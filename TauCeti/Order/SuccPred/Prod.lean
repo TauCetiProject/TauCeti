@@ -11,13 +11,14 @@ public import Mathlib.Order.SuccPred.Basic
 /-!
 # Successors and predecessors in lexicographic products
 
-In the lexicographic product `α ×ₗ β`, pairs are compared first by their first coordinate and then
-by their second. When `β` has no maximal element, the successor of `(a, b)` is `(a, succ b)`, so
-`α ×ₗ β` is a successor order. Dually, when `β` has no minimal element, `α ×ₗ β` is a predecessor
-order with `pred (a, b) = (a, pred b)`.
+In the lexicographic product `α ×ₗ β`, two pairs with the same first coordinate are compared in the
+second coordinate, while a strict inequality in the first coordinate dominates every change in the
+second. When `β` has no maximal element, the successor of `(a, b)` is `(a, succ b)`, so `α ×ₗ β`
+is a successor order. Dually, when `β` has no minimal element, `α ×ₗ β` is a predecessor order with
+`pred (a, b) = (a, pred b)`.
 
-In particular `ℤ ×ₗ ℤ` is a discretely ordered non-Archimedean abelian group whose least positive
-element is `(0, 1)`, strictly smaller than `(1, 0)` and every positive multiple of it.
+For example `ℤ ×ₗ ℤ`, equipped with componentwise addition, is a non-Archimedean discretely ordered
+abelian group with least positive element `(0, 1)` and `(1, 0) > n • (0, 1)` for all `n : ℕ`.
 -/
 
 public section
@@ -36,19 +37,23 @@ variable [SuccOrder β] [NoMaxOrder β]
 coordinate. -/
 instance succOrder : SuccOrder (α ×ₗ β) where
   succ x := toLex ((ofLex x).1, succ (ofLex x).2)
-  le_succ x := le_iff.2 (Or.inr ⟨rfl, le_succ (ofLex x).2⟩)
+  le_succ _ := le_iff.mpr (.inr ⟨rfl, le_succ _⟩)
   max_of_succ_le {x} h := by
-    rcases le_iff.1 h with hlt | ⟨-, hle⟩
+    rcases le_iff.mp h with hlt | ⟨_, hle⟩
     · exact (lt_irrefl _ hlt).elim
-    · exact (not_isMax (ofLex x).2 (max_of_succ_le hle)).elim
+    · exact (not_isMax _ (max_of_succ_le hle)).elim
   succ_le_of_lt {x y} h := by
-    rcases lt_iff.1 h with hlt | ⟨heq, hlt⟩
-    · exact le_iff.2 (Or.inl hlt)
-    · exact le_iff.2 (Or.inr ⟨heq, succ_le_of_lt hlt⟩)
+    rcases lt_iff.mp h with hlt | ⟨heq, hlt⟩
+    · exact le_iff.mpr (.inl hlt)
+    · exact le_iff.mpr (.inr ⟨heq, succ_le_of_lt hlt⟩)
 
-/-- The successor of a lexicographic pair advances its second coordinate. -/
+/-- The successor of `toLex x` applies `succ` to the second coordinate. -/
 @[simp]
-theorem succ_toLex (a : α) (b : β) : succ (toLex (a, b)) = toLex (a, succ b) := (rfl)
+theorem succ_toLex (x : α × β) : succ (toLex x) = toLex (x.1, succ x.2) := (rfl)
+
+/-- Unwrapping `ofLex` after `succ` applies `succ` to the second coordinate. -/
+@[simp]
+theorem ofLex_succ (x : α ×ₗ β) : ofLex (succ x) = ((ofLex x).1, succ (ofLex x).2) := (rfl)
 
 end Succ
 
@@ -60,19 +65,23 @@ variable [PredOrder β] [NoMinOrder β]
 coordinate. -/
 instance predOrder : PredOrder (α ×ₗ β) where
   pred x := toLex ((ofLex x).1, pred (ofLex x).2)
-  pred_le x := le_iff.2 (Or.inr ⟨rfl, pred_le (ofLex x).2⟩)
+  pred_le _ := le_iff.mpr (.inr ⟨rfl, pred_le _⟩)
   min_of_le_pred {x} h := by
-    rcases le_iff.1 h with hlt | ⟨-, hle⟩
+    rcases le_iff.mp h with hlt | ⟨_, hle⟩
     · exact (lt_irrefl _ hlt).elim
-    · exact (not_isMin (ofLex x).2 (min_of_le_pred hle)).elim
+    · exact (not_isMin _ (min_of_le_pred hle)).elim
   le_pred_of_lt {x y} h := by
-    rcases lt_iff.1 h with hlt | ⟨heq, hlt⟩
-    · exact le_iff.2 (Or.inl hlt)
-    · exact le_iff.2 (Or.inr ⟨heq, le_pred_of_lt hlt⟩)
+    rcases lt_iff.mp h with hlt | ⟨heq, hlt⟩
+    · exact le_iff.mpr (.inl hlt)
+    · exact le_iff.mpr (.inr ⟨heq, le_pred_of_lt hlt⟩)
 
-/-- The predecessor of a lexicographic pair decrements its second coordinate. -/
+/-- The predecessor of `toLex x` applies `pred` to the second coordinate. -/
 @[simp]
-theorem pred_toLex (a : α) (b : β) : pred (toLex (a, b)) = toLex (a, pred b) := (rfl)
+theorem pred_toLex (x : α × β) : pred (toLex x) = toLex (x.1, pred x.2) := (rfl)
+
+/-- Unwrapping `ofLex` after `pred` applies `pred` to the second coordinate. -/
+@[simp]
+theorem ofLex_pred (x : α ×ₗ β) : ofLex (pred x) = ((ofLex x).1, pred (ofLex x).2) := (rfl)
 
 end Pred
 

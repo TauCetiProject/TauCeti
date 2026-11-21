@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Constructions
-public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.Topology.PathSpace.Moore.Lifting
 public import TauCeti.Topology.PathSpace.Moore.Truncate
 
@@ -280,7 +278,7 @@ theorem val_eq_subtypeVal (x : Fiber p b) : x.val = Subtype.val x :=
 
 @[simp]
 theorem target_path_val (x : Fiber p b) : x.val.path.target = b :=
-  x.2
+  x.property
 
 @[ext]
 theorem ext {x y : Fiber p b} (h : x.val = y.val) : x = y :=
@@ -288,7 +286,7 @@ theorem ext {x y : Fiber p b} (h : x.val = y.val) : x = y :=
 
 @[fun_prop]
 theorem continuous_val : Continuous (val : Fiber p b → MooreReplacement p) :=
-  continuous_subtype_val
+  continuous_subtypeVal
 
 /-- The point `(e, γ)` of the fibre, for a pair whose path ends at `b`. -/
 def mk' (x : MooreReplacement p) (h : x.path.target = b) : Fiber p b :=
@@ -359,18 +357,19 @@ open MooreReplacement
 `f · ω = Φ (f, ω)(end)`.  It is a strict action when `Φ` is transitive. -/
 def fiberAct {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B) (f : {e // p e = b})
     (ω : MooreLoopSpace B b) : {e // p e = b} :=
-  ⟨(Φ.lift f ω.toMoorePath (by rw [ω.source_eq, f.2])).target, by rw [target_lift, ω.target_eq]⟩
+  ⟨(Φ.lift f ω.toMoorePath (by rw [ω.source_eq, f.property])).target, by rw [target_lift,
+      ω.target_eq]⟩
 
 @[simp]
 theorem coe_fiberAct {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B) (f : {e // p e = b})
     (ω : MooreLoopSpace B b) :
-    (Φ.fiberAct b f ω : E) = (Φ.lift f ω.toMoorePath (by rw [ω.source_eq, f.2])).target :=
+    (Φ.fiberAct b f ω : E) = (Φ.lift f ω.toMoorePath (by rw [ω.source_eq, f.property])).target :=
   (rfl)
 
 /-- The action through a lifting function is continuous in both variables. -/
 theorem continuous_fiberAct {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B) :
     Continuous fun q : {e // p e = b} × MooreLoopSpace B b ↦ Φ.fiberAct b q.1 q.2 :=
-  (MoorePath.continuous_target.comp (Φ.continuous_lift (continuous_subtype_val.comp continuous_fst)
+  (MoorePath.continuous_target.comp (Φ.continuous_lift (continuous_subtypeVal.comp continuous_fst)
     (MooreLoopSpace.continuous_toMoorePath.comp continuous_snd) _)).subtype_mk _
 
 /-- The unit loop acts trivially, for any lifting function: the lift of a path of length zero is
@@ -436,12 +435,12 @@ theorem IsTransitive.transport_act {p : C(E, B)} {Φ : MooreLiftingFunction p}
 
 private theorem target_path_incl_val {p : C(E, B)} {b : B} (f : {e // p e = b}) :
     (incl p f).path.target = b := by
-  simp [f.2]
+  simp [f.property]
 
 /-- The inclusion of the fibre of `p` into the fibre `F'`, `f ↦ (f, const)`. -/
 def fiberIncl (p : C(E, B)) (b : B) : C({e // p e = b}, Fiber p b) :=
   ⟨fun f ↦ Fiber.mk' (incl p f) (target_path_incl_val f),
-    ((incl p).continuous.comp continuous_subtype_val).subtype_mk _⟩
+    ((incl p).continuous.comp continuous_subtypeVal).subtype_mk _⟩
 
 @[simp]
 theorem val_fiberIncl {p : C(E, B)} (b : B) (f : {e // p e = b}) :
