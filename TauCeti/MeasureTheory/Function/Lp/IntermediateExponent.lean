@@ -49,7 +49,13 @@ and `MeasureTheory.Lp.exists_add_ae_eq_of_le_of_le` for elements of `Lᵖ`). The
 `‖f‖` exceeds `‖f‖_p` and the part where it does not are such a pair
 (`MeasureTheory.eLpNorm_indicator_eLpNorm_lt_enorm_le`,
 `MeasureTheory.eLpNorm_indicator_enorm_le_eLpNorm_le`). Together the two inclusions make `Lᵖ` an
-intermediate space of the couple `(L^{p₀}, L^{p₁})`.
+intermediate space of the couple `(L^{p₀}, L^{p₁})`. For a split at an arbitrary height `h`,
+`∫_{‖f‖ > h} ‖f‖ ^ s` and `∫_{‖f‖ ≤ h} ‖f‖ ^ s` are bounded by `h ^ (s - r) ∫ ‖f‖ ^ r` for
+`s ≤ r` and `s ≥ r` respectively (`MeasureTheory.setLIntegral_lt_enorm_rpow_le`,
+`MeasureTheory.setLIntegral_enorm_le_rpow_le`), and the part of `f` on a null-measurable set `S` has
+`Lˢ` norm `(∫_S ‖f‖ ^ s) ^ (1 / s)` (`MeasureTheory.eLpNorm_indicator_eq_setLIntegral_rpow`), so it
+lies in `Lˢ` when that integral is finite
+(`MeasureTheory.memLp_indicator_of_setLIntegral_rpow_ne_top`).
 
 ## References
 
@@ -179,6 +185,44 @@ theorem eLpNorm_indicator_enorm_le_eLpNorm_le {f : α → E} {p p₁ : ℝ≥0�
     (Filter.Eventually.of_forall fun x => ?_)
   rw [← toReal_eNorm]
   exact ENNReal.toReal_mono ht (hst x)
+
+/-- Above a height `h`, the power `‖f‖ ^ s` with `0 < s ≤ r` is at most `h ^ (s - r) ‖f‖ ^ r`, so
+`∫_{‖f‖ > h} ‖f‖ ^ s ≤ h ^ (s - r) ∫ ‖f‖ ^ r`. -/
+theorem setLIntegral_lt_enorm_rpow_le {f : α → E} (hf : AEStronglyMeasurable f μ) {s r : ℝ}
+    (hs : 0 < s) (hsr : s ≤ r) (h : ℝ≥0∞) :
+    ∫⁻ x in {x | h < ‖f x‖ₑ}, ‖f x‖ₑ ^ s ∂μ ≤ h ^ (s - r) * ∫⁻ x, ‖f x‖ₑ ^ r ∂μ := by
+  rw [← lintegral_const_mul'' _ (hf.eNorm.pow_const _)]
+  refine (lintegral_mono_ae ((ae_restrict_mem₀ (nullMeasurableSet_lt aemeasurable_const
+    hf.eNorm)).mono fun x hx => ?_)).trans (setLIntegral_le_lintegral _ _)
+  exact ENNReal.rpow_le_rpow_sub_mul_rpow hs eNorm_ne_top
+    (ENNReal.rpow_le_rpow_of_nonpos (le_of_lt hx) (sub_nonpos.2 hsr))
+
+/-- Up to a height `h`, the power `‖f‖ ^ s` with `r ≤ s` is at most `h ^ (s - r) ‖f‖ ^ r`, so
+`∫_{‖f‖ ≤ h} ‖f‖ ^ s ≤ h ^ (s - r) ∫ ‖f‖ ^ r`. -/
+theorem setLIntegral_enorm_le_rpow_le {f : α → E} (hf : AEStronglyMeasurable f μ) {s r : ℝ}
+    (hs : 0 < s) (hrs : r ≤ s) (h : ℝ≥0∞) :
+    ∫⁻ x in {x | ‖f x‖ₑ ≤ h}, ‖f x‖ₑ ^ s ∂μ ≤ h ^ (s - r) * ∫⁻ x, ‖f x‖ₑ ^ r ∂μ := by
+  rw [← lintegral_const_mul'' _ (hf.eNorm.pow_const _)]
+  refine (lintegral_mono_ae ((ae_restrict_mem₀ (nullMeasurableSet_le hf.eNorm
+    aemeasurable_const)).mono fun x hx => ?_)).trans (setLIntegral_le_lintegral _ _)
+  exact ENNReal.rpow_le_rpow_sub_mul_rpow hs eNorm_ne_top
+    (ENNReal.rpow_le_rpow hx (sub_nonneg.2 hrs))
+
+/-- The part of `f` on a null-measurable set `S` has `Lˢ` norm `(∫_S ‖f‖ ^ s) ^ (1 / s)` for
+`0 < s < ∞`. -/
+theorem eLpNorm_indicator_eq_setLIntegral_rpow {f : α → E} (hf : AEStronglyMeasurable f μ)
+    {s : ℝ≥0∞} (hs0 : s ≠ 0) (hs : s ≠ ∞) {S : Set α} (hS : NullMeasurableSet S μ) :
+    eLpNorm (S.indicator f) s μ = (∫⁻ x in S, ‖f x‖ₑ ^ s.toReal ∂μ) ^ (1 / s.toReal) := by
+  rw [eLpNorm_indicator_eq_eLpNorm_restrict hS,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hs0 hs hf.restrict]
+
+/-- The part of `f` on a null-measurable set `S` lies in `Lˢ` for `0 < s < ∞` when `∫_S ‖f‖ ^ s` is
+finite. -/
+theorem memLp_indicator_of_setLIntegral_rpow_ne_top {f : α → E} (hf : AEStronglyMeasurable f μ)
+    {s : ℝ≥0∞} (hs0 : s ≠ 0) (hs : s ≠ ∞) {S : Set α} (hS : NullMeasurableSet S μ)
+    (hfin : ∫⁻ x in S, ‖f x‖ₑ ^ s.toReal ∂μ ≠ ∞) : MemLp (S.indicator f) s μ := by
+  rw [MemLp, eLpNorm_indicator_eq_setLIntegral_rpow hf hs0 hs hS]
+  exact ENNReal.rpow_lt_top_of_nonneg (by positivity) hfin
 
 /-- A function in `Lᵖ` is the sum of a function in `L^{p₀}` and a function in `L^{p₁}` for every
 `p₀ ≤ p ≤ p₁`, each of norm at most `‖f‖_p`. This is the inclusion `Lᵖ ⊆ L^{p₀} + L^{p₁}`. -/
