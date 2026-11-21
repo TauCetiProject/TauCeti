@@ -240,7 +240,7 @@ private theorem norm_coeff_sum_smul_rescale_exp_mul_pow_le (s : Finset ι) (a x 
     (ha : ∀ i ∈ s, ‖a i‖ ≤ A) (n : ℕ) :
     ‖coeff n (∑ i ∈ s, a i • rescale (x i) (exp K))‖ * c ^ n ≤ A := by
   have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
-  refine norm_coeff_sum_mul_pow_le s _ hA (fun i hi n ↦ ?_) n
+  refine norm_coeff_sum_mul_pow_le s _ n hA fun i hi ↦ ?_
   simp only [coeff_smul, smul_eq_mul, norm_mul, mul_assoc]
   exact (mul_le_mul (ha i hi)
     (PowerSeries.norm_coeff_rescale_exp_mul_pow_le_one hc (hxc i hi) n)

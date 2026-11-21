@@ -22,11 +22,11 @@ namespace TauCeti
 
 variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {c : ℝ}
 
-/-- A common bound for weighted coefficients of finitely many series also bounds their sum
-in an ultrametric ring, including the empty sum. -/
+/-- A common bound for the weighted coefficients of degree `n` of finitely many series also
+bounds that of their sum in an ultrametric ring, including the empty sum. -/
 theorem norm_coeff_sum_mul_pow_le {ι : Type*} (s : Finset ι)
-    (F : ι → PowerSeries R) {A : ℝ} (hA : 0 ≤ A)
-    (hF : ∀ i ∈ s, ∀ n, ‖(F i).coeff n‖ * c ^ n ≤ A) (n : ℕ) :
+    (F : ι → PowerSeries R) (n : ℕ) {A : ℝ} (hA : 0 ≤ A)
+    (hF : ∀ i ∈ s, ‖(F i).coeff n‖ * c ^ n ≤ A) :
     ‖(∑ i ∈ s, F i).coeff n‖ * c ^ n ≤ A := by
   rw [map_sum]
   rcases s.eq_empty_or_nonempty with rfl | hs
@@ -34,7 +34,7 @@ theorem norm_coeff_sum_mul_pow_le {ι : Type*} (s : Finset ι)
   obtain ⟨i, hi, hle⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty hs
     fun i ↦ (F i).coeff n
   by_cases hcn : 0 ≤ c ^ n
-  · exact (mul_le_mul_of_nonneg_right hle hcn).trans (hF i hi n)
+  · exact (mul_le_mul_of_nonneg_right hle hcn).trans (hF i hi)
   · exact (mul_nonpos_of_nonneg_of_nonpos (norm_nonneg _) (le_of_not_ge hcn)).trans hA
 
 end TauCeti
