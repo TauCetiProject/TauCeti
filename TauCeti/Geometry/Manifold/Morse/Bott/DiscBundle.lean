@@ -259,20 +259,16 @@ private theorem normalHessian_eq_add :
   ring
 
 private theorem negSq_nonneg : 0 ≤ h.negSq hn g x := by
-  by_cases hv : h.negPart hn g x.proj x.snd = 0
-  · simp [negSq, hv]
-  · have := h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g
-      (h.negPart_mem hn g x.snd) hv
-    simp only [negSq]
-    linarith
+  have := h.normalHessian_apply_self_nonpos_of_mem_negativeNormalSpace hn g
+      (h.negPart_mem hn g x.snd)
+  simp only [negSq]
+  linarith
 
 private theorem posSq_nonneg : 0 ≤ h.posSq hn g x := by
-  by_cases hv : h.posPart hn g x.proj x.snd = 0
-  · simp [posSq, hv]
-  · have := h.normalHessian_apply_self_pos_of_mem_positiveNormalSpace hn g
-      (h.posPart_mem hn g x.snd) hv
-    simp only [posSq]
-    linarith
+  have := h.normalHessian_apply_self_nonneg_of_mem_positiveNormalSpace hn g
+      (h.posPart_mem hn g x.snd)
+  simp only [posSq]
+  linarith
 
 private theorem negPart_eq_zero (hx : h.negSq hn g x = 0) : h.negPart hn g x.proj x.snd = 0 := by
   by_contra hne

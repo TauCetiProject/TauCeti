@@ -50,9 +50,10 @@ and moving the remaining factors by vectors of that subspace does not change the
   modules in every characteristic, without factorial invertibility.
 * `exteriorPower.range_toTensorPower`: the image of the antisymmetrization is the image of the
   antisymmetrization operator on the tensor power.
-* `exteriorPower.map_apply_ιMulti_two` and `exteriorPower.map_bijective`: the map induced by `f`
-  sends a two-vector `u ∧ w` to `f u ∧ f w`, and bijective maps induce bijections of exterior
-  powers.
+* `exteriorPower.map_apply_ιMulti_two`, `exteriorPower.map_apply_map_of_comp_eq` and
+  `exteriorPower.map_bijective`: the map induced by `f` sends a two-vector `u ∧ w` to
+  `f u ∧ f w`, induced maps preserve commuting squares, and bijective maps induce bijections of
+  exterior powers.
 * `exteriorPower.ofEq_ιMulti`: the identification of exterior powers of equal degree renumbers the
   factors of an exterior product.
 * `Submodule.ιMulti_eq_zero_of_finrank_lt`: an exterior product vanishes when more of its factors
@@ -62,7 +63,9 @@ and moving the remaining factors by vectors of that subspace does not change the
 * `exteriorPower.toTensorPower_comp_map` and `exteriorPower.map_comp_fromTensorPower`: the
   antisymmetrization and the canonical surjection are natural in the module.
 * `TauCeti.ExteriorAlgebra.ιMulti_comp_cast`: an exterior product in the exterior algebra is
-  unchanged by renumbering its factors along `Fin.cast`, and
+  unchanged by renumbering its factors along `Fin.cast`, an empty part of an appended family can
+  be dropped (`TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_left`,
+  `TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_right`), and
   `TauCeti.ExteriorAlgebra.ιMulti_comp_append` splits the image of an appended family.
 * `TauCeti.ExteriorAlgebra.ιMulti_of_eq_zero`: an exterior product of a family indexed by `Fin n`
   with `n = 0` is `1`.
@@ -295,6 +298,14 @@ theorem map_apply_ιMulti_two (f : M →ₗ[R] N) (u w : M) :
   funext i
   fin_cases i <;> rfl
 
+/-- Exterior powers carry a commuting square `e' ∘ f = g ∘ e` of linear maps to a commuting
+square. -/
+theorem map_apply_map_of_comp_eq {n : ℕ} {M' N' : Type*} [AddCommGroup M'] [Module R M']
+    [AddCommGroup N'] [Module R N'] {f : M →ₗ[R] M'} {g : N →ₗ[R] N'} {e : M →ₗ[R] N}
+    {e' : M' →ₗ[R] N'} (h : e' ∘ₗ f = g ∘ₗ e) (y : ⋀[R]^n M) :
+    map n e' (map n f y) = map n g (map n e y) := by
+  rw [← LinearMap.comp_apply (map n e'), ← map_comp, h, map_comp, LinearMap.comp_apply]
+
 /-- A bijective linear map induces a bijective map on every exterior power. -/
 theorem map_bijective {n : ℕ} {f : M →ₗ[R] N} (hf : Function.Bijective f) :
     Function.Bijective (map n f) :=
@@ -438,6 +449,20 @@ theorem ιMulti_of_eq_zero {n : ℕ} (h : n = 0) (v : Fin n → M) :
     _root_.ExteriorAlgebra.ιMulti R n v = 1 := by
   subst h
   exact _root_.ExteriorAlgebra.ιMulti_zero_apply v
+
+/-- The exterior product of an appended family whose first part is empty is the exterior product
+of the second part. -/
+theorem ιMulti_append_of_eq_zero_left {n m : ℕ} (hn : n = 0) (a : Fin n → M) (b : Fin m → M) :
+    _root_.ExteriorAlgebra.ιMulti R (n + m) (Fin.append a b) =
+      _root_.ExteriorAlgebra.ιMulti R m b := by
+  rw [← _root_.ExteriorAlgebra.ιMulti_mul_ιMulti, ιMulti_of_eq_zero hn, one_mul]
+
+/-- The exterior product of an appended family whose second part is empty is the exterior product
+of the first part. -/
+theorem ιMulti_append_of_eq_zero_right {n m : ℕ} (hm : m = 0) (a : Fin n → M) (b : Fin m → M) :
+    _root_.ExteriorAlgebra.ιMulti R (n + m) (Fin.append a b) =
+      _root_.ExteriorAlgebra.ιMulti R n a := by
+  rw [← _root_.ExteriorAlgebra.ιMulti_mul_ιMulti, ιMulti_of_eq_zero hm, mul_one]
 
 /-- The exterior product of the image of an appended family under a linear map splits as the
 product of the exterior products of the images of the two parts. -/
