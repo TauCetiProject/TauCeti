@@ -13,7 +13,7 @@ public import TauCeti.Topology.VectorBundle.Orientation.TwistedHomology.OverTriv
 public import TauCeti.Topology.VectorBundle.Thom.Class
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.AlgebraicTopology.Singular.FiniteUnionInduction
-import TauCeti.Topology.VectorBundle.Thom.RankDegreeHomology
+import TauCeti.Topology.Category.TopCat.Limits.Basic
 import TauCeti.Topology.Connected.PathConnected
 
 /-!
@@ -378,13 +378,18 @@ variable [FiniteDimensional ℝ F]
 
 omit [VectorBundle ℝ F E] in
 /-- Through a trivialization, the fibre class over `x` read by it as a multiple `a • g` of the
-generator `g` of `Hᵣ(F, F ∖ {0}; R)` is `a` times the class of `x`. -/
+point class `g` of `Hᵣ(F, F ∖ {0}; R)` is `a` times the class of `x`. -/
 private theorem singularHomologyMap_thomPairOverIso_readFiberClass (e : Trivialization F (π F E))
     [e.IsLinear ℝ] {V : Set B} (hV : V ⊆ e.baseSet) {x : B} (hx : x ∈ V) (a : R) :
     TopPair.singularHomologyMap (e.thomPairOverIso ℝ hV).hom (ModuleCat.of R R) (finrank ℝ F)
-        (readFiberClass F E e hx (hV hx) (a • complZeroPairGenerator R F)) =
+        (readFiberClass F E e hx (hV hx)
+          (a • complZeroPairPointHom (ModuleCat.of R R) F (finrank ℝ F) rfl (1 : R))) =
       (prodThomPairSingularHomologyIso (ModuleCat.of R R) V F 0 (finrank ℝ F)).inv
         (a • singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of V) ⟨x, hx⟩ 1) := by
+  have hfib := ConcreteCategory.congr_hom
+    (complZeroPairPointHom_comp_singularHomologyMap_prodThomPairFiberMap (ModuleCat.of R R) V F
+      (finrank ℝ F) rfl ⟨x, hx⟩) (1 : R)
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hfib
   rw [readFiberClass, ← ConcreteCategory.comp_apply (TopPair.singularHomologyMap
       (fiberThomPairOverMap F E hx) (ModuleCat.of R R) (finrank ℝ F)),
     ← TopPair.singularHomologyMap_comp, e.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ hV hx,
@@ -394,7 +399,7 @@ private theorem singularHomologyMap_thomPairOverIso_readFiberClass (e : Triviali
         (finrank ℝ F)),
     ← TopPair.singularHomologyMap_comp, Iso.inv_hom_id, TopPair.singularHomologyMap_id,
     ConcreteCategory.id_apply, map_smul,
-    singularHomologyMap_prodThomPairFiberMap_complZeroPairGenerator, map_smul]
+    hfib, map_smul]
 
 variable (ω : Orientation ℝ F ι)
   (γ : ((TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology
@@ -436,7 +441,7 @@ private theorem signFiberClassOver_eq_of_joinedIn (c : B) {W : Set B} {x y : B} 
   set e := trivializationAt F E c
   have hV : W ∩ e.baseSet ⊆ e.baseSet := inter_subset_right
   obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.1
-    ((span_complZeroPairGenerator R F).symm ▸ Submodule.mem_top : γ ∈ _)
+    ((span_complZeroPairPointHom_one F R).symm ▸ Submodule.mem_top : γ ∈ _)
   rw [← restrictOver_signFiberClassOver (E := E) hι ω γ inter_subset_left h.source_mem,
     ← restrictOver_signFiberClassOver (E := E) hι ω γ inter_subset_left h.target_mem]
   congr 1
@@ -508,7 +513,7 @@ private theorem isIso_signThomPairOverFinrankInv_of_subset (hγ : Submodule.span
     (c : B) {W : Set B} (hW : W ⊆ (trivializationAt F E c).baseSet) :
     IsIso (signThomPairOverFinrankInv (E := E) hι ω γ W) := by
   set e := trivializationAt F E c
-  obtain ⟨u, hu⟩ := exists_eq_units_smul_complZeroPairGenerator R F hγ
+  obtain ⟨u, hu⟩ := exists_eq_units_smul_complZeroPairPointHom_one F R hγ
   have h : signThomPairOverFinrankInv (E := E) hι ω γ W ≫ readOver hι e ω hW (finrank ℝ F) ≫
       TopPair.singularHomologyMap (e.thomPairOverIso ℝ hW).hom (ModuleCat.of R R) (finrank ℝ F) =
       singularHomology₀UnitsSmul (ModuleCat.of R R) (X := TopCat.of W) (fun _ ↦ u)
@@ -746,12 +751,15 @@ private theorem isIso_signThomPairOverFinrankInv_univ (hγ : Submodule.span R {�
   exact isIso_univ_of_subsetMayerVietoris
     (H := fun W ↦ (thomPairOver F E W).twistedHomology (signSystemOver R F E hι W) (finrank ℝ F))
     (fun h ↦ restrictOver hι h (finrank ℝ F)) (fun h h' ↦ restrictOver_comp_restrictOver hι h h' _)
-    (ModuleCat.of R R) (ψ := signThomPairOverFinrankInv hι ω γ)
+    (A := TopCat.subspaceDiagram (A := (id : Set B → Set B)) monotone_id ⋙
+      (singularHomologyFunctor (ModuleCat.{w} R) 0).obj (ModuleCat.of R R))
+    (ψ := signThomPairOverFinrankInv hι ω γ)
     (fun h ↦ signThomPairOverFinrankInv_naturality hι ω γ h)
     (P := fun W ↦ ∃ c, W ⊆ (trivializationAt F E c).baseSet)
     (fun h ⟨c, hc⟩ ↦ ⟨c, h.trans hc⟩)
     (fun _ ⟨c, hc⟩ ↦ isIso_signThomPairOverFinrankInv_of_subset hι ω γ hγ c hc)
-    (isIso_signThomPairOverFinrankInv_empty hι ω γ) hMV
+    (isIso_signThomPairOverFinrankInv_empty hι ω γ)
+    (fun _ _ ↦ epi_biprod_desc_singularHomologyMap_inclusion _ _ _) hMV
     fun b ↦ ⟨_, (trivializationAt F E b).open_baseSet, mem_baseSet_trivializationAt F E b, b,
       subset_rfl⟩
 

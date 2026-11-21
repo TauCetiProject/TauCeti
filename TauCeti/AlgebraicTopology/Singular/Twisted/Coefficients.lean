@@ -101,6 +101,17 @@ lemma twistedHomologyCoefficientMap_neg {L K : LocalCoefficientSystem.{u, v, max
     ((twistedChainComplexFunctor.{u, v, w} R X).map_neg (f := η))).trans
       (HomologicalComplex.homologyMap_neg _ k)
 
+/-- The map on twisted homology induced by a sum of morphisms of local systems is the sum of the
+induced maps. -/
+@[simp]
+lemma twistedHomologyCoefficientMap_add {L K : LocalCoefficientSystem.{u, v, max v w} R X}
+    (η θ : L ⟶ K) (k : ℕ) :
+    twistedHomologyCoefficientMap (η + θ) k =
+      twistedHomologyCoefficientMap η k + twistedHomologyCoefficientMap θ k :=
+  (congrArg (HomologicalComplex.homologyMap · k)
+    ((twistedChainComplexFunctor.{u, v, w} R X).map_add (f := η) (g := θ))).trans
+      (HomologicalComplex.homologyMap_add _ _ k)
+
 /-- The map on twisted homology induced by a difference of morphisms of local systems is the
 difference of the induced maps. -/
 @[simp]
@@ -111,6 +122,32 @@ lemma twistedHomologyCoefficientMap_sub {L K : LocalCoefficientSystem.{u, v, max
   (congrArg (HomologicalComplex.homologyMap · k)
     ((twistedChainComplexFunctor.{u, v, w} R X).map_sub (f := η) (g := θ))).trans
       (HomologicalComplex.homologyMap_sub _ _ k)
+
+/-- The twisted homology maps of an isomorphism of local coefficient systems and of its inverse
+compose to the identity. -/
+@[reassoc (attr := simp), elementwise]
+lemma twistedHomologyCoefficientMap_hom_inv_id
+    {L K : LocalCoefficientSystem.{u, v, max v w} R X} (e : L ≅ K) (k : ℕ) :
+    twistedHomologyCoefficientMap e.hom k ≫ twistedHomologyCoefficientMap e.inv k = 𝟙 _ := by
+  rw [← twistedHomologyCoefficientMap_comp, e.hom_inv_id, twistedHomologyCoefficientMap_id]
+
+/-- The twisted homology maps of the inverse of an isomorphism of local coefficient systems and
+of the isomorphism compose to the identity. -/
+@[reassoc (attr := simp), elementwise]
+lemma twistedHomologyCoefficientMap_inv_hom_id
+    {L K : LocalCoefficientSystem.{u, v, max v w} R X} (e : L ≅ K) (k : ℕ) :
+    twistedHomologyCoefficientMap e.inv k ≫ twistedHomologyCoefficientMap e.hom k = 𝟙 _ := by
+  rw [← twistedHomologyCoefficientMap_comp, e.inv_hom_id, twistedHomologyCoefficientMap_id]
+
+variable (X) in
+/-- The inverse comparison with singular homology is natural in the coefficient module. -/
+@[reassoc]
+lemma twistedHomologyConstantIso_inv_naturality {M N : ModuleCat.{max v w} R} (φ : M ⟶ N) (k : ℕ) :
+    (twistedHomologyConstantIso X M k).inv ≫
+        twistedHomologyCoefficientMap ((constantFunctor X).map φ) k =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{max v w} R) k).map φ).app X ≫
+        (twistedHomologyConstantIso X N k).inv := by
+  rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv, twistedHomologyConstantIso_hom_naturality]
 
 end TauCeti.LocalCoefficientSystem
 

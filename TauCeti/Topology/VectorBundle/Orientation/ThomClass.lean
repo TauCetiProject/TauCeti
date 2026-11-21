@@ -88,7 +88,8 @@ stated in degree `finrank ℝ F`, so `isThomClass_thomClass` transports it along
   `eq_thomClassOfModel_of_forall` characterizes it, as does
   `eq_thomClassOfModel_of_forall_exists` reading each fibre in a single trivialization, with
   `exists_singularCohomologyMap_fiberThomPairMap_thomClassOfModel` its reading in any one; and
-  `isThomClass_thomClassOfModel` shows that normalization by a generator gives a Thom class.
+  `isThomClass_thomClassOfModel` shows that normalization by a generator gives a Thom class, and
+  `thomClassOfModel_neg` that reversing the orientation negates it.
 * `TauCeti.VectorBundleOrientation.exists_isThomClass`: an oriented real vector bundle has a Thom
   class with coefficients in any commutative ring.
 * `TauCeti.VectorBundleOrientation.singularCohomologyMap_fiberThomPairMap_thomClass`: the integral
@@ -453,6 +454,18 @@ theorem eq_thomClassOfModel_of_forall {u : (thomPair F E).singularCohomology R' 
   (existsUnique_singularCohomology_thomPair_fiber hι o ω g).unique
     ⟨fun e _ b hb h ↦ (hu e b hb).1 h, fun e _ b hb h ↦ (hu e b hb).2 h⟩
     (existsUnique_singularCohomology_thomPair_fiber hι o ω g).exists.choose_spec
+
+/-- **Reversing the orientation negates the Thom class** `thomClassOfModel o hι ω g`. -/
+@[simp]
+theorem thomClassOfModel_neg : (-o).thomClassOfModel hι ω g = -o.thomClassOfModel hι ω g := by
+  refine (eq_thomClassOfModel_of_forall (-o) fun e _ b hb ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩).symm <;>
+    rw [neg_apply, Trivialization.mapOrientation_neg] at h
+  · have h' : e.mapOrientation ι hb (o b) = -ω := by
+      rw [← h]; exact (neg_neg (G := Orientation ℝ F ι) _).symm
+    rw [map_neg, o.singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq_neg
+      e hb h', neg_neg]
+  · rw [map_neg, o.singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq e hb
+      (neg_injective h)]
 
 end ThomClass
 
