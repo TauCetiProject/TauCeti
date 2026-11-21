@@ -12,6 +12,7 @@ import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.ContMDiff.PartialDeriv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import TauCeti.Topology.Compactness.Normed
 
 /-!
@@ -94,29 +95,6 @@ variable {E H S F G M V : Type*}
   [TopologicalSpace M] [ChartedSpace G M]
   [NormedAddCommGroup V] [NormedSpace ℝ V] {n : WithTop ℕ∞}
 
-/-- The normal part `pr₂ ∘ d₀⁻¹ ∘ d₁ ∘ ι₂ : V →L[ℝ] V` of two linear maps `d₀, d₁ : E × V →L[ℝ] F`
-on the fibre `V`. -/
-private noncomputable def fiberPart (d₀ d₁ : E × V →L[ℝ] F) : V →L[ℝ] V :=
-  ContinuousLinearMap.snd ℝ E V ∘L d₀.inverse ∘L d₁ ∘L ContinuousLinearMap.inr ℝ E V
-
-private theorem fiberPart_comp {d₀ : E × V →L[ℝ] F} (hd : d₀.IsInvertible)
-    (T : E × V →L[ℝ] E × V) :
-    fiberPart d₀ (d₀ ∘L T) = ContinuousLinearMap.snd ℝ E V ∘L T ∘L ContinuousLinearMap.inr ℝ E V :=
-  ContinuousLinearMap.ext fun v ↦ by simp [fiberPart, hd.inverse_apply_self]
-
-/-- Two invertible linear maps `d₀, d₁ : E × V →L[ℝ] F` agreeing on the base `E` have mutually
-inverse normal parts. -/
-private theorem fiberPart_comp_fiberPart {d₀ d₁ : E × V →L[ℝ] F} (h₀ : d₀.IsInvertible)
-    (h₁ : d₁.IsInvertible) (h : ∀ u, d₀ (u, 0) = d₁ (u, 0)) :
-    fiberPart d₀ d₁ ∘L fiberPart d₁ d₀ = ContinuousLinearMap.id ℝ V :=
-  ContinuousLinearMap.ext fun v ↦ by
-    -- Write `w = d₁⁻¹ (d₀ (0, v))`; removing its base part, `d₁ (0, w.2) = d₀ ((0, v) - (w.1, 0))`.
-    have hw : d₁ (0, (d₁.inverse (d₀ (0, v))).2) =
-        d₀ ((0, v) - ((d₁.inverse (d₀ (0, v))).1, 0)) := by
-      rw [map_sub, h, eq_sub_iff_add_eq, ← map_add, Prod.mk_add_mk, zero_add, add_zero, Prod.mk.eta,
-        h₁.self_apply_inverse]
-    simp [fiberPart, hw, h₀.inverse_apply_self]
-
 variable (I J) in
 /-- The **transition fibre derivative** of two tubes `τ₀, τ₁ : S × V → M` at the core point
 `(x, 0)`: the normal part `pr₂ ∘ (dτ₀_(x,0))⁻¹ ∘ dτ₁_(x,0) ∘ ι₂ : V →L[ℝ] V` of the derivative of
@@ -125,8 +103,8 @@ projection and the inclusion of the fibre in the tangent space `E × V` of `S ×
 meaningful when `τ₀ (x, 0) = τ₁ (x, 0)`, as for two framed tubes around the same map, and
 `dτ₀_(x,0)` is invertible, as for a local diffeomorphism `τ₀`. -/
 noncomputable def transitionFDeriv (τ₀ τ₁ : S × V → M) (x : S) : V →L[ℝ] V :=
-  fiberPart (E := E) (F := F) (mfderiv (I.prod 𝓘(ℝ, V)) J τ₀ (x, 0))
-    (mfderiv (I.prod 𝓘(ℝ, V)) J τ₁ (x, 0))
+  ContinuousLinearMap.snd ℝ E V ∘L (mfderiv (I.prod 𝓘(ℝ, V)) J τ₀ (x, 0) : E × V →L[ℝ] F).inverse ∘L
+    (mfderiv (I.prod 𝓘(ℝ, V)) J τ₁ (x, 0) : E × V →L[ℝ] F) ∘L ContinuousLinearMap.inr ℝ E V
 
 variable (I J) in
 /-- The transition fibre derivative applied to `v` is the normal coordinate of
@@ -165,10 +143,9 @@ theorem transitionFDeriv_eq_fderiv {τ₀ τ₁ : S × V → M} {x : S} (hn : n 
   have hd : HasFDerivAt (fun w ↦ (φ (x, w)).2)
       (ContinuousLinearMap.snd ℝ E V ∘L dφ ∘L ContinuousLinearMap.inr ℝ E V) 0 :=
     ((hasMFDerivAt_snd _).comp (0 : V) (hφ.hasMFDerivAt.comp (0 : V) hslice)).hasFDerivAt
-  calc transitionFDeriv I J τ₀ τ₁ x = fiberPart d₀ (d₀ ∘L dφ) := congrArg (fiberPart d₀) hτ₁
-    _ = ContinuousLinearMap.snd ℝ E V ∘L dφ ∘L ContinuousLinearMap.inr ℝ E V :=
-      fiberPart_comp hinv dφ
-    _ = fderiv ℝ (fun w ↦ (φ (x, w)).2) 0 := hd.fderiv.symm
+  refine .trans (ContinuousLinearMap.ext fun v ↦ ?_) hd.fderiv.symm
+  change (d₀.inverse (d₁ (0, v))).2 = _
+  simp [hτ₁, hinv.inverse_apply_self]
 
 /-- The transition fibre derivative of a local diffeomorphism to itself is the identity. -/
 theorem transitionFDeriv_self {τ : S × V → M} {x : S} (hn : n ≠ 0)
@@ -197,8 +174,8 @@ theorem transitionFDeriv_comp_transitionFDeriv {τ₀ τ₁ : S × V → M} {x :
     ((hτ₀.mdifferentiableAt hn).hasMFDerivAt.comp x hz).mfderiv.symm.trans
       (((hτ₁.mdifferentiableAt hn).hasMFDerivAt.comp x hz).congr_of_eventuallyEq_abuse
         hcore.symm).mfderiv
-  exact fiberPart_comp_fiberPart (hτ₀.isInvertible_mfderiv hn) (hτ₁.isInvertible_mfderiv hn)
-    fun u ↦ congrArg (fun L : E →L[ℝ] F ↦ L u) hbase
+  exact (hτ₀.isInvertible_mfderiv hn).snd_comp_inverse_comp_inr_comp_snd_comp_inverse_comp_inr
+    (hτ₁.isInvertible_mfderiv hn) hbase
 
 /-- The transition fibre derivative of two local diffeomorphisms at the core point `(x, 0)` which
 agree on the core near `x` is invertible, with inverse `transitionFDeriv I J τ₁ τ₀ x`. -/
