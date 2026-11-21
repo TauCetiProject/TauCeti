@@ -25,6 +25,8 @@ instance to the multiplicative monoid of an algebraically closed field of any ch
 
 * `Perfection.coeffMonoidHom_surjective`: if `x ↦ x ^ p` is surjective on `M`, so is every
   coordinate map `Perfection.coeffMonoidHom M p n`.
+* `Perfection.coeffMonoidHom_eq_coeffMonoidHom_zero_of_isIdempotentElem`: all coordinates of an
+  idempotent of `Perfection M p` agree.
 * `Perfection.coeff_lift_apply`: the coordinates of `Perfection.lift p k R φ x` are the values of
   `φ` at the `p ^ n`-th roots of `x`.
 * `Perfection.coeff_eq_zero_iff`: in the perfection of a reduced ring of characteristic `p`, an
@@ -33,6 +35,10 @@ instance to the multiplicative monoid of an algebraically closed field of any ch
   extensionality and coordinate formulas for `PreTilt.equivPerfection`.
 * `PreTilt.coeff_eq_zero_iff`: in `PreTilt O p`, each coordinate detects zero when `O ⧸ p` is
   reduced.
+* `PreTilt.coeff_injective_of_isReduced`: for a reduced ring `O` of characteristic `p`, every
+  coordinate of `PreTilt O p` is injective.
+* `PreTilt.coeff_eq_coeff_zero_of_isIdempotentElem`: all coordinates of an idempotent of
+  `PreTilt O p` agree.
 * `TauCeti.dvd_of_compatible_roots`: in a compatible root sequence, later roots divide earlier ones.
 -/
 
@@ -56,6 +62,20 @@ theorem coeffMonoidHom_surjective (h : Function.Surjective fun x : M ↦ x ^ p) 
   have hf := coeffMonoidHom_pow_p_pow f 0 n
   rw [zero_add] at hf
   exact hf.trans (coeffMonoidHom_mk _ _ 0)
+
+/-- **The coordinates of an idempotent of a perfection are all equal.** Every coordinate of an
+idempotent `e` of `Perfection M p` equals its zeroth coordinate. -/
+theorem coeffMonoidHom_eq_coeffMonoidHom_zero_of_isIdempotentElem {e : Perfection M p}
+    (he : IsIdempotentElem e) (n : ℕ) : coeffMonoidHom M p n e = coeffMonoidHom M p 0 e := by
+  -- each coordinate is an idempotent, hence its own `p`-th power, and `eₙ₊₁ ^ p = eₙ`
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    rw [← ih, ← coeffMonoidHom_pow_p' e n]
+    rcases eq_or_ne p 0 with rfl | hp
+    · -- for `p = 0` every coordinate is `x ^ 0 = 1`
+      rw [pow_zero, ← coeffMonoidHom_pow_p' e (n + 1), pow_zero]
+    · exact ((he.map (coeffMonoidHom M p (n + 1))).pow_eq hp).symm
 
 /-- The `n`-th coordinate of `Perfection.lift p k R φ x` is `φ` applied to the `p ^ n`-th root of
 `x` in the perfect ring `k`. -/
@@ -120,6 +140,24 @@ theorem coeff_eq_zero_iff [IsReduced (ModP O p)] (n : ℕ) {f : PreTilt O p} :
     coeff n f = 0 ↔ f = 0 :=
   -- `PreTilt O p` is by definition `Perfection (ModP O p) p`, with `coeff` its coordinate maps
   Perfection.coeff_eq_zero_iff (R := ModP O p) n
+
+/-- **In characteristic `p`, the coordinates of the tilt of a reduced ring are injective.** If `O`
+is a reduced ring of characteristic `p`, then `O ⧸ p = O` is reduced and every coordinate map
+`PreTilt O p → O ⧸ p` is injective. -/
+theorem coeff_injective_of_isReduced [CharP O p] [IsReduced O] (n : ℕ) :
+    Function.Injective (coeff (O := O) (p := p) n) := by
+  have hp : Ideal.span {(p : O)} = ⊥ := by simp
+  have : IsReduced (ModP O p) :=
+    isReduced_of_injective ((Ideal.quotEquivOfEq hp).trans (RingEquiv.quotientBot O))
+      (RingEquiv.injective _)
+  exact (injective_iff_map_eq_zero _).mpr fun _ ↦ (coeff_eq_zero_iff n).mp
+
+/-- **The coordinates of an idempotent of the tilt are all equal.** Every coordinate of an
+idempotent `e` of `PreTilt O p` equals its zeroth coordinate. -/
+theorem coeff_eq_coeff_zero_of_isIdempotentElem {e : PreTilt O p} (he : IsIdempotentElem e)
+    (n : ℕ) : coeff n e = coeff 0 e :=
+  -- `PreTilt O p` is by definition `Perfection (ModP O p) p`, with `coeff` its coordinate maps
+  Perfection.coeffMonoidHom_eq_coeffMonoidHom_zero_of_isIdempotentElem (M := ModP O p) he n
 
 end PreTilt
 
