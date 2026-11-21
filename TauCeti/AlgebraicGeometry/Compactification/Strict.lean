@@ -78,7 +78,9 @@ theorem strict_iff {C D : Compactification f} (h : C ⟶ D) :
 target. -/
 theorem opensRange_le_preimage_opensRange {C D : Compactification f} (h : C ⟶ D) :
     C.j.opensRange ≤ h.hom.h ⁻¹ᵁ D.j.opensRange := by
-  rintro _ ⟨x, rfl⟩
+  intro y hy
+  obtain ⟨x, rfl⟩ := Scheme.Hom.mem_opensRange.mp hy
+  rw [Scheme.Hom.mem_preimage, Scheme.Hom.mem_opensRange]
   exact ⟨x, by rw [← Scheme.Hom.comp_apply, h.hom.ι_h]⟩
 
 /-- Strictness only needs the inclusion of the inverse image of the target interior into the
@@ -152,7 +154,9 @@ theorem strict_of_isDominant {C D : Compactification f} [IsDominant C.j] (h : C 
   -- The map `V ⟶ X` induced by `h` is separated, and `s` is a section of it.
   have hrV : Set.range (V.ι ≫ h.hom.h) ⊆ Set.range D.j := by
     rintro _ ⟨v, rfl⟩
-    exact v.property
+    rw [Scheme.Hom.comp_apply, ← Scheme.Hom.coe_opensRange, SetLike.mem_coe,
+      ← Scheme.Hom.mem_preimage, ← SetLike.mem_coe, ← Scheme.Opens.range_ι]
+    exact Set.mem_range_self v
   let r : V.toScheme ⟶ X := IsOpenImmersion.lift D.j (V.ι ≫ h.hom.h) hrV
   have : IsSeparated (r ≫ D.j) := by
     rw [IsOpenImmersion.lift_fac]
@@ -177,8 +181,8 @@ theorem strict_of_isDominant {C D : Compactification f} [IsDominant C.j] (h : C 
     rw [← hclosed.closure_eq, hdense.closure_eq]
   intro x hx
   obtain ⟨v, rfl⟩ : x ∈ Set.range V.ι := by rwa [Scheme.Opens.range_ι]
-  have hv : v ∈ V.ι ⁻¹' Set.range C.j := hpre ▸ huniv ▸ Set.mem_univ v
-  exact hv
+  have hv : v ∈ V.ι ⁻¹' Set.range C.j := by simp [hpre, huniv]
+  rwa [Set.mem_preimage, ← Scheme.Hom.coe_opensRange, SetLike.mem_coe] at hv
 
 /-- Any two compactifications have a common refinement by strict morphisms, for example their
 common refinement `commonRefinement C₁ C₂`. -/
