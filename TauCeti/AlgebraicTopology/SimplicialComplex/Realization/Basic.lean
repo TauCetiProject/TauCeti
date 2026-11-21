@@ -440,6 +440,7 @@ theorem Realization.mem_convexHull_of_support_subset (K : AbstractSimplicialComp
 /-- A realization point lying in the closed simplex of a face is the image under the face
 inclusion of its own barycentric coordinates. With `mem_convexHull_carrier`, every point lies in
 the closed simplex of its carrier. -/
+@[simp]
 theorem faceInclusion_mk_val (K : AbstractSimplicialComplex ι) (σ : Face K) (x : Realization K)
     (hx : x.val ∈ convexHull ℝ (σ.val.image (fun v => Finsupp.single v (1 : ℝ)) :
       Set (ι →₀ ℝ))) :

@@ -146,7 +146,7 @@ theorem vertexSchemeInclusion_refl [DecidableEq E] (h : K ≤ K) :
       K.vertexScheme.toPreAbstractSimplicialComplex :=
   DFunLike.coe_injective (by
     rw [coe_vertexSchemeInclusion, PreAbstractSimplicialComplex.SimplicialMap.coe_id]
-    rfl)
+    exact inclusion_eq_id _)
 
 /-- Composing subcomplex inclusions agrees with the inclusion for the transitive inequality. -/
 @[simp]
@@ -157,6 +157,6 @@ theorem vertexSchemeInclusion_comp [DecidableEq E] {L N : SimplicialComplex 𝕜
   DFunLike.coe_injective (by
     rw [PreAbstractSimplicialComplex.SimplicialMap.coe_comp,
       coe_vertexSchemeInclusion, coe_vertexSchemeInclusion, coe_vertexSchemeInclusion]
-    rfl)
+    exact inclusion_comp_inclusion _ _)
 
 end Geometry.SimplicialComplex

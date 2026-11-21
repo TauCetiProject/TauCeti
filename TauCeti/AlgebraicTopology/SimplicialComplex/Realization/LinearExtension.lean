@@ -24,6 +24,8 @@ geometric complex to its ambient space, where `p` is the inclusion of the vertic
 
 * `AbstractSimplicialComplex.linearExtension K p`: the extension of `p` linear in barycentric
   coordinates on every closed simplex.
+* `AbstractSimplicialComplex.secantMap K f`: the secant map of `f : Realization K → E`, the
+  linear extension of its values at the vertices.
 
 ## Main results
 
@@ -36,6 +38,10 @@ geometric complex to its ambient space, where `p` is the inclusion of the vertic
 * `AbstractSimplicialComplex.continuous_linearExtension`: the extension is continuous.
 * `AbstractSimplicialComplex.secantMap_linearExtension`: taking the secant map fixes linear
   extensions.
+* `AbstractSimplicialComplex.eq_secantMap`: a map that is linear in barycentric coordinates on
+  every closed simplex, with the same vertex values as `f`, is the secant map of `f`.
+* `AbstractSimplicialComplex.secantMap_eq_self_iff`: a map is its own secant map exactly when it is
+  linear in barycentric coordinates on every closed simplex.
 
 ## References
 
@@ -158,8 +164,8 @@ theorem continuous_secantMap [TopologicalSpace E] [ContinuousAdd E] [ContinuousS
 @[simp]
 theorem secantMap_linearExtension (p : ι → E) :
     K.secantMap (K.linearExtension p) = K.linearExtension p := by
-  change K.linearExtension (fun v => K.linearExtension p (vertex K v)) = _
-  simp only [linearExtension_vertex]
+  funext x
+  simp only [secantMap, linearExtension_vertex]
 
 /-- Taking secant maps is idempotent. -/
 @[simp]

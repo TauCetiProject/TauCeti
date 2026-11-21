@@ -17,10 +17,12 @@ import TauCeti.Analysis.Convex.StdSimplex
 
 The *secant map* of a map `f : |K| → E` from the realization of a simplicial complex into a real
 normed space is the map which agrees with `f` at the vertices of `K` and is linear on every closed
-simplex. Secant maps are how Whitehead and Munkres pass from smooth to piecewise-linear maps:
-both the existence of smooth triangulations and their uniqueness up to linearly isomorphic
-subdivisions (Munkres, Theorems 10.5 and 10.6) replace a smooth map, simplex by simplex, by its
-secant map, and use that the secant map is again non-degenerate.
+simplex; it is defined, with its uniqueness and idempotence, in
+`TauCeti.AlgebraicTopology.SimplicialComplex.Realization.LinearExtension`. Secant maps are how
+Whitehead and Munkres pass from smooth to piecewise-linear maps: both the existence of smooth
+triangulations and their uniqueness up to linearly isomorphic subdivisions (Munkres, Theorems
+10.5 and 10.6) replace a smooth map, simplex by simplex, by its secant map, and use that the
+secant map is again non-degenerate.
 
 The estimate behind that replacement on a single simplex, in barycentric coordinates, is proved in
 `TauCeti.Analysis.Convex.SecantEstimate`. Let `F : (σ → ℝ) → E` be differentiable within the
@@ -37,16 +39,8 @@ there is `δ > 0` such that the secant map of `g` on every simplex inside it of 
 is `t`-fat at scale `d` is again an immersion. Applied to the simplices of a fine subdivision
 whose simplices are uniformly fat, this is Munkres' secant approximation theorem.
 
-## Main definitions
-
-* `AbstractSimplicialComplex.secantMap K f`: the secant map of `f : Realization K → E`.
-
 ## Main results
 
-* `AbstractSimplicialComplex.eq_secantMap`: a map that is linear in barycentric coordinates on
-  every closed simplex, with the same vertex values as `f`, is the secant map of `f`.
-* `AbstractSimplicialComplex.secantMap_eq_self_iff`: a map is its own secant map exactly when it is
-  linear in barycentric coordinates on every closed simplex.
 * `LinearMap.isSimplexImmersion`: a map of a simplex that is linear in barycentric
   coordinates and injective on the directions of the simplex is an immersion of the simplex.
 * `AbstractSimplicialComplex.isSimplexImmersion_secantMap_comp_faceInclusion`: the secant map of

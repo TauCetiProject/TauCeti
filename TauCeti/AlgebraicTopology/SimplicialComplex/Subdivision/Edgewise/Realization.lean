@@ -188,13 +188,9 @@ theorem range_edgewiseSubdivisionRealizationMap_faceInclusion
       fun x : StandardSimplex ρ.val => Fintype.linearCombination ℝ
         (fun a : ρ.val => (edgewisePoint a.val.val : ι → ℝ)) (fun a => x.val a) := by
     funext x i
-    change ((K.edgewiseSubdivision k).linearExtension (fun u => edgewisePoint u.val)
-      (faceInclusion _ ρ x)) i = _
-    rw [linearExtension_faceInclusion, Fintype.linearCombination_apply]
-    rw [show (∑ a : ρ.val, x.val a • edgewisePoint a.val.val) i =
-      ∑ a : ρ.val, (x.val a • edgewisePoint a.val.val) i from
-        map_sum (Finsupp.applyAddHom (M := ℝ) i) _ _]
-    simp only [Finset.sum_apply, Finsupp.smul_apply, Pi.smul_apply]
+    rw [edgewiseSubdivisionRealizationMap_val, ← linearExtension_apply,
+      linearExtension_faceInclusion, Fintype.linearCombination_apply]
+    simp only [Finsupp.finsetSum_apply, Finset.sum_apply, Finsupp.smul_apply, Pi.smul_apply]
   rw [hformula, Finset.range_linearCombination_standardSimplex]
 
 /-- The edgewise realization map is continuous for the weak topologies on both realizations. -/

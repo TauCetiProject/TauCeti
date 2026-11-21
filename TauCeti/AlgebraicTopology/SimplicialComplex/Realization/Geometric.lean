@@ -53,9 +53,11 @@ way.
 
 ## Main results
 
-* `Geometry.SimplicialComplex.injective_realizationToAmbient`,
+* `Geometry.SimplicialComplex.realizationToAmbient_injective`,
   `Geometry.SimplicialComplex.range_realizationToAmbient`: the comparison map is a bijection onto
   `K.space`.
+* `Geometry.SimplicialComplex.secantMap_realizationToAmbient`: the comparison map is its own secant
+  map.
 * `Geometry.SimplicialComplex.realizationToAmbient_comp_realizationMap_vertexSchemeInclusion`:
   the comparison maps are compatible with the inclusion of a subcomplex.
 * `Geometry.SimplicialComplex.isClosedMap_codRestrict_realizationToAmbient`: for a complex with
@@ -148,7 +150,7 @@ private theorem eq_of_realizationToAmbient_eq {σ : Face K.vertexScheme}
 
 /-- The comparison map is injective: distinct points of the realization of the vertex scheme
 have distinct images in `E`. -/
-theorem injective_realizationToAmbient : Injective K.realizationToAmbient := by
+theorem realizationToAmbient_injective : Injective K.realizationToAmbient := by
   classical
   intro x y hxy
   have hσ := carrier_val K.vertexScheme x
@@ -205,7 +207,7 @@ theorem realizationToAmbient_mem_convexHull_iff (σ : Face K.vertexScheme)
       convexHull ℝ (σ.val.map (Embedding.subtype (· ∈ K.vertices)) : Set E) ↔
         x.val.support ⊆ σ.val := by
     rw [← range_realizationToAmbient_comp_faceInclusion, range_comp,
-      (injective_realizationToAmbient).mem_set_image, mem_range_faceInclusion_iff]
+      (realizationToAmbient_injective).mem_set_image, mem_range_faceInclusion_iff]
   simpa only [Finset.coe_map, Embedding.coe_subtype] using h
 
 /-- The comparison map is its own secant map, since it linearly extends the vertex inclusion. -/
@@ -223,9 +225,8 @@ theorem realizationToAmbient_realizationMap_vertexSchemeInclusion [DecidableEq E
     {L : SimplicialComplex ℝ E} (h : K ≤ L) (x : Realization K.vertexScheme) :
     L.realizationToAmbient ((vertexSchemeInclusion h).realizationMap x) =
       K.realizationToAmbient x := by
-  change L.vertexScheme.linearExtension Subtype.val ((vertexSchemeInclusion h).realizationMap x) = _
-  rw [linearExtension_realizationMap, coe_vertexSchemeInclusion, val_comp_inclusion]
-  rfl
+  simp only [realizationToAmbient, linearExtension_realizationMap, coe_vertexSchemeInclusion,
+    val_comp_inclusion]
 
 /-- For a subcomplex `K ≤ L`, the comparison map of `K` factors through the realization of the
 inclusion of vertex schemes and the comparison map of `L`. -/
@@ -296,7 +297,7 @@ theorem isClosedEmbedding_realizationToAmbient [T2Space E]
     (hK : LocallyFinite fun s : K.faces => convexHull ℝ (s : Set E)) :
     IsClosedEmbedding K.realizationToAmbient :=
   .of_continuous_injective_isClosedMap continuous_realizationToAmbient
-    injective_realizationToAmbient (isClosedMap_realizationToAmbient hK)
+    realizationToAmbient_injective (isClosedMap_realizationToAmbient hK)
 
 variable (K) in
 /-- For a geometric complex in a space with continuous addition and real scalar multiplication,
@@ -307,7 +308,7 @@ underlying space. A family locally finite in `E` is locally finite in `K.space`,
 def realizationHomeomorph [T2Space K.space]
     (hK : LocallyFinite fun s : K.faces => ((↑) : K.space → E) ⁻¹' convexHull ℝ (s : Set E)) :
     Realization K.vertexScheme ≃ₜ K.space :=
-  (Equiv.ofBijective _ ⟨(injective_codRestrict _).mpr injective_realizationToAmbient,
+  (Equiv.ofBijective _ ⟨(injective_codRestrict _).mpr realizationToAmbient_injective,
     (surjective_codRestrict _).mpr range_realizationToAmbient⟩).toHomeomorphOfContinuousClosed
     (continuous_realizationToAmbient.codRestrict _)
     (isClosedMap_codRestrict_realizationToAmbient hK)
