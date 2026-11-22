@@ -49,8 +49,6 @@ determined by their inverse images along morphisms from affine schemes, which cl
 
 ## Main results
 
-* `Module.Grassmannian.isBaseChangeEquiv_isBaseChange`: for the base change `m ↦ 1 ⊗ m`, the
-  bijection `isBaseChangeEquiv` on points is `baseChangeEquiv`.
 * `Module.Grassmannian.toSchemeHom_comp_baseChangeHom`: the characterisation of
   `baseChangeHom` on points.
 * `Module.Grassmannian.isPullback_baseChangeHom`: **base change**; `G(k, R' ⊗[R] M)` is the fibre
@@ -90,18 +88,6 @@ noncomputable def baseChangeHom : scheme R' (R' ⊗[R] M) k ⟶ scheme R M k :=
 variable {R R' M k}
 
 variable {A : Type u} [CommRing A] [Algebra R' A] [Algebra R A] [IsScalarTower R R' A]
-
-/-- For the base change `m ↦ 1 ⊗ m`, the bijection `isBaseChangeEquiv` on points is
-`baseChangeEquiv`. -/
-theorem isBaseChangeEquiv_isBaseChange (N : G(k, A ⊗[R'] (R' ⊗[R] M); A)) :
-    isBaseChangeEquiv (TensorProduct.isBaseChange R M R') A N = baseChangeEquiv R' N := by
-  ext : 1
-  rw [toSubmodule_isBaseChangeEquiv, toSubmodule_baseChangeEquiv]
-  congr 1
-  refine LinearMap.ext fun x ↦ ?_
-  induction x using (TensorProduct.isBaseChange R M R').forall_tmul A with
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | tmul a m => simpa using isBaseChangeLinearEquiv_tmul (TensorProduct.isBaseChange R M R') A a m
 
 /-- **`baseChangeHom` on points.** The morphism classifying `N` over an `R'`-algebra `A`, composed
 with `baseChangeHom`, classifies the image of `N` in `G(k, A ⊗[R] M; A)`. -/

@@ -37,7 +37,8 @@ induced on a finite product is injective as soon as each factor induces an injec
 For any localization, extension also preserves injectivity of a linear map into a module over
 the localized semiring, without requiring its image to span the target.
 
-The image of a base change map spans its target over the extended scalars.
+The image of a base change map spans its target over the extended scalars, and for an
+`R'`-algebra `A` the tensors `a ⊗ f m` generate `A ⊗[R'] M'` additively.
 
 ## Main results
 
@@ -60,6 +61,9 @@ The image of a base change map spans its target over the extended scalars.
 * `LinearMap.liftBaseChange_injective`: extension to a localization preserves injectivity of a
   map into a module over the localized semiring, without a full-span hypothesis.
 * `IsBaseChange.span_range_eq_top`: the image of a base change map spans its target over `R'`.
+* `IsBaseChange.cancelBaseChange`: for a base change `f : M → M'` along `R → R'` and an
+  `R'`-algebra `A`, the isomorphism `A ⊗[R'] M' ≃ A ⊗[R] M` sending `a ⊗ f m` to `a ⊗ m`.
+* `IsBaseChange.tensorProduct_induction`: induction on `A ⊗[R'] M'` over the tensors `a ⊗ f m`.
 -/
 
 public section
@@ -214,5 +218,51 @@ theorem span_range_eq_top {R R' M M' : Type*} [CommSemiring R] [CommSemiring R']
   | tmul a => exact Submodule.subset_span ⟨a, rfl⟩
   | smul r n hn => exact Submodule.smul_mem _ r hn
   | add n₁ n₂ h₁ h₂ => exact Submodule.add_mem _ h₁ h₂
+
+section CancelBaseChange
+
+variable {R R' M M' : Type*} [CommSemiring R] [CommSemiring R'] [Algebra R R'] [AddCommMonoid M]
+  [Module R M] [AddCommMonoid M'] [Module R' M'] [Module R M'] [IsScalarTower R R' M']
+  {f : M →ₗ[R] M'} (hf : IsBaseChange R' f)
+  (A : Type*) [CommSemiring A] [Algebra R A] [Algebra R' A] [IsScalarTower R R' A]
+
+/-- For a base change `f : M → M'` along `R → R'` and an `R'`-algebra `A`, the `A`-linear
+isomorphism `A ⊗[R'] M' ≃ A ⊗[R] M` sending `a ⊗ f m` to `a ⊗ m`
+(`IsBaseChange.cancelBaseChange_tmul`). For `M' = R' ⊗[R] M` it is Mathlib's
+`TensorProduct.AlgebraTensorModule.cancelBaseChange`. -/
+noncomputable def cancelBaseChange : A ⊗[R'] M' ≃ₗ[A] A ⊗[R] M :=
+  (TensorProduct.AlgebraTensorModule.congr (LinearEquiv.refl A A) hf.equiv.symm).trans
+    (TensorProduct.AlgebraTensorModule.cancelBaseChange R R' A A M)
+
+@[simp]
+theorem cancelBaseChange_tmul (a : A) (m : M) : hf.cancelBaseChange A (a ⊗ₜ f m) = a ⊗ₜ m := by
+  simp [cancelBaseChange]
+
+end CancelBaseChange
+
+section Induction
+
+variable {R R' M M' : Type*} [CommSemiring R] [CommSemiring R'] [Algebra R R'] [AddCommMonoid M]
+  [Module R M] [AddCommMonoid M'] [Module R' M'] [Module R M'] [IsScalarTower R R' M']
+  {f : M →ₗ[R] M'} (hf : IsBaseChange R' f)
+  (A : Type*) [CommSemiring A] [Algebra R' A]
+
+include hf in
+/-- **Induction on `A ⊗[R'] M'` for a base change `M'` of `M`.** A property of the elements of
+`A ⊗[R'] M'` which is closed under addition holds as soon as it holds on the tensors `a ⊗ f m`,
+since `M'` is generated over `R'` by the image of `f`. -/
+@[elab_as_elim]
+theorem tensorProduct_induction {motive : A ⊗[R'] M' → Prop}
+    (add : ∀ x y, motive x → motive y → motive (x + y))
+    (tmul : ∀ (a : A) (m : M), motive (a ⊗ₜ f m)) (x : A ⊗[R'] M') : motive x := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => exact add x y hx hy
+  | tmul a m' =>
+    induction m' using hf.inductionOn generalizing a with
+    | tmul m => exact tmul a m
+    | smul s n h => rw [← TensorProduct.smul_tmul]; exact h _
+    | add n₁ n₂ h₁ h₂ => rw [TensorProduct.tmul_add]; exact add _ _ (h₁ a) (h₂ a)
+
+end Induction
 
 end IsBaseChange

@@ -27,23 +27,19 @@ sections of a quasi-coherent sheaf over the affine opens of a scheme
 product `Γ(V, 𝒪) ⊗ Γ(U, E)` itself.
 
 For an `R'`-algebra `A`, the map `f` induces an `A`-linear isomorphism
-`A ⊗[R'] M' ≃ A ⊗[R] M` sending `a ⊗ f m` to `a ⊗ m`
-(`Module.Grassmannian.isBaseChangeLinearEquiv`), and transport along it identifies the points of
-the two Grassmannians over `A` (`Module.Grassmannian.isBaseChangeEquiv`), naturally in `A`.
+`A ⊗[R'] M' ≃ A ⊗[R] M` sending `a ⊗ f m` to `a ⊗ m` (`IsBaseChange.cancelBaseChange`), and
+transport along it identifies the points of the two Grassmannians over `A`
+(`Module.Grassmannian.isBaseChangeEquiv`), naturally in `A`.
 Composing with the classifying morphisms of `Module.Grassmannian.schemeHomEquiv` gives a natural
 map on affine points, which is composition with a unique morphism of schemes
 (`AlgebraicGeometry.Scheme.homOfAffinePoints`).
 
 ## Main definitions
 
-* `Module.Grassmannian.isBaseChangeLinearEquiv hf A`: the isomorphism `A ⊗[R'] M' ≃ A ⊗[R] M`.
-* `Module.Grassmannian.isBaseChangeEquiv hf`: the induced bijection
-  `G(k, A ⊗[R'] M'; A) ≃ G(k, A ⊗[R] M; A)`.
 * `Module.Grassmannian.isBaseChangeHom hf k`: the morphism `G(k, M') ⟶ G(k, M)`.
 
 ## Main results
 
-* `Module.Grassmannian.isBaseChangeEquiv_map`: the bijection on points is natural in `A`.
 * `Module.Grassmannian.toSchemeHom_comp_isBaseChangeHom`: the morphism on points.
 * `Module.Grassmannian.isPullback_isBaseChangeHom`: **base change**; `G(k, M')` is the fibre
   product of `G(k, M)` and `Spec R'` over `Spec R`.
@@ -68,68 +64,6 @@ namespace Module.Grassmannian
 variable {R R' : Type u} [CommRing R] [CommRing R'] [Algebra R R'] {M M' : Type u}
   [AddCommGroup M] [Module R M] [AddCommGroup M'] [Module R' M'] [Module R M']
   [IsScalarTower R R' M'] {f : M →ₗ[R] M'} (hf : IsBaseChange R' f)
-
-section Points
-
-variable (A : Type u) [CommRing A] [Algebra R A] [Algebra R' A] [IsScalarTower R R' A]
-
-/-- For a base change `f : M → M'` along `R → R'` and an `R'`-algebra `A`, the `A`-linear
-isomorphism `A ⊗[R'] M' ≃ A ⊗[R] M` sending `a ⊗ f m` to `a ⊗ m`
-(`Module.Grassmannian.isBaseChangeLinearEquiv_tmul`). -/
-noncomputable def isBaseChangeLinearEquiv : A ⊗[R'] M' ≃ₗ[A] A ⊗[R] M :=
-  (AlgebraTensorModule.congr (LinearEquiv.refl A A) hf.equiv.symm).trans
-    (AlgebraTensorModule.cancelBaseChange R R' A A M)
-
-@[simp]
-theorem isBaseChangeLinearEquiv_tmul (a : A) (m : M) :
-    isBaseChangeLinearEquiv hf A (a ⊗ₜ f m) = a ⊗ₜ m := by
-  simp [isBaseChangeLinearEquiv]
-
-include hf in
-omit [Algebra R A] [IsScalarTower R R' A] in
-/-- A property of the elements of `A ⊗[R'] M'` which is closed under addition holds as soon as it
-holds on the tensors `a ⊗ f m`, since `M'` is generated over `R'` by the image of `f`. -/
-theorem _root_.IsBaseChange.forall_tmul {motive : A ⊗[R'] M' → Prop}
-    (add : ∀ x y, motive x → motive y → motive (x + y))
-    (tmul : ∀ (a : A) (m : M), motive (a ⊗ₜ f m)) (x : A ⊗[R'] M') : motive x := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy => exact add x y hx hy
-  | tmul a m' =>
-    induction m' using hf.inductionOn generalizing a with
-    | tmul m => exact tmul a m
-    | smul s n h => rw [← smul_tmul]; exact h _
-    | add n₁ n₂ h₁ h₂ => rw [tmul_add]; exact add _ _ (h₁ a) (h₂ a)
-
-/-- **Points of the Grassmannian along a base change.** For a base change `f : M → M'` along
-`R → R'` and an `R'`-algebra `A`, the points of the Grassmannian of `M'` over `A` are the points
-of the Grassmannian of `M` over `A`, through the isomorphism `A ⊗[R'] M' ≃ A ⊗[R] M`. This
-bijection is natural in `A` (`Module.Grassmannian.isBaseChangeEquiv_map`). -/
-noncomputable def isBaseChangeEquiv {k : ℕ} : G(k, A ⊗[R'] M'; A) ≃ G(k, A ⊗[R] M; A) :=
-  (isBaseChangeLinearEquiv hf A).grassmannianCongr
-
-variable {A}
-
-@[simp]
-theorem toSubmodule_isBaseChangeEquiv {k : ℕ} (N : G(k, A ⊗[R'] M'; A)) :
-    (isBaseChangeEquiv hf A N).toSubmodule =
-      N.toSubmodule.map (isBaseChangeLinearEquiv hf A).toLinearMap :=
-  LinearEquiv.toSubmodule_grassmannianCongr_apply _ N
-
-variable {B : Type u} [CommRing B] [Algebra R B] [Algebra R' B] [IsScalarTower R R' B]
-
-/-- **Naturality of `isBaseChangeEquiv`.** Base change of points along an `R'`-algebra map
-`g : A → B` corresponds to base change along `g` as an `R`-algebra map. -/
-theorem isBaseChangeEquiv_map {k : ℕ} (g : A →ₐ[R'] B) (N : G(k, A ⊗[R'] M'; A)) :
-    isBaseChangeEquiv hf B (map g N) = map (g.restrictScalars R) (isBaseChangeEquiv hf A N) := by
-  ext : 1
-  simp only [toSubmodule_isBaseChangeEquiv, map_toSubmodule_eq_span, Submodule.map_span,
-    Submodule.map_coe, ← Set.image_comp]
-  refine congrArg _ (Set.image_congr' rfl fun x ↦ ?_)
-  induction x using hf.forall_tmul A with
-  | add x y hx hy => simp only [Function.comp_apply, map_add] at hx hy ⊢; rw [hx, hy]
-  | tmul a m => simp
-
-end Points
 
 section Scheme
 
@@ -304,7 +238,7 @@ theorem isBaseChangeHom_comp (hgf : IsBaseChange R'' (g.restrictScalars R ∘ₗ
   simp only [toSubmodule_isBaseChangeEquiv, ← Submodule.map_comp]
   congr 1
   refine LinearMap.ext fun x ↦ ?_
-  induction x using hg.forall_tmul B with
+  induction x using hg.tensorProduct_induction B with
   | add x y hx hy =>
     simp only [LinearMap.coe_comp, Function.comp_apply, map_add] at hx hy ⊢
     rw [hx, hy]
@@ -312,8 +246,8 @@ theorem isBaseChangeHom_comp (hgf : IsBaseChange R'' (g.restrictScalars R ∘ₗ
     induction m' using hf.inductionOn generalizing b with
     | tmul m =>
       simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-        isBaseChangeLinearEquiv_tmul]
-      exact (isBaseChangeLinearEquiv_tmul hgf B b m).symm
+        IsBaseChange.cancelBaseChange_tmul]
+      exact (hgf.cancelBaseChange_tmul B b m).symm
     | smul s n h =>
       rw [map_smul, ← smul_tmul]
       exact h _

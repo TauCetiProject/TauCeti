@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Grassmannian
+public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 import Mathlib.RingTheory.Flat.LocallyFree
 -- Proof-only: the body of `Module.Grassmannian.baseChangeMkQ` is not exposed.
@@ -45,6 +46,8 @@ of `M`, naturally in `A`. This is the functorial form of base change of the Gras
   `G(k, M'; R)`.
 * `Module.Grassmannian.baseChangeEquiv`: the points of the Grassmannian of `R' ⊗[R] M` over an
   `R'`-algebra `A` are the points of the Grassmannian of `M` over `A`.
+* `Module.Grassmannian.isBaseChangeEquiv hf`: the same for any base change `f : M → M'` along
+  `R → R'`, through `IsBaseChange.cancelBaseChange`.
 
 ## Main results
 
@@ -70,6 +73,9 @@ of `M`, naturally in `A`. This is the functorial form of base change of the Gras
   `Module.Grassmannian.map_injective`: along an injective map, a point is recovered from its base
   change.
 * `Module.Grassmannian.baseChangeEquiv_map`: `baseChangeEquiv` is natural in the algebra.
+* `Module.Grassmannian.isBaseChangeEquiv_map`: so is `isBaseChangeEquiv`, and
+  `Module.Grassmannian.isBaseChangeEquiv_isBaseChange`: for the base change `m ↦ 1 ⊗ m` it is
+  `baseChangeEquiv`.
 
 ## References
 
@@ -363,5 +369,55 @@ theorem baseChangeEquiv_map (f : A →ₐ[R'] B) (N : G(k, A ⊗[R'] (R' ⊗[R] 
     | tmul r m => simp
 
 end BaseChangeEquiv
+
+section IsBaseChangeEquiv
+
+variable {R' : Type*} [CommRing R'] [Algebra R R'] {M' : Type*} [AddCommGroup M'] [Module R' M']
+  [Module R M'] [IsScalarTower R R' M'] {f : M →ₗ[R] M'} (hf : IsBaseChange R' f)
+  (A : Type w) [CommRing A] [Algebra R A] [Algebra R' A] [IsScalarTower R R' A]
+
+/-- **Points of the Grassmannian along a base change.** For a base change `f : M → M'` along
+`R → R'` and an `R'`-algebra `A`, the points of the Grassmannian of `M'` over `A` are the points
+of the Grassmannian of `M` over `A`, through the isomorphism `A ⊗[R'] M' ≃ A ⊗[R] M`
+(`IsBaseChange.cancelBaseChange`). This bijection is natural in `A`
+(`Module.Grassmannian.isBaseChangeEquiv_map`). -/
+noncomputable def isBaseChangeEquiv : G(k, A ⊗[R'] M'; A) ≃ G(k, A ⊗[R] M; A) :=
+  (hf.cancelBaseChange A).grassmannianCongr
+
+variable {A}
+
+@[simp]
+theorem toSubmodule_isBaseChangeEquiv (N : G(k, A ⊗[R'] M'; A)) :
+    (isBaseChangeEquiv hf A N).toSubmodule =
+      N.toSubmodule.map (hf.cancelBaseChange A).toLinearMap :=
+  LinearEquiv.toSubmodule_grassmannianCongr_apply _ N
+
+variable {B : Type w} [CommRing B] [Algebra R B] [Algebra R' B] [IsScalarTower R R' B]
+
+/-- **Naturality of `isBaseChangeEquiv`.** Base change of points along an `R'`-algebra map
+`g : A → B` corresponds to base change along `g` as an `R`-algebra map. -/
+theorem isBaseChangeEquiv_map (g : A →ₐ[R'] B) (N : G(k, A ⊗[R'] M'; A)) :
+    isBaseChangeEquiv hf B (map g N) = map (g.restrictScalars R) (isBaseChangeEquiv hf A N) := by
+  ext : 1
+  simp only [toSubmodule_isBaseChangeEquiv, map_toSubmodule_eq_span, Submodule.map_span,
+    Submodule.map_coe, ← Set.image_comp]
+  refine congrArg _ (Set.image_congr' rfl fun x ↦ ?_)
+  induction x using hf.tensorProduct_induction A with
+  | add x y hx hy => simp only [Function.comp_apply, map_add] at hx hy ⊢; rw [hx, hy]
+  | tmul a m => simp
+
+/-- For the base change `m ↦ 1 ⊗ m`, the bijection `isBaseChangeEquiv` on points is
+`baseChangeEquiv`. -/
+theorem isBaseChangeEquiv_isBaseChange (N : G(k, A ⊗[R'] (R' ⊗[R] M); A)) :
+    isBaseChangeEquiv (TensorProduct.isBaseChange R M R') A N = baseChangeEquiv R' N := by
+  ext : 1
+  rw [toSubmodule_isBaseChangeEquiv, toSubmodule_baseChangeEquiv]
+  congr 1
+  refine LinearMap.ext fun x ↦ ?_
+  induction x using (TensorProduct.isBaseChange R M R').tensorProduct_induction A with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul a m => simpa using (TensorProduct.isBaseChange R M R').cancelBaseChange_tmul A a m
+
+end IsBaseChangeEquiv
 
 end Module.Grassmannian
