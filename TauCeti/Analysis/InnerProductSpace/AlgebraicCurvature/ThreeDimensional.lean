@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Cone
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Reaction
 import Mathlib.Analysis.InnerProductSpace.Trace
+import Mathlib.Data.Fin.Tuple.Reflection
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Extension
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
@@ -79,13 +80,22 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 
 /-! ### Ricci curvature and pairs of bivectors -/
 
-/-- The Ricci curvature of a nonzero vector `u` is `‖u‖²` times that of the unit vector
-`‖u‖⁻¹ • u`. -/
-private theorem ricci_apply_self_eq_norm_sq_mul (r : FourTensor V) {u : V} (hu : u ≠ 0) :
-    ricci r u u = ‖u‖ ^ 2 * ricci r (‖u‖⁻¹ • u) (‖u‖⁻¹ • u) := by
-  have hu' : ‖u‖ ≠ 0 := norm_ne_zero_iff.mpr hu
-  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
-  field_simp
+omit [FiniteDimensional ℝ V] in
+/-- A nonzero vector `u` of a three-dimensional space, normalised, is the first vector of an
+orthonormal basis indexed by `Fin 3`. -/
+private theorem exists_orthonormalBasis_apply_zero_eq_inv_norm_smul (hV : finrank ℝ V = 3)
+    {u : V} (hu : u ≠ 0) : ∃ b : OrthonormalBasis (Fin 3) ℝ V, b 0 = ‖u‖⁻¹ • u :=
+  exists_orthonormalBasis_fin_apply_zero_eq (n := 2) hV
+    (by simpa using norm_smul_inv_norm (𝕜 := ℝ) hu)
+
+omit [FiniteDimensional ℝ V] in
+/-- The vectors of an orthonormal basis indexed by `Fin 3`, listed as `![b 0, b 1, b 2]`, are
+orthonormal. -/
+private theorem orthonormal_vecCons_orthonormalBasis (b : OrthonormalBasis (Fin 3) ℝ V) :
+    Orthonormal ℝ ![b 0, b 1, b 2] := by
+  have h := b.orthonormal
+  -- `FinVec.etaExpand ⇑b` unfolds to `![b 0, b 1, b 2]`.
+  rwa [← FinVec.etaExpand_eq ⇑b] at h
 
 /-- In an orthonormal basis `b₀, b₁, b₂` of a three-dimensional space, the Ricci curvature of `b₀`
 is the sum of the values of the curvature operator on `b₀ ∧ b₁` and `b₀ ∧ b₂`. -/
@@ -104,8 +114,7 @@ private theorem inner_add_inner_eq_ricci_of_antisymm {r : FourTensor V}
     inner_curvatureEndomorphism_ιMulti_of_antisymm h₁ h₂, zero_add]
 
 /-- In dimension three, the Ricci curvature `Ric(e, e)` of every unit vector `e` is the sum
-`⟪R ω₁, ω₁⟫ + ⟪R ω₂, ω₂⟫` of the curvature operator over an orthonormal pair of bivectors, namely
-`ω₁ = e ∧ b₁` and `ω₂ = e ∧ b₂` for an orthonormal basis `e, b₁, b₂`. -/
+`⟪R ω₁, ω₁⟫ + ⟪R ω₂, ω₂⟫` of the curvature operator over some orthonormal pair of bivectors. -/
 theorem exists_orthonormal_inner_curvatureEndomorphism_add_inner_eq_ricci_of_antisymm
     (hV : finrank ℝ V = 3) {r : FourTensor V}
     (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
@@ -113,15 +122,11 @@ theorem exists_orthonormal_inner_curvatureEndomorphism_add_inner_eq_ricci_of_ant
     ∃ ω₁ ω₂ : ⋀[ℝ]^2 V, Orthonormal ℝ ![ω₁, ω₂] ∧
       ⟪curvatureEndomorphism r ω₁, ω₁⟫ + ⟪curvatureEndomorphism r ω₂, ω₂⟫ = ricci r e e := by
   obtain ⟨b, rfl⟩ := exists_orthonormalBasis_fin_apply_zero_eq (n := 2) hV he
-  refine ⟨_, _, exteriorPower.orthonormal_ιMulti_two_of_orthonormal ?_,
-    inner_add_inner_eq_ricci_of_antisymm h₁ h₂ b⟩
-  convert b.orthonormal using 1
-  ext i
-  fin_cases i <;> rfl
+  exact ⟨_, _, exteriorPower.orthonormal_ιMulti_two_of_orthonormal
+    (orthonormal_vecCons_orthonormalBasis b), inner_add_inner_eq_ricci_of_antisymm h₁ h₂ b⟩
 
 /-- In dimension three, the sum `⟪R ω₁, ω₁⟫ + ⟪R ω₂, ω₂⟫` of the curvature operator over an
-orthonormal pair of bivectors is the Ricci curvature `Ric(e, e)` of a unit vector `e`: the plane
-spanned by `ω₁, ω₂` is `e ∧ V`. -/
+orthonormal pair of bivectors is the Ricci curvature `Ric(e, e)` of some unit vector `e`. -/
 theorem exists_norm_eq_one_inner_curvatureEndomorphism_add_inner_eq_ricci_of_antisymm
     (hV : finrank ℝ V = 3) {r : FourTensor V}
     (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
@@ -147,21 +152,22 @@ theorem exists_norm_eq_one_inner_curvatureEndomorphism_add_inner_eq_ricci_of_ant
   -- starts an orthonormal basis `b` of `V`; then `b₀ ∧ b₁` and `b₀ ∧ b₂` are orthogonal to `ω₃`.
   obtain ⟨u, hu₀, hu⟩ := exists_ne_zero_apply_eq_zero_of_skew_of_odd_finrank
     (f := twoVectorContraction ω₃) (inner_twoVectorContraction_apply_left _) (by rw [hV]; decide)
-  obtain ⟨b, hbu⟩ := exists_orthonormalBasis_fin_apply_zero_eq (n := 2) hV
-    (by simpa using norm_smul_inv_norm (𝕜 := ℝ) hu₀)
+  obtain ⟨b, hbu⟩ := exists_orthonormalBasis_apply_zero_eq_inv_norm_smul hV hu₀
   have hb₃ : twoVectorContraction ω₃ (b 0) = 0 := by simp [hbu, hu]
-  have hb : Orthonormal ℝ ![b 0, b 1, b 2] := by
-    convert b.orthonormal using 1
-    ext i
-    fin_cases i <;> rfl
   have hperp (j : Fin 3) : ⟪ω₃, exteriorPower.ιMulti ℝ 2 ![b 0, b j]⟫ = 0 := by
     rw [← inner_twoVectorContraction_apply, hb₃, inner_zero_left]
   -- Computing the trace of `R` in the orthonormal triples `ω₃, ω₁, ω₂` and
   -- `ω₃, b₀ ∧ b₁, b₀ ∧ b₂`, the common term `⟪R ω₃, ω₃⟫` cancels.
-  have htr := (htrace (orthonormal_vecCons_iff.mpr ⟨hω₃, fun i ↦ by
-      fin_cases i <;> exact real_inner_comm ω₃ _ ▸ hω₃o _ (by simp), hω⟩)).symm.trans
-    (htrace (orthonormal_vecCons_iff.mpr ⟨hω₃, fun i ↦ by fin_cases i <;> exact hperp _,
-      exteriorPower.orthonormal_ιMulti_two_of_orthonormal hb⟩))
+  have h₁₂ : Orthonormal ℝ ![ω₃, ω₁, ω₂] := by
+    refine orthonormal_vecCons_iff.mpr ⟨hω₃, fun i ↦ ?_, hω⟩
+    rw [real_inner_comm]
+    fin_cases i <;> exact hω₃o _ (by simp)
+  have h₀ : Orthonormal ℝ ![ω₃, exteriorPower.ιMulti ℝ 2 ![b 0, b 1],
+      exteriorPower.ιMulti ℝ 2 ![b 0, b 2]] :=
+    orthonormal_vecCons_iff.mpr ⟨hω₃, fun i ↦ by fin_cases i <;> exact hperp _,
+      exteriorPower.orthonormal_ιMulti_two_of_orthonormal
+        (orthonormal_vecCons_orthonormalBasis b)⟩
+  have htr := (htrace h₁₂).symm.trans (htrace h₀)
   refine ⟨b 0, b.orthonormal.1 0, ?_⟩
   rw [← inner_add_inner_eq_ricci_of_antisymm h₁ h₂ b]
   linarith
@@ -181,10 +187,11 @@ theorem forall_inner_curvatureEndomorphism_add_inner_nonneg_iff_forall_ricci_non
   refine ⟨fun h u ↦ ?_, fun h ω₁ ω₂ hω ↦ ?_⟩
   · rcases eq_or_ne u 0 with rfl | hu
     · simp
+    obtain ⟨b, hb⟩ := exists_orthonormalBasis_apply_zero_eq_inv_norm_smul hV hu
     obtain ⟨ω₁, ω₂, hω, he⟩ :=
       exists_orthonormal_inner_curvatureEndomorphism_add_inner_eq_ricci_of_antisymm hV h₁ h₂
-        (by simpa using norm_smul_inv_norm (𝕜 := ℝ) hu)
-    rw [ricci_apply_self_eq_norm_sq_mul r hu, ← he]
+        (b.orthonormal.1 0)
+    rw [ricci_apply_self_eq_norm_sq_mul r hu, ← hb, ← he]
     exact mul_nonneg (sq_nonneg _) (h ω₁ ω₂ hω)
   · obtain ⟨e, -, he⟩ :=
       exists_norm_eq_one_inner_curvatureEndomorphism_add_inner_eq_ricci_of_antisymm hV h₁ h₂ hω
@@ -201,10 +208,11 @@ theorem forall_inner_curvatureEndomorphism_add_inner_pos_iff_forall_ricci_pos_of
       0 < ⟪curvatureEndomorphism r ω₁, ω₁⟫ + ⟪curvatureEndomorphism r ω₂, ω₂⟫) ↔
       ∀ u : V, u ≠ 0 → 0 < ricci r u u := by
   refine ⟨fun h u hu ↦ ?_, fun h ω₁ ω₂ hω ↦ ?_⟩
-  · obtain ⟨ω₁, ω₂, hω, he⟩ :=
+  · obtain ⟨b, hb⟩ := exists_orthonormalBasis_apply_zero_eq_inv_norm_smul hV hu
+    obtain ⟨ω₁, ω₂, hω, he⟩ :=
       exists_orthonormal_inner_curvatureEndomorphism_add_inner_eq_ricci_of_antisymm hV h₁ h₂
-        (by simpa using norm_smul_inv_norm (𝕜 := ℝ) hu)
-    rw [ricci_apply_self_eq_norm_sq_mul r hu, ← he]
+        (b.orthonormal.1 0)
+    rw [ricci_apply_self_eq_norm_sq_mul r hu, ← hb, ← he]
     exact mul_pos (pow_pos (norm_pos_iff.mpr hu) 2) (h ω₁ ω₂ hω)
   · obtain ⟨e, he₁, he⟩ :=
       exists_norm_eq_one_inner_curvatureEndomorphism_add_inner_eq_ricci_of_antisymm hV h₁ h₂ hω
@@ -251,8 +259,7 @@ theorem IsAlgebraicCurvature.ricci_reactionTensor_apply_self_nonneg_of_ricci_app
     (he : ricci r e e = 0) : 0 ≤ ricci (FourTensor.reactionTensor r) e e := by
   rcases eq_or_ne e 0 with rfl | he₀
   · simp
-  obtain ⟨b, hb⟩ := exists_orthonormalBasis_fin_apply_zero_eq (n := 2) hV
-    (by simpa using norm_smul_inv_norm (𝕜 := ℝ) he₀)
+  obtain ⟨b, hb⟩ := exists_orthonormalBasis_apply_zero_eq_inv_norm_smul hV he₀
   have hb₀ : ricci r (b 0) (b 0) = 0 := by
     rw [ricci_apply_self_eq_norm_sq_mul r he₀] at he
     rw [hb]

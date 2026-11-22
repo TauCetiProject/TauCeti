@@ -21,12 +21,14 @@ import TauCeti.LinearAlgebra.SymplecticGroup
 /-!
 # Determinants of skew-symmetric matrices and of even symmetric matrices
 
-The determinant of a skew-symmetric matrix `M` (`Mᵀ = -M`) with zero diagonal over a field is a
-square: the form `x, y ↦ xᵀ M y` is alternating, so when it is nondegenerate it has a symplectic
-basis, in which its matrix is `J` of determinant `1`, and `det M` is the square of the determinant
-of the change of basis. For an integer matrix the diagonal vanishes automatically
-and the square root, a rational number, is an integer. Over an arbitrary commutative ring the
-statement is Cayley's identity `det M = Pf(M)²`, which needs the Pfaffian and is not proved here.
+A skew-symmetric matrix `M` (`Mᵀ = -M`) of odd size `n` has zero determinant whenever `2` is
+regular, since `det M = det Mᵀ = (-1)ⁿ det M`. The determinant of a skew-symmetric matrix with zero
+diagonal over a field is a square: the form `x, y ↦ xᵀ M y` is alternating, so when it is
+nondegenerate it has a symplectic basis, in which its matrix is `J` of determinant `1`, and `det M`
+is the square of the determinant of the change of basis. For an integer matrix the diagonal vanishes
+automatically and the square root, a rational number, is an integer. Over an arbitrary commutative
+ring the statement is Cayley's identity `det M = Pf(M)²`, which needs the Pfaffian and is not proved
+here.
 
 A symmetric integer matrix `A` with even diagonal, of size `2k`, splits as `A = S + Sᵀ`. The
 polynomial `q(X) = det (X • Sᵀ + S)` has degree at most `2k` and is its own reflection at `2k`,
@@ -39,6 +41,8 @@ the Gram matrix `!![2a, b; b, 2c]` of a binary form this is `b² - 4ac ≡ b² (
 
 ## Main results
 
+* `Matrix.det_eq_zero_of_transpose_eq_neg_of_odd_card`: a skew-symmetric matrix of odd size has
+  zero determinant when `2` is regular.
 * `Matrix.isSquare_det_of_transpose_eq_neg_of_diag_eq_zero`: a skew-symmetric matrix with zero
   diagonal over a field has square determinant.
 * `Matrix.isSquare_det_of_transpose_eq_neg`: a skew-symmetric integer matrix has square
@@ -58,6 +62,15 @@ namespace Matrix
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-! ### Skew-symmetric matrices -/
+
+/-- **A skew-symmetric matrix of odd size has zero determinant**, over any commutative ring in
+which `2` is regular: `det M = det Mᵀ = det (-M) = -det M`. -/
+theorem det_eq_zero_of_transpose_eq_neg_of_odd_card {R : Type*} [CommRing R]
+    (h2 : IsRegular (2 : R)) {M : Matrix ι ι R} (hM : Mᵀ = -M) (hn : Odd (Fintype.card ι)) :
+    M.det = 0 := by
+  have h := congrArg det hM
+  rw [det_transpose, det_neg, hn.neg_one_pow, neg_one_mul] at h
+  exact h2.left (by linear_combination h : 2 * M.det = 2 * 0)
 
 /-- **The determinant of a skew-symmetric matrix with zero diagonal over a field is a square.** -/
 theorem isSquare_det_of_transpose_eq_neg_of_diag_eq_zero {K : Type*} [Field K]

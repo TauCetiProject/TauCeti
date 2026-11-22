@@ -589,6 +589,14 @@ theorem ricci_apply_orthonormalBasis {ι : Type*} [Fintype ι] (b : OrthonormalB
     (r : FourTensor V) (u v : V) : ricci r u v = ∑ i, r ![b i, u, b i, v] :=
   bilinFormTrace_eq_sum (ricciSlice r u v) b
 
+/-- The Ricci curvature of a nonzero vector `u` is `‖u‖²` times that of the unit vector
+`‖u‖⁻¹ • u`. -/
+theorem ricci_apply_self_eq_norm_sq_mul (r : FourTensor V) {u : V} (hu : u ≠ 0) :
+    ricci r u u = ‖u‖ ^ 2 * ricci r (‖u‖⁻¹ • u) (‖u‖⁻¹ • u) := by
+  have hu' : ‖u‖ ≠ 0 := norm_ne_zero_iff.mpr hu
+  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
+  field_simp
+
 /-- The Ricci contraction of a four-tensor symmetric under pair interchange is symmetric. -/
 theorem isSymm_ricci_of_swap_pairs {r : FourTensor V}
     (h : ∀ u v z w, r ![u, v, z, w] = r ![z, w, u, v]) : (ricci r).IsSymm := by

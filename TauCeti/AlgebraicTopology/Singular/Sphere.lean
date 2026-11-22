@@ -22,6 +22,7 @@ public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.AlgebraicTopology.Singular.BettiNumber
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Extension
 import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
@@ -627,12 +628,8 @@ theorem reducedSingularHomologyFunctor_map_reflection_unitSphereMap {n : ℕ}
           (ℝ ∙ v)ᗮ.reflection.toLinearIsometry.continuous_unitSphereMap⟩) = -𝟙 _ := by
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
   -- Extend the unit vector `‖v‖⁻¹ • v` to an orthonormal basis `b` with `b 0 = ‖v‖⁻¹ • v`.
-  obtain ⟨b, hb⟩ := Orthonormal.exists_orthonormalBasis_extension_of_card_eq (𝕜 := ℝ)
-    (ι := Fin (n + 1)) (by simpa using hE) (v := fun _ ↦ ‖v‖⁻¹ • v) (s := {0})
-    (orthonormal_iff_ite.2 fun i j ↦ by
-      rw [Subsingleton.elim i j]
-      simp [hv])
-  have hb₀ : b 0 = ‖v‖⁻¹ • v := hb 0 rfl
+  obtain ⟨b, hb₀⟩ := exists_orthonormalBasis_fin_apply_zero_eq hE
+    (by simpa using norm_smul_inv_norm (𝕜 := ℝ) hv)
   rw [← cancel_mono (reducedSingularHomologySphereIso R b).hom, Preadditive.neg_comp,
     Category.id_comp]
   refine reducedSingularHomologySphereIso_hom_neg_zero R b _ ?_ fun i hi ↦ ?_

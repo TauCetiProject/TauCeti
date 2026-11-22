@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.LinearAlgebra.Determinant
+import TauCeti.LinearAlgebra.Matrix.Determinant.Skew
 
 /-!
 # Skew-symmetric maps and orthogonal hyperplane frames on real inner product spaces
@@ -107,10 +108,9 @@ theorem exists_ne_zero_apply_eq_zero_of_skew_of_odd_finrank [FiniteDimensional �
       OrthonormalBasis.repr_apply_apply]
     rw [real_inner_comm, hf]
   have hdet : LinearMap.det f = 0 := by
-    have h := congrArg Matrix.det hM
-    rw [Matrix.det_transpose, Matrix.det_neg, Fintype.card_fin, hodd.neg_one_pow,
-      LinearMap.det_toMatrix] at h
-    linarith
+    rw [← LinearMap.det_toMatrix b]
+    exact Matrix.det_eq_zero_of_transpose_eq_neg_of_odd_card (.of_ne_zero two_ne_zero) hM
+      (by rwa [Fintype.card_fin])
   obtain ⟨x, hx, hx₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
     (LinearMap.bot_lt_ker_of_det_eq_zero hdet).ne'
   exact ⟨x, hx₀, hx⟩

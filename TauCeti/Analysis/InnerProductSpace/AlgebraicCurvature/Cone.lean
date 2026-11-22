@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.Cone.Basic
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.ExteriorSquare
 import TauCeti.Algebra.Order.BigOperators.Sum.PairwiseAdd
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Extension
 
 /-!
 # Basic cones of algebraic curvature tensors
@@ -273,24 +274,17 @@ private theorem ricci_apply_self_nonneg_of_mem_twoNonneg (hn : Module.finrank �
   have hR := mem_algebraicCurvatureSubmodule.mp r.property
   have hpos : 0 < Module.finrank ℝ V :=
     Module.finrank_pos_iff_exists_ne_zero.mpr ⟨e, norm_ne_zero_iff.mp (he.trans_ne one_ne_zero)⟩
-  let i₀ : Fin (Module.finrank ℝ V) := ⟨0, hpos⟩
-  obtain ⟨b, hb⟩ := Orthonormal.exists_orthonormalBasis_extension_of_card_eq (𝕜 := ℝ)
-    (ι := Fin (Module.finrank ℝ V)) (by simp) (v := fun _ ↦ e) (s := {i₀}) <| by
-      rw [orthonormal_iff_ite]
-      rintro ⟨i, hi⟩ ⟨j, hj⟩
-      simp only [Set.mem_singleton_iff] at hi hj
-      subst hi hj
-      simp [he]
-  have hb₀ : b i₀ = e := hb i₀ rfl
+  obtain ⟨n, hn'⟩ := Nat.exists_eq_succ_of_ne_zero hpos.ne'
+  obtain ⟨b, hb₀⟩ := exists_orthonormalBasis_fin_apply_zero_eq hn' he
   -- The `i₀` term `r(e, e, e, e)` vanishes by antisymmetry.
   have hself : r.val ![e, e, e, e] = 0 := by linarith [hR.antisymm_first e e e e]
   -- Each remaining term is the value of the operator on `e ∧ bⱼ`.
-  have hterm (j : Fin (Module.finrank ℝ V)) :
+  have hterm (j : Fin (n + 1)) :
       r.val ![b j, e, b j, e] =
         ⟪curvatureEndomorphism r.val (exteriorPower.ιMulti ℝ 2 ![e, b j]),
           exteriorPower.ιMulti ℝ 2 ![e, b j]⟫ := by
     rw [hR.inner_curvatureEndomorphism_ιMulti, hR.antisymm_first, hR.antisymm_last, neg_neg]
-  rw [ricci_apply_orthonormalBasis b, ← Finset.add_sum_erase _ _ (Finset.mem_univ i₀), hb₀,
+  rw [ricci_apply_orthonormalBasis b, ← Finset.add_sum_erase _ _ (Finset.mem_univ 0), hb₀,
     hself, zero_add]
   refine Finset.sum_nonneg_of_pairwise_add_nonneg ?_ fun i hi j hj hij ↦ ?_
   · rw [Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ, Fintype.card_fin]
@@ -313,12 +307,9 @@ theorem twoNonnegCurvatureOperatorCone_le_nonnegRicciCone (hn : Module.finrank �
   mem_nonnegRicciCone.mpr fun u ↦ by
     rcases eq_or_ne u 0 with rfl | hu
     · simp
-    have hu' : ‖u‖ ≠ 0 := norm_ne_zero_iff.mpr hu
-    have h := ricci_apply_self_nonneg_of_mem_twoNonneg hn hr (e := ‖u‖⁻¹ • u) <| by
-      rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hu']
-    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, ← mul_assoc] at h
-    exact (mul_nonneg_iff_of_pos_left
-      (mul_self_pos.mpr (inv_ne_zero hu'))).mp h
+    rw [ricci_apply_self_eq_norm_sq_mul _ hu]
+    exact mul_nonneg (sq_nonneg _) (ricci_apply_self_nonneg_of_mem_twoNonneg hn hr <| by
+      rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (norm_ne_zero_iff.mpr hu)])
 
 /-! ### The round tensor and salience -/
 
