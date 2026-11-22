@@ -96,6 +96,9 @@ and every `H^s` wave front set are preserved up to the shift by `m`.
   neighbourhood of `(x, ξ)`, then `T` is microlocally `H^{s + m}` there.
 * `Distribution.IsMicrolocallySmoothAt.of_quantizeDistribution`: the same for microlocal
   smoothness, `WF(T) ⊆ WF(Op(a) T) ∪ Char(a)`.
+* `TauCeti.Symbol.sobolevWaveFrontSet_quantizeDistribution_of_forall_isEllipticOn`,
+  `TauCeti.Symbol.waveFrontSet_quantizeDistribution_of_forall_isEllipticOn`: for `a` elliptic near
+  every position, `WF_s(Op(a) T) = WF_{s + m}(T)` and `WF(Op(a) T) = WF(T)`.
 * `TauCeti.Symbol.IsEllipticAbove.sobolevWaveFrontSet_quantizeDistribution`,
   `TauCeti.ClassicalSymbol.IsElliptic.sobolevWaveFrontSet_quantizeDistribution`: for elliptic `a`,
   `WF_s(Op(a) T) = WF_{s + m}(T)`.
@@ -440,10 +443,9 @@ theorem IsMicrolocallySobolevAt.of_quantizeDistribution (ha : a.HasNearDiagonalK
   -- with `a` on `tsupport χ`, a neighbourhood of `x`; so `b` is elliptic near `(x, ξ)`.
   obtain ⟨b, hb, t, u, hu, hOp, hba⟩ :=
     exists_quantizeDistribution_toDistribution_cutoffTempered_eq ha T χ
-  have hellb : b.IsEllipticOn {p | p.1 ∈ U ∩ tsupport χ ∧ p.2 ∈ Γ ∧ R' ≤ ‖p.2‖} :=
-    isEllipticOn_iff.2 fun K hK ↦ (isEllipticOn_iff.1 hell K hK).imp fun C hC p hp hpK ↦ by
-      rw [← Prod.mk.eta (p := p), hba p.1 hp.1.2, Prod.mk.eta, zero_add]
-      exact hC p ⟨hp.1.1, hp.2⟩ hpK
+  have hellb : b.IsEllipticOn {p | p.1 ∈ U ∩ tsupport χ ∧ p.2 ∈ Γ ∧ R' ≤ ‖p.2‖} := by
+    refine (hell.mono fun _ hp ↦ ?_).congr (zero_add m) fun p hp ↦ hba p.1 hp.1.2 p.2
+    exact ⟨hp.1.1, hp.2⟩
   -- Microlocal elliptic regularity on `H^t` makes `χ T` microlocally `H^{s + m}` at `(x, ξ)`, and
   -- `T - χ T` vanishes near `x`.
   have hD := hb.isMicrolocallySobolevAt_toDistribution_of_quantizeSobolev (Ω := ⊤)
@@ -470,9 +472,23 @@ theorem IsMicrolocallySmoothAt.of_quantizeDistribution (ha : a.HasNearDiagonalKe
   simpa using (hp (s - m)).of_quantizeDistribution ha (mem_interior_iff_mem_nhds.1 hpW.1) hΓ hcone
     hpW.2 hell
 
-/-- If a symbol is elliptic near every position, at the frequencies of norm at least a radius
-depending on the position, then `Op(a)` shifts the `H^s` wave front set by exactly its order. -/
-private theorem sobolevWaveFrontSet_quantizeDistribution_of_forall_isEllipticOn
+end Distribution
+
+namespace TauCeti
+
+open Distribution Set Metric
+open scoped Topology
+
+variable {n : ℕ} {m R R' : ℝ}
+
+namespace Symbol
+
+/-- **Locally elliptic operators shift the `H^s` wave front set by exactly their order.** If the
+scalar symbol `a` of order `m` is elliptic near every position, at the frequencies of norm at least
+a radius depending on the position, and `Op(a)` has kernel supported within distance `R` of the
+diagonal, then `WF_s(Op(a) T) = WF_{s + m}(T)` for every distribution `T` on `ℝⁿ` and every real
+`s`. -/
+theorem sobolevWaveFrontSet_quantizeDistribution_of_forall_isEllipticOn {a : Symbol n ℂ ℂ m}
     (hell : ∀ x, ∃ U ∈ 𝓝 x, ∃ R' : ℝ, a.IsEllipticOn {p | p.1 ∈ U ∧ R' ≤ ‖p.2‖})
     (ha : a.HasNearDiagonalKernel R) (s : ℝ) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
     (quantizeDistribution ha T).sobolevWaveFrontSet s = T.sobolevWaveFrontSet (s + m) := by
@@ -483,9 +499,11 @@ private theorem sobolevWaveFrontSet_quantizeDistribution_of_forall_isEllipticOn
   exact ⟨hp.1, hp.2.1, fun h ↦ hp.2.2 (h.of_quantizeDistribution ha hU isOpen_univ
     (fun _ _ _ _ ↦ trivial) trivial (hell.mono fun q hq ↦ ⟨hq.1, hq.2.2⟩))⟩
 
-/-- If a symbol is elliptic near every position, at the frequencies of norm at least a radius
-depending on the position, then `Op(a)` preserves the wave front set. -/
-private theorem waveFrontSet_quantizeDistribution_of_forall_isEllipticOn
+/-- **Locally elliptic operators preserve the wave front set.** If the scalar symbol `a` is
+elliptic near every position, at the frequencies of norm at least a radius depending on the
+position, and `Op(a)` has kernel supported within distance `R` of the diagonal, then
+`WF(Op(a) T) = WF(T)` for every distribution `T` on `ℝⁿ`. -/
+theorem waveFrontSet_quantizeDistribution_of_forall_isEllipticOn {a : Symbol n ℂ ℂ m}
     (hell : ∀ x, ∃ U ∈ 𝓝 x, ∃ R' : ℝ, a.IsEllipticOn {p | p.1 ∈ U ∧ R' ≤ ‖p.2‖})
     (ha : a.HasNearDiagonalKernel R) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
     (quantizeDistribution ha T).waveFrontSet = T.waveFrontSet := by
@@ -495,14 +513,7 @@ private theorem waveFrontSet_quantizeDistribution_of_forall_isEllipticOn
   exact ⟨hp.1, hp.2.1, fun h ↦ hp.2.2 (h.of_quantizeDistribution ha hU isOpen_univ
     (fun _ _ _ _ ↦ trivial) trivial (hell.mono fun q hq ↦ ⟨hq.1, hq.2.2⟩))⟩
 
-end Distribution
-
-namespace TauCeti
-
-open Distribution Set Metric
-open scoped Topology
-
-variable {n : ℕ} {m R R' : ℝ}
+end Symbol
 
 /-- A symbol elliptic above a radius is elliptic near every position. -/
 private theorem Symbol.IsEllipticAbove.forall_exists_isEllipticOn {a : Symbol n ℂ ℂ m}
@@ -528,7 +539,7 @@ theorem Symbol.IsEllipticAbove.sobolevWaveFrontSet_quantizeDistribution {a : Sym
     (hell : a.IsEllipticAbove R') (ha : a.HasNearDiagonalKernel R) (s : ℝ)
     (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
     (Symbol.quantizeDistribution ha T).sobolevWaveFrontSet s = T.sobolevWaveFrontSet (s + m) :=
-  sobolevWaveFrontSet_quantizeDistribution_of_forall_isEllipticOn
+  Symbol.sobolevWaveFrontSet_quantizeDistribution_of_forall_isEllipticOn
     hell.forall_exists_isEllipticOn ha s T
 
 /-- **Elliptic operators preserve the wave front set.** If the scalar symbol `a` is elliptic above
@@ -538,7 +549,8 @@ theorem Symbol.IsEllipticAbove.waveFrontSet_quantizeDistribution {a : Symbol n �
     (hell : a.IsEllipticAbove R') (ha : a.HasNearDiagonalKernel R)
     (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
     (Symbol.quantizeDistribution ha T).waveFrontSet = T.waveFrontSet :=
-  waveFrontSet_quantizeDistribution_of_forall_isEllipticOn hell.forall_exists_isEllipticOn ha T
+  Symbol.waveFrontSet_quantizeDistribution_of_forall_isEllipticOn
+    hell.forall_exists_isEllipticOn ha T
 
 /-- **Elliptic classical operators shift the `H^s` wave front set by exactly their order.** If the
 classical symbol `a` of order `m` is elliptic and `Op(a)` has kernel supported within distance `R`
@@ -548,7 +560,7 @@ theorem ClassicalSymbol.IsElliptic.sobolevWaveFrontSet_quantizeDistribution
     {a : ClassicalSymbol n ℂ ℂ m} (hell : a.IsElliptic) (ha : a.toSymbol.HasNearDiagonalKernel R)
     (s : ℝ) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
     (Symbol.quantizeDistribution ha T).sobolevWaveFrontSet s = T.sobolevWaveFrontSet (s + m) :=
-  sobolevWaveFrontSet_quantizeDistribution_of_forall_isEllipticOn
+  Symbol.sobolevWaveFrontSet_quantizeDistribution_of_forall_isEllipticOn
     hell.forall_exists_isEllipticOn ha s T
 
 /-- **Elliptic classical operators preserve the wave front set.** If the classical symbol `a` is
@@ -558,6 +570,7 @@ theorem ClassicalSymbol.IsElliptic.waveFrontSet_quantizeDistribution
     {a : ClassicalSymbol n ℂ ℂ m} (hell : a.IsElliptic) (ha : a.toSymbol.HasNearDiagonalKernel R)
     (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
     (Symbol.quantizeDistribution ha T).waveFrontSet = T.waveFrontSet :=
-  waveFrontSet_quantizeDistribution_of_forall_isEllipticOn hell.forall_exists_isEllipticOn ha T
+  Symbol.waveFrontSet_quantizeDistribution_of_forall_isEllipticOn
+    hell.forall_exists_isEllipticOn ha T
 
 end TauCeti

@@ -879,11 +879,10 @@ theorem HasCompactSpatialSupport.isMicrolocallySobolevAt_toDistribution_of_quant
     ((ψ'.smooth ⊤).smul contDiff_const)).sharp a ha
   have hc := hF.sharp ha
   -- Since `c(y, η) = ψ(y) a(y, η)`, the symbol `c` agrees with `a` on `V`, so it is elliptic there.
-  have hellc : c.IsEllipticOn {p | p.1 ∈ U ∩ V ∧ p.2 ∈ Γ ∩ Γ₁ ∧ R ≤ ‖p.2‖} :=
-    isEllipticOn_iff.2 fun K hK ↦ (isEllipticOn_iff.1 hell K hK).imp fun C hC p hp hpK ↦ by
-      rw [← Prod.mk.eta (p := p), coefficient_ofSpatial_smul_id_sharp, hψ', hψV hp.1.2,
-        Pi.one_apply, one_smul, zero_add]
-      exact hC p ⟨hp.1.1, hp.2.1.1, hp.2.2⟩ hpK
+  have hellc : c.IsEllipticOn {p | p.1 ∈ U ∩ V ∧ p.2 ∈ Γ ∩ Γ₁ ∧ R ≤ ‖p.2‖} := by
+    refine (hell.mono fun _ hp ↦ ?_).congr (zero_add m) fun ⟨y, η⟩ hp ↦ ?_
+    · exact ⟨hp.1.1, hp.2.1.1, hp.2.2⟩
+    · rw [coefficient_ofSpatial_smul_id_sharp, hψ', hψV hp.1.2, Pi.one_apply, one_smul]
   -- `Op(c) u = ψ Op(a) u` is `H^s` in the cone `Γ₁`.
   have hψc : TemperedDistribution.smulLeftCLM ℂ (ψ : CoordinateSpace n → ℂ)
       (a.quantizeSobolev ha t u).toDistr = (c.quantizeSobolev hc t u).toDistr :=
