@@ -39,8 +39,9 @@ radius `r` with `‖a‖ ≤ r < R₀`.
 ## Main results
 
 * `PowerSeries.OnOpenDisc.taylor`: translation preserves the open-disc radius condition.
-* `PowerSeries.OnOpenDisc.taylor_smul` and `PowerSeries.OnOpenDisc.hasseDeriv_taylor`:
-  translation commutes with scalar multiplication and with Hasse derivatives.
+* `PowerSeries.OnOpenDisc.taylor_smul`, `PowerSeries.OnOpenDisc.hasseDeriv_taylor`, and
+  `PowerSeries.OnOpenDisc.taylor_map`: translation commutes with scalar multiplication, Hasse
+  derivatives, and continuous coefficient homomorphisms.
 * `PowerSeries.OnOpenDisc.evalAt_taylor` and `PowerSeries.OnOpenDisc.hasSum_taylor`: the Taylor
   identity `(taylor a f)(b) = f(b + a)` at points of the base ring and the convergent Taylor
   expansion `f(b + a) = ∑ₖ (Δᵏ f)(a) bᵏ` on the open disc.
@@ -136,6 +137,17 @@ theorem OnOpenDisc.hasseDeriv_taylor (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R�
   rw [LinearMap.comp_apply, LinearMap.smul_apply, ← Nat.cast_smul_eq_nsmul R] at h
   rw [coeff_hasseDeriv, coeff_taylor, coeff_taylor, h, (hf.hasseDeriv _).evalAt_smul _ ha,
     smul_eq_mul, Nat.choose_symm_add]
+
+omit [IsUltrametricDist R] in
+/-- Taylor translation on an open disc commutes with continuous coefficient homomorphisms:
+`taylor (φ a) (map φ f) = map φ (taylor a f)`. -/
+theorem OnOpenDisc.taylor_map {S : Type*} [CommSemiring S] [TopologicalSpace S] [T2Space S]
+    (hf : f.OnOpenDisc R₀) (φ : R →+* S) (hφ : Continuous φ) (ha : ‖a‖ < R₀) :
+    PowerSeries.taylor (φ a) (PowerSeries.map φ f) =
+      PowerSeries.map φ (PowerSeries.taylor a f) := by
+  ext n
+  rw [coeff_taylor, hasseDeriv_map, coeff_map, coeff_taylor]
+  exact (hf.hasseDeriv n).evalAt_map φ hφ ha
 
 /-- **The Taylor identity on an open disc** at a point of the base ring: if `f` lies on the open
 disc of radius `R₀` and `‖a‖ < R₀`, `‖b‖ < R₀`, then the expansion of `f` at `a` evaluated at `b`

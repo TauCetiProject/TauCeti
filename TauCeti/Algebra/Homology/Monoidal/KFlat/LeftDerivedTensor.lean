@@ -40,7 +40,30 @@ variables (`CategoryTheory.Functor.hasLeftDerivedFunctor₂_tensor_of_inverts`).
   `TauCeti.derivedTensor C` provide the canonical left derived tensor bifunctor `⊗^L` on
   `DerivedCategory C`, together with its universal counit `TauCeti.derivedTensorCounit C`,
   one-variable `IsLeftDerivedFunctor` instances, and K-flat object isomorphisms
-  `CochainComplex.derivedTensorKFlatLeftIso` and `CochainComplex.derivedTensorKFlatRightIso`.
+  `CochainComplex.derivedTensorKFlatLeftIso` and `CochainComplex.derivedTensorKFlatRightIso`;
+* for any left derived bifunctor `(LF, α)` of the tensor product on `DerivedCategory C`, the partial
+  counits `Functor.bifunctorCounit₁ α P` and `Functor.bifunctorCounit₂ α Q` are isomorphisms when
+  `P` or `Q` is K-flat, in particular a bounded-above complex of flat objects
+  (`TauCeti.isIso_bifunctorCounit₁_of_boundedAbove_flat_of_isLeftDerivedFunctor₂_tensor`), for
+  K-flat `P` the functor `LF.obj (DerivedCategory.Q.obj P)` is naturally isomorphic to
+  `P.kFlatTensor` compatibly with morphisms of K-flat models
+  (`TauCeti.leftDerivedTensorObjIsoKFlatTensor`,
+  `TauCeti.leftDerivedTensorObjIsoKFlatTensor_naturality`), and derived tensoring with the unit
+  complex `𝟙_ (CochainComplex C ℤ)` on either side is naturally isomorphic to the identity
+  (`TauCeti.leftDerivedTensorLeftUnitor`, `TauCeti.leftDerivedTensorRightUnitor`).
+
+Bounded-above complexes of flat objects are K-flat, so on either side they compute the derived
+tensor product on complex models as the ordinary totalized tensor product followed by
+`DerivedCategory.Q` (`TauCeti.leftDerivedTensorObjModelIsoOfIsStrictlyLEFlat`,
+`TauCeti.leftDerivedTensorFlipObjModelIsoOfIsStrictlyLEFlat`, and, for any target `F`,
+`CategoryTheory.Functor.isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_boundedAbove_flat_left`
+and
+`CategoryTheory.Functor.isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_boundedAbove_flat_right`).
+
+For the canonical bifunctor `TauCeti.derivedTensor C`, the unit `𝟙_ C` placed in degree `0` is a
+unit on both sides (`TauCeti.derivedTensorLeftUnitor`, `TauCeti.derivedTensorRightUnitor`).
+Modules over a commutative ring and sheaves of modules over a sheaf of commutative rings on a small
+site are the main examples.
 
 ## References
 
@@ -216,6 +239,38 @@ theorem isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_right
   (isLeftDerivedFunctor₂_tensor_iff_isIso_right F hF α).1 inferInstance K Q
 
 include hF in
+/-- **Flat-model comparison on the left.** When `F` inverts quasi-isomorphisms and sequential
+colimits in `C` are exact and commute with tensoring, any left derived bifunctor `(LF, α)` of
+`curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F` has invertible comparison
+component `(α.app P).app L` whenever `P` is a bounded-above complex of flat objects. -/
+theorem isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_boundedAbove_flat_left
+    [HasColimitsOfShape ℕ C] [HasExactColimitsOfShape ℕ C]
+    [∀ X : C, PreservesColimitsOfShape ℕ (MonoidalCategory.tensorRight X)]
+    [∀ X : C, PreservesFiniteColimits (MonoidalCategory.tensorLeft X)]
+    [LF.IsLeftDerivedFunctor₂ α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ))]
+    (P : CochainComplex C ℤ) (b : ℤ) [P.IsStrictlyLE b]
+    [∀ n, PreservesFiniteLimits (MonoidalCategory.tensorLeft (P.X n))]
+    (L : CochainComplex C ℤ) : IsIso ((α.app P).app L) :=
+  have := P.isKFlat_of_boundedAbove_flat b
+  isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_left F hF α P L
+
+include hF in
+/-- **Flat-model comparison on the right.** When `F` inverts quasi-isomorphisms and sequential
+colimits in `C` are exact and commute with tensoring, any left derived bifunctor `(LF, α)` of
+`curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F` has invertible comparison
+component `(α.app K).app Q` whenever `Q` is a bounded-above complex of flat objects. -/
+theorem isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_boundedAbove_flat_right
+    [HasColimitsOfShape ℕ C] [HasExactColimitsOfShape ℕ C]
+    [∀ X : C, PreservesColimitsOfShape ℕ (MonoidalCategory.tensorRight X)]
+    [∀ X : C, PreservesFiniteColimits (MonoidalCategory.tensorLeft X)]
+    [LF.IsLeftDerivedFunctor₂ α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ))]
+    (K Q : CochainComplex C ℤ) (b : ℤ) [Q.IsStrictlyLE b]
+    [∀ n, PreservesFiniteLimits (MonoidalCategory.tensorLeft (Q.X n))] :
+    IsIso ((α.app K).app Q) :=
+  have := Q.isKFlat_of_boundedAbove_flat b
+  isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_right F hF α K Q
+
+include hF in
 /-- When `F` inverts quasi-isomorphisms and `(LF, α)` is a left derived bifunctor of
 `curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F`, evaluating at `L₁.obj K`
 exhibits `LF.obj (L₁.obj K)` as a left derived functor of
@@ -260,6 +315,30 @@ end DerivabilityStructure
 end GeneralTarget
 
 end CategoryTheory.Functor
+
+namespace CochainComplex.KFlat
+
+variable [(localizerMorphism C).HasLeftResolutions]
+
+/-- The product of the K-flat localizer morphism with itself derives the uncurried tensor product
+of complexes followed by `DerivedCategory.Q`. -/
+theorem prod_localizerMorphism_derives_tensor [HasDerivedCategory C] :
+    ((localizerMorphism C).prod (localizerMorphism C)).Derives
+      (Functor.uncurry.obj
+        (MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
+          (Functor.whiskeringRight _ _ _).obj (DerivedCategory.Q (C := C)))) := by
+  rw [LocalizerMorphism.Derives, LocalizerMorphism.prod_functor, localizerMorphism_functor]
+  rintro ⟨K₁, L₁⟩ ⟨K₂, L₂⟩ f ⟨hf₁, hf₂⟩
+  have : QuasiIso f.1.hom := (quasiIso_iff f.1).1 hf₁
+  have : QuasiIso f.2.hom := (quasiIso_iff f.2).1 hf₂
+  simp only [Functor.comp_map, Functor.prod_map, Functor.prod_obj, ObjectProperty.ι_map,
+    Functor.uncurry_obj_map, Functor.comp_obj, Functor.whiskeringRight_obj_obj,
+    Functor.whiskeringRight_obj_map, whiskerRight_app, MonoidalCategory.curriedTensor_obj_obj,
+    MonoidalCategory.curriedTensor_map_app, MonoidalCategory.curriedTensor_obj_map,
+    ObjectProperty.ι_obj]
+  infer_instance
+
+end CochainComplex.KFlat
 
 section DerivedCategory
 
@@ -376,3 +455,290 @@ lemma derivedTensorKFlatRightIso_inv (K P : CochainComplex C ℤ) [P.IsKFlat] :
 end CochainComplex
 
 end DerivedCategory
+
+section ModelComparison
+
+variable [(CochainComplex.KFlat.localizerMorphism C).IsLeftDerivabilityStructure]
+  [HasDerivedCategory C]
+  (LF : DerivedCategory C ⥤ DerivedCategory C ⥤ DerivedCategory C)
+  (α : (((whiskeringLeft₂ (DerivedCategory C)).obj DerivedCategory.Q).obj
+    DerivedCategory.Q).obj LF ⟶
+      MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
+        (whiskeringRight _ _ _).obj (DerivedCategory.Q (C := C)))
+  [LF.IsLeftDerivedFunctor₂ α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ))]
+
+namespace TauCeti
+
+/-- For any left derived bifunctor `(LF, α)` of the tensor product on `DerivedCategory C`,
+`(α.app P).app L` is an isomorphism whenever `P` is K-flat, for every (possibly unbounded)
+complex `L`. -/
+instance isIso_app_app_of_isKFlat_left_of_isLeftDerivedFunctor₂_tensor
+    (P L : CochainComplex C ℤ) [P.IsKFlat] :
+    IsIso ((α.app P).app L) :=
+  isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_left DerivedCategory.Q
+    (Localization.inverts _ _) α P L
+
+/-- For any left derived bifunctor `(LF, α)` of the tensor product on `DerivedCategory C`,
+`(α.app K).app Q` is an isomorphism whenever `Q` is K-flat, for every (possibly unbounded)
+complex `K`. -/
+instance isIso_app_app_of_isKFlat_right_of_isLeftDerivedFunctor₂_tensor
+    (K Q : CochainComplex C ℤ) [Q.IsKFlat] :
+    IsIso ((α.app K).app Q) :=
+  isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_right DerivedCategory.Q
+    (Localization.inverts _ _) α K Q
+
+/-- For any complex `K` (without any K-flatness assumption), `LF.obj (Q.obj K)` is a left derived
+functor of `K ⊗ - ⋙ Q` via `Functor.bifunctorCounit₁ α K`. -/
+instance isLeftDerivedFunctor_bifunctorCounit₁_of_isLeftDerivedFunctor₂_tensor
+    (K : CochainComplex C ℤ) :
+    (LF.obj (DerivedCategory.Q.obj K)).IsLeftDerivedFunctor (Functor.bifunctorCounit₁ α K)
+      (quasiIso C (.up ℤ)) :=
+  Functor.isLeftDerivedFunctor_bifunctorCounit₁_of_isLeftDerivedFunctor₂_tensor DerivedCategory.Q
+    (Localization.inverts _ _) α K
+
+/-- For any complex `L` (without any K-flatness assumption), `LF.flip.obj (Q.obj L)` is a left
+derived functor of `- ⊗ L ⋙ Q` via `Functor.bifunctorCounit₂ α L`. -/
+instance isLeftDerivedFunctor_bifunctorCounit₂_of_isLeftDerivedFunctor₂_tensor
+    (L : CochainComplex C ℤ) :
+    (LF.flip.obj (DerivedCategory.Q.obj L)).IsLeftDerivedFunctor (Functor.bifunctorCounit₂ α L)
+      (quasiIso C (.up ℤ)) :=
+  Functor.isLeftDerivedFunctor_bifunctorCounit₂_of_isLeftDerivedFunctor₂_tensor DerivedCategory.Q
+    (Localization.inverts _ _) α L
+
+/-- When `P` is K-flat, the partial counit `Functor.bifunctorCounit₁ α P` is a natural isomorphism
+`DerivedCategory.Q ⋙ LF.obj (DerivedCategory.Q.obj P) ≅ tensorLeft P ⋙ DerivedCategory.Q`. -/
+instance isIso_bifunctorCounit₁_of_isKFlat_of_isLeftDerivedFunctor₂_tensor
+    (P : CochainComplex C ℤ) [P.IsKFlat] :
+    IsIso (Functor.bifunctorCounit₁ α P) := by
+  rw [NatTrans.isIso_iff_isIso_app]
+  intro L
+  rw [Functor.bifunctorCounit₁_app]
+  infer_instance
+
+/-- When `Q` is K-flat, the partial counit `Functor.bifunctorCounit₂ α Q` is a natural isomorphism
+`DerivedCategory.Q ⋙ LF.flip.obj (DerivedCategory.Q.obj Q) ≅ tensorRight Q ⋙ DerivedCategory.Q`. -/
+instance isIso_bifunctorCounit₂_of_isKFlat_of_isLeftDerivedFunctor₂_tensor
+    (Q : CochainComplex C ℤ) [Q.IsKFlat] :
+    IsIso (Functor.bifunctorCounit₂ α Q) := by
+  rw [NatTrans.isIso_iff_isIso_app]
+  intro K
+  rw [Functor.bifunctorCounit₂_app]
+  infer_instance
+
+section BoundedAbove
+
+variable [∀ M : C, PreservesFiniteColimits (MonoidalCategory.tensorLeft M)]
+  [HasColimitsOfShape ℕ C] [HasExactColimitsOfShape ℕ C]
+  [∀ X : C, PreservesColimitsOfShape ℕ (MonoidalCategory.tensorRight X)]
+
+/-- When `P` is bounded above with flat terms and sequential colimits in `C` are exact and commute
+with tensoring, `Functor.bifunctorCounit₁ α P` is a natural isomorphism. -/
+theorem isIso_bifunctorCounit₁_of_boundedAbove_flat_of_isLeftDerivedFunctor₂_tensor
+    (P : CochainComplex C ℤ) (b : ℤ)
+    [P.IsStrictlyLE b] [∀ i, PreservesFiniteLimits (MonoidalCategory.tensorLeft (P.X i))] :
+    IsIso (Functor.bifunctorCounit₁ α P) :=
+  have := P.isKFlat_of_boundedAbove_flat b
+  inferInstance
+
+/-- When `Q` is bounded above with flat terms and sequential colimits in `C` are exact and commute
+with tensoring, `Functor.bifunctorCounit₂ α Q` is a natural isomorphism. -/
+theorem isIso_bifunctorCounit₂_of_boundedAbove_flat_of_isLeftDerivedFunctor₂_tensor
+    (Q : CochainComplex C ℤ) (b : ℤ)
+    [Q.IsStrictlyLE b] [∀ i, PreservesFiniteLimits (MonoidalCategory.tensorLeft (Q.X i))] :
+    IsIso (Functor.bifunctorCounit₂ α Q) :=
+  have := Q.isKFlat_of_boundedAbove_flat b
+  inferInstance
+
+/-- **Bounded-above flat models compute derived tensor products in the left variable.** If `P` is a
+bounded-above complex of flat objects, then
+`DerivedCategory.Q ⋙ LF.obj (DerivedCategory.Q.obj P)` is naturally isomorphic to the ordinary
+totalized tensor functor `P ⊗ -` followed by `DerivedCategory.Q`. -/
+def leftDerivedTensorObjModelIsoOfIsStrictlyLEFlat
+    (P : CochainComplex C ℤ) (b : ℤ)
+    [P.IsStrictlyLE b] [∀ i, PreservesFiniteLimits (MonoidalCategory.tensorLeft (P.X i))] :
+    DerivedCategory.Q ⋙ LF.obj (DerivedCategory.Q.obj P) ≅
+      (MonoidalCategory.curriedTensor (CochainComplex C ℤ)).obj P ⋙
+        DerivedCategory.Q := by
+  have : P.IsKFlat := P.isKFlat_of_boundedAbove_flat b
+  exact asIso (Functor.bifunctorCounit₁ α P)
+
+/-- The forward natural transformation of `leftDerivedTensorObjModelIsoOfIsStrictlyLEFlat` is
+`Functor.bifunctorCounit₁ α P`. -/
+@[simp]
+theorem leftDerivedTensorObjModelIsoOfIsStrictlyLEFlat_hom
+    (P : CochainComplex C ℤ) (b : ℤ)
+    [P.IsStrictlyLE b] [∀ i, PreservesFiniteLimits (MonoidalCategory.tensorLeft (P.X i))] :
+    (leftDerivedTensorObjModelIsoOfIsStrictlyLEFlat LF α P b).hom =
+      Functor.bifunctorCounit₁ α P := by
+  have : P.IsKFlat := P.isKFlat_of_boundedAbove_flat b
+  simp [leftDerivedTensorObjModelIsoOfIsStrictlyLEFlat]
+
+/-- **Bounded-above flat models compute derived tensor products in the right variable.** If `Q` is
+a bounded-above complex of flat objects, then
+`DerivedCategory.Q ⋙ LF.flip.obj (DerivedCategory.Q.obj Q)` is naturally isomorphic to the ordinary
+totalized tensor functor `- ⊗ Q` followed by `DerivedCategory.Q`. -/
+def leftDerivedTensorFlipObjModelIsoOfIsStrictlyLEFlat
+    (Q : CochainComplex C ℤ) (b : ℤ)
+    [Q.IsStrictlyLE b] [∀ i, PreservesFiniteLimits (MonoidalCategory.tensorLeft (Q.X i))] :
+    DerivedCategory.Q ⋙ LF.flip.obj (DerivedCategory.Q.obj Q) ≅
+      (MonoidalCategory.curriedTensor (CochainComplex C ℤ)).flip.obj Q ⋙
+        DerivedCategory.Q := by
+  have : Q.IsKFlat := Q.isKFlat_of_boundedAbove_flat b
+  exact asIso (Functor.bifunctorCounit₂ α Q)
+
+/-- The forward natural transformation of `leftDerivedTensorFlipObjModelIsoOfIsStrictlyLEFlat` is
+`Functor.bifunctorCounit₂ α Q`. -/
+@[simp]
+theorem leftDerivedTensorFlipObjModelIsoOfIsStrictlyLEFlat_hom
+    (Q : CochainComplex C ℤ) (b : ℤ)
+    [Q.IsStrictlyLE b] [∀ i, PreservesFiniteLimits (MonoidalCategory.tensorLeft (Q.X i))] :
+    (leftDerivedTensorFlipObjModelIsoOfIsStrictlyLEFlat LF α Q b).hom =
+      Functor.bifunctorCounit₂ α Q := by
+  have : Q.IsKFlat := Q.isKFlat_of_boundedAbove_flat b
+  simp [leftDerivedTensorFlipObjModelIsoOfIsStrictlyLEFlat]
+
+end BoundedAbove
+
+/-- For a K-flat complex `P`, evaluating any left derived tensor bifunctor `(LF, α)` at
+`DerivedCategory.Q.obj P` is naturally isomorphic to `P.kFlatTensor`. -/
+def leftDerivedTensorObjIsoKFlatTensor (P : CochainComplex C ℤ) [P.IsKFlat] :
+    LF.obj (DerivedCategory.Q.obj P) ≅ P.kFlatTensor :=
+  letI : Localization.Lifting DerivedCategory.Q (quasiIso C (.up ℤ))
+      ((MonoidalCategory.curriedTensor (CochainComplex C ℤ)).obj P ⋙ DerivedCategory.Q)
+      (LF.obj (DerivedCategory.Q.obj P)) :=
+    ⟨asIso (Functor.bifunctorCounit₁ α P)⟩
+  Localization.liftNatIso DerivedCategory.Q (quasiIso C (.up ℤ))
+    ((MonoidalCategory.curriedTensor (CochainComplex C ℤ)).obj P ⋙ DerivedCategory.Q)
+    (((MonoidalCategory.curriedTensor C).map₂CochainComplex.obj P) ⋙ DerivedCategory.Q)
+    (LF.obj (DerivedCategory.Q.obj P)) P.kFlatTensor
+    (Functor.isoWhiskerRight ((CochainComplex.curriedTensorIsoMap₂CochainComplex C).app P)
+      DerivedCategory.Q)
+
+/-- On a complex model `L`, `leftDerivedTensorObjIsoKFlatTensor LF α P` intertwines
+`P.kFlatTensorModelIso` with `(α.app P).app L`. -/
+@[reassoc (attr := simp)]
+theorem leftDerivedTensorObjIsoKFlatTensor_hom_app_Q_comp
+    (P L : CochainComplex C ℤ) [P.IsKFlat] :
+    (leftDerivedTensorObjIsoKFlatTensor LF α P).hom.app (DerivedCategory.Q.obj L) ≫
+      P.kFlatTensorModelIso.hom.app L = (α.app P).app L := by
+  let : Localization.Lifting DerivedCategory.Q (quasiIso C (.up ℤ))
+      ((MonoidalCategory.curriedTensor (CochainComplex C ℤ)).obj P ⋙ DerivedCategory.Q)
+      (LF.obj (DerivedCategory.Q.obj P)) :=
+    ⟨asIso (Functor.bifunctorCounit₁ α P)⟩
+  have h := Localization.liftNatTrans_app DerivedCategory.Q (quasiIso C (.up ℤ))
+    ((MonoidalCategory.curriedTensor (CochainComplex C ℤ)).obj P ⋙ DerivedCategory.Q)
+    (((MonoidalCategory.curriedTensor C).map₂CochainComplex.obj P) ⋙ DerivedCategory.Q)
+    (LF.obj (DerivedCategory.Q.obj P)) P.kFlatTensor
+    (Functor.isoWhiskerRight ((CochainComplex.curriedTensorIsoMap₂CochainComplex C).app P)
+      DerivedCategory.Q).hom L
+  rw [← CochainComplex.kFlatTensorModelIso_eq_liftingIso P] at h
+  have h' := h =≫ P.kFlatTensorModelIso.hom.app L
+  rw [Category.assoc, Category.assoc, Iso.inv_hom_id_app, Category.comp_id] at h'
+  exact h'.trans (by dsimp [Functor.bifunctorCounit₁]; simp; rfl)
+
+/-- Compatibility of `leftDerivedTensorObjIsoKFlatTensor` with morphisms `f : P₁ ⟶ P₂` between
+K-flat models: `LF.map (DerivedCategory.Q.map f)` corresponds to `CochainComplex.kFlatTensorMap f`.
+-/
+@[reassoc]
+theorem leftDerivedTensorObjIsoKFlatTensor_naturality
+    {P₁ P₂ : CochainComplex C ℤ} [P₁.IsKFlat] [P₂.IsKFlat] (f : P₁ ⟶ P₂) :
+    LF.map (DerivedCategory.Q.map f) ≫ (leftDerivedTensorObjIsoKFlatTensor LF α P₂).hom =
+      (leftDerivedTensorObjIsoKFlatTensor LF α P₁).hom ≫ CochainComplex.kFlatTensorMap f := by
+  refine Localization.natTrans_ext DerivedCategory.Q (quasiIso C (.up ℤ)) fun L ↦ ?_
+  rw [← cancel_mono (P₂.kFlatTensorModelIso.hom.app L)]
+  simp only [NatTrans.comp_app, Category.assoc, leftDerivedTensorObjIsoKFlatTensor_hom_app_Q_comp,
+    CochainComplex.kFlatTensorMap_app_Q_comp,
+    leftDerivedTensorObjIsoKFlatTensor_hom_app_Q_comp_assoc]
+  have hnat := NatTrans.congr_app (α.naturality f) L
+  dsimp at hnat
+  rw [whiskerRight_eq_mapBifunctorMap] at hnat
+  exact hnat
+
+/-- **Left unitor.** Left derived tensoring with the monoidal unit complex `𝟙_ (CochainComplex C ℤ)`
+(the unit of `C` in degree `0`) is naturally isomorphic to the identity of `DerivedCategory C`, for
+any left derived tensor bifunctor `(LF, α)`. -/
+def leftDerivedTensorLeftUnitor :
+    LF.obj (DerivedCategory.Q.obj (𝟙_ (CochainComplex C ℤ))) ≅ 𝟭 (DerivedCategory C) :=
+  Localization.liftNatIso DerivedCategory.Q (quasiIso C (.up ℤ))
+    (DerivedCategory.Q ⋙ LF.obj (DerivedCategory.Q.obj (𝟙_ (CochainComplex C ℤ))))
+    (DerivedCategory.Q ⋙ 𝟭 (DerivedCategory C))
+    (LF.obj (DerivedCategory.Q.obj (𝟙_ (CochainComplex C ℤ)))) (𝟭 (DerivedCategory C))
+    (asIso (Functor.bifunctorCounit₁ α (𝟙_ (CochainComplex C ℤ))) ≪≫
+      Functor.isoWhiskerRight (MonoidalCategory.leftUnitorNatIso _) DerivedCategory.Q ≪≫
+      DerivedCategory.Q.leftUnitor ≪≫ DerivedCategory.Q.rightUnitor.symm)
+
+/-- On complex models, `leftDerivedTensorLeftUnitor` is the derived tensor counit followed by the
+left unitor of `CochainComplex C ℤ`. -/
+@[simp]
+theorem leftDerivedTensorLeftUnitor_hom_app_Q (L : CochainComplex C ℤ) :
+    (leftDerivedTensorLeftUnitor LF α).hom.app (DerivedCategory.Q.obj L) =
+      (α.app (𝟙_ (CochainComplex C ℤ))).app L ≫ DerivedCategory.Q.map (λ_ L).hom := by
+  simp [leftDerivedTensorLeftUnitor]
+
+/-- **Right unitor.** Right derived tensoring with the monoidal unit complex
+`𝟙_ (CochainComplex C ℤ)` is naturally isomorphic to the identity of `DerivedCategory C`, for any
+left derived tensor bifunctor `(LF, α)`. -/
+def leftDerivedTensorRightUnitor :
+    LF.flip.obj (DerivedCategory.Q.obj (𝟙_ (CochainComplex C ℤ))) ≅ 𝟭 (DerivedCategory C) :=
+  Localization.liftNatIso DerivedCategory.Q (quasiIso C (.up ℤ))
+    (DerivedCategory.Q ⋙ LF.flip.obj (DerivedCategory.Q.obj (𝟙_ (CochainComplex C ℤ))))
+    (DerivedCategory.Q ⋙ 𝟭 (DerivedCategory C))
+    (LF.flip.obj (DerivedCategory.Q.obj (𝟙_ (CochainComplex C ℤ)))) (𝟭 (DerivedCategory C))
+    (asIso (Functor.bifunctorCounit₂ α (𝟙_ (CochainComplex C ℤ))) ≪≫
+      Functor.isoWhiskerRight (MonoidalCategory.rightUnitorNatIso _) DerivedCategory.Q ≪≫
+      DerivedCategory.Q.leftUnitor ≪≫ DerivedCategory.Q.rightUnitor.symm)
+
+/-- On complex models, `leftDerivedTensorRightUnitor` is the derived tensor counit followed by the
+right unitor of `CochainComplex C ℤ`. -/
+@[simp]
+theorem leftDerivedTensorRightUnitor_hom_app_Q (K : CochainComplex C ℤ) :
+    (leftDerivedTensorRightUnitor LF α).hom.app (DerivedCategory.Q.obj K) =
+      (α.app K).app (𝟙_ (CochainComplex C ℤ)) ≫ DerivedCategory.Q.map (ρ_ K).hom := by
+  simp [leftDerivedTensorRightUnitor]
+
+end TauCeti
+
+end ModelComparison
+
+section Unit
+
+variable [(CochainComplex.KFlat.localizerMorphism C).IsLeftDerivabilityStructure]
+  [HasDerivedCategory C]
+
+namespace TauCeti
+
+variable (C)
+
+/-- The derived tensor product with the unit `𝟙_ C` placed in degree `0` on the left is naturally
+isomorphic to the identity of the derived category. -/
+def derivedTensorLeftUnitor :
+    (derivedTensor C).obj ((DerivedCategory.singleFunctor C 0).obj (𝟙_ C)) ≅ 𝟭 _ :=
+  leftDerivedTensorLeftUnitor (derivedTensor C) (derivedTensorCounit C)
+
+/-- On a complex model `L`, the derived left unitor is the derived tensor comparison followed by
+the left unitor of cochain complexes. -/
+@[simp]
+theorem derivedTensorLeftUnitor_hom_app_Q (L : CochainComplex C ℤ) :
+    (derivedTensorLeftUnitor C).hom.app (DerivedCategory.Q.obj L) =
+      ((derivedTensorCounit C).app (𝟙_ (CochainComplex C ℤ))).app L ≫
+        DerivedCategory.Q.map (λ_ L).hom :=
+  leftDerivedTensorLeftUnitor_hom_app_Q (derivedTensor C) (derivedTensorCounit C) L
+
+/-- The derived tensor product with the unit `𝟙_ C` placed in degree `0` on the right is naturally
+isomorphic to the identity of the derived category. -/
+def derivedTensorRightUnitor :
+    (derivedTensor C).flip.obj ((DerivedCategory.singleFunctor C 0).obj (𝟙_ C)) ≅ 𝟭 _ :=
+  leftDerivedTensorRightUnitor (derivedTensor C) (derivedTensorCounit C)
+
+/-- On a complex model `K`, the derived right unitor is the derived tensor comparison followed by
+the right unitor of cochain complexes. -/
+@[simp]
+theorem derivedTensorRightUnitor_hom_app_Q (K : CochainComplex C ℤ) :
+    (derivedTensorRightUnitor C).hom.app (DerivedCategory.Q.obj K) =
+      ((derivedTensorCounit C).app K).app (𝟙_ (CochainComplex C ℤ)) ≫
+        DerivedCategory.Q.map (ρ_ K).hom :=
+  leftDerivedTensorRightUnitor_hom_app_Q (derivedTensor C) (derivedTensorCounit C) K
+
+end TauCeti
+
+end Unit
