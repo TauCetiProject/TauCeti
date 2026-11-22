@@ -115,6 +115,18 @@ private theorem coe_mul {A : Type*} [NonUnitalCStarAlgebra A] {I : TwoSidedIdeal
     ((x * y : I) : A) = (x : A) * (y : A) := by
   simpa only [I.starAlgHom_apply] using map_mul I.starAlgHom x y
 
+private theorem tendsto_mul_left_coe_iff {A : Type*} [NonUnitalCStarAlgebra A]
+    {I : TwoSidedIdeal A} [IsClosed (I : Set A)] {l : Filter I} {x : I} :
+    Tendsto (fun e : I => (x : A) * (e : A)) l (𝓝 (x : A)) ↔ Tendsto (x * ·) l (𝓝 x) := by
+  rw [IsInducing.subtypeVal.tendsto_nhds_iff]
+  simp only [Function.comp_def, coe_mul]
+
+private theorem tendsto_mul_right_coe_iff {A : Type*} [NonUnitalCStarAlgebra A]
+    {I : TwoSidedIdeal A} [IsClosed (I : Set A)] {l : Filter I} {x : I} :
+    Tendsto (fun e : I => (e : A) * (x : A)) l (𝓝 (x : A)) ↔ Tendsto (· * x) l (𝓝 x) := by
+  rw [IsInducing.subtypeVal.tendsto_nhds_iff]
+  simp only [Function.comp_def, coe_mul]
+
 section Basic
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
@@ -225,10 +237,6 @@ theorem of_tendsto_mul_left_of_dense [l.NeBot] (hmem : ∀ᶠ e in l, e ∈ I)
       (eventually_lipschitzWith_commutator_left hnorm)
       continuousWithinAt_const hcomm (hsA a))
 
-/-- Elements along a quasicentral approximate unit eventually have `nnnorm` at most `1`. -/
-theorem eventually_nnNorm (hl : I.IsQuasicentralApproximateUnit l) : ∀ᶠ e in l, ‖e‖₊ ≤ 1 :=
-  eventually_nnNorm_le_one hl.eventually_norm
-
 /-- The closed unit ball belongs to any quasicentral approximate unit. -/
 theorem closedBall_mem (hl : I.IsQuasicentralApproximateUnit l) : Metric.closedBall 0 1 ∈ l :=
   hl.eventually_norm.mono fun _ h => mem_closedBall_zero_iff.mpr h
@@ -265,7 +273,8 @@ theorem topologicalClosure (hl : I.IsQuasicentralApproximateUnit l) :
 theorem tendstoUniformlyOn_mul_right (hl : I.IsQuasicentralApproximateUnit l) {K : Set A}
     (hK : IsCompact K) (hKI : K ⊆ I) : TendstoUniformlyOn (fun e x => e * x) id l K :=
   TauCeti.tendstoUniformlyOn_of_lipschitzWith
-    (hl.eventually_nnNorm.mono fun e => (TauCeti.lipschitzWith_mul_left e).weaken)
+    ((eventually_nnNorm_le_one hl.eventually_norm).mono fun e =>
+      (TauCeti.lipschitzWith_mul_left e).weaken)
     hK fun _ hx => hl.tendsto_mul_right (hKI hx)
 
 /-- Along a quasicentral approximate unit, commutators `e * a - a * e` tend to `0` uniformly on
@@ -289,14 +298,10 @@ theorem isIncreasingApproximateUnit_comap_coe [IsClosed (I : Set A)]
     (hl : I.IsQuasicentralApproximateUnit l) :
     (l.comap ((↑) : I → A)).IsIncreasingApproximateUnit where
   neBot := hl.neBot.comap_of_range_mem (hl.eventually_mem.mono fun e he => ⟨⟨e, he⟩, rfl⟩)
-  tendsto_mul_left x := by
-    rw [IsInducing.subtypeVal.tendsto_nhds_iff]
-    simpa only [Function.comp_def, coe_mul] using
-      (hl.tendsto_mul_left x.property).comp tendsto_comap
-  tendsto_mul_right x := by
-    rw [IsInducing.subtypeVal.tendsto_nhds_iff]
-    simpa only [Function.comp_def, coe_mul] using
-      (hl.tendsto_mul_right x.property).comp tendsto_comap
+  tendsto_mul_left x :=
+    tendsto_mul_left_coe_iff.mp ((hl.tendsto_mul_left x.property).comp tendsto_comap)
+  tendsto_mul_right x :=
+    tendsto_mul_right_coe_iff.mp ((hl.tendsto_mul_right x.property).comp tendsto_comap)
   eventually_nonneg := (hl.eventually_nonneg.comap _).mono fun _ h => Subtype.coe_le_coe.mp h
   eventually_norm := (hl.eventually_norm.comap _).mono fun _ h => by
     rwa [AddSubgroupClass.coe_norm]
@@ -382,9 +387,8 @@ theorem isQuasicentralApproximateUnit_map_coe_iff {I : TwoSidedIdeal A} [IsClose
       (eventually_map.mpr <| hl.eventually_nonneg.mono fun _ h => Subtype.coe_le_coe.mpr h)
       (eventually_map.mpr <| hl.eventually_norm.mono fun _ h => by
         rwa [← AddSubgroupClass.coe_norm])
-      (fun x hx => tendsto_map'_iff.mpr <| by
-        simpa only [Function.comp_def, coe_mul, Subtype.coe_mk] using
-          (continuous_subtypeVal.tendsto ⟨x, hx⟩).comp (hl.tendsto_mul_right ⟨x, hx⟩))
+      (fun x hx => tendsto_map'_iff.mpr <|
+        tendsto_mul_right_coe_iff.mpr (hl.tendsto_mul_right ⟨x, hx⟩))
       (fun a => tendsto_map'_iff.mpr (hc a))
 
 end Basic
@@ -613,12 +617,10 @@ private theorem exists_next_quasicentral_step (I : TwoSidedIdeal A) [IsClosed (I
   let l₀ : Filter I := CStarAlgebra.approximateUnit I
   have hl₀ : l₀.IsIncreasingApproximateUnit := CStarAlgebra.increasingApproximateUnit I
   have := hl₀.neBot
-  have hmul_l {y : A} (hy : y ∈ I) : Tendsto (fun v : I => y * (v : A)) l₀ (𝓝 y) := by
-    simpa only [Function.comp_def, coe_mul, Subtype.coe_mk] using
-      (continuous_subtypeVal.tendsto ⟨y, hy⟩).comp (hl₀.tendsto_mul_left ⟨y, hy⟩)
-  have hmul_r {y : A} (hy : y ∈ I) : Tendsto (fun v : I => (v : A) * y) l₀ (𝓝 y) := by
-    simpa only [Function.comp_def, coe_mul, Subtype.coe_mk] using
-      (continuous_subtypeVal.tendsto ⟨y, hy⟩).comp (hl₀.tendsto_mul_right ⟨y, hy⟩)
+  have hmul_l {y : A} (hy : y ∈ I) : Tendsto (fun v : I => y * (v : A)) l₀ (𝓝 y) :=
+    tendsto_mul_left_coe_iff.mpr (hl₀.tendsto_mul_left ⟨y, hy⟩)
+  have hmul_r {y : A} (hy : y ∈ I) : Tendsto (fun v : I => (v : A) * y) l₀ (𝓝 y) :=
+    tendsto_mul_right_coe_iff.mpr (hl₀.tendsto_mul_right ⟨y, hy⟩)
   have hG : ∀ᶠ v : I in l₀, ∀ x ∈ G,
       ‖(v : A) * (x : A) - x‖ < ε ∧ ‖(x : A) * (v : A) - x‖ < ε :=
     eventually_forall_mem_mul_sub_lt (I := I) (φ := ((↑) : I → A)) G hε
@@ -715,10 +717,12 @@ private theorem cesaro_mem_and_mul_lt (I : TwoSidedIdeal A) [IsClosed (I : Set A
       havg (fun k => (x : A) * u k) x (fun k hk => ((hu k hk).2.2.2 x hx).2)
 
 omit [PartialOrder A] [StarOrderedRing A] in
-private theorem norm_average_sq_le {ι : Type*} {s : Finset ι} (hs : s.Nonempty)
+private theorem norm_average_sq_le {ι : Type*} {s : Finset ι}
     {d : ι → A} {C η : ℝ} (hη : 0 ≤ η) (hd : ∀ i ∈ s, ‖d i‖ ≤ C)
     (hoff : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → ‖star (d i) * d j‖ ≤ η) :
     ‖(s.card : ℝ)⁻¹ • ∑ i ∈ s, d i‖ ^ 2 ≤ C ^ 2 / s.card + η := by
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simpa using hη
   rw [norm_smul, Real.norm_of_nonneg (by positivity), mul_pow]
   have hcard : (s.card : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hs.card_pos.ne'
   calc ((s.card : ℝ)⁻¹) ^ 2 * ‖∑ i ∈ s, d i‖ ^ 2
@@ -727,7 +731,7 @@ private theorem norm_average_sq_le {ι : Type*} {s : Finset ι} (hs : s.Nonempty
     _ = C ^ 2 / s.card + η := by field_simp
 
 omit [PartialOrder A] [StarOrderedRing A] in
-private theorem norm_commutator_average_sq_le {n : ℕ} (hn_pos : 0 < n) {u : ℕ → A} {a : A}
+private theorem norm_commutator_average_sq_le {n : ℕ} {u : ℕ → A} {a : A}
     {η : ℝ} (hη : 0 ≤ η) (hu : ∀ k < n, ‖u k‖ ≤ 1)
     (hoff : ∀ i j, i < j → j < n → ‖star (u i * a - a * u i) * (u j * a - a * u j)‖ ≤ η) :
     let e : A := (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k
@@ -739,7 +743,7 @@ private theorem norm_commutator_average_sq_le {n : ℕ} (hn_pos : 0 < n) {u : �
   have havg_sq : ‖(n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, (u k * a - a * u k)‖ ^ 2 ≤
       (2 * ‖a‖) ^ 2 / n + η := by
     simpa only [Finset.card_range] using
-      norm_average_sq_le (Finset.nonempty_range_iff.mpr hn_pos.ne') (C := 2 * ‖a‖) hη
+      norm_average_sq_le (C := 2 * ‖a‖) hη
         (fun k hk => (TauCeti.norm_commutator_le (u k) a).trans
           (mul_le_mul_of_nonneg_right
             (mul_le_of_le_one_right zero_le_two (hu k (Finset.mem_range.mp hk)))
@@ -778,7 +782,7 @@ theorem exists_mem_nonneg_norm_le_one_norm_mul_sub_lt_norm_commutator_lt
   have haM : ‖a‖ ≤ M :=
     (Finset.single_le_sum (fun b _ => norm_nonneg b) ha).trans (le_add_of_nonneg_right zero_le_one)
   have havg_sq : ‖e * a - a * e‖ ^ 2 ≤ 4 * ‖a‖ ^ 2 / (n : ℝ) + ε ^ 2 / 4 :=
-    norm_commutator_average_sq_le hn_pos (by positivity) (fun k hk => (hu k hk).2.2.1)
+    norm_commutator_average_sq_le (by positivity) (fun k hk => (hu k hk).2.2.1)
       fun i j hij hjn => (hoff i j hij hjn a ha).trans <| by
         calc δ * (‖a‖ + 1) ≤ δ * (M + 1) := by gcongr
           _ = ε ^ 2 / 4 := by dsimp [δ]; field_simp
