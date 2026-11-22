@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.Data.ZMod.Basic
-import Mathlib.Algebra.CharP.Basic
 import Mathlib.Data.Nat.Choose.Dvd
 
 /-!

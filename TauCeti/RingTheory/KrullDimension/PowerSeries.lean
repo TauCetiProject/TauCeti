@@ -81,17 +81,17 @@ theorem ringKrullDim_of_isNoetherianRing_of_finite [IsNoetherianRing R] [Finite 
     rw [ringKrullDim_eq_of_ringEquiv (isEmptyEquiv _ _).toRingEquiv]
     simp
   | h_option IH =>
-    simp only [Nat.card_eq_fintype_card, Fintype.card_option, Nat.cast_add, Nat.cast_one,
-      ← add_assoc] at IH ⊢
     rw [ringKrullDim_eq_of_ringEquiv (optionEquivLeft _ _).toRingEquiv,
       PowerSeries.ringKrullDim_of_isNoetherianRing, IH]
+    simp [add_assoc]
 
 /-- **The dimension of a multivariate power series ring.** Over a Noetherian ring `R`, the Krull
 dimension of `MvPowerSeries σ R` is `dim R + ENat.card σ`. -/
 theorem ringKrullDim_of_isNoetherianRing [IsNoetherianRing R] :
     ringKrullDim (MvPowerSeries σ R) = ringKrullDim R + ENat.card σ := by
   rcases subsingleton_or_nontrivial R with _ | _
-  · have : Subsingleton (MvPowerSeries σ R) := by unfold MvPowerSeries; exact Pi.instSubsingleton
+  · have : Subsingleton (MvPowerSeries σ R) :=
+      ⟨fun _ _ ↦ MvPowerSeries.ext fun _ ↦ Subsingleton.elim _ _⟩
     simp [ringKrullDim_eq_bot_of_subsingleton]
   by_cases hσ : Finite σ
   · simp [ringKrullDim_of_isNoetherianRing_of_finite, ENat.card_eq_coe_natCard]

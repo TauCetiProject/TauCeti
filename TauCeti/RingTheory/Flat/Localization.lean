@@ -30,22 +30,6 @@ endomorphism of a localization to be checked after restricting along the localiz
 
 public section
 
-namespace Localization
-
-variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
-
-/-- The local homomorphism `R_p → S_q` at primes `q` over `p` is flat iff `S_q` is flat over
-`R`. -/
-theorem flat_localRingHom_iff (p : Ideal R) [p.IsPrime] (q : Ideal S) [q.IsPrime]
-    (h : p = q.comap (algebraMap R S)) :
-    (localRingHom p q (algebraMap R S) h).Flat ↔ Module.Flat R (Localization.AtPrime q) := by
-  have : q.LiesOver p := ⟨h⟩
-  let := AtPrime.algebraOfLiesOver p q
-  rw [← Module.flat_iff_of_isLocalization (Localization.AtPrime p) p.primeCompl]
-  exact RingHom.flat_algebraMap_iff
-
-end Localization
-
 namespace RingHom
 
 /-- Precomposing a ring homomorphism out of a localization with the localization map preserves and
@@ -58,3 +42,21 @@ theorem Flat.comp_algebraMap_isLocalization_iff {R Rₘ T : Type*} [CommRing R] 
   exact (Module.flat_iff_of_isLocalization Rₘ M T).symm
 
 end RingHom
+
+namespace Localization
+
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- The local homomorphism `R_p → S_q` at primes `q` over `p` is flat iff `S_q` is flat over
+`R`. -/
+theorem flat_localRingHom_iff (p : Ideal R) [p.IsPrime] (q : Ideal S) [q.IsPrime]
+    (h : p = q.comap (algebraMap R S)) :
+    (localRingHom p q (algebraMap R S) h).Flat ↔ Module.Flat R (Localization.AtPrime q) := by
+  rw [← RingHom.Flat.comp_algebraMap_isLocalization_iff p.primeCompl]
+  have hcomp : (localRingHom p q (algebraMap R S) h).comp (algebraMap R (Localization.AtPrime p)) =
+      algebraMap R (Localization.AtPrime q) := by
+    ext r
+    simp [localRingHom_to_map, IsScalarTower.algebraMap_apply R S (Localization.AtPrime q)]
+  rw [hcomp, RingHom.flat_algebraMap_iff]
+
+end Localization

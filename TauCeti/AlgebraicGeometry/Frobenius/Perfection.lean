@@ -11,6 +11,8 @@ public import TauCeti.AlgebraicGeometry.RelativeSpec.Basic
 public import TauCeti.AlgebraicGeometry.Sites.SmallAffineZariski
 public import TauCeti.RingTheory.Perfect.Colimit
 
+import TauCeti.RingTheory.Spectrum.Prime.IsPRadical
+
 /-!
 # Perfection of schemes
 

@@ -9,11 +9,10 @@ public import Mathlib.FieldTheory.IsPerfectClosure
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
-public import Mathlib.RingTheory.RingHom.Flat
 import TauCeti.Algebra.CharP.Frobenius.Flat
 import TauCeti.RingTheory.Perfect.Basic
-import TauCeti.RingTheory.Perfect.IsPRadical
 import TauCeti.RingTheory.RingHom.Flat
+import TauCeti.RingTheory.Spectrum.Prime.IsPRadical
 
 /-!
 # Perfect closures of flat algebras over a perfect ring
