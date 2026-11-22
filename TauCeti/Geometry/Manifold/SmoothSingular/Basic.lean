@@ -408,6 +408,16 @@ theorem smoothSingularSubcomplexMap_ι (hφ : ContMDiff I J ∞ φ) :
       (smoothSingularSubcomplex I M).ι ≫ TopCat.toSSet.map (TopCat.ofHom ⟨φ, hφ.continuous⟩) :=
   SSet.Subcomplex.lift_ι _ _
 
+/-- An injective smooth map induces a monomorphism of smooth singular subcomplexes: composing
+smooth simplices with it is injective. -/
+theorem mono_smoothSingularSubcomplexMap (hφ : ContMDiff I J ∞ φ) (hinj : Function.Injective φ) :
+    Mono (smoothSingularSubcomplexMap φ hφ) := by
+  have : Mono (TopCat.ofHom ⟨φ, hφ.continuous⟩) := (TopCat.mono_iff_injective _).mpr hinj
+  have h : Mono (smoothSingularSubcomplexMap φ hφ ≫ (smoothSingularSubcomplex J N).ι) := by
+    rw [smoothSingularSubcomplexMap_ι]
+    infer_instance
+  exact mono_of_mono _ (smoothSingularSubcomplex J N).ι
+
 variable (I) in
 /-- The map of singular simplicial sets induced by the constant map `X → M` with value `c`, which
 lands in the smooth singular subcomplex because constant simplices are smooth. -/
