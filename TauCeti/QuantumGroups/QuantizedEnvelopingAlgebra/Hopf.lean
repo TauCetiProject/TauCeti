@@ -328,8 +328,10 @@ theorem comulAlgHom_quantumDividedPower_f {i : ι} {n : ℕ}
             simpleKInv D q i ^ a)) := by
   rw [map_quantumDividedPower, comulAlgHom_f, ← comulElemF, quantumDividedPower_comulElemF D q hn]
 
-/-- The Chevalley involution is a coalgebra anti-automorphism:
-`Δ(ω x) = (ω ⊗ ω)(swap(Δ x))`. -/
+/-- Under the Serre-factorial nonvanishing hypothesis `hserre`, the Chevalley involution is a
+coalgebra anti-automorphism for the explicit coproduct `Δ = comulAlgHom D q hserre`:
+`Δ(ω x) = (ω ⊗ ω)(swap(Δ x))`. See `comul_chevalleyInvolution` for the `Coalgebra.comul`
+version under the canonical generic `instBialgebra` instance. -/
 theorem comulAlgHom_chevalleyInvolution (x : QuantizedEnvelopingAlgebra D q) :
     comulAlgHom D q hserre (chevalleyInvolution D q x) =
       Algebra.TensorProduct.map (chevalleyInvolution D q).toAlgHom
@@ -781,7 +783,9 @@ theorem inverseAntipode_simpleKInv (i : ι) :
       simpleK D q i := by
   rw [simpleKInv_def, inverseAntipode_k, neg_neg, simpleK_def]
 
-/-- `S(ω(S x)) = ω x`, equivalently `ω ∘ S = S⁻¹ ∘ ω`. -/
+/-- Under the canonical generic `instHopfAlgebra` instance (`[Fact (IsGenericQuantumParameter q)]`),
+`S(ω(S x)) = ω x`, equivalently `ω ∘ S = S⁻¹ ∘ ω`. For arbitrary `q : K` without genericity, see
+`antipodeLinearEquiv_chevalleyInvolution_antipodeLinearEquiv` in `Antipode.lean`. -/
 theorem antipode_chevalleyInvolution_antipode (x : QuantizedEnvelopingAlgebra D q) :
     HopfAlgebra.antipode K (chevalleyInvolution D q (HopfAlgebra.antipode K x)) =
       chevalleyInvolution D q x := by

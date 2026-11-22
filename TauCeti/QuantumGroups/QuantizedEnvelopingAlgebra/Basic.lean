@@ -524,30 +524,30 @@ theorem f_pow_mul_k (y : Y) (i : ι) (n : ℕ) :
     rw [pow_succ', mul_assoc, ih, mul_smul_comm, ← mul_assoc, f_mul_k, smul_mul_assoc,
       smul_smul, ← pow_succ, mul_assoc, ← pow_succ']
 
-/-- Toral straightening for raising divided powers, generalizing `k_mul_e_pow`: the divided-power
-parameter `q'` is arbitrary and independent of the algebra parameter `q` governing the torus-action
-scalar `(q ^ D.pairing (D.root i) y) ^ n`. -/
+/-- Toral straightening for raising divided powers, the divided-power analogue of `k_mul_e_pow`:
+the divided-power parameter `q'` is arbitrary and independent of the algebra parameter `q`
+governing the torus-action scalar `(q ^ D.pairing (D.root i) y) ^ n`. -/
 theorem k_mul_quantumDividedPower_e (q' : K) (y : Y) (i : ι) (n : ℕ) :
     k D q y * quantumDividedPower q' (e D q i) n =
       (q ^ D.pairing (D.root i) y) ^ n • (quantumDividedPower q' (e D q i) n * k D q y) :=
   mul_quantumDividedPower_of_mul_eq_smul_mul q' (k_mul_e D q y i) n
-/-- Toral straightening for raising divided powers, generalizing `e_pow_mul_k`: the divided-power
-parameter `q'` is arbitrary and independent of the algebra parameter `q` governing the torus-action
-scalar `(q ^ (-D.pairing (D.root i) y)) ^ n`. -/
+/-- Toral straightening for raising divided powers, the divided-power analogue of `e_pow_mul_k`:
+the divided-power parameter `q'` is arbitrary and independent of the algebra parameter `q`
+governing the torus-action scalar `(q ^ (-D.pairing (D.root i) y)) ^ n`. -/
 theorem quantumDividedPower_e_mul_k (q' : K) (y : Y) (i : ι) (n : ℕ) :
     quantumDividedPower q' (e D q i) n * k D q y =
       (q ^ (-D.pairing (D.root i) y)) ^ n • (k D q y * quantumDividedPower q' (e D q i) n) :=
   quantumDividedPower_mul_of_mul_eq_smul_mul q' (e_mul_k D q y i) n
-/-- Toral straightening for lowering divided powers, generalizing `k_mul_f_pow`: the divided-power
-parameter `q'` is arbitrary and independent of the algebra parameter `q` governing the torus-action
-scalar `(q ^ (-D.pairing (D.root i) y)) ^ n`. -/
+/-- Toral straightening for lowering divided powers, the divided-power analogue of `k_mul_f_pow`:
+the divided-power parameter `q'` is arbitrary and independent of the algebra parameter `q`
+governing the torus-action scalar `(q ^ (-D.pairing (D.root i) y)) ^ n`. -/
 theorem k_mul_quantumDividedPower_f (q' : K) (y : Y) (i : ι) (n : ℕ) :
     k D q y * quantumDividedPower q' (f D q i) n =
       (q ^ (-D.pairing (D.root i) y)) ^ n • (quantumDividedPower q' (f D q i) n * k D q y) :=
   mul_quantumDividedPower_of_mul_eq_smul_mul q' (k_mul_f D q y i) n
-/-- Toral straightening for lowering divided powers, generalizing `f_pow_mul_k`: the divided-power
-parameter `q'` is arbitrary and independent of the algebra parameter `q` governing the torus-action
-scalar `(q ^ D.pairing (D.root i) y) ^ n`. -/
+/-- Toral straightening for lowering divided powers, the divided-power analogue of `f_pow_mul_k`:
+the divided-power parameter `q'` is arbitrary and independent of the algebra parameter `q`
+governing the torus-action scalar `(q ^ D.pairing (D.root i) y) ^ n`. -/
 theorem quantumDividedPower_f_mul_k (q' : K) (y : Y) (i : ι) (n : ℕ) :
     quantumDividedPower q' (f D q i) n * k D q y =
       (q ^ D.pairing (D.root i) y) ^ n • (k D q y * quantumDividedPower q' (f D q i) n) :=
