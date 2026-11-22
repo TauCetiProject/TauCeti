@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.Sobolev.Strip.Basic
 public import TauCeti.Analysis.Sobolev.Strip.Operator
+import Mathlib.Analysis.Normed.Operator.Mul
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
@@ -18,20 +19,22 @@ import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.MeasureTheory.Measure.Haar.Prod
 
 /-!
-# The Sobolev space `W^{1,2}` on the cylinder and Rellich's theorem
+# The Sobolev space `W^{1,2}` on the cylinder and Peetre's argument
 
 Let `V` be a finite-dimensional real normed space. Sections of the trivial bundle with fibre `V`
 over the cylinder `ℝ × S¹` are maps `ξ : ℝ × ℝ → V` of period one in the second variable `t`, and
 the fundamental domain of the cylinder is the strip `ℝ × [0, 1]` with its Lebesgue measure
 `TauCeti.StripSobolev.stripMeasure`. This file sets up the Sobolev space `W^{1,2}(ℝ × S¹, V)`
-and proves Rellich's theorem for it, which lets Peetre's argument
-(`TauCeti.Analysis.Sobolev.Strip.Operator`) turn an elliptic estimate for a first-order operator
-with bounded coefficients on the cylinder into finite-dimensional kernel and closed range. It is
-the setting of the linearized operators of Floer theory along Floer cylinders.
+and the functional analysis that turns an elliptic estimate for a first-order operator with
+bounded coefficients on the cylinder into finite-dimensional kernel and closed range. It is the
+setting of the linearized operators of Floer theory along Floer cylinders.
 
 * The strip measure is the product of Lebesgue measure and Lebesgue measure on `[0, 1]`
-  (`TauCeti.CylinderSobolev.stripMeasure_eq_prod`). A product section `φ(s) ψ(t)` with `φ`
-  compactly supported lies in every `Lᵖ` of the strip
+  (`TauCeti.CylinderSobolev.stripMeasure_eq_prod`). A section that is bounded on a box
+  `[-R, R] × [0, 1]` and vanishes outside it lies in every `Lᵖ` of the strip
+  (`TauCeti.CylinderSobolev.memLp_stripMeasure_of_bound_of_eq_zero`), in particular a continuous
+  section vanishing for `|s|` large (`TauCeti.CylinderSobolev.memLp_stripMeasure_of_continuous`)
+  and a product section `φ(s) ψ(t)` with `φ` compactly supported
   (`TauCeti.CylinderSobolev.memLp_smul_of_hasCompactSupport`).
 * **Test sections** (`TauCeti.CylinderSobolev.testSection`) are the `C²` maps of period one in
   `t` that vanish for `|s|` large.
@@ -58,21 +61,26 @@ the setting of the linearized operators of Floer theory along Floer cylinders.
   `W^{1,2}` norm on the strip through periodicity in `t`
   (`TauCeti.StripSobolev.eLpNorm_fderiv_smul_le`), and applies the Fréchet–Kolmogorov criterion
   for `C¹` functions `TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`.
-* **Peetre's argument.** The test sections are `C¹` and vanish for `|s|` large
-  (`TauCeti.StripSobolev.IsTestSpace`), and Rellich's theorem holds for them
-  (`TauCeti.StripSobolev.HasCompactRestriction`). So the functional analysis of
-  `TauCeti.Analysis.Sobolev.Strip.Operator` applies to a first-order operator
-  `D ξ = M (ξ, ∂s ξ, ∂t ξ)` with an essentially bounded coefficient field `M`, acting on `L²` jets
-  by `TauCeti.jetOperator stripMeasure M`: if `D` satisfies the semi-Fredholm estimate
+* A first-order operator `D ξ = M (ξ, ∂s ξ, ∂t ξ)` with an essentially bounded coefficient field
+  `M` acts on `L²` jets by `TauCeti.jetOperator stripMeasure M`; the steps of Peetre's argument
+  shared with the strip with boundary conditions are in
+  `TauCeti.Analysis.Sobolev.Strip.Operator`. **Peetre's argument**: if `D` satisfies the
+  semi-Fredholm estimate
 
   `∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C (∫ ‖D ξ‖² + ∫_{[-T, T] × [0, 1]} ‖ξ‖²)`
 
-  (`TauCeti.StripSobolev.HasSemiFredholmEstimate (testSection V)`) for all test sections, then
-  its extension to `H1` has finite-dimensional kernel
-  (`TauCeti.StripSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL`) and closed range
-  (`TauCeti.StripSobolev.isClosed_range_jetOperator_comp_subtypeL`). The estimate is stated in
-  the form proved for the linearized Floer operator in
+  (`TauCeti.CylinderSobolev.HasSemiFredholmEstimate`) for all test sections, then its extension
+  to `H1` has finite-dimensional kernel
+  (`TauCeti.CylinderSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL`) and closed range
+  (`TauCeti.CylinderSobolev.isClosed_range_jetOperator_comp_subtypeL`), by Rellich's theorem and
+  `TauCeti.StripSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le`.
+  The estimate is stated in the form proved for the linearized Floer operator in
   `TauCeti.Geometry.Symplectic.Floer.SemiFredholm`.
+* **An estimate from below.** If `D` moreover bounds every test section in `L²` over the whole
+  strip, `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²`, the compact error term disappears: the extension satisfies
+  `‖x‖ ≤ K ‖D x‖` on `H1`
+  (`TauCeti.CylinderSobolev.exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL`), so
+  it is injective (`TauCeti.CylinderSobolev.ker_jetOperator_comp_subtypeL_eq_bot`).
 * Integrals of functions of period one in `t` over `ℝ × [-1, 2]` are controlled by those over the
   strip (`TauCeti.setLIntegral_univ_prod_Icc_neg_one_two_le`), and the smooth cutoff comes from
   `IsCompact.exists_contDiff_cutoff_eventuallyEq_one`.
@@ -105,6 +113,35 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 theorem stripMeasure_eq_prod :
     stripMeasure = (volume : Measure ℝ).prod (volume.restrict (Icc (0 : ℝ) 1)) := by
   rw [stripMeasure, Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.restrict_univ]
+
+omit [NormedSpace ℝ V] in
+/-- A section bounded on `[-R, R] × [0, 1]` and vanishing for `|s| > R` lies in every `Lᵖ` of the
+strip. -/
+theorem memLp_stripMeasure_of_bound_of_eq_zero {u : ℝ × ℝ → V}
+    (hu : AEStronglyMeasurable u stripMeasure) {C R : ℝ}
+    (hC : ∀ z ∈ Icc (-R) R ×ˢ Icc 0 1, ‖u z‖ ≤ C) (hR : ∀ z : ℝ × ℝ, R < |z.1| → u z = 0)
+    (p : ℝ≥0∞) : MemLp u p stripMeasure := by
+  set K : Set (ℝ × ℝ) := Icc (-R) R ×ˢ Icc 0 1
+  have hK : MeasurableSet K := measurableSet_Icc.prod measurableSet_Icc
+  have hae : u =ᵐ[stripMeasure] K.indicator u := by
+    refine ae_restrict_of_forall_mem (MeasurableSet.univ.prod measurableSet_Icc) fun z hz ↦ ?_
+    by_cases hzR : |z.1| ≤ R
+    · rw [indicator_of_mem (show z ∈ K from ⟨abs_le.1 hzR, hz.2⟩)]
+    · rw [hR z (not_le.1 hzR), indicator_apply_eq_zero.2 fun _ ↦ hR z (not_le.1 hzR)]
+  refine (memLp_congr_ae hae).2 ((memLp_indicator_iff_restrict hK.nullMeasurableSet).2 ?_)
+  have : IsFiniteMeasure (stripMeasure.restrict K) := ⟨by
+    rw [Measure.restrict_apply_univ, stripMeasure, Measure.restrict_apply hK]
+    exact (measure_mono inter_subset_left).trans_lt
+      ((isCompact_Icc.prod isCompact_Icc).measure_lt_top)⟩
+  exact MemLp.of_bound hu.restrict C ((ae_restrict_mem hK).mono hC)
+
+omit [NormedSpace ℝ V] in
+/-- A continuous section vanishing for `|s| > R` lies in every `Lᵖ` of the strip. -/
+theorem memLp_stripMeasure_of_continuous {u : ℝ × ℝ → V} (hu : Continuous u) {R : ℝ}
+    (hR : ∀ z : ℝ × ℝ, R < |z.1| → u z = 0) (p : ℝ≥0∞) : MemLp u p stripMeasure := by
+  obtain ⟨C, hC⟩ := (isCompact_Icc.prod isCompact_Icc).exists_bound_of_continuousOn
+    (s := Icc (-R) R ×ˢ Icc (0 : ℝ) 1) hu.continuousOn
+  exact memLp_stripMeasure_of_bound_of_eq_zero hu.aestronglyMeasurable hC hR p
 
 /-- A product section `φ(s) ψ(t)`, with `φ` continuous of compact support and `ψ` continuous,
 lies in every `Lᵖ` of the strip. -/
@@ -162,14 +199,6 @@ theorem tendsto_jet_comap_fst_cocompact (hξ : ξ ∈ testSection V) :
       fun s hs ↦ by rwa [Real.norm_eq_abs] at hs)
   filter_upwards [hev] with z hz
   exact (jet_eq_zero_of_lt_abs hR hz).symm
-
-/-- A continuous function that vanishes wherever the jet of a test section vanishes is integrable
-on the strip. -/
-theorem integrable_of_jet_eq_zero {E : Type*} [NormedAddCommGroup E] (hξ : ξ ∈ testSection V)
-    {F : ℝ × ℝ → E} (hF : Continuous F) (h0 : ∀ z, jet ξ z = 0 → F z = 0) :
-    Integrable F stripMeasure := by
-  obtain ⟨-, -, R, hR⟩ := mem_testSection_iff.1 hξ
-  exact StripSobolev.integrable_of_jet_eq_zero hR hF h0
 
 /-- The jet of a test section is square integrable on the strip. -/
 theorem memLp_jet (hξ : ξ ∈ testSection V) : MemLp (jet ξ) 2 stripMeasure := by
@@ -373,18 +402,110 @@ theorem isCompactOperator_restrictValue_comp_subtypeL [FiniteDimensional ℝ V] 
   exact closure_mono hsub (image_closure_subset_closure_image (restrictValue T).continuous
     ⟨_, mem_closure_image_jetLp x ((mem_ball_zero_iff.1 hx).trans one_lt_two), rfl⟩)
 
-/-! ### Peetre's argument on the cylinder -/
+/-! ### First-order operators with bounded coefficients and Peetre's estimate -/
 
-/-- The test sections of the cylinder are `C¹` and vanish for `|s|` large, so semi-Fredholm
-estimates for first-order operators on them pass to `H1 V`. -/
-instance : IsTestSpace (testSection V) :=
-  ⟨fun _ hξ ↦ (mem_testSection_iff.1 hξ).1.of_le (by norm_num),
-    fun _ hξ ↦ (mem_testSection_iff.1 hξ).2.2⟩
+section Operator
 
-/-- Rellich's theorem on the cylinder, in the form consumed by Peetre's argument
-(`TauCeti.StripSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL`,
-`TauCeti.StripSobolev.isClosed_range_jetOperator_comp_subtypeL`). -/
-instance [FiniteDimensional ℝ V] : HasCompactRestriction (testSection V) :=
-  ⟨isCompactOperator_restrictValue_comp_subtypeL⟩
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
+
+/-- The **semi-Fredholm estimate** with constants `C` and `T` for the first-order operator
+`D ξ = M (ξ, ∂s ξ, ∂t ξ)` on the cylinder: for every `C²` section `ξ` of period one in `t` that
+vanishes for `s ∉ (a, b)`,
+
+`∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C (∫ ‖D ξ‖² + ∫_{[-T, T] × [0, 1]} ‖ξ‖²)`,
+
+the first two integrals over `[a, b] × [0, 1]`. This is the form proved for the linearized Floer
+operator in `TauCeti.Geometry.Symplectic.Floer.SemiFredholm`. -/
+def HasSemiFredholmEstimate (M : ℝ × ℝ → V × V × V →L[ℝ] W) (C T : ℝ) : Prop :=
+  ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
+    ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ s t, s ∉ Ioo a b → ξ (s, t) = 0) →
+      ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z (1, 0)‖ ^ 2 +
+          ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
+        C * ((∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖M z (jet ξ z)‖ ^ 2) +
+          ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2)
+
+/-- The defining property of `TauCeti.CylinderSobolev.HasSemiFredholmEstimate`. -/
+theorem hasSemiFredholmEstimate_iff {M : ℝ × ℝ → V × V × V →L[ℝ] W} {C T : ℝ} :
+    HasSemiFredholmEstimate M C T ↔
+      ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
+        ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ s t, s ∉ Ioo a b → ξ (s, t) = 0) →
+          ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z (1, 0)‖ ^ 2 +
+              ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
+            C * ((∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖M z (jet ξ z)‖ ^ 2) +
+              ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2) :=
+  Iff.rfl
+
+/-- A semi-Fredholm estimate for test sections, as for the linearized Floer operator, gives
+`‖f‖ ≤ √C (‖D f‖ + ‖f|_{[-T, T] × [0, 1]}‖)` on the jets of test sections. -/
+theorem norm_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
+    {C T : ℝ} (hest : HasSemiFredholmEstimate M C T) (ξ : testSection V) :
+    ‖jetLp (testSection V) ξ‖ ≤
+      √(max C 0) * (‖jetOperator stripMeasure M (jetLp (testSection V) ξ)‖ +
+        ‖restrictValue T (jetLp (testSection V) ξ)‖) := by
+  obtain ⟨hξ, hper, R, hR⟩ := mem_testSection_iff.1 ξ.property
+  have hR₀ : ∀ s t, max R 0 ≤ |s| → (ξ : ℝ × ℝ → V) (s, t) = 0 := fun s t hs ↦
+    hR s t ((le_max_left R 0).trans hs)
+  exact norm_jetLp_le_of_setIntegral_le hM (hξ.of_le (by norm_num)) hR₀
+    (hest hξ hper (neg_le_self (le_max_right R 0)) fun s t hs ↦
+      hR₀ s t (by rwa [mem_Ioo, ← abs_lt, not_lt] at hs))
+
+/-- **Peetre's argument on the cylinder: finite-dimensional kernel.** Let `M` be an essentially
+bounded coefficient field on the cylinder, and suppose the first-order operator
+`D ξ = M (ξ, ∂s ξ, ∂t ξ)` satisfies the semi-Fredholm estimate
+(`TauCeti.CylinderSobolev.HasSemiFredholmEstimate`)
+
+`∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C (∫ ‖D ξ‖² + ∫_{[-T, T] × [0, 1]} ‖ξ‖²)`
+
+over `[a, b] × [0, 1]` for every `C²` section `ξ` of period one in `t` vanishing for
+`s ∉ (a, b)`. Then the extension of `D` to `W^{1,2}(ℝ × S¹, V)` has finite-dimensional kernel. -/
+theorem finiteDimensional_ker_jetOperator_comp_subtypeL [FiniteDimensional ℝ V]
+    {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure) {C T : ℝ}
+    (hest : HasSemiFredholmEstimate M C T) :
+    FiniteDimensional ℝ ((jetOperator stripMeasure M).comp (H1 V).subtypeL).ker :=
+  finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le
+    (isCompactOperator_restrictValue_comp_subtypeL T) (norm_jetLp_le hM hest)
+
+/-- **Peetre's argument on the cylinder: closed range.** Under the semi-Fredholm estimate of
+`finiteDimensional_ker_jetOperator_comp_subtypeL`, the extension of `D` to
+`W^{1,2}(ℝ × S¹, V)` has closed range in `L²(ℝ × S¹, W)`. -/
+theorem isClosed_range_jetOperator_comp_subtypeL [FiniteDimensional ℝ V]
+    {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure) {C T : ℝ}
+    (hest : HasSemiFredholmEstimate M C T) :
+    IsClosed (((jetOperator stripMeasure M).comp (H1 V).subtypeL).range :
+      Set (Lp W 2 stripMeasure)) :=
+  isClosed_range_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le
+    (isCompactOperator_restrictValue_comp_subtypeL T) (norm_jetLp_le hM hest)
+
+/-- **An estimate from below on `W^{1,2}`.** Let `M` be an essentially bounded coefficient field on
+the cylinder whose first-order operator `D ξ = M (ξ, ∂s ξ, ∂t ξ)` satisfies the semi-Fredholm
+estimate (`TauCeti.CylinderSobolev.HasSemiFredholmEstimate`), and suppose that `D` also bounds the
+value of every test section in `L²` over the whole strip: `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²`. Then the
+extension of `D` to `W^{1,2}(ℝ × S¹, V)` is bounded below: `‖x‖ ≤ K ‖D x‖` for every `x`. The
+global `L²` bound removes the compact error term of the semi-Fredholm estimate. -/
+theorem exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL
+    {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure) {C T C' : ℝ}
+    (hest : HasSemiFredholmEstimate M C T)
+    (hL2 : ∀ ξ : testSection V, ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
+      C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
+    ∃ K : ℝ≥0, ∀ x : H1 V, ‖x‖ ≤ K * ‖(jetOperator stripMeasure M).comp (H1 V).subtypeL x‖ :=
+  ⟨⟨√(max C 0) * (1 + √(max C' 0)), by positivity⟩,
+    norm_le_mul_norm_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le (Real.sqrt_nonneg _)
+      (norm_jetLp_le hM hest) fun ξ ↦
+        have ⟨hξ, _, _, hR⟩ := mem_testSection_iff.1 ξ.property
+        norm_restrictValue_jetLp_le hM T hξ.continuous hR (hL2 ξ)⟩
+
+/-- **Injectivity on `W^{1,2}`.** Under the hypotheses of
+`TauCeti.CylinderSobolev.exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL`, a semi-Fredholm
+estimate together with a global `L²` bound `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²` on test sections, the extension
+of `D` to `W^{1,2}(ℝ × S¹, V)` has trivial kernel. -/
+theorem ker_jetOperator_comp_subtypeL_eq_bot {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ stripMeasure) {C T C' : ℝ} (hest : HasSemiFredholmEstimate M C T)
+    (hL2 : ∀ ξ : testSection V, ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
+      C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
+    ((jetOperator stripMeasure M).comp (H1 V).subtypeL).ker = ⊥ := by
+  obtain ⟨K, hK⟩ := exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL hM hest hL2
+  exact LinearMap.ker_eq_bot.2 ((ContinuousLinearMap.antilipschitz_of_bound _ hK).injective)
+
+end Operator
 
 end TauCeti.CylinderSobolev

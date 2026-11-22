@@ -89,9 +89,7 @@ open scoped NNReal ENNReal Manifold
 namespace TauCeti.Floer
 
 open CylinderSobolev
-open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure jetOperator_jetLp_ae_eq
-  HasSemiFredholmEstimate hasSemiFredholmEstimate_iff isClosed_range_jetOperator_comp_subtypeL
-  exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL)
+open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure jetOperator_jetLp_ae_eq)
 
 section General
 
@@ -183,14 +181,14 @@ variable {ω : SymplecticForm V}
 `ω`-compatible and depend continuously on `t`, let each `S_t` be infinitesimally symplectic and
 `S` continuous, and suppose that `det (1 - Ψ(1)) ≠ 0` for the return map `Ψ(1)` of `ζ' = S_t ζ`.
 Then the stationary cylinder operator satisfies the semi-Fredholm estimate
-(`TauCeti.StripSobolev.HasSemiFredholmEstimate`) on the test sections of the cylinder, with no
-compact error term: `∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C ∫ ‖D ξ‖²` over `[a, b] × [0, 1]` for every
-test section `ξ` vanishing for `s ∉ (a, b)`. -/
+(`TauCeti.CylinderSobolev.HasSemiFredholmEstimate`), with no compact error term:
+`∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C ∫ ‖D ξ‖²` over `[a, b] × [0, 1]` for every `C²` section `ξ` of
+period one in `t` vanishing for `s ∉ (a, b)`. -/
 theorem exists_hasSemiFredholmEstimate_stationaryJetCoeff (hJ : ∀ t, ω.Compatible (J t))
     (hJc : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap)
     (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S)
     (hdet : LinearMap.det ((1 - dysonSeriesLeft S 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0) :
-    ∃ C, HasSemiFredholmEstimate (testSection V) (stationaryJetCoeff J S) C 0 := by
+    ∃ C, HasSemiFredholmEstimate (stationaryJetCoeff J S) C 0 := by
   have hJc' : Continuous fun p : ℝ × V ↦ J p.1 p.2 := by
     simpa using (hJc.comp continuous_fst).clm_apply continuous_snd
   obtain ⟨C, hC, hest⟩ :=
@@ -200,8 +198,7 @@ theorem exists_hasSemiFredholmEstimate_stationaryJetCoeff (hJ : ∀ t, ω.Compat
     isCompact_Icc hJc.continuousOn fun t _ ↦ (hJ t).tames
   obtain ⟨σ, hσ⟩ := isCompact_Icc.exists_bound_of_continuousOn (hSc.continuousOn (s := Icc 0 1))
   refine ⟨(2 + 2 * σ ^ 2) / a * C * b,
-    hasSemiFredholmEstimate_iff.2 fun ξ hξS s₁ s₂ hs hξ0 ↦ ?_⟩
-  obtain ⟨hξ, hper, -⟩ := mem_testSection_iff.1 hξS
+    hasSemiFredholmEstimate_iff.2 fun ξ hξ hper s₁ s₂ hs hξ0 ↦ ?_⟩
   set R : Set (ℝ × ℝ) := Icc s₁ s₂ ×ˢ Icc 0 1
   have hint {f : ℝ × ℝ → ℝ} (hf : Continuous f) : IntegrableOn f R :=
     hf.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)

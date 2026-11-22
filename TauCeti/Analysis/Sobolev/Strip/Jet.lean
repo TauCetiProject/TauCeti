@@ -607,6 +607,41 @@ theorem sq_norm_jetLp (ξ : S) :
     ‖jetLp S ξ‖ ^ 2 = ∫ z, ‖jet (ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure := by
   rw [jetLp_apply, MemLp.norm_toLp_sq]
 
+/-- The squared norm of the `L²` jet of a `C¹` element of `S` is at most its `W^{1,2}` energy
+`∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²)` over the strip. -/
+theorem sq_norm_jetLp_le_integral (ξ : S) (hξ : ContDiff ℝ 1 (ξ : ℝ × ℝ → V)) :
+    ‖jetLp S ξ‖ ^ 2 ≤ ∫ z, (‖fderiv ℝ (ξ : ℝ × ℝ → V) z (1, 0)‖ ^ 2 +
+      ‖fderiv ℝ (ξ : ℝ × ℝ → V) z (0, 1)‖ ^ 2 + ‖(ξ : ℝ × ℝ → V) z‖ ^ 2) ∂stripMeasure := by
+  have hjm := HasL2Jets.memLp_jet _ ξ.property
+  rw [sq_norm_jetLp]
+  refine integral_mono_of_nonneg (Eventually.of_forall fun z ↦ by positivity) ?_
+    (Eventually.of_forall fun z ↦ sq_norm_jet_le _ z)
+  refine ((hjm.integrable_norm_pow two_ne_zero).const_mul 3).mono' ?_
+    (Eventually.of_forall fun z ↦ ?_)
+  · exact (continuous_norm_partialDeriv_sq_add_norm_sq hξ).aestronglyMeasurable
+  · have h₁ := norm_fderiv_one_zero_le_norm_jet (ξ : ℝ × ℝ → V) z
+    have h₂ := norm_fderiv_zero_one_le_norm_jet (ξ : ℝ × ℝ → V) z
+    have h₃ := norm_le_norm_jet (ξ : ℝ × ℝ → V) z
+    rw [Real.norm_of_nonneg (by positivity)]
+    linarith [pow_le_pow_left₀ (norm_nonneg _) h₁ 2, pow_le_pow_left₀ (norm_nonneg _) h₂ 2,
+      pow_le_pow_left₀ (norm_nonneg _) h₃ 2]
+
+/-- The squared norm of the restricted value of the jet of an element `ξ` of `S` is the integral
+of `‖ξ‖²` over `[-T, T] × [0, 1]`. -/
+theorem sq_norm_restrictValue_jetLp (T : ℝ) (ξ : S) :
+    ‖restrictValue T (jetLp S ξ)‖ ^ 2 =
+      ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 := by
+  -- On subsets of the strip, the strip measure is Lebesgue measure.
+  have hμ : stripMeasure.restrict (Icc (-T) T ×ˢ Icc (0 : ℝ) 1) =
+      volume.restrict (Icc (-T) T ×ˢ Icc (0 : ℝ) 1) := by
+    rw [Measure.restrict_restrict (measurableSet_Icc.prod measurableSet_Icc),
+      inter_eq_left.2 (prod_mono (subset_univ _) subset_rfl)]
+  rw [← Lp.integral_norm_sq_eq_norm_sq, ← hμ]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_restrictValue T (jetLp S ξ), ae_restrict_of_ae (coeFn_jetLp ξ)]
+    with z h₁ h₂
+  rw [h₁, h₂, jet_apply]
+
 /-- A closed set containing the jets of all elements of `S` contains `jetClosure S`. -/
 theorem jetClosure_subset_of_isClosed {s : Set (Lp (V × V × V) 2 stripMeasure)}
     (hs : IsClosed s) (h : Set.range (jetLp S) ⊆ s) :

@@ -18,8 +18,7 @@ import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 Let `D ξ = M (ξ, ∂s ξ, ∂t ξ)` be a first-order operator on the cylinder `ℝ × S¹` with an
 essentially bounded coefficient field `M`, satisfying the semi-Fredholm estimate
-`TauCeti.StripSobolev.HasSemiFredholmEstimate (testSection V)` for the test sections
-`TauCeti.CylinderSobolev.testSection V`, as the linearized Floer operator along a Floer
+`TauCeti.CylinderSobolev.HasSemiFredholmEstimate`, as the linearized Floer operator along a Floer
 trajectory does. The Sobolev space `TauCeti.CylinderSobolev.H1` is the closure of the jets of test
 sections, which vanish for `|s|` large. This file shows that a `C²` section `ξ` of period one in
 `t` which does not vanish for `|s|` large still defines an element of `H1` as soon as `ξ` and
@@ -141,7 +140,7 @@ private theorem norm_apply_jet_smul_fst_le {ρ : ℝ → ℝ} {ρ' : ℝ} {B : �
 are square integrable, the `W^{1,2}` norms of the cut-off sections `ρ(s) ξ` are bounded uniformly
 over all cutoffs `0 ≤ ρ ≤ 1` vanishing for `|s|` large with `|ρ'| ≤ B`. -/
 private theorem exists_eLpNorm_jet_smul_fst_le (hM : MemLp M ∞ stripMeasure)
-    (hest : HasSemiFredholmEstimate (testSection V) M C T) (hξ : ContDiff ℝ 2 ξ)
+    (hest : HasSemiFredholmEstimate M C T) (hξ : ContDiff ℝ 2 ξ)
     (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (hξ2 : MemLp ξ 2 stripMeasure)
     (hD : MemLp (fun z ↦ M z (jet ξ z)) 2 stripMeasure) (B : ℝ) :
     ∃ A : ℝ≥0∞, A ≠ ∞ ∧ ∀ ⦃ρ ρ' : ℝ → ℝ⦄ ⦃R : ℝ⦄, ContDiff ℝ 2 ρ →
@@ -209,7 +208,7 @@ private theorem tendsto_jet_smul_fst {ρ : ℕ → ℝ → ℝ}
 semi-Fredholm estimate. If a `C²` section `ξ` of period one in `t` and `D ξ` are square
 integrable on the strip, so is the jet `(ξ, ∂s ξ, ∂t ξ)`. -/
 theorem memLp_jet_of_hasSemiFredholmEstimate (hM : MemLp M ∞ stripMeasure)
-    (hest : HasSemiFredholmEstimate (testSection V) M C T) (hξ : ContDiff ℝ 2 ξ)
+    (hest : HasSemiFredholmEstimate M C T) (hξ : ContDiff ℝ 2 ξ)
     (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (hξ2 : MemLp ξ 2 stripMeasure)
     (hD : MemLp (fun z ↦ M z (jet ξ z)) 2 stripMeasure) : MemLp (jet ξ) 2 stripMeasure := by
   obtain ⟨B, ρ, ρ', hρ, h01, h1, h0, hd, hb⟩ := exists_cutoff_seq

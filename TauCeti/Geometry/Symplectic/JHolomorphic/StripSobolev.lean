@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Strip.Rellich
+public import TauCeti.Analysis.Sobolev.Strip.Fredholm
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Strip
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -195,8 +195,8 @@ theorem exists_norm_jetLp_le_mul_norm_cauchyRiemann_jetLp (hg : ∀ v w, ω v (J
       (√C * ‖cauchyRiemann J L₀ L₁ ⟨jetLp (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩‖) ^ 2 := by
     rw [mul_pow, Real.sq_sqrt hC.le, sq_norm_cauchyRiemann_jetLp, stdComplexLineReal_eq,
       stdComplexLineImag_eq]
-    exact (sq_norm_jetLp_le_integral ξ (IsTestSpace.contDiff _ ξ.property)).trans
-      (hest ξ ξ.property)
+    exact (sq_norm_jetLp_le_integral ξ
+      ((mem_testSection_iff.1 ξ.property).1.of_le (by norm_num))).trans (hest ξ ξ.property)
   exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hsq
 
 end InnerProductSpace
@@ -318,12 +318,16 @@ theorem exists_hasSemiFredholmEstimate_cauchyRiemannAddJetCoeff
     (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hL₀ : ω.IsIsotropic L₀) (hL₁ : ω.IsIsotropic L₁)
     (hL : Disjoint L₀ L₁) {A : ℝ × ℝ → V →L[ℝ] V} (hA : Continuous A) {T : ℝ}
     (hAT : ∀ z : ℝ × ℝ, T < |z.1| → A z = 0) :
-    ∃ C, HasSemiFredholmEstimate (testSection L₀ L₁) (cauchyRiemannAddJetCoeff J A) C T := by
+    ∃ C, HasSemiFredholmEstimate L₀ L₁ (cauchyRiemannAddJetCoeff J A) C T := by
   obtain ⟨C, hC, hest⟩ := exists_setIntegral_energy_le_mul_setIntegral_cauchyRiemann hg hL₀ hL₁ hL
   obtain ⟨B, -, hB⟩ := exists_forall_mem_strip_norm_le hA hAT
-  refine ⟨2 * C * (1 + B ^ 2), hasSemiFredholmEstimate_iff.2 fun ξ hξS a b _ hvan ↦ ?_⟩
-  obtain ⟨R, hR⟩ := IsTestSpace.exists_forall_le_abs_eq_zero _ hξS
-  have hξ := IsTestSpace.contDiff _ hξS
+  refine ⟨2 * C * (1 + B ^ 2), hasSemiFredholmEstimate_iff.2 fun ξ hξ2 h₀ h₁ a b _ hvan ↦ ?_⟩
+  -- A section vanishing for `s ∉ (a, b)` vanishes for `|s| ≥ |a| + |b|`.
+  have hR : ∀ s t, |a| + |b| ≤ |s| → ξ (s, t) = 0 := fun s t hs ↦ hvan s t fun h ↦
+    not_lt.2 hs (abs_lt.2 ⟨by linarith [neg_abs_le a, abs_nonneg b, h.1],
+      by linarith [le_abs_self b, abs_nonneg a, h.2]⟩)
+  have hξS : ξ ∈ testSection L₀ L₁ := mem_testSection_iff.2 ⟨hξ2, h₀, h₁, _, hR⟩
+  have hξ : ContDiff ℝ 1 ξ := hξ2.of_le (by norm_num)
   have hD := setIntegral_cauchyRiemann_le (J := J) hA hB hAT hξ hR
   rw [integral_strip_eq_setIntegral_Icc_of_jet_eq_zero
     (F := fun z ↦ ‖cauchyRiemannAddJetCoeff J A z (jet ξ z)‖ ^ 2) hvan
@@ -386,8 +390,8 @@ theorem exists_norm_le_mul_norm_cauchyRiemann (hg : ∀ v w, ω v (J w) = ⟪v, 
   rw [cauchyRiemannAddJetCoeff_zero] at hC'
   obtain ⟨K, hK⟩ := exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL
     (memLp_top_const (cauchyRiemannJetCoeff J)) hC' (C' := C) fun ξ ↦ by
-      obtain ⟨R, hR⟩ := IsTestSpace.exists_forall_le_abs_eq_zero _ ξ.property
-      have hξ := IsTestSpace.contDiff _ ξ.property
+      obtain ⟨hξ2, -, -, R, hR⟩ := mem_testSection_iff.1 ξ.property
+      have hξ : ContDiff ℝ 1 (ξ : ℝ × ℝ → V) := hξ2.of_le (by norm_num)
       refine (integral_mono (integrable_norm_sq_of_continuous hξ.continuous hR)
         (integrable_of_jet_eq_zero hR (continuous_norm_partialDeriv_sq_add_norm_sq hξ)
         fun _ ↦ norm_partialDeriv_sq_add_norm_sq_eq_zero_of_jet_eq_zero) fun z ↦

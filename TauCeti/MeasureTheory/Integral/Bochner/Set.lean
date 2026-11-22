@@ -25,7 +25,8 @@ many disjoint measurable subsets, that an almost everywhere positive function ha
 integral, bounds for the integral of the reciprocal of a function bounded below by a positive
 constant, the bound `∫_s ψ² ≤ K² |B|` for a function bounded by `K` and supported in a closed
 ball `B`, the integral of `Φ x (f₀ x)` for an almost everywhere zero extension `f₀` of `f`
-from `s` and an integrand `Φ` vanishing at `0`, and that a continuous square-integrable function
+from `s` and an integrand `Φ` vanishing at `0`, the pairing `∫ h φ = ∫_B (φ - c) h` of a function
+`h` of integral zero vanishing off `B`, and that a continuous square-integrable function
 `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive on nonempty open sets.
 It also bounds the integral over a measurable set `S` by integrals over unions with disjoint sets,
 that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K} σ`, that a pointwise
@@ -53,6 +54,8 @@ integral.
   ball `B` and vanishing off it has `∫_s ψ² ≤ K² |B|` over every set `s`.
 * `TauCeti.integral_eq_setIntegral_of_ae_eq_indicator`: if `f₀` is almost everywhere the zero
   extension `1_s f` and `Φ x 0 = 0`, then `∫ Φ x (f₀ x) = ∫_s Φ x (f x)`.
+* `TauCeti.integral_mul_eq_setIntegral_sub_mul`: if `h` vanishes off `B` and has integral zero,
+  then `∫ h φ = ∫_B (φ - c) h` for every constant `c`.
 * `TauCeti.integrableOn_sin_of_measure_ne_top`,
   `TauCeti.integrableOn_exp_ofReal_mul_I_of_measure_ne_top`: the sine and the unit-circle
   exponential `exp (t x I)` are integrable on a set of finite measure.
@@ -284,6 +287,22 @@ theorem integral_eq_setIntegral_of_ae_eq_indicator {X E G : Type*} [MeasurableSp
   rw [← integral_indicator₀ hs]
   refine integral_congr_ae (h.mono fun x hx => ?_)
   by_cases hx' : x ∈ s <;> simp [hx, hx', hΦ]
+
+/-- If `h` vanishes off `B` and has integral zero, its pairing with `φ` only sees `φ - c` on `B`,
+for any constant `c`: `∫ h φ = ∫_B (φ - c) h`. -/
+theorem integral_mul_eq_setIntegral_sub_mul {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {B : Set α} {h φ : α → ℝ}
+    (hh : Integrable h (μ.restrict B)) (hsupp : ∀ᵐ x ∂μ, x ∉ B → h x = 0)
+    (hmean : ∫ x, h x ∂μ = 0) (c : ℝ)
+    (hint : Integrable (fun x => (φ x - c) * h x) (μ.restrict B)) :
+    ∫ x, h x * φ x ∂μ = ∫ x in B, (φ x - c) * h x ∂μ := by
+  rw [← setIntegral_eq_integral_of_ae_compl_eq_zero (s := B)
+    (by filter_upwards [hsupp] with x hx hxB; rw [hx hxB, zero_mul])]
+  calc ∫ x in B, h x * φ x ∂μ = ∫ x in B, ((φ x - c) * h x + c * h x) ∂μ :=
+        integral_congr_ae (ae_of_all _ fun x => by ring)
+    _ = _ := by
+        rw [integral_add hint (hh.const_mul c), integral_const_mul,
+          (setIntegral_eq_integral_of_ae_compl_eq_zero hsupp).trans hmean, mul_zero, add_zero]
 
 end TauCeti
 
