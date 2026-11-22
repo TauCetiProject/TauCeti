@@ -101,9 +101,7 @@ theorem commutator_range_rankTwoUpperUnitaryRootHom_eq_center :
   have h := HeisenbergGroup.unitarySubgroup.commutator_eq_center_iterateFrobenius
     (K := GaloisField d.characteristic (d.fieldExponent * 2))
     (p := d.characteristic) (n := d.fieldExponent)
-    (by
-      simpa [pow_mul] using GaloisField.card d.characteristic (d.fieldExponent * 2)
-        (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero))
+    (d.natCard_galoisField.trans (by rw [d.fieldOrder_eq_characteristic_pow]))
   have hm := congrArg (Subgroup.map e.toMonoidHom) h
   exact (map_commutator_of_surjective e.surjective).symm.trans
     (hm.trans (Subgroup.map_center_eq e))

@@ -10,6 +10,7 @@ public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.GroupTheory.Index
 import TauCeti.FieldTheory.Finite.Card
+import TauCeti.FieldTheory.Finite.FrobeniusFixed
 
 /-!
 # The fibres of `b ↦ b ^ q + b` over a field with `q²` elements
@@ -68,22 +69,21 @@ theorem natCard_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
   classical
   have := finite_of_natCard_eq_pow_sq hK
   have := Fintype.ofFinite K
-  rw [Nat.card_eq_fintype_card] at hK
+  have hK' : Fintype.card K = (p ^ n) ^ 2 := by rwa [← Nat.card_eq_fintype_card]
   set q := p ^ n with hqdef
   -- A field has at least two elements, so `q > 1`.
-  have hq : 1 < q := (Nat.one_lt_pow_iff two_ne_zero).mp (hK ▸ Fintype.one_lt_card)
+  have hq : 1 < q := (Nat.one_lt_pow_iff two_ne_zero).mp (hK' ▸ Fintype.one_lt_card)
   -- The additive maps `T b = b ^ q + b` and `T' c = c ^ q - c`.
   let T : K →+ K := (iterateFrobenius K p n).toAddMonoidHom + .id K
   let T' : K →+ K := (iterateFrobenius K p n).toAddMonoidHom - .id K
   have hT (b : K) : T b = b ^ q + b := by simp [T, iterateFrobenius_def, hqdef]
   have hT' (c : K) : T' c = c ^ q - c := by simp [T', iterateFrobenius_def, hqdef]
-  have hpow (b : K) : b ^ q ^ 2 = b := by rw [← hK]; exact FiniteField.pow_card b
   -- The image of `T` lies in the kernel of `T'`, since `(b ^ q + b) ^ q = b + b ^ q`.
   have hle : T.range ≤ T'.ker := by
     rintro _ ⟨b, rfl⟩
     rw [AddMonoidHom.mem_ker, hT', hT, hqdef, add_pow_expChar_pow]
-    -- `(b ^ q) ^ q = b ^ q ^ 2 = b`, as `K` has `q ^ 2` elements.
-    rw [← pow_mul, ← sq, hpow]
+    -- `(b ^ q) ^ q = b`, as `K` has `q ^ 2` elements.
+    rw [← hqdef, pow_pow_eq_self_of_natCard_eq_sq hK (pow_ne_zero n (expChar_pos K p).ne')]
     ring
   -- The kernels of `T` and `T'` consist of roots of `X ^ q + X` and `X ^ q - X`.
   have hX1 : (X ^ q + X : K[X]).natDegree = q := by
@@ -101,7 +101,7 @@ theorem natCard_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
     simpa [hT'] using hc
   -- `|ker T| · |im T| = q²` and both factors are at most `q`, so both are `q`.
   have hmul : Nat.card T.ker * Nat.card T.range = q ^ 2 := by
-    rw [AddSubgroup.card_ker_mul_card_range, Nat.card_eq_fintype_card, hK]
+    rw [AddSubgroup.card_ker_mul_card_range, hK]
   have hrange : Nat.card T.range ≤ q := (AddSubgroup.card_le_of_le hle).trans hker'
   have hkerq : Nat.card T.ker = q := by nlinarith
   have hrangeq : Nat.card T.range = q := by nlinarith
@@ -190,16 +190,14 @@ theorem natCard_add_pow_eq_pow_mul {q : ℕ} (hK : Nat.card K = q ^ 2) :
     simpa using (Nat.card_congr e).trans hK
   have : Finite K := Nat.finite_of_card_ne_zero (hK ▸ pow_ne_zero 2 hq)
   let := Fintype.ofFinite K
-  have : Fact (ringChar K).Prime := ⟨CharP.prime_ringChar K⟩
+  have hprime : (ringChar K).Prime := CharP.prime_ringChar K
+  have : Fact (ringChar K).Prime := ⟨hprime⟩
   obtain ⟨n, rfl⟩ :=
     exists_eq_pow_of_dvd_natCard (p := ringChar K) (hK ▸ dvd_pow_self q two_ne_zero)
-  have hpow (a : K) : a ^ (ringChar K ^ n) ^ 2 = a := by
-    rw [← hK, Nat.card_eq_fintype_card]
-    exact _root_.FiniteField.pow_card a
   have hfib (x : K) :
       Nat.card {z : K // z ^ ringChar K ^ n + z = x ^ ringChar K ^ n * x} = ringChar K ^ n := by
     apply natCard_pow_add_self_eq hK
-    rw [mul_pow, ← pow_mul, ← sq, hpow, mul_comm]
+    rw [mul_pow, pow_pow_eq_self_of_natCard_eq_sq hK (pow_ne_zero n hprime.ne_zero), mul_comm]
   let e : {c : K × K // c.1 + c.1 ^ ringChar K ^ n = c.2 ^ ringChar K ^ n * c.2} ≃
       {c : K × K // c.2 ^ ringChar K ^ n + c.2 = c.1 ^ ringChar K ^ n * c.1} :=
     Equiv.subtypeEquiv (Equiv.prodComm K K) (by intro c; simp [add_comm])

@@ -26,6 +26,8 @@ statements are what the elliptic conjugacy classes of `GL₂(𝔽_q)` are read o
   `TauCeti.FiniteField.pow_natCard_eq_self_iff_mem_range_algebraMap` its `Nat.card` spelling.
 * `TauCeti.algebraMap_bijective_of_pow_card_eq_self`: its immediate global consequence, that a
   domain over `K` *all* of whose elements are fixed by the `q`-power map is `K` itself.
+* `TauCeti.FiniteField.pow_pow_eq_self_of_natCard_eq_sq`: in a division ring of order `q²`,
+  raising to the `q`-th power twice is the identity.
 * `TauCeti.FiniteField.pow_natCard_pow_natCard`: in a quadratic extension the `q`-power map is an
   involution. `TauCeti.FiniteField.pow_natCard_ne` and
   `TauCeti.FiniteField.pow_natCard_notMem_range_algebraMap` say that an element outside `K` is
@@ -149,6 +151,14 @@ theorem units_map_algebraMap_pow_natCard (a : Kˣ) :
 
 end Finite
 
+/-- **In a division ring of order `q²`, raising to the `q`-th power twice is the identity.** -/
+theorem pow_pow_eq_self_of_natCard_eq_sq {L : Type*} [DivisionRing L] {q : ℕ}
+    (hL : Nat.card L = q ^ 2) (hq : q ≠ 0) (a : L) : (a ^ q) ^ q = a := by
+  have : Finite L := Nat.finite_of_card_ne_zero (hL ▸ pow_ne_zero 2 hq)
+  let _ := Fintype.ofFinite L
+  rw [← pow_mul, ← pow_two, ← hL, Nat.card_eq_fintype_card]
+  exact _root_.FiniteField.pow_card a
+
 /-! ### Quadratic extensions -/
 
 section Quadratic
@@ -165,14 +175,11 @@ variable [DivisionRing L] [Algebra K L] [Algebra.IsQuadraticExtension K L]
 This is deliberately not a simp lemma: in a context with a `Fintype K` instance, `Nat.card K`
 is not in simp normal form. -/
 theorem pow_natCard_pow_natCard (a : L) :
-    (a ^ Nat.card K) ^ Nat.card K = a := by
-  have h2 := Algebra.IsQuadraticExtension.finrank_eq_two K L
-  have : Finite L := Module.finite_of_finite K
-  let _ := Fintype.ofFinite L
-  have hcard : Nat.card L = Nat.card K ^ 2 := by
-    rw [Module.natCard_eq_pow_finrank (K := K) (V := L), h2]
-  rw [← pow_mul, ← pow_two, ← hcard, Nat.card_eq_fintype_card]
-  exact _root_.FiniteField.pow_card a
+    (a ^ Nat.card K) ^ Nat.card K = a :=
+  pow_pow_eq_self_of_natCard_eq_sq
+    (by rw [Module.natCard_eq_pow_finrank (K := K) (V := L),
+      Algebra.IsQuadraticExtension.finrank_eq_two K L])
+    Nat.card_pos.ne' a
 
 /-- **In a quadratic extension the `q`-power map is an involution on units**, the units-level
 form of `TauCeti.FiniteField.pow_natCard_pow_natCard`. -/

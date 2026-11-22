@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
+import TauCeti.FieldTheory.Finite.FrobeniusFixed
 
 /-!
 # The Frobenius over a finite base field
@@ -150,13 +151,9 @@ theorem isPurelyInseparable_fieldRange_frobeniusAlgHom :
 /-- In a field of order `q ^ 2`, any ring endomorphism acting as `a ↦ a ^ q` is an involution. -/
 theorem involutive_of_natCard_eq_sq {K : Type*} [Field K] {σ : K →+* K} {q : ℕ}
     (hK : Nat.card K = q ^ 2) (hσ : ∀ a, σ a = a ^ q) :
-    Function.Involutive σ := by
-  have hq : q ≠ 0 := fun h ↦ by simpa [h] using hσ 0
-  have : Finite K := Nat.finite_of_card_ne_zero (hK ▸ pow_ne_zero 2 hq)
-  let _ := Fintype.ofFinite K
-  intro a
-  rw [hσ, hσ, ← pow_mul, ← sq, ← hK, Nat.card_eq_fintype_card]
-  exact _root_.FiniteField.pow_card a
+    Function.Involutive σ := fun a ↦ by
+  rw [hσ, hσ]
+  exact pow_pow_eq_self_of_natCard_eq_sq hK (fun h ↦ by simpa [h] using hσ 0) a
 
 variable {K : Type*} [Field K] {p : ℕ} [ExpChar K p]
 

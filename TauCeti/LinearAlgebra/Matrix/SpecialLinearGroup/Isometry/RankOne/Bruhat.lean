@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.UnitaryRa
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.GroupTheory.DoubleCoset.Orbits
 
 /-!
 # The Bruhat decomposition and rank-one Tits system of a three-dimensional unitary group
@@ -452,13 +453,18 @@ theorem exists_unipotent_mul_weyl_mul_borel_of_notMem_borelSubgroup (hσ : Funct
   have hg' : g • infinity K σ ≠ infinity K σ := by
     simpa [borelSubgroup_def, MulAction.mem_stabilizer_iff] using hg
   obtain ⟨c, hc⟩ := exists_point hg'
-  let u := unipotentHom K σ (HeisenbergGroup.unitaryMk σ hσ (σ c.val.2) c.val.1
-    (by simpa [hσ c.val.2] using c.property))
-  let b := (u * weyl K σ)⁻¹ * g
-  have hb : b ∈ borelSubgroup K σ := by
-    rw [borelSubgroup_def, MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff,
-      unipotentHom_mul_weyl_smul_infinity, hc]
-  exact ⟨u, unipotentHom_mem_unipotentSubgroup _, b, hb, mul_inv_cancel_left _ _⟩
+  let u : unipotentSubgroup K σ :=
+    ⟨unipotentHom K σ (HeisenbergGroup.unitaryMk σ hσ (σ c.val.2) c.val.1
+      (by simpa [hσ c.val.2] using c.property)), unipotentHom_mem_unipotentSubgroup _⟩
+  have horb : MulAction.orbitRel (unipotentSubgroup K σ) _
+      (g • infinity K σ) (weyl K σ • infinity K σ) := by
+    rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
+    refine ⟨u, ?_⟩
+    rw [Subgroup.smul_def, smul_smul, unipotentHom_mul_weyl_smul_infinity, hc]
+  obtain ⟨u', hu', b, hb, rfl⟩ := DoubleCoset.mem_doubleCoset.mp
+    ((orbitRel_smul_iff_mem_doubleCoset_stabilizer (unipotentSubgroup K σ)
+      (infinity K σ) g (weyl K σ)).mp horb)
+  exact ⟨u', hu', b, by simpa [borelSubgroup_def] using hb, rfl⟩
 
 /-- **Unique sharp rank-one Bruhat decomposition**: every element outside the Borel subgroup
 factors uniquely as `u * weyl * b` with `u ∈ unipotentSubgroup` and `b ∈ borelSubgroup`. -/

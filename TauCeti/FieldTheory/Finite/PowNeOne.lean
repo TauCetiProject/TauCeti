@@ -53,8 +53,7 @@ theorem exists_ne_zero_pow_ne_pow {m n : ℕ} (hmn : m < n) (hF : n - m + 1 < Na
     ∃ a : F, a ≠ 0 ∧ a ^ m ≠ a ^ n := by
   obtain ⟨a, ha0, ha⟩ := exists_ne_zero_pow_ne_one (Nat.sub_ne_zero_of_lt hmn) hF
   refine ⟨a, ha0, fun heq ↦ ha ?_⟩
-  apply mul_left_cancel₀ (pow_ne_zero m ha0)
-  rw [← pow_add, Nat.add_sub_cancel' hmn.le, mul_one, heq]
+  rw [pow_sub_of_lt a hmn, ← heq, ← div_eq_mul_inv, div_self (pow_ne_zero m ha0)]
 
 /-- In a field of order `q ^ 2`, for every `m < q`, some nonzero element has distinct `m`-th and
 `q`-th powers. -/

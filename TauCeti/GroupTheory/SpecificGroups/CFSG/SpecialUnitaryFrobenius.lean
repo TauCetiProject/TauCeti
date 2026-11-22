@@ -184,13 +184,19 @@ section UnitaryForm
 
 variable {r : ℕ}
 
+/-- The field with `q²` elements has `q²` elements, with `q = d.fieldOrder`. -/
+theorem natCard_galoisField :
+    Nat.card (GaloisField d.characteristic (d.fieldExponent * 2)) = d.fieldOrder ^ 2 := by
+  rw [GaloisField.card _ _ (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero), pow_mul,
+    d.fieldOrder_eq_characteristic_pow]
+
 /-- The `q`-power Frobenius `σ` of the field with `q²` elements is an involution, an instance of
-`TauCeti.FiniteField.iterateFrobenius_involutive`. -/
+`TauCeti.FiniteField.involutive_of_natCard_eq_sq`. -/
 theorem involutive_iterateFrobenius_galoisField :
     Function.Involutive (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2))
       d.characteristic d.fieldExponent) :=
-  FiniteField.iterateFrobenius_involutive
-    (GaloisField.card _ _ (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero))
+  FiniteField.involutive_of_natCard_eq_sq d.natCard_galoisField
+    (congrFun d.coe_iterateFrobenius_galoisField)
 
 /-- The `σ`-sesquilinear form of Gram matrix `Q` is `(-1) ^ r`-Hermitian: `σ(Q)ᵀ = (-1) ^ r • Q`,
 with `σ` the `q`-power Frobenius and `Q` the signed reversal matrix. -/
@@ -288,12 +294,6 @@ end UnitaryForm
 section IsotropicPoints
 
 variable {r : ℕ}
-
-/-- The field with `q²` elements has `q²` elements, with `q = d.fieldOrder`. -/
-theorem natCard_galoisField :
-    Nat.card (GaloisField d.characteristic (d.fieldExponent * 2)) = d.fieldOrder ^ 2 := by
-  rw [GaloisField.card _ _ (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero), pow_mul,
-    d.fieldOrder_eq_characteristic_pow]
 
 variable (r) in
 /-- The trace `t ↦ t + (-1) ^ r σ(t)` is onto the elements `s` with `σ(s) = (-1) ^ r s`. -/
