@@ -12,6 +12,10 @@ public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.LinearAlgebra.FreeModule.Filtration
 
+import Mathlib.CategoryTheory.Limits.ConcreteCategory.Filtered
+import Mathlib.CategoryTheory.Limits.ConcreteCategory.WithAlgebraicStructures
+import TauCeti.Algebra.Category.ModuleCat.FilteredColimits
+
 /-!
 # Colimits of modules
 
@@ -220,39 +224,6 @@ theorem telescopeDiff_injective : Function.Injective (telescopeDiff F) := by
 
 end
 
-/-- If `telescopeDiff F a` is concentrated in degree `n` with value `x`, then `x` is eventually
-annihilated by a transition map `F.map (homOfLE hnm)`. -/
-theorem exists_map_homOfLE_eq_zero_of_telescopeDiff_eq_lof {F : ℕ ⥤ ModuleCat.{v} R}
-    {a : ⨁ k, F.obj k} {n : ℕ} {x : F.obj n}
-    (ha : telescopeDiff F a = lof R ℕ (fun k ↦ F.obj k) n x) :
-    ∃ (m : ℕ) (hnm : n ≤ m), F.map (homOfLE hnm) x = 0 := by
-  classical
-  have hlt (m : ℕ) (hm : m < n) : a m = 0 := by
-    induction m with
-    | zero => simpa [lof_eq_of, of_eq_of_ne _ _ _ hm.ne] using congr($ha 0)
-    | succ m ih =>
-      simpa [lof_eq_of, of_eq_of_ne _ _ _ hm.ne, ih (by lia)] using congr($ha (m + 1))
-  have hn : a n = x := by
-    rcases n with _ | n
-    · simpa [lof_eq_of] using congr($ha 0)
-    · simpa [lof_eq_of, hlt n (by lia)] using congr($ha (n + 1))
-  have hge (m : ℕ) (hnm : n ≤ m) : a m = F.map (homOfLE hnm) x := by
-    induction m, hnm using Nat.le_induction with
-    | base =>
-      rw [Subsingleton.elim (homOfLE _) (𝟙 n), F.map_id]
-      exact hn
-    | succ m hnm ih =>
-      have h1 := congr($ha (m + 1))
-      simp only [telescopeDiff_apply_succ, lof_eq_of,
-        of_eq_of_ne _ _ _ (by lia : m + 1 ≠ n), sub_eq_zero, ih] at h1
-      rwa [← ModuleCat.comp_apply, ← F.map_comp] at h1
-  let m : ℕ := max n (a.support.sup id + 1)
-  exact ⟨m, le_max_left _ _, (hge m (le_max_left _ _)).symm.trans <|
-    DFinsupp.notMem_support_iff.1 fun hm ↦ by
-      have := Finset.le_sup (f := id) hm
-      simp only [id] at this
-      lia⟩
-
 variable (F : ℕ ⥤ ModuleCat.{v} R)
 
 /-- The telescope sequence `⨁ₙ Fₙ → ⨁ₙ Fₙ → c.pt` of a cocone `c` over a sequence of modules
@@ -287,6 +258,22 @@ theorem telescopeShortComplex_g (c : Cocone F) :
       ConcreteCategory.ofHom (C := ModuleCat R) (X := of R (⨁ n, F.obj n)) (Y := c.pt)
         (toModule R ℕ c.pt fun n ↦ (c.ι.app n).hom) ≫
       eqToHom (telescopeShortComplex_X₃ F c).symm := (rfl)
+
+/-- If `telescopeDiff F a` is concentrated in degree `n` with value `x`, then `x` is eventually
+annihilated by a transition map `F.map (homOfLE hnm)`. -/
+theorem exists_map_homOfLE_eq_zero_of_telescopeDiff_eq_lof {F : ℕ ⥤ ModuleCat.{v} R}
+    {a : ⨁ k, F.obj k} {n : ℕ} {x : F.obj n}
+    (ha : telescopeDiff F a = lof R ℕ (fun k ↦ F.obj k) n x) :
+    ∃ (m : ℕ) (hnm : n ≤ m), F.map (homOfLE hnm) x = 0 := by
+  have := preservesSmallestFilteredColimits_of_preservesFilteredColimits
+    (CategoryTheory.forget (ModuleCat.{v} R))
+  have hcolim : colimit.ι F n x = 0 := by
+    have hz := congrArg (fun φ ↦ (eqToHom (telescopeShortComplex_X₁ F (colimit.cocone F)).symm ≫
+      φ ≫ eqToHom (telescopeShortComplex_X₃ F (colimit.cocone F))).hom a)
+      (telescopeShortComplex F (colimit.cocone F)).zero
+    simpa [telescopeShortComplex_f, telescopeShortComplex_g, ha] using hz
+  obtain ⟨m, f, hm⟩ := Concrete.colimit_rep_eq_zero R F n x hcolim
+  exact ⟨m, leOfHom f, by rwa [Subsingleton.elim (homOfLE (leOfHom f)) f]⟩
 
 /-- The cocone over `F` with point the cokernel of `telescopeDiff F`, whose legs are the
 summand inclusions followed by the quotient map. -/
@@ -334,17 +321,10 @@ cocone. -/
 theorem injective_ι_app_of_isColimit {c : Cocone F} (hc : IsColimit c)
     (hinj : ∀ n : ℕ, Function.Injective (F.map (homOfLE (n.le_add_right 1))).hom) (n : ℕ) :
     Function.Injective (c.ι.app n).hom := by
+  have := preservesSmallestFilteredColimits_of_preservesFilteredColimits
+    (CategoryTheory.forget (ModuleCat.{v} R))
   refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
-  -- Placed in degree `n`, `x` lies in the kernel of the telescope sequence, hence in the image
-  -- of the difference map: `x = a n - φ (a (n - 1))` and `a (m + 1) = φ (a m)` in other degrees.
-  obtain ⟨a, ha'⟩ : ∃ a : ⨁ n, F.obj n, telescopeDiff F a = lof R ℕ (fun n ↦ F.obj n) n x :=
-    (ShortComplex.moduleCat_exact_iff _).1 (shortExact_telescopeShortComplex F hc).exact
-      (lof R ℕ (fun n ↦ F.obj n) n x) (by
-        -- The second map of the telescope sequence is by definition induced by the legs.
-        change toModule R ℕ c.pt (fun n ↦ (c.ι.app n).hom) (lof R ℕ (fun n ↦ F.obj n) n x) = 0
-        rw [toModule_lof]
-        exact hx)
-  -- Composite transitions are injective, so vanishing at stage `m` forces `x = 0`.
+  obtain ⟨m, f, hm⟩ := (hc.eq_iff' x 0).1 (hx.trans (map_zero _).symm)
   have hinj_le : ∀ {m : ℕ} (hnm : n ≤ m), Function.Injective (F.map (homOfLE hnm)).hom := by
     intro m hnm
     induction m, hnm using Nat.le_induction with
@@ -354,8 +334,7 @@ theorem injective_ι_app_of_isColimit {c : Cocone F} (hc : IsColimit c)
     | succ m hnm ih =>
       rw [← homOfLE_comp hnm (m.le_add_right 1), F.map_comp, ModuleCat.hom_comp]
       exact (hinj m).comp ih
-  obtain ⟨m, hnm, hm⟩ := exists_map_homOfLE_eq_zero_of_telescopeDiff_eq_lof ha'
-  exact hinj_le hnm (hm.trans (map_zero _).symm)
+  exact hinj_le (leOfHom f) (by simpa [Subsingleton.elim (homOfLE (leOfHom f)) f] using hm)
 
 /-- **A sequential colimit of injections with free cokernels is free.** Let `F₀ → F₁ → F₂ → ⋯` be
 a sequence of modules with `F₀` free, whose transition maps `φₙ : Fₙ → Fₙ₊₁` are injective with

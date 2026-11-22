@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.Grp.ForgetCorepresentable
 public import Mathlib.CategoryTheory.Limits.EssentiallySmall
-public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
+public import Mathlib.CategoryTheory.ObjectProperty.Retract
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.Yoneda.Basic
 public import Mathlib.CategoryTheory.Shift.Basic
 public import TauCeti.Algebra.Category.Grp.Coproducts
 
+import Mathlib.CategoryTheory.Adjunction.Additive
 import Mathlib.CategoryTheory.Adjunction.Limits
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 import Mathlib.CategoryTheory.ObjectProperty.FunctorCategory.PreservesLimits
@@ -24,12 +24,13 @@ An object `G` of a preadditive category `T` (with morphisms in `Type v`) is *com
 coproducts* (`TauCeti.IsCompactForCoproducts G`) if `preadditiveCoyoneda.obj (op G)` preserves
 `Type v`-indexed coproducts, equivalently (`TauCeti.isCompactForCoproducts_iff`) if
 `TauCeti.coprodComparisonAddHom G f : (⨁ j, (G ⟶ f j)) →+ (G ⟶ ∐ f)` is bijective, yielding
-`TauCeti.IsCompactForCoproducts.homCoprodEquiv`.
+`TauCeti.IsCompactForCoproducts.homCoprodEquiv`. The `ObjectProperty` of compact objects is
+`TauCeti.compactForCoproducts T`.
 
 ## Main definitions
 
-* `TauCeti.IsCompactForCoproducts`, `TauCeti.coprodComparisonAddHom`,
-  `TauCeti.IsCompactForCoproducts.homCoprodEquiv`
+* `TauCeti.IsCompactForCoproducts`, `TauCeti.compactForCoproducts`,
+  `TauCeti.coprodComparisonAddHom`, `TauCeti.IsCompactForCoproducts.homCoprodEquiv`
 
 ## Main results
 
@@ -145,35 +146,39 @@ theorem coprodComparisonAddHom_equivCongrLeft (G : T) {J : Type w} {K : Type*} [
 
 /-- The corepresented functor `Hom(G, -)` preserves a `Type v`-indexed coproduct `∐ f` if and only
 if the direct-sum comparison homomorphism `coprodComparisonAddHom G f` is bijective. -/
-theorem preservesColimit_discrete_preadditiveCoyoneda_iff_sameUniv (G : T) {J : Type v}
+private theorem preservesColimit_discrete_preadditiveCoyoneda_iff_sameUniv (G : T) {J : Type v}
     [DecidableEq J] (f : J → T) [HasCoproduct f] :
     PreservesColimit (Discrete.functor f) (preadditiveCoyoneda.obj (op G)) ↔
       Function.Bijective (coprodComparisonAddHom G f) := by
   let F := preadditiveCoyoneda.obj (op G)
-  let hc := AddCommGrpCat.coproductCoconeIsColimit (fun j ↦ F.obj (f j))
-  let d : Cofan (fun j ↦ F.obj (f j)) := Cofan.mk (F.obj (∐ f)) fun j ↦ F.map (Sigma.ι f j)
+  have : HasCoproduct (fun j ↦ F.obj (f j)) :=
+    ⟨⟨⟨_, AddCommGrpCat.coproductCoconeIsColimit _⟩⟩⟩
+  let φ : AddCommGrpCat.of (⨁ j, ↑(F.obj (f j))) ⟶ F.obj (∐ f) :=
+    (AddCommGrpCat.coprodIsoDirectSum (fun j ↦ F.obj (f j))).inv ≫ sigmaComparison F f
   let eDS : (⨁ j, ↑(F.obj (f j))) ≃+ (⨁ j, (G ⟶ f j)) :=
     DFinsupp.mapRange.addEquiv fun _ ↦ AddEquiv.refl _
-  have hdesc : (hc.desc d).hom = (coprodComparisonAddHom G f).comp eDS.toAddMonoidHom := by
-    rw [AddCommGrpCat.coproductCoconeIsColimit_desc]
+  have hφ : φ.hom = (coprodComparisonAddHom G f).comp eDS.toAddMonoidHom := by
     refine DirectSum.addHom_ext fun j g ↦ ?_
-    exact (DirectSum.toAddMonoid_of (fun i ↦ (d.inj i).hom) j g).trans
-      ((coprodComparisonAddHom_of G f j g).symm.trans <| congrArg (coprodComparisonAddHom G f)
-        (DFinsupp.mapRange_single (f := fun _ ↦ id) (hf := fun _ ↦ rfl) (i := j)).symm)
-  have hbij : Function.Bijective (hc.desc d) ↔ Function.Bijective (coprodComparisonAddHom G f) := by
-    have hfun : ⇑(hc.desc d) = ⇑(coprodComparisonAddHom G f) ∘ ⇑eDS :=
-      funext (DFunLike.congr_fun hdesc)
+    have hcomp := congrArg (fun ψ : F.obj (f j) ⟶ F.obj (∐ f) ↦ ψ g)
+      (AddCommGrpCat.of_coprodIsoDirectSum_inv_assoc (fun i ↦ F.obj (f i)) j
+        (sigmaComparison F f))
+    rw [ι_comp_sigmaComparison] at hcomp
+    refine hcomp.trans ?_
+    exact (coprodComparisonAddHom_of G f j g).symm.trans <| congrArg (coprodComparisonAddHom G f)
+      (DFinsupp.mapRange_single (f := fun _ ↦ id) (hf := fun _ ↦ rfl) (i := j)).symm
+  have hbij : Function.Bijective φ ↔ Function.Bijective (coprodComparisonAddHom G f) := by
+    have hfun : ⇑φ = ⇑(coprodComparisonAddHom G f) ∘ ⇑eDS :=
+      funext (DFunLike.congr_fun hφ)
     rw [hfun]
     exact Function.Bijective.of_comp_iff _ eDS.bijective
-  refine ⟨fun _ ↦ ?_, fun h ↦ ?_⟩
-  · have hd : IsColimit d := isColimitOfHasCoproductOfPreservesColimit F f
-    have : IsIso (hc.desc d) :=
-      (hc.uniq d _ fun j ↦ hc.comp_coconePointUniqueUpToIso_hom hd j) ▸ inferInstance
-    exact hbij.1 ((ConcreteCategory.isIso_iff_bijective _).1 this)
-  · have : IsIso (hc.desc d) := (ConcreteCategory.isIso_iff_bijective _).2 (hbij.2 h)
-    exact preservesColimit_of_preserves_colimit_cocone (coproductIsCoproduct f)
-      ((isColimitMapCoconeCofanMkEquiv F f (Sigma.ι f)).symm
-        (IsColimit.ofIsoColimit hc (Cocone.ext (asIso (hc.desc d)) fun ⟨j⟩ ↦ hc.fac d ⟨j⟩)))
+  have hiso : IsIso φ ↔ IsIso (sigmaComparison F f) :=
+    ⟨fun _ ↦ by
+      rw [← Iso.hom_inv_id_assoc (AddCommGrpCat.coprodIsoDirectSum (fun j ↦ F.obj (f j)))
+        (sigmaComparison F f)]
+      infer_instance,
+     fun _ ↦ inferInstance⟩
+  rw [← hbij, ← ConcreteCategory.isIso_iff_bijective, hiso]
+  exact ⟨fun _ ↦ inferInstance, fun _ ↦ PreservesCoproduct.of_iso_comparison F f⟩
 
 /-- For any `v`-small index type `J`, the corepresented functor `Hom(G, -)` preserves `∐ f` if and
 only if the direct-sum comparison homomorphism `coprodComparisonAddHom G f` is bijective. -/
@@ -187,25 +192,15 @@ theorem preservesColimit_discrete_preadditiveCoyoneda_iff (G : T) {J : Type w} [
   let eqv : Discrete (Shrink.{v} J) ≌ Discrete J := Discrete.equivalence e.symm
   let iso : eqv.functor ⋙ Discrete.functor f ≅ Discrete.functor (f ∘ e.symm) :=
     Discrete.natIso fun ⟨k⟩ ↦ Iso.refl (f (e.symm k))
-  let c := colimit.cocone (Discrete.functor f)
-  let hc : IsColimit c := colimit.isColimit (Discrete.functor f)
-  let c' := (Cocone.precompose iso.inv).obj (c.whisker eqv.functor)
-  have hc' : IsColimit c' := (IsColimit.precomposeInvEquiv iso _).symm (hc.whiskerEquivalence eqv)
-  have : HasCoproduct (f ∘ e.symm) := ⟨⟨⟨c', hc'⟩⟩⟩
-  have hmapIso : F.mapCocone c' ≅
-      (Cocone.precompose (Functor.whiskerRight iso.inv F)).obj
-        ((F.mapCocone c).whisker eqv.functor) :=
-    Cocone.ext (Iso.refl _) fun ⟨k⟩ ↦ by simp [c', iso]
+  have : HasCoproduct (f ∘ e.symm) :=
+    ⟨⟨⟨_, (IsColimit.precomposeInvEquiv iso _).symm
+      ((colimit.isColimit (Discrete.functor f)).whiskerEquivalence eqv)⟩⟩⟩
   have hpres :
       PreservesColimit (Discrete.functor f) F ↔
-        PreservesColimit (Discrete.functor (f ∘ e.symm)) F :=
-    ⟨fun _ ↦ preservesColimit_of_preserves_colimit_cocone hc' <| IsColimit.ofIsoColimit
-        ((IsColimit.precomposeInvEquiv (Functor.isoWhiskerRight iso F) _).symm
-          ((isColimitOfPreserves F hc).whiskerEquivalence eqv)) hmapIso.symm,
-      fun _ ↦ preservesColimit_of_preserves_colimit_cocone hc <|
-        IsColimit.ofWhiskerEquivalence eqv <|
-          (IsColimit.precomposeInvEquiv (Functor.isoWhiskerRight iso F) _)
-            (IsColimit.ofIsoColimit (isColimitOfPreserves F hc') hmapIso)⟩
+        PreservesColimit (Discrete.functor (f ∘ e.symm)) F := by
+    rw [← Functor.Final.preservesColimit_comp_iff (G := Discrete.functor f) eqv.functor]
+    exact ⟨fun _ ↦ preservesColimit_of_iso_diagram _ iso,
+      fun _ ↦ preservesColimit_of_iso_diagram _ iso.symm⟩
   rw [hpres, preservesColimit_discrete_preadditiveCoyoneda_iff_sameUniv G (f ∘ e.symm)]
   let equivDS := DirectSum.equivCongrLeft (β := fun j ↦ G ⟶ f j) e
   have hpostEq : (fun g : G ⟶ ∐ f ↦ g ≫ (Limits.Sigma.reindex e.symm f).inv) =
@@ -271,15 +266,25 @@ theorem IsCompactForCoproducts.homCoprodEquiv_symm_comp_ι {G : T}
     (hG.homCoprodEquiv f).symm (g ≫ Sigma.ι f j) = DirectSum.of (fun j ↦ G ⟶ f j) j g :=
   (hG.homCoprodEquiv f).injective (by simp)
 
+/-- Every morphism from `G` into a `v`-small coproduct `∐ f` preserved by `Hom(G, -)` is a
+finite sum of morphisms factoring through the summand inclusions `Sigma.ι f j`. -/
+theorem exists_finset_sum_comp_ι_of_preservesColimit {G : T} {J : Type w} [Small.{v} J]
+    (f : J → T) [HasCoproduct f]
+    [PreservesColimit (Discrete.functor f) (preadditiveCoyoneda.obj (op G))]
+    (g : G ⟶ ∐ f) :
+    ∃ (s : Finset J) (h : ∀ j, G ⟶ f j), g = ∑ j ∈ s, h j ≫ Sigma.ι f j := by
+  classical
+  obtain ⟨a, rfl⟩ := ((preservesColimit_discrete_preadditiveCoyoneda_iff G f).1 inferInstance).2 g
+  exact ⟨a.support, fun j ↦ a j, coprodComparisonAddHom_apply G f a⟩
+
 /-- Every morphism from a compact object `G` into a `v`-small coproduct `∐ f` is a finite sum of
 morphisms factoring through the summand inclusions `Sigma.ι f j`. -/
 theorem IsCompactForCoproducts.exists_finset_sum_comp_ι {G : T}
     (hG : IsCompactForCoproducts G) {J : Type w} [Small.{v} J]
     (f : J → T) [HasCoproduct f] (g : G ⟶ ∐ f) :
-    ∃ (s : Finset J) (h : ∀ j, G ⟶ f j), g = ∑ j ∈ s, h j ≫ Sigma.ι f j := by
-  classical
-  obtain ⟨a, rfl⟩ := (hG.bijective_coprodComparisonAddHom f).2 g
-  exact ⟨a.support, fun j ↦ a j, coprodComparisonAddHom_apply G f a⟩
+    ∃ (s : Finset J) (h : ∀ j, G ⟶ f j), g = ∑ j ∈ s, h j ≫ Sigma.ι f j :=
+  have := hG.preservesColimitsOfShape J
+  exists_finset_sum_comp_ι_of_preservesColimit f g
 
 end Basic
 
@@ -306,6 +311,21 @@ theorem IsCompactForCoproducts.of_retract {G H : T} (r : Retract G H)
     (hH : IsCompactForCoproducts H) : IsCompactForCoproducts G := fun J ↦
   (ObjectProperty.preservesColimitsOfShape (Discrete J)).prop_of_retract
     (r.op.map preadditiveCoyoneda) (hH J)
+
+/-- The `ObjectProperty` of objects compact for coproducts in a preadditive category. -/
+def compactForCoproducts (T : Type u) [Category.{v} T] [Preadditive T] : ObjectProperty T :=
+  IsCompactForCoproducts
+
+@[simp]
+theorem compactForCoproducts_iff (G : T) :
+    compactForCoproducts T G ↔ IsCompactForCoproducts G :=
+  Iff.rfl
+
+instance : (compactForCoproducts T).IsClosedUnderIsomorphisms where
+  of_iso e h := h.of_iso e
+
+instance : (compactForCoproducts T).IsStableUnderRetracts where
+  of_retract h hY := hY.of_retract h
 
 /-- Finite coproducts of compact objects are compact. -/
 theorem IsCompactForCoproducts.coproduct_of_finite {K : Type w} [Finite K] (X : K → T)
@@ -340,38 +360,48 @@ theorem IsCompactForCoproducts.coproduct_of_finite {K : Type w} [Finite K] (X : 
 theorem IsCompactForCoproducts.biprod {X Y : T} [HasBinaryBiproduct X Y]
     (hX : IsCompactForCoproducts X) (hY : IsCompactForCoproducts Y) :
     IsCompactForCoproducts (X ⊞ Y) := by
-  let f : Bool → T | true => X | false => Y
-  let inj : ∀ b : Bool, f b ⟶ X ⊞ Y | true => biprod.inl | false => biprod.inr
-  have hc : IsColimit (Cofan.mk (X ⊞ Y) inj) :=
-    Cofan.IsColimit.mk _ (fun s ↦ biprod.desc (s.inj true) (s.inj false))
-      (fun s b ↦ by cases b <;> simp [inj])
-      (fun s m h ↦ biprod.hom_ext' _ _ (by simpa [inj] using h true) (by simpa [inj] using h false))
-  have : HasCoproduct f := ⟨⟨⟨_, hc⟩⟩⟩
-  exact (IsCompactForCoproducts.coproduct_of_finite f fun b ↦ by cases b <;> assumption).of_iso
-    ((colimit.isColimit _).coconePointUniqueUpToIso hc)
+  have hc : IsColimit (BinaryBiproduct.bicone X Y).toBicone.toCocone :=
+    (BinaryBiproduct.bicone X Y).toBiconeIsColimit.symm (BinaryBiproduct.isColimit X Y)
+  have : HasCoproduct (pairFunction X Y) := ⟨⟨⟨_, hc⟩⟩⟩
+  exact (IsCompactForCoproducts.coproduct_of_finite (pairFunction X Y) fun p ↦ by
+    cases p <;> assumption).of_iso ((colimit.isColimit _).coconePointUniqueUpToIso hc)
 
 /-- Finite biproducts of compact objects are compact. -/
 theorem IsCompactForCoproducts.biproduct {K : Type w} [Finite K] (X : K → T) [HasBiproduct X]
     (hX : ∀ k, IsCompactForCoproducts (X k)) : IsCompactForCoproducts (Limits.biproduct X) :=
   have : HasCoproduct X := ⟨⟨⟨_, biproduct.isColimit X⟩⟩⟩
-  (IsCompactForCoproducts.coproduct_of_finite X hX).of_iso
-    ((colimit.isColimit _).coconePointUniqueUpToIso (biproduct.isColimit X))
+  (IsCompactForCoproducts.coproduct_of_finite X hX).of_iso (biproduct.isoCoproduct X).symm
+
+/-- An additive equivalence `e : T ≌ T'` carries preservation of `I`-shaped colimits by
+`Hom(G, -)` to preservation of `I`-shaped colimits by `Hom(e.functor.obj G, -)`. -/
+theorem preservesColimitsOfShape_preadditiveCoyoneda_of_equivalence
+    {T' : Type u'} [Category.{v} T'] [Preadditive T'] (e : T ≌ T') [e.functor.Additive]
+    (I : Type*) [Category* I] (G : T)
+    [PreservesColimitsOfShape I (preadditiveCoyoneda.obj (op G))] :
+    PreservesColimitsOfShape I (preadditiveCoyoneda.obj (op (e.functor.obj G))) := by
+  have := comp_preservesColimitsOfShape (J := I) e.inverse (preadditiveCoyoneda.obj (op G))
+  let α : e.inverse ⋙ preadditiveCoyoneda.obj (op G) ≅
+      preadditiveCoyoneda.obj (op (e.functor.obj G)) :=
+    NatIso.ofComponents (fun X ↦ (e.toAdjunction.homAddEquiv G X).symm.toAddCommGrpIso)
+      fun {X Y} φ ↦ AddCommGrpCat.hom_ext <| AddMonoidHom.ext fun f ↦ by
+        dsimp
+        exact e.toAdjunction.homEquiv_naturality_right_symm f φ
+  exact preservesColimitsOfShape_of_natIso α
+
+/-- If `Hom(G, -)` preserves `I`-shaped colimits, then so does `Hom(G⟦a⟧, -)`. -/
+theorem preservesColimitsOfShape_preadditiveCoyoneda_shift {A : Type*} [AddGroup A]
+    [HasShift T A] (I : Type*) [Category* I] (G : T) (a : A) [(shiftFunctor T a).Additive]
+    [PreservesColimitsOfShape I (preadditiveCoyoneda.obj (op G))] :
+    PreservesColimitsOfShape I (preadditiveCoyoneda.obj (op (G⟦a⟧))) :=
+  have : (shiftEquiv T a).functor.Additive := inferInstanceAs (shiftFunctor T a).Additive
+  preservesColimitsOfShape_preadditiveCoyoneda_of_equivalence (shiftEquiv T a) I G
 
 /-- Additive equivalences preserve compactness for coproducts. -/
 theorem IsCompactForCoproducts.map_of_equivalence {T' : Type u'} [Category.{v} T']
     [Preadditive T'] (e : T ≌ T') [e.functor.Additive] {G : T} (hG : IsCompactForCoproducts G) :
-    IsCompactForCoproducts (e.functor.obj G) := fun J ↦ by
+    IsCompactForCoproducts (e.functor.obj G) := fun J ↦
   have := hG J
-  have := comp_preservesColimitsOfShape (J := Discrete J) e.inverse (preadditiveCoyoneda.obj (op G))
-  let homAddEquiv (X : T') : (G ⟶ e.inverse.obj X) ≃+ (e.functor.obj G ⟶ X) :=
-    { toEquiv := (e.toAdjunction.homEquiv G X).symm
-      map_add' := fun _ _ ↦ by
-        simp [Adjunction.homEquiv_symm_apply, e.functor.map_add, Preadditive.add_comp] }
-  let α : e.inverse ⋙ preadditiveCoyoneda.obj (op G) ≅
-      preadditiveCoyoneda.obj (op (e.functor.obj G)) :=
-    NatIso.ofComponents (fun X ↦ (homAddEquiv X).toAddCommGrpIso) fun {X Y} φ ↦ by
-      ext (f : G ⟶ e.inverse.obj X); exact e.toAdjunction.homEquiv_naturality_right_symm f φ
-  exact preservesColimitsOfShape_of_natIso α
+  preservesColimitsOfShape_preadditiveCoyoneda_of_equivalence e (Discrete J) G
 
 /-- Compactness for coproducts is invariant under additive equivalences. -/
 theorem isCompactForCoproducts_map_of_equivalence_iff {T' : Type u'} [Category.{v} T']
@@ -399,26 +429,27 @@ end Closure
 
 section Examples
 
-/-- In a preadditive category, an infinite `v`-small coproduct of copies of a nonzero object is
+/-- In a preadditive category, a `v`-small coproduct with infinitely many nonzero summands is
 never compact: its identity morphism does not factor through any finite subcoproduct. -/
 theorem not_isCompactForCoproducts_sigma {T : Type u} [Category.{v} T] [Preadditive T]
-    {X : T} (hX : ¬ IsZero X) {J : Type w} [Small.{v} J] [Infinite J]
-    [HasCoproduct fun _ : J ↦ X] :
-    ¬ IsCompactForCoproducts (∐ fun _ : J ↦ X) := by
+    {J : Type w} [Small.{v} J] (f : J → T) [HasCoproduct f]
+    (hf : Set.Infinite {j | ¬ IsZero (f j)}) :
+    ¬ IsCompactForCoproducts (∐ f) := by
   classical
   intro hC
-  let f : J → T := fun _ ↦ X
   obtain ⟨s, h, hid⟩ := hC.exists_finset_sum_comp_ι f (𝟙 (∐ f))
-  obtain ⟨m, hm⟩ : ∃ m : J, m ∉ s := Infinite.exists_notMem_finset s
-  let p : (∐ f) ⟶ X := Sigma.desc fun j ↦ if j = m then 𝟙 X else 0
-  have hp (j : J) : Sigma.ι f j ≫ p = if j = m then 𝟙 X else 0 := Sigma.ι_comp_desc _ j
-  refine hX ((IsZero.iff_id_eq_zero X).2 ?_)
+  obtain ⟨m, hmS, hm0⟩ : ∃ m ∈ {j | ¬ IsZero (f j)}, m ∉ s := hf.exists_notMem_finset s
+  let p : (∐ f) ⟶ f m := Sigma.desc fun j ↦ if hjm : j = m then eqToHom (congrArg f hjm) else 0
+  have hp (j : J) : Sigma.ι f j ≫ p = if hjm : j = m then eqToHom (congrArg f hjm) else 0 :=
+    Sigma.ι_comp_desc _ j
+  refine hmS ((IsZero.iff_id_eq_zero (f m)).2 ?_)
   calc
-    𝟙 X = Sigma.ι f m ≫ (∑ j ∈ s, h j ≫ Sigma.ι f j) ≫ p := by rw [← hid]; simp [hp]
+    𝟙 (f m) = Sigma.ι f m ≫ (∑ j ∈ s, h j ≫ Sigma.ι f j) ≫ p := by
+      rw [← hid]; simp [hp]
     _ = ∑ j ∈ s, Sigma.ι f m ≫ h j ≫ (Sigma.ι f j ≫ p) := by
       simp [Preadditive.comp_sum, Preadditive.sum_comp, Category.assoc]
     _ = 0 := Finset.sum_eq_zero fun j hj ↦ by
-      have hjm : j ≠ m := fun h' ↦ hm (h' ▸ hj); simp [hp, hjm]
+      have hjm : j ≠ m := fun h' ↦ hm0 (h' ▸ hj); simp [hp, hjm]
 
 /-- The free abelian group of rank one (`ULift ℤ`) is compact for coproducts in
 `AddCommGrpCat`. -/

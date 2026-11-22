@@ -42,7 +42,7 @@ noncomputable section
 
 open CategoryTheory Limits
 
-universe uR u v w
+universe uR u v w s
 
 namespace ModuleCat
 
@@ -81,12 +81,12 @@ open Opposite
 
 variable {T : Type u} [Category.{v} T]
 
-/-- A contravariant `ModuleCat R`-valued functor preserving `J`-indexed products identifies its
-value on any colimit cofan `c` over `f : J → T` with the concrete product
-`∀ j, F.obj (op (f j))`, compatibly with the projections `F.map (c.inj j).op`. -/
+/-- A contravariant `ModuleCat R`-valued functor preserving the `J`-indexed product of
+`fun j ↦ op (f j)` identifies its value on any colimit cofan `c` over `f : J → T` with the
+concrete product `∀ j, F.obj (op (f j))`, compatibly with the projections `F.map (c.inj j).op`. -/
 def cofanOpToPiLinearEquiv {R : Type uR} [Ring R] {J : Type w} {f : J → T} {c : Cofan f}
-    (hc : IsColimit c) (F : Tᵒᵖ ⥤ ModuleCat.{max w v} R)
-    [PreservesLimitsOfShape (Discrete J) F] :
+    (hc : IsColimit c) (F : Tᵒᵖ ⥤ ModuleCat.{max w s} R)
+    [PreservesLimit (Discrete.functor fun j ↦ Opposite.op (f j)) F] :
     F.obj (Opposite.op c.pt) ≃ₗ[R] ∀ j, F.obj (Opposite.op (f j)) :=
   let hFan : IsLimit (Fan.mk (F.obj (Opposite.op c.pt)) fun j ↦ F.map (c.inj j).op) :=
     (isLimitMapConeFanMkEquiv F (fun j ↦ Opposite.op (f j)) (fun j ↦ (c.inj j).op)).toFun
@@ -97,8 +97,9 @@ def cofanOpToPiLinearEquiv {R : Type uR} [Ring R] {J : Type w} {f : J → T} {c 
 
 @[simp]
 theorem cofanOpToPiLinearEquiv_apply {R : Type uR} [Ring R] {J : Type w} {f : J → T} {c : Cofan f}
-    (hc : IsColimit c) (F : Tᵒᵖ ⥤ ModuleCat.{max w v} R)
-    [PreservesLimitsOfShape (Discrete J) F] (x : F.obj (Opposite.op c.pt)) (j : J) :
+    (hc : IsColimit c) (F : Tᵒᵖ ⥤ ModuleCat.{max w s} R)
+    [PreservesLimit (Discrete.functor fun j ↦ Opposite.op (f j)) F]
+    (x : F.obj (Opposite.op c.pt)) (j : J) :
     hc.cofanOpToPiLinearEquiv F x j = F.map (c.inj j).op x :=
   congrArg (fun φ : F.obj (Opposite.op c.pt) ⟶ F.obj (Opposite.op (f j)) ↦ φ x) <|
     ((isLimitMapConeFanMkEquiv F (fun j ↦ Opposite.op (f j)) (fun j ↦ (c.inj j).op)).toFun
@@ -107,8 +108,9 @@ theorem cofanOpToPiLinearEquiv_apply {R : Type uR} [Ring R] {J : Type w} {f : J 
 
 @[simp]
 theorem map_inj_cofanOpToPiLinearEquiv_symm {R : Type uR} [Ring R] {J : Type w} {f : J → T}
-    {c : Cofan f} (hc : IsColimit c) (F : Tᵒᵖ ⥤ ModuleCat.{max w v} R)
-    [PreservesLimitsOfShape (Discrete J) F] (x : ∀ j, F.obj (Opposite.op (f j))) (j : J) :
+    {c : Cofan f} (hc : IsColimit c) (F : Tᵒᵖ ⥤ ModuleCat.{max w s} R)
+    [PreservesLimit (Discrete.functor fun j ↦ Opposite.op (f j)) F]
+    (x : ∀ j, F.obj (Opposite.op (f j))) (j : J) :
     F.map (c.inj j).op ((hc.cofanOpToPiLinearEquiv F).symm x) = x j := by
   rw [← hc.cofanOpToPiLinearEquiv_apply F, LinearEquiv.apply_symm_apply]
 

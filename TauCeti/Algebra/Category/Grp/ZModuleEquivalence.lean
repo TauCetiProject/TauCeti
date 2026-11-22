@@ -51,23 +51,25 @@ theorem toIntModule_map {A B : AddCommGrpCat.{w}} (f : A ⟶ B) :
 
 /-- Composing `AddCommGrpCat.toIntModule` with the forgetful functor to `AddCommGrpCat` is
 naturally isomorphic to the identity functor. -/
-@[expose] def toIntModuleCompForget₂Iso :
+def toIntModuleCompForget₂Iso :
     toIntModule.{w} ⋙ forget₂ (ModuleCat.{w} ℤ) AddCommGrpCat.{w} ≅ 𝟭 AddCommGrpCat.{w} :=
   NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦ rfl
 
 @[simp]
 theorem toIntModuleCompForget₂Iso_hom_app (A : AddCommGrpCat.{w}) :
-    toIntModuleCompForget₂Iso.hom.app A = 𝟙 A :=
+    toIntModuleCompForget₂Iso.hom.app A = 𝟙 A := by
   rfl
 
 @[simp]
 theorem toIntModuleCompForget₂Iso_inv_app (A : AddCommGrpCat.{w}) :
-    toIntModuleCompForget₂Iso.inv.app A = 𝟙 A :=
+    toIntModuleCompForget₂Iso.inv.app A = 𝟙 A := by
   rfl
 
 instance : toIntModule.{w}.IsEquivalence :=
   have := (Functor.isEquivalence_iff_of_iso toIntModuleCompForget₂Iso.{w}.symm).1 inferInstance
   Functor.isEquivalence_of_comp_right toIntModule.{w}
     (forget₂ (ModuleCat.{w} ℤ) AddCommGrpCat.{w})
+
+instance : toIntModule.{w}.Additive where
 
 end AddCommGrpCat
