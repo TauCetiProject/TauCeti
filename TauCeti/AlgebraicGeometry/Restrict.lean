@@ -137,6 +137,42 @@ lemma Scheme.opensRange_homOfLE_sup (S : Scheme.{u}) (U W : S.Opens) :
   rw [Scheme.opensRange_homOfLE, Scheme.opensRange_homOfLE, ← Scheme.Hom.preimage_sup]
   simpa only [Scheme.Opens.opensRange_ι] using Scheme.Hom.preimage_opensRange (U ⊔ W).ι
 
+/-- A square of open immersions identifying the source with the full inverse image
+of the target open identifies its top arrow with the restriction of the bottom arrow. -/
+noncomputable def Scheme.Hom.morphismRestrictArrowIso {X Y U V : Scheme.{u}}
+    (f : X ⟶ Y) {i : U ⟶ X} {j : V ⟶ Y} (g : U ⟶ V)
+    [IsOpenImmersion i] [IsOpenImmersion j]
+    (h : i ≫ f = g ≫ j) (he : f ⁻¹ᵁ j.opensRange = i.opensRange) :
+    Arrow.mk (f ∣_ j.opensRange) ≅ Arrow.mk g := by
+  have hi : Set.range (f ⁻¹ᵁ j.opensRange).ι = Set.range i := by
+    rw [Scheme.Opens.range_ι, he]
+    rfl
+  have hj : Set.range j.opensRange.ι = Set.range j := by
+    rw [Scheme.Opens.range_ι]
+    rfl
+  refine Arrow.isoMk' (f ∣_ j.opensRange) g
+    (IsOpenImmersion.isoOfRangeEq (f ⁻¹ᵁ j.opensRange).ι i hi)
+    (IsOpenImmersion.isoOfRangeEq j.opensRange.ι j hj) ?_
+  rw [← cancel_mono j, Category.assoc, Category.assoc, ← h,
+    IsOpenImmersion.isoOfRangeEq_hom_fac_assoc,
+    IsOpenImmersion.isoOfRangeEq_hom_fac, morphismRestrict_ι]
+
+/-- The source isomorphism identifying a restriction with an open square respects its inclusion. -/
+@[reassoc (attr := simp)]
+theorem Scheme.Hom.morphismRestrictArrowIso_hom_left_comp {U V : Scheme.{u}}
+    {i : U ⟶ X} {j : V ⟶ Y} (g : U ⟶ V) [IsOpenImmersion i] [IsOpenImmersion j]
+    (h : i ≫ f = g ≫ j) (he : f ⁻¹ᵁ j.opensRange = i.opensRange) :
+    (f.morphismRestrictArrowIso g h he).hom.left ≫ i = (f ⁻¹ᵁ j.opensRange).ι := by
+  simp [morphismRestrictArrowIso, Arrow.isoMk']
+
+/-- The target isomorphism identifying a restriction with an open square respects its inclusion. -/
+@[reassoc (attr := simp)]
+theorem Scheme.Hom.morphismRestrictArrowIso_hom_right_comp {U V : Scheme.{u}}
+    {i : U ⟶ X} {j : V ⟶ Y} (g : U ⟶ V) [IsOpenImmersion i] [IsOpenImmersion j]
+    (h : i ≫ f = g ≫ j) (he : f ⁻¹ᵁ j.opensRange = i.opensRange) :
+    (f.morphismRestrictArrowIso g h he).hom.right ≫ j = j.opensRange.ι := by
+  simp [morphismRestrictArrowIso, Arrow.isoMk']
+
 end AlgebraicGeometry
 
 namespace CategoryTheory

@@ -40,9 +40,10 @@ difference quotients tend to zero at small scales: for every `ε > 0` there is `
 * `TauCeti.not_memLittleHolder_of_eqOn_norm_rpow`, `TauCeti.not_memLittleHolder_norm_rpow` and
   `TauCeti.HolderSpace.littleHolder_ne_top`: the cusp `x ↦ ‖x‖ ^ α`, `0 < α ≤ 1`, is `α`-Hölder
   (`TauCeti.holderWith_norm_rpow`) but has difference quotient `1` between `0` and every other
-  point, so no function agreeing with it near `0` is little Hölder. Truncated at height `1`, it is
-  a bounded Hölder function outside `h^{0,α}`. So for `α < 1`, in positive dimension, the smooth
-  Lipschitz functions are not dense in the full Hölder space.
+  point, so no function agreeing with it near `0` is little Hölder. Truncated at height `1`, and
+  taken along a unit vector of any nontrivial target, it is a bounded Hölder function outside
+  `h^{0,α}`. So for `α < 1`, in positive dimension, the smooth Lipschitz functions are not dense in
+  the full Hölder space.
 
 ## References
 
@@ -99,6 +100,19 @@ theorem _root_.LipschitzWith.memLittleHolder [PseudoMetricSpace Y] {K α : ℝ�
     (hf : LipschitzWith K f) (hα : α < 1) : MemLittleHolder α f :=
   hf.holderWith.memLittleHolder hα
 
+/-- Postcomposition with a Lipschitz map preserves little Hölder continuity. -/
+theorem _root_.LipschitzWith.comp_memLittleHolder [PseudoMetricSpace Y] {Z : Type*}
+    [PseudoMetricSpace Z] {K α : ℝ≥0} {g : Y → Z} (hg : LipschitzWith K g) {f : X → Y}
+    (hf : MemLittleHolder α f) : MemLittleHolder α (g ∘ f) := by
+  intro ε hε
+  obtain ⟨δ, hδ, h⟩ := hf (ε / (K + 1)) (by positivity)
+  refine ⟨δ, hδ, fun x y hxy ↦ ?_⟩
+  have hK : (K : ℝ) / (K + 1) ≤ 1 := (div_le_one (by positivity)).2 (by linarith)
+  calc dist (g (f x)) (g (f y)) ≤ K * dist (f x) (f y) := hg.dist_le_mul _ _
+    _ ≤ K * (ε / (K + 1) * dist x y ^ (α : ℝ)) := by gcongr; exact h x y hxy
+    _ = K / (K + 1) * (ε * dist x y ^ (α : ℝ)) := by ring
+    _ ≤ ε * dist x y ^ (α : ℝ) := mul_le_of_le_one_left (by positivity) hK
+
 /-- Constant functions are little Hölder. -/
 theorem memLittleHolder_const [PseudoMetricSpace Y] {α : ℝ≥0} (c : Y) :
     MemLittleHolder α (fun _ : X ↦ c) :=
@@ -130,16 +144,8 @@ theorem MemLittleHolder.neg (hf : MemLittleHolder α f) : MemLittleHolder α (-f
 
 /-- A scalar multiple of a little Hölder function is little Hölder. -/
 theorem MemLittleHolder.const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 Y]
-    (hf : MemLittleHolder α f) (c : 𝕜) : MemLittleHolder α (c • f) := by
-  intro ε hε
-  obtain ⟨δ, hδ, h⟩ := hf (ε / (‖c‖ + 1)) (by positivity)
-  refine ⟨δ, hδ, fun x y hxy ↦ ?_⟩
-  have hc : ‖c‖ / (‖c‖ + 1) ≤ 1 := (div_le_one (by positivity)).2 (by linarith)
-  calc dist ((c • f) x) ((c • f) y) = ‖c‖ * dist (f x) (f y) := by
-        rw [Pi.smul_apply, Pi.smul_apply, dist_smul₀]
-    _ ≤ ‖c‖ * (ε / (‖c‖ + 1) * dist x y ^ (α : ℝ)) := by gcongr; exact h x y hxy
-    _ = ‖c‖ / (‖c‖ + 1) * (ε * dist x y ^ (α : ℝ)) := by ring
-    _ ≤ ε * dist x y ^ (α : ℝ) := mul_le_of_le_one_left (by positivity) hc
+    (hf : MemLittleHolder α f) (c : 𝕜) : MemLittleHolder α (c • f) :=
+  (lipschitzWith_smul c).comp_memLittleHolder hf
 
 /-- The difference of two little Hölder functions is little Hölder. -/
 theorem MemLittleHolder.sub (hf : MemLittleHolder α f) (hg : MemLittleHolder α g) :
@@ -303,27 +309,35 @@ theorem littleHolder_eq_closure (hα : α < 1) :
 
 end Mollification
 
-/-- **The little Hölder space is a proper subspace** in positive dimension, for `0 < α ≤ 1`: the
-cusp `x ↦ ‖x‖ ^ α`, truncated at height `1`, is a bounded `α`-Hölder function whose Hölder
-quotients do not tend to zero at small scales. -/
-theorem littleHolder_ne_top {α : ℝ≥0} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [Nontrivial E] (hα0 : 0 < α) (hα1 : α ≤ 1) : littleHolder α E ℝ ≠ ⊤ := by
+/-- **The little Hölder space is a proper subspace** in positive dimension, for `0 < α ≤ 1` and
+every nontrivial target: for a unit vector `v`, the function `x ↦ min (‖x‖ ^ α) 1 • v`, the cusp
+truncated at height `1` along `v`, is a bounded `α`-Hölder function whose Hölder quotients do not
+tend to zero at small scales. -/
+theorem littleHolder_ne_top {α : ℝ≥0} {E Y : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [Nontrivial E] [NormedAddCommGroup Y] [NormedSpace ℝ Y] [Nontrivial Y] (hα0 : 0 < α)
+    (hα1 : α ≤ 1) : littleHolder α E Y ≠ ⊤ := by
+  obtain ⟨v, hv⟩ := exists_norm_eq Y zero_le_one
   let c : E → ℝ := fun x ↦ min (‖x‖ ^ (α : ℝ)) 1
+  have hc0 : ∀ x, 0 ≤ c x := fun x ↦ le_min (by positivity) zero_le_one
   have hc : HolderWith 1 α c := by
     have h := (LipschitzWith.id.min_const 1).holderWith.comp (holderWith_norm_rpow (E := E) hα1)
     rw [NNReal.one_rpow, mul_one, one_mul] at h
     exact h
-  have hcb : ∀ x, ‖c x‖ ≤ 1 := fun x ↦ by
-    rw [Real.norm_of_nonneg (le_min (by positivity) zero_le_one)]
-    exact min_le_right _ _
-  let f : HolderSpace α E ℝ :=
-    ofBoundedContinuousFunction (.ofNormedAddCommGroup c (hc.continuous hα0) 1 hcb) hc.memHolder
-  have hfc : ∀ y, f y = c y := fun y ↦ (ofBoundedContinuousFunction_apply _ _ y).trans (by simp)
-  -- Below height `1` the truncated cusp is the cusp.
-  refine fun htop ↦ not_memLittleHolder_of_eqOn_norm_rpow hα0 one_pos (fun x hx ↦ ?_)
-    (mem_littleHolder_iff.1 (htop ▸ Submodule.mem_top (x := f)))
-  exact (hfc x).trans (min_eq_left
-    (Real.rpow_le_one (norm_nonneg x) (mem_ball_zero_iff.1 hx).le α.coe_nonneg))
+  -- Along the unit vector `v`, the truncated cusp keeps its Hölder bound and its norm.
+  let g : E → Y := LinearIsometry.toSpanSingleton ℝ Y hv ∘ c
+  have hg : HolderWith 1 α g := (LinearIsometry.toSpanSingleton ℝ Y hv).isometry.comp_holderWith hc
+  have hgc : ∀ x, ‖g x‖ = c x := fun x ↦ by
+    simp only [g, Function.comp_apply, LinearIsometry.norm_map, Real.norm_of_nonneg (hc0 x)]
+  let f : HolderSpace α E Y :=
+    ofBoundedContinuousFunction (.ofNormedAddCommGroup g (hg.continuous hα0) 1
+      fun x ↦ (hgc x).trans_le (min_le_right _ _)) hg.memHolder
+  have hfg : ∀ y, f y = g y := fun y ↦ (ofBoundedContinuousFunction_apply _ _ y).trans (by simp)
+  -- Below height `1` the norm of the truncated cusp is the cusp.
+  refine fun htop ↦ not_memLittleHolder_of_eqOn_norm_rpow hα0 one_pos (f := fun x ↦ ‖f x‖)
+    (fun x hx ↦ ?_) (lipschitzWith_one_norm.comp_memLittleHolder
+      (mem_littleHolder_iff.1 (htop ▸ Submodule.mem_top (x := f))))
+  simp only [hfg, hgc, c]
+  exact min_eq_left (Real.rpow_le_one (norm_nonneg x) (mem_ball_zero_iff.1 hx).le α.coe_nonneg)
 
 end HolderSpace
 
