@@ -35,8 +35,10 @@ check to any dense subset.
 
 Along any approximate unit of a C⋆-algebra, two-sided compression `e * a * e` converges in norm to
 `a`, `Filter.IsApproximateUnit.tendsto_mul_mul` (and
-`Filter.IsIncreasingApproximateUnit.tendsto_mul_self`), and an approximate unit of `B` mapped into
-`A` by a star-algebra homomorphism `f` right-approximates every `a` with `star a * a ∈ Set.range f`
+`Filter.IsIncreasingApproximateUnit.tendsto_mul_self`), and more generally `u i * a * v i → a`
+for any left and right approximate identities `u, v` along a filter
+(`TauCeti.CStarAlgebra.tendsto_mul_mul`). An approximate unit of `B` mapped into `A` by a
+star-algebra homomorphism `f` right-approximates every `a` with `star a * a ∈ Set.range f`
 (`Filter.IsApproximateUnit.tendsto_mul_left_of_star_mul_self_mem_range`) and left-approximates
 every `a` with `a * star a ∈ Set.range f`
 (`Filter.IsApproximateUnit.tendsto_mul_right_of_mul_star_self_mem_range`). For closed
@@ -68,9 +70,12 @@ public section
 open Filter Topology
 open scoped CStarAlgebra ComplexOrder
 
-namespace Filter.IsApproximateUnit
+namespace TauCeti.CStarAlgebra
 
-private theorem tendsto_mul_mul_of_tendsto {ι A : Type*} [NonUnitalCStarAlgebra A]
+/-- If `u` is a left approximate identity and `v` is a right approximate identity along a filter
+`l` in a C⋆-algebra (with no norm-boundedness hypothesis), then two-sided compression
+`u i * a * v i` converges in norm to `a` for every `a`. -/
+theorem tendsto_mul_mul {ι A : Type*} [NonUnitalCStarAlgebra A]
     {l : Filter ι} {u v : ι → A}
     (hu : ∀ x : A, Tendsto (fun i => u i * x) l (𝓝 x))
     (hv : ∀ x : A, Tendsto (fun i => x * v i) l (𝓝 x)) (a : A) :
@@ -86,12 +91,16 @@ private theorem tendsto_mul_mul_of_tendsto {ι A : Type*} [NonUnitalCStarAlgebra
   | add x y _ _ hx hy => exact (hx.add hy).congr fun _ => by rw [mul_add, add_mul]
   | smul c x _ hx => exact (hx.const_smul c).congr fun _ => by rw [mul_smul_comm, smul_mul_assoc]
 
+end TauCeti.CStarAlgebra
+
+namespace Filter.IsApproximateUnit
+
 /-- Along any approximate unit of a C⋆-algebra, two-sided compression `e * a * e` converges in
 norm to `a`, without assuming positivity or norm boundedness of the filter. -/
 theorem tendsto_mul_mul {A : Type*} [NonUnitalCStarAlgebra A] {l : Filter A}
     (hl : l.IsApproximateUnit) (a : A) :
     Tendsto (fun e => e * a * e) l (𝓝 a) :=
-  tendsto_mul_mul_of_tendsto hl.tendsto_mul_right hl.tendsto_mul_left a
+  TauCeti.CStarAlgebra.tendsto_mul_mul hl.tendsto_mul_right hl.tendsto_mul_left a
 
 /-- Along any approximate unit `l` of `B` mapped into `A` by a star-algebra homomorphism `f`, right
 multiplication `a * f e` converges to `a` whenever `star a * a` lies in the range of `f`. In
@@ -105,7 +114,7 @@ theorem tendsto_mul_left_of_star_mul_self_mem_range {A B F : Type*} [NonUnitalCS
   have hstar_right (x : B) : Tendsto (fun e => star e * x) l (𝓝 x) :=
     tendsto_map'_iff.mp (hl.map_star.tendsto_mul_right x)
   have hquad : Tendsto (fun e => star e * b * e - star e * b - b * e + b) l (𝓝 0) := by
-    simpa using (((tendsto_mul_mul_of_tendsto hstar_right hl.tendsto_mul_left b).sub
+    simpa using (((TauCeti.CStarAlgebra.tendsto_mul_mul hstar_right hl.tendsto_mul_left b).sub
       (hstar_right b)).sub (hl.tendsto_mul_left b)).add (tendsto_const_nhds (x := b))
   have hf_quad : Tendsto (fun e => star (a * f e - a) * (a * f e - a)) l (𝓝 0) := by
     have hlim := ((map_continuous f).tendsto 0).comp hquad

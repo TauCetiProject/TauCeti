@@ -10,9 +10,10 @@ public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
+import Mathlib.Analysis.Normed.Operator.Mul
 
 /-!
-# Norms of positive functionals on C⋆-algebras
+# Norms and compression of positive functionals on C⋆-algebras
 
 ## Pullback along surjective homomorphisms
 
@@ -39,6 +40,15 @@ These are Mathlib's `ContinuousLinearMap.monotone_iff_tendsto_nhds_opNorm` and
 
 Finally, `WeakDual.ext_nonneg`: a functional on a C⋆-algebra is determined by its values on
 nonnegative elements, since these span the algebra.
+
+## Functional compression
+
+Compressing a weak-* dual functional `ω` by `v : A` yields `z ↦ ω (star v * z * v)` as a weak-*
+continuous linear map `TauCeti.compressFunctional v : WeakDual 𝕜 A →L[𝕜] WeakDual 𝕜 A`
+(`TauCeti.compressFunctional_apply`), with operator norm bound
+`TauCeti.norm_toStrongDual_compressFunctional_le` (`‖toStrongDual (compressFunctional v ω)‖ ≤
+‖toStrongDual ω‖ * ‖v‖ ^ 2`), preservation of positivity (`TauCeti.map_nonneg_compressFunctional`),
+and weak-* closed unit-ball preservation (`TauCeti.compressFunctional_mem_closedBall`).
 -/
 
 public section
@@ -100,3 +110,58 @@ theorem norm_toStrongDual_eq_map_one_of_map_nonneg {A : Type*} [CStarAlgebra A] 
     (monotone_toStrongDual_of_map_nonneg hφ)
 
 end WeakDual
+
+namespace TauCeti
+
+section Compress
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalSeminormedRing A] [StarRing A]
+  [NormedSpace 𝕜 A] [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A]
+
+/-- Compress a weak-* dual functional `ω : WeakDual 𝕜 A` by `v : A`, sending `z` to
+`ω (star v * z * v)`. -/
+noncomputable def compressFunctional (v : A) : WeakDual 𝕜 A →L[𝕜] WeakDual 𝕜 A where
+  toFun ω := StrongDual.toWeakDual
+    ((WeakDual.toStrongDual ω).comp (ContinuousLinearMap.mulLeftRight 𝕜 A (star v) v))
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  cont := WeakDual.continuous_of_continuous_eval fun a => WeakDual.eval_continuous (star v * a * v)
+
+/-- Compressing `ω` by `v` evaluates at `z` as `ω (star v * z * v)`. -/
+@[simp]
+theorem compressFunctional_apply (v : A) (ω : WeakDual 𝕜 A) (z : A) :
+    compressFunctional v ω z = ω (star v * z * v) := by
+  unfold compressFunctional
+  rfl
+
+/-- The operator norm of `compressFunctional v ω` is at most `‖toStrongDual ω‖ * ‖v‖ ^ 2`. -/
+theorem norm_toStrongDual_compressFunctional_le [NormedStarGroup A] (v : A)
+    (ω : WeakDual 𝕜 A) :
+    ‖WeakDual.toStrongDual (compressFunctional v ω)‖ ≤ ‖WeakDual.toStrongDual ω‖ * ‖v‖ ^ 2 := by
+  refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
+  have hmul := ContinuousLinearMap.opNorm_mulLeftRight_apply_apply_le 𝕜 A (star v) v
+  rw [norm_star v, ← sq] at hmul
+  exact mul_le_mul_of_nonneg_left hmul (norm_nonneg _)
+
+/-- Compressing a functional that is nonnegative on nonnegative elements preserves nonnegativity
+on nonnegative elements. -/
+theorem map_nonneg_compressFunctional [PartialOrder A] [StarOrderedRing A] [PartialOrder 𝕜]
+    {v : A} {ω : WeakDual 𝕜 A} (hω : ∀ z : A, 0 ≤ z → 0 ≤ ω z) {z : A} (hz : 0 ≤ z) :
+    0 ≤ compressFunctional v ω z := by
+  rw [compressFunctional_apply]
+  exact hω _ (star_left_conjugate_nonneg hz v)
+
+/-- If `‖toStrongDual ω‖ ≤ 1` and `‖v‖ ≤ 1`, then `compressFunctional v ω` lies in the weak-*
+closed unit ball `toStrongDual ⁻¹' Metric.closedBall 0 1`. -/
+theorem compressFunctional_mem_closedBall [NormedStarGroup A] {v : A} (hv : ‖v‖ ≤ 1)
+    {ω : WeakDual 𝕜 A} (hω : ‖WeakDual.toStrongDual ω‖ ≤ 1) :
+    compressFunctional v ω ∈ WeakDual.toStrongDual ⁻¹' Metric.closedBall 0 1 := by
+  simp only [Set.mem_preimage, Metric.mem_closedBall, dist_zero_right]
+  calc ‖WeakDual.toStrongDual (compressFunctional v ω)‖
+      ≤ ‖WeakDual.toStrongDual ω‖ * ‖v‖ ^ 2 := norm_toStrongDual_compressFunctional_le v ω
+    _ ≤ 1 * 1 ^ 2 := by gcongr
+    _ = 1 := by norm_num
+
+end Compress
+
+end TauCeti

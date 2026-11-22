@@ -525,42 +525,6 @@ private theorem pos_of_isStrictlyPositive {h : A} (hh : IsStrictlyPositive h) (�
   ext a
   exact DFunLike.congr_fun hω a
 
-/-- Compressing a state `ω` of a unital C⋆-algebra by a nonnegative contraction `v` produces a
-positive functional in the weak-* closed unit ball taking `z` to `ω (v * z * v)`. -/
-private noncomputable def compressState {B : Type*} [CStarAlgebra B] (v : B)
-    (ω : WeakDual ℂ B) : WeakDual ℂ B :=
-  StrongDual.toWeakDual ((toStrongDual ω).comp (ContinuousLinearMap.mulLeftRight ℂ B v v))
-
-private theorem compressState_apply {B : Type*} [CStarAlgebra B] (v : B) (ω : WeakDual ℂ B)
-    (z : B) : compressState v ω z = ω (v * z * v) := by
-  simp [compressState]
-
-private theorem compressState_nonneg_and_mem_closedBall {B : Type*} [CStarAlgebra B]
-    [PartialOrder B] [StarOrderedRing B] {v : B} (hv₀ : 0 ≤ v) (hv₁ : ‖v‖ ≤ 1)
-    {ω : WeakDual ℂ B} (hω : ω ∈ stateSpace B) :
-    (∀ z : B, 0 ≤ z → 0 ≤ compressState v ω z) ∧
-      compressState v ω ∈ toStrongDual ⁻¹' Metric.closedBall 0 1 := by
-  have hpos : ∀ z : B, 0 ≤ z → 0 ≤ compressState v ω z := fun z hz => by
-    rw [compressState_apply]
-    have hvz : 0 ≤ v * z * v := by
-      have := star_left_conjugate_nonneg hz v
-      rwa [hv₀.isSelfAdjoint.star_eq] at this
-    exact map_nonneg_of_mem_stateSpace hω hvz
-  refine ⟨hpos, ?_⟩
-  simp only [Set.mem_preimage, Metric.mem_closedBall, dist_zero_right]
-  have hnorm1 := WeakDual.norm_toStrongDual_eq_map_one_of_map_nonneg hpos
-  have hle : ‖compressState v ω 1‖ ≤ 1 := by
-    calc ‖compressState v ω 1‖ = ‖toStrongDual ω (v * 1 * v)‖ := by
-          rw [compressState_apply, toStrongDual_apply]
-      _ ≤ ‖toStrongDual ω‖ * ‖v * 1 * v‖ := (toStrongDual ω).le_opNorm _
-      _ ≤ 1 * 1 := by
-        rw [norm_toStrongDual_of_mem_stateSpace hω, mul_one v]
-        exact mul_le_mul_of_nonneg_left
-          ((norm_mul_le_of_le hv₁ hv₁).trans_eq (one_mul 1)) zero_le_one
-      _ = 1 := one_mul 1
-  simpa [Complex.norm_real, Real.norm_of_nonneg (norm_nonneg _)] using
-    (congrArg norm hnorm1).le.trans hle
-
 private theorem exists_mem_stateSpace_compress_eq_norm_sq {u : A} (hu : IsSelfAdjoint u) (a : A) :
     ∃ ω ∈ stateSpace A⁺¹,
       ω ((1 - (u : A⁺¹)) * ((a * star a : A) : A⁺¹) * (1 - (u : A⁺¹))) =
@@ -578,19 +542,20 @@ private theorem exists_mem_stateSpace_compress_eq_norm_sq {u : A} (hu : IsSelfAd
 
 /-- Along `atTop`, compressing any sequence of states `ω m ∈ stateSpace A⁺¹` by
 `1 - ((resolventApprox h m : A) : A⁺¹)` sends `(h : A⁺¹)` to `0`. -/
-private theorem tendsto_compressState_resolventApprox_self {h : A} (hh : 0 ≤ h)
+private theorem tendsto_compressFunctional_resolventApprox_self {h : A} (hh : 0 ≤ h)
     {ω : ℕ → WeakDual ℂ A⁺¹} (hω : ∀ m, ω m ∈ stateSpace A⁺¹) :
-    Tendsto (fun m => compressState (1 - ((resolventApprox h m : A) : A⁺¹)) (ω m) (h : A⁺¹))
+    Tendsto (fun m => compressFunctional (1 - ((resolventApprox h m : A) : A⁺¹)) (ω m) (h : A⁺¹))
       atTop (𝓝 (0 : ℂ)) := by
   let u : ℕ → A := resolventApprox h
   let v : ℕ → A⁺¹ := fun m => 1 - (u m : A⁺¹)
-  have hv_norm (m : ℕ) : ‖v m‖ ≤ 1 := (CStarAlgebra.mem_Icc_iff_norm_le_one.mp <|
+  have hv (m : ℕ) : 0 ≤ v m ∧ ‖v m‖ ≤ 1 := CStarAlgebra.mem_Icc_iff_norm_le_one.mp <|
     Set.sub_mem_Icc_zero_iff_right.mpr <| CStarAlgebra.inr_mem_Icc_iff_norm_le.mpr
-      ⟨resolventApprox_nonneg hh m, (norm_resolventApprox_lt_one hh m).le⟩).2
+      ⟨resolventApprox_nonneg hh m, (norm_resolventApprox_lt_one hh m).le⟩
   have hinv : Tendsto (fun m : ℕ => ((m : ℝ) + 1)⁻¹) atTop (𝓝 0) := by
     simpa only [one_div] using tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)
   refine tendsto_iff_norm_sub_tendsto_zero.mpr <| squeeze_zero_norm' (.of_forall fun m => ?_) hinv
-  rw [sub_zero, Real.norm_of_nonneg (norm_nonneg _), compressState_apply, ← toStrongDual_apply]
+  rw [sub_zero, Real.norm_of_nonneg (norm_nonneg _), compressFunctional_apply,
+    (hv m).1.isSelfAdjoint.star_eq, ← toStrongDual_apply]
   have hvh : v m * (h : A⁺¹) * v m = ((h - u m * h : A) : A⁺¹) * v m := by
     simp [v, u, sub_mul, Unitization.inr_sub, Unitization.inr_mul]
   rw [hvh]
@@ -599,7 +564,7 @@ private theorem tendsto_compressState_resolventApprox_self {h : A} (hh : 0 ≤ h
   calc ‖((h - u m * h : A) : A⁺¹) * v m‖ ≤ ‖((h - u m * h : A) : A⁺¹)‖ * ‖v m‖ := norm_mul_le _ _
     _ ≤ ‖u m * h - h‖ := by
       rw [Unitization.norm_inr, norm_sub_rev]
-      exact mul_le_of_le_one_right (norm_nonneg _) (hv_norm m)
+      exact mul_le_of_le_one_right (norm_nonneg _) (hv m).2
     _ ≤ ((m : ℝ) + 1)⁻¹ := norm_resolventApprox_mul_self_sub_le hh m
 
 /-- Weak-* compactness step (Blackadar II.4.2.4): if `0 ≤ h` and `0 < φ h` for every nonzero
@@ -619,29 +584,32 @@ private theorem tendsto_resolventApprox_mul_of_forall_positiveLinearMap_pos {h :
       ⟨resolventApprox_nonneg hh m, (norm_resolventApprox_lt_one hh m).le⟩
   choose ω hω_mem hω_val using fun m =>
     exists_mem_stateSpace_compress_eq_norm_sq (isSelfAdjoint_resolventApprox h m) a
-  let ψ : ℕ → WeakDual ℂ A⁺¹ := fun m => compressState (v m) (ω m)
-  have hψ (m : ℕ) := compressState_nonneg_and_mem_closedBall (hv m).1 (hv m).2 (hω_mem m)
+  let ψ : ℕ → WeakDual ℂ A⁺¹ := fun m => compressFunctional (v m) (ω m)
   let l_bad : Filter ℕ := atTop ⊓ 𝓟 {m : ℕ | ε ≤ ‖a - u m * a‖}
   have : l_bad.NeBot := frequently_iff_neBot.mp hfreq
   obtain ⟨ψ₀, _, hcl⟩ := (WeakDual.isCompact_closedBall (0 : StrongDual ℂ A⁺¹) 1).exists_clusterPt
-    (f := l_bad.map ψ) (le_principal_iff.mpr <| eventually_map.mpr <| .of_forall fun m => (hψ m).2)
+    (f := l_bad.map ψ) (le_principal_iff.mpr <| eventually_map.mpr <| .of_forall fun m =>
+      compressFunctional_mem_closedBall (hv m).2
+        (norm_toStrongDual_of_mem_stateSpace (hω_mem m)).le)
   have heval (z : A⁺¹) : MapClusterPt (ψ₀ z) l_bad (fun m => ψ m z) :=
     (mapClusterPt_def.mpr hcl).continuousAt_comp (WeakBilin.eval_continuous _ z).continuousAt
   let φ₀ : A →ₚ[ℂ] ℂ := .mk₀
     ((toStrongDual ψ₀).toLinearMap.comp (Unitization.inrHom ℂ ℂ A)) fun x hx =>
       isClosed_Ici.mem_of_mapClusterPt (heval (x : A⁺¹))
-        (.of_forall fun m => (hψ m).1 (x : A⁺¹) (Unitization.inr_nonneg ℂ x hx))
+        (.of_forall fun m => map_nonneg_compressFunctional
+          (fun _ => map_nonneg_of_mem_stateSpace (hω_mem m)) (Unitization.inr_nonneg ℂ x hx))
   have hφ₀_ne : φ₀ ≠ 0 := fun h0 => by
     have hge : ε ^ 2 ≤ ‖ψ₀ ((a * star a : A) : A⁺¹)‖ :=
       (isClosed_le continuous_const continuous_norm).mem_of_mapClusterPt
         (heval ((a * star a : A) : A⁺¹)) <|
           eventually_inf_principal.mpr <| .of_forall fun m hm => by
             simp only [Set.mem_ofPred_eq] at hm ⊢
-            rw [compressState_apply, hω_val m, Complex.norm_real, Real.norm_of_nonneg (sq_nonneg _)]
+            rw [compressFunctional_apply, (hv m).1.isSelfAdjoint.star_eq, hω_val m,
+              Complex.norm_real, Real.norm_of_nonneg (sq_nonneg _)]
             exact pow_le_pow_left₀ hε.le hm 2
     have hzero : ψ₀ ((a * star a : A) : A⁺¹) = 0 := DFunLike.congr_fun h0 (a * star a)
     rw [hzero, norm_zero] at hge; linarith [sq_pos_of_pos hε]
-  have hlim_top := tendsto_compressState_resolventApprox_self hh hω_mem
+  have hlim_top := tendsto_compressFunctional_resolventApprox_self hh hω_mem
   exact (hpos φ₀ hφ₀_ne).ne'
     (eq_of_nhds_neBot ((heval (h : A⁺¹)).clusterPt.mono (hlim_top.mono_left inf_le_left)))
 
