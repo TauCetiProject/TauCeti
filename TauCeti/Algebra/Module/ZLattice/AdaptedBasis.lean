@@ -35,7 +35,8 @@ with `W` is recorded as the lattice `ZLattice.comap ℝ Δ W.subtype` in `W`. Si
 subspace, the quotient `Δ ⧸ (Δ ∩ W)` is torsion-free, hence free, so every `ℤ`-basis of `Δ ∩ W`
 extends to a `ℤ`-basis of `Δ` (`ZLattice.exists_basis_sum_inl_eq`). When `Δ` is a discrete full
 lattice in a finite-dimensional `E` and `Δ ∩ W` spans `W`, this gives a basis of `Δ` whose first
-`dim W` vectors form a basis of `Δ ∩ W` (`ZLattice.exists_basis_sum_finrank`).
+`dim W` vectors form a basis of `Δ ∩ W` (`ZLattice.exists_basis_sum_finrank`), and the first
+block of such a basis spans `W` over `ℝ` (`ZLattice.span_range_ofZLatticeBasis_inl`).
 
 ## Main results
 
@@ -49,6 +50,8 @@ lattice in a finite-dimensional `E` and `Δ ∩ W` spans `W`, this gives a basis
 * `ZLattice.exists_basis_sum_finrank`: if `Δ` is a discrete full lattice in a finite-dimensional
   `E` and `Δ ∩ W` spans `W`, then `Δ` has a basis indexed by `Fin (dim W) ⊕ Fin s`, with
   `dim W + s = dim E`, whose first block is a basis of `Δ ∩ W`.
+* `ZLattice.span_range_ofZLatticeBasis_inl`: if `Δ ∩ W` spans `W`, the first block of a basis of
+  `Δ` that extends a basis of `Δ ∩ W` spans `W` over `ℝ`.
 
 ## References
 
@@ -280,6 +283,20 @@ theorem exists_basis_sum_finrank [FiniteDimensional ℝ E] (Δ : Submodule ℤ E
   let c := Module.finBasisOfFinrankEq ℤ _ (ZLattice.rank ℝ (ZLattice.comap ℝ Δ W.subtype))
   obtain ⟨s, b, hs, hb⟩ := exists_basis_sum_inl_eq Δ W c
   exact ⟨s, b, c, by rwa [Nat.card_fin, ZLattice.rank ℝ Δ] at hs, hb⟩
+
+/-- If the first block of a basis `b` of `Δ` is a basis `c` of `Δ ∩ W`, and `Δ ∩ W` spans `W`, then
+the first block of `b` spans `W` over `ℝ`. -/
+theorem span_range_ofZLatticeBasis_inl [FiniteDimensional ℝ E] {Δ : Submodule ℤ E}
+    [DiscreteTopology Δ] [IsZLattice ℝ Δ] {W : Submodule ℝ E} {ι κ : Type*}
+    (hL : span ℝ (ZLattice.comap ℝ Δ W.subtype : Set W) = ⊤) (b : Basis (ι ⊕ κ) ℤ Δ)
+    (c : Basis ι ℤ (ZLattice.comap ℝ Δ W.subtype)) (hbc : ∀ i, (b (.inl i) : E) = c i) :
+    span ℝ (Set.range (b.ofZLatticeBasis ℝ Δ ∘ Sum.inl)) = W := by
+  have : IsZLattice ℝ (ZLattice.comap ℝ Δ W.subtype) := ⟨hL⟩
+  have hcomp : b.ofZLatticeBasis ℝ Δ ∘ Sum.inl = W.subtype ∘ c.ofZLatticeBasis ℝ _ := by
+    ext i
+    simp [hbc]
+  rw [hcomp, Set.range_comp, ← Submodule.map_span, Basis.span_eq, Submodule.map_top,
+    range_subtype]
 
 end Saturated
 

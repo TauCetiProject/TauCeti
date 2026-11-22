@@ -17,9 +17,9 @@ import TauCeti.Analysis.InnerProductSpace.Gram.Projection
 Let `Δ` be a discrete full lattice in a finite-dimensional real inner product space `E` and `W`
 a real subspace. The intersection `Δ ∩ W` is recorded as the lattice `ZLattice.comap ℝ Δ W.subtype`
 in `W`, and `W` is rational for `Δ` when `Δ ∩ W` spans `W`. In that case `Δ` has a basis whose
-first `dim W` vectors form a basis of `Δ ∩ W` (`ZLattice.exists_basis_sum_finrank`, in
-`TauCeti.Algebra.Module.ZLattice.AdaptedBasis`), and the first block of such a basis spans `W`
-over `ℝ` (`ZLattice.span_range_ofZLatticeBasis_inl`).
+first `dim W` vectors form a basis of `Δ ∩ W` (`ZLattice.exists_basis_sum_finrank`), and the
+first block of such a basis spans `W` over `ℝ` (`ZLattice.span_range_ofZLatticeBasis_inl`), both
+in `TauCeti.Algebra.Module.ZLattice.AdaptedBasis`.
 
 Let `π : E → Wᗮ` be the orthogonal projection. For a basis of `Δ` whose first block spans `W`, the
 projections of the second block are a real basis of `Wᗮ` whose `ℤ`-span is the image `π(Δ)`
@@ -31,8 +31,6 @@ or self-duality of `Δ` is assumed.
 
 ## Main results
 
-* `ZLattice.span_range_ofZLatticeBasis_inl`: if `Δ ∩ W` spans `W`, the first block of a basis of
-  `Δ` that extends a basis of `Δ ∩ W` spans `W` over `ℝ`.
 * `ZLattice.span_orthogonalProjectionInr_ofZLatticeBasis`: the projections to `Wᗮ` of the second
   block of a basis of `Δ` whose first block spans `W` span `π(Δ)` over `ℤ`.
 * `ZLattice.discreteTopology_map_orthogonalProjectionOnto`,
@@ -76,19 +74,6 @@ theorem span_orthogonalProjectionInr_ofZLatticeBasis {ι κ : Type*} (b : Basis 
         exact subset_span ⟨i, rfl⟩
       simp [orthogonalProjectionOnto_orthogonal_apply_eq_zero hi]
     · exact subset_span ⟨j, by simp⟩
-
-/-- If the first block of a basis `b` of `Δ` is a basis `c` of `Δ ∩ W`, and `Δ ∩ W` spans `W`, then
-the first block of `b` spans `W` over `ℝ`. -/
-theorem span_range_ofZLatticeBasis_inl {ι κ : Type*}
-    (hL : span ℝ (ZLattice.comap ℝ Δ W.subtype : Set W) = ⊤) (b : Basis (ι ⊕ κ) ℤ Δ)
-    (c : Basis ι ℤ (ZLattice.comap ℝ Δ W.subtype)) (hbc : ∀ i, (b (.inl i) : E) = c i) :
-    span ℝ (Set.range (b.ofZLatticeBasis ℝ Δ ∘ Sum.inl)) = W := by
-  have : IsZLattice ℝ (ZLattice.comap ℝ Δ W.subtype) := ⟨hL⟩
-  have hcomp : b.ofZLatticeBasis ℝ Δ ∘ Sum.inl = W.subtype ∘ c.ofZLatticeBasis ℝ _ := by
-    ext i
-    simp [hbc]
-  rw [hcomp, Set.range_comp, ← Submodule.map_span, Basis.span_eq, Submodule.map_top,
-    range_subtype]
 
 /-- The projection of a full lattice to the orthogonal complement of a rational subspace is the
 `ℤ`-span of a real basis of the complement. -/
