@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Topology.ContinuousMap.Ordered
-import Mathlib.Tactic.FieldSimp
 
 /-!
 # Uniform positivity of continuous functions
@@ -20,11 +19,11 @@ when `𝕜 = ℝ`); openness needs only a linear order on `𝕜` whose intervals
 These facts apply, for example, to separating positive continuous functions in the proof of
 Pietsch domination.
 
-A linear functional on `C(X, 𝕜)`, for a linearly ordered field `𝕜`, that is bounded above on the
-uniformly positive functions is nonpositive on them, since they form a cone, and hence nonpositive
-on every nonnegative function: adding a small positive constant to a nonnegative function makes it
-uniformly positive. This is the positivity of the functional produced by separating the uniformly
-positive functions from a cone.
+A linear functional on `C(X, 𝕜)`, for a linearly ordered semifield `𝕜` such as `ℝ≥0` or any
+linearly ordered field, that is bounded above on the uniformly positive functions is nonpositive on
+them, since they form a cone, and hence nonpositive on every nonnegative function: adding a positive
+constant to a large multiple of a nonnegative function makes it uniformly positive. This is the
+positivity of the functional produced by separating the uniformly positive functions from a cone.
 
 A continuous map from a compact space into a metric space (or normed additive group) stays at a
 uniform positive distance from every point outside its range.
@@ -122,36 +121,35 @@ end ContinuousMap
 
 namespace LinearMap
 
-/-- A linear functional on `C(X, 𝕜)`, for a linearly ordered field `𝕜`, that is bounded above on
-the functions bounded below by a positive constant is nonpositive on the nonnegative functions. -/
-theorem apply_nonpos_of_forall_uniformlyPositive_lt {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜] [ContinuousConstSMul 𝕜 𝕜]
-    (L : C(X, 𝕜) →ₗ[𝕜] 𝕜) {u : 𝕜}
+/-- A linear functional on `C(X, 𝕜)`, for a linearly ordered semifield `𝕜` such as `ℝ≥0` or any
+linearly ordered field, that is bounded above on the functions bounded below by a positive constant
+is nonpositive on the nonnegative functions. -/
+theorem apply_nonpos_of_forall_uniformlyPositive_lt {𝕜 : Type*} [Semifield 𝕜] [LinearOrder 𝕜]
+    [IsStrictOrderedRing 𝕜] [ExistsAddOfLE 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
+    [ContinuousConstSMul 𝕜 𝕜] (L : C(X, 𝕜) →ₗ[𝕜] 𝕜) {u : 𝕜}
     (hL : ∀ h ∈ {h : C(X, 𝕜) | ∃ δ > 0, ∀ x, δ ≤ h x}, L h < u) {h : C(X, 𝕜)} (hh : 0 ≤ h) :
     L h ≤ 0 := by
   -- The uniformly positive functions form a cone, so `L` is nonpositive on them: if `L g > 0`,
-  -- then `t • g` with `t = |u| / L g + 1` is uniformly positive and `L (t • g) = |u| + L g > u`.
+  -- then `t • g` with `t = (max u 0 + 1) / L g` is uniformly positive and
+  -- `L (t • g) = max u 0 + 1 > u`.
   have hL' (g : C(X, 𝕜)) (hg : g ∈ {h : C(X, 𝕜) | ∃ δ > 0, ∀ x, δ ≤ h x}) : L g ≤ 0 := by
     obtain ⟨δ, hδ, hgδ⟩ := hg
     by_contra! hpos
-    have ht : 0 < |u| / L g + 1 := by
-      have := div_nonneg (abs_nonneg u) hpos.le
-      linarith
-    have hlt := hL ((|u| / L g + 1) • g) ⟨_, mul_pos ht hδ, fun x ↦ by
+    have ht : 0 < (max u 0 + 1) / L g :=
+      div_pos (add_pos_of_nonneg_of_pos (le_max_right u 0) one_pos) hpos
+    have hlt := hL (((max u 0 + 1) / L g) • g) ⟨_, mul_pos ht hδ, fun x ↦ by
       simpa using mul_le_mul_of_nonneg_left (hgδ x) ht.le⟩
-    rw [map_smul, smul_eq_mul, add_mul, div_mul_cancel₀ _ hpos.ne', one_mul] at hlt
-    linarith [le_abs_self u]
-  have hL1 : L 1 ≤ 0 := hL' 1 ⟨1, one_pos, fun _ ↦ le_rfl⟩
-  have h1 : 0 < 1 - L 1 := by linarith
-  -- If `0 < L h`, then `h + ε • 1` with `ε = L h / (1 - L 1)` is uniformly positive, and
-  -- `L (h + ε • 1) = L h / (1 - L 1)` is positive.
+    rw [map_smul, smul_eq_mul, div_mul_cancel₀ _ hpos.ne'] at hlt
+    exact (le_max_left u 0).not_gt ((lt_add_one _).trans hlt)
+  -- As `L 1 ≤ 0`, write `L 1 + c = 0` with `0 ≤ c`. If `0 < L h`, then `t • h + 1` with
+  -- `t = (c + 1) / L h` is uniformly positive and `L (t • h + 1) = c + 1 + L 1 = 1` is positive.
+  obtain ⟨c, hc0, hc⟩ := le_iff_exists_nonneg_add.1 (hL' 1 ⟨1, one_pos, fun _ ↦ le_rfl⟩)
   by_contra! hpos
-  have hε : 0 < L h / (1 - L 1) := div_pos hpos h1
-  have hle := hL' (h + (L h / (1 - L 1)) • 1) ⟨_, hε, fun x ↦ by simpa using hh x⟩
-  rw [map_add, map_smul, smul_eq_mul] at hle
-  have heq : L h + L h / (1 - L 1) * L 1 = L h / (1 - L 1) := by
-    field_simp
-    ring
-  linarith
+  have ht : 0 ≤ (c + 1) / L h := div_nonneg (add_nonneg hc0 zero_le_one) hpos.le
+  have hle := hL' (((c + 1) / L h) • h + 1) ⟨1, one_pos, fun x ↦
+    le_add_of_nonneg_left (mul_nonneg ht (hh x))⟩
+  rw [map_add, map_smul, smul_eq_mul, div_mul_cancel₀ _ hpos.ne', add_right_comm, add_comm c,
+    hc, zero_add] at hle
+  exact hle.not_gt one_pos
 
 end LinearMap
