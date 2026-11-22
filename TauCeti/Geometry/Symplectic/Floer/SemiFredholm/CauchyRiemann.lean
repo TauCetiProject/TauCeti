@@ -36,7 +36,7 @@ for every such operator whose coefficients converge, at both ends of the cylinde
 stationary cylinder operators `∂s + J_t (∂t - S_t)` (`TauCeti.Floer.stationaryCylinderOperator`)
 with nondegenerate return maps. With Rellich's theorem on the cylinder, such an estimate gives
 finite-dimensional kernel and closed range of the extension of `P` to `W^{1,2}`
-(`TauCeti.CylinderSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL`).
+(`TauCeti.StripSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL`).
 
 * `exists_forall_setIntegral_le_mul_setIntegral_cauchyRiemann_add_of_ends` is the patching
   argument: estimates of `P` on the two ends imply the semi-Fredholm estimate. Cut `ξ` into three

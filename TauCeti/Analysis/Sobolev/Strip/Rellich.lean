@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Sobolev.Strip.Basic
+public import TauCeti.Analysis.Sobolev.Strip.Operator
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Sobolev.Poincare.TransverseBoundary
@@ -46,6 +47,19 @@ Unlike the cylinder, the strip has a boundary, so a section cannot be cut off ne
 
 Hence the restricted values of the unit ball lie within any `ε > 0` of a totally bounded set, and
 are totally bounded. No boundary condition is used, so the theorem holds for every `F₀` and `F₁`.
+
+The test sections are `C¹` and vanish for `|s|` large, so with Rellich's theorem the strip carries
+the instances `TauCeti.StripSobolev.IsTestSpace` and `TauCeti.StripSobolev.HasCompactRestriction`
+of `TauCeti.Analysis.Sobolev.Strip.Operator`. Peetre's argument then applies to every first-order
+operator `D ξ = M (ξ, ∂s ξ, ∂t ξ)` with bounded coefficients on `W^{1,2}_F(ℝ × [0, 1], V)`: a
+semi-Fredholm estimate (`TauCeti.StripSobolev.HasSemiFredholmEstimate (testSection F₀ F₁)`) gives
+finite-dimensional kernel and closed range
+(`TauCeti.StripSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL`,
+`TauCeti.StripSobolev.isClosed_range_jetOperator_comp_subtypeL`), and Fredholmness and the index
+are constant along continuous families of such operators
+(`TauCeti.StripSobolev.isFredholm_and_index_eq_of_hasSemiFredholmEstimate`). These are the
+Fredholm properties of the linearized operators of Floer strips with Lagrangian boundary
+conditions.
 
 ## Main results
 
@@ -339,5 +353,17 @@ theorem isCompactOperator_restrictValue_comp_subtypeL [FiniteDimensional ℝ V]
     rintro _ ⟨hb, ξ, rfl⟩
     exact ⟨ξ, by simpa using hb, rfl⟩
   exact image_closure_subset_closure_image (restrictValue T).continuous ⟨_, hxc, rfl⟩
+
+/-- The test sections of the strip are `C¹` and vanish for `|s|` large, so semi-Fredholm
+estimates for first-order operators on them pass to `H1 F₀ F₁`. -/
+instance (F₀ F₁ : Submodule ℝ V) : IsTestSpace (testSection F₀ F₁) :=
+  ⟨fun _ ↦ contDiff_one_of_mem_testSection, fun _ hξ ↦ (mem_testSection_iff.1 hξ).2.2.2⟩
+
+/-- Rellich's theorem on the strip, in the form consumed by Peetre's argument
+(`TauCeti.StripSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL`,
+`TauCeti.StripSobolev.isClosed_range_jetOperator_comp_subtypeL`). -/
+instance [FiniteDimensional ℝ V] (F₀ F₁ : Submodule ℝ V) :
+    HasCompactRestriction (testSection F₀ F₁) :=
+  ⟨isCompactOperator_restrictValue_comp_subtypeL F₀ F₁⟩
 
 end TauCeti.StripSobolev

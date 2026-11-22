@@ -54,8 +54,8 @@ independent of `s`) are the case `R = 0`, and continuation cylinders are treated
   `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical`
   holds (`TauCeti.SymplecticForm.exists_hasSemiFredholmEstimate_floerJetCoeff_of_cylindrical`),
   and Peetre's argument on the cylinder
-  (`TauCeti.CylinderSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL`,
-  `TauCeti.CylinderSobolev.isClosed_range_jetOperator_comp_subtypeL`) gives finite-dimensional
+  (`TauCeti.StripSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL`,
+  `TauCeti.StripSobolev.isClosed_range_jetOperator_comp_subtypeL`) gives finite-dimensional
   kernel (`TauCeti.SymplecticForm.finiteDimensional_ker_floerSobolevOperator_of_cylindrical`) and
   closed range (`TauCeti.SymplecticForm.isClosed_range_floerSobolevOperator_of_cylindrical`). For a
   Floer trajectory these are `TauCeti.SymplecticForm.finiteDimensional_ker_floerSobolevOperator`
@@ -103,7 +103,10 @@ open scoped NNReal ENNReal Manifold
 namespace TauCeti.SymplecticForm
 
 open CylinderSobolev
-open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure coeFn_jetLp)
+open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure coeFn_jetLp jetOperator
+  coeFn_jetOperator jetOperator_jetLp_ae_eq HasSemiFredholmEstimate hasSemiFredholmEstimate_iff
+  finiteDimensional_ker_jetOperator_comp_subtypeL isClosed_range_jetOperator_comp_subtypeL
+  exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL ker_jetOperator_comp_subtypeL_eq_bot)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -139,7 +142,7 @@ def floerSobolevOperator (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →
   (jetOperator (ω.floerJetCoeff J Ks Kt u)).comp (H1 V).subtypeL
 
 /-- The definition of the Sobolev realization of the linearized Floer operator: the first-order
-operator `TauCeti.CylinderSobolev.jetOperator` of the coefficient field on jets, restricted to
+operator `TauCeti.StripSobolev.jetOperator` of the coefficient field on jets, restricted to
 `TauCeti.CylinderSobolev.H1`. -/
 theorem floerSobolevOperator_def (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) :
@@ -343,7 +346,7 @@ theorem memLp_floerJetCoeff_of_cylindrical (ω : SymplecticForm V)
 by Peetre's argument on the cylinder: under the hypotheses of
 `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical`,
 the coefficient field of the linearized Floer operator on jets satisfies
-`TauCeti.CylinderSobolev.HasSemiFredholmEstimate`. -/
+`TauCeti.StripSobolev.HasSemiFredholmEstimate`. -/
 theorem exists_hasSemiFredholmEstimate_floerJetCoeff_of_cylindrical (ω : SymplecticForm V)
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
     {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u : ℝ × ℝ → V}
@@ -369,12 +372,13 @@ theorem exists_hasSemiFredholmEstimate_floerJetCoeff_of_cylindrical (ω : Symple
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
         (Icc 0 1)) :
-    ∃ C T : ℝ, HasSemiFredholmEstimate
+    ∃ C T : ℝ, HasSemiFredholmEstimate (testSection V)
       (ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u) C T := by
   obtain ⟨C, -, T, hest⟩ :=
     ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical hcyl hu
       hJu hXm hHm hxm hndm hJm hJxm huxm hδm hXp hHp hxp hndp hJp hJxp huxp hδp
-  refine ⟨C, T, hasSemiFredholmEstimate_iff.2 fun ξ hξ hper a b hab hvan ↦ ?_⟩
+  refine ⟨C, T, hasSemiFredholmEstimate_iff.2 fun ξ hξS a b hab hvan ↦ ?_⟩
+  obtain ⟨hξ, hper, -⟩ := mem_testSection_iff.1 hξS
   simpa only [floerJetCoeff_jet, stdComplexLineReal_eq, stdComplexLineImag_eq] using
     hest hξ hper hab hvan
 
@@ -477,7 +481,7 @@ theorem memLp_floerJetCoeff (ω : SymplecticForm V) {H : ℝ → V → ℝ}
     (Floer.isCylindricalNearEnds_comp_snd hJ hH u) hu hH hJ huxm hδm hH hJ huxp hδp
 
 /-- **The semi-Fredholm estimate along a Floer trajectory**, in the form
-`TauCeti.CylinderSobolev.HasSemiFredholmEstimate` consumed by Peetre's argument on the cylinder:
+`TauCeti.StripSobolev.HasSemiFredholmEstimate` consumed by Peetre's argument on the cylinder:
 the estimate
 `TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add`
 for the coefficient field of the linearized Floer operator on jets. -/
@@ -500,7 +504,7 @@ theorem exists_hasSemiFredholmEstimate_floerJetCoeff (ω : SymplecticForm V) {H 
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop
         (Icc 0 1)) :
-    ∃ C T : ℝ, HasSemiFredholmEstimate (ω.floerJetCoeff
+    ∃ C T : ℝ, HasSemiFredholmEstimate (testSection V) (ω.floerJetCoeff
       (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2) u)
       C T :=
   ω.exists_hasSemiFredholmEstimate_floerJetCoeff_of_cylindrical
@@ -572,7 +576,10 @@ end TauCeti.SymplecticForm
 namespace TauCeti.Floer
 
 open CylinderSobolev
-open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure coeFn_jetLp)
+open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure coeFn_jetLp jetOperator
+  coeFn_jetOperator jetOperator_jetLp_ae_eq HasSemiFredholmEstimate hasSemiFredholmEstimate_iff
+  finiteDimensional_ker_jetOperator_comp_subtypeL isClosed_range_jetOperator_comp_subtypeL
+  exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL ker_jetOperator_comp_subtypeL_eq_bot)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : ℝ → AlmostComplexStructure V} {S : ℝ → V →L[ℝ] V}
@@ -650,7 +657,10 @@ end TauCeti.Floer
 namespace TauCeti.SymplecticForm
 
 open CylinderSobolev
-open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure coeFn_jetLp)
+open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure coeFn_jetLp jetOperator
+  coeFn_jetOperator jetOperator_jetLp_ae_eq HasSemiFredholmEstimate hasSemiFredholmEstimate_iff
+  finiteDimensional_ker_jetOperator_comp_subtypeL isClosed_range_jetOperator_comp_subtypeL
+  exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL ker_jetOperator_comp_subtypeL_eq_bot)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -673,7 +683,7 @@ private theorem memLp_and_exists_hasSemiFredholmEstimate_floerJetCoeff_stationar
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
     MemLp (ω.floerJetCoeff (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
         (fun w ↦ H w.2) (fun w ↦ x w.2)) ∞ stripMeasure ∧
-      ∃ C T : ℝ, HasSemiFredholmEstimate (ω.floerJetCoeff
+      ∃ C T : ℝ, HasSemiFredholmEstimate (testSection V) (ω.floerJetCoeff
         (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
           (fun w ↦ x w.2)) C T := by
   have hu : ContDiff ℝ 1 fun w : ℝ × ℝ ↦ x w.2 :=
