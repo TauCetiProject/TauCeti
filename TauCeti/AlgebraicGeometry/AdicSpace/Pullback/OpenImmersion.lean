@@ -224,9 +224,10 @@ the image of `i`. -/
 theorem range_pullback_snd_of_isOpenImmersion_left (i : X ⟶ S) [PreAdicSpace.IsOpenImmersion i.hom]
     (f : Y ⟶ S) :
     Set.range (pullback.snd i f).hom.base = f.hom.base ⁻¹' Set.range i.hom.base := by
-  rw [← ((IsPullback.of_hasPullback i f).map
-      (ObjectProperty.ι PreAdicSpace.isAdic)).isoPullback_hom_snd,
-    PreAdicSpace.comp_base, TopCat.coe_comp, Function.Surjective.range_comp ?_,
+  have h : IsPullback (pullback.fst i f).hom (pullback.snd i f).hom i.hom f.hom :=
+    (IsPullback.of_hasPullback i f).map (ObjectProperty.ι PreAdicSpace.isAdic)
+  rw [← h.isoPullback_hom_snd, PreAdicSpace.comp_base, TopCat.coe_comp,
+    Function.Surjective.range_comp ?_,
     PreAdicSpace.IsOpenImmersion.range_pullback_snd_of_left]
   exact (TopCat.homeoOfIso (PreAdicSpace.forgetToTop.mapIso _)).surjective
 

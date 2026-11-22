@@ -572,7 +572,7 @@ theorem isPullback_restrictPreimage :
     refine ⟨⟨x, ?_⟩, rfl⟩
     rw [ofRestrict_base] at hy
     rw [Opens.mem_map, ← hy]
-    exact y.2
+    exact y.property
 
 /-- The restriction of an isomorphism over an open is an isomorphism. -/
 instance [IsIso f] : IsIso (f.restrictPreimage V) :=
