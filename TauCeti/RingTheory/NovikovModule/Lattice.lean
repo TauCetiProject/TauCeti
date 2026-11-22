@@ -19,25 +19,26 @@ completed combinations `NovikovModule R F` form a finite free module over the No
 `Λ = Nov(R, H, N)` (`TauCeti.NovikovModule.module`). The *valuation* of a generator `p` is
 `-F p`, so multiplying by a monomial `e^h` of positive period raises valuations by `N h`.
 
-For a real number `r`, the completed combinations vanishing at every generator of potential
-`> r`, that is, those all of whose generators have valuation at least `-r`, form the subgroup
-`U_r` of the potential-cutoff topology (`TauCeti.NovikovModule.potentialFiltration`). This file
-shows that `U_r` is a module over the nonnegative subring `Λ₀` of Novikov series, the *shifted
-lattice* `C⟨r⟩` of cutoff `r` (`TauCeti.NovikovModule.lattice`), and develops its basic
-properties:
+For a real number `C`, the completed combinations vanishing at every generator of potential
+`> C`, that is, those all of whose generators have valuation at least `-C`, form the subgroup
+`U_C` of the potential-cutoff topology (`TauCeti.NovikovModule.potentialFiltration`). This file
+shows that `U_C` is a module over the nonnegative subring `Λ₀` of Novikov series, the *shifted
+lattice* `lattice hF C` of cutoff `C` (`TauCeti.NovikovModule.lattice`; the roadmap, which uses
+`C` for the module, writes `C⟨t⟩` for `lattice hF t`), and develops its basic properties:
 
-* the lattices increase with `r`, so that `r ≤ s` gives the injective inclusion
-  `Submodule.inclusion : C⟨r⟩ → C⟨s⟩`; they exhaust the completed combinations, and meet only
-  in `0`;
-* the monomial `e^h` maps `C⟨r + N h⟩` onto `C⟨r⟩`;
+* the lattices increase with the cutoff, so that `C ≤ D` gives the injective inclusion
+  `Submodule.inclusion : lattice hF C → lattice hF D`; they exhaust the completed combinations,
+  and meet only in `0`;
+* the monomial `e^h` maps `lattice hF (C + N h)` onto `lattice hF C`;
 * if the monomials `e^m`, `m ∈ M`, have periods unbounded above, then the inclusion of any
   lattice is a localization at these monomials: the completed module over the full Novikov ring
   is obtained from a single lattice by inverting them. In the action-weighted case, with
   exponents `G × ℝ`, periods `(g, t) ↦ E g + t` and the monomials `T^t = e^(0, t)`, `t ≥ 0`,
-  this says that the completed module is `⋃ᵣ T^(-r) C⟨0⟩`, and `T^(-r) C⟨0⟩ = C⟨r⟩`;
-* chosen lifts all of potential `r` form a basis of `C⟨r⟩` over `Λ₀`. When the period map is
-  surjective, as in the action-weighted case, such lifts always exist, so each lattice is a
-  finite free `Λ₀`-module.
+  this says that the completed module is `⋃ₜ T^(-t) (lattice hF 0)`, and
+  `T^(-t) (lattice hF 0) = lattice hF t`;
+* chosen lifts `r` all of potential `C` form a basis of `lattice hF C` over `Λ₀`. When the period
+  map is surjective, as in the action-weighted case, such lifts always exist, so each lattice is
+  a finite free `Λ₀`-module.
 
 The localization statement is Mathlib's `IsLocalizedModule`, so its universal property applies:
 a `Λ₀`-linear map out of a lattice into a module on which the monomials act invertibly extends
@@ -55,7 +56,8 @@ not restrict to one on a lattice without a shift of the cutoff.
 
 ## Main results
 
-* `TauCeti.NovikovModule.single_smul_mem_lattice_iff`: `e^h • a ∈ C⟨C⟩ ↔ a ∈ C⟨C + N h⟩`.
+* `TauCeti.NovikovModule.single_smul_mem_lattice_iff`:
+  `e^h • a ∈ lattice hF C ↔ a ∈ lattice hF (C + N h)`.
 * `TauCeti.NovikovModule.iUnion_lattice`, `TauCeti.NovikovModule.iInf_lattice`: the lattices
   exhaust the completed combinations and meet in `0`.
 * `TauCeti.NovikovModule.isLocalizedModule_lattice`: the inclusion of a lattice is a localization
@@ -284,9 +286,9 @@ theorem isLocalizedModule_lattice {M : AddSubmonoid H} (hM : ∀ D : ℝ, ∃ m 
 
 /-- **Action-weighted localization of a lattice.** On the exponent group `G × ℝ` with periods
 `(g, r) ↦ E g + r`, the inclusion of any lattice is a localization at the monomials
-`T^r = e^(0, r)`, `r ≥ 0`. Writing `C⟨r⟩` for the lattice of cutoff `r`,
-`single_smul_mem_lattice_iff` gives `T^(-r) C⟨0⟩ = C⟨r⟩`, so this says that the completed module
-is `⋃ᵣ T^(-r) C⟨0⟩`. -/
+`T^r = e^(0, r)`, `r ≥ 0`. Since `single_smul_mem_lattice_iff` gives
+`T^(-r) (lattice hF 0) = lattice hF r`, this says that the completed module is
+`⋃ᵣ T^(-r) (lattice hF 0)`. -/
 theorem isLocalizedModule_lattice_map_inr {G : Type*} [AddCommGroup G] {E : G →+ ℝ}
     {P : ι → Type*} [∀ i, AddTorsor (G × ℝ) (P i)] {F : (Σ i, P i) → ℝ}
     (hF : ∀ i h (p : P i), F ⟨i, h +ᵥ p⟩ = F ⟨i, p⟩ - E.coprod (AddMonoidHom.id ℝ) h) (C : ℝ) :
