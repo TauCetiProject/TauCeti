@@ -125,13 +125,11 @@ theorem exists_mem_unstableSet_inter_stableSet_flow_mem_of_target
   -- Reversing both fields, the configuration breaks at the source for the pair `(-X₁, -X₀)`.
   have hrev := (h.neg hf₀ hf₁).exists_mem_unstableSet_inter_stableSet_flow_mem_of_source
     (h₁.neg hf₁) hf₁.neg hbr.symm (a₁ := a₂) (y := y) (r := p)
-    (by rwa [hX₁.neg_flow hf₁, Flow.unstableSet_reverse, Flow.stableSet_reverse, inter_comm])
-    (by rwa [hX₁.neg_flow hf₁, hX₀.neg_flow hf₀, Flow.unstableSet_reverse,
-      Flow.stableSet_reverse, inter_comm]) hyb hN₂ hN
-  rw [hX₁.neg_flow hf₁, hX₀.neg_flow hf₀, Flow.unstableSet_reverse, Flow.stableSet_reverse,
-    inter_comm] at hrev
+    (hX₁.unstableSet_inter_stableSet_eq_neg hX₁ hf₁ hf₁ b r ▸ ha₂)
+    (hX₀.unstableSet_inter_stableSet_eq_neg hX₁ hf₀ hf₁ p b ▸ hy) hyb hN₂ hN
+  rw [← hX₀.unstableSet_inter_stableSet_eq_neg hX₁ hf₀ hf₁] at hrev
   obtain ⟨w, hw, hwN, s, hs⟩ := hrev
-  exact ⟨w, hw, hwN, -s, by rwa [Flow.reverse_apply] at hs⟩
+  exact ⟨w, hw, hwN, -s, by rwa [hX₁.neg_flow hf₁, Flow.reverse_apply] at hs⟩
 
 /-- **Configurations breaking at the target are limits.** Let `(X₀, X₁)` be a Morse–Smale pair
 with `X₁` Morse–Smale. If a trajectory of `X₁` runs from a critical point `b` to `r ≠ b`, then
