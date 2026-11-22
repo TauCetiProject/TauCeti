@@ -255,9 +255,9 @@ theorem continuousOn_divMatrixGradient (hg : ContDiffOn ℝ 2 g Omega) :
 
 /-- `div(A ∇ψ)` is continuous for smooth `ψ`. -/
 theorem continuous_divMatrixGradient {ψ : EuclideanSpace ℝ ι → ℝ}
-    (hψ : ContDiff ℝ ∞ ψ) : Continuous (divMatrixGradient (fun _ => A) ψ) := by
-  simpa only [Opens.coe_top, continuousOn_univ] using
-    continuousOn_divMatrixGradient (A := A) (Omega := ⊤) (hψ.of_le (by simp)).contDiffOn
+    (hψ : ContDiff ℝ ∞ ψ) : Continuous (divMatrixGradient (fun _ => A) ψ) :=
+  (contDiff_divMatrixGradient (a := fun _ => A) (k := 0) (fun _ _ => contDiff_const)
+    (hψ.of_le (by simp))).continuous
 
 /-- Integration by parts for the constant-matrix conormal gradient of a `C²` function.
 The test function is compactly supported in the open domain, so no boundary term occurs. -/
@@ -582,7 +582,8 @@ theorem exists_value_ae_eq_localizedForcing
     sum_inner_mul_matrixBilinearForm _ _
   have hB₂ : ∑ i, ⟪W1p.gradient u x, b i⟫_ℝ * matrixBilinearForm (a x) (∇ ψ x) (b i) =
       matrixBilinearForm (a x) (∇ ψ x) (W1p.gradient u x) :=
-    sum_inner_mul_matrixBilinearForm_right _ _
+    by simpa only [matrixBilinearForm_transpose_apply] using
+      sum_inner_mul_matrixBilinearForm (A := (a x).transpose) (W1p.gradient u x) (∇ ψ x)
   simp only [Pi.add_apply] at h1 h2
   rw [h1, h2, h3, h4, h5, localizedForcing_def]
   simp only [h6, h7, c, ← hB₁, ← hB₂]

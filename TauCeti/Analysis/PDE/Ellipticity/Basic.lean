@@ -55,9 +55,8 @@ constants are parameters, not hidden existential data.
   the predicate.
 * `TauCeti.PDE.matrixBilinearForm`: the bounded bilinear form `η, ξ ↦ ηᵀ A ξ` attached to
   a coefficient matrix.
-* `TauCeti.PDE.sum_inner_mul_matrixBilinearForm` and
-  `TauCeti.PDE.sum_inner_mul_matrixBilinearForm_right`: expansion in the standard orthonormal
-  basis, in the first and second arguments.
+* `TauCeti.PDE.sum_inner_mul_matrixBilinearForm`: expansion of the first argument in the
+  standard orthonormal basis.
 * `TauCeti.PDE.contDiff_matrixBilinearForm_gradient` and
   `TauCeti.PDE.tsupport_matrixBilinearForm_gradient_subset`: smoothness and support of a
   conormal component of a smooth gradient.
@@ -1174,13 +1173,6 @@ theorem sum_inner_mul_matrixBilinearForm {A : Matrix n n ℝ} (ξ η : Euclidean
     ∑ i, ⟪ξ, EuclideanSpace.basisFun n ℝ i⟫_ℝ *
         matrixBilinearForm A (EuclideanSpace.basisFun n ℝ i) η = matrixBilinearForm A ξ η := by
   conv_rhs => rw [← (EuclideanSpace.basisFun n ℝ).sum_repr' ξ]
-  simp [map_sum, map_smul]
-
-/-- Expanding the second argument of a matrix bilinear form in an orthonormal basis. -/
-theorem sum_inner_mul_matrixBilinearForm_right {A : Matrix n n ℝ} (ξ η : EuclideanSpace ℝ n) :
-    ∑ i, ⟪η, EuclideanSpace.basisFun n ℝ i⟫_ℝ *
-        matrixBilinearForm A ξ (EuclideanSpace.basisFun n ℝ i) = matrixBilinearForm A ξ η := by
-  conv_rhs => rw [← (EuclideanSpace.basisFun n ℝ).sum_repr' η]
   simp [map_sum, map_smul]
 
 /-- The conormal component obtained by applying a matrix bilinear form to a smooth gradient is
