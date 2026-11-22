@@ -20,11 +20,11 @@ notions combine to the full principle: at a speed tending to `0`, an exponential
 satisfying a weak principle satisfies the full one. In an `R₁` space, along a nontrivial filter,
 the rate function of such a family is then good.
 
-Weak principles are usually obtained from local estimates. If the measures of small
-neighbourhoods of each point `x` decay at the rate `I x`, from above and from below, then the
-weak principle holds with rate `I`. Together with exponential tightness, this is how the
-large deviation principles for empirical spectral measures and extreme eigenvalues of Gaussian
-ensembles are proved.
+Weak principles are usually obtained from local estimates. At an eventually positive speed
+tending to `0`, if the measures of small neighbourhoods of each point `x` decay at the rate `I x`,
+from above and from below, and `I` is lower semicontinuous, then the weak principle holds with
+rate `I`. Together with exponential tightness, this is how the large deviation principles for
+empirical spectral measures and extreme eigenvalues of Gaussian ensembles are proved.
 
 ## Main definitions
 

@@ -12,11 +12,13 @@ import Mathlib.Topology.Separation.Regular
 /-!
 # The rate function of a large deviation principle
 
-A large deviation principle determines its rate function: in a regular space two lower
-semicontinuous rate functions for the same family of measures coincide. For probability
-measures, a good rate function vanishes somewhere. Outside any open set containing all of its
-zeros the measures decay exponentially fast at the speed of the principle, so they concentrate on
-the zero set. This is how a large deviation principle with a rate function having a unique zero
+Along a nontrivial filter, a large deviation principle at a given speed determines its rate
+function: in a regular space two lower semicontinuous rate functions for the same family of
+measures at the same speed coincide. For probability measures along a nontrivial filter, a good
+rate function vanishes somewhere. For a good rate function, the measure of the complement of any
+open set containing all of its zeros is eventually bounded by `exp (-c / ε i)` for some `c > 0`.
+If moreover the speed tends to `0`, these masses tend to `0`, so the measures concentrate on the
+zero set. This is how a large deviation principle with a rate function having a unique zero
 yields a law of large numbers, for example convergence of empirical spectral measures to an
 equilibrium measure.
 
@@ -24,13 +26,15 @@ equilibrium measure.
 
 * `TauCeti.Probability.HasLDP.eventually_pos`: the speed of a large deviation principle is
   eventually positive.
-* `TauCeti.Probability.HasLDP.unique`: uniqueness of the rate function in a regular space.
-* `TauCeti.Probability.HasLDP.exists_eq_zero`: for probability measures, a good rate function has
-  a zero.
-* `TauCeti.Probability.HasLDP.exists_eventually_measure_compl_le`: exponential decay of the
-  measures off an open neighbourhood of the zero set.
-* `TauCeti.Probability.HasLDP.tendsto_measure_compl`: the measures of the complement of such a
-  neighbourhood tend to `0`.
+* `TauCeti.Probability.HasLDP.unique`: in a regular space, along a nontrivial filter, the rate
+  function at a fixed speed is unique.
+* `TauCeti.Probability.HasLDP.exists_eq_zero`: for probability measures along a nontrivial filter,
+  a good rate function has a zero.
+* `TauCeti.Probability.HasLDP.exists_eventually_measure_compl_le`: for a good rate function, the
+  measure off an open neighbourhood of the zero set is eventually at most `exp (-c / ε i)` for
+  some `c > 0`.
+* `TauCeti.Probability.HasLDP.tendsto_measure_compl`: if moreover the speed tends to `0`, the
+  measures of the complement of such a neighbourhood tend to `0`.
 
 ## References
 
