@@ -66,7 +66,8 @@ smoothness of the transition maps between such charts, are not treated here.
 
 ## Main definitions
 
-* `TauCeti.Vortex.SobolevFieldSpace.coulombSlice x`: the Coulomb slice `d₀* (y - x) = 0` at `x`.
+* `TauCeti.Vortex.SobolevFieldSpace.coulombSlice hk x`: the Coulomb slice `d₀* (y - x) = 0` at `x`,
+  for `hk : 3 ≤ k`.
 
 ## Main results
 
@@ -118,18 +119,23 @@ theorem properSMul [Fact (1 < k)] (hk : 2 < k) :
 
 /-! ### The Coulomb slice -/
 
-/-- **The Coulomb slice** at a field `x` of `A_m^k`: the fields `y` with `d₀* (y - x) = 0`, where
-`d₀* = gaugeAdjoint x` is the formal `L²` adjoint of the infinitesimal gauge action at `x`. -/
-def coulombSlice (x : SobolevFieldSpace f m k) : Set (SobolevFieldSpace f m k) :=
+/-- **The Coulomb slice** at a field `x` of `A_m^k`, `k ≥ 3`: the fields `y` with
+`d₀* (y - x) = 0` at every point, where `d₀* = gaugeAdjoint x` is the formal `L²` adjoint of the
+infinitesimal gauge action at `x`. The condition is tested pointwise with classical derivatives.
+This is the Coulomb condition only because fields of `A_m^k` are `C¹` when `k ≥ 3`, by Sobolev
+embedding, so the classical and distributional divergences agree; the hypothesis `3 ≤ k`
+restricts the definition to that range. -/
+def coulombSlice (_hk : 3 ≤ k) (x : SobolevFieldSpace f m k) : Set (SobolevFieldSpace f m k) :=
   {y | ∀ z, gaugeAdjoint x (⇑y - ⇑x) z = 0}
 
 @[simp]
-theorem mem_coulombSlice {x y : SobolevFieldSpace f m k} :
-    y ∈ coulombSlice x ↔ ∀ z, gaugeAdjoint x (⇑y - ⇑x) z = 0 :=
+theorem mem_coulombSlice {hk : 3 ≤ k} {x y : SobolevFieldSpace f m k} :
+    y ∈ coulombSlice hk x ↔ ∀ z, gaugeAdjoint x (⇑y - ⇑x) z = 0 :=
   Iff.rfl
 
 /-- A field lies in its own Coulomb slice. -/
-theorem self_mem_coulombSlice (x : SobolevFieldSpace f m k) : x ∈ coulombSlice x := fun z ↦ by
+theorem self_mem_coulombSlice (hk : 3 ≤ k) (x : SobolevFieldSpace f m k) :
+    x ∈ coulombSlice hk x := fun z ↦ by
   simp [gaugeAdjoint_def]
 
 variable [Fact (1 < k)]
@@ -140,8 +146,8 @@ action map `(u, s) ↦ u · s` on `G_(k+1)` times the slice is injective near `(
 private theorem exists_mem_nhds_injOn_smul_coulombSlice (hk : 3 ≤ k)
     (x : SobolevFieldSpace f m k) :
     ∃ N ∈ 𝓝 ((1 : SobolevTopologicalGaugeGroup hs),
-      (⟨x, self_mem_coulombSlice x⟩ : coulombSlice x)),
-      InjOn (fun p : SobolevTopologicalGaugeGroup hs × coulombSlice x ↦
+      (⟨x, self_mem_coulombSlice hk x⟩ : coulombSlice hk x)),
+      InjOn (fun p : SobolevTopologicalGaugeGroup hs × coulombSlice hk x ↦
         p.1 • (p.2 : SobolevFieldSpace f m k)) N := by
   obtain ⟨U, hU, N₀, hN₀, huniq⟩ :=
     exists_mem_nhds_forall_eq_one_of_gaugeAdjoint_sub_eq_zero hs hk x
@@ -170,9 +176,9 @@ variable (hs) in
 private theorem exists_isOpen_coulombGauge (hk : 3 ≤ k) (x : SobolevFieldSpace f m k) :
     ∃ V : Set (SobolevFieldSpace f m k), IsOpen V ∧ x ∈ V ∧
       ∃ g : SobolevFieldSpace f m k → SobolevTopologicalGaugeGroup hs,
-        (∀ y ∈ V, ContinuousAt g y) ∧ (∀ y ∈ V, g y • y ∈ coulombSlice x) ∧
-        (∀ y ∈ V ∩ coulombSlice x, g y = 1) ∧
-        InjOn (fun p : SobolevTopologicalGaugeGroup hs × coulombSlice x ↦
+        (∀ y ∈ V, ContinuousAt g y) ∧ (∀ y ∈ V, g y • y ∈ coulombSlice hk x) ∧
+        (∀ y ∈ V ∩ coulombSlice hk x, g y = 1) ∧
+        InjOn (fun p : SobolevTopologicalGaugeGroup hs × coulombSlice hk x ↦
           p.1 • (p.2 : SobolevFieldSpace f m k)) (univ ×ˢ (Subtype.val ⁻¹' V)) := by
   have := properSMul (f := f) (m := m) (hs := hs) (by omega)
   -- Properness and freeness upgrade injectivity near `(1, x)` to injectivity on `G_(k+1) × U₁`.
@@ -202,9 +208,9 @@ restricted to `G_(k+1) × U` for an open neighbourhood `U` of `x` in the slice, 
 embedding. -/
 private theorem exists_isOpen_isOpenEmbedding_domRestrict_smul (hk : 3 ≤ k)
     (x : SobolevFieldSpace f m k) :
-    ∃ U : Set (coulombSlice x), IsOpen U ∧ ⟨x, self_mem_coulombSlice x⟩ ∈ U ∧
+    ∃ U : Set (coulombSlice hk x), IsOpen U ∧ ⟨x, self_mem_coulombSlice hk x⟩ ∈ U ∧
       IsOpenEmbedding ((univ ×ˢ U).domRestrict
-        fun p : SobolevTopologicalGaugeGroup hs × coulombSlice x ↦
+        fun p : SobolevTopologicalGaugeGroup hs × coulombSlice hk x ↦
           p.1 • (p.2 : SobolevFieldSpace f m k)) := by
   obtain ⟨V, hVo, hxV, g, hg, hgS, hg1, hinj⟩ := exists_isOpen_coulombGauge hs hk x
   refine ⟨Subtype.val ⁻¹' V, continuous_subtypeVal.isOpen_preimage _ hVo, hxV,
@@ -220,7 +226,7 @@ private theorem exists_isOpen_isOpenEmbedding_domRestrict_smul (hk : 3 ≤ k)
     rw [isOpen_iff_mem_nhds]
     rintro _ ⟨⟨⟨u, y, hyS⟩, hp⟩, hW'y, rfl⟩
     have hyV : y ∈ V := hp.2
-    have hy : y ∈ V ∩ coulombSlice x := ⟨hyV, hyS⟩
+    have hy : y ∈ V ∩ coulombSlice hk x := ⟨hyV, hyS⟩
     have hA : Tendsto (fun z ↦ u⁻¹ • z) (𝓝 (u • y)) (𝓝 y) := by
       simpa only [inv_smul_smul] using (continuous_const_smul u⁻¹).tendsto (u • y)
     have hgt : Tendsto (fun z ↦ g (u⁻¹ • z)) (𝓝 (u • y)) (𝓝 1) := by
@@ -243,10 +249,10 @@ homeomorphism on `G_(k+1) × U`, for an open neighbourhood `U` of `x` in the sli
 of the orbit-space charts from slices. -/
 private theorem exists_isOpen_injOn_isLocalHomeomorphOn_smul (hk : 3 ≤ k)
     (x : SobolevFieldSpace f m k) :
-    ∃ U : Set (coulombSlice x), IsOpen U ∧ ⟨x, self_mem_coulombSlice x⟩ ∈ U ∧
-      InjOn (fun p : SobolevTopologicalGaugeGroup hs × coulombSlice x ↦
+    ∃ U : Set (coulombSlice hk x), IsOpen U ∧ ⟨x, self_mem_coulombSlice hk x⟩ ∈ U ∧
+      InjOn (fun p : SobolevTopologicalGaugeGroup hs × coulombSlice hk x ↦
         p.1 • (p.2 : SobolevFieldSpace f m k)) (univ ×ˢ U) ∧
-      IsLocalHomeomorphOn (fun p : SobolevTopologicalGaugeGroup hs × coulombSlice x ↦
+      IsLocalHomeomorphOn (fun p : SobolevTopologicalGaugeGroup hs × coulombSlice hk x ↦
         p.1 • (p.2 : SobolevFieldSpace f m k)) (univ ×ˢ U) := by
   obtain ⟨U, hUo, hxU, hemb⟩ := exists_isOpen_isOpenEmbedding_domRestrict_smul hs hk x
   exact ⟨U, hUo, hxU, injOn_iff_injective.2 hemb.injective,
@@ -260,9 +266,9 @@ such that the action map `G_(k+1) × U → A_m^k`, `(u, y) ↦ u · y`, is an op
 gauge orbits through `U` fill an open set of `A_m^k`, homeomorphic to `G_(k+1) × U`. -/
 theorem exists_isOpen_isOpenEmbedding_smul_coulombSlice (hk : 3 ≤ k)
     (x : SobolevFieldSpace f m k) :
-    ∃ U : Set (coulombSlice x), IsOpen U ∧ ⟨x, self_mem_coulombSlice x⟩ ∈ U ∧
+    ∃ U : Set (coulombSlice hk x), IsOpen U ∧ ⟨x, self_mem_coulombSlice hk x⟩ ∈ U ∧
       IsOpenEmbedding fun p : SobolevTopologicalGaugeGroup hs × U ↦
-        p.1 • ((p.2 : coulombSlice x) : SobolevFieldSpace f m k) := by
+        p.1 • ((p.2 : coulombSlice hk x) : SobolevFieldSpace f m k) := by
   obtain ⟨U, hUo, hxU, hinj, hloc⟩ := exists_isOpen_injOn_isLocalHomeomorphOn_smul hs hk x
   exact ⟨U, hUo, hxU, TauCeti.MulAction.isOpenEmbedding_smul_slice hUo hinj hloc⟩
 
@@ -273,10 +279,10 @@ quotient map `A_m^k → A_m^k / G_(k+1)` is an open embedding. So near the orbit
 is homeomorphic to an open subset of the Coulomb slice. -/
 theorem exists_isOpen_isOpenEmbedding_quotientMk_coulombSlice (hk : 3 ≤ k)
     (x : SobolevFieldSpace f m k) :
-    ∃ U : Set (coulombSlice x), IsOpen U ∧ ⟨x, self_mem_coulombSlice x⟩ ∈ U ∧
+    ∃ U : Set (coulombSlice hk x), IsOpen U ∧ ⟨x, self_mem_coulombSlice hk x⟩ ∈ U ∧
       IsOpenEmbedding fun y : U ↦
         Quotient.mk (MulAction.orbitRel (SobolevTopologicalGaugeGroup hs)
-          (SobolevFieldSpace f m k)) ((y : coulombSlice x) : SobolevFieldSpace f m k) := by
+          (SobolevFieldSpace f m k)) ((y : coulombSlice hk x) : SobolevFieldSpace f m k) := by
   obtain ⟨U, hUo, hxU, hinj, hloc⟩ := exists_isOpen_injOn_isLocalHomeomorphOn_smul hs hk x
   exact ⟨U, hUo, hxU, TauCeti.MulAction.isOpenEmbedding_quotientMk_slice hUo hinj hloc⟩
 
