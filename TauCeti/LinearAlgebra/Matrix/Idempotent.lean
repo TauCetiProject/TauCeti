@@ -198,7 +198,21 @@ theorem transpose_map_unop {e : Matrix ι ι Aᵐᵒᵖ} {f : Matrix κ κ Aᵐ�
   refine ⟨yᵀ.map MulOpposite.unop, xᵀ.map MulOpposite.unop, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     rw [← transpose_mul_map_unop] <;> simp only [*]
 
+/-- Simultaneous row-and-column submatrix relabelling preserves equivalence of idempotents. -/
+theorem submatrix {ι' κ' : Type*} [Fintype ι'] [Fintype κ'] (h : IdempotentEquivalent e f)
+    (σ : ι' ≃ ι) (τ : κ' ≃ κ) :
+    IdempotentEquivalent (e.submatrix σ σ) (f.submatrix τ τ) := by
+  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
+  refine ⟨x.submatrix σ τ, y.submatrix τ σ, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp only [submatrix_mul_equiv, *]
+
 end IdempotentEquivalent
+
+/-- **Relabelling.** An idempotent matrix is equivalent to its relabelling along any bijection of
+index types. -/
+theorem idempotentEquivalent_submatrix {e : Matrix ι ι A} (he : IsIdempotentElem e) (σ : κ ≃ ι) :
+    IdempotentEquivalent e (e.submatrix σ σ) := by
+  simpa using (IdempotentEquivalent.refl he).submatrix (Equiv.refl ι) σ
 
 /-- The transpose of an idempotent matrix, with entries in the opposite ring, is idempotent. -/
 theorem _root_.IsIdempotentElem.matrix_transpose_map_op {e : Matrix ι ι A}
@@ -301,16 +315,6 @@ theorem idempotentEquivalent_iff_exists_mul_eq {e : Matrix ι ι A} {f : Matrix 
   · rw [Matrix.mul_assoc, hf.eq]
   · rw [hye, ← Matrix.mul_assoc, hf.eq]
   · rw [Matrix.mul_assoc, he.eq]
-
-/-- **Relabelling.** An idempotent matrix is equivalent to its relabelling along any bijection of
-index types. -/
-theorem idempotentEquivalent_submatrix {e : Matrix ι ι A} (he : IsIdempotentElem e) (σ : κ ≃ ι) :
-    IdempotentEquivalent e (e.submatrix σ σ) := by
-  refine (idempotentEquivalent_iff_exists_mul_eq he ?_).2
-    ⟨e.submatrix _root_.id σ, e.submatrix σ _root_.id, ?_, ?_⟩
-  · rw [IsIdempotentElem, submatrix_mul_equiv, he.eq]
-  · rw [submatrix_mul_equiv, he.eq, submatrix_id_id]
-  · rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, he.eq]
 
 end NonUnitalSemiring
 

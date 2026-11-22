@@ -62,12 +62,24 @@ namespace Matrix
 
 section MulAddCommMonoid
 
-variable {m n R : Type*} [Mul R] [AddCommMonoid R]
+variable {m m' n n' R : Type*} [Mul R] [AddCommMonoid R]
 
 /-- Equivalence of idempotents is symmetric. -/
 theorem idempotentEquivalent_comm [Fintype m] [Fintype n] {e : Matrix m m R} {f : Matrix n n R} :
     IdempotentEquivalent e f ↔ IdempotentEquivalent f e :=
   ⟨IdempotentEquivalent.symm, IdempotentEquivalent.symm⟩
+
+/-- Simultaneous row-and-column reindexing preserves equivalence of idempotents. -/
+theorem IdempotentEquivalent.reindex [Fintype m] [Fintype m'] [Fintype n] [Fintype n']
+    {e : Matrix m m R} {f : Matrix n n R} (h : IdempotentEquivalent e f) (σ : m ≃ m')
+    (τ : n ≃ n') : IdempotentEquivalent (e.reindex σ σ) (f.reindex τ τ) :=
+  h.submatrix σ.symm τ.symm
+
+/-- Reindexing an idempotent matrix along an index bijection yields an equivalent idempotent. -/
+theorem _root_.IsIdempotentElem.idempotentEquivalent_reindex [Fintype m] [Fintype m']
+    {e : Matrix m m R} (he : IsIdempotentElem e) (σ : m ≃ m') :
+    IdempotentEquivalent (e.reindex σ σ) e := by
+  simpa using (IdempotentEquivalent.refl he).reindex σ (Equiv.refl m)
 
 end MulAddCommMonoid
 
@@ -100,19 +112,6 @@ end NonUnitalNonAssocSemiring
 section NonUnitalSemiring
 
 variable {m m' n n' R : Type*} [NonUnitalSemiring R]
-
-/-- Simultaneous row-and-column reindexing preserves equivalence of idempotents. -/
-theorem IdempotentEquivalent.reindex [Fintype m] [Fintype m'] [Fintype n] [Fintype n']
-    {e : Matrix m m R} {f : Matrix n n R} (h : IdempotentEquivalent e f) (σ : m ≃ m')
-    (τ : n ≃ n') : IdempotentEquivalent (e.reindex σ σ) (f.reindex τ τ) :=
-  (idempotentEquivalent_submatrix h.isIdempotentElem_left σ.symm).symm.trans
-    (h.trans (idempotentEquivalent_submatrix h.isIdempotentElem_right τ.symm))
-
-/-- Reindexing an idempotent matrix along an index bijection yields an equivalent idempotent. -/
-theorem _root_.IsIdempotentElem.idempotentEquivalent_reindex [Fintype m] [Fintype m']
-    {e : Matrix m m R} (he : IsIdempotentElem e) (σ : m ≃ m') :
-    IdempotentEquivalent (e.reindex σ σ) e :=
-  (idempotentEquivalent_submatrix he σ.symm).symm
 
 /-- Padding an idempotent matrix by a lower-right zero block preserves its equivalence class. -/
 theorem _root_.IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_right (n : Type*)

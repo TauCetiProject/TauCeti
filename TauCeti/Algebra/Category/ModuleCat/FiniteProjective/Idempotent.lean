@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Idempotent
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
-public import TauCeti.LinearAlgebra.Matrix.Idempotent.Monoid
 
 import TauCeti.Data.Matrix.Mul
 
@@ -22,6 +22,8 @@ scalar extension, the stable equivalence criterion in `K₀`, and the algebraic 
 
 * `TauCeti.BalancedExtension.rangeMulVecBilinEquiv`: base change `(e R^ι) ⊗_R S ≃ f(e) S^ι` of
   the column range of an idempotent matrix along `f : R →+* S`;
+* `TauCeti.FiniteProjectiveModules.extendScalarsOfIdempotentIso`: categorical base-change
+  isomorphism for `FiniteProjectiveModules.ofIdempotent`;
 * `TauCeti.IdempotentMonoid.toKZero`: the right-module class map `IdempotentMonoid R →+ KZero R`
   (`kZeroEquiv` restricted along `GrothendieckAddGroup.of`), its factorization
   `TauCeti.IdempotentMonoid.ofCode_comp_objectCodeAddEquiv` through `SplitK0.ofCode`, and its
@@ -99,6 +101,26 @@ end BalancedExtension
 
 section FiniteProjective
 
+namespace FiniteProjectiveModules
+
+variable {R S : Type u} [Ring R] [Ring S]
+
+/-- **Extension of scalars on `ofIdempotent`.** Along a ring homomorphism `f : R →+* S`,
+extending scalars of the finitely generated projective right `R`-module
+`FiniteProjectiveModules.ofIdempotent e he` yields a module canonically isomorphic to
+`FiniteProjectiveModules.ofIdempotent (e.map f) (he.matrix_map f)`. -/
+noncomputable def extendScalarsOfIdempotentIso (f : R →+* S) {ι : Type*} [Fintype ι]
+    {e : Matrix ι ι R} (he : IsIdempotentElem e) :
+    (RingHom.op f).finiteProjectiveModulesExtendScalars.obj (ofIdempotent e he) ≅
+      ofIdempotent (e.map f) (he.matrix_map f) :=
+  ObjectProperty.isoMk (finiteProjectiveModules Sᵐᵒᵖ)
+    (eqToIso ((RingHom.op f).finiteProjectiveModulesExtendScalars_obj_obj _) ≪≫
+      ((BalancedExtension.congr (RingHom.op f) (ofIdempotentLinearEquiv e he)).trans
+        ((BalancedExtension.rangeMulVecBilinEquiv f he).trans
+          (ofIdempotentLinearEquiv (e.map f) (he.matrix_map f)).symm)).toModuleIso)
+
+end FiniteProjectiveModules
+
 namespace IdempotentMonoid
 
 section ObjectCode
@@ -167,12 +189,7 @@ theorem map_toKZero (f : R →+* S) (x : IdempotentMonoid R) :
       toKZero S (IdempotentMonoid.map f.toNonUnitalRingHom x) := by
   induction x using ind with | mk n e he =>
   rw [toKZero_mk, SplitK0.map_of,
-    SplitK0.of_extendScalars_obj
-      (Q := FiniteProjectiveModules.ofIdempotent (e.map f) (he.matrix_map f))
-      ((BalancedExtension.congr (RingHom.op f)
-        (FiniteProjectiveModules.ofIdempotentLinearEquiv e he)).trans
-        ((BalancedExtension.rangeMulVecBilinEquiv f he).trans
-          (FiniteProjectiveModules.ofIdempotentLinearEquiv (e.map f) (he.matrix_map f)).symm)),
+    SplitK0.of_congr.{u} (FiniteProjectiveModules.extendScalarsOfIdempotentIso f he),
     IdempotentMonoid.map_mk]
   exact (toKZero_mk (e.map f.toNonUnitalRingHom) (he.matrix_map f.toNonUnitalRingHom)).symm
 
