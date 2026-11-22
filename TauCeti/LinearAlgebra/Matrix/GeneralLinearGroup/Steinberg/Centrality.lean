@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Steinberg.Basic
-import Mathlib.GroupTheory.NoncommPiCoprod
 import TauCeti.GroupTheory.Commutator
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Steinberg.RowColumn
 
 /-!
 # Centrality of `ker (St(R) →* GL_∞(R))`
@@ -16,10 +16,10 @@ For an associative unital ring `R`, the canonical homomorphism
 `TauCeti.SteinbergGroup.toStableGL : St(R) →* GL_∞(R)` has image the stable elementary subgroup
 `E_∞(R)`. Every element `z ∈ ker (St(R) →* GL_∞(R))` comes from `Stₙ(R)` for some `n`. Inside
 `St_{n + 1}(R)`, the stabilized subgroup `Stₙ(R)` normalizes the `n`-th column root subgroup
-`Pₙ = ⟨x_{in}(a) | i < n⟩`, on which `toGL` is injective via the reindexed upper block unipotent
-homomorphism `Matrix.upperBlockGLHom` into `GL_{n + 1}(R)`. Hence `z` centralizes `Pₙ`, and by
-opposite-ring inverse-transpose duality (`IndexedSteinbergGroup.transposeOp`) it also centralizes
-the `n`-th row root subgroup `⟨x_{nj}(b) | j < n⟩`, and therefore every generator
+`Pₙ = ⟨x_{in}(a) | i < n⟩`, the range of `TauCeti.IndexedSteinbergGroup.colHom`, on which `toGL`
+is injective (`TauCeti.IndexedSteinbergGroup.toGL_comp_colHom_injective`). Hence `z` centralizes
+`Pₙ`, and by opposite-ring inverse-transpose duality (`IndexedSteinbergGroup.transposeOp`) it also
+centralizes the `n`-th row root subgroup `⟨x_{nj}(b) | j < n⟩`, and therefore every generator
 `x_{pq}(b) = ⁅x_{pn}(b), x_{nq}(1)⁆` with `p, q < n`.
 
 ## Main results
@@ -55,122 +55,21 @@ section Center
 
 variable {R : Type u} [Ring R]
 
-private theorem colHomFin_pairwise (n : ℕ) :
-    Pairwise fun i j : Fin n ↦ ∀ a b : Multiplicative R,
-      Commute (IndexedSteinbergGroup.xHom (Fin.castSucc_lt_last i).ne a)
-        (IndexedSteinbergGroup.xHom (Fin.castSucc_lt_last j).ne b) := by
-  intro i j _ a b
-  simp only [IndexedSteinbergGroup.xHom_apply]
-  exact IndexedSteinbergGroup.commute_x
-    (Fin.castSucc_lt_last i).ne (Fin.castSucc_lt_last j).ne
-    (Fin.castSucc_lt_last j).ne.symm (Fin.castSucc_lt_last i).ne.symm a.toAdd b.toAdd
-
-/-- The homomorphism `(Fin n → Multiplicative R) →* St_{n + 1}(R)` assembling the commuting column
-root subgroups `x_{i, n}` (`i < n`). -/
-private def colHomFin (n : ℕ) :
-    (Fin n → Multiplicative R) →* IndexedSteinbergGroup (Fin (n + 1)) R :=
-  MonoidHom.noncommPiCoprod
-    (fun i : Fin n ↦ IndexedSteinbergGroup.xHom (Fin.castSucc_lt_last i).ne)
-    (colHomFin_pairwise n)
-
-/-- Package a column vector `Fin n → Multiplicative R` as a multiplicative `n × 1` matrix. -/
-private def toColHom (n : ℕ) :
-    (Fin n → Multiplicative R) →* Multiplicative (Matrix (Fin n) (Fin 1) R) where
-  toFun f := Multiplicative.ofAdd (Matrix.of fun i (_ : Fin 1) ↦ (f i).toAdd)
-  map_one' := by
-    rw [← ofAdd_zero]
-    rfl
-  map_mul' f g := by
-    rw [← ofAdd_add]
-    rfl
-
-private theorem toColHom_injective (n : ℕ) :
-    Function.Injective (toColHom (R := R) n) := by
-  intro f g hfg
-  ext i
-  have h := congrArg (fun x : Multiplicative (Matrix (Fin n) (Fin 1) R) ↦ x.toAdd i 0) hfg
-  simpa [toColHom] using h
-
-/-- The upper block unipotent homomorphism `(Fin n → Multiplicative R) →* GL (Fin (n + 1)) R`
-placing a column vector in the last column, obtained by specializing and reindexing
-`Matrix.upperBlockGLHom`. -/
-private def upperColGLHom (n : ℕ) :
-    (Fin n → Multiplicative R) →* GL (Fin (n + 1)) R :=
-  (((finSumFinEquiv (m := n) (n := 1)).reindexGL R).toMonoidHom.comp
-    Matrix.upperBlockGLHom).comp (toColHom n)
-
-private theorem upperColGLHom_injective (n : ℕ) :
-    Function.Injective (upperColGLHom (R := R) n) :=
-  (((finSumFinEquiv (m := n) (n := 1)).reindexGL R).injective.comp
-    Matrix.upperBlockGLHom_injective).comp (toColHom_injective n)
-
-private theorem toGL_comp_colHomFin (n : ℕ) :
-    (IndexedSteinbergGroup.toGL (R := R)).comp (colHomFin n) = upperColGLHom n := by
-  refine MonoidHom.pi_ext fun i a ↦ ?_
-  rw [MonoidHom.comp_apply, colHomFin, MonoidHom.noncommPiCoprod_mulSingle,
-    IndexedSteinbergGroup.xHom_apply, IndexedSteinbergGroup.toGL_x, upperColGLHom,
-    MonoidHom.comp_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    Matrix.upperBlockGLHom_apply]
-  have hmat : (toColHom n (Pi.mulSingle i a)).toAdd = Matrix.single i (0 : Fin 1) a.toAdd := by
-    ext p q
-    fin_cases q
-    simp [toColHom, Matrix.single_apply, Pi.mulSingle_apply, apply_ite Multiplicative.toAdd,
-      eq_comm]
-  rw [hmat, Matrix.upperBlockGL_single, Equiv.reindexGL_transvectionUnit]
-  have hi_eq : finSumFinEquiv (m := n) (n := 1) (Sum.inl i) = i.castSucc := by ext; simp
-  have hj_eq : finSumFinEquiv (m := n) (n := 1) (Sum.inr 0) = Fin.last n := by ext; simp
-  simp only [hi_eq, hj_eq]
-
-private theorem mem_range_colHomFin {n : ℕ} (i : Fin n) (a : R) :
-    IndexedSteinbergGroup.x (Fin.castSucc_lt_last i).ne a ∈ (colHomFin (R := R) n).range := by
-  refine ⟨Pi.mulSingle i (Multiplicative.ofAdd a), ?_⟩
-  rw [colHomFin, MonoidHom.noncommPiCoprod_mulSingle, IndexedSteinbergGroup.xHom_apply,
-    toAdd_ofAdd]
-
-private theorem range_stabilize_le_normalizer_colHomFin (n : ℕ) :
+/-- Stabilization `Stₙ(R) →* St_{n + 1}(R)` lands in the normalizer of the column root subgroup at
+the new last index, since every generator `x_{ij}(c)` with `i, j < n` normalizes it
+(`TauCeti.IndexedSteinbergGroup.x_mem_normalizer_range_colHom`). -/
+private theorem range_stabilize_le_normalizer_colHom (n : ℕ) :
     (stabilize (Nat.le_succ n) (R := R)).range ≤
-      Subgroup.normalizer ((colHomFin (R := R) n).range :
+      Subgroup.normalizer ((IndexedSteinbergGroup.colHom (R := R) (Fin.last n)).range :
         Set (IndexedSteinbergGroup (Fin (n + 1)) R)) := by
   have hcastEmb : Fin.castLEEmb (Nat.le_succ n) = Fin.castSuccEmb := by
     ext p
     simp
-  have hconj : ∀ {i j : Fin n} (hij : i ≠ j) (c : R),
-      ((colHomFin (R := R) n).range).map
-        (MulAut.conj (stabilize (Nat.le_succ n) (IndexedSteinbergGroup.x hij c))) ≤
-        (colHomFin (R := R) n).range := by
-    intro i j hij c
-    have hrange : (colHomFin (R := R) n).range =
-        ⨆ k : Fin n, (IndexedSteinbergGroup.xHom (Fin.castSucc_lt_last k).ne).range :=
-      MonoidHom.noncommPiCoprod_range _
-    rw [hrange, Subgroup.map_iSup]
-    refine iSup_le fun k ↦ ?_
-    rintro _ ⟨_, ⟨a, rfl⟩, rfl⟩
-    simp only [stabilize, hcastEmb, IndexedSteinbergGroup.xHom_apply,
-      IndexedSteinbergGroup.mapIndex_x, Fin.castSuccEmb_apply, MonoidHom.coe_ofClass,
-      MulAut.conj_apply]
-    by_cases hjk : j = k
-    · subst hjk
-      rw [IndexedSteinbergGroup.x_mul_x_mul_inv (Fin.castSucc_injective n |>.ne hij)
-        (Fin.castSucc_lt_last j).ne (Fin.castSucc_lt_last i).ne, ← hrange]
-      exact mul_mem (mem_range_colHomFin i (c * a.toAdd)) (mem_range_colHomFin j a.toAdd)
-    · have hcomm := IndexedSteinbergGroup.commute_x
-        (Fin.castSucc_injective n |>.ne hij) (Fin.castSucc_lt_last k).ne
-        (Fin.castSucc_injective n |>.ne hjk) (Fin.castSucc_lt_last i).ne.symm c a.toAdd
-      rw [hcomm.eq, mul_inv_cancel_right, ← hrange]
-      exact mem_range_colHomFin k a.toAdd
   rw [IndexedSteinbergGroup.range_le_iff]
   intro i j hij c
-  rw [Subgroup.mem_normalizer_iff_map_conj_eq]
-  refine le_antisymm (hconj hij c) fun y hy ↦ ?_
-  refine ⟨(stabilize (Nat.le_succ n) (IndexedSteinbergGroup.x hij c))⁻¹ * y *
-    stabilize (Nat.le_succ n) (IndexedSteinbergGroup.x hij c), ?_,
-    by rw [MonoidHom.coe_ofClass, MulAut.conj_apply]; group⟩
-  have hinv : (stabilize (Nat.le_succ n) (IndexedSteinbergGroup.x hij c))⁻¹ =
-      stabilize (Nat.le_succ n) (IndexedSteinbergGroup.x hij (-c)) := by
-    rw [← map_inv, IndexedSteinbergGroup.x_inv]
-  have hmem := hconj hij (-c) ⟨y, hy, rfl⟩
-  simpa only [SetLike.mem_coe, MonoidHom.coe_ofClass, MulAut.conj_apply, ← hinv, inv_inv] using
-    hmem
+  simp only [stabilize, hcastEmb, IndexedSteinbergGroup.mapIndex_x, Fin.castSuccEmb_apply]
+  exact IndexedSteinbergGroup.x_mem_normalizer_range_colHom _ (Fin.castSucc_lt_last i).ne
+    (Fin.castSucc_lt_last j).ne c
 
 /-- Any element of `Stₙ(R)` in the kernel of `toGL` commutes, after stabilizing to `St_{n + 1}(R)`,
 with every column generator `x_{p, n}(b)` (`p < n`). -/
@@ -179,23 +78,22 @@ private theorem commute_stabilize_col {n : ℕ} {u : IndexedSteinbergGroup (Fin 
     Commute (stabilize (Nat.le_succ n) u)
       (IndexedSteinbergGroup.x (Fin.castSucc_lt_last p).ne b) := by
   have hinf : (IndexedSteinbergGroup.toGL (ι := Fin (n + 1)) (R := R)).ker ⊓
-      (colHomFin (R := R) n).range = ⊥ := by
+      (IndexedSteinbergGroup.colHom (R := R) (Fin.last n)).range = ⊥ := by
     rw [eq_bot_iff]
-    rintro _ ⟨hker, ⟨f, rfl⟩⟩
-    have hf : upperColGLHom n f = 1 := by
-      rw [← toGL_comp_colHomFin, MonoidHom.comp_apply]
-      exact hker
-    have hf1 : f = 1 := upperColGLHom_injective n (hf.trans (map_one _).symm)
-    rw [hf1, map_one, Subgroup.mem_bot]
+    rintro _ ⟨hker, ⟨v, rfl⟩⟩
+    have hv : v = 1 := IndexedSteinbergGroup.toGL_comp_colHom_injective (Fin.last n)
+      (by simpa using hker)
+    rw [hv, map_one, Subgroup.mem_bot]
   have hle := inf_normalizer_le_centralizer_of_inf_eq_bot Subgroup.le_normalizer_of_normal hinf
   have hker_u : stabilize (Nat.le_succ n) u ∈
       (IndexedSteinbergGroup.toGL (ι := Fin (n + 1)) (R := R)).ker := by
     rw [MonoidHom.mem_ker, IndexedSteinbergGroup.toGL_mapIndex_castLE, hu, map_one]
   have hmem : stabilize (Nat.le_succ n) u ∈
-      Subgroup.centralizer ((colHomFin (R := R) n).range :
+      Subgroup.centralizer ((IndexedSteinbergGroup.colHom (R := R) (Fin.last n)).range :
         Set (IndexedSteinbergGroup (Fin (n + 1)) R)) :=
-    hle ⟨hker_u, range_stabilize_le_normalizer_colHomFin n ⟨u, rfl⟩⟩
-  exact (Subgroup.mem_centralizer_iff.mp hmem _ (mem_range_colHomFin p b)).symm
+    hle ⟨hker_u, range_stabilize_le_normalizer_colHom n ⟨u, rfl⟩⟩
+  exact (Subgroup.mem_centralizer_iff.mp hmem _
+    (IndexedSteinbergGroup.x_mem_range_colHom ⟨p.castSucc, (Fin.castSucc_lt_last p).ne⟩ b)).symm
 
 /-- **Milnor's centrality theorem (`K₂(R) ≤ Z(St(R))`).** The kernel of `toStableGL R` lies in the
 center of `SteinbergGroup R`. -/

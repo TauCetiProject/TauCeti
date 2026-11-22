@@ -30,6 +30,10 @@ are differentiable.
 For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts, the transitions
 `ψ ∘ φ⁻¹` are differentiable, and their derivatives compose by the chain rule.
 
+The same holds for a local diffeomorphism `f` at `x` and its chosen local inverse
+`IsLocalDiffeomorphAt.localInverse`, at every point of the domain of that local inverse, not just
+at `f x`.
+
 ## Main results
 
 * `IsLocalDiffeomorphAt.finrank_eq`: a local diffeomorphism of nonzero regularity has source
@@ -68,6 +72,10 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts,
   the transition `ψ ∘ φ⁻¹` is differentiable.
 * `PartialDiffeomorph.fderiv_comp_symm_eq_comp`: the derivatives of transitions compose, the
   chain rule `D(ψ ∘ φ⁻¹) = D(ψ ∘ χ⁻¹) ∘ D(χ ∘ φ⁻¹)`.
+* `IsLocalDiffeomorphAt.mfderiv_apply_mfderiv_localInverse_apply`,
+  `IsLocalDiffeomorphAt.mfderiv_localInverse_apply_mfderiv_apply`: the differentials of a local
+  diffeomorphism and of its chosen local inverse are mutually inverse at corresponding points near
+  the base point.
 -/
 
 public section
@@ -318,3 +326,34 @@ theorem IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv_symm_apply {f : M �
   rw [← hw, hd]
   exact (Φ.mfderiv_symm_apply_mfderiv_apply hn hx u).symm.trans
     (congrArg (fun y : N ↦ (mfderiv J I Φ.symm y (mfderiv I J Φ x u) : E)) (hfΦ hx).symm)
+
+namespace IsLocalDiffeomorphAt
+
+variable {f : M → N} {x : M}
+
+/-- On the target of the chosen local inverse of a local diffeomorphism `f`, `f` agrees with the
+inverse of that local inverse. -/
+theorem eqOn_localInverse_symm (hf : IsLocalDiffeomorphAt I J n f x) :
+    Set.EqOn f hf.localInverse.symm hf.localInverse.target := fun y hy ↦ by
+  conv_lhs => rw [← hf.localInverse.right_inv hy]
+  exact hf.localInverse_right_inv (hf.localInverse.map_target hy)
+
+/-- The differential of a local diffeomorphism `f` undoes the differential of its chosen local
+inverse `s` at a point `z` of the source of `s`: `df_(s z) (ds_z w) = w`. -/
+theorem mfderiv_apply_mfderiv_localInverse_apply (hf : IsLocalDiffeomorphAt I J n f x)
+    (hn : n ≠ 0) {z : N} (hz : z ∈ hf.localInverse.source) (w : TangentSpace J z) :
+    mfderiv I J f (hf.localInverse z) (mfderiv J I hf.localInverse z w) = w := by
+  rw [(eventuallyEq_of_mem (hf.localInverse.open_target.mem_nhds (hf.localInverse.map_source hz))
+    hf.eqOn_localInverse_symm).mfderiv_eq]
+  exact hf.localInverse.mfderiv_symm_apply_mfderiv_apply hn hz w
+
+/-- The differential of the chosen local inverse `s` of a local diffeomorphism `f` undoes the
+differential of `f` at a point `y` of the target of `s`: `ds_(f y) (df_y w) = w`. -/
+theorem mfderiv_localInverse_apply_mfderiv_apply (hf : IsLocalDiffeomorphAt I J n f x)
+    (hn : n ≠ 0) {y : M} (hy : y ∈ hf.localInverse.target) (w : TangentSpace I y) :
+    mfderiv J I hf.localInverse (f y) (mfderiv I J f y w) = w := by
+  rw [(eventuallyEq_of_mem (hf.localInverse.open_target.mem_nhds hy)
+    hf.eqOn_localInverse_symm).mfderiv_eq, hf.eqOn_localInverse_symm hy]
+  exact hf.localInverse.mfderiv_apply_mfderiv_symm_apply hn hy w
+
+end IsLocalDiffeomorphAt
