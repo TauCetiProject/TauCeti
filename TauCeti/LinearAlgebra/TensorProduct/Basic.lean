@@ -43,7 +43,12 @@ pure tensors over a finite spanning family of the right factor.
   reassociation.
 * `LinearMap.tensorComponent_mul`: contracting a product in an algebra tensor product against a
   functional which splits on products splits the contraction accordingly.
-* `LinearMap.rid_rTensor_apply`: naturality of the right tensor unitor.
+* `LinearMap.lid_lTensor_apply`, `LinearMap.lid_comp_lTensor`: naturality of the left tensor
+  unitor.
+* `LinearMap.rid_rTensor_apply`, `LinearMap.rid_comp_rTensor`: naturality of the right tensor
+  unitor.
+* `LinearMap.lid_comp_assoc`, `LinearMap.lTensor_rid_comp_assoc`,
+  `LinearMap.lTensor_lid_comp_assoc`: coherence between the tensor unitors and the associator.
 * `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
   multiplication.
 * `TensorProduct.exists_eq_sum_tmul_of_span_eq_top`: over a finite spanning family of the right
@@ -274,6 +279,21 @@ theorem tensorComponent_mul {A C : Type*} [Semiring A] [Algebra R A] [Semiring C
 
 end
 
+/-- The left tensor unitor is natural with respect to a linear map in its right factor. -/
+@[simp]
+theorem lid_lTensor_apply (f : M →ₗ[R] N) (t : R ⊗[R] M) :
+    TensorProduct.lid R N (lTensor R f t) = f (TensorProduct.lid R M t) := by
+  induction t using TensorProduct.inductionOn with
+  | tmul r m => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- The left tensor unitor is natural with respect to a linear map in its right factor, as a
+composition of linear maps. -/
+theorem lid_comp_lTensor (f : M →ₗ[R] N) :
+    (TensorProduct.lid R N).toLinearMap ∘ₗ f.lTensor R =
+      f ∘ₗ (TensorProduct.lid R M).toLinearMap :=
+  ext (lid_lTensor_apply f)
+
 /-- The right tensor unitor is natural with respect to a linear map in its left factor. -/
 @[simp]
 theorem rid_rTensor_apply (f : M →ₗ[R] N) (t : M ⊗[R] R) :
@@ -281,6 +301,46 @@ theorem rid_rTensor_apply (f : M →ₗ[R] N) (t : M ⊗[R] R) :
   induction t using TensorProduct.inductionOn with
   | tmul m r => simp
   | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- The right tensor unitor is natural with respect to a linear map in its left factor, as a
+composition of linear maps. -/
+theorem rid_comp_rTensor (f : M →ₗ[R] N) :
+    (TensorProduct.rid R N).toLinearMap ∘ₗ f.rTensor R =
+      f ∘ₗ (TensorProduct.rid R M).toLinearMap :=
+  ext (rid_rTensor_apply f)
+
+/-- Reassociation commutes with the left tensor unitor on a tensor product. -/
+theorem lid_comp_assoc :
+    (TensorProduct.lid R (M ⊗[R] N)).toLinearMap ∘ₗ (TensorProduct.assoc R R M N).toLinearMap =
+      (TensorProduct.lid R M).toLinearMap.rTensor N := by
+  refine LinearMap.ext fun t ↦ ?_
+  have h := congrArg (fun e : R ⊗[R] (M ⊗[R] N) ≃ₗ[R] M ⊗[R] N ↦
+    e (TensorProduct.assoc R R M N t)) (TensorProduct.lid_tensor (R := R) (M := M) (N := N))
+  simp only [LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply] at h
+  simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe] using
+    h.trans (LinearMap.congr_fun (LinearEquiv.coe_rTensor N (TensorProduct.lid R M)) t)
+
+/-- Reassociation relates the right tensor unitor on a tensor product to `lTensor` of the right
+tensor unitor on the second factor. -/
+theorem lTensor_rid_comp_assoc :
+    (TensorProduct.rid R N).toLinearMap.lTensor M ∘ₗ (TensorProduct.assoc R M N R).toLinearMap =
+      (TensorProduct.rid R (M ⊗[R] N)).toLinearMap := by
+  refine LinearMap.ext fun t ↦ ?_
+  have h := tensorComponent_assoc_symm (LinearMap.id : R →ₗ[R] R)
+    ((TensorProduct.assoc R M N R) t)
+  simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply,
+    tensorComponent_def, LinearMap.lTensor_id, LinearMap.comp_id] using h.symm
+
+/-- Monoidal triangle identity relating `lid` on the right factor and `rid` on the left factor via
+reassociation. -/
+theorem lTensor_lid_comp_assoc :
+    (TensorProduct.lid R N).toLinearMap.lTensor M ∘ₗ (TensorProduct.assoc R M R N).toLinearMap =
+      (TensorProduct.rid R M).toLinearMap.rTensor N := by
+  refine LinearMap.ext fun t ↦ ?_
+  have h := rTensor_tensorComponent_assoc_symm (LinearMap.id : R →ₗ[R] R)
+    ((TensorProduct.assoc R M R N) t)
+  simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply,
+    tensorComponent_def, LinearMap.lTensor_id, LinearMap.rTensor_id, LinearMap.comp_id] using h.symm
 
 /-! ### The Casimir element of a trace
 

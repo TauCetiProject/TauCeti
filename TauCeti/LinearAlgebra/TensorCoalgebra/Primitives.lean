@@ -30,6 +30,9 @@ letter, and cutting is injective, so no component of length at least two can sur
   `TauCeti.ReducedTensorWords.deconcatenation_of_two`: the two-letter word and its only cut.
 * `TauCeti.ReducedTensorWords.map_letter_letter_deconcatenation_of_ne_two`: `letter ⊗ letter`
   annihilates the deconcatenation of any pure word of length other than two.
+* `TauCeti.ReducedTensorWords.eq_zero_of_factor_letter_pair`: any linear map factoring through
+  `(f ∘ₗ letter) ⊗ (g ∘ₗ letter) ∘ₗ deconcatenation` vanishes on pure words of length other than
+  two.
 * `TauCeti.ReducedTensorWords.letter_comp_map`: the letter of a letterwise-mapped word is the
   image of its letter.
 * `TauCeti.ReducedTensorWords.deconcatenation_eq_zero_iff`: the primitives of the reduced tensor
@@ -232,6 +235,21 @@ theorem map_letter_letter_deconcatenation_of_ne_two (n : {n : ℕ // 0 < n}) (hn
   by_cases hd1 : d = 1
   · rw [zero_add, letter_subword_of_ne_one R M x d (by omega), TensorProduct.tmul_zero]
   · rw [letter_subword_of_ne_one R M x 0 hd1, TensorProduct.zero_tmul]
+
+/-- Any linear map factoring through `(letter ⊗ letter) ∘ deconcatenation` vanishes on pure words
+of length other than two. -/
+theorem eq_zero_of_factor_letter_pair {P Q N : Type*}
+    [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q]
+    [AddCommMonoid N] [Module R N]
+    {h : ReducedTensorWords R M →ₗ[R] N} (F : P ⊗[R] Q →ₗ[R] N)
+    (f : M →ₗ[R] P) (g : M →ₗ[R] Q)
+    (hfac : h = F ∘ₗ TensorProduct.map (f ∘ₗ letter R M) (g ∘ₗ letter R M) ∘ₗ
+      deconcatenation R M)
+    (n : {n : ℕ // 0 < n}) (hn : n.val ≠ 2) (x : Fin n.val → M) :
+    h (of R M n (PiTensorProduct.tprod R x)) = 0 := by
+  rw [hfac, LinearMap.comp_apply, LinearMap.comp_apply, TensorProduct.map_comp,
+    LinearMap.comp_apply, map_letter_letter_deconcatenation_of_ne_two R M n hn x,
+    map_zero, map_zero]
 
 section Prepend
 
