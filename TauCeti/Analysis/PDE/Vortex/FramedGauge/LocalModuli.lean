@@ -278,27 +278,29 @@ theorem coe_kerRealSobolevGaugeFixedOperatorEquiv_apply (hk : 2 ≤ k)
       continuousRepField (v : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) :=
   (rfl)
 
-/-- **The kernel of `L` at a vortex is finite dimensional.** -/
+/-- **The kernel of `L` at a vortex is finite dimensional.** It suffices that the section of the
+field satisfies the holomorphicity rows `∂bar_a α = 0` of the vortex equation. -/
 theorem finiteDimensional_ker_realSobolevGaugeFixedOperator (hk : 2 ≤ k)
     (x : SobolevFieldSpace f m ((k : ℝ) + 1)) (hmem : ∀ j : ℕ, ⇑x ∈ framedFieldSpace f m j)
-    (hsol : ∀ z, equation x z = 0) :
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) :
     FiniteDimensional ℝ (realSobolevGaugeFixedOperator f m hk (x.realSubRef _)).ker := by
   have hxs := contDiff_of_forall_mem_framedFieldSpace x.continuous hmem
-  have := finiteDimensional_gaugeFixedKernel (hxs.of_le (by simp)) (fun w ↦ by simp [hsol w])
+  have := finiteDimensional_gaugeFixedKernel (hxs.of_le (by simp)) hhol
     (tendsto_sectionValue_mul_inv_pow (((Nat.one_lt_cast (α := ℝ)).2 hk).trans (lt_add_one _))
       x.mem_framedFieldSpace x.continuous)
   exact (kerRealSobolevGaugeFixedOperatorEquiv f m hk x hmem).symm.finiteDimensional
 
 /-- **The kernel of `L` at a vortex has dimension `2m`** (Taubes), the dimension of the divisor
-space `Sym^m ℂ`. -/
+space `Sym^m ℂ`, whatever `k`. It suffices that the section of the field satisfies the
+holomorphicity rows `∂bar_a α = 0` of the vortex equation. -/
 theorem finrank_ker_realSobolevGaugeFixedOperator (hk : 2 ≤ k)
     (x : SobolevFieldSpace f m ((k : ℝ) + 1)) (hmem : ∀ j : ℕ, ⇑x ∈ framedFieldSpace f m j)
-    (hsol : ∀ z, equation x z = 0) :
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) :
     finrank ℝ (realSobolevGaugeFixedOperator f m hk (x.realSubRef _)).ker = 2 * m := by
   rw [(kerRealSobolevGaugeFixedOperatorEquiv f m hk x hmem).finrank_eq]
   exact finrank_gaugeFixedKernel_eq_two_mul_of_mem_framedFieldSpace
     (((Nat.one_lt_cast (α := ℝ)).2 hk).trans (lt_add_one _)) x.mem_framedFieldSpace
-    (contDiff_of_forall_mem_framedFieldSpace x.continuous hmem) fun w ↦ by simp [hsol w]
+    (contDiff_of_forall_mem_framedFieldSpace x.continuous hmem) hhol
 
 /-! ### The vortex equation in the Coulomb slice -/
 
@@ -396,7 +398,7 @@ theorem exists_isSliceChart_realSobolevSliceEquation (hk : 2 ≤ k)
         (∀ v ∈ e.target, ContDiffAt ℝ ω e.symm v) ∧
         IsSliceChart e ((realSobolevGaugeFixedOperator f m hk (x.realSubRef _)).ker : Set _)
           (realSobolevSliceEquation f m hk x ⁻¹' {0}) := by
-  have := finiteDimensional_ker_realSobolevGaugeFixedOperator hk x hmem hsol
+  have := finiteDimensional_ker_realSobolevGaugeFixedOperator hk x hmem fun w ↦ by simp [hsol w]
   obtain ⟨e, hxe, -, he, hesymm, hslice⟩ :=
     (hasStrictFDerivAt_realSobolevSliceEquation hk x).exists_isSliceChart_preimage_zero
       (LinearMap.range_eq_top.2 (realSobolevGaugeFixedOperator_surjective hk x hmem hsol))
