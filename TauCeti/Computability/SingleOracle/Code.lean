@@ -352,6 +352,7 @@ theorem eval_prec_succ (cf cg : Code) (a k : ℕ) :
   simp [Nat.unpaired]
 
 /-- Primitive recursion at one unpacks a single recursion step from the base case. -/
+@[simp]
 theorem eval_prec_one (cf cg : Code) (a : ℕ) :
     eval O (prec cf cg) (Nat.pair a 1) =
       eval O cf a >>= fun y => eval O cg (Nat.pair a (Nat.pair 0 y)) := by

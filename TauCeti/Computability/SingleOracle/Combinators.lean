@@ -19,9 +19,8 @@ This file provides reusable, oracle-independent combinators and compilation help
   `0`/`1`-valued programs (`encode false = 0`, `encode true = 1`). Their semantic equations hold
   relative to every partial oracle whenever the operand programs halt with Boolean outputs on the
   given input.
-* `TauCeti.Oracle.Single.Code.paramCode`: compiles any computable two-argument function
-  `f : α → β → γ` between primitive-codable types into a primitive recursive family of query-free
-  programs sending `encode b` to `encode (f a b)`, uniformly for every partial oracle.
+* `TauCeti.Oracle.Single.Code.paramCode`: specializes a base program `c` to an encodable
+  parameter `a : α` via `Code.curry`, producing a primitive recursive family of programs.
 * `TauCeti.Oracle.Single.Code.exists_boolGuardCode` and
   `TauCeti.Oracle.Single.Code.exists_listHeadCode`: existence of query-free programs for
   checking whether an output is Boolean (`< 2`) and for extracting the head of an encoded list of
@@ -51,7 +50,7 @@ theorem eval_boolNot (O : ℕ →. ℕ) (c : Code) (n : ℕ) (b : Bool)
     (hc : encode b ∈ eval O c n) :
     eval O (boolNot c) n = Part.some (encode (!b)) := by
   have hce : eval O c n = Part.some (encode b) := Part.eq_some_iff.2 hc
-  cases b <;> simp [boolNot, hce, eval_prec_one, Seq.seq]
+  cases b <;> simp [boolNot, hce, Seq.seq]
 
 /-- Explicit oracle-independent Boolean conjunction on `0`/`1`-valued programs. -/
 def boolAnd (c₁ c₂ : Code) : Code :=
@@ -68,7 +67,7 @@ theorem eval_boolAnd (O : ℕ →. ℕ) (c₁ c₂ : Code) (n : ℕ) (b₁ b₂ 
     eval O (boolAnd c₁ c₂) n = Part.some (encode (b₁ && b₂)) := by
   have he₁ : eval O c₁ n = Part.some (encode b₁) := Part.eq_some_iff.2 h₁
   have he₂ : eval O c₂ n = Part.some (encode b₂) := Part.eq_some_iff.2 h₂
-  cases b₁ <;> cases b₂ <;> simp [boolAnd, he₁, he₂, eval_prec_one, Seq.seq]
+  cases b₁ <;> cases b₂ <;> simp [boolAnd, he₁, he₂, Seq.seq]
 
 /-- Explicit oracle-independent Boolean disjunction on `0`/`1`-valued programs. -/
 def boolOr (c₁ c₂ : Code) : Code :=
@@ -87,52 +86,37 @@ theorem eval_boolOr (O : ℕ →. ℕ) (c₁ c₂ : Code) (n : ℕ) (b₁ b₂ :
   have he₂ : eval O c₂ n = Part.some (encode b₂) := Part.eq_some_iff.2 h₂
   have hid (x : ℕ) : eval O (pair left right) x = Part.some x := by
     simp [Seq.seq]
-  cases b₁ <;> cases b₂ <;> simp [boolOr, he₁, he₂, eval_prec_one, hid, Seq.seq]
+  cases b₁ <;> cases b₂ <;> simp [boolOr, he₁, he₂, hid, Seq.seq]
 
-/-! ### Parameterized computable transformation compiler -/
+/-! ### Parameterized program specialization -/
 
-private theorem natPartrec_param {α β γ : Type*} [Primcodable α] [Primcodable β] [Primcodable γ]
-    {f : α → β → γ} (hf : Computable₂ f) :
-    Nat.Partrec fun n : ℕ =>
-      (((decode (α := α) n.unpair.1).bind fun a =>
-        (decode (α := β) n.unpair.2).map fun b => encode (f a b)) : Part ℕ) := by
-  have hopt : Computable fun n : ℕ =>
-      (decode (α := α) n.unpair.1).bind fun a =>
-        (decode (α := β) n.unpair.2).map fun b => encode (f a b) :=
-    Computable.option_bind (Computable.decode.comp (Computable.fst.comp Computable.unpair))
-      (Computable.option_map
-        (Computable.decode.comp (Computable.snd.comp (Computable.unpair.comp Computable.fst)))
-        (Computable.encode.comp
-          (hf.comp (Computable.snd.comp Computable.fst) Computable.snd)).to₂).to₂
-  exact Partrec.nat_iff.1 (Computable.ofOption hopt)
+/-- Specialize a base program `c` to an encodable parameter `a : α` using `Code.curry`. -/
+def paramCode {α : Type*} [Encodable α] (c : Code) (a : α) : Code :=
+  curry c (encode a)
 
-/-- Compile a parameterized computable transformation `f : α → β → γ` into an oracle-independent
-program parameterized by `a : α`, sending `encode b` to `encode (f a b)`. -/
-noncomputable def paramCode {α β γ : Type*} [Primcodable α] [Primcodable β] [Primcodable γ]
-    {f : α → β → γ} (hf : Computable₂ f) (a : α) : Code :=
-  curry (exists_forall_eval_eq_of_partrec (natPartrec_param hf)).choose (encode a)
+/-- Specializing `paramCode c a` is primitive recursive in the parameter `a`. -/
+theorem primrec_paramCode {α : Type*} [Primcodable α] (c : Code) :
+    Primrec (paramCode c : α → Code) :=
+  primrec₂_curry.comp (Primrec.const c) Primrec.encode
 
-/-- Compiling `paramCode hf a` is primitive recursive in the parameter `a`. -/
-theorem primrec_paramCode {α β γ : Type*} [Primcodable α] [Primcodable β] [Primcodable γ]
-    {f : α → β → γ} (hf : Computable₂ f) : Primrec (paramCode hf) :=
-  primrec₂_curry.comp (Primrec.const _) Primrec.encode
+/-- Specializing `paramCode c a` is primitive recursive in both the base program `c` and the
+parameter `a`. -/
+theorem primrec₂_paramCode {α : Type*} [Primcodable α] :
+    Primrec₂ (paramCode (α := α)) :=
+  primrec₂_curry.comp Primrec.fst (Primrec.encode.comp Primrec.snd)
 
-/-- Evaluating `paramCode hf a` on `encode b` returns `encode (f a b)` relative to every partial
-oracle. -/
-@[simp]
-theorem eval_paramCode {α β γ : Type*} [Primcodable α] [Primcodable β] [Primcodable γ]
-    {f : α → β → γ} (hf : Computable₂ f) (O : ℕ →. ℕ) (a : α) (b : β) :
-    eval O (paramCode hf a) (encode b) = Part.some (encode (f a b)) := by
-  have hcode := congrFun
-    ((exists_forall_eval_eq_of_partrec (natPartrec_param hf)).choose_spec O)
-    (Nat.pair (encode a) (encode b))
-  simpa [paramCode, encodek] using hcode
-
-/-- Composing a program `c` with `paramCode hf a` evaluates `c` on `encode (f a b)`, relative to
+/-- Evaluating `paramCode c a` on `x` evaluates `c` on `Nat.pair (encode a) x`, relative to
 every partial oracle. -/
-theorem eval_comp_paramCode {α β γ : Type*} [Primcodable α] [Primcodable β] [Primcodable γ]
-    {f : α → β → γ} (hf : Computable₂ f) (O : ℕ →. ℕ) (c : Code) (a : α) (b : β) :
-    eval O (comp c (paramCode hf a)) (encode b) = eval O c (encode (f a b)) := by
+@[simp]
+theorem eval_paramCode {α : Type*} [Encodable α] (O : ℕ →. ℕ) (c : Code) (a : α) (x : ℕ) :
+    eval O (paramCode c a) x = eval O c (Nat.pair (encode a) x) :=
+  eval_curry O c (encode a) x
+
+/-- Composing a program `d` with `paramCode c a` evaluates `c` on `Nat.pair (encode a) x` and
+passes the result to `d`, relative to every partial oracle. -/
+theorem eval_comp_paramCode {α : Type*} [Encodable α] (O : ℕ →. ℕ) (d c : Code) (a : α)
+    (x : ℕ) :
+    eval O (comp d (paramCode c a)) x = eval O c (Nat.pair (encode a) x) >>= eval O d := by
   simp [eval_comp]
 
 /-! ### Auxiliary query-free programs -/

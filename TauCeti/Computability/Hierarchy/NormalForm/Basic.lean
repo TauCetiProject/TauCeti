@@ -156,6 +156,33 @@ theorem isValid_iff {Z : Set ℕ} {nf : NormalFormCode} :
     nf.IsValid Z ↔ ∀ l : List ℕ, l.length = nf.quantifiers.depth + nf.arity →
       ∃ b : Bool, encode b ∈ Code.eval Z.oracle nf.matrix (encode l) := (Iff.rfl)
 
+/-- `MatrixHolds` on a literal `NormalFormCode.mk` simplifies to matrix evaluation. -/
+@[simp]
+theorem matrixHolds_mk (Z : Set ℕ) (p : QuantifierPrefix) (k : ℕ) (c : Code) (l : List ℕ) :
+    (NormalFormCode.mk p k c).MatrixHolds Z l ↔ 1 ∈ Code.eval Z.oracle c (encode l) := (Iff.rfl)
+
+/-- `EvalList` on a literal `NormalFormCode.mk` simplifies to quantifier-prefix evaluation of the
+matrix. -/
+@[simp]
+theorem evalList_mk (Z : Set ℕ) (p : QuantifierPrefix) (k : ℕ) (c : Code) (xs : List ℕ) :
+    (NormalFormCode.mk p k c).EvalList Z xs ↔
+      p.Eval (fun l => 1 ∈ Code.eval Z.oracle c (encode l)) xs := (Iff.rfl)
+
+/-- `Holds` on a literal `NormalFormCode.mk` simplifies to quantifier-prefix evaluation of the
+matrix on `List.ofFn x`. -/
+@[simp]
+theorem holds_mk (Z : Set ℕ) (p : QuantifierPrefix) (k : ℕ) (c : Code) (x : Fin k → ℕ) :
+    (NormalFormCode.mk p k c).Holds Z x ↔
+      p.Eval (fun l => 1 ∈ Code.eval Z.oracle c (encode l)) (List.ofFn x) := (Iff.rfl)
+
+/-- `IsValid` on a literal `NormalFormCode.mk` simplifies to totality and Boolean-valuedness of
+the matrix on variable lists of length `p.depth + k`. -/
+@[simp]
+theorem isValid_mk (Z : Set ℕ) (p : QuantifierPrefix) (k : ℕ) (c : Code) :
+    (NormalFormCode.mk p k c).IsValid Z ↔
+      ∀ l : List ℕ, l.length = p.depth + k →
+        ∃ b : Bool, encode b ∈ Code.eval Z.oracle c (encode l) := (Iff.rfl)
+
 /-- For a valid normal-form code and a list of the expected length, the matrix program halts with
 output `0` exactly when `MatrixHolds` fails. -/
 theorem IsValid.zero_mem_eval_iff {Z : Set ℕ} {nf : NormalFormCode} (h : nf.IsValid Z)
