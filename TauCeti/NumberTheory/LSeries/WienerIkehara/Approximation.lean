@@ -39,6 +39,11 @@ Consequently a weight `W` with `‖W v‖ ≤ M (1 + v ^ 2)⁻¹` gives a series
 limit. For nonnegative coefficients with Wiener--Ikehara boundary data the Chebyshev bound is
 `TauCeti.LSeries.isBigO_sum_Icc_norm_id_of_boundary`.
 
+Applying this approximation to truncations of a Schwartz function `g` yields the smoothed
+asymptotic for `𝓕 g`, and Fourier inversion turns any complex-valued smooth cutoff `Ψ` with
+compact support in `(0, ∞)` into `𝓕 (𝓕⁻ (v ↦ e^{2πv} Ψ(e^{2πv})))`, giving
+`x⁻¹ ∑ a n Ψ (n / x) → A ∫_{(0, ∞)} Ψ`.
+
 ## Main results
 
 * `TauCeti.LSeries.tsum_norm_term_mul_inv_one_add_sq_le`: the uniform bound on the
@@ -49,6 +54,10 @@ limit. For nonnegative coefficients with Wiener--Ikehara boundary data the Cheby
 * `TauCeti.LSeries.tendsto_tsum_term_mul_atTop_of_approx_fourier`: the smoothed Wiener--Ikehara
   asymptotic for a weight `W` approximable by Fourier transforms of smooth compactly supported
   functions `psi` whose values `psi 0` approximate `L`; the limit is `2π A L`.
+* `TauCeti.LSeries.tendsto_tsum_term_mul_fourier_schwartz_atTop`: the smoothed asymptotic for
+  a Schwartz test function `g`.
+* `TauCeti.LSeries.tendsto_inv_mul_tsum_mul_div_atTop`: the smoothed asymptotic
+  `x⁻¹ ∑ a n Ψ (n / x) → A ∫_{(0, ∞)} Ψ` for a smooth `Ψ` with compact support in `(0, ∞)`.
 
 ## Provenance
 
@@ -63,7 +72,10 @@ weight `W` instead of a fixed truncation of a `W^{2,1}` function. For a Schwartz
 (`limiting_cor_schwartz` there) the approximants are the truncations `χ (R⁻¹ • ·) • g`, which
 converge to `g` in the Schwartz topology (Mathlib's `SchwartzMap.tendsto_smulLeftCLM_comp_smul`);
 the weighted sup norm of a Fourier transform is bounded by two Schwartz seminorms, so it is the
-continuity of the Fourier transform on `𝓢(ℝ, ℂ)` that makes the truncation error small.
+continuity of the Fourier transform on `𝓢(ℝ, ℂ)` that makes the truncation error small. The passage
+from Schwartz test functions to smooth cutoffs on `(0, ∞)`
+(`TauCeti.LSeries.tendsto_inv_mul_tsum_mul_div_atTop`) follows `WienerIkeharaSmooth` in the same
+source, derived here from the Schwartz-function asymptotic by Fourier inversion on `𝓢(ℝ, ℂ)`.
 
 ## References
 
@@ -74,7 +86,7 @@ public section
 
 namespace TauCeti.LSeries
 
-open Complex Filter FourierTransform Real Set
+open Complex Filter FourierTransform MeasureTheory Real Set
 open scoped ComplexOrder ContDiff SchwartzMap Topology
 
 variable {a : ℕ → ℂ} {C x : ℝ}
@@ -432,5 +444,86 @@ theorem tendsto_tsum_term_mul_fourier_schwartz_atTop (ha : 0 ≤ a)
         (b.hasCompactSupport.hasTemperateGrowth b.contDiff),
       smul_zero, b.one_of_mem_closedBall (by simp [b]), one_smul, sub_self, norm_zero]
     exact hε.le
+
+/-! ### Smooth cutoffs on the positive half-line -/
+
+section Smooth
+
+variable {Ψ : ℝ → ℂ}
+
+/-- The weight `v ↦ e^{2πv} Ψ(e^{2πv})`, which turns the logarithmic frequency `log (n / x) / 2π`
+of the smoothed asymptotic back into the ratio `n / x`. -/
+private noncomputable def expWeight (Ψ : ℝ → ℂ) (v : ℝ) : ℂ :=
+  Real.exp (2 * π * v) • Ψ (Real.exp (2 * π * v))
+
+private lemma contDiff_expWeight (hΨ : ContDiff ℝ ∞ Ψ) : ContDiff ℝ ∞ (expWeight Ψ) := by
+  have he : ContDiff ℝ ∞ fun v : ℝ ↦ Real.exp (2 * π * v) := by fun_prop
+  exact he.smul (hΨ.comp he)
+
+/-- A compact support inside `(0, ∞)` becomes a compact support after the substitution
+`y = e^{2πv}`: it is the image of `tsupport Ψ` under `y ↦ log y / 2π`. -/
+private lemma hasCompactSupport_expWeight (hΨc : HasCompactSupport Ψ)
+    (hΨpos : tsupport Ψ ⊆ Ioi 0) : HasCompactSupport (expWeight Ψ) := by
+  refine HasCompactSupport.intro (K := (fun y ↦ Real.log y / (2 * π)) '' tsupport Ψ)
+    (hΨc.isCompact.image_of_continuousOn fun y hy ↦
+      ((Real.continuousAt_log (hΨpos hy).ne').div_const _).continuousWithinAt) fun v hv ↦ ?_
+  by_contra h
+  refine hv ⟨Real.exp (2 * π * v), subset_tsupport _ fun h0 ↦ h ?_, ?_⟩
+  · simp [expWeight, h0]
+  · simp only [Real.log_exp]
+    field_simp
+
+private lemma term_mul_expWeight (a : ℕ → ℂ) (hΨ0 : Ψ 0 = 0) {x : ℝ} (hx : 0 < x) (n : ℕ) :
+    _root_.LSeries.term a 1 n * expWeight Ψ (1 / (2 * π) * Real.log (n / x)) =
+      (x : ℂ)⁻¹ * (a n * Ψ (n / x)) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [hΨ0]
+  have hexp : Real.exp (2 * π * (1 / (2 * π) * Real.log (n / x))) = n / x := by
+    rw [← mul_assoc, mul_one_div_cancel (by positivity), one_mul, Real.exp_log (by positivity)]
+  rw [_root_.LSeries.term_of_ne_zero hn, expWeight, hexp, cpow_one, Complex.real_smul]
+  push_cast
+  field_simp
+
+/-- The substitution `y = e^{2πv}`: `∫ W = (2π)⁻¹ ∫_{(0, ∞)} Ψ`. -/
+private lemma integral_expWeight :
+    ∫ v, expWeight Ψ v = (2 * π : ℂ)⁻¹ * ∫ y in Ioi 0, Ψ y := by
+  have h := Measure.integral_comp_mul_left (fun u ↦ Real.exp u • Ψ (Real.exp u)) (2 * π)
+  simp only [expWeight]
+  rw [h, integral_comp_exp, abs_of_pos (by positivity), Complex.real_smul]
+  push_cast
+  rfl
+
+variable {a : ℕ → ℂ} {A : ℂ} {G : ℂ → ℂ}
+
+/-- **The smoothed Wiener--Ikehara asymptotic for a cutoff on `(0, ∞)`.** Let `a` be
+nonnegative, with Dirichlet series summable on `Re s > 1` and a boundary remainder
+`G = LSeries a - A / (s - 1)` continuous on `Re s ≥ 1`. For every smooth `Ψ` whose support is a
+compact subset of `(0, ∞)`, `x⁻¹ ∑ a n Ψ (n / x) → A ∫_{(0, ∞)} Ψ` as `x → ∞`. -/
+theorem tendsto_inv_mul_tsum_mul_div_atTop (ha : 0 ≤ a)
+    (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
+    (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
+    (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma)
+    (hΨ : ContDiff ℝ ∞ Ψ) (hΨc : HasCompactSupport Ψ) (hΨpos : tsupport Ψ ⊆ Ioi 0) :
+    Tendsto (fun x : ℝ ↦ (x : ℂ)⁻¹ * ∑' n : ℕ, a n * Ψ (n / x)) atTop
+      (𝓝 (A * ∫ y in Ioi 0, Ψ y)) := by
+  set W : 𝓢(ℝ, ℂ) := (hasCompactSupport_expWeight hΨc hΨpos).toSchwartzMap
+    (contDiff_expWeight hΨ)
+  have hFg : 𝓕 ((𝓕⁻ W : 𝓢(ℝ, ℂ)) : ℝ → ℂ) = expWeight Ψ := by
+    rw [← SchwartzMap.fourier_coe, fourier_fourierInv_eq]
+    rfl
+  have hg0 : (𝓕⁻ W : 𝓢(ℝ, ℂ)) 0 = (2 * π : ℂ)⁻¹ * ∫ y in Ioi 0, Ψ y := by
+    rw [SchwartzMap.fourierInv_coe, Real.fourierInv_eq, ← integral_expWeight]
+    simp [W]
+  have hΨ0 : Ψ 0 = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ lt_irrefl (0 : ℝ) (hΨpos h)
+  have key := tendsto_tsum_term_mul_fourier_schwartz_atTop ha hG hG' hsum (𝓕⁻ W)
+  have hscale : 2 * (π : ℂ) * A * ((2 * π : ℂ)⁻¹ * ∫ y in Ioi 0, Ψ y) =
+      A * ∫ y in Ioi 0, Ψ y := by
+    field_simp
+  rw [hFg, hg0, hscale] at key
+  refine key.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with x hx
+  simp_rw [term_mul_expWeight a hΨ0 hx, tsum_mul_left]
+
+end Smooth
 
 end TauCeti.LSeries
