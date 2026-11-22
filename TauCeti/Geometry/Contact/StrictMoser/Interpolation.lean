@@ -14,8 +14,8 @@ import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 import TauCeti.Geometry.Manifold.Flow.Parametric
 import TauCeti.Geometry.Manifold.Flow.Transport
+import TauCeti.Geometry.Manifold.MFDeriv.Opens
 import TauCeti.Geometry.Manifold.Metrizable
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Strict relative Moser stability for contact forms agreeing along a transverse slice
@@ -184,19 +184,17 @@ private theorem exists_isOpen_iff_notMem_range_mfderiv (hι : ContMDiff J I ∞ 
   set ι₀ : (⟨ι ⁻¹' W, W.isOpen.preimage hι.continuous⟩ : TopologicalSpace.Opens S) → W :=
     (W : Set M).restrictPreimage ι
   have hι₀ : ContMDiff J I ∞ ι₀ := hι.restrictPreimage W
-  have hdι₀ (s) (v : TangentSpace J s) : mfderiv J I ι₀ s v = mfderiv J I ι s v :=
-    Manifold.mfderiv_apply_of_subtype_val_comp_eq (f := ι₀) (A := ι) rfl v
-  have himm₀ (s) : Function.Injective (mfderiv J I ι₀ s) := fun v v' hv ↦
-    himm s (by rw [← hdι₀, ← hdι₀]; exact hv)
   -- The pairs `(t, s)` at which the vertical Reeb field of `β` is transverse to `id × ι₀` form an
   -- open set.
-  refine ⟨_, isOpen_setOf_notMem_range_mfderiv (Z := verticalField 𝓘(ℝ, ℝ) fun t ↦
+  refine ⟨_, isOpen_setOf_notMem_range_mfderiv_of_finrank_add_one_eq
+    (Z := verticalField 𝓘(ℝ, ℝ) fun t ↦
       (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) β).reebVectorField)
     (contMDiff_verticalField (contMDiff_reebVectorField_mpullback_prodMk β hcβ))
     (contMDiff_id.prodMap hι₀) (fun q ↦ ?_)
     (by rw [Module.finrank_prod, Module.finrank_prod, ← hdim]; ring), fun t s ↦ ?_⟩
   · rw [mfderiv_prodMap mdifferentiableAt_id (hι₀.mdifferentiableAt (by simp)), mfderiv_id]
-    exact Function.Injective.prodMap (fun _ _ h ↦ h) (himm₀ q.2)
+    exact Function.Injective.prodMap (fun _ _ h ↦ h)
+      ((Manifold.injective_mfderiv_restrictPreimage_iff hι.continuous W).2 (himm q.2))
   -- At `(t, s)`, transversality to `id × ι₀` is transversality of the Reeb field of `β_t` to `ι₀`,
   -- and that Reeb field is the one of `α₀ + c(t) (α₁ - α₀)`.
   rw [mem_ofPred_eq, mfderiv_prodMap mdifferentiableAt_id (hι₀.mdifferentiableAt (by simp)),
@@ -204,9 +202,11 @@ private theorem exists_isOpen_iff_notMem_range_mfderiv (hι : ContMDiff J I ∞ 
     reebVectorField_mpullback_subtype_val]
   constructor
   · rintro ⟨w, hw⟩
-    exact ⟨w.2, (hdι₀ s w.2).symm.trans (congrArg Prod.snd hw)⟩
+    exact ⟨w.2, (Manifold.mfderiv_restrictPreimage_apply hι.continuous W (x := s) w.2).symm.trans
+      (congrArg Prod.snd hw)⟩
   · rintro ⟨w, hw⟩
-    exact ⟨((0 : ℝ), w), Prod.ext rfl ((hdι₀ s w).trans hw)⟩
+    exact ⟨((0 : ℝ), w), Prod.ext rfl
+      ((Manifold.mfderiv_restrictPreimage_apply hι.continuous W (x := s) w).trans hw)⟩
 
 /-- **Transversality persists near a transverse slice.** Let every interpolation
 `α₀ + u (α₁ - α₀)`, `u ∈ [0, 1]`, be contact on an open set `N`, and let `K ⊆ N` be a set on the
@@ -287,17 +287,18 @@ theorem exists_partialDiffeomorph_mpullback_eq_of_apply_eq [SigmaCompactSpace M]
   set ι₂ : (⟨ι ⁻¹' W, W.isOpen.preimage hι.continuous⟩ : TopologicalSpace.Opens S) → W :=
     (W : Set M).restrictPreimage ι
   have hι₂ : ContMDiff J I ∞ ι₂ := hι.restrictPreimage W
-  have hdι₂ (s) (v : TangentSpace J s) : mfderiv J I ι₂ s v = mfderiv J I ι s v :=
-    Manifold.mfderiv_apply_of_subtype_val_comp_eq (f := ι₂) (A := ι) rfl v
   have htrW (u : ℝ) (hu : u ∈ Icc (0 : ℝ) 1) :
       IsTransverseAlong J (res α₀ + u • (res α₁ - res α₀)).reebVectorField ι₂ := by
     refine isTransverseAlong_iff.2 fun s ⟨w, hw⟩ ↦ htrV s s.property.1 s.property.2 u hu ⟨w, ?_⟩
-    rw [hres, reebVectorField_mpullback_subtype_val, ContinuousLinearMap.coe_coe, hdι₂] at hw
-    rw [ContinuousLinearMap.coe_coe, hw]
-    rfl
+    obtain ⟨s, hs⟩ := s
+    rw [hres, reebVectorField_mpullback_subtype_val, ContinuousLinearMap.coe_coe,
+      Manifold.mfderiv_restrictPreimage_apply hι.continuous W] at hw
+    simp only [ι₂, restrictPreimage_mk] at hw
+    rwa [ContinuousLinearMap.coe_coe]
   obtain ⟨φ, hsrc, htgt, hfix, hφ⟩ :=
     exists_partialDiffeomorph_mpullback_eq_of_forall_isContactFormAt hι₂
-      (fun s v v' hv ↦ himm s (by rw [← hdι₂, ← hdι₂]; exact hv)) (hind.restrictPreimage W)
+      (fun s ↦ (Manifold.injective_mfderiv_restrictPreimage_iff hι.continuous W).2 (himm s))
+      (hind.restrictPreimage W)
       (range_restrictPreimage (W : Set M) ι ▸ hclosed.preimage continuous_subtypeVal)
       hdim (fun y u hu ↦ hres u ▸ (isContactFormAt_mpullback_subtype_val_iff _ y).2
         (hcN y y.property.1 u hu)) htrW (K := Subtype.val ⁻¹' K)

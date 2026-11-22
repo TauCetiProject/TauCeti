@@ -46,8 +46,8 @@ in which `Z` is a Reeb vector field.
 
 ## Main results
 
-* `TauCeti.isOpen_setOf_notMem_range_mfderiv`: the points of a hypersurface at which a smooth
-  vector field is transverse to it form an open set.
+* `TauCeti.isOpen_setOf_notMem_range_mfderiv_of_finrank_add_one_eq`: the points of an immersed
+  hypersurface at which a smooth vector field is transverse to it form an open set.
 * `TauCeti.exists_contMDiffOn_mvfderiv_eq_of_isTransverseAlong`: a smooth solution of `Z h = g`
   on an open neighbourhood of a transverse embedded hypersurface, vanishing on the hypersurface.
 * `TauCeti.exists_contMDiff_mvfderiv_eq_of_isTransverseAlong`: for a closed hypersurface in a
@@ -197,11 +197,14 @@ private theorem isLocalDiffeomorphAt_snd_flowOf_integralField [IsManifold J ∞ 
     (by rw [Module.finrank_prod, finrank_self, ← hdim, add_comm])
 
 omit hg in
-/-- **Transversality is an open condition.** Let `Z` be a smooth vector field on a
-finite-dimensional boundaryless manifold `N`, and let `ι : S → N` be a smooth immersion of a
+/-- **Transversality to a hypersurface is an open condition.** Let `Z` be a smooth vector field on
+a finite-dimensional boundaryless manifold `N`, and let `ι : S → N` be a smooth immersion of a
 boundaryless manifold of one dimension less. Then the points `s` at which `Z (ι s)` is transverse
-to `ι`, that is, not in the range of `dι_s`, form an open subset of `S`. -/
-theorem isOpen_setOf_notMem_range_mfderiv [IsManifold J ∞ S]
+to `ι`, that is, not in the range of `dι_s`, form an open subset of `S`.
+
+This is the codimension-one case, read off from the flow-out of `Z` along `ι`: at a transverse
+point the flow-out is a local diffeomorphism, hence so it is nearby. -/
+theorem isOpen_setOf_notMem_range_mfderiv_of_finrank_add_one_eq [IsManifold J ∞ S]
     (himm : ∀ s, Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E) :
     IsOpen {s | Z (ι s) ∉ (mfderiv J I ι s).range} := by
   have hg : ContMDiff I 𝓘(ℝ) ∞ (0 : N → ℝ) := contMDiff_const
