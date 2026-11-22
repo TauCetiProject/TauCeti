@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.FlatBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.VariableCoefficient
 import TauCeti.Analysis.Holder.Lp
-import TauCeti.Analysis.PDE.Ellipticity.ConstantCoefficient
+import TauCeti.Analysis.PDE.Ellipticity.Basic
 
 /-!
 # Schauder estimates up to a flat boundary for coefficients of small oscillation

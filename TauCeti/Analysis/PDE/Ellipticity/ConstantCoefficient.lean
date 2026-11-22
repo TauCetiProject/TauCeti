@@ -39,8 +39,6 @@ map `T` stretches lengths by at most `√Λ` and its inverse by at most `1 / √
 
 ## Main declarations
 
-* `TauCeti.PDE.le_of_mul_norm_sq_le_toQuadraticForm'_le`: two-sided bounds
-  `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` force `λ ≤ Λ`.
 * `TauCeti.PDE.exists_continuousLinearEquiv_laplacian_comp_eq`: an elliptic constant-coefficient
   operator is the Laplacian after a linear change of variables with controlled condition number,
   in which its quadratic form is the squared Euclidean norm.
@@ -67,13 +65,6 @@ namespace PDE
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {F : Type*} [NormedAddCommGroup F]
   [NormedSpace ℝ F]
-
-/-- Two-sided bounds `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` on the quadratic form of a square matrix over a
-nonempty index type force `λ ≤ Λ`. -/
-theorem le_of_mul_norm_sq_le_toQuadraticForm'_le [Nonempty ι] {A : Matrix ι ι ℝ} {lam Lam : ℝ}
-    (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hA' : ∀ ξ : EuclideanSpace ℝ ι, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) : lam ≤ Lam := by
-  simpa using (hA (EuclideanSpace.single (Classical.arbitrary ι) 1)).trans (hA' _)
 
 /-- **A constant-coefficient operator is the Laplacian in suitable linear coordinates.** Let `A`
 be a square matrix whose quadratic form satisfies `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` with `0 < λ`. Then

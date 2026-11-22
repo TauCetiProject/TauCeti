@@ -11,7 +11,7 @@ import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Holder.Lp
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Normed.Operator.Holder
-import TauCeti.Analysis.PDE.Ellipticity.ConstantCoefficient
+import TauCeti.Analysis.PDE.Ellipticity.Basic
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!

@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.CompactSupport
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
-import TauCeti.Analysis.PDE.Ellipticity.ConstantCoefficient
+import TauCeti.Analysis.PDE.Ellipticity.Basic
 import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Cutoff
 
 /-!
