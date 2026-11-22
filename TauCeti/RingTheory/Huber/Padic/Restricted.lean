@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.RingTheory.Huber.Padic.Basic
-public import TauCeti.RingTheory.Huber.Restricted.Comparison
+public import TauCeti.RingTheory.Huber.Restricted.Comparison.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!

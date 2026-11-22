@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.AdicRing.Basic
 public import TauCeti.RingTheory.Huber.Restricted.Adic
-public import TauCeti.RingTheory.Huber.Restricted.Comparison.Eval
 public import TauCeti.RingTheory.Huber.Restricted.Gauss.Norm
 public import TauCeti.RingTheory.Huber.Restricted.Reduction
 public import TauCeti.RingTheory.Huber.WeightedEval.Completion
