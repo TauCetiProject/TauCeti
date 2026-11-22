@@ -9,10 +9,10 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.Moments.Variance
-public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import TauCeti.MeasureTheory.Function.Lp.Norm
 public import TauCeti.MeasureTheory.Integral.Lebesgue.SetOfEqZero
 public import TauCeti.Probability.Moments.Mixture
+import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 
 /-!
@@ -36,9 +36,10 @@ The file also records the elementary bound of the mean of a real function by the
 its second moment (the nonnegativity of its variance), together with two consequences of nonzero
 variance `Var[X; μ] ≠ 0` on a finite measure space: strict positivity of the expectation of an
 almost everywhere strongly measurable, almost everywhere nonnegative real random variable, and
-nondegeneracy `μ {ω | X ω = 0} < μ univ` of a real-valued random variable, as well as Chebyshev
-convergence in probability from vanishing variances and Borel--Cantelli almost-sure convergence to
-the mean from summable variances.
+nondegeneracy `μ {ω | X ω = 0} < μ univ` of a real-valued random variable. For a family of
+square-integrable random variables, the deviation of each from its own mean tends to zero in
+measure when the variances tend to zero (Chebyshev), and almost everywhere when the variances are
+summable (Borel--Cantelli); the means themselves may vary and need not converge.
 
 ## Main statements
 
@@ -60,11 +61,14 @@ the mean from summable variances.
 * `TauCeti.Probability.variance_weighted_coordinate_sum`,
   `TauCeti.Probability.variance_weighted_coordinate_sum_of_covariance_eq_zero` and
   `TauCeti.Probability.measure_weighted_coordinate_sum_sub_mean_ge`: variance and Chebyshev
-  bounds for weighted sums of pairwise independent or pairwise uncorrelated variables.
+  bounds for weighted sums of square-integrable variables that are pairwise independent or
+  pairwise uncorrelated.
 * `TauCeti.Probability.tendsto_measure_abs_sub_integral_ge_of_tendsto_variance`: vanishing
-  variances imply convergence in measure to the mean, including on varying finite measure spaces.
-* `TauCeti.Probability.ae_tendsto_sub_integral_of_summable_variance`: summable variances imply
-  almost-everywhere convergence to the mean on a finite measure space.
+  variances imply that the deviations of square-integrable functions from their own means tend
+  to zero in measure, including on varying finite measure spaces.
+* `TauCeti.Probability.ae_tendsto_sub_integral_of_summable_variance`: on a finite measure space,
+  summable variances imply that the deviations of square-integrable functions from their own
+  means tend to zero almost everywhere.
 * `TauCeti.integral_pos_of_nonneg_ae_of_variance_ne_zero`: on a finite measure space, an almost
   everywhere strongly measurable, almost everywhere nonnegative real random variable with nonzero
   variance has strictly positive expectation.
@@ -157,27 +161,25 @@ theorem MemLp.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul
 section Centering
 
 variable {α E : Type*} [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup E]
-  [InnerProductSpace ℝ E] [CompleteSpace E]
+  [InnerProductSpace ℝ E]
 
-/-- Centering a Hilbert-space-valued square-integrable variable subtracts the squared norm
-of its mean from its second absolute moment. -/
+/-- Centering a square-integrable variable with values in a real inner product space subtracts
+the squared norm of its mean from its second absolute moment. -/
 theorem MemLp.integral_norm_sub_integral_sq [IsProbabilityMeasure μ] {f : α → E}
     (hf : MemLp f 2 μ) :
     ∫ x, ‖f x - ∫ y, f y ∂μ‖ ^ 2 ∂μ =
       (∫ x, ‖f x‖ ^ 2 ∂μ) - ‖∫ x, f x ∂μ‖ ^ 2 := by
-  have hi := hf.integrable one_le_two
-  have hs := (memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).mp hf
-  have hc : Integrable (fun x ↦ 2 * ⟪(∫ y, f y ∂μ), f x⟫) μ :=
-    (hi.const_inner _).const_mul 2
-  -- The cross term integrates to twice the squared norm of the mean.
-  have hcross : ∫ x, 2 * ⟪(∫ y, f y ∂μ), f x⟫ ∂μ = 2 * ‖∫ x, f x ∂μ‖ ^ 2 := by
-    rw [integral_const_mul, integral_inner hi, real_inner_self_eq_norm_sq]
-  simp_rw [norm_sub_sq_real, real_inner_comm (∫ y, f y ∂μ)]
-  rw [integral_add (f := fun x ↦ ‖f x‖ ^ 2 - 2 * ⟪(∫ y, f y ∂μ), f x⟫)
-      (g := fun _ ↦ ‖∫ y, f y ∂μ‖ ^ 2) (hs.sub hc) (integrable_const _),
-    integral_sub hs hc, hcross]
-  simp only [integral_const, probReal_univ, one_smul]
-  ring
+  by_cases hE : CompleteSpace E
+  swap
+  · simp only [integral_of_not_completeSpace hE, sub_zero, norm_zero]
+    ring
+  -- The orthogonal splitting of the square oscillation about `0` over the whole space.
+  have h := TauCeti.setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add
+    (s := univ) (c := 0) (measure_ne_top μ univ) (hf.integrable one_le_two).integrableOn
+    (by simpa only [sub_zero] using
+      ((memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).mp hf).integrableOn)
+  simp only [Measure.restrict_univ, sub_zero, average_eq_integral, probReal_univ, one_mul] at h
+  linarith
 
 end Centering
 
@@ -306,8 +308,8 @@ theorem variance_weighted_coordinate_sum_of_covariance_eq_zero {Ω ι : Type*} [
         mul_zero],
     covariance_self ((hX i hi).const_mul (a i)).aemeasurable, variance_const_mul]
 
-/-- Chebyshev's bound for a weighted sum of pairwise uncorrelated variables on a finite measure
-space. -/
+/-- Chebyshev's bound for a weighted sum of pairwise uncorrelated square-integrable variables on a
+finite measure space. -/
 theorem measure_weighted_coordinate_sum_sub_mean_ge {Ω ι : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} [IsFiniteMeasure P] {X : ι → Ω → ℝ} {s : Finset ι} (a : ι → ℝ)
     (hX : ∀ i ∈ s, MemLp (X i) 2 P)
@@ -366,20 +368,18 @@ theorem evariance_integral_prod_le (hint : Integrable F (ν.prod π)) :
         ∫ w, (F (a, w) - ∫ a', F (a', w) ∂ν) ∂π := by
       rw [integral_sub ha hmint, hm_eq]
     rw [hsub]
-    calc ‖∫ w, (F (a, w) - ∫ a', F (a', w) ∂ν) ∂π‖ₑ ^ 2
-        ≤ (∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ∂π) ^ 2 := by
-          gcongr
-          exact eNorm_integral_le_lintegral_eNorm _
-      _ ≤ _ := by
-          simpa [ENNReal.rpow_two] using rpow_lintegral_le_measure_univ_rpow_mul
-            (μ := π) (u := fun w => ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ)
-            one_le_two
+    -- Hölder's bound on the average over the whole space of the probability measure `π`.
+    simpa only [Measure.restrict_univ, average_eq_integral, measure_univ, inv_one, one_mul,
+      ENNReal.rpow_two] using
+      TauCeti.enorm_setAverage_rpow_le (mu := π) (s := univ)
+        (f := fun w => F (a, w) - ∫ a', F (a', w) ∂ν) one_le_two
   calc evariance (fun a => ∫ w, F (a, w) ∂π) ν
-      ≤ ∫⁻ a, ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π ∂ν := lintegral_mono_ae hae
+      ≤ ∫⁻ a, ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π ∂ν := by
+        simpa only [evariance] using lintegral_mono_ae hae
     _ = ∫⁻ w, ∫⁻ a, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂ν ∂π :=
         lintegral_lintegral_swap
           ((hint.1.sub hmint.aestronglyMeasurable.comp_snd).eNorm.pow_const 2)
-    _ = ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := rfl
+    _ = ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by simp only [evariance]
 
 omit [SFinite ν] in
 /-- The two-factor Efron--Stein inequality. -/

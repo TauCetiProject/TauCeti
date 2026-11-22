@@ -15,7 +15,9 @@ public import TauCeti.Probability.Moments.Variance
 
 The second empirical spectral moment is the normalized squared Frobenius norm. Its
 upper-triangular expansion counts each off-diagonal coordinate twice. Pairwise independence
-and a uniform bound on the variances of the squared coordinate norms give an `O(n⁻²)` tail bound.
+and a uniform bound on the variances of the squared coordinate norms give an `O(n⁻²)` variance
+bound. On a finite measure space, pairwise uncorrelated square-integrable squared coordinate
+norms with uniformly bounded variances give an `O(n⁻²)` tail bound.
 -/
 
 public section
@@ -238,12 +240,12 @@ theorem variance_second_spectralMoment_le
   rw [variance_weighted_coordinate_sum _ (fun i _ ↦ hmem i) (hindep.set_pairwise _)]
   exact wignerCoordinate_variance_bound n hvar
 
-/-- The second spectral moment concentrates if the squared coordinate norms are pairwise
-independent and have uniformly bounded variances. -/
-theorem measure_second_spectralMoment_sub_mean_ge [IsProbabilityMeasure P]
+/-- On a finite measure space, the second spectral moment concentrates if the squared coordinate
+norms are square-integrable, pairwise uncorrelated, and have uniformly bounded variances. -/
+theorem measure_second_spectralMoment_sub_mean_ge [IsFiniteMeasure P]
     (n : ℕ) {V : ℝ}
-    (hindep : Pairwise fun i j ↦ IndepFun (wignerCoordinateSquare ξ η (n + 1) i)
-      (wignerCoordinateSquare ξ η (n + 1) j) P)
+    (hcov : Pairwise fun i j ↦ cov[wignerCoordinateSquare ξ η (n + 1) i,
+      wignerCoordinateSquare ξ η (n + 1) j; P] = 0)
     (hmem : ∀ i, MemLp (wignerCoordinateSquare ξ η (n + 1) i) 2 P)
     (hvar : ∀ i, Var[wignerCoordinateSquare ξ η (n + 1) i; P] ≤ V)
     {ε : ℝ} (hε : 0 < ε) :
@@ -254,8 +256,7 @@ theorem measure_second_spectralMoment_sub_mean_ge [IsProbabilityMeasure P]
       ENNReal.ofReal ((8 * V / (n + 1 : ℝ) ^ 2) / ε ^ 2) := by
   have h := measure_weighted_coordinate_sum_sub_mean_ge (s := Finset.univ)
     (fun i ↦ (n + 1 : ℝ)⁻¹ ^ 2 * wignerCoordinateWeight (n + 1) i)
-    (fun i _ ↦ hmem i)
-    (fun i _ j _ hij ↦ (hindep hij).covariance_eq_zero (hmem i) (hmem j)) hε
+    (fun i _ ↦ hmem i) (hcov.set_pairwise _) hε
   have hbound := ENNReal.ofReal_le_ofReal (div_le_div_of_nonneg_right
     (wignerCoordinate_variance_bound n hvar) (sq_nonneg ε))
   simp_rw [integral_sq_spectralMeasure_wignerMatrix_weighted]
@@ -311,8 +312,7 @@ theorem variance_second_spectralMoment_le_of_independent_coordinates
     (wignerCoordinateSquare_pairwise_independent hindep (n + 1)) hmem hvar
 
 /-- The second-moment Chebyshev bound for jointly independent Wigner coordinates. -/
-theorem measure_second_spectralMoment_sub_mean_ge_of_independent_coordinates
-    [IsProbabilityMeasure P] (n : ℕ) {V : ℝ}
+theorem measure_second_spectralMoment_sub_mean_ge_of_independent_coordinates (n : ℕ) {V : ℝ}
     (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦
       Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
     (hmem : ∀ i, MemLp (wignerCoordinateSquare ξ η (n + 1) i) 2 P)
@@ -322,9 +322,11 @@ theorem measure_second_spectralMoment_sub_mean_ge_of_independent_coordinates
         (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) -
       ∫ ω, (∫ x, x ^ 2 ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) ∂P|} ≤
-      ENNReal.ofReal ((8 * V / (n + 1 : ℝ) ^ 2) / ε ^ 2) :=
-  measure_second_spectralMoment_sub_mean_ge n
-    (wignerCoordinateSquare_pairwise_independent hindep (n + 1)) hmem hvar hε
+      ENNReal.ofReal ((8 * V / (n + 1 : ℝ) ^ 2) / ε ^ 2) := by
+  have := hindep.isProbabilityMeasure
+  exact measure_second_spectralMoment_sub_mean_ge n
+    (fun i j hij ↦ (wignerCoordinateSquare_pairwise_independent hindep (n + 1) hij)
+      |>.covariance_eq_zero (hmem i) (hmem j)) hmem hvar hε
 
 /-- Second-moment fluctuations vanish for triangular arrays whose original coordinates
 are jointly independent at each size. -/

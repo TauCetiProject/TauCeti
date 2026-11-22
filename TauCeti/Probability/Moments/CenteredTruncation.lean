@@ -18,8 +18,8 @@ the integral of the truncated variable. On a probability space it is bounded by 
 when `X` is almost everywhere strongly measurable, has every finite absolute moment.
 Its integral is zero when `P` is a probability measure, `X` is almost everywhere strongly
 measurable, and the target space is complete.
-For a centered square-integrable variable on a probability space with values in a complete
-real inner product space, its mean-square approximation error is bounded by the second moment
+For a centered square-integrable variable on a probability space with values in a real inner
+product space, its mean-square approximation error is bounded by the second moment
 outside that ball, and tends to zero as the radius tends to infinity.
 These approximations allow moment arguments for bounded variables to be transferred to
 variables having only a second moment.
@@ -155,8 +155,7 @@ end Normed
 
 section Hilbert
 
-variable [InnerProductSpace ℝ E] [CompleteSpace E] {X : Ω → E} {P : Measure Ω}
-  [IsProbabilityMeasure P]
+variable [InnerProductSpace ℝ E] {X : Ω → E} {P : Measure Ω} [IsProbabilityMeasure P]
 
 /-- The mean-square error of centered truncation is bounded by the discarded second moment.
 No distributional or independence assumption is needed. -/
