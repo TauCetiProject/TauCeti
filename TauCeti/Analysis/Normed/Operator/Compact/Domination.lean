@@ -53,12 +53,8 @@ theorem IsCompactOperator.of_norm_le_mul_sum (T : X →ₗ[𝕜] Y) (K : ∀ i, 
           simpa only [nsmul_eq_mul, P, ContinuousLinearMap.pi_apply] using
             Pi.sum_norm_apply_le_norm (P x)
       _ = C' * Fintype.card ι * ‖P x‖ := by ring
-  refine IsCompactOperator.of_norm_le_mul_rpow_mul_rpow
-    (T₀ := P.toLinearMap) (IsCompactOperator.pi hK) (ContinuousLinearMap.id 𝕜 X)
-    (T := T) (C := C' * Fintype.card ι) (θ := 0) (by norm_num) (by norm_num)
-    fun x ↦ ?_
-  simpa only [sub_zero, Real.rpow_one, Real.rpow_zero, mul_one, ContinuousLinearMap.coe_coe]
-    using hdom x
+  exact (IsCompactOperator.pi hK).of_norm_le_mul_norm (T₀ := P.toLinearMap) fun x ↦ by
+    simpa only [ContinuousLinearMap.coe_coe] using hdom x
 
 /-- **Domination by compact operators, extended-norm form.** A linear map into a Banach
 space whose extended norm is bounded by a finite multiple of the sum of the extended norms of
