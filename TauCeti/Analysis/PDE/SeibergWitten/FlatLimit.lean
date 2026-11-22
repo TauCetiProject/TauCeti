@@ -89,8 +89,10 @@ For a solution `(b, α u₀)` that is not assumed base independent:
   `TauCeti.eq_zero_of_tendsto_comap_norm_starProjection_of_mul_laplacian_nonneg`, since `|z(y)|`
   is the length of the projection of `y` to the normal plane (`norm_normalCoord`).
 
-The boundedness of the log-modulus ratio, the gauge fixing row and the insertion into a curved
-normal tube are not treated here. That rescaled solutions of the large-parameter equations
+The boundedness of the log-modulus ratio, and with it the classification of the solutions whose
+section tends to the vacuum transversally, are in
+`TauCeti.Analysis.PDE.SeibergWitten.ConfinedLimit`. The gauge fixing row and the insertion into a
+curved normal tube are not treated here. That rescaled solutions of the large-parameter equations
 converge, in the sense of `1`-jets, only to solutions of the flat limiting equations is
 `TauCeti.Analysis.PDE.SeibergWitten.Rescaling`.
 
@@ -399,6 +401,18 @@ theorem alternatingFormEquiv_symm_neg_extDeriv_normalConnection
     ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I _ (π w), π, normalCoord_re,
     normalCoord_im, smul_eq_mul]
   ring
+
+/-- **The normal curvature component of the pulled-back connection** is the curvature coefficient
+`TauCeti.Vortex.curvature` of the plane field at the normal coordinate:
+`db(e₂, e₃) = ∂₁ b₂ - ∂₂ b₁` at `z(y)`. -/
+theorem extDeriv_normalConnection_apply_two_three (hx : DifferentiableAt ℝ x (normalCoord e y)) :
+    extDeriv (normalConnection e x) y ![e 2, e 3] = Vortex.curvature x (normalCoord e y) := by
+  have h := congrArg (⟪·, ιMulti ℝ 2 ![e 2, e 3]⟫)
+    (alternatingFormEquiv_symm_neg_extDeriv_normalConnection hx)
+  rw [inner_alternatingFormEquiv_symm_ιMulti, real_inner_smul_left, inner_ιMulti_two,
+    ContinuousAlternatingMap.neg_apply] at h
+  simp [e.orthonormal.inner_eq_zero (by decide : (2 : Fin 4) ≠ 3)] at h
+  linarith
 
 end Pullback
 

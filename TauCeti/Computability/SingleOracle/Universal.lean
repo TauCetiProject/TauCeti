@@ -67,20 +67,14 @@ namespace TauCeti.Oracle.Single.Code
 
 /-! ### The universal program -/
 
-/-- A primitive recursive function is computed by one program relative to every oracle. -/
-private theorem exists_code_of_primrec {g : ℕ → ℕ} (hg : Primrec g) :
-    ∃ c : Code, ∀ O n, eval O c n = Part.some (g n) :=
-  (exists_forall_eval_eq_of_partrec (Nat.Partrec.of_primrec (Primrec.nat_iff.1 hg))).imp
-    fun _ h O n => by simp [h O]
-
 /-- A program sending `Nat.pair a k` to the code of the string `O 0, …, O (k - 1)`, relative to
 every total oracle `O`. -/
 private theorem exists_code_answers : ∃ c : Code, ∀ (O : ℕ → ℕ) a k,
     eval (O : ℕ →. ℕ) c (Nat.pair a k) =
       Part.some (encode ((List.range k).map O)) := by
   -- appending a number to a coded string is primitive recursive
-  obtain ⟨cs, hcs⟩ := exists_code_of_primrec (g := fun m =>
-      encode (ofNat (List ℕ) m.unpair.1 ++ [m.unpair.2])) <|
+  obtain ⟨cs, hcs⟩ := exists_code_of_computable (g := fun m =>
+      encode (ofNat (List ℕ) m.unpair.1 ++ [m.unpair.2])) <| Primrec.to_comp <|
     Primrec.encode.comp <| list_append.comp ((Primrec.ofNat _).comp (fst.comp Primrec.unpair))
       (list_cons.comp (snd.comp Primrec.unpair) (const []))
   -- by recursion on `k`, append the answer of the oracle at `k`
@@ -98,9 +92,9 @@ theorem exists_code_answers_apply {g : ℕ × ℕ × List ℕ → ℕ} (hg : Pri
     ∃ c : Code, ∀ (O : ℕ → ℕ) n k, eval (O : ℕ →. ℕ) c (Nat.pair n k) =
       Part.some (g (n, k, (List.range k).map O)) := by
   obtain ⟨ca, hca⟩ := exists_code_answers
-  obtain ⟨cg, hcg⟩ := exists_code_of_primrec (g := fun m =>
+  obtain ⟨cg, hcg⟩ := exists_code_of_computable (g := fun m =>
       g (m.unpair.1.unpair.1, m.unpair.1.unpair.2, ofNat (List ℕ) m.unpair.2)) <|
-    hg.comp <| (fst.comp (Primrec.unpair.comp (fst.comp Primrec.unpair))).pair <|
+    Primrec.to_comp <| hg.comp <| (fst.comp (Primrec.unpair.comp (fst.comp Primrec.unpair))).pair <|
       (snd.comp (Primrec.unpair.comp (fst.comp Primrec.unpair))).pair <|
         (Primrec.ofNat _).comp (snd.comp Primrec.unpair)
   refine ⟨comp cg (pair (pair left right) ca), fun O n k => ?_⟩
