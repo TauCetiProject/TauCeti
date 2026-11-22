@@ -133,14 +133,9 @@ theorem exists_forall_holderOnWith_coord_toSection_of_mul_lt_of_lt_mul
   rw [Nat.add_comm r 1] at hα
   have : Fact (1 ≤ q) := ⟨one_le_of_inv_add_eq_inv hexp⟩
   obtain ⟨T, hT⟩ := exists_sobolevEmbeddingL_of_inv_add_eq A μ 1 r hq hexp
-  obtain ⟨C, hC⟩ := exists_forall_holderOnWith_coord_toSection (μ := μ) hnq i hK hKi
-  refine ⟨C * ‖T‖₊, fun w ↦ ?_⟩
-  have h := hC (T w)
-  rw [toSection_eq_of_chartValueL_ae_eq (.of_finrank_lt hnq) (hT w), hα] at h
-  refine h.mono_const ?_
-  rw [mul_assoc]
-  gcongr
-  exact T.le_opNNNorm w
+  rw [← hα]
+  exact exists_forall_holderOnWith_coord_toSection_of_chartValueL_ae_eq (.of_finrank_lt hnq) T hT
+    (exists_forall_holderOnWith_coord_toSection hnq i hK hKi)
 
 /-- **Morrey's embedding for Sobolev sections at an integer margin.** If `1 < p` and
 `(k - 1) p = n`, where `n` is the dimension, so that the Morrey exponent `k - n / p` is `1`, then
@@ -160,18 +155,12 @@ theorem exists_forall_holderOnWith_coord_toSection_of_mul_eq (hp : 1 < p)
   obtain ⟨p₀, hp₀, hp₀p, hk₀, hkp₀, hβ⟩ :=
     exists_mul_lt_and_lt_mul_and_sub_div_eq hn hp hkp hβ0 hβ1
   have : Fact (1 ≤ p₀) := ⟨hp₀.le⟩
-  obtain ⟨C, hC⟩ :=
+  have hC :=
     exists_forall_holderOnWith_coord_toSection_of_mul_lt_of_lt_mul (μ := μ) hk₀ hkp₀ i hK hKi
   rw [hβ, ENNReal.toNNReal_coe] at hC
-  let T := A.sectionChartData.ofExponentLEL μ k hp₀p
-  refine ⟨C * ‖T‖₊, fun w ↦ ?_⟩
-  have h := hC (T w)
-  rw [toSection_ofExponentLEL hp₀p
-    ((HasContinuousRepresentatives.of_finrank_lt_mul hp₀ hkp₀).mono hp₀p le_rfl)] at h
-  refine h.mono_const ?_
-  rw [mul_assoc]
-  gcongr
-  exact T.le_opNNNorm w
+  exact exists_forall_holderOnWith_coord_toSection_of_chartValueL_ae_eq
+    (.of_finrank_lt_mul hp₀ hkp₀) (A.sectionChartData.ofExponentLEL μ k hp₀p)
+    (fun w i ↦ by rw [SectionChartData.chartValueL_ofExponentLEL, Lp.coeFn_ofExponentLEL]) hC
 
 /-- **Check.** In dimension `3`, `W^{2,2}(V)` embeds continuously into the Hölder space
 `C^{0,1/2}(K; F)` on every compact subset `K` of a chart image: `(2 - 1) · 2 < 3 < 2 · 2` and the
@@ -183,15 +172,9 @@ example [Fact (1 ≤ (2 : ℝ≥0∞))] (hE : finrank ℝ E = 3) (i : Fin A.n) (
   have hk : (((2 - 1 : ℕ) : ℝ≥0∞)) * 2 < finrank ℝ E := by rw [hE]; norm_num
   have hkp : (finrank ℝ E : ℝ≥0∞) < (2 : ℕ) * 2 := by rw [hE]; norm_num
   have hα : (((2 : ℕ) : ℝ≥0∞) - finrank ℝ E / 2).toNNReal = 1 / 2 := by
-    have h : ((2 : ℕ) : ℝ≥0∞) - ((3 : ℕ) : ℝ≥0∞) / 2 = ENNReal.ofReal (1 / 2) := by
-      rw [show ((3 : ℕ) : ℝ≥0∞) / 2 = ENNReal.ofReal (3 / 2) by
-          rw [ENNReal.ofReal_div_of_pos (by norm_num)]; norm_num,
-        show ((2 : ℕ) : ℝ≥0∞) = ENNReal.ofReal 2 by norm_num,
-        ← ENNReal.ofReal_sub _ (by norm_num)]
-      norm_num
-    rw [hE, h, ENNReal.ofReal, ENNReal.toNNReal_coe]
-    ext
-    norm_num
+    rw [hE]
+    norm_num [← NNReal.coe_inj, ENNReal.coe_toNNReal_eq_toReal, ENNReal.toReal_sub_of_le,
+      ENNReal.div_le_iff, ENNReal.toReal_div]
   obtain ⟨C, hC⟩ := exists_forall_holderOnWith_coord_toSection_of_mul_lt_of_lt_mul (μ := μ)
     hk hkp i (isCompact_iff_compactSpace.2 ‹_›) hKi
   rw [hα] at hC

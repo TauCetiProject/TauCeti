@@ -99,6 +99,8 @@ over surfaces.
 * `TauCeti.SobolevSection.HasContinuousRepresentatives.of_chartValueL_ae_eq`: continuous
   representatives transfer back along maps keeping the chart data, and
   `TauCeti.SobolevSection.HasContinuousRepresentatives.mono`: to higher orders and exponents.
+* `TauCeti.SobolevSection.exists_forall_holderOnWith_coord_toSection_of_chartValueL_ae_eq`: Hölder
+  bounds in a chart transfer back along bounded linear maps keeping the chart data.
 * `TauCeti.SobolevSection.coordHolderL`: Hölder bounds in a chart give a bounded operator into
   `C^{0,α}(K; F)`, and `TauCeti.SobolevSection.isCompactOperator_inclusionL_comp_coordHolderL`:
   it is compact into `C^{0,β}(K; F)` for `β < α`.
@@ -228,23 +230,32 @@ theorem toSection_injective (h : HasContinuousRepresentatives A μ p k) :
   fun w w' hww' ↦ eq_of_ae_eq_coord (chartValueL_ae_eq_coord_toSection h w)
     (hww' ▸ chartValueL_ae_eq_coord_toSection h w')
 
+/-- Two Sobolev sections, possibly of different orders and exponents, with the same chart data have
+the same continuous representative. -/
+theorem toSection_eq_of_chartValueL_ae_eq {q : ℝ≥0∞} [Fact (1 ≤ q)] {l : ℕ}
+    (h : HasContinuousRepresentatives A μ q l) {v : SobolevSection A μ q l}
+    {w : SobolevSection A μ p k}
+    (hvw : ∀ i, A.sectionChartData.chartValueL μ q l i v
+      =ᵐ[μ.restrict (A.image i)] A.sectionChartData.chartValueL μ p k i w) :
+    toSection v = toSection w :=
+  eq_toSection (continuous_toSection h v) fun i ↦
+    (hvw i).symm.trans (chartValueL_ae_eq_coord_toSection h v i)
+
 /-- Forgetting the highest derivative does not change the continuous representative. -/
 @[simp]
 theorem toSection_lowerOrderL (h : HasContinuousRepresentatives A μ p (k + 1))
     (w : SobolevSection A μ p (k + 1)) :
     toSection (A.sectionChartData.lowerOrderL μ p k w) = toSection w :=
-  (eq_toSection (continuous_toSection h w) fun i ↦ by
-    rw [SectionChartData.chartValueL_coe_lowerOrderL]
-    exact chartValueL_ae_eq_coord_toSection h w i).symm
+  (toSection_eq_of_chartValueL_ae_eq h fun i ↦ by
+    rw [SectionChartData.chartValueL_coe_lowerOrderL]).symm
 
 /-- Lowering the exponent does not change the continuous representative. -/
 @[simp]
 theorem toSection_ofExponentLEL {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ q)
     (h : HasContinuousRepresentatives A μ q k) (w : SobolevSection A μ q k) :
     toSection (A.sectionChartData.ofExponentLEL μ k hpq w) = toSection w :=
-  (eq_toSection (continuous_toSection h w) fun i ↦ by
-    rw [SectionChartData.chartValueL_ofExponentLEL, Lp.coeFn_ofExponentLEL]
-    exact chartValueL_ae_eq_coord_toSection h w i).symm
+  (toSection_eq_of_chartValueL_ae_eq h fun i ↦ by
+    rw [SectionChartData.chartValueL_ofExponentLEL, Lp.coeFn_ofExponentLEL]).symm
 
 /-- **Transfer of continuous representatives.** If a map `T` from `W^{k,p}(V)` to `W^{l,q}(V)` keeps
 the chart data and every element of `W^{l,q}(V)` has a continuous representative, then so does every
@@ -258,16 +269,27 @@ theorem HasContinuousRepresentatives.of_chartValueL_ae_eq {q : ℝ≥0∞} [Fact
   ⟨toSection (T w), continuous_toSection h (T w),
     fun i ↦ (hT w i).symm.trans (chartValueL_ae_eq_coord_toSection h (T w) i)⟩
 
-/-- Two Sobolev sections, possibly of different orders and exponents, with the same chart data have
-the same continuous representative. -/
-theorem toSection_eq_of_chartValueL_ae_eq {q : ℝ≥0∞} [Fact (1 ≤ q)] {l : ℕ}
-    (h : HasContinuousRepresentatives A μ q l) {v : SobolevSection A μ q l}
-    {w : SobolevSection A μ p k}
-    (hvw : ∀ i, A.sectionChartData.chartValueL μ q l i v
-      =ᵐ[μ.restrict (A.image i)] A.sectionChartData.chartValueL μ p k i w) :
-    toSection v = toSection w :=
-  eq_toSection (continuous_toSection h v) fun i ↦
-    (hvw i).symm.trans (chartValueL_ae_eq_coord_toSection h v i)
+/-- **Transfer of Hölder bounds.** If a bounded linear map `T` from `W^{k,p}(V)` to `W^{l,q}(V)`
+keeps the chart data and the chart expressions of the continuous representatives of `W^{l,q}(V)`
+are `α`-Hölder on `K` with constant `C ‖v‖`, then those of `W^{k,p}(V)` are `α`-Hölder on `K` with
+constant `C ‖T‖ ‖w‖`. -/
+theorem exists_forall_holderOnWith_coord_toSection_of_chartValueL_ae_eq {q : ℝ≥0∞} [Fact (1 ≤ q)]
+    {l : ℕ} (h : HasContinuousRepresentatives A μ q l)
+    (T : SobolevSection A μ p k →L[ℝ] SobolevSection A μ q l)
+    (hT : ∀ w i, A.sectionChartData.chartValueL μ q l i (T w)
+      =ᵐ[μ.restrict (A.image i)] A.sectionChartData.chartValueL μ p k i w)
+    {i : Fin A.n} {K : Set E} {α : ℝ≥0}
+    (hC : ∃ C : ℝ≥0, ∀ v : SobolevSection A μ q l,
+      HolderOnWith (C * ‖v‖₊) α (A.coord i (toSection v)) K) :
+    ∃ C : ℝ≥0, ∀ w : SobolevSection A μ p k,
+      HolderOnWith (C * ‖w‖₊) α (A.coord i (toSection w)) K := by
+  obtain ⟨C, hC⟩ := hC
+  refine ⟨C * ‖T‖₊, fun w ↦ ?_⟩
+  rw [← toSection_eq_of_chartValueL_ae_eq h (hT w)]
+  refine (hC (T w)).mono_const ?_
+  rw [mul_assoc]
+  gcongr
+  exact T.le_opNNNorm w
 
 /-- **Monotonicity of continuous representatives.** If the elements of `W^{k,p}(V)` have continuous
 representatives, so do those of `W^{l,q}(V)` for `k ≤ l` and `p ≤ q`. -/
@@ -661,7 +683,7 @@ theorem isCompactOperator_inclusionL_comp_morreyEmbedding (hp : (finrank ℝ E :
     (hβ : β < ((1 : ℝ≥0∞) - finrank ℝ E / p).toNNReal) :
     IsCompactOperator ((HolderSpace.inclusionL (X := K) (Y := F) hβ.le).comp
       (morreyEmbedding (μ := μ) hp i K hKi)) :=
-  (HolderSpace.isCompactOperator_inclusionL hβ).comp_clm _
+  isCompactOperator_inclusionL_comp_coordHolderL _ i K hKi _ hβ
 
 end SobolevSection
 
