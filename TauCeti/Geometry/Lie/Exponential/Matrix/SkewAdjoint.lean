@@ -72,7 +72,6 @@ private theorem mem_skewAdjointMatricesLieSubalgebra_iff_add (J A : Matrix n n ð
   simp only [mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
     Matrix.IsSkewAdjoint, Matrix.IsAdjointPair, mul_neg, eq_neg_iff_add_eq_zero]
 
-
 /-- The matrix exponential of an element of `skewAdjointMatricesLieSubalgebra J` preserves `J`,
 without any invertibility or symmetry assumption on `J`. -/
 theorem exp_transpose_mul_mul_exp_of_mem_skewAdjointMatricesLieSubalgebra
