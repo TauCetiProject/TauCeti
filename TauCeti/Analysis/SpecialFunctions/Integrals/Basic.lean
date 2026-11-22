@@ -71,6 +71,9 @@ Interval integrals of elementary functions in closed form or as series, continui
   `TauCeti.integral_comp_sin_sq_int_mul_pi`: the integral from `0` of an integrand
   `θ ↦ G (sin² θ)` (with `G` valued in a normed space) is odd and quasi-periodic in its upper
   limit.
+* `TauCeti.one_sub_rpow_mul_integral_rpow_mul_add_mul_rpow`: the substitution
+  `w = (1 - x) s / (x + (1 - x) s)` relating `(1 - x)^a ∫₀¹ s^(a-1) (x + (1-x) s)^(-a)` to
+  `∫₀^(1-x) w^(a-1) / (1 - w)` for `x ∈ (0, 1)`.
 -/
 
 public section
@@ -504,6 +507,47 @@ theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hS : S <
   rw [intervalIntegral.integral_comp_sub_left (fun x : ℝ => x ^ S) (r + β)] at h
   rw [intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r]
   convert h using 2 <;> ring
+
+/-- For every `a : ℝ` and `x ∈ (0, 1)`, substituting `w = (1 - x) s / (x + (1 - x) s)` on `[0, 1]`
+gives
+`(1 - x) ^ a * ∫ s in (0 : ℝ)..1, s ^ (a - 1) * (x + (1 - x) * s) ^ (-a) =`
+`∫ w in (0 : ℝ)..(1 - x), w ^ (a - 1) / (1 - w)`.
+-/
+theorem one_sub_rpow_mul_integral_rpow_mul_add_mul_rpow {a x : ℝ} (hx : x ∈ Set.Ioo (0 : ℝ) 1) :
+    (1 - x) ^ a * (∫ s in (0 : ℝ)..1, s ^ (a - 1) * (x + (1 - x) * s) ^ (-a)) =
+      ∫ w in (0 : ℝ)..(1 - x), w ^ (a - 1) / (1 - w) := by
+  let u : ℝ → ℝ := fun s ↦ (1 - x) * s / (x + (1 - x) * s)
+  let u' : ℝ → ℝ := fun s ↦ x * (1 - x) / (x + (1 - x) * s) ^ 2
+  have hsub := intervalIntegral.integral_comp_mul_deriv_of_deriv_nonneg
+    (f := u) (f' := u') (a := (0 : ℝ)) (b := 1)
+    (ContinuousOn.div (by fun_prop) (by fun_prop) fun s hs ↦
+      (by rw [Set.uIcc_of_le zero_le_one] at hs; nlinarith [hx.1, hx.2, hs.1, hs.2] :
+        0 < x + (1 - x) * s).ne')
+    (fun s hs ↦ by
+      rw [min_eq_left zero_le_one, max_eq_right zero_le_one] at hs
+      exact (((hasDerivAt_id s).const_mul (1 - x)).div
+        (((hasDerivAt_id s).const_mul (1 - x)).const_add x)
+        (by nlinarith [hx.1, hx.2, hs.1, hs.2] : 0 < x + (1 - x) * s).ne').congr_deriv
+        (by dsimp [u']; ring))
+    (fun _ _ ↦ div_nonneg (mul_nonneg hx.1.le (sub_nonneg.mpr hx.2.le)) (sq_nonneg _))
+    (g := fun w : ℝ ↦ w ^ (a - 1) / (1 - w))
+  rw [(by simp [u] : u 0 = 0),
+    (by dsimp [u]; rw [mul_one, add_sub_cancel, div_one] : u 1 = 1 - x)] at hsub
+  rw [← hsub, ← intervalIntegral.integral_const_mul]
+  refine intervalIntegral.integral_congr_ae (Filter.Eventually.of_forall fun s hs ↦ ?_)
+  rw [Set.uIoc_of_le zero_le_one] at hs
+  have h1x := sub_pos.mpr hx.2
+  have hD : 0 < x + (1 - x) * s := by nlinarith [hx.1, h1x, hs.1]
+  have h1u : 1 - (1 - x) * s / (x + (1 - x) * s) = x / (x + (1 - x) * s) := by
+    field_simp [hD.ne']; ring
+  have h1xa : (1 - x) ^ a = (1 - x) ^ (a - 1) * (1 - x) := by
+    simpa only [sub_add_cancel] using Real.rpow_add_one h1x.ne' (a - 1)
+  have hDa : (x + (1 - x) * s) ^ a = (x + (1 - x) * s) ^ (a - 1) * (x + (1 - x) * s) := by
+    simpa only [sub_add_cancel] using Real.rpow_add_one hD.ne' (a - 1)
+  dsimp [u, u']
+  rw [Real.div_rpow (mul_nonneg h1x.le hs.1.le) hD.le, Real.mul_rpow h1x.le hs.1.le, h1u,
+    h1xa, Real.rpow_neg hD.le, hDa]
+  field_simp [hx.1.ne', hD.ne', (Real.rpow_pos_of_pos hD (a - 1)).ne']
 
 end TauCeti
 

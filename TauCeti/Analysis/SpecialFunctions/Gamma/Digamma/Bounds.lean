@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma.GaussSeries
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.GaussSeries
 import Mathlib.NumberTheory.ZetaValues
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 

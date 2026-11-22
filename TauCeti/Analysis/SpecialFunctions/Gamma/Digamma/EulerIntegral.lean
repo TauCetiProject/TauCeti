@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Real
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Real
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import TauCeti.Analysis.SpecialFunctions.Gamma.GaussSeries
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.GaussSeries
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -24,6 +24,9 @@ proved by dominated convergence from Gauss' series for `digamma`.
 
 * `Real.intervalIntegrable_rpow_sub_one_div_one_sub`: interval integrability of the Euler
   digamma kernel on `[0, 1]` for `0 < a`.
+* `Real.one_sub_rpow_mul_integral_rpow_mul_add_mul_rpow_eq_sub_log`: for `0 < a` and
+  `x ∈ (0, 1)`, rewriting `(1 - x) ^ a * ∫ s in 0..1, s^(a-1) (x + (1-x) s)^(-a)` as
+  `(∫ w in 0..(1-x), (w^(a-1) - 1) / (1 - w)) - log x`.
 * `Real.integral_rpow_sub_one_div_one_sub`: Euler's integral representation
   `∫ w in (0 : ℝ)..1, (w ^ (a - 1) - 1) / (1 - w) = digamma 1 - digamma a`.
 
@@ -52,6 +55,31 @@ theorem intervalIntegrable_rpow_sub_one_div_one_sub {a : ℝ} (ha : 0 < a) :
       fun w hw ↦ sub_ne_zero.mpr hw.2.ne').aestronglyMeasurable measurableSet_Ioo) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioo] with w hw
   simpa only [Real.norm_eq_abs] using Real.abs_rpow_sub_one_div_one_sub_le ha hw.1 hw.2
+
+/-- Splitting the singular Euler-type integral on `[0, 1]` for `0 < a` and `x ∈ (0, 1)` into
+the truncated Euler digamma kernel on `[0, 1 - x]` minus `log x`:
+`(1 - x) ^ a * ∫ s in (0 : ℝ)..1, s ^ (a - 1) * (x + (1 - x) * s) ^ (-a) =`
+`(∫ w in (0 : ℝ)..(1 - x), (w ^ (a - 1) - 1) / (1 - w)) - Real.log x`.
+-/
+theorem one_sub_rpow_mul_integral_rpow_mul_add_mul_rpow_eq_sub_log {a x : ℝ}
+    (ha : 0 < a) (hx : x ∈ Ioo (0 : ℝ) 1) :
+    (1 - x) ^ a * (∫ s in (0 : ℝ)..1, s ^ (a - 1) * (x + (1 - x) * s) ^ (-a)) =
+      (∫ w in (0 : ℝ)..(1 - x), (w ^ (a - 1) - 1) / (1 - w)) - Real.log x := by
+  have hint1 : IntervalIntegrable (fun w ↦ (w ^ (a - 1) - 1) / (1 - w)) volume 0 (1 - x) :=
+    (Real.intervalIntegrable_rpow_sub_one_div_one_sub ha).mono_set <| by
+      rw [uIcc_of_le (sub_nonneg.mpr hx.2.le), uIcc_of_le zero_le_one]
+      exact Icc_subset_Icc_right (by linarith [hx.1])
+  have hint2 : IntervalIntegrable (fun w : ℝ ↦ (1 - w)⁻¹) volume 0 (1 - x) :=
+    (ContinuousOn.inv₀ (by fun_prop) fun w hw ↦ by
+      rw [uIcc_of_le (sub_nonneg.mpr hx.2.le)] at hw; linarith [hw.2, hx.1]).intervalIntegrable
+  have hlog : ∫ w in (0 : ℝ)..(1 - x), (1 - w)⁻¹ = -Real.log x := by
+    have h := intervalIntegral.integral_comp_sub_left (fun u : ℝ ↦ u⁻¹) 1 (a := 0) (b := 1 - x)
+    simp only [sub_sub_cancel, sub_zero] at h
+    rw [h, integral_inv_of_pos hx.1 zero_lt_one, one_div, Real.log_inv]
+  rw [TauCeti.one_sub_rpow_mul_integral_rpow_mul_add_mul_rpow hx,
+    intervalIntegral.integral_congr (fun _ _ ↦ by ring :
+      ∀ w ∈ uIcc 0 (1 - x), w ^ (a - 1) / (1 - w) = (w ^ (a - 1) - 1) / (1 - w) + (1 - w)⁻¹),
+    intervalIntegral.integral_add hint1 hint2, hlog, ← sub_eq_add_neg]
 
 private theorem integral_finset_rpow_sub_pow {a : ℝ} (ha : 0 < a) (N : ℕ) :
     ∫ w in (0 : ℝ)..1, (∑ k ∈ Finset.range N, (w ^ ((k : ℝ) + a - 1) - w ^ k)) =

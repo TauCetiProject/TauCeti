@@ -11,8 +11,8 @@ import TauCeti.Analysis.Complex.NegNatTopology
 import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.ODE.Wronskian
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma.DigammaEulerIntegral
-import TauCeti.Analysis.SpecialFunctions.Gamma.GaussSeries
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.EulerIntegral
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.GaussSeries
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Analytic
 import TauCeti.Analysis.SpecialFunctions.Log.Limits
@@ -251,62 +251,6 @@ private theorem hasDerivAt_sturmLiouville_realU2 {a x : ℝ}
 
 /-! ### Logarithmic asymptotic at `0⁺`, Wronskian uniqueness, and complex continuation -/
 
-private theorem integral_singular_euler_sub {a x : ℝ} (hx : x ∈ Ioo (0 : ℝ) 1) :
-    (1 - x) ^ a * (∫ s in (0 : ℝ)..1, s ^ (a - 1) * (x + (1 - x) * s) ^ (-a)) =
-      ∫ w in (0 : ℝ)..(1 - x), w ^ (a - 1) / (1 - w) := by
-  let u : ℝ → ℝ := fun s ↦ (1 - x) * s / (x + (1 - x) * s)
-  let u' : ℝ → ℝ := fun s ↦ x * (1 - x) / (x + (1 - x) * s) ^ 2
-  have hsub := intervalIntegral.integral_comp_mul_deriv_of_deriv_nonneg
-    (f := u) (f' := u') (a := (0 : ℝ)) (b := 1)
-    (ContinuousOn.div (by fun_prop) (by fun_prop) fun s hs ↦
-      (by rw [uIcc_of_le zero_le_one] at hs; nlinarith [hx.1, hx.2, hs.1, hs.2] :
-        0 < x + (1 - x) * s).ne')
-    (fun s hs ↦ by
-      rw [min_eq_left zero_le_one, max_eq_right zero_le_one] at hs
-      exact (((hasDerivAt_id s).const_mul (1 - x)).div
-        (((hasDerivAt_id s).const_mul (1 - x)).const_add x)
-        (by nlinarith [hx.1, hx.2, hs.1, hs.2] : 0 < x + (1 - x) * s).ne').congr_deriv
-        (by dsimp [u']; ring))
-    (fun _ _ ↦ div_nonneg (mul_nonneg hx.1.le (sub_nonneg.mpr hx.2.le)) (sq_nonneg _))
-    (g := fun w : ℝ ↦ w ^ (a - 1) / (1 - w))
-  rw [(by simp [u] : u 0 = 0),
-    (by dsimp [u]; rw [mul_one, add_sub_cancel, div_one] : u 1 = 1 - x)] at hsub
-  rw [← hsub, ← intervalIntegral.integral_const_mul]
-  refine intervalIntegral.integral_congr_ae (Eventually.of_forall fun s hs ↦ ?_)
-  rw [uIoc_of_le zero_le_one] at hs
-  have h1x := sub_pos.mpr hx.2
-  have hD : 0 < x + (1 - x) * s := by nlinarith [hx.1, h1x, hs.1]
-  have h1u : 1 - (1 - x) * s / (x + (1 - x) * s) = x / (x + (1 - x) * s) := by
-    field_simp [hD.ne']; ring
-  have h1xa : (1 - x) ^ a = (1 - x) ^ (a - 1) * (1 - x) := by
-    simpa only [sub_add_cancel] using Real.rpow_add_one h1x.ne' (a - 1)
-  have hDa : (x + (1 - x) * s) ^ a = (x + (1 - x) * s) ^ (a - 1) * (x + (1 - x) * s) := by
-    simpa only [sub_add_cancel] using Real.rpow_add_one hD.ne' (a - 1)
-  dsimp [u, u']
-  rw [Real.div_rpow (mul_nonneg h1x.le hs.1.le) hD.le, Real.mul_rpow h1x.le hs.1.le, h1u,
-    h1xa, Real.rpow_neg hD.le, hDa]
-  field_simp [hx.1.ne', hD.ne', (Real.rpow_pos_of_pos hD (a - 1)).ne']
-
-private theorem integral_singular_euler_piece {a x : ℝ}
-    (ha : a ∈ Ioo (0 : ℝ) 1) (hx : x ∈ Ioo (0 : ℝ) 1) :
-    (1 - x) ^ a * (∫ s in (0 : ℝ)..1, s ^ (a - 1) * (x + (1 - x) * s) ^ (-a)) =
-      (∫ w in (0 : ℝ)..(1 - x), (w ^ (a - 1) - 1) / (1 - w)) - Real.log x := by
-  have hint1 : IntervalIntegrable (fun w ↦ (w ^ (a - 1) - 1) / (1 - w)) volume 0 (1 - x) :=
-    (Real.intervalIntegrable_rpow_sub_one_div_one_sub ha.1).mono_set <| by
-      rw [uIcc_of_le (sub_nonneg.mpr hx.2.le), uIcc_of_le zero_le_one]
-      exact Icc_subset_Icc_right (by linarith [hx.1])
-  have hint2 : IntervalIntegrable (fun w : ℝ ↦ (1 - w)⁻¹) volume 0 (1 - x) :=
-    (ContinuousOn.inv₀ (by fun_prop) fun w hw ↦ by
-      rw [uIcc_of_le (sub_nonneg.mpr hx.2.le)] at hw; linarith [hw.2, hx.1]).intervalIntegrable
-  have hlog : ∫ w in (0 : ℝ)..(1 - x), (1 - w)⁻¹ = -Real.log x := by
-    have h := intervalIntegral.integral_comp_sub_left (fun u : ℝ ↦ u⁻¹) 1 (a := 0) (b := 1 - x)
-    simp only [sub_sub_cancel, sub_zero] at h
-    rw [h, integral_inv_of_pos hx.1 zero_lt_one, one_div, Real.log_inv]
-  rw [integral_singular_euler_sub hx,
-    intervalIntegral.integral_congr (fun _ _ ↦ by ring :
-      ∀ w ∈ uIcc 0 (1 - x), w ^ (a - 1) / (1 - w) = (w ^ (a - 1) - 1) / (1 - w) + (1 - w)⁻¹),
-    intervalIntegral.integral_add hint1 hint2, hlog, ← sub_eq_add_neg]
-
 private theorem intervalIntegrable_swappedEuler {a x : ℝ}
     (ha : a ∈ Ioo (0 : ℝ) 1) (hx : x ∈ Ioo (0 : ℝ) 1) :
     IntervalIntegrable
@@ -339,8 +283,8 @@ private theorem eulerZeroBalanced_eq_split {a x : ℝ}
     exact intervalIntegral.integral_congr fun _ _ ↦ by ring
   have hsing_val : ∫ s in (0 : ℝ)..1, s ^ (a - 1) * (x + (1 - x) * s) ^ (-a) =
       (1 - x) ^ (-a) * ((∫ w in (0 : ℝ)..(1 - x), (w ^ (a - 1) - 1) / (1 - w)) - Real.log x) := by
-    rw [← integral_singular_euler_piece ha hx, ← mul_assoc, ← Real.rpow_add (sub_pos.mpr hx.2),
-      neg_add_cancel, Real.rpow_zero, one_mul]
+    rw [← Real.one_sub_rpow_mul_integral_rpow_mul_add_mul_rpow_eq_sub_log ha.1 hx, ← mul_assoc,
+      ← Real.rpow_add (sub_pos.mpr hx.2), neg_add_cancel, Real.rpow_zero, one_mul]
   linarith
 
 private theorem smooth_euler_integrand_le {a x s : ℝ}
@@ -586,10 +530,6 @@ private theorem ordinaryHypergeometric_ofReal_eq_zeroBalancedSeries {a x : ℝ}
   have hlhs : Complex.ofReal (₂F₁ a a (2 * a) (1 - x)) =
       ordinaryHypergeometric (a : ℂ) (a : ℂ) (2 * (a : ℂ)) (1 - (x : ℂ)) := by
     simp
-  have hp (u : ℝ) (k : ℕ) :
-      (ascPochhammer ℂ k).eval (u : ℂ) = Complex.ofReal ((ascPochhammer ℝ k).eval u) := by
-    simpa [ascPochhammer_map] using
-      Polynomial.eval_map_apply (p := ascPochhammer ℝ k) (f := Complex.ofRealHom) u
   have hx_norm : ‖(x : ℂ)‖ < 1 := by
     rw [Complex.norm_real, Real.norm_of_nonneg hx.1.le]; exact hx.2
   refine hlhs.symm.trans ((congrArg Complex.ofReal hreal).trans ?_)
@@ -598,17 +538,18 @@ private theorem ordinaryHypergeometric_ofReal_eq_zeroBalancedSeries {a x : ℝ}
       Complex.Gamma (2 * (a : ℂ)) = Complex.ofReal (Real.Gamma (2 * a))),
     Complex.Gamma_ofReal a, (Complex.ofReal_log hx.1.le).symm]
   simp only [realU2, realV, FormalMultilinearSeries.ofScalarsSum_eq_tsum, smul_eq_mul,
-    realDigammaCoeff, realDigammaDiff, ordinaryHypergeometricCoefficient_eq_div,
-    ascPochhammer_eval_one, Complex.ofReal_mul, Complex.ofReal_div, Complex.ofReal_pow,
-    Complex.ofReal_add, Complex.ofReal_neg, Complex.ofReal_sub, Complex.ofReal_tsum,
-    Complex.ofReal_ofNat, ofReal_ordinaryHypergeometric]
+    Complex.ofReal_mul, Complex.ofReal_div, Complex.ofReal_pow, Complex.ofReal_add,
+    Complex.ofReal_neg, Complex.ofReal_tsum, ofReal_ordinaryHypergeometric]
   congr 1; congr 1
   refine tsum_congr fun k ↦ ?_
-  rw [(by simpa using Complex.digamma_ofReal (x := (k : ℝ) + 1) :
+  rw [realDigammaCoeff, realDigammaDiff, Complex.ofReal_mul,
+    ofReal_ordinaryHypergeometricCoefficient, Complex.ofReal_mul, Complex.ofReal_sub,
+    Complex.ofReal_ofNat,
+    (by simpa using Complex.digamma_ofReal (x := (k : ℝ) + 1) :
       Complex.digamma ((k : ℂ) + 1) = Complex.ofReal (Real.digamma (k + 1))),
     (by simpa using Complex.digamma_ofReal (x := (k : ℝ) + a) :
       Complex.digamma ((k : ℂ) + a) = Complex.ofReal (Real.digamma (k + a)))]
-  simp [hp, sq]
+  simp only [Complex.ofReal_one]
 
 /-- On the overlap lens `‖x‖ < 1`, `‖1 - x‖ < 1`, the zero-balanced Gauss hypergeometric function
 `₂F₁(a, a; 2a; 1 - x)` agrees with `zeroBalancedSeries a x` whenever `2a` is not a nonpositive

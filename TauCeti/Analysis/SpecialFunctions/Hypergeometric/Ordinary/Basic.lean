@@ -43,6 +43,8 @@ is equivalent to the recurrence `(n + 1) (c + n) cₙ₊₁ = (a + n) (b + n) c�
 * `TauCeti.hasFPowerSeriesOnBall_ordinaryHypergeometric`: `₂F₁ a b c` has the scalar formal power
   series of hypergeometric coefficients on the open unit ball of radius `1`.
 * `TauCeti.analyticOnNhd_ordinaryHypergeometric`: `₂F₁ a b c` is analytic on the open unit ball.
+* `TauCeti.ofReal_ordinaryHypergeometricCoefficient`: coercing
+  `ordinaryHypergeometricCoefficient a b c n` from `ℝ` to `ℂ` yields the complex coefficient.
 * `TauCeti.ofReal_ordinaryHypergeometric`: coercing `₂F₁ a b c z` from `ℝ` to `ℂ` yields
   `₂F₁ (a : ℂ) (b : ℂ) (c : ℂ) (z : ℂ)`.
 * `TauCeti.hasSum_ordinaryHypergeometric`: on the open unit ball, `₂F₁ a b c` is the sum of its
@@ -190,18 +192,28 @@ theorem analyticOnNhd_ordinaryHypergeometric [CompleteSpace 𝔸] (a b c : 𝕂)
   (hasFPowerSeriesOnBall_ordinaryHypergeometric 𝔸 a b c).analyticAt_of_mem (by
     simpa only [Metric.mem_eball, edist_dist, ENNReal.ofReal_lt_one, Metric.mem_ball] using hx)
 
+/-- Coercing the real hypergeometric coefficient `ordinaryHypergeometricCoefficient a b c n` to
+`ℂ` agrees with the complex coefficient. -/
+@[norm_cast]
+theorem ofReal_ordinaryHypergeometricCoefficient (a b c : ℝ) (n : ℕ) :
+    ((ordinaryHypergeometricCoefficient a b c n : ℝ) : ℂ) =
+      ordinaryHypergeometricCoefficient (a : ℂ) (b : ℂ) (c : ℂ) n := by
+  have hp (x : ℝ) :
+      (((ascPochhammer ℝ n).eval x : ℝ) : ℂ) = (ascPochhammer ℂ n).eval (x : ℂ) := by
+    have h := Polynomial.eval_map_apply (p := ascPochhammer ℝ n) (f := Complex.ofRealHom) x
+    rw [ascPochhammer_map] at h
+    exact h.symm
+  simp only [ordinaryHypergeometricCoefficient, Complex.ofReal_mul, Complex.ofReal_inv,
+    Complex.ofReal_natCast, hp]
+
 /-- Coercing the real hypergeometric function `₂F₁ a b c z` to `ℂ` agrees with complex `₂F₁`. -/
 @[simp, norm_cast]
 theorem ofReal_ordinaryHypergeometric (a b c z : ℝ) :
     ((₂F₁ a b c z : ℝ) : ℂ) = ₂F₁ (a : ℂ) (b : ℂ) (c : ℂ) (z : ℂ) := by
-  simp only [ordinaryHypergeometric, ordinaryHypergeometric_sum_eq, smul_eq_mul,
-    Complex.ofReal_tsum]
+  simp only [ordinaryHypergeometric_eq_ofScalarsSum,
+    FormalMultilinearSeries.ofScalarsSum_eq_tsum, smul_eq_mul, Complex.ofReal_tsum]
   refine tsum_congr fun n ↦ ?_
-  have hp (x : ℝ) : (((ascPochhammer ℝ n).eval x : ℝ) : ℂ) = (ascPochhammer ℂ n).eval (x : ℂ) := by
-    have h := Polynomial.eval_map_apply (p := ascPochhammer ℝ n) (f := Complex.ofRealHom) x
-    rw [ascPochhammer_map] at h
-    exact h.symm
-  simp only [Complex.ofReal_mul, Complex.ofReal_inv, Complex.ofReal_pow, Complex.ofReal_natCast, hp]
+  rw [Complex.ofReal_mul, Complex.ofReal_pow, ofReal_ordinaryHypergeometricCoefficient]
 
 variable {𝔸} in
 /-- Inside the open unit ball, `₂F₁(a, b; c; x)` is the sum of its hypergeometric series

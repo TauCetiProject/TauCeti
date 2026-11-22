@@ -6,7 +6,6 @@ Authors: OpenAI Codex
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
-public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 public import Mathlib.Analysis.Meromorphic.Complex
@@ -20,10 +19,8 @@ with derivative `(-1)^n n!` at `-n`. Hence Gamma has a simple pole at each such 
 leading Laurent coefficient `(-1)^n / n!` (`Complex.tendsto_add_natCast_mul_Gamma`,
 `Complex.meromorphicTrailingCoeffAt_Gamma_neg_nat`,
 `Complex.meromorphicTrailingCoeffAt_Gamma_zero`), and has order zero everywhere else. In particular,
-`Complex.Gamma`, `Complex.digamma`, `b ↦ Γ(2b) / Γ(b)²`, and the shifted Gamma–power kernel
-`s ↦ Γ(s - β) * x ^ (β - s)` are analytic wherever the Gamma argument avoids the nonpositive
-integers (`Complex.analyticAt_Gamma`, `Complex.analyticAt_digamma`,
-`Complex.analyticAt_Gamma_two_mul_div_Gamma_sq`, `Complex.analyticOnNhd_Gamma_two_mul_div_Gamma_sq`,
+`Complex.Gamma` and the shifted Gamma–power kernel `s ↦ Γ(s - β) * x ^ (β - s)` are analytic
+wherever the Gamma argument avoids the nonpositive integers (`Complex.analyticAt_Gamma`,
 `Complex.analyticAt_Gamma_sub_mul_cpow`). Deligne's
 factors inherit exactly the pole lattices `-2n` and `-n`. Their meromorphic orders are
 nonpositive: none has a zero as a meromorphic germ.
@@ -125,26 +122,6 @@ theorem meromorphicTrailingCoeffAt_Gamma_zero : meromorphicTrailingCoeffAt Gamma
 theorem analyticAt_Gamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ Gamma s := by
   have h := (differentiable_one_div_Gamma.analyticAt s).inv (inv_ne_zero (Gamma_ne_zero hs))
   simpa only [Pi.inv_def, inv_inv] using h
-
-/-- Complex digamma is analytic away from the nonpositive integers. -/
-@[fun_prop]
-theorem analyticAt_digamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ digamma s := by
-  have hΓ := analyticAt_Gamma hs
-  simpa only [digamma_def, logDeriv, Pi.div_def] using hΓ.deriv.div hΓ (Gamma_ne_zero hs)
-
-/-- `b ↦ Γ(2b) / Γ(b)²` is analytic wherever `2b` is not a nonpositive integer. -/
-theorem analyticAt_Gamma_two_mul_div_Gamma_sq {b : ℂ} (hb : ∀ n : ℕ, 2 * b ≠ -(n : ℂ)) :
-    AnalyticAt ℂ (fun z : ℂ ↦ Gamma (2 * z) / Gamma z ^ 2) b := by
-  have hb' : ∀ m : ℕ, b ≠ -(m : ℂ) := fun m hm ↦
-    hb (2 * m) (by push_cast; linear_combination 2 * hm)
-  exact ((analyticAt_Gamma hb).comp (analyticAt_const.mul analyticAt_id)).div
-    ((analyticAt_Gamma hb').pow 2) (pow_ne_zero 2 (Gamma_ne_zero hb'))
-
-/-- `b ↦ Γ(2b) / Γ(b)²` is analytic on `{b : ℂ | ∀ n : ℕ, 2 * b ≠ -(n : ℂ)}`. -/
-theorem analyticOnNhd_Gamma_two_mul_div_Gamma_sq :
-    AnalyticOnNhd ℂ (fun b : ℂ ↦ Gamma (2 * b) / Gamma b ^ 2)
-      {b : ℂ | ∀ n : ℕ, 2 * b ≠ -(n : ℂ)} :=
-  fun _ hb ↦ analyticAt_Gamma_two_mul_div_Gamma_sq hb
 
 /-- For any complex base `x` and shift `β`, the shifted Gamma–power kernel
 `s ↦ Γ(s - β) * x ^ (β - s)` is analytic at every `s₀` where `s₀ - β` is not a nonpositive

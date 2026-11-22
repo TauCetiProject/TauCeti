@@ -5,7 +5,7 @@ Authors: OpenAI Codex
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Real
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Real
 public import Mathlib.Analysis.PSeries
 public import Mathlib.Analysis.Complex.HalfPlane
 public import Mathlib.Analysis.Complex.Convex

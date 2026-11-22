@@ -7,13 +7,13 @@ module
 
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Log
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Real
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Real
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma.GaussSeries
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.GaussSeries
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!

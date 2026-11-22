@@ -11,13 +11,12 @@ import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Real.Pi.Bounds
 import TauCeti.Analysis.Analytic.Binomial
-import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Complex.NegNatTopology
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma.DigammaBounds
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Analytic
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Bounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Basic
-import TauCeti.RingTheory.Binomial
 
 /-!
 # The zero-balanced hypergeometric logarithmic series and its remainder estimates
@@ -60,32 +59,30 @@ where `Complex.log 0 = 0`) and at poles of `Gamma` or `digamma`, this is only th
 -/
 noncomputable def zeroBalancedSeries (a x : ℂ) : ℂ :=
   Complex.Gamma (2 * a) / Complex.Gamma a ^ 2 *
-    ∑' k : ℕ, (Polynomial.eval a (ascPochhammer ℂ k)) ^ 2 / ((k.factorial : ℂ) ^ 2) *
-      x ^ k * (-Complex.log x + 2 * (Complex.digamma (k + 1) - Complex.digamma (k + a)))
+    ∑' k : ℕ, ordinaryHypergeometricCoefficient a a 1 k * x ^ k *
+      (-Complex.log x + 2 * (Complex.digamma (k + 1) - Complex.digamma (k + a)))
 
 /-- Unfolding lemma for `zeroBalancedSeries`. -/
 theorem zeroBalancedSeries_def (a x : ℂ) :
     zeroBalancedSeries a x =
       Complex.Gamma (2 * a) / Complex.Gamma a ^ 2 *
-        ∑' k : ℕ, (Polynomial.eval a (ascPochhammer ℂ k)) ^ 2 / ((k.factorial : ℂ) ^ 2) *
-          x ^ k * (-Complex.log x + 2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) :=
+        ∑' k : ℕ, ordinaryHypergeometricCoefficient a a 1 k * x ^ k *
+          (-Complex.log x + 2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) :=
   (rfl)
 
 /-- The `k ≥ 1` inner tail of `zeroBalancedSeries`, indexed by `k ↦ k + 1` without the Gamma
 prefactor. -/
 noncomputable def zeroBalancedTail (a x : ℂ) : ℂ :=
-  ∑' k : ℕ, (Polynomial.eval a (ascPochhammer ℂ (k + 1))) ^ 2 / (((k + 1).factorial : ℂ) ^ 2) *
-    x ^ (k + 1) *
-      (-Complex.log x + 2 *
-        (Complex.digamma ((k + 1 : ℕ) + 1) - Complex.digamma ((k + 1 : ℕ) + a)))
+  ∑' k : ℕ, ordinaryHypergeometricCoefficient a a 1 (k + 1) * x ^ (k + 1) *
+    (-Complex.log x + 2 *
+      (Complex.digamma ((k + 1 : ℕ) + 1) - Complex.digamma ((k + 1 : ℕ) + a)))
 
 /-- Unfolding lemma for `zeroBalancedTail`. -/
 theorem zeroBalancedTail_def (a x : ℂ) :
     zeroBalancedTail a x =
-      ∑' k : ℕ, (Polynomial.eval a (ascPochhammer ℂ (k + 1))) ^ 2 /
-        (((k + 1).factorial : ℂ) ^ 2) * x ^ (k + 1) *
-          (-Complex.log x + 2 *
-            (Complex.digamma ((k + 1 : ℕ) + 1) - Complex.digamma ((k + 1 : ℕ) + a))) := (rfl)
+      ∑' k : ℕ, ordinaryHypergeometricCoefficient a a 1 (k + 1) * x ^ (k + 1) *
+        (-Complex.log x + 2 *
+          (Complex.digamma ((k + 1 : ℕ) + 1) - Complex.digamma ((k + 1 : ℕ) + a))) := (rfl)
 
 /-- Every term of `zeroBalancedTail` carries a positive power of `x`, so the tail vanishes at `0`.
 -/
@@ -96,7 +93,7 @@ theorem zeroBalancedTail_zero_right (a : ℂ) : zeroBalancedTail a 0 = 0 := by
 /-- At `a = 0`, every Pochhammer factor `(0)_(k + 1)` vanishes, so `zeroBalancedTail 0 x = 0`. -/
 @[simp]
 theorem zeroBalancedTail_zero_left (x : ℂ) : zeroBalancedTail 0 x = 0 := by
-  simp [zeroBalancedTail, ascPochhammer_succ_left]
+  simp [zeroBalancedTail, ordinaryHypergeometricCoefficient, ascPochhammer_succ_left]
 
 /-- At `a = 0`, the prefactor `Γ(0) / Γ(0)²` vanishes, so `zeroBalancedSeries 0 x = 0`. -/
 @[simp]
@@ -112,44 +109,43 @@ theorem zeroBalancedSeries_zero_right (a : ℂ) :
         (2 * (Complex.digamma 1 - Complex.digamma a)) := by
   simp only [zeroBalancedSeries, Complex.log_zero, neg_zero, zero_add]
   rw [tsum_eq_single 0 fun k hk ↦ by simp [zero_pow hk]]
-  simp
+  simp [ordinaryHypergeometricCoefficient]
 
-private noncomputable def zeroBalancedCoeff (a : ℂ) (k : ℕ) : ℂ :=
-  (Polynomial.eval a (ascPochhammer ℂ k)) ^ 2 / ((k.factorial : ℂ) ^ 2)
+/-- The zero-balanced prefactor `b ↦ Γ(2b) / Γ(b)²` is analytic wherever `2b` is not a nonpositive
+integer. -/
+theorem analyticAt_Gamma_two_mul_div_Gamma_sq {b : ℂ} (hb : ∀ n : ℕ, 2 * b ≠ -(n : ℂ)) :
+    AnalyticAt ℂ (fun z : ℂ ↦ Complex.Gamma (2 * z) / Complex.Gamma z ^ 2) b := by
+  have hb' : ∀ m : ℕ, b ≠ -(m : ℂ) := fun m hm ↦
+    hb (2 * m) (by push_cast; linear_combination 2 * hm)
+  exact ((Complex.analyticAt_Gamma hb).comp (analyticAt_const.mul analyticAt_id)).div
+    ((Complex.analyticAt_Gamma hb').pow 2) (pow_ne_zero 2 (Complex.Gamma_ne_zero hb'))
+
+/-- The zero-balanced prefactor `b ↦ Γ(2b) / Γ(b)²` is analytic on
+`{b : ℂ | ∀ n : ℕ, 2 * b ≠ -(n : ℂ)}`. -/
+theorem analyticOnNhd_Gamma_two_mul_div_Gamma_sq :
+    AnalyticOnNhd ℂ (fun b : ℂ ↦ Complex.Gamma (2 * b) / Complex.Gamma b ^ 2)
+      {b : ℂ | ∀ n : ℕ, 2 * b ≠ -(n : ℂ)} :=
+  fun _ hb ↦ analyticAt_Gamma_two_mul_div_Gamma_sq hb
 
 private noncomputable def zeroBalancedTerm (a x : ℂ) (k : ℕ) : ℂ :=
-  zeroBalancedCoeff a k * x ^ k *
+  ordinaryHypergeometricCoefficient a a 1 k * x ^ k *
     (-Complex.log x + 2 * (Complex.digamma (k + 1) - Complex.digamma (k + a)))
 
 private theorem zeroBalancedSeries_eq_tsum_term (a x : ℂ) :
     zeroBalancedSeries a x =
       Complex.Gamma (2 * a) / Complex.Gamma a ^ 2 * ∑' k : ℕ, zeroBalancedTerm a x k := (rfl)
 
-private theorem norm_zeroBalancedCoeff_le {a : ℂ} {R : ℝ} (ha : ‖a‖ ≤ R) (k : ℕ) :
-    ‖zeroBalancedCoeff a k‖ ≤ (Ring.multichoose R k) ^ 2 := by
-  rw [zeroBalancedCoeff, ← div_pow, norm_pow]
-  have hdiv : Polynomial.eval a (ascPochhammer ℂ k) / (k.factorial : ℂ) =
-      Ring.multichoose a k := by
-    rw [Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer, div_eq_inv_mul]
-  rw [hdiv]
+private theorem norm_ordinaryHypergeometricCoefficient_self_one_le {a : ℂ} {R : ℝ}
+    (ha : ‖a‖ ≤ R) (k : ℕ) :
+    ‖ordinaryHypergeometricCoefficient a a 1 k‖ ≤ (Ring.multichoose R k) ^ 2 := by
+  rw [ordinaryHypergeometricCoefficient_one_eq_multichoose_mul, ← sq, norm_pow]
   exact pow_le_pow_left₀ (norm_nonneg _) (norm_multichoose_le_of_norm_le ha k) 2
-
-/-- On the open unit disc, the squared Pochhammer component series in
-`zeroBalancedSeries_eq_log_mul_add` is summable. -/
-theorem summable_zeroBalancedSeries_pochhammer (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
-    Summable fun k : ℕ ↦
-      (Polynomial.eval a (ascPochhammer ℂ k)) ^ 2 / ((k.factorial : ℂ) ^ 2) * x ^ k := by
-  refine (hasSum_multichoose_sq_mul_pow (max ‖a‖ 1) (x := ‖x‖)
-    (by simpa [abs_of_nonneg (norm_nonneg x)] using hx)).summable.of_norm_bounded fun k ↦ ?_
-  rw [norm_mul, norm_pow]
-  exact mul_le_mul_of_nonneg_right
-    (norm_zeroBalancedCoeff_le (le_max_left _ _) k) (pow_nonneg (norm_nonneg x) k)
 
 /-- On the open unit disc, the digamma-weighted component series in
 `zeroBalancedSeries_eq_log_mul_add` is summable. -/
 theorem summable_zeroBalancedSeries_digamma (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
     Summable fun k : ℕ ↦
-      (Polynomial.eval a (ascPochhammer ℂ k)) ^ 2 / ((k.factorial : ℂ) ^ 2) *
+      ordinaryHypergeometricCoefficient a a 1 k *
         (2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) * x ^ k := by
   let R := max ‖a‖ 1
   refine ((hasSum_multichoose_sq_mul_pow R (x := ‖x‖)
@@ -164,8 +160,8 @@ theorem summable_zeroBalancedSeries_digamma (a : ℂ) {x : ℂ} (hx : ‖x‖ < 
       2 * (1 + R) * (Real.pi ^ 2 / 6) := by
     rw [norm_mul, Complex.norm_ofNat]
     exact (mul_le_mul_of_nonneg_left hdig zero_le_two).trans_eq (by ring)
-  have hc : ‖zeroBalancedCoeff a k‖ ≤ (Ring.multichoose R k) ^ 2 :=
-    norm_zeroBalancedCoeff_le (le_max_left ‖a‖ 1) k
+  have hc : ‖ordinaryHypergeometricCoefficient a a 1 k‖ ≤ (Ring.multichoose R k) ^ 2 :=
+    norm_ordinaryHypergeometricCoefficient_self_one_le (le_max_left ‖a‖ 1) k
   rw [norm_mul, norm_mul, norm_pow]
   exact (mul_le_mul_of_nonneg_right
     (mul_le_mul hc hdig2 (norm_nonneg _) (by positivity))
@@ -174,16 +170,17 @@ theorem summable_zeroBalancedSeries_digamma (a : ℂ) {x : ℂ} (hx : ‖x‖ < 
 /-- On the open unit disc, the inner series of `zeroBalancedSeries` is summable. -/
 theorem summable_zeroBalancedSeries (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
     Summable fun k : ℕ ↦
-      (Polynomial.eval a (ascPochhammer ℂ k)) ^ 2 / ((k.factorial : ℂ) ^ 2) * x ^ k *
+      ordinaryHypergeometricCoefficient a a 1 k * x ^ k *
         (-Complex.log x + 2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) :=
-  (((summable_zeroBalancedSeries_pochhammer a hx).mul_right (-Complex.log x)).add
-    (summable_zeroBalancedSeries_digamma a hx)).congr fun k ↦ by ring
+  (((hasSum_ordinaryHypergeometric (𝔸 := ℂ) a a 1 hx).summable.mul_right
+    (-Complex.log x)).add (summable_zeroBalancedSeries_digamma a hx)).congr fun k ↦ by
+      simp only [smul_eq_mul]; ring
 
 /-- On the open unit disc, the `zeroBalancedSeries` summand has sum `zeroBalancedSeries a x`. -/
 theorem hasSum_zeroBalancedSeries (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
     HasSum (fun k : ℕ ↦
       Complex.Gamma (2 * a) / Complex.Gamma a ^ 2 *
-        ((Polynomial.eval a (ascPochhammer ℂ k)) ^ 2 / ((k.factorial : ℂ) ^ 2) * x ^ k *
+        (ordinaryHypergeometricCoefficient a a 1 k * x ^ k *
           (-Complex.log x + 2 * (Complex.digamma (k + 1) - Complex.digamma (k + a)))))
       (zeroBalancedSeries a x) :=
   (summable_zeroBalancedSeries a hx).hasSum.mul_left _
@@ -191,28 +188,28 @@ theorem hasSum_zeroBalancedSeries (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
 /-- On the open unit disc, the `zeroBalancedTail` series is summable. -/
 theorem summable_zeroBalancedTail (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
     Summable fun k : ℕ ↦
-      (Polynomial.eval a (ascPochhammer ℂ (k + 1))) ^ 2 / (((k + 1).factorial : ℂ) ^ 2) *
-        x ^ (k + 1) * (-Complex.log x +
+      ordinaryHypergeometricCoefficient a a 1 (k + 1) * x ^ (k + 1) *
+        (-Complex.log x +
           2 * (Complex.digamma ((k + 1 : ℕ) + 1) - Complex.digamma ((k + 1 : ℕ) + a))) :=
   (summable_nat_add_iff 1).mpr (summable_zeroBalancedSeries a hx)
 
 /-- On the open unit disc, the `zeroBalancedTail` series sums to `zeroBalancedTail a x`. -/
 theorem hasSum_zeroBalancedTail (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
     HasSum (fun k : ℕ ↦
-      (Polynomial.eval a (ascPochhammer ℂ (k + 1))) ^ 2 / (((k + 1).factorial : ℂ) ^ 2) *
-        x ^ (k + 1) * (-Complex.log x +
+      ordinaryHypergeometricCoefficient a a 1 (k + 1) * x ^ (k + 1) *
+        (-Complex.log x +
           2 * (Complex.digamma ((k + 1 : ℕ) + 1) - Complex.digamma ((k + 1 : ℕ) + a))))
       (zeroBalancedTail a x) :=
   (summable_zeroBalancedTail a hx).hasSum
 
 private theorem tsum_zeroBalancedTerm_eq_split (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
     ∑' k : ℕ, zeroBalancedTerm a x k =
-      -Complex.log x * (∑' k : ℕ, zeroBalancedCoeff a k * x ^ k) +
-        ∑' k : ℕ, zeroBalancedCoeff a k *
+      -Complex.log x * ordinaryHypergeometric a a 1 x +
+        ∑' k : ℕ, ordinaryHypergeometricCoefficient a a 1 k *
           (2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) * x ^ k :=
-  ((((summable_zeroBalancedSeries_pochhammer a hx).hasSum.mul_left (-Complex.log x)).add
+  ((((hasSum_ordinaryHypergeometric (𝔸 := ℂ) a a 1 hx).mul_left (-Complex.log x)).add
     (summable_zeroBalancedSeries_digamma a hx).hasSum).congr_fun fun k ↦ by
-      dsimp [zeroBalancedTerm, zeroBalancedCoeff]; ring).tsum_eq
+      dsimp [zeroBalancedTerm]; ring).tsum_eq
 
 /-- On the open unit disc, `zeroBalancedSeries a x` separates into `-log x * ₂F₁(a, a; 1; x)`
 plus the holomorphic digamma-weighted power series. -/
@@ -220,15 +217,9 @@ theorem zeroBalancedSeries_eq_log_mul_add (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1)
     zeroBalancedSeries a x =
       Complex.Gamma (2 * a) / Complex.Gamma a ^ 2 *
         (-Complex.log x * ordinaryHypergeometric a a 1 x +
-        ∑' k : ℕ, (Polynomial.eval a (ascPochhammer ℂ k)) ^ 2 / ((k.factorial : ℂ) ^ 2) *
+        ∑' k : ℕ, ordinaryHypergeometricCoefficient a a 1 k *
           (2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) * x ^ k) := by
-  rw [zeroBalancedSeries_eq_tsum_term, tsum_zeroBalancedTerm_eq_split a hx,
-    ← (hasSum_ordinaryHypergeometric (𝔸 := ℂ) a a 1 hx).tsum_eq]
-  congr 1; congr 1; congr 1
-  refine tsum_congr fun k ↦ ?_
-  simp only [zeroBalancedCoeff, ordinaryHypergeometricCoefficient_eq_div, ascPochhammer_eval_one,
-    smul_eq_mul]
-  ring
+  rw [zeroBalancedSeries_eq_tsum_term, tsum_zeroBalancedTerm_eq_split a hx]
 
 /-- On the open unit disc, `zeroBalancedSeries a x` splits into its `k = 0` logarithmic term
 `-log x - 2γ - 2ψ(a)` and `zeroBalancedTail a x`. -/
@@ -241,7 +232,7 @@ theorem zeroBalancedSeries_eq_add_zeroBalancedTail (a : ℂ) {x : ℂ} (hx : ‖
   have hsum : Summable (zeroBalancedTerm a x) := summable_zeroBalancedSeries a hx
   rw [hsum.tsum_eq_zero_add]
   congr 1
-  rw [(by simp [zeroBalancedTerm, zeroBalancedCoeff, Complex.digamma_one]; ring :
+  rw [(by simp [zeroBalancedTerm, ordinaryHypergeometricCoefficient, Complex.digamma_one]; ring :
     zeroBalancedTerm a x 0 =
       -Complex.log x - 2 * Real.eulerMascheroniConstant - 2 * Complex.digamma a)]
   rfl
@@ -258,8 +249,9 @@ theorem norm_zeroBalancedTail_le {a x : ℂ} (hre : 0 ≤ a.re) (ha : ‖a‖ �
       fun k ↦ by rw [← pow_succ']) using 1
     dsimp [M]; ring
   have hterm (k : ℕ) : ‖zeroBalancedTerm a x (k + 1)‖ ≤ ‖x‖ ^ (k + 1) * M := by
-    have hc : ‖zeroBalancedCoeff a (k + 1)‖ ≤ 1 :=
-      (norm_zeroBalancedCoeff_le ha (k + 1)).trans_eq (by simp [Ring.multichoose_one])
+    have hc : ‖ordinaryHypergeometricCoefficient a a 1 (k + 1)‖ ≤ 1 :=
+      (norm_ordinaryHypergeometricCoefficient_self_one_le ha (k + 1)).trans_eq
+        (by simp [Ring.multichoose_one])
     have h1 := Complex.norm_digamma_sub_digamma_le_of_one_le_re
       (s := ((k + 1 : ℕ) : ℂ) + 1) (w := ((k + 1 : ℕ) : ℂ) + a)
       (by simp; linarith [k.cast_nonneg (α := ℝ)]) (by simp; linarith)
@@ -312,17 +304,21 @@ theorem analyticOnNhd_zeroBalancedTail_left {x : ℂ} (hx : ‖x‖ < 1) :
         linarith
     rw [zeroBalancedTerm, norm_mul, norm_mul, norm_pow]
     exact (mul_le_mul (mul_le_mul_of_nonneg_right
-      (norm_zeroBalancedCoeff_le hbR (k + 1)) (pow_nonneg (norm_nonneg x) _))
-      hlog (norm_nonneg _) (by positivity)).trans_eq (by ring)
+      (norm_ordinaryHypergeometricCoefficient_self_one_le hbR (k + 1))
+      (pow_nonneg (norm_nonneg x) _)) hlog (norm_nonneg _) (by positivity)).trans_eq (by ring)
   refine ((hasSumLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn.mp hloc).differentiableOn
     (Eventually.of_forall fun _ ↦ DifferentiableOn.fun_sum fun k _ b hb ↦ ?_)
     Complex.isOpen_ne_neg_succ).analyticOnNhd Complex.isOpen_ne_neg_succ
   have hbp : ∀ m : ℕ, ((k + 1 : ℕ) : ℂ) + b ≠ -(m : ℂ) := fun m hm ↦
     hb (k + m) (by push_cast at hm ⊢; linear_combination hm)
-  exact ((((((Polynomial.differentiableAt (ascPochhammer ℂ (k + 1))).pow 2).div_const _).mul_const
-    _).mul ((differentiableAt_const _).add <| (differentiableAt_const 2).mul <|
+  have hcoeff :
+      DifferentiableAt ℂ (fun z : ℂ ↦ ordinaryHypergeometricCoefficient z z 1 (k + 1)) b :=
+    ((((differentiableAt_const _).mul (Polynomial.differentiableAt (ascPochhammer ℂ (k + 1)))).mul
+      (Polynomial.differentiableAt (ascPochhammer ℂ (k + 1)))).mul_const _)
+  exact ((hcoeff.mul_const _).mul
+    ((differentiableAt_const _).add <| (differentiableAt_const 2).mul <|
       (differentiableAt_const _).sub <| (Complex.analyticAt_digamma hbp).differentiableAt.comp b
-        (differentiableAt_id.const_add _)))).differentiableWithinAt
+        (differentiableAt_id.const_add _))).differentiableWithinAt
 
 /-- Cauchy derivative estimate for `b ↦ zeroBalancedTail b x` on `closedBall (1 / 2 : ℂ) (3 / 8)`
 and `‖x‖ < 1`. -/
@@ -408,7 +404,7 @@ theorem exists_norm_mul_zeroBalancedTail_and_deriv_le :
         C / (1 - ‖x‖) * ‖x‖ * (1 + ‖Complex.log x‖) := by
   have hgamma : AnalyticOnNhd ℂ (fun b : ℂ ↦ Complex.Gamma (2 * b) / Complex.Gamma b ^ 2)
       (closedBall (1 / 2 : ℂ) (5 / 16)) :=
-    Complex.analyticOnNhd_Gamma_two_mul_div_Gamma_sq.mono fun b hb ↦ by
+    analyticOnNhd_Gamma_two_mul_div_Gamma_sq.mono fun b hb ↦ by
       have hba := mem_closedBall_iff_norm.mp hb
       have hsub := (abs_le.mp (abs_re_le_norm (b - (1 / 2 : ℂ)))).1
       simp at hsub
@@ -442,16 +438,8 @@ theorem exists_norm_mul_zeroBalancedTail_and_deriv_le :
 
 /-! ### Analyticity in `x` and `a` and upper-half-plane boundary limit -/
 
-private theorem analyticOnNhd_zeroBalancedCoeffSeries (a : ℂ) :
-    AnalyticOnNhd ℂ (fun z : ℂ ↦ ∑' k : ℕ, zeroBalancedCoeff a k * z ^ k) (Metric.ball 0 1) :=
-  FormalMultilinearSeries.analyticOnNhd_tsum_mul_pow_of_eventually_le zero_lt_one fun r hr ↦
-    ⟨_, (hasSum_multichoose_sq_mul_pow (max ‖a‖ 1) (x := (r : ℝ))
-      (by simpa [abs_of_nonneg r.coe_nonneg] using hr)).summable,
-      Eventually.of_forall fun k ↦ mul_le_mul_of_nonneg_right
-        (norm_zeroBalancedCoeff_le (le_max_left _ _) k) (pow_nonneg r.coe_nonneg k)⟩
-
 private theorem analyticOnNhd_zeroBalancedDigammaSeries (a : ℂ) :
-    AnalyticOnNhd ℂ (fun z : ℂ ↦ ∑' k : ℕ, zeroBalancedCoeff a k *
+    AnalyticOnNhd ℂ (fun z : ℂ ↦ ∑' k : ℕ, ordinaryHypergeometricCoefficient a a 1 k *
       (2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) * z ^ k) (Metric.ball 0 1) := by
   let R := max ‖a‖ 1
   refine FormalMultilinearSeries.analyticOnNhd_tsum_mul_pow_of_eventually_le zero_lt_one fun r hr ↦
@@ -467,8 +455,8 @@ private theorem analyticOnNhd_zeroBalancedDigammaSeries (a : ℂ) :
       2 * (1 + R) * (Real.pi ^ 2 / 6) := by
     rw [norm_mul, Complex.norm_ofNat]
     exact (mul_le_mul_of_nonneg_left hdig zero_le_two).trans_eq (by ring)
-  have hc : ‖zeroBalancedCoeff a k‖ ≤ (Ring.multichoose R k) ^ 2 :=
-    norm_zeroBalancedCoeff_le (le_max_left ‖a‖ 1) k
+  have hc : ‖ordinaryHypergeometricCoefficient a a 1 k‖ ≤ (Ring.multichoose R k) ^ 2 :=
+    norm_ordinaryHypergeometricCoefficient_self_one_le (le_max_left ‖a‖ 1) k
   rw [norm_mul]
   exact (mul_le_mul_of_nonneg_right
     (mul_le_mul hc hdig2 (norm_nonneg _) (by positivity))
@@ -482,7 +470,7 @@ theorem analyticOnNhd_zeroBalancedSeries_left {x : ℂ} (hx : ‖x‖ < 1) :
   intro a ha
   have ha' : ∀ m : ℕ, a ≠ -(m : ℂ) := fun m hm ↦
     ha (2 * m) (by push_cast; linear_combination 2 * hm)
-  refine ((Complex.analyticAt_Gamma_two_mul_div_Gamma_sq ha).mul
+  refine ((analyticAt_Gamma_two_mul_div_Gamma_sq ha).mul
     (((analyticAt_const (v := -Complex.log x - 2 * Real.eulerMascheroniConstant)).sub
       ((analyticAt_const (v := (2 : ℂ))).mul (Complex.analyticAt_digamma ha'))).add
       (analyticOnNhd_zeroBalancedTail_left hx a fun m ↦ ha' (m + 1)))).congr ?_
@@ -495,7 +483,7 @@ theorem analyticOnNhd_zeroBalancedSeries (a : ℂ) :
   intro x hx
   refine ((analyticAt_const (v := Complex.Gamma (2 * a) / Complex.Gamma a ^ 2)).mul
     (((analyticAt_clog hx.2).neg.mul
-      (analyticOnNhd_zeroBalancedCoeffSeries a x hx.1)).add
+      (analyticOnNhd_ordinaryHypergeometric ℂ a a 1 x hx.1)).add
       (analyticOnNhd_zeroBalancedDigammaSeries a x hx.1))).congr ?_
   filter_upwards [(Metric.isOpen_ball.inter Complex.isOpen_slitPlane).mem_nhds hx] with z hz
   rw [zeroBalancedSeries_eq_tsum_term, tsum_zeroBalancedTerm_eq_split a (mem_ball_zero_iff.mp hz.1)]
@@ -517,7 +505,7 @@ theorem tendsto_zeroBalancedSeries_nhdsWithin_im_pos (a : ℂ) {x : ℂ}
           (by intro _ hz; simp only [Set.mem_ofPred] at hz ⊢; exact hz.le :
             {z : ℂ | 0 < z.im} ⊆ {z : ℂ | 0 ≤ z.im})).tendsto
   have htend := (tendsto_const_nhds (x := Complex.Gamma (2 * a) / Complex.Gamma a ^ 2)).mul
-    ((hlog.neg.mul ((analyticOnNhd_zeroBalancedCoeffSeries a x
+    ((hlog.neg.mul ((analyticOnNhd_ordinaryHypergeometric ℂ a a 1 x
         hx_ball).continuousAt.continuousWithinAt.tendsto)).add
       (analyticOnNhd_zeroBalancedDigammaSeries a x hx_ball).continuousAt.continuousWithinAt.tendsto)
   rw [← tsum_zeroBalancedTerm_eq_split a hx1, ← zeroBalancedSeries_eq_tsum_term] at htend
