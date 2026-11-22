@@ -386,7 +386,7 @@ abbrev ofFactorSet : ProfiniteGroupExtension G M where
   continuous_rightHom := by
     rw [FactorSet.groupExtension_rightHom]
     exact FactorSet.continuous_rightHom α
-  inducesAction := GroupExtension.inducesAction_groupExtension α
+  inducesAction := α.inducesAction_groupExtension
 
 @[simp]
 theorem ofFactorSet_toGroupExtension : (ofFactorSet α hα).toGroupExtension = α.groupExtension :=

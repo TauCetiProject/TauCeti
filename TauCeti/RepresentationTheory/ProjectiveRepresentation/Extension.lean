@@ -13,7 +13,7 @@ public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
 public import TauCeti.RepresentationTheory.ProjectiveRepresentation.Basic
 
 /-!
-# A projective representation is a linear representation of the central extension of its factor set
+# A projective representation lifts to a linear representation of a central extension
 
 A projective representation `ρ : G → (V ≃ₗ[k] V)` with factor set `α` is multiplicative only up to
 the scalars `α`, so it is not a homomorphism. Enlarging `G` by those scalars repairs this: the
@@ -81,8 +81,9 @@ This lets finite lifting extensions use roots of unity as their kernel coefficie
   representation have the same invariant submodules, which is why irreducibility transfers between
   them.
 * `TauCeti.IsProjectiveRep.exists_factorSet_linearization`: **every projective representation of
-  `G` is a linear representation of a central extension of `G` by `kˣ`**, for the extension built
-  from the factor set the projective representation carries.
+  `G` lifts to a linear representation of a central extension of `G` by `kˣ`**, for the extension
+  built from the factor set the projective representation carries, and is recovered by restricting
+  that lift along the canonical section.
 
 ## References
 

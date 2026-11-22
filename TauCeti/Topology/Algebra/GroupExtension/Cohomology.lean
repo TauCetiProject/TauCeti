@@ -242,9 +242,9 @@ theorem contCohomologyClass_eq_zero_iff :
 `α`, because `TauCeti.GroupExtension.factorSet_canonicalSection` reads `α` back off that section. -/
 theorem contCohomologyClass_factorSet_canonicalSection
     (h : Continuous ⇑(GroupExtension.factorSet α.canonicalSection α.canonicalSection_one
-      (GroupExtension.inducesAction_groupExtension α))) :
+      α.inducesAction_groupExtension)) :
     (GroupExtension.factorSet α.canonicalSection α.canonicalSection_one
-      (GroupExtension.inducesAction_groupExtension α)).contCohomologyClass h =
+      α.inducesAction_groupExtension).contCohomologyClass h =
         α.contCohomologyClass hα :=
   contCohomologyClass_congr (GroupExtension.factorSet_canonicalSection α) h
 

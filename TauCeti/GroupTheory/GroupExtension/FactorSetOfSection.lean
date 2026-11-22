@@ -33,8 +33,7 @@ equivalent to `conjActOfSection` *being* that action
 (`TauCeti.GroupExtension.inducesAction_iff_conjActOfSection_eq`). For a central extension the
 conjugation is trivial (`GroupExtension.conjAct_eq_one_of_le_center`), so there
 `InducesAction` holds exactly for the trivial action
-(`GroupExtension.inducesAction_iff_smul_eq_self`), the case in which a projective
-representation of `G` becomes a linear representation of `E`.
+(`GroupExtension.inducesAction_iff_smul_eq_self`).
 
 The factor set itself measures the failure of the section to be a homomorphism:
 `σ g * σ h * (σ (g * h))⁻¹` lies in the copy of `M`, and `TauCeti.GroupExtension.factorSetFun` is
@@ -327,12 +326,12 @@ variable [CommGroup M] [MulDistribMulAction G M] (α : FactorSet G M)
 /-- **Reading the factor set back off the extension it builds returns it unchanged**, when the
 factor set is read off the canonical section. -/
 theorem factorSet_canonicalSection :
-    factorSet α.canonicalSection α.canonicalSection_one (inducesAction_groupExtension α) = α := by
+    factorSet α.canonicalSection α.canonicalSection_one α.inducesAction_groupExtension = α := by
   ext p
   obtain ⟨g, h⟩ := p
   refine FactorSet.inl_injective α ?_
   rw [← FactorSet.groupExtension_inl,
-    inl_factorSet α.canonicalSection α.canonicalSection_one (inducesAction_groupExtension α) g h,
+    inl_factorSet α.canonicalSection α.canonicalSection_one α.inducesAction_groupExtension g h,
     FactorSet.groupExtension_inl, FactorSet.canonicalSection_mul, mul_inv_cancel_right]
 
 end RoundTrip
