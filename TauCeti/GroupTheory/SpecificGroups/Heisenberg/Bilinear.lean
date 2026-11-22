@@ -25,8 +25,8 @@ extensions and the half-alternating convention of the metaplectic cover. In gene
 coefficient group supplied by `TauCeti.FactorSet.inl` is only a subgroup of the centre; it is the
 whole centre exactly when the skew part `B - Bᵀ` has trivial left radical, i.e. is left-separating.
 For the half-form extension `E_{ω/2}` of an alternating `ω` with `2` invertible, the skew part is
-`ω` itself (`LinearMap.IsAlt.half_skew_eq_self`), so the centre is `inl.range` exactly when `ω` is
-left-separating, and in particular when `ω` is nondegenerate.
+`ω` itself (`LinearMap.IsAlt.invOf_two_smul_sub_flip`), so the centre is `inl.range` exactly when
+`ω` is left-separating, and in particular when `ω` is nondegenerate.
 
 The extension of `B : W × W → C` is the `TauCeti.FactorSet.Extension` of
 `B.bilinearFactorSet`: its elements are pairs `(t, w)` with the coefficient written first, its
@@ -68,8 +68,8 @@ is the copy of the coefficient group exactly when `ω` is left-separating
 
 ## References
 
-* S. Kudla, Notes on local theta correspondence and local Langlands correspondence (1996), I.1.
-* H. Weil, Sur certains groupes d'opérateurs unitaires, Acta Math. 111 (1964), I.§3.
+* S. Kudla, *Notes on the local theta correspondence* (1996), I.1.
+* A. Weil, *Sur certains groupes d'opérateurs unitaires*, Acta Math. 111 (1964), I.§3.
 -/
 
 public section
@@ -217,7 +217,7 @@ theorem halfForm_commutatorElement_eq_inl (hω : ω.IsAlt)
     ⁅p, q⁆ = FactorSet.inl (bilinearFactorSet (⅟(2 : R) • ω))
       (ofAdd (ω p.right.toAdd q.right.toAdd)) := by
   rw [HeisenbergGroup.Bilinear.bilinearExtension_commutatorElement_eq_inl]
-  have key := LinearMap.congr_fun (LinearMap.congr_fun hω.half_skew_eq_self p.right.toAdd)
+  have key := LinearMap.congr_fun (LinearMap.congr_fun hω.invOf_two_smul_sub_flip p.right.toAdd)
     q.right.toAdd
   simp only [LinearMap.sub_apply, LinearMap.flip_apply] at key
   rw [key]
@@ -231,6 +231,6 @@ theorem halfForm_center_eq_range_iff (hω : ω.IsAlt) :
     Subgroup.center ((bilinearFactorSet (⅟(2 : R) • ω)).Extension) =
       (FactorSet.inl (bilinearFactorSet (⅟(2 : R) • ω))).range ↔
       ω.SeparatingLeft := by
-  rw [HeisenbergGroup.Bilinear.bilinearExtension_center_eq_range_iff, hω.half_skew_eq_self]
+  rw [HeisenbergGroup.Bilinear.bilinearExtension_center_eq_range_iff, hω.invOf_two_smul_sub_flip]
 
 end LinearMap.IsAlt

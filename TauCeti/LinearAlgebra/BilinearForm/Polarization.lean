@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Properties
 # Half-skew and polarization identities for bilinear maps
 
 For an alternating bilinear map `ω` with `2` invertible, halving `ω` gives a bilinear map whose
-skew part `⅟2 • ω - (⅟2 • ω)ᵀ` recovers `ω` itself (`LinearMap.IsAlt.half_skew_eq_self`).
+skew part `⅟2 • ω - (⅟2 • ω)ᵀ` recovers `ω` itself (`LinearMap.IsAlt.invOf_two_smul_sub_flip`).
 
 For a general bilinear map `B` with `2` invertible, half of its skew part `ω = B - Bᵀ` and its
 quadratic diagonal `q x = ⅟2 • B x x` satisfy the coboundary relation
@@ -19,14 +19,14 @@ quadratic diagonal `q x = ⅟2 • B x x` satisfy the coboundary relation
 
 ## Main results
 
-* `LinearMap.IsAlt.half_skew_eq_self`: `⅟2 • ω - (⅟2 • ω)ᵀ = ω` for alternating `ω` when `2` is
-  invertible.
+* `LinearMap.IsAlt.invOf_two_smul_sub_flip`: `⅟2 • ω - (⅟2 • ω)ᵀ = ω` for alternating `ω` when
+  `2` is invertible.
 * `LinearMap.BilinMap.polarization_cocycle`: `⅟2 • (B - Bᵀ) x y + q (x + y) = B x y + q x + q y`
   for `q x = ⅟2 • B x x` when `2` is invertible.
 
 ## References
 
-* H. Weil, Sur certains groupes d'opérateurs unitaires, Acta Math. 111 (1964), I.§3.
+* A. Weil, *Sur certains groupes d'opérateurs unitaires*, Acta Math. 111 (1964), I.§3.
 -/
 
 public section
@@ -39,7 +39,8 @@ variable {R W C : Type*} [CommSemiring R] [AddCommMonoid W] [Module R W]
 /-- **The skew part of the half-form `ω / 2` is `ω` itself**: for an alternating bilinear map `ω`
 with `2` invertible, `⅟2 • ω - (⅟2 • ω)ᵀ = ω`. -/
 @[simp]
-theorem half_skew_eq_self [Invertible (2 : R)] {ω : LinearMap.BilinMap R W C} (hω : ω.IsAlt) :
+theorem invOf_two_smul_sub_flip [Invertible (2 : R)] {ω : LinearMap.BilinMap R W C}
+    (hω : ω.IsAlt) :
     ⅟(2 : R) • ω - (⅟(2 : R) • ω).flip = ω := by
   ext w v
   simp only [LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.flip_apply, ← hω.neg w v,
