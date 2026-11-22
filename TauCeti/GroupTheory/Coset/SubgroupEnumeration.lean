@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Coset.Enumeration
+import TauCeti.GroupTheory.Coset.Basic
 
 /-!
 # Replaying unlabeled coset enumeration over an arbitrary subgroup
@@ -36,10 +37,10 @@ A replay certificate serves two purposes under the same invariant:
    generator permutes the cosets `w_p H` of the surviving points, so they cover `G ⧸ H`. Thus
    `H.FiniteIndex` holds and `H.index ≤ k` for the number `k` of surviving points.
 
-The replay engine (`CosetEnumeration.State`, `CosetEnumeration.runSteps`), signed-letter conventions
-(`CosetEnumeration.invLetter`, `letter`, `signedLetter`, `wordValue`, `rotations`), and soundness
-invariant are shared with `TauCeti.CosetEnumeration`, instantiated with the `32`-bit trivial-label
-scheme `TauCeti.SubgroupEnumeration.unlabeledScheme`.
+The replay engine (`CosetEnumeration.State`, `CosetEnumeration.Scheme.replay`), signed-letter
+conventions (`CosetEnumeration.invLetter`, `letter`, `signedLetter`, `wordValue`, `rotations`), and
+soundness invariant are shared with `TauCeti.CosetEnumeration`, instantiated with the `32`-bit
+trivial-label scheme `TauCeti.SubgroupEnumeration.unlabeledScheme`.
 
 ## Main definitions
 
@@ -106,7 +107,7 @@ and subgroup words `subs` in `n` generators, then check that every word in `ws` 
 to the representative of `0`. The table need not close. -/
 @[expose]
 def checkWords (n : ℕ) (rels subs ws : List (List ℕ)) (parents steps : List ℕ) : Bool :=
-  let st := runSteps unlabeledScheme (2 * n) (rotations rels) subs steps ⟨1, 0, 0, (), [], parents⟩
+  let st := unlabeledScheme.replay n rels subs () parents steps
   ws.all (st.closesAt unlabeledScheme (2 * n) 0)
 
 /-- **Replay and check relator closure at specified points.** Replay `parents` and `steps` for the
@@ -115,7 +116,7 @@ in `ws` walks `w` from `i` back to the representative of `i`. The table need not
 @[expose]
 def checkRelators (n : ℕ) (rels : List (List ℕ)) (ws : List (ℕ × List ℕ))
     (parents steps : List ℕ) : Bool :=
-  let st := runSteps unlabeledScheme (2 * n) (rotations rels) [] steps ⟨1, 0, 0, (), [], parents⟩
+  let st := unlabeledScheme.replay n rels [] () parents steps
   ws.all fun iw ↦ st.closesAt unlabeledScheme (2 * n) iw.1 iw.2
 
 /-- **Replay of unlabeled coset enumeration** over a subgroup containing the values of `subs`, for
@@ -125,8 +126,8 @@ of `TauCeti.CosetEnumeration.State.step`. A closed replay returns the number of 
 points. -/
 @[expose]
 def run (n : ℕ) (rels subs : List (List ℕ)) (parents steps : List ℕ) : Option ℕ :=
-  ((runSteps unlabeledScheme (2 * n) (rotations rels) subs steps
-    ⟨1, 0, 0, (), [], parents⟩).result unlabeledScheme (2 * n)).map Prod.fst
+  ((unlabeledScheme.replay n rels subs () parents steps).result unlabeledScheme (2 * n)).map
+    Prod.fst
 
 /-! ### Soundness -/
 
@@ -151,14 +152,14 @@ private theorem unlabeledInterp_sub {G : Type*} [Group G] {n : ℕ} {x : Fin n �
       wordValue x s • (QuotientGroup.mk 1 : G ⧸ H) =
         (unlabeledInterp H).actR (QuotientGroup.mk 1) unlabeledScheme.subLabel := fun s hs ↦ by
   rw [MulAction.Quotient.smul_mk, smul_eq_mul, mul_one]
-  exact QuotientGroup.eq.mpr (by simpa using H.inv_mem (hsubs s hs))
+  exact QuotientGroup.mk_eq_one_iff.mpr (hsubs s hs)
 
 private theorem closesAt_coset {G : Type*} [Group G] {n : ℕ} {x : Fin n → G} {H : Subgroup G}
     {rels subs : List (List ℕ)} {parents steps : List ℕ}
     (hrels : ∀ r ∈ rels, wordValue x r = 1) (hsubs : ∀ s ∈ subs, wordValue x s ∈ H)
     {i : ℕ} {w : List ℕ}
-    (hw : (runSteps unlabeledScheme (2 * n) (rotations rels) subs steps
-      ⟨1, 0, 0, (), [], parents⟩).closesAt unlabeledScheme (2 * n) i w = true) :
+    (hw : (unlabeledScheme.replay n rels subs () parents steps).closesAt unlabeledScheme (2 * n)
+      i w = true) :
     (pt x parents i)⁻¹ * wordValue x w * pt x parents i ∈ H := by
   obtain ⟨r, _, _, hw1, hw2⟩ :=
     closesAt_of_runSteps (unlabeledInterp H) hrels (unlabeledInterp_sub hsubs) trivial hw
@@ -166,7 +167,7 @@ private theorem closesAt_coset {G : Type*} [Group G] {n : ℕ} {x : Fin n → G}
       QuotientGroup.mk (pt x parents i) := by
     have heq := hw1.trans hw2.symm
     simpa [unlabeledInterp, MulAction.Quotient.smul_mk, smul_eq_mul, mul_one] using heq
-  simpa [mul_assoc] using H.inv_mem (QuotientGroup.eq.mp hmk)
+  simpa [mul_assoc] using QuotientGroup.eq.mp hmk.symm
 
 end Soundness
 
@@ -197,31 +198,24 @@ theorem wordValue_eq_one_of_checkRelators {ws : List (ℕ × List ℕ)}
   have hmem : (pt x parents iw.1)⁻¹ * wordValue x iw.2 * pt x parents iw.1 = 1 :=
     Subgroup.mem_bot.mp (closesAt_coset (H := (⊥ : Subgroup G)) hrels (by simp)
       (List.all_eq_true.mp hcheck iw hiw))
-  simpa [mul_assoc] using congrArg (fun g ↦ pt x parents iw.1 * g * (pt x parents iw.1)⁻¹) hmem
+  exact (conj_eq_one_iff (a := (pt x parents iw.1)⁻¹)).mp (by simpa only [inv_inv] using hmem)
 
 private theorem surjective_of_run (hx : Subgroup.closure (Set.range x) = ⊤)
     (hrels : ∀ r ∈ rels, wordValue x r = 1) (hsubs : ∀ s ∈ subs, wordValue x s ∈ H)
     (hrun : run n rels subs parents steps = some k) :
     ∃ f : Fin k → G ⧸ H, Function.Surjective f := by
   obtain ⟨⟨k', _⟩, hres, rfl⟩ := Option.map_eq_some_iff.mp hrun
-  obtain ⟨hc, hk, _⟩ := State.result_eq_some_iff.mp hres
-  obtain ⟨h0, hstep⟩ := closed_edges_of_runSteps (unlabeledInterp H) hrels
-    (unlabeledInterp_sub hsubs) trivial hc
-  rw [← hk]
-  refine ⟨_, surjective_mk_pt_of_roots hx H parents h0 fun i r hr ↦ ?_⟩
-  obtain ⟨r', hr', _, he⟩ := hstep (2 * i) (by omega) r hr
-  refine ⟨r', hr', ?_⟩
-  simpa [unlabeledInterp, letter_two_mul, MulAction.Quotient.smul_mk, smul_eq_mul, mul_one] using he
+  exact surjective_of_result (unlabeledInterp H) hx H hrels (unlabeledInterp_sub hsubs) trivial hres
+    fun h ↦ by simpa [unlabeledInterp, MulAction.Quotient.smul_mk, smul_eq_mul, mul_one] using h
 
 /-- A closed unlabeled replay shows that any subgroup containing the values of `subs` has finite
 index. -/
 theorem finiteIndex_of_run (hx : Subgroup.closure (Set.range x) = ⊤)
     (hrels : ∀ r ∈ rels, wordValue x r = 1) (hsubs : ∀ s ∈ subs, wordValue x s ∈ H)
     (hrun : run n rels subs parents steps = some k) :
-    H.FiniteIndex := by
-  obtain ⟨f, hf⟩ := surjective_of_run hx hrels hsubs hrun
-  have : Finite (G ⧸ H) := Finite.of_surjective f hf
-  exact Subgroup.finiteIndex_of_finite_quotient
+    H.FiniteIndex :=
+  let ⟨_, hf⟩ := surjective_of_run hx hrels hsubs hrun
+  H.finiteIndex_of_surjective hf
 
 /-- **Subgroup index bound from unlabeled coset enumeration.** If the generators `x` generate `G`,
 the relators `rels` hold, and every word in `subs` evaluates into `H`, then a closed replay with
@@ -229,10 +223,9 @@ the relators `rels` hold, and every word in `subs` evaluates into `H`, then a cl
 theorem index_le_of_run (hx : Subgroup.closure (Set.range x) = ⊤)
     (hrels : ∀ r ∈ rels, wordValue x r = 1) (hsubs : ∀ s ∈ subs, wordValue x s ∈ H)
     (hrun : run n rels subs parents steps = some k) :
-    H.index ≤ k := by
-  obtain ⟨f, hf⟩ := surjective_of_run hx hrels hsubs hrun
-  rw [Subgroup.index_eq_card]
-  exact (Nat.card_le_card_of_surjective f hf).trans_eq (Nat.card_fin k)
+    H.index ≤ k :=
+  let ⟨_, hf⟩ := surjective_of_run hx hrels hsubs hrun
+  (H.index_le_of_surjective hf).trans_eq (Nat.card_fin k)
 
 end Main
 
