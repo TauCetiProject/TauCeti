@@ -88,10 +88,10 @@ variable {ι R M N : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [A
 
 /-- **The stabilizer of the fundamental alcove preserves the closed fundamental alcove.** -/
 theorem apply_mem_closedFundamentalAlcove_iff (ω : P.fundamentalAlcoveStabilizer b) {x : N} :
-    ω.1 x ∈ closedFundamentalAlcove P b ↔ x ∈ closedFundamentalAlcove P b := by
+    ω.val x ∈ closedFundamentalAlcove P b ↔ x ∈ closedFundamentalAlcove P b := by
   -- `ω` permutes the affine simple roots, whose nonnegativity cuts out the closed alcove.
   simp only [mem_closedFundamentalAlcove_iff_forall_affineSimpleRoot_nonneg]
-  refine (Equiv.forall_congr_right (q := fun k ↦ 0 ≤ b.affineSimpleRoot k (ω.1 x))
+  refine (Equiv.forall_congr_right (q := fun k ↦ 0 ≤ b.affineSimpleRoot k (ω.val x))
     (fundamentalAlcoveStabilizerToPerm b ω)).symm.trans ?_
   simp
 
@@ -99,7 +99,7 @@ theorem apply_mem_closedFundamentalAlcove_iff (ω : P.fundamentalAlcoveStabilize
 
 /-- The translation part `ω 0` of an element of `Ω` lies in the closed fundamental alcove. -/
 theorem apply_zero_mem_closedFundamentalAlcove (ω : P.fundamentalAlcoveStabilizer b) :
-    ω.1 0 ∈ closedFundamentalAlcove P b :=
+    ω.val 0 ∈ closedFundamentalAlcove P b :=
   (apply_mem_closedFundamentalAlcove_iff b ω).2 zero_mem_closedFundamentalAlcove
 
 /-- **Every coweight in the closed fundamental alcove is the translation part of an element of
@@ -112,12 +112,12 @@ theorem exists_mem_fundamentalAlcoveStabilizer_apply_zero_eq [Archimedean R] {p 
   obtain ⟨g, hg, hgp⟩ := exists_mem_affineWeylGroup_mul_mem_fundamentalAlcoveStabilizer b
     ((P.constVAdd_mem_extendedAffineWeylGroup_iff (v := -p)).2 (neg_mem hp))
   set ω : P.fundamentalAlcoveStabilizer b := ⟨_, hgp⟩
-  have hωp : ω.1 p = 0 := by
+  have hωp : ω.val p = 0 := by
     refine eq_zero_of_mem_corootSpan_of_mem_closedFundamentalAlcove b ?_
       ((apply_mem_closedFundamentalAlcove_iff b ω).2 hp')
-    have : ω.1 p = g 0 := by simp [ω]
+    have : ω.val p = g 0 := by simp [ω]
     exact this ▸ (P.mem_affineWeylGroup_iff.1 hg).2
-  refine ⟨ω.1⁻¹, inv_mem ω.2, ?_⟩
+  refine ⟨ω.val⁻¹, inv_mem ω.property, ?_⟩
   rw [← hωp, AffineEquiv.inv_def, AffineEquiv.symm_apply_apply]
 
 /-! ### The action of `Ω` on the special nodes -/
@@ -126,7 +126,7 @@ theorem exists_mem_fundamentalAlcoveStabilizer_apply_zero_eq [Archimedean R] {p 
 vanishes: `ω 0` is the vertex of the closed alcove opposite the wall `a_{σ_ω 0} = 0`. -/
 private lemma affineSimpleRoot_apply_zero_eq_zero (ω : P.fundamentalAlcoveStabilizer b)
     {l : Option b.support} (hl : l ≠ fundamentalAlcoveStabilizerToPerm b ω none) :
-    b.affineSimpleRoot l (ω.1 0) = 0 := by
+    b.affineSimpleRoot l (ω.val 0) = 0 := by
   obtain ⟨k, rfl⟩ := (fundamentalAlcoveStabilizerToPerm b ω).surjective l
   rw [affineSimpleRoot_fundamentalAlcoveStabilizerToPerm_apply]
   rcases k with _ | i
@@ -139,10 +139,10 @@ theorem fundamentalAlcoveStabilizerToPerm_apply_none_mem_specialNodes
     fundamentalAlcoveStabilizerToPerm b ω none ∈ b.specialNodes := by
   -- In the null-root relation `∑ₖ mₖ aₖ = 1` at `ω 0`, only `a_{σ_ω 0} = 1` is nonzero.
   set k := fundamentalAlcoveStabilizerToPerm b ω none
-  have h := b.sum_affineMarks_mul_affineSimpleRoot (ω.1 0)
+  have h := b.sum_affineMarks_mul_affineSimpleRoot (ω.val 0)
   rw [Finset.sum_eq_single_of_mem k (Finset.mem_univ k) fun l _ hl ↦ by
     rw [affineSimpleRoot_apply_zero_eq_zero b ω hl, mul_zero]] at h
-  have hk : b.affineSimpleRoot k (ω.1 0) = 1 := by
+  have hk : b.affineSimpleRoot k (ω.val 0) = 1 := by
     simp [k, affineSimpleRoot_fundamentalAlcoveStabilizerToPerm_apply]
   rw [hk, mul_one] at h
   exact b.mem_specialNodes.mpr (by exact_mod_cast h)
@@ -157,7 +157,7 @@ theorem fundamentalAlcoveStabilizerToPerm_apply_none_injective [P.IsRootSystem] 
   refine fundamentalAlcoveStabilizer_apply_zero_injective b ?_
   -- Every affine simple root takes the same value at `ω₁ 0` and at `ω₂ 0`.
   have heq (l : Option b.support) :
-      b.affineSimpleRoot l (ω₁.1 0) = b.affineSimpleRoot l (ω₂.1 0) := by
+      b.affineSimpleRoot l (ω₁.val 0) = b.affineSimpleRoot l (ω₂.val 0) := by
     by_cases hl : l = fundamentalAlcoveStabilizerToPerm b ω₁ none
     · rw [hl, affineSimpleRoot_fundamentalAlcoveStabilizerToPerm_apply, h,
         affineSimpleRoot_fundamentalAlcoveStabilizerToPerm_apply]
@@ -194,7 +194,7 @@ noncomputable def fundamentalAlcoveStabilizerEquivSpecialNodes [P.IsRootSystem] 
     (fun ω ↦ ⟨fundamentalAlcoveStabilizerToPerm b ω none,
       fundamentalAlcoveStabilizerToPerm_apply_none_mem_specialNodes b ω⟩)
     ⟨fun _ _ h ↦ fundamentalAlcoveStabilizerToPerm_apply_none_injective b (congrArg Subtype.val h),
-      fun k ↦ (exists_fundamentalAlcoveStabilizerToPerm_apply_none_eq b k.2).imp
+      fun k ↦ (exists_fundamentalAlcoveStabilizerToPerm_apply_none_eq b k.property).imp
         fun _ h ↦ Subtype.ext h⟩
 
 @[simp]
@@ -231,7 +231,7 @@ theorem existsUnique_fundamentalAlcoveStabilizerToMatrixSymmetryGroup_mul_affine
       fundamentalAlcoveStabilizerToPerm b ω none = (σ : Equiv.Perm (Option b.support)) none := by
     simp [← h, φ, Equiv.Perm.mul_apply]
   obtain ⟨ω, hω⟩ := exists_fundamentalAlcoveStabilizerToPerm_apply_none_eq b
-    ((b.apply_mem_specialNodes_iff σ.2).mpr b.none_mem_specialNodes)
+    ((b.apply_mem_specialNodes_iff σ.property).mpr b.none_mem_specialNodes)
   -- `σ_ω⁻¹ σ` fixes the affine node, so it is the extension of a finite symmetry.
   obtain ⟨τ, hτ⟩ : (φ ω)⁻¹ * σ ∈ b.affineExtension.range := by
     rw [Base.range_affineExtension, MulAction.mem_stabilizer_iff]

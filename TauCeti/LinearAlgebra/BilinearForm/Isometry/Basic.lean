@@ -19,7 +19,11 @@ import Mathlib.Tactic.LinearCombination
 This file defines the predicate that an endomorphism preserves a bilinear form and provides its
 elementary API, including the bridge to Mathlib's bundled isometric maps. It also records that
 scaling two forms by the same non-zero-divisor preserves whether they are isometric
-(`LinearMap.BilinForm.equivalent_smul_iff`), and gives the evaluation lemmas
+(`LinearMap.BilinForm.equivalent_smul_iff`), and gives the underlying-equivalence and evaluation
+lemmas `LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_refl`,
+`LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_symm`,
+`LinearMap.BilinForm.IsometryEquiv.coe_symm_toLinearEquiv`,
+`LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_trans`,
 `LinearMap.BilinForm.IsometryEquiv.trans_apply`,
 `LinearMap.BilinForm.IsometryEquiv.symm_apply_apply` and
 `LinearMap.BilinForm.IsometryEquiv.apply_symm_apply` for Mathlib's isometric equivalences, which
@@ -159,6 +163,34 @@ namespace IsometryEquiv
 variable {R M₁ M₂ M₃ : Type*} [CommSemiring R] [AddCommMonoid M₁] [AddCommMonoid M₂]
   [AddCommMonoid M₃] [Module R M₁] [Module R M₂] [Module R M₃] {B₁ : BilinForm R M₁}
   {B₂ : BilinForm R M₂} {B₃ : BilinForm R M₃}
+
+/-- The underlying linear equivalence of the identity isometric equivalence is the identity linear
+equivalence. -/
+@[simp]
+theorem toLinearEquiv_refl (B : BilinForm R M₁) :
+    (IsometryEquiv.refl B).toLinearEquiv = LinearEquiv.refl R M₁ :=
+  (rfl)
+
+/-- The underlying linear equivalence of the inverse isometric equivalence is the inverse of the
+underlying linear equivalence. -/
+@[simp]
+theorem toLinearEquiv_symm (f : B₁.IsometryEquiv B₂) :
+    f.symm.toLinearEquiv = f.toLinearEquiv.symm :=
+  (rfl)
+
+/-- Coercing the inverse of the underlying linear equivalence agrees with coercing the inverse
+isometric equivalence. -/
+@[simp]
+theorem coe_symm_toLinearEquiv (f : B₁.IsometryEquiv B₂) :
+    ⇑f.toLinearEquiv.symm = f.symm :=
+  (rfl)
+
+/-- The underlying linear equivalence of a composite of isometric equivalences is the composite of
+their underlying linear equivalences. -/
+@[simp]
+theorem toLinearEquiv_trans (f : B₁.IsometryEquiv B₂) (g : B₂.IsometryEquiv B₃) :
+    (f.trans g).toLinearEquiv = f.toLinearEquiv.trans g.toLinearEquiv :=
+  (rfl)
 
 /-- A composite of isometric equivalences applies the first and then the second. -/
 @[simp]

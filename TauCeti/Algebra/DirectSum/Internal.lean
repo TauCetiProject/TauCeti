@@ -9,6 +9,7 @@ public import Mathlib.Algebra.DirectSum.Decomposition
 public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.LinearAlgebra.Pi
+import TauCeti.LinearAlgebra.Submodule.Independent
 
 /-!
 # Internal direct sums from explicit equivalences
@@ -35,7 +36,9 @@ map whose range contains the homogeneous projections of its elements, with
 
 A third group is about maps compatible with a decomposition. Two linear maps out of a finite
 product `P → M` agree as soon as they agree on the homogeneous single-coordinate functions
-`Pi.single x α`, `LinearMap.pi_ext_of_decomposition`.
+`Pi.single x α`, `LinearMap.pi_ext_of_decomposition`, and two additive maps out of `α →₀ M`
+agree as soon as they agree on the homogeneous singles `Finsupp.single x c`,
+`Finsupp.addHom_ext_of_decomposition`.
 
 `DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map,
 `DirectSum.IsInternal.comp_equiv` reindexes one along an equivalence of the index types, and
@@ -43,12 +46,19 @@ product `P → M` agree as soon as they agree on the homogeneous single-coordina
 internal decomposition.
 
 `DirectSum.IsInternal.iSup_inf_eq_of_component_mem` restricts an internal decomposition to any
-submodule that contains the canonical components of each of its elements, and
+submodule that contains the canonical components of each of its elements,
 `DirectSum.mem_of_forall_ne_eq_bot` shows that when all pieces outside one degree vanish, every
-element lies in that piece.
+element lies in that piece, and over a ring `DirectSum.isInternal_submodule_comap_subtype` turns a
+supremum-independent family with supremum `S` into an internal direct sum of `S` via
+`(A i).comap S.subtype`.
 
 `DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of a scalar
 action on a homogeneous element when the scalar and module decompositions are compatible.
+When the ambient carrier is an additive commutative group, `DirectSum.coe_decompose_neg` shows that
+homogeneous projections commute with negation even when the summand type carries only
+`AddSubmonoidClass` (such as submodules over a semiring), giving closure of each summand under
+negation, subtraction, and integer scaling (`DirectSum.Decomposition.neg_mem`,
+`DirectSum.Decomposition.sub_mem`, `DirectSum.Decomposition.zsmul_mem`).
 
 Finally, the external direct sum `⨁ i, M i` of a family of `R`-modules is the internal direct sum
 of its summands `DirectSum.summand R M i`, the ranges of the inclusions `DirectSum.lof R ι M i`
@@ -163,7 +173,7 @@ theorem DirectSum.isInternal_comap {R ι M N : Type*} [Semiring R]
     DirectSum.IsInternal 𝓝 := by
   classical
   let φ : ∀ i, 𝓝 i →ₗ[R] ℳ i := fun i ↦
-    (f.comp (𝓝 i).subtype).codRestrict (ℳ i) fun x ↦ (hmem i x).mp x.2
+    (f.comp (𝓝 i).subtype).codRestrict (ℳ i) fun x ↦ (hmem i x).mp x.property
   have hφ : ∀ (i : ι) (x : 𝓝 i), (φ i x : M) = f x := fun _ _ ↦ rfl
   have hΦinj : Function.Injective (DirectSum.lmap φ) :=
     (DirectSum.lmap_injective φ).mpr fun i x y hxy ↦
@@ -252,7 +262,7 @@ theorem map_decompose_shift {ι κ M N S T : Type*}
   induction x using Decomposition.inductionOn ℳ with
   | zero => simp
   | @homogeneous j x =>
-    have hxM : (x : M) ∈ ℳ j := x.2
+    have hxM : (x : M) ∈ ℳ j := x.property
     have hxN : f (x : M) ∈ 𝓝 (σ j) := hf j x hxM
     by_cases hij : i = j
     · subst hij
@@ -354,11 +364,69 @@ theorem pi_ext_of_decomposition {R ι M N P : Type*} [Semiring R] [AddCommMonoid
   refine pi_ext' fun x ↦ ?_
   refine DirectSum.decompose_lhom_ext ℳ fun i ↦ ?_
   refine ext fun α ↦ ?_
-  simpa using h x α.2
+  simpa using h x α.property
 
 end LinearMap
 
+namespace Finsupp
+
+/-- Two additive maps out of `α →₀ M` agree if they agree on `Finsupp.single x c` for every `x`
+and every `c` in a piece `ℳ i` of a decomposition of `M`. -/
+theorem addHom_ext_of_decomposition {ι α M N σ : Type*} [DecidableEq ι] [AddCommMonoid M]
+    [SetLike σ M] [AddSubmonoidClass σ M] (ℳ : ι → σ) [DirectSum.Decomposition ℳ]
+    [AddZeroClass N] {φ ψ : (α →₀ M) →+ N}
+    (h : ∀ x i (c : M), c ∈ ℳ i → φ (single x c) = ψ (single x c)) : φ = ψ :=
+  addHom_ext fun x c ↦ by
+    induction c using DirectSum.Decomposition.inductionOn ℳ with
+    | zero => simp
+    | @homogeneous i c => exact h x i c c.property
+    | add c c' hc hc' => rw [single_add, map_add, map_add, hc, hc']
+
+end Finsupp
+
 namespace DirectSum.IsInternal
+
+/-- The recomposition map of the fiberwise collection of an internal decomposition is injective. -/
+private theorem injective_coeLinearMap_iSup_fiber {R M ι κ : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [DecidableEq ι] [DecidableEq κ] {P : ι → Submodule R M}
+    (hP : IsInternal P) (degree : ι → κ) :
+    Function.Injective (coeLinearMap fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i) := by
+  -- Projection onto each fiber recovers that component of the recomposed direct sum.
+  let Q : κ → Submodule R M := fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i
+  let _ : Decomposition P := hP.chooseDecomposition
+  let projection (j : κ) : M →ₗ[R] M :=
+    (toModule R ι M fun i ↦
+      if degree i = j then (P i).subtype else 0) ∘ₗ
+        (decomposeLinearEquiv P).toLinearMap
+  have projection_piece (j : κ) (i : ι) (x : P i) :
+      projection j x = if degree i = j then (x : M) else 0 := by
+    simp only [projection, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      decomposeLinearEquiv_apply_coe, toModule_lof]
+    split <;> simp
+  have projection_mem (j k : κ) {x : M} (hx : x ∈ Q k) :
+      projection j x = if k = j then x else 0 := by
+    dsimp only [Q] at hx
+    rw [iSup_subtype'] at hx
+    refine Submodule.iSup_induction (fun i : {i // degree i = k} ↦ P i)
+      (motive := fun y ↦ projection j y = if k = j then y else 0) hx
+      (fun i x hx ↦ ?_) (by simp) (fun x y ihx ihy ↦ ?_)
+    · simpa only [i.property] using projection_piece j i ⟨x, hx⟩
+    · simp only [map_add, ihx, ihy, ite_add_zero]
+  have projection_coe (j : κ) (z : ⨁ k, ↥(Q k)) :
+      projection j (coeLinearMap Q z) = z j := by
+    induction z using DirectSum.induction_on with
+    | zero => simp
+    | of k x =>
+        rw [coeLinearMap_of, projection_mem j k x.property]
+        simp only [coe_of_apply]
+        split <;> simp
+    | add x y ihx ihy =>
+        rw [map_add (coeLinearMap Q), map_add (projection j), ihx, ihy]
+        rw [add_apply, Submodule.coe_add]
+  intro x y hxy
+  apply ext fun j ↦ Subtype.ext ?_
+  exact (projection_coe j x).symm.trans ((congrArg (projection j) hxy).trans
+    (projection_coe j y))
 
 /-- Collecting an internal decomposition along the fibers of any map again gives an internal
 decomposition. Each new summand is the sum of the original summands over the corresponding fiber. -/
@@ -369,45 +437,9 @@ theorem iSup_fiber {R M ι κ : Type*} [Semiring R] [AddCommMonoid M] [Module R 
   -- For submodules, the additive recomposition map in `IsInternal` is the underlying function
   -- of the canonical linear recomposition map.
   change Function.Bijective (coeLinearMap fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i)
-  refine ⟨?_, ?_⟩
-  · -- Projection onto each fiber recovers that component of the recomposed direct sum.
-    let Q : κ → Submodule R M := fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i
-    let _ : Decomposition P := hP.chooseDecomposition
-    let projection (j : κ) : M →ₗ[R] M :=
-      (toModule R ι M fun i ↦
-        if degree i = j then (P i).subtype else 0) ∘ₗ
-          (decomposeLinearEquiv P).toLinearMap
-    have projection_piece (j : κ) (i : ι) (x : P i) :
-        projection j x = if degree i = j then (x : M) else 0 := by
-      simp only [projection, LinearMap.comp_apply, LinearEquiv.coe_coe,
-        decomposeLinearEquiv_apply_coe, toModule_lof]
-      split <;> rfl
-    have projection_mem (j k : κ) {x : M} (hx : x ∈ Q k) :
-        projection j x = if k = j then x else 0 := by
-      dsimp only [Q] at hx
-      rw [iSup_subtype'] at hx
-      refine Submodule.iSup_induction (fun i : {i // degree i = k} ↦ P i)
-        (motive := fun y ↦ projection j y = if k = j then y else 0) hx
-        (fun i x hx ↦ ?_) (by simp) (fun x y ihx ihy ↦ ?_)
-      · simpa only [i.property] using projection_piece j i ⟨x, hx⟩
-      · simp only [map_add, ihx, ihy, ite_add_zero]
-    have projection_coe (j : κ) (z : ⨁ k, ↥(Q k)) :
-        projection j (coeLinearMap Q z) = z j := by
-      induction z using DirectSum.induction_on with
-      | zero => simp
-      | of k x =>
-          rw [coeLinearMap_of, projection_mem j k x.property]
-          simp only [coe_of_apply]
-          split <;> rfl
-      | add x y ihx ihy =>
-          rw [map_add (coeLinearMap Q), map_add (projection j), ihx, ihy]
-          rfl
-    intro x y hxy
-    apply ext fun j ↦ Subtype.ext ?_
-    exact (projection_coe j x).symm.trans ((congrArg (projection j) hxy).trans
-      (projection_coe j y))
-  · rw [← LinearMap.range_eq_top, range_coeLinearMap, iSup_comm]
-    simpa only [iSup_iSup_eq_right] using hP.submodule_iSup_eq_top
+  refine ⟨injective_coeLinearMap_iSup_fiber hP degree, ?_⟩
+  rw [← LinearMap.range_eq_top, range_coeLinearMap, iSup_comm]
+  simpa only [iSup_iSup_eq_right] using hP.submodule_iSup_eq_top
 
 /-- An internal direct sum of submodules can be reindexed along an equivalence of the index
 types. -/
@@ -461,7 +493,7 @@ theorem iSup_inf_eq_of_component_mem
     exact Finset.sum_congr rfl fun i _ ↦ coeLinearMap_of A i (e.symm m i)
   rw [hsum]
   exact Submodule.sum_mem _ fun i _ ↦
-    Submodule.mem_iSup_of_mem i ⟨hp m hm i, (e.symm m i).2⟩
+    Submodule.mem_iSup_of_mem i ⟨hp m hm i, (e.symm m i).property⟩
 
 end DirectSum.IsInternal
 
@@ -482,17 +514,54 @@ theorem coe_decompose_smul_add_of_right_mem {a : A} {x : M} {i j : ι} (hx : x �
   induction a using Decomposition.inductionOn 𝒜 with
   | zero => simp
   | @homogeneous k a =>
-    have hmem : (a : A) • x ∈ ℳ (k + j) := SetLike.GradedSMul.smul_mem a.2 hx
+    have hmem : (a : A) • x ∈ ℳ (k + j) := SetLike.GradedSMul.smul_mem a.property hx
     by_cases hki : k = i
     · subst k
-      rw [decompose_of_mem_same ℳ hmem, decompose_of_mem_same 𝒜 a.2]
+      rw [decompose_of_mem_same ℳ hmem, decompose_of_mem_same 𝒜 a.property]
     · rw [decompose_of_mem_ne ℳ hmem (fun h ↦ hki (add_right_cancel h)),
-        decompose_of_mem_ne 𝒜 a.2 hki, zero_smul]
+        decompose_of_mem_ne 𝒜 a.property hki, zero_smul]
   | add a b ha hb => simp [add_smul, ha, hb]
 
 end DirectSum
 
 namespace DirectSum
+
+section AddCommGroup
+
+variable {ι M σ : Type*} [DecidableEq ι] [AddCommGroup M] [SetLike σ M] [AddSubmonoidClass σ M]
+
+/-- In an additive commutative group decomposed into additive submonoids (for instance submodules
+over a semiring), homogeneous projections commute with negation. -/
+theorem coe_decompose_neg (ℳ : ι → σ) [Decomposition ℳ] (x : M) (i : ι) :
+    (decompose ℳ (-x) i : M) = -(decompose ℳ x i : M) :=
+  eq_neg_of_add_eq_zero_left <| by
+    rw [← AddMemClass.coe_add, ← DirectSum.add_apply, ← decompose_add, neg_add_cancel,
+      decompose_zero, DirectSum.zero_apply, ZeroMemClass.coe_zero]
+
+/-- Each summand of a `DirectSum.Decomposition` of an additive commutative group is closed under
+negation, even when the summand type carries only `AddSubmonoidClass` (such as `Submodule R M`
+over a semiring `R`). -/
+theorem Decomposition.neg_mem {ℳ : ι → σ} [Decomposition ℳ] {i : ι} {x : M} (hx : x ∈ ℳ i) :
+    -x ∈ ℳ i := by
+  rw [← decompose_of_mem_same ℳ hx, ← coe_decompose_neg]
+  exact (decompose ℳ (-x) i).property
+
+/-- Each summand of a `DirectSum.Decomposition` of an additive commutative group is closed under
+subtraction. -/
+theorem Decomposition.sub_mem {ℳ : ι → σ} [Decomposition ℳ] {i : ι} {x y : M}
+    (hx : x ∈ ℳ i) (hy : y ∈ ℳ i) : x - y ∈ ℳ i := by
+  rw [sub_eq_add_neg]
+  exact add_mem hx (Decomposition.neg_mem hy)
+
+/-- Each summand of a `DirectSum.Decomposition` of an additive commutative group is closed under
+integer scalar multiplication. -/
+theorem Decomposition.zsmul_mem {ℳ : ι → σ} [Decomposition ℳ] {i : ι} {x : M}
+    (hx : x ∈ ℳ i) (n : ℤ) : n • x ∈ ℳ i := by
+  cases n with
+  | ofNat k => simpa only [Int.ofNat_eq_natCast, natCast_zsmul] using nsmul_mem hx k
+  | negSucc k => simpa only [negSucc_zsmul] using Decomposition.neg_mem (nsmul_mem hx (k + 1))
+
+end AddCommGroup
 
 section Module
 
@@ -573,7 +642,8 @@ theorem Module.Basis.isInternal_span_image_fiber {R ι κ M : Type*} [Semiring R
       rw [DirectSum.coeLinearMap_of]
       by_cases h : c' = c
       · subst h; simp
-      · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm h), hsupp c' a a.2 i fun e => h (e.symm.trans hi)]
+      · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm h), hsupp c' a a.property i fun e => h
+          (e.symm.trans hi)]
         simp
     | add x y hx hy => simp [hx, hy]
   -- For submodules, the additive recomposition map in `IsInternal` is the underlying function
@@ -583,7 +653,19 @@ theorem Module.Basis.isInternal_span_image_fiber {R ι κ M : Type*} [Semiring R
   · refine DirectSum.ext fun c => Subtype.ext (b.repr.injective (Finsupp.ext fun i => ?_))
     by_cases hi : w i = c
     · rw [← key x c i hi, ← key y c i hi, hxy]
-    · rw [hsupp c _ (x c).2 i hi, hsupp c _ (y c).2 i hi]
+    · rw [hsupp c _ (x c).property i hi, hsupp c _ (y c).property i hi]
   · rw [← LinearMap.range_eq_top, eq_top_iff, ← b.span_eq, Submodule.span_le]
     rintro _ ⟨i, rfl⟩
     exact ⟨DirectSum.of (fun c => A c) (w i) ⟨b i, Submodule.subset_span ⟨i, rfl, rfl⟩⟩, by simp⟩
+
+/-- If a supremum-independent family of submodules `A` over a ring has supremum `S`, then its
+traces `(A i).comap S.subtype` on `S` form an internal direct sum of `S` (the ring hypothesis is
+required by `DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top`). -/
+theorem DirectSum.isInternal_submodule_comap_subtype {R ι M : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [DecidableEq ι] {A : ι → Submodule R M} {S : Submodule R M}
+    (hind : iSupIndep A) (hsup : ⨆ i, A i = S) :
+    DirectSum.IsInternal fun i ↦ (A i).comap S.subtype := by
+  refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top hind.comap_subtype ?_
+  have hS : S = ⨆ i ∈ (Set.univ : Set ι), A i := by simp [← hsup]
+  subst hS
+  simpa using Submodule.biSup_comap_subtype_eq_top Set.univ A

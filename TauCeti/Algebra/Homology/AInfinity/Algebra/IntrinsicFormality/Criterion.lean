@@ -88,21 +88,21 @@ sense for any `A∞` algebra. -/
 def HochschildVanishesAt (n : {n : ℕ // 1 < n}) : Prop :=
   ∀ F : ReducedTensorWords R A →ₗ[R] A,
     LinearMap.IsHomogeneous F (gradedPiece (ℋ.grading.shift 1)) (ℋ.grading.shift 1).piece 1 →
-    F ∘ₗ lengthProj R A ⟨n.1, by omega⟩ = F → ℋ.hochschildDifferential 1 F = 0 →
+    F ∘ₗ lengthProj R A ⟨n.val, by omega⟩ = F → ℋ.hochschildDifferential 1 F = 0 →
     ∃ φ : ReducedTensorWords R A →ₗ[R] A,
       LinearMap.IsHomogeneous φ (gradedPiece (ℋ.grading.shift 1))
         (ℋ.grading.shift 1).piece 0 ∧
-      φ ∘ₗ lengthProj R A ⟨n.1 - 1, by omega⟩ = φ ∧ ℋ.hochschildDifferential 0 φ = F
+      φ ∘ₗ lengthProj R A ⟨n.val - 1, by omega⟩ = φ ∧ ℋ.hochschildDifferential 0 φ = F
 
 /-- Unfolding `HochschildVanishesAt`. -/
 theorem hochschildVanishesAt_iff {n : {n : ℕ // 1 < n}} :
     ℋ.HochschildVanishesAt n ↔ ∀ F : ReducedTensorWords R A →ₗ[R] A,
       LinearMap.IsHomogeneous F (gradedPiece (ℋ.grading.shift 1)) (ℋ.grading.shift 1).piece 1 →
-      F ∘ₗ lengthProj R A ⟨n.1, by omega⟩ = F → ℋ.hochschildDifferential 1 F = 0 →
+      F ∘ₗ lengthProj R A ⟨n.val, by omega⟩ = F → ℋ.hochschildDifferential 1 F = 0 →
       ∃ φ : ReducedTensorWords R A →ₗ[R] A,
         LinearMap.IsHomogeneous φ (gradedPiece (ℋ.grading.shift 1))
           (ℋ.grading.shift 1).piece 0 ∧
-        φ ∘ₗ lengthProj R A ⟨n.1 - 1, by omega⟩ = φ ∧ ℋ.hochschildDifferential 0 φ = F :=
+        φ ∘ₗ lengthProj R A ⟨n.val - 1, by omega⟩ = φ ∧ ℋ.hochschildDifferential 0 φ = F :=
   Iff.rfl
 
 /-- A stage of the killing procedure: a minimal `A∞` structure with the grading of `ℋ` whose

@@ -12,10 +12,12 @@ import Mathlib.Analysis.Complex.Convex
 /-!
 # Holomorphic functions and their values on the real line
 
-Two entire functions with values in a complex normed space that agree at every real point are
-equal. This is the identity principle `AnalyticOnNhd.eq_of_frequently_eq`, applied at the
-accumulation point `0` of the real axis. It is the uniqueness statement behind analytic
-continuation of real one-parameter orbits to complex time.
+Two entire functions with values in a complex normed space that agree frequently in a punctured
+real neighborhood of a real point—in particular on an open real ray `(a, ∞)` or on the whole real
+line—are equal (`Differentiable.eq_of_frequently_ofReal_eq`, `Differentiable.eq_of_ofReal_gt_eq`,
+`Differentiable.eq_of_ofReal_eq`). This is the identity principle
+`AnalyticOnNhd.eq_of_frequently_eq`, applied at an accumulation point on the real axis. It is the
+uniqueness statement behind analytic continuation of real one-parameter orbits to complex time.
 On the complex slit plane, agreement on the positive real axis likewise determines a
 holomorphic function uniquely.
 
@@ -30,20 +32,32 @@ open Filter Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- Two entire functions agreeing on the real line are equal. -/
-theorem Differentiable.eq_of_ofReal_eq {f g : ℂ → E} (hf : Differentiable ℂ f)
-    (hg : Differentiable ℂ g) (h : ∀ t : ℝ, f t = g t) : f = g := by
+/-- Two entire functions agreeing frequently in a punctured real neighborhood of a real point `t₀`
+are equal. -/
+theorem Differentiable.eq_of_frequently_ofReal_eq {f g : ℂ → E} (hf : Differentiable ℂ f)
+    (hg : Differentiable ℂ g) {t₀ : ℝ} (h : ∃ᶠ t : ℝ in 𝓝[≠] t₀, f t = g t) : f = g := by
   -- `Differentiable.analyticAt` needs a complete codomain, so work in the completion of `E`
   let ι : E →ₗᵢ[ℂ] UniformSpace.Completion E := UniformSpace.Completion.toComplₗᵢ
-  -- nonzero real points accumulate at `0` in `ℂ`
-  have hreal : Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] 0) (𝓝[≠] 0) := by
-    simpa using Complex.continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin (x := 0)
-      fun _ _ ↦ by simp_all
+  -- real points other than `t₀` accumulate at `t₀` in `ℂ`
+  have hreal : Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] t₀) (𝓝[≠] (t₀ : ℂ)) :=
+    Complex.continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin fun _ ht =>
+      Complex.ofReal_inj.not.mpr ht
   have hιfg : ι ∘ f = ι ∘ g := AnalyticOnNhd.eq_of_frequently_eq
     (fun z _ => (ι.toContinuousLinearMap.differentiable.comp hf).analyticAt z)
     (fun z _ => (ι.toContinuousLinearMap.differentiable.comp hg).analyticAt z)
-    (hreal.frequently (.of_forall fun t => congrArg ι (h t)))
+    (hreal.frequently (h.mono fun _ ht => congrArg ι ht))
   exact ι.injective.comp_left hιfg
+
+/-- Two entire functions agreeing on an open real ray `(a, ∞)` are equal. -/
+theorem Differentiable.eq_of_ofReal_gt_eq {f g : ℂ → E} (hf : Differentiable ℂ f)
+    (hg : Differentiable ℂ g) {a : ℝ} (h : ∀ t : ℝ, a < t → f t = g t) : f = g :=
+  hf.eq_of_frequently_ofReal_eq hg (t₀ := a + 1)
+    (eventually_nhdsWithin_of_eventually_nhds ((lt_mem_nhds (lt_add_one a)).mono h)).frequently
+
+/-- Two entire functions agreeing on the real line are equal. -/
+theorem Differentiable.eq_of_ofReal_eq {f g : ℂ → E} (hf : Differentiable ℂ f)
+    (hg : Differentiable ℂ g) (h : ∀ t : ℝ, f t = g t) : f = g :=
+  hf.eq_of_ofReal_gt_eq hg (a := 0) fun t _ => h t
 
 /-- Two holomorphic functions on the slit plane agreeing on the positive real axis agree
 throughout the slit plane. -/

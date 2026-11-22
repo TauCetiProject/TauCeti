@@ -96,14 +96,15 @@ variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} (Φ : Fan i) (hΦ : Φ.IsRegular)
 
 /-- A chosen regular affine chart of each cone of a regular fan, modelled on `ℂ ^ n`. -/
-private noncomputable def chartData (σ : Φ.cones) : RankChartData i σ.1 :=
-  Classical.choice (nonempty_rankChartData ((isRegular_iff.mp hΦ) σ.1 σ.2))
+private noncomputable def chartData (σ : Φ.cones) : RankChartData i σ.val :=
+  Classical.choice (nonempty_rankChartData ((isRegular_iff.mp hΦ) σ.val σ.property))
 
 /-- The chosen chart of the affine analytic chart of a cone, in `ℂ ^ n`. -/
 private noncomputable def rankChart (σ : Φ.cones) :
     (Φ.analyticGlueData hΦ).U σ → (Fin (Module.finrank ℤ N) → ℂ) :=
   fun x ↦ (Φ.chartData hΦ σ).L (coneChartAmbient Φ.lattice
-    ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone (Φ.chartData hΦ σ).hB (Φ.chartData hΦ σ).κ x)
+    ((isRegular_iff.mp hΦ) σ.val σ.property).toIsToricCone (Φ.chartData hΦ σ).hB
+        (Φ.chartData hΦ σ).κ x)
 
 /-- The chosen chart is an open embedding into `ℂ ^ n`. -/
 private theorem isOpenEmbedding_rankChart (σ : Φ.cones) :
@@ -114,7 +115,7 @@ private theorem isOpenEmbedding_rankChart (σ : Φ.cones) :
 
 /-- An affine analytic chart is nonempty. -/
 private instance nonempty_piece (σ : Φ.cones) : Nonempty ((Φ.analyticGlueData hΦ).U σ) :=
-  inferInstanceAs (Nonempty (AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)))
+  inferInstanceAs (Nonempty (AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)))
 
 /-- The charted-space structure on an affine analytic chart given by its chosen chart. -/
 @[instance_reducible]
@@ -154,19 +155,19 @@ attribute [local instance] isManifold_piece'
 /-- A point of the affine analytic chart of a cone, viewed as a complex point of its affine toric
 scheme. -/
 private def toPoint (σ : Φ.cones) :
-    (Φ.analyticGlueData hΦ).U σ → AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) :=
+    (Φ.analyticGlueData hΦ).U σ → AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) :=
   id
 
 /-- A complex point of the affine toric scheme of a cone, viewed as a point of its affine analytic
 chart. -/
 private def ofPoint (σ : Φ.cones) :
-    AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) → (Φ.analyticGlueData hΦ).U σ :=
+    AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) → (Φ.analyticGlueData hΦ).U σ :=
   id
 
 /-- The identity from the chosen structure on an affine analytic chart to the regular cone
 structure of the chosen chart data is holomorphic. -/
 private theorem contMDiff_toCone (σ : Φ.cones) (n : ℕ∞ω) :
-    let hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
+    let hσ := (isRegular_iff.mp hΦ) σ.val σ.property
     let D := Φ.chartData hΦ σ
     let _ := affinePointTopology (analyticChartGenerators Φ σ).2
     let _ := coneChartedSpace Φ.lattice hσ.toIsToricCone D.hB D.κ
@@ -185,7 +186,7 @@ private theorem contMDiff_toCone (σ : Φ.cones) (n : ℕ∞ω) :
 /-- The identity from the regular cone structure of the chosen chart data to the chosen structure
 on an affine analytic chart is holomorphic. -/
 private theorem contMDiff_ofCone (σ : Φ.cones) (n : ℕ∞ω) :
-    let hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
+    let hσ := (isRegular_iff.mp hΦ) σ.val σ.property
     let D := Φ.chartData hΦ σ
     let _ := affinePointTopology (analyticChartGenerators Φ σ).2
     let _ := coneChartedSpace Φ.lattice hσ.toIsToricCone D.hB D.κ
@@ -204,9 +205,9 @@ private theorem contMDiffOn_piece_iff (σ : Φ.cones) {E' H' M : Type*} [NormedA
     [NormedSpace ℂ E'] [TopologicalSpace H'] {I : ModelWithCorners ℂ E' H'} [TopologicalSpace M]
     [ChartedSpace H' M] {f : M → (Φ.analyticGlueData hΦ).U σ} {t : Set M} {n : ℕ∞ω} :
     ContMDiffOn I 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n f t ↔
-      ∀ m : dualSemigroup Φ.lattice σ.1, ContMDiffOn I 𝓘(ℂ, ℂ) n
+      ∀ m : dualSemigroup Φ.lattice σ.val, ContMDiffOn I 𝓘(ℂ, ℂ) n
         (fun x ↦ Φ.toPoint hΦ σ (f x) (MonoidAlgebra.single (Multiplicative.ofAdd m) 1)) t := by
-  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
+  have hσ := (isRegular_iff.mp hΦ) σ.val σ.property
   let D := Φ.chartData hΦ σ
   let _ := affinePointTopology (analyticChartGenerators Φ σ).2
   let _ := coneChartedSpace Φ.lattice hσ.toIsToricCone D.hB D.κ (analyticChartGenerators Φ σ).2
@@ -230,7 +231,8 @@ private theorem isOpenEmbedding_pieceMap {τ σ : Φ.cones} (f : τ ⟶ σ) :
 /-- A map of affine analytic charts along a face inclusion restricts complex points. -/
 private theorem toPoint_pieceMap {τ σ : Φ.cones} (f : τ ⟶ σ) (x : (Φ.analyticGlueData hΦ).U τ) :
     Φ.toPoint hΦ σ (Φ.pieceMap hΦ f x) =
-      faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f)) (Φ.toPoint hΦ τ x) :=
+      faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.property τ.property (leOfHom f))
+          (Φ.toPoint hΦ τ x) :=
   Φ.analyticFaceMap_apply f x
 
 /-- The gluing of two pieces is compatible with a map along a face inclusion. -/
@@ -247,7 +249,7 @@ private theorem contMDiff_pieceMap {τ σ : Φ.cones} (f : τ ⟶ σ) (n : ℕ�
   rw [← contMDiffOn_univ, contMDiffOn_piece_iff]
   intro m
   refine ((Φ.contMDiffOn_piece_iff hΦ τ (f := id) (t := univ)).1 contMDiffOn_id
-    ⟨m, dualSemigroup_anti Φ.lattice (leOfHom f) m.2⟩).congr fun x _ ↦ ?_
+    ⟨m, dualSemigroup_anti Φ.lattice (leOfHom f) m.property⟩).congr fun x _ ↦ ?_
   rw [toPoint_pieceMap, faceAffinePointMap_apply_single]
   -- `toPoint` is the identity.
   rfl
@@ -258,9 +260,9 @@ private theorem contMDiffOn_pieceMap_symm {τ σ : Φ.cones} (f : τ ⟶ σ) (n 
     ContMDiffOn 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n
       ((Φ.isOpenEmbedding_pieceMap hΦ f).toOpenPartialHomeomorph _).symm
       (range (Φ.pieceMap hΦ f)) := by
-  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
-  have hτ := (isRegular_iff.mp hΦ) τ.1 τ.2
-  have hτσ := Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f)
+  have hσ := (isRegular_iff.mp hΦ) σ.val σ.property
+  have hτ := (isRegular_iff.mp hΦ) τ.val τ.property
+  have hτσ := Φ.isFaceOf_of_le σ.property τ.property (leOfHom f)
   let Dσ := Φ.chartData hΦ σ
   let Dτ := Φ.chartData hΦ τ
   let gσ := (analyticChartGenerators Φ σ).2
@@ -357,15 +359,16 @@ private theorem piecePartialDiffeomorph_apply (σ : Φ.cones) (n : ℕ∞ω)
 
 section ChartInclusion
 
-variable (σ : Φ.cones) {k l s : ℕ} {B : Module.Basis (ToricRay σ.1 ⊕ Fin l) ℤ N}
-  (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ.1 ≃ Fin k)
-  (g : AddGeneratingFamily (dualSemigroup Φ.lattice σ.1) s)
+variable (σ : Φ.cones) {k l s : ℕ} {B : Module.Basis (ToricRay σ.val ⊕ Fin l) ℤ N}
+  (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ.val ≃ Fin k)
+  (g : AddGeneratingFamily (dualSemigroup Φ.lattice σ.val) s)
 
 /-- The identity from the complex structure of an extending basis on the affine analytic chart of
 a cone to its chosen structure is holomorphic. -/
 private theorem contMDiff_ofPoint (n : ℕ∞ω) :
     let _ := affinePointTopology g
-    let _ := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
+    let _ := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.val σ.property).toIsToricCone hB κ
+        g
     ContMDiff 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n
       (Φ.ofPoint hΦ σ) := by
   intro _ _
@@ -376,7 +379,8 @@ private theorem contMDiff_ofPoint (n : ℕ∞ω) :
 structure of an extending basis is holomorphic. -/
 private theorem contMDiff_toPoint (n : ℕ∞ω) :
     let _ := affinePointTopology g
-    let _ := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
+    let _ := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.val σ.property).toIsToricCone hB κ
+        g
     ContMDiff 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n
       (Φ.toPoint hΦ σ) := by
   intro _ _
@@ -389,12 +393,13 @@ biholomorphism onto its open image. The chart carries the complex structure of a
 of the cone. -/
 noncomputable def analyticAffineChartPartialDiffeomorph (n : ℕ∞ω) :
     let _ := affinePointTopology g
-    let _ := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
+    let _ := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.val σ.property).toIsToricCone hB κ
+        g
     letI := Φ.analyticChartedSpace hΦ
     PartialDiffeomorph 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ)
-      (AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) (Φ.analyticRealization hΦ) n :=
+      (AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) (Φ.analyticRealization hΦ) n :=
   let _ := affinePointTopology g
-  let _ := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
+  let _ := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.val σ.property).toIsToricCone hB κ g
   letI := Φ.analyticChartedSpace hΦ
   { toPartialEquiv := (Φ.piecePartialDiffeomorph hΦ σ n).toPartialEquiv
     open_source := by
@@ -424,16 +429,17 @@ theorem analyticAffineChartPartialDiffeomorph_target (n : ℕ∞ω) :
 /-- The chart-inclusion biholomorphism is the inclusion of the affine analytic chart. -/
 @[simp]
 theorem analyticAffineChartPartialDiffeomorph_apply (n : ℕ∞ω)
-    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) :
     Φ.analyticAffineChartPartialDiffeomorph hΦ σ hB κ g n x = Φ.analyticAffineChartι hΦ σ x :=
   Φ.piecePartialDiffeomorph_apply hΦ σ n x
 
 /-- The inverse chart-inclusion biholomorphism recovers each affine chart point from its image. -/
 @[simp]
 theorem analyticAffineChartPartialDiffeomorph_symm_analyticAffineChartι (n : ℕ∞ω)
-    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) :
     let _ := affinePointTopology g
-    let _ := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
+    let _ := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.val σ.property).toIsToricCone hB κ
+        g
     letI := Φ.analyticChartedSpace hΦ
     (Φ.analyticAffineChartPartialDiffeomorph hΦ σ hB κ g n).toPartialEquiv.symm
       (Φ.analyticAffineChartι hΦ σ x) = x := by
@@ -447,10 +453,11 @@ theorem analyticAffineChartPartialDiffeomorph_symm_analyticAffineChartι (n : �
 holomorphic, for the complex structure of any extending basis of the cone. -/
 theorem contMDiff_analyticAffineChartι (n : ℕ∞ω) :
     let _ := affinePointTopology g
-    let _ := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
+    let _ := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.val σ.property).toIsToricCone hB κ
+        g
     letI := Φ.analyticChartedSpace hΦ
     ContMDiff 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n
-      fun x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) ↦
+      fun x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) ↦
         Φ.analyticAffineChartι hΦ σ x := by
   intro _ _
   let _ := Φ.analyticChartedSpace hΦ

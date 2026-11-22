@@ -125,7 +125,7 @@ theorem character_resFDRep_indFDRep_sign_stabilizer_perm_fin_three_eq_one_add (x
   · subst x
     simp
   · have hval : (x : Equiv.Perm (Fin 3)) = Equiv.swap (a + 1) (a + 2) :=
-      ((mem_stabilizer_perm_fin_three_iff a _).mp x.2).resolve_left
+      ((mem_stabilizer_perm_fin_three_iff a _).mp x.property).resolve_left
         (fun h => hx (Subtype.ext h))
     have hidx : (a + 1 : Fin 3) ≠ a + 2 := by revert a; decide
     simp [hx, hval, signLinearCharacter_swap hidx]

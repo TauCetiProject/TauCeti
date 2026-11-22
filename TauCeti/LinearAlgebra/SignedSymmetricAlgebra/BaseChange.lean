@@ -37,7 +37,7 @@ variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
 private theorem baseChange_generator_mul_generator (p q : ℤ) (x y : S ⊗[R] V)
     (hx : x ∈ (G.baseChange S).piece p) (hy : y ∈ (G.baseChange S).piece q) :
     (generator G).baseChange S x * (generator G).baseChange S y =
-      ((p * q).negOnePow : ℤ) •
+      ((-1 : ℤˣ) ^ (p * q)) •
         ((generator G).baseChange S y * (generator G).baseChange S x) := by
   rw [InternalGrading.baseChange_piece] at hx hy
   obtain ⟨x, rfl⟩ := (G.piece p).toBaseChange_surjective' S hx
@@ -49,8 +49,8 @@ private theorem baseChange_generator_mul_generator (p q : ℤ) (x y : S ⊗[R] V
     | tmul t y =>
       simp only [Submodule.coe_toBaseChange_tmul, LinearMap.baseChange_tmul,
         Algebra.TensorProduct.tmul_mul_tmul]
-      rw [generator_mul_generator G x.2 y.2, mul_comm s t]
-      exact (map_zsmul (TensorProduct.mk R S (SignedSym G) (t * s)) _ _)
+      rw [generator_mul_generator G x.property y.property, mul_comm s t]
+      exact map_zsmul_unit (TensorProduct.mk R S (SignedSym G) (t * s)) _ _
     | add a b ha hb =>
       simpa only [map_add, Submodule.coe_add, mul_add, add_mul, smul_add] using
         congrArg₂ (· + ·) ha hb
@@ -74,7 +74,7 @@ private theorem baseChangeGenerator_apply (x : V) :
 private theorem baseChangeGenerator_mul_generator (p q : ℤ) (x y : V)
     (hx : x ∈ G.piece p) (hy : y ∈ G.piece q) :
     baseChangeGenerator G S x * baseChangeGenerator G S y =
-      ((p * q).negOnePow : ℤ) • (baseChangeGenerator G S y * baseChangeGenerator G S x) := by
+      ((-1 : ℤˣ) ^ (p * q)) • (baseChangeGenerator G S y * baseChangeGenerator G S x) := by
   simp only [baseChangeGenerator_apply]
   exact generator_mul_generator (G.baseChange S)
     (by simpa using Submodule.tmul_mem_baseChange_of_mem (1 : S) hx)

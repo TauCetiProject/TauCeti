@@ -31,7 +31,8 @@ and more generally finite products of circles, lines and other manifolds, into m
   product model acts coordinatewise, with range the product of the ranges.
 * `TauCeti.contDiffGroupoid_pi`: a finite product of `C^n` open partial homeomorphisms of the
   model spaces is `C^n` for the product model.
-* `TauCeti.instIsManifoldPi`: a finite product of `C^n` manifolds is a `C^n` manifold.
+* `TauCeti.instIsManifoldPi`, `TauCeti.pi_mem_maximalAtlas`: a finite product of `C^n` manifolds is
+  a `C^n` manifold, and products of maximal-atlas charts belong to its maximal atlas.
 * `TauCeti.extChartAt_pi`, `TauCeti.extChartAt_pi_apply`: the extended charts of a finite
   product.
 -/
@@ -114,6 +115,17 @@ instance instIsManifoldPi [∀ i, IsManifold (I i) n (M i)] :
     rw [OpenPartialHomeomorph.pi_symm, OpenPartialHomeomorph.pi_trans]
     exact contDiffGroupoid_pi fun i ↦
       (contDiffGroupoid n (I i)).compatible (hf i trivial) (hg i trivial)
+
+/-- A finite product of charts in the maximal `C^n` atlases of the factors belongs to the maximal
+`C^n` atlas of the finite product. -/
+theorem pi_mem_maximalAtlas {e : ∀ i, OpenPartialHomeomorph (M i) (H i)}
+    (he : ∀ i, e i ∈ IsManifold.maximalAtlas (I i) n (M i)) :
+    OpenPartialHomeomorph.pi e ∈ IsManifold.maximalAtlas (ModelWithCorners.pi I) n (∀ i, M i) := by
+  rintro _ ⟨f, hf, rfl⟩
+  rw [OpenPartialHomeomorph.pi_symm, OpenPartialHomeomorph.pi_symm,
+    OpenPartialHomeomorph.pi_trans, OpenPartialHomeomorph.pi_trans]
+  exact ⟨contDiffGroupoid_pi fun i ↦ (he i (f i) (hf i trivial)).1,
+    contDiffGroupoid_pi fun i ↦ (he i (f i) (hf i trivial)).2⟩
 
 /-- The extended chart of a finite product at `x` is the product of the extended charts of the
 factors at the coordinates of `x`. -/

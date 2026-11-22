@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Pullback
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.PolarCompatible
 import TauCeti.Analysis.InnerProductSpace.Positive.MetricChange.Smooth
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.Riemannian.Invariant
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
@@ -366,8 +367,6 @@ theorem exists_compatible_mfderiv_smul_apply [T2Space M] [SigmaCompactSpace M] {
     ∃ J : SmoothAlmostComplexStructure I M, σ.Compatible J ∧
       ∀ (a : G) (x : M) (v : TangentSpace I x),
         mfderiv I I (a • ·) x (J x v) = J (a • x) (mfderiv I I (a • ·) x v) := by
-  -- The averaged metric is smooth when the action maps are `C^(∞ + 1)`, that is, smooth.
-  have : ENat.LEInfty ((∞ : ℕ∞ω) + 1) := ⟨by simp⟩
   have := Fintype.ofFinite G
   obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := E)
     (E := fun x : M ↦ TangentSpace I x)
@@ -394,19 +393,10 @@ theorem exists_compatible_mfderiv_smul_apply_of_compactSpace [T2Space M] [SigmaC
       σ.eval₂ (a • x) (mfderiv I I (a • ·) x u) (mfderiv I I (a • ·) x v) = σ.eval₂ x u v) :
     ∃ J : SmoothAlmostComplexStructure I M, σ.Compatible J ∧
       ∀ (a : G) (x : M) (v : TangentSpace I x),
-        mfderiv I I (a • ·) x (J x v) = J (a • x) (mfderiv I I (a • ·) x v) := by
-  obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := E)
-    (E := fun x : M ↦ TangentSpace I x)
-  -- Haar averaging needs the action to be `C^(n + 1)` for a `C^n` metric; for `n = ∞` this is
-  -- smoothness.
-  have : ContMDiffSMul IG I (∞ + 1) G M := by
-    rwa [ENat.coe_top_add_one]
-  obtain ⟨g', hg'⟩ := exists_contMDiffRiemannianMetric_inner_mfderiv (G := G) (n := ⊤) IG g
-  let : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩
-  let : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
-    Bundle.instIsContMDiffRiemannianBundle g'
-  exact ⟨h.polarComplexStructure, h.compatible_polarComplexStructure, fun a x v ↦
-    h.mfderiv_polarComplexStructure_apply h rfl (hg' a x) (hσ a x) v⟩
+        mfderiv I I (a • ·) x (J x v) = J (a • x) (mfderiv I I (a • ·) x v) :=
+  of_forall_riemannianBundle_inner_mfderiv IG G fun hg' ↦
+    ⟨h.polarComplexStructure, h.compatible_polarComplexStructure, fun a x v ↦
+      h.mfderiv_polarComplexStructure_apply h rfl (hg' a x) (hσ a x) v⟩
 
 end SmoothTwoForm.IsNondegenerate
 
