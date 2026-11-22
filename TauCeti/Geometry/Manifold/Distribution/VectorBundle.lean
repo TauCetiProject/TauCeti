@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
-import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
 
 /-!
 # Distributions as vector bundles
