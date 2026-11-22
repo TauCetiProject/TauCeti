@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
+import TauCeti.AlgebraicGeometry.Modules.Pullback.Preservation
 
 /-!
 # Pullback of quasicoherent sheaves preserves duals

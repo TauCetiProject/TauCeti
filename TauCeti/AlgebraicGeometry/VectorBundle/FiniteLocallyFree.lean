@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocallyFree
 public import TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Biprod
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Preservation
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 
 /-!

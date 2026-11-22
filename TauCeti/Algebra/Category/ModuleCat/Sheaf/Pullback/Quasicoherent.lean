@@ -100,7 +100,6 @@ theorem LocalGeneratorsData.pullback_X {M : SheafOfModules.{u} S}
   (rfl)
 
 /-- The generating sections of `q.pullback φ` are those of `q` transported along `pullbackOver`. -/
-@[simp]
 theorem LocalGeneratorsData.pullback_generators {M : SheafOfModules.{u} S}
     (q : LocalGeneratorsData.{w} (R := S) M)
     (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous RingCat.{u}
@@ -115,6 +114,7 @@ theorem LocalGeneratorsData.pullback_generators {M : SheafOfModules.{u} S}
   (rfl)
 
 /-- Typed projection of the generator index type of `(q.pullback φ).generators i`. -/
+@[simp]
 theorem LocalGeneratorsData.pullback_generators_I {M : SheafOfModules.{u} S}
     (q : LocalGeneratorsData.{w} (R := S) M)
     (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous RingCat.{u}
@@ -192,7 +192,6 @@ theorem QuasicoherentData.pullback_X {M : SheafOfModules.{u} S}
   (rfl)
 
 /-- The presentations of `q.pullback φ` are those of `q` transported along `pullbackOver`. -/
-@[simp]
 theorem QuasicoherentData.pullback_presentation {M : SheafOfModules.{u} S}
     (q : QuasicoherentData.{w} (R := S) M)
     (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous RingCat.{u}
@@ -208,6 +207,7 @@ theorem QuasicoherentData.pullback_presentation {M : SheafOfModules.{u} S}
   (rfl)
 
 /-- Typed projection of the generator index type of `(q.pullback φ).presentation i`. -/
+@[simp]
 theorem QuasicoherentData.pullback_presentation_generators_I {M : SheafOfModules.{u} S}
     (q : QuasicoherentData.{w} (R := S) M)
     (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous RingCat.{u}
@@ -221,6 +221,7 @@ theorem QuasicoherentData.pullback_presentation_generators_I {M : SheafOfModules
   rfl
 
 /-- Typed projection of the relation index type of `(q.pullback φ).presentation i`. -/
+@[simp]
 theorem QuasicoherentData.pullback_presentation_relations_I {M : SheafOfModules.{u} S}
     (q : QuasicoherentData.{w} (R := S) M)
     (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous RingCat.{u}

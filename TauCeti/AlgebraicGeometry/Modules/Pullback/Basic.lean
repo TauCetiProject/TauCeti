@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocalIsomorphism
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Quasicoherent
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction.OpenSubspace
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
@@ -42,10 +42,6 @@ adjoint, is oplax monoidal, with unit map the identification `f^* 𝒪_Y ≅ �
 compatible with symmetry (`pullback_map_braiding_hom_comp_δ`). These structures are compatible
 with composition: the composition isomorphism of pullbacks carries the comparison maps of
 `(f ≫ g)^*` to the composites of those of `g^*` and `f^*`.
-
-Pullback along any scheme morphism preserves quasi-coherence, finite type, finite presentation
-and local freeness of modules, specializing the ringed-space results of
-`TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Quasicoherent`.
 
 ## Main declarations
 
@@ -95,12 +91,7 @@ and local freeness of modules, specializing the ringed-space results of
 * `AlgebraicGeometry.Scheme.Modules.ιFree_pullbackObjFreeIso_inv`: through Mathlib's
   `f^* 𝒪_Y^I ≅ 𝒪_X^I`, the pullback of a basis section is the basis section; multiplied by a
   global function `r`, it is the basis section multiplied by the pullback of `r`
-  (`pullback_map_globalSectionsSmul_comp_ιFree_comp_pullbackObjFreeIso_hom`);
-* `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_pullback`,
-  `AlgebraicGeometry.Scheme.Modules.isFiniteType_pullback`,
-  `AlgebraicGeometry.Scheme.Modules.isFinitePresentation_pullback` and
-  `AlgebraicGeometry.Scheme.Modules.isLocallyFree_pullback`: pullback preserves quasi-coherent,
-  finite type, finitely presented and locally free modules.
+  (`pullback_map_globalSectionsSmul_comp_ιFree_comp_pullbackObjFreeIso_hom`).
 
 ## References
 
@@ -255,30 +246,25 @@ lemma pullbackObjUnitIso_hom (f : X ⟶ Y) :
 /-- The transpose of `f^* 𝒪_Y ≅ 𝒪_X` is the map `𝒪_Y ⟶ f_* 𝒪_X` given by `f` on sections. -/
 lemma pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom (f : X ⟶ Y) :
     (pullbackPushforwardAdjunction f).homEquiv _ _ (pullbackObjUnitIso f).hom =
-      SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom :=
-  SheafOfModules.pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom f.toRingCatSheafHom
-
-/-- The map `𝒪_Z ⟶ (f ≫ g)_* 𝒪_X` given by `f ≫ g` on sections is the composite of the maps given
-by `g` and by `f`. -/
-lemma unitToPushforwardObjUnit_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
-    SheafOfModules.unitToPushforwardObjUnit g.toRingCatSheafHom ≫
-        (pushforward g).map (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom) ≫
-          (pushforwardComp f g).hom.app _ =
-      SheafOfModules.unitToPushforwardObjUnit (f ≫ g).toRingCatSheafHom :=
-  SheafOfModules.unitToPushforwardObjUnit_comp g.toRingCatSheafHom f.toRingCatSheafHom
+      SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom := by
+  rw [pullbackObjUnitIso_hom]
+  exact SheafOfModules.pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitToUnit
+    f.toRingCatSheafHom
 
 /-- Along the identity, `𝟙^* 𝒪_X ≅ 𝒪_X` is the identity isomorphism of pullback. -/
 lemma pullbackObjUnitIso_id (X : Scheme.{u}) :
-    (pullbackObjUnitIso (𝟙 X)).hom = (pullbackId X).hom.app _ :=
-  SheafOfModules.pullbackObjUnitIso_id X.ringCatSheaf
+    (pullbackObjUnitIso (𝟙 X)).hom = (pullbackId X).hom.app _ := by
+  rw [pullbackObjUnitIso_hom]
+  exact SheafOfModules.pullbackObjUnitToUnit_id X.ringCatSheaf
 
 /-- The isomorphism `(f ≫ g)^* 𝒪_Z ≅ 𝒪_X` is the composite of `f^* (g^* 𝒪_Z ≅ 𝒪_Y)` and
 `f^* 𝒪_Y ≅ 𝒪_X`, through the composition isomorphism of pullback. -/
 @[reassoc]
 lemma pullbackObjUnitIso_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
     (pullbackComp f g).inv.app _ ≫ (pullback f).map (pullbackObjUnitIso g).hom ≫
-      (pullbackObjUnitIso f).hom = (pullbackObjUnitIso (f ≫ g)).hom :=
-  SheafOfModules.pullbackObjUnitIso_comp g.toRingCatSheafHom f.toRingCatSheafHom
+      (pullbackObjUnitIso f).hom = (pullbackObjUnitIso (f ≫ g)).hom := by
+  simp only [pullbackObjUnitIso_hom]
+  exact SheafOfModules.pullbackObjUnitToUnit_comp g.toRingCatSheafHom f.toRingCatSheafHom
 
 /-- The composite `𝒪_X ≅ f^* 𝒪_Y ≅ f^* g^* 𝒪_Z ≅ (f ≫ g)^* 𝒪_Z` is the inverse of the
 identification `(f ≫ g)^* 𝒪_Z ≅ 𝒪_X`. This is `pullbackObjUnitIso_comp` read through inverses. -/
@@ -655,27 +641,6 @@ lemma pullback_map_globalSectionsSmul_comp_ιFree_comp_pullbackObjFreeIso_hom (r
 end PullbackFree
 
 end Free
-
-/-- The pullback of a quasi-coherent module along a morphism of schemes is quasi-coherent. -/
-instance isQuasicoherent_pullback (f : X ⟶ Y) (M : Y.Modules) [M.IsQuasicoherent] :
-    ((pullback f).obj M).IsQuasicoherent :=
-  SheafOfModules.isQuasicoherent_pullback f.toRingCatSheafHom M
-
-/-- The pullback of a module of finite type along a morphism of schemes is of finite type. -/
-instance isFiniteType_pullback (f : X ⟶ Y) (M : Y.Modules) [M.IsFiniteType] :
-    ((pullback f).obj M).IsFiniteType :=
-  SheafOfModules.isFiniteType_pullback f.toRingCatSheafHom M
-
-/-- The pullback of a finitely presented module along a morphism of schemes is finitely
-presented. -/
-instance isFinitePresentation_pullback (f : X ⟶ Y) (M : Y.Modules) [M.IsFinitePresentation] :
-    ((pullback f).obj M).IsFinitePresentation :=
-  SheafOfModules.isFinitePresentation_pullback f.toRingCatSheafHom M
-
-/-- The pullback of a locally free module along a morphism of schemes is locally free. -/
-instance isLocallyFree_pullback (f : X ⟶ Y) (M : Y.Modules) [M.IsLocallyFree] :
-    ((pullback f).obj M).IsLocallyFree :=
-  SheafOfModules.isLocallyFree_pullback f.toRingCatSheafHom M
 
 end
 

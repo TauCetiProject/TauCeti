@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Sheaves.Module
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Unit
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward.Basic
 public import TauCeti.Topology.Sheaves.Functors
 public import TauCeti.Topology.Sheaves.Over
@@ -34,8 +34,9 @@ restriction `SheafOfModules.overFunctor R U` and preserves free module sheaves.
   `sheafOfModulesRestrict_obj_val_obj`, `sheafOfModulesRestrict_obj_val_map`,
   `sheafOfModulesRestrict_map_val_app`, `sheafOfModulesRestrict_obj_val_presheaf_obj`, and
   `sheafOfModulesRestrict_obj_val_presheaf_map`;
-* `TopologicalSpace.Opens.sheafOfModulesRestrictAdj` and
-  `TopologicalSpace.Opens.sheafOfModulesRestrictIsoPullback`: the adjunction of open-subspace
+* `TopologicalSpace.Opens.sheafOfModulesRestrictAdj` (with sectionwise unit and counit formulas
+  `sheafOfModulesRestrictAdj_unit_app_val_app` and `sheafOfModulesRestrictAdj_counit_app_val_app`)
+  and `TopologicalSpace.Opens.sheafOfModulesRestrictIsoPullback`: the adjunction of open-subspace
   restriction with direct image and its identification with pullback;
 * `TopologicalSpace.Opens.overFunctorCompSheafOfModulesEquivOver`,
   `TopologicalSpace.Opens.sheafOfModulesRestrictUnitIso`,
@@ -155,6 +156,40 @@ def sheafOfModulesRestrictAdj :
         (U.sheafInclusionHom_hom_app RingCat.{u} R
           (op (U.isOpenEmbedding.functor.obj W.unop)))).trans h₁
     exact (Category.id_comp _).trans h
+
+/-- On sections over `V`, the unit of `sheafOfModulesRestrictAdj` restricts along the counit of the
+open-image/preimage adjunction `U.isOpenEmbedding.isOpenMap.adjunction`. -/
+theorem sheafOfModulesRestrictAdj_unit_app_val_app (M : SheafOfModules.{v} R)
+    (V : (Opens X)ᵒᵖ) (x : M.val.obj V) :
+    (eqToHom (sheafOfModulesRestrict_obj_val_presheaf_obj U R M
+        (op ((Opens.map U.inclusion').obj V.unop))) :
+        ((U.sheafOfModulesRestrict.{v} R).obj M).val.presheaf.obj
+            (op ((Opens.map U.inclusion').obj V.unop)) ⟶
+          M.val.presheaf.obj
+            (op (U.isOpenEmbedding.functor.obj ((Opens.map U.inclusion').obj V.unop))))
+        (((U.sheafOfModulesRestrictAdj.{v} R).unit.app M).val.app V x) =
+      M.val.map (U.isOpenEmbedding.isOpenMap.adjunction.counit.app V.unop).op x := by
+  unfold sheafOfModulesRestrictAdj sheafOfModulesRestrict
+  rfl
+
+/-- On sections over `W`, the counit of `sheafOfModulesRestrictAdj` restricts along the unit of the
+open-image/preimage adjunction `U.isOpenEmbedding.isOpenMap.adjunction`. -/
+theorem sheafOfModulesRestrictAdj_counit_app_val_app
+    (M : SheafOfModules.{v} ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj R))
+    (W : (Opens ((Opens.toTopCat X).obj U))ᵒᵖ)
+    (x : M.val.obj (op ((Opens.map U.inclusion').obj (U.isOpenEmbedding.functor.obj W.unop)))) :
+    ((U.sheafOfModulesRestrictAdj.{v} R).counit.app M).val.app W
+        ((eqToHom (sheafOfModulesRestrict_obj_val_presheaf_obj U R
+            ((SheafOfModules.pushforward.{v} (U.sheafInclusionHom RingCat.{u} R)).obj M)
+            W).symm :
+          M.val.presheaf.obj
+              (op ((Opens.map U.inclusion').obj (U.isOpenEmbedding.functor.obj W.unop))) ⟶
+            ((U.sheafOfModulesRestrict.{v} R).obj
+              ((SheafOfModules.pushforward.{v}
+                (U.sheafInclusionHom RingCat.{u} R)).obj M)).val.presheaf.obj W) x) =
+      M.val.map (U.isOpenEmbedding.isOpenMap.adjunction.unit.app W.unop).op x := by
+  unfold sheafOfModulesRestrictAdj sheafOfModulesRestrict
+  rfl
 
 /-- Open-subspace restriction of module sheaves is a left adjoint (right adjoint: direct image). -/
 instance isLeftAdjoint_sheafOfModulesRestrict :

@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.LocalProperties.FinitePresentation
 public import Mathlib.RingTheory.Finiteness.Finsupp
 public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.FiniteType
+import TauCeti.AlgebraicGeometry.Modules.Pullback.Preservation
 
 /-!
 # Finite presentation of modules and their associated sheaves

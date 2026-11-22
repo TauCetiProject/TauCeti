@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
+import TauCeti.AlgebraicGeometry.Modules.Pullback.Preservation
 
 /-!
 # Global presentations of quasicoherent sheaves on affine schemes

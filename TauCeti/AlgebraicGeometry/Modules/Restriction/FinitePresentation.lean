@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Presentation
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.FiniteType
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.FinitePresentationDescent
+import TauCeti.AlgebraicGeometry.Modules.Pullback.Preservation
 
 /-!
 # Restriction criteria for finitely presented modules on schemes

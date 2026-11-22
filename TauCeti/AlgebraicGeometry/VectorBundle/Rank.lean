@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteLocallyFree
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 public import TauCeti.Topology.LocallyConstant.Fiber
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Restriction
 
 /-!
 # The rank of a finite locally free sheaf

@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction.OpenSubspace
-public import TauCeti.Topology.Sheaves.Functors
 
 /-!
 # Restriction and slice-site pullback of sheaves of modules on ringed spaces
@@ -24,8 +21,8 @@ and slice-restriction natural comparisons `SheafOfModules.pullbackOverUnitIso` a
 
 ## Main declarations
 
-* `SheafOfModules.restrictPullbackIso`: compatibility of module pullback with open-subspace
-  restriction;
+* `SheafOfModules.restrictPullbackIso` and `SheafOfModules.restrictPullbackIso_hom_app`:
+  compatibility of module pullback with open-subspace restriction, and its component formula;
 * `SheafOfModules.pullbackOver`: the induced pullback functor between slice sites;
 * `SheafOfModules.pullbackOverUnitIso`: unit preservation for `pullbackOver`;
 * `SheafOfModules.overFunctorCompPullbackOverIso`: natural isomorphism identifying slice
@@ -83,6 +80,33 @@ def restrictPullbackIso [(pushforward.{v} φ).IsRightAdjoint]
       (Opens.sheafHomResLE φ V U e)).symm ≪≫
     Functor.isoWhiskerRight (V.sheafOfModulesRestrictIsoPullback.{v} S).symm
       (pullback.{v} (Opens.sheafHomResLE φ V U e))
+
+/-- The components of `restrictPullbackIso`: both restrictions are identified with pullbacks along
+the open inclusions, and `Opens.map f ⋙ Opens.map U.inclusion'` is naturally isomorphic to
+`Opens.map V.inclusion' ⋙ Opens.map (Opens.resLE f V U e)`. -/
+theorem restrictPullbackIso_hom_app [(pushforward.{v} φ).IsRightAdjoint]
+    (V : Opens Y) (U : Opens X) (e : U ≤ (Opens.map f).obj V)
+    [(pushforward.{v} (Opens.sheafHomResLE φ V U e)).IsRightAdjoint]
+    (M : SheafOfModules.{v} S) :
+    (restrictPullbackIso.{v} φ V U e).hom.app M =
+      (haveI : (Opens.map f ⋙ Opens.map U.inclusion').IsContinuous
+          (Opens.grothendieckTopology Y)
+          (Opens.grothendieckTopology ((Opens.toTopCat X).obj U)) :=
+        Functor.isContinuous_comp _ _ _ (Opens.grothendieckTopology X) _
+      haveI : (Opens.map V.inclusion' ⋙ Opens.map (Opens.resLE f V U e)).IsContinuous
+          (Opens.grothendieckTopology Y)
+          (Opens.grothendieckTopology ((Opens.toTopCat X).obj U)) :=
+        Functor.isContinuous_comp _ _ _
+          (Opens.grothendieckTopology ((Opens.toTopCat Y).obj V)) _
+      (U.sheafOfModulesRestrictIsoPullback.{v} R).hom.app ((pullback.{v} φ).obj M) ≫
+        (pullbackComp.{v} φ (U.sheafInclusionHom RingCat.{u} R)).hom.app M ≫
+        (pullbackCongr₂.{v} _ (Opens.mapCompResLEIso f V U e)
+          (Opens.sheafInclusionHom_comp_map_sheafHomResLE φ V U e)).inv.app M ≫
+        (pullbackComp.{v} (V.sheafInclusionHom RingCat.{u} S)
+          (Opens.sheafHomResLE φ V U e)).inv.app M ≫
+        (pullback.{v} (Opens.sheafHomResLE φ V U e)).map
+          ((V.sheafOfModulesRestrictIsoPullback.{v} S).inv.app M)) :=
+  (rfl)
 
 /-- Pullback along `(f, φ)` read between slice sites over `V : Opens Y` and
 `(Opens.map f).obj V : Opens X`, obtained by conjugating pullback along

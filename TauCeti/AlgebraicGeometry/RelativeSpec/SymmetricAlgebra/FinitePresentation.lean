@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.RelativeSpec.SymmetricAlgebra.Tilde
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
+import TauCeti.AlgebraicGeometry.Modules.Pullback.Preservation
 
 /-!
 # Finite presentation of relative spectra of symmetric algebras
