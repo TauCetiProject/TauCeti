@@ -680,7 +680,9 @@ theorem fromEnveloping_comp_envelopingMap {A : Type uA} [AddCommGroup A] [Module
       ((ε.augmentedEnvelopingDGAlgHomEquiv e).symm ⟨f, hf⟩).val := by
   have h := ε.augmentedEnvelopingDGAlgHomEquiv_symm_comp_right hf e
     ⟨AInfinityHom.id _, AInfinityHom.isAugmented_id e.toAInfinityAugmentation⟩
-  simpa [fromEnveloping, AInfinityHom.id_comp] using h.symm
+  simpa only [fromEnveloping, AInfinityAlgebra.Augmentation.envelopingDGAlgHomEquiv_symm_apply,
+    AInfinityAlgebra.Augmentation.augmentedEnvelopingDGAlgHomEquiv_symm_apply_val,
+    AInfinityHom.id_comp] using h.symm
 
 end DGAlgAugmentation
 
@@ -690,11 +692,15 @@ namespace AInfinityAlgebra.Augmentation
 @[simp] theorem fromEnveloping_comp_envelopingMap_toEnveloping
     {𝒜 : AInfinityAlgebra R A} (ε : 𝒜.Augmentation) :
     ε.envelopingAugmentation.fromEnveloping.comp ε.isAugmented_toEnveloping.envelopingMap =
-      DGAlgHom.id _ :=
-  (ε.envelopingAugmentation.fromEnveloping_comp_envelopingMap
-      ε.isAugmented_toEnveloping).trans <|
-    congrArg Subtype.val ((ε.augmentedEnvelopingDGAlgHomEquiv
-      ε.envelopingAugmentation).symm_apply_apply ⟨DGAlgHom.id _, DGAlgHom.comp_id _⟩)
+      DGAlgHom.id _ := by
+  have hid :
+      ε.augmentedEnvelopingDGAlgHomEquiv ε.envelopingAugmentation
+          ⟨DGAlgHom.id _, DGAlgHom.comp_id _⟩ =
+        ⟨ε.toEnveloping, ε.isAugmented_toEnveloping⟩ :=
+    Subtype.ext <| by
+      rw [augmentedEnvelopingDGAlgHomEquiv_apply_val, envelopingDGAlgHomEquiv_id]
+  rw [ε.envelopingAugmentation.fromEnveloping_comp_envelopingMap ε.isAugmented_toEnveloping, ← hid,
+    Equiv.symm_apply_apply]
 
 end AInfinityAlgebra.Augmentation
 
