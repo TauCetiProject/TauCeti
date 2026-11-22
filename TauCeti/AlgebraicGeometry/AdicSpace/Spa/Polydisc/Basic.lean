@@ -156,8 +156,8 @@ theorem comap_weightedC_mem_spa (v : closedPolydisc k A) :
           (closedPolydisc_def k A ▸ v.property)
 
 variable {k A} in
-/-- The preimage of a rational subset `R(T/s)` in the closed polydisc `closedPolydisc k A` is
-open. -/
+/-- The preimage of a basic open `R(T/s)` (`rationalSubset`) in the closed polydisc
+`closedPolydisc k A` is open. -/
 theorem isOpen_val_preimage_rationalSubset_closedPolydisc
     (T : Finset (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
       isWeightFamily_one_weight))

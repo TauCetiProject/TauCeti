@@ -25,16 +25,17 @@ normed field `K`. Although the basic opens of `Spv K⟨T⟩` cut out weak inequa
 varies by less than `‖g(a₀)‖` and `f` varies by less than `‖g(a₀)‖`, so preimages of basic opens
 are open in `(K°)ᵏ`.
 
-Conversely, for any nonzero scalar `c ∈ K` and any centre `a₀ ∈ (K°)ᵏ`, the rational subset
+Conversely, for any nonzero scalar `c ∈ K` and any centre `a₀ ∈ (K°)ᵏ`, the basic open
 `R({T₁ - a₀,₁, …, Tₖ - a₀,ₖ} / c)` pulls back along the classical-point map to the metric closed
 ball of radius `‖c‖` about `a₀`. When `K` is nontrivially normed, such balls form a neighbourhood
 basis in `(K°)ᵏ`, so the classical-point map is a topological embedding and induces a homeomorphism
-from `(K°)ᵏ` onto the subspace `D(K)` of `K`-rational points. (Over a trivially normed infinite
-field the subspace topology on `D(K)` is strictly coarser than the discrete topology of `Kᵏ`.)
+from `(K°)ᵏ` onto the subspace `D(K)` of `K`-rational points. (In positive dimension `k ≥ 1` over a
+trivially normed infinite field, the subspace topology on `D(K)` is strictly coarser than the
+discrete topology of `Kᵏ`.)
 
 Since `(K°)ᵏ` is the closed unit ball in the complete finite product `Kᵏ`, it is complete as a
-metric space. Transporting along the homeomorphism shows that `D(K)` is completely metrizable and
-hence a Baire space.
+metric space. When `K` is nontrivially normed, transporting along this homeomorphism shows that
+`D(K)` is completely metrizable and hence a Baire space.
 
 ## Main definitions
 
@@ -47,13 +48,14 @@ hence a Baire space.
 * `TauCeti.ValuationSpectrum.continuous_classicalPoint`: the classical-point map
   `(K°)ᵏ → closedPolydisc k K` is continuous.
 * `TauCeti.ValuationSpectrum.preimage_rationalSubset_classicalPoint_closedBall`: the preimage of
-  `R({Tᵢ - a₀,ᵢ} / c)` under the classical-point map is the closed metric ball of radius `‖c‖`
-  about `a₀`.
+  the basic open `R({Tᵢ - a₀,ᵢ} / c)` under the classical-point map is the closed metric ball of
+  radius `‖c‖` about `a₀`.
 * `TauCeti.ValuationSpectrum.isEmbedding_classicalPoint`: over a complete nontrivially normed
   ultrametric field, the classical-point map is a topological embedding.
 * `TauCeti.ValuationSpectrum.isCompletelyMetrizableSpace_range_classicalPoint` and
-  `TauCeti.ValuationSpectrum.baireSpace_range_classicalPoint`: the subspace of `K`-rational points
-  of `closedPolydisc k K` is completely metrizable and a Baire space.
+  `TauCeti.ValuationSpectrum.baireSpace_range_classicalPoint`: over a complete nontrivially normed
+  ultrametric field, the subspace of `K`-rational points of `closedPolydisc k K` is completely
+  metrizable and a Baire space.
 
 ## References
 
@@ -117,8 +119,8 @@ theorem continuous_classicalPoint (x : spa (powerBoundedSubring K)) :
   exact ⟨hfa, hgpos⟩
 
 open scoped Classical in
-/-- **Rational balls pull back to metric closed balls on `(K°)ᵏ`.** For any centre `a₀ ∈ (K°)ᵏ`
-and any nonzero `c ∈ K`, the preimage of the rational subset `R({T₁ - a₀,₁, …, Tₖ - a₀,ₖ} / c)`
+/-- **Basic-open balls pull back to metric closed balls on `(K°)ᵏ`.** For any centre `a₀ ∈ (K°)ᵏ`
+and any nonzero `c ∈ K`, the preimage of the basic open `R({T₁ - a₀,₁, …, Tₖ - a₀,ₖ} / c)`
 under the classical-point map is the closed ball of radius `‖c‖` about `a₀`. -/
 theorem preimage_rationalSubset_classicalPoint_closedBall (x : spa (powerBoundedSubring K))
     (a₀ : {a : Fin k → K // ∀ i, IsPowerBounded (a i)}) {c : K} (hc : c ≠ 0) :
@@ -147,7 +149,7 @@ variable {k : ℕ} {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
 /-- **The classical-point map `(K°)ᵏ → closedPolydisc k K` is a topological embedding.**
 Continuity holds by `continuous_classicalPoint`, injectivity by
 `classicalPoint_injective_of_isField`, and metric closed balls of arbitrarily small positive radius
-`‖c‖` arise as preimages of rational subsets `R({Tᵢ - a₀,ᵢ} / c)`. -/
+`‖c‖` arise as preimages of basic opens `R({Tᵢ - a₀,ᵢ} / c)`. -/
 theorem isEmbedding_classicalPoint (x : spa (powerBoundedSubring K)) :
     Topology.IsEmbedding fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
       classicalPoint x a.val a.property := by

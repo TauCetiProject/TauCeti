@@ -18,9 +18,9 @@ This file compares Huber's topological evaluation homomorphisms `TauCeti.Huber.w
 `TauCeti.Huber.restrictedMvPowerSeriesGaussEquiv` and
 `TauCeti.Huber.restrictedMvPowerSeriesCompletionGaussEquiv`.
 
-From this identification, we transfer the coefficient-map norm bound and the ultrametric
-argument-perturbation bound to `weightedEvalHom` and `weightedEvalHomCompletion` without pulling in
-adic ideal reduction or noetherianity infrastructure.
+From this identification, we transfer the coefficient-map norm bound to both `weightedEvalHom` and
+`weightedEvalHomCompletion`, and the ultrametric argument-perturbation bound to `weightedEvalHom`,
+without pulling in adic ideal reduction or noetherianity infrastructure.
 
 ## Main results
 
