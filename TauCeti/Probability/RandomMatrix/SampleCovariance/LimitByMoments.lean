@@ -51,6 +51,10 @@ theorem tendsto_leadingCovarianceMoment {ι : Type*} {l : Filter ι} {p n : ι �
   apply tendsto_finsetSum
   intro π _
   have hc : #π.val.parts ≤ k := by simpa using π.val.card_parts_le_card
+  -- The row falling factorial in `leadingCovarianceMoment` has length `k + 1 - c`, while the
+  -- limit lemma for it is stated for lengths of the form `m + 1`. Truncated subtraction makes
+  -- this a propositional, not definitional, identity, so it is proved by `omega`.
+  have hlen : k + 1 - #π.val.parts = k - #π.val.parts + 1 := by omega
   have hnpos : ∀ᶠ i in l, n i ≠ 0 := (hn.eventually_ge_atTop 1).mono fun _ hi ↦ by omega
   have hself : Tendsto (fun i ↦ (n i : ℝ) / n i) l (𝓝 1) := by
     refine tendsto_const_nhds.congr' ?_
@@ -62,8 +66,7 @@ theorem tendsto_leadingCovarianceMoment {ι : Type*} {l : Filter ι} {p n : ι �
   have ht := hr.mul hs
   rw [one_pow, mul_one] at ht
   refine ht.congr fun i ↦ ?_
-  rw [show k + 1 - #π.val.parts = k - #π.val.parts + 1 by omega,
-    ← pow_sub_mul_pow (n i : ℝ)⁻¹ hc]
+  rw [hlen, ← pow_sub_mul_pow (n i : ℝ)⁻¹ hc]
   simp only [div_eq_mul_inv, mul_inv, inv_pow]
   ring
 
