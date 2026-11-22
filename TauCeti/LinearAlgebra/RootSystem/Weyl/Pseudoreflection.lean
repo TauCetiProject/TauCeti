@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Basic
+public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.ActsBy
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 public import TauCeti.RepresentationTheory.Weyl.Reflections
 import Mathlib.LinearAlgebra.Charpoly.ToMatrix
@@ -43,7 +44,8 @@ coefficients.
 
 ## Main results
 
-* `RootPairing.exists_map_int_eq_charpoly_weylGroupRootRep_of_base` and
+* `RootPairing.Base.ActsBy.map_charpoly_eq_charpoly_weylGroupRootRep`,
+  `RootPairing.exists_map_int_eq_charpoly_weylGroupRootRep_of_base`, and
   `RootPairing.exists_map_int_eq_charpoly_weylGroupRootRep`: integrality of characteristic
   polynomials on a crystallographic root system.
 * `RootPairing.pseudoreflectionSubgroup_weylGroupRootRep_dual`: the pseudoreflections of the dual
@@ -83,6 +85,28 @@ section CommRing
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] (P : RootPairing ι R M N)
 
+/-- If a Weyl-group element `w` acts on the simple roots of `b` by an integer matrix `W`, then the
+characteristic polynomial of `P.weylGroupRootRep w` is the scalar extension of `W.charpoly`. -/
+theorem Base.ActsBy.map_charpoly_eq_charpoly_weylGroupRootRep [DecidableEq ι] [P.IsRootSystem]
+    {b : P.Base} {w : P.weylGroup} {W : Matrix b.support b.support ℤ} (hW : b.ActsBy w W) :
+    letI := Module.Free.of_basis b.toWeightBasis
+    letI := Module.Finite.of_basis b.toWeightBasis
+    W.charpoly.map (algebraMap ℤ R) = (P.weylGroupRootRep w).charpoly := by
+  classical
+  let := Module.Free.of_basis b.toWeightBasis
+  let := Module.Finite.of_basis b.toWeightBasis
+  have hmat : LinearMap.toMatrix b.toWeightBasis b.toWeightBasis (P.weylGroupRootRep w) =
+      W.map (algebraMap ℤ R) := by
+    ext i j
+    have hw : P.weylGroupRootRep w (b.toWeightBasis j) =
+        ∑ k : b.support, (algebraMap ℤ R (W k j)) • b.toWeightBasis k := by
+      rw [weylGroupRootRep_apply, Base.toWeightBasis_apply, Base.actsBy_iff.1 hW j]
+      refine Finset.sum_congr rfl fun k _ ↦ ?_
+      rw [Base.toWeightBasis_apply, eq_intCast, Int.cast_smul_eq_zsmul]
+    rw [LinearMap.toMatrix_apply, ← Basis.equivFun_apply, hw, map_sum, Finset.sum_apply]
+    simp [Finsupp.single_apply]
+  rw [← (P.weylGroupRootRep w).charpoly_toMatrix b.toWeightBasis, hmat, Matrix.charpoly_map]
+
 /-- On a root system with a base `b`, the characteristic polynomial of any Weyl-group element on
 `M` is the scalar extension of an integer polynomial: the simple roots form an `R`-basis
 `b.toWeightBasis` of `M`, and `w` expands each simple root as an integer combination of simple
@@ -93,24 +117,12 @@ theorem exists_map_int_eq_charpoly_weylGroupRootRep_of_base [CharZero R] [P.IsRo
     letI := Module.Finite.of_basis b.toWeightBasis
     ∃ p : Polynomial ℤ, p.map (algebraMap ℤ R) = (P.weylGroupRootRep w).charpoly := by
   classical
-  let := Module.Free.of_basis b.toWeightBasis
-  let := Module.Finite.of_basis b.toWeightBasis
   choose c _ _ hc using fun j : b.support ↦ b.exists_root_eq_sum_int (P.weylGroupToPerm w j)
   let A : Matrix b.support b.support ℤ := fun i j ↦ c j i
-  have hmat : LinearMap.toMatrix b.toWeightBasis b.toWeightBasis (P.weylGroupRootRep w) =
-      A.map (algebraMap ℤ R) := by
-    ext i j
-    have hw : P.weylGroupRootRep w (b.toWeightBasis j) =
-        ∑ k : b.support, (algebraMap ℤ R (A k j)) • b.toWeightBasis k := by
-      rw [weylGroupRootRep_apply, Base.toWeightBasis_apply, P.weylGroup_apply_root, hc j,
-        ← Finset.sum_attach b.support]
-      refine Finset.sum_congr rfl fun k _ ↦ ?_
-      rw [Base.toWeightBasis_apply, eq_intCast, Int.cast_smul_eq_zsmul]
-    rw [LinearMap.toMatrix_apply, ← Basis.equivFun_apply, hw, map_sum, Finset.sum_apply]
-    simp [A, Finsupp.single_apply]
+  have hA : b.ActsBy w A := Base.actsBy_iff.2 fun j ↦ by
+    rw [P.weylGroup_apply_root, hc j, ← Finset.sum_attach b.support]
     rfl
-  refine ⟨A.charpoly, ?_⟩
-  rw [← (P.weylGroupRootRep w).charpoly_toMatrix b.toWeightBasis, hmat, Matrix.charpoly_map]
+  exact ⟨A.charpoly, hA.map_charpoly_eq_charpoly_weylGroupRootRep⟩
 
 /-- On a root system with a base over a `ℚ`-algebra of characteristic zero, the characteristic
 polynomial of any Weyl-group element on `M` is the scalar extension of a rational polynomial. -/

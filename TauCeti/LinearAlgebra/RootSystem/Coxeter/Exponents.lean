@@ -9,13 +9,17 @@ public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Plane
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Length
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Weyl
 
-import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 import Mathlib.LinearAlgebra.RootSystem.BaseExists
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 import Mathlib.RingTheory.RootsOfUnity.Complex
+import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Basic
+import TauCeti.LinearAlgebra.RootSystem.CoweightLattice.Basis
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.ActsBy
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.FixedPoints
+import TauCeti.LinearAlgebra.RootSystem.Inversions.Subword
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Pseudoreflection
+import TauCeti.LinearAlgebra.RootSystem.Weyl.ReflectionPerm
 import TauCeti.RepresentationTheory.SymmetricAlgebra.Weyl.BaseChange
 
 /-!
@@ -44,14 +48,6 @@ open Matrix Polynomial SymmetricAlgebra TauCeti TauCeti.SymmetricAlgebra
 
 namespace RootPairing
 
-private lemma prod_map_reflMatrix_submatrix {α β : Type*} [Fintype α] [Fintype β]
-    [DecidableEq α] [DecidableEq β] (A : Matrix α α ℤ) (e : β ≃ α) (l : List α) :
-    ((l.map e.symm).map (reflMatrix (A.submatrix e e))).prod =
-      Matrix.reindexAlgEquiv ℤ ℤ e.symm (l.map (reflMatrix A)).prod := by
-  rw [map_list_prod, List.map_map, List.map_map]
-  congr 1; refine List.map_congr_left fun j _ ↦ ?_
-  ext u v; simp [reflMatrix_apply, e.eq_symm_apply]
-
 section OrbitAndInversions
 
 variable {ι R M N : Type*} [CommRing R] [IsDomain R] [CharZero R]
@@ -77,9 +73,6 @@ theorem natCard_le_ncard_inversions_mul_orderOf_wordProd (b : P.Base)
   have hh_pos : 0 < h := orderOf_pos c
   set f : Equiv.Perm ι := P.weylGroupToPerm c
   have hf_pow : f ^ h = 1 := by dsimp only [f]; rw [← map_pow, pow_orderOf_eq_one, map_one]
-  have hf_mod (n : ℕ) : f ^ n = f ^ (n % h) := by
-    conv_lhs => rw [← Nat.div_add_mod n h]
-    rw [pow_add, pow_mul, hf_pow, one_pow, one_mul]
   have hsurj : Function.Surjective
       (fun p : (inversions P b c) × Fin h ↦ (f ^ (p.2 : ℕ)) p.1.val) := by
     intro i
@@ -93,7 +86,8 @@ theorem natCard_le_ncard_inversions_mul_orderOf_wordProd (b : P.Base)
       rcases Finset.mem_image.1 hx with ⟨k, -, rfl⟩
       refine Finset.mem_image.2
         ⟨⟨((k : ℕ) + 1) % h, Nat.mod_lt _ hh_pos⟩, Finset.mem_univ _, ?_⟩
-      change (f ^ (((k : ℕ) + 1) % h)) i = f ((f ^ (k : ℕ)) i); rw [← hf_mod, pow_succ']; rfl
+      change (f ^ (((k : ℕ) + 1) % h)) i = f ((f ^ (k : ℕ)) i)
+      rw [pow_eq_pow_of_modEq (Nat.mod_modEq ((k : ℕ) + 1) h) hf_pow, pow_succ']; rfl
     have hsum_zero : ∑ j ∈ S, P.root j = 0 := by
       rw [← wordProd_smul_eq_self_iff_eq_zero b hl hall]
       change c • ∑ j ∈ S, P.root j = ∑ j ∈ S, P.root j
@@ -132,7 +126,8 @@ theorem natCard_le_ncard_inversions_mul_orderOf_wordProd (b : P.Base)
       exact hm₀_spec
     let k : Fin h := ⟨(h - (n + (a : ℕ)) % h) % h, Nat.mod_lt _ hh_pos⟩
     refine ⟨(⟨(f ^ n) ((f ^ (a : ℕ)) i), hn_inv⟩, k), ?_⟩
-    change (f ^ (k : ℕ) * f ^ n * f ^ (a : ℕ)) i = i; rw [← pow_add, ← pow_add, hf_mod]
+    change (f ^ (k : ℕ) * f ^ n * f ^ (a : ℕ)) i = i
+    rw [← pow_add, ← pow_add, pow_eq_pow_of_modEq (Nat.mod_modEq _ h).symm hf_pow]
     have hmod0 : ((k : ℕ) + n + (a : ℕ)) % h = 0 := by
       dsimp only [k]; rw [add_assoc, Nat.mod_add_mod, ← Nat.add_mod_mod,
         Nat.sub_add_cancel (Nat.mod_lt _ hh_pos).le, Nat.mod_self]
@@ -159,57 +154,28 @@ theorem ncard_inversions_wordProd_eq_card_support (b : P.Base)
   have hle : (inversions P b (wordProd P b l)).ncard ≤ b.support.card := by
     rw [← P.length_eq_card_support hl hall]; exact ncard_inversions_wordProd_le_length P b l
   refine le_antisymm hle ?_; by_contra hlt; push Not at hlt
-  obtain ⟨l', hl'eq, hl'len⟩ :=
-    exists_wordProd_eq_and_length_eq_ncard_inversions P b (wordProd P b l)
+  obtain ⟨l', hsub, hl'eq, hl'len⟩ :=
+    exists_sublist_wordProd_eq_and_length_eq_ncard_inversions P b l
   have hcard_lt : l'.toFinset.card < (Finset.univ : Finset b.support).card := by
     rw [Finset.card_univ, Fintype.card_coe]
     exact (List.toFinset_card_le l').trans_lt (hl'len.trans_lt hlt)
   obtain ⟨i₀, -, hi₀⟩ := Finset.exists_mem_notMem_of_card_lt_card hcard_lt
   rw [List.mem_toFinset] at hi₀
-  let Q := b.rationalModel; let bQ := b.rationalModelBase
-  let e : bQ.support ≃ b.support := b.supportEquivRationalModelBase
-  have hmat_eq : (l'.map (reflMatrix b.cartanMatrix)).prod =
-      (l.map (reflMatrix b.cartanMatrix)).prod :=
-    (hl'eq ▸ b.actsBy_wordProd l').unique (b.actsBy_wordProd l)
-  have hmap_prod (m : List b.support) : ((m.map e.symm).map (reflMatrix bQ.cartanMatrix)).prod =
-      Matrix.reindexAlgEquiv ℤ ℤ e.symm (m.map (reflMatrix b.cartanMatrix)).prod := by
-    rw [show bQ.cartanMatrix = b.cartanMatrix.submatrix e e by ext j k; simp [bQ, e]]
-    exact prod_map_reflMatrix_submatrix b.cartanMatrix e m
-  have hQ_eq : wordProd Q bQ (l'.map e.symm) = wordProd Q bQ (l.map e.symm) := by
-    have hacts_l := bQ.actsBy_wordProd (l.map e.symm)
-    have hacts_l' := bQ.actsBy_wordProd (l'.map e.symm)
-    rw [hmap_prod, hmat_eq, ← hmap_prod] at hacts_l'
-    exact weylGroup.ext fun x ↦ LinearMap.congr_fun (bQ.toWeightBasis.ext fun j ↦ by
-      rw [bQ.toWeightBasis_apply]
-      exact (RootPairing.Base.actsBy_iff.1 hacts_l' j).trans
-        (RootPairing.Base.actsBy_iff.1 hacts_l j).symm) x
-  let j₀ : bQ.flip.support := ⟨(e.symm i₀ : ι), (e.symm i₀).property⟩
-  let x : b.support → ℚ := Q.toPerfPair.symm (bQ.flip.toWeightBasis.dualBasis j₀)
-  have hx_coroot (j : bQ.support) : Q.coroot' j x = if (j₀ : ι) = (j : ι) then 1 else 0 := by
-    change Q.toPerfPair x (Q.flip.root (⟨j.val, j.property⟩ : bQ.flip.support)) = _
-    rw [LinearEquiv.apply_symm_apply, ← bQ.flip.toWeightBasis_apply,
-      Module.Basis.dualBasis_apply_self]
-    exact if_congr (eq_comm.trans Subtype.ext_iff) rfl rfl
-  have hx_ne : x ≠ 0 := fun h0 ↦ by
-    have := hx_coroot (e.symm i₀); rw [h0, map_zero] at this; simp [j₀] at this
-  have hx_fix : wordProd Q bQ (l'.map e.symm) • x = x := by
-    suffices ∀ m : List bQ.support,
-        (∀ j ∈ m, Q.coroot' j x = 0) → wordProd Q bQ m • x = x from
-      this _ fun j hj ↦ by
-        rcases List.mem_map.1 hj with ⟨k, hk, rfl⟩
-        rw [hx_coroot, ite_eq_right]
-        exact fun heq ↦ hi₀ (e.symm.injective (Subtype.ext heq.symm) ▸ hk)
-    intro m; induction m with
-    | nil => simp
-    | cons j t ih =>
-      intro hm; rw [wordProd_cons, mul_smul, ih fun k hk ↦ hm k (List.mem_cons_of_mem _ hk),
-        weylGroup.ofIdx_smul, Equiv.reflection_smul, reflection_apply, hm j (by simp), zero_smul,
-        sub_zero]
-  rw [hQ_eq] at hx_fix
-  exact hx_ne ((wordProd_smul_eq_self_iff_eq_zero bQ (hl.map e.symm.injective)
-    (fun j ↦ List.mem_map.2 ⟨e j, hall (e j), e.symm_apply_apply j⟩)).1 hx_fix)
+  let j₀ : b.flip.support := ⟨i₀.val, i₀.property⟩
+  let x : M := b.flip.fundamentalCoweightBasis j₀
+  have hx_ne : x ≠ 0 := b.flip.fundamentalCoweightBasis.ne_zero j₀
+  have hx_coroot (j : b.support) (hj : j ∈ l') : P.coroot' j x = 0 := by
+    let j' : b.flip.support := ⟨j.val, j.property⟩
+    have hne : j' ≠ j₀ := fun heq ↦ hi₀ ((Subtype.ext (congrArg Subtype.val heq) : j = i₀) ▸ hj)
+    have h0 := b.flip.root'_fundamentalCoweightBasis j' j₀
+    rw [ite_eq_right hne] at h0
+    exact h0
+  have hx_fix : wordProd P b l' • x = x :=
+    (wordProd_smul_eq_self_iff b (hl.sublist hsub)).2 hx_coroot
+  rw [hl'eq] at hx_fix
+  exact hx_ne ((wordProd_smul_eq_self_iff_eq_zero b hl hall).1 hx_fix)
 
-omit [P.IsReduced] in
+omit [IsDomain R] [Finite ι] [P.IsReduced] in
 private theorem orderOf_wordProd_eq_baseChange (S : Type*) [Field S] [CharZero S]
     (b : P.Base) (l : List b.support) :
     orderOf (wordProd P b l) =
@@ -219,18 +185,32 @@ private theorem orderOf_wordProd_eq_baseChange (S : Type*) [Field S] [CharZero S
         (l.map ((supportEquivRootPairingBaseChangeBase S b.rationalModel
           b.rationalModel_toLinearMap b.rationalModelBase).trans
           b.supportEquivRationalModelBase).symm)) := by
-  classical
+  let PS := rootPairingBaseChange S b.rationalModel b.rationalModel_toLinearMap
   let bS := rootPairingBaseChangeBase S b.rationalModel b.rationalModel_toLinearMap
     b.rationalModelBase
   let e : bS.support ≃ b.support :=
     (supportEquivRootPairingBaseChangeBase S b.rationalModel b.rationalModel_toLinearMap
       b.rationalModelBase).trans b.supportEquivRationalModelBase
-  rw [(b.actsBy_wordProd l).orderOf_eq, (bS.actsBy_wordProd (l.map e.symm)).orderOf_eq,
-    show bS.cartanMatrix = b.cartanMatrix.submatrix e e by ext i j; simp [bS, e],
-    prod_map_reflMatrix_submatrix]
-  exact (orderOf_injective
-    (Matrix.reindexAlgEquiv ℤ ℤ e.symm).toRingEquiv.toMulEquiv.toMonoidHom
-    (Matrix.reindexAlgEquiv ℤ ℤ e.symm).injective _).symm
+  let φ : P.weylGroup ≃* PS.weylGroup :=
+    weylGroupEquivOfReflectionPermEq P PS
+      (by
+        rw [show PS = rootPairingBaseChange S b.rationalModel b.rationalModel_toLinearMap from rfl,
+          reflectionPerm_rootPairingBaseChange, b.rationalModel_reflectionPerm])
+      P.weylGroupToPerm_injective PS.weylGroupToPerm_injective
+  have he_coe (i : b.support) : ((e.symm i : bS.support) : ι) = (i : ι) := by
+    conv_rhs => rw [← e.apply_symm_apply i]
+    dsimp only [e]
+    rw [Equiv.trans_apply, Base.coe_supportEquivRationalModelBase,
+      coe_supportEquivRootPairingBaseChangeBase]
+  have hφ_word (m : List b.support) :
+      φ (wordProd P b m) = wordProd PS bS (m.map e.symm) := by
+    induction m with
+    | nil => simp [wordProd_nil]
+    | cons i t ih =>
+      simp only [wordProd_cons, map_mul, ih, List.map_cons, φ,
+        weylGroupEquivOfReflectionPermEq_ofIdx, he_coe]
+  rw [← hφ_word l]
+  exact (φ.orderOf_eq (wordProd P b l)).symm
 
 end OrbitAndInversions
 
@@ -239,21 +219,12 @@ section ComplexSandwich
 private theorem charpoly_weylGroupRootRep_wordProd_eq_map_rat
     {ι K M N : Type*} [DecidableEq ι] [Field K] [CharZero K] [AddCommGroup M] [Module K M]
     [Module.Finite K M] [AddCommGroup N] [Module K N] (P : RootPairing ι K M N)
-    [Finite ι] [P.IsCrystallographic] [P.IsRootSystem] (b : P.Base) (l : List b.support) :
+    [P.IsCrystallographic] [P.IsRootSystem] (b : P.Base) (l : List b.support) :
     (((l.map (reflMatrix b.cartanMatrix)).prod.map (Int.castRingHom ℚ)).charpoly).map
         (algebraMap ℚ K) =
       (P.weylGroupRootRep (wordProd P b l)).charpoly := by
-  let W : Matrix b.support b.support ℤ := (l.map (reflMatrix b.cartanMatrix)).prod
-  have htoMat : LinearMap.toMatrix b.toWeightBasis b.toWeightBasis
-      (P.weylGroupRootRep (wordProd P b l)) = W.map (Int.castRingHom K) := by
-    ext k j
-    rw [LinearMap.toMatrix_apply, Matrix.map_apply, Int.coe_castRingHom, b.toWeightBasis_apply]
-    change b.toWeightBasis.repr (wordProd P b l • P.root j) k = (W k j : K)
-    rw [(RootPairing.Base.actsBy_iff.1 (b.actsBy_wordProd l)) j, map_sum, Finset.sum_apply']
-    simp only [map_zsmul, ← b.toWeightBasis_apply, b.toWeightBasis.repr_self]
-    simp [Finsupp.single_apply, W]
-  rw [← LinearMap.charpoly_toMatrix (P.weylGroupRootRep (wordProd P b l)) b.toWeightBasis, htoMat,
-    Matrix.charpoly_map, Matrix.charpoly_map, Polynomial.map_map]
+  rw [← (b.actsBy_wordProd l).map_charpoly_eq_charpoly_weylGroupRootRep,
+    Matrix.charpoly_map, Polynomial.map_map]
   congr 1; exact RingHom.ext_int _ _
 
 private theorem complex_coxeter_exponents_package
@@ -305,14 +276,13 @@ private theorem complex_coxeter_exponents_package
     P.charpoly_weylGroupRootRep_wordProd_eq_map_rat b l
   let e : κ → ℕ := fun i ↦ (d i - 1) % h
   have he_lt (i : κ) : e i < h := Nat.mod_lt _ hh_pos
-  have hζ_mod (i : κ) : ζ ^ (d i - 1) = ζ ^ (e i) := by
-    conv_lhs => rw [← Nat.div_add_mod (d i - 1) h]
-    rw [pow_add, pow_mul, hζ_pow, one_pow, one_mul]
   have he_pos (i : κ) : 1 ≤ e i := by
     by_contra hlt; have he0 : e i = 0 := by omega
     have hroot1 : (P.weylGroupRootRep c).charpoly.IsRoot 1 := by
       rw [Polynomial.IsRoot, hcharpoly, Polynomial.eval_prod]
-      exact Finset.prod_eq_zero (Finset.mem_univ i) (by rw [hζ_mod i, he0, pow_zero]; simp)
+      exact Finset.prod_eq_zero (Finset.mem_univ i) (by
+        rw [pow_eq_pow_of_modEq (Nat.mod_modEq (d i - 1) h).symm hζ_pow,
+          show (d i - 1) % h = 0 from he0, pow_zero]; simp)
     exact not_hasEigenvalue_one_wordProd b hl hall
       ((Module.End.hasEigenvalue_iff_isRoot_charpoly (P.weylGroupRootRep c) 1).2 hroot1)
   have hhe_lt (i : κ) : h - e i < h := by have := he_pos i; omega
@@ -324,7 +294,8 @@ private theorem complex_coxeter_exponents_package
     rw [← mul_pow, inv_mul_cancel₀ hζ_ne, one_pow, ← pow_add,
       Nat.sub_add_cancel (le_of_lt (he_lt i)), hζ_pow]
   have hchar_e : (P.weylGroupRootRep c).charpoly = ∏ i : κ, (X - C (ζ ^ e i)) :=
-    hcharpoly.trans (Finset.prod_congr rfl fun i _ ↦ by rw [hζ_mod i])
+    hcharpoly.trans (Finset.prod_congr rfl fun i _ ↦ by
+      rw [pow_eq_pow_of_modEq (Nat.mod_modEq (d i - 1) h).symm hζ_pow])
   have hchar_conj : (P.weylGroupRootRep c).charpoly.map (starRingEnd ℂ) =
       (P.weylGroupRootRep c).charpoly := by
     rw [← hp, Polynomial.map_map]; congr 1; exact RingHom.ext_rat _ _
@@ -612,7 +583,7 @@ theorem charpoly_weylGroupRootRep_wordProd_eq_prod [Module.Finite K M] (b : P.Ba
     rw [show (lC.map (reflMatrix bC.cartanMatrix)).prod =
         Matrix.reindexAlgEquiv ℤ ℤ eCB.symm (l.map (reflMatrix b.cartanMatrix)).prod from
       (show bC.cartanMatrix = b.cartanMatrix.submatrix eCB eCB by ext i j; simp [bC, eCB]) ▸
-        prod_map_reflMatrix_submatrix b.cartanMatrix eCB l]
+        Matrix.prod_map_reflMatrix_submatrix b.cartanMatrix eCB l]
     rw [show (Matrix.reindexAlgEquiv ℤ ℤ eCB.symm
         (l.map (reflMatrix b.cartanMatrix)).prod).map (Int.castRingHom ℚ) =
         Matrix.reindexAlgEquiv ℚ ℚ eCB.symm

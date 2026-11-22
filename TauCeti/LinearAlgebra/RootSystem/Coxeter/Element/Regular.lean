@@ -87,15 +87,23 @@ section Plane
 
 variable [Algebra ℝ K]
 
+omit [P.IsCrystallographic] [CharZero K] [Finite ι] [P.IsReduced] in
 /-- The part `∑ yᵢ αᵢ` of colour `x` of a real combination of the simple roots. -/
-private noncomputable def colorPart (c : b.support → Bool) (y : b.support → ℝ) (x : Bool) : M :=
+noncomputable def colorPart (c : b.support → Bool) (y : b.support → ℝ) (x : Bool) : M :=
   ∑ i : b.support, algebraMap ℝ K (if c i = x then y i else 0) • P.root i
+
+omit [P.IsCrystallographic] [CharZero K] [Finite ι] [P.IsReduced] in
+/-- Unfolding lemma for `colorPart`. -/
+theorem colorPart_def (c : b.support → Bool) (y : b.support → ℝ) (x : Bool) :
+    colorPart P b c y x =
+      ∑ i : b.support, algebraMap ℝ K (if c i = x then y i else 0) • P.root i :=
+  (rfl)
 
 variable {P b} {c : (coxeterMatrixOfBase P b).graph.Coloring Bool} {y : b.support → ℝ} {κ : ℝ}
 
 omit [P.IsCrystallographic] [CharZero K] [Finite ι] [P.IsReduced] in
 /-- The two colour parts add up to the whole combination. -/
-private theorem colorPart_add (c : b.support → Bool) (y : b.support → ℝ) :
+theorem colorPart_add (c : b.support → Bool) (y : b.support → ℝ) :
     colorPart P b c y true + colorPart P b c y false =
       ∑ i : b.support, algebraMap ℝ K (y i) • P.root i := by
   rw [colorPart, colorPart, ← sum_add_distrib]
@@ -104,7 +112,7 @@ private theorem colorPart_add (c : b.support → Bool) (y : b.support → ℝ) :
 
 omit [CharZero K] [Finite ι] [P.IsReduced] in
 /-- The value of a coroot on a colour part. -/
-private theorem coroot'_colorPart_eq (c : b.support → Bool) (y : b.support → ℝ) (z : Bool)
+theorem coroot'_colorPart_eq (c : b.support → Bool) (y : b.support → ℝ) (z : Bool)
     (i : ι) :
     P.coroot' i (colorPart P b c y z) =
       algebraMap ℝ K (∑ k : b.support, (if c k = z then y k else 0) * P.pairingIn ℤ k i) := by
@@ -113,7 +121,7 @@ private theorem coroot'_colorPart_eq (c : b.support → Bool) (y : b.support →
 omit [CharZero K] [Finite ι] [P.IsReduced] in
 /-- The value of a simple coroot on the sum of the two colour parts of a left eigenvector of the
 Cartan matrix. -/
-private theorem coroot'_colorPart_add
+theorem coroot'_colorPart_add
     (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j) (j : b.support) :
     P.coroot' j (colorPart P b c y true + colorPart P b c y false) =
       algebraMap ℝ K (κ * y j) := by
@@ -121,7 +129,7 @@ private theorem coroot'_colorPart_add
 
 omit [P.IsReduced] in
 /-- The value of a simple coroot of colour `x` on the colour part of colour `z`. -/
-private theorem coroot'_colorPart
+theorem coroot'_colorPart
     (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j) {x : Bool}
     {j : b.support} (hj : c j = x) (z : Bool) :
     P.coroot' j (colorPart P b c y z) = algebraMap ℝ K ((if z = x then 2 else κ - 2) * y j) := by
@@ -150,7 +158,7 @@ private theorem coroot'_colorPart
 
 /-- The product of the simple reflections of colour `x` negates the colour part of colour `x`,
 and adds `2 - κ` times it to the colour part of the other colour. -/
-private theorem colorClassProd_smul_colorPart
+theorem colorClassProd_smul_colorPart
     (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j) (x z : Bool) :
     (weylCoxeterSystem P b).colorClassProd c x • colorPart P b c y z =
       colorPart P b c y z - algebraMap ℝ K (if z = x then 2 else κ - 2) • colorPart P b c y x := by
@@ -165,7 +173,7 @@ private theorem colorClassProd_smul_colorPart
 
 /-- The bipartite Coxeter element maps the colour part `u₀` of colour `true` to
 `(λ ^ 2 - 1) u₀ + λ u₁`, where `λ = 2 - κ` and `u₁` is the colour part of colour `false`. -/
-private theorem bipartiteCoxeterElement_smul_colorPart_true
+theorem bipartiteCoxeterElement_smul_colorPart_true
     (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j) :
     (weylCoxeterSystem P b).bipartiteCoxeterElement c • colorPart P b c y true =
       (algebraMap ℝ K (2 - κ) ^ 2 - 1) • colorPart P b c y true +
@@ -178,7 +186,7 @@ private theorem bipartiteCoxeterElement_smul_colorPart_true
 
 /-- The bipartite Coxeter element maps the colour part `u₁` of colour `false` to `-u₁ - λ u₀`,
 where `λ = 2 - κ` and `u₀` is the colour part of colour `true`. -/
-private theorem bipartiteCoxeterElement_smul_colorPart_false
+theorem bipartiteCoxeterElement_smul_colorPart_false
     (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j) :
     (weylCoxeterSystem P b).bipartiteCoxeterElement c • colorPart P b c y false =
       -colorPart P b c y false - algebraMap ℝ K (2 - κ) • colorPart P b c y true := by
@@ -190,7 +198,7 @@ private theorem bipartiteCoxeterElement_smul_colorPart_false
 
 /-- For a root `μ` of `X ^ 2 + (2 - λ ^ 2) X + 1`, the vector `(1 + μ) u₀ + λ u₁` of the Coxeter
 plane is an eigenvector of the bipartite Coxeter element for `μ`. -/
-private theorem bipartiteCoxeterElement_smul_eigen
+theorem bipartiteCoxeterElement_smul_eigen
     (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j) {μ : K}
     (hμ : μ ^ 2 + (2 - algebraMap ℝ K (2 - κ) ^ 2) * μ + 1 = 0) :
     (weylCoxeterSystem P b).bipartiteCoxeterElement c •
@@ -234,7 +242,7 @@ private theorem one_add_mul_add_mul_ne_zero (hκ : 0 < κ) (hκ2 : κ < 2) {μ :
 omit [CharZero K] [Finite ι] [P.IsReduced] in
 /-- The sum `u₀ + u₁ = ∑ yᵢ αᵢ` of the two colour parts of a positive left eigenvector of the
 Cartan matrix, for a positive eigenvalue, takes a positive real value on every simple coroot. -/
-private theorem exists_pos_coroot'_colorPart_add
+theorem exists_pos_coroot'_colorPart_add
     (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j)
     (hy0 : ∀ i, 0 < y i) (hκ : 0 < κ) :
     ∀ j ∈ b.support, ∃ t : ℝ, 0 < t ∧
@@ -243,7 +251,7 @@ private theorem exists_pos_coroot'_colorPart_add
 
 /-- For `0 < κ < 2` and a root `ν` of `X ^ 2 + (2 - λ ^ 2) X + 1`, where `λ = 2 - κ`, the
 eigenvector `(1 + ν) u₀ + λ u₁` of the Coxeter plane is regular. -/
-private theorem isRegularWeight_one_add_smul_colorPart_add_smul
+theorem isRegularWeight_one_add_smul_colorPart_add_smul
     (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j)
     (hy0 : ∀ i, 0 < y i) (hκ : 0 < κ) (hκ2 : κ < 2) {ν : K}
     (hν : ν ^ 2 + (2 - algebraMap ℝ K (2 - κ) ^ 2) * ν + 1 = 0) :

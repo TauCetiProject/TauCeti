@@ -142,11 +142,8 @@ theorem prod_reflMatrix_eq {n : ℕ} (b : P.Base) (A : Matrix (Fin n) (Fin n) �
     (((List.finRange n).map e.symm).map (reflMatrix b.cartanMatrix)).prod =
       reindexAlgEquiv ℤ ℤ e.symm (coxeterElement A) := by
   have hC : b.cartanMatrix = A.submatrix e e := by ext i j; exact hA i j
-  rw [hC, coxeterElement, map_list_prod, List.map_map, List.map_map]
-  congr 1
-  refine List.map_congr_left fun i _ => ?_
-  simp only [Function.comp_apply, reflMatrix_submatrix, _root_.Equiv.apply_symm_apply,
-    coe_reindexAlgEquiv, reindex_apply, _root_.Equiv.symm_symm]
+  rw [hC, coxeterElement]
+  exact prod_map_reflMatrix_submatrix A e (List.finRange n)
 
 omit [DecidableEq ι] in
 /-- **The Weyl-group Coxeter element has the order of the Coxeter element of its Cartan

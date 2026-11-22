@@ -38,11 +38,21 @@ theorem reflMatrix_apply {κ : Type*} [DecidableEq κ] (A : Matrix κ κ ℤ) (i
   (rfl)
 
 /-- Relabelling a Cartan matrix relabels its simple-reflection matrices. -/
-theorem reflMatrix_submatrix {κ : Type*} [DecidableEq κ] {n : ℕ} (A : Matrix (Fin n) (Fin n) ℤ)
-    (e : κ ≃ Fin n) (i : κ) :
+theorem reflMatrix_submatrix {α β : Type*} [DecidableEq α] [DecidableEq β] (A : Matrix α α ℤ)
+    (e : β ≃ α) (i : β) :
     reflMatrix (A.submatrix e e) i = (reflMatrix A (e i)).submatrix e e := by
   ext k j
   simp [reflMatrix, e.injective.eq_iff]
+
+/-- Relabelling a Cartan matrix relabels products of its simple-reflection matrices. -/
+theorem prod_map_reflMatrix_submatrix {α β : Type*} [Fintype α] [Fintype β]
+    [DecidableEq α] [DecidableEq β] (A : Matrix α α ℤ) (e : β ≃ α) (l : List α) :
+    ((l.map e.symm).map (reflMatrix (A.submatrix e e))).prod =
+      Matrix.reindexAlgEquiv ℤ ℤ e.symm (l.map (reflMatrix A)).prod := by
+  rw [map_list_prod, List.map_map, List.map_map]
+  congr 1
+  refine List.map_congr_left fun i _ => ?_
+  simp [reflMatrix_submatrix]
 
 /-- The Coxeter element `s₁ s₂ ⋯ sₙ` of a Cartan matrix, in the simple-root basis. -/
 @[expose] def coxeterElement {n : ℕ} (A : Matrix (Fin n) (Fin n) ℤ) : Matrix (Fin n) (Fin n) ℤ :=

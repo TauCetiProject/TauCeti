@@ -7,8 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
+public import TauCeti.LinearAlgebra.RootSystem.CoefficientReflection
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
-import Mathlib.LinearAlgebra.Dual.Basis
+import TauCeti.LinearAlgebra.RootSystem.CoweightLattice.Basis
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 
 /-!
@@ -34,17 +35,6 @@ variable {ι R M N : Type*} [CommRing R] [CharZero R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N} (b : P.Base)
 
-private noncomputable def rootCoordInt (i : ι) : b.support → ℤ :=
-  fun k ↦ b.toWeightBasisInt.repr (P.rootSpanMem ℤ i) k
-
-private lemma sum_rootCoordInt_smul (i : ι) :
-    ∑ k : b.support, b.rootCoordInt i k • P.root k = P.root i := by
-  simpa [rootCoordInt] using
-    congrArg Subtype.val (b.toWeightBasisInt.sum_repr (P.rootSpanMem ℤ i))
-
-private lemma rootCoordInt_injective : Injective b.rootCoordInt := fun i j hij ↦
-  P.root.injective (by rw [← b.sum_rootCoordInt_smul i, ← b.sum_rootCoordInt_smul j, hij])
-
 variable [P.IsCrystallographic]
 
 omit [CharZero R] in
@@ -57,27 +47,23 @@ private lemma corootCoordInt_injective [P.IsRootSystem] :
     ← P.algebraMap_pairingIn ℤ]
   exact congrArg (algebraMap ℤ R) (congrFun hij k)
 
-private lemma rootCoordInt_dot_corootCoordInt (i j : ι) :
-    b.rootCoordInt i ⬝ᵥ (fun k : b.support ↦ P.pairingIn ℤ k j) = P.pairingIn ℤ i j := by
+private lemma rootCoefficients_dot_corootCoordInt (i j : ι) :
+    b.rootCoefficients i ⬝ᵥ (fun k : b.support ↦ P.pairingIn ℤ k j) = P.pairingIn ℤ i j := by
   apply FaithfulSMul.algebraMap_injective ℤ R
   rw [P.algebraMap_pairingIn ℤ i j, dotProduct, map_sum]
-  conv_rhs => rw [← root_coroot_eq_pairing, ← b.sum_rootCoordInt_smul i, map_sum,
+  conv_rhs => rw [← root_coroot_eq_pairing, ← b.sum_rootCoefficients_smul_root i, map_sum,
     LinearMap.sum_apply]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [map_mul, P.algebraMap_pairingIn ℤ, ← root_coroot_eq_pairing, map_zsmul,
     LinearMap.smul_apply, zsmul_eq_mul, eq_intCast]
 
-private lemma rootCoordInt_reflectionPerm (i j : ι) :
-    b.rootCoordInt (P.reflectionPerm i j) =
-      b.rootCoordInt j - P.pairingIn ℤ j i • b.rootCoordInt i := by
-  ext k
-  have hmem : P.rootSpanMem ℤ (P.reflectionPerm i j) =
-      P.rootSpanMem ℤ j - P.pairingIn ℤ j i • P.rootSpanMem ℤ i := by
-    apply Subtype.ext
-    simpa [Int.cast_smul_eq_zsmul, ← P.algebraMap_pairingIn ℤ, eq_intCast] using
-      (P.reflectionPerm_root i j).symm
-  rw [rootCoordInt, hmem, map_sub, map_zsmul]
-  simp [rootCoordInt]
+private lemma rootCoefficients_reflectionPerm (i j : ι) :
+    b.rootCoefficients (P.reflectionPerm i j) =
+      b.rootCoefficients j - P.pairingIn ℤ j i • b.rootCoefficients i := by
+  rw [b.rootCoefficients_eq_iff]
+  simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul, sub_smul, Finset.sum_sub_distrib,
+    mul_smul, ← Finset.smul_sum, b.sum_rootCoefficients_smul_root,
+    ← P.reflection_apply_root' ℤ, P.root_reflectionPerm]
 
 private lemma corootCoordInt_reflectionPerm (i j : ι) (k : b.support) :
     P.pairingIn ℤ k (P.reflectionPerm i j) =
@@ -94,34 +80,34 @@ variable [P.IsRootSystem]
 spaces are `b.support → ℚ` paired by the dot product. -/
 noncomputable def rationalModel : RootPairing ι ℚ (b.support → ℚ) (b.support → ℚ) where
   toLinearMap := dotProductBilin ℚ ℚ
-  root := ⟨fun i k ↦ (b.rootCoordInt i k : ℚ), fun _ _ h ↦
-    b.rootCoordInt_injective (funext fun k ↦ Int.cast_injective (congrFun h k))⟩
+  root := ⟨fun i k ↦ (b.rootCoefficients i k : ℚ), fun _ _ h ↦
+    b.rootCoefficients_injective (funext fun k ↦ Int.cast_injective (congrFun h k))⟩
   coroot := ⟨fun j k ↦ (P.pairingIn ℤ k j : ℚ), fun _ _ h ↦
     b.corootCoordInt_injective (funext fun k ↦ Int.cast_injective (congrFun h k))⟩
   root_coroot_two i := by
-    change (fun k ↦ (b.rootCoordInt i k : ℚ)) ⬝ᵥ (fun k ↦ (P.pairingIn ℤ k i : ℚ)) = 2
-    have h := congrArg (Int.cast (R := ℚ)) (b.rootCoordInt_dot_corootCoordInt i i)
+    change (fun k ↦ (b.rootCoefficients i k : ℚ)) ⬝ᵥ (fun k ↦ (P.pairingIn ℤ k i : ℚ)) = 2
+    have h := congrArg (Int.cast (R := ℚ)) (b.rootCoefficients_dot_corootCoordInt i i)
     simp only [dotProduct, Int.cast_sum, Int.cast_mul, P.pairingIn_same ℤ i, Int.cast_ofNat] at h
     exact h
   reflectionPerm := P.reflectionPerm
   reflectionPerm_root i j := by
     ext k
-    have hdot := congrArg (Int.cast (R := ℚ)) (b.rootCoordInt_dot_corootCoordInt j i)
+    have hdot := congrArg (Int.cast (R := ℚ)) (b.rootCoefficients_dot_corootCoordInt j i)
     simp only [dotProduct, Int.cast_sum, Int.cast_mul] at hdot
-    change (b.rootCoordInt j k : ℚ) -
-      ((fun k ↦ (b.rootCoordInt j k : ℚ)) ⬝ᵥ fun k ↦ (P.pairingIn ℤ k i : ℚ)) *
-        (b.rootCoordInt i k : ℚ) = (b.rootCoordInt (P.reflectionPerm i j) k : ℚ)
-    rw [show (fun k ↦ (b.rootCoordInt j k : ℚ)) ⬝ᵥ (fun k ↦ (P.pairingIn ℤ k i : ℚ)) =
-        (P.pairingIn ℤ j i : ℚ) from hdot, b.rootCoordInt_reflectionPerm i j]
+    change (b.rootCoefficients j k : ℚ) -
+      ((fun k ↦ (b.rootCoefficients j k : ℚ)) ⬝ᵥ fun k ↦ (P.pairingIn ℤ k i : ℚ)) *
+        (b.rootCoefficients i k : ℚ) = (b.rootCoefficients (P.reflectionPerm i j) k : ℚ)
+    rw [show (fun k ↦ (b.rootCoefficients j k : ℚ)) ⬝ᵥ (fun k ↦ (P.pairingIn ℤ k i : ℚ)) =
+        (P.pairingIn ℤ j i : ℚ) from hdot, b.rootCoefficients_reflectionPerm i j]
     simp [zsmul_eq_mul]
   reflectionPerm_coroot i j := by
     ext k
-    have hdot := congrArg (Int.cast (R := ℚ)) (b.rootCoordInt_dot_corootCoordInt i j)
+    have hdot := congrArg (Int.cast (R := ℚ)) (b.rootCoefficients_dot_corootCoordInt i j)
     simp only [dotProduct, Int.cast_sum, Int.cast_mul] at hdot
     change (P.pairingIn ℤ k j : ℚ) -
-      ((fun k ↦ (b.rootCoordInt i k : ℚ)) ⬝ᵥ fun k ↦ (P.pairingIn ℤ k j : ℚ)) *
+      ((fun k ↦ (b.rootCoefficients i k : ℚ)) ⬝ᵥ fun k ↦ (P.pairingIn ℤ k j : ℚ)) *
         (P.pairingIn ℤ k i : ℚ) = (P.pairingIn ℤ k (P.reflectionPerm i j) : ℚ)
-    rw [show (fun k ↦ (b.rootCoordInt i k : ℚ)) ⬝ᵥ (fun k ↦ (P.pairingIn ℤ k j : ℚ)) =
+    rw [show (fun k ↦ (b.rootCoefficients i k : ℚ)) ⬝ᵥ (fun k ↦ (P.pairingIn ℤ k j : ℚ)) =
         (P.pairingIn ℤ i j : ℚ) from hdot, b.corootCoordInt_reflectionPerm i j k]
     simp
 
@@ -134,7 +120,7 @@ theorem rationalModel_reflectionPerm : b.rationalModel.reflectionPerm = P.reflec
 
 @[simp]
 theorem rationalModel_root_apply (i : ι) (k : b.support) :
-    b.rationalModel.root i k = (b.toWeightBasisInt.repr (P.rootSpanMem ℤ i) k : ℚ) := (rfl)
+    b.rationalModel.root i k = (b.rootCoefficients i k : ℚ) := (rfl)
 
 @[simp]
 theorem rationalModel_coroot_apply (j : ι) (k : b.support) :
@@ -144,18 +130,14 @@ theorem rationalModel_coroot_apply (j : ι) (k : b.support) :
 theorem rationalModel_root_support [DecidableEq ι] (i : b.support) :
     b.rationalModel.root i = Pi.single i (1 : ℚ) := by
   ext k
-  have h : b.toWeightBasisInt.repr (P.rootSpanMem ℤ i) = Finsupp.single i (1 : ℤ) := by
-    rw [show P.rootSpanMem ℤ i = b.toWeightBasisInt i from
-      Subtype.ext (b.coe_toWeightBasisInt_apply i).symm, b.toWeightBasisInt.repr_self]
-  rw [rationalModel_root_apply, h, Finsupp.single_apply, Pi.single_apply]
-  by_cases hki : k = i <;> simp [hki, Ne.symm]
+  simp [rationalModel_root_apply, b.rootCoefficients_coe, Pi.single_apply, apply_ite]
 
 @[simp]
 theorem rationalModel_pairing (i j : ι) :
     b.rationalModel.pairing i j = (P.pairingIn ℤ i j : ℚ) := by
   rw [← root_coroot_eq_pairing, rationalModel_toLinearMap]
-  simpa [dotProduct, rationalModel_root_apply, rationalModel_coroot_apply, rootCoordInt] using
-    congrArg (Int.cast (R := ℚ)) (b.rootCoordInt_dot_corootCoordInt i j)
+  simpa [dotProduct, rationalModel_root_apply, rationalModel_coroot_apply] using
+    congrArg (Int.cast (R := ℚ)) (b.rootCoefficients_dot_corootCoordInt i j)
 
 instance isCrystallographic_rationalModel : b.rationalModel.IsCrystallographic where
   exists_value i j := ⟨P.pairingIn ℤ i j, by simp⟩
@@ -167,17 +149,21 @@ theorem rationalModel_pairingIn (i j : ι) :
   rw [← eq_intCast (algebraMap ℤ ℚ), b.rationalModel.algebraMap_pairingIn ℤ,
     rationalModel_pairing]
 
+omit [CharZero R] [P.IsCrystallographic] [P.IsRootSystem] in
+private lemma exists_int_mul_eq {κ : Type*} [Finite κ] (c : κ → ℚ) :
+    ∃ (d : ℤ) (a : κ → ℤ), d ≠ 0 ∧ ∀ i, (a i : ℚ) = (d : ℚ) * c i := by
+  obtain ⟨d, hd⟩ := IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors ℤ) c
+  have hd' : ∀ i, ∃ a : ℤ, (a : ℚ) = ((d : ℤ) : ℚ) * c i := fun i ↦ by
+    obtain ⟨a, ha⟩ := hd i
+    exact ⟨a, by simpa [Algebra.smul_def] using ha⟩
+  choose a ha using hd'
+  exact ⟨d, a, nonZeroDivisors.coe_ne_zero d, ha⟩
+
 private lemma linearIndependent_rationalModel_coroot :
     LinearIndependent ℚ (fun j : b.support ↦ b.rationalModel.coroot j) := by
   rw [Fintype.linearIndependent_iff]; intro c hc
-  let d : ℕ := ∏ j : b.support, (c j).den
-  have hd : (d : ℚ) ≠ 0 := by
-    exact_mod_cast (Finset.prod_ne_zero_iff.2 fun j _ ↦ (c j).den_pos.ne')
-  have hint (j : b.support) : ∃ a : ℤ, (a : ℚ) = (d : ℚ) * c j := by
-    obtain ⟨m, hm⟩ := Finset.dvd_prod_of_mem (fun j ↦ (c j).den) (Finset.mem_univ j)
-    refine ⟨(c j).num * m, ?_⟩
-    dsimp only [d]; rw [hm]; push_cast; rw [← Rat.mul_den_eq_num]; ring
-  choose a ha using hint
+  obtain ⟨d, a, hd0, ha⟩ := exists_int_mul_eq c
+  have hd : (d : ℚ) ≠ 0 := Int.cast_ne_zero.2 hd0
   have hN : ∑ j : b.support, a j • P.coroot j = 0 := by
     apply (LinearMap.IsPerfPair.bijective_right P.toLinearMap).injective
     refine b.toWeightBasis.ext fun k ↦ ?_
@@ -211,22 +197,23 @@ noncomputable def rationalModelBase : b.rationalModel.Base where
         ∑ j : b.support, f j • b.rationalModel.root j ∈
           AddSubmonoid.closure (b.rationalModel.root '' b.support) :=
       sum_mem fun j _ ↦ nsmul_mem (AddSubmonoid.subset_closure (mem_image_of_mem _ j.property)) _
-    have hrepr (f : ι → ℕ) (x : P.rootSpan ℤ)
-        (hx : (x : M) = ∑ j ∈ b.support, f j • P.root j) :
-        (fun k : b.support ↦ (b.toWeightBasisInt.repr x k : ℚ)) =
-          ∑ j : b.support, f j • b.rationalModel.root j := by
-      have hm : x = ∑ j : b.support, (f j : ℤ) • b.toWeightBasisInt j :=
-        Subtype.ext (by simpa [Finset.sum_attach b.support (fun j ↦ f j • P.root j)] using hx)
-      ext k; simpa [rationalModel_root_support, Pi.single_apply, Finsupp.single_apply] using
-        congrArg (fun z ↦ (b.toWeightBasisInt.repr z k : ℚ)) hm
+    have hcoeff (f : ι → ℕ) {i' : ι} (hi' : P.root i' = ∑ j ∈ b.support, f j • P.root j) :
+        b.rationalModel.root i' = ∑ j : b.support, f j • b.rationalModel.root j := by
+      have hc : b.rootCoefficients i' = fun j : b.support ↦ (f j : ℤ) :=
+        b.rootCoefficients_eq_iff.2 (by
+          rw [hi', ← Finset.sum_coe_sort b.support]; simp [natCast_zsmul])
+      ext k
+      simp [rationalModel_root_apply, rationalModel_root_support, Pi.single_apply, hc]
     obtain ⟨f, -, hroot | hroot⟩ := b.exists_root_eq_sum_nat_or_neg i
-    · exact Or.inl (by rw [show b.rationalModel.root i = _ from hrepr f _ hroot]; exact hsum_mem f)
-    · refine Or.inr (by
-        have hneg' := congrArg Neg.neg hroot; rw [neg_neg] at hneg'
-        have hneg_eq : -b.rationalModel.root i =
-            fun k : b.support ↦ (b.toWeightBasisInt.repr (-P.rootSpanMem ℤ i) k : ℚ) := by
-          ext k; simp [rationalModel_root_apply]
-        rw [hneg_eq, hrepr f (-P.rootSpanMem ℤ i) hneg']; exact hsum_mem f)
+    · exact Or.inl (hcoeff f hroot ▸ hsum_mem f)
+    · refine Or.inr ?_
+      have hneg := congrArg Neg.neg hroot; rw [neg_neg, ← reflection_apply_self P i,
+        ← P.root_reflectionPerm] at hneg
+      have heq := hcoeff f hneg
+      have hneg_eq : -b.rationalModel.root i = b.rationalModel.root (P.reflectionPerm i i) := by
+        ext k; simp [rationalModel_root_apply]
+      rw [hneg_eq, heq]
+      exact hsum_mem f
   coroot_mem_or_neg_mem i := by
     have hsum_mem (f : ι → ℕ) :
         ∑ j : b.support, f j • b.rationalModel.coroot j ∈
@@ -287,21 +274,19 @@ instance isReduced_rationalModel [P.IsReduced] : b.rationalModel.IsReduced where
   eq_or_eq_neg i j hdep := by
     have hR : ¬ LinearIndependent R ![P.root i, P.root j] := fun hli ↦ hdep (by
       rw [Fintype.linearIndependent_iff]; intro c hc
-      let d : ℕ := (c 0).den * (c 1).den; have hd : (d : ℚ) ≠ 0 := by positivity
-      let a : Fin 2 → ℤ := ![((c 0).num * (c 1).den : ℤ), ((c 1).num * (c 0).den : ℤ)]
-      have ha (m : Fin 2) : (a m : ℚ) = (d : ℚ) * c m := by
-        fin_cases m <;> simp [a, d, ← Rat.mul_den_eq_num] <;> ring
+      obtain ⟨d, a, hd0, ha⟩ := exists_int_mul_eq c
+      have hd : (d : ℚ) ≠ 0 := Int.cast_ne_zero.2 hd0
       have hsumR : ∑ m : Fin 2, (a m : R) • ![P.root i, P.root j] m = 0 := by
         have hsum_coord (k : b.support) :
-            a 0 * b.rootCoordInt i k + a 1 * b.rootCoordInt j k = 0 := by
+            a 0 * b.rootCoefficients i k + a 1 * b.rootCoefficients j k = 0 := by
           apply Int.cast_injective (α := ℚ); have hk := congrFun hc k
           simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Pi.add_apply,
             Pi.smul_apply, smul_eq_mul, Pi.zero_apply, rationalModel_root_apply] at hk
-          push_cast; rw [ha 0, ha 1, rootCoordInt, rootCoordInt]; linear_combination (d : ℚ) * hk
+          push_cast; rw [ha 0, ha 1]; linear_combination (d : ℚ) * hk
         rw [Fin.sum_univ_two]
         simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Int.cast_smul_eq_zsmul,
-          ← b.sum_rootCoordInt_smul i, ← b.sum_rootCoordInt_smul j, Finset.smul_sum,
-          ← Finset.sum_add_distrib]
+          ← b.sum_rootCoefficients_smul_root i, ← b.sum_rootCoefficients_smul_root j,
+          Finset.smul_sum, ← Finset.sum_add_distrib]
         exact Finset.sum_eq_zero fun k _ ↦ by
           rw [smul_smul, smul_smul, ← add_smul, hsum_coord k, zero_smul]
       have ha0 := Fintype.linearIndependent_iff.1 hli (fun m ↦ (a m : R)) hsumR
@@ -309,8 +294,12 @@ instance isReduced_rationalModel [P.IsReduced] : b.rationalModel.IsReduced where
       exact (mul_eq_zero.1 (by rw [← ha m, ham, Int.cast_zero])).resolve_left hd)
     rcases IsReduced.eq_or_eq_neg i j hR with h | h
     · exact Or.inl (by rw [P.root.injective h])
-    · exact Or.inr (by ext k; simp [rationalModel_root_apply,
-        show P.rootSpanMem ℤ i = -P.rootSpanMem ℤ j from Subtype.ext h])
+    · refine Or.inr ?_
+      have hneg : b.rootCoefficients i = -b.rootCoefficients j := by
+        rw [b.rootCoefficients_eq_iff]
+        simp only [Pi.neg_apply, neg_smul, Finset.sum_neg_distrib,
+          b.sum_rootCoefficients_smul_root, h]
+      ext k; simp [rationalModel_root_apply, hneg]
 
 omit [CharZero R] [P.IsCrystallographic] in
 private lemma nonempty_support_of_isIrreducible [P.IsIrreducible] : Nonempty b.support := by
@@ -376,42 +365,42 @@ variable {ι K M N : Type*} [Field K] [CharZero K]
   [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
   {P : RootPairing ι K M N} [P.IsCrystallographic] [P.IsRootSystem] (b : P.Base)
 
-private noncomputable def coweightEquivFun : N ≃ₗ[K] (b.support → K) := by
-  classical
-  exact P.flip.toPerfPair.trans b.toWeightBasis.dualBasis.equivFun
-
-omit [CharZero K] [P.IsCrystallographic] in
-private lemma coweightEquivFun_apply (y : N) (k : b.support) :
-    b.coweightEquivFun y k = P.toLinearMap (P.root k) y := by
-  classical
-  simp [coweightEquivFun, Module.Basis.dualBasis_equivFun]
-
 /-- **Comparison with the base-changed rational model.** Over a characteristic-zero field `K`,
 expanding weights in `b.toWeightBasis` identifies `P` with the base change of `b.rationalModel`
 to `K`, with trivial permutation of root indices. -/
 noncomputable def equivBaseChangeRationalModel :
     P.Equiv (rootPairingBaseChange K b.rationalModel b.rationalModel_toLinearMap) where
   weightMap := b.toWeightBasis.equivFun.toLinearMap
-  coweightMap := b.coweightEquivFun.symm.toLinearMap
+  coweightMap := b.fundamentalCoweightBasis.equivFun.symm.toLinearMap
   indexEquiv := _root_.Equiv.refl ι
   weight_coweight_transpose := by
     ext y x
     simp only [LinearMap.comp_apply, LinearMap.dualMap_apply, LinearEquiv.coe_coe,
-      flip_toLinearMap, LinearMap.toPerfPair_apply, LinearMap.flip_apply]
+      flip_toLinearMap, LinearMap.toPerfPair_apply, LinearMap.flip_apply,
+      toLinearMap_rootPairingBaseChange, dotProduct, Module.Basis.equivFun_apply]
     conv_rhs => rw [← b.toWeightBasis.sum_repr x]
-    simp [toLinearMap_rootPairingBaseChange, dotProduct, ← b.coweightEquivFun_apply]
+    simp only [toWeightBasis_apply, map_sum, LinearMap.sum_apply, map_smul, LinearMap.smul_apply,
+      smul_eq_mul]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    congr 1
+    have hk : P.toLinearMap (P.root k) (b.fundamentalCoweightBasis.equivFun.symm y) = y k := by
+      change P.root' k (b.fundamentalCoweightBasis.equivFun.symm y) = y k
+      rw [← b.fundamentalCoweightBasis_repr, ← Module.Basis.equivFun_apply,
+        LinearEquiv.apply_symm_apply]
+    exact hk.symm
   root_weightMap := by
     classical
     ext i k
     simpa [root_rootPairingBaseChange, piAlgebraMap_apply, rationalModel_root_apply, map_sum,
-      map_zsmul, b.toWeightBasis_repr_root, Finsupp.single_apply, rootCoordInt] using
-      congrArg (fun x ↦ b.toWeightBasis.repr x k) (b.sum_rootCoordInt_smul i).symm
+      map_zsmul, b.toWeightBasis_repr_root, Finsupp.single_apply] using
+      congrArg (fun x ↦ b.toWeightBasis.repr x k) (b.sum_rootCoefficients_smul_root i).symm
   coroot_coweightMap := by
-    ext j; change b.coweightEquivFun.symm _ = _; rw [LinearEquiv.symm_apply_eq]; ext k
-    simp [b.coweightEquivFun_apply, root_coroot_eq_pairing, ← P.algebraMap_pairingIn ℤ,
+    ext j; change b.fundamentalCoweightBasis.equivFun.symm _ = _
+    rw [LinearEquiv.symm_apply_eq]; ext k
+    simp [Module.Basis.equivFun_apply, b.fundamentalCoweightBasis_repr, ← P.algebraMap_pairingIn ℤ,
       coroot_rootPairingBaseChange, piAlgebraMap_apply]
   bijective_weightMap := b.toWeightBasis.equivFun.bijective
-  bijective_coweightMap := b.coweightEquivFun.symm.bijective
+  bijective_coweightMap := b.fundamentalCoweightBasis.equivFun.symm.bijective
 
 @[simp]
 theorem equivBaseChangeRationalModel_indexEquiv :
