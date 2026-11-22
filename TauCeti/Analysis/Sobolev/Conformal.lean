@@ -460,8 +460,8 @@ theorem norm_restrictWeightedValue_sq (hρ : IsWeight U ρ) {K : Set (ℝ × ℝ
         refine integral_congr_ae ?_
         filter_upwards [coeFn_restrictWeightedValue K f, ae_restrict_of_ae hf,
           ae_restrict_mem hK] with z h₁ h₂ hz
-        rw [h₁, h₂, jet_apply, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs,
-          Real.sq_sqrt (hρ.pos z (hKU hz)).le]
+        rw [h₁, h₂]
+        simp [jet_apply, norm_smul, mul_pow, Real.sq_sqrt (hρ.pos z (hKU hz)).le]
     _ = ∫ z in K, ρ z * ‖ξ z‖ ^ 2 := by rw [Measure.restrict_restrict hK, inter_eq_left.2 hKU]
 
 /-- On a compact set `K ⊆ U`, where the weight is bounded below, the `L²` norm over `K` of a

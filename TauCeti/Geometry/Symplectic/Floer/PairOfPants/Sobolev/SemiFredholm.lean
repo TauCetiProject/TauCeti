@@ -145,10 +145,7 @@ theorem exists_forall_setIntegral_le_mul_sum_setIntegral_sobolevDensity_add {T :
   set f : ℝ × ℝ → ℝ := fun z ↦ cylindricalWeight z * ‖ξ z‖ ^ 2 + ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 +
     ‖fderiv ℝ ξ z (0, 1)‖ ^ 2
   have hf0 (z : ℝ × ℝ) : 0 ≤ f z := by
-    have : 0 ≤ cylindricalWeight z := by
-      rw [cylindricalWeight_apply]
-      exact add_nonneg (inv_nonneg.2 (Complex.normSq_nonneg _))
-        (inv_nonneg.2 (Complex.normSq_nonneg _))
+    have := cylindricalWeight_nonneg z
     positivity
   set E : Puncture → ℝ :=
     fun q ↦ ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ

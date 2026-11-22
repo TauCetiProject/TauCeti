@@ -86,6 +86,10 @@ theorem cylindricalWeight_apply (z : ℝ × ℝ) :
       (Complex.normSq (Complex.equivRealProdCLM.symm z - 1))⁻¹ :=
   (rfl)
 
+/-- The cylindrical weight is nonnegative everywhere. -/
+theorem cylindricalWeight_nonneg (z : ℝ × ℝ) : 0 ≤ cylindricalWeight z :=
+  add_nonneg (inv_nonneg.2 (Complex.normSq_nonneg _)) (inv_nonneg.2 (Complex.normSq_nonneg _))
+
 /-- The cylindrical weight is a conformal weight on the pair of pants: it is continuous and
 positive on `S`. -/
 theorem isWeight_cylindricalWeight :
@@ -322,8 +326,8 @@ theorem det_fderiv_positiveEndChart_mul_le (q : Puncture) {ξ : ℝ × ℝ → V
     rw [det_fderiv_positiveEndChart, det_fderiv_endChart, hφ]
   have hd (v : ℝ × ℝ) : ‖fderiv ℝ (ξ ∘ endChart q) (q.endSign • ζ) v‖ =
       ‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ v‖ := by
-    rw [fderiv_comp_endChart, smul_smul, endSign_mul_self, one_smul,
-      smul_apply, norm_smul, Real.norm_eq_abs, abs_endSign, one_mul]
+    rw [fderiv_comp_endChart]
+    simp [smul_smul, norm_smul, abs_endSign]
   have h := det_fderiv_endChart_mul_le q hz (hφ ▸ hξ)
   rwa [hd, hd, ← hdet, ← hφ] at h
 
