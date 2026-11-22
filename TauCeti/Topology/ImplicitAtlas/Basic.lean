@@ -21,13 +21,13 @@ It is the input from which virtual fundamental cycles are built. Its data are:
   (the *obstruction space*), given here as parameters `Γ`, `E` and `ρ`;
 * for every finite `I ⊆ A`, a Hausdorff space `X_I` (the *thickening*) with a continuous action
   of `Γ_I = ∏_(α ∈ I) Γ_α`, given here as parameters `T` and `act`, and an identification
-  `X_∅ ≃ₜ X` (`ImplicitAtlas.baseHomeomorph`);
+  `X_∅ ≃ₜ X` (`ImplicitAtlas.Core.baseHomeomorph`);
 * for every `α ∈ I`, a continuous equivariant *Kuranishi map* `s_α : X_I → E_α`
-  (`ImplicitAtlas.kuranishi`), on which the factors `Γ_β` with `β ≠ α` act trivially;
+  (`ImplicitAtlas.Core.kuranishi`), on which the factors `Γ_β` with `β ≠ α` act trivially;
 * for every finite `I`, an invariant open *regular locus* `X_I^reg ⊆ X_I`
-  (`ImplicitAtlas.regLocus`), on which the thickening is a topological manifold;
+  (`ImplicitAtlas.Core.regLocus`), on which the thickening is a topological manifold;
 * for finite `I ⊆ J`, an equivariant continuous *footprint map*
-  `ψ_IJ : Z_IJ → X_I` (`ImplicitAtlas.footprintMap`) defined on the zero set
+  `ψ_IJ : Z_IJ → X_I` (`ImplicitAtlas.Core.footprintMap`) defined on the zero set
   `Z_IJ = {x ∈ X_J | s_α(x) = 0 for all α ∈ J \ I}` (`TauCeti.kuranishiZeroSet`).
 
 The axioms say that the footprint maps form a cocycle compatible with the Kuranishi maps, that
@@ -40,17 +40,20 @@ the quotient axiom makes `ψ_IJ` surjective onto `U_IJ`, so here `U_IJ` is the r
 The regular locus is part of the data; outside it the thickening need not be a manifold and the
 action need not be free.
 
-This file states the definition (`TauCeti.ImplicitAtlas`) and proves its first consequences: the
-zero sets are invariant (`TauCeti.ImplicitAtlas.act_mem_kuranishiZeroSet`), the images `U_IJ`
-are invariant under `Γ_I` (`TauCeti.ImplicitAtlas.act_mem_range_footprintMap`), the zero-set
-domains of the cocycle condition match
-(`TauCeti.ImplicitAtlas.mem_kuranishiZeroSet_iff_footprintMap_mem`), the footprints are open and
-cover `X` (`TauCeti.ImplicitAtlas.isOpen_footprint`, `TauCeti.ImplicitAtlas.iUnion_footprint`),
-they satisfy the *footprint conditions* `V_I ∩ V_K ⊆ V_J` for `I ⊆ J ⊆ K` and
-`V_I ∩ V_J ⊆ V_(I ∪ J)` (`TauCeti.ImplicitAtlas.footprint_inter_footprint_subset_footprint`,
-`TauCeti.ImplicitAtlas.footprint_inter_footprint_subset_footprint_union`), which make the cover
-`{V_I}` suitable for gluing local data indexed by pairs `I ⊆ J`, and the regular locus is empty
-where the expected dimension `d + m_I` is negative
+This file states the definition (`TauCeti.ImplicitAtlas`) and proves its first consequences. All
+data and axioms other than the local product model form `TauCeti.ImplicitAtlas.Core`, which
+implicit atlases with boundary also extend, and the consequences not involving the product model
+are proved for it. The zero sets are invariant
+(`TauCeti.ImplicitAtlas.Core.act_mem_kuranishiZeroSet`), the images `U_IJ` are invariant under
+`Γ_I` (`TauCeti.ImplicitAtlas.Core.act_mem_range_footprintMap`), the zero-set domains of the
+cocycle condition match (`TauCeti.ImplicitAtlas.Core.mem_kuranishiZeroSet_iff_footprintMap_mem`),
+the footprints are open and cover `X` (`TauCeti.ImplicitAtlas.Core.isOpen_footprint`,
+`TauCeti.ImplicitAtlas.Core.iUnion_footprint`), they satisfy the *footprint conditions*
+`V_I ∩ V_K ⊆ V_J` for `I ⊆ J ⊆ K` and `V_I ∩ V_J ⊆ V_(I ∪ J)`
+(`TauCeti.ImplicitAtlas.Core.footprint_inter_footprint_subset_footprint`,
+`TauCeti.ImplicitAtlas.Core.footprint_inter_footprint_subset_footprint_union`), which make the
+cover `{V_I}` suitable for gluing local data indexed by pairs `I ⊆ J`, and the regular locus is
+empty where the expected dimension `d + m_I` is negative
 (`TauCeti.ImplicitAtlas.regLocus_eq_empty_of_neg`), so that a nonempty space carries no atlas
 whose expected dimensions are all negative (`TauCeti.ImplicitAtlas.isEmpty_of_forall_neg`).
 Examples are in `TauCeti.Topology.ImplicitAtlas.Examples`.
@@ -120,16 +123,18 @@ theorem kuranishiZeroSet_mono {T : Finset A → Type*} {E : A → Type*} [∀ α
     kuranishiZeroSet s I J ⊆ kuranishiZeroSet s I' J :=
   fun _ hx ↦ mem_kuranishiZeroSet.2 fun α hα ↦ mem_kuranishiZeroSet.1 hx α fun hαI ↦ hα (h hαI)
 
-/-- An **implicit atlas** of virtual dimension `d` on `X` (Pardon, Definition 3.1.1), with finite
-isotropy groups `Γ α`, obstruction representations `ρ α` on `E α`, thickenings `T I` and actions
-`act I` of `Γ_I = ∏_(α ∈ I) Γ α` on them. See the module docstring for the meaning of each field.
-The image `U_IJ` of the footprint map `ψ_IJ` is `Set.range (footprintMap h)`. -/
-structure ImplicitAtlas [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α)] [∀ α, Finite (Γ α)]
-    (E : A → Type*) [∀ α, NormedAddCommGroup (E α)] [∀ α, NormedSpace ℝ (E α)]
-    [∀ α, FiniteDimensional ℝ (E α)] (ρ : ∀ α, Representation ℝ (Γ α) (E α))
+/-- The data and axioms of an implicit atlas (`TauCeti.ImplicitAtlas`) other than its local
+product model over the regular locus, which is the only axiom involving the virtual dimension.
+Implicit atlases and implicit atlases with boundary (`TauCeti.ImplicitAtlasWithBoundary`) both
+extend it, with their own product models, and share the consequences proved for it here. See the
+module docstring for the meaning of each field. -/
+structure ImplicitAtlas.Core [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α)]
+    [∀ α, Finite (Γ α)] (E : A → Type*) [∀ α, NormedAddCommGroup (E α)]
+    [∀ α, NormedSpace ℝ (E α)] [∀ α, FiniteDimensional ℝ (E α)]
+    (ρ : ∀ α, Representation ℝ (Γ α) (E α))
     (T : Finset A → Type*) [∀ I, TopologicalSpace (T I)] [∀ I, T2Space (T I)]
     (act : ∀ I : Finset A, ((α : I) → Γ α) →* (T I ≃ₜ T I))
-    (X : Type*) [TopologicalSpace X] (d : ℤ) where
+    (X : Type*) [TopologicalSpace X] where
   /-- The identification `X_∅ ≃ₜ X` of the thickening at the empty index set. -/
   baseHomeomorph : T ∅ ≃ₜ X
   /-- The Kuranishi map `s_α : X_I → E_α`, for `α ∈ I`. -/
@@ -190,6 +195,21 @@ structure ImplicitAtlas [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α
   eq_one_of_act_eq : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J) (x : kuranishiZeroSet kuranishi I J),
     footprintMap h x ∈ regLocus I → ∀ g : (α : J) → Γ α,
       Finset.restrict₂ (π := Γ) h g = 1 → act J g x = x → g = 1
+  /-- The regular footprints `V_I = ψ_∅I(X_I^reg ∩ Z_∅I)` cover `X`. -/
+  exists_footprintMap_eq : ∀ y : X, ∃ (I : Finset A) (x : kuranishiZeroSet kuranishi ∅ I),
+    x.val ∈ regLocus I ∧ baseHomeomorph (footprintMap (Finset.empty_subset I) x) = y
+
+/-- An **implicit atlas** of virtual dimension `d` on `X` (Pardon, Definition 3.1.1), with finite
+isotropy groups `Γ α`, obstruction representations `ρ α` on `E α`, thickenings `T I` and actions
+`act I` of `Γ_I = ∏_(α ∈ I) Γ α` on them. Its data and all axioms but the product model are those
+of `TauCeti.ImplicitAtlas.Core`; see the module docstring for the meaning of each field. The
+image `U_IJ` of the footprint map `ψ_IJ` is `Set.range (footprintMap h)`. -/
+structure ImplicitAtlas [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α)] [∀ α, Finite (Γ α)]
+    (E : A → Type*) [∀ α, NormedAddCommGroup (E α)] [∀ α, NormedSpace ℝ (E α)]
+    [∀ α, FiniteDimensional ℝ (E α)] (ρ : ∀ α, Representation ℝ (Γ α) (E α))
+    (T : Finset A → Type*) [∀ I, TopologicalSpace (T I)] [∀ I, T2Space (T I)]
+    (act : ∀ I : Finset A, ((α : I) → Γ α) →* (T I ≃ₜ T I))
+    (X : Type*) [TopologicalSpace X] (d : ℤ) extends ImplicitAtlas.Core Γ E ρ T act X where
   /-- Over `ψ_IJ⁻¹(X_I^reg)`, the map `s_(J \ I) : X_J → E_(J \ I)` is locally a product
   projection `ℝ^(d + m_I) × E_(J \ I) → E_(J \ I)`. -/
   exists_openPartialHomeomorph : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J)
@@ -199,9 +219,6 @@ structure ImplicitAtlas [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α
       ∃ e : OpenPartialHomeomorph (T J) (EuclideanSpace ℝ (Fin n) × ((α : ↥(J \ I)) → E α)),
         x.val ∈ e.source ∧ ∀ y ∈ e.source,
           (e y).2 = fun α : ↥(J \ I) ↦ kuranishi J ⟨α.val, (Finset.mem_sdiff.1 α.property).1⟩ y
-  /-- The regular footprints `V_I = ψ_∅I(X_I^reg ∩ Z_∅I)` cover `X`. -/
-  exists_footprintMap_eq : ∀ y : X, ∃ (I : Finset A) (x : kuranishiZeroSet kuranishi ∅ I),
-    x.val ∈ regLocus I ∧ baseHomeomorph (footprintMap (Finset.empty_subset I) x) = y
 
 namespace ImplicitAtlas
 
@@ -210,7 +227,11 @@ variable [DecidableEq A] {Γ : A → Type*} [∀ α, Group (Γ α)] [∀ α, Fin
   [∀ α, FiniteDimensional ℝ (E α)] {ρ : ∀ α, Representation ℝ (Γ α) (E α)}
   {T : Finset A → Type*} [∀ I, TopologicalSpace (T I)] [∀ I, T2Space (T I)]
   {act : ∀ I : Finset A, ((α : I) → Γ α) →* (T I ≃ₜ T I)}
-  {X : Type*} [TopologicalSpace X] {d : ℤ} (𝒜 : ImplicitAtlas Γ E ρ T act X d)
+  {X : Type*} [TopologicalSpace X] {d : ℤ}
+
+namespace Core
+
+variable (𝒜 : ImplicitAtlas.Core Γ E ρ T act X)
 
 /-- The zero sets `Z_IJ` are invariant under `Γ_J`. -/
 theorem act_mem_kuranishiZeroSet {I J : Finset A} (g : (α : J) → Γ α) {x : T J}
@@ -233,7 +254,7 @@ theorem mem_kuranishiZeroSet_iff_footprintMap_mem {I J K : Finset A} (hJK : J �
     · exact mem_kuranishiZeroSet.1 x.property α hαJ
 
 /-- The cocycle condition `ψ_IJ ∘ ψ_JK = ψ_IK`, with the domain of `ψ_IJ` supplied by
-`ImplicitAtlas.mem_kuranishiZeroSet_iff_footprintMap_mem`. -/
+`ImplicitAtlas.Core.mem_kuranishiZeroSet_iff_footprintMap_mem`. -/
 theorem footprintMap_footprintMap_mk {I J K : Finset A} (hIJ : I ⊆ J) (hJK : J ⊆ K)
     (x : kuranishiZeroSet 𝒜.kuranishi J K) (hx : x.val ∈ kuranishiZeroSet 𝒜.kuranishi I K) :
     𝒜.footprintMap hIJ
@@ -354,6 +375,10 @@ theorem footprint_inter_footprint_subset_footprint_union (I J : Finset A) :
   rw [← 𝒜.range_footprintMap_inter (Finset.empty_subset I) (Finset.empty_subset J),
     image_inter 𝒜.baseHomeomorph.injective]
   exact ⟨𝒜.footprint_subset_image_range I hI, 𝒜.footprint_subset_image_range J hJ⟩
+
+end Core
+
+variable (𝒜 : ImplicitAtlas Γ E ρ T act X d)
 
 /-- The expected dimension `d + m_I` is nonnegative wherever the regular locus `X_I^reg` is
 nonempty: there it is the dimension of a topological manifold. -/
