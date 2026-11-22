@@ -26,7 +26,8 @@ It needs no norm, order, faithfulness or traciality on the original algebra. Nor
 required only to make the cyclic vector a unit vector. `StarPositiveFunctional.comp` pulls positive
 functionals back along (possibly non-unital) `⋆`-algebra homomorphisms,
 `StarPositiveFunctional.ofPositiveLinearMap` views any order-positive functional on a
-`StarOrderedRing` as a `StarPositiveFunctional`, and
+`StarOrderedRing` as a `StarPositiveFunctional`, whose null space is then a left ideal
+(`TauCeti.map_star_mul_mul_self_eq_zero`), and
 `StarPositiveFunctional.algebraicPositiveLinearMap` realizes a unital positive functional as the
 positive vector functional at `cyclicVector` on `Module.End ℂ φ.GNS`.
 
@@ -372,6 +373,17 @@ theorem inner_leftMul (a : A) (x y : φ.GNS) :
   simp [mul_assoc]
 
 end StarPositiveFunctional
+
+/-- For an order-positive functional `ω` on a `StarOrderedRing`, `ω (star b * b) = 0` implies
+`ω (star (a * b) * (a * b)) = 0`: the null space of `ω` is a left ideal
+(`StarPositiveFunctional.mul_mem_nullSubmodule`). -/
+theorem map_star_mul_mul_self_eq_zero {C F : Type*} [NonUnitalRing C] [PartialOrder C]
+    [StarRing C] [StarOrderedRing C] [Module ℂ C] [StarModule ℂ C] [IsScalarTower ℂ C C]
+    [FunLike F C ℂ] [LinearMapClass F ℂ C ℂ] [OrderHomClass F C ℂ] (ω : F) (a : C) {b : C}
+    (hb : ω (star b * b) = 0) : ω (star (a * b) * (a * b)) = 0 := by
+  let φ := StarPositiveFunctional.ofPositiveLinearMap (.ofClass ω)
+  exact (φ.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero _).mp <|
+    φ.mul_mem_nullSubmodule a ((φ.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero b).mpr hb)
 
 end NonUnital
 
