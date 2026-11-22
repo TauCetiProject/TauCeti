@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Toric.Delzant.Irredundant
 
 import Mathlib.Analysis.Convex.Extrema
 import Mathlib.Analysis.LocallyConvex.Separation
-import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import TauCeti.Analysis.Convex.KreinMilman
 import TauCeti.Analysis.Convex.Polyhedron.TangentCone
 
@@ -27,7 +26,7 @@ for the vertices `v` and the `n ∈ s_v`, and this presentation is Delzant
 (`TauCeti.Toric.existsUnique_isDelzant_facetPolyhedron_eq`). The presentation is recorded as the
 finite set `F ⊆ N × ℝ` of pairs (inward normal, support constant), indexed by itself. This set is
 unique: a Delzant polytope determines its facets
-(`TauCeti.Toric.eq_of_isDelzant_of_facetPolyhedron_eq`, from
+(`TauCeti.Toric.eq_of_isDelzant_of_facetPolyhedron_eq`, the set-indexed form of
 `TauCeti.Toric.IsDelzant.facetPolyhedron_eq_iff`). Conversely, every Delzant polytope is nonempty,
 compact and convex with finitely many vertices, and has a smooth corner at each of them, so these
 conditions characterize Delzant polytopes among subsets of `V*`
@@ -62,8 +61,6 @@ The proof has three steps.
   unique facet set.
 * `TauCeti.Toric.exists_isDelzant_facetPolyhedron_eq_iff`: these conditions characterize Delzant
   polytopes.
-* `TauCeti.Toric.eq_of_isDelzant_of_facetPolyhedron_eq`: two finite facet sets presenting the same
-  Delzant polytope are equal.
 
 ## References
 
@@ -112,6 +109,14 @@ private theorem eventually_add_smul_mem
   simp only [add_apply, smul_apply, smul_eq_mul]
   nlinarith [hw n hn, mem_Ioi.1 ht0]
 
+/-- The normals of a corner, a `ℤ`-basis of the lattice, are finitely many and index a basis of
+`N`. -/
+private theorem finite_and_exists_basis (hi : IsIntegralLattice i) (hli : LinearIndepOn ℤ id s)
+    (hsp : Submodule.span ℤ s = ⊤) : Finite s ∧ ∃ b : Module.Basis s ℤ N, ∀ k, b k = k := by
+  let b := Module.Basis.mk hli (by simp [hsp])
+  have := hi.finite
+  exact ⟨Module.Finite.finite_basis b, b, fun _ ↦ Module.Basis.mk_apply ..⟩
+
 variable (hi : IsIntegralLattice i) [Finite s] {b : Module.Basis s ℤ N} (hb : ∀ k, b k = k)
 include hi hb
 
@@ -126,10 +131,8 @@ normal `l₀`. -/
 private theorem eq_smul_of_dualBasis_apply_eq_zero {z : V} {l₀ : s}
     (hz : ∀ l, l ≠ l₀ → hi.dualBasis b l z = 0) : z = hi.dualBasis b l₀ z • i l₀ := by
   have := Fintype.ofFinite s
-  refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun x ↦ ?_
-  rw [← hi.sum_apply_mul_dualBasis_apply b x z, Finset.sum_eq_single l₀
-    (fun l _ hl ↦ by rw [hz l hl, mul_zero]) (by simp), hb, ContinuousLinearMap.map_smul,
-    smul_eq_mul, mul_comm]
+  conv_lhs => rw [← hi.sum_dualBasis_apply_smul b z]
+  rw [Finset.sum_eq_single l₀ (fun l _ hl ↦ by rw [hz l hl, zero_smul]) (by simp), hb]
 
 omit hb in
 /-- A nonzero vector with nonnegative coordinates along the edge directions has a positive one. -/
@@ -137,9 +140,9 @@ private theorem exists_dualBasis_apply_pos {z : V} (hz : z ≠ 0)
     (ht : ∀ m, 0 ≤ hi.dualBasis b m z) : ∃ m, 0 < hi.dualBasis b m z := by
   have := Fintype.ofFinite s
   by_contra! hneg
-  refine hz (SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun x ↦ ?_)
-  rw [← hi.sum_apply_mul_dualBasis_apply b x z]
-  exact Finset.sum_eq_zero fun k _ ↦ by rw [le_antisymm (hneg k) (ht k), mul_zero]
+  refine hz ?_
+  rw [← hi.sum_dualBasis_apply_smul b z]
+  exact Finset.sum_eq_zero fun k _ ↦ by rw [le_antisymm (hneg k) (ht k), zero_smul]
 
 /-- The edge directions of a corner are nonnegative on its normals. -/
 private theorem dualBasis_apply_nonneg (m : s) {k : N} (hk : k ∈ s) :
@@ -200,13 +203,8 @@ private theorem mem_of_apply_eq {v v' : StrongDual ℝ V} (hv : v ∈ Δ.extreme
   obtain ⟨hli', hsp', hloc'⟩ := hs v' hv'
   have hvΔ : v ∈ Δ := extremePoints_subset hv
   have hv'Δ : v' ∈ Δ := extremePoints_subset hv'
-  let b := Module.Basis.mk hli (by simp [hsp])
-  let b' := Module.Basis.mk hli' (by simp [hsp'])
-  have hb (k : s v) : b k = k := Module.Basis.mk_apply ..
-  have hb' (k : s v') : b' k = k := Module.Basis.mk_apply ..
-  have := hi.finite
-  have := Module.Finite.finite_basis b
-  have := Module.Finite.finite_basis b'
+  obtain ⟨_, b, hb⟩ := finite_and_exists_basis hi hli hsp
+  obtain ⟨_, b', hb'⟩ := finite_and_exists_basis hi hli' hsp'
   have := Fintype.ofFinite (s v')
   set w := hi.dualBasis b
   set w' := hi.dualBasis b'
@@ -315,10 +313,7 @@ private theorem exists_activeSet_eq_singleton [Finite ι]
   classical
   obtain ⟨v, hv, hn, hcj⟩ := hu j
   obtain ⟨hli, hsp, hloc⟩ := hs v hv
-  let b := Module.Basis.mk hli (by simp [hsp])
-  have hb (k : s v) : b k = k := Module.Basis.mk_apply ..
-  have := hi.finite
-  have := Module.Finite.finite_basis b
+  obtain ⟨_, b, hb⟩ := finite_and_exists_basis hi hli hsp
   let k : s v := ⟨u j, hn⟩
   -- The direction `σ` pairs to `0` with `u j` and to `1` with the other normals at `v`.
   let σ := (hi.dualBasis b).equivFun.symm fun m ↦ if m = k then 0 else 1
@@ -375,28 +370,6 @@ end Facets
 
 /-! ### Delzant polytopes from smooth corners -/
 
-/-- **A Delzant polytope determines its facet set.** Two finite sets of pairs (inward normal,
-support constant) whose Delzant presentations cut out the same polytope are equal. -/
-theorem eq_of_isDelzant_of_facetPolyhedron_eq (hi : IsIntegralLattice i) {F F' : Set (N × ℝ)}
-    (hF : F.Finite) (hF' : F'.Finite)
-    (hΔ : IsDelzant i (fun j : F ↦ (j : N × ℝ).1) fun j : F ↦ (j : N × ℝ).2)
-    (hΔ' : IsDelzant i (fun j : F' ↦ (j : N × ℝ).1) fun j : F' ↦ (j : N × ℝ).2)
-    (h : facetPolyhedron i (fun j : F ↦ (j : N × ℝ).1) (fun j : F ↦ (j : N × ℝ).2) =
-      facetPolyhedron i (fun j : F' ↦ (j : N × ℝ).1) fun j : F' ↦ (j : N × ℝ).2) :
-    F = F' := by
-  have := hF.to_subtype
-  have := hF'.to_subtype
-  obtain ⟨e, he⟩ := (hΔ.facetPolyhedron_eq_iff hi hΔ').1 h
-  have hval (j : F) : (e j : N × ℝ) = j := Prod.ext (he j).1 (he j).2
-  ext p
-  refine ⟨fun hp ↦ ?_, fun hp ↦ ?_⟩
-  · have := (e ⟨p, hp⟩).property
-    rwa [hval] at this
-  · have h₁ := hval (e.symm ⟨p, hp⟩)
-    have h₂ := (e.symm ⟨p, hp⟩).property
-    rw [Equiv.apply_symm_apply] at h₁
-    rwa [← h₁] at h₂
-
 /-- **Polytopes with smooth vertex cones are Delzant.** Let `Δ ⊆ V*` be a nonempty compact convex
 set with finitely many extreme points, such that near each extreme point `v` it is cut out by the
 inequalities `⟨v, n⟩ ≤ ⟨y, n⟩` for the members `n` of a `ℤ`-basis of the lattice. Then `Δ` is a
@@ -416,11 +389,10 @@ theorem existsUnique_isDelzant_facetPolyhedron_eq (hi : IsIntegralLattice i) (hn
     fun _ h _ ↦ h) fun hv ↦ ⟨∅, fun h ↦ (hv h).elim⟩
   -- The facet set: the inequalities of all corners.
   have hF : {p : N × ℝ | ∃ v ∈ Δ.extremePoints ℝ, p.1 ∈ s v ∧ p.2 = v (i p.1)}.Finite := by
-    have := hi.finite
     refine Set.Finite.subset (s := ⋃ v ∈ Δ.extremePoints ℝ, (fun n ↦ (n, v (i n))) '' s v)
       (hfin.biUnion fun v hv ↦ ?_) ?_
     · obtain ⟨hli, hsp, -⟩ := hs v hv
-      have := Module.Finite.finite_basis (Module.Basis.mk hli (by simp [hsp]))
+      have := (finite_and_exists_basis hi hli hsp).1
       exact (Set.toFinite (s v)).image _
     · rintro ⟨n, a⟩ ⟨v, hv, hn, ha⟩
       dsimp only at hn ha
@@ -451,30 +423,16 @@ theorem exists_isDelzant_facetPolyhedron_eq_iff (hi : IsIntegralLattice i) :
   rintro ⟨F, hF, hFΔ, rfl⟩
   have := hF.to_subtype
   have := hi.finiteDimensional
-  refine ⟨hFΔ.nonempty, hFΔ.isCompact, convex_facetPolyhedron, ?_, fun v hv ↦ ?_⟩
-  · -- A vertex is determined by its active facets, of which there are finitely many sets.
-    refine Set.Finite.of_finite_image (f := activeSet (facetPairing i fun j : F ↦ (j : N × ℝ).1)
-      fun j ↦ (j : N × ℝ).2) (Set.toFinite _) fun x hx y _ hxy ↦ ?_
-    have h := (mem_extremePoints_facetPolyhedron_iff.1 hx).2 (x - y) fun j hj ↦ by
-      have hj' := hxy ▸ hj
-      rw [mem_activeSet, facetPairing_apply] at hj hj'
-      rw [sub_apply, hj, hj', sub_self]
-    exact sub_eq_zero.1 h
-  · -- The corner at a vertex is cut out by its active facets, whose normals form a basis.
-    have hsv := hFΔ.isSmoothVertex v hv
-    have hinj : InjOn (fun j : F ↦ (j : N × ℝ).1)
-        (activeSet (facetPairing i fun j : F ↦ (j : N × ℝ).1) (fun j ↦ (j : N × ℝ).2) v) := by
-      obtain ⟨b, hb⟩ := isSmoothVertex_def.1 hsv
-      intro j hj j' hj' h
-      have hbj : b ⟨j, hj⟩ = b ⟨j', hj'⟩ := by rw [hb, hb]; exact h
-      exact congrArg Subtype.val (b.injective hbj)
-    obtain ⟨hli, hsp⟩ := isSmoothVertex_iff_linearIndepOn.1 hsv
-    refine ⟨_, (linearIndepOn_iff_image hinj).1 hli, hsp, ?_⟩
-    have hvP := extremePoints_subset hv
-    rw [facetPolyhedron_eq_polyhedron] at hvP
-    filter_upwards [eventually_mem_polyhedron_iff (continuous_facetPairing _ _) hvP] with y hy
-    rw [facetPolyhedron_eq_polyhedron, hy, forall_mem_image]
-    refine forall₂_congr fun j _ ↦ ?_
-    rw [map_sub, sub_nonneg, facetPairing_apply, facetPairing_apply]
+  refine ⟨hFΔ.nonempty, hFΔ.isCompact, convex_facetPolyhedron,
+    finite_extremePoints_facetPolyhedron, fun v hv ↦ ?_⟩
+  -- The corner at a vertex is cut out by its active facets, whose normals form a basis.
+  obtain ⟨hli, hsp⟩ := isSmoothVertex_iff_linearIndepOn.1 (hFΔ.isSmoothVertex v hv)
+  refine ⟨_, (linearIndepOn_iff_image hli.injOn).1 hli, hsp, ?_⟩
+  have hvP := extremePoints_subset hv
+  rw [facetPolyhedron_eq_polyhedron] at hvP
+  filter_upwards [eventually_mem_polyhedron_iff (continuous_facetPairing _ _) hvP] with y hy
+  rw [facetPolyhedron_eq_polyhedron, hy, forall_mem_image]
+  refine forall₂_congr fun j _ ↦ ?_
+  rw [map_sub, sub_nonneg, facetPairing_apply, facetPairing_apply]
 
 end TauCeti.Toric

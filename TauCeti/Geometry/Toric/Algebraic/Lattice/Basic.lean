@@ -478,6 +478,16 @@ theorem sum_apply_mul_dualBasis_apply [Fintype κ] (b : Basis κ ℤ N) (x : Str
   conv_rhs => rw [← (h.dualBasis b).sum_repr x]
   simp [dualBasis_repr]
 
+/-- A vector of `V` is the combination of the lattice vectors `i (b j)` with its values on the
+dual basis of `b` as coefficients. -/
+theorem sum_dualBasis_apply_smul [Fintype κ] (b : Basis κ ℤ N) (z : V) :
+    ∑ j, h.dualBasis b j z • i (b j) = z := by
+  have := h.finiteDimensional
+  classical
+  conv_rhs => rw [← (h.isBaseChange.basis b).sum_repr z]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simp [dualBasis, IsBaseChange.basis_apply]
+
 /-- **The `ℤ`-span of the dual basis is the weight lattice**: a functional lies in it exactly when
 it takes integer values on the lattice. In particular this span does not depend on `b`. -/
 theorem span_dualBasis (b : Basis κ ℤ N) : span ℤ (range (h.dualBasis b)) = weightLattice i := by
