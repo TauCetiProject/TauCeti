@@ -70,21 +70,13 @@ variable {n : ℕ} {F : Type} [Field F]
 `μₙ = KummerCoeff F n`. -/
 private def explicitTr (tr : continuousCohomology 2 (muNRep n F) ≃+ ZMod n) :
     H2 (AbsoluteGaloisGroup F) (KummerCoeff F n) ≃+ ZMod n :=
-  ((explicitMap2Equiv _ _ _ _ (absoluteGaloisGroupRestrictEquiv F)
-    (galRepOfZModModuleEquiv n F (KummerCoeff F n))
-    continuous_of_discreteTopology continuous_of_discreteTopology
-    (galRepOfZModModuleEquiv_smul n F (KummerCoeff F n))).trans
-    (muNRep n F).explicitH2AddEquivContinuousCohomologyOfDiscrete).trans tr
+  (galRepOfZModModuleH2Equiv n F (KummerCoeff F n)).trans tr
 
-/-- `explicitTr` applies the explicit pullback before `tr`. -/
+/-- `explicitTr` applies `galRepOfZModModuleH2Equiv` before `tr`. -/
 private theorem explicitTr_apply (tr : continuousCohomology 2 (muNRep n F) ≃+ ZMod n)
     (z : H2 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
-    explicitTr tr z = tr ((muNRep n F).explicitH2AddEquivContinuousCohomologyOfDiscrete
-      (explicitMap2 _ _ _ _ (absoluteGaloisGroupRestrictEquiv F)
-        (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toAddMonoidHom
-        continuous_of_discreteTopology (galRepOfZModModuleEquiv_smul n F (KummerCoeff F n)) z)) :=
-  congrArg (fun w => tr ((muNRep n F).explicitH2AddEquivContinuousCohomologyOfDiscrete w))
-    (explicitMap2Equiv_apply _ _ _ _ _ _ _ _ _ z)
+    explicitTr tr z = tr (galRepOfZModModuleH2Equiv n F (KummerCoeff F n) z) :=
+  (rfl)
 
 variable [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F]
   (hn : IsUnit (n : F)) (A : GalRep n F) [DiscreteTopology A.V] [Finite A.V]

@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Unramified
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Local
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Unramified
+import TauCeti.Algebra.Group.Subgroup.Ker
 
 /-!
 # Unramified local Tate duality for elliptic torsion and isogeny kernels
@@ -79,11 +80,11 @@ theorem mem_unramifiedTorsionCohomology_iff_forall_localTateWeilPairing_eq_zero
   exact mem_unramifiedH1_iff_forall_pairing_eq_zero p hpm
     (fun P : W.TorsionCoeff m ↦ AddSubgroup.torsionBy.nsmul P)
     (W.torsionCoeffWeilDual m hm) (W.torsionCoeffWeilDual_bijective m hm)
-    ((galRepOfZModModuleH2Equiv m K (KummerCoeff K m)).trans (h2MuEquivZMod K hm)).toAddMonoidHom
-    ((galRepOfZModModuleH2Equiv m K (KummerCoeff K m)).trans (h2MuEquivZMod K hm)).injective
+    (explicitH2MuEquivZMod K hm).toAddMonoidHom
+    (explicitH2MuEquivZMod K hm).injective
     (W.localTateWeilPairing m hm)
     (fun x y ↦ by rw [localTateWeilPairing_apply, torsionH1WeilPairing_eq_dualityMap1,
-      AddEquiv.coe_toAddMonoidHom, AddEquiv.trans_apply]) a
+      AddEquiv.coe_toAddMonoidHom]) a
 
 /-- **`H¹_ur(G_K, E[m])` is its own exact annihilator under `localTateWeilPairing`** over a finite
 extension `K` of `ℚ_p` when `p ∤ m`. -/
@@ -92,9 +93,8 @@ theorem unramifiedTorsionCohomology_eq_ker_compl₂_localTateWeilPairing (hpm : 
       ((W.localTateWeilPairing m (FinitePadicExtension.isUnit_natCast_of_not_dvd K p hpm)).compl₂
         (W.unramifiedTorsionCohomology m).subtype).ker := by
   ext a
-  simp only [W.mem_unramifiedTorsionCohomology_iff_forall_localTateWeilPairing_eq_zero p hpm a,
-    AddMonoidHom.mem_ker, AddMonoidHom.ext_iff, AddMonoidHom.compl₂_apply,
-    AddMonoidHom.zero_apply, Subtype.forall, AddSubgroup.subtype_apply]
+  rw [AddMonoidHom.mem_ker_compl₂_subtype_iff]
+  exact W.mem_unramifiedTorsionCohomology_iff_forall_localTateWeilPairing_eq_zero p hpm a
 
 end Padic
 
@@ -128,13 +128,11 @@ theorem mem_unramifiedKerCohomology_iff_forall_localTateKerWeilPairing_eq_zero
   simp only [unramifiedKerCohomology_eq_unramifiedH1]
   exact mem_unramifiedH1_iff_forall_pairing_eq_zero p hpn
     φ.degree_nsmul_kerCoeff_eq_zero (φ.kerCoeffWeilDual hn) (φ.kerCoeffWeilDual_bijective hn)
-    ((galRepOfZModModuleH2Equiv φ.degree K (KummerCoeff K φ.degree)).trans
-      (h2MuEquivZMod K hn)).toAddMonoidHom
-    ((galRepOfZModModuleH2Equiv φ.degree K (KummerCoeff K φ.degree)).trans
-      (h2MuEquivZMod K hn)).injective
+    (explicitH2MuEquivZMod K hn).toAddMonoidHom
+    (explicitH2MuEquivZMod K hn).injective
     (φ.localTateKerWeilPairing hn)
     (fun x y ↦ by rw [localTateKerWeilPairing_apply, kerH1WeilPairing_eq_dualityMap1,
-      AddEquiv.coe_toAddMonoidHom, AddEquiv.trans_apply]) a
+      AddEquiv.coe_toAddMonoidHom]) a
 
 /-- **`H¹_ur(G_K, E₁[φ])` is the exact left annihilator of `H¹_ur(G_K, E₂[φ̂])`** under
 `localTateKerWeilPairing` over a finite extension `K` of `ℚ_p` when `p ∤ deg φ`. -/
@@ -143,9 +141,8 @@ theorem unramifiedKerCohomology_eq_ker_compl₂_localTateKerWeilPairing (hpn : �
       ((φ.localTateKerWeilPairing (FinitePadicExtension.isUnit_natCast_of_not_dvd K p hpn)).compl₂
         φ.dual.unramifiedKerCohomology.subtype).ker := by
   ext a
-  simp only [φ.mem_unramifiedKerCohomology_iff_forall_localTateKerWeilPairing_eq_zero p hpn a,
-    AddMonoidHom.mem_ker, AddMonoidHom.ext_iff, AddMonoidHom.compl₂_apply,
-    AddMonoidHom.zero_apply, Subtype.forall, AddSubgroup.subtype_apply]
+  rw [AddMonoidHom.mem_ker_compl₂_subtype_iff]
+  exact φ.mem_unramifiedKerCohomology_iff_forall_localTateKerWeilPairing_eq_zero p hpn a
 
 /-- **Pointwise unramified duality for `E₂[φ̂]`.** Over a finite extension `K` of `ℚ_p` with
 `p ∤ deg φ`, a class in `H¹(G_K, E₂[φ̂])` is unramified if and only if every unramified class in
@@ -161,13 +158,11 @@ theorem mem_unramifiedKerCohomology_dual_iff_forall_localTateKerWeilPairing_eq_z
   simp only [unramifiedKerCohomology_eq_unramifiedH1]
   exact mem_unramifiedH1_right_iff_forall_pairing_eq_zero p hpn
     φ.degree_nsmul_kerCoeff_eq_zero (φ.kerCoeffWeilDual hn) (φ.kerCoeffWeilDual_bijective hn)
-    ((galRepOfZModModuleH2Equiv φ.degree K (KummerCoeff K φ.degree)).trans
-      (h2MuEquivZMod K hn)).toAddMonoidHom
-    ((galRepOfZModModuleH2Equiv φ.degree K (KummerCoeff K φ.degree)).trans
-      (h2MuEquivZMod K hn)).injective
+    (explicitH2MuEquivZMod K hn).toAddMonoidHom
+    (explicitH2MuEquivZMod K hn).injective
     (φ.localTateKerWeilPairing hn)
     (fun x y ↦ by rw [localTateKerWeilPairing_apply, kerH1WeilPairing_eq_dualityMap1,
-      AddEquiv.coe_toAddMonoidHom, AddEquiv.trans_apply]) b
+      AddEquiv.coe_toAddMonoidHom]) b
 
 /-- **`H¹_ur(G_K, E₂[φ̂])` is the exact right annihilator of `H¹_ur(G_K, E₁[φ])`** under
 `localTateKerWeilPairing` over a finite extension `K` of `ℚ_p` when `p ∤ deg φ`. -/
@@ -178,10 +173,9 @@ theorem unramifiedKerCohomology_dual_eq_ker_flip_compl₂_localTateKerWeilPairin
           (FinitePadicExtension.isUnit_natCast_of_not_dvd K p hpn)).flip.compl₂
         φ.unramifiedKerCohomology.subtype).ker := by
   ext b
-  simp only
-    [φ.mem_unramifiedKerCohomology_dual_iff_forall_localTateKerWeilPairing_eq_zero p hpn b,
-    AddMonoidHom.mem_ker, AddMonoidHom.ext_iff, AddMonoidHom.compl₂_apply,
-    AddMonoidHom.zero_apply, AddMonoidHom.flip_apply, Subtype.forall, AddSubgroup.subtype_apply]
+  rw [AddMonoidHom.mem_ker_compl₂_subtype_iff]
+  simp_rw [AddMonoidHom.flip_apply]
+  exact φ.mem_unramifiedKerCohomology_dual_iff_forall_localTateKerWeilPairing_eq_zero p hpn b
 
 end Padic
 

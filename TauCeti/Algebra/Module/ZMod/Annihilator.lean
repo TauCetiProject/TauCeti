@@ -53,8 +53,9 @@ theorem natCard_ker_compl₂_subtype_eq_index_zmod (he : Function.Bijective e)
   let E := Equiv.ofBijective e he
   have hmem (x : M) : x ∈ (e.compl₂ H.subtype).ker ↔
       E x ∈ (domRestrictHom H (ZMod n)).ker := by
-    simp only [mem_ker, AddMonoidHom.ext_iff, compl₂_apply, domRestrictHom_apply,
-      domRestrict_apply, E, Equiv.ofBijective_apply, AddSubgroup.subtype_apply]
+    rw [mem_ker_compl₂_subtype_iff, mem_ker, AddMonoidHom.ext_iff]
+    simp only [domRestrictHom_apply, domRestrict_apply, E, Equiv.ofBijective_apply, zero_apply,
+      Subtype.forall]
   rw [Nat.card_congr (Equiv.subtypeEquiv E hmem),
     Nat.card_congr (domRestrictHomKerEquiv (ZMod n) H).toEquiv,
     TauCeti.natCard_addMonoidHom_zmod]
@@ -81,8 +82,7 @@ theorem eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_zmod [Fini
   have : Finite (N →+ ZMod n) := Finite.of_injective _ DFunLike.coe_injective
   have : Finite M := Finite.of_injective e he.1
   have hle : U ≤ (e.compl₂ H.subtype).ker ↔ ∀ x ∈ U, ∀ y ∈ H, e x y = 0 := by
-    simp only [IsConcreteLE.le_iff, mem_ker, AddMonoidHom.ext_iff, compl₂_apply, zero_apply,
-      Subtype.forall, AddSubgroup.subtype_apply]
+    simp only [IsConcreteLE.le_iff, mem_ker_compl₂_subtype_iff]
   constructor
   · intro h
     exact ⟨hle.mp h.le, h ▸ e.natCard_ker_compl₂_subtype_mul_natCard_zmod he hN H⟩

@@ -35,6 +35,8 @@ unity `ζ`, the root identifies the trivial coefficients `ℤ/n` with `μₙ`, a
 ## Main definitions
 
 * `h2MuEquivZMod`: the normalized identification `H²(F, μₙ) ≃+ ZMod n`.
+* `explicitH2MuEquivZMod`: the normalized identification `H²(G_F, μₙ) ≃+ ZMod n` on explicit
+  cocycles (`TauCeti.ContCohomology.H2 (AbsoluteGaloisGroup F) (KummerCoeff F n)`).
 * `h2EquivZModOfMuNRepIso`: its transport `H²(F, T) ≃+ ZMod n` along a coefficient isomorphism
   `μₙ ≅ T`.
 * `h2FpEquivZMod`: the normalized identification `H²(F, ℤ/n) ≃+ ZMod n` with trivial
@@ -145,6 +147,19 @@ by `p`. The witness is the normalized equivalence `h2MuEquivZMod`. -/
 theorem h2MuEquivZMod_mixed [CharZero F] (n : ℕ) (hn : n ≠ 0) :
     Nonempty (continuousCohomology 2 (muNRep n F) ≃+ ZMod n) :=
   ⟨h2MuEquivZMod F (Nat.cast_ne_zero.mpr hn).isUnit⟩
+
+/-- **The normalized local invariant on explicit `H²(G_F, μₙ)`** (`KummerCoeff F n`), for `n`
+invertible in `F`, obtained by composing `h2MuEquivZMod` with `galRepOfZModModuleH2Equiv`. -/
+def explicitH2MuEquivZMod (hn : IsUnit (n : F)) :
+    ContCohomology.H2 (AbsoluteGaloisGroup F) (KummerCoeff F n) ≃+ ZMod n :=
+  (galRepOfZModModuleH2Equiv n F (KummerCoeff F n)).trans (h2MuEquivZMod F hn)
+
+/-- `explicitH2MuEquivZMod` applies `galRepOfZModModuleH2Equiv` before `h2MuEquivZMod`. -/
+theorem explicitH2MuEquivZMod_apply (hn : IsUnit (n : F))
+    (x : ContCohomology.H2 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
+    explicitH2MuEquivZMod F hn x =
+      h2MuEquivZMod F hn (galRepOfZModModuleH2Equiv n F (KummerCoeff F n) x) :=
+  (rfl)
 
 /-! ### Coefficients identified with roots of unity -/
 

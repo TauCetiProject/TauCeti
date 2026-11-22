@@ -90,7 +90,7 @@ theorem localTateWeilPairing_eq_zero_of_mem_unramifiedTorsionCohomology
     (ha : a ∈ W.unramifiedTorsionCohomology m) (hb : b ∈ W.unramifiedTorsionCohomology m) :
     W.localTateWeilPairing m hm a b = 0 := by
   rw [localTateWeilPairing_apply,
-    W.torsionH1WeilPairing_eq_zero_of_mem_unramifiedTorsionCohomology hm ha hb, map_zero, map_zero]
+    W.torsionH1WeilPairing_eq_zero_of_mem_unramifiedTorsionCohomology hm ha hb, map_zero]
 
 end UnramifiedLocalTate
 
@@ -258,7 +258,7 @@ theorem localTateKerWeilPairing_eq_zero_of_mem_unramifiedKerCohomology
     (ha : a ∈ φ.unramifiedKerCohomology) (hb : b ∈ φ.dual.unramifiedKerCohomology) :
     φ.localTateKerWeilPairing hn a b = 0 := by
   rw [localTateKerWeilPairing_apply,
-    φ.kerH1WeilPairing_eq_zero_of_mem_unramifiedKerCohomology hn ha hb, map_zero, map_zero]
+    φ.kerH1WeilPairing_eq_zero_of_mem_unramifiedKerCohomology hn ha hb, map_zero]
 
 end UnramifiedLocalTate
 

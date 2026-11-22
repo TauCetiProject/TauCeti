@@ -199,7 +199,7 @@ private theorem dualityMap_kummerCoeff_bijective_of_smul_eq_self [V.Normal] [V.F
         Function.Bijective (dualityMap2 (AbsoluteGaloisGroup K) A (KummerCoeff K n)) :=
   have : NeZero n := NeZero.of_neZero_natCast K (h := ⟨hn.ne_zero⟩)
   have e₂ : H2 (AbsoluteGaloisGroup K) (KummerCoeff K n) ≃+ ZMod n :=
-    (galRepOfZModModuleH2Equiv n K (KummerCoeff K n)).trans (h2MuEquivZMod K hn)
+    explicitH2MuEquivZMod K hn
   have : Finite (H1 (AbsoluteGaloisGroup K)
       (InternalHom (AbsoluteGaloisGroup K) A (KummerCoeff K n))) :=
     finite_H1_of_nsmul_eq_zero hn.ne_zero _ (InternalHom.nsmul_eq_zero_of_domain hA)

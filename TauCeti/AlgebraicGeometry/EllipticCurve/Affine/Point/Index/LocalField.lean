@@ -43,6 +43,8 @@ local Tate duality, which is stated over nonarchimedean local fields.
 
 * `WeierstrassCurve.index_range_nsmul_eq_natCard_torsionBy_mul_of_localField`: the index of
   `n E(K)` is `#E(K)[n] · #(𝒪[K] ⧸ n 𝒪[K])`.
+* `WeierstrassCurve.index_range_nsmul_eq_natCard_torsionBy_of_localField`: when `(n : 𝓀[K]) ≠ 0`,
+  the index of `n E(K)` is `#E(K)[n]`.
 * `index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual_mul_of_localField`, in the
   namespace `TauCeti.Isogeny.Hom`: the cokernel/kernel ratios of `f` and `f̂` multiply to
   `#(𝒪[K] ⧸ deg f · 𝒪[K])`.
@@ -91,6 +93,20 @@ theorem index_range_nsmul_eq_natCard_torsionBy_mul_of_localField (hn : (n : K) �
     ← TauCeti.natCard_ker_nsmulAddMonoidHom_eq_natCard_torsionBy, eqv.card_ker_nsmulAddMonoidHom]
   refine congrArg _ (Nat.card_congr (Ideal.quotientEquiv _ _ e ?_).toEquiv).symm
   rw [Ideal.map_span, Set.image_singleton, map_natCast]
+
+/-- **The prime-to-residue-characteristic local Kummer index over a nonarchimedean local field**:
+when `(n : 𝓀[K]) ≠ 0`, the residue-ring factor is `1`, so `#(E(K) ⧸ n E(K)) = #E(K)[n]`. -/
+theorem index_range_nsmul_eq_natCard_torsionBy_of_localField (hnres : (n : 𝓀[K]) ≠ 0) :
+    (nsmulAddMonoidHom (α := W.toAffine.Point) n).range.index =
+      Nat.card (Submodule.torsionBy ℤ W.toAffine.Point n) := by
+  have hnO : IsUnit (n : 𝒪[K]) :=
+    (IsLocalRing.residue_ne_zero_iff_isUnit (n : 𝒪[K])).mp (by simpa using hnres)
+  have hnK : (n : K) ≠ 0 := fun h ↦ hnO.ne_zero (Subtype.ext (by simpa using h))
+  have hcard : Nat.card (𝒪[K] ⧸ Ideal.span {(n : 𝒪[K])}) = 1 :=
+    have : Subsingleton (𝒪[K] ⧸ Ideal.span {(n : 𝒪[K])}) :=
+      Ideal.Quotient.subsingleton_iff.mpr (Ideal.span_singleton_eq_top.mpr hnO)
+    Nat.card_unique
+  rw [W.index_range_nsmul_eq_natCard_torsionBy_mul_of_localField hnK, hcard, mul_one]
 
 end WeierstrassCurve
 

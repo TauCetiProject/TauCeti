@@ -226,7 +226,7 @@ theorem _root_.DistribMulActionHom.explicitCoeff1_mem_unramifiedH1 {N : Type w} 
 
 /-- An equivariant additive homeomorphism of topological `G_K`-modules preserves and reflects
 unramified first cohomology classes. -/
-theorem explicitCoeff1Equiv_mem_unramifiedH1_iff {N : Type w} [AddCommGroup N]
+theorem _root_.AddEquiv.explicitCoeff1Equiv_mem_unramifiedH1_iff {N : Type w} [AddCommGroup N]
     [TopologicalSpace N] [IsTopologicalAddGroup N]
     [DistribMulAction (AbsoluteGaloisGroup K) N] [ContinuousSMul (AbsoluteGaloisGroup K) N]
     (e : M ≃+ N) (he : Continuous e) (he' : Continuous e.symm)
@@ -245,26 +245,18 @@ theorem explicitCoeff1Equiv_mem_unramifiedH1_iff {N : Type w} [AddCommGroup N]
 
 /-- A bijective equivariant homomorphism of discrete `G_K`-modules preserves and reflects
 unramified first cohomology classes. -/
+@[simp high]
 theorem _root_.DistribMulActionHom.explicitCoeff1_mem_unramifiedH1_iff
     [DiscreteTopology M] {N : Type w} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
     [DistribMulAction (AbsoluteGaloisGroup K) N] [ContinuousSMul (AbsoluteGaloisGroup K) N]
-    {f : M →+[AbsoluteGaloisGroup K] N} (hf : Function.Bijective f)
+    (f : M →+[AbsoluteGaloisGroup K] N) (hf : Function.Bijective f)
     {c : H1 (AbsoluteGaloisGroup K) M} :
     explicitCoeff1 (AbsoluteGaloisGroup K) M f continuous_of_discreteTopology c ∈
         unramifiedH1 K N ↔
       c ∈ unramifiedH1 K M := by
-  have h := explicitCoeff1Equiv_mem_unramifiedH1_iff (AddEquiv.ofBijective f hf)
+  rw [← explicitCoeff1Equiv_ofBijective_apply (AbsoluteGaloisGroup K) M hf c]
+  exact (AddEquiv.ofBijective f hf).explicitCoeff1Equiv_mem_unramifiedH1_iff
     continuous_of_discreteTopology continuous_of_discreteTopology (AddEquiv.ofBijective_smul hf)
-    (c := c)
-  have heq : explicitCoeff1Equiv (AbsoluteGaloisGroup K) M (AddEquiv.ofBijective f hf)
-      continuous_of_discreteTopology continuous_of_discreteTopology
-      (AddEquiv.ofBijective_smul hf) c =
-      explicitCoeff1 (AbsoluteGaloisGroup K) M f continuous_of_discreteTopology c := by
-    rw [explicitCoeff1Equiv_apply]
-    exact congrArg (fun φ : M →+[AbsoluteGaloisGroup K] N ↦
-        explicitCoeff1 (AbsoluteGaloisGroup K) M φ continuous_of_discreteTopology c)
-      (AddEquiv.ofBijective_toDistribMulActionHom hf)
-  rwa [heq] at h
 
 /-- **Functoriality of `unramifiedH1` along an extension of local fields.** For a valuative
 extension `L/K` of nonarchimedean local fields, a `K`-embedding `τ : Kˢ →ₐ[K] Lˢ` of separable

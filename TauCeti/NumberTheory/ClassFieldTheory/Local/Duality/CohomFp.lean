@@ -148,7 +148,7 @@ theorem natCard_cohomFp_one_absoluteGaloisGroup (hn : IsUnit (n : K)) :
       (InternalHom.zmodEquiv_smul fun _ _ ↦ rfl)).trans
       (MulEquiv.toAdditiveLeft (kummerIso K n hn)).symm
   let e₂ : H2 (AbsoluteGaloisGroup K) (KummerCoeff K n) ≃+ ZMod n :=
-    (galRepOfZModModuleH2Equiv n K (KummerCoeff K n)).trans (h2MuEquivZMod K hn)
+    explicitH2MuEquivZMod K hn
   rw [Nat.card_congr ((cohomFpLinearEquiv n (absoluteGaloisGroupRestrictEquiv K) 1).toAddEquiv.trans
       (cohomFpAddEquivH1 n _ fun _ _ ↦ rfl)).toEquiv,
     Nat.card_congr (Equiv.ofBijective _ (dualityMap1_kummerCoeff_bijective hn (ZMod n)

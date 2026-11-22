@@ -147,18 +147,15 @@ theorem tateDualityPairing_eq_explicitDualityPairing02 (hij : 0 + 2 = 2)
         (A.explicitH2AddEquivContinuousCohomologyOfDiscrete
           (explicitMap2 _ _ _ _ (absoluteGaloisGroupRestrictEquiv F) (AddMonoidHom.id A.V)
             continuous_of_discreteTopology (absoluteGaloisGroupRestrictEquiv_smul A) y)) =
-      tr ((muNRep n F).explicitH2AddEquivContinuousCohomologyOfDiscrete
-        (explicitMap2 _ _ _ _ (absoluteGaloisGroupRestrictEquiv F)
-          (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toAddMonoidHom
-          continuous_of_discreteTopology (galRepOfZModModuleEquiv_smul n F (KummerCoeff F n))
-          (explicitDualityPairing02 (AbsoluteGaloisGroup F) A.V (KummerCoeff F n) x y))) := by
+      tr (galRepOfZModModuleH2Equiv n F (KummerCoeff F n)
+        (explicitDualityPairing02 (AbsoluteGaloisGroup F) A.V (KummerCoeff F n) x y)) := by
   have hμ : ∀ (φ : (tateDual A).V) (a : A.V),
       (tateDualEquiv A).toAddMonoidHom φ a = (tateEvaluationPairing A).bil φ a := fun φ a =>
     (tateEvaluationPairing_bil A φ a).symm
   rw [tateDualityPairing_def, TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_apply,
     ← TopPairing.cup_zero_two_ofDiscreteModuleRestrictScalarsInt _ _ hμ,
     explicitAddEquiv_cup02, explicitDualityPairing02_def,
-    TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_apply]
+    galRepOfZModModuleH2Equiv_apply, TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_apply]
   exact congrArg (fun z => tr (ofDiscreteModuleRestrictScalarsIntEquiv (muNRep n F) 2
       (explicitH2AddEquivContinuousCohomology (Field.absoluteGaloisGroup F) (muNRep n F).V z)))
     (explicitMap2_explicitCup02 (H := Field.absoluteGaloisGroup F) (P := KummerCoeff F n)
@@ -191,17 +188,14 @@ theorem tateDualityPairing_eq_explicitDualityPairing11 [Finite A.V] (hij : 1 + 1
         (A.explicitH1AddEquivContinuousCohomologyOfDiscrete
           (explicitMap1 _ _ _ _ (absoluteGaloisGroupRestrictEquiv F) (AddMonoidHom.id A.V)
             continuous_of_discreteTopology (absoluteGaloisGroupRestrictEquiv_smul A) y)) =
-      tr ((muNRep n F).explicitH2AddEquivContinuousCohomologyOfDiscrete
-        (explicitMap2 _ _ _ _ (absoluteGaloisGroupRestrictEquiv F)
-          (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toAddMonoidHom
-          continuous_of_discreteTopology (galRepOfZModModuleEquiv_smul n F (KummerCoeff F n))
-          (explicitDualityPairing11 (AbsoluteGaloisGroup F) A.V (KummerCoeff F n) x y))) := by
+      tr (galRepOfZModModuleH2Equiv n F (KummerCoeff F n)
+        (explicitDualityPairing11 (AbsoluteGaloisGroup F) A.V (KummerCoeff F n) x y)) := by
   have hμ : ∀ (φ : (tateDual A).V) (a : A.V),
       (tateDualEquiv A).toAddMonoidHom φ a = (tateEvaluationPairing A).bil φ a := fun φ a =>
     (tateEvaluationPairing_bil A φ a).symm
   rw [tateDualityPairing_def,
     TopPairing.cup_one_one_explicitH1AddEquivContinuousCohomologyOfDiscrete _ _ hμ,
-    explicitDualityPairing11_def]
+    explicitDualityPairing11_def, galRepOfZModModuleH2Equiv_apply]
   exact congrArg (fun z => tr ((muNRep n F).explicitH2AddEquivContinuousCohomologyOfDiscrete z))
     (explicitMap2_explicitCup11 (H := Field.absoluteGaloisGroup F) (P := KummerCoeff F n)
       (μ := InternalHom.evalPairing _) (μ' := (tateDualEquiv A).toAddMonoidHom)
@@ -236,18 +230,15 @@ theorem tateDualityPairing_eq_explicitDualityPairing20 [Finite A.V] (hij : 2 + 0
             (explicitMap0 _ _ (absoluteGaloisGroupRestrictEquiv F :
                 Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F)
               (AddMonoidHom.id A.V) (absoluteGaloisGroupRestrictEquiv_smul A) y))) =
-      tr ((muNRep n F).explicitH2AddEquivContinuousCohomologyOfDiscrete
-        (explicitMap2 _ _ _ _ (absoluteGaloisGroupRestrictEquiv F)
-          (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toAddMonoidHom
-          continuous_of_discreteTopology (galRepOfZModModuleEquiv_smul n F (KummerCoeff F n))
-          (explicitDualityPairing20 (AbsoluteGaloisGroup F) A.V (KummerCoeff F n) x y))) := by
+      tr (galRepOfZModModuleH2Equiv n F (KummerCoeff F n)
+        (explicitDualityPairing20 (AbsoluteGaloisGroup F) A.V (KummerCoeff F n) x y)) := by
   have hμ : ∀ (φ : (tateDual A).V) (a : A.V),
       (tateDualEquiv A).toAddMonoidHom φ a = (tateEvaluationPairing A).bil φ a := fun φ a =>
     (tateEvaluationPairing_bil A φ a).symm
   rw [tateDualityPairing_def, TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_apply,
     ← TopPairing.cup_two_zero_ofDiscreteModuleRestrictScalarsInt _ _ hμ,
     explicitAddEquiv_cup20, explicitDualityPairing20_def,
-    TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_apply]
+    galRepOfZModModuleH2Equiv_apply, TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_apply]
   exact congrArg (fun z => tr (ofDiscreteModuleRestrictScalarsIntEquiv (muNRep n F) 2
       (explicitH2AddEquivContinuousCohomology (Field.absoluteGaloisGroup F) (muNRep n F).V z)))
     (explicitMap2_explicitCup20 (G := AbsoluteGaloisGroup F)

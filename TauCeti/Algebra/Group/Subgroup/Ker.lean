@@ -28,6 +28,9 @@ pointwise inverse of a homomorphism into a commutative group.
 * `MonoidHom.ker_compl₂_compr₂_of_injective`, `AddMonoidHom.ker_compl₂_compr₂_of_injective`:
   postcomposing a bimultiplicative or biadditive pairing with an injective homomorphism on its
   target preserves the kernel of precomposition in the second slot.
+* `MonoidHom.mem_ker_compl₂_subtype_iff`, `AddMonoidHom.mem_ker_compl₂_subtype_iff`:
+  membership in the kernel of a pairing restricted on its second slot to a subgroup is pointwise
+  triviality against that subgroup.
 * `Subgroup.sup_hom_ext`: homomorphisms out of a join are determined by their restrictions.
 -/
 
@@ -99,6 +102,16 @@ theorem ker_compl₂_compr₂_of_injective {A B C D Q : Type*} [Group A] [MulOne
   ext a
   simp only [mem_ker, DFunLike.ext_iff, compl₂_apply, compr₂_apply, one_apply]
   exact forall_congr' fun q ↦ map_eq_one_iff i hi
+
+/-- Membership in the kernel of a bimultiplicative pairing restricted on the second slot to a
+subgroup `H` is pointwise triviality against `H`. -/
+@[to_additive /-- Membership in the kernel of a biadditive pairing restricted on the second slot
+to an additive subgroup `H` is pointwise triviality against `H`. -/]
+theorem mem_ker_compl₂_subtype_iff {A B C : Type*} [Group A] [Group B] [CommMonoid C]
+    (f : A →* B →* C) (H : Subgroup B) {a : A} :
+    a ∈ (f.compl₂ H.subtype).ker ↔ ∀ b ∈ H, f a b = 1 := by
+  simp only [mem_ker, DFunLike.ext_iff, compl₂_apply, one_apply, Subtype.forall,
+    Subgroup.subtype_apply]
 
 end MonoidHom
 

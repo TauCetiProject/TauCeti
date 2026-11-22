@@ -119,7 +119,7 @@ theorem natCard_H2_eq_natCard_H0_internalHom (hn : IsUnit (n : F))
       Nat.card (ContCohomology.H0 (AbsoluteGaloisGroup F)
         (InternalHom (AbsoluteGaloisGroup F) M (KummerCoeff F n))) := by
   have : NeZero n := NeZero.of_neZero_natCast F (h := ⟨hn.ne_zero⟩)
-  let e₂ := (galRepOfZModModuleH2Equiv n F (KummerCoeff F n)).trans (h2MuEquivZMod F hn)
+  let e₂ := explicitH2MuEquivZMod F hn
   rw [Nat.card_congr (Equiv.ofBijective _ (dualityMap2_kummerCoeff_bijective hn M hM)),
     e₂.natCard_addMonoidHom_zmod]
   intro x

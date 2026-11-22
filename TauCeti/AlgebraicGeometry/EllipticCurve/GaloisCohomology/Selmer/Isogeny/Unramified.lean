@@ -237,24 +237,6 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   (τ : ∀ v : HeightOneSpectrum R,
     SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
 
-/-- Global-instance version of
-`mem_selmerGroup_iff_mem_unramifiedOutsideKerCohomology_and_forall_kerRes_mem_localCondition`
-when all residue fields `R ⧸ v.asIdeal` are finite. -/
-theorem
-  mem_selmerGroup_iff_unramifiedOutsideKerCohomology_and_forall_kerRes_mem_localCondition_of_finite
-    {S : Set (HeightOneSpectrum R)}
-    (hgood₁ : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W₁⁄(v.adicCompletion K)),
-      (integralModel 𝒪[v.adicCompletion K] (W₁⁄(v.adicCompletion K))).IsElliptic)
-    (hgood₂ : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W₂⁄(v.adicCompletion K)),
-      (integralModel 𝒪[v.adicCompletion K] (W₂⁄(v.adicCompletion K))).IsElliptic)
-    (hS : ∀ v ∉ S, (φ.degree : R) ∉ v.asIdeal)
-    {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} :
-    c ∈ φ.selmerGroup τ ↔
-      c ∈ φ.unramifiedOutsideKerCohomology τ S (fun _ _ ↦ inferInstance) ∧
-        ∀ v ∈ S, φ.kerRes (τ v) c ∈ (φ.selmerStructure τ).localCondition v :=
-  φ.mem_selmerGroup_iff_mem_unramifiedOutsideKerCohomology_and_forall_kerRes_mem_localCondition τ
-    (fun _ _ ↦ inferInstance) hgood₁ hgood₂ hS
-
 variable (R) in
 /-- **There is a finite set of primes containing `S` outside which every `φ`-Selmer class is
 unramified**, whenever `deg φ` is nonzero in `K`. -/

@@ -58,19 +58,18 @@ end LinearMap
 
 namespace Submodule
 
-variable {n : ℕ} [NeZero n] {M N : Type*} [AddCommGroup M] [AddCommGroup N]
-  [Module (ZMod n) M] [Module (ZMod n) N] [Finite M]
-  (S : Submodule (ZMod n) M) (B : M →ₗ[ZMod n] N →ₗ[ZMod n] ZMod n)
+section OrthogonalBilin
 
-omit [NeZero n] in
-/-- The kernel of the restricted flipped biadditive pairing attached to a `ℤ/n`-bilinear form
-`P : A →ₗ[ZMod n] B' →ₗ[ZMod n] ZMod n` and a submodule `S ≤ A` has the same carrier as
+/-- The kernel of the restricted flipped biadditive pairing attached to a sesquilinear pairing
+`P : M₁ →ₛₗ[I₁] M₂ →ₛₗ[I₂] M` and a submodule `S ≤ M₁` has the same carrier as
 `S.orthogonalBilin P`. -/
 theorem ker_compl₂_toAddSubgroup_eq_orthogonalBilin
-    {A B' : Type*} [AddCommGroup A] [AddCommGroup B'] [Module (ZMod n) A] [Module (ZMod n) B']
-    (S : Submodule (ZMod n) A) (P : A →ₗ[ZMod n] B' →ₗ[ZMod n] ZMod n) :
-    (((AddMonoidHom.toZModLinearMapEquiv n).symm.toAddMonoidHom.comp
-        P.flip.toAddMonoidHom).compl₂ S.toAddSubgroup.subtype).ker =
+    {R R₁ R₂ M M₁ M₂ : Type*} [CommSemiring R] [CommRing R₁] [CommRing R₂]
+    [AddCommMonoid M] [Module R M] [AddCommGroup M₁] [Module R₁ M₁]
+    [AddCommGroup M₂] [Module R₂ M₂] {I₁ : R₁ →+* R} {I₂ : R₂ →+* R}
+    (S : Submodule R₁ M₁) (P : M₁ →ₛₗ[I₁] M₂ →ₛₗ[I₂] M) :
+    ((LinearMap.toAddMonoidHom'.comp P.flip.toAddMonoidHom).compl₂
+        S.toAddSubgroup.subtype).ker =
       (S.orthogonalBilin P).toAddSubgroup := by
   ext y
   simp only [AddMonoidHom.mem_ker, AddMonoidHom.ext_iff, AddMonoidHom.compl₂_apply,
@@ -78,13 +77,18 @@ theorem ker_compl₂_toAddSubgroup_eq_orthogonalBilin
   -- Forgetting linearity and flipping the pairing preserve its pointwise values.
   rfl
 
+end OrthogonalBilin
+
+variable {n : ℕ} [NeZero n] {M N : Type*} [AddCommGroup M] [AddCommGroup N]
+  [Module (ZMod n) M] [Module (ZMod n) N] [Finite M]
+  (S : Submodule (ZMod n) M) (B : M →ₗ[ZMod n] N →ₗ[ZMod n] ZMod n)
+
 omit [Finite M] in
 /-- The orthogonal complement has `Nat.card` equal to that of the quotient if the right
 adjoint of the pairing is bijective. Neither module need be finite. -/
 theorem natCard_orthogonalBilin_zmod (hB : Function.Bijective B.flip) :
     Nat.card (S.orthogonalBilin B) = Nat.card (M ⧸ S) := by
-  let e := (AddMonoidHom.toZModLinearMapEquiv n).symm.toAddMonoidHom.comp
-    B.flip.toAddMonoidHom
+  let e := LinearMap.toAddMonoidHom'.comp B.flip.toAddMonoidHom
   have he : Function.Bijective e :=
     (AddMonoidHom.toZModLinearMapEquiv n).symm.bijective.comp hB
   have h := e.natCard_ker_compl₂_subtype_eq_index_zmod he
@@ -122,8 +126,7 @@ is the original submodule. The pairing is flipped on the second step. -/
 @[simp]
 theorem orthogonalBilin_flip_orthogonalBilin_zmod [B.IsPerfPair] :
     (S.orthogonalBilin B).orthogonalBilin B.flip = S := by
-  let e := (AddMonoidHom.toZModLinearMapEquiv n).symm.toAddMonoidHom.comp
-    B.flip.toAddMonoidHom
+  let e := LinearMap.toAddMonoidHom'.comp B.flip.toAddMonoidHom
   have he : Function.Bijective e :=
     (AddMonoidHom.toZModLinearMapEquiv n).symm.bijective.comp
       (LinearMap.IsPerfPair.bijective_right B)

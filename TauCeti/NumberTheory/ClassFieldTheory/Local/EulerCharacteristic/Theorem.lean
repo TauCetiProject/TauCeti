@@ -156,7 +156,7 @@ theorem natCard_H1_eq_natCard_H0_mul_natCard_H2_of_not_dvd
 /-- **Prime-to-`p` local Euler characteristic on explicit cohomology (by exponent).** If `M` is a
 finite discrete `G_K`-module over a finite extension `K` of `ℚ_p` killed by `n` with `p ∤ n`, then
 `#H¹(G_K, M) = #H⁰(G_K, M) · #H²(G_K, M)`. -/
-theorem natCard_H1_eq_natCard_H0_mul_natCard_H2_of_not_dvd_exponent
+theorem natCard_H1_eq_natCard_H0_mul_natCard_H2_of_not_dvd_of_nsmul_eq_zero
     {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
     [IsNonarchimedeanLocalField K] [FinitePadicExtension K p]
     {n : ℕ} (hpn : ¬ p ∣ n)
