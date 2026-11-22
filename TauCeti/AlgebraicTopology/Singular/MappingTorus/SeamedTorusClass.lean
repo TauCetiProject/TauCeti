@@ -14,13 +14,13 @@ public import TauCeti.Topology.MappingTorus.Section
 Let `φ : F ≃ₜ F` be a homeomorphism with mapping torus `Y_φ`. A `φ`-seamed path `γ`, a path with
 `γ 1 = φ (γ 0)`, is a section of the projection `Y_φ → S¹`
 (`TauCeti.SeamedPath.sectionHomeomorph`), and so a free loop of `Y_φ`
-(`TauCeti.SeamedPath.sectionLoop`). A loop `s ↦ γ_s` of seamed paths therefore sweeps out the torus
-`(s, t) ↦ mk φ (γ_s t) t` in the mapping torus. This is a torus in `Y_φ`, not in general the image
+(`TauCeti.SeamedPath.sectionLoop`). A loop `t ↦ γ_t` of seamed paths therefore sweeps out the torus
+`(s, t) ↦ mk φ (γ_t s) s` in the mapping torus. This is a torus in `Y_φ`, not in general the image
 of a torus or of a sphere in `F`.
 
 The **torus class** of a loop of seamed paths (`TauCeti.SeamedPath.torusClassHom`) is the class of
 this torus in `H₂(Y_φ; ℤ)`: the torus class `TauCeti.freeLoopTorusClassHom` of the loop of free
-loops `s ↦ sectionLoop φ γ_s`. It is a homomorphism on the fundamental group of the space of
+loops `t ↦ sectionLoop φ γ_t`. It is a homomorphism on the fundamental group of the space of
 seamed paths. In the Floer theory of a symplectomorphism `φ`, whose configuration space is the
 space of `φ`-seamed paths, the symplectic area and the first Chern number are evaluated on these
 classes; they play the role that the classes of spheres play for the contractible free loops of
@@ -50,9 +50,9 @@ namespace TauCeti.SeamedPath
 variable {F : Type} [TopologicalSpace F] (φ : F ≃ₜ F)
 
 /-- **The torus class of a loop of seamed paths**: the homomorphism
-`π₁(SeamedPath φ, γ) → H₂(Y_φ; ℤ)` sending a loop `s ↦ γ_s` of `φ`-seamed paths at `γ` to the class
-of the torus `(s, t) ↦ mk φ (γ_s t) t` that it sweeps out in the mapping torus. It is the torus
-class `TauCeti.freeLoopTorusClassHom` of the loop of free loops `s ↦ sectionLoop φ γ_s`. -/
+`π₁(SeamedPath φ, γ) → H₂(Y_φ; ℤ)` sending a loop `t ↦ γ_t` of `φ`-seamed paths at `γ` to the class
+of the torus `(s, t) ↦ mk φ (γ_t s) s` that it sweeps out in the mapping torus. It is the torus
+class `TauCeti.freeLoopTorusClassHom` of the loop of free loops `t ↦ sectionLoop φ γ_t`. -/
 def torusClassHom (γ : SeamedPath φ) :
     Additive (HomotopyGroup (Fin 1) (SeamedPath φ) γ) →+
       ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj

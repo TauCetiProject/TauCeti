@@ -7,9 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.PathComponent
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.SeamedTorusClass
-public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Bijection
-public import TauCeti.AlgebraicTopology.UniversalCover.Classification.DeckGroup
-public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Regular.Torsor
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.AdditiveKer
 
 /-!
 # The reference-cylinder cover of a space of seamed paths
@@ -48,7 +46,9 @@ points of a fibre being the period class of the loop relating them
 
 This is the analogue, for seamed paths, of the cap cover of the contractible free loops
 (`TauCeti.Floer.CapCover`): for `φ = id` the seamed paths are the free loops, and the reference
-cylinder replaces the cap.
+cylinder replaces the cap. Both are covers attached to the kernel of an onto homomorphism
+`π₁ → Γ`, and their deck groups, actions and fibre torsors come from that generic construction
+(`TauCeti.UniversalCover.deckAdditiveKerEquiv`).
 
 ## Main definitions
 
@@ -188,32 +188,13 @@ theorem seamedPeriodClass_surjective : Function.Surjective (seamedPeriodClass γ
 
 /-! ### The reference-cylinder cover -/
 
-/-- The period homomorphism onto the period group, read on the fundamental group of the path
-component of `γ₀`. -/
-private def fundamentalGroupPeriodHom :
-    FundamentalGroup (pathComponent γ₀) (pathComponentSelf γ₀) →*
-      Multiplicative (seamedPeriodGroup γ₀ Iω Ic) :=
-  (AddMonoidHom.toMultiplicativeRight (seamedPeriodClass γ₀ Iω Ic)).comp
-    HomotopyGroup.pi1MulEquivFundamentalGroup.symm.toMonoidHom
-
-private theorem fundamentalGroupPeriodHom_pi1MulEquivFundamentalGroup
-    (a : HomotopyGroup (Fin 1) (pathComponent γ₀) (pathComponentSelf γ₀)) :
-    fundamentalGroupPeriodHom γ₀ (Iω := Iω) (Ic := Ic)
-        (HomotopyGroup.pi1MulEquivFundamentalGroup a) =
-      Multiplicative.ofAdd (seamedPeriodClass γ₀ Iω Ic (Additive.ofMul a)) := by
-  simp [fundamentalGroupPeriodHom]
-
-private theorem fundamentalGroupPeriodHom_surjective :
-    Function.Surjective (fundamentalGroupPeriodHom γ₀ (Iω := Iω) (Ic := Ic)) :=
-  (seamedPeriodClass_surjective γ₀).comp HomotopyGroup.pi1MulEquivFundamentalGroup.symm.surjective
-
 variable (Iω Ic) in
 /-- **The subgroup of the reference-cylinder cover**: the classes in the fundamental group of the
 path component of `γ₀` of the loops of seamed paths on whose swept-out torus both transgressions
 vanish, the kernel of the period homomorphism. -/
 def referenceCylinderCoverSubgroup :
     Subgroup (FundamentalGroup (pathComponent γ₀) (pathComponentSelf γ₀)) :=
-  (fundamentalGroupPeriodHom γ₀ (Iω := Iω) (Ic := Ic)).ker
+  additiveKerSubgroup (pathComponentSelf γ₀) (seamedPeriodClass γ₀ Iω Ic)
 
 /-- A class of the fundamental group of the path component of `γ₀` lies in the subgroup of the
 reference-cylinder cover exactly when its period class vanishes. -/
@@ -223,15 +204,13 @@ theorem mem_referenceCylinderCoverSubgroup_iff
     g ∈ referenceCylinderCoverSubgroup γ₀ Iω Ic ↔
       seamedPeriodHom γ₀ Iω Ic
         (Additive.ofMul (HomotopyGroup.pi1MulEquivFundamentalGroup.symm g)) = 0 := by
-  obtain ⟨a, rfl⟩ := HomotopyGroup.pi1MulEquivFundamentalGroup.surjective g
-  rw [referenceCylinderCoverSubgroup, MonoidHom.mem_ker,
-    fundamentalGroupPeriodHom_pi1MulEquivFundamentalGroup, ofAdd_eq_one,
-    MulEquiv.symm_apply_apply, ← ZeroMemClass.coe_eq_zero, coe_seamedPeriodClass]
+  rw [referenceCylinderCoverSubgroup, mem_additiveKerSubgroup_iff, ← ZeroMemClass.coe_eq_zero,
+    coe_seamedPeriodClass]
 
 /-- The subgroup of the reference-cylinder cover is normal, being the kernel of a
 homomorphism. -/
 instance referenceCylinderCoverSubgroup_normal : (referenceCylinderCoverSubgroup γ₀ Iω Ic).Normal :=
-  MonoidHom.normal_ker _
+  additiveKerSubgroup_normal _ _
 
 variable (Iω Ic) in
 /-- **The reference-cylinder cover** of the path component `C` of a seamed path `γ₀`: the
@@ -271,8 +250,7 @@ the deck group of the cover attached to the kernel of a surjective homomorphism 
 target. -/
 def referenceCylinderCoverDeckEquiv :
     Multiplicative (seamedPeriodGroup γ₀ Iω Ic) ≃* deck (referenceCylinderCoverProj γ₀ Iω Ic) :=
-  (deckSubgroupQuotientProjKerEquivOfSurjective _ (fundamentalGroupPeriodHom γ₀)
-    (fundamentalGroupPeriodHom_surjective γ₀)).symm
+  deckAdditiveKerEquiv _ (seamedPeriodClass γ₀ Iω Ic) (seamedPeriodClass_surjective γ₀)
 
 /-- The deck transformation of the period class of a loop `a` of seamed paths acts on the
 reference-cylinder cover through the action of `a` on the universal cover of the path component
@@ -284,11 +262,8 @@ theorem referenceCylinderCoverDeckEquiv_seamedPeriodClass_apply_mk
     (referenceCylinderCoverDeckEquiv γ₀ Iω Ic (Multiplicative.ofAdd
         (seamedPeriodClass γ₀ Iω Ic (Additive.ofMul a)))).val
         (Quotient.mk'' e) =
-      Quotient.mk'' (HomotopyGroup.pi1MulEquivFundamentalGroup a • e) := by
-  rw [← fundamentalGroupPeriodHom_pi1MulEquivFundamentalGroup, referenceCylinderCoverDeckEquiv]
-  -- the cover is attached to `referenceCylinderCoverSubgroup γ₀ Iω Ic`, which is by definition the
-  -- kernel of `fundamentalGroupPeriodHom γ₀`
-  exact deckSubgroupQuotientProjKerEquivOfSurjective_symm_apply_mk _ _ _ _ e
+      Quotient.mk'' (HomotopyGroup.pi1MulEquivFundamentalGroup a • e) :=
+  deckAdditiveKerEquiv_apply_mk _ _ (seamedPeriodClass_surjective γ₀) a e
 
 /-- The period group acts on the reference-cylinder cover through its deck group. -/
 noncomputable instance instAddActionReferenceCylinderCover :
@@ -323,8 +298,8 @@ theorem seamedPeriodClass_vadd_mk
     (e : UniversalCover (pathComponentSelf γ₀)) :
     seamedPeriodClass γ₀ Iω Ic (Additive.ofMul a) +ᵥ
         (Quotient.mk'' e : ReferenceCylinderCover γ₀ Iω Ic) =
-      Quotient.mk'' (HomotopyGroup.pi1MulEquivFundamentalGroup a • e) := by
-  rw [vadd_def, referenceCylinderCoverDeckEquiv_seamedPeriodClass_apply_mk]
+      Quotient.mk'' (HomotopyGroup.pi1MulEquivFundamentalGroup a • e) :=
+  deckAdditiveKerEquiv_vadd_mk _ _ (seamedPeriodClass_surjective γ₀) a e
 
 /-- **Each fibre of the reference-cylinder cover is a torsor under the period group** `Γ`: the
 deck group `Γ` of the regular cover acts simply transitively on every fibre. -/
@@ -362,9 +337,8 @@ theorem ReferenceCylinderCover.vsub_mk {γ : pathComponent γ₀}
     (h₂ : (Quotient.mk'' e : ReferenceCylinderCover γ₀ Iω Ic) ∈
       referenceCylinderCoverProj γ₀ Iω Ic ⁻¹' {γ}) :
     (⟨_, h₁⟩ : referenceCylinderCoverProj γ₀ Iω Ic ⁻¹' {γ}) -ᵥ ⟨_, h₂⟩ =
-      seamedPeriodClass γ₀ Iω Ic (Additive.ofMul a) := by
-  rw [← eq_vadd_iff_vsub_eq]
-  exact Subtype.ext (by rw [coe_vadd_fiber, seamedPeriodClass_vadd_mk])
+      seamedPeriodClass γ₀ Iω Ic (Additive.ofMul a) :=
+  deckAdditiveKerEquiv_vsub_mk _ _ (seamedPeriodClass_surjective γ₀) a e h₁ h₂
 
 end Covering
 
