@@ -185,17 +185,23 @@ theorem isSeparable_completionEmbedding [Algebra.IsSeparable F F'] (y : F') :
     letI := P.completionExtensionAlgebra P' hP
     IsSeparable P.Completion (P'.completionEmbedding y) := by
   let _ := P.completionExtensionAlgebra P' hP
-  have hsep : ((minpoly F y).map P.completionEmbedding.toRingHom).Separable :=
-    Polynomial.Separable.map (Algebra.IsSeparable.isSeparable F y)
-  refine hsep.of_dvd (minpoly.dvd P.Completion (P'.completionEmbedding y) ?_)
-  have hcomp :
-      (algebraMap P.Completion P'.Completion).comp P.completionEmbedding.toRingHom =
-        (P'.completionEmbedding : F' →+* P'.Completion).comp (algebraMap F F') := by
-    ext x
-    simp [algebraMap_completionExtensionAlgebra]
-  rw [Polynomial.aeval_def, Polynomial.eval₂_map, hcomp,
-    ← AlgHom.coe_toRingHom (f := P'.completionEmbedding), ← Polynomial.hom_eval₂,
-    ← Polynomial.aeval_def, minpoly.aeval, map_zero]
+  let _ := P.completionAlgebra
+  let _ := P'.completionAlgebra
+  let _ : Algebra F P'.Completion :=
+    haveI := WithVal.uniformContinuousConstSMul_of_isScalarTower F P'.valuation
+    UniformSpace.Completion.algebra (WithVal P'.valuation) F
+  have hFP' (x : F) :
+      algebraMap F P'.Completion x = P'.completionEmbedding (algebraMap F F' x) := by
+    rw [UniformSpace.Completion.algebraMap_def, WithVal.algebraMap_right_apply,
+      P'.completionEmbedding_apply]
+  have : IsScalarTower F F' P'.Completion := .of_algebraMap_eq fun x ↦ by
+    rw [hFP', algebraMap_completion]
+  have : IsScalarTower F P.Completion P'.Completion := .of_algebraMap_eq fun x ↦ by
+    rw [hFP', algebraMap_completion, algebraMap_completionExtensionAlgebra,
+      completionExtension_completionEmbedding]
+  simpa only [IsScalarTower.coe_toAlgHom', algebraMap_completion] using
+    ((Algebra.IsSeparable.isSeparable F y).map
+      (IsScalarTower.toAlgHom F F' P'.Completion) (RingHom.injective _)).tower_top P.Completion
 
 section Integers
 

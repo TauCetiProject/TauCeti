@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Different.Completion.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.Semilocal
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # Semilocal decomposition of the different under completion
@@ -55,25 +56,14 @@ theorem differentIdeal_integralCompletionSemilocal (P : Place k F) :
         (integralCompletionSemilocalEquiv k' F' P) =
       Ideal.pi fun Q : {P' : Place k' F' // P'.restrict k F = P} ↦
         differentIdeal P.completionPlace.integers Q.val.completionPlace.integers := by
-  let incR : integralClosure P.integers F' →ₐ[P.integers]
-      P.completionPlace.integers ⊗[P.integers] integralClosure P.integers F' :=
-    Algebra.TensorProduct.includeRight
-  let f : integralClosure P.integers F' →+*
-      ∀ Q : {P' : Place k' F' // P'.restrict k F = P}, Q.val.completionPlace.integers :=
-    (integralCompletionSemilocalEquiv k' F' P).toRingEquiv.toRingHom.comp incR.toRingHom
-  have hcomp (Q : {P' : Place k' F' // P'.restrict k F = P}) :
-      ((differentIdeal P.integers (integralClosure P.integers F')).map f).map (Pi.evalRingHom _ Q) =
-        differentIdeal P.completionPlace.integers Q.val.completionPlace.integers := by
-    rw [Ideal.map_map, ← map_differentIdeal_eq_differentIdeal_completionIntegers P Q.val Q.property]
-    congr 1; ext x; simp [f, incR]
-  have hf : ((differentIdeal P.integers (integralClosure P.integers F')).map incR).map
-        (integralCompletionSemilocalEquiv k' F' P) =
-      (differentIdeal P.integers (integralClosure P.integers F')).map f :=
-    Ideal.map_map incR.toRingHom (integralCompletionSemilocalEquiv k' F' P).toRingEquiv.toRingHom
-  rw [hf]
-  exact Ideal.piOrderIso.injective <| funext fun Q ↦ by
-    dsimp [Ideal.piOrderIso]
-    rw [Ideal.map_evalRingHom_pi, hcomp Q]
+  refine (Ideal.map_map
+    (Algebra.TensorProduct.includeRight :
+      integralClosure P.integers F' →ₐ[P.integers]
+        P.completionPlace.integers ⊗[P.integers] integralClosure P.integers F').toRingHom
+    (integralCompletionSemilocalEquiv k' F' P).toRingEquiv.toRingHom).trans
+    (Ideal.map_eq_pi_iff.mpr fun Q ↦ ?_)
+  rw [← map_differentIdeal_eq_differentIdeal_completionIntegers P Q.val Q.property]
+  congr 1; ext x; simp
 
 end TauCeti.Place
 

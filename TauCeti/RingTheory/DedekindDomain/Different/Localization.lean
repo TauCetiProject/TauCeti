@@ -180,32 +180,10 @@ theorem extended_dual_one_eq_dual_one [IsDomain S] :
         (FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)) =
       FractionalIdeal.dual Rₘ K (1 : FractionalIdeal Sₘ⁰ L) := by
   intro _ _ hMS _ _ _ _
-  let h : S⁰ ≤ Submonoid.comap (algebraMap S Sₘ) Sₘ⁰ :=
-    nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
-      (IsLocalization.injective Sₘ hMS)
-  -- `extended` takes the inclusion proof explicitly, so proof irrelevance identifies the
-  -- canonical proof in the statement with the named proof `h` used throughout this proof.
-  change FractionalIdeal.extended L h
-      (FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)) = _
-  apply FractionalIdeal.coeToSubmodule_injective
-  refine (FractionalIdeal.coeToSubmodule_extended_eq_span L h _).trans ?_
-  have hmap : IsLocalization.map L (algebraMap S Sₘ) h = RingHom.id L := by
-    apply IsFractionRing.ringHom_ext (A := S)
-    intro s
-    rw [IsLocalization.map_eq, RingHom.id_apply, IsScalarTower.algebraMap_apply S Sₘ L]
-  rw [hmap]
-  simp only [RingHom.id_apply, Set.image_id']
-  calc
-    Submodule.span Sₘ
-        ((↑(FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)) : Submodule S L) : Set L) =
-        Submodule.span Sₘ (Submodule.traceDual R K (1 : Submodule S L) : Set L) :=
-      congrArg (Submodule.span Sₘ)
-        (congrArg (fun N : Submodule S L ↦ (N : Set L))
-          FractionalIdeal.coe_dual_one_of_isDomain)
-    _ = Submodule.traceDual Rₘ K (1 : Submodule Sₘ L) :=
-      span_traceDual_one_eq_traceDual_one (M := M)
-    _ = (↑(FractionalIdeal.dual Rₘ K (1 : FractionalIdeal Sₘ⁰ L)) : Submodule Sₘ L) :=
-      (FractionalIdeal.coe_dual_one_of_isDomain (R := Rₘ) (S := Sₘ)).symm
+  exact extended_dual_one_eq_dual_one_of_span (algebraMap S Sₘ) (IsLocalization.injective Sₘ hMS)
+    (RingHom.id L) (fun s ↦ IsScalarTower.algebraMap_apply S Sₘ L s)
+    (by simpa only [RingHom.id_apply, Set.image_id'] using
+      (span_traceDual_one_eq_traceDual_one (M := M)).symm)
 
 variable [IsDedekindDomain S]
 
@@ -237,16 +215,11 @@ theorem map_differentIdeal_eq_differentIdeal :
   let _ : IsFractionRing Sₘ L :=
     IsFractionRing.isFractionRing_of_isDomain_of_isLocalization
       (Algebra.algebraMapSubmonoid S M) Sₘ L
-  have hSSₘ : Function.Injective (algebraMap S Sₘ) := IsLocalization.injective Sₘ hMS
-  let h : S⁰ ≤ Submonoid.comap (algebraMap S Sₘ) Sₘ⁰ :=
-    nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _ hSSₘ
-  rw [← FractionalIdeal.coeIdeal_inj (K := L),
-    ← FractionalIdeal.extended_coeIdeal_eq_map (K := L) L h,
-    ← FractionalIdeal.extendedHom'_apply]
-  rw [coeIdeal_differentIdeal R K L S, coeIdeal_differentIdeal Rₘ K L Sₘ, map_inv₀,
-    FractionalIdeal.extendedHom'_apply,
-    extended_dual_one_eq_dual_one (R := R) (Rₘ := Rₘ) (S := S) (Sₘ := Sₘ)
-      (K := K) (L := L) (M := M)]
+  exact map_differentIdeal_eq_of_extended_dual_one_eq
+    (K := K) (L := L) (K' := K) (L' := L)
+    (IsLocalization.injective Sₘ hMS)
+    (extended_dual_one_eq_dual_one (R := R) (Rₘ := Rₘ) (S := S) (Sₘ := Sₘ)
+      (K := K) (L := L) (M := M))
 
 include K L in
 /-- **Localization preserves the coefficients of the different ideal**: at a nonzero prime `P` of

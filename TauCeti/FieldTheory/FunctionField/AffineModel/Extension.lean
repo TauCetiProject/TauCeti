@@ -207,6 +207,26 @@ noncomputable def centerIntegralClosure :
 theorem centerIntegralClosure_def : centerIntegralClosure k F P' =
     P'.center (algebraMap_mem_integers_of_mem_integralClosure k F P') := (rfl)
 
+/-- Membership in the centre of `P'` on the local model `𝒪'_P` is characterized by `v_{P'} < 1`. -/
+@[simp]
+theorem mem_centerIntegralClosure_asIdeal
+    {r : integralClosure ((P'.restrict k F).integers) F'} :
+    r ∈ (centerIntegralClosure k F P').asIdeal ↔
+      P'.valuation (algebraMap (integralClosure ((P'.restrict k F).integers) F') F' r) < 1 :=
+  P'.mem_center_asIdeal (algebraMap_mem_integers_of_mem_integralClosure k F P')
+
+/-- The adic valuation of the centre of `P'` on the local model `𝒪'_P` equals `P'.valuation`. -/
+@[simp]
+theorem valuation_centerIntegralClosure [Algebra.IsSeparable F F'] :
+    (centerIntegralClosure k F P').valuation F' = P'.valuation :=
+  P'.valuation_center (algebraMap_mem_integers_of_mem_integralClosure k F P')
+
+/-- The valuation ring of `P'` is the localization of the local model `𝒪'_P` at the centre of
+`P'`. -/
+theorem valuationSubringAtPrime_centerIntegralClosure_eq_integers [Algebra.IsSeparable F F'] :
+    HeightOneSpectrum.valuationSubringAtPrime F' (centerIntegralClosure k F P') = P'.integers :=
+  P'.valuationSubringAtPrime_eq_integers (algebraMap_mem_integers_of_mem_integralClosure k F P')
+
 /-- The centre of `P'` on the local model lies over the maximal ideal of `𝒪_P`, so the residue
 extension of the local model is read at the residue field of `P`. -/
 instance centerIntegralClosure_liesOver_maximalIdeal :

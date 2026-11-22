@@ -22,7 +22,12 @@ and the completed valuation ring `𝒪̂_{P'}` is a free module of the same rank
 the integral closure of `𝒪̂_P` in `F̂'_{P'}` (`TauCeti.Place.isIntegralClosure_completionIntegers`,
 adapting `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_isIntegralClosure` in
 `TauCeti/RingTheory/DedekindDomain/AdicValuation/IntegralClosure.lean`). Moreover, the image of
-`F'` generates `F̂'_{P'}` over `F̂_P` (`TauCeti.Place.adjoin_range_completionEmbedding_eq_top`).
+`F'` generates `F̂'_{P'}` over `F̂_P` (`TauCeti.Place.adjoin_range_completionEmbedding_eq_top`), and
+separability of `F' / F` passes to `F̂'_{P'} / F̂_P` (`TauCeti.Place.isSeparable_completion`, the
+place-theoretic counterpart of
+`IsDedekindDomain.HeightOneSpectrum.isSeparable_adicCompletion_of_isSeparable` in
+`TauCeti/RingTheory/DedekindDomain/AdicValuation/Semilocal.lean`, proved directly from the embedded
+generators rather than via surjectivity of the tensor-product projection).
 Neither separability nor perfectness is assumed, of `F' / F`, of the residue extension, or of the
 constants: an inseparable residue extension is counted with its full degree. This identifies the
 completion at a place as a finite extension of complete discrete valuation rings, the setting in
@@ -67,6 +72,10 @@ completed extension.
 ## References
 
 * J.-P. Serre, *Local Fields*, GTM 67, Springer, 1979, Chapter II, §§2–3.
+* `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_isIntegralClosure` in
+  `TauCeti/RingTheory/DedekindDomain/AdicValuation/IntegralClosure.lean` and
+  `IsDedekindDomain.HeightOneSpectrum.isSeparable_adicCompletion_of_isSeparable` in
+  `TauCeti/RingTheory/DedekindDomain/AdicValuation/Semilocal.lean`.
 -/
 
 public section
@@ -527,7 +536,13 @@ theorem adjoin_range_completionEmbedding_eq_top :
   exact eq_top_iff.mpr fun x _ ↦ hle Submodule.mem_top
 
 /-- **Completion preserves separability**: for an integral separable extension `F' / F` with finite
-residue extension at `P' ∣ P`, `F̂'_{P'} / F̂_P` is separable (with arbitrary residue fields). -/
+residue extension at `P' ∣ P`, `F̂'_{P'} / F̂_P` is separable (with arbitrary residue fields).
+
+Formal counterpart of
+`IsDedekindDomain.HeightOneSpectrum.isSeparable_adicCompletion_of_isSeparable` in
+`TauCeti/RingTheory/DedekindDomain/AdicValuation/Semilocal.lean`, which transports separability via
+surjectivity of the tensor-product projection; here the place-completion proof works directly from
+the embedded generators `Set.range P'.completionEmbedding`. -/
 theorem isSeparable_completion [Algebra.IsSeparable F F'] :
     letI := P.completionExtensionAlgebra P' hP
     Algebra.IsSeparable P.Completion P'.Completion := by

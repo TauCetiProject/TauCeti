@@ -116,6 +116,7 @@ variable (P : Place k F) (P' : Place k' F') (hP : P'.restrict k F = P)
 
 /-- Completion preserves the full relative degree `f(P' ∣ P)`, including any inseparable
 residue factor. -/
+@[simp]
 theorem relativeDegree_completionPlace :
     letI := P.completionExtensionAlgebra P' hP
     letI := (P'.restrictConstants k).instAlgebraCompletion

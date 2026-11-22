@@ -25,8 +25,6 @@ ideal, `TauCeti.multiplicity_differentIdeal_eq_multiplicity_under`.
 
 * `TauCeti.Place.differentExponent_eq_multiplicity_center`: the different exponent is the
   coefficient of the different ideal of an affine model at the centre of the place.
-* `TauCeti.Place.differentExponent_restrictConstants`: restricting the constant field of `P'` to
-  `k` leaves `d(P' ∣ P)` unchanged.
 
 ## References
 
@@ -112,30 +110,12 @@ theorem differentExponent_eq_multiplicity_center (P' : Place k' F')
   have hunder : (centerIntegralClosure k F P').asIdeal.under C = (P'.center hC).asIdeal := by
     ext c
     rw [Ideal.mem_under]
-    simp only [centerIntegralClosure_def, mem_center_asIdeal]
+    simp only [mem_centerIntegralClosure_asIdeal, mem_center_asIdeal]
     rw [← IsScalarTower.algebraMap_apply C Cₘ F']
   rw [differentExponent_def, ← hunder]
   exact multiplicity_differentIdeal_eq_multiplicity_under (R := B) (Rₘ := Bₘ) (S := C)
     (Sₘ := Cₘ) (K := F) (L := F') (M := p.asIdeal.primeCompl)
     (centerIntegralClosure k F P').ne_bot
-
-variable (k F) in
-/-- Restricting the constant field of `P'` to `k` does not change its different exponent over
-`F / k`. -/
-@[simp]
-theorem differentExponent_restrictConstants (P' : Place k' F') :
-    differentExponent k F (P'.restrictConstants k) = differentExponent k F P' := by
-  let B := (P'.restrict k F).integers
-  let C := integralClosure B F'
-  have : Module.IsTorsionFree B C := IsIntegralClosure.isTorsionFree B F'
-  have hC := algebraMap_mem_integers_of_mem_integralClosure k F P'
-  have hC₀ : ∀ c : C, algebraMap C F' c ∈ (P'.restrictConstants k).integers := fun c ↦ by
-    simpa only [integers_restrictConstants] using hC c
-  rw [differentExponent_eq_multiplicity_center (B := B) (C := C) (P'.restrictConstants k) hC₀,
-    differentExponent_eq_multiplicity_center (B := B) (C := C) P' hC]
-  congr 2
-  ext c
-  simp [mem_center_asIdeal]
 
 end Place
 

@@ -48,6 +48,8 @@ fields, and nothing needs `k` perfect.
 
 ## Main results
 
+* `TauCeti.Place.differentExponent_restrictConstants`: restricting the constant field of `P'` to
+  `k` leaves `d(P' ∣ P)` unchanged.
 * `TauCeti.Place.pow_dvd_differentIdeal_iff_le_differentExponent`: the characteristic property of
   the different exponent, `𝔓'^n ∣ differentIdeal 𝒪_P 𝒪'_P ↔ n ≤ d(P' ∣ P)`.
 * `TauCeti.Place.ramificationIdx_le_differentExponent_add_one`: **Dedekind's different theorem**
@@ -183,6 +185,33 @@ theorem differentExponent_def : differentExponent k F P' =
     multiplicity (centerIntegralClosure k F P').asIdeal (differentIdeal
       ((P'.restrict k F).integers) (integralClosure ((P'.restrict k F).integers) F')) := (rfl)
 
+private theorem differentExponent_eq_multiplicity_of_restrict_eq {k₀ : Type*} [Field k₀]
+    [Algebra k₀ F'] [Algebra k k₀] [IsScalarTower k k₀ F']
+    {Q : Place k₀ F'} {P : Place k F} (hP : Q.restrict k F = P)
+    (hQ : ∀ c : integralClosure P.integers F', algebraMap _ F' c ∈ Q.integers) :
+    differentExponent k F Q =
+      multiplicity (Q.center hQ).asIdeal
+        (differentIdeal P.integers (integralClosure P.integers F')) := by
+  subst hP
+  rw [differentExponent_def]
+  congr 2
+  ext c
+  simp [mem_center_asIdeal]
+
+/-- Restricting the constant field of `P'` to `k` does not change its different exponent over
+`F / k`. -/
+@[simp]
+theorem differentExponent_restrictConstants :
+    differentExponent k F (P'.restrictConstants k) = differentExponent k F P' := by
+  rw [differentExponent_eq_multiplicity_of_restrict_eq k F (restrict_restrictConstants k F P')
+      fun c ↦ by
+        rw [integers_restrictConstants]
+        exact algebraMap_mem_integers_of_mem_integralClosure k F P' c,
+    differentExponent_def]
+  congr 2
+  ext c
+  simp [mem_center_asIdeal]
+
 /-- **The characteristic property of the different exponent**: the `n`-th power of the centre of
 `P'` divides the different ideal of the local model exactly when `n ≤ d(P' ∣ P)`. -/
 theorem pow_dvd_differentIdeal_iff_le_differentExponent {n : ℕ} :
@@ -253,8 +282,7 @@ theorem differentExponent_eq_zero_iff_formallyUnramified :
     AlgEquiv.ofRingEquiv
       (f := RingEquiv.subringCongr
         (congrArg ValuationSubring.toSubring
-          ((congrArg (HeightOneSpectrum.valuationSubringAtPrime F')
-            (centerIntegralClosure_def k F P')).trans (P'.valuationSubringAtPrime_eq_integers hB))))
+          (valuationSubringAtPrime_centerIntegralClosure_eq_integers k F P')))
       fun _ ↦ rfl
   have : IsLocalization q.asIdeal.primeCompl P'.integers :=
     IsLocalization.isLocalization_of_algEquiv q.asIdeal.primeCompl eB

@@ -81,7 +81,7 @@ private theorem valuation_eq_centerBase (P' : Place k' F') :
 
 private theorem valuation_eq_centerIntegralClosure (P' : Place k' F') :
     P'.valuation = (centerIntegralClosure k F P').valuation F' :=
-  centerIntegralClosure_def k F P' ▸ (P'.valuation_center _).symm
+  (valuation_centerIntegralClosure k F P').symm
 
 omit [FiniteDimensional F F'] [Algebra.IsSeparable F F'] in
 private theorem isTorsionFree_integers [Algebra.IsIntegral F F'] (P' : Place k' F') :

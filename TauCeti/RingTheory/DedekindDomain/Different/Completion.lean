@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.DedekindDomain.Different.Discriminant
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 import Mathlib.RingTheory.Flat.EquationalCriterion
 import TauCeti.RingTheory.DedekindDomain.Different.DualFamily
+import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.NormTrace.BaseChange
 
 /-!
@@ -184,24 +185,11 @@ theorem differentIdeal_adicCompletionIntegersSemilocal :
       Ideal.pi fun u ↦
         differentIdeal (v.adicCompletionIntegers K) (u.val.adicCompletionIntegers L) := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
-  let f : B →+* ∀ u : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
-      u.val.adicCompletionIntegers L :=
-    (v.adicCompletionIntegersSemilocalEquiv K B L).toRingEquiv.toRingHom.comp
-      (Algebra.TensorProduct.includeRight : B →ₐ[R] _).toRingHom
-  have hcomp (u : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
-      ((differentIdeal R B).map f).map (Pi.evalRingHom _ u) =
-        differentIdeal (v.adicCompletionIntegers K) (u.val.adicCompletionIntegers L) := by
-    rw [Ideal.map_map, differentIdeal_adicCompletionIntegers_eq_map (K := K) (L := L) v u.val]
-    congr 1; ext x; simp [f]
-  have hf : ((differentIdeal R B).map
-      (Algebra.TensorProduct.includeRight : B →ₐ[R] v.adicCompletionIntegers K ⊗[R] B)).map
-      (v.adicCompletionIntegersSemilocalEquiv K B L) = (differentIdeal R B).map f :=
-    Ideal.map_map (Algebra.TensorProduct.includeRight : B →ₐ[R] _).toRingHom
-      (v.adicCompletionIntegersSemilocalEquiv K B L).toRingEquiv.toRingHom
-  rw [hf]
-  exact Ideal.piOrderIso.injective <| funext fun u ↦ by
-    dsimp [Ideal.piOrderIso]
-    rw [Ideal.map_evalRingHom_pi, hcomp u]
+  refine (Ideal.map_map (Algebra.TensorProduct.includeRight : B →ₐ[R] _).toRingHom
+    (v.adicCompletionIntegersSemilocalEquiv K B L).toRingEquiv.toRingHom).trans
+    (Ideal.map_eq_pi_iff.mpr fun u ↦ ?_)
+  rw [differentIdeal_adicCompletionIntegers_eq_map (K := K) (L := L) v u.val]
+  congr 1; ext x; simp
 
 include K L in
 /-- **Completion preserves the different exponent**: the multiplicity of the maximal ideal of `𝒪_w`

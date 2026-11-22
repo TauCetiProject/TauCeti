@@ -24,7 +24,9 @@ element, and its annihilator to the annihilator of that ideal. The principal-ide
 to ideals extended from a common commutative semiring, without assuming the algebras commutative.
 
 If `t ∈ I` and `r • I ≤ (t)`, then `I` extends to the principal ideal `(f t)` along every ring
-homomorphism `f` for which `f r` is a unit.
+homomorphism `f` for which `f r` is a unit. Extending an ideal along a homomorphism into a finite
+product equals a product ideal `Ideal.pi J` exactly when each coordinate projection sends it to
+`J i`.
 -/
 
 public section
@@ -105,6 +107,16 @@ theorem map_eq_span_singleton_of_isUnit {B B' F : Type*} [CommSemiring B] [Semir
     ((span_singleton_le_iff_mem _).mpr (mem_map_of_mem f ht))
   have := mem_map_of_mem f (h (Submodule.smul_mem_pointwise_smul i r I hi))
   rwa [map_span, Set.image_singleton, smul_eq_mul, map_mul, unit_mul_mem_iff_mem _ hr] at this
+
+/-- Extending an ideal `I` along a ring homomorphism `f` into a finite product equals `Ideal.pi J`
+if and only if each coordinate projection carries `I` to `J i`. -/
+theorem map_eq_pi_iff {ι S : Type*} {R : ι → Type*} [Finite ι] [Semiring S]
+    [∀ i, Semiring (R i)] {f : S →+* ∀ i, R i} {I : Ideal S} {J : ∀ i, Ideal (R i)} :
+    I.map f = pi J ↔ ∀ i, I.map ((Pi.evalRingHom R i).comp f) = J i :=
+  ⟨fun h i ↦ by rw [← map_map, h, map_evalRingHom_pi], fun h ↦
+    piOrderIso.injective <| funext fun i ↦ by
+      dsimp [piOrderIso]
+      rw [map_evalRingHom_pi, ← h i, map_map]⟩
 
 end Ideal
 
