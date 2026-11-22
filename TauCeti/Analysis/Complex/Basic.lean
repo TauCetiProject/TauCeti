@@ -63,6 +63,16 @@ The real coordinates `equivRealProdCLM : ℂ ≃L[ℝ] ℝ × ℝ` do not increa
 disc of radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)` of `ℝ × ℝ`
 (`Complex.dist_equivRealProdCLM_le`).
 
+A point of the closed disc of centre `c` and radius `ρ` has real part in `[c.re - ρ, c.re + ρ]`
+(`Complex.re_mem_Icc_of_norm_sub_le`, and `Complex.re_mem_Icc_of_normSq_sub_le` for the disc
+written as `normSq (w - c) ≤ ρ ^ 2` with `0 ≤ ρ`). Two complex numbers whose real parts have the
+same absolute value compare in norm as their imaginary parts compare in absolute value
+(`Complex.norm_le_norm_iff_abs_im_le_abs_im_of_abs_re_eq`). Hence moving up the vertical ray from a
+point `z` of the closed upper half-plane does not decrease the norm
+(`Complex.norm_le_norm_add_ofReal_mul_I`), and every point `z + s * I` of the vertical line
+through such a `z` has norm at least `(‖z‖ + s) / 2`
+(`Complex.norm_add_div_two_le_norm_add_ofReal_mul_I`).
+
 On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at least `1`
 (`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
 
@@ -353,6 +363,56 @@ theorem dist_equivRealProdCLM_le (y : ℂ) (z₀ : ℝ × ℝ) :
     dist (equivRealProdCLM y) z₀ ≤ dist y (equivRealProdCLM.symm z₀) := by
   conv_lhs => rw [← equivRealProdCLM.apply_symm_apply z₀]
   exact (lipschitz_equivRealProd.dist_le_mul y _).trans (by simp)
+
+/-- A point of the closed disc of centre `c` and radius `ρ` has real part in
+`[c.re - ρ, c.re + ρ]`. -/
+theorem re_mem_Icc_of_norm_sub_le (w : ℂ) {c : ℂ} {ρ : ℝ} (h : ‖w - c‖ ≤ ρ) :
+    w.re ∈ Set.Icc (c.re - ρ) (c.re + ρ) := by
+  -- the real part is `1`-Lipschitz, so it maps `closedBall c ρ` into `closedBall c.re ρ`
+  rw [← Real.closedBall_eq_Icc]
+  simpa only [RCLike.re_to_complex, NNReal.coe_one, one_mul] using
+    (RCLike.lipschitzWith_re (K := ℂ)).mapsTo_closedBall c ρ
+      (by rwa [Metric.mem_closedBall, dist_eq])
+
+/-- A point `w` with `normSq (w - c) ≤ ρ ^ 2`, for `0 ≤ ρ`, has real part in
+`[c.re - ρ, c.re + ρ]`. -/
+theorem re_mem_Icc_of_normSq_sub_le (w : ℂ) {c : ℂ} {ρ : ℝ} (hρ : 0 ≤ ρ)
+    (h : normSq (w - c) ≤ ρ ^ 2) : w.re ∈ Set.Icc (c.re - ρ) (c.re + ρ) :=
+  re_mem_Icc_of_norm_sub_le w <| by
+    rw [norm_def, ← Real.sqrt_sq hρ]
+    exact Real.sqrt_le_sqrt h
+
+/-- Two complex numbers whose real parts have the same absolute value compare in norm as their
+imaginary parts compare in absolute value. -/
+theorem norm_le_norm_iff_abs_im_le_abs_im_of_abs_re_eq (z : ℂ) {w : ℂ} (h : |z.re| = |w.re|) :
+    ‖z‖ ≤ ‖w‖ ↔ |z.im| ≤ |w.im| := by
+  rw [← sq_le_sq₀ (norm_nonneg z) (norm_nonneg w), ← sq_le_sq]
+  -- `‖·‖ ^ 2 = re ^ 2 + im ^ 2`, and the squares of the real parts agree
+  have hz := sq_norm_sub_sq_re z
+  have hw := sq_norm_sub_sq_re w
+  rw [← sq_abs z.re, h, sq_abs] at hz
+  constructor <;> intro <;> linarith
+
+/-- For `z` in the closed upper half-plane, every point `z + s * I` (`s ≥ 0`) of the vertical ray
+going upward from `z` is at least as far from the origin as `z`. -/
+theorem norm_le_norm_add_ofReal_mul_I (z : ℂ) (hz : 0 ≤ z.im) {s : ℝ} (hs : 0 ≤ s) :
+    ‖z‖ ≤ ‖z + (s : ℂ) * I‖ := by
+  have him : (z + (s : ℂ) * I).im = z.im + s := by simp
+  exact (norm_le_norm_iff_abs_im_le_abs_im_of_abs_re_eq z (by simp)).2
+    (abs_le_abs (by linarith) (by linarith))
+
+/-- For `z` in the closed upper half-plane and every real `s`, the point `z + s * I` of the
+vertical line through `z` is at distance at least `(‖z‖ + s) / 2` from the origin. -/
+theorem norm_add_div_two_le_norm_add_ofReal_mul_I (z : ℂ) (hz : 0 ≤ z.im) (s : ℝ) :
+    (‖z‖ + s) / 2 ≤ ‖z + (s : ℂ) * I‖ := by
+  rcases le_total 0 s with hs | hs
+  · -- `s` is at most the imaginary part `z.im + s` of `z + s * I`, hence at most its norm
+    have h : s ≤ ‖z + (s : ℂ) * I‖ := le_trans (by simpa using hz) (im_le_norm _)
+    linarith [norm_le_norm_add_ofReal_mul_I z hz hs]
+  · -- for `s ≤ 0`, the triangle inequality gives `‖z‖ ≤ ‖z + s * I‖ - s`
+    have h := norm_le_norm_add_norm_sub' z (z + (s : ℂ) * I)
+    have hsI : ‖z - (z + (s : ℂ) * I)‖ = -s := by simp [abs_of_nonpos hs]
+    linarith [norm_nonneg (z + (s : ℂ) * I)]
 
 /-- For `z` in the closed right half-plane (`0 ≤ z.re`), `1 + z` has real part at least `1`. -/
 theorem one_le_re_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ (1 + z).re := by
