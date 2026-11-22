@@ -168,7 +168,7 @@ theorem eq_C_mul_X_pow_mul_tprod_of_order_taylor_eq {ι : Type*} (hf : f.IsEntir
       ((∏' i, IsEntire.polynomialHom (1 - Polynomial.C (a i)⁻¹ * Polynomial.X) :
         IsEntire.subring K) : K⟦X⟧) := by
   obtain ⟨g₁, hg₁, hg₁_const, hfg₁, hord_nz⟩ :=
-    hf.exists_eq_C_mul_X_pow_mul_constantCoeff_one hf0
+    hf.exists_eq_C_mul_X_pow_mul_with_constantCoeff_eq_one hf0
   have hord (x : K) : (_root_.PowerSeries.taylor x g₁).order = {i : ι | a i = x}.encard := by
     by_cases hx0 : x = 0
     · subst hx0

@@ -17,15 +17,16 @@ import TauCeti.Analysis.Normed.Ring.Basic
 
 An ultrametric seminormed ring is a nonarchimedean topological ring: its open balls about zero
 are open additive subgroups. In an ultrametric seminormed ring with `‖1‖ = 1`, the closed unit
-ball is an open subring. In an ultrametric seminormed ring, a finite product, a convergent
-`HasProd` limit, or the totalized infinite product `∏' i, f i` (which defaults to `1` for
-nonmultipliable families) of elements each within `B` of `1` (`0 ≤ B ≤ 1`) or strictly within `ε`
-of `1` (`0 < ε ≤ 1`) satisfies the same bound, and over a complete ultrametric seminormed
-commutative ring `∏' i, (1 + f i)` or `∏' i, (1 - f i)` converges whenever `f` tends to `0` along
-the cofinite filter. A series `∑_{n ≥ 1} f(qⁿ w)` of terms bounded by their
-arguments is bounded by its first argument `q w`, and it depends on `w` in a `‖q‖`-Lipschitz way
-when its terms are `1`-Lipschitz. The rational functions `t / (1 - t)²`, `t / (1 - t)³` and
-`t² / (1 - t)³` are Lipschitz on the open unit ball of an ultrametric field.
+ball is an open subring. In an ultrametric seminormed ring, the product of two elements each
+within `B` of `1` (`0 ≤ B ≤ 1`) or strictly within `ε` of `1` (`0 < ε ≤ 1`) satisfies the same
+bound; over a commutative ultrametric seminormed ring, the same bound holds for finite
+`Finset.prod` products, convergent `HasProd` limits, and totalized infinite products `∏' i, f i`
+(which default to `1` for nonmultipliable families), and when complete `∏' i, (1 + f i)` or
+`∏' i, (1 - f i)` converges whenever `f` tends to `0` along the cofinite filter. A series
+`∑_{n ≥ 1} f(qⁿ w)` of terms bounded by their arguments is bounded by its first argument `q w`,
+and it depends on `w` in a `‖q‖`-Lipschitz way when its terms are `1`-Lipschitz. The rational
+functions `t / (1 - t)²`, `t / (1 - t)³` and `t² / (1 - t)³` are Lipschitz on the open unit ball
+of an ultrametric field.
 
 Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized. When
 `‖1‖ = 1`, arbitrarily large natural numbers have norm exactly one. Since the forward differences
@@ -63,18 +64,21 @@ of a monomial are divisible by `k!`, their norms carry the factor `‖k!‖`.
   `1`-Lipschitz on the unit circle of an ultrametric field.
 * `TauCeti.one_le_norm_one_sub_of_norm_ne_one`: subtracting an element whose norm is not one
   from one gives norm at least one.
-* `TauCeti.norm_mul_sub_one_le`, `TauCeti.norm_prod_sub_one_le` and
-  `TauCeti.norm_tprod_sub_one_le`: finite products and totalized infinite products `∏' i, f i`
-  (which default to `1` for nonmultipliable families) of elements within `B` of `1` (`0 ≤ B ≤ 1`)
-  remain within `B` of `1` (see `HasProd.norm_sub_one_le` for actual limits).
-* `TauCeti.norm_mul_sub_one_lt`, `TauCeti.norm_prod_sub_one_lt` and
-  `TauCeti.norm_tprod_sub_one_lt`: finite products and totalized infinite products `∏' i, f i`
-  (which default to `1` for nonmultipliable families) of elements strictly within `ε` of `1`
-  (`0 < ε ≤ 1`) remain strictly within `ε` of `1` (see `HasProd.norm_sub_one_lt` for actual
-  limits).
-* `HasProd.norm_sub_one_le` and `HasProd.norm_sub_one_lt`: closed (`0 ≤ B ≤ 1`) and strict
-  (`0 < ε ≤ 1`) perturbation bounds near `1` for a supplied convergent product, without a
-  Hausdorff hypothesis.
+* `TauCeti.norm_mul_sub_one_le` and `TauCeti.norm_mul_sub_one_lt`: binary multiplication bounds
+  near `1` (closed for `0 ≤ B ≤ 1`, strict for `0 < ε ≤ 1`) over any ultrametric seminormed ring
+  (without commutativity).
+* `TauCeti.norm_prod_sub_one_le` and `TauCeti.norm_tprod_sub_one_le`: over a commutative
+  ultrametric seminormed ring, unordered `Finset.prod` products and totalized infinite products
+  `∏' i, f i` (which default to `1` for nonmultipliable families) of elements within `B` of `1`
+  (`0 ≤ B ≤ 1`) remain within `B` of `1` (see `HasProd.norm_sub_one_le` for actual limits).
+* `TauCeti.norm_prod_sub_one_lt` and `TauCeti.norm_tprod_sub_one_lt`: over a commutative
+  ultrametric seminormed ring, unordered `Finset.prod` products and totalized infinite products
+  `∏' i, f i` (which default to `1` for nonmultipliable families) of elements strictly within `ε`
+  of `1` (`0 < ε ≤ 1`) remain strictly within `ε` of `1` (see `HasProd.norm_sub_one_lt` for
+  actual limits).
+* `HasProd.norm_sub_one_le` and `HasProd.norm_sub_one_lt`: over a commutative ultrametric
+  seminormed ring, closed (`0 ≤ B ≤ 1`) and strict (`0 < ε ≤ 1`) perturbation bounds near `1` for
+  a supplied convergent product, without a Hausdorff hypothesis.
 * `HasProd.tendsto_cofinite_one_of_norm_sub_one_lt_one`: factors of a convergent product with
   `‖f i - 1‖ < 1` tend to `1` along `cofinite`.
 * `IsUltrametricDist.multipliable_of_tendsto_cofinite_one` and

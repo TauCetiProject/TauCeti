@@ -62,6 +62,10 @@ coefficient. No discreteness of the valuation, Weierstrass product or identity t
 * `PowerSeries.IsEntire.exists_isGoodZero`,
   `PowerSeries.IsEntire.exists_pos_isGoodZero_of_evalAt_eq_zero`: over a complete normed field, a
   nonzero entire series has a good zero of some order at every point, of positive order at a zero.
+* `PowerSeries.IsEntire.exists_eq_C_mul_X_pow_mul_with_constantCoeff_eq_one`: over a complete
+  normed field, a nonzero entire series factors as `C (coeff m f) * X ^ m * g` where
+  `m = f.order.toNat`, `g` is entire with `constantCoeff g = 1`, and `g` has the same Taylor
+  orders as `f` at nonzero points.
 
 ## References
 
@@ -299,6 +303,35 @@ theorem IsEntire.exists_pos_isGoodZero_of_evalAt_eq_zero (hf : f.IsEntire) (hf0 
   refine ⟨h, Nat.pos_of_ne_zero fun h0 ↦ ?_, hfa⟩
   subst h0
   exact not_isUnit_zero (ha ▸ isGoodZero_zero_iff.mp hfa)
+
+/-- **Normalised factorisation at the origin.** A nonzero entire series `f` over a complete normed
+field factors as `f = C (coeff f.order.toNat f) * X ^ f.order.toNat * g`, where `g` is entire
+with `constantCoeff g = 1` and has the same Taylor orders as `f` at every nonzero point. -/
+theorem IsEntire.exists_eq_C_mul_X_pow_mul_with_constantCoeff_eq_one (hf : f.IsEntire)
+    (hf0 : f ≠ 0) :
+    ∃ g : K⟦X⟧, g.IsEntire ∧ constantCoeff g = 1 ∧
+      f = C (coeff f.order.toNat f) * X ^ f.order.toNat * g ∧
+      ∀ x : K, x ≠ 0 →
+        (_root_.PowerSeries.taylor x g).order = (_root_.PowerSeries.taylor x f).order := by
+  have hnf : f.IsGoodZero 0 f.order.toNat := by
+    rw [isGoodZero_iff_order_taylor_eq, taylor_zero,
+      ENat.natCast_toNat (order_eq_top.not.mpr hf0)]
+  obtain ⟨g₀, hg₀, hfg₀, hg₀0⟩ := hf.isGoodZero_iff.mp hnf
+  rw [map_zero, sub_zero] at hfg₀
+  simp only [evalAt_at_zero, Algebra.algebraMap_self_apply, isUnit_iff_ne_zero] at hg₀0
+  have hcoeff : coeff f.order.toNat f = constantCoeff g₀ := by
+    nth_rw 2 [hfg₀]
+    simp [coeff_X_pow_mul', coeff_zero_eq_constantCoeff_apply]
+  refine ⟨C (constantCoeff g₀)⁻¹ * g₀, (isEntire_C _).mul hg₀, by simp [hg₀0], ?_, fun x hx0 ↦ ?_⟩
+  · rw [hcoeff]
+    calc f = X ^ f.order.toNat * g₀ := hfg₀
+      _ = (C (constantCoeff g₀) * C (constantCoeff g₀)⁻¹) * (X ^ f.order.toNat * g₀) := by
+          rw [← map_mul, mul_inv_cancel₀ hg₀0, map_one, one_mul]
+      _ = C (constantCoeff g₀) * X ^ f.order.toNat * (C (constantCoeff g₀)⁻¹ * g₀) := by ring
+  · rw [hg₀.order_taylor_C_mul (inv_ne_zero hg₀0) x]
+    conv_rhs => rw [hfg₀]
+    rw [(isEntire_X.pow _).taylor_mul hg₀ x, order_mul, order_taylor_X_pow_of_ne_zero hx0,
+      zero_add]
 
 end Field
 
