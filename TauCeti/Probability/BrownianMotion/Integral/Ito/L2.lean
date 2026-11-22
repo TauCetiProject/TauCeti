@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Deterministic
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry
-import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
-import Mathlib.MeasureTheory.Function.LpSeminorm.Trim
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
@@ -83,11 +81,11 @@ theorem isItoIntegral_iff_ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W
       ∀ T : ℝ≥0, I T =ᵐ[P]
         hW.l2Integral T ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H)) := by
   refine ⟨fun hI T ↦ hW.ae_eq_l2Integral_of_isItoIntegral hH hI T, fun hT ↦ ?_⟩
-  obtain ⟨n, τ, a, -, -, hτ, ha, -, -, -, -, hE, hL2⟩ := hW.exists_simpleHolding_approx hH
+  obtain ⟨n, τ, a, -, hmem, hτ, ha, -, -, -, -, hE, hLp⟩ := hW.exists_simpleHolding_approx hH
   refine ⟨hH.isStronglyPredictable, hIcont, fun T ↦
     ⟨n, τ, a, hτ, ha, hE T,
-      tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero
-        ((hL2 T).congr fun k ↦ eLpNorm_congr_ae (EventuallyEq.rfl.sub (hT T).symm))⟩⟩
+      (tendstoInMeasure_of_tendsto_Lp (hLp T)).congr
+        (fun k ↦ (hmem k T).coeFn_toLp) (hT T).symm⟩⟩
 
 /-- Every Itô integral of a Brownian-integrable process has expectation zero at each horizon. -/
 theorem integral_eq_zero_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -232,24 +230,6 @@ theorem continuous_toLp_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P
   exact (hW.tendsto_eLpNorm_sub_of_isItoIntegral hH hI t).congr fun s ↦
     eLpNorm_congr_ae (((hI.memLp hW hH s).coeFn_toLp.sub (hI.memLp hW hH t).coeFn_toLp).symm)
 
-private theorem compMeasurePreserving_fst_toLp [IsProbabilityMeasure P]
-    {h : ℝ≥0 → ℝ} (hm : Measurable h) (hLp : ∀ T : ℝ≥0, MemLp h 2 (timeMeasure T)) (T : ℝ≥0) :
-    letI : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-    Lp.compMeasurePreserving Prod.fst (ℱ.measurePreserving_fst_predictableMeasure P T)
-        ((hLp T).toLp h) =
-      ((TauCeti.brownianIntegrable_fst (ℱ := ℱ) (P := P) hm hLp).memLp_predictableMeasure T).toLp
-        (Function.uncurry fun t _ ↦ h t) := by
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  let hbi := TauCeti.brownianIntegrable_fst (ℱ := ℱ) (P := P) hm hLp
-  apply Lp.ext
-  refine (Lp.coeFn_compMeasurePreserving ((hLp T).toLp h)
-    (ℱ.measurePreserving_fst_predictableMeasure P T)).trans ?_
-  have hcomp : (fun p : ℝ≥0 × Ω ↦ ((hLp T).toLp h) p.fst) =ᵐ[ℱ.predictableMeasure P T]
-      Function.uncurry fun t _ ↦ h t :=
-    (ℱ.measurePreserving_fst_predictableMeasure P T).quasiMeasurePreserving.ae_eq_comp
-      (hLp T).coeFn_toLp
-  exact hcomp.trans (hbi.memLp_predictableMeasure T).coeFn_toLp.symm
-
 /-- **Deterministic L² bridge.** For a measurable deterministic integrand `h` in `L²` on every
 finite horizon, any Itô integral agrees almost surely at each horizon `T` with the Wiener
 integral of `h`. -/
@@ -261,8 +241,9 @@ theorem ae_eq_wienerIntegral_of_isItoIntegral (hW : IsFilteredPreBrownianReal �
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
   let hbi := TauCeti.brownianIntegrable_fst (ℱ := ℱ) (P := P) hm hLp
   refine (hW.ae_eq_l2Integral_of_isItoIntegral hbi hI T).trans ?_
-  rw [← compMeasurePreserving_fst_toLp (ℱ := ℱ) (P := P) hm hLp T,
-    hW.l2Integral_compMeasurePreserving_fst T ((hLp T).toLp h)]
+  rw [← hW.l2Integral_compMeasurePreserving_fst T ((hLp T).toLp h),
+    Lp.toLp_compMeasurePreserving (hLp T) (ℱ.measurePreserving_fst_predictableMeasure P T)]
+  rfl
 
 /-- **Deterministic L² characterization.** For a measurable deterministic integrand `h` in `L²` on
 every finite horizon, an almost surely continuous process `I` is an Itô integral of `h` if and
@@ -277,8 +258,9 @@ theorem isItoIntegral_iff_ae_eq_wienerIntegral (hW : IsFilteredPreBrownianReal �
   let hbi := TauCeti.brownianIntegrable_fst (ℱ := ℱ) (P := P) hm hLp
   rw [hW.isItoIntegral_iff_ae_eq_l2Integral hbi hIcont]
   refine forall_congr' fun T ↦ ?_
-  rw [← compMeasurePreserving_fst_toLp (ℱ := ℱ) (P := P) hm hLp T,
-    hW.l2Integral_compMeasurePreserving_fst T ((hLp T).toLp h)]
+  rw [← hW.l2Integral_compMeasurePreserving_fst T ((hLp T).toLp h),
+    Lp.toLp_compMeasurePreserving (hLp T) (ℱ.measurePreserving_fst_predictableMeasure P T)]
+  rfl
 
 /-- **Doob uniform approximation for elementary gains.** If simple holdings with square-integrable
 left-measurable heights converge in `L²` on `(0, T] × Ω` to a Brownian-integrable integrand `H`,
@@ -342,26 +324,18 @@ private theorem exists_martingale_sq_sub_ae_eq (hW : IsFilteredPreBrownianReal �
   have hA_adapt : StronglyAdapted ℱ (fun t ω ↦ ∫ s, H s ω ^ 2 ∂timeMeasure t) :=
     hH.isStronglyPredictable.isStronglyPredictable_integral_sq_timeMeasure
       |>.isStronglyProgressive.stronglyAdapted
-  obtain ⟨n, τ, a, -, hmem, hτ, ha, -, ha₂, hmart, hlim, -, hL2⟩ :=
-    hW.exists_simpleHolding_approx hH
-  have hcau (t : ℝ≥0) :
-      CauchySeq fun k ↦ (hmem k t).toLp (Finance.simpleGains (τ k) (n k) (a k) W t) :=
-    ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).2 ((hL2 t).congr fun k ↦
-      eLpNorm_congr_ae ((hmem k t).coeFn_toLp.symm.sub EventuallyEq.rfl))).cauchySeq
-  obtain ⟨Z, hZ, hZlim⟩ := exists_martingale_of_cauchySeq_Lp hmart hmem hcau
+  obtain ⟨n, τ, a, Z, hτ, ha, ha₂, hlim, hZ, hZmem, hZlim, hZL⟩ :=
+    hW.exists_simpleHolding_martingale_approx hH
   have hIZ (t : ℝ≥0) : Z t =ᵐ[P] I t :=
-    (tendstoInMeasure_ae_unique
-      (tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hZlim t).2)
-      (tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hL2 t))).trans
-      (hW.ae_eq_l2Integral_of_isItoIntegral hH hI t).symm
+    (hZL t).trans (hW.ae_eq_l2Integral_of_isItoIntegral hH hI t).symm
   let B (k : ℕ) (t : ℝ≥0) (ω : Ω) : ℝ :=
     ∑ j ∈ Finset.range (n k), a k j ω ^ 2 * (↑(min (τ k (j + 1)) t) - ↑(min (τ k j) t))
-  refine ⟨Z, hZ, hIZ, fun t ↦ (hZlim t).1, martingale_of_tendsto_eLpNorm_one
+  refine ⟨Z, hZ, hIZ, hZmem, martingale_of_tendsto_eLpNorm_one
     (fun k ↦ hW.martingale_sq_simpleGains_sub (hτ k) (ha k) (ha₂ k))
     (fun t ↦ (hZ.stronglyAdapted t).pow 2 |>.sub (hA_adapt t)) fun t ↦ ?_⟩
   have hsq_lim : Tendsto (fun k ↦ eLpNorm
       (fun ω ↦ Finance.simpleGains (τ k) (n k) (a k) W t ω ^ 2 - Z t ω ^ 2) 1 P) atTop (𝓝 0) :=
-    TauCeti.tendsto_eLpNorm_sq_sub_one (hZlim t).1.eLpNorm_ne_top (hZlim t).2
+    TauCeti.tendsto_eLpNorm_sq_sub_one (hZmem t).eLpNorm_ne_top (hZlim t)
   have henergy_lim : Tendsto (fun k ↦ eLpNorm
       (fun ω ↦ B k t ω - ∫ s, H s ω ^ 2 ∂timeMeasure t) 1 P) atTop (𝓝 0) := by
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
@@ -447,14 +421,10 @@ theorem setIntegral_sub_sq_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ 
       ∫ ω in A, ((∫ r, H r ω ^ 2 ∂timeMeasure t) - ∫ r, H r ω ^ 2 ∂timeMeasure s) ∂P := by
     have hZt2 : IntegrableOn (fun ω ↦ Z t ω ^ 2) A P := (hZmem t).integrable_sq.integrableOn
     have hZs2 : IntegrableOn (fun ω ↦ Z s ω ^ 2) A P := (hZmem s).integrable_sq.integrableOn
-    have hAt : IntegrableOn (fun ω ↦ ∫ r, H r ω ^ 2 ∂timeMeasure t) A P := by
-      have h : Integrable (fun ω ↦ Z t ω ^ 2 - (Z t ω ^ 2 - ∫ r, H r ω ^ 2 ∂timeMeasure t)) P :=
-        ((hZmem t).integrable_sq).sub (hMZ.integrable t)
-      simpa only [sub_sub_cancel] using h.integrableOn
-    have hAs : IntegrableOn (fun ω ↦ ∫ r, H r ω ^ 2 ∂timeMeasure s) A P := by
-      have h : Integrable (fun ω ↦ Z s ω ^ 2 - (Z s ω ^ 2 - ∫ r, H r ω ^ 2 ∂timeMeasure s)) P :=
-        ((hZmem s).integrable_sq).sub (hMZ.integrable s)
-      simpa only [sub_sub_cancel] using h.integrableOn
+    have hAt : IntegrableOn (fun ω ↦ ∫ r, H r ω ^ 2 ∂timeMeasure t) A P :=
+      ((hH.memLp_timeMeasure t).integrable_sq).integral_prod_right.integrableOn
+    have hAs : IntegrableOn (fun ω ↦ ∫ r, H r ω ^ 2 ∂timeMeasure s) A P :=
+      ((hH.memLp_timeMeasure s).integrable_sq).integral_prod_right.integrableOn
     rw [integral_sub hZt2 hZs2, integral_sub hAt hAs]
     rw [integral_sub hZt2 hAt, integral_sub hZs2 hAs] at hMeq
     linarith
@@ -483,11 +453,8 @@ theorem condExp_sub_sq_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
     P[fun ω ↦ (I t ω - I s ω) ^ 2 | ℱ s] =ᵐ[P]
       P[fun ω ↦ (∫ r, H r ω ^ 2 ∂timeMeasure t) - ∫ r, H r ω ^ 2 ∂timeMeasure s | ℱ s] := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  have hA_int (u : ℝ≥0) : Integrable (fun ω ↦ ∫ r, H r ω ^ 2 ∂timeMeasure u) P := by
-    obtain ⟨Z, -, -, hZmem, hMZ⟩ := exists_martingale_sq_sub_ae_eq hW hH hI
-    have h : Integrable (fun ω ↦ Z u ω ^ 2 - (Z u ω ^ 2 - ∫ r, H r ω ^ 2 ∂timeMeasure u)) P :=
-      ((hZmem u).integrable_sq).sub (hMZ.integrable u)
-    simpa only [sub_sub_cancel] using h
+  have hA_int (u : ℝ≥0) : Integrable (fun ω ↦ ∫ r, H r ω ^ 2 ∂timeMeasure u) P :=
+    ((hH.memLp_timeMeasure u).integrable_sq).integral_prod_right
   have hdiff_int :
       Integrable (fun ω ↦ (∫ r, H r ω ^ 2 ∂timeMeasure t) - ∫ r, H r ω ^ 2 ∂timeMeasure s) P :=
     (hA_int t).sub (hA_int s)

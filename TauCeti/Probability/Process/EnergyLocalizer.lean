@@ -89,11 +89,6 @@ theorem energyLocalizer_pos {C : ℝ≥0} (hC : 0 < C) (ω : Ω) :
   rw [← not_le, ← WithTop.coe_zero, energyLocalizer_le_iff]
   simpa using hC.ne'
 
-/-- Positive energy levels cannot be hit at the bottom time `⊥`. -/
-theorem bot_lt_energyLocalizer {C : ℝ≥0} (hC : 0 < C) (ω : Ω) :
-    (⊥ : WithTop ℝ≥0) < μ.energyLocalizer H C ω :=
-  bot_le.trans_lt (μ.energyLocalizer_pos H hC ω)
-
 omit [NullSingletonClass μ] in
 /-- Closed energy levels give pointwise increasing hitting times. -/
 theorem monotone_energyLocalizer (ω : Ω) : Monotone (fun C ↦ μ.energyLocalizer H C ω) := by

@@ -362,7 +362,8 @@ private theorem ae_eq_stoppedProcess_dyadicCeilTime_of_brownianIntegrable
     min_le_min_right T (div_le_div_of_nonneg_right (Nat.cast_le.mpr h) h2pos.le)
   have hA_meas (k : ℕ) (hk : k < N) : MeasurableSet[ℱ (t k)] (A k) := by
     have hdk_lt : (k : ℝ≥0) / 2 ^ m < T := (div_lt_iff₀ h2pos).mpr (Nat.lt_ceil.mp hk)
-    rw [show t k = (k : ℝ≥0) / 2 ^ m from min_eq_left hdk_lt.le]
+    have htk : t k = (k : ℝ≥0) / 2 ^ m := min_eq_left hdk_lt.le
+    rw [htk]
     simpa only [compl_ofPred, not_le] using (hσ ((k : ℝ≥0) / 2 ^ m)).compl
   let fH := (hH.memLp_predictableMeasure T).toLp (Function.uncurry H)
   let piece (k : ℕ) : Lp ℝ 2 (ℱ.predictableMeasure P T) :=
@@ -520,8 +521,8 @@ theorem exists_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
   refine ⟨I, hII, hIpred, hIpred.isStronglyProgressive.locally_martingale_of_ae_stopped_eq
     hH.isLocalizingSequence_energyLocalizer hUmart fun n t ↦ ?_⟩
   filter_upwards [hIstop n] with ω hω
-  rw [stoppedProcess_indicator_pos_apply,
-    ite_eq_left (nnvolume.bot_lt_energyLocalizer H (C := (n : ℝ≥0) + 1) (by positivity) ω)]
+  rw [stoppedProcess_indicator_pos_apply, ite_eq_left
+    (bot_le.trans_lt (nnvolume.energyLocalizer_pos H (C := (n : ℝ≥0) + 1) (by positivity) ω))]
   exact (hω t).symm
 
 /-- Every strongly progressive Itô integral against an almost surely continuous filtered
@@ -586,8 +587,8 @@ theorem locally_martingale_sq_sub_of_isItoIntegral (hW : IsFilteredPreBrownianRe
     (fun n ↦ hW.martingale_sq_sub_of_isItoIntegral (hHseq n) (hUI n)
       (hUpred n).isStronglyProgressive.stronglyAdapted) fun n t ↦ ?_
   filter_upwards [hII₀, hI₀stop n, hH.ae_accumulatedEnergy_lt_top] with ω hω h0ω hfin
-  rw [stoppedProcess_indicator_pos_apply,
-    ite_eq_left (nnvolume.bot_lt_energyLocalizer H (C := (n : ℝ≥0) + 1) (by positivity) ω)]
+  rw [stoppedProcess_indicator_pos_apply, ite_eq_left
+    (bot_le.trans_lt (nnvolume.energyLocalizer_pos H (C := (n : ℝ≥0) + 1) (by positivity) ω))]
   let u : ℝ≥0 := (min (t : WithTop ℝ≥0) (σ n ω)).untopA
   have hI_eq : U n t ω = I u ω := by simpa only [stoppedProcess, hω] using (h0ω t).symm
   have hE_eq : (∫ s, Hseq n s ω ^ 2 ∂timeMeasure t) = ∫ s, H s ω ^ 2 ∂timeMeasure u := by

@@ -112,9 +112,8 @@ theorem IsFilteredPreBrownianReal.exists_simpleHolding_approx
       (∀ T ε, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
         ∫⁻ s, ‖Finance.simpleHolding (τ k) (n k) (a k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure T})
           atTop (𝓝 0)) ∧
-      (∀ T, Tendsto (fun k ↦ eLpNorm (fun ω ↦ Finance.simpleGains (τ k) (n k) (a k) W T ω -
-        hW.l2Integral T ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H)) ω) 2 P)
-          atTop (𝓝 0)) := by
+      (∀ T, Tendsto (fun k ↦ (hmem k T).toLp (Finance.simpleGains (τ k) (n k) (a k) W T)) atTop
+        (𝓝 (hW.l2Integral T ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H))))) := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   obtain ⟨n, τ, a, C, -, hτ, ha, haC, hlim⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
   have ha₂ (k j : ℕ) (hj : j < n k) : MemLp (a k j) 2 P :=
@@ -136,10 +135,11 @@ theorem IsFilteredPreBrownianReal.exists_simpleHolding_approx
       (fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
         hH.isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
       (hlim T) hε,
-    fun T ↦ (hlim T).congr fun k ↦ by
+    fun T ↦ (Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).2 <| (hlim T).congr fun k ↦ by
       have hsub := hW.eLpNorm_l2Integral_sub T (Finance.isStronglyPredictable_simpleHolding (ha k))
         hH.isStronglyPredictable (hKm k T) (hH.memLp_predictableMeasure T)
-      exact hsub.symm.trans (eLpNorm_congr_ae ((hgain k T).sub EventuallyEq.rfl))⟩
+      exact hsub.symm.trans (eLpNorm_congr_ae
+        (((hgain k T).trans (hmem k T).coeFn_toLp.symm).sub EventuallyEq.rfl))⟩
 
 /-- **Agreement with the terminal L² integral.** For a Brownian-integrable integrand, any Itô
 integral agrees almost surely at each finite horizon `T` with `hW.l2Integral T`. Path continuity
@@ -148,9 +148,9 @@ theorem IsFilteredPreBrownianReal.ae_eq_l2Integral_of_isItoIntegral
     (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
     (hI : IsItoIntegral ℱ P W H I) (T : ℝ≥0) :
     I T =ᵐ[P] hW.l2Integral T ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H)) := by
-  obtain ⟨n, τ, a, -, -, hτ, ha, -, -, -, -, hE, hL2⟩ := hW.exists_simpleHolding_approx hH
+  obtain ⟨n, τ, a, -, hmem, hτ, ha, -, -, -, -, hE, hLp⟩ := hW.exists_simpleHolding_approx hH
   exact hI.ae_eq_of_tendstoInMeasure hW hτ ha (hE T)
-    (tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hL2 T))
+    ((tendstoInMeasure_of_tendsto_Lp (hLp T)).congr_left fun k ↦ (hmem k T).coeFn_toLp)
 
 /-- **Existence of the Itô integral for square-integrable integrands.** Against a pre-Brownian
 motion relative to the filtration with almost surely continuous paths, every predictable
@@ -160,16 +160,40 @@ theorem _root_.TauCeti.BrownianIntegrable.exists_isItoIntegral (hH : BrownianInt
     (hW : IsFilteredPreBrownianReal ℱ W P) (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω) :
     ∃ I, IsItoIntegral ℱ P W H I ∧ IsStronglyPredictable ℱ I ∧ Martingale I ℱ P := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, -, hmem, hτ, ha, -, -, hmart, -, hE, hL2⟩ := hW.exists_simpleHolding_approx hH
-  have hcau (t : ℝ≥0) :
-      CauchySeq fun k ↦ (hmem k t).toLp (Finance.simpleGains (τ k) (n k) (a k) W t) :=
-    ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).2 ((hL2 t).congr fun k ↦
-      eLpNorm_congr_ae ((hmem k t).coeFn_toLp.symm.sub EventuallyEq.rfl))).cauchySeq
+  obtain ⟨n, τ, a, -, hmem, hτ, ha, -, -, hmart, -, hE, hLp⟩ := hW.exists_simpleHolding_approx hH
   obtain ⟨I, hI, hIp, hIlim, -, _, -, hIc⟩ := exists_continuous_martingale_of_cauchySeq_Lp hmart
-    (fun k ↦ hWc.mono fun ω hω ↦ Finance.continuous_simpleGains hω) hmem hcau
+    (fun k ↦ hWc.mono fun ω hω ↦ Finance.continuous_simpleGains hω) hmem
+    fun t ↦ (hLp t).cauchySeq
   refine ⟨I, ⟨hH.isStronglyPredictable, hIc.mono fun ω hω ↦ hω.1,
     fun t ↦ ⟨n, τ, a, hτ, ha, hE t, tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hIlim t).2⟩⟩,
     hIp, hI⟩
+
+/-- Bounded simple holdings approximating a Brownian-integrable integrand on every finite horizon
+in `L²` have elementary integrals converging in `L²(P)` to a martingale that agrees almost surely
+at every time with the terminal `L²` integral `hW.l2Integral t`. -/
+theorem IsFilteredPreBrownianReal.exists_simpleHolding_martingale_approx
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H) :
+    ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ) (Z : ℝ≥0 → Ω → ℝ),
+      (∀ k, MonotoneOn (τ k) (Iic (n k))) ∧
+      (∀ k j, j < n k → StronglyMeasurable[ℱ (τ k j)] (a k j)) ∧
+      (∀ k j, j < n k → MemLp (a k j) 2 P) ∧
+      (∀ T, Tendsto (fun k ↦ eLpNorm (Function.uncurry (Finance.simpleHolding (τ k) (n k) (a k)) -
+        Function.uncurry H) 2 ((timeMeasure T).prod P)) atTop (𝓝 0)) ∧
+      Martingale Z ℱ P ∧
+      (∀ t, MemLp (Z t) 2 P) ∧
+      (∀ t, Tendsto (fun k ↦ eLpNorm (Finance.simpleGains (τ k) (n k) (a k) W t - Z t) 2 P)
+        atTop (𝓝 0)) ∧
+      (∀ t, Z t =ᵐ[P]
+        hW.l2Integral t ((hH.memLp_predictableMeasure t).toLp (Function.uncurry H))) := by
+  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
+  obtain ⟨n, τ, a, -, hmem, hτ, ha, -, ha₂, hmart, hlim, -, hLp⟩ :=
+    hW.exists_simpleHolding_approx hH
+  obtain ⟨Z, hZ, hZlim⟩ :=
+    exists_martingale_of_cauchySeq_Lp hmart hmem fun t ↦ (hLp t).cauchySeq
+  refine ⟨n, τ, a, Z, hτ, ha, ha₂, hlim, hZ, fun t ↦ (hZlim t).1, fun t ↦ (hZlim t).2,
+    fun t ↦ tendstoInMeasure_ae_unique
+      (tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hZlim t).2)
+      ((tendstoInMeasure_of_tendsto_Lp (hLp t)).congr_left fun k ↦ (hmem k t).coeFn_toLp)⟩
 
 /-- **The martingale property of the Itô integral.** Against a pre-Brownian motion relative to
 the filtration, an adapted Itô integral of a Brownian-integrable integrand is a martingale.
@@ -177,20 +201,8 @@ Neither path continuity of the integrator nor usual conditions on the filtration
 theorem IsItoIntegral.martingale (hI : IsItoIntegral ℱ P W H I)
     (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
     (hIa : StronglyAdapted ℱ I) : Martingale I ℱ P := by
-  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, -, hmem, -, -, -, -, hmart, -, -, hL2⟩ := hW.exists_simpleHolding_approx hH
-  have hcau (t : ℝ≥0) :
-      CauchySeq fun k ↦ (hmem k t).toLp (Finance.simpleGains (τ k) (n k) (a k) W t) :=
-    ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).2 ((hL2 t).congr fun k ↦
-      eLpNorm_congr_ae ((hmem k t).coeFn_toLp.symm.sub EventuallyEq.rfl))).cauchySeq
-  obtain ⟨Z, hZ, hZlim⟩ := exists_martingale_of_cauchySeq_Lp hmart hmem hcau
-  refine hZ.congr hIa fun t ↦ ?_
-  have hZL : Z t =ᵐ[P]
-      hW.l2Integral t ((hH.memLp_predictableMeasure t).toLp (Function.uncurry H)) :=
-    tendstoInMeasure_ae_unique
-      (tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hZlim t).2)
-      (tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hL2 t))
-  exact hZL.trans (hW.ae_eq_l2Integral_of_isItoIntegral hH hI t).symm
+  obtain ⟨-, -, -, Z, -, -, -, -, hZ, -, -, hZL⟩ := hW.exists_simpleHolding_martingale_approx hH
+  exact hZ.congr hIa fun t ↦ (hZL t).trans (hW.ae_eq_l2Integral_of_isItoIntegral hH hI t).symm
 
 /-- An Itô integral of a Brownian-integrable integrand against a pre-Brownian motion relative to
 the filtration is square integrable at every time. -/
