@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.Bounded
+import Mathlib.Analysis.Normed.Group.Pointwise
 
 /-!
 # Von Neumann boundedness helpers
@@ -38,8 +39,8 @@ norms `‖f x‖` on `s` are bounded above. -/
 theorem IsVonNBounded.bddAbove_range_norm {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
     [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {s : Set E}
     (hs : IsVonNBounded 𝕜 (f '' s)) :
-    BddAbove (Set.range fun x : s ↦ ‖f x‖) :=
-  let ⟨r, hr⟩ := (NormedSpace.image_isVonNBounded_iff 𝕜).1 hs
-  ⟨r, Set.forall_mem_range.2 fun x ↦ hr x.val x.property⟩
+    BddAbove (Set.range fun x : s ↦ ‖f x‖) := by
+  have h := Bornology.IsBounded.bddAbove_norm ((NormedSpace.isVonNBounded_iff 𝕜).1 hs)
+  rwa [Set.image_image, Set.image_eq_range] at h
 
 end Bornology

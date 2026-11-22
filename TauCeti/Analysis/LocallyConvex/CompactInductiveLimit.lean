@@ -119,6 +119,8 @@ open scoped ComplexOrder NNReal
 
 namespace TauCeti
 
+section RCLike
+
 variable {𝕜 : Type*} [RCLike 𝕜] {B : ℕ → Type*}
   [∀ n, NormedAddCommGroup (B n)] [∀ n, NormedSpace 𝕜 (B n)]
   {T : ∀ n, B n →L[𝕜] B (n + 1)}
@@ -149,7 +151,17 @@ theorem isVonNBounded_iff_exists_subset_image_closedBall [SeparatingDual 𝕜 L]
   exact ⟨z, mem_closedBall_zero_iff.2 hz,
     evalInductive_injective hι hinj hcover ((evalInductive_ι hι hinj hcover j z).trans heq)⟩
 
+end RCLike
+
 namespace dualProjectiveLimit
+
+section RCLike
+
+variable {𝕜 : Type*} [RCLike 𝕜] {B : ℕ → Type*}
+  [∀ n, NormedAddCommGroup (B n)] [∀ n, NormedSpace 𝕜 (B n)]
+  {T : ∀ n, B n →L[𝕜] B (n + 1)}
+  {L : Type*} [AddCommGroup L] [Module 𝕜 L] [TopologicalSpace L]
+  {ι : ∀ n, B n →L[𝕜] L}
 
 /-- Inverse continuity of precomposition: by regularity, a bounded subset of `L` lies in the image
 of a ball of some `B j`, on which a functional is controlled by its `j`-th coordinate norm. -/
@@ -288,7 +300,17 @@ theorem preimage_polar_image_precomp_polar_eq_closure
 
 end PolarComparison
 
+end RCLike
+
 section EvaluationIsomorphism
+
+section RCLike
+
+variable {𝕜 : Type*} [RCLike 𝕜] {B : ℕ → Type*}
+  [∀ n, NormedAddCommGroup (B n)] [∀ n, NormedSpace 𝕜 (B n)]
+  {T : ∀ n, B n →L[𝕜] B (n + 1)}
+  {L : Type*} [AddCommGroup L] [Module 𝕜 L] [TopologicalSpace L]
+  {ι : ∀ n, B n →L[𝕜] L}
 
 /-- **Inverse continuity of `evalInductive` at `0`.** In any locally convex space `L` over `ℝ` or
 `ℂ` with compatible injective covering continuous linear maps `ι n : B n →L[𝕜] L`, the pullback of
@@ -345,6 +367,16 @@ theorem continuous_evalInductive_of_le_finalLocallyConvexTopology
       (eval T n).continuous.congr fun z ↦ (evalInductive_ι hι hinj hcover n z).symm
   exact continuous_iff_le_induced.2 (hle.trans (continuous_iff_le_induced.1 hcont₀))
 
+end RCLike
+
+section
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {B : ℕ → Type*}
+  [∀ n, NormedAddCommGroup (B n)] [∀ n, NormedSpace 𝕜 (B n)]
+  {T : ∀ n, B n →L[𝕜] B (n + 1)}
+  {L : Type*} [AddCommGroup L] [Module 𝕜 L] [TopologicalSpace L]
+  {ι : ∀ n, B n →L[𝕜] L}
+
 /-- **Forward continuity from stagewise-tested seminorms.** If every `𝕜`-seminorm on `L` whose
 composites with all stage maps `ι n` are continuous is itself continuous, then the glued evaluation
 map `evalInductive` is continuous: on a bounded subset `Q` of `dualProjectiveLimit T`, each
@@ -380,6 +412,16 @@ theorem continuous_evalInductive_of_continuous_comp_seminorm [IsTopologicalAddGr
   filter_upwards [(⨆ f, p f).ball_mem_nhds hp hε] with x hx f hf
   rw [Seminorm.mem_ball_zero] at hx
   simpa [p, mem_ball_zero_iff] using (Seminorm.le_def.1 (le_ciSup hbdd ⟨f, hf⟩) x).trans_lt hx
+
+end
+
+section RCLike
+
+variable {𝕜 : Type*} [RCLike 𝕜] {B : ℕ → Type*}
+  [∀ n, NormedAddCommGroup (B n)] [∀ n, NormedSpace 𝕜 (B n)]
+  {T : ∀ n, B n →L[𝕜] B (n + 1)}
+  {L : Type*} [AddCommGroup L] [Module 𝕜 L] [TopologicalSpace L]
+  {ι : ∀ n, B n →L[𝕜] L}
 
 /-- Auxiliary helper identifying `finalLocallyConvexTopology` with the topology induced by
 `evalInductive` on a fresh module `L₀` carrying no prior `TopologicalSpace` instance. -/
@@ -606,6 +648,8 @@ theorem precomp_precomp_comp_inductiveBidualEquiv
   u.precomp_precomp_comp_of_forall_apply_eq
     (inductiveBidualEquiv_apply_apply hT hι hinj hcover hcont)
     (inductiveBidualEquiv_apply_apply hT' hι' hinj' hcover' hcont')
+
+end RCLike
 
 end EvaluationIsomorphism
 

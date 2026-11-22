@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+public import Mathlib.Topology.Algebra.Module.TransferInstance
 
 /-!
 # Strong-bidual reflexivity from dual identifications
@@ -44,54 +45,33 @@ variable {𝕜 E F : Type*} [NormedField 𝕜]
 `E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)`, equal to
 `b.trans (a.symm.arrowCongr (.refl 𝕜 𝕜))`. -/
 def bidualEquivOfDualEquiv (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
-    (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
+    (_h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
     E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E) :=
-  letI : ContinuousSMul 𝕜 E :=
-    b.toHomeomorph.isInducing.continuousSMul continuous_id fun {c x} ↦ b.map_smul c x
-  let e := b.trans (a.symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜))
-  have he : ∀ x, e x = ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) x := fun x ↦
-    ContinuousLinearMap.ext fun ℓ ↦ by
-      simpa [e, trans_apply, arrowCongr_apply, refl_apply] using h x ℓ
-  let ev : E →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E) :=
-    { __ := (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
-        E →ₗ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E))
-      cont := e.continuous.congr he }
-  ContinuousLinearEquiv.ofContinuousLinearMap ev e.symm.toContinuousLinearMap
-    (ContinuousLinearMap.ext fun Ξ ↦ by simp [ev, ← he (e.symm Ξ)])
-    (ContinuousLinearMap.ext fun x ↦ by simp [ev, ← he x])
-
-theorem coe_bidualEquivOfDualEquiv
-    (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
-    (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
-    letI : ContinuousSMul 𝕜 E :=
-      b.toHomeomorph.isInducing.continuousSMul continuous_id fun {c x} ↦ b.map_smul c x
-    ⇑(bidualEquivOfDualEquiv a b h) =
-      (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) : E →ₗ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)) :=
-  (rfl)
-
-@[simp]
-theorem toLinearMap_bidualEquivOfDualEquiv
-    (a : StrongDual 𝕜 E ≃L[𝕜] F)
-    (b : E ≃L[𝕜] StrongDual 𝕜 F) (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
-    letI : ContinuousSMul 𝕜 E :=
-      b.toHomeomorph.isInducing.continuousSMul continuous_id fun {c x} ↦ b.map_smul c x
-    (bidualEquivOfDualEquiv a b h).toLinearMap = ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :=
-  (rfl)
+  b.trans (a.symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜))
 
 @[simp]
 theorem bidualEquivOfDualEquiv_apply_apply (a : StrongDual 𝕜 E ≃L[𝕜] F)
     (b : E ≃L[𝕜] StrongDual 𝕜 F) (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x)
     (x : E) (ℓ : StrongDual 𝕜 E) :
-    bidualEquivOfDualEquiv a b h x ℓ = ℓ x :=
-  (rfl)
+    bidualEquivOfDualEquiv a b h x ℓ = ℓ x := by
+  simpa [bidualEquivOfDualEquiv] using h x ℓ
+
+@[simp]
+theorem toLinearMap_bidualEquivOfDualEquiv
+    (a : StrongDual 𝕜 E ≃L[𝕜] F)
+    (b : E ≃L[𝕜] StrongDual 𝕜 F) (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
+    letI : ContinuousSMul 𝕜 E := b.continuousSMul
+    (bidualEquivOfDualEquiv a b h).toLinearMap = ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) := by
+  let : ContinuousSMul 𝕜 E := b.continuousSMul
+  ext x ℓ
+  exact bidualEquivOfDualEquiv_apply_apply a b h x ℓ
 
 /-- `bidualEquivOfDualEquiv a b h` factors as `b` followed by `a.symm.arrowCongr (.refl 𝕜 𝕜)`. -/
 theorem bidualEquivOfDualEquiv_eq_trans (a : StrongDual 𝕜 E ≃L[𝕜] F)
     (b : E ≃L[𝕜] StrongDual 𝕜 F) (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
     bidualEquivOfDualEquiv a b h =
       b.trans (a.symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜)) := by
-  ext x ℓ
-  simp [h]
+  rw [bidualEquivOfDualEquiv]
 
 /-- Given topological linear isomorphisms `a : StrongDual 𝕜 E ≃L[𝕜] F` and
 `b : E ≃L[𝕜] StrongDual 𝕜 F` compatible with evaluation (`b x (a ℓ) = ℓ x`), canonical evaluation
@@ -110,7 +90,18 @@ theorem dualBidualEquivOfDualEquiv_apply_apply
     (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x)
     (f : F) (φ : StrongDual 𝕜 F) :
     dualBidualEquivOfDualEquiv a b h f φ = φ f :=
-  (rfl)
+  bidualEquivOfDualEquiv_apply_apply _ _ _ f φ
+
+@[simp]
+theorem toLinearMap_dualBidualEquivOfDualEquiv
+    (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
+    (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
+    letI : ContinuousSMul 𝕜 F := a.symm.continuousSMul
+    (dualBidualEquivOfDualEquiv a b h).toLinearMap =
+      ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) := by
+  let : ContinuousSMul 𝕜 F := a.symm.continuousSMul
+  ext f φ
+  exact dualBidualEquivOfDualEquiv_apply_apply a b h f φ
 
 /-- Composing `a : StrongDual 𝕜 E ≃L[𝕜] F` with the dual-bidual equivalence
 `dualBidualEquivOfDualEquiv a b h` agrees with `b.arrowCongr (.refl 𝕜 𝕜)`. -/

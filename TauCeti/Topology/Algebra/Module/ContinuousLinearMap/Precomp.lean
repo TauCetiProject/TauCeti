@@ -144,11 +144,10 @@ theorem symm_comp_precomp_precomp_comp_of_forall_apply_eq (u : E →L[𝕜] F)
     (he₁ : ∀ x (φ : E →L[𝕜] G), e₁ x φ = φ x)
     (he₂ : ∀ y (ψ : F →L[𝕜] G), e₂ y ψ = ψ y) :
     e₂.symm.toContinuousLinearMap.comp
-      ((precomp G (precomp G u)).comp e₁.toContinuousLinearMap) = u := by
-  ext x
-  rw [comp_apply, comp_apply, ContinuousLinearEquiv.coe_coe, e₂.symm_apply_eq]
-  ext ψ
-  simp [he₁, he₂]
+      ((precomp G (precomp G u)).comp e₁.toContinuousLinearMap) = u :=
+  ((e₂.eq_toContinuousLinearMap_symm_comp u
+    ((precomp G (precomp G u)).comp e₁.toContinuousLinearMap)).2
+    (precomp_precomp_comp_of_forall_apply_eq u he₁ he₂).symm).symm
 
 end EvaluationMaps
 
