@@ -188,8 +188,8 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isTho
 
 variable [FiniteDimensional ℝ F]
 
-/-- **Across a Morse–Bott level the relative cohomology in characteristic two is the shifted
-cohomology of the critical submanifold, with no orientation.** Under the hypotheses of
+/-- **Across a Morse–Bott level the relative cohomology mod `2` is the shifted cohomology of the
+critical submanifold, with no orientation.** Under the hypotheses of
 `TauCeti.exists_isIso_singularCohomologyMap_sublevelPair_of_negativeDiscBundle`, where the
 negative disc bundle of the quadratic normal form `f = c - s + t` is parametrized by the disc
 bundle of a real vector bundle `V → B` of rank `r`, let `K` be a commutative ring in which

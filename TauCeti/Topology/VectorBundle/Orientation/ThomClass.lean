@@ -37,11 +37,11 @@ The glued class is `TauCeti.VectorBundleOrientation.thomClassOfModel`. When `g` 
 `Hʳ(F, F ∖ {0})` it is a Thom class, the Thom class compatible with `o`. In particular **every
 oriented real vector bundle has a Thom class with coefficients in any commutative ring**, integral
 coefficients included (`TauCeti.VectorBundleOrientation.exists_isThomClass`). Without an
-orientation the existence and uniqueness are established
-(`TauCeti.existsUnique_isThomClass_of_subsingleton_units`) for coefficient rings with a single
-unit, such as `ZMod 2`, and the existence for coefficient rings in which `2 = 0`
-(`TauCeti.exists_isThomClass_of_two_eq_zero`). For an oriented plane bundle the Euler class of
-this Thom class (`TauCeti.eulerClass`) is the Euler class in `H²(B; ℤ)`.
+orientation the existence is established for coefficient rings in which `2 = 0`
+(`TauCeti.exists_isThomClass_of_two_eq_zero`), and the uniqueness for coefficient rings with a
+single unit, such as `ZMod 2` (`TauCeti.existsUnique_isThomClass_of_subsingleton_units`). For an
+oriented plane bundle the Euler class of this Thom class (`TauCeti.eulerClass`) is the Euler class
+in `H²(B; ℤ)`.
 
 For a bundle of positive rank `n + 1` with integral coefficients, the generators of the fibre
 pairs can be named directly: an orientation of `F` selects a generator of `Hⁿ⁺¹(F, F ∖ {0}; ℤ)`

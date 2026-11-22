@@ -100,8 +100,7 @@ In the namespace `TauCeti.IsMorseBottFamily`:
   page is the coproduct over the critical submanifolds on the level `c` of the homologies of the
   Thom pairs of their negative normal bundles.
 * `finrank_filteredSpaceSpectralSequence_page_two_X`: in characteristic two, the dimension of the
-  first page
-  at a critical band is the sum of the shifted Betti numbers of the pieces in the band.
+  first page at a critical band is the sum of the shifted Betti numbers of the pieces in the band.
 * `filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_eq_zero_or_eq_zero`: degeneration when
   no two consecutive Morse–Bott counts in characteristic two are both nonzero.
 * `finrank_cokernel_abutmentFiltrationMap_of_forall_eq_zero_or_eq_zero`: in that case, the

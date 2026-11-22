@@ -504,19 +504,18 @@ theorem thomEquivOfField_apply (M : ModuleCat.{w} K) (p m : ℕ) (h : p + finran
     thomEquivOfField F E M p m h u hu a = thomMap F E M (finrank ℝ F) p m h u a := (rfl)
 
 variable (F E) in
-/-- **The homology Thom isomorphism in characteristic two, in dimensions.** Let `K` be a field of
-characteristic two, such as `ZMod 2`. For a real vector bundle `E → B` with fibres of dimension
-`r`, over any base and with no orientation, `dim Hₘ(E, E₀; K)` is the Betti number `bₚ(B; K)`
-whenever `r + p = m`: the bundle has a Thom class with coefficients in `K`
-(`TauCeti.exists_isThomClass_of_two_eq_zero`), and its homology Thom map is an isomorphism
-(`TauCeti.homologyThomIso`). -/
+/-- **The mod `2` homology Thom isomorphism, in dimensions.** Let `K` be a field of characteristic
+two, such as `ZMod 2`. For a real vector bundle `E → B` with fibres of dimension `r`, over any base
+and with no orientation, `dim Hₘ(E, E₀; K)` is the Betti number `bₚ(B; K)` whenever `r + p = m`:
+the bundle has a Thom class with coefficients in `K` (`TauCeti.exists_isThomClass_of_two_eq_zero`),
+and its homology Thom map is an isomorphism (`TauCeti.homologyThomIso`). -/
 theorem finrank_singularHomology_thomPair_of_two_eq_zero [FiniteDimensional ℝ F]
     (h2 : (2 : K) = 0) (p m : ℕ) (h : finrank ℝ F + p = m) :
     finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) m : ModuleCat K) =
       bettiNumber K B p := by
-  obtain ⟨u, hu⟩ := exists_isThomClass_of_two_eq_zero (F := F) (E := E) K h2
+  have hu := exists_isThomClass_of_two_eq_zero (F := F) (E := E) K h2
   rw [bettiNumber_def]
-  exact (homologyThomIso F E p m h u hu).toLinearEquiv.finrank_eq
+  exact (homologyThomIso F E p m h _ hu.choose_spec).toLinearEquiv.finrank_eq
 
 end IsomorphismOfField
 
