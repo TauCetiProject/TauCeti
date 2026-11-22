@@ -67,6 +67,9 @@ On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at l
 (`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
 
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
+
+For `t ∈ [0, 1]`, the segment point `z₀ - t` has norm at most `max ‖z₀‖ ‖z₀ - 1‖`
+(`TauCeti.norm_sub_ofReal_le_max`).
 -/
 
 public section
@@ -264,6 +267,23 @@ theorem eq_of_dist_intCast_lt_one {m n : ℤ} (h : dist (m : ℂ) (n : ℂ) < 1)
   have : (1 : ℝ) ≤ dist (m : ℂ) (n : ℂ) := by
     rw [Complex.isometry_intCast.dist_eq]; exact Int.pairwise_one_le_dist hne
   linarith
+
+/-- For `t ∈ [0, 1]`, the segment point `z₀ - t` has norm at most `max ‖z₀‖ ‖z₀ - 1‖`. -/
+theorem norm_sub_ofReal_le_max (z₀ : ℂ) {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :
+    ‖z₀ - (t : ℂ)‖ ≤ max ‖z₀‖ ‖z₀ - 1‖ := by
+  have h1t : 0 ≤ 1 - t := sub_nonneg.mpr ht.2
+  have heq : z₀ - (t : ℂ) = ((1 - t : ℝ) : ℂ) * z₀ + (t : ℂ) * (z₀ - 1) := by
+    push_cast; ring
+  rw [heq]
+  calc ‖((1 - t : ℝ) : ℂ) * z₀ + (t : ℂ) * (z₀ - 1)‖
+      ≤ ‖((1 - t : ℝ) : ℂ) * z₀‖ + ‖(t : ℂ) * (z₀ - 1)‖ := norm_add_le _ _
+    _ = (1 - t) * ‖z₀‖ + t * ‖z₀ - 1‖ := by
+      rw [norm_mul, norm_mul, Complex.norm_real, Complex.norm_real,
+        Real.norm_of_nonneg h1t, Real.norm_of_nonneg ht.1]
+    _ ≤ (1 - t) * max ‖z₀‖ ‖z₀ - 1‖ + t * max ‖z₀‖ ‖z₀ - 1‖ :=
+      add_le_add (mul_le_mul_of_nonneg_left (le_max_left _ _) h1t)
+        (mul_le_mul_of_nonneg_left (le_max_right _ _) ht.1)
+    _ = max ‖z₀‖ ‖z₀ - 1‖ := by ring
 
 end TauCeti
 

@@ -22,7 +22,9 @@ terms of positive norm), each term dominates the sum of its predecessors and the
 diverge in norm. In any normed ring with summable geometric series, shifted polynomial-geometric
 series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`. Likewise, in a complete normed
 division ring, a power series converging at `w` remains summable at every `z` with `‖z‖ < ‖w‖`
-after multiplying its coefficients by `n ^ k`.
+after multiplying its coefficients by `n ^ k`; in particular, for a real sequence whose weighted
+series `∑ f s * r ^ s` converges for all `0 ≤ r < R`, multiplying by `s` or `(s + 1)` with a
+shifted exponent preserves summability inside `R`.
 **Dirichlet's test** holds for coefficients of bounded variation tending to zero: their
 products with a sequence of bounded partial sums have Cauchy partial sums.
 
@@ -223,6 +225,32 @@ theorem summable_pow_mul_powerSeries_of_norm_lt {α : Type*} [NormedDivisionRing
       = ‖(n : α) ^ k‖ * ‖f n‖ * ‖z‖ ^ n := by rw [norm_mul, norm_mul, norm_pow z]
     _ ≤ (n : ℝ) ^ k * (C / ‖w‖ ^ n) * ‖z‖ ^ n := by gcongr
     _ = C * ((n : ℝ) ^ k * (‖z‖ / ‖w‖) ^ n) := by rw [div_pow]; ring
+
+/-- Multiplying a real sequence by the index `s` preserves weighted summability strictly inside
+the radius `R`. -/
+theorem summable_nat_mul_of_forall_lt {f : ℕ → ℝ} {R : ℝ}
+    (hf : ∀ r : ℝ, 0 ≤ r → r < R → Summable fun s : ℕ => f s * r ^ s)
+    {r : ℝ} (hr0 : 0 ≤ r) (hr : r < R) :
+    Summable fun s : ℕ => (s : ℝ) * f s * r ^ s := by
+  let w : ℝ := (r + R) / 2
+  have hwR : w < R := add_div_two_lt_right.mpr hr
+  have hrw_lt : r < w := left_lt_add_div_two.mpr hr
+  have hw0 : 0 ≤ w := hr0.trans hrw_lt.le
+  have hrw : ‖r‖ < ‖w‖ := by
+    rwa [Real.norm_of_nonneg hr0, Real.norm_of_nonneg hw0]
+  simpa only [pow_one] using summable_pow_mul_powerSeries_of_norm_lt 1
+    ((hf w hw0 hwR).hasSum.tendsto_sum_nat.cauchySeq) hrw
+
+/-- Summability of `n * f n * r ^ n` and `f n * r ^ n` yields summability of
+`(n + 1) * f n * r ^ (n + 1)`. -/
+theorem summable_add_one_mul_pow_succ {R : Type*} [CommSemiring R] [TopologicalSpace R]
+    [IsTopologicalSemiring R] {f : ℕ → R} {r : R}
+    (hnf : Summable fun n : ℕ => (n : R) * f n * r ^ n)
+    (hf : Summable fun n : ℕ => f n * r ^ n) :
+    Summable fun n : ℕ => ((n : R) + 1) * f n * r ^ (n + 1) := by
+  refine ((hnf.mul_left r).add (hf.mul_left r)).congr fun n => ?_
+  rw [pow_succ r n]
+  ring
 
 /-- **Dirichlet's test** for coefficients of bounded variation. If `f n → 0`, the series of the
 differences `‖f (n + 1) - f n‖` converges, and the partial sums of `z` are bounded, then the

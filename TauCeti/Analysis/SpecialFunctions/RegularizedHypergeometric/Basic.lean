@@ -142,25 +142,6 @@ theorem hasSum_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) (z 
   simpa [regularizedHGFun, regularizedHGFunSeries, FormalMultilinearSeries.ofScalars_apply_eq,
     mul_comm] using this
 
-/-- On the open unit disk `‖z‖ < 1`, the regularized Gauss hypergeometric power series converges
-to `regularizedGaussHGFun a b c z`. -/
-theorem hasSum_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
-    HasSum (fun n : ℕ => (regularizedGaussHGFunSeries a b c).coeff n * z ^ n)
-      (regularizedGaussHGFun a b c z) := by
-  have hmem : z ∈ Metric.eball (0 : ℂ) (regularizedGaussHGFunSeries a b c).radius :=
-    Metric.eball_subset_eball (radius_regularizedGaussHGFunSeries_ge_one a b c) <| by
-      rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
-  simpa only [regularizedGaussHGFun, FormalMultilinearSeries.apply_eq_pow_smul_coeff, smul_eq_mul,
-    mul_comm] using (regularizedGaussHGFunSeries a b c).hasSum hmem
-
-/-- When there are at most as many upper as lower parameters, the regularized hypergeometric
-series converges absolutely at every `z`. -/
-theorem summable_norm_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) (z : ℂ) :
-    Summable fun n => ‖regularizedHGFunCoeff a b n * z ^ n‖ := by
-  have := (regularizedHGFunSeries a b).summable_norm_apply (x := z)
-    (by simp [radius_regularizedHGFunSeries_eq_top h])
-  simpa [regularizedHGFunSeries, FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using this
-
 /-- When there is one more upper than lower parameter, the regularized hypergeometric series
 converges to `regularizedHGFun a b z` on the open unit disk `‖z‖ < 1`. -/
 theorem hasSum_regularizedHGFun_of_card_eq_add_one {a b : Multiset ℂ}
@@ -182,6 +163,23 @@ theorem summable_norm_regularizedHGFun_of_card_eq_add_one {a b : Multiset ℂ}
     rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
   simpa [regularizedHGFunSeries, FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using
     (regularizedHGFunSeries a b).summable_norm_apply hmem
+
+/-- On the open unit disk `‖z‖ < 1`, the regularized Gauss hypergeometric power series converges
+to `regularizedGaussHGFun a b c z`. -/
+theorem hasSum_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
+    HasSum (fun n : ℕ => (regularizedGaussHGFunSeries a b c).coeff n * z ^ n)
+      (regularizedGaussHGFun a b c z) := by
+  simpa only [regularizedGaussHGFun, regularizedHGFun, ← coeff_regularizedGaussHGFunSeries,
+    regularizedGaussHGFunSeries, regularizedHGFunSeries_coeff] using
+    hasSum_regularizedHGFun_of_card_eq_add_one (a := {a, b}) (b := {c}) rfl hz
+
+/-- When there are at most as many upper as lower parameters, the regularized hypergeometric
+series converges absolutely at every `z`. -/
+theorem summable_norm_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) (z : ℂ) :
+    Summable fun n => ‖regularizedHGFunCoeff a b n * z ^ n‖ := by
+  have := (regularizedHGFunSeries a b).summable_norm_apply (x := z)
+    (by simp [radius_regularizedHGFunSeries_eq_top h])
+  simpa [regularizedHGFunSeries, FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using this
 
 /-- When there are at most as many upper as lower parameters, `regularizedHGFun a b` is entire. -/
 @[fun_prop]

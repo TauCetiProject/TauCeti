@@ -60,7 +60,7 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 * `TauCeti.mem_slitPlane_of_norm_one_sub_lt_one_add`,
   `TauCeti.div_mem_slitPlane_of_norm_sub_lt_add`
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
-* `TauCeti.re_pos_of_norm_sub_one_lt_one`
+* `TauCeti.re_pos_of_norm_sub_one_lt_one`, `TauCeti.one_sub_div_re_pos`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
 * `TauCeti.mul_mem_slitPlane_of_re_pos`
 * `TauCeti.ofReal_mul_mem_slitPlane`, `TauCeti.div_ofReal_mem_slitPlane`
@@ -157,6 +157,26 @@ theorem re_pos_of_norm_sub_one_lt_one {q : ℂ} (hq : ‖q - 1‖ < 1) : 0 < q.r
   have h := Complex.re_le_norm (1 - q)
   rw [norm_sub_rev, Complex.sub_re, Complex.one_re] at h
   linarith
+
+/-- When `z` is strictly farther from `z₀` than `0` is, `1 - z₀ / z` lies in the open right
+half-plane. -/
+theorem one_sub_div_re_pos {z z₀ : ℂ} (h : ‖z₀‖ < ‖z - z₀‖) :
+    0 < (1 - z₀ / z).re := by
+  have hzz₀_pos : 0 < ‖z - z₀‖ := (norm_nonneg z₀).trans_lt h
+  have hzz₀ : z - z₀ ≠ 0 := norm_pos_iff.mp hzz₀_pos
+  have hz : z ≠ 0 := by
+    rintro rfl
+    exact lt_irrefl ‖z₀‖ (by simpa only [zero_sub, norm_neg] using h)
+  have hinv_re : 0 < ((1 - z₀ / z)⁻¹).re := by
+    have hinv : (1 - z₀ / z)⁻¹ = 1 + z₀ / (z - z₀) := by field_simp; ring
+    rw [hinv]
+    exact re_pos_of_norm_sub_one_lt_one <| by
+      rwa [add_sub_cancel_left, norm_div, div_lt_one hzz₀_pos]
+  have hne : (1 - z₀ / z)⁻¹ ≠ 0 := by
+    intro h0
+    simp [h0] at hinv_re
+  rw [← inv_inv (1 - z₀ / z), inv_re]
+  exact div_pos hinv_re (normSq_pos.mpr hne)
 
 /-- Two points in the right half-plane have their ratio in the slit plane. -/
 theorem div_mem_slitPlane_of_re_pos {z₁ z₂ : ℂ} (h₁ : 0 < z₁.re) (h₂ : 0 < z₂.re) :
