@@ -196,7 +196,7 @@ theorem smul_kerCoeff_eq_self_of_mem_inertiaSubgroup (hdeg : (φ.degree : 𝓀[K
   classical
   have hQ : (ofIsogeny φ).pointCoeffMap (Q : W₁.PointCoeff) = W₂.basePointCoeff 0 := by
     rw [map_zero]
-    exact Q.2
+    exact Q.property
   exact Subtype.ext (smul_pointCoeff_eq_self_of_pointCoeffMap_eq_basePointCoeff hdeg hQ hσ)
 
 variable {φ} in

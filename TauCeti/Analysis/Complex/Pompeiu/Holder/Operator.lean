@@ -61,7 +61,7 @@ private theorem source_gain [FiniteDimensional ℂ F]
     exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
       (F := F) hα hα1 c hr hR
   obtain ⟨hcd, hH, -, -⟩ := hC (support_subset_of_mem_supportedHolderSubmodule f.property)
-    f.1.holderWith (source_bound f.1)
+    f.val.holderWith (source_bound f.val)
   exact ⟨hcd, _, hH⟩
 
 private def cauchyDerivativeHolder [FiniteDimensional ℂ F]
@@ -102,8 +102,8 @@ private theorem normalizedCauchy_add {α : ℝ≥0} {c : ℂ} {r : ℝ}
       fun w ↦ normalizedCauchy f w + normalizedCauchy g w := by
   -- With the induced real action, `normalizedCauchy` is the Cauchy transform.
   cases NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := F)
-  have h := cauchyTransform_add (HolderSpace.continuous f.1) (hasCompactSupport_cauchy_source f)
-    (HolderSpace.continuous g.1) (hasCompactSupport_cauchy_source g)
+  have h := cauchyTransform_add (HolderSpace.continuous f.val) (hasCompactSupport_cauchy_source f)
+    (HolderSpace.continuous g.val) (hasCompactSupport_cauchy_source g)
   funext w
   simpa only [normalizedCauchy, cauchyTransform_apply, Submodule.coe_add, HolderSpace.add_apply,
     Pi.add_apply] using congrFun h w
@@ -160,7 +160,7 @@ private theorem exists_norm_cauchyDerivativeLinearMap_le [FiniteDimensional ℂ 
   let H := nnHolderNorm α (f : HolderSpace α ℂ F)
   let M := ‖(f : HolderSpace α ℂ F).toBoundedContinuousFunction‖₊
   obtain ⟨-, hH, hN, -⟩ := hC (support_subset_of_mem_supportedHolderSubmodule f.property)
-    f.1.holderWith (source_bound f.1)
+    f.val.holderWith (source_bound f.val)
   -- Match the integral representative and the local source seminorm abbreviations.
   change HolderOnWith (C * (H + M)) α (fderiv ℝ (normalizedCauchy f)) (closedBall c R) at hH
   -- The norm bound uses the same representative and source abbreviations.
@@ -263,7 +263,7 @@ private def cauchyValue {α : ℝ≥0} (hα : 0 < α) {c : ℂ} {r R : ℝ}
   -- with the caller's action without changing the exported source or target carriers.
   cases NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := F)
   have h := holderOnWith_pi_inv_smul_integral_sub_inv_smul
-    (f := fun z ↦ (f : HolderSpace α ℂ F) z) hα f.1.holderWith
+    (f := fun z ↦ (f : HolderSpace α ℂ F) z) hα f.val.holderWith
     hr hR (support_subset_of_mem_supportedHolderSubmodule f.property)
   exact BoundedContinuousFunction.mkOfCompact
     ⟨(closedBall c R).domRestrict (fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z,

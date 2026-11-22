@@ -96,7 +96,7 @@ theorem range_whiskerRight_ι_comp_toSSet_h_le_smoothSingularSubcomplex
       ((TopCat.of N).toSSetObjEquiv _
           ((((smoothSingularSubcomplex I M).ι ▷ Δ[1]) ≫ H.toSSet.h).app _ (σ, α)) ∘
         fullSimplexEquivStdSimplex n) x =
-      F (simplexMapAmbient (SSet.stdSimplex.objEquiv α) x.1 0,
+      F (simplexMapAmbient (SSet.stdSimplex.objEquiv α) x.val 0,
         SmoothSimplex.toContinuousMap (I := I) σ x) := by
     intro x
     rw [simplexMapAmbient_coe_apply, Fin.succ_zero_eq_one,
@@ -107,7 +107,7 @@ theorem range_whiskerRight_ι_comp_toSSet_h_le_smoothSingularSubcomplex
     -- simplices assembled by `μ`, whose components are `σ` and the interval simplex of `α`
     -- (`simplexMap_μ_apply`). Then `H.h (a, b) = H (I.homeomorph b, a)` holds by definition
     -- (`TopCat.Homotopy.h_hom_apply`), and `simplexMap` is `toSSetObjEquiv` read on `ULift`.
-    exact congrArg (ConcreteCategory.hom H.h) (TauCeti.TopCat.simplexMap_μ_apply σ.1
+    exact congrArg (ConcreteCategory.hom H.h) (TauCeti.TopCat.simplexMap_μ_apply σ.val
       (SSet.stdSimplex.toSSetObjI.app _ α) (ULift.up (fullSimplexEquivStdSimplex n x)))
   rw [mem_smoothSingularSubcomplex_iff, funext hval]
   have hA : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ) ∞

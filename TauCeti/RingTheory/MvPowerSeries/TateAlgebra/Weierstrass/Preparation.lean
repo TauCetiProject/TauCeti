@@ -94,7 +94,7 @@ theorem exists_isNormMulUnit_isMonicOfDegree_mul_eq_of_isMulDistinguished [Compl
         c none ^ s ∧
       e * restrictedOptionEquiv.symm (PowerSeries.polynomialToRestricted (c none) ω) = g := by
   obtain ⟨e, ω, he, hω, hn, heω⟩ :=
-    hg.exists_isNormMulUnit_isMonicOfDegree_mul_eq (restrictedOptionEquiv g).2
+    hg.exists_isNormMulUnit_isMonicOfDegree_mul_eq (restrictedOptionEquiv g).property
   refine ⟨restrictedOptionEquiv.symm e, ω, ?_, hω, ?_, ?_⟩
   · -- The identification is norm-preserving, so it reflects multiplicative units.
     refine (MulEquiv.isNormMulUnit_iff (restrictedOptionEquiv (c := c)).toMulEquiv

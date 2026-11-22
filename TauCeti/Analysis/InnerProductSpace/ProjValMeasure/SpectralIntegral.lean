@@ -133,7 +133,7 @@ private theorem cauchy_map_integral_truncate (P : ProjValMeasure X H) {f : X →
         g.measurable.aestronglyMeasurable]
     simp
   have hmem : MemLp f 2 (P.diag x) :=
-    hf.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.2 x.2
+    hf.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.2 x.property
   have hmem_tr (M : ℝ) : MemLp (BoundedBorelFunction.truncate f hf M) 2 (P.diag x) :=
     MemLp.of_bound (BoundedBorelFunction.truncate f hf M).measurable.aestronglyMeasurable
       ‖BoundedBorelFunction.truncate f hf M‖
@@ -281,10 +281,10 @@ theorem dense_spectralIntegral_domain (P : ProjValMeasure X H) {f : X → ℂ} (
 domain. -/
 theorem spectralIntegral_proj_apply (P : ProjValMeasure X H) {f : X → ℂ} (hf : Measurable f)
     (B : Set X) (hB : MeasurableSet B) (x : (P.spectralIntegral f hf).domain) :
-    P.spectralIntegral f hf ⟨P.proj B hB x, P.proj_mem_spectralIntegral_domain hf B hB x.2⟩ =
+    P.spectralIntegral f hf ⟨P.proj B hB x, P.proj_mem_spectralIntegral_domain hf B hB x.property⟩ =
       P.proj B hB (P.spectralIntegral f hf x) := by
   let xB : (P.spectralIntegral f hf).domain :=
-    ⟨P.proj B hB x, P.proj_mem_spectralIntegral_domain hf B hB x.2⟩
+    ⟨P.proj B hB x, P.proj_mem_spectralIntegral_domain hf B hB x.property⟩
   refine tendsto_nhds_unique (P.tendsto_integral_truncate_spectralIntegral hf xB) ?_
   have hcont := ((P.proj B hB).continuous.tendsto _).comp
     (P.tendsto_integral_truncate_spectralIntegral hf x)
@@ -365,7 +365,7 @@ theorem norm_sq_spectralIntegral_apply (P : ProjValMeasure X H) {f : X → ℂ} 
     (x : (P.spectralIntegral f hf).domain) :
     ‖P.spectralIntegral f hf x‖ ^ 2 = ∫ t, ‖f t‖ ^ 2 ∂(P.diag x) := by
   have hint : Integrable (fun t => ‖f t‖ ^ 2) (P.diag x) :=
-    (P.mem_spectralIntegral_domain_iff_integrable_norm_sq hf x).1 x.2
+    (P.mem_spectralIntegral_domain_iff_integrable_norm_sq hf x).1 x.property
   have hcont : Continuous fun v : H => ‖v‖ ^ 2 := continuous_norm.pow 2
   refine tendsto_nhds_unique
     ((hcont.tendsto _).comp (P.tendsto_integral_truncate_spectralIntegral hf x)) ?_
@@ -392,10 +392,10 @@ theorem diag_spectralIntegral (P : ProjValMeasure X H) {f : X → ℂ} (hf : Mea
     (x : (P.spectralIntegral f hf).domain) :
     P.diag (P.spectralIntegral f hf x) = (P.diag x).withDensity fun t => ‖f t‖ₑ ^ 2 := by
   have hint : Integrable (fun t => ‖f t‖ ^ 2) (P.diag x) :=
-    (P.mem_spectralIntegral_domain_iff_integrable_norm_sq hf x).1 x.2
+    (P.mem_spectralIntegral_domain_iff_integrable_norm_sq hf x).1 x.property
   ext B hB
   let xB : (P.spectralIntegral f hf).domain :=
-    ⟨P.proj B hB x, P.proj_mem_spectralIntegral_domain hf B hB x.2⟩
+    ⟨P.proj B hB x, P.proj_mem_spectralIntegral_domain hf B hB x.property⟩
   calc
     P.diag (P.spectralIntegral f hf x) B
         = ‖P.proj B hB (P.spectralIntegral f hf x)‖ₑ ^ 2 :=
@@ -418,7 +418,7 @@ theorem spectralIntegral_apply_eq_zero_iff (P : ProjValMeasure X H) {f : X → �
     (hf : Measurable f) (x : (P.spectralIntegral f hf).domain) :
     P.spectralIntegral f hf x = 0 ↔ f =ᵐ[P.diag x] 0 := by
   have hint : Integrable (fun t => ‖f t‖ ^ 2) (P.diag x) :=
-    (P.mem_spectralIntegral_domain_iff_integrable_norm_sq hf x).1 x.2
+    (P.mem_spectralIntegral_domain_iff_integrable_norm_sq hf x).1 x.property
   rw [← norm_eq_zero, ← pow_eq_zero_iff (n := 2) two_ne_zero, P.norm_sq_spectralIntegral_apply hf,
     integral_eq_zero_iff_of_nonneg (fun _ => sq_nonneg _) hint]
   simp [EventuallyEq]
@@ -448,7 +448,7 @@ theorem inner_spectralIntegral_apply (P : ProjValMeasure X H) {f : X → ℂ} (h
     (x : (P.spectralIntegral f hf).domain) (y : H) :
     ⟪y, P.spectralIntegral f hf x⟫_ℂ =
       ∫ᵛ t, f t ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure y x] := by
-  have hint := P.integrable_polarizedComplexMeasure_of_mem_spectralIntegral_domain hf x.2 y
+  have hint := P.integrable_polarizedComplexMeasure_of_mem_spectralIntegral_domain hf x.property y
   have hcont : Continuous fun v : H => ⟪y, v⟫_ℂ := continuous_const.inner continuous_id
   refine tendsto_nhds_unique
     ((hcont.tendsto _).comp (P.tendsto_integral_truncate_spectralIntegral hf x)) ?_
@@ -477,7 +477,7 @@ theorem inner_spectralIntegral_apply_left (P : ProjValMeasure X H) {f : X → �
   have hsf : Measurable (star f) := continuous_star.measurable.comp hf
   have hint : (P.polarizedComplexMeasure x y).Integrable (star f) :=
     P.integrable_polarizedComplexMeasure_of_mem_spectralIntegral_domain hsf
-      (by rw [P.spectralIntegral_star_domain]; exact y.2) x
+      (by rw [P.spectralIntegral_star_domain]; exact y.property) x
   rw [← inner_conj_symm, P.inner_spectralIntegral_apply hf y x]
   simpa [Complex.conjCLE_apply, P.mapRangeL_conjCLE_polarizedComplexMeasure] using
     VectorMeasure.map_integral_comp_eq_integral_mapRangeL (P.polarizedComplexMeasure x y) hint
@@ -495,7 +495,7 @@ theorem polarizedComplexMeasure_spectralIntegral_right (P : ProjValMeasure X H) 
   rw [P.polarizedComplexMeasure_apply _ _ _ hB, ← P.spectralIntegral_proj_apply hf B hB x,
     P.inner_spectralIntegral_apply hf _ y, P.polarizedComplexMeasure_proj_right B hB y x,
     ← VectorMeasure.withDensity_apply
-      (P.integrable_polarizedComplexMeasure_of_mem_spectralIntegral_domain hf x.2 y)]
+      (P.integrable_polarizedComplexMeasure_of_mem_spectralIntegral_domain hf x.property y)]
 
 /-- Applying `P.spectralIntegral f hf` in the conjugate-linear argument weights the polarized
 complex measure by `star f`. -/
@@ -506,7 +506,7 @@ theorem polarizedComplexMeasure_spectralIntegral_left (P : ProjValMeasure X H) {
   have hsf : Measurable (star f) := continuous_star.measurable.comp hf
   have hy' : (y : H) ∈ (P.spectralIntegral (star f) hsf).domain := by
     rw [P.spectralIntegral_star_domain]
-    exact y.2
+    exact y.property
   ext B hB
   rw [P.polarizedComplexMeasure_apply _ _ _ hB, P.inner_spectralIntegral_apply_left hf y _,
     P.polarizedComplexMeasure_proj_right B hB y x,
@@ -608,8 +608,8 @@ theorem add_le_spectralIntegral_add (P : ProjValMeasure X H) {f g : X → ℂ} (
       (((P.mem_spectralIntegral_domain_iff_memLp hf x).1 hx.1).add
         ((P.mem_spectralIntegral_domain_iff_memLp hg x).1 hx.2))
   · refine ext_inner_left ℂ fun z => ?_
-    have hxf : (x : H) ∈ (P.spectralIntegral f hf).domain := x.2.1
-    have hxg : (x : H) ∈ (P.spectralIntegral g hg).domain := x.2.2
+    have hxf : (x : H) ∈ (P.spectralIntegral f hf).domain := x.property.1
+    have hxg : (x : H) ∈ (P.spectralIntegral g hg).domain := x.property.2
     have hintf := P.integrable_polarizedComplexMeasure_of_mem_spectralIntegral_domain hf hxf z
     have hintg := P.integrable_polarizedComplexMeasure_of_mem_spectralIntegral_domain hg hxg z
     rw [LinearPMap.add_apply, inner_add_right, P.inner_spectralIntegral_apply hf ⟨x, hxf⟩ z,
@@ -860,7 +860,7 @@ theorem norm_adjoint_spectralIntegral_apply (P : ProjValMeasure X H) {f : X → 
   let hsf : Measurable (star f) := continuous_star.measurable.comp hf
   have hx' : (x : H) ∈ (P.spectralIntegral (star f) hsf).domain := by
     rw [P.spectralIntegral_star_domain]
-    exact x.2
+    exact x.property
   rw [LinearPMap.congr_fun (P.adjoint_spectralIntegral hf) _ hx',
     ← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _),
     P.norm_sq_spectralIntegral_apply hsf ⟨x, hx'⟩, P.norm_sq_spectralIntegral_apply hf x]

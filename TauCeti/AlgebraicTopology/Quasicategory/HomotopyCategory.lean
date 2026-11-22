@@ -20,6 +20,16 @@ In particular an edge is an equivalence exactly when its class in the generators
 homotopy category is invertible. This is the form needed when using comparison functors out
 of that homotopy category, for example for the differential graded nerve.
 
+The comparison also describes the generators-and-relations homotopy category of a quasicategory
+directly: every morphism between two vertices is the class of an edge
+(`SSet.HomotopyCategory.homMk_surjective`), two edges have the same class exactly when a
+`2`-simplex exhibits one as a composite of the identity and the other
+(`SSet.HomotopyCategory.homMk_eq_homMk_iff`), and two vertices are isomorphic exactly when an
+equivalence joins them (`SSet.HomotopyCategory.nonempty_iso_mk_iff`). Consequently a map into a
+quasicategory is essentially surjective on homotopy categories exactly when every vertex of the
+target is joined by an equivalence to a vertex of the image
+(`SSet.essSurj_mapHomotopyCategory_iff`).
+
 ## References
 
 * J. Lurie, *Higher Topos Theory*, §1.2.3 and §1.2.4.
@@ -148,3 +158,70 @@ lemma isEquivalence_iff_isIso_homotopyCategoryHomMk (e : X.Edge x y) :
   simp [HomotopyCategory.homMk]
 
 end SSet.Edge
+
+namespace SSet.HomotopyCategory
+
+variable {X : SSet.{u}} [Quasicategory X] {x y : X _⦋0⦌}
+
+/-- The comparison functor sends the class of an edge to the class of the same edge. -/
+private lemma toHomotopyCategory_map_homMk_toTruncated (e : X.Edge x y) :
+    (Truncated.HomotopyCategory₂.toHomotopyCategory ((truncation 2).obj X)).map
+        (Truncated.HomotopyCategory₂.homMk e.toTruncated) =
+      homMk e := by
+  rw [Truncated.HomotopyCategory₂.toHomotopyCategory_map_homMk]
+  -- The two `eqToHom` factors are identities, since the comparison fixes vertices by definition.
+  exact (Category.id_comp _).trans (Category.comp_id _)
+
+/-- In a quasicategory, every morphism of the homotopy category between two vertices is the class
+of an edge. -/
+lemma homMk_surjective : Function.Surjective (homMk : X.Edge x y → (mk x ⟶ mk y)) := by
+  intro φ
+  obtain ⟨ψ, hψ⟩ : ∃ ψ : (⟨x⟩ : Truncated.HomotopyCategory₂ ((truncation 2).obj X)) ⟶ ⟨y⟩,
+      (Truncated.HomotopyCategory₂.toHomotopyCategory _).map ψ = φ :=
+    (Truncated.HomotopyCategory₂.toHomotopyCategory _).map_surjective φ
+  obtain ⟨e, rfl⟩ := Truncated.HomotopyCategory₂.homMk_surjective ψ
+  exact ⟨Edge.ofTruncated e, (toHomotopyCategory_map_homMk_toTruncated _).symm.trans hψ⟩
+
+/-- In a quasicategory, two edges with the same endpoints have the same class in the homotopy
+category exactly when a `2`-simplex exhibits the second as a composite of the identity and the
+first. -/
+lemma homMk_eq_homMk_iff (e e' : X.Edge x y) :
+    homMk e = homMk e' ↔ Nonempty (Edge.CompStruct (.id x) e e') := by
+  refine ⟨fun h ↦ ?_, fun ⟨h⟩ ↦ ?_⟩
+  · obtain ⟨h⟩ := Truncated.HomotopyCategory₂.homMk_eq_iff_homotopicR.1
+      ((Truncated.HomotopyCategory₂.toHomotopyCategory ((truncation 2).obj X)).map_injective
+        ((toHomotopyCategory_map_homMk_toTruncated e).trans
+          (h.trans (toHomotopyCategory_map_homMk_toTruncated e').symm)))
+    exact ⟨.ofTruncated h⟩
+  · exact (toHomotopyCategory_map_homMk_toTruncated e).symm.trans
+      ((congrArg (Truncated.HomotopyCategory₂.toHomotopyCategory ((truncation 2).obj X)).map
+        (Truncated.HomotopyCategory₂.homMk_eq_iff_homotopicR.2 ⟨h.toTruncated⟩)).trans
+        (toHomotopyCategory_map_homMk_toTruncated e'))
+
+/-- In a quasicategory, two vertices are isomorphic in the homotopy category exactly when an
+equivalence joins them. -/
+lemma nonempty_iso_mk_iff : Nonempty (mk x ≅ mk y) ↔ ∃ e : X.Edge x y, e.IsEquivalence := by
+  refine ⟨fun ⟨i⟩ ↦ ?_, fun ⟨e, he⟩ ↦ ?_⟩
+  · obtain ⟨e, he⟩ := homMk_surjective i.hom
+    exact ⟨e, (Edge.isEquivalence_iff_isIso_homotopyCategoryHomMk e).2 (he ▸ inferInstance)⟩
+  · have := (Edge.isEquivalence_iff_isIso_homotopyCategoryHomMk e).1 he
+    exact ⟨asIso (homMk e)⟩
+
+end SSet.HomotopyCategory
+
+namespace SSet
+
+/-- A map `f : X ⟶ Y` to a quasicategory is essentially surjective on homotopy categories exactly
+when every vertex of `Y` is joined by an equivalence to a vertex in the image of `f`. -/
+lemma essSurj_mapHomotopyCategory_iff {X Y : SSet.{u}} [Quasicategory Y] (f : X ⟶ Y) :
+    (mapHomotopyCategory f).EssSurj ↔
+      ∀ y : Y _⦋0⦌, ∃ (x : X _⦋0⦌) (e : Edge (f.app _ x) y), e.IsEquivalence := by
+  refine ⟨fun _ y ↦ ?_, fun h ↦ ⟨fun b ↦ ?_⟩⟩
+  · obtain ⟨a, ⟨i⟩⟩ := Functor.EssSurj.mem_essImage (mapHomotopyCategory f) (HomotopyCategory.mk y)
+    induction a with | mk x => ?_
+    exact ⟨x, HomotopyCategory.nonempty_iso_mk_iff.1 ⟨i⟩⟩
+  · induction b with | mk y => ?_
+    obtain ⟨x, e, he⟩ := h y
+    exact ⟨HomotopyCategory.mk x, HomotopyCategory.nonempty_iso_mk_iff.2 ⟨e, he⟩⟩
+
+end SSet

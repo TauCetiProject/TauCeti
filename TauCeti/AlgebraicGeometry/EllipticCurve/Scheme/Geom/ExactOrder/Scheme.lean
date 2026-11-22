@@ -107,9 +107,9 @@ noncomputable def exactOrderPointsEquivOfIsPullback :
     {P : 𝟙_ (Over T.left) ⟶ Over.mk E'.structureMap // E'.IsOfExactOrder P N} ≃
       (T ⟶ E.exactOrderScheme N) where
   toFun P := Over.homMk
-    (IsClosedImmersion.lift (E.exactOrderLocus N).subschemeι (P.1.left ≫ g) (by
+    (IsClosedImmersion.lift (E.exactOrderLocus N).subschemeι (P.val.left ≫ g) (by
       rw [Scheme.IdealSheafData.ker_subschemeι]
-      exact (isOfExactOrder_iff_exactOrderLocus_le_ker_comp hg h0 P.1 N).mp P.2))
+      exact (isOfExactOrder_iff_exactOrderLocus_le_ker_comp hg h0 P.val N).mp P.property))
     (by simp [hg.w])
   invFun y := ⟨Over.homMk (hg.lift (y ≫ E.exactOrderSchemeι N).left (𝟙 T.left)
       (by simpa using Over.w (y ≫ E.exactOrderSchemeι N))) (by simp), by
@@ -132,14 +132,14 @@ the inclusion in `E`, is `P ≫ g`. -/
 theorem exactOrderPointsEquivOfIsPullback_apply_left_comp
     (P : {P : 𝟙_ (Over T.left) ⟶ Over.mk E'.structureMap // E'.IsOfExactOrder P N}) :
     (exactOrderPointsEquivOfIsPullback N hg h0 P).left ≫ (E.exactOrderLocus N).subschemeι =
-      P.1.left ≫ g := by
+      P.val.left ≫ g := by
   simp [exactOrderPointsEquivOfIsPullback]
 
 /-- The point of exact order `N` of `E'` attached to a morphism `y` from `T` to the exact-order
 scheme lies over the image of `y` in `E`. -/
 @[reassoc (attr := simp)]
 theorem exactOrderPointsEquivOfIsPullback_symm_apply_left_comp (y : T ⟶ E.exactOrderScheme N) :
-    ((exactOrderPointsEquivOfIsPullback N hg h0).symm y).1.left ≫ g =
+    ((exactOrderPointsEquivOfIsPullback N hg h0).symm y).val.left ≫ g =
       (y ≫ E.exactOrderSchemeι N).left :=
   hg.lift_fst _ _ _
 
@@ -160,7 +160,7 @@ theorem exactOrderSchemeι_comp_mulBy : E.exactOrderSchemeι N ≫ E.mulBy N = 1
       (E.baseChangeIso (E.exactOrderScheme N).hom).hom ≫ pullback.fst _ _ =
         (E.exactOrderScheme N).hom ≫ E.zero := by
     simp
-  have hP := ((exactOrderPointsEquivOfIsPullback N hg h0).symm (𝟙 _)).2.comp_mulBy_eq_one
+  have hP := ((exactOrderPointsEquivOfIsPullback N hg h0).symm (𝟙 _)).property.comp_mulBy_eq_one
   have hι := exactOrderPointsEquivOfIsPullback_symm_apply_left_comp hg h0 (𝟙 _)
   simp only [Over.mk_hom, Category.id_comp, exactOrderSchemeι_left] at hι
   ext1

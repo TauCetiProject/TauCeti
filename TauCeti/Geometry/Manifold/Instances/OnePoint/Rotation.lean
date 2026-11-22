@@ -182,7 +182,7 @@ theorem mpullback_smul_fubiniStudyForm_eq_self_iff_exists_star_mul_self_eq_scala
       OnePoint ℂ → OnePoint ℂ) = ((A : GL (Fin 2) ℂ) • ·) := by
     funext x
     rw [mul_smul, scalar_smul_onePoint_eq_self]
-  have hdet : (A : Matrix (Fin 2) (Fin 2) ℂ).det = 1 := A.2
+  have hdet : (A : Matrix (Fin 2) (Fin 2) ℂ).det = 1 := A.property
   simp only [hact]
   rw [mpullback_smul_fubiniStudyForm_eq_self_iff_mem_unitaryGroup, hM]
   -- `(s A)ᴴ (s A) = |s|² Aᴴ A`, and `A` is unitary exactly when `Aᴴ A` is scalar.

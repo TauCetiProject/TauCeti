@@ -76,7 +76,8 @@ noncomputable def symmetricAlgebraDividedDifference (hσ : ∀ m, m - ρ g m ∈
     rw [Subalgebra.smul_def, RingHom.id_apply, Subalgebra.smul_def]
     -- Every invariant is fixed by `g`, so it passes through the divided difference.
     exact SymmetricAlgebra.dividedDifference_mul_of_map_eq
-      ((ρ.symmetricAlgebra_apply g a).symm.trans ((ρ.mem_symmetricAlgebraInvariants a).1 a.2 g)) p
+      ((ρ.symmetricAlgebra_apply g a).symm.trans ((ρ.mem_symmetricAlgebraInvariants a).1 a.property
+          g)) p
 
 /-- The bundled divided-difference operator of `g` is `SymmetricAlgebra.dividedDifference`. -/
 @[simp]

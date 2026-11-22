@@ -44,7 +44,7 @@ theorem join_simplex_simplex (V : Finset α) (W : Finset β) :
     join (simplex V) (simplex W) = simplex (V.disjSum W) := by
   refine SetLike.ext fun τ => ?_
   simp only [mem_join_iff, mem_simplex, subset_disjSum]
-  grind [Finset.nonempty_iff_ne_empty, Finset.empty_subset]
+  grind [← Finset.ne_empty_iff_nonempty, Finset.empty_subset]
 
 variable [DecidableEq α] [DecidableEq β]
 
@@ -72,14 +72,14 @@ theorem stellarSubdivision_simplex_disjSum (hV : V.Nonempty) :
     have hsub : τ.toRight.erase w ⊆ W ↔ τ.toRight ⊆ insert w W :=
       subset_insert_iff.symm
     rw [hsub]
-    grind [Finset.nonempty_iff_ne_empty, Finset.empty_subset]
+    grind [← Finset.ne_empty_iff_nonempty, Finset.empty_subset]
   · have hnot : w ∉ τ.toRight := by simpa using hmem
     have hsub : τ.toRight ⊆ insert w W ↔ τ.toRight ⊆ W :=
       subset_insert_iff_of_notMem hnot
     simp only [mem_stellarSubdivision_iff, hmem, not_false_eq_true, true_and, false_and,
       or_false, mem_simplex, mem_join_iff, mem_simplexBoundary,
       subset_disjSum, map_inl_subset_iff_subset_toLeft, Finset.ssubset_iff_subset_ne, hsub]
-    grind [Finset.nonempty_iff_ne_empty, Finset.empty_subset]
+    grind [← Finset.ne_empty_iff_nonempty, Finset.empty_subset]
 
 /-- The stellar subdivision of a simplex boundary along its left vertex set is the join
 of that set's boundary with the boundary on the right vertices and the fresh vertex `w`. -/
@@ -108,7 +108,7 @@ theorem stellarSubdivision_simplexBoundary_disjSum (hV : V.Nonempty) (hw : w ∉
       herase, herase', hleft, hright, union_subset_iff, subset_refl, hsub]
     simp only [ne_eq, Finset.eq_disjSum_iff]
     simp only [toLeft_union, toRight_union, herase, herase', hleft, hright, union_empty, heq]
-    grind [Finset.nonempty_iff_ne_empty, Finset.empty_subset, Finset.union_eq_right]
+    grind [← Finset.ne_empty_iff_nonempty, Finset.empty_subset, Finset.union_eq_right]
   · have hnot : w ∉ τ.toRight := by simpa using hmem
     have hsub : τ.toRight ⊆ insert w W ↔ τ.toRight ⊆ W :=
       subset_insert_iff_of_notMem hnot
@@ -117,7 +117,7 @@ theorem stellarSubdivision_simplexBoundary_disjSum (hV : V.Nonempty) (hw : w ∉
       Finset.ssubset_iff_subset_ne, subset_disjSum, map_inl_subset_iff_subset_toLeft,
       hsub]
     simp only [ne_eq, Finset.eq_disjSum_iff]
-    grind [Finset.nonempty_iff_ne_empty, Finset.empty_subset, Finset.mem_insert_self]
+    grind [← Finset.ne_empty_iff_nonempty, Finset.empty_subset, Finset.mem_insert_self]
 
 /-- The join of a standard `m`-sphere with a standard `n`-ball is a combinatorial
 `(m + n + 1)`-ball. -/

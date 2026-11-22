@@ -161,7 +161,7 @@ def restrict (S : CompactMatrixStructureGroup n) (hH : H ≤ S.group) :
     have hAd (Z : H.matrixLieAlgebra) :
         LieSubalgebra.inclusion (ClosedSubgroup.matrixLieAlgebra_mono hH)
             (H.matrixAdjointRepresentation g Z) =
-          S.group.matrixAdjointRepresentation ⟨g, hH g.2⟩
+          S.group.matrixAdjointRepresentation ⟨g, hH g.property⟩
             (LieSubalgebra.inclusion (ClosedSubgroup.matrixLieAlgebra_mono hH) Z) :=
       Subtype.ext (by simp)
     simp only [LinearMap.compl₁₂_apply, LieHom.coe_toLinearMap, hAd,
@@ -208,7 +208,7 @@ def prod (S₁ : CompactMatrixStructureGroup n) (S₂ : CompactMatrixStructureGr
     -- `QuadraticMap.prod` of their quadratic maps.
     exact S₁.posDef_innerForm.prod S₂.posDef_innerForm
   isInvariantForm_innerForm := Representation.isInvariantForm_iff.mpr fun g X Y ↦ by
-    obtain ⟨g₁, h₁, g₂, h₂, hg⟩ := ClosedSubgroup.mem_fromBlocksProd_iff.mp g.2
+    obtain ⟨g₁, h₁, g₂, h₂, hg⟩ := ClosedSubgroup.mem_fromBlocksProd_iff.mp g.property
     have hg' : g = ⟨Matrix.UnitaryGroup.sum (g₁, g₂),
         ClosedSubgroup.sum_mem_fromBlocksProd h₁ h₂⟩ :=
       Subtype.ext (Subtype.ext (by simpa using hg))

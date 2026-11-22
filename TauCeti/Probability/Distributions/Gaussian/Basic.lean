@@ -24,7 +24,8 @@ The file also extends the density to extended real points, by its limit `0` at `
 differentiates it in the mean, for formulas over intervals whose bounds may be infinite. It also
 differentiates the density in its real argument and turns integrability against `gaussianReal μ v`
 into Lebesgue integrability of the density-weighted function, the inputs to Gaussian integration
-by parts.
+by parts. Finally, it records the integral form of the Gaussian moment-generating function, which
+needs nothing beyond the definition of `gaussianReal`.
 
 ## Main statements
 
@@ -41,11 +42,15 @@ by parts.
   `v = 0`).
 * `TauCeti.Probability.tendsto_mul_gaussianPDFReal_zero_one_cocompact` — `x φ(x) → 0` as
   `|x| → ∞`, for the standard Gaussian density `φ`.
+* `TauCeti.Probability.tendsto_gaussianPDFReal_zero_one_atBot` — `φ(x) → 0` as `x → -∞`.
 * `TauCeti.Probability.hasDerivAt_gaussianPDFReal` — the derivative of the Gaussian density in
   its real argument is `-(x - μ) / v` times the density, for every variance.
 * `TauCeti.Probability.integrable_gaussianReal_iff_integrable_gaussianPDFReal_smul` — at positive
   variance, integrability against `gaussianReal μ v` is equivalent to Lebesgue integrability of
   the function weighted by the density.
+* `TauCeti.Probability.integral_exp_mul_gaussianReal` — the exponential moment
+  `∫ exp (t x) ∂N(μ, v) = exp (μ t + v t² / 2)`, and
+  `TauCeti.Probability.integral_exp_mul_sub_gaussianReal`, its normalized form.
 * `TauCeti.Probability.hasDerivAt_gaussianPDFRealEReal` — as a function of the mean `μ`, the
   density at an extended point `e` has derivative `(e - μ) / v` times the density.
 
@@ -136,6 +141,16 @@ theorem tendsto_mul_gaussianPDFReal_zero_one_cocompact :
     abs_of_pos (inv_pos.2 (sqrt_pos.2 (by positivity : (0 : ℝ) < 2 * π)))]
   ring_nf
 
+/-- The standard Gaussian density tends to `0` at `-∞`. -/
+theorem tendsto_gaussianPDFReal_zero_one_atBot :
+    Tendsto (gaussianPDFReal 0 1) atBot (𝓝 0) := by
+  have h := (tendsto_mul_gaussianPDFReal_zero_one_cocompact.mono_left atBot_le_cocompact).mul
+    tendsto_inv_atBot_zero
+  rw [mul_zero] at h
+  refine h.congr' ?_
+  filter_upwards [eventually_lt_atBot 0] with x hx
+  rw [mul_comm x, mul_assoc, mul_inv_cancel₀ hx.ne, mul_one]
+
 /-- The derivative of the Gaussian density in its real argument is `-(x - μ) / v` times the
 density. At zero variance both sides vanish. -/
 theorem hasDerivAt_gaussianPDFReal (μ : ℝ) (v : ℝ≥0) (x : ℝ) :
@@ -166,6 +181,20 @@ theorem integrable_gaussianReal_iff_integrable_gaussianPDFReal_smul {E : Type*}
     MeasureTheory.integrable_withDensity_iff_integrable_smul' (measurable_gaussianPDF μ v)
       (MeasureTheory.ae_of_all _ fun _ => gaussianPDF_lt_top)]
   simp only [toReal_gaussianPDF]
+
+/-! ### Exponential moments -/
+
+/-- The exponential moment of a real Gaussian law: the integral form of
+`ProbabilityTheory.mgf_fun_id_gaussianReal`. -/
+theorem integral_exp_mul_gaussianReal (μ : ℝ) (v : ℝ≥0) (t : ℝ) :
+    ∫ x, Real.exp (t * x) ∂gaussianReal μ v = Real.exp (μ * t + v * t ^ 2 / 2) := by
+  simpa only [mgf] using congrFun (mgf_fun_id_gaussianReal (μ := μ) (v := v)) t
+
+/-- A Gaussian exponential normalized by its cumulant-generating function has mean one. -/
+theorem integral_exp_mul_sub_gaussianReal (μ b : ℝ) (v : ℝ≥0) :
+    ∫ y, Real.exp (b * y - (μ * b + (v : ℝ) * b ^ 2 / 2)) ∂gaussianReal μ v = 1 := by
+  simp_rw [Real.exp_sub, MeasureTheory.integral_div]
+  rw [integral_exp_mul_gaussianReal, div_self (Real.exp_pos _).ne']
 
 /-! ### The Gaussian density at an extended point -/
 
