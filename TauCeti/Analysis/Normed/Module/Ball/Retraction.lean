@@ -48,10 +48,17 @@ constant never matters for cutting off, where one is free to shrink the radius i
 * `TauCeti.radialRetraction_eventuallyEq_id`: inside the open ball, it agrees locally with the
   identity.
 * `TauCeti.lipschitzWith_radialRetraction`: for `0 ≤ r`, it is `2`-Lipschitz.
-* `TauCeti.norm_radialRetraction_le_abs_min`: for any radius, its norm is at most `|min ‖x‖ r|`.
-* `Filter.Tendsto.radialRetraction`, `ContinuousAt.radialRetraction`,
+* `TauCeti.norm_radialRetraction_eq_abs_min`, `TauCeti.norm_radialRetraction_le_abs_min`: for
+  any radius, its norm is at most `|min ‖x‖ r|`, with equality unless `‖x‖ = 0` and `r < 0`.
+* `Filter.Tendsto.radialRetraction`, `ContinuousWithinAt.radialRetraction`,
+  `ContinuousAt.radialRetraction`, `ContinuousOn.radialRetraction`,
   `Continuous.radialRetraction`: it depends jointly continuously on the radius and the point,
   provided the radius is nonnegative wherever the point has norm zero.
+* `Filter.Tendsto.centeredRadialRetraction`, `ContinuousWithinAt.centeredRadialRetraction`,
+  `ContinuousAt.centeredRadialRetraction`, `ContinuousOn.centeredRadialRetraction`,
+  `Continuous.centeredRadialRetraction`: the centred retraction depends jointly continuously on
+  the centre, the radius and the point, provided the radius is nonnegative wherever the point lies
+  at distance zero from the centre.
 * `TauCeti.dist_centeredRadialRetraction`: for `0 ≤ r`, the distance from the centre is
   `min (dist x x₀) r`.
 * `TauCeti.lipschitzWith_centeredRadialRetraction`: for `0 ≤ r`, the centred retraction is
@@ -196,23 +203,30 @@ theorem centeredRadialRetraction_of_le_dist {x₀ : E} (h : r ≤ dist x x₀) :
   rw [dist_eq_norm] at h ⊢
   rw [centeredRadialRetraction_def, radialRetraction_of_le_norm h]
 
+/-- The radial retraction has norm `|min ‖x‖ r|`, provided `x` has nonzero norm or the radius is
+nonnegative. In the remaining case, `‖x‖ = 0` with `r < 0`, the vector is sent to zero. -/
+theorem norm_radialRetraction_eq_abs_min (h : ‖x‖ ≠ 0 ∨ 0 ≤ r) :
+    ‖radialRetraction r x‖ = |min ‖x‖ r| := by
+  by_cases hx : ‖x‖ = 0
+  · rw [radialRetraction_of_norm_eq_zero hx, norm_zero, hx,
+      min_eq_left (h.resolve_left (not_not.2 hx)), abs_zero]
+  have hmin : min ‖x‖ r = min 1 (r / ‖x‖) * ‖x‖ := by
+    rw [min_mul_of_nonneg _ _ (norm_nonneg x), one_mul, div_mul_cancel₀ _ hx]
+  rw [hmin, abs_mul, abs_norm, radialRetraction_def, norm_smul, Real.norm_eq_abs]
+
 /-- For nonnegative radius, the radial retraction has norm `min ‖x‖ r`. -/
 @[simp]
 theorem norm_radialRetraction (hr : 0 ≤ r) (x : E) : ‖radialRetraction r x‖ = min ‖x‖ r := by
-  by_cases hx : ‖x‖ = 0
-  · simp [hx, hr]
-  rw [radialRetraction, norm_smul, Real.norm_of_nonneg (by positivity),
-    min_mul_of_nonneg _ _ (norm_nonneg x), one_mul, div_mul_cancel₀ _ hx]
+  rw [norm_radialRetraction_eq_abs_min (.inr hr), abs_of_nonneg (le_min (norm_nonneg x) hr)]
 
-/-- For any radius, the radial retraction has norm at most `|min ‖x‖ r|`. This is an equality
-except at a vector of norm zero with a negative radius, which is sent to zero. -/
+/-- For any radius, the radial retraction has norm at most `|min ‖x‖ r|`, with equality except
+at a vector of norm zero with a negative radius (`TauCeti.norm_radialRetraction_eq_abs_min`). -/
 theorem norm_radialRetraction_le_abs_min (r : ℝ) (x : E) :
     ‖radialRetraction r x‖ ≤ |min ‖x‖ r| := by
-  rcases le_total 0 r with hr | hr
-  · rw [norm_radialRetraction hr, abs_of_nonneg (le_min (norm_nonneg _) hr)]
-  · rw [radialRetraction_of_le_norm (hr.trans (norm_nonneg _)), norm_smul, norm_div, norm_norm,
-      min_eq_right (hr.trans (norm_nonneg _)), Real.norm_eq_abs]
-    exact mul_le_of_le_div₀ (abs_nonneg _) (norm_nonneg _) le_rfl
+  by_cases h : ‖x‖ ≠ 0 ∨ 0 ≤ r
+  · exact (norm_radialRetraction_eq_abs_min h).le
+  · rw [radialRetraction_of_norm_eq_zero (not_not.1 (not_or.1 h).1), norm_zero]
+    exact abs_nonneg _
 
 /-- For nonnegative radius, the radial retraction moves `x` by `max (‖x‖ - r) 0`. -/
 theorem norm_sub_radialRetraction (hr : 0 ≤ r) (x : E) :
@@ -422,6 +436,14 @@ theorem Filter.Tendsto.radialRetraction {E α : Type*} [SeminormedAddCommGroup E
   · simp only [TauCeti.radialRetraction_def]
     exact (tendsto_const_nhds.min (hr.div hf.norm hy)).smul hf
 
+/-- The radial retraction is jointly continuous within a set in the radius and the point at every
+point where the point has nonzero norm or the radius is nonnegative. -/
+theorem ContinuousWithinAt.radialRetraction {E X : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace X] {r : X → ℝ} {f : X → E} {s : Set X} {x : X}
+    (hr : ContinuousWithinAt r s x) (h : ‖f x‖ ≠ 0 ∨ 0 ≤ r x) (hf : ContinuousWithinAt f s x) :
+    ContinuousWithinAt (fun x ↦ TauCeti.radialRetraction (r x) (f x)) s x :=
+  Filter.Tendsto.radialRetraction hr h hf
+
 /-- The radial retraction is jointly continuous in the radius and the point at every point where
 the point has nonzero norm or the radius is nonnegative. -/
 theorem ContinuousAt.radialRetraction {E X : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
@@ -430,6 +452,14 @@ theorem ContinuousAt.radialRetraction {E X : Type*} [SeminormedAddCommGroup E] [
     ContinuousAt (fun x ↦ TauCeti.radialRetraction (r x) (f x)) x :=
   Filter.Tendsto.radialRetraction hr h hf
 
+/-- The radial retraction is jointly continuous on a set in the radius and the point, as long as
+the radius is nonnegative at every point of the set where the point has norm zero. -/
+theorem ContinuousOn.radialRetraction {E X : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    [TopologicalSpace X] {r : X → ℝ} {f : X → E} {s : Set X} (hr : ContinuousOn r s)
+    (h : ∀ x ∈ s, ‖f x‖ ≠ 0 ∨ 0 ≤ r x) (hf : ContinuousOn f s) :
+    ContinuousOn (fun x ↦ TauCeti.radialRetraction (r x) (f x)) s :=
+  fun x hx ↦ (hr x hx).radialRetraction (h x hx) (hf x hx)
+
 /-- **The radial retraction depends continuously on the radius and the point**, as long as the
 radius is nonnegative wherever the point has norm zero. -/
 theorem Continuous.radialRetraction {E X : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
@@ -437,6 +467,60 @@ theorem Continuous.radialRetraction {E X : Type*} [SeminormedAddCommGroup E] [No
     (h : ∀ x, ‖f x‖ ≠ 0 ∨ 0 ≤ r x) (hf : Continuous f) :
     Continuous fun x ↦ TauCeti.radialRetraction (r x) (f x) :=
   continuous_iff_continuousAt.2 fun x ↦ hr.continuousAt.radialRetraction (h x) hf.continuousAt
+
+/-- **The centred radial retraction depends continuously on the centre, the radius and the
+point**: if `c`, `r` and `f` tend to `x₀`, `r₀` and `y`, then the retraction of `f` by `r` about
+`c` tends to that of `y` by `r₀` about `x₀`, provided `dist y x₀ ≠ 0` or `0 ≤ r₀`. -/
+theorem Filter.Tendsto.centeredRadialRetraction {E α : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] {l : Filter α} {c : α → E} {r : α → ℝ} {f : α → E} {x₀ : E} {r₀ : ℝ}
+    {y : E} (hc : Tendsto c l (𝓝 x₀)) (hr : Tendsto r l (𝓝 r₀)) (h : dist y x₀ ≠ 0 ∨ 0 ≤ r₀)
+    (hf : Tendsto f l (𝓝 y)) :
+    Tendsto (fun a ↦ TauCeti.centeredRadialRetraction (c a) (r a) (f a)) l
+      (𝓝 (TauCeti.centeredRadialRetraction x₀ r₀ y)) := by
+  rw [dist_eq_norm] at h
+  simp only [TauCeti.centeredRadialRetraction_def]
+  exact hc.add (hr.radialRetraction h (hf.sub hc))
+
+/-- The centred radial retraction is jointly continuous within a set in the centre, the radius
+and the point at every point where the point is at nonzero distance from the centre or the radius
+is nonnegative. -/
+theorem ContinuousWithinAt.centeredRadialRetraction {E X : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace X] {c : X → E} {r : X → ℝ} {f : X → E} {s : Set X}
+    {x : X} (hc : ContinuousWithinAt c s x) (hr : ContinuousWithinAt r s x)
+    (h : dist (f x) (c x) ≠ 0 ∨ 0 ≤ r x) (hf : ContinuousWithinAt f s x) :
+    ContinuousWithinAt (fun x ↦ TauCeti.centeredRadialRetraction (c x) (r x) (f x)) s x :=
+  Filter.Tendsto.centeredRadialRetraction hc hr h hf
+
+/-- The centred radial retraction is jointly continuous in the centre, the radius and the point at
+every point where the point is at nonzero distance from the centre or the radius is
+nonnegative. -/
+theorem ContinuousAt.centeredRadialRetraction {E X : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace X] {c : X → E} {r : X → ℝ} {f : X → E} {x : X}
+    (hc : ContinuousAt c x) (hr : ContinuousAt r x) (h : dist (f x) (c x) ≠ 0 ∨ 0 ≤ r x)
+    (hf : ContinuousAt f x) :
+    ContinuousAt (fun x ↦ TauCeti.centeredRadialRetraction (c x) (r x) (f x)) x :=
+  Filter.Tendsto.centeredRadialRetraction hc hr h hf
+
+/-- The centred radial retraction is jointly continuous on a set in the centre, the radius and the
+point, as long as the radius is nonnegative at every point of the set where the point lies at
+distance zero from the centre. -/
+theorem ContinuousOn.centeredRadialRetraction {E X : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace X] {c : X → E} {r : X → ℝ} {f : X → E} {s : Set X}
+    (hc : ContinuousOn c s) (hr : ContinuousOn r s) (h : ∀ x ∈ s, dist (f x) (c x) ≠ 0 ∨ 0 ≤ r x)
+    (hf : ContinuousOn f s) :
+    ContinuousOn (fun x ↦ TauCeti.centeredRadialRetraction (c x) (r x) (f x)) s :=
+  fun x hx ↦ (hc x hx).centeredRadialRetraction (hr x hx) (h x hx) (hf x hx)
+
+/-- **The centred radial retraction depends continuously on the centre, the radius and the
+point**, as long as the radius is nonnegative wherever the point lies at distance zero from the
+centre. -/
+theorem Continuous.centeredRadialRetraction {E X : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace X] {c : X → E} {r : X → ℝ} {f : X → E}
+    (hc : Continuous c) (hr : Continuous r) (h : ∀ x, dist (f x) (c x) ≠ 0 ∨ 0 ≤ r x)
+    (hf : Continuous f) :
+    Continuous fun x ↦ TauCeti.centeredRadialRetraction (c x) (r x) (f x) :=
+  continuous_iff_continuousAt.2 fun x ↦
+    hc.continuousAt.centeredRadialRetraction hr.continuousAt (h x) hf.continuousAt
 
 /-- Precomposing with the centred radial retraction turns a map that is Lipschitz on a closed ball
 into a globally Lipschitz map, at the cost of doubling the constant. -/
