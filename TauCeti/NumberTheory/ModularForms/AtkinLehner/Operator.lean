@@ -115,7 +115,7 @@ theorem exists_mem_Gamma0_atkinLehnerGL_mul_mapGL (hQ : 0 < Q) (hQN : Q ∣ N)
   obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_left hQN hγ
   refine ⟨δ, hδ, Units.ext ?_⟩
   simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
-    Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
+    Matrix.SpecialLinearGroup.map_apply_coe, algebraMap_int_eq,
     Int.coe_castRingHom, ← Matrix.map_mul_intCast, hmul]
 
 /-- **Moving `Γ₀(N)` past `W`**, the mirror of
@@ -127,7 +127,7 @@ theorem exists_mem_Gamma0_mapGL_mul_atkinLehnerGL (hQ : 0 < Q) (hQN : Q ∣ N)
   obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_right hQN hγ
   refine ⟨δ, hδ, Units.ext ?_⟩
   simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
-    Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
+    Matrix.SpecialLinearGroup.map_apply_coe, algebraMap_int_eq,
     Int.coe_castRingHom, ← Matrix.map_mul_intCast, hmul]
 
 /-- **`W` normalizes `Γ₀(N)` in `GL (Fin 2) ℝ`.** Conjugating the image of `Γ₀(N)` by an
@@ -217,7 +217,7 @@ theorem atkinLehnerOperator_congr (hQ : 0 < Q) (hQN : Q ∣ N) (h : IsAtkinLehne
   have hGL : atkinLehnerGL hQ h = mapGL ℝ γ * atkinLehnerGL hQ h' := by
     refine Units.ext ?_
     simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
-      Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
+      Matrix.SpecialLinearGroup.map_apply_coe, algebraMap_int_eq,
       Int.coe_castRingHom, ← Matrix.map_mul_intCast, hM]
   refine DFunLike.coe_injective ?_
   rw [coe_atkinLehnerOperator, coe_atkinLehnerOperator, hGL, SlashAction.slash_mul,
@@ -255,7 +255,7 @@ theorem slash_atkinLehnerGL_slash_atkinLehnerGL_of_mul_self_eq (hQ : 0 < Q)
       split_ifs <;> simp
     refine Units.ext ?_
     rw [Matrix.GeneralLinearGroup.coe_mul, Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL,
-      mapGL_coe_matrix, Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+      mapGL_coe_matrix, Matrix.SpecialLinearGroup.map_apply_coe,
       algebraMap_int_eq, Int.coe_castRingHom, ← Matrix.map_mul_intCast, hsq, hscal,
       Matrix.smul_mul, Matrix.one_mul]
     ext i j
@@ -440,7 +440,7 @@ theorem Nat.IsExactDivisor.slash_atkinLehnerGL_one (h : 1 ∥ N) (f : ℍ → �
   have hGL : atkinLehnerGL h.pos hM = mapGL ℝ γ := by
     refine Units.ext ?_
     simp only [coe_atkinLehnerGL, mapGL_coe_matrix, Matrix.SpecialLinearGroup.map_apply_coe,
-      RingHom.mapMatrix_apply, algebraMap_int_eq, Int.coe_castRingHom, hγM]
+      algebraMap_int_eq, Int.coe_castRingHom, hγM]
   rw [hGL]
   exact hf _ (Subgroup.mem_map_of_mem _ hγ)
 

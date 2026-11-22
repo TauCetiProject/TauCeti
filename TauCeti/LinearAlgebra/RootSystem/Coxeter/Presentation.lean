@@ -57,8 +57,9 @@ its simple root is an inversion of the word, and the reflection in it deletes a 
 * `RootPairing.exists_isReduced_forall_isLeftDescent`: some reduced word spells an element of which
   every simple reflection is a left descent (a reduced word of the longest element of the Weyl
   group).
-* `RootPairing.weylCoxeterSystem_isReflection_ofIdx`: the reflection in every root, simple or not,
-  is a reflection of the Coxeter system.
+* `RootPairing.weylCoxeterSystem_isReflection_ofIdx` and
+  `RootPairing.weylCoxeterSystem_isReflection_iff_exists_ofIdx`: the reflections of the Coxeter
+  system are precisely the root reflections.
 * `RootPairing.bruhatStep_ofIdx_mul_iff_mem_inversions`: for a positive root `β`, `s_β w → w` is an
   edge of the Bruhat graph exactly when `β` is an inversion of `w⁻¹`.
 
@@ -146,10 +147,10 @@ private theorem exchange_weylCoxeterHom (l : List b.support) (i : b.support)
           (coxeterMatrixOfBase P b).toCoxeterSystem.simple i) := by
   simp only [map_mul, weylCoxeterHom_wordProd, CoxeterMatrix.toCoxeterSystem_simple,
     weylCoxeterHom_apply_simple] at hl hle ⊢
-  have hpos := b.isPos_of_mem_support i.2
+  have hpos := b.isPos_of_mem_support i.property
   have hlt : (inversions P b (wordProd P b l * RootPairing.weylGroup.ofIdx P (i : ι))).ncard <
       (inversions P b (wordProd P b l)).ncard := by
-    rcases ncard_inversions_mul_ofIdx P (wordProd P b l) b i.2 with h | h <;> omega
+    rcases ncard_inversions_mul_ofIdx P (wordProd P b l) b i.property with h | h <;> omega
   have hmem := (ncard_inversions_mul_ofIdx_lt_iff P b _ hpos).mp hlt
   exact exists_wordProd_eraseIdx_eq_mul_ofIdx P b hpos l ((mem_inversions P b _ _).mp hmem).2
 
@@ -216,6 +217,16 @@ theorem _root_.RootPairing.weylCoxeterSystem_isReflection_ofIdx (i : ι) :
   obtain ⟨j, hj, w, rfl⟩ := exists_mem_support_weylGroupToPerm_eq b i
   refine ⟨w, ⟨j, hj⟩, ?_⟩
   rw [weylCoxeterSystem_simple, RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj]
+
+/-- **Coxeter reflections of a Weyl group are precisely the root reflections.** Every conjugate of
+a simple reflection is the reflection in the transported simple root, and conversely every root is
+in the Weyl orbit of a simple root. -/
+theorem _root_.RootPairing.weylCoxeterSystem_isReflection_iff_exists_ofIdx {w : P.weylGroup} :
+    (weylCoxeterSystem P b).IsReflection w ↔ ∃ i : ι, w = RootPairing.weylGroup.ofIdx P i := by
+  refine ⟨?_, fun ⟨i, hi⟩ ↦ hi ▸ P.weylCoxeterSystem_isReflection_ofIdx b i⟩
+  rintro ⟨u, j, rfl⟩
+  exact ⟨P.weylGroupToPerm u j, by
+    rw [weylCoxeterSystem_simple, RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj]⟩
 
 /-- **Bruhat steps by root reflections.** For a positive root `β`, reflecting in `β` moves `w` one
 step down the Bruhat graph, `s_β w → w`, exactly when `β` is an inversion of `w⁻¹`. -/

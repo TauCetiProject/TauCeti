@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Cycle.Basis
+public import TauCeti.Combinatorics.Graph.Serre.Cycle.SpanningTree
+public import TauCeti.Combinatorics.Graph.Serre.Parallel
 import TauCeti.Combinatorics.Graph.Serre.Cycle.Coefficients
 import TauCeti.Combinatorics.Graph.Serre.Cycle.Coordinates
 
 /-!
-# Cycle modules of roses and of the segment
+# Cycle modules of roses, of the segment and of parallel edges
 
 This file computes the incidence kernel, the cycle rank, the number of components and the
-spanning forests of two families of small graphs. The incidence kernels are computed over an
+spanning forests of three families of small graphs. The incidence kernels are computed over an
 arbitrary ring, the cycle ranks over any ring with the strong rank condition, such as the
 integers and `ZMod 2`.
 
@@ -24,6 +26,13 @@ supported and in finite-function coordinates.
 
 The positive dart of the segment is a spanning forest of itself. The segment therefore has
 no nonzero cycle and a single component.
+
+For the graph `SerreGraph.parallelGraph α` of parallel edges indexed by `α`, any single dart is a
+spanning forest of every set of darts containing it, and the fundamental cycle of another dart in
+the same direction traverses that dart forward and the forest dart backward. Two distinct darts
+never form a spanning forest, since they join the same two vertices. When `α` has `n` elements,
+`0 < n`, the cycle modules relative to any orientation have rank `n - 1`, and every spanning tree
+leaves `n - 1` positive darts outside it.
 
 ## References
 
@@ -65,7 +74,7 @@ theorem finrank_ker_incidenceBoundary_rose [StrongRankCondition R] :
     Module.finrank R ((rose α).incidenceBoundary {e | e.2 = true} R).ker = Nat.card α := by
   rw [finrank_ker_incidenceBoundary_of_forall_src_eq_tgt fun _ _ => rfl]
   exact Nat.card_congr
-    ⟨fun e => e.1.1, fun a => ⟨(a, true), rfl⟩, fun ⟨⟨_, _⟩, h⟩ => by cases h; rfl,
+    ⟨fun e => e.val.1, fun a => ⟨(a, true), rfl⟩, fun ⟨⟨_, _⟩, h⟩ => by cases h; rfl,
       fun _ => rfl⟩
 
 /- The integral unit cycle on a petal reduces modulo two to the binary unit cycle, in finitely
@@ -104,5 +113,59 @@ theorem card_connectedComponent_supportGraph_segment :
   omega
 
 end Segment
+
+section Parallel
+
+variable {α : Type*}
+
+/-- Any single dart of a graph of parallel edges is a spanning forest of every set of darts
+containing it: all darts join the two vertices. -/
+theorem isSpanningForest_parallelGraph_singleton {O : Set (parallelGraph α).E}
+    {e : (parallelGraph α).E} (he : e ∈ O) : (parallelGraph α).IsSpanningForest O {e} :=
+  isSpanningForest_singleton he (fun h => Bool.not_ne_self _ h.symm) fun f _ _ => by
+    simp only [← edgeEnds_edge, parallelGraph_edgeEnds]
+
+/-- Two distinct darts of a graph of parallel edges never form a spanning forest: they join the
+same two vertices. -/
+theorem not_isSpanningForest_parallelGraph_pair {O : Set (parallelGraph α).E}
+    {e f : (parallelGraph α).E} (hef : e ≠ f) : ¬(parallelGraph α).IsSpanningForest O {e, f} :=
+  fun h => hef <| h.endpoints_injOn (Set.mem_insert _ _) (Set.mem_insert_of_mem _ rfl) <| by
+    simp only [← edgeEnds_edge, parallelGraph_edgeEnds]
+
+/-- Relative to the single dart `e`, the fundamental cycle of another dart of a graph of parallel
+edges in the same direction traverses it forward and `e` backward. -/
+theorem cycleBasis_parallelGraph_singleton (R : Type*) [Ring R] {O : Set (parallelGraph α).E}
+    {e : (parallelGraph α).E} (he : e ∈ O) (f : ↥(O \ {e})) (hf : f.val.2 = e.2) :
+    ((isSpanningForest_parallelGraph_singleton he).cycleBasis R f).val =
+      Finsupp.single ⟨f.val, f.property.1⟩ 1 - Finsupp.single ⟨e, he⟩ 1 :=
+  (isSpanningForest_parallelGraph_singleton he).cycleBasis_of_parallel f rfl hf
+    (congrArg (!·) hf)
+
+/-- Relative to any orientation, the cycle modules of `n` parallel edges, `0 < n`, have rank
+`n - 1` over any coefficient ring with the strong rank condition. -/
+theorem finrank_ker_incidenceBoundary_parallelGraph_add_one (R : Type*) [Ring R]
+    [StrongRankCondition R] [Finite α] [Nonempty α] {O : Set (parallelGraph α).E}
+    (hO : (parallelGraph α).IsOrientation O) :
+    Module.finrank R ((parallelGraph α).incidenceBoundary O R).ker + 1 = Nat.card α := by
+  obtain ⟨a⟩ := ‹Nonempty α›
+  obtain ⟨e, he⟩ : ∃ e, e ∈ O := (hO.mem_or_rev_mem (a, false)).elim (⟨_, ·⟩) (⟨_, ·⟩)
+  rw [finrank_ker_incidenceBoundary_add_one he (fun h => Bool.not_ne_self _ h.symm)
+      fun f _ _ => by simp only [← edgeEnds_edge, parallelGraph_edgeEnds],
+    Nat.card_eq_of_bijective _ hO.bijective_toGeomEdge,
+    Nat.card_congr (parallelGraphGeomEdgeEquiv α)]
+
+/-- Every spanning tree of `n` parallel edges leaves `n - 1` positive darts outside it, for any
+orientation: these darts index the fundamental cycle basis, and the free basis of the reduced path
+group. -/
+theorem card_diff_darts_parallelGraph_add_one [Finite α] (T : (parallelGraph α).SpanningTree)
+    {O : Set (parallelGraph α).E} (hO : (parallelGraph α).IsOrientation O) :
+    Nat.card ↥(O \ T.darts) + 1 = Nat.card α := by
+  have h := T.card_diff_add_card hO
+  have hV : Nat.card (parallelGraph α).V = 2 := Nat.card_eq_fintype_card.trans rfl
+  rw [hV, Nat.card_eq_of_bijective _ hO.bijective_toGeomEdge,
+    Nat.card_congr (parallelGraphGeomEdgeEquiv α)] at h
+  omega
+
+end Parallel
 
 end TauCeti.SerreGraph
