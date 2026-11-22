@@ -111,7 +111,7 @@ theorem singularHomologyMap_sectionFamily_comp_wangδ (ℓ : C(K, SeamedPath φ)
         wangδ φ R n =
       wangδ (Homeomorph.refl K) R n ≫
         ((singularHomologyFunctor A n).obj R).map (TopCat.ofHom g) :=
-  singularHomologyMap_comp_wangδ_of_section φ R _ (proj_sectionFamily φ ℓ) g
+  singularHomologyMap_comp_wangδ_of_section φ R _ (fun _ _ ↦ by simp) g
     (fun k ↦ by rw [sectionFamily_zero, hg]) n
 
 end SeamedPath

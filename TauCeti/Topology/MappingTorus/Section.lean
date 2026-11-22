@@ -321,11 +321,6 @@ theorem sectionFamily_apply (ℓ : C(K, SeamedPath φ)) (k : K) (θ : UnitAddCir
     sectionFamily φ ℓ (k, θ) = (sectionHomeomorph φ (ℓ k)).val θ :=
   (rfl)
 
-/-- The family of sections of a family of seamed paths consists of sections. -/
-theorem proj_sectionFamily (ℓ : C(K, SeamedPath φ)) (k : K) (θ : UnitAddCircle) :
-    proj φ (sectionFamily φ ℓ (k, θ)) = θ :=
-  (sectionHomeomorph φ (ℓ k)).property θ
-
 /-- At height zero, the family of sections of a family of seamed paths passes through the start
 points of the paths. -/
 theorem sectionFamily_zero (ℓ : C(K, SeamedPath φ)) (k : K) :
