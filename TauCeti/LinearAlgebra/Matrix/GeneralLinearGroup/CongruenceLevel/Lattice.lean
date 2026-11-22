@@ -116,8 +116,7 @@ theorem GL2K0.mem_iff_val_mem_M2O0 {g : GL (Fin 2) A} :
 `K₀(I)` exactly when it and its inverse lie in `O₀(I)`. -/
 theorem GL2K0.eq_units_M2O0 : GL2K0 I = (M2O0 I).toSubmonoid.units := by
   ext g
-  rw [Submonoid.mem_units_iff, Subsemiring.mem_toSubmonoid, Subsemiring.mem_toSubmonoid,
-    Subalgebra.mem_toSubsemiring, Subalgebra.mem_toSubsemiring, ← GL2K0.mem_iff_val_mem_M2O0,
+  simp only [Submonoid.mem_units_iff, Subsemiring.mem_toSubmonoid, Subalgebra.mem_toSubsemiring,
     ← GL2K0.mem_iff_val_mem_M2O0]
   exact ⟨fun hg ↦ ⟨hg, inv_mem hg⟩, And.left⟩
 
@@ -205,14 +204,15 @@ private theorem ker_mkQ_comp_proj :
 /-- **`A² ⧸ (A ⊕ I) ≃ A ⧸ I`**, through the second coordinate modulo `I`. -/
 noncomputable def quotientLatticeEquiv : ((Fin 2 → A) ⧸ lattice I) ≃ₗ[A] A ⧸ I :=
   (Submodule.quotEquivOfEq _ _ (ker_mkQ_comp_proj I).symm).trans <|
-    LinearMap.quotKerEquivOfSurjective _ fun y ↦ by
+    -- Stated as `Function.Surjective` so that `quotKerEquivOfSurjective_apply_mk` applies.
+    LinearMap.quotKerEquivOfSurjective _ <| show Function.Surjective _ from fun y ↦ by
       obtain ⟨a, rfl⟩ := I.mkQ_surjective y
       exact ⟨Pi.single 1 a, by simp⟩
 
 @[simp]
 theorem quotientLatticeEquiv_mk (x : Fin 2 → A) :
-    quotientLatticeEquiv I (Submodule.Quotient.mk x) = Ideal.Quotient.mk I (x 1) :=
-  (rfl)
+    quotientLatticeEquiv I (Submodule.Quotient.mk x) = Ideal.Quotient.mk I (x 1) := by
+  simp [quotientLatticeEquiv]
 
 /-- **Every translate of `A ⊕ I` has quotient `A ⧸ I`**, over every commutative ring:
 `A² ⧸ γ (A ⊕ I) ≃ A ⧸ I` through `γ⁻¹` and `TauCeti.GL2K0.quotientLatticeEquiv`. -/
@@ -222,9 +222,8 @@ theorem nonempty_quotient_smul_lattice_equiv (g : GL (Fin 2) A) :
     ?_).trans (quotientLatticeEquiv I)⟩
   -- The image of `g • (A ⊕ I)` under `g⁻¹` is `A ⊕ I`.
   ext x
-  rw [Submodule.mem_map_equiv, DistribMulAction.toLinearEquiv_symm_apply, inv_inv,
-    mem_smul_lattice_iff, Units.smul_def, Matrix.smul_eq_mulVec, Matrix.mulVec_mulVec,
-    ← Units.val_mul, inv_mul_cancel, Units.val_one, Matrix.one_mulVec, mem_lattice]
+  rw [Submodule.mem_map_equiv, mem_smul_lattice_iff]
+  simp [Units.smul_def, Matrix.smul_eq_mulVec, Matrix.mulVec_mulVec]
 
 /-! ### The submodules with quotient `A ⧸ I` -/
 
@@ -250,7 +249,7 @@ theorem exists_eq_smul_lattice [IsLocalRing A] {L : Submodule A (Fin 2 → A)}
   have hv : Module.IsUnimodular (A ⧸ I) v := by
     obtain ⟨x, hx⟩ := (e.surjective.comp L.mkQ_surjective) 1
     refine TauCeti.Module.isUnimodular_pi_iff.mpr ⟨fun j ↦ Ideal.Quotient.mk I (x j), ?_⟩
-    have hx' : f x = 1 := hx
+    have hx' : f x = 1 := by simpa [f] using hx
     rw [hf] at hx'
     simpa [mul_comm] using hx'
   obtain ⟨γ, hγ⟩ := exists_bottomRowMod_eq I hv
@@ -284,8 +283,8 @@ noncomputable def quotientEquivLattices [IsLocalRing A] :
 
 @[simp]
 theorem coe_quotientEquivLattices_mk [IsLocalRing A] (g : GL (Fin 2) A) :
-    (quotientEquivLattices I (QuotientGroup.mk g) : Submodule A (Fin 2 → A)) = g • lattice I :=
-  (rfl)
+    (quotientEquivLattices I (QuotientGroup.mk g) : Submodule A (Fin 2 → A)) = g • lattice I := by
+  simp [quotientEquivLattices, Subgroup.quotientEquivOfEq_mk]
 
 /-- **The number of submodules of `A²` with quotient `A ⧸ I`** is the index `[GL₂(A) : K₀(I)]`,
 over a local ring. -/
