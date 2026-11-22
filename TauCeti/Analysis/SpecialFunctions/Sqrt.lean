@@ -12,16 +12,14 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Tactic.FieldSimp
 
-import Mathlib.Analysis.MeanInequalitiesPow
-
 /-!
 # Square-root displacement estimates and limits at zero
 
 Two estimates comparing the real square-root and inverse-square-root functions
 with the identity near `1`. These bounds control scalar spectral factors of
 positive operators close to the identity. The file also records that the square root is
-`1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, together with a weighted form of that bound, that
-`1 ≤ √(1 + t²)`, and that `|t / √(t² + p)| ≤ 1` for `p ≥ 0`. It also records that the
+subadditive and `1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, together with a weighted form of that
+bound, that `1 ≤ √(1 + t²)`, and that `|t / √(t² + p)| ≤ 1` for `p ≥ 0`. It also records that the
 modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschitz, that `c √u` tends
 to `0` as `u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables, and that the radial profile
@@ -32,8 +30,9 @@ the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of t
 
 * `Real.abs_sqrt_sub_one_le_abs_sub_one`: for every real `μ`,
   `|√μ - 1| ≤ |μ - 1|`.
-* `Real.abs_one_sub_inv_sqrt_le`: if `|μ - 1| ≤ δ ≤ 1/2`,
-  `|1 - (√μ)⁻¹| ≤ δ`.
+* `Real.abs_one_sub_inv_sqrt_le_abs_sub_one`: if `1/2 ≤ μ`,
+  `|1 - (√μ)⁻¹| ≤ |μ - 1|`.
+* `Real.sqrt_add_le_add_sqrt`: for all reals `a` and `b`, `√(a + b) ≤ √a + √b`.
 * `Real.abs_sqrt_sub_sqrt_le`: for all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`.
 * `Real.abs_sqrt_sub_sqrt_mul_max_rpow_le`: for `0 ≤ γ ≤ 1`, the weighted bound
   `|√t - √s| max (√t) (√s) ^ γ ≤ |t - s| ^ ((1 + γ) / 2)`.
@@ -91,65 +90,41 @@ namespace Real
 /-- For every real `μ`, the square root is no farther from `1` than `μ` is:
 `|√μ - 1| ≤ |μ - 1|`. -/
 theorem abs_sqrt_sub_one_le_abs_sub_one {μ : ℝ} :
-    |sqrt μ - 1| ≤ |μ - 1| := by
+    |√μ - 1| ≤ |μ - 1| := by
   rcases le_total 0 μ with hμ | hμ
-  · have hs : 0 ≤ sqrt μ := sqrt_nonneg μ
-    have hsq : sqrt μ * sqrt μ = μ := mul_self_sqrt hμ
-    have key : |sqrt μ - 1| * (sqrt μ + 1) = |μ - 1| := by
-      rw [← abs_of_nonneg (by linarith : (0 : ℝ) ≤ sqrt μ + 1), ← abs_mul]
-      congr 1
-      nlinarith [hsq]
-    nlinarith [key, mul_nonneg (abs_nonneg (sqrt μ - 1)) hs]
-  · have hsqrt : sqrt μ = 0 := sqrt_eq_zero_of_nonpos hμ
-    calc
-      |sqrt μ - 1| = 1 := by rw [hsqrt]; norm_num
-      _ ≤ |μ - 1| := by
-        rw [abs_of_nonpos (by linarith : μ - 1 ≤ 0)]
-        linarith
+  · -- `|√μ - 1| (√μ + 1) = |μ - 1|` and `1 ≤ √μ + 1`.
+    have hpos : 0 < √μ + 1 := by positivity
+    calc |√μ - 1| ≤ |√μ - 1| * (√μ + 1) :=
+          le_mul_of_one_le_right (abs_nonneg _) (le_add_of_nonneg_left (sqrt_nonneg μ))
+      _ = |μ - 1| := by
+          rw [← abs_of_pos hpos, ← abs_mul]
+          congr 1
+          linear_combination sq_sqrt hμ
+  · rw [sqrt_eq_zero_of_nonpos hμ, abs_of_nonpos (by linarith : μ - 1 ≤ 0)]
+    norm_num
+    linarith
 
-/-- If `|μ - 1| ≤ δ ≤ 1 / 2`, then `|1 - (√μ)⁻¹| ≤ δ`.
+/-- If `1 / 2 ≤ μ`, then the inverse square root is no farther from `1` than `μ` is:
+`|1 - (√μ)⁻¹| ≤ |μ - 1|`. -/
+theorem abs_one_sub_inv_sqrt_le_abs_sub_one {μ : ℝ} (hμ : 1 / 2 ≤ μ) :
+    |1 - (√μ)⁻¹| ≤ |μ - 1| := by
+  have hs : 0 < √μ := sqrt_pos.2 (by linarith)
+  have hsq : √μ ^ 2 = μ := sq_sqrt (by linarith)
+  -- `|1 - (√μ)⁻¹| = |√μ - 1| / √μ` and `|μ - 1| = |√μ - 1| (√μ + 1)`, with `1 ≤ √μ (√μ + 1)`.
+  have h1 : 1 ≤ √μ * (√μ + 1) := by nlinarith
+  rw [show 1 - (√μ)⁻¹ = (√μ - 1) / √μ by field_simp,
+    show μ - 1 = (√μ - 1) * (√μ + 1) by linear_combination -hsq, abs_div, abs_mul,
+    abs_of_pos hs, abs_of_pos (by positivity : 0 < √μ + 1), div_le_iff₀ hs, mul_assoc]
+  exact le_mul_of_one_le_right (abs_nonneg _) (by linarith)
 
-The hypotheses force `μ` to be positive and keep the inverse square root
-bounded near `1`. -/
-theorem abs_one_sub_inv_sqrt_le {μ δ : ℝ} (hδ : δ ≤ 1 / 2) (hμ : |μ - 1| ≤ δ) :
-    |1 - (sqrt μ)⁻¹| ≤ δ := by
-  have hμlb : 1 - δ ≤ μ := by rw [abs_le] at hμ; linarith
-  have hμpos : (0 : ℝ) < μ := by linarith
-  set s := sqrt μ
-  have hs0 : 0 < s := sqrt_pos.mpr hμpos
-  have hssq : s ^ 2 = μ := sq_sqrt (le_of_lt hμpos)
-  -- `s ≥ 1/2` (since `s² = μ ≥ 1/2`)
-  have hssqlb : (1 : ℝ) / 2 ≤ s ^ 2 := by rw [hssq]; linarith
-  have hsge : (1 : ℝ) / 2 ≤ s := by nlinarith [hs0, hssqlb]
-  have hδ0 : 0 ≤ δ := le_trans (abs_nonneg _) hμ
-  rw [abs_le] at hμ ⊢
-  obtain ⟨hμ1, hμ2⟩ := hμ
-  have hssq' : s * s = μ := by nlinarith [hssq]
-  -- Lower bound `1 ≤ (1 + δ) * s`: its square is `(1 + δ)² μ ≥ (1 + δ)² (1 - δ) ≥ 1`.
-  have hlow : 1 ≤ (1 + δ) * s := by
-    have hpos : 0 < (1 + δ) * s := by positivity
-    nlinarith [hpos, hssq', hμ1, hμ2, hδ0, hsge, mul_nonneg hδ0 hδ0,
-      mul_nonneg (mul_nonneg hδ0 hδ0) hδ0]
-  -- Upper bound `(1 - δ) * s ≤ 1`: equivalently `(1 - δ)² μ ≤ 1` when `1 - δ ≥ 0`.
-  have hhigh : (1 - δ) * s ≤ 1 := by
-    rcases le_or_gt (1 - δ) 0 with h | h
-    · nlinarith [hs0, h]
-    · nlinarith [hssq', hμ1, hμ2, hδ0, hsge, h, mul_nonneg hδ0 hδ0]
-  -- Translate the two multiplicative bounds into bounds on `s⁻¹`.
-  have hinv_le : s⁻¹ ≤ 1 + δ := by
-    rw [inv_eq_one_div, div_le_iff₀ hs0]; linarith [hlow]
-  have hle_inv : 1 - δ ≤ s⁻¹ := by
-    rw [inv_eq_one_div, le_div_iff₀ hs0]; linarith [hhigh]
-  exact ⟨by linarith [hinv_le], by linarith [hle_inv]⟩
+/-- Subadditivity of the square root: `√(a + b) ≤ √a + √b`. -/
+theorem sqrt_add_le_add_sqrt (a b : ℝ) : √(a + b) ≤ √a + √b := by
+  rw [sqrt_le_left (by positivity), add_sq, sq_sqrt', sq_sqrt']
+  nlinarith [le_max_left a 0, le_max_left b 0, mul_nonneg (sqrt_nonneg a) (sqrt_nonneg b)]
 
 /-- For all reals `t` and `s`, `√t ≤ √s + √|t - s|`. -/
-theorem sqrt_le_sqrt_add_sqrt_abs_sub (t s : ℝ) : √t ≤ √s + √|t - s| := by
-  rw [sqrt_le_left (by positivity)]
-  have hts := sq_sqrt (abs_nonneg (t - s))
-  rcases le_total 0 s with hs | hs
-  · nlinarith [sq_sqrt hs, le_abs_self (t - s), mul_nonneg (sqrt_nonneg s) (sqrt_nonneg |t - s|)]
-  · rw [sqrt_eq_zero_of_nonpos hs]
-    nlinarith [le_abs_self (t - s)]
+theorem sqrt_le_sqrt_add_sqrt_abs_sub (t s : ℝ) : √t ≤ √s + √|t - s| :=
+  (sqrt_le_sqrt (by linarith [le_abs_self (t - s)])).trans (sqrt_add_le_add_sqrt s |t - s|)
 
 /-- **The square root is `1/2`-Hölder.** For all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`. -/
 theorem abs_sqrt_sub_sqrt_le (t s : ℝ) : |√t - √s| ≤ √|t - s| := by
@@ -398,18 +373,6 @@ theorem strictMonoOn_mul_sqrt_sq_add_sub {c : ℝ} (hc : 0 < c) :
     have := mul_self_le_mul_self hnn hcon
     nlinarith [hs y₁, hs y₂, mul_lt_mul_of_pos_left (mul_self_lt_mul_self h0 h12) hc]
   nlinarith [mul_lt_mul_of_pos_left hkey hc]
-
-/-- Subadditivity of the square root: `√(a + b) ≤ √a + √b`. -/
-theorem sqrt_add_le_add_sqrt (a b : ℝ) : √(a + b) ≤ √a + √b := by
-  rcases le_or_gt 0 a with ha | ha
-  · rcases le_or_gt 0 b with hb | hb
-    · have h := rpow_add_le_add_rpow (p := 1 / 2) (a := a) (b := b) ha hb (by norm_num)
-        (by norm_num)
-      simpa only [← sqrt_eq_rpow] using h
-    · rw [sqrt_eq_zero_of_nonpos hb.le, add_zero]
-      exact sqrt_le_sqrt (by linarith)
-  · rw [sqrt_eq_zero_of_nonpos ha.le, zero_add]
-    exact sqrt_le_sqrt (by linarith)
 
 /-- The closed sublevel `{x² ≤ a}` of the square, for `0 ≤ a`, is the interval `[-√a, √a]`. -/
 theorem setOf_sq_le_eq_Icc {a : ℝ} (ha : 0 ≤ a) : {x : ℝ | x ^ 2 ≤ a} = Set.Icc (-√a) √a := by
