@@ -100,7 +100,7 @@ theorem natCard_GL_eq_natCard_ker_pow_mul {n R S : Type*} [Fintype n] [Decidable
     [CommRing R] [CommRing S] (f : R →+* S) [IsLocalHom f] (hf : Function.Surjective f) :
     Nat.card (GL n R) =
       Nat.card (RingHom.ker f) ^ (Fintype.card n * Fintype.card n) * Nat.card (GL n S) := by
-  rw [← natCard_ker_mapMatrix f]
+  rw [← f.natCard_ker_mapMatrix]
   exact (f.mapMatrix (m := n)).natCard_units_eq_natCard_ker_mul fun M ↦
     ⟨of fun i j ↦ (hf (M i j)).choose, ext fun i j ↦ (hf (M i j)).choose_spec⟩
 

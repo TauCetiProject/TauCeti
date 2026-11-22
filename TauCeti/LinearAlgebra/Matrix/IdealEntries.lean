@@ -39,8 +39,8 @@ closure proof performs when it propagates a relation through a matrix identity.
   ideal vanishes.
 * `Matrix.forall_mem_ker_iff_map_eq_zero`: the entries of a matrix lie in the kernel of a ring
   homomorphism exactly when its image under that homomorphism is zero.
-* `Matrix.natCard_ker_mapMatrix`: so the kernel of `f` applied entrywise to `n × n` matrices has
-  `|ker f| ^ (n * n)` elements.
+* `RingHom.natCard_ker_mapMatrix`: so the kernel of `f` applied entrywise to `n × n` matrices
+  has `|ker f| ^ (n * n)` elements.
 * `Matrix.pow_apply_mem_pow`, `Matrix.isNilpotent_of_forall_apply_mem`: the `k`-th power of a
   square matrix with entries in `I` has entries in `I ^ k`, so a square matrix with entries in a
   nilpotent ideal is nilpotent.
@@ -94,8 +94,8 @@ theorem forall_mem_ker_iff_map_eq_zero {R : Type*} [Semiring R] [Semiring S] {F 
 
 /-- **The kernel of an entrywise ring homomorphism** consists of the matrices with entries in
 `ker f`, so it has `|ker f| ^ (n * n)` elements. -/
-theorem natCard_ker_mapMatrix {R : Type*} [Semiring R] [Semiring S] [Fintype n] [DecidableEq n]
-    (f : R →+* S) :
+theorem _root_.RingHom.natCard_ker_mapMatrix {R : Type*} [Semiring R] [Semiring S] [Fintype n]
+    [DecidableEq n] (f : R →+* S) :
     Nat.card (RingHom.ker (f.mapMatrix : Matrix n n R →+* Matrix n n S)) =
       Nat.card (RingHom.ker f) ^ (Fintype.card n * Fintype.card n) := by
   let e : RingHom.ker (f.mapMatrix : Matrix n n R →+* Matrix n n S) ≃
