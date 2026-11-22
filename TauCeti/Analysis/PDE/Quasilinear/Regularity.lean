@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder
+public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Basic
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.Analysis.Sobolev.W1p.Convex
