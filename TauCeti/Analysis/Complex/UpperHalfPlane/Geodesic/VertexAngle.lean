@@ -277,8 +277,8 @@ theorem vertexAngle_infty_of_re_lt {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
     simp only [Real.sphere_eq_pair m hρ.le, Set.mem_insert_iff, Set.mem_singleton_iff] at hx
     have hxρ := hpq.trans_le (Complex.re_mem_Icc_of_normSq_sub_le _ hρ.le hqm.le).2
     simp only [Complex.ofReal_re] at hxρ
-    rw [Complex.ofReal_re, vertexAngle_inr, eq_comm, sub_eq_zero, hx.resolve_right hxρ.ne,
-      sub_sub_cancel_left, neg_div, div_self hρ.ne', Real.arccos_neg_one]
+    have hxe : x = m - ρ := hx.resolve_right hxρ.ne
+    simp [vertexAngle_inr, hxe, hρ.ne']
 
 /-- **The angle at the right vertex of a triangle with an ideal vertex at `∞`.** If `p` and `q`
 lie on the semicircle of centre `m` and radius `ρ` (or are among its ideal endpoints), with `p` to
@@ -306,8 +306,8 @@ theorem vertexAngle_infty_of_lt_re {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
     simp only [Real.sphere_eq_pair m hρ.le, Set.mem_insert_iff, Set.mem_singleton_iff] at hx
     have hxρ := (Complex.re_mem_Icc_of_normSq_sub_le _ hρ.le hpm.le).1.trans_lt hpq
     simp only [Complex.ofReal_re] at hxρ
-    rw [Complex.ofReal_re, vertexAngle_inr, hx.resolve_left hxρ.ne', add_sub_cancel_left,
-      div_self hρ.ne', Real.arccos_one]
+    have hxe : x = m + ρ := hx.resolve_left hxρ.ne'
+    simp [vertexAngle_inr, hxe, hρ.ne']
 
 /-- **An angle split by the upward vertical.** Let `A ∈ ℍ` lie on two semicircles, of centres
 `m₁`, `m₂` and radii `ρ₁`, `ρ₂`; let `p` lie on the first, to the left of `A`, and `q` on the

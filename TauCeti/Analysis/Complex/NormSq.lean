@@ -76,8 +76,9 @@ theorem lt_normSq_sub_of_le_normSq_sub (z : ℂ) {a : ℂ} {m₁ r₁ m₂ r₂ 
 axis, the level sets `|· - m₁|² = r₁` and `|· - m₂|² = r₂`, and a point `a` whose power with
 respect to the first is at most that with respect to the second. Let `w`, to the left of `a`, be a
 point at which the power with respect to the second circle minus the power with respect to the
-first is larger than at `a`; equivalently, the squared distance to `m₂` grows more than that to
-`m₁` from `a` to `w`. Then every point `z` on or outside the first circle to the left of `a` is
+first is larger than at `a`; equivalently, from `a` to `w` the signed change in the squared
+distance to `m₂` is greater than the signed change in the squared distance to `m₁` (both changes
+may be negative). Then every point `z` on or outside the first circle to the left of `a` is
 strictly outside the second. -/
 theorem lt_normSq_sub_of_le_normSq_sub_of_sub_lt_sub (z : ℂ) {a w : ℂ} {m₁ r₁ m₂ r₂ : ℝ}
     (ha : normSq (a - m₁) - r₁ ≤ normSq (a - m₂) - r₂)
