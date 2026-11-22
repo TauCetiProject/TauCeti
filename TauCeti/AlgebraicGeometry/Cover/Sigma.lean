@@ -9,7 +9,6 @@ public import Mathlib.AlgebraicGeometry.Cover.Sigma
 public import Mathlib.AlgebraicGeometry.Morphisms.UnderlyingMap
 
 import Mathlib.AlgebraicGeometry.Limits
-import TauCeti.CategoryTheory.Sites.Sieves.Basic
 
 /-!
 # Finite affine coproduct covers
@@ -17,17 +16,13 @@ import TauCeti.CategoryTheory.Sites.Sieves.Basic
 This file complements `Mathlib.AlgebraicGeometry.Cover.Sigma` (Christian Merten) by showing that a
 finite affine `P`-cover `𝒰` of an affine scheme `Spec R` collapses via its coproduct cover
 `𝒰.sigma` to a single affine `P`-morphism `Spec.map φ : Spec S ⟶ Spec R` factoring through an
-isomorphism `Spec S ≅ ∐ 𝒰.X` followed by `Sigma.desc 𝒰.f`, and identifying the generated sieve
-and coproduct reindexing.
+isomorphism `Spec S ≅ ∐ 𝒰.X` followed by `Sigma.desc 𝒰.f`.
 
 ## Main results
 
 * `AlgebraicGeometry.Scheme.Cover.exists_specMap_sigma`: factor a finite affine `P`-cover of
   `Spec R` through an isomorphism `Spec S ≅ ∐ 𝒰.X` and a single surjective `P`-morphism
   `Spec.map φ : Spec S ⟶ Spec R`.
-* `AlgebraicGeometry.Scheme.Cover.exists_specMap_sigma_sieve`: obtain the affine singleton morphism
-  generating the same sieve as `Sigma.desc 𝒰.f` together with the coproduct reindexing to
-  `𝒰.presieve₀`.
 -/
 
 public section
@@ -59,23 +54,5 @@ lemma exists_specMap_sigma {P : MorphismProperty Scheme.{u}} [IsZariskiLocalAtSo
     infer_instance
   refine ⟨_, φ, (∐ 𝒰.X).isoSpec.symm, hP, hsurj, ?_⟩
   simp [hφ, q]
-
-/-- A finite affine `P`-cover `𝒰` of `Spec R` induces a single surjective `P`-morphism
-`Spec.map φ : Spec S ⟶ Spec R` generating the same sieve as `Sigma.desc 𝒰.f`, while the
-coproduct inclusions reindex back to `𝒰.presieve₀`. -/
-lemma exists_specMap_sigma_sieve {P : MorphismProperty Scheme.{u}} [IsZariskiLocalAtSource P]
-    {R : CommRingCat.{u}} (𝒰 : Scheme.Cover.{v} (precoverage P) (Spec R)) [UnivLE.{v, u}]
-    (haff : ∀ i, IsAffine (𝒰.X i)) (hfin : Finite 𝒰.I₀) :
-    ∃ (S : CommRingCat.{u}) (φ : R ⟶ S),
-      P (Spec.map φ) ∧ Surjective (Spec.map φ) ∧
-        Sieve.generate (.ofArrows (fun _ : PUnit.{1} ↦ ∐ 𝒰.X) (fun _ ↦ Sigma.desc 𝒰.f)) =
-          Sieve.generate (.singleton (Spec.map φ)) ∧
-        Presieve.ofArrows (fun jk : Σ _ : PUnit.{1}, 𝒰.I₀ ↦ 𝒰.X jk.2)
-            (fun jk ↦ Sigma.ι 𝒰.X jk.2 ≫ Sigma.desc 𝒰.f) =
-          𝒰.presieve₀ := by
-  obtain ⟨S, φ, e, hP, hsurj, hφ⟩ := exists_specMap_sigma 𝒰 haff hfin
-  refine ⟨S, φ, hP, hsurj, ?_, ?_⟩
-  · rw [Presieve.ofArrows_pUnit, ← Sieve.generate_singleton_comp_of_isIso e.hom, ← hφ]
-  · rw [Presieve.ofArrows_sigma_ι_comp_desc]
 
 end AlgebraicGeometry.Scheme.Cover

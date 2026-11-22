@@ -56,7 +56,8 @@ Mathlib's sheaf criteria (`Presieve.isSheafFor_trans`, `Presieve.isSheafFor_of_f
 * `CategoryTheory.Pseudofunctor.isSeparatedFor_presheafHom_of_hom_ext`: joint injectivity of
   restriction on morphisms in `F(Y.left)` along a sieve `R` implies separation of
   `F.presheafHom M N` for the corresponding sieve on `Y : Over S₀`.
-* `CategoryTheory.Pseudofunctor.pullHom_comp`,
+* `CategoryTheory.Pseudofunctor.pullHom_eq_compIso`,
+  `CategoryTheory.Pseudofunctor.pullHom_comp`,
   `CategoryTheory.Pseudofunctor.pullHom_id_self`,
   `CategoryTheory.Pseudofunctor.pullHom_map`,
   `CategoryTheory.Pseudofunctor.pullHom_mapComp'_hom`,
@@ -187,6 +188,18 @@ lemma map_presheafHomObjHomEquiv_symm {M N : F.obj (.mk (op S))}
   exact this.symm
 
 variable {F}
+
+/-- Express `LocallyDiscreteOpToCat.pullHom` in terms of `Pseudofunctor.compIso`. -/
+lemma pullHom_eq_compIso ⦃X₁ X₂ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ ⦃M₂ : F.obj (.mk (op X₂))⦄
+    ⦃Y : C⦄ ⦃f₁ : Y ⟶ X₁⦄ ⦃f₂ : Y ⟶ X₂⦄
+    (φ : (F.map f₁.op.toLoc).toFunctor.obj M₁ ⟶ (F.map f₂.op.toLoc).toFunctor.obj M₂)
+    ⦃Y' : C⦄ (g : Y' ⟶ Y) (gf₁ : Y' ⟶ X₁) (gf₂ : Y' ⟶ X₂)
+    (hgf₁ : g ≫ f₁ = gf₁ := by cat_disch) (hgf₂ : g ≫ f₂ = gf₂ := by cat_disch) :
+    pullHom φ g gf₁ gf₂ hgf₁ hgf₂ =
+      (F.compIso f₁.op g.op gf₁.op (by rw [← op_comp, hgf₁]) M₁).hom ≫
+        (F.map g.op.toLoc).toFunctor.map φ ≫
+        (F.compIso f₂.op g.op gf₂.op (by rw [← op_comp, hgf₂]) M₂).inv := by
+  rw [pullHom, compIso_hom, compIso_inv]
 
 /-- The pullback of a composite of local morphisms is the composite of their pullbacks. -/
 @[reassoc]

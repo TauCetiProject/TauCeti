@@ -22,7 +22,7 @@ transition maps and compatibility squares of `toDescentData` and `pullFunctor` i
 `DescentData.hom_toDescentData_obj_iff`, `DescentData.pullFunctor_obj_hom_eq`).
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory Bicategory Opposite
 
@@ -76,8 +76,9 @@ lemma toDescentData_obj_hom {M : F.obj (.mk (op S))} ⦃Y : C⦄ (q : Y ⟶ S) �
     (f₁ : Y ⟶ X i₁) (f₂ : Y ⟶ X i₂) (hf₁ : f₁ ≫ f i₁ = q) (hf₂ : f₂ ≫ f i₂ = q) :
     ((F.toDescentData f).obj M).hom q f₁ f₂ hf₁ hf₂ =
       (F.compIso (f i₁).op f₁.op q.op (by rw [← op_comp, hf₁]) M).inv ≫
-        (F.compIso (f i₂).op f₂.op q.op (by rw [← op_comp, hf₂]) M).hom :=
-  rfl
+        (F.compIso (f i₂).op f₂.op q.op (by rw [← op_comp, hf₂]) M).hom := by
+  dsimp [toDescentData, DescentData.ofObj]
+  rw [compIso_inv, compIso_hom]
 
 /-- A compatibility square with `((F.toDescentData f).obj M).hom` on the right-hand side reduces,
 after cancelling the left `compIso`, to matching `compIso.hom` components on both sides. -/
@@ -90,12 +91,9 @@ lemma hom_toDescentData_obj_iff {M : F.obj (.mk (op S))} ⦃Y : C⦄ (q : Y ⟶ 
     lhs ≫ m = ((F.toDescentData f).obj M).hom q f₁ f₂ hf₁ hf₂ ≫ rhs ↔
       (F.compIso (f i₁).op f₁.op q.op (by rw [← op_comp, hf₁]) M).hom ≫ lhs ≫ m =
         (F.compIso (f i₂).op f₂.op q.op (by rw [← op_comp, hf₂]) M).hom ≫ rhs := by
-  have hhom : ((F.toDescentData f).obj M).hom q f₁ f₂ hf₁ hf₂ ≫ rhs =
-      (F.compIso (f i₁).op f₁.op q.op (by rw [← op_comp, hf₁]) M).inv ≫
-        (F.compIso (f i₂).op f₂.op q.op (by rw [← op_comp, hf₂]) M).hom ≫ rhs := by
-    dsimp [toDescentData, DescentData.ofObj]
-    rw [Category.assoc, compIso_inv, compIso_hom]
-  rw [hhom, ← Iso.eq_inv_comp]
+  refine (iff_of_eq (congrArg (lhs ≫ m = · ≫ rhs) (toDescentData_obj_hom q f₁ f₂ hf₁ hf₂))).trans
+    ?_
+  rw [Category.assoc, ← Iso.eq_inv_comp]
 
 /-- The transition morphisms of `(pullFunctor F w).obj D`, rewritten to an arbitrary common
 composite `q'` and factored morphisms `f₁'`, `f₂'`. -/
@@ -110,15 +108,14 @@ lemma pullFunctor_obj_hom_eq {S' : C} {p : S' ⟶ S} {ι' : Type*} {X' : ι' →
     (hf₁' : f₁ ≫ p' j₁ = f₁' := by cat_disch)
     (hf₂' : f₂ ≫ p' j₂ = f₂' := by cat_disch) :
     ((pullFunctor F w).obj D).hom q f₁ f₂ hf₁ hf₂ =
-      (F.mapComp' (p' j₁).op.toLoc f₁.op.toLoc f₁'.op.toLoc
-          (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, hf₁'])).inv.toNatTrans.app _ ≫
+      (F.compIso (p' j₁).op f₁.op f₁'.op (by rw [← op_comp, hf₁']) (D.obj (α j₁))).inv ≫
         D.hom q' f₁' f₂'
           (by rw [← hq', ← hf₁', Category.assoc, w, reassoc_of% hf₁])
           (by rw [← hq', ← hf₂', Category.assoc, w, reassoc_of% hf₂]) ≫
-        (F.mapComp' (p' j₂).op.toLoc f₂.op.toLoc f₂'.op.toLoc
-          (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, hf₂'])).hom.toNatTrans.app _ := by
+        (F.compIso (p' j₂).op f₂.op f₂'.op (by rw [← op_comp, hf₂']) (D.obj (α j₂))).hom := by
   subst hf₁
-  dsimp only [pullFunctor, pullFunctorObj]
-  exact pullFunctorObjHom_eq w D (f₁ ≫ f' j₁) f₁ f₂ q' f₁' f₂' rfl hf₂ hq' hf₁' hf₂'
+  rw [compIso_inv, compIso_hom]
+  exact (pullFunctorObj_hom w D Y (f₁ ≫ f' j₁) j₁ j₂ f₁ f₂ rfl hf₂).trans
+    (pullFunctorObjHom_eq w D (f₁ ≫ f' j₁) f₁ f₂ q' f₁' f₂' rfl hf₂ hq' hf₁' hf₂')
 
 end CategoryTheory.Pseudofunctor.DescentData

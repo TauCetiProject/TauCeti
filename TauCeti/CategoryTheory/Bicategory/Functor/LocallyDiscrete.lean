@@ -36,7 +36,9 @@ associativity and unit laws. The comparisons of a pseudofunctor `LocallyDiscrete
 satisfy these laws (`CategoryTheory.Pseudofunctor.mapComp'_hom_app_comp_map_mapComp'_hom_app`),
 the unit laws even at `1`-morphisms that are only propositionally identities
 (`CategoryTheory.Pseudofunctor.mapComp'_hom_app_comp_map_mapId'_hom_app` and
-`CategoryTheory.Pseudofunctor.mapComp'_hom_app_comp_mapId'_hom_app`).
+`CategoryTheory.Pseudofunctor.mapComp'_hom_app_comp_mapId'_hom_app`). For unexposed downstream use,
+`CategoryTheory.Pseudofunctor.compIso` and `CategoryTheory.Pseudofunctor.idIso` package these
+comparison isomorphisms objectwise together with their naturality, associativity, and unit laws.
 -/
 
 @[expose] public section
@@ -406,6 +408,18 @@ lemma mapComp'_hom_app_comp_mapId'_hom_app {X Y : LocallyDiscrete B₀} (e : Y �
   subst he
   simp [mapId'_eq_mapId, mapComp'_comp_id_hom_app]
 
+end CategoryTheory.Pseudofunctor
+
+public section
+
+namespace CategoryTheory.Pseudofunctor
+
+open Bicategory
+
+universe v u
+
+variable {B₀ : Type*} [Category B₀] (P : LocallyDiscrete B₀ ⥤ᵖ Cat.{v, u})
+
 /-- Objectwise composition comparison isomorphism `fg_* M ≅ g_* (f_* M)` for a factorization
 `f ≫ g = fg` in `B₀`. -/
 def compIso {A B D : B₀} (f : A ⟶ B) (g : B ⟶ D) (fg : A ⟶ D) (h : f ≫ g = fg)
@@ -446,6 +460,139 @@ lemma idIso_inv {A : B₀} (M : P.obj (.mk A)) :
     (P.idIso M).inv = (P.mapId (.mk A)).inv.toNatTrans.app M :=
   rfl
 
+/-- Naturality of the forward morphism of `Pseudofunctor.compIso`. -/
+@[reassoc]
+lemma compIso_hom_naturality {A B D : B₀} (f : A ⟶ B) (g : B ⟶ D) (fg : A ⟶ D)
+    (h : f ≫ g = fg) {M N : P.obj (.mk A)} (φ : M ⟶ N) :
+    (P.map fg.toLoc).toFunctor.map φ ≫ (P.compIso f g fg h N).hom =
+      (P.compIso f g fg h M).hom ≫
+        (P.map g.toLoc).toFunctor.map ((P.map f.toLoc).toFunctor.map φ) := by
+  simpa only [compIso_hom] using
+    P.mapComp'_hom_naturality f.toLoc g.toLoc fg.toLoc (by simp [← Quiver.Hom.comp_toLoc, h]) φ
+
+/-- Naturality of the inverse morphism of `Pseudofunctor.compIso`. -/
+@[reassoc]
+lemma compIso_inv_naturality {A B D : B₀} (f : A ⟶ B) (g : B ⟶ D) (fg : A ⟶ D)
+    (h : f ≫ g = fg) {M N : P.obj (.mk A)} (φ : M ⟶ N) :
+    (P.map g.toLoc).toFunctor.map ((P.map f.toLoc).toFunctor.map φ) ≫
+        (P.compIso f g fg h N).inv =
+      (P.compIso f g fg h M).inv ≫ (P.map fg.toLoc).toFunctor.map φ := by
+  simpa only [compIso_inv] using
+    P.mapComp'_inv_naturality f.toLoc g.toLoc fg.toLoc (by simp [← Quiver.Hom.comp_toLoc, h]) φ
+
+/-- Conjugation by `Pseudofunctor.compIso` recovers iterated pullback along `f` and `g`. -/
+@[reassoc]
+lemma compIso_naturality_1 {A B D : B₀} (f : A ⟶ B) (g : B ⟶ D) (fg : A ⟶ D)
+    (h : f ≫ g = fg) {M N : P.obj (.mk A)} (φ : M ⟶ N) :
+    (P.compIso f g fg h M).inv ≫ (P.map fg.toLoc).toFunctor.map φ ≫
+        (P.compIso f g fg h N).hom =
+      (P.map g.toLoc).toFunctor.map ((P.map f.toLoc).toFunctor.map φ) := by
+  simpa only [compIso_hom, compIso_inv] using
+    P.mapComp'_naturality_1 f.toLoc g.toLoc fg.toLoc (by simp [← Quiver.Hom.comp_toLoc, h]) φ
+
+/-- Conjugation of iterated pullback along `f` and `g` by `Pseudofunctor.compIso` recovers
+pullback along `fg`. -/
+@[reassoc]
+lemma compIso_naturality_2 {A B D : B₀} (f : A ⟶ B) (g : B ⟶ D) (fg : A ⟶ D)
+    (h : f ≫ g = fg) {M N : P.obj (.mk A)} (φ : M ⟶ N) :
+    (P.compIso f g fg h M).hom ≫
+        (P.map g.toLoc).toFunctor.map ((P.map f.toLoc).toFunctor.map φ) ≫
+        (P.compIso f g fg h N).inv =
+      (P.map fg.toLoc).toFunctor.map φ := by
+  simpa only [compIso_hom, compIso_inv] using
+    P.mapComp'_naturality_2 f.toLoc g.toLoc fg.toLoc (by simp [← Quiver.Hom.comp_toLoc, h]) φ
+
+/-- Naturality of the forward morphism of `Pseudofunctor.idIso`. -/
+@[reassoc]
+lemma idIso_hom_naturality {A : B₀} {M N : P.obj (.mk A)} (φ : M ⟶ N) :
+    (P.map (𝟙 A).toLoc).toFunctor.map φ ≫ (P.idIso N).hom = (P.idIso M).hom ≫ φ := by
+  rw [idIso_hom, idIso_hom]
+  exact (Cat.Hom.toNatIso (P.mapId (.mk A))).hom.naturality φ
+
+/-- Naturality of the inverse morphism of `Pseudofunctor.idIso`. -/
+@[reassoc]
+lemma idIso_inv_naturality {A : B₀} {M N : P.obj (.mk A)} (φ : M ⟶ N) :
+    (P.idIso M).inv ≫ (P.map (𝟙 A).toLoc).toFunctor.map φ = φ ≫ (P.idIso N).inv := by
+  rw [idIso_inv, idIso_inv]
+  exact ((Cat.Hom.toNatIso (P.mapId (.mk A))).inv.naturality φ).symm
+
+/-- Associativity of `Pseudofunctor.compIso` across arbitrary factorizations. -/
+@[reassoc]
+lemma compIso_hom_comp_map_compIso_hom {A B D E : B₀} (f : A ⟶ B) (g : B ⟶ D) (h : D ⟶ E)
+    (fg : A ⟶ D) (gh : B ⟶ E) (fgh : A ⟶ E) (hfg : f ≫ g = fg) (hgh : g ≫ h = gh)
+    (hfgh : fg ≫ h = fgh) (hfgh' : f ≫ gh = fgh) (M : P.obj (.mk A)) :
+    (P.compIso fg h fgh hfgh M).hom ≫
+        (P.map h.toLoc).toFunctor.map (P.compIso f g fg hfg M).hom =
+      (P.compIso f gh fgh hfgh' M).hom ≫
+        (P.compIso g h gh hgh ((P.map f.toLoc).toFunctor.obj M)).hom := by
+  simpa only [compIso_hom] using P.mapComp'_hom_app_comp_map_mapComp'_hom_app
+    f.toLoc g.toLoc h.toLoc fg.toLoc gh.toLoc fgh.toLoc
+    (by simp [← Quiver.Hom.comp_toLoc, hfg]) (by simp [← Quiver.Hom.comp_toLoc, hgh])
+    (by simp [← Quiver.Hom.comp_toLoc, hfgh]) (by simp [← Quiver.Hom.comp_toLoc, hfgh']) M
+
+/-- Inverse associativity of `Pseudofunctor.compIso` across arbitrary factorizations. -/
+@[reassoc]
+lemma map_compIso_inv_comp_compIso_inv {A B D E : B₀} (f : A ⟶ B) (g : B ⟶ D) (h : D ⟶ E)
+    (fg : A ⟶ D) (gh : B ⟶ E) (fgh : A ⟶ E) (hfg : f ≫ g = fg) (hgh : g ≫ h = gh)
+    (hfgh : fg ≫ h = fgh) (hfgh' : f ≫ gh = fgh) (M : P.obj (.mk A)) :
+    (P.map h.toLoc).toFunctor.map (P.compIso f g fg hfg M).inv ≫
+        (P.compIso fg h fgh hfgh M).inv =
+      (P.compIso g h gh hgh ((P.map f.toLoc).toFunctor.obj M)).inv ≫
+        (P.compIso f gh fgh hfgh' M).inv := by
+  have := congrArg Iso.inv (Iso.ext
+    (P.compIso_hom_comp_map_compIso_hom f g h fg gh fgh hfg hgh hfgh hfgh' M) :
+    P.compIso fg h fgh hfgh M ≪≫ (P.map h.toLoc).toFunctor.mapIso (P.compIso f g fg hfg M) =
+      P.compIso f gh fgh hfgh' M ≪≫ P.compIso g h gh hgh ((P.map f.toLoc).toFunctor.obj M))
+  simpa using this
+
+/-- Left unit law expressing `compIso (𝟙 A) f` in terms of `idIso`. -/
+lemma compIso_id_comp {A B : B₀} (f : A ⟶ B) (h : 𝟙 A ≫ f = f := by cat_disch)
+    (M : P.obj (.mk A)) :
+    P.compIso (𝟙 A) f f h M = (P.map f.toLoc).toFunctor.mapIso (P.idIso M).symm := by
+  ext
+  rw [compIso_hom, Functor.mapIso_hom, Iso.symm_hom, idIso_inv]
+  simp [Quiver.Hom.id_toLoc, P.mapComp'_id_comp_hom_app]
+
+/-- The forward morphism of `compIso (𝟙 A) f` is `f_* (idIso M).inv`. -/
+@[simp]
+lemma compIso_id_comp_hom {A B : B₀} (f : A ⟶ B) (h : 𝟙 A ≫ f = f := by cat_disch)
+    (M : P.obj (.mk A)) :
+    (P.compIso (𝟙 A) f f h M).hom = (P.map f.toLoc).toFunctor.map (P.idIso M).inv := by
+  rw [P.compIso_id_comp f h M]
+  rfl
+
+/-- The inverse morphism of `compIso (𝟙 A) f` is `f_* (idIso M).hom`. -/
+@[simp]
+lemma compIso_id_comp_inv {A B : B₀} (f : A ⟶ B) (h : 𝟙 A ≫ f = f := by cat_disch)
+    (M : P.obj (.mk A)) :
+    (P.compIso (𝟙 A) f f h M).inv = (P.map f.toLoc).toFunctor.map (P.idIso M).hom := by
+  rw [P.compIso_id_comp f h M]
+  rfl
+
+/-- Right unit law expressing `compIso f (𝟙 B)` in terms of `idIso`. -/
+lemma compIso_comp_id {A B : B₀} (f : A ⟶ B) (h : f ≫ 𝟙 B = f := by cat_disch)
+    (M : P.obj (.mk A)) :
+    P.compIso f (𝟙 B) f h M = (P.idIso ((P.map f.toLoc).toFunctor.obj M)).symm := by
+  ext
+  rw [compIso_hom, Iso.symm_hom, idIso_inv]
+  simp [Quiver.Hom.id_toLoc, P.mapComp'_comp_id_hom_app]
+
+/-- The forward morphism of `compIso f (𝟙 B)` is `(idIso (f_* M)).inv`. -/
+@[simp]
+lemma compIso_comp_id_hom {A B : B₀} (f : A ⟶ B) (h : f ≫ 𝟙 B = f := by cat_disch)
+    (M : P.obj (.mk A)) :
+    (P.compIso f (𝟙 B) f h M).hom = (P.idIso ((P.map f.toLoc).toFunctor.obj M)).inv := by
+  rw [P.compIso_comp_id f h M]
+  rfl
+
+/-- The inverse morphism of `compIso f (𝟙 B)` is `(idIso (f_* M)).hom`. -/
+@[simp]
+lemma compIso_comp_id_inv {A B : B₀} (f : A ⟶ B) (h : f ≫ 𝟙 B = f := by cat_disch)
+    (M : P.obj (.mk A)) :
+    (P.compIso f (𝟙 B) f h M).inv = (P.idIso ((P.map f.toLoc).toFunctor.obj M)).hom := by
+  rw [P.compIso_comp_id f h M]
+  rfl
+
 /-- Two morphisms `M ⟶ N` over `X` have equal iterated pullbacks along `f : X ⟶ Y` and
 `g : Y ⟶ Z` if and only if they have equal pullbacks along `f ≫ g`. -/
 @[simp]
@@ -455,10 +602,7 @@ lemma map_map_eq_iff_map_comp {X Y Z : B₀} (f : X ⟶ Y) (g : Y ⟶ Z)
       (P.map g.toLoc).toFunctor.map ((P.map f.toLoc).toFunctor.map ψ) ↔
       (P.map (f ≫ g).toLoc).toFunctor.map φ =
         (P.map (f ≫ g).toLoc).toFunctor.map ψ := by
-  rw [← P.mapComp'_naturality_1 f.toLoc g.toLoc (f ≫ g).toLoc
-      (by simp [← Quiver.Hom.comp_toLoc]) φ,
-    ← P.mapComp'_naturality_1 f.toLoc g.toLoc (f ≫ g).toLoc
-      (by simp [← Quiver.Hom.comp_toLoc]) ψ,
-    cancel_epi, cancel_mono]
+  rw [← P.compIso_naturality_1 f g (f ≫ g) rfl φ,
+    ← P.compIso_naturality_1 f g (f ≫ g) rfl ψ, cancel_epi, cancel_mono]
 
 end CategoryTheory.Pseudofunctor
