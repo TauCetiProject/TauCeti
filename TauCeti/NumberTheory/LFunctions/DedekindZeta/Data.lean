@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LFunctions.Data.RiemannZeta
+public import TauCeti.NumberTheory.LFunctions.Data.Growth
+public import TauCeti.NumberTheory.LFunctions.Data.Series
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completion
 import TauCeti.Data.Finsupp.Single
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
@@ -21,8 +22,7 @@ and simple poles at `0` and `1` (Iwaniec--Kowalski §5.1; Neukirch VII §5).
 
 It proves that `dedekindZetaData K` is self-dual, satisfies `HasAverageCoefficientGrowth`,
 `HasDirichletAgreement`, `HasMeromorphicContinuation`, and `HasFunctionalEquation`, and is
-recovered verbatim by `AnalyticLFunctionData.ofSeries`. Over `K = ℚ`, it compares
-`dedekindZetaData ℚ` with `TauCeti.LFunctions.riemannZetaData`.
+recovered verbatim by `AnalyticLFunctionData.ofSeries`.
 
 ## Main definitions
 
@@ -38,7 +38,6 @@ recovered verbatim by `AnalyticLFunctionData.ofSeries`. Over `K = ℚ`, it compa
   `TauCeti.LFunctions.dedekindZetaData_hasFunctionalEquation`: the four analytic predicates.
 * `TauCeti.LFunctions.ofSeries_dedekindZetaData`: exact recovery by
   `AnalyticLFunctionData.ofSeries`.
-* `TauCeti.LFunctions.dedekindZetaData_rat_eqOffZero`: comparison over `ℚ` with `riemannZetaData`.
 
 ## References
 
@@ -188,24 +187,5 @@ theorem ofSeries_dedekindZetaData :
   exact mul_ne_zero
     (mul_ne_zero (mul_ne_zero hdiscr (pow_ne_zero _ hGℝ)) (pow_ne_zero _ hGℂ))
     (dedekindZeta_ne_zero_of_one_lt_re (by norm_num))
-
-/-! ### Comparison over `ℚ` with the Riemann zeta function -/
-
-/-- Over `ℚ`, `dedekindZetaData ℚ` agrees off index zero with the normal-form version of
-`riemannZetaData`. The two differ at index zero because `dedekindZetaCoeff ℚ 0 = 1` whereas
-`ArithmeticFunction.zeta 0 = 0`. -/
-theorem dedekindZetaData_rat_eqOffZero :
-    (dedekindZetaData ℚ).EqOffZero
-      { riemannZetaData with completed := toMeromorphicNFOn completedRiemannZeta univ } where
-  coeff_eq n hn := by simp [hn]
-  conductor_eq := by
-    apply PNat.eq
-    simp
-  gammaR_eq := by
-    simp [nrRealPlaces_eq_one_of_finrank_eq_one (Module.finrank_self ℚ)]
-  gammaC_eq := by simp
-  rootNumber_eq := by simp
-  completed_eq := completedDedekindZeta_rat_eq_toMeromorphicNFOn
-  polarOrder_eq := by simp
 
 end TauCeti.LFunctions

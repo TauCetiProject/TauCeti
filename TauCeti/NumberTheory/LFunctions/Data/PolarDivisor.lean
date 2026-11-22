@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Data.Finsupp.Defs
-import Mathlib.Data.Finsupp.Basic
+public import Mathlib.Data.Finsupp.Basic
 
 /-!
 # Symmetries of the simple-pole divisor at `0` and `1`
@@ -25,7 +24,7 @@ open Complex ComplexConjugate
 namespace TauCeti.LFunctions
 
 /-- Conjugation preserves the simple-pole divisor at `0` and `1`. -/
-private theorem mapDomain_conj_single_zero_add_single_one :
+theorem mapDomain_conj_single_zero_add_single_one :
     (Finsupp.single (0 : ℂ) (1 : ℕ) + Finsupp.single 1 1).mapDomain conj =
       Finsupp.single 0 1 + Finsupp.single 1 1 := by
   simp only [Finsupp.mapDomain_add, Finsupp.mapDomain_single, map_zero, map_one]

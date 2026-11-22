@@ -30,14 +30,6 @@ theorem intCast_single_apply {α R : Type*} [AddGroupWithOne R] (a : α) (n : �
     ((single a n b : ℤ) : R) = single a (n : R) b :=
   apply_single' Int.cast Int.cast_zero a n b
 
-/-- The support of a sum of two nonzero singletons `single a b + single c d` is `{a, c}`, without
-assuming `a ≠ c`. -/
-theorem support_single_add_single' {α M : Type*} [DecidableEq α]
-    [AddCommMonoid M] [PartialOrder M] [CanonicallyOrderedAdd M] [Sub M] [OrderedSub M]
-    {a c : α} {b d : M} (hb : b ≠ 0) (hd : d ≠ 0) :
-    (single a b + single c d).support = {a, c} := by
-  rw [support_add_eq_union, support_single a hb, support_single c hd, Finset.singleton_union]
-
 /-- A sum of two nonzero singletons `single a b + single c d` vanishes exactly away from `a` and
 `c`. -/
 theorem single_add_single_eq_zero_iff {α M : Type*}
@@ -56,5 +48,15 @@ theorem single_add_single_ne_zero_iff {α M : Type*}
     (single a b + single c d) x ≠ 0 ↔ x = a ∨ x = c := by
   simpa only [ne_eq, not_and_or, not_not] using
     not_congr (single_add_single_eq_zero_iff hb hd x)
+
+/-- The support of a sum of two nonzero singletons `single a b + single c d` is `{a, c}`, without
+assuming `a ≠ c`. -/
+theorem support_single_add_single' {α M : Type*} [DecidableEq α]
+    [AddCommMonoid M] [PartialOrder M] [CanonicallyOrderedAdd M]
+    {a c : α} {b d : M} (hb : b ≠ 0) (hd : d ≠ 0) :
+    (single a b + single c d).support = {a, c} := by
+  ext x
+  rw [mem_support_iff, single_add_single_ne_zero_iff hb hd]
+  simp
 
 end Finsupp

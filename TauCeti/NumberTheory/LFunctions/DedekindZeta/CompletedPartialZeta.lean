@@ -79,9 +79,10 @@ Hecke's functional equation `Z(I, 1 - s) = Z(I^∨, s)` against the trace dual
   `TauCeti.LFunctions.meromorphicOrderAt_completedPartialZeta_one`,
   `TauCeti.LFunctions.meromorphicOrderAt_completedPartialZeta_zero`: regularity, simple poles at
   `0` and `1`, and their residues.
-* `TauCeti.LFunctions.completedPartialZeta_one_sub`: Hecke's functional equation
-  `completedPartialZeta I (1 - s) = completedPartialZeta (FractionalIdeal.dualEquiv ℤ ℚ I) s`
-  (Neukirch VII (5.9)).
+* `TauCeti.LFunctions.completedPartialZeta_one_sub`,
+  `TauCeti.LFunctions.completedPartialZeta_one_sub_eventuallyEq`: Hecke's functional equation
+  `completedPartialZeta I (1 - s) = completedPartialZeta (FractionalIdeal.dualEquiv ℤ ℚ I) s`,
+  pointwise and as punctured germs (Neukirch VII (5.9)).
 * `TauCeti.LFunctions.completedPartialZeta_conj`: reflection symmetry
   `completedPartialZeta I (conj s) = conj (completedPartialZeta I s)`.
 
@@ -748,6 +749,14 @@ theorem completedPartialZeta_one_sub (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s 
       indicator_of_mem (mem_Ioi.mpr hu)]
     exact mellinKernel_mixedDual_idealLattice (FractionalIdeal.coe_dualEquiv ℤ ℚ I) _ u
   exact congrFun hcongr (s / 2)
+
+/-- **Hecke's functional equation for completed partial zeta functions, as germs:**
+`Z(I, 1 - z) = Z(I^∨, z)` on a punctured neighborhood of every `s : ℂ` (including the poles `0`
+and `1`). -/
+theorem completedPartialZeta_one_sub_eventuallyEq (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s : ℂ) :
+    (fun z ↦ completedPartialZeta I (1 - z)) =ᶠ[𝓝[≠] s]
+      completedPartialZeta (FractionalIdeal.dualEquiv ℤ ℚ I) :=
+  Eventually.of_forall (completedPartialZeta_one_sub I)
 
 /-- Reflection symmetry of the completed partial zeta function across the real axis. -/
 @[simp]
