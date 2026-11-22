@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
-public import Mathlib.Algebra.DirectSum.Decomposition
 public import Mathlib.Algebra.Ring.NegOnePow
-public import Mathlib.Data.ZMod.IntUnitsPower
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.CharP.Invertible
 public import TauCeti.LinearAlgebra.Graded.LinearMap
+import TauCeti.Algebra.Algebra.Subalgebra.Adjoin
 import TauCeti.Algebra.Group.Action.SemiconjBy
 import TauCeti.RingTheory.GradedAlgebra.Generators
 
@@ -178,7 +177,7 @@ theorem mul_eq_smul_mul_right_of_adjoin_range_eq_top_of_isHomogeneous {a : A} {c
     a * b = c j • (b * a) :=
   mul_eq_smul_mul_right_of_adjoin_range_eq_top (𝒜 := 𝒜) hc0 hc
     (fun x : (i : ι) × 𝒱 i ↦ g x.2.val) Sigma.fst
-    (GradedAlgebra.adjoin_range_sigma_eq_top hadj h𝒱)
+    (TauCeti.Algebra.adjoin_range_sigma_eq_top hadj h𝒱)
     (fun x ↦ by simpa only [add_zero] using hg.map_mem x.2.property) (fun x ↦ hcomm x.2.property) hb
 
 /-- If `b : A` satisfies `g x * b = c i • (b * g x)` for every homogeneous generator `x ∈ 𝒱 i`,
@@ -193,7 +192,7 @@ theorem mul_eq_smul_mul_left_of_adjoin_range_eq_top_of_isHomogeneous {b : A} {c 
     a * b = c i • (b * a) :=
   mul_eq_smul_mul_left_of_adjoin_range_eq_top (𝒜 := 𝒜) hc0 hc
     (fun x : (i : ι) × 𝒱 i ↦ g x.2.val) Sigma.fst
-    (GradedAlgebra.adjoin_range_sigma_eq_top hadj h𝒱)
+    (TauCeti.Algebra.adjoin_range_sigma_eq_top hadj h𝒱)
     (fun x ↦ by simpa only [add_zero] using hg.map_mem x.2.property) (fun x ↦ hcomm x.2.property) ha
 
 /-- **Graded supercommutativity from a homogeneous linear generator map.** If a degree-`0` linear
@@ -212,7 +211,7 @@ theorem mul_eq_smul_mul_of_adjoin_range_eq_top_of_isHomogeneous {s : ι → ι �
     a * b = s i j • (b * a) :=
   mul_eq_smul_mul_of_adjoin_range_eq_top (𝒜 := 𝒜) hs_zero_right hs_add_right hs_zero_left
     hs_add_left (fun x : (i : ι) × 𝒱 i ↦ g x.2.val) Sigma.fst
-    (GradedAlgebra.adjoin_range_sigma_eq_top hadj h𝒱)
+    (TauCeti.Algebra.adjoin_range_sigma_eq_top hadj h𝒱)
     (fun x ↦ by simpa only [add_zero] using hg.map_mem x.2.property)
     (fun x y ↦ hcomm x.2.property y.2.property) ha hb
 

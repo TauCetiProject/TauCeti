@@ -27,6 +27,8 @@ to noncommutative ambient algebras, using the same span calculation.
   unit multiplier generates the same subalgebra.
 * `TauCeti.Algebra.adjoin_two_mul_sub_one_eq_top`: `2x - 1` generates the whole algebra when
   `x` does and `2` is a unit.
+* `TauCeti.Algebra.adjoin_range_sigma_eq_top`: restricting a linear map with algebra-generating
+  range to a spanning family of submodules still has algebra-generating range.
 * `TauCeti.rank_adjoin_eq_rank_adjoin_range`: adjoining a set to `F` or to the image of `F` in a
   larger field gives the same rank.
 * `NonUnitalSubalgebra.adjoin_eq_span_one_sup`: adjoining the identity adds the scalar line
@@ -36,6 +38,8 @@ to noncommutative ambient algebras, using the same span calculation.
 public section
 
 namespace TauCeti.Algebra
+
+section
 
 variable {F E : Type*} [CommRing F] [Ring E] [Algebra F E]
 
@@ -65,6 +69,22 @@ theorem adjoin_two_mul_sub_one_eq_top (h2 : IsUnit (2 : F)) {x : E}
     (h : Algebra.adjoin F {x} = ⊤) : Algebra.adjoin F {2 * x - 1} = ⊤ := by
   have := adjoin_algebraMap_mul_add_algebraMap_eq_adjoin h2 (-1) x
   rwa [map_ofNat, map_neg, map_one, ← sub_eq_add_neg, h] at this
+
+end
+
+/-- If a linear map `g : V →ₗ[R] A` has algebra-generating image and a family of submodules
+`𝒱 : ι → Submodule R V` spans `V`, then the restriction of `g` to `(i : ι) × 𝒱 i` also has
+algebra-generating image. -/
+theorem adjoin_range_sigma_eq_top {R A ι V : Type*} [CommSemiring R] [Semiring A]
+    [Algebra R A] [AddCommMonoid V] [Module R V] {𝒱 : ι → Submodule R V}
+    {g : V →ₗ[R] A} (hadj : Algebra.adjoin R (Set.range g) = ⊤) (h𝒱 : ⨆ i, 𝒱 i = ⊤) :
+    Algebra.adjoin R (Set.range fun x : (i : ι) × 𝒱 i ↦ g x.2.val) = ⊤ := by
+  rw [eq_top_iff, ← hadj, Algebra.adjoin_le_iff]
+  rintro _ ⟨v, rfl⟩
+  have hv : v ∈ ⨆ i, 𝒱 i := h𝒱 ▸ Submodule.mem_top
+  refine Submodule.iSup_induction 𝒱 (motive := fun v ↦ g v ∈ Algebra.adjoin R _) hv
+    (fun i x hx ↦ Algebra.subset_adjoin ⟨⟨i, x, hx⟩, rfl⟩)
+    (by simp) (fun _ _ hx hy ↦ by rw [map_add]; exact add_mem hx hy)
 
 end TauCeti.Algebra
 

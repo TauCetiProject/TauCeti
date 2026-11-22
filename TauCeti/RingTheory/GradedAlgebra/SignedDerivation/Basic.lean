@@ -8,9 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Algebra.DirectSum.Decomposition
 public import Mathlib.Algebra.GradedMonoid
-public import Mathlib.Algebra.Module.LinearMap.Defs
 import Mathlib.Data.Int.Order.Units
-import Mathlib.GroupTheory.GroupAction.Ring
 import Mathlib.Tactic.Abel
 
 /-!

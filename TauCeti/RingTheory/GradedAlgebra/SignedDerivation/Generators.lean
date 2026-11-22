@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
-import Mathlib.GroupTheory.GroupAction.Ring
 import Mathlib.Tactic.Abel
 import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.RingTheory.GradedAlgebra.Generators
@@ -42,17 +41,14 @@ grading index types `ι` (in particular both `ℤ` and `ZMod 2`) and arbitrary s
 * `TauCeti.eq_zero_of_signedLeibniz_along_of_adjoin_eq_top`,
   `TauCeti.eq_of_signedLeibniz_along_of_adjoin_eq_top`,
   `TauCeti.eq_zero_of_signedLeibniz_of_adjoin_eq_top`,
-  `TauCeti.apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_eq_top`,
-  `TauCeti.apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_range_eq_top`,
-  `TauCeti.eq_of_signedLeibniz_of_adjoin_eq_top`, and
-  `TauCeti.eq_of_signedLeibniz_of_adjoin_range_eq_top`: an `s`-signed Leibniz map (along a
+  `TauCeti.apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_eq_top`, and
+  `TauCeti.eq_of_signedLeibniz_of_adjoin_eq_top`: an `s`-signed Leibniz map (along a
   unit-preserving map, as an endomorphism, or intertwined along a grading-preserving algebra map)
   is determined on any algebra-generating set.
 * `TauCeti.isHomogeneous_of_signedLeibniz_of_adjoin_eq_top` and
   `TauCeti.isHomogeneous_of_signedLeibniz_of_adjoin_range_eq_top`: degree shift on generators
   propagates to the whole graded algebra.
-* `TauCeti.comp_self_eq_zero_iff_of_signedLeibniz_of_adjoin_eq_top` and
-  `TauCeti.comp_self_eq_zero_iff_of_signedLeibniz_of_adjoin_range_eq_top`: an odd-sign Leibniz
+* `TauCeti.comp_self_eq_zero_iff_of_signedLeibniz_of_adjoin_eq_top`: an odd-sign Leibniz
   endomorphism squares to zero if and only if its square vanishes on generators.
 
 ## References
@@ -143,21 +139,6 @@ theorem apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_eq_top
         Units.smul_def, map_zsmul]
   exact LinearMap.congr_fun h a
 
-/-- A grading-preserving algebra homomorphism out of `A` intertwines `s`-signed Leibniz
-endomorphisms if it does so on the range of an algebra-generating map. -/
-theorem apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_range_eq_top
-    {V B F : Type*} [Ring B] [Algebra R B] {ℬ : ι → Submodule R B}
-    [FunLike F A B] [AlgHomClass F R A B]
-    {dA : A →ₗ[R] A}
-    (hdA : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, dA (a * b) = dA a * b + s i • (a * dA b))
-    {dB : B →ₗ[R] B}
-    (hdB : ∀ {i : ι} {b : B}, b ∈ ℬ i → ∀ c : B, dB (b * c) = dB b * c + s i • (b * dB c))
-    (f : F) (hf : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → f a ∈ ℬ i)
-    {g : V → A} (hadj : Algebra.adjoin R (Set.range g) = ⊤)
-    (hg : ∀ x, dB (f (g x)) = f (dA (g x))) (a : A) : dB (f a) = f (dA a) :=
-  apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_eq_top (𝒜 := 𝒜) (ℬ := ℬ) hdA hdB f hf hadj
-    (Set.forall_mem_range.2 hg) a
-
 /-- Two linear endomorphisms satisfying the same `s`-signed Leibniz rule and agreeing on an
 algebra-generating set are equal. -/
 theorem eq_of_signedLeibniz_of_adjoin_eq_top {d₁ d₂ : A →ₗ[R] A}
@@ -165,15 +146,6 @@ theorem eq_of_signedLeibniz_of_adjoin_eq_top {d₁ d₂ : A →ₗ[R] A}
     (hl₂ : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d₂ (a * b) = d₂ a * b + s i • (a * d₂ b))
     {S : Set A} (hadj : Algebra.adjoin R S = ⊤) (hS : ∀ x ∈ S, d₁ x = d₂ x) : d₁ = d₂ :=
   eq_of_signedLeibniz_along_of_adjoin_eq_top (𝒜 := 𝒜) (OneHom.id A) hl₁ hl₂ hadj hS
-
-/-- Two `s`-signed Leibniz endomorphisms agreeing on the range of an algebra-generating map are
-equal. -/
-theorem eq_of_signedLeibniz_of_adjoin_range_eq_top {V : Type*} {d₁ d₂ : A →ₗ[R] A}
-    (hl₁ : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d₁ (a * b) = d₁ a * b + s i • (a * d₁ b))
-    (hl₂ : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d₂ (a * b) = d₂ a * b + s i • (a * d₂ b))
-    {g : V → A} (hadj : Algebra.adjoin R (Set.range g) = ⊤)
-    (hg : ∀ x, d₁ (g x) = d₂ (g x)) : d₁ = d₂ :=
-  eq_of_signedLeibniz_of_adjoin_eq_top (𝒜 := 𝒜) hl₁ hl₂ hadj <| Set.forall_mem_range.2 hg
 
 end Uniqueness
 
@@ -254,16 +226,6 @@ theorem comp_self_eq_zero_iff_of_signedLeibniz_of_adjoin_eq_top
   exact eq_zero_of_signedLeibniz_of_adjoin_eq_top (𝒜 := 𝒜) (s := fun _ ↦ 1)
     (fun {_ a} _ b ↦ by simp [map_map_mul_of_leibniz 𝒜 (fun hx ↦ hdeg.map_mem hx) hl hs a b])
     hadj hS
-
-/-- A degree-`q` endomorphism satisfying an `s`-signed Leibniz rule with `s (i + q) = -s i` squares
-to zero if and only if its square vanishes on the range of an algebra-generating map. -/
-theorem comp_self_eq_zero_iff_of_signedLeibniz_of_adjoin_range_eq_top {V : Type*}
-    (hdeg : LinearMap.IsHomogeneous d 𝒜 𝒜 q)
-    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d (a * b) = d a * b + s i • (a * d b))
-    (hs : ∀ i, s (i + q) = -s i) {g : V → A} (hadj : Algebra.adjoin R (Set.range g) = ⊤) :
-    d ∘ₗ d = 0 ↔ ∀ x, d (d (g x)) = 0 := by
-  rw [comp_self_eq_zero_iff_of_signedLeibniz_of_adjoin_eq_top hdeg hl hs hadj,
-    Set.forall_mem_range]
 
 end SquareZero
 

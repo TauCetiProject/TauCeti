@@ -91,9 +91,9 @@ theorem apply_map_eq_map_apply_of_leibniz {A : Type*} [Ring A] [Algebra R A]
     (f : signedSymPiece G →ₐᵍ[R] 𝒜)
     (hgen : ∀ x, d (f (generator G x)) = f (dV (generator G x)))
     (a : SignedSym G) : d (f a) = f (dV a) :=
-  apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_range_eq_top
+  apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_eq_top
     (𝒜 := signedSymPiece G) (ℬ := 𝒜) hV hd f (fun ha ↦ Graded.map_mem f ha)
-    (adjoin_range_generator G) hgen a
+    (adjoin_range_generator G) (Set.forall_mem_range.2 hgen) a
 
 section Lift
 
@@ -194,9 +194,9 @@ theorem eq_liftDerivation {d : SignedSym G →ₗ[R] SignedSym G}
     (hleibniz : ∀ {p : ι} {a : SignedSym G}, a ∈ signedSymPiece G p → ∀ b : SignedSym G,
       d (a * b) = d a * b + ((-1 : ℤˣ) ^ p) • (a * d b))
     (hgen : ∀ x, d (generator G x) = δ x) : d = liftDerivation δ hδ hk :=
-  eq_of_signedLeibniz_of_adjoin_range_eq_top (𝒜 := signedSymPiece G) hleibniz
-    (liftDerivation_mul hδ hk) (adjoin_range_generator G) fun x =>
-      (hgen x).trans (liftDerivation_generator hδ hk x).symm
+  eq_of_signedLeibniz_of_adjoin_eq_top (𝒜 := signedSymPiece G) hleibniz
+    (liftDerivation_mul hδ hk) (adjoin_range_generator G)
+    (Set.forall_mem_range.2 fun x => (hgen x).trans (liftDerivation_generator hδ hk x).symm)
 
 end Lift
 
@@ -221,9 +221,10 @@ theorem comp_self_eq_zero_iff {d : SignedSym G →ₗ[R] SignedSym G} {k : ι}
     (hk : (-1 : ℤˣ) ^ k = -1)
     (hleibniz : ∀ {p : ι} {a : SignedSym G}, a ∈ signedSymPiece G p → ∀ b : SignedSym G,
       d (a * b) = d a * b + ((-1 : ℤˣ) ^ p) • (a * d b)) :
-    d ∘ₗ d = 0 ↔ ∀ x, d (d (generator G x)) = 0 :=
-  comp_self_eq_zero_iff_of_signedLeibniz_of_adjoin_range_eq_top hdeg hleibniz
-    (fun i => by rw [uzpow_add, hk, mul_neg, mul_one]) (adjoin_range_generator G)
+    d ∘ₗ d = 0 ↔ ∀ x, d (d (generator G x)) = 0 := by
+  rw [comp_self_eq_zero_iff_of_signedLeibniz_of_adjoin_eq_top hdeg hleibniz
+    (fun i => by rw [uzpow_add, hk, mul_neg, mul_one]) (adjoin_range_generator G),
+    Set.forall_mem_range]
 
 end General
 

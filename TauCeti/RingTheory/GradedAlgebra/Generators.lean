@@ -27,8 +27,6 @@ generator's degree.
 * `TauCeti.GradedAlgebra.grade_le_of_adjoin_eq_top` and
   `TauCeti.GradedAlgebra.grade_le_of_adjoin_range_eq_top`: graded induction from algebra generators
   for any family of submodules `ℬ : Γ → Submodule R A` closed under `1` and graded multiplication.
-* `TauCeti.GradedAlgebra.adjoin_range_sigma_eq_top`: restricting a linear map with
-  algebra-generating range to a spanning family of submodules still has algebra-generating range.
 * `AlgHom.map_mem_of_adjoin_range_eq_top`: an algebra map preserving the degrees of a homogeneous
   generating family preserves the degree of every homogeneous element.
 * `GradedAlgHom.ofAdjoinRangeEqTop`: such an algebra map, as a graded algebra map.
@@ -158,20 +156,6 @@ theorem grade_le_of_adjoin_range_eq_top {V : Type*} [AddCommMonoid V] [Module R 
   exact hle Submodule.mem_top
 
 end Induction
-
-/-- If a linear map `g : V →ₗ[R] A` has algebra-generating image and a family of submodules
-`𝒱 : ι → Submodule R V` spans `V`, then the restriction of `g` to `(i : ι) × 𝒱 i` also has
-algebra-generating image. -/
-theorem adjoin_range_sigma_eq_top {R A ι V : Type*} [CommSemiring R] [Semiring A]
-    [Algebra R A] [AddCommMonoid V] [Module R V] {𝒱 : ι → Submodule R V}
-    {g : V →ₗ[R] A} (hadj : Algebra.adjoin R (Set.range g) = ⊤) (h𝒱 : ⨆ i, 𝒱 i = ⊤) :
-    Algebra.adjoin R (Set.range fun x : (i : ι) × 𝒱 i ↦ g x.2.val) = ⊤ := by
-  rw [eq_top_iff, ← hadj, Algebra.adjoin_le_iff]
-  rintro _ ⟨v, rfl⟩
-  have hv : v ∈ ⨆ i, 𝒱 i := h𝒱 ▸ Submodule.mem_top
-  refine Submodule.iSup_induction 𝒱 (motive := fun v ↦ g v ∈ Algebra.adjoin R _) hv
-    (fun i x hx ↦ Algebra.subset_adjoin ⟨⟨i, x, hx⟩, rfl⟩)
-    (by simp) (fun _ _ hx hy ↦ by rw [map_add]; exact add_mem hx hy)
 
 end TauCeti.GradedAlgebra
 
