@@ -73,8 +73,8 @@ function near that point only up to constant factors (`TauCeti.isTheta_clm_apply
 and a family continuous and invertible on a compact set does so uniformly there
 (`TauCeti.exists_norm_clm_apply_le_and_norm_le_of_isUnit`).
 
-The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm at
-most one, such as the trace of `A` along an orthonormal basis, is bounded by `#s * ‖A‖`
+The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous sesquilinear map along vectors of norm
+at most one, such as the trace of `A` along an orthonormal basis, is bounded by `#s * ‖A‖`
 (`ContinuousLinearMap.norm_sum_apply_apply_le`). For a sequence `A` of continuous semilinear maps
 and a sequence `v` of vectors, the weighted norm of the finite Cauchy product
 `∑ k ∈ Finset.range (n + 1), A (n - k) (v k)` is bounded termwise by the Cauchy product of the
@@ -90,16 +90,16 @@ normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squ
 (`TauCeti.prodMap_mul_self_eq_neg_one`), and `a + J b = y` holds exactly when `b - J a = -J y`
 (`ContinuousLinearMap.add_apply_eq_iff_sub_apply_eq_neg_apply`).
 
-Two first-order estimates: an estimate `‖w - L (t v)‖ ≤ c ‖t v‖` with `t ≠ 0` rescales to
-`‖t⁻¹ w - L v‖ ≤ c ‖v‖` (`ContinuousLinearMap.norm_inv_smul_sub_le`), and if `B` inverts `T`
-on `v` and `u` is close to `T v`, then any `B'` close to `B` sends `u` close to `v`
-(`ContinuousLinearMap.norm_sub_apply_le_of_apply_eq`).
+Two first-order estimates for semilinear maps: an estimate `‖w - L (t v)‖ ≤ c ‖t v‖` with
+`t ≠ 0` rescales to `‖(σ t)⁻¹ w - L v‖ ≤ c ‖v‖` (`ContinuousLinearMap.norm_inv_smul_sub_le`),
+and if `B` sends `y` to `v` and `u` is close to `y`, then any `B'` close to `B` sends `u` close
+to `v` (`ContinuousLinearMap.norm_sub_apply_le_of_apply_eq`).
 
 If `a₀ ‖w‖² ≤ g w` and `‖S‖ ≤ m`, then `‖p‖² + ‖q‖² + ‖v‖²` is bounded by
 `(2 + 2 m²) / a₀ (g p + g (q - S v) + g v)`, comparing an energy density with a perturbed middle
 term to the squared norms (`TauCeti.norm_sq_add_norm_sq_add_norm_sq_le`).
 
-A continuous bilinear map satisfies a Young-type bound
+A continuous semilinear map of two variables satisfies a Young-type bound
 `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for every `c > 0`
 (`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
 
@@ -120,7 +120,8 @@ On a finite product `ι → R`, a nonzero continuous linear map is nonzero at so
 every value (`ContinuousLinearMap.norm_apply_le_card_mul_norm`). Replacing one coordinate by a
 functional is injective over a semiring with cancellative addition if its coefficient there is
 right-regular (`ContinuousLinearMap.pi_update_injective`), and a continuous linear equivalence over
-a semitopological ring if that coefficient is a unit (`ContinuousLinearMap.exists_pi_update_equiv`).
+a ring with continuous right multiplications if that coefficient is a unit
+(`ContinuousLinearMap.exists_pi_update_equiv`).
 The coordinate arguments are adapted from
 [KLS](https://github.com/human-ai-mathematics/kls-lean), commit
 `65810c73f9dd7945fc646ab484cb19d673f5291d`,
@@ -467,21 +468,29 @@ theorem exists_add_apply_eq_of_norm_lt_one [CompleteSpace E] (v : E) {A : E →L
 
 end Inverse
 
-/-- The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm
-at most one is bounded by `#s * ‖A‖`. Along an orthonormal basis this bounds the trace of `A` by
-the dimension times its norm. -/
-theorem norm_sum_apply_apply_le {ι : Type*} (s : Finset ι) (A : X →L[𝕜] X →L[𝕜] Y)
-    {v : ι → X} (hv : ∀ i ∈ s, ‖v i‖ ≤ 1) : ‖∑ i ∈ s, A (v i) (v i)‖ ≤ s.card * ‖A‖ := by
+section Semilinear₂
+
+variable {𝕜 𝕜₂ 𝕜₃ E F G : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  [NontriviallyNormedField 𝕜₃] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F] [SeminormedAddCommGroup G] [NormedSpace 𝕜₃ G]
+  {σ₁₃ : 𝕜 →+* 𝕜₃} [RingHomIsometric σ₁₃]
+
+/-- The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous sesquilinear map along vectors of
+norm at most one is bounded by `#s * ‖A‖`. Along an orthonormal basis this bounds the trace of
+`A` by the dimension times its norm. -/
+theorem norm_sum_apply_apply_le {τ : 𝕜 →+* 𝕜₃} [RingHomIsometric τ] {ι : Type*} (s : Finset ι)
+    (A : E →SL[σ₁₃] E →SL[τ] G) {v : ι → E} (hv : ∀ i ∈ s, ‖v i‖ ≤ 1) :
+    ‖∑ i ∈ s, A (v i) (v i)‖ ≤ s.card * ‖A‖ := by
   refine (norm_sum_le _ _).trans <|
     (Finset.sum_le_card_nsmul _ _ _ fun i hi ↦ ?_).trans_eq (nsmul_eq_mul _ _)
   calc ‖A (v i) (v i)‖ ≤ ‖A‖ * ‖v i‖ * ‖v i‖ := A.le_opNorm₂ _ _
     _ ≤ ‖A‖ * 1 * 1 := by gcongr <;> exact hv i hi
     _ = ‖A‖ := by ring
 
-/-- A Young-type bound for a continuous bilinear map: for every `c > 0`,
+/-- A Young-type bound for a continuous semilinear map of two variables: for every `c > 0`,
 `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)`. -/
-theorem norm_apply_apply_le_mul_add_sq {Z : Type*} [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z]
-    (B : X →L[𝕜] Y →L[𝕜] Z) {c : ℝ} (hc : 0 < c) (u : X) (v : Y) :
+theorem norm_apply_apply_le_mul_add_sq {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₂₃]
+    (B : E →SL[σ₁₃] F →SL[σ₂₃] G) {c : ℝ} (hc : 0 < c) (u : E) (v : F) :
     ‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2) := by
   refine (B.le_opNorm₂ _ _).trans ?_
   rw [mul_assoc]
@@ -489,6 +498,8 @@ theorem norm_apply_apply_le_mul_add_sq {Z : Type*} [SeminormedAddCommGroup Z] [N
   have h := two_mul_le_add_mul_sq (a := ‖u‖) (b := ‖v‖) (inv_pos.2 hc)
   rw [inv_inv] at h
   linarith
+
+end Semilinear₂
 
 section SmulRight
 
@@ -598,11 +609,13 @@ theorem norm_apply_smul_le_of_support_subset_closedBall (L : E →SL[σ] F) {g :
 end Support
 
 /-- A pointwise squared-norm bound gives the square-root bound on the operator norm. -/
-theorem opNorm_le_sqrt_of_forall_sq_norm_le (T : X →L[𝕜] Y) {c : ℝ} (hc : 0 ≤ c)
-    (h : ∀ x, ‖T x‖ ^ 2 ≤ c * ‖x‖ ^ 2) : ‖T‖ ≤ Real.sqrt c := by
-  refine T.opNorm_le_bound (Real.sqrt_nonneg _) fun x => ?_
-  apply (sq_le_sq₀ (norm_nonneg _) (mul_nonneg (Real.sqrt_nonneg _) (norm_nonneg _))).mp
-  simpa only [mul_pow, Real.sq_sqrt hc] using h x
+theorem opNorm_le_sqrt_of_forall_sq_norm_le {𝕜₂ Z : Type*} [NontriviallyNormedField 𝕜₂]
+    [SeminormedAddCommGroup Z] [NormedSpace 𝕜₂ Z] {σ : 𝕜 →+* 𝕜₂} (T : X →SL[σ] Z) {c : ℝ}
+    (h : ∀ x, ‖T x‖ ^ 2 ≤ c * ‖x‖ ^ 2) : ‖T‖ ≤ Real.sqrt c :=
+  T.opNorm_le_bound (Real.sqrt_nonneg _) fun x ↦
+    calc ‖T x‖ = Real.sqrt (‖T x‖ ^ 2) := (Real.sqrt_sq (norm_nonneg _)).symm
+      _ ≤ Real.sqrt (c * ‖x‖ ^ 2) := Real.sqrt_le_sqrt (h x)
+      _ = Real.sqrt c * ‖x‖ := by rw [Real.sqrt_mul' _ (sq_nonneg _), Real.sqrt_sq (norm_nonneg _)]
 
 section Coordinates
 
@@ -632,6 +645,18 @@ theorem norm_apply_le_card_mul_norm [Fintype ι] [SeminormedRing R] {F : Type*}
         mul_le_mul (norm_le_pi_norm v j) (h j) (norm_nonneg _) (norm_nonneg _)
     _ = Fintype.card ι * ‖v‖ * M := by simp [mul_assoc]
 
+/-- Updating the coordinate `i` of `x` to `t` changes the value of a linear functional by `t`
+times its coefficient at `i`. -/
+private theorem apply_update_eq_add_mul [Semiring R] [TopologicalSpace R] (α : (ι → R) →L[R] R)
+    (x : ι → R) (i : ι) (t : R) :
+    α (Function.update x i t) = α (Function.update x i 0) + t * α (Pi.single i 1) := by
+  rw [← smul_eq_mul, ← map_smul, ← map_add]
+  congr 1
+  ext m
+  rcases eq_or_ne m i with rfl | hm
+  · simp
+  · simp [hm]
+
 /-- Replacing one coordinate by a linear functional is injective when its coefficient at
 that coordinate is right-regular. -/
 theorem pi_update_injective [Semiring R] [IsLeftCancelAdd R] [TopologicalSpace R]
@@ -641,12 +666,7 @@ theorem pi_update_injective [Semiring R] [IsLeftCancelAdd R] [TopologicalSpace R
   have hoff (m : ι) (hm : m ≠ i) : v m = w m := by simpa [pi_apply, hm] using congrFun h m
   -- Split off the coordinate `i`: the remaining parts of `v` and `w` agree.
   have hsplit (x : ι → R) : α x = α (Function.update x i 0) + x i * α (Pi.single i 1) := by
-    rw [← smul_eq_mul, ← map_smul, ← map_add]
-    congr 1
-    ext m
-    rcases eq_or_ne m i with rfl | hm
-    · simp
-    · simp [hm]
+    rw [← apply_update_eq_add_mul, Function.update_eq_self]
   have hrest : Function.update v i 0 = Function.update w i 0 := by
     ext m
     rcases eq_or_ne m i with rfl | hm
@@ -661,24 +681,46 @@ theorem pi_update_injective [Semiring R] [IsLeftCancelAdd R] [TopologicalSpace R
   · exact hoff m hm
 
 /-- Replacing one coordinate by a functional whose coefficient at that coordinate is a unit
-is a continuous linear equivalence. -/
-theorem exists_pi_update_equiv [Ring R] [TopologicalSpace R] [IsSemitopologicalRing R]
+is a continuous linear equivalence. Only right multiplication by constants has to be continuous
+on `R`. -/
+theorem exists_pi_update_equiv [Ring R] [TopologicalSpace R] [ContinuousConstSMul Rᵐᵒᵖ R]
     (α : (ι → R) →L[R] R) (i : ι) (hα : IsUnit (α (Pi.single i 1))) :
     ∃ e : (ι → R) ≃L[R] (ι → R),
       (e : (ι → R) →L[R] (ι → R)) = pi fun m : ι ↦ if m = i then α else proj m := by
+  set f : (ι → R) →L[R] (ι → R) := pi fun m : ι ↦ if m = i then α else proj m
   -- The update is the dilatransvection `v ↦ v + (α v - v i) • Pi.single i 1`, whose
   -- dilation factor `1 + (α - proj i) (Pi.single i 1)` is the coefficient of `α`.
-  set β : (ι → R) →L[R] R := α - proj i
-  have h : IsUnit (1 + (β : Module.Dual R (ι → R)) (Pi.single i 1)) := by simpa [β] using hα
-  have hcont (w : ι → R) : Continuous (LinearMap.transvection (β : Module.Dual R (ι → R)) w) := by
-    have : Continuous fun v ↦ v + β v • w :=
-      continuous_id.add <| continuous_pi fun m ↦ β.continuous.mul_const (w m)
-    exact this.congr fun v ↦ (LinearMap.transvection.apply _ _ v).symm
-  refine ⟨⟨LinearEquiv.dilatransvection h, hcont _, hcont _⟩, ?_⟩
-  ext v m
-  rcases eq_or_ne m i with rfl | hm
-  · simp [LinearEquiv.dilatransvection.apply, β, pi_apply]
-  · simp [LinearEquiv.dilatransvection.apply, β, pi_apply, hm]
+  have h : IsUnit (1 + ((α : (ι → R) →ₗ[R] R) - LinearMap.proj i : Module.Dual R (ι → R))
+      (Pi.single i 1)) := by
+    simpa using hα
+  set e := LinearEquiv.dilatransvection h
+  have he (v : ι → R) : e v = f v := by
+    ext m
+    rcases eq_or_ne m i with rfl | hm
+    · simp [e, f, LinearEquiv.dilatransvection.apply, pi_apply]
+    · simp [e, f, LinearEquiv.dilatransvection.apply, pi_apply, hm]
+  -- With `d` the inverse of the coefficient, the inverse map sets the coordinate `i` of `u` to
+  -- `(u i - α (update u i 0)) * d`. Written with `α` and right multiplications by constants
+  -- only, it is visibly continuous.
+  set d : R := ↑hα.unit⁻¹
+  have hd : d * α (Pi.single i 1) = 1 := hα.val_inv_mul
+  have hmul (a : R) : Continuous fun x : R ↦ x * a := continuous_const_smul (MulOpposite.op a)
+  have hinv : Continuous fun u : ι → R ↦
+      Function.update u i (α (Function.update u i (u i * -d)) * -d) :=
+    continuous_id.update i <| (hmul _).comp <| α.continuous.comp <|
+      continuous_id.update i <| (hmul _).comp (continuous_apply i)
+  refine ⟨⟨e, f.continuous.congr fun v ↦ (he v).symm, hinv.congr fun u ↦ ?_⟩, ?_⟩
+  · refine (e.symm_apply_eq.2 ?_).symm
+    rw [he]
+    ext m
+    rcases eq_or_ne m i with rfl | hm
+    · simp only [f, pi_apply, ↓reduceIte]
+      rw [apply_update_eq_add_mul α u m (_ * -d), apply_update_eq_add_mul α u m (u m * -d)]
+      simp only [mul_assoc, neg_mul, mul_neg, hd, mul_one]
+      abel
+    · simp [f, pi_apply, hm]
+  · ext v : 1
+    exact he v
 
 end Coordinates
 
@@ -808,17 +850,19 @@ namespace ContinuousLinearMap
 
 section Rescale
 
-variable {𝕜 E F : Type*} [NormedDivisionRing 𝕜] [SeminormedAddCommGroup E]
-  [SeminormedAddCommGroup F] [Module 𝕜 E] [Module 𝕜 F] [NormSMulClass 𝕜 E] [NormSMulClass 𝕜 F]
+variable {𝕜 𝕜₂ E F : Type*} [NormedDivisionRing 𝕜] [NormedDivisionRing 𝕜₂] {σ : 𝕜 →+* 𝕜₂}
+  [RingHomIsometric σ] [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [Module 𝕜 E]
+  [Module 𝕜₂ F] [NormSMulClass 𝕜 E] [NormSMulClass 𝕜₂ F]
 
 /-- A first-order estimate at `t • v` rescales to one at `v`: if `w` is within `c ‖t • v‖` of
-`L (t • v)` with `t ≠ 0`, then `t⁻¹ • w` is within `c ‖v‖` of `L v`. -/
-theorem norm_inv_smul_sub_le {t : 𝕜} (ht : t ≠ 0) {w : F} {v : E} {L : E →L[𝕜] F} {c : ℝ}
-    (h : ‖w - L (t • v)‖ ≤ c * ‖t • v‖) : ‖t⁻¹ • w - L v‖ ≤ c * ‖v‖ := by
-  have : t⁻¹ • w - L v = t⁻¹ • (w - L (t • v)) := by
-    rw [map_smul, smul_sub, inv_smul_smul₀ ht]
+`L (t • v)` with `t ≠ 0`, then `(σ t)⁻¹ • w` is within `c ‖v‖` of `L v`. -/
+theorem norm_inv_smul_sub_le {t : 𝕜} (ht : t ≠ 0) {w : F} {v : E} {L : E →SL[σ] F} {c : ℝ}
+    (h : ‖w - L (t • v)‖ ≤ c * ‖t • v‖) : ‖(σ t)⁻¹ • w - L v‖ ≤ c * ‖v‖ := by
+  have hσ : σ t ≠ 0 := (map_ne_zero σ).2 ht
+  have : (σ t)⁻¹ • w - L v = (σ t)⁻¹ • (w - L (t • v)) := by
+    rw [map_smulₛₗ, smul_sub, inv_smul_smul₀ hσ]
   have ht' : 0 < ‖t‖ := norm_pos_iff.2 ht
-  rw [this, norm_smul, norm_inv]
+  rw [this, norm_smul, norm_inv, RingHomIsometric.norm_map]
   rw [norm_smul] at h
   calc ‖t‖⁻¹ * ‖w - L (t • v)‖ ≤ ‖t‖⁻¹ * (c * (‖t‖ * ‖v‖)) := by gcongr
     _ = c * ‖v‖ := by field_simp
@@ -850,30 +894,31 @@ instance instContinuousSMul {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
 
 section FirstOrder
 
-variable {E F : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 E]
-  [NormedSpace 𝕜 F]
+variable {𝕜₁ 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
+  [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [NormedSpace 𝕜₁ E] [NormedSpace 𝕜₂ F]
+  {σ : 𝕜₂ →+* 𝕜₁} [RingHomIsometric σ]
 
-/-- Let `B` invert `T` on `v`, with `‖B‖ ≤ K`, let `u` be within `ε' ‖v‖` of `T v` with
+/-- Let `B` send `y` to `v`, with `‖B‖ ≤ K`, let `u` be within `ε' ‖v‖` of `y` with
 `K ε' ≤ 1 / 2`, and let `B'` be within `η` of `B`. Then `v` is within `(2 K² ε' + η) ‖u‖` of
-`B' u`. -/
-theorem norm_sub_apply_le_of_apply_eq {T : E →L[𝕜] F} {B B' : F →L[𝕜] E} {u : F} {v : E}
-    {K ε' η : ℝ} (hBT : B (T v) = v) (hB : ‖B‖ ≤ K) (hKε : K * ε' ≤ 1 / 2) (hε' : 0 ≤ ε')
-    (hu : ‖u - T v‖ ≤ ε' * ‖v‖) (hη : ‖B' - B‖ ≤ η) :
+`B' u`. Typically `B` inverts an operator `T` on `v` and `y = T v`. -/
+theorem norm_sub_apply_le_of_apply_eq {B B' : F →SL[σ] E} {y u : F} {v : E}
+    {K ε' η : ℝ} (hBy : B y = v) (hB : ‖B‖ ≤ K) (hKε : K * ε' ≤ 1 / 2) (hε' : 0 ≤ ε')
+    (hu : ‖u - y‖ ≤ ε' * ‖v‖) (hη : ‖B' - B‖ ≤ η) :
     ‖v - B' u‖ ≤ (2 * K ^ 2 * ε' + η) * ‖u‖ := by
   have hK : 0 ≤ K := (norm_nonneg _).trans hB
-  have hTv : ‖T v‖ ≤ ‖u‖ + ε' * ‖v‖ :=
-    (norm_le_insert' (T v) u).trans (by rw [norm_sub_rev]; gcongr)
+  have hy : ‖y‖ ≤ ‖u‖ + ε' * ‖v‖ :=
+    (norm_le_insert' y u).trans (by rw [norm_sub_rev]; gcongr)
   -- First, `‖v‖ ≤ 2 K ‖u‖`.
   have hv : ‖v‖ ≤ 2 * K * ‖u‖ := by
     have : ‖v‖ ≤ K * (‖u‖ + ε' * ‖v‖) :=
-      calc ‖v‖ = ‖B (T v)‖ := by rw [hBT]
-        _ ≤ ‖B‖ * ‖T v‖ := B.le_opNorm _
-        _ ≤ K * (‖u‖ + ε' * ‖v‖) := mul_le_mul hB hTv (norm_nonneg _) hK
+      calc ‖v‖ = ‖B y‖ := by rw [hBy]
+        _ ≤ ‖B‖ * ‖y‖ := B.le_opNorm _
+        _ ≤ K * (‖u‖ + ε' * ‖v‖) := mul_le_mul hB hy (norm_nonneg _) hK
     nlinarith [norm_nonneg v, norm_nonneg u]
-  have key : v - B' u = B (T v - u) + (B - B') u := by
-    rw [map_sub, hBT, sub_apply]
+  have key : v - B' u = B (y - u) + (B - B') u := by
+    rw [map_sub, hBy, sub_apply]
     abel
-  calc ‖v - B' u‖ ≤ ‖B‖ * ‖T v - u‖ + ‖B - B'‖ * ‖u‖ := by
+  calc ‖v - B' u‖ ≤ ‖B‖ * ‖y - u‖ + ‖B - B'‖ * ‖u‖ := by
         rw [key]
         exact norm_add_le_of_le (B.le_opNorm _) ((B - B').le_opNorm _)
     _ ≤ K * (ε' * (2 * K * ‖u‖)) + η * ‖u‖ := by
