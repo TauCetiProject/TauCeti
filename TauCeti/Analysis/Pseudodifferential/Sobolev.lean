@@ -85,7 +85,11 @@ families of operators.
   `TauCeti.Symbol.HasCompactSpatialSupport.coordinateDeriv_fourier_slice`), smoothness in `ξ`
   with the symbol estimates `‖D_ξ^k â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - k) ⟨η⟩ ^ (-r)`
   (`TauCeti.Symbol.HasCompactSpatialSupport.contDiff_fourier_slice`,
-  `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_le`), and
+  `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_le`), with
+  constants given by a continuous seminorm of `a`, uniformly over the symbols vanishing outside a
+  fixed compact set (`TauCeti.Symbol.exists_norm_fourier_slice_le_seminorm`,
+  `TauCeti.Symbol.exists_norm_coordinateDeriv_fourier_slice_le_seminorm`,
+  `TauCeti.Symbol.exists_norm_iteratedFDeriv_fourier_slice_le_seminorm`), and
   `(∂_{x_j} a)^(η, ξ) = 2πi ηⱼ â(η, ξ)`
   (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_spatialDeriv_slice`).
 * `TauCeti.Symbol.HasCompactSpatialSupport.fourier_quantizeSchwartzValue`: the Fourier transform
@@ -358,6 +362,28 @@ theorem exists_norm_fourier_slice_le_sum_seminorm (K : Compacts (CoordinateSpace
     _ ≤ C * (∑ α ∈ t, Symbol.seminorm K α [] a) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
       rw [mul_comm]; exact hC a haK η ξ
 
+/-- **Rapid decay, uniformly in the symbol.** For a compact set `K` and every `r` there is a
+continuous seminorm `q` on the symbols of order `m` such that every symbol `a` vanishing at
+positions outside `K` satisfies `‖â(η, ξ)‖ ≤ q(a) ⟨ξ⟩ ^ m ⟨η⟩ ^ (-r)`. -/
+theorem exists_norm_fourier_slice_le_seminorm (K : Compacts (CoordinateSpace n)) (r : ℝ) :
+    ∃ q : Seminorm ℂ (Symbol n V W m), Continuous q ∧ ∀ a : Symbol n V W m,
+      (∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) → ∀ η ξ : CoordinateSpace n,
+        ‖𝓕 (fun y ↦ a.coefficient (y, ξ)) η‖ ≤
+          q a * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  obtain ⟨t, C, hC0, hC⟩ := exists_norm_fourier_slice_le_sum_seminorm
+    (V := V) (W := W) (m := m) K r
+  refine ⟨C.toNNReal • ∑ α ∈ t, Symbol.seminorm K α [], ?_, fun a haK η ξ ↦ ?_⟩
+  · have hcont : Continuous (∑ α ∈ t, Symbol.seminorm K α [] : Seminorm ℂ (Symbol n V W m)) :=
+      Seminorm.continuous_finsetSum fun α _ ↦ by
+        simpa using (withSeminorms (n := n) (V := V) (W := W) (m := m)).continuous_seminorm
+          (K, α, [])
+    simpa using hcont.const_smul C.toNNReal
+  have hq : (C.toNNReal • ∑ α ∈ t, Symbol.seminorm K α [] : Seminorm ℂ (Symbol n V W m)) a =
+      C * ∑ α ∈ t, Symbol.seminorm K α [] a := by
+    simp [NNReal.smul_def, hC0]
+  rw [hq]
+  exact hC a haK η ξ
+
 /-- **Rapid decay.** For every `r`, the Fourier transform of the position slice satisfies
 `‖â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ m ⟨η⟩ ^ (-r)`. -/
 theorem HasCompactSpatialSupport.exists_norm_fourier_slice_le (ha : a.HasCompactSpatialSupport)
@@ -365,10 +391,8 @@ theorem HasCompactSpatialSupport.exists_norm_fourier_slice_le (ha : a.HasCompact
       ‖𝓕 (fun y ↦ a.coefficient (y, ξ)) η‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
-  obtain ⟨t, C, hC, h⟩ :=
-    exists_norm_fourier_slice_le_sum_seminorm (V := V) (W := W) (m := m) ⟨K, hK⟩ r
-  exact ⟨C * ∑ α ∈ t, Symbol.seminorm ⟨K, hK⟩ α [] a,
-    mul_nonneg hC (Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _), h a hKa⟩
+  obtain ⟨q, -, hq⟩ := exists_norm_fourier_slice_le_seminorm (V := V) (W := W) (m := m) ⟨K, hK⟩ r
+  exact ⟨q a, apply_nonneg _ _, hq a hKa⟩
 
 /-! ### Regularity of the Fourier transform in the position -/
 
@@ -452,27 +476,58 @@ theorem HasCompactSpatialSupport.contDiff_fourier_slice (ha : a.HasCompactSpatia
         (ha.hasFDerivAt_fourier_slice η ξ).fderiv] at h
       simp [D, h, EuclideanSpace.proj, Finset.sum_apply]
 
-/-- **Frequency derivatives of `â`.** For a symbol `a` of order `m` with compact spatial support,
-the coordinate derivative of `ξ ↦ â(η, ξ)` along a word `w` satisfies
-`‖∂_ξ^w â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - |w|) ⟨η⟩ ^ (-r)`, for every `r`. -/
-theorem HasCompactSpatialSupport.exists_norm_coordinateDeriv_fourier_slice_le
-    (ha : a.HasCompactSpatialSupport) (w : List (Fin n)) (r : ℝ) :
-    ∃ C, 0 ≤ C ∧ ∀ η ξ : CoordinateSpace n,
-      ‖coordinateDeriv w (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η) ξ‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ ((m - w.length) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+/-- **Frequency derivatives of `â`, uniformly in the symbol.** For a compact set `K`, a word `w`
+and every `r` there is a continuous seminorm `q` on the symbols of order `m` such that every symbol
+`a` vanishing at positions outside `K` satisfies
+`‖∂_ξ^w â(η, ξ)‖ ≤ q(a) ⟨ξ⟩ ^ (m - |w|) ⟨η⟩ ^ (-r)`. -/
+theorem exists_norm_coordinateDeriv_fourier_slice_le_seminorm (K : Compacts (CoordinateSpace n))
+    (w : List (Fin n)) (r : ℝ) :
+    ∃ q : Seminorm ℂ (Symbol n V W m), Continuous q ∧ ∀ a : Symbol n V W m,
+      (∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) → ∀ η ξ : CoordinateSpace n,
+        ‖coordinateDeriv w (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η) ξ‖ ≤
+          q a * (1 + ‖ξ‖ ^ 2) ^ ((m - w.length) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
   induction w using List.reverseRecOn generalizing m with
-  | nil => simpa using ha.exists_norm_fourier_slice_le r
+  | nil => simpa using exists_norm_fourier_slice_le_seminorm (V := V) (W := W) (m := m) K r
   | append_singleton w j ih =>
-    obtain ⟨C, hC0, hC⟩ := ih (ha.frequencyDeriv j)
-    refine ⟨C, hC0, fun η ξ ↦ ?_⟩
+    obtain ⟨q, hq, hqa⟩ := ih (m := m - 1)
+    refine ⟨q.comp (frequencyDerivCLM j : Symbol n V W m →L[ℂ] Symbol n V W (m - 1)).toLinearMap,
+      hq.comp (frequencyDerivCLM j).continuous, fun a haK η ξ ↦ ?_⟩
+    have ha : a.HasCompactSpatialSupport := hasCompactSpatialSupport_iff.2 ⟨K, K.isCompact, haK⟩
+    have hjK (x : CoordinateSpace n) (hx : x ∉ K) (ξ : CoordinateSpace n) :
+        (Symbol.frequencyDeriv j a).coefficient (x, ξ) = 0 := by
+      rw [coefficient_frequencyDeriv,
+        show (fun η ↦ a.coefficient (x, η)) = 0 from funext (haK x hx), coordinateDeriv_zero,
+        Pi.zero_apply]
     have hd : coordinateDeriv [j] (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η) =
         fun ξ ↦ 𝓕 (fun y ↦ (Symbol.frequencyDeriv j a).coefficient (y, ξ)) η :=
       funext (ha.coordinateDeriv_fourier_slice j η)
-    rw [coordinateDeriv_append, hd]
-    convert hC η ξ using 4
+    rw [coordinateDeriv_append, hd, Seminorm.comp_apply, ContinuousLinearMap.coe_coe,
+      frequencyDerivCLM_apply]
+    convert hqa _ hjK η ξ using 4
     rw [List.length_append, List.length_singleton]
     push_cast
     ring
+
+/-- **Fréchet derivatives of `â` in the frequency, uniformly in the symbol.** For a compact set
+`K` and every `k` and `r` there is a continuous seminorm `q` on the symbols of order `m` such that
+every symbol `a` vanishing at positions outside `K` satisfies
+`‖D_ξ^k â(η, ξ)‖ ≤ q(a) ⟨ξ⟩ ^ (m - k) ⟨η⟩ ^ (-r)`. -/
+theorem exists_norm_iteratedFDeriv_fourier_slice_le_seminorm (K : Compacts (CoordinateSpace n))
+    (k : ℕ) (r : ℝ) :
+    ∃ q : Seminorm ℂ (Symbol n V W m), Continuous q ∧ ∀ a : Symbol n V W m,
+      (∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) → ∀ η ξ : CoordinateSpace n,
+        ‖iteratedFDeriv ℝ k (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η) ξ‖ ≤
+          q a * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  choose q hq hqa using fun w : Fin k → Fin n ↦
+    exists_norm_coordinateDeriv_fourier_slice_le_seminorm (V := V) (W := W) (m := m) K
+      (List.ofFn w) r
+  refine ⟨∑ w, q w, Seminorm.continuous_finsetSum fun w _ ↦ hq w, fun a haK η ξ ↦ ?_⟩
+  have ha : a.HasCompactSpatialSupport := hasCompactSpatialSupport_iff.2 ⟨K, K.isCompact, haK⟩
+  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv
+    ((ha.contDiff_fourier_slice η).of_le (mod_cast le_top)) ξ).trans ?_
+  rw [FunLike.coe_sum, Finset.sum_apply, Finset.sum_mul, Finset.sum_mul]
+  refine Finset.sum_le_sum fun w _ ↦ ?_
+  simpa using hqa w a haK η ξ
 
 /-- **Fréchet derivatives of `â` in the frequency.** For a symbol `a` of order `m` with compact
 spatial support, `‖D_ξ^k â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - k) ⟨η⟩ ^ (-r)`, for every `k` and `r`. -/
@@ -481,14 +536,10 @@ theorem HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_le
     ∃ C, 0 ≤ C ∧ ∀ η ξ : CoordinateSpace n,
       ‖iteratedFDeriv ℝ k (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η) ξ‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
-  choose C hC0 hC using fun w : Fin k → Fin n ↦
-    ha.exists_norm_coordinateDeriv_fourier_slice_le (List.ofFn w) r
-  refine ⟨∑ w, C w, Finset.sum_nonneg fun w _ ↦ hC0 w, fun η ξ ↦ ?_⟩
-  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv
-    ((ha.contDiff_fourier_slice η).of_le (mod_cast le_top)) ξ).trans ?_
-  rw [Finset.sum_mul, Finset.sum_mul]
-  refine Finset.sum_le_sum fun w _ ↦ ?_
-  simpa using hC w η ξ
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  obtain ⟨q, -, hq⟩ :=
+    exists_norm_iteratedFDeriv_fourier_slice_le_seminorm (V := V) (W := W) (m := m) ⟨K, hK⟩ k r
+  exact ⟨q a, apply_nonneg _ _, hq a hKa⟩
 
 end Decay
 
@@ -911,19 +962,13 @@ theorem toDistr_quantizeSobolev_ofSpatial_smul_id (φ : 𝓢(CoordinateSpace n, 
     refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦
       BesselPotentialSpace.ext ?_
     ext ψ
-    have hc : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
-        ((φ.smooth ⊤).smul contDiff_const)).coefficient =
-          fun p ↦ φ p.1 • ContinuousLinearMap.id ℂ V :=
-      coefficient_ofSpatial_eq _ _
-    simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, hc,
+    simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
+      quantizeSchwartzValue_ofSpatial, _root_.smul_apply, ContinuousLinearMap.id_apply,
       ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
       BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
       smulLeftCLM_apply_apply, SchwartzMap.coe_apply,
       SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth, smul_eq_mul, mul_smul]
-    refine integral_congr_ae (.of_forall fun x ↦ ?_)
-    dsimp only
-    rw [quantizeSchwartzValue_comp_fst (fun x ↦ φ x • ContinuousLinearMap.id ℂ V),
-      _root_.smul_apply, ContinuousLinearMap.id_apply, smul_comm]
+    exact integral_congr_ae (.of_forall fun x ↦ smul_comm _ _ _)
   rw [key, ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion]
 
 /-- **Smoothing operators gain every number of derivatives.** A smoothing symbol `a` with
@@ -973,14 +1018,9 @@ theorem quantizeSobolev_ofSpatial_smul {ψ : 𝓢(CoordinateSpace n, ℂ)} (hψ 
       BesselPotentialSpace.inclusion (by simp) ∘L BesselPotentialSpace.smulLeftCLM s ψ := by
   refine BesselPotentialSpace.continuousLinearMap_ext (p := 2) ENNReal.ofNat_ne_top fun u ↦
     BesselPotentialSpace.ext ?_
-  have hc : (ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) hψ).coefficient =
-      fun p ↦ ψ p.1 • ContinuousLinearMap.id ℂ V :=
-    coefficient_ofSpatial_eq _ hψ
-  have hq (x : CoordinateSpace n) :
-      quantizeSchwartzValue (fun p ↦ ψ p.1 • ContinuousLinearMap.id ℂ V) u x = ψ x • u x := by
-    simpa using quantizeSchwartzValue_comp_fst (fun y ↦ ψ y • ContinuousLinearMap.id ℂ V) u x
   ext φ
-  simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, hc, hq,
+  simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
+    quantizeSchwartzValue_ofSpatial, _root_.smul_apply, ContinuousLinearMap.id_apply,
     ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
     BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
     smulLeftCLM_toTemperedDistributionCLM_eq, SchwartzMap.toTemperedDistributionCLM_apply_apply,

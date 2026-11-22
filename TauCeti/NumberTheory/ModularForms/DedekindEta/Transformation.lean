@@ -38,7 +38,8 @@ eta multiplier by `exp(-π i / 4)`. At `τ = i`, the new automorphy factor `-c +
 lies in the upper half-plane, controlling the principal square root. Together with the
 translation laws and the initial value `exp(π i ((a + d) / 12 - 1/4))` at `c = 1`, strong
 induction on `|c|` yields the Euclidean uniqueness principle `eq_etaMultiplier_of_c_pos` on
-`{c > 0}`. The file also evaluates `ε(γ)` on upper-triangular matrices (`c = 0`) and
+`{c > 0}`. When `c > 0` and `d < 0`, right multiplication by `S` multiplies `ε` by
+`-exp(-π i / 4)`. The file also evaluates `ε(γ)` on upper-triangular matrices (`c = 0`) and
 lower-triangular transvections `(1 0; c 1)`, and records its transformation under `γ ↦ -γ`
 and `γ ↦ γ⁻¹` across all of `SL(2, ℤ)`.
 
@@ -68,6 +69,8 @@ matched by the reciprocity law of Dedekind sums.
 * `TauCeti.ModularForm.etaMultiplier_mul_T_zpow`, `TauCeti.ModularForm.etaMultiplier_T_zpow_mul`:
   `ε(γ Tⁿ) = ε(Tⁿ γ) = e^{π i n / 12} ε(γ)`.
 * `TauCeti.ModularForm.etaMultiplier_mul_S`: `ε(γ S) = e^{-π i / 4} ε(γ)` when `d > 0`.
+* `TauCeti.ModularForm.etaMultiplier_mul_S_of_c_pos_of_d_neg`: `ε(γ S) = -e^{-π i / 4} ε(γ)` when
+  `c > 0` and `d < 0`.
 * `TauCeti.ModularForm.etaMultiplier_of_c_eq_one`: the explicit multiplier when `c = 1`.
 * `TauCeti.ModularForm.eq_etaMultiplier_of_c_pos`: Euclidean uniqueness of `ε` on `{c > 0}`.
 * `TauCeti.ModularForm.etaMultiplier_of_c_pos`: the Dedekind-sum value of the multiplier when
@@ -129,13 +132,9 @@ theorem eta_neg_one_div {τ : ℂ} (hτ : 0 < τ.im) :
 
 /-! ### The eta multiplier -/
 
-/-- The automorphy factor `c τ + d` of `γ ∈ SL(2, ℤ)` does not vanish on the upper half-plane. -/
-private theorem denom_ne_zero' (γ : SL(2, ℤ)) (τ : ℍ) : (γ 1 0 : ℂ) * τ + γ 1 1 ≠ 0 := by
-  simpa [UpperHalfPlane.denom] using UpperHalfPlane.denom_ne_zero (γ : GL (Fin 2) ℝ) τ
-
 private theorem sqrt_denom_mul_eta_ne_zero (γ : SL(2, ℤ)) (τ : ℍ) :
     Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) * η τ ≠ 0 :=
-  mul_ne_zero (Complex.sqrt_eq_zero_iff.not.2 (denom_ne_zero' γ τ))
+  mul_ne_zero (Complex.sqrt_eq_zero_iff.not.2 (UpperHalfPlane.denom_ne_zero γ τ))
     (_root_.ModularForm.eta_ne_zero τ.coe_im_pos)
 
 /-- `Δ(γ τ) = (c τ + d)¹² Δ(τ)` for `γ ∈ SL(2, ℤ)`, in terms of `η`. -/
@@ -153,11 +152,11 @@ private noncomputable def etaQuotient (γ : SL(2, ℤ)) (τ : ℍ) : ℂ :=
 private theorem etaQuotient_pow_twentyFour (γ : SL(2, ℤ)) (τ : ℍ) :
     etaQuotient γ τ ^ 24 = 1 := by
   have hη : η τ ≠ 0 := _root_.ModularForm.eta_ne_zero τ.coe_im_pos
+  have hden : (γ 1 0 : ℂ) * τ + γ 1 1 ≠ 0 := UpperHalfPlane.denom_ne_zero γ τ
   have hs : Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) ^ 24 = ((γ 1 0 : ℂ) * τ + γ 1 1) ^ 12 :=
     (pow_mul _ 2 12).trans (congrArg (· ^ 12) (Complex.sq_sqrt _))
   rw [etaQuotient, div_pow, mul_pow, hs,
-    eta_smul_pow_twentyFour, div_self (mul_ne_zero (pow_ne_zero _ (denom_ne_zero' γ τ))
-      (pow_ne_zero _ hη))]
+    eta_smul_pow_twentyFour, div_self (mul_ne_zero (pow_ne_zero _ hden) (pow_ne_zero _ hη))]
 
 private theorem continuous_etaQuotient (γ : SL(2, ℤ)) : Continuous (etaQuotient γ) := by
   have hη : Continuous fun τ : ℍ ↦ η τ := continuous_iff_continuousAt.2 fun τ ↦
@@ -536,6 +535,19 @@ theorem etaMultiplier_neg_of_c_eq_zero (γ : SL(2, ℤ)) (hc : γ 1 0 = 0) :
       if γ 1 1 < 0 then I * etaMultiplier γ else -I * etaMultiplier γ := by
   simp [etaMultiplier_neg, hc]
 
+/-- Right inversion multiplies the eta multiplier by `-exp(-π i / 4)` when `c > 0` and `d < 0`.
+This complements `etaMultiplier_mul_S`, where `d > 0` gives the factor `exp(-π i / 4)`. -/
+theorem etaMultiplier_mul_S_of_c_pos_of_d_neg (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) (hd : γ 1 1 < 0) :
+    etaMultiplier (γ * S) = -cexp (-(π * I / 4)) * etaMultiplier γ := by
+  have hd' : 0 < (-γ) 1 1 := by
+    simpa only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, Left.neg_pos_iff] using hd
+  have hc' : (γ * S) 1 0 < 0 := by rwa [mul_S_apply_apply_zero]
+  -- `-(γ S) = (-γ) S`, and `-γ` has positive lower-right entry.
+  have h := etaMultiplier_mul_S (-γ) hd'
+  rw [neg_mul, etaMultiplier_neg_of_c_neg (γ * S) hc', etaMultiplier_neg_of_c_pos γ hc] at h
+  rw [← mul_right_inj' (neg_ne_zero.mpr I_ne_zero), h]
+  ring
+
 /-- Explicit formula for the eta multiplier of any upper-triangular matrix (`γ 1 0 = 0`) in
 `SL(2, ℤ)`. -/
 theorem etaMultiplier_of_c_eq_zero (γ : SL(2, ℤ)) (hc : γ 1 0 = 0) :
@@ -599,8 +611,18 @@ theorem etaMultiplier_inv (γ : SL(2, ℤ)) :
     · have ha : γ 0 0 = -1 := by obtain ⟨_, _ | _⟩ := hdiag h.1 <;> omega
       have hz : z = -1 := by simp [z, h.1, ha]
       rw [ite_eq_left h, hw, hz, inv_neg, inv_one, Complex.sqrt_neg_one, I_mul_I]
-    · rw [ite_eq_right h, hw, Complex.sqrt, Complex.sqrt, Complex.inv_cpow z _ (harg.not.mpr h)]
-      exact inv_mul_cancel₀ (Complex.sqrt_eq_zero_iff.not.mpr (denom_ne_zero' γ⁻¹ UpperHalfPlane.I))
+    · have hz_ne : z ≠ 0 := fun hz0 ↦ by
+        have hre : z.re = (γ 0 0 : ℝ) := by simp [z]
+        have him : z.im = -(γ 1 0 : ℝ) := by simp [z]
+        have hdet := γ.fin_two_mul_sub_mul_eq_one
+        have ha : γ 0 0 = 0 := Int.cast_injective (α := ℝ)
+          (by rw [← hre, hz0, Complex.zero_re, Int.cast_zero])
+        have hc : γ 1 0 = 0 := Int.cast_injective (α := ℝ)
+          (by rw [Int.cast_zero]; exact neg_eq_zero.mp (by rw [← him, hz0, Complex.zero_im]))
+        rw [ha, hc, zero_mul, mul_zero, sub_zero] at hdet
+        exact zero_ne_one hdet
+      rw [ite_eq_right h, hw, Complex.sqrt, Complex.sqrt, Complex.inv_cpow z _ (harg.not.mpr h)]
+      exact inv_mul_cancel₀ (Complex.sqrt_eq_zero_iff.not.mpr hz_ne)
   have hprod : etaMultiplier γ * etaMultiplier γ⁻¹ *
       (if γ 1 0 = 0 ∧ γ 1 1 < 0 then -1 else 1) = 1 := by
     apply mul_right_cancel₀ (_root_.ModularForm.eta_ne_zero UpperHalfPlane.I.coe_im_pos)

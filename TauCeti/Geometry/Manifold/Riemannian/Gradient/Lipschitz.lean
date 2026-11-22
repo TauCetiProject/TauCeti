@@ -96,7 +96,8 @@ theorem norm_mvfderiv_le (hf : LipschitzWith C f) (x : M) : ‖mvfderiv I f x‖
     rw [h0, zero_apply, norm_zero]
     positivity
   obtain ⟨γ, hγ₀, hγ, hw⟩ :=
-    TauCeti.Manifold.exists_contMDiffAt_curveVelocity_eq (I := I) (n := 1) le_rfl x w (0 : ℝ)
+    TauCeti.Manifold.exists_contMDiffAt_curveVelocity_eq (I := I) (n := 1) le_rfl x
+      BoundarylessManifold.isInteriorPoint w (0 : ℝ)
   subst hγ₀
   have hd := TauCeti.Manifold.hasDerivAt_comp_curve hg
     (TauCeti.Manifold.hasMFDerivAt_curveVelocity (hγ.mdifferentiableAt one_ne_zero))
