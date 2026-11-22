@@ -55,6 +55,12 @@ def nonnegOutside (S : Set K) : AddSubmonoid (K →₀ ℤ) where
 theorem mem_nonnegOutside {S : Set K} {m : K →₀ ℤ} :
     m ∈ nonnegOutside S ↔ ∀ i ∉ S, 0 ≤ m i := (Iff.rfl)
 
+/-- A bundled permitted exponent has nonnegative coordinates outside the inverted set. -/
+@[simp]
+theorem nonnegOutside_nonneg_iff {S : Set K} (a : nonnegOutside S) :
+    (∀ i ∉ S, 0 ≤ (a : K →₀ ℤ) i) ↔ True :=
+  iff_true_intro (mem_nonnegOutside.mp a.property)
+
 variable (R : Type*) [CommSemiring R] (S : Set K)
 
 /-- The injective `R`-algebra map from the monoid algebra of `nonnegOutside S` to
@@ -120,6 +126,18 @@ theorem mem_partiallyLaurent_iff {f : LaurentRing R K} :
     apply AddMonoidAlgebra.mapDomain_comapDomain
     intro m hm
     exact ⟨⟨m, hf m hm⟩, rfl⟩
+
+/-- The ordinary partially Laurent subalgebra is spanned by its permitted monomials. -/
+@[simp]
+theorem partiallyLaurent_toSubmodule :
+    (partiallyLaurent R S).toSubmodule = Submodule.span R
+      ((fun m : K →₀ ℤ ↦ AddMonoidAlgebra.single m (1 : R)) ''
+        (nonnegOutside S : Set (K →₀ ℤ))) := by
+  rw [← AddMonoidAlgebra.supported_eq_span_single]
+  ext f
+  change f ∈ partiallyLaurent R S ↔ f ∈ AddMonoidAlgebra.supported R R _
+  rw [mem_partiallyLaurent_iff, AddMonoidAlgebra.mem_supported]
+  rfl
 
 /-- Increasing the set of inverted variables increases the partially Laurent subalgebra. -/
 theorem partiallyLaurent_mono {T : Set K} (h : S ⊆ T) :
