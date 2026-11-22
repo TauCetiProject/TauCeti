@@ -393,6 +393,17 @@ theorem mpullback_fun_smul {S : Type*} [Monoid S] [DistribMulAction S F]
   ext v
   simp only [mpullback_apply, ContinuousAlternatingMap.smul_apply]
 
+/-- Pullback of a pointwise finite weighted sum of forms, whose finite index set may depend on the
+point, is the weighted sum of the pullbacks, with index set and weights read at the image point. -/
+theorem mpullback_sum_smul [ContinuousAdd F] [ContinuousConstSMul ℝ F] {ι : Type*} (f : M → M')
+    (S : M' → Finset ι) (c : ι → M' → ℝ) (φ : ι → RoughForm I' M' F k) :
+    mpullback I I' f (fun y ↦ ∑ i ∈ S y, c i y • φ i y) =
+      fun x ↦ ∑ i ∈ S (f x), c i (f x) • mpullback I I' f (φ i) x := by
+  funext x
+  ext v
+  simp only [mpullback_apply, ContinuousAlternatingMap.sum_apply,
+    ContinuousAlternatingMap.smul_apply]
+
 /-- Within-set pullback by the identity fixes forms wherever the derivative is unique. -/
 @[simp]
 theorem mpullbackWithin_id {s : Set M} {x : M} (hs : UniqueMDiffWithinAt I s x)

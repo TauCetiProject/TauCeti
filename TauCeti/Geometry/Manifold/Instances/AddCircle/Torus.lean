@@ -54,6 +54,8 @@ For a torus `∀ i, AddCircle (p i)` with arbitrary positive periods, every tran
   derivative the identity.
 * `AddCircle.isCoveringMap_coe_pi`, `AddCircle.isLocalDiffeomorph_coe_pi`: it is a covering map
   and a local diffeomorphism.
+* `AddCircle.coe_extChartAt_pi_apply`: the extended charts of `Tⁿ` are local inverses of the
+  covering map.
 * `AddCircle.hasMFDerivAt_pi_add_right`, `AddCircle.mfderiv_pi_add_right`: translations of a torus
   `∀ i, AddCircle (p i)` have derivative the identity.
 * `AddCircle.hasMFDerivAt_generalLinearGroup_smul`,
@@ -117,6 +119,17 @@ theorem isLocalDiffeomorph_coe_pi (n : ℕ∞ω) :
       (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle p)) :=
   (TauCeti.isLocalDiffeomorph_of_mfderiv_eq (contMDiff_coe_pi p ω) le_top fun t ↦
     ⟨ContinuousLinearEquiv.refl ℝ (ι → ℝ), (mfderiv_coe_pi p t).symm⟩).of_le le_top
+
+/-- The extended charts of the torus `ι → AddCircle p` are local lifts to `ℝ^ι`: an extended chart
+sends each point of its source to angles representing it. -/
+theorem coe_extChartAt_pi_apply (x : ι → AddCircle p) {y : ι → AddCircle p}
+    (hy : y ∈ (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x).source) :
+    (fun j ↦ (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x y j : AddCircle p)) = y := by
+  have hy' : y ∈ (PartialEquiv.pi fun j ↦ extChartAt 𝓘(ℝ) (x j)).source := by
+    rwa [← TauCeti.extChartAt_pi]
+  funext j
+  rw [TauCeti.extChartAt_pi_apply]
+  exact coe_extChartAt_apply _ (hy' j (Set.mem_univ j))
 
 end Cover
 
