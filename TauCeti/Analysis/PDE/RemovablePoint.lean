@@ -71,7 +71,7 @@ theorem setIntegral_inner_gradient_eq_zero_of_forall_notMem_tsupport
   set I := ∫ x in Ω, ⟪V x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ
   have hbound (ε : ℝ) (hε : 0 < ε) :
       ‖I‖ ≤ μ.real (closedBall p (2 * ε)) * (C' * A + B * (K / ε) * C') := by
-    obtain ⟨η, η', hηs', hη01, hη1', hη0, hηderiv, hηbound⟩ := hcut p ε hε
+    obtain ⟨η, η', hηs', hη01, hη1', hη0, hηderiv, hηbound, -⟩ := hcut p ε hε
     have hηs : ContDiff ℝ ∞ η := hηs' ⊤
     have hη1 (x : E) (hx : x ∈ ball p ε) : η x = 1 :=
       hη1' x (ball_subset_closedBall hx)
