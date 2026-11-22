@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Combinatorics
+public import TauCeti.LinearAlgebra.RootSystem.Coxeter.LongestElement
 public import TauCeti.LinearAlgebra.RootSystem.FundamentalDomain
 
 import TauCeti.GroupTheory.Coxeter.ChainProperty

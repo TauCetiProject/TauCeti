@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Coxeter.LongestElement
 public import TauCeti.GroupTheory.Coxeter.Poincare
-public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
-public import TauCeti.LinearAlgebra.RootSystem.Opposition.Basic
+public import TauCeti.LinearAlgebra.RootSystem.Coxeter.LongestElement
 
 /-!
 # Length and subwords in the Weyl group
@@ -25,17 +23,10 @@ just to a chosen expression.
   whose inversion count equals its number of letters.
 * `RootPairing.bruhatLE_wordProd_iff_exists_reduced_sublist` additionally makes the subword
   reduced, with its length equal to the inversion count of the lower element.
-* `RootPairing.length_weylCoxeterSystem_longestElement` identifies the length of the longest
-  element with the number of positive roots.
-* `RootPairing.isLongest_longestElement`: the longest element complements lengths,
-  `ℓ (w * w₀) + ℓ w = ℓ w₀`, so it reverses the Bruhat order of the Weyl group and of its
-  parabolic quotients (`TauCeti.GroupTheory.Coxeter.LongestElement`).
-* `TauCeti.conj_longestElement_simple`: conjugating a simple reflection by `w₀` applies the
-  opposition involution `TauCeti.oppositionPerm`.
 
 The length and reducedness comparisons come from `TauCeti.length_weylCoxeterSystem_eq` and
-`TauCeti.isReduced_weylCoxeterSystem_iff`. The longest element here is the existing
-`TauCeti.longestElement`. None of these results requires the roots to span the weight space.
+`TauCeti.isReduced_weylCoxeterSystem_iff`. None of these results requires the roots to span the
+weight space.
 
 ## References
 
@@ -89,38 +80,4 @@ theorem bruhatLE_wordProd_iff_exists_reduced_sublist {u : P.weylGroup} {l : List
   · rintro ⟨s, hs, hsu, -⟩
     exact (P.bruhatLE_wordProd_iff_exists_sublist b hl).mpr ⟨s, hs, hsu⟩
 
-/-- The longest element has Coxeter length equal to the number of positive roots. -/
-theorem length_weylCoxeterSystem_longestElement :
-    (weylCoxeterSystem P b).length (longestElement P b) = (posRoots P b).ncard := by
-  rw [length_weylCoxeterSystem_eq, ncard_inversions_longestElement]
-
-/-- **The longest element of the Weyl group is a longest element of the Weyl Coxeter system**:
-`ℓ (w * w₀) + ℓ w = ℓ w₀` for every `w`. -/
-theorem isLongest_longestElement :
-    (weylCoxeterSystem P b).IsLongest (longestElement P b) := by
-  simp only [CoxeterSystem.isLongest_iff, length_weylCoxeterSystem_eq, inversions_longestElement]
-  exact ncard_inversions_mul_longestElement_add_ncard_inversions P b
-
 end RootPairing
-
-namespace TauCeti
-
-open RootPairing
-
-/-- **Conjugating a simple reflection by `w₀` applies the opposition involution.** -/
-theorem conj_longestElement_simple {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R]
-    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] {P : RootPairing ι R M N}
-    {b : P.Base} [Finite ι] [P.IsCrystallographic] [P.IsReduced] (i : b.support) :
-    longestElement P b * (weylCoxeterSystem P b).simple i * longestElement P b =
-      (weylCoxeterSystem P b).simple (oppositionPerm P b i) := by
-  rw [weylCoxeterSystem_simple, weylCoxeterSystem_simple, coe_oppositionPerm]
-  have hconj : longestElement P b * weylGroup.ofIdx P ↑i * longestElement P b =
-      longestElement P b * weylGroup.ofIdx P ↑i * (longestElement P b)⁻¹ :=
-    congrArg (_ * ·) (longestElement_inv P b).symm
-  rw [hconj, ← weylGroup.ofIdx_weylGroupToPerm_eq_conj]
-  let := P.indexNeg
-  have hneg : opposition P b ↑i = -(P.weylGroupToPerm (longestElement P b) ↑i) := by
-    rw [RootPairing.indexNeg_neg, ← P.root_eq_neg_iff, root_opposition, P.weylGroup_apply_root]
-  rw [hneg, weylGroup.ofIdx_neg]
-
-end TauCeti

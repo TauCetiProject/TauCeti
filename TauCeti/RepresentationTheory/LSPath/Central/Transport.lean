@@ -218,10 +218,12 @@ theorem centralTransport_congr {lam' : M} (h : lam = lam') :
 
 section Realization
 
-variable (𝕜 : Type*) {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+section PartialOrder
+
+variable (𝕜 : Type*) {V : Type*} [Field 𝕜] [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup V] [Module 𝕜 V] (f : M →+ V)
 
-omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
+omit [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜] in
 /-- **The central transport adds `t ↦ t χ` to the presentation by directions and breaks**: the
 segment `(a_{j+1} - a_j) τ_j λ` becomes `(a_{j+1} - a_j) τ_j (λ + χ) = (a_{j+1} - a_j) (τ_j λ + χ)`.
 -/
@@ -241,45 +243,12 @@ theorem toPLPath_centralTransport_eq_ofSegments :
       PLPath.ofSegments 𝕜 ((PLPath.shiftTimed (f χ) (π.timed 𝕜 f)).map Prod.snd) := by
   rw [toPLPath_def, timed_centralTransport]
 
-/-- Lowering along a form killing `χ` on a centrally transported LS path computes the lower of the
-time–weight graph of `π` shifted by `f χ` and projected back to `V`. -/
-theorem lower_toPLPath_centralTransport (F : Module.Dual 𝕜 V)
-    (hFχ : F (f χ) = 0) (i : b.support) :
-    PLPath.lower F (f (P.root i)) ((centralTransport χ hχ π).toPLPath 𝕜 f) =
-      (PLPath.lower (F.comp (LinearMap.snd 𝕜 𝕜 V)) (0, f (P.root i))
-        (PLPath.ofSegments 𝕜 (π.timed 𝕜 f))).map
-        (fun q ↦ (q.shiftGraph (f χ)).map (LinearMap.snd 𝕜 𝕜 V)) := by
-  rw [toPLPath_centralTransport_eq_ofSegments,
-    PLPath.lower_ofSegments_shiftTimed (π.timed 𝕜 f) hFχ (f (P.root i))]
-
 /-- The central transport moves the endpoint of an LS path by `χ`. -/
 @[simp]
 theorem endpoint_toPLPath_centralTransport :
     ((centralTransport χ hχ π).toPLPath 𝕜 f).endpoint = (π.toPLPath 𝕜 f).endpoint + f χ := by
   rw [toPLPath_centralTransport_eq_ofSegments, PLPath.endpoint_ofSegments_shiftTimed,
     duration_timed, one_smul, toPLPath_def]
-
-/-- A linear form killing `χ` has the same minimum height on an LS path and on its central
-transport. This applies to the simple coroots, whose minimum heights govern the root operators. -/
-@[simp]
-theorem minHeight_toPLPath_centralTransport {g : Module.Dual 𝕜 V} (hg : g (f χ) = 0) :
-    ((centralTransport χ hχ π).toPLPath 𝕜 f).minHeight g = (π.toPLPath 𝕜 f).minHeight g := by
-  rw [toPLPath_centralTransport_eq_ofSegments, PLPath.minHeight_ofSegments_shiftTimed hg,
-    toPLPath_def]
-
-/-- **The central transport is the central shift of the realized path.** For dominant `λ`, a
-realization `f` injective on `W λ` and a realized orbit with no two distinct points on a common ray,
-the path of the central transport of `π` is obtained from the path of `π` by adding `t ↦ t χ` to
-its distinguished presentation for the realized orbit `W λ`. -/
-theorem toPLPath_centralTransport (hlam : lam ∈ dominantChamber P b)
-    (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam))
-    (hS : (Set.range fun w : P.weylGroup ↦ f (w • lam)).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v) :
-    (centralTransport χ hχ π).toPLPath 𝕜 f =
-      PLPath.shiftDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (f χ)
-        (π.toPLPath 𝕜 f) := by
-  have := P.flip_isReduced
-  rw [toPLPath_centralTransport_eq_ofSegments, toPLPath_def,
-    PLPath.shiftDistinguished_ofSegments (π.isDistinguished_timed 𝕜 f hlam hf) hS]
 
 /-- **Central transports compose additively** on realized paths: transporting by `χ` and then by
 `ψ` gives the same path as transporting by `χ + ψ`. -/
@@ -307,14 +276,56 @@ theorem toPLPath_centralTransport_neg (π : LSPath P b (lam + χ)) :
   simpa only [toPLPath_congr] using
     congrArg (fun ρ ↦ ρ.toPLPath 𝕜 f) (centralTransport_symm_apply χ hχ π).symm
 
+end PartialOrder
+
+section LinearOrder
+
+variable (𝕜 : Type*) {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup V] [Module 𝕜 V] (f : M →+ V)
+
+/-- Lowering along a form killing `χ` on a centrally transported LS path computes the lower of the
+time–weight graph of `π` shifted by `f χ` and projected back to `V`. -/
+theorem lower_toPLPath_centralTransport (F : Module.Dual 𝕜 V)
+    (hFχ : F (f χ) = 0) (i : b.support) :
+    PLPath.lower F (f (P.root i)) ((centralTransport χ hχ π).toPLPath 𝕜 f) =
+      (PLPath.lower (F.comp (LinearMap.snd 𝕜 𝕜 V)) (0, f (P.root i))
+        (PLPath.ofSegments 𝕜 (π.timed 𝕜 f))).map
+        (fun q ↦ (q.shiftGraph (f χ)).map (LinearMap.snd 𝕜 𝕜 V)) := by
+  rw [toPLPath_centralTransport_eq_ofSegments,
+    PLPath.lower_ofSegments_shiftTimed (π.timed 𝕜 f) hFχ (f (P.root i))]
+
+/-- A linear form killing `χ` has the same minimum height on an LS path and on its central
+transport. This applies to the simple coroots, whose minimum heights govern the root operators. -/
+@[simp]
+theorem minHeight_toPLPath_centralTransport {g : Module.Dual 𝕜 V} (hg : g (f χ) = 0) :
+    ((centralTransport χ hχ π).toPLPath 𝕜 f).minHeight g = (π.toPLPath 𝕜 f).minHeight g := by
+  rw [toPLPath_centralTransport_eq_ofSegments, PLPath.minHeight_ofSegments_shiftTimed hg,
+    toPLPath_def]
+
+/-- **The central transport is the central shift of the realized path.** For dominant `λ`, a
+realization `f` injective on `W λ` and a realized orbit with no two distinct points on a common ray,
+the path of the central transport of `π` is obtained from the path of `π` by adding `t ↦ t χ` to
+its distinguished presentation for the realized orbit `W λ`. -/
+theorem toPLPath_centralTransport (hlam : lam ∈ dominantChamber P b)
+    (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam))
+    (hS : (Set.range fun w : P.weylGroup ↦ f (w • lam)).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v) :
+    (centralTransport χ hχ π).toPLPath 𝕜 f =
+      PLPath.shiftDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (f χ)
+        (π.toPLPath 𝕜 f) := by
+  have := P.flip_isReduced
+  rw [toPLPath_centralTransport_eq_ofSegments, toPLPath_def,
+    PLPath.shiftDistinguished_ofSegments (π.isDistinguished_timed 𝕜 f hlam hf) hS]
+
+end LinearOrder
+
 end Realization
 
 /-- Central transport shifts the lattice-valued weight of an LS path by `χ`. -/
 theorem weight_centralTransport :
     (centralTransport χ hχ π).weight = π.weight + χ := by
-  refine ((centralTransport χ hχ π).weight_eq_iff_toRatPLPath_endpoint).mpr ?_
-  rw [toRatPLPath, endpoint_toPLPath_centralTransport, ← toRatPLPath, toRatPLPath_endpoint,
-    LinearMap.toAddMonoidHom_coe, ← map_add]
+  refine (centralTransport χ hχ π).weight_eq_iff_endpoint_toRatPLPath.mpr ?_
+  rw [toRatPLPath, endpoint_toPLPath_centralTransport, ← apply_weight ℚ _,
+    LinearMap.toAddMonoidHom_coe, map_add]
 
 end LSPath
 

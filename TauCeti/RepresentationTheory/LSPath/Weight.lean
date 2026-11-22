@@ -28,7 +28,7 @@ Using the canonical rational realization `M → ℚ ⊗[ℤ] M` (`RootPairing.te
 this yields the intrinsic lattice-valued weight `TauCeti.LSPath.weight`, which maps to the
 endpoint in every additive realization (`TauCeti.LSPath.apply_weight`) and is uniquely characterized
 by the endpoint in the canonical rational realization
-(`TauCeti.LSPath.weight_eq_iff_toRatPLPath_endpoint`) or in any injective realization
+(`TauCeti.LSPath.weight_eq_iff_endpoint_toRatPLPath`) or in any injective realization
 (`TauCeti.LSPath.weight_eq_iff_endpoint`).
 
 ## References
@@ -107,13 +107,13 @@ variable {ι : Type u} {M : Type w} {N : Type x} [AddCommGroup M] [AddCommGroup 
 /-- **The lattice-valued weight of an LS path**, sent to the endpoint in every additive realization
 (`TauCeti.LSPath.apply_weight`) and uniquely characterized by the endpoint in any injective
 realization (`TauCeti.LSPath.weight_eq_iff_endpoint`) or in the canonical rational realization
-(`TauCeti.LSPath.weight_eq_iff_toRatPLPath_endpoint`). -/
+(`TauCeti.LSPath.weight_eq_iff_endpoint_toRatPLPath`). -/
 noncomputable def weight (π : LSPath P b lam) : M :=
   Classical.choose (π.existsUnique_endpoint_eq (𝕜 := ℚ)
     (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom (P.tensorProduct_mk_injective ℚ))
 
 /-- The canonical rational endpoint of `π` is the image of `π.weight`. -/
-theorem toRatPLPath_endpoint (π : LSPath P b lam) :
+theorem endpoint_toRatPLPath (π : LSPath P b lam) :
     π.toRatPLPath.endpoint = TensorProduct.mk ℤ ℚ M 1 π.weight :=
   (Classical.choose_spec (π.existsUnique_endpoint_eq (𝕜 := ℚ)
     (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom (P.tensorProduct_mk_injective ℚ))).1
@@ -126,7 +126,7 @@ theorem apply_weight (𝕜 : Type*) {V : Type*} [Field 𝕜] [PartialOrder 𝕜]
       = (f.liftBaseChangeSemilinear (Rat.castHom 𝕜)) (TensorProduct.mk ℤ ℚ M 1 π.weight) :=
         (f.liftBaseChangeSemilinear_mk_one (Rat.castHom 𝕜) π.weight).symm
     _ = (f.liftBaseChangeSemilinear (Rat.castHom 𝕜)) π.toRatPLPath.endpoint :=
-        congrArg _ π.toRatPLPath_endpoint.symm
+        congrArg _ π.endpoint_toRatPLPath.symm
     _ = (π.toPLPath 𝕜 f).endpoint := by
         rw [toRatPLPath, endpoint_toPLPath, endpoint_toPLPath, LinearMap.toAddMonoidHom_coe,
           map_sum]
@@ -141,13 +141,13 @@ theorem weight_eq_iff_endpoint {𝕜 V : Type*} [Field 𝕜] [PartialOrder 𝕜]
 
 /-- Characterization of `π.weight` by the endpoint of its canonical rational realization
 `π.toRatPLPath`. -/
-theorem weight_eq_iff_toRatPLPath_endpoint (π : LSPath P b lam) {μ : M} :
+theorem weight_eq_iff_endpoint_toRatPLPath (π : LSPath P b lam) {μ : M} :
     π.weight = μ ↔ π.toRatPLPath.endpoint = TensorProduct.mk ℤ ℚ M 1 μ :=
   weight_eq_iff_endpoint (𝕜 := ℚ) (P.tensorProduct_mk_injective ℚ) π
 
 @[simp]
 theorem weight_straight : (straight lam : LSPath P b lam).weight = lam :=
-  (weight_eq_iff_toRatPLPath_endpoint (straight lam)).mpr (by
+  (weight_eq_iff_endpoint_toRatPLPath (straight lam)).mpr (by
     rw [toRatPLPath, toPLPath_straight, PLPath.endpoint_straight, LinearMap.toAddMonoidHom_coe])
 
 @[simp]

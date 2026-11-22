@@ -436,18 +436,7 @@ theorem IsAChain.exists_mem_rootSpan_smul_sub_eq
     by_cases hweq : y.val • lam = C.last.val • lam
     · refine ⟨m, hm, ?_⟩
       simpa only [RelSeries.head_snoc, RelSeries.last_snoc, hweq] using heq
-    · obtain ⟨t, ⟨w, i, rfl⟩, -, hmem⟩ := hy.exists_isReflection
-      have hstab := MulAction.mem_stabilizer_iff.mp
-        (P.parabolic_wallIndices_le_stabilizer b lam hmem)
-      rw [mul_smul, inv_smul_eq_iff, mul_smul, weylCoxeterSystem_simple,
-        ← RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj,
-        RootPairing.weylGroup.ofIdx_smul, Equiv.reflection_smul] at hstab
-      obtain ⟨β, hβ, hβx⟩ : ∃ β, b.IsPos β ∧ P.reflection β (C.last.val • lam) = y.val • lam := by
-        let := P.indexNeg
-        rcases Base.IsPos.or_neg b (P.weylGroupToPerm w i) with hj | hj
-        · exact ⟨_, hj, hstab⟩
-        · refine ⟨_, hj, ?_⟩
-          rw [← hstab, reflection_indexNeg_neg]
+    · obtain ⟨β, hβ, hβx⟩ := exists_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hy
       have hb := reflectionBond_eq_neg_coroot' hβ hβx hweq
       have hz' : (a : 𝕜) * (P.coroot' β (C.last.val • lam) : 𝕜) = (-z : ℤ) := by
         rw [hb] at hz

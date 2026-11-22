@@ -133,6 +133,23 @@ theorem smul_ne_smul_of_minimalCosetRepCovBy (hlam : lam ∈ dominantChamber P b
   exact fun heq ↦ h.ne <|
     eq_of_isMinimalCosetRep_of_smul_eq hlam h.isMinimalCosetRep_left h.isMinimalCosetRep_right heq
 
+/-- **A cover of `W / W_λ` has a positive root label** `β` with `y λ = s_β (x λ)` (without
+assuming `λ` is dominant). -/
+theorem exists_isPos_reflection_smul_eq_of_minimalCosetRepCovBy {x y : P.weylGroup}
+    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) :
+    ∃ β, b.IsPos β ∧ P.reflection β (x • lam) = y • lam := by
+  obtain ⟨t, ⟨w, i, rfl⟩, -, hmem⟩ := h.exists_isReflection
+  have hstab := MulAction.mem_stabilizer_iff.mp
+    (P.parabolic_wallIndices_le_stabilizer b lam hmem)
+  rw [mul_smul, inv_smul_eq_iff, mul_smul, weylCoxeterSystem_simple,
+    ← RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj,
+    RootPairing.weylGroup.ofIdx_smul, Equiv.reflection_smul] at hstab
+  let := P.indexNeg
+  rcases Base.IsPos.or_neg b (P.weylGroupToPerm w i) with hj | hj
+  · exact ⟨_, hj, hstab⟩
+  · refine ⟨_, hj, ?_⟩
+    rw [← hstab, reflection_indexNeg_neg]
+
 /-- **A cover of `W / W_λ` has a unique positive root label.** If `y` is covered by `x` in the
 Bruhat order of the minimal coset representatives of the stabilizer of the dominant weight `λ`,
 there is exactly one positive root `β` with `y λ = s_β (x λ)`. -/
@@ -142,18 +159,7 @@ theorem existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy
     ∃! β, b.IsPos β ∧ P.reflection β (x • lam) = y • lam := by
   have := P.flip_isReduced
   have hne := smul_ne_smul_of_minimalCosetRepCovBy hlam h
-  -- The reflection of the cover is the reflection in the root `j = w αᵢ`.
-  obtain ⟨t, ⟨w, i, rfl⟩, -, hmem⟩ := h.exists_isReflection
-  rw [inv_mul_mem_parabolic_wallIndices_iff hlam, weylCoxeterSystem_simple,
-    ← RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj, mul_smul,
-    RootPairing.weylGroup.ofIdx_smul, Equiv.reflection_smul] at hmem
-  obtain ⟨β, hβ, hβx⟩ : ∃ β, b.IsPos β ∧ P.reflection β (x • lam) = y • lam := by
-    let := P.indexNeg
-    rcases Base.IsPos.or_neg b (P.weylGroupToPerm w i) with hj | hj
-    · exact ⟨_, hj, hmem⟩
-    · -- The reflection in `-j` is the reflection in `j`.
-      refine ⟨_, hj, ?_⟩
-      rw [← hmem, reflection_indexNeg_neg]
+  obtain ⟨β, hβ, hβx⟩ := exists_isPos_reflection_smul_eq_of_minimalCosetRepCovBy h
   exact ⟨β, ⟨hβ, hβx⟩, fun γ ⟨hγ, hγx⟩ ↦
     (eq_of_isPos_of_reflection_eq hβ hγ (hβx.trans hγx.symm) (by rwa [hβx])).symm⟩
 

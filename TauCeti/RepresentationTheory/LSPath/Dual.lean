@@ -181,9 +181,9 @@ end Realization
 
 /-- The weight of Littelmann's dual path `π^*` is the negative of the weight of `π`. -/
 @[simp]
-theorem weight_dual : (dual π).weight = -π.weight :=
-  (dual π).weight_eq_iff_toRatPLPath_endpoint.mpr (by
-    rw [toRatPLPath, toPLPath_dual, PLPath.endpoint_reverse, ← toRatPLPath,
-      toRatPLPath_endpoint, map_neg])
+theorem weight_dual : (dual π).weight = -π.weight := by
+  refine (dual π).weight_eq_iff_endpoint_toRatPLPath.mpr ?_
+  rw [toRatPLPath, toPLPath_dual, PLPath.endpoint_reverse, ← apply_weight ℚ _,
+    LinearMap.toAddMonoidHom_coe, map_neg]
 
 end TauCeti.LSPath

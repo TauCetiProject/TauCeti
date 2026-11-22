@@ -227,6 +227,15 @@ lemma add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero {x y : M}
     x + y ∈ dominantChamber P b ↔ x ∈ dominantChamber P b :=
   forall₂_congr fun i hi ↦ by simp only [map_add, hy i hi, add_zero]
 
+/-- Translating a dominant weight by a weight killed by every simple coroot pairing preserves
+dominance. -/
+lemma add_mem_dominantChamber_of_forall_toLinearMap_coroot_eq_zero {x y : M}
+    (hx : x ∈ dominantChamber P b) (hy : ∀ i : b.support, P.toLinearMap y (P.coroot i) = 0) :
+    x + y ∈ dominantChamber P b :=
+  (P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b
+    ((P.forall_mem_support_coroot'_eq_zero_iff_forall_toLinearMap_coroot_eq_zero b y).mpr
+      hy)).mpr hx
+
 /-- The closed dominant chamber is closed under nonnegative scaling. -/
 lemma smul_mem_dominantChamber [PosMulMono R] {t : R} (ht : 0 ≤ t) {x : M}
     (hx : x ∈ dominantChamber P b) :

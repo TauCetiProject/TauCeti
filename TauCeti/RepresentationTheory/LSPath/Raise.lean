@@ -49,7 +49,7 @@ into a normal crystal when `f` is injective.
   preserves Lakshmibai–Seshadri paths**.
 * `TauCeti.LSPath.isCrystalSet_range_toPLPath`: the realized LS paths of a dominant shape form a
   crystal-admissible set of paths (`TauCeti.PLPath.IsCrystalSet`).
-* `TauCeti.LSPath.isIntegralPath_toPLPath`, `TauCeti.LSPath.isIntegralPath_straight`: realized
+* `TauCeti.LSPath.isIntegralPath_toPLPath`, `TauCeti.PLPath.isIntegralPath_straight`: realized
   LS paths of dominant shape and straight paths along arbitrary weights are integral in any
   compatible realization (`F i (f x) = (P.coroot' i x : 𝕜)`).
 
@@ -460,8 +460,7 @@ theorem isCrystalSet_range_toPLPath (hlam : lam ∈ dominantChamber P b) (f : M 
     PLPath.IsCrystalSet b f F (Set.range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) where
   endpoint_mem_range := by
     rintro _ ⟨π, rfl⟩
-    obtain ⟨m, -, hm⟩ := π.exists_mem_rootSpan_endpoint_eq_add (𝕜 := 𝕜) f
-    exact ⟨_, hm.symm⟩
+    exact ⟨π.weight, π.apply_weight 𝕜 f⟩
   exists_minHeight_eq_intCast := by
     rintro _ ⟨π, rfl⟩ i
     exact π.exists_minHeight_eq_intCast hlam f i (F i) (hF i)
@@ -480,18 +479,29 @@ theorem isIntegralPath_toPLPath (hlam : lam ∈ dominantChamber P b) (f : M →+
     PLPath.IsIntegralPath b f F (π.toPLPath 𝕜 f) :=
   (isCrystalSet_range_toPLPath hlam f hF).subset_isIntegralPath ⟨π, rfl⟩
 
+end TauCeti.LSPath
+
+namespace TauCeti.PLPath
+
+open RootPairing
+
+variable {ι M N 𝕜 V : Type*} [AddCommGroup M] [AddCommGroup N]
+  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced]
+  {lam : M} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup V] [Module 𝕜 V]
+
 /-- The straight path along any weight `λ` is an integral path in any compatible realization
 (`∀ i x, F i (f x) = (P.coroot' i x : 𝕜)`). -/
 theorem isIntegralPath_straight (f : M →+ V) (F : b.support → Module.Dual 𝕜 V)
     (hF : ∀ (i : b.support) (x : M), F i (f x) = (P.coroot' i x : 𝕜)) :
-    PLPath.IsIntegralPath b f F (PLPath.straight 𝕜 (f lam)) := by
+    IsIntegralPath b f F (straight 𝕜 (f lam)) := by
   have := P.flip_isReduced
   have := P.finite_weylGroup_of_base b
   obtain ⟨w, hw⟩ := P.exists_mem_dominantChamber_of_finite_weylGroup b lam
   obtain ⟨τ, ⟨hτmin, hτ⟩, -⟩ := existsUnique_isMinimalCosetRep_smul_eq hw w⁻¹
-  have hsingle : (single ⟨τ, hτmin⟩ : LSPath P b (w • lam)).toPLPath 𝕜 f =
-      PLPath.straight 𝕜 (f lam) := by
-    rw [toPLPath_single, hτ, inv_smul_smul]
-  simpa only [hsingle] using isIntegralPath_toPLPath hw f F hF (single ⟨τ, hτmin⟩)
+  have hsingle : (LSPath.single ⟨τ, hτmin⟩ : LSPath P b (w • lam)).toPLPath 𝕜 f =
+      straight 𝕜 (f lam) := by
+    rw [LSPath.toPLPath_single, hτ, inv_smul_smul]
+  simpa only [hsingle] using LSPath.isIntegralPath_toPLPath hw f F hF (LSPath.single ⟨τ, hτmin⟩)
 
-end TauCeti.LSPath
+end TauCeti.PLPath

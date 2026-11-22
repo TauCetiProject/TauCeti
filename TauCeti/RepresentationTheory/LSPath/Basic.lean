@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.LSPath.Reparametrization
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Set.Finite.List
 import TauCeti.Data.Rat.BoundedDen
+import TauCeti.Data.Rat.Lemmas
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 import TauCeti.LinearAlgebra.RootSystem.Weyl.IntervalBondGcd
 
@@ -32,10 +33,11 @@ orbit weight `τ_j λ` during `[a_j, a_{j+1}]`:
 `π(t) = ∑_{k < j} (a_{k+1} - a_k) τ_k λ + (t - a_j) τ_j λ` for `a_j ≤ t ≤ a_{j+1}`.
 
 This file defines these encodings as the structure `TauCeti.LSPath`, together with their
-distinguished timed presentation, whose velocities are the orbit weights `τ_j λ`, and the
-piecewise-linear path `TauCeti.LSPath.toPLPath` they present. The weights live in a `ℤ`-module
-`M`, so that bonds are integers; the paths live in a vector space `V` over an ordered field,
-reached by an additive map `f : M →+ V` (typically `M → ℚ ⊗ M`).
+canonical timed presentation `TauCeti.LSPath.timed`, whose velocities are `f (τ_j • λ)`
+(distinguished under `TauCeti.LSPath.isDistinguished_timed`), and the piecewise-linear path
+`TauCeti.LSPath.toPLPath` they present. The weights live in a `ℤ`-module `M`, so that bonds are
+integers; the paths live in a vector space `V` over an ordered field, reached by an additive map
+`f : M →+ V` (typically `M → ℚ ⊗ M`).
 
 The main result is finiteness: for dominant `λ` there are only finitely many
 Lakshmibai–Seshadri paths of shape `λ`. The Weyl group is finite, so there are finitely many
@@ -53,8 +55,9 @@ The straight path `t ↦ t λ` (`TauCeti.LSPath.straight`) and, for a simple roo
 * `TauCeti.LSPath`: Littelmann's encoding `(τ; a)` of a Lakshmibai–Seshadri path of shape `λ`.
 * `TauCeti.LSPath.congr`: transport of encodings along an equality of shape weights.
 * `TauCeti.LSPath.duration`: the duration `a_{j+1} - a_j` of the `j`-th segment.
-* `TauCeti.LSPath.timed`: the distinguished timed presentation, running with constant velocity
-  `τ_j λ` for time `a_{j+1} - a_j`.
+* `TauCeti.LSPath.timed`: the canonical timed presentation, running with constant velocity
+  `f (τ_j • λ)` for time `a_{j+1} - a_j` (distinguished under
+  `TauCeti.LSPath.isDistinguished_timed`).
 * `TauCeti.LSPath.toPLPath`: the piecewise-linear path presented by it.
 * `TauCeti.LSPath.straight`, `TauCeti.LSPath.single`, and `TauCeti.LSPath.simple`: the straight
   path, the zero-break path along any minimal coset representative, and the two-direction paths
@@ -71,9 +74,10 @@ The straight path `t ↦ t λ` (`TauCeti.LSPath.straight`) and, for a simple roo
   `TauCeti.LSPath.bruhatLE_dir_of_le`, and `TauCeti.LSPath.strictAnti_length_dir`: the directions
   strictly decrease in the Bruhat order, and so do their lengths.
 * `TauCeti.LSPath.sum_duration`, `TauCeti.LSPath.isTimed_timed` and
-  `TauCeti.LSPath.duration_timed`: the distinguished presentation is a timed presentation of
+  `TauCeti.LSPath.duration_timed`: the canonical timed presentation is a timed presentation of
   duration `1`.
-* `TauCeti.LSPath.inv_smul_mem_range_of_mem_timed`: its velocities lie in the Weyl orbit of `λ`.
+* `TauCeti.LSPath.inv_smul_mem_range_of_mem_timed`: its velocities lie in the realized Weyl orbit of
+  `λ`.
 * `TauCeti.LSPath.endpoint_toPLPath`: the endpoint is `∑_j (a_{j+1} - a_j) τ_j λ`.
 * `TauCeti.LSPath.isAChain`: for dominant `λ`, every saturated chain from `τ_j` down to `τ_{j+1}`
   is an `a_{j+1}`-chain, not only the one witnessing the definition.
@@ -219,9 +223,10 @@ theorem sum_duration (π : LSPath P b lam) : ∑ j, π.duration j = 1 := by
 
 variable (𝕜 : Type*) {V : Type*} [Field 𝕜] [AddCommGroup V] [Module 𝕜 V] (f : M →+ V)
 
-/-- The **distinguished timed presentation** of a Lakshmibai–Seshadri path: for each direction
-`τ_j`, the segment `(a_{j+1} - a_j) τ_j λ` traversed during time `a_{j+1} - a_j`, so with constant
-velocity `f (τ_j λ)`, carried to `V` by `f`. -/
+/-- The **canonical timed presentation** of a Lakshmibai–Seshadri path: for each direction
+`τ_j`, the segment `(a_{j+1} - a_j) • f (τ_j • λ)` traversed during time `a_{j+1} - a_j`, so with
+constant velocity `f (τ_j • λ)`. It is distinguished for `f (W λ)` under the hypotheses of
+`TauCeti.LSPath.isDistinguished_timed`. -/
 noncomputable def timed (π : LSPath P b lam) : List (𝕜 × V) :=
   List.ofFn fun j ↦ ((π.duration j : 𝕜), (π.duration j : 𝕜) • f ((π.dir j).val • lam))
 
@@ -230,36 +235,36 @@ theorem timed_def (π : LSPath P b lam) :
       List.ofFn fun j ↦ ((π.duration j : 𝕜), (π.duration j : 𝕜) • f ((π.dir j).val • lam)) :=
   (rfl)
 
-/-- The segments of the distinguished timed presentation are the segments `(a_{j+1} - a_j) τ_j λ`,
+/-- The segments of the canonical timed presentation are `(a_{j+1} - a_j) • f (τ_j • λ)`,
 traversed during time `a_{j+1} - a_j`. -/
 theorem mem_timed_iff (π : LSPath P b lam) {y : 𝕜 × V} :
     y ∈ π.timed 𝕜 f ↔
       ∃ j, ((π.duration j : 𝕜), (π.duration j : 𝕜) • f ((π.dir j).val • lam)) = y := by
   rw [timed_def, List.mem_ofFn]
 
-/-- Every segment of the distinguished timed presentation of a Lakshmibai–Seshadri path has
-strictly positive duration. -/
-theorem isTimed_timed [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] (π : LSPath P b lam) :
-    PLPath.IsTimed (π.timed 𝕜 f) := by
-  simp only [PLPath.isTimed_iff, timed, List.forall_mem_ofFn_iff]
-  exact fun j ↦ Rat.cast_pos.mpr (π.duration_pos j)
-
-variable [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜]
-
-/-- The distinguished timed presentation of a Lakshmibai–Seshadri path has duration `1`. -/
+/-- The canonical timed presentation of a Lakshmibai–Seshadri path has duration `1`. -/
 @[simp]
-theorem duration_timed (π : LSPath P b lam) : PLPath.duration (π.timed 𝕜 f) = 1 := by
+theorem duration_timed [CharZero 𝕜] (π : LSPath P b lam) : PLPath.duration (π.timed 𝕜 f) = 1 := by
   simp only [PLPath.duration_def, timed, List.map_ofFn, List.sum_ofFn, Function.comp_apply]
   rw [← Rat.cast_sum, sum_duration, Rat.cast_one]
 
-/-- The velocities of the distinguished timed presentation of a Lakshmibai–Seshadri path of shape
-`λ` lie in the Weyl orbit of `λ`, carried to `V` by `f`. -/
-theorem inv_smul_mem_range_of_mem_timed (π : LSPath P b lam) {y : 𝕜 × V}
+/-- The velocities of the canonical timed presentation of a Lakshmibai–Seshadri path of shape
+`λ` lie in the realized Weyl orbit of `λ`. -/
+theorem inv_smul_mem_range_of_mem_timed [CharZero 𝕜] (π : LSPath P b lam) {y : 𝕜 × V}
     (hy : y ∈ π.timed 𝕜 f) : y.1⁻¹ • y.2 ∈ Set.range fun w : P.weylGroup ↦ f (w • lam) := by
   obtain ⟨j, rfl⟩ := List.mem_ofFn.mp hy
   exact ⟨π.dir j, (inv_smul_smul₀ (Rat.cast_ne_zero.mpr (π.duration_pos j).ne') _).symm⟩
 
-/-- The piecewise-linear path of a Lakshmibai–Seshadri path, presented by its distinguished timed
+variable [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜]
+
+/-- Every segment of the canonical timed presentation of a Lakshmibai–Seshadri path has
+strictly positive duration. -/
+theorem isTimed_timed [PosMulReflectLT 𝕜] (π : LSPath P b lam) :
+    PLPath.IsTimed (π.timed 𝕜 f) := by
+  simp only [PLPath.isTimed_iff, timed, List.forall_mem_ofFn_iff]
+  exact fun j ↦ Rat.cast_pos_of_partialOrder (π.duration_pos j)
+
+/-- The piecewise-linear path of a Lakshmibai–Seshadri path, presented by its canonical timed
 presentation and carried to `V` by `f`. -/
 noncomputable def toPLPath (π : LSPath P b lam) : PLPath 𝕜 V :=
   PLPath.ofSegments 𝕜 ((π.timed 𝕜 f).map Prod.snd)

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Tower
 public import TauCeti.RepresentationTheory.LSPath.Distinguished
+import TauCeti.Data.Rat.Lemmas
 import TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
@@ -29,8 +30,8 @@ the dominant shape is required.
 This file also defines the canonical rational realization `TauCeti.LSPath.toRatPLPath` in
 `ℚ ⊗[ℤ] M`, its pushforward `TauCeti.LSPath.mapSemilinear_toRatPLPath` to arbitrary realizations
 (valid for arbitrary shapes), and its injectivity (`TauCeti.LSPath.toRatPLPath_injective`) as well
-as injectivity in any injective compatible realization
-(`TauCeti.LSPath.toPLPath_injective_of_compatible`) for dominant shapes.
+as injectivity in any compatible realization (`TauCeti.LSPath.toPLPath_injective_of_compatible`) for
+dominant shapes.
 
 ## References
 
@@ -125,90 +126,15 @@ theorem toPLPath_inj (hlam : lam ∈ dominantChamber P b)
     π.toPLPath 𝕜 f = π'.toPLPath 𝕜 f ↔ π = π' :=
   (toPLPath_injective hlam hf hS).eq_iff
 
-/-- In any injective compatible realization `(𝕜, V, f, F)`, no two distinct points of a realized
-Weyl orbit lie on the same ray: the sum of squares of all coroot pairings is Weyl-invariant. -/
-theorem pairwise_not_sameRay_of_compatible {f : M →+ V} (hf : Function.Injective f)
-    {F : b.support → Module.Dual 𝕜 V}
-    (hF : ∀ (i : b.support) (x : M), F i (f x) = (P.coroot' i x : 𝕜)) (lam : M) :
-    (Set.range fun w : P.weylGroup ↦ f (w • lam)).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v := by
-  have := P.flip_isReduced
-  rintro _ ⟨w₁, rfl⟩ _ ⟨w₂, rfl⟩ hne hray
-  have hw_ne_zero (w : P.weylGroup) : f (w • lam) ≠ 0 := by
-    intro h0
-    have hw0 : w • lam = 0 := hf (h0.trans (map_zero f).symm)
-    have hlam0 : lam = 0 := by
-      rw [← inv_smul_smul w lam, hw0, smul_zero]
-    exact hne (by simp [hlam0])
-  obtain ⟨r₁, r₂, hr₁, hr₂, hsmul⟩ := hray.exists_pos (hw_ne_zero w₁) (hw_ne_zero w₂)
-  have hsimple (i : b.support) :
-      r₁ * (P.coroot' i (w₁ • lam) : 𝕜) = r₂ * (P.coroot' i (w₂ • lam) : 𝕜) := by
-    have := congrArg (F i) hsmul
-    simpa only [map_smul, smul_eq_mul, hF] using this
-  have hpos (j : ι) (hj : j ∈ posRoots P b) :
-      r₁ * (P.coroot' j (w₁ • lam) : 𝕜) = r₂ * (P.coroot' j (w₂ • lam) : 𝕜) := by
-    obtain ⟨c, -, hsum⟩ := exists_coroot'_eq_sum_nat_of_mem_posRoots P b hj
-    simp only [hsum, LinearMap.sum_apply, LinearMap.smul_apply, Nat.cast_smul_eq_nsmul,
-      nsmul_eq_mul, Int.cast_sum, Int.cast_mul, Int.cast_natCast, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [← mul_assoc, mul_comm r₁, mul_assoc, hsimple ⟨i, hi⟩, ← mul_assoc, mul_comm _ r₂, mul_assoc]
-  have hcoroot (j : ι) :
-      r₁ * (P.coroot' j (w₁ • lam) : 𝕜) = r₂ * (P.coroot' j (w₂ • lam) : 𝕜) := by
-    let := P.indexNeg
-    rcases Base.IsPos.or_neg b j with hj | hj
-    · exact hpos j ((mem_posRoots P b j).mpr hj)
-    · have h := hpos (-j) ((mem_posRoots P b (-j)).mpr hj)
-      simpa only [indexNeg_neg, coroot'_reflectionPerm_self, LinearMap.neg_apply, Int.cast_neg,
-        mul_neg, neg_inj] using h
-  let := Fintype.ofFinite ι
-  have hsq_inv (w : P.weylGroup) :
-      ∑ j : ι, (P.coroot' j (w • lam) : 𝕜) ^ 2 = ∑ j : ι, (P.coroot' j lam : 𝕜) ^ 2 := by
-    calc ∑ j : ι, (P.coroot' j (w • lam) : 𝕜) ^ 2
-        = ∑ j : ι, (P.coroot' (P.weylGroupToPerm w⁻¹ j) lam : 𝕜) ^ 2 := by
-          refine Finset.sum_congr rfl fun j _ ↦ ?_
-          have hc := P.coroot'_weylGroupToPerm_smul w⁻¹ j (w • lam)
-          rw [inv_smul_smul] at hc
-          rw [hc]
-      _ = ∑ j : ι, (P.coroot' j lam : 𝕜) ^ 2 :=
-          Equiv.sum_comp (P.weylGroupToPerm w⁻¹) fun j ↦ (P.coroot' j lam : 𝕜) ^ 2
-  have hS : r₁ ^ 2 * ∑ j : ι, (P.coroot' j (w₁ • lam) : 𝕜) ^ 2 =
-      r₂ ^ 2 * ∑ j : ι, (P.coroot' j (w₁ • lam) : 𝕜) ^ 2 := by
-    calc r₁ ^ 2 * ∑ j : ι, (P.coroot' j (w₁ • lam) : 𝕜) ^ 2
-        = ∑ j : ι, (r₁ * (P.coroot' j (w₁ • lam) : 𝕜)) ^ 2 := by
-          rw [Finset.mul_sum]
-          exact Finset.sum_congr rfl fun j _ ↦ by ring
-      _ = ∑ j : ι, (r₂ * (P.coroot' j (w₂ • lam) : 𝕜)) ^ 2 :=
-          Finset.sum_congr rfl fun j _ ↦ congrArg (· ^ 2) (hcoroot j)
-      _ = r₂ ^ 2 * ∑ j : ι, (P.coroot' j (w₂ • lam) : 𝕜) ^ 2 := by
-          rw [Finset.mul_sum]
-          exact Finset.sum_congr rfl fun j _ ↦ by ring
-      _ = r₂ ^ 2 * ∑ j : ι, (P.coroot' j (w₁ • lam) : 𝕜) ^ 2 := by
-          rw [hsq_inv w₂, ← hsq_inv w₁]
-  by_cases hsum0 : ∑ j : ι, (P.coroot' j (w₁ • lam) : 𝕜) ^ 2 = 0
-  · rw [Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ sq_nonneg _] at hsum0
-    have hzero : ∀ i ∈ b.support, P.coroot' i (w₁ • lam) = 0 := fun i _ ↦ by
-      have hi := sq_eq_zero_iff.mp (hsum0 i (Finset.mem_univ i))
-      exact Int.cast_eq_zero.mp hi
-    have hfix : w₁ • lam = lam := by
-      have h := smul_eq_self_of_forall_coroot'_eq_zero b hzero w₁⁻¹
-      rw [inv_smul_smul] at h
-      exact h.symm
-    have hfix2 : w₂ • lam = w₁ • lam := by
-      rw [hfix]
-      have hzero' : ∀ i ∈ b.support, P.coroot' i lam = 0 := fun i hi ↦ hfix ▸ hzero i hi
-      exact smul_eq_self_of_forall_coroot'_eq_zero b hzero' w₂
-    exact hne (congrArg f hfix2.symm)
-  · have hr : r₁ = r₂ := (sq_eq_sq₀ hr₁.le hr₂.le).mp (mul_right_cancel₀ hsum0 hS)
-    rw [hr] at hsmul
-    exact hne (smul_right_injective V hr₂.ne' hsmul)
-
-/-- In any injective compatible realization `(𝕜, V, f, F)`, the realized piecewise-linear path
-determines the LS encoding of a dominant shape without needing an explicit ray-separation
-hypothesis. -/
+/-- In any compatible realization `(𝕜, V, f, F)`, the realized piecewise-linear path determines the
+LS encoding of a dominant shape without needing global injectivity of `f` or an explicit
+ray-separation hypothesis. -/
 theorem toPLPath_injective_of_compatible (hlam : lam ∈ dominantChamber P b)
-    {f : M →+ V} (hf : Function.Injective f) {F : b.support → Module.Dual 𝕜 V}
+    {f : M →+ V} {F : b.support → Module.Dual 𝕜 V}
     (hF : ∀ (i : b.support) (x : M), F i (f x) = (P.coroot' i x : 𝕜)) :
     Function.Injective (fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) :=
-  toPLPath_injective hlam hf.injOn (pairwise_not_sameRay_of_compatible hf hF lam)
+  toPLPath_injective hlam (P.injOn_orbit_of_compatible b hF lam)
+    (P.pairwise_not_sameRay_image_orbit_of_compatible b hF lam)
 
 end PLPath
 
@@ -222,29 +148,21 @@ noncomputable abbrev toRatPLPath (π : LSPath P b lam) : PLPath ℚ (ℚ ⊗[ℤ
 
 /-- Pushing `LSPath.toRatPLPath` forward along the canonical semilinear extension of `f : M →+ V`
 yields `π.toPLPath 𝕜 f`. -/
-theorem mapSemilinear_toRatPLPath {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V] (f : M →+ V) (π : LSPath P b lam) :
+theorem mapSemilinear_toRatPLPath {𝕜 V : Type*} [Field 𝕜] [PartialOrder 𝕜]
+    [IsStrictOrderedRing 𝕜] [PosMulReflectLT 𝕜] [AddCommGroup V] [Module 𝕜 V] (f : M →+ V)
+    (π : LSPath P b lam) :
     π.toRatPLPath.mapSemilinear (f.liftBaseChangeSemilinear (Rat.castHom 𝕜)) =
       π.toPLPath 𝕜 f := by
-  rw [toRatPLPath, mapSemilinear_toPLPath ℚ _ _ (Rat.cast_mono (K := 𝕜)),
+  rw [toRatPLPath, mapSemilinear_toPLPath ℚ _ _ Rat.cast_mono_of_partialOrder,
     AddMonoidHom.liftBaseChangeSemilinear_comp_mk]
-
-/-- In the canonical rational realization `ℚ ⊗[ℤ] M`, no two distinct points of a Weyl orbit lie
-on the same ray. -/
-theorem pairwise_not_sameRay_toRatPLPath (P : RootPairing ι ℤ M N) (b : P.Base) [P.IsReduced]
-    (lam : M) :
-    (Set.range fun w : P.weylGroup ↦
-      (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom (w • lam)).Pairwise
-        fun u v ↦ ¬ SameRay ℚ u v := by
-  have := P.finite_weylGroup_of_base b
-  simpa only [LinearMap.toAddMonoidHom_coe] using
-    P.pairwise_not_sameRay_tensorProduct_mk_orbit ℚ lam
 
 /-- The canonical rational realization `LSPath.toRatPLPath` is injective for any dominant shape. -/
 theorem toRatPLPath_injective (hlam : lam ∈ dominantChamber P b) :
-    Function.Injective (toRatPLPath (P := P) (b := b) (lam := lam)) :=
-  toPLPath_injective hlam (P.tensorProduct_mk_injective ℚ).injOn
-    (pairwise_not_sameRay_toRatPLPath P b lam)
+    Function.Injective (toRatPLPath (P := P) (b := b) (lam := lam)) := by
+  have := P.finite_weylGroup_of_base b
+  refine toPLPath_injective hlam (P.tensorProduct_mk_injective ℚ).injOn ?_
+  simpa only [LinearMap.toAddMonoidHom_coe] using
+    P.pairwise_not_sameRay_tensorProduct_mk_orbit ℚ lam
 
 end Rational
 

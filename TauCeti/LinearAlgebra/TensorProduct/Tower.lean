@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
+public import Mathlib.LinearAlgebra.Dual.BaseChange
+
+import TauCeti.LinearAlgebra.Dual.BaseChange
 
 /-!
 # Scalar extension along algebra maps
@@ -53,7 +56,8 @@ an `A`-linear map `A ⊗[R] M → M`. Mathlib's `LinearMap.liftBaseChange` and
 * `LinearMap.liftBaseChangeSemilinear`, `AddMonoidHom.liftBaseChangeSemilinear`,
   `LinearMap.ext_one_tmul`, `LinearMap.eq_liftBaseChangeSemilinear_iff`,
   `AddMonoidHom.eq_liftBaseChangeSemilinear_iff`, `LinearMap.apply_liftBaseChangeSemilinear`,
-  `AddMonoidHom.apply_liftBaseChangeSemilinear`, and
+  `AddMonoidHom.apply_liftBaseChangeSemilinear`,
+  `AddMonoidHom.apply_liftBaseChangeSemilinear_baseChange`, and
   `AddMonoidHom.liftBaseChangeSemilinear_mk_one`: semilinear extensions out of `S ⊗[R] M`,
   generalizing Mathlib's linear construction `LinearMap.liftBaseChangeEquiv`, together with their
   universal property and compatibility with linear forms.
@@ -155,43 +159,62 @@ section Semilinear
 variable {R S T M V : Type*} [CommSemiring R] [Semiring S] [Algebra R S] [Semiring T]
   {σ : S →+* T} [AddCommMonoid M] [Module R M] [AddCommMonoid V] [Module T V]
 
+private theorem compHomIsScalarTower (R S T V : Type*) [CommSemiring R] [Semiring S] [Algebra R S]
+    [Semiring T] (σ : S →+* T) [AddCommMonoid V] [Module T V] :
+    letI : Module S V := Module.compHom V σ
+    letI : Module R V := Module.compHom V (σ.comp (algebraMap R S))
+    IsScalarTower R S V :=
+  letI : Module S V := Module.compHom V σ
+  letI : Module R V := Module.compHom V (σ.comp (algebraMap R S))
+  ⟨fun r s v ↦ by
+    -- `Module.compHom` has no rewrite lemma for scalar multiplication, so unfold via `change`.
+    change σ (r • s) • v = σ (algebraMap R S r) • (σ s • v)
+    rw [Algebra.smul_def, map_mul, mul_smul]⟩
+
+private theorem compHomSMulCommClass (R S T V : Type*) [CommSemiring R] [Semiring S] [Algebra R S]
+    [Semiring T] (σ : S →+* T) [AddCommMonoid V] [Module T V] :
+    letI : Module S V := Module.compHom V σ
+    letI : Module R V := Module.compHom V (σ.comp (algebraMap R S))
+    SMulCommClass R S V :=
+  letI : Module S V := Module.compHom V σ
+  letI : Module R V := Module.compHom V (σ.comp (algebraMap R S))
+  ⟨fun r s v ↦ by
+    change σ (algebraMap R S r) • (σ s • v) = σ s • (σ (algebraMap R S r) • v)
+    rw [← mul_smul, ← mul_smul, ← map_mul, ← map_mul, Algebra.commutes]⟩
+
+private def liftBaseChangeLinear (f : M →ₛₗ[σ.comp (algebraMap R S)] V) :
+    @LinearMap S S _ _ (RingHom.id S) (S ⊗[R] M) V _ _ _ (Module.compHom V σ) :=
+  letI : Module S V := Module.compHom V σ
+  letI : Module R V := Module.compHom V (σ.comp (algebraMap R S))
+  haveI : IsScalarTower R S V := compHomIsScalarTower R S T V σ
+  haveI : SMulCommClass R S V := compHomSMulCommClass R S T V σ
+  let f' : M →ₗ[R] V := { toFun := f, map_add' := f.map_add, map_smul' := f.map_smulₛₗ }
+  AlgebraTensorModule.lift ((LinearMap.ringLmapEquivSelf S ℕ (M →ₗ[R] V)).symm f')
+
+private theorem liftBaseChangeLinear_tmul (f : M →ₛₗ[σ.comp (algebraMap R S)] V) (s : S)
+    (m : M) : liftBaseChangeLinear f (s ⊗ₜ[R] m) = σ s • f m := by
+  let _ : Module S V := Module.compHom V σ
+  let _ : Module R V := Module.compHom V (σ.comp (algebraMap R S))
+  have _ : IsScalarTower R S V := compHomIsScalarTower R S T V σ
+  have _ : SMulCommClass R S V := compHomSMulCommClass R S T V σ
+  dsimp only [liftBaseChangeLinear]
+  rw [AlgebraTensorModule.lift_tmul, LinearMap.ringLmapEquivSelf_symm_apply]
+  -- Scalar multiplication under `Module.compHom V σ` is definitionally `σ s • _`.
+  rfl
+
 /-- Lift `f : M →ₛₗ[σ.comp (algebraMap R S)] V` to `(S ⊗[R] M) →ₛₗ[σ] V` via `s ⊗ₜ m ↦ σ s • f m`,
 generalizing Mathlib's linear construction `LinearMap.liftBaseChangeEquiv`. -/
 def LinearMap.liftBaseChangeSemilinear (f : M →ₛₗ[σ.comp (algebraMap R S)] V) :
     (S ⊗[R] M) →ₛₗ[σ] V :=
   letI : Module S V := Module.compHom V σ
-  letI : Module R V := Module.compHom V (σ.comp (algebraMap R S))
-  -- `Module.compHom` has no rewrite lemma for scalar multiplication, so unfold via `change`.
-  haveI : IsScalarTower R S V :=
-    ⟨fun r s v ↦ by
-      change σ (r • s) • v = σ (algebraMap R S r) • (σ s • v)
-      rw [Algebra.smul_def, map_mul, mul_smul]⟩
-  haveI : SMulCommClass R S V :=
-    ⟨fun r s v ↦ by
-      change σ (algebraMap R S r) • (σ s • v) = σ s • (σ (algebraMap R S r) • v)
-      rw [← mul_smul, ← mul_smul, ← map_mul, ← map_mul, Algebra.commutes]⟩
-  let f' : M →ₗ[R] V := { toFun := f, map_add' := f.map_add, map_smul' := f.map_smulₛₗ }
-  let g : S →ₗ[S] M →ₗ[R] V := (LinearMap.ringLmapEquivSelf S ℕ (M →ₗ[R] V)).symm f'
-  let L := AlgebraTensorModule.lift g
-  { toFun := L, map_add' := L.map_add, map_smul' := L.map_smul }
+  { toFun := liftBaseChangeLinear f
+    map_add' := (liftBaseChangeLinear f).map_add
+    map_smul' := (liftBaseChangeLinear f).map_smul }
 
 @[simp]
 theorem LinearMap.liftBaseChangeSemilinear_tmul (f : M →ₛₗ[σ.comp (algebraMap R S)] V) (s : S)
-    (m : M) : f.liftBaseChangeSemilinear (s ⊗ₜ[R] m) = σ s • f m := by
-  let : Module S V := Module.compHom V σ
-  let : Module R V := Module.compHom V (σ.comp (algebraMap R S))
-  have : IsScalarTower R S V :=
-    ⟨fun r s v ↦ by
-      change σ (r • s) • v = σ (algebraMap R S r) • (σ s • v)
-      rw [Algebra.smul_def, map_mul, mul_smul]⟩
-  have : SMulCommClass R S V :=
-    ⟨fun r s v ↦ by
-      change σ (algebraMap R S r) • (σ s • v) = σ s • (σ (algebraMap R S r) • v)
-      rw [← mul_smul, ← mul_smul, ← map_mul, ← map_mul, Algebra.commutes]⟩
-  dsimp only [liftBaseChangeSemilinear, LinearMap.coe_mk, AddHom.coe_mk]
-  rw [AlgebraTensorModule.lift_tmul, LinearMap.ringLmapEquivSelf_symm_apply]
-  -- Scalar multiplication under `Module.compHom V σ` is definitionally `σ s • _`.
-  rfl
+    (m : M) : f.liftBaseChangeSemilinear (s ⊗ₜ[R] m) = σ s • f m :=
+  liftBaseChangeLinear_tmul f s m
 
 /-- Two `σ`-semilinear maps out of `S ⊗[R] M` are equal if they agree on every `1 ⊗ₜ[R] m`. -/
 theorem LinearMap.ext_one_tmul {g₁ g₂ : (S ⊗[R] M) →ₛₗ[σ] V}
@@ -264,6 +287,17 @@ theorem AddMonoidHom.apply_liftBaseChangeSemilinear (f : X →+ V) (σ : S →+*
     (hF : ∀ x : X, F (f x) = σ (φ (1 ⊗ₜ[ℤ] x))) (z : S ⊗[ℤ] X) :
     F (f.liftBaseChangeSemilinear σ z) = σ (φ z) :=
   LinearMap.apply_liftBaseChangeSemilinear _ F φ hF z
+
+/-- Evaluating `F : V →ₗ[T] T` on `f.liftBaseChangeSemilinear σ z` agrees with
+`σ (Module.Dual.baseChange S φ z)` whenever `F` agrees with an integral linear form `φ` on
+`f(X)`. -/
+theorem AddMonoidHom.apply_liftBaseChangeSemilinear_baseChange {S T X V : Type*}
+    [CommRing S] [Ring T] [AddCommGroup X] [AddCommGroup V] [Module T V]
+    (f : X →+ V) (σ : S →+* T) (F : V →ₗ[T] T) (φ : Module.Dual ℤ X)
+    (hF : ∀ x : X, F (f x) = (φ x : T)) (z : S ⊗[ℤ] X) :
+    F (f.liftBaseChangeSemilinear σ z) = σ (Module.Dual.baseChange S φ z) :=
+  f.apply_liftBaseChangeSemilinear σ F (Module.Dual.baseChange S φ)
+    (fun x ↦ by rw [Module.Dual.baseChange_apply_one_tmul, eq_intCast, map_intCast, hF x]) z
 
 end AddMonoidHomSemilinear
 

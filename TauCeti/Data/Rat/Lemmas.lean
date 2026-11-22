@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Algebra.Order.Field.Rat
 public import Mathlib.Algebra.Order.Ring.Abs
 public import Mathlib.Data.Rat.Lemmas
 public import Mathlib.Data.Set.Insert
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Rat.Cast.CharZero
 import Mathlib.Tactic.NormNum
 
 /-!
@@ -15,8 +19,9 @@ import Mathlib.Tactic.NormNum
 
 This module records elementary rational-number lemmas complementing `Mathlib.Data.Rat.Lemmas`:
 the numerator formula `Rat.add_intCast_num` for shifting a rational by an integer (the numerator
-counterpart to Mathlib's `Rat.add_intCast_den`), and the height-one characterization
-`Rat.abs_num_le_one_and_den_le_one_iff`.
+counterpart to Mathlib's `Rat.add_intCast_den`), the height-one characterization
+`Rat.abs_num_le_one_and_den_le_one_iff`, and positivity and monotonicity of the rational cast into
+partially ordered fields (`Rat.cast_pos_of_partialOrder`, `Rat.cast_mono_of_partialOrder`).
 -/
 
 public section
@@ -39,5 +44,26 @@ theorem abs_num_le_one_and_den_le_one_iff {q : ℚ} :
     rcases (by omega : q.num = -1 ∨ q.num = 0 ∨ q.num = 1) with h | h | h <;> simp [h]
   · simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
     rintro (rfl | rfl | rfl) <;> norm_num
+
+/-- Casting a positive rational into a partially ordered strictly ordered field with
+`PosMulReflectLT` preserves strict positivity. -/
+theorem cast_pos_of_partialOrder {K : Type*} [Field K] [PartialOrder K]
+    [IsStrictOrderedRing K] [PosMulReflectLT K] {q : ℚ} (hq : 0 < q) : (0 : K) < q := by
+  rw [Rat.cast_def]
+  obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le (Rat.num_pos.mpr hq).le
+  have hn0 : 0 < n := Int.natCast_pos.mp (hn ▸ Rat.num_pos.mpr hq)
+  rw [hn, Int.cast_natCast]
+  exact div_pos (Nat.cast_pos.mpr hn0) (Nat.cast_pos.mpr q.pos)
+
+/-- Casting from `ℚ` into a partially ordered strictly ordered field with `PosMulReflectLT` is
+monotone. -/
+theorem cast_mono_of_partialOrder {K : Type*} [Field K] [PartialOrder K]
+    [IsStrictOrderedRing K] [PosMulReflectLT K] : Monotone ((↑) : ℚ → K) := by
+  intro p q hpq
+  rcases hpq.eq_or_lt with rfl | hlt
+  · rfl
+  · have hpos : (0 : K) < ((q - p : ℚ) : K) := cast_pos_of_partialOrder (sub_pos.mpr hlt)
+    rw [Rat.cast_sub, sub_pos] at hpos
+    exact hpos.le
 
 end Rat

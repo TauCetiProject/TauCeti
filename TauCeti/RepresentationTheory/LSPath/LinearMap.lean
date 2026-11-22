@@ -10,9 +10,11 @@ public import TauCeti.RepresentationTheory.LSPath.RootOperator
 /-!
 # Root operators under linear and semilinear maps
 
-This file proves naturality of `PLPath.minHeight`, `PLPath.lower`, and `PLPath.raise` under
-semilinear maps `g : V →ₛₗ[σ] W` along a monotone ring homomorphism `σ : 𝕜 →+* 𝕜'` intertwining the
-height forms (`f' (g v) = σ (f v)`), and specializes to `σ = RingHom.id 𝕜` for linear maps.
+This file proves naturality of `PLPath.lower` and `PLPath.raise` (extending the minimum-height
+naturality in `TauCeti.RepresentationTheory.LSPath.RootOperator`) under semilinear maps
+`g : V →ₛₗ[σ] W` along a monotone ring homomorphism `σ : 𝕜 →+* 𝕜'` carrying the source root `x` to
+the target root `g x` and intertwining the height forms (`f' (g v) = σ (f v)`), and specializes to
+`σ = RingHom.id 𝕜` for linear maps.
 
 ## References
 

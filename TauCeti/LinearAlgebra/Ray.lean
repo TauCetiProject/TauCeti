@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Ray
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 import Mathlib.Order.Preorder.Finite
+import Mathlib.RingTheory.SimpleRing.DivisionRing
 import TauCeti.Algebra.GroupWithZero.Action.Basic
 
 /-!
@@ -89,23 +90,27 @@ end Semiring
 
 section Semilinear
 
-variable {R R' M N : Type*} [Field R] [PartialOrder R] [IsStrictOrderedRing R]
-  [AddCommGroup M] [Module R M] [CommSemiring R'] [PartialOrder R'] [IsStrictOrderedRing R']
-  [AddCommGroup N] [Module R' N] {σ : R →+* R'}
-
-/-- A semilinear map along a monotone ring homomorphism preserves the same-ray relation. -/
-theorem SameRay.mapSemilinear {x y : M} (h : SameRay R x y) (g : M →ₛₗ[σ] N) (hσ : Monotone σ) :
+/-- A semilinear map over ordered commutative semirings whose scalar homomorphism preserves strict
+positivity preserves the same-ray relation. -/
+theorem SameRay.mapSemilinear_of_pos {R R' M N : Type*} [CommSemiring R] [PartialOrder R]
+    [IsStrictOrderedRing R] [CommSemiring R'] [PartialOrder R'] [IsStrictOrderedRing R']
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R' N] {σ : R →+* R'} {x y : M}
+    (h : SameRay R x y) (g : M →ₛₗ[σ] N) (hσ : ∀ r : R, 0 < r → 0 < σ r) :
     SameRay R' (g x) (g y) := by
   rcases h with rfl | rfl | ⟨r₁, r₂, hr₁, hr₂, heq⟩
   · simp
   · simp
-  · have hσ_pos {r : R} (hr : 0 < r) : 0 < σ r := by
-      refine lt_of_le_of_ne (by simpa only [map_zero] using hσ hr.le) ?_
-      intro h0
-      have h1 : σ r * σ r⁻¹ = 1 := by rw [← map_mul, mul_inv_cancel₀ hr.ne', map_one]
-      simp [← h0] at h1
-    exact Or.inr (Or.inr ⟨σ r₁, σ r₂, hσ_pos hr₁, hσ_pos hr₂,
+  · exact Or.inr (Or.inr ⟨σ r₁, σ r₂, hσ r₁ hr₁, hσ r₂ hr₂,
       by rw [← map_smulₛₗ, ← map_smulₛₗ, heq]⟩)
+
+/-- A semilinear map from a partially ordered field to a strictly ordered semiring along a monotone
+ring homomorphism preserves the same-ray relation. -/
+theorem SameRay.mapSemilinear {R R' M N : Type*} [Field R] [PartialOrder R] [IsStrictOrderedRing R]
+    [AddCommMonoid M] [Module R M] [CommSemiring R'] [PartialOrder R'] [IsStrictOrderedRing R']
+    [AddCommMonoid N] [Module R' N] {σ : R →+* R'} {x y : M} (h : SameRay R x y) (g : M →ₛₗ[σ] N)
+    (hσ : Monotone σ) : SameRay R' (g x) (g y) :=
+  h.mapSemilinear_of_pos g fun _ hr ↦ by
+    simpa only [map_zero] using hσ.strictMono_of_injective σ.injective hr
 
 end Semilinear
 
