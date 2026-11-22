@@ -18,9 +18,9 @@ function on such a ball. This bundled function supplies the integrand in Pietsch
 
 Evaluation at a vector is itself a continuous function on such a ball, and
 `WeakDual.evalClosedBall` bundles `x ↦ (φ ↦ φ x)` as a bounded operator from `E` into the
-continuous functions on the ball of radius `r`, of norm at most `r` when `0 ≤ r`. On the unit
-ball it is the canonical map of `E` into `C(B, 𝕜)` through which Pietsch factorization passes to
-`Lᵖ`.
+continuous functions on the ball of radius `r`, of norm at most `max r 0` (so at most `r` when
+`0 ≤ r`). On the unit ball it is the canonical map of `E` into `C(B, 𝕜)` through which Pietsch
+factorization passes to `Lᵖ`.
 -/
 
 public section
@@ -73,10 +73,11 @@ theorem evalClosedBall_apply_apply (r : ℝ) (x : E)
     evalClosedBall r x φ = (φ : WeakDual 𝕜 E) x := by
   simp [evalClosedBall]
 
-/-- Evaluation on the dual ball of radius `r ≥ 0` has operator norm at most `r`. -/
-theorem norm_evalClosedBall_le {r : ℝ} (hr : 0 ≤ r) :
-    ‖evalClosedBall (𝕜 := 𝕜) (E := E) r‖ ≤ r := by
+/-- Evaluation on the dual ball of radius `r` has operator norm at most `max r 0`, so at most `r`
+when `0 ≤ r`; for `r < 0` the ball is empty and the operator is `0`. -/
+theorem norm_evalClosedBall_le (r : ℝ) :
+    ‖evalClosedBall (𝕜 := 𝕜) (E := E) r‖ ≤ max r 0 := by
   rw [evalClosedBall]
-  exact (LinearMap.mkContinuous_norm_le _ (le_max_right r 0) _).trans_eq (max_eq_left hr)
+  exact LinearMap.mkContinuous_norm_le _ (le_max_right r 0) _
 
 end WeakDual
