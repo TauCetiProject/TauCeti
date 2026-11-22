@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Module.LinearMap.Index
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import TauCeti.LinearAlgebra.Quotient.Prod
+public import TauCeti.LinearAlgebra.TensorProduct.Quotient
+public import Mathlib.RingTheory.Flat.Equalizer
 
 import TauCeti.LinearAlgebra.Prod
 
@@ -29,6 +31,14 @@ It also compares the kernels, cokernels and indices of two linear maps `f : M �
 cokernel and index of an elliptic operator `H^(s+m) → H^s` from the Sobolev order `s`, where `f'`
 is the same operator `H^(t+m) → H^t` at a higher order `t` and the hypothesis is elliptic
 regularity.
+
+Finally, extending scalars from a field `K` to a nontrivial commutative `K`-algebra `A` preserves
+the dimensions of the kernel and the cokernel, and hence the index
+(`LinearMap.finrank_ker_baseChange`, `LinearMap.finrank_quotient_range_baseChange`,
+`LinearMap.index_baseChange`). The kernel of `f.baseChange A` is `A ⊗[K] ker f` because `A` is flat
+over the field `K` (`LinearMap.tensorKerEquiv`), and its cokernel is `A ⊗[K] (N ⧸ range f)` by right
+exactness (`LinearMap.cokernelBaseChangeEquiv`). For `K = ℝ` and `A = ℂ` this says that a real
+linear map and its complexification have the same index.
 
 These lemmas are absent from `Mathlib.Algebra.Module.LinearMap.Index` and support the
 continuous-linear-map results in `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
@@ -196,5 +206,36 @@ lemma index_restrictScalars (f : M →ₗ[L] N) :
   ring
 
 end RestrictScalars
+
+section BaseChange
+
+open Module
+open scoped TensorProduct
+
+variable {K : Type*} (A : Type*) {M N : Type*} [Field K] [CommRing A] [Nontrivial A]
+  [Algebra K A] [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
+
+/-- Extending scalars from a field preserves the dimension of the kernel: the kernel of
+`f.baseChange A` is `A ⊗[K] ker f`. No finiteness hypothesis is needed: an infinite-dimensional
+kernel has `finrank` zero on both sides. -/
+theorem finrank_ker_baseChange (f : M →ₗ[K] N) :
+    finrank A (ker (f.baseChange A)) = finrank K (ker f) :=
+  (tensorKerEquiv A A f).finrank_eq.symm.trans finrank_baseChange
+
+/-- Extending scalars from a field preserves the dimension of the cokernel: the cokernel of
+`f.baseChange A` is `A ⊗[K] (N ⧸ range f)`. No finiteness hypothesis is needed: an
+infinite-dimensional cokernel has `finrank` zero on both sides. -/
+theorem finrank_quotient_range_baseChange (f : M →ₗ[K] N) :
+    finrank A ((A ⊗[K] N) ⧸ range (f.baseChange A)) = finrank K (N ⧸ range f) :=
+  (f.cokernelBaseChangeEquiv (S := A)).finrank_eq.symm.trans finrank_baseChange
+
+/-- Extending scalars from a field to a nontrivial commutative algebra preserves the index. For
+instance a real linear map and its complexification have the same index. -/
+@[simp]
+theorem index_baseChange (f : M →ₗ[K] N) : (f.baseChange A).index = f.index := by
+  rw [index_eq_finrank_sub, index_eq_finrank_sub, finrank_ker_baseChange,
+    finrank_quotient_range_baseChange]
+
+end BaseChange
 
 end LinearMap
