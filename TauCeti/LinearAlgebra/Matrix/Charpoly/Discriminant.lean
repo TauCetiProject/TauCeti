@@ -6,18 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Basic
-public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.Algebra.MvPolynomial.Eval
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
-# The characteristic discriminant along a real-linear family of matrices
+# The characteristic discriminant along a linear family of matrices
 
-The entries of a real-linear family of real or complex matrices are linear in the parameters,
-so the characteristic discriminant is a polynomial in them. Every real-linear functional of it,
-such as its real part, is therefore a real polynomial
+Let `S` be a commutative `R`-algebra. The entries of an `R`-linear family of matrices over `S`
+are linear in the parameters, so the characteristic discriminant is a polynomial in them with
+coefficients in `S`. Every `R`-linear functional `S → R` of it, such as the real part when `S` is
+`ℂ` and `R` is `ℝ`, is therefore a polynomial over `R`
 (`Matrix.exists_eval_eq_linearMap_charpoly_discr`). Its zero locus contains the matrices with a
 repeated characteristic root.
 
@@ -29,24 +29,26 @@ public section
 
 namespace Matrix
 
-variable {ι 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [RCLike 𝕜]
+variable {ι R S : Type*} [Fintype ι] [DecidableEq ι] [CommSemiring R] [CommRing S] [Algebra R S]
 
-/-- Along a real-linear family of matrices, every real-linear functional of the characteristic
-discriminant is a real polynomial in the parameters. -/
+/-- Along an `R`-linear family of matrices over an `R`-algebra `S`, every `R`-linear functional of
+the characteristic discriminant is a polynomial over `R` in the parameters. -/
 theorem exists_eval_eq_linearMap_charpoly_discr {κ : Type*} [Finite κ]
-    (L : (κ → ℝ) →ₗ[ℝ] Matrix ι ι 𝕜) (f : 𝕜 →ₗ[ℝ] ℝ) :
-    ∃ q : MvPolynomial κ ℝ, ∀ x : κ → ℝ,
+    (L : (κ → R) →ₗ[R] Matrix ι ι S) (f : S →ₗ[R] R) :
+    ∃ q : MvPolynomial κ R, ∀ x : κ → R,
       MvPolynomial.eval x q = f (L x).charpoly.discr := by
   classical
   let _ := Fintype.ofFinite κ
-  let M : Matrix ι ι (MvPolynomial κ 𝕜) := of fun i j ↦
+  let M : Matrix ι ι (MvPolynomial κ S) := of fun i j ↦
     ∑ k, MvPolynomial.C (L (fun l ↦ if k = l then 1 else 0) i j) * MvPolynomial.X k
   obtain ⟨q, hq⟩ := MvPolynomial.exists_eval_eq_linearMap f M.charpoly.discr
   refine ⟨q, fun x ↦ ?_⟩
-  have hM : M.map (MvPolynomial.eval (algebraMap ℝ 𝕜 ∘ x)) = L x := by
+  have hM : M.map (MvPolynomial.eval (algebraMap R S ∘ x)) = L x := by
     rw [L.pi_apply_eq_sum_univ x]
     ext i j
-    simp [M, RCLike.real_smul_eq_coe_mul, mul_comm]
+    simp only [M, map_apply, of_apply, map_sum, map_mul, MvPolynomial.eval_C, MvPolynomial.eval_X,
+      Function.comp_apply, Matrix.sum_apply, Matrix.smul_apply]
+    simp only [Algebra.smul_def, mul_comm]
   rw [← hM, charpoly_map, M.charpoly_monic.discr_map]
   exact hq x
 

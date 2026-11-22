@@ -9,8 +9,9 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Analysis.Matrix.SkewAdjoint
-import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
+import Mathlib.Analysis.Calculus.FDeriv.Star
 
 /-!
 # The unitary exponential of strict upper coordinates
@@ -20,8 +21,10 @@ unitary matrix. This parametrizes the unitary frames transverse to the diagonal 
 subgroup near the identity. The underlying matrix is smooth in the coordinates, and its
 derivative at zero is the skew-adjoint extension itself.
 
-The angular differential `TauCeti.spectralAngularFDeriv` differentiates the strict upper
-entries of the frame relative to the frame at a base angle. At zero angle it is the identity.
+The relative frame `TauCeti.relativeFrame a b` is the frame at angle `b` seen from the frame at
+the base angle `a`. It is smooth in `b`, and its derivative at `b = a` is skew-adjoint. The
+angular differential `TauCeti.spectralAngularFDeriv` differentiates the strict upper entries of
+the relative frame at the base angle. At zero angle it is the identity.
 
 These are the angular coordinates of the spectral change of variables in Anderson, Guionnet
 and Zeitouni, *An Introduction to Random Matrices* (2010), proof of Theorem 2.5.2 and §4.1.
@@ -54,19 +57,37 @@ theorem coe_expStrictUpper (x : FinStrictUpper n → 𝕜) :
   apply Subtype.ext
   simp [coe_expStrictUpper]
 
+/-- The unitary frame at angle `b` relative to the frame at the base angle `a`. -/
+def relativeFrame (a b : FinStrictUpper n → 𝕜) : unitaryGroup (Fin n) 𝕜 :=
+  star (expStrictUpper a) * expStrictUpper b
+
+/-- A frame relative to itself is the identity. -/
+@[simp] theorem relativeFrame_self (a : FinStrictUpper n → 𝕜) : relativeFrame a a = 1 := by
+  simp [relativeFrame]
+
+/-- The matrix underlying the relative frame. -/
+theorem coe_relativeFrame (a b : FinStrictUpper n → 𝕜) :
+    (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜) =
+      star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜) *
+        (expStrictUpper b : Matrix (Fin n) (Fin n) 𝕜) := (rfl)
+
+/-- The base frame followed by the relative frame is the frame at the target angle. -/
+theorem expStrictUpper_mul_relativeFrame (a b : FinStrictUpper n → 𝕜) :
+    expStrictUpper a * relativeFrame a b = expStrictUpper b := by
+  simp [relativeFrame, ← mul_assoc]
+
 /-- The differential of the angular coordinates in the moving unitary frame.
 The differential is taken at the base angle, where the relative frame is the identity. -/
 def spectralAngularFDeriv (a : FinStrictUpper n → 𝕜) :
     (FinStrictUpper n → 𝕜) →L[ℝ] (FinStrictUpper n → 𝕜) :=
-  fderiv ℝ (fun b ij ↦ (star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜) *
-    (expStrictUpper b : Matrix (Fin n) (Fin n) 𝕜)) ij.val.1 ij.val.2) a
+  fderiv ℝ (fun b ij ↦ (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜) ij.val.1 ij.val.2) a
 
 /-- The angular differential is the derivative of the strict upper entries of the unitary
 frame relative to the frame at the base angle. -/
 theorem spectralAngularFDeriv_def (a : FinStrictUpper n → 𝕜) :
     spectralAngularFDeriv a =
-      fderiv ℝ (fun b ij ↦ (star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜) *
-        (expStrictUpper b : Matrix (Fin n) (Fin n) 𝕜)) ij.val.1 ij.val.2) a := (rfl)
+      fderiv ℝ (fun b ij ↦ (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜) ij.val.1 ij.val.2) a :=
+  (rfl)
 
 section Differentiation
 
@@ -97,20 +118,40 @@ theorem hasFDerivAt_expStrictUpper_zero :
   rw [ContinuousLinearMap.id_comp] at hh
   exact hh.congr_of_eventuallyEq (Filter.Eventually.of_forall coe_expStrictUpper)
 
+/-- The underlying matrix of the relative frame is smooth in the target angle. -/
+theorem contDiff_relativeFrame (a : FinStrictUpper n → 𝕜) {k : WithTop ℕ∞} :
+    ContDiff ℝ k (fun b ↦ (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)) := by
+  simp only [coe_relativeFrame]
+  exact contDiff_const.mul contDiff_expStrictUpper
+
+/-- At the base angle, the derivative of the relative frame is skew-adjoint. -/
+theorem star_fderiv_relativeFrame (a v : FinStrictUpper n → 𝕜) :
+    star (fderiv ℝ (fun b ↦ (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)) a v) =
+      -(fderiv ℝ (fun b ↦ (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)) a v) := by
+  let F (b : FinStrictUpper n → 𝕜) := (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)
+  let L := fderiv ℝ F a
+  have hF : HasFDerivAt F L a :=
+    ((contDiff_relativeFrame a (k := 1)).differentiable one_ne_zero a).hasFDerivAt
+  have hu : (fun b ↦ F b * star (F b)) = fun _ ↦ (1 : Matrix (Fin n) (Fin n) 𝕜) :=
+    funext fun b ↦ Unitary.coe_mul_star_self (relativeFrame a b)
+  have he := hF.fun_mul' hF.star
+  rw [hu] at he
+  have hv := DFunLike.congr_fun (he.unique (hasFDerivAt_const _ _)) v
+  have h1 : F a = 1 := by simp [F]
+  simpa [L, F, h1, eq_neg_iff_add_eq_zero, add_comm] using hv
+
 /-- Each entry of the angular differential is the derivative of the corresponding strict upper
 entry of the frame relative to the frame at the base angle. -/
 theorem spectralAngularFDeriv_apply (a v : FinStrictUpper n → 𝕜) (ij : FinStrictUpper n) :
     spectralAngularFDeriv a v ij =
-      fderiv ℝ (fun b ↦ star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜) *
-        (expStrictUpper b : Matrix (Fin n) (Fin n) 𝕜)) a v ij.val.1 ij.val.2 := by
+      fderiv ℝ (fun b ↦ (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)) a v
+        ij.val.1 ij.val.2 := by
   let read : Matrix (Fin n) (Fin n) 𝕜 →L[ℝ] (FinStrictUpper n → 𝕜) :=
     (LinearMap.pi fun ij : FinStrictUpper n ↦
       Matrix.entryLinearMap ℝ 𝕜 ij.val.1 ij.val.2).toContinuousLinearMap
-  have hF := ((contDiff_expStrictUpper (n := n) (𝕜 := 𝕜) (k := 1)).differentiable one_ne_zero
-    a).const_mul (star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜)) |>.hasFDerivAt
+  have hF := ((contDiff_relativeFrame a (k := 1)).differentiable one_ne_zero a).hasFDerivAt
   have he : spectralAngularFDeriv a = read.comp (fderiv ℝ (fun b ↦
-      star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜) *
-        (expStrictUpper b : Matrix (Fin n) (Fin n) 𝕜)) a) := by
+      (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)) a) := by
     rw [spectralAngularFDeriv_def]
     exact (read.hasFDerivAt.comp a hF).fderiv
   rw [he, ContinuousLinearMap.comp_apply]
@@ -120,9 +161,11 @@ theorem spectralAngularFDeriv_apply (a v : FinStrictUpper n → 𝕜) (ij : FinS
 @[simp] theorem spectralAngularFDeriv_zero :
     spectralAngularFDeriv (0 : FinStrictUpper n → 𝕜) = ContinuousLinearMap.id ℝ _ := by
   refine ContinuousLinearMap.ext fun v ↦ funext fun ij ↦ ?_
-  rw [spectralAngularFDeriv_apply, expStrictUpper_zero, OneMemClass.coe_one, star_one]
-  simp only [Matrix.one_mul]
-  rw [hasFDerivAt_expStrictUpper_zero.fderiv, skewAdjointOfStrictUpper_apply_of_lt _ ij.property]
+  have h : (fun b ↦ (relativeFrame (0 : FinStrictUpper n → 𝕜) b : Matrix (Fin n) (Fin n) 𝕜)) =
+      fun b ↦ (expStrictUpper b : Matrix (Fin n) (Fin n) 𝕜) :=
+    funext fun b ↦ by simp [relativeFrame]
+  rw [spectralAngularFDeriv_apply, h, hasFDerivAt_expStrictUpper_zero.fderiv,
+    skewAdjointOfStrictUpper_apply_of_lt _ ij.property]
   rfl
 
 end Differentiation

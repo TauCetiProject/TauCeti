@@ -114,47 +114,11 @@ private theorem diagonalRealL_isHermitian (d : Fin n → ℝ) :
   rw [diagonalRealL_apply]
   exact isHermitian_diagonal_of_self_adjoint _ (by ext i; simp)
 
-/-- The relative unitary frame based at a given angle. -/
-private def relativeFrame (a b : FinStrictUpper n → 𝕜) : unitaryGroup (Fin n) 𝕜 :=
-  star (expStrictUpper a) * expStrictUpper b
-
-@[simp] private theorem relativeFrame_self (a : FinStrictUpper n → 𝕜) : relativeFrame a a = 1 := by
-  simp [relativeFrame]
-
-private theorem coe_relativeFrame (a b : FinStrictUpper n → 𝕜) :
-    (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜) =
-      star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜) *
-        (expStrictUpper b : Matrix (Fin n) (Fin n) 𝕜) := (rfl)
-
-private theorem expStrictUpper_mul_relativeFrame (a b : FinStrictUpper n → 𝕜) :
-    expStrictUpper a * relativeFrame a b = expStrictUpper b := by
-  simp [relativeFrame, ← mul_assoc]
-
 section Differentiation
 
 open scoped Matrix.Norms.L2Operator
 
 attribute [local instance] Matrix.l2OpNormedAlgebraReal
-
-private theorem contDiff_relativeFrame (a : FinStrictUpper n → 𝕜) {k : WithTop ℕ∞} :
-    ContDiff ℝ k (fun b ↦ (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)) := by
-  simp only [coe_relativeFrame]
-  exact contDiff_const.mul contDiff_expStrictUpper
-
-private theorem star_fderiv_relativeFrame (a v : FinStrictUpper n → 𝕜) :
-    star (fderiv ℝ (fun b ↦ (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)) a v) =
-      -(fderiv ℝ (fun b ↦ (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)) a v) := by
-  let F (b : FinStrictUpper n → 𝕜) := (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)
-  let L := fderiv ℝ F a
-  have hF : HasFDerivAt F L a :=
-    ((contDiff_relativeFrame a (k := 1)).differentiable one_ne_zero a).hasFDerivAt
-  have hu : (fun b ↦ F b * star (F b)) = fun _ ↦ (1 : Matrix (Fin n) (Fin n) 𝕜) :=
-    funext fun b ↦ Unitary.coe_mul_star_self (relativeFrame a b)
-  have he := hF.fun_mul' hF.star
-  rw [hu] at he
-  have hv := DFunLike.congr_fun (he.unique (hasFDerivAt_const _ _)) v
-  have h1 : F a = 1 := by simp [F]
-  simpa [L, F, h1, eq_neg_iff_add_eq_zero, add_comm] using hv
 
 /-- Differentiate the conjugation in the frame in which the base matrix is diagonal. -/
 private theorem hasFDerivAt_spectralCoordinates_relative (x : SelfAdjointCoordinates n 𝕜) :
