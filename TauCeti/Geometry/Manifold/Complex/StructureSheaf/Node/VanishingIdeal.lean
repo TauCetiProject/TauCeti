@@ -53,12 +53,6 @@ namespace TauCeti.holomorphicStructureSheaf
 
 variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- Any representative `S` of a holomorphic germ `s` at `b` is continuous at `b`. -/
-private theorem continuousAt_of_toFilterGerm_eq {b : E}
-    {s : (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk b} {S : E → ℂ}
-    (hS : toFilterGerm 𝓘(ℂ, E) E b (𝓝 b) le_rfl s = S) : ContinuousAt S b :=
-  (exists_toFilterGerm_nhds_eq_iff.1 ⟨s, hS⟩).self_of_nhds.continuousAt
-
 /-! ### The vanishing ideal at the node -/
 
 /-- Over a point `(b, v)` near `(b₀, 0)`, both square roots `u` of `v² + S(b)` are small. If
