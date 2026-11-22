@@ -106,6 +106,12 @@ theorem const_mem_cyclicDistanceCut {δ : Fin (n + 1) → ℝ} (hδ : 0 ≤ δ) 
     (fun _ ↦ x) ∈ cyclicDistanceCut δ :=
   fun i ↦ by simpa using hδ i
 
+/-- If every point of a cyclic tuple is at distance less than `r` from the preceding one, it is at
+distance less than `r` from the next one. -/
+theorem dist_add_one_lt_of_forall_dist_sub_one_lt {r : ℝ} {q : Fin (n + 1) → X}
+    (h : ∀ i, dist (q i) (q (i - 1)) < r) (i : Fin (n + 1)) : dist (q i) (q (i + 1)) < r := by
+  simpa only [add_sub_cancel_right, dist_comm] using h (i + 1)
+
 /-- **Repeating the first vertex maps one distance cut into another.** The tuple
 `(q₀, q₀, q₁, …, qₙ)` has the closing edge `(q₀, qₙ)` of `q` at the vertex `0`, a new edge of
 length zero at the vertex `1`, and the edge of `q` at the vertex `i` at the vertex `i + 1`

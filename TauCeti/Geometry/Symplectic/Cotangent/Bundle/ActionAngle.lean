@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Translate
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 
 import TauCeti.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Symplectic.Darboux.Momenta
 
 /-!
 # Action–angle coordinates on the cotangent bundle of a torus
@@ -285,9 +286,8 @@ theorem isLocalDiffeomorph_actionAngleCover :
     (eval₂_symplecticForm_mfderiv_actionAngleCover p x v w).symm.trans (by
       rw [hv, eval₂_symplecticForm]
       exact LinearMap.map_zero₂ _ _)
-  have h₁ : v.1 = 0 := funext fun i ↦ by simpa [Pi.single_apply] using h (0, Pi.single i 1)
-  have h₂ : v.2 = 0 := funext fun i ↦ by simpa [Pi.single_apply] using h (Pi.single i 1, 0)
-  exact Prod.ext h₁ h₂
+  exact eq_of_forall_sum_mul_sub_mul_eq (c := (0 : (ι → ℝ) × (ι → ℝ))) fun w ↦ by
+    simpa using h w
 
 end CotangentBundle
 

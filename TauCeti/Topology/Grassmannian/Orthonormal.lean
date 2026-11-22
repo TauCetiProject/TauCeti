@@ -44,10 +44,11 @@ The unitary group `Matrix.unitaryGroup (Fin N) 𝕜` of the ambient space also a
 frames, by applying a matrix to each vector of the frame
 (`TauCeti.finiteOrthonormalFrame.unitaryMap`); this action commutes with the change of frame. It
 is the definition `TauCeti.finiteOrthonormalFrame.unitaryMulAction` rather than an instance, since
-for `r = N` the two actions would be actions of the same group; over `ℝ` it restricts to the
+for `r = N` the two actions would be actions of the same group; it restricts to the special
+unitary group (`TauCeti.finiteOrthonormalFrame.specialUnitaryMulAction`) and, over `ℝ`, to the
 special orthogonal group (`TauCeti.finiteOrthonormalFrame.specialOrthogonalMulAction`). The
 standard orthonormal frame `(e₀, …, e_{r-1})` is `TauCeti.finiteOrthonormalFrame.standard`.
-A real orthonormal one-frame is the same as a unit vector
+An orthonormal one-frame is the same as a unit vector
 (`TauCeti.finiteOrthonormalFrame.sphereHomeomorph`).
 
 The comparison of the frame-quotient description of Grassmannians with orthonormal frames follows
@@ -242,14 +243,38 @@ abbrev unitaryMulAction : MulAction (unitaryGroup (Fin N) 𝕜) (finiteOrthonorm
   one_smul := unitaryMap_one
   mul_smul := unitaryMap_mul
 
-variable (r N) in
-/-- The action of `SO(N)` on orthonormal real `r`-frames, through the orthogonal group. Like
+variable (𝕜 r N) in
+/-- The action of `SU(N)` on orthonormal `r`-frames, through the unitary group. Like
 `unitaryMulAction`, it is a definition rather than an instance. -/
+noncomputable abbrev specialUnitaryMulAction :
+    MulAction (specialUnitaryGroup (Fin N) 𝕜) (finiteOrthonormalFrame 𝕜 r N) :=
+  letI := unitaryMulAction 𝕜 r N
+  MulAction.compHom _ (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup)
+
+/-- Under `specialUnitaryMulAction`, a special unitary matrix acts on frames by `unitaryMap`. It is
+not a `simp` lemma: over `ℝ` it would subsume `specialOrthogonal_smul_def`. -/
+theorem specialUnitary_smul_def (A : specialUnitaryGroup (Fin N) 𝕜)
+    (f : finiteOrthonormalFrame 𝕜 r N) :
+    letI := specialUnitaryMulAction 𝕜 r N
+    A • f = unitaryMap ⟨A.val, A.property.1⟩ f :=
+  (rfl)
+
+variable (𝕜 r N) in
+/-- The action `specialUnitaryMulAction` of `SU(N)` on orthonormal frames is jointly continuous. -/
+theorem continuousSMul_specialUnitaryMulAction :
+    letI := specialUnitaryMulAction 𝕜 r N
+    ContinuousSMul (specialUnitaryGroup (Fin N) 𝕜) (finiteOrthonormalFrame 𝕜 r N) :=
+  letI := specialUnitaryMulAction 𝕜 r N
+  ⟨continuous_unitaryMap.comp
+    (((continuous_subtypeVal.subtype_mk _).comp continuous_fst).prodMk continuous_snd)⟩
+
+variable (r N) in
+/-- The action of `SO(N)` on orthonormal real `r`-frames: the action `specialUnitaryMulAction` of
+`SU(N)` over `ℝ`, since `Matrix.specialOrthogonalGroup` is `Matrix.specialUnitaryGroup` for the
+trivial star. -/
 noncomputable abbrev specialOrthogonalMulAction :
     MulAction (specialOrthogonalGroup (Fin N) ℝ) (finiteOrthonormalFrame ℝ r N) :=
-  letI := unitaryMulAction ℝ r N
-  MulAction.compHom _ (Submonoid.inclusion (S := specialOrthogonalGroup (Fin N) ℝ)
-    (T := unitaryGroup (Fin N) ℝ) fun _ hA ↦ hA.1)
+  specialUnitaryMulAction ℝ r N
 
 /-- Under `specialOrthogonalMulAction`, a special orthogonal matrix acts on frames by
 `unitaryMap`. -/
@@ -258,16 +283,14 @@ theorem specialOrthogonal_smul_def (A : specialOrthogonalGroup (Fin N) ℝ)
     (f : finiteOrthonormalFrame ℝ r N) :
     letI := specialOrthogonalMulAction r N
     A • f = unitaryMap ⟨A.val, A.property.1⟩ f :=
-  (rfl)
+  specialUnitary_smul_def A f
 
 /-- The action `specialOrthogonalMulAction` of `SO(N)` on orthonormal real frames is jointly
 continuous. -/
 theorem continuousSMul_specialOrthogonalMulAction :
     letI := specialOrthogonalMulAction r N
     ContinuousSMul (specialOrthogonalGroup (Fin N) ℝ) (finiteOrthonormalFrame ℝ r N) :=
-  letI := specialOrthogonalMulAction r N
-  ⟨continuous_unitaryMap.comp
-    (((continuous_subtypeVal.subtype_mk _).comp continuous_fst).prodMk continuous_snd)⟩
+  continuousSMul_specialUnitaryMulAction ℝ r N
 
 end UnitaryMap
 
@@ -333,15 +356,14 @@ of all frames. -/
     gramSchmidt_of_orthogonal 𝕜 fun _ _ hij ↦ f.property.2 hij
   simp [finiteFullRankFrame.coe_orthonormalize, gramSchmidtNormed, hgs, f.property.1 i]
 
-/-- An orthonormal one-frame of `ℝ^N` is the same as a unit vector of `EuclideanSpace ℝ (Fin N)`. -/
+variable (𝕜) in
+/-- An orthonormal one-frame of `𝕜^N` is the same as a unit vector of `EuclideanSpace 𝕜 (Fin N)`.
+For `𝕜 = ℂ` this identifies `V₁(ℂ^N)` with the sphere `S^(2N-1)`. -/
 def sphereHomeomorph (N : ℕ) :
-    finiteOrthonormalFrame ℝ 1 N ≃ₜ Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1 where
-  toFun f := ⟨WithLp.toLp 2 (f.val 0), by simpa using f.property.1 0⟩
-  invFun y := ⟨fun _ ↦ WithLp.ofLp (y : EuclideanSpace ℝ (Fin N)), by
-    rw [orthonormal_iff_ite]
-    intro i j
-    rw [Subsingleton.elim i j]
-    simp [norm_eq_of_mem_sphere]⟩
+    finiteOrthonormalFrame 𝕜 1 N ≃ₜ Metric.sphere (0 : EuclideanSpace 𝕜 (Fin N)) 1 where
+  toFun f := ⟨WithLp.toLp 2 (f.val 0), mem_sphere_zero_iff_norm.2 (f.property.1 0)⟩
+  invFun y := ⟨fun _ ↦ WithLp.ofLp (y : EuclideanSpace 𝕜 (Fin N)),
+    orthonormal_subsingleton_iff.2 fun _ ↦ norm_eq_of_mem_sphere y⟩
   left_inv f := Subtype.ext <| funext fun i ↦ by rw [Subsingleton.elim i 0]
   right_inv y := rfl
   continuous_toFun := Continuous.subtype_mk ((PiLp.continuous_toLp 2 _).comp
@@ -350,15 +372,25 @@ def sphereHomeomorph (N : ℕ) :
     (PiLp.continuous_ofLp 2 _).comp continuous_subtypeVal) _
 
 @[simp]
-theorem coe_sphereHomeomorph_apply {N : ℕ} (f : finiteOrthonormalFrame ℝ 1 N) :
-    (sphereHomeomorph N f : EuclideanSpace ℝ (Fin N)) = WithLp.toLp 2 (f.val 0) :=
+theorem coe_sphereHomeomorph_apply (f : finiteOrthonormalFrame 𝕜 1 N) :
+    (sphereHomeomorph 𝕜 N f : EuclideanSpace 𝕜 (Fin N)) = WithLp.toLp 2 (f.val 0) :=
   (rfl)
 
 @[simp]
-theorem coe_sphereHomeomorph_symm_apply {N : ℕ} (y : Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1)
+theorem coe_sphereHomeomorph_symm_apply (y : Metric.sphere (0 : EuclideanSpace 𝕜 (Fin N)) 1)
     (i : Fin 1) :
-    ((sphereHomeomorph N).symm y).val i = WithLp.ofLp (y : EuclideanSpace ℝ (Fin N)) :=
+    ((sphereHomeomorph 𝕜 N).symm y).val i = WithLp.ofLp (y : EuclideanSpace 𝕜 (Fin N)) :=
   (rfl)
+
+/-- There is an orthonormal `r`-frame of `𝕜^N` exactly when `r ≤ N`: the span of such a frame is
+an `r`-dimensional subspace, and the standard frame `(e₀, …, e_{r-1})` exists for `r ≤ N`. -/
+theorem nonempty_iff_le : Nonempty (finiteOrthonormalFrame 𝕜 r N) ↔ r ≤ N :=
+  ⟨fun ⟨f⟩ ↦ finiteGrassmannian.nonempty_iff_le.1 ⟨finiteGrassmannian.frameSpan f.toFullRankFrame⟩,
+    fun h ↦ ⟨standard 𝕜 h⟩⟩
+
+/-- For `N < r`, there is no orthonormal `r`-frame of `𝕜^N`. -/
+theorem isEmpty_of_lt (h : N < r) : IsEmpty (finiteOrthonormalFrame 𝕜 r N) :=
+  not_nonempty_iff.1 fun hf ↦ (nonempty_iff_le.1 hf).not_gt h
 
 end finiteOrthonormalFrame
 

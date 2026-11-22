@@ -62,13 +62,15 @@ coefficient vanishing at all large frequencies is smoothing
 `TauCeti.Symbol.isSmoothing_of_coefficient_eq_zero`), also when the radius beyond which it
 vanishes depends on the compact set of positions
 (`TauCeti.Symbol.isSmoothing_of_forall_isCompact_coefficient_eq_zero`), while in positive
-dimension a nonzero constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
+dimension a nonzero constant is not (`TauCeti.Symbol.isSmoothing_const_iff`); it is a symbol of
+no negative order (`TauCeti.Symbol.not_exists_coefficient_eq_const`).
 
-The estimates are only required locally uniformly in `x`. The predicate
-`TauCeti.Symbol.IsUniform` asks for constants independent of `x`, and
-`TauCeti.Symbol.HasCompactSpatialSupport` asks that the symbol vanish for `x` outside a fixed
-compact set. Symbols with compact spatial support are uniform
-(`TauCeti.Symbol.HasCompactSpatialSupport.isUniform`). The symbol of multiplication by `f` is
+The estimates are only required locally uniformly in `x`. The predicate `TauCeti.Symbol.IsUniform`
+asks for constants independent of `x`, and `TauCeti.Symbol.HasCompactSpatialSupport` asks that the
+symbol vanish for `x` outside a fixed compact set. Symbols with compact spatial support are uniform
+(`TauCeti.Symbol.HasCompactSpatialSupport.isUniform`), but not conversely: in positive dimension a
+nonzero constant symbol is uniform without compact spatial support
+(`TauCeti.Symbol.not_hasCompactSpatialSupport_const`). The symbol of multiplication by `f` is
 uniform exactly when all derivatives of `f` are bounded (`TauCeti.Symbol.isUniform_ofSpatial_iff`),
 so the local estimates alone do not give uniform ones: a coordinate function `x_j` is a symbol of
 order `0` that is not uniform (`TauCeti.Symbol.not_isUniform_ofSpatial_smul`).
@@ -130,54 +132,6 @@ theorem rpow_weight_le_rpow_mul_rpow_weight {t s s' : ℝ} {ξ : CoordinateSpace
   refine mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_nonpos (by positivity) ?_
     (by linarith)) (by positivity)
   nlinarith [norm_nonneg ξ]
-
-/-- **Symbol estimates for a product with a frequency cutoff.** Let `B i` bound
-`‖D^i ψ ξ‖ ⟨ξ⟩ ^ i`. If the mixed derivatives `∂ₓ^α ∂_ξ^w a` at `(x, ξ)` are bounded by
-`D w ⟨ξ⟩ ^ (m - |w|)`, then by the Leibniz rule `∂ₓ^α ∂_ξ^β (ψ(ξ) a(x, ξ))` is bounded by
-`C ⟨ξ⟩ ^ (m - |β|)`, where `C = ∑ᵢ (|β| choose i) B i ∑_{|w| = |β| - i} D w`. -/
-theorem norm_mixedDeriv_comp_snd_smul_le_mul_rpow_weight {A : Type*} [NormedAddCommGroup A]
-    [NormedSpace ℝ A] {ψ : CoordinateSpace n → ℝ} {a : CoordinateSpace n × CoordinateSpace n → A}
-    (hψ : ContDiff ℝ ∞ ψ) (ha : ContDiff ℝ ∞ a) {α : List (Fin n)} {x ξ : CoordinateSpace n}
-    {m : ℝ} {B : ℕ → ℝ}
-    (hB : ∀ i, ‖iteratedFDeriv ℝ i ψ ξ‖ * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) ≤ B i)
-    {D : List (Fin n) → ℝ}
-    (hD : ∀ w, ‖mixedDeriv α w a x ξ‖ ≤ D w * (1 + ‖ξ‖ ^ 2) ^ ((m - w.length) / 2))
-    (β : List (Fin n)) :
-    ‖mixedDeriv α β (fun p => ψ p.2 • a p) x ξ‖ ≤
-      (∑ i ∈ Finset.range (β.length + 1), (β.length.choose i : ℝ) * B i *
-        ∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
-        (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  refine (norm_mixedDeriv_comp_snd_smul_le hψ ha α β x ξ).trans ?_
-  rw [Finset.sum_mul]
-  refine Finset.sum_le_sum fun i hi => ?_
-  have hi' : i ≤ β.length := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
-  -- `⟨ξ⟩ ^ (m - (|β| - i)) = ⟨ξ⟩ ^ i * ⟨ξ⟩ ^ (m - |β|)`
-  have hw (w : Fin (β.length - i) → Fin n) :
-      (1 + ‖ξ‖ ^ 2) ^ ((m - (List.ofFn w).length) / 2) =
-        (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-    rw [← one_add_norm_sq_rpow_add, List.length_ofFn, Nat.cast_sub hi']
-    ring_nf
-  have hsum : ∑ w : Fin (β.length - i) → Fin n, ‖mixedDeriv α (List.ofFn w) a x ξ‖ ≤
-      (∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
-        ((1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) := by
-    rw [Finset.sum_mul]
-    exact Finset.sum_le_sum fun w _ => (hD _).trans_eq (by rw [hw])
-  have hS : 0 ≤ ∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w) :=
-    Finset.sum_nonneg fun w _ => nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hD _))
-      (rpow_weight_pos ξ _)
-  calc (β.length.choose i : ℝ) * ‖iteratedFDeriv ℝ i ψ ξ‖ *
-        ∑ w : Fin (β.length - i) → Fin n, ‖mixedDeriv α (List.ofFn w) a x ξ‖
-      ≤ (β.length.choose i : ℝ) * ‖iteratedFDeriv ℝ i ψ ξ‖ *
-        ((∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
-          ((1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2))) := by
-        gcongr
-    _ = (β.length.choose i : ℝ) * (‖iteratedFDeriv ℝ i ψ ξ‖ * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2)) *
-          (∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
-          (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by ring
-    _ ≤ (β.length.choose i : ℝ) * B i * (∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
-          (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-        gcongr
-        exact hB i
 
 variable (n) in
 /-- The class `S^m_{1,0}` of symbols of order `m` on `ℝⁿ × ℝⁿ` with values in `V →L[ℂ] W`: smooth
@@ -429,8 +383,7 @@ theorem IsUniform.add {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUnifor
 theorem IsUniform.smul {a : Symbol n V W m} (ha : a.IsUniform) (c : ℂ) : (c • a).IsUniform := by
   intro α β
   obtain ⟨C, hC, hCa⟩ := ha α β
-  exact ⟨‖c‖ * C, mul_nonneg (norm_nonneg c) hC, fun x ξ =>
-    norm_mixedDeriv_smul_le c (hCa x ξ)⟩
+  exact ⟨‖c‖ * C, mul_nonneg (norm_nonneg c) hC, fun x ξ => norm_mixedDeriv_smul_le c (hCa x ξ)⟩
 
 theorem IsUniform.neg {a : Symbol n V W m} (ha : a.IsUniform) : (-a).IsUniform := by
   intro α β
@@ -623,8 +576,7 @@ theorem mixedDeriv_spatialDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (
 /-- Two frequency derivatives of a symbol commute. -/
 theorem frequencyDeriv_comm (j l : Fin n) (a : Symbol n V W m) :
     frequencyDeriv j (frequencyDeriv l a) = frequencyDeriv l (frequencyDeriv j a) := by
-  ext1
-  funext ⟨x, ξ⟩
+  ext ⟨x, ξ⟩ : 2
   simp only [coefficient_frequencyDeriv]
   rw [← coordinateDeriv_append, ← coordinateDeriv_append]
   exact coordinateDeriv_pair_comm
@@ -633,8 +585,7 @@ theorem frequencyDeriv_comm (j l : Fin n) (a : Symbol n V W m) :
 /-- Two spatial derivatives of a symbol commute. -/
 theorem spatialDeriv_comm (j l : Fin n) (a : Symbol n V W m) :
     spatialDeriv j (spatialDeriv l a) = spatialDeriv l (spatialDeriv j a) := by
-  ext1
-  funext ⟨x, ξ⟩
+  ext ⟨x, ξ⟩ : 2
   simp only [coefficient_spatialDeriv]
   rw [← coordinateDeriv_append, ← coordinateDeriv_append]
   exact coordinateDeriv_pair_comm ((a.contDiff_coefficient_slice ξ).of_le (by simp)) j l x
@@ -642,8 +593,7 @@ theorem spatialDeriv_comm (j l : Fin n) (a : Symbol n V W m) :
 /-- A spatial and a frequency derivative of a symbol commute. -/
 theorem spatialDeriv_frequencyDeriv_comm (j l : Fin n) (a : Symbol n V W m) :
     spatialDeriv j (frequencyDeriv l a) = frequencyDeriv l (spatialDeriv j a) := by
-  ext1
-  funext ⟨x, ξ⟩
+  ext ⟨x, ξ⟩ : 2
   exact (coordinateDeriv_coordinateDeriv_comm a.contDiff_coefficient [j] [l] x ξ).symm
 
 /-- The position derivative of a symbol in the `j`-th coordinate direction is the coefficient of
@@ -746,16 +696,14 @@ theorem exists_norm_coefficient_add_sub_le (a : Symbol n V W m)
 @[simp]
 theorem frequencyDeriv_inclusion (j : Fin n) (h : m ≤ m') (a : Symbol n V W m) :
     frequencyDeriv j (inclusion h a) = inclusion (by linarith) (frequencyDeriv j a) := by
-  ext1
-  funext ⟨x, ξ⟩
+  ext ⟨x, ξ⟩ : 2
   simp
 
 /-- Spatial derivatives commute with the order inclusions. -/
 @[simp]
 theorem spatialDeriv_inclusion (j : Fin n) (h : m ≤ m') (a : Symbol n V W m) :
     spatialDeriv j (inclusion h a) = inclusion h (spatialDeriv j a) := by
-  ext1
-  funext ⟨x, ξ⟩
+  ext ⟨x, ξ⟩ : 2
   simp
 
 theorem IsUniform.frequencyDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin n) :
@@ -947,6 +895,13 @@ theorem isUniform_const (T : V →L[ℂ] W) : (const T : Symbol n V W 0).IsUnifo
   · simp
   · simp [coordinateDeriv_const T hα]
 
+/-- In positive dimension a nonzero constant symbol does not have compact spatial support. -/
+theorem not_hasCompactSpatialSupport_const (hn : 0 < n) {T : V →L[ℂ] W} (hT : T ≠ 0) :
+    ¬(const T : Symbol n V W 0).HasCompactSpatialSupport := by
+  have : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
+  simpa [const, hasCompactSpatialSupport_ofSpatial_iff, HasCompactSupport, tsupport,
+    Function.support_const hT] using noncompact_univ (CoordinateSpace n)
+
 variable (V) in
 /-- The symbol `ψ(x) id_V` of multiplication by a smooth real function `ψ`. -/
 def cutoff {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ) : Symbol n V V 0 :=
@@ -1022,6 +977,11 @@ variable (hb : ContDiff ℝ ∞ b)
 @[simp]
 theorem coefficient_ofFrequency (p : CoordinateSpace n × CoordinateSpace n) :
     (ofFrequency b hb hbound).coefficient p = b p.2 := (rfl)
+
+/-- A frequency-only symbol does not depend on the position. -/
+@[simp]
+theorem spatialDeriv_ofFrequency (j : Fin n) : spatialDeriv j (ofFrequency b hb hbound) = 0 :=
+  Symbol.ext <| funext fun ⟨_, _⟩ => by simp [coordinateDeriv_const _ (List.cons_ne_nil j [])]
 
 /-- A frequency-only symbol satisfies its estimates uniformly in the position. -/
 theorem isUniform_ofFrequency : (ofFrequency b hb hbound).IsUniform :=
@@ -1144,28 +1104,24 @@ theorem coefficient_comp (b : Symbol n W U m') (a : Symbol n V W m)
 
 theorem comp_add (b : Symbol n W U m') (a₁ a₂ : Symbol n V W m) :
     b.comp (a₁ + a₂) = b.comp a₁ + b.comp a₂ := by
-  ext1
-  funext p
+  ext p : 2
   simp [ContinuousLinearMap.comp_add]
 
 theorem add_comp (b₁ b₂ : Symbol n W U m') (a : Symbol n V W m) :
     (b₁ + b₂).comp a = b₁.comp a + b₂.comp a := by
-  ext1
-  funext p
+  ext p : 2
   simp [ContinuousLinearMap.add_comp]
 
 @[simp]
 theorem comp_smul (c : ℂ) (b : Symbol n W U m') (a : Symbol n V W m) :
     b.comp (c • a) = c • b.comp a := by
-  ext1
-  funext p
+  ext p : 2
   simp
 
 @[simp]
 theorem smul_comp (c : ℂ) (b : Symbol n W U m') (a : Symbol n V W m) :
     (c • b).comp a = c • b.comp a := by
-  ext1
-  funext p
+  ext p : 2
   simp [ContinuousLinearMap.smul_comp]
 
 @[simp]
@@ -1346,27 +1302,33 @@ theorem IsSmoothing.neg {a : Symbol n V W m} (ha : a.IsSmoothing) : (-a).IsSmoot
   exact ⟨-a', by simp [ha']⟩
 
 theorem IsSmoothing.sub {a b : Symbol n V W m} (ha : a.IsSmoothing) (hb : b.IsSmoothing) :
-    (a - b).IsSmoothing := by
-  rw [sub_eq_add_neg]
-  exact ha.add hb.neg
+    (a - b).IsSmoothing := by simpa only [sub_eq_add_neg] using ha.add hb.neg
 
 theorem IsSmoothing.inclusion {a : Symbol n V W m} (ha : a.IsSmoothing) (h : m ≤ m') :
     (inclusion h a).IsSmoothing :=
   fun m'' => (ha m'').imp fun _ hb => by rw [hb, coefficient_inclusion]
 
+/-- A symbol is smoothing exactly when its negative is. -/
+@[simp]
+theorem isSmoothing_neg_iff {a : Symbol n V W m} : (-a).IsSmoothing ↔ a.IsSmoothing :=
+  ⟨fun ha => neg_neg a ▸ ha.neg, IsSmoothing.neg⟩
+
+/-- Including a symbol into a higher order does not change whether it is smoothing. -/
+@[simp]
+theorem isSmoothing_inclusion_iff {a : Symbol n V W m} {h : m ≤ m'} :
+    (inclusion h a).IsSmoothing ↔ a.IsSmoothing :=
+  ⟨fun ha m'' => (ha m'').imp fun _ hb => by rw [hb, coefficient_inclusion], (·.inclusion h)⟩
+
 theorem IsSmoothing.frequencyDeriv {a : Symbol n V W m} (ha : a.IsSmoothing) (j : Fin n) :
     (frequencyDeriv j a).IsSmoothing := fun m' => by
   obtain ⟨a', ha'⟩ := ha (m' + 1)
-  refine ⟨Symbol.inclusion (by linarith) (Symbol.frequencyDeriv j a'), ?_⟩
-  funext ⟨x, ξ⟩
-  simp [ha']
+  exact ⟨Symbol.inclusion (by linarith) (Symbol.frequencyDeriv j a'),
+    funext fun ⟨x, ξ⟩ => by simp [ha']⟩
 
 theorem IsSmoothing.spatialDeriv {a : Symbol n V W m} (ha : a.IsSmoothing) (j : Fin n) :
     (spatialDeriv j a).IsSmoothing := fun m' => by
   obtain ⟨a', ha'⟩ := ha m'
-  refine ⟨Symbol.spatialDeriv j a', ?_⟩
-  funext ⟨x, ξ⟩
-  simp [ha']
+  exact ⟨Symbol.spatialDeriv j a', funext fun ⟨x, ξ⟩ => by simp [ha']⟩
 
 variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U]
 
@@ -1469,27 +1431,27 @@ theorem exists_coefficient_eq_of_forall_le_norm
   ⟨b + ofBoundedFrequencySupport (f - b.coefficient) (hf.sub b.contDiff_coefficient) R
     fun x ξ hξ => sub_eq_zero.2 (h x ξ hξ), by simp⟩
 
+/-- In positive dimension, a nonzero constant is a symbol of no negative order: along a ray of
+frequencies the weight `⟨ξ⟩ ^ m` tends to `0`, while the coefficient stays the fixed `T`. -/
+theorem not_exists_coefficient_eq_const [NeZero n] {T : V →L[ℂ] W} (hT : T ≠ 0) (hm : m < 0) :
+    ¬∃ a : Symbol n V W m, ∀ p, a.coefficient p = T := fun ⟨a, ha⟩ => by
+  obtain ⟨C, -, hC⟩ := a.exists_bound {0} isCompact_singleton [] []
+  have htend : Filter.Tendsto (fun t : ℝ ↦ C * (1 + t ^ 2) ^ (m / 2)) Filter.atTop (nhds 0) := by
+    simpa using tendsto_const_nhds.mul ((tendsto_rpow_neg_atTop (y := -(m / 2)) (by linarith)).comp
+      (Filter.tendsto_atTop_add_const_left _ 1 (Filter.tendsto_pow_atTop two_ne_zero)))
+  obtain ⟨t, ht⟩ := (htend.eventually (gt_mem_nhds (norm_pos_iff.2 hT))).exists
+  have h := hC 0 rfl (EuclideanSpace.single 0 t)
+  simp only [mixedDeriv_nil_nil, ha, List.length_nil, CharP.cast_eq_zero, sub_zero,
+    PiLp.norm_single, Real.norm_eq_abs, sq_abs] at h
+  linarith
+
 /-- In positive dimension, a nonzero constant symbol is not smoothing: it does not even have order
 `-2`. (On `ℝ⁰` every symbol is smoothing, since there `⟨ξ⟩ = 1`.) -/
 theorem isSmoothing_const_iff (hn : n ≠ 0) {T : V →L[ℂ] W} :
     (const T : Symbol n V W 0).IsSmoothing ↔ T = 0 := by
-  refine ⟨fun h => ?_, fun h => ?_⟩
-  · obtain ⟨b, hb⟩ := h (-2)
-    obtain ⟨C, hC0, hC⟩ := b.exists_bound {0} isCompact_singleton [] []
-    by_contra hT
-    have hT' : 0 < ‖T‖ := norm_pos_iff.2 hT
-    -- At a frequency with `‖ξ‖ ^ 2 = C / ‖T‖` the order `-2` bound fails.
-    let ξ : CoordinateSpace n := EuclideanSpace.single ⟨0, Nat.pos_of_ne_zero hn⟩ √(C / ‖T‖)
-    have hξ : ‖ξ‖ ^ 2 = C / ‖T‖ := by
-      rw [PiLp.norm_single, Real.norm_eq_abs, sq_abs, Real.sq_sqrt (by positivity)]
-    have h := hC 0 rfl ξ
-    rw [mixedDeriv_nil_nil, hb, coefficient_const, List.length_nil, Nat.cast_zero, sub_zero, hξ,
-      show (-2 : ℝ) / 2 = -1 by norm_num, Real.rpow_neg_one, ← div_eq_mul_inv,
-      le_div_iff₀ (by positivity)] at h
-    have : ‖T‖ * (1 + C / ‖T‖) = ‖T‖ + C := by field_simp
-    linarith
-  · subst h
-    exact fun _ => ⟨0, by funext p; simp⟩
+  refine ⟨fun h => of_not_not fun hT => ?_, fun h => h ▸ fun _ => ⟨0, by funext p; simp⟩⟩
+  have : NeZero n := ⟨hn⟩
+  exact not_exists_coefficient_eq_const hT (by norm_num) ((h (-2)).imp fun b hb _ => by simp [hb])
 
 end Smoothing
 
