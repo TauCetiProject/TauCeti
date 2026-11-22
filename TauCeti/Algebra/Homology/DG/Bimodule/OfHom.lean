@@ -89,6 +89,14 @@ theorem bimoduleDifferential_bimoduleOf (b : B) :
       Bimodule.of f.toGradedAlgHom.toAlgHom (dB b) := by
   simp [bimoduleDifferential]
 
+/-- If the target has zero differential, as the ground ring has for an augmentation, then so has
+`{}_f B`. -/
+theorem bimoduleDifferential_eq_zero (h : dB = 0) : f.bimoduleDifferential = 0 := by
+  subst h
+  ext b
+  rw [← (Bimodule.of f.toGradedAlgHom.toAlgHom).apply_symm_apply b, bimoduleDifferential_bimoduleOf,
+    LinearMap.zero_apply, map_zero, LinearMap.zero_apply]
+
 /-- Reading the differential on `{}_f B` gives the target differential. -/
 @[simp]
 theorem bimoduleOf_symm_bimoduleDifferential
