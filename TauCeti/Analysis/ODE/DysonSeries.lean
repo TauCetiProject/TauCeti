@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Topology.Order.ProjIcc
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # The Dyson series of a continuous path in a Banach algebra
@@ -580,28 +581,20 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {M : ℝ → E �
 
 open Complex (I)
 
-/-- Multiplication by `I` commutes with every value of a path of complex-linear maps. -/
-private theorem commute_I_smul_one (hMI : ∀ s v, M s (I • v) = I • M s v) (s : ℝ) :
-    Commute (I • (1 : E →L[ℝ] E)) (M s) :=
-  ContinuousLinearMap.ext fun w ↦ by simp [hMI]
-
-/-- A real-linear map commuting with multiplication by `I` commutes with `I` on vectors. -/
-private theorem apply_I_smul_of_commute {A : E →L[ℝ] E} (h : Commute (I • (1 : E →L[ℝ] E)) A)
-    (v : E) : A (I • v) = I • A v := by
-  simpa using (ContinuousLinearMap.ext_iff.1 h.eq v).symm
-
 variable [CompleteSpace E]
 
 /-- The propagator of a continuous path of complex-linear maps is complex linear. -/
 theorem dysonSeriesLeft_apply_I_smul (hM : Continuous M) (hMI : ∀ s v, M s (I • v) = I • M s v)
     (t : ℝ) (v : E) : dysonSeriesLeft M t (I • v) = I • dysonSeriesLeft M t v :=
-  apply_I_smul_of_commute (commute_dysonSeriesLeft hM (commute_I_smul_one hMI) t) v
+  ContinuousLinearMap.commute_I_smul_one_iff.1
+    (commute_dysonSeriesLeft hM (ContinuousLinearMap.commute_I_smul_one_iff.2 <| hMI ·) t) v
 
 /-- The inverse `dysonSeries (-M)` of the propagator of a continuous path of complex-linear maps
 is complex linear. -/
 theorem dysonSeries_neg_apply_I_smul (hM : Continuous M) (hMI : ∀ s v, M s (I • v) = I • M s v)
     (t : ℝ) (v : E) : dysonSeries (-M) t (I • v) = I • dysonSeries (-M) t v :=
-  apply_I_smul_of_commute (commute_dysonSeries_neg hM (commute_I_smul_one hMI) t) v
+  ContinuousLinearMap.commute_I_smul_one_iff.1
+    (commute_dysonSeries_neg hM (ContinuousLinearMap.commute_I_smul_one_iff.2 <| hMI ·) t) v
 
 end Complex
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.LinearAlgebra.StdBasis
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 import Mathlib.Algebra.Module.Torsion.Field
 import Mathlib.Algebra.Ring.Action.ConjAct
 import Mathlib.LinearAlgebra.Basis.Submodule
@@ -37,8 +38,10 @@ Multiplication by `I` squares to `-1` as a real-linear endomorphism of a complex
 (`Complex.I_smul_smul_I_smul`).
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
-linear (`LinearMap.map_smul_of_map_I_smul`, `LinearMap.complexOfMapISmul`), and one that
-anticommutes with it is conjugate-linear (`LinearMap.map_smul_eq_conj_smul_of_map_I_smul`). The
+linear (`LinearMap.map_smul_of_map_I_smul`, `LinearMap.complexOfMapISmul`); for a continuous
+endomorphism this says it commutes with the operator `I • 1`
+(`ContinuousLinearMap.commute_I_smul_one_iff`). One that anticommutes with multiplication by `I`
+is conjugate-linear (`LinearMap.map_smul_eq_conj_smul_of_map_I_smul`). The
 non-instance `RestrictScalars.realModule` normalizes the restricted real module at the
 additive-group parent for use in constructions on real modules.
 
@@ -303,6 +306,13 @@ theorem map_smul_eq_conj_smul_of_map_I_smul (u : V →ₗ[ℝ] W)
     Complex.conj_im, smul_neg, neg_smul]
 
 end LinearMap
+
+/-- A continuous real-linear endomorphism commutes with multiplication by `I` as an operator
+exactly when it commutes with `I` on vectors. -/
+theorem ContinuousLinearMap.commute_I_smul_one_iff [TopologicalSpace V] [ContinuousConstSMul ℂ V]
+    {A : V →L[ℝ] V} : Commute (Complex.I • (1 : V →L[ℝ] V)) A ↔
+      ∀ v, A (Complex.I • v) = Complex.I • A v := by
+  simp [Commute, SemiconjBy, ContinuousLinearMap.ext_iff, eq_comm]
 
 end ComplexOfMapISmul
 
