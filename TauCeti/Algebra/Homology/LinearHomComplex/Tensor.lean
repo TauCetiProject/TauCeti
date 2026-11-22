@@ -383,10 +383,9 @@ private lemma cochainTensorTensor_d (p q j : ℤ)
   intro z₁ z₂
   let z₁' : ModuleCat.of R (Cochain X₁ Y₁ p) := z₁
   let z₂' : ModuleCat.of R (Cochain X₂ Y₂ q) := z₂
-  simp only [curriedTensor_obj_obj, ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,
-    curriedTensor_map_app, curriedTensor_obj_map, ModuleCat.hom_add, ModuleCat.hom_smul,
-    LinearMap.add_apply, ModuleCat.MonoidalCategory.whiskerRight_apply, LinearMap.smul_apply,
-    ModuleCat.MonoidalCategory.whiskerLeft_apply]
+  simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply, ModuleCat.hom_add,
+    ModuleCat.hom_smul, LinearMap.add_apply, ModuleCat.MonoidalCategory.whiskerRight_apply,
+    LinearMap.smul_apply, ModuleCat.MonoidalCategory.whiskerLeft_apply]
   -- Read the differential of the tensor product on this pure tensor in the degreewise cochain
   -- modules characterized by `linearHomComplex_X`.
   change ModuleCat.Hom.hom (cochainTensorTensor R X₁ Y₁ X₂ Y₂ (p + 1) q (j + 1)
