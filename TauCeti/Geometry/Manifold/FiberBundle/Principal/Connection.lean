@@ -15,7 +15,8 @@ public import Mathlib.LinearAlgebra.Projection
 
 A principal connection is a smooth Lie-algebra-valued one-form that reproduces fundamental
 vectors and transforms by `Ad(g⁻¹)` under right translation. We use the existing smooth form
-carrier on `ManifoldTotalSpace G P`, without choosing a second total-space topology or atlas.
+carrier on `ManifoldTotalSpace G P`, with smooth base, Lie group, and bundle transitions and
+without choosing a second total-space topology or atlas.
 
 The connection defines complementary continuous linear projections onto vertical and horizontal
 tangent vectors. Its kernel complements the kernel of the bundle projection's differential;
@@ -41,13 +42,13 @@ namespace TauCeti.PrincipalBundle
 variable {B G : Type*}
   {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
   {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB}
-  [TopologicalSpace B] [ChartedSpace HB B] [IsManifold IB 1 B]
+  [TopologicalSpace B] [ChartedSpace HB B] [IsManifold IB ∞ B]
   {EG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG]
   {HG : Type*} [TopologicalSpace HG] {IG : ModelWithCorners ℝ EG HG}
-  [Group G] [TopologicalSpace G] [ChartedSpace HG G] [LieGroup IG 1 G]
+  [Group G] [TopologicalSpace G] [ChartedSpace HG G] [LieGroup IG ∞ G]
   {P : B → Type*} [TopologicalSpace (TotalSpace G P)] [∀ b, TopologicalSpace (P b)]
   [FiberBundle G P] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P]
-  [ContMDiffFiberBundle 1 G P IB IG]
+  [ContMDiffFiberBundle ∞ G P IB IG]
 
 -- Only the fixed coefficient space receives its model norm; no varying tangent-fibre norms
 -- are installed. These local instances transport the model norm through the tangent type copy.
@@ -59,12 +60,12 @@ local instance : NormedAddCommGroup (GroupLieAlgebra IG G) :=
 local instance : NormedSpace ℝ (GroupLieAlgebra IG G) :=
   inferInstanceAs (NormedSpace ℝ EG)
 
-/-- A principal connection form for a right principal action: a smooth one-form reproducing
-fundamental vectors and equivariant for the inverse adjoint action. -/
+/-- A connection form on a smooth principal bundle with a right action: a smooth one-form
+reproducing fundamental vectors and equivariant for the inverse adjoint action. -/
 structure ConnectionForm (IB : ModelWithCorners ℝ EB HB) (IG : ModelWithCorners ℝ EG HG)
     (P : B → Type*) [TopologicalSpace (TotalSpace G P)] [∀ b, TopologicalSpace (P b)]
     [FiberBundle G P] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P]
-    [IsManifold IB 1 B] [LieGroup IG 1 G] [ContMDiffFiberBundle 1 G P IB IG] where
+    [IsManifold IB ∞ B] [LieGroup IG ∞ G] [ContMDiffFiberBundle ∞ G P IB IG] where
   /-- The underlying smooth Lie-algebra-valued one-form. -/
   toForm : SmoothForm (IB.prod IG) (ManifoldTotalSpace G P) (GroupLieAlgebra IG G) 1
   /-- The connection is the identity on fundamental vectors. -/
@@ -138,6 +139,13 @@ theorem horizontalProj_apply (x : ManifoldTotalSpace G P) (v : TangentSpace (IB.
     ω.horizontalProj x v = v - ω.verticalProj x v :=
   (rfl)
 
+/-- The vertical and horizontal components reconstruct the original tangent vector. -/
+@[simp]
+theorem verticalProj_add_horizontalProj (x : ManifoldTotalSpace G P)
+    (v : TangentSpace (IB.prod IG) x) :
+    ω.verticalProj x v + ω.horizontalProj x v = v := by
+  rw [horizontalProj_apply, add_comm, sub_add_cancel]
+
 /-- Horizontal tangent vectors are the kernel of the connection form at a point. -/
 def horizontalSpace (x : ManifoldTotalSpace G P) : Submodule ℝ (TangentSpace (IB.prod IG) x) :=
   (ω.formAt x).ker
@@ -187,7 +195,7 @@ theorem mfderiv_proj_horizontalProj (x : ManifoldTotalSpace G P)
     mfderiv (IB.prod IG) IB
       (fun y : ManifoldTotalSpace G P =>
         ((ManifoldTotalSpace.homeomorph G P).symm y).proj) x v := by
-  simp [horizontalProj_apply]
+  rw [horizontalProj_apply, map_sub, mfderiv_proj_verticalProj, sub_zero]
 
 /-- The vertical projection is a projection onto the vertical tangent space. -/
 theorem isProj_verticalProj (x : ManifoldTotalSpace G P) :
@@ -268,7 +276,7 @@ theorem horizontalToBase_apply (x : ManifoldTotalSpace G P) (v : ω.horizontalSp
   (rfl)
 
 /-- Every base tangent vector has a unique horizontal lift at each point of the bundle. -/
-theorem bijective_horizontalToBase (x : ManifoldTotalSpace G P) :
+theorem horizontalToBase_bijective (x : ManifoldTotalSpace G P) :
     Function.Bijective (ω.horizontalToBase x) := by
   constructor
   · apply (ω.horizontalToBase x).ker_eq_bot.mp
@@ -289,7 +297,7 @@ linear equivalence. Its inverse is the pointwise horizontal lift. -/
 def horizontalEquiv (x : ManifoldTotalSpace G P) :
     ω.horizontalSpace x ≃ₗ[ℝ]
       TangentSpace IB (((ManifoldTotalSpace.homeomorph G P).symm x).proj) :=
-  LinearEquiv.ofBijective (ω.horizontalToBase x) (ω.bijective_horizontalToBase x)
+  LinearEquiv.ofBijective (ω.horizontalToBase x) (ω.horizontalToBase_bijective x)
 
 /-- The horizontal equivalence agrees with the restricted projection differential. -/
 @[simp]
