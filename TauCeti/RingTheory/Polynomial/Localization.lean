@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Polynomial.GaussLemma
+public import Mathlib.RingTheory.Localization.Algebra
 public import TauCeti.GroupTheory.MonoidLocalization.Divisibility
 
 /-!

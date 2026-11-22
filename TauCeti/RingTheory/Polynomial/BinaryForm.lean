@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Polynomial.Homogenize
 import Mathlib.FieldTheory.Perfect
 import Mathlib.RingTheory.Polynomial.UniqueFactorization
 import Mathlib.RingTheory.Radical.Basic
-import TauCeti.RingTheory.Polynomial.GaussLemma
+import TauCeti.RingTheory.Polynomial.Localization
 
 /-!
 # Square-free divisors of integer binary forms

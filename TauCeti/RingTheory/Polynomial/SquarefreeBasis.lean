@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 
 import Mathlib.Algebra.Squarefree.Basic
 import Mathlib.RingTheory.PrincipalIdealDomain
-import TauCeti.RingTheory.Polynomial.GaussLemma
+import TauCeti.RingTheory.Polynomial.Localization
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
