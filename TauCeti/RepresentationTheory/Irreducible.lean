@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.RepresentationTheory.Subrepresentation
@@ -83,6 +84,9 @@ irreducible by.
   out of an irreducible representation differ by a unit scalar.
 * `Representation.exists_isCompl_finrank_eq_one_of_not_isIrreducible`: a reducible semisimple
   two-dimensional representation splits into two complementary one-dimensional subrepresentations.
+* `Representation.exists_central_no_eigenvalue_one_of_not_isIrreducible`: a reducible faithful
+  semisimple two-dimensional representation of determinant `1` has a central element without
+  eigenvalue `1`.
 -/
 
 public section
@@ -445,3 +449,66 @@ theorem exists_isCompl_finrank_eq_one_of_not_isIrreducible {ρ : Representation 
   exact ⟨W, W', hWW', hW1, by omega⟩
 
 end Representation
+
+section Group
+
+variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
+
+/-- **A reducible faithful semisimple two-dimensional representation of determinant `1` has a
+central group element without eigenvalue `1`.** -/
+theorem Representation.exists_central_no_eigenvalue_one_of_not_isIrreducible [Nontrivial G]
+    {ρ : Representation k G V} [ρ.IsSemisimpleRepresentation] (hdim : Module.finrank k V = 2)
+    (hfaithful : Function.Injective ρ) (hdet : ∀ g : G, LinearMap.det (ρ g) = 1)
+    (hρ : ¬ ρ.IsIrreducible) :
+    ∃ g₀ : G, (∀ h : G, g₀ * h = h * g₀) ∧ ¬ Module.End.HasEigenvalue (ρ g₀) 1 := by
+  -- Split `ρ` into two complementary invariant lines on which `G` acts by scalars.
+  obtain ⟨W, W', hWW', hW1, hW'1⟩ :=
+    Representation.exists_isCompl_finrank_eq_one_of_not_isIrreducible hdim hρ
+  let e := Subrepresentation.equivProdOfIsCompl hWW'
+  choose c₁ hc₁ using fun g : G ↦
+    (LinearMap.existsUnique_eq_smul_id_of_finrank_eq_one hW1 (W.toRepresentation g)).exists
+  choose c₂ hc₂ using fun g : G ↦
+    (LinearMap.existsUnique_eq_smul_id_of_finrank_eq_one hW'1 (W'.toRepresentation g)).exists
+  let eL : V ≃ₗ[k] W.toSubmodule × W'.toSubmodule := e.toLinearEquiv
+  have he_apply (g : G) (v : V) : eL (ρ g v) = (c₁ g • (eL v).1, c₂ g • (eL v).2) := by
+    have h := LinearMap.congr_fun (e.isIntertwining' g) v
+    exact Prod.ext (by simpa [eL, hc₁ g] using congrArg Prod.fst h)
+      (by simpa [eL, hc₂ g] using congrArg Prod.snd h)
+  -- Read `det (ρ g) = 1` across `V ≃ W × W'` to get `c₁ g * c₂ g = 1`, and deduce `G` is abelian
+  -- since `ρ` embeds `G` into diagonal matrices.
+  have hconj (g : G) :
+      (eL : V →ₗ[k] W.toSubmodule × W'.toSubmodule) ∘ₗ ρ g ∘ₗ
+          (eL.symm : W.toSubmodule × W'.toSubmodule →ₗ[k] V) =
+        LinearMap.prodMap (c₁ g • LinearMap.id) (c₂ g • LinearMap.id) :=
+    LinearMap.ext fun p ↦ Prod.ext (by simp [he_apply]) (by simp [he_apply])
+  have : FiniteDimensional k W.toSubmodule := Module.finite_of_finrank_pos (by omega)
+  have : FiniteDimensional k W'.toSubmodule := Module.finite_of_finrank_pos (by omega)
+  have hdet_prod (g : G) : c₁ g * c₂ g = 1 := by
+    have hd : LinearMap.det ((eL : V →ₗ[k] W.toSubmodule × W'.toSubmodule) ∘ₗ ρ g ∘ₗ
+        (eL.symm : W.toSubmodule × W'.toSubmodule →ₗ[k] V)) = 1 := by
+      rw [LinearMap.det_conj, hdet g]
+    simpa [hconj g, LinearMap.det_prodMap, hW1, hW'1] using hd
+  have hcomm (g h : G) : g * h = h * g :=
+    hfaithful <| LinearMap.ext fun v ↦ eL.injective <| by
+      simp [map_mul, mul_apply_eq_comp, he_apply, smul_smul, mul_comm]
+  -- Any `g₀ ≠ 1` is central with diagonal eigenvalues `c₁ g₀, c₂ g₀ ≠ 1`.
+  obtain ⟨g₀, hg₀⟩ := exists_ne (1 : G)
+  have hne_one : ¬ (c₁ g₀ = 1 ∧ c₂ g₀ = 1) := fun ⟨h1, h2⟩ ↦
+    hg₀ <| hfaithful <| by
+      rw [map_one]; exact LinearMap.ext fun v ↦ eL.injective (by simp [he_apply, h1, h2])
+  have hc₁_ne : c₁ g₀ ≠ 1 := fun h1 ↦ hne_one ⟨h1, by simpa [h1] using hdet_prod g₀⟩
+  have hc₂_ne : c₂ g₀ ≠ 1 := fun h2 ↦ hne_one ⟨by simpa [h2] using hdet_prod g₀, h2⟩
+  refine ⟨g₀, fun h ↦ hcomm g₀ h, fun hev ↦ ?_⟩
+  obtain ⟨v, hv, hv0⟩ := hev.exists_hasEigenvector
+  have hv_fix : ρ g₀ v = v := by simpa using Module.End.mem_eigenspace_iff.mp hv
+  have hpair := congrArg eL hv_fix
+  rw [he_apply] at hpair
+  have h1 : (eL v).1 = 0 := by
+    by_contra hnz
+    exact hc₁_ne (smul_left_injective k hnz (by simpa using congrArg Prod.fst hpair))
+  have h2 : (eL v).2 = 0 := by
+    by_contra hnz
+    exact hc₂_ne (smul_left_injective k hnz (by simpa using congrArg Prod.snd hpair))
+  exact hv0 (eL.injective (by ext <;> simp [h1, h2]))
+
+end Group

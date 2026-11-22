@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.RepresentationTheory.FDRep
 public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RepresentationTheory.Rep.Iso
+public import TauCeti.CategoryTheory.Simple.Classes
 public import TauCeti.CategoryTheory.Skeletal
 public import TauCeti.RepresentationTheory.Rep.Subrepresentation
 import TauCeti.RepresentationTheory.AsModule
@@ -84,6 +85,8 @@ drag in the semisimple isotypic-component theory that only the comparison needs.
   they are isomorphic in `FDRep k G`.
 * `TauCeti.SimpleFDRepClasses.ind` and `TauCeti.SimpleFDRepClasses.lift`: the eliminator and the
   lift of an isomorphism-invariant function.
+* `TauCeti.SimpleFDRepClasses.equivSimpleClasses`: canonical identification of
+  `SimpleFDRepClasses k G` with `SimpleClasses (FDRep k G)`.
 * `TauCeti.SimpleFDRepClasses.finrank`, `TauCeti.SimpleFDRepClasses.trivial` (with
   `mk_tensorUnit` and `mk_eq_trivial_iff`), and `TauCeti.SimpleFDRepClasses.multiplicity` (with
   `multiplicity_zero`, `multiplicity_biprod`, and `multiplicity_simple`).
@@ -308,6 +311,41 @@ theorem lift_mk {α : Sort*} {f : ∀ (X : FDRep k G) [Simple X], α} {h}
     (X : FDRep k G) [Simple X] : lift f h (mk X) = f X :=
   ObjectProperty.skeletonLift_toSkeleton _ _
 
+variable (k G) in
+/-- **Canonical identification of `SimpleFDRepClasses k G` with `SimpleClasses (FDRep k G)`.** -/
+noncomputable def equivSimpleClasses : SimpleFDRepClasses k G ≃ SimpleClasses (FDRep k G) where
+  toFun := lift (fun X ↦ SimpleClasses.classOf X) fun _ _ _ _ h ↦
+    (SimpleClasses.classOf_eq_iff_nonempty_iso _ _).mpr h
+  invFun S := mk S.repr
+  left_inv c := by
+    induction c using ind with
+    | h X hX =>
+      simp only [lift_mk]
+      exact (mk_eq_mk_iff _ _).mpr ⟨SimpleClasses.classOfReprIso X⟩
+  right_inv S := by
+    simp only [lift_mk]
+    exact SimpleClasses.classOf_repr S
+
+/-- Evaluating `equivSimpleClasses` on the class of a simple object `X` yields
+`SimpleClasses.classOf X`. -/
+@[simp]
+theorem equivSimpleClasses_mk (X : FDRep k G) [Simple X] :
+    equivSimpleClasses k G (mk X) = SimpleClasses.classOf X := by
+  dsimp [equivSimpleClasses]
+  exact lift_mk X
+
+/-- The inverse of `equivSimpleClasses` sends `S` to the class of its representative `S.repr`. -/
+theorem equivSimpleClasses_symm_apply (S : SimpleClasses (FDRep k G)) :
+    (equivSimpleClasses k G).symm S = mk S.repr := by
+  dsimp [equivSimpleClasses]
+
+/-- Applying the inverse of `equivSimpleClasses` to `SimpleClasses.classOf X` yields `mk X`. -/
+@[simp]
+theorem equivSimpleClasses_symm_classOf (X : FDRep k G) [Simple X] :
+    (equivSimpleClasses k G).symm (SimpleClasses.classOf X) = mk X := by
+  rw [equivSimpleClasses_symm_apply, mk_eq_mk_iff]
+  exact ⟨SimpleClasses.classOfReprIso X⟩
+
 end SimpleFDRepClasses
 
 end Classes
@@ -342,6 +380,12 @@ open MonoidalCategory in
 @[simp]
 theorem mk_tensorUnit : mk (𝟙_ (FDRep k G)) = trivial k G := by
   rw [trivial_def, mk_eq_mk_iff]; exact ⟨(eqToIso (FDRep.of_trivial k G)).symm⟩
+
+open MonoidalCategory in
+@[simp]
+theorem equivSimpleClasses_trivial :
+    equivSimpleClasses k G (trivial k G) = SimpleClasses.classOf (𝟙_ (FDRep k G)) := by
+  rw [← mk_tensorUnit, equivSimpleClasses_mk]
 
 @[simp]
 theorem finrank_trivial : (trivial k G).finrank = 1 := by

@@ -169,6 +169,13 @@ theorem tprodDirectSumEquiv_tmul_lof (v : V₀) (i : κ) (u : U i) :
       lof R κ (fun j ↦ V₀ ⊗[R] U j) i (v ⊗ₜ[R] u) := by
   simp [tprodDirectSumEquiv]
 
+/-- The inverse equivalence recovers a pure tensor from a summand inclusion. -/
+@[simp]
+theorem tprodDirectSumEquiv_symm_lof (v : V₀) (i : κ) (u : U i) :
+    (tprodDirectSumEquiv ρ₀ τ).symm (lof R κ (fun j ↦ V₀ ⊗[R] U j) i (v ⊗ₜ[R] u)) =
+      v ⊗ₜ[R] lof R κ U i u := by
+  rw [← tprodDirectSumEquiv_tmul_lof ρ₀ τ v i u, Representation.Equiv.symm_apply_apply]
+
 end TensorProduct
 
 section Internal
