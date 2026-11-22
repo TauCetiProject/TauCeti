@@ -522,11 +522,8 @@ theorem timeDependentFlowOf_const_smul [T2Space M] [IsManifold I 1 M] [Boundaryl
     rw [isMIntegralCurve_iff_isMIntegralCurveOn]
     simpa [hcomplete.mem_flowDomain] using isMIntegralCurveOn_flowOf hv x
   have hγ := (hcurve.comp_mul c).comp_add (-s)
-  have h := timeDependentFlowOf_eq_of_hasMFDerivAt hX (X := fun _ ↦ c • v)
-    (γ := fun u ↦ flowOf v ((u + -s) * c) x) (s := s) (t := t) (a := min s t - 1)
-    (b := max s t + 1) (fun u _ ↦ hγ u)
-    ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
-    ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  have h := timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX (X := fun _ ↦ c • v)
+    (γ := fun u ↦ flowOf v ((u + -s) * c) x) hγ s t
   simpa [flowOf_zero, sub_eq_add_neg] using h
 
 /-- On a complete normed model space, the time-dependent flow of a `C^n` field, `1 ≤ n`, is
