@@ -458,6 +458,16 @@ theorem coinvariantProj_idem (m : M) :
     coinvariantProj R H M (coinvariantProj R H M m) = coinvariantProj R H M m :=
   coinvariantProj_eq_self (coinvariantProj_mem_fixedSubcomodule m)
 
+/-- On the regular right `H`-Hopf module, `coinvariantProj` sends `x` to the scalar multiple of
+`1` given by the counit. -/
+@[simp]
+theorem coinvariantProj_self (x : H) :
+    coinvariantProj R H H x = algebraMap R H (Coalgebra.counit (R := R) x) := by
+  have hop : opSMulTensor R H H = LinearMap.mul' R H :=
+    TensorProduct.ext' fun a b => by simp
+  rw [coinvariantProj_apply, Comodule.instSelf_coact, hop,
+    _root_.HopfAlgebra.mul_antipode_lTensor_comul_apply]
+
 variable (R H M) in
 /-- The coinvariant projection with codomain restricted to `Comodule.fixedSubcomodule R H M`. -/
 def toFixedSubcomodule : M →ₗ[R] Comodule.fixedSubcomodule R H M :=
