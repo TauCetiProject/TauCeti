@@ -123,6 +123,20 @@ theorem _root_.Module.Basis.symmetricAlgebra_add {ι : Type w} (b : Basis ι R M
     simp [MvPolynomial.monomial_mul_monomial]
 
 variable {R M} in
+/-- The symmetric monomial with zero exponents is the unit. -/
+theorem _root_.Module.Basis.symmetricAlgebra_zero {ι : Type w} (b : Basis ι R M) :
+    b.symmetricAlgebra 0 = 1 :=
+  (SymmetricAlgebra.equivMvPolynomial b).injective <| by simp
+
+variable {R M} in
+/-- A symmetric monomial supported at a single index is a power of that generator. -/
+theorem _root_.Module.Basis.symmetricAlgebra_single {ι : Type w} (b : Basis ι R M)
+    (i : ι) (n : ℕ) :
+    b.symmetricAlgebra (Finsupp.single i n) = SymmetricAlgebra.ι R M (b i) ^ n :=
+  (SymmetricAlgebra.equivMvPolynomial b).injective <| by
+    simp [MvPolynomial.X_pow_eq_monomial]
+
+variable {R M} in
 /-- A power of the basis vector `b.symmetricAlgebra d` multiplies its exponent. -/
 theorem _root_.Module.Basis.symmetricAlgebra_pow {ι : Type w} (b : Basis ι R M)
     (d : ι →₀ ℕ) (k : ℕ) :

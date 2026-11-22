@@ -86,6 +86,12 @@ theorem _root_.Module.Basis.exteriorAlgebra_eq_prod_map_sort {I : Type w} [Linea
     Set.powersetCard.ofFinEmbEquiv_symm_apply, Set.powersetCard.ofCard]
   exact congrArg (fun i ↦ ExteriorAlgebra.ι R (b i)) (Finset.orderEmbOfFin_apply _ _ _)
 
+/-- An exterior-basis vector belongs to the exterior power indexed by the size of its support. -/
+theorem _root_.Module.Basis.exteriorAlgebra_mem_exteriorPower {I : Type w} [LinearOrder I]
+    (b : Module.Basis I R M) (s : Finset I) : b.ExteriorAlgebra s ∈ ⋀[R]^s.card M := by
+  rw [ExteriorAlgebra.basis_eq_coe_basis b (⟨s, rfl⟩ : Set.powersetCard I s.card)]
+  exact SetLike.coe_mem _
+
 /-- Contracting an exterior-basis vector by a coordinate not in its index set gives zero. -/
 @[simp]
 private theorem contractLeft_coord_basis_eq_zero_of_not_mem {I : Type w} [LinearOrder I]
