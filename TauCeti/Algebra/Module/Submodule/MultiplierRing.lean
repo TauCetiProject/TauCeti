@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 public import TauCeti.Algebra.Ring.Subgroup
 
 import Mathlib.LinearAlgebra.Matrix.Charpoly.LinearMap
+import TauCeti.LinearAlgebra.End.Aeval
 
 /-!
 # The multiplier ring of a submodule of an algebra
@@ -21,7 +22,8 @@ Let `B` be an `R`-algebra, not necessarily commutative, and `M` an `R`-submodule
 of `R`, so the structure map of `B` corestricts to a ring map `R → B₀`. For an ideal `I` of `R`,
 the `R`-submodule `I • M` of `B` lies in `B₀` only under a hypothesis such as `I • (M * M) ≤ M`
 (see `Submodule.smul_subset_multiplierRing`). If `M` is finitely generated and contains `1`, every
-element of `B₀` is integral over `R` (`Submodule.isIntegral_of_mem_multiplierRing`).
+element of `B₀` is integral over `R` (`Submodule.isIntegral_of_mem_multiplierRing`), and so is
+every right multiplier `b`, with `M b ⊆ M` (`Submodule.isIntegral_of_forall_mul_mem`).
 
 The last part of the file assumes that `B` is commutative. It compares `I • M` with the extension
 of `I` to `B₀` along the structure map `R → B₀`. These comparisons are how a lattice in a finite
@@ -33,6 +35,8 @@ algebra over a Huber ring yields a pair of definition.
 * `Submodule.smul_subset_multiplierRing`: if `I` carries `M * M` into `M`, then `I • M ⊆ B₀`.
 * `Submodule.isIntegral_of_mem_multiplierRing`: if `M` is finitely generated and contains `1`,
   every element of `B₀` is integral over `R`.
+* `Submodule.isIntegral_of_forall_mul_mem`: if `M` is finitely generated and contains `1`,
+  every `b` with `M b ⊆ M` is integral over `R`.
 * `Submodule.coe_map_pow_subset`: if `B` is commutative and `1 ∈ M`, the powers of the extension
   `J = I B₀` satisfy `Jⁿ ⊆ Iⁿ • M`.
 * `Submodule.smul_subset_coe_map_pow`: if `B` is commutative and `Iʲ • M ⊆ B₀`, then
@@ -92,18 +96,37 @@ theorem isIntegral_of_mem_multiplierRing {M : Submodule R B} (hM : M.FG) (h1 : (
     rw [LinearMap.mulLeft_apply, ← M.mem_toAddSubgroup]
     exact AddSubgroup.mem_multiplierRing.mp hb m (M.mem_toAddSubgroup.mpr hm)
   let f : Module.End R M := (LinearMap.mulLeft R b).restrict hbM
-  have hpow (n : ℕ) (v : M) : ((f ^ n) v : B) = b ^ n * v := by
-    rw [Module.End.pow_restrict n hbM, LinearMap.coe_restrict_apply, LinearMap.pow_mulLeft,
-      LinearMap.mulLeft_apply]
   obtain ⟨p, hp, hpf⟩ := LinearMap.exists_monic_and_aeval_eq_zero R f
   refine ⟨p, hp, ?_⟩
-  -- evaluating a polynomial in `f` at `1 ∈ M` is evaluating it at `b`
-  have heval (q : Polynomial R) : ((Polynomial.aeval f q) ⟨1, h1⟩ : B) =
-      Polynomial.aeval b q := by
-    induction q using Polynomial.induction_on' with
-    | add p q hp hq => simp only [map_add, LinearMap.add_apply, Submodule.coe_add, hp, hq]
-    | monomial n a => simp [Polynomial.aeval_monomial, hpow, Algebra.smul_def]
-  rw [← Polynomial.aeval_def, ← heval, hpf, LinearMap.zero_apply, Submodule.coe_zero]
+  -- The inclusion `M → B` intertwines `f` with left multiplication by `b`, so evaluating a
+  -- polynomial in `f` at `1 ∈ M` is evaluating it at `b`.
+  have hcomp : (Algebra.lmul R B b).comp M.subtype = M.subtype.comp f := rfl
+  have := LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq hcomp p) ⟨1, h1⟩
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, hpf, LinearMap.zero_apply, map_zero,
+    Polynomial.aeval_algHom_apply, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply',
+    Submodule.subtype_apply, Submodule.coe_mk, mul_one] at this
+  rw [← Polynomial.aeval_def, this]
+
+/-- **Right multipliers of a finitely generated submodule containing `1` are integral.** If `M`
+is a finitely generated `R`-submodule of an `R`-algebra `B` with `1 ∈ M`, every `b ∈ B` with
+`M b ⊆ M` is integral over `R`. This is `Submodule.isIntegral_of_mem_multiplierRing` applied in
+the opposite algebra `Bᵐᵒᵖ`, where right multiplication by `b` becomes left multiplication by
+`op b`. -/
+theorem isIntegral_of_forall_mul_mem {M : Submodule R B} (hM : M.FG) (h1 : (1 : B) ∈ M)
+    {b : B} (hb : ∀ m ∈ M, m * b ∈ M) : IsIntegral R b := by
+  let N : Submodule R Bᵐᵒᵖ := M.map (MulOpposite.opLinearEquiv R).toLinearMap
+  have hN : MulOpposite.op b ∈ N.toAddSubgroup.multiplierRing := by
+    refine AddSubgroup.mem_multiplierRing.mpr fun z hz ↦ ?_
+    rw [Submodule.mem_toAddSubgroup] at hz ⊢
+    obtain ⟨m, hm, rfl⟩ := Submodule.mem_map.mp hz
+    simpa only [MulOpposite.coe_opLinearEquiv_toLinearMap, MulOpposite.op_mul] using
+      Submodule.mem_map_of_mem (f := (MulOpposite.opLinearEquiv R).toLinearMap) (hb m hm)
+  have h1N : (1 : Bᵐᵒᵖ) ∈ N := by
+    simpa only [MulOpposite.coe_opLinearEquiv_toLinearMap, MulOpposite.op_one] using
+      Submodule.mem_map_of_mem (f := (MulOpposite.opLinearEquiv R).toLinearMap) h1
+  obtain ⟨p, hp, hpb⟩ := isIntegral_of_mem_multiplierRing (hM.map _) h1N hN
+  rw [← Polynomial.aeval_def, Polynomial.aeval_op_apply, MulOpposite.op_eq_zero_iff] at hpb
+  exact ⟨p, hp, by rwa [← Polynomial.aeval_def]⟩
 
 end Ring
 
