@@ -19,7 +19,8 @@ import TauCeti.NumberTheory.ZetaValues
 This file records Lebesgue integrability on `(0, ∞)` for the periodic Bernoulli kernels
 `(B_{2n} - B_{2n}({u})) / (u + z)^k` and `B_{2n}({u}) / (u + z)^k` (`z ∈ Complex.slitPlane`,
 `k ≥ 2`), obtained by specializing `TauCeti.integrableOn_div_ofReal_add_pow_of_norm_le` with the
-uniform bound `|B_{2n}({u})| ≤ |B_{2n}|` (`TauCeti.abs_bernoulliFun_even_fract_le`).
+uniform bound `|B_{2n}({u})| ≤ |B_{2n}|` (`TauCeti.abs_bernoulliFun_even_fract_le`), as well as the
+positive-real specialization `(B_{2n} - B_{2n}({u})) / (u + x)^k` (`x > 0`, `k ≥ 2`).
 
 ## Main declarations
 
@@ -27,6 +28,8 @@ uniform bound `|B_{2n}({u})| ≤ |B_{2n}|` (`TauCeti.abs_bernoulliFun_even_fract
   `(B_{2n} - B_{2n}({u})) / (u + z)^k` on `(0, ∞)` for `z ∈ slitPlane` and `k ≥ 2`.
 * `TauCeti.integrableOn_bernoulliFun_fract_div_pow_Ioi`: integrability of
   `B_{2n}({u}) / (u + z)^k` on `(0, ∞)` for `z ∈ slitPlane` and `k ≥ 2`.
+* `TauCeti.integrableOn_real_bernoulli_sub_bernoulliFun_div_pow_Ioi`: real-variable integrability
+  of `(B_{2n} - B_{2n}({u})) / (u + x)^k` on `(0, ∞)` for `x > 0` and `k ≥ 2`.
 -/
 
 public section
@@ -57,6 +60,23 @@ theorem integrableOn_bernoulli_sub_bernoulliFun_div_pow_Ioi (n : ℕ) {k : ℕ} 
         linarith [abs_bernoulliFun_even_fract_le n u]
       simpa only [g, Complex.norm_real, Real.norm_eq_abs] using hle
   exact integrableOn_div_ofReal_add_pow_of_norm_le hg_meas hg_bdd hz hk
+
+/-- Real-variable integrability of the periodic Bernoulli integrand
+`(B_{2n} - B_{2n}({u})) / (u + x)^k` on `(0, ∞)` for `x > 0` and `k ≥ 2`. -/
+theorem integrableOn_real_bernoulli_sub_bernoulliFun_div_pow_Ioi (n : ℕ) {k : ℕ} (hk : 2 ≤ k)
+    {x : ℝ} (hx : 0 < x) :
+    IntegrableOn (fun u : ℝ ↦
+      ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) / (u + x) ^ k)
+      (Ioi 0) := by
+  have h := Complex.reCLM.integrable_comp
+    (integrableOn_bernoulli_sub_bernoulliFun_div_pow_Ioi n hk (Complex.ofReal_mem_slitPlane.mpr hx))
+  refine h.congr (Eventually.of_forall fun u ↦ ?_)
+  have heq : (((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u) : ℝ) : ℂ) /
+      ((u : ℂ) + (x : ℂ)) ^ k =
+      ((((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
+        (u + x) ^ k : ℝ) : ℂ) := by
+    rw [← Complex.ofReal_add, ← Complex.ofReal_pow, ← Complex.ofReal_div]
+  simp only [Complex.reCLM_apply, heq, Complex.ofReal_re]
 
 /-- Integrability of Olver's periodic Bernoulli integrand `B_{2n}({u}) / (u + z)^k` on `(0, ∞)`
 for `z ∈ slitPlane` and `k ≥ 2`. -/

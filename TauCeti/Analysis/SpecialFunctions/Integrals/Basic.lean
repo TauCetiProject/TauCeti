@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
+import TauCeti.Analysis.Calculus.Deriv.Complex
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
@@ -515,19 +516,17 @@ theorem integral_log_ofReal_add {a b : ℝ} {z : ℂ}
     (h : ∀ u ∈ Set.uIcc a b, (u : ℂ) + z ∈ Complex.slitPlane) :
     ∫ u in a..b, Complex.log ((u : ℂ) + z) =
       ((z + b) * Complex.log (z + b) - (z + b)) - ((z + a) * Complex.log (z + a) - (z + a)) := by
-  have hlin (u : ℝ) : HasDerivAt (fun t : ℝ ↦ (t : ℂ) + z) 1 u := by
-    simpa using (hasDerivAt_id (u : ℂ)).comp_ofReal.add_const z
   have hderiv : ∀ u ∈ Set.uIcc a b,
       HasDerivAt (fun t : ℝ ↦ ((t : ℂ) + z) * Complex.log ((t : ℂ) + z) - ((t : ℂ) + z))
         (Complex.log ((u : ℂ) + z)) u := by
     intro u hu
     have hmem : (u : ℂ) + z ∈ Complex.slitPlane := h u hu
-    refine (((hlin u).mul ((Complex.hasDerivAt_log hmem).comp u (hlin u))).sub
-      (hlin u)).congr_deriv ?_
+    have hlin := TauCeti.hasDerivAt_ofReal_add u z
+    refine ((hlin.mul ((Complex.hasDerivAt_log hmem).comp u hlin)).sub hlin).congr_deriv ?_
     simp [mul_inv_cancel₀ (Complex.slitPlane_ne_zero hmem)]
   have hcont : ContinuousOn (fun u : ℝ ↦ Complex.log ((u : ℂ) + z)) (Set.uIcc a b) := by
     intro u hu
-    have hd := (Complex.hasDerivAt_log (h u hu)).comp u (hlin u)
+    have hd := (Complex.hasDerivAt_log (h u hu)).comp u (TauCeti.hasDerivAt_ofReal_add u z)
     exact hd.continuousAt.continuousWithinAt
   simpa [add_comm] using
     intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hcont.intervalIntegrable

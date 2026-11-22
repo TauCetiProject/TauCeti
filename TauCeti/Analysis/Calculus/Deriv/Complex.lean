@@ -14,7 +14,9 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 /-!
 # Real coordinate slices of complex-domain functions
 
-A real Fréchet derivative determines the derivatives of the horizontal and vertical slices.
+A real Fréchet derivative determines the derivatives of the horizontal and vertical slices, and
+the horizontal real-parameter shift `t ↦ (t : ℂ) + z` has derivative `1`
+(`TauCeti.hasDerivAt_ofReal_add`).
 -/
 
 public section
@@ -43,3 +45,12 @@ theorem hasDerivAt_im_slice (hP : HasFDerivAt P L z) :
     using HasFDerivAt.comp z.im hP h.hasFDerivAt
 
 end HasFDerivAt
+
+namespace TauCeti
+
+/-- The horizontal real-parameter shift `t ↦ (t : ℂ) + z` has derivative `1` at every `u : ℝ`. -/
+theorem hasDerivAt_ofReal_add (u : ℝ) (z : ℂ) :
+    HasDerivAt (fun t : ℝ ↦ (t : ℂ) + z) 1 u := by
+  simpa using (Complex.ofRealCLM.hasDerivAt (x := u)).add_const z
+
+end TauCeti

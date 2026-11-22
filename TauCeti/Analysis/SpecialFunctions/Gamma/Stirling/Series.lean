@@ -15,11 +15,11 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Basic
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
 import TauCeti.Analysis.Complex.IteratedDeriv
+import TauCeti.Analysis.SpecialFunctions.Complex.Log.Deriv
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.HalfLineRational
-import TauCeti.Analysis.SpecialFunctions.Integrals.PeriodicBernoulli
-import TauCeti.Analysis.SpecialFunctions.Integrals.PeriodicStieltjes
-import TauCeti.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Analysis.SpecialFunctions.Integrals.Periodic.Bernoulli
+import TauCeti.Analysis.SpecialFunctions.Integrals.Periodic.Stieltjes
 import TauCeti.Analysis.SpecialFunctions.Pow.ParametricIntegral
 
 /-!
@@ -116,13 +116,29 @@ theorem stirlingTerm_three {𝕜 : Type*} [Field 𝕜] [CharZero 𝕜] (z : 𝕜
     Rat.cast_inv, Rat.cast_ofNat, Nat.cast_ofNat]
   ring
 
+/-- Positivity of `2 * (j : ℝ) - 1` for `j ≥ 1`. -/
+private theorem two_mul_sub_one_pos {j : ℕ} (hj : 1 ≤ j) : (0 : ℝ) < 2 * (j : ℝ) - 1 := by
+  have : (1 : ℝ) ≤ j := by exact_mod_cast hj
+  linarith
+
+/-- Cast identity `((2 * j - 1 : ℕ) : 𝕜) = 2 * (j : 𝕜) - 1` for `j ≥ 1`. -/
+private theorem natCast_two_mul_sub_one {𝕜 : Type*} [Ring 𝕜] {j : ℕ} (hj : 1 ≤ j) :
+    ((2 * j - 1 : ℕ) : 𝕜) = 2 * (j : 𝕜) - 1 := by
+  rw [Nat.cast_sub (by omega : 1 ≤ 2 * j)]
+  simp only [Nat.cast_mul, Nat.cast_ofNat, Nat.cast_one]
+
+/-- Cast identity `((m)! : 𝕜) = m * (m - 1)!` for `m ≠ 0`. -/
+private theorem natCast_factorial {𝕜 : Type*} [Semiring 𝕜] {m : ℕ} (hm : m ≠ 0) :
+    ((m ! : ℕ) : 𝕜) = (m : 𝕜) * ((m - 1)! : 𝕜) := by
+  rw [← Nat.mul_factorial_pred hm, Nat.cast_mul]
+
 /-- Coercion of a real Stirling term to `ℂ`. -/
 @[simp]
 theorem ofReal_stirlingTerm (j : ℕ) (x : ℝ) :
     ((stirlingTerm j x : ℝ) : ℂ) = stirlingTerm j (x : ℂ) := by
-  simp only [stirlingTerm_def]
-  push_cast
-  rfl
+  simp only [stirlingTerm_def, Complex.ofReal_div, Complex.ofReal_ratCast, Complex.ofReal_mul,
+    Complex.ofReal_sub, Complex.ofReal_ofNat, Complex.ofReal_natCast, Complex.ofReal_one,
+    Complex.ofReal_pow]
 
 /-- Explicit modulus of the `j`-th Stirling term. -/
 theorem norm_stirlingTerm (j : ℕ) (z : ℂ) :
@@ -130,12 +146,13 @@ theorem norm_stirlingTerm (j : ℕ) (z : ℂ) :
       |(bernoulli (2 * j) : ℝ)| / ((2 * j : ℝ) * (2 * j - 1 : ℝ) * ‖z‖ ^ (2 * j - 1)) := by
   rcases eq_or_ne j 0 with rfl | hj
   · simp
-  · have hpos2 : (0 : ℝ) ≤ 2 * (j : ℝ) - 1 := by
-      have : (1 : ℝ) ≤ j := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hj
-      linarith
+  · have hpos2 : (0 : ℝ) ≤ 2 * (j : ℝ) - 1 :=
+      (two_mul_sub_one_pos (Nat.one_le_iff_ne_zero.mpr hj)).le
     simp only [stirlingTerm_def, norm_div, norm_mul, norm_pow, ← Complex.ofReal_ratCast,
       Complex.norm_real, Complex.norm_ofNat, Complex.norm_natCast, Real.norm_eq_abs]
-    have hc : (2 : ℂ) * (j : ℂ) - 1 = ((2 * (j : ℝ) - 1 : ℝ) : ℂ) := by push_cast; rfl
+    have hc : (2 : ℂ) * (j : ℂ) - 1 = ((2 * (j : ℝ) - 1 : ℝ) : ℂ) := by
+      simp only [Complex.ofReal_sub, Complex.ofReal_mul, Complex.ofReal_ofNat,
+        Complex.ofReal_natCast, Complex.ofReal_one]
     rw [hc, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hpos2]
 
 /-- The modulus of `stirlingTerm j z` equals `|stirlingTerm j ‖z‖|`. -/
@@ -144,9 +161,8 @@ theorem norm_stirlingTerm_eq_abs_norm (j : ℕ) (z : ℂ) :
   rcases eq_or_ne j 0 with rfl | hj
   · simp
   · have hpos1 : (0 : ℝ) ≤ 2 * (j : ℝ) := by positivity
-    have hpos2 : (0 : ℝ) ≤ 2 * (j : ℝ) - 1 := by
-      have : (1 : ℝ) ≤ j := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hj
-      linarith
+    have hpos2 : (0 : ℝ) ≤ 2 * (j : ℝ) - 1 :=
+      (two_mul_sub_one_pos (Nat.one_le_iff_ne_zero.mpr hj)).le
     rw [norm_stirlingTerm, stirlingTerm_def, abs_div, abs_mul, abs_mul, abs_of_nonneg hpos1,
       abs_of_nonneg hpos2, abs_of_nonneg (pow_nonneg (norm_nonneg z) _)]
 
@@ -180,7 +196,14 @@ theorem stirlingSeriesRemainder_one_eq_stirlingRemainder (z : ℂ) :
     stirlingSeriesRemainder 1 z = stirlingRemainder z := by
   simp [stirlingSeriesRemainder_def]
 
+/-- Function-level identification `stirlingSeriesRemainder 1 = stirlingRemainder`. -/
+@[simp]
+theorem stirlingSeriesRemainder_one :
+    stirlingSeriesRemainder 1 = stirlingRemainder :=
+  funext stirlingSeriesRemainder_one_eq_stirlingRemainder
+
 /-- The order-`1` real Stirling remainder has no Bernoulli sum terms. -/
+@[simp]
 theorem realStirlingSeriesRemainder_one (x : ℝ) :
     realStirlingSeriesRemainder 1 x =
       Real.log (Real.Gamma x) - ((x - 1 / 2) * Real.log x - x + Real.log (2 * π) / 2) := by
@@ -224,9 +247,9 @@ Stirling remainder. -/
 theorem stirlingSeriesRemainder_ofReal (n : ℕ) {x : ℝ} (hx : 0 < x) :
     stirlingSeriesRemainder n (x : ℂ) = (realStirlingSeriesRemainder n x : ℂ) := by
   simp only [stirlingSeriesRemainder_def, realStirlingSeriesRemainder_def,
-    stirlingRemainder_ofReal hx, ← ofReal_stirlingTerm]
-  push_cast
-  rfl
+    stirlingRemainder_ofReal hx, ← ofReal_stirlingTerm, Complex.ofReal_sub, Complex.ofReal_add,
+    Complex.ofReal_mul, Complex.ofReal_div, Complex.ofReal_one, Complex.ofReal_ofNat,
+    Complex.ofReal_sum]
 
 /-- Complex conjugation symmetry of the Stirling remainder on the slit plane. -/
 theorem stirlingSeriesRemainder_conj (n : ℕ) {z : ℂ} (hz : z ∈ slitPlane) :
@@ -247,10 +270,7 @@ theorem differentiableOn_stirlingSeriesRemainder (n : ℕ) :
     · exact (differentiableOn_const _).mul (differentiableOn_id.pow _)
     · refine mul_ne_zero (mul_ne_zero (by norm_cast; omega) ?_)
         (pow_ne_zero _ (slitPlane_ne_zero hz))
-      have hpos : (0 : ℝ) < 2 * (j : ℝ) - 1 := by
-        have : (1 : ℝ) ≤ j := by exact_mod_cast hj1
-        linarith
-      exact_mod_cast hpos.ne'
+      exact_mod_cast (two_mul_sub_one_pos hj1).ne'
   exact (differentiableOn_stirlingRemainder.sub hsum).congr fun _ _ ↦
     (stirlingSeriesRemainder_def n _).symm
 
@@ -261,9 +281,7 @@ private theorem tendsto_stirlingTerm_add_natCast (j : ℕ) (z : ℂ) :
   rcases eq_or_ne j 0 with rfl | hj
   · simp
   · have h1 : (0 : ℝ) < 2 * (j : ℝ) := by positivity
-    have h2 : (0 : ℝ) < 2 * (j : ℝ) - 1 := by
-      have : (1 : ℝ) ≤ j := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hj
-      linarith
+    have h2 : (0 : ℝ) < 2 * (j : ℝ) - 1 := two_mul_sub_one_pos (Nat.one_le_iff_ne_zero.mpr hj)
     refine squeeze_zero_norm' (a := fun N : ℕ ↦
         |(bernoulli (2 * j) : ℝ)| /
           ((2 * j : ℝ) * (2 * j - 1 : ℝ) * ((N : ℝ) + z.re) ^ (2 * j - 1))) ?_ ?_
@@ -329,14 +347,9 @@ private theorem stirlingTerm_eq_bernoulli_smul_iteratedDeriv_log {z : ℂ} (j : 
     have hidx : 2 * j - 1 - 1 = 2 * (j - 1) := by omega
     rw [hidx, pow_mul, neg_one_sq, one_pow]
   have hfac : ((2 * j)! : ℂ) = (2 * j : ℂ) * (2 * j - 1 : ℂ) * ((2 * j - 1 - 1)! : ℂ) := by
-    have hnat : (2 * j)! = (2 * j) * ((2 * j - 1) * (2 * j - 1 - 1)!) := by
-      rw [Nat.mul_factorial_pred (by omega), Nat.mul_factorial_pred (by omega)]
-    have hc : ((2 * j - 1 : ℕ) : ℂ) = (2 * j : ℂ) - 1 := by
-      rw [Nat.cast_sub (by omega : 1 ≤ 2 * j)]; push_cast; rfl
-    have hcast : ((2 * j)! : ℂ) =
-        (2 * j : ℂ) * ((2 * j - 1 : ℕ) : ℂ) * ((2 * j - 1 - 1)! : ℂ) := by
-      rw [← mul_assoc] at hnat; exact_mod_cast hnat
-    rw [hcast, hc]
+    rw [natCast_factorial (by omega), natCast_factorial (by omega),
+      natCast_two_mul_sub_one hj, Nat.cast_mul, Nat.cast_ofNat]
+    ring
   have hpow_eq : ((w : ℂ) + z) ^ (2 * j - 1) = (z + w) ^ (2 * j - 1) := by
     rw [add_comm (w : ℂ) z]
   have hne_fac : ((2 * j - 1 - 1)! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
@@ -354,7 +367,7 @@ private theorem div_factorial_smul_bernoulliFun_iteratedDeriv_log {n : ℕ} (hn 
   have hodd_pow : (-1 : ℂ) ^ (2 * n - 1) = -1 := Odd.neg_one_pow ⟨n - 1, by omega⟩
   have heven_pow : (-1 : ℝ) ^ (2 * n) = 1 := by rw [pow_mul, neg_one_sq, one_pow]
   have hfac : ((2 * n)! : ℂ) = (2 * n : ℂ) * ((2 * n - 1)! : ℂ) := by
-    exact_mod_cast (Nat.mul_factorial_pred (by omega : 2 * n ≠ 0)).symm
+    simpa [Nat.cast_mul, Nat.cast_ofNat] using (natCast_factorial (𝕜 := ℂ) (by omega : 2 * n ≠ 0))
   have hne_fac : ((2 * n - 1)! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
   rw [Complex.iteratedDeriv_log_ofReal_add (by omega) hu, heven_pow, Complex.real_smul,
     Complex.real_smul, hodd_pow]
@@ -362,12 +375,31 @@ private theorem div_factorial_smul_bernoulliFun_iteratedDeriv_log {n : ℕ} (hn 
   rw [hfac]
   field_simp
 
+private theorem sum_Icc_log_ofReal_add {z : ℂ} (hz : z ∈ slitPlane) (N : ℕ) :
+    ∑ j ∈ Finset.Icc (0 : ℤ) (N : ℤ), Complex.log (((j : ℝ) : ℂ) + z) =
+      logGamma (z + N) + Complex.log (z + N) - logGamma z := by
+  have hcard : ((N : ℤ) + 1 - 0).toNat = N + 1 := by omega
+  rw [Int.Icc_eq_finset_map, hcard, Finset.sum_map]
+  simp only [Function.Embedding.trans_apply, Nat.castEmbedding_apply, addLeftEmbedding_apply,
+    zero_add, Int.cast_natCast, Complex.ofReal_natCast, add_comm _ z, Finset.sum_range_succ]
+  rw [logGamma_add_natCast hz N]
+  ring
+
+private theorem integral_zero_natCast_log_ofReal_add {z : ℂ} (hz : z ∈ slitPlane) (N : ℕ) :
+    ∫ u in (0 : ℝ)..(N : ℝ), Complex.log ((u : ℂ) + z) =
+      ((z + N) * Complex.log (z + N) - (z + N)) - (z * Complex.log z - z) := by
+  have hlog := TauCeti.integral_log_ofReal_add (a := (0 : ℝ)) (b := (N : ℝ)) (z := z) fun u hu ↦ by
+    rw [uIcc_of_le (Nat.cast_nonneg N)] at hu
+    exact ofReal_add_mem_slitPlane hz hu.1
+  simpa only [Complex.ofReal_zero, add_zero, Complex.ofReal_natCast] using hlog
+
 /-- Finite-truncation identity from Euler–Maclaurin of order `2n` applied to `u ↦ log (u + z)`. -/
 private theorem stirlingSeriesRemainder_succ_eq_sub_intervalIntegral {n : ℕ} (hn : 1 ≤ n) {z : ℂ}
     (hz : z ∈ slitPlane) (N : ℕ) :
     stirlingSeriesRemainder (n + 1) z = stirlingSeriesRemainder (n + 1) (z + N) -
       ∫ u in (0 : ℝ)..(N : ℝ),
         (bernoulliFun (2 * n) (Int.fract u) : ℂ) / ((2 * n : ℂ) * ((u : ℂ) + z) ^ (2 * n)) := by
+  -- 1. Euler–Maclaurin setup for `f(t) = log (t + z)` on `[0, N]`
   let f : ℝ → ℂ := fun t ↦ Complex.log ((t : ℂ) + z)
   let g : ℕ → ℝ → ℂ := fun i u ↦ iteratedDeriv i f u
   let U : Set ℝ := {t : ℝ | (t : ℂ) + z ∈ slitPlane}
@@ -379,15 +411,6 @@ private theorem stirlingSeriesRemainder_succ_eq_sub_intervalIntegral {n : ℕ} (
     (hcd.differentiableOn_iteratedDerivWithin
       (by exact_mod_cast ENat.natCast_lt_top i) hU.uniqueDiffOn).congr
       fun _ hu ↦ (iteratedDerivWithin_of_isOpen hU hu).symm
-  have hsum_lhs : ∑ j ∈ Finset.Icc (0 : ℤ) (N : ℤ), g 0 (j : ℝ) =
-      logGamma (z + N) + Complex.log (z + N) - logGamma z := by
-    have hcard : ((N : ℤ) + 1 - 0).toNat = N + 1 := by omega
-    rw [Int.Icc_eq_finset_map, hcard, Finset.sum_map]
-    simp only [g, iteratedDeriv_zero, f, Function.Embedding.trans_apply, Nat.castEmbedding_apply,
-      addLeftEmbedding_apply, zero_add, Int.cast_natCast, Complex.ofReal_natCast, add_comm _ z,
-      Finset.sum_range_succ]
-    rw [logGamma_add_natCast hz N]
-    ring
   have hint2n : IntervalIntegrable (g (2 * n)) volume (0 : ℤ) (N : ℤ) := by
     simpa using ((hdiff (2 * n)).continuousOn.mono hIcc).intervalIntegrable_of_Icc
       (Nat.cast_nonneg N)
@@ -398,6 +421,7 @@ private theorem stirlingSeriesRemainder_succ_eq_sub_intervalIntegral {n : ℕ} (
       have huU : u ∈ U := hIcc (Ioo_subset_Icc_self (by simpa using hu))
       simpa [g, iteratedDeriv_succ] using ((hdiff i).differentiableAt (hU.mem_nhds huU)).hasDerivAt)
     hint2n
+  -- 2. Boundary terms from orders `2 ≤ s ≤ 2n` collapse to `stirlingTerm` differences
   have hbern_sum :
       ∑ s ∈ Finset.Icc 2 (2 * n),
         (bernoulli s / (s ! : ℝ) : ℝ) • (g (s - 1) (N : ℝ) - g (s - 1) 0) =
@@ -410,6 +434,7 @@ private theorem stirlingSeriesRemainder_succ_eq_sub_intervalIntegral {n : ℕ} (
         (ofReal_add_mem_slitPlane hz (Nat.cast_nonneg N)),
       stirlingTerm_eq_bernoulli_smul_iteratedDeriv_log j hj1 (ofReal_add_mem_slitPlane hz le_rfl)]
     simp
+  -- 3. Order-`2n` remainder integral matches Olver's periodic Bernoulli kernel
   have hrem_int :
       ((-1 : ℝ) ^ (2 * n) / ((2 * n)! : ℝ)) •
         ∫ u in (0 : ℝ)..(N : ℝ), bernoulliFun (2 * n) (Int.fract u) • g (2 * n) u =
@@ -419,15 +444,14 @@ private theorem stirlingSeriesRemainder_succ_eq_sub_intervalIntegral {n : ℕ} (
     refine intervalIntegral.integral_congr fun u hu ↦ ?_
     rw [uIcc_of_le (Nat.cast_nonneg N)] at hu
     exact div_factorial_smul_bernoulliFun_iteratedDeriv_log hn (ofReal_add_mem_slitPlane hz hu.1)
+  -- 4. Substitute the sum and log integral into `hEM` and rearrange into `r_{n+1}(z)`
+  simp only [Int.cast_zero, Int.cast_natCast] at hEM
+  have hsum_lhs : ∑ j ∈ Finset.Icc (0 : ℤ) (N : ℤ), g 0 (j : ℝ) =
+      logGamma (z + N) + Complex.log (z + N) - logGamma z := by
+    simpa [g, iteratedDeriv_zero, f] using sum_Icc_log_ofReal_add hz N
   have hint_log : ∫ u in (0 : ℝ)..(N : ℝ), g 0 u =
       ((z + N) * Complex.log (z + N) - (z + N)) - (z * Complex.log z - z) := by
-    simp only [g, iteratedDeriv_zero, f]
-    have hlog := TauCeti.integral_log_ofReal_add (a := (0 : ℝ)) (b := (N : ℝ)) (z := z) fun u hu ↦
-      by
-        rw [uIcc_of_le (Nat.cast_nonneg N)] at hu
-        exact ofReal_add_mem_slitPlane hz hu.1
-    simpa only [Complex.ofReal_zero, add_zero, Complex.ofReal_natCast] using hlog
-  simp only [Int.cast_zero, Int.cast_natCast] at hEM
+    simpa [g, iteratedDeriv_zero, f] using integral_zero_natCast_log_ofReal_add hz N
   rw [hsum_lhs, hbern_sum, hrem_int, sub_neg_eq_add, hint_log] at hEM
   simp only [g, iteratedDeriv_zero, f, Complex.ofReal_zero, zero_add, Complex.ofReal_natCast,
     add_comm (N : ℂ) z, Complex.real_smul] at hEM
@@ -493,10 +517,9 @@ theorem stirlingSeriesRemainder_eq_integral {n : ℕ} (hn : 1 ≤ n) {z : ℂ} (
     have hint_val : ∫ u in Ioi (0 : ℝ), 1 / ((u : ℂ) + z) ^ (2 * n) =
         1 / (((2 * n - 1 : ℕ) : ℂ) * z ^ (2 * n - 1)) := by
       simpa only [← h2n, hsub] using integral_Ioi_one_div_ofReal_add_pow hz (2 * n - 2)
-    rw [heq, integral_const_mul, hint_val, stirlingTerm_def]
-    have hc : ((2 * n - 1 : ℕ) : ℂ) = (2 * n : ℂ) - 1 := by
-      rw [Nat.cast_sub (by omega : 1 ≤ 2 * n)]; push_cast; rfl
-    rw [hc, Complex.ofReal_ratCast]; simp only [div_eq_mul_inv, mul_inv]; ring
+    rw [heq, integral_const_mul, hint_val, stirlingTerm_def, natCast_two_mul_sub_one hn,
+      Complex.ofReal_ratCast]
+    simp only [div_eq_mul_inv, mul_inv]; ring
   have hsplit : stirlingSeriesRemainder n z =
       stirlingTerm n z + stirlingSeriesRemainder (n + 1) z := by
     rw [stirlingSeriesRemainder_succ]; ring
@@ -523,7 +546,7 @@ theorem iteratedDeriv_stirlingSeriesRemainder {n : ℕ} (hn : 1 ≤ n) (k : ℕ)
     rw [iteratedDeriv_zero, pow_zero, one_mul, add_zero, stirlingSeriesRemainder_eq_integral hn hz,
       ← integral_const_mul]
     have hfac : ((2 * n)! : ℂ) = (2 * n : ℂ) * ((2 * n - 1)! : ℂ) := by
-      exact_mod_cast (Nat.mul_factorial_pred (by omega : 2 * n ≠ 0)).symm
+      simpa [Nat.cast_mul, Nat.cast_ofNat] using (natCast_factorial (𝕜 := ℂ) (by omega : 2 * n ≠ 0))
     have hne_fac : ((2 * n - 1)! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
     refine setIntegral_congr_fun measurableSet_Ioi fun _ _ ↦ ?_
     rw [hfac]; field_simp
@@ -560,7 +583,7 @@ theorem iteratedDeriv_stirlingSeriesRemainder {n : ℕ} (hn : 1 ≤ n) (k : ℕ)
     have hidx : 2 * n + (k + 1) - 1 = 2 * n + k := by omega
     have hfac : ((2 * n + (k + 1) - 1)! : ℂ) = ((2 * n + k : ℕ) : ℂ) * ((2 * n + k - 1)! : ℂ) := by
       rw [hidx]
-      exact_mod_cast (Nat.mul_factorial_pred (by omega : 2 * n + k ≠ 0)).symm
+      exact natCast_factorial (by omega : 2 * n + k ≠ 0)
     rw [hfac, pow_succ]
     ring
 
@@ -603,10 +626,17 @@ theorem iteratedDeriv_realStirlingSeriesRemainder {n : ℕ} (hn : 1 ≤ n) (k : 
           ((u : ℂ) + (x : ℂ)) ^ (2 * n + k) =
       ((∫ u in Ioi (0 : ℝ),
         ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-          (u + x) ^ (2 * n + k) : ℝ) : ℂ) :=
-    (setIntegral_congr_fun measurableSet_Ioi fun _ _ ↦ by push_cast; rfl).trans
-      (integral_ofReal (𝕜 := ℂ))
-  rw [hint]; push_cast; rfl
+          (u + x) ^ (2 * n + k) : ℝ) : ℂ) := by
+    rw [setIntegral_congr_fun measurableSet_Ioi fun u _ ↦
+      show (((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u) : ℝ) : ℂ) /
+          ((u : ℂ) + (x : ℂ)) ^ (2 * n + k) =
+          ((((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
+            (u + x) ^ (2 * n + k) : ℝ) : ℂ) by
+        simp only [Complex.ofReal_div, Complex.ofReal_pow, Complex.ofReal_add]]
+    exact integral_ofReal
+  rw [hint]
+  simp only [Complex.ofReal_mul, Complex.ofReal_pow, Complex.ofReal_neg, Complex.ofReal_one,
+    Complex.ofReal_div, Complex.ofReal_natCast]
 
 /-- Exact real integral representation of `realStirlingSeriesRemainder n` on `(0, ∞)` for
 `n ≥ 1`. -/
@@ -619,7 +649,7 @@ theorem realStirlingSeriesRemainder_eq_integral {n : ℕ} (hn : 1 ≤ n) {x : �
   rw [iteratedDeriv_zero, pow_zero, one_mul, add_zero, ← integral_const_mul] at h0
   rw [h0]
   have hfac : ((2 * n)! : ℝ) = (2 * n : ℝ) * ((2 * n - 1)! : ℝ) := by
-    exact_mod_cast (Nat.mul_factorial_pred (by omega : 2 * n ≠ 0)).symm
+    simpa [Nat.cast_mul, Nat.cast_ofNat] using (natCast_factorial (𝕜 := ℝ) (by omega : 2 * n ≠ 0))
   have hne : ((2 * n - 1)! : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
   refine setIntegral_congr_fun measurableSet_Ioi fun _ _ ↦ ?_
   rw [hfac]; field_simp

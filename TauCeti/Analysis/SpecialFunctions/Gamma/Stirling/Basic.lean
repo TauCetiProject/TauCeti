@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Log
 public import TauCeti.Analysis.SpecialFunctions.Gamma.SectorialDigamma
 public import Mathlib.Analysis.SpecialFunctions.Stirling
-import TauCeti.Analysis.SpecialFunctions.Integrals.PeriodicStieltjes
+import TauCeti.Analysis.SpecialFunctions.Integrals.Periodic.Stieltjes
 
 /-!
 # Stirling's formula on sectors

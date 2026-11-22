@@ -15,7 +15,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import TauCeti.Analysis.Calculus.Deriv.Fract
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.HalfAngle
 public import Mathlib.MeasureTheory.Function.Floor
-import TauCeti.Analysis.SpecialFunctions.Integrals.PeriodicStieltjes
+import TauCeti.Analysis.SpecialFunctions.Integrals.Periodic.Stieltjes
 
 /-!
 # Uniform sectorial digamma asymptotics

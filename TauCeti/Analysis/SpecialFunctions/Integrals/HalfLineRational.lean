@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
+import TauCeti.Analysis.Calculus.Deriv.Complex
 import TauCeti.Analysis.Calculus.Deriv.ZPow
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Pow.ParametricIntegral
@@ -230,9 +231,8 @@ theorem integral_Ioi_one_div_ofReal_add_pow {z : ℂ} (hz : z ∈ Complex.slitPl
       HasDerivAt F (1 / ((u : ℂ) + z) ^ (j + 2)) u := fun u hu ↦ by
     have hne : (u : ℂ) + z ≠ 0 :=
       Complex.slitPlane_ne_zero (ofReal_add_mem_slitPlane hz (mem_Ici.mp hu))
-    have hlin : HasDerivAt (fun t : ℝ ↦ (t : ℂ) + z) 1 u := by
-      simpa using (hasDerivAt_id (u : ℂ)).comp_ofReal.add_const z
-    refine (hlin.const_div_pow hne (-(((j + 1 : ℕ) : ℂ))⁻¹) (j + 1)).congr_deriv ?_
+    refine ((TauCeti.hasDerivAt_ofReal_add u z).const_div_pow hne
+      (-(((j + 1 : ℕ) : ℂ))⁻¹) (j + 1)).congr_deriv ?_
     have hj1c : (((j + 1 : ℕ) : ℂ)) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero j
     rw [Nat.add_assoc]
     field_simp

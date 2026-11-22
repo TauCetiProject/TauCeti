@@ -78,9 +78,7 @@ for every `j : ℕ` and `z ∈ slitPlane`,
 theorem iteratedDeriv_stirlingRemainder (j : ℕ) {z : ℂ} (hz : z ∈ slitPlane) :
     iteratedDeriv j stirlingRemainder z = (-1 : ℂ) ^ j * ((j + 1).factorial : ℂ) *
       ∫ t : ℝ in Ioi 0, (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / (z + t) ^ (j + 2) := by
-  have hfun : stirlingRemainder = stirlingSeriesRemainder 1 :=
-    funext fun w ↦ (stirlingSeriesRemainder_one_eq_stirlingRemainder w).symm
-  rw [hfun, iteratedDeriv_stirlingSeriesRemainder le_rfl j hz]
+  rw [← stirlingSeriesRemainder_one, iteratedDeriv_stirlingSeriesRemainder le_rfl j hz]
   have hidx : 2 * 1 + j - 1 = j + 1 := by omega
   have hpow : 2 * 1 + j = j + 2 := by omega
   rw [hidx, hpow, Nat.mul_one]
@@ -154,44 +152,32 @@ theorem isBigO_iteratedDeriv_stirlingRemainder (j : ℕ) {δ : ℝ} (hδ : 0 < �
 /-- For every `j : ℕ` and `0 < x`, `iteratedDeriv j stirlingRemainder x` is real-valued. -/
 theorem iteratedDeriv_stirlingRemainder_ofReal_im (j : ℕ) {x : ℝ} (hx : 0 < x) :
     (iteratedDeriv j stirlingRemainder x).im = 0 := by
-  have hfun : stirlingRemainder = stirlingSeriesRemainder 1 :=
-    funext fun w ↦ (stirlingSeriesRemainder_one_eq_stirlingRemainder w).symm
-  rw [hfun, iteratedDeriv_stirlingSeriesRemainder_ofReal 1 j hx, ofReal_im]
+  rw [← stirlingSeriesRemainder_one, iteratedDeriv_stirlingSeriesRemainder_ofReal 1 j hx, ofReal_im]
 
 /-- Real integral representation of `(iteratedDeriv j stirlingRemainder x).re` for `0 < x`. -/
 theorem iteratedDeriv_stirlingRemainder_ofReal_re (j : ℕ) {x : ℝ} (hx : 0 < x) :
     (iteratedDeriv j stirlingRemainder x).re =
       (-1 : ℝ) ^ j * ((j + 1).factorial : ℝ) *
         ∫ t : ℝ in Ioi 0, ((Int.fract t - Int.fract t ^ 2) / 2) / (x + t) ^ (j + 2) := by
-  have hfun : stirlingRemainder = stirlingSeriesRemainder 1 :=
-    funext fun w ↦ (stirlingSeriesRemainder_one_eq_stirlingRemainder w).symm
-  rw [hfun, iteratedDeriv_stirlingSeriesRemainder_ofReal 1 j hx, ofReal_re,
-    iteratedDeriv_realStirlingSeriesRemainder le_rfl j hx]
-  have hidx : 2 * 1 + j - 1 = j + 1 := by omega
-  have hpow : 2 * 1 + j = j + 2 := by omega
-  rw [hidx, hpow, Nat.mul_one]
-  have hcoe : (-1 : ℝ) ^ j * (((j + 1).factorial : ℝ) / ((2 : ℕ).factorial : ℝ)) *
-      ∫ u in Ioi (0 : ℝ),
-        ((bernoulli 2 : ℝ) - bernoulliFun 2 (Int.fract u)) / (u + x) ^ (j + 2) =
-      (-1 : ℝ) ^ j * ((j + 1).factorial : ℝ) *
-        ((2 : ℝ)⁻¹ * ∫ u in Ioi (0 : ℝ),
-          ((bernoulli 2 : ℝ) - bernoulliFun 2 (Int.fract u)) / (u + x) ^ (j + 2)) := by
-    rw [Nat.factorial_two, Nat.cast_ofNat]; ring
-  rw [hcoe, ← MeasureTheory.integral_const_mul]
-  refine congr_arg (_ * ·) (setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ ?_)
-  rw [bernoulli_two, bernoulliFun_two]
-  push_cast
-  rw [add_comm t x]
-  ring
+  rw [iteratedDeriv_stirlingRemainder j (ofReal_mem_slitPlane.mpr hx)]
+  have hint :
+      ∫ t : ℝ in Ioi 0, (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / ((x : ℂ) + t) ^ (j + 2) =
+        ((∫ t : ℝ in Ioi 0,
+          ((Int.fract t - Int.fract t ^ 2) / 2) / (x + t) ^ (j + 2) : ℝ) : ℂ) := by
+    rw [setIntegral_congr_fun measurableSet_Ioi fun t _ ↦
+      show (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / ((x : ℂ) + t) ^ (j + 2) =
+          ((((Int.fract t - Int.fract t ^ 2) / 2) / (x + t) ^ (j + 2) : ℝ) : ℂ) by
+        simp only [Complex.ofReal_div, Complex.ofReal_pow, Complex.ofReal_add]]
+    exact integral_ofReal
+  rw [hint]
+  norm_cast
 
 /-- Strict sign alternation of the Stirling remainder and its derivatives on `(0, ∞)`:
 for every `j : ℕ` and `0 < x`, `0 < (-1) ^ j * (iteratedDeriv j stirlingRemainder x).re`. -/
 theorem neg_one_pow_mul_iteratedDeriv_stirlingRemainder_ofReal_re_pos (j : ℕ) {x : ℝ}
     (hx : 0 < x) :
     0 < (-1 : ℝ) ^ j * (iteratedDeriv j stirlingRemainder x).re := by
-  have hfun : stirlingRemainder = stirlingSeriesRemainder 1 :=
-    funext fun w ↦ (stirlingSeriesRemainder_one_eq_stirlingRemainder w).symm
-  rw [hfun, iteratedDeriv_stirlingSeriesRemainder_ofReal 1 j hx, ofReal_re]
+  rw [← stirlingSeriesRemainder_one, iteratedDeriv_stirlingSeriesRemainder_ofReal 1 j hx, ofReal_re]
   exact neg_one_pow_mul_iteratedDeriv_realStirlingSeriesRemainder_odd_pos 0 j hx
 
 /-- Sharp upper bound on `(-1) ^ j * (iteratedDeriv j stirlingRemainder x).re` for `0 < x`:
