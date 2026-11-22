@@ -11,6 +11,7 @@ public import TauCeti.Algebra.GroupAction.DiagonalOrbits
 public import TauCeti.Topology.Algebra.ProperAction.Basic
 
 import TauCeti.Geometry.Manifold.Submersion.Basic
+import TauCeti.Geometry.Manifold.Submersion.Split
 
 /-!
 # The smooth structure of a balanced product `P ×_K Z`
@@ -25,7 +26,8 @@ dimension `dim P + dim Z - dim K` (`TauCeti.BalancedProduct.chartedSpace`), for 
 checked on representatives (`TauCeti.BalancedProduct.contMDiff_iff`), and the projection
 `[p, z] ↦ [z]` onto `Z ⧸ K` is smooth for every manifold structure on `Z ⧸ K` making the orbit
 projection `Z → Z ⧸ K` smooth, such as that of the quotient manifold theorem when `K` acts freely
-and properly on `Z`.
+and properly on `Z`. It is a submersion for every manifold structure on `Z ⧸ K` for which the
+orbit projection of `Z` is a submersion.
 
 The case `P = G` of a Lie group with right translation by a closed subgroup `K` is in
 `TauCeti.Geometry.Lie.Subgroup.BalancedProduct`.
@@ -45,6 +47,7 @@ The case `P = G` of a Lie group with right translation by a closed subgroup `K` 
   `TauCeti.BalancedProduct.contMDiff_orbitProj`: the projection onto `Z ⧸ K` is smooth for any
   charts on `Z ⧸ K` for which `Z → Z ⧸ K` is smooth, in particular for those of the quotient
   manifold theorem.
+* `TauCeti.BalancedProduct.isSubmersion_orbitProj`: the projection onto `Z ⧸ K` is a submersion.
 
 ## References
 
@@ -150,5 +153,36 @@ theorem contMDiff_orbitProj [ProperSMul K Z] [IsCancelSMul K Z] :
       (orbitProj : BalancedProduct K P Z → MulAction.orbitRel.Quotient K Z) :=
   letI := ProperSMul.orbitRelQuotientChartedSpace IK K IZ Z
   contMDiff_orbitProj_of_contMDiff (IK := IK) (IP := IP) (ProperSMul.contMDiff_quotientMk (I := IK))
+
+/-- **The projection onto `Z ⧸ K` is a smooth submersion** for every manifold structure on `Z ⧸ K`
+for which the orbit projection `Z → Z ⧸ K` is a submersion, such as the charts of the quotient
+manifold theorem when `K` acts freely and properly on `Z` (`ProperSMul.isSubmersion_quotientMk`).
+Its composite with the projection from `P × Z` is the submersion `(p, z) ↦ [z]`. -/
+theorem isSubmersion_orbitProj {EQ HQ : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ]
+    [FiniteDimensional ℝ EQ] [TopologicalSpace HQ] {JQ : ModelWithCorners ℝ EQ HQ}
+    [ChartedSpace HQ (MulAction.orbitRel.Quotient K Z)]
+    [IsManifold JQ ∞ (MulAction.orbitRel.Quotient K Z)]
+    (hq : IsSubmersion IZ JQ ∞ (Quotient.mk (MulAction.orbitRel K Z))) :
+    letI := chartedSpace IK K IP P IZ Z
+    IsSubmersion 𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EP × EZ)) JQ ∞
+      (orbitProj : BalancedProduct K P Z → MulAction.orbitRel.Quotient K Z) := by
+  let _ := chartedSpace IK K IP P IZ Z
+  have := isManifold (IK := IK) (IP := IP) (IZ := IZ) (K := K) (P := P) (Z := Z)
+  have hπ := isSubmersion_quotientMk (IK := IK) (IP := IP) (IZ := IZ) (K := K) (P := P) (Z := Z)
+  have hcomp : orbitProj ∘ Quotient.mk (MulAction.orbitRel K (P × Z)) =
+      Quotient.mk (MulAction.orbitRel K Z) ∘ Prod.snd :=
+    funext fun x ↦ orbitProj_mk x.1 x.2
+  have hsnd : ContMDiff (IP.prod IZ) IZ ∞ (Prod.snd : P × Z → Z) := contMDiff_snd
+  have hO := contMDiff_orbitProj_of_contMDiff (IK := IK) (IP := IP) (P := P) hq.contMDiff
+  -- `orbitProj ∘ π = π_Z ∘ Prod.snd` is a submersion, as its differentials are surjective.
+  have hZ : IsSubmersion (IP.prod IZ) JQ ∞
+      (Quotient.mk (MulAction.orbitRel K Z) ∘ (Prod.snd : P × Z → Z)) := by
+    refine ((hq.contMDiff.comp hsnd).isSubmersionOfComplement_of_surjective_mfderiv (by simp)
+      fun x ↦ ?_).isSubmersion
+    rw [mfderiv_comp x (hq.contMDiff.mdifferentiableAt (by simp))
+      (hsnd.mdifferentiableAt (by simp)), mfderiv_snd]
+    exact (hq.surjective_mfderiv (by simp) x.2).comp fun v ↦ ⟨(0, v), rfl⟩
+  rw [← hcomp] at hZ
+  exact hZ.of_comp hπ.contMDiff Quotient.mk_surjective hO (by simp)
 
 end TauCeti.BalancedProduct
