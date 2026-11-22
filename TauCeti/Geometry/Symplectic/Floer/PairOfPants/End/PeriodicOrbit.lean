@@ -8,10 +8,11 @@ module
 public import TauCeti.Geometry.Manifold.Flow.Periodic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
+public import TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Homotopy
 
 /-!
-# Periodic orbits in positive end charts on a manifold
+# Periodic orbits in positive end charts
 
 On an end `q` of the pair of pants `S = ℂ ∖ {0, 1}`, the positive end chart
 `φ'_q(s, t) = φ_q(±s, ±t)` (`TauCeti.Floer.positiveEndChart`) rescales time by `q.endSign = ±1`
@@ -20,27 +21,39 @@ and replaces the end Hamiltonian `H_q` by `H'_q(t, x) = ±H_q(±t, x)`
 `TauCeti.Floer.exists_nullhomotopic_comp_endSign_mul_iff` from
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Homotopy`, this file translates Hamiltonian
 vector fields, solution curves, `1`-periodic orbits, and contractible `1`-periodic orbits between
-`H'_q` and `H_q` without importing the Floer pullback or half-cylinder convergence layers.
+`H'_q` and `H_q` on manifolds and symplectic vector spaces without importing the Floer pullback or
+half-cylinder convergence layers.
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.hamiltonianVectorField_positiveEndHamiltonian_endSign_mul`: at the time
-  `±t` of the end, `X_{H'_q(±t)} = ±X_{H_q(t)}`.
-* `TauCeti.SmoothTwoForm.hasMFDerivAt_comp_endSign_mul`: reading an integral curve of `H'_q` with
-  `t ↦ ±t` gives an integral curve of `H_q`.
-* `TauCeti.SmoothTwoForm.mem_periodicSolutions_comp_endSign_mul`: reading a `1`-periodic orbit of
-  `H'_q` with `t ↦ ±t` gives a `1`-periodic orbit of `H_q`.
-* `TauCeti.SmoothTwoForm.mem_periodicSolutions_positiveEndHamiltonian_iff`: `x` is a `1`-periodic
-  orbit of `H'_q` if and only if `t ↦ x(±t)` is a `1`-periodic orbit of `H_q`.
-* `TauCeti.SmoothTwoForm.mem_contractiblePeriodicSolutions_positiveEndHamiltonian_iff`: `x` is a
-  contractible `1`-periodic orbit of `H'_q` if and only if `t ↦ x(±t)` is a contractible
-  `1`-periodic orbit of `H_q`.
+On manifolds (`TauCeti.SmoothTwoForm`):
+
+* `hamiltonianVectorField_positiveEndHamiltonian_endSign_mul`: at the time `±t` of the end,
+  `X_{H'_q(±t)} = ±X_{H_q(t)}`.
+* `hasMFDerivAt_comp_endSign_mul`: reading an integral curve of `H'_q` with `t ↦ ±t` gives an
+  integral curve of `H_q`.
+* `mem_periodicSolutions_comp_endSign_mul`: reading a `1`-periodic orbit of `H'_q` with `t ↦ ±t`
+  gives a `1`-periodic orbit of `H_q`.
+* `mem_periodicSolutions_positiveEndHamiltonian_iff`: `x` is a `1`-periodic orbit of `H'_q` if and
+  only if `t ↦ x(±t)` is a `1`-periodic orbit of `H_q`.
+* `mem_contractiblePeriodicSolutions_positiveEndHamiltonian_iff`: `x` is a contractible
+  `1`-periodic orbit of `H'_q` if and only if `t ↦ x(±t)` is a contractible `1`-periodic orbit of
+  `H_q`.
+
+On symplectic vector spaces (`TauCeti.SymplecticForm`):
+
+* `hamiltonianVectorField_positiveEndHamiltonian_endSign_mul`: at the time `±t` of the end,
+  `X_{H'_q(±t)} = ±X_{H_q(t)}`.
+* `hasDerivAt_comp_endSign_mul` and `hasDerivAt_comp_endSign_mul_positiveEndHamiltonian`:
+  transport of Hamiltonian trajectories between `H'_q` and `H_q`.
+* `exists_pos_forall_eq_of_isNondegenerateFixedPt_positiveEndHamiltonian`: nondegeneracy of the
+  time-one map of `H_q` at `x(0)` isolates `x` among `1`-periodic orbits of `H'_q`.
 -/
 
 public section
 
-open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
-open scoped Manifold
+open Function TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
+open scoped Manifold NNReal
 
 namespace TauCeti
 
@@ -120,5 +133,65 @@ theorem mem_contractiblePeriodicSolutions_positiveEndHamiltonian_iff {q : Punctu
     ← exists_nullhomotopic_comp_endSign_mul_iff]
 
 end SmoothTwoForm
+
+namespace SymplecticForm
+
+open Floer
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {H : Puncture → ℝ → V → ℝ}
+
+/-- At the time `±t` of the end, the Hamiltonian vector field of the positive end Hamiltonian
+`H'_q` is `±` that of `H_q` at the time `t`: `X_{H'_q(±t)} = ±X_{H_q(t)}`. -/
+theorem hamiltonianVectorField_positiveEndHamiltonian_endSign_mul (q : Puncture) (t : ℝ) :
+    ω.hamiltonianVectorField (positiveEndHamiltonian H q (q.endSign * t)) =
+      q.endSign • ω.hamiltonianVectorField (H q t) := by
+  -- This is the manifold statement for the constant form.
+  funext y
+  have h := SmoothTwoForm.hamiltonianVectorField_positiveEndHamiltonian_endSign_mul
+    (ω := ω.constSmooth) (H := H) q t y
+  rw [hamiltonianVectorField_constSmooth, hamiltonianVectorField_constSmooth] at h
+  exact h
+
+/-- Reading an orbit of the positive end Hamiltonian `H'_q` with the time `±t` of the end gives
+an orbit of `H_q`. -/
+theorem hasDerivAt_comp_endSign_mul {q : Puncture} {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x t)) t)
+    (t : ℝ) :
+    HasDerivAt (fun t ↦ x (q.endSign * t))
+      (ω.hamiltonianVectorField (H q t) (x (q.endSign * t))) t := by
+  have h := (hx (q.endSign * t)).scomp t ((hasDerivAt_id' t).const_mul q.endSign)
+  rw [hamiltonianVectorField_positiveEndHamiltonian_endSign_mul, mul_one, Pi.smul_apply,
+    smul_smul, endSign_mul_self, one_smul] at h
+  exact h
+
+/-- Reading an orbit of `H_q` with the time `±t` of the end gives an orbit of the positive end
+Hamiltonian `H'_q`. This is the converse of `hasDerivAt_comp_endSign_mul`. -/
+theorem hasDerivAt_comp_endSign_mul_positiveEndHamiltonian {q : Puncture} {y : ℝ → V}
+    (hy : ∀ t, HasDerivAt y (ω.hamiltonianVectorField (H q t) (y t)) t) (t : ℝ) :
+    HasDerivAt (fun t ↦ y (q.endSign * t))
+      (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (y (q.endSign * t))) t :=
+  hasDerivAt_comp_endSign_mul (H := positiveEndHamiltonian H)
+    (by simpa only [positiveEndHamiltonian_positiveEndHamiltonian] using hy) t
+
+/-- An orbit of the positive end Hamiltonian `H'_q` which, read with the time `±t` of the end,
+starts at a nondegenerate fixed point of the time-one map of `H_q`, is isolated among the
+`1`-periodic orbits of `H'_q`: `H'_q` is `H_q` on the input ends and the reversed Hamiltonian
+`-H_q(-t)` on the output end. -/
+theorem exists_pos_forall_eq_of_isNondegenerateFixedPt_positiveEndHamiltonian (ω : SymplecticForm V)
+    {q : Puncture} {L : ℝ≥0} (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension (H q)))
+    {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x t)) t)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow (H q) hL 0 1) (x 0)) :
+    ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 →
+      (∀ t, HasDerivAt y (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (y t)) t) →
+      dist (y 0) (x 0) < ε → y = x := by
+  rcases q.endSign_eq_one_or_eq_neg_one with h | h
+  · rw [positiveEndHamiltonian_of_endSign_eq_one H h] at hx ⊢
+    exact ω.exists_pos_forall_eq_of_isNondegenerateFixedPt hL hx hnd
+  · rw [positiveEndHamiltonian_of_endSign_eq_neg_one H h] at hx ⊢
+    exact ω.exists_pos_forall_eq_of_isNondegenerateFixedPt_reverse hL hx hnd
+
+end SymplecticForm
 
 end TauCeti

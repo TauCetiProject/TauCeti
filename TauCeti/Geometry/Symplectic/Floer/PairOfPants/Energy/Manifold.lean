@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Integrable
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
 
 /-!
@@ -17,7 +18,8 @@ perturbation on the pair of pants `S = ℂ ∖ {0, 1}` equal to `H_q(t) dt` beyo
 for `1`-periodic Hamiltonians `H_q`, and let `u : ℝ × ℝ → M` solve `(du - X_K)^{0,1} = 0` on `S`
 with image in a compact set `B ⊆ M` and integrable symplectic area density and curvature along `u`.
 
-In `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic`, compactness of `[0, 1] × B`
+In `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Integrable` and
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic`, compactness of `[0, 1] × B`
 bounds `H_q` along end loops, giving automatic finite energy
 (`integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact`,
 `lintegral_floerEnergyDensity_of_eq_smul_endAngularForm_ne_top_of_isCompact`) and the energy

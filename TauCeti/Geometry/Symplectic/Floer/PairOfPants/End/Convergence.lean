@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.CylindricalEnd
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Orbit
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.PeriodicOrbit
 
 /-!
 # Convergence of the ends of a Floer pair of pants to nondegenerate orbits
@@ -79,24 +80,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
   {ω : SymplecticForm V} {K : ℂ → V → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → V → ℝ} {T₀ : ℝ}
   {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {B : Set V} {c M : ℝ}
 
-/-- An orbit of the positive end Hamiltonian `H'_q` which, read with the time `±t` of the end,
-starts at a nondegenerate fixed point of the time-one map of `H_q`, is isolated among the
-`1`-periodic orbits of `H'_q`: `H'_q` is `H_q` on the input ends and the reversed Hamiltonian
-`-H_q(-t)` on the output end. -/
-private theorem exists_pos_forall_eq_of_isNondegenerateFixedPt_positiveEndHamiltonian
-    {q : Puncture} {L : ℝ≥0} (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension (H q)))
-    {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x t)) t)
-    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow (H q) hL 0 1) (x 0)) :
-    ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 →
-      (∀ t, HasDerivAt y (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (y t)) t) →
-      dist (y 0) (x 0) < ε → y = x := by
-  rcases q.endSign_eq_one_or_eq_neg_one with h | h
-  · rw [positiveEndHamiltonian_of_endSign_eq_one H h] at hx ⊢
-    exact ω.exists_pos_forall_eq_of_isNondegenerateFixedPt hL hx hnd
-  · rw [positiveEndHamiltonian_of_endSign_eq_neg_one H h] at hx ⊢
-    exact ω.exists_pos_forall_eq_of_isNondegenerateFixedPt_reverse hL hx hnd
-
 /-- **The ends of a Floer pair of pants converge to nondegenerate orbits.** Let `K` be equal to
 `H_q(t) dt` beyond `T₀` on each end `q`, for `1`-periodic `C¹` Hamiltonians `H_q`, and let `u` be
 `C¹` on `S`, with image in a compact set `B`, solving the Floer equation `(du - X_K)^{0,1} = 0` on
@@ -166,7 +149,7 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_endChart_atTop_of_floer
         fun t ↦ hxB _
       rw [mul_zero] at hnd₀
       obtain ⟨ε, hε, h⟩ :=
-        exists_pos_forall_eq_of_isNondegenerateFixedPt_positiveEndHamiltonian hL hx hnd₀
+        ω.exists_pos_forall_eq_of_isNondegenerateFixedPt_positiveEndHamiltonian hL hx hnd₀
       exact ⟨ε, hε, fun y hyper hy _ _ hyx ↦ h y hyper hy (hyx 0)⟩
   refine ⟨fun t ↦ x (q.endSign * t), periodic_comp_endSign_mul hxper,
     hasDerivAt_comp_endSign_mul hx, ?_⟩

@@ -115,6 +115,22 @@ open Floer
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ}
 
+omit [FiniteDimensional ℝ V] in
+/-- The action of a loop for the positive end Hamiltonian `H'_q` is `±` the action, for `H_q`,
+of the loop read with the time `±t` of the end. -/
+theorem hamiltonianAction_positiveEndHamiltonian (ω : SymplecticForm V) {q : Puncture}
+    (hH : Periodic (H q) 1) {x : ℝ → V} (hx : Periodic x 1) :
+    ω.hamiltonianAction (positiveEndHamiltonian H q) x =
+      q.endSign * ω.hamiltonianAction (H q) (fun t ↦ x (q.endSign * t)) := by
+  rcases q.endSign_eq_one_or_eq_neg_one with h | h
+  · simp [positiveEndHamiltonian_of_endSign_eq_one H h, h]
+  · have hx' : Periodic (fun t ↦ x (-t)) 1 := by
+      simpa only [h, neg_one_mul] using periodic_comp_endSign_mul (q := q) hx
+    have h' := ω.hamiltonianAction_comp_neg hH hx'
+    simp only [neg_neg] at h'
+    rw [positiveEndHamiltonian_of_endSign_eq_neg_one H h, h]
+    simpa using h'
+
 /-- Stokes' formula `TauCeti.SymplecticForm.integral_fderiv_apply_truncation` in the real
 coordinates `ℝ × ℝ ≃ ℂ` of the energy identity. -/
 private theorem integral_symplecticForm_fderiv_truncation (ω : SymplecticForm V) {u : ℝ × ℝ → V}

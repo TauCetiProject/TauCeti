@@ -10,6 +10,7 @@ public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Connected.Basic
 public import Mathlib.Topology.DiscreteSubset
 public import Mathlib.Topology.Separation.Hausdorff
+import TauCeti.Topology.Maps.DomRestrict
 import TauCeti.Topology.Separation.InvFunOn
 
 /-!
@@ -128,12 +129,9 @@ values in `K`. If `f ∘ g` tends to `f x` for some `x ∈ K`, then `g` tends to
 theorem _root_.IsCompact.tendsto_nhds_of_tendsto_comp {Y ι : Type*} [TopologicalSpace Y]
     [T2Space Y] {K : Set X} {f : X → Y} (hK : IsCompact K) (hf : ContinuousOn f K)
     (hinj : InjOn f K) {l : Filter ι} {g : ι → X} (hg : ∀ᶠ i in l, g i ∈ K) {x : X} (hx : x ∈ K)
-    (h : Tendsto (f ∘ g) l (𝓝 (f x))) : Tendsto g l (𝓝 x) := by
-  intro s hs
-  obtain ⟨t, ht, hts⟩ := hK.exists_mem_nhds_inter_preimage_subset hf hinj hx hs
-  have hgt : ∀ᶠ i in l, f (g i) ∈ t := by
-    simpa only [Function.comp_apply] using h.eventually_mem ht
-  exact (hg.and hgt).mono fun i hi ↦ hts ⟨hi.1, hi.2⟩
+    (h : Tendsto (f ∘ g) l (𝓝 (f x))) : Tendsto g l (𝓝 x) :=
+  (hK.isClosedEmbedding_domRestrict hf hinj).isInducing.tendsto_of_tendsto_comp_of_eventually_mem
+    hx hg h
 
 /-- A family that eventually lies in a compact set `s` along an ultrafilter converges along it to
 a point of `s`. -/

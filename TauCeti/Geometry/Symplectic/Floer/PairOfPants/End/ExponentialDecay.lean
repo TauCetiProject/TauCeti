@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Convergence
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.PeriodicOrbit
 
 /-!
 # Exponential convergence of the ends of a Floer pair of pants
