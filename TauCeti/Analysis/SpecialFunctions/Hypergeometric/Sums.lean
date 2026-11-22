@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
+public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -35,7 +35,7 @@ and keeps `z⁻¹` off `[1, ∞)`.
 Building on the terminating-polynomial API in
 `TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic` and
 `Complex.eulerIntegral_neg_natCast` in
-`TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral`, this file proves that the
+`TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic`, this file proves that the
 DLMF 15.15.1 series converges absolutely and defines a holomorphic function throughout
 `{z | max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖}` for all complex parameters `a`, `b`, `c`, and establishes the
 inverse-argument expansion for:
