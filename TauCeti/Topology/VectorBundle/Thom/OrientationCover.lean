@@ -36,7 +36,9 @@ by the lifted involution onto the classes of `Hₚ(B'; K)` negated by `τ`
 the fixed classes upstairs are the relative homology of `(E, E₀)` and the negated classes of `B'`
 are the homology of `B` twisted by the orientation local system of `E`; neither identification is
 proved in this file. Through them, this isomorphism becomes the Thom isomorphism
-`Hₚ₊ᵣ(E, E₀; K) ≅ Hₚ(B; o(E) ⊗ K)` with orientation-twisted coefficients.
+`Hₚ₊ᵣ(E, E₀; K) ≅ Hₚ(B; o(E) ⊗ K)` with orientation-twisted coefficients
+(`TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyEquivTwistedHomology`, in
+`TauCeti.Topology.VectorBundle.Thom.TwistedHomology`).
 
 ## Main definitions and results
 

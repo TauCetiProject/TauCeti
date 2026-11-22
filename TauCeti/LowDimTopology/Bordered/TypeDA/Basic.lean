@@ -77,8 +77,10 @@ tensor differential of `TauCeti.LowDimTopology.Bordered.TypeA`; the elementary t
 idempotents do not match are among the generators of `P ⊠ N`, and they vanish in the tensor product
 over the idempotents, which `P ⊠_I N` discards. The type `A` module `M ⊠ P` is built here from a
 differential module `M`; for a general `A∞` module `M` whose operations vanish from some arity on it
-is `TauCeti.TypeDAStructure.typeABoxModule`, in `TauCeti.LowDimTopology.Bordered.TypeA.BoxTypeDA`.
-The associativity `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)` for such a module is not treated.
+is `TauCeti.TypeDAStructure.typeABoxModule`, in `TauCeti.LowDimTopology.Bordered.TypeA.BoxTypeDA`,
+and the associativity `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)` for such a module is
+`TauCeti.TypeDAStructure.typeABoxDifferential_typeABoxModule`, in
+`TauCeti.LowDimTopology.Bordered.TypeA.Associativity`.
 
 ## Main definitions
 

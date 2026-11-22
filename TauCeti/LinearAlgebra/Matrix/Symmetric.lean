@@ -23,9 +23,10 @@ import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
 /-!
 # Quadratic forms, idempotents, and the number of symmetric matrices
 
-For a symmetric matrix `A` over a commutative ring, the quadratic form `x ↦ xᵀ A x` satisfies
-the polarization identities `(x ± y)ᵀ A (x ± y) = xᵀ A x + yᵀ A y ± 2 xᵀ A y`. If moreover `A` is
-invertible, translating `x` by `A y` changes the quadratic form of `A⁻¹` by
+For a symmetric matrix `A` over a commutative ring, every congruent matrix `P A Pᵀ` is symmetric,
+and the quadratic form `x ↦ xᵀ A x` satisfies the polarization identities
+`(x ± y)ᵀ A (x ± y) = xᵀ A x + yᵀ A y ± 2 xᵀ A y`. If moreover `A` is invertible, translating `x`
+by `A y` changes the quadratic form of `A⁻¹` by
 `(x + A y)ᵀ A⁻¹ (x + A y) = xᵀ A⁻¹ x + 2 xᵀ y + yᵀ A y`.
 
 For a symmetric integer matrix `A` and an integer vector `m`, the quadratic form
@@ -59,6 +60,7 @@ same way by their entries on and above the diagonal, in every characteristic.
 
 ## Main results
 
+* `Matrix.IsSymm.mul_mul_transpose`: a congruence `P A Pᵀ` of a symmetric matrix is symmetric.
 * `Matrix.IsSymm.add_dotProduct_mulVec_add` and `Matrix.IsSymm.sub_dotProduct_mulVec_sub`: the
   polarization identities for a symmetric matrix.
 * `Matrix.IsSymm.add_mulVec_dotProduct_inv_mulVec_add_mulVec`: for an invertible symmetric `A`,
@@ -93,6 +95,11 @@ public section
 namespace Matrix
 
 open Finset
+
+/-- A congruence `P A Pᵀ` of a symmetric matrix `A` is symmetric. -/
+theorem IsSymm.mul_mul_transpose {m n R : Type*} [Fintype n] [NonUnitalCommSemiring R]
+    {A : Matrix n n R} (hA : A.IsSymm) (P : Matrix m n R) : (P * A * Pᵀ).IsSymm := by
+  rw [IsSymm, transpose_mul, transpose_mul, transpose_transpose, hA.eq, Matrix.mul_assoc]
 
 /-- Expanding the quadratic form of a symmetric matrix at a sum. -/
 theorem IsSymm.add_dotProduct_mulVec_add {ι R : Type*} [Fintype ι] [CommSemiring R]
