@@ -22,7 +22,9 @@ compact set the uniform bounds are automatic for a positive exponent
 If one argument vanishes off a set `s`, the other need only be Hölder and bounded on `s`
 (`ContinuousLinearMap.holderWith_comp₂_of_eq_zero`, and `HolderWith.smul_of_eq_zero` for scalar
 multiplication): this is how a cutoff extends a function given on `s` to the whole space, and how
-freezing a coefficient on the support of a localized function is estimated.
+freezing a coefficient on the support of a localized function is estimated. The same holds
+relative to a set `t` (`HolderOnWith.smul_of_eq_zero`), for a cutoff that extends a function given
+on `s ∩ t` to `t`.
 
 A continuous linear map applied after a Hölder function is Hölder, the constant multiplied by
 the operator norm (`ContinuousLinearMap.holderWith_comp`).
@@ -179,3 +181,23 @@ theorem norm_smulRight_sub_le {ι Y : Type*} [Fintype ι] {E : ι → Type*}
   exact mul_le_mul_of_nonneg_left (hg.dist_le x y) (norm_nonneg _)
 
 end HolderWith
+
+namespace HolderOnWith
+
+variable {𝕜 X G : Type*} [NontriviallyNormedField 𝕜] [PseudoEMetricSpace X]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- The relative form of `HolderWith.smul_of_eq_zero`: a scalar factor that is Hölder and bounded
+on a set `t` and vanishes at the points of `t` off a set `s` turns a function that is Hölder and
+bounded only on `s ∩ t` into a function that is Hölder on `t`. -/
+theorem smul_of_eq_zero {α Kc Kf Mc Mf : ℝ≥0} {c : X → 𝕜} {f : X → G} {s t : Set X}
+    (hc : HolderOnWith Kc α c t) (hf : HolderOnWith Kf α f (s ∩ t))
+    (hcnorm : ∀ x ∈ t, ‖c x‖ ≤ Mc) (hfnorm : ∀ x ∈ s ∩ t, ‖f x‖ ≤ Mf)
+    (hc0 : ∀ x ∈ t, x ∉ s → c x = 0) :
+    HolderOnWith (Mc * Kf + Mf * Kc) α (fun x ↦ c x • f x) t :=
+  HolderWith.restrict_iff.1 <| HolderWith.smul_of_eq_zero (s := {x : t | (x : X) ∈ s})
+    hc.holderWith (fun x hx y hy ↦ hf x ⟨hx, x.property⟩ y ⟨hy, y.property⟩)
+    (fun x ↦ hcnorm x x.property) (fun x hx ↦ hfnorm x ⟨hx, x.property⟩)
+    (fun x hx ↦ hc0 x x.property hx)
+
+end HolderOnWith
