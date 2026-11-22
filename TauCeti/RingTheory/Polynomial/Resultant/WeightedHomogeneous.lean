@@ -7,8 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.RingTheory.Polynomial.Resultant.Normalization
-
-import TauCeti.RingTheory.Polynomial.UniversalFactorizationRing
+public import TauCeti.RingTheory.Polynomial.UniversalFactorizationRing
 
 /-!
 # Weighted homogeneity of the discriminant
@@ -29,6 +28,8 @@ coefficients of `p` yields the general monoid statement.
 
 ## Main results
 
+* `Polynomial.isWeightedHomogeneous_discr_freePoly`: the discriminant of `Polynomial.freePoly R n`
+  is weighted homogeneous of weight `n * (n - 1)` when `X i` has weight `n - i`.
 * `Polynomial.isWeightedHomogeneous_discr`: the discriminant of a polynomial whose coefficient of
   `X ^ i` has weight `(natDegree - i) • u` is weighted homogeneous of weight
   `(natDegree * (natDegree - 1)) • u`.
@@ -69,9 +70,14 @@ private theorem isWeightedHomogeneous_discr_nat {w : σ → ℕ} {p : (MvPolynom
   rw [hcomp]
   exact MvPolynomial.weightedHomogeneousComponent_isWeightedHomogeneous _ _
 
-private theorem isWeightedHomogeneous_discr_freePoly [Nontrivial R] (n : ℕ) :
+/-- The discriminant of `Polynomial.freePoly R n` is weighted homogeneous of weight `n * (n - 1)`
+when the variable `X i` (the coefficient in degree `i`) is given weight `n - i`. -/
+theorem isWeightedHomogeneous_discr_freePoly (R : Type*) [CommRing R] (n : ℕ) :
     (freePoly R n).discr.IsWeightedHomogeneous (fun i : Fin (n + 1) ↦ n - (i : ℕ))
       (n * (n - 1)) := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · rw [Subsingleton.elim (freePoly R n).discr 0]
+    exact MvPolynomial.isWeightedHomogeneous_zero R _ _
   let w : Fin (n + 1) → ℕ := fun i ↦ n - (i : ℕ)
   have hp : ∀ k, ((freePoly R n).coeff k).IsWeightedHomogeneous w
       ((freePoly R n).natDegree - k) := by
@@ -97,7 +103,7 @@ theorem isWeightedHomogeneous_discr {M : Type*} [AddCommMonoid M] {w : σ → M}
   have hP_smul : (freePoly R n).discr.IsWeightedHomogeneous
       (fun i : Fin (n + 1) ↦ (n - (i : ℕ)) • u) ((n * (n - 1)) • u) := by
     simpa [Function.comp_def, multiplesHom_apply] using
-      (isWeightedHomogeneous_discr_freePoly (R := R) n).comp_weight (multiplesHom M u)
+      (isWeightedHomogeneous_discr_freePoly R n).comp_weight (multiplesHom M u)
   let φ : MvPolynomial (Fin (n + 1)) R →ₐ[R] MvPolynomial σ R :=
     MvPolynomial.aeval fun i : Fin (n + 1) ↦ p.coeff i
   have hmap : (freePoly R n).map φ.toRingHom = p := map_aeval_coeff_freePoly le_rfl

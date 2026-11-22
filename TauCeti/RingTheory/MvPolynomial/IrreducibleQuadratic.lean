@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPolynomial.IrreducibleQuadratic
 
 import Mathlib.Algebra.MvPolynomial.Nilpotent
+import TauCeti.Algebra.MvPolynomial.Variables
 
 /-!
 # Irreducibility and non-associatedness of variable differences
@@ -49,15 +50,9 @@ theorem eq_of_associated_X_sub_X {σ R : Type*} [Preorder σ] [CommRing R] [IsDo
   classical
   obtain ⟨u, hu⟩ := hass
   obtain ⟨r, hr, huC⟩ := isUnit_iff_eq_C_of_isReduced.mp u.isUnit
-  have hvars_sub : ∀ {a b : σ}, a ≠ b → (X a - X b : MvPolynomial σ R).vars = {a, b} :=
-    fun {a b} hab ↦ by
-      have hd : Disjoint (X a : MvPolynomial σ R).vars (X b : MvPolynomial σ R).vars := by
-        simp [hab]
-      rw [vars_sub_of_disjoint (X a) hd, vars_X, vars_X]
-      rfl
   have hvars : ({i, j} : Finset σ) = {i', j'} := by
     have hv := congrArg MvPolynomial.vars hu
-    rwa [huC, mul_comm, vars_C_mul r hr.ne_zero, hvars_sub hij.ne, hvars_sub hij'.ne] at hv
+    rwa [huC, mul_comm, vars_C_mul r hr.ne_zero, vars_X_sub_X hij.ne, vars_X_sub_X hij'.ne] at hv
   have hi : i = i' ∨ i = j' := by simpa using (Finset.ext_iff.mp hvars i).mp (by simp)
   have hj : j = i' ∨ j = j' := by simpa using (Finset.ext_iff.mp hvars j).mp (by simp)
   rcases hi with rfl | rfl <;> rcases hj with rfl | rfl

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.Polynomial.Resultant.WeightedHomogeneous
 
+import Mathlib.Tactic.LinearCombination
+
 /-!
 # The generic depressed polynomial and its discriminant
 
@@ -45,8 +47,10 @@ The discriminant of the generic depressed polynomial is weighted homogeneous of 
   `TauCeti.discr_eq_eval_depressedDiscr`: base change and evaluation of `depressedDiscr R m`.
 * `TauCeti.depressedDiscr_mem_smul`, `TauCeti.depressedDiscr_mem`: the discriminant is weighted
   homogeneous of weight `(m * (m - 1)) • u` (and `m * (m - 1)` for `depressedWeight m`).
-* `TauCeti.depressedDiscr_two`, `TauCeti.depressedDiscr_three`: the discriminants in degrees `2`
-  and `3`.
+* `TauCeti.depressedDiscr_zero`, `TauCeti.depressedDiscr_one`, `TauCeti.depressedDiscr_two`,
+  `TauCeti.depressedDiscr_three`, `TauCeti.depressedDiscr_four`,
+  `TauCeti.depressedDiscr_two_of_charTwo`, `TauCeti.depressedDiscr_three_of_charThree`: explicit
+  discriminants in degrees `0` through `4` and reductions in characteristics `2` and `3`.
 -/
 
 public section
@@ -340,6 +344,19 @@ theorem depressedDiscr_mem :
     rcases m with _ | m <;> simp
   rwa [hw, hm] at h
 
+/-- For `m = 0`, `TauCeti.depressedDiscr R 0` is `1`. -/
+@[simp]
+theorem depressedDiscr_zero (R : Type*) [CommRing R] :
+    depressedDiscr R 0 = 1 := by
+  rw [← discr_genericDepressed, genericDepressed_zero]
+  simpa only [Polynomial.C_1] using Polynomial.discr_C (1 : MvPolynomial (Fin 0) R)
+
+/-- For `m = 1`, `TauCeti.depressedDiscr R 1` is `1`. -/
+@[simp]
+theorem depressedDiscr_one (R : Type*) [CommRing R] :
+    depressedDiscr R 1 = 1 := by
+  rw [← discr_genericDepressed, genericDepressed_one, discr_X]
+
 /-- For `m = 2`, the discriminant of `X² + a₂` is `-4 a₂`. -/
 theorem depressedDiscr_two : depressedDiscr R 2 = -4 * MvPolynomial.X 0 := by
   nontriviality R
@@ -354,6 +371,29 @@ theorem depressedDiscr_three :
   rw [← discr_genericDepressed, discr_of_degree_eq_three (by rw [degree_genericDepressed,
     Nat.cast_ofNat])]
   simp [genericDepressed, Fin.sum_univ_two, coeff_X]
+
+/-- For `m = 4`, the discriminant of `X ^ 4 + a₂ X ^ 2 + a₃ X + a₄`. -/
+theorem depressedDiscr_four (R : Type*) [CommRing R] :
+    depressedDiscr R 4 =
+      256 * MvPolynomial.X 2 ^ 3 - 128 * MvPolynomial.X 0 ^ 2 * MvPolynomial.X 2 ^ 2 +
+        144 * MvPolynomial.X 0 * MvPolynomial.X 1 ^ 2 * MvPolynomial.X 2 -
+        27 * MvPolynomial.X 1 ^ 4 + 16 * MvPolynomial.X 0 ^ 4 * MvPolynomial.X 2 -
+        4 * MvPolynomial.X 0 ^ 3 * MvPolynomial.X 1 ^ 2 := by
+  rw [← discr_genericDepressed, genericDepressed_four, discr_depressedQuartic]
+
+/-- In characteristic `2`, `depressedDiscr R 2` vanishes identically. -/
+theorem depressedDiscr_two_of_charTwo (R : Type*) [CommRing R] [CharP R 2] :
+    depressedDiscr R 2 = 0 := by
+  rw [depressedDiscr_two]
+  have h2 : (2 : MvPolynomial (Fin 1) R) = 0 := CharP.ofNat_eq_zero (MvPolynomial (Fin 1) R) 2
+  linear_combination -2 * MvPolynomial.X 0 * h2
+
+/-- In characteristic `3`, `depressedDiscr R 3` collapses to `-X 0 ^ 3`. -/
+theorem depressedDiscr_three_of_charThree (R : Type*) [CommRing R] [CharP R 3] :
+    depressedDiscr R 3 = -MvPolynomial.X 0 ^ 3 := by
+  rw [depressedDiscr_three]
+  have h3 : (3 : MvPolynomial (Fin 2) R) = 0 := CharP.ofNat_eq_zero (MvPolynomial (Fin 2) R) 3
+  linear_combination (-MvPolynomial.X 0 ^ 3 - 9 * MvPolynomial.X 1 ^ 2) * h3
 
 end Ring
 

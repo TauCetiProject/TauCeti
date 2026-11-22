@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.CommRing
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Algebra.MvPolynomial.Variables
 public import TauCeti.Data.Finsupp.Filter
@@ -32,6 +33,8 @@ recursion along the variable order.
 
 * `MvPolynomial.coeff_add_mul_of_disjoint_vars`: `(P * Q).coeff (a + b) = P.coeff a * Q.coeff b`
   for exponents `a` and `b` supported on the variables of `P` and of `Q`.
+* `MvPolynomial.vars_X_sub_X`: over a nontrivial commutative ring, the variables of `X i - X j`
+  for `i ≠ j` are `{i, j}`.
 * `MvPolynomial.vars_rename_subset_Ioi`: if `f` sends every variable of `a` above `i`, then
   every variable of `rename f a` lies above `i`.
 * `MvPolynomial.exists_rename_eq_of_vars_subset_range'`: a polynomial whose variables all lie in
@@ -64,6 +67,15 @@ theorem coeff_add_mul_of_disjoint_vars (h : Disjoint P.vars Q.vars) {a b : σ �
   rw [finsupp_support_eq_support] at ha' hb'
   exact ⟨Finset.coe_subset.2 (support_subset_vars_of_mem_support ha'),
     Finset.coe_subset.2 (support_subset_vars_of_mem_support hb')⟩
+
+/-- Over a nontrivial commutative ring, the variables of `X i - X j` for `i ≠ j` are `{i, j}`. -/
+theorem vars_X_sub_X {σ R : Type*} [DecidableEq σ] [CommRing R] [Nontrivial R] {i j : σ}
+    (hij : i ≠ j) :
+    (X i - X j : MvPolynomial σ R).vars = {i, j} := by
+  have hd : Disjoint (X i : MvPolynomial σ R).vars (X j : MvPolynomial σ R).vars := by
+    simp [hij]
+  rw [vars_sub_of_disjoint (X i) hd, vars_X, vars_X]
+  rfl
 
 /-- If `f` sends every variable of `a` above `i`, then every variable of `rename f a` lies
 above `i`. -/
