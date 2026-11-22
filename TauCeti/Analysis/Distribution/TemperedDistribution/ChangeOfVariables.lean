@@ -46,6 +46,11 @@ If `φ` pushes `μ` forward to at most a finite multiple of `μ`, the pullback o
 `c ≤ |det Dφ|` with `c > 0`, the pullback maps every `Lᵖ` space to itself, with norm at most
 `c^{-1/p}` (`exists_compCLM_toTemperedDistribution_eq_and_norm_le`).
 
+Translates of a Schwartz function escape to infinity: as `a` leaves every compact set, the
+distribution of `u (· - a)` tends to `0` in `𝓢'`
+(`SchwartzMap.tendsto_toTemperedDistributionCLM_compSubConstCLM`), although translation does not
+change its `Lᵖ` norms.
+
 This is the global change of variables on `𝓢'` against which the Bessel-potential spaces `H^s` and
 Besov spaces `B^s_{p, q}`, which are subspaces of `𝓢'`, are compared under diffeomorphisms of `E`.
 It needs no bound on the derivatives beyond temperate growth: the shear `(x, y) ↦ (x, y + x³)` of
@@ -232,6 +237,37 @@ theorem compCLM_toTemperedDistribution (hφ : (φ : E → E).HasTemperateGrowth)
   ext f
   simp only [compCLM_apply_apply, Function.HasTemperateGrowth.toTemperedDistribution_apply,
     SchwartzMap.integral_pushforwardCLM_smul, Function.comp_apply]
+
+open Filter Topology in
+omit [μ.IsAddHaarMeasure] in
+/-- **Translates of a Schwartz function tend to `0` as tempered distributions**: as `a` leaves
+every compact set, `∫ f (x) • u (x - a) dμ → 0` for every Schwartz test function `f`, for every
+measure `μ` of temperate growth. -/
+theorem _root_.SchwartzMap.tendsto_toTemperedDistributionCLM_compSubConstCLM
+    [μ.HasTemperateGrowth] (u : 𝓢(E, F)) :
+    Tendsto (fun a : E ↦ SchwartzMap.toTemperedDistributionCLM E F μ (u.compSubConstCLM ℂ a))
+      (cocompact E) (𝓝 0) := by
+  rw [PointwiseConvergenceCLM.tendsto_iff_forall_tendsto]
+  intro f
+  simp only [SchwartzMap.toTemperedDistributionCLM_apply_apply, SchwartzMap.compSubConstCLM_apply]
+  obtain ⟨C, hC⟩ : ∃ C, ∀ x, ‖u x‖ ≤ C :=
+    ⟨_, fun x ↦ u.toBoundedContinuousFunction.norm_coe_le_norm x⟩
+  have : (cocompact E).IsCountablyGenerated := by
+    rw [← Metric.cobounded_eq_cocompact, ← comap_norm_atTop]
+    infer_instance
+  -- Dominated convergence, with the bound `‖f x‖ C`.
+  have h := tendsto_integral_filter_of_dominated_convergence (F := fun a x ↦ f x • u (x - a))
+    (fun x ↦ ‖f x‖ * C)
+    (.of_forall fun a ↦ (f.continuous.smul (u.continuous.comp
+      (continuous_id.sub continuous_const))).aestronglyMeasurable)
+    (.of_forall fun a ↦ .of_forall fun x ↦ by
+      rw [norm_smul]
+      exact mul_le_mul_of_nonneg_left (hC _) (norm_nonneg _))
+    ((f.integrable (μ := μ)).norm.mul_const C) (.of_forall fun x ↦ by
+      simpa using (u.tendsto_cocompact.comp
+        (Homeomorph.subLeft x).isClosedEmbedding.tendsto_cocompact).const_smul (f x))
+  rw [integral_zero] at h
+  simpa using h
 
 open scoped ENNReal in
 /-- If `φ` pushes `μ` forward to at most `C • μ` with `C < ∞`, pulling back the distribution of
