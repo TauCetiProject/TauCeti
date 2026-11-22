@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat
+public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.Basic
 public import TauCeti.Topology.Category.BasedTopologicalSpace.WedgeSum
 
 /-!

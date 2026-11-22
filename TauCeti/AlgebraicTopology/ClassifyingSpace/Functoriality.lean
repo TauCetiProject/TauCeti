@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.Grp.Basic
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
+public import TauCeti.Topology.Category.BasedTopologicalSpace
 public import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 
 /-!
@@ -14,8 +16,9 @@ public import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 A group homomorphism induces a continuous map of classifying spaces by applying it to
 the labels of the countable join and descending to orbits. These maps preserve the chosen
 base points and respect identity homomorphisms and composition as equalities of continuous
-maps. The total-space maps are equivariant, so the orbit projections commute with the induced
-maps.
+maps, assembling into the strict functor
+`TauCeti.classifyingSpaceFunctor : GrpCat ⥤ BasedTopologicalSpace`. The total-space maps are
+equivariant, so the orbit projections commute with the induced maps.
 
 The representative formula `MonoidHom.classifyingSpaceMap_proj` characterizes the induced map
 without unfolding the orbit space. Together with `classifyingSpace_continuousMap_ext`, it
@@ -28,6 +31,7 @@ the original homomorphism.
 ## Main definitions
 
 * `MonoidHom.classifyingSpaceMap`: the continuous map induced by a group homomorphism.
+* `TauCeti.classifyingSpaceFunctor`: Milnor's classifying space as a functor to based spaces.
 
 ## Main results
 
@@ -115,3 +119,39 @@ theorem classifyingSpaceFundamentalGroupMulEquiv_mapOfEq (φ : G →* H)
   simp [← smul_universalGSpaceBasepoint]
 
 end MonoidHom
+
+namespace TauCeti
+
+open CategoryTheory
+
+universe u
+
+/-- **Milnor's classifying space as a functor to based spaces.** A group goes to
+`classifyingSpace G` with its base point, and a homomorphism to the strictly functorial map
+`MonoidHom.classifyingSpaceMap`. -/
+@[expose] def classifyingSpaceFunctor : GrpCat.{u} ⥤ BasedTopologicalSpace.{u} where
+  obj G := ⟨classifyingSpace G, classifyingSpaceBasepoint G⟩
+  map φ := ⟨φ.hom.classifyingSpaceMap, φ.hom.classifyingSpaceMap_basepoint⟩
+  map_id G := BasedTopologicalSpace.Hom.ext (by
+    simp only [GrpCat.hom_id, MonoidHom.classifyingSpaceMap_id,
+      BasedTopologicalSpace.id_eq_hom_id, BasedTopologicalSpace.Hom.toContinuousMap_id])
+  map_comp φ ψ := BasedTopologicalSpace.Hom.ext (by
+    simp only [GrpCat.hom_comp, MonoidHom.classifyingSpaceMap_comp,
+      BasedTopologicalSpace.comp_eq_hom_comp, BasedTopologicalSpace.Hom.toContinuousMap_comp])
+
+@[simp]
+theorem classifyingSpaceFunctor_obj_carrier (G : GrpCat.{u}) :
+    (classifyingSpaceFunctor.obj G).carrier = classifyingSpace G :=
+  (rfl)
+
+@[simp]
+theorem classifyingSpaceFunctor_obj_basepoint (G : GrpCat.{u}) :
+    (classifyingSpaceFunctor.obj G).basepoint = classifyingSpaceBasepoint G :=
+  (rfl)
+
+@[simp]
+theorem classifyingSpaceFunctor_map_toContinuousMap {G H : GrpCat.{u}} (φ : G ⟶ H) :
+    (classifyingSpaceFunctor.map φ).toContinuousMap = φ.hom.classifyingSpaceMap :=
+  (rfl)
+
+end TauCeti

@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
-public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat
+public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.Basic
 public import TauCeti.Topology.CWComplex.Classical.CWType
+public import TauCeti.Topology.Homotopy.Extension.Basic
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Cellular
+import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.HomotopyEquiv
 
 /-!
 # Classification of pointed maps out of a well-pointed aspherical space

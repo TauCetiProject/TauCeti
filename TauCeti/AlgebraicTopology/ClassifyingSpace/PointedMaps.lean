@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
-public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat
+public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.Basic
 import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
 import TauCeti.AlgebraicTopology.EilenbergMacLane.PointedMaps
 
@@ -125,10 +125,12 @@ theorem fundamentalGroupFunctor_map_bijective_classifyingSpace (G : Type u) [Gro
     {Y : BasedTopologicalSpace.{u}}
     (hY : ∀ (y : Y.carrier) (n : ℕ), Subsingleton (π_ (n + 2) Y.carrier y)) :
     Function.Bijective (PointedHomotopyCat.fundamentalGroupFunctor.map
-      (X := PointedHomotopyCat.quotient.obj ⟨classifyingSpace G, classifyingSpaceBasepoint G⟩)
+      (X := PointedHomotopyCat.quotient.obj (classifyingSpaceFunctor.obj (GrpCat.of G)))
       (Y := PointedHomotopyCat.quotient.obj Y)) :=
+  haveI : CWType (classifyingSpaceFunctor.obj (GrpCat.of G)).carrier :=
+    inferInstanceAs (CWType (classifyingSpace G))
   IsAspherical.fundamentalGroupFunctor_map_bijective
-    (X := ⟨classifyingSpace G, classifyingSpaceBasepoint G⟩)
+    (X := classifyingSpaceFunctor.obj (GrpCat.of G))
     (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical
     (hasHomotopyExtensionProperty_classifyingSpaceBasepoint G) hY
 

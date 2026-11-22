@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.PointedMaps
-public import TauCeti.Topology.CWComplex.Classical.CWType
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Cellular
@@ -216,8 +215,10 @@ def IsAspherical.pointedHomotopyCatIsoClassifyingSpace {G : Type u} [Group G]
     (hX_hep : HasHomotopyExtensionProperty ({X.basepoint} : Set X.carrier))
     (eX : FundamentalGroup X.carrier X.basepoint ≃* G) :
     PointedHomotopyCat.quotient.obj X ≅
-      PointedHomotopyCat.quotient.obj ⟨classifyingSpace G, classifyingSpaceBasepoint G⟩ :=
-  hX.pointedHomotopyCatIso (Y := ⟨classifyingSpace G, classifyingSpaceBasepoint G⟩)
+      PointedHomotopyCat.quotient.obj (classifyingSpaceFunctor.obj (GrpCat.of G)) :=
+  haveI : CWType (classifyingSpaceFunctor.obj (GrpCat.of G)).carrier :=
+    inferInstanceAs (CWType (classifyingSpace G))
+  hX.pointedHomotopyCatIso (Y := classifyingSpaceFunctor.obj (GrpCat.of G))
     (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical hX_hep
     (hasHomotopyExtensionProperty_classifyingSpaceBasepoint G)
     (eX.trans (classifyingSpaceFundamentalGroupMulEquiv G).symm)
@@ -233,8 +234,10 @@ theorem IsAspherical.fundamentalGroupFunctor_map_pointedHomotopyCatIsoClassifyin
     PointedHomotopyCat.fundamentalGroupFunctor.map
         (hX.pointedHomotopyCatIsoClassifyingSpace hX_hep eX).hom =
       GrpCat.ofHom (eX.trans (classifyingSpaceFundamentalGroupMulEquiv G).symm).toMonoidHom :=
+  haveI : CWType (classifyingSpaceFunctor.obj (GrpCat.of G)).carrier :=
+    inferInstanceAs (CWType (classifyingSpace G))
   hX.fundamentalGroupFunctor_map_pointedHomotopyCatIso_hom
-    (Y := ⟨classifyingSpace G, classifyingSpaceBasepoint G⟩)
+    (Y := classifyingSpaceFunctor.obj (GrpCat.of G))
     (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical hX_hep
     (hasHomotopyExtensionProperty_classifyingSpaceBasepoint G)
     (eX.trans (classifyingSpaceFundamentalGroupMulEquiv G).symm)
@@ -250,8 +253,10 @@ theorem IsAspherical.fundamentalGroupFunctor_map_pointedHomotopyCatIsoClassifyin
     PointedHomotopyCat.fundamentalGroupFunctor.map
         (hX.pointedHomotopyCatIsoClassifyingSpace hX_hep eX).inv =
       GrpCat.ofHom ((classifyingSpaceFundamentalGroupMulEquiv G).trans eX.symm).toMonoidHom :=
+  haveI : CWType (classifyingSpaceFunctor.obj (GrpCat.of G)).carrier :=
+    inferInstanceAs (CWType (classifyingSpace G))
   hX.fundamentalGroupFunctor_map_pointedHomotopyCatIso_inv
-    (Y := ⟨classifyingSpace G, classifyingSpaceBasepoint G⟩)
+    (Y := classifyingSpaceFunctor.obj (GrpCat.of G))
     (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical hX_hep
     (hasHomotopyExtensionProperty_classifyingSpaceBasepoint G)
     (eX.trans (classifyingSpaceFundamentalGroupMulEquiv G).symm)

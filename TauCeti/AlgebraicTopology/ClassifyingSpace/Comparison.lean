@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.Cellular
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.HomotopyEquiv
+import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.HomotopyEquiv
 import TauCeti.Topology.Homotopy.Extension.HomotopyEquivRel
 
 /-!
@@ -196,8 +197,7 @@ theorem exists_basedInverse_cellularHomotopyEquivClassifyingSpace {G : Type u} [
 /-- The comparison `cellularHomotopyEquivClassifyingSpace R e` of the cellular model with Milnor's
 classifying space, as a based map. -/
 @[expose] def cellularHomotopyEquivClassifyingSpaceBasedHom :
-    cellularClassifyingSpaceBased R ⟶
-      (⟨classifyingSpace G, classifyingSpaceBasepoint G⟩ : BasedTopologicalSpace.{u}) :=
+    cellularClassifyingSpaceBased R ⟶ classifyingSpaceFunctor.obj (GrpCat.of G) :=
   ⟨(cellularHomotopyEquivClassifyingSpace R e).toFun,
     cellularHomotopyEquivClassifyingSpace_toFun_basepoint R e⟩
 
@@ -213,8 +213,7 @@ of `cellularHomotopyEquivClassifyingSpaceBasedHom R e` (inducing `e` on `π₁`)
 induces `e⁻¹` with no base-point change. -/
 def cellularHomotopyEquivClassifyingSpaceIso :
     PointedHomotopyCat.quotient.obj (cellularClassifyingSpaceBased R) ≅
-      PointedHomotopyCat.quotient.obj
-        (⟨classifyingSpace G, classifyingSpaceBasepoint G⟩ : BasedTopologicalSpace.{u}) :=
+      PointedHomotopyCat.quotient.obj (classifyingSpaceFunctor.obj (GrpCat.of G)) :=
   PointedHomotopyCat.isoOfHomotopyEquiv
     (hasHomotopyExtensionProperty_cellularClassifyingSpaceBasepoint R)
     (hasHomotopyExtensionProperty_classifyingSpaceBasepoint G)
@@ -275,21 +274,16 @@ open CategoryTheory in
 `e : PresentedGroup R ≃* G` be a presentation and `φ : G ⟶ H`. Every pointed map from the cellular
 classifying space of `R` to `classifyingSpace H` that induces `φ` under the identifications of both
 fundamental groups is pointed homotopic to the comparison map of
-`cellularHomotopyEquivClassifyingSpace R e` followed by the based map underlying
-`φ.hom.classifyingSpaceMap`. -/
+`cellularHomotopyEquivClassifyingSpace R e` followed by `classifyingSpaceFunctor.map φ`. -/
 theorem quotient_map_eq_quotient_map_comp_cellularClassifyingSpace {G H : GrpCat.{u}}
     (e : PresentedGroup R ≃* G) (φ : G ⟶ H)
-    (f : cellularClassifyingSpaceBased R ⟶
-      (⟨classifyingSpace H, classifyingSpaceBasepoint H⟩ : BasedTopologicalSpace.{u}))
+    (f : cellularClassifyingSpaceBased R ⟶ classifyingSpaceFunctor.obj H)
     (hf : ∀ a, classifyingSpaceFundamentalGroupMulEquiv H
         ((BasedTopologicalSpace.fundamentalGroupFunctor.map f).hom a) =
       φ.hom (e (cellularClassifyingSpaceFundamentalGroupMulEquiv R a))) :
     PointedHomotopyCat.quotient.map f =
       PointedHomotopyCat.quotient.map
-        (cellularHomotopyEquivClassifyingSpaceBasedHom R e ≫
-          (⟨φ.hom.classifyingSpaceMap, φ.hom.classifyingSpaceMap_basepoint⟩ :
-            (⟨classifyingSpace G, classifyingSpaceBasepoint G⟩ : BasedTopologicalSpace.{u}) ⟶
-              ⟨classifyingSpace H, classifyingSpaceBasepoint H⟩)) := by
+        (cellularHomotopyEquivClassifyingSpaceBasedHom R e ≫ classifyingSpaceFunctor.map φ) := by
   refine (fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace R
     (fun y n ↦ subsingleton_homotopyGroup_classifyingSpace H n y)).1 ?_
   simp only [PointedHomotopyCat.fundamentalGroupFunctor_map_quotient_map]

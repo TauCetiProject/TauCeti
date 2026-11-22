@@ -7,20 +7,22 @@ module
 
 public import Mathlib.CategoryTheory.EssentialImage
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
-public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat
+public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.Basic
 public import TauCeti.Topology.CWComplex.Classical.CWType
 import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
 import TauCeti.AlgebraicTopology.ClassifyingSpace.PointedMaps
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Uniqueness
 import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
+import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.HomotopyEquiv
 
 /-!
 # The classifying space as a functor to the pointed homotopy category
 
 Milnor's classifying space is strictly functorial in the group
-(`MonoidHom.classifyingSpaceMap`), so it is a functor
-`TauCeti.classifyingSpaceFunctor : GrpCat ⥤ BasedTopologicalSpace` to based spaces. Composing with
-the quotient by pointed homotopy gives the classifying-space functor
+(`MonoidHom.classifyingSpaceMap`), giving the functor
+`TauCeti.classifyingSpaceFunctor : GrpCat ⥤ BasedTopologicalSpace` to based spaces (defined in
+`TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality`). Composing with the quotient by
+pointed homotopy gives the classifying-space functor
 `TauCeti.classifyingSpaceHomotopyFunctor : GrpCat ⥤ PointedHomotopyCat` to the pointed homotopy
 category, which the strict functor refines by construction.
 
@@ -52,7 +54,6 @@ contractible, hence isomorphic to `classifyingSpace PUnit`, yet `{0}` is not `G_
 
 ## Main definitions
 
-* `TauCeti.classifyingSpaceFunctor`: Milnor's classifying space as a functor to based spaces.
 * `TauCeti.classifyingSpaceHomotopyFunctor`: the classifying space as a functor to the pointed
   homotopy category.
 * `TauCeti.classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso`: the natural
@@ -85,34 +86,6 @@ open scoped Topology
 universe u
 
 namespace TauCeti
-
-/-- **Milnor's classifying space as a functor to based spaces.** A group goes to
-`classifyingSpace G` with its base point, and a homomorphism to the strictly functorial map
-`MonoidHom.classifyingSpaceMap`. -/
-@[expose] def classifyingSpaceFunctor : GrpCat.{u} ⥤ BasedTopologicalSpace.{u} where
-  obj G := ⟨classifyingSpace G, classifyingSpaceBasepoint G⟩
-  map φ := ⟨φ.hom.classifyingSpaceMap, φ.hom.classifyingSpaceMap_basepoint⟩
-  map_id G := BasedTopologicalSpace.Hom.ext (by
-    simp only [GrpCat.hom_id, MonoidHom.classifyingSpaceMap_id,
-      BasedTopologicalSpace.id_eq_hom_id, BasedTopologicalSpace.Hom.toContinuousMap_id])
-  map_comp φ ψ := BasedTopologicalSpace.Hom.ext (by
-    simp only [GrpCat.hom_comp, MonoidHom.classifyingSpaceMap_comp,
-      BasedTopologicalSpace.comp_eq_hom_comp, BasedTopologicalSpace.Hom.toContinuousMap_comp])
-
-@[simp]
-theorem classifyingSpaceFunctor_obj_carrier (G : GrpCat.{u}) :
-    (classifyingSpaceFunctor.obj G).carrier = classifyingSpace G :=
-  (rfl)
-
-@[simp]
-theorem classifyingSpaceFunctor_obj_basepoint (G : GrpCat.{u}) :
-    (classifyingSpaceFunctor.obj G).basepoint = classifyingSpaceBasepoint G :=
-  (rfl)
-
-@[simp]
-theorem classifyingSpaceFunctor_map_toContinuousMap {G H : GrpCat.{u}} (φ : G ⟶ H) :
-    (classifyingSpaceFunctor.map φ).toContinuousMap = φ.hom.classifyingSpaceMap :=
-  (rfl)
 
 /-- The underlying space of `classifyingSpaceFunctor.obj G` has CW type. -/
 instance instCWTypeClassifyingSpaceFunctorObj (G : GrpCat.{u}) :
