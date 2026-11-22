@@ -51,15 +51,6 @@ theorem exists_pos_lt_and_norm_add_le_one (z : 𝔻) {ε : ℝ} (hε : 0 < ε) :
     (min_le_left _ _).trans_lt (by linarith), ?_⟩
   linarith [min_le_right (ε / 2) (1 - ‖(z : ℂ)‖)]
 
-/-- Every point `z` of the unit disc has a round neighbourhood `B(z, R)` containing no point of a
-finite set `s ⊆ 𝔻` other than `z`. -/
-theorem exists_pos_forall_mem_ball_eq (z : 𝔻) (s : Finset 𝔻) :
-    ∃ R > 0, ∀ w ∈ s, (w : ℂ) ∈ ball (z : ℂ) R → w = z := by
-  classical
-  obtain ⟨R, hR, hmiss⟩ := exists_pos_forall_notMem_ball (K := ((s.erase z : Finset 𝔻) : Set 𝔻))
-    ((s.erase z).finite_toSet.image _).isClosed (z := z) (by simp)
-  exact ⟨R, hR, fun w hw hwb ↦ by_contra fun hwz ↦ hmiss w (by simpa [hwz] using hw) hwb⟩
-
 end Complex.UnitDisc
 
 open Complex.UnitDisc
@@ -115,8 +106,8 @@ theorem coe_subdisc_sub_div (z : 𝔻) : ((subdisc c r hc hr z : ℂ) - c) / r =
   simp [mul_div_cancel_left₀ _ hr0]
 
 /-- The round subdisc map `subdisc c r` is injective. -/
-theorem subdisc_injective : Function.Injective (subdisc c r hc hr) := fun w z hwz ↦
-  coe_injective (by rw [← coe_subdisc_sub_div (hc := hc) (hr := hr) w, hwz, coe_subdisc_sub_div])
+theorem subdisc_injective : Function.Injective (subdisc c r hc hr) :=
+  isOpenEmbedding_coe_comp_subdisc.injective.of_comp
 
 /-- Round subdisc maps compose like the affine maps they are:
 `subdisc c r ∘ subdisc c' r' = subdisc (c + r c') (r r')`. -/

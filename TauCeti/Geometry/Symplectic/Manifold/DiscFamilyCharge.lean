@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.PositiveCohomologyAssignment
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Continuity of the charges along a family of discs
@@ -23,9 +24,9 @@ The family is a continuous map `u : P × 𝔻 → Y`, with leaves `σ_w = u (w, 
 inside a fixed compact set `K ⊆ 𝔻`, the open-disc form of a boundary staying away from `Z`. Then,
 as `w` tends to `w₀`:
 
-* **The intersection points converge.** Every point of `σ_w⁻¹(Z)` lies within any prescribed
-  distance `ε > 0` of a point of `σ_{w₀}⁻¹(Z)` (`ContinuousMap.eventually_forall_exists_dist_lt`).
-  This only uses that `Z` is closed.
+* **The intersection points converge.** `σ_w⁻¹(Z)` lies in any prescribed open neighbourhood of
+  `σ_{w₀}⁻¹(Z)`: this is `IsClosed.eventually_preimage_prodMk_subset` for the closed set `u⁻¹(Z)`,
+  and only uses that `Z` is closed.
 * **The integer is locally constant.** Two leaves joined by a path of leaves meeting `Z` inside `K`
   have the same integer, by the homotopy law
   (`TauCeti.PositiveCohomologyAssignment.charge_eq_of_path`). So when `P` is locally path
@@ -41,8 +42,8 @@ as `w` tends to `w₀`:
 * **Zeros are retained.** If that local charge is nonzero, every leaf near `σ_{w₀}` meets `Z` in
   `B(z₀, r)`
   (`TauCeti.PositiveCohomologyAssignment.eventually_exists_mem_ball_of_localCharge_ne_zero`).
-  By `TauCeti.PositiveCohomologyAssignment.localCharge_pos`, this applies at every point of
-  `σ_{w₀}⁻¹(Z)` near which `σ_{w₀}` is a nonconstant `J`-holomorphic disc.
+  By `TauCeti.PositiveCohomologyAssignment.localCharge_pos`, this applies when `σ_{w₀}` extends to
+  a map `ℂ → Y` that is `J`-holomorphic on the unit disc, and `σ_{w₀}` is not constant near `z₀`.
 * **Counting.** If moreover the leaf `σ_w` is `J`-holomorphic and constant near none of the
   finitely many points of `σ_w⁻¹(Z)`, it meets `Z` inside `B(z₀, r)` in at most as many points as
   the local charge of `σ_{w₀}` at `z₀`
@@ -55,8 +56,6 @@ reconstructed curve.
 
 ## Main results
 
-* `ContinuousMap.eventually_forall_exists_dist_lt`: the intersection points of nearby leaves
-  stay close to those of `σ_{w₀}`.
 * `TauCeti.PositiveCohomologyAssignment.charge_eq_of_path`,
   `TauCeti.PositiveCohomologyAssignment.eventually_charge_eq`: the integer of the leaves is
   constant along paths and near `w₀`.
@@ -82,43 +81,18 @@ open scoped Complex.UnitDisc Manifold ContDiff
 
 variable {P : Type*} [TopologicalSpace P]
 
-namespace ContinuousMap
-
-variable {Y : Type*} [TopologicalSpace Y] {Z : Set Y}
-
-/-- **The intersection points of nearby leaves converge.** Let `u : P × 𝔻 → Y` be a continuous
-family of discs and `Z ⊆ Y` closed, and suppose that for `w` near `w₀` the leaf `u (w, ·)` meets
-`Z` only inside a compact set `K ⊆ 𝔻`. Then for every `ε > 0` and every `w` near enough to `w₀`,
-each point of the leaf over `w` lying in `Z` is within distance `ε` of a point of the leaf over
-`w₀` lying in `Z`. -/
-theorem eventually_forall_exists_dist_lt (hZ : IsClosed Z) (u : C(P × 𝔻, Y)) {K : Set 𝔻}
-    (hK : IsCompact K) {w₀ : P} (hKZ : ∀ᶠ w in 𝓝 w₀, ∀ z, u (w, z) ∈ Z → z ∈ K) {ε : ℝ}
-    (hε : 0 < ε) :
-    ∀ᶠ w in 𝓝 w₀, ∀ z, u (w, z) ∈ Z → ∃ z₀, u (w₀, z₀) ∈ Z ∧ dist (z : ℂ) z₀ < ε := by
-  set T : Set 𝔻 := {z | ∃ z₀, u (w₀, z₀) ∈ Z ∧ dist (z : ℂ) z₀ < ε}
-  have hT : IsOpen T := by
-    have hT' : T = ⋃ z₀ ∈ {z₀ : 𝔻 | u (w₀, z₀) ∈ Z}, (↑) ⁻¹' ball (z₀ : ℂ) ε := by
-      ext z
-      simp [T, mem_ball]
-    rw [hT']
-    exact isOpen_biUnion fun _ _ ↦ isOpen_ball.preimage continuous_coe
-  -- On the compact set `K \ T` the leaf over `w₀` misses `Z`, hence so do nearby leaves.
-  have hev : ∀ᶠ w in 𝓝 w₀, ∀ z ∈ K \ T, u (w, z) ∉ Z := by
-    refine (hK.diff hT).eventually_forall_of_forall_eventually fun z hz ↦ ?_
-    have hz₀ : u (w₀, z) ∉ Z := fun h ↦ hz.2 ⟨z, h, by simpa using hε⟩
-    exact (u.continuous.tendsto (w₀, z)).eventually (hZ.isOpen_compl.mem_nhds hz₀)
-  filter_upwards [hKZ, hev] with w hwK hwT z hz
-  by_contra hzT
-  exact hwT z ⟨hwK z hz, hzT⟩ hz
-
-end ContinuousMap
-
 namespace TauCeti.PositiveCohomologyAssignment
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {Y : Type*} [TopologicalSpace Y] [ChartedSpace H Y]
   [IsManifold I ∞ Y] {J : SmoothAlmostComplexStructure I Y} {Z : Set Y}
   (A : PositiveCohomologyAssignment J Z) (u : C(P × 𝔻, Y))
+
+/-- A leaf of a continuous family of discs that meets the closed set `Z` only inside a compact set
+`K` has compact preimage of `Z`. -/
+private theorem isCompact_curry_preimage (hZ : IsClosed Z) {K : Set 𝔻} (hK : IsCompact K) {w : P}
+    (hw : ∀ z, u (w, z) ∈ Z → z ∈ K) : IsCompact (u.curry w ⁻¹' Z) :=
+  hK.of_isClosed_subset (hZ.preimage (u.curry w).continuous) hw
 
 /-- **The integer is constant along paths of leaves.** If `γ` is a path from `w` to `w'` in the
 parameter space of a continuous family of discs `u`, and every leaf `u (γ t, ·)` meets the closed
@@ -148,8 +122,7 @@ theorem eventually_charge_eq [LocallyPathConnectedSpace P] (hZ : IsClosed Z) {K 
   obtain ⟨V, ⟨hV, hVpc⟩, hVK⟩ := (LocallyPathConnectedSpace.path_connected_basis w₀).mem_iff.1 hKZ
   filter_upwards [hV] with w hw
   have hγ := hVpc.joinedIn w₀ (mem_of_mem_nhds hV) w hw
-  have h : IsCompact (u.curry w ⁻¹' Z) :=
-    hK.of_isClosed_subset (hZ.preimage (u.curry w).continuous) (hVK hw)
+  have h := isCompact_curry_preimage u hZ hK (hVK hw)
   exact ⟨h, (A.charge_eq_of_path u hZ hK hγ.somePath (fun t ↦ hVK (hγ.somePath_mem t)) h₀ h).symm⟩
 
 /-- **Conservation of local charges.** Let `u` be a continuous family of discs over a locally path
@@ -169,26 +142,28 @@ theorem eventually_exists_charge_comp_subdisc_eq_localCharge [LocallyPathConnect
   -- `w₀` meet `Z` only in the compact set `‖ζ‖ ≤ 1 / 2`.
   set v : C(P × 𝔻, Y) := u.comp ((ContinuousMap.id P).prodMap (subdisc z₀ r hc hr))
   have hv (w : P) : v.curry w = (u.curry w).comp (subdisc z₀ r hc hr) := rfl
-  set ε := min (R - r) (r / 2)
-  have hε : 0 < ε := lt_min (sub_pos.2 hrR) (half_pos hr)
   have hK' : IsCompact {ζ : 𝔻 | ‖(ζ : ℂ)‖ ≤ 1 / 2} := isCompact_setOf_norm_le (by norm_num)
+  -- The leaf over `w₀` meets `Z` near `z₀` only at `z₀`, so in the open set `U` of points at
+  -- distance less than `r / 2` or more than `r` from `z₀`; hence so do nearby leaves.
+  set U : Set 𝔻 := (↑) ⁻¹' (ball (z₀ : ℂ) (r / 2) ∪ (closedBall (z₀ : ℂ) r)ᶜ)
+  have hU : IsOpen U :=
+    (isOpen_ball.union isClosed_closedBall.isOpen_compl).preimage continuous_coe
+  have hσU : Prod.mk w₀ ⁻¹' (u ⁻¹' Z) ⊆ U := fun z hz ↦ by
+    by_cases hzR : (z : ℂ) ∈ ball (z₀ : ℂ) R
+    · obtain rfl := hiso z hz hzR
+      exact Or.inl (mem_ball_self (half_pos hr))
+    · exact Or.inr fun hzr ↦ hzR (closedBall_subset_ball hrR hzr)
   have hKZ' : ∀ᶠ w in 𝓝 w₀, ∀ ζ, v (w, ζ) ∈ Z → ζ ∈ {ζ : 𝔻 | ‖(ζ : ℂ)‖ ≤ 1 / 2} := by
-    filter_upwards [u.eventually_forall_exists_dist_lt hZ hK hKZ hε] with w hw ζ hζ
-    obtain ⟨z₁, hz₁, hdist⟩ := hw _ hζ
+    filter_upwards [(hZ.preimage u.continuous).eventually_preimage_prodMk_subset hK hKZ hU hσU]
+      with w hw ζ hζ
     have hζr : dist (subdisc z₀ r hc hr ζ : ℂ) z₀ < r := mem_range_subdisc.1 ⟨ζ, rfl⟩
-    obtain rfl : z₁ = z₀ := by
-      refine hiso z₁ hz₁ (mem_ball.2 ?_)
-      calc dist (z₁ : ℂ) z₀ ≤ dist (z₁ : ℂ) (subdisc z₀ r hc hr ζ) +
-            dist (subdisc z₀ r hc hr ζ : ℂ) z₀ := dist_triangle _ _ _
-        _ < ε + r := by rw [dist_comm] at hdist; gcongr
-        _ ≤ R := by linarith [min_le_left (R - r) (r / 2)]
-    have hlt : r * ‖(ζ : ℂ)‖ < r / 2 := by
-      simpa [dist_eq_norm, norm_mul, abs_of_pos hr] using hdist.trans_le (min_le_right _ _)
-    nlinarith
-  have hσ₀ : IsCompact (u.curry w₀ ⁻¹' Z) :=
-    hK.of_isClosed_subset (hZ.preimage (u.curry w₀).continuous) hKZ.self_of_nhds
-  have h₀ : IsCompact (v.curry w₀ ⁻¹' Z) :=
-    hK'.of_isClosed_subset (hZ.preimage (v.curry w₀).continuous) hKZ'.self_of_nhds
+    rcases (mem_union _ _ _).1 (@hw (subdisc z₀ r hc hr ζ) hζ) with hlt | hgt
+    · have hlt : r * ‖(ζ : ℂ)‖ < r / 2 := by
+        simpa [dist_eq_norm, norm_mul, abs_of_pos hr] using mem_ball.1 hlt
+      exact (lt_of_mul_lt_mul_left (by linarith) hr.le).le
+    · exact absurd (ball_subset_closedBall (mem_ball.2 hζr)) hgt
+  have hσ₀ := isCompact_curry_preimage u hZ hK hKZ.self_of_nhds
+  have h₀ := isCompact_curry_preimage v hZ hK' hKZ'.self_of_nhds
   filter_upwards [A.eventually_charge_eq v hZ hK' hKZ' h₀] with w ⟨h, hw⟩
   refine ⟨hv w ▸ h, (A.charge_congr (hv w) h _).symm.trans (hw.trans ?_)⟩
   exact (A.charge_congr (hv w₀) h₀ _).trans
@@ -208,8 +183,8 @@ theorem eventually_sum_localCharge_eq [LocallyPathConnectedSpace P] (hZ : IsClos
         A.localCharge (u.curry w₀) z₀ := by
   filter_upwards [A.eventually_exists_charge_comp_subdisc_eq_localCharge u hZ hK hKZ hc hr hrR
     hiso, hKZ] with w ⟨h', hw⟩ hwK s hs
-  rw [← hw, A.charge_comp_subdisc_eq_sum_localCharge
-    (hK.of_isClosed_subset (hZ.preimage (u.curry w).continuous) hwK) s hs hc hr h']
+  rw [← hw, A.charge_comp_subdisc_eq_sum_localCharge (isCompact_curry_preimage u hZ hK hwK) s hs
+    hc hr h']
 
 /-- **Retention of charged intersection points.** Under the hypotheses of
 `eventually_exists_charge_comp_subdisc_eq_localCharge`, if the leaf over `w₀` has nonzero local
@@ -249,8 +224,7 @@ theorem eventually_card_le_localCharge [LocallyPathConnectedSpace P] (hZ : IsClo
         A.localCharge (u.curry w₀) z₀ := by
   filter_upwards [A.eventually_sum_localCharge_eq u hZ hK hKZ hc hr hrR hiso, hKZ] with
     w hw hwK hhol s hs hnc
-  have h : IsCompact (u.curry w ⁻¹' Z) :=
-    hK.of_isClosed_subset (hZ.preimage (u.curry w).continuous) hwK
+  have h := isCompact_curry_preimage u hZ hK hwK
   rw [← hw s hs, Finset.card_eq_sum_ones, Nat.cast_sum, Nat.cast_one]
   refine Finset.sum_le_sum fun z hz ↦ ?_
   have hzs := (Finset.mem_filter.1 hz).1
