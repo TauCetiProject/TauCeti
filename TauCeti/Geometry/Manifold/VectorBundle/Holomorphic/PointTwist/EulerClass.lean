@@ -203,16 +203,16 @@ theorem sectionIndex_pointTwistMul_self (x : X) {s : ∀ z, L z}
         Complex.finrank_real_complex (complexHomologicalOrientation X)
         (continuous_pointTwistMul_section (x := x) hs) x = 1 := by
   classical
-  set φ := chartAt ℂ x
+  set φ := chartAt ℂ x with hφ_chart
   set eL := trivializationAt ℂ L x
   -- The preferred chart of the point twist at `x`, its chart `(x, true)`.
-  set e := trivializationAt ℂ (pointTwistCore ℂ L x).Fiber x
+  set e := trivializationAt ℂ (pointTwistCore ℂ L x).Fiber x with he
   -- The fibre coordinate `g` of `s` in the chart of `L` at `x`.
   set g : X → ℂ := fun z ↦ (eL (TotalSpace.mk' ℂ z (s z))).2
   have hxL : x ∈ eL.baseSet := mem_baseSet_trivializationAt ℂ L x
   have hgx : g x ≠ 0 := (eL.snd_apply_ne_zero_iff ℂ (v := TotalSpace.mk' ℂ x (s x)) hxL).2 hsx
   have heb : ∀ {z}, z ∈ e.baseSet → z ∈ eL.baseSet ∧ z ∈ φ.source := fun hz ↦ by
-    rw [show e = _ from signedPointTwistCore_trivializationAt_self ℂ L x true] at hz
+    rw [he, signedPointTwistCore_trivializationAt_self ℂ L x true] at hz
     simpa using mem_signedPointTwistCore_baseSet.1 hz
   -- The neighbourhood `U` of `x` on which `s` does not vanish.
   set U := e.baseSet ∩ (eL.baseSet ∩ g ⁻¹' {0}ᶜ)
@@ -227,7 +227,6 @@ theorem sectionIndex_pointTwistMul_self (x : X) {s : ∀ z, L z}
   -- Over `ℝ`, multiplication by `g x` has determinant `|g x|²`.
   have hdet' : ((ContinuousLinearMap.id ℝ ℂ).smulRight (g x)).det = Complex.normSq (g x) := by
     simp [ContinuousLinearMap.det, LinearMap.det_complex, Complex.normSq_apply]
-  -- The zero of the fibre of the point twist is the zero of its model fibre `ℂ`.
   rw [VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt _ _ _ _ e φ hU hxU hUz
     (congrArg (fun f : L x →L[ℂ] ℂ ↦ f (s x)) (pointTwistMul_self ℂ L x))
     inter_subset_left hUφ
@@ -247,7 +246,9 @@ theorem sectionIndex_pointTwistMul_self (x : X) {s : ∀ z, L z}
           rw [hσ]
           exact fun y hy ↦ Subtype.ext (φ.injOn y.property (hUφ hxU) (sub_eq_zero.1 hy)))
       simp only [hσ] at hφ
-      simpa only [ContinuousLinearEquiv.refl, φ, Orientation.map_refl, Equiv.refl_apply] using hφ)
+      -- Orientation.map uses the underlying linear identity, rather than the continuous structure.
+      have hid : (ContinuousLinearEquiv.refl ℝ ℂ).toLinearEquiv = LinearEquiv.refl ℝ ℂ := rfl
+      simpa only [hid, hφ_chart, Orientation.map_refl, Equiv.refl_apply] using hφ)
     hA (hdet'.trans_ne (Complex.normSq_pos.2 hgx).ne'), hdet',
     sign_pos (Complex.normSq_pos.2 hgx), SignType.coe_one]
 
