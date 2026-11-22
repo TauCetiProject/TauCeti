@@ -13,6 +13,8 @@ public import Mathlib.Algebra.Polynomial.Degree.Operations
 Multiplication by `X ^ l` shifts a polynomial's coefficients by `l`. When its degree is
 bounded by `n`, the shifted coefficients vanish outside the window from `l` to `l + n`.
 This identity identifies bounded coefficient rows with coefficients of shifted polynomials.
+Such a polynomial is determined by its coefficients indexed by `Fin (n + 1)`:
+`Polynomial.eq_of_natDegree_le_of_coeff_fin_eq`.
 
 If `p` has smaller degree than `q`, then the largest degree at which the coefficients of `p` and
 `q` differ is the degree of `q`, where `p` has coefficient `0`.
@@ -30,6 +32,13 @@ theorem coeff_X_pow_mul_of_natDegree_le {R : Type*} [Semiring R]
     {p : R[X]} {n : ℕ} (hp : p.natDegree ≤ n) (l d : ℕ) :
     (X ^ l * p).coeff d = if l ≤ d ∧ d ≤ l + n then p.coeff (d - l) else 0 := by
   grind [coeff_X_pow_mul', coeff_eq_zero_of_natDegree_lt]
+
+/-- Two polynomials of degree at most `n` are equal once their coefficients agree at every
+index `i : Fin (n + 1)`. -/
+theorem eq_of_natDegree_le_of_coeff_fin_eq {R : Type*} [Semiring R] {p q : R[X]} {n : ℕ}
+    (hp : p.natDegree ≤ n) (hq : q.natDegree ≤ n) (h : ∀ i : Fin (n + 1), p.coeff i = q.coeff i) :
+    p = q :=
+  (ext_iff_natDegree_le hp hq).2 fun k hk => h ⟨k, Nat.lt_succ_of_le hk⟩
 
 /-- If `p` has smaller degree than `q`, then the largest degree at which `p` and `q` differ is the
 degree of `q`, where `p` has coefficient `0`. So for an irreflexive relation `r`, there is a

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Coordinates of vector-bundle sections along maps
@@ -15,10 +16,11 @@ on the parameter domain. This permits manifold differentiation, in particular fo
 differentiation of tangent fields along maps in submanifold geometry.
 
 The coordinate reading and its algebra laws require only a vector bundle over a topological
-space. For a differentiable base map, differentiability of the total-space section at a point
-is equivalent to differentiability of its coordinate reading in any trivialization containing
-the image point. The corresponding equivalences within a set hold both for differentiability
-and for higher manifold regularity.
+space. A section continuous into the total space has a continuous coordinate reading in any
+trivialization containing the image point. For a differentiable base map, differentiability of
+the total-space section at a point is equivalent to differentiability of its coordinate reading
+in any trivialization containing the image point. The corresponding equivalences within a set
+hold both for differentiability and for higher manifold regularity.
 -/
 
 public section
@@ -168,6 +170,31 @@ theorem symmL_sectionCoord_self (t : N) :
     (trivializationAt F V (γ t)).symmL 𝕜 (γ t)
       (sectionCoord 𝕜 (F := F) γ W (γ t) t) = W t :=
   symmL_sectionCoord γ W (γ t) t (FiberBundle.mem_baseSet_trivializationAt F V (γ t))
+
+section Continuity
+
+variable [TopologicalSpace N]
+
+variable (𝕜) in
+/-- A section continuous into the total space within a set has a continuous coordinate reading
+within that set in any canonical trivialization whose base set contains the image point. -/
+theorem continuousWithinAt_sectionCoord {s : Set N} {x : M} {t : N}
+    (h : ContinuousWithinAt (fun r ↦ TotalSpace.mk' F (γ r) (W r)) s t)
+    (hx : γ t ∈ (trivializationAt F V x).baseSet) :
+    ContinuousWithinAt (sectionCoord 𝕜 (F := F) γ W x) s t :=
+  (((trivializationAt F V x).tendsto_mk_nhds_mk_iff 𝕜 hx).1 h.tendsto).2
+
+variable (𝕜) in
+/-- A section continuous into the total space at a point has a continuous coordinate reading at
+that point in any canonical trivialization whose base set contains the image point. -/
+theorem continuousAt_sectionCoord {x : M} {t : N}
+    (h : ContinuousAt (fun r ↦ TotalSpace.mk' F (γ r) (W r)) t)
+    (hx : γ t ∈ (trivializationAt F V x).baseSet) :
+    ContinuousAt (sectionCoord 𝕜 (F := F) γ W x) t := by
+  rw [← continuousWithinAt_univ]
+  exact continuousWithinAt_sectionCoord 𝕜 γ W h.continuousWithinAt hx
+
+end Continuity
 
 variable
   {E H : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]

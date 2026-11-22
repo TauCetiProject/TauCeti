@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.SelfDual.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Integral
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Measure
+import TauCeti.Analysis.PDE.SeibergWitten.LargeParameter.Curvature
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.Riemannian.FormMetric
 
@@ -31,8 +32,8 @@ gives the **Chern identity**
 `r ∫_X (1 - |α|² + |β|²) vol = 4 ⟨[F] ∪ [ω], [X]⟩ + 2 ∫_X ⟨ω, η⟩ vol`
 
 (`TauCeti.SeibergWitten.mul_integralTopForm_one_sub_add_eq`). Combined with the pointwise bound
-`|α|² + |β|² ≤ 1 + C / r`, which gives `r |1 - |α|² - |β|²| ≤ r (1 - |α|² + |β|²) + 2 C`, it
-yields Taubes's **`L¹` defect bound**
+`|α|² + |β|² ≤ 1 + C / r`, which gives `r |1 - |α|² - |β|²| ≤ r (1 - |α|² + |β|²) + 2 C`
+(`TauCeti.SeibergWitten.mul_abs_one_sub_sub_le`), it yields Taubes's **`L¹` defect bound**
 
 `r ∫_X |1 - |χ|²| vol ≤ 4 ⟨[F] ∪ [ω], [X]⟩ + 2 ∫_X ⟨ω, η⟩ vol + 2 C Vol(X)`
 
@@ -49,8 +50,6 @@ pointwise identity.
 
 ## Main results
 
-* `TauCeti.SeibergWitten.mul_abs_one_sub_sub_le`: the pointwise inequality
-  `r |1 - s - t| ≤ r (1 - s + t) + 2 C` under `s + t ≤ 1 + C / r` and `t ≥ 0`.
 * `TauCeti.SeibergWitten.mul_integralTopForm_one_sub_add_eq`: the Chern identity.
 * `TauCeti.SeibergWitten.mul_integralTopForm_abs_one_sub_sub_le`: the `L¹` defect bound.
 * `TauCeti.SeibergWitten.mul_integral_abs_one_sub_sub_le`: the `L¹` defect bound against the
@@ -73,18 +72,6 @@ open scoped Manifold
 
 namespace TauCeti.SeibergWitten
 
-/-- **The spinor defect is controlled by the `ω`-component.** If `0 ≤ t`, `0 ≤ C` and
-`s + t ≤ 1 + C / r` with `r > 0`, then `r |1 - s - t| ≤ r (1 - s + t) + 2 C`. With `s = |α|²` and
-`t = |β|²`, the right side is the `ω`-component of the large-parameter curvature equation up to
-the constant `2 C`. -/
-theorem mul_abs_one_sub_sub_le {s t r C : ℝ} (hr : 0 < r) (hC : 0 ≤ C) (ht : 0 ≤ t)
-    (hst : s + t ≤ 1 + C / r) :
-    r * |1 - s - t| ≤ r * (1 - s + t) + 2 * C := by
-  have h : r * (s + t) ≤ r + C := by
-    calc r * (s + t) ≤ r * (1 + C / r) := mul_le_mul_of_nonneg_left hst hr.le
-      _ = r + C := by field_simp
-  rcases abs_cases (1 - s - t) with ⟨h₁, _⟩ | ⟨h₁, _⟩ <;> rw [h₁] <;> nlinarith
-
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I (⊤ : ℕ∞) M] [BoundarylessManifold I M] [T2Space M]
@@ -106,28 +93,29 @@ only on the line bundle, through the class `[F] = 2π c₁(E)`, and on the pertu
 theorem mul_integralTopForm_one_sub_add_eq [SigmaCompactSpace M]
     (hω : ω ∈ compactlySupportedClosedForms I M 2)
     (hω' : ω ∈ SmoothForm.selfDualForms o) (hF : F ∈ closedForms I M 2)
-    (hFω : ∀ x, alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (F.1 x) / 2 =
-      r / 8 * (1 - s x + t x) - alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (η.1 x) / 4) :
+    (hFω : ∀ x, alternatingFormInner (TangentSpace I x) 2 (ω.val x) (F.val x) / 2 =
+      r / 8 * (1 - s x + t x) - alternatingFormInner (TangentSpace I x) 2 (ω.val x) (η.val x) / 4) :
     r * integralTopForm o (fun x ↦ (1 - s x + t x) • riemannianVolumeForm o x) =
       4 * poincarePairing I M o (deRhamCohomology.mk I 2 ⟨F, hF⟩)
           (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩) +
-        2 * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (η.1 x) •
+        2 * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ω.val x)
+            (η.val x) •
           riemannianVolumeForm o x) := by
   have hc := (mem_compactlySupportedForms I).mp
     (compactlySupportedClosedForms_le_compactlySupportedForms I 2 hω)
   -- `∫ ⟨ω, F⟩ vol` is the Poincaré pairing of `[F]` and `[ω]`.
   have hpair : integralTopForm o (fun x ↦
-      alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (F.1 x) • riemannianVolumeForm o x) =
+      alternatingFormInner (TangentSpace I x) 2 (ω.val x) (F.val x) • riemannianVolumeForm o x) =
       poincarePairing I M o (deRhamCohomology.mk I 2 ⟨F, hF⟩)
         (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩) := by
     rw [← SmoothForm.integralTopForm_inner_smul_riemannianVolumeForm_eq_poincarePairing o hF hω
       hω']
-    simp only [alternatingFormInner_comm (ω.1 _)]
+    simp only [alternatingFormInner_comm (ω.val _)]
   -- The integrand is pointwise `4 ⟨ω, F⟩ vol + 2 ⟨ω, η⟩ vol`.
   have h : (fun x ↦ (r * (1 - s x + t x)) • riemannianVolumeForm o x) =
-      (4 : ℝ) • (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (F.1 x) •
+      (4 : ℝ) • (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ω.val x) (F.val x) •
         riemannianVolumeForm o x) +
-      (2 : ℝ) • (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (η.1 x) •
+      (2 : ℝ) • (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ω.val x) (η.val x) •
         riemannianVolumeForm o x) := by
     funext x
     rw [Pi.add_apply, Pi.smul_apply, Pi.smul_apply, smul_smul, smul_smul, ← add_smul]
@@ -137,9 +125,9 @@ theorem mul_integralTopForm_one_sub_add_eq [SigmaCompactSpace M]
     (((SmoothForm.isSmoothForm_inner_smul_riemannianVolumeForm o rfl ω F).of_le bot_le).smul 4)
     (((SmoothForm.isSmoothForm_inner_smul_riemannianVolumeForm o rfl ω η).of_le bot_le).smul 2)
     (by rw [RoughForm.tsupport_smul _ _ (by norm_num)]
-        exact RoughForm.isCompact_tsupport_inner_smul_riemannianVolumeForm o ω.1 F.1 hc)
+        exact RoughForm.isCompact_tsupport_inner_smul_riemannianVolumeForm o ω.val F.val hc)
     (by rw [RoughForm.tsupport_smul _ _ (by norm_num)]
-        exact RoughForm.isCompact_tsupport_inner_smul_riemannianVolumeForm o ω.1 η.1 hc),
+        exact RoughForm.isCompact_tsupport_inner_smul_riemannianVolumeForm o ω.val η.val hc),
     integralTopForm_smul, integralTopForm_smul, hpair]
 
 /-- **Taubes's `L¹` defect bound.** On a closed oriented Riemannian four-manifold, let `ω` be a
@@ -157,12 +145,13 @@ theorem mul_integralTopForm_abs_one_sub_sub_le [CompactSpace M] {C : ℝ} (hr : 
     (hC : 0 ≤ C) (hs : Continuous s) (ht : Continuous t) (ht₀ : ∀ x, 0 ≤ t x)
     (hst : ∀ x, s x + t x ≤ 1 + C / r) (hω : ω ∈ compactlySupportedClosedForms I M 2)
     (hω' : ω ∈ SmoothForm.selfDualForms o) (hF : F ∈ closedForms I M 2)
-    (hFω : ∀ x, alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (F.1 x) / 2 =
-      r / 8 * (1 - s x + t x) - alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (η.1 x) / 4) :
+    (hFω : ∀ x, alternatingFormInner (TangentSpace I x) 2 (ω.val x) (F.val x) / 2 =
+      r / 8 * (1 - s x + t x) - alternatingFormInner (TangentSpace I x) 2 (ω.val x) (η.val x) / 4) :
     r * integralTopForm o (fun x ↦ |1 - s x - t x| • riemannianVolumeForm o x) ≤
       4 * poincarePairing I M o (deRhamCohomology.mk I 2 ⟨F, hF⟩)
           (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩) +
-        2 * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (η.1 x) •
+        2 * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ω.val x)
+            (η.val x) •
           riemannianVolumeForm o x) +
         2 * C * integralTopForm o (riemannianVolumeForm o) := by
   have hvol : integralTopForm o (fun x ↦ (2 * C) • riemannianVolumeForm o x) =
@@ -204,13 +193,13 @@ theorem mul_integral_abs_one_sub_sub_le [CompactSpace M] {A B : M → Type*}
     (ht : Continuous fun x ↦ ‖β x‖ ^ 2) (hαβ : ∀ x, ‖α x‖ ^ 2 + ‖β x‖ ^ 2 ≤ 1 + K / r)
     (hω : ω ∈ compactlySupportedClosedForms I M 2) (hω' : ω ∈ SmoothForm.selfDualForms o)
     (hF : F ∈ closedForms I M 2)
-    (hFω : ∀ x, alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (F.1 x) / 2 =
+    (hFω : ∀ x, alternatingFormInner (TangentSpace I x) 2 (ω.val x) (F.val x) / 2 =
       r / 8 * (1 - ‖α x‖ ^ 2 + ‖β x‖ ^ 2) -
-        alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (η.1 x) / 4) :
+        alternatingFormInner (TangentSpace I x) 2 (ω.val x) (η.val x) / 4) :
     r * ∫ x, |1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2| ∂riemannianVolume I M ≤
       4 * poincarePairing I M o (deRhamCohomology.mk I 2 ⟨F, hF⟩)
           (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩) +
-        2 * ∫ x, alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (η.1 x)
+        2 * ∫ x, alternatingFormInner (TangentSpace I x) 2 (ω.val x) (η.val x)
           ∂riemannianVolume I M +
         2 * K * riemannianTotalVolume I M := by
   -- `contMDiff_alternatingFormInner` needs `C^(⊤ + 1)` charts.

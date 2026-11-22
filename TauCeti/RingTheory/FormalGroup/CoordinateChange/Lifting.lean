@@ -40,8 +40,8 @@ and its inverse. -/
 theorem exists_iso_lifting_coordinate (F : FormalGroup R) [F.IsComm] (f : R →+* S)
     (hf : Function.Surjective f) (hu : Function.Surjective (Units.map f.toMonoidHom))
     (G : FormalGroup S) (ψ : FormalCoordinate S) (hψ : ψ • F.map f = G) :
-    ∃ (H : {H : FormalGroup R // H.IsComm}) (e : FormalGroupIso F H.1),
-      H.1.map f = G ∧
+    ∃ (H : {H : FormalGroup R // H.IsComm}) (e : FormalGroupIso F H.val),
+      H.val.map f = G ∧
       PowerSeries.map f e.toHom.toPowerSeries = ψ.toPowerSeries ∧
       PowerSeries.map f e.invHom.toPowerSeries = ψ⁻¹.toPowerSeries := by
   obtain ⟨φ, hφ⟩ := (FormalCoordinate.map_surjective_iff f).2 ⟨hf, hu⟩ ψ

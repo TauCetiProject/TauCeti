@@ -240,7 +240,7 @@ theorem weilDifferentialDivisor_weilDifferentialCotrace_ratFuncWeilDifferential
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) :
     weilDifferentialDivisor hF hex
         (weilDifferentialCotrace k F (IsFunctionField.ratFunc k) hF
-          ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).2
+          ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).property
         (weilDifferentialCotrace_ratFuncWeilDifferential_ne_zero hF) =
       (-2 : ℤ) • Divisor.poles hF (Units.map (algebraMap (RatFunc k) F : RatFunc k →* F)
           (Units.mk0 RatFunc.X RatFunc.X_ne_zero)) +
@@ -285,7 +285,7 @@ theorem weilDifferentialDivisor_weilDifferentialOfSeparating (hF : IsFunctionFie
     letI := isScalarTower_ratFuncAlgebraOfTranscendental hx
     letI := isFunctionField_iff_functionField.mp hF
     letI := isSeparable_ratFuncAlgebraOfTranscendental hx
-    weilDifferentialDivisor hF hex (weilDifferentialOfSeparating hF hx).2
+    weilDifferentialDivisor hF hex (weilDifferentialOfSeparating hF hx).property
         (by simpa using weilDifferentialOfSeparating_ne_zero hF hx) =
       (-2 : ℤ) • Divisor.poles hF (Units.mk0 x hx.ne_zero) +
         Divisor.different k F (IsFunctionField.ratFunc k) := by
@@ -307,7 +307,7 @@ theorem weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero (hF : IsFunct
     (hex : IsIntegrallyClosedIn k F) {t : F} (ht : Transcendental k t)
     [Algebra.IsSeparable k⟮t⟯ F] {P : Place k F} [Algebra.IsSeparable k P.ResidueField]
     (htP : P.ord t = 1) :
-    weilDifferentialOrder hF hex (weilDifferentialOfSeparating hF ht).2
+    weilDifferentialOrder hF hex (weilDifferentialOfSeparating hF ht).property
       (by simpa using weilDifferentialOfSeparating_ne_zero hF ht) P = 0 := by
   let _ := ratFuncAlgebraOfTranscendental ht
   let _ := isScalarTower_ratFuncAlgebraOfTranscendental ht
@@ -339,7 +339,7 @@ theorem weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero_of_span_D_eq_
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hx : Transcendental k x)
     [Algebra.IsSeparable k⟮x⟯ F] {P : Place k F} (hxP : x ∈ P.integers)
     (hΩ : Submodule.span P.integers {D k P.integers ⟨x, hxP⟩} = ⊤) :
-    weilDifferentialOrder hF hex (weilDifferentialOfSeparating hF hx).2
+    weilDifferentialOrder hF hex (weilDifferentialOfSeparating hF hx).property
       (by simpa using weilDifferentialOfSeparating_ne_zero hF hx) P = 0 := by
   let _ := ratFuncAlgebraOfTranscendental hx
   let _ := isScalarTower_ratFuncAlgebraOfTranscendental hx

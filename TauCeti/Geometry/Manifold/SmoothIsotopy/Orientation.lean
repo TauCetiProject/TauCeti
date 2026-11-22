@@ -158,8 +158,8 @@ private theorem exists_diffeotopy_eqOn_of_range_subset_of_isSigmaCompact [T2Spac
       (oM.restrict V) (hrestrict (by simpa [f'] using hf)) (hrestrict (by simpa [g'] using hg)) hA
   obtain ⟨Φ, hΦ, hΦK⟩ := Λ.exists_extend_of_isCompact isLocalDiffeomorph_subtype_val
     V.isOpen.isOpenEmbedding_subtypeVal hK fun t z hz ↦ hΛK t z hz
-  refine ⟨Φ, Subtype.val '' K, hK.image continuous_subtype_val,
-    image_subset_iff.mpr fun z _ ↦ z.2, hΦK, fun x hx ↦ ?_⟩
+  refine ⟨Φ, Subtype.val '' K, hK.image continuous_subtypeVal,
+    image_subset_iff.mpr fun z _ ↦ z.property, hΦK, fun x hx ↦ ?_⟩
   calc Φ.final (f x) = Φ.final (f' x : M) := by rw [val_codRestrict_apply]
     _ = Λ.final (f' x) := by rw [Diffeotopy.final_apply, Diffeotopy.final_apply, hΦ]
     _ = g x := by rw [← Function.comp_apply (f := Λ.final), hΛ hx, val_codRestrict_apply]

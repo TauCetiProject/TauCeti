@@ -68,6 +68,13 @@ the elements of `Γ'` fixing `z`. Precisely:
   (`Subgroup.LinearizingCoordinate.automorphyDescent_eq_mul_automorphyDescent`); when the second
   chart is that of such a `ψ'`, the transition functions satisfy the cocycle law on triple
   overlaps (`Subgroup.LinearizingCoordinate.automorphyDescent_automorphyExtension_eq_mul`);
+* on a precisely invariant disc the transition function from the chart of `ψ` to itself is `1`
+  (`Subgroup.LinearizingCoordinate.eqOn_automorphyDescent_automorphyExtension_automorphyFrame_one`),
+  so the transition functions between the charts of `ψ` and `ψ'` in the two directions are inverse
+  to each other (`Subgroup.LinearizingCoordinate.automorphyDescent_automorphyExtension_mul_eq_one`)
+  and vanish nowhere on the overlap, also at the orbit of the centre `z'`, where the frame of
+  `ψ'` vanishes for `r' ≠ 0`
+  (`Subgroup.LinearizingCoordinate.automorphyDescent_automorphyExtension_automorphyFrame_ne_zero`);
 * the frames of the disc coordinates at `z` and at `h • z`, for `h ∈ SL(2, ℝ)`, differ by a
   nonzero constant after transport by `h` in weight `k`
   (`Subgroup.LinearizingCoordinate.automorphyFrame_discCoordinate_smul`): this is the transition
@@ -131,6 +138,10 @@ Diamond–Shurman §3.5.
   `Subgroup.LinearizingCoordinate.automorphyDescent_eq_mul_automorphyDescent` and
   `Subgroup.LinearizingCoordinate.automorphyDescent_automorphyExtension_eq_mul`: the coefficients
   of a section in two charts differ by the transition function, and the cocycle law.
+* `Subgroup.LinearizingCoordinate.eqOn_automorphyDescent_automorphyExtension_automorphyFrame_one`,
+  `Subgroup.LinearizingCoordinate.automorphyDescent_automorphyExtension_mul_eq_one` and
+  `Subgroup.LinearizingCoordinate.automorphyDescent_automorphyExtension_automorphyFrame_ne_zero`:
+  the transition functions between two elliptic charts are units on the whole overlap.
 * `Subgroup.LinearizingCoordinate.automorphyFrame_discCoordinate_smul`: the transport of the frame
   of the disc coordinate along `SL(2, ℝ)`.
 * `Subgroup.LinearizingCoordinate.differentialFrame` and
@@ -244,7 +255,7 @@ private theorem pointOf_coordinate (τ : stabilizerBall Γ z ε) :
   have hτ : UpperHalfPlane.discCoordinate z (τ : ℍ) ∈ ψ.toEquiv.source := by
     rw [ψ.toEquiv_source, mem_ball_zero_iff]
     exact mem_ball_iff_norm_discCoordinate_lt.mp
-      (mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2))
+      (mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.property))
   have h := congrArg ((↑) : ℍ → ℂ) ((discCoordinateHomeomorph z).symm_apply_apply (τ : ℍ))
   rw [coe_discCoordinateHomeomorph_symm_apply, coe_discCoordinateHomeomorph_apply] at h
   rw [pointOf, coordinate_def, ψ.toEquiv.left_inv' hτ, h]
@@ -327,7 +338,7 @@ theorem differentiableOn_automorphyUntwist (hfd : MDifferentiableOn 𝓘(ℂ) �
     DifferentiableOn ℂ (ψ.automorphyUntwist k f) ψ.toEquiv.target := by
   intro u hu
   obtain ⟨τ, rfl⟩ := (ψ.mem_target_iff u).mp hu
-  have hτ : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2)
+  have hτ : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.property)
   exact (ψ.differentiableAt_automorphyUntwist_coordinate
     ((hfd τ hτ).mdifferentiableAt (isOpen_ball.mem_nhds hτ))).differentiableWithinAt
 
@@ -348,7 +359,7 @@ theorem automorphyUntwist_smul_coordinate
   have hq : stabilizerRotation Γ z q = ζ := by
     rw [← coe_stabilizerRotationEquiv]
     exact (stabilizerRotationEquiv Γ z).apply_symm_apply ζ
-  obtain ⟨g, hgΓ', hgq⟩ := mem_map.mp (hΓ (q : Γ).2)
+  obtain ⟨g, hgΓ', hgq⟩ := mem_map.mp (hΓ (q : Γ).property)
   rw [QuotientGroup.mk'_apply] at hgq
   have hgz := smul_eq_self_of_coe_eq q hgq
   have hζ : ζ • ψ.coordinate τ = ψ.coordinate (q • τ) := by
@@ -376,7 +387,7 @@ theorem automorphyUntwist_smul (hΓ : Γ ≤ Γ'.map (QuotientGroup.mk' (center 
     ψ.automorphyUntwist k f (ζ • u) = ((ζ : ℂˣ) : ℂ) ^ r • ψ.automorphyUntwist k f u := by
   obtain ⟨τ, rfl⟩ := (ψ.mem_target_iff u).mp hu
   exact ψ.automorphyUntwist_smul_coordinate hΓ hk τ
-    (fun g hg hgz ↦ hf g hg hgz τ (mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2))) ζ
+    (fun g hg hgz ↦ hf g hg hgz τ (mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.property))) ζ
 
 /-- The coordinates of the points of the invariant disc lying in `V`. -/
 private def coordinateSet (V : Set ℍ) : Set ℂ :=
@@ -418,7 +429,7 @@ private theorem differentiableOn_automorphyUntwist_coordinateSet_and_smul
       ∀ u ∈ ψ.coordinateSet V, ∀ ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ,
         ψ.automorphyUntwist k f (ζ • u) = ((ζ : ℂˣ) : ℂ) ^ r • ψ.automorphyUntwist k f u := by
   have hball : ∀ σ : stabilizerBall Γ z ε, (σ : ℍ) ∈ V → (σ : ℍ) ∈ ball z ε ∩ V :=
-    fun σ hσ ↦ ⟨mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 σ.2), hσ⟩
+    fun σ hσ ↦ ⟨mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 σ.property), hσ⟩
   refine ⟨fun u hu ↦ ?_, fun u hu ζ ↦ ?_⟩ <;>
     obtain ⟨σ, hσ, rfl⟩ := ψ.exists_of_mem_coordinateSet hu
   · exact (ψ.differentiableAt_automorphyUntwist_coordinate ((hfd _ (hball σ hσ)).mdifferentiableAt
@@ -668,7 +679,7 @@ private theorem automorphyUntwist_differentialFrame_mul (j : ℕ) {u : ℂ}
         u ^ (j * (Nat.card (stabilizer Γ z) - 1)) := by
   set m := Nat.card (stabilizer Γ z)
   obtain ⟨τ, rfl⟩ := (ψ.mem_target_iff u).mp hu
-  have hτ : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2)
+  have hτ : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.property)
   have hWP : ψ.quotientCoordinateOnComplex ∘ ψ.pointOf =ᶠ[nhds (ψ.coordinate τ)]
       fun u ↦ u ^ m := by
     filter_upwards [ψ.isOpen_target.mem_nhds hu] with v hv
@@ -956,7 +967,7 @@ theorem automorphyDescent_eq_automorphyDescent_automorphyExtension_mul
   -- At the centre both sides are continuous functions of the point, read on `ℂ` near `z`, which
   -- agree at every other point by the first case.
   have hz : (τ : ℍ) = z := ((ψ.automorphyFrame_eq_zero_iff k r τ).mp (not_not.mp hF)).1
-  have hτb : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2)
+  have hτb : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.property)
   set M : ℂ → ℍ := fun t ↦ h • ofComplex t
   set L : ℂ → ℂ := fun t ↦ ψ.automorphyDescent k r f (ψ.quotientCoordinateOnComplex t)
   set R : ℂ → ℂ := fun t ↦ ψ.automorphyDescent k r E (ψ.quotientCoordinateOnComplex t) * c' (M t)
@@ -1034,7 +1045,7 @@ theorem automorphyDescent_eq_mul_automorphyDescent
       ψ.automorphyDescent k r (Γ'.automorphyExtension (ball z' ε') k fun σ ↦
           ((σ : ℂ) - conj (z' : ℂ)) ^ (-k) * ψ'.toEquiv (UpperHalfPlane.discCoordinate z' σ) ^ r')
         (ψ.quotientCoordinate τ) * ψ'.automorphyDescent k r' f (ψ'.quotientCoordinate σ) := by
-  have hσb : (σ : ℍ) ∈ ball z' ε' := mem_ball.mpr ((mem_stabilizerBall Γ z' ε').1 σ.2)
+  have hσb : (σ : ℍ) ∈ ball z' ε' := mem_ball.mpr ((mem_stabilizerBall Γ z' ε').1 σ.property)
   -- by its transformation law, `f` is holomorphic on the saturation `Γ' • W`, which contains `σ`
   set W' := (Γ' : Set SL(2, ℝ)) • W
   have hW' : IsOpen W' := hW.smul_left
@@ -1099,6 +1110,82 @@ theorem automorphyDescent_automorphyExtension_eq_mul
     (fun _ hg σ ↦ automorphyExtension_smul hF'' hg σ)
     (mdifferentiableOn_automorphyExtension hF'' hU'' hF''d)
     (mem_smul_set_iff_exists_smul_mem.mpr ⟨h'', hh'', hτ⟩) hh hσ
+
+/-- **The transition function from the chart of `ψ` to itself is `1`.** On a precisely invariant
+disc, the coefficient with respect to the frame of `ψ` of the automorphic extension of that frame
+is `1` on the whole set of local quotient-coordinate values, including the quotient coordinate
+`0` of the centre, where for `r ≠ 0` the frame vanishes. -/
+theorem eqOn_automorphyDescent_automorphyExtension_automorphyFrame_one
+    (hΓ : Γ'.map (QuotientGroup.mk' (center SL(2, ℝ))) = Γ)
+    (hk : ∀ g ∈ Γ', g • z = z → denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z ^ (2 * r + k) = 1)
+    (hr : r < Nat.card (stabilizer Γ z))
+    (hprec : ∀ g ∈ Γ', ∀ σ ∈ ball z ε, g • σ ∈ ball z ε → g • z = z) :
+    EqOn (ψ.automorphyDescent k r (Γ'.automorphyExtension (ball z ε) k fun σ ↦
+        ((σ : ℂ) - conj (z : ℂ)) ^ (-k) * ψ.toEquiv (UpperHalfPlane.discCoordinate z σ) ^ r))
+      (fun _ ↦ 1) ψ.quotientImage := by
+  have hF := ψ.automorphyFrame_compatible hΓ.le hk hprec
+  refine (ψ.eqOn_automorphyDescent hΓ.ge hk (fun g hg _ σ _ ↦ automorphyExtension_smul hF hg σ)
+    ((mdifferentiableOn_automorphyExtension hF isOpen_ball
+      (ψ.mdifferentiableOn_automorphyFrame k r)).mono fun σ hσ ↦
+        mem_smul_set_iff_exists_smul_mem.mpr ⟨1, Γ'.one_mem, by rwa [one_smul]⟩)
+    hr continuousOn_const fun τ ↦ ?_).symm
+  rw [automorphyExtension_of_mem hF (mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.property)),
+    automorphyFrame_eq_toEquiv_discCoordinate, mul_one]
+
+/-- **The transition functions between two elliptic charts are inverse to each other.** Let `ψ`
+and `ψ'` be local linearizing coordinates at `z` and `z'` on precisely invariant discs, with
+exponents `r < m` and `r' < m'` satisfying the frame conditions. If `σ = h • τ`, for `h ∈ Γ'`, is
+a point of the disc about `z'` and `τ` a point of the disc about `z`, then the transition function
+from the chart of `ψ'` to that of `ψ`, at the quotient coordinate of `τ`, times the transition
+function from the chart of `ψ` to that of `ψ'`, at the quotient coordinate of `σ`, is `1`. This
+holds also when `τ` is the centre `z` or `σ` is the centre `z'`, where the frames may vanish; so
+both transition functions are units on the whole overlap of the two charts. -/
+theorem automorphyDescent_automorphyExtension_mul_eq_one
+    (hΓ : Γ'.map (QuotientGroup.mk' (center SL(2, ℝ))) = Γ)
+    (hk : ∀ g ∈ Γ', g • z = z → denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z ^ (2 * r + k) = 1)
+    (hr : r < Nat.card (stabilizer Γ z))
+    (hprec : ∀ g ∈ Γ', ∀ σ ∈ ball z ε, g • σ ∈ ball z ε → g • z = z)
+    (hk' : ∀ g ∈ Γ', g • z' = z' →
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z' ^ (2 * r' + k) = 1)
+    (hr' : r' < Nat.card (stabilizer Γ z'))
+    (hprec' : ∀ g ∈ Γ', ∀ σ ∈ ball z' ε', g • σ ∈ ball z' ε' → g • z' = z')
+    {τ : stabilizerBall Γ z ε} {σ : stabilizerBall Γ z' ε'} {h : SL(2, ℝ)} (hh : h ∈ Γ')
+    (hσ : (σ : ℍ) = h • (τ : ℍ)) :
+    ψ.automorphyDescent k r (Γ'.automorphyExtension (ball z' ε') k fun σ ↦
+          ((σ : ℂ) - conj (z' : ℂ)) ^ (-k) * ψ'.toEquiv (UpperHalfPlane.discCoordinate z' σ) ^ r')
+        (ψ.quotientCoordinate τ) *
+      ψ'.automorphyDescent k r' (Γ'.automorphyExtension (ball z ε) k fun σ ↦
+          ((σ : ℂ) - conj (z : ℂ)) ^ (-k) * ψ.toEquiv (UpperHalfPlane.discCoordinate z σ) ^ r)
+        (ψ'.quotientCoordinate σ) = 1 := by
+  rw [← ψ.automorphyDescent_automorphyExtension_eq_mul ψ' hΓ hk hr hk' hr' hprec' isOpen_ball
+    (ψ.automorphyFrame_compatible hΓ.le hk hprec) (ψ.mdifferentiableOn_automorphyFrame k r) hh hσ
+    Γ'.one_mem (by rw [one_smul]; exact mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.property))]
+  exact ψ.eqOn_automorphyDescent_automorphyExtension_automorphyFrame_one hΓ hk hr hprec
+    ((ψ.mem_quotientImage_iff _).mpr ⟨τ, rfl⟩)
+
+/-- **The transition function between two elliptic charts vanishes nowhere on their overlap.**
+Let `ψ` and `ψ'` be local linearizing coordinates at `z` and `z'` on precisely invariant discs,
+with exponents `r < m` and `r' < m'` satisfying the frame conditions. If `h ∈ Γ'` moves the point
+`τ` of the disc about `z` into the disc about `z'`, then the transition function from the chart of
+`ψ'` to that of `ψ` does not vanish at the quotient coordinate of `τ`. This holds also when
+`h • τ` is the centre `z'`, where for `r' ≠ 0` the frame of `ψ'` vanishes and
+`Subgroup.LinearizingCoordinate.automorphyDescent_automorphyExtension_ne_zero` does not apply. -/
+theorem automorphyDescent_automorphyExtension_automorphyFrame_ne_zero
+    (hΓ : Γ'.map (QuotientGroup.mk' (center SL(2, ℝ))) = Γ)
+    (hk : ∀ g ∈ Γ', g • z = z → denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z ^ (2 * r + k) = 1)
+    (hr : r < Nat.card (stabilizer Γ z))
+    (hprec : ∀ g ∈ Γ', ∀ σ ∈ ball z ε, g • σ ∈ ball z ε → g • z = z)
+    (hk' : ∀ g ∈ Γ', g • z' = z' →
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z' ^ (2 * r' + k) = 1)
+    (hr' : r' < Nat.card (stabilizer Γ z'))
+    (hprec' : ∀ g ∈ Γ', ∀ σ ∈ ball z' ε', g • σ ∈ ball z' ε' → g • z' = z')
+    {τ : stabilizerBall Γ z ε} {h : SL(2, ℝ)} (hh : h ∈ Γ') (hτ : h • (τ : ℍ) ∈ ball z' ε') :
+    ψ.automorphyDescent k r (Γ'.automorphyExtension (ball z' ε') k fun σ ↦
+          ((σ : ℂ) - conj (z' : ℂ)) ^ (-k) * ψ'.toEquiv (UpperHalfPlane.discCoordinate z' σ) ^ r')
+        (ψ.quotientCoordinate τ) ≠ 0 :=
+  left_ne_zero_of_mul_eq_one
+    (ψ.automorphyDescent_automorphyExtension_mul_eq_one ψ' hΓ hk hr hprec hk' hr' hprec'
+      (σ := ⟨h • (τ : ℍ), (mem_stabilizerBall Γ z' ε').2 (mem_ball.mp hτ)⟩) hh rfl)
 
 end LinearizingCoordinate
 
