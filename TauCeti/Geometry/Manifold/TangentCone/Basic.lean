@@ -341,8 +341,8 @@ theorem IsSliceChart.span_mtangentConeAt_eq_comap (hn : n ≠ 0)
   have himg := image_mtangentConeAt_eq_tangentConeAt (s := s) hy hA
   rw [tangentConeAt_preimage_symm_eq hs hL hy hys] at himg
   rw [OpenPartialHomeomorph.coe_trans] at hA
-  rw [mfderiv_eq_of_hasFDerivAt_chartAt_symm hA, ← A.injective.preimage_image
-    (mtangentConeAt 𝓘(𝕜, E) s y), himg]
+  rw [(hasMFDerivAt_iff_hasFDerivAt_comp_chartAt_symm.2 hA).mfderiv,
+    ← A.injective.preimage_image (mtangentConeAt 𝓘(𝕜, E) s y), himg]
   exact Submodule.span_eq (L.comap ((A : E →L[𝕜] E) : E →ₗ[𝕜] E))
 
 /-- **Sets flattened by one chart onto spanning subspaces are transverse.** If a single chart `q`

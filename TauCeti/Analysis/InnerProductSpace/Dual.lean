@@ -174,6 +174,14 @@ theorem isInvertible_of_apply_apply_eq_mul_inner {c : ℝ} (hc : c ≠ 0)
     ContinuousLinearMap.ext fun b ↦ ContinuousLinearMap.ext fun a ↦ ?_⟩
   simpa [e] using (hB b a).symm
 
+/-- The real Riesz map to the continuous dual is invertible on every Hilbert space. -/
+theorem isInvertible_innerSL {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] :
+    (innerSL ℝ (E := E)).IsInvertible :=
+  isInvertible_of_apply_apply_eq_mul_inner one_ne_zero fun b a ↦ by
+    rw [one_mul]
+    exact innerSL_apply_apply ℝ b a
+
 /-- The adjoint of the Fréchet–Riesz operator of a real bilinear form represents the transposed
 form. -/
 @[simp]
