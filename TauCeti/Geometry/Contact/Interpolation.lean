@@ -99,19 +99,6 @@ theorem isContactFormAt_add_smul_sub {x : M} (hc : IsContactFormAt α₀.val x)
   · rw [← mextDerivₗ_apply I 1 (α₀ + s • (α₁ - α₀)), map_add, map_smul, map_sub]
     simp [hd v hv w hw]
 
-/-- The interpolations of the restrictions of `α₀` and `α₁` to an open subset `W` are contact
-where those of `α₀` and `α₁` are. -/
-theorem isContactFormAt_mpullback_subtypeVal_add_smul_sub {W : TopologicalSpace.Opens M} {s : ℝ}
-    {y : W} (hc : IsContactFormAt (α₀ + s • (α₁ - α₀)).val y) :
-    IsContactFormAt (mpullback (Subtype.val : W → M) contMDiff_subtypeVal α₀ +
-      s • (mpullback (Subtype.val : W → M) contMDiff_subtypeVal α₁ -
-        mpullback (Subtype.val : W → M) contMDiff_subtypeVal α₀)).val y := by
-  rw [← map_sub, ← map_smul, ← map_add, coe_mpullback,
-    isContactFormAt_mpullback_iff contMDiff_subtypeVal.contMDiffAt
-      ((α₀ + s • (α₁ - α₀)).contMDiff.of_le (by simp) y)
-      (by rw [Manifold.mfderiv_subtype_val]; exact ContinuousLinearEquiv.bijective _)]
-  exact hc
-
 variable [FiniteDimensional ℝ E]
 
 /-- **The interpolation is contact near the set of first-order agreement.** Let `α₀` be contact at
@@ -199,8 +186,9 @@ theorem exists_partialDiffeomorph_mpullback_eq_smul_of_apply_eq {K : Set M}
   have hW : Nonempty W := ⟨⟨x₀, hKN hx₀⟩⟩
   obtain ⟨φ, hsrc, htgt, hfix, hφ⟩ :=
     exists_partialDiffeomorph_mpullback_eq_smul_of_forall_isContactFormAt (K := Subtype.val ⁻¹' K)
-      (fun (y : W) s hs ↦
-        isContactFormAt_mpullback_subtypeVal_add_smul_sub (hcN y y.property s hs))
+      (fun (y : W) s hs ↦ by
+        rw [← map_sub, ← map_smul, ← map_add, isContactFormAt_mpullback_subtypeVal_iff]
+        exact hcN y y.property s hs)
       fun y hy ↦ (coe_mpullback_subtype_val_apply α₁ y).trans
         ((hval y hy).trans (coe_mpullback_subtype_val_apply α₀ y).symm)
   -- Read `φ` in `M`.

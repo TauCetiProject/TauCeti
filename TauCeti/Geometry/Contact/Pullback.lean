@@ -173,6 +173,16 @@ theorem _root_.Diffeomorph.isContactForm_mpullback_iff (e : M ≃ₘ⟮I, J⟯ N
   SmoothForm.isContactForm_mpullback_iff e.contMDiff
     (fun _ ↦ (e.isInvertible_mfderiv (by simp)).bijective) e.surjective α
 
+/-- Restriction to an open subset `W` preserves and reflects the pointwise contact condition. -/
+theorem isContactFormAt_mpullback_subtypeVal_iff {W : TopologicalSpace.Opens M}
+    {α : SmoothForm I M ℝ 1} (y : W) :
+    IsContactFormAt (mpullback (Subtype.val : W → M) contMDiff_subtypeVal α).val y ↔
+      IsContactFormAt α.val y := by
+  rw [coe_mpullback]
+  exact isContactFormAt_mpullback_iff contMDiff_subtypeVal.contMDiffAt
+    (α.contMDiff.of_le (by simp) y)
+    (by rw [Manifold.mfderiv_subtype_val]; exact ContinuousLinearEquiv.bijective _)
+
 /-- If the pullback of a one-form along a smooth map `f : M → N` is a contact form and `M` is
 nonempty, then the model space of `M` is finite-dimensional whenever that of `N` is. -/
 theorem finiteDimensional_of_isContactForm_mpullback [FiniteDimensional ℝ F]
@@ -204,10 +214,7 @@ theorem mfderiv_reebVectorField_mpullback_of_isContactFormAt [FiniteDimensional 
     rw [coe_mpullback, isContactFormAt_mpullback_iff (hf.of_le (by simp)).contMDiffAt
       (α.contMDiff.of_le (by simp) (f x)) hdf]
     exact hα
-  rw [← characteristicVectorField_mextDerivₗ α,
-    eq_characteristicVectorField_iff (isContactFormAt_iff_isContact.1 hα),
-    mextDerivₗ_apply]
-  constructor
+  refine (eq_reebVectorField_iff_of_isContactFormAt hα).2 ⟨?_, ?_⟩
   · have h := apply_reebVectorField_of_isContactFormAt hβ
     rw [SmoothForm.mpullback_apply] at h
     convert h using 2

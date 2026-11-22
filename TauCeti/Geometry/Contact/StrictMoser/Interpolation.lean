@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Contact.StrictMoser
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Manifold.DifferentialForm.Opens
-import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 
 /-!
 # Strict interpolation of contact forms agreeing along a transverse slice
@@ -166,24 +165,20 @@ private theorem isOpen_setOf_forall_pos_apply_reebVectorField {α₀ α₁ β : 
   set A := lineMapFamily α₀ α₁ (Real.smoothTransition.contDiff (n := ⊤))
   set g : ℝ × M → ℝ := fun q ↦ β.val q.2
     ![(mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) A).reebVectorField q.2]
-  -- `g` is continuous at the points over `N`, where all slices of `A` are contact.
+  -- `g` is continuous at the points over `N`, where all slices of `A` are contact. It is the
+  -- Reeb component of the constant family with slices `β`.
+  have hβ (t : ℝ) : mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id)
+      (mpullback Prod.snd contMDiff_snd β) = β :=
+    (mpullback_mpullback (Prod.mk t) Prod.snd (I' := 𝓘(ℝ, ℝ).prod I)
+      (contMDiff_const.prodMk contMDiff_id) contMDiff_snd β).trans
+        (LinearMap.congr_fun mpullback_id β)
   have hg (p : ℝ × M) (hp : p.2 ∈ N) : ContinuousAt g p := by
-    have hc : ∀ᶠ q in 𝓝 p, IsContactFormAt
-        (mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) A).val q.2 :=
-      mem_of_superset ((hN.preimage continuous_snd).mem_nhds hp) fun q hq ↦ by
+    have hgp := contMDiffAt_apply_reebVectorField_mpullback_prodMk A
+      (mpullback Prod.snd contMDiff_snd β) (p := p)
+      (mem_of_superset ((hN.preimage continuous_snd).mem_nhds hp) fun q hq ↦ by
         simp only [mem_ofPred_eq, A, mpullback_prodMk_lineMapFamily]
-        exact hcN q.2 hq _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
-    have hβ : ContMDiffAt (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞
-        (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] ℝ) (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)
-          q.2 (degreeOneEquiv β q.2)) p :=
-      (contMDiffAt_sectionAlong_degreeOneEquiv_iff (b := Prod.snd)
-        (α := fun _ : ℝ × M ↦ β) (m₀ := p) (n := ∞)).2
-        ((β.contMDiff.comp (contMDiff_snd (I := 𝓘(ℝ, ℝ)) (J := I))) p)
-    have hR := contMDiffAt_sectionAlong_reebVectorField (b := Prod.snd)
-      (α := fun q : ℝ × M ↦ mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) A) hc
-      (contMDiff_mpullback_prodMk A p) (contMDiff_mextDeriv_mpullback_prodMk A p)
-    have hgp : ContMDiffAt (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ g p := by
-      simpa [degreeOneEquiv_apply_apply_vec] using hβ.clm_bundle_apply_scalar hR
+        exact hcN q.2 hq _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩)
+    simp only [hβ] at hgp
     exact hgp.continuousAt
   refine isOpen_iff_mem_nhds.2 fun x ⟨hxN, hx⟩ ↦ ?_
   have hev : ∀ᶠ y in 𝓝 x, ∀ t ∈ Icc (0 : ℝ) 1, 0 < g (t, y) :=
@@ -191,9 +186,10 @@ private theorem isOpen_setOf_forall_pos_apply_reebVectorField {α₀ α₁ β : 
       fun t ht ↦ by
         have hgs : ContinuousAt (fun z : M × ℝ ↦ g (z.2, z.1)) (x, t) :=
           (hg (t, x) hxN).comp_of_eq continuous_swap.continuousAt rfl
-        exact hgs.eventually (lt_mem_nhds (by simpa [g, A] using hx t ht))
+        exact hgs.eventually
+          (lt_mem_nhds (by simpa only [g, A, mpullback_prodMk_lineMapFamily] using hx t ht))
   filter_upwards [hN.mem_nhds hxN, hev] with y hyN hy
-  exact ⟨hyN, fun t ht ↦ by simpa [g, A] using hy t ht⟩
+  exact ⟨hyN, fun t ht ↦ by simpa only [g, A, mpullback_prodMk_lineMapFamily] using hy t ht⟩
 
 variable [SecondCountableTopology M]
 
@@ -250,7 +246,9 @@ private theorem exists_partialDiffeomorph_mpullback_eq_of_forall_pos
     exact (hpos (ι σ) σ.property t ht).ne' h0
   obtain ⟨φ, hsrc, htgt, hfix, hφ⟩ :=
     exists_partialDiffeomorph_mpullback_eq_of_forall_isContactFormAt (K := Subtype.val ⁻¹' K)
-      (fun y s hs ↦ isContactFormAt_mpullback_subtypeVal_add_smul_sub (hcV y y.property s hs))
+      (fun y s hs ↦ by
+        rw [← map_sub, ← map_smul, ← map_add, isContactFormAt_mpullback_subtypeVal_iff]
+        exact hcV y y.property s hs)
       ((ContMDiff.subtypeVal_comp_iff W ιW).1 (hι.comp contMDiff_subtypeVal))
       (fun σ v w h ↦ himm σ (by rwa [hdιW, hdιW] at h))
       ((Topology.IsInducing.subtypeVal.of_comp_iff).1 (hind.comp Topology.IsInducing.subtypeVal))
