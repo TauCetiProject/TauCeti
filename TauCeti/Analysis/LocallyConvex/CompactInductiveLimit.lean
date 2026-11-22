@@ -248,7 +248,17 @@ theorem strongDualEquiv_symm_apply_eq_evalInductive (f : dualProjectiveLimit T) 
 
 end StrongDualEquiv
 
+end RCLike
+
 section PolarComparison
+
+section
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {B : ℕ → Type*}
+  [∀ n, NormedAddCommGroup (B n)] [∀ n, NormedSpace 𝕜 (B n)]
+  {T : ∀ n, B n →L[𝕜] B (n + 1)}
+  {L : Type*} [AddCommGroup L] [Module 𝕜 L] [TopologicalSpace L]
+  {ι : ∀ n, B n →L[𝕜] L}
 
 /-- For any `0`-neighborhood `U` in `L`, the image in `dualProjectiveLimit T` of its strong polar
 `StrongDual.polar 𝕜 U` under `precomp ι hι` is von Neumann bounded. -/
@@ -285,6 +295,16 @@ theorem preimage_polar_image_precomp_polar (hι : ∀ n, (ι (n + 1)).comp (T n)
   ext x
   simp [StrongDual.mem_polar_iff, LinearMap.polar_mem_iff]
 
+end
+
+section RCLike
+
+variable {𝕜 : Type*} [RCLike 𝕜] {B : ℕ → Type*}
+  [∀ n, NormedAddCommGroup (B n)] [∀ n, NormedSpace 𝕜 (B n)]
+  {T : ∀ n, B n →L[𝕜] B (n + 1)}
+  {L : Type*} [AddCommGroup L] [Module 𝕜 L] [TopologicalSpace L]
+  {ι : ∀ n, B n →L[𝕜] L}
+
 /-- **Explicit bipolar comparison for `evalInductive`.** For a nonempty absolutely convex subset
 `U` of a locally convex space `L` over `ℝ` or `ℂ`, pulling back the strong polar of
 `precomp ι hι '' StrongDual.polar 𝕜 U` along `evalInductive` gives `_root_.closure U`. -/
@@ -298,9 +318,9 @@ theorem preimage_polar_image_precomp_polar_eq_closure
       _root_.closure U := by
   rw [preimage_polar_image_precomp_polar, hU.bipolar_eq_closure hne]
 
-end PolarComparison
-
 end RCLike
+
+end PolarComparison
 
 section EvaluationIsomorphism
 
@@ -334,22 +354,6 @@ theorem isInducing_evalInductive_of_continuous
     IsInducing (evalInductive hι hinj hcover) :=
   isInducing_of_forall_apply_eq_of_continuous (evalInductive_apply_precomp hι hinj hcover) hcont
 
-/-- If `evalInductive` is continuous, then every linear functional on `L` whose composites with all
-stage maps `ι n` are continuous is itself continuous on `L`. -/
-theorem continuous_of_continuous_evalInductive_of_continuous_comp
-    (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
-    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
-    (hcont : Continuous (evalInductive hι hinj hcover))
-    (ψ : L →ₗ[𝕜] 𝕜) (hψ : ∀ n, Continuous (ψ ∘ ι n)) :
-    Continuous ψ := by
-  let f : dualProjectiveLimit T :=
-    ⟨fun n ↦ ⟨ψ.comp (ι n).toLinearMap, hψ n⟩, mem_dualProjectiveLimit.2 fun n ↦ by
-      ext z
-      exact congrArg ψ (congr($(hι n) z))⟩
-  refine ((continuous_eval_const f).comp hcont).congr fun x ↦ ?_
-  obtain ⟨n, z, rfl⟩ := hcover x
-  simp [f]
-
 /-- **Forward continuity from the final locally convex topology.** Whenever the topology of `L` is
 at least as fine as the final locally convex topology of the maps `ι n`, the glued evaluation map
 `evalInductive` is continuous into `StrongDual 𝕜 (dualProjectiveLimit T)`. -/
@@ -376,6 +380,22 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {B : ℕ → Type*}
   {T : ∀ n, B n →L[𝕜] B (n + 1)}
   {L : Type*} [AddCommGroup L] [Module 𝕜 L] [TopologicalSpace L]
   {ι : ∀ n, B n →L[𝕜] L}
+
+/-- If `evalInductive` is continuous, then every linear functional on `L` whose composites with all
+stage maps `ι n` are continuous is itself continuous on `L`. -/
+theorem continuous_of_continuous_evalInductive_of_continuous_comp
+    (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hcont : Continuous (evalInductive hι hinj hcover))
+    (ψ : L →ₗ[𝕜] 𝕜) (hψ : ∀ n, Continuous (ψ ∘ ι n)) :
+    Continuous ψ := by
+  let f : dualProjectiveLimit T :=
+    ⟨fun n ↦ ⟨ψ.comp (ι n).toLinearMap, hψ n⟩, mem_dualProjectiveLimit.2 fun n ↦ by
+      ext z
+      exact congrArg ψ (congr($(hι n) z))⟩
+  refine ((continuous_eval_const f).comp hcont).congr fun x ↦ ?_
+  obtain ⟨n, z, rfl⟩ := hcover x
+  simp [f]
 
 /-- **Forward continuity from stagewise-tested seminorms.** If every `𝕜`-seminorm on `L` whose
 composites with all stage maps `ι n` are continuous is itself continuous, then the glued evaluation

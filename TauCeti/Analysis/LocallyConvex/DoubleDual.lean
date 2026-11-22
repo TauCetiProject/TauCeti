@@ -254,7 +254,6 @@ def strongEval : E →L[𝕜₁] StrongDual 𝕜₁ (StrongDual 𝕜₁ E) :=
   { ContinuousLinearMap.applyₗ 𝕜₁ (RingHom.id 𝕜₁) with
     cont := continuous_applyₗ }
 
-@[simp]
 theorem strongEval_apply_apply (x : E) (f : StrongDual 𝕜₁ E) :
     strongEval 𝕜₁ E x f = f x :=
   (rfl)
@@ -263,6 +262,11 @@ theorem strongEval_apply_apply (x : E) (f : StrongDual 𝕜₁ E) :
 theorem toLinearMap_strongEval :
     (strongEval 𝕜₁ E).toLinearMap = ContinuousLinearMap.applyₗ 𝕜₁ (RingHom.id 𝕜₁) :=
   (rfl)
+
+@[simp]
+theorem strongEval_apply (x : E) :
+    strongEval 𝕜₁ E x = ContinuousLinearMap.applyₗ 𝕜₁ (RingHom.id 𝕜₁) x :=
+  LinearMap.congr_fun toLinearMap_strongEval x
 
 end Barrelled
 

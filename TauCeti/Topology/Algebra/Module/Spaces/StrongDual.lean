@@ -98,10 +98,8 @@ theorem toLinearMap_dualBidualEquivOfDualEquiv
     (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
     letI : ContinuousSMul 𝕜 F := a.symm.continuousSMul
     (dualBidualEquivOfDualEquiv a b h).toLinearMap =
-      ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) := by
-  let : ContinuousSMul 𝕜 F := a.symm.continuousSMul
-  ext f φ
-  exact dualBidualEquivOfDualEquiv_apply_apply a b h f φ
+      ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :=
+  toLinearMap_bidualEquivOfDualEquiv b.symm a.symm _
 
 /-- Composing `a : StrongDual 𝕜 E ≃L[𝕜] F` with the dual-bidual equivalence
 `dualBidualEquivOfDualEquiv a b h` agrees with `b.arrowCongr (.refl 𝕜 𝕜)`. -/
