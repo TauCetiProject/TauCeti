@@ -19,7 +19,9 @@ For a trivial value bundle, `mpullbackWithin` and `mpullback` retain the fixed c
 space. On model spaces they agree with precomposition by the Fréchet derivative.
 Pullback at `x` only depends on the germ of `f` at `x`, within-set pullback at `x` only on the
 value at `x` and the germ within the set, and when the derivative of `f` at `x`
-is surjective it determines the form at `f x`.
+is surjective it determines the form at `f x`. On a normed space, the pullback along a translate
+`w ↦ u (w + c)` is the pullback along `u` at the translated point
+(`TauCeti.mpullback_comp_add_right`).
 
 This construction follows Lee, *Introduction to Smooth Manifolds*, second edition,
 Chapter 14. The proofs reuse Mathlib's manifold chain rule and alternating-map composition.
@@ -517,6 +519,19 @@ theorem mpullback_comp_apply_of_hasFDerivAt {u : E' → M} {L : E'' → E'} {A :
       (mpullback 𝓘(ℝ, E') I u ω (L y)).compContinuousLinearMap A := by
   rw [mpullback_comp_at hL.differentiableAt.mdifferentiableAt hu, mpullback_eq_flat]
   exact congrArg _ hL.fderiv
+
+/-- **Translation.** The pullback along a translate `w ↦ u (w + c)` of a map of a normed space is
+the pullback along `u` at the translated point. -/
+theorem mpullback_comp_add_right {u : E' → M} {c y : E'}
+    (hu : MDifferentiableAt 𝓘(ℝ, E') I u (y + c)) (ω : RoughForm I M F k) :
+    mpullback 𝓘(ℝ, E') I (fun w ↦ u (w + c)) ω y = mpullback 𝓘(ℝ, E') I u ω (y + c) := by
+  -- The translation has derivative the identity.
+  have hL : HasFDerivAt (fun w : E' ↦ w + c) (ContinuousLinearMap.id ℝ E') y :=
+    (hasFDerivAt_id y).add_const c
+  rw [← Function.comp_def u (· + c), mpullback_comp_apply_of_hasFDerivAt hL hu]
+  -- Precomposing with the identity of `E'` changes nothing; the tangent spaces of `E'` are `E'`
+  -- itself, but indexed by the point, so this is not a rewrite with a precomposition lemma.
+  exact ContinuousAlternatingMap.ext fun v ↦ rfl
 
 /-- The pullback of a form along `γ ∘ P`, for a continuous linear map `P` of normed spaces,
 vanishes on every family of vectors one of which lies in the kernel of `P`. -/

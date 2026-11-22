@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.InvariantForm
 public import Mathlib.Algebra.Lie.Prod
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.LinearAlgebra.Quotient.Prod
+
+import TauCeti.Algebra.Lie.Dual
 
 /-!
 # The Kirillov–Kostant–Souriau form on a coadjoint tangent space
@@ -60,6 +63,11 @@ covering homomorphism and quotients by central ideals. For a product `L₁ × L�
 `(η₁, η₂) ↦ ν₁ η₁ + ν₂ η₂`, the stabilizer is the product of the stabilizers and the KKS form is
 the sum of the two factor forms.
 
+An invariant form `B` on `L`, with `B ⁅ξ, μ⁆ η = -B μ ⁅ξ, η⁆`, is a map of Lie modules
+`μ ↦ B μ` from `L` to `L*` (`LinearMap.BilinForm.map_lie_of_lieInvariant`). So when `B` has
+trivial left radical the stabilizer of the covector `B μ` is the centralizer `{ξ | ⁅ξ, μ⁆ = 0}`
+of `μ` (`TauCeti.lieAnnihilator_bilinForm_apply_eq_of_lieInvariant`).
+
 Finally, the positive Lie–Poisson tensor of `L*` at `ν`, `{ℓ_α, ℓ_β}(ν) = ν ⁅α, β⁆`, is the Kirillov
 form on covectors `α, β ∈ L`, with sharp map `β(π♯α) = π(α, β)`. Its sharp image
 `π♯α = -⁅α, ν⁆` is the orbit derivative of `[-α]`, and the KKS form evaluated on the preimages
@@ -92,6 +100,9 @@ structure.
   the orbit derivative of `[-α]`.
 * `Module.Dual.kksForm_eq_kirillovForm_of_coadjointTangentMap_eq`: the KKS form inverts the
   Lie–Poisson sharp map.
+* `TauCeti.lieAnnihilator_bilinForm_apply_eq_of_lieInvariant`: for an invariant form `B` with
+  trivial left radical on a Lie module, the annihilator of `B m` is that of `m`; on `L` itself,
+  the stabilizer of `B μ` is the centralizer of `μ`.
 
 ## References
 
@@ -426,3 +437,24 @@ theorem kksForm_eq_kirillovForm_of_coadjointTangentMap_eq {α β : L}
     kirillovForm_apply, neg_lie, lie_neg, neg_neg]
 
 end Module.Dual
+
+/-! ### Covectors of an invariant form -/
+
+namespace TauCeti
+
+variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+  [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+  {B : LinearMap.BilinForm R M}
+
+/-- **Annihilators of invariant-form covectors.** For a bilinear form `B` on a Lie module `M`,
+invariant under `L` and with trivial left radical, the annihilator in `L` of the linear form
+`B m = B(m, ·)` is the annihilator of `m`. For `M = L` this says that the infinitesimal coadjoint
+stabilizer of `B μ` is the centralizer `{ξ | ⁅ξ, μ⁆ = 0}` of `μ`. -/
+theorem lieAnnihilator_bilinForm_apply_eq_of_lieInvariant (hB : B.lieInvariant L)
+    (hB' : LinearMap.SeparatingLeft B) (m : M) :
+    lieAnnihilator R L (B m) = lieAnnihilator R L m := by
+  ext ξ
+  rw [mem_lieAnnihilator, mem_lieAnnihilator, ← LinearMap.BilinForm.map_lie_of_lieInvariant hB]
+  exact ⟨fun h ↦ hB' _ fun η ↦ by rw [h, LinearMap.zero_apply], fun h ↦ by rw [h, map_zero]⟩
+
+end TauCeti
