@@ -36,10 +36,11 @@ derivatives (`TendstoLocallyUniformlyOn.iteratedDeriv`), and hence of all real i
 (`TendstoLocallyUniformlyOn.iteratedFDeriv`).
 
 For a family `f t` of maps holomorphic on `U`, depending on a real variable `t` with derivative
-`f' t` in `t`, Weierstrass's theorem applied to the difference quotients `t⁻¹ (f t - f 0)` shows
-that `f' 0` is again holomorphic on `U` and that the complex derivatives of `f t` are
-differentiable in `t` at `0`, with derivatives those of `f' 0`, provided `f' t` converges to
-`f' 0` uniformly on `U` (`TauCeti.differentiableOn_of_hasDerivAt_of_tendstoUniformlyOn`,
+`f' t` in `t`, Weierstrass's theorem applied to the difference quotients `t⁻¹ (f t - f 0)`, which
+are holomorphic on `U` (`TauCeti.eventually_differentiableOn_slope`), shows that `f' 0` is again
+holomorphic on `U` and that the complex derivatives of `f t` are differentiable in `t` at `0`,
+with derivatives those of `f' 0`, provided `f' t` converges to `f' 0` uniformly on `U`
+(`TauCeti.differentiableOn_of_hasDerivAt_of_tendstoUniformlyOn`,
 `TauCeti.hasDerivAt_iteratedDeriv_of_tendstoUniformlyOn`). No joint regularity in `t` and the
 complex variable is assumed.
 -/
@@ -157,9 +158,9 @@ theorem tendstoUniformlyOn_slope_of_tendstoUniformlyOn (hδ : 0 < δ)
   exact (hηε s (ball_subset_ball (min_le_right δ η) hs) r hr).le
 
 omit [CompleteSpace E] in
-/-- The difference quotients `r ↦ t⁻¹ (f t r - f 0 r)` of a family of maps holomorphic on `U` are
-holomorphic on `U`. -/
-private theorem eventually_differentiableOn_slope (hδ : 0 < δ)
+/-- If `f t` is holomorphic on `U` for every real `t` near `0`, then so are the difference
+quotients `r ↦ t⁻¹ (f t r - f 0 r)` for every nonzero `t` near `0`. -/
+theorem eventually_differentiableOn_slope (hδ : 0 < δ)
     (hF : ∀ t ∈ ball (0 : ℝ) δ, DifferentiableOn ℂ (f t) U) :
     ∀ᶠ t in 𝓝[≠] (0 : ℝ), DifferentiableOn ℂ (fun r ↦ slope (f · r) 0 t) U := by
   filter_upwards [nhdsWithin_le_nhds (ball_mem_nhds 0 hδ)] with t ht

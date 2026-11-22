@@ -35,8 +35,8 @@ two weakly parameter-dependent symbols are built.
   (`TauCeti.WeakParameterSymbol.iteratedDerivSymbol_spatialDeriv`) and values
   `∂_{x_l} a(·, ·, r)` (`TauCeti.WeakParameterSymbol.toSymbol_spatialDeriv`).
 
-Both derivatives are `ℂ`-linear (`TauCeti.WeakParameterSymbol.frequencyDeriv_add`,
-`TauCeti.WeakParameterSymbol.frequencyDeriv_smul` and their position counterparts).
+Both derivatives are bundled as `ℂ`-linear maps, like `TauCeti.Symbol.frequencyDeriv` and
+`TauCeti.Symbol.spatialDeriv`.
 
 ## Implementation notes
 
@@ -194,9 +194,10 @@ private theorem coordinateDeriv_snd_coefficient (a : WeakParameterSymbol n R V W
 `m`, a weakly parameter-dependent symbol of frequency order `m - 1`. Its `j`-th parameter
 derivative is the frequency derivative `∂_{ξ_l} ∂_r^j a` of the `j`-th parameter derivative of `a`
 (`TauCeti.WeakParameterSymbol.iteratedDerivSymbol_frequencyDeriv`). -/
-def frequencyDeriv (l : Fin n) (a : WeakParameterSymbol n R V W d m) :
-    WeakParameterSymbol n R V W d (m - 1) :=
-  ofIteratedDerivSymbol (fun p r ↦ coordinateDeriv [l] (fun η ↦ a.coefficient (p.1, η) r) p.2)
+def frequencyDeriv (l : Fin n) :
+    WeakParameterSymbol n R V W d m →ₗ[ℂ] WeakParameterSymbol n R V W d (m - 1) where
+  toFun a := ofIteratedDerivSymbol
+    (fun p r ↦ coordinateDeriv [l] (fun η ↦ a.coefficient (p.1, η) r) p.2)
     (fun p ↦ DifferentiableOn.contDiffOn
       ((a.differentiableOn_fderiv_apply_and_iteratedDeriv_eq p _).1.congr
         fun r _ ↦ a.coordinateDeriv_snd_coefficient l p r) R.isOpen)
@@ -214,6 +215,16 @@ def frequencyDeriv (l : Fin n) (a : WeakParameterSymbol n R V W d m) :
     (fun j K α β ↦ (a.bddAbove_seminorm_iteratedDerivSymbol j K α (β ++ [l])).imp
       fun C hC r hr ↦ (Symbol.seminorm_inclusion_le _ K α β _).trans
         ((Symbol.seminorm_frequencyDeriv l K α β _).trans_le (hC ⟨⟨r, hr⟩, rfl⟩)))
+  map_add' a b := ext_of_mem fun ⟨x, ξ⟩ r hr ↦ by
+    simpa only [coefficient_ofIteratedDerivSymbol, coefficient_add, Symbol.coefficient_add,
+      Pi.add_apply, Symbol.coefficient_frequencyDeriv, coefficient_toSymbol] using
+      congrArg (Symbol.coefficient · (x, ξ)) (map_add (Symbol.frequencyDeriv l) (a.toSymbol hr)
+        (b.toSymbol hr))
+  map_smul' c a := ext_of_mem fun ⟨x, ξ⟩ r hr ↦ by
+    simpa only [coefficient_ofIteratedDerivSymbol, coefficient_smul, Symbol.coefficient_smul,
+      Pi.smul_apply, RingHom.id_apply, Symbol.coefficient_frequencyDeriv, coefficient_toSymbol]
+      using congrArg (Symbol.coefficient · (x, ξ)) (map_smul (Symbol.frequencyDeriv l) c
+        (a.toSymbol hr))
 
 @[simp]
 theorem coefficient_frequencyDeriv (l : Fin n) (a : WeakParameterSymbol n R V W d m)
@@ -236,25 +247,6 @@ theorem toSymbol_frequencyDeriv (l : Fin n) (a : WeakParameterSymbol n R V W d m
     (hr : r ∈ R) : (frequencyDeriv l a).toSymbol hr = Symbol.frequencyDeriv l (a.toSymbol hr) :=
   Symbol.ext (funext fun ⟨_, _⟩ ↦ by simp)
 
-@[simp]
-theorem frequencyDeriv_add (l : Fin n) (a b : WeakParameterSymbol n R V W d m) :
-    frequencyDeriv l (a + b) = frequencyDeriv l a + frequencyDeriv l b :=
-  ext_of_mem fun p r hr ↦ by
-    rw [← coefficient_toSymbol _ hr, ← coefficient_toSymbol _ hr]
-    simp only [toSymbol_add, toSymbol_frequencyDeriv, map_add]
-
-@[simp]
-theorem frequencyDeriv_smul (l : Fin n) (c : ℂ) (a : WeakParameterSymbol n R V W d m) :
-    frequencyDeriv l (c • a) = c • frequencyDeriv l a :=
-  ext_of_mem fun p r hr ↦ by
-    rw [← coefficient_toSymbol _ hr, ← coefficient_toSymbol _ hr]
-    simp only [toSymbol_smul, toSymbol_frequencyDeriv, map_smul]
-
-@[simp]
-theorem frequencyDeriv_zero (l : Fin n) :
-    frequencyDeriv l (0 : WeakParameterSymbol n R V W d m) = 0 := by
-  simpa using frequencyDeriv_smul l 0 (0 : WeakParameterSymbol n R V W d m)
-
 /-! ### Position derivatives -/
 
 omit [CompleteSpace W] in
@@ -272,9 +264,10 @@ private theorem coordinateDeriv_fst_coefficient (a : WeakParameterSymbol n R V W
 `m`, again a weakly parameter-dependent symbol of frequency order `m`. Its `j`-th parameter
 derivative is the position derivative `∂_{x_l} ∂_r^j a` of the `j`-th parameter derivative of `a`
 (`TauCeti.WeakParameterSymbol.iteratedDerivSymbol_spatialDeriv`). -/
-def spatialDeriv (l : Fin n) (a : WeakParameterSymbol n R V W d m) :
-    WeakParameterSymbol n R V W d m :=
-  ofIteratedDerivSymbol (fun p r ↦ coordinateDeriv [l] (fun y ↦ a.coefficient (y, p.2) r) p.1)
+def spatialDeriv (l : Fin n) :
+    WeakParameterSymbol n R V W d m →ₗ[ℂ] WeakParameterSymbol n R V W d m where
+  toFun a := ofIteratedDerivSymbol
+    (fun p r ↦ coordinateDeriv [l] (fun y ↦ a.coefficient (y, p.2) r) p.1)
     (fun p ↦ DifferentiableOn.contDiffOn
       ((a.differentiableOn_fderiv_apply_and_iteratedDeriv_eq p _).1.congr
         fun r _ ↦ a.coordinateDeriv_fst_coefficient l p r) R.isOpen)
@@ -290,6 +283,16 @@ def spatialDeriv (l : Fin n) (a : WeakParameterSymbol n R V W d m) :
         ((a.contDiff_iteratedDeriv j r hr).differentiable (by simp) p) l)
     (fun j K α β ↦ (a.bddAbove_seminorm_iteratedDerivSymbol j K (α ++ [l]) β).imp
       fun C hC r hr ↦ (Symbol.seminorm_spatialDeriv l K α β _).trans_le (hC ⟨⟨r, hr⟩, rfl⟩))
+  map_add' a b := ext_of_mem fun ⟨x, ξ⟩ r hr ↦ by
+    simpa only [coefficient_ofIteratedDerivSymbol, coefficient_add, Symbol.coefficient_add,
+      Pi.add_apply, Symbol.coefficient_spatialDeriv, coefficient_toSymbol] using
+      congrArg (Symbol.coefficient · (x, ξ)) (map_add (Symbol.spatialDeriv l) (a.toSymbol hr)
+        (b.toSymbol hr))
+  map_smul' c a := ext_of_mem fun ⟨x, ξ⟩ r hr ↦ by
+    simpa only [coefficient_ofIteratedDerivSymbol, coefficient_smul, Symbol.coefficient_smul,
+      Pi.smul_apply, RingHom.id_apply, Symbol.coefficient_spatialDeriv, coefficient_toSymbol]
+      using congrArg (Symbol.coefficient · (x, ξ)) (map_smul (Symbol.spatialDeriv l) c
+        (a.toSymbol hr))
 
 @[simp]
 theorem coefficient_spatialDeriv (l : Fin n) (a : WeakParameterSymbol n R V W d m)
@@ -311,25 +314,6 @@ theorem iteratedDerivSymbol_spatialDeriv (l : Fin n) (a : WeakParameterSymbol n 
 theorem toSymbol_spatialDeriv (l : Fin n) (a : WeakParameterSymbol n R V W d m) {r : ℂ}
     (hr : r ∈ R) : (spatialDeriv l a).toSymbol hr = Symbol.spatialDeriv l (a.toSymbol hr) :=
   Symbol.ext (funext fun ⟨_, _⟩ ↦ by simp)
-
-@[simp]
-theorem spatialDeriv_add (l : Fin n) (a b : WeakParameterSymbol n R V W d m) :
-    spatialDeriv l (a + b) = spatialDeriv l a + spatialDeriv l b :=
-  ext_of_mem fun p r hr ↦ by
-    rw [← coefficient_toSymbol _ hr, ← coefficient_toSymbol _ hr]
-    simp only [toSymbol_add, toSymbol_spatialDeriv, map_add]
-
-@[simp]
-theorem spatialDeriv_smul (l : Fin n) (c : ℂ) (a : WeakParameterSymbol n R V W d m) :
-    spatialDeriv l (c • a) = c • spatialDeriv l a :=
-  ext_of_mem fun p r hr ↦ by
-    rw [← coefficient_toSymbol _ hr, ← coefficient_toSymbol _ hr]
-    simp only [toSymbol_smul, toSymbol_spatialDeriv, map_smul]
-
-@[simp]
-theorem spatialDeriv_zero (l : Fin n) :
-    spatialDeriv l (0 : WeakParameterSymbol n R V W d m) = 0 := by
-  simpa using spatialDeriv_smul l 0 (0 : WeakParameterSymbol n R V W d m)
 
 end WeakParameterSymbol
 

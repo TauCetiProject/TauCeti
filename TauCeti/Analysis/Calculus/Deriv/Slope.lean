@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
 public import Mathlib.Analysis.Calculus.Deriv.Slope
+public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -208,10 +209,10 @@ theorem HasDerivWithinAt.eventually_lt_of_neg {f : ℝ → ℝ} {a x : ℝ}
 /-- **Mean value estimate for slopes.** If `f` has derivative `f' s` within a convex set `D` at
 every `s ∈ D`, and `f' s` is within `C` of `v` on `D`, then every slope of `f` between two distinct
 points of `D` is within `C` of `v`. -/
-theorem Convex.norm_slope_sub_le_of_norm_hasDerivWithin_sub_le {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {D : Set ℝ} (hD : Convex ℝ D) {f f' : ℝ → E} {v : E}
+theorem Convex.norm_slope_sub_le_of_norm_hasDerivWithin_sub_le {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {D : Set 𝕜} (hD : Convex ℝ D) {f f' : 𝕜 → E} {v : E}
     {C : ℝ} (hf : ∀ s ∈ D, HasDerivWithinAt f (f' s) D s) (hC : ∀ s ∈ D, ‖f' s - v‖ ≤ C)
-    {a b : ℝ} (ha : a ∈ D) (hb : b ∈ D) (hab : a ≠ b) : ‖slope f a b - v‖ ≤ C := by
+    {a b : 𝕜} (ha : a ∈ D) (hb : b ∈ D) (hab : a ≠ b) : ‖slope f a b - v‖ ≤ C := by
   -- `s ↦ f s - s • v` has derivative `f' s - v`, of norm at most `C` on `D`
   have h := hD.norm_image_sub_le_of_norm_hasDerivWithin_le
     (fun s hs ↦ ((hf s hs).sub ((hasDerivWithinAt_id s D).smul_const v)).congr_deriv (by simp))
