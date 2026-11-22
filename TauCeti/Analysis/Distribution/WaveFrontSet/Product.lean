@@ -770,6 +770,15 @@ private theorem exists_eqOn_one_noOppositeCovectorsOn {x : E} (hx : x ∈ Ω)
   exact ⟨⟨V ∩ Ω, hV.inter Ω.isOpen⟩, φ, ⟨hxV, hx⟩, fun y hy ↦ hy.2, hφV.mono inter_subset_left,
     hWc.mono hφW⟩
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- A distribution vanishes on an open set `W` if it vanishes on `U x ∩ W` for open sets `U x`
+containing the points `x` of `Ω`. -/
+private theorem isVanishingOn_of_forall_inter {P : 𝓓'(Ω, ℂ)} {U : Ω → Opens E}
+    (hxU : ∀ x, (x : E) ∈ U x) {W : Set E} (hW : IsOpen W)
+    (hP : ∀ x, IsVanishingOn P ((U x : Set E) ∩ W)) : IsVanishingOn P W := fun ψ hψ ↦
+  isVanishingOn_iUnion P (fun x ↦ (U x).isOpen.inter hW) hP ψ fun y hy ↦
+    mem_iUnion.2 ⟨⟨y, ψ.tsupport_subset hy⟩, hxU _, hψ hy⟩
+
 /-- The cutoff products `φ² S T` glue to a distribution which agrees with `φ² S T` on the test
 functions `ψ` such that `φ = 1` near the support of `ψ`. -/
 private theorem exists_forall_apply_eq_cutoffProduct (h : ∀ x, NoOppositeCovectorsOn S T {x}) :
@@ -804,14 +813,14 @@ private theorem exists_forall_apply_eq_cutoffProduct (h : ∀ x, NoOppositeCovec
   -- On an open set where `φ = 1`, the glued distribution is `φ² S T` near every point.
   refine ⟨P', fun φ' hφ' ψ hφ'ψ ↦ ?_⟩
   obtain ⟨V, hV, hψV, hφ'V⟩ := mem_nhdsSet_iff_exists.1 hφ'ψ
-  have hvan : IsVanishingOn (P' - S.cutoffProduct T φ' hφ') (⋃ x, (U x : Set E) ∩ V) :=
-    isVanishingOn_iUnion _ (fun x ↦ (U x).isOpen.inter hV) fun x χ hχ ↦ by
+  have hvan : IsVanishingOn (P' - S.cutoffProduct T φ' hφ') V :=
+    isVanishingOn_of_forall_inter hxU hV fun x χ hχ ↦ by
       have hm : (U x : Set E) ∩ V ∈ 𝓝ˢ (tsupport χ) := ((U x).isOpen.inter hV).mem_nhdsSet.2 hχ
       rw [sub_apply, hPx x χ (hχ.trans inter_subset_left),
         cutoffProduct_congr (hφc x) hφ' (((hφ1 x).mono inter_subset_left).eventuallyEq_of_mem hm)
           (Filter.mem_of_superset hm fun y hy ↦ hφ'V hy.2), sub_self]
-  have h0 := hvan ψ fun y hy ↦ mem_iUnion.2 ⟨⟨y, ψ.tsupport_subset hy⟩, hxU _, hψV hy⟩
-  rwa [sub_apply, sub_eq_zero] at h0
+  rw [← sub_eq_zero, ← sub_apply]
+  exact hvan ψ hψV
 
 /-- **The product of distributions** (Hörmander I, Theorem 8.2.10). If at every point `x` no
 covector `(x, ξ)` of the wave front set of `S` is opposite to a covector `(x, -ξ)` of the wave
@@ -853,19 +862,31 @@ theorem eq_product_iff (h : ∀ x, NoOppositeCovectorsOn S T {x}) {P : 𝓓'(Ω,
     ext ψ
     simpa [sub_eq_zero] using DFunLike.congr_fun hzero ψ
 
+/-- A distribution `P` is the product `S T` if every cutoff `φ` over whose support the pairs
+`(S₁, T₁)` and `(S₂, T₂)` have no opposite covectors is a cutoff for `S` and `T` such that `P`
+agrees with `φ² S T` on the test functions `ψ` with `φ = 1` near the support of `ψ`. -/
+private theorem eq_product_of_forall_cutoffProduct {S₁ T₁ S₂ T₂ : 𝓓'(Ω, ℂ)}
+    (h₁ : ∀ x, NoOppositeCovectorsOn S₁ T₁ {x}) (h₂ : ∀ x, NoOppositeCovectorsOn S₂ T₂ {x})
+    (h : ∀ x, NoOppositeCovectorsOn S T {x}) {P : 𝓓'(Ω, ℂ)}
+    (hP : ∀ ⦃φ : 𝓓(Ω, ℂ)⦄, NoOppositeCovectorsOn S₁ T₁ (tsupport φ) →
+      NoOppositeCovectorsOn S₂ T₂ (tsupport φ) → ∃ hφ : NoOppositeCovectorsOn S T (tsupport φ),
+        ∀ ⦃ψ : 𝓓(Ω, ℝ)⦄, (φ : E → ℂ) =ᶠ[𝓝ˢ (tsupport ψ)] 1 → P ψ = S.cutoffProduct T φ hφ ψ) :
+    P = S.product T h := by
+  refine (eq_product_iff h).2 fun x hx ↦ ?_
+  obtain ⟨W₁, hW₁, hWc₁⟩ := exists_mem_nhds_noOppositeCovectorsOn hx fun ξ ↦ h₁ x x rfl x rfl ξ
+  obtain ⟨W₂, hW₂, hWc₂⟩ := exists_mem_nhds_noOppositeCovectorsOn hx fun ξ ↦ h₂ x x rfl x rfl ξ
+  obtain ⟨φ, U, hU, hxU, hφU, hφW⟩ := exists_eqOn_one_tsupport_subset (𝕜 := ℂ)
+    (inter_mem hW₁ hW₂) hx
+  obtain ⟨hφ, hPφ⟩ := hP (hWc₁.mono (hφW.trans inter_subset_left))
+    (hWc₂.mono (hφW.trans inter_subset_right))
+  exact ⟨φ, hφ, U, hU, hxU, hφU, fun ψ hψ ↦ hPφ (hφU.eventuallyEq_of_mem (hU.mem_nhdsSet.2 hψ))⟩
+
 /-- The product is additive in the first factor. -/
 theorem product_add_left (h : ∀ x, NoOppositeCovectorsOn S T {x})
     (h' : ∀ x, NoOppositeCovectorsOn S' T {x}) :
     (S + S').product T (fun x ↦ (h x).add_left (h' x)) = S.product T h + S'.product T h' := by
-  refine ((eq_product_iff _).2 fun x hx ↦ ?_).symm
-  obtain ⟨W, hW, hWc⟩ := exists_mem_nhds_noOppositeCovectorsOn hx fun ξ ↦ h x x rfl x rfl ξ
-  obtain ⟨W', hW', hWc'⟩ := exists_mem_nhds_noOppositeCovectorsOn hx fun ξ ↦ h' x x rfl x rfl ξ
-  obtain ⟨φ, U, hU, hxU, hφU, hφW⟩ := exists_eqOn_one_tsupport_subset (𝕜 := ℂ)
-    (inter_mem hW hW') hx
-  have hφ := hWc.mono (hφW.trans inter_subset_left)
-  have hφ' := hWc'.mono (hφW.trans inter_subset_right)
-  refine ⟨φ, hφ.add_left hφ', U, hU, hxU, hφU, fun ψ hψ ↦ ?_⟩
-  have hφψ := hφU.eventuallyEq_of_mem (hU.mem_nhdsSet.2 hψ)
+  refine (eq_product_of_forall_cutoffProduct h h' _ fun φ hφ hφ' ↦
+    ⟨hφ.add_left hφ', fun ψ hφψ ↦ ?_⟩).symm
   rw [add_apply, product_apply_of_eventuallyEq_one h hφ hφψ,
     product_apply_of_eventuallyEq_one h' hφ' hφψ, cutoffProduct_add_left hφ hφ', add_apply]
 
@@ -873,36 +894,25 @@ theorem product_add_left (h : ∀ x, NoOppositeCovectorsOn S T {x})
 theorem product_add_right (h : ∀ x, NoOppositeCovectorsOn S T {x})
     (h' : ∀ x, NoOppositeCovectorsOn S T' {x}) :
     S.product (T + T') (fun x ↦ (h x).add_right (h' x)) = S.product T h + S.product T' h' := by
-  refine ((eq_product_iff _).2 fun x hx ↦ ?_).symm
-  obtain ⟨W, hW, hWc⟩ := exists_mem_nhds_noOppositeCovectorsOn hx fun ξ ↦ h x x rfl x rfl ξ
-  obtain ⟨W', hW', hWc'⟩ := exists_mem_nhds_noOppositeCovectorsOn hx fun ξ ↦ h' x x rfl x rfl ξ
-  obtain ⟨φ, U, hU, hxU, hφU, hφW⟩ := exists_eqOn_one_tsupport_subset (𝕜 := ℂ)
-    (inter_mem hW hW') hx
-  have hφ := hWc.mono (hφW.trans inter_subset_left)
-  have hφ' := hWc'.mono (hφW.trans inter_subset_right)
-  refine ⟨φ, hφ.add_right hφ', U, hU, hxU, hφU, fun ψ hψ ↦ ?_⟩
-  have hφψ := hφU.eventuallyEq_of_mem (hU.mem_nhdsSet.2 hψ)
+  refine (eq_product_of_forall_cutoffProduct h h' _ fun φ hφ hφ' ↦
+    ⟨hφ.add_right hφ', fun ψ hφψ ↦ ?_⟩).symm
   rw [add_apply, product_apply_of_eventuallyEq_one h hφ hφψ,
     product_apply_of_eventuallyEq_one h' hφ' hφψ, cutoffProduct_add_right hφ hφ', add_apply]
 
 /-- The product is complex-linear in the first factor. -/
 theorem product_smul_left (h : ∀ x, NoOppositeCovectorsOn S T {x}) (c : ℂ) :
     (c • S).product T (fun x ↦ (h x).smul_left c) = c • S.product T h := by
-  refine ((eq_product_iff _).2 fun x hx ↦ ?_).symm
-  obtain ⟨U, φ, hxU, -, hφU, hφ⟩ := exists_eqOn_one_noOppositeCovectorsOn hx (h x)
-  refine ⟨φ, hφ.smul_left c, U, U.isOpen, hxU, hφU, fun ψ hψ ↦ ?_⟩
-  rw [smul_apply, product_apply_of_eventuallyEq_one h hφ
-    (hφU.eventuallyEq_of_mem (U.isOpen.mem_nhdsSet.2 hψ)), cutoffProduct_smul_left hφ c,
+  refine (eq_product_of_forall_cutoffProduct h h _ fun φ hφ _ ↦
+    ⟨hφ.smul_left c, fun ψ hφψ ↦ ?_⟩).symm
+  rw [smul_apply, product_apply_of_eventuallyEq_one h hφ hφψ, cutoffProduct_smul_left hφ c,
     smul_apply]
 
 /-- The product is complex-linear in the second factor. -/
 theorem product_smul_right (h : ∀ x, NoOppositeCovectorsOn S T {x}) (c : ℂ) :
     S.product (c • T) (fun x ↦ (h x).smul_right c) = c • S.product T h := by
-  refine ((eq_product_iff _).2 fun x hx ↦ ?_).symm
-  obtain ⟨U, φ, hxU, -, hφU, hφ⟩ := exists_eqOn_one_noOppositeCovectorsOn hx (h x)
-  refine ⟨φ, hφ.smul_right c, U, U.isOpen, hxU, hφU, fun ψ hψ ↦ ?_⟩
-  rw [smul_apply, product_apply_of_eventuallyEq_one h hφ
-    (hφU.eventuallyEq_of_mem (U.isOpen.mem_nhdsSet.2 hψ)), cutoffProduct_smul_right hφ c,
+  refine (eq_product_of_forall_cutoffProduct h h _ fun φ hφ _ ↦
+    ⟨hφ.smul_right c, fun ψ hφψ ↦ ?_⟩).symm
+  rw [smul_apply, product_apply_of_eventuallyEq_one h hφ hφψ, cutoffProduct_smul_right hφ c,
     smul_apply]
 
 /-- If the products `φ² S T` vanish on `U ∩ W` for every cutoff `φ` equal to one on an open set
@@ -914,12 +924,10 @@ private theorem isVanishingOn_product (h : ∀ x, NoOppositeCovectorsOn S T {x})
     IsVanishingOn (S.product T h) W := by
   choose U φ hxU _ hφ1 hφc using fun x : Ω ↦
     exists_eqOn_one_noOppositeCovectorsOn x.property (h x)
-  have hvan : IsVanishingOn (S.product T h) (⋃ x, (U x : Set E) ∩ W) :=
-    isVanishingOn_iUnion _ (fun x ↦ (U x).isOpen.inter hW) fun x χ hχ ↦ by
-      rw [product_apply_of_eventuallyEq_one h (hφc x) (((hφ1 x).mono
-        inter_subset_left).eventuallyEq_of_mem (((U x).isOpen.inter hW).mem_nhdsSet.2 hχ))]
-      exact hloc (hφc x) (U x).isOpen (hφ1 x) χ hχ
-  exact fun ψ hψ ↦ hvan ψ fun y hy ↦ mem_iUnion.2 ⟨⟨y, ψ.tsupport_subset hy⟩, hxU _, hψ hy⟩
+  refine isVanishingOn_of_forall_inter hxU hW fun x χ hχ ↦ ?_
+  rw [product_apply_of_eventuallyEq_one h (hφc x) (((hφ1 x).mono
+    inter_subset_left).eventuallyEq_of_mem (((U x).isOpen.inter hW).mem_nhdsSet.2 hχ))]
+  exact hloc (hφc x) (U x).isOpen (hφ1 x) χ hχ
 
 /-- **The support of the product.** The product `S T` is supported in the intersection of the
 supports of `S` and `T`. -/
