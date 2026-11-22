@@ -55,8 +55,8 @@ variable {R A : Type u} [CommRing R] [CommRing A] [Algebra R A]
 theorem Spec_map_comp_Spec_map_algebraMap (f : A →ₐ[R] R) :
     Spec.map (CommRingCat.ofHom (f : A →+* R)) ≫ Spec.map (CommRingCat.ofHom (algebraMap R A)) =
       𝟙 (Spec (CommRingCat.of R)) := by
-  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, f.comp_algebraMap, Algebra.algebraMap_self,
-    CommRingCat.ofHom_id, Spec.map_id]
+  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, f.comp_algebraMap]
+  simp
 
 /-- The structure morphism `Spec A ⟶ Spec R` of a commutative `R`-algebra `A`, split by the
 section `Spec R ⟶ Spec A` induced by an augmentation `f : A →ₐ[R] R`. -/
