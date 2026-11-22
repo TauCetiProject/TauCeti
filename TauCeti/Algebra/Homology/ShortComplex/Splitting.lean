@@ -22,6 +22,13 @@ composition with `biprod.snd` recovers the projection `g`.
 For a split short complex of homological complexes, the homology of the outer terms is a retract
 of that of the middle term, so the outer terms are exact wherever the middle term is.
 
+Gaussian elimination produces splittings. If a morphism `φ` out of a biproduct `P ⊞ Q` restricts
+to an isomorphism on `P`, then `φ` is a split epimorphism whose kernel is `Q`; dually, if a
+morphism into `P ⊞ Q` has an isomorphism as its component in `Q`, then it is a split monomorphism
+whose cokernel is `P`. For complexes, the mapping cones of such maps are then homotopy equivalent
+to `Q` shifted by one and to `P` (see `TauCeti.Algebra.Homology.HomotopyCategory.MappingCone` and
+`TauCeti.Algebra.Homology.HomotopyCofiber`).
+
 ## Main results
 
 * `CategoryTheory.ShortComplex.Splitting.binaryBicone`,
@@ -33,6 +40,9 @@ of that of the middle term, so the outer terms are exact wherever the middle ter
 * `CategoryTheory.ShortComplex.Splitting.isoBinaryBiproduct_hom_snd`: the projection under
   the canonical biproduct comparison.
 
+* `CategoryTheory.ShortComplex.Splitting.ofIsIsoInlComp` and
+  `CategoryTheory.ShortComplex.Splitting.ofIsIsoCompSnd`: Gaussian elimination, the splittings of
+  a morphism out of, respectively into, a biproduct with an invertible component.
 * `CategoryTheory.ShortComplex.Splitting.g_s_comp_eq_of_f_comp_eq_zero`: if `S.f ≫ k = 0`, then
   `S.g ≫ s.s ≫ k = k`.
 * `CategoryTheory.ShortComplex.Splitting.comp_r_f_eq_of_comp_g_eq_zero`: if `k ≫ S.g = 0`, then
@@ -44,6 +54,11 @@ of that of the middle term, so the outer terms are exact wherever the middle ter
 * `CategoryTheory.ShortComplex.Splitting.acyclic_X₁` and
   `CategoryTheory.ShortComplex.Splitting.acyclic_X₃`: the outer terms of a split short complex of
   homological complexes are acyclic when the middle term is.
+
+## References
+
+* D. Bar-Natan, *Fast Khovanov homology computations*, J. Knot Theory Ramifications 16 (2007),
+  243--255, Lemma 4.2 (Gaussian elimination).
 
 ## Implementation notes
 
@@ -106,6 +121,91 @@ def isBilimitBinaryBicone (s : S.Splitting) : s.binaryBicone.IsBilimit :=
 product of the outer terms. -/
 def isLimitBinaryFan (s : S.Splitting) : IsLimit (BinaryFan.mk s.r S.g) :=
   s.isBilimitBinaryBicone.isLimit
+
+/-! ### Gaussian elimination -/
+
+section GaussianElimination
+
+variable {P Q X : C} (c : BinaryBicone P Q) (hc : c.fst ≫ c.inl + c.snd ≫ c.inr = 𝟙 c.pt)
+
+include hc in
+private theorem id_of_inl_comp_comp_eq_id {φ : c.pt ⟶ X} {u : X ⟶ P}
+    (hu : c.inl ≫ φ ≫ u = 𝟙 P) :
+    c.snd ≫ (c.inr - c.inr ≫ φ ≫ u ≫ c.inl) + φ ≫ u ≫ c.inl = 𝟙 c.pt := by
+  have e : (c.fst ≫ c.inl + c.snd ≫ c.inr) ≫ φ ≫ u ≫ c.inl = φ ≫ u ≫ c.inl := by
+    rw [hc, Category.id_comp]
+  rw [Preadditive.add_comp, Category.assoc, reassoc_of% hu, Category.assoc] at e
+  conv_lhs => arg 2; rw [← e]
+  rw [← hc, Preadditive.comp_sub]
+  abel
+
+include hc in
+private theorem id_of_comp_comp_snd_eq_id {φ : X ⟶ c.pt} {u : Q ⟶ X}
+    (hu : u ≫ φ ≫ c.snd = 𝟙 Q) :
+    (c.snd ≫ u) ≫ φ + (c.fst - c.snd ≫ u ≫ φ ≫ c.fst) ≫ c.inl = 𝟙 c.pt := by
+  have e : c.snd ≫ u ≫ φ ≫ (c.fst ≫ c.inl + c.snd ≫ c.inr) = c.snd ≫ u ≫ φ := by
+    rw [hc, Category.comp_id]
+  rw [Preadditive.comp_add, Preadditive.comp_add, Preadditive.comp_add, reassoc_of% hu] at e
+  conv_lhs => arg 1; rw [Category.assoc, ← e]
+  rw [← hc, Preadditive.sub_comp]
+  simp only [Category.assoc]
+  abel
+
+/-- **Gaussian elimination on the source.** Let `c` exhibit `c.pt` as a biproduct of `P` and `Q`,
+and let `φ : c.pt ⟶ X` restrict to an isomorphism `c.inl ≫ φ` on `P`. Then `φ` is a split
+epimorphism, with section `inv (c.inl ≫ φ) ≫ c.inl`, and its kernel is `Q`, included by `c.inr`
+corrected along `P`. -/
+noncomputable def ofIsIsoInlComp (φ : c.pt ⟶ X) [IsIso (c.inl ≫ φ)] :
+    (ShortComplex.mk (c.inr - c.inr ≫ φ ≫ inv (c.inl ≫ φ) ≫ c.inl) φ
+      (by simp)).Splitting where
+  r := c.snd
+  s := inv (c.inl ≫ φ) ≫ c.inl
+  f_r := by simp
+  s_g := by simp
+  id := id_of_inl_comp_comp_eq_id c hc (by rw [← Category.assoc, IsIso.hom_inv_id])
+
+/-- The retraction of `ofIsIsoInlComp` is the projection onto `Q`. -/
+@[simp]
+theorem ofIsIsoInlComp_r (φ : c.pt ⟶ X) [IsIso (c.inl ≫ φ)] :
+    (ofIsIsoInlComp c hc φ).r = c.snd :=
+  (rfl)
+
+/-- The section of `ofIsIsoInlComp` is the inverse of `c.inl ≫ φ` followed by `c.inl`. -/
+@[simp]
+theorem ofIsIsoInlComp_s (φ : c.pt ⟶ X) [IsIso (c.inl ≫ φ)] :
+    (ofIsIsoInlComp c hc φ).s = inv (c.inl ≫ φ) ≫ c.inl :=
+  (rfl)
+
+/-- **Gaussian elimination on the target.** Let `c` exhibit `c.pt` as a biproduct of `P` and `Q`,
+and let `φ : X ⟶ c.pt` have an isomorphism `φ ≫ c.snd` as its component in `Q`. Then `φ` is a
+split monomorphism, with retraction `c.snd ≫ inv (φ ≫ c.snd)`, and its cokernel is `P`, projected
+to by `c.fst` corrected along `Q`. -/
+noncomputable def ofIsIsoCompSnd (φ : X ⟶ c.pt) [IsIso (φ ≫ c.snd)] :
+    (ShortComplex.mk φ (c.fst - c.snd ≫ inv (φ ≫ c.snd) ≫ φ ≫ c.fst)
+      (by rw [Preadditive.comp_sub, ← Category.assoc φ c.snd, IsIso.hom_inv_id_assoc,
+        sub_self])).Splitting where
+  r := c.snd ≫ inv (φ ≫ c.snd)
+  s := c.inl
+  f_r := by
+    dsimp only
+    rw [← Category.assoc, IsIso.hom_inv_id]
+  s_g := by simp
+  id := id_of_comp_comp_snd_eq_id c hc (by rw [IsIso.inv_hom_id])
+
+/-- The retraction of `ofIsIsoCompSnd` is the projection onto `Q` followed by the inverse of
+`φ ≫ c.snd`. -/
+@[simp]
+theorem ofIsIsoCompSnd_r (φ : X ⟶ c.pt) [IsIso (φ ≫ c.snd)] :
+    (ofIsIsoCompSnd c hc φ).r = c.snd ≫ inv (φ ≫ c.snd) :=
+  (rfl)
+
+/-- The section of `ofIsIsoCompSnd` is the inclusion of `P`. -/
+@[simp]
+theorem ofIsIsoCompSnd_s (φ : X ⟶ c.pt) [IsIso (φ ≫ c.snd)] :
+    (ofIsIsoCompSnd c hc φ).s = c.inl :=
+  (rfl)
+
+end GaussianElimination
 
 variable [HasBinaryBiproduct S.X₁ S.X₃]
 

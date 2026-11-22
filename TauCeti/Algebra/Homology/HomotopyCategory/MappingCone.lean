@@ -46,6 +46,10 @@ whose cones are acyclic.
   square is an isomorphism in each degree where the vertical maps are.
 * `CochainComplex.mappingCone.mapHomotopy`: homotopies of the vertical maps of a commutative
   square, compatible with its horizontal maps, induce a homotopy of the maps of mapping cones.
+* `CategoryTheory.ShortComplex.Splitting.mappingConeGHomotopyEquiv`: for a short complex of
+  cochain complexes split by chain maps, the mapping cone of the split epimorphism `S.g` is
+  homotopy equivalent to `S.X₁⟦1⟧`.
+* `HomotopyEquiv.shift`: the shift of a homotopy equivalence of cochain complexes.
 
 ## Mapping cones of natural transformations and shifts
 
@@ -773,3 +777,81 @@ lemma mappingConeFunctorMapTriangleIso_inv_hom₃ :
   (rfl)
 
 end CategoryTheory.NatTrans
+
+namespace HomotopyEquiv
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {K L : CochainComplex C ℤ}
+
+/-- The shift `K⟦n⟧ ≃ L⟦n⟧` of a homotopy equivalence `K ≃ L` of cochain complexes, with the
+homotopies shifted by Mathlib's `Homotopy.shift`. -/
+noncomputable def shift (e : HomotopyEquiv K L) (n : ℤ) : HomotopyEquiv (K⟦n⟧) (L⟦n⟧) where
+  hom := e.hom⟦n⟧'
+  inv := e.inv⟦n⟧'
+  homotopyHomInvId := (Homotopy.ofEq (CategoryTheory.Functor.map_comp _ _ _).symm).trans
+    ((e.homotopyHomInvId.shift n).trans (Homotopy.ofEq (CategoryTheory.Functor.map_id _ _)))
+  homotopyInvHomId := (Homotopy.ofEq (CategoryTheory.Functor.map_comp _ _ _).symm).trans
+    ((e.homotopyInvHomId.shift n).trans (Homotopy.ofEq (CategoryTheory.Functor.map_id _ _)))
+
+/-- The map of the shift of a homotopy equivalence is the shifted map. -/
+@[simp]
+theorem shift_hom (e : HomotopyEquiv K L) (n : ℤ) : (e.shift n).hom = e.hom⟦n⟧' :=
+  (rfl)
+
+/-- The homotopy inverse of the shift of a homotopy equivalence is the shifted homotopy
+inverse. -/
+@[simp]
+theorem shift_inv (e : HomotopyEquiv K L) (n : ℤ) : (e.shift n).inv = e.inv⟦n⟧' :=
+  (rfl)
+
+end HomotopyEquiv
+
+namespace CategoryTheory.ShortComplex.Splitting
+
+open CochainComplex HomComplex CochainComplex.mappingCone
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
+  {S : ShortComplex (CochainComplex C ℤ)} (σ : S.Splitting)
+
+/-- For a short complex of cochain complexes `S` split by chain maps, the mapping cone of the split
+epimorphism `S.g` is homotopy equivalent to `S.X₁⟦1⟧`. This is dual to
+`CategoryTheory.ShortComplex.Splitting.homotopyCofiberHomotopyEquiv`, which identifies the mapping
+cone of `S.f` with `S.X₃`. The map from the cone is the third morphism of the mapping cone triangle
+followed by the shifted retraction, and its homotopy inverse is `S.f` shifted into the first
+summand of the cone. One composite is the identity, and the other is homotopic to the identity
+through the homotopy which sends the `S.X₃`-summand of the cone to its `S.X₂`-summand by `-σ.s`. -/
+noncomputable def mappingConeGHomotopyEquiv :
+    _root_.HomotopyEquiv (mappingCone S.g) (S.X₁⟦(1 : ℤ)⟧) where
+  hom := (mappingCone.triangle S.g).mor₃ ≫ σ.r⟦(1 : ℤ)⟧'
+  inv := lift S.g ((Cocycle.ofHom S.f).leftShift 1 1 (zero_add 1)) 0 (by
+    have hfg (k : ℤ) : S.f.f k ≫ S.g.f k = 0 := by
+      rw [← HomologicalComplex.comp_f, S.zero, HomologicalComplex.zero_f]
+    ext p q hpq
+    simp [Cochain.comp_zero_cochain_v,
+      (Cochain.ofHom S.f).leftShift_v 1 1 (zero_add 1) p q hpq q (by lia), hfg])
+  homotopyInvHomId := _root_.Homotopy.ofEq (by
+    have hfr (k : ℤ) : S.f.f k ≫ σ.r.f k = 𝟙 _ := by
+      rw [← HomologicalComplex.comp_f, σ.f_r, HomologicalComplex.id_f]
+    ext n
+    simp [lift_f _ _ _ _ _ (n + 1) rfl,
+      (Cochain.ofHom S.f).leftShift_v 1 1 (zero_add 1) n (n + 1) rfl (n + 1) (by lia), hfr])
+  homotopyHomInvId := (Cochain.equivHomotopy _ _).symm
+    ⟨-(snd S.g).comp ((Cochain.ofHom σ.s).comp (inl S.g) (zero_add (-1))) (zero_add (-1)), by
+      have hrf (k : ℤ) : σ.r.f k ≫ S.f.f k = 𝟙 _ - S.g.f k ≫ σ.s.f k := by
+        rw [← HomologicalComplex.comp_f, σ.r_f, HomologicalComplex.sub_f_apply,
+          HomologicalComplex.id_f, HomologicalComplex.comp_f]
+      have hsg (k : ℤ) : σ.s.f k ≫ S.g.f k = 𝟙 _ := by
+        rw [← HomologicalComplex.comp_f, σ.s_g, HomologicalComplex.id_f]
+      ext n
+      simp [ext_to_iff _ _ (n + 1) rfl, ext_from_iff _ (n + 1) _ rfl,
+        (Cochain.ofHom S.f).leftShift_v 1 1 (zero_add 1) n (n + 1) rfl (n + 1) (by lia),
+        Cochain.comp_v _ _ (add_neg_cancel 1) n (n + 1) n rfl (by lia),
+        δ_zero_cochain_comp _ _ _ (neg_add_cancel 1), hrf, hsg]⟩
+
+/-- The map from the mapping cone in `mappingConeGHomotopyEquiv` is the third morphism of the
+mapping cone triangle followed by the shifted retraction. -/
+@[simp]
+theorem mappingConeGHomotopyEquiv_hom :
+    (σ.mappingConeGHomotopyEquiv).hom = (mappingCone.triangle S.g).mor₃ ≫ σ.r⟦(1 : ℤ)⟧' :=
+  (rfl)
+
+end CategoryTheory.ShortComplex.Splitting
