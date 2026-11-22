@@ -194,7 +194,7 @@ theorem isQuotientCoveringMap_lift [Fintype ι] [FiniteDimensional ℝ F]
 variable [Fintype ι] [FiniteDimensional ℝ F]
 
 /-- The orientation cover modulo its deck action is the original base. -/
-noncomputable abbrev orbitQuotientHomeomorph (hι : Fintype.card ι = finrank ℝ F) :
+@[expose] noncomputable def orbitQuotientHomeomorph (hι : Fintype.card ι = finrank ℝ F) :
     MulAction.orbitRel.Quotient ℤˣ (VectorBundleOrientationCover F E ι) ≃ₜ B :=
   (Homeomorph.Quotient.congrRight
     (r' := Setoid.ker (proj : VectorBundleOrientationCover F E ι → B))
