@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Linear
 public import TauCeti.CategoryTheory.Monoidal.Grading.Universal
 public import TauCeti.CategoryTheory.Monoidal.NaturalTransformation
-public import TauCeti.CategoryTheory.Preadditive.Schur
+public import TauCeti.CategoryTheory.Simple.ScalarEndomorphism
 
 /-!
 # Characters of the universal grading group from monoidal automorphisms

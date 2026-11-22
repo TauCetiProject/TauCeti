@@ -12,21 +12,17 @@ public import TauCeti.CategoryTheory.Simple.Rigid
 # Exact pairings and duality for Peircian unit supports
 
 In a finite semisimple monoidal category `C` with `MonoidalPreadditive C`, an exact pairing
-`ExactPairing X Y` between simple objects `X` and `Y` swaps left and right unit supports
-(`TauCeti.leftUnitClass_of_exactPairing`, `TauCeti.rightUnitClass_of_exactPairing`). Moreover, when
-`Y` has a right dual `Y'`, the tensor product `X ⊗ Y` of simple objects is nonzero if and only if
-`rightUnitClass X = leftUnitClass Y`
-(`TauCeti.not_isZero_tensorObj_iff_rightUnitClass_eq_leftUnitClass`).
-
-In a rigid finite semisimple category, these specialize to simp rules interchanging the left and
-right unit classes under right duality (`TauCeti.leftUnitClass_rightDual`,
-`TauCeti.rightUnitClass_rightDual`, `TauCeti.leftUnitClass_dual_repr`,
-`TauCeti.rightUnitClass_dual_repr`).
+`ExactPairing X Y` between simple objects swaps left and right unit supports
+(`leftUnitClass_of_exactPairing`, `rightUnitClass_of_exactPairing`). When `Y` has a right dual
+`Y'`, `X ⊗ Y` is nonzero iff `rightUnitClass X = leftUnitClass Y`
+(`not_isZero_tensorObj_iff_rightUnitClass_eq_leftUnitClass`), yielding `@[simp]` laws
+`leftUnitClass_rightDual`, `rightUnitClass_rightDual`, `leftUnitClass_dual_repr`, and
+`rightUnitClass_dual_repr`.
 
 ## Main declarations
 
-* `TauCeti.not_isZero_tensorObj_iff_rightUnitClass_eq_leftUnitClass`: when `Y` has a right dual,
-  `X ⊗ Y` is nonzero for simple `X, Y` iff `rightUnitClass X = leftUnitClass Y`.
+* `TauCeti.not_isZero_tensorObj_iff_rightUnitClass_eq_leftUnitClass`: `X ⊗ Y` is nonzero iff
+  `rightUnitClass X = leftUnitClass Y` when `Y` has a right dual.
 * `TauCeti.leftUnitClass_of_exactPairing`, `TauCeti.rightUnitClass_of_exactPairing`: exact
   pairings of simple objects swap left and right unit supports.
 * `TauCeti.leftUnitClass_rightDual`, `TauCeti.rightUnitClass_rightDual`,
@@ -52,8 +48,6 @@ namespace TauCeti
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
   [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C]
-
-section ExactPairing
 
 /-- In a finite semisimple monoidal category, if `Y` admits a right dual `Y'`, then the tensor
 product of simple objects `X` and `Y` is nonzero if and only if
@@ -89,31 +83,26 @@ theorem rightUnitClass_of_exactPairing {X Y : C} [ExactPairing X Y] [Simple X] [
     rightUnitClass Y = leftUnitClass X := by
   obtain ⟨I, f, _, hf⟩ :=
     exists_unitSimpleClasses_comp_ne_zero (coevaluation_ne_zero (Y := Y) (Simple.not_isZero X))
-  have hI₁ : I = leftUnitClass X := by
-    simpa using leftUnitClass_eq_of_hom_ne_zero hf
-  have hI₂ : I = rightUnitClass Y := by
-    simpa using rightUnitClass_eq_of_hom_ne_zero hf
-  exact hI₂.symm.trans hI₁
-
-end ExactPairing
-
-section Rigid
-
-variable [RigidCategory C]
+  exact (by simpa using rightUnitClass_eq_of_hom_ne_zero hf : I = rightUnitClass Y).symm.trans
+    (by simpa using leftUnitClass_eq_of_hom_ne_zero hf)
 
 /-- Right duality interchanges left and right unit classes: the left unit class of `Xᘁ` is the
 right unit class of `X`. -/
 @[simp]
-theorem leftUnitClass_rightDual (X : C) [Simple X] :
+theorem leftUnitClass_rightDual (X : C) [HasRightDual X] [Simple X] [Simple Xᘁ] :
     leftUnitClass Xᘁ = rightUnitClass X :=
   leftUnitClass_of_exactPairing
 
 /-- Right duality interchanges left and right unit classes: the right unit class of `Xᘁ` is the
 left unit class of `X`. -/
 @[simp]
-theorem rightUnitClass_rightDual (X : C) [Simple X] :
+theorem rightUnitClass_rightDual (X : C) [HasRightDual X] [Simple X] [Simple Xᘁ] :
     rightUnitClass Xᘁ = leftUnitClass X :=
   rightUnitClass_of_exactPairing
+
+section Rigid
+
+variable [RigidCategory C]
 
 @[simp]
 theorem leftUnitClass_dual_repr (S : SimpleClasses C) :

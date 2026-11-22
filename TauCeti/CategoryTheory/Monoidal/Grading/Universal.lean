@@ -55,7 +55,6 @@ abbrev universalGradingGroup :=
     ∃ (S T U : SimpleClasses C) (f : U.repr ⟶ S.repr ⊗ T.repr),
       f ≠ 0 ∧ r = FreeGroup.of S * FreeGroup.of T * (FreeGroup.of U)⁻¹}
 
-
 namespace universalGradingGroup
 
 variable {C}
@@ -95,6 +94,55 @@ theorem hom_ext {G : Type w} [Monoid G] {f g : universalGradingGroup C →* G}
   ext x
   exact congrArg Units.val (DFunLike.congr_fun h' x)
 
+section Monoid
+
+variable {M : Type w} [Monoid M]
+
+/-- Extend an assignment of invertible degrees in a monoid `M` satisfying the tensor-constituent
+relations to a monoid homomorphism from the universal grading group. -/
+def liftOfIsUnit (d : SimpleClasses C → M) (hu : ∀ S, IsUnit (d S))
+    (hd : ∀ (S T U : SimpleClasses C) (f : U.repr ⟶ S.repr ⊗ T.repr),
+      f ≠ 0 → d U = d S * d T) : universalGradingGroup C →* M :=
+  (Units.coeHom M).comp <|
+    PresentedGroup.toGroup (f := fun S ↦ (hu S).unit) <| by
+      rintro r ⟨S, T, U, f, hf, rfl⟩
+      apply Units.ext
+      simp [hd S T U f hf]
+
+/-- The monoid extension recovers the prescribed degrees. -/
+@[simp]
+theorem liftOfIsUnit_degree (d : SimpleClasses C → M) (hu) (hd) (S : SimpleClasses C) :
+    liftOfIsUnit d hu hd (degree S) = d S := by
+  simp [liftOfIsUnit, degree]
+
+/-- The universal property of the grading group for monoid targets: homomorphisms into `M`
+correspond to assignments of invertible degrees to simple objects respecting every tensor
+constituent. -/
+def liftEquivOfIsUnit :
+    {d : SimpleClasses C → M // (∀ S, IsUnit (d S)) ∧
+      ∀ (S T U : SimpleClasses C) (f : U.repr ⟶ S.repr ⊗ T.repr),
+        f ≠ 0 → d U = d S * d T} ≃ (universalGradingGroup C →* M) where
+  toFun d := liftOfIsUnit d.val d.property.1 d.property.2
+  invFun f := ⟨fun S ↦ f (degree S),
+    fun S ↦ (Group.isUnit (degree S)).map f,
+    fun S T U g hg ↦ by dsimp only; rw [degree_mul S T U g hg, map_mul]⟩
+  left_inv d := by ext S; simp
+  right_inv f := hom_ext fun S ↦ by simp
+
+/-- The monoid universal-property equivalence sends a degree assignment to its extension. -/
+@[simp]
+theorem liftEquivOfIsUnit_apply (d) :
+    (liftEquivOfIsUnit (C := C) (M := M)) d = liftOfIsUnit d.val d.property.1 d.property.2 := (rfl)
+
+/-- The inverse monoid universal-property equivalence restricts a homomorphism to simple degrees. -/
+@[simp]
+theorem liftEquivOfIsUnit_symm_apply (f : universalGradingGroup C →* M) (S : SimpleClasses C) :
+    ((liftEquivOfIsUnit (C := C) (M := M)).symm f).val S = f (degree S) := (rfl)
+
+end Monoid
+
+section Group
+
 variable {G : Type w} [Group G]
 
 /-- Extend an assignment of degrees satisfying the tensor-constituent relations to a group
@@ -102,27 +150,22 @@ homomorphism from the universal grading group. -/
 def lift (d : SimpleClasses C → G)
     (hd : ∀ (S T U : SimpleClasses C) (f : U.repr ⟶ S.repr ⊗ T.repr),
       f ≠ 0 → d U = d S * d T) : universalGradingGroup C →* G :=
-  PresentedGroup.toGroup (f := d) <| by
-    rintro r ⟨S, T, U, f, hf, rfl⟩
-    simp [hd S T U f hf]
+  liftOfIsUnit d (fun S ↦ Group.isUnit (d S)) hd
 
 /-- The extension recovers the prescribed degrees. -/
 @[simp]
 theorem lift_degree (d : SimpleClasses C → G) (hd) (S : SimpleClasses C) :
-    lift d hd (degree S) = d S := PresentedGroup.toGroup.of _
+    lift d hd (degree S) = d S :=
+  liftOfIsUnit_degree d _ hd S
 
 /-- The universal property of the grading group: maps from it correspond to assignments of
 degrees to simple objects respecting every tensor constituent. -/
 def liftEquiv :
     {d : SimpleClasses C → G //
       ∀ (S T U : SimpleClasses C) (f : U.repr ⟶ S.repr ⊗ T.repr),
-        f ≠ 0 → d U = d S * d T} ≃ (universalGradingGroup C →* G) where
-  toFun d := lift d.val d.property
-  invFun f := ⟨fun S ↦ f (degree S), fun S T U g hg ↦ by
-    dsimp only
-    rw [degree_mul S T U g hg, map_mul]⟩
-  left_inv d := by ext S; simp
-  right_inv f := hom_ext fun S ↦ by simp
+        f ≠ 0 → d U = d S * d T} ≃ (universalGradingGroup C →* G) :=
+  (Equiv.subtypeEquivRight fun d ↦
+    ⟨fun h ↦ ⟨fun S ↦ Group.isUnit (d S), h⟩, fun h ↦ h.2⟩).trans liftEquivOfIsUnit
 
 /-- The universal-property equivalence sends a degree assignment to its extension. -/
 @[simp]
@@ -132,6 +175,8 @@ theorem liftEquiv_apply (d) : (liftEquiv (C := C) (G := G)) d = lift d.val d.pro
 @[simp]
 theorem liftEquiv_symm_apply (f : universalGradingGroup C →* G) (S : SimpleClasses C) :
     ((liftEquiv (C := C) (G := G)).symm f).val S = f (degree S) := (rfl)
+
+end Group
 
 end universalGradingGroup
 
@@ -162,12 +207,9 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
 theorem degree_dual (S : SimpleClasses C) : degree S.dual = (degree S)⁻¹ := by
   let e := SimpleClasses.classOfReprIso (𝟙_ C)
   let t := whiskerLeftIso S.repr (SimpleClasses.dualReprIso S).symm
-  have hf : e.hom ≫ η_ S.repr S.reprᘁ ≫ t.hom ≠ 0 := by
-    intro hf
-    apply coevaluation_ne_zero (Y := S.reprᘁ) (Simple.not_isZero S.repr)
-    apply (cancel_epi e.hom).mp
-    apply (cancel_mono t.hom).mp
-    simpa only [Category.assoc, comp_zero, zero_comp] using hf
+  have hf : e.hom ≫ η_ S.repr S.reprᘁ ≫ t.hom ≠ 0 := fun hf ↦
+    coevaluation_ne_zero (Y := S.reprᘁ) (Simple.not_isZero S.repr) <| by
+      simpa using e.inv ≫= hf =≫ t.inv
   have h := degree_mul S S.dual (SimpleClasses.classOf (𝟙_ C)) _ hf
   rw [degree_unit] at h
   exact eq_inv_of_mul_eq_one_right h.symm

@@ -13,22 +13,17 @@ public import TauCeti.CategoryTheory.Monoidal.Grading.Groupoid.SingleObj
 
 For a finite semisimple linear monoidal category `C` without assuming `𝟙_ C` is simple, a
 `kˣ`-valued groupoid character of `universalGradingGroupoid C` is a functor
-`universalGradingGroupoid C ⥤ SingleObj kˣ` (equipped with the pointwise abelian group structure
-`CategoryTheory.SingleObj.functorCommGroup`).
+`universalGradingGroupoid C ⥤ SingleObj kˣ` (`CategoryTheory.SingleObj.functorCommGroup`).
 
-Composing the universal comparison `universalGradingGroupoid.singleObjFunctorMulEquiv` with
-`characterMonoidalAut` and `monoidalAutCharacterEquiv` identifies monoidal natural automorphisms of
-the identity functor `Aut_⊗(𝟭_C)` with `universalGradingGroupoid C ⥤ SingleObj kˣ` whenever
-simple objects have scalar endomorphisms (`TauCeti.HasScalarSimpleEnd k C`, automatic over an
-algebraically closed field with finite-dimensional simple endomorphism spaces) (Penneys,
-Lemma 3.19(1)).
+Composing `universalGradingGroupoid.singleObjFunctorMulEquiv` with `characterMonoidalAut` and
+`monoidalAutCharacterEquiv` identifies `Aut (LaxMonoidalFunctor.of (𝟭 C))` with
+`universalGradingGroupoid C ⥤ SingleObj kˣ` whenever `TauCeti.HasScalarSimpleEnd k C` holds
+(Penneys, Lemma 3.19(1)).
 
 ## Main declarations
 
-* `TauCeti.groupoidCharacterMonoidalAut`: extends an `Rˣ`-valued functor on
-  `universalGradingGroupoid C` to a monoidal natural automorphism of `𝟭 C`.
-* `TauCeti.monoidalAutGroupoidCharacter`: extracts the `kˣ`-valued functor on
-  `universalGradingGroupoid C` from a monoidal natural automorphism of `𝟭 C`.
+* `TauCeti.groupoidCharacterMonoidalAut`: extends an `Rˣ`-valued character to `Aut_⊗(𝟭 C)`.
+* `TauCeti.monoidalAutGroupoidCharacter`: extracts the `kˣ`-valued character from `Aut_⊗(𝟭 C)`.
 * `TauCeti.monoidalAutGroupoidCharacterEquiv`: group isomorphism
   `Aut (LaxMonoidalFunctor.of (𝟭 C)) ≃* (universalGradingGroupoid C ⥤ SingleObj kˣ)`.
 
@@ -67,8 +62,7 @@ variable {R}
 theorem groupoidCharacterMonoidalAut_eq_characterMonoidalAut
     (F : universalGradingGroupoid C ⥤ SingleObj Rˣ) :
     groupoidCharacterMonoidalAut R F =
-      characterMonoidalAut R (universalGradingGroupoid.singleObjFunctorMulEquiv Rˣ F) :=
-  (rfl)
+      characterMonoidalAut R (universalGradingGroupoid.singleObjFunctorMulEquiv Rˣ F) := (rfl)
 
 /-- Precomposed with a morphism `s : S ⟶ X` out of a simple object `S`, the monoidal automorphism
 associated to a groupoid character `F` scales `s` by `F.map (degreeOf S)`. -/
@@ -90,24 +84,18 @@ theorem groupoidCharacterMonoidalAut_app_of_simple
   rw [groupoidCharacterMonoidalAut_eq_characterMonoidalAut, characterMonoidalAut_app_of_simple,
     universalGradingGroupoid.singleObjFunctorMulEquiv_apply_degree_classOf]
 
-end Semiring
-
-section Injective
-
-variable (R : Type w) [CommSemiring R] {C : Type u} [Category.{v} C] [Abelian C]
-  [MonoidalCategory C] [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
-  [IsFiniteSemisimpleCategory C]
-
 /-- If units of `R` act faithfully by scalar multiplication on the identity of every simple
 representative, distinct `Rˣ`-valued characters of `universalGradingGroupoid C` induce distinct
 monoidal automorphisms of the identity functor. -/
-theorem groupoidCharacterMonoidalAut_injective_of_smul_injective
+theorem groupoidCharacterMonoidalAut_injective_of_smul_injective (R) [CommSemiring R]
+    {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C]
+    [Linear R C] [MonoidalLinear R C] [IsFiniteSemisimpleCategory C]
     (hinj : ∀ S : SimpleClasses C, Function.Injective (fun u : Rˣ ↦ (u : R) • 𝟙 S.repr)) :
     Function.Injective (groupoidCharacterMonoidalAut R (C := C)) :=
   (characterMonoidalAut_injective_of_smul_injective R hinj).comp
     (universalGradingGroupoid.singleObjFunctorMulEquiv (C := C) Rˣ).injective
 
-end Injective
+end Semiring
 
 section Field
 
@@ -125,10 +113,9 @@ end Field
 
 section Classification
 
-variable (k : Type w) [Field k]
-  {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
-  [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
-  [IsFiniteSemisimpleCategory C] [HasScalarSimpleEnd k C]
+variable (k : Type w) [Field k] {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
+  [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C] [IsFiniteSemisimpleCategory C]
+  [HasScalarSimpleEnd k C]
 
 /-- Extract the `kˣ`-valued character of `universalGradingGroupoid C` from a monoidal natural
 automorphism of the identity functor when simple objects have scalar endomorphisms. -/

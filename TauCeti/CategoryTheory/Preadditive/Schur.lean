@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Preadditive.Schur
-public import TauCeti.CategoryTheory.Linear.Endomorphism
+public import TauCeti.CategoryTheory.Simple.ScalarEndomorphism
 
 /-!
 # Endomorphisms of a simple object are scalars
@@ -57,13 +57,6 @@ open CategoryTheory CategoryTheory.Limits
 universe w v u
 
 namespace TauCeti
-
-/-- A `k`-linear preadditive category has scalar simple endomorphisms if for every simple object
-`X`, the structure map `k → End X` is surjective. -/
-class HasScalarSimpleEnd (k : Type w) [CommSemiring k] (C : Type u) [Category.{v} C]
-    [Preadditive C] [Linear k C] : Prop where
-  /-- For every simple object `X`, `algebraMap k (End X)` is surjective. -/
-  surjective_algebraMap (X : C) [Simple X] : Function.Surjective (algebraMap k (End X))
 
 variable (k : Type w) [Field k] [IsAlgClosed k]
 variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear k C] [HasKernels C]

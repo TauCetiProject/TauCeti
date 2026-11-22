@@ -34,7 +34,7 @@ universe v u
 namespace TauCeti.universalGradingGroup
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
-  [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C]
+  [IsFiniteSemisimpleCategory C]
 
 /-- Every simple summand of the tensor unit has trivial degree in `universalGradingGroup C`. -/
 @[simp]

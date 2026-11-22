@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Equiv
-public import Mathlib.Algebra.Algebra.Hom
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
 
 /-!
