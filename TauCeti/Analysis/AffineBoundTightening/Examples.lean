@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Notation
-public import TauCeti.Analysis.AffineBoundTightening.Operator
+public import TauCeti.Analysis.AffineBoundTightening.LinearProgram
 import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.Tactic.FinCases
+import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
@@ -17,9 +19,10 @@ import Mathlib.Tactic.Ring
 
 This file records concrete examples exercising joint interval packing, endpoint containment, total
 width, signed affine image arithmetic, simultaneous step evaluation, empty absorption, graph-point
-survival, fixed-tuple containment, and non-terminating geometric convergence.
+survival, fixed-tuple containment, non-terminating geometric convergence, and the scalar linear
+program of fixed boxes.
 
-## Main example
+## Main examples
 
 * `TauCeti.AffineBoundTightening.Examples.rawRun_twoRow`: for `1 < a`, initial variable box
   `[0, 1]²`, and equality rows `a * x₀ - x₁ = 0` and `x₀ - a * x₁ = 0`, the simultaneous iterates
@@ -29,6 +32,10 @@ survival, fixed-tuple containment, and non-terminating geometric convergence.
   (`twoRow_width_tendsto_and_no_stabilization`). At `a = 2`, one simultaneous step yields variable
   uppers `(1/2, 1/2)` whereas sequential row-by-row updates yield `(1/2, 1/4)`
   (`twoRow_two_step`).
+* `TauCeti.AffineBoundTightening.Examples.fourRow_feasible_without_graph_point`: three variables
+  in `[-1, 1]` with equality rows `x₀ + x₁ + x₂ = 0`, `x₀ + x₁ - x₂ = 0`, `x₀ - x₁ + x₂ = 0` and
+  `-x₀ + x₁ + x₂ = 1` form an ordered fixed box with a feasible canonical assignment, although the
+  equations have no common solution.
 
 ## References
 
@@ -459,6 +466,166 @@ theorem zero_rows_fixed_and_nonfixed (A : Matrix (Fin 0) (Fin 1) ℝ) :
   refine ⟨within_rawRun_of_isFixedPt_step h1, within_rawRun_of_isFixedPt_step h2, fun h3 => ?_⟩
   have hle := ((isFixedPt_step_zero_rows_iff A q₀ q₃).mp h3).le_snd (.inl 0)
   norm_num [q₀, q₃] at hle
+
+/-! ### The scalar linear program -/
+
+/-- For `A = !![-2]` and `x = ![1]`, the singleton graph assignment has both products `-2`, both
+inverse endpoints of the singleton box are `1`, and the assignment is feasible for that box. -/
+theorem neg_coeff_graphAssignment :
+    let A : Matrix (Fin 1) (Fin 1) ℝ := !![-2]
+    let x : Fin 1 → ℝ := ![1]
+    let q : Raw 1 1 := (graph A x, graph A x)
+    (graphAssignment A x).zL 0 0 = -2 ∧ (graphAssignment A x).zU 0 0 = -2 ∧
+      inverseLo A q 0 0 = 1 ∧ inverseHi A q 0 0 = 1 ∧ IsFeasible A q (graphAssignment A x) := by
+  intro A x q
+  have hA : A 0 0 < 0 := by norm_num [A]
+  have hrow : graph A x (.inr 0) = -2 := by simp [A, x, Matrix.mulVec, dotProduct]
+  refine ⟨by simp [A, x], by simp [A, x], ?_, ?_, isFeasible_graphAssignment ⟨le_rfl, le_rfl⟩⟩
+  · rw [inverseLo_of_neg hA, restLo_eq_zero_of_subsingleton]
+    norm_num [q, hrow, A]
+  · rw [inverseHi_of_neg hA, restHi_eq_zero_of_subsingleton]
+    norm_num [q, hrow, A]
+
+/-- A zero coefficient forces both product unknowns of a feasible assignment to `0`, so they cannot
+act as free variables in the row sums. -/
+theorem zero_coeff_products_of_isFeasible {n m : ℕ} {A : Matrix (Fin m) (Fin n) ℝ}
+    {q₀ : Raw n m} {p : Assignment n m} (h : IsFeasible A q₀ p) {i : Fin m} {j : Fin n}
+    (hA : A i j = 0) : p.zL i j = 0 ∧ p.zU i j = 0 :=
+  ⟨by rw [h.zL_eq, zLo_of_zero hA], by rw [h.zU_eq, zHi_of_zero hA]⟩
+
+/-- With no rows and initial box `[0, 2]`, the canonical assignments of `[0, 1]` and `[1, 2]` are
+feasible with objective `1` and that of `[0, 2]` is feasible with objective `2`, whereas `[0, 3]` is
+neither fixed nor feasible. -/
+theorem zero_rows_feasible_assignments (A : Matrix (Fin 0) (Fin 1) ℝ) :
+    let q₀ : Raw 1 0 := (fun _ => 0, fun _ => 2)
+    let q₁ : Raw 1 0 := (fun _ => 0, fun _ => 1)
+    let q₂ : Raw 1 0 := (fun _ => 1, fun _ => 2)
+    let q₃ : Raw 1 0 := (fun _ => 0, fun _ => 3)
+    (IsFeasible A q₀ (canonical A q₁) ∧ objective (canonical A q₁) = 1) ∧
+      (IsFeasible A q₀ (canonical A q₂) ∧ objective (canonical A q₂) = 1) ∧
+      (IsFeasible A q₀ (canonical A q₀) ∧ objective (canonical A q₀) = 2) ∧
+      ¬ Function.IsFixedPt (step A q₀) q₃ ∧ ¬ IsFeasible A q₀ (canonical A q₃) := by
+  intro q₀ q₁ q₂ q₃
+  have hfeas : ∀ q : Raw 1 0, q.1 ≤ q.2 → Within q q₀ → IsFeasible A q₀ (canonical A q) :=
+    fun q hq hw => isFeasible_canonical_iff.mpr ⟨hq, (isFixedPt_step_zero_rows_iff A q₀ q).mpr hw⟩
+  have h3 : ¬ Function.IsFixedPt (step A q₀) q₃ := fun h => by
+    have hle := ((isFixedPt_step_zero_rows_iff A q₀ q₃).mp h).le_snd (.inl 0)
+    norm_num [q₀, q₃] at hle
+  refine ⟨⟨hfeas q₁ (fun _ => by norm_num [q₁])
+        (within_iff.mpr ⟨fun _ => le_rfl, fun _ => by norm_num [q₀, q₁]⟩),
+      by simp [q₁, objective_eq_sum_add_sum]⟩,
+    ⟨hfeas q₂ (fun _ => by norm_num [q₂])
+        (within_iff.mpr ⟨fun _ => by norm_num [q₀, q₂], fun _ => le_rfl⟩),
+      by norm_num [q₂, objective_eq_sum_add_sum]⟩,
+    ⟨hfeas q₀ (fun _ => by norm_num [q₀]) Within.rfl, by simp [q₀, objective_eq_sum_add_sum]⟩,
+    h3, fun h => h3 (isFeasible_canonical_iff.mp h).2⟩
+
+/-- A zero row with row bounds `[1, 1]` admits no feasible assignment and no ordered fixed tuple;
+with zero variables and row bounds `[1, 1]`, no graph point lies in the initial box and the program
+is again infeasible. -/
+theorem zero_row_conflict_infeasible (A₀ : Matrix (Fin 1) (Fin 0) ℝ) :
+    let A : Matrix (Fin 1) (Fin 1) ℝ := 0
+    let q₀ : Raw 1 1 := (Sum.elim ![0] ![1], Sum.elim ![1] ![1])
+    let r₀ : Raw 0 1 := (fun _ => 1, fun _ => 1)
+    ((¬ ∃ p, IsFeasible A q₀ p) ∧
+        ¬ ∃ q : Raw 1 1, q.1 ≤ q.2 ∧ Function.IsFixedPt (step A q₀) q) ∧
+      (∀ x, graph A₀ x ∉ Icc r₀.1 r₀.2) ∧ ¬ ∃ p, IsFeasible A₀ r₀ p := by
+  intro A q₀ r₀
+  have hA : ¬ ∃ p, IsFeasible A q₀ p := fun ⟨p, h⟩ => by
+    have hu := h.le_sum_zU 0
+    have hw := h.within.fst_le (.inr 0)
+    have ho := h.fst_le_snd (.inr 0)
+    simp only [h.zU_eq, A, zHi_zero, Finset.sum_const_zero] at hu
+    simp only [q₀, Sum.elim_inr, Matrix.cons_val_fin_one] at hw
+    linarith
+  refine ⟨⟨hA, exists_isFeasible_iff.not.mp hA⟩, fun x hx => ?_, fun ⟨p, h⟩ => ?_⟩
+  · have h0 := hx.1 (.inr 0)
+    simp [r₀, Matrix.mulVec, dotProduct] at h0
+    norm_num at h0
+  · have hu := h.le_sum_zU 0
+    have hw := h.within.fst_le (.inr 0)
+    have ho := h.fst_le_snd (.inr 0)
+    simp only [Finset.univ_eq_empty, Finset.sum_empty] at hu
+    simp only [r₀] at hw
+    linarith
+
+/-- Coefficient matrix of the equality rows `x₀ + x₁ + x₂`, `x₀ + x₁ - x₂`, `x₀ - x₁ + x₂` and
+`-x₀ + x₁ + x₂`. -/
+def fourRowMatrix : Matrix (Fin 4) (Fin 3) ℝ :=
+  !![1, 1, 1; 1, 1, -1; 1, -1, 1; -1, 1, 1]
+
+/-- Variable box `[-1, 1]³` with row values `0, 0, 0, 1`. -/
+def fourRowBox : Raw 3 4 :=
+  (Sum.elim (fun _ => -1) ![0, 0, 0, 1], Sum.elim (fun _ => 1) ![0, 0, 0, 1])
+
+private theorem fourRowMatrix_eq (i : Fin 4) (j : Fin 3) :
+    fourRowMatrix i j = 1 ∨ fourRowMatrix i j = -1 := by
+  fin_cases i <;> fin_cases j <;> simp [fourRowMatrix]
+
+private theorem zLo_fourRowBox (i : Fin 4) (j : Fin 3) :
+    zLo fourRowMatrix fourRowBox i j = -1 := by
+  rcases fourRowMatrix_eq i j with h | h
+  · rw [zLo_of_nonneg (by rw [h]; norm_num), h]
+    simp [fourRowBox]
+  · rw [zLo_of_nonpos (by rw [h]; norm_num), h]
+    simp [fourRowBox]
+
+private theorem zHi_fourRowBox (i : Fin 4) (j : Fin 3) :
+    zHi fourRowMatrix fourRowBox i j = 1 := by
+  rcases fourRowMatrix_eq i j with h | h
+  · rw [zHi_of_nonneg (by rw [h]; norm_num), h]
+    simp [fourRowBox]
+  · rw [zHi_of_nonpos (by rw [h]; norm_num), h]
+    simp [fourRowBox]
+
+private theorem fourRowBox_inr (i : Fin 4) :
+    0 ≤ fourRowBox.1 (.inr i) ∧ fourRowBox.2 (.inr i) ≤ 1 ∧
+      fourRowBox.1 (.inr i) = fourRowBox.2 (.inr i) := by
+  fin_cases i <;> norm_num [fourRowBox]
+
+/-- In the four-row example every inverse interval contains the variable interval `[-1, 1]`. -/
+theorem fourRow_inverse_bounds (i : Fin 4) (j : Fin 3) :
+    inverseLo fourRowMatrix fourRowBox i j ≤ -1 ∧ 1 ≤ inverseHi fourRowMatrix fourRowBox i j := by
+  have hrLo : restLo fourRowMatrix fourRowBox i j = -2 := by
+    simp [restLo_def, zLo_fourRowBox, Finset.card_erase_of_mem]
+  have hrHi : restHi fourRowMatrix fourRowBox i j = 2 := by
+    simp [restHi_def, zHi_fourRowBox, Finset.card_erase_of_mem]
+  obtain ⟨h0, h1, h2⟩ := fourRowBox_inr i
+  rcases fourRowMatrix_eq i j with h | h
+  · rw [inverseLo_of_pos (by rw [h]; norm_num), inverseHi_of_pos (by rw [h]; norm_num), hrLo,
+      hrHi, h]
+    constructor <;> linarith
+  · rw [inverseLo_of_neg (by rw [h]; norm_num), inverseHi_of_neg (by rw [h]; norm_num), hrLo,
+      hrHi, h]
+    constructor <;> linarith
+
+/-- The four-row box is an ordered fixed tuple for itself as initial box, so its canonical
+assignment is feasible, yet no graph point lies in it: the first three equalities force `x = 0`,
+contradicting the fourth. Thus feasibility of the program does not give an affine graph point. -/
+theorem fourRow_feasible_without_graph_point :
+    fourRowBox.1 ≤ fourRowBox.2 ∧ Function.IsFixedPt (step fourRowMatrix fourRowBox) fourRowBox ∧
+      IsFeasible fourRowMatrix fourRowBox (canonical fourRowMatrix fourRowBox) ∧
+      ∀ x, graph fourRowMatrix x ∉ Icc fourRowBox.1 fourRowBox.2 := by
+  have hle : fourRowBox.1 ≤ fourRowBox.2 := fun c => by
+    cases c with
+    | inl j => norm_num [fourRowBox]
+    | inr i => exact (fourRowBox_inr i).2.2.le
+  have hfix : Function.IsFixedPt (step fourRowMatrix fourRowBox) fourRowBox := by
+    refine isFixedPt_step_iff.mpr ⟨Within.rfl, fun i => ?_, fun i j => ?_⟩
+    · obtain ⟨h0, h1, -⟩ := fourRowBox_inr i
+      simp only [imageLo_def, imageHi_def, zLo_fourRowBox, zHi_fourRowBox, Finset.sum_const,
+        Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, Nat.cast_ofNat]
+      constructor <;> linarith
+    · obtain ⟨hlo, hhi⟩ := fourRow_inverse_bounds i j
+      exact ⟨hlo.trans_eq (by simp [fourRowBox]), (by simp [fourRowBox] : _ = (1 : ℝ)).trans_le hhi⟩
+  refine ⟨hle, hfix, isFeasible_canonical_iff.mpr ⟨hle, hfix⟩, fun x hx => ?_⟩
+  obtain ⟨-, hrow⟩ := mem_Icc_graph_iff.mp hx
+  have h0 := hrow 0
+  have h1 := hrow 1
+  have h2 := hrow 2
+  have h3 := hrow 3
+  simp [fourRowMatrix, fourRowBox, Matrix.mulVec, dotProduct, Fin.sum_univ_three] at h0 h1 h2 h3
+  linarith
 
 end
 
