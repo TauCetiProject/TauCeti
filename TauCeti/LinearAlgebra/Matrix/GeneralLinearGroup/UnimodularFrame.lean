@@ -137,9 +137,7 @@ theorem orbit_eq_setOf_exists_mul_eq_one [Finite (MaximalSpectrum R)] {A : Matri
   refine ⟨?_, fun ⟨_, h'⟩ ↦ exists_smul_eq_of_mul_eq_one h h'⟩
   rintro ⟨g, rfl⟩
   refine ⟨B * ((g⁻¹ : GL n R) : Matrix n n R), ?_⟩
-  dsimp only
-  rw [GeneralLinearGroup.smul_def, Matrix.mul_assoc, ← Matrix.mul_assoc _ (g : Matrix n n R),
-    ← GeneralLinearGroup.coe_mul, inv_mul_cancel, GeneralLinearGroup.coe_one, Matrix.one_mul, h]
+  simp [Matrix.mul_assoc, h]
 
 /-- Over a commutative semilocal ring, the orbit under `GL n R` of the standard frame
 `(e_(f a))_a` of an injective `f : k → n` is the set of all unimodular `k`-frames of `Rⁿ`, the
