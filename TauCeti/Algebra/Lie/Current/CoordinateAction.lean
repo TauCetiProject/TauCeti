@@ -208,7 +208,8 @@ theorem coordinateEnvelopingAut_homothety_envelopingι (u : Kˣ) (m : ℤ) (c : 
       (u : K) ^ m • envelopingι cΦ a (HahnSeries.single m c ⊗ₜ[K] x) := by
   have hs : HahnSeries.single m ((u : K) ^ m * c) =
       (u : K) ^ m • HahnSeries.single m c := by
-    rw [← HahnSeries.single_zero_mul_eq_smul, HahnSeries.single_mul_single, zero_add]
+    simpa [HahnSeries.single.addMonoidHom, smul_eq_mul] using
+      map_smul (HahnSeries.single.linearMap m) ((u : K) ^ m) c
   simp only [coordinateEnvelopingAut_envelopingι, FormalCoordinate.ofAlgEquiv_substAlgEquiv,
     substLieEquiv_tmul, LaurentSeries.substAlgEquiv_homothety, LaurentSeries.rescale_single,
     Units.val_zpow_eq_zpow_val, hs,

@@ -342,7 +342,10 @@ theorem continuousLinearMap_ext_single {K M : Type*} [Field K] [AddCommMonoid M]
   | add p q hp hq => simp only [Function.comp_apply, map_add] at *; rw [hp, hq]
   | C_mul_T n r =>
     have hs : (single n r : K⸨X⸩) = r • single n 1 := by
-      rw [← single_zero_mul_eq_smul, single_mul_single, zero_add, mul_one]
+      -- The linear-map apply lemma retains the additive-hom wrapper; unfold just that wrapper
+      -- to express its scalar-linearity law in terms of single.
+      simpa [HahnSeries.single.addMonoidHom] using
+        map_smul (HahnSeries.single.linearMap n) r (1 : K)
     simp only [Function.comp_apply, ← LaurentPolynomial.single_eq_C_mul_T,
       LaurentPolynomial.toLaurentSeries_single, hs, map_smul, h]
 
