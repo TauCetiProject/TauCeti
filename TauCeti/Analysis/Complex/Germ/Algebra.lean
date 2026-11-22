@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Analytic.Polynomial
 public import Mathlib.Algebra.Algebra.Spectrum.Basic
 public import TauCeti.Order.Filter.Germ
 import Mathlib.Analysis.Calculus.DSlope
+import TauCeti.Analysis.Analytic.Constructions
 
 /-!
 # Holomorphic germs near a set
@@ -23,10 +24,10 @@ We construct evaluation, restriction, and composition homomorphisms, the nonunit
 `holomorphicGerms.vanishingAt` of germs vanishing at a marked point, and characterize units by
 nonvanishing on `s`; the inverse of a unit is represented by the pointwise reciprocal. A germ
 vanishes at a point `x ∈ s` exactly when it is divisible by `z - x`. The spectrum of a
-represented germ is exactly the image of `s`, and the coordinate germ has spectrum `s`. Polynomial
-functions evaluate via `Polynomial.aeval` at the coordinate germ
-(`holomorphicGerms.ofFun_eval_polynomial`), and the Cauchy kernel `z ↦ (w - z)⁻¹` is analytic
-near `s` precisely when `w ∉ s` (`analyticOnNhd_sub_inv_iff`). We also record how unital
+represented germ is exactly the image of `s`, the coordinate germ has spectrum `s`, and
+restricting a germ along an equality of base sets preserves its spectrum
+(`holomorphicGerms.spectrum_restrict_of_eq`). Polynomial functions evaluate via `Polynomial.aeval`
+at the coordinate germ (`holomorphicGerms.ofFun_eval_polynomial`). We also record how unital
 complex-algebra homomorphisms out of `holomorphicGerms s` act on quotients whose denominators are
 nonvanishing on `s`, and—when sending the coordinate germ to `a`—on the Cauchy kernel `(w - ·)⁻¹`
 (sending it to `resolvent a w` when `(w - ·)⁻¹` is analytic near `s`). When `s = spectrum ℂ a`, any
@@ -279,6 +280,12 @@ theorem spectrum_ofFun_id :
     spectrum ℂ (ofFun id (analyticOnNhd_id : AnalyticOnNhd ℂ id s)) = s := by
   rw [spectrum_ofFun, image_id]
 
+/-- Restricting a holomorphic germ along an equality of base sets preserves its spectrum. -/
+theorem spectrum_restrict_of_eq {h : t ⊆ s} (heq : t = s) (g : holomorphicGerms s) :
+    spectrum ℂ (restrict h g) = spectrum ℂ g := by
+  subst heq
+  simp
+
 /-- The nonunital complex subalgebra of `holomorphicGerms s` consisting of germs vanishing at a
 marked point `x ∈ s`. -/
 def vanishingAt (s : Set ℂ) (x : ℂ) (hx : x ∈ s) :
@@ -488,22 +495,6 @@ theorem comp_comp {u : Set ℂ} (f : holomorphicGerms s) (hf : spectrum ℂ f �
   simp [Function.comp_assoc]
 
 end holomorphicGerms
-
-/-- The Cauchy kernel `z ↦ (w - z)⁻¹` is analytic near `s` if and only if `w ∉ s`. -/
-theorem analyticOnNhd_sub_inv_iff {s : Set ℂ} {w : ℂ} :
-    AnalyticOnNhd ℂ (fun z ↦ (w - z)⁻¹) s ↔ w ∉ s := by
-  constructor
-  · intro hf hws
-    have hcont : ContinuousAt (fun z : ℂ ↦ (w - z)⁻¹) (w - 0) := by
-      rw [sub_zero]
-      exact (hf w hws).continuousAt
-    have h0 : ContinuousAt (Inv.inv : ℂ → ℂ) 0 := by
-      simpa only [Function.comp_def, sub_sub_cancel] using
-        hcont.comp (continuousAt_const.sub continuousAt_id)
-    exact NormedField.continuousAt_inv.mp h0 rfl
-  · intro hws
-    exact (analyticOnNhd_const.sub analyticOnNhd_id).inv fun z hz (h : w - z = 0) ↦
-      hws (sub_eq_zero.mp h ▸ hz)
 
 end TauCeti
 

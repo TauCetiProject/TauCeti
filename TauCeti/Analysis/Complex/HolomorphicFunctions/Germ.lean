@@ -13,8 +13,10 @@ public import TauCeti.Analysis.Complex.Germ.Algebra
 
 A holomorphic function on an open neighbourhood of a set defines a germ near that set.
 The maps `HolomorphicFunctions.toGerm` commute with restriction, and every holomorphic
-germ arises this way. Two functions define the same germ precisely when their restrictions
-agree on some common open neighbourhood.
+germ arises this way; restricting to functions vanishing at a marked point `x ∈ s` gives the
+nonunital algebra homomorphism `HolomorphicFunctions.toGermVanishingAt` into
+`holomorphicGerms.vanishingAt`. Two functions define the same germ precisely when their
+restrictions agree on some common open neighbourhood.
 
 Compatible algebra homomorphisms on these neighbourhoods therefore descend uniquely to
 `holomorphicGerms s`. This allows constructions on open domains, such as contour functional
@@ -143,6 +145,23 @@ theorem comp_toGerm {t : Set ℂ} (hs : s ⊆ U) (ht : t ⊆ V) (f : holomorphic
   rw [holomorphicGerms.comp_ofFun]
   exact (toGerm_eq_ofFun hs (comp f hf g) (extend g ∘ extend f) _ fun z =>
     (extend_apply (comp f hf g) z).symm.trans (extend_comp f hf g z.property)).symm
+
+/-- Send a holomorphic function on an open neighbourhood `U` of `s` vanishing at `x ∈ s` to its
+germ in `holomorphicGerms.vanishingAt s x hx`. -/
+def toGermVanishingAt {x : ℂ} (hs : s ⊆ U) (hx : x ∈ s) :
+    vanishingAt U x (hs hx) →ₙₐ[ℂ] holomorphicGerms.vanishingAt s x hx where
+  toFun f := ⟨toGerm hs f.val, holomorphicGerms.mem_vanishingAt_iff.mpr <| by
+    rw [eval_toGerm, mem_vanishingAt_iff.mp f.property]⟩
+  map_smul' c f := Subtype.ext (map_smul (toGerm hs) c f.val)
+  map_zero' := Subtype.ext (map_zero (toGerm hs))
+  map_add' f g := Subtype.ext (map_add (toGerm hs) f.val g.val)
+  map_mul' f g := Subtype.ext (map_mul (toGerm hs) f.val g.val)
+
+/-- Coercing `toGermVanishingAt` back to `holomorphicGerms s` recovers `toGerm`. -/
+@[simp]
+theorem coe_toGermVanishingAt {x : ℂ} (hs : s ⊆ U) (hx : x ∈ s)
+    (f : vanishingAt U x (hs hx)) :
+    (toGermVanishingAt hs hx f : holomorphicGerms s) = toGerm hs f.val := (rfl)
 
 end TauCeti.HolomorphicFunctions
 

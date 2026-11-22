@@ -35,6 +35,9 @@ vector-valued series, scalar multiplication `f • g` over a normed algebra, and
 (`HasFPowerSeriesWithinOnBall.clm_apply`, `HasFPowerSeriesOnBall.clm_apply`,
 `HasFPowerSeriesWithinOnBall.smul`, `HasFPowerSeriesOnBall.smul`,
 `HasFPowerSeriesWithinOnBall.mul`, `HasFPowerSeriesOnBall.mul`).
+
+For a fixed pole `w`, the reciprocal kernel `z ↦ (w - z)⁻¹` is analytic near `s` if and only if
+`w ∉ s` (`TauCeti.analyticOnNhd_sub_inv_iff`).
 -/
 
 public section
@@ -278,3 +281,25 @@ theorem HasFPowerSeriesOnBall.mul
   hf.smul hg
 
 end CauchyProduct
+
+namespace TauCeti
+
+/-- The reciprocal kernel `z ↦ (w - z)⁻¹` is analytic near `s` if and only if `w ∉ s`. -/
+@[simp]
+theorem analyticOnNhd_sub_inv_iff {𝕜 𝕝 : Type*} [NontriviallyNormedField 𝕜]
+    [NontriviallyNormedField 𝕝] [NormedAlgebra 𝕜 𝕝] {s : Set 𝕝} {w : 𝕝} :
+    AnalyticOnNhd 𝕜 (fun z ↦ (w - z)⁻¹) s ↔ w ∉ s := by
+  constructor
+  · intro hf hws
+    have hcont : ContinuousAt (fun z : 𝕝 ↦ (w - z)⁻¹) (w - 0) := by
+      rw [sub_zero]
+      exact (hf w hws).continuousAt
+    have h0 : ContinuousAt (Inv.inv : 𝕝 → 𝕝) 0 := by
+      simpa only [Function.comp_def, sub_sub_cancel] using
+        hcont.comp (continuousAt_const.sub continuousAt_id)
+    exact NormedField.continuousAt_inv.mp h0 rfl
+  · intro hws
+    exact (analyticOnNhd_const.sub analyticOnNhd_id).inv fun z hz (h : w - z = 0) ↦
+      hws (sub_eq_zero.mp h ▸ hz)
+
+end TauCeti

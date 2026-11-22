@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Spectrum
-public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Unitization
+public import TauCeti.Analysis.Normed.Algebra.Unitization.Basic
 
 /-!
 # Holomorphic functional calculus for nonunital Banach algebras
@@ -21,10 +21,12 @@ copy of `A` if and only if `g(0) = 0`.
 On the nonunital subalgebra `holomorphicGerms.vanishingAt (quasispectrum ℂ a) 0 _` of holomorphic
 germs near `quasispectrum ℂ a` that vanish at `0`, projecting onto `A` yields the nonunital
 complex-algebra homomorphism `nonUnitalHolomorphicCalculus a` sending the coordinate germ `z ↦ z`
-to `a`, intertwining the unitization inclusion with `holomorphicCalculus`, and obeying the
-nonunital spectral mapping theorem: `quasispectrum ℂ (nonUnitalHolomorphicCalculus a g)` is the
-set of point evaluations `holomorphicGerms.eval z _ g.val` for `z ∈ quasispectrum ℂ a` (and
-`f '' quasispectrum ℂ a` for an analytic representative `f` with `f 0 = 0`).
+to `a`, intertwining the unitization inclusion with `holomorphicCalculus`, continuous for the
+compact-open topology after precomposition with `HolomorphicFunctions.toGermVanishingAt` on each
+open neighbourhood of `quasispectrum ℂ a`, and obeying the nonunital spectral mapping theorem:
+`quasispectrum ℂ (nonUnitalHolomorphicCalculus a g)` is the set of point evaluations
+`holomorphicGerms.eval z _ g.val` for `z ∈ quasispectrum ℂ a` (and `f '' quasispectrum ℂ a` for an
+analytic representative `f` with `f 0 = 0`).
 
 ## References
 
@@ -79,6 +81,35 @@ theorem nonUnitalHolomorphicCalculus_apply (a : A)
       (holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
         (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g.val)) := (rfl)
 
+/-- Evaluating `nonUnitalHolomorphicCalculus a` on a holomorphic function on an open
+neighbourhood `U` of `quasispectrum ℂ a` vanishing at `0` agrees with projecting the unital
+`holomorphicCalculusOn` of the embedded element onto `A`. -/
+@[simp]
+theorem nonUnitalHolomorphicCalculus_toGermVanishingAt (a : A) (U : Opens ℂ)
+    (ha : quasispectrum ℂ a ⊆ U)
+    (f : vanishingAt U 0 (ha (quasispectrum.zero_mem ℂ a))) :
+    nonUnitalHolomorphicCalculus a (toGermVanishingAt ha (quasispectrum.zero_mem ℂ a) f) =
+      WithLp.unitizationSndL ℂ A (holomorphicCalculusOn (WithLp.unitizationInrL ℂ A a) U
+        ((WithLp.spectrum_unitizationInrL a).le.trans ha) f.val) := by
+  simp [nonUnitalHolomorphicCalculus_apply]
+
+/-- For every open neighbourhood `U` of `quasispectrum ℂ a`, composing
+`nonUnitalHolomorphicCalculus a` with the chart map `HolomorphicFunctions.toGermVanishingAt` is
+continuous for the compact-open topology on `HolomorphicFunctions.vanishingAt U 0 _`. -/
+@[continuity]
+theorem continuous_nonUnitalHolomorphicCalculus_comp_toGermVanishingAt (a : A)
+    (U : Opens ℂ) (ha : quasispectrum ℂ a ⊆ U) :
+    Continuous (nonUnitalHolomorphicCalculus a ∘
+      toGermVanishingAt ha (quasispectrum.zero_mem ℂ a)) := by
+  have heq : (nonUnitalHolomorphicCalculus a ∘
+      toGermVanishingAt ha (quasispectrum.zero_mem ℂ a)) =
+      fun f ↦ WithLp.unitizationSndL ℂ A (holomorphicCalculusOn (WithLp.unitizationInrL ℂ A a) U
+        ((WithLp.spectrum_unitizationInrL a).le.trans ha) f.val) :=
+    funext (nonUnitalHolomorphicCalculus_toGermVanishingAt a U ha)
+  rw [heq]
+  exact ((WithLp.unitizationSndL ℂ A).continuous.comp
+    (continuous_holomorphicCalculusOn _ _ _)).comp continuous_subtypeVal
+
 /-- Embedding `nonUnitalHolomorphicCalculus a g` into the `ℓ¹` unitization agrees with the unital
 `holomorphicCalculus` of the embedded element. -/
 @[simp]
@@ -105,14 +136,9 @@ theorem quasispectrum_nonUnitalHolomorphicCalculus (a : A)
     quasispectrum ℂ (nonUnitalHolomorphicCalculus a g) =
       {c | ∃ (z : ℂ) (hz : z ∈ quasispectrum ℂ a), holomorphicGerms.eval z hz g.val = c} := by
   rw [← TauCeti.spectrum_unitization_toLp_inr, toLp_inr_nonUnitalHolomorphicCalculus,
-    spectrum_holomorphicCalculus, holomorphicGerms.spectrum_eq]
-  ext c; constructor
-  · rintro ⟨z, hz, rfl⟩
-    exact ⟨z, (WithLp.spectrum_unitizationInrL a).le hz,
-      (holomorphicGerms.eval_restrict _ z hz g.val).symm⟩
-  · rintro ⟨z, hz, rfl⟩
-    exact ⟨z, (WithLp.spectrum_unitizationInrL a).ge hz,
-      holomorphicGerms.eval_restrict _ z _ g.val⟩
+    spectrum_holomorphicCalculus,
+    holomorphicGerms.spectrum_restrict_of_eq (WithLp.spectrum_unitizationInrL a),
+    holomorphicGerms.spectrum_eq]
 
 /-- **Nonunital spectral mapping theorem** for an analytic representative `f` with `f 0 = 0`:
 `quasispectrum ℂ (f(a)) = f '' quasispectrum ℂ a`. -/

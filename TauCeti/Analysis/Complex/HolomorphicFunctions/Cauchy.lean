@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Analytic.Constructions
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Basic
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Germ
 public import TauCeti.Analysis.Contour.Cycle.Grid
