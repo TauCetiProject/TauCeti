@@ -38,6 +38,8 @@ On finite orthonormal bases, the file also provides coisometric Parseval contrac
   linear maps along a map whose adjoint preserves inner products.
 * `OrthonormalBasis.sum_sum_inner_comp_eq_of_inner_eq` — double coisometric Parseval contraction
   of two bilinear maps along a map whose adjoint preserves inner products.
+* `HilbertBasis.summable_norm_inner_mul_inner` and `HilbertBasis.tsum_norm_inner_mul_inner_le` —
+  the products `⟪x, bᵢ⟫ ⟪bᵢ, y⟫` are absolutely summable, with sum of norms at most `‖x‖ ‖y‖`.
 * `Orthonormal.summable_norm_apply_sq` — Bessel's inequality for a functional: the squared values
   of a continuous linear functional on an orthonormal family are summable.
 -/
@@ -77,6 +79,21 @@ theorem _root_.HilbertBasis.tsum_enorm_sq_inner (b : _root_.HilbertBasis ι 𝕜
   simp_rw [← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
   rw [← ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) (b.summable_norm_sq_inner x),
     b.tsum_norm_sq_inner]
+
+/-- The products `⟪x, bᵢ⟫ ⟪bᵢ, y⟫` of the coordinates of two vectors in a Hilbert basis are
+absolutely summable; `HilbertBasis.hasSum_inner_mul_inner` computes their sum. -/
+theorem _root_.HilbertBasis.summable_norm_inner_mul_inner (b : _root_.HilbertBasis ι 𝕜 E)
+    (x y : E) : Summable fun i ↦ ‖inner 𝕜 x (b i) * inner 𝕜 (b i) y‖ := by
+  simpa only [b.repr_apply_apply, norm_mul, norm_inner_symm x] using
+    lp.summable_mul (p := 2) (q := 2) (by simpa using Real.HolderConjugate.two_two)
+      (b.repr x) (b.repr y)
+
+/-- **Cauchy–Schwarz for Hilbert basis coordinates.** `∑ᵢ ‖⟪x, bᵢ⟫ ⟪bᵢ, y⟫‖ ≤ ‖x‖ ‖y‖`. -/
+theorem _root_.HilbertBasis.tsum_norm_inner_mul_inner_le (b : _root_.HilbertBasis ι 𝕜 E)
+    (x y : E) : ∑' i, ‖inner 𝕜 x (b i) * inner 𝕜 (b i) y‖ ≤ ‖x‖ * ‖y‖ := by
+  simpa only [b.repr_apply_apply, b.repr.norm_map, norm_mul, norm_inner_symm x] using
+    lp.tsum_mul_le_mul_norm' (p := 2) (q := 2) (by simpa using Real.HolderConjugate.two_two)
+      (b.repr x) (b.repr y)
 
 /-- **Parseval's identity for a functional.** The squared values of a continuous linear functional
 on a finite orthonormal basis sum to the square of its operator norm: by the Riesz representation,
