@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 
 /-!
@@ -99,9 +100,7 @@ theorem contDiff_trivializedCoeff [CompleteSpace F] {n : ℕ} {Φ : ℝ → F �
     (hS : ContDiff ℝ n S) : ContDiff ℝ n (trivializedCoeff Φ S) := by
   have hΦn : ContDiff ℝ n Φ := hΦ.of_le (by norm_cast; omega)
   have hderiv : ContDiff ℝ n (deriv Φ) := (contDiff_succ_iff_deriv.1 hΦ).2.2
-  have hinverse : ContDiff ℝ n fun t ↦ (Φ t).inverse := contDiff_iff_contDiffAt.2 fun t ↦
-    ((hinv t).contDiffAt_map_inverse (n := n)).comp t hΦn.contDiffAt
-  exact hinverse.clm_comp ((hS.clm_comp hΦn).sub hderiv)
+  exact (hΦn.clm_inverse hinv).clm_comp ((hS.clm_comp hΦn).sub hderiv)
 
 /-- For complete `F`, `C¹` `Φ` with invertible values, and continuous `S`, `trivializedCoeff Φ S`
 is continuous. -/

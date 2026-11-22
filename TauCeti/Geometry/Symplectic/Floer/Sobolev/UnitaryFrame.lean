@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Stationary
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Sobolev.Circle.LinearODE.DeterminantLine
 import TauCeti.Geometry.Symplectic.AlmostComplex.Frame
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
@@ -101,10 +102,20 @@ variable {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensi
   (hH : ContDiff ℝ 3 (Function.uncurry H)) (hHp : Periodic H 1) {x : ℝ → V}
   (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
   {J : ℝ → V → AlmostComplexStructure V}
-  (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
   {Φ : ℝ → F →L[ℝ] V} (hΦ : ContDiff ℝ 2 Φ) (hΦp : Periodic Φ 1)
   (hΦi : ∀ t, (Φ t).IsInvertible) (hΦω : ∀ t v w, ω (Φ t v) (Φ t w) = (inner ℂ v w).im)
   (hΦJ : ∀ t v, J t (x t) (Φ t v) = Φ t (Complex.I • v))
+
+include hΦ hΦi hΦJ in
+/-- A unitary frame `Φ` of the structures `J_t(x(t))` makes them continuous in `t`, since
+`J_t(x(t)) = Φ_t i Φ_t⁻¹`. -/
+private theorem continuous_toContinuousLinearMap_of_frame :
+    Continuous fun t ↦ (J t (x t)).toLinearMap.toContinuousLinearMap := by
+  refine (hΦ.continuous.clm_comp ((continuous_const (y := (AlmostComplexStructure.ofComplexModule
+    F).toLinearMap.toContinuousLinearMap)).clm_comp (hΦ.clm_inverse hΦi).continuous)).congr
+    fun t ↦ ContinuousLinearMap.ext fun v ↦ ?_
+  conv_rhs => rw [← (hΦi t).self_apply_inverse v]
+  simp [hΦJ, AlmostComplexStructure.ofComplexModule_apply]
 
 include hH hHp hx hxp hΦ hΦp hΦi hΦω in
 /-- The linearized Hamiltonian vector field `S_t = dX_{H_t}(x(t))` along a nondegenerate orbit,
@@ -138,11 +149,11 @@ private theorem exists_loop_eq_trivializedCoeff
   exact ⟨S', funext hS', funext hS' ▸ hS'₁, ω.im_inner_apply_add_eq_zero_of_trivializedCoeff
     (fun t ↦ (hH₂.comp (contDiff_prodMk_right t)).contDiffAt) hΦd hΦi hΦω hS', by simpa using hdet⟩
 
-include hH hHp hx hxp hJ hΦ hΦp hΦi hΦω hΦJ in
+include hH hHp hx hxp hΦ hΦp hΦi hΦω hΦJ in
 /-- **The linearized Floer operator at a nondegenerate orbit is onto.** Let `x` be a one-periodic
 orbit of a one-periodic, jointly `C³` time-dependent Hamiltonian `H` whose suspended vector field is
 globally Lipschitz, with `x(0)` a nondegenerate fixed point of the time-one map, and let `J_t(y)` be
-a `C¹` family of almost complex structures. Suppose that along `x` the structures `J_t(x(t))` have
+a family of almost complex structures. Suppose that along `x` the structures `J_t(x(t))` have
 a unitary frame: a `C²` one-periodic family of invertible maps `Φ_t : F → V` from a
 finite-dimensional complex inner product space, carrying `Im ⟪·, ·⟫` to `ω` and `i` to
 `J_t(x(t))`. Then at the stationary cylinder `u(s, t) = x(t)` the realization
@@ -154,8 +165,7 @@ theorem range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt_of_frame
   have hH₂ : ContDiff ℝ 2 (Function.uncurry H) := hH.of_le (by norm_num)
   have hΦd : Differentiable ℝ Φ := hΦ.differentiable (by norm_num)
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
-  have hJc : Continuous fun t ↦ (J t (x t)).toLinearMap.toContinuousLinearMap :=
-    hJ.continuous.comp (continuous_id.prodMk hxc)
+  have hJc := continuous_toContinuousLinearMap_of_frame hΦ hΦi hΦJ
   have hSc := ω.continuous_fderiv_hamiltonianVectorField_comp hH₂ hxc
   -- `D_u` is the stationary cylinder operator `∂s + J_t(x(t)) (∂t - S_t)`, with closed range.
   rw [floerSobolevOperator_def, floerJetCoeff_eq_stationaryJetCoeff ω J H hx,
@@ -201,7 +211,7 @@ theorem range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt_of_frame
   exact (StripSobolev.denseRange_codRestrict_jetLp (testSection F)).induction_on ξ
     (hclosed.preimage (mult.continuous.comp DF.continuous)) hgen
 
-include hH hHp hx hxp hJ hΦ hΦp hΦi hΦω hΦJ in
+include hH hHp hx hxp hΦ hΦp hΦi hΦω hΦJ in
 /-- **The linearized Floer operator at a nondegenerate orbit is invertible.** Under the hypotheses
 of `TauCeti.SymplecticForm.range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt_of_frame`,
 the realization `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of the linearized Floer operator at the
@@ -211,11 +221,9 @@ theorem isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_frame
     (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).IsInvertible :=
   ⟨.ofBijective _ (ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt ω hX
-      (hH.of_le (by norm_num)) hx
-      (hJ.continuous.comp (continuous_id.prodMk (continuous_iff_continuousAt.2 fun t ↦
-        (hx t).continuousAt)))
+      (hH.of_le (by norm_num)) hx (continuous_toContinuousLinearMap_of_frame hΦ hΦi hΦJ)
       (fun t ↦ ω.compatible_of_isInvertible_of_forall_eq_im_inner (hΦi t) (hΦω t) (hΦJ t)) hnd)
-    (range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt_of_frame ω hX hH hHp hx hxp hJ hΦ
+    (range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt_of_frame ω hX hH hHp hx hxp hΦ
       hΦp hΦi hΦω hΦJ hnd),
     ContinuousLinearEquiv.coe_ofBijective ..⟩
 
@@ -247,7 +255,7 @@ theorem range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt
       (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).range = ⊤ :=
   range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt_of_frame ω hX hH hHp hx hxp
-    (J := fun _ _ ↦ AlmostComplexStructure.ofComplexModule F) contDiff_const
+    (J := fun _ _ ↦ AlmostComplexStructure.ofComplexModule F)
     (Φ := fun _ ↦ ContinuousLinearMap.id ℝ F) contDiff_const (fun _ ↦ rfl)
     (fun _ ↦ ⟨.refl ℝ F, rfl⟩) (fun _ ↦ hω)
     (fun _ v ↦ AlmostComplexStructure.ofComplexModule_apply v) hnd
@@ -267,7 +275,7 @@ theorem isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt
       (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).IsInvertible :=
   isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_frame ω hX hH hHp hx hxp
-    (J := fun _ _ ↦ AlmostComplexStructure.ofComplexModule F) contDiff_const
+    (J := fun _ _ ↦ AlmostComplexStructure.ofComplexModule F)
     (Φ := fun _ ↦ ContinuousLinearMap.id ℝ F) contDiff_const (fun _ ↦ rfl)
     (fun _ ↦ ⟨.refl ℝ F, rfl⟩) (fun _ ↦ hω)
     (fun _ v ↦ AlmostComplexStructure.ofComplexModule_apply v) hnd
@@ -285,15 +293,14 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   (hH : ContDiff ℝ 3 (Function.uncurry H)) (hHp : Periodic H 1) {x : ℝ → E}
   (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
   {J : ℝ → E → AlmostComplexStructure E}
-  (hJ : ContDiff ℝ 1 fun p : ℝ × E ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
 
-include hH hHp hx hxp hJ in
+include hH hHp hx hxp in
 /-- **The linearized Floer operator at a nondegenerate orbit is invertible for a loop of compatible
 structures.** Let the inner product of `E` be the metric `ω(·, J₀ ·)` of a structure `J₀` with a
 frame `Φ : F ≃ E` from a finite-dimensional complex inner product space: `Φ (i v) = J₀ (Φ v)` and
 `ω (Φ v) (Φ w) = Im ⟪v, w⟫`. Let `x` be a one-periodic orbit of a one-periodic, jointly `C³`
 time-dependent Hamiltonian `H` whose suspended vector field is globally Lipschitz, with `x(0)` a
-nondegenerate fixed point of the time-one map, and let `J_t(y)` be a `C¹` family of almost complex
+nondegenerate fixed point of the time-one map, and let `J_t(y)` be a family of almost complex
 structures such that along `x` the structures `J_t(x(t))` are `ω`-compatible, one-periodic and `C²`
 in `t`. Then at the stationary cylinder `u(s, t) = x(t)` the realization
 `D_u : W^{1,2}(ℝ × S¹, E) → L²(ℝ × S¹, E)` of the linearized Floer operator is an isomorphism of
@@ -308,7 +315,7 @@ theorem isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_compatibl
     (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).IsInvertible :=
   -- The frame of `J_t(x(t))` is `Ψ_t Φ`, for the unitary frames `Ψ_t` of the loop.
-  isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_frame ω hX hH hHp hx hxp hJ
+  isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_frame ω hX hH hHp hx hxp
     (Φ := fun t ↦ ω.unitaryFrame (J t (x t)) ∘L (Φ : F →L[ℝ] E))
     ((hJx₂.unitaryFrame hJx).clm_comp contDiff_const)
     (fun t ↦ congrArg (fun J' ↦ ω.unitaryFrame J' ∘L (Φ : F →L[ℝ] E)) (hJxp t))
