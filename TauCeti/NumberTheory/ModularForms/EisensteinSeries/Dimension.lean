@@ -11,7 +11,6 @@ import TauCeti.NumberTheory.ModularForms.CharacterDecomp
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Independence
 import TauCeti.NumberTheory.ModularForms.Cusps.Codimension
 import TauCeti.NumberTheory.ModularForms.SturmBound
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection.FinTwo
 
 /-!
 # The Eisenstein series with character span the Eisenstein space
@@ -86,14 +85,8 @@ private theorem finrank_congruenceEisensteinSubspace_le_card_four (hk : 3 ≤ (k
       (by exact_mod_cast hodd) f
   rw [CharIndex.card_four]
   split_ifs with hk₂
-  · -- The cusp `1/2 = α • ∞` is the third representative.
-    let α : SL(2, ℤ) := Matrix.SpecialLinearGroup.transvection (one_ne_zero : (1 : Fin 2) ≠ 0) 2
-    have hα : ((α 1 0 : ℤ) : ZMod 4) = 2 := by
-      simp [α]
-    simpa using ModularForm.finrank_le_natCard_of_disjoint (Gamma1 4) k ![1, ModularGroup.S, α]
-      (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_four γ).elim (fun h ↦ .inl ⟨0, h⟩) fun h ↦
-        h.elim (fun h ↦ .inl ⟨1, h⟩)
-          fun h ↦ .inl ⟨2, cuspOrbitOfSL2Z_Gamma1_four_eq_of_intCast_eq_two hα h⟩) hV
+  · simpa using ModularForm.finrank_le_natCard_of_disjoint (Gamma1 4) k _
+      (fun γ ↦ .inl (exists_cuspOrbitOfSL2Z_Gamma1_four_eq γ)) hV
   · -- In odd weight the irregular cusp `1/2` carries no constant term.
     simpa using ModularForm.finrank_le_natCard_of_disjoint (Gamma1 4) k ![1, ModularGroup.S]
       (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_four γ).elim (fun h ↦ .inl ⟨0, h⟩) fun h ↦
