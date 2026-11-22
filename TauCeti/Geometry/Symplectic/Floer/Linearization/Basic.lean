@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Local-coordinate linearization of the inhomogeneous Floer equation
