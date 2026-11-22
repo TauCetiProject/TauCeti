@@ -336,7 +336,7 @@ and `x`.
 Taking `D = fderiv 𝕜 Φ` for a map `Φ` with `Φ x = 0` gives the persistence of a nondegenerate
 zero of `Φ` under small `C¹` perturbations. -/
 theorem exists_eq_zero_perturbation {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
-    [IsRCLikeNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E]
+    [IsRCLikeNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {D : E → E →L[𝕜] F} {x : E}
     (hinv : (D x).IsInvertible) (hD : ContinuousAt D x) :
     ∃ (K : ℝ) (c : ℝ≥0), ∀ᶠ r in 𝓝[>] 0, ∃ δ > 0, ∀ G : E → F,
@@ -347,6 +347,9 @@ theorem exists_eq_zero_perturbation {𝕜 E F : Type*} [NontriviallyNormedField 
           dist y x ≤ K * ‖G x‖ ∧ ∀ z ∈ closedBall x r, G z = 0 → z = y := by
   -- On a small ball the derivative of `G` stays within `κ` of the invertible operator
   -- `L = D x`, so `G` has a unique zero there by `exists_eq_zero_of_two_mul_norm_le`.
+  -- The mean value inequality on the ball uses the underlying real structure of `E`.
+  let : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+  let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
   obtain ⟨L, hL⟩ := hinv
   -- `C` bounds the inverse of `L` and is positive even on the zero space.
   set C : ℝ := ‖(L.symm : F →L[𝕜] E)‖ + 1
