@@ -91,7 +91,8 @@ private theorem sigmaCongrRight_apply_of_mem
     Diffeomorph.sigmaCongrRight (fun i ↦ (φ i : X i ≃ₘ^n⟮I, I⟯ X i)) x = x := by
   obtain ⟨i, y⟩ := x
   rw [Diffeomorph.sigmaCongrRight_apply,
-    Diffeomorph.apply_eq_of_mem_fixingSubgroup (φ i).2 (Marking.mem_specialPoints_iff.mpr hx)]
+    Diffeomorph.apply_eq_of_mem_fixingSubgroup (φ i).property (Marking.mem_specialPoints_iff.mpr
+        hx)]
 
 /-- The ordered automorphism acting componentwise by `φ`. -/
 private noncomputable def toOrdered

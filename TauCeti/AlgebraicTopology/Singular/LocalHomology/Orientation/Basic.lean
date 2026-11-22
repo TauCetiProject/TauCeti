@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.System
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
+import TauCeti.Algebra.Group.ZMultiples
 
 /-!
 # Local orientations from chart homology
@@ -17,9 +18,13 @@ local homology group in degree `n`. This file defines that generator condition a
 every point in a finite-dimensional charted space has local orientations. Integral coefficients
 are represented by the universe-lifted module `ULift ℤ`. The construction is the inverse image of
 `1` under the chart computation of local homology. The two generators of a fibre isomorphic to
-`ℤ` differ by sign; reversal and preservation by local homology isomorphisms are also proved, and
-isomorphisms of pairs `(M, M ∖ {x}) ≅ (N, N ∖ {y})` transport local orientations
-(`TauCeti.LocalOrientation.map`), compatibly with reversal, identities and composites.
+`ℤ` differ by sign, and each of them identifies `ℤ` with the fibre
+(`TauCeti.IsLocalOrientation.linearEquiv`); reversal and preservation by local homology
+isomorphisms are also proved, and isomorphisms of pairs `(M, M ∖ {x}) ≅ (N, N ∖ {y})` transport
+local orientations (`TauCeti.LocalOrientation.map`), compatibly with reversal, identities and
+composites. In the dimension of a manifold, every point has exactly two local orientations, which
+are reversals of each other (`TauCeti.LocalOrientation.nat_card_eq_two`,
+`TauCeti.LocalOrientation.eq_or_eq_neg_of_finrank_eq`, `TauCeti.LocalOrientation.neg_ne`).
 
 The local orientation is the generator of `Hₙ(M, M ∖ {x}; ℤ)` described in Hatcher's
 *Algebraic Topology*, Section 3.3.
@@ -48,6 +53,15 @@ theorem isLocalOrientation_iff {M : Type w} [TopologicalSpace M] (x : M) (d : �
     (z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
       ({x} : Set M) d) :
     IsLocalOrientation x d z ↔ ∀ y, ∃ c : ℤ, c • z = y := Iff.rfl
+
+/-- An element of local homology is a local orientation exactly when its `ℤ`-multiples are the
+whole group. -/
+theorem isLocalOrientation_iff_zmultiples_eq_top {M : Type w} [TopologicalSpace M] (x : M)
+    (d : ℕ) (z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
+      ({x} : Set M) d) :
+    IsLocalOrientation x d z ↔ AddSubgroup.zmultiples z = ⊤ := by
+  rw [AddSubgroup.eq_top_iff']
+  exact forall_congr' fun _ ↦ AddSubgroup.mem_zmultiples_iff.symm
 
 /-- The integral local homology group at `x` in degree `d`, with its local orientations. -/
 abbrev LocalOrientation (M : Type w) [TopologicalSpace M] (x : M) (d : ℕ) :=
@@ -101,15 +115,10 @@ theorem IsLocalOrientation.map {M N : Type w} [TopologicalSpace M] [TopologicalS
     (hz : IsLocalOrientation x d z)
     (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
       localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({y} : Set N) d') :
-    IsLocalOrientation y d' (e.hom z) := by
-  intro a
-  obtain ⟨c, hc⟩ := hz (e.inv a)
-  refine ⟨c, ?_⟩
-  calc
-    c • e.hom z = e.hom (c • z) :=
-      (e.hom.hom.toAddMonoidHom.map_zsmul c z).symm
-    _ = e.hom (e.inv a) := congrArg e.hom hc
-    _ = a := e.inv_hom_id_apply a
+    IsLocalOrientation y d' (e.hom z) :=
+  (isLocalOrientation_iff_zmultiples_eq_top _ _ _).2 <|
+    zmultiples_apply_eq_top_of_surjective (ConcreteCategory.bijective_of_isIso e.hom).2
+      ((isLocalOrientation_iff_zmultiples_eq_top _ _ _).1 hz)
 
 /-- An isomorphism of pairs `(M, M ∖ {x}) ≅ (N, N ∖ {y})` carries local orientations at `x` to
 local orientations at `y`, through the isomorphism it induces on integral local homology. -/
@@ -241,6 +250,55 @@ theorem IsLocalOrientation.neg_ne {M : Type w} [TopologicalSpace M] {x : M} {d :
     exact neg_add_cancel z
   exact two_ne_zero ((hz.zsmul_eq_zero_iff e).1 h2)
 
+/-- In a local homology fibre isomorphic to `ℤ`, two local orientations agree up to sign. -/
+theorem LocalOrientation.eq_or_eq_neg {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      ModuleCat.of ℤ (ULift.{w} ℤ))
+    (z z₀ : LocalOrientation M x d) : z = z₀ ∨ z = -z₀ :=
+  (z₀.property.eq_or_eq_neg e z.property).imp Subtype.ext Subtype.ext
+
+/-- In a local homology fibre isomorphic to `ℤ`, a local orientation `z` identifies `ℤ` with the
+fibre: every class is a unique integral multiple `c • z` of `z`. -/
+def IsLocalOrientation.linearEquiv {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      ModuleCat.of ℤ (ULift.{w} ℤ))
+    {z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d}
+    (hz : IsLocalOrientation x d z) :
+    ℤ ≃ₗ[ℤ] localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d :=
+  LinearEquiv.ofBijective (LinearMap.toSpanSingleton ℤ _ z)
+    ⟨(injective_iff_map_eq_zero _).2 fun c hc ↦
+        (hz.zsmul_eq_zero_iff e).1 ((int_smul_eq_zsmul _ c z).symm.trans hc),
+      fun y ↦ let ⟨c, hc⟩ := hz y; ⟨c, (int_smul_eq_zsmul _ c z).trans hc⟩⟩
+
+/-- The identification of `ℤ` with the fibre given by a local orientation `z` sends `c` to
+`c • z`. -/
+@[simp]
+theorem IsLocalOrientation.linearEquiv_apply {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      ModuleCat.of ℤ (ULift.{w} ℤ))
+    {z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d}
+    (hz : IsLocalOrientation x d z) (c : ℤ) : hz.linearEquiv e c = c • z :=
+  (LinearMap.toSpanSingleton_apply ℤ _ z c).trans (int_smul_eq_zsmul _ c z)
+
+/-- The identification of `ℤ` with the fibre given by a local orientation `z` sends `1` to `z`. -/
+theorem IsLocalOrientation.linearEquiv_apply_one {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      ModuleCat.of ℤ (ULift.{w} ℤ))
+    {z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d}
+    (hz : IsLocalOrientation x d z) : hz.linearEquiv e 1 = z :=
+  (hz.linearEquiv_apply e 1).trans (one_smul ℤ z)
+
+/-- The identification of `ℤ` with the fibre given by a local orientation `z` sends `z` back
+to `1`. -/
+@[simp]
+theorem IsLocalOrientation.linearEquiv_symm_self {M : Type w} [TopologicalSpace M] {x : M}
+    {d : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      ModuleCat.of ℤ (ULift.{w} ℤ))
+    {z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d}
+    (hz : IsLocalOrientation x d z) : (hz.linearEquiv e).symm z = 1 :=
+  (hz.linearEquiv e).symm_apply_eq.2 (hz.linearEquiv_apply_one e).symm
+
 /-- The local orientation at `x` selected by a chart and its chart-induced local homology
 isomorphism. -/
 def localOrientationOfChart {M E : Type w} [TopologicalSpace M] [T2Space M]
@@ -270,6 +328,31 @@ def localOrientationOfZeroDimChart {M E : Type w} [TopologicalSpace M] [T2Space 
       (ModuleCat.of ℤ (ULift.{w} ℤ)) φ hx hn).inv 1,
     isLocalOrientation_inv_one _⟩
 
+/-- The positive local orientation of a zero-dimensional chart is the actual relative point
+class of the original point. In particular the chart contributes no additional sign. -/
+@[simp]
+theorem localOrientationOfZeroDimChart_coe
+    {M E : Type w} [TopologicalSpace M] [T2Space M]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    (φ : OpenPartialHomeomorph M E) {x : M} (hx : x ∈ φ.source) (hE : finrank ℝ E = 0) :
+    (localOrientationOfZeroDimChart φ hx hE).val =
+      localHomologyPointClass (ModuleCat.of ℤ (ULift.{w} ℤ)) {x} x 1 := by
+  exact singularHomologyComplSingletonIsoOfFinrankEqZero_inv_eq_localHomologyPointClass_apply
+    (ModuleCat.of ℤ (ULift.{w} ℤ)) φ hx hE 1
+
+/-- Zero-dimensional charts, even in different real normed models, select the same positive
+local point class. -/
+theorem localOrientationOfZeroDimChart_eq
+    {M E F : Type w} [TopologicalSpace M] [T2Space M]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    (φ : OpenPartialHomeomorph M E) (ψ : OpenPartialHomeomorph M F) {x : M}
+    (hx : x ∈ φ.source) (hx' : x ∈ ψ.source) (hE : finrank ℝ E = 0) (hF : finrank ℝ F = 0) :
+    localOrientationOfZeroDimChart φ hx hE = localOrientationOfZeroDimChart ψ hx' hF := by
+  apply Subtype.ext
+  rw [localOrientationOfZeroDimChart_coe,
+    localOrientationOfZeroDimChart_coe]
+
 /-- Every point of a zero-dimensional finite-dimensional charted space has a local orientation. -/
 theorem exists_localOrientation_of_zero_dim_chart {M E : Type w} [TopologicalSpace M]
     [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -277,5 +360,48 @@ theorem exists_localOrientation_of_zero_dim_chart {M E : Type w} [TopologicalSpa
   haveI : Subsingleton E := Module.finrank_zero_iff.1 hn
   haveI : DiscreteTopology M := ChartedSpace.discreteTopology (H := E) M
   ⟨localOrientationOfZeroDimChart (chartAt E x) (mem_chart_source E x) hn⟩
+
+/-! ### Local orientations of a manifold -/
+
+section Manifold
+
+variable {M E : Type w} [TopologicalSpace M] [T2Space M] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [ChartedSpace E M] {d : ℕ}
+
+namespace LocalOrientation
+
+/-- In the dimension of the manifold, every point has a local orientation. -/
+theorem nonempty (hd : finrank ℝ E = d) (x : M) : Nonempty (LocalOrientation M x d) := by
+  cases d with
+  | zero => exact exists_localOrientation_of_zero_dim_chart x hd
+  | succ d => exact exists_localOrientation_of_chart x hd
+
+/-- In the dimension of the manifold, every point has exactly two local orientations. -/
+theorem nat_card_eq_two (hd : finrank ℝ E = d) (x : M) : Nat.card (LocalOrientation M x d) = 2 := by
+  subst hd
+  exact nat_card_localOrientation
+    (singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x))
+
+/-- In the dimension of the manifold, the local orientations at a point form a finite set. -/
+theorem finite (hd : finrank ℝ E = d) (x : M) : Finite (LocalOrientation M x d) :=
+  Nat.finite_of_card_ne_zero (by simp [nat_card_eq_two hd x])
+
+/-- In the dimension of the manifold, two local orientations at a point agree up to reversal. -/
+theorem eq_or_eq_neg_of_finrank_eq (hd : finrank ℝ E = d) {x : M}
+    (z z' : LocalOrientation M x d) : z' = z ∨ z' = -z := by
+  subst hd
+  exact LocalOrientation.eq_or_eq_neg
+    (singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x)) z' z
+
+/-- In the dimension of the manifold, a local orientation differs from its reversal. -/
+theorem neg_ne (hd : finrank ℝ E = d) {x : M} (z : LocalOrientation M x d) : -z ≠ z := by
+  subst hd
+  exact fun h ↦ IsLocalOrientation.neg_ne
+    (singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x))
+    z.property (congrArg Subtype.val h)
+
+end LocalOrientation
+
+end Manifold
 
 end TauCeti

@@ -252,7 +252,7 @@ theorem mem_Z1 [IsTopologicalAddGroup M] (hf : IsTransgressionLift c f) : c ∈ 
       rw [hf.apply_coe]
       abel
     rw [hc]
-    exact (hf.continuous.comp continuous_subtype_val).sub continuous_const
+    exact (hf.continuous.comp continuous_subtypeVal).sub continuous_const
   · calc
       c (n * n') = f (n * n') - f 1 := by
         have h := hf.apply_coe (n * n')
@@ -483,7 +483,7 @@ theorem exists_continuous_smul_conj_sub_eq_d0 (hN : IsCompact (N : Set G)) {c : 
   have hV : IsOpen (V : Set G) :=
     (isOpen_rightTranslationStabilizer hloc).preimage (continuous_const.prodMk continuous_id)
   have hψV : ∀ (x : G) (v : V) (n : N), ψ (n, x * v) = ψ (n, x) := fun x v n => by
-    simpa using (mem_rightTranslationStabilizer.1 (Subgroup.mem_comap.1 v.2)) (n, x)
+    simpa using (mem_rightTranslationStabilizer.1 (Subgroup.mem_comap.1 v.property)) (n, x)
   have : DiscreteTopology (G ⧸ V) := QuotientGroup.discreteTopology hV
   choose m hm using h
   refine ⟨fun g => m (g : G ⧸ V).out,
@@ -513,7 +513,7 @@ private theorem mul_sectionOffset (g : G) : s g * (sectionOffset s hs g : G) = g
 
 private theorem sectionOffset_mul (g : G) (n : N) :
     sectionOffset s hs (g * n) = sectionOffset s hs g * n :=
-  Subtype.ext (by simp [sectionOffset, QuotientGroup.mk_mul_of_mem g n.2, mul_assoc])
+  Subtype.ext (by simp [sectionOffset, QuotientGroup.mk_mul_of_mem g n.property, mul_assoc])
 
 end SectionOffset
 
@@ -562,7 +562,7 @@ private theorem isTransgressionLift_sectionLift (hs_cont : Continuous s) {c : N 
       continuous_induced_rng.2 (hsq.inv.mul continuous_id)
     exact (hF.comp hsq).add (hsq.smul ((mem_Z1_iff.1 hc).1.comp hoff))
   apply_mul g n := by
-    simp only [sectionLift, sectionOffset_mul, QuotientGroup.mk_mul_of_mem g n.2,
+    simp only [sectionLift, sectionOffset_mul, QuotientGroup.mk_mul_of_mem g n.property,
       (mem_Z1_iff.1 hc).2 (sectionOffset s hs g) n, smul_add, Subgroup.smul_def, smul_smul,
       mul_sectionOffset]
     abel
@@ -582,7 +582,7 @@ variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Com
 /-- The chosen continuous conjugation primitives for a cocycle with invariant class. -/
 private noncomputable def conjPrimitive (hN : IsCompact (N : Set G)) (c : Z1 N M)
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) : G → M :=
-  (exists_continuous_smul_conj_sub_eq_d0 hN (mem_Z1_iff.1 c.2).1
+  (exists_continuous_smul_conj_sub_eq_d0 hN (mem_Z1_iff.1 c.property).1
     (exists_smul_conj_sub_eq_d0_of_mem_H1ConjInvariants hc)).choose
 
 private theorem conjPrimitive_spec (hN : IsCompact (N : Set G)) (c : Z1 N M)
@@ -590,14 +590,14 @@ private theorem conjPrimitive_spec (hN : IsCompact (N : Set G)) (c : Z1 N M)
     Continuous (conjPrimitive G M N hN c hc) ∧ ∀ (g : G) (n : N),
       g • (c : N → M) (inverseConjugationHom N g n) - (c : N → M) n =
         d0 N M (conjPrimitive G M N hN c hc g) n :=
-  (exists_continuous_smul_conj_sub_eq_d0 hN (mem_Z1_iff.1 c.2).1
+  (exists_continuous_smul_conj_sub_eq_d0 hN (mem_Z1_iff.1 c.property).1
     (exists_smul_conj_sub_eq_d0_of_mem_H1ConjInvariants hc)).choose_spec
 
 private theorem isTransgressionLift_sectionLift_conjPrimitive (hN : IsCompact (N : Set G))
     (s : G ⧸ N → G) (hs_cont : Continuous s) (hs : ∀ q, (s q : G ⧸ N) = q) (c : Z1 N M)
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) :
     IsTransgressionLift (c : N → M) (sectionLift s hs (conjPrimitive G M N hN c hc) c) :=
-  isTransgressionLift_sectionLift s hs hs_cont c.2 (conjPrimitive_spec G M N hN c hc).1
+  isTransgressionLift_sectionLift s hs hs_cont c.property (conjPrimitive_spec G M N hN c hc).1
     (conjPrimitive_spec G M N hN c hc).2
 
 /-- **The section-dependent lift used by transgression.** Given a compact normal subgroup `N`, a
@@ -643,7 +643,8 @@ noncomputable def transgressionCochain (hN : IsCompact (N : Set G)) (s : G ⧸ N
     (hs_cont : Continuous s) (hs : ∀ q, (s q : G ⧸ N) = q) (c : Z1 N M)
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) :
     C2 (G ⧸ N) (FixedPoints.addSubgroup N M) :=
-  ⟨_, Z2_le_C2 _ _ (isTransgressionLift_transgressionLift G M N hN s hs_cont hs c hc).cocycle.2⟩
+  ⟨_, Z2_le_C2 _ _ (isTransgressionLift_transgressionLift G M N hN s hs_cont hs c
+      hc).cocycle.property⟩
 
 /-- **The lift-and-differentiate formula.** After the inclusion `M ^ N ↪ M`, the raw
 transgression at `(q, r)` is `d¹` of the lift at the chosen representatives `(s q, s r)`. -/
@@ -662,7 +663,7 @@ theorem transgressionCochain_isCocycle (hN : IsCompact (N : Set G)) (s : G ⧸ N
     (hc : (c : H1 N M) ∈ H1ConjInvariants G M N) :
     (transgressionCochain G M N hN s hs_cont hs c hc : (G ⧸ N) × (G ⧸ N) →
       FixedPoints.addSubgroup N M) ∈ Z2 (G ⧸ N) (FixedPoints.addSubgroup N M) :=
-  (isTransgressionLift_transgressionLift G M N hN s hs_cont hs c hc).cocycle.2
+  (isTransgressionLift_transgressionLift G M N hN s hs_cont hs c hc).cocycle.property
 
 /-- The raw transgression bundled as a continuous `2`-cocycle. -/
 noncomputable def transgressionCocycle (hN : IsCompact (N : Set G)) (s : G ⧸ N → G)
@@ -704,7 +705,7 @@ noncomputable def transgression (hN : IsClosed (N : Set G)) :
   toFun y := (transgressionCocycle G M N hN.isCompact (exists_continuous_section N hN).choose
     (exists_continuous_section N hN).choose_spec.1 (exists_continuous_section N hN).choose_spec.2.1
     (QuotientAddGroup.mk_surjective (y : H1 N M)).choose
-    (by rw [(QuotientAddGroup.mk_surjective (y : H1 N M)).choose_spec]; exact y.2) :
+    (by rw [(QuotientAddGroup.mk_surjective (y : H1 N M)).choose_spec]; exact y.property) :
       H2 (G ⧸ N) (FixedPoints.addSubgroup N M))
   map_zero' := by
     rw [transgressionCocycle_eq_cocycle, IsTransgressionLift.mk_cocycle_eq _
@@ -729,7 +730,7 @@ theorem transgression_apply (hN : IsClosed (N : Set G)) (s : G ⧸ N → G)
     (hs_cont : Continuous s) (hs : ∀ q, (s q : G ⧸ N) = q) (y : H1ConjInvariants G M N)
     (c : Z1 N M) (hc : (c : H1 N M) = y) :
     transgression G M N hN y =
-      (transgressionCocycle G M N hN.isCompact s hs_cont hs c (hc ▸ y.2) :
+      (transgressionCocycle G M N hN.isCompact s hs_cont hs c (hc ▸ y.property) :
         H2 (G ⧸ N) (FixedPoints.addSubgroup N M)) :=
   H2pi_eq_iff.2 (transgressionCochain_sub_mem_B2 G M N hN.isCompact _ s _ hs_cont _ hs _ c _ _
     ((QuotientAddGroup.mk_surjective _).choose_spec.trans hc.symm))
@@ -747,8 +748,8 @@ theorem transgression_explicitResConj1 (hN : IsClosed (N : Set G)) (x : H1 G M) 
     rw [transgression_apply G M N hN s hs_cont hs _ c'
         ((explicitRes1_mk G M N c).symm.trans (coe_explicitResConj1 G M N _).symm),
       transgressionCocycle_eq_cocycle, IsTransgressionLift.mk_cocycle_eq _
-        (IsTransgressionLift.of_mem_Z1 (N := N) c.2) ?_,
-      IsTransgressionLift.cocycle_eq_zero _ (d1_apply_eq_zero_iff.2 (mem_Z1_iff.1 c.2).2),
+        (IsTransgressionLift.of_mem_Z1 (N := N) c.property) ?_,
+      IsTransgressionLift.cocycle_eq_zero _ (d1_apply_eq_zero_iff.2 (mem_Z1_iff.1 c.property).2),
       QuotientAddGroup.mk_zero]
     have hc' : (c' : N → M) = fun n : N => (c : G → M) n := funext fun n => by simp [c']
     rw [hc', sub_self]
@@ -785,8 +786,9 @@ theorem fiveTerm_exact_H1N (hN : IsClosed (N : Set G)) :
   -- `f` minus the inflation of `e` is a continuous `1`-cocycle on `G` restricting to `c`.
   obtain ⟨s, hs_cont, hs, -⟩ := exists_continuous_section N hN
   obtain ⟨c, hc⟩ := QuotientAddGroup.mk_surjective (y : H1 N M)
-  have hf := isTransgressionLift_transgressionLift G M N hN.isCompact s hs_cont hs c (hc ▸ y.2)
-  set f : G → M := (transgressionLift G M N hN.isCompact s hs_cont hs c (hc ▸ y.2) : G → M)
+  have hf := isTransgressionLift_transgressionLift G M N hN.isCompact s hs_cont hs c
+      (hc ▸ y.property)
+  set f : G → M := (transgressionLift G M N hN.isCompact s hs_cont hs c (hc ▸ y.property) : G → M)
   rw [AddMonoidHom.mem_ker, transgression_eq_mk_cocycle G M N hN y c hc hf, H2pi_eq_zero_iff,
     mem_B2_iff] at hy
   obtain ⟨e, he_cont, he⟩ := hy
@@ -804,7 +806,7 @@ theorem fiveTerm_exact_H1N (hN : IsClosed (N : Set G)) :
   let z : G → M := fun g => f g - e g
   have hz : z ∈ Z1 G M := by
     refine mem_Z1_iff.2 ⟨hf.continuous.sub
-      (continuous_subtype_val.comp (he_cont.comp QuotientGroup.continuous_mk)), fun g h => ?_⟩
+      (continuous_subtypeVal.comp (he_cont.comp QuotientGroup.continuous_mk)), fun g h => ?_⟩
     have := hde g h
     rw [d1_apply, QuotientGroup.mk_mul] at this
     simp only [z, QuotientGroup.mk_mul, smul_sub]
@@ -815,7 +817,7 @@ theorem fiveTerm_exact_H1N (hN : IsClosed (N : Set G)) :
   congr 1
   ext n
   simp only [cocyclesMap1_apply, ContinuousMonoidHom.subgroupSubtype_apply,
-    AddMonoidHom.id_apply, z, (QuotientGroup.eq_one_iff (n : G)).2 n.2, he₁, sub_zero, f,
+    AddMonoidHom.id_apply, z, (QuotientGroup.eq_one_iff (n : G)).2 n.property, he₁, sub_zero, f,
     transgressionLift_apply_coe]
 
 /-- **Exactness of the five-term sequence at `H²(G ⧸ N, M ^ N)`.** A class in `H²(G ⧸ N, M ^ N)`
@@ -844,15 +846,17 @@ theorem fiveTerm_exact_H2Q (hN : IsClosed (N : Set G)) :
       rw [← this, d1_apply]
       simp only [f₀, smul_sub]
       abel
-  have hmk : ∀ n : N, ((n : G) : G ⧸ N) = 1 := fun n => (QuotientGroup.eq_one_iff (n : G)).2 n.2
+  have hmk : ∀ n : N, ((n : G) : G ⧸ N) = 1 := fun n => (QuotientGroup.eq_one_iff
+      (n : G)).2 n.property
   have hlift : IsTransgressionLift (fun n : N => f₀ n) f₀ :=
     IsTransgressionLift.of_d1_apply_eq_zero (hf_cont.sub continuous_const)
       (fun g n => by
-        rw [hd1, hmk, map_one_snd_of_mem_Z2 z.2, ← ha, coe_quotient_smul_fixedPoints_addSubgroup,
+        rw [hd1, hmk, map_one_snd_of_mem_Z2 z.property, ← ha,
+            coe_quotient_smul_fixedPoints_addSubgroup,
           coe_smul_fixedPoints_addSubgroup, sub_self])
       (fun n g => by
-        rw [hd1, hmk, map_one_fst_of_mem_Z2 z.2, ← ha,
-          ← Subgroup.smul_def, (FixedPoints.mem_addSubgroup N M _).1 a.2 n, sub_self])
+        rw [hd1, hmk, map_one_fst_of_mem_Z2 z.property, ← ha,
+          ← Subgroup.smul_def, (FixedPoints.mem_addSubgroup N M _).1 a.property n, sub_self])
   have hc : (fun n : N => f₀ n) ∈ Z1 N M := hlift.mem_Z1
   refine ⟨⟨((⟨_, hc⟩ : Z1 N M) : H1 N M), hlift.mk_mem_H1ConjInvariants⟩, ?_⟩
   rw [transgression_eq_mk_cocycle G M N hN _ ⟨_, hc⟩ rfl hlift, H2pi_eq_iff, mem_B2_iff']

@@ -40,6 +40,8 @@ below are `Mathlib/AlgebraicTopology/SingularHomology/HomotopyInvariance.lean`
 * `TopPair.isIso_singularCohomologyMap_ofInclusionMap_inclusion_of_homotopyRel`: a strong
   deformation retraction of the ambient space onto an intermediate subset does not change relative
   cohomology.
+* `TopPair.isZero_singularCohomology_ofInclusion_of_homotopyRel`: a pair with a strong deformation
+  retraction onto its subspace has no relative cohomology.
 * `ContinuousMap.HomotopyEquiv.isIso_singularCohomologyMap` and
   `ContinuousMap.HomotopyEquiv.singularCohomologyIso`: the induced isomorphism on singular
   cohomology for a bundled homotopy equivalence of spaces.
@@ -252,7 +254,7 @@ theorem isIso_singularCohomologyMap_ofInclusionMap_inclusion_of_homotopyRel {X :
   · rw [← ofInclusionMap_comp, ← ofInclusionMap_id]
     have hid : r.comp (ContinuousMap.inclusion hct) = ContinuousMap.id c := by
       ext x
-      exact hrc _ x.2
+      exact hrc _ x.property
     simp only [hid]
     exact Homotopy.refl _
   · rw [← ofInclusionMap_comp, ← ofInclusionMap_id]
@@ -260,5 +262,27 @@ theorem isIso_singularCohomologyMap_ofInclusionMap_inclusion_of_homotopyRel {X :
     refine ofInclusionHomotopy G.toHomotopy fun τ x hx ↦ ?_
     have h : G.toHomotopy (τ, x) = _ := G.eq_fst τ (hsc hx)
     exact h ▸ hrs x hx
+
+/-- **A pair with a strong deformation retraction onto its subspace has no relative cohomology.**
+If `s ⊆ t` and `t` deformation retracts onto `s` relative to `s`, the relative singular cohomology
+of `(t, s)` vanishes in every degree. This is the cohomology form of
+`TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel`. -/
+theorem isZero_singularCohomology_ofInclusion_of_homotopyRel {X : TopCat.{w}} {s t : Set X}
+    (hst : s ⊆ t) (r : C(t, s))
+    (G : ((ContinuousMap.inclusion hst).comp r).HomotopyRel (ContinuousMap.id t)
+      {x | (x : X) ∈ s})
+    (R : C) (k : Type*) [Ring k] [Linear k C] (M : C) (n : ℕ) :
+    IsZero ((ofInclusion hst).singularCohomology R k M n) := by
+  -- The identity of the pair is homotopic to the retraction, which factors through `s`.
+  let f := ofInclusionMap hst hst ((ContinuousMap.inclusion hst).comp r) fun x _ ↦ (r x).property
+  have H : Homotopy (𝟙 (ofInclusion hst)) f := by
+    rw [← ofInclusionMap_id]
+    refine ofInclusionHomotopy G.symm.toHomotopy fun τ x hx ↦ ?_
+    have h : G.symm.toHomotopy (τ, x) = x := G.symm.eq_fst τ hx
+    rw [h]
+    exact hx
+  rw [IsZero.iff_id_eq_zero, ← singularCohomologyMap_id, H.congr_singularCohomologyMap R k M n]
+  exact singularCohomologyMap_eq_zero_of_fac R k M f (TopCat.ofHom r)
+    (by ext x; exact (ofInclusionMap_fst_apply (hst := hst) (hst' := hst) _ _ x).symm) n
 
 end TopPair

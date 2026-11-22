@@ -39,7 +39,7 @@ theorem restrictRootsOfUnity_bijective :
     Function.Bijective (restrictRootsOfUnity (algebraMap R A) n) := by
   have hinj : Function.Injective (algebraMap R A) := IsIntegralClosure.algebraMap_injective R R A
   refine ⟨fun x y h => Subtype.ext (Units.map_injective hinj (congrArg Subtype.val h)), fun ξ => ?_⟩
-  have hξ : ((ξ : Aˣ) : A) ^ n = 1 := (mem_rootsOfUnity' n _).1 ξ.2
+  have hξ : ((ξ : Aˣ) : A) ^ n = 1 := (mem_rootsOfUnity' n _).1 ξ.property
   obtain ⟨y, hy⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow
     (R := R) (A := A) (NeZero.pos n) (hξ ▸ isIntegral_one)
   have hyn : y ^ n = 1 := hinj (by rw [map_pow, hy, hξ, map_one])

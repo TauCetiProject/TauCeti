@@ -193,7 +193,7 @@ noncomputable instance simplyBlockedRenameRingHomInvPairSymm {n m : ℕ} (R : Ty
 @[simp]
 theorem simplyBlockedRenameEquiv_X {n m : ℕ} (R : Type*) [CommSemiring R]
     (e : Fin n ≃ Fin m) (i : Fin n) (c : {c : Fin n // c ≠ i}) :
-    simplyBlockedRenameEquiv R e i (X c) = X ⟨e c, fun h => c.2 (e.injective h)⟩ := by
+    simplyBlockedRenameEquiv R e i (X c) = X ⟨e c, fun h => c.property (e.injective h)⟩ := by
   simp [simplyBlockedRenameEquiv, Equiv.subtypeEquiv]
 
 /-- Blocking a column and then renaming the surviving variables agrees with renaming all

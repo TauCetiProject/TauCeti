@@ -226,11 +226,9 @@ include hG
 theorem X_smul_simplyBlockedHomology {i : Fin n} (c : {c : Fin n // c ≠ i})
     (x : hG.simplyBlockedHomology R i) :
     (MvPolynomial.X c : MvPolynomial {c : Fin n // c ≠ i} R) • x = 0 := by
-  have hc : G.componentPerm.SameCycle i c :=
-    ((G.isKnot_iff_componentPerm_isCycle).mp hG).sameCycle (G.componentPerm_apply_ne_self i)
-      (G.componentPerm_apply_ne_self c)
   simpa using congrArg (fun f => f.hom x)
-    (G.homologyMap_X_smul_simplyBlockedComplex_eq_zero_of_sameCycle R hc)
+    (G.homologyMap_X_smul_simplyBlockedComplex_eq_zero_of_sameCycle R
+      (hG.sameCycle_componentPerm i c))
 
 /-- On a knot grid a polynomial acts on the simply blocked grid homology through its constant
 coefficient. -/
