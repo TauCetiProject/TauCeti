@@ -47,8 +47,8 @@ on `U`, into actual symbols on `U`.
 ## References
 
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Proposition 18.1.3.
-* R. Melrose, *Pseudodifferential operators on Euclidean space*, MIT 18.199 (2008), Chapter 2,
-  Proposition 2.3 and (2.55)–(2.57).
+* R. B. Melrose, *Introduction to Microlocal Analysis*, Chapter 2, Proposition 2.3 and
+  (2.55)–(2.57).
 * M. E. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI*, September 2008,
   Lecture I, (1.17).
 -/
