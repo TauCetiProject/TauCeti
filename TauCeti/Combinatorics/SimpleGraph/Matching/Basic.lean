@@ -320,18 +320,6 @@ theorem IsMatching.encard_verts_inter_left {L R : Set V}
     (M.verts ∩ L).encard = M.edgeSet.encard :=
   ENat.card_congr (vertsInterLeftEquivEdgeSet hM hLR)
 
-/-- In a bipartite graph with sides `L` and `R`, every matching has at most `L.encard` edges. -/
-theorem IsMatching.encard_edgeSet_le_encard_left {L R : Set V}
-    (hM : M.IsMatching) (hLR : G.IsBipartiteWith L R) :
-    M.edgeSet.encard ≤ L.encard :=
-  hM.encard_verts_inter_left hLR ▸ encard_le_encard inter_subset_right
-
-/-- In a bipartite graph with finite left side `L`, every matching has finitely many edges. -/
-theorem IsMatching.finite_edgeSet_of_isBipartiteWith {L R : Set V}
-    (hM : M.IsMatching) (hLR : G.IsBipartiteWith L R) (hL : L.Finite) :
-    M.edgeSet.Finite :=
-  hL.finite_of_encard_le (hM.encard_edgeSet_le_encard_left hLR)
-
 /-- In a bipartite graph with sides `L` and `R`, the number of matched vertices in `L` equals the
 number of edges of the matching in `ℕ`. -/
 theorem IsMatching.ncard_verts_inter_left {L R : Set V}
@@ -419,14 +407,11 @@ theorem Subgraph.IsMatching.exists_le_maximal {M : G.Subgraph} (hM : M.IsMatchin
     refine ⟨sSup c, fun v hv ↦ ?_, fun _ hz ↦ le_sSup hz⟩
     obtain ⟨M', hMc, hvM'⟩ := by simpa [Subgraph.verts_sSup] using hv
     obtain ⟨w, hvw, -⟩ := hc hMc hvM'
-    have hadj_mono {A B : G.Subgraph} (hle : A ≤ B) {x y : V} (h : A.Adj x y) : B.Adj x y :=
-      (G.subgraphOfAdj_le_iff (A.adj_sub h) B).1
-        (((G.subgraphOfAdj_le_iff (A.adj_sub h) A).2 h).trans hle)
     refine ⟨w, Subgraph.sSup_adj.mpr ⟨M', hMc, hvw⟩, fun y hy ↦ ?_⟩
     obtain ⟨M'', hMc'', hyM''⟩ := Subgraph.sSup_adj.mp hy
     rcases hchain.total hMc hMc'' with hle | hle
-    · exact (hc hMc'').eq_of_adj_left hyM'' (hadj_mono hle hvw)
-    · exact (hc hMc).eq_of_adj_left (hadj_mono hle hyM'') hvw) M hM
+    · exact (hc hMc'').eq_of_adj_left hyM'' (hle.2 hvw)
+    · exact (hc hMc).eq_of_adj_left (hle.2 hyM'') hvw) M hM
 
 /-- Every simple graph has a maximal matching. -/
 theorem exists_maximal_isMatching (G : SimpleGraph V) :

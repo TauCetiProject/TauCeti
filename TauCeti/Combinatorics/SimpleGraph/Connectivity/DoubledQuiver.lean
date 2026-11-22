@@ -207,8 +207,8 @@ theorem map_doubledVertexEquiv_toOfSimpleGraphFinset (S : Finset V) :
     (G.toOfSimpleGraphFinset S).map G.doubledVertexEquiv.toEmbedding =
       DoubledQuiver.vertexFinset G S := by
   ext i
-  rw [Finset.mem_map_equiv, G.doubledVertexEquiv_symm_apply, G.mem_toOfSimpleGraphFinset,
-    DoubledQuiver.mem_vertexFinset_iff]
+  rw [Finset.mem_map_equiv, G.doubledVertexEquiv_symm_apply, G.mem_toOfSimpleGraphFinset_iff,
+    G.toOfSimpleGraphVertex_val, DoubledQuiver.mem_vertexFinset_iff]
 
 /-- Every bidirected arrow of `Graph.ofSimpleGraph G` witnesses adjacency of its endpoints in
 `G`. -/
@@ -692,7 +692,7 @@ theorem arrowSum_capacity_eq_edgeCutCapacity [Fintype V]
       (vertexFinset G S)ᶜ := by
     ext i
     rw [Finset.mem_map_equiv, Finset.mem_compl, Finset.mem_compl, G.doubledVertexEquiv_symm_apply,
-      G.mem_toOfSimpleGraphFinset, mem_vertexFinset_iff]
+      G.mem_toOfSimpleGraphFinset_iff, G.toOfSimpleGraphVertex_val, mem_vertexFinset_iff]
   rw [← assignmentEquiv_bidirectedCapacity G c, ← hcompl,
     ← G.map_doubledVertexEquiv_toOfSimpleGraphFinset S, arrowSum_assignmentEquiv,
     Graph.arrowSum_bidirectedCapacity]

@@ -649,8 +649,15 @@ def toOfSimpleGraphVertex (x : V) : (Graph.ofSimpleGraph G).vertexSet :=
   G.ofSimpleGraphVertexEquiv.symm x
 
 @[simp]
-theorem toOfSimpleGraphVertex_val (x : V) : (G.toOfSimpleGraphVertex x).val = x :=
-  G.ofSimpleGraphVertexEquiv.apply_symm_apply x
+theorem toOfSimpleGraphVertex_val (x : V) : (G.toOfSimpleGraphVertex x).val = x := by
+  rw [← G.ofSimpleGraphVertexEquiv_apply, toOfSimpleGraphVertex,
+    G.ofSimpleGraphVertexEquiv.apply_symm_apply]
+
+@[simp]
+theorem toOfSimpleGraphVertex_subtype_val (x : (Graph.ofSimpleGraph G).vertexSet) :
+    G.toOfSimpleGraphVertex x.val = x := by
+  rw [toOfSimpleGraphVertex, ← G.ofSimpleGraphVertexEquiv_apply x,
+    G.ofSimpleGraphVertexEquiv.symm_apply_apply]
 
 @[simp]
 theorem ofSimpleGraphVertexEquiv_symm_apply (x : V) :
@@ -665,12 +672,8 @@ def toOfSimpleGraphFinset (S : Finset V) :
 @[simp]
 theorem mem_toOfSimpleGraphFinset_iff {S : Finset V} {x : (Graph.ofSimpleGraph G).vertexSet} :
     x ∈ G.toOfSimpleGraphFinset S ↔ x.val ∈ S := by
-  rw [toOfSimpleGraphFinset, Equiv.finsetCongr_apply, Finset.mem_map_equiv]
-  rfl
-
-theorem mem_toOfSimpleGraphFinset {S : Finset V} {x : V} :
-    G.toOfSimpleGraphVertex x ∈ G.toOfSimpleGraphFinset S ↔ x ∈ S := by
-  simp
+  rw [toOfSimpleGraphFinset, Equiv.finsetCongr_apply, Finset.mem_map_equiv, Equiv.symm_symm,
+    G.ofSimpleGraphVertexEquiv_apply]
 
 @[simp]
 theorem toOfSimpleGraphFinset_compl [Fintype V] [Fintype (Graph.ofSimpleGraph G).vertexSet]
@@ -683,17 +686,23 @@ theorem toOfSimpleGraphFinset_compl [Fintype V] [Fintype (Graph.ofSimpleGraph G)
 theorem image_val_toOfSimpleGraphFinset (S : Finset V) :
     Subtype.val '' (G.toOfSimpleGraphFinset S : Set (Graph.ofSimpleGraph G).vertexSet) =
       (S : Set V) := by
-  rw [toOfSimpleGraphFinset, Equiv.finsetCongr_apply, Finset.coe_map, Equiv.coe_toEmbedding]
+  have hval : (Subtype.val : (Graph.ofSimpleGraph G).vertexSet → V) =
+      G.ofSimpleGraphVertexEquiv :=
+    funext fun x ↦ (G.ofSimpleGraphVertexEquiv_apply x).symm
+  rw [hval, toOfSimpleGraphFinset, Equiv.finsetCongr_apply, Finset.coe_map,
+    Equiv.coe_toEmbedding]
   exact G.ofSimpleGraphVertexEquiv.image_symm_image (S : Set V)
 
 @[simp]
 theorem toOfSimpleGraphFinset_map_val
     (S : Finset (Graph.ofSimpleGraph G).vertexSet) :
     G.toOfSimpleGraphFinset (S.map ⟨Subtype.val, Subtype.val_injective⟩) = S := by
-  rw [toOfSimpleGraphFinset, Equiv.finsetCongr_apply, Finset.map_map]
-  convert S.map_refl
-  ext x
-  exact G.ofSimpleGraphVertexEquiv.apply_symm_apply x.val
+  have hemb : (⟨Subtype.val, Subtype.val_injective⟩ :
+      (Graph.ofSimpleGraph G).vertexSet ↪ V) = G.ofSimpleGraphVertexEquiv.toEmbedding := by
+    ext x
+    exact (G.ofSimpleGraphVertexEquiv_apply x).symm
+  rw [hemb, ← Equiv.finsetCongr_apply]
+  exact G.ofSimpleGraphVertexEquiv.finsetCongr.symm_apply_apply S
 
 end OfSimpleGraphFinset
 

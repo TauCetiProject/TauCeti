@@ -71,8 +71,10 @@ theorem val_le_pairCutCapacity
   classical
   rw [← G.edgeCutCapacity_eq_pairCutCapacity c hsupport S]
   exact f.val_le_edgeCutCapacity
-    (G.mem_toOfSimpleGraphFinset.mpr hs)
-    (fun ht' ↦ ht (G.mem_toOfSimpleGraphFinset.mp ht'))
+    (by simpa only [SimpleGraph.mem_toOfSimpleGraphFinset_iff,
+      SimpleGraph.toOfSimpleGraphVertex_val] using hs)
+    (fun ht' ↦ ht (by simpa only [SimpleGraph.mem_toOfSimpleGraphFinset_iff,
+      SimpleGraph.toOfSimpleGraphVertex_val] using ht'))
 
 end TauCeti.Flow
 

@@ -8,6 +8,8 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.VertexCover
 public import Mathlib.Order.Filter.Extr
 
+import Mathlib.Data.Set.Card
+
 /-!
 # Minimum vertex covers of simple graphs
 
@@ -38,6 +40,8 @@ cover).
 * `SimpleGraph.isMinimumVertexCover_iff_ncard_le`: a finite vertex cover is minimum if and only
   if its `Set.ncard` is at most that of every finite vertex cover (and at most that of every vertex
   cover on a finite vertex type via `SimpleGraph.isMinimumVertexCover_iff_ncard_le_of_finite`).
+* `SimpleGraph.exists_finite_induce_vertexCoverNum_eq`: every simple graph with finite vertex
+  cover number has a finite induced subgraph with the same vertex cover number.
 
 ## References
 
@@ -188,5 +192,63 @@ theorem IsMinimumVertexCover.isLeast_ncard_of_finite [Finite V] (hc : G.IsMinimu
     IsLeast {n : ℕ | ∃ s : Set V, G.IsVertexCover s ∧ s.ncard = n} c.ncard :=
   let ⟨_, hmin⟩ := hc.isLeast_ncard c.toFinite
   ⟨⟨c, hc.1, rfl⟩, fun _ ⟨s, hs, hsn⟩ ↦ hmin ⟨s, hs, s.toFinite, hsn⟩⟩
+
+/-- Every simple graph with finite vertex cover number has a finite induced subgraph with the same
+vertex cover number. -/
+theorem exists_finite_induce_vertexCoverNum_eq (h : G.vertexCoverNum ≠ ⊤) :
+    ∃ s : Set V, s.Finite ∧ (G.induce s).vertexCoverNum = G.vertexCoverNum := by
+  classical
+  let n : ℕ := G.vertexCoverNum.toNat
+  have hn : (n : ℕ∞) = G.vertexCoverNum := ENat.natCast_toNat h
+  obtain ⟨C₀, hC₀eq, hC₀⟩ := G.vertexCoverNum_exists
+  have hC₀fin : C₀.Finite := Set.encard_ne_top_iff.1 (hC₀eq ▸ h)
+  have hT : ∀ v : V, ∃ t ⊆ G.neighborSet v,
+      t.Finite ∧ ((G.neighborSet v).Finite → t = G.neighborSet v) ∧
+        ((G.neighborSet v).Infinite → t.ncard = n) := by
+    intro v
+    by_cases hv : (G.neighborSet v).Finite
+    · exact ⟨G.neighborSet v, Set.Subset.rfl, hv, fun _ ↦ rfl, fun hinf ↦ (hinf hv).elim⟩
+    · obtain ⟨t, ht_sub, ht_fin, ht_card⟩ := Set.Infinite.exists_subset_ncard_eq hv n
+      exact ⟨t, ht_sub, ht_fin, fun hf ↦ (hv hf).elim, fun _ ↦ ht_card⟩
+  choose T hT_sub hT_fin hT_all hT_card using hT
+  let s : Set V := C₀ ∪ ⋃ v ∈ C₀, T v
+  have hs_fin : s.Finite := hC₀fin.union (hC₀fin.biUnion fun v _ ↦ hT_fin v)
+  refine ⟨s, hs_fin,
+    le_antisymm (IsContained.vertexCoverNum_le_vertexCoverNum ⟨Copy.induce G s⟩) ?_⟩
+  by_contra! hlt
+  obtain ⟨D₀, hD₀eq, hD₀⟩ := (G.induce s).vertexCoverNum_exists
+  let D : Set V := Subtype.val '' D₀
+  have hD_encard : D.encard = (G.induce s).vertexCoverNum := by
+    rw [Subtype.val_injective.encard_image, hD₀eq]
+  have hDfin : D.Finite := Set.encard_lt_top_iff.1 (hD_encard ▸ hlt.trans_le le_top)
+  have hD_ncard : D.ncard < n := by
+    rw [← Nat.cast_lt (α := ℕ∞), hDfin.cast_ncard_eq, hn, hD_encard]
+    exact hlt
+  have mem_D_of_adj {u x : V} (hu_s : u ∈ s) (huD : u ∉ D) (hx_s : x ∈ s) (hux : G.Adj u x) :
+      x ∈ D := by
+    rcases hD₀ ((SimpleGraph.induce_adj (u := ⟨u, hu_s⟩) (v := ⟨x, hx_s⟩)).mpr hux) with h | h
+    · exact False.elim (huD ⟨⟨u, hu_s⟩, h, rfl⟩)
+    · exact ⟨⟨x, hx_s⟩, h, rfl⟩
+  have hDcov : G.IsVertexCover D := by
+    have step : ∀ {u w : V}, G.Adj u w → u ∈ C₀ → u ∈ D ∨ w ∈ D := by
+      intro u w huw huC₀
+      by_cases huD : u ∈ D
+      · exact Or.inl huD
+      · right
+        by_cases hfin_u : (G.neighborSet u).Finite
+        · exact mem_D_of_adj (Set.subset_union_left huC₀) huD
+            (Set.subset_union_right (Set.mem_biUnion huC₀ (hT_all u hfin_u ▸ huw))) huw
+        · have hsubD : T u ⊆ D := fun z hz ↦
+            mem_D_of_adj (Set.subset_union_left huC₀) huD
+              (Set.subset_union_right (Set.mem_biUnion huC₀ hz)) (hT_sub u hz)
+          have hle_n : n ≤ D.ncard := by
+            rw [← hT_card u hfin_u]
+            exact Set.ncard_le_ncard hsubD hDfin
+          exact False.elim (not_le_of_gt hD_ncard hle_n)
+    intro u w huw
+    rcases hC₀ huw with hu | hw
+    · exact step huw hu
+    · exact (step huw.symm hw).symm
+  exact not_le_of_gt hlt (hD_encard ▸ hDcov.vertexCoverNum_le)
 
 end SimpleGraph
