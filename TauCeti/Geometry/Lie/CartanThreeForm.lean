@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Lie.LeftInvariantForm
 public import TauCeti.Geometry.Manifold.DeRham.Integration.Homotopy
 import TauCeti.Geometry.Lie.Functor
 import TauCeti.Geometry.Lie.Interior
-import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 
 /-!
 # Homomorphisms detected by the Cartan three-form
@@ -20,9 +19,9 @@ of dimension `n + 1`, and let `α` be an alternating `(n + 1)`-form on the Lie a
 that is a Chevalley–Eilenberg cocycle with trivial coefficients. Its left-invariant extension
 `α^L` is a closed form on `G` (`TauCeti.isClosed_leftInvariantSmoothForm_iff`), and `φ` pulls it
 back to the left-invariant top form `(α ∘ dφ)^L` on `K`
-(`ContMDiffMonoidMorphism.mpullback_leftInvariantSmoothForm`). If `α ∘ dφ ≠ 0`, this top form
-vanishes nowhere, so it orients `K` and has positive integral for that orientation
-(`TauCeti.integralTopForm_ofTopForm_pos`). Integrals of pullbacks of closed forms only depend on
+(`TauCeti.mpullback_leftInvariantSmoothForm`). If `α ∘ dφ ≠ 0`, this top form vanishes nowhere,
+so it orients `K` and has positive integral for that orientation
+(`TauCeti.integralTopForm_leftInvariantForm_pos`). Integrals of pullbacks of closed forms only depend on
 the homotopy class of the map, and vanish along constant maps, so `φ` is not null-homotopic
 (`ContMDiffMonoidMorphism.not_nullhomotopic_of_compContinuousLinearMap_ne_zero`).
 
@@ -90,19 +89,16 @@ theorem not_nullhomotopic_of_compContinuousLinearMap_ne_zero
   have : T2Space G := I.t2Space_of_lieGroup ∞
   have : T2Space K := J.t2Space_of_lieGroup ∞
   have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
-  set β := α.compContinuousLinearMap (φ.toMonoidHom.groupLieAlgebraMap J I)
-  have hβ : IsSmoothForm J 0 (leftInvariantForm J K ℝ (n + 1) β) :=
-    isSmoothForm_leftInvariantForm (n := ∞) (by simp) β
-  have h0 (g : K) : leftInvariantForm J K ℝ (n + 1) β g ≠ 0 := by simpa using hne
   refine not_nullhomotopic_of_integralTopForm_mpullback_ne_zero
-    (Manifold.Orientation.ofTopForm hk _ hβ h0) φ.contMDiff_toFun
+    (Manifold.Orientation.ofTopForm hk _
+      (isSmoothForm_leftInvariantForm (m := 0) (n := 1) (zero_add 1).le _)
+      (leftInvariantForm_apply_ne_zero hne)) φ.contMDiff_toFun
     (φ := leftInvariantSmoothForm I G ℝ (n + 1) α) ?_ ?_
   · rw [mem_closedForms, leftInvariantSmoothForm_val, mextDeriv_leftInvariantForm_eq_zero_iff]
     exact hα
   · rw [ContinuousMap.coe_ofClass, leftInvariantSmoothForm_val,
-      mpullback_leftInvariantForm_of_contMDiffMonoidMorphism]
-    exact (integralTopForm_ofTopForm_pos hk hβ
-      (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (Set.subset_univ _)) h0).ne'
+      mpullback_leftInvariantForm φ (by simp)]
+    exact (integralTopForm_leftInvariantForm_pos hk hne).ne'
 
 /-- **The Cartan three-form detects homotopically nontrivial homomorphisms.** Let `φ : K → G` be a
 smooth homomorphism of finite-dimensional real Lie groups, with `K` compact of dimension
