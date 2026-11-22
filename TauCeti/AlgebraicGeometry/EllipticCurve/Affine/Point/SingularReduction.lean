@@ -431,7 +431,7 @@ theorem exists_chord_of_add_notMem_nonsingularReduction
   set ℓ := W.slope (x₁ : F) x₂ y₁ y₂
   have hO {z : F} (hz : v z < 1) : z ∈ v.valuationSubring :=
     (v.mem_valuationSubring_iff z).2 hz.le
-  have hint (z : v.valuationSubring) : v (z : F) ≤ 1 := (v.mem_valuationSubring_iff _).1 z.2
+  have hint (z : v.valuationSubring) : v (z : F) ≤ 1 := (v.mem_valuationSubring_iff _).1 z.property
   have hℓ : ℓ ∈ v.valuationSubring := (v.mem_valuationSubring_iff ℓ).2
     (valuation_le_one_of_valuation_addX_le_one v (hint x₁) (hint x₂) hx₃.le)
   -- the coefficients of `X` and `1` in `W(X, ℓ (X − x₁) + y₁) = −(X − x₁) (X − x₂) (X − x₃)`

@@ -35,8 +35,15 @@ matrix past `J`.
 * `LieAlgebra.Symplectic.transpose_mem_sp` and `LieAlgebra.Symplectic.conjTranspose_mem_sp`: the
   symplectic Lie algebra is stable under transpose, and under conjugate transpose over a star
   ring.
+* `LieAlgebra.Symplectic.J_mul_mem_sp`: `J` times a symmetric matrix lies in `sp l R`.
 * `LieAlgebra.Symplectic.J_conj_eq_neg_transpose`: on symplectic Lie matrices, conjugation by `J`
   is negative transpose.
+* `LieAlgebra.Symplectic.jConj` and `LieAlgebra.Symplectic.symmetrize`: the linear involution
+  `Z ↦ J Zᵀ J` of the matrices, whose fixed points form `sp l R`
+  (`LieAlgebra.Symplectic.mem_sp_iff_jConj_eq`), and the symmetrization `Z ↦ Z + J Zᵀ J`
+  into `sp l R`.
+* `LieAlgebra.Symplectic.lie_symmetrize_symmetrize`: the bracket of two symmetrizations is a
+  symmetrization.
 * `Matrix.mem_symplecticLieAlgebra_iff`: the entrywise block criterion, with symmetric
   off-diagonal blocks and opposite transposed diagonal blocks.
 * `Matrix.mem_range_scalar_of_commute_sp`: a matrix commuting with every element of `sp l R` is
@@ -123,11 +130,65 @@ theorem conjTranspose_mem_sp [StarRing R] {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX
   rw [mem_sp, eq_neg_iff_add_eq_zero, ← neg_eq_zero, ← h]
   noncomm_ring
 
+/-- **`J` times a symmetric matrix is a symplectic Lie matrix**: `(J S)ᵀ J = S (-J) J = S` and
+`-(J (J S)) = S`, both since `J * J = -1`. These are the Hamiltonian matrices of quadratic
+Hamiltonians. -/
+theorem J_mul_mem_sp {S : Matrix (l ⊕ l) (l ⊕ l) R} (hS : S.IsSymm) : J l R * S ∈ sp l R := by
+  simp [transpose_mul, hS.eq, Matrix.mul_assoc, ← Matrix.mul_assoc (J l R) (J l R), J_squared]
+
 /-- On the symplectic Lie algebra, conjugation by `J` is negative transpose. -/
 theorem J_conj_eq_neg_transpose {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX : X ∈ sp l R) :
     J l R * X * (J l R)⁻¹ = -Xᵀ := by
   rw [(mem_sp_iff_transpose_eq_J_conj_neg X).mp hX]
   simp
+
+/-- The linear involution `Z ↦ J Zᵀ J` of the matrices, whose fixed points form `sp l R`. -/
+noncomputable def jConj : Matrix (l ⊕ l) (l ⊕ l) R →ₗ[R] Matrix (l ⊕ l) (l ⊕ l) R :=
+  LinearMap.mulLeft R (J l R) ∘ₗ LinearMap.mulRight R (J l R) ∘ₗ
+    (transposeLinearEquiv (l ⊕ l) (l ⊕ l) R R).toLinearMap
+
+theorem jConj_apply (Z : Matrix (l ⊕ l) (l ⊕ l) R) : jConj Z = J l R * Zᵀ * J l R := by
+  simp [jConj, mul_assoc]
+
+/-- `Z ↦ J Zᵀ J` is an involution. -/
+@[simp]
+theorem jConj_jConj (Z : Matrix (l ⊕ l) (l ⊕ l) R) : jConj (jConj Z) = Z := by
+  simp only [jConj_apply, transpose_mul, J_transpose, transpose_transpose, neg_mul, mul_neg,
+    neg_neg, ← mul_assoc]
+  simpa only [mul_assoc] using J_mul_mul_J_mul_J Z
+
+/-- The fixed points of `Z ↦ J Zᵀ J` are exactly the symplectic Lie algebra. -/
+theorem mem_sp_iff_jConj_eq (A : Matrix (l ⊕ l) (l ⊕ l) R) : A ∈ sp l R ↔ jConj A = A := by
+  rw [jConj_apply, mem_sp_iff_J_mul_transpose_mul_J_eq]
+
+/-- `Z ↦ J Zᵀ J` reverses products up to sign. -/
+theorem jConj_mul (A B : Matrix (l ⊕ l) (l ⊕ l) R) : jConj (A * B) = -(jConj B * jConj A) := by
+  simp only [jConj_apply]
+  calc J l R * (A * B)ᵀ * J l R = J l R * Bᵀ * -(J l R * J l R) * Aᵀ * J l R := by
+        rw [J_squared, neg_neg, transpose_mul]
+        noncomm_ring
+    _ = _ := by noncomm_ring
+
+/-- The symmetrization `Z ↦ Z + J Zᵀ J` into `sp l R`, which is multiplication by two on
+`sp l R`. -/
+noncomputable def symmetrize : Matrix (l ⊕ l) (l ⊕ l) R →ₗ[R] sp l R where
+  toFun Z := ⟨Z + jConj Z, by
+    rw [mem_sp_iff_jConj_eq, map_add, jConj_jConj, add_comm]⟩
+  map_add' Z W := by ext1; simp only [map_add, AddMemClass.coe_add]; abel
+  map_smul' c Z := by ext1; simp
+
+@[simp]
+theorem coe_symmetrize_apply (Z : Matrix (l ⊕ l) (l ⊕ l) R) :
+    (symmetrize Z : Matrix (l ⊕ l) (l ⊕ l) R) = Z + jConj Z :=
+  (rfl)
+
+/-- The bracket of two symmetrizations is the symmetrization of `⁅X, Y⁆ + ⁅X, J Yᵀ J⁆`. -/
+theorem lie_symmetrize_symmetrize (X Y : Matrix (l ⊕ l) (l ⊕ l) R) :
+    ⁅symmetrize X, symmetrize Y⁆ = symmetrize (⁅X, Y⁆ + ⁅X, jConj Y⁆) := by
+  ext1
+  rw [LieSubalgebra.coe_bracket, coe_symmetrize_apply, coe_symmetrize_apply, coe_symmetrize_apply]
+  simp only [Ring.lie_def, map_add, map_sub, jConj_mul, jConj_jConj]
+  noncomm_ring
 
 end LieAlgebra.Symplectic
 

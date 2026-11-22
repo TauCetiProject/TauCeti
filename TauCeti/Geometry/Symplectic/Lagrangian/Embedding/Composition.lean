@@ -111,14 +111,14 @@ theorem IsLagrangianMap.isLagrangianEmbedding_relComp_transverseFiberProduct
     [I₁.Boundaryless] [I₃.Boundaryless] (hfL : (hσ₁.twistedProd hσ₂).IsLagrangianMap K₁ f)
     (hgL : (hσ₂.twistedProd hσ₃).IsLagrangianMap K₂ g)
     (hexc : ∀ (p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1}) u w,
-      (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).2 = (mfderiv K₂ (I₂.prod I₃) g p.1.2 w).1 →
-        (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).1 = 0 → (mfderiv K₂ (I₂.prod I₃) g p.1.2 w).2 = 0 →
+      (mfderiv K₁ (I₁.prod I₂) f p.val.1 u).2 = (mfderiv K₂ (I₂.prod I₃) g p.val.2 w).1 →
+        (mfderiv K₁ (I₁.prod I₂) f p.val.1 u).1 = 0 → (mfderiv K₂ (I₂.prod I₃) g p.val.2 w).2 = 0 →
           u = 0 ∧ w = 0)
     (hemb : Topology.IsEmbedding
-      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2))) :
+      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.val.1).1, (g p.val.2).2))) :
     letI := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
     (hσ₁.twistedProd hσ₃).IsLagrangianEmbedding KF
-      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2)) := by
+      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.val.1).1, (g p.val.2).2)) := by
   let := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
   have := isManifold_transverseFiberProduct (by simp) hf.snd hg.fst htrans
   exact ⟨(contMDiff_relComp_transverseFiberProduct hf hg htrans).isImmersion_of_injective_mfderiv
@@ -139,9 +139,9 @@ theorem IsLagrangianImmersion.isLagrangianEmbedding_relComp_transverseFiberProdu
     letI := transverseFiberProductChartedSpace (by simp)
       hfL.isImmersion.contMDiff.snd hgL.isImmersion.contMDiff.fst htrans
     (hσ₁.twistedProd hσ₃).IsLagrangianEmbedding KF
-        (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2)) ↔
+        (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.val.1).1, (g p.val.2).2)) ↔
       Topology.IsEmbedding
-        (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2)) := by
+        (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.val.1).1, (g p.val.2).2)) := by
   let := transverseFiberProductChartedSpace (by simp)
     hfL.isImmersion.contMDiff.snd hgL.isImmersion.contMDiff.fst htrans
   have h := IsLagrangianImmersion.relComp_transverseFiberProduct (hσ₁ := hσ₁) (hσ₂ := hσ₂)

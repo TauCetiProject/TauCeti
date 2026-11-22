@@ -11,9 +11,11 @@ public import TauCeti.Geometry.Manifold.VectorField.InfinitesimalAction
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import Mathlib.Algebra.Lie.Cochain
 
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.Algebra.Lie.SkewAdjoint
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Symplectic.Hamiltonian.Bracket
 
@@ -64,6 +66,9 @@ field `X` of a function `f` the differential is `⟨dμ_x(X x), Z⟩ = -df_x(Z_M
 (`TauCeti.SmoothTwoForm.IsMomentMap.differential_apply_of_isHamiltonianVectorField`), so `X` is
 tangent to the level at `x` exactly when `df_x` vanishes on every `Z_M x`
 (`TauCeti.SmoothTwoForm.IsMomentMap.mem_ker_differential_iff_of_isHamiltonianVectorField`).
+Hence the moment map is conserved along the integral curves of `X` on which `df` vanishes on every
+`Z_M`, as it does for an invariant `f`
+(`TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isMIntegralCurveOn`).
 
 The failure of a moment map to be infinitesimally equivariant is measured by its **cocycle**, the
 Lie algebra `2`-cochain `c(Z, Z') = σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` on `𝔤` at each point, with values
@@ -101,7 +106,9 @@ has the **Heisenberg cocycle** `c(Z, Z') = ω(τ Z, τ Z')`
 * `TauCeti.SmoothTwoForm.momentCocycle σ a μ x`: the cocycle `σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` at `x`,
   a `2`-cochain of `𝔤` with trivial coefficients.
 * `TauCeti.SymplecticForm.linearMomentMap ω`: the moment map `μ_A(x) = ½ ω(A x, x)` of the linear
-  action of `sp(V, ω)`.
+  action of `sp(V, ω)`. Its components are quadratic forms with polarization `ω(A x, y)`
+  (`TauCeti.SymplecticForm.linearMomentMap_add`), so the moment equation holds along every line
+  without any topology on `V` (`TauCeti.SymplecticForm.hasDerivAt_linearMomentMap_add_smul`).
 * `TauCeti.SymplecticForm.translationMomentMap ω τ`: the moment map `μ_Z(x) = ω(τ Z, x)` of a
   translation action.
 
@@ -330,6 +337,23 @@ theorem differential_eq (h : σ.IsMomentMap a μ) (x : M) :
   ext v Z
   simp [h.differential_apply_eq_eval₂]
 
+/-- The differential of the moment map `x ↦ μ x ∘ f` of an action restricted along a Lie algebra
+homomorphism `f : 𝔥 → 𝔤` is the differential of `μ` composed with `f`. -/
+@[simp]
+theorem differential_comp_apply {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥]
+    (h : σ.IsMomentMap a μ) (f : 𝔥 →ₗ⁅ℝ⁆ 𝔤) (x : M) (v : TangentSpace I x) :
+    (h.comp f).differential x v = (h.differential x v).comp (f : 𝔥 →ₗ[ℝ] 𝔤) :=
+  (rfl)
+
+/-- The level tangent space `ker dμ_x` of a moment map lies in that of its restriction along a Lie
+algebra homomorphism. -/
+theorem ker_differential_le_ker_differential_comp {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥]
+    (h : σ.IsMomentMap a μ) (f : 𝔥 →ₗ⁅ℝ⁆ 𝔤) (x : M) :
+    LinearMap.ker (h.differential x) ≤ LinearMap.ker ((h.comp f).differential x) := by
+  intro v hv
+  rw [LinearMap.mem_ker] at hv ⊢
+  rw [h.differential_comp_apply, hv, LinearMap.zero_comp]
+
 /-- The kernel of the differential of a moment map at `x` is the `σ`-orthogonal of the orbit
 tangent space: `ker dμ_x = (𝔤 · x)^σ`. -/
 theorem ker_differential (h : σ.IsMomentMap a μ) (x : M) :
@@ -355,6 +379,21 @@ theorem mem_ker_differential_iff_of_isHamiltonianVectorField (h : σ.IsMomentMap
     X x ∈ LinearMap.ker (h.differential x) ↔ ∀ Z, mvfderiv I f x (a Z x) = 0 := by
   simp only [LinearMap.mem_ker, LinearMap.ext_iff,
     h.differential_apply_of_isHamiltonianVectorField hX, LinearMap.zero_apply, neg_eq_zero]
+
+/-- **Noether's theorem along integral curves.** Let `X` be a Hamiltonian vector field of `f` and
+let `γ` be an integral curve of `X` on a preconnected set `s` of times. If at every time in `s` the
+derivative of `f` vanishes along every generated vector field `Z_M`, as when `f` is invariant, then
+the moment map is constant along `γ` on `s`. -/
+theorem apply_eq_of_isMIntegralCurveOn (h : σ.IsMomentMap a μ) {f : M → ℝ}
+    {X : (x : M) → TangentSpace I x} (hX : σ.IsHamiltonianVectorField f X) {γ : ℝ → M}
+    {s : Set ℝ} (hs : IsPreconnected s) (hγ : IsMIntegralCurveOn γ X s)
+    (hf : ∀ t ∈ s, ∀ Z, mvfderiv I f (γ t) (a Z (γ t)) = 0) {t₀ t : ℝ} (ht₀ : t₀ ∈ s)
+    (ht : t ∈ s) : μ (γ t) = μ (γ t₀) := by
+  ext Z
+  refine hγ.apply_eq_of_mvfderiv_apply_eq_zero (f := fun x ↦ μ x Z) hs
+    (fun u _ ↦ h.mdifferentiableAt Z (γ u)) (fun u hu ↦ ?_) ht₀ ht
+  rw [← h.differential_apply, h.differential_apply_of_isHamiltonianVectorField hX, hf u hu Z,
+    neg_zero]
 
 /-- At a point where the form is nondegenerate, the image of the differential of a moment map is
 the image of the transpose of the orbit map `Z ↦ Z_M(x)`. -/
@@ -614,6 +653,35 @@ def linearMomentMap (x : V) : Module.Dual ℝ (skewAdjointLieSubalgebra ω.toBil
 theorem linearMomentMap_apply (x : V) (A : skewAdjointLieSubalgebra ω.toBilinForm) :
     ω.linearMomentMap x A = ω ((A : Module.End ℝ V) x) x / 2 :=
   (rfl)
+
+/-- **Polarization of the linear moment map.** Each component `μ_A` is a quadratic form with
+polarization `ω(A x, y)`: `μ_A(x + y) = μ_A(x) + ω(A x, y) + μ_A(y)`, since skew-adjointness of `A`
+and skew-symmetry of `ω` give `ω(A y, x) = ω(A x, y)`. -/
+theorem linearMomentMap_add (x y : V) (A : skewAdjointLieSubalgebra ω.toBilinForm) :
+    ω.linearMomentMap (x + y) A =
+      ω.linearMomentMap x A + ω ((A : Module.End ℝ V) x) y + ω.linearMomentMap y A := by
+  have hskew : ω.toBilinForm ((A : Module.End ℝ V) y) x =
+      ω.toBilinForm ((A : Module.End ℝ V) x) y :=
+    (skewAdjointLieSubalgebra.apply_left A y x).trans (ω.neg_eq y _)
+  simp only [linearMomentMap_apply, map_add, LinearMap.add_apply, hskew]
+  ring
+
+/-- Each component of the linear moment map is homogeneous of degree two. -/
+theorem linearMomentMap_smul (c : ℝ) (x : V) (A : skewAdjointLieSubalgebra ω.toBilinForm) :
+    ω.linearMomentMap (c • x) A = c ^ 2 * ω.linearMomentMap x A := by
+  simp only [linearMomentMap_apply, map_smul, LinearMap.smul_apply, smul_eq_mul]
+  ring
+
+/-- **The moment equation along lines.** The derivative of `μ_A` at `x` in the direction `y` is
+`ω(A x, y)`. No topology on `V` is needed: along the line `t ↦ x + t y` the component `μ_A` is the
+quadratic polynomial `μ_A(x) + t ω(A x, y) + t² μ_A(y)`. -/
+theorem hasDerivAt_linearMomentMap_add_smul (x y : V) (A : skewAdjointLieSubalgebra ω.toBilinForm) :
+    HasDerivAt (fun t : ℝ ↦ ω.linearMomentMap (x + t • y) A) (ω ((A : Module.End ℝ V) x) y) 0 := by
+  have h := (((hasDerivAt_id (0 : ℝ)).mul_const (ω ((A : Module.End ℝ V) x) y)).const_add
+    (ω.linearMomentMap x A)).add (((hasDerivAt_id (0 : ℝ)).pow 2).mul_const (ω.linearMomentMap y A))
+  refine (h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun t ↦ ?_)).congr_deriv (by simp)
+  rw [linearMomentMap_add, linearMomentMap_smul]
+  simp only [Pi.add_apply, Pi.pow_apply, id_eq, map_smul, smul_eq_mul]
 
 variable {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤] (τ : 𝔤 →ₗ[ℝ] V)
 

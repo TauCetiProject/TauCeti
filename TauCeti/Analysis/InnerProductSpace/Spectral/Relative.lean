@@ -33,6 +33,8 @@ nondegenerate the negative and positive spectral subspaces are complementary.
 
 * `LinearMap.BilinForm.exists_linearEquiv_euclideanSpace_apply_apply`: `g` is the pullback of the
   Euclidean inner product along a linear equivalence.
+* `LinearMap.BilinForm.exists_continuousLinearEquiv_euclideanSpace_apply_self`: on a
+  finite-dimensional Hausdorff topological vector space, that linear equivalence is continuous.
 * `LinearMap.BilinForm.relativeEigenspace_innerₗ`: relative to an inner product, the relative
   eigenspaces are the eigenspaces of the operator representing `q`.
 * `LinearMap.BilinForm.relativeSpectralSubspace_univ`: the relative eigenvectors span.
@@ -102,6 +104,17 @@ theorem exists_linearEquiv_euclideanSpace_apply_apply (hg : g.IsSymm)
     field_simp
     simp [Real.sq_sqrt (hbpos i).le]
   · simp [hb hij, hij]
+
+/-- A positive definite symmetric bilinear form on a finite-dimensional Hausdorff topological
+vector space is the squared norm of a continuous linear identification with Euclidean space. -/
+theorem exists_continuousLinearEquiv_euclideanSpace_apply_self [TopologicalSpace V]
+    [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V] (hg : g.IsSymm)
+    (hpos : ∀ v, v ≠ 0 → 0 < g v v) :
+    ∃ e : EuclideanSpace ℝ (Fin (finrank ℝ V)) ≃L[ℝ] V, ∀ v, g v v = ‖e.symm v‖ ^ 2 := by
+  obtain ⟨e, he⟩ := exists_linearEquiv_euclideanSpace_apply_apply hg hpos
+  refine ⟨e.toContinuousLinearEquiv, fun v ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := e.surjective v
+  simp [he]
 
 /-- Over a Euclidean space, the eigenspaces of `q` relative to the inner product are the
 eigenspaces of an operator `T` representing `q`. -/

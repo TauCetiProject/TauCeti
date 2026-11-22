@@ -455,7 +455,7 @@ theorem range_morseCellComparison (hε : 0 < ε) :
         hε.le).symm ▸ mem_univ y
     · refine Or.inl ?_
       rw [mem_ofPred_eq, coe_morseCellComparison_morseCellAttachmentIncl]
-      exact x.2
+      exact x.property
     obtain ⟨i, w, rfl⟩ := mem_iUnion.1 hy
     have hw : (φ i).morseCharacteristicMap (hk i) hε.le (hball i) (hf i) w ∈
         range ((φ i).morseCharacteristicMap (hk i) hε.le (hball i) (hf i)) := mem_range_self w
@@ -562,14 +562,14 @@ theorem exists_morseCellAttachment_deformation [Finite ι] (hfs : ContMDiff I �
   let j : C(↥({x | f x ≤ c + ε} ∩ ({x | f x ≤ c - ε} ∪
       ⋃ i, (φ i).source ∩ φ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0})),
       range Φ) :=
-    ⟨fun x ↦ ⟨⟨x, x.2.1⟩, hrange ▸ x.2.2⟩,
-      ((continuous_subtype_val.subtype_mk _).subtype_mk _)⟩
+    ⟨fun x ↦ ⟨⟨x, x.property.1⟩, hrange ▸ x.property.2⟩,
+      ((continuous_subtypeVal.subtype_mk _).subtype_mk _)⟩
   refine ⟨(hΦ.isEmbedding.toHomeomorph.symm : C(range Φ, _)).comp (j.comp r), fun y ↦ ?_, ?_⟩
   · have hy : (Φ y : M) ∈ {x | f x ≤ c - ε} ∪
         ⋃ i, (φ i).source ∩ φ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0} := by
       have := mem_range_self (f := Φ) y
       rwa [hrange] at this
-    have hry : r (Φ y) = ⟨Φ y, (Φ y).2, hy⟩ := hr ⟨Φ y, (Φ y).2, hy⟩
+    have hry : r (Φ y) = ⟨Φ y, (Φ y).property, hy⟩ := hr ⟨Φ y, (Φ y).property, hy⟩
     have hjr : j (r (Φ y)) = ⟨Φ y, mem_range_self y⟩ := by
       rw [hry]
       rfl

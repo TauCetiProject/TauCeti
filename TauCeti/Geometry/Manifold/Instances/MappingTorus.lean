@@ -70,6 +70,8 @@ projections to the circle, so the topological results for `TauCeti.MappingTorus`
   `C^n` local diffeomorphism.
 * `TauCeti.SmoothMappingTorus.mk_eq_mk_iff`, `TauCeti.SmoothMappingTorus.mk_add_intCast`: when two
   points of `ℝ × M` have the same class.
+* `TauCeti.SmoothMappingTorus.uncurry_mk_image_Icc_prod_univ`: every point is the class of a point
+  of `[0, 1] × M`, so the mapping torus of a diffeomorphism of a compact manifold is compact.
 * `TauCeti.SmoothMappingTorus.contMDiff_proj`, `TauCeti.SmoothMappingTorus.range_mk`: the
   projection is `C^n`, and its fibres are the images of the fibre inclusions. It is continuous
   with no smoothness hypotheses (`TauCeti.SmoothMappingTorus.continuous_proj`).
@@ -333,6 +335,21 @@ theorem mk_injective (t : ℝ) : Function.Injective (mk φ t) := fun x y h ↦ b
   obtain rfl : k = 0 := by exact_mod_cast (add_eq_left.mp hk.symm)
   simp
 
+/-- Every point of the mapping torus is the class of a point of `[0, 1] × M`: shift the real
+coordinate by its integer part. -/
+theorem uncurry_mk_image_Icc_prod_univ :
+    Function.uncurry (mk φ) '' (Icc (0 : ℝ) 1 ×ˢ univ) = univ := by
+  refine eq_univ_of_forall fun z ↦ ?_
+  obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
+  refine ⟨(Int.fract t, (φ ^ ⌊t⌋) x), ⟨⟨Int.fract_nonneg t, (Int.fract_lt_one t).le⟩, trivial⟩, ?_⟩
+  simp only [Function.uncurry_apply_pair]
+  rw [← mk_add_intCast, Int.fract_add_floor]
+
+/-- The mapping torus of a diffeomorphism of a compact manifold is compact. -/
+instance instCompactSpace [CompactSpace M] : CompactSpace (SmoothMappingTorus φ) :=
+  ⟨uncurry_mk_image_Icc_prod_univ φ ▸
+    (isCompact_Icc.prod isCompact_univ).image (continuous_uncurry_mk φ)⟩
+
 section Manifold
 
 variable [T2Space M] [LocallyCompactSpace M] [IsManifold I n M]
@@ -450,6 +467,18 @@ theorem flow_mk (s t : ℝ) (x : M) : flow φ s (mk φ t x) = mk φ (t + s) x :=
 theorem proj_flow (s : ℝ) (z : SmoothMappingTorus φ) : proj φ (flow φ s z) = proj φ z + s := by
   obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
   simp
+
+/-- No point of the mapping torus is a rest point of the suspension flow: the time-`1 / 2` map
+moves the projection to the base circle by `1 / 2`. -/
+theorem exists_flow_ne {φ : M ≃ₘ^n⟮I, I⟯ M} (z : SmoothMappingTorus φ) : ∃ s, flow φ s z ≠ z := by
+  refine ⟨1 / 2, fun h ↦ ?_⟩
+  have hproj := congrArg (proj φ) h
+  rw [proj_flow, add_eq_left, AddCircle.coe_eq_zero_iff] at hproj
+  obtain ⟨k, hk⟩ := hproj
+  rw [zsmul_eq_mul, mul_one] at hk
+  have h2 : ((2 * k : ℤ) : ℝ) = 1 := by push_cast; rw [hk]; norm_num
+  have h2' : 2 * k = 1 := by exact_mod_cast h2
+  omega
 
 /-- The time-`k` map of the suspension flow, for an integer `k`, returns each fibre to itself
 by `φ ^ k`. -/

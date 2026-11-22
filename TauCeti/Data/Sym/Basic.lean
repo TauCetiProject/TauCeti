@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Basic
+public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Data.Finsupp.Multiset
@@ -32,6 +33,8 @@ orbits of the permutation action, by `Sym.ofFn_eq_ofFn_iff`. Nothing here is top
 
 * `Sym.ofFn`: the ordered tuple `f : Fin n → α` read as a point of `Sym α n`, and
   `Sym.ofFn_surjective`, that every unordered tuple arises this way.
+* `Sym.fin_two_two_cases` and `Sym.fin_two_three_cases`: the unordered pairs and triples over
+  `Fin 2`, listed as values of `Sym.ofFn`.
 * `Sym.map_ofFn`, `Sym.map_comp_ofFn` and `Sym.ofFn_fin_append`: `ofFn` intertwines
   postcomposition with `Sym.map`, and concatenation of ordered tuples with `Sym.append`.
 * `Sym.ofFn_eq_ofFn_iff`: two ordered tuples have the same underlying unordered tuple exactly when
@@ -97,6 +100,23 @@ theorem ofFn_surjective : Function.Surjective (ofFn : (Fin n → α) → Sym α 
   obtain rfl : l.length = n := by simpa using hs
   exact ⟨l.get, Subtype.ext (by simp)⟩
 
+/-- **The unordered pairs over `Fin 2`** are `{0, 0}`, `{0, 1}` and `{1, 1}`. -/
+theorem fin_two_two_cases (s : Sym (Fin 2) 2) :
+    s = ofFn ![0, 0] ∨ s = ofFn ![0, 1] ∨ s = ofFn ![1, 1] := by
+  obtain ⟨p, rfl⟩ := ofFn_surjective s
+  simp only [← Sym.coe_inj, coe_ofFn]
+  revert p
+  decide
+
+/-- **The unordered triples over `Fin 2`** are `{0, 0, 0}`, `{0, 0, 1}`, `{0, 1, 1}` and
+`{1, 1, 1}`. -/
+theorem fin_two_three_cases (s : Sym (Fin 2) 3) :
+    s = ofFn ![0, 0, 0] ∨ s = ofFn ![0, 0, 1] ∨ s = ofFn ![0, 1, 1] ∨ s = ofFn ![1, 1, 1] := by
+  obtain ⟨p, rfl⟩ := ofFn_surjective s
+  simp only [← Sym.coe_inj, coe_ofFn]
+  revert p
+  decide
+
 /-- Prepending a point to an ordered tuple adjoins it to the unordered one. -/
 @[simp]
 theorem ofFn_cons (a : α) (f : Fin n → α) : ofFn (Fin.cons a f) = a ::ₛ ofFn f :=
@@ -121,9 +141,9 @@ theorem mem_range_map (f : α → β) {w : Sym β n} :
   · rintro ⟨s, rfl⟩ b hb
     obtain ⟨a, -, rfl⟩ := Sym.mem_map.1 hb
     exact Set.mem_range_self a
-  · choose g hg using fun b : {b // b ∈ w} => hw b b.2
+  · choose g hg using fun b : {b // b ∈ w} => hw b b.property
     exact ⟨Sym.map g w.attach,
-      (Sym.map_map _ _ _).trans ((Sym.map_congr fun b _ => hg b).trans w.attach_map_coe)⟩
+      (Sym.map_map _ _ _).trans ((Sym.map_congr rfl fun b _ => hg b).trans w.attach_map_coe)⟩
 
 /-- Concatenating two ordered tuples adjoins the two unordered ones. -/
 @[simp]

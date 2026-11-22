@@ -7,11 +7,9 @@ module
 
 public import TauCeti.Algebra.Lie.CartanInvolution.Reductive
 public import TauCeti.Algebra.Lie.SpecialLinear.Cartan
-public import TauCeti.Algebra.Lie.Symplectic.Cartan
 
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
 import TauCeti.Algebra.Lie.SpecialLinear.Killing
-import TauCeti.Algebra.Lie.Symplectic.Killing
 
 /-!
 # Examples and non-examples of Cartan involutions
@@ -34,9 +32,6 @@ algebras:
 * **General linear Lie algebras `gl n K`:** negative transpose `TauCeti.negTransposeLieEquiv n K`
   is a reductive Cartan involution over every ordered field `K`
   (`TauCeti.isReductiveCartanInvolution_negTransposeLieEquiv`).
-* **Symplectic Lie algebras `sp l K`:** negative transpose `LieAlgebra.Symplectic.cartanInvolution`
-  is a Cartan involution over every ordered field `K`
-  (`LieAlgebra.Symplectic.isCartanInvolution_cartanInvolution`).
 
 ## Main results
 
@@ -47,8 +42,6 @@ algebras:
   `sl n K`, while `LieEquiv.refl` is not when `1 < Fintype.card n`.
 * `TauCeti.isReductiveCartanInvolution_negTransposeLieEquiv`: `X ↦ -Xᵀ` is a reductive Cartan
   involution of `gl n K`.
-* `LieAlgebra.Symplectic.isCartanInvolution_cartanInvolution`: `X ↦ -Xᵀ` is a Cartan involution
-  of `sp l K`.
 
 ## References
 
@@ -66,13 +59,14 @@ namespace LieEquiv
 
 section Abelian
 
-variable {R L : Type*} [CommRing R] [PartialOrder R] [LieRing L] [LieAlgebra R L]
+variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+  [LieRing L] [LieAlgebra K L]
 
 /-- On an abelian Lie algebra, an automorphism is a reductive Cartan involution if and only if it
 is involutive (its derived ideal is `⊥`). -/
-theorem isReductiveCartanInvolution_iff_of_isLieAbelian [IsLieAbelian L] (θ : L ≃ₗ⁅R⁆ L) :
+theorem isReductiveCartanInvolution_iff_of_isLieAbelian [IsLieAbelian L] (θ : L ≃ₗ⁅K⁆ L) :
     θ.IsReductiveCartanInvolution ↔ Function.Involutive θ := by
-  have hbot : derivedSeries R L 1 = ⊥ := by
+  have hbot : derivedSeries K L 1 = ⊥ := by
     rw [derivedSeries_def, derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero, eq_bot_iff]
     refine (LieSubmodule.lie_le_iff _ _ _).mpr fun x _ y _ ↦ ?_
     simp [trivial_lie_zero]
@@ -84,21 +78,22 @@ theorem isReductiveCartanInvolution_iff_of_isLieAbelian [IsLieAbelian L] (θ : L
     exfalso
     apply hx
     apply Subtype.ext
-    have hx' : (x : L) ∈ (⊥ : LieIdeal R L) := hbot ▸ x.2
+    have hx' : (x : L) ∈ (⊥ : LieIdeal K L) := hbot ▸ x.property
     exact hx'
 
+omit [IsStrictOrderedRing K] in
 /-- No automorphism of a nontrivial abelian Lie algebra is a (semisimple) Cartan involution, since
 the Killing form vanishes identically. -/
-theorem not_isCartanInvolution_of_isLieAbelian [Nontrivial L] [IsLieAbelian L] (θ : L ≃ₗ⁅R⁆ L) :
+theorem not_isCartanInvolution_of_isLieAbelian [Nontrivial L] [IsLieAbelian L] (θ : L ≃ₗ⁅K⁆ L) :
     ¬ θ.IsCartanInvolution := by
   intro hθ
   obtain ⟨x, hx⟩ := exists_ne (0 : L)
-  have had : ad R L x = 0 := by
+  have had : ad K L x = 0 := by
     ext y
     simp [trivial_lie_zero]
-  have hpos := hθ.cartanForm_self_pos hx
-  simp only [cartanForm_apply, killingForm_apply_apply, had, LinearMap.zero_comp, map_zero,
-    neg_zero] at hpos
+  have hpos := hθ.twistedKillingForm_self_pos hx
+  simp only [twistedKillingForm_apply, killingForm_apply_apply, had, LinearMap.zero_comp,
+    map_zero, neg_zero] at hpos
   exact lt_irrefl 0 hpos
 
 end Abelian
@@ -178,12 +173,12 @@ section PID
 variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] [IsDomain R]
   [IsPrincipalIdealRing R]
 
-/-- The Cartan form of `X ↦ -Xᵀ` on `sl n R` is `B_θ(X, Y) = 2 n trace (X * Yᵀ)`. -/
-theorem cartanForm_cartanInvolution_apply (X Y : sl n R) :
-    (cartanInvolution n R).cartanForm X Y =
+/-- The twisted Killing form of `X ↦ -Xᵀ` on `sl n R` is `B_θ(X, Y) = 2 n trace (X * Yᵀ)`. -/
+theorem twistedKillingForm_cartanInvolution_apply (X Y : sl n R) :
+    (cartanInvolution n R).twistedKillingForm X Y =
       2 * Fintype.card n * ((X : Matrix n n R) * (Y : Matrix n n R)ᵀ).trace := by
-  rw [LieEquiv.cartanForm_apply, killingForm_apply, coe_cartanInvolution, mul_neg, trace_neg,
-    mul_neg, neg_neg]
+  rw [LieEquiv.twistedKillingForm_apply, killingForm_apply, coe_cartanInvolution, mul_neg,
+    trace_neg, mul_neg, neg_neg]
 
 end PID
 
@@ -197,7 +192,7 @@ theorem isCartanInvolution_cartanInvolution :
     (cartanInvolution n K).IsCartanInvolution := by
   rw [LieEquiv.isCartanInvolution_iff]
   refine ⟨cartanInvolution_cartanInvolution, fun X hX ↦ ?_⟩
-  rw [← LieEquiv.cartanForm_apply, cartanForm_cartanInvolution_apply]
+  rw [← neg_pos, ← LieEquiv.twistedKillingForm_apply, twistedKillingForm_cartanInvolution_apply]
   obtain ⟨i, j, hij⟩ : ∃ i j, (X : Matrix n n K) i j ≠ 0 := by
     by_contra! h
     exact hX (Subtype.ext (Matrix.ext h))
@@ -222,8 +217,8 @@ theorem not_isCartanInvolution_refl (hn : 1 < Fintype.card n) :
     intro h0
     have hentry := congrArg (fun M : sl n K ↦ (M : Matrix n n K) i i) h0
     simp [H, Matrix.single, hij.symm] at hentry
-  have hpos := hθ.cartanForm_self_pos hH0
-  rw [LieEquiv.cartanForm_apply, LieEquiv.refl_apply, killingForm_apply] at hpos
+  have hpos := hθ.twistedKillingForm_self_pos hH0
+  rw [LieEquiv.twistedKillingForm_apply, LieEquiv.refl_apply, killingForm_apply] at hpos
   have htr : ((H : Matrix n n K) * (H : Matrix n n K)).trace = 2 := by
     simp only [H, val_singleSubSingle, sub_mul, mul_sub, single_mul_single_same,
       single_mul_single_of_ne _ _ _ _ hij, single_mul_single_of_ne _ _ _ _ hij.symm,
@@ -238,7 +233,7 @@ end OrderedField
 
 end LieAlgebra.SpecialLinear
 
-/-! ### General linear and symplectic Lie algebras -/
+/-! ### General linear Lie algebras -/
 
 namespace TauCeti
 
@@ -265,18 +260,3 @@ theorem isReductiveCartanInvolution_negTransposeLieEquiv
   · exact LieAlgebra.SpecialLinear.isCartanInvolution_cartanInvolution
 
 end TauCeti
-
-namespace LieAlgebra.Symplectic
-
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-/-- **Negative transpose `X ↦ -Xᵀ` is a Cartan involution of `sp l K`** over every ordered field
-`K`. -/
-theorem isCartanInvolution_cartanInvolution {l K : Type*} [Fintype l] [DecidableEq l]
-    [Field K] [LinearOrder K] [IsStrictOrderedRing K] :
-    (cartanInvolution l K).IsCartanInvolution :=
-  (LieEquiv.isCartanInvolution_iff _).mpr
-    ⟨cartanInvolution_cartanInvolution, fun _ hX ↦
-      neg_pos.mpr (killingForm_cartanInvolution_self_neg hX)⟩
-
-end LieAlgebra.Symplectic

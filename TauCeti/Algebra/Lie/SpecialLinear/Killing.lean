@@ -62,7 +62,7 @@ theorem killingForm_apply (X Y : sl n R) :
   rw [hres]
   have hX : (e.symm X : Matrix n n R) = X := rfl
   have hY : (e.symm Y : Matrix n n R) = Y := rfl
-  rw [hX, hY, Matrix.killingForm_apply, mem_sl_iff.mp X.2, mem_sl_iff.mp Y.2]
+  rw [hX, hY, Matrix.killingForm_apply, mem_sl_iff.mp X.property, mem_sl_iff.mp Y.property]
   ring
 
 end LieAlgebra.SpecialLinear

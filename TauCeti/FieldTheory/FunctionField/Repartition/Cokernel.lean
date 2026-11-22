@@ -90,14 +90,14 @@ noncomputable def riemannRochSpaceToInfSupDiagonalQuotient (D E : Divisor k F) :
       (adeleFiltration E ⊓ (adeleFiltration D ⊔ diagonalRepartitions k F))).mkQ ∘ₗ
     LinearMap.codRestrict _
       ((Pi.constAlgHom k (Place k F) F).toLinearMap ∘ₗ (riemannRochSpace E).subtype)
-      fun f ↦ const_mem_adeleFiltration_inf_sup_diagonalRepartitions D f.2
+      fun f ↦ const_mem_adeleFiltration_inf_sup_diagonalRepartitions D f.property
 
 @[simp]
 theorem riemannRochSpaceToInfSupDiagonalQuotient_apply (D E : Divisor k F)
     (f : ↥(riemannRochSpace E)) :
     riemannRochSpaceToInfSupDiagonalQuotient D E f =
       Submodule.Quotient.mk ⟨Function.const (Place k F) (f : F),
-        const_mem_adeleFiltration_inf_sup_diagonalRepartitions D f.2⟩ := (rfl)
+        const_mem_adeleFiltration_inf_sup_diagonalRepartitions D f.property⟩ := (rfl)
 
 /-- Every class of `(A_F(E) ∩ (A_F(D) + F))/A_F(D)` is represented by a constant, by the relative
 diagonal-intersection lemma. -/
@@ -109,7 +109,7 @@ theorem riemannRochSpaceToInfSupDiagonalQuotient_surjective (h : D ≤ E) :
       adeleFiltration D ⊔ (diagonalRepartitions k F ⊓ adeleFiltration E) := by
     rw [diagonalRepartitions_inf_adeleFiltration,
       ← adeleFiltration_inf_sup_diagonalRepartitions h]
-    exact a.2
+    exact a.property
   obtain ⟨b, hb, c, ⟨hcd, hce⟩, hbc⟩ := Submodule.mem_sup.mp ha
   obtain ⟨f, rfl⟩ := mem_diagonalRepartitions_iff.mp hcd
   have hf : f ∈ riemannRochSpace E := const_mem_adeleFiltration_iff.mp hce
@@ -151,7 +151,7 @@ theorem riemannRochQuotientEquivInfSupDiagonalQuotient_apply_mk (h : D ≤ E)
     (f : ↥(riemannRochSpace E)) :
     riemannRochQuotientEquivInfSupDiagonalQuotient h (Submodule.Quotient.mk f) =
       Submodule.Quotient.mk ⟨Function.const (Place k F) (f : F),
-        const_mem_adeleFiltration_inf_sup_diagonalRepartitions D f.2⟩ := (rfl)
+        const_mem_adeleFiltration_inf_sup_diagonalRepartitions D f.property⟩ := (rfl)
 
 /-! ### The rank identity -/
 
