@@ -15,6 +15,7 @@ import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Analysis.Convex.Continuous
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.MeasureTheory.Integral.Bochner.Holder
 
 /-!
 # Norms of averages
@@ -254,21 +255,17 @@ theorem enorm_setAverage_rpow_le {q : ℝ} (hq : 1 ≤ q) :
   · simp [setAverage_eq, measureReal_def, hs0, ENNReal.zero_rpow_of_pos hq0]
   by_cases hs : mu s = ∞
   · simp [setAverage_eq, measureReal_def, hs, ENNReal.zero_rpow_of_pos hq0]
-  by_cases hf : IntegrableOn f s mu
-  swap
-  · simp [setAverage_eq, integral_undef hf, ENNReal.zero_rpow_of_pos hq0]
-  have h0 : ‖⨍ y in s, f y ∂mu‖ₑ ≤ (mu s)⁻¹ * ∫⁻ y in s, ‖f y‖ₑ ∂mu := by
-    simpa only [setLAverage_eq, ENNReal.div_eq_inv_mul] using
-      enorm_setAverage_le_setLAverage mu f s
-  have hholder : (∫⁻ y in s, ‖f y‖ₑ ∂mu) ^ q ≤ mu s ^ (q - 1) * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu := by
-    have := rpow_lintegral_le_measure_univ_rpow_mul (μ := mu.restrict s)
-      (u := fun y => ‖f y‖ₑ) hq
-    rwa [Measure.restrict_apply_univ] at this
+  -- Jensen's inequality for the integral over `s`, normalized by `μ s`.
+  have hJ := enorm_integral_rpow_le_measure_univ_rpow_mul (μ := mu.restrict s) f hq
+  rw [Measure.restrict_apply_univ] at hJ
+  have hnorm : ‖(mu.real s)⁻¹‖ₑ = (mu s)⁻¹ := by
+    rw [eNorm_inv (by simp [measureReal_def, ENNReal.toReal_eq_zero_iff, hs0, hs]),
+      Real.eNorm_of_nonneg measureReal_nonneg, measureReal_def, ENNReal.ofReal_toReal hs]
   have hexp : -q + (q - 1) = (-1 : ℝ) := by ring
   calc ‖⨍ y in s, f y ∂mu‖ₑ ^ q
-      ≤ ((mu s)⁻¹ * ∫⁻ y in s, ‖f y‖ₑ ∂mu) ^ q := ENNReal.rpow_le_rpow h0 hq0.le
-    _ = (mu s)⁻¹ ^ q * (∫⁻ y in s, ‖f y‖ₑ ∂mu) ^ q := ENNReal.mul_rpow_of_nonneg _ _ hq0.le
-    _ ≤ (mu s)⁻¹ ^ q * (mu s ^ (q - 1) * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu) := mul_le_mul' le_rfl hholder
+      = (mu s)⁻¹ ^ q * ‖∫ y in s, f y ∂mu‖ₑ ^ q := by
+        rw [setAverage_eq, eNorm_smul, hnorm, ENNReal.mul_rpow_of_nonneg _ _ hq0.le]
+    _ ≤ (mu s)⁻¹ ^ q * (mu s ^ (q - 1) * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu) := mul_le_mul' le_rfl hJ
     _ = (mu s)⁻¹ * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu := by
         rw [← mul_assoc, ENNReal.inv_rpow, ← ENNReal.rpow_neg, ← ENNReal.rpow_add _ _ hs0 hs,
           hexp, ENNReal.rpow_neg_one]

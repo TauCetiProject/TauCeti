@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Kernel.Composition.IntegralCompProd
 public import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Integral.Bochner.Holder
 
 /-!
@@ -19,10 +20,13 @@ most a constant `c`, then for `1 ≤ p` the `Lᵖ` seminorm of the component int
 `c ^ (1 - 1 / p)` times that of the observable under the mixture, so an observable in `Lᵖ` of the
 mixture has its component integrals in `Lᵖ` of the mixing measure. An observable that is almost
 everywhere strongly measurable, or in `Lᵖ`, with respect to the mixture is so with respect to
-almost every component. Integrability is characterized by almost-everywhere component
-integrability and integrability of the component absolute moments. The second-moment version
-supports covariance calculations for mixtures. The real mass of a measurable set is the integral
-of its component real masses when those component masses are finite almost everywhere.
+almost every component. For an observable that is almost everywhere strongly measurable with
+respect to the mixture, integrability is characterized by almost-everywhere component
+integrability and integrability of the component absolute moments, and square-integrability by
+almost-everywhere component square-integrability and integrability of the component second
+moments; the latter supports covariance calculations for mixtures. The real mass of a measurable
+set is the integral of its component real masses when those component masses are finite almost
+everywhere.
 
 These results use Mathlib's integration theory for kernel composition, with the mixing measure
 viewed as a constant kernel. The component family need only be almost everywhere measurable: it
@@ -43,8 +47,9 @@ namespace MeasureTheory.Measure
 variable {α β E : Type*} [MeasurableSpace α] [MeasurableSpace β]
   [NormedAddCommGroup E] {μ : Measure α} {K : α → Measure β} {f : β → E}
 
-/-- Integrability against a mixture is equivalent to component integrability almost everywhere
-and integrability of the component absolute moments. -/
+/-- An observable that is almost everywhere strongly measurable with respect to the mixture is
+integrable against it exactly when it is integrable against almost every component and its
+component absolute moments are integrable against the mixing measure. -/
 theorem integrable_bind_iff (hK : AEMeasurable K μ)
     (hf : AEStronglyMeasurable f (μ.bind K)) :
     Integrable f (μ.bind K) ↔
@@ -130,8 +135,9 @@ theorem ae_aestronglyMeasurable_bind (hK : AEMeasurable K μ)
   filter_upwards [ae_ae_of_ae_bind hK hf.ae_eq_mk] with a ha
   exact ⟨hf.mk f, hf.stronglyMeasurable_mk, ha⟩
 
-/-- A mixture has a finite second moment exactly when its components do almost everywhere
-and their second moments are integrable under the mixing law. -/
+/-- An observable that is almost everywhere strongly measurable with respect to the mixture is
+square-integrable against it exactly when it is square-integrable against almost every component
+and its component second moments are integrable against the mixing measure. -/
 theorem memLp_two_bind_iff (hK : AEMeasurable K μ)
     (hf : AEStronglyMeasurable f (μ.bind K)) :
     MemLp f 2 (μ.bind K) ↔
@@ -185,7 +191,6 @@ private theorem eLpNorm_integral_bind_le_of_aestronglyMeasurable [NormedSpace �
           exact mul_le_mul' hca le_rfl
   have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp_top hp
   have hr0 : p.toReal ≠ 0 := (zero_lt_one.trans_le hr).ne'
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
   have hcr : (c : ℝ≥0∞) ^ (p.toReal - 1) ≠ ∞ :=
     ENNReal.rpow_ne_top_of_nonneg (sub_nonneg.2 hr) ENNReal.coe_ne_top
   -- Jensen's inequality under each component, integrated against the mixing measure.
@@ -197,16 +202,13 @@ private theorem eLpNorm_integral_bind_le_of_aestronglyMeasurable [NormedSpace �
     exact (TauCeti.enorm_integral_rpow_le_measure_univ_rpow_mul _ hr).trans
       (mul_le_mul' (ENNReal.rpow_le_rpow hca (sub_nonneg.2 hr)) le_rfl)
   -- Taking `p`-th roots turns the integrated bound into the bound on the seminorms.
-  calc eLpNorm (fun a ↦ ∫ x, f x ∂K a) p μ
-      = (∫⁻ a, ‖∫ x, f x ∂K a‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) :=
-        eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hmean
-    _ ≤ ((c : ℝ≥0∞) ^ (p.toReal - 1) * ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ.bind K) ^ (1 / p.toReal) :=
-        ENNReal.rpow_le_rpow hJ (by positivity)
-    _ = (c : ℝ≥0∞) ^ (1 - p.toReal⁻¹) * eLpNorm f p (μ.bind K) := by
-        rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul,
-          eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hf]
-        congr 2
-        field_simp
+  have hC : ENNReal.ofReal ((c : ℝ) ^ (1 - p.toReal⁻¹)) = (c : ℝ≥0∞) ^ (1 - p.toReal⁻¹) := by
+    rw [← ENNReal.ofReal_rpow_of_nonneg c.coe_nonneg (sub_nonneg.2 (inv_le_one_of_one_le₀ hr)),
+      ENNReal.ofReal_coe_nnreal]
+  rw [← hC]
+  refine TauCeti.eLpNorm_le_eLpNorm_of_lintegral_rpow_le (by positivity) hp_top hmean ?_
+  rwa [← ENNReal.ofReal_rpow_of_nonneg (by positivity) (by positivity), hC, ← ENNReal.rpow_mul,
+    sub_mul, inv_mul_cancel₀ hr0, one_mul]
 
 /-- If almost every component has mass at most `c`, then for `1 ≤ p` the `Lᵖ` seminorm of the
 component Bochner integrals of an observable is at most `c ^ (1 - 1 / p)` times its `Lᵖ` seminorm

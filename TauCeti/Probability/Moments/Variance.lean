@@ -67,8 +67,11 @@ variances and Borel--Cantelli almost-sure convergence to the mean from summable 
   of the extended variances of its sections in the second coordinate is finite and either the
   extended variance of their integrals or the lower integral of the extended variances of its
   sections in the first coordinate is finite.
-* `TauCeti.Probability.evariance_integral_prod_le` and
-  `TauCeti.Probability.evariance_prod_le`: product-variance bounds for averages and products.
+* `TauCeti.Probability.evariance_integral_prod_le`: the extended variance of the integral over the
+  second factor of an s-finite product is at most the mass of that factor times the integral of the
+  section extended variances in the first coordinate.
+* `TauCeti.Probability.evariance_prod_le`: the two-factor Efron–Stein bound on the product of a
+  finite measure and a probability measure.
 * `TauCeti.Probability.variance_weighted_coordinate_sum` and
   `TauCeti.Probability.measure_weighted_coordinate_sum_sub_mean_ge`: variance and Chebyshev
   bounds for weighted sums of pairwise independent variables.
@@ -508,40 +511,45 @@ theorem evariance_prod_eq [IsFiniteMeasure ν] [IsProbabilityMeasure π]
 end ProdSections
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {ν : Measure α} {π : Measure β}
-  [SFinite ν] [IsProbabilityMeasure π] {F : α × β → ℝ}
+  [SFinite ν] [SFinite π] {F : α × β → ℝ}
 
 private theorem evariance_integral_prod_le_of_measurable (hF : Measurable F)
     (hint : Integrable F (ν.prod π)) :
     evariance (fun a => ∫ w, F (a, w) ∂π) ν ≤
-      ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
+      π Set.univ * ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
   have hmm : StronglyMeasurable (fun w => ∫ a, F (a, w) ∂ν) :=
     (hF.comp measurable_swap).stronglyMeasurable.integral_prod_right'
   have hmint : Integrable (fun w => ∫ a, F (a, w) ∂ν) π := hint.integral_prod_right
   have hm_eq : ∫ w, ∫ a, F (a, w) ∂ν ∂π = ∫ a, ∫ w, F (a, w) ∂π ∂ν := by
     rw [← integral_prod_symm _ hint, integral_prod _ hint]
   have hae : ∀ᵐ a ∂ν, ‖(∫ w, F (a, w) ∂π) - ∫ a', ∫ w, F (a', w) ∂π ∂ν‖ₑ ^ 2 ≤
-      ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π := by
+      π Set.univ * ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π := by
     filter_upwards [hint.prod_right_ae] with a ha
     have hsub : (∫ w, F (a, w) ∂π) - ∫ a', ∫ w, F (a', w) ∂π ∂ν =
         ∫ w, (F (a, w) - ∫ a', F (a', w) ∂ν) ∂π := by
       rw [integral_sub ha hmint, hm_eq]
     rw [hsub]
-    simpa only [measure_univ, ENNReal.one_rpow, one_mul, ENNReal.rpow_two] using
-      enorm_integral_rpow_le_measure_univ_rpow_mul (μ := π)
-        (fun w => F (a, w) - ∫ a', F (a', w) ∂ν) one_le_two
+    have hJ := enorm_integral_rpow_le_measure_univ_rpow_mul (μ := π)
+      (fun w => F (a, w) - ∫ a', F (a', w) ∂ν) one_le_two
+    rw [show (2 : ℝ) - 1 = 1 by norm_num, ENNReal.rpow_one] at hJ
+    simpa only [ENNReal.rpow_two] using hJ
+  have hGm : Measurable fun p : α × β => ‖F p - ∫ a', F (a', p.2) ∂ν‖ₑ ^ 2 :=
+    (hF.sub (hmm.measurable.comp measurable_snd)).eNorm.pow_const 2
   calc evariance (fun a => ∫ w, F (a, w) ∂π) ν
-      ≤ ∫⁻ a, ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π ∂ν := lintegral_mono_ae hae
-    _ = ∫⁻ w, ∫⁻ a, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂ν ∂π :=
-        lintegral_lintegral_swap
-          ((hF.sub (hmm.measurable.comp measurable_snd)).eNorm.pow_const 2).aemeasurable
-    _ = ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := rfl
+      ≤ ∫⁻ a, π Set.univ * ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π ∂ν :=
+        lintegral_mono_ae hae
+    _ = π Set.univ * ∫⁻ w, ∫⁻ a, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂ν ∂π := by
+        rw [lintegral_const_mul _ hGm.lintegral_prod_right', lintegral_lintegral_swap
+          hGm.aemeasurable]
+    _ = π Set.univ * ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := rfl
 
-/-- Jensen's inequality for the variance of an average: the variance of the average over the
-second coordinate is at most the average over the second coordinate of the variances in the first
-coordinate. -/
+/-- Jensen's inequality for the variance of an integral: the variance of the integral over the
+second coordinate is at most the mass of the second factor times the integral over the second
+coordinate of the variances in the first coordinate. For a probability measure on the second
+factor this bounds the variance of the average by the average of the variances. -/
 theorem evariance_integral_prod_le (hint : Integrable F (ν.prod π)) :
     evariance (fun a => ∫ w, F (a, w) ∂π) ν ≤
-      ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
+      π Set.univ * ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
   have hG := hint.1.stronglyMeasurable_mk
   have hFG : F =ᵐ[ν.prod π] hint.1.mk F := hint.1.ae_eq_mk
   have h1 : ∀ᵐ a ∂ν, ∀ᵐ w ∂π, F (a, w) = hint.1.mk F (a, w) := Measure.ae_ae_of_ae_prod hFG
@@ -552,17 +560,18 @@ theorem evariance_integral_prod_le (hint : Integrable F (ν.prod π)) :
     lintegral_congr_ae (h2.mono fun w hw => evariance_congr hw)]
   exact evariance_integral_prod_le_of_measurable hG.measurable (hint.congr hFG)
 
-omit [SFinite ν] in
+omit [SFinite ν] [SFinite π] in
 /-- The two-factor Efron--Stein inequality on the product of a finite measure and a probability
 measure. The function `F` need only be almost everywhere strongly measurable with respect to the
 product measure; when it is not square-integrable, both sides are infinite. -/
-theorem evariance_prod_le [IsFiniteMeasure ν] (hF : AEStronglyMeasurable F (ν.prod π)) :
+theorem evariance_prod_le [IsFiniteMeasure ν] [IsProbabilityMeasure π]
+    (hF : AEStronglyMeasurable F (ν.prod π)) :
     evariance F (ν.prod π) ≤ ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν +
       ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
   by_cases hL : MemLp F 2 (ν.prod π)
   · rw [evariance_prod_eq hF]
     gcongr
-    exact evariance_integral_prod_le (hL.integrable one_le_two)
+    simpa only [measure_univ, one_mul] using evariance_integral_prod_le (hL.integrable one_le_two)
   rw [evariance_eq_top hF hL, top_le_iff, ENNReal.add_eq_top]
   by_contra h
   exact hL (memLp_prod_of_lintegral_evariance_ne_top hF (h ∘ .inl) (h ∘ .inr))
