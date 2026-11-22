@@ -161,7 +161,7 @@ theorem continuousOn_zeroSectionRescale {h : S × V → S × W}
     have := hδε p.2.1 _ hpU (by rwa [norm_smul, Real.norm_of_nonneg hp0.le])
     calc ‖(p.1 : ℝ)⁻¹ • (h (p.2.1, (p.1 : ℝ) • p.2.2)).2 - L p.2.1 p.2.2‖
         ≤ ε / 2 / (‖q.2.2‖ + 1) * ‖p.2.2‖ :=
-          (L p.2.1).toLinearMap.norm_inv_smul_sub_le hp le_rfl this
+          (L p.2.1).toLinearMap.norm_inv_smul_sub_le hp le_rfl (by rwa [norm_smul] at this)
       _ ≤ ε / 2 / (‖q.2.2‖ + 1) * (‖q.2.2‖ + 1) := by gcongr
       _ = ε / 2 := div_mul_cancel₀ _ (by positivity)
       _ < ε := half_lt_self hε
