@@ -77,19 +77,27 @@ theorem hasLaw_renewalArrivalMeasure_poissonLaw_of_expMeasure
     (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
     HasLaw (renewalArrivalMeasure T) ((r : ℝ≥0∞) • nnvolume).poissonLaw P := by
-  have hTm (n : ℕ) : AEMeasurable (T n) P :=
-    ((hlaw n).identDistrib_nnreal (hlaw 0)).aemeasurable_fst
-  let T' : ℕ → Ω → ℝ≥0 := fun n ↦ (hTm n).mk (T n)
-  have hT' (n : ℕ) : Measurable (T' n) := (hTm n).measurable_mk
-  have haeT (n : ℕ) : T n =ᵐ[P] T' n := (hTm n).ae_eq_mk
-  have hindep' : iIndepFun T' P := hindep.congr haeT
-  have hlaw' (n : ℕ) : HasLaw (fun ω ↦ (T' n ω : ℝ)) (expMeasure r) P :=
-    (hlaw n).congr ((haeT n).symm.mono fun _ hω ↦ congrArg NNReal.toReal hω)
-  have hP' := isPoissonRandomMeasure_renewalArrivalMeasure_of_expMeasure hT' hindep' hlaw'
-  have hmeas_eq : renewalArrivalMeasure T =ᵐ[P] renewalArrivalMeasure T' := by
-    filter_upwards [arrival_congr_ae haeT] with ω hω
-    simp only [renewalArrivalMeasure_def, hω]
-  exact hP'.hasLaw_poissonLaw.congr hmeas_eq
+  have := hindep.isProbabilityMeasure
+  have hr := pos_of_hasLaw_expMeasure (hlaw 0)
+  have := isProbabilityMeasure_nnrealExpMeasure (NNReal.coe_pos.mpr hr)
+  have hTnn (n : ℕ) : HasLaw (T n) (nnrealExpMeasure r) P :=
+    hasLaw_nnrealExpMeasure_iff.mpr (hlaw n)
+  have hpath : HasLaw (fun ω n ↦ T n ω)
+      (Measure.infinitePi fun _ : ℕ ↦ nnrealExpMeasure r) P :=
+    hindep.hasLaw_infinitePi hTnn (aemeasurable_pi_iff.2 fun n ↦ (hTnn n).aemeasurable)
+  have hP₀ : IsPoissonRandomMeasure (Measure.infinitePi fun _ : ℕ ↦ nnrealExpMeasure r)
+      (renewalArrivalMeasure fun n (w : ℕ → ℝ≥0) ↦ w n) ((r : ℝ≥0∞) • nnvolume) :=
+    isPoissonRandomMeasure_renewalArrivalMeasure_of_expMeasure
+      (fun n ↦ measurable_pi_apply n)
+      (iIndepFun_infinitePi (X := fun _ : ℕ ↦ (id : ℝ≥0 → ℝ≥0)) fun _ ↦ measurable_id)
+      fun n ↦ hasLaw_nnrealExpMeasure_iff.mp
+        (measurePreserving_eval_infinitePi (fun _ : ℕ ↦ nnrealExpMeasure r) n).hasLaw
+  have hcomp : renewalArrivalMeasure T =
+      renewalArrivalMeasure (fun n (w : ℕ → ℝ≥0) ↦ w n) ∘ (fun ω n ↦ T n ω) := by
+    funext ω
+    exact renewalArrivalMeasure_comp (fun n (w : ℕ → ℝ≥0) ↦ w n) (fun ω n ↦ T n ω) ω
+  rw [hcomp]
+  exact hP₀.hasLaw_poissonLaw.comp hpath
 
 /-- **Equality in distribution of arrival measures.** The exponential renewal arrival measure has
 the same distribution as any homogeneous Poisson random measure of the same rate, possibly on a

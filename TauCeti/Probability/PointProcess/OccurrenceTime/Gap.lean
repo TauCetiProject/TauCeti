@@ -181,6 +181,7 @@ theorem coe_sum_range_succ_toNNReal_occurrenceGap {μ : Measure ℝ≥0} {n : �
 
 /-- Summing the first `n + 1` nonnegative-real interarrival gaps recovers the nonnegative-real
 occurrence time whenever that occurrence is finite. -/
+@[simp]
 theorem sum_range_succ_toNNReal_occurrenceGap {μ : Measure ℝ≥0} {n : ℕ}
     (hn : μ.occurrenceTime n ≠ ∞) :
     ∑ i ∈ Finset.range (n + 1), (μ.occurrenceGap i).toNNReal = (μ.occurrenceTime n).toNNReal := by
@@ -189,6 +190,7 @@ theorem sum_range_succ_toNNReal_occurrenceGap {μ : Measure ℝ≥0} {n : ℕ}
 
 /-- Summing the first `n + 1` real-valued interarrival gaps recovers the real-valued occurrence
 time whenever that occurrence is finite. -/
+@[simp]
 theorem sum_range_succ_toReal_occurrenceGap {μ : Measure ℝ≥0} {n : ℕ}
     (hn : μ.occurrenceTime n ≠ ∞) :
     ∑ i ∈ Finset.range (n + 1), (μ.occurrenceGap i).toReal = (μ.occurrenceTime n).toReal := by

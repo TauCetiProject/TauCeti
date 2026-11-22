@@ -7,12 +7,8 @@ module
 
 public import TauCeti.Probability.Renewal.Exponential.Poisson
 public import TauCeti.Probability.PointProcess.Poisson.Temporal
-import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 import TauCeti.Probability.Independence.Basic
 import TauCeti.Probability.Independence.InfinitePi
-import TauCeti.Probability.PointProcess.Poisson.IntegerValued
-import TauCeti.Probability.PointProcess.Poisson.OccurrenceTime
-import Mathlib.Probability.Independence.InfinitePi
 
 /-!
 # Exponential interarrival characterization of homogeneous Poisson random measures
@@ -142,30 +138,6 @@ theorem hasLaw_occurrenceGap_infinitePi
   funext n
   exact (ENNReal.coe_toNNReal (hω n).2.ne).symm
 
-/-- The `ℝ≥0`-valued interarrival gaps of a homogeneous Poisson random measure are mutually
-independent, including at rate zero where every gap is almost surely zero. -/
-theorem iIndepFun_toNNReal_occurrenceGap
-    (h : IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume)) :
-    ProbabilityTheory.iIndepFun (fun n ω ↦ ((M ω).occurrenceGap n).toNNReal) P := by
-  have := h.isProbabilityMeasure
-  rcases eq_zero_or_pos r with rfl | hr
-  · rw [ENNReal.coe_zero, zero_smul] at h
-    exact iIndepFun_of_ae_eq_const_outside_subsingleton (s := ∅) Set.subsingleton_empty
-      fun n _ ↦ ⟨0, h.ae_eq_zero_measure.mono fun ω hω ↦ by simp [hω]⟩
-  · have hm : Measurable (fun ω n ↦ ((M ω).occurrenceGap n).toNNReal) :=
-      measurable_pi_iff.mpr fun n ↦
-        ENNReal.measurable_toNNReal.comp ((Measure.measurable_occurrenceGap n).comp h.measurable)
-    exact (iIndepFun_iff_hasLaw_Pi_infinitePi (h.hasLaw_toNNReal_occurrenceGap hr)
-      hm.aemeasurable).mpr (h.hasLaw_toNNReal_occurrenceGap_infinitePi hr)
-
-/-- The real-valued interarrival gaps of a homogeneous Poisson random measure are mutually
-independent, including at rate zero. -/
-theorem iIndepFun_toReal_occurrenceGap
-    (h : IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume)) :
-    ProbabilityTheory.iIndepFun (fun n ω ↦ ((M ω).occurrenceGap n).toReal) P :=
-  h.iIndepFun_toNNReal_occurrenceGap.comp (fun _ ↦ ((↑) : ℝ≥0 → ℝ))
-    (fun _ ↦ measurable_coe_nnreal_real)
-
 /-- Each extended-valued interarrival gap of a positive-rate homogeneous Poisson random measure
 has law `(expMeasure r).map ENNReal.ofReal`. -/
 theorem hasLaw_occurrenceGap
@@ -186,11 +158,26 @@ theorem iIndepFun_occurrenceGap
   · rw [ENNReal.coe_zero, zero_smul] at h
     exact iIndepFun_of_ae_eq_const_outside_subsingleton (s := ∅) Set.subsingleton_empty
       fun n _ ↦ ⟨∞, h.ae_eq_zero_measure.mono fun ω hω ↦ by simp [hω]⟩
-  · have hcoe := h.iIndepFun_toNNReal_occurrenceGap.comp
-      (fun _ ↦ ((↑) : ℝ≥0 → ℝ≥0∞)) (fun _ ↦ measurable_coe_nnreal_ennreal)
-    refine hcoe.congr fun n ↦ ?_
-    filter_upwards [h.ae_forall_occurrenceGap_pos_lt_top hr] with ω hω
-    exact ENNReal.coe_toNNReal (hω n).2.ne
+  · have hm : Measurable (fun ω n ↦ (M ω).occurrenceGap n) :=
+      measurable_pi_iff.mpr fun n ↦ (Measure.measurable_occurrenceGap n).comp h.measurable
+    exact (iIndepFun_iff_hasLaw_Pi_infinitePi (h.hasLaw_occurrenceGap hr)
+      hm.aemeasurable).mpr (h.hasLaw_occurrenceGap_infinitePi hr)
+
+/-- The `ℝ≥0`-valued interarrival gaps of a homogeneous Poisson random measure are mutually
+independent, including at rate zero where every gap is almost surely zero. -/
+theorem iIndepFun_toNNReal_occurrenceGap
+    (h : IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume)) :
+    ProbabilityTheory.iIndepFun (fun n ω ↦ ((M ω).occurrenceGap n).toNNReal) P :=
+  h.iIndepFun_occurrenceGap.comp (fun _ ↦ ENNReal.toNNReal)
+    (fun _ ↦ ENNReal.measurable_toNNReal)
+
+/-- The real-valued interarrival gaps of a homogeneous Poisson random measure are mutually
+independent, including at rate zero. -/
+theorem iIndepFun_toReal_occurrenceGap
+    (h : IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume)) :
+    ProbabilityTheory.iIndepFun (fun n ω ↦ ((M ω).occurrenceGap n).toReal) P :=
+  h.iIndepFun_occurrenceGap.comp (fun _ ↦ ENNReal.toReal)
+    (fun _ ↦ ENNReal.measurable_toReal)
 
 /-- Almost every realization of a positive-rate homogeneous Poisson random measure has strictly
 increasing occurrence times. -/
@@ -202,32 +189,35 @@ theorem ae_strictMono_occurrenceTime
     (Measure.occurrenceGap_succ_pos_iff
       (((M ω).occurrenceGap_eq_top_iff n).not.mp (hω n).2.ne)).1 (hω (n + 1)).1
 
+private theorem ae_toReal_occurrenceGap_succ_eq
+    (h : IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume)) (n : ℕ) :
+    (fun ω ↦ ((M ω).occurrenceGap (n + 1)).toReal) =ᵐ[P]
+      fun ω ↦ ((M ω).occurrenceTime (n + 1)).toReal - ((M ω).occurrenceTime n).toReal := by
+  rcases eq_zero_or_pos r with rfl | hr
+  · rw [ENNReal.coe_zero, zero_smul] at h
+    filter_upwards [h.ae_eq_zero_measure] with ω hω
+    simp [hω]
+  · filter_upwards [h.ae_forall_occurrenceGap_pos_lt_top hr] with ω hω
+    exact Measure.toReal_occurrenceGap_succ
+      ((Measure.occurrenceGap_lt_top_iff _ _).mp (hω (n + 1)).2).ne
+
 /-- Consecutive real-valued occurrence-time differences
 `((M ω).occurrenceTime (n + 1)).toReal - ((M ω).occurrenceTime n).toReal` of a homogeneous
 temporal Poisson random measure are mutually independent, including at rate zero. -/
 theorem iIndepFun_toReal_occurrenceTime_sub
     (h : IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume)) :
     ProbabilityTheory.iIndepFun (fun n ω ↦
-      ((M ω).occurrenceTime (n + 1)).toReal - ((M ω).occurrenceTime n).toReal) P := by
-  rcases eq_zero_or_pos r with rfl | hr
-  · have := h.isProbabilityMeasure
-    rw [ENNReal.coe_zero, zero_smul] at h
-    exact iIndepFun_of_ae_eq_const_outside_subsingleton (s := ∅) Set.subsingleton_empty
-      fun n _ ↦ ⟨0, h.ae_eq_zero_measure.mono fun ω hω ↦ by simp [hω]⟩
-  · have hind := h.iIndepFun_toReal_occurrenceGap.precomp Nat.succ_injective
-    refine hind.congr fun n ↦ ?_
-    filter_upwards [h.ae_forall_occurrenceTime_pos_lt_top hr] with ω hω
-    exact Measure.toReal_occurrenceGap_succ (hω (n + 1)).2.ne
+      ((M ω).occurrenceTime (n + 1)).toReal - ((M ω).occurrenceTime n).toReal) P :=
+  (h.iIndepFun_toReal_occurrenceGap.precomp Nat.succ_injective).congr
+    (ae_toReal_occurrenceGap_succ_eq h)
 
 /-- Each consecutive real-valued occurrence-time difference of a positive-rate homogeneous
 temporal Poisson random measure has law `expMeasure r`. -/
 theorem hasLaw_toReal_occurrenceTime_sub
     (h : IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume)) (hr : 0 < r) (n : ℕ) :
     HasLaw (fun ω ↦ ((M ω).occurrenceTime (n + 1)).toReal - ((M ω).occurrenceTime n).toReal)
-      (expMeasure r) P := by
-  refine (h.hasLaw_toReal_occurrenceGap hr (n + 1)).congr ?_
-  filter_upwards [h.ae_forall_occurrenceTime_pos_lt_top hr] with ω hω
-  exact (Measure.toReal_occurrenceGap_succ (hω (n + 1)).2.ne).symm
+      (expMeasure r) P :=
+  (h.hasLaw_toReal_occurrenceGap hr (n + 1)).congr (ae_toReal_occurrenceGap_succ_eq h n).symm
 
 /-- Almost every realization of a positive-rate homogeneous Poisson random measure is the sum of
 Dirac masses at the partial sums of its interarrival gaps. -/
@@ -283,6 +273,20 @@ theorem isPoissonRandomMeasure_smul_nnvolume_of_iIndepFun_toReal_occurrenceGap
   let := hloc
   exact renewalArrivalMeasure_toNNReal_occurrenceGap_eq hωint hfin
 
+/-- **Recognizing a homogeneous Poisson random measure from i.i.d. exponential gaps (`ℝ≥0` form).**
+No separate `0 < r`, local-finiteness, simplicity, or absence of mass at zero is needed. -/
+theorem isPoissonRandomMeasure_smul_nnvolume_of_iIndepFun_toNNReal_occurrenceGap
+    (hM : Measurable M) (hint : ∀ᵐ ω ∂P, (M ω).IsIntegerValued)
+    (hind : iIndepFun (fun n ω ↦ ((M ω).occurrenceGap n).toNNReal) P)
+    (hlaw : ∀ n, HasLaw (fun ω ↦ ((M ω).occurrenceGap n).toNNReal) (nnrealExpMeasure r) P) :
+    IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume) := by
+  refine isPoissonRandomMeasure_smul_nnvolume_of_iIndepFun_toReal_occurrenceGap hM hint ?_
+    fun n ↦ ?_
+  · simpa only [Function.comp_def, ENNReal.coe_toNNReal_eq_toReal] using
+      hind.comp (fun _ ↦ ((↑) : ℝ≥0 → ℝ)) (fun _ ↦ measurable_coe_nnreal_real)
+  · simpa only [ENNReal.coe_toNNReal_eq_toReal] using
+      hasLaw_nnrealExpMeasure_iff.mp (hlaw n)
+
 /-- **Recognizing a homogeneous Poisson random measure from i.i.d. exponential gaps (`ℝ≥0∞` form).**
 No separate `0 < r`, local-finiteness, simplicity, or absence of mass at zero is needed. -/
 theorem isPoissonRandomMeasure_smul_nnvolume_of_iIndepFun_occurrenceGap
@@ -310,6 +314,18 @@ theorem isPoissonRandomMeasure_smul_nnvolume_iff_iIndepFun_toReal_occurrenceGap
       h.hasLaw_toReal_occurrenceGap hr⟩,
     fun ⟨hint, hind, hlaw⟩ ↦
       isPoissonRandomMeasure_smul_nnvolume_of_iIndepFun_toReal_occurrenceGap hM hint hind hlaw⟩
+
+/-- **Exponential-gap characterization of a homogeneous Poisson random measure (`ℝ≥0` form).** -/
+theorem isPoissonRandomMeasure_smul_nnvolume_iff_iIndepFun_toNNReal_occurrenceGap
+    (hr : 0 < r) (hM : Measurable M) :
+    IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume) ↔
+      (∀ᵐ ω ∂P, (M ω).IsIntegerValued) ∧
+      iIndepFun (fun n ω ↦ ((M ω).occurrenceGap n).toNNReal) P ∧
+      ∀ n, HasLaw (fun ω ↦ ((M ω).occurrenceGap n).toNNReal) (nnrealExpMeasure r) P :=
+  ⟨fun h ↦ ⟨h.ae_isIntegerValued, h.iIndepFun_toNNReal_occurrenceGap,
+      h.hasLaw_toNNReal_occurrenceGap hr⟩,
+    fun ⟨hint, hind, hlaw⟩ ↦
+      isPoissonRandomMeasure_smul_nnvolume_of_iIndepFun_toNNReal_occurrenceGap hM hint hind hlaw⟩
 
 /-- **Exponential-gap characterization of a homogeneous Poisson random measure (`ℝ≥0∞` form).** -/
 theorem isPoissonRandomMeasure_smul_nnvolume_iff_iIndepFun_occurrenceGap

@@ -209,30 +209,33 @@ theorem measurable_renewalArrivalMeasure (hT : ∀ n, Measurable (T n)) :
 theorem measurable_renewalArrivalMeasure_iff :
     Measurable (renewalArrivalMeasure T) ↔ ∀ n, Measurable (T n) := by
   refine ⟨fun h n => ?_, measurable_renewalArrivalMeasure⟩
-  have hcomp : T n = fun ω => ((renewalArrivalMeasure T ω).occurrenceGap n).toNNReal := by
-    funext ω
-    simp
-  rw [hcomp]
-  exact ENNReal.measurable_toNNReal.comp ((Measure.measurable_occurrenceGap n).comp h)
+  simpa only [Function.comp_def, occurrenceGap_renewalArrivalMeasure, ENNReal.toNNReal_coe] using
+    ENNReal.measurable_toNNReal.comp ((Measure.measurable_occurrenceGap n).comp h)
 
 variable {P : Measure Ω}
+
+/-- If two increment sequences agree almost everywhere at each index, then their renewal arrival
+measures agree almost everywhere. -/
+theorem renewalArrivalMeasure_congr_ae {T' : ℕ → Ω → ℝ≥0} (h : ∀ n, T n =ᵐ[P] T' n) :
+    renewalArrivalMeasure T =ᵐ[P] renewalArrivalMeasure T' := by
+  filter_upwards [arrival_congr_ae h] with ω hω
+  simp only [renewalArrivalMeasure_def, hω]
 
 /-- The renewal arrival measure is almost everywhere measurable if and only if every increment
 is almost everywhere measurable. -/
 theorem aemeasurable_renewalArrivalMeasure_iff :
     AEMeasurable (renewalArrivalMeasure T) P ↔ ∀ n, AEMeasurable (T n) P := by
   refine ⟨fun h n => ?_, fun hT => ?_⟩
-  · have hcomp : T n = fun ω => ((renewalArrivalMeasure T ω).occurrenceGap n).toNNReal := by
+  · simpa only [Function.comp_def, occurrenceGap_renewalArrivalMeasure, ENNReal.toNNReal_coe] using
+      ENNReal.measurable_toNNReal.comp_aemeasurable
+        ((Measure.measurable_occurrenceGap n).comp_aemeasurable h)
+  · have hcomp : renewalArrivalMeasure T =
+        renewalArrivalMeasure (fun n (w : ℕ → ℝ≥0) => w n) ∘ (fun ω n => T n ω) := by
       funext ω
-      simp
+      exact renewalArrivalMeasure_comp (fun n (w : ℕ → ℝ≥0) => w n) (fun ω n => T n ω) ω
     rw [hcomp]
-    exact ENNReal.measurable_toNNReal.comp_aemeasurable
-      ((Measure.measurable_occurrenceGap n).comp_aemeasurable h)
-  · let T' : ℕ → Ω → ℝ≥0 := fun n => (hT n).mk (T n)
-    refine ⟨renewalArrivalMeasure T',
-      measurable_renewalArrivalMeasure fun n => (hT n).measurable_mk, ?_⟩
-    filter_upwards [arrival_congr_ae fun n => (hT n).ae_eq_mk] with ω hω
-    simp only [renewalArrivalMeasure_def, T', hω]
+    exact (measurable_renewalArrivalMeasure fun n => measurable_pi_apply n).comp_aemeasurable
+      (aemeasurable_pi_iff.2 hT)
 
 /-- Almost-everywhere measurable increments give an almost-everywhere measurable random arrival
 measure for the evaluation σ-algebra on measures. -/
