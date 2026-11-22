@@ -24,6 +24,17 @@ independent within each corner, with no independence required across sizes, as w
 infinite array) of every `k`-th empirical spectral moment to the `k`-th moment of
 `semicircleReal 0 s`.
 
+The reduction of the expected-moment limit from `2k`-th to `k`-th moments (via
+`MemLp.mono_exponent` and `MemLp.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul`) and the
+fluctuation-plus-mean arguments adapt the odd-moment and `sub_mean` proofs in
+`TauCeti.Probability.RandomMatrix.SpectralMoment.Variance`
+(`tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean_probability`,
+`tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_probability`) and
+`TauCeti.Probability.RandomMatrix.SpectralMoment.AlmostSure`
+(`ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean`,
+`ae_tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix`) to corner-padded
+Wigner arrays.
+
 ## Main results
 
 * `tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_semicircleReal_probability`:

@@ -128,9 +128,13 @@ theorem ae_tendsto_spectralMeasure_wignerMatrix_of_identDistrib
     (fun _ ↦ ⟨_, fun ij ↦ (hξid ij).norm.pow.integral_eq.le⟩)
     (fun _ ↦ ⟨_, fun i ↦ (hηid i).norm.pow.integral_eq.le⟩)
 
-/-- **Wigner's semicircle law (in probability).** On possibly varying probability spaces, bounded
-continuous linear statistics `f : ℝ →ᵇ ℝ` of `(n + 1) × (n + 1)` Wigner empirical spectral measures
-converge in probability to `∫ x, f x ∂semicircleReal 0 s`. -/
+/-- **Wigner's semicircle law (in probability).** On possibly varying probability spaces, when
+entries in each `(n + 1) × (n + 1)` corner are centered, the diagonal and strictly upper-triangular
+entries are jointly independent within each corner, the strictly upper-triangular entries have
+common second absolute moment `s`, and at every even order `2 * k` the corner entries lie in
+`L^(2 * k)` with uniformly bounded `2k`-th absolute moments, bounded continuous linear statistics
+`f : ℝ →ᵇ ℝ` of the empirical spectral measures converge in probability to
+`∫ x, f x ∂semicircleReal 0 s`. -/
 theorem tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probability
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)] {P : (n : ℕ) → Measure (Ω n)}
     {ξ : (n : ℕ) → StrictUpper → Ω n → ℂ} {η : (n : ℕ) → ℕ → Ω n → ℝ} {s : ℝ≥0}
@@ -164,7 +168,11 @@ theorem tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probabi
     f hε
 
 /-- **Wigner's semicircle law (in probability, identically distributed entries).** Specialization of
-`tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probability` to `ξ₀` and `η₀`. -/
+`tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probability` (under the same
+within-corner joint independence) to entries identically distributed with centered reference laws
+`ξ₀` (having second absolute moment `s` and `MemLp ξ₀ (2 * k) P₀` for every `k`) and `η₀` (having
+`MemLp η₀ (2 * k) P₁` for every `k`), which supply the centering, common off-diagonal second
+moment, and uniform even moment bounds. -/
 theorem tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probability_of_identDistrib
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)] {P : (n : ℕ) → Measure (Ω n)}
     {Ω₀ Ω₁ : Type*} [MeasurableSpace Ω₀] [MeasurableSpace Ω₁]
