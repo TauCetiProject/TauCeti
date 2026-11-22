@@ -21,12 +21,12 @@ commutative `R`-algebra without zero divisors agree up to conjugation.
 ## Main results
 
 * `QuadraticAlgebra.star_omega`: `star ω = b - ω`.
-* `QuadraticAlgebra.algHom_eq_or_eq_comp_starAlgEquiv`: two `R`-algebra maps
-  from `QuadraticAlgebra R a b` into a commutative `R`-algebra without zero divisors agree, or
-  agree after precomposing one of them with conjugation.
-* `QuadraticAlgebra.algHom_eq_id_or_eq_starAlgEquiv`: when `QuadraticAlgebra R a b` has no zero
-  divisors (for instance the quadratic field `K(√r)` over a field `K`, for `r` not a square), the
-  identity and conjugation are its only `R`-algebra endomorphisms.
+* `AlgHom.eq_or_eq_comp_starAlgEquiv`: two `R`-algebra maps from `QuadraticAlgebra R a b` into a
+  commutative `R`-algebra without zero divisors agree, or agree after precomposing one of them
+  with conjugation.
+* `AlgHom.eq_id_or_eq_starAlgEquiv`: when `QuadraticAlgebra R a b` has no zero divisors (for
+  instance the quadratic field `K(√r)` over a field `K`, for `r` not a square), the identity and
+  conjugation are its only `R`-algebra endomorphisms.
 -/
 
 public section
@@ -45,9 +45,17 @@ may coincide with `ω`. -/
     (starAlgEquiv : QuadraticAlgebra R a b ≃ₐ[R] _).symm = starAlgEquiv :=
   AlgEquiv.ext fun _ ↦ by simp
 
+end QuadraticAlgebra
+
+namespace AlgHom
+
+open QuadraticAlgebra
+
+variable {R : Type*} [CommRing R] {a b : R}
+
 /-- Two `R`-algebra maps from `QuadraticAlgebra R a b` into a commutative `R`-algebra without
 zero divisors are equal, or equal after precomposing one of them with conjugation. -/
-theorem algHom_eq_or_eq_comp_starAlgEquiv {B : Type*} [CommRing B]
+theorem eq_or_eq_comp_starAlgEquiv {B : Type*} [CommRing B]
     [Algebra R B] [NoZeroDivisors B] (f g : QuadraticAlgebra R a b →ₐ[R] B) :
     f = g ∨ f = g.comp (starAlgEquiv : QuadraticAlgebra R a b ≃ₐ[R] _).toAlgHom := by
   -- `f ω` and `g ω` are both roots of `X ^ 2 - b X - a`.
@@ -64,10 +72,10 @@ theorem algHom_eq_or_eq_comp_starAlgEquiv {B : Type*} [CommRing B]
 
 /-- If `QuadraticAlgebra R a b` has no zero divisors, an `R`-algebra endomorphism of it is the
 identity or conjugation. -/
-theorem algHom_eq_id_or_eq_starAlgEquiv [NoZeroDivisors (QuadraticAlgebra R a b)]
+theorem eq_id_or_eq_starAlgEquiv [NoZeroDivisors (QuadraticAlgebra R a b)]
     (f : QuadraticAlgebra R a b →ₐ[R] QuadraticAlgebra R a b) :
     f = AlgHom.id R _ ∨ f = (starAlgEquiv : QuadraticAlgebra R a b ≃ₐ[R] _).toAlgHom := by
   simpa only [AlgHom.id_comp] using
-    algHom_eq_or_eq_comp_starAlgEquiv f (AlgHom.id R _)
+    f.eq_or_eq_comp_starAlgEquiv (AlgHom.id R _)
 
-end QuadraticAlgebra
+end AlgHom

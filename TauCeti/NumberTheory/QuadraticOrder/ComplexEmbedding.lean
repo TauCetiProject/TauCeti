@@ -141,7 +141,7 @@ theorem map_toSubalgebra_eq_complexOrder {D : ℤ} (hD0 : D ≤ 0) (hD : D % 4 =
     (φ : QuadraticAlgebra ℚ (D : ℚ) 0 →+* ℂ) :
     (toSubalgebra D hD).map φ.toIntAlgHom = complexOrder D hD0 hD := by
   rw [toSubalgebra_eq_adjoin, AlgHom.map_adjoin, Set.image_singleton, complexOrder_eq_adjoin]
-  rcases algHom_eq_or_eq_comp_starAlgEquiv φ.toRatAlgHom
+  rcases φ.toRatAlgHom.eq_or_eq_comp_starAlgEquiv
       (complexEmbedding (Int.cast_nonpos.mpr hD0)) with h | h
   · have hφ : φ (generator D) = complexGenerator D := by
       simpa using AlgHom.congr_fun h (generator D)

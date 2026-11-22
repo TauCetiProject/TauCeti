@@ -109,7 +109,7 @@ theorem norm_ringHom_eq_norm_complexEmbedding
     {a : ℚ} (ha : a ≤ 0) (φ : QuadraticAlgebra ℚ a 0 →+* ℂ)
     (z : QuadraticAlgebra ℚ a 0) :
     ‖φ z‖ = ‖QuadraticAlgebra.complexEmbedding ha z‖ := by
-  rcases algHom_eq_or_eq_comp_starAlgEquiv φ.toRatAlgHom (complexEmbedding ha) with h | h
+  rcases φ.toRatAlgHom.eq_or_eq_comp_starAlgEquiv (complexEmbedding ha) with h | h
   · exact congrArg Norm.norm (AlgHom.congr_fun h z)
   · simpa using congrArg Norm.norm (AlgHom.congr_fun h z)
 
@@ -120,7 +120,7 @@ theorem ringHom_eq_complexEmbedding_iff (ha : a < 0) (φ : QuadraticAlgebra ℚ 
     φ = (complexEmbedding ha.le : QuadraticAlgebra ℚ a 0 →+* ℂ) ↔ 0 < (φ ω).im := by
   have hpos : 0 < √(-(a : ℝ)) := Real.sqrt_pos.mpr (by simpa using ha)
   refine ⟨fun h => by simpa [h] using hpos, fun h => ?_⟩
-  rcases algHom_eq_or_eq_comp_starAlgEquiv φ.toRatAlgHom (complexEmbedding ha.le) with h' | h'
+  rcases φ.toRatAlgHom.eq_or_eq_comp_starAlgEquiv (complexEmbedding ha.le) with h' | h'
   · exact RingHom.ext fun z => by simpa using AlgHom.congr_fun h' z
   · have him : (φ ω).im = -√(-(a : ℝ)) := by
       simpa using congrArg Complex.im (AlgHom.congr_fun h' ω)
@@ -170,7 +170,7 @@ complex conjugate. -/
 theorem ringHom_eq_or_eq_conjugate (ha : a ≤ 0) (φ : QuadraticAlgebra ℚ a 0 →+* ℂ) :
     φ = (complexEmbedding ha : QuadraticAlgebra ℚ a 0 →+* ℂ) ∨
       φ = ComplexEmbedding.conjugate (complexEmbedding ha : QuadraticAlgebra ℚ a 0 →+* ℂ) := by
-  rcases algHom_eq_or_eq_comp_starAlgEquiv φ.toRatAlgHom (complexEmbedding ha) with h | h
+  rcases φ.toRatAlgHom.eq_or_eq_comp_starAlgEquiv (complexEmbedding ha) with h | h
   · exact Or.inl (RingHom.ext fun z => by simpa using AlgHom.congr_fun h z)
   · refine Or.inr (RingHom.ext fun z => ?_)
     simpa [ComplexEmbedding.conjugate_coe_eq] using AlgHom.congr_fun h z
