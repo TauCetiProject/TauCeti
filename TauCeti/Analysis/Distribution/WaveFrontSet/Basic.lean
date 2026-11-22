@@ -414,9 +414,7 @@ theorem isMicrolocallySmoothAt_of_notMem_dsupport {T : 𝓓'(Ω, ℂ)} {x : E} (
 /-- The zero distribution is microlocally smooth in every direction at every point of `Ω`. -/
 theorem isMicrolocallySmoothAt_zero {x : E} (hx : x ∈ Ω) (ξ : E) :
     (0 : 𝓓'(Ω, ℂ)).IsMicrolocallySmoothAt x ξ :=
-  isMicrolocallySmoothAt_of_notMem_dsupport hx (by
-    rw [show dsupport ⇑(0 : 𝓓'(Ω, ℂ)) = ∅ from (dsupport_eq_empty_iff _).2 rfl]
-    exact notMem_empty x) ξ
+  isMicrolocallySmoothAt_of_notMem_dsupport hx (by simp) ξ
 
 /-- The wave front set lies over the support of the distribution. -/
 theorem waveFrontSet_subset_dsupport (T : 𝓓'(Ω, ℂ)) :
