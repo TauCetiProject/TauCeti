@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.SemidirectProduct
+public import TauCeti.GroupTheory.Amenable.Prod
 public import TauCeti.GroupTheory.Amenable.Subgroup
 import TauCeti.GroupTheory.Amenable.Finite
 import TauCeti.GroupTheory.Amenable.Quotient
@@ -32,6 +33,11 @@ containing an amenable subgroup `H` of finite index is amenable: the permutation
 finite coset space `G ⧸ H` maps `G` into a finite group with kernel contained in `H`. Consequently,
 a discrete group acting with a finite orbit whose point stabilizer is amenable is itself amenable.
 
+A product `G × H` of discrete groups is the extension of `G` by `H` through the right factor
+inclusion `MonoidHom.inr` and the first projection `MonoidHom.fst`, whose kernel is the range of
+the inclusion. Along the section `x ↦ (x, 1)`, the iterated mean of this extension is the product
+mean `m.prod n` of `TauCeti.GroupTheory.Amenable.Prod`.
+
 ## Main definitions
 
 * `TauCeti.UCB.fiberAverage ψ n`: the fiber average `f ↦ (x ↦ n (k ↦ f (x * ψ k)))`.
@@ -53,6 +59,8 @@ a discrete group acting with a finite orbit whose point stabilizer is amenable i
   amenable.
 * `TauCeti.Amenable.of_finite_orbit`: a discrete group acting with a finite orbit and amenable
   point stabilizer is amenable.
+* `TauCeti.Mean.extension_inr_eq_prod`: for discrete groups, the iterated mean of the extension
+  `H → G × H → G` along `x ↦ (x, 1)` is the product mean.
 
 ## References
 
@@ -278,5 +286,32 @@ theorem AddAmenable.of_addSubgroup_quotient (N : AddSubgroup A) [N.Normal] [AddA
 attribute [to_additive existing] Amenable.of_subgroup_quotient
 
 end Additive
+
+section Prod
+
+variable {G H : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
+  [Group H] [TopologicalSpace H] [DiscreteTopology H]
+
+/-- Along the right factor inclusion `H →* G × H`, the fiber average of a bounded function `f` on
+`G × H` at `(x, 1)` is the mean `n (f (x, ·))` of the slice of `f` at `x`. -/
+theorem UCB.fiberAverage_inr_apply_mk_one (n : Mean H) (f : UCB (G × H)) (x : G) :
+    (UCB.fiberAverage (MonoidHom.inr G H) n f : G × H →ᵇ ℝ) (x, 1) =
+      (UCB.applyRight n.toContinuousLinearMap f : G →ᵇ ℝ) x := by
+  rw [UCB.fiberAverage_apply, UCB.applyRight_apply, Mean.coe_toContinuousLinearMap]
+  exact congrArg n (UCB.ext fun y => by simp)
+
+/-- **Products as extensions.** A product `G × H` of discrete groups is the extension of `G` by
+`H` through the right factor inclusion `MonoidHom.inr` and the first projection `MonoidHom.fst`,
+whose kernel is the range of the inclusion (`MonoidHom.range_inr`, `MonoidHom.ker_fst`). Along
+the section `x ↦ (x, 1)` of the projection, the iterated mean `Mean.extension` of this extension
+is the product mean `m.prod n`. -/
+theorem Mean.extension_inr_eq_prod (m : Mean G) (n : Mean H) :
+    Mean.extension (MonoidHom.inr G H) n (fun x => (x, 1)) m = m.prod n :=
+  Mean.ext fun f => by
+    rw [extension_apply, prod_apply, mapOfDiscrete_apply]
+    exact congrArg m (UCB.ext fun x => by
+      rw [UCB.compRightAlgHomOfDiscrete_apply, UCB.fiberAverage_inr_apply_mk_one])
+
+end Prod
 
 end TauCeti
