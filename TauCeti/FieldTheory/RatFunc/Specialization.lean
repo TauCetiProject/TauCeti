@@ -146,6 +146,23 @@ theorem regularEval_algebraMap (t : K) (q : K[X]) :
       q.eval t := by
   simp
 
+/-- The reciprocal of a nonzero polynomial `h` is regular at `t` exactly when `h(t) ≠ 0`. -/
+theorem inv_algebraMap_mem_regularSubring_iff {t : K} {h : K[X]} (hh : h ≠ 0) :
+    (algebraMap K[X] (RatFunc K) h)⁻¹ ∈ regularSubring t ↔ h.eval t ≠ 0 := by
+  constructor
+  · intro hinv
+    -- Evaluate `h⁻¹ · h = 1` with the ring map `regularEval t`.
+    have hmul : regularEval t ⟨_, hinv⟩ *
+        regularEval t ⟨_, algebraMap_mem_regularSubring t h⟩ = 1 := by
+      rw [← map_mul, ← map_one (regularEval t)]
+      exact congrArg _ (Subtype.ext (inv_mul_cancel₀ (by simpa using hh)))
+    rw [regularEval_algebraMap] at hmul
+    exact right_ne_zero_of_mul_eq_one hmul
+  · intro ht
+    obtain ⟨c, hc⟩ := (RatFunc.denom_dvd hh).mpr ⟨1, by rw [map_one, one_div]⟩
+    rw [hc, eval_mul] at ht
+    exact mem_regularSubring_iff.mpr (left_ne_zero_of_mul ht)
+
 /-- Evaluation at `t` takes every value: the constant `a` has value `a`. -/
 theorem regularEval_surjective (t : K) : Function.Surjective (regularEval t) := fun a ↦
   ⟨⟨algebraMap K[X] (RatFunc K) (C a), algebraMap_mem_regularSubring t _⟩, by simp⟩
