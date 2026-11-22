@@ -162,6 +162,39 @@ lemma basisAddCircleProd_one
   -- `basisBaseClass_apply`.
   exact congrArg _ (basisBaseClass_apply φ hdet 0)
 
+/-- The first coordinate of `x` in `basisAddCircleProd`, the coefficient of `[ds]`, is the value at
+any point `y` of the slant product `x / [ℝ / pℤ] ∈ H⁰(Y_φ; ℤ)` by the circuit class. -/
+lemma basisAddCircleProd_repr_zero
+    (hdet : (LinearMap.id -
+      (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0)
+    (x : (TopCat.of (AddCircle p) ⊗ TopCat.of (MappingTorus φ)).singularCohomology
+      (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1) (y : MappingTorus φ) :
+    (basisAddCircleProd φ p hdet).repr x 0 =
+      singularCohomologyZeroEval (X := TopCat.of (MappingTorus φ)) y
+        (TopCat.singularSlant ℤ (𝟙_ (ModuleCat.{0} ℤ)) _ (TopCat.of (MappingTorus φ))
+          (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 0 1 (add_comm 1 0) (AddCircle.fundamentalClass p)
+          x) := by
+  rw [basisAddCircleProd, Module.Basis.repr_reindex_apply, Equiv.symm_symm, finSuccEquiv_zero,
+    TopCat.singularCohomologyOneAddCircleProdBasis_repr_none _ _ _ y]
+
+/-- The second coordinate of `x` in `basisAddCircleProd`, the coefficient of `[dt]`, is the
+coordinate in `basisBaseClass` of the slant product `x / [0]` by the class of `0`. -/
+@[simp]
+lemma basisAddCircleProd_repr_one
+    (hdet : (LinearMap.id -
+      (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0)
+    (x : (TopCat.of (AddCircle p) ⊗ TopCat.of (MappingTorus φ)).singularCohomology
+      (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1) :
+    (basisAddCircleProd φ p hdet).repr x 1 =
+      (basisBaseClass φ hdet).repr
+        (TopCat.singularSlant ℤ (𝟙_ (ModuleCat.{0} ℤ)) _ (TopCat.of (MappingTorus φ))
+          (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 0 1 1 (zero_add _)
+          (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{0} ℤ)) (0 : AddCircle p) (1 : ℤ)) x)
+        0 := by
+  rw [basisAddCircleProd, Module.Basis.repr_reindex_apply, Equiv.symm_symm,
+    show finSuccEquiv 1 1 = some 0 from rfl,
+    TopCat.singularCohomologyOneAddCircleProdBasis_repr_some]
+
 end FirstCohomology
 
 variable [Module.Free ℤ ((((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj

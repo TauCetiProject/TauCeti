@@ -339,6 +339,32 @@ lemma singularCohomologyAddCircleProdBasis_inr (s₀ : AddCircle p) (n : ℕ) {�
     AddEquiv.coe_toIntLinearEquiv, singularCohomologyAddCircleProdSlantEquiv_symm_apply, map_zero,
     zero_add]
 
+/-- The coordinate of `φ` at `Sum.inl i` in `TopCat.singularCohomologyAddCircleProdBasis` is the
+coordinate at `i`, in the basis `b`, of the slant product `φ / [s₀]` by the class of `s₀`. -/
+@[simp]
+lemma singularCohomologyAddCircleProdBasis_repr_inl (s₀ : AddCircle p) (n : ℕ) {ι κ : Type*}
+    (b : Module.Basis ι ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)))
+    (c : Module.Basis κ ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n))
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1))
+    (i : ι) :
+    (singularCohomologyAddCircleProdBasis M Y s₀ n b c).repr φ (Sum.inl i) =
+      b.repr (singularSlant ℤ M _ Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 0 (n + 1) (n + 1)
+        (zero_add _) (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{0} ℤ)) s₀ (1 : ℤ)) φ) i := by
+  simp [singularCohomologyAddCircleProdBasis]
+
+/-- The coordinate of `φ` at `Sum.inr j` in `TopCat.singularCohomologyAddCircleProdBasis` is the
+coordinate at `j`, in the basis `c`, of the slant product `φ / [ℝ / pℤ]` by the circuit class. -/
+@[simp]
+lemma singularCohomologyAddCircleProdBasis_repr_inr (s₀ : AddCircle p) (n : ℕ) {ι κ : Type*}
+    (b : Module.Basis ι ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)))
+    (c : Module.Basis κ ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n))
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1))
+    (j : κ) :
+    (singularCohomologyAddCircleProdBasis M Y s₀ n b c).repr φ (Sum.inr j) =
+      c.repr (singularSlant ℤ M _ Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 n (n + 1) (add_comm 1 n)
+        (AddCircle.fundamentalClass p) φ) j := by
+  simp [singularCohomologyAddCircleProdBasis]
+
 /-- **A basis of `H¹((ℝ / pℤ) × Y; ℤ)`.** For a path-connected `Y` and a basis `b` of `H¹(Y; ℤ)`,
 the pullbacks `pr₂^* (b i)` and the angular class `pr₁^* θ_p` of the circle factor form a basis of
 `H¹((ℝ / pℤ) × Y; ℤ)`, indexed by `Option ι`, with `pr₁^* θ_p` at `none`. It is the case `n = 0`
@@ -386,6 +412,35 @@ lemma singularCohomologyOneAddCircleProdBasis_some [PathConnectedSpace Y] {ι : 
     (i : ι) :
     singularCohomologyOneAddCircleProdBasis (p := p) Y b (some i) =
       TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 1 (b i) := by
+  simp [singularCohomologyOneAddCircleProdBasis]
+
+/-- The coordinate of `φ` at `none` in `TopCat.singularCohomologyOneAddCircleProdBasis`, the
+coefficient of the angular class `pr₁^* θ_p`, is the value at any point `y` of the slant product
+`φ / [ℝ / pℤ] ∈ H⁰(Y; ℤ)` by the circuit class. -/
+lemma singularCohomologyOneAddCircleProdBasis_repr_none [PathConnectedSpace Y] {ι : Type*}
+    (b : Module.Basis ι ℤ
+      (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1))
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
+      (𝟙_ (ModuleCat.{0} ℤ)) 1) (y : Y) :
+    (singularCohomologyOneAddCircleProdBasis (p := p) Y b).repr φ none =
+      singularCohomologyZeroEval y
+        (singularSlant ℤ (𝟙_ (ModuleCat.{0} ℤ)) _ Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 0 1
+          (add_comm 1 0) (AddCircle.fundamentalClass p) φ) := by
+  simp [singularCohomologyOneAddCircleProdBasis,
+    singularCohomologyZeroEval_eq_of_joined (PathConnectedSpace.joined (Classical.arbitrary Y) y)]
+
+/-- The coordinate of `φ` at `some i` in `TopCat.singularCohomologyOneAddCircleProdBasis` is the
+coordinate at `i`, in the basis `b`, of the slant product `φ / [0]` by the class of `0`. -/
+@[simp]
+lemma singularCohomologyOneAddCircleProdBasis_repr_some [PathConnectedSpace Y] {ι : Type*}
+    (b : Module.Basis ι ℤ
+      (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1))
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
+      (𝟙_ (ModuleCat.{0} ℤ)) 1) (i : ι) :
+    (singularCohomologyOneAddCircleProdBasis (p := p) Y b).repr φ (some i) =
+      b.repr (singularSlant ℤ (𝟙_ (ModuleCat.{0} ℤ)) _ Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 0 1 1
+        (zero_add _) (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{0} ℤ)) (0 : AddCircle p)
+          (1 : ℤ)) φ) i := by
   simp [singularCohomologyOneAddCircleProdBasis]
 
 end Basis
