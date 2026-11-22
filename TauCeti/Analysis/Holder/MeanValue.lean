@@ -49,6 +49,13 @@ functions are the constants, which is why Hölder exponents are taken in `(0, 1]
   `M δ^(α - 1)`. This reads Hölder continuity of a holomorphic function on a disc off the growth
   of its derivative.
 * `ContDiffOn.exists_holderOnWith`: a function `C¹` on a compact convex set is Hölder there.
+
+## References
+
+* G. H. Hardy and J. E. Littlewood, *Some properties of fractional integrals. II*, Math. Z. **34**
+  (1932), 403–439.
+* P. L. Duren, *Theory of Hᵖ Spaces*, Academic Press, 1970, Chapter 5 (Hölder continuity from the
+  growth of the derivative).
 -/
 
 public section
