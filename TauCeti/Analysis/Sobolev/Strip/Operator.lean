@@ -52,7 +52,9 @@ each geometry supplies its own semi-Fredholm estimate and its own Rellich theore
 * **Families.** Along a family of coefficient fields continuous in `L^∞` on a preconnected set,
   whose realizations on a complete subspace of `L²` jets all have finite-dimensional kernel and
   closed range, Fredholmness and the index are constant once one member is Fredholm
-  (`TauCeti.StripSobolev.isFredholm_and_index_eq_of_isPreconnected`). This is the abstract
+  (`TauCeti.StripSobolev.isFredholm_and_index_eq_of_isPreconnected`). Continuity in `L^∞`
+  follows from uniform closeness of continuous fields on the strip
+  (`TauCeti.StripSobolev.tendsto_eLpNorm_sub_of_forall_dist_lt`). This is the abstract
   stability `ContinuousOn.isFredholm_of_isPreconnected`, which needs the target `L²` space to be a
   Hilbert space, so `W` is an inner product space there.
 
@@ -255,6 +257,27 @@ theorem norm_le_mul_norm_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le
     _ = c * (1 + c') * d := by ring
 
 end Operator
+
+/-- **Continuity in `L^∞` from uniform closeness on the strip.** A family of continuous fields
+`M μ` on `ℝ × ℝ` that are uniformly close to `M lam` on the strip `ℝ × [0, 1]` for `μ` close
+to `lam` depends continuously on `μ` at `lam` in `L^∞` of the strip. -/
+theorem tendsto_eLpNorm_sub_of_forall_dist_lt {E : Type*} [NormedAddCommGroup E]
+    {M : ℝ → ℝ × ℝ → E} (hM : ∀ μ, Continuous (M μ)) {lam : ℝ}
+    (h : ∀ r > 0, ∃ η > 0, ∀ μ, |μ - lam| < η → ∀ z : ℝ × ℝ, z.2 ∈ Icc (0 : ℝ) 1 →
+      dist (M μ z) (M lam z) < r) :
+    Tendsto (fun μ ↦ eLpNorm (M μ - M lam) ∞ stripMeasure) (𝓝 lam) (𝓝 0) := by
+  rw [ENNReal.tendsto_nhds_zero]
+  intro ε hε
+  obtain ⟨r, -, hr, hrε⟩ := ENNReal.lt_iff_exists_real_btwn.1 hε
+  obtain ⟨η, hη, h⟩ := h r (ENNReal.ofReal_pos.1 hr)
+  filter_upwards [Metric.ball_mem_nhds lam hη] with μ hμ
+  rw [Metric.mem_ball, Real.dist_eq] at hμ
+  refine le_trans ?_ hrε.le
+  rw [eLpNorm_exponent_top ((hM μ).sub (hM lam)).aestronglyMeasurable]
+  refine eLpNormEssSup_le_of_ae_bound ?_
+  filter_upwards [ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with z hz
+  rw [Pi.sub_apply, ← dist_eq_norm]
+  exact (h μ hμ z hz.2).le
 
 section Family
 
