@@ -23,6 +23,8 @@ this file shows that it is the reduction of `galEquivZMod` modulo `m`.
   `m`-th root of unity in the `n`-th cyclotomic field is `galEquivZMod` reduced modulo `m`.
 * `AlgEquiv.galEquivZMod_restrictNormal`: an automorphism of a larger field acting on the `n`-th
   roots of unity through `u` restricts to `galEquivZMod.symm u`.
+* `AlgEquiv.map_galEquivZMod_symm`: a `ℚ`-algebra isomorphism between `n`-th cyclotomic fields
+  intertwines `(galEquivZMod n _).symm a`.
 -/
 
 public section
@@ -59,3 +61,27 @@ theorem AlgEquiv.galEquivZMod_restrictNormal {L : Type*} [Field L] [Algebra ℚ 
     hτ _ (by rw [← map_pow, hζ.pow_eq_one, map_one])] at h
   have hζL := hζ.map_of_injective (algebraMap K L).injective
   exact Units.ext (ZMod.val_injective _ (hζL.pow_inj (ZMod.val_lt _) (ZMod.val_lt _) h).symm)
+
+/-- **Conjugation equivariance of `galEquivZMod`.** A `ℚ`-algebra isomorphism `e : K ≃ₐ[ℚ] K'`
+between `n`-th cyclotomic fields intertwines `(galEquivZMod n _).symm a`:
+`e (((galEquivZMod n K).symm a) x) = ((galEquivZMod n K').symm a) (e x)`. -/
+theorem AlgEquiv.map_galEquivZMod_symm {K' : Type*} [Field K'] [NumberField K']
+    [IsCyclotomicExtension {n} ℚ K'] (e : K ≃ₐ[ℚ] K') (a : (ZMod n)ˣ) (x : K) :
+    e (((galEquivZMod n K).symm a) x) = ((galEquivZMod n K').symm a) (e x) := by
+  let σ' : Gal(K'/ℚ) := AlgEquiv.autCongr e ((galEquivZMod n K).symm a)
+  have hσ' : galEquivZMod n K' σ' = a := by
+    let ζ' := IsCyclotomicExtension.zeta n ℚ K'
+    have hζ' : IsPrimitiveRoot ζ' n := IsCyclotomicExtension.zeta_spec n ℚ K'
+    have hact : σ' ζ' = ζ' ^ (a : ZMod n).val := by
+      have hpow : (e.symm ζ') ^ n = 1 := by rw [← map_pow, hζ'.pow_eq_one, map_one]
+      have h := galEquivZMod_apply_of_pow_eq n K ((galEquivZMod n K).symm a) hpow
+      rw [MulEquiv.apply_symm_apply] at h
+      calc
+        σ' ζ' = e (((galEquivZMod n K).symm a) (e.symm ζ')) := rfl
+        _ = e ((e.symm ζ') ^ (a : ZMod n).val) := congrArg e h
+        _ = ζ' ^ (a : ZMod n).val := by rw [map_pow, e.apply_symm_apply]
+    have hζ'act := galEquivZMod_apply_of_pow_eq n K' σ' hζ'.pow_eq_one
+    rw [hact] at hζ'act
+    exact Units.ext (ZMod.val_injective _ (hζ'.pow_inj (ZMod.val_lt _) (ZMod.val_lt _) hζ'act.symm))
+  have h := congrArg (· (e x)) ((galEquivZMod n K').eq_symm_apply.mpr hσ')
+  simpa [σ'] using h

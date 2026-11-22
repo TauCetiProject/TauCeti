@@ -22,10 +22,12 @@ import TauCeti.Algebra.BigOperators.ZPow
 import TauCeti.NumberTheory.GaussSum.Basic
 import TauCeti.NumberTheory.NumberField.AutomorphismAction
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Finrank
+import TauCeti.NumberTheory.NumberField.Cyclotomic.Galois
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerPhi.Relation
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
@@ -60,6 +62,11 @@ under `Gal(K/ℚ)`, and satisfying `u(x) ^ m = ∏_a (σ_a Φ(P)) ^ (x.coeff a)`
 * `TauCeti.prod_galEquivProd_gaussSum_eq_of_isPrimitiveRoot` and
   `TauCeti.algebraMap_stickelbergerGaussProduct`: identification of `stickelbergerGaussProduct` in
   any compositum `L = K(ζ_p)` and independence of the auxiliary primitive `p`-th root of unity.
+* `TauCeti.inv_powerResidueSymbol_algebraMap_eq_of_zpowers`,
+  `TauCeti.gaussSum_inv_powerResidueSymbol_eq_of_eq`, and
+  `TauCeti.algebraMap_stickelbergerGaussProduct_of_zpowers`: split-prime comparison identifying
+  `(Ideal.powerResidueSymbol P m)⁻¹`, its native Gauss sum, and `stickelbergerGaussProduct` with a
+  generator-normalized character over `ZMod p`.
 * `TauCeti.map_stickelbergerGaussProduct`, `TauCeti.gal_smul_stickelbergerGaussProduct`, and
   `TauCeti.galEquivZMod_symm_stickelbergerGaussProduct`: compatibility of
   `stickelbergerGaussProduct` with field embeddings `K →+* K'` and Galois automorphisms.
@@ -93,15 +100,6 @@ theorem coprime_natAbs_discr_of_liesOver {m : ℕ}
   exact ((Nat.Prime.coprime_iff_not_dvd hp.out).mpr fun hdvd ↦
     hpm (prime_dvd_of_dvd_natAbs_discr K m hp.out hdvd)).symm
 
-private theorem charP_quotient_of_liesOver {K : Type*} [Field K]
-    (P : Ideal (𝓞 K)) [P.IsMaximal] (p : ℕ) [hp : Fact p.Prime]
-    [P.LiesOver (Ideal.span {(p : ℤ)})] : CharP (𝓞 K ⧸ P) p := by
-  let _ := Ideal.Quotient.field P
-  refine (CharP.charP_iff_prime_eq_zero hp.out).mpr ?_
-  rw [← map_natCast (Ideal.Quotient.mk P), Ideal.Quotient.eq_zero_iff_mem]
-  simpa using (Ideal.mem_of_liesOver P (Ideal.span {(p : ℤ)}) (p : ℤ)).1
-    (Ideal.mem_span_singleton_self _)
-
 private theorem galEquivProd_symm_sigma_algebraMap {m : ℕ} [NeZero m]
     {K L : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K] [IsGalois ℚ K]
     [Field L] [Algebra ℚ L] [Algebra K L] [IsScalarTower ℚ K L]
@@ -111,9 +109,7 @@ private theorem galEquivProd_symm_sigma_algebraMap {m : ℕ} [NeZero m]
     (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm
         ((galEquivZMod m K).symm a, 1) (algebraMap K L z) =
       algebraMap K L (((galEquivZMod m K).symm a) z) := by
-  have hcomm := ((IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm
-    ((galEquivZMod m K).symm a, 1)).restrictNormal_commutes K z
-  simpa [IsCyclotomicExtension.restrictNormal_galEquivProd_symm] using hcomm.symm
+  simp
 
 private theorem galEquivProd_symm_tau_algebraMap
     {K L : Type*} [Field K] [NumberField K] [IsGalois ℚ K]
@@ -123,9 +119,7 @@ private theorem galEquivProd_symm_tau_algebraMap
     (b : (ZMod p)ˣ) (z : K) :
     (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm (1, b) (algebraMap K L z) =
       algebraMap K L z := by
-  have hcomm := ((IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm
-    (1, b)).restrictNormal_commutes K z
-  simpa [IsCyclotomicExtension.restrictNormal_galEquivProd_symm] using hcomm.symm
+  simp
 
 private theorem galEquivProd_symm_tau_zeta
     {K L : Type*} [Field K] [NumberField K] [IsGalois ℚ K]
@@ -135,9 +129,7 @@ private theorem galEquivProd_symm_tau_zeta
     (b : (ZMod p)ˣ) :
     (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm (1, b) ζ =
       ζ ^ (b : ZMod p).val := by
-  have hspec := hζ.autToPow_spec ℚ
-    ((IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm (1, b))
-  simpa [IsCyclotomicExtension.autToPow_galEquivProd_symm] using hspec.symm
+  simp
 
 private theorem galEquivProd_symm_tau_gaussSum {m : ℕ} [NeZero m]
     {K L : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K] [IsGalois ℚ K]
@@ -299,9 +291,8 @@ theorem prod_galEquivProd_gaussSum_eq_of_isPrimitiveRoot (m : ℕ) [NeZero m]
           (traceAddChar p (𝓞 K ⧸ P) hζ'.pow_eq_one) := by
     simp only [gaussSum, map_sum, map_mul]
     refine Finset.sum_congr rfl fun t _ ↦ congrArg₂ (· * ·) ?_ ?_
-    · simpa [MulChar.ringHomComp_apply] using
-        galEquivProd_symm_tau_algebraMap hcop hζ b
-          (algebraMap (𝓞 K) K ((Ideal.powerResidueSymbol P m)⁻¹ t))
+    · simp only [MulChar.ringHomComp_apply, RingHom.comp_apply, τ,
+        IsCyclotomicExtension.galEquivProd_symm_algebraMap, AlgEquiv.one_apply]
     · rw [traceAddChar_apply, traceAddChar_apply, map_pow, hτζ]
   refine (galEquivProd_symm_tau_prod_gaussSum P hcop hζ b hx).symm.trans ?_
   rw [map_prod]
@@ -314,28 +305,6 @@ theorem prod_galEquivProd_gaussSum_eq_of_isPrimitiveRoot (m : ℕ) [NeZero m]
     (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).injective
       (by simp only [τ, map_mul, MulEquiv.apply_symm_apply, Prod.mk_mul_mk, one_mul, mul_one])
   rw [map_zpow₀, ← AlgEquiv.mul_apply, hcomm, AlgEquiv.mul_apply, hτg, hσ_eq a]
-
-private theorem galEquivZMod_symm_conj {m : ℕ} [NeZero m]
-    {K K' : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K]
-    [Field K'] [NumberField K'] [IsCyclotomicExtension {m} ℚ K']
-    (e : K ≃ₐ[ℚ] K') (a : (ZMod m)ˣ) (z : K') :
-    e (((galEquivZMod m K).symm a) (e.symm z)) = ((galEquivZMod m K').symm a) z := by
-  let σ' : Gal(K'/ℚ) := AlgEquiv.autCongr e ((galEquivZMod m K).symm a)
-  have hσ' : galEquivZMod m K' σ' = a := by
-    let ζ' := IsCyclotomicExtension.zeta m ℚ K'
-    have hζ' : IsPrimitiveRoot ζ' m := IsCyclotomicExtension.zeta_spec m ℚ K'
-    have hact : σ' ζ' = ζ' ^ (a : ZMod m).val := by
-      have hpow : (e.symm ζ') ^ m = 1 := by rw [← map_pow, hζ'.pow_eq_one, map_one]
-      have h := galEquivZMod_apply_of_pow_eq m K ((galEquivZMod m K).symm a) hpow
-      rw [MulEquiv.apply_symm_apply] at h
-      calc
-        σ' ζ' = e (((galEquivZMod m K).symm a) (e.symm ζ')) := rfl
-        _ = e ((e.symm ζ') ^ (a : ZMod m).val) := congrArg e h
-        _ = ζ' ^ (a : ZMod m).val := by rw [map_pow, e.apply_symm_apply]
-    have hζ'act := galEquivZMod_apply_of_pow_eq m K' σ' hζ'.pow_eq_one
-    rw [hact] at hζ'act
-    exact Units.ext (ZMod.val_injective _ (hζ'.pow_inj (ZMod.val_lt _) (ZMod.val_lt _) hζ'act.symm))
-  exact congrArg (· z) ((galEquivZMod m K').eq_symm_apply.mpr hσ')
 
 private theorem exists_algEquiv_map_prod_galEquivProd_gaussSum {m : ℕ} [NeZero m]
     {K K' : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K] [IsGalois ℚ K]
@@ -423,7 +392,7 @@ private theorem exists_algEquiv_map_prod_galEquivProd_gaussSum {m : ℕ} [NeZero
           algebraMap K' L' (((galEquivZMod m K').symm a) k')
         rw [heL_symm_K', galEquivProd_symm_sigma_algebraMap,
           show eL (algebraMap K L _) = eL_K (algebraMap K L _) from rfl, heL_K,
-          galEquivZMod_symm_conj]
+          e.map_galEquivZMod_symm, e.apply_symm_apply]
       · rw [hζ₀.autToPow_eq_one_iff]
         change eL ((IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm
           ((galEquivZMod m K).symm a, 1) (eL.symm (eL ζ))) = eL ζ
@@ -517,7 +486,8 @@ private theorem exists_stickelbergerGaussProduct (m : ℕ) [NeZero m]
       let ζp : L := IsCyclotomicExtension.zeta p K L
       have hζp : IsPrimitiveRoot ζp p := IsCyclotomicExtension.zeta_spec p K L
       let _ := Ideal.Quotient.field P; let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
-      have : CharP (𝓞 K ⧸ P) p := charP_quotient_of_liesOver P p
+      have : CharP (𝓞 K ⧸ P) p :=
+        Ideal.Quotient.charP_of_liesOver P Ideal.IsPrime.ne_top' p Fact.out
       let _ : Algebra (ZMod p) (𝓞 K ⧸ P) := ZMod.algebra _ p
       algebraMap K L (u : K) =
         ∏ a : (ZMod m)ˣ,
@@ -541,7 +511,7 @@ private theorem exists_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   have : FiniteDimensional K L := IsCyclotomicExtension.finiteDimensional {p} K L
   have hζp := IsCyclotomicExtension.zeta_spec p K L
   let _ := Ideal.Quotient.field P; let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
-  have : CharP (𝓞 K ⧸ P) p := charP_quotient_of_liesOver P p
+  have : CharP (𝓞 K ⧸ P) p := Ideal.Quotient.charP_of_liesOver P Ideal.IsPrime.ne_top' p Fact.out
   let _ : Algebra (ZMod p) (𝓞 K ⧸ P) := ZMod.algebra _ p
   let σ : (ZMod m)ˣ → Gal(L/ℚ) := fun a ↦
     (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζp).symm ((galEquivZMod m K).symm a, 1)
@@ -593,7 +563,8 @@ noncomputable def stickelbergerGaussProduct (m : ℕ) [NeZero m]
           ← Finset.prod_mul_distrib]
         refine Finset.prod_congr rfl fun a _ ↦ ?_
         let _ := Ideal.Quotient.field P; let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
-        have : CharP (𝓞 K ⧸ P) p := charP_quotient_of_liesOver P p
+        have : CharP (𝓞 K ⧸ P) p :=
+          Ideal.Quotient.charP_of_liesOver P Ideal.IsPrime.ne_top' p Fact.out
         let _ : Algebra (ZMod p) (𝓞 K ⧸ P) := ZMod.algebra _ p
         exact zpow_add₀ ((map_ne_zero_iff _ (AlgEquiv.injective _)).mpr
           (gaussSum_ne_zero m hm P hP (IsCyclotomicExtension.zeta_spec p K L))) _ _ }
@@ -650,26 +621,113 @@ theorem algebraMap_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   convert heL_prod
   exact Subsingleton.elim _ _
 
-private theorem liesOver_map_ringOfIntegers_mapRingEquiv {K K' : Type*}
-    [Field K] [Field K']
-    (P : Ideal (𝓞 K)) (e : K ≃+* K') (p : ℕ) [P.LiesOver (Ideal.span {(p : ℤ)})] :
-    (P.map (NumberField.RingOfIntegers.mapRingEquiv e : 𝓞 K →+* 𝓞 K')).LiesOver
-      (Ideal.span {(p : ℤ)}) := by
-  rw [Ideal.liesOver_iff, Ideal.under_def]
-  ext z
-  simp only [Ideal.mem_comap, Ideal.mem_span_singleton]
-  let eO := NumberField.RingOfIntegers.mapRingEquiv e
-  have hez : algebraMap ℤ (𝓞 K') z = eO (algebraMap ℤ (𝓞 K) z) :=
-    NumberField.RingOfIntegers.ext (by simp)
-  rw [hez]
-  constructor
-  · intro hz
-    exact Ideal.mem_map_of_mem _
-      ((Ideal.mem_of_liesOver P (Ideal.span {(p : ℤ)}) z).1 (Ideal.mem_span_singleton.mpr hz))
-  · intro hz
-    obtain ⟨w, hw, hew⟩ := (Ideal.mem_map_iff_of_surjective _ eO.surjective).mp hz
-    rw [eO.injective hew] at hw
-    exact (Ideal.mem_span_singleton).mp ((Ideal.mem_of_liesOver P (Ideal.span {(p : ℤ)}) z).2 hw)
+/-- **Split-prime comparison for the inverse power residue symbol.** Let `P` be a maximal ideal
+of `𝓞 K` of prime norm `p` coprime to `m`, and let `g` be a generator of `(ZMod p)ˣ`. A
+character `χ : MulChar (ZMod p) (𝓞 K)` with `χ (g : ZMod p) ^ m = 1` and
+`Ideal.Quotient.mk P (χ⁻¹ (g : ZMod p)) =`
+`algebraMap (ZMod p) (𝓞 K ⧸ P) ((g : ZMod p) ^ ((p - 1) / m))`
+agrees with `(Ideal.powerResidueSymbol P m)⁻¹` via `algebraMap (ZMod p) (𝓞 K ⧸ P)`. -/
+theorem inv_powerResidueSymbol_algebraMap_eq_of_zpowers {m : ℕ} [NeZero m]
+    {K : Type*} [Field K] [NumberField K] [HasEnoughRootsOfUnity (𝓞 K) m]
+    (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m)
+    {p : ℕ} [hp : Fact p.Prime] [Algebra (ZMod p) (𝓞 K ⧸ P)]
+    (hNP : Ideal.absNorm P = p) {χ : MulChar (ZMod p) (𝓞 K)} {g : (ZMod p)ˣ}
+    (hg : Subgroup.zpowers g = ⊤) (hχm : χ (g : ZMod p) ^ m = 1)
+    (hχP : Ideal.Quotient.mk P (χ⁻¹ (g : ZMod p)) =
+      algebraMap (ZMod p) (𝓞 K ⧸ P) ((g : ZMod p) ^ ((p - 1) / m)))
+    (t : ZMod p) :
+    (Ideal.powerResidueSymbol P m)⁻¹ (algebraMap (ZMod p) (𝓞 K ⧸ P) t) = χ t := by
+  let _ := Ideal.Quotient.field P
+  obtain ⟨u, hu⟩ := IsUnit.of_pow_eq_one hχm (NeZero.ne m)
+  have hu_pow : u ^ m = 1 := Units.ext (by simp [hu, hχm])
+  have hχinv_pow : χ⁻¹ (g : ZMod p) ^ m = 1 := by
+    rw [MulChar.inv_apply_eq_inv, ← hu, Ring.inverse_unit, ← Units.val_pow_eq_pow_val, inv_pow,
+      hu_pow, inv_one, Units.val_one]
+  have h_gen :
+      Ideal.powerResidueSymbol P m (algebraMap (ZMod p) (𝓞 K ⧸ P) (g : ZMod p)) =
+        χ⁻¹ (g : ZMod p) := by
+    rw [Ideal.powerResidueSymbol_eq_iff hP hχinv_pow, hNP, ← map_pow]
+    exact hχP
+  have h_gen_inv :
+      (Ideal.powerResidueSymbol P m)⁻¹ (algebraMap (ZMod p) (𝓞 K ⧸ P) (g : ZMod p)) =
+        χ (g : ZMod p) := by
+    rw [MulChar.inv_apply_eq_inv, h_gen, MulChar.inv_apply_eq_inv, ← hu, Ring.inverse_unit,
+      Ring.inverse_unit, inv_inv]
+  obtain rfl | ht := eq_or_ne t 0
+  · rw [map_zero, MulChar.map_zero, MulChar.map_zero]
+  lift t to (ZMod p)ˣ using ht.isUnit
+  obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp (hg ▸ Subgroup.mem_top t)
+  rw [← hk]
+  let φ₁ : (ZMod p)ˣ →* (𝓞 K)ˣ :=
+    (Ideal.powerResidueSymbol P m)⁻¹.toUnitHom.comp
+      (Units.map (algebraMap (ZMod p) (𝓞 K ⧸ P)).toMonoidHom)
+  let φ₂ : (ZMod p)ˣ →* (𝓞 K)ˣ := χ.toUnitHom
+  have hφ : φ₁ g = φ₂ g := Units.ext h_gen_inv
+  have hφk : (φ₁ (g ^ k) : 𝓞 K) = (φ₂ (g ^ k) : 𝓞 K) := by
+    rw [map_zpow, map_zpow, hφ]
+  simpa only [φ₁, φ₂, MonoidHom.comp_apply, MulChar.coe_toUnitHom, Units.coe_map,
+    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass] using hφk
+
+/-- **Split-prime comparison for the native Gauss sum.** If `(Ideal.powerResidueSymbol P m)⁻¹`
+agrees with `χ : MulChar (ZMod p) (𝓞 K)` on `algebraMap (ZMod p) (𝓞 K ⧸ P)` and
+`Ideal.absNorm P = p`, then the native Gauss sum over `𝓞 K ⧸ P` against `traceAddChar` equals the
+Gauss sum of `χ` over `ZMod p` against `AddChar.zmodChar`. -/
+theorem gaussSum_inv_powerResidueSymbol_eq_of_eq {m : ℕ} [NeZero m]
+    {K : Type*} [Field K] [NumberField K] [HasEnoughRootsOfUnity (𝓞 K) m]
+    (P : Ideal (𝓞 K)) [P.IsMaximal] {p : ℕ} [hp : Fact p.Prime]
+    [Fintype (𝓞 K ⧸ P)] [Algebra (ZMod p) (𝓞 K ⧸ P)]
+    (hNP : Ideal.absNorm P = p) {χ : MulChar (ZMod p) (𝓞 K)}
+    {L : Type*} [CommRing L] (f : 𝓞 K →+* L) {ζ : L} (hζ : ζ ^ p = 1)
+    (hχ : ∀ t : ZMod p,
+      (Ideal.powerResidueSymbol P m)⁻¹ (algebraMap (ZMod p) (𝓞 K ⧸ P) t) = χ t) :
+    gaussSum ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp f) (traceAddChar p (𝓞 K ⧸ P) hζ) =
+      gaussSum (χ.ringHomComp f) (AddChar.zmodChar p hζ) := by
+  let _ := Ideal.Quotient.field P
+  have hcard : Fintype.card (𝓞 K ⧸ P) = p := by
+    rw [← Nat.card_eq_fintype_card, ← Ideal.absNorm_eq_natCard, hNP]
+  have hbij : Function.Bijective (Algebra.ofId (ZMod p) (𝓞 K ⧸ P)) :=
+    (Fintype.bijective_iff_injective_and_card _).mpr
+      ⟨(Algebra.ofId (ZMod p) (𝓞 K ⧸ P)).toRingHom.injective, by rw [ZMod.card, hcard]⟩
+  let eQ : ZMod p ≃ₐ[ZMod p] (𝓞 K ⧸ P) :=
+    AlgEquiv.ofBijective (Algebra.ofId (ZMod p) (𝓞 K ⧸ P)) hbij
+  have heQ (t : ZMod p) : (eQ t : 𝓞 K ⧸ P) = algebraMap (ZMod p) (𝓞 K ⧸ P) t := rfl
+  rw [gaussSum, gaussSum]
+  refine (Fintype.sum_equiv eQ.toEquiv _ _ fun t ↦ ?_).symm
+  simp only [MulChar.ringHomComp_apply, AlgEquiv.toEquiv_eq_coe, EquivLike.coe_coe,
+    heQ, hχ t, traceAddChar_apply, AddChar.zmodChar_apply]
+  rw [← heQ, Algebra.trace_eq_of_algEquiv eQ t, Algebra.trace_self, LinearMap.id_apply]
+
+/-- **Split-prime compositum formula for `stickelbergerGaussProduct`.** Under the hypotheses of
+`algebraMap_stickelbergerGaussProduct` and `inv_powerResidueSymbol_algebraMap_eq_of_zpowers`,
+`stickelbergerGaussProduct` embeds into `L` as the Galois-weighted product of the `ZMod p` Gauss
+sums `gaussSum (χ.ringHomComp _) (AddChar.zmodChar p hζ.pow_eq_one)`. -/
+theorem algebraMap_stickelbergerGaussProduct_of_zpowers (m : ℕ) [NeZero m]
+    (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K] [IsGalois ℚ K]
+    (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m)
+    {L : Type*} [Field L] [Algebra ℚ L] [Algebra K L] [IsScalarTower ℚ K L]
+    {p : ℕ} [hp : Fact p.Prime] [P.LiesOver (Ideal.span {(p : ℤ)})]
+    [IsCyclotomicExtension {p} K L] [Algebra (ZMod p) (𝓞 K ⧸ P)]
+    (hcop : ((NumberField.discr K).natAbs).Coprime p)
+    {ζ : L} (hζ : IsPrimitiveRoot ζ p)
+    (hNP : Ideal.absNorm P = p) {χ : MulChar (ZMod p) (𝓞 K)} {g : (ZMod p)ˣ}
+    (hg : Subgroup.zpowers g = ⊤) (hχm : χ (g : ZMod p) ^ m = 1)
+    (hχP : Ideal.Quotient.mk P (χ⁻¹ (g : ZMod p)) =
+      algebraMap (ZMod p) (𝓞 K ⧸ P) ((g : ZMod p) ^ ((p - 1) / m)))
+    (x : stickelbergerDenominatorIdeal m) :
+    algebraMap K L
+        (stickelbergerGaussProduct m K hm P hP (Multiplicative.ofAdd x) : K) =
+      ∏ a : (ZMod m)ˣ,
+        ((IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm
+          ((galEquivZMod m K).symm a, 1)
+            (gaussSum
+              (χ.ringHomComp ((algebraMap K L).comp (algebraMap (𝓞 K) K)))
+              (AddChar.zmodChar p hζ.pow_eq_one))) ^
+          (x : MonoidAlgebra ℤ (ZMod m)ˣ).coeff a := by
+  let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
+  rw [algebraMap_stickelbergerGaussProduct m K hm P hP hcop hζ x]
+  refine Finset.prod_congr rfl fun a _ ↦ ?_
+  rw [gaussSum_inv_powerResidueSymbol_eq_of_eq P hNP _ hζ.pow_eq_one
+    (inv_powerResidueSymbol_algebraMap_eq_of_zpowers P hP hNP hg hχm hχP)]
 
 /-- **Compatibility with field embeddings.** Any ring homomorphism `e : K →+* K'` between `m`-th
 cyclotomic extensions of `ℚ` sends `stickelbergerGaussProduct m K hm P hP` to
@@ -700,7 +758,8 @@ theorem map_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   have : Fact p.Prime := ⟨Nat.absNorm_under_prime P⟩
   have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
   have : P'.LiesOver (Ideal.span {(p : ℤ)}) :=
-    hPP'_equiv ▸ liesOver_map_ringOfIntegers_mapRingEquiv P eEquiv.toRingEquiv p
+    hPP'_equiv ▸ Ideal.liesOver_map_ringOfIntegers_mapRingEquiv P eEquiv.toRingEquiv
+      (Ideal.span {(p : ℤ)})
   have hcop : ((NumberField.discr K).natAbs).Coprime p :=
     coprime_natAbs_discr_of_liesOver K P hP p
   have hcop' : ((NumberField.discr K').natAbs).Coprime p :=
@@ -709,10 +768,10 @@ theorem map_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   have hζ := IsCyclotomicExtension.zeta_spec p K L
   have hζ' := IsCyclotomicExtension.zeta_spec p K' L'
   let _ := Ideal.Quotient.field P; let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
-  have : CharP (𝓞 K ⧸ P) p := charP_quotient_of_liesOver P p
+  have : CharP (𝓞 K ⧸ P) p := Ideal.Quotient.charP_of_liesOver P Ideal.IsPrime.ne_top' p Fact.out
   let _ : Algebra (ZMod p) (𝓞 K ⧸ P) := ZMod.algebra _ p
   let _ := Ideal.Quotient.field P'; let _ : Fintype (𝓞 K' ⧸ P') := Fintype.ofFinite _
-  have : CharP (𝓞 K' ⧸ P') p := charP_quotient_of_liesOver P' p
+  have : CharP (𝓞 K' ⧸ P') p := Ideal.Quotient.charP_of_liesOver P' Ideal.IsPrime.ne_top' p Fact.out
   let _ : Algebra (ZMod p) (𝓞 K' ⧸ P') := ZMod.algebra _ p
   obtain ⟨eL, heL_K, heL_prod⟩ :=
     exists_algEquiv_map_prod_galEquivProd_gaussSum P hcop hζ eEquiv hPP'_equiv hcop' hζ' x.property
@@ -757,7 +816,7 @@ theorem galEquivZMod_symm_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   let L := CyclotomicField p K
   have hζ := IsCyclotomicExtension.zeta_spec p K L
   let _ := Ideal.Quotient.field P; let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
-  have : CharP (𝓞 K ⧸ P) p := charP_quotient_of_liesOver P p
+  have : CharP (𝓞 K ⧸ P) p := Ideal.Quotient.charP_of_liesOver P Ideal.IsPrime.ne_top' p Fact.out
   let _ : Algebra (ZMod p) (𝓞 K ⧸ P) := ZMod.algebra _ p
   apply (algebraMap K L).injective
   rw [← galEquivProd_symm_sigma_algebraMap hcop hζ b,
@@ -792,7 +851,7 @@ theorem pow_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   let L := CyclotomicField p K
   have hζ := IsCyclotomicExtension.zeta_spec p K L
   let _ := Ideal.Quotient.field P; let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
-  have : CharP (𝓞 K ⧸ P) p := charP_quotient_of_liesOver P p
+  have : CharP (𝓞 K ⧸ P) p := Ideal.Quotient.charP_of_liesOver P Ideal.IsPrime.ne_top' p Fact.out
   let _ : Algebra (ZMod p) (𝓞 K ⧸ P) := ZMod.algebra _ p
   let f : 𝓞 K →+* L := (algebraMap K L).comp (algebraMap (𝓞 K) K)
   have hf : Function.Injective f :=

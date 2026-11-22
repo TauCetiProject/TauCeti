@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.RingTheory.Ideal.Over
 
 /-!
 # Transporting ideals of a ring of integers along an isomorphism of fields
@@ -28,6 +29,8 @@ on nonzero ideals.
   the rings of integers back to their fraction fields recovers `e`.
 * `Ideal.comap_mapRingEquiv_refl`, `Ideal.comap_mapRingEquiv_trans`: functoriality on ideals.
 * `Ideal.comap_mapRingEquiv_eq_bot_iff`: the pullback is the zero ideal only for the zero ideal.
+* `Ideal.liesOver_map_ringOfIntegers_mapRingEquiv`: transporting an ideal along
+  `RingOfIntegers.mapRingEquiv e` preserves `Ideal.LiesOver`.
 -/
 
 public section
@@ -108,5 +111,25 @@ theorem comap_mapRingEquiv_eq_bot_iff (I : Ideal (𝓞 L)) (e : K ≃+* L) :
     Ideal.comap (RingOfIntegers.mapRingEquiv e) I = ⊥ ↔ I = ⊥ := by
   rw [← Ideal.map_symm]
   exact Ideal.map_eq_bot_iff_of_injective (RingOfIntegers.mapRingEquiv e).symm.injective
+
+/-- Transporting an ideal of `𝓞 K` along a field isomorphism `e : K ≃+* L` preserves lying
+over any ideal `q` of `ℤ`. -/
+theorem liesOver_map_ringOfIntegers_mapRingEquiv (P : Ideal (𝓞 K)) (e : K ≃+* L)
+    (q : Ideal ℤ) [P.LiesOver q] :
+    (P.map (RingOfIntegers.mapRingEquiv e : 𝓞 K →+* 𝓞 L)).LiesOver q := by
+  rw [Ideal.liesOver_iff, Ideal.under_def]
+  ext z
+  simp only [Ideal.mem_comap]
+  let eO := RingOfIntegers.mapRingEquiv e
+  have hez : algebraMap ℤ (𝓞 L) z = eO (algebraMap ℤ (𝓞 K) z) :=
+    RingOfIntegers.ext (by simp)
+  rw [hez]
+  constructor
+  · intro hz
+    exact Ideal.mem_map_of_mem _ ((Ideal.mem_of_liesOver P q z).1 hz)
+  · intro hz
+    obtain ⟨w, hw, hew⟩ := (Ideal.mem_map_iff_of_surjective _ eO.surjective).mp hz
+    rw [eO.injective hew] at hw
+    exact (Ideal.mem_of_liesOver P q z).2 hw
 
 end Ideal

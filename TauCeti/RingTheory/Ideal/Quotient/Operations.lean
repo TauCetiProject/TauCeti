@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors, Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 -/
 module
 
+public import Mathlib.Algebra.CharP.Defs
+public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.RingTheory.Ideal.Colon
 public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.Module.SpanRank
+import Mathlib.Algebra.CharP.Basic
 
 /-!
 # Operations on ideal quotients
@@ -51,6 +54,9 @@ endomorphism of the quotient by `Ideal.span s` (`Ideal.exists_quotient_linearMap
 
 Multiplication by `b` gives the exact sequence `B/(J : b) → B/J → B/(J + (b))` for any ideal
 `J`, without regularity of `b`. The first map `TauCeti.ColonQuotient.mulColon` is injective.
+
+A proper two-sided ideal lying over `(p)` for a rational prime `p` gives a quotient ring of
+characteristic `p` (`Ideal.Quotient.charP_of_liesOver`).
 
 -/
 
@@ -179,6 +185,16 @@ theorem exact_mulLeft_mkₐ_span_singleton {B : Type*} [CommRing B] [Algebra R B
     simp only [AlgHom.toLinearMap_apply, Quotient.mkₐ_eq_mk, Quotient.eq_zero_iff_mem,
       mem_span_singleton', Set.mem_range, LinearMap.mulLeft_apply]
     exact exists_congr fun _ ↦ by rw [mul_comm]
+
+/-- If a proper two-sided ideal `P` lies over `(p)` for a rational prime `p`, then `R ⧸ P` has
+characteristic `p`. -/
+theorem Quotient.charP_of_liesOver {R : Type*} [Ring R] [Algebra ℤ R] (P : Ideal R)
+    [P.IsTwoSided] (hP : P ≠ ⊤) (p : ℕ) (hp : p.Prime) [P.LiesOver (span {(p : ℤ)})] :
+    CharP (R ⧸ P) p := by
+  let _ : Nontrivial (R ⧸ P) := Quotient.nontrivial_iff.mpr hP
+  refine (CharP.charP_iff_prime_eq_zero hp).mpr ?_
+  rw [← map_natCast (Quotient.mk P), Quotient.eq_zero_iff_mem]
+  simpa using (mem_of_liesOver P (span {(p : ℤ)}) (p : ℤ)).1 (mem_span_singleton_self _)
 
 end Ideal
 
