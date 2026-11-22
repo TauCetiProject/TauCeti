@@ -54,7 +54,7 @@ nonstationary trajectory form an open dense set.
   Floer trajectory
   (`TauCeti.Floer.dense_setOf_fderiv_apply_ne_zero_and_ne_and_ne_of_floerOperator_eq_zero`).
 * **Density.** For a nonstationary `C²` Floer trajectory `u` with the cylindrical datum
-  `K = H_t dt` and an `s`-independent `J_t`, converging uniformly to `xm` and `xp`, the regular
+  `K = H_t dt` and an `s`-independent `J_t`, converging pointwise to `xm` and `xp`, the regular
   points are dense (`TauCeti.Floer.dense_regularPoints`). Suppose that a nonempty open set `W` of
   points with `∂ₛu ≠ 0`, `u ≠ xm` and `u ≠ xp` contains no regular point, so that every point
   `z ∈ W` has a partner `s ≠ z.1` with `u(s, z.2) = u z`. The zeros of `∂ₛu` are isolated, hence
@@ -443,15 +443,15 @@ private theorem exists_ne_zero_periodic_of_forall_exists_slicePartner
 /-- **The regular points of a nonstationary Floer trajectory are dense** (Floer, Hofer and
 Salamon). Let `u` be a `C²` solution on `ℝ × ℝ` of the Floer equation
 `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0`, for a `C¹` family `J_t` with `J_t(u)² = -1` along `u` and a
-`C²` Hamiltonian `H`, converging uniformly in `t` to continuous loops `xm` and `xp` as `s → -∞`
+`C²` Hamiltonian `H`, converging pointwise in `t` to continuous loops `xm` and `xp` as `s → -∞`
 and `s → +∞`. If `u` is not stationary, its regular points form a dense subset of `ℝ × ℝ`. -/
 theorem dense_regularPoints (hJ : ContDiff ℝ 1 (fun p : ℝ × V ↦ J p.1 p.2))
     (hJJ : ∀ z, J z.2 (u z) ∘L J z.2 (u z) = -ContinuousLinearMap.id ℝ V)
     (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiff ℝ 2 u)
     (hF : ∀ z, ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u z = 0)
     (hne : ∃ z, fderiv ℝ u z stdComplexLineReal ≠ 0) (hxm : Continuous xm) (hxp : Continuous xp)
-    (hm : TendstoUniformly (fun s t ↦ u (s, t)) xm atBot)
-    (hp : TendstoUniformly (fun s t ↦ u (s, t)) xp atTop) :
+    (hm : ∀ t, Tendsto (fun s ↦ u (s, t)) atBot (𝓝 (xm t)))
+    (hp : ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (xp t))) :
     Dense (regularPoints u xm xp) := by
   have hJ' : ContDiff ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1.2 p.2) :=
     hJ.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
@@ -502,7 +502,7 @@ theorem dense_regularPoints (hJ : ContDiff ℝ 1 (fun p : ℝ × V ↦ J p.1 p.2
   obtain ⟨c, hc, hper⟩ := exists_ne_zero_periodic_of_forall_exists_slicePartner hJ hJJ hH
     (hu.of_le (by norm_num)) hF hU₀ hU₀ne hD hDs hinj hε hpart₀
   -- A period `(c, 0)` with `c ≠ 0` moves `z₀` to an end, where `u` is an asymptotic orbit.
-  exact (hper.eq_or_eq_of_tendsto hc (hm.tendsto_at _) (hp.tendsto_at _) _).elim hz₀G.2.1 hz₀G.2.2
+  exact (hper.eq_or_eq_of_tendsto hc (hm _) (hp _) _).elim hz₀G.2.1 hz₀G.2.2
 
 end Dense
 
