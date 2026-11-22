@@ -16,7 +16,6 @@ import TauCeti.Analysis.PDE.Regularity.Smooth
 import TauCeti.Geometry.Manifold.ContMDiff.LocalRepresentative
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.ChartCutoff
-import TauCeti.Geometry.Manifold.Riemannian.Poisson.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Chart
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Null
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
@@ -44,7 +43,7 @@ transfers Euclidean interior regularity to `H¹(M)`:
   every weak solution `w ∈ H¹(M)` of `Δ⁺w = f` agrees almost everywhere with a continuous function
   on `M`.
 * **Semilinear `C^∞` bootstrap**
-  (`TauCeti.Manifold.SobolevH1.contMDiff_of_dirichletForm_eq_semilinear` and
+  (`TauCeti.Manifold.SobolevH1.contMDiff_and_eq_ofSmooth_of_dirichletForm_eq_semilinear` and
   `SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_comp_add_of_dirichletForm_eq`):
   in dimension at most three, if the metric, `A`, `C` on `M`, and `Φ : ℝ → ℝ` are smooth, then a
   weak solution `w ∈ H¹(M)` of `Δ⁺w = A Φ(w) + C` with `A Φ(w) + C ∈ L²(M)` is smooth on `M` and
@@ -57,12 +56,7 @@ transfers Euclidean interior regularity to `H¹(M)`:
   Euclidean interior smoothness
   (`TauCeti.PDE.UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_contDiffOn`) applies. In particular
   weak eigenfunctions of `Δ⁺` are smooth
-  (`SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_of_dirichletForm_eq_mul`). With
-  the weak Poisson theory of `TauCeti.Geometry.Manifold.Riemannian.Poisson.Basic` this solves
-  `Δ⁺u = f` with `u` smooth for every smooth `f` of integral zero
-  (`TauCeti.Manifold.SobolevH1.exists_neg_laplaceBeltrami_eq`). For a smooth `1`-form `a` on a
-  closed four-manifold, this is the scalar equation `Δ⁺ξ = d*a / 2` of the global Coulomb gauge
-  `d*(a - 2 dξ) = 0`.
+  (`SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_of_dirichletForm_eq_mul`).
 
 Local continuous or smooth representatives constructed in charts are glued to a global one by
 `TauCeti.exists_contMDiff_ae_eq_of_locally`, since the Riemannian volume charges every nonempty
@@ -77,8 +71,9 @@ hence zero (`ae_eq_zero_of_integral_contMDiff_smul_eq_zero`).
 * `TauCeti.Manifold.SobolevH1.eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq`: a weak
   solution agreeing almost everywhere with a smooth function `u` is `ofSmooth u`, and `u` solves
   `Δ⁺u = f` everywhere.
-* `TauCeti.Manifold.SobolevH1.contMDiff_of_dirichletForm_eq_semilinear`: smoothness and classical
-  equation `Δ⁺u = A Φ(u) + C` for continuous weak solutions in dimension at most three.
+* `TauCeti.Manifold.SobolevH1.contMDiff_and_eq_ofSmooth_of_dirichletForm_eq_semilinear`:
+  smoothness, Sobolev identification, and classical equation `Δ⁺u = A Φ(u) + C` for continuous
+  weak solutions in dimension at most three.
 * `SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_comp_add_of_dirichletForm_eq`:
   smoothness and classical equation `Δ⁺u = A Φ(u) + C` for weak solutions in dimension at most
   three without an a priori continuity assumption.
@@ -87,8 +82,6 @@ hence zero (`ae_eq_zero_of_integral_contMDiff_smul_eq_zero`).
   every dimension.
 * `SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_of_dirichletForm_eq_mul`:
   a weak solution of `Δ⁺w = μ w` is a smooth classical eigenfunction.
-* `TauCeti.Manifold.SobolevH1.exists_neg_laplaceBeltrami_eq`: a smooth `f` of integral zero is
-  `Δ⁺u` for a smooth `u` of integral zero.
 
 ## References
 
@@ -894,9 +887,13 @@ private theorem ChartPDEData.contDiffOn_comp_chartInvMap_of_dirichletForm_eq {p 
   exact d.hell.contDiffOn_of_energyFormH1_eq (by simpa using hE) (contDiffOn_chartMatrix p d.hΩt)
     hA₀ hC₀ hΦ (hu_cont.continuousOn.comp hψ.continuousOn (mapsTo_univ _ _)) hTv_u hu_H10
 
-/-- Private semilinear smooth bootstrap returning smoothness of `u`, the Sobolev identification
-`w = ofSmooth ⟨u, hu⟩`, and the pointwise classical equation. -/
-private theorem contMDiff_and_eq_ofSmooth_of_dirichletForm_eq_semilinear (hE : finrank ℝ E < 4)
+/-- **Semilinear smooth bootstrap on `H¹(M)`.** Let `M` be a closed smooth Riemannian manifold of
+dimension at most three, let `A` and `C` be smooth on `M`, and let `Φ : ℝ → ℝ` be smooth. If
+`w ∈ H¹(M)` agrees almost everywhere with a continuous function `u : M → ℝ` and solves
+`D(w, φ) = ∫ (A Φ(u) + C) φ dV` against every smooth function `φ`, then `u` is smooth on `M`,
+`w = ofSmooth ⟨u, hu⟩`, and `-laplaceBeltrami I u x = A x * Φ (u x) + C x` holds everywhere on
+`M`. -/
+theorem contMDiff_and_eq_ofSmooth_of_dirichletForm_eq_semilinear (hE : finrank ℝ E < 4)
     {A C : M → ℝ} (hA : ContMDiff I 𝓘(ℝ) ∞ A) (hC : ContMDiff I 𝓘(ℝ) ∞ C)
     {Φ : ℝ → ℝ} (hΦ : ContDiff ℝ ∞ Φ) {w : SobolevH1 I M} {u : M → ℝ}
     (hu_cont : Continuous u) (hwu : toLp w =ᵐ[riemannianVolume I M] u)
@@ -918,22 +915,6 @@ private theorem contMDiff_and_eq_ofSmooth_of_dirichletForm_eq_semilinear (hE : f
     (u := ⟨u, hu_smooth⟩)
     ((hA.continuous.mul (hΦ.continuous.comp hu_cont)).add hC.continuous) hwu hw
   exact ⟨hu_smooth, hw_eq, hΔ⟩
-
-/-- **Semilinear smooth bootstrap on `H¹(M)`.** Let `M` be a closed smooth Riemannian manifold of
-dimension at most three, let `A` and `C` be smooth on `M`, and let `Φ : ℝ → ℝ` be smooth. If
-`w ∈ H¹(M)` agrees almost everywhere with a continuous function `u : M → ℝ` and solves
-`D(w, φ) = ∫ (A Φ(u) + C) φ dV` against every smooth function `φ`, then `u` is smooth on `M`
-and `-laplaceBeltrami I u x = A x * Φ (u x) + C x` holds everywhere on `M`. -/
-theorem contMDiff_of_dirichletForm_eq_semilinear (hE : finrank ℝ E < 4)
-    {A C : M → ℝ} (hA : ContMDiff I 𝓘(ℝ) ∞ A) (hC : ContMDiff I 𝓘(ℝ) ∞ C)
-    {Φ : ℝ → ℝ} (hΦ : ContDiff ℝ ∞ Φ) {w : SobolevH1 I M} {u : M → ℝ}
-    (hu_cont : Continuous u) (hwu : toLp w =ᵐ[riemannianVolume I M] u)
-    (hw : ∀ φ : C^∞⟮I, M; ℝ⟯, dirichletForm w (ofSmooth φ) =
-      ∫ x, (A x * Φ (u x) + C x) * φ x ∂riemannianVolume I M) :
-    ContMDiff I 𝓘(ℝ) ∞ u ∧ ∀ x, -laplaceBeltrami I u x = A x * Φ (u x) + C x := by
-  obtain ⟨hu_smooth, -, hΔ⟩ :=
-    contMDiff_and_eq_ofSmooth_of_dirichletForm_eq_semilinear hE hA hC hΦ hu_cont hwu hw
-  exact ⟨hu_smooth, hΔ⟩
 
 /-- The reading `ρ (g ∘ ψ)` in the coordinates at `p` of a function `g` on `M`, weighted by the
 chart volume density `ρ`, where `ψ` is the inverse chart. Integrals against the Riemannian volume
@@ -1145,27 +1126,6 @@ theorem exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_comp_add_of_dirichletF
   obtain ⟨hu_smooth, hw_eq, hΔ⟩ :=
     contMDiff_and_eq_ofSmooth_of_dirichletForm_eq_semilinear hE hA hC hΦ hu_cont hwu hw_u
   exact ⟨⟨u, hu_smooth⟩, hw_eq, hΔ⟩
-
-/-- **The smooth Poisson equation on a closed manifold.** On a closed connected manifold of any
-dimension with a smooth Riemannian metric, every smooth function `f` of integral zero is `Δ⁺u` for
-a smooth function `u` of integral zero. -/
-theorem exists_neg_laplaceBeltrami_eq [PreconnectedSpace M] {f : M → ℝ}
-    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf₀ : ∫ x, f x ∂riemannianVolume I M = 0) :
-    ∃ u : C^∞⟮I, M; ℝ⟯, ∫ x, u x ∂riemannianVolume I M = 0 ∧
-      ∀ x, -laplaceBeltrami I u x = f x := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
-  have hf2 : MemLp f 2 (riemannianVolume I M) :=
-    hf.continuous.memLp_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
-  obtain ⟨w, hw₀, hw⟩ := (existsUnique_dirichletForm_eq (hf2.toLp f)
-    ((integral_congr_ae hf2.coeFn_toLp).trans hf₀)).exists
-  obtain ⟨u, rfl, hu⟩ :=
-    exists_eq_ofSmooth_and_neg_laplaceBeltrami_add_mul_eq_of_dirichletForm_add_eq (V := 0)
-      contMDiff_const hf (w := w) fun φ ↦ by
-        rw [hw, integral_congr_ae ((hf2.coeFn_toLp.mul (toLp_ofSmooth_ae_eq φ)).mono
-          fun x hx ↦ by simpa only [Pi.mul_apply] using hx)]
-        simp
-  exact ⟨u, (integral_congr_ae (toLp_ofSmooth_ae_eq u)).symm.trans hw₀,
-    fun x ↦ by simpa using hu x⟩
 
 end SmoothRegularity
 

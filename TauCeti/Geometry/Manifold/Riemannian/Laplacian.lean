@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Topology.Algebra.Module.Trace
@@ -33,7 +34,8 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 This file introduces the pointwise Riemannian divergence as the trace of the Levi–Civita
 covariant derivative, the scalar Hessian obtained by pairing that derivative of the gradient,
-and the Laplace–Beltrami operator with the convention `Δ = div ∘ grad`.  The orthonormal-basis
+and the Laplace–Beltrami operator with the convention `Δ = div ∘ grad`, bundled on smooth
+functions as `TauCeti.Manifold.laplaceBeltramiLinearMap`.  The orthonormal-basis
 trace formula makes the relationship between the Laplacian and the Hessian explicit. The operator
 laws include the Leibniz rule and the chain rule `Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²` for a
 real function `h`, with its special case `Δ (log f) = Δ f / f - |grad f|² / f²`. On a
@@ -726,6 +728,38 @@ theorem laplaceBeltrami_log {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (hf
   ring
 
 end OperatorLaws
+
+section LinearMap
+
+variable (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- The Laplace–Beltrami operator `Δ = div ∘ grad` on smooth functions `C^∞⟮I, M; ℝ⟯`, as an
+`ℝ`-linear map. -/
+def laplaceBeltramiLinearMap : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ where
+  toFun u :=
+    ⟨laplaceBeltrami I u, contMDiff_laplaceBeltrami (n := ∞) (m := ∞) (k := ∞) (by simp) (by simp)
+      u.contMDiff⟩
+  map_add' u v := by
+    ext x
+    simp only [ContMDiffMap.coeFn_mk, ContMDiffMap.coe_add]
+    exact laplaceBeltrami_add I (u.contMDiff.of_le (by simp)) (v.contMDiff.of_le (by simp)) x
+  map_smul' c u := by
+    ext x
+    simp only [ContMDiffMap.coeFn_mk, ContMDiffMap.coe_smul, RingHom.id_apply]
+    exact laplaceBeltrami_smul I c (u.contMDiff.of_le (by simp)) x
+
+variable {I M}
+
+/-- Applying `laplaceBeltramiLinearMap` evaluates `laplaceBeltrami`. -/
+@[simp]
+theorem laplaceBeltramiLinearMap_apply (u : C^∞⟮I, M; ℝ⟯) (x : M) :
+    laplaceBeltramiLinearMap I M u x = laplaceBeltrami I u x := by
+  rw [laplaceBeltramiLinearMap]
+  rfl
+
+end LinearMap
 
 /-- In any orthonormal basis, the divergence is the sum of the diagonal inner products of the
 covariant derivative of the vector field. -/

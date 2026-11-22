@@ -9,15 +9,19 @@ public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
+import TauCeti.MeasureTheory.Integral.ContinuousMap
 
 /-!
 # Harmonic functions on closed Riemannian manifolds
 
 A real `C²` function with vanishing Laplace–Beltrami operator on a compact manifold without
-boundary has zero gradient. On a preconnected manifold it is therefore constant. This is the
-energy argument for the scalar-flat case of conformal metric rigidity: Green's first identity
-gives zero Dirichlet energy, and the full support of Riemannian volume turns almost-everywhere
-vanishing into pointwise vanishing.
+boundary has zero gradient. On a preconnected manifold it is therefore constant, and two `C²`
+functions with equal Laplacians and equal Riemannian integrals coincide
+(`TauCeti.Manifold.eq_of_laplaceBeltrami_eq_of_integral_eq`). This is the energy argument for the
+scalar-flat case of conformal metric rigidity and classical Poisson uniqueness: Green's first
+identity gives zero Dirichlet energy, and the full support of Riemannian volume turns
+almost-everywhere vanishing into pointwise vanishing.
 
 ## References
 
@@ -64,5 +68,37 @@ theorem apply_eq_of_laplaceBeltrami_eq_zero [PreconnectedSpace M] {u : M → ℝ
   intro z
   exact mvfderiv_eq_zero_iff.mp
     (mgradient_eq_zero_iff.mp (mgradient_eq_zero_of_laplaceBeltrami_eq_zero hu hΔ z))
+
+/-- Two `C²` functions on a closed connected Riemannian manifold with a `C¹` metric that have the
+same Laplace–Beltrami operator and the same Riemannian integral are equal. -/
+theorem eq_of_laplaceBeltrami_eq_of_integral_eq
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+    [PreconnectedSpace M] {u v : M → ℝ}
+    (hu : ContMDiff I 𝓘(ℝ) 2 u) (hv : ContMDiff I 𝓘(ℝ) 2 v)
+    (hΔ : ∀ x, laplaceBeltrami I u x = laplaceBeltrami I v x)
+    (hint : ∫ x, u x ∂riemannianVolume I M = ∫ x, v x ∂riemannianVolume I M) :
+    u = v := by
+  by_cases hne : Nonempty M
+  · have hΔ0 : ∀ x, laplaceBeltrami I (u - v) x = 0 := fun x ↦ by
+      rw [laplaceBeltrami_sub I hu hv, hΔ x, sub_self]
+    have hconst : ∀ x y, (u - v) x = (u - v) y :=
+      apply_eq_of_laplaceBeltrami_eq_zero (hu.sub hv) hΔ0
+    obtain ⟨x₀⟩ := hne
+    have : Nonempty M := ⟨x₀⟩
+    have hsub : u - v = fun _ ↦ (u - v) x₀ := funext fun x ↦ hconst x x₀
+    have hint0 : ∫ x, (u - v) x ∂riemannianVolume I M = 0 := by
+      rw [Pi.sub_def, integral_sub
+        (hu.continuous.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace u))
+        (hv.continuous.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace v)),
+        hint, sub_self]
+    rw [hsub, integral_const, smul_eq_mul] at hint0
+    have hvol : (riemannianVolume I M).real Set.univ ≠ 0 := by
+      rw [← riemannianTotalVolume_def]
+      exact riemannianTotalVolume_pos.ne'
+    have hc : (u - v) x₀ = 0 := (mul_eq_zero.1 hint0).resolve_left hvol
+    ext x
+    exact sub_eq_zero.1 ((hconst x x₀).trans hc)
+  · ext x
+    exact False.elim (hne ⟨x⟩)
 
 end TauCeti.Manifold
