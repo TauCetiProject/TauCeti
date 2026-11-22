@@ -49,6 +49,8 @@ arbitrary: it need not be adapted to the Morse charts of `f`.
   gradient trajectory is `-grad f`.
 * `TauCeti.maximalIntegralCurve_neg_mgradient_neg`: a global negative gradient trajectory of `f`
   run backwards is the negative gradient trajectory of `-f`.
+* `TauCeti.maximalIntegralCurve_neg_mgradient_neg_of_nonpos`: the same for negative times, when
+  the trajectory of `f` is only defined for all positive time.
 * `TauCeti.hasDerivAt_comp_maximalIntegralCurve_neg_mgradient` and
   `TauCeti.antitoneOn_comp_maximalIntegralCurve_neg_mgradient`: energy dissipation and
   monotonicity along a negative gradient trajectory.
@@ -61,6 +63,9 @@ arbitrary: it need not be adapted to the Morse charts of `f`.
   the sublevel of its initial point.
 * `TauCeti.Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto`: a forward
   trajectory converging to a critical point exists for all positive time.
+* `TauCeti.le_comp_maximalIntegralCurve_neg_mgradient` and
+  `TauCeti.tendsto_comp_maximalIntegralCurve_neg_mgradient`: along a forward trajectory, `f` stays
+  above and tends to its value at any ω-limit point.
 * `TauCeti.Ici_subset_maximalIntegralCurveInterval_neg_mgradient`: a trapped forward trajectory
   exists for all positive time.
 * `TauCeti.mem_criticalPoints_of_mapClusterPt_maximalIntegralCurve_neg_mgradient`: the ω-limit
@@ -116,6 +121,35 @@ theorem maximalIntegralCurve_neg_mgradient_neg (hf : ContMDiff I 𝓘(ℝ) 2 f)
   funext t
   simpa only [Function.comp_apply, zero_mul, maximalIntegralCurve_zero] using
     hrev.maximalIntegralCurve_eq (contMDiff_neg_mgradient_one (f := -f) hf.neg) t
+
+/-- **Reversing time in a forward negative gradient trajectory.** If the maximal integral curve of
+`-grad f` through `x` is defined for all positive time, then for `t ≤ 0` the maximal integral curve
+of `-grad (-f)` through `x` at time `t` is the trajectory of `-grad f` at time `-t`. Unlike
+`TauCeti.maximalIntegralCurve_neg_mgradient_neg`, the flow of `-grad f` need not be complete. -/
+theorem maximalIntegralCurve_neg_mgradient_neg_of_nonpos (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x) (ht : t ≤ 0) :
+    maximalIntegralCurve (-mgradient I (-f)) x t =
+      maximalIntegralCurve (-mgradient I f) x (-t) := by
+  -- The trajectory of `-grad f` is defined on a ray `(l, ∞)` with `l < 0`.
+  obtain ⟨l, u, ⟨hl, hu⟩, hlu⟩ := mem_nhds_iff_exists_Ioo_subset.1
+    (isOpen_maximalIntegralCurveInterval.mem_nhds (hx (le_refl (0 : ℝ))))
+  have hray : Ioi l ⊆ maximalIntegralCurveInterval (-mgradient I f) x := fun s hs ↦
+    (lt_or_ge s u).elim (fun hsu ↦ hlu ⟨hs, hsu⟩) fun hsu ↦ hx (hu.le.trans hsu)
+  -- Reversing time turns it into an integral curve of `-grad (-f)` through `x` on `(-∞, -l)`.
+  have hcurve : IsMIntegralCurveOn (maximalIntegralCurve (-mgradient I f) x ∘ (· * -1))
+      (-mgradient I (-f)) (Iio (-l)) := by
+    have h := ((isMIntegralCurveOn_maximalIntegralCurve
+      (contMDiff_neg_mgradient_one hf)).mono hray).comp_mul (-1)
+    have h2 : (-1 : ℝ) • -mgradient I f = -mgradient I (-f) := by
+      funext y
+      simp [mgradient_neg]
+    rw [h2] at h
+    exact h.mono fun s hs ↦ by rw [mem_ofPred_eq, mem_Ioi]; linarith [mem_Iio.1 hs]
+  have h := (hcurve.mono (Ioo_subset_Iio_self (a := t - 1) (b := -l))).eqOn_maximalIntegralCurve
+    (x := x) (contMDiff_neg_mgradient_one (f := -f) hf.neg) ⟨by linarith, by linarith⟩
+    (by simp [maximalIntegralCurve_zero])
+    (show t ∈ Ioo (t - 1) (-l) from ⟨by linarith, by linarith⟩)
+  simpa only [Function.comp_apply, mul_neg_one] using h
 
 /-! ### Energy dissipation -/
 
@@ -245,6 +279,34 @@ theorem Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto [IsMani
   Ici_subset_maximalIntegralCurveInterval_of_tendsto
     (by rwa [Pi.neg_apply, neg_eq_zero, mgradient_eq_zero_iff, ← mem_criticalPoints]) hconv
 
+/-- **The value at an ω-limit point bounds `f` from below along the trajectory.** If the maximal
+integral curve `γ` of `-grad f` through `x` exists for all positive time and `z` is a cluster point
+of `γ t` as `t → ∞`, then `f z ≤ f (γ t)` for every `t ≥ 0`, since `f` decreases along `γ`. -/
+theorem le_comp_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x) {z : M}
+    (hz : MapClusterPt z atTop (maximalIntegralCurve (-mgradient I f) x)) (ht : 0 ≤ t) :
+    f z ≤ f (maximalIntegralCurve (-mgradient I f) x t) :=
+  (isClosed_le hf.continuous continuous_const).mem_of_mapClusterPt hz <| by
+    filter_upwards [eventually_ge_atTop t] with s hs
+    exact antitoneOn_comp_maximalIntegralCurve_neg_mgradient hf (hx ht) (hx (ht.trans hs)) hs
+
+/-- **Along a forward trajectory, `f` tends to its value at every ω-limit point.** If the maximal
+integral curve `γ` of `-grad f` through `x` exists for all positive time and `z` is a cluster point
+of `γ t` as `t → ∞`, then `f (γ t)` tends to `f z`. -/
+theorem tendsto_comp_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x) {z : M}
+    (hz : MapClusterPt z atTop (maximalIntegralCurve (-mgradient I f) x)) :
+    Tendsto (fun s ↦ f (maximalIntegralCurve (-mgradient I f) x s)) atTop (𝓝 (f z)) := by
+  set γ := maximalIntegralCurve (-mgradient I f) x
+  -- The function `f` is antitone along the forward trajectory and bounded below by `f z`.
+  have hg := tendsto_atTop_ciInf_of_antitoneOn_Ici
+    ((antitoneOn_comp_maximalIntegralCurve_neg_mgradient hf).mono hx)
+    ⟨f z, by rintro _ ⟨s, hs, rfl⟩; exact le_comp_maximalIntegralCurve_neg_mgradient hf hx hz hs⟩
+  -- The limit is the value of `f` at the cluster point `z`.
+  have hne : NeBot (𝓝 (f z) ⊓ 𝓝 (⨅ s : Ici (0 : ℝ), f (γ s))) :=
+    NeBot.mono (hz.continuousAt_comp hf.continuous.continuousAt) (inf_le_inf_left _ hg)
+  rwa [eq_of_nhds_neBot hne]
+
 /-! ### Trapped trajectories -/
 
 variable (hK : IsCompact K)
@@ -261,23 +323,6 @@ theorem Ici_subset_maximalIntegralCurveInterval_neg_mgradient (hf : ContMDiff I 
   Ici_subset_maximalIntegralCurveInterval_of_isCompact_of_mapsTo
     (contMDiff_neg_mgradient_one hf) hK hmem
 
-/-- Along a trapped forward trajectory of `-grad f`, the function `f` converges to its value at
-every ω-limit point. -/
-private theorem tendsto_comp_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 f)
-    {z : M} (hz : MapClusterPt z atTop (maximalIntegralCurve (-mgradient I f) x)) :
-    Tendsto (fun s ↦ f (maximalIntegralCurve (-mgradient I f) x s)) atTop (𝓝 (f z)) := by
-  set γ := maximalIntegralCurve (-mgradient I f) x
-  have hx := Ici_subset_maximalIntegralCurveInterval_neg_mgradient hK hmem hf
-  -- The function `f` is antitone along the forward trajectory and bounded below on `K`.
-  obtain ⟨m, hm⟩ := (hK.image hf.continuous).bddBelow
-  have hg := tendsto_atTop_ciInf_of_antitoneOn_Ici
-    ((antitoneOn_comp_maximalIntegralCurve_neg_mgradient hf).mono hx)
-    ⟨m, by rintro _ ⟨s, hs, rfl⟩; exact hm (mem_image_of_mem f (hmem ⟨hx hs, hs⟩))⟩
-  -- The limit is the value of `f` at the cluster point `z`.
-  have hne : NeBot (𝓝 (f z) ⊓ 𝓝 (⨅ s : Ici (0 : ℝ), f (γ s))) :=
-    NeBot.mono (hz.continuousAt_comp hf.continuous.continuousAt) (inf_le_inf_left _ hg)
-  rwa [eq_of_nhds_neBot hne]
-
 /-- **The ω-limit points of a trapped trajectory are critical.** If the forward part of the
 maximal integral curve of `-grad f` through `x` stays in a compact set, every cluster point of this
 curve as `t → ∞` is a critical point of `f`. -/
@@ -287,14 +332,14 @@ theorem mem_criticalPoints_of_mapClusterPt_maximalIntegralCurve_neg_mgradient
     z ∈ criticalPoints I f := by
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have hx := Ici_subset_maximalIntegralCurveInterval_neg_mgradient hK hmem hf
-  have hlim := tendsto_comp_maximalIntegralCurve_neg_mgradient hK hmem hf hz
+  have hlim := tendsto_comp_maximalIntegralCurve_neg_mgradient hf hx hz
   -- The ω-limit set is invariant under the local flow and `f` is constant on it, so `f` is
   -- constant along the trajectory through `z` near time `0`.
   have hz0 := zero_mem_maximalIntegralCurveInterval (x := z)
     (contMDiff_neg_mgradient_one hf).contMDiffAt
   have hconst : (fun s ↦ f (maximalIntegralCurve (-mgradient I f) z s)) =ᶠ[𝓝 0] fun _ ↦ f z := by
     filter_upwards [isOpen_maximalIntegralCurveInterval.mem_nhds hz0] with s hs
-    exact tendsto_nhds_unique (tendsto_comp_maximalIntegralCurve_neg_mgradient hK hmem hf
+    exact tendsto_nhds_unique (tendsto_comp_maximalIntegralCurve_neg_mgradient hf hx
       (mapClusterPt_atTop_maximalIntegralCurve (contMDiff_neg_mgradient_one hf) hx hz hs)) hlim
   -- Hence the derivative `-‖grad f z‖²` of `f` along that trajectory at time `0` vanishes.
   have hderiv := hasDerivAt_comp_maximalIntegralCurve_neg_mgradient hf hz0
