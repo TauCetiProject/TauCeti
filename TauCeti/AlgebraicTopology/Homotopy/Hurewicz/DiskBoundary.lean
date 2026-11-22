@@ -139,14 +139,7 @@ theorem _root_.TopCat.Hom.nullhomotopic_iff_singularHomologyMap_eq_zero {n : ℕ
           ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of ℤ ℤ) (n + 2)).inv 1)) = 0 := by
   -- `h` is the attaching map of the generalized loop it defines at the image of the north pole.
   let z' := h ⟨sphereNorthPole (n + 2)⟩
-  let p : Ω^ (Fin (n + 2)) Z z' :=
-    (sphereEquiv (n + 2) Z z').symm ⟨h.hom.comp ⟨ULift.up, continuous_uliftUp⟩, rfl⟩
-  have hp : diskBoundaryMap p = h := by
-    ext s
-    rw [diskBoundaryMap_apply, ← coe_sphereEquiv_apply, Equiv.apply_symm_apply]
-    -- Both sides evaluate `h` at `s`: `ULift.up s.down` is `s` by structure eta, and
-    -- `TopCat.Hom.hom` and `ConcreteCategory.hom` agree by definition.
-    rfl
+  obtain ⟨p, hp⟩ := exists_diskBoundaryMap_eq h
   -- The homotopy groups below `n + 2` also vanish at `z'`, since `Z` is path connected.
   have hpc : PathConnectedSpace Z :=
     (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero z).2 (hZ 0 (by omega))

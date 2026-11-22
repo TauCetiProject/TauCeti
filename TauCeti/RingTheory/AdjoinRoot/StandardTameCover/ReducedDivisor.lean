@@ -15,7 +15,7 @@ import TauCeti.Algebra.Algebra.Hom
 import TauCeti.FieldTheory.Kummer.Extension
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.MinimalPrime
-import TauCeti.RingTheory.Localization.AtPrime
+import TauCeti.RingTheory.Localization.AtPrime.FractionRing
 import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.RingTheory.Smooth.Regular
 

@@ -258,10 +258,9 @@ lemma linearHomComplexUnit_f_zero_apply (r : R) :
       (r • Cochain.ofHom (𝟙 F) : ModuleCat.of R (Cochain F F 0)) := by
   rw [linearHomComplexUnit_def, linearHomComplexOfHom_f_zero_apply]
 
-/- Two maps out of a tensor product of linear Hom complexes agree when they agree on every pure
-tensor of cochains.  This keeps the totalization and `ModuleCat` extensionality boilerplate out of
-the naturality and unit calculations below. -/
-private lemma linearHomComplexTensor_hom_ext
+/-- Two maps out of a tensor product of linear Hom complexes agree when they agree on every pure
+tensor of cochains. -/
+lemma linearHomComplex_tensor_hom_ext
     {A B D E : CochainComplex C ℤ} {Z : CochainComplex (ModuleCat.{v} R) ℤ}
     {f g : linearHomComplex R A B ⊗ linearHomComplex R D E ⟶ Z}
     (h : ∀ (p q j : ℤ)
@@ -300,7 +299,7 @@ cochain `Cochain.ofHom φ` in the first (diagrammatic) argument. -/
 lemma linearHomComplexComp_naturality_source (φ : F₁ ⟶ F₂) (G K : CochainComplex C ℤ) :
     linearHomComplex R G K ◁ linearHomComplexPrecomp R φ G ≫ linearHomComplexComp R F₁ G K =
       linearHomComplexComp R F₂ G K ≫ linearHomComplexPrecomp R φ K := by
-  apply linearHomComplexTensor_hom_ext
+  apply linearHomComplex_tensor_hom_ext
   intro p q j h z₂ z₁
   have h' : p + q = j := h
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, ← Category.assoc,
@@ -331,7 +330,7 @@ cochain `Cochain.ofHom ψ` in the last (diagrammatic) argument. -/
 lemma linearHomComplexComp_naturality_target (ψ : K₁ ⟶ K₂) (F G : CochainComplex C ℤ) :
     linearHomComplexPostcomp R G ψ ▷ linearHomComplex R F G ≫ linearHomComplexComp R F G K₂ =
       linearHomComplexComp R F G K₁ ≫ linearHomComplexPostcomp R F ψ := by
-  apply linearHomComplexTensor_hom_ext
+  apply linearHomComplex_tensor_hom_ext
   intro p q j h z₂ z₁
   have h' : p + q = j := h
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, ← Category.assoc,
@@ -363,7 +362,7 @@ lemma linearHomComplexComp_dinaturality_middle (ψ : G₁ ⟶ G₂) (F K : Cocha
         linearHomComplexComp R F G₁ K =
       linearHomComplex R G₂ K ◁ linearHomComplexPostcomp R F ψ ≫
         linearHomComplexComp R F G₂ K := by
-  apply linearHomComplexTensor_hom_ext
+  apply linearHomComplex_tensor_hom_ext
   intro p q j h z₂ z₁
   have h' : p + q = j := h
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, ← Category.assoc,

@@ -54,26 +54,13 @@ namespace WeierstrassCurve
 
 variable {R : Type u} [CommRing R] (W : WeierstrassCurve R)
 
-private theorem exists_mem_range_unitChart (x : W.projModel) :
-    ∃ i : Fin 2, x ∈ Set.range (W.chartι i.succ) := by
-  by_cases hx : x ∈ Set.range (W.chartι 2)
-  · exact ⟨1, hx⟩
-  · have hxZ : x ∉ Proj.basicOpen W.toProjective.grading (W.toProjective.coord 2) := by
-      rw [← W.opensRange_chartι 2]
-      exact fun h ↦ hx (Set.mem_range.mpr (Scheme.Hom.mem_opensRange.mp h))
-    obtain ⟨q, rfl⟩ := (W.mem_range_projModelZero_iff x).mpr hxZ
-    have hq : W.projModelZero q ∈ (W.chartι 1).opensRange := by
-      rw [W.opensRange_chartι 1]
-      exact (W.projModelZero_mem_basicOpen_iff q 1).2 rfl
-    exact ⟨0, Set.mem_range.mpr (Scheme.Hom.mem_opensRange.mp hq)⟩
-
 /-- The two affine charts `D₊(Y)` and `D₊(Z)` cover the projective Weierstrass model. -/
 private noncomputable abbrev unitCover : W.projModel.AffineOpenCover where
   I₀ := Fin 2
   X i := .of (W.toProjective.ChartRing i.succ)
   f i := W.chartι i.succ
-  idx x := (W.exists_mem_range_unitChart x).choose
-  covers x := (W.exists_mem_range_unitChart x).choose_spec
+  idx x := (W.exists_mem_range_chartι_succ x).choose
+  covers x := (W.exists_mem_range_chartι_succ x).choose_spec
 
 -- Restricted to a standard chart, pairing a point with the zero section is the pair of their
 -- homogeneous-coordinate descriptions.

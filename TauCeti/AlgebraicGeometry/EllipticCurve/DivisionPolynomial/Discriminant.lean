@@ -72,7 +72,7 @@ Mathlib's `ψ₂`, `Ψ₂Sq` and `Ψ₃` rather than the raw expressions the sou
 `eval_Ψ₃` bridge lemma is needed; the source's `[IsDomain]`, `[IsPrincipalIdealRing]` and
 `[CharZero]` hypotheses were already `omit`ted there and are absent here too.
 `isUnit_two_of_evalEval_ψ₂_eq_zero` is not ported; it was written for the Legendre form over a
-ring in `TauCeti.AlgebraicGeometry.EllipticCurve.Legendre`.
+ring in `TauCeti.AlgebraicGeometry.EllipticCurve.Legendre.Basic`.
 -/
 
 public section

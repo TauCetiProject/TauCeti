@@ -18,9 +18,10 @@ degrees of freedom. Nonnegative degrees and positive scale give probability meas
 degrees give a point mass at zero; negative degrees or nonpositive scale give the zero measure.
 
 This file supplies the measure, its Lebesgue density at positive degrees, parameter
-measurability, the cumulative distribution function, and the squaring and scaling identities.
-The density is written in standardized coordinates `x / s`. The change of variables reuses
-`map_sqrt_chiSquaredMeasure` and `map_affine_withDensity_volume`.
+measurability, the cumulative distribution function, and the squaring and scaling identities,
+together with their random-variable forms. The density is written in standardized coordinates
+`x / s`. The change of variables reuses `map_sqrt_chiSquaredMeasure` and
+`map_affine_withDensity_volume`.
 
 ## References
 
@@ -279,6 +280,13 @@ theorem chiMeasure_map_const_mul (hc : 0 < c) :
   ext x
   exact (mul_assoc c s (√x)).symm
 
+/-- Multiplying a chi variable by a positive constant multiplies its scale by that constant. -/
+theorem hasLaw_chiMeasure_const_mul (hc : 0 < c)
+    (hX : HasLaw X (chiMeasure k s) P) :
+    HasLaw (fun ω ↦ c * X ω) (chiMeasure k (c * s)) P := by
+  rw [← chiMeasure_map_const_mul hc]
+  exact (hasLaw_map (X := fun x : ℝ ↦ c * x) (by fun_prop)).fun_comp hX
+
 /-- Taking a scaled square root of a chi-squared variable gives the chi law. -/
 theorem hasLaw_chiMeasure_of_hasLaw_chiSquaredMeasure (hs : 0 < s)
     (hX : HasLaw X (chiSquaredMeasure k) P) :
@@ -298,6 +306,14 @@ theorem chiMeasure_map_sq (hs : 0 < s) :
     apply Measure.map_congr
     filter_upwards [ae_pos_gammaMeasure (k / 2) (1 / 2)] with x hx
     simp [mul_pow, Real.sq_sqrt hx.le]
+
+/-- Squaring a chi variable gives a scaled chi-squared variable. -/
+theorem hasLaw_chiSquaredMeasure_of_hasLaw_chiMeasure (hs : 0 < s)
+    (hX : HasLaw X (chiMeasure k s) P) :
+    HasLaw (fun ω ↦ X ω ^ 2)
+      ((chiSquaredMeasure k).map (fun x ↦ s ^ 2 * x)) P := by
+  rw [← chiMeasure_map_sq hs]
+  exact (hasLaw_map (X := fun x : ℝ ↦ x ^ 2) (by fun_prop)).fun_comp hX
 
 /-- The chi cdf is the regularized lower incomplete Gamma function on the nonnegative half-line
 and zero below it. -/

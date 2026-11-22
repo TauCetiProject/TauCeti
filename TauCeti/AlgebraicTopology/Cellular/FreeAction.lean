@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.Cellular.Equivariant
 public import TauCeti.AlgebraicTopology.Cellular.LocalDegree
 public import TauCeti.RepresentationTheory.FreeOfBasis
 public import TauCeti.Topology.CWComplex.Classical.OrbitSpace
+import TauCeti.AlgebraicTopology.Cellular.Permutation
 
 /-!
 # Cellular chains of free cellular actions
@@ -26,12 +27,15 @@ This file shows that on cellular chains with coefficients in a ring `R`, each tr
 cellular basis vector of a cell `i` to a unit scalar multiple of the cellular basis vector of the
 translated cell `g • i` (`TauCeti.cellActionChainRepresentation_cellularChainBasis` and
 `TauCeti.cellActionUnit`). The coordinate of any other `n`-cell `k ≠ g • i` vanishes because the
-closed cell `closedCell n (g • i) = g • closedCell n i` misses any point of `openCell n k`, so the
-induced map into the local homology `Hₙ(Xⁿ, Xⁿ ∖ {x})` at `x ∈ openCell n k` factors through the
-subspace `Xⁿ ∖ {x}` (`TauCeti.cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_notMem` and
+translate `g • openCell n i = openCell n (g • i)` misses `openCell n k`, while the frontier of `i`
+is carried into the `(n - 1)`-skeleton, so the induced map into the local homology
+`Hₙ(Xⁿ, Xⁿ ∖ {x})` at `x ∈ openCell n k` factors through the subspace `Xⁿ ∖ {x}`
+(`TauCeti.cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_ne` and
 `TauCeti.cellularChainGroupMap_cellularChainBasis_eq_smul`, proved in
 `TauCeti.AlgebraicTopology.Cellular.LocalDegree`). Functoriality of cellular chains on `1` and
-`g * h` turns these local scalars into units over `R`.
+`g * h` turns these local scalars into units over `R`; they are `1` on `0`-cells and whenever the
+translation carries characteristic maps strictly onto characteristic maps
+(`TauCeti.cellActionUnit_eq_one_of_smul_map`).
 
 When `G` acts freely on the cells (`hfree`) and `R` is a commutative ring, rescaling the geometric
 cellular basis along each orbit by `TauCeti.cellActionUnit` produces an `R`-basis
@@ -207,9 +211,9 @@ theorem cellActionChainRepresentation_cellularChainBasis {n : ℕ} (g : G) (i : 
   let := cellMulAction hcell n
   rw [cellActionScale_def, cellActionChainRepresentation_apply]
   refine cellularChainGroupMap_cellularChainBasis_eq_smul C C R
-    (isCellular_cellActionSMul C g (hcell g)) fun z hz ↦ ?_
-  rw [coe_cellActionSMul_apply, ← smul_closedCell hcell g i]
-  exact smul_mem_smul_set hz
+    (isCellular_cellActionSMul C g (hcell g)) fun z hz ↦ Or.inr ?_
+  rw [coe_cellActionSMul_apply]
+  exact smul_mem_openCell_smul hcell g hz
 
 /-- The identity element acts with scalar `1` on every cell. -/
 @[simp]
@@ -233,6 +237,39 @@ theorem cellActionScale_mul (g h : G) {n : ℕ} (i : cell C n) :
   simpa only [map_smul, Module.Basis.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one,
     Finsupp.single_eq_same] using
     congrArg (fun v ↦ (cellularChainBasis C R n).repr v ((g * h) • i)) h1.symm
+
+/-- When translation by `g` carries the characteristic map of `i` strictly onto that of an `n`-cell
+`j`, as for the lifted CW structure of a covering (`TauCeti.map_smul_cellPreimage`), the local
+scalar `TauCeti.cellActionScale` is `1`. -/
+theorem cellActionScale_eq_one_of_smul_map {n : ℕ} {g : G} {i j : cell C n}
+    (hmap : ∀ x ∈ Metric.closedBall (0 : Fin n → ℝ) 1, g • map n i x = map n j x) :
+    cellActionScale C hcell R g i = 1 := by
+  let := cellMulAction hcell n
+  have hj : j = g • i := by
+    have hmem : map n j 0 ∈ openCell n j ∧ map n j 0 ∈ openCell n (g • i) :=
+      ⟨map_zero_mem_openCell n j, hmap 0 (Metric.mem_closedBall_self zero_le_one) ▸
+        smul_mem_openCell_smul hcell g (map_zero_mem_openCell n i)⟩
+    exact eq_of_heq (Sigma.mk.inj_iff.1
+      (eq_of_not_disjoint_openCell (not_disjoint_iff.2 ⟨_, hmem.1, hmem.2⟩))).2
+  subst hj
+  have hstrict : cellActionChainRepresentation C hcell R n g (cellularChainBasis C R n i) =
+      cellularChainBasis C R n (g • i) := by
+    rw [cellActionChainRepresentation_apply]
+    exact cellularChainGroupMap_cellularChainBasis C C
+      (isCellular_cellActionSMul C g (hcell g)) R fun x hx hxC ↦
+        (coe_cellActionSMul_apply C g (hcell g) ⟨map n i x, hxC⟩).trans (hmap x hx)
+  rw [cellActionScale_def, hstrict, Module.Basis.repr_self, Finsupp.single_eq_same]
+
+/-- Every element acts with scalar `1` on the cellular basis vector of a `0`-cell. -/
+@[simp]
+theorem cellActionScale_zero (g : G) (i : cell C 0) :
+    cellActionScale C hcell R g i = 1 := by
+  let := cellMulAction hcell 0
+  refine cellActionScale_eq_one_of_smul_map C hcell R (j := g • i) fun x _ ↦ ?_
+  rw [Subsingleton.elim x 0]
+  have hmem := smul_mem_openCell_smul hcell g (map_zero_mem_openCell 0 i)
+  rw [openCell_zero_eq_singleton, mem_singleton_iff] at hmem
+  exact hmem.trans (congrArg (map 0 (g • i)) (Subsingleton.elim _ _))
 
 end MonoidAction
 
@@ -275,6 +312,39 @@ theorem val_cellActionUnit (g : G) {n : ℕ} (i : cell C n) :
 theorem isUnit_cellActionScale (g : G) {n : ℕ} (i : cell C n) :
     IsUnit (cellActionScale C hcell R g i) :=
   (cellActionUnit C hcell R g i).isUnit
+
+/-- The identity element acts with unit `1` on every cell. -/
+@[simp]
+theorem cellActionUnit_one {n : ℕ} (i : cell C n) :
+    cellActionUnit C hcell R (1 : G) i = 1 :=
+  Units.ext (cellActionScale_one C hcell R i)
+
+/-- The units `TauCeti.cellActionUnit` satisfy the cocycle identity
+`u (g * h) i = u h i * u g (h • i)`. -/
+theorem cellActionUnit_mul (g h : G) {n : ℕ} (i : cell C n) :
+    letI := cellMulAction hcell n
+    cellActionUnit C hcell R (g * h) i =
+      cellActionUnit C hcell R h i * cellActionUnit C hcell R g (h • i) :=
+  Units.ext (cellActionScale_mul C hcell R g h i)
+
+/-- The inverse of the unit of `g` at `i` is the unit of `g⁻¹` at `g • i`. -/
+theorem cellActionUnit_inv (g : G) {n : ℕ} (i : cell C n) :
+    letI := cellMulAction hcell n
+    (cellActionUnit C hcell R g i)⁻¹ = cellActionUnit C hcell R g⁻¹ (g • i) :=
+  Units.ext rfl
+
+/-- When translation by `g` carries the characteristic map of `i` strictly onto that of an `n`-cell
+`j`, the unit `TauCeti.cellActionUnit` is `1`. -/
+theorem cellActionUnit_eq_one_of_smul_map {n : ℕ} {g : G} {i j : cell C n}
+    (hmap : ∀ x ∈ Metric.closedBall (0 : Fin n → ℝ) 1, g • map n i x = map n j x) :
+    cellActionUnit C hcell R g i = 1 :=
+  Units.ext (cellActionScale_eq_one_of_smul_map C hcell R hmap)
+
+/-- Every element acts with unit `1` on the cellular basis vector of a `0`-cell. -/
+@[simp]
+theorem cellActionUnit_zero (g : G) (i : cell C 0) :
+    cellActionUnit C hcell R g i = 1 :=
+  Units.ext (cellActionScale_zero C hcell R g i)
 
 end GroupAction
 
@@ -377,6 +447,25 @@ theorem cellActionChainRepIsoFree_hom_hom_cellularChainBasis (a : ι) :
     rw [map_one, Module.End.one_eq_id, LinearMap.id_apply]
   rw [← h1, ← cellActionChainRepIsoFree_inv_hom_single C hcell hfree R s hs, Rep.hom_inv_apply]
 
+/-- The cellular basis vector of a translated representative `g • s a` maps to the generator
+`single a (single g u⁻¹)` of `Rep.free R G ι`, where `u` is the unit
+`TauCeti.cellActionUnit C hcell R g (s a)` by which `g` rescales the cellular basis vector of
+`s a`. -/
+theorem cellActionChainRepIsoFree_hom_hom_cellularChainBasis_smul (a : ι) (g : G) :
+    letI := cellMulAction hcell n
+    (cellActionChainRepIsoFree C hcell hfree R s hs).hom.hom
+        (cellularChainBasis C R n (g • s a)) =
+      Finsupp.single a (MonoidAlgebra.single g (↑(cellActionUnit C hcell R g (s a))⁻¹ : R)) := by
+  let := cellMulAction hcell n
+  have h := cellActionChainRepIsoFree_inv_hom_single C hcell hfree R s hs a g
+  rw [cellActionChainRepresentation_cellularChainBasis, ← val_cellActionUnit] at h
+  have hb : cellularChainBasis C R n (g • s a) =
+      (↑(cellActionUnit C hcell R g (s a))⁻¹ : R) •
+        (cellActionChainRepIsoFree C hcell hfree R s hs).inv.hom
+          (Finsupp.single a (MonoidAlgebra.single g 1)) := by
+    rw [h, smul_smul, Units.inv_mul, one_smul]
+  rw [hb, map_smul, Rep.hom_inv_apply, Finsupp.smul_single, MonoidAlgebra.smul_single', mul_one]
+
 end Representatives
 
 /-- Canonical isomorphism of the `n`-th cellular chain group of a free cellular action with the
@@ -417,6 +506,19 @@ theorem cellActionChainRepIsoFreeOrbitQuotient_hom_hom_cellularChainBasis {n : �
   let := cellMulAction hcell n
   unfold cellActionChainRepIsoFreeOrbitQuotient
   exact cellActionChainRepIsoFree_hom_hom_cellularChainBasis _ _ _ _ _ _ o
+
+/-- Under `TauCeti.cellActionChainRepIsoFreeOrbitQuotient`, the cellular basis vector of the
+translate `g • o.out` maps to `single o (single g u⁻¹)` for the unit
+`u = TauCeti.cellActionUnit C hcell R g o.out`. -/
+theorem cellActionChainRepIsoFreeOrbitQuotient_hom_hom_cellularChainBasis_smul {n : ℕ}
+    (o : letI := cellMulAction hcell n; MulAction.orbitRel.Quotient G (cell C n)) (g : G) :
+    letI := cellMulAction hcell n
+    (cellActionChainRepIsoFreeOrbitQuotient C hcell hfree R n).hom.hom
+        (cellularChainBasis C R n (g • o.out)) =
+      Finsupp.single o (MonoidAlgebra.single g (↑(cellActionUnit C hcell R g o.out)⁻¹ : R)) := by
+  let := cellMulAction hcell n
+  unfold cellActionChainRepIsoFreeOrbitQuotient
+  exact cellActionChainRepIsoFree_hom_hom_cellularChainBasis_smul _ _ _ _ _ _ o g
 
 include hfree in
 /-- **Each term of the cellular chain complex of a free cellular action is projective in
@@ -502,6 +604,24 @@ theorem quotientCellularChainRepIsoFree_hom_hom_cellularChainBasis
   have := hp.toContinuousConstSMul
   unfold quotientCellularChainRepIsoFree
   exact cellActionChainRepIsoFree_hom_hom_cellularChainBasis _ _ _ _ _ _ b
+
+/-- Under `TauCeti.quotientCellularChainRepIsoFree`, the cellular basis vector of the translated
+lift `g • s b` maps to `single b (single g u⁻¹)` for the unit
+`u = TauCeti.cellActionUnit (univ : Set E) hcell R g (s b)`. -/
+theorem quotientCellularChainRepIsoFree_hom_hom_cellularChainBasis_smul
+    (b : letI := hp.cwComplexQuotient hcell hfree; cell (univ : Set B) n) (g : G) :
+    letI := hp.cwComplexQuotient hcell hfree
+    letI := cellMulAction hcell n
+    haveI := hp.toContinuousConstSMul
+    (quotientCellularChainRepIsoFree hp hcell hfree R s hs).hom.hom
+        (cellularChainBasis (univ : Set E) R n (g • s b)) =
+      Finsupp.single b (MonoidAlgebra.single g
+        (↑(cellActionUnit (univ : Set E) hcell R g (s b))⁻¹ : R)) := by
+  let := hp.cwComplexQuotient hcell hfree
+  let := cellMulAction hcell n
+  have := hp.toContinuousConstSMul
+  unfold quotientCellularChainRepIsoFree
+  exact cellActionChainRepIsoFree_hom_hom_cellularChainBasis_smul _ _ _ _ _ _ b g
 
 end OrbitSpace
 

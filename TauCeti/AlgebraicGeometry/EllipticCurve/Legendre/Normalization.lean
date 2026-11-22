@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Legendre.Equation
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.TwoTorsion
-import Mathlib.Algebra.CubicDiscriminant
 import Mathlib.FieldTheory.Separable
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TwoTorsion
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve.Translation
 
 /-!
 # Scaled Legendre normalization over the base field
@@ -18,9 +18,9 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
 An elliptic curve with full rational `2`-torsion admits an equation
 `y² = x(x - d)(x - dλ)` over its base field. Full rational `2`-torsion forces characteristic
 different from `2`. Completing the square gives a split monic cubic. Translating by its first
-root gives the scaled Legendre equation, expressed
-as `TauCeti.freyCurve d (-(d * λ))`. The scale `d` is a difference of roots; it need not be a
-square, so this does not assert an isomorphism to the unscaled Legendre curve.
+root gives the scaled Legendre equation `TauCeti.scaledLegendre d λ`. The scale `d` is a difference
+of roots; it need not be a square, so this does not assert an isomorphism to the unscaled
+Legendre curve.
 
 See Bennett–Siksek, *A conjecture of Erdős, supersingular primes and short character sums*, §6,
 and Silverman, *The Arithmetic of Elliptic Curves*, second edition, §§III.1–III.2. We use
@@ -33,22 +33,6 @@ open Polynomial TauCeti
 
 namespace WeierstrassCurve
 
-/-- Translating the first root of the split cubic to the origin gives the Frey equation with
-ordered roots `0`, `e₁ - e₀`, `e₂ - e₀`. No distinctness assumption is needed for this
-coefficient identity. -/
-theorem translate_smul_eq_freyCurve_of_f_eq_prod {R : Type*} [CommRing R]
-    (W : WeierstrassCurve R) [W.IsCharNeTwoNF] {e₀ e₁ e₂ : R}
-    (h : W.toAffine.f = (X - C e₀) * (X - C e₁) * (X - C e₂)) :
-    (⟨1, e₀, 0, 0⟩ : VariableChange R) • W = freyCurve (e₁ - e₀) (e₀ - e₂) := by
-  have hpoly : (⟨1, W.a₂, W.a₄, W.a₆⟩ : Cubic R).toPoly = W.toAffine.f := by
-    simp only [Cubic.toPoly, C_1, one_mul, Affine.f]
-  rw [← hpoly, Cubic.prod_X_sub_C_eq, Cubic.toPoly_injective] at h
-  simp only [Cubic.mk.injEq, true_and] at h
-  obtain ⟨ha₂, ha₄, ha₆⟩ := h
-  ext <;>
-    simp [variableChange_a₁, variableChange_a₂, variableChange_a₃, variableChange_a₄,
-      variableChange_a₆, a₁_of_isCharNeTwoNF, a₃_of_isCharNeTwoNF, ha₂, ha₄, ha₆] <;> ring
-
 /-- An elliptic curve whose native point group has four points killed by doubling is isomorphic
 over the base field to a scaled Legendre equation `y² = x(x - d)(x - dλ)`, with `d` nonzero
 and `λ` different from `0` and `1`. The base field necessarily has characteristic different
@@ -57,7 +41,7 @@ theorem exists_scaledLegendre_of_full_two_torsion {K : Type*} [Field K] [Decidab
     (W : WeierstrassCurve K) [W.IsElliptic]
     (h : Nat.card (nsmulAddMonoidHom (α := W.toAffine.Point) 2).ker = 4) :
     (2 : K) ≠ 0 ∧ ∃ (D : VariableChange K) (d : Kˣ) (l : K), l ≠ 0 ∧ l ≠ 1 ∧
-      D • W = freyCurve (d : K) (-((d : K) * l)) := by
+      D • W = scaledLegendre (d : K) l := by
   let S : Set W.toAffine.Point := (nsmulAddMonoidHom (α := W.toAffine.Point) 2).ker
   have hS : S.ncard = 4 := (Nat.card_coe_set_eq S).symm.trans h
   have hfin : S.Finite := Set.finite_of_ncard_ne_zero (by rw [hS]; decide)
@@ -85,8 +69,7 @@ theorem exists_scaledLegendre_of_full_two_torsion {K : Type*} [Field K] [Decidab
   rw [he] at hdist
   have ⟨⟨h01, h02⟩, h12⟩ : (e₀ ≠ e₁ ∧ e₀ ≠ e₂) ∧ e₁ ≠ e₂ := by
     simpa [Multiset.nodup_cons] using hdist
-  have hf := (prod_multiset_X_sub_C_of_monic_of_roots_card_eq V.toAffine.monic_f
-    hs.natDegree_eq_card_roots.symm).symm
+  have hf := hs.eq_prod_roots_of_monic V.toAffine.monic_f
   rw [he] at hf
   let d := Units.mk0 (e₁ - e₀) (sub_ne_zero.mpr h01.symm)
   let l := (e₂ - e₀) / (e₁ - e₀)
@@ -101,7 +84,7 @@ theorem exists_scaledLegendre_of_full_two_torsion {K : Type*} [Field K] [Decidab
       rw [mul_comm (e₁ - e₀), div_mul_cancel₀ _ (sub_ne_zero.mpr h01.symm)]
     _ = e₀ - e₂ := neg_sub ..
   refine ⟨h₂, ⟨1, e₀, 0, 0⟩ * N, d, l, hl₀, hl₁, ?_⟩
-  rw [mul_smul, hd]
+  rw [mul_smul, scaledLegendre_eq_freyCurve, hd]
   exact V.translate_smul_eq_freyCurve_of_f_eq_prod (by simpa [mul_assoc] using hf)
 
 end WeierstrassCurve

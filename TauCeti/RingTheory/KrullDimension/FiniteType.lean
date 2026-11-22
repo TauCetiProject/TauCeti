@@ -104,8 +104,8 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
   transcendence degree)
 * R. Hartshorne, *Algebraic Geometry* (1977), Chapter I, Theorem 1.8A (heights of
   primes in finitely generated domains over a field, and the dimension formula)
-* [Stacks Project, Tags 00P0–00P4](https://stacks.math.columbia.edu/tag/00P4) (local dimension of
-  `Spec A` for `A` of finite type over a field)
+* [Stacks Project, Tag 00P1](https://stacks.math.columbia.edu/tag/00P1) (local dimension of
+  `Spec A` for `A` of finite type over a field: `dim_x X = dim A_p + trdeg_k κ(p)`)
 * The height theorem for integral extensions generalises, from finite to integral extensions,
   `Pcf.height_under_eq_of_finite_of_finiteType` in `lean/Pcf/Bounding/Divisors.lean`, ported from
   T. Dupuy, T. Tucker and Z. Wang,
