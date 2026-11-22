@@ -11,10 +11,10 @@ public import Mathlib.CategoryTheory.Sites.Descent.IsStack
 import Mathlib.CategoryTheory.Sites.Descent.Precoverage
 import TauCeti.AlgebraicGeometry.Cover.Sigma
 import TauCeti.AlgebraicGeometry.Sites.BigZariski
+import TauCeti.AlgebraicGeometry.Sites.QuasiCompact
 import TauCeti.CategoryTheory.Sites.Descent.IsPrestack
 import TauCeti.CategoryTheory.Sites.Descent.IsStack
 import TauCeti.CategoryTheory.Sites.Descent.Precoverage
-import TauCeti.CategoryTheory.Sites.Sieves.Basic
 
 /-!
 # Stacks for the quasi-compact topology
@@ -60,14 +60,6 @@ open _root_.AlgebraicGeometry _root_.AlgebraicGeometry.Scheme
 variable {P : MorphismProperty Scheme.{u}} [P.IsStableUnderBaseChange]
   [P.IsMultiplicative] [IsZariskiLocalAtSource P]
 
-/-- A finite affine cover `𝒱` of an affine scheme yields a quasi-compact cover with affine
-components and finite index type. -/
-private lemma isAffine_and_finite_of_affineCover {P : MorphismProperty Scheme.{u}}
-    {S : Scheme.{u}} [IsAffine S] (𝒱 : Scheme.AffineCover.{u} P S) [hfin : Finite 𝒱.I₀] :
-    (∀ j, IsAffine ((Cover.ofQuasiCompactCover 𝒱.cover).X j)) ∧
-      Finite (Cover.ofQuasiCompactCover 𝒱.cover).I₀ :=
-  ⟨fun _ ↦ inferInstanceAs <| IsAffine (Spec _), hfin⟩
-
 /-- A pseudofunctor on schemes is a prestack for `Scheme.propQCTopology P` if and only if it is a
 prestack for the big Zariski topology and satisfies descent of morphisms for every single-morphism
 `P`-covering `Spec S ⟶ Spec R` of affine schemes. -/
@@ -101,15 +93,34 @@ theorem isPrestack_propQCTopology_iff (F : LocallyDiscrete Scheme.{u}ᵒᵖ ⥤�
       rw [← Sieve.pullbackArrows_comm, ← Presieve.ofArrows_pullback, IsPrestackFor_generate_iff]
       obtain ⟨A, rfl⟩ := hV
       let 𝒰' := 𝒱.cover.pullback₂ h
-      have _ : Finite 𝒰'.I₀ := hfin
-      have haff : ∀ j, IsAffine (𝒰'.X j) := fun j ↦ by
-        have _ : IsAffine (𝒱.cover.X j) := inferInstanceAs <| IsAffine (Spec _)
-        exact inferInstanceAs <| IsAffine (pullback (𝒱.cover.f j) h)
-      have _ : ∀ j, AlgebraicGeometry.QuasiCompact (𝒰'.f j) := fun _ ↦ inferInstance
-      exact this A (.ofQuasiCompactCover 𝒰' (qc := .of_finite)) ⟨haff, hfin⟩
+      have _ : Finite 𝒰'.I₀ := by
+        rw [Precoverage.ZeroHypercover.pullback₂_toPreZeroHypercover,
+          PreZeroHypercover.pullback₂_I₀, AffineCover.cover_I₀]
+        exact hfin
+      have haff𝒱 : ∀ j : 𝒱.cover.I₀, IsAffine (𝒱.cover.X j) := fun (j : 𝒱.I₀) ↦ by
+        rw [AffineCover.cover_X]
+        infer_instance
+      have haffPull : ∀ j : 𝒱.cover.I₀,
+          IsAffine ((𝒱.cover.toPreZeroHypercover.pullback₂ h).X j) := fun j ↦ by
+        rw [PreZeroHypercover.pullback₂_X]
+        have _ := haff𝒱 j
+        infer_instance
+      have haff : ∀ j, IsAffine (𝒰'.X j) := haffPull
+      have hqcPull : ∀ j : 𝒱.cover.I₀,
+          AlgebraicGeometry.QuasiCompact ((𝒱.cover.toPreZeroHypercover.pullback₂ h).f j) :=
+        fun j ↦ by
+          have _ : IsAffine (pullback (𝒱.cover.f j) h) := by
+            simpa [PreZeroHypercover.pullback₂_X] using haffPull j
+          rw [PreZeroHypercover.pullback₂_f]
+          exact quasiCompact_of_compactSpace _
+      have _ : ∀ j, AlgebraicGeometry.QuasiCompact (𝒰'.f j) := hqcPull
+      exact this A (.ofQuasiCompactCover 𝒰' (qc := .of_finite))
+        ⟨Cover.isAffine_ofQuasiCompactCover 𝒰' haff, Cover.finite_ofQuasiCompactCover 𝒰'⟩
     rw [← IsPrestackFor_generate_iff]
     refine ((IsPrestackFor_generate_iff F _).2
-      (this R (.ofQuasiCompactCover 𝒱.cover) (isAffine_and_finite_of_affineCover 𝒱))).of_le'
+      (this R (.ofQuasiCompactCover 𝒱.cover)
+        ⟨AffineCover.isAffine_ofQuasiCompactCover 𝒱,
+          AffineCover.finite_ofQuasiCompactCover 𝒱⟩)).of_le'
       f.sieve₀_le_sieve₀ fun V g _ M N φ ψ h ↦ ?_
     refine (F.isPrestackFor (Presieve.ofArrows V.affineCover.X V.affineCover.f)
       V.affineCover.mem_grothendieckTopology).hom_ext fun Z _ ⟨i⟩ ↦ ?_
@@ -118,15 +129,15 @@ theorem isPrestack_propQCTopology_iff (F : LocallyDiscrete Scheme.{u}ᵒᵖ ⥤�
       fun W s hs ↦ ?_
     rw [Sieve.pullback_comp] at hs
     simpa using h _ hs
-  obtain ⟨S, φ, e, hP, hsurj, hφ⟩ := Cover.exists_specMap_sigma 𝒰.forgetQc h𝒰.1 h𝒰.2
+  obtain ⟨S, φ, hP, hsurj, hsieve, href⟩ :=
+    Cover.exists_specMap_sigma_sieve 𝒰.forgetQc h𝒰.1 h𝒰.2
   have hp : F.IsPrestackFor (.ofArrows (fun _ : PUnit.{1} ↦ ∐ 𝒰.X) (fun _ ↦ Sigma.desc 𝒰.f)) := by
-    rw [← IsPrestackFor_generate_iff, Presieve.ofArrows_pUnit,
-      ← Sieve.generate_singleton_comp_of_isIso e.hom, ← hφ, IsPrestackFor_generate_iff]
+    rw [← IsPrestackFor_generate_iff, hsieve, IsPrestackFor_generate_iff]
     exact hff φ hP hsurj
   have hcomp := hp.comp (fun _ i ↦ Sigma.ι 𝒰.X i)
     (fun _ ↦ (sigmaOpenCover 𝒰.X).mem_grothendieckTopology)
-  rw [Presieve.ofArrows_sigma_ι_comp_desc] at hcomp
-  simpa [PreZeroHypercover.presieve₀] using hcomp
+  rw [href] at hcomp
+  exact hcomp
 
 /-- A pseudofunctor on schemes is a stack for `Scheme.propQCTopology P` if and only if it is a
 stack for the big Zariski topology and has effective descent for every single-morphism `P`-covering
@@ -154,19 +165,20 @@ theorem isStack_propQCTopology_iff (F : LocallyDiscrete Scheme.{u}ᵒᵖ ⥤ᵖ 
   obtain ⟨R, rfl⟩ := hT
   wlog h𝒰 : (∀ i, IsAffine (𝒰.X i)) ∧ Finite 𝒰.I₀ generalizing R 𝒰
   · obtain ⟨𝒱, f, hfin, _⟩ := QuasiCompactCover.exists_hom 𝒰.forgetQc
-    have h𝒱 := this R (.ofQuasiCompactCover 𝒱.cover) (isAffine_and_finite_of_affineCover 𝒱)
+    have h𝒱 := this R (.ofQuasiCompactCover 𝒱.cover)
+      ⟨AffineCover.isAffine_ofQuasiCompactCover 𝒱, AffineCover.finite_ofQuasiCompactCover 𝒱⟩
     rw [← IsStackFor_generate_iff] at h𝒱 ⊢
     exact h𝒱.of_le' F 𝒱.cover.mem_propQCTopology f.sieve₀_le_sieve₀
-  obtain ⟨S, φ, e, hP, hsurj, hφ⟩ := Cover.exists_specMap_sigma 𝒰.forgetQc h𝒰.1 h𝒰.2
+  obtain ⟨S, φ, hP, hsurj, hsieve, href⟩ :=
+    Cover.exists_specMap_sigma_sieve 𝒰.forgetQc h𝒰.1 h𝒰.2
   have hp : F.IsStackFor (.ofArrows (fun _ : PUnit.{1} ↦ ∐ 𝒰.X) (fun _ ↦ Sigma.desc 𝒰.f)) := by
-    rw [← IsStackFor_generate_iff, Presieve.ofArrows_pUnit,
-      ← Sieve.generate_singleton_comp_of_isIso e.hom, ← hφ, IsStackFor_generate_iff]
+    rw [← IsStackFor_generate_iff, hsieve, IsStackFor_generate_iff]
     exact hff φ hP hsurj
   have hcomp := hp.comp (J := Scheme.zariskiTopology) (fun _ i ↦ Sigma.ι 𝒰.X i)
     (fun _ ↦ (sigmaOpenCover 𝒰.X).mem_grothendieckTopology)
     (fun _ ↦ (IsStackFor_generate_iff F _).1
       (F.isStackFor' _ (sigmaOpenCover 𝒰.X).mem_grothendieckTopology))
-  rw [Presieve.ofArrows_sigma_ι_comp_desc] at hcomp
-  simpa [PreZeroHypercover.presieve₀] using hcomp
+  rw [href] at hcomp
+  exact hcomp
 
 end TauCeti.AlgebraicGeometry

@@ -8,6 +8,8 @@ module
 public import Mathlib.CategoryTheory.Sites.CoversTop.Basic
 public import Mathlib.CategoryTheory.Sites.Over
 
+import TauCeti.CategoryTheory.Sites.Hypercover.One
+
 /-!
 # Sheaves on `Over S` as sheaves on `C`
 
@@ -238,32 +240,6 @@ def PreOneHypercover.over {X : C} (Y : Over X) (E : PreOneHypercover.{w} Y.left)
 @[simp]
 lemma PreOneHypercover.map_over_forget {X : C} (Y : Over X) (E : PreOneHypercover.{w} Y.left) :
     (E.over Y).map (Over.forget X) = E :=
-  rfl
-
-/-- Pointwise extensionality for two `PreOneHypercover`s sharing the same index types `I₀` and
-`I₁`, discharging the commutativity field `w` by proof irrelevance. -/
-private lemma PreOneHypercover.ext_sameIndex {S : C}
-    {I₀ : Type w} {X X' : I₀ → C} {f : ∀ i, X i ⟶ S} {f' : ∀ i, X' i ⟶ S}
-    {I₁ : I₀ → I₀ → Type w}
-    {Y Y' : ∀ ⦃i₁ i₂⦄, I₁ i₁ i₂ → C}
-    {p₁ : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), Y k ⟶ X i₁}
-    {p₁' : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), Y' k ⟶ X' i₁}
-    {p₂ : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), Y k ⟶ X i₂}
-    {p₂' : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), Y' k ⟶ X' i₂}
-    {w : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), p₁ k ≫ f i₁ = p₂ k ≫ f i₂}
-    {w' : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), p₁' k ≫ f' i₁ = p₂' k ≫ f' i₂}
-    (hX : ∀ i, X i = X' i) (hf : ∀ i, f i ≍ f' i)
-    (hY : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), Y k = Y' k)
-    (hp₁ : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), p₁ k ≍ p₁' k)
-    (hp₂ : ∀ ⦃i₁ i₂⦄ (k : I₁ i₁ i₂), p₂ k ≍ p₂' k) :
-    (⟨⟨I₀, X, f⟩, I₁, Y, p₁, p₂, w⟩ : PreOneHypercover S) =
-      ⟨⟨I₀, X', f'⟩, I₁, Y', p₁', p₂', w'⟩ := by
-  have hX' : X = X' := funext hX
-  have hY' : Y = Y' := funext fun _ ↦ funext fun _ ↦ funext fun k ↦ hY k
-  subst hX' hY'
-  obtain rfl : f = f' := funext fun i ↦ eq_of_heq (hf i)
-  obtain rfl : p₁ = p₁' := funext fun _ ↦ funext fun _ ↦ funext fun k ↦ eq_of_heq (hp₁ k)
-  obtain rfl : p₂ = p₂' := funext fun _ ↦ funext fun _ ↦ funext fun k ↦ eq_of_heq (hp₂ k)
   rfl
 
 /-- Lifting the forgetful image of a pre-`1`-hypercover `E` in `Over X` back to `Over X` recovers

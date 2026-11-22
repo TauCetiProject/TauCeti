@@ -406,6 +406,46 @@ lemma mapComp'_hom_app_comp_mapId'_hom_app {X Y : LocallyDiscrete B₀} (e : Y �
   subst he
   simp [mapId'_eq_mapId, mapComp'_comp_id_hom_app]
 
+/-- Objectwise composition comparison isomorphism `fg_* M ≅ g_* (f_* M)` for a factorization
+`f ≫ g = fg` in `B₀`. -/
+def compIso {A B D : B₀} (f : A ⟶ B) (g : B ⟶ D) (fg : A ⟶ D) (h : f ≫ g = fg)
+    (M : P.obj (.mk A)) :
+    (P.map fg.toLoc).toFunctor.obj M ≅
+      (P.map g.toLoc).toFunctor.obj ((P.map f.toLoc).toFunctor.obj M) :=
+  (Cat.Hom.toNatIso (P.mapComp' f.toLoc g.toLoc fg.toLoc
+    (by simp [← Quiver.Hom.comp_toLoc, h]))).app M
+
+/-- The forward morphism of `Pseudofunctor.compIso`. -/
+lemma compIso_hom {A B D : B₀} (f : A ⟶ B) (g : B ⟶ D) (fg : A ⟶ D) (h : f ≫ g = fg)
+    (M : P.obj (.mk A)) :
+    (P.compIso f g fg h M).hom =
+      (P.mapComp' f.toLoc g.toLoc fg.toLoc
+        (by simp [← Quiver.Hom.comp_toLoc, h])).hom.toNatTrans.app M :=
+  rfl
+
+/-- The inverse morphism of `Pseudofunctor.compIso`. -/
+lemma compIso_inv {A B D : B₀} (f : A ⟶ B) (g : B ⟶ D) (fg : A ⟶ D) (h : f ≫ g = fg)
+    (M : P.obj (.mk A)) :
+    (P.compIso f g fg h M).inv =
+      (P.mapComp' f.toLoc g.toLoc fg.toLoc
+        (by simp [← Quiver.Hom.comp_toLoc, h])).inv.toNatTrans.app M :=
+  rfl
+
+/-- Objectwise unit comparison isomorphism `(𝟙 A)_* M ≅ M`. -/
+def idIso {A : B₀} (M : P.obj (.mk A)) :
+    (P.map (𝟙 A).toLoc).toFunctor.obj M ≅ M :=
+  (Cat.Hom.toNatIso (P.mapId (.mk A))).app M
+
+/-- The forward morphism of `Pseudofunctor.idIso`. -/
+lemma idIso_hom {A : B₀} (M : P.obj (.mk A)) :
+    (P.idIso M).hom = (P.mapId (.mk A)).hom.toNatTrans.app M :=
+  rfl
+
+/-- The inverse morphism of `Pseudofunctor.idIso`. -/
+lemma idIso_inv {A : B₀} (M : P.obj (.mk A)) :
+    (P.idIso M).inv = (P.mapId (.mk A)).inv.toNatTrans.app M :=
+  rfl
+
 /-- Two morphisms `M ⟶ N` over `X` have equal iterated pullbacks along `f : X ⟶ Y` and
 `g : Y ⟶ Z` if and only if they have equal pullbacks along `f ≫ g`. -/
 @[simp]
