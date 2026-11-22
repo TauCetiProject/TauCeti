@@ -336,8 +336,8 @@ lemma mk_eq_mk_iff [W.IsElliptic] [W.IsCharNeTwoNF] {x : R} (hx : W.f.eval x = 0
   simpa only [equivProdA'_apply] using Prod.mk_inj
 
 variable {W} in
-/-- At a root `x` of `f`, the corrected representative `x - T + fCofactor x` is a unit of the
-cubic quotient algebra. -/
+/-- When `W` is elliptic and in characteristic `≠ 2` normal form, then at a root `x` of `f` the
+corrected representative `x - T + fCofactor x` is a unit of the cubic quotient algebra. -/
 lemma isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero [W.IsElliptic] [W.IsCharNeTwoNF] {x : R}
     (h : W.f.eval x = 0) :
     IsUnit <| AdjoinRoot.mk W.f <| C x - X + W.fCofactor x := by
