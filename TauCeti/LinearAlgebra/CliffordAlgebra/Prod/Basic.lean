@@ -285,8 +285,8 @@ private noncomputable def cliffordProdTensorLinearEquiv
     (hρ₁ : Function.Bijective ρ₁) (hρ₂ : Function.Bijective ρ₂) :
     CliffordAlgebra (Q₁.prod Q₂) ≃ₗ[R] Module.End R (E ⊗[R] F) :=
   let rγ : Module.End R E ≃ₗ[R] Module.End R E := Units.mulRightLinearEquiv R ⟨γ, γ, hγ, hγ⟩
-  let hρ₁' : Function.Bijective ρ₁.toLinearMap := by simpa only [AlgHom.coe_toLinearMap] using hρ₁
-  let hρ₂' : Function.Bijective ρ₂.toLinearMap := by simpa only [AlgHom.coe_toLinearMap] using hρ₂
+  have hρ₁' : Function.Bijective ρ₁.toLinearMap := by simpa only [AlgHom.coe_toLinearMap] using hρ₁
+  have hρ₂' : Function.Bijective ρ₂.toLinearMap := by simpa only [AlgHom.coe_toLinearMap] using hρ₂
   prodTensorLinearEquiv Q₁ Q₂ ≪≫ₗ
     TensorProduct.congr (LinearEquiv.ofBijective ρ₁.toLinearMap hρ₁')
       (evenOddProdEquiv Q₂).symm ≪≫ₗ
