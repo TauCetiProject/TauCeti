@@ -19,6 +19,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Linearization of the negative-gradient field at a Morse critical point
@@ -232,17 +233,9 @@ theorem isSelfAdjoint_hessianOperator (hf : ContDiffAt ℝ 2 f x) :
 the Hessian operator. -/
 theorem hasFDerivAt_gradient (hf : ContDiffAt ℝ 2 f x) :
     HasFDerivAt (∇ f) (hessianOperator f x) x := by
-  have h := (InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.hasFDerivAt.comp x
-    (hf.hasFDerivAt_fderiv le_rfl)
-  -- The composed function is the gradient, by the defining property `toDual_gradient` of `∇ f`.
-  have hfun : ⇑(InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv ∘ fderiv ℝ f = ∇ f := by
-    funext y
-    simp only [Function.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
-    exact ((InnerProductSpace.toDual ℝ E).eq_symm_apply.2 toDual_gradient).symm
-  rw [hfun] at h
   -- The derivative of the gradient is the Hessian operator by `fderiv_gradient`.
   rw [← fderiv_gradient]
-  exact h.differentiableAt.hasFDerivAt
+  exact ((hf.gradient_right (m := 1) le_rfl).differentiableAt one_ne_zero).hasFDerivAt
 
 /-- The negative-gradient vector field is differentiable at a twice continuously differentiable
 point, with derivative minus the Hessian operator. -/
@@ -417,20 +410,11 @@ theorem IsNondegenerateCriticalPoint.gradient_eq_zero
   apply (InnerProductSpace.toDual ℝ E).injective
   simp [h.fderiv_eq_zero]
 
-/-- Negating a Hessian operator preserves and reflects invertibility. -/
-theorem isInvertible_neg_hessianOperator_iff :
-    (-hessianOperator f x).IsInvertible ↔ (hessianOperator f x).IsInvertible := by
-  have hneg : -hessianOperator f x =
-      (ContinuousLinearEquiv.neg ℝ : E ≃L[ℝ] E) ∘L hessianOperator f x := by
-    ext v
-    simp
-  rw [hneg, ContinuousLinearMap.isInvertible_equiv_comp]
-
 /-- The derivative of the negative-gradient field at a nondegenerate critical point is
 invertible. -/
 theorem IsNondegenerateCriticalPoint.isInvertible_neg_hessianOperator
     (h : IsNondegenerateCriticalPoint f x) : (-hessianOperator f x).IsInvertible :=
-  isInvertible_neg_hessianOperator_iff.2 h.isInvertible_hessianOperator
+  ContinuousLinearMap.isInvertible_neg_iff.2 h.isInvertible_hessianOperator
 
 /-- The nonlinear-remainder estimate at a nondegenerate critical point. -/
 theorem IsNondegenerateCriticalPoint.neg_gradient_sub_linearization_isLittleO
@@ -485,7 +469,7 @@ theorem isNondegenerateCriticalPoint_iff_neg_gradient_linearization :
     exact h.isInvertible_neg_hessianOperator
   · rintro ⟨hf, hzero, hinv⟩
     rw [fderiv_neg, fderiv_gradient,
-      isInvertible_neg_hessianOperator_iff] at hinv
+      ContinuousLinearMap.isInvertible_neg_iff] at hinv
     rw [isNondegenerateCriticalPoint_iff_gradient]
     refine ⟨hf, ?_, hinv⟩
     simpa only [Pi.neg_apply, neg_eq_zero] using hzero

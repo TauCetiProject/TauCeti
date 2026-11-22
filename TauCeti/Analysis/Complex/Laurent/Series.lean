@@ -53,13 +53,15 @@ annuli, removable-singularity characterization, and term-by-term differentiation
   `TauCeti.HasLaurentSeriesOnAnnulus.tendstoUniformlyOn_closedAnnulus`: automatic absolute
   summability on interior circles and uniform convergence on closed concentric subannuli.
 * `TauCeti.HasLaurentSeriesOnAnnulus.hasFPowerSeriesOnBall_laurentPosPart`,
+  `TauCeti.HasLaurentSeriesOnAnnulus.tendstoUniformlyOn_laurentNegPart`,
   `TauCeti.HasLaurentSeriesOnAnnulus.analyticOnNhd_laurentNegPart`, and
   `TauCeti.HasLaurentSeriesOnAnnulus.tendsto_laurentNegPart_cocompact`: convergence and analyticity
-  of the positive part on `Metric.eball c R` and of the negative part on `(Metric.closedBall c r)ᶜ`,
-  with vanishing at infinity.
-* `TauCeti.HasLaurentSeriesOnAnnulus.eq_laurentPosPart_add_laurentNegPart` and
-  `TauCeti.HasLaurentSeriesOnAnnulus.analyticOnNhd`: Laurent splitting and analyticity of the sum on
-  the open annulus.
+  of the positive part on `Metric.eball c R` and of the negative part on `(Metric.closedBall c r)ᶜ`
+  (uniform on `(Metric.ball c r')ᶜ` for `r' > r`), with vanishing at infinity.
+* `TauCeti.HasLaurentSeriesOnAnnulus.eq_laurentPosPart_add_laurentNegPart`,
+  `TauCeti.HasLaurentSeriesOnAnnulus.eventuallyEq_laurentPosPart_add_laurentNegPart`, and
+  `TauCeti.HasLaurentSeriesOnAnnulus.analyticOnNhd`: Laurent splitting on the open annulus (as a
+  germ on `𝓝[≠] c` for punctured disks) and analyticity of the sum on the open annulus.
 * `TauCeti.HasLaurentSeriesOnAnnulus.hasFPowerSeriesOnBall_update_of_neg_eq_zero`:
   removable-singularity extension across `c` when negative coefficients vanish.
 
@@ -225,6 +227,18 @@ theorem mono {f : ℂ → E} {a : ℤ → E} {c : ℂ} {r r' : ℝ} {R R' : ℝ�
   r_lt := hrR'
   hasSum hw := h.hasSum ⟨eball_subset_eball hR hw.1,
     fun hmem => hw.2 (closedBall_subset_closedBall hr hmem)⟩
+
+/-- Given `r' > r`, every convergent Laurent series on `Metric.eball c R \ Metric.closedBall c r`
+admits an interior circle radius `ρ` with `r < ρ`, `ρ < r'`, and `ENNReal.ofReal ρ < R`. -/
+theorem exists_radius_lt {f : ℂ → E} {a : ℤ → E} {c : ℂ} {r r' : ℝ} {R : ℝ≥0∞}
+    (h : HasLaurentSeriesOnAnnulus f a c r R) (hrr' : r < r') :
+    ∃ ρ : ℝ, r < ρ ∧ ρ < r' ∧ ENNReal.ofReal ρ < R := by
+  have hr'_pos : 0 < r' := h.r_nonneg.trans_lt hrr'
+  have hmin : ENNReal.ofReal r < min (ENNReal.ofReal r') R :=
+    lt_min ((ENNReal.ofReal_lt_ofReal_iff hr'_pos).mpr hrr') h.r_lt
+  obtain ⟨ρ, hrρ, hρmin⟩ := (h.mono le_rfl (min_le_right _ _) hmin).exists_radius
+  exact ⟨ρ, hrρ, (ENNReal.ofReal_lt_ofReal_iff hr'_pos).mp (lt_min_iff.mp hρmin).1,
+    (lt_min_iff.mp hρmin).2⟩
 
 /-- Functions agreeing on the open annulus share the same Laurent series expansions. -/
 theorem congr {f g : ℂ → E} {a : ℤ → E} {c : ℂ} {r : ℝ} {R : ℝ≥0∞}
@@ -489,18 +503,31 @@ theorem tendstoUniformlyOn_closedAnnulus {f : ℂ → E} {a : ℤ → E} {c : �
   filter_upwards [he ε hε] with t ht w hw
   simpa only [← map_sum, e.isometry.dist_eq] using ht w hw
 
+/-- Outside any open disk `Metric.ball c r'` of radius `r' > r`, the negative-degree Laurent terms
+admit a uniform summable norm majorant on the entire unbounded exterior `(Metric.ball c r')ᶜ`. -/
+theorem exists_summable_norm_bound_laurentNegPart {f : ℂ → E} {a : ℤ → E} {c : ℂ}
+    {r r' : ℝ} {R : ℝ≥0∞} (h : HasLaurentSeriesOnAnnulus f a c r R) (hrr' : r < r') :
+    ∃ B : ℕ → ℝ, Summable B ∧
+      ∀ n : ℕ, ∀ w ∈ (ball c r')ᶜ,
+        ‖(w - c) ^ (-((n : ℤ) + 1)) • a (-((n : ℤ) + 1))‖ ≤ B n := by
+  obtain ⟨ρ, hrρ, hρr', hρR⟩ := h.exists_radius_lt hrr'
+  have hρ_pos : 0 < ρ := h.r_nonneg.trans_lt hrρ
+  refine ⟨fun n : ℕ => ‖a (-((n : ℤ) + 1))‖ * ρ ^ (-((n : ℤ) + 1)),
+    h.summable_norm_mul_zpow_neg_add_one hrρ hρR, fun n w hw => ?_⟩
+  have hρw : ρ ≤ ‖w - c‖ :=
+    hρr'.le.trans (by simpa only [mem_compl_iff, mem_ball, dist_eq_norm, not_lt] using hw)
+  dsimp only
+  rw [norm_smul, norm_zpow, mul_comm, ← Int.negSucc_eq, zpow_negSucc, zpow_negSucc]
+  exact mul_le_mul_of_nonneg_left
+    (inv_anti₀ (pow_pos hρ_pos (n + 1)) (pow_le_pow_left₀ hρ_pos.le hρw (n + 1))) (norm_nonneg _)
+
 private theorem inv_sub_mem_eball_radius_negCoordPowerSeries
     {f : ℂ → E} {a : ℤ → E} {c w : ℂ} {r : ℝ} {R : ℝ≥0∞}
     (h : HasLaurentSeriesOnAnnulus f a c r R) (hw : w ∉ closedBall c r) :
     (w - c)⁻¹ ∈ eball (0 : ℂ) (negCoordPowerSeries a).radius := by
   have hrw : r < dist w c := not_le.mp (mt mem_closedBall.mpr hw)
-  have hmin : ENNReal.ofReal r < min (ENNReal.ofReal (dist w c)) R :=
-    lt_min ((ENNReal.ofReal_lt_ofReal_iff (h.r_nonneg.trans_lt hrw)).mpr hrw) h.r_lt
-  obtain ⟨ρ, -, hrρ', hρmin⟩ := ENNReal.lt_iff_exists_real_btwn.1 hmin
-  obtain ⟨hrρ, hρ_pos⟩ := ENNReal.ofReal_lt_ofReal_iff'.1 hrρ'
-  have hρw : ρ < dist w c :=
-    (ENNReal.ofReal_lt_ofReal_iff'.1 (hρmin.trans_le (min_le_left _ _))).1
-  have hρR : ENNReal.ofReal ρ < R := hρmin.trans_le (min_le_right _ _)
+  obtain ⟨ρ, hrρ, hρw, hρR⟩ := h.exists_radius_lt hrw
+  have hρ_pos : 0 < ρ := h.r_nonneg.trans_lt hrρ
   refine eball_subset_eball (h.le_radius_negCoordPowerSeries hrρ hρR) ?_
   rw [mem_eball, edist_zero_right, eNorm_eq_nnNorm]
   have hnorm : ‖(w - c)⁻¹‖ < ρ⁻¹ := by
@@ -583,6 +610,17 @@ theorem hasSum_laurentNegPart {f : ℂ → E} {a : ℤ → E} {c w : ℂ} {r : �
   rw [h.laurentNegPart_eq_negCoordPowerSeries_sum hw]
   exact h.hasSum_negCoordPowerSeries_sum hw
 
+/-- On the unbounded exterior `(Metric.ball c r')ᶜ` of any open disk of radius `r' > r`, the finite
+partial sums of the negative-degree Laurent terms converge uniformly to `laurentNegPart a c`. -/
+theorem tendstoUniformlyOn_laurentNegPart {f : ℂ → E} {a : ℤ → E} {c : ℂ}
+    {r r' : ℝ} {R : ℝ≥0∞} (h : HasLaurentSeriesOnAnnulus f a c r R) (hrr' : r < r') :
+    TendstoUniformlyOn
+      (fun (t : Finset ℕ) w => ∑ n ∈ t, (w - c) ^ (-((n : ℤ) + 1)) • a (-((n : ℤ) + 1)))
+      (laurentNegPart a c) atTop (ball c r')ᶜ := by
+  obtain ⟨B, hB, hbound⟩ := h.exists_summable_norm_bound_laurentNegPart hrr'
+  refine (tendstoUniformlyOn_tsum hB hbound).congr_right fun w hw => ?_
+  exact (h.hasSum_laurentNegPart fun hwc => hw (closedBall_subset_ball hrr' hwc)).tsum_eq
+
 /-- The negative part `laurentNegPart a c` is complex-analytic on `(Metric.closedBall c r)ᶜ`
 (the whole punctured plane `ℂ \ {c}` when `r = 0`). -/
 theorem analyticOnNhd_laurentNegPart {f : ℂ → E} {a : ℤ → E} {c : ℂ} {r : ℝ} {R : ℝ≥0∞}
@@ -639,6 +677,14 @@ theorem eq_laurentPosPart_add_laurentNegPart {f : ℂ → E} {a : ℤ → E} {c 
     simpa only [zpow_natCast] using h.hasSum_laurentPosPart hw.1
   have hn := h.hasSum_laurentNegPart hw.2
   exact (h.hasSum hw).unique (hp.of_nat_of_neg_add_one hn)
+
+/-- On a punctured disk (`r = 0`), `f` agrees on `𝓝[≠] c` with the sum of its nonnegative and
+negative Laurent parts. -/
+theorem eventuallyEq_laurentPosPart_add_laurentNegPart {f : ℂ → E} {a : ℤ → E} {c : ℂ}
+    {R : ℝ≥0∞} (h : HasLaurentSeriesOnAnnulus f a c 0 R) :
+    f =ᶠ[𝓝[≠] c] laurentPosPart a c + laurentNegPart a c := by
+  filter_upwards [sdiff_mem_nhdsWithin_compl (eball_mem_nhds c h.outerRadius_pos) {c}] with w hw
+  exact h.eq_laurentPosPart_add_laurentNegPart (by rwa [closedBall_zero])
 
 /-- Any function admitting a convergent Laurent series on an open annulus is complex-analytic on
 that annulus. -/

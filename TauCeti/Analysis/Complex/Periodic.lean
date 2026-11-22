@@ -64,7 +64,7 @@ theorem qParam_one (z : ℂ) : 𝕢 1 z = exp (2 * π * I * z) := by
 
 /-- An integer power of the local parameter `𝕢 h z` is `exp (2 π I n z / h)`. -/
 theorem qParam_zpow (z : ℂ) (n : ℤ) : 𝕢 h z ^ n = exp (2 * π * I * n * z / h) := by
-  rw [qParam, ← Complex.exp_int_mul]
+  rw [qParam, ← Complex.exp_intCast_mul]
   congr 1
   ring
 
@@ -90,7 +90,7 @@ factor: `𝕢 h (z + t I) ^ m = 𝕢 h z ^ m * e^{-2πmt/h}`. When `h > 0` and `
 decays exponentially as `t` increases. -/
 theorem qParam_add_mul_I_pow (z : ℂ) (t : ℝ) (m : ℕ) :
     𝕢 h (z + t * I) ^ m = 𝕢 h z ^ m * (Real.exp (-(2 * π * m / h * t)) : ℂ) := by
-  rw [← sub_neg_eq_add, qParam_sub, mul_pow, ← Complex.exp_nat_mul, ofReal_exp]
+  rw [← sub_neg_eq_add, qParam_sub, mul_pow, ← Complex.exp_natCast_mul, ofReal_exp]
   congr 2
   push_cast
   ring_nf
@@ -100,7 +100,7 @@ theorem qParam_add_mul_I_pow (z : ℂ) (t : ℝ) (m : ℕ) :
 /-- The `m`-th power of the local parameter at period `m * h` is the local parameter at
 period `h`. -/
 theorem qParam_nat_mul_pow {m : ℕ} (hm : m ≠ 0) (z : ℂ) : 𝕢 (m * h) z ^ m = 𝕢 h z := by
-  simp only [qParam, ← Complex.exp_nat_mul, ofReal_mul, ofReal_natCast]
+  simp only [qParam, ← Complex.exp_natCast_mul, ofReal_mul, ofReal_natCast]
   rw [mul_div_assoc', mul_div_mul_left _ _ (Nat.cast_ne_zero.mpr hm)]
 
 /-- If `h t = 2 m` with `m ∈ ℕ` and `h ≠ 0`, then `exp (π I t z)` is the `m`-th power of the
@@ -108,7 +108,7 @@ local parameter `𝕢 h z = exp (2 π I z / h)`. This is how a term `exp (π I t
 `t` lies in the progression `(2 / h) ℕ` becomes a power of the local parameter. -/
 theorem exp_pi_mul_I_mul_eq_qParam_pow (hh : h ≠ 0) {t : ℝ} {m : ℕ} (ht : h * t = 2 * m)
     (z : ℂ) : exp (π * I * t * z) = 𝕢 h z ^ m := by
-  rw [qParam, ← Complex.exp_nat_mul]
+  rw [qParam, ← Complex.exp_natCast_mul]
   congr 1
   have ht' : t = 2 * m / h := by
     rw [eq_div_iff hh]
@@ -137,7 +137,7 @@ theorem sum_qParam_natCast_pow {p : ℕ} (m : ℕ) :
     exact Complex.isPrimitiveRoot_exp p hp
   have hterm : ∀ b ∈ Finset.range p, 𝕢 (p : ℝ) (b : ℂ) ^ m = (𝕢 (p : ℝ) 1 ^ m) ^ b := by
     intro b _
-    simp only [qParam, ← Complex.exp_nat_mul]
+    simp only [qParam, ← Complex.exp_natCast_mul]
     ring_nf
   rw [Finset.sum_congr rfl hterm]
   split_ifs with hd
