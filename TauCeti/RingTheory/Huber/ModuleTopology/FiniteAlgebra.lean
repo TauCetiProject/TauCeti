@@ -114,7 +114,7 @@ theorem exists_pairOfDefinition_isIntegral (P : PairOfDefinition A) :
             fg_idealOfDefinition := P.fg_idealOfDefinition.map _
             isAdic_idealOfDefinition := isAdic_iff.mpr ⟨fun n ↦ ?_, fun U hU ↦ ?_⟩ },
     fun a ha ↦ M₀.algebraMap_mem_multiplierRing ⟨a, ha⟩,
-    fun b hb ↦ Submodule.isIntegral_of_mem_multiplierRing (Submodule.fg_span hT) h1 hb⟩
+    fun b hb ↦ (Submodule.fg_span hT).isIntegral_of_mem_multiplierRing h1 hb⟩
   · -- `Jⁿ` contains the neighbourhood `I^(n + j) • M₀` of `0`
     refine (J ^ n).toAddSubgroup.isOpen_of_mem_nhds (g := 0) ?_
     have hmem := continuous_subtypeVal.continuousAt.preimage_mem_nhds

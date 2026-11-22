@@ -22,8 +22,8 @@ Let `B` be an `R`-algebra, not necessarily commutative, and `M` an `R`-submodule
 of `R`, so the structure map of `B` corestricts to a ring map `R → B₀`. For an ideal `I` of `R`,
 the `R`-submodule `I • M` of `B` lies in `B₀` only under a hypothesis such as `I • (M * M) ≤ M`
 (see `Submodule.smul_subset_multiplierRing`). If `M` is finitely generated and contains `1`, every
-element of `B₀` is integral over `R` (`Submodule.isIntegral_of_mem_multiplierRing`), and so is
-every right multiplier `b`, with `M b ⊆ M` (`Submodule.isIntegral_of_forall_mul_mem`).
+element of `B₀` is integral over `R` (`Submodule.FG.isIntegral_of_mem_multiplierRing`), and so
+is every right multiplier `b`, with `M b ⊆ M` (`Submodule.FG.isIntegral_of_forall_mul_mem`).
 
 The last part of the file assumes that `B` is commutative. It compares `I • M` with the extension
 of `I` to `B₀` along the structure map `R → B₀`. These comparisons are how a lattice in a finite
@@ -33,9 +33,9 @@ algebra over a Huber ring yields a pair of definition.
 
 * `Submodule.toMultiplierRing`: the structure map `R → B₀`.
 * `Submodule.smul_subset_multiplierRing`: if `I` carries `M * M` into `M`, then `I • M ⊆ B₀`.
-* `Submodule.isIntegral_of_mem_multiplierRing`: if `M` is finitely generated and contains `1`,
+* `Submodule.FG.isIntegral_of_mem_multiplierRing`: if `M` is finitely generated and contains `1`,
   every element of `B₀` is integral over `R`.
-* `Submodule.isIntegral_of_forall_mul_mem`: if `M` is finitely generated and contains `1`,
+* `Submodule.FG.isIntegral_of_forall_mul_mem`: if `M` is finitely generated and contains `1`,
   every `b` with `M b ⊆ M` is integral over `R`.
 * `Submodule.coe_map_pow_subset`: if `B` is commutative and `1 ∈ M`, the powers of the extension
   `J = I B₀` satisfy `Jⁿ ⊆ Iⁿ • M`.
@@ -67,12 +67,11 @@ theorem algebraMap_mem_multiplierRing (M : Submodule R B) (a : R) :
 /-- If an ideal `I` carries `M * M` into `M`, then `I • M` lies in the multiplier ring of `M`. -/
 theorem smul_subset_multiplierRing {M : Submodule R B} {I : Ideal R} (h : I • (M * M) ≤ M) :
     ((I • M : Submodule R B) : Set B) ⊆ M.toAddSubgroup.multiplierRing := fun x hx ↦ by
-  refine Submodule.smul_induction_on hx (fun t ht n hn ↦ ?_) fun x y hx hy ↦ ?_
-  · refine AddSubgroup.mem_multiplierRing.mpr fun m hm ↦ ?_
-    rw [Submodule.mem_toAddSubgroup] at hm ⊢
-    rw [smul_mul_assoc]
-    exact h (Submodule.smul_mem_smul ht (Submodule.mul_mem_mul hn hm))
-  · exact M.toAddSubgroup.multiplierRing.add_mem hx hy
+  -- The product of submodules is their pointwise scalar action, so `smul_assoc` applies.
+  have h' : (I • M) * M ≤ M := (Submodule.smul_assoc I M M).trans_le h
+  refine AddSubgroup.mem_multiplierRing.mpr fun m hm ↦ ?_
+  rw [Submodule.mem_toAddSubgroup] at hm ⊢
+  exact Submodule.mul_le.mp h' x hx m hm
 
 /-- The structure map `R → B₀` into the multiplier ring of an `R`-submodule. -/
 noncomputable def toMultiplierRing (M : Submodule R B) : R →+* M.toAddSubgroup.multiplierRing :=
@@ -87,7 +86,7 @@ theorem coe_toMultiplierRing (M : Submodule R B) (a : R) :
 /-- **The multiplier ring of a finitely generated submodule containing `1` is integral.** If `M`
 is a finitely generated `R`-submodule of an `R`-algebra `B` with `1 ∈ M`, every `b ∈ B` with
 `b M ⊆ M` is integral over `R`. The algebra `B` need not be commutative. -/
-theorem isIntegral_of_mem_multiplierRing {M : Submodule R B} (hM : M.FG) (h1 : (1 : B) ∈ M)
+theorem FG.isIntegral_of_mem_multiplierRing {M : Submodule R B} (hM : M.FG) (h1 : (1 : B) ∈ M)
     {b : B} (hb : b ∈ M.toAddSubgroup.multiplierRing) : IsIntegral R b := by
   have : Module.Finite R M := Module.Finite.iff_fg.mpr hM
   have hbM (m : B) (hm : m ∈ M) : Algebra.lmul R B b m ∈ M := by
@@ -110,8 +109,8 @@ theorem isIntegral_of_mem_multiplierRing {M : Submodule R B} (hM : M.FG) (h1 : (
 /-- **Right multipliers of a finitely generated submodule containing `1` are integral.** If `M`
 is a finitely generated `R`-submodule of an `R`-algebra `B` with `1 ∈ M`, every `b ∈ B` with
 `M b ⊆ M` is integral over `R`. This is the right-multiplier counterpart of
-`Submodule.isIntegral_of_mem_multiplierRing`. -/
-theorem isIntegral_of_forall_mul_mem {M : Submodule R B} (hM : M.FG) (h1 : (1 : B) ∈ M)
+`Submodule.FG.isIntegral_of_mem_multiplierRing`. -/
+theorem FG.isIntegral_of_forall_mul_mem {M : Submodule R B} (hM : M.FG) (h1 : (1 : B) ∈ M)
     {b : B} (hb : ∀ m ∈ M, m * b ∈ M) : IsIntegral R b := by
   -- In the opposite algebra `Bᵐᵒᵖ`, right multiplication by `b` becomes left multiplication by
   -- `op b`, so `op b` is a left multiplier of the image `N` of `M`.
@@ -122,7 +121,7 @@ theorem isIntegral_of_forall_mul_mem {M : Submodule R B} (hM : M.FG) (h1 : (1 : 
       MulOpposite.coe_opLinearEquiv_symm, MulOpposite.unop_mul, MulOpposite.unop_op] at hz ⊢
     exact hb _ hz
   have h1N : (1 : Bᵐᵒᵖ) ∈ N := by simpa [N] using h1
-  obtain ⟨p, hp, hpb⟩ := isIntegral_of_mem_multiplierRing (hM.map _) h1N hN
+  obtain ⟨p, hp, hpb⟩ := (hM.map _).isIntegral_of_mem_multiplierRing h1N hN
   rw [← Polynomial.aeval_def, Polynomial.aeval_op_apply, MulOpposite.op_eq_zero_iff] at hpb
   exact ⟨p, hp, by rwa [← Polynomial.aeval_def]⟩
 
@@ -147,12 +146,12 @@ theorem coe_map_pow_subset {M : Submodule R B} (h1 : (1 : B) ∈ M) (I : Ideal R
   | zero => exact Submodule.zero_mem _
   | add y z _ _ hy hz => exact Submodule.add_mem _ hy hz
   | smul r y _ hy =>
-    rw [smul_eq_mul, Subring.coe_mul]
-    refine Submodule.smul_induction_on' hy (fun t ht m hm ↦ ?_) fun _ _ _ _ h₁ h₂ ↦ ?_
-    · rw [mul_smul_comm]
-      exact Submodule.smul_mem_smul ht (AddSubgroup.mem_multiplierRing.mp r.property m hm)
-    · rw [mul_add]
-      exact Submodule.add_mem _ h₁ h₂
+    -- Left multiplication by `r ∈ B₀` maps `M` into itself, hence also `Iⁿ • M`.
+    have hr : M.map (LinearMap.mulLeft R (r : B)) ≤ M := Submodule.map_le_iff_le_comap.mpr
+      fun m hm ↦ AddSubgroup.mem_multiplierRing.mp r.property m hm
+    rw [smul_eq_mul, Subring.coe_mul, ← LinearMap.mulLeft_apply R]
+    exact (Submodule.map_smul'' _ _ _).trans_le (Submodule.smul_mono le_rfl hr)
+      (Submodule.mem_map_of_mem hy)
 
 /-- If `Iʲ • M` lies in the multiplier ring, then `I^(n + j) • M` lies in the `n`-th power of the
 extension `J = I B₀` of `I` to the multiplier ring. -/
