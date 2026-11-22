@@ -110,7 +110,7 @@ theorem exists_completeSpace_cstarModule_of_finite_projective (A M : Type*)
   have hfg_apply : Function.LeftInverse f g := fun m ↦ by
     simpa [f, g, LinearMap.comp_apply] using LinearMap.congr_fun hfg₀ m
   let : Norm M := ⟨fun m ↦ ‖g m‖⟩
-  let : CStarModule Aᵐᵒᵖ M := CStarModule.induced (g.restrictScalars ℂ)
+  let : CStarModule Aᵐᵒᵖ M := induced (g.restrictScalars ℂ)
     (e_pi.symm.injective.comp hg₀_inj) g.map_smul fun _ ↦ rfl
   let : NormedAddCommGroup M := CStarModule.normedAddCommGroup Aᵐᵒᵖ
   let : NormedSpace ℂ M := .ofCore (CStarModule.normedSpaceCore Aᵐᵒᵖ)

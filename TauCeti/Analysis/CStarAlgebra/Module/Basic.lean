@@ -47,8 +47,8 @@ Riesz theorem.
   `CStarModule.inner_map_map_iff_forall_inner_map_map_self`: complex-linear endomorphisms are
   determined by diagonal inner products `⟪x, T x⟫_A`, and a complex-linear map preserves all inner
   products iff it preserves the diagonal inner products `⟪x, x⟫_A`.
-* `CStarModule.induced`, `Submodule.instCStarModule`: pullback `CStarModule` structures along
-  norm-preserving module injections and on `A`-submodules.
+* `TauCeti.CStarModule.induced`, `Submodule.instCStarModule`: pullback `CStarModule`
+  structures along norm-preserving module injections and on `A`-submodules.
 * `CStarModule.isGreatest_norm_inner`: norm recovery, `‖x‖` is the largest value of
   `‖⟪y, x⟫_A‖` over the closed unit ball.
 * `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`, and `CStarModule.norm_inner_smul_le`:
@@ -208,8 +208,9 @@ theorem norm_eq_of_inner_self_eq {F : Type*} [AddCommGroup F] [Module ℂ F] [SM
 
 end Algebraic
 
-section Induced
+end CStarModule
 
+namespace TauCeti.CStarModule
 variable {A M E : Type*} [NonUnitalSemiring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
   [AddCommGroup M] [Module ℂ M] [SMul A M] [Norm M]
   [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
@@ -222,21 +223,24 @@ def induced (g : M →ₗ[ℂ] E) (hg : Function.Injective g)
     (hnorm : ∀ x : M, ‖x‖ = ‖g x‖) : CStarModule A M where
   inner x y := inner A (g x) (g y)
   inner_add_right := by simp
-  inner_self_nonneg := inner_self_nonneg
-  inner_self {x} := by simp [inner_self, map_eq_zero_iff g hg]
+  inner_self_nonneg := _root_.CStarModule.inner_self_nonneg
+  inner_self {x} := by simp [_root_.CStarModule.inner_self, map_eq_zero_iff g hg]
   inner_op_smul_right := by simp [hA]
   inner_smul_right_complex := by simp
-  star_inner x y := star_inner (g x) (g y)
+  star_inner x y := _root_.CStarModule.star_inner (g x) (g y)
   norm_eq_sqrt_norm_inner_self x :=
-    (hnorm x).trans (norm_eq_sqrt_norm_inner_self (A := A) (x := g x))
+    (hnorm x).trans (_root_.CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (x := g x))
 
-/-- The inner product of the pullback `CStarModule.induced` structure is the pullback along `g`. -/
+/-- The inner product of the pullback `TauCeti.CStarModule.induced` structure is the pullback along
+`g`. -/
 @[simp] theorem induced_inner (g : M →ₗ[ℂ] E) (hg : Function.Injective g)
     (hA : ∀ (a : A) (x : M), g (a • x) = a • g x)
     (hnorm : ∀ x : M, ‖x‖ = ‖g x‖) (x y : M) :
     @inner A M (induced g hg hA hnorm).toInner x y = inner A (g x) (g y) := (rfl)
 
-end Induced
+end TauCeti.CStarModule
+
+namespace CStarModule
 
 section Submodule
 
@@ -246,7 +250,7 @@ variable {A E : Type*} [Ring A] [StarRing A] [Module ℂ A] [PartialOrder A] [No
 /-- Any `A`-submodule of a `CStarModule` over a unital coefficient ring inherits a `CStarModule`
 structure by restricting the inner product. -/
 instance _root_.Submodule.instCStarModule (S : Submodule A E) : CStarModule A S :=
-  CStarModule.induced (S.subtype.restrictScalars ℂ) Subtype.val_injective
+  TauCeti.CStarModule.induced (S.subtype.restrictScalars ℂ) Subtype.val_injective
     (fun _ _ ↦ rfl) fun _ ↦ rfl
 
 /-- The `A`-valued inner product on a submodule agrees with that of the ambient `CStarModule`. -/

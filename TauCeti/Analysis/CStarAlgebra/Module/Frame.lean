@@ -33,11 +33,13 @@ complete (`TauCeti.CStarModule.IsParsevalFrame.completeSpace`).
 Over a unital C⋆-algebra `A`, Parseval frames correspond unitarily to projection-cutdown modules
 `LinearMap.range (TauCeti.CStarMatrix.mulVecLinearMap p)`
 (`TauCeti.CStarModule.IsParsevalFrame.equivRangeGram`,
-`IsStarProjection.exists_isParsevalFrame_and_gram_eq`), for finite `ι` every complete retract of
-`C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` admits an `ι`-indexed Parseval frame
+`IsStarProjection.exists_isParsevalFrame_and_gram_eq`), for finite `ι` every complete right
+`A`-linear retract of `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` admits an `ι`-indexed Parseval frame
 (`LinearMap.exists_isParsevalFrame_of_comp_eq_id`, applied downstream in
-`TauCeti.Analysis.CStarAlgebra.Module.Projective` to finitely generated projective modules), frames
-give explicit module adjoints (`TauCeti.CStarModule.frameAdjoint`), and for `T : E ≃ₗ[Aᵐᵒᵖ] F` into
+`TauCeti.Analysis.CStarAlgebra.Module.Projective` to finitely generated projective modules), a
+Parseval frame gives an explicit adjoint (`TauCeti.CStarModule.frameAdjoint`) for any `A`-linear
+(in particular, right `A`-linear) map out of the module
+(`TauCeti.CStarModule.IsParsevalFrame.isAdjointPair_frameAdjoint`), and for `T : E ≃ₗ[Aᵐᵒᵖ] F` into
 a complete right Hilbert `A`-module `F` they yield polar decompositions `T = U ∘ |T|`
 (`TauCeti.CStarModule.IsParsevalFrame.polarModulus`,
 `TauCeti.CStarModule.IsParsevalFrame.polarUnitary`,
@@ -175,42 +177,43 @@ theorem IsParsevalFrame.isStarProjection_gram {A ι E : Type*} [Fintype ι]
     ext i j; conv_rhs => rw [CStarMatrix.gram_apply, ← hx.sum_inner_smul (x j)]
     simp [CStarMatrix.mul_apply, inner_sum_right', Finset.unop_sum]
 
-section ParsevalAlgebraic
-
 /-- **Parseval's identity** (general algebraic form): `x : ι → E` is a Parseval frame iff
 `∑ i, ⟪x i, z⟫_A * (⟪x i, z⟫_A)⋆ = ⟪z, z⟫_A` for all `z : E`. -/
 theorem isParsevalFrame_iff_sum_inner_mul_star_inner {A ι E : Type*} [Fintype ι] [NonUnitalRing A]
-    [StarRing A] [Module ℂ A] [StarModule ℂ A] [IsScalarTower ℂ A A] [PartialOrder A] [Norm A]
+    [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
     [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E] {x : ι → E} :
     IsParsevalFrame A x ↔ ∀ z : E, ∑ i, inner A (x i) z * star (inner A (x i) z) = inner A z z := by
-  refine ⟨fun hx z ↦ ?_, fun h ↦ ?_⟩
+  refine ⟨fun hx z ↦ ?_, fun h ↦ isParsevalFrame_iff.mpr fun z ↦ ?_⟩
   · conv_rhs => arg 3; rw [← hx.sum_inner_smul z]
     rw [inner_sum_right']; simp
-  · have : IsScalarTower ℂ A E := CStarModule.isScalarTower A E
-    let R : E →ₗ[ℂ] E :=
-      { toFun := fun z ↦ ∑ i, inner A (x i) z • x i
-        map_add' := fun _ _ ↦ by
-          simp [CStarModule.inner_add_right, CStarModule.add_smul, Finset.sum_add_distrib]
-        map_smul' := fun _ _ ↦ by simp [inner_smul_right_complex, smul_assoc, Finset.smul_sum] }
-    exact isParsevalFrame_iff.mpr fun z ↦ LinearMap.congr_fun
-      (eq_of_forall_inner_map_self (A := A) (S := R) (T := LinearMap.id) fun w ↦ by
-        simpa [R, inner_sum_right'] using h w) z
+  · let Q : E → E := fun w ↦ (∑ i, inner A (x i) w • x i) - w
+    have hQ_add (u v : E) : Q (u + v) = Q u + Q v := by
+      simp only [Q, CStarModule.inner_add_right, CStarModule.add_smul, Finset.sum_add_distrib]
+      abel
+    have hQ_sa (u v : E) : inner A u (Q v) = inner A (Q u) v := by
+      have h_l : inner A (∑ i, inner A (x i) u • x i) v =
+          ∑ i, inner A (x i) v * inner A u (x i) := star_injective <| by
+        simp [inner_sum_right', CStarModule.inner_op_smul_right, star_sum]
+      simp [Q, sub_eq_add_neg, CStarModule.inner_neg_right', CStarModule.inner_neg_left',
+        inner_sum_right', h_l]
+    have hQ_diag (w : E) : inner A w (Q w) = 0 := by
+      have hw := h w; simp only [star_inner] at hw
+      simp [Q, sub_eq_add_neg, CStarModule.inner_neg_right', inner_sum_right', hw]
+    have h2 : (2 : ℂ) • inner A (Q z) (Q z) = 0 := by
+      simpa [hQ_add, hQ_diag z, hQ_diag (Q z), hQ_sa z (Q z), ← two_smul ℂ] using hQ_diag (z + Q z)
+    exact sub_eq_zero.mp <| (CStarModule.inner_self (A := A)).mp <| by
+      simpa using congrArg ((2 : ℂ)⁻¹ • ·) h2
 
 /-- **Parseval's identity** (right-module algebraic form): `x : ι → E` is a Parseval frame iff
 `∑ i, ⟨x i, z⟩_A⋆ ⟨x i, z⟩_A = ⟨z, z⟩_A` for all `z : E`. -/
 theorem isParsevalFrame_iff_sum_star_unop_inner_mul_unop_inner {A ι E : Type*} [Fintype ι]
-    [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [IsScalarTower ℂ A A]
-    [PartialOrder A] [Norm Aᵐᵒᵖ] [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E]
+    [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm Aᵐᵒᵖ]
+    [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E]
     [CStarModule Aᵐᵒᵖ E] {x : ι → E} : IsParsevalFrame Aᵐᵒᵖ x ↔ ∀ z : E, ∑ i,
       star (unop (inner Aᵐᵒᵖ (x i) z)) * unop (inner Aᵐᵒᵖ (x i) z) = unop (inner Aᵐᵒᵖ z z) := by
-  have hmul (c : ℂ) (a b : A) : a * (c • b) = c • (a * b) := star_injective <| by
-    simp only [star_mul, star_smul, smul_mul_assoc]
-  have : IsScalarTower ℂ Aᵐᵒᵖ Aᵐᵒᵖ := ⟨fun _ _ _ ↦ unop_injective <| by simp [hmul]⟩
   rw [isParsevalFrame_iff_sum_inner_mul_star_inner]
   exact ⟨fun h z ↦ by simpa only [Finset.unop_sum, unop_mul, unop_star] using congrArg unop (h z),
     fun h z ↦ unop_injective (by simpa only [Finset.unop_sum, unop_mul, unop_star] using h z)⟩
-
-end ParsevalAlgebraic
 
 section NonUnital
 
@@ -241,7 +244,7 @@ theorem frameSynthesisCLM_op_smul (x : ι → E) (a : A) (v : C⋆ᵐᵒᵈ(Aᵐ
 end SynthesisCLM
 
 variable {A ι E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
+  [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
 
 /-- The *analysis operator* of a family `x : ι → E` in a right Hilbert `A`-module, sending `z : E`
 to `i ↦ ⟨x i, z⟩_A` in `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)`. -/
@@ -249,12 +252,14 @@ noncomputable def frameAnalysisCLM (A : Type*) [NonUnitalCStarAlgebra A] [Partia
     [StarOrderedRing A] [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] (x : ι → E) :
     E →L[ℂ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) :=
   (WithCStarModule.equivL ℂ (A := Aᵐᵒᵖ) (E := ι → A)).symm.toContinuousLinearMap.comp <|
-    ContinuousLinearMap.pi fun i ↦
-      (MulOpposite.opContinuousLinearEquiv ℂ).symm.toContinuousLinearMap.comp (innerSL (x i))
+    ContinuousLinearMap.pi fun i ↦ LinearMap.mkContinuous
+      { toFun := fun z ↦ unop (inner Aᵐᵒᵖ (x i) z)
+        map_add' := fun _ _ ↦ by simp [CStarModule.inner_add_right]
+        map_smul' := fun _ _ ↦ by simp }
+      ‖x i‖ fun z ↦ by simpa using norm_unop_inner_le (x i) z
 
 @[simp] theorem frameAnalysisCLM_apply_apply (x : ι → E) (z : E) (i : ι) :
-    frameAnalysisCLM A x z i = unop (inner Aᵐᵒᵖ (x i) z) := by
-  simp [frameAnalysisCLM, innerSL_apply]
+    frameAnalysisCLM A x z i = unop (inner Aᵐᵒᵖ (x i) z) := by simp [frameAnalysisCLM]
 
 theorem frameAnalysisCLM_op_smul (x : ι → E) (a : A) (z : E) :
     frameAnalysisCLM A x (op a • z) = op a • frameAnalysisCLM A x z := by
@@ -379,7 +384,7 @@ variable {A ι E : Type*} [Ring A] [StarRing A] [Module ℂ A] [PartialOrder A] 
 variable [Fintype ι]
 
 /-- Synthesis after analysis equals the identity when `x` is a Parseval frame. -/
-theorem IsParsevalFrame.frameSynthesisLinearMap_comp_frameAnalysisLinearMap {x : ι → E}
+theorem IsParsevalFrame.frameSynthesisLinearMap_comp_frameAnalysisLinearMap_eq_id {x : ι → E}
     (hx : IsParsevalFrame Aᵐᵒᵖ x) :
     (frameSynthesisLinearMap A x).comp (frameAnalysisLinearMap A x) = LinearMap.id := by
   ext z; simpa [LinearMap.comp_apply] using hx.sum_inner_smul z
@@ -422,7 +427,7 @@ theorem frameSynthesisCLM_single_one [DecidableEq ι] (x : ι → E) (i : ι) :
 end SynthesisUnital
 
 variable {A ι E : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [NormedAddCommGroup E] [NormedSpace ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
+  [SeminormedAddCommGroup E] [NormedSpace ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
 
 @[simp] theorem coe_frameAnalysisLinearMap (x : ι → E) :
     ⇑(frameAnalysisLinearMap A x) = ⇑(frameAnalysisCLM A x) := by funext z; ext i; simp
@@ -517,8 +522,6 @@ end TauCeti.CStarModule
 /-! ### Splitting Gram matrices and Parseval frames on retracts of free modules -/
 
 namespace LinearMap
-
-section Splitting
 
 open TauCeti.CStarModule
 
@@ -686,8 +689,6 @@ theorem exists_isParsevalFrame_of_comp_eq_id {ι : Type*} [Fintype ι]
           simp_rw [hinner_x, map_sum, map_smul, hπ_fst, hη_fst]
     _ = z := by rw [hu₀_rec, hπ_fst, WithCStarModule.equiv_symm_fst]
 
-end Splitting
-
 end LinearMap
 
 namespace TauCeti.CStarModule
@@ -813,7 +814,7 @@ theorem IsParsevalFrame.isStrictlyPositive_polarMatrix [DecidableEq ι] {x : ι 
   let g : F →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) := frameAnalysisLinearMap A x ∘ₗ T.symm.toLinearMap
   have hfg : f ∘ₗ g = LinearMap.id := LinearMap.ext fun w ↦ by
     simpa [f, g, LinearMap.comp_apply] using congrArg T
-      (LinearMap.congr_fun hx.frameSynthesisLinearMap_comp_frameAnalysisLinearMap (T.symm w))
+      (LinearMap.congr_fun hx.frameSynthesisLinearMap_comp_frameAnalysisLinearMap_eq_id (T.symm w))
   let y : ι → C⋆ᵐᵒᵈ(Aᵐᵒᵖ, F × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :=
     fun i ↦ (WithCStarModule.equiv Aᵐᵒᵖ _).symm (f (e i), e i - g (f (e i)))
   suffices polarMatrix A x T = CStarMatrix.gram A y from
