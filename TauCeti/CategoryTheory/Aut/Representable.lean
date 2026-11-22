@@ -77,8 +77,8 @@ private def toAutObj (σ : Aut F) : Aut Y :=
   .of ((R.ofIso σ.asIso).uniqueUpToIso R)
 
 private theorem homEquiv_toAutObj_hom (σ : Aut F) :
-    R.homEquiv (R.toAutObj σ).asIso.hom = σ.asIso.hom.app (op Y) (R.homEquiv (𝟙 Y)) := by
-  simpa [toAutObj] using (R.ofIso σ.asIso).homEquiv_uniqueUpToIso_hom R
+    R.homEquiv (R.toAutObj σ).asIso.hom = σ.asIso.hom.app (op Y) (R.homEquiv (𝟙 Y)) :=
+  (R.ofIso σ.asIso).homEquiv_uniqueUpToIso_hom R
 
 private theorem homEquiv_comp_toAutObj_hom (σ : Aut F) {X : C} (f : X ⟶ Y) :
     R.homEquiv (f ≫ (R.toAutObj σ).asIso.hom) = σ.asIso.hom.app (op X) (R.homEquiv f) := by

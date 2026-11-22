@@ -100,6 +100,9 @@ theorem ofIso_homEquiv_apply {G : Cᵒᵖ ⥤ Type w} (e : F ≅ G) {X : C} (f :
 
 /-- The isomorphism between two representing objects of `F` classifies, under the second
 representation, the universal element of the first. -/
+-- top-down (`↓`): bottom-up, `simp` first rewrites the comparison isomorphism by
+-- `uniqueUpToIso_hom` into a Yoneda preimage, after which this lemma no longer matches
+@[simp↓]
 theorem homEquiv_uniqueUpToIso_hom {Y' : C} (R' : F.RepresentableBy Y') :
     R'.homEquiv (R.uniqueUpToIso R').hom = R.homEquiv (𝟙 Y) := by
   rw [uniqueUpToIso_hom, Yoneda.fullyFaithful_preimage]
