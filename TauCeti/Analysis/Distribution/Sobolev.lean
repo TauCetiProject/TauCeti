@@ -45,6 +45,8 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
 * `TemperedDistribution.MemSobolev.sum`: `H^{s,p}` is closed under finite sums.
 * `TemperedDistribution.MemSobolev.smul_of_tower`: `H^{s,p}` is closed under scalar
   multiplication by scalars acting through `ℂ`, such as real numbers.
+* `TemperedDistribution.MemSobolev.toBesselPotentialSpace_eq_of_toDistr_eq`: the element of
+  `H^{s,p}` defined by the tempered distribution of `v ∈ H^{s,p}` is `v`.
 * `TemperedDistribution.MemSobolev.toBesselPotentialSpace_add`,
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_neg`,
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_sub`,
@@ -175,6 +177,13 @@ theorem MemSobolev.smul_of_tower {R : Type*} [SMul R ℂ] [SMul R 𝓢'(E, F)]
     (hf : MemSobolev s p f) : MemSobolev s p (c • f) := by
   rw [← smul_one_smul ℂ c f]
   exact hf.smul _
+
+/-- The element of `H^{s,p}` defined by `f` is `v` whenever `f` is the tempered distribution
+of `v`. -/
+theorem MemSobolev.toBesselPotentialSpace_eq_of_toDistr_eq {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
+    {f : 𝓢'(E, F)} (hf : MemSobolev s p f) {v : BesselPotentialSpace E F s p}
+    (h : f = v.toDistr) : hf.toBesselPotentialSpace = v :=
+  BesselPotentialSpace.ext (by rw [toBesselPotentialSpace_toDistr, h])
 
 /-- The element of `H^{s,p}` defined by a sum is the sum of the elements defined by the
 summands. -/

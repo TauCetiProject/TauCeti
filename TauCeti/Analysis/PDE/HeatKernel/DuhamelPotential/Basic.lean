@@ -131,6 +131,15 @@ theorem heatDuhamelPotential_smul (c : ℝ) (f : ℝ → E → F) (t : ℝ) (x :
   simp only [heatDuhamelPotential_def, Pi.smul_apply, convolution_smul]
   exact intervalIntegral.integral_smul c _
 
+/-- The Duhamel heat potential commutes with a continuous linear equivalence of the values. -/
+theorem heatDuhamelPotential_comp_continuousLinearEquiv {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (L : F ≃L[ℝ] G) (f : ℝ → E → F) (t : ℝ) (x : E) :
+    heatDuhamelPotential (fun s y ↦ L (f s y)) t x = L (heatDuhamelPotential f t x) := by
+  have hconv : ∀ s, (heatKernel (t - s) ⋆ fun y ↦ L (f s y)) x =
+      L ((heatKernel (t - s) ⋆ f s) x) := fun s ↦ by
+    simp only [convolution_lsmul, ← L.integral_comp_comm, map_smul]
+  simp only [heatDuhamelPotential_def, hconv, intervalIntegral, ← L.integral_comp_comm, map_sub]
+
 /-- The Duhamel heat potential vanishes at time zero. -/
 @[simp]
 theorem heatDuhamelPotential_zero (f : ℝ → E → F) : heatDuhamelPotential f 0 = 0 := by
