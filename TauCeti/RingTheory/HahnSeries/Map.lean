@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.RingTheory.HahnSeries.PowerSeries
 import Mathlib.Algebra.Polynomial.Eval.Degree
@@ -16,8 +17,9 @@ import Mathlib.LinearAlgebra.Dual.Lemmas
 A ring homomorphism `f : R →+* S` induces the ring homomorphism `R⟦Γ⟧ →+* S⟦Γ⟧` applying `f` to
 every coefficient. Mathlib provides the underlying map `HahnSeries.map` and its compatibility with
 addition, multiplication and monomials; this file bundles it as a ring homomorphism, records that
-it commutes with exponent embeddings and with the inclusion of power series, and shows that an
-injective coefficient map preserves supports and orders.
+it commutes with exponent embeddings and with the inclusion of power series, and shows that a
+coefficient map sending only `0` to `0`, for instance an injective one, preserves supports and
+orders.
 
 For Laurent series `R⸨X⸩ = R⟦ℤ⟧` this is the base change of the coefficients, for instance
 along a field embedding `K → L`, under which formal substitution and the other coefficient-level
@@ -42,19 +44,21 @@ constructions on Laurent series are natural.
   with all coefficients in the range of the coefficient map.
 * `HahnSeries.eqLocusS_mapRingHom`: coefficientwise maps preserve equalizers; for a faithfully
   flat `R → S` this describes `R⟦Γ⟧` inside `S⟦Γ⟧` by the two maps to `(S ⊗[R] S)⟦Γ⟧`.
-* `HahnSeries.support_map_of_injective`, `HahnSeries.orderTop_map_of_injective`,
-  `HahnSeries.order_map_of_injective`: an injective coefficient map preserves the support and
-  the order.
-* `HahnSeries.exists_mul_eval₂_C_eq_eval₂_C_of_mapRingHom`: for an algebra `L` over a field
-  `K`, a relation `φ Q(ℓ) = P(ℓ)` with `P, Q` over `L`, `Q ≠ 0`, between series `φ, ℓ` with
-  coefficients in `K` descends to such a relation with `P, Q` over `K`.
+* `HahnSeries.support_map_eq`, `HahnSeries.orderTop_map_eq`, `HahnSeries.order_map_eq`: a
+  coefficient map sending only `0` to `0` preserves the support and the order; the
+  `_of_injective` versions are the simp lemmas for injective coefficient maps.
+* `HahnSeries.exists_mul_eval₂_C_eq_eval₂_C_of_mapRingHom`: for an algebra `L` over a commutative
+  semiring `K` that is projective as a `K`-module, for instance a field extension, a relation
+  `φ Q(ℓ) = P(ℓ)` with `P, Q` over `L`, `Q ≠ 0`, between series `φ, ℓ` with coefficients in `K`
+  descends to such a relation with `P, Q` over `K`.
 
 ## Implementation notes
 
 The descent applies a `K`-linear functional `f : L → K` to every coefficient. Since `φ` and `ℓ`
 have coefficients in `K`, this sends `c • φ ℓⁱ` to `f c • φ ℓⁱ`, so it turns the relation over `L`
 into the one whose coefficients are the images of those of `P` and `Q` under `f`. Choosing `f`
-with `f` of the leading coefficient of `Q` equal to `1` keeps the new `Q` nonzero.
+nonzero at the leading coefficient of `Q`, as projectivity of `L` allows, keeps the new `Q`
+nonzero.
 -/
 
 public section
@@ -78,28 +82,47 @@ theorem map_embDomain [PartialOrder Γ'] (f : Γ ↪o Γ') (x : R⟦Γ⟧) (g : 
     simp
   · simp [embDomain_of_notMem_range hb]
 
-/-- An injective coefficient map preserves the support. -/
-@[simp]
-theorem support_map_of_injective (x : R⟦Γ⟧) {g : F} (hg : Function.Injective g) :
+/-- A coefficient map that sends only `0` to `0` preserves the support. Compare
+`Finsupp.support_mapRange_eq`. -/
+theorem support_map_eq (x : R⟦Γ⟧) {g : F} (hg : ∀ r, g r = 0 → r = 0) :
     (x.map g).support = x.support := by
   ext a
   simp only [mem_support, map_coeff, ne_eq]
-  rw [← map_zero g, hg.eq_iff]
+  exact ⟨fun h hx ↦ h (hx ▸ map_zero g), fun h hx ↦ h (hg _ hx)⟩
+
+/-- An injective coefficient map preserves the support. -/
+@[simp]
+theorem support_map_of_injective (x : R⟦Γ⟧) {g : F} (hg : Function.Injective g) :
+    (x.map g).support = x.support :=
+  support_map_eq x fun _ h ↦ hg (h.trans (map_zero g).symm)
+
+/-- A coefficient map that sends only `0` to `0` preserves `orderTop`. -/
+theorem orderTop_map_eq (x : R⟦Γ⟧) {g : F} (hg : ∀ r, g r = 0 → r = 0) :
+    (x.map g).orderTop = x.orderTop := by
+  -- `orderTop` is defined from the support alone: whether it is empty, and if not, the minimal
+  -- element chosen by `Set.IsWF.min`
+  simp only [orderTop, ← support_eq_empty_iff, support_map_eq x hg]
 
 /-- An injective coefficient map preserves `orderTop`. -/
 @[simp]
 theorem orderTop_map_of_injective (x : R⟦Γ⟧) {g : F} (hg : Function.Injective g) :
-    (x.map g).orderTop = x.orderTop := by
-  -- `orderTop` is defined from the support alone: whether it is empty, and its minimal element
-  simp only [orderTop, ← support_eq_empty_iff, support_map_of_injective x hg]
+    (x.map g).orderTop = x.orderTop :=
+  orderTop_map_eq x fun _ h ↦ hg (h.trans (map_zero g).symm)
+
+/-- A coefficient map that sends only `0` to `0` preserves the order of a nonzero series, and the
+junk value `0` of the order of `0`. -/
+theorem order_map_eq [Zero Γ] (x : R⟦Γ⟧) {g : F} (hg : ∀ r, g r = 0 → r = 0) :
+    (x.map g).order = x.order := by
+  -- `order` is defined from the support alone: whether it is empty, and if not, the minimal
+  -- element chosen by `Set.IsWF.min`
+  simp only [order, ← support_eq_empty_iff, support_map_eq x hg]
 
 /-- An injective coefficient map preserves the order of a nonzero series, and the junk value `0`
 of the order of `0`. -/
 @[simp]
 theorem order_map_of_injective [Zero Γ] (x : R⟦Γ⟧) {g : F} (hg : Function.Injective g) :
-    (x.map g).order = x.order := by
-  -- `order` is defined from the support alone: whether it is empty, and its minimal element
-  simp only [order, ← support_eq_empty_iff, support_map_of_injective x hg]
+    (x.map g).order = x.order :=
+  order_map_eq x fun _ h ↦ hg (h.trans (map_zero g).symm)
 
 end Zero
 
@@ -136,6 +159,15 @@ theorem mapRingHom_comp (f : R →+* S) (g : S →+* T) :
 theorem mapRingHom_injective {f : R →+* S} (hf : Function.Injective f) :
     Function.Injective (mapRingHom f : R⟦Γ⟧ →+* S⟦Γ⟧) := fun _ _ h ↦
   HahnSeries.ext <| funext fun g ↦ hf congr(($h).coeff g)
+
+/-- A series with coefficients mapped by `f` commutes with the constant series `C c` when every
+value of `f` commutes with `c`, for instance for `f = algebraMap K L` of a `K`-algebra `L`. -/
+theorem commute_mapRingHom_C {f : R →+* S} {c : S} (h : ∀ r, Commute (f r) c) (x : R⟦Γ⟧) :
+    Commute (mapRingHom f x) (C c) := by
+  rw [commute_iff_eq]
+  ext g
+  simp only [C_apply, coeff_mul_single_zero, coeff_single_zero_mul, coeff_mapRingHom]
+  exact h _
 
 /-- A Hahn series is in the range of a coefficientwise map exactly when all its coefficients are
 in the range of the coefficient map. Compare `Polynomial.mem_map_rangeS`. -/
@@ -291,39 +323,37 @@ theorem map_smul_mapRingHom_algebraMap {K L : Type*} [CommSemiring K] [Semiring 
     (c • mapRingHom (algebraMap K L) x).map f = f c • x := by
   ext g
   simp only [map_coeff, coeff_smul, coeff_mapRingHom, smul_eq_mul]
-  rw [← Algebra.commutes, ← Algebra.smul_def, map_smul, smul_eq_mul, mul_comm]
+  exact f.map_mul_algebraMap c (x.coeff g)
 
-variable {K L : Type*} [Field K] [Ring L] [Algebra K L]
+variable {K L : Type*} [CommSemiring K] [Semiring L] [Algebra K L] [Module.Projective K L]
 
-/-- **Descent of algebraic relations to the coefficient field.** Let `L` be an algebra over a field
-`K`, for instance a field extension, and let `φ` and `ℓ` be series with coefficients in `K`. If
-`φ Q(ℓ) = P(ℓ)` over `L` for polynomials `P, Q` over `L` with `Q ≠ 0`, then `φ Q'(ℓ) = P'(ℓ)` for
-polynomials `P', Q'` over `K` with `Q' ≠ 0`. Polynomials are evaluated through the constant
-series `HahnSeries.C`, which does not depend on a choice of algebra structure on the series. -/
+/-- **Descent of algebraic relations to the coefficient ring.** Let `L` be an algebra over a
+commutative semiring `K` that is projective as a `K`-module, for instance a field extension, and
+let `φ` and `ℓ` be series with coefficients in `K`. If `φ Q(ℓ) = P(ℓ)` over `L` for polynomials
+`P, Q` over `L` with `Q ≠ 0`, then `φ Q'(ℓ) = P'(ℓ)` for polynomials `P', Q'` over `K` with
+`Q' ≠ 0`. Polynomials are evaluated through the constant series `HahnSeries.C`, which does not
+depend on a choice of algebra structure on the series. -/
 theorem exists_mul_eval₂_C_eq_eval₂_C_of_mapRingHom {φ ℓ : K⟦Γ⟧} {P Q : L[X]} (hQ : Q ≠ 0)
     (h : mapRingHom (algebraMap K L) φ * Q.eval₂ C (mapRingHom (algebraMap K L) ℓ) =
       P.eval₂ C (mapRingHom (algebraMap K L) ℓ)) :
     ∃ P' Q' : K[X], Q' ≠ 0 ∧ φ * Q'.eval₂ C ℓ = P'.eval₂ C ℓ := by
-  obtain ⟨f, hf⟩ := Module.Projective.exists_dual_eq_one K (Polynomial.leadingCoeff_ne_zero.mpr hQ)
+  obtain ⟨f, hf⟩ := Module.Projective.exists_dual_ne_zero K (Polynomial.leadingCoeff_ne_zero.mpr hQ)
   let Λ : L⟦Γ⟧ →+ K⟦Γ⟧ :=
     { toFun y := y.map f
       map_zero' := by ext; simp
       map_add' _ _ := by ext; simp }
   -- apply `f` to every coefficient of a polynomial over `L`
   let lin (R : L[X]) : K[X] := ∑ i ∈ Finset.range (R.natDegree + 1), monomial i (f (R.coeff i))
-  -- a series with coefficients in `K` commutes with the constants, as `K` is central in `L`
-  have hcomm (y : K⟦Γ⟧) (c : L) : Commute (mapRingHom (algebraMap K L) y) (C c) := by
-    rw [commute_iff_eq]
-    ext g
-    simp [Algebra.commutes]
   have hlin (R : L[X]) (y : K⟦Γ⟧) :
       Λ (mapRingHom (algebraMap K L) y * R.eval₂ C (mapRingHom (algebraMap K L) ℓ)) =
         y * (lin R).eval₂ C ℓ := by
     rw [eval₂_eq_sum_range, Finset.mul_sum, map_sum]
     simp only [lin, eval₂_finsetSum, eval₂_monomial, Finset.mul_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [(hcomm y _).left_comm, ← map_pow, ← map_mul, C_mul_eq_smul, C_mul_eq_smul, mul_smul_comm]
-    exact map_smul_mapRingHom_algebraMap f _ _
+    -- a series with coefficients in `K` commutes with the constants, as `K` is central in `L`
+    rw [(commute_mapRingHom_C (fun r ↦ Algebra.commute_algebraMap_left r (R.coeff i)) y).left_comm]
+    simpa only [Λ, AddMonoidHom.coe_mk, ZeroHom.coe_mk, map_mul, map_pow, C_mul_eq_smul,
+      mul_smul_comm] using map_smul_mapRingHom_algebraMap f (R.coeff i) (y * ℓ ^ i)
   refine ⟨lin P, lin Q, fun h0 ↦ ?_, ?_⟩
   · have := congrArg (fun p : K[X] ↦ p.coeff Q.natDegree) h0
     simp [lin, coeff_monomial, Finsupp.single_apply, hf] at this
