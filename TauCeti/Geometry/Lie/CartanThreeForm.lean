@@ -21,8 +21,9 @@ that is a Chevalley–Eilenberg cocycle with trivial coefficients. Its left-inva
 back to the left-invariant top form `(α ∘ dφ)^L` on `K`
 (`TauCeti.mpullback_leftInvariantSmoothForm`). If `α ∘ dφ ≠ 0`, this top form vanishes nowhere,
 so it orients `K` and has positive integral for that orientation
-(`TauCeti.integralTopForm_leftInvariantForm_pos`). Integrals of pullbacks of closed forms only depend on
-the homotopy class of the map, and vanish along constant maps, so `φ` is not null-homotopic
+(`TauCeti.integralTopForm_leftInvariantForm_pos`). Integrals of pullbacks of closed forms only
+depend on the homotopy class of the map, and vanish along constant maps, so `φ` is not
+null-homotopic
 (`ContMDiffMonoidMorphism.not_nullhomotopic_of_compContinuousLinearMap_ne_zero`).
 
 The cocycle used to detect the third homotopy group of compact Lie groups is the Cartan
