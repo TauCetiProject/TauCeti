@@ -104,6 +104,9 @@ Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 �
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
+* `TauCeti.affine_nonneg_left` and `TauCeti.affine_nonneg_of_no_zero`: sign preservation on an
+  open interval `(a, b)` for an affine function `(1 - t) * u + t * v` that never vanishes on
+  `(a, b)`.
 -/
 
 public section
@@ -392,6 +395,40 @@ theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictO
 theorem pos_of_mem_Ioo_neg_one_div {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
     {s t : K} (ht : t ∈ Set.Ioo (-1 / s) (1 / s)) : 0 < s :=
   one_div_pos.1 (neg_lt_self_iff.1 (by simpa only [neg_div] using ht.1.trans ht.2))
+
+/-- One-sided affine sign preservation at the left endpoint of `(a, m]`. -/
+theorem affine_nonneg_left {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {a m u v : K} (ham : a < m) (hm : 0 < (1 - m) * u + m * v)
+    (hno : ∀ t ∈ Set.Ioo a m, (1 - t) * u + t * v ≠ 0) :
+    0 ≤ (1 - a) * u + a * v := by
+  by_contra hlt
+  push Not at hlt
+  set fa := (1 - a) * u + a * v
+  set fm := (1 - m) * u + m * v
+  have hden : 0 < fm - fa := by linarith
+  let t : K := (a * fm + m * (-fa)) / (fm - fa)
+  have hzero : (1 - t) * u + t * v = 0 := by
+    have hmul : (fm - fa) * ((1 - t) * u + t * v) = 0 := by
+      calc (fm - fa) * ((1 - t) * u + t * v)
+          = (fm - fa) * u + ((fm - fa) * t) * (v - u) := by ring
+        _ = (fm - fa) * u + (a * fm + m * (-fa)) * (v - u) := by
+            rw [mul_div_cancel₀ _ hden.ne']
+        _ = 0 := by simp only [fa, fm]; ring
+    exact (mul_eq_zero.mp hmul).resolve_left hden.ne'
+  exact hno t ⟨(lt_div_iff₀ hden).mpr (by nlinarith), (div_lt_iff₀ hden).mpr (by nlinarith)⟩ hzero
+
+/-- Affine sign preservation: if `f t = (1 - t) * u + t * v` is strictly positive at an interior
+point `m ∈ (a, b)` and never vanishes on `(a, b)`, then `0 ≤ f a` and `0 ≤ f b`. -/
+theorem affine_nonneg_of_no_zero {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {a m b u v : K} (ham : a < m) (hmb : m < b) (hm : 0 < (1 - m) * u + m * v)
+    (hno : ∀ t ∈ Set.Ioo a b, (1 - t) * u + t * v ≠ 0) :
+    0 ≤ (1 - a) * u + a * v ∧ 0 ≤ (1 - b) * u + b * v :=
+  ⟨affine_nonneg_left ham hm fun t ht => hno t ⟨ht.1, lt_trans ht.2 hmb⟩, by
+    simpa [sub_sub_cancel, add_comm] using
+      affine_nonneg_left (a := 1 - b) (m := 1 - m) (u := v) (v := u) (by linarith)
+        (by linarith) fun t ht => by
+          have := hno (1 - t) ⟨by linarith [ht.2], by linarith [ht.1]⟩
+          intro h; exact this (by linarith)⟩
 
 end TauCeti
 

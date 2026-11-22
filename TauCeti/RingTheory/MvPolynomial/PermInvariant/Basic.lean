@@ -117,12 +117,12 @@ theorem mem_permInvariantSubalgebra_closure_iff {S : Set (Perm σ)} {p : MvPolyn
   refine ⟨fun hp g hg => hp g (Subgroup.subset_closure hg), fun h g hg => ?_⟩
   induction hg using Subgroup.closure_induction with
   | mem s hs => exact h s hs
-  | one => change rename id p = p; simp [rename_id]
+  | one => rw [Perm.coe_one, rename_id, AlgHom.id_apply]
   | mul g₁ g₂ _ _ ih₁ ih₂ =>
-    change rename (⇑g₁ ∘ ⇑g₂) p = p; rw [← rename_rename, ih₂, ih₁]
+    rw [Perm.coe_mul, ← rename_rename, ih₂, ih₁]
   | inv g _ ih =>
     have h' := congrArg (rename (⇑g⁻¹)) ih
-    rw [rename_rename, show (⇑g⁻¹ ∘ ⇑g) = id from funext g.symm_apply_apply, rename_id] at h'
+    rw [rename_rename, Perm.inv_def, Equiv.symm_comp_self, rename_id] at h'
     exact h'.symm
 
 end Subalgebra
@@ -299,15 +299,11 @@ private theorem coeff_linearCombination_orbitSumQuot (G : Subgroup (Perm σ)) [F
           permInvariantSubalgebra G R)) c : permInvariantSubalgebra G R) : MvPolynomial σ R).coeff d
       = c (Quotient.mk (permOrbitRel G) d) := by
   classical
-  rw [Finsupp.linearCombination_apply, Finsupp.sum,
-    show (↑(∑ a ∈ c.support, c a •
-        (⟨orbitSumQuot G R a, orbitSumQuot_mem_permInvariantSubalgebra G a⟩ :
-          permInvariantSubalgebra G R)) : MvPolynomial σ R) =
-      ∑ a ∈ c.support, (c a • orbitSumQuot G R a) from
-      map_sum (permInvariantSubalgebra G R).val _ _, coeff_sum]
-  have hterm : ∀ a, (c a • orbitSumQuot G R a).coeff d =
+  rw [Finsupp.linearCombination_apply, Finsupp.sum, ← Subalgebra.val_apply, map_sum, coeff_sum]
+  have hterm : ∀ a, ((permInvariantSubalgebra G R).val (c a • (⟨orbitSumQuot G R a,
+      orbitSumQuot_mem_permInvariantSubalgebra G a⟩ : permInvariantSubalgebra G R))).coeff d =
       if a = Quotient.mk (permOrbitRel G) d then c a else 0 := fun a => by
-    rw [coeff_smul, smul_eq_mul]
+    rw [Subalgebra.val_apply, SetLike.val_smul, coeff_smul, smul_eq_mul]
     split_ifs with ha
     · rw [coeff_orbitSumQuot_of_eq G ha.symm, mul_one]
     · rw [coeff_orbitSumQuot_of_ne G (Ne.symm ha), mul_zero]
@@ -316,13 +312,13 @@ private theorem coeff_linearCombination_orbitSumQuot (G : Subgroup (Perm σ)) [F
   · rfl
   · exact (Finsupp.notMem_support_iff.mp h).symm
 
-/-- The coordinate linear equivalence identifying `permInvariantSubalgebra G R` with finitely
-supported `R`-valued functions on the `G`-orbits of exponent vectors. -/
-private noncomputable def orbitSumRepr (G : Subgroup (Perm σ)) [Finite G] (R : Type*)
+/-- Coordinate projection of a `G`-invariant polynomial onto finitely supported functions on the
+`G`-orbits of exponent vectors. -/
+private noncomputable def orbitSumToFun (G : Subgroup (Perm σ)) (R : Type*)
     [CommSemiring R] :
-    permInvariantSubalgebra G R ≃ₗ[R] (Quotient (permOrbitRel G) →₀ R) := by
+    permInvariantSubalgebra G R →ₗ[R] (Quotient (permOrbitRel G) →₀ R) := by
   classical
-  let toFun : permInvariantSubalgebra G R →ₗ[R] (Quotient (permOrbitRel G) →₀ R) :=
+  exact
     { toFun := fun p =>
         Finsupp.onFinset ((p : MvPolynomial σ R).support.image (Quotient.mk (permOrbitRel G)))
           (orbitCoeff G p) fun q hq => Quotient.inductionOn q (fun d hq =>
@@ -331,14 +327,33 @@ private noncomputable def orbitSumRepr (G : Subgroup (Perm σ)) [Finite G] (R : 
         Quotient.inductionOn q fun _ => by simp [orbitCoeff_mk]
       map_smul' := fun _ _ => Finsupp.ext fun q =>
         Quotient.inductionOn q fun _ => by simp [orbitCoeff_mk] }
-  let invFun : (Quotient (permOrbitRel G) →₀ R) →ₗ[R] permInvariantSubalgebra G R :=
-    Finsupp.linearCombination R fun q =>
-      ⟨orbitSumQuot G R q, orbitSumQuot_mem_permInvariantSubalgebra G q⟩
-  refine LinearEquiv.ofLinearMap toFun invFun ?_ ?_
-  · refine LinearMap.ext fun c => Finsupp.ext fun q => Quotient.inductionOn q fun d => ?_
-    simpa [toFun, orbitCoeff_mk] using coeff_linearCombination_orbitSumQuot G c d
-  · refine LinearMap.ext fun p => Subtype.ext <| MvPolynomial.ext _ _ fun d => ?_
-    simpa [invFun, toFun, orbitCoeff_mk] using coeff_linearCombination_orbitSumQuot G (toFun p) d
+
+private theorem orbitSumToFun_apply_mk (G : Subgroup (Perm σ))
+    (p : permInvariantSubalgebra G R) (d : σ →₀ ℕ) :
+    orbitSumToFun G R p (Quotient.mk (permOrbitRel G) d) = (p : MvPolynomial σ R).coeff d := by
+  classical
+  simp [orbitSumToFun, orbitCoeff_mk]
+
+/-- The coordinate linear equivalence identifying `permInvariantSubalgebra G R` with finitely
+supported `R`-valued functions on the `G`-orbits of exponent vectors. -/
+private noncomputable def orbitSumRepr (G : Subgroup (Perm σ)) [Finite G] (R : Type*)
+    [CommSemiring R] :
+    permInvariantSubalgebra G R ≃ₗ[R] (Quotient (permOrbitRel G) →₀ R) :=
+  LinearEquiv.ofLinearMap (orbitSumToFun G R)
+    (Finsupp.linearCombination R fun q =>
+      ⟨orbitSumQuot G R q, orbitSumQuot_mem_permInvariantSubalgebra G q⟩)
+    (LinearMap.ext fun c => Finsupp.ext fun q => Quotient.inductionOn q fun d => by
+      simpa [orbitSumToFun_apply_mk] using coeff_linearCombination_orbitSumQuot G c d)
+    (LinearMap.ext fun p => Subtype.ext <| MvPolynomial.ext _ _ fun d => by
+      simpa [orbitSumToFun_apply_mk] using
+        coeff_linearCombination_orbitSumQuot G (orbitSumToFun G R p) d)
+
+private theorem orbitSumRepr_symm_apply (G : Subgroup (Perm σ)) [Finite G]
+    (c : Quotient (permOrbitRel G) →₀ R) :
+    (orbitSumRepr G R).symm c = Finsupp.linearCombination R (fun q =>
+      (⟨orbitSumQuot G R q, orbitSumQuot_mem_permInvariantSubalgebra G q⟩ :
+        permInvariantSubalgebra G R)) c := by
+  rw [orbitSumRepr, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap]
 
 /-- **The orbit-sum basis** of the permutation-invariant subalgebra `permInvariantSubalgebra G R`:
 for a finite permutation subgroup `G ≤ Equiv.Perm σ` and any commutative semiring `R`, the orbit
@@ -351,23 +366,18 @@ noncomputable def orbitSumBasis (G : Subgroup (Perm σ)) [Finite G] (R : Type*) 
 theorem coe_orbitSumBasis_apply (G : Subgroup (Perm σ)) [Finite G]
     (q : Quotient (permOrbitRel G)) :
     (orbitSumBasis G R q : MvPolynomial σ R) = orbitSumQuot G R q := by
-  classical
-  ext d
-  have h : ((orbitSumBasis G R q : permInvariantSubalgebra G R) : MvPolynomial σ R).coeff d =
-      Finsupp.single q (1 : R) (Quotient.mk (permOrbitRel G) d) :=
-    coeff_linearCombination_orbitSumQuot G (Finsupp.single q 1) d
-  rw [h, Finsupp.single_apply]
-  split_ifs with heq
-  · exact (coeff_orbitSumQuot_of_eq G heq.symm).symm
-  · exact (coeff_orbitSumQuot_of_ne G (Ne.symm heq)).symm
+  rw [orbitSumBasis, Module.Basis.coe_ofRepr]
+  dsimp only
+  rw [orbitSumRepr_symm_apply, Finsupp.linearCombination_single, one_smul]
 
 @[simp]
 theorem orbitSumBasis_repr_mk (G : Subgroup (Perm σ)) [Finite G]
     (p : permInvariantSubalgebra G R) (d : σ →₀ ℕ) :
     (orbitSumBasis G R).repr p (Quotient.mk (permOrbitRel G) d) =
       (p : MvPolynomial σ R).coeff d := by
+  -- Unfold `(orbitSumBasis G R).repr` across the `Module.Basis.ofRepr` constructor.
   change orbitSumRepr G R p (Quotient.mk (permOrbitRel G) d) = _
-  simp [orbitSumRepr, orbitCoeff_mk]
+  rw [orbitSumRepr, LinearEquiv.coe_ofLinearMap, orbitSumToFun_apply_mk]
 
 end OrbitSum
 

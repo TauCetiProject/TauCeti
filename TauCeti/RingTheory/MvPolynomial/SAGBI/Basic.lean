@@ -34,6 +34,9 @@ and the SAGBI criterion for presentations.
 * `MonomialOrder.isSAGBIBasis_iff_exists_mem_closure`: over a field, `B ⊆ A` is a SAGBI basis of
   `A` if and only if the leading exponent of every nonzero element of `A` is the leading exponent
   of a nonzero product of elements of `B`.
+* `MonomialOrder.fg_leadingExponents_of_finite_isSAGBIBasis`: over a nontrivial commutative
+  semiring without zero divisors, a finite SAGBI basis yields finite generation of
+  `m.leadingExponents A`.
 
 Bounded subduction representations and the fact that a SAGBI basis generates its algebra are
 proved in `TauCeti.RingTheory.MvPolynomial.SAGBI.Subduction`.
@@ -155,6 +158,37 @@ theorem isSAGBIBasis_range_X :
   rw [initialAlgebra_top, ← Set.range_comp]
   simp [Function.comp_def, m.leadingTerm_X]
 
+/-- Over any commutative semiring, every element of `Algebra.adjoin R (m.leadingTerm '' B)` is
+supported in `AddSubmonoid.closure (m.degree '' (B \ {0}))`. -/
+theorem support_subset_closure_degree_of_mem_adjoin_leadingTerm (m : MonomialOrder σ)
+    {p : MvPolynomial σ R} (hp : p ∈ Algebra.adjoin R (m.leadingTerm '' B)) :
+    (p.support : Set (σ →₀ ℕ)) ⊆ AddSubmonoid.closure (m.degree '' (B \ {0})) := by
+  classical
+  induction hp using Algebra.adjoin_induction with
+  | mem _ hx =>
+    obtain ⟨b, hb, rfl⟩ := hx
+    rcases eq_or_ne b 0 with rfl | hb0
+    · simp
+    · intro e he
+      have hsup : (m.leadingTerm b).support ⊆ {m.degree b} := by
+        rw [leadingTerm]; exact support_monomial_subset
+      rw [Finset.mem_singleton.mp (hsup he)]
+      exact AddSubmonoid.subset_closure ⟨b, ⟨hb, hb0⟩, rfl⟩
+  | algebraMap c =>
+    intro e he
+    have hsup : (C c : MvPolynomial σ R).support ⊆ {0} :=
+      monomial_zero' (R := R) (σ := σ) ▸ support_monomial_subset
+    rw [Finset.mem_singleton.mp (hsup he)]
+    exact zero_mem _
+  | add x y _ _ hx hy =>
+    refine (Finset.coe_subset.2 support_add).trans ?_
+    rw [Finset.coe_union]
+    exact Set.union_subset hx hy
+  | mul x y _ _ hx hy =>
+    refine (Finset.coe_subset.2 (support_mul x y)).trans ?_
+    rw [Finset.coe_add]
+    exact Set.add_subset_iff.2 fun _ ha _ hb => add_mem (hx ha) (hy hb)
+
 end CommSemiring
 
 section NoZeroDivisors
@@ -217,6 +251,25 @@ theorem closure_image_degree_eq_leadingExponents :
       m.leadingExponents A :=
   le_antisymm (AddSubmonoid.closure_le.2 fun _ ⟨f, ⟨hf, hf0⟩, hfa⟩ ↦ ⟨f, hf, hf0, hfa⟩)
     fun _ ⟨f, hf, hf0, hfa⟩ ↦ AddSubmonoid.subset_closure ⟨f, ⟨hf, hf0⟩, hfa⟩
+
+/-- If a subalgebra `A` over a nontrivial commutative semiring without zero divisors has a finite
+`m`-SAGBI basis, then its monoid of leading exponents `m.leadingExponents A` is finitely
+generated. -/
+theorem fg_leadingExponents_of_finite_isSAGBIBasis (m : MonomialOrder σ)
+    (hBfin : B.Finite) (hB : m.IsSAGBIBasis B A) : (m.leadingExponents A).FG := by
+  rw [AddSubmonoid.fg_iff]
+  refine ⟨m.degree '' (B \ {0}), le_antisymm ?_ ?_, (hBfin.subset Set.sdiff_subset).image m.degree⟩
+  · rw [AddSubmonoid.closure_le]
+    rintro _ ⟨b, ⟨hb, hb0⟩, rfl⟩
+    exact m.degree_mem_leadingExponents (hB.subset hb) hb0
+  · intro d hd
+    obtain ⟨f, hfA, hf0, rfl⟩ := mem_leadingExponents_iff.mp hd
+    have hlt : m.leadingTerm f ∈ Algebra.adjoin R (m.leadingTerm '' B) :=
+      hB.adjoin_leadingTerm ▸ m.leadingTerm_mem_initialAlgebra hfA
+    have hmem : m.degree f ∈ (m.leadingTerm f).support := by
+      classical simpa [mem_support_iff, leadingTerm, coeff_monomial] using
+        m.leadingCoeff_ne_zero_iff.mpr hf0
+    exact m.support_subset_closure_degree_of_mem_adjoin_leadingTerm hlt hmem
 
 end NoZeroDivisors
 

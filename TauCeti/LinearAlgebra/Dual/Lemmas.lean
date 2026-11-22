@@ -8,6 +8,10 @@ module
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
+import Mathlib.Algebra.Module.Submodule.Union
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Order.Interval.Set.Infinite
+
 /-!
 # Linear functionals and hyperplanes
 
@@ -42,6 +46,10 @@ and so separate points.
 * `Module.Dual.linearIndependent_sub_div_smul` and `Module.Dual.span_sub_div_smul_eq_ker`: if
   `X` is a basis and `f (X j) ≠ 0`, the vectors `X i - (f (X i) / f (X j)) • X j`, `i ≠ j`, form a
   basis of `ker f`.
+* `Module.Dual.span_sup_inf_ker_ne_top`: if `ker φ₁ ≠ ker φ₂` both avoid `p`, then
+  `span K {p} ⊔ (ker φ₁ ⊓ ker φ₂) ≠ ⊤`.
+* `Module.Dual.exists_perturb_pos_and_notMem`: perturb a point along a line avoiding finitely many
+  proper submodules while preserving finitely many strict linear inequalities.
 * `Submodule.exists_dual_ker_eq_of_finrank_quotient_eq_one`: every codimension-one subspace
   is the kernel of a nonzero functional.
 * `Submodule.exists_dual_apply_eq_one_of_ne_top`: if a subspace `p` is not everything, some
@@ -219,7 +227,79 @@ theorem smul_evalEquiv_symm_dualMap {L P : Type*} [AddCommGroup L] [Module K L]
   simp only [map_sub, map_smul, apply_evalEquiv_symm_apply, LinearEquiv.dualMap_apply, smul_eq_mul,
     h, mul_comm, sub_self]
 
+/-- If two hyperplanes `ker φ₁ ≠ ker φ₂` both avoid `p`, then
+`span K {p} ⊔ (ker φ₁ ⊓ ker φ₂) ≠ ⊤`. -/
+theorem span_sup_inf_ker_ne_top {φ₁ φ₂ : Dual K V} {p : V}
+    (hne : LinearMap.ker φ₁ ≠ LinearMap.ker φ₂)
+    (hp₁ : p ∉ LinearMap.ker φ₁) (hp₂ : p ∉ LinearMap.ker φ₂) :
+    Submodule.span K {p} ⊔ (LinearMap.ker φ₁ ⊓ LinearMap.ker φ₂) ≠ ⊤ := by
+  let ψ : Dual K V := (φ₂ p) • φ₁ - (φ₁ p) • φ₂
+  have hle : Submodule.span K {p} ⊔ (LinearMap.ker φ₁ ⊓ LinearMap.ker φ₂) ≤ LinearMap.ker ψ :=
+    sup_le (by rw [Submodule.span_singleton_le_iff_mem, LinearMap.mem_ker]; simp [ψ, mul_comm])
+      fun _ ⟨hv₁, hv₂⟩ => by simp [ψ, LinearMap.mem_ker.mp hv₁, LinearMap.mem_ker.mp hv₂]
+  have hψ0 : ψ ≠ 0 := fun h0 => hne <| Submodule.ext fun v => by
+    have hv := LinearMap.congr_fun h0 v
+    simp only [ψ, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, LinearMap.zero_apply,
+      sub_eq_zero] at hv
+    have h1 : φ₁ p ≠ 0 := by simpa [LinearMap.mem_ker] using hp₁
+    have h2 : φ₂ p ≠ 0 := by simpa [LinearMap.mem_ker] using hp₂
+    simp only [LinearMap.mem_ker]
+    exact ⟨fun h => (mul_eq_zero.mp (by rw [← hv, h, mul_zero])).resolve_left h1,
+      fun h => (mul_eq_zero.mp (by rw [hv, h, mul_zero])).resolve_left h2⟩
+  intro htop
+  rw [htop, top_le_iff] at hle
+  exact hψ0 (LinearMap.ker_eq_top.mp hle)
+
 end Field
+
+section OrderedField
+
+variable {K V : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+  [AddCommGroup V] [Module K V]
+
+/-- Perturb a point `q` along a direction avoiding a finite family of proper submodules so that
+finitely many strictly positive linear conditions are preserved while avoiding every submodule in
+the family. -/
+theorem exists_perturb_pos_and_notMem (q : V) (L : Finset (Dual K V)) (hL : ∀ φ ∈ L, 0 < φ q)
+    (ℬ : Finset (Submodule K V)) (hℬ : ∀ S ∈ ℬ, S ≠ ⊤) :
+    ∃ q' : V, (∀ φ ∈ L, 0 < φ q') ∧ (∀ S ∈ ℬ, q' ∉ S) := by
+  classical
+  obtain ⟨v, hv⟩ := Submodule.exists_forall_notMem_of_forall_ne_top
+    (fun S : ℬ => (S : Submodule K V)) (fun S => hℬ S.1 S.2)
+  let bounds : Finset K := insert 1 (L.image fun φ => φ q / (|φ v| + 1))
+  let ε : K := bounds.min' (Finset.insert_nonempty _ _)
+  have hε : 0 < ε := by
+    have hmem : ε ∈ bounds := Finset.min'_mem bounds (Finset.insert_nonempty _ _)
+    rcases Finset.mem_insert.mp hmem with h1 | h2
+    · rw [h1]; exact zero_lt_one
+    · obtain ⟨φ, hφ, hφeq⟩ := Finset.mem_image.mp h2
+      rw [← hφeq]
+      exact div_pos (hL φ hφ) (add_pos_of_nonneg_of_pos (abs_nonneg _) zero_lt_one)
+  have hbad_fin : (⋃ S ∈ ℬ, {s : K | q + s • v ∈ S}).Finite :=
+    ℬ.finite_toSet.biUnion fun S hS => Set.Subsingleton.finite fun s₁ hs₁ s₂ hs₂ => by
+      by_contra hne
+      have hdiff : (s₁ - s₂) • v ∈ S := by
+        have heq : (q + s₁ • v) - (q + s₂ • v) = (s₁ - s₂) • v := by module
+        exact heq ▸ S.sub_mem hs₁ hs₂
+      have hvS := S.smul_mem (s₁ - s₂)⁻¹ hdiff
+      rw [smul_smul, inv_mul_cancel₀ (sub_ne_zero.mpr hne), one_smul] at hvS
+      exact hv ⟨S, hS⟩ hvS
+  obtain ⟨s, hsIoo, hsnot⟩ := (Set.Ioo_infinite hε).exists_notMem_finite hbad_fin
+  refine ⟨q + s • v, fun φ hφ => ?_, fun S hS hmem => hsnot (Set.mem_biUnion hS hmem)⟩
+  have hden : 0 < |φ v| + 1 := add_pos_of_nonneg_of_pos (abs_nonneg _) zero_lt_one
+  have hs_lt : s < φ q / (|φ v| + 1) := lt_of_lt_of_le hsIoo.2
+    (Finset.min'_le bounds _ (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ hφ)))
+  have hmul : s * (|φ v| + 1) < φ q := (lt_div_iff₀ hden).mp hs_lt
+  have hnonneg : 0 ≤ s * (|φ v| + φ v) :=
+    mul_nonneg hsIoo.1.le (neg_le_iff_add_nonneg.mp (neg_le_abs (φ v)))
+  rw [map_add, map_smul, smul_eq_mul]
+  calc
+    0 < s := hsIoo.1
+    _ ≤ s + s * (|φ v| + φ v) := le_add_of_nonneg_right hnonneg
+    _ = s * (|φ v| + 1) + s * φ v := by ring
+    _ < φ q + s * φ v := add_lt_add_left hmul _
+
+end OrderedField
 
 end Module.Dual
 

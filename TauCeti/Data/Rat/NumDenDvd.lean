@@ -26,6 +26,8 @@ the scaling `(A, B) ↦ (r⁴A, r⁶B)` between two integral short Weierstrass e
 * `Rat.den_dvd_iff_exists_eq_intCast_div`: for `n ≠ 0`, `r.den ∣ n` exactly when `r = k / n` for
   an integer `k`.
 * `Rat.den_dvd_iff_exists_mul_intCast_eq`: `r.den ∣ a` exactly when `r * a` is an integer.
+* `Rat.den_dvd_iff_exists_mul_natCast_eq`: for `0 ≤ r`, `r.den ∣ n` exactly when `r * n` is a
+  natural number.
 -/
 
 public section
@@ -77,6 +79,17 @@ theorem den_dvd_iff_exists_mul_intCast_eq (r : ℚ) (a : ℤ) :
     (r.den : ℤ) ∣ a ↔ ∃ z : ℤ, r * a = z := by
   refine ⟨fun ⟨c, hc⟩ ↦ ⟨r.num * c, ?_⟩, fun ⟨z, hz⟩ ↦ den_dvd_of_intCast_eq_mul_intCast r hz.symm⟩
   rw [hc, Int.cast_mul, Int.cast_natCast, ← mul_assoc, mul_den_eq_num, Int.cast_mul]
+
+/-- **A nonnegative rational multiple of a natural number is a natural number exactly when the
+denominator divides it**: for `0 ≤ r`, `r.den ∣ n` if and only if `r * n` is a natural number. -/
+theorem den_dvd_iff_exists_mul_natCast_eq {r : ℚ} (hr : 0 ≤ r) (n : ℕ) :
+    r.den ∣ n ↔ ∃ k : ℕ, r * n = k := by
+  refine ⟨fun ⟨c, hc⟩ ↦ ⟨r.num.toNat * c, ?_⟩, fun ⟨k, hk⟩ ↦ ?_⟩
+  · have hnum : (r.num.toNat : ℚ) = r.num := by
+      exact_mod_cast Int.toNat_of_nonneg (num_nonneg.mpr hr)
+    rw [hc, Nat.cast_mul, ← mul_assoc, mul_den_eq_num, Nat.cast_mul, hnum]
+  · exact Int.natCast_dvd_natCast.mp
+      (den_dvd_of_intCast_eq_mul_intCast r (by exact_mod_cast hk.symm))
 
 end Rat
 
