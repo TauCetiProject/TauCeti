@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Geometry.Manifold.Complex.Orientation
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 
 /-!
 # Tangent coordinate changes of the Riemann sphere
@@ -26,7 +27,9 @@ as `-z⁻² v` (`OnePoint.trivializationAt_infty_apply_coe`). The base point of 
 rewritten along an equality of points with `OnePoint.trivializationAt_snd_congr`.
 
 Read in the affine chart, the inclusion `ℂ → OnePoint ℂ` is the identity, so its derivative at
-every point is the identity of `ℂ` (`OnePoint.hasMFDerivAt_coe`).
+every point is the identity of `ℂ` (`OnePoint.hasMFDerivAt_coe`). The inverses of both charts, the
+inclusion and `w ↦ w⁻¹`, are smooth for the real structure (`OnePoint.contMDiff_coe_real`,
+`OnePoint.contMDiff_invChart_symm_real`), since they are holomorphic.
 -/
 
 public section
@@ -36,6 +39,18 @@ open scoped Manifold TauCeti.ComplexManifold
 noncomputable section
 
 namespace OnePoint
+
+/-- On the Riemann sphere regarded as a real surface, the inclusion `ℂ → OnePoint ℂ`, the inverse
+of the affine chart, is smooth. -/
+theorem contMDiff_coe_real {n : WithTop ℕ∞} :
+    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n ((↑) : ℂ → OnePoint ℂ) := by
+  simpa using ((contMDiff_coe (𝕜 := ℂ)).restrictScalars ℝ).of_le le_top
+
+/-- On the Riemann sphere regarded as a real surface, the inverse of the inverted chart,
+`0 ↦ ∞` and `w ↦ w⁻¹` for `w ≠ 0`, is smooth. -/
+theorem contMDiff_invChart_symm_real {n : WithTop ℕ∞} :
+    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n (invChart.symm : ℂ → OnePoint ℂ) := by
+  simpa using ((contMDiff_invChart_symm (𝕜 := ℂ)).restrictScalars ℝ).of_le le_top
 
 /-- On the Riemann sphere regarded as a real surface, the inclusion `ℂ → OnePoint ℂ`, the inverse
 of the affine chart, has the identity of `ℂ` as derivative at every point. -/
