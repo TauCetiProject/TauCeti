@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Colim
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
 public import Mathlib.CategoryTheory.GradedObject.Monoidal
+public import Mathlib.Algebra.Order.Antidiag.Prod
 
 /-!
 # Exactness and reindexing for tensor products of graded objects
@@ -42,6 +43,11 @@ facts about these coproducts which are used to compare homology of tensor produc
   (`CategoryTheory.GradedObject.Monoidal.tensorObjSuccIso`), and symmetrically for `X` when the
   indices commute (`CategoryTheory.GradedObject.Monoidal.succTensorObjIso`).  This identifies the
   degree shift of a connecting morphism between tensor products.
+* For graded objects indexed by a type with an addition and antidiagonals, such as `ℕ`, the
+  coproduct over `i + j = n` defining `CategoryTheory.GradedObject.mapBifunctorMapObj` is the
+  biproduct indexed by `Finset.antidiagonal n`
+  (`CategoryTheory.GradedObject.mapBifunctorMapObjIsoBiproduct`), and so is the tensor product in
+  degree `n` (`CategoryTheory.GradedObject.Monoidal.tensorObjIsoBiproduct`).
 -/
 
 public section
@@ -346,6 +352,92 @@ lemma ι_succTensorObjIso_inv (p q : I) (h : p + 1 + q = m + 1) :
   simp [succTensorObjIso, succTensorObjInvComponent_add_one _ _ _ _ _ _ (add_eq_of_succ_add_eq h)]
 
 end SuccLeft
+
+end Monoidal
+
+section Antidiagonal
+
+/-! ### Graded objects indexed by a type with antidiagonals as finite biproducts -/
+
+variable {I : Type*} [Add I] [Finset.HasAntidiagonal I]
+  {C₁ C₂ C₃ : Type*} [Category* C₁] [Category* C₂] [Category* C₃] [HasZeroMorphisms C₃]
+  (F : C₁ ⥤ C₂ ⥤ C₃) (X : GradedObject I C₁) (Y : GradedObject I C₂)
+  [HasMap (((mapBifunctor F I I).obj X).obj Y) (fun x ↦ x.1 + x.2)] (n : I)
+  [HasBiproduct fun x : Finset.antidiagonal n ↦ (F.obj (X x.val.1)).obj (Y x.val.2)]
+
+/-- For graded objects indexed by a type with an addition and antidiagonals, such as `ℕ`, the
+coproduct of the `(F.obj (X i)).obj (Y j)` with `i + j = n` is the biproduct of these objects
+indexed by `Finset.antidiagonal n`. -/
+noncomputable def mapBifunctorMapObjIsoBiproduct :
+    mapBifunctorMapObj F (fun x ↦ x.1 + x.2) X Y n ≅
+      ⨁ fun x : Finset.antidiagonal n ↦ (F.obj (X x.val.1)).obj (Y x.val.2) where
+  hom := mapBifunctorMapObjDesc fun i j h ↦
+    biproduct.ι (fun x : Finset.antidiagonal n ↦ (F.obj (X x.val.1)).obj (Y x.val.2))
+      ⟨(i, j), Finset.mem_antidiagonal.2 h⟩
+  inv := biproduct.desc fun x ↦
+    ιMapBifunctorMapObj F _ X Y x.val.1 x.val.2 n (Finset.mem_antidiagonal.1 x.property)
+  hom_inv_id := mapBifunctorMapObj_ext F _ fun i j h ↦ by simp
+  inv_hom_id := biproduct.hom_ext' _ _ fun x ↦ by simp
+
+/-- `mapBifunctorMapObjIsoBiproduct` sends the summand `(F.obj (X i)).obj (Y j)` to the
+corresponding summand of the biproduct. -/
+@[reassoc (attr := simp)]
+lemma ι_mapBifunctorMapObjIsoBiproduct_hom (i j : I) (h : i + j = n) :
+    ιMapBifunctorMapObj F (fun x ↦ x.1 + x.2) X Y i j n h ≫
+        (mapBifunctorMapObjIsoBiproduct F X Y n).hom =
+      biproduct.ι (fun x : Finset.antidiagonal n ↦ (F.obj (X x.val.1)).obj (Y x.val.2))
+        ⟨(i, j), Finset.mem_antidiagonal.2 h⟩ := by
+  simp [mapBifunctorMapObjIsoBiproduct]
+
+/-- The inverse of `mapBifunctorMapObjIsoBiproduct` sends each summand of the biproduct to the
+corresponding summand of `mapBifunctorMapObj`. -/
+@[reassoc (attr := simp)]
+lemma ι_mapBifunctorMapObjIsoBiproduct_inv (x : Finset.antidiagonal n) :
+    biproduct.ι (fun x : Finset.antidiagonal n ↦ (F.obj (X x.val.1)).obj (Y x.val.2)) x ≫
+        (mapBifunctorMapObjIsoBiproduct F X Y n).inv =
+      ιMapBifunctorMapObj F _ X Y x.val.1 x.val.2 n (Finset.mem_antidiagonal.1 x.property) := by
+  simp [mapBifunctorMapObjIsoBiproduct]
+
+end Antidiagonal
+
+namespace Monoidal
+
+section Antidiagonal
+
+variable {I : Type*} [AddMonoid I] [Finset.HasAntidiagonal I] [MonoidalCategory C]
+  [HasZeroMorphisms C] (X Y : GradedObject I C) [HasTensor X Y] (n : I)
+  [HasBiproduct fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2]
+
+-- The summands `X i ⊗ Y j` are by definition those of `curriedTensor C`.
+private instance : HasBiproduct fun x : Finset.antidiagonal n ↦
+    ((curriedTensor C).obj (X x.val.1)).obj (Y x.val.2) :=
+  ‹HasBiproduct fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2›
+
+/-- For graded objects indexed by an additive monoid with antidiagonals, such as `ℕ`, the tensor
+product in degree `n` is the biproduct of the `X i ⊗ Y j` indexed by `Finset.antidiagonal n`. -/
+noncomputable def tensorObjIsoBiproduct :
+    tensorObj X Y n ≅ ⨁ fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2 :=
+  mapBifunctorMapObjIsoBiproduct (curriedTensor C) X Y n
+
+/-- `tensorObjIsoBiproduct` sends the summand `X i ⊗ Y j` to the corresponding summand of the
+biproduct. -/
+@[reassoc (attr := simp)]
+lemma ι_tensorObjIsoBiproduct_hom (i j : I) (h : i + j = n) :
+    ιTensorObj X Y i j n h ≫ (tensorObjIsoBiproduct X Y n).hom =
+      biproduct.ι (fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2)
+        ⟨(i, j), Finset.mem_antidiagonal.2 h⟩ :=
+  ι_mapBifunctorMapObjIsoBiproduct_hom (curriedTensor C) X Y n i j h
+
+/-- The inverse of `tensorObjIsoBiproduct` sends each summand of the biproduct to the
+corresponding summand of the tensor product. -/
+@[reassoc (attr := simp)]
+lemma ι_tensorObjIsoBiproduct_inv (x : Finset.antidiagonal n) :
+    biproduct.ι (fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2) x ≫
+        (tensorObjIsoBiproduct X Y n).inv =
+      ιTensorObj X Y x.val.1 x.val.2 n (Finset.mem_antidiagonal.1 x.property) :=
+  ι_mapBifunctorMapObjIsoBiproduct_inv (curriedTensor C) X Y n x
+
+end Antidiagonal
 
 end Monoidal
 
