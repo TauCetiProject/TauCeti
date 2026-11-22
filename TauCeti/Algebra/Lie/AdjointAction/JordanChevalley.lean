@@ -13,8 +13,8 @@ import TauCeti.Algebra.Lie.AdjointAction.Basic
 # Ad-nilpotent endomorphisms
 
 The adjoint action of an associative algebra does not see its centre, so the adjoint action of a
-scalar plus a nilpotent element is nilpotent
-(`TauCeti.LieAlgebra.isNilpotent_ad_of_isNilpotent_sub_algebraMap`, over any commutative ring).
+central element, such as a scalar, plus a nilpotent element is nilpotent
+(`TauCeti.LieAlgebra.isNilpotent_ad_of_isNilpotent_sub_of_mem_center`, over any commutative ring).
 For the endomorphisms of a finite-dimensional vector space over a perfect field this is the only
 way `ad f` can be nilpotent: the semisimple part `s` of the Jordan–Chevalley decomposition
 `f = n + s` has a semisimple adjoint action, which is also nilpotent since it is `ad f - ad n`.
@@ -57,7 +57,8 @@ theorem isNilpotent_ad_iff_exists_isNilpotent_sub_algebraMap [PerfectField K]
     [FiniteDimensional K V] {f : End K V} :
     IsNilpotent (LieAlgebra.ad K (End K V) f) ↔
       ∃ c : K, IsNilpotent (f - algebraMap K (End K V) c) := by
-  refine ⟨fun hf ↦ ?_, fun ⟨c, hc⟩ ↦ isNilpotent_ad_of_isNilpotent_sub_algebraMap hc⟩
+  refine ⟨fun hf ↦ ?_, fun ⟨c, hc⟩ ↦
+    isNilpotent_ad_of_isNilpotent_sub_of_mem_center hc (Subalgebra.algebraMap_mem _ c)⟩
   obtain ⟨n, hn, s, -, hn_nil, hs_ss, rfl⟩ := f.exists_isNilpotent_isSemisimple
   -- The adjoint action of the semisimple part is semisimple and nilpotent, hence zero.
   have hcomm : Commute (LieAlgebra.ad K (End K V) (n + s)) (LieAlgebra.ad K (End K V) n) :=
