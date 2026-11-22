@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Coset.Enumeration
 import TauCeti.GroupTheory.Coset.Basic
+import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
 # Replaying unlabeled coset enumeration over an arbitrary subgroup
@@ -160,14 +161,11 @@ private theorem closesAt_coset {G : Type*} [Group G] {n : ℕ} {x : Fin n → G}
     {i : ℕ} {w : List ℕ}
     (hw : (unlabeledScheme.replay n rels subs () parents steps).closesAt unlabeledScheme (2 * n)
       i w = true) :
-    (pt x parents i)⁻¹ * wordValue x w * pt x parents i ∈ H := by
+    wordValue x w • (QuotientGroup.mk (pt x parents i) : G ⧸ H) =
+      QuotientGroup.mk (pt x parents i) := by
   obtain ⟨r, _, _, hw1, hw2⟩ :=
     closesAt_of_runSteps (unlabeledInterp H) hrels (unlabeledInterp_sub hsubs) trivial hw
-  have hmk : (QuotientGroup.mk (wordValue x w * pt x parents i) : G ⧸ H) =
-      QuotientGroup.mk (pt x parents i) := by
-    have heq := hw1.trans hw2.symm
-    simpa [unlabeledInterp, MulAction.Quotient.smul_mk, smul_eq_mul, mul_one] using heq
-  simpa [mul_assoc] using QuotientGroup.eq.mp hmk.symm
+  simpa [unlabeledInterp, MulAction.Quotient.smul_mk, smul_eq_mul, mul_one] using hw1.trans hw2.symm
 
 end Soundness
 
@@ -184,7 +182,8 @@ theorem wordValue_mem_of_checkWords (hrels : ∀ r ∈ rels, wordValue x r = 1)
     (hcheck : checkWords n rels subs ws parents steps = true) :
     ∀ w ∈ ws, wordValue x w ∈ H := by
   intro w hw
-  have hmem := closesAt_coset hrels hsubs (List.all_eq_true.mp hcheck w hw)
+  have hmem := (smul_quotientGroup_mk_eq_self_iff H (wordValue x w) (pt x parents 0)).mp
+    (closesAt_coset hrels hsubs (List.all_eq_true.mp hcheck w hw))
   simpa [pt_zero] using hmem
 
 /-- **Relator derivation from a partial replay.** If the relators `rels` hold, then every pair
@@ -193,12 +192,11 @@ satisfies `wordValue x w = 1`. Neither generation by `x` nor table closure is re
 theorem wordValue_eq_one_of_checkRelators {ws : List (ℕ × List ℕ)}
     (hrels : ∀ r ∈ rels, wordValue x r = 1)
     (hcheck : checkRelators n rels ws parents steps = true) :
-    ∀ iw ∈ ws, wordValue x iw.2 = 1 := by
-  intro iw hiw
-  have hmem : (pt x parents iw.1)⁻¹ * wordValue x iw.2 * pt x parents iw.1 = 1 :=
-    Subgroup.mem_bot.mp (closesAt_coset (H := (⊥ : Subgroup G)) hrels (by simp)
+    ∀ iw ∈ ws, wordValue x iw.2 = 1 := fun iw hiw ↦
+  (quotientBot_smul_eq_self_iff (wordValue x iw.2)
+    (QuotientGroup.mk (pt x parents iw.1) : G ⧸ (⊥ : Subgroup G))).mp
+    (closesAt_coset (H := (⊥ : Subgroup G)) hrels (by simp)
       (List.all_eq_true.mp hcheck iw hiw))
-  exact (conj_eq_one_iff (a := (pt x parents iw.1)⁻¹)).mp (by simpa only [inv_inv] using hmem)
 
 private theorem surjective_of_run (hx : Subgroup.closure (Set.range x) = ⊤)
     (hrels : ∀ r ∈ rels, wordValue x r = 1) (hsubs : ∀ s ∈ subs, wordValue x s ∈ H)

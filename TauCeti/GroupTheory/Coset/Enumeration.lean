@@ -930,31 +930,21 @@ theorem closed_edges_of_runSteps (hrels : ∀ r ∈ rels, wordValue x r = 1)
       S.add (st.root S st.n q).2 e, ?_⟩
     rw [hv.edge t r q e hq, hv.actR_root q e]
 
-/-- Shared root-to-coset surjection construction: if `0 ∈ roots`, `x` generates `G`, and every
-generator maps the coset of any point in `roots` to the coset of a point in `roots`, then the
-cosets of `roots` cover `G ⧸ H`. -/
+/-- Shared root-to-coset surjection construction: if `roots` is nonempty, `x` generates `G`, and
+every generator maps the coset of any point in `roots` to the coset of a point in `roots`, then
+the cosets of `roots` cover `G ⧸ H`. -/
 theorem surjective_mk_pt_of_roots (hx : Subgroup.closure (Set.range x) = ⊤) (H : Subgroup G)
-    (parents : List ℕ) {roots : List ℕ} (h0 : 0 ∈ roots)
+    (parents : List ℕ) {roots : List ℕ} (hne : roots ≠ [])
     (hstep : ∀ i : Fin n, ∀ r ∈ roots, ∃ r' ∈ roots,
       x i • (QuotientGroup.mk (pt x parents r) : G ⧸ H) = QuotientGroup.mk (pt x parents r')) :
     Function.Surjective (fun i : Fin roots.length ↦
       (QuotientGroup.mk (pt x parents (roots.get i)) : G ⧸ H)) := by
-  set T : Set (G ⧸ H) := (fun r ↦ QuotientGroup.mk (pt x parents r)) '' {r | r ∈ roots}
-  have hfin : T.Finite := roots.finite_toSet.image _
-  have horb := MulAction.orbit_closure_subset_of_finite hfin ⟨0, h0, rfl⟩ (S := Set.range x) (by
-    rintro _ ⟨i, rfl⟩ _ ⟨r, hr, rfl⟩
-    obtain ⟨r', hr', h'⟩ := hstep i r hr
-    exact ⟨r', hr', h'.symm⟩)
-  intro y
-  obtain ⟨y, rfl⟩ := QuotientGroup.mk_surjective y
-  have hmem : y • (QuotientGroup.mk (pt x parents 0) : G ⧸ H) ∈
-      MulAction.orbit (Subgroup.closure (Set.range x)) (QuotientGroup.mk (pt x parents 0)) :=
-    ⟨⟨y, hx ▸ Subgroup.mem_top y⟩, rfl⟩
-  obtain ⟨r, hr, hyr⟩ := horb hmem
-  obtain ⟨i, rfl⟩ := List.get_of_mem hr
-  refine ⟨i, ?_⟩
-  dsimp only at hyr ⊢
-  rw [hyr, pt_zero x parents, MulAction.Quotient.smul_mk, smul_eq_mul, mul_one]
+  have : Nonempty (Fin roots.length) := ⟨⟨0, List.length_pos_iff.mpr hne⟩⟩
+  refine MulAction.surjective_of_smul_mem_range hx ?_
+  rintro _ ⟨i, rfl⟩ j
+  obtain ⟨r', hr', h'⟩ := hstep i (roots.get j) (List.get_mem _ _)
+  obtain ⟨j', rfl⟩ := (Set.range_list_get roots).ge hr'
+  exact ⟨j', h'.symm⟩
 
 /-- If a replay under `S` closes with `k` surviving points, and edges equated up to `I.actR`
 agree in `G ⧸ H`, then the cosets of the `k` surviving points cover `G ⧸ H`. -/
@@ -969,7 +959,7 @@ theorem surjective_of_result (hx : Subgroup.closure (Set.range x) = ⊤) (H : Su
   obtain ⟨hc, hk, _⟩ := State.result_eq_some_iff.mp hres
   obtain ⟨h0, hstep⟩ := closed_edges_of_runSteps I hrels hsubs hextra0 hc
   rw [← hk]
-  refine ⟨_, surjective_mk_pt_of_roots hx H parents h0 fun i r hr ↦ ?_⟩
+  refine ⟨_, surjective_mk_pt_of_roots hx H parents (List.ne_nil_of_mem h0) fun i r hr ↦ ?_⟩
   obtain ⟨r', hr', e, he⟩ := hstep (2 * i) (by omega) r hr
   refine ⟨r', hr', ?_⟩
   rw [letter_two_mul, ← mul_smul] at he

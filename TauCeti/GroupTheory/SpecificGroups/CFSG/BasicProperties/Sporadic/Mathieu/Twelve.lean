@@ -534,23 +534,16 @@ private abbrev gB : M12.Group := m12Of ⟨1, by simp [presentation_M12]⟩
 private abbrev gH : M12.Group := gA * gB * gA
 private abbrev gK : M12.Group := gB * gB * gA * gB⁻¹ * gB⁻¹
 
-private theorem letter_zero : letter m12Of 0 = gA := by
-  simpa [gA] using letter_two_mul m12Of ⟨0, by simp [presentation_M12]⟩
-
-private theorem letter_one : letter m12Of 1 = gA⁻¹ := by
-  simpa [gA] using letter_two_mul_add_one m12Of ⟨0, by simp [presentation_M12]⟩
-
-private theorem letter_two : letter m12Of 2 = gB := by
-  simpa [gB] using letter_two_mul m12Of ⟨1, by simp [presentation_M12]⟩
-
-private theorem letter_three : letter m12Of 3 = gB⁻¹ := by
-  simpa [gB] using letter_two_mul_add_one m12Of ⟨1, by simp [presentation_M12]⟩
-
 private theorem wordValue_wordH : wordValue m12Of wordH = gH := by
-  simp [wordH, wordValue_cons, wordValue_nil, letter_zero, letter_two, gH, mul_assoc]
+  simp [wordH, wordValue_cons, wordValue_nil, gH, mul_assoc,
+    show letter m12Of 0 = gA from letter_two_mul m12Of ⟨0, by simp [presentation_M12]⟩,
+    show letter m12Of 2 = gB from letter_two_mul m12Of ⟨1, by simp [presentation_M12]⟩]
 
 private theorem wordValue_wordK : wordValue m12Of wordK = gK := by
-  simp [wordK, wordValue_cons, wordValue_nil, letter_zero, letter_two, letter_three, gK, mul_assoc]
+  simp [wordK, wordValue_cons, wordValue_nil, gK, mul_assoc,
+    show letter m12Of 0 = gA from letter_two_mul m12Of ⟨0, by simp [presentation_M12]⟩,
+    show letter m12Of 2 = gB from letter_two_mul m12Of ⟨1, by simp [presentation_M12]⟩,
+    show letter m12Of 3 = gB⁻¹ from letter_two_mul_add_one m12Of ⟨1, by simp [presentation_M12]⟩]
 
 private theorem wordValue_wordK_inv : wordValue m12Of (wordK.reverse.map invLetter) = gK⁻¹ := by
   have hinv : wordK.map (letter m12Of ∘ invLetter) =
@@ -606,7 +599,9 @@ private theorem wordValue_wordConj : wordValue m12Of wordConj = 1 :=
 private theorem gK_pow_five : gK ^ 5 = 1 := by
   have ha5 : gA ^ 5 = 1 := by
     have h := wordValue_wordA5
-    rwa [wordA5, wordValue_def, List.map_replicate, List.prod_replicate, letter_zero] at h
+    rw [wordA5, wordValue_def, List.map_replicate, List.prod_replicate] at h
+    simpa [show letter m12Of 0 = gA from
+      letter_two_mul m12Of ⟨0, by simp [presentation_M12]⟩] using h
   have hk : gK = MulAut.conj (gB * gB) gA := by
     simp [gK, MulAut.conj_apply, mul_assoc]
   rw [hk, ← map_pow, ha5, map_one]
@@ -616,7 +611,9 @@ private theorem gH_pow_eleven : gH ^ 11 = 1 := by
     have h := wordValue_wordAAB11
     rw [wordAAB11, wordValue_def, List.map_flatten, List.prod_flatten, List.map_replicate,
       List.map_replicate, List.prod_replicate] at h
-    simpa [letter_zero, letter_two, mul_assoc] using h
+    simpa [mul_assoc,
+      show letter m12Of 0 = gA from letter_two_mul m12Of ⟨0, by simp [presentation_M12]⟩,
+      show letter m12Of 2 = gB from letter_two_mul m12Of ⟨1, by simp [presentation_M12]⟩] using h
   have hh : gH = MulAut.conj gA⁻¹ (gA * gA * gB) := by
     simp [gH, mul_assoc]
   rw [hh, ← map_pow, haab11, map_one]

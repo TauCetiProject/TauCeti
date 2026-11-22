@@ -276,9 +276,10 @@ certificate is required. For the cosets of a subgroup `H`, take the base point
 theorem surjective_point_of_edges [NeZero k] [MulAction.IsPretransitive G α]
     (hg : Subgroup.closure (Set.range g) = ⊤)
     (hedges : ∀ t i, g t • T.point g a i = T.point g a (T.act t i)) :
-    Function.Surjective (T.point g a) := fun y ↦ by
-  obtain ⟨x, rfl⟩ := MulAction.exists_smul_eq G a y
-  exact smul_mem_range_point_of_edges hedges (hg ▸ Subgroup.mem_top x)
+    Function.Surjective (T.point g a) :=
+  MulAction.surjective_of_smul_mem_range hg <| by
+    rintro _ ⟨t, rfl⟩ i
+    exact ⟨T.act t i, (hedges t i).symm⟩
 
 /-- A nonempty table on `k` points with sound generator edges on the cosets of `H` shows that
 `H` has index at most `k`, if the generators `g` generate `G`. -/
