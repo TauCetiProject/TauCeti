@@ -16,8 +16,9 @@ public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 /-!
 # Levi forms and inertia of the quadratic models
 
-This file computes the Levi form and the Morse index of the model quadratic functions of complex
-Morse theory on a complex vector space `V` of dimension `n`.
+This file computes the Levi form, the Hessian and the Morse index of the model quadratic functions
+of complex Morse theory on a complex normed space `V`. The Levi-form and Hessian formulas hold in
+any dimension; the Morse indices are computed for finite-dimensional `V`, of complex dimension `n`.
 
 * The Levi form of a real quadratic function `z ↦ B z z` is the Levi form of its polarization
   `B.flip + B`.
@@ -38,8 +39,10 @@ Morse theory on a complex vector space `V` of dimension `n`.
   the number of `j` with `1 < |a j|`. Choosing `a`, every index between `0` and `n` occurs for a
   strictly plurisubharmonic quadratic function, so the index bound `λ ≤ n` for strictly
   plurisubharmonic functions cannot be improved.
-* For finitely many continuous linear functionals `ℓ j`, the function
-  `a ‖z‖² + Re (∑ⱼ c j (ℓ j z)²)` has Levi form `a ⟪·, ·⟫`. For `ℓ j = ⟪b j, ·⟫` with `b` an
+* On a complex inner product space of any dimension, for a finite family `ℓ` of continuous
+  complex linear functionals, the function `a ‖z‖² + Re (∑ⱼ c j (ℓ j z)²)` has Hessian
+  `v ↦ 2 (a ‖v‖² + Re (∑ⱼ c j (ℓ j v)²))` and Levi form `a ⟪·, ·⟫`; only the family is finite,
+  not the space. For `ℓ j = ⟪b j, ·⟫` with `b` an
   orthonormal basis of a finite-dimensional complex inner product space, its Morse index is
   `∑ⱼ ([a < ‖c j‖] + [a < -‖c j‖])`. In coordinates it is `∑ⱼ (a |zⱼ|² + Re (c j zⱼ²))`, and each
   coordinate contributes the inertia of `a |w|² + Re (c j w²)` on `ℂ`, whose real eigenvalues are
@@ -62,7 +65,8 @@ Morse theory on a complex vector space `V` of dimension `n`.
   `a ‖z‖ ^ 2 + Re (q z z)`; the Levi form is `a ⟪·, ·⟫`.
 * `TauCeti.hessianQuadraticForm_mul_norm_sq_add_re_sum_mul_sq`,
   `TauCeti.leviForm_mul_norm_sq_add_re_sum_mul_sq`: the same for `q z z = ∑ⱼ c j (ℓ j z)²`, a
-  weighted sum of squares of finitely many continuous linear functionals `ℓ j`.
+  weighted sum of squares of finitely many continuous linear functionals `ℓ j`, on a complex
+  inner product space of any dimension.
 * `TauCeti.leviForm_euclidean_norm_sq_add_sum_re_sq`,
   `TauCeti.morseIndex_euclidean_norm_sq_add_sum_re_sq`: on `ℂⁿ`, the Levi form of
   `‖z‖ ^ 2 + ∑ j, a j * Re (z j ^ 2)` is the standard inner product and its Morse index is the
