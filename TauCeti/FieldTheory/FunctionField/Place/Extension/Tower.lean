@@ -143,7 +143,7 @@ private theorem algebraMap_comp_cast_restrict_restrict (P : Place k₂ F₂)
     have hxy : y = x := Subtype.ext hy
     subst y
     rfl
-  let y : ((P.restrict k₁ F₁).restrict k₀ F₀).integers := ⟨x, by rw [h]; exact x.2⟩
+  let y : ((P.restrict k₁ F₁).restrict k₀ F₀).integers := ⟨x, by rw [h]; exact x.property⟩
   simp only [RingHom.coe_comp, Function.comp_apply, RingHom.coe_coe]
   rw [cast_residue _ h x y rfl, IsLocalRing.ResidueField.algebraMap_residue,
     IsLocalRing.ResidueField.algebraMap_residue, IsScalarTower.algebraMap_apply _

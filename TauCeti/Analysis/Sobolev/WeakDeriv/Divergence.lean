@@ -11,7 +11,12 @@ public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Topology.Algebra.Support
 
 /-!
 # The weak divergence of a weakly differentiable vector field
@@ -35,6 +40,11 @@ finite-dimensional real normed domain and a real normed codomain. For scalar `u`
 identity behind total variation, a supremum of the left-hand side over `‖φ‖ ≤ 1`. Against an
 additive Haar measure, taking `u = 1` gives `∫ div φ = 0`.
 
+Applied to the test vector field `φ ∇χ` for a smooth cutoff `χ` compactly supported in `Ω`, whose
+divergence is `⟪∇φ, ∇χ⟫ + φ Δχ`, the pairing localizes Poisson's equation: if `v` has weak
+gradient `g` and solves `Δv = f` on `Ω`, then `Δ(χ v) = χ f + 2 ⟪∇χ, g⟫ + v Δχ` against every
+smooth function on the whole space.
+
 No boundedness or boundary regularity of `Ω` is used. Except for `∫ div φ = 0`, which needs an
 additive Haar measure, the measure need not be a Haar measure: the trace identity, the Laplacian
 identity and the pairing `∫ div φ • u = -∫ U φ` all come from the defining integration-by-parts
@@ -51,9 +61,16 @@ identities of weak derivatives. For a general measure these are adjoint identiti
   function pairs with the divergence of a test vector field through its weak derivative.
 * `TestFunction.integral_divergenceCLM_eq_zero`: the divergence of a test vector field has
   integral zero against an additive Haar measure.
+* `TauCeti.HasWeakFDerivOn.integral_inner_gradient_add_mul_laplacian_mul_eq`: integration by
+  parts against the divergence `⟪∇φ, ∇χ⟫ + φ Δχ` of a cutoff gradient field `φ ∇χ`.
+* `TauCeti.HasWeakFDerivOn.integral_laplacian_mul_cutoff_mul_eq`: the weak Leibniz rule
+  `Δ(χ v) = χ f + 2 ⟪∇χ, g⟫ + v Δχ` for a cutoff `χ` of a weak solution `v` of `Δv = f`.
 * `TauCeti.dist_integral_trace_fderiv_mul_le`: the pairing `∫ div φ * u` of `C¹` vector fields
   supported in a fixed set `K` with a function integrable on `K` depends continuously on
   `Dφ` in the uniform norm.
+* `TauCeti.continuousOn_trace_fderiv`, `TauCeti.integrable_mul_trace_fderiv`: the divergence
+  `tr (DV)` of a `C¹` vector field is continuous, and integrable against a compactly supported
+  continuous weight.
 
 ## References
 
@@ -65,7 +82,7 @@ public section
 namespace TauCeti
 
 open InnerProductSpace Laplacian MeasureTheory TopologicalSpace
-open scoped Distributions Gradient InnerProductSpace
+open scoped ContDiff Distributions Gradient InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] {μ : Measure E} {Ω : Opens E}
 
@@ -119,6 +136,8 @@ theorem HasWeakFDerivOn.integral_laplacian_smul_eq_integral_smul_trace [OpensMea
 
 end InnerProductSpace
 
+section NormedSpace
+
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
 /-- **Integration by parts against a divergence.** If `u : E → F` has weak derivative `U` on
@@ -158,6 +177,23 @@ theorem _root_.TestFunction.integral_divergenceCLM_eq_zero [BorelSpace E] [μ.Is
     simpa using hasWeakLineDerivOn_const (μ := μ) (Ω := Ω) (v := v) (1 : ℝ)
   simpa using h.integral_divergenceCLM_smul_eq_neg_integral φ
 
+omit [MeasurableSpace E] in
+/-- The trace of the derivative of a vector field `V` is continuous on a set where `V` is `C¹`. -/
+theorem continuousOn_trace_fderiv {V : E → E} {s : Set E} (hV : ∀ x ∈ s, ContDiffAt ℝ 1 V x) :
+    ContinuousOn (fun x => LinearMap.trace ℝ E (fderiv ℝ V x : E →ₗ[ℝ] E)) s := fun x hx => by
+  simpa only [Function.comp_def, traceCLM_apply] using ((traceCLM ℝ E).continuous.continuousAt.comp
+    ((hV x hx).fderiv_right (m := 0) le_rfl).continuousAt).continuousWithinAt
+
+/-- If `χ` is continuous with compact support inside an open set `U` on which the vector field `V`
+is `C¹`, then `χ tr (DV)` is integrable. This is the integrability of the right-hand side of the
+weak divergence identity for a classical derivative. -/
+theorem integrable_mul_trace_fderiv [OpensMeasurableSpace E] [IsFiniteMeasureOnCompacts μ]
+    {U : Set E} (hU : IsOpen U) {χ : E → ℝ} {V : E → E} (hχ : Continuous χ)
+    (hχc : HasCompactSupport χ) (hχU : tsupport χ ⊆ U) (hV : ∀ x ∈ U, ContDiffAt ℝ 1 V x) :
+    Integrable (fun x => χ x * LinearMap.trace ℝ E (fderiv ℝ V x : E →ₗ[ℝ] E)) μ :=
+  ((hχ.continuousOn.mul (continuousOn_trace_fderiv hV)).continuous_of_tsupport_subset hU
+    (tsupport_mul_subset_left.trans hχU)).integrable_of_hasCompactSupport hχc.mul_right
+
 /-- Vector fields supported in a fixed set `K` whose derivatives are uniformly close have
 close divergence pairings `∫ div φ * u dμ` with a function `u` integrable on `K`. The constant is
 the norm of the trace times `∫_K |u| dμ`. (If the two pairings are not integrable, both are `0`.) -/
@@ -169,9 +205,8 @@ theorem dist_integral_trace_fderiv_mul_le [OpensMeasurableSpace E] {u : E → �
       (∫ x, LinearMap.trace ℝ E (fderiv ℝ g x : E →ₗ[ℝ] E) * u x ∂μ) ≤
       ‖traceCLM ℝ E‖ * ε * ∫ x in K, ‖u x‖ ∂μ := by
   have hdiv {h : E → E} (hh : ContDiff ℝ 1 h) :
-      Continuous fun x => LinearMap.trace ℝ E (fderiv ℝ h x : E →ₗ[ℝ] E) := by
-    simpa [Function.comp_def] using
-      (traceCLM ℝ E).continuous.comp (hh.continuous_fderiv one_ne_zero)
+      Continuous fun x => LinearMap.trace ℝ E (fderiv ℝ h x : E →ₗ[ℝ] E) :=
+    continuousOn_univ.mp (continuousOn_trace_fderiv fun x _ => hh.contDiffAt)
   -- Both integrands vanish off `K`, where `u` is integrable.
   have hvan {h : E → E} (hhK : tsupport h ⊆ K) (x : E) (hx : x ∉ K) :
       LinearMap.trace ℝ E (fderiv ℝ h x : E →ₗ[ℝ] E) * u x = 0 := by
@@ -213,5 +248,100 @@ theorem dist_integral_trace_fderiv_mul_le [OpensMeasurableSpace E] {u : E → �
     rw [integral_undef hF, integral_undef hG, sub_zero, norm_zero]
     have hε0 : 0 ≤ ε := (dist_nonneg).trans (hε 0)
     positivity
+
+end NormedSpace
+
+section Cutoff
+
+variable [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [OpensMeasurableSpace E]
+
+/-- **Integration by parts against a cutoff gradient.** Let `v` have weak gradient `g` on `Ω` and
+let `χ` be smooth with compact support in `Ω`. Then for every smooth `φ`,
+`∫ (⟪∇φ, ∇χ⟫ + φ Δχ) v ∂μ = -∫ φ ⟪∇χ, g⟫ ∂μ`: the left side pairs `v` with `div (φ ∇χ)`, and
+`φ ∇χ` is a test vector field on `Ω`. -/
+theorem HasWeakFDerivOn.integral_inner_gradient_add_mul_laplacian_mul_eq {v : E → ℝ}
+    {g : E → E} (hv : HasWeakFDerivOn μ Ω v fun x ↦ innerSL ℝ (g x)) {χ φ : E → ℝ}
+    (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ) (hχΩ : tsupport χ ⊆ Ω)
+    (hφ : ContDiff ℝ ∞ φ) :
+    ∫ x, (⟪∇ φ x, ∇ χ x⟫_ℝ + φ x * Δ χ x) * v x ∂μ = -∫ x, φ x * ⟪∇ χ x, g x⟫_ℝ ∂μ := by
+  have hgχ : ContDiff ℝ ∞ (∇ χ) := hχ.gradient_right (m := ∞) (by simp)
+  have hts : tsupport (fun x ↦ φ x • ∇ χ x) ⊆ tsupport χ :=
+    (tsupport_smul_subset_right _ _).trans <|
+      tsupport_subset_of_forall_notMem_eq_zero (fun _ ↦ gradient_of_notMem_tsupport)
+        (isClosed_tsupport χ)
+  let Φ : 𝓓(Ω, E) := ⟨fun x ↦ φ x • ∇ χ x, hφ.smul hgχ,
+    hχc.of_isClosed_subset (isClosed_tsupport _) hts, hts.trans hχΩ⟩
+  have hΦ : (Φ : E → E) = fun x ↦ φ x • ∇ χ x := TestFunction.coe_mk
+  -- The divergence of the test vector field `φ ∇χ` is `⟪∇φ, ∇χ⟫ + φ Δχ`.
+  have hdiv : ∀ x, TestFunction.divergenceCLM Φ x = ⟪∇ φ x, ∇ χ x⟫_ℝ + φ x * Δ χ x := fun x ↦ by
+    rw [TestFunction.divergenceCLM_apply, hΦ,
+      trace_fderiv_smul (hφ.differentiable (by simp) x) (hgχ.differentiable (by simp) x),
+      laplacian_eq_trace_iteratedGradientChain_one, iteratedGradientChain_succ,
+      iteratedGradientChain_zero, inner_gradient_left, add_comm]
+  simpa only [hdiv, hΦ, smul_eq_mul, innerSL_apply_apply, real_inner_smul_right,
+    real_inner_comm (g _)] using hv.integral_divergenceCLM_smul_eq_neg_integral Φ
+
+/-- **The Laplacian of a cutoff of a solution.** Let `v` have weak gradient `g` on `Ω` and solve
+`Δv = f` against the test functions on `Ω`, and let `χ` be smooth with compact support in `Ω`.
+Then `Δ(χ v) = χ f + 2 ⟪∇χ, g⟫ + v Δχ` against every smooth function on the whole space; no
+support condition is needed on it, since `χ` has compact support. -/
+theorem HasWeakFDerivOn.integral_laplacian_mul_cutoff_mul_eq {v f : E → ℝ} {g : E → E}
+    (hv : HasWeakFDerivOn μ Ω v fun x ↦ innerSL ℝ (g x)) (hf : LocallyIntegrableOn f Ω μ)
+    (h : ∀ φ : 𝓓(Ω, ℝ), ∫ x, Δ (φ : E → ℝ) x • v x ∂μ = ∫ x, (φ : E → ℝ) x • f x ∂μ)
+    {χ : E → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ) (hχΩ : tsupport χ ⊆ Ω)
+    {φ : E → ℝ} (hφ : ContDiff ℝ ∞ φ) :
+    ∫ x, Δ φ x * (χ x * v x) ∂μ =
+      ∫ x, φ x * (χ x * f x + 2 * ⟪∇ χ x, g x⟫_ℝ + Δ χ x * v x) ∂μ := by
+  have hχ2 : ContDiff ℝ 2 χ := hχ.of_le (by simp)
+  have hcgχ : Continuous (∇ χ) := (hχ.gradient_right (m := 0) (by simp)).continuous
+  -- Integrability of the five terms, each a continuous coefficient vanishing off `tsupport χ`.
+  have hint : ∀ {c q : E → ℝ}, Continuous c → (∀ x ∉ tsupport χ, c x = 0) →
+      LocallyIntegrableOn q Ω μ → Integrable (fun x ↦ c x * q x) μ := fun {c _} hc hc0 hq ↦ by
+    simpa only [smul_eq_mul] using hq.integrable_smul_left_of_hasCompactSupport hc (.intro hχc hc0)
+      ((tsupport_subset_of_forall_notMem_eq_zero hc0 (isClosed_tsupport χ)).trans hχΩ)
+  have I₁ : Integrable (fun x ↦ Δ (fun y ↦ χ y * φ y) x * v x) μ :=
+    hint ((hχ.mul hφ).of_le (m := 2) (by simp)).continuous_laplacian (fun _ hx ↦
+      laplacian_of_notMem_tsupport fun h ↦ hx (tsupport_mul_subset_left h)) hv.locallyIntegrableOn
+  have I₂ : Integrable (fun x ↦ (⟪∇ φ x, ∇ χ x⟫_ℝ + φ x * Δ χ x) * v x) μ :=
+    hint (((hφ.gradient_right (m := 0) (by simp)).continuous.inner hcgχ).add
+      (hφ.continuous.mul hχ2.continuous_laplacian))
+      (fun x hx ↦ by simp [gradient_of_notMem_tsupport hx, laplacian_of_notMem_tsupport hx])
+      hv.locallyIntegrableOn
+  have I₃ : Integrable (fun x ↦ φ x * Δ χ x * v x) μ := hint (hφ.continuous.mul
+    hχ2.continuous_laplacian) (fun x hx ↦ by simp [laplacian_of_notMem_tsupport hx])
+    hv.locallyIntegrableOn
+  have I₄ : Integrable (fun x ↦ χ x * φ x * f x) μ := hint (hχ.continuous.mul hφ.continuous)
+    (fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]) hf
+  have I₅ : Integrable (fun x ↦ φ x * ⟪∇ χ x, g x⟫_ℝ) μ := by
+    have h0 : ∀ x ∉ tsupport χ, φ x • ∇ χ x = 0 := fun x hx ↦ by
+      simp [gradient_of_notMem_tsupport hx]
+    simpa only [real_inner_smul_left] using
+      hv.locallyIntegrableOn_gradient.integrable_inner_left_of_hasCompactSupport (𝕜 := ℝ)
+        (g := fun x ↦ φ x • ∇ χ x) (hφ.continuous.smul hcgχ) (.intro hχc h0)
+        ((tsupport_subset_of_forall_notMem_eq_zero h0 (isClosed_tsupport χ)).trans hχΩ)
+  -- Poisson's equation against `χ φ`, then split both sides by linearity.
+  have hB : ∫ x, Δ (fun y ↦ χ y * φ y) x * v x ∂μ = ∫ x, χ x * φ x * f x ∂μ := by
+    simpa only [TestFunction.coe_mk, smul_eq_mul] using
+      h ⟨fun x ↦ χ x * φ x, hχ.mul hφ, hχc.mul_right, tsupport_mul_subset_left.trans hχΩ⟩
+  have e₁ : ∫ x, Δ φ x * (χ x * v x) ∂μ = (∫ x, Δ (fun y ↦ χ y * φ y) x * v x ∂μ) -
+      2 * (∫ x, (⟪∇ φ x, ∇ χ x⟫_ℝ + φ x * Δ χ x) * v x ∂μ) + ∫ x, φ x * Δ χ x * v x ∂μ := by
+    rw [← integral_const_mul, ← integral_sub I₁ (I₂.const_mul 2),
+      ← integral_add (f := fun x ↦ Δ (fun y ↦ χ y * φ y) x * v x -
+        2 * ((⟪∇ φ x, ∇ χ x⟫_ℝ + φ x * Δ χ x) * v x)) (I₁.sub (I₂.const_mul 2)) I₃]
+    refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
+    simp only [hχ2.contDiffAt.laplacian_fun_mul (hφ.contDiffAt.of_le (by simp)),
+      real_inner_comm (∇ φ x) (∇ χ x)]
+    ring
+  have e₂ : ∫ x, φ x * (χ x * f x + 2 * ⟪∇ χ x, g x⟫_ℝ + Δ χ x * v x) ∂μ =
+      (∫ x, χ x * φ x * f x ∂μ) + 2 * (∫ x, φ x * ⟪∇ χ x, g x⟫_ℝ ∂μ) +
+        ∫ x, φ x * Δ χ x * v x ∂μ := by
+    rw [← integral_const_mul, ← integral_add I₄ (I₅.const_mul 2),
+      ← integral_add (f := fun x ↦ χ x * φ x * f x + 2 * (φ x * ⟪∇ χ x, g x⟫_ℝ))
+        (I₄.add (I₅.const_mul 2)) I₃]
+    exact integral_congr_ae (ae_of_all _ fun x ↦ by ring)
+  rw [e₁, e₂, hB, hv.integral_inner_gradient_add_mul_laplacian_mul_eq hχ hχc hχΩ hφ]
+  ring
+
+end Cutoff
 
 end TauCeti

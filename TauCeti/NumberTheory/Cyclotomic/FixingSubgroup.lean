@@ -104,7 +104,7 @@ theorem fixingSubgroup_adjoin_nth_roots_eq_ker (m : ℕ) :
   simp only [← AlgEquiv.smul_def]
   rw [forall_mem_adjoin_smul_eq_self_iff]
   refine ⟨fun h ↦ MulEquiv.ext fun ζ ↦ Subtype.ext <| Units.ext ?_, fun h b hb ↦ ?_⟩
-  · simpa [AlgEquiv.smul_units_def] using h _ ((mem_rootsOfUnity' m _).1 ζ.2)
+  · simpa [AlgEquiv.smul_units_def] using h _ ((mem_rootsOfUnity' m _).1 ζ.property)
   · -- A root of unity is a unit, except when `m = 0` and `b = 0`, which every `σ` fixes.
     rcases eq_or_ne b 0 with rfl | hb0
     · exact smul_zero σ

@@ -91,14 +91,10 @@ theorem hasDerivAt_mpullback_timeDependentFlowOf_self (t : ℝ) (y : M)
       (fun u ↦ mpullback I I (timeDependentFlowOf X t u) α y)
       (mlieDerivForm (X t) α y) t := by
   have hX₁ := hX.of_le (m := 1) one_le_two
-  have hflow : ContMDiffAt ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) I 2
-      (fun p : (ℝ × ℝ) × M ↦ timeDependentFlowOf X p.1.1 p.1.2 p.2) ((t, t), y) :=
-    (contMDiffOn_timeDependentFlowOf (n := 2) (by norm_num) hX).contMDiffAt
-      ((isOpen_timeDependentFlowDomain hX₁).mem_nhds (mem_timeDependentFlowDomain_self hX₁ t y))
   exact hasDerivAt_mpullback_of_eq_id (ψ := timeDependentFlowOf X t) (V := X t) y
     (Eventually.of_forall (timeDependentFlowOf_self X t))
-    (hflow.comp (t, y) (((contMDiff_const (c := t)).prodMk contMDiff_fst).prodMk
-      contMDiff_snd).contMDiffAt)
+    (contMDiffAt_uncurry_timeDependentFlowOf (n := 2) one_le_two hX
+      (mem_timeDependentFlowDomain_self hX₁ t y))
     (Eventually.of_forall fun x ↦
       hasMFDerivAt_timeDependentFlowOf hX₁ (mem_timeDependentFlowDomain_self hX₁ t x)) hα
 

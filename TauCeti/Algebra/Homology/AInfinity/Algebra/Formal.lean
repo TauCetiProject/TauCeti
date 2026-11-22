@@ -40,7 +40,8 @@ graded nonunital algebra with zero differential is formal.
   is formal. `TauCeti.IsNonUnitalDGAlgebra.isFormal_toAInfinityAlgebra_of_differential_eq_zero`
   applies this to DG algebras with zero differential.
 * `TauCeti.AInfinityAlgebra.IsFormal.of_isQuasiIso`: formality is reflected along
-  quasi-isomorphisms.
+  quasi-isomorphisms; `TauCeti.AInfinityHom.IsIso.isFormal_iff` deduces invariance under `A∞`
+  isomorphism.
 * `TauCeti.AInfinityAlgebra.IsMinimal.isFormal_iff_exists_isIso`: a minimal `A∞` structure with
   the grading and binary operation of a graded algebra is formal exactly when it is `A∞` isomorphic
   to that graded algebra.
@@ -143,6 +144,16 @@ theorem isFormal_iff_exists_isIso (h : 𝒜.IsMinimal) (hℋ : ℋ.IsMinimal)
 end IsMinimal
 
 end AInfinityAlgebra
+
+namespace AInfinityHom
+
+/-- Formality of an `A∞` algebra is invariant under `A∞` isomorphism. -/
+theorem IsIso.isFormal_iff {𝒜 : AInfinityAlgebra R A} {ℬ : AInfinityAlgebra R B}
+    {f : AInfinityHom 𝒜 ℬ} (hf : f.IsIso) : 𝒜.IsFormal ↔ ℬ.IsFormal :=
+  ⟨fun h𝒜 ↦ h𝒜.of_isQuasiIso (f.isIso_inverse hf.linearPart_bijective).isQuasiIso,
+    fun hℬ ↦ hℬ.of_isQuasiIso hf.isQuasiIso⟩
+
+end AInfinityHom
 
 /-- The `A∞` algebra of a nonunital DG algebra with vanishing differential is formal. -/
 theorem IsNonUnitalDGAlgebra.isFormal_toAInfinityAlgebra_of_differential_eq_zero

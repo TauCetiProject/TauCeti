@@ -163,7 +163,7 @@ private theorem continuous_seminorm_gauge_sub (k : ℕ) (a : SmoothNoncommutativ
   simp only [seminorm_apply, coeff_sub, Pi.sub_apply, coeff_gauge]
   apply continuous_tsum
   · intro x
-    exact (((continuous_gaugePhase x).subtype_val.mul_const (a.coeff x)).sub
+    exact (((continuous_gaugePhase x).subtypeVal.mul_const (a.coeff x)).sub
       continuous_const).norm.mul_const _
   · exact (a.isRapidDecay_coeff.summable_norm_mul_weight_pow k).mul_left 2
   · intro x z
@@ -242,24 +242,24 @@ theorem trace_gauge (z : Circle × Circle) (a : SmoothNoncommutativeTorus θ) :
 @[simp↓]
 theorem continuousOddCocycle₁_gauge (z : Circle × Circle)
     (a : Fin 2 → SmoothNoncommutativeTorus θ) :
-    (continuousOddCocycle₁ θ).1.1 (fun i ↦ gauge z (a i)) =
-      (continuousOddCocycle₁ θ).1.1 a := by
+    (continuousOddCocycle₁ θ).val.val (fun i ↦ gauge z (a i)) =
+      (continuousOddCocycle₁ θ).val.val a := by
   simp only [continuousOddCocycle₁_apply, derivation₁_gauge, ← map_mul, trace_gauge]
 
 /-- The second continuous odd cocycle is invariant under simultaneous gauge transport. -/
 @[simp↓]
 theorem continuousOddCocycle₂_gauge (z : Circle × Circle)
     (a : Fin 2 → SmoothNoncommutativeTorus θ) :
-    (continuousOddCocycle₂ θ).1.1 (fun i ↦ gauge z (a i)) =
-      (continuousOddCocycle₂ θ).1.1 a := by
+    (continuousOddCocycle₂ θ).val.val (fun i ↦ gauge z (a i)) =
+      (continuousOddCocycle₂ θ).val.val a := by
   simp only [continuousOddCocycle₂_apply, derivation₂_gauge, ← map_mul, trace_gauge]
 
 /-- The continuous fundamental cocycle, including its orientation, is gauge invariant. -/
 @[simp↓]
 theorem continuousFundamentalCocycle_gauge (z : Circle × Circle)
     (a : Fin 3 → SmoothNoncommutativeTorus θ) :
-    (continuousFundamentalCocycle θ).1.1 (fun i ↦ gauge z (a i)) =
-      (continuousFundamentalCocycle θ).1.1 a := by
+    (continuousFundamentalCocycle θ).val.val (fun i ↦ gauge z (a i)) =
+      (continuousFundamentalCocycle θ).val.val a := by
   simp only [continuousFundamentalCocycle_apply, fundamentalCocycle_apply,
     derivation₁_gauge, derivation₂_gauge, ← map_mul, ← map_sub, trace_gauge]
 
