@@ -286,6 +286,7 @@ theorem injOn_logNormalMomentPerturbation :
 
 /-- **The standard log-normal law is not determined by its moments.** The member `ε = 1` of the
 Stieltjes family is a different probability measure with the same finite moments. -/
+@[simp]
 theorem not_isMomentDeterminate_logNormalMeasure :
     ¬(logNormalMeasure 0 1).IsMomentDeterminate := by
   intro hdet

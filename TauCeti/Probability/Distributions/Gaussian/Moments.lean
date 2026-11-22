@@ -155,6 +155,7 @@ theorem centralMoment_id_two_mul_add_one_gaussianReal (m : ℝ) (v : ℝ≥0) (n
 
 /-- **A real Gaussian law is determined by its moments**: every measure on `ℝ` with the finite
 moments of `gaussianReal m v` is `gaussianReal m v`. -/
+@[simp]
 theorem isMomentDeterminate_gaussianReal (m : ℝ) (v : ℝ≥0) :
     (gaussianReal m v).IsMomentDeterminate :=
   .of_integrable_exp_mul_abs one_pos (integrable_exp_mul_abs (X := id)
