@@ -9,6 +9,7 @@ public import TauCeti.Analysis.ODE.EnergyEstimate.Basic
 public import TauCeti.Analysis.ODE.TrajectoryOperator
 public import TauCeti.Analysis.Sobolev.GraphStep.Density
 public import TauCeti.Analysis.Sobolev.GraphStep.LocalCompactness
+import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain
 import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -45,10 +46,10 @@ identity `‖u'‖² + ‖A₀ u‖² = ‖D_{A₀} u‖²` on `W^{1,2}(ℝ, E)`
 
 * `TauCeti.WeakDerivStep.mul_norm_weakFDeriv_sq_add_mul_norm_prev_sq_le_of_forall_contDiff`: an
   estimate on compactly supported `C¹` paths extends to `W^{1,2}(ℝ, E)`.
-* `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_add_norm_compLp_sq_eq_trajectoryOperator_sq`: the exact
-  Pythagorean energy identity `‖u'‖² + ‖A₀ u‖² = ‖D_{A₀} u‖²` for a constant symmetric operator
-  `A₀`, and its scalar specialization
-  `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_add_mul_norm_prev_sq_eq_trajectoryOperator_sq`.
+* `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_add_norm_compLp_sq_eq_norm_trajectoryOperator_sq`: the
+  exact Pythagorean energy identity `‖u'‖² + ‖A₀ u‖² = ‖D_{A₀} u‖²` for a constant symmetric
+  operator `A₀`, and its scalar specialization
+  `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_add_mul_norm_prev_sq_eq_norm_trajectoryOperator_sq`.
 * `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_add_mul_norm_prev_sq_le_norm_trajectoryOperator_sq`:
   for a family with a uniform spectral gap `α` and `⟪v, A' v⟫ ≤ β ‖v‖²`, the estimate
   `‖u'‖² + (α² - β) ‖u‖² ≤ ‖D_A u‖²` without compact error, and
@@ -152,41 +153,36 @@ open scoped InnerProductSpace in
 /-- **Pythagorean energy identity for a constant symmetric trajectory operator.** If `A₀` is a
 symmetric bounded operator on `E` and `AL` is an `L∞` class equal almost everywhere to `A₀`, then
 `‖u'‖² + ‖A₀ u‖² = ‖D_{A₀} u‖²` for every `u ∈ W^{1,2}(ℝ, E)`. -/
-theorem norm_weakFDeriv_sq_add_norm_compLp_sq_eq_trajectoryOperator_sq
+theorem norm_weakFDeriv_sq_add_norm_compLp_sq_eq_norm_trajectoryOperator_sq
     {A₀ : E →L[ℝ] E} (hsym : A₀.toLinearMap.IsSymmetric)
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun _ ↦ A₀)
     (u : WeakDerivStep volume ⊤ 2
       (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     ‖weakFDeriv _ u‖ ^ 2 + ‖A₀.compLp (prev _ u)‖ ^ 2 = ‖trajectoryOperator AL u‖ ^ 2 := by
-  let base := ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-  have hclosed : IsClosed {v : WeakDerivStep volume ⊤ 2 base |
-      ‖weakFDeriv base v‖ ^ 2 + ‖A₀.compLp (prev base v)‖ ^ 2 = ‖trajectoryOperator AL v‖ ^ 2} :=
-    isClosed_eq
-      ((((weakFDerivL base).continuous.congr (weakFDerivL_apply base)).norm.pow 2).add
-        (((A₀.compLpL 2 _).continuous.comp
-          ((prevL base).continuous.congr (prevL_apply base))).norm.pow 2))
-      ((trajectoryOperator AL).continuous.norm.pow 2)
-  refine hclosed.closure_subset_iff.mpr ?_
-    (dense_setOf_exists_contDiff_hasCompactSupport (by norm_num) u)
-  rintro v ⟨φ, hφ, hφc, hv⟩
-  have hφ1 : ContDiff ℝ 1 φ := hφ.of_le (by exact_mod_cast le_top)
-  have hnormA : ‖A₀.compLp (prev base v)‖ ^ 2 = ∫ s, ‖A₀ (φ s)‖ ^ 2 := by
-    rw [← Lp.integral_norm_sq_eq_norm_sq]
-    refine (integral_congr_ae (g := fun s ↦ ‖A₀ (φ s)‖ ^ 2) ?_).trans (by simp)
-    filter_upwards [A₀.coeFn_compLp (prev base v), hv] with s hs hφs
-    dsimp only [base] at hs
-    rw [hs, hφs]
-  have hid := integral_norm_deriv_add_sq_eq (A := fun _ : ℝ ↦ A₀) contDiff_const
-    (fun _ _ ↦ hsym) hφ1 hφc
-  simp only [deriv_const, zero_apply, inner_zero_right, integral_zero, sub_zero] at hid
-  rw [Set.mem_ofPred_eq, norm_weakFDeriv_sq_eq_integral hφ1 hv, hnormA,
-    norm_trajectoryOperator_sq_eq_integral hφ1 hv AL hAL, hid]
+  let μ := (volume : Measure ℝ).restrict ((⊤ : Opens ℝ) : Set ℝ)
+  let ι := ContinuousLinearMap.id ℝ E
+  have hu' : HasWeakFDerivOn volume ⊤ (ι.compLpL 2 μ (prev _ u)) (weakFDeriv _ u) := by
+    simpa [ι, ContinuousLinearMap.compLpL_apply, ContinuousLinearMap.id_compLp] using
+      hasWeakFDerivOn_base_prev _ u
+  let u' : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ) := mk _ (prev _ u) (weakFDeriv _ u) hu'
+  have hpost : postcompBaseL (ι.compLpL 2 μ) ι u' = u := by
+    dsimp only [ι]
+    rw [postcompBaseL_id]
+    refine ext_prev_weakFDeriv ?_ ?_
+    · rw [prev_toIdL, prev_mk, ContinuousLinearMap.id_compLpL, ContinuousLinearMap.id_apply]
+    · rw [weakFDeriv_toIdL, weakFDeriv_mk]
+  have htraj : trajectoryOperator AL u = domainTrajectoryOperator ι A₀ u' := by
+    have hinter := trajectoryOperator_postcompBaseL ι A₀ ι A₀ (fun _ ↦ rfl) AL hAL u'
+    rwa [hpost, ContinuousLinearMap.id_compLp] at hinter
+  have hSymm : ∀ x y : E, ⟪A₀ x, ι y⟫_ℝ = ⟪ι x, A₀ y⟫_ℝ := fun x y ↦ hsym x y
+  rw [htraj, norm_domainTrajectoryOperator_sq hSymm u', prev_mk, weakFDeriv_mk,
+    ContinuousLinearMap.compLpL_apply]
 
 /-- **Pythagorean energy identity for a constant scalar trajectory operator.** For `c : ℝ` and an
 `L∞` class `AL` equal almost everywhere to `c • id`, every `u ∈ W^{1,2}(ℝ, E)` satisfies
 `‖u'‖² + c² ‖u‖² = ‖D_{c • id} u‖²`. -/
-theorem norm_weakFDeriv_sq_add_mul_norm_prev_sq_eq_trajectoryOperator_sq (c : ℝ)
+theorem norm_weakFDeriv_sq_add_mul_norm_prev_sq_eq_norm_trajectoryOperator_sq (c : ℝ)
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun _ ↦ c • ContinuousLinearMap.id ℝ E)
     (u : WeakDerivStep volume ⊤ 2
@@ -194,7 +190,7 @@ theorem norm_weakFDeriv_sq_add_mul_norm_prev_sq_eq_trajectoryOperator_sq (c : �
     ‖weakFDeriv _ u‖ ^ 2 + c ^ 2 * ‖prev _ u‖ ^ 2 = ‖trajectoryOperator AL u‖ ^ 2 := by
   simpa only [ContinuousLinearMap.smul_compLp, ContinuousLinearMap.id_compLp, norm_smul,
     Real.norm_eq_abs, mul_pow, sq_abs] using
-    norm_weakFDeriv_sq_add_norm_compLp_sq_eq_trajectoryOperator_sq
+    norm_weakFDeriv_sq_add_norm_compLp_sq_eq_norm_trajectoryOperator_sq
       (LinearMap.IsSymmetric.id.smul (conj_trivial c)) AL hAL u
 
 open scoped InnerProductSpace in

@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
 public import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Topology.Algebra.Module.Equiv.SMul
 
 /-!
 # Multiplication by `i` on complex modules
@@ -16,15 +17,12 @@ Multiplication by `i` is a real continuous linear automorphism of any complex mo
 compatible real scalar action (`IsScalarTower ℝ ℂ X`) and continuous multiplication by constant
 scalars, with inverse multiplication by `-i`. It is the conjugating operator by which complex
 linearity of a real-linear map is tested: a continuous real-linear map between complex modules that
-commutes with it is continuous complex-linear, and post-composing any continuous real-linear map
-with multiplication by `i` preserves invertibility.
+commutes with it is continuous complex-linear.
 
 ## Main definitions and results
 
 * `Complex.smulIEquiv`: multiplication by `i` as a real continuous linear equivalence, with
   `smulIEquiv_apply`, `smulIEquiv_symm_apply`, and `smulIEquiv_comp`.
-* `ContinuousLinearMap.isInvertible_I_smul_iff`: `(Complex.I • L).IsInvertible ↔ L.IsInvertible`
-  for a continuous real-linear map `L : Y →L[ℝ] X`.
 * `ContinuousLinearMap.complexOfMapISmul`: a continuous real-linear map between complex modules
   that commutes with multiplication by `i`, as a continuous complex-linear map.
 -/
@@ -55,24 +53,10 @@ theorem smulIEquiv_symm_apply (x : X) : (smulIEquiv X).symm x = -I • x := by
 @[simp]
 theorem smulIEquiv_comp {Y : Type*} [AddCommGroup Y] [TopologicalSpace Y] [Module ℝ Y]
     (L : Y →L[ℝ] X) :
-    (smulIEquiv X : X →L[ℝ] X).comp L = I • L := by
-  ext y
-  simp
+    (smulIEquiv X : X →L[ℝ] X).comp L = I • L :=
+  (ContinuousLinearMap.smul_eq_smulLeft_comp I_ne_zero L).symm
 
 end Complex
-
-namespace ContinuousLinearMap
-
-/-- Multiplying a continuous real-linear map into a complex module by `I` preserves
-invertibility. -/
-@[simp]
-theorem isInvertible_I_smul_iff {X Y : Type*} [AddCommGroup Y] [TopologicalSpace Y] [Module ℝ Y]
-    [AddCommGroup X] [TopologicalSpace X] [Module ℝ X] [Module ℂ X] [IsScalarTower ℝ ℂ X]
-    [ContinuousConstSMul ℂ X] (L : Y →L[ℝ] X) :
-    (Complex.I • L).IsInvertible ↔ L.IsInvertible := by
-  rw [← Complex.smulIEquiv_comp, isInvertible_equiv_comp]
-
-end ContinuousLinearMap
 
 section ComplexOfMapISmul
 

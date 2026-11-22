@@ -865,9 +865,10 @@ theorem norm_inverse_smul {S M M₂ : Type*} [NormedDivisionRing S]
       ((inv_mul_le_iff₀ (norm_pos_iff.mpr hc)).mpr <| opNorm_le_bound _ (by positivity) fun z ↦ ?_)
     · rw [inverse_smul_apply hc]
       exact (f.inverse.le_opNorm _).trans_eq (by rw [norm_smul, norm_inv]; ring)
-    · rw [show f.inverse z = (c • f).inverse (c • z) by
-        rw [inverse_smul_apply hc, inv_smul_smul₀ hc]]
-      exact ((c • f).inverse.le_opNorm _).trans_eq (by rw [norm_smul]; ring)
+    · calc ‖f.inverse z‖ = ‖(c • f).inverse (c • z)‖ := by
+            rw [inverse_smul_apply hc, inv_smul_smul₀ hc]
+        _ ≤ ‖(c • f).inverse‖ * ‖c • z‖ := (c • f).inverse.le_opNorm _
+        _ = ‖c‖ * ‖(c • f).inverse‖ * ‖z‖ := by rw [norm_smul]; ring
 
 /-- Bounded linear endomorphisms of a seminormed space act continuously on it. -/
 instance instContinuousSMul {𝕜 E : Type*} [NontriviallyNormedField 𝕜]

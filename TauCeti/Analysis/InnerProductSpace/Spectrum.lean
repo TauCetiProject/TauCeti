@@ -17,6 +17,7 @@ public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 import Mathlib.LinearAlgebra.Eigenspace.ContinuousLinearMap
 import Mathlib.Topology.Bases
 import TauCeti.Analysis.InnerProductSpace.CourantFischer
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Basic
 
 /-!
 # Spectral decompositions of self-adjoint operators
@@ -68,9 +69,10 @@ eigenvectors for distinct eigenvalues of any operator `A` symmetric with respect
   specialization of the preceding result.
 * `ContinuousLinearMap.exists_hilbertBasis_forall_hasEigenvector_ne_zero`: for an injective compact
   symmetric operator, every vector of that basis has a nonzero eigenvalue.
-* `ContinuousLinearMap.exists_hilbertBasis_of_isCompactOperator`: for an invertible operator
-  `A : D →L[𝕜] E` symmetric with respect to an injective compact map `ι : D →L[𝕜] E`, a Hilbert
-  basis of `E` of eigenvectors of `A` with real eigenvalues uniformly bounded away from `0`.
+* `ContinuousLinearMap.exists_hilbertBasis_forall_apply_eq_smul_of_isCompactOperator_inclusion`:
+  for an invertible operator `A : D →L[𝕜] E` symmetric with respect to an injective compact map
+  `ι : D →L[𝕜] E`, a Hilbert basis of `E` of eigenvectors of `A` with real eigenvalues uniformly
+  bounded away from `0`.
 * `ContinuousLinearMap.countable_setOf_exists_ne_zero_apply_eq_smul`: on a separable inner product
   space, the set of eigenvalues of an operator `A : D →L[𝕜] E` symmetric with respect to an
   injective map `ι : D →L[𝕜] E` is countable.
@@ -221,7 +223,7 @@ a Hilbert space `E`, and let `A : D →L[𝕜] E` be an invertible operator symm
 `ι` (`⟪A x, ι y⟫ = ⟪ι x, A y⟫`). Then `E` admits a Hilbert basis `b` of eigenvectors of `A` in
 the range of `ι` (`ι (a i) = b i` and `A (a i) = lam i • b i`) with real eigenvalues uniformly
 bounded away from `0`: `c ≤ |lam i|` for a positive constant `c`. -/
-theorem exists_hilbertBasis_of_isCompactOperator
+theorem exists_hilbertBasis_forall_apply_eq_smul_of_isCompactOperator_inclusion
     {D : Type*} [NormedAddCommGroup D] [NormedSpace 𝕜 D]
     {ι A : D →L[𝕜] E} (hιc : IsCompactOperator ι) (hιi : Function.Injective ι)
     (hsym : ∀ x y : D, ⟪A x, ι y⟫_𝕜 = ⟪ι x, A y⟫_𝕜) (hA : A.IsInvertible) :
@@ -231,13 +233,14 @@ theorem exists_hilbertBasis_of_isCompactOperator
   obtain ⟨e, he⟩ := hA
   set R : E →L[𝕜] D := e.symm.toContinuousLinearMap
   set K : E →L[𝕜] E := ι.comp R
+  have hK (x : E) : K x = ι (R x) := comp_apply ι R x
   have hAR (x : E) : A (R x) = x := he ▸ e.apply_symm_apply x
   have hKs : (K : E →ₗ[𝕜] E).IsSymmetric := fun x y ↦ by
     have h := hsym (R x) (R y)
     rw [hAR, hAR] at h
-    simpa only [coe_coe, K, comp_apply] using h.symm
+    simpa only [coe_coe, hK] using h.symm
   have hKi : LinearMap.ker (K : E →ₗ[𝕜] E) = ⊥ := LinearMap.ker_eq_bot'.2 fun x hx ↦ by
-    have hRx : R x = 0 := hιi (by simpa only [coe_coe, K, comp_apply, map_zero] using hx)
+    have hRx : R x = 0 := hιi (by simpa only [coe_coe, hK, map_zero] using hx)
     rw [← hAR x, hRx, map_zero]
   obtain ⟨s, b, nu, hb, hnu0, hev⟩ :=
     exists_hilbertBasis_forall_hasEigenvector_ne_zero (hιc.comp_clm R) hKs hKi
@@ -248,7 +251,7 @@ theorem exists_hilbertBasis_of_isCompactOperator
   have hKev (i : s) : K i = nu i • (i : E) := (hev i).apply_eq_smul
   refine ⟨s, b, fun i ↦ (((RCLike.re (nu i))⁻¹ : ℝ) : 𝕜) • R i, fun i ↦ (RCLike.re (nu i))⁻¹,
     (‖K‖ + 1)⁻¹, by positivity, fun i ↦ ?_, fun i ↦ ?_, fun i ↦ by rw [map_smul, hAR, hb]⟩
-  · rw [map_smul, RCLike.ofReal_inv, hreal i, show ι (R i) = K i from rfl, hKev i, smul_smul,
+  · rw [map_smul, RCLike.ofReal_inv, hreal i, ← hK, hKev i, smul_smul,
       inv_mul_cancel₀ (hnu0 i), one_smul, hb]
   · have hle : |RCLike.re (nu i)| ≤ ‖K‖ := by
       have hnorm : ‖nu i‖ = |RCLike.re (nu i)| := by
@@ -286,13 +289,8 @@ theorem countable_setOf_exists_ne_zero_apply_eq_smul
     have h0 : ⟪ι (x a), ι (x b)⟫_𝕜 = 0 := (mul_eq_zero.1 (by rw [sub_mul, sub_eq_zero]; exact h1))
       |>.resolve_left (sub_ne_zero.2 (Subtype.coe_injective.ne hab))
     simp only [u, inner_smul_left, inner_smul_right, h0, mul_zero]
-  have hdisj : Pairwise (Function.onFun Disjoint fun lam : S ↦ Metric.ball (u lam) (1 / 2)) :=
-    fun a b hab ↦ Metric.ball_disjoint_ball <| by
-      have hsq : ‖u a - u b‖ ^ 2 = 2 := by
-        rw [norm_sub_sq (𝕜 := 𝕜), hunorm a, hunorm b, huorth hab, map_zero]; norm_num
-      rw [dist_eq_norm]; nlinarith [norm_nonneg (u a - u b)]
-  exact Set.countable_coe_iff.1 <| hdisj.countable_of_isOpen_disjoint (fun _ ↦ Metric.isOpen_ball)
-    (fun lam ↦ ⟨u lam, Metric.mem_ball_self (by positivity)⟩)
+  exact Set.countable_coe_iff.1
+    (Orthonormal.countable_of_separableSpace (⟨hunorm, huorth⟩ : Orthonormal 𝕜 u))
 
 omit [CompleteSpace E] in
 /-- **The spectral expansion of an operator diagonal in a Hilbert basis.**  Applying `T` term by

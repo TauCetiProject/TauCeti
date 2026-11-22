@@ -8,9 +8,12 @@ module
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Basic
 import TauCeti.Analysis.InnerProductSpace.Parseval
 import TauCeti.MeasureTheory.Function.Lp.Basic
+import TauCeti.MeasureTheory.Function.Lp.RankOne
 
 /-!
 # Orthogonal decompositions of Hilbert-space-valued `L²` functions
@@ -25,14 +28,11 @@ orthogonal decomposition in `L²(μ; E)` without separability of `E`, countabili
 * `MeasureTheory.Lp.inner_compLp_toSpanSingleton`,
   `MeasureTheory.Lp.inner_compLp_toSpanSingleton_left`: inner products and adjointness of rank-one
   functions `x ↦ f x • v` in `L²`.
-* `MeasureTheory.Lp.compLp_innerSL_compLp_toSpanSingleton`,
-  `MeasureTheory.Lp.compLpL_innerSL_comp_compLpL_toSpanSingleton`: rank-one projection on `Lᵖ`.
 * `Orthonormal.pairwise_inner_compLp_toSpanSingleton_eq_zero`,
   `Orthonormal.summable_compLp_toSpanSingleton_iff`,
   `Orthonormal.hasSum_norm_sq_tsum_compLp_toSpanSingleton`,
   `Orthonormal.compLp_innerSL_tsum_compLp_toSpanSingleton`: orthogonal synthesis, Pythagoras, and
-  coordinate extraction along any orthonormal family (with `HilbertBasis.*` counterparts dropping
-  `[CompleteSpace E]`).
+  coordinate extraction along any orthonormal family.
 * `HilbertBasis.ext_compLp_innerSL`: extensionality by Hilbert-basis projections in `L²(μ; E)`.
 * `HilbertBasis.hasSum_compLp_toSpanSingleton_innerSL`: orthogonal reconstruction in `L²(μ; E)`.
 * `HilbertBasis.hasSum_norm_sq_compLp_innerSL`: Parseval's identity in `L²(μ; E)`.
@@ -74,22 +74,6 @@ theorem inner_compLp_toSpanSingleton_left (v : E) (g : Lp 𝕜 2 μ) (f : Lp E 2
   filter_upwards [(toSpanSingleton 𝕜 v).coeFn_compLp g,
     (innerSL 𝕜 v).coeFn_compLp f] with x hgx hfx
   rw [hgx, hfx, toSpanSingleton_apply, innerSL_apply_apply, inner_smul_left, RCLike.inner_apply']
-
-/-- Projecting a rank-one `Lᵖ` function `x ↦ f x • w` along `v` scales `f` by `⟪v, w⟫`, for any
-exponent `p : ℝ≥0∞`. -/
-@[simp]
-theorem compLp_innerSL_compLp_toSpanSingleton {p : ℝ≥0∞} (v w : E) (f : Lp 𝕜 p μ) :
-    (innerSL 𝕜 v).compLp ((toSpanSingleton 𝕜 w).compLp f) = ⟪v, w⟫_𝕜 • f := by
-  rw [compLp_compLp, show (innerSL 𝕜 v).comp (toSpanSingleton 𝕜 w) =
-    ⟪v, w⟫_𝕜 • ContinuousLinearMap.id 𝕜 𝕜 by ext; simp, smul_compLp, id_compLp]
-
-/-- Operator-level projection identity on `Lᵖ`: composing `(innerSL 𝕜 v).compLpL p μ` with
-`(toSpanSingleton 𝕜 w).compLpL p μ` is scaling by `⟪v, w⟫`. -/
-@[simp]
-theorem compLpL_innerSL_comp_compLpL_toSpanSingleton {p : ℝ≥0∞} [Fact (1 ≤ p)] (v w : E) :
-    ((innerSL 𝕜 v).compLpL p μ).comp ((toSpanSingleton 𝕜 w).compLpL p μ) =
-      ⟪v, w⟫_𝕜 • ContinuousLinearMap.id 𝕜 (Lp 𝕜 p μ) :=
-  ContinuousLinearMap.ext (compLp_innerSL_compLp_toSpanSingleton v w)
 
 end MeasureTheory.Lp
 
@@ -160,16 +144,6 @@ namespace HilbertBasis
 variable {α ι 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
-private theorem completeSpace_of_hilbertBasis (b : HilbertBasis ι 𝕜 E) : CompleteSpace E :=
-  (b.repr.isometry.isUniformInducing.completeSpace_congr b.repr.surjective).2 inferInstance
-
-/-- Distinct modes along a Hilbert basis are orthogonal in `L²(μ; E)`. -/
-theorem pairwise_inner_compLp_toSpanSingleton_eq_zero (b : HilbertBasis ι 𝕜 E)
-    (g : ι → Lp 𝕜 2 μ) :
-    Pairwise fun i j ↦
-      ⟪(toSpanSingleton 𝕜 (b i)).compLp (g i), (toSpanSingleton 𝕜 (b j)).compLp (g j)⟫_𝕜 = 0 :=
-  b.orthonormal.pairwise_inner_compLp_toSpanSingleton_eq_zero g
-
 /-- **Extensionality by Hilbert-basis projections in `L²(μ; E)`.** Two `L²(μ; E)` functions whose
 scalar projections along every element of a Hilbert basis agree are equal. No separability of `E`
 or countability of `ι` is required. -/
@@ -182,14 +156,13 @@ theorem ext_compLp_innerSL (b : HilbertBasis ι 𝕜 E) {f g : Lp E 2 μ}
   have hmeas := Lp.aestronglyMeasurable r
   set φ : α → E := hmeas.mk r
   obtain ⟨D, hDcount, hDrange⟩ := hmeas.stronglyMeasurable_mk.isSeparable_range
-  let S : Set ι := ⋃ y ∈ D, Function.support fun i ↦ ‖⟪b i, y⟫_𝕜‖ ^ 2
+  let S : Set ι := ⋃ y ∈ D, Function.support fun i ↦ ⟪b i, y⟫_𝕜
   have hScount : S.Countable :=
-    hDcount.biUnion fun y _ ↦ (b.summable_norm_sq_inner y).countable_support
+    hDcount.biUnion fun y _ ↦ b.orthonormal.countable_support_inner_left y
   have hout : ∀ i ∉ S, ∀ x, ⟪b i, φ x⟫_𝕜 = 0 := fun i hi x ↦
     (hDrange.trans <| closure_minimal (fun y hy ↦ by
       by_contra hne
-      simp only [Set.mem_ofPred_eq, innerSL_apply_apply] at hne
-      exact hi (Set.mem_biUnion hy (by simp [hne])))
+      exact hi (Set.mem_biUnion hy hne))
       (isClosed_eq (innerSL 𝕜 (b i)).continuous continuous_const)) ⟨x, rfl⟩
   have hin : ∀ᵐ x ∂μ, ∀ i ∈ S, ⟪b i, φ x⟫_𝕜 = 0 := by
     have : Countable S := hScount.to_subtype
@@ -207,56 +180,36 @@ theorem ext_compLp_innerSL (b : HilbertBasis ι 𝕜 E) {f g : Lp E 2 μ}
   rw [b.repr_apply_apply, b.repr_apply_apply, Pi.zero_apply, inner_zero_right]
   exact (em (i ∈ S)).elim (hxin i) (fun hi ↦ hout i hi x)
 
-/-- **Orthogonal synthesis in `L²(μ; E)`.** A mode series `∑ᵢ g i • b i` converges in `L²(μ; E)`
-exactly when the squared `L²` norms `‖g i‖²` are summable. -/
-theorem summable_compLp_toSpanSingleton_iff (b : HilbertBasis ι 𝕜 E) (g : ι → Lp 𝕜 2 μ) :
-    Summable (fun i ↦ (toSpanSingleton 𝕜 (b i)).compLp (g i)) ↔
-      Summable (fun i ↦ ‖g i‖ ^ 2) :=
-  have := b.completeSpace_of_hilbertBasis; b.orthonormal.summable_compLp_toSpanSingleton_iff g
-
-/-- **Pythagoras for an orthogonal synthesis in `L²(μ; E)`.** If `∑ᵢ ‖g i‖² < ∞`, the squared norm
-of `∑' i, g i • b i` is `∑' i, ‖g i‖²`. -/
-theorem hasSum_norm_sq_tsum_compLp_toSpanSingleton (b : HilbertBasis ι 𝕜 E) {g : ι → Lp 𝕜 2 μ}
-    (hg : Summable fun i ↦ ‖g i‖ ^ 2) :
-    HasSum (fun i ↦ ‖g i‖ ^ 2) (‖∑' i, (toSpanSingleton 𝕜 (b i)).compLp (g i)‖ ^ 2) :=
-  have := b.completeSpace_of_hilbertBasis
-  b.orthonormal.hasSum_norm_sq_tsum_compLp_toSpanSingleton hg
-
-/-- **Coordinate extraction for an orthogonal synthesis in `L²(μ; E)`.** Projecting
-`∑' i, g i • b i` along `b j` recovers `g j`. -/
-theorem compLp_innerSL_tsum_compLp_toSpanSingleton (b : HilbertBasis ι 𝕜 E) {g : ι → Lp 𝕜 2 μ}
-    (hg : Summable fun i ↦ ‖g i‖ ^ 2) (j : ι) :
-    (innerSL 𝕜 (b j)).compLp (∑' i, (toSpanSingleton 𝕜 (b i)).compLp (g i)) = g j :=
-  have := b.completeSpace_of_hilbertBasis
-  b.orthonormal.compLp_innerSL_tsum_compLp_toSpanSingleton hg j
-
 /-- **Orthogonal reconstruction in `L²(μ; E)`.** Every `f ∈ L²(μ; E)` is the unconditional sum of
 its mode projections `x ↦ ⟪b i, f x⟫ • b i`. -/
 theorem hasSum_compLp_toSpanSingleton_innerSL (b : HilbertBasis ι 𝕜 E) (f : Lp E 2 μ) :
     HasSum (fun i ↦ (toSpanSingleton 𝕜 (b i)).compLp ((innerSL 𝕜 (b i)).compLp f)) f := by
+  have := b.completeSpace
   let g : ι → Lp 𝕜 2 μ := fun i ↦ (innerSL 𝕜 (b i)).compLp f
   let v : ι → Lp E 2 μ := fun i ↦ (toSpanSingleton 𝕜 (b i)).compLp (g i)
   have hsq : Summable fun i ↦ ‖g i‖ ^ 2 := by
     refine summable_of_sum_le (c := ‖f‖ ^ 2) (fun _ ↦ sq_nonneg _) fun s ↦ ?_
-    have horth : ⟪∑ i ∈ s, v i, f - ∑ i ∈ s, v i⟫_𝕜 = 0 := by
-      rw [sum_inner]
-      refine Finset.sum_eq_zero fun i hi ↦ ?_
-      have hb1 : ⟪b i, b i⟫_𝕜 = 1 := by simp [inner_self_eq_norm_sq_to_K, b.orthonormal.1 i]
-      rw [inner_sub_right, inner_sum, Finset.sum_eq_single i
-        (fun j _ hji ↦ b.pairwise_inner_compLp_toSpanSingleton_eq_zero g hji.symm)
-        (fun hni ↦ absurd hi hni)]
-      simp only [v, Lp.inner_compLp_toSpanSingleton_left,
-        Lp.compLp_innerSL_compLp_toSpanSingleton, hb1, one_smul, g, sub_self]
-    have hpyth : ‖f‖ ^ 2 = ‖∑ i ∈ s, v i‖ ^ 2 + ‖f - ∑ i ∈ s, v i‖ ^ 2 := by
-      simpa only [add_sub_cancel, ← sq] using
-        norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero (∑ i ∈ s, v i) (f - ∑ i ∈ s, v i) horth
-    have hsum_sq : ‖∑ i ∈ s, v i‖ ^ 2 = ∑ i ∈ s, ‖g i‖ ^ 2 := by
-      rw [TauCeti.norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero
-        ((b.pairwise_inner_compLp_toSpanSingleton_eq_zero g).set_pairwise _)]
-      exact Finset.sum_congr rfl fun i _ ↦ by simp [b.orthonormal.1 i]
-    linarith [sq_nonneg ‖f - ∑ i ∈ s, v i‖]
-  have hsum : HasSum v (∑' i, v i) := ((b.summable_compLp_toSpanSingleton_iff g).mpr hsq).hasSum
-  rwa [b.ext_compLp_innerSL fun j ↦ b.compLp_innerSL_tsum_compLp_toSpanSingleton hsq j] at hsum
+    have hae : ∀ᵐ x ∂μ, ∑ i ∈ s, ‖g i x‖ ^ 2 ≤ ‖f x‖ ^ 2 := by
+      have hall : ∀ i : s, ∀ᵐ x ∂μ, g i x = ⟪b i, f x⟫_𝕜 := fun i ↦ by
+        filter_upwards [(innerSL 𝕜 (b (i : ι))).coeFn_compLp f] with x hx
+        simpa only [g, innerSL_apply_apply] using hx
+      filter_upwards [ae_all_iff.mpr hall] with x hx
+      calc ∑ i ∈ s, ‖g i x‖ ^ 2
+          = ∑ i ∈ s, ‖⟪b i, f x⟫_𝕜‖ ^ 2 :=
+            Finset.sum_congr rfl fun i hi ↦ by rw [hx ⟨i, hi⟩]
+        _ ≤ ‖f x‖ ^ 2 := b.orthonormal.sum_inner_products_le (f x)
+    have hint : Integrable (fun x ↦ ∑ i ∈ s, ‖g i x‖ ^ 2) μ :=
+      integrable_finsetSum s fun i _ ↦ (Lp.memLp (g i)).norm.integrable_sq
+    calc ∑ i ∈ s, ‖g i‖ ^ 2
+        = ∑ i ∈ s, ∫ x, ‖g i x‖ ^ 2 ∂μ := by simp_rw [Lp.integral_norm_sq_eq_norm_sq]
+      _ = ∫ x, ∑ i ∈ s, ‖g i x‖ ^ 2 ∂μ :=
+          (integral_finsetSum s fun i _ ↦ (Lp.memLp (g i)).norm.integrable_sq).symm
+      _ ≤ ∫ x, ‖f x‖ ^ 2 ∂μ := integral_mono_ae hint (Lp.memLp f).norm.integrable_sq hae
+      _ = ‖f‖ ^ 2 := Lp.integral_norm_sq_eq_norm_sq f
+  have hsum : HasSum v (∑' i, v i) :=
+    ((b.orthonormal.summable_compLp_toSpanSingleton_iff g).mpr hsq).hasSum
+  rwa [b.ext_compLp_innerSL fun j ↦
+    b.orthonormal.compLp_innerSL_tsum_compLp_toSpanSingleton hsq j] at hsum
 
 /-- **Parseval's identity in `L²(μ; E)`.** The squared `L²` norms of the scalar projections of `f`
 along a Hilbert basis sum to `‖f‖²`. -/
@@ -264,7 +217,8 @@ theorem hasSum_norm_sq_compLp_innerSL (b : HilbertBasis ι 𝕜 E) (f : Lp E 2 �
     HasSum (fun i ↦ ‖(innerSL 𝕜 (b i)).compLp f‖ ^ 2) (‖f‖ ^ 2) := by
   simpa only [norm_compLp_toSpanSingleton, b.orthonormal.1, mul_one] using
     TauCeti.hasSum_norm_sq_of_pairwise_inner_eq_zero
-      (b.pairwise_inner_compLp_toSpanSingleton_eq_zero fun i ↦ (innerSL 𝕜 (b i)).compLp f)
+      (b.orthonormal.pairwise_inner_compLp_toSpanSingleton_eq_zero
+        fun i ↦ (innerSL 𝕜 (b i)).compLp f)
       (b.hasSum_compLp_toSpanSingleton_innerSL f)
 
 end HilbertBasis

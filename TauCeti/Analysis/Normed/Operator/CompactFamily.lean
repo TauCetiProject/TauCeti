@@ -72,19 +72,22 @@ theorem exists_mem_nhds_isInvertible_norm_inverse_le {K : Set X} (hK : IsCompact
 
 /-- Invertibility on a compact parameter slice gives a uniform positive radius around `z₀` in a
 pseudometric parameter space on which all operators remain invertible with uniformly bounded
-inverses. Only continuity on `K ×ˢ Set.univ` is required. -/
+inverses. Only `ContinuousWithinAt L (K ×ˢ Set.univ) (x, z₀)` at slice points `x ∈ K` is
+required. -/
 theorem exists_pos_isInvertible_norm_inverse_le {Z : Type*} [PseudoMetricSpace Z]
     {K : Set X} (hK : IsCompact K) (L : X × Z → E →L[𝕜] F) (z₀ : Z)
-    (hL : ContinuousOn L (K ×ˢ Set.univ))
+    (hL : ∀ x ∈ K, ContinuousWithinAt L (K ×ˢ Set.univ) (x, z₀))
     (hinv : ∀ x ∈ K, (L (x, z₀)).IsInvertible) :
     ∃ ε > 0, ∃ C ≥ 0, ∀ x ∈ K, ∀ z : Z, dist z z₀ ≤ ε →
       (L (x, z)).IsInvertible ∧ ‖(L (x, z)).inverse‖ ≤ C := by
   let : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  have hL' : Continuous (fun p : K × Z ↦ L (p.fst, p.snd)) :=
-    hL.comp_continuous (continuous_subtypeVal.prodMap continuous_id)
-      fun p ↦ ⟨p.fst.property, mem_univ _⟩
+  have hL' : ∀ x : K, ContinuousAt (fun p : K × Z ↦ L (p.fst, p.snd)) (x, z₀) := fun x ↦
+    (hL x.val x.property).tendsto.comp <|
+      tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+        (continuous_subtypeVal.prodMap continuous_id).continuousAt
+        (Filter.Eventually.of_forall fun p ↦ ⟨p.fst.property, mem_univ _⟩)
   obtain ⟨V, hV, C, hC, hbound⟩ := isCompact_univ.exists_mem_nhds_isInvertible_norm_inverse_le
-    (fun p : K × Z ↦ L (p.fst, p.snd)) z₀ (fun _ _ ↦ hL'.continuousAt)
+    (fun p : K × Z ↦ L (p.fst, p.snd)) z₀ (fun x _ ↦ hL' x)
     (fun x _ ↦ hinv x x.property)
   obtain ⟨r, hr, hrV⟩ := Metric.mem_nhds_iff.1 hV
   exact ⟨r / 2, by positivity, C, hC, fun x hx z hz ↦
@@ -104,7 +107,8 @@ theorem exists_pos_isInvertible_map_sub_smul_norm_inverse_le
   have hcont : ContinuousOn (fun z : X × ℝ ↦ Φ (S z.1 - z.2 • J z.1)) (K ×ˢ Set.univ) :=
     hΦ.comp_continuousOn <| (hS.comp (s := K ×ˢ Set.univ) continuousOn_fst fun _ h ↦ h.1).sub
       (continuousOn_snd.smul (hJ.comp (s := K ×ˢ Set.univ) continuousOn_fst fun _ h ↦ h.1))
-  obtain ⟨ε, hε, C, hC, hbound⟩ := hK.exists_pos_isInvertible_norm_inverse_le _ 0 hcont
+  obtain ⟨ε, hε, C, hC, hbound⟩ := hK.exists_pos_isInvertible_norm_inverse_le _ 0
+    (fun x hx ↦ hcont (x, 0) ⟨hx, mem_univ _⟩)
     fun x hx ↦ by simpa only [zero_smul, sub_zero] using hinv x hx
   exact ⟨ε, hε, C, hC, fun x hx δ hδ ↦ hbound x hx δ (by simpa [Real.dist_eq] using hδ)⟩
 

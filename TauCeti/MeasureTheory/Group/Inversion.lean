@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Sets.Opens
 public import TauCeti.MeasureTheory.Group.Conjugation
 
 /-!
@@ -49,25 +48,6 @@ public section
 
 open MeasureTheory
 open scoped ENNReal
-
-namespace MeasureTheory.Measure
-
-/-- Restricting an inversion-invariant measure to `Set.univ` remains inversion-invariant. -/
-@[to_additive
-/-- Restricting a negation-invariant measure to `Set.univ` remains negation-invariant. -/]
-instance isInvInvariant_restrict_univ {G : Type*} [MeasurableSpace G] [Inv G] {μ : Measure G}
-    [μ.IsInvInvariant] : (μ.restrict Set.univ).IsInvInvariant := by
-  rw [Measure.restrict_univ]; infer_instance
-
-/-- Restricting an inversion-invariant measure to `(⊤ : Opens G)` remains inversion-invariant. -/
-@[to_additive
-/-- Restricting a negation-invariant measure to `(⊤ : Opens G)` remains negation-invariant. -/]
-instance isInvInvariant_restrict_top {G : Type*} [TopologicalSpace G] [MeasurableSpace G] [Inv G]
-    {μ : Measure G} [μ.IsInvInvariant] :
-    (μ.restrict ((⊤ : TopologicalSpace.Opens G) : Set G)).IsInvInvariant := by
-  rw [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]; infer_instance
-
-end MeasureTheory.Measure
 
 namespace TauCeti
 

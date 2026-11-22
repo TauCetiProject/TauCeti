@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Eigenbasis
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Normed.Operator.CompactFamily
-import TauCeti.Analysis.Normed.Operator.ComplexSmulI
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The stationary cylinder operator over periodic circle Sobolev spaces
@@ -26,11 +27,10 @@ exponential weight shifts `e^{±δ s}` on cylindrical ends, feeding
 When `F` is a finite-dimensional complex inner product space and `S` is infinitesimally symplectic
 (`Im ⟪S t v, w⟫ + Im ⟪v, S t w⟫ = 0`), `I • loopOperator T S` is `ι`-symmetric and index-`0`
 Fredholm, yielding unconditional injectivity, equivalence of closed range / Fredholmness /
-invertibility with `loopOperator T S` invertibility, invertibility of the opposite-sign
-operator `∂s - I • loopOperator T S`, the Pythagorean identity and inverse bounds
-`√(1 + ‖(loopOperator T S)⁻¹‖²)` and `max ‖(loopOperator T S)⁻¹‖ 1`, uniform weighted inverses over
-compact families (adapting `TauCeti/Analysis/Sobolev/Circle/LinearODE/Family.lean`), and eigenmode
-intertwining (`w' + λ w`).
+invertibility (for either sign `∂s ± I • loopOperator T S`) with `loopOperator T S` invertibility
+— equivalently nondegeneracy of the periodic orbit — the Pythagorean identity and improved inverse
+bound `max ‖(loopOperator T S)⁻¹‖ 1`, uniform weighted inverses over compact families (adapting
+`TauCeti/Analysis/Sobolev/Circle/LinearODE/Family.lean`), and eigenmode intertwining (`w' + λ w`).
 
 ## References
 
@@ -188,7 +188,7 @@ theorem isClosed_range_cylinderOperator_iff_isInvertible_loopOperator
   rw [cylinderOperator, WeakDerivStep.isClosed_range_domainTrajectoryOperator_iff
     (inclusion_injective zero_le_one) (real_inner_I_smul_loopOperator_comm T S hS)
     (isFredholm_I_smul_loopOperator T S) (index_I_smul_loopOperator T S),
-    ContinuousLinearMap.isInvertible_I_smul_iff]
+    ContinuousLinearMap.isInvertible_smul_iff I_ne_zero]
 
 /-- For infinitesimally symplectic `S`, `cylinderOperator T S` is invertible iff `loopOperator T S`
 is invertible. -/
@@ -198,7 +198,7 @@ theorem isInvertible_cylinderOperator_iff_isInvertible_loopOperator {S : C(AddCi
   rw [cylinderOperator, WeakDerivStep.isInvertible_domainTrajectoryOperator_iff
     (inclusion_injective zero_le_one) (real_inner_I_smul_loopOperator_comm T S hS)
     (isFredholm_I_smul_loopOperator T S) (index_I_smul_loopOperator T S),
-    ContinuousLinearMap.isInvertible_I_smul_iff]
+    ContinuousLinearMap.isInvertible_smul_iff I_ne_zero]
 
 /-- For infinitesimally symplectic `S`, `cylinderOperator T S` is Fredholm iff `loopOperator T S`
 is invertible. -/
@@ -208,7 +208,7 @@ theorem isFredholm_cylinderOperator_iff_isInvertible_loopOperator {S : C(AddCirc
   rw [cylinderOperator, WeakDerivStep.isFredholm_domainTrajectoryOperator_iff
     (inclusion_injective zero_le_one) (real_inner_I_smul_loopOperator_comm T S hS)
     (isFredholm_I_smul_loopOperator T S) (index_I_smul_loopOperator T S),
-    ContinuousLinearMap.isInvertible_I_smul_iff]
+    ContinuousLinearMap.isInvertible_smul_iff I_ne_zero]
 
 /-- For infinitesimally symplectic `S`, `cylinderOperator T S` is invertible iff `ζ' = S ζ` has no
 nonzero continuous `T`-periodic solution. -/
@@ -225,44 +225,35 @@ theorem index_cylinderOperator {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
     (hL : (loopOperator T S).IsInvertible) : (cylinderOperator T S).index = 0 :=
   WeakDerivStep.index_domainTrajectoryOperator (real_inner_I_smul_loopOperator_comm T S hS)
-    ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL)
+    ((ContinuousLinearMap.isInvertible_smul_iff I_ne_zero).2 hL)
 
-/-- Inverse norm bound `‖(cylinderOperator T S).inverse‖ ≤ √(1 + ‖(loopOperator T S).inverse‖²)` for
-infinitesimally symplectic nondegenerate `S`. -/
-theorem norm_inverse_cylinderOperator_le {S : C(AddCircle T, F →L[ℝ] F)}
-    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
-    (hL : (loopOperator T S).IsInvertible) :
-    ‖(cylinderOperator T S).inverse‖ ≤ √(1 + ‖(loopOperator T S).inverse‖ ^ 2) := by
-  simpa only [cylinderOperator, ContinuousLinearMap.norm_inverse_I_smul] using
-    WeakDerivStep.norm_inverse_domainTrajectoryOperator_le
-      (ι := (inclusion (E := F) zero_le_one).restrictScalars ℝ)
-      (real_inner_I_smul_loopOperator_comm T S hS)
-      ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL)
-
-/-- Sharp inverse norm bound `‖(cylinderOperator T S).inverse‖ ≤ max ‖(loopOperator T S).inverse‖ 1`
+/-- Improved inverse norm bound
+`‖(cylinderOperator T S).inverse‖ ≤ max ‖(loopOperator T S).inverse‖ 1`
 for infinitesimally symplectic nondegenerate `S`. -/
 theorem norm_inverse_cylinderOperator_le_max {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
     (hL : (loopOperator T S).IsInvertible) :
     ‖(cylinderOperator T S).inverse‖ ≤ max ‖(loopOperator T S).inverse‖ 1 := by
-  simpa only [cylinderOperator, ContinuousLinearMap.norm_inverse_I_smul] using
+  simpa only [cylinderOperator, ContinuousLinearMap.norm_inverse_smul, Complex.norm_I, inv_one,
+    one_mul] using
     WeakDerivStep.norm_inverse_domainTrajectoryOperator_le_max
       (ι := (inclusion (E := F) zero_le_one).restrictScalars ℝ)
       (real_inner_I_smul_loopOperator_comm T S hS)
-      ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL)
+      ((ContinuousLinearMap.isInvertible_smul_iff I_ne_zero).2 hL)
 
 /-- Invertibility of the opposite-sign stationary Floer cylinder operator
-`∂s ∘ ι - I • loopOperator T S` for infinitesimally symplectic nondegenerate `S`. -/
+`∂s ∘ ι + (-I) • loopOperator T S` for infinitesimally symplectic nondegenerate `S`. -/
 theorem isInvertible_domainTrajectoryOperator_neg_I_smul_loopOperator
     {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
     (hL : (loopOperator T S).IsInvertible) :
     (WeakDerivStep.domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2)
       ((inclusion (E := F) zero_le_one).restrictScalars ℝ)
-      (-(I • loopOperator T S))).IsInvertible :=
-  WeakDerivStep.isInvertible_domainTrajectoryOperator_neg
+      ((-I) • loopOperator T S)).IsInvertible := by
+  rw [neg_smul]
+  exact WeakDerivStep.isInvertible_domainTrajectoryOperator_neg
     (real_inner_I_smul_loopOperator_comm T S hS)
-    ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL)
+    ((ContinuousLinearMap.isInvertible_smul_iff I_ne_zero).2 hL)
 
 /-- If `S` is infinitesimally symplectic and `c ‖ι a‖ ≤ ‖loopOperator T S a‖` (`c > 0`), then
 `‖ι ∘ u‖_{L²} ≤ c⁻¹ ‖cylinderOperator T S u‖_{L²}`. -/

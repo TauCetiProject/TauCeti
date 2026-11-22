@@ -50,8 +50,9 @@ null set.
 * `Measure.ae_inv_mem_preimage`, `Measure.ae_neg_mem_preimage`: a full-mass set reflects to a
   full-mass set for the inverted or negated measure.
 * `Measure.isInvInvariant_restrict`, `Measure.isNegInvariant_restrict`,
+  `Measure.isInvInvariant_restrict_univ`, `Measure.isNegInvariant_restrict_univ`,
   `Measure.isInvInvariant_withDensity`, `Measure.isNegInvariant_withDensity`: restriction to a
-  symmetric set and an even density preserve inversion or negation invariance.
+  symmetric set (or `Set.univ`) and an even density preserve inversion or negation invariance.
 * `Measure.isMulLeftInvariant_comap`, `Measure.isAddLeftInvariant_comap`,
   `Measure.isMulRightInvariant_comap`, `Measure.isAddRightInvariant_comap`: the pullback of a
   left- or right-invariant measure along a group homomorphism is left- or right-invariant, without
@@ -284,6 +285,13 @@ theorem isInvInvariant_withDensity [μ.IsInvInvariant] {f : G → ℝ≥0∞} (h
     (MeasurableEquiv.inv G).measurableEmbedding f t
 
 end InvolutiveInv
+
+/-- Restricting an inversion-invariant measure to `Set.univ` remains inversion-invariant. -/
+@[to_additive
+/-- Restricting a negation-invariant measure to `Set.univ` remains negation-invariant. -/]
+instance isInvInvariant_restrict_univ {G : Type*} [MeasurableSpace G] [Inv G] {μ : Measure G}
+    [μ.IsInvInvariant] : (μ.restrict Set.univ).IsInvInvariant := by
+  rw [Measure.restrict_univ]; infer_instance
 
 end MeasureTheory.Measure
 

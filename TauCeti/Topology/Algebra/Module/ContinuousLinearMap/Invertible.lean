@@ -161,14 +161,12 @@ invertibility. -/
 @[simp]
 theorem isInvertible_smul_iff {c : S} (hc : c ≠ 0) {f : M →L[R] M₂} :
     (c • f).IsInvertible ↔ f.IsInvertible := by
-  have := SMulCommClass.symm R S M₂
   rw [smul_eq_smulLeft_comp hc, isInvertible_equiv_comp]
 
 /-- For a nonzero commuting scalar `c`, the inverse of `c • f` applies `f.inverse` after scaling
 by `c⁻¹`. This holds whether or not `f` is invertible. -/
 theorem inverse_smul_apply {c : S} (hc : c ≠ 0) (f : M →L[R] M₂) (y : M₂) :
     (c • f).inverse y = f.inverse (c⁻¹ • y) := by
-  have := SMulCommClass.symm R S M₂
   rw [smul_eq_smulLeft_comp hc, inverse_equiv_comp, comp_apply, ContinuousLinearEquiv.coe_coe,
     (ContinuousLinearEquiv.symm_apply_eq _ (y := c⁻¹ • y)).2 (by simp [smul_smul, hc])]
 
@@ -199,6 +197,29 @@ theorem inverse_smul_of_isScalarTower {𝕜 S : Type*} [Semifield 𝕜] [Semifie
     map_inv₀]
 
 end Smul
+
+section Neg
+
+variable {R M M₂ : Type*} [Ring R]
+  [TopologicalSpace M] [AddCommGroup M] [Module R M]
+  [TopologicalSpace M₂] [AddCommGroup M₂] [Module R M₂] [IsTopologicalAddGroup M₂]
+
+/-- Negating a continuous linear map negates its totalized inverse. -/
+@[simp]
+theorem inverse_neg [IsTopologicalAddGroup M] (f : M →L[R] M₂) : (-f).inverse = -f.inverse := by
+  have hneg : -f = ((ContinuousLinearEquiv.neg R : M₂ ≃L[R] M₂) : M₂ →L[R] M₂) ∘L f := by
+    ext; simp
+  rw [hneg, inverse_equiv_comp]
+  ext; simp
+
+/-- Negating a continuous linear map preserves invertibility. -/
+@[simp]
+theorem isInvertible_neg_iff (f : M →L[R] M₂) : (-f).IsInvertible ↔ f.IsInvertible := by
+  have hneg : -f = ((ContinuousLinearEquiv.neg R : M₂ ≃L[R] M₂) : M₂ →L[R] M₂) ∘L f := by
+    ext; simp
+  rw [hneg, isInvertible_equiv_comp]
+
+end Neg
 
 section SMulId
 

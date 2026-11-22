@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.Analysis.ODE.TrajectoryOperator
 public import TauCeti.Analysis.Sobolev.GraphStep.Coordinates
+public import TauCeti.Analysis.Sobolev.GraphStep.Reflection
 public import TauCeti.Analysis.Sobolev.GraphStep.ZeroAtInfty
 public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.MeasureTheory.Group.Inversion
@@ -17,7 +18,6 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Normed.Operator.CompactFamily
 import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Basic
-import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -40,10 +40,9 @@ After proving `1`-Lipschitz dependence on `A`, weak-ODE characterizations, inter
 second half develops the whole-line `L²(ℝ)` theory (`Ω = ⊤`, `p = 2`) for Hilbert `H` and
 `ι`-symmetric `A` (`⟪A x, ι y⟫ = ⟪ι x, A y⟫`): orthogonality and the Pythagorean identity
 `‖(∂s ∘ ι + A) u‖² = ‖(ι ∘ u)'‖² + ‖A ∘ u‖²`, unconditional injectivity for injective `ι`,
-invertibility of `∂s ± A` with sharp inverse norm bound `≤ max ‖A⁻¹‖ 1` (and `≤ √(1 + ‖A⁻¹‖²)`)
-for invertible `A`, failure of closed range when `A.ker ≠ ⊥`, equivalence of closed range /
-Fredholmness / invertibility with `A.IsInvertible` for index-`0` Fredholm `A`, and compact-family
-perturbation stability
+invertibility of `∂s ± A` with improved upper bound `≤ max ‖A⁻¹‖ 1` for invertible `A`, failure of
+closed range when `A.ker ≠ ⊥`, equivalence of closed range / Fredholmness / invertibility with
+`A.IsInvertible` for index-`0` Fredholm `A`, and compact-family perturbation stability
 (`exists_pos_isInvertible_domainTrajectoryOperator_sub_smul_norm_inverse_le`).
 Adapts `TauCeti/Analysis/ODE/TrajectoryOperator.lean`,
 `TauCeti/Analysis/Sobolev/GraphStep/Coordinates.lean`,
@@ -205,8 +204,10 @@ theorem trajectoryOperator_postcompBaseL
     T.coeFn_compLp (ι.compLpL p μΩ (prev _ u)),
     ι.coeFn_compLpL (prev _ u), hBL, T.coeFn_compLp (domainTrajectoryOperator ι A u),
     domainTrajectoryOperator_apply_ae ι A u] with s hT hw hTι hι hBLs hTS hS
-  rw [hT, weakFDeriv_postcompBaseL, prev_postcompBaseL, hw, hTι, hι, hBLs, hTS, hS, map_add,
-    ContinuousLinearMap.compL_apply, ContinuousLinearMap.comp_apply, hinter]
+  rw [hT, hBLs, hTS, hS]
+  simp only [weakFDeriv_postcompBaseL, prev_postcompBaseL]
+  rw [hw, hTι, hι]
+  simp [hinter]
 
 end Banach
 
@@ -245,84 +246,6 @@ variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
 
 local notation "μtop" => (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))
 
-private theorem hasWeakFDerivOn_reflect (ι : D →L[ℝ] H)
-    (u : WeakDerivStep mu ⊤ p (ι.compLpL p μtop)) :
-    HasWeakFDerivOn mu ⊤
-      (ι.compLpL p μtop (negLpₗᵢ ℝ (prev _ u)))
-      ((-negLpₗᵢ ℝ (weakFDeriv _ u) : Lp (ℝ →L[ℝ] H) p μtop) : ℝ → ℝ →L[ℝ] H) := by
-  have h1 := (hasWeakFDerivOn_base_prev (ι.compLpL p _) u).comp_continuousLinearEquiv
-    (U := ⊤) (ContinuousLinearEquiv.neg ℝ) (Measure.measurePreserving_neg mu) (Set.mapsTo_univ _ _)
-  refine (h1.congr_ae ?_).congr_ae_deriv ?_
-  · have hcomp :=
-      (Measure.measurePreserving_neg μtop).quasiMeasurePreserving.ae_eq_comp
-        (ι.coeFn_compLpL (prev (ι.compLpL p _) u))
-    filter_upwards [hcomp, ι.coeFn_compLpL (negLpₗᵢ ℝ (prev _ u)),
-      coeFn_negLpₗᵢ (𝕜 := ℝ) (prev _ u)] with s hιneg hιref href
-    simpa only [Function.comp_apply, ContinuousLinearEquiv.neg_apply, hιref, href] using hιneg
-  · filter_upwards [Lp.coeFn_neg (negLpₗᵢ ℝ (weakFDeriv _ u)),
-      coeFn_negLpₗᵢ (𝕜 := ℝ) (weakFDeriv _ u)] with s hneg href
-    rw [hneg, Pi.neg_apply, href]
-    ext
-    simp
-
-/-- Time reflection `s ↦ u(-s)` as an involutive linear isometry of the evolution Sobolev space
-on `ℝ`. -/
-def reflectEvolutionEquiv (ι : D →L[ℝ] H) :
-    WeakDerivStep mu ⊤ p (ι.compLpL p μtop) ≃ₗᵢ[ℝ] WeakDerivStep mu ⊤ p (ι.compLpL p μtop) where
-  toFun u :=
-    mk _ (negLpₗᵢ ℝ (prev _ u)) (-negLpₗᵢ ℝ (weakFDeriv _ u)) (hasWeakFDerivOn_reflect ι u)
-  invFun u :=
-    mk _ (negLpₗᵢ ℝ (prev _ u)) (-negLpₗᵢ ℝ (weakFDeriv _ u)) (hasWeakFDerivOn_reflect ι u)
-  left_inv u := ext (by simp only [prev_mk, negLpₗᵢ_negLpₗᵢ])
-  right_inv u := ext (by simp only [prev_mk, negLpₗᵢ_negLpₗᵢ])
-  map_add' u v := ext (by simp only [prev_mk, prev_add, map_add])
-  map_smul' c u := ext (by simp only [prev_mk, prev_smul, map_smul, RingHom.id_apply])
-  norm_map' u := by
-    have hsq : ‖mk (ι.compLpL p μtop) (negLpₗᵢ ℝ (prev _ u)) (-negLpₗᵢ ℝ (weakFDeriv _ u))
-        (hasWeakFDerivOn_reflect ι u)‖ ^ 2 = ‖u‖ ^ 2 := by
-      calc ‖mk (ι.compLpL p μtop) (negLpₗᵢ ℝ (prev _ u)) (-negLpₗᵢ ℝ (weakFDeriv _ u))
-              (hasWeakFDerivOn_reflect ι u)‖ ^ 2
-          = ‖negLpₗᵢ ℝ (prev _ u)‖ ^ 2 + ‖-negLpₗᵢ ℝ (weakFDeriv _ u)‖ ^ 2 := by
-            rw [norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq, prev_mk, weakFDeriv_mk]
-        _ = ‖prev _ u‖ ^ 2 + ‖weakFDeriv _ u‖ ^ 2 := by
-            rw [norm_neg, (negLpₗᵢ ℝ).norm_map, (negLpₗᵢ ℝ).norm_map]
-        _ = ‖u‖ ^ 2 := (norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq _ u).symm
-    exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp hsq
-
-/-- Time reflection acts on the `Lᵖ(ℝ; D)` path by `TauCeti.negLpₗᵢ`. -/
-theorem prev_reflectEvolutionEquiv (ι : D →L[ℝ] H)
-    (u : WeakDerivStep mu ⊤ p (ι.compLpL p μtop)) :
-    prev (ι.compLpL p μtop) (reflectEvolutionEquiv ι u) =
-      negLpₗᵢ ℝ (prev (ι.compLpL p μtop) u) :=
-  prev_mk _ _ _ _
-
-/-- Time reflection negates and reflects the weak derivative via `TauCeti.negLpₗᵢ`. -/
-theorem weakFDeriv_reflectEvolutionEquiv (ι : D →L[ℝ] H)
-    (u : WeakDerivStep mu ⊤ p (ι.compLpL p μtop)) :
-    weakFDeriv (ι.compLpL p μtop) (reflectEvolutionEquiv ι u) =
-      -negLpₗᵢ ℝ (weakFDeriv (ι.compLpL p μtop) u) :=
-  weakFDeriv_mk _ _ _ _
-
-/-- Time reflection is involutive. -/
-theorem reflectEvolutionEquiv_apply_self (ι : D →L[ℝ] H)
-    (u : WeakDerivStep mu ⊤ p (ι.compLpL p μtop)) :
-    reflectEvolutionEquiv ι (reflectEvolutionEquiv ι u) = u :=
-  ext (by simp only [prev_reflectEvolutionEquiv, negLpₗᵢ_negLpₗᵢ])
-
-/-- Time reflection is its own inverse. -/
-@[simp]
-theorem reflectEvolutionEquiv_symm (ι : D →L[ℝ] H) :
-    (reflectEvolutionEquiv (mu := mu) (p := p) ι).symm =
-      reflectEvolutionEquiv (mu := mu) (p := p) ι :=
-  LinearIsometryEquiv.ext fun _ ↦ rfl
-
-/-- Composing time reflection with itself is the identity equivalence. -/
-@[simp]
-theorem reflectEvolutionEquiv_trans_self (ι : D →L[ℝ] H) :
-    (reflectEvolutionEquiv (mu := mu) (p := p) ι).trans
-      (reflectEvolutionEquiv (mu := mu) (p := p) ι) = LinearIsometryEquiv.refl ℝ _ :=
-  LinearIsometryEquiv.ext (reflectEvolutionEquiv_apply_self ι)
-
 /-- Time reflection conjugates `∂s ∘ ι - A` to `-(∂s ∘ ι + A)` on `ℝ`:
 `∂s ∘ ι - A = -(negLpₗᵢ ∘ (∂s ∘ ι + A) ∘ reflectEvolutionEquiv)`. -/
 theorem domainTrajectoryOperator_neg_eq (ι A : D →L[ℝ] H) :
@@ -332,8 +255,9 @@ theorem domainTrajectoryOperator_neg_eq (ι A : D →L[ℝ] H) :
           (reflectEvolutionEquiv (mu := mu) (p := p) ι :
             WeakDerivStep mu ⊤ p (ι.compLpL p μtop) →L[ℝ] _))) := by
   ext1 u
-  change _ = -(negLpₗᵢ ℝ (domainTrajectoryOperator ι A (reflectEvolutionEquiv ι u)))
-  simp only [domainTrajectoryOperator_apply, ContinuousLinearMap.compLpL_apply,
+  rw [neg_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply]
+  simp only [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    domainTrajectoryOperator_apply, ContinuousLinearMap.compLpL_apply,
     weakFDeriv_reflectEvolutionEquiv, prev_reflectEvolutionEquiv,
     ContinuousLinearMap.neg_compLp, map_add, compLp_negLpₗᵢ, map_neg, negLpₗᵢ_negLpₗᵢ]
   abel
@@ -352,28 +276,9 @@ theorem norm_domainTrajectoryOperator_neg (ι A : D →L[ℝ] H) :
 theorem isInvertible_domainTrajectoryOperator_neg_iff (ι A : D →L[ℝ] H) :
     (domainTrajectoryOperator (mu := mu) (Omega := ⊤) (p := p) ι (-A)).IsInvertible ↔
       (domainTrajectoryOperator (mu := mu) (Omega := ⊤) (p := p) ι A).IsInvertible := by
-  let eL := negLpₗᵢ ℝ (E := H) (p := p) (μ := μtop)
-  let eR := reflectEvolutionEquiv (mu := mu) (p := p) ι
-  have hL : (eL : Lp H p μtop →L[ℝ] _) = eL.toContinuousLinearEquiv.toContinuousLinearMap :=
-    ContinuousLinearMap.ext fun _ ↦ rfl
-  have hR : (eR : WeakDerivStep mu ⊤ p (ι.compLpL p μtop) →L[ℝ] _) =
-      eR.toContinuousLinearEquiv.toContinuousLinearMap :=
-    ContinuousLinearMap.ext fun _ ↦ rfl
-  rw [domainTrajectoryOperator_neg_eq, ← neg_one_smul ℝ,
-    ContinuousLinearMap.isInvertible_smul_iff (by norm_num : (-1 : ℝ) ≠ 0), hL, hR,
+  rw [domainTrajectoryOperator_neg_eq,
+    ContinuousLinearMap.isInvertible_neg_iff,
     ContinuousLinearMap.isInvertible_equiv_comp, ContinuousLinearMap.isInvertible_comp_equiv]
-
-private theorem inverse_neg_comp_equiv {X Y : Type*}
-    [TopologicalSpace X] [AddCommGroup X] [Module ℝ X] [IsTopologicalAddGroup X]
-    [TopologicalSpace Y] [AddCommGroup Y] [Module ℝ Y] [IsTopologicalAddGroup Y]
-    [ContinuousConstSMul ℝ Y]
-    (eL : Y ≃L[ℝ] Y) (L : X →L[ℝ] Y) (eR : X ≃L[ℝ] X) (heL : eL.symm = eL) (heR : eR.symm = eR) :
-    (-(eL.toContinuousLinearMap.comp (L.comp eR.toContinuousLinearMap))).inverse =
-      -(eR.toContinuousLinearMap.comp (L.inverse.comp eL.toContinuousLinearMap)) := by
-  ext1 f
-  rw [← neg_one_smul ℝ, ContinuousLinearMap.inverse_smul_apply (by norm_num : (-1 : ℝ) ≠ 0),
-    ContinuousLinearMap.inverse_equiv_comp, ContinuousLinearMap.inverse_comp_equiv]
-  simp [heL, heR]
 
 /-- Time reflection conjugates `(∂s ∘ ι - A)⁻¹` to `-(∂s ∘ ι + A)⁻¹` on `ℝ`. -/
 theorem inverse_domainTrajectoryOperator_neg (ι A : D →L[ℝ] H) :
@@ -382,21 +287,18 @@ theorem inverse_domainTrajectoryOperator_neg (ι A : D →L[ℝ] H) :
           WeakDerivStep mu ⊤ p (ι.compLpL p μtop) →L[ℝ] _).comp
         ((domainTrajectoryOperator (mu := mu) (Omega := ⊤) (p := p) ι A).inverse.comp
           (negLpₗᵢ ℝ (E := H) (p := p) (μ := μtop) : Lp H p μtop →L[ℝ] _))) := by
-  let eL := (negLpₗᵢ ℝ (E := H) (p := p) (μ := μtop)).toContinuousLinearEquiv
-  let eR := (reflectEvolutionEquiv (mu := mu) (p := p) ι).toContinuousLinearEquiv
-  have heL : eL.symm = eL :=
-    ContinuousLinearEquiv.ext (funext fun f ↦ eL.symm_apply_eq.2 (negLpₗᵢ_negLpₗᵢ f).symm)
-  have heR : eR.symm = eR :=
-    ContinuousLinearEquiv.ext (funext fun u ↦ eR.symm_apply_eq.2
-      (reflectEvolutionEquiv_apply_self ι u).symm)
-  have h1 : (domainTrajectoryOperator (mu := mu) (Omega := ⊤) (p := p) ι (-A)).inverse =
-      (-(eL.toContinuousLinearMap.comp
-        ((domainTrajectoryOperator (mu := mu) (Omega := ⊤) (p := p) ι A).comp
-          eR.toContinuousLinearMap))).inverse :=
-    congrArg ContinuousLinearMap.inverse <| (domainTrajectoryOperator_neg_eq ι A).trans <|
-      congrArg Neg.neg (ContinuousLinearMap.ext fun _ ↦ rfl)
-  exact h1.trans <| (inverse_neg_comp_equiv eL _ eR heL heR).trans <|
-    congrArg Neg.neg (ContinuousLinearMap.ext fun _ ↦ rfl)
+  have heL : (negLpₗᵢ ℝ (E := H) (p := p) (μ := μtop)).toContinuousLinearEquiv.symm =
+      (negLpₗᵢ ℝ (E := H) (p := p) (μ := μtop)).toContinuousLinearEquiv :=
+    ContinuousLinearEquiv.ext <| funext fun x ↦
+      (ContinuousLinearEquiv.symm_apply_eq _).2 (negLpₗᵢ_negLpₗᵢ x).symm
+  have heR : (reflectEvolutionEquiv (mu := mu) (p := p) ι).toContinuousLinearEquiv.symm =
+      (reflectEvolutionEquiv (mu := mu) (p := p) ι).toContinuousLinearEquiv :=
+    ContinuousLinearEquiv.ext <| funext fun x ↦
+      (ContinuousLinearEquiv.symm_apply_eq _).2
+        (reflectEvolutionEquiv_reflectEvolutionEquiv ι x).symm
+  rw [domainTrajectoryOperator_neg_eq,
+    ContinuousLinearMap.inverse_neg, ContinuousLinearMap.inverse_equiv_comp,
+    ContinuousLinearMap.inverse_comp_equiv, heL, heR, ContinuousLinearMap.comp_assoc]
 
 /-- `(∂s ∘ ι - A)⁻¹` and `(∂s ∘ ι + A)⁻¹` have the same operator norm on `ℝ`. -/
 @[simp]
@@ -503,6 +405,8 @@ private theorem inner_domainTrajectoryOperator_ofTestFunction_eq
   simp [hz, hval, hgrad, gradient_eq_deriv', inner_add_left, inner_smul_left, inner_smul_right,
     hsymm']
 
+section CompleteDomain
+
 variable [CompleteSpace D]
 
 /-- When `A` is `ι`-symmetric (`⟪A x, ι y⟫ = ⟪ι x, A y⟫`), `(ι ∘ u)'` and `A ∘ u` are orthogonal in
@@ -600,35 +504,34 @@ theorem injective_domainTrajectoryOperator_of_symmetric (hι : Function.Injectiv
     Lp.coeFn_zero D 2 _] with s hs h0 hd0
   rw [hd0, Pi.zero_apply]; exact hι (by rw [← hs, h0, Pi.zero_apply, map_zero])
 
+end CompleteDomain
+
 /-- Coercive graph-norm estimate on `L²(ℝ)`: for `ι`-symmetric invertible `A`,
-`‖u‖ ≤ √(1 + ‖A.inverse‖²) ‖(∂s ∘ ι + A) u‖`. -/
-theorem norm_le_sqrt_one_add_sq_mul_norm_domainTrajectoryOperator
+`‖u‖ ≤ max ‖A.inverse‖ 1 * ‖(∂s ∘ ι + A) u‖`. -/
+theorem norm_le_max_norm_inverse_one_mul_norm_domainTrajectoryOperator
     (hSymm : ∀ x y : D, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ) (hA : A.IsInvertible)
     (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
-    ‖u‖ ≤ √(1 + ‖A.inverse‖ ^ 2) * ‖domainTrajectoryOperator ι A u‖ := by
-  obtain ⟨e, rfl⟩ := hA; rw [ContinuousLinearMap.inverse_equiv]
-  let μ := (volume : Measure ℝ).restrict ((⊤ : Opens ℝ) : Set ℝ)
-  let base := ι.compLpL 2 μ
-  have hid : (e.symm : H →L[ℝ] D).compLpL 2 μ ((e : D →L[ℝ] H).compLpL 2 μ (prev base u)) =
-      prev base u := by rw [ContinuousLinearMap.compLpL_compLpL]; simp
-  have hprev :
-      ‖prev base u‖ ≤ ‖(e.symm : H →L[ℝ] D)‖ * ‖(e : D →L[ℝ] H).compLpL 2 μ (prev base u)‖ := by
-    nth_rw 1 [← hid]
-    exact (ContinuousLinearMap.le_opNorm _ _).trans
-      (mul_le_mul_of_nonneg_right (e.symm : H →L[ℝ] D).norm_compLpL_le (norm_nonneg _))
+    ‖u‖ ≤ max ‖A.inverse‖ 1 * ‖domainTrajectoryOperator ι A u‖ := by
+  have : CompleteSpace D := ContinuousLinearMap.completeSpace_of_isInvertible hA
+  set M : ℝ := max ‖A.inverse‖ 1
+  have hprev_eq : prev _ u = A.inverse.compLp (A.compLp (prev _ u)) := by
+    rw [ContinuousLinearMap.compLp_compLp, hA.inverse_comp_self, ContinuousLinearMap.id_compLp]
+  have hprev_le : ‖prev _ u‖ ≤ M * ‖A.compLp (prev _ u)‖ :=
+    (congrArg norm hprev_eq).trans_le <|
+      (A.inverse.norm_compLp_le _).trans (by gcongr; exact le_max_left _ _)
+  have hprev_sq : ‖prev _ u‖ ^ 2 ≤ M ^ 2 * ‖A.compLp (prev _ u)‖ ^ 2 := by
+    rw [← mul_pow]; exact pow_le_pow_left₀ (norm_nonneg _) hprev_le 2
+  have h1M2 : 1 ≤ M ^ 2 := by nlinarith [le_max_right ‖A.inverse‖ (1 : ℝ)]
   refine le_of_pow_le_pow_left₀ two_ne_zero (by positivity) ?_
-  rw [mul_pow, Real.sq_sqrt (by positivity), norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq,
-    norm_domainTrajectoryOperator_sq hSymm u]
-  have hsq : ‖prev base u‖ ^ 2 ≤
-      ‖(e.symm : H →L[ℝ] D)‖ ^ 2 * ‖(e : D →L[ℝ] H).compLpL 2 μ (prev base u)‖ ^ 2 := by
-    simpa only [mul_pow] using pow_le_pow_left₀ (norm_nonneg _) hprev 2
-  nlinarith [sq_nonneg ‖weakFDeriv base u‖, sq_nonneg ‖(e.symm : H →L[ℝ] D)‖,
-    sq_nonneg ‖(e : D →L[ℝ] H).compLpL 2 μ (prev base u)‖]
+  rw [norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq, mul_pow,
+    norm_domainTrajectoryOperator_sq hSymm u, ContinuousLinearMap.compLpL_apply]
+  nlinarith [sq_nonneg ‖weakFDeriv _ u‖]
 
 private theorem eq_zero_of_mem_orthogonal_range_domainTrajectoryOperator
     (hSymm : ∀ x y : D, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ) (hA : A.IsInvertible) {v : Lp H 2 μ₀}
     (hv : v ∈ (domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι A).rangeᗮ) :
     v = 0 := by
+  have : CompleteSpace D := ContinuousLinearMap.completeSpace_of_isInvertible hA
   obtain ⟨e, rfl⟩ := hA
   let μ := (volume : Measure ℝ).restrict ((⊤ : Opens ℝ) : Set ℝ)
   let x := (e.symm : H →L[ℝ] D).compLpL 2 μ v
@@ -659,10 +562,12 @@ private theorem eq_zero_of_mem_orthogonal_range_domainTrajectoryOperator
 theorem bijective_domainTrajectoryOperator (hSymm : ∀ x y : D, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ)
     (hA : A.IsInvertible) :
     Function.Bijective (domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι A) := by
+  have : CompleteSpace D := ContinuousLinearMap.completeSpace_of_isInvertible hA
   set T := domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι A
-  let C : NNReal := ⟨√(1 + ‖A.inverse‖ ^ 2), Real.sqrt_nonneg _⟩
+  let C : NNReal := ⟨max ‖A.inverse‖ 1, by positivity⟩
   have hanti : AntilipschitzWith C T :=
-    T.antilipschitz_of_bound (norm_le_sqrt_one_add_sq_mul_norm_domainTrajectoryOperator hSymm hA)
+    T.antilipschitz_of_bound
+      (norm_le_max_norm_inverse_one_mul_norm_domainTrajectoryOperator hSymm hA)
   have hclosed : IsClosed (T.range : Set (Lp H 2 μ₀)) :=
     (hanti.isClosedEmbedding T.uniformContinuous).isClosed_range
   have := hclosed.completeSpace_coe
@@ -676,42 +581,10 @@ theorem isInvertible_domainTrajectoryOperator (hSymm : ∀ x y : D, ⟪A x, ι y
     (domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι A).IsInvertible :=
   ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le
     (bijective_domainTrajectoryOperator hSymm hA).2
-    (norm_le_sqrt_one_add_sq_mul_norm_domainTrajectoryOperator hSymm hA)
-
-/-- On `L²(ℝ)`, for `ι`-symmetric invertible `A`, `‖(∂s ∘ ι + A).inverse‖ ≤ √(1 + ‖A.inverse‖²)`. -/
-theorem norm_inverse_domainTrajectoryOperator_le (hSymm : ∀ x y : D, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ)
-    (hA : A.IsInvertible) :
-    ‖(domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι A).inverse‖ ≤
-      √(1 + ‖A.inverse‖ ^ 2) :=
-  ContinuousLinearMap.opNorm_le_bound _ (Real.sqrt_nonneg _)
-    (ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le
-      (bijective_domainTrajectoryOperator hSymm hA).2
-      (norm_le_sqrt_one_add_sq_mul_norm_domainTrajectoryOperator hSymm hA))
-
-/-- Sharp coercive graph-norm estimate on `L²(ℝ)`: for `ι`-symmetric invertible `A`,
-`‖u‖ ≤ max ‖A.inverse‖ 1 * ‖(∂s ∘ ι + A) u‖`. -/
-theorem norm_le_max_norm_inverse_one_mul_norm_domainTrajectoryOperator
-    (hSymm : ∀ x y : D, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ) (hA : A.IsInvertible)
-    (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
-    ‖u‖ ≤ max ‖A.inverse‖ 1 * ‖domainTrajectoryOperator ι A u‖ := by
-  set M : ℝ := max ‖A.inverse‖ 1
-  have hprev_eq : prev _ u = A.inverse.compLp (A.compLp (prev _ u)) := by
-    rw [ContinuousLinearMap.compLp_compLp,
-      show A.inverse.comp A = ContinuousLinearMap.id ℝ D from
-        ContinuousLinearMap.ext hA.inverse_apply_self, ContinuousLinearMap.id_compLp]
-  have hprev_le : ‖prev _ u‖ ≤ M * ‖A.compLp (prev _ u)‖ :=
-    (congrArg norm hprev_eq).trans_le <|
-      (A.inverse.norm_compLp_le _).trans (by gcongr; exact le_max_left _ _)
-  have hprev_sq : ‖prev _ u‖ ^ 2 ≤ M ^ 2 * ‖A.compLp (prev _ u)‖ ^ 2 := by
-    rw [← mul_pow]; exact pow_le_pow_left₀ (norm_nonneg _) hprev_le 2
-  have h1M2 : 1 ≤ M ^ 2 := by nlinarith [le_max_right ‖A.inverse‖ (1 : ℝ)]
-  refine le_of_pow_le_pow_left₀ two_ne_zero (by positivity) ?_
-  rw [norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq, mul_pow,
-    norm_domainTrajectoryOperator_sq hSymm u, ContinuousLinearMap.compLpL_apply]
-  nlinarith [sq_nonneg ‖weakFDeriv _ u‖]
+    (norm_le_max_norm_inverse_one_mul_norm_domainTrajectoryOperator hSymm hA)
 
 /-- On `L²(ℝ)`, for `ι`-symmetric invertible `A`,
-`‖(∂s ∘ ι + A).inverse‖ ≤ max ‖A.inverse‖ 1`. -/
+`‖(∂s ∘ ι + A).inverse‖ ≤ max ‖A.inverse‖ 1` (improved upper bound). -/
 theorem norm_inverse_domainTrajectoryOperator_le_max
     (hSymm : ∀ x y : D, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ) (hA : A.IsInvertible) :
     ‖(domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι A).inverse‖ ≤
@@ -740,6 +613,10 @@ theorem index_domainTrajectoryOperator (hSymm : ∀ x y : D, ⟪A x, ι y⟫_ℝ
     (hA : A.IsInvertible) :
     (domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι A).index = 0 :=
   ContinuousLinearMap.index_eq_zero_of_bijective _ (bijective_domainTrajectoryOperator hSymm hA)
+
+section Fredholm
+
+variable [CompleteSpace D]
 
 /-- On `L²(ℝ)`, when `ι` is injective, `A` is `ι`-symmetric, and `A.ker ≠ ⊥`, the range of
 `domainTrajectoryOperator ι A` is not closed. -/
@@ -803,6 +680,8 @@ theorem isInvertible_domainTrajectoryOperator_iff (hι : Function.Injective ι)
       A.IsInvertible :=
   ⟨fun hT ↦ (isFredholm_domainTrajectoryOperator_iff hι hSymm hAF hAi).mp hT.isFredholm,
     isInvertible_domainTrajectoryOperator hSymm⟩
+
+end Fredholm
 
 end Symmetric
 

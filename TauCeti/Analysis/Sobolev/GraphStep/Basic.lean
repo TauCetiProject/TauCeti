@@ -59,8 +59,8 @@ whose exponent is two whatever `p` is.  That is what makes the squared-norm iden
 * `TauCeti.WeakDerivStep.hasWeakFDerivOn_of_hasSum`: closedness of weak derivatives under
   unconditional sums.
 * `TauCeti.WeakDerivStep.postcompBaseL`: postcomposing the selected field with a continuous linear
-  map `T : F →L[ℝ] G`, landing in `W^{1,p}(Ω; G)`, with its projection, norm, zero, composition,
-  and directional-derivative lemmas.
+  map `T : F →L[ℝ] G`, landing in `W^{1,p}(Ω; G)`, with its projection, norm, zero, identity,
+  linearity, composition, and directional-derivative lemmas.
 * `TauCeti.WeakDerivStep.toIdL`: pushforward along `base` to the weak-derivative graph over the
   identity on `Lp F p (mu.restrict Omega)`.
 * `TauCeti.WeakDerivStep.mkLine`: on the line, constructing an element of `WeakDerivStep` from a
@@ -510,7 +510,7 @@ theorem prev_postcompBaseL [IsLocallyFiniteMeasure (mu.restrict Omega)]
     (u : WeakDerivStep mu Omega p base) :
     prev (ContinuousLinearMap.id ℝ (Lp G p (mu.restrict Omega))) (postcompBaseL base T u) =
       T.compLp (base (prev base u)) := by
-  rw [prev_coe]; rfl
+  simp [prev_coe, postcompBaseL]
 
 /-- The weak derivative of `postcompBaseL base T u` is `compL T` postcomposed with
 `weakFDeriv base u`. -/
@@ -520,7 +520,7 @@ theorem weakFDeriv_postcompBaseL [IsLocallyFiniteMeasure (mu.restrict Omega)]
     (u : WeakDerivStep mu Omega p base) :
     weakFDeriv (ContinuousLinearMap.id ℝ (Lp G p (mu.restrict Omega))) (postcompBaseL base T u) =
       (ContinuousLinearMap.compL ℝ E F G T).compLp (weakFDeriv base u) := by
-  rw [weakFDeriv_coe]; rfl
+  simp [weakFDeriv_coe, postcompBaseL]
 
 /-- Postcomposing with the zero map gives the zero operator on `WeakDerivStep`. -/
 @[simp]
@@ -533,6 +533,42 @@ theorem postcompBaseL_zero [IsLocallyFiniteMeasure (mu.restrict Omega)]
       ContinuousLinearMap.smul_compLp, zero_smul]
   · rw [weakFDeriv_postcompBaseL, zero_apply, map_zero, ← weakFDerivL_apply _ 0, map_zero,
       ← zero_smul ℝ (0 : (E →L[ℝ] F) →L[ℝ] (E →L[ℝ] G)), ContinuousLinearMap.smul_compLp, zero_smul]
+
+/-- Postcomposing with the identity map agrees with `toIdL`. -/
+@[simp]
+theorem postcompBaseL_id [IsLocallyFiniteMeasure (mu.restrict Omega)]
+    (base : X →L[ℝ] Lp F p (mu.restrict Omega)) :
+    postcompBaseL base (ContinuousLinearMap.id ℝ F) = toIdL base := by
+  ext1 u
+  refine ext_prev_weakFDeriv ?_ ?_
+  · simp [ContinuousLinearMap.id_compLp]
+  · have hcomp : ContinuousLinearMap.compL ℝ E F F (ContinuousLinearMap.id ℝ F) =
+        ContinuousLinearMap.id ℝ (E →L[ℝ] F) := by ext; simp
+    simp [hcomp, ContinuousLinearMap.id_compLp]
+
+/-- Postcomposition is additive in the linear map. -/
+@[simp]
+theorem postcompBaseL_add [IsLocallyFiniteMeasure (mu.restrict Omega)]
+    (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (T₁ T₂ : F →L[ℝ] G) :
+    postcompBaseL base (T₁ + T₂) = postcompBaseL base T₁ + postcompBaseL base T₂ := by
+  ext1 u
+  refine ext_prev_weakFDeriv ?_ ?_
+  · simp [ContinuousLinearMap.add_compLp]
+  · simp only [add_apply, ← weakFDerivL_apply]
+    rw [map_add]
+    simp [ContinuousLinearMap.add_compLp]
+
+/-- Postcomposition commutes with scalar multiplication in the linear map. -/
+@[simp]
+theorem postcompBaseL_smul [IsLocallyFiniteMeasure (mu.restrict Omega)]
+    (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (c : ℝ) (T : F →L[ℝ] G) :
+    postcompBaseL base (c • T) = c • postcompBaseL base T := by
+  ext1 u
+  refine ext_prev_weakFDeriv ?_ ?_
+  · simp [ContinuousLinearMap.smul_compLp]
+  · simp only [smul_apply, ← weakFDerivL_apply]
+    rw [map_smul]
+    simp [ContinuousLinearMap.smul_compLp]
 
 /-- Postcomposing sequentially with `T₂` and `T₁` agrees with postcomposing with `T₁ ∘L T₂`. -/
 theorem postcompBaseL_comp [IsLocallyFiniteMeasure (mu.restrict Omega)]
