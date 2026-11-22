@@ -141,6 +141,12 @@ instance countable_relations_symbSublang [Countable R] :
     cases congrArg Subtype.val h
     rfl
 
+/-- A symbol sublanguage with countably many relation symbols has countably many relation
+symbols of each arity. -/
+instance countable_relations_arity_symbSublang [Countable R] (n : ℕ) :
+    Countable ((symbSublang F R).Relations n) :=
+  (sigma_mk_injective (i := n)).countable
+
 /-- Any symbol sublanguage of a relational language is relational. -/
 instance isRelational_symbSublang [L.IsRelational] : (symbSublang F R).IsRelational :=
   fun _ => ⟨fun f => isEmptyElim f.val⟩

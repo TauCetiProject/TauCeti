@@ -12,7 +12,8 @@ public import Mathlib.RingTheory.PowerSeries.Basic
 
 Mathlib's `PowerSeries.constantCoeff` is the constant coefficient `S⟦X⟧ → S` as a ring
 homomorphism. This file records it as a homomorphism of `A`-algebras for any commutative semiring
-`A` over which `S` is an algebra: evaluation at `X = 0`.
+`A` over which `S` is an algebra: evaluation at `X = 0`. It also records how a change of
+coefficients `map f` acts on the constant coefficient.
 
 ## Main definitions
 
@@ -22,6 +23,8 @@ homomorphism. This file records it as a homomorphism of `A`-algebras for any com
 
 * `PowerSeries.constantCoeffAlgHom_comp_toAlgHom`: evaluation at `X = 0` is a retraction of the
   inclusion of constants.
+* `PowerSeries.constantCoeff_map`: a change of coefficients `map f` acts on the constant
+  coefficient by `f`, as `MvPowerSeries.constantCoeff_map` does for multivariate power series.
 -/
 
 public section
@@ -58,5 +61,17 @@ theorem constantCoeffAlgHom_comp_toAlgHom {S : Type*} [CommSemiring S] [Algebra 
   AlgHom.ext fun s ↦ by simp
 
 end ConstantCoeff
+
+section Map
+
+variable {R S : Type*} [Semiring R] [Semiring S]
+
+/-- A change of coefficients `map f` acts on the constant coefficient by `f`. -/
+@[simp]
+theorem constantCoeff_map (f : R →+* S) (φ : R⟦X⟧) :
+    constantCoeff (map f φ) = f (constantCoeff φ) := by
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply]
+
+end Map
 
 end PowerSeries

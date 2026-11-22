@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import TauCeti.Analysis.SpecialFunctions.Log.TwoAdd
 
 /-!
-# The growth scale `(1 + r) log (2 + r)`
+# Logarithmic growth scales
 
 Growth bounds for entire functions of order one, such as `1/Γ`, are naturally obtained in the
 shape `A r log (1 + r) + B r` with `r = ‖s‖`. The single scale `(1 + r) log (2 + r)` absorbs both
@@ -20,6 +21,8 @@ terms for `r ≥ 0`, since `log (2 + r) ≥ log 2 ≥ 1/2`.
   `A r log (1 + r) + B r ≤ (A + 2 B) (1 + r) log (2 + r)`.
 * `Real.mul_log_le_mul_log_one_add`: for `1 ≤ t` and any `p : ℝ`,
   `p log t ≤ p log (1 + t) + |p| log 2`.
+* `Real.mul_add_two_mul_log_le`: for `c ≥ 0` and `r ≥ 1`,
+  `(c r + 2) log (c r + 2) ≤ (c + 2) (2 log (c + 2) + 1) r log (1 + r)`.
 -/
 
 public section
@@ -66,5 +69,35 @@ theorem mul_log_le_mul_log_one_add (p : ℝ) {t : ℝ} (ht : 1 ≤ t) :
       rw [abs_mul]
       exact mul_le_mul_of_nonneg_left habs (abs_nonneg p)
   linarith
+
+/-- For a nonnegative scale `c` and radius `r ≥ 1`, an affine logarithmic growth term is
+bounded by a constant depending on `c` times `r * log (1 + r)`. -/
+theorem mul_add_two_mul_log_le {c r : ℝ} (hc : 0 ≤ c) (hr : 1 ≤ r) :
+    (c * r + 2) * log (c * r + 2) ≤
+      (c + 2) * (2 * log (c + 2) + 1) * r * log (1 + r) := by
+  let K := c + 2
+  let D := K * (2 * log K + 1)
+  have hK : 1 < K := by dsimp [K]; linarith
+  have hL : 1 / 2 ≤ log (1 + r) := by
+    convert one_half_le_log_two_add (r := r - 1) (by linarith) using 1
+    congr 1
+    ring
+  have hy : 0 < c * r + 2 := by positivity
+  have hyK : c * r + 2 ≤ K * r := by
+    dsimp [K]
+    nlinarith
+  have hlog : log (c * r + 2) ≤ (2 * log K + 1) * log (1 + r) := by
+    have h := log_le_log hy hyK
+    rw [log_mul (by positivity : K ≠ 0) (by positivity : r ≠ 0)] at h
+    have hrlog : log r ≤ log (1 + r) :=
+      log_le_log (by positivity) (by linarith)
+    nlinarith [mul_le_mul_of_nonneg_left hL (log_pos hK).le]
+  have hprod : (c * r + 2) * log (c * r + 2) ≤
+      D * r * log (1 + r) := by
+    have h := mul_le_mul hyK hlog (log_nonneg (by nlinarith : 1 ≤ c * r + 2))
+      (by positivity : 0 ≤ K * r)
+    dsimp [D]
+    nlinarith [h]
+  exact hprod
 
 end Real

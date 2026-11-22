@@ -44,8 +44,10 @@ derivatives are bounded independently of `R`, so its `(k, n)` seminorm is `O(R�
   `𝓢(E, F)`.
 * `SchwartzMap.hasCompactSupport_smulLeftCLM_comp_inv_smul`: the truncations are compactly
   supported.
-* `SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow`: the dyadic truncations
-  `φ (2^{-N} ·) • f` by a `ContDiffBump` converge to `f`, for complex-valued multipliers.
+* `SchwartzMap.tendsto_smulLeftCLM_contDiffBump`: the truncations `φ (R⁻¹ ·) • f` by a
+  `ContDiffBump` converge to `f` as `R → ∞`, for complex-valued multipliers.
+* `ContDiffBump.lowPassSchwartz`: the low-pass symbol `φ (R⁻¹ ·)` of a `ContDiffBump`, as a
+  complex Schwartz function.
 * Mathlib's `SchwartzMap.dense_hasCompactSupport`: compactly supported functions are dense in
   `𝓢(E, F)` for finite-dimensional `E`.
 * `IsCompact.exists_schwartzMap_cutoff`: a compact subset `K` of an open set `U` has a compactly
@@ -201,16 +203,17 @@ section Truncation
 
 variable [FiniteDimensional ℝ E] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
 
-/-- The low-pass truncations `φ (2^{-N} ·) • f` of a Schwartz function converge to `f` in the
-Schwartz topology. -/
-theorem tendsto_smulLeftCLM_contDiffBump_two_pow (φ : ContDiffBump (0 : E)) (f : 𝓢(E, G)) :
-    Tendsto (fun N : ℕ ↦ smulLeftCLM G (fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ)) f) atTop
-      (𝓝 f) := by
+/-- The low-pass truncations `φ (R⁻¹ ·) • f` of a Schwartz function by a `ContDiffBump`, for
+complex-valued multipliers, converge to `f` in the Schwartz topology along any family of scales
+`R → ∞`. -/
+theorem tendsto_smulLeftCLM_contDiffBump {α : Type*} {l : Filter α} {R : α → ℝ}
+    (hR : Tendsto R l atTop) (φ : ContDiffBump (0 : E)) (f : 𝓢(E, G)) :
+    Tendsto (fun a ↦ smulLeftCLM G (fun ξ ↦ (φ ((R a)⁻¹ • ξ) : ℂ)) f) l (𝓝 f) := by
   have hφ : (⇑φ).HasTemperateGrowth := φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
   have h := (tendsto_smulLeftCLM_comp_smul φ.contDiff φ.hasCompactSupport φ.eventuallyEq_one
-    f).comp (tendsto_inv_atTop_zero.comp (tendsto_pow_atTop_atTop_of_one_lt (one_lt_two (α := ℝ))))
-  refine h.congr fun N ↦ ?_
-  have hc : (fun ξ ↦ φ (((2 : ℝ) ^ N)⁻¹ • ξ)).HasTemperateGrowth := by fun_prop
+    f).comp (tendsto_inv_atTop_zero.comp hR)
+  refine h.congr fun a ↦ ?_
+  have hc : (fun ξ ↦ φ ((R a)⁻¹ • ξ)).HasTemperateGrowth := by fun_prop
   rw [Function.comp_apply, Function.comp_apply, ← smulLeftCLM_ofReal ℂ hc,
     RCLike.ofReal_eq_complex_ofReal]
 
@@ -262,6 +265,36 @@ theorem hasSum_smulLeftCLM_latticeBump_sub (f : 𝓢(EuclideanSpace ℝ (Fin n),
 end Lattice
 
 end SchwartzMap
+
+namespace ContDiffBump
+
+variable [FiniteDimensional ℝ E] (φ : ContDiffBump (0 : E))
+
+/-- The **low-pass symbol** `φ (R⁻¹ ·)` at a scale `R ≠ 0`, as a complex Schwartz function: it is
+smooth and supported in the closed ball of radius `|R| φ.rOut`. -/
+noncomputable def lowPassSchwartz {R : ℝ} (hR : R ≠ 0) : 𝓢(E, ℂ) :=
+  HasCompactSupport.toSchwartzMap (f := fun ξ ↦ (φ (R⁻¹ • ξ) : ℂ))
+    ((φ.hasCompactSupport.comp_smul (inv_ne_zero hR)).comp_left Complex.ofReal_zero)
+    (Complex.ofRealCLM.contDiff.comp (φ.contDiff.comp (contDiff_const_smul _)))
+
+/-- The values of the low-pass Schwartz symbol `φ (R⁻¹ ·)`. -/
+@[simp]
+theorem lowPassSchwartz_apply {R : ℝ} (hR : R ≠ 0) (ξ : E) :
+    φ.lowPassSchwartz hR ξ = (φ (R⁻¹ • ξ) : ℂ) :=
+  (rfl)
+
+/-- The low-pass Schwartz symbol `φ (R⁻¹ ·)`, as a function. -/
+theorem coe_lowPassSchwartz {R : ℝ} (hR : R ≠ 0) :
+    ⇑(φ.lowPassSchwartz hR) = fun ξ ↦ (φ (R⁻¹ • ξ) : ℂ) :=
+  (rfl)
+
+/-- The low-pass Schwartz symbol at scale `R` is the dilation of the one at scale `1`. -/
+theorem coe_lowPassSchwartz_eq_comp {R : ℝ} (hR : R ≠ 0) :
+    ⇑(φ.lowPassSchwartz hR) = fun ξ ↦ φ.lowPassSchwartz one_ne_zero (R⁻¹ • ξ) := by
+  ext ξ
+  simp
+
+end ContDiffBump
 
 /-- A compact subset `K` of an open set `U` of a finite-dimensional space has a compactly supported
 Schwartz cutoff, with topological support in `U` and equal to `1` on a neighbourhood of `K`. -/
