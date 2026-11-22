@@ -169,6 +169,7 @@ theorem singularKronecker_angularClass_fundamentalClass :
 
 /-- **The cup square of the angular class vanishes**: `θ_p ⌣ θ_p = 0`, because
 `H²(ℝ / pℤ; ℤ) = 0` for the compact one-dimensional manifold `ℝ / pℤ`. -/
+@[simp]
 theorem singularCup_angularClass_self :
     (TopCat.of (AddCircle p)).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
       (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 1 (1 + 1) rfl (angularClass p) (angularClass p) = 0 :=
