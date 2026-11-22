@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Maps.Strict.Module
 public import TauCeti.Analysis.Normed.Operator.RingOpNorm
 public import TauCeti.Topology.MetricSpace.Algebra
 import TauCeti.Topology.Algebra.OpenMapping.BanachSchauder

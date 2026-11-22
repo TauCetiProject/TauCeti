@@ -29,22 +29,20 @@ through the quotient.
 A continuous linear functional taking a nonzero value on a vector `u` splits the space as the
 product of the scalars and the kernel (`TauCeti.exists_homeomorph_prod_ker`).
 
-Over a topological ring with a zero sequence of units (`TauCeti.HasZeroSequenceOfUnits`), the
-Banach–Schauder open mapping theorem yields:
+For `T₀` complete first-countable uniform modules over a topological ring with a zero sequence of
+units (`TauCeti.HasZeroSequenceOfUnits`), the Banach–Schauder open mapping theorem yields:
 * `ContinuousLinearMap.equivProdOfSurjectiveOfIsComplOfComplete`: two surjective continuous linear
   maps with complementary kernels give an isomorphism `E ≃L[R] F × G`.
-* `ContinuousLinearMap.isClosed_range_of_isCompl_of_isClosed_of_complete`: a continuous linear map
-  whose range admits a closed algebraic complement has closed range.
 * `Submodule.IsCompl.isTopCompl_of_isClosed_of_complete`,
   `Submodule.isTopCompl_iff_isCompl_isClosed_of_complete`,
   `Submodule.ClosedComplemented.of_isCompl_isClosed_of_complete`, and
-  `Submodule.closedComplemented_iff_isClosed_exists_isClosed_isCompl_of_complete`: in a `T₀`
-  complete first-countable uniform module over such a ring, two closed algebraic complements are
-  topological complements.
+  `Submodule.closedComplemented_iff_isClosed_exists_isClosed_isCompl_of_complete`: two closed
+  algebraic complements are topological complements.
 
-The product equivalence, closed-complement criteria, and closed-range coproduct proof generalize
-the normed-space results in `Mathlib/Analysis/Normed/Module/Complemented.lean` and the Banach
-coproduct argument in `TauCeti/Analysis/Fredholm/ClosedRange.lean`.
+The companion closed-range criteria for a range admitting a closed complement or finite-dimensional
+cokernel live in `TauCeti.Topology.Algebra.OpenMapping.ClosedRange`. The product equivalence and
+closed-complement criteria generalize the normed-space results in
+`Mathlib/Analysis/Normed/Module/Complemented.lean`.
 -/
 
 public section
@@ -211,7 +209,8 @@ theorem equivProdOfSurjectiveOfIsComplOfComplete_apply {G : Type*}
     (hfg : IsCompl f.ker g.ker) (x : E) :
     f.equivProdOfSurjectiveOfIsComplOfComplete g hf hg hfg x = (f x, g x) := by
   dsimp only [equivProdOfSurjectiveOfIsComplOfComplete]
-  exact (LinearEquiv.toContinuousLinearEquivOfContinuousOfComplete_apply _ _ x).trans rfl
+  exact (LinearEquiv.toContinuousLinearEquivOfContinuousOfComplete_apply _ _ x).trans
+    (LinearMap.equivProdOfSurjectiveOfIsCompl_apply hf hg hfg x)
 
 @[simp]
 theorem coe_equivProdOfSurjectiveOfIsComplOfComplete {G : Type*}
@@ -220,43 +219,9 @@ theorem coe_equivProdOfSurjectiveOfIsComplOfComplete {G : Type*}
     (f : E →L[R] F) (g : E →L[R] G) (hf : f.range = ⊤) (hg : g.range = ⊤)
     (hfg : IsCompl f.ker g.ker) :
     (f.equivProdOfSurjectiveOfIsComplOfComplete g hf hg hfg : E →L[R] F × G) = f.prod g := by
-  ext x
-  · exact congrArg Prod.fst (equivProdOfSurjectiveOfIsComplOfComplete_apply f g hf hg hfg x)
-  · exact congrArg Prod.snd (equivProdOfSurjectiveOfIsComplOfComplete_apply f g hf hg hfg x)
-
-/-- **Closed range from a closed algebraic complement.** If `f : E →L[R] F` is a continuous linear
-map between complete first-countable uniform modules (with `T₀` target) over a topological ring
-with a zero sequence of units, and `G` is a closed algebraic complement of `f.range`, then `f.range`
-is closed.
-
-No injectivity assumption (`f.ker = ⊥`) is required: the coproduct `Φ(x, y) = f x + y` from
-`E × G` onto `F` is a quotient map by `ContinuousLinearMap.isQuotientMap_of_complete`, and the
-preimage `Φ ⁻¹' f.range = {p | p.2 = 0}` is closed. -/
-theorem isClosed_range_of_isCompl_of_isClosed_of_complete [ContinuousSMul R F]
-    (f : E →L[R] F) (G : Submodule R F) (hG : IsCompl f.range G)
-    (hG_closed : IsClosed (G : Set F)) :
-    IsClosed (f.range : Set F) := by
-  have : CompleteSpace G := hG_closed.completeSpace_coe
-  have : (𝓤 F).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  let Φ : (E × G) →L[R] F := f.coprod G.subtypeL
-  have hsurj : Surjective Φ := LinearMap.range_eq_top.mp <| by
-    dsimp only [Φ]
-    rw [ContinuousLinearMap.range_coprod, Submodule.toLinearMap_subtypeL, Submodule.range_subtype,
-      hG.sup_eq_top]
-  have hpre : Φ ⁻¹' (f.range : Set F) = {p : E × G | p.snd = 0} := by
-    ext p
-    simp only [Set.mem_preimage, SetLike.mem_coe, Set.mem_ofPred_eq, Φ, coprod_apply,
-      Submodule.coe_subtypeL, Submodule.coe_subtype]
-    have hfp : f p.fst ∈ f.range := f.mem_range_self p.fst
-    refine ⟨fun hmem ↦ ?_, fun h0 ↦ by simp [h0]⟩
-    have hb : (p.snd : F) ∈ f.range := by simpa using f.range.sub_mem hmem hfp
-    have hbot : (p.snd : F) ∈ f.range ⊓ G := ⟨hb, p.snd.property⟩
-    rw [hG.inf_eq_bot] at hbot
-    exact Submodule.coe_eq_zero.mp (by simpa using hbot)
-  have hclosed : IsClosed (Φ ⁻¹' (f.range : Set F)) := by
-    rw [hpre]
-    exact isClosed_eq continuous_snd continuous_const
-  exact (Φ.isQuotientMap_of_complete hsurj).isClosed_preimage.mp hclosed
+  ext x <;>
+    simp only [ContinuousLinearEquiv.coe_coe, equivProdOfSurjectiveOfIsComplOfComplete_apply,
+      prod_apply]
 
 end ContinuousLinearMap
 

@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Topology.Algebra.OpenMapping.Sequence
 public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
-import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Topology.Algebra.OpenSubgroup
+import TauCeti.Algebra.BigOperators.Intervals
 
 /-!
 # Removing the closure from Henkel's approximation
@@ -24,12 +24,13 @@ Two settings are handled here.
   (`TauCeti.mem_image_of_mem_closure_image_of_add_subset` and
   `TauCeti.isOpenMap_of_closure_image_mem_nhds`): along a sequence of sets `V : ℕ → Set M`
   with `V 0` closed, `0 ∈ V n`, `V (n + 1) + V (n + 1) ⊆ V n`, and shrinking into every
-  neighbourhood of zero, every tail sum `∑_{i = n}^{n + m - 1} x i` lies in `V n`, so the partial
-  sums form a Cauchy sequence inside `V 0`. Completeness gives a limit in `V 0`, and regularity of
-  the target (`hasBasis_nhds_closure`) sends the residuals to zero. When `𝓝 (0 : M)` is countably
-  generated, such a sequence exists inside any neighbourhood of zero, so `f` is open once the
-  closure of the image of every neighbourhood of zero is a neighbourhood of zero. No
-  nonarchimedean, locally convex, or normed structure is needed.
+  neighbourhood of zero, if the errors satisfy `x i ∈ V (i + 1)`, every tail sum
+  `∑_{i = n}^{n + m - 1} x i` lies in `V n`, so the partial sums form a Cauchy sequence inside
+  `V 0`. Completeness gives a limit in `V 0`, and regularity of the target (`hasBasis_nhds_closure`)
+  sends the residuals to zero. When `𝓝 (0 : M)` is countably generated, such a sequence exists
+  inside any neighbourhood of zero, so `f` is open once the closure of the image of every
+  neighbourhood of zero is a neighbourhood of zero. No nonarchimedean, locally convex, or normed
+  structure is needed.
 * **Subgroup bases** (`TauCeti.mem_image_of_mem_closure_image`): when the basis consists of
   subgroups `V n`, `V 0 + V 0 ⊆ V 0` keeps the limit in the *same* subgroup `V 0` rather than a
   strictly larger neighbourhood, giving the sharper inclusion `closure (f '' V 0) ⊆ f '' V 0`.
@@ -61,30 +62,6 @@ open scoped Pointwise Uniformity
 
 namespace TauCeti
 
-/-- Tail sums along a doubling sequence `V (n + 1) + V (n + 1) ⊆ V n` stay inside `V n`. -/
-private theorem sum_Ico_mem_of_add_subset {M : Type*} [AddCommMonoid M]
-    {V : ℕ → Set M} (h0 : ∀ n, (0 : M) ∈ V n)
-    (hadd : ∀ n, V (n + 1) + V (n + 1) ⊆ V n)
-    {x : ℕ → M} (hx : ∀ n, x n ∈ V (n + 1)) (m n : ℕ) :
-    ∑ i ∈ Finset.Ico n (n + m), x i ∈ V n := by
-  induction m generalizing n with
-  | zero => simpa using h0 n
-  | succ m ih =>
-    have hlt : n < n + (m + 1) := by omega
-    have hend : n + (m + 1) = (n + 1) + m := by omega
-    rw [Finset.sum_eq_sum_Ico_succ_bot hlt, hend]
-    exact hadd n (Set.add_mem_add (hx n) (ih (n + 1)))
-
-/-- Ordered differences of partial sums along a doubling sequence stay inside `V p`. -/
-private theorem sum_range_sub_sum_range_mem_of_add_subset {M : Type*} [AddCommGroup M]
-    {V : ℕ → Set M} (h0 : ∀ n, (0 : M) ∈ V n)
-    (hadd : ∀ n, V (n + 1) + V (n + 1) ⊆ V n)
-    {x : ℕ → M} (hx : ∀ n, x n ∈ V (n + 1)) {p q : ℕ} (hpq : p ≤ q) :
-    (∑ i ∈ Finset.range q, x i) - ∑ i ∈ Finset.range p, x i ∈ V p := by
-  have hend : p + (q - p) = q := Nat.add_sub_of_le hpq
-  rw [(Finset.sum_Ico_eq_sub x hpq).symm, ← hend]
-  exact sum_Ico_mem_of_add_subset h0 hadd hx (q - p) p
-
 variable {M N : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M] [CompleteSpace M]
   [AddGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N] [T0Space N]
 
@@ -94,9 +71,9 @@ sets containing `0` in a complete uniform additive group `M` such that `V 0` is 
 If `f : M → N` is an additive map continuous at zero and each `closure (f '' V (n + 2))` is a
 neighbourhood of zero, then every point of `closure (f '' V 1)` lies in `f '' V 0`.
 
-No nonarchimedean or vector-space hypothesis is needed: the doubling bound
-`V (n + 1) + V (n + 1) ⊆ V n` controls arbitrary finite tail sums, making the partial sums Cauchy
-inside `V 0`. -/
+No nonarchimedean or vector-space hypothesis is needed: for errors `x i ∈ V (i + 1)`, the doubling
+bound `V (n + 1) + V (n + 1) ⊆ V n` controls arbitrary finite tail sums, making the partial sums
+Cauchy inside `V 0`. -/
 theorem mem_image_of_mem_closure_image_of_add_subset {F : Type*} [FunLike F M N]
     [AddMonoidHomClass F M N] (f : F) (hf : ContinuousAt (f : M → N) 0) {V : ℕ → Set M}
     (hV0 : IsClosed (V 0)) (h0 : ∀ n, (0 : M) ∈ V n)
@@ -113,18 +90,11 @@ theorem mem_image_of_mem_closure_image_of_add_subset {F : Type*} [FunLike F M N]
   let s : ℕ → M := fun k ↦ ∑ i ∈ Finset.range k, x i
   have hs_mem : ∀ k, s k ∈ V 0 := fun k ↦ by
     simpa only [s, zero_add, Nat.Ico_zero_eq_range] using
-      sum_Ico_mem_of_add_subset h0 hadd hxV k 0
-  have hs_cauchy : CauchySeq s := by
-    rw [cauchySeq_iff]
-    intro u hu
-    rw [uniformity_eq_comap_nhds_zero, Filter.mem_comap] at hu
-    obtain ⟨U, hU, hUu⟩ := hu
-    obtain ⟨K, hK⟩ := hbasis _ (Filter.inter_mem hU (neg_mem_nhds_zero M hU))
-    refine ⟨K, fun p hp q hq ↦ hUu (Set.mem_preimage.mpr ?_)⟩
-    rcases le_total p q with hpq | hqp
-    · exact (hK (hanti hp (sum_range_sub_sum_range_mem_of_add_subset h0 hadd hxV hpq))).1
-    · simpa only [Set.mem_neg, neg_sub] using
-        (hK (hanti hq (sum_range_sub_sum_range_mem_of_add_subset h0 hadd hxV hqp))).2
+      Finset.sum_Ico_mem_of_add_subset h0 hadd hxV k 0
+  have hs_cauchy : CauchySeq s :=
+    (𝓝 (0 : M)).basis_sets.uniformity_of_nhds_zero_swapped.cauchySeq_iff'.mpr fun U hU ↦
+      let ⟨K, hK⟩ := hbasis U hU
+      ⟨K, fun _ hn ↦ hK (Finset.sum_range_sub_sum_range_mem_of_add_subset h0 hadd hxV hn)⟩
   obtain ⟨a, ha⟩ := cauchySeq_tendsto_of_complete hs_cauchy
   refine ⟨a, hV0.mem_of_tendsto ha (Eventually.of_forall hs_mem), ?_⟩
   have hpart : Tendsto (fun n ↦ (f : M → N) (s (n + 1))) atTop (𝓝 ((f : M → N) a)) :=

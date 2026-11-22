@@ -35,7 +35,7 @@ normability, or separability.
   `ContinuousLinearEquiv.ofBijectiveOfComplete`,
   `ContinuousLinearMap.isUnit_iff_bijective_of_complete`,
   `ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap_of_complete`,
-  `IsUniformAddGroup.eq_of_le_of_complete`.
+  `IsUniformAddGroup.eq_of_toTopologicalSpace_le_of_complete`.
   In particular, two comparable complete first-countable uniform group structures making a module
   over a topological semiring with a zero sequence of units topological (with the coarser one
   `T₀`) must coincide.
@@ -46,24 +46,22 @@ normability, or separability.
   `ContinuousLinearMap.ofSeqClosedGraphOfComplete`.
   First-countability of the product comes directly from countable generation of `𝓝 0`
   (`TauCeti.ContinuousConstVAdd.toFirstCountableTopology`), with no metric required.
-* **Strictness and range equivalence**:
-  `LinearMap.isStrictMap_of_isClosed_range_of_complete`,
-  `ContinuousLinearMap.isStrictMap_of_isClosed_range_of_complete`,
-  `ContinuousLinearMap.isOpenMap_rangeRestrict_of_isClosed_range_of_complete`, and
-  `ContinuousLinearMap.equivRangeOfComplete`.
+* **Closed-range strictness**:
+  `ContinuousLinearMap.isStrictMap_of_isClosed_range_of_complete`.
 
-Complement and finite-cokernel closed-range applications built on these results live in
-`TauCeti.Topology.Algebra.Module.Complement` and `TauCeti.Topology.Algebra.Module.FiniteDimension`,
-respectively.
+Complement and closed-range applications built on these results live in
+`TauCeti.Topology.Algebra.Module.Complement` and
+`TauCeti.Topology.Algebra.OpenMapping.ClosedRange`, respectively.
 
 ## Attribution
 
-The API shapes for the continuous inverse, closed graph, and range-equivalence results generalise
-the Banach-space theorems in `Mathlib/Analysis/Normed/Operator/Banach.lean`, and their proofs and
-constructor packaging are adapted directly from the Tate-ring formalisation in
-`TauCeti/Analysis/Normed/Operator/RingOpNorm/OpenMapping.lean` (covering the inverse and
-bijective-equivalence constructors, unit criterion, closed-graph theorems and constructors, and
-closed-range strictness, openness, and range-equivalence results).
+The API shapes for the continuous inverse, closed graph, and unit-criterion results generalise
+the Banach-space theorems in `Mathlib/Analysis/Normed/Operator/Banach.lean`. Specifically,
+`ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap_of_complete` is adapted directly from
+Mathlib's `ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap`, while the remaining constructor
+packaging and proofs (the inverse and bijective-equivalence constructors, the bijectivity unit
+criterion, the closed-graph theorems and constructors, and closed-range strictness) are adapted
+from the Tate-ring formalisation in `TauCeti/Analysis/Normed/Operator/RingOpNorm/OpenMapping.lean`.
 
 ## References
 
@@ -187,7 +185,7 @@ first-countable uniform modules (with `T₀` target) over a topological semiring
 sequence of units is a continuous linear equivalence. -/
 noncomputable def ofBijectiveOfComplete (f : E →L[R] F) (hf : Bijective f) : E ≃L[R] F :=
   (LinearEquiv.ofBijective f.toLinearMap hf).toContinuousLinearEquivOfContinuousOfComplete
-    f.continuous
+    (f.continuous.congr fun x ↦ (LinearEquiv.ofBijective_apply f.toLinearMap (hf := hf) x).symm)
 
 @[simp]
 theorem toLinearEquiv_ofBijectiveOfComplete (f : E →L[R] F) (hf : Bijective f) :
@@ -195,30 +193,20 @@ theorem toLinearEquiv_ofBijectiveOfComplete (f : E →L[R] F) (hf : Bijective f)
   (rfl)
 
 @[simp]
+theorem ofBijectiveOfComplete_apply (f : E →L[R] F) (hf : Bijective f) (x : E) :
+    ofBijectiveOfComplete f hf x = f x :=
+  (LinearEquiv.toContinuousLinearEquivOfContinuousOfComplete_apply _ _ x).trans
+    (LinearEquiv.ofBijective_apply f.toLinearMap x)
+
+@[simp]
 theorem coeFn_ofBijectiveOfComplete (f : E →L[R] F) (hf : Bijective f) :
     ⇑(ofBijectiveOfComplete f hf) = f :=
-  (rfl)
+  funext (ofBijectiveOfComplete_apply f hf)
 
 @[simp]
 theorem coe_ofBijectiveOfComplete (f : E →L[R] F) (hf : Bijective f) :
-    (ofBijectiveOfComplete f hf : E →L[R] F) = f := by
-  ext
-  rfl
-
-@[simp]
-theorem ofBijectiveOfComplete_apply (f : E →L[R] F) (hf : Bijective f) (x : E) :
-    ofBijectiveOfComplete f hf x = f x :=
-  (rfl)
-
-@[simp]
-theorem ofBijectiveOfComplete_symm_apply_apply (f : E →L[R] F) (hf : Bijective f) (x : E) :
-    (ofBijectiveOfComplete f hf).symm (f x) = x :=
-  (ofBijectiveOfComplete f hf).symm_apply_apply x
-
-@[simp]
-theorem ofBijectiveOfComplete_apply_symm_apply (f : E →L[R] F) (hf : Bijective f) (y : F) :
-    f ((ofBijectiveOfComplete f hf).symm y) = y :=
-  (ofBijectiveOfComplete f hf).apply_symm_apply y
+    (ofBijectiveOfComplete f hf : E →L[R] F) = f :=
+  ContinuousLinearMap.ext (ofBijectiveOfComplete_apply f hf)
 
 end ContinuousLinearEquiv
 
@@ -252,8 +240,8 @@ semiring `R` with a zero sequence of units, satisfying
 `u₁.toTopologicalSpace ≤ u₂.toTopologicalSpace` (`u₁` finer than `u₂`), `u₂` `T₀`, `ContinuousSMul`
 for `u₁`, and `ContinuousConstSMul` for `u₂`, then `u₁ = u₂` (and in particular their topologies
 agree). -/
-theorem eq_of_le_of_complete (R : Type*) {E : Type*} [Semiring R] [TopologicalSpace R]
-    [TauCeti.HasZeroSequenceOfUnits R] [AddCommGroup E] [Module R E]
+theorem eq_of_toTopologicalSpace_le_of_complete (R : Type*) {E : Type*} [Semiring R]
+    [TopologicalSpace R] [TauCeti.HasZeroSequenceOfUnits R] [AddCommGroup E] [Module R E]
     {u₁ u₂ : UniformSpace E}
     (hu₁ : @IsUniformAddGroup E u₁ _) (hu₂ : @IsUniformAddGroup E u₂ _)
     (hc₁ : @CompleteSpace E u₁) (hc₂ : @CompleteSpace E u₂)
@@ -264,31 +252,12 @@ theorem eq_of_le_of_complete (R : Type*) {E : Type*} [Semiring R] [TopologicalSp
     (hsmul₂ : @ContinuousConstSMul R E u₂.toTopologicalSpace _)
     (hle : u₁.toTopologicalSpace ≤ u₂.toTopologicalSpace) :
     u₁ = u₂ := by
-  have hsmul₁' : ∀ x : E, @ContinuousAt R E _ u₁.toTopologicalSpace (fun r : R ↦ r • x) 0 := by
-    let : TopologicalSpace E := u₁.toTopologicalSpace
-    exact fun _ ↦ (continuous_id.smul continuous_const).continuousAt
-  have hucg₂ : (@uniformity E u₂).IsCountablyGenerated :=
-    @IsUniformAddGroup.uniformity_countably_generated E u₂ _ hu₂ hcg₂
-  have htopgrp₂ : @IsTopologicalAddGroup E u₂.toTopologicalSpace _ :=
-    let : UniformSpace E := u₂
-    have : IsUniformAddGroup E := hu₂
-    inferInstance
-  have hbaire₂ : @BaireSpace E u₂.toTopologicalSpace :=
-    let : UniformSpace E := u₂
-    have : CompleteSpace E := hc₂
-    have : (𝓤 E).IsCountablyGenerated := hucg₂
-    inferInstance
   have hopen_lin : @IsOpenMap E E u₁.toTopologicalSpace u₂.toTopologicalSpace
       (LinearMap.id : E →ₗ[R] E) :=
-    @TauCeti.HasZeroSequenceOfUnits.isOpenMap R E E _ _ _ _ u₁ hu₁ hc₁ hcg₁ _
-      _ u₂.toTopologicalSpace htopgrp₂ ht0 hbaire₂ _ hsmul₂
-      (E →ₗ[R] E) _ _ _ LinearMap.id
-      (by simpa only [LinearMap.id_coe] using surjective_id)
-      (by
-        simpa only [LinearMap.id_coe] using
-          (@Continuous.continuousAt E E u₁.toTopologicalSpace u₂.toTopologicalSpace id 0
-            (continuous_id_iff_le.mpr hle)))
-      hsmul₁'
+    @LinearMap.isOpenMap_of_complete R E E _ _ _ _ u₁ hu₁ hc₁ hcg₁ _ hsmul₁
+      _ u₂ hu₂ hc₂ hcg₂ ht0 _ hsmul₂ LinearMap.id surjective_id
+      (@Continuous.continuousAt E E u₁.toTopologicalSpace u₂.toTopologicalSpace id 0
+        (continuous_id_of_le hle))
   have hopen : @IsOpenMap E E u₁.toTopologicalSpace u₂.toTopologicalSpace id := by
     simpa only [LinearMap.id_coe] using hopen_lin
   have hle' : u₂.toTopologicalSpace ≤ u₁.toTopologicalSpace :=
@@ -323,13 +292,26 @@ theorem continuous_of_isClosed_graph_of_complete (f : E →ₗ[R] F)
   have : CompleteSpace f.graph := hg.completeSpace_coe
   have : (𝓤 E).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
   have : (𝓤 F).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  let φ₀ : E →ₗ[R] E × F := LinearMap.id.prod f
-  have hleft : LeftInverse Prod.fst φ₀ := fun _ ↦ rfl
-  let φ : E ≃ₗ[R] f.graph :=
-    (LinearEquiv.ofLeftInverse hleft).trans (LinearEquiv.ofEq _ _ f.graph_eq_range_prod.symm)
-  have hφ : Continuous φ :=
-    φ.symm.continuous_symm_of_complete continuous_subtypeVal.fst
-  exact (continuous_subtypeVal.comp hφ).snd
+  let p₁ : f.graph →ₗ[R] E := (LinearMap.fst R E F).domRestrict f.graph
+  have hp₁ : Bijective p₁ := by
+    refine ⟨fun z₁ z₂ hz ↦ Subtype.ext (Prod.ext hz ?_), fun x ↦
+      ⟨⟨(x, f x), (LinearMap.mem_graph_iff f (x, f x)).mpr rfl⟩, rfl⟩⟩
+    have h₁ : z₁.val.2 = f z₁.val.1 := (LinearMap.mem_graph_iff f z₁.val).mp z₁.property
+    have h₂ : z₂.val.2 = f z₂.val.1 := (LinearMap.mem_graph_iff f z₂.val).mp z₂.property
+    rw [h₁, h₂]
+    exact congrArg f hz
+  let e : f.graph ≃ₗ[R] E := LinearEquiv.ofBijective p₁ hp₁
+  have he_cont : Continuous e :=
+    continuous_subtypeVal.fst.congr fun z ↦ (LinearEquiv.ofBijective_apply p₁ (hf := hp₁) z).symm
+  have hsymm : Continuous e.symm := e.continuous_symm_of_complete he_cont
+  have hf_eq : (f : E → F) = fun x ↦ (e.symm x).val.2 := by
+    ext x
+    have hp₁x : (e.symm x).val.1 = x :=
+      (LinearEquiv.ofBijective_apply p₁ (hf := hp₁) (e.symm x)).symm.trans (e.apply_symm_apply x)
+    exact (((LinearMap.mem_graph_iff f (e.symm x).val).mp (e.symm x).property).trans
+      (congrArg f hp₁x)).symm
+  rw [hf_eq]
+  exact (continuous_subtypeVal.comp hsymm).snd
 
 /-- **Sequential closed graph theorem.** A linear map between complete first-countable uniform
 modules (with `T₀` domain) over a topological ring with a zero sequence of units is continuous if
@@ -412,9 +394,9 @@ end ContinuousLinearMap
 
 end ClosedGraph
 
-/-! ### Strictness and range equivalence -/
+/-! ### Closed-range strictness -/
 
-section StrictAndRangeEquiv
+section Strict
 
 variable {R E F : Type*} [Ring R] [TopologicalSpace R] [TauCeti.HasZeroSequenceOfUnits R]
   [AddCommGroup E] [UniformSpace E] [IsUniformAddGroup E] [CompleteSpace E]
@@ -422,80 +404,19 @@ variable {R E F : Type*} [Ring R] [TopologicalSpace R] [TauCeti.HasZeroSequenceO
   [AddCommGroup F] [UniformSpace F] [IsUniformAddGroup F] [CompleteSpace F]
   [(𝓝 (0 : F)).IsCountablyGenerated] [T0Space F] [Module R F] [ContinuousConstSMul R F]
 
-namespace LinearMap
-
-/-- A linear map continuous at zero with closed range between complete first-countable uniform
-modules (with `T₀` target) over a topological ring with a zero sequence of units is strict
-(`Topology.IsStrictMap`). -/
-theorem isStrictMap_of_isClosed_range_of_complete (f : E →ₗ[R] F)
-    (hfc : ContinuousAt (f : E → F) 0) (hr : IsClosed (f.range : Set F)) :
-    Topology.IsStrictMap (f : E → F) := by
-  have : (𝓤 F).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  exact f.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits hfc
-    (fun _ ↦ (continuous_id.smul continuous_const).continuousAt) hr
-
-end LinearMap
-
 namespace ContinuousLinearMap
 
 /-- A continuous linear map with closed range between complete first-countable uniform modules
 (with `T₀` target) over a topological ring with a zero sequence of units is strict
 (`Topology.IsStrictMap`). -/
 theorem isStrictMap_of_isClosed_range_of_complete (f : E →L[R] F)
-    (hr : IsClosed (f.range : Set F)) : Topology.IsStrictMap f :=
-  f.toLinearMap.isStrictMap_of_isClosed_range_of_complete f.continuous.continuousAt hr
-
-/-- A continuous linear map with closed range between complete first-countable uniform modules
-(with `T₀` target) over a topological ring with a zero sequence of units is open onto its
-range. -/
-theorem isOpenMap_rangeRestrict_of_isClosed_range_of_complete (f : E →L[R] F)
-    (hr : IsClosed (f.range : Set F)) : IsOpenMap f.rangeRestrict :=
-  (LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mp
-    (f.isStrictMap_of_isClosed_range_of_complete hr)).isOpenMap
-
-/-- An injective continuous linear map with closed range between complete first-countable uniform
-modules (with `T₀` target) over a topological ring with a zero sequence of units induces a
-continuous linear equivalence onto its range. -/
-noncomputable def equivRangeOfComplete (f : E →L[R] F) (hinj : Injective f)
-    (hr : IsClosed (f.range : Set F)) : E ≃L[R] f.range := by
-  have : CompleteSpace f.range := hr.completeSpace_coe
+    (hr : IsClosed (f.range : Set F)) : Topology.IsStrictMap f := by
   have : (𝓤 F).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  exact (LinearEquiv.ofInjective f.toLinearMap hinj).toContinuousLinearEquivOfContinuousOfComplete
-    ((f.continuous.codRestrict _).congr fun _ ↦ rfl)
-
-@[simp]
-theorem toLinearEquiv_equivRangeOfComplete (f : E →L[R] F) (hinj : Injective f)
-    (hr : IsClosed (f.range : Set F)) :
-    (f.equivRangeOfComplete hinj hr).toLinearEquiv = LinearEquiv.ofInjective f.toLinearMap hinj :=
-  (rfl)
-
-@[simp]
-theorem coeFn_equivRangeOfComplete (f : E →L[R] F) (hinj : Injective f)
-    (hr : IsClosed (f.range : Set F)) :
-    ⇑(f.equivRangeOfComplete hinj hr) = f.rangeRestrict :=
-  (rfl)
-
-@[simp]
-theorem coe_equivRangeOfComplete (f : E →L[R] F) (hinj : Injective f)
-    (hr : IsClosed (f.range : Set F)) :
-    (f.equivRangeOfComplete hinj hr : E →L[R] f.range) = f.rangeRestrict := by
-  ext
-  rfl
-
-@[simp]
-theorem equivRangeOfComplete_apply (f : E →L[R] F) (hinj : Injective f)
-    (hr : IsClosed (f.range : Set F)) (x : E) :
-    f.equivRangeOfComplete hinj hr x = f.rangeRestrict x :=
-  (rfl)
-
-@[simp]
-theorem equivRangeOfComplete_symm_apply_apply (f : E →L[R] F) (hinj : Injective f)
-    (hr : IsClosed (f.range : Set F)) (x : E) :
-    (f.equivRangeOfComplete hinj hr).symm ⟨f x, f.mem_range_self x⟩ = x :=
-  (f.equivRangeOfComplete hinj hr).symm_apply_apply x
+  exact f.toLinearMap.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits
+    f.continuous.continuousAt (fun _ ↦ (continuous_id.smul continuous_const).continuousAt) hr
 
 end ContinuousLinearMap
 
-end StrictAndRangeEquiv
+end Strict
 
 end
