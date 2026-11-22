@@ -141,12 +141,8 @@ theorem inner_toEuclideanLin_piLpExtendByZero (A : Matrix κ κ 𝕜) (f : ι �
   have hmul : ∀ b, (A.mulVec (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x).ofLp) b =
       ∑ c, A b (f c) * x c := fun b => by
     simpa [mulVec, dotProduct] using LinearIsometry.sum_mul_piLpExtendByZero f x (A b)
-  simp only [PiLp.inner_apply, toLpLin_apply, RCLike.inner_apply]
-  conv_lhs => enter [2, b]; rw [mul_comm]
-  rw [LinearIsometry.sum_mul_piLpExtendByZero f x (fun b => (starRingEnd 𝕜)
-    (A.mulVec (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x).ofLp b))]
-  refine Finset.sum_congr rfl fun a _ => ?_
-  rw [mul_comm, hmul (f a)]
+  simp only [PiLp.inner_apply, toLpLin_apply, RCLike.inner_apply',
+    LinearIsometry.sum_mul_piLpExtendByZero, hmul]
   simp [mulVec, dotProduct]
 
 /-- The quadratic form of the diagonal operator `diag(w)` on Euclidean space is
@@ -258,14 +254,22 @@ theorem inner_toEuclideanCLM_mul_mul_conjTranspose (A B : Matrix ι ι 𝕜)
   rw [map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp, ← adjoint_toEuclideanCLM,
     ContinuousLinearMap.adjoint_inner_left]
 
+/-- The operator of a normal matrix on `EuclideanSpace 𝕜 ι` is normal: on square matrices,
+`toEuclideanLin` is the inverse of the star algebra equivalence
+`LinearMap.toMatrixOrthonormal` of the standard orthonormal basis. -/
+instance isStarNormal_toEuclideanLin (A : Matrix ι ι 𝕜) [IsStarNormal A] :
+    IsStarNormal (toEuclideanLin A) := by
+  rw [toEuclideanLin_eq_toLin_orthonormal, ← LinearMap.toMatrix_symm]
+  -- `LinearMap.toMatrixOrthonormal` is `LinearMap.toMatrix` bundled as a star algebra equivalence
+  exact IsStarNormal.map (LinearMap.toMatrixOrthonormal (EuclideanSpace.basisFun ι 𝕜)).symm A
 
 /-- A unitary matrix acts on `EuclideanSpace 𝕜 ι` as a linear isometry equivalence, and this is a
 group homomorphism from the unitary group to the linear isometry group: the continuous linear map
 of a unitary matrix is a unitary operator. -/
 noncomputable def UnitaryGroup.toLinearIsometryEquiv :
     unitaryGroup ι 𝕜 →* (EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :=
-  Unitary.linearIsometryEquiv.toMonoidHom.comp
-    (Unitary.map (.ofClass (toEuclideanCLM (n := ι) (𝕜 := 𝕜)))).toMonoidHom
+  ((Unitary.mapEquiv (StarMulEquiv.ofClass (toEuclideanCLM (n := ι) (𝕜 := 𝕜)))).toMulEquiv.trans
+    Unitary.linearIsometryEquiv).toMonoidHom
 
 /-- The linear isometry of a unitary matrix acts by matrix-vector multiplication in Euclidean
 coordinates. -/
@@ -300,28 +304,14 @@ theorem UnitaryGroup.toLinearIsometryEquiv_inv_apply (A : unitaryGroup ι 𝕜)
 
 /-- The conversion from unitary matrices to linear isometries of Euclidean space is injective. -/
 theorem UnitaryGroup.toLinearIsometryEquiv_injective :
-    Function.Injective (UnitaryGroup.toLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)) := by
-  intro A B h
-  apply Subtype.ext
-  apply toEuclideanLin.injective
-  exact LinearMap.ext fun x ↦ by
-    simpa only [UnitaryGroup.toLinearIsometryEquiv_apply, toLpLin_apply] using
-      LinearIsometryEquiv.congr_fun h x
+    Function.Injective (UnitaryGroup.toLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)) :=
+  MulEquiv.injective _
 
 /-- Every linear isometry of Euclidean space is the action of a unitary matrix, namely its matrix
 in the standard basis. -/
 theorem UnitaryGroup.toLinearIsometryEquiv_surjective :
-    Function.Surjective (UnitaryGroup.toLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)) := by
-  intro g
-  set B := toEuclideanLin.symm g.toLinearIsometry.toLinearMap with hBdef
-  have hB : toEuclideanLin B = g.toLinearIsometry.toLinearMap :=
-    toEuclideanLin.apply_symm_apply _
-  have hmem : B ∈ unitaryGroup ι 𝕜 := by
-    rw [hBdef, toEuclideanLin_eq_toLin_orthonormal]
-    exact g.toMatrix_mem_unitaryGroup (EuclideanSpace.basisFun ι 𝕜) (EuclideanSpace.basisFun ι 𝕜)
-  refine ⟨⟨B, hmem⟩, LinearIsometryEquiv.ext fun x ↦ ?_⟩
-  rw [UnitaryGroup.toLinearIsometryEquiv_apply]
-  exact LinearMap.congr_fun hB x
+    Function.Surjective (UnitaryGroup.toLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)) :=
+  MulEquiv.surjective _
 
 /-- The linear isometry of a unitary matrix has the determinant of the matrix. -/
 @[simp]
@@ -589,20 +579,6 @@ theorem GeneralLinearGroup.continuous_toEuclideanCLE {X : Type*} [TopologicalSpa
   exact continuous_toEuclideanCLM.comp (Units.continuous_val.comp hA)
 
 end Invertible
-
-end Matrix
-
-namespace Matrix
-
-variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- The operator of a normal matrix on `EuclideanSpace 𝕜 n` is normal. -/
-instance isStarNormal_toEuclideanLin {𝕜 : Type*} [RCLike 𝕜] (A : Matrix n n 𝕜) [IsStarNormal A] :
-    IsStarNormal (toEuclideanLin A) where
-  star_comm_self := by
-    have h : Aᴴ * A = A * Aᴴ := star_comm_self' A
-    rw [commute_iff_eq, LinearMap.star_eq_adjoint, ← toEuclideanLin_conjTranspose_eq_adjoint,
-      Module.End.mul_eq_comp, Module.End.mul_eq_comp, ← toLpLin_mul_same, ← toLpLin_mul_same, h]
 
 end Matrix
 
