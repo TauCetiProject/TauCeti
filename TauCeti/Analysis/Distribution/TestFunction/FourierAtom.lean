@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 public import TauCeti.Analysis.PositiveDefinite.FourierAtom
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
+import TauCeti.Analysis.Distribution.TestFunction.Frechet
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 
@@ -100,7 +101,7 @@ theorem exists_forall_norm_iteratedFDeriv_bilinLeftCLM_fourierAtom_le (g : 𝓓(
     ring
   have hsup : ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K i gK ≤
       ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K r gK :=
-    Seminorm.le_def.1 (Finset.sup_mono (Finset.Iic_subset_Iic.2 hi)) gK
+    Seminorm.le_def.1 (ContDiffMapSupportedIn.supSeminorm_mono hi) gK
   rw [hcoe]
   calc ‖iteratedFDeriv ℝ i (gK.modulate (-ζ)) y‖ ≤ N[ℂ]_{K, i} (gK.modulate (-ζ)) :=
         ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm_top ℂ
