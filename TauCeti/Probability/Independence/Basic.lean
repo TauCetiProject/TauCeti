@@ -32,7 +32,8 @@ Independence within rows also gives a union bound for row counts. For a finite a
 whose rows consist of independent events of measure at most `p`, the measure that some row
 contains at least `q` occurring events is at most `p ^ q` times the sum over rows of the number of
 `q`-element subsets of the row indices (`TauCeti.Probability.measure_exists_le_card_filter_mem_le`).
-This bound needs no probability-measure assumption.
+No separate `[IsProbabilityMeasure μ]` argument is needed: whenever some row is nonempty, its
+independence hypothesis already makes `μ` a probability measure.
 -/
 
 public section

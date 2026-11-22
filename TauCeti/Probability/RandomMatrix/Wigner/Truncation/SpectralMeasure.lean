@@ -11,14 +11,17 @@ public import TauCeti.Probability.RandomMatrix.SpectralMeasure.Perturbation
 /-!
 # Spectral statistics of truncated Wigner corners
 
-The expected normalized squared Frobenius error bounds the Bochner integral of the squared
-difference of Lipschitz spectral statistics and the probability of a large difference, uniformly
-over positive dimensions. At a fixed dimension, only the upper entries of that corner need a
-common centered, square-integrable law, and both bounds hold for an unrestricted diagonal. The
-common diagonal cancels in the matrix difference, but not necessarily in the difference of the
-nonlinear spectral statistics. So the integral bound is mean-square control only when that
+Here a spectral statistic is the empirical spectral average of a Lipschitz test function. The
+expected normalized squared Frobenius error bounds the Bochner integral of the squared difference
+of such averages and the outer probability of a large difference, uniformly over positive
+dimensions. At a fixed dimension, only the upper entries of that corner need a common centered,
+square-integrable law, and both bounds hold for an unrestricted diagonal. The common diagonal
+cancels in the matrix difference, but not necessarily in the difference of the averages, which
+depend nonlinearly on the matrix. So the integral bound is mean-square control only when that
 squared difference is integrable, for instance when the diagonal entries of the corner are almost
-everywhere measurable.
+everywhere measurable. Likewise, a nonmeasurable diagonal can make the event of a large
+difference nonmeasurable; the tail bounds are ordinary probability bounds whenever those events
+are measurable.
 
 ## References
 
@@ -46,11 +49,12 @@ include hX hmean
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
-/-- At a positive dimension, the Bochner integral of the squared difference of a Lipschitz
-spectral statistic is bounded independently of the dimension. The upper entries of the corner
-share a centered, square-integrable law, and the inequality needs no assumption on the diagonal
-entries. It is mean-square control when the squared difference is integrable, for instance when
-the diagonal entries of the corner are almost everywhere measurable. -/
+/-- At a positive dimension, the Bochner integral of the squared difference of the empirical
+spectral averages of a Lipschitz test function is bounded independently of the dimension. The
+upper entries of the corner share a centered, square-integrable law, and the inequality needs no
+assumption on the diagonal entries. It is mean-square control when the squared difference is
+integrable, for instance when the diagonal entries of the corner are almost everywhere
+measurable. -/
 theorem integral_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_sq_le
     {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) (R : ℝ≥0) (n : ℕ)
     (hd : ∀ ij : StrictUpper, ij.val.2 < n + 1 → IdentDistrib (ξ ij) X P Q) :
@@ -69,10 +73,11 @@ theorem integral_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_sq_le
       (inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le hX hmean R n hd)
       (sq_nonneg (K : ℝ))
 
-/-- At a positive dimension, the probability that a Lipschitz spectral statistic of the corner
-and of its centered truncation differ by at least a positive threshold is bounded independently
-of the dimension. The upper entries of the corner share a centered, square-integrable law, and
-the diagonal is unrestricted. -/
+/-- At a positive dimension, the outer probability that the empirical spectral averages of a
+Lipschitz test function over the corner and over its centered truncation differ by at least a
+positive threshold is bounded independently of the dimension. The upper entries of the corner
+share a centered, square-integrable law, and the diagonal is unrestricted. This is an ordinary
+probability bound whenever the event is measurable. -/
 theorem measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_ge_le
     {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) {ε : ℝ} (hε : 0 < ε)
     (R : ℝ≥0) (n : ℕ) (hd : ∀ ij : StrictUpper, ij.val.2 < n + 1 → IdentDistrib (ξ ij) X P Q) :
@@ -93,9 +98,10 @@ theorem measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_ge_le
       (inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le hX hmean R n hd)
       (by positivity : 0 ≤ (K : ℝ) ^ 2 / ε ^ 2)
 
-/-- Bounded centered off-diagonal approximation is valid in probability, uniformly over
-all positive matrix sizes, for every Lipschitz spectral statistic when the upper entries
-have a common centered, square-integrable law. -/
+/-- Bounded centered off-diagonal approximation is valid in outer probability, uniformly over
+all positive matrix sizes, for the empirical spectral average of every Lipschitz test function
+when the upper entries have a common centered, square-integrable law. These are ordinary
+probabilities whenever the events are measurable. -/
 theorem tendsto_iSup_measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation
     (hd : ∀ ij, IdentDistrib (ξ ij) X P Q)
     {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) {ε : ℝ} (hε : 0 < ε) :

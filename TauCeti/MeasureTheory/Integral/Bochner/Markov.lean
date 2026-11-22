@@ -6,37 +6,39 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
-# Markov's inequality for the Bochner integral
+# Markov's inequality for a natural power
 
-For an almost everywhere nonnegative integrable real function, Markov's inequality bounds the
-extended measure of a positive superlevel set by the Bochner integral divided by the threshold.
-Unlike Mathlib's `MeasureTheory.mul_meas_ge_le_integral_of_nonneg`, the bound is stated in
-`ℝ≥0∞` and holds for an arbitrary measure.
+For any measure and any real function `Y` whose `k`-th power is integrable and almost everywhere
+nonnegative, the set where `Y` is at least `c > 0` has extended measure at most
+`(∫ Y ^ k) / c ^ k`. This is Mathlib's `MeasureTheory.Integrable.measure_le_integral` applied to
+`Y ^ k / c ^ k`. Taking `Y = ‖Z‖` bounds the set where the norm of a function `Z` is at least `c`
+by its `k`-th absolute moment.
 
 ## Main results
 
-* `MeasureTheory.Integrable.measure_ge_le_ofReal_integral_div`:
-  `μ {c ≤ f} ≤ ENNReal.ofReal ((∫ f) / c)` for `0 < c`.
+* `TauCeti.meas_ge_le_integral_pow_div_pow`: `μ {c ≤ Y} ≤ (∫ Y ^ k) / c ^ k` for `0 < c`.
 -/
 
 public section
 
-namespace MeasureTheory
+open MeasureTheory
 
-/-- Markov's inequality for the extended measure of a positive superlevel set of an
-integrable, almost everywhere nonnegative real function. -/
-theorem Integrable.measure_ge_le_ofReal_integral_div
-    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {f : Ω → ℝ}
-    (hf : Integrable f μ) (hnonneg : 0 ≤ᵐ[μ] f) {c : ℝ} (hc : 0 < c) :
-    μ {ω | c ≤ f ω} ≤ ENNReal.ofReal ((∫ ω, f ω ∂μ) / c) := by
-  have hsub : {ω | c ≤ f ω} ⊆ {ω | ENNReal.ofReal c ≤ ENNReal.ofReal (f ω)} :=
-    fun _ hω ↦ ENNReal.ofReal_le_ofReal hω
-  refine (measure_mono hsub).trans ?_
-  refine (meas_ge_le_lintegral_div hf.aemeasurable.ennreal_ofReal
-    (ENNReal.ofReal_pos.2 hc).ne' ENNReal.ofReal_ne_top).trans_eq ?_
-  rw [← ofReal_integral_eq_lintegral_ofReal hf hnonneg, ENNReal.ofReal_div_of_pos hc]
+namespace TauCeti
 
-end MeasureTheory
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+
+/-- **Markov's inequality for a natural power.** For any measure, if `Y ^ k` is integrable and
+almost everywhere nonnegative and `0 < c`, the set where `Y` is at least `c` has measure at most
+`(∫ Y ^ k) / c ^ k`. Taking `Y = ‖Z‖` gives the bound for the set where `‖Z‖` is at least `c`. -/
+theorem meas_ge_le_integral_pow_div_pow {Y : Ω → ℝ} (k : ℕ) (hY : Integrable (fun ω ↦ Y ω ^ k) μ)
+    (hn : ∀ᵐ ω ∂μ, 0 ≤ Y ω ^ k) {c : ℝ} (hc : 0 < c) :
+    μ {ω | c ≤ Y ω} ≤ ENNReal.ofReal ((∫ ω, Y ω ^ k ∂μ) / c ^ k) := by
+  have hck : 0 < c ^ k := pow_pos hc k
+  rw [← integral_div]
+  exact (hY.div_const _).measure_le_integral (hn.mono fun _ h ↦ div_nonneg h hck.le)
+    fun _ hω ↦ (one_le_div hck).2 (pow_le_pow_left₀ hc.le hω k)
+
+end TauCeti

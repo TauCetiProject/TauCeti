@@ -71,44 +71,26 @@ theorem strictUpperEquivNat_lt_choose_iff (ij : StrictUpper) (n : ℕ) :
     strictUpperEquivNat ij < n.choose 2 ↔ ij.val.2 < n :=
   strictUpperIndex_lt_choose_iff ij n
 
-private def strictUpperFinOfIndex {n : ℕ} (ij : StrictUpper) (hj : ij.val.2 < n) :
-    StrictUpperFin n :=
-  ⟨(⟨ij.val.1, ij.prop.trans hj⟩, ⟨ij.val.2, hj⟩), ij.prop⟩
-
-private theorem wignerUpperIndex_strictUpperFinOfIndex {n : ℕ} (ij : StrictUpper)
-    (hj : ij.val.2 < n) : wignerUpperIndex (strictUpperFinOfIndex ij hj) = ij := by
-  exact Subtype.ext (wignerUpperIndex_val _)
-
 /-- The column-order enumeration restricted to strictly upper entries of a finite corner. -/
-def strictUpperFinEquiv (n : ℕ) : StrictUpperFin n ≃ Fin (n.choose 2) where
-  toFun ij := ⟨strictUpperEquivNat (wignerUpperIndex ij),
-    (strictUpperEquivNat_lt_choose_iff _ _).2 (by simp)⟩
-  invFun k := strictUpperFinOfIndex (strictUpperEquivNat.symm k)
-    ((strictUpperEquivNat_lt_choose_iff _ _).1
-      (by simpa only [Equiv.apply_symm_apply] using k.isLt))
-  left_inv ij := by
-    have h := strictUpperEquivNat.symm_apply_apply (wignerUpperIndex ij)
-    apply Subtype.ext
-    apply Prod.ext <;> apply Fin.ext
-    · exact (congrArg (fun x : StrictUpper ↦ x.val.1) h).trans (by simp)
-    · exact (congrArg (fun x : StrictUpper ↦ x.val.2) h).trans (by simp)
-  right_inv k := by
-    apply Fin.ext
-    exact (congrArg strictUpperEquivNat (wignerUpperIndex_strictUpperFinOfIndex _ _)).trans
-      (strictUpperEquivNat.apply_symm_apply k)
+def strictUpperFinEquiv (n : ℕ) : StrictUpperFin n ≃ Fin (n.choose 2) :=
+  ((strictUpperFinEquivSubtype n).trans (strictUpperEquivNat.subtypeEquiv fun ij ↦
+    (strictUpperEquivNat_lt_choose_iff ij n).symm)).trans Fin.equivSubtype.symm
 
 /-- The finite enumeration gives the same index as the infinite column enumeration. -/
 @[simp]
 theorem strictUpperFinEquiv_apply_val (n : ℕ) (ij : StrictUpperFin n) :
-    (strictUpperFinEquiv n ij).val = strictUpperEquivNat (wignerUpperIndex ij) :=
-  (rfl)
+    (strictUpperFinEquiv n ij).val = strictUpperEquivNat (wignerUpperIndex ij) := by
+  simp only [strictUpperFinEquiv, Equiv.trans_apply, Fin.equivSubtype_symm_apply,
+    Equiv.subtypeEquiv_apply, strictUpperFinEquivSubtype_apply_val]
 
 /-- An index of the finite enumeration corresponds to the same strictly upper entry as in the
 infinite column enumeration. -/
 @[simp]
 theorem wignerUpperIndex_strictUpperFinEquiv_symm_apply (n : ℕ) (k : Fin (n.choose 2)) :
-    wignerUpperIndex ((strictUpperFinEquiv n).symm k) = strictUpperEquivNat.symm k :=
-  wignerUpperIndex_strictUpperFinOfIndex _ _
+    wignerUpperIndex ((strictUpperFinEquiv n).symm k) = strictUpperEquivNat.symm k := by
+  simp only [strictUpperFinEquiv, Equiv.symm_trans_apply, Equiv.subtypeEquiv_symm,
+    Equiv.subtypeEquiv_apply, Equiv.symm_symm, Fin.equivSubtype_apply,
+    wignerUpperIndex_strictUpperFinEquivSubtype_symm_apply]
 
 /-- A sum over a finite strictly upper corner is the sum over the corresponding prefix
 of the column-order enumeration. -/
@@ -118,8 +100,8 @@ theorem sum_strictUpperFin_eq_sum_range {E : Type*} [AddCommMonoid E]
       ∑ k ∈ Finset.range (n.choose 2), f (strictUpperEquivNat.symm k) := by
   calc
     _ = ∑ k : Fin (n.choose 2), f (strictUpperEquivNat.symm k) :=
-      Fintype.sum_equiv (strictUpperFinEquiv n) _ _
-        fun ij ↦ congrArg f (strictUpperEquivNat.symm_apply_apply _).symm
+      Fintype.sum_equiv (strictUpperFinEquiv n) _ _ fun ij ↦ by
+        rw [strictUpperFinEquiv_apply_val, Equiv.symm_apply_apply]
     _ = _ := by
       rw [Finset.sum_fin_eq_sum_range]
       exact Finset.sum_congr rfl fun k hk ↦ dite_eq_left (Finset.mem_range.mp hk)

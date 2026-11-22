@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Analysis.Matrix.Eigenvalues.OperatorNorm
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Pow.Summable
-import TauCeti.MeasureTheory.Integral.Bochner.Markov
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 
@@ -59,7 +59,11 @@ theorem meas_l2_opNorm_ge_le_integral_re_trace_pow_two_mul_div_pow
   have hsub : {ω | r ≤ ‖A ω‖} ≤ᵐ[P] {ω | r ^ (2 * k) ≤ RCLike.re ((A ω) ^ (2 * k)).trace} :=
     hA.mono fun _ hω h ↦
       (pow_le_pow_left₀ hr.le h _).trans (hω.l2_opNorm_pow_two_mul_le_re_trace_pow_two_mul k)
-  exact (measure_mono_ae hsub).trans (hint.measure_ge_le_ofReal_integral_div hnonneg (pow_pos hr _))
+  have hr' : 0 < r ^ (2 * k) := pow_pos hr _
+  refine (measure_mono_ae hsub).trans ?_
+  rw [← integral_div]
+  exact (hint.div_const _).measure_le_integral (hnonneg.mono fun _ h ↦ div_nonneg h hr'.le)
+    fun _ hω ↦ (one_le_div hr').2 hω
 
 variable {m : ℕ → Type*} [∀ n, Fintype (m n)] [∀ n, DecidableEq (m n)]
   {A : (n : ℕ) → Ω → Matrix (m n) (m n) 𝕜} {k : ℕ → ℕ}

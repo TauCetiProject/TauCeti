@@ -12,15 +12,14 @@ import TauCeti.MeasureTheory.Integral.Bochner.Markov
 # Chebyshev's inequality for the second moment
 
 For any measure `μ` and any real function `Y` whose square is integrable, the set where `Y` is at
-least `c > 0` has measure at most `(∫ Y²) / c²`. This is Markov's inequality applied to `Y²`.
+least `c > 0` has measure at most `(∫ Y²) / c²`. This is the case `k = 2` of Markov's inequality
+for a natural power, `TauCeti.meas_ge_le_integral_pow_div_pow`.
 Taking `Y = ‖Z‖` bounds the set where the norm of a function `Z` is at least `c`. Unlike
 `ProbabilityTheory.meas_ge_le_variance_div_sq`, `Y` is not centered at its mean, so the bound
 applies directly to a deviation such as the error of an estimator.
 
 ## Main statements
 
-* `TauCeti.meas_ge_le_integral_pow_div_pow`: Markov's inequality for a natural power of a real
-  function, `μ {c ≤ Y} ≤ (∫ Y ^ k) / c ^ k` when `Y ^ k` is almost everywhere nonnegative.
 * `TauCeti.meas_ge_le_integral_sq_div_sq`: Chebyshev's inequality for the second moment,
   `μ {c ≤ Y} ≤ (∫ Y²) / c²`, for any measure and without centering.
 * `TauCeti.meas_gt_le_div_sq_of_integral_sq_le`: the uncentered Chebyshev inequality
@@ -38,16 +37,6 @@ open MeasureTheory
 namespace TauCeti
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
-
-/-- **Markov's inequality for a natural power.** For any measure, if `Y ^ k` is integrable and
-almost everywhere nonnegative and `0 < c`, the set where `Y` is at least `c` has measure at most
-`(∫ Y ^ k) / c ^ k`. Taking `Y = ‖Z‖` gives the bound for the set where `‖Z‖` is at least `c`. -/
-theorem meas_ge_le_integral_pow_div_pow {Y : Ω → ℝ} (k : ℕ) (hY : Integrable (fun ω ↦ Y ω ^ k) μ)
-    (hn : ∀ᵐ ω ∂μ, 0 ≤ Y ω ^ k) {c : ℝ} (hc : 0 < c) :
-    μ {ω | c ≤ Y ω} ≤ ENNReal.ofReal ((∫ ω, Y ω ^ k ∂μ) / c ^ k) := by
-  have hsub : {ω | c ≤ Y ω} ⊆ {ω | c ^ k ≤ Y ω ^ k} :=
-    fun _ hω ↦ pow_le_pow_left₀ hc.le hω k
-  exact (measure_mono hsub).trans (hY.measure_ge_le_ofReal_integral_div hn (pow_pos hc k))
 
 /-- **Chebyshev's inequality for the second moment.** For any measure, if `Y²` is integrable and
 `0 < c`, the set where `Y` is at least `c` has measure at most `(∫ Y²) / c²`. Taking `Y = ‖Z‖`

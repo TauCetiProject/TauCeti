@@ -13,13 +13,16 @@ public import TauCeti.Topology.Instances.Matrix
 # Mean-square perturbations of random spectral statistics
 
 The Hoffman–Wielandt bound transfers a small expected normalized squared Frobenius
-perturbation to a small difference of Lipschitz spectral statistics, and to a probability bound
-for their difference. The matrices may be dependent, and only the squared Frobenius perturbation
-needs to be integrable. Without measurability, the bound for the squared difference of the
-statistics is an inequality between Bochner integrals: if that squared difference is not
-integrable, its integral is zero by convention. Almost-everywhere measurability of the matrices
-makes it integrable (`integrable_norm_integral_spectralMeasure_sub_sq`), and the bound is then
-genuine mean-square control. All matrix norms here are Frobenius norms.
+perturbation to a small difference of the empirical spectral averages of a Lipschitz test
+function, and to a tail bound for their difference. The matrices may be dependent, and only the
+squared Frobenius perturbation needs to be integrable. Without measurability, the event of a large
+difference need not be measurable, and the tail bound controls its outer measure; on a probability
+space it is an ordinary probability bound whenever that event is measurable. Likewise, the bound
+for the squared difference of the averages is an inequality between Bochner integrals: if that
+squared difference is not integrable, its integral is zero by convention. Almost-everywhere
+measurability of the matrices makes it integrable
+(`integrable_norm_integral_spectralMeasure_sub_sq`), and the bound is then genuine mean-square
+control. All matrix norms here are Frobenius norms.
 
 ## References
 
@@ -43,8 +46,9 @@ variable {Ω n 𝕜 E : Type*} [MeasurableSpace Ω] [Fintype n] [DecidableEq n] 
 
 include hD hf
 
-/-- The difference of Lipschitz spectral statistics has an integrable squared norm
-when the matrices are measurable almost everywhere and the squared Frobenius error is integrable. -/
+/-- The difference of the empirical spectral averages of a Lipschitz test function has an
+integrable squared norm when the matrices are measurable almost everywhere and the squared
+Frobenius error is integrable. -/
 theorem integrable_norm_integral_spectralMeasure_sub_sq
     [MeasurableSpace 𝕜] [BorelSpace 𝕜] (hAm : AEMeasurable A P) (hBm : AEMeasurable B P) :
     Integrable (fun ω ↦ ‖(∫ x, f x ∂((A ω).spectralMeasure (hA ω) : Measure ℝ)) -
@@ -72,7 +76,8 @@ theorem integrable_norm_integral_spectralMeasure_sub_sq
     (Matrix.norm_integral_spectralMeasure_sub_integral_spectralMeasure_le (hA ω) (hB ω) hf) 2
 
 /-- The expected squared Frobenius error bounds the Bochner integral of the squared difference
-of every Lipschitz linear spectral statistic, with the normalization by matrix dimension. The
+of the empirical spectral averages of every Lipschitz test function, with the normalization by
+matrix dimension. The
 matrices need not be measurable, but then the squared difference may fail to be integrable and
 its integral is zero by convention. For almost everywhere measurable matrices,
 `integrable_norm_integral_spectralMeasure_sub_sq` gives integrability, and this is mean-square
@@ -93,8 +98,10 @@ theorem integral_norm_integral_spectralMeasure_sub_sq_le :
       rw [integral_mul_const, integral_const_mul]
       ring
 
-/-- A quantitative probability bound for a Lipschitz spectral-statistic perturbation.
-The estimate includes constant test functions (`K = 0`). -/
+/-- A quantitative tail bound for the difference of the empirical spectral averages of a
+Lipschitz test function. The event need not be measurable, so this bounds its outer measure; on a
+probability space it is an ordinary probability bound whenever the event is measurable. The
+estimate includes constant test functions (`K = 0`). -/
 theorem measure_norm_integral_spectralMeasure_sub_ge_le {ε : ℝ} (hε : 0 < ε) :
     P {ω | ε ≤ ‖(∫ x, f x ∂((A ω).spectralMeasure (hA ω) : Measure ℝ)) -
       ∫ x, f x ∂((B ω).spectralMeasure (hB ω) : Measure ℝ)‖} ≤

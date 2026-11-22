@@ -11,8 +11,9 @@ public import TauCeti.Probability.Moments.CenteredTruncation
 /-!
 # Bounded centered approximation of Wigner off-diagonal entries
 
-Replacing the upper entries by their centered truncations gives bounded centered entries
-without changing their independence or identical distribution. The expected normalized squared
+Replacing the upper entries by their centered truncations gives bounded entries without changing
+their independence or identical distribution. On a probability space, the truncations of almost
+everywhere strongly measurable upper entries have zero mean. The expected normalized squared
 Frobenius error is at most the discarded second absolute moment when the upper entries of the
 corner have a common centered, square-integrable law on a probability space.
 

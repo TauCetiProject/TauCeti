@@ -11,7 +11,7 @@ import TauCeti.Probability.RandomMatrix.Wigner.EntryMax
 public import TauCeti.Probability.Moments.CenteredTruncation
 import TauCeti.Probability.Independence.Basic
 import TauCeti.Probability.RandomMatrix.Wigner.Diagonal.OperatorNorm
-import TauCeti.Probability.Moments.Chebyshev
+import TauCeti.MeasureTheory.Integral.Bochner.Markov
 import TauCeti.Probability.RandomMatrix.Wigner.Centering.Basic
 import TauCeti.Probability.RandomMatrix.Wigner.Truncation.HardThreshold
 import TauCeti.Analysis.SpecialFunctions.Pow.Summable
@@ -63,12 +63,13 @@ theorem measure_exists_le_card_filter_lt_norm_wignerMatrix_zero_apply_le {n q : 
   classical
   let E (i : Fin n) (j : {j : Fin n // i ≠ j}) :=
     {ω | R / Real.sqrt n < ‖wignerMatrix ξ (fun _ _ ↦ 0) n ω i j‖}
+  -- Each exceedance event is a measurable preimage of its entry, so it inherits independence.
   have hE (i : Fin n) : iIndepSet (E i) P := by
-    apply iIndep_comap_mem_iff.1
-    have hind' := (hind i).comp (fun _ (z : ℂ) ↦ R / Real.sqrt n < ‖z‖) fun _ ↦
-      measurableSet_setOfPred.mp (measurableSet_lt measurable_const measurable_norm)
-    simpa only [E, mem_ofPred_eq, Function.comp_def, Prop.instMeasurableSpace]
-      using hind'.iIndep
+    rw [iIndepSet_iff_iIndep]
+    refine iIndep_of_iIndep_of_le (hind i).iIndep fun j ↦ MeasurableSpace.generateFrom_le ?_
+    rintro _ rfl
+    exact MeasurableSpace.measurableSet_comap.2
+      ⟨{z : ℂ | R / Real.sqrt n < ‖z‖}, measurableSet_lt measurable_const measurable_norm, rfl⟩
   have hp (i : Fin n) (j : {j : Fin n // i ≠ j}) : P (E i j) ≤ p := by
     simp only [E, div_lt_norm_wignerMatrix_apply_iff _ _ _ j.property]
     exact htail _ (max_lt i.isLt j.val.isLt)

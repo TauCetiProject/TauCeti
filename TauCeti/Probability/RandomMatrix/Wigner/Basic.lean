@@ -29,6 +29,8 @@ array is the coupling used by almost-sure global laws such as the semicircle law
 This file defines `TauCeti.wignerMatrix` and proves the structural facts consumed by the moment
 and resolvent methods:
 
+* the corner positions `StrictUpperFin n` correspond to the strictly upper positions of the
+  infinite array with column below `n` (`strictUpperFinEquivSubtype`);
 * the entry formulas and `wignerMatrix_isHermitian`;
 * the Hermitian trace-square identity `Matrix.IsHermitian.trace_mul_self_eq_sum_norm_sq`;
 * the matrix depends only on the entries in its corner (`wignerMatrix_congr`,
@@ -106,6 +108,30 @@ def wignerUpperIndex {n : ℕ} (u : StrictUpperFin n) : StrictUpper :=
 @[simp]
 theorem wignerUpperIndex_val {n : ℕ} (u : StrictUpperFin n) :
     (wignerUpperIndex u).val = (u.val.1.val, u.val.2.val) :=
+  (rfl)
+
+/-- The strictly upper positions of the corner of size `n` are the strictly upper positions of
+the infinite array whose column index is below `n`. -/
+def strictUpperFinEquivSubtype (n : ℕ) :
+    StrictUpperFin n ≃ {ij : StrictUpper // ij.val.2 < n} where
+  toFun u := ⟨wignerUpperIndex u, u.val.2.isLt⟩
+  invFun ij := ⟨(⟨ij.val.val.1, ij.val.prop.trans ij.prop⟩, ⟨ij.val.val.2, ij.prop⟩), ij.val.prop⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- The forward direction of `strictUpperFinEquivSubtype` reads a corner position in the
+infinite array. -/
+@[simp]
+theorem strictUpperFinEquivSubtype_apply_val {n : ℕ} (u : StrictUpperFin n) :
+    (strictUpperFinEquivSubtype n u).val = wignerUpperIndex u :=
+  (rfl)
+
+/-- Reading back a corner position produced by the inverse of `strictUpperFinEquivSubtype`
+recovers the original position of the infinite array. -/
+@[simp]
+theorem wignerUpperIndex_strictUpperFinEquivSubtype_symm_apply {n : ℕ}
+    (ij : {ij : StrictUpper // ij.val.2 < n}) :
+    wignerUpperIndex ((strictUpperFinEquivSubtype n).symm ij) = ij.val :=
   (rfl)
 
 /-- Coordinate labels for a finite Wigner matrix: upper-triangular entries and its diagonal. -/

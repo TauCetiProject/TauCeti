@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Probability.IdentDistrib
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Truncation
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
 import TauCeti.MeasureTheory.Integral.Bochner.TailSum
 
@@ -69,10 +68,8 @@ theorem ae_eventually_le_natCast_of_identDistrib {Ω Ω' : Type*}
   have hfinite : (∑' i : ℕ, P {ω | Z (i + 1) ω ∈ Ioi ((i + 1 : ℕ) : ℝ)}) < ∞ := by
     simpa only [heq] using hint.tsum_measure_mem_Ioi_nat_succ_lt_top
   filter_upwards [ae_eventually_notMem hfinite.ne] with ω hω
-  obtain ⟨N, hN⟩ := eventually_atTop.1 hω
-  refine eventually_atTop.2 ⟨N + 1, fun i hi ↦ ?_⟩
-  obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : i ≠ 0)
-  exact not_lt.1 (hN j (by omega))
+  rw [← map_add_atTop_eq_nat 1, eventually_map]
+  exact hω.mono fun _ h ↦ not_lt.1 h
 
 section PrefixMaxima
 

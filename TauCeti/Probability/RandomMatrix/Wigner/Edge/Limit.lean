@@ -105,9 +105,8 @@ theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_
   have hZnorm r (hr : 2 < r) : ∀ᶠ n in atTop, ‖Z n ω‖ < r := by
     have hgap : 0 < (r - 2) / 2 := by linarith
     filter_upwards [hn ((r + 2) / 2) (by linarith), hdiff.eventually_lt_const hgap] with n hBn hδ
-    have htri : ‖Z n ω‖ ≤ ‖Z n ω - B n ω‖ + ‖B n ω‖ := by
-      simpa only [sub_zero] using norm_sub_le_norm_sub_add_norm_sub (Z n ω) (B n ω) 0
-    exact htri.trans_lt ((add_lt_add hδ hBn).trans_eq (by ring))
+    exact (norm_le_norm_sub_add (Z n ω) (B n ω)).trans_lt
+      ((add_lt_add hδ hBn).trans_eq (by ring))
   obtain ⟨hmax, hmin⟩ := hw.eigenvalues₀_bot_and_top_of_eventually_l2_opNorm_lt
     (hA := fun n ↦ hZ n ω) (by simp [support_semicircleReal]) (by simp [support_semicircleReal])
     hZnorm
