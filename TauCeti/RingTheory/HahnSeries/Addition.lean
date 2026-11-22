@@ -8,15 +8,33 @@ module
 public import Mathlib.RingTheory.HahnSeries.Addition
 
 /-!
-# Finitely supported Hahn series
+# Hahn series monomials
 
 Mathlib's `HahnSeries.ofFinsuppLinearMap` views a finitely supported function `Γ →₀ V` as a Hahn
 series. This file records that it sends `Finsupp.single a v` to the monomial
 `HahnSeries.single a v`, which reduces computations with finitely supported series, such as
 polynomial loops, to monomials.
+
+The coefficientwise scalar action also commutes with formation of a monomial.
 -/
 
 public section
+
+/-- Scaling the coefficient of a Hahn monomial scales the whole monomial.
+This generalizes the `map_smul'` law of Mathlib's `HahnSeries.single.linearMap`, using
+`HahnSeries.map_single` for the zero-preserving coefficient action. -/
+@[simp ←]
+theorem TauCeti.hahnSeries_single_smul {Γ R V : Type*} [PartialOrder Γ] [Zero V]
+    [SMulZeroClass R V] (a : Γ) (r : R) (v : V) :
+    HahnSeries.single a (r • v) = r • HahnSeries.single a v := by
+  let f := SMulZeroClass.toZeroHom V r
+  calc
+    HahnSeries.single a (r • v) = (HahnSeries.single a v).map f :=
+      (HahnSeries.map_single (a := a) (r := v) f).symm
+    _ = r • HahnSeries.single a v := by
+      ext b
+      simp only [HahnSeries.map_coeff, HahnSeries.coeff_smul, f,
+        SMulZeroClass.toZeroHom_apply]
 
 namespace HahnSeries
 

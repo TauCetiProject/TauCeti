@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.SpectralObject.HasSpectralSequence
 public import Mathlib.Data.Set.Finite.Basic
 public import TauCeti.Algebra.Homology.SpectralSequence.SerreClass
 
@@ -24,6 +25,14 @@ page, for instance a lacunary pattern of nonzero total degrees, makes a spectral
 degenerate: all differentials from the page `r` on vanish
 (`CategoryTheory.SpectralSequence.page_d_eq_zero_of_le`).
 
+For a cohomological spectral sequence starting on the page `2`, whose differentials on the page
+`r` go from `(p, q)` to `(p + r, q - r + 1)` and so raise the total degree `p + q` by one, this
+gives the lacunary degeneration: if of any two positions of the page `2` whose total degrees differ
+by one at least one carries the zero object, every differential from the page `2` on vanishes
+(`CategoryTheory.SpectralSequence.page_d_eq_zero_of_isZero_or_isZero`), and every object of the
+page `2` survives unchanged to every later page
+(`CategoryTheory.SpectralSequence.nonempty_page_X_iso_page_two_X_of_isZero_or_isZero`).
+
 ## Main results
 
 * `CategoryTheory.SpectralSequence.isZero_page_X_of_le`: a zero object stays zero on later pages,
@@ -36,6 +45,9 @@ degenerate: all differentials from the page `r` on vanish
   survives unchanged to all later pages, with
   `CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero_self` and
   `CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero_add_one`.
+* `CategoryTheory.SpectralSequence.page_d_eq_zero_of_isZero_or_isZero` and
+  `CategoryTheory.SpectralSequence.nonempty_page_X_iso_page_two_X_of_isZero_or_isZero`: lacunary
+  degeneration of a cohomological spectral sequence starting on the page `2`.
 
 ## References
 
@@ -131,5 +143,39 @@ lemma pageXIsoOfLEOfIsZero_add_one {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
           (E.page_d_eq_zero_of_forall_isZero hr h s hrs (Or.inl rfl)) ≪≫
         E.pageXIsoOfLEOfIsZero hr h s hrs :=
   Int.leInduction_add_one _ _ s hrs
+
+section Cohomological
+
+variable (E : SpectralSequence C (fun r ↦ ComplexShape.up' ((r, 1 - r) : ℤ × ℤ)) 2)
+
+/-- **Lacunary degeneration.** If of any two positions of the page `2` of a cohomological spectral
+sequence whose total degrees differ by one at least one carries the zero object, every
+differential on every page `r ≥ 2` vanishes, since a differential raises the total degree by
+one. -/
+lemma page_d_eq_zero_of_isZero_or_isZero
+    (h : ∀ pq pq' : ℤ × ℤ, pq.1 + pq.2 + 1 = pq'.1 + pq'.2 →
+      IsZero ((E.page 2).X pq) ∨ IsZero ((E.page 2).X pq'))
+    (r : ℤ) (hr : 2 ≤ r) (pq pq' : ℤ × ℤ) : (E.page r hr).d pq pq' = 0 := by
+  by_cases hrel : (ComplexShape.up' ((r, 1 - r) : ℤ × ℤ)).Rel pq pq'
+  · exact E.page_d_eq_zero_of_le le_rfl
+      (h pq pq' (Abelian.SpectralObject.coreE₂Cohomological.hc r pq pq' hrel hr)) r hr
+  · exact HomologicalComplex.shape _ _ _ hrel
+
+/-- **Survival in the lacunary case.** Let `pq` be a position of the page `2` of a cohomological
+spectral sequence. If for every position `pq'` whose total degree differs by one from that of `pq`
+the object at `pq` or the object at `pq'` vanishes on the page `2`, then on every page `r ≥ 2` the
+object at `pq` is isomorphic to the object at `pq` on the page `2`. -/
+lemma nonempty_page_X_iso_page_two_X_of_isZero_or_isZero {pq : ℤ × ℤ}
+    (h : ∀ pq' : ℤ × ℤ, pq.1 + pq.2 + 1 = pq'.1 + pq'.2 ∨ pq'.1 + pq'.2 + 1 = pq.1 + pq.2 →
+      IsZero ((E.page 2).X pq) ∨ IsZero ((E.page 2).X pq'))
+    (r : ℤ) (hr : 2 ≤ r) : Nonempty ((E.page r hr).X pq ≅ (E.page 2).X pq) := by
+  by_cases hpq : IsZero ((E.page 2).X pq)
+  · exact ⟨(E.isZero_page_X_of_le le_rfl hpq r hr).iso hpq⟩
+  -- Otherwise every object joined to `pq` by a differential vanishes, so `pq` survives.
+  refine ⟨E.pageXIsoOfLEOfIsZero le_rfl (fun s hs pq' hpq' ↦ (h pq' ?_).resolve_left hpq) r hr⟩
+  exact hpq'.imp (fun hrel ↦ Abelian.SpectralObject.coreE₂Cohomological.hc s _ _ hrel hs)
+    (fun hrel ↦ Abelian.SpectralObject.coreE₂Cohomological.hc s _ _ hrel hs)
+
+end Cohomological
 
 end CategoryTheory.SpectralSequence

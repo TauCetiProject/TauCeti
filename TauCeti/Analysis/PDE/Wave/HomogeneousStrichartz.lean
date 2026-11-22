@@ -5,31 +5,42 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.Wave.Energy
 public import TauCeti.Analysis.PDE.Wave.Strichartz
 import TauCeti.Analysis.Fourier.LittlewoodPaley
+import TauCeti.Analysis.PDE.Strichartz.LittlewoodPaley
+import TauCeti.Analysis.PDE.Wave.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 
 /-!
-# Strichartz estimates for the half-wave propagator with Besov data
+# Strichartz estimates for the wave equation with Besov data
 
-On a nontrivial real inner product space `E` of dimension `n`, let `W₊(t) = exp(itD)`,
-`D = √(-Δ)`, be the half-wave propagator (`TauCeti.halfWavePropagator`), and let `Pⱼ`, `j ∈ ℤ`, be
-the `L²` Fourier multipliers with the homogeneous Littlewood–Paley cutoffs `ψⱼ`
+On a nontrivial real inner product space `E` of dimension `n`, let `D = √(-Δ)`, let
+`W₊(t) = exp(itD)` be the half-wave propagator (`TauCeti.halfWavePropagator`), and let `Pⱼ`,
+`j ∈ ℤ`, be the `L²` Fourier multipliers with the homogeneous Littlewood–Paley cutoffs `ψⱼ`
 (`ContDiffBump.littlewoodPaley`), supported where `‖ξ‖ ≈ 2^j`, as symbols. Let `(q, r)` be
 wave-admissible, `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `2 < q < ∞`, and let
 `γ = n / 2 - n / r - 1 / q` be its scaling-critical regularity. This file proves the
-**Strichartz estimate on the whole time line**
+**Strichartz estimates on the whole time line** with data in homogeneous Besov spaces, written
+through the blocks of the data:
 
-`‖W₊(t) f‖_{L^q_t L^r_x} ≤ C ∑ⱼ 2^{jγ} ‖Pⱼ f‖₂`
+* `‖W₊(t) f‖_{L^q_t L^r_x} ≤ C ∑ⱼ 2^{jγ} ‖Pⱼ f‖₂` in weak form, that is tested against
+  `G ∈ L^{q'}_t L^{r'}_x`, and the same estimate for the backward propagator `W₋(t) = W₊(-t)`;
+* `‖cos(tD) f + D⁻¹ sin(tD) g‖_{L^q_t L^r_x} ≤ C (∑ⱼ 2^{jγ} ‖Pⱼ f‖₂ + ∑ⱼ 2^{j(γ - 1)} ‖Pⱼ g‖₂)`
+  for the solution of the free wave equation `∂ₜ²u = Δu` with data `u(0) = f` and `∂ₜu(0) = g`,
+  together with the estimates for `cos(tD)` and `D⁻¹ sin(tD)` separately. Every strong solution
+  of the free equation on an interval of times containing `0` agrees there with this solution
+  for `f = u(0)` and `g = ∂ₜu(0)`, so it satisfies the estimate on that interval, with a
+  constant independent of the interval.
 
-in weak form, that is tested against `G ∈ L^{q'}_t L^{r'}_x`, and the same estimate for the
-backward propagator `W₋(t) = W₊(-t)`. The right-hand side is the norm of `f` in the homogeneous
-Besov space `\dot B^γ_{2,1}`, written through the blocks of `f`. Since the bound is an `ℓ¹` sum
-over the blocks rather than a square function, the argument also covers the pairs with `r = ∞`.
+The right-hand sides are the norms of the data in `\dot B^γ_{2,1}` and `\dot B^{γ - 1}_{2,1}`.
+Since these are `ℓ¹` sums over the blocks rather than square functions, the pairs with `r = ∞` are
+covered.
 
 ## The argument
 
-The frequency-localized dual estimate
+For the half-wave propagator, the frequency-localized dual estimate
 (`ContDiffBump.exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le`) bounds the blocks
 of `g = ∫ W₊(-t) G(t) dt`: since the blocks commute with the propagator,
 `Pₖ g = ∫ W₊(-t) Pₖ G(t) dt`, and `‖Pₖ g‖₂ ≤ C 2^{kγ} ‖G‖_{L^{q'}_t L^{r'}_x}` uniformly in `k`.
@@ -37,12 +48,28 @@ That is, `g ∈ \dot B^{-γ}_{2,∞}`. The pairing `∫ ⟪W₊(t) f, G(t)⟫ dt
 then bounded by the duality of the dyadic `ℓ¹` and `ℓ^∞` norms
 (`ContDiffBump.exists_enorm_inner_le_mul_tsum`).
 
+For `cos(tD)` and `D⁻¹ sin(tD)`, the frequency-localized mixed-norm estimates
+(`ContDiffBump.exists_eLpNorm_eLpNorm_waveCosPropagator_littlewoodPaley_le` and
+`ContDiffBump.exists_eLpNorm_eLpNorm_waveSinPropagator_littlewoodPaley_le`) are summed over the
+blocks by `ContDiffBump.exists_eLpNorm_eLpNorm_le_mul_tsum`. The duality argument does not apply
+to `D⁻¹ sin(tD)` directly: its norm grows like `|t|`, so `∫ D⁻¹ sin(tD) G(t) dt` need not exist for
+integrable `G`. Strong solutions are identified with `cos(tD) u(0) + D⁻¹ sin(tD) ∂ₜu(0)` by
+Duhamel's formula
+(`TauCeti.IsWaveSolutionOn.eq_waveCosPropagator_add_waveSinPropagator_add_integral`).
+
 ## Main declarations
 
 * `ContDiffBump.exists_enorm_integral_inner_halfWavePropagator_le_tsum`: the Strichartz estimate
   for `W₊(t)` with data in `\dot B^γ_{2,1}`, in weak form.
 * `ContDiffBump.exists_enorm_integral_inner_halfWavePropagator_neg_le_tsum`: the same estimate for
   `W₋(t) = W₊(-t)`.
+* `ContDiffBump.exists_eLpNorm_eLpNorm_waveCosPropagator_le_tsum` and
+  `ContDiffBump.exists_eLpNorm_eLpNorm_waveSinPropagator_le_tsum`: the estimates for `cos(tD) f`
+  with `f ∈ \dot B^γ_{2,1}` and for `D⁻¹ sin(tD) g` with `g ∈ \dot B^{γ - 1}_{2,1}`.
+* `ContDiffBump.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum`: the
+  Strichartz estimate for the free wave equation with data `(f, g)`.
+* `ContDiffBump.exists_eLpNorm_eLpNorm_le_tsum_of_isWaveSolutionOn`: the same estimate for every
+  strong solution of the free wave equation on an interval of times containing `0`.
 
 ## References
 
@@ -144,12 +171,156 @@ theorem exists_enorm_integral_inner_halfWavePropagator_neg_le_tsum (hq : 2 < q)
   have hneg := Measure.measurePreserving_neg (volume : Measure ℝ)
   have h := hC m hm f (fun t ↦ G (-t)) (hG.comp_quasiMeasurePreserving hneg.quasiMeasurePreserving)
     (by simpa only [neg_neg] using hWG.comp_neg)
-  have hnorm : eLpNorm (fun t ↦ eLpNorm (G (-t)) r' volume) p volume =
-      eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
-    simpa only [Function.comp_def] using eLpNorm_comp_measurePreserving
-      (g := fun t ↦ eLpNorm (G t) r' volume)
-      (hG.aemeasurable_eLpNorm_Lp .rfl r').aestronglyMeasurable hneg
-  rw [← integral_neg_eq_self, hnorm] at h
+  rw [← integral_neg_eq_self, hG.eLpNorm_eLpNorm_comp_neg] at h
   simpa only [neg_neg] using h
+
+/-- Sum frequency-localized mixed-norm estimates with weights `2^{jσ}` for a strongly continuous
+family `T(t)` of operators on `L²(E)` over the Littlewood–Paley blocks, for a wave-admissible pair
+`(q, r)`. This is the common step of the estimates for `cos(tD)` and `D⁻¹ sin(tD)`. -/
+private theorem exists_eLpNorm_eLpNorm_le_tsum_of_littlewoodPaley_le (hq : 2 < q)
+    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2) (σ : ℝ)
+    (T : ℝ → Lp ℂ 2 (volume : Measure E) →L[ℂ] Lp ℂ 2 (volume : Measure E))
+    (hT : ∀ x, Continuous fun t ↦ T t x)
+    (hloc : ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ f : Lp ℂ 2 (volume : Measure E),
+        eLpNorm (fun t ↦ eLpNorm (T t (Lp.fourierMultiplierCLM ℂ m f)) r volume) q volume ≤
+          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) * ‖f‖ₑ) :
+    ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
+      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ f : Lp ℂ 2 (volume : Measure E),
+        eLpNorm (fun t ↦ eLpNorm (T t f) r volume) q volume ≤
+          C * ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) *
+            ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ := by
+  rcases eq_or_ne r 0 with rfl | hr0
+  · exact ⟨0, fun _ _ _ ↦ by simp [eLpNorm_exponent_zero, Lp.aestronglyMeasurable]⟩
+  obtain ⟨-, -, hr2⟩ := two_le_finrank_of_waveAdmissible hq hr0 hqr Module.finrank_pos
+  obtain ⟨C, hC⟩ := hloc
+  obtain ⟨K, hK⟩ := φ.exists_eLpNorm_eLpNorm_le_mul_tsum (F := ℂ) (β := ℝ) (ρ := volume) σ
+    (q := q) (by exact_mod_cast one_le_two.trans hq.le) (one_le_two.trans hr2)
+  refine ⟨K * C, fun m hm f ↦ (hK m hm T (fun x ↦ (hT x).aestronglyMeasurable) C
+    (fun k x ↦ hC k (m k) (hm k) x) f).trans_eq ?_⟩
+  push_cast
+  ring
+
+/-- **The Strichartz estimate for `cos(tD)` with data in `\dot B^γ_{2,1}`.** Let `E` be nontrivial
+of dimension `n`, let `ψⱼ` be the Littlewood–Paley cutoffs built from `φ`, and let `Pⱼ` be the `L²`
+Fourier multiplier with symbol `ψⱼ`. Let `(q, r)` be wave-admissible,
+`2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `2 < q < ∞`, and let `γ = n / 2 - n / r - 1 / q`.
+There is `C` such that for every `f ∈ L²(E)`,
+
+`‖cos(tD) f‖_{L^q_t L^r_x} ≤ C ∑ⱼ 2^{jγ} ‖Pⱼ f‖₂`. -/
+theorem exists_eLpNorm_eLpNorm_waveCosPropagator_le_tsum (hq : 2 < q)
+    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2) :
+    ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
+      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ f : Lp ℂ 2 (volume : Measure E),
+        eLpNorm (fun t ↦ eLpNorm (waveCosPropagator ℂ t f) r volume) q volume ≤
+          C * ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹)) *
+              ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ :=
+  φ.exists_eLpNorm_eLpNorm_le_tsum_of_littlewoodPaley_le hq hqr _ _
+    continuous_waveCosPropagator_apply <|
+      φ.exists_eLpNorm_eLpNorm_waveCosPropagator_littlewoodPaley_le hq
+        (NNReal.HolderConjugate.conjExponent (one_lt_two.trans hq)).symm hqr
+
+/-- **The Strichartz estimate for `D⁻¹ sin(tD)` with data in `\dot B^{γ - 1}_{2,1}`.** Under the
+hypotheses of `ContDiffBump.exists_eLpNorm_eLpNorm_waveCosPropagator_le_tsum`, there is `C` such
+that for every `g ∈ L²(E)`,
+
+`‖D⁻¹ sin(tD) g‖_{L^q_t L^r_x} ≤ C ∑ⱼ 2^{j(γ - 1)} ‖Pⱼ g‖₂`. -/
+theorem exists_eLpNorm_eLpNorm_waveSinPropagator_le_tsum (hq : 2 < q)
+    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2) :
+    ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
+      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ g : Lp ℂ 2 (volume : Measure E),
+        eLpNorm (fun t ↦ eLpNorm (waveSinPropagator ℂ t g) r volume) q volume ≤
+          C * ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹ - 1)) *
+              ‖Lp.fourierMultiplierCLM ℂ (m j) g‖ₑ :=
+  φ.exists_eLpNorm_eLpNorm_le_tsum_of_littlewoodPaley_le hq hqr _ _
+    continuous_waveSinPropagator_apply <|
+      φ.exists_eLpNorm_eLpNorm_waveSinPropagator_littlewoodPaley_le hq
+        (NNReal.HolderConjugate.conjExponent (one_lt_two.trans hq)).symm hqr
+
+/-- **The Strichartz estimate for the free wave equation with data in
+`\dot B^γ_{2,1} × \dot B^{γ - 1}_{2,1}`.** Under the hypotheses of
+`ContDiffBump.exists_eLpNorm_eLpNorm_waveCosPropagator_le_tsum`, there is `C` such that for all
+`f, g ∈ L²(E)`, the solution `u(t) = cos(tD) f + D⁻¹ sin(tD) g` of `∂ₜ²u = Δu` with `u(0) = f` and
+`∂ₜu(0) = g` satisfies
+
+`‖u‖_{L^q_t L^r_x} ≤ C (∑ⱼ 2^{jγ} ‖Pⱼ f‖₂ + ∑ⱼ 2^{j(γ - 1)} ‖Pⱼ g‖₂)`. -/
+theorem exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum (hq : 2 < q)
+    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2) :
+    ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
+      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ f g : Lp ℂ 2 (volume : Measure E),
+        eLpNorm (fun t ↦ eLpNorm (waveCosPropagator ℂ t f + waveSinPropagator ℂ t g) r volume) q
+            volume ≤
+          C * (∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+              Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹)) *
+                ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ +
+            ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+              Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹ - 1)) *
+                ‖Lp.fourierMultiplierCLM ℂ (m j) g‖ₑ) := by
+  rcases eq_or_ne r 0 with rfl | hr0
+  · exact ⟨0, fun _ _ _ _ ↦ by simp_rw [eLpNorm_exponent_zero (Lp.aestronglyMeasurable _)]; simp⟩
+  obtain ⟨-, -, hr2⟩ := two_le_finrank_of_waveAdmissible hq hr0 hqr Module.finrank_pos
+  obtain ⟨C₁, h₁⟩ := φ.exists_eLpNorm_eLpNorm_waveCosPropagator_le_tsum hq hqr
+  obtain ⟨C₂, h₂⟩ := φ.exists_eLpNorm_eLpNorm_waveSinPropagator_le_tsum hq hqr
+  refine ⟨C₁ + C₂, fun m hm f g ↦ ?_⟩
+  have hu : Continuous fun t ↦ waveCosPropagator ℂ t f + waveSinPropagator ℂ t g :=
+    (continuous_waveCosPropagator_apply f).add (continuous_waveSinPropagator_apply g)
+  calc _ ≤ eLpNorm (fun t ↦ eLpNorm (waveCosPropagator ℂ t f) r volume +
+          eLpNorm (waveSinPropagator ℂ t g) r volume) q volume :=
+        eLpNorm_mono_eNorm
+          (hu.aestronglyMeasurable.aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable fun t ↦ by
+            simp only [eNorm_eq_self]
+            rw [eLpNorm_congr_ae (Lp.coeFn_add _ _)]
+            exact eLpNorm_add_le (one_le_two.trans hr2)
+    _ ≤ eLpNorm (fun t ↦ eLpNorm (waveCosPropagator ℂ t f) r volume) q volume +
+          eLpNorm (fun t ↦ eLpNorm (waveSinPropagator ℂ t g) r volume) q volume :=
+        eLpNorm_add_le (by exact_mod_cast one_le_two.trans hq.le)
+    _ ≤ _ := by
+        grw [h₁ m hm f, h₂ m hm g, ENNReal.coe_add, add_mul, mul_add, mul_add]
+        gcongr
+        · exact le_self_add
+        · exact le_add_self
+
+/-- **The Strichartz estimate for strong solutions of the free wave equation.** Under the
+hypotheses of `ContDiffBump.exists_eLpNorm_eLpNorm_waveCosPropagator_le_tsum`, there is `C` such
+that for every interval `I` containing `0`, every strong solution `u` of `∂ₜ²u = Δu` on `I`, with
+velocity `u'`, satisfies
+
+`‖u‖_{L^q(I; L^r_x)} ≤ C (∑ⱼ 2^{jγ} ‖Pⱼ u(0)‖₂ + ∑ⱼ 2^{j(γ - 1)} ‖Pⱼ u'(0)‖₂)`. -/
+theorem exists_eLpNorm_eLpNorm_le_tsum_of_isWaveSolutionOn (hq : 2 < q)
+    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2) :
+    ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
+      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ (s : Set ℝ) [s.OrdConnected], 0 ∈ s →
+      ∀ u u' u'' : ℝ → Lp ℂ 2 (volume : Measure E), IsWaveSolutionOn u u' u'' 0 s →
+        eLpNorm (fun t ↦ eLpNorm (u t) r volume) q (volume.restrict s) ≤
+          C * (∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+              Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹)) *
+                ‖Lp.fourierMultiplierCLM ℂ (m j) (u 0)‖ₑ +
+            ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+              Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹ - 1)) *
+                ‖Lp.fourierMultiplierCLM ℂ (m j) (u' 0)‖ₑ) := by
+  obtain ⟨C, hC⟩ :=
+    φ.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum hq hqr
+  refine ⟨C, fun m hm s _ h0 u u' u'' hu ↦ ?_⟩
+  -- By Duhamel's formula with no forcing, `u(t) = cos(tD) u(0) + D⁻¹ sin(tD) u'(0)` on `s`.
+  have hrep : ∀ᵐ t ∂volume.restrict s, eLpNorm (u t) r volume =
+      eLpNorm (waveCosPropagator ℂ t (u 0) + waveSinPropagator ℂ t (u' 0)) r volume :=
+    ae_restrict_of_forall_mem (Set.OrdConnected.measurableSet ‹_›) fun t ht ↦ by
+      rw [hu.eq_waveCosPropagator_add_waveSinPropagator_add_integral h0 ht
+        intervalIntegrable_const]
+      simp
+  rw [eLpNorm_congr_ae hrep]
+  exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans (hC m hm _ _)
 
 end ContDiffBump
