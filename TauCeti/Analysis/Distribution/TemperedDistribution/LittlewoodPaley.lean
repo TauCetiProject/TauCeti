@@ -23,6 +23,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
+import TauCeti.Data.Nat.Interval
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
@@ -1020,8 +1021,8 @@ theorem exists_enlargedLittlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] (L 
           rw [Finset.sum_const, nsmul_eq_mul]
       _ ≤ 2 * L * (max C₀ 0 * ‖f‖) := by
           gcongr
-          rw [Nat.card_Ico]
-          exact_mod_cast (by omega : j + L - (j + 1 - L) ≤ 2 * L)
+          exact_mod_cast Nat.card_Ico_add_le_two_mul_of_sub_le j L
+            (Nat.sub_le_sub_right (Nat.le_add_right j 1) L)
       _ = 2 * L * max C₀ 0 * ‖f‖ := by ring
 
 /-- **Littlewood–Paley blocks preserve the `Lᵖ` closure of Schwartz functions.** If `f ∈ Lᵖ` lies in

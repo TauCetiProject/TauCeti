@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Holder.Inclusion
 public import TauCeti.Analysis.Holder.LowOrder
 public import TauCeti.Analysis.Holder.Zygmund.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
-public import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence
+public import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!
