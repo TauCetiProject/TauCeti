@@ -32,7 +32,7 @@ function `f : ℝ → ℂ` defines a closed partial operator `A.eigenCalculus hA
   `LinearPMap.isClosed_eigenCalculus`, `LinearPMap.adjoint_eigenCalculus`.
 * `LinearPMap.boundedEigenCalculus_eq_diagonal`,
   `LinearPMap.isCompactOperator_boundedEigenCalculus`,
-  `LinearPMap.boundedEigenCalculus_unitaryConj`,
+  `LinearPMap.boundedEigenCalculus_conj`,
   `LinearPMap.mul_boundedEigenCalculus_of_anticommute`.
 -/
 
@@ -267,20 +267,27 @@ theorem boundedEigenCalculus_invOneAddSq
   push_cast; rfl
 
 /-- Unitary conjugation commutes with the bounded eigenbasis functional calculus. -/
-theorem boundedEigenCalculus_unitaryConj {H' : Type*} [NormedAddCommGroup H']
+theorem boundedEigenCalculus_conj {H' : Type*} [NormedAddCommGroup H']
     [InnerProductSpace ℂ H'] [CompleteSpace H'] (U : H ≃ₗᵢ[ℂ] H') (f : ℝ → ℂ)
     (hf : ∃ C, ∀ t, ‖f t‖ ≤ C) :
-    (unitaryConj U A).boundedEigenCalculus (isSelfAdjoint_unitaryConj hA)
-      ((hasCompactResolvent_unitaryConj_iff U).2 h) f hf =
+    (A.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).boundedEigenCalculus (hA.conj U)
+      ((hasCompactResolvent_conj_iff (U : H ≃L[ℂ] H')).2 h) f hf =
       U.conjStarAlgEquiv (A.boundedEigenCalculus hA h f hf) := by
   set b := chosenBasis hA h
   set lam := chosenEigval hA h
-  have hb' : ∀ k, ∃ hk : b.mapₗᵢ U k ∈ (unitaryConj U A).domain,
-      unitaryConj U A ⟨b.mapₗᵢ U k, hk⟩ = (lam k : ℂ) • b.mapₗᵢ U k := fun k ↦ by
+  have hb' : ∀ k, ∃ hk : b.mapₗᵢ U k ∈ (A.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain,
+      A.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H') ⟨b.mapₗᵢ U k, hk⟩ =
+        (lam k : ℂ) • b.mapₗᵢ U k := fun k ↦ by
     obtain ⟨hk, hAk⟩ := chosenBasis_spec hA h k
-    refine ⟨by rw [HilbertBasis.mapₗᵢ_apply]; exact map_mem_unitaryConj_domain U A ⟨b k, hk⟩, ?_⟩
+    refine ⟨by rw [HilbertBasis.mapₗᵢ_apply, mem_conj_domain_iff]; simpa using hk, ?_⟩
     simp only [HilbertBasis.mapₗᵢ_apply]
-    rw [unitaryConj_apply_map U A ⟨b k, hk⟩, hAk, _root_.map_smul]
+    rw [conj_apply]
+    have hbk : (⟨((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H').symm (U (b k)),
+        mem_conj_domain_iff.1 (by simpa using hk)⟩ : A.domain) = ⟨b k, hk⟩ :=
+      Subtype.ext (U.symm_apply_apply _)
+    rw [hbk]
+    change U (A ⟨b k, hk⟩) = _
+    rw [hAk, _root_.map_smul]
   refine (b.mapₗᵢ U).ext_inner_apply (b.mapₗᵢ U) fun i j ↦ ?_
   obtain ⟨hj', hAj'⟩ := hb' j
   obtain ⟨hj, hAj⟩ := chosenBasis_spec hA h j

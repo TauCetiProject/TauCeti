@@ -135,12 +135,12 @@ theorem isCompactOperator_boundedTransform_mul_self_sub_one :
   exact (h.isCompactOperator_invOneAddSq hA.I_mem_resolventSet).neg
 
 /-- Unitary conjugation commutes with the bounded transform. -/
-theorem boundedTransform_unitaryConj {H' : Type*} [NormedAddCommGroup H']
+theorem boundedTransform_conj {H' : Type*} [NormedAddCommGroup H']
     [InnerProductSpace ℂ H'] [CompleteSpace H'] (U : H ≃ₗᵢ[ℂ] H') :
-    (unitaryConj U A).boundedTransform (isSelfAdjoint_unitaryConj hA)
-      ((hasCompactResolvent_unitaryConj_iff U).2 h) =
+    (A.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).boundedTransform (hA.conj U)
+      ((hasCompactResolvent_conj_iff (U : H ≃L[ℂ] H')).2 h) =
       U.conjStarAlgEquiv (A.boundedTransform hA h) :=
-  A.boundedEigenCalculus_unitaryConj hA h U _ _
+  A.boundedEigenCalculus_conj hA h U _ _
 
 /-- Any bounded operator preserving `D(A)` and anticommuting with `A` anticommutes with `F_A`. -/
 theorem mul_boundedTransform_of_anticommute {γ : H →L[ℂ] H}

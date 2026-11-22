@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 public import TauCeti.Analysis.Normed.Operator.Resolvent.LowerBound
 
@@ -19,10 +18,6 @@ this is the quantitative form of `z ∉ σ(A)`. Every nonreal scalar `z` is such
 real. Taking the adjoint of a resolvent conjugates its scalar parameter; in particular, resolvents
 at real points are self-adjoint. These facts provide the bounded inverses used in Cayley
 transforms and imaginary-shift approximations of unbounded self-adjoint operators.
-
-Unitary conjugation transports resolvent points and conjugates the bounded resolvent
-(`LinearPMap.IsResolventAt.unitaryConj`, `LinearPMap.mem_resolventSet_unitaryConj_iff`,
-`LinearPMap.resolvent_unitaryConj`).
 
 The off-real estimates and surjectivity come from
 `TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint`; the bounded inverse uses
@@ -42,57 +37,6 @@ namespace TauCeti
 
 open _root_.LinearPMap
 open scoped InnerProductSpace
-
-section UnitaryConj
-
-variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {A : E →ₗ.[𝕜] E} {z : 𝕜} {R : E →L[𝕜] E}
-
-/-- Unitary conjugation transports a resolvent at `z` to the conjugated operator
-`U ∘ R ∘ U⁻¹`. -/
-theorem _root_.LinearPMap.IsResolventAt.unitaryConj (h : IsResolventAt A z R) (U : E ≃ₗᵢ[𝕜] F) :
-    IsResolventAt (unitaryConj U A) z
-      (U.toContinuousLinearEquiv.toContinuousLinearMap ∘L R ∘L
-        U.symm.toContinuousLinearEquiv.toContinuousLinearMap) where
-  mem_domain y := by
-    rw [mem_unitaryConj_domain_iff]
-    simpa using h.mem_domain (U.symm y)
-  smul_sub_apply y := by
-    let x : A.domain := ⟨R (U.symm y), h.mem_domain (U.symm y)⟩
-    have hxy : ((U.toContinuousLinearEquiv.toContinuousLinearMap ∘L R ∘L
-        U.symm.toContinuousLinearEquiv.toContinuousLinearMap) y : F) = U (x : E) := rfl
-    rw [unitaryConj_apply_of_eq hxy]
-    simp only [ContinuousLinearMap.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-      ContinuousLinearEquiv.coe_coe]
-    rw [← _root_.map_smul, ← _root_.map_sub, h.smul_sub_apply (U.symm y), U.apply_symm_apply]
-  apply_smul_sub x := by
-    let x' : A.domain :=
-      ⟨U.symm (x : F), (mem_unitaryConj_domain_iff (U := U) (A := A)).1 x.property⟩
-    rw [unitaryConj_apply_of_eq (y := x') (U.apply_symm_apply _).symm]
-    simp only [ContinuousLinearMap.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-      ContinuousLinearEquiv.coe_coe]
-    rw [_root_.map_sub U.symm, _root_.map_smul U.symm, U.symm_apply_apply,
-      h.apply_smul_sub x', U.apply_symm_apply]
-
-/-- Unitary conjugation preserves the resolvent set. -/
-@[simp]
-theorem _root_.LinearPMap.mem_resolventSet_unitaryConj_iff (U : E ≃ₗᵢ[𝕜] F) :
-    z ∈ (unitaryConj U A).resolventSet ↔ z ∈ A.resolventSet := by
-  simp only [mem_resolventSet_iff]
-  refine ⟨fun ⟨R, hR⟩ ↦ ?_, fun ⟨R, hR⟩ ↦ ⟨_, hR.unitaryConj U⟩⟩
-  have h := hR.unitaryConj U.symm
-  rw [unitaryConj_unitaryConj_symm] at h
-  exact ⟨_, h⟩
-
-/-- The resolvent of a unitary conjugate is the conjugate of the resolvent. -/
-theorem _root_.LinearPMap.resolvent_unitaryConj (U : E ≃ₗᵢ[𝕜] F) (hz : z ∈ A.resolventSet) :
-    (unitaryConj U A).resolvent z =
-      U.toContinuousLinearEquiv.toContinuousLinearMap ∘L A.resolvent z ∘L
-        U.symm.toContinuousLinearEquiv.toContinuousLinearMap :=
-  (isResolventAt_resolvent ((mem_resolventSet_unitaryConj_iff U).2 hz)).unique
-    ((isResolventAt_resolvent hz).unitaryConj U)
-
-end UnitaryConj
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   {A B : E →ₗ.[𝕜] E} {z : 𝕜}

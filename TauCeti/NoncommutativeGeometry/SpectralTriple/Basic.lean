@@ -244,38 +244,40 @@ variable {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H'] [Comple
 
 private theorem conj_mem_domain {D : H →ₗ.[ℂ] H} (U : H ≃ₗᵢ[ℂ] H') {T : H →L[ℂ] H}
     (hT : ∀ {x : H}, x ∈ D.domain → T x ∈ D.domain) {y : H'}
-    (hy : y ∈ (LinearPMap.unitaryConj U D).domain) :
-    U.conjStarAlgEquiv T y ∈ (LinearPMap.unitaryConj U D).domain := by
-  rw [LinearPMap.mem_unitaryConj_domain_iff] at hy ⊢
+    (hy : y ∈ (D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain) :
+    U.conjStarAlgEquiv T y ∈ (D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain := by
+  rw [LinearPMap.mem_conj_domain_iff] at hy ⊢
   simpa [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply] using hT hy
 
 private theorem conj_commutator_apply_domain (U : H ≃ₗᵢ[ℂ] H') (a : A)
-    (y : (LinearPMap.unitaryConj U S.operator).domain) :
-    LinearPMap.unitaryConj U S.operator
+    (y : (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain) :
+    S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')
         ⟨U.conjStarAlgEquiv (S.rep a) y,
           conj_mem_domain U (S.rep_mem_domain a) y.property⟩ -
-      U.conjStarAlgEquiv (S.rep a) (LinearPMap.unitaryConj U S.operator y) =
+      U.conjStarAlgEquiv (S.rep a)
+        (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H') y) =
     U.conjStarAlgEquiv (S.commutator a) y := by
   let x : S.operator.domain :=
-    ⟨U.symm (y : H'),
-      (LinearPMap.mem_unitaryConj_domain_iff (U := U) (A := S.operator)).1 y.property⟩
+    ⟨((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H').symm (y : H'), LinearPMap.mem_conj_domain_iff.1 y.property⟩
   let x' : S.operator.domain := ⟨S.rep a x, S.rep_mem_domain a x.property⟩
-  rw [LinearPMap.unitaryConj_apply_of_eq (y := x')
-      (by simp [x, x', LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]),
-    LinearPMap.unitaryConj_apply_of_eq (y := x) (U.apply_symm_apply _).symm,
-    LinearIsometryEquiv.conjStarAlgEquiv_apply_apply,
-    LinearIsometryEquiv.conjStarAlgEquiv_apply_apply,
-    U.symm_apply_apply, ← map_sub]
+  have hx' : (⟨((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H').symm (U.conjStarAlgEquiv (S.rep a) y),
+      LinearPMap.mem_conj_domain_iff.1 (conj_mem_domain U (S.rep_mem_domain a) y.property)⟩ :
+      S.operator.domain) = x' := by
+    ext; simp [x, x', LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
+  rw [LinearPMap.conj_apply, LinearPMap.conj_apply, hx']
+  simp only [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
+  change U (S.operator x') - U (S.rep a (U.symm (U (S.operator x)))) = U (S.commutator a (U.symm y))
+  rw [U.symm_apply_apply, ← map_sub]
   exact congrArg U (S.commutator_apply_domain a x)
 
 /-- **Unitary equivalence.** The spectral triple on `H'` obtained by transporting `S` along the
 unitary `U : H ≃ₗᵢ[ℂ] H'`, with representation `U π(a) U*` and Dirac operator `U D U*`. -/
 def conj (U : H ≃ₗᵢ[ℂ] H') : SpectralTriple A H' where
   rep := U.conjStarAlgEquiv.toStarAlgHom.comp S.rep
-  operator := LinearPMap.unitaryConj U S.operator
-  isSelfAdjoint_operator := LinearPMap.isSelfAdjoint_unitaryConj S.isSelfAdjoint_operator
+  operator := S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')
+  isSelfAdjoint_operator := S.isSelfAdjoint_operator.conj U
   hasCompactResolvent_operator :=
-    (LinearPMap.hasCompactResolvent_unitaryConj_iff U).2 S.hasCompactResolvent_operator
+    (LinearPMap.hasCompactResolvent_conj_iff (U : H ≃L[ℂ] H')).2 S.hasCompactResolvent_operator
   rep_mem_domain a _ hy := conj_mem_domain U (S.rep_mem_domain a) hy
   exists_bounded_commutator a :=
     ⟨U.conjStarAlgEquiv (S.commutator a), S.conj_commutator_apply_domain U a⟩
@@ -287,7 +289,7 @@ theorem conj_rep_apply (U : H ≃ₗᵢ[ℂ] H') (a : A) :
 
 @[simp]
 theorem conj_operator (U : H ≃ₗᵢ[ℂ] H') :
-    (S.conj U).operator = LinearPMap.unitaryConj U S.operator :=
+    (S.conj U).operator = S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H') :=
   (rfl)
 
 @[simp]
@@ -300,7 +302,7 @@ theorem conj_commutator (U : H ≃ₗᵢ[ℂ] H') (a : A) :
 theorem conj_conj_symm (U : H ≃ₗᵢ[ℂ] H') : (S.conj U).conj U.symm = S := by
   ext1
   · ext1 a; simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
-  · exact LinearPMap.unitaryConj_unitaryConj_symm U S.operator
+  · simp
 
 /-- Transporting along the inverse unitary and then along `U` recovers the original triple. -/
 @[simp]
@@ -312,7 +314,8 @@ theorem conj_symm_conj (U : H' ≃ₗᵢ[ℂ] H) : (S.conj U.symm).conj U = S :=
 theorem conj_refl : S.conj (LinearIsometryEquiv.refl ℂ H) = S := by
   ext1
   · ext1 a; simp
-  · exact LinearPMap.unitaryConj_refl S.operator
+  · change S.operator.conj (LinearEquiv.refl ℂ H) = S.operator
+    exact LinearPMap.conj_refl S.operator
 
 /-- Transporting along `U` and then along `V` is transporting along their composite. -/
 theorem conj_trans {H'' : Type*} [NormedAddCommGroup H''] [InnerProductSpace ℂ H'']
@@ -320,7 +323,7 @@ theorem conj_trans {H'' : Type*} [NormedAddCommGroup H''] [InnerProductSpace ℂ
     (S.conj U).conj V = S.conj (U.trans V) := by
   ext1
   · ext1 a; ext x; simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
-  · exact LinearPMap.unitaryConj_trans U V S.operator
+  · simp [conj_operator, ← LinearPMap.conj_trans]
 
 end Conj
 
@@ -446,19 +449,23 @@ section Conj
 variable {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H'] [CompleteSpace H']
 
 private theorem conj_grading_apply_operator (U : H ≃ₗᵢ[ℂ] H')
-    (y : (LinearPMap.unitaryConj U S.operator).domain) :
-    (U.conjStarAlgEquiv S.grading) (LinearPMap.unitaryConj U S.operator y) =
-      -LinearPMap.unitaryConj U S.operator
+    (y : (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain) :
+    (U.conjStarAlgEquiv S.grading) (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H') y) =
+      -S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')
         ⟨U.conjStarAlgEquiv S.grading y,
           SpectralTriple.conj_mem_domain U S.grading_mem_domain y.property⟩ := by
   let x : S.operator.domain :=
-    ⟨U.symm (y : H'),
-      (LinearPMap.mem_unitaryConj_domain_iff (U := U) (A := S.operator)).1 y.property⟩
+    ⟨((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H').symm (y : H'), LinearPMap.mem_conj_domain_iff.1 y.property⟩
   let x' : S.operator.domain := ⟨S.grading x, S.grading_mem_domain x.property⟩
-  rw [LinearPMap.unitaryConj_apply_of_eq (y := x) (U.apply_symm_apply _).symm,
-    LinearPMap.unitaryConj_apply_of_eq (y := x')
-      (by simp [x, x', LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]),
-    LinearIsometryEquiv.conjStarAlgEquiv_apply_apply, U.symm_apply_apply, ← map_neg]
+  have hx' : (⟨((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H').symm (U.conjStarAlgEquiv S.grading y),
+      LinearPMap.mem_conj_domain_iff.1
+        (SpectralTriple.conj_mem_domain U S.grading_mem_domain y.property)⟩ :
+      S.operator.domain) = x' := by
+    ext; simp [x, x', LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
+  rw [LinearPMap.conj_apply, LinearPMap.conj_apply, hx']
+  simp only [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
+  change U (S.grading (U.symm (U (S.operator x)))) = -U (S.operator x')
+  rw [U.symm_apply_apply, ← map_neg]
   exact congrArg U (S.grading_apply_operator x)
 
 /-- **Unitary equivalence**, even version: the grading is transported to `U γ U*`. -/
@@ -487,7 +494,7 @@ theorem conj_grading (U : H ≃ₗᵢ[ℂ] H') : (S.conj U).grading = U.conjStar
 theorem conj_conj_symm (U : H ≃ₗᵢ[ℂ] H') : (S.conj U).conj U.symm = S := by
   ext1
   · ext1 a; simp
-  · exact LinearPMap.unitaryConj_unitaryConj_symm U S.operator
+  · simp
   · simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
 
 /-- Transporting along the inverse unitary and then along `U` recovers the original triple. -/
@@ -500,7 +507,7 @@ theorem conj_symm_conj (U : H' ≃ₗᵢ[ℂ] H) : (S.conj U.symm).conj U = S :=
 theorem conj_refl : S.conj (LinearIsometryEquiv.refl ℂ H) = S := by
   ext1
   · ext1 a; simp
-  · exact LinearPMap.unitaryConj_refl S.operator
+  · simp
   · simp
 
 /-- Transporting along `U` and then along `V` is transporting along their composite. -/
@@ -509,7 +516,7 @@ theorem conj_trans {H'' : Type*} [NormedAddCommGroup H''] [InnerProductSpace ℂ
     (S.conj U).conj V = S.conj (U.trans V) := by
   ext1
   · ext1 a; ext x; simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
-  · exact LinearPMap.unitaryConj_trans U V S.operator
+  · simp [SpectralTriple.conj_operator, ← LinearPMap.conj_trans]
   · ext x; simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
 
 end Conj

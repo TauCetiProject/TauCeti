@@ -121,7 +121,7 @@ theorem boundedTransform_conj {H' : Type*} [NormedAddCommGroup H'] [InnerProduct
     [CompleteSpace H'] (U : H ≃ₗᵢ[ℂ] H') :
     (S.conj U).boundedTransform = U.conjStarAlgEquiv S.boundedTransform := by
   simp only [boundedTransform, conj_operator]
-  exact S.operator.boundedTransform_unitaryConj S.isSelfAdjoint_operator
+  exact S.operator.boundedTransform_conj S.isSelfAdjoint_operator
     S.hasCompactResolvent_operator U
 
 /-- Algebra pullback preserves the bounded transform. -/
