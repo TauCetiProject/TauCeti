@@ -47,7 +47,8 @@ acts on the mode `k` by `(aₖ, bₖ) ↦ (A aₖ + ωₖ bₖ, A bₖ - ωₖ a
 (`TauCeti.torusModeOperator`, `TauCeti.torusModeOperator_apply_apply_eq`). It depends
 continuously on `S` (`TauCeti.continuous_torusModeOperator`), and for `S = 0` it is complex linear
 (`TauCeti.torusModeOperator_zero_apply_smul`,
-`TauCeti.exists_restrictScalars_eq_torusModeOperator_zero`).
+`TauCeti.exists_restrictScalars_eq_torusModeOperator_zero`), as it is for every loop whose loop
+operator is complex linear (`TauCeti.torusModeOperator_apply_smul`).
 
 **The estimate.** By the symmetry of `A` the cross terms cancel and each mode satisfies
 `‖A a + ω b‖² + ‖A b - ω a‖² = ‖A a‖² + ‖A b‖² + ω² (‖a‖² + ‖b‖²)`, the operator counterpart of
@@ -66,9 +67,10 @@ twisted orbit-torus operator is oriented (`TauCeti.isInvertible_torusModeOperato
 for maps periodic in `s` it splits off the nonconstant modes as an invertible summand
 (`TauCeti.isInvertible_torusModeOperator_periodic`).
 
-The twist along `γ` by the sign `-1` is not treated here: a map antiperiodic in `t` of period `T`
-is `exp (J₀ π t / T)` times a periodic one, and the corresponding loop operator is that of a
-different loop. Finite covers of the torus are not treated either.
+The twist along `γ` by the sign `-1` is not treated separately: a map antiperiodic in `t` of
+period `T` is `exp (J₀ π t / T)` times a periodic one, and the corresponding loop operator is that
+of the loop `TauCeti.CircleSobolev.antiperiodicGaugeLoop T S`, which is infinitesimally symplectic
+with `S`, so the results here apply to it. Finite covers of the torus are not treated either.
 
 ## Main definitions
 
@@ -226,15 +228,24 @@ theorem torusModeOperator_apply_apply_eq (ω : ℕ → ℝ) (S : C(AddCircle T, 
   rw [torusModeOperator_apply_apply, fst_snd_apply_of_mem_torusModeSobolev x.property,
     snd_snd_apply_of_mem_torusModeSobolev x.property]
 
-/-- **The reference operator is complex linear.** For `S = 0` the operator `∂s + J₀ ∂t` commutes
-with multiplication by complex scalars, the complex structure of `H¹` and `L²` acting by `J₀`. -/
-theorem torusModeOperator_zero_apply_smul (ω : ℕ → ℝ) (c : ℂ) (x : torusModeSobolev F ω) :
-    torusModeOperator T ω 0 (c • x) = c • torusModeOperator T ω 0 x := by
+/-- **Complex linearity.** If the loop operator `L_S` commutes with multiplication by complex
+scalars, as for a constant complex scalar loop, so does the operator `∂s + A` on the modes, the
+complex structure of `H¹` and `L²` acting by `J₀`. -/
+theorem torusModeOperator_apply_smul (ω : ℕ → ℝ) {S : C(AddCircle T, F →L[ℝ] F)}
+    (hS : ∀ (c : ℂ) (a : CircleSobolev 1 F), loopOperator T S (c • a) = c • loopOperator T S a)
+    (c : ℂ) (x : torusModeSobolev F ω) :
+    torusModeOperator T ω S (c • x) = c • torusModeOperator T ω S x := by
   refine lp.ext (funext fun k ↦ ?_)
   rw [lp.coeFn_smul, Pi.smul_apply, torusModeOperator_apply_apply,
     torusModeOperator_apply_apply]
   refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;>
-    simp [smul_comm c I, smul_add, smul_sub]
+    simp [hS, smul_comm c I, smul_add, smul_sub]
+
+/-- **The reference operator is complex linear.** For `S = 0` the operator `∂s + J₀ ∂t` commutes
+with multiplication by complex scalars, the complex structure of `H¹` and `L²` acting by `J₀`. -/
+theorem torusModeOperator_zero_apply_smul (ω : ℕ → ℝ) (c : ℂ) (x : torusModeSobolev F ω) :
+    torusModeOperator T ω 0 (c • x) = c • torusModeOperator T ω 0 x :=
+  torusModeOperator_apply_smul T ω (fun c a ↦ by simp) c x
 
 /-- **The reference operator as a complex-linear map.** For `S = 0` the operator `∂s + J₀ ∂t` is
 the restriction of scalars of a bounded complex-linear map, for the complex structures of `H¹` and
