@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
+public import TauCeti.Geometry.Manifold.ContMDiffMap.MeanZero
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.MeanZero
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
-import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
 import TauCeti.Geometry.Manifold.Riemannian.Harmonic
 import TauCeti.Geometry.Manifold.Riemannian.Poisson.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Regularity
@@ -46,6 +44,8 @@ and using `LinearEquiv.ofBijective` gives the linear automorphism
   `negLaplaceBeltramiEquiv`.
 * `TauCeti.Manifold.neg_laplaceBeltrami_negLaplaceBeltramiEquiv_symm`: the inverse of
   `negLaplaceBeltramiEquiv` solves `Δ⁺u = f`.
+* `TauCeti.Manifold.eq_negLaplaceBeltramiEquiv_symm_iff`: pointwise characterization of the
+  inverse of `negLaplaceBeltramiEquiv`.
 -/
 
 public section
@@ -103,6 +103,23 @@ theorem existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq
     (hu'_smooth.of_le (by simp)) (u.contMDiff.of_le (by simp))
     (fun x ↦ neg_inj.1 ((hu'eq x).trans (hueq x).symm)) (hu'0.trans hu0.symm)
 
+omit [PreconnectedSpace M] in
+variable (I M) in
+/-- The nonnegative Laplacian `-laplaceBeltramiLinearMap I M` restricted to mean-zero smooth
+functions. -/
+private def negLaplaceBeltramiMeanZero :
+    meanZeroSmoothFunctions I M (riemannianVolume I M) →ₗ[ℝ]
+      meanZeroSmoothFunctions I M (riemannianVolume I M) :=
+  -((laplaceBeltramiLinearMap I M).restrict fun u _ ↦
+    laplaceBeltramiLinearMap_mem_meanZeroSmoothFunctions u)
+
+omit [PreconnectedSpace M] in
+private theorem negLaplaceBeltramiMeanZero_apply
+    (u : meanZeroSmoothFunctions I M (riemannianVolume I M)) (x : M) :
+    (negLaplaceBeltramiMeanZero I M u).val x = -laplaceBeltrami I u.val x := by
+  simp only [negLaplaceBeltramiMeanZero, LinearMap.neg_apply, Submodule.coe_neg,
+    LinearMap.restrict_apply, ContMDiffMap.coe_neg, Pi.neg_apply, laplaceBeltramiLinearMap_apply]
+
 variable (I M) in
 /-- **The nonnegative Laplacian as a linear equivalence on mean-zero smooth functions.** On a
 closed connected smooth Riemannian manifold, `u ↦ Δ⁺u` is a linear automorphism of the submodule
@@ -111,9 +128,7 @@ equation. -/
 def negLaplaceBeltramiEquiv :
     meanZeroSmoothFunctions I M (riemannianVolume I M) ≃ₗ[ℝ]
       meanZeroSmoothFunctions I M (riemannianVolume I M) :=
-  LinearEquiv.ofBijective
-    (-((laplaceBeltramiLinearMap I M).restrict fun u _ ↦
-      laplaceBeltramiLinearMap_mem_meanZeroSmoothFunctions u))
+  LinearEquiv.ofBijective (negLaplaceBeltramiMeanZero I M)
     ((Function.bijective_iff_existsUnique _).2 fun f ↦ by
       obtain ⟨u, ⟨hu, hu0, hueq⟩, huniq⟩ :=
         existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq
@@ -121,13 +136,10 @@ def negLaplaceBeltramiEquiv :
       let u₀ : C^∞⟮I, M; ℝ⟯ := ⟨u, hu⟩
       refine ⟨⟨u₀, mem_meanZeroSmoothFunctions_iff.2 hu0⟩, ?_, fun u' hu' ↦ ?_⟩
       · refine Subtype.ext (ContMDiffMap.ext fun x ↦ ?_)
-        rw [LinearMap.neg_apply, Submodule.coe_neg, LinearMap.restrict_apply,
-          ContMDiffMap.coe_neg, Pi.neg_apply, laplaceBeltramiLinearMap_apply]
+        rw [negLaplaceBeltramiMeanZero_apply]
         exact hueq x
       · have hu'eq : ∀ x, -laplaceBeltrami I u'.val x = f.val x := fun x ↦ by
-          have hx := congrFun (congrArg (fun g ↦ (g.val : M → ℝ)) hu') x
-          simpa only [LinearMap.neg_apply, Submodule.coe_neg, LinearMap.restrict_apply,
-            ContMDiffMap.coe_neg, Pi.neg_apply, laplaceBeltramiLinearMap_apply] using hx
+          rw [← negLaplaceBeltramiMeanZero_apply, hu']
         exact Subtype.ext (ContMDiffMap.ext (congrFun
           (huniq u'.val ⟨u'.val.contMDiff, mem_meanZeroSmoothFunctions_iff.1 u'.property,
             hu'eq⟩))))
@@ -137,9 +149,7 @@ def negLaplaceBeltramiEquiv :
 theorem negLaplaceBeltramiEquiv_apply
     (u : meanZeroSmoothFunctions I M (riemannianVolume I M)) (x : M) :
     (negLaplaceBeltramiEquiv I M u).val x = -laplaceBeltrami I u.val x := by
-  simp only [negLaplaceBeltramiEquiv, LinearEquiv.ofBijective_apply, LinearMap.neg_apply,
-    Submodule.coe_neg, LinearMap.restrict_apply, ContMDiffMap.coe_neg, Pi.neg_apply,
-    laplaceBeltramiLinearMap_apply]
+  rw [negLaplaceBeltramiEquiv, LinearEquiv.ofBijective_apply, negLaplaceBeltramiMeanZero_apply]
 
 /-- The inverse of `negLaplaceBeltramiEquiv` solves the smooth Poisson equation
 `-laplaceBeltrami I u x = f x` pointwise. -/
@@ -149,5 +159,16 @@ theorem neg_laplaceBeltrami_negLaplaceBeltramiEquiv_symm
     -laplaceBeltrami I ((negLaplaceBeltramiEquiv I M).symm f).val x = f.val x := by
   have h := congrArg (fun g ↦ g.val x) ((negLaplaceBeltramiEquiv I M).apply_symm_apply f)
   simpa only [negLaplaceBeltramiEquiv_apply] using h
+
+/-- A mean-zero smooth function `u` equals `(negLaplaceBeltramiEquiv I M).symm f` if and only if
+it solves `-laplaceBeltrami I u x = f x` pointwise. -/
+theorem eq_negLaplaceBeltramiEquiv_symm_iff
+    {u f : meanZeroSmoothFunctions I M (riemannianVolume I M)} :
+    u = (negLaplaceBeltramiEquiv I M).symm f ↔
+      ∀ x, -laplaceBeltrami I u.val x = f.val x := by
+  rw [LinearEquiv.eq_symm_apply]
+  refine ⟨fun h x ↦ ?_, fun h ↦ Subtype.ext (ContMDiffMap.ext fun x ↦ ?_)⟩
+  · rw [← negLaplaceBeltramiEquiv_apply, h]
+  · rw [negLaplaceBeltramiEquiv_apply, h x]
 
 end TauCeti.Manifold

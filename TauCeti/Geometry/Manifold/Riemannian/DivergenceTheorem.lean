@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.MeanZero
+public import TauCeti.Geometry.Manifold.ContMDiffMap.MeanZero
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Calculus.FDeriv.Integral
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Divergence
 
 /-!
@@ -31,9 +32,8 @@ manifolds. No orientation is used: the measure is the orientation-free `TauCeti.
 ## Main results
 
 * `TauCeti.Manifold.integral_divergence_eq_zero`: the divergence theorem `∫ div X dV = 0`.
-* `TauCeti.Manifold.integral_laplaceBeltrami_eq_zero`,
-  `TauCeti.Manifold.integral_laplaceBeltrami_eq_zero_of_compactSpace`: `∫ Δf dV = 0` for a
-  compactly supported `C²` function `f`, and for any `C²` function on a closed manifold.
+* `TauCeti.Manifold.integral_laplaceBeltrami_eq_zero`: `∫ Δf dV = 0` for a compactly supported `C²`
+  function `f`.
 * `TauCeti.Manifold.laplaceBeltramiLinearMap_mem_meanZeroSmoothFunctions`: on a closed smooth
   Riemannian manifold, `laplaceBeltramiLinearMap` maps every smooth function into
   `meanZeroSmoothFunctions I M (riemannianVolume I M)`.
@@ -220,6 +220,8 @@ private theorem integral_divergence_eq_zero_of_tsupport_subset
 
 end Chart
 
+section Divergence
+
 variable [IsManifold I ∞ M] [T2Space M] [SigmaCompactSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
@@ -342,22 +344,6 @@ theorem integral_laplaceBeltrami_eq_zero {f : M → ℝ} (hf : ContMDiff I 𝓘(
   exact integral_divergence_eq_zero
     (contMDiff_mgradient (n := 1) (by rwa [one_add_one_eq_two])) (hfc.mgradient I)
 
-/-- On a closed Riemannian manifold without boundary, the Laplace–Beltrami operator of every `C²`
-function has integral zero against the Riemannian volume. -/
-theorem integral_laplaceBeltrami_eq_zero_of_compactSpace [CompactSpace M] {f : M → ℝ}
-    (hf : ContMDiff I 𝓘(ℝ) 2 f) :
-    ∫ x, laplaceBeltrami I f x ∂riemannianVolume I M = 0 :=
-  integral_laplaceBeltrami_eq_zero hf (HasCompactSupport.of_compactSpace f)
-
-/-- On a closed smooth Riemannian manifold without boundary, `laplaceBeltramiLinearMap` maps every
-smooth function into `meanZeroSmoothFunctions I M (riemannianVolume I M)`. -/
-theorem laplaceBeltramiLinearMap_mem_meanZeroSmoothFunctions [CompactSpace M]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] (u : C^∞⟮I, M; ℝ⟯) :
-    laplaceBeltramiLinearMap I M u ∈ meanZeroSmoothFunctions I M (riemannianVolume I M) := by
-  rw [mem_meanZeroSmoothFunctions_iff]
-  simpa only [laplaceBeltramiLinearMap_apply] using
-    integral_laplaceBeltrami_eq_zero_of_compactSpace (u.contMDiff.of_le (by simp))
-
 /-- **Green's first identity** on a manifold without boundary: for a compactly supported `C¹`
 function `f` and a `C²` function `g`, `∫ f Δg dV = -∫ ⟪grad f, grad g⟫ dV`. -/
 theorem integral_mul_laplaceBeltrami {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 1 f)
@@ -398,5 +384,32 @@ theorem integral_mul_laplaceBeltrami_right_eq_left {f g : M → ℝ} (hf : ContM
   congr 1
   refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
   exact (inner_mgradient_right _).symm.trans (inner_mgradient _)
+
+end Divergence
+
+section CompactSmooth
+
+variable [IsManifold I ∞ M] [T2Space M] [CompactSpace M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [MeasurableSpace M] [BorelSpace M]
+
+local instance instIsContinuousRiemannianBundleDivergence :
+    IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+  IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+    (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
+
+/-- On a closed smooth Riemannian manifold without boundary, `laplaceBeltramiLinearMap` maps every
+smooth function into `meanZeroSmoothFunctions I M (riemannianVolume I M)`. -/
+theorem laplaceBeltramiLinearMap_mem_meanZeroSmoothFunctions (u : C^∞⟮I, M; ℝ⟯) :
+    laplaceBeltramiLinearMap I M u ∈ meanZeroSmoothFunctions I M (riemannianVolume I M) := by
+  let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.of_le (n := ∞) (by simp)
+  rw [mem_meanZeroSmoothFunctions_iff]
+  simpa only [laplaceBeltramiLinearMap_apply] using
+    integral_laplaceBeltrami_eq_zero (u.contMDiff.of_le (by simp))
+      (HasCompactSupport.of_compactSpace _)
+
+end CompactSmooth
 
 end TauCeti.Manifold

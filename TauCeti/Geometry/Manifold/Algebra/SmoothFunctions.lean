@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import Mathlib.Topology.ContinuousMap.Algebra
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 /-!
@@ -16,13 +17,15 @@ import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 This file complements Mathlib's algebraic structures on spaces of smooth maps with the pointwise
 evaluation of finite sums, with the iterated derivatives of a difference of `C^n` maps between
-normed spaces, with the pullback of smooth functions along a smooth map, and with the transport of
-pointwise identities between scalar-valued smooth functions to identities in the algebra of smooth
-functions. It also bundles the coordinate functions of a basis of a finite-dimensional space as
-smooth functions.
+normed spaces, with the pullback of smooth functions along a smooth map, with the forgetful linear
+map to continuous maps, and with the transport of pointwise identities between scalar-valued smooth
+functions to identities in the algebra of smooth functions. It also bundles the coordinate functions
+of a basis of a finite-dimensional space as smooth functions.
 
 ## Main definitions
 
+* `ContMDiffMap.toContinuousMapLinearMap`: the forgetful `𝕜`-linear map from `C^n` maps into a
+  normed space to continuous maps.
 * `Module.Basis.smoothCoord`: the `i`-th coordinate function of a basis, as a smooth function.
 
 ## Main results
@@ -30,6 +33,8 @@ smooth functions.
 * `ContMDiffMap.coe_sum`: the coercion of a finite sum of smooth maps is the sum of the coercions.
 * `ContMDiffMap.coe_smul'`: the coercion of a scalar-valued smooth map multiplying a vector-valued
   one is the pointwise scalar product of their coercions.
+* `ContMDiffMap.toContinuousMapLinearMap_apply`: pointwise evaluation of
+  `ContMDiffMap.toContinuousMapLinearMap`.
 * `ContMDiffMap.restrictMonoidHom_apply` and `ContMDiffMap.restrictAddMonoidHom_apply`: pointwise
   evaluation of restriction of smooth maps between open subsets.
 * `ContMDiffMap.algebraMap_apply`: the scalars of the algebra of `C^n` functions are the constant
@@ -118,6 +123,33 @@ theorem iteratedFDeriv_sub_apply {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     iteratedFDeriv 𝕜 i ⇑(u - v) z = iteratedFDeriv 𝕜 i u z - iteratedFDeriv 𝕜 i v z := by
   rw [coe_sub, _root_.iteratedFDeriv_sub_apply (u.contMDiff.contDiff.contDiffAt.of_le hi)
     (v.contMDiff.contDiff.contDiffAt.of_le hi)]
+
+/-- The forgetful `𝕜`-linear map from `C^n` maps into a normed space to continuous maps. -/
+def toContinuousMapLinearMap {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H N] {n : ℕ∞ω}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V] :
+    C^n⟮I, N; 𝓘(𝕜, V), V⟯ →ₗ[𝕜] C(N, V) where
+  toFun u := ⟨u, map_continuous u⟩
+  map_add' u v := by
+    ext x
+    simp only [ContinuousMap.coe_mk, ContinuousMap.add_apply, ContMDiffMap.coe_add, Pi.add_apply]
+  map_smul' c u := by
+    ext x
+    simp only [ContinuousMap.coe_mk, RingHom.id_apply, ContinuousMap.smul_apply,
+      ContMDiffMap.coe_smul, Pi.smul_apply]
+
+/-- Applying `ContMDiffMap.toContinuousMapLinearMap` evaluates the underlying function. -/
+@[simp]
+theorem toContinuousMapLinearMap_apply {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H N] {n : ℕ∞ω}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+    (u : C^n⟮I, N; 𝓘(𝕜, V), V⟯) (x : N) :
+    toContinuousMapLinearMap u x = u x :=
+  (rfl)
 
 section AlgHom
 

@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 import TauCeti.MeasureTheory.Integral.ContinuousMap
 
 /-!
@@ -16,7 +15,7 @@ import TauCeti.MeasureTheory.Integral.ContinuousMap
 Given a finite measure `μ` on a compact manifold `M`, the smooth real-valued functions on `M`
 whose integral against `μ` vanishes form the `ℝ`-submodule
 `TauCeti.Manifold.meanZeroSmoothFunctions I M μ`, defined as the kernel of integration against `μ`
-via `ContinuousMap.integralPositiveLinearMap`.
+via `ContinuousMap.integralPositiveLinearMap` and `ContMDiffMap.toContinuousMapLinearMap`.
 
 ## Main definitions
 
@@ -45,11 +44,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The submodule of smooth functions on `M` with vanishing integral against `μ`. -/
 def meanZeroSmoothFunctions : Submodule ℝ C^∞⟮I, M; ℝ⟯ :=
-  let toContinuousMap : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C(M, ℝ) :=
-    { toFun u := ⟨u, map_continuous u⟩
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl }
-  LinearMap.ker ((ContinuousMap.integralPositiveLinearMap μ).toLinearMap.comp toContinuousMap)
+  LinearMap.ker
+    ((ContinuousMap.integralPositiveLinearMap μ).toLinearMap.comp
+      ContMDiffMap.toContinuousMapLinearMap)
 
 variable {I M μ}
 
