@@ -38,7 +38,8 @@ the field.
   vector field are the solutions of the autonomous differential equation it defines.
 * `IsMIntegralCurveAt.of_extChartAt_symm`, `IsMIntegralCurveOn.of_extChartAt_symm`: a coordinate
   solution, on a neighbourhood of a time or on an open set of times, gives a manifold integral
-  curve.
+  curve. `IsMIntegralCurveOn.of_extChartAt_symm_of_hasDerivWithinAt` does the same for a coordinate
+  solution on an arbitrary set of times, which may meet the boundary of the model.
   Conversely, `HasMFDerivAt.hasDerivAt_extChartAt_comp` shows that a curve read in a fixed
   extended chart has the coordinate expression of its velocity as velocity, so an integral curve
   solves the coordinate equation there.
@@ -236,6 +237,37 @@ theorem IsMIntegralCurveOn.of_extChartAt_symm
   IsMIntegralCurveAt.isMIntegralCurveOn fun t ht ↦ IsMIntegralCurveAt.of_extChartAt_symm
     (by filter_upwards [hs.mem_nhds ht] with s hs using htarget s hs)
     (by filter_upwards [hs.mem_nhds ht] with s hs using hderiv s hs)
+
+/-- A curve in the extended chart at `x₀` that stays in the chart target on a set `s` of times and
+whose derivative within `s` is the coordinate expression of a vector field is an integral curve of
+the field on `s` once pulled back through the inverse chart. Unlike
+`IsMIntegralCurveOn.of_extChartAt_symm`, the curve may meet the boundary of the model and `s` is an
+arbitrary set of times, such as a half-open interval starting at an initial time. -/
+theorem IsMIntegralCurveOn.of_extChartAt_symm_of_hasDerivWithinAt
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+    {x₀ : M} {f : ℝ → E} {s : Set ℝ} {v : (x : M) → TangentSpace I x}
+    (hderiv : ∀ t ∈ s, HasDerivWithinAt f ((tangentCoordChange I ((extChartAt I x₀).symm (f t)) x₀
+      ((extChartAt I x₀).symm (f t))) (v ((extChartAt I x₀).symm (f t)))) s t)
+    (htarget : ∀ t ∈ s, f t ∈ (extChartAt I x₀).target) :
+    IsMIntegralCurveOn ((extChartAt I x₀).symm ∘ f) v s := by
+  intro t ht
+  have hft := htarget t ht
+  have hft1 : (extChartAt I x₀).symm (f t) ∈ (extChartAt I x₀).source :=
+    (extChartAt I x₀).map_target hft
+  have hft2 := mem_extChartAt_source (I := I) ((extChartAt I x₀).symm (f t))
+  refine ⟨(continuousOn_extChartAt_symm x₀ _ hft).comp (hderiv t ht).continuousWithinAt
+    fun r hr ↦ htarget r hr, ?_⟩
+  -- The chart change from `x₀` to the chart at the current point is differentiable within the
+  -- range of the model, which contains the whole curve.
+  have hchange := hasFDerivWithinAt_tangentCoordChange (I := I) ⟨hft1, hft2⟩
+  rw [(extChartAt I x₀).right_inv hft] at hchange
+  have hcomp := (hchange.comp_hasDerivWithinAt t (hderiv t ht) fun r hr ↦
+    extChartAt_target_subset_range x₀ (htarget r hr)).congr_deriv
+    ((tangentCoordChange_comp ⟨⟨hft2, hft1⟩, hft2⟩).trans (tangentCoordChange_self hft2))
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+    PartialEquiv.refl_symm, modelWithCornersSelf_coe, Function.comp_def, id_eq, range_id,
+    preimage_id, inter_univ]
+  exact hcomp.hasFDerivWithinAt
 
 /-- **Local step of fixed-chart uniqueness.** Near a time of `Ioo a b` where two integral curves
 agree, they agree, provided one of them stays in a fixed extended chart, over an open set on which
