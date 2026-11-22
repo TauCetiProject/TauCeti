@@ -813,24 +813,29 @@ private theorem regularizedGaussHGFun_step_one (a b c : ℂ) {z : ℂ} (hz : ‖
     rw [hΓ]
     field_simp; push_cast; ring
 
+private noncomputable def bcFiniteSummand (a b c z : ℂ) (n s : ℕ) : ℂ :=
+  (n.choose s : ℂ) * (ascPochhammer ℂ s).eval (c - a) * (ascPochhammer ℂ s).eval (c - b) *
+    (ascPochhammer ℂ (n - s)).eval (c + s) * z ^ s * (1 - z) ^ (n - s) *
+      regularizedGaussHGFun (a + n) (b + n) (c + n + s) z
+
+@[simp]
+private theorem bcFiniteSummand_zero (a b c z : ℂ) (n : ℕ) :
+    bcFiniteSummand a b c z n 0 =
+      (ascPochhammer ℂ n).eval c * (1 - z) ^ n *
+        regularizedGaussHGFun (a + n) (b + n) (c + n) z := by
+  simp [bcFiniteSummand]
+
+@[simp]
+private theorem bcFiniteSummand_self (a b c z : ℂ) (n : ℕ) :
+    bcFiniteSummand a b c z n n =
+      (ascPochhammer ℂ n).eval (c - a) * (ascPochhammer ℂ n).eval (c - b) * z ^ n *
+        regularizedGaussHGFun (a + n) (b + n) (c + n + n) z := by
+  simp [bcFiniteSummand]
+
 private theorem burchnallChaundy_step_mid (a b c z : ℂ) {n k : ℕ} (hkn : k + 1 ≤ n) :
-    c * (1 - z) * ((n.choose (k + 1) : ℂ) *
-        (ascPochhammer ℂ (k + 1)).eval (c + 1 - (a + 1)) *
-        (ascPochhammer ℂ (k + 1)).eval (c + 1 - (b + 1)) *
-        (ascPochhammer ℂ (n - (k + 1))).eval (c + 1 + (k + 1 : ℕ)) * z ^ (k + 1) *
-        (1 - z) ^ (n - (k + 1)) *
-        regularizedGaussHGFun (a + 1 + n) (b + 1 + n) (c + 1 + n + (k + 1 : ℕ)) z) +
-      (c - a) * (c - b) * z * ((n.choose k : ℂ) *
-        (ascPochhammer ℂ k).eval (c + 2 - (a + 1)) *
-        (ascPochhammer ℂ k).eval (c + 2 - (b + 1)) *
-        (ascPochhammer ℂ (n - k)).eval (c + 2 + k) * z ^ k * (1 - z) ^ (n - k) *
-        regularizedGaussHGFun (a + 1 + n) (b + 1 + n) (c + 2 + n + k) z) =
-    ((n + 1).choose (k + 1) : ℂ) * (ascPochhammer ℂ (k + 1)).eval (c - a) *
-      (ascPochhammer ℂ (k + 1)).eval (c - b) *
-      (ascPochhammer ℂ (n + 1 - (k + 1))).eval (c + (k + 1 : ℕ)) * z ^ (k + 1) *
-      (1 - z) ^ (n + 1 - (k + 1)) *
-      regularizedGaussHGFun (a + (n + 1 : ℕ)) (b + (n + 1 : ℕ))
-        (c + (n + 1 : ℕ) + (k + 1 : ℕ)) z := by
+    c * (1 - z) * bcFiniteSummand (a + 1) (b + 1) (c + 1) z n (k + 1) +
+      (c - a) * (c - b) * z * bcFiniteSummand (a + 1) (b + 1) (c + 2) z n k =
+    bcFiniteSummand a b c z (n + 1) (k + 1) := by
   obtain ⟨l, hl⟩ := Nat.exists_eq_add_of_le hkn
   have hs1 : n - (k + 1) = l := by omega
   have hs2 : n - k = l + 1 := by omega
@@ -858,7 +863,8 @@ private theorem burchnallChaundy_step_mid (a b c z : ℂ) {n k : ℕ} (hkn : k +
   have he8 : b + 1 + (n : ℂ) = b + (n + 1 : ℕ) := by push_cast; ring
   have he9 : c + 1 + (n : ℂ) + (k + 1 : ℕ) = c + (n + 1 : ℕ) + (k + 1 : ℕ) := by push_cast; ring
   have he10 : c + 2 + (n : ℂ) + k = c + (n + 1 : ℕ) + (k + 1 : ℕ) := by push_cast; ring
-  simp only [hs1, hs2, hs3, he1, he2, he3, he4, he5, he6, he7, he8, he9, he10, pow_succ]
+  simp only [bcFiniteSummand, hs1, hs2, hs3, he1, he2, he3, he4, he5, he6, he7, he8, he9, he10,
+    pow_succ]
   rw [TauCeti.ascPochhammer_succ_left_eval k (c - a),
     TauCeti.ascPochhammer_succ_left_eval k (c - b)]
   linear_combination
@@ -869,34 +875,16 @@ private theorem burchnallChaundy_step_mid (a b c z : ℂ) {n k : ℕ} (hkn : k +
         (c + (n + 1 : ℕ) + (k + 1 : ℕ)) z * hchoose_id
 
 private theorem burchnallChaundy_step_bd (a b c z : ℂ) (n : ℕ) :
-    c * (1 - z) * ((n.choose 0 : ℂ) * (ascPochhammer ℂ 0).eval (c + 1 - (a + 1)) *
-        (ascPochhammer ℂ 0).eval (c + 1 - (b + 1)) *
-        (ascPochhammer ℂ (n - 0)).eval (c + 1 + (0 : ℕ)) * z ^ 0 * (1 - z) ^ (n - 0) *
-        regularizedGaussHGFun (a + 1 + n) (b + 1 + n) (c + 1 + n + (0 : ℕ)) z) +
-      (c - a) * (c - b) * z * ((n.choose n : ℂ) * (ascPochhammer ℂ n).eval (c + 2 - (a + 1)) *
-        (ascPochhammer ℂ n).eval (c + 2 - (b + 1)) *
-        (ascPochhammer ℂ (n - n)).eval (c + 2 + n) * z ^ n * (1 - z) ^ (n - n) *
-        regularizedGaussHGFun (a + 1 + n) (b + 1 + n) (c + 2 + n + n) z) =
-    ((n + 1).choose 0 : ℂ) * (ascPochhammer ℂ 0).eval (c - a) *
-        (ascPochhammer ℂ 0).eval (c - b) *
-        (ascPochhammer ℂ (n + 1 - 0)).eval (c + (0 : ℕ)) * z ^ 0 * (1 - z) ^ (n + 1 - 0) *
-        regularizedGaussHGFun (a + (n + 1 : ℕ)) (b + (n + 1 : ℕ))
-          (c + (n + 1 : ℕ) + (0 : ℕ)) z +
-      ((n + 1).choose (n + 1) : ℂ) * (ascPochhammer ℂ (n + 1)).eval (c - a) *
-        (ascPochhammer ℂ (n + 1)).eval (c - b) *
-        (ascPochhammer ℂ (n + 1 - (n + 1))).eval (c + (n + 1 : ℕ)) * z ^ (n + 1) *
-        (1 - z) ^ (n + 1 - (n + 1)) *
-        regularizedGaussHGFun (a + (n + 1 : ℕ)) (b + (n + 1 : ℕ))
-          (c + (n + 1 : ℕ) + (n + 1 : ℕ)) z := by
+    c * (1 - z) * bcFiniteSummand (a + 1) (b + 1) (c + 1) z n 0 +
+      (c - a) * (c - b) * z * bcFiniteSummand (a + 1) (b + 1) (c + 2) z n n =
+    bcFiniteSummand a b c z (n + 1) 0 + bcFiniteSummand a b c z (n + 1) (n + 1) := by
   have ha1 : a + 1 + (n : ℂ) = a + (n + 1 : ℕ) := by push_cast; ring
   have hb1 : b + 1 + (n : ℂ) = b + (n + 1 : ℕ) := by push_cast; ring
   have hc1 : c + 1 + (n : ℂ) = c + (n + 1 : ℕ) := by push_cast; ring
   have hc2 : c + 2 + (n : ℂ) + n = c + (n + 1 : ℕ) + (n + 1 : ℕ) := by push_cast; ring
   have hca2 : c + 2 - (a + 1) = c - a + 1 := by ring
   have hcb2 : c + 2 - (b + 1) = c - b + 1 := by ring
-  simp only [Nat.choose_zero_right, Nat.choose_self, Nat.cast_one, ascPochhammer_zero,
-    Polynomial.eval_one, Nat.sub_zero, Nat.sub_self, Nat.cast_zero, add_zero, pow_zero,
-    one_mul, mul_one, pow_succ, ha1, hb1, hc1, hc2, hca2, hcb2]
+  simp only [bcFiniteSummand_zero, bcFiniteSummand_self, pow_succ, ha1, hb1, hc1, hc2, hca2, hcb2]
   rw [TauCeti.ascPochhammer_succ_left_eval n c,
     TauCeti.ascPochhammer_succ_left_eval n (c - a),
     TauCeti.ascPochhammer_succ_left_eval n (c - b)]
@@ -912,6 +900,8 @@ theorem regularizedGaussHGFun_eq_sum_choose_mul_regularizedGaussHGFun (a b c : �
         (n.choose s : ℂ) * (ascPochhammer ℂ s).eval (c - a) * (ascPochhammer ℂ s).eval (c - b) *
           (ascPochhammer ℂ (n - s)).eval (c + s) * z ^ s * (1 - z) ^ (n - s) *
             regularizedGaussHGFun (a + n) (b + n) (c + n + s) z := by
+  suffices h : regularizedGaussHGFun a b c z = ∑ s ∈ range (n + 1), bcFiniteSummand a b c z n s by
+    simpa only [bcFiniteSummand] using h
   induction n generalizing a b c with
   | zero => simp
   | succ n ih =>

@@ -177,7 +177,8 @@ theorem cayleyOrrCoeff_add_self {𝕂 : Type*} [Field 𝕂] (a b : 𝕂) (s : �
   · simp
   · intro k hk hne
     have hpos : s - k ≠ 0 := Nat.sub_ne_zero_of_lt (lt_of_le_of_ne (mem_range_succ_iff.mp hk) hne)
-    rw [show a + b - a - b = 0 by ring, ascPochhammer_ne_zero_eval_zero 𝕂 hpos, mul_zero, zero_mul]
+    have hsub : a + b - a - b = 0 := by ring
+    rw [hsub, ascPochhammer_ne_zero_eval_zero 𝕂 hpos, mul_zero, zero_mul]
   · simp
 
 section CayleyOrrRecurrence
@@ -197,6 +198,105 @@ private theorem sum_range_recurrence_of_cert {𝕂 : Type*} [CommRing 𝕂] {r�
   linear_combination hsum + hbd
 
 variable {𝕂 : Type*} [Field 𝕂]
+
+private theorem two_mul_sub_one_add_ne_zero {c : 𝕂} (hc : ∀ m : ℕ, 2 * c - 1 ≠ -m)
+    (m : ℕ) : 2 * c - 1 + (m : 𝕂) ≠ 0 :=
+  fun h ↦ hc m (by linear_combination h)
+
+private theorem sub_half_add_ne_zero [CharZero 𝕂] {c : 𝕂} (hc : ∀ m : ℕ, 2 * c - 1 ≠ -m)
+    (m : ℕ) : c - 1 / 2 + (m : 𝕂) ≠ 0 :=
+  fun h ↦ hc (2 * m) (by push_cast; linear_combination 2 * h)
+
+private theorem add_half_add_ne_zero [CharZero 𝕂] {c : 𝕂} (hc : ∀ m : ℕ, 2 * c - 1 ≠ -m)
+    (m : ℕ) : c + 1 / 2 + (m : 𝕂) ≠ 0 :=
+  fun h ↦ hc (2 * (m + 1)) (by push_cast; linear_combination 2 * h)
+
+private theorem inv_factorial_eq_mul_inv_factorial_add_two [CharZero 𝕂] (n : ℕ) :
+    (n ! : 𝕂)⁻¹ = ((n : 𝕂) + 1) * ((n : 𝕂) + 2) * ((n + 2)! : 𝕂)⁻¹ := by
+  rw [Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ n,
+    Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ (n + 1)]
+  push_cast; ring
+
+private theorem inv_ascPochhammer_eq_mul_inv_ascPochhammer_add_two {z : 𝕂} {n : ℕ}
+    (hz0 : z + (n : 𝕂) ≠ 0) (hz1 : z + ((n + 1 : ℕ) : 𝕂) ≠ 0) :
+    ((ascPochhammer 𝕂 n).eval z)⁻¹ =
+      (z + n) * (z + n + 1) * ((ascPochhammer 𝕂 (n + 2)).eval z)⁻¹ := by
+  rw [inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval hz0,
+    inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval hz1]
+  push_cast; ring
+
+private theorem inv_factorial_mul_ascPochhammer_eq_add_two [CharZero 𝕂] (d : 𝕂) (l : ℕ) :
+    (l ! : 𝕂)⁻¹ * (ascPochhammer 𝕂 l).eval d =
+      ((l : 𝕂) + 1) * ((l : 𝕂) + 2) * (((l + 2)! : 𝕂)⁻¹ * (ascPochhammer 𝕂 l).eval d) := by
+  rw [inv_factorial_eq_mul_inv_factorial_add_two l]; ring
+
+private theorem inv_factorial_mul_ascPochhammer_add_one_eq_add_two [CharZero 𝕂] (d : 𝕂) (l : ℕ) :
+    ((l + 1)! : 𝕂)⁻¹ * (ascPochhammer 𝕂 (l + 1)).eval d =
+      ((l : 𝕂) + 2) * (d + l) * (((l + 2)! : 𝕂)⁻¹ * (ascPochhammer 𝕂 l).eval d) := by
+  rw [Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ (l + 1), ascPochhammer_succ_eval]
+  push_cast; ring
+
+private theorem inv_factorial_mul_ascPochhammer_add_two (d : 𝕂) (l : ℕ) :
+    ((l + 2)! : 𝕂)⁻¹ * (ascPochhammer 𝕂 (l + 2)).eval d =
+      (d + l) * (d + l + 1) * (((l + 2)! : 𝕂)⁻¹ * (ascPochhammer 𝕂 l).eval d) := by
+  rw [ascPochhammer_succ_eval (l + 1) d, ascPochhammer_succ_eval l d]
+  push_cast; ring
+
+private theorem ordinaryHypergeometricCoefficient_eq_add_two [CharZero 𝕂] (x y : 𝕂) {z : 𝕂}
+    {l : ℕ} (hz0 : z + (l : 𝕂) ≠ 0) (hz1 : z + ((l + 1 : ℕ) : 𝕂) ≠ 0) :
+    ordinaryHypergeometricCoefficient x y z l =
+      ((l : 𝕂) + 1) * ((l : 𝕂) + 2) * (z + l) * (z + l + 1) *
+        ((ascPochhammer 𝕂 l).eval x * (ascPochhammer 𝕂 l).eval y *
+          ((l + 2)! : 𝕂)⁻¹ * ((ascPochhammer 𝕂 (l + 2)).eval z)⁻¹) := by
+  simp only [ordinaryHypergeometricCoefficient]
+  rw [inv_factorial_eq_mul_inv_factorial_add_two l,
+    inv_ascPochhammer_eq_mul_inv_ascPochhammer_add_two hz0 hz1]
+  ring
+
+private theorem ordinaryHypergeometricCoefficient_add_one_eq_add_two [CharZero 𝕂] (x y : 𝕂)
+    {z : 𝕂} {l : ℕ} (hz1 : z + ((l + 1 : ℕ) : 𝕂) ≠ 0) :
+    ordinaryHypergeometricCoefficient x y z (l + 1) =
+      ((l : 𝕂) + 2) * (x + l) * (y + l) * (z + l + 1) *
+        ((ascPochhammer 𝕂 l).eval x * (ascPochhammer 𝕂 l).eval y *
+          ((l + 2)! : 𝕂)⁻¹ * ((ascPochhammer 𝕂 (l + 2)).eval z)⁻¹) := by
+  simp only [ordinaryHypergeometricCoefficient]
+  rw [Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ (l + 1),
+    inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval hz1,
+    ascPochhammer_succ_eval l x, ascPochhammer_succ_eval l y]
+  push_cast; ring
+
+private theorem ordinaryHypergeometricCoefficient_add_two_eq_add_two (x y z : 𝕂) (l : ℕ) :
+    ordinaryHypergeometricCoefficient x y z (l + 2) =
+      (x + l) * (x + l + 1) * (y + l) * (y + l + 1) *
+        ((ascPochhammer 𝕂 l).eval x * (ascPochhammer 𝕂 l).eval y *
+          ((l + 2)! : 𝕂)⁻¹ * ((ascPochhammer 𝕂 (l + 2)).eval z)⁻¹) := by
+  simp only [ordinaryHypergeometricCoefficient, ascPochhammer_succ_eval]
+  push_cast; ring
+
+private theorem ascPochhammer_div_eq_add_two (x : 𝕂) {y : 𝕂} {n : ℕ}
+    (hy0 : y + (n : 𝕂) ≠ 0) (hy1 : y + ((n + 1 : ℕ) : 𝕂) ≠ 0) :
+    (ascPochhammer 𝕂 n).eval x / (ascPochhammer 𝕂 n).eval y =
+      (y + n) * (y + n + 1) *
+        ((ascPochhammer 𝕂 n).eval x * ((ascPochhammer 𝕂 (n + 2)).eval y)⁻¹) := by
+  simp only [div_eq_mul_inv]
+  rw [inv_ascPochhammer_eq_mul_inv_ascPochhammer_add_two hy0 hy1]
+  ring
+
+private theorem ascPochhammer_div_add_one_eq_add_two (x : 𝕂) {y : 𝕂} {n : ℕ}
+    (hy1 : y + ((n + 1 : ℕ) : 𝕂) ≠ 0) :
+    (ascPochhammer 𝕂 (n + 1)).eval x / (ascPochhammer 𝕂 (n + 1)).eval y =
+      (x + n) * (y + n + 1) *
+        ((ascPochhammer 𝕂 n).eval x * ((ascPochhammer 𝕂 (n + 2)).eval y)⁻¹) := by
+  simp only [div_eq_mul_inv]
+  rw [inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval hy1, ascPochhammer_succ_eval n x]
+  push_cast; ring
+
+private theorem ascPochhammer_div_add_two_eq_add_two (x y : 𝕂) (n : ℕ) :
+    (ascPochhammer 𝕂 (n + 2)).eval x / (ascPochhammer 𝕂 (n + 2)).eval y =
+      (x + n) * (x + n + 1) *
+        ((ascPochhammer 𝕂 n).eval x * ((ascPochhammer 𝕂 (n + 2)).eval y)⁻¹) := by
+  simp only [div_eq_mul_inv, ascPochhammer_succ_eval]
+  push_cast; ring
 
 private def cayleyRecR2 (c : 𝕂) (n : ℕ) : 𝕂 := (n + 2) * (n + 2 * c)
 
@@ -228,27 +328,32 @@ private theorem cayleySummand_step [CharZero 𝕂] (a b : 𝕂) {c : 𝕂} (hc :
     rw [zero_add]
     simp only [cayleySummand, cayleyCertH, Nat.sub_zero, zero_add,
       ordinaryHypergeometricCoefficient]
-    rw [Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ l,
+    rw [inv_factorial_mul_ascPochhammer_eq_add_two (c - a - b) l,
+      inv_factorial_mul_ascPochhammer_add_one_eq_add_two (c - a - b) l,
+      inv_factorial_mul_ascPochhammer_add_two (c - a - b) l,
       Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ (l + 1),
-      ascPochhammer_succ_eval (l + 1) (c - a - b), ascPochhammer_succ_eval l (c - a - b),
       ascPochhammer_succ_eval 0 (2 * a), ascPochhammer_succ_eval 0 (2 * b)]
     simp only [ascPochhammer_zero, Polynomial.eval_one, Nat.factorial_zero, Nat.cast_add,
       Nat.cast_one, Nat.cast_zero, inv_one]
     dsimp only [cayleyRecR2, cayleyRecR1, cayleyRecR0]
     ring
   | succ j =>
-    have hden1 : 2 * c - 1 + (j : 𝕂) ≠ 0 := fun h ↦ hc j (by linear_combination h)
-    simp only [cayleySummand, cayleyCertH, ordinaryHypergeometricCoefficient,
-      show j + 1 + l - (j + 1) = l by omega, show j + 1 + l + 1 - (j + 1) = l + 1 by omega,
-      show j + 1 + l + 2 - (j + 1) = l + 2 by omega, show j + 1 + l - j = l + 1 by omega,
-      show j + 1 + l + 1 - j = l + 2 by omega]
-    rw [Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ j,
-      Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ l,
+    have hs0 : j + 1 + l - (j + 1) = l := by omega
+    have hs1 : j + 1 + l + 1 - (j + 1) = l + 1 := by omega
+    have hs2 : j + 1 + l + 2 - (j + 1) = l + 2 := by omega
+    have hs3 : j + 1 + l - j = l + 1 := by omega
+    have hs4 : j + 1 + l + 1 - j = l + 2 := by omega
+    simp only [cayleySummand, cayleyCertH, hs0, hs1, hs2, hs3, hs4]
+    rw [inv_factorial_mul_ascPochhammer_eq_add_two (c - a - b) l,
+      inv_factorial_mul_ascPochhammer_add_one_eq_add_two (c - a - b) l,
+      inv_factorial_mul_ascPochhammer_add_two (c - a - b) l,
+      Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ j,
       Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ (l + 1),
-      inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval hden1,
-      ascPochhammer_succ_eval (l + 1) (c - a - b), ascPochhammer_succ_eval l (c - a - b),
+      inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval
+        (two_mul_sub_one_add_ne_zero hc j),
+      ascPochhammer_succ_eval l (c - a - b),
       ascPochhammer_succ_eval (j + 1) (2 * a), ascPochhammer_succ_eval (j + 1) (2 * b)]
-    dsimp only [cayleyRecR2, cayleyRecR1, cayleyRecR0]
+    dsimp only [cayleyRecR2, cayleyRecR1, cayleyRecR0, ordinaryHypergeometricCoefficient]
     simp only [Nat.cast_add, Nat.cast_one]
     ring
 
@@ -265,19 +370,19 @@ theorem cayleyOrrCoeff_recurrence [CharZero 𝕂] (a b : 𝕂) {c : 𝕂} (hc : 
       (n + c + a - b) * (n + c - a + b) * cayleyOrrCoeff a b c n = 0 := by
   refine sum_range_recurrence_of_cert (F := cayleySummand a b c) (C := cayleyCertH a b c n) rfl
     (fun k hk ↦ cayleySummand_step a b hc hk) ?_
-  have hden1 : 2 * c - 1 + (n : 𝕂) ≠ 0 := fun h ↦ hc n (by linear_combination h)
-  have hden2 : 2 * c - 1 + ((n + 1 : ℕ) : 𝕂) ≠ 0 := fun h ↦
-    hc (n + 1) (by push_cast at h ⊢; linear_combination h)
-  simp only [cayleyCertH, cayleySummand, Nat.sub_self, ordinaryHypergeometricCoefficient,
-    show n + 2 - (n + 1) = 1 by omega, show n + 1 - n = 1 by omega]
-  rw [Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ n,
-    Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ (n + 1),
-    inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval hden1,
-    inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval hden2,
-    ascPochhammer_succ_eval (n + 1) (2 * a), ascPochhammer_succ_eval (n + 1) (2 * b),
+  have hs1 : n + 2 - (n + 1) = 1 := by omega
+  have hs2 : n + 1 - n = 1 := by omega
+  simp only [cayleyCertH, cayleySummand, Nat.sub_self, hs1, hs2]
+  rw [ordinaryHypergeometricCoefficient_add_one_eq_add_two (2 * a) (2 * b)
+      (two_mul_sub_one_add_ne_zero hc (n + 1)),
+    ordinaryHypergeometricCoefficient_add_two_eq_add_two,
+    inv_factorial_eq_mul_inv_factorial_add_two n,
+    inv_ascPochhammer_eq_mul_inv_ascPochhammer_add_two
+      (two_mul_sub_one_add_ne_zero hc n) (two_mul_sub_one_add_ne_zero hc (n + 1)),
+    ascPochhammer_succ_eval n (2 * a), ascPochhammer_succ_eval n (2 * b),
     ascPochhammer_succ_eval 0 (c - a - b)]
   simp only [ascPochhammer_zero, Polynomial.eval_one, Nat.factorial_zero, Nat.factorial_one,
-    Nat.cast_add, Nat.cast_one, Nat.cast_zero, inv_one]
+    Nat.cast_one, Nat.cast_zero, inv_one]
   ring
 
 private def cayleyRecQ2 (c : 𝕂) (n : ℕ) : 𝕂 := cayleyRecR2 c n * (c + n + 1 / 2) * (c + n + 3 / 2)
@@ -323,45 +428,41 @@ private theorem cayleyConvTerm_step [CharZero 𝕂] (a b : 𝕂) {c : 𝕂} (hc 
       cayleyRecQ0 a b c n * cayleyConvTerm a b c n k =
       cayleyCertG a b c n (k + 1) - cayleyCertG a b c n k := by
   obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le hk
-  have hadd1 : c + 1 / 2 + (l : 𝕂) ≠ 0 := fun h ↦
-    hc (2 * (l + 1)) (by push_cast at h ⊢; linear_combination 2 * h)
-  have hadd2 : c + 1 / 2 + ((l + 1 : ℕ) : 𝕂) ≠ 0 := fun h ↦
-    hc (2 * (l + 2)) (by push_cast at h ⊢; linear_combination 2 * h)
+  have hadd1 := add_half_add_ne_zero hc l
+  have hadd2 := add_half_add_ne_zero hc (l + 1)
   cases k with
   | zero =>
     rw [zero_add]
-    simp only [cayleyConvTerm, cayleyCertG, Nat.sub_zero, zero_add,
-      ordinaryHypergeometricCoefficient]
-    rw [Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ l,
+    simp only [cayleyConvTerm, cayleyCertG, Nat.sub_zero, zero_add]
+    rw [ordinaryHypergeometricCoefficient_eq_add_two (c - a) (c - b) hadd1 hadd2,
+      ordinaryHypergeometricCoefficient_add_one_eq_add_two (c - a) (c - b) hadd2,
+      ordinaryHypergeometricCoefficient_add_two_eq_add_two,
       Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ (l + 1),
-      inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval hadd1,
       inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval hadd2,
-      ascPochhammer_succ_eval (l + 1) (c - a), ascPochhammer_succ_eval (l + 1) (c - b),
-      ascPochhammer_succ_eval l (c - a), ascPochhammer_succ_eval l (c - b),
       ascPochhammer_succ_eval 0 a, ascPochhammer_succ_eval 0 b]
-    simp only [ascPochhammer_zero, Polynomial.eval_one, Nat.factorial_zero, inv_one,
-      Nat.cast_add, Nat.cast_one, Nat.cast_zero]
+    simp only [ordinaryHypergeometricCoefficient, ascPochhammer_zero, Polynomial.eval_one,
+      Nat.factorial_zero, inv_one, Nat.cast_add, Nat.cast_one, Nat.cast_zero]
     dsimp only [cayleyRecQ2, cayleyRecQ1, cayleyRecQ0, cayleyRecR2, cayleyRecR1, cayleyRecR0,
       cayleyCertPoly, cayleyCertPolyAux]
     ring
   | succ j =>
-    have hsub1 : c - 1 / 2 + (j : 𝕂) ≠ 0 := fun h ↦
-      hc (2 * j) (by push_cast at h ⊢; linear_combination 2 * h)
-    simp only [cayleyConvTerm, cayleyCertG, ordinaryHypergeometricCoefficient,
-      show j + 1 + l - (j + 1) = l by omega, show j + 1 + l + 1 - (j + 1) = l + 1 by omega,
-      show j + 1 + l + 2 - (j + 1) = l + 2 by omega, show j + 1 + l - j = l + 1 by omega,
-      show j + 1 + l + 1 - j = l + 2 by omega]
-    rw [Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ j,
-      Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ l,
+    have hs0 : j + 1 + l - (j + 1) = l := by omega
+    have hs1 : j + 1 + l + 1 - (j + 1) = l + 1 := by omega
+    have hs2 : j + 1 + l + 2 - (j + 1) = l + 2 := by omega
+    have hs3 : j + 1 + l - j = l + 1 := by omega
+    have hs4 : j + 1 + l + 1 - j = l + 2 := by omega
+    simp only [cayleyConvTerm, cayleyCertG, hs0, hs1, hs2, hs3, hs4]
+    rw [ordinaryHypergeometricCoefficient_eq_add_two (c - a) (c - b) hadd1 hadd2,
+      ordinaryHypergeometricCoefficient_add_one_eq_add_two (c - a) (c - b) hadd2,
+      ordinaryHypergeometricCoefficient_add_two_eq_add_two,
+      Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ j,
       Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ (l + 1),
-      inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval hsub1,
-      inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval hadd1,
+      inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval (sub_half_add_ne_zero hc j),
       inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval hadd2,
-      ascPochhammer_succ_eval (l + 1) (c - a), ascPochhammer_succ_eval (l + 1) (c - b),
       ascPochhammer_succ_eval l (c - a), ascPochhammer_succ_eval l (c - b),
       ascPochhammer_succ_eval (j + 1) a, ascPochhammer_succ_eval (j + 1) b]
     dsimp only [cayleyRecQ2, cayleyRecQ1, cayleyRecQ0, cayleyRecR2, cayleyRecR1, cayleyRecR0,
-      cayleyCertPoly, cayleyCertPolyAux]
+      cayleyCertPoly, cayleyCertPolyAux, ordinaryHypergeometricCoefficient]
     simp only [Nat.cast_add, Nat.cast_one]
     ring
 
@@ -372,23 +473,20 @@ private theorem cayleyConvSum_recurrence [CharZero 𝕂] (a b : 𝕂) {c : 𝕂}
       cayleyRecQ0 a b c n * cayleyConvSum a b c n = 0 := by
   refine sum_range_recurrence_of_cert (F := cayleyConvTerm a b c) (C := cayleyCertG a b c n) rfl
     (fun k hk ↦ cayleyConvTerm_step a b hc hk) ?_
-  have hsub1 : c - 1 / 2 + (n : 𝕂) ≠ 0 := fun h ↦
-    hc (2 * n) (by push_cast at h ⊢; linear_combination 2 * h)
-  have hsub2 : c - 1 / 2 + ((n + 1 : ℕ) : 𝕂) ≠ 0 := fun h ↦
-    hc (2 * (n + 1)) (by push_cast at h ⊢; linear_combination 2 * h)
-  have hadd0 : c + 1 / 2 + ((0 : ℕ) : 𝕂) ≠ 0 := fun h ↦
-    hc 2 (by push_cast at h ⊢; linear_combination 2 * h)
-  simp only [cayleyCertG, cayleyConvTerm, Nat.sub_self, ordinaryHypergeometricCoefficient,
-    show n + 2 - (n + 1) = 1 by omega, show n + 1 - n = 1 by omega]
-  rw [Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ n,
-    Nat.inv_factorial_eq_add_one_mul_inv_factorial_succ (n + 1),
-    inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval hsub1,
-    inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval hsub2,
-    inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval hadd0,
-    ascPochhammer_succ_eval (n + 1) a, ascPochhammer_succ_eval (n + 1) b,
+  have hs1 : n + 2 - (n + 1) = 1 := by omega
+  have hs2 : n + 1 - n = 1 := by omega
+  simp only [cayleyCertG, cayleyConvTerm, Nat.sub_self, hs1, hs2]
+  rw [ordinaryHypergeometricCoefficient_add_one_eq_add_two a b (sub_half_add_ne_zero hc (n + 1)),
+    ordinaryHypergeometricCoefficient_add_two_eq_add_two,
+    inv_factorial_eq_mul_inv_factorial_add_two n,
+    inv_ascPochhammer_eq_mul_inv_ascPochhammer_add_two
+      (sub_half_add_ne_zero hc n) (sub_half_add_ne_zero hc (n + 1))]
+  dsimp only [ordinaryHypergeometricCoefficient]
+  rw [inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval (add_half_add_ne_zero hc 0),
+    ascPochhammer_succ_eval n a, ascPochhammer_succ_eval n b,
     ascPochhammer_succ_eval 0 (c - a), ascPochhammer_succ_eval 0 (c - b)]
-  simp only [ascPochhammer_zero, Polynomial.eval_one, zero_add, Nat.factorial_zero,
-    Nat.factorial_one, Nat.cast_add, Nat.cast_one, Nat.cast_zero]
+  simp only [ascPochhammer_zero, Polynomial.eval_one, zero_add,
+    Nat.factorial_zero, Nat.factorial_one, Nat.cast_one, Nat.cast_zero, inv_one]
   dsimp only [cayleyRecQ2, cayleyRecQ1, cayleyRecR2, cayleyRecR1, cayleyCertPoly,
     cayleyCertPolyAux]
   ring
@@ -397,29 +495,26 @@ private theorem cayleyRhs_recurrence [CharZero 𝕂] (a b : 𝕂) {c : 𝕂} (hc
     (n : ℕ) :
     cayleyRecQ2 c n * cayleyRhs a b c (n + 2) + cayleyRecQ1 a b c n * cayleyRhs a b c (n + 1) +
       cayleyRecQ0 a b c n * cayleyRhs a b c n = 0 := by
-  have hrec : cayleyRecR2 c n * cayleyOrrCoeff a b c (n + 2) +
-      cayleyRecR1 a b c n * cayleyOrrCoeff a b c (n + 1) +
-      cayleyRecR0 a b c n * cayleyOrrCoeff a b c n = 0 := cayleyOrrCoeff_recurrence a b hc n
-  have hadd1 : c + 1 / 2 + (n : 𝕂) ≠ 0 := fun h ↦
-    hc (2 * (n + 1)) (by push_cast at h ⊢; linear_combination 2 * h)
-  have hadd2 : c + 1 / 2 + ((n + 1 : ℕ) : 𝕂) ≠ 0 := fun h ↦
-    hc (2 * (n + 2)) (by push_cast at h ⊢; linear_combination 2 * h)
+  have hrec := cayleyOrrCoeff_recurrence a b hc n
   dsimp only [cayleyRhs]
-  simp only [div_eq_mul_inv (a := (ascPochhammer 𝕂 _).eval c)]
-  rw [inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval hadd1,
-    inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval hadd2,
-    ascPochhammer_succ_eval (n + 1) c, ascPochhammer_succ_eval n c]
-  simp only [Nat.cast_add, Nat.cast_one]
-  dsimp only [cayleyRecQ2, cayleyRecQ1, cayleyRecQ0]
-  linear_combination (ascPochhammer 𝕂 n).eval c * (c + n) * (c + n + 1) *
-    (c + 1 / 2 + n) * (c + n + 3 / 2) *
-    ((ascPochhammer 𝕂 (n + 2)).eval (c + 1 / 2))⁻¹ * hrec
+  rw [ascPochhammer_div_eq_add_two c (add_half_add_ne_zero hc n) (add_half_add_ne_zero hc (n + 1)),
+    ascPochhammer_div_add_one_eq_add_two c (add_half_add_ne_zero hc (n + 1)),
+    ascPochhammer_div_add_two_eq_add_two]
+  dsimp only [cayleyRecQ2, cayleyRecQ1, cayleyRecQ0, cayleyRecR2, cayleyRecR1, cayleyRecR0]
+  calc
+    _ = (ascPochhammer 𝕂 n).eval c * (c + n) * (c + n + 1) *
+          (c + 1 / 2 + n) * (c + n + 3 / 2) * ((ascPochhammer 𝕂 (n + 2)).eval (c + 1 / 2))⁻¹ *
+          (((n : 𝕂) + 2) * (n + 2 * c) * cayleyOrrCoeff a b c (n + 2) +
+            (-2 * (n + 1) * n - 4 * c * (n + 1) + (a + b - c) * (2 * c - 1) - 4 * a * b) *
+              cayleyOrrCoeff a b c (n + 1) +
+            (n + c + a - b) * (n + c - a + b) * cayleyOrrCoeff a b c n) := by ring
+    _ = 0 := by rw [hrec, mul_zero]
 
 private theorem cayleyConvSum_one [CharZero 𝕂] (a b : 𝕂) {c : 𝕂} (hc : ∀ m : ℕ, 2 * c - 1 ≠ -m) :
     cayleyConvSum a b c 1 = cayleyRhs a b c 1 := by
-  have hw : 2 * c - 1 ≠ 0 := by simpa using hc 0
-  have hv : c - 1 / 2 ≠ 0 := fun h ↦ hc 0 (by push_cast; linear_combination 2 * h)
-  have hu : c + 1 / 2 ≠ 0 := fun h ↦ hc 2 (by push_cast; linear_combination 2 * h)
+  have hw : 2 * c - 1 ≠ 0 := by simpa using two_mul_sub_one_add_ne_zero hc 0
+  have hv : c - 1 / 2 ≠ 0 := by simpa using sub_half_add_ne_zero hc 0
+  have hu : c + 1 / 2 ≠ 0 := by simpa using add_half_add_ne_zero hc 0
   rw [cayleyConvSum, cayleyRhs, sum_range_succ, sum_range_one, cayleyOrrCoeff_one]
   simp only [cayleyConvTerm, ordinaryHypergeometricCoefficient, ascPochhammer_zero,
     Polynomial.eval_one, ascPochhammer_one, Polynomial.eval_X, Nat.factorial_zero,
@@ -456,12 +551,13 @@ theorem sum_ordinaryHypergeometricCoefficient_mul_eq_div_mul_cayleyOrrCoeff {�
     have hS := cayleyConvSum_recurrence a b hc n
     have hB := cayleyRhs_recurrence a b hc n
     have hn2 : (n : 𝕂) + 2 ≠ 0 := by exact_mod_cast Nat.succ_ne_zero (n + 1)
+    have h2c : (n : 𝕂) + 2 * c ≠ 0 := fun h ↦
+      two_mul_sub_one_add_ne_zero hc (n + 1) (by push_cast; linear_combination h)
     have hq2 : cayleyRecQ2 c n ≠ 0 := by
       simp only [cayleyRecQ2, cayleyRecR2]
-      refine mul_ne_zero (mul_ne_zero (mul_ne_zero hn2 ?_) ?_) ?_
-      · exact fun h ↦ hc (n + 1) (by push_cast; linear_combination h)
-      · exact fun h ↦ hc (2 * n + 2) (by push_cast; linear_combination 2 * h)
-      · exact fun h ↦ hc (2 * n + 4) (by push_cast; linear_combination 2 * h)
+      refine mul_ne_zero (mul_ne_zero (mul_ne_zero hn2 h2c) ?_) ?_
+      · simpa only [add_right_comm] using add_half_add_ne_zero hc n
+      · exact fun h ↦ add_half_add_ne_zero hc (n + 1) (by push_cast; linear_combination h)
     have hdiff : cayleyRecQ2 c n * (cayleyConvSum a b c (n + 2) - cayleyRhs a b c (n + 2)) = 0 := by
       rw [ih.1, ih.2] at hS
       linear_combination hS - hB
@@ -522,8 +618,8 @@ theorem hasFPowerSeriesOnBall_one_sub_cpow_mul_ordinaryHypergeometric (a b c : �
   have hmul := h1.mul_ofScalars h2
   have hchoose (j : ℕ) :
       Ring.choose (c - a - b + j - 1) j = (j ! : ℂ)⁻¹ * (ascPochhammer ℂ j).eval (c - a - b) := by
-    rw [Ring.choose_eq_smul, Polynomial.descPochhammer_smeval_eq_ascPochhammer,
-      show c - a - b + j - 1 - j + 1 = c - a - b by ring,
+    have hsub : c - a - b + j - 1 - j + 1 = c - a - b := by ring
+    rw [Ring.choose_eq_smul, Polynomial.descPochhammer_smeval_eq_ascPochhammer, hsub,
       Polynomial.ascPochhammer_smeval_eq_eval, smul_eq_mul]
   have hser :
       (FormalMultilinearSeries.ofScalars ℂ fun s ↦
@@ -532,11 +628,12 @@ theorem hasFPowerSeriesOnBall_one_sub_cpow_mul_ordinaryHypergeometric (a b c : �
       FormalMultilinearSeries.ofScalars ℂ (TauCeti.cayleyOrrCoeff a b c) := by
     congr 1; ext s; rw [← sum_range_reflect]
     refine sum_congr rfl fun k hk ↦ ?_
-    rw [show s + 1 - 1 - k = s - k from rfl, Nat.sub_sub_self (mem_range_succ_iff.mp hk), hchoose]
+    rw [Nat.add_succ_sub_one, add_zero, Nat.sub_sub_self (mem_range_succ_iff.mp hk), hchoose]
   rw [hser] at hmul
   refine hmul.congr fun z _ ↦ ?_
   dsimp only
-  rw [one_div, ← cpow_neg, show -(c - a - b) = a + b - c by ring]
+  have hneg : -(c - a - b) = a + b - c := by ring
+  rw [one_div, ← cpow_neg, hneg]
 
 /-- **DLMF 15.16.2 (`HasSum` form).** For `‖z‖ < 1`, the power series
 `∑ s, cayleyOrrCoeff a b c s * z ^ s` converges to
@@ -582,10 +679,13 @@ theorem eq_cayleyOrrCoeff_of_eventually_hasSum (a b c : ℂ) {A : ℕ → ℂ}
 
 section BurchnallChaundyBounds
 
-private noncomputable def bcTerm (a b c : ℂ) (s : ℕ) (z ζ : ℂ) : ℂ :=
+private noncomputable def bcPref (a b c : ℂ) (s : ℕ) (u : ℂ) : ℂ :=
   (ascPochhammer ℂ s).eval a * (ascPochhammer ℂ s).eval b *
     (ascPochhammer ℂ s).eval (c - a) * (ascPochhammer ℂ s).eval (c - b) /
-      (s ! * Gamma (c + s)) * (z * ζ) ^ s *
+      (s ! * Gamma (c + s)) * u ^ s
+
+private noncomputable def bcTerm (a b c : ℂ) (s : ℕ) (z ζ : ℂ) : ℂ :=
+  bcPref a b c s (z * ζ) *
     regularizedGaussHGFun (a + s) (b + s) (c + 2 * s) (z + ζ - z * ζ)
 
 private noncomputable def bcGenCoeff (a b c : ℂ) (s j k : ℕ) : ℂ :=
@@ -594,10 +694,12 @@ private noncomputable def bcGenCoeff (a b c : ℂ) (s j k : ℕ) : ℂ :=
     (s ! * Gamma (c + s) * j ! * k ! * Gamma (c + (2 * s + j + k : ℕ)))
 
 private noncomputable def bcGenPref (a b c u v : ℂ) (s j : ℕ) : ℂ :=
-  (ascPochhammer ℂ s).eval a * (ascPochhammer ℂ s).eval b *
-    (ascPochhammer ℂ s).eval (c - a) * (ascPochhammer ℂ s).eval (c - b) /
-      (s ! * Gamma (c + s)) * u ^ s *
+  bcPref a b c s u *
     ((ascPochhammer ℂ j).eval (a + s) * (ascPochhammer ℂ j).eval (b + s) / j ! * v ^ j)
+
+private theorem bcGenPref_zero (a b c u v : ℂ) (s : ℕ) :
+    bcGenPref a b c u v s 0 = bcPref a b c s u := by
+  simp [bcGenPref]
 
 private noncomputable def bcDoubleTerm (a b c z ζ : ℂ) (p : ℕ × ℕ) : ℂ :=
   bcGenPref a b c (z * ζ) (ζ * (1 - z)) p.1 p.2 *
@@ -646,8 +748,9 @@ private theorem exists_bc_coeff_bound (a b c : ℂ) :
     push_cast; nlinarith [N.cast_nonneg (α := ℝ), s.cast_nonneg (α := ℝ)]
   have hp3 : ((2 * s + m : ℕ) : ℝ) + 1 ≤ 2 * ((s : ℝ) + 1) * ((m : ℝ) + 1) := by
     push_cast; nlinarith [s.cast_nonneg (α := ℝ), m.cast_nonneg (α := ℝ)]
-  rw [bcGenCoeff, show s + j + k = s + m by omega, show 2 * s + j + k = 2 * s + m by omega,
-    div_eq_mul_inv]
+  have hsjk : s + j + k = s + m := add_assoc s j k
+  have h2sjk : 2 * s + j + k = 2 * s + m := add_assoc (2 * s) j k
+  rw [bcGenCoeff, hsjk, h2sjk, div_eq_mul_inv]
   simp only [mul_inv, norm_mul, norm_inv, norm_natCast]
   rw [← norm_inv (Gamma _), ← norm_inv (Gamma _)]
   calc ‖(ascPochhammer ℂ (s + m)).eval a‖ * ‖(ascPochhammer ℂ (s + m)).eval b‖ *
@@ -683,7 +786,7 @@ private theorem norm_bcGenTerm_coeff_eq (a b c u v y : ℂ) (s j k : ℕ) :
     rw [TauCeti.ascPochhammer_add_eval b (s + j) k, TauCeti.ascPochhammer_add_eval b s j]
     push_cast; ring_nf
   have hc_eq : c + 2 * (s : ℂ) + j + k = c + (2 * s + j + k : ℕ) := by push_cast; ring
-  simp only [bcGenPref, bcGenCoeff, coeff_regularizedGaussHGFunSeries, hc_eq]
+  simp only [bcGenPref, bcPref, bcGenCoeff, coeff_regularizedGaussHGFunSeries, hc_eq]
   rw [← norm_pow u s, ← norm_pow v j, ← norm_pow y k, ← norm_mul, ← norm_mul, ← norm_mul]
   refine congrArg norm ?_
   simp only [div_eq_mul_inv, mul_inv]
@@ -743,8 +846,12 @@ private theorem exists_summable_norm_bcTerm_le (a b c : ℂ) {ζ : ℂ} {r : ℝ
       (r := ‖w‖) (by simpa using hw1)
     have hbc : ‖bcTerm a b c s z ζ‖ ≤
         K * ((s : ℝ) + 1) ^ P * ‖z * ζ‖ ^ s * (∑' k : ℕ, ((k : ℝ) + 1) ^ Q * ‖w‖ ^ k) := by
-      simpa [bcTerm, bcGenPref, w] using norm_bcGenTerm_le (u := z * ζ) (v := 1) hw1 hbound s 0
+      have h0 := norm_bcGenTerm_le (u := z * ζ) (v := 1) hw1 hbound s 0
         (hrow_w0.congr fun k ↦ by simp)
+      rw [bcGenPref_zero] at h0
+      simp only [Nat.cast_zero, add_zero, zero_add, Nat.choose_zero_right, Nat.cast_one,
+        norm_one, one_pow, mul_one] at h0
+      exact h0
     have htsum : (∑' k : ℕ, ((k : ℝ) + 1) ^ Q * ‖w‖ ^ k) ≤ ∑' k : ℕ, ((k : ℝ) + 1) ^ Q * r ^ k :=
       Summable.tsum_le_tsum (fun k ↦ by gcongr) hrow_w0 hrow_r
     have huz : ‖z * ζ‖ ^ s ≤ (r * ‖ζ‖) ^ s := by
@@ -785,11 +892,21 @@ private theorem differentiableOn_tsum_bcTerm (a b c : ℂ) {ζ : ℂ} (hζ : ‖
       (differentiableAt_const ζ)).pow s)).mul hcomp).differentiableWithinAt
   exact ((hdiffV z₀ hz₀V).differentiableAt (hV_open.mem_nhds hz₀V)).differentiableWithinAt
 
-private theorem summable_norm_bcDoubleTerm (a b c : ℂ) {z ζ : ℂ} (hζ : ‖ζ‖ < 1)
+private theorem norm_snd_lt_one_of_add_norm_mul_sub_lt_one {z ζ : ℂ}
+    (hzv : ‖z‖ + ‖ζ * (1 - z)‖ < 1) : ‖ζ‖ < 1 := by
+  have hz1 : ‖z‖ < 1 := by linarith [norm_nonneg (ζ * (1 - z))]
+  have h1z : 1 - ‖z‖ ≤ ‖1 - z‖ := by simpa using norm_sub_norm_le 1 z
+  have hmul : ‖ζ‖ * (1 - ‖z‖) ≤ ‖ζ * (1 - z)‖ := by
+    rw [norm_mul]; exact mul_le_mul_of_nonneg_left h1z (norm_nonneg ζ)
+  by_contra! hζ
+  nlinarith
+
+private theorem summable_norm_bcDoubleTerm (a b c : ℂ) {z ζ : ℂ}
     (hzv : ‖z‖ + ‖ζ * (1 - z)‖ < 1) :
     Summable fun p : ℕ × ℕ ↦ ‖bcDoubleTerm a b c z ζ p‖ := by
   obtain ⟨K, P, Q, _, hbound⟩ := exists_bc_coeff_bound a b c
   have hz1 : ‖z‖ < 1 := by linarith [norm_nonneg (ζ * (1 - z))]
+  have hζ : ‖ζ‖ < 1 := norm_snd_lt_one_of_add_norm_mul_sub_lt_one hzv
   have hzζ1 : ‖z * ζ‖ < 1 := by rw [norm_mul]; nlinarith [norm_nonneg z, norm_nonneg ζ]
   set r₁ := ‖z‖
   set r₂ := ‖ζ * (1 - z)‖
@@ -839,8 +956,9 @@ private theorem bcDoubleTerm_antidiag_eq (a b c z ζ : ℂ) {n s : ℕ} (hsn : s
     simpa [hadd_n] using (TauCeti.ascPochhammer_add_eval x s (n - s)).symm
   have hζn : ζ ^ s * ζ ^ (n - s) = ζ ^ n := by rw [← pow_add, hadd_n]
   have hc2_shift : c + 2 * (s : ℂ) + (n - s : ℕ) = c + n + s := by
-    rw [show c + 2 * (s : ℂ) = (c + s) + s by ring, hshift (c + s), add_right_comm]
-  simp only [bcDoubleTerm, bcGenPref, coeff_regularizedGaussHGFunSeries, hshift a, hshift b,
+    have htwo : c + 2 * (s : ℂ) = c + s + s := by ring
+    rw [htwo, hshift (c + s), add_right_comm]
+  simp only [bcDoubleTerm, bcGenPref, bcPref, coeff_regularizedGaussHGFunSeries, hshift a, hshift b,
     hc2_shift, div_eq_mul_inv, mul_inv, mul_pow]
   rw [← hΓ, ← hp a, ← hp b, ← hζn]
   linear_combination (ascPochhammer ℂ s).eval a * (ascPochhammer ℂ (n - s)).eval (a + s) *
@@ -850,21 +968,21 @@ private theorem bcDoubleTerm_antidiag_eq (a b c z ζ : ℂ) {n s : ℕ} (hsn : s
     z ^ s * ζ ^ s * ζ ^ (n - s) * (1 - z) ^ (n - s) *
     regularizedGaussHGFun (a + n) (b + n) (c + n + s) z * hch.symm
 
-private theorem hasSum_bcTerm_of_add_norm_lt (a b c : ℂ) {z ζ : ℂ} (hζ : ‖ζ‖ < 1)
+private theorem hasSum_bcTerm_of_add_norm_lt (a b c : ℂ) {z ζ : ℂ}
     (hzv : ‖z‖ + ‖ζ * (1 - z)‖ < 1) :
     HasSum (fun s : ℕ ↦ bcTerm a b c s z ζ)
       (regularizedGaussHGFun a b c z * regularizedGaussHGFun a b c ζ) := by
   let D := bcDoubleTerm a b c z ζ
-  have hD : Summable D := (summable_norm_bcDoubleTerm a b c hζ hzv).of_norm
+  have hD : Summable D := (summable_norm_bcDoubleTerm a b c hzv).of_norm
   have hz1 : ‖z‖ < 1 := by linarith [norm_nonneg (ζ * (1 - z))]
+  have hζ : ‖ζ‖ < 1 := norm_snd_lt_one_of_add_norm_mul_sub_lt_one hzv
   have hrow : HasSum (fun s : ℕ ↦ bcTerm a b c s z ζ) (∑' p, D p) := by
     refine hD.hasSum.prod_fiberwise fun s ↦ ?_
     have hadd := (hasSum_regularizedGaussHGFun_add (a + s) (b + s) (c + 2 * s) hzv).mul_left
-      ((ascPochhammer ℂ s).eval a * (ascPochhammer ℂ s).eval b *
-        (ascPochhammer ℂ s).eval (c - a) * (ascPochhammer ℂ s).eval (c - b) /
-          (s ! * Gamma (c + s)) * (z * ζ) ^ s)
-    simpa only [D, bcDoubleTerm, bcGenPref, bcTerm, mul_assoc,
-      show z + ζ * (1 - z) = z + ζ - z * ζ by ring] using hadd
+      (bcPref a b c s (z * ζ))
+    have hw : z + ζ * (1 - z) = z + ζ - z * ζ := by ring
+    rw [hw] at hadd
+    simpa only [D, bcDoubleTerm, bcGenPref, bcTerm, mul_assoc] using hadd
   have hdiag : HasSum
       (fun n : ℕ ↦ regularizedGaussHGFun a b c z *
         ((regularizedGaussHGFunSeries a b c).coeff n * ζ ^ n)) (∑' p, D p) := by
@@ -882,13 +1000,14 @@ private theorem hasSum_bcTerm_of_add_norm_lt (a b c : ℂ) {z ζ : ℂ} (hζ : �
 
 private theorem convex_bcDomain (ζ : ℂ) :
     Convex ℝ {z : ℂ | ‖z‖ < 1 ∧ ‖z + ζ - z * ζ‖ < 1} := by
-  rw [show {z : ℂ | ‖z‖ < 1 ∧ ‖z + ζ - z * ζ‖ < 1} =
+  have hset : {z : ℂ | ‖z‖ < 1 ∧ ‖z + ζ - z * ζ‖ < 1} =
       Metric.ball (0 : ℂ) 1 ∩
-        (LinearMap.mulLeft ℝ (1 - ζ) ⁻¹' ((· + ζ) ⁻¹' Metric.ball (0 : ℂ) 1)) by
+        (LinearMap.mulLeft ℝ (1 - ζ) ⁻¹' ((· + ζ) ⁻¹' Metric.ball (0 : ℂ) 1)) := by
     ext z
+    have hmul : (1 - ζ) * z + ζ = z + ζ - z * ζ := by ring
     simp only [Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_preimage, Metric.mem_ball,
-      dist_zero_right, LinearMap.mulLeft_apply]
-    rw [show (1 - ζ) * z + ζ = z + ζ - z * ζ by ring]]
+      dist_zero_right, LinearMap.mulLeft_apply, hmul]
+  rw [hset]
   exact (convex_ball (0 : ℂ) 1).inter
     (((convex_ball (0 : ℂ) 1).translate_preimage_left ζ).linear_preimage
       (LinearMap.mulLeft ℝ (1 - ζ)))
@@ -916,20 +1035,20 @@ theorem hasSum_regularizedGaussHGFun_mul_regularizedGaussHGFun (a b c : ℂ) {z 
     fun _ hz' ↦ (analyticAt_regularizedGaussHGFun a b c hz'.1).mul analyticAt_const
   have heq0 : (fun z' : ℂ ↦ ∑' s : ℕ, bcTerm a b c s z' ζ) =ᶠ[𝓝 (0 : ℂ)]
       fun z' : ℂ ↦ regularizedGaussHGFun a b c z' * regularizedGaussHGFun a b c ζ := by
-    filter_upwards [Metric.ball_mem_nhds (0 : ℂ) (show 0 < (1 - ‖ζ‖) / 4 by linarith)]
-      with z' hz'
+    have hrad : 0 < (1 - ‖ζ‖) / 4 := by linarith
+    filter_upwards [Metric.ball_mem_nhds (0 : ℂ) hrad] with z' hz'
     rw [Metric.mem_ball, dist_zero_right] at hz'
     have hzv : ‖z'‖ + ‖ζ * (1 - z')‖ < 1 := by
       calc ‖z'‖ + ‖ζ * (1 - z')‖ = ‖z'‖ + ‖ζ‖ * ‖1 - z'‖ := by rw [norm_mul]
         _ ≤ ‖z'‖ + ‖ζ‖ * (1 + ‖z'‖) := by gcongr; exact (norm_sub_le 1 z').trans_eq (by simp)
         _ < 1 := by nlinarith [norm_nonneg ζ, norm_nonneg z']
-    exact (hasSum_bcTerm_of_add_norm_lt a b c hζ hzv).tsum_eq
+    exact (hasSum_bcTerm_of_add_norm_lt a b c hzv).tsum_eq
   have heqU := hf_an.eqOn_of_preconnected_of_eventuallyEq hg_an
     (convex_bcDomain ζ).isPreconnected ⟨by simp, by simpa using hζ⟩ heq0
   obtain ⟨g, hg, hbound⟩ := exists_summable_norm_bcTerm_le a b c hζ (max_lt hz hw)
   have hsum_z : Summable fun s : ℕ ↦ bcTerm a b c s z ζ :=
     .of_norm_bounded hg fun s ↦ hbound s z (le_max_left _ _) (le_max_right _ _)
-  simpa only [bcTerm, ← heqU ⟨hz, hw⟩] using hsum_z.hasSum
+  simpa only [bcTerm, bcPref, ← heqU ⟨hz, hw⟩] using hsum_z.hasSum
 
 /-- **Burchnall–Chaundy two-variable product expansion for `₂F₁` (DLMF 15.16.3, ordinary form).**
 When `c` avoids the nonpositive integers and `‖z‖ < 1`, `‖ζ‖ < 1`, `‖z + ζ - z * ζ‖ < 1`,
@@ -947,11 +1066,12 @@ theorem hasSum_ordinaryHypergeometric_mul_ordinaryHypergeometric (a b : ℂ) {c 
   have hΓc : Gamma c ≠ 0 := Gamma_ne_zero hc
   have hmul := (hasSum_regularizedGaussHGFun_mul_regularizedGaussHGFun a b c hz hζ hw).mul_left
     (Gamma c * Gamma c)
-  rw [show Gamma c * Gamma c *
+  have hprod : Gamma c * Gamma c *
       (regularizedGaussHGFun a b c z * regularizedGaussHGFun a b c ζ) =
-      ₂F₁ a b c z * ₂F₁ a b c ζ by
+      ₂F₁ a b c z * ₂F₁ a b c ζ := by
     rw [← ordinaryHypergeometric_div_Gamma_eq hc, ← ordinaryHypergeometric_div_Gamma_eq hc]
-    field_simp] at hmul
+    field_simp
+  rw [hprod] at hmul
   refine hmul.congr_fun fun s ↦ ?_
   have hc2s : ∀ k : ℕ, c + 2 * (s : ℂ) ≠ -k := fun k h ↦
     hc (2 * s + k) (by push_cast; linear_combination h)
