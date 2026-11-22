@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
 # Vanishing exponential damping of a half-line integral
@@ -16,8 +17,9 @@ integrable function unchanged in the limit `sigma → 1⁺`: the damping factor 
 half-line uniformly in `sigma ∈ [1, 2]`, so dominated convergence applies.
 
 Conversely, increasing the damping rate from `σ` to `x ≥ σ` multiplies the integrand by
-`e^{-(x-σ)t} ≤ e^{-(x-σ)δ}` for `t ≥ δ`. This preserves integrability on a right half-line, and on
-`(δ, ∞)` it gains the factor `e^{-(x-σ)δ}`: this bounds the tail of a Laplace integral.
+`e^{-(x-σ)t} ≤ e^{-(x-σ)δ}` for `t ≥ δ` (`TauCeti.exp_neg_sub_mul_le_of_le`). This preserves
+integrability on a right half-line, and on `(δ, ∞)` it gains the factor `e^{-(x-σ)δ}`: this
+bounds the tail of a Laplace integral.
 
 This is the Abelian step of a Tauberian argument, where a Dirichlet series is tested on a vertical
 line `Re s = sigma` inside its half-plane of convergence and the line is pushed to the boundary;
@@ -28,7 +30,6 @@ term of the Wiener--Ikehara identity.
 
 * `TauCeti.tendsto_setIntegral_exp_smul`: the damped integral converges to the undamped one as
   `sigma` decreases to `1`.
-* `TauCeti.exp_neg_sub_mul_le_of_le`: `e^{-(x-σ)t} ≤ e^{-(x-σ)δ}` for `σ ≤ x` and `δ ≤ t`.
 * `MeasureTheory.IntegrableOn.exp_neg_mul_smul_of_le`: if `e^{-σt} G(t)` is integrable on
   `(0, ∞)`, so is the more strongly damped `e^{-xt} G(t)` for every `x ≥ σ`.
 * `TauCeti.norm_setIntegral_Ioi_exp_neg_mul_smul_le`: on `(δ, ∞)` the extra damping
@@ -62,12 +63,6 @@ theorem tendsto_setIntegral_exp_smul (hf : IntegrableOn f (Ici a) μ) :
   · have hexp : Tendsto (fun sigma : ℝ ↦ Real.exp (-u * (sigma - 1))) (𝓝 1) (𝓝 1) :=
       (by fun_prop : Continuous fun sigma : ℝ ↦ Real.exp (-u * (sigma - 1))).tendsto' 1 1 (by simp)
     simpa using (hexp.mono_left nhdsWithin_le_nhds).smul_const (f u)
-
-/-- Raising the damping rate from `σ` to `x ≥ σ` multiplies by `e^{-(x-σ)t}`, which is at most
-`e^{-(x-σ)δ}` for `t ≥ δ`. -/
-theorem exp_neg_sub_mul_le_of_le {σ x δ t : ℝ} (hx : σ ≤ x) (ht : δ ≤ t) :
-    Real.exp (-(x - σ) * t) ≤ Real.exp (-(x - σ) * δ) :=
-  Real.exp_le_exp.mpr (mul_le_mul_of_nonpos_left ht (by linarith))
 
 /-- If `t ↦ e^{-σt} G(t)` is integrable on `(0, ∞)`, then so is `t ↦ e^{-xt} G(t)` for every
 `x ≥ σ`. -/

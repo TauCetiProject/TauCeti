@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
 import TauCeti.MeasureTheory.Integral.Exp.Damped
 import TauCeti.MeasureTheory.Integral.RpowLaplace
 
@@ -40,8 +41,8 @@ together with integrability of `e^{-σt} q(t)` on `(1, ∞)`: see
 The remainder bound `TauCeti.isBigO_integral_exp_neg_mul_smul` (if `G(t) = O(t^{s-1})` as
 `t → 0+`, then `∫₀^∞ e^{-xt} G(t) dt = O(x^{-s})` as `x → +∞`) is in
 `TauCeti.MeasureTheory.Integral.RpowLaplace`, and the integrability of `e^{-xt} G(t)` for
-`x ≥ σ` in `TauCeti.MeasureTheory.Integral.Exp.Damped`. The terms are evaluated by Mathlib's
-`Complex.integral_cpow_mul_exp_neg_mul_Ioi`.
+`x ≥ σ` in `TauCeti.MeasureTheory.Integral.Exp.Damped`. The terms are evaluated by
+`Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos` at a real rate.
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
 file `DLMFMathlib/Analysis/Asymptotics/Watson.lean`, and generalized from exponents in steps
@@ -82,14 +83,9 @@ theorem hasAsymptoticExpansion_laplace {q : ℝ → ℂ} {α c : ℕ → ℂ} {�
     simp [Complex.real_smul]
   -- each term `e^{-xt} c_s t^{α_s - 1}` is integrable for `x > 0`
   have hterm (x : ℝ) (hx : 0 < x) (s : ℕ) :
-      IntegrableOn (fun t : ℝ => Real.exp (-x * t) • (c s * (t : ℂ) ^ (α s - 1))) (Ioi 0) := by
-    refine Integrable.mono' ((TauCeti.integrableOn_rpow_mul_exp_neg_mul_Ioi (hα s) hx).const_mul
-      ‖c s‖) (by fun_prop : Measurable fun t : ℝ =>
-        Real.exp (-x * t) • (c s * (t : ℂ) ^ (α s - 1))).aestronglyMeasurable ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
-    rw [norm_smul, norm_mul, norm_cpow_eq_rpow_re_of_pos ht,
-      Real.norm_of_nonneg (Real.exp_pos _).le, sub_re, one_re, neg_mul]
-    exact le_of_eq (by ring)
+      IntegrableOn (fun t : ℝ => Real.exp (-x * t) • (c s * (t : ℂ) ^ (α s - 1))) (Ioi 0) :=
+    IntegrableOn.congr_fun ((Complex.integrableOn_cpow_mul_exp_neg_mul_Ioi (w := (x : ℂ)) (hα s)
+      (by rwa [ofReal_re])).const_mul (c s)) (fun t _ => by rw [hsmul]; ring) measurableSet_Ioi
   have hsum (x : ℝ) (hx : 0 < x) : IntegrableOn
       (fun t : ℝ => ∑ s ∈ range N, Real.exp (-x * t) • (c s * (t : ℂ) ^ (α s - 1))) (Ioi 0) :=
     integrable_finsetSum _ fun s _ => hterm x hx s
@@ -106,11 +102,9 @@ theorem hasAsymptoticExpansion_laplace {q : ℝ → ℂ} {α c : ℕ → ℂ} {�
   congr 1
   · exact setIntegral_congr_fun measurableSet_Ioi fun t _ => hsmul x t (q t)
   refine sum_congr rfl fun s _ => ?_
-  have hM := Complex.integral_cpow_mul_exp_neg_mul_Ioi (hα s) hx
-  rw [one_div, inv_cpow _ _ (by simp [arg_ofReal_of_nonneg hx.le, Real.pi_ne_zero.symm]),
-    ← cpow_neg] at hM
-  simp_rw [hsmul]
-  rw [smul_eq_mul, ← mul_assoc, ← hM, ← integral_mul_const]
-  exact setIntegral_congr_fun measurableSet_Ioi fun t _ => by ring
+  have hM := Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos (z := (x : ℂ)) (hα s)
+    (by rwa [ofReal_re])
+  rw [smul_eq_mul, ← mul_assoc, mul_comm ((x : ℂ) ^ (-α s)), ← hM, ← integral_mul_const]
+  exact setIntegral_congr_fun measurableSet_Ioi fun t _ => by rw [hsmul]; ring
 
 end Asymptotics

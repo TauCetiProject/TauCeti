@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import TauCeti.MeasureTheory.Integral.Exp.Damped
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
 # Integrability and interval integrals with a complex exponential kernel
