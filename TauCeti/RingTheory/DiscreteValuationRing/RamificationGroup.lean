@@ -91,6 +91,10 @@ through a fraction field or Teichmüller lifts.
   `TauCeti.IsDiscreteValuationRing.lowerIndex_eq_addVal_of_irreducible`: for a separable residue
   extension over a `G`-fixed local base `A`, membership in `G_i` and Serre's lower index on `G_0`
   are read at any uniformizer.
+* `TauCeti.IsDiscreteValuationRing.tameCharacterGraded_injective_of_injective` and
+  `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToResidueField_injective_of_injective`:
+  injectivity of the tame character and positive-depth residue coordinate from injectivity of
+  the underlying graded principal-unit map.
 * `TauCeti.IsDiscreteValuationRing.ker_ramificationGroupToPrincipalUnitGroupGraded`,
   `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToPrincipalUnitGroupGraded_injective`,
   `TauCeti.IsDiscreteValuationRing.tameCharacter_injective_iff`,
@@ -125,11 +129,6 @@ section UniformizerRatio
 variable {G : Type*} [Group G] {B : Type*} [CommRing B] [MulSemiringAction G B]
 variable [IsDomain B] [_root_.IsDiscreteValuationRing B]
 
-private theorem coe_unitsMap_ringHom {R₁ R₂ : Type*} [Ring R₁] [Ring R₂]
-    (f : R₁ →+* R₂) (u : R₁ˣ) :
-    ((Units.map f.toMonoidHom u : R₂ˣ) : R₂) = f (u : R₁) := by
-  simp
-
 private theorem unitsMap_mul_inv_mem_principalUnitGroup {i : ℕ} {σ : G}
     (hσ : σ ∈ ramificationGroup G B (i : ℤ)) (u : Bˣ) :
     Units.map (MulSemiringAction.toRingHom G B σ).toMonoidHom u * u⁻¹ ∈
@@ -138,8 +137,7 @@ private theorem unitsMap_mul_inv_mem_principalUnitGroup {i : ℕ} {σ : G}
   have hsub :
       ((Units.map (MulSemiringAction.toRingHom G B σ).toMonoidHom u * u⁻¹ : Bˣ) : B) - 1 =
         (σ • (u : B) - (u : B)) * ↑u⁻¹ := by
-    rw [Units.val_mul, coe_unitsMap_ringHom, MulSemiringAction.toRingHom_apply, sub_mul,
-      Units.mul_inv]
+    simp [sub_mul]
   rw [hsub]
   exact Ideal.mul_mem_right _ _ (mem_ramificationGroup_natCast_iff.mp hσ (u : B))
 
@@ -203,9 +201,8 @@ theorem coe_uniformizerRatio_mul (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
           (uniformizerRatio i hϖ τ : Bˣ) := by
   apply Units.ext
   apply mul_left_cancel₀ hϖ.ne_zero
-  rw [mul_coe_uniformizerRatio, Subgroup.coe_mul, mul_smul, Units.val_mul, ← mul_assoc,
-    mul_coe_uniformizerRatio, coe_unitsMap_ringHom, MulSemiringAction.toRingHom_apply,
-    ← smul_mul', mul_coe_uniformizerRatio]
+  rw [mul_coe_uniformizerRatio, Subgroup.coe_mul, mul_smul]
+  simp [← mul_assoc, ← smul_mul']
 
 /-- **1-cocycle law** in `B` for `uniformizerRatio`. -/
 theorem val_coe_uniformizerRatio_mul (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
@@ -213,8 +210,8 @@ theorem val_coe_uniformizerRatio_mul (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
     ((uniformizerRatio i hϖ (σ * τ) : Bˣ) : B) =
       ((uniformizerRatio i hϖ σ : Bˣ) : B) *
         (σ : G) • ((uniformizerRatio i hϖ τ : Bˣ) : B) := by
-  rw [coe_uniformizerRatio_mul, Units.val_mul, coe_unitsMap_ringHom,
-    MulSemiringAction.toRingHom_apply]
+  rw [coe_uniformizerRatio_mul]
+  simp
 
 /-! ### Homomorphisms into principal-unit graded pieces -/
 
@@ -274,8 +271,7 @@ theorem ramificationGroupToPrincipalUnitGroupGraded_eq_of_irreducible (i : ℕ) 
             rw [mul_coe_uniformizerRatio, ← mul_uniformizerChangeUnit ϖ ϖ' hϖ hϖ']
       _ = ϖ * (((uniformizerRatio i hϖ σ : Bˣ) *
             Units.map (MulSemiringAction.toRingHom G B (σ : G)).toMonoidHom c : Bˣ) : B) := by
-            rw [smul_mul', ← mul_coe_uniformizerRatio i hϖ σ, Units.val_mul,
-              coe_unitsMap_ringHom, MulSemiringAction.toRingHom_apply, mul_assoc]
+            simp [smul_mul', ← mul_assoc]
   have hquot : (uniformizerRatio i hϖ σ : Bˣ)⁻¹ * (uniformizerRatio i hϖ' σ : Bˣ) =
       Units.map (MulSemiringAction.toRingHom G B (σ : G)).toMonoidHom c * c⁻¹ := by
     apply mul_left_cancel (a := (uniformizerRatio i hϖ σ : Bˣ))
@@ -355,8 +351,8 @@ theorem coe_tameCharacter_apply {ϖ : B} (hϖ : Irreducible ϖ)
       residue B ((uniformizerRatio 0 hϖ σ : Bˣ) : B) := by
   rw [tameCharacter, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     ramificationGroupToPrincipalUnitGroupGraded_apply (i := 0),
-    maximalIdealPrincipalUnitGroupPowGradedZeroEquivResidueFieldUnits_mk,
-    coe_unitsMap_ringHom]
+    maximalIdealPrincipalUnitGroupPowGradedZeroEquivResidueFieldUnits_mk]
+  simp
 
 /-- If `ϖ * y = σ • ϖ` in `B`, then the tame character of `σ` has underlying value `residue B y`. -/
 theorem coe_tameCharacter_of_mul_eq_smul {ϖ : B} (hϖ : Irreducible ϖ)
@@ -412,6 +408,13 @@ theorem tameCharacterGraded_eq_of_irreducible {ϖ ϖ' : B} (hϖ : Irreducible ϖ
     tameCharacterGraded (G := G) hϖ = tameCharacterGraded (G := G) hϖ' := by
   rw [tameCharacterGraded, tameCharacterGraded,
     ramificationGroupGradedToPrincipalUnitGroupGraded_eq_of_irreducible 0 hϖ hϖ']
+
+/-- The graded tame character is injective whenever the depth-zero graded principal-unit map is
+injective. -/
+theorem tameCharacterGraded_injective_of_injective {ϖ : B} (hϖ : Irreducible ϖ)
+    (h : Function.Injective (ramificationGroupGradedToPrincipalUnitGroupGraded (G := G) 0 hϖ)) :
+    Function.Injective (tameCharacterGraded (G := G) hϖ) :=
+  (maximalIdealPrincipalUnitGroupPowGradedZeroEquivResidueFieldUnits B).injective.comp h
 
 private def ramificationGroupCastSuccEquiv (n : ℕ) :
     ramificationGroup G B ((n : ℤ) + 1) ≃* ramificationGroup G B ((n + 1 : ℕ) : ℤ) :=
@@ -496,6 +499,19 @@ theorem ramificationGroupGradedToResidueField_change (n : ℕ) {ϖ ϖ' : B}
   exact
     maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer_change n ϖ ϖ'
       hϖ hϖ' _
+
+/-- The positive-depth residue coordinate is injective whenever the `(n + 1)`-st graded
+principal-unit map is injective. -/
+theorem ramificationGroupGradedToResidueField_injective_of_injective (n : ℕ) {ϖ : B}
+    (hϖ : Irreducible ϖ)
+    (h : Function.Injective
+      (ramificationGroupGradedToPrincipalUnitGroupGraded (G := G) (n + 1) hϖ)) :
+    Function.Injective (ramificationGroupGradedToResidueField (G := G) n hϖ) := by
+  rw [ramificationGroupGradedToResidueField]
+  exact (maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer
+    n ϖ hϖ).injective.comp
+    (Additive.ofMul.injective.comp
+      (h.comp ((ramificationGroupGradedCastSuccEquiv n).injective.comp Additive.toMul.injective)))
 
 end UniformizerRatio
 
@@ -599,7 +615,7 @@ theorem tameCharacterGraded_injective (A : Type*) [CommRing A] [IsLocalRing A] [
     [IsLocalHom (algebraMap A B)] [SMulCommClass G A B]
     [Algebra.IsSeparable (ResidueField A) (ResidueField B)] {ϖ : B} (hϖ : Irreducible ϖ) :
     Function.Injective (tameCharacterGraded (G := G) hϖ) :=
-  (maximalIdealPrincipalUnitGroupPowGradedZeroEquivResidueFieldUnits B).injective.comp
+  tameCharacterGraded_injective_of_injective hϖ
     (ramificationGroupGradedToPrincipalUnitGroupGraded_injective A 0 hϖ)
 
 /-- **Injectivity of the positive-depth residue coordinate**: when `B` is a local `A`-algebra on
@@ -609,13 +625,9 @@ theorem ramificationGroupGradedToResidueField_injective (A : Type*) [CommRing A]
     [Algebra A B] [IsLocalHom (algebraMap A B)] [SMulCommClass G A B]
     [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (n : ℕ) {ϖ : B}
     (hϖ : Irreducible ϖ) :
-    Function.Injective (ramificationGroupGradedToResidueField (G := G) n hϖ) := by
-  rw [ramificationGroupGradedToResidueField]
-  exact (maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer
-    n ϖ hϖ).injective.comp
-    (Additive.ofMul.injective.comp
-      ((ramificationGroupGradedToPrincipalUnitGroupGraded_injective A (n + 1) hϖ).comp
-        ((ramificationGroupGradedCastSuccEquiv n).injective.comp Additive.toMul.injective)))
+    Function.Injective (ramificationGroupGradedToResidueField (G := G) n hϖ) :=
+  ramificationGroupGradedToResidueField_injective_of_injective n hϖ
+    (ramificationGroupGradedToPrincipalUnitGroupGraded_injective A (n + 1) hϖ)
 
 end Separable
 
@@ -680,8 +692,7 @@ def ramificationGroupOneSylow (A G B : Type*) [CommRing A] [IsLocalRing A] [Grou
     [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (p : ℕ) [Fact p.Prime]
     [CharP (ResidueField B) p] [FaithfulSMul G B] [Finite (ramificationGroup G B 0)] :
     Sylow p (ramificationGroup G B 0) :=
-  ((TauCeti.IsLocalRing.isPGroup_ramificationGroup G B p (i := 1) one_pos).comap_subtype).toSylow
-    (not_dvd_index_ramificationGroup_one A G B p)
+  ramificationGroupOneSylowOfNotDvdIndex G B p (not_dvd_index_ramificationGroup_one A G B p)
 
 /-- The subgroup underlying `ramificationGroupOneSylow` is `G_1` inside `G_0`. -/
 @[simp]
@@ -692,7 +703,8 @@ theorem ramificationGroupOneSylow_coe (A G B : Type*) [CommRing A] [IsLocalRing 
     [CharP (ResidueField B) p] [FaithfulSMul G B] [Finite (ramificationGroup G B 0)] :
     (ramificationGroupOneSylow A G B p : Subgroup (ramificationGroup G B 0)) =
       (ramificationGroup G B 1).subgroupOf (ramificationGroup G B 0) :=
-  (rfl)
+  ramificationGroupOneSylowOfNotDvdIndex_coe G B p
+    (not_dvd_index_ramificationGroup_one A G B p)
 
 /-- Membership in `ramificationGroupOneSylow` is membership in `G_1`. -/
 @[simp]
@@ -702,9 +714,8 @@ theorem mem_ramificationGroupOneSylow (A G B : Type*) [CommRing A] [IsLocalRing 
     [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (p : ℕ) [Fact p.Prime]
     [CharP (ResidueField B) p] [FaithfulSMul G B] [Finite (ramificationGroup G B 0)]
     (σ : ramificationGroup G B 0) :
-    σ ∈ ramificationGroupOneSylow A G B p ↔ (σ : G) ∈ ramificationGroup G B 1 := by
-  rw [← SetLike.mem_coe, ← Sylow.coe_coe, ramificationGroupOneSylow_coe, SetLike.mem_coe,
-    Subgroup.mem_subgroupOf]
+    σ ∈ ramificationGroupOneSylow A G B p ↔ (σ : G) ∈ ramificationGroup G B 1 :=
+  mem_ramificationGroupOneSylowOfNotDvdIndex G B p (not_dvd_index_ramificationGroup_one A G B p) σ
 
 /-- The wild inertia Sylow subgroup is normal in `G_0`. -/
 instance ramificationGroupOneSylow_normal (A G B : Type*) [CommRing A] [IsLocalRing A] [Group G]
@@ -712,9 +723,9 @@ instance ramificationGroupOneSylow_normal (A G B : Type*) [CommRing A] [IsLocalR
     [IsLocalHom (algebraMap A B)] [MulSemiringAction G B] [SMulCommClass G A B]
     [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (p : ℕ) [Fact p.Prime]
     [CharP (ResidueField B) p] [FaithfulSMul G B] [Finite (ramificationGroup G B 0)] :
-    (ramificationGroupOneSylow A G B p : Subgroup (ramificationGroup G B 0)).Normal := by
-  rw [ramificationGroupOneSylow_coe]
-  infer_instance
+    (ramificationGroupOneSylow A G B p : Subgroup (ramificationGroup G B 0)).Normal :=
+  ramificationGroupOneSylowOfNotDvdIndex_normal G B p
+    (not_dvd_index_ramificationGroup_one A G B p)
 
 /-- **Uniqueness of the wild inertia Sylow subgroup**: when `B` is a local `A`-algebra on which `G`
 acts faithfully by `A`-algebra automorphisms with separable residue extension, prime residue
@@ -725,10 +736,8 @@ theorem eq_ramificationGroupOneSylow (A G B : Type*) [CommRing A] [IsLocalRing A
     [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (p : ℕ) [Fact p.Prime]
     [CharP (ResidueField B) p] [FaithfulSMul G B] [Finite (ramificationGroup G B 0)]
     (Q : Sylow p (ramificationGroup G B 0)) :
-    Q = ramificationGroupOneSylow A G B p := by
-  let _ : Unique (Sylow p (ramificationGroup G B 0)) :=
-    Sylow.unique_of_normal (ramificationGroupOneSylow A G B p) inferInstance
-  exact Subsingleton.elim _ _
+    Q = ramificationGroupOneSylow A G B p :=
+  eq_ramificationGroupOneSylowOfNotDvdIndex G B p (not_dvd_index_ramificationGroup_one A G B p) Q
 
 /-- When `B` is a local `A`-algebra on which `G` acts faithfully by `A`-algebra automorphisms with
 separable residue extension, prime residue characteristic `p`, and finite `G_0`, the cardinality of
@@ -739,10 +748,9 @@ theorem natCard_ramificationGroup_one (A G B : Type*) [CommRing A] [IsLocalRing 
     [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (p : ℕ) [Fact p.Prime]
     [CharP (ResidueField B) p] [FaithfulSMul G B] [Finite (ramificationGroup G B 0)] :
     Nat.card (ramificationGroup G B 1) =
-      p ^ (Nat.card (ramificationGroup G B 0)).factorization p := by
-  rw [← Sylow.card_eq_multiplicity (ramificationGroupOneSylow A G B p)]
-  exact Nat.card_congr (Subgroup.subgroupOfEquivOfLe
-    (ramificationGroup_antitone G B (by omega : (0 : ℤ) ≤ 1))).toEquiv.symm
+      p ^ (Nat.card (ramificationGroup G B 0)).factorization p :=
+  natCard_ramificationGroup_one_of_not_dvd_index G B p
+    (not_dvd_index_ramificationGroup_one A G B p)
 
 /-- **Wild inertia is trivial if and only if `p ∤ #G_0`**, when `B` is a local `A`-algebra on which
 `G` acts faithfully by `A`-algebra automorphisms with separable residue extension, residue
@@ -753,15 +761,9 @@ theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (A 
     [MulSemiringAction G B] [SMulCommClass G A B]
     [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (p : ℕ) [CharP (ResidueField B) p]
     [FaithfulSMul G B] [Finite (ramificationGroup G B 0)] :
-    ramificationGroup G B 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G B 0) := by
-  rcases CharP.char_is_prime_or_zero (ResidueField B) p with hp | rfl
-  · have : Fact p.Prime := ⟨hp⟩
-    rw [← Subgroup.card_eq_one, natCard_ramificationGroup_one A G B p,
-      pow_eq_one_iff_right hp.ne_one, Nat.factorization_eq_zero_iff]
-    simp only [hp, not_true_eq_false, false_or, Nat.card_pos.ne', or_false]
-  · have : CharZero (ResidueField B) := CharP.charP_to_charZero (ResidueField B)
-    rw [ramificationGroup_eq_bot_of_charZero G B one_pos, zero_dvd_iff]
-    exact iff_of_true rfl Nat.card_pos.ne'
+    ramificationGroup G B 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G B 0) :=
+  ramificationGroup_one_eq_bot_iff_not_dvd_card_of_not_dvd_index G B p
+    (not_dvd_index_ramificationGroup_one A G B p)
 
 /-- When `B` is a local `A`-algebra on which `G` acts faithfully by `A`-algebra automorphisms with
 separable residue extension, residue characteristic zero, and finite `G_0`, the tame character

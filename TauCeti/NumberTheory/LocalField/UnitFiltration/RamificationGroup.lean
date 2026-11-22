@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 public import TauCeti.RingTheory.DiscreteValuationRing.RamificationGroup
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.RingTheory.RootsOfUnity.Basic
 import TauCeti.RingTheory.Valuation.ValuativeRel.Action
 
 /-!
@@ -74,9 +75,6 @@ separable base extension.
 * `TauCeti.isCyclic_ramificationGroupGraded_zero` and
   `TauCeti.card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one`: the tame quotient
   is cyclic, of order dividing `q - 1`.
-* `TauCeti.isPGroup_ramificationGroupGraded_natCast_succ` and
-  `TauCeti.isPGroup_ramificationGroup`: the positive-depth graded pieces, and, for a faithful
-  action with finite `G_0`, the positive-depth ramification groups, are `p`-groups.
 * `TauCeti.eq_ramificationGroupOneSylow` and `TauCeti.natCard_ramificationGroup_one`: uniqueness
   and order `p ^ (v_p #G_0)` of the wild inertia Sylow subgroup.
 * `TauCeti.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`: `G_1` is
@@ -458,40 +456,17 @@ theorem ker_tameCharacter (hϖ : Irreducible ϖ) :
 
 /-- **The tame character is injective on `G_0 / G_1`.** -/
 theorem tameCharacterGraded_injective (hϖ : Irreducible ϖ) :
-    Function.Injective (IsDiscreteValuationRing.tameCharacterGraded (G := G) hϖ) := by
-  rw [← MonoidHom.ker_eq_bot_iff, Subgroup.eq_bot_iff_forall]
-  intro q hq
-  induction q using QuotientGroup.induction_on with
-  | _ σ =>
-    rw [MonoidHom.mem_ker, IsDiscreteValuationRing.tameCharacterGraded_mk,
-      ← MonoidHom.mem_ker, ker_tameCharacter hϖ] at hq
-    rw [QuotientGroup.eq_one_iff]
-    simpa only [zero_add] using hq
+    Function.Injective (IsDiscreteValuationRing.tameCharacterGraded (G := G) hϖ) :=
+  IsDiscreteValuationRing.tameCharacterGraded_injective_of_injective hϖ
+    (ramificationGroupGradedToPrincipalUnitGroupGraded_injective hϖ)
 
 /-- The positive-depth ramification quotient embeds in the additive residue field. -/
 theorem ramificationGroupGradedToResidueField_injective (n : ℕ) (π : 𝒪[L])
     (hπ : Irreducible π) :
     Function.Injective
-      (IsDiscreteValuationRing.ramificationGroupGradedToResidueField (G := G) n hπ) := by
-  rw [← AddMonoidHom.ker_eq_bot_iff, AddSubgroup.eq_bot_iff_forall]
-  intro x hx
-  induction x using Additive.rec with
-  | ofMul q =>
-    induction q using QuotientGroup.induction_on with
-    | _ τ =>
-      rw [AddMonoidHom.mem_ker,
-        IsDiscreteValuationRing.ramificationGroupGradedToResidueField_ofMul_mk,
-        map_eq_zero_iff _
-          (maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer
-            n π hπ).injective,
-        ofMul_eq_zero,
-        ← IsDiscreteValuationRing.ramificationGroupGradedToPrincipalUnitGroupGraded_mk,
-        map_eq_one_iff _
-          (ramificationGroupGradedToPrincipalUnitGroupGraded_injective (G := G) (i := n + 1) hπ),
-        QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf] at hx
-      change (τ : G) ∈ ramificationGroup G 𝒪[L] ((n + 1 : ℕ) + 1) at hx
-      rw [ofMul_eq_zero, QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf]
-      simpa only [Nat.cast_succ] using hx
+      (IsDiscreteValuationRing.ramificationGroupGradedToResidueField (G := G) n hπ) :=
+  IsDiscreteValuationRing.ramificationGroupGradedToResidueField_injective_of_injective n hπ
+    (ramificationGroupGradedToPrincipalUnitGroupGraded_injective hπ)
 
 variable (G L) in
 /-- **The tame quotient is cyclic**: `G_0 / G_1` embeds into the multiplicative group of the
@@ -510,61 +485,33 @@ theorem card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one :
   rw [← Nat.card_units]
   exact Subgroup.card_dvd_of_injective _ (tameCharacterGraded_injective hϖ)
 
-/-! ### Wild inertia is a `p`-group -/
-
-variable (G) in
-/-- At positive depth `i`, the graded piece `G_i / G_{i+1}` is a `p`-group for the residue
-characteristic `p`: it embeds into `U(L,i) / U(L,i+1)`, which has `q` elements. -/
-theorem isPGroup_ramificationGroupGraded_natCast_succ (p : ℕ) [CharP 𝓀[L] p] (i : ℕ) :
-    IsPGroup p (RamificationGroupGraded G 𝒪[L] ((i + 1 : ℕ) : ℤ)) :=
-  TauCeti.IsLocalRing.isPGroup_ramificationGroupGraded G 𝒪[L] p (by omega)
-
-variable (G) in
-/-- **The positive-depth ramification groups are `p`-groups**, for `p` the residue
-characteristic, whenever the action is faithful and `G_0` is finite; in particular the wild
-inertia group `G_1` is a `p`-group. The filtration reaches `1`, and each positive-depth step
-`G_i / G_{i+1}` is a `p`-group (`TauCeti.isPGroup_ramificationGroupGraded_natCast_succ`). -/
-theorem isPGroup_ramificationGroup (p : ℕ) [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]]
-    [Finite (ramificationGroup G 𝒪[L] 0)] {i : ℤ} (hi : 0 < i) :
-    IsPGroup p (ramificationGroup G 𝒪[L] i) :=
-  TauCeti.IsLocalRing.isPGroup_ramificationGroup G 𝒪[L] p hi
-
 /-! ### Wild inertia as the Sylow subgroup of inertia -/
 
 variable (G) in
-/-- The index of `G_1` in `G_0` is prime to the residue characteristic `p`. This is the
-order-theoretic consequence of the tame-character embedding `G_0/G_1 → 𝓀[L]ˣ`. -/
+/-- The index of `G_1` in `G_0` is prime to the residue characteristic `p`. -/
 theorem not_dvd_index_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p] :
     ¬p ∣ ((ramificationGroup G 𝒪[L] 1).subgroupOf
       (ramificationGroup G 𝒪[L] 0)).index := by
-  let _ := Fintype.ofFinite 𝓀[L]
   let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  intro hpIndex
-  have hpCard : p ∣ Nat.card (RamificationGroupGraded G 𝒪[L] 0) := by
-    rwa [RamificationGroupGraded, zero_add, ← Subgroup.index_eq_card]
-  have hpResidueCard : p ∣ Nat.card 𝓀[L] := by
-    obtain ⟨d, -, hd⟩ := FiniteField.card 𝓀[L] p
-    rw [Nat.card_eq_fintype_card, hd]
-    exact dvd_pow_self p d.ne_zero
-  have hcoprime : Nat.Coprime p (Nat.card 𝓀[L] - 1) :=
-    Nat.Coprime.of_dvd_left hpResidueCard <|
-      (Nat.coprime_self_sub_right
-        (show 1 ≤ Nat.card 𝓀[L] from Nat.card_pos)).2 (by simp)
-  exact (Fact.out : p.Prime).coprime_iff_not_dvd.mp hcoprime <|
-    hpCard.trans
-      (card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one (L := L) G)
+  obtain ⟨_, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
+  have _ : Finite (RamificationGroupGraded G 𝒪[L] 0) :=
+    Finite.of_injective _ (tameCharacterGraded_injective hϖ)
+  have hidx : ((ramificationGroup G 𝒪[L] 1).subgroupOf (ramificationGroup G 𝒪[L] 0)).index =
+      Nat.card (RamificationGroupGraded G 𝒪[L] 0) := by
+    rw [Subgroup.index_eq_card, RamificationGroupGraded, zero_add]
+  rw [hidx]
+  exact TauCeti.not_dvd_natCard_of_injective_units p
+    (IsDiscreteValuationRing.tameCharacterGraded (G := G) hϖ)
+    (tameCharacterGraded_injective hϖ)
 
 variable (G) in
 /-- **Wild inertia is the Sylow `p`-subgroup of inertia.** For the residue characteristic `p`,
-the first ramification group `G_1`, viewed as a subgroup of `G_0`, is a Sylow `p`-subgroup.
-
-The two inputs are the positive-depth `p`-group theorem and the tame-character embedding, which
-shows that the index `#(G_0/G_1)` divides `#𝓀[L] - 1` and is therefore prime to `p`. -/
+the first ramification group `G_1`, viewed as a subgroup of `G_0`, is a Sylow `p`-subgroup. -/
 noncomputable def ramificationGroupOneSylow (p : ℕ) [CharP 𝓀[L] p]
     [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
     Sylow p (ramificationGroup G 𝒪[L] 0) :=
   let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  ((isPGroup_ramificationGroup G p (i := 1) (by omega)).comap_subtype).toSylow
+  IsLocalRing.ramificationGroupOneSylowOfNotDvdIndex G 𝒪[L] p
     (not_dvd_index_ramificationGroup_one G p)
 
 variable (G) in
@@ -575,28 +522,29 @@ theorem ramificationGroupOneSylow_coe (p : ℕ) [CharP 𝓀[L] p]
     (ramificationGroupOneSylow (G := G) (L := L) p :
       Subgroup (ramificationGroup G 𝒪[L] 0)) =
       (ramificationGroup G 𝒪[L] 1).subgroupOf (ramificationGroup G 𝒪[L] 0) :=
-  (rfl)
+  let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
+  IsLocalRing.ramificationGroupOneSylowOfNotDvdIndex_coe G 𝒪[L] p
+    (not_dvd_index_ramificationGroup_one G p)
 
 variable (G) in
 /-- The wild inertia Sylow subgroup is normal in inertia. -/
 theorem ramificationGroupOneSylow_normal (p : ℕ) [CharP 𝓀[L] p]
     [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
     (ramificationGroupOneSylow (G := G) (L := L) p :
-      Subgroup (ramificationGroup G 𝒪[L] 0)).Normal := by
-  rw [ramificationGroupOneSylow_coe]
-  infer_instance
+      Subgroup (ramificationGroup G 𝒪[L] 0)).Normal :=
+  let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
+  IsLocalRing.ramificationGroupOneSylowOfNotDvdIndex_normal G 𝒪[L] p
+    (not_dvd_index_ramificationGroup_one G p)
 
 variable (G) in
 /-- The wild inertia Sylow subgroup is the unique Sylow `p`-subgroup of inertia. -/
 theorem eq_ramificationGroupOneSylow (p : ℕ) [CharP 𝓀[L] p]
     [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)]
     (Q : Sylow p (ramificationGroup G 𝒪[L] 0)) :
-    Q = ramificationGroupOneSylow (G := G) (L := L) p := by
+    Q = ramificationGroupOneSylow (G := G) (L := L) p :=
   let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  let _ : Unique (Sylow p (ramificationGroup G 𝒪[L] 0)) :=
-    Sylow.unique_of_normal (ramificationGroupOneSylow (G := G) (L := L) p)
-      (ramificationGroupOneSylow_normal (G := G) (L := L) p)
-  exact Subsingleton.elim _ _
+  IsLocalRing.eq_ramificationGroupOneSylowOfNotDvdIndex G 𝒪[L] p
+    (not_dvd_index_ramificationGroup_one G p) Q
 
 variable (G) in
 /-- The order of wild inertia is the residue-characteristic part of the order of inertia:
@@ -604,11 +552,10 @@ variable (G) in
 theorem natCard_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p]
     [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
     Nat.card (ramificationGroup G 𝒪[L] 1) =
-      p ^ (Nat.card (ramificationGroup G 𝒪[L] 0)).factorization p := by
+      p ^ (Nat.card (ramificationGroup G 𝒪[L] 0)).factorization p :=
   let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  rw [← Sylow.card_eq_multiplicity (ramificationGroupOneSylow G p)]
-  exact Nat.card_congr (Subgroup.subgroupOfEquivOfLe
-    (ramificationGroup_antitone G 𝒪[L] (by omega : (0 : ℤ) ≤ 1))).toEquiv.symm
+  IsLocalRing.natCard_ramificationGroup_one_of_not_dvd_index G 𝒪[L] p
+    (not_dvd_index_ramificationGroup_one G p)
 
 variable (G) in
 /-- **Wild inertia is trivial exactly in the tame case.** For the residue characteristic `p`, the
@@ -619,11 +566,9 @@ is, if and only if the inertia group `G_0` is finite of order prime to `p`: when
 theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (p : ℕ)
     [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]] :
     ramificationGroup G 𝒪[L] 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G 𝒪[L] 0) := by
-  have hp : p.Prime := CharP.char_is_prime 𝓀[L] p
   by_cases hfin : Finite (ramificationGroup G 𝒪[L] 0)
-  · rw [← Subgroup.card_eq_one, natCard_ramificationGroup_one G p, pow_eq_one_iff_right hp.ne_one,
-      Nat.factorization_eq_zero_iff]
-    simp only [hp, not_true_eq_false, false_or, Nat.card_pos.ne', or_false]
+  · exact IsLocalRing.ramificationGroup_one_eq_bot_iff_not_dvd_card_of_not_dvd_index
+      G 𝒪[L] p (not_dvd_index_ramificationGroup_one G p)
   · -- if `G_0` is infinite, `G_1 ≠ ⊥`, since `G_0 / G_1` embeds in the finite group `𝓀[L]ˣ`
     have hinf := not_finite_iff_infinite.mp hfin
     rw [Nat.card_eq_zero_of_infinite]
