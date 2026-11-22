@@ -28,6 +28,7 @@ For positive bases `b < a` and `n ≥ 3`, we also bound differences of powers be
 * `Nat.exists_prime_dvd_ne_of_forall_ne_pow`: every `n` not of the form `b ^ k` has a prime divisor
   `q ≠ b`.
 * `Nat.add_mul_pow_sub_two_lt_pow_sub_pow`: the strict lower bound above.
+* `Nat.mul_pow_le_pow_mul`: `n * b ^ p ≤ b ^ (n * p)` for `2 ≤ b` and `0 < p`.
 -/
 
 public section
@@ -71,5 +72,22 @@ theorem add_mul_pow_sub_two_lt_pow_sub_pow {a b n : ℕ} (hb : 0 < b) (hba : b <
     rw [mul_comm (a ^ (n - 2)) (b ^ 2), ← add_mul,
       Nat.sub_add_cancel (Nat.pow_le_pow_left hba.le 2), ha, mul_comm]
   omega
+
+/-- For any base `b ≥ 2`, natural number `n`, and positive exponent `p > 0`,
+`n * b ^ p ≤ b ^ (n * p)`. -/
+theorem mul_pow_le_pow_mul {b : ℕ} (n : ℕ) {p : ℕ} (hb : 2 ≤ b) (hp : 0 < p) :
+    n * b ^ p ≤ b ^ (n * p) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
+  · have hn_pow : n ≤ b ^ (n - 1) := by
+      have h2 : n ≤ 2 ^ (n - 1) := by
+        simpa [Nat.sub_add_cancel hn] using Nat.succ_le_of_lt (n - 1).lt_two_pow_self
+      exact h2.trans (Nat.pow_le_pow_left hb _)
+    have hpow_mono : b ^ (n - 1) ≤ b ^ ((n - 1) * p) :=
+      Nat.pow_le_pow_right (by omega) (Nat.le_mul_of_pos_right (n - 1) hp)
+    calc n * b ^ p
+        ≤ b ^ ((n - 1) * p) * b ^ p := Nat.mul_le_mul_right _ (hn_pow.trans hpow_mono)
+      _ = b ^ (n * p) := by
+        rw [← pow_add, ← add_one_mul, Nat.sub_add_cancel hn]
 
 end Nat

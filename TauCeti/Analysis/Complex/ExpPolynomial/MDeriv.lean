@@ -7,23 +7,22 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Data.Matrix.Mul
-public import TauCeti.Analysis.Complex.MDeriv
+public import TauCeti.Analysis.Complex.MDeriv.Basic
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import TauCeti.Analysis.Complex.IteratedDeriv
 
 /-!
 # Mixed partial derivatives of exponential monomials
 
 The auxiliary functions of the Schneider, Lang, and Baker transcendence methods in several
-variables are integer combinations of exponential monomials `z ↦ z^τ e^{w · z}`. Using the
+variables are finite linear combinations of exponential monomials `z ↦ z^τ e^{w · z}`. Using the
 general mixed partial derivative operator `TauCeti.mDeriv` and the separated-product formula
 `TauCeti.mDeriv_prod`, this file computes the mixed partial derivatives `D^σ (z ↦ e^{w · z})`
-and `D^σ (z ↦ z^τ e^{w · z})` needed for the arithmetic estimates.
+and `D^σ (z ↦ z^τ e^{w · z})`.
 
 ## Main results
 
-* `TauCeti.Baker.mDeriv_exp_dotProduct`: `D^σ (z ↦ e^{w · z}) = z ↦ w^σ e^{w · z}`.
-* `TauCeti.Baker.mDeriv_monomial_mul_exp`: the Leibniz expansion of `D^σ (z ↦ z^τ e^{w · z})`.
+* `TauCeti.mDeriv_exp_dotProduct`: `D^σ (z ↦ e^{w · z}) = z ↦ w^σ e^{w · z}`.
+* `TauCeti.mDeriv_monomial_mul_exp`: the Leibniz expansion of `D^σ (z ↦ z^τ e^{w · z})`.
 
 ## References
 
@@ -36,7 +35,7 @@ public section
 
 open Finset
 
-namespace TauCeti.Baker
+namespace TauCeti
 
 variable {n : ℕ}
 
@@ -77,4 +76,4 @@ theorem mDeriv_monomial_mul_exp (τ σ : Fin n → ℕ) (w : Fin n → ℂ) :
   rw [iteratedDeriv_pow, iteratedDeriv_cexp_const_mul]
   ring
 
-end TauCeti.Baker
+end TauCeti

@@ -25,6 +25,8 @@ not matter, since second derivatives of `C²` functions are symmetric.
 
 ## Main results
 
+* `TauCeti.mDeriv`, `TauCeti.mDeriv_def`: the mixed partial derivative `D^σ f` and its defining
+  `List.finRange` fold equation.
 * `TauCeti.mDeriv_zero`, `TauCeti.mDeriv_add_single`: `D⁰ f = f` and `D^{σ + eᵢ} f = ∂ᵢ (D^σ f)`
   for entire `f`; these two characterize `D^σ` on entire functions.
 * `TauCeti.mDeriv_single`, `TauCeti.mDeriv_mDeriv`: `D^{k eᵢ} f = ∂ᵢ^k f`, and
@@ -55,6 +57,11 @@ variable {n : ℕ}
 function `f : ℂⁿ → ℂ` of multi-order `σ ∈ ℕⁿ`. It is not divided by `σ!`. -/
 noncomputable def mDeriv (σ : Fin n → ℕ) (f : (Fin n → ℂ) → ℂ) : (Fin n → ℂ) → ℂ :=
   (List.finRange n).foldr (fun i g ↦ (partialDeriv i)^[σ i] g) f
+
+/-- Defining equation of `mDeriv` as a fold of iterated coordinate partial derivatives over
+`List.finRange n`. -/
+theorem mDeriv_def (σ : Fin n → ℕ) (f : (Fin n → ℂ) → ℂ) :
+    mDeriv σ f = (List.finRange n).foldr (fun i g ↦ (partialDeriv i)^[σ i] g) f := (rfl)
 
 /-! ### Iterated partial derivatives along a list of coordinates -/
 
@@ -178,6 +185,7 @@ end List
 
 /-! ### Basic properties of `mDeriv` -/
 
+/-- The zeroth mixed partial derivative of `f` is `f`. -/
 @[simp]
 theorem mDeriv_zero (f : (Fin n → ℂ) → ℂ) : mDeriv 0 f = f := by
   rw [mDeriv_eq_listDeriv]

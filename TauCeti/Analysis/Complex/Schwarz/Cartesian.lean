@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.MDeriv
+public import TauCeti.Analysis.Complex.MDeriv.Basic
 import Mathlib.Data.Finsupp.Indicator
 import Mathlib.Data.Finsupp.Multiset
 import Mathlib.Data.Finsupp.Weight
 import TauCeti.Analysis.Complex.CoordinateDivision.Basic
 import TauCeti.Analysis.Complex.CoordinateDivision.MDeriv
 import TauCeti.Analysis.Polynomial.OfMultiset
+import TauCeti.Data.Nat.Pow
 
 /-!
 # Schwarz's lemma for Cartesian products
@@ -57,27 +58,12 @@ namespace TauCeti
 
 /-! ### Preliminary helpers -/
 
-/-- Elementary constant bound `n * 2 ^ p * 3 ^ (n * p) ≤ 6 ^ (n * p)` for positive `n, p`. -/
-private lemma mul_two_pow_mul_three_pow_le_six_pow {n p : ℕ} (hn : 0 < n) (hp : 0 < p) :
-    n * 2 ^ p * 3 ^ (n * p) ≤ 6 ^ (n * p) := by
-  have hn_pow : n ≤ 2 ^ (n - 1) := by
-    simpa [Nat.sub_add_cancel hn] using Nat.succ_le_of_lt (n - 1).lt_two_pow_self
-  have hpow_mono : 2 ^ (n - 1) ≤ 2 ^ ((n - 1) * p) :=
-    Nat.pow_le_pow_right (by positivity) (by simpa using Nat.mul_le_mul_left (n - 1) hp)
-  calc n * 2 ^ p * 3 ^ (n * p)
-      ≤ 2 ^ ((n - 1) * p) * 2 ^ p * 3 ^ (n * p) :=
-        Nat.mul_le_mul_right _ (Nat.mul_le_mul_right _ (hn_pow.trans hpow_mono))
-    _ = 2 ^ (n * p) * 3 ^ (n * p) := by
-        have hn1 : n - 1 + 1 = n := by omega
-        rw [← pow_add, ← add_one_mul, hn1]
-    _ = 6 ^ (n * p) := by rw [← mul_pow]; rfl
-
 /-- Core `0 < n`, `0 < p`, `0 < r`, `5 * r ≤ R` regime of the weighted Cartesian Schwarz lemma. -/
 private theorem norm_le_mul_six_pow_mul_div_pow_of_five_mul_le {n : ℕ} {f : (Fin n → ℂ) → ℂ}
     (hf : Differentiable ℂ f) {E : Fin n → Finset ℂ} {k : Fin n → ℂ → ℕ} {p : ℕ}
-    (hn : 0 < n) (hp : 0 < p) (hsum : ∀ i, p ≤ ∑ ζ ∈ E i, k i ζ)
+    (_hn : 0 < n) (hp : 0 < p) (hsum : ∀ i, p ≤ ∑ ζ ∈ E i, k i ζ)
     {c : Fin n → ℂ} {r R M : ℝ} (hE : ∀ i, (E i : Set ℂ) ⊆ closedBall (c i) r)
-    (hr : 0 < r) (hrR : 5 * r ≤ R)
+    (_hr : 0 < r) (hrR : 5 * r ≤ R)
     (hzero : ∀ ξ : Fin n → ℂ, (∀ i, ξ i ∈ E i) →
       ∀ σ : Fin n → ℕ, (∀ i, σ i < k i (ξ i)) → mDeriv σ f ξ = 0)
     (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M) {z : Fin n → ℂ} (hz : z ∈ closedBall c r) :
@@ -115,7 +101,8 @@ private theorem norm_le_mul_six_pow_mul_div_pow_of_five_mul_le {n : ℕ} {f : (F
     hdiv hdeg₀ hdeg_g hR_pos hrR (fun i ζ hζ ↦ hE i (hP_mem i hζ)) hM hzR
   have hsum_deg : ∑ j : Fin n, (P j).natDegree = n * p := by simp [hP_deg]
   have hconst : (n : ℝ) * 2 ^ p * 3 ^ (n * p) ≤ (6 : ℝ) ^ (n * p) := by
-    exact_mod_cast mul_two_pow_mul_three_pow_le_six_pow hn hp
+    exact_mod_cast (Nat.mul_le_mul_right (3 ^ (n * p))
+      (Nat.mul_pow_le_pow_mul n (by norm_num) hp)).trans_eq (by rw [← mul_pow]; rfl)
   calc ‖f z‖ = ‖∑ i : Fin n, g i z * (P i).eval (z i)‖ := by simp [hdiv z, hf₀_zero]
     _ ≤ ∑ i : Fin n, ‖g i z * (P i).eval (z i)‖ := norm_sum_le _ _
     _ ≤ ∑ _ : Fin n, ((3 : ℝ) ^ (n * p) / R ^ p * M) * (2 * r) ^ p :=

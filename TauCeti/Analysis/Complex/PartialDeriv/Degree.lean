@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import TauCeti.Analysis.Complex.PartialDeriv.Basic
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
-import TauCeti.Analysis.Complex.DividedDifference
+import TauCeti.Analysis.Complex.DividedDifference.Degree
 
 /-!
 # Polynomial degree preservation under partial derivatives
