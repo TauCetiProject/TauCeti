@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Linear
-public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import TauCeti.CategoryTheory.Monoidal.Center.Relative.Basic
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
@@ -78,30 +76,32 @@ variable [Preadditive D] [MonoidalPreadditive D] [HasFiniteBiproducts D] {J : Ty
 /-- The component at `U` of the half-braiding relative to `F` on a finite biproduct `⨁ f` of
 objects carrying half-braidings `b j`: it distributes `(⨁ f) ⊗ F.obj U` over the summands, applies
 the half-braidings of the summands, and collects `F.obj U ⊗ ⨁ f` again. -/
-noncomputable def biproductβ (f : J → D) (b : ∀ j, F.RelativeHalfBraiding (f j)) (U : C) :
+private noncomputable def biproductβ (f : J → D) (b : ∀ j, F.RelativeHalfBraiding (f j)) (U : C) :
     (⨁ f) ⊗ F.obj U ≅ F.obj U ⊗ ⨁ f :=
   rightDistributor f (F.obj U) ≪≫ biproduct.mapIso (fun j ↦ (b j).β U) ≪≫
     (leftDistributor (F.obj U) f).symm
 
 /-- On the summand `f j`, the component `biproductβ f b U` is the half-braiding of `f j`. -/
-@[reassoc (attr := simp)]
-theorem biproduct_ι_comp_biproductβ_hom (f : J → D) (b : ∀ j, F.RelativeHalfBraiding (f j))
-    (U : C) (j : J) :
+@[reassoc]
+private theorem biproduct_ι_comp_biproductβ_hom (f : J → D)
+    (b : ∀ j, F.RelativeHalfBraiding (f j)) (U : C) (j : J) :
     biproduct.ι f j ▷ F.obj U ≫ (biproductβ f b U).hom =
       ((b j).β U).hom ≫ F.obj U ◁ biproduct.ι f j := by
   simp [biproductβ]
 
 /-- Projected to the summand `f j`, the component `biproductβ f b U` is the half-braiding of
 `f j`. -/
-@[reassoc (attr := simp)]
-theorem biproductβ_hom_comp_biproduct_π (f : J → D) (b : ∀ j, F.RelativeHalfBraiding (f j))
-    (U : C) (j : J) :
+@[reassoc]
+private theorem biproductβ_hom_comp_biproduct_π (f : J → D)
+    (b : ∀ j, F.RelativeHalfBraiding (f j)) (U : C) (j : J) :
     (biproductβ f b U).hom ≫ F.obj U ◁ biproduct.π f j =
       biproduct.π f j ▷ F.obj U ≫ ((b j).β U).hom := by
   simp [biproductβ]
 
 /-- The half-braiding relative to `F` on a finite biproduct `⨁ f` of objects carrying
-half-braidings `b j` relative to `F`, with components `biproductβ f b`. -/
+half-braidings `b j` relative to `F`: its component `(biproduct f b).β U` distributes
+`(⨁ f) ⊗ F.obj U` over the summands, applies the half-braidings `(b j).β U`, and collects
+`F.obj U ⊗ ⨁ f` again. -/
 noncomputable def biproduct (f : J → D) (b : ∀ j, F.RelativeHalfBraiding (f j)) :
     F.RelativeHalfBraiding (⨁ f) where
   β := biproductβ f b
@@ -128,7 +128,8 @@ noncomputable def biproduct (f : J → D) (b : ∀ j, F.RelativeHalfBraiding (f 
   naturality g := by
     refine rightDistributor_ext_left fun j ↦ ?_
     rw [← whisker_exchange_assoc]
-    simp [whisker_exchange, RelativeHalfBraiding.naturality_assoc]
+    simp [whisker_exchange, RelativeHalfBraiding.naturality_assoc,
+      biproduct_ι_comp_biproductβ_hom, biproduct_ι_comp_biproductβ_hom_assoc]
 
 /-- On the summand `f j`, the half-braiding of `⨁ f` is that of `f j`. -/
 @[reassoc (attr := simp)]
@@ -212,13 +213,8 @@ variable [Preadditive D] [MonoidalPreadditive D] {R : Type*} [Semiring R]
 scalar multiplication computed on underlying morphisms. -/
 instance instLinear : CategoryTheory.Linear R F.RelativeCenter where
   homModule X Y :=
-    { smul r f := { f := r • f.f }
-      one_smul _ := by ext; exact one_smul _ _
-      mul_smul _ _ _ := by ext; exact mul_smul _ _ _
-      smul_zero _ := by ext; exact smul_zero _
-      smul_add _ _ _ := by ext; exact smul_add _ _ _
-      add_smul _ _ _ := by ext; exact add_smul _ _ _
-      zero_smul _ := by ext; exact zero_smul _ _ }
+    letI : SMul R (X ⟶ Y) := ⟨fun r f ↦ { f := r • f.f }⟩
+    Function.Injective.module R (forget F).mapAddHom (forget F).map_injective fun _ _ ↦ rfl
   smul_comp _ _ _ _ _ _ := by ext; exact CategoryTheory.Linear.smul_comp _ _ _ _ _ _
   comp_smul _ _ _ _ _ _ := by ext; exact CategoryTheory.Linear.comp_smul _ _ _ _ _ _
 

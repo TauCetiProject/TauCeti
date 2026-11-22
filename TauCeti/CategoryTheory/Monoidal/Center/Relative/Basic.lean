@@ -5,19 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Center
+public import Mathlib.CategoryTheory.Monoidal.Transport
+public import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
 
 /-!
 # The centre of a lax monoidal functor
 
 Let `F : C ⥤ D` be a lax monoidal functor between monoidal categories. A half-braiding relative
 to `F` on an object `X : D` is a family of isomorphisms `β U : X ⊗ F.obj U ≅ F.obj U ⊗ X`,
-natural in `U : C`, which is compatible with the tensorator `μ` and the unit `ε` of `F`: moving
-`X` past `F.obj (U ⊗ U')` is moving it past `F.obj U` and then past `F.obj U'`, and moving it past
-`F.obj (𝟙_ C)` is trivial. The centre `Functor.RelativeCenter F` of `F` (the relative centre
-`Z(F)` of Gainutdinov–Haferkamp–Schweigert) has as objects the pairs of an object of `D` and a
-half-braiding relative to `F` on it, and as morphisms the morphisms of `D` commuting with the
-half-braidings.
+natural in `U : C`, which is compatible with the tensorator `μ` and the unit `ε` of `F`: applying
+`μ` and then moving `X` past `F.obj (U ⊗ U')` agrees with moving `X` past `F.obj U` and then past
+`F.obj U'` and then applying `μ`, and applying `ε` and then moving `X` past `F.obj (𝟙_ C)` agrees,
+up to unitors, with applying `ε` on the other side of `X`. Since `μ` and `ε` need not be
+invertible, these laws only constrain the half-braiding after precomposition with them. The
+centre `Functor.RelativeCenter F` of `F` (the relative centre `Z(F)` of
+Gainutdinov–Haferkamp–Schweigert) has as objects the pairs of an object of `D` and a half-braiding
+relative to `F` on it, and as morphisms the morphisms of `D` commuting with the half-braidings.
 
 For `F` the identity functor the half-braidings relative to `F` are Mathlib's `HalfBraiding`s,
 which satisfy the compatibility with the unit automatically. For a lax monoidal functor whose unit
@@ -26,9 +29,10 @@ which satisfy the compatibility with the unit automatically. For a lax monoidal 
 Following Mathlib's `Center`, this file makes `Functor.RelativeCenter F` a monoidal category,
 with tensor product computed in `D`: the half-braiding `RelativeHalfBraiding.tensor` of `X ⊗ Y`
 moves `Y` and then `X`, and the unit is `𝟙_ D` with the half-braiding
-`RelativeHalfBraiding.tensorUnit` given by the unitors. The forgetful functor
-`Functor.RelativeCenter.forget F` to `D` is faithful, reflects isomorphisms and is monoidal, with
-identity tensorator and unit. Nothing here uses rigidity, linearity or a strong monoidal
+`RelativeHalfBraiding.tensorUnit` given by the unitors. The coherence laws are transported along
+the faithful forgetful functor `Functor.RelativeCenter.forget F` to `D` with
+`Monoidal.induced`, which also makes this functor monoidal, with identity tensorator and unit;
+it reflects isomorphisms. Nothing here uses rigidity, linearity or a strong monoidal
 structure on `F`.
 
 The relative centre is where the coefficients of Davydov–Yetter cohomology of a tensor functor
@@ -49,7 +53,7 @@ Ocneanu rigidity.
 * The construction follows Mathlib's `CategoryTheory.Center`, by Kim Morrison.
 -/
 
-@[expose] public section
+public section
 
 universe v₁ v₂ u₁ u₂
 
@@ -70,12 +74,14 @@ tensorator and the unit of `F`. -/
 structure RelativeHalfBraiding (X : D) where
   /-- The family of isomorphisms `X ⊗ F.obj U ≅ F.obj U ⊗ X`. -/
   β : ∀ U, X ⊗ F.obj U ≅ F.obj U ⊗ X
-  /-- Moving `X` past `F.obj (U ⊗ U')` is moving it past `F.obj U` and then past `F.obj U'`. -/
+  /-- Applying the tensorator `μ` and then moving `X` past `F.obj (U ⊗ U')` agrees with moving `X`
+  past `F.obj U` and then past `F.obj U'` and then applying `μ`. -/
   monoidal : ∀ U U', X ◁ μ F U U' ≫ (β (U ⊗ U')).hom =
       (α_ _ _ _).inv ≫ (β U).hom ▷ F.obj U' ≫ (α_ _ _ _).hom ≫ F.obj U ◁ (β U').hom ≫
         (α_ _ _ _).inv ≫ μ F U U' ▷ X := by
     cat_disch
-  /-- Moving `X` past `F.obj (𝟙_ C)` is trivial. -/
+  /-- Applying the unit `ε` and then moving `X` past `F.obj (𝟙_ C)` agrees, up to unitors, with
+  applying `ε` on the other side of `X`. -/
   unit : X ◁ ε F ≫ (β (𝟙_ C)).hom = (ρ_ X).hom ≫ (λ_ X).inv ≫ ε F ▷ X := by
     cat_disch
   /-- The isomorphisms `β U` are natural in `U`. -/
@@ -90,6 +96,15 @@ attribute [reassoc (attr := simp)] RelativeHalfBraiding.naturality
 namespace RelativeHalfBraiding
 
 variable {F}
+
+/-- Two half-braidings relative to `F` on the same object agree if their components do. -/
+@[ext]
+theorem ext {X : D} {b b' : F.RelativeHalfBraiding X} (h : ∀ U, (b.β U).hom = (b'.β U).hom) :
+    b = b' := by
+  obtain ⟨β, _, _, _⟩ := b
+  obtain ⟨β', _, _, _⟩ := b'
+  obtain rfl : β = β' := funext fun U ↦ Iso.ext (h U)
+  rfl
 
 /-- The half-braiding relative to `F` on `X ⊗ Y` built from half-braidings on `X` and `Y`: it
 moves `Y` and then `X`. -/
@@ -135,7 +150,7 @@ theorem tensor_β_hom {X Y : D} (bX : F.RelativeHalfBraiding X) (bY : F.Relative
     (U : C) :
     ((bX.tensor bY).β U).hom =
       (α_ _ _ _).hom ≫ X ◁ (bY.β U).hom ≫ (α_ _ _ _).inv ≫ (bX.β U).hom ▷ Y ≫ (α_ _ _ _).hom :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem tensor_β_inv {X Y : D} (bX : F.RelativeHalfBraiding X) (bY : F.RelativeHalfBraiding Y)
@@ -164,12 +179,12 @@ def tensorUnit : F.RelativeHalfBraiding (𝟙_ D) where
 @[simp]
 theorem tensorUnit_β_hom (U : C) :
     ((tensorUnit F).β U).hom = (λ_ (F.obj U)).hom ≫ (ρ_ (F.obj U)).inv :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem tensorUnit_β_inv (U : C) :
     ((tensorUnit F).β U).inv = (ρ_ (F.obj U)).hom ≫ (λ_ (F.obj U)).inv :=
-  rfl
+  (rfl)
 
 end RelativeHalfBraiding
 
@@ -217,28 +232,51 @@ theorem id_f (X : F.RelativeCenter) : Hom.f (𝟙 X) = 𝟙 X.obj :=
 theorem comp_f {X Y Z : F.RelativeCenter} (f : X ⟶ Y) (g : Y ⟶ Z) : (f ≫ g).f = f.f ≫ g.f :=
   rfl
 
-/-- An isomorphism in the centre of `F` built from a morphism whose underlying morphism is an
-isomorphism. -/
-@[simps]
-noncomputable def isoMk {X Y : F.RelativeCenter} (f : X ⟶ Y) [IsIso f.f] : X ≅ Y where
-  hom := f
-  inv := ⟨CategoryTheory.inv f.f, fun U ↦ by
-    simp [← cancel_epi (f.f ▷ F.obj U), ← comp_whiskerRight_assoc,
-      ← MonoidalCategory.whiskerLeft_comp]⟩
+/-- An isomorphism in the centre of `F` built from an isomorphism of the underlying objects whose
+forward map commutes with the half-braidings; its inverse is `e.inv`. -/
+@[expose, simps]
+def isoMk {X Y : F.RelativeCenter} (e : X.obj ≅ Y.obj)
+    (comm : ∀ U, e.hom ▷ F.obj U ≫ (Y.halfBraiding.β U).hom =
+      (X.halfBraiding.β U).hom ≫ F.obj U ◁ e.hom) : X ≅ Y where
+  hom := ⟨e.hom, comm⟩
+  inv := ⟨e.inv, fun U ↦ by
+    rw [← cancel_epi (e.hom ▷ F.obj U), ← comp_whiskerRight_assoc, e.hom_inv_id,
+      id_whiskerRight, Category.id_comp, reassoc_of% (comm U),
+      ← MonoidalCategory.whiskerLeft_comp, e.hom_inv_id, MonoidalCategory.whiskerLeft_id,
+      Category.comp_id]⟩
+  hom_inv_id := by ext; exact e.hom_inv_id
+  inv_hom_id := by ext; exact e.inv_hom_id
 
 instance isIso_of_f_isIso {X Y : F.RelativeCenter} (f : X ⟶ Y) [IsIso f.f] : IsIso f :=
-  (isoMk f).isIso_hom
+  (isoMk (asIso f.f) f.comm).isIso_hom
 
-/-- Auxiliary definition for the `MonoidalCategory` instance on the centre of `F`: the tensor
-product of the underlying objects, with the half-braiding `RelativeHalfBraiding.tensor`. -/
-abbrev tensorObj (X Y : F.RelativeCenter) : F.RelativeCenter :=
-  ⟨X.obj ⊗ Y.obj, X.halfBraiding.tensor Y.halfBraiding⟩
+section
+
+variable (F)
+
+/-- The forgetful functor from the centre of `F` to the target of `F`. -/
+@[expose, simps]
+def forget : F.RelativeCenter ⥤ D where
+  obj X := X.obj
+  map f := f.f
+
+/-- The forgetful functor from the centre of `F` is faithful. -/
+instance : (forget F).Faithful where
+  map_injective h := ext _ _ h
+
+/-- The forgetful functor from the centre of `F` reflects isomorphisms. -/
+instance : (forget F).ReflectsIsomorphisms where
+  reflects f i := by
+    have : IsIso f.f := i
+    exact isIso_of_f_isIso f
+
+end
 
 @[reassoc]
-theorem whiskerLeft_comm (X : F.RelativeCenter) {Y₁ Y₂ : F.RelativeCenter} (f : Y₁ ⟶ Y₂)
+private theorem whiskerLeft_comm (X : F.RelativeCenter) {Y₁ Y₂ : F.RelativeCenter} (f : Y₁ ⟶ Y₂)
     (U : C) :
-    (X.obj ◁ f.f) ▷ F.obj U ≫ ((tensorObj X Y₂).halfBraiding.β U).hom =
-      ((tensorObj X Y₁).halfBraiding.β U).hom ≫ F.obj U ◁ X.obj ◁ f.f := by
+    (X.obj ◁ f.f) ▷ F.obj U ≫ ((X.halfBraiding.tensor Y₂.halfBraiding).β U).hom =
+      ((X.halfBraiding.tensor Y₁.halfBraiding).β U).hom ≫ F.obj U ◁ X.obj ◁ f.f := by
   simp only [RelativeHalfBraiding.tensor_β_hom]
   calc
     _ = 𝟙 _ ⊗≫ X.obj ◁ (f.f ▷ F.obj U ≫ (Y₂.halfBraiding.β U).hom) ⊗≫
@@ -249,17 +287,11 @@ theorem whiskerLeft_comm (X : F.RelativeCenter) {Y₁ Y₂ : F.RelativeCenter} (
       rw [f.comm]; monoidal
     _ = _ := by rw [whisker_exchange]; monoidal
 
-/-- Auxiliary definition for the `MonoidalCategory` instance on the centre of `F`. -/
-def whiskerLeft (X : F.RelativeCenter) {Y₁ Y₂ : F.RelativeCenter} (f : Y₁ ⟶ Y₂) :
-    tensorObj X Y₁ ⟶ tensorObj X Y₂ where
-  f := X.obj ◁ f.f
-  comm U := whiskerLeft_comm X f U
-
 @[reassoc]
-theorem whiskerRight_comm {X₁ X₂ : F.RelativeCenter} (f : X₁ ⟶ X₂) (Y : F.RelativeCenter)
+private theorem whiskerRight_comm {X₁ X₂ : F.RelativeCenter} (f : X₁ ⟶ X₂) (Y : F.RelativeCenter)
     (U : C) :
-    f.f ▷ Y.obj ▷ F.obj U ≫ ((tensorObj X₂ Y).halfBraiding.β U).hom =
-      ((tensorObj X₁ Y).halfBraiding.β U).hom ≫ F.obj U ◁ f.f ▷ Y.obj := by
+    f.f ▷ Y.obj ▷ F.obj U ≫ ((X₂.halfBraiding.tensor Y.halfBraiding).β U).hom =
+      ((X₁.halfBraiding.tensor Y.halfBraiding).β U).hom ≫ F.obj U ◁ f.f ▷ Y.obj := by
   simp only [RelativeHalfBraiding.tensor_β_hom]
   calc
     _ = 𝟙 _ ⊗≫ (f.f ▷ (Y.obj ⊗ F.obj U) ≫ X₂.obj ◁ (Y.halfBraiding.β U).hom) ⊗≫
@@ -270,79 +302,26 @@ theorem whiskerRight_comm {X₁ X₂ : F.RelativeCenter} (f : X₁ ⟶ X₂) (Y 
       rw [← whisker_exchange]; monoidal
     _ = _ := by rw [f.comm]; monoidal
 
-/-- Auxiliary definition for the `MonoidalCategory` instance on the centre of `F`. -/
-def whiskerRight {X₁ X₂ : F.RelativeCenter} (f : X₁ ⟶ X₂) (Y : F.RelativeCenter) :
-    tensorObj X₁ Y ⟶ tensorObj X₂ Y where
-  f := f.f ▷ Y.obj
-  comm U := whiskerRight_comm f Y U
-
-/-- Auxiliary definition for the `MonoidalCategory` instance on the centre of `F`. -/
-def tensorHom {X₁ Y₁ X₂ Y₂ : F.RelativeCenter} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂) :
-    tensorObj X₁ X₂ ⟶ tensorObj Y₁ Y₂ where
-  f := f.f ⊗ₘ g.f
-  comm U := by
+/-- The monoidal operations on the centre of `F`, computed in the target: the tensor product of
+the underlying objects carries the half-braiding `RelativeHalfBraiding.tensor`, and the unit `𝟙_ D`
+carries `RelativeHalfBraiding.tensorUnit`. -/
+instance : MonoidalCategoryStruct F.RelativeCenter where
+  -- Instance bodies are exposed, so the private commutation lemmas enter through tactic proofs.
+  tensorObj X Y := ⟨X.obj ⊗ Y.obj, X.halfBraiding.tensor Y.halfBraiding⟩
+  whiskerLeft X _ _ f := ⟨X.obj ◁ f.f, by exact whiskerLeft_comm X f⟩
+  whiskerRight f Y := ⟨f.f ▷ Y.obj, by exact whiskerRight_comm f Y⟩
+  tensorHom f g := ⟨f.f ⊗ₘ g.f, fun U ↦ by
     rw [tensorHom_def, comp_whiskerRight_assoc, whiskerLeft_comm, whiskerRight_comm_assoc,
-      MonoidalCategory.whiskerLeft_comp]
-
-/-- Auxiliary definition for the `MonoidalCategory` instance on the centre of `F`: the unit
-object `𝟙_ D`, with the half-braiding `RelativeHalfBraiding.tensorUnit`. -/
-abbrev tensorUnit : F.RelativeCenter :=
-  ⟨𝟙_ D, RelativeHalfBraiding.tensorUnit F⟩
-
-/-- Auxiliary definition for the `MonoidalCategory` instance on the centre of `F`. -/
-def associator (X Y Z : F.RelativeCenter) :
-    tensorObj (tensorObj X Y) Z ≅ tensorObj X (tensorObj Y Z) where
-  hom := ⟨(α_ X.obj Y.obj Z.obj).hom, fun U ↦ by
-    simp only [RelativeHalfBraiding.tensor_β_hom]; monoidal⟩
-  inv := ⟨(α_ X.obj Y.obj Z.obj).inv, fun U ↦ by
-    simp only [RelativeHalfBraiding.tensor_β_hom]; monoidal⟩
-  hom_inv_id := by ext; exact (α_ X.obj Y.obj Z.obj).hom_inv_id
-  inv_hom_id := by ext; exact (α_ X.obj Y.obj Z.obj).inv_hom_id
-
-/-- Auxiliary definition for the `MonoidalCategory` instance on the centre of `F`. -/
-def leftUnitor (X : F.RelativeCenter) : tensorObj tensorUnit X ≅ X where
-  hom := ⟨(λ_ X.obj).hom, fun U ↦ by
+      MonoidalCategory.whiskerLeft_comp]⟩
+  tensorUnit := ⟨𝟙_ D, RelativeHalfBraiding.tensorUnit F⟩
+  associator X Y Z := isoMk (α_ X.obj Y.obj Z.obj) fun U ↦ by
+    simp only [RelativeHalfBraiding.tensor_β_hom]; monoidal
+  leftUnitor X := isoMk (λ_ X.obj) fun U ↦ by
     simp only [RelativeHalfBraiding.tensor_β_hom, RelativeHalfBraiding.tensorUnit_β_hom]
-    monoidal⟩
-  inv := ⟨(λ_ X.obj).inv, fun U ↦ by
+    monoidal
+  rightUnitor X := isoMk (ρ_ X.obj) fun U ↦ by
     simp only [RelativeHalfBraiding.tensor_β_hom, RelativeHalfBraiding.tensorUnit_β_hom]
-    monoidal⟩
-  hom_inv_id := by ext; exact (λ_ X.obj).hom_inv_id
-  inv_hom_id := by ext; exact (λ_ X.obj).inv_hom_id
-
-/-- Auxiliary definition for the `MonoidalCategory` instance on the centre of `F`. -/
-def rightUnitor (X : F.RelativeCenter) : tensorObj X tensorUnit ≅ X where
-  hom := ⟨(ρ_ X.obj).hom, fun U ↦ by
-    simp only [RelativeHalfBraiding.tensor_β_hom, RelativeHalfBraiding.tensorUnit_β_hom]
-    monoidal⟩
-  inv := ⟨(ρ_ X.obj).inv, fun U ↦ by
-    simp only [RelativeHalfBraiding.tensor_β_hom, RelativeHalfBraiding.tensorUnit_β_hom]
-    monoidal⟩
-  hom_inv_id := by ext; exact (ρ_ X.obj).hom_inv_id
-  inv_hom_id := by ext; exact (ρ_ X.obj).inv_hom_id
-
-section
-
-attribute [local simp] associator_naturality leftUnitor_naturality rightUnitor_naturality pentagon
-
-attribute [local simp] RelativeCenter.associator RelativeCenter.leftUnitor
-  RelativeCenter.rightUnitor RelativeCenter.whiskerLeft RelativeCenter.whiskerRight
-  RelativeCenter.tensorHom
-
-/-- The centre of a lax monoidal functor is a monoidal category, with tensor product, unit and
-structure isomorphisms computed in the target. -/
-instance : MonoidalCategory F.RelativeCenter where
-  tensorObj X Y := tensorObj X Y
-  tensorHom f g := tensorHom f g
-  tensorHom_def := by intros; ext; simp [tensorHom_def]
-  whiskerLeft X _ _ f := whiskerLeft X f
-  whiskerRight f Y := whiskerRight f Y
-  tensorUnit := tensorUnit
-  associator := associator
-  leftUnitor := leftUnitor
-  rightUnitor := rightUnitor
-
-end
+    monoidal
 
 @[simp]
 theorem tensor_obj (X Y : F.RelativeCenter) : (X ⊗ Y).obj = X.obj ⊗ Y.obj :=
@@ -403,36 +382,41 @@ theorem rightUnitor_hom_f (X : F.RelativeCenter) : Hom.f (ρ_ X).hom = (ρ_ X.ob
 theorem rightUnitor_inv_f (X : F.RelativeCenter) : Hom.f (ρ_ X).inv = (ρ_ X.obj).inv :=
   rfl
 
+/-- The data transporting the monoidal structure of `D` to the centre of `F` along `forget F`:
+the forgetful functor preserves all the monoidal operations on the nose. -/
+@[expose]
+def inducingFunctorData : Monoidal.InducingFunctorData (forget F) where
+  μIso _ _ := Iso.refl _
+  εIso := Iso.refl _
+  -- Each law holds by definition once the identity structure isomorphisms are cancelled. The
+  -- objects `(forget F).obj X` and `X.obj` agree only up to unfolding `forget`, so the coherence
+  -- laws are first restated in terms of `X.obj`, where `simp` can cancel the identities.
+  whiskerLeft_eq _ _ _ _ := ((Category.id_comp _).trans (Category.comp_id _)).symm
+  whiskerRight_eq _ _ := ((Category.id_comp _).trans (Category.comp_id _)).symm
+  tensorHom_eq _ _ := ((Category.id_comp _).trans (Category.comp_id _)).symm
+  associator_eq X Y Z := by
+    change (α_ X.obj Y.obj Z.obj).hom =
+      (𝟙 _ ≫ (𝟙 _ ⊗ₘ 𝟙 _)) ≫ (α_ X.obj Y.obj Z.obj).hom ≫ (𝟙 _ ⊗ₘ 𝟙 _) ≫ 𝟙 _
+    simp
+  leftUnitor_eq X := by
+    change (λ_ X.obj).hom = (𝟙 _ ≫ (𝟙 _ ⊗ₘ 𝟙 _)) ≫ (λ_ X.obj).hom
+    simp
+  rightUnitor_eq X := by
+    change (ρ_ X.obj).hom = (𝟙 _ ≫ (𝟙 _ ⊗ₘ 𝟙 _)) ≫ (ρ_ X.obj).hom
+    simp
+
+/-- The centre of a lax monoidal functor is a monoidal category, with tensor product, unit and
+structure isomorphisms computed in the target. -/
+instance : MonoidalCategory F.RelativeCenter :=
+  Monoidal.induced (forget F) inducingFunctorData
+
 section
 
 variable (F)
 
-/-- The forgetful functor from the centre of `F` to the target of `F`. -/
-@[simps]
-def forget : F.RelativeCenter ⥤ D where
-  obj X := X.obj
-  map f := f.f
-
 /-- The forgetful functor from the centre of `F` is monoidal, with identity tensorator and unit. -/
 instance : (forget F).Monoidal :=
-  Functor.CoreMonoidal.toMonoidal
-    { εIso := Iso.refl _
-      μIso := fun _ _ ↦ Iso.refl _
-      μIso_hom_natural_left _ _ := (Category.comp_id _).trans (Category.id_comp _).symm
-      μIso_hom_natural_right _ _ := (Category.comp_id _).trans (Category.id_comp _).symm
-      -- The remaining laws are those of `D`, up to the identity tensorator and unit, whose
-      -- whiskerings are only identities up to unfolding `forget`.
-      associativity X Y Z := by
-        have h : 𝟙 _ ▷ Z.obj ≫ 𝟙 _ ≫ (α_ X.obj Y.obj Z.obj).hom =
-            (α_ X.obj Y.obj Z.obj).hom ≫ X.obj ◁ 𝟙 _ ≫ 𝟙 _ := by
-          simp
-        exact h
-      left_unitality X := by
-        have h : (λ_ X.obj).hom = 𝟙 (𝟙_ D) ▷ X.obj ≫ 𝟙 _ ≫ (λ_ X.obj).hom := by simp
-        exact h
-      right_unitality X := by
-        have h : (ρ_ X.obj).hom = X.obj ◁ 𝟙 (𝟙_ D) ≫ 𝟙 _ ≫ (ρ_ X.obj).hom := by simp
-        exact h }
+  Monoidal.fromInducedMonoidal (forget F) inducingFunctorData
 
 @[simp] lemma forget_ε : ε (forget F) = 𝟙 _ := rfl
 @[simp] lemma forget_η : OplaxMonoidal.η (forget F) = 𝟙 _ := rfl
@@ -441,16 +425,6 @@ variable {F}
 
 @[simp] lemma forget_μ (X Y : F.RelativeCenter) : μ (forget F) X Y = 𝟙 _ := rfl
 @[simp] lemma forget_δ (X Y : F.RelativeCenter) : OplaxMonoidal.δ (forget F) X Y = 𝟙 _ := rfl
-
-/-- The forgetful functor from the centre of `F` is faithful. -/
-instance : (forget F).Faithful where
-  map_injective h := ext _ _ h
-
-/-- The forgetful functor from the centre of `F` reflects isomorphisms. -/
-instance : (forget F).ReflectsIsomorphisms where
-  reflects f i := by
-    have : IsIso f.f := i
-    exact isIso_of_f_isIso f
 
 end
 
