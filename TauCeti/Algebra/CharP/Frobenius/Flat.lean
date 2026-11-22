@@ -8,10 +8,9 @@ module
 public import Mathlib.Algebra.CharP.Frobenius
 public import Mathlib.RingTheory.RingHom.Flat
 import Mathlib.Algebra.CharP.Reduced
-import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.Nilpotent.Basic
 import Mathlib.RingTheory.RingHom.FaithfullyFlat
-import TauCeti.RingTheory.RingHom.Flat
+import TauCeti.RingTheory.Flat.Localization
 
 /-!
 # Flat Frobenius: reducedness, iterates, and localization

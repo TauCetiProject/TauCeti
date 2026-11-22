@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Lemmas
+import Mathlib.Algebra.CharP.Basic
 
 /-!
 # Natural casts and `p`-power maps in exponential characteristic `p`
@@ -36,6 +37,8 @@ law.
 * `TauCeti.ne_zero_of_coprime_ringChar`: a natural number prime to the characteristic of a
   nontrivial ring is nonzero.
 * `TauCeti.neg_pow_expChar_pow`: `(-x) ^ p ^ n = -x ^ p ^ n`.
+* `RingHom.charP_of_prime`: a ring homomorphism from a ring of prime characteristic `p` into a
+  nontrivial ring transports characteristic `p`.
 -/
 
 public section
@@ -96,3 +99,14 @@ theorem neg_pow_expChar_pow (x : R) : (-x) ^ p ^ n = -x ^ p ^ n := by
   rw [neg_pow, neg_one_pow_expChar_pow, neg_one_mul]
 
 end TauCeti
+
+namespace RingHom
+
+/-- A ring homomorphism from a ring of prime characteristic `p` into a nontrivial ring
+transports characteristic `p`, without requiring injectivity. -/
+theorem charP_of_prime {R S : Type*} [NonAssocSemiring R] [NonAssocSemiring S] [Nontrivial S]
+    (f : R →+* S) (p : ℕ) (hp : p.Prime) [CharP R p] : CharP S p :=
+  (CharP.charP_iff_prime_eq_zero hp).2 <| by
+    rw [← map_natCast f, CharP.cast_eq_zero, map_zero]
+
+end RingHom

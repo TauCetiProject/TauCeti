@@ -8,9 +8,9 @@ module
 public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import Mathlib.RingTheory.RingHom.Flat
-import Mathlib.FieldTheory.PerfectClosure
 import Mathlib.RingTheory.KrullDimension.Field
 import TauCeti.Algebra.CharP.Frobenius.Flat
+import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.RingTheory.AdicCompletion.Flat.Frobenius
 import TauCeti.RingTheory.AdicCompletion.LocalRing
 import TauCeti.RingTheory.Flat.ProjectiveDimension
@@ -21,7 +21,6 @@ import TauCeti.RingTheory.Perfect.PerfectClosure
 import TauCeti.RingTheory.Perfect.Projective.Dimension
 import TauCeti.RingTheory.RegularLocalRing.Frobenius
 import TauCeti.RingTheory.RegularLocalRing.PowerSeries
-import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
 
 /-!
 # Kunz's theorem: regularity from flatness of Frobenius
@@ -97,16 +96,13 @@ theorem IsRegularLocalRing.of_flat_frobenius {R : Type u} [CommRing R] [IsLocalR
     exists_surjective_mvPowerSeries_spanFinrank (ZMod p) R' (maximalIdeal R').fg_of_isNoetherianRing
   let e := (maximalIdeal R').spanFinrank
   let P₀ := _root_.MvPowerSeries (Fin e) (ResidueField R')
-  have : CharP (ResidueField R') p := (CharP.charP_iff_prime_eq_zero hp).2 <| by
-    rw [← map_natCast (residue R'), CharP.cast_eq_zero, map_zero]
+  have : CharP (ResidueField R') p := (residue R').charP_of_prime p hp
   have : CharP P₀ p := charP_of_injective_ringHom _root_.MvPowerSeries.C_injective p
   have hdim : ringKrullDim P₀ ≤ e := by
     rw [_root_.MvPowerSeries.ringKrullDim_of_isNoetherianRing_of_finite,
       ringKrullDim_eq_zero_of_field, zero_add, Nat.card_fin]
   -- Lift `φ : P₀ →+* R'` to a surjection of colimit perfections to bound global dimension of
   -- `PerfectClosure R' p`.
-  have := PerfectClosure.isPRadical P₀ p
-  have := PerfectClosure.isPRadical R' p
   have hψ : Function.Surjective
       (PerfectRing.lift (PerfectClosure.of P₀ p) ((PerfectClosure.of R' p).comp φ) p) :=
     PerfectRing.surjective_lift_comp (PerfectClosure.of P₀ p) (PerfectClosure.of R' p) hφ p
@@ -132,8 +128,8 @@ theorem IsRegularRing.of_flat_frobenius {R : Type u} [CommRing R] [IsNoetherianR
   have hp : p.Prime := Fact.out
   have : CharP R p := (expChar_prime_iff (R := R) hp).1 inferInstance
   refine isRegularRing_iff.mpr fun q _ ↦ ?_
-  have : CharP (Localization.AtPrime q) p := (CharP.charP_iff_prime_eq_zero hp).2 <| by
-    rw [← map_natCast (algebraMap R _), CharP.cast_eq_zero, map_zero]
+  have : CharP (Localization.AtPrime q) p :=
+    (algebraMap R (Localization.AtPrime q)).charP_of_prime p hp
   exact IsRegularLocalRing.of_flat_frobenius p (flat_frobenius_of_isLocalization p q.primeCompl h)
 
 /-- **Kunz's theorem (local case).** A Noetherian local ring of prime characteristic `p` is regular

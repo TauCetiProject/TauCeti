@@ -9,7 +9,7 @@ public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import Mathlib.RingTheory.RingHom.Flat
 import TauCeti.Algebra.CharP.Frobenius.Basic
-import Mathlib.Algebra.CharP.Basic
+import TauCeti.Algebra.CharP.Lemmas
 import Mathlib.RingTheory.Localization.AtPrime.Basic
 import TauCeti.RingTheory.CohenMacaulay.RegularSequence
 import TauCeti.RingTheory.Flat.LocalCriterion
@@ -91,8 +91,8 @@ theorem IsRegularRing.flat_frobenius [IsRegularRing R] : (frobenius R p).Flat :=
   have hQ : J.comap (frobenius R p) = J.comap (RingHom.id R) := by
     ext a
     exact hJ.pow_mem_iff_mem p hp.pos
-  have : CharP (Localization.AtPrime J) p := (CharP.charP_iff_prime_eq_zero hp).2 <| by
-    rw [← map_natCast (algebraMap R _), CharP.cast_eq_zero, map_zero]
+  have : CharP (Localization.AtPrime J) p :=
+    (algebraMap R (Localization.AtPrime J)).charP_of_prime p hp
   have : ExpChar (Localization.AtPrime J) p := .prime hp
   have hcomp : Localization.localRingHom _ J (frobenius R p) rfl =
       (frobenius (Localization.AtPrime J) p).comp

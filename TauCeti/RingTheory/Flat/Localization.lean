@@ -9,17 +9,23 @@ public import Mathlib.RingTheory.Flat.Localization
 public import Mathlib.RingTheory.RingHom.Flat
 
 /-!
-# Flatness of the local homomorphism at a pair of primes
+# Flatness and localization
 
 For an `R`-algebra `S` and primes `q` of `S` and `p = q ∩ R` of `R`, the local homomorphism
 `R_p → S_q` is flat iff `S_q` is flat over `R`: flatness over `R_p` and over `R` agree for an
 `R_p`-module, by Mathlib's `Module.flat_iff_of_isLocalization`. Stalk maps of morphisms of affine
 schemes are such local homomorphisms, so this is how flatness is read off from a stalk.
 
+Precomposing a ring homomorphism out of a localization with the localization map preserves and
+reflects flatness (`RingHom.Flat.comp_algebraMap_isLocalization_iff`), allowing flatness of an
+endomorphism of a localization to be checked after restricting along the localization map.
+
 ## Main results
 
 * `Localization.flat_localRingHom_iff`: the local homomorphism `R_p → S_q` is flat iff `S_q` is
   flat over `R`.
+* `RingHom.Flat.comp_algebraMap_isLocalization_iff`: precomposing a ring homomorphism out of a
+  localization with the localization map preserves and reflects flatness.
 -/
 
 public section
@@ -39,3 +45,16 @@ theorem flat_localRingHom_iff (p : Ideal R) [p.IsPrime] (q : Ideal S) [q.IsPrime
   exact RingHom.flat_algebraMap_iff
 
 end Localization
+
+namespace RingHom
+
+/-- Precomposing a ring homomorphism out of a localization with the localization map preserves and
+reflects flatness. Stated for ring homomorphisms without an `Algebra Rₘ T` instance so that it
+applies to endomorphisms `Rₘ →+* Rₘ`. -/
+theorem Flat.comp_algebraMap_isLocalization_iff {R Rₘ T : Type*} [CommRing R] [CommRing Rₘ]
+    [CommRing T] (M : Submonoid R) [Algebra R Rₘ] [IsLocalization M Rₘ] (f : Rₘ →+* T) :
+    (f.comp (algebraMap R Rₘ)).Flat ↔ f.Flat := by
+  algebraize_only [f, f.comp (algebraMap R Rₘ)]
+  exact (Module.flat_iff_of_isLocalization Rₘ M T).symm
+
+end RingHom

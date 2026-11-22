@@ -29,6 +29,8 @@ ring of global sections of a perfect scheme, which is the zero ring for the empt
 * `IsPRadical.isHomeomorph_comap`: a `p`-radical ring map induces a homeomorphism of prime spectra.
 * `IsPRadical.bijective_comp`: if `p = 0` in `K` and `M` is a perfect ring, then precomposition
   with a `p`-radical map `i : K →+* L` is a bijection `(L →+* M) → (K →+* M)`.
+* `PerfectRing.surjective_lift_iff`: a lift along a `p`-radical map from a perfect source is
+  surjective iff every target element has a `p ^ n`-th power in the image of the base map.
 * `PerfectRing.surjective_lift_comp`: a surjective ring homomorphism induces a surjective map
   between perfect closures.
 
@@ -96,16 +98,34 @@ theorem bijective_comp [hp : Fact p.Prime] (hK : (p : K) = 0) [PerfectRing M p] 
 
 end IsPRadical
 
+/-- **Surjectivity of a perfection lift**: if `i : K →+* L` is `p`-radical with `L` perfect and
+`L'` is perfect, then `PerfectRing.lift i g p` is surjective if and only if every element of `L'`
+has a `p ^ n`-th power in the image of `g`. -/
+theorem PerfectRing.surjective_lift_iff {K L L' : Type*} [CommRing K] [CommRing L] [CommRing L']
+    (i : K →+* L) (g : K →+* L') (p : ℕ) [ExpChar K p] [ExpChar L p] [PerfectRing L p]
+    [IsPRadical i p] [ExpChar L' p] [PerfectRing L' p] :
+    Function.Surjective (PerfectRing.lift i g p) ↔
+      ∀ z : L', ∃ (n : ℕ) (a : K), g a = z ^ p ^ n := by
+  refine ⟨fun h z ↦ ?_, fun h z ↦ ?_⟩
+  · obtain ⟨x, hx⟩ := h z
+    obtain ⟨n, a, ha⟩ := IsPRadical.pow_mem i p x
+    refine ⟨n, a, ?_⟩
+    rw [← PerfectRing.lift_comp_apply i g p a, ha, map_pow, hx]
+  · obtain ⟨n, a, ha⟩ := h z
+    refine ⟨(iterateFrobeniusEquiv L p n).symm (i a), ?_⟩
+    have hpow : i a = ((iterateFrobeniusEquiv L p n).symm (i a)) ^ p ^ n := by
+      rw [← iterateFrobeniusEquiv_def, RingEquiv.apply_symm_apply]
+    rw [PerfectRing.lift_apply i g p _ n a hpow, ha, ← iterateFrobeniusEquiv_def,
+      RingEquiv.symm_apply_apply]
+
 /-- **Perfect closures preserve surjections**: if `f : K →+* K'` is surjective and `i : K →+* L`,
 `j : K' →+* L'` are perfect closures, then the induced map `L →+* L'` is surjective. -/
 theorem PerfectRing.surjective_lift_comp {K K' L L' : Type*} [CommRing K] [CommRing K']
     [CommRing L] [CommRing L'] (i : K →+* L) (j : K' →+* L') {f : K →+* K'}
     (hf : Function.Surjective f) (p : ℕ) [ExpChar K p] [ExpChar L p] [PerfectRing L p]
     [IsPRadical i p] [ExpChar L' p] [PerfectRing L' p] [IsPRadical j p] :
-    Function.Surjective (PerfectRing.lift i (j.comp f) p) := fun z ↦ by
-  obtain ⟨n, b, hb⟩ := IsPRadical.pow_mem j p z
-  obtain ⟨a, rfl⟩ := hf b
-  refine ⟨(iterateFrobeniusEquiv L p n).symm (i a), ?_⟩
-  rw [PerfectRing.lift_apply i (j.comp f) p _ n a
-      (by rw [← iterateFrobeniusEquiv_def, RingEquiv.apply_symm_apply]),
-    RingHom.comp_apply, hb, ← iterateFrobeniusEquiv_def, RingEquiv.symm_apply_apply]
+    Function.Surjective (PerfectRing.lift i (j.comp f) p) :=
+  (PerfectRing.surjective_lift_iff i (j.comp f) p).2 fun z ↦ by
+    obtain ⟨n, b, hb⟩ := IsPRadical.pow_mem j p z
+    obtain ⟨a, rfl⟩ := hf b
+    exact ⟨n, a, hb⟩

@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.KrullDimension.Regular
 public import Mathlib.RingTheory.PowerSeries.Basic
 import Mathlib.RingTheory.MvPowerSeries.Equiv
 import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
-import Mathlib.RingTheory.MvPowerSeries.Rename
 import Mathlib.RingTheory.PowerSeries.Ideal
 import TauCeti.RingTheory.PowerSeries.Ideal
 
@@ -92,7 +91,7 @@ dimension of `MvPowerSeries σ R` is `dim R + ENat.card σ`. -/
 theorem ringKrullDim_of_isNoetherianRing [IsNoetherianRing R] :
     ringKrullDim (MvPowerSeries σ R) = ringKrullDim R + ENat.card σ := by
   rcases subsingleton_or_nontrivial R with _ | _
-  · have : Subsingleton (MvPowerSeries σ R) := ⟨fun _ _ ↦ ext fun _ ↦ Subsingleton.elim _ _⟩
+  · have : Subsingleton (MvPowerSeries σ R) := by unfold MvPowerSeries; exact Pi.instSubsingleton
     simp [ringKrullDim_eq_bot_of_subsingleton]
   by_cases hσ : Finite σ
   · simp [ringKrullDim_of_isNoetherianRing_of_finite, ENat.card_eq_coe_natCard]
@@ -110,13 +109,8 @@ theorem ringKrullDim_of_isNoetherianRing [IsNoetherianRing R] :
         _ = ringKrullDim (MvPowerSeries (Fin n) R) :=
           (ringKrullDim_of_isNoetherianRing_of_finite (σ := Fin n)).symm
         _ ≤ ringKrullDim (MvPowerSeries σ R) := ringKrullDim_le_of_surjective _ hsurj
-    have htop : ringKrullDim (MvPowerSeries σ R) = ⊤ := by
-      cases hx : ringKrullDim (MvPowerSeries σ R) with
-      | bot => exact absurd (hx ▸ hle 0) (by simp)
-      | coe y =>
-        cases y with
-        | top => rfl
-        | coe m => exact absurd (hx ▸ hle (m + 1)) (by norm_cast; omega)
+    have htop : ringKrullDim (MvPowerSeries σ R) = ⊤ :=
+      ENat.WithBot.eq_top_iff_forall_ge.mpr hle
     simp [htop, WithBot.coe_bot_le.mp ringKrullDim_nonneg_of_nontrivial]
 
 end MvPowerSeries

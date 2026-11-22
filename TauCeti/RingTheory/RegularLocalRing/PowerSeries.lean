@@ -10,7 +10,6 @@ public import Mathlib.RingTheory.PowerSeries.Ideal
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import TauCeti.RingTheory.PowerSeries.Ideal
 import Mathlib.RingTheory.MvPowerSeries.Equiv
-import Mathlib.RingTheory.MvPowerSeries.Rename
 import TauCeti.RingTheory.KrullDimension.PowerSeries
 
 /-!
