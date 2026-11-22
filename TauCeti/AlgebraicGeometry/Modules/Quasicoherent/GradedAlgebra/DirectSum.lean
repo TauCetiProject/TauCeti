@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Basi
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Functor
 public import TauCeti.CategoryTheory.GradedObject.Total
 public import TauCeti.CategoryTheory.Monoidal.Mon
-public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 
 /-!
 # The direct-sum algebra of a graded quasicoherent algebra
