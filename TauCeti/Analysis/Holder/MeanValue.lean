@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Calculus.MeanValue
 public import TauCeti.Topology.MetricSpace.Holder
 
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.Calculus.Deriv.Shift
 
 /-!
 # Hölder bounds from bounds on a function and its derivative
@@ -23,6 +25,9 @@ Conversely, a Hölder bound with exponent `r > 1` forces the derivative to vanis
 `f y - f x` is `O(‖y - x‖ʳ)`, which is `o(‖y - x‖)`. So on a preconnected open set the only such
 functions are the constants, which is why Hölder exponents are taken in `(0, 1]`.
 
+A Hölder bound on the derivative along a line gives a first-order Taylor estimate along that line:
+the remainder `φ (x + h • e) - φ x - h • φ' x` is `O(|h| ^ (1 + r))`.
+
 ## Main declarations
 
 * `TauCeti.holderWith_of_norm_le_of_norm_fderiv_le`: on the whole space, the Hölder constant is
@@ -33,7 +38,14 @@ functions are the constants, which is why Hölder exponents are taken in `(0, 1]
   derivative zero there.
 * `HolderOnWith.eq_of_one_lt`: a function `r`-Hölder on a preconnected open set, with `r > 1`, is
   constant there.
+* `TauCeti.holderOnWith_ball_of_norm_fderiv_le`: on a ball `B_R`, the derivative bound `N₁` alone
+  gives the Hölder constant `N₁ (2R)^(1 - α)`.
+* `TauCeti.holderOnWith_fderiv_ball_of_norm_iteratedFDeriv_two_le`: on a ball `B_R`, the
+  derivative of a `C²` function with second derivative bounded by `N₂` is Hölder with constant
+  `N₂ (2R)^(1 - α)`.
 * `ContDiffOn.exists_holderOnWith`: a function `C¹` on a compact convex set is Hölder there.
+* `HolderWith.norm_sub_sub_smul_le_of_hasLineDerivAt`: the first-order Taylor estimate along a line
+  for a function whose line derivative is Hölder.
 -/
 
 public section
@@ -88,6 +100,37 @@ theorem HolderOnWith.eq_of_one_lt {E F : Type*} [NormedAddCommGroup E] [NormedSp
       |>.differentiableWithinAt)
     (fun _ hz ↦ (hf.hasFDerivAt_zero_of_one_lt hr (hs.mem_nhds hz)).fderiv) hx hy
 
+/-- **A first-order Taylor estimate along a line.** If `φ` has line derivative `φ' y` along `e` at
+every point `y` and `φ'` is `r`-Hölder with constant `C`, then the remainder of the first-order
+expansion of `φ` along `e` satisfies `‖φ (x + h • e) - φ x - h • φ' x‖ ≤ C ‖h • e‖ ^ r |h|`. -/
+theorem HolderWith.norm_sub_sub_smul_le_of_hasLineDerivAt {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {φ φ' : E → F} {e : E}
+    {C r : ℝ≥0} (hφ' : HolderWith C r φ') (hφ : ∀ y, HasLineDerivAt ℝ φ (φ' y) y e) (x : E)
+    (h : ℝ) : ‖φ (x + h • e) - φ x - h • φ' x‖ ≤ C * ‖h • e‖ ^ (r : ℝ) * |h| := by
+  -- `σ ↦ φ (x + σ • e) - σ • φ' x` has derivative `φ' (x + s • e) - φ' x` at `s`.
+  have hψ (s : ℝ) :
+      HasDerivAt (fun σ : ℝ ↦ φ (x + σ • e) - σ • φ' x) (φ' (x + s • e) - φ' x) s := by
+    have h₁ : HasDerivAt (fun σ : ℝ ↦ φ ((x + s • e) + (σ - s) • e)) (φ' (x + s • e)) s :=
+      HasDerivAt.comp_sub_const s s (by rw [sub_self]; exact hφ (x + s • e))
+    have h₂ : (fun σ : ℝ ↦ φ ((x + s • e) + (σ - s) • e)) = fun σ ↦ φ (x + σ • e) := by
+      funext σ
+      rw [sub_smul, add_add_sub_cancel]
+    rw [h₂] at h₁
+    have h₃ := h₁.sub ((hasDerivAt_id s).smul_const (φ' x))
+    simp only [id, one_smul] at h₃
+    exact h₃
+  have hbound : ∀ s ∈ Set.uIcc 0 h, ‖φ' (x + s • e) - φ' x‖ ≤ C * ‖h • e‖ ^ (r : ℝ) := by
+    intro s hs
+    have hs' : |s| ≤ |h| := by simpa using Set.abs_sub_left_of_mem_uIcc hs
+    rw [← dist_eq_norm]
+    refine (hφ'.dist_le _ _).trans ?_
+    rw [dist_eq_norm, add_sub_cancel_left, norm_smul, norm_smul, Real.norm_eq_abs,
+      Real.norm_eq_abs]
+    gcongr
+  have := (convex_uIcc (0 : ℝ) h).norm_image_sub_le_of_norm_hasDerivWithin_le
+    (fun s _ ↦ (hψ s).hasDerivWithinAt) hbound Set.left_mem_uIcc Set.right_mem_uIcc
+  simpa [sub_right_comm, Real.norm_eq_abs] using this
+
 namespace TauCeti
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
@@ -134,6 +177,35 @@ theorem holderOnWith_thickening_of_norm_fderiv_le {Ω K : Set E} {g : E → F} {
       (thickening_mono (by linarith [δ.coe_nonneg]) K).trans hKΩ
     push_cast
     linarith [dist_le_norm_add_norm (g x) (g y), hg0 x (hU hx), hg0 y (hU hy)]
+
+/-- A function differentiable on the ball `B_R`, with derivative bounded by `N` there, is `α`-Hölder
+on `B_R` with constant `N (2R)^(1 - α)` for every `α ≤ 1`: it is `N`-Lipschitz on the convex set
+`B_R`, whose diameter is at most `2R`. -/
+theorem holderOnWith_ball_of_norm_fderiv_le {g : E → F} {x₀ : E} {R : ℝ} {N α : ℝ≥0}
+    (hα : α ≤ 1) (hg : DifferentiableOn ℝ g (ball x₀ R))
+    (hN : ∀ x ∈ ball x₀ R, ‖fderiv ℝ g x‖ ≤ N) :
+    HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α g (ball x₀ R) := by
+  have hA : ∀ x ∈ ball x₀ R, ∀ y ∈ ball x₀ R, edist x y ≤ (2 * R).toNNReal := by
+    intro x hx y hy
+    rw [edist_dist]
+    refine ENNReal.ofReal_le_ofReal ?_
+    linarith [dist_triangle_right x y x₀, mem_ball.1 hx, mem_ball.1 hy]
+  have hL : LipschitzOnWith N g (ball x₀ R) :=
+    (convex_ball x₀ R).lipschitzOnWith_of_nnNorm_fderiv_le
+      (fun x hx => hg.differentiableAt (isOpen_ball.mem_nhds hx))
+      fun x hx => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hN x hx
+  simpa using (holderOnWith_one.2 hL).of_le hA hα
+
+/-- The derivative of a `C²` function on the ball `B_R`, with second derivative bounded by `N`
+there, is `α`-Hölder on `B_R` with constant `N (2R)^(1 - α)` for every `α ≤ 1`: this is
+`holderOnWith_ball_of_norm_fderiv_le` applied to `Dg`. -/
+theorem holderOnWith_fderiv_ball_of_norm_iteratedFDeriv_two_le {g : E → F} {x₀ : E} {R : ℝ}
+    {N α : ℝ≥0} (hα : α ≤ 1) (hg : ContDiffOn ℝ 2 g (ball x₀ R))
+    (hN : ∀ x ∈ ball x₀ R, ‖iteratedFDeriv ℝ 2 g x‖ ≤ N) :
+    HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α (fderiv ℝ g) (ball x₀ R) :=
+  holderOnWith_ball_of_norm_fderiv_le hα
+    ((hg.fderiv_of_isOpen isOpen_ball (m := 1) le_rfl).differentiableOn one_ne_zero)
+    fun x hx => by rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]; exact hN x hx
 
 end TauCeti
 

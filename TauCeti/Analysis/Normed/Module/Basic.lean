@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.Real.Sqrt
 import Mathlib.Tactic.Module
 
 /-!
@@ -28,6 +29,10 @@ normed spaces:
   satisfy `‖u i‖ ≤ C` (or perturbations satisfy `‖u i - v i‖ ≤ δ`) on `s`, the scalar-weighted sum
   `∑ i ∈ s, a i • u i` (or difference `∑ i ∈ s, a i • u i - ∑ i ∈ s, a i • v i`) has norm at most
   `(∑ i ∈ s, ‖a i‖) * C` (respectively `(∑ i ∈ s, ‖a i‖) * δ`).
+* `TauCeti.norm_sqrt_smul_sq`: scaling a vector by `√a`, `a ≥ 0`, multiplies its squared norm by
+  `a`.
+* `TauCeti.norm_inv_sqrt_smul_sq`: scaling a vector by `(√a)⁻¹`, `a ≥ 0`, divides its squared
+  norm by `a`.
 * `TauCeti.norm_neg_one_pow_smul`: the sign `(-1) ^ n` does not change norms.
 * `TauCeti.norm_smul_sq_div_add_norm_smul_sq`: the ratio `‖u‖² / (‖u‖² + ‖v‖²)` is unchanged when
   `u` and `v` are scaled by the same nonzero scalar.
@@ -44,6 +49,8 @@ normed spaces:
   holomorphic change of coordinates.
 * `IsOpen.diam_pos`: a nonempty bounded open set in a nontrivial real normed space has positive
   diameter.
+* `LipschitzWith.smul_const`: if a scalar function `f` is `K`-Lipschitz, then `y ↦ f y • c` is
+  `K ‖c‖`-Lipschitz.
 -/
 
 public section
@@ -100,6 +107,16 @@ theorem norm_sum_smul_sub_smul_le {ι A E : Type*} [SeminormedAddGroup A]
     ‖∑ i ∈ s, a i • u i - ∑ i ∈ s, a i • v i‖ ≤ (∑ i ∈ s, ‖a i‖) * δ := by
   simpa only [smul_sub, Finset.sum_sub_distrib] using
     norm_sum_smul_le_sum_norm_mul (a := a) huv
+
+/-- The squared norm of a vector scaled by the square root of `a ≥ 0` is multiplied by `a`. -/
+theorem norm_sqrt_smul_sq {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {a : ℝ}
+    (ha : 0 ≤ a) (x : E) : ‖√a • x‖ ^ 2 = a * ‖x‖ ^ 2 := by
+  simp [norm_smul, mul_pow, Real.sq_sqrt ha]
+
+/-- The squared norm of a vector scaled by the inverse square root of `a ≥ 0` is divided by `a`. -/
+theorem norm_inv_sqrt_smul_sq {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {a : ℝ}
+    (ha : 0 ≤ a) (x : E) : ‖(√a)⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 / a := by
+  simp [norm_smul, mul_pow, Real.sq_sqrt ha, div_eq_inv_mul]
 
 /-- The sign `(-1) ^ n` does not change norms. -/
 @[simp]
@@ -206,5 +223,15 @@ theorem IsOpen.diam_pos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [
   calc 0 < 2 * r := by positivity
     _ = Metric.diam (Metric.ball x r) := (Metric.diam_ball_eq x hr.le).symm
     _ ≤ Metric.diam s := Metric.diam_mono hball hb
+
+/-- If a scalar function `f` is `K`-Lipschitz, then `y ↦ f y • c` is `K ‖c‖`-Lipschitz. -/
+theorem LipschitzWith.smul_const {α 𝕜 E : Type*} [PseudoEMetricSpace α] [SeminormedRing 𝕜]
+    [SeminormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] {K : NNReal} {f : α → 𝕜}
+    (hf : LipschitzWith K f) (c : E) : LipschitzWith (K * ‖c‖₊) fun y ↦ f y • c := by
+  have hc : LipschitzWith ‖c‖₊ fun r : 𝕜 ↦ r • c := .of_dist_le_mul fun r s ↦ by
+    rw [dist_eq_norm, dist_eq_norm, ← sub_smul, coe_nnNorm, mul_comm]
+    exact norm_smul_le _ _
+  rw [mul_comm]
+  exact hc.comp hf
 
 end
