@@ -34,9 +34,8 @@ proves the two steps.
   (`TauCeti.TopCat.t1Space_of_isPushout`). The map `f` is then a closed embedding by
   `TauCeti.TopCat.isClosedEmbedding_of_isPushout`, so `X` is a closed subspace of `P`.
 * Sequential colimits. If `F : ℕ ⥤ TopCat` has closed embeddings as transition maps and every
-  `F.obj n` is normal, its colimit is normal (`TauCeti.TopCat.normalSpace_of_isColimit`). A
-  filtered colimit of `T1` spaces along injective transition maps is `T1`
-  (`TauCeti.TopCat.t1Space_of_isColimit`), so a sequential colimit of `T4` spaces along closed
+  `F.obj n` is normal, its colimit is normal (`TauCeti.TopCat.normalSpace_of_isColimit`). With
+  `TauCeti.TopCat.t1Space_of_isColimit`, a sequential colimit of `T4` spaces along closed
   embeddings is `T4` (`TauCeti.TopCat.t4Space_of_isColimit`).
 
 Both normality proofs separate two disjoint closed sets by a continuous real function, built from
@@ -59,7 +58,7 @@ public section
 
 open CategoryTheory Limits Topology Set
 
-universe w u
+universe u
 
 namespace TauCeti.TopCat
 
@@ -141,13 +140,6 @@ theorem t1Space_of_isPushout (sq : IsPushout g m f g₂) (hm : IsClosedEmbedding
 end Pushout
 
 section Colimit
-
-/-- A filtered colimit of `T1` spaces in `TopCat` along injective transition maps is `T1`. -/
-theorem t1Space_of_isColimit {J : Type w} [Category J] [IsFilteredOrEmpty J] {F : J ⥤ TopCat.{u}}
-    (hF : ∀ ⦃i j : J⦄ (f : i ⟶ j), Function.Injective (F.map f))
-    {c : Cocone F} (hc : IsColimit c) [∀ j, T1Space (F.obj j)] : T1Space c.pt := by
-  refine ⟨fun p ↦ (TopCat.isClosed_iff_of_isColimit _ hc _).2 fun j ↦ ?_⟩
-  exact (subsingleton_singleton.preimage (injective_ι_of_isColimit hF hc j)).isClosed
 
 variable {F : ℕ ⥤ TopCat.{u}} {c : Cocone F}
 
