@@ -39,11 +39,11 @@ section Measure
 
 variable [MeasurableSpace 𝕜] [BorelSpace 𝕜]
 
-/-- On an injective coordinate patch the spectral change of variables multiplies
-additive Haar measure by the angular Jacobian and the Vandermonde factor. -/
+/-- On an injective null-measurable coordinate patch the spectral change of variables
+multiplies additive Haar measure by the angular Jacobian and the Vandermonde factor. -/
 theorem lintegral_image_spectralCoordinates (μ : Measure (SelfAdjointCoordinates n 𝕜))
     [μ.IsAddHaarMeasure] (U : unitaryGroup (Fin n) 𝕜) {s : Set (SelfAdjointCoordinates n 𝕜)}
-    (hs : MeasurableSet s) (h : Set.InjOn spectralCoordinates s)
+    (hs : NullMeasurableSet s μ) (h : Set.InjOn spectralCoordinates s)
     (g : SelfAdjointCoordinates n 𝕜 → ℝ≥0∞) :
     (∫⁻ y in (unitaryConjCoordinates U ∘ spectralCoordinates) '' s, g y ∂μ) =
       ∫⁻ x in s, ENNReal.ofReal (|(spectralAngularFDeriv x.2).det| *
@@ -56,15 +56,28 @@ theorem lintegral_image_spectralCoordinates (μ : Measure (SelfAdjointCoordinate
       |(T.comp (fderiv ℝ spectralCoordinates x)).det| = |(fderiv ℝ spectralCoordinates x).det| := by
     rw [ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_comp, LinearMap.det_comp,
       abs_mul, abs_det_unitaryConjCoordinates, one_mul]
-  have he := lintegral_image_eq_lintegral_abs_det_fderiv_mul μ hs
-    (fun x _ ↦ (hF x).hasFDerivWithinAt) ((unitaryConjCoordinates U).injective.comp_injOn h) g
+  -- Reduce to a measurable subpatch `t` with the same measure; its image differs from the
+  -- image of `s` by the image of a null set, which is null for a differentiable map.
+  obtain ⟨t, hts, ht, hst⟩ := hs.exists_measurable_subset_ae_eq
+  have himage : unitaryConjCoordinates U ∘ spectralCoordinates '' t =ᵐ[μ]
+      unitaryConjCoordinates U ∘ spectralCoordinates '' s :=
+    (Filter.EventuallySubset.of_subset (Set.image_mono hts)).antisymm <| ae_subset.2 <|
+      measure_mono_null (Set.subset_image_sdiff _ s t) <|
+        addHaar_image_eq_zero_of_differentiableOn_of_addHaar_eq_zero μ
+          (fun x _ ↦ (hF x).differentiableAt.differentiableWithinAt)
+          (ae_subset.1 hst.symm.subset)
+  have he := lintegral_image_eq_lintegral_abs_det_fderiv_mul μ ht
+    (fun x _ ↦ (hF x).hasFDerivWithinAt)
+    ((unitaryConjCoordinates U).injective.comp_injOn (h.mono hts)) g
   simp only [hjac, abs_det_fderiv_spectralCoordinates, Function.comp_apply] at he
+  rw [← setLIntegral_congr himage, ← setLIntegral_congr hst]
   exact he
 
-/-- Frobenius volume transforms by the spectral Jacobian on every injective patch.
-The source measure is Frobenius volume transported to the linear matrix coordinates. -/
+/-- Frobenius volume transforms by the spectral Jacobian on every injective null-measurable
+patch. The source measure is Frobenius volume transported to the linear matrix coordinates. -/
 theorem lintegral_image_spectralMatrix (U : unitaryGroup (Fin n) 𝕜)
-    {s : Set (SelfAdjointCoordinates n 𝕜)} (hs : MeasurableSet s)
+    {s : Set (SelfAdjointCoordinates n 𝕜)}
+    (hs : NullMeasurableSet s (volume.map selfAdjointCoordinates))
     (h : Set.InjOn (spectralMatrix U) s)
     (g : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜) → ℝ≥0∞) :
     (∫⁻ A in spectralMatrix U '' s, g A) =

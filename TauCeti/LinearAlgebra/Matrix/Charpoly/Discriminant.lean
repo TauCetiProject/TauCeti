@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.Algebra.MvPolynomial.Eval

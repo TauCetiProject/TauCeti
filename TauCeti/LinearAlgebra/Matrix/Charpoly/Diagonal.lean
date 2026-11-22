@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
-public import Mathlib.SetTheory.Cardinal.Finite
-import Mathlib.Data.Fintype.Perm
 
 /-!
 # Characteristic roots of diagonal matrices

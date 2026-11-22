@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Matrix.SelfAdjoint
 public import Mathlib.Analysis.Matrix.MeasurableSpace
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!

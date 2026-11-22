@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Lemmas
-public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!

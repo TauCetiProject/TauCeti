@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.Algebra.BigOperators.Finset.Pairs
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.UniformSpace.Matrix
 
 /-!
