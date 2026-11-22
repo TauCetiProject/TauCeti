@@ -182,6 +182,12 @@ def sectionsBasePresheafCompForget₂Iso (M : X.Modules) :
     (sectionsBasePresheafFunctor R).obj M ⋙ forget₂ (ModuleCat.{u} R) Ab ≅ M.presheaf :=
   NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦ rfl
 
+/-- The presheaf of `R`-modules of sections of a sheaf of modules is a sheaf. -/
+lemma isSheaf_sectionsBasePresheafFunctor_obj (M : X.Modules) :
+    Presheaf.IsSheaf (Opens.grothendieckTopology X) ((sectionsBasePresheafFunctor R).obj M) := by
+  rw [Presheaf.isSheaf_iff_isSheaf_comp _ _ (forget₂ (ModuleCat.{u} R) Ab)]
+  exact (Presheaf.isSheaf_of_iso_iff (sectionsBasePresheafCompForget₂Iso R M)).2 M.isSheaf
+
 /-- The identification `sectionsBasePresheafCompForget₂Iso` is natural in the sheaf of modules. -/
 @[reassoc]
 lemma sectionsBasePresheafCompForget₂Iso_hom_naturality {M N : X.Modules} (f : M ⟶ N) :

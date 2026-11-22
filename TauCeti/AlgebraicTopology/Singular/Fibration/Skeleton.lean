@@ -88,12 +88,12 @@ theorem isZero_singularHomology_preimage_of_relHomotopyGroup (hp : serreFibratio
 
 /-- **A Serre fibration over a deformation has acyclic preimage pair.** Let `p : E ⟶ B` be a Serre
 fibration and `A ⊆ S ⊆ B`. If the identity of `S` is homotopic, relative to `A`, to a map with
-values in `A`, then `Hₘ(p⁻¹(S), p⁻¹(A); R) = 0` in every degree `m`. -/
+values in `A`, then `Hₘ(p⁻¹(S), p⁻¹(A); M) = 0` in every degree `m` and for every module `M`. -/
 theorem isZero_singularHomology_preimage_of_homotopyRel (hp : serreFibrations p) {A S : Set B}
     (hAS : A ⊆ S) {g : C(S, S)} (H : (ContinuousMap.id S).HomotopyRel g (Subtype.val ⁻¹' A))
-    (hg : ∀ x, (g x : B) ∈ A) (R : Type u) [Ring R] (m : ℕ) :
+    (hg : ∀ x, (g x : B) ∈ A) {R : Type*} [Ring R] (M : ModuleCat.{u} R) (m : ℕ) :
     IsZero ((TopPair.ofInclusion (X := E) (preimage_mono (f := p) hAS)).singularHomology
-      (ModuleCat.of R R) m) := by
+      M m) := by
   let A' : Set (_root_.TopCat.of S) := Subtype.val ⁻¹' A
   have h₀ (b : _root_.TopCat.of S) : ∃ a ∈ A', Joined b a :=
     ⟨g b, hg b, ⟨{ toFun t := H (t, b), source' := by simp, target' := by simp }⟩⟩
@@ -105,11 +105,10 @@ theorem isZero_singularHomology_preimage_of_homotopyRel (hp : serreFibrations p)
     · rw [TopPair.range_ofSubset_map]
       exact hg x
   have hz := isZero_singularHomology_preimage_of_relHomotopyGroup
-    (mem_serreFibrations_restrictPreimage hp S) h₀ h (ModuleCat.of R R) (Nat.lt_succ_self m)
+    (mem_serreFibrations_restrictPreimage hp S) h₀ h M (Nat.lt_succ_self m)
   -- The preimage pair of the restriction of `p` over `S` is the pair `(p⁻¹(S), p⁻¹(A))`.
   exact hz.of_iso (asIso (TopPair.singularHomologyMap
-    (TopPair.ofSubsetPreimageValIso (X := E) (preimage_mono (f := p) hAS)).hom
-    (ModuleCat.of R R) m)).symm
+    (TopPair.ofSubsetPreimageValIso (X := E) (preimage_mono (f := p) hAS)).hom M m)).symm
 
 variable [T2Space B] {C D : Set B} [RelCWComplex C D]
 
