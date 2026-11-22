@@ -241,7 +241,7 @@ theorem relativeSubspaceArakelovHeight_ker_restrictScalars_comp_le_prod (A : Mat
     rw [← Fintype.prod_subtype_mul_prod_subtype (fun i ↦ A i ≠ 0),
       Fintype.prod_eq_one (α := {i // ¬A i ≠ 0}) _ fun i ↦ by simp [not_not.1 i.property],
       mul_one]
-    rfl
+    exact Fintype.prod_congr _ _ fun i ↦ congrArg _ (funext fun j ↦ by simp [A'])
   rw [hker, hprod]
   exact relativeSubspaceArakelovHeight_ker_le_prod_of_ne_zero A' fun i ↦ i.property
 
