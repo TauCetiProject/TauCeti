@@ -74,8 +74,10 @@ transform decays is transported along the transposed derivative of a change of v
 * `TauCeti.exists_finset_subset_biUnion_interior_and_isOpen_cone`: finitely many of given
   neighbourhoods of the points of a compact set cover it, and the corresponding open cones
   intersect in an open cone.
-* `TauCeti.forall_smul_mem_neg`: the negative of a set closed under multiplication by positive
-  reals is closed under multiplication by positive reals.
+* `TauCeti.forall_smul_mem_neg`, `TauCeti.forall_smul_mem_compl`, `TauCeti.forall_smul_mem_add`,
+  `TauCeti.forall_smul_mem_insert_zero`: the negative and the complement of a set closed under
+  multiplication by positive reals, the sum of two such sets, and such a set with `0` adjoined, are
+  closed under multiplication by positive reals.
 
 ## References
 
@@ -564,5 +566,30 @@ theorem forall_smul_mem_neg [Module ℝ E] {Γ : Set E}
     ∀ t : ℝ, 0 < t → ∀ η ∈ -Γ, t • η ∈ -Γ := fun t ht η hη ↦ by
   rw [Set.mem_neg, ← smul_neg]
   exact hcone t ht _ (Set.mem_neg.1 hη)
+
+/-- The complement of a set closed under multiplication by positive reals is again closed under
+multiplication by positive reals. -/
+theorem forall_smul_mem_compl [Module ℝ E] {Γ : Set E}
+    (hcone : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) :
+    ∀ t : ℝ, 0 < t → ∀ η ∈ Γᶜ, t • η ∈ Γᶜ := fun t ht η hη htη ↦
+  hη (by simpa [smul_smul, inv_mul_cancel₀ ht.ne'] using hcone t⁻¹ (inv_pos.2 ht) _ htη)
+
+open Pointwise in
+/-- The sum `Γ₁ + Γ₂` of two sets closed under multiplication by positive reals is again closed
+under multiplication by positive reals. -/
+theorem forall_smul_mem_add [Module ℝ E] {Γ₁ Γ₂ : Set E}
+    (hc₁ : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ₁, t • η ∈ Γ₁) (hc₂ : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ₂, t • η ∈ Γ₂) :
+    ∀ t : ℝ, 0 < t → ∀ η ∈ Γ₁ + Γ₂, t • η ∈ Γ₁ + Γ₂ := by
+  rintro t ht _ ⟨a, ha, b, hb, rfl⟩
+  exact ⟨t • a, hc₁ t ht a ha, t • b, hc₂ t ht b hb, (smul_add t a b).symm⟩
+
+/-- Adjoining `0` to a set closed under multiplication by positive reals keeps it closed under
+multiplication by positive reals. -/
+theorem forall_smul_mem_insert_zero [Module ℝ E] {Γ : Set E}
+    (hc : ∀ t : ℝ, 0 < t → ∀ ξ ∈ Γ, t • ξ ∈ Γ) :
+    ∀ t : ℝ, 0 < t → ∀ ξ ∈ insert 0 Γ, t • ξ ∈ insert 0 Γ := by
+  rintro t ht ξ (rfl | hξ)
+  · simp
+  · exact Set.mem_insert_of_mem _ (hc t ht ξ hξ)
 
 end TauCeti
