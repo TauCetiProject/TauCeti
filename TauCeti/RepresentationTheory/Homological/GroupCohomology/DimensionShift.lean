@@ -69,9 +69,8 @@ open _root_.groupCohomology
 
 variable {k G : Type u} [CommRing k] [Group G] (A : Rep k G)
 
--- The sequence is presented through `ShortComplex.mk`, with short exactness transported from
--- `dimensionShiftUpSES_shortExact` along `dimensionShiftUpSES_def`, so that its terms are visible
--- without exposing the body of `dimensionShiftUpSES`. This is the presentation the merged
+-- The sequence is presented through `ShortComplex.mk`, the exposed body of `dimensionShiftUpSES`,
+-- so that its terms are visible in the statements. This is the presentation
 -- `TauCeti.TateCohomology.dimensionShiftUpIso` uses.
 
 /-- **Dimension shifting** as an isomorphism: `Hⁿ⁺¹(G, dimensionShiftUp A) ≅ Hⁿ⁺²(G, A)`, the
@@ -83,7 +82,7 @@ def dimensionShiftUpIso (n : ℕ) :
   (map_cochainsFunctor_shortExact
     (X := ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
       (coindBotUnit_comp_dimensionShiftUpπ A))
-    (by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact A)).δIso
+    (dimensionShiftUpSES_shortExact A)).δIso
       (n + 1) (n + 2) rfl (isZero_coindBot_succ A.V n) (isZero_coindBot_succ A.V (n + 1))
 
 /-- The dimension-shifting isomorphism is the connecting homomorphism. -/
@@ -92,7 +91,7 @@ theorem dimensionShiftUpIso_hom (n : ℕ) :
     (dimensionShiftUpIso A n).hom =
       δ (X := ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
           (coindBotUnit_comp_dimensionShiftUpπ A))
-        (by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact A)
+        (dimensionShiftUpSES_shortExact A)
         (n + 1) (n + 2) rfl := (rfl)
 
 /-- Vanishing in degree `n + 1` of an upward shift is vanishing in degree `n + 2` of the
@@ -111,7 +110,7 @@ isomorphism would need. -/
 theorem epi_δ_dimensionShiftUp_zero :
     Epi (δ (X := ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
         (coindBotUnit_comp_dimensionShiftUpπ A))
-      (by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact A) 0 1 rfl) :=
+      (dimensionShiftUpSES_shortExact A) 0 1 rfl) :=
   epi_δ_of_isZero _ 0 (isZero_coindBot_succ A.V 0)
 
 variable (S : Subgroup G)
@@ -125,8 +124,7 @@ def dimensionShiftUpResIso (n : ℕ) :
   (map_cochainsFunctor_shortExact
     (X := (ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
       (coindBotUnit_comp_dimensionShiftUpπ A)).map (resFunctor S.subtype))
-    (by simpa only [dimensionShiftUpSES_def] using
-      dimensionShiftUpSES_res_shortExact A S.subtype)).δIso (n + 1) (n + 2) rfl
+    (dimensionShiftUpSES_res_shortExact A S.subtype)).δIso (n + 1) (n + 2) rfl
         (isZero_res_coindBot_succ S A.V n) (isZero_res_coindBot_succ S A.V (n + 1))
 
 /-- The restricted dimension-shifting isomorphism is the connecting homomorphism. -/
@@ -135,8 +133,7 @@ theorem dimensionShiftUpResIso_hom (n : ℕ) :
     (dimensionShiftUpResIso A S n).hom =
       δ (X := (ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
           (coindBotUnit_comp_dimensionShiftUpπ A)).map (resFunctor S.subtype))
-        (by simpa only [dimensionShiftUpSES_def] using
-          dimensionShiftUpSES_res_shortExact A S.subtype) (n + 1) (n + 2) rfl := (rfl)
+        (dimensionShiftUpSES_res_shortExact A S.subtype) (n + 1) (n + 2) rfl := (rfl)
 
 /-- After restriction to a subgroup, vanishing in degree `n + 1` of an upward shift is
 vanishing in degree `n + 2` of the original module. Together with the unrestricted form this
@@ -154,8 +151,7 @@ but not the second input an isomorphism would need. -/
 theorem epi_δ_res_dimensionShiftUp_zero :
     Epi (δ (X := (ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
         (coindBotUnit_comp_dimensionShiftUpπ A)).map (resFunctor S.subtype))
-      (by simpa only [dimensionShiftUpSES_def] using
-        dimensionShiftUpSES_res_shortExact A S.subtype) 0 1 rfl) :=
+      (dimensionShiftUpSES_res_shortExact A S.subtype) 0 1 rfl) :=
   epi_δ_of_isZero _ 0 (isZero_res_coindBot_succ S A.V 0)
 
 end TauCeti.groupCohomology

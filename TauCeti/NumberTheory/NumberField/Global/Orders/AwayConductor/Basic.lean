@@ -128,16 +128,16 @@ theorem mem_integralIdealsAwayConductor_iff {I : Ideal O.toRingOfIntegers} :
 the nonzero ideals of `𝓞 K` coprime to the conductor, whose inverse is contraction. -/
 def integralIdealsAwayConductorEquiv :
     O.integralIdealsAwayConductor ≃* integralIdealsPrimeTo O.conductorModulus where
-  toFun I := ⟨I.1.map (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K), by
+  toFun I := ⟨I.val.map (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K), by
     rw [mem_integralIdealsPrimeTo_conductorModulus_iff]
-    refine ⟨fun h => I.2.1 ?_,
-      Ideal.map_sup_eq_top_of_coprime_comap I.2.2⟩
+    refine ⟨fun h => I.property.1 ?_,
+      Ideal.map_sup_eq_top_of_coprime_comap I.property.2⟩
     exact (comap_map_of_coprime_comap (S := O.toRingOfIntegers.toSubring)
-      O.conductor_le_toRingOfIntegers I.2.2).symm.trans
+      O.conductor_le_toRingOfIntegers I.property.2).symm.trans
         ((congrArg (Ideal.comap O.toRingOfIntegers.toSubring.subtype) h).trans
           (Ideal.comap_bot_of_injective _ Subtype.val_injective))⟩
-  invFun J := ⟨J.1.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K), by
-    have hJ := (O.mem_integralIdealsPrimeTo_conductorModulus_iff).mp J.2
+  invFun J := ⟨J.val.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K), by
+    have hJ := (O.mem_integralIdealsPrimeTo_conductorModulus_iff).mp J.property
     refine ⟨fun h => hJ.1 ?_, (comap_sup_comap_eq_top_iff (S := O.toRingOfIntegers.toSubring)
       O.conductor_le_toRingOfIntegers).mpr hJ.2⟩
     exact (map_comap_of_coprime (S := O.toRingOfIntegers.toSubring)
@@ -145,10 +145,11 @@ def integralIdealsAwayConductorEquiv :
         ((congrArg (Ideal.map O.toRingOfIntegers.toSubring.subtype) h).trans Ideal.map_bot)⟩
   left_inv I := Subtype.ext <|
     comap_map_of_coprime_comap (S := O.toRingOfIntegers.toSubring)
-      O.conductor_le_toRingOfIntegers I.2.2
+      O.conductor_le_toRingOfIntegers I.property.2
   right_inv J := Subtype.ext <|
     map_comap_of_coprime (S := O.toRingOfIntegers.toSubring)
-      O.conductor_le_toRingOfIntegers ((O.mem_integralIdealsPrimeTo_conductorModulus_iff).mp J.2).2
+      O.conductor_le_toRingOfIntegers ((O.mem_integralIdealsPrimeTo_conductorModulus_iff).mp
+          J.property).2
   map_mul' I J := Subtype.ext (Ideal.map_mul _ _ _)
 
 /-- The isomorphism `integralIdealsAwayConductorEquiv` extends an ideal of the order to `𝓞 K`. -/
@@ -216,7 +217,7 @@ theorem isUnit_coeIdeal_of_mem_integralIdealsAwayConductor {I : Ideal O.toRingOf
       FractionalIdeal (𝓞 K)⁰ K)
   have hM : M ≠ 0 := FractionalIdeal.coeIdeal_ne_zero.mpr
     ((O.mem_integralIdealsPrimeTo_conductorModulus_iff).mp
-      (O.integralIdealsAwayConductorEquiv ⟨I, hI⟩).2).1
+      (O.integralIdealsAwayConductorEquiv ⟨I, hI⟩).property).1
   -- Work with `ℤ`-submodules of `K`, where ideals of `O` and of `𝓞 K` can be multiplied.
   set i := (Ifr : Submodule O.toSubalgebra K).restrictScalars ℤ
   set one := (1 : Submodule O.toSubalgebra K).restrictScalars ℤ
@@ -246,7 +247,7 @@ variable (O)
 conductor. -/
 def integralIdealsAwayConductorToInvertible :
     O.integralIdealsAwayConductor →* O.invertibleProperFractionalIdeals where
-  toFun I := (isUnit_coeIdeal_of_mem_integralIdealsAwayConductor I.2).unit
+  toFun I := (isUnit_coeIdeal_of_mem_integralIdealsAwayConductor I.property).unit
   map_one' := Units.ext <| by simp [Ideal.map_top]
   map_mul' I J := Units.ext <| by simp [Ideal.map_mul, FractionalIdeal.coeIdeal_mul]
 

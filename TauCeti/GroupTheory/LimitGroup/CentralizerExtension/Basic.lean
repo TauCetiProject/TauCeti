@@ -225,7 +225,7 @@ theorem range_ofProd :
   refine le_antisymm ?_ (sup_le ?_ ((closure_le _).2 ?_))
   · rintro _ ⟨⟨c, v⟩, rfl⟩
     rw [ofProd_apply]
-    exact mul_mem (mem_sup_left (mem_map_of_mem _ c.2))
+    exact mul_mem (mem_sup_left (mem_map_of_mem _ c.property))
       (mem_sup_right ((range_zpowersPiHom t commute_t_t).le (MonoidHom.mem_range.2 ⟨v, rfl⟩)))
   · rintro _ ⟨c, hc, rfl⟩
     exact ⟨(⟨c, hc⟩, 1), ofProd_inl _⟩
@@ -237,8 +237,8 @@ theorem commute_ofProd_of (p : centralizer {u} × (Fin n → Multiplicative ℤ)
     Commute (ofProd p : CentralizerExt u n) (of u) := by
   have hu : u ∈ centralizer {u} := mem_centralizer_singleton_iff.2 rfl
   rw [← ofProd_inl ⟨u, hu⟩]
-  exact (((commute_iff_eq _ _).2 (Subtype.ext (mem_centralizer_singleton_iff.1 p.1.2))).prod
-    (Commute.one_right _)).map ofProd
+  have hc : Commute p.1 ⟨u, hu⟩ := Subtype.ext (mem_centralizer_singleton_iff.1 p.1.property).eq
+  exact (hc.prod (Commute.one_right _)).map ofProd
 
 /-- The normal form for the amalgam `G(u, ℤⁿ)`: every element is `g * a₁ * ⋯ * aᵣ` with `g ∈ G`
 and letters `aⱼ` alternately in `C_G(u) × ℤⁿ` and in `G`, none of them in `C_G(u)`, the first one
@@ -275,7 +275,8 @@ def lift (φ : G →* K) (τ : Fin n → K) (hτ : ∀ i j, Commute (τ i) (τ j
   Monoid.PushoutI.lift
     (fun b => Bool.rec (motive := fun b => CentralizerExtFactor u n b →* K) φ
       ((φ.comp (centralizer {u}).subtype).noncommCoprod (zpowersPiHom τ hτ)
-        fun c v => commute_zpowersPiHom (x := (φ.comp (centralizer {u}).subtype) c) (hφ c c.2) v)
+        fun c v => commute_zpowersPiHom (x := (φ.comp (centralizer {u}).subtype) c)
+            (hφ c c.property) v)
       b)
     (φ.comp (centralizer {u}).subtype)
     fun b => by
@@ -314,7 +315,7 @@ def homEquiv : (CentralizerExt u n →* K) ≃
       ∀ c ∈ centralizer {u}, ∀ i, Commute (p.1 c) (p.2 i) } where
   toFun f := ⟨(f.comp of, fun i => f (t i)), fun i j => (commute_t_t i j).map f,
     fun _ hc i => (commute_of_t hc i).map f⟩
-  invFun p := lift p.1.1 p.1.2 p.2.1 p.2.2
+  invFun p := lift p.val.1 p.val.2 p.property.1 p.property.2
   left_inv f := hom_ext (by simp) (by simp)
   right_inv p := by ext <;> simp
 
@@ -322,7 +323,8 @@ def homEquiv : (CentralizerExt u n →* K) ≃
     (homEquiv f : (G →* K) × (Fin n → K)) = (f.comp of, fun i => f (t i)) := (rfl)
 
 @[simp] theorem homEquiv_symm_apply (p) :
-    (homEquiv (u := u) (n := n) (K := K)).symm p = lift p.1.1 p.1.2 p.2.1 p.2.2 := (rfl)
+    (homEquiv (u := u) (n := n) (K := K)).symm p = lift p.val.1 p.val.2 p.property.1 p.property.2 :=
+        (rfl)
 
 /-- For `k : Fin n → ℤ`, the retraction of `G(u, ℤⁿ)` onto `G` sending `tᵢ` to `u ^ kᵢ`. -/
 def retraction (k : Fin n → ℤ) : CentralizerExt u n →* G :=
@@ -546,7 +548,7 @@ private theorem toHNNExtension_t (i : Fin 1) :
 /-- The inverse of `toHNNExtension`. -/
 private def ofHNNExtension :
     HNNExtension G (centralizer {u}) (centralizer {u}) (.refl _) →* CentralizerExt u 1 :=
-  HNNExtension.lift of (t 0) fun c => (commute_of_t c.2 0).symm.eq
+  HNNExtension.lift of (t 0) fun c => (commute_of_t c.property 0).symm.eq
 
 private theorem ofHNNExtension_of (g : G) :
     ofHNNExtension (HNNExtension.of g : HNNExtension G (centralizer {u}) (centralizer {u}) _) =

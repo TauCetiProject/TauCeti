@@ -57,11 +57,19 @@ of a higher-order Sobolev space.
 ## Main statements
 
 * `Real.prod_rpow_add_prod_rpow_le_prod_add_rpow`: the weighted geometric mean is superadditive.
+* `Real.sq_add_sq_le_rpow_mul_rpow`: two interpolation bounds combine into one for the Euclidean
+  norms of the pairs.
+* `Real.mul_rpow_mul_mul_rpow_of_add_eq_one`: the two-point weighted geometric mean is
+  positively homogeneous.
 * `Real.geom_mean_le_arith_mean2_weighted_div_mul`,
   `Real.geom_mean_lt_arith_mean2_weighted_div_mul`: two-point weighted AM-GM after normalizing
   by positive scalars, with the strict form.
 * `Real.sqrt_sum_sq_add_sum_sq_le_sum_sqrt`: the triangle inequality in the plane for finite
   sums of coordinate pairs.
+* `Real.le_div_add_rpow_mul_of_le_add_mul_rpow_mul_rpow`: absorption of a power `M^θ`, `θ < 1`,
+  in a bound `M ≤ A + B M^θ N^(1 - θ)`.
+* `Real.pow_mul_le_rpow_mul_rpow`: `s^(a + b) u ≤ M` gives
+  `s^a u ≤ M^(a / (a + b)) u^(b / (a + b))`.
 * `ENNReal.geom_mean_le_arith_mean2_weighted_ofReal`: two-point weighted AM-GM in `ℝ≥0∞` with
   the real weights `1 - θ` and `θ`.
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
@@ -117,6 +125,26 @@ theorem prod_rpow_add_prod_rpow_le_prod_add_rpow {ι : Type*} (s : Finset ι) {w
         mul_le_of_le_one_right (hw i hi) (div_self_le_one _)
     _ = 1 := hw'
 
+/-- Two interpolation bounds `a ≤ a₀ ^ (1 - θ) a₁ ^ θ` and `b ≤ b₀ ^ (1 - θ) b₁ ^ θ` combine into
+the interpolation bound for the squared Euclidean norms of the pairs `(a, b)`, `(a₀, b₀)` and
+`(a₁, b₁)`, by Hölder's inequality for two terms. -/
+theorem sq_add_sq_le_rpow_mul_rpow {a b a₀ a₁ b₀ b₁ θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    (ha : 0 ≤ a) (hb : 0 ≤ b) (ha₀ : 0 ≤ a₀) (ha₁ : 0 ≤ a₁) (hb₀ : 0 ≤ b₀) (hb₁ : 0 ≤ b₁)
+    (hal : a ≤ a₀ ^ (1 - θ) * a₁ ^ θ) (hbl : b ≤ b₀ ^ (1 - θ) * b₁ ^ θ) :
+    a ^ 2 + b ^ 2 ≤ (a₀ ^ 2 + b₀ ^ 2) ^ (1 - θ) * (a₁ ^ 2 + b₁ ^ 2) ^ θ := by
+  have key := prod_rpow_add_prod_rpow_le_prod_add_rpow Finset.univ (w := ![1 - θ, θ])
+    (a := ![a₀ ^ 2, a₁ ^ 2]) (b := ![b₀ ^ 2, b₁ ^ 2])
+    (by simp [Fin.forall_fin_two, hθ.1, hθ.2]) (by simp [Fin.sum_univ_two])
+    (by simp [Fin.forall_fin_two, sq_nonneg]) (by simp [Fin.forall_fin_two, sq_nonneg])
+  simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one] at key
+  calc a ^ 2 + b ^ 2 ≤ (a₀ ^ (1 - θ) * a₁ ^ θ) ^ 2 + (b₀ ^ (1 - θ) * b₁ ^ θ) ^ 2 :=
+        add_le_add (pow_le_pow_left₀ ha hal 2) (pow_le_pow_left₀ hb hbl 2)
+    _ = (a₀ ^ 2) ^ (1 - θ) * (a₁ ^ 2) ^ θ + (b₀ ^ 2) ^ (1 - θ) * (b₁ ^ 2) ^ θ := by
+        rw [mul_pow, mul_pow, rpow_pow_comm ha₀, rpow_pow_comm ha₁,
+          rpow_pow_comm hb₀, rpow_pow_comm hb₁]
+    _ ≤ _ := key
+
 /-- Splitting a weighted geometric mean through positive normalizers `a` and `b`:
 `A ^ (1 - θ) * B ^ θ = (A / a) ^ (1 - θ) * (B / b) ^ θ * (a ^ (1 - θ) * b ^ θ)`. -/
 theorem rpow_one_sub_mul_rpow_eq_div_mul {A B a b θ : ℝ} (ha : 0 < a) (hb : 0 < b) :
@@ -125,6 +153,13 @@ theorem rpow_one_sub_mul_rpow_eq_div_mul {A B a b θ : ℝ} (ha : 0 < a) (hb : 0
   have := (rpow_pos_of_pos ha (1 - θ)).ne'
   have := (rpow_pos_of_pos hb θ).ne'
   field_simp
+
+/-- **Homogeneity of the two-point weighted geometric mean.** For weights with `a + b = 1` and
+`t, x, y ≥ 0`, `(t x) ^ a (t y) ^ b = t (x ^ a y ^ b)`. -/
+theorem mul_rpow_mul_mul_rpow_of_add_eq_one {t x y a b : ℝ} (ht : 0 ≤ t) (hx : 0 ≤ x)
+    (hy : 0 ≤ y) (hab : a + b = 1) : (t * x) ^ a * (t * y) ^ b = t * (x ^ a * y ^ b) := by
+  rw [mul_rpow ht hx, mul_rpow ht hy, mul_mul_mul_comm,
+    ← rpow_add' ht (by rw [hab]; exact one_ne_zero), hab, rpow_one]
 
 /-- **Normalized weighted AM-GM.** For positive normalizers `a` and `b`, the weighted geometric
 mean of `A` and `B` is at most the weighted arithmetic mean of `A / a` and `B / b` times the
@@ -156,6 +191,43 @@ theorem sqrt_sum_sq_add_sum_sq_le_sum_sqrt {ι : Type*} (s : Finset ι) (a b : �
   have hsum : (⟨∑ i ∈ s, a i, ∑ i ∈ s, b i⟩ : ℂ) = ∑ i ∈ s, ⟨a i, b i⟩ :=
     Complex.ext (by rw [Complex.re_sum]) (by rw [Complex.im_sum])
   simpa only [h, hsum] using norm_sum_le s fun i => (⟨a i, b i⟩ : ℂ)
+
+/-- **Absorption.** If `M ≤ A + B M^θ N^(1 - θ)` with `0 ≤ θ < 1` and `M, B, N ≥ 0`, then
+`M ≤ A / (1 - θ) + B^(1 / (1 - θ)) N`, by Young's inequality
+`M^θ D^(1 - θ) ≤ θ M + (1 - θ) D` for `D = B^(1 / (1 - θ)) N`. -/
+theorem le_div_add_rpow_mul_of_le_add_mul_rpow_mul_rpow {M A B N θ : ℝ} (hθ0 : 0 ≤ θ)
+    (hθ1 : θ < 1) (hM : 0 ≤ M) (hB : 0 ≤ B) (hN : 0 ≤ N)
+    (h : M ≤ A + B * M ^ θ * N ^ (1 - θ)) : M ≤ A / (1 - θ) + B ^ (1 / (1 - θ)) * N := by
+  set D := B ^ (1 / (1 - θ)) * N
+  have hD : 0 ≤ D := by positivity
+  have hBN : B * N ^ (1 - θ) = D ^ (1 - θ) := by
+    rw [mul_rpow (by positivity) hN, ← rpow_mul hB, one_div_mul_cancel (by linarith),
+      rpow_one]
+  have hY := geom_mean_le_arith_mean2_weighted hθ0 (by linarith : 0 ≤ 1 - θ) hM hD
+    (by ring)
+  have h' : M ≤ A + (θ * M + (1 - θ) * D) :=
+    calc M ≤ A + B * M ^ θ * N ^ (1 - θ) := h
+      _ = A + M ^ θ * D ^ (1 - θ) := by rw [← hBN]; ring
+      _ ≤ _ := by gcongr
+  rw [div_add' _ _ _ (by linarith), le_div_iff₀ (by linarith)]
+  nlinarith
+
+/-- If `s^(a + b) u ≤ M` with `s, u ≥ 0` and `b > 0`, then
+`s^a u ≤ M^(a / (a + b)) u^(b / (a + b))`: split `s^a u` as
+`(s^(a + b) u)^(a / (a + b)) u^(b / (a + b))`. -/
+theorem pow_mul_le_rpow_mul_rpow {s u M : ℝ} {a b : ℕ} (hb : 0 < b) (hs : 0 ≤ s) (hu : 0 ≤ u)
+    (hM : s ^ (a + b) * u ≤ M) :
+    s ^ a * u ≤ M ^ ((a : ℝ) / (a + b)) * u ^ ((b : ℝ) / (a + b)) := by
+  have hsplit : s ^ a * u = (s ^ (a + b) * u) ^ ((a : ℝ) / (a + b)) * u ^ ((b : ℝ) / (a + b)) := by
+    rw [mul_rpow (by positivity) hu, ← rpow_natCast s (a + b), ← rpow_mul hs,
+      mul_assoc, ← rpow_add' hu (by field_simp; positivity)]
+    push_cast
+    have hmul : ((a : ℝ) + b) * (a / (a + b)) = a := by field_simp
+    have hsum : (a : ℝ) / (a + b) + b / (a + b) = 1 := by field_simp
+    rw [hmul, hsum, rpow_one, rpow_natCast]
+  rw [hsplit]
+  exact mul_le_mul_of_nonneg_right (rpow_le_rpow (by positivity) hM (by positivity))
+    (by positivity)
 
 end Real
 
@@ -296,7 +368,8 @@ theorem Lq_le_Lp_of_nonneg {ι : Type*} (s : Finset ι) {f : ι → ℝ} (hf : �
       ENNReal.ofReal_sum_of_nonneg fun i hi ↦ rpow_nonneg (hf i hi) r]
     congr 1
     rw [← Finset.sum_coe_sort s]
-    exact Finset.sum_congr rfl fun i _ ↦ (ENNReal.ofReal_rpow_of_nonneg (hf i i.2) hr.le).symm
+    exact Finset.sum_congr rfl fun i _ ↦ (ENNReal.ofReal_rpow_of_nonneg
+        (hf i i.property) hr.le).symm
   have h := ENNReal.Lq_le_Lp_tsum (fun i : s ↦ ENNReal.ofReal (f i)) hp hpq
   rw [← hofReal hq, ← hofReal hp] at h
   exact (ENNReal.ofReal_le_ofReal_iff (rpow_nonneg (Finset.sum_nonneg fun i hi ↦

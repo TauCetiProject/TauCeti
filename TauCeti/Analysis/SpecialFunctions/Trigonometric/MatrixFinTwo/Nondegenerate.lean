@@ -204,7 +204,7 @@ theorem isGδ_setOf_forall_det_one_sub_pow_ne_zero :
       exact h m⟩
   rw [h]
   exact IsGδ.iInter_of_isOpen fun k ↦ isOpen_ne_fun
-    (continuous_const.sub (continuous_subtype_val.pow _)).matrix_det continuous_const
+    (continuous_const.sub (continuous_subtypeVal.pow _)).matrix_det continuous_const
 
 end SpecialLinearGroup
 

@@ -173,9 +173,9 @@ noncomputable def localInvariantsEquiv :
     RegularFormClass K ≃ {I : LocalFormInvariants K // I.IsAdmissible} :=
   Equiv.ofBijective (fun x => ⟨x.localInvariants, isAdmissible_localInvariants x⟩)
     ⟨fun _ _ h => localInvariants_injective (congrArg Subtype.val h), fun I => by
-      obtain ⟨x, hx⟩ : I.1 ∈ Set.range (localInvariants (K := K)) := by
+      obtain ⟨x, hx⟩ : I.val ∈ Set.range (localInvariants (K := K)) := by
         rw [range_localInvariants]
-        exact I.2
+        exact I.property
       exact ⟨x, Subtype.ext hx⟩⟩
 
 /-- `localInvariantsEquiv` sends a class to its local invariants. -/

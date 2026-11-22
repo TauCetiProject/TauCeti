@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.ModelTheory.Infinitary.GraphTranslation.BackTranslate
 public import TauCeti.ModelTheory.Infinitary.GraphTranslation.Reconstruct
-public import TauCeti.ModelTheory.Infinitary.GraphTranslation.Relationalize
 public import TauCeti.ModelTheory.Infinitary.Satisfiability
 
 /-!
@@ -19,7 +19,9 @@ symbols say that for `f ∈ F` this relation is the graph of a function: totalit
 `∀ xs y z, G_f(xs, y) → G_f(xs, z) → y = z` (`graphFunctionality`). For a countable `F` they form
 one `L_{ω₁ω}` sentence `graphAxiomsSentence F hF`, the countable conjunction over `F`, and they
 hold in the graph expansion of every `L`-structure. The theory of the same axioms is
-`FirstOrder.Language.graphAxioms` in `TauCeti.ModelTheory.Infinitary.GraphTranslation.Reconstruct`.
+`FirstOrder.Language.graphAxioms` in `TauCeti.ModelTheory.Infinitary.GraphTranslation.Reconstruct`,
+whose countable conjunction has the same realization
+(`realize_conjunction_graphAxioms_iff_realize_graphAxiomsSentence`).
 
 Conversely, a nonempty structure of the graph language is read back as an `L`-structure
 `FirstOrder.Language.reconstructStructure L M` on the same carrier: relation symbols of `L` are
@@ -36,7 +38,10 @@ Together with the translation of `L`-structures into graph structures, this tran
 translation of `φ` entail that the graph axioms of the function symbols of `ψ` imply the
 translation of `ψ` (`Sentenceω.entails_iff_graphTranslation`). The graph language is relational,
 so this is how entailments between sentences of an arbitrary language reach theorems proved for
-relational languages, such as interpolation theorems.
+relational languages, such as interpolation theorems; conversely, entailments to or from a
+graph-language sentence return to `L` along `BoundedFormulaInf.backTranslate`
+(`Sentenceω.entails_backTranslate_of_graphAxioms_inf_relationalize`,
+`Sentenceω.backTranslate_entails_of_graphAxioms_imp_relationalize`).
 
 ## Main definitions
 
@@ -47,8 +52,10 @@ relational languages, such as interpolation theorems.
 
 ## Main results
 
-* `FirstOrder.Language.realize_graphAxiomsSentence`: the graph axioms of `F` hold exactly when, for
-  every `f ∈ F`, the graph relation of `f` relates each argument tuple to exactly one value.
+* `FirstOrder.Language.realize_graphAxiomsSentence` and
+  `FirstOrder.Language.realize_conjunction_graphAxioms_iff_realize_graphAxiomsSentence`: the graph
+  axioms of `F` hold exactly when, for every `f ∈ F`, the graph relation of `f` relates each
+  argument tuple to exactly one value, matching `(graphAxioms F).conjunction`.
 * `FirstOrder.Language.realize_graphAxiomsSentence_graphExpansion`: the graph expansion of an
   `L`-structure satisfies the graph axioms.
 * `FirstOrder.Language.relationsIn_graphAxiomsSentence`: the graph axioms of `F` mention exactly the
@@ -56,9 +63,10 @@ relational languages, such as interpolation theorems.
 * `BoundedFormulaInf.realize_relationalize_reconstructStructure_of_existsUnique`: on a graph
   structure whose graph relations for the function symbols of `φ` are graphs of functions, the
   translation of `φ` is realized exactly when `φ` is realized in the reconstruction.
-* `FirstOrder.Language.Sentenceω.entails_iff_graphTranslation`: entailment between sentences of
-  `L` is entailment between their translations into the graph language, relative to the graph
-  axioms.
+* `FirstOrder.Language.Sentenceω.entails_iff_graphTranslation`,
+  `FirstOrder.Language.Sentenceω.entails_backTranslate_of_graphAxioms_inf_relationalize`, and
+  `FirstOrder.Language.Sentenceω.backTranslate_entails_of_graphAxioms_imp_relationalize`:
+  entailment transfer between `L` and `L.graphLanguage` across `relationalize` and `backTranslate`.
 
 ## References
 
@@ -110,13 +118,13 @@ structure. -/
 noncomputable def graphAxiomsSentence (F : Set (Σ n, L.Functions n)) (hF : F.Countable) :
     L.graphLanguage.Sentenceω :=
   iInfAlong (TauCeti.IndexCoding.ofEncodableWith hF.toEncodable) fun f : F =>
-    graphTotality f.1.2 ⊓ graphFunctionality f.1.2
+    graphTotality f.val.2 ⊓ graphFunctionality f.val.2
 
 /-- The graph axioms of `F` are the coded conjunction of totality and functionality of the graph
 relations of the symbols in `F`. -/
 theorem graphAxiomsSentence_def (F : Set (Σ n, L.Functions n)) (hF : F.Countable) :
     graphAxiomsSentence F hF = iInfAlong (TauCeti.IndexCoding.ofEncodableWith hF.toEncodable)
-      fun f : F => graphTotality f.1.2 ⊓ graphFunctionality f.1.2 :=
+      fun f : F => graphTotality f.val.2 ⊓ graphFunctionality f.val.2 :=
   (rfl)
 
 section Realize
@@ -170,6 +178,16 @@ theorem realize_graphAxiomsSentence (F : Set (Σ n, L.Functions n)) (hF : F.Coun
     fun h => ⟨fun xs => (h xs).exists, fun xs _ _ hy hz => (h xs).unique hy hz⟩⟩
 
 end Realize
+
+/-- The countable conjunction `(graphAxioms F).conjunction hF'` holds in a graph-language structure
+exactly when `graphAxiomsSentence F hF` does. -/
+theorem realize_conjunction_graphAxioms_iff_realize_graphAxiomsSentence
+    {F : Set (Σ n, L.Functions n)} (hF : F.Countable)
+    {hF' : (graphAxioms F).Countable} {M : Type w} [L.graphLanguage.Structure M] :
+    SentenceInf.Realize ((graphAxioms F).conjunction hF') M ↔
+      SentenceInf.Realize (graphAxiomsSentence F hF) M := by
+  rw [Theoryω.realize_conjunction_iff, model_graphAxioms_iff, realize_graphAxiomsSentence,
+    Sigma.forall]
 
 /-- The graph expansion of an `L`-structure satisfies the graph axioms of every countable set of
 function symbols. -/
@@ -289,6 +307,40 @@ theorem Sentenceω.entails_iff_graphTranslation {φ ψ : L.Sentenceω} :
     simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_imp,
       realize_relationalize] at hψ ⊢
     exact hψ (hA _ _)
+
+/-- **Left entailment transfer along back-translation**: if the countable conjunction of
+`graphAxioms F` together with `φ.relationalize` entails `θ` in `L.graphLanguage`, then `φ` entails
+`θ.backTranslate` in `L`. -/
+theorem Sentenceω.entails_backTranslate_of_graphAxioms_inf_relationalize
+    {F : Set (Σ n, L.Functions n)} {hF : (graphAxioms F).Countable}
+    {φ : L.Sentenceω} {θ : L.graphLanguage.Sentenceω}
+    (h : Sentenceω.Entails ((graphAxioms F).conjunction hF ⊓ φ.relationalize) θ) :
+    Sentenceω.Entails φ θ.backTranslate := by
+  refine Sentenceω.entails_iff.2 fun M _ _ hφM => ?_
+  let := graphExpansion L M
+  have hA : SentenceInf.Realize ((graphAxioms F).conjunction hF) M :=
+    (Theoryω.realize_conjunction_iff hF).2 (model_graphAxioms_graphExpansion L M F)
+  have hθM := Sentenceω.entails_iff.1 h M (SentenceInf.realize_inf.2 ⟨hA, by
+    simpa only [SentenceInf.realize_def, FormulaInf.realize_def, realize_relationalize]
+      using hφM⟩)
+  simpa only [SentenceInf.realize_def, FormulaInf.realize_def, realize_backTranslate] using hθM
+
+/-- **Right entailment transfer along back-translation**: if `θ` entails in `L.graphLanguage` that
+the countable conjunction of `graphAxioms F` implies `ψ.relationalize`, then `θ.backTranslate`
+entails `ψ` in `L`. -/
+theorem Sentenceω.backTranslate_entails_of_graphAxioms_imp_relationalize
+    {F : Set (Σ n, L.Functions n)} {hF : (graphAxioms F).Countable}
+    {ψ : L.Sentenceω} {θ : L.graphLanguage.Sentenceω}
+    (h : Sentenceω.Entails θ (((graphAxioms F).conjunction hF).imp ψ.relationalize)) :
+    Sentenceω.Entails θ.backTranslate ψ := by
+  refine Sentenceω.entails_iff.2 fun M _ _ hθM => ?_
+  let := graphExpansion L M
+  have hA : SentenceInf.Realize ((graphAxioms F).conjunction hF) M :=
+    (Theoryω.realize_conjunction_iff hF).2 (model_graphAxioms_graphExpansion L M F)
+  have hψM := SentenceInf.realize_imp.1 (Sentenceω.entails_iff.1 h M (by
+    simpa only [SentenceInf.realize_def, FormulaInf.realize_def, realize_backTranslate]
+      using hθM)) hA
+  simpa only [SentenceInf.realize_def, FormulaInf.realize_def, realize_relationalize] using hψM
 
 end Language
 

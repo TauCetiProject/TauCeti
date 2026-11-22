@@ -274,6 +274,18 @@ lemma supportedModuleHPresheafFunctor_map_app_apply (S : Closeds X) (n : ℕ)
     ((supportedModuleHPresheafFunctor S n).map f).app W x = x.comp (Ext.mk₀ f) (add_zero n) :=
   (rfl)
 
+/-- If the maps `H_Sⁿ(W, F) ⟶ H_Sⁿ(W, G)` induced by `f : F ⟶ G` are bijective for every open
+`W`, then `f` induces an isomorphism of presheaves `H_Sⁿ(-, F) ≅ H_Sⁿ(-, G)`. -/
+theorem isIso_supportedModuleHPresheafFunctor_map (S : Closeds X) (n : ℕ)
+    {F G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} (f : F ⟶ G)
+    (h : ∀ W : Opens X, Function.Bijective ((Ext.mk₀ f).postcomp _ (add_zero n) :
+      F.supportedModuleH S W n →+ G.supportedModuleH S W n)) :
+    IsIso ((supportedModuleHPresheafFunctor S n).map f) := by
+  have (W : (Opens X)ᵒᵖ) : IsIso (((supportedModuleHPresheafFunctor S n).map f).app W) := by
+    rw [ConcreteCategory.isIso_iff_bijective]
+    exact h W.unop
+  exact NatIso.isIso_of_isIso_app _
+
 /-- The supported cohomology presheaf functor is additive in its coefficients. -/
 instance additive_supportedModuleHPresheafFunctor (S : Closeds X) (n : ℕ) :
     (supportedModuleHPresheafFunctor (R := R) S n).Additive where

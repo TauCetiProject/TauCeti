@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Map
+import TauCeti.Algebra.MonoidAlgebra.ComapDomain
 
 /-!
 # The completed group algebra of a product with a finite group
@@ -145,25 +146,15 @@ theorem mapDomain_mapOfLE_comapDomain_botProdMk {U V : OpenNormalSubgroup Γ} (h
         (MonoidAlgebra.comapDomain (botProdMk U c) (botProdMk_injective U c) z) =
       MonoidAlgebra.comapDomain (botProdMk V c) (botProdMk_injective V c)
         (MonoidAlgebra.mapDomain (QuotientGroup.mapOfLE (bot_prod_mono hUV))
-          z) := by
-  induction z using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add x y hx hy =>
-    rw [MonoidAlgebra.comapDomain_add, MonoidAlgebra.mapDomain_add, hx, hy,
-      MonoidAlgebra.mapDomain_add, MonoidAlgebra.comapDomain_add]
-  | single q r =>
-    obtain ⟨⟨c', γ⟩, rfl⟩ := QuotientGroup.mk_surjective q
-    rw [MonoidAlgebra.mapDomain_single, QuotientGroup.mapOfLE_mk]
-    by_cases hc : c' = c
-    · subst hc
-      rw [← botProdMk_mk U c' γ, MonoidAlgebra.comapDomain_single_map,
-        MonoidAlgebra.mapDomain_single, QuotientGroup.mapOfLE_mk, ← botProdMk_mk V c' γ,
-        MonoidAlgebra.comapDomain_single_map]
-    · rw [MonoidAlgebra.comapDomain_single_of_notMem_range
-          (mt (mem_range_botProdMk_iff U γ).mp hc),
-        MonoidAlgebra.mapDomain_zero,
-        MonoidAlgebra.comapDomain_single_of_notMem_range
-          (mt (mem_range_botProdMk_iff V γ).mp hc)]
+          z) :=
+  MonoidAlgebra.mapDomain_comapDomain_eq_comapDomain_mapDomain _ _
+    (fun q ↦ QuotientGroup.induction_on q fun γ ↦ by
+      rw [botProdMk_mk, QuotientGroup.mapOfLE_mk, QuotientGroup.mapOfLE_mk, botProdMk_mk])
+    (fun q hq ↦ by
+      obtain ⟨⟨c', γ⟩, rfl⟩ := QuotientGroup.mk_surjective q
+      rw [QuotientGroup.mapOfLE_mk, mem_range_botProdMk_iff] at hq
+      exact (mem_range_botProdMk_iff U γ).mpr hq)
+    z
 
 end BotProd
 

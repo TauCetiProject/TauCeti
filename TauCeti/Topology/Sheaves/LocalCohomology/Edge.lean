@@ -42,7 +42,8 @@ quotient of the flasque sheaf `Γ_S(I)` by `Γ_S(F)`, and the connecting maps
 flasque, the degree-zero connecting maps identify `H_S¹(-, F)` and `𝓗_S¹(F)` with the cokernel
 sheaf of `Γ_S(I) ⟶ Γ_S(I / F)`, whose sections are computed objectwise, and the image of
 `Γ_S(I) ⟶ Γ_S(I / F)` (equivalently, the kernel of the quotient map `Γ_S(I / F) ⟶ 𝓗_S¹(F)`) is
-flasque.
+flasque. For `n = 0` the inclusion `Γ_S(F) ⟶ F` induces an isomorphism on `H_Zʲ` by the four lemma
+along `Γ_S(F) ⟶ Γ_S(I)`.
 
 ## Main declarations
 
@@ -56,7 +57,9 @@ flasque.
 * `CategoryTheory.Sheaf.supportedModuleHEdgeEquiv` and
   `CategoryTheory.Sheaf.supportedModuleHPresheafIsoSupportedSubmodule`: the degree-zero degenerate
   edge comparison `H_Zⁿ(W, F) ≃ₗ[R] Γ_Z(W, 𝓗_Sⁿ(F))` for closed `Z ≤ S`;
-* `CategoryTheory.Sheaf.isIso_supportedModuleHPresheafFunctor_map_supportedSubmoduleι`: when
+* `CategoryTheory.Sheaf.isIso_supportedModuleHPresheafFunctor_map_supportedSubmoduleι`,
+  `CategoryTheory.Sheaf.bijective_postcomp_mk₀_supportedSubmoduleι` and
+  `CategoryTheory.Sheaf.isIso_supportedModuleHSheafFunctor_map_supportedSubmoduleι`: when
   `𝓗_S^{q+1}(F) = 0` for `q < j`, the inclusion `Γ_S(F) ⟶ F` induces
   `H_Z^j(-, Γ_S(F)) ≅ H_Z^j(-, F)` for closed `Z ≤ S`;
 * `CategoryTheory.Sheaf.supportedModuleHPresheafEdgeIso`,
@@ -357,7 +360,7 @@ def supportedModuleHEdgeEquiv (h : ∀ q < n, IsZero (F.supportedModuleHSheaf S 
           (F.exact_supportedModuleHPresheafMap_app_supportedModuleHPresheaf_map hZS W n y).1 <|
             (F.supportedModuleHSectionsEquiv S h _).injective <| by
               rw [supportedModuleHSectionsEquiv_map, hy]
-              exact ((mem_supportedSubmodule_iff _).1 s.2).trans (map_zero _).symm
+              exact ((mem_supportedSubmodule_iff _).1 s.property).trans (map_zero _).symm
         exact ⟨x, Subtype.ext hy⟩⟩
 
 /-- The degenerate edge comparison enlarges the support from `Z` to `S` and then applies the
@@ -547,7 +550,7 @@ private def supportedModuleHPresheafEdgeIsoOne
   have : TopCat.Presheaf.IsFlasque E.X₂.obj := isFlasque_supportedSubmoduleSheaf T.X₂ S
   have : TopCat.Presheaf.IsFlasque (Limits.image E.g).obj :=
     hE.shortExact_factorThruImage.isFlasque_X₃_of_isFlasque
-  have := isIso_supportedModuleHPresheafFunctor_map_g_succ Z
+  have := isIso_supportedModuleHPresheafFunctor_map_g Z
     (ShortComplex.shortExact_image_ι_cokernel_π E.g) j
   (asIso (supportedModuleHPresheafPostcomp Z hT.extClass hk)).symm ≪≫
     (asIso ((supportedModuleHPresheafFunctor Z (j + 1)).map

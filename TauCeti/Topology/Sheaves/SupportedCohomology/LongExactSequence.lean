@@ -65,20 +65,6 @@ theorem isIso_supportedModuleHPresheafPostcomp_extClass (hT : T.ShortExact)
     subst hk
     exact hT.extClass_postcomp_bijective _ rfl inferInstance inferInstance
 
-/-- If `F₁` is flasque, the morphism `H_Sⁿ⁺¹(-, F₂) ⟶ H_Sⁿ⁺¹(-, F₃)` induced by
-`F₂ ⟶ F₃` is an isomorphism of presheaves. -/
-theorem isIso_supportedModuleHPresheafFunctor_map_g_succ (hT : T.ShortExact)
-    [TopCat.Presheaf.IsFlasque T.X₁.obj] (n : ℕ) :
-    IsIso ((supportedModuleHPresheafFunctor S (n + 1)).map T.g) := by
-  have : IsIso (supportedModuleHPresheafPostcomp S (Ext.mk₀ T.g) (add_zero (n + 1))) :=
-    isIso_supportedModuleHPresheafPostcomp S _ _ fun _ ↦
-      ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ by
-          obtain ⟨z, rfl⟩ := Ext.covariant_sequence_exact₂ _ hT x hx
-          rw [Subsingleton.elim z 0, Ext.zero_comp],
-        fun x ↦ Ext.covariant_sequence_exact₃ _ hT x rfl (Subsingleton.elim _ _)⟩
-  rw [supportedModuleHPresheafPostcomp_mk₀] at this
-  exact this
-
 /-- The connecting morphism of supported cohomology presheaves for a short exact
 sequence of coefficient sheaves, given by its Yoneda extension class. -/
 def supportedModuleHPresheafδ (hT : T.ShortExact) (n : ℕ) :
@@ -181,6 +167,17 @@ instance isIso_supportedModuleHPresheafδ_succ (hT : T.ShortExact)
     [TopCat.Presheaf.IsFlasque T.X₂.obj] (n : ℕ) :
     IsIso (supportedModuleHPresheafδ S hT (n + 1)) :=
   isIso_supportedModuleHPresheafPostcomp_extClass S hT rfl
+
+/-- A flasque first term makes the positive-degree map `H_Sⁿ⁺¹(-, F₂) ⟶ H_Sⁿ⁺¹(-, F₃)` induced
+by `F₂ ⟶ F₃` an isomorphism of supported cohomology presheaves. -/
+theorem isIso_supportedModuleHPresheafFunctor_map_g (hT : T.ShortExact)
+    [TopCat.Presheaf.IsFlasque T.X₁.obj] (n : ℕ) :
+    IsIso ((supportedModuleHPresheafFunctor S (n + 1)).map T.g) :=
+  isIso_supportedModuleHPresheafFunctor_map S (n + 1) T.g fun _ ↦
+    ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ by
+      obtain ⟨z, rfl⟩ := Ext.covariant_sequence_exact₂ _ hT x hx
+      rw [Subsingleton.elim z 0, Ext.zero_comp],
+    fun x ↦ Ext.covariant_sequence_exact₃ _ hT x rfl (Subsingleton.elim _ _)⟩
 
 /-- The degree-zero connecting morphism `Γ_S(-, F₃) ⟶ H_S¹(-, F₁)` of a short exact sequence
 `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0`, read through the identification of degree-zero supported cohomology
