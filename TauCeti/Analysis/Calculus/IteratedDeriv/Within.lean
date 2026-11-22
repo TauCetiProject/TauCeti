@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
 /-!
 # Derivatives of iterated derivatives within a set
@@ -154,14 +156,18 @@ theorem ContDiffOn.map_pow_smul_iteratedDerivWithin_eq_zero {f : 𝕜' → E} {s
     (hzero : ∀ x ∈ I, L (f (z₀ + x • d)) = 0) :
     ∀ {k : ℕ}, (k : ℕ∞ω) ≤ n → ∀ {x : 𝕜}, x ∈ I →
       L (d ^ k • iteratedDerivWithin k f s (z₀ + x • d)) = 0
-  | 0, _, x, hx => by simpa using hzero x hx
-  | k + 1, hk, x, hx => by
-    have hk_lt : (k : ℕ∞ω) < n := lt_of_lt_of_le (by exact_mod_cast Nat.lt_succ_self k) hk
-    have ih : ∀ t ∈ I, L (d ^ k • iteratedDerivWithin k f s (z₀ + t • d)) = 0 :=
-      fun _ ht => hf.map_pow_smul_iteratedDerivWithin_eq_zero hs hI hmaps L hzero hk_lt.le ht
-    have hL := L.hasFDerivAt.comp_hasDerivWithinAt x
-      (hf.hasDerivWithinAt_pow_smul_iteratedDerivWithin_add_smul hs hk_lt hmaps hx)
-    have h0 := (hasDerivWithinAt_const x I (0 : F)).congr ih (ih x hx)
-    rw [← hL.derivWithin (hI x hx), Function.comp_def, h0.derivWithin (hI x hx)]
+  | k, hk, x, hx => by
+    have hfline : ContDiffOn 𝕜 n (fun t : 𝕜 => f (z₀ + t • d)) I :=
+      (hf.restrict_scalars 𝕜).comp (by fun_prop) hmaps
+    rw [← hf.iteratedDerivWithin_comp_add_smul hs hI hmaps hk hx]
+    have hcomm : L (iteratedDerivWithin k (fun t : 𝕜 => f (z₀ + t • d)) I x) =
+        iteratedDerivWithin k (fun t : 𝕜 => L (f (z₀ + t • d))) I x := by
+      simpa only [iteratedDerivWithin_eq_iteratedFDerivWithin,
+        ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
+        Function.comp_def] using
+        congrArg (fun M => M fun _ => (1 : 𝕜))
+          (L.iteratedFDerivWithin_comp_left (hfline x hx) hI hx hk).symm
+    rw [hcomm, iteratedDerivWithin_congr (fun t ht => hzero t ht) hx,
+      iteratedDerivWithin_fun_const_zero]
 
 end NormedAlgebra

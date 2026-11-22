@@ -106,21 +106,12 @@ theorem sum_integral_adjacent_intervals_Ico_int {E : Type*} [NormedAddCommGroup 
     [NormedSpace ℝ E] {μ : Measure ℝ} {f : ℝ → E} {a n : ℤ} (han : a ≤ n) (τ : ℤ → ℝ)
     (hint : ∀ j ∈ Finset.Ico a n, IntervalIntegrable f μ (τ j) (τ (j + 1))) :
     ∑ j ∈ Finset.Ico a n, ∫ t in τ j..τ (j + 1), f t ∂μ = ∫ t in τ a..τ n, f t ∂μ := by
-  let m : ℕ := (n - a).toNat
-  have hm : a + (m : ℤ) = n := by omega
-  have hsum := _root_.intervalIntegral.sum_integral_adjacent_intervals (n := m)
+  rw [Int.Ico_eq_finset_map, Finset.sum_map]
+  have hm : max (n - a) 0 = n - a := by omega
+  have hsum := _root_.intervalIntegral.sum_integral_adjacent_intervals (n := (n - a).toNat)
     (a := fun k : ℕ => τ (a + k)) fun k hk => by
       simpa [Nat.cast_add, add_assoc] using hint (a + k) (Finset.mem_Ico.mpr (by omega))
-  simp only [Nat.cast_zero, add_zero, hm] at hsum
-  rw [← hsum]
-  refine Finset.sum_nbij' (fun j => (j - a).toNat) (fun k => a + k)
-    (fun j hj => Finset.mem_range.mpr (by rw [Finset.mem_Ico] at hj; omega))
-    (fun k hk => Finset.mem_Ico.mpr (by rw [Finset.mem_range] at hk; omega))
-    (fun j hj => by rw [Finset.mem_Ico] at hj; omega) (fun _ _ => by omega) fun j hj => by
-      rw [Finset.mem_Ico] at hj
-      have h1 : a + ((j - a).toNat : ℤ) = j := by omega
-      have h2 : a + (((j - a).toNat + 1 : ℕ) : ℤ) = j + 1 := by omega
-      rw [h1, h2]
+  simpa [Nat.cast_add, add_assoc, hm] using hsum
 
 /-- The primitive `t ↦ ∫ x in a..t, f x ∂μ` of a function that is almost everywhere nonnegative and
 interval integrable on `[a, b]` is nondecreasing on `[a, b]`. -/

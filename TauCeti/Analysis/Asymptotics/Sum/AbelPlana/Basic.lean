@@ -9,11 +9,12 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.Complex.Conformal.Reflection.Principle
+import TauCeti.Analysis.Complex.VerticalStrip.Growth
+import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
@@ -51,7 +52,8 @@ exponentially damped vertical-line remainder.
   `[a, n]`, assuming `Im f(c + i y) / (e^{2πy} - 1)` is integrable on `(0, ∞)` at `c = a` and
   `c = n`.
 * `TauCeti.tendsto_mul_exp_neg_two_pi_abs_im_of_norm_le`: growth criterion verifying the uniform
-  `o(e^{2π|Im z|})` hypothesis when `‖f z‖ ≤ C * (1 + |z.im|) ^ p * e^{c |z.im|}` with `c < 2 * π`.
+  `o(e^{2π|Im z|})` hypothesis when `‖f z‖ ≤ C * (1 + |z.im|) ^ p * e^{c |z.im|}` eventually as
+  `|Im z| → ∞` in the strip with `c < 2 * π`.
 
 ## Proof strategy
 
@@ -84,47 +86,20 @@ namespace TauCeti
 private noncomputable def abelPlanaUpper (f : ℂ → ℂ) (z : ℂ) : ℂ :=
   f z / (cexp (-2 * π * I * z) - 1)
 
-/-- Integer periodicity of `z ↦ e^{-2πiz}`. -/
-private theorem cexp_neg_two_pi_I_mul_int_add (k : ℤ) (w : ℂ) :
-    cexp (-2 * π * I * ((k : ℂ) + w)) = cexp (-2 * π * I * w) := by
-  have hsplit : -2 * π * I * ((k : ℂ) + w) = (-k : ℤ) * (2 * π * I) + (-2 * π * I * w) := by
-    push_cast
-    ring
-  rw [hsplit, Complex.exp_add, Complex.exp_int_mul_two_pi_mul_I, one_mul]
-
-/-- Along a vertical line at an integer abscissa `k`, `e^{-2πi(k + iy)} = e^{2πy}`. -/
-private theorem cexp_neg_two_pi_I_mul_int_add_mul_I (k : ℤ) (y : ℝ) :
-    cexp (-2 * π * I * ((k : ℂ) + (y : ℂ) * I)) = (Real.exp (2 * π * y) : ℂ) := by
-  rw [cexp_neg_two_pi_I_mul_int_add]
-  have hy : -2 * π * I * ((y : ℂ) * I) = ((2 * π * y : ℝ) : ℂ) := by
-    calc
-      -2 * π * I * ((y : ℂ) * I) = -2 * (π : ℂ) * (y : ℂ) * (I * I) := by ring
-      _ = ((2 * π * y : ℝ) : ℂ) := by rw [I_mul_I]; push_cast; ring
-  rw [hy, Complex.ofReal_exp]
-
 /-- The nonzero constant `-2 * π * I`. -/
-private theorem neg_two_pi_I_ne_zero : (-2 * π * I : ℂ) ≠ 0 :=
-  mul_ne_zero (mul_ne_zero (neg_ne_zero.mpr two_ne_zero)
-    (Complex.ofReal_ne_zero.mpr Real.pi_ne_zero)) I_ne_zero
-
-/-- Solutions to `e^{-2πiz} = 1` are integers. -/
-private theorem exists_int_of_cexp_neg_two_pi_I_mul_eq_one {z : ℂ}
-    (h : cexp (-2 * π * I * z) = 1) : ∃ m : ℤ, z = m := by
-  obtain ⟨k, hk⟩ := Complex.exp_eq_one_iff.mp h
-  have hneg := mul_left_cancel₀ neg_two_pi_I_ne_zero
-    (by linear_combination hk : (-2 * π * I : ℂ) * z = (-2 * π * I) * (-k : ℂ))
-  exact ⟨-k, by push_cast; exact hneg⟩
+private theorem neg_two_pi_I_ne_zero : (-2 * π * I : ℂ) ≠ 0 := by
+  simp [neg_mul]
 
 /-- `e^{-2πiz} ≠ 1` off the real axis. -/
 private theorem cexp_neg_two_pi_I_mul_ne_one_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
     cexp (-2 * π * I * z) ≠ 1 := fun h => by
-  obtain ⟨m, rfl⟩ := exists_int_of_cexp_neg_two_pi_I_mul_eq_one h
+  obtain ⟨m, rfl⟩ := Complex.exp_neg_two_pi_mul_I_mul_eq_one_iff.mp h
   exact hz (intCast_im m)
 
 /-- `e^{-2πiz} ≠ 1` whenever `Re z` lies strictly between two consecutive integers. -/
 private theorem cexp_neg_two_pi_I_mul_ne_one_of_re_mem_Ioo {z : ℂ} (j : ℤ)
     (hz : z.re ∈ Ioo (j : ℝ) (j + 1)) : cexp (-2 * π * I * z) ≠ 1 := fun h => by
-  obtain ⟨m, rfl⟩ := exists_int_of_cexp_neg_two_pi_I_mul_eq_one h
+  obtain ⟨m, rfl⟩ := Complex.exp_neg_two_pi_mul_I_mul_eq_one_iff.mp h
   have h1 : (j : ℝ) < m := by simpa using hz.1
   have h2 : (m : ℝ) < (j + 1 : ℤ) := by push_cast; simpa using hz.2
   have : j < m := by exact_mod_cast h1
@@ -200,6 +175,13 @@ private theorem cauchy_rect_abelPlanaUpper {f : ℂ → ℂ} {a n : ℤ} {x₁ x
     Complex.integral_boundary_rect_eq_zero_of_continuousOn_of_differentiableOn
       (abelPlanaUpper f) z₀ w₀ hcont_r hdiff_r
 
+/-- Continuity of `x ↦ abelPlanaUpper f (x + ε * I)` across `[a, n]` for `ε ≠ 0`. -/
+private theorem continuousOn_abelPlanaUpper_add_mul_I {f : ℂ → ℂ} {a n : ℤ} {ε : ℝ}
+    (hε0 : ε ≠ 0) (hcont : ContinuousOn f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) :
+    ContinuousOn (fun x : ℝ => abelPlanaUpper f (x + ε * I)) (Icc (a : ℝ) n) :=
+  (hcont.comp (by fun_prop) fun x hx => ⟨by simp [hx.1], by simp [hx.2]⟩).div (by fun_prop)
+    fun _ _ => sub_ne_zero.mpr (cexp_neg_two_pi_I_mul_ne_one_of_im_ne_zero (by simp [hε0]))
+
 /-- Rewriting a horizontal unit segment `∫_{j}^{j+1} g₊(x + iε) dx` via Cauchy's theorem on the
 pole-free bottom rectangle `[j + ε, j + 1 - ε] × [0, ε]`. -/
 private theorem upper_unit_strip_eq {f : ℂ → ℂ} {a n j : ℤ} {ε : ℝ}
@@ -219,9 +201,7 @@ private theorem upper_unit_strip_eq {f : ℂ → ℂ} {a n j : ℤ} {ε : ℝ}
   simp only [Complex.ofReal_zero, zero_mul, add_zero] at hcauchy
   have hcont_line : ContinuousOn (fun x : ℝ => abelPlanaUpper f (x + ε * I))
       (Icc (j : ℝ) ((j : ℝ) + 1)) :=
-    (hcont.comp (by fun_prop) fun x hx => ⟨by simp; linarith [hx.1], by simp; linarith [hx.2]⟩).div
-      (by fun_prop) fun _ _ =>
-        sub_ne_zero.mpr (cexp_neg_two_pi_I_mul_ne_one_of_im_ne_zero (by simp [hε0.ne']))
+    (continuousOn_abelPlanaUpper_add_mul_I hε0.ne' hcont).mono (Icc_subset_Icc hja' hjn')
   have hint1 := (hcont_line.mono (Icc_subset_Icc le_rfl (by linarith))).intervalIntegrable_of_Icc
     (μ := volume) (by linarith : (j : ℝ) ≤ (j : ℝ) + ε)
   have hint2 := (hcont_line.mono (Icc_subset_Icc (by linarith)
@@ -267,9 +247,7 @@ private theorem upper_rect_identity {f : ℂ → ℂ} {a n : ℤ} {ε T : ℝ}
   have hcauchy := cauchy_rect_abelPlanaUpper le_rfl han' le_rfl hεT hf hcont fun z hz =>
     cexp_neg_two_pi_I_mul_ne_one_of_im_ne_zero (by linarith [hz.2.1])
   simp only [Complex.ofReal_intCast] at hcauchy
-  have hcont_line : ContinuousOn (fun x : ℝ => abelPlanaUpper f (x + ε * I)) (Icc (a : ℝ) n) :=
-    (hcont.comp (by fun_prop) fun x hx => ⟨by simp [hx.1], by simp [hx.2]⟩).div (by fun_prop)
-      fun _ _ => sub_ne_zero.mpr (cexp_neg_two_pi_I_mul_ne_one_of_im_ne_zero (by simp [hε0.ne']))
+  have hcont_line := continuousOn_abelPlanaUpper_add_mul_I hε0.ne' hcont
   have hsum_units :
       (∑ j ∈ Finset.Ico a n, ∫ x in (j : ℝ)..((j : ℝ) + 1), abelPlanaUpper f (x + ε * I)) =
         (∑ j ∈ Finset.Ico a n, ∫ x in ((j : ℝ) + ε)..((j : ℝ) + 1 - ε), abelPlanaUpper f x) +
@@ -290,7 +268,7 @@ private theorem upper_rect_identity {f : ℂ → ℂ} {a n : ℤ} {ε T : ℝ}
   have hvert : ∀ k : ℤ, (∫ y in ε..T, abelPlanaUpper f (k + y * I)) =
       ∫ y in ε..T, f (k + y * I) / (Real.exp (2 * π * y) - 1) :=
     fun k => integral_congr fun y _ => by
-      dsimp only [abelPlanaUpper]; rw [cexp_neg_two_pi_I_mul_int_add_mul_I]
+      dsimp only [abelPlanaUpper]; rw [Complex.exp_neg_two_pi_mul_I_mul_intCast_add_mul_I]
   rw [hvert a, hvert n, hsplit, hsum_units] at hcauchy
   linear_combination hcauchy
 
@@ -349,27 +327,31 @@ private theorem tendsto_integral_abelPlanaUpper_atTop {f : ℂ → ℂ} {a n : �
   rw [div_mul_eq_mul_div]
   exact (div_lt_iff₀ hlen_pos).mpr (by linarith)
 
+/-- Evaluates a segment integral of the singular model `c / (-2πi * (z₀ + t d))` multiplied by
+the segment direction `d`, factoring out `c / (-2πi)` and applying
+`integral_inv_linear_mul_eq_log_sub`. -/
+private theorem mul_integral_div_neg_two_pi_I_mul_linear (c d u z₀ : ℂ) {a₀ b₀ : ℝ}
+    (hslit : ∀ t ∈ Set.uIcc a₀ b₀, u * (z₀ + (t : ℂ) * d) ∈ Complex.slitPlane) :
+    d * (∫ t in a₀..b₀, c / (-2 * π * I * (z₀ + (t : ℂ) * d))) =
+      (c / (-2 * π * I)) *
+        (Complex.log (u * (z₀ + (b₀ : ℂ) * d)) - Complex.log (u * (z₀ + (a₀ : ℂ) * d))) := by
+  have hrew : d * (∫ t in a₀..b₀, c / (-2 * π * I * (z₀ + (t : ℂ) * d))) =
+      (c / (-2 * π * I)) * ∫ t in a₀..b₀, (z₀ + (t : ℂ) * d)⁻¹ * d := by
+    rw [← intervalIntegral.integral_const_mul, ← intervalIntegral.integral_const_mul]
+    exact integral_congr fun _ _ => by rw [div_mul_eq_div_div, div_eq_mul_inv]; ring
+  rw [hrew, integral_inv_linear_mul_eq_log_sub hslit]
+
 /-- Exact evaluation of the singular model for the upper-right quarter-box indent. -/
 private theorem upperRightCap_model (c : ℂ) {ε : ℝ} (hε : 0 < ε) :
     (∫ t in (0 : ℝ)..ε, c / (-2 * π * I * ((t : ℂ) + ε * I))) -
       I * (∫ y in (0 : ℝ)..ε, c / (-2 * π * I * ((ε : ℂ) + y * I))) = c / 4 := by
-  have h1 := integral_inv_linear_mul_eq_log_sub (u := 1) (z₀ := (ε : ℂ) * I) (d := 1)
-    (a₀ := 0) (b₀ := ε) fun t _ =>
-      Complex.mem_slitPlane_iff.mpr (Or.inr (by simp [hε.ne']))
+  have h1 := mul_integral_div_neg_two_pi_I_mul_linear c 1 1 ((ε : ℂ) * I) (a₀ := 0) (b₀ := ε)
+    fun t _ => Complex.mem_slitPlane_iff.mpr (Or.inr (by simp [hε.ne']))
   simp only [one_mul, mul_one, ofReal_zero, add_comm ((ε : ℂ) * I), zero_add] at h1
-  have h2 := integral_inv_linear_mul_eq_log_sub (u := 1) (z₀ := ε) (d := I)
-    (a₀ := 0) (b₀ := ε) fun y _ =>
-      Complex.mem_slitPlane_iff.mpr (Or.inl (by simp [hε]))
+  have h2 := mul_integral_div_neg_two_pi_I_mul_linear c I 1 ε (a₀ := 0) (b₀ := ε)
+    fun y _ => Complex.mem_slitPlane_iff.mpr (Or.inl (by simp [hε]))
   simp only [one_mul, ofReal_zero, zero_mul, add_zero] at h2
-  have hrew1 : (∫ t in (0 : ℝ)..ε, c / (-2 * π * I * ((t : ℂ) + ε * I))) =
-      (c / (-2 * π * I)) * ∫ t in (0 : ℝ)..ε, ((t : ℂ) + ε * I)⁻¹ := by
-    rw [← intervalIntegral.integral_const_mul]
-    exact integral_congr fun _ _ => by rw [div_mul_eq_div_div, div_eq_mul_inv]
-  have hrew2 : I * (∫ y in (0 : ℝ)..ε, c / (-2 * π * I * ((ε : ℂ) + y * I))) =
-      (c / (-2 * π * I)) * ∫ y in (0 : ℝ)..ε, ((ε : ℂ) + y * I)⁻¹ * I := by
-    rw [← intervalIntegral.integral_const_mul, ← intervalIntegral.integral_const_mul]
-    exact integral_congr fun _ _ => by rw [div_mul_eq_div_div, div_eq_mul_inv]; ring
-  rw [hrew1, hrew2, h1, h2, ← mul_sub, sub_sub_sub_cancel_left,
+  rw [h1, h2, ← mul_sub, sub_sub_sub_cancel_left,
     Complex.log_ofReal_mul hε I_ne_zero, Complex.ofReal_log hε.le, Complex.log_I,
     sub_add_cancel_left]
   have : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
@@ -387,26 +369,17 @@ private theorem upperLeftCap_model (c : ℂ) {ε : ℝ} (hε : 0 < ε) :
   have hrot2 : ∀ y : ℝ, -I * (-(ε : ℂ) + (y : ℂ) * I) = (y : ℂ) + (ε : ℂ) * I := fun y => by
     calc -I * (-(ε : ℂ) + (y : ℂ) * I) = -(y : ℂ) * (I * I) + (ε : ℂ) * I := by ring
       _ = (y : ℂ) + (ε : ℂ) * I := by rw [I_mul_I]; ring
-  have h1 := integral_inv_linear_mul_eq_log_sub (u := -I) (z₀ := (ε : ℂ) * I) (d := 1)
-    (a₀ := -ε) (b₀ := 0) fun t _ =>
-      Complex.mem_slitPlane_iff.mpr (Or.inl (by rw [hrot1]; simp [hε]))
+  have h1 := mul_integral_div_neg_two_pi_I_mul_linear c 1 (-I) ((ε : ℂ) * I) (a₀ := -ε) (b₀ := 0)
+    fun t _ => Complex.mem_slitPlane_iff.mpr (Or.inl (by rw [hrot1]; simp [hε]))
+  have hlog : (ε : ℂ) - -(ε : ℂ) * I = (ε : ℂ) + ε * I := by ring
   rw [hrot1, hrot1] at h1
-  simp only [mul_one, ofReal_zero, zero_mul, sub_zero, ofReal_neg, neg_mul, sub_neg_eq_add,
+  simp only [one_mul, mul_one, ofReal_zero, zero_mul, sub_zero, ofReal_neg, hlog,
     add_comm ((ε : ℂ) * I)] at h1
-  have h2 := integral_inv_linear_mul_eq_log_sub (u := -I) (z₀ := -ε) (d := I)
-    (a₀ := 0) (b₀ := ε) fun y _ =>
-      Complex.mem_slitPlane_iff.mpr (Or.inr (by rw [hrot2]; simp [hε.ne']))
+  have h2 := mul_integral_div_neg_two_pi_I_mul_linear c I (-I) (-ε) (a₀ := 0) (b₀ := ε)
+    fun y _ => Complex.mem_slitPlane_iff.mpr (Or.inr (by rw [hrot2]; simp [hε.ne']))
   rw [hrot2, hrot2] at h2
   simp only [ofReal_zero, zero_add] at h2
-  have hrew1 : (∫ t in (-ε)..(0 : ℝ), c / (-2 * π * I * ((t : ℂ) + ε * I))) =
-      (c / (-2 * π * I)) * ∫ t in (-ε)..(0 : ℝ), ((t : ℂ) + ε * I)⁻¹ := by
-    rw [← intervalIntegral.integral_const_mul]
-    exact integral_congr fun _ _ => by rw [div_mul_eq_div_div, div_eq_mul_inv]
-  have hrew2 : I * (∫ y in (0 : ℝ)..ε, c / (-2 * π * I * (-(ε : ℂ) + y * I))) =
-      (c / (-2 * π * I)) * ∫ y in (0 : ℝ)..ε, (-(ε : ℂ) + y * I)⁻¹ * I := by
-    rw [← intervalIntegral.integral_const_mul, ← intervalIntegral.integral_const_mul]
-    exact integral_congr fun _ _ => by rw [div_mul_eq_div_div, div_eq_mul_inv]; ring
-  rw [hrew1, hrew2, h1, h2, ← mul_add, sub_add_sub_cancel,
+  rw [h1, h2, ← mul_add, sub_add_sub_cancel,
     Complex.log_ofReal_mul hε I_ne_zero, Complex.ofReal_log hε.le, Complex.log_I,
     sub_add_cancel_left]
   have : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
@@ -446,7 +419,7 @@ private theorem tendsto_norm_mul_abelPlanaUpper_sub {f : ℂ → ℂ} {S : Set �
   refine hprod.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with w hw
   dsimp only [abelPlanaUpper]
-  rw [cexp_neg_two_pi_I_mul_int_add, ← norm_mul, mul_sub]
+  rw [add_comm (k : ℂ), Complex.exp_neg_two_pi_mul_I_mul_add_intCast, ← norm_mul, mul_sub]
   congr 1
   have hw0 : w ≠ 0 := hw.1
   rcases em (cexp (-2 * π * I * w) - 1 = 0) with h0 | h0
@@ -456,9 +429,9 @@ private theorem tendsto_norm_mul_abelPlanaUpper_sub {f : ℂ → ℂ} {S : Set �
 /-- If `0 < ‖w‖ < 1`, `w` cannot be a nonzero integer, so `e^{-2πi(k + w)} ≠ 1`. -/
 private theorem cexp_neg_two_pi_I_mul_int_add_ne_one_of_norm_lt_one (k : ℤ) {w : ℂ}
     (hw0 : 0 < ‖w‖) (hw1 : ‖w‖ < 1) : cexp (-2 * π * I * ((k : ℂ) + w)) ≠ 1 := by
-  rw [cexp_neg_two_pi_I_mul_int_add]
+  rw [add_comm (k : ℂ), Complex.exp_neg_two_pi_mul_I_mul_add_intCast]
   intro h
-  obtain ⟨m, rfl⟩ := exists_int_of_cexp_neg_two_pi_I_mul_eq_one h
+  obtain ⟨m, rfl⟩ := Complex.exp_neg_two_pi_mul_I_mul_eq_one_iff.mp h
   rw [Complex.norm_intCast] at hw0 hw1
   have : (0 : ℤ) < |m| := by exact_mod_cast hw0
   have : |m| < (1 : ℤ) := by exact_mod_cast hw1
@@ -580,32 +553,15 @@ private theorem tendsto_neg_sum_integral_Ico {f : ℂ → ℂ} {a n : ℤ} (han 
     Tendsto
       (fun ε : ℝ => - ∑ j ∈ Finset.Ico a n, ∫ x in ((j : ℝ) + ε)..((j : ℝ) + 1 - ε), f x)
       (𝓝[>] 0) (𝓝 (- ∫ x in (a : ℝ)..n, f x)) := by
-  have hcont_real : ContinuousOn (fun x : ℝ => f x) (Icc (a : ℝ) n) :=
-    hcont.comp Complex.continuous_ofReal.continuousOn fun x hx => ⟨by simp [hx.1], by simp [hx.2]⟩
-  have hsplit := (TauCeti.intervalIntegral.sum_integral_adjacent_intervals_Ico_int (μ := volume)
-    han.le (fun j : ℤ => (j : ℝ)) fun j hj => by
-      obtain ⟨hja, hjn⟩ := Finset.mem_Ico.mp hj
-      simpa [Int.cast_add, Int.cast_one] using
-        (hcont_real.mono (Icc_subset_Icc (by exact_mod_cast hja)
-          (by exact_mod_cast hjn))).intervalIntegrable_of_Icc (by linarith)).symm
-  simp only [Int.cast_add, Int.cast_one] at hsplit
-  rw [hsplit]
-  refine (tendsto_finsetSum _ fun j hj => ?_).neg
-  obtain ⟨hja, hjn⟩ := Finset.mem_Ico.mp hj
-  have hint_j : IntervalIntegrable (fun x : ℝ => f x) volume (j : ℝ) ((j : ℝ) + 1) :=
-    (hcont_real.mono (Icc_subset_Icc (by exact_mod_cast hja)
-      (by exact_mod_cast hjn))).intervalIntegrable_of_Icc (by linarith)
+  have han' : (a : ℝ) ≤ n := by exact_mod_cast han.le
+  have hint : IntervalIntegrable (fun x : ℝ => f x) volume (a : ℝ) n :=
+    (hcont.comp Complex.continuous_ofReal.continuousOn
+      fun x hx => ⟨by simp [hx.1], by simp [hx.2]⟩).intervalIntegrable_of_Icc han'
   have h0 : Tendsto (fun ε : ℝ => ε) (𝓝[>] 0) (𝓝 0) :=
     tendsto_id.mono_left nhdsWithin_le_nhds
-  refine (TauCeti.intervalIntegral.continuousOn_integral_prod hint_j
-    ((j : ℝ), (j : ℝ) + 1) ⟨left_mem_uIcc, right_mem_uIcc⟩).tendsto.comp
-      (tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within
-        (fun ε : ℝ => ((j : ℝ) + ε, (j : ℝ) + 1 - ε)) ?_ ?_)
-  · simpa using (tendsto_const_nhds (x := (j : ℝ)).add h0).prodMk_nhds
-      (tendsto_const_nhds (x := (j : ℝ) + 1).sub h0)
-  · filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with ε hε
-    rw [uIcc_of_le (by linarith : (j : ℝ) ≤ (j : ℝ) + 1)]
-    exact ⟨⟨by linarith [hε.1], by linarith [hε.2]⟩, ⟨by linarith [hε.2], by linarith [hε.1]⟩⟩
+  have hev : ∀ᶠ ε in 𝓝[>] (0 : ℝ), 0 ≤ ε :=
+    eventually_nhdsWithin_of_forall fun _ h => le_of_lt h
+  exact (TauCeti.intervalIntegral.tendsto_sum_integral_Ico_add_sub han.le hint hev hev h0 h0).neg
 
 /-! ### General complex Abel–Plana formula and Schwarz-symmetric specialization -/
 
@@ -888,38 +844,15 @@ theorem sum_Icc_eq_abelPlana {f : ℂ → ℂ} {a n : ℤ} (han : a ≤ n)
 /-! ### Growth criterion -/
 
 /-- Sufficient growth condition for the Abel–Plana formula: if `‖f z‖ ≤ C * (1 + |z.im|) ^ p *
-exp (c * |z.im|)` on the closed strip `{a ≤ z.re ≤ b}` with `c < 2 * π`, then
-`f z * exp (-(2 * π * |z.im|)) → 0` as `|z.im| → ∞` uniformly in the strip. -/
+exp (c * |z.im|)` holds eventually as `|z.im| → ∞` uniformly on the closed strip `{a ≤ z.re ≤ b}`
+with `c < 2 * π`, then `f z * exp (-(2 * π * |z.im|)) → 0` as `|z.im| → ∞` uniformly in the
+strip. -/
 theorem tendsto_mul_exp_neg_two_pi_abs_im_of_norm_le {f : ℂ → ℂ} {a b C p c : ℝ}
     (hc : c < 2 * π)
-    (hbound : ∀ z : ℂ, a ≤ z.re → z.re ≤ b →
+    (hbound : ∀ᶠ z in comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b},
       ‖f z‖ ≤ C * (1 + |z.im|) ^ p * Real.exp (c * |z.im|)) :
     Tendsto (fun z => f z * Real.exp (-(2 * π * |z.im|)))
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b}) (𝓝 0) := by
-  have hd : 0 < 2 * π - c := sub_pos.mpr hc
-  have hdec : Tendsto (fun t : ℝ => |C| * (t ^ p * Real.exp (-(2 * π - c) * t))) atTop (𝓝 0) := by
-    simpa using (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero p (2 * π - c) hd).const_mul |C|
-  have hmaj : Tendsto (fun z : ℂ =>
-      |C| * ((1 + |z.im|) ^ p * Real.exp (-(2 * π - c) * (1 + |z.im|))) * Real.exp (2 * π - c))
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b}) (𝓝 0) := by
-    simpa [Function.comp_def] using
-      (((hdec.comp (tendsto_atTop_add_const_left atTop 1 tendsto_id)).mul_const
-        (Real.exp (2 * π - c))).comp (tendsto_comap.mono_left inf_le_left))
-  refine tendsto_zero_iff_norm_tendsto_zero.mpr (squeeze_zero'
-    (Eventually.of_forall fun _ => norm_nonneg _) ?_ hmaj)
-  filter_upwards [mem_inf_of_right (mem_principal_self {z : ℂ | a ≤ z.re ∧ z.re ≤ b})] with z hz
-  rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le]
-  have hexp : Real.exp (c * |z.im|) * Real.exp (-(2 * π * |z.im|)) =
-      Real.exp (-(2 * π - c) * (1 + |z.im|)) * Real.exp (2 * π - c) := by
-    rw [← Real.exp_add, ← Real.exp_add]; congr 1; ring
-  calc
-    ‖f z‖ * Real.exp (-(2 * π * |z.im|))
-      ≤ (C * (1 + |z.im|) ^ p * Real.exp (c * |z.im|)) * Real.exp (-(2 * π * |z.im|)) := by
-        gcongr; exact hbound z hz.1 hz.2
-    _ ≤ (|C| * (1 + |z.im|) ^ p * Real.exp (c * |z.im|)) * Real.exp (-(2 * π * |z.im|)) := by
-        gcongr; exact le_abs_self C
-    _ = |C| * ((1 + |z.im|) ^ p * Real.exp (-(2 * π - c) * (1 + |z.im|))) *
-          Real.exp (2 * π - c) := by
-        linear_combination |C| * (1 + |z.im|) ^ p * hexp
+      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b}) (𝓝 0) :=
+  tendsto_mul_exp_neg_mul_abs_im_of_norm_le hc hbound
 
 end TauCeti

@@ -18,6 +18,8 @@ estimates at division points to real inequalities.
 
 For real `t`, the complex number `1 + t ^ 2` is nonzero (`Complex.one_add_ofReal_sq_ne_zero`), as
 needed to clear the denominator of kernels such as `t / (1 + t ^ 2)`.
+
+Even natural powers of `I` simplify via `Complex.I_pow_two_mul`: `I ^ (2 * k) = (-1 : ℂ) ^ k`.
 -/
 
 public section
@@ -33,5 +35,10 @@ lemma im_ofReal_mul_add_ofReal_div_sub_ofReal_mul (a b d c : ℝ) (z : ℂ) :
 /-- For real `t`, the complex number `1 + t ^ 2` is nonzero. -/
 theorem one_add_ofReal_sq_ne_zero (t : ℝ) : 1 + (t : ℂ) ^ 2 ≠ 0 := by
   exact_mod_cast (by positivity : (1 + t ^ 2 : ℝ) ≠ 0)
+
+/-- Even natural powers of `I` satisfy `I ^ (2 * k) = (-1 : ℂ) ^ k`. -/
+@[simp]
+theorem I_pow_two_mul (k : ℕ) : I ^ (2 * k) = (-1 : ℂ) ^ k := by
+  rw [pow_mul, I_sq]
 
 end Complex

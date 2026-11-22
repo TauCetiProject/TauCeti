@@ -41,6 +41,9 @@ used to identify weak derivatives on an interval with ordinary primitives.
 * `TauCeti.intervalIntegral.continuousOn_integral_prod`: the interval integral
   `(s, t) ↦ ∫ x in s..t, f x ∂μ` is jointly continuous in both endpoints on
   `uIcc a b ×ˢ uIcc a b` whenever `f` is interval integrable on `a..b` and `μ` has no atoms.
+* `TauCeti.intervalIntegral.tendsto_sum_integral_Ico_add_sub`: for `a ≤ n` and `f` interval
+  integrable on `a..n`, summing `∫ x in (j + δ₁ i)..(j + 1 - δ₂ i), f x ∂μ` over `j ∈ [a, n)`
+  converges to `∫ x in a..n, f x ∂μ` as `δ₁, δ₂ → 0` from the right.
 * `TauCeti.intervalIntegral.lipschitzWith_primitive`: the primitive of a locally integrable
   function bounded almost everywhere by `K` is `K`-Lipschitz.
 * `TauCeti.intervalIntegral.integrableOn_primitive_of_integrableOn_Ioo` and
@@ -72,7 +75,7 @@ used to identify weak derivatives on an interval with ordinary primitives.
 public section
 
 open MeasureTheory Set Filter
-open scoped Interval
+open scoped Interval Topology
 
 namespace TauCeti
 
@@ -125,6 +128,43 @@ theorem continuousOn_integral_prod {μ : Measure ℝ} [NullSingletonClass μ]
   exact (_root_.intervalIntegral.integral_interval_sub_left
     (hf.mono_set (uIcc_subset_uIcc left_mem_uIcc hp2))
     (hf.mono_set (uIcc_subset_uIcc left_mem_uIcc hp1))).symm
+
+/-- For integers `a ≤ n`, a function `f` interval integrable on `a..n`, and nonnegative
+endpoint perturbations `δ₁, δ₂ → 0`, the sum of integrals `∫ x in (j + δ₁ i)..(j + 1 - δ₂ i), f x`
+over `j ∈ Finset.Ico a n` converges to `∫ x in a..n, f x`. -/
+theorem tendsto_sum_integral_Ico_add_sub {μ : Measure ℝ} [NullSingletonClass μ]
+    {a n : ℤ} (han : a ≤ n) (hf : IntervalIntegrable f μ a n) {ι : Type*} {l : Filter ι}
+    {δ₁ δ₂ : ι → ℝ} (hδ₁0 : ∀ᶠ i in l, 0 ≤ δ₁ i) (hδ₂0 : ∀ᶠ i in l, 0 ≤ δ₂ i)
+    (hδ₁ : Tendsto δ₁ l (𝓝 0)) (hδ₂ : Tendsto δ₂ l (𝓝 0)) :
+    Tendsto
+      (fun i => ∑ j ∈ Finset.Ico a n, ∫ x in ((j : ℝ) + δ₁ i)..((j : ℝ) + 1 - δ₂ i), f x ∂μ)
+      l (𝓝 (∫ x in (a : ℝ)..n, f x ∂μ)) := by
+  have hsplit := (sum_integral_adjacent_intervals_Ico_int (μ := μ) han (fun j : ℤ => (j : ℝ))
+    fun j hj => by
+      obtain ⟨hja, hjn⟩ := Finset.mem_Ico.mp hj
+      have hsub : uIcc (j : ℝ) ((j + 1 : ℤ) : ℝ) ⊆ uIcc (a : ℝ) (n : ℝ) := by
+        rw [uIcc_of_le (by push_cast; linarith), uIcc_of_le (by exact_mod_cast han)]
+        exact Icc_subset_Icc (by exact_mod_cast hja) (by exact_mod_cast hjn)
+      exact hf.mono_set hsub).symm
+  simp only [Int.cast_add, Int.cast_one] at hsplit
+  rw [hsplit]
+  refine tendsto_finsetSum _ fun j hj => ?_
+  obtain ⟨hja, hjn⟩ := Finset.mem_Ico.mp hj
+  have hint_j : IntervalIntegrable f μ (j : ℝ) ((j : ℝ) + 1) := by
+    have hsub : uIcc (j : ℝ) ((j : ℝ) + 1) ⊆ uIcc (a : ℝ) (n : ℝ) := by
+      rw [uIcc_of_le (by linarith : (j : ℝ) ≤ (j : ℝ) + 1), uIcc_of_le (by exact_mod_cast han)]
+      exact Icc_subset_Icc (by exact_mod_cast hja) (by exact_mod_cast hjn)
+    exact hf.mono_set hsub
+  refine (continuousOn_integral_prod hint_j ((j : ℝ), (j : ℝ) + 1)
+    ⟨left_mem_uIcc, right_mem_uIcc⟩).tendsto.comp
+      (tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within
+        (fun i => ((j : ℝ) + δ₁ i, (j : ℝ) + 1 - δ₂ i)) ?_ ?_)
+  · simpa using (tendsto_const_nhds (x := (j : ℝ)).add hδ₁).prodMk_nhds
+      (tendsto_const_nhds (x := (j : ℝ) + 1).sub hδ₂)
+  · filter_upwards [hδ₁0, hδ₂0, hδ₁.eventually (Iio_mem_nhds zero_lt_one),
+      hδ₂.eventually (Iio_mem_nhds zero_lt_one)] with i hi10 hi20 hi11 hi21
+    rw [uIcc_of_le (by linarith : (j : ℝ) ≤ (j : ℝ) + 1)]
+    exact ⟨⟨by linarith, by linarith⟩, ⟨by linarith, by linarith⟩⟩
 
 /-- The primitive `t ↦ ∫ s in t₀..t, f s ∂μ` of a function integrable on `(a, b)`, based at a point
 `t₀` of `[a, b]`, lies in every `Lᵖ((a, b), ν)` for any measure `ν` that is finite on compact sets:

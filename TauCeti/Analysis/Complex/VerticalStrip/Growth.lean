@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Order.Filter.Defs
+public import Mathlib.Topology.Defs.Filter
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -20,7 +23,9 @@ The property is stable under addition, finite sums, multiplication and affine pu
 `s ↦ a * s + b` with a real dilation `a : ℝ` (whereas a non-real dilation rotates vertical strips
 into horizontal ones, so `exp (-I * s)` fails to have vertical-strip growth). Every function
 bounded on each closed vertical strip has it, as does the identity function. Bounds extend to
-degenerate strips, and real exponential functions provide nonconstant examples. These facts allow
+degenerate strips, and real exponential functions provide nonconstant examples. Any function with
+vertical-strip growth decays faster than `exp (r * |Im s|)` for every `r > 0` uniformly on closed
+strips (`TauCeti.HasVerticalStripGrowth.tendsto_mul_exp_neg_mul_abs_im`). These facts allow
 growth estimates for completed and pole-cleared L-functions to be assembled from their factors.
 -/
 
@@ -283,5 +288,61 @@ theorem not_hasVerticalStripGrowth_cexp_neg_I_mul :
   simp only [Complex.mul_im, Complex.I_re, Complex.ofReal_im, mul_zero, Complex.I_im,
     Complex.ofReal_re, one_mul, zero_add, abs_of_pos ht0] at hs
   linarith
+
+open Filter in
+open scoped Topology in
+/-- Any function bounded eventually for large `|Im z|` on `{a ≤ z.re ≤ b}` by
+`C * (1 + |z.im|) ^ p * exp (c * |z.im|)` with `c < r` satisfies
+`f z * exp (-(r * |z.im|)) → 0` as `|z.im| → ∞` uniformly in the strip. -/
+theorem tendsto_mul_exp_neg_mul_abs_im_of_norm_le {f : ℂ → ℂ} {a b C p c r : ℝ}
+    (hc : c < r)
+    (hbound : ∀ᶠ z in comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b},
+      ‖f z‖ ≤ C * (1 + |z.im|) ^ p * Real.exp (c * |z.im|)) :
+    Tendsto (fun z => f z * Real.exp (-(r * |z.im|)))
+      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b}) (𝓝 0) := by
+  have hd : 0 < r - c := sub_pos.mpr hc
+  have hdec : Tendsto (fun t : ℝ => |C| * (t ^ p * Real.exp (-(r - c) * t))) atTop (𝓝 0) := by
+    simpa using (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero p (r - c) hd).const_mul |C|
+  have hmaj : Tendsto (fun z : ℂ =>
+      |C| * ((1 + |z.im|) ^ p * Real.exp (-(r - c) * (1 + |z.im|))) * Real.exp (r - c))
+      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b}) (𝓝 0) := by
+    simpa [Function.comp_def] using
+      (((hdec.comp (tendsto_atTop_add_const_left atTop 1 tendsto_id)).mul_const
+        (Real.exp (r - c))).comp (tendsto_comap.mono_left inf_le_left))
+  refine tendsto_zero_iff_norm_tendsto_zero.mpr (squeeze_zero'
+    (Eventually.of_forall fun _ => norm_nonneg _) ?_ hmaj)
+  filter_upwards [hbound] with z hz
+  rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le]
+  have hexp : Real.exp (c * |z.im|) * Real.exp (-(r * |z.im|)) =
+      Real.exp (-(r - c) * (1 + |z.im|)) * Real.exp (r - c) := by
+    rw [← Real.exp_add, ← Real.exp_add]; congr 1; ring
+  calc
+    ‖f z‖ * Real.exp (-(r * |z.im|))
+      ≤ (C * (1 + |z.im|) ^ p * Real.exp (c * |z.im|)) * Real.exp (-(r * |z.im|)) := by
+        gcongr
+    _ ≤ (|C| * (1 + |z.im|) ^ p * Real.exp (c * |z.im|)) * Real.exp (-(r * |z.im|)) := by
+        gcongr; exact le_abs_self C
+    _ = |C| * ((1 + |z.im|) ^ p * Real.exp (-(r - c) * (1 + |z.im|))) *
+          Real.exp (r - c) := by
+        linear_combination |C| * (1 + |z.im|) ^ p * hexp
+
+open Filter in
+open scoped Topology in
+/-- Any function with `HasVerticalStripGrowth` decays faster than `exp (r * |Im z|)` for any
+positive rate `r > 0`, uniformly on every closed vertical strip `a ≤ z.re ≤ b`. -/
+theorem HasVerticalStripGrowth.tendsto_mul_exp_neg_mul_abs_im {f : ℂ → ℂ}
+    (hf : HasVerticalStripGrowth f) {r : ℝ} (hr : 0 < r) (a b : ℝ) :
+    Tendsto (fun z : ℂ => f z * Real.exp (-(r * |z.im|)))
+      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b}) (𝓝 0) := by
+  rcases le_or_gt a b with hab | hab
+  · obtain ⟨C, _, p, _, T₀, _, hbound⟩ := hf.exists_bound hab
+    refine tendsto_mul_exp_neg_mul_abs_im_of_norm_le (C := C) (p := p) hr ?_
+    rw [eventually_inf_principal, eventually_comap, eventually_atTop]
+    refine ⟨T₀, fun t ht z hzt hz => ?_⟩
+    simpa only [zero_mul, Real.exp_zero, mul_one] using hbound z hz (hzt ▸ ht)
+  · have hemp : {z : ℂ | a ≤ z.re ∧ z.re ≤ b} = ∅ := by
+      ext z; simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_and, not_le]
+      intro h; linarith
+    simp [hemp]
 
 end TauCeti

@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.TangentCone.Defs
 public import Mathlib.Analysis.Complex.Hadamard
 public import Mathlib.Analysis.Complex.HasPrimitives
 import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.RCLike.TangentCone
+import TauCeti.Analysis.Calculus.IteratedDeriv.Within
 import TauCeti.Analysis.Complex.HasPrimitives.Basic
 
 /-!
@@ -18,9 +21,11 @@ import TauCeti.Analysis.Complex.HasPrimitives.Basic
 Mathlib's three-lines theorem is stated on the open strip `verticalStrip a b` and the closed
 strip `verticalClosedStrip a b`, the preimages of `Ioo a b` and `Icc a b` under `Complex.re`.
 This file records their membership criteria, behavior under reflection, convexity, closure, unique
-differentiability (`uniqueDiffOn_verticalClosedStrip`), the exponential gauge multiplier
-`scaleFactor` normalizing strip boundary bounds, and holomorphic primitives `Complex.wedgeIntegral`
-for functions satisfying `DiffContOnCl` on a vertical strip (specializing
+differentiability (`uniqueDiffOn_verticalClosedStrip`), vanishing of imaginary parts of iterated
+derivatives along the real segment for functions real-valued on `[a, b]`
+(`ContDiffOn.im_iteratedDerivWithin_verticalClosedStrip_eq_zero`), the exponential gauge
+multiplier `scaleFactor` normalizing strip boundary bounds, and holomorphic primitives
+`Complex.wedgeIntegral` for functions satisfying `DiffContOnCl` on a vertical strip (specializing
 `TauCeti.Analysis.Complex.HasPrimitives.Basic` to `verticalClosedStrip a b = Icc a b ×ℂ univ`),
 and the Cauchy rectangle contour-shift identity `DiffContOnCl.intervalIntegral_add_mul_I_eq`
 equating vertical line integrals of vertically periodic holomorphic strip functions.
@@ -39,6 +44,11 @@ variable {a b : ℝ} {z : ℂ}
 
 @[simp] theorem mem_verticalClosedStrip_iff : z ∈ verticalClosedStrip a b ↔ z.re ∈ Icc a b :=
   Iff.rfl
+
+/-- The closed vertical strip `verticalClosedStrip a b` as a set comprehension. -/
+theorem verticalClosedStrip_eq_setOf (a b : ℝ) :
+    verticalClosedStrip a b = {z : ℂ | a ≤ z.re ∧ z.re ≤ b} := by
+  ext z; exact mem_verticalClosedStrip_iff
 
 /-- Reflection by `z ↦ w - z` reverses the real endpoints of an open vertical strip. -/
 theorem sub_mem_verticalStrip_iff (w z : ℂ) :
@@ -98,6 +108,30 @@ theorem uniqueDiffOn_verticalClosedStrip (hab : a < b) :
   refine uniqueDiffOn_convex_of_isRCLikeNormedField hconv ⟨(((a + b) / 2 : ℝ) : ℂ), hsub ?_⟩
   simp only [mem_verticalStrip_iff, mem_Ioo, ofReal_re]
   constructor <;> linarith
+
+end TauCeti.Complex.HadamardThreeLines
+
+/-- If `f : ℂ → ℂ` is `C^n` on the closed vertical strip `verticalClosedStrip a b` (`a < b`)
+and real-valued on `[a, b]`, then every iterated derivative
+`iteratedDerivWithin k f (verticalClosedStrip a b) c` (`k ≤ n`, `c ∈ [a, b]`) has vanishing
+imaginary part. -/
+theorem ContDiffOn.im_iteratedDerivWithin_verticalClosedStrip_eq_zero {f : ℂ → ℂ} {a b c : ℝ}
+    {n : WithTop ℕ∞} {k : ℕ} (hf : ContDiffOn ℂ n f (verticalClosedStrip a b))
+    (hab : a < b) (hc : c ∈ Icc a b) (hk : (k : WithTop ℕ∞) ≤ n)
+    (hreal : ∀ x ∈ Icc a b, (f x).im = 0) :
+    (iteratedDerivWithin k f (verticalClosedStrip a b) c).im = 0 := by
+  have huniqS : UniqueDiffOn ℂ (verticalClosedStrip a b) :=
+    TauCeti.Complex.HadamardThreeLines.uniqueDiffOn_verticalClosedStrip hab
+  have hmaps : MapsTo (fun t : ℝ => (0 : ℂ) + t • (1 : ℂ)) (Icc a b) (verticalClosedStrip a b) :=
+    fun t ht => by simp [TauCeti.Complex.HadamardThreeLines.mem_verticalClosedStrip_iff,
+      Complex.real_smul, ht]
+  simpa [Complex.real_smul] using
+    hf.map_pow_smul_iteratedDerivWithin_eq_zero huniqS (uniqueDiffOn_Icc hab) hmaps
+      Complex.imCLM (fun t ht => by simpa [Complex.real_smul] using hreal t ht) hk hc
+
+namespace TauCeti.Complex.HadamardThreeLines
+
+variable {a b : ℝ} {z : ℂ}
 
 section ScaleFactor
 
