@@ -13,6 +13,7 @@ import Mathlib.Algebra.Polynomial.Div
 import Mathlib.Algebra.Polynomial.Smeval
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.Algebra.Ring.SpectralIdempotent
+import TauCeti.Topology.Algebra.Algebra.Basic
 
 /-!
 # Riesz–Coleman projections and topological polynomial spectral splittings
@@ -231,24 +232,10 @@ theorem eq_inverse (hE : IsRieszColemanProjection u Q E) {w : M →L[R] M}
     _ = hE.inverse := by
         rw [hw, mul_sub (α := M →L[R] M), mul_one, hE.inverse_mul_eq_zero, sub_zero hE.inverse]
 
-omit [TauCeti.NormedRing.IsTate R] in
-private theorem aeval_C_mul_reverse (u : M →L[R] M) {c : R} (hc : IsUnit c) (Q : R[X]) :
-    Polynomial.aeval u (Polynomial.C c * Q).reverse = c • Polynomial.aeval u Q.reverse := by
-  rw [Polynomial.reverse_C_mul_of_isUnit hc, map_mul, Polynomial.aeval_C, Algebra.smul_def]
-
-private theorem smul_mem_closure_adjoin {u w : M →L[R] M}
-    (hw : w ∈ closure (Algebra.adjoin R {u} : Set (M →L[R] M))) (c : R) :
-    c • w ∈ closure (Algebra.adjoin R {u} : Set (M →L[R] M)) := by
-  have : IsTopologicalSemiring (M →L[R] M) := inferInstance
-  have hw' : w ∈ (Algebra.adjoin R {u}).topologicalClosure := by
-    rwa [← SetLike.mem_coe, Subalgebra.topologicalClosure_coe]
-  have hsmul := (Algebra.adjoin R {u}).topologicalClosure.smul_mem hw' c
-  rwa [← SetLike.mem_coe, Subalgebra.topologicalClosure_coe] at hsmul
-
 private theorem of_C_mul_aux (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
     ∃ hE' : IsRieszColemanProjection u (Polynomial.C c * Q) E,
       hE'.inverse = Ring.inverse c • hE.inverse := by
-  have haeval := aeval_C_mul_reverse u hc Q
+  have haeval := Polynomial.aeval_C_mul_reverse u hc Q
   have hcc : Ring.inverse c * c = 1 := Ring.inverse_mul_cancel _ hc
   have hinv₁ : Polynomial.aeval u (Polynomial.C c * Q).reverse * (Ring.inverse c • hE.inverse) =
       1 - E := by
@@ -264,7 +251,7 @@ private theorem of_C_mul_aux (hE : IsRieszColemanProjection u Q E) {c : R} (hc :
     ⟨hE.isIdempotentElem, hE.commute, hE.mem_closure_adjoin,
       by rw [haeval, smul_mul_assoc, hE.aeval_reverse_mul_eq_zero, smul_zero],
       ⟨Ring.inverse c • hE.inverse, hinv₁, hinv₂, hinv₃, hinv₄,
-        smul_mem_closure_adjoin hE.inverse_mem_closure_adjoin _⟩⟩
+        (Algebra.adjoin R {u}).smul_mem_closure hE.inverse_mem_closure_adjoin _⟩⟩
   exact ⟨hE', (hE'.eq_inverse hinv₁ hinv₃).symm⟩
 
 /-- Scaling `Q` by a unit scalar preserves Riesz–Coleman projections. -/
@@ -283,6 +270,7 @@ theorem iff_C_mul {c : R} (hc : IsUnit c) :
   simpa only [hQ] using h.of_C_mul (IsUnit.of_mul_eq_one _ hc')
 
 /-- Rescaling `Q` by a unit scalar `c` scales the complementary inverse by `Ring.inverse c`. -/
+@[simp]
 theorem inverse_of_C_mul (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
     (hE.of_C_mul hc).inverse = Ring.inverse c • hE.inverse :=
   (of_C_mul_aux hE hc).2

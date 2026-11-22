@@ -25,6 +25,8 @@ continuously complemented; the section is obtained by descending the complementa
 through the quotient.
 A continuous linear functional taking a nonzero value on a vector `u` splits the space as the
 product of the scalars and the kernel (`TauCeti.exists_homeomorph_prod_ker`).
+The restriction of an invariant endomorphism to a topologically complemented submodule factors
+through the complementary projection (`ContinuousLinearMap.restrict_eq_projectionOntoL_comp`).
 -/
 
 public section
@@ -80,6 +82,17 @@ end Submodule
 namespace ContinuousLinearMap
 
 open Topology
+
+/-- The restriction of an invariant endomorphism `u` to a topologically complemented submodule `p`
+factors as the projection onto `p` composed with `u` on `p.subtypeL`. -/
+theorem restrict_eq_projectionOntoL_comp {R M : Type*} [Ring R] [TopologicalSpace M]
+    [AddCommGroup M] [Module R M] (u : M →L[R] M) {p q : Submodule R M} (h : p.IsTopCompl q)
+    (hu_maps : ∀ x ∈ p, u x ∈ p) :
+    u.restrict hu_maps = (p.projectionOntoL q h).comp (u.comp p.subtypeL) := by
+  refine ext fun x ↦ Subtype.ext ?_
+  rw [coe_restrict_apply, comp_apply, comp_apply, Submodule.coe_subtypeL, Submodule.coe_subtype,
+    Submodule.coe_projectionOntoL_apply]
+  exact (Submodule.projectionL_apply_left h ⟨u x, hu_maps x x.property⟩).symm
 
 variable {R E F : Type*} [Ring R] [AddCommGroup E] [Module R E] [TopologicalSpace E]
   [AddCommGroup F] [Module R F] [TopologicalSpace F]

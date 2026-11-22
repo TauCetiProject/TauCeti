@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Module.Complement
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Resolvent
 public import TauCeti.Analysis.Normed.Operator.RowCompact.PrModule
 public import TauCeti.LinearAlgebra.Charpoly.Projective
@@ -204,9 +203,10 @@ theorem IsPrCompact.charPowerSeries_restrict_of_isTopCompl {u : M →L[R] M} (hu
     {p q : Submodule R M} (h : p.IsTopCompl q) (hu_maps : ∀ x ∈ p, u x ∈ p) :
     (u.restrict hu_maps).charPowerSeries = (u * p.projectionL q h).charPowerSeries := by
   have hPr : HasPr R p := hu.hasPr_source.of_isTopCompl h
+  have hop : (u.comp p.subtypeL).comp (p.projectionOntoL q h) = u * p.projectionL q h :=
+    ext fun x ↦ by simp [mul_def, Submodule.projectionL_apply]
   rw [u.restrict_eq_projectionOntoL_comp h hu_maps,
-    ← (hu.comp_clm p.subtypeL hPr).charPowerSeries_comp_comm]
-  rfl
+    ← (hu.comp_clm p.subtypeL hPr).charPowerSeries_comp_comm, hop]
 
 omit [NormOneClass R] in
 /-- **Invariance under conjugation.** The Fredholm series of a row-compact endomorphism `u` of a

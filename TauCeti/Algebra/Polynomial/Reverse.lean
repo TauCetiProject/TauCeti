@@ -45,7 +45,10 @@ factors into such binomials, and that reflection at a sum of degree bounds is mu
 finite products (`Polynomial.reflect_prod`), which computes the reflection of a determinant of
 polynomials term by term. The reverse of a scalar multiple of a product of linear factors with
 nonzero roots is again such a product in the reciprocal roots
-(`Polynomial.reverse_C_mul_prod_X_sub_C`). Reflection at a degree bound stays within that bound,
+(`Polynomial.reverse_C_mul_prod_X_sub_C`), unit-scalar multiplication preserves the leading-
+coefficient-normalised reversal (`Polynomial.C_inverse_leadingCoeff_mul_reverse_C_mul`), and
+evaluating a unit-rescaled reversal in an algebra scales the evaluation
+(`Polynomial.aeval_C_mul_reverse`). Reflection at a degree bound stays within that bound,
 also after a coefficient map, and its coefficient at the bound is the constant coefficient; when a
 coefficient map does not kill the leading coefficient, or when the leading coefficient is a unit, it
 commutes with reversal (`Polynomial.reverse_map_of_leadingCoeff_ne_zero`,
@@ -215,6 +218,28 @@ theorem reverse_map_of_isUnit_leadingCoeff [Semiring R] [Semiring S] {p : R[X]}
 theorem reverse_C_mul_of_isUnit [Semiring R] {a : R} (ha : IsUnit a) (p : R[X]) :
     (C a * p).reverse = C a * p.reverse := by
   rw [reverse, reverse, natDegree_C_mul_of_isUnit ha, reflect_C_mul]
+
+/-- Scaling a polynomial by a unit leaves the normalised reverse polynomial `lc(p)⁻¹ * p*`
+unchanged. -/
+theorem C_inverse_leadingCoeff_mul_reverse_C_mul [Semiring R] {a : R} (ha : IsUnit a)
+    (p : R[X]) :
+    C (Ring.inverse (C a * p).leadingCoeff) * (C a * p).reverse =
+      C (Ring.inverse p.leadingCoeff) * p.reverse := by
+  calc C (Ring.inverse (C a * p).leadingCoeff) * (C a * p).reverse
+      = C (Ring.inverse p.leadingCoeff * Ring.inverse a) * (C a * p.reverse) := by
+        rw [leadingCoeff_C_mul_of_isUnit ha, reverse_C_mul_of_isUnit ha,
+          Ring.inverse_mul (Or.inl ha)]
+    _ = C (Ring.inverse p.leadingCoeff) * (C (Ring.inverse a * a) * p.reverse) := by
+        simp only [map_mul, mul_assoc]
+    _ = C (Ring.inverse p.leadingCoeff) * p.reverse := by
+        rw [Ring.inverse_mul_cancel _ ha, map_one, one_mul]
+
+/-- Evaluating the reversal of a unit-scalar multiple `C a * p` in an `R`-algebra scales the
+evaluation of `p.reverse` by `a`. -/
+theorem aeval_C_mul_reverse [CommSemiring R] {A : Type*} [Semiring A] [Algebra R A]
+    (x : A) {a : R} (ha : IsUnit a) (p : R[X]) :
+    aeval x (C a * p).reverse = a • aeval x p.reverse := by
+  rw [reverse_C_mul_of_isUnit ha, map_mul, aeval_C, Algebra.smul_def]
 
 /-- The reversal of `1` is `1`. -/
 @[simp]

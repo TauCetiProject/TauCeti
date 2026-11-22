@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.Topology.Algebra.Module.Complement
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import TauCeti.Analysis.Normed.Module.Bases.Orthonormal
 public import TauCeti.Analysis.Normed.Operator.RingOpNorm.OpenMapping
@@ -28,7 +29,8 @@ conditions which only see the topology of `M`:
 
 Then `IsONable R M → IsPotentiallyONable R M → HasPr R M`. Both new conditions are invariant
 under continuous linear equivalence, stable under finite products (using
-`C₀(I ⊕ J, R) ≃ C₀(I, R) × C₀(J, R)`), and (Pr) passes to continuous linear retracts.
+`C₀(I ⊕ J, R) ≃ C₀(I, R) × C₀(J, R)`), and (Pr) passes to continuous linear retracts and
+topologically complemented submodules (`TauCeti.HasPr.of_isTopCompl`).
 
 Over a ring with a multiplicative pseudo-uniformiser (`TauCeti.NormedRing.IsTate R`), property
 (Pr) is the analytic analogue of projectivity:
@@ -129,6 +131,12 @@ theorem HasPr.of_retract (h : HasPr R N) (i : M →L[R] N) (r : N →L[R] M)
   obtain ⟨I, _, hI, j, s, hsj⟩ := h
   refine ⟨I, _, hI, j.comp i, r.comp s, ?_⟩
   rw [ContinuousLinearMap.comp_assoc, ← s.comp_assoc, hsj, ContinuousLinearMap.id_comp, hri]
+
+/-- A topologically complemented submodule of a module with property `(Pr)` has property `(Pr)`. -/
+theorem HasPr.of_isTopCompl (hM : HasPr R M) {p q : Submodule R M} (h : p.IsTopCompl q) :
+    HasPr R p :=
+  hM.of_retract p.subtypeL (p.projectionOntoL q h)
+    (ContinuousLinearMap.ext fun x ↦ Submodule.projectionOntoL_apply_left h x)
 
 /-- Property (Pr) is invariant under continuous linear equivalence. -/
 theorem HasPr.of_equiv (h : HasPr R N) (e : M ≃L[R] N) : HasPr R M :=
