@@ -101,6 +101,17 @@ theorem act_def {p q : ℕ} (c : NormalizedCubicalChain Y R p) (a : NormalizedCu
     act Y G R p q c a = map R (actMap Y G) (p + q) (crossProduct Y G R p q c a) :=
   (rfl)
 
+/-- The `0`-cube at `g` acts on the `0`-cube at `y` as `g` acts on `y`. -/
+@[simp]
+theorem act_ofCube_point (y : Y) (g : G) :
+    act Y G R 0 0 (ofCube Y R (SingularCube.point y)) (ofCube G R (SingularCube.point g)) =
+      ofCube Y R (SingularCube.point (op g • y)) := by
+  rw [act_def, crossProduct_ofCube, map_ofCube]
+  congr 1
+  ext t
+  rw [ContinuousMap.comp_apply, SingularCube.crossProduct_zero_left, actMap_apply,
+    SingularCube.point_apply, SingularCube.point_apply, SingularCube.point_apply]
+
 /-- **The Leibniz rule for the action**: for `c` of degree `p + 1` and `a` of degree `q + 1`,
 `∂ (c · a) = ∂ c · a + (-1) ^ (p + 1) • (c · ∂ a)`, in degree `p + q + 1`. -/
 theorem boundary_act {p q : ℕ} (c : NormalizedCubicalChain Y R (p + 1))
