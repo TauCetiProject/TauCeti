@@ -58,20 +58,36 @@ def subspaceSystemPullbackIso :
       (LocalCoefficientSystem.pullback g.hom).obj L) (Hom.w f).symm) ≪≫
     (LocalCoefficientSystem.pullbackCompIso (Hom.snd f).hom Q.map.hom).app L
 
-/-- On the fibre over a point `y` of the subspace, `TopPair.subspaceSystemPullbackIso` is the
-identification of the fibres of `L` over the two expressions of the same point of `Q.fst`, the
-image of `y` in `P.fst` followed by `f`, and the image of `y` under `f` followed by the inclusion
-of the subspace of `Q`. -/
-lemma subspaceSystemPullbackIso_hom_app (y : FundamentalGroupoid P.snd) :
-    (subspaceSystemPullbackIso f L).hom.app y =
-      eqToHom (congrArg (fun z : Q.fst ↦ L.obj (FundamentalGroupoid.mk z))
-        (Hom.w_apply f y.as).symm) := by
-  simp only [subspaceSystemPullbackIso, Iso.trans_hom, Iso.symm_hom, eqToIso.hom, NatTrans.comp_app,
-    eqToHom_app, Iso.app_inv, Iso.app_hom, LocalCoefficientSystem.pullbackCompIso_hom_app_app,
+/-- On every fibre, the comparison `TopPair.subspaceSystemPullbackIso` is the identification of
+the fibres of `L` over the two equal images of a point under `P.map ≫ Hom.fst f` and
+`Hom.snd f ≫ Q.map`. -/
+@[simp]
+lemma subspaceSystemPullbackIso_hom_app (x : FundamentalGroupoid P.snd) :
+    (subspaceSystemPullbackIso f L).hom.app x =
+      eqToHom (Functor.congr_obj (congrArg (fun g : P.snd ⟶ Q.fst ↦
+        (LocalCoefficientSystem.pullback g.hom).obj L) (Hom.w f).symm) x) := by
+  simp only [subspaceSystemPullbackIso, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
+    eqToIso.hom, eqToHom_app, Iso.app_hom, Iso.app_inv,
+    LocalCoefficientSystem.pullbackCompIso_hom_app_app,
     LocalCoefficientSystem.pullbackCompIso_inv_app_app]
-  -- The identities are stated at the two presentations of the fibres, which agree only up to
-  -- unfolding the fundamental groupoid functors, so they are removed by unification.
+  -- The identities are stated on composites of whiskered functors, which match the `eqToHom`
+  -- only up to unfolding.
   exact (Category.id_comp _).trans (Category.comp_id _)
+
+/-- On every fibre, the inverse of the comparison `TopPair.subspaceSystemPullbackIso` is the
+identification of the fibres of `L` over the two equal images of a point. -/
+@[simp]
+lemma subspaceSystemPullbackIso_inv_app (x : FundamentalGroupoid P.snd) :
+    (subspaceSystemPullbackIso f L).inv.app x =
+      eqToHom (Functor.congr_obj (congrArg (fun g : P.snd ⟶ Q.fst ↦
+        (LocalCoefficientSystem.pullback g.hom).obj L) (Hom.w f)) x) := by
+  simp only [subspaceSystemPullbackIso, Iso.trans_inv, Iso.symm_inv, NatTrans.comp_app,
+    eqToIso.inv, eqToHom_app, Iso.app_hom, Iso.app_inv,
+    LocalCoefficientSystem.pullbackCompIso_hom_app_app,
+    LocalCoefficientSystem.pullbackCompIso_inv_app_app]
+  -- The identities are stated on composites of whiskered functors, which match the `eqToHom`
+  -- only up to unfolding.
+  exact (Category.comp_id _).trans (Category.id_comp _)
 
 /-- The map on twisted chains of the subspaces induced by a map of pairs.  Its source is first
 identified with the pullback of the target subspace system. -/
@@ -225,6 +241,16 @@ def fstPullbackIdIso (P : TopPair.{v})
       (Hom.fst_id P)) ≪≫
     (LocalCoefficientSystem.pullbackIdIso P.fst).app L
 
+/-- The comparison `TopPair.fstPullbackIdIso` is the identity on every fibre. -/
+@[simp]
+lemma fstPullbackIdIso_hom_app (P : TopPair.{v})
+    (L : LocalCoefficientSystem.{u, v, max v w} R P.fst) (x : FundamentalGroupoid P.fst) :
+    (fstPullbackIdIso P L).hom.app x = 𝟙 _ := by
+  -- What remains composes an identity with an `eqToHom` between definitionally equal fibres.
+  simp only [fstPullbackIdIso, Iso.trans_hom, NatTrans.comp_app, Iso.app_hom,
+    LocalCoefficientSystem.pullbackIdIso_hom_app_app, eqToIso.hom, eqToHom_app]
+  rfl
+
 /-- The identity map of a pair induces the coefficient-change map coming from the canonical
 identification of a system with its pullback along the identity. -/
 @[simp]
@@ -244,16 +270,20 @@ lemma twistedChainComplexMap_id (L : LocalCoefficientSystem.{u, v, max v w} R P.
   rw [Iso.app_hom]
 
 variable {f} in
-/-- Equal maps of pairs induce the same map of relative twisted chains, after the canonical
-identification of their pulled-back coefficient systems. -/
-lemma twistedChainComplexMap_congr {f' : P ⟶ Q} (h : f = f') :
+/-- Two maps of pairs with the same ambient component induce the same map of relative twisted
+chains, after the canonical identification of their pulled-back coefficient systems. -/
+lemma twistedChainComplexMap_congr {f' : P ⟶ Q} (h : Hom.fst f = Hom.fst f') :
     twistedChainComplexMap f L =
       P.twistedChainComplexCoefficientMap
-          (eqToHom (congrArg (fun g : P ⟶ Q ↦
-            (LocalCoefficientSystem.pullback (Hom.fst g).hom).obj L) h)) ≫
+          (eqToHom (congrArg (fun g : P.fst ⟶ Q.fst ↦
+            (LocalCoefficientSystem.pullback g.hom).obj L) h)) ≫
         twistedChainComplexMap f' L := by
-  subst h
-  simp
+  apply (cancel_epi (P.twistedChainComplexπ
+    ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L))).1
+  rw [twistedChainComplexπ_comp_twistedChainComplexMap,
+    twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
+    twistedChainComplexπ_comp_twistedChainComplexMap,
+    LocalCoefficientSystem.twistedChainComplexMap_congr _ L h, eqToIso.hom, Category.assoc]
 
 variable {S : TopPair.{v}} (g : Q ⟶ S)
   (K : LocalCoefficientSystem.{u, v, max v w} R S.fst)
@@ -378,13 +408,13 @@ lemma twistedHomologyMap_id
     (twistedChainComplexMap_id L)
 
 variable {f} in
-/-- Equal maps of pairs induce the same map on relative twisted homology, after the canonical
-identification of their pulled-back coefficient systems. -/
-lemma twistedHomologyMap_congr {f' : P ⟶ Q} (h : f = f') (k : ℕ) :
+/-- Two maps of pairs with the same ambient component induce the same map on relative twisted
+homology, after the canonical identification of their pulled-back coefficient systems. -/
+lemma twistedHomologyMap_congr {f' : P ⟶ Q} (h : Hom.fst f = Hom.fst f') (k : ℕ) :
     twistedHomologyMap f L k =
       P.twistedHomologyCoefficientMap
-          (eqToHom (congrArg (fun g : P ⟶ Q ↦
-            (LocalCoefficientSystem.pullback (Hom.fst g).hom).obj L) h)) k ≫
+          (eqToHom (congrArg (fun g : P.fst ⟶ Q.fst ↦
+            (LocalCoefficientSystem.pullback g.hom).obj L) h)) k ≫
         twistedHomologyMap f' L k :=
   (congrArg (fun φ ↦ HomologicalComplex.homologyMap φ k) (twistedChainComplexMap_congr L h)).trans
     (HomologicalComplex.homologyMap_comp _ _ _)
@@ -480,5 +510,108 @@ lemma quasiIso_twistedChainComplexMap_of_quasiIso
     (by rw [twistedChainComplexShortComplexMap_τ₁]; infer_instance)
     (by rw [twistedChainComplexShortComplexMap_τ₂]; infer_instance)
   rwa [twistedChainComplexShortComplexMap_τ₃] at this
+
+section AmbientComponent
+
+/-! ### Composites of maps of pairs with the same ambient component
+
+The relative twisted homology map of a composite of maps of pairs only depends on its ambient
+component. -/
+
+variable {P' Q' : TopPair.{v}} {N : LocalCoefficientSystem.{u, v, max v w} R P.fst}
+  {S : LocalCoefficientSystem.{u, v, max v w} R Q.fst}
+
+/-- Two composites of maps of pairs with the same composite ambient component induce the same map
+of relative twisted homology, when the coefficient systems are identified along equalities. -/
+lemma twistedHomologyMap_comp_twistedHomologyMap_eq_of_fst_comp_eq
+    (g₁ : P ⟶ P') (g₂ : P' ⟶ Q) (h₁ : P ⟶ Q') (h₂ : Q' ⟶ Q)
+    (hw : Hom.fst g₁ ≫ Hom.fst g₂ = Hom.fst h₁ ≫ Hom.fst h₂)
+    {M₁ : LocalCoefficientSystem.{u, v, max v w} R P'.fst}
+    {M₂ : LocalCoefficientSystem.{u, v, max v w} R Q'.fst}
+    (e₁ : N = (LocalCoefficientSystem.pullback (Hom.fst g₁).hom).obj M₁)
+    (e₂ : M₁ = (LocalCoefficientSystem.pullback (Hom.fst g₂).hom).obj S)
+    (e₃ : N = (LocalCoefficientSystem.pullback (Hom.fst h₁).hom).obj M₂)
+    (e₄ : M₂ = (LocalCoefficientSystem.pullback (Hom.fst h₂).hom).obj S) (k : ℕ) :
+    P.twistedHomologyCoefficientMap (eqToHom e₁) k ≫ twistedHomologyMap g₁ M₁ k ≫
+        P'.twistedHomologyCoefficientMap (eqToHom e₂) k ≫ twistedHomologyMap g₂ S k =
+      P.twistedHomologyCoefficientMap (eqToHom e₃) k ≫ twistedHomologyMap h₁ M₂ k ≫
+        Q'.twistedHomologyCoefficientMap (eqToHom e₄) k ≫ twistedHomologyMap h₂ S k := by
+  simp only [← HomologicalComplex.homologyMap_comp]
+  congr 1
+  apply (cancel_epi (P.twistedChainComplexπ N)).1
+  simp only [twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
+    twistedChainComplexπ_comp_twistedChainComplexMap_assoc,
+    twistedChainComplexπ_comp_twistedChainComplexMap]
+  rw [LocalCoefficientSystem.twistedChainComplexMap_naturality_assoc,
+    LocalCoefficientSystem.twistedChainComplexMap_naturality_assoc,
+    reassoc_of% (LocalCoefficientSystem.twistedChainComplexMap_naturality_square (Hom.fst g₁)
+      (Hom.fst g₂) (Hom.fst h₁) (Hom.fst h₂) S hw)]
+  simp only [← LocalCoefficientSystem.twistedChainComplexCoefficientMap_comp_assoc]
+  congr 2
+  ext x : 2
+  simp only [eqToHom_map, eqToHom_app, NatTrans.comp_app, Iso.trans_hom, Iso.symm_hom,
+    Iso.app_inv, Iso.app_hom, eqToIso.hom, LocalCoefficientSystem.pullbackCompIso_inv_app_app,
+    LocalCoefficientSystem.pullbackCompIso_hom_app_app, eqToHom_trans]
+  -- Every component is now an identification of fibres of `S` over equal points. The identities
+  -- are stated on composites of whiskered functors, which match the neighbouring `eqToHom`s only
+  -- up to unfolding, so `erw` removes them.
+  erw [Category.id_comp, Category.comp_id, eqToHom_trans, eqToHom_trans]
+
+end AmbientComponent
+
+section EqualMaps
+
+/-! ### Maps of pairs equal to an identity or a composite
+
+When a map of pairs is only propositionally equal to an identity or to a composite, the
+coefficient systems are matched along equalities of local systems, and the identity and
+composition laws hold after the corresponding `eqToHom` coefficient maps. -/
+
+variable {P' : TopPair.{v}}
+
+/-- A map of pairs equal to the identity induces the identity on twisted homology, once the
+coefficient systems are matched along equalities. -/
+lemma twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_id (g : P ⟶ P)
+    (hg : g = 𝟙 P) {N S : LocalCoefficientSystem.{u, v, max v w} R P.fst}
+    (e : N = (LocalCoefficientSystem.pullback (Hom.fst g).hom).obj S) (e' : N = S) (k : ℕ) :
+    P.twistedHomologyCoefficientMap (eqToHom e) k ≫ twistedHomologyMap g S k =
+      P.twistedHomologyCoefficientMap (eqToHom e') k := by
+  subst hg e
+  rw [twistedHomologyMap_id, eqToHom_refl, twistedHomologyCoefficientMap_id, Category.id_comp]
+  congr 1
+  ext x : 2
+  rw [fstPullbackIdIso_hom_app, eqToHom_app]
+  -- Both sides identify the same fibre of `S` with itself up to unfolding the pullback.
+  rfl
+
+/-- A map of pairs equal to a composite induces the composite of the induced maps on twisted
+homology, once the coefficient systems are matched along equalities. -/
+lemma twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_comp (g₁ : P ⟶ P')
+    (g₂ : P' ⟶ Q) (h : P ⟶ Q) (hw : h = g₁ ≫ g₂)
+    {N N' : LocalCoefficientSystem.{u, v, max v w} R P.fst}
+    {M : LocalCoefficientSystem.{u, v, max v w} R P'.fst}
+    {S : LocalCoefficientSystem.{u, v, max v w} R Q.fst}
+    (e₀ : N = N') (e : N' = (LocalCoefficientSystem.pullback (Hom.fst h).hom).obj S)
+    (e₁ : N = (LocalCoefficientSystem.pullback (Hom.fst g₁).hom).obj M)
+    (e₂ : M = (LocalCoefficientSystem.pullback (Hom.fst g₂).hom).obj S) (k : ℕ) :
+    P.twistedHomologyCoefficientMap (eqToHom e₀) k ≫
+        P.twistedHomologyCoefficientMap (eqToHom e) k ≫ twistedHomologyMap h S k =
+      (P.twistedHomologyCoefficientMap (eqToHom e₁) k ≫ twistedHomologyMap g₁ M k) ≫
+        P'.twistedHomologyCoefficientMap (eqToHom e₂) k ≫ twistedHomologyMap g₂ S k := by
+  subst hw e₂ e₁ e₀
+  simp only [eqToHom_refl, twistedHomologyCoefficientMap_id, Category.id_comp,
+    twistedHomologyMap_comp, ← twistedHomologyCoefficientMap_comp_assoc]
+  convert Category.id_comp _
+  rw [← twistedHomologyCoefficientMap_id]
+  congr 1
+  ext x : 2
+  rw [NatTrans.comp_app, fstPullbackCompIso_hom_app]
+  -- The fibres of the iterated pullback and of the pullback along the composite agree only up to
+  -- unfolding, so `Category.comp_id` is applied by unification rather than by rewriting.
+  refine (Category.comp_id _).trans ?_
+  rw [eqToHom_app]
+  rfl
+
+end EqualMaps
 
 end TopPair

@@ -375,7 +375,8 @@ private theorem exists_bound_mixedDeriv_transport (a : Symbol n V W m)
   have hρc (g : G) : ‖(ρ g : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ ≤ c :=
     ((BoundedContinuousFunction.mkOfCompact ⟨_, hρ⟩).norm_coe_le_norm g).trans (le_max_right _ _)
   obtain ⟨B, hB0, hB⟩ :=
-    exists_bound_mixedDeriv_comp_prodMap (m := m) a.contDiff_coefficient (le_max_left 1 Cρ) C α β
+    exists_bound_mixedDeriv_comp_prodMap_of_norm_le_mul_norm (m := m) a.contDiff_coefficient
+      (le_max_left 1 Cρ) C α β
   refine ⟨Cτ * B * Cσ, by positivity, fun g x hx ξ ↦ ?_⟩
   -- The position map is `ρ(g⁻¹)` and the frequency map is the adjoint of `ρ(g)`, with inverse the
   -- adjoint of `ρ(g⁻¹)`; all three have norm at most `c`.

@@ -8,8 +8,11 @@ module
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Genus
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Divisor
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.RamificationDegree
+import TauCeti.Algebra.Order.Field.OrbifoldDeficit
 import TauCeti.Analysis.Complex.Fuchsian.Compactification.CellStructure
+import TauCeti.Analysis.Complex.Fuchsian.Cusp.Finite
 import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Cofinite
+import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Cofinite
 import TauCeti.Analysis.Complex.Fuchsian.Polygon.LocallyFinite
 
 /-!
@@ -26,6 +29,8 @@ the CW structure of `TauCeti.Analysis.Complex.Fuchsian.Compactification.CellStru
   `Subgroup.IsCofinite.covolume_eq_two_pi_mul_signature`: the orbifold area formulas;
 * `Subgroup.IsCofinite.eulerChar_compactifiedQuotient_lt_finsum_mem_ellipticOrbits_add_cusps` and
   `Subgroup.IsCofinite.two_mul_genus_compactifiedQuotient_sub_two_add_pos`: signature positivity;
+* `Subgroup.IsCofinite.covolume_eq_pi_div_three_iff`: a cofinite group with a cusp has covolume
+  `π / 3` exactly when its signature is `(0; 2, 3; 1)`, that of `PSL(2, ℤ)`;
 * `Subgroup.IsCofinite.eulerChar_sub_finsum_mem_ellipticOrbits_sub_cusps_eq_index_mul`:
   multiplicativity of the orbifold Euler characteristic;
 * `Fuchsian.eulerChar_compactifiedQuotient_eq_index_mul_sub_ramificationDegree_of_isCofinite` and
@@ -38,6 +43,8 @@ the CW structure of `TauCeti.Analysis.Complex.Fuchsian.Compactification.CellStru
 * Fred Diamond and Jerry Shurman, *A First Course in Modular Forms*, GTM 228, Springer, 2005,
   Theorem 3.1.1.
 * Svetlana Katok, *Fuchsian Groups*, University of Chicago Press, 1992, §§4.2–4.3.
+* Gaven J. Martin, *The geometry and arithmetic of Kleinian groups*, arXiv:1311.2636, 2013,
+  Theorem 2.2.
 -/
 
 public section
@@ -115,6 +122,38 @@ theorem two_mul_genus_compactifiedQuotient_sub_two_add_pos (hΓ : Γ.IsCofinite)
   have hlt := hΓ.eulerChar_compactifiedQuotient_lt_finsum_mem_ellipticOrbits_add_cusps
   rw [hΓ.eulerChar_compactifiedQuotient_eq_two_sub_two_mul_genus] at hlt
   push_cast at hlt; linarith
+
+/-- **The equality case of the minimal area with a cusp.** A cofinite Fuchsian group with at
+least one cusp has covolume `π / 3` exactly when its signature is `(0; 2, 3; 1)`, that of
+`PSL(2, ℤ)`: the compactified quotient has genus zero, there is exactly one cusp orbit, and there
+is one elliptic orbit of each order `2` and `3` and none of any other order. The cusp hypothesis
+is needed: the cuspless signature `(0; 2, 2, 2, 3)` has the same deficit `1 / 6`. -/
+theorem covolume_eq_pi_div_three_iff (hΓ : Γ.IsCofinite) [Nonempty Γ.CuspOrbit] :
+    haveI := hΓ.finiteCWType_compactifiedQuotient
+    covolume Γ ℍ = ENNReal.ofReal (Real.pi / 3) ↔
+      RiemannSurface.genus Γ.CompactifiedQuotient = 0 ∧ Nat.card Γ.CuspOrbit = 1 ∧
+        ∀ m : ℕ, Nat.card {e // e ∈ Γ.ellipticOrbits ∧ cardStabilizerOnOrbit e = m} =
+          Multiset.count m {2, 3} := by
+  have := hΓ.finiteCWType_compactifiedQuotient
+  have := hΓ.finite_cuspOrbit
+  -- an elliptic orbit has a nontrivial stabilizer, so its order is not `1`
+  have hell : ∀ e ∈ Γ.ellipticOrbits, cardStabilizerOnOrbit e ≠ 1 := by
+    intro e he
+    induction e using Quotient.inductionOn' with | h z => ?_
+    rw [cardStabilizerOnOrbit_mk, Ne, Subgroup.card_eq_one, ← mem_freeLocus]
+    exact (Γ.quotientMk_mem_ellipticOrbits_iff z).mp he
+  rw [hΓ.covolume_eq_two_pi_mul_signature, ENNReal.ofReal_eq_ofReal_iff
+      (mul_pos Real.two_pi_pos hΓ.two_mul_genus_compactifiedQuotient_sub_two_add_pos).le
+      (by positivity),
+    ← orbifold_deficit_finsum_eq_one_div_six_iff (K := ℝ) hΓ.finite_ellipticOrbits Nat.card_pos
+      hell]
+  constructor
+  · intro h
+    apply mul_left_cancel₀ Real.two_pi_pos.ne'
+    linear_combination h
+  · intro h
+    rw [h]
+    ring
 
 /-- **Multiplicativity of the orbifold Euler characteristic** under finite-index subgroups:
 `χ(X(Δ)) - ∑ₑ (1 - 1 / mₑ) - c(Δ) = [Γ : Δ] · (χ(X(Γ)) - ∑ₑ (1 - 1 / mₑ) - c(Γ))`. -/

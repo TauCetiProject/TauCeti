@@ -27,9 +27,9 @@ the existence of the embeddings; the Lipschitz-domain case is
 
 ## Method
 
-The induction on `j` is that of the `p = 2` interior statement
-`TauCeti.Wkp.exists_contDiffOn_ae_eq`: for `u ∈ W^{j+2,p}(Ω)`, the weak derivatives of `u` along
-an orthonormal basis lie in `W^{j+1,p}(Ω)`, and depend boundedly on `u`
+The induction on `j` is that of the interior statement
+`TauCeti.Wkp.exists_contDiffOn_ae_eq_of_forall_zeroAtInfty`: for `u ∈ W^{j+2,p}(Ω)`, the weak
+derivatives of `u` along an orthonormal basis lie in `W^{j+1,p}(Ω)`, and depend boundedly on `u`
 (`TauCeti.Wkp.lineDerivL`), so by induction they have representatives with the required bounds.
 They assemble into a continuous weak derivative of the Hölder representative of `u`, which is
 therefore its classical derivative.
