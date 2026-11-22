@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.Algebra.Polynomial.Derivative
+public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Algebra.Polynomial.FieldDivision
 import Mathlib.Tactic.ByContra
@@ -29,6 +30,10 @@ factor on the left.
 Factoring out the full multiplicity of a root of a nonzero polynomial leaves a cofactor
 that does not vanish at the root.
 
+Over any ring, the Hasse derivative of order `k + 1` of `(X - C r) * g` is `X - C r` times that of
+`g`, plus the Hasse derivative of `g` of order `k`. Consequently a Hasse derivative of order `k`
+lowers the power of `X - C r` that is a left factor of a polynomial by at most `k`.
+
 ## Main results
 
 * `Polynomial.modByMonic_X_sub_C_eq_zero`: division by a central linear factor has zero
@@ -39,6 +44,10 @@ that does not vanish at the root.
 * `Polynomial.eval_mul_pos_of_natDegree_le_one_of_no_roots`: constant nonzero sign on a root-free
   closed interval for polynomials of degree at most one.
 * `Polynomial.derivative_root_factors`: factor the derivative of a polynomial with two root powers.
+* `Polynomial.hasseDeriv_succ_X_sub_C_mul`: the Leibniz rule for Hasse derivatives of a left
+  multiple of `X - C r`, over any ring.
+* `Polynomial.pow_sub_dvd_hasseDeriv_of_pow_dvd`: if `(X - C r) ^ n` is a left factor of `p`, then
+  `(X - C r) ^ (n - k)` is a left factor of its Hasse derivative of order `k`, over any ring.
 * `Polynomial.IsRoot.exists_eq_pow_succ_mul`: factor out a positive power of `X - C x`, leaving a
   cofactor nonzero at `x`.
 * `Polynomial.rootMultiplicity_add_eq_left_of_dvd`: adding a multiple of a higher power of
@@ -163,6 +172,39 @@ theorem derivative_root_factors {A : Type*} [CommRing A] (a b : A) (m n : ℕ) (
     derivative_C, sub_zero, mul_one]
   simp only [pow_succ]
   ring
+
+/-- The Leibniz rule for Hasse derivatives of a left multiple of the linear factor `X - C r`:
+`D⁽ᵏ⁺¹⁾ ((X - C r) * g) = (X - C r) * D⁽ᵏ⁺¹⁾ g + D⁽ᵏ⁾ g`. This is the polynomial analogue of
+`PowerSeries.hasseDeriv_succ_X_sub_C_mul`. -/
+theorem hasseDeriv_succ_X_sub_C_mul (k : ℕ) (r : R) (g : R[X]) :
+    hasseDeriv (k + 1) ((X - C r) * g) = (X - C r) * hasseDeriv (k + 1) g + hasseDeriv k g := by
+  rw [hasseDeriv_mul, Finset.Nat.sum_antidiagonal_succ, Finset.sum_eq_single (0, k)]
+  · simp
+  · rintro ⟨_ | a, b⟩ hab hne
+    · simp_all
+    · simp [hasseDeriv_X, hasseDeriv_C]
+  · simp
+
+/-- If `(X - C r) ^ n` is a left factor of `p`, then `(X - C r) ^ (n - k)` is a left factor of the
+Hasse derivative of `p` of order `k`. This is the analogue of
+`Polynomial.pow_sub_dvd_iterate_derivative_of_pow_dvd` for Hasse derivatives. That result only
+gives the divisibility for `k !` times the Hasse derivative, and the factor `k !` cannot in general
+be cancelled. -/
+theorem pow_sub_dvd_hasseDeriv_of_pow_dvd {p : R[X]} {r : R} {n : ℕ} (k : ℕ)
+    (h : (X - C r) ^ n ∣ p) : (X - C r) ^ (n - k) ∣ hasseDeriv k p := by
+  obtain ⟨q, rfl⟩ := h
+  induction n generalizing k with
+  | zero => simp
+  | succ n ih =>
+    cases k with
+    | zero => simp
+    | succ k =>
+      rw [pow_succ', mul_assoc, hasseDeriv_succ_X_sub_C_mul]
+      -- The first summand keeps one linear factor in front of a derivative of order `k + 1`.
+      have hle : n + 1 - (k + 1) ≤ n - (k + 1) + 1 := by omega
+      refine dvd_add ((pow_dvd_pow _ hle).trans ?_) (by simpa using ih k)
+      rw [pow_succ']
+      exact mul_dvd_mul_left _ (ih (k + 1))
 
 end Polynomial
 
