@@ -36,8 +36,8 @@ declaration has an additive counterpart via `@[to_additive]`.
 * `TauCeti.image_levelMonoidHom_pi_prod_univ`, `TauCeti.preimage_levelMonoidHom_box`: image and
   box-preimage formulas for `levelMonoidHom`.
 * `TauCeti.levelOpenSubgroup`, `TauCeti.levelOpenSubgroupEquiv`,
-  `TauCeti.coe_comp_levelOpenSubgroupEquiv`: level open subgroup of elements integral outside `S`,
-  its topological group chart, and inclusion formula.
+  `TauCeti.val_comp_levelOpenSubgroupEquiv`: level open subgroup of elements integral outside `S`,
+  its topological group chart, and inclusion formulas.
 
 ## References
 
@@ -305,14 +305,37 @@ def levelOpenSubgroupEquiv (B : ∀ i, K i) (S : Finset ι)
 
 /-- Composing `levelOpenSubgroupEquiv B S hB` with the subtype inclusion into `Πʳ i, [G i, B i]`
 recovers `levelMonoidHom B S`. -/
-@[to_additive (attr := simp) /-- Composing `levelOpenAddSubgroupEquiv B S hB` with the subtype
-inclusion into `Πʳ i, [G i, B i]` recovers `levelAddMonoidHom B S`. -/]
-theorem coe_comp_levelOpenSubgroupEquiv (B : ∀ i, K i) (S : Finset ι)
+@[to_additive (attr := simp)
+/-- Composing `levelOpenAddSubgroupEquiv B S hB` with the subtype inclusion into `Πʳ i, [G i, B i]`
+recovers `levelAddMonoidHom B S`. -/]
+theorem val_comp_levelOpenSubgroupEquiv (B : ∀ i, K i) (S : Finset ι)
     (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) :
     Subtype.val ∘ levelOpenSubgroupEquiv B S hB = levelMonoidHom B S := by
   funext p
   dsimp [levelOpenSubgroupEquiv]
   exact Topology.IsEmbedding.toHomeomorph_apply_coe (isEmbedding_levelMonoidHom B S) p
+
+/-- Coercing `levelOpenSubgroupEquiv B S hB p` into `Πʳ i, [G i, B i]` recovers
+`levelMonoidHom B S p`. -/
+@[to_additive (attr := simp)
+/-- Coercing `levelOpenAddSubgroupEquiv B S hB p` into `Πʳ i, [G i, B i]` recovers
+`levelAddMonoidHom B S p`. -/]
+theorem val_levelOpenSubgroupEquiv_apply (B : ∀ i, K i) (S : Finset ι)
+    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i)))
+    (p : (Π i : S, G i) × (Π j : {i // i ∉ S}, B j.val)) :
+    ((levelOpenSubgroupEquiv B S hB p : levelOpenSubgroup B S hB) : Πʳ i, [G i, B i]) =
+      levelMonoidHom B S p :=
+  congrFun (val_comp_levelOpenSubgroupEquiv B S hB) p
+
+/-- Applying `levelMonoidHom B S` to `(levelOpenSubgroupEquiv B S hB).symm u` recovers the
+ambient restricted-product element `(u : Πʳ i, [G i, B i])`. -/
+@[to_additive (attr := simp)
+/-- Applying `levelAddMonoidHom B S` to `(levelOpenAddSubgroupEquiv B S hB).symm u` recovers the
+ambient restricted-product element `(u : Πʳ i, [G i, B i])`. -/]
+theorem levelMonoidHom_levelOpenSubgroupEquiv_symm (B : ∀ i, K i) (S : Finset ι)
+    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) (u : levelOpenSubgroup B S hB) :
+    levelMonoidHom B S ((levelOpenSubgroupEquiv B S hB).symm u) = (u : Πʳ i, [G i, B i]) := by
+  rw [← val_levelOpenSubgroupEquiv_apply, (levelOpenSubgroupEquiv B S hB).apply_symm_apply]
 
 /-- First projection of `(levelOpenSubgroupEquiv B S hB).symm`. -/
 @[to_additive (attr := simp) /-- First projection of
@@ -322,8 +345,7 @@ theorem levelOpenSubgroupEquiv_symm_fst (B : ∀ i, K i) (S : Finset ι)
     ((levelOpenSubgroupEquiv B S hB).symm u).1 = fun i : S ↦ (u : Πʳ j, [G j, B j]) i.val := by
   funext i
   rw [← levelMonoidHom_apply_of_mem B S _ i.property,
-    ← congrFun (coe_comp_levelOpenSubgroupEquiv B S hB) _, Function.comp_apply,
-    (levelOpenSubgroupEquiv B S hB).apply_symm_apply]
+    levelMonoidHom_levelOpenSubgroupEquiv_symm]
 
 /-- Second projection of `(levelOpenSubgroupEquiv B S hB).symm`. -/
 @[to_additive (attr := simp) /-- Second projection of
@@ -338,8 +360,7 @@ theorem levelOpenSubgroupEquiv_symm_snd (B : ∀ i, K i) (S : Finset ι)
   funext j
   apply Subtype.ext
   rw [← levelMonoidHom_apply_of_notMem B S _ j.property,
-    ← congrFun (coe_comp_levelOpenSubgroupEquiv B S hB) _, Function.comp_apply,
-    (levelOpenSubgroupEquiv B S hB).apply_symm_apply]
+    levelMonoidHom_levelOpenSubgroupEquiv_symm]
 
 end OpenSubgroup
 

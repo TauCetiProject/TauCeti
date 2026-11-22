@@ -422,11 +422,15 @@ theorem comap_levelOpenSubgroup_restrictedHaar {T : Finset ι} (hT : ∀ i ∉ T
   let e := levelOpenSubgroupEquiv B T fun i _ ↦ hBopen.out i
   have hmu : MeasurableEmbedding (Subtype.val : U → Πʳ i, [G i, B i]) :=
     MeasurableEmbedding.subtypeVal U.isOpen.measurableSet
+  have hcomap :
+      ((restrictedHaar B μ hμB).comap (Subtype.val : U → Πʳ i, [G i, B i])).comap e =
+        restrictedPrincipalPieceMeasure B T μ := by
+    rw [hmu.comap_comap, val_comp_levelOpenSubgroupEquiv,
+      comap_levelMonoidHom_restrictedHaar B μ hμB hT]
   have he : (e : _ → _) = e.toHomeomorph.toMeasurableEquiv :=
     e.toHomeomorph.toMeasurableEquiv_coe.symm
   rw [eq_comm, he, e.toHomeomorph.toMeasurableEquiv.map_apply_eq_iff_map_symm_apply_eq,
-    MeasurableEquiv.map_symm, hmu.comap_comap, ← he, coe_comp_levelOpenSubgroupEquiv,
-    comap_levelMonoidHom_restrictedHaar B μ hμB hT]
+    MeasurableEquiv.map_symm, ← he, hcomap]
 
 /-- Value of `restrictedHaar` on a coordinate box `box C` agreeing with `B i` outside a finite set
 `T` on whose complement `μ i (B i) = 1`. No measurability assumption on `C i` is needed. -/
