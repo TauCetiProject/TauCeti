@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.NoetherianSpace
 public import Mathlib.Topology.Sober
 public import TauCeti.Logic.Equiv.Set
 
@@ -15,6 +16,13 @@ In a sober space, the generic points of irreducible components are precisely the
 with no proper generization. Every point of a closed subset is a specialization of such a
 generic point of that subset. These facts let one choose component-generic points without
 Noetherianity or a dimension argument.
+
+The set of component-generic points is stable under generalization. A dense set that is stable
+under generalization contains every point whose closure has nonempty interior, and the closure of a
+component-generic point has nonempty interior as soon as the point has an open Noetherian
+neighbourhood. So in a space covered by open Noetherian subspaces, such as a locally Noetherian
+scheme, a set stable under generalization is dense exactly when it contains every
+component-generic point.
 
 In a sober space, `x ↦ closure {x}` is a bijection from component-generic points onto
 irreducible components. For a continuous map between sober spaces, bijections on
@@ -230,3 +238,40 @@ theorem GeneralizingMap.bijOn_preimage_irreducibleComponents [QuasiSober Y] {f :
   h.symm (hf.invOn_preimage_closure_image_irreducibleComponents h).symm
 
 end Maps
+
+section Generalization
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-- The set of component-generic points is stable under generalization: in a `T₀` space, a
+generalization of the generic point of an irreducible component is that generic point. -/
+theorem genericPoints.stableUnderGeneralization [T0Space X] :
+    StableUnderGeneralization (genericPoints X) := by
+  intro x y hyx hx
+  have hle := specializes_iff_closure_subset.mp hyx
+  have hyx' : x ⤳ y :=
+    specializes_iff_closure_subset.mpr (hx.2 isIrreducible_singleton.closure hle)
+  rwa [(hyx.antisymm hyx').eq]
+
+/-- A dense set stable under generalization contains every point whose closure has nonempty
+interior. -/
+theorem StableUnderGeneralization.mem_of_dense {s : Set X} (hs : StableUnderGeneralization s)
+    (hd : Dense s) {x : X} (hx : (interior (closure {x})).Nonempty) : x ∈ s := by
+  obtain ⟨y, hyx, hys⟩ := hd.inter_open_nonempty _ isOpen_interior hx
+  exact hs (specializes_iff_mem_closure.mpr (interior_subset hyx)) hys
+
+/-- The closure of a component-generic point with an open Noetherian neighbourhood has nonempty
+interior. -/
+theorem IsOpen.nonempty_interior_closure_of_mem_genericPoints {U : Set X} (hU : IsOpen U)
+    [TopologicalSpace.NoetherianSpace U] {x : X} (hxU : x ∈ U) (hx : x ∈ genericPoints X) :
+    (interior (closure {x})).Nonempty := by
+  have hx' : (⟨x, hxU⟩ : U) ∈ genericPoints U :=
+    (hU.isOpenEmbedding_subtypeVal.mem_genericPoints_iff _).mp hx
+  obtain ⟨o, ho, ⟨y, hy⟩, hsub⟩ :=
+    TopologicalSpace.NoetherianSpace.exists_isOpen_nonempty_subset_irreducibleComponent _ hx'
+  refine ⟨y, mem_interior.mpr ⟨(↑) '' o, ?_, hU.isOpenMap_subtypeVal o ho, mem_image_of_mem _ hy⟩⟩
+  refine (image_mono hsub).trans ?_
+  simpa only [image_singleton] using
+    image_closure_subset_closure_image (s := {(⟨x, hxU⟩ : U)}) continuous_subtypeVal
+
+end Generalization

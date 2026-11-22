@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.Topology.NoetherianSpace.ConnectedComponents
+public import TauCeti.Topology.Sober
 import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 
 /-!
@@ -24,7 +25,8 @@ hypothesis on `f`: over affine opens `Spec B ⟶ Spec R` it is `Spec (κ(p) ⊗[
 `κ(p) ⊗[R] B` is a quotient of a localization of `B`.
 
 The underlying space of a locally Noetherian scheme is locally connected, since it is covered by
-the Noetherian spaces of its affine opens. In particular its connected components are open.
+the Noetherian spaces of its affine opens. In particular its connected components are open. For
+the same reason every irreducible component of a locally Noetherian scheme has nonempty interior.
 -/
 
 public section
@@ -71,6 +73,15 @@ instance locallyConnectedSpace_of_isLocallyNoetherian (X : Scheme.{u}) [IsLocall
   · exact W.isOpen.isOpenMap_subtypeVal _ isOpen_connectedComponent
   · exact ⟨_, mem_connectedComponent, rfl⟩
   · exact isConnected_connectedComponent.image _ continuous_subtypeVal.continuousOn
+
+/-- In a locally Noetherian scheme, the irreducible component with generic point `x` has nonempty
+interior: an affine open neighbourhood of `x` is a Noetherian space. -/
+theorem nonempty_interior_closure_of_mem_genericPoints {X : Scheme.{u}} [IsLocallyNoetherian X]
+    {x : X} (hx : x ∈ genericPoints X) : (interior (closure {x})).Nonempty := by
+  obtain ⟨W, hW, hxW, -⟩ := exists_isAffineOpen_mem_and_subset (x := x) (U := ⊤) trivial
+  have : IsNoetherianRing Γ(X, W) := IsLocallyNoetherian.component_noetherian ⟨W, hW⟩
+  have : TopologicalSpace.NoetherianSpace (W : Set X) := noetherianSpace_of_isAffineOpen W hW
+  exact W.isOpen.nonempty_interior_closure_of_mem_genericPoints hxW hx
 
 end TauCeti.AlgebraicGeometry
 
