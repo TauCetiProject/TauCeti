@@ -43,11 +43,15 @@ wherever no `Finset.univ` appears in the statement.
 
 ## Main results
 
-* `RootPairing.range_internalDirectSum_root`: the roots of an internal direct sum are the union of
-  the roots of its summands inside `M`.
-* `RootPairing.isRootSystem_internalDirectSum`, `RootPairing.isValuedIn_internalDirectSum`,
-  `RootPairing.isReduced_internalDirectSum`: structural properties preserved by internal direct
-  sums.
+* `RootPairing.range_internalDirectSum_root`, `RootPairing.range_internalDirectSum_coroot`: the
+  roots and coroots of an internal direct sum are the unions of those of its summands inside `M`
+  and `Module.Dual R M`.
+* `RootPairing.isRootSystem_internalDirectSum_iff`,
+  `RootPairing.isValuedIn_internalDirectSum_iff`,
+  `RootPairing.isReduced_of_internalDirectSum`,
+  `RootPairing.isReduced_internalDirectSum_iff_of_isRegular`,
+  `RootPairing.isReduced_internalDirectSum_iff`: characterization and preservation of structural
+  properties for internal direct sums.
 * `RootPairing.Equiv.internalDirectSumCongr_id`, `RootPairing.Equiv.internalDirectSumCongr_comp`,
   `RootPairing.Equiv.toPerfPair_symm_internalDirectSumCongr_coweightMap`: identity, composition,
   and coweight coordinate formulas for `RootPairing.Equiv.internalDirectSumCongr`.
@@ -239,6 +243,30 @@ theorem internalProjection_internalDirectSum_reflection_ne {c d : κ} (hdc : d �
       internalProjection hEi hEt d x := by
   simp [internalDirectSum_reflection_apply, internalProjection_apply_of_ne hEi hEt hdc.symm]
 
+/-- Formula for the coreflection of an internal direct sum at `⟨c, i⟩` on an arbitrary dual
+functional. -/
+theorem internalDirectSum_coreflection_apply (c : κ) (i : ι c) (f : Module.Dual R M) :
+    (internalDirectSum hEi hEt P).coreflection ⟨c, i⟩ f =
+      f - f ((P c).root i : M) • ((P c).coroot' i).comp (internalProjection hEi hEt c) :=
+  (rfl)
+
+@[simp]
+theorem internalDirectSum_coreflection_comp_subtype_same (c : κ) (i : ι c)
+    (f : Module.Dual R M) :
+    ((internalDirectSum hEi hEt P).coreflection ⟨c, i⟩ f).comp (E c).subtype =
+      (P c).flip.toPerfPair
+        ((P c).coreflection i ((P c).flip.toPerfPair.symm (f.comp (E c).subtype))) := by
+  ext x
+  simp [coreflection_apply, root', coroot']
+
+@[simp]
+theorem internalDirectSum_coreflection_comp_subtype_ne {c d : κ} (hdc : d ≠ c) (i : ι c)
+    (f : Module.Dual R M) :
+    ((internalDirectSum hEi hEt P).coreflection ⟨c, i⟩ f).comp (E d).subtype =
+      f.comp (E d).subtype := by
+  ext x
+  simp [coreflection_apply, internalProjection_apply_of_ne hEi hEt hdc]
+
 /-- **The roots of a finite internal direct sum are the union of the summands' roots inside `M`.**
 In particular, no sum of roots from distinct summands is a root. -/
 theorem range_internalDirectSum_root :
@@ -247,6 +275,19 @@ theorem range_internalDirectSum_root :
       fun s : Σ c, ι c ↦ ((P s.1).root s.2 : M) := rfl
   rw [h, Set.range_sigma_eq_iUnion_range]
   exact iUnion_congr fun c ↦ Set.range_comp' Subtype.val (P c).root
+
+/-- **The coroots of a finite internal direct sum are the union of the summands' coroot
+functionals extended by `TauCeti.internalProjection`.** -/
+theorem range_internalDirectSum_coroot :
+    range (internalDirectSum hEi hEt P).coroot =
+      ⋃ c, (fun g : Module.Dual R (E c) ↦ g.comp (internalProjection hEi hEt c)) ''
+        range (P c).coroot' := by
+  have h : ⇑(internalDirectSum hEi hEt P).coroot =
+      fun s : Σ c, ι c ↦ ((P s.1).coroot' s.2).comp (internalProjection hEi hEt s.1) := rfl
+  rw [h, Set.range_sigma_eq_iUnion_range]
+  exact iUnion_congr fun c ↦
+    Set.range_comp' (fun g : Module.Dual R (E c) ↦ g.comp (internalProjection hEi hEt c))
+      (P c).coroot'
 
 end Evaluation
 
@@ -277,11 +318,8 @@ private theorem internalDirectSumCoweightEquiv_symm_apply
       (LinearMap.single R (fun c ↦ ↥(E c)) c x) =
       f (internalDirectSumEquiv hEi hEt (Pi.single c x)) := by
     simp [LinearEquiv.dualMap_apply]
-  rw [LinearMap.comp_apply, hdual, internalDirectSumEquiv_apply,
-    Finset.sum_eq_single_of_mem c (Finset.mem_univ c)]
-  · simp
-  · intro d _ hdc
-    simp [Pi.single_eq_of_ne hdc]
+  rw [LinearMap.comp_apply, hdual, internalDirectSumEquiv_single]
+  rfl
 
 /-- **Canonical equivalence between the external direct sum `RootPairing.pi P` and the internal
 direct sum `RootPairing.internalDirectSum hEi hEt P`.** -/
@@ -305,12 +343,8 @@ noncomputable def piEquivInternalDirectSum [DecidableEq κ] :
     exact h.symm
   root_weightMap := by
     ext ⟨c, i⟩
-    simp only [comp_apply, LinearEquiv.coe_coe, pi_root, _root_.Equiv.refl_apply,
-      internalDirectSum_root, internalDirectSumEquiv_apply]
-    rw [Finset.sum_eq_single_of_mem c (Finset.mem_univ c)]
-    · simp
-    · intro d _ hdc
-      simp [Pi.single_eq_of_ne hdc]
+    simp only [comp_apply, LinearEquiv.coe_coe, _root_.Equiv.refl_apply, pi_root,
+      internalDirectSumEquiv_single, internalDirectSum_root]
   coroot_coweightMap := by
     ext ⟨c, i⟩ d
     simp only [comp_apply, LinearEquiv.coe_coe, _root_.Equiv.refl_symm, _root_.Equiv.refl_apply,
@@ -371,6 +405,16 @@ instance isRootSystem_internalDirectSum [∀ c, (P c).IsRootSystem] :
   let _ : DecidableEq κ := Classical.decEq κ
   (piEquivInternalDirectSum hEi hEt P).isRootSystem
 
+/-- **A finite internal direct sum is a root system iff every summand is a root system.** -/
+theorem isRootSystem_internalDirectSum_iff :
+    (internalDirectSum hEi hEt P).IsRootSystem ↔ ∀ c, (P c).IsRootSystem :=
+  ⟨fun _ ↦
+    let _ : Fintype κ := Fintype.ofFinite κ
+    let _ : DecidableEq κ := Classical.decEq κ
+    let _ := (piEquivInternalDirectSum hEi hEt P).symm.isRootSystem
+    (isRootSystem_pi_iff P).mp ‹_›,
+   fun _ ↦ isRootSystem_internalDirectSum hEi hEt P⟩
+
 /-- **A finite internal direct sum of `S`-valued root pairings is `S`-valued.** In particular, an
 internal direct sum of crystallographic root pairings is crystallographic. -/
 instance isValuedIn_internalDirectSum (S : Type*) [CommRing S] [Algebra S R]
@@ -378,6 +422,16 @@ instance isValuedIn_internalDirectSum (S : Type*) [CommRing S] [Algebra S R]
   let _ : Fintype κ := Fintype.ofFinite κ
   let _ : DecidableEq κ := Classical.decEq κ
   (piEquivInternalDirectSum hEi hEt P).toHom.isValuedIn S
+
+/-- **A finite internal direct sum is `S`-valued iff every summand is `S`-valued.** -/
+theorem isValuedIn_internalDirectSum_iff (S : Type*) [CommRing S] [Algebra S R] :
+    (internalDirectSum hEi hEt P).IsValuedIn S ↔ ∀ c, (P c).IsValuedIn S :=
+  ⟨fun _ ↦
+    let _ : Fintype κ := Fintype.ofFinite κ
+    let _ : DecidableEq κ := Classical.decEq κ
+    let _ := (piEquivInternalDirectSum hEi hEt P).symm.toHom.isValuedIn S
+    (isValuedIn_pi_iff P S).mp ‹_›,
+   fun _ ↦ isValuedIn_internalDirectSum hEi hEt P S⟩
 
 @[simp]
 theorem internalDirectSum_pairingIn_same (S : Type*) [CommRing S] [Algebra S R] [FaithfulSMul S R]
@@ -400,11 +454,32 @@ theorem isReduced_internalDirectSum_of_isRegular (h2 : IsRegular (2 : R)) [∀ c
   let _ := isReduced_pi_of_isRegular P h2
   (piEquivInternalDirectSum hEi hEt P).isReduced
 
+/-- Every summand of a reduced finite internal direct sum is reduced. -/
+theorem isReduced_of_internalDirectSum [(internalDirectSum hEi hEt P).IsReduced] (c : κ) :
+    (P c).IsReduced :=
+  let _ : Fintype κ := Fintype.ofFinite κ
+  let _ : DecidableEq κ := Classical.decEq κ
+  let _ := (piEquivInternalDirectSum hEi hEt P).symm.isReduced
+  isReduced_of_pi P c
+
+/-- **Under regularity of `2`, a finite internal direct sum is reduced iff every summand is
+reduced.** -/
+theorem isReduced_internalDirectSum_iff_of_isRegular (h2 : IsRegular (2 : R)) :
+    (internalDirectSum hEi hEt P).IsReduced ↔ ∀ c, (P c).IsReduced :=
+  ⟨fun _ c ↦ isReduced_of_internalDirectSum hEi hEt P c,
+   fun _ ↦ isReduced_internalDirectSum_of_isRegular hEi hEt P h2⟩
+
 /-- A finite internal direct sum of reduced root pairings over a ring with no zero divisors (and
 `2 ≠ 0`) is reduced. -/
 instance isReduced_internalDirectSum [NoZeroDivisors R] [∀ c, (P c).IsReduced] :
     (internalDirectSum hEi hEt P).IsReduced :=
   isReduced_internalDirectSum_of_isRegular hEi hEt P (IsRegular.of_ne_zero' two_ne_zero)
+
+/-- **Over a ring with no zero divisors (and `2 ≠ 0`), a finite internal direct sum is reduced iff
+every summand is reduced.** -/
+theorem isReduced_internalDirectSum_iff [NoZeroDivisors R] :
+    (internalDirectSum hEi hEt P).IsReduced ↔ ∀ c, (P c).IsReduced :=
+  isReduced_internalDirectSum_iff_of_isRegular hEi hEt P (IsRegular.of_ne_zero' two_ne_zero)
 
 end Properties
 

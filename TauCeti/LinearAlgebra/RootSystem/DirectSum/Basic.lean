@@ -43,8 +43,9 @@ specializes to the product-of-automorphisms embedding `RootPairing.piAut`.
 * `RootPairing.range_pi_root`: the roots of `RootPairing.pi P` are the union of the coordinate
   images of the summands' roots.
 * `RootPairing.pi_flip`: flipping a finite direct sum gives the direct sum of the flipped pairings.
-* `RootPairing.isRootSystem_pi`, `RootPairing.isValuedIn_pi`, `RootPairing.isReduced_pi`:
-  structural instances preserved by finite direct sums.
+* `RootPairing.isRootSystem_pi_iff`, `RootPairing.isValuedIn_pi_iff`,
+  `RootPairing.isReduced_of_pi`, `RootPairing.isReduced_pi_iff_of_isRegular`,
+  `RootPairing.isReduced_pi_iff`: structural characterizations for finite direct sums.
 * `RootPairing.Equiv.piCongr_id`, `RootPairing.Equiv.piCongr_comp`: identity and composition laws
   for `RootPairing.Equiv.piCongr`.
 * `RootPairing.piAut_injective`, `RootPairing.piAut_mulSingle_reflection`: injectivity and
@@ -275,6 +276,21 @@ instance isRootSystem_pi [∀ c, (P c).IsRootSystem] : (pi P).IsRootSystem where
     rw [IsRootSystem.span_coroot_eq_top]
     exact mem_top
 
+/-- **A finite direct sum is a root system iff every summand is a root system.** -/
+theorem isRootSystem_pi_iff : (pi P).IsRootSystem ↔ ∀ c, (P c).IsRootSystem := by
+  refine ⟨fun _ c ↦ ?_, fun _ ↦ isRootSystem_pi P⟩
+  exact
+    { span_root_eq_top := eq_top_iff.mpr fun x _ ↦ by
+        have hx : Pi.single c x ∈ span R (range (pi P).root) := by
+          rw [IsRootSystem.span_root_eq_top]
+          exact mem_top
+        simpa using (mem_rootSpan_pi_iff P R (Pi.single c x)).mp hx c
+      span_coroot_eq_top := eq_top_iff.mpr fun y _ ↦ by
+        have hy : Pi.single c y ∈ span R (range (pi P).coroot) := by
+          rw [IsRootSystem.span_coroot_eq_top]
+          exact mem_top
+        simpa using (mem_corootSpan_pi_iff P R (Pi.single c y)).mp hy c }
+
 /-- **A finite direct sum of `S`-valued root pairings is `S`-valued.** In particular, a finite
 direct sum of crystallographic root pairings is crystallographic. -/
 instance isValuedIn_pi (S : Type*) [CommRing S] [Algebra S R] [∀ c, (P c).IsValuedIn S] :
@@ -285,6 +301,14 @@ instance isValuedIn_pi (S : Type*) [CommRing S] [Algebra S R] [∀ c, (P c).IsVa
     · subst hcd
       simpa using (P c).exists_value (S := S) i j
     · exact ⟨0, by simp [pi_pairing_ne P hcd]⟩
+
+/-- **A finite direct sum is `S`-valued iff every summand is `S`-valued.** -/
+theorem isValuedIn_pi_iff (S : Type*) [CommRing S] [Algebra S R] :
+    (pi P).IsValuedIn S ↔ ∀ c, (P c).IsValuedIn S :=
+  ⟨fun _ c ↦
+    { exists_value i j := by
+        simpa [pi_pairing_same] using (pi P).exists_value (S := S) ⟨c, i⟩ ⟨c, j⟩ },
+   fun _ ↦ isValuedIn_pi P S⟩
 
 @[simp]
 theorem pi_pairingIn_same (S : Type*) [CommRing S] [Algebra S R] [FaithfulSMul S R]
@@ -326,10 +350,33 @@ theorem isReduced_pi_of_isRegular (h2 : IsRegular (2 : R)) [∀ c, (P c).IsReduc
         simpa [map_smul, smul_eq_mul, root_coroot'_eq_pairing] using this
       exact ⟨h2.right (by simpa using ha2), h2.right (by simpa using hb2)⟩
 
+/-- Every summand of a reduced finite direct sum is reduced. -/
+theorem isReduced_of_pi [(pi P).IsReduced] (c : κ) : (P c).IsReduced where
+  eq_or_eq_neg i j hdep := by
+    have hdep' : ¬ LinearIndependent R ![(pi P).root ⟨c, i⟩, (pi P).root ⟨c, j⟩] := fun hli ↦
+      hdep <| by
+        refine LinearIndependent.of_comp (LinearMap.single R M c) ?_
+        convert hli
+        ext k
+        fin_cases k <;> rfl
+    rcases IsReduced.eq_or_eq_neg (P := pi P) ⟨c, i⟩ ⟨c, j⟩ hdep' with h | h
+    · exact Or.inl <| by simpa using congrFun h c
+    · exact Or.inr <| by simpa using congrFun h c
+
+/-- **Under regularity of `2`, a finite direct sum is reduced iff every summand is reduced.** -/
+theorem isReduced_pi_iff_of_isRegular (h2 : IsRegular (2 : R)) :
+    (pi P).IsReduced ↔ ∀ c, (P c).IsReduced :=
+  ⟨fun _ c ↦ isReduced_of_pi P c, fun _ ↦ isReduced_pi_of_isRegular P h2⟩
+
 /-- A finite direct sum of reduced root pairings over a ring with no zero divisors (and `2 ≠ 0`) is
 reduced. -/
 instance isReduced_pi [NoZeroDivisors R] [∀ c, (P c).IsReduced] : (pi P).IsReduced :=
   isReduced_pi_of_isRegular P (IsRegular.of_ne_zero' two_ne_zero)
+
+/-- **Over a ring with no zero divisors (and `2 ≠ 0`), a finite direct sum is reduced iff every
+summand is reduced.** -/
+theorem isReduced_pi_iff [NoZeroDivisors R] : (pi P).IsReduced ↔ ∀ c, (P c).IsReduced :=
+  isReduced_pi_iff_of_isRegular P (IsRegular.of_ne_zero' two_ne_zero)
 
 end Basic
 

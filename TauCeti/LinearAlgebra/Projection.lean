@@ -198,22 +198,31 @@ noncomputable def internalDirectSumEquiv [Fintype ι] (hQi : iSupIndep Q) (hQt :
     (LinearEquiv.ofBijective (DirectSum.coeLinearMap Q)
       (DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top hQi hQt))
 
+/-- Applying the internal direct-sum equivalence to a single-coordinate tuple returns the coerced
+element in `M`. -/
+theorem internalDirectSumEquiv_single [Fintype ι] [inst : DecidableEq ι]
+    (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤) (i : ι) (x : Q i) :
+    internalDirectSumEquiv hQi hQt (Pi.single i x) = (x : M) := by
+  let dec := Classical.decEq ι
+  have hpi : @Pi.single ι (fun j ↦ Q j) _ inst i x = @Pi.single ι (fun j ↦ Q j) _ dec i x := by
+    rw [Subsingleton.elim inst dec]
+  have hsingle := @DirectSum.linearEquivFunOnFintype_symm_single A _ ι (fun j ↦ Q j) _ _ dec _ i x
+  have hcoe := @DirectSum.coeLinearMap_of A _ ι dec M _ _ Q i x
+  exact (congrArg (internalDirectSumEquiv hQi hQt) hpi).trans
+    ((congrArg (@DirectSum.coeLinearMap A _ ι dec M _ _ Q) hsingle).trans hcoe)
+
 /-- The internal direct-sum equivalence sends a tuple of summand elements to their sum in `M`. -/
 @[simp]
 theorem internalDirectSumEquiv_apply [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤)
     (x : ∀ i, Q i) :
     internalDirectSumEquiv hQi hQt x = ∑ i, (x i : M) := by
-  let _ : DecidableEq ι := Classical.decEq ι
-  let e : (∀ i, Q i) ≃ₗ[A] DirectSum ι (fun i ↦ Q i) :=
-    (DirectSum.linearEquivFunOnFintype A ι (fun i ↦ Q i)).symm
-  have hsum : e x = ∑ i, DirectSum.of (fun i ↦ Q i) i (x i) := by
-    refine (DirectSum.sum_univ_of (e x)).symm.trans (Finset.sum_congr rfl fun i _ ↦ ?_)
-    have hi : (e x) i = x i :=
-      congrFun ((DirectSum.linearEquivFunOnFintype A ι fun i ↦ Q i).apply_symm_apply x) i
-    rw [hi]
-  rw [show internalDirectSumEquiv hQi hQt x = DirectSum.coeLinearMap Q (e x) from rfl,
-    hsum, map_sum]
-  simp [DirectSum.coeLinearMap_of]
+  classical
+  have hlin : (internalDirectSumEquiv hQi hQt).toLinearMap =
+      LinearMap.lsum A (fun i ↦ Q i) ℕ fun i ↦ (Q i).subtype := by
+    refine LinearMap.pi_ext fun i y ↦ ?_
+    rw [LinearEquiv.coe_toLinearMap, internalDirectSumEquiv_single, LinearMap.lsum_piSingle,
+      Submodule.coe_subtype]
+  simpa [LinearMap.lsum_apply] using LinearMap.congr_fun hlin x
 
 /-- The inverse of the internal direct-sum equivalence reads off the `i`-th coordinate by
 `TauCeti.internalProjection`. -/

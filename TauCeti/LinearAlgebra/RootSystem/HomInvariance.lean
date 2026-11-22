@@ -5,26 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.Chain
-
-import TauCeti.LinearAlgebra.RootSystem.PairingInvariance
+public import Mathlib.LinearAlgebra.RootSystem.Hom
+public import Mathlib.LinearAlgebra.RootSystem.IsValuedIn
+public import Mathlib.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # Invariance under homomorphisms of root pairings
 
 A homomorphism `f : P.Hom P₂` of root pairings consists of a linear map of weight spaces,
 its transpose on coweight spaces, and a bijection `f.indexEquiv` of the indexing sets, subject to
-`f.weightMap (P.root i) = P₂.root (f.indexEquiv i)`. The index bijection preserves Cartan pairings,
-commutes with root reflections, and (for finite crystallographic pairings in characteristic zero)
-preserves the root-string coefficients `RootPairing.chainTopCoeff` and `RootPairing.chainBotCoeff`.
-When the weight map is injective, it also preserves and reflects root membership, additive relations
-between roots, and linear independence.
+`f.weightMap (P.root i) = P₂.root (f.indexEquiv i)`. The index bijection preserves Cartan pairings
+and commutes with root reflections. When the weight map is injective, it also preserves and reflects
+root membership, additive relations between roots, and linear independence.
 
 The weight map need not be surjective: these results also apply when the target has extra toral
 directions outside the span of its roots. An equivalence of root pairings supplies the injectivity
 hypothesis through `g.bijective_weightMap.injective`. Coefficient-valuedness is transported by
-`RootPairing.Hom.isValuedIn`; the root-string results likewise derive target finiteness from the
-index bijection. Only the source coefficient-valuedness and finiteness instances are required.
+`RootPairing.Hom.isValuedIn`.
 
 Mathlib's `RootPairing.Hom.pairing` gives the pairing in the coefficient ring. The invariance
 lemmas here also apply to combinatorial expressions in the index bijection, without introducing
@@ -47,15 +44,11 @@ weight-space vectors.
 * `RootPairing.Hom.linearIndependent_root_indexEquiv_iff`: it preserves and reflects linear
   independence of a pair of roots; consequently `RootPairing.Hom.isReduced` and
   `RootPairing.Equiv.isReduced` transport reducedness to the target pairing.
-* `RootPairing.Hom.chainTopCoeff_indexEquiv` and `RootPairing.Hom.chainBotCoeff_indexEquiv`: it
-  preserves the two root-string coefficients.
+* `RootPairing.Equiv.isRootSystem`: an equivalence of root pairings transports `IsRootSystem`.
 * `RootPairing.Hom.coroot'_weightMap` and `RootPairing.Hom.weightMap_reflection`: the weight map
   preserves coroot values and intertwines the reflection at a root with the reflection at its
   image. These generalise Mathlib's `RootPairing.Equiv.coroot'_weightEquiv` and
   `RootPairing.Equiv.weightEquiv_reflection` from equivalences to morphisms.
-
-These invariance facts show that an automorphism of a root system permutes the matrices of Geck's
-construction, as developed in `TauCeti.LinearAlgebra.RootSystem.GeckConstruction.Symmetry`.
 
 ## References
 
@@ -172,32 +165,6 @@ theorem isReduced [P.IsReduced] : P₂.IsReduced := by
   · rw [← Hom.root_weightMap_apply P P₂ i f, hroot, map_neg, Hom.root_weightMap_apply P P₂ j f]
 
 end Injective
-
-section Chain
-
-variable (f : P.Hom P₂) [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic]
-
-/-- The index bijection of a homomorphism of finite crystallographic root pairings preserves the
-number of times one may add `P.root i` to `P.root j` and stay among the roots. -/
-@[simp]
-theorem chainTopCoeff_indexEquiv (i j : ι) :
-    letI := Finite.of_equiv ι f.indexEquiv
-    letI := f.isValuedIn ℤ
-    P₂.chainTopCoeff (f.indexEquiv i) (f.indexEquiv j) = P.chainTopCoeff i j := by
-  let := f.isValuedIn ℤ
-  exact chainTopCoeff_eq_of_pairingIn f.indexEquiv (f.pairingIn_indexEquiv ℤ) i j
-
-/-- The index bijection of a homomorphism of finite crystallographic root pairings preserves the
-number of times one may subtract `P.root i` from `P.root j` and stay among the roots. -/
-@[simp]
-theorem chainBotCoeff_indexEquiv (i j : ι) :
-    letI := Finite.of_equiv ι f.indexEquiv
-    letI := f.isValuedIn ℤ
-    P₂.chainBotCoeff (f.indexEquiv i) (f.indexEquiv j) = P.chainBotCoeff i j := by
-  let := f.isValuedIn ℤ
-  exact chainBotCoeff_eq_of_pairingIn f.indexEquiv (f.pairingIn_indexEquiv ℤ) i j
-
-end Chain
 
 end Hom
 

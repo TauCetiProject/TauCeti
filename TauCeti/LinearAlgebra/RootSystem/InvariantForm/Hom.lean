@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.MulAction
+public import TauCeti.LinearAlgebra.RootSystem.RootForm
 
 import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
@@ -20,11 +21,9 @@ invariant form `(x, y) ↦ B (f x) (f y)` of `P`, written `comap f B`. Pulling b
 commutes with rescaling, preserves positive definiteness when the weight map is injective, and
 along an equivalence of root pairings it is a bijection of invariant forms.
 
-A morphism of finite root pairings preserves the canonical root form: its index bijection
-reindexes the sum of products of coroot values. The weight map need not be bijective, and the
-roots need not span the weight space. In particular diagram automorphisms preserve lengths
-also on weights outside the root lattice. So the canonical invariant form of `Q` pulls back to that
-of `P`.
+A morphism of finite root pairings preserves the canonical root form (proved in
+`TauCeti.LinearAlgebra.RootSystem.RootForm`). So the canonical invariant form of `Q` pulls back to
+that of `P`.
 
 ## Main definitions
 
@@ -34,8 +33,6 @@ of `P`.
 
 ## Main results
 
-* `RootPairing.Hom.rootForm_weightMap`: a morphism of finite root pairings preserves the canonical
-  root form.
 * `RootPairing.InvariantForm.comap_toInvariantForm`: the canonical invariant form pulls back to the
   canonical invariant form.
 * `RootPairing.InvariantForm.posDef_comap`, `RootPairing.InvariantForm.posDef_comap_iff`: the
@@ -44,24 +41,6 @@ of `P`.
 -/
 
 public section
-
-namespace RootPairing.Hom
-
-variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
-  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
-  {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂}
-  [Fintype ι] [Fintype ι₂]
-
-/-- A morphism of finite root pairings preserves the canonical root form on weights. -/
-@[simp]
-theorem rootForm_weightMap (f : P.Hom Q) (x y : M) :
-    Q.RootForm (f.weightMap x) (f.weightMap y) = P.RootForm x y := by
-  simp only [RootPairing.rootForm_apply_apply]
-  rw [← f.indexEquiv.sum_comp]
-  simp only [coroot'_weightMap]
-
-end RootPairing.Hom
 
 namespace RootPairing.InvariantForm
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.RootSystem.GeckConstruction.Basic
 public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+public import TauCeti.LinearAlgebra.RootSystem.HomInvariance.Chain
 
 /-!
 # Symmetries of Geck's construction

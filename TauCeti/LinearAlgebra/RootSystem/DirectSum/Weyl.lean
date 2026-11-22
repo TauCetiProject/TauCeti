@@ -94,11 +94,9 @@ noncomputable def piWeylGroupEquiv : (pi P).weylGroup ≃* ∀ c, (P c).weylGrou
         let w : ∀ d, (P d).weylGroup := Pi.mulSingle c (weylGroup.ofIdx (P c) i)
         refine ⟨w, ?_⟩
         have hval : (fun d ↦ (w d : (P d).Aut)) =
-            Pi.mulSingle c (Equiv.reflection (P c) i) := by
-          funext d
-          by_cases h : d = c
-          · subst h; simp [w]
-          · simp [w, Pi.mulSingle_eq_of_ne h]
+            Pi.mulSingle c (Equiv.reflection (P c) i) :=
+          (Pi.mulSingle_op (fun d ↦ ⇑(P d).weylGroup.subtype) (fun _ ↦ map_one _) c
+            (weylGroup.ofIdx (P c) i)).symm
         simp [piWeylGroupHom, hval]
       rintro ⟨g, hg⟩
       obtain ⟨w, hw⟩ := hle hg
@@ -130,10 +128,8 @@ theorem piWeylGroupEquiv_ofIdx (c : κ) (i : ι c) :
   rw [coe_piWeylGroupEquiv_symm, weylGroup.coe_ofIdx]
   refine (piAut_mulSingle_reflection P c i).symm.trans ?_
   congr 1
-  funext d
-  by_cases h : d = c
-  · subst h; simp
-  · simp [Pi.mulSingle_eq_of_ne h]
+  exact Pi.mulSingle_op (fun d ↦ ⇑(P d).weylGroup.subtype) (fun _ ↦ map_one _) c
+    (weylGroup.ofIdx (P c) i)
 
 end External
 

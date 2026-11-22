@@ -37,15 +37,16 @@ theorem linearIndepOn_single_iff {R κ : Type*} [Semiring R] [DecidableEq κ]
       (Equiv.Set.sigma t s).symm.injective.comp fun _ _ h' ↦ by simpa using h'
     exact (h.comp g hg).of_comp (LinearMap.single R M c)
   · intro hli
-    let res : (∀ c : κ, M c) →ₗ[R] (∀ c : t, M c) :=
-      { toFun := fun x c ↦ x c.val
-        map_add' := fun _ _ ↦ rfl
-        map_smul' := fun _ _ ↦ rfl }
+    let res : (∀ c : κ, M c) →ₗ[R] (∀ c : t, M c) := LinearMap.pi fun c : t ↦ LinearMap.proj c.val
     refine LinearIndependent.of_comp res ?_
     convert (Pi.linearIndependent_single (fun (c : t) (i : s c) ↦ v c.val i.val)
       fun c ↦ hli c.val c.property).comp (Equiv.Set.sigma t s) (Equiv.Set.sigma t s).injective
     ext ⟨⟨c, i⟩, h⟩ d
-    dsimp only [Function.comp_apply, LinearMap.coe_mk, AddHom.coe_mk, res]
+    have hres : res (Pi.single c (v c i)) d = Pi.single c (v c i) d.val :=
+      LinearMap.congr_fun (LinearMap.proj_pi (R := R) (fun c : t ↦ LinearMap.proj c.val) d)
+        (Pi.single c (v c i))
+    dsimp only [Function.comp_apply]
+    rw [hres]
     have heq : (Equiv.Set.sigma t s) ⟨⟨c, i⟩, h⟩ = ⟨⟨c, h.1⟩, ⟨i, h.2⟩⟩ := rfl
     rw [heq]
     by_cases hdc : d = ⟨c, h.1⟩

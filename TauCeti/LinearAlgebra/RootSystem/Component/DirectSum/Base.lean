@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.Component.Base
-public import TauCeti.LinearAlgebra.RootSystem.Component.DirectSum
+public import TauCeti.LinearAlgebra.RootSystem.Component.DirectSum.Basic
 public import TauCeti.LinearAlgebra.RootSystem.DirectSum.Base
 
 /-!
