@@ -94,7 +94,7 @@ theorem mfderiv_mlieBracket_of_eventually_related {f : N → M} {V W : Π y : N,
       (u : TangentSpace J y) (hu : mfderiv J I f y u = U' (f y)) :
       mvfderiv J ((fun x ↦ mvfderiv I c x (U x)) ∘ f) y u =
         mvfderiv I (fun x ↦ mvfderiv I c x (U x)) (f y) (U' (f y)) := by
-    rw [mvfderiv_comp_apply y (mdifferentiableAt_mvfderiv_apply hc le_rfl hU) hfy, hu]
+    rw [mvfderiv_comp_apply y (mdifferentiableAt_mvfderiv_apply hc le_minSmoothness hU) hfy, hu]
   have key := mvfderiv_mlieBracket (hc.comp y hf2) le_rfl hV hW
   rw [(hpush W W' hWW').mvfderiv_eq, (hpush V V' hVV').mvfderiv_eq,
     houter W' V' hW' (V y) hVV'.self_of_nhds, houter V' W' hV' (W y) hWW'.self_of_nhds,

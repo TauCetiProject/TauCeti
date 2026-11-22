@@ -15,11 +15,15 @@ public import TauCeti.GroupTheory.TrivialIntersection
 A group is CSA if its maximal abelian subgroups are malnormal. The centralizer of a nonidentity
 element in such a group is its unique maximal abelian subgroup containing that element. In
 particular, commutation is transitive through a nonidentity element. In a torsion-free
-commutative-transitive group roots are unique and no nonidentity element is conjugate to its
-inverse. In a torsion-free CSA group, conjugates of nontrivial powers of `u ≠ 1` by elements of
-different cosets of the centralizer of `u` do not commute. A group is CSA exactly when it is
-commutative transitive and every nonidentity element commuting with one of its conjugates
-`g * x * g⁻¹` commutes with `g`. Consequently, given two noncommuting elements `a` and `b`, the
+commutative-transitive group roots are unique, no nonidentity element is conjugate to its
+inverse, and in the nonabelian case every nonidentity conjugacy class is infinite. In a
+torsion-free CSA group, conjugates of nontrivial powers of `u ≠ 1` by elements of different
+cosets of the centralizer of `u` do not commute, and on any finite index set powers `c x` of an
+element outside that centralizer can be chosen so that `(c x)⁻¹ * h * c x'` avoids the
+centralizer for distinct indices when `h = 1` and for all indices when `h` is a prescribed
+nonidentity element of a finite set. A group is CSA exactly when it is commutative transitive
+and every nonidentity element commuting with one of its conjugates `g * x * g⁻¹` commutes with
+`g`. Consequently, given two noncommuting elements `a` and `b`, the
 disjunction `x = 1 ∨ y = 1` is equivalent to `x` commuting with `y`, `a * y * a⁻¹` and
 `b * y * b⁻¹`. A failure of either condition is witnessed by a nonidentity element together with a
 nontrivial commutator, so both conditions pass to any group in which every pair of nonidentity
@@ -27,8 +31,26 @@ elements survives under one homomorphism to a CSA group. This is how fully resid
 inherit the CSA property from free groups. These properties are useful for the centralizers and
 equations of free groups and limit groups.
 
+A nonabelian CSA group has no element of order two ([MR], §6, Remark 7), and in it every
+nonidentity element has a conjugate that does not commute with a given nonidentity element. A list
+of nonidentity elements of a CSA group in which some two consecutive entries do not commute can be
+conjugated entry by entry, keeping its product, into a list in which no two consecutive entries
+commute ([VAR-I], Proposition 3 and Lemma 10); this is how solutions of quadratic equations are
+moved into general position. Where [VAR-I] conjugates two consecutive entries by a large power of
+their product, the first or the second power suffices here, so no big-powers property is needed;
+the absence of involutions makes the second power nontrivial.
+
 The definition follows Baumslag, Myasnikov and Remeslennikov, *Algebraic geometry over groups I*,
 §§1–2.
+
+## References
+
+* [MR] A. G. Myasnikov, V. N. Remeslennikov, *Exponential groups. II. Extensions of centralizers and
+  tensor completion of CSA-groups*, Internat. J. Algebra Comput. 6 (1996); §6, Remark 7 of the
+  preprint arXiv:math/9507203.
+* [VAR-I] O. Kharlampovich, A. Myasnikov, *Irreducible affine varieties over a free group. I:
+  Irreducibility of quadratic equations and Nullstellensatz*, J. Algebra 200 (1998), §2,
+  Proposition 3 and Lemma 10.
 -/
 
 public section
@@ -175,6 +197,17 @@ theorem IsCSA.mem_centralizer_of_commute_conj (hG : IsCSA G) {u x y g : G}
       (Subgroup.mem_centralizer_singleton_iff.2 h.eq.symm)
   exact (hT g x u hx1 (Subgroup.mem_centralizer_singleton_iff.1 hg) hx).eq
 
+/-- In a CSA group, an element conjugating `u` into its own centralizer centralizes `u`: if
+`g⁻¹ * u * g` commutes with `u`, then so does `g`. -/
+theorem IsCSA.mem_centralizer_of_conj_mem_centralizer (hG : IsCSA G) {u g : G}
+    (h : g⁻¹ * u * g ∈ Subgroup.centralizer {u}) : g ∈ Subgroup.centralizer {u} := by
+  rcases eq_or_ne u 1 with rfl | hu
+  · exact Subgroup.mem_centralizer_singleton_iff.2 (by simp)
+  have huu : u ∈ Subgroup.centralizer {u} := Subgroup.mem_centralizer_singleton_iff.2 rfl
+  refine inv_mem_iff.1 (hG.mem_centralizer_of_commute_conj huu hu huu hu ?_)
+  rw [inv_inv, commute_iff_eq]
+  exact (Subgroup.mem_centralizer_singleton_iff.1 h).symm
+
 /-- In a torsion-free CSA group, conjugates of nonzero powers of `u` by `y` and `y'` do not
 commute unless `y⁻¹ * y'` centralizes `u`. -/
 theorem IsCSA.not_commute_conj_zpow (hG : IsCSA G) [IsMulTorsionFree G] {u y y' : G}
@@ -208,6 +241,19 @@ theorem IsCSA.exists_inv_mul_notMem_centralizer (hG : IsCSA G) {u g : G} (hu : u
     · simpa [mul_assoc] using mul_mem (inv_mem hu') h
     · exact (hG.centralizer_isTISubgroup u).conj_notMem (g := (a⁻¹ * b)⁻¹)
         (fun h' => hd (by simpa using inv_mem h')) hu' hu (by simpa [mul_assoc] using h)
+
+/-- In a torsion-free CSA group, given `v` outside `C_G(u)`, one can choose powers of `v` whose
+mixed products `(v ^ n x)⁻¹ * h * v ^ n x'` avoid `C_G(u)` for distinct indices in the finite set
+`s` when `h = 1`, and for all indices in `s` when `h` is a prescribed nonidentity element of the
+finite set `T`. -/
+theorem IsCSA.exists_inv_pow_mul_mul_pow_notMem_centralizer (hG : IsCSA G) [IsMulTorsionFree G]
+    {ι : Type*} {u v : G} (hv : v ∉ Subgroup.centralizer {u}) (s : Finset ι)
+    (T : Set G) (hT : T.Finite) :
+    ∃ n : ι → ℕ, ∀ x ∈ s, ∀ x' ∈ s, ∀ h : G, (h = 1 ∧ x ≠ x' ∨ h ∈ T ∧ h ≠ 1) →
+      (v ^ n x)⁻¹ * h * v ^ n x' ∉ Subgroup.centralizer {u} := by
+  have hv1 : v ≠ 1 := by rintro rfl; exact hv (Subgroup.one_mem _)
+  exact (hG.centralizer_isTISubgroup u).exists_inv_pow_mul_mul_pow_notMem hv
+    (not_isOfFinOrder_of_isMulTorsionFree hv1) s T hT
 
 /-- In a CSA group with two noncommuting elements `a` and `b`, an element `x` is trivial or `y`
 is trivial exactly when `x` commutes with `y`, `a * y * a⁻¹` and `b * y * b⁻¹`. This expresses
@@ -281,6 +327,15 @@ theorem IsCSA.center_eq_bot (hG : IsCSA G) (h : ¬ IsMulCommutative G) :
     Subgroup.center G = ⊥ :=
   hG.isCommTransitive.center_eq_bot h
 
+/-- In a nonabelian torsion-free commutative-transitive group, every nonidentity element has an
+infinite conjugacy class. -/
+theorem IsCommTransitive.infinite_setOf_isConj [IsMulTorsionFree G] (hG : IsCommTransitive G)
+    (h : ¬ IsMulCommutative G) {g : G} (hg : g ≠ 1) :
+    {x : G | IsConj g x}.Infinite := by
+  have := hG.hasUniqueRoots
+  refine infinite_setOf_isConj_of_notMem_center ?_
+  rwa [hG.center_eq_bot h, Subgroup.mem_bot]
+
 /-- An injective homomorphism into a CSA group has CSA domain. -/
 theorem IsCSA.of_injective {H : Type*} [Group H] (hG : IsCSA G)
     (f : H →* G) (hf : Function.Injective f) : IsCSA H := by
@@ -300,7 +355,7 @@ theorem IsCSA.of_injective {H : Type*} [Group H] (hG : IsCSA G)
     have hMC : M ≤ C.comap f := by
       have : IsMulCommutative M := hM.prop
       intro x hx
-      exact Subgroup.mem_centralizer_singleton_iff.mpr <|
+      exact Subgroup.mem_centralizer_singleton_iff.mpr <| (commute_iff_eq _ _).mpr <|
         by simpa only [map_mul] using congrArg f (setLike_mul_comm hx hyM)
     have hM_eq : M = C.comap f := hM.eq_of_le hCM hMC
     rw [hM_eq]
@@ -360,5 +415,163 @@ theorem not_isCSA_prod_of_nontrivial {C : Type*} [Group C]
     [Nontrivial C] (hG : ¬ IsMulCommutative G) :
     ¬ IsCSA (G × C) :=
   fun h => (not_isCommTransitive_prod_of_nontrivial hG) h.isCommTransitive
+
+/-! ### Moving a list of elements into general position by conjugations -/
+
+/-- A nonabelian CSA group has no element of order two ([MR], §6, Remark 7). -/
+theorem IsCSA.eq_one_of_sq_eq_one (hG : IsCSA G) (h : ¬IsMulCommutative G) {s : G}
+    (hs : s ^ 2 = 1) : s = 1 := by
+  have hs' : s * s = 1 := by rw [← sq, hs]
+  have hss : ∀ x, s * (s * x) = x := fun x => by rw [← mul_assoc, hs', one_mul]
+  rw [← Subgroup.mem_bot, ← hG.center_eq_bot h, Subgroup.mem_center_iff]
+  intro g
+  -- Conjugation by `s` inverts `p = s * (g * s * g⁻¹)`, so `s` centralizes `p`.
+  have hp : Commute s (s * (g * s * g⁻¹)) := by
+    have hsp : Commute (s⁻¹ * (s * (g * s * g⁻¹)) * s) (s * (g * s * g⁻¹)) := by
+      rw [inv_eq_of_mul_eq_one_right hs', commute_iff_eq]
+      simp [mul_assoc, hss, hs']
+    exact Subgroup.mem_centralizer_singleton_iff.1
+      (hG.mem_centralizer_of_conj_mem_centralizer (Subgroup.mem_centralizer_singleton_iff.2 hsp))
+  -- Hence `g * s * g⁻¹` commutes with `s`, and `g` centralizes `s`.
+  have hq : Commute (g⁻¹⁻¹ * s * g⁻¹) s :=
+    (commute_iff_eq _ _).2 (by simpa [mul_assoc, hss] using (congrArg (s * ·) hp.eq).symm)
+  exact Subgroup.mem_centralizer_singleton_iff.1 (inv_mem_iff.1
+    (hG.mem_centralizer_of_conj_mem_centralizer (Subgroup.mem_centralizer_singleton_iff.2 hq)))
+
+/-- In a nonabelian CSA group, every nonidentity element has a conjugate that does not commute
+with a given nonidentity element. -/
+theorem IsCSA.exists_not_commute_conj (hG : IsCSA G) (h : ¬IsMulCommutative G) {u w : G}
+    (hu : u ≠ 1) (hw : w ≠ 1) : ∃ f : G, ¬Commute (f⁻¹ * u * f) w := by
+  by_contra! hf
+  apply hu
+  rw [← Subgroup.mem_bot, ← hG.center_eq_bot h, Subgroup.mem_center_iff]
+  intro f
+  have huw : Commute u w := by simpa using hf 1
+  -- Every conjugate of `u` commutes with `u` through `w ≠ 1`, so every `f` centralizes `u`.
+  exact Subgroup.mem_centralizer_singleton_iff.1 (hG.mem_centralizer_of_conj_mem_centralizer
+    (Subgroup.mem_centralizer_singleton_iff.2 (hG.isCommTransitive _ w u hw (hf f) huw.symm).eq))
+
+/-- In a CSA group, if `x` commutes with `y ≠ 1` but not with `t`, then the conjugate
+`t⁻¹ * x * t` does not commute with `y`. -/
+private theorem IsCSA.not_commute_conj_of_commute (hG : IsCSA G) {x y t : G} (hy : y ≠ 1)
+    (hxy : Commute x y) (htx : ¬Commute t x) : ¬Commute (t⁻¹ * x * t) y := fun h =>
+  htx (Subgroup.mem_centralizer_singleton_iff.1 (hG.mem_centralizer_of_conj_mem_centralizer
+    (Subgroup.mem_centralizer_singleton_iff.2 (hG.isCommTransitive _ y x hy h hxy.symm).eq)))
+
+/-- In a CSA group, if `b` does not commute with `c`, then for every `d ≠ 1` some nonidentity `t`
+commuting with `b * c` makes the conjugate `t⁻¹ * c * t` not commute with `d`. -/
+private theorem IsCSA.exists_conj_not_commute_conj (hG : IsCSA G) {b c d : G} (hd : d ≠ 1)
+    (hbc : ¬Commute b c) : ∃ t, t ≠ 1 ∧ Commute t (b * c) ∧ ¬Commute (t⁻¹ * c * t) d := by
+  have hsc : ¬Commute (b * c) c := fun h =>
+    hbc ((IsRightRegular.all c).commute_mul_right_iff.1 h).symm
+  generalize b * c = s at hsc ⊢
+  have hs1 : s ≠ 1 := fun h => hsc (h ▸ Commute.one_left c)
+  by_cases h : Commute (s⁻¹ * c * s) d
+  swap
+  · exact ⟨s, hs1, .refl s, h⟩
+  -- Otherwise `t = s ^ 2` works; it is nontrivial since nonabelian CSA groups have no involutions.
+  refine ⟨s ^ 2, fun h2 => hs1 (hG.eq_one_of_sq_eq_one (fun hG' => hbc (hG'.is_comm.comm b c)) h2),
+    .pow_self s 2, ?_⟩
+  have hsc' : ¬Commute s (s⁻¹ * c * s) := fun h' =>
+    hsc (by simpa [mul_assoc] using (Commute.conj_iff s).2 h')
+  have := hG.not_commute_conj_of_commute hd h hsc'
+  simpa only [sq, mul_inv_rev, mul_assoc] using this
+
+/-- [VAR-I], Lemma 10, case (5): in a CSA group, if no two consecutive entries of `b :: c :: r`
+commute and `a ≠ 1`, then `b` and `c` have conjugates `b'` and `c'` with `b' * c' = b * c` such
+that no two consecutive entries of `a :: b' :: c' :: r` commute. -/
+private theorem IsCSA.exists_isConj_isChain_cons (hG : IsCSA G) {a b c : G} {r : List G}
+    (ha : a ≠ 1) (h : (b :: c :: r).IsChain fun x y => ¬Commute x y) : ∃ b' c', IsConj b b' ∧
+      IsConj c c' ∧ b' * c' = b * c ∧ (a :: b' :: c' :: r).IsChain fun x y => ¬Commute x y := by
+  rw [List.isChain_cons_cons, List.isChain_cons] at h
+  obtain ⟨hbc, hcr, hr⟩ := h
+  by_cases hab : Commute a b
+  swap
+  · refine ⟨b, c, .refl b, .refl c, rfl, ?_⟩
+    rw [List.isChain_cons_cons, List.isChain_cons_cons, List.isChain_cons]
+    exact ⟨hab, hbc, hcr, hr⟩
+  have hsb : ¬Commute (b * c) b := fun h => hbc ((IsLeftRegular.all b).commute_mul_left_iff.1 h)
+  -- Conjugate `b` and `c` by some `t ≠ 1` commuting with `b * c` such that `t⁻¹ * c * t` does not
+  -- commute with the next entry.
+  obtain ⟨t, ht, hts, htr⟩ : ∃ t, t ≠ 1 ∧ Commute t (b * c) ∧
+      ∀ d ∈ r.head?, ¬Commute (t⁻¹ * c * t) d := by
+    obtain _ | ⟨d, r⟩ := r
+    · exact ⟨b * c, fun h => hsb (h ▸ Commute.one_left b), .refl _, by simp⟩
+    obtain ⟨t, ht, hts, htd⟩ := hG.exists_conj_not_commute_conj (d := d)
+      (by rintro rfl; exact hcr 1 rfl (Commute.one_right c)) hbc
+    exact ⟨t, ht, hts, by simpa using htd⟩
+  refine ⟨t⁻¹ * b * t, t⁻¹ * c * t, isConj_iff.2 ⟨t⁻¹, by rw [inv_inv]⟩,
+    isConj_iff.2 ⟨t⁻¹, by rw [inv_inv]⟩, ?_, ?_⟩
+  · rw [← hts.inv_mul_cancel]
+    group
+  rw [List.isChain_cons_cons, List.isChain_cons_cons, List.isChain_cons]
+  -- `t` does not commute with `b`, so the new first entry does not commute with `a`.
+  exact ⟨fun h => hG.not_commute_conj_of_commute ha hab.symm
+      (fun htb => hsb (hG.isCommTransitive _ t b ht hts.symm htb)) h.symm,
+    fun h => hbc ((Commute.conj_iff t⁻¹).1 (by simpa using h)), htr, hr⟩
+
+/-- In a CSA group, if `a` does not commute with `b` and `b` commutes with `c ≠ 1`, then `a` and
+`b` have conjugates `a'` and `b'` with `a' * b' = a * b` such that `b'` does not commute with
+`c`. -/
+private theorem IsCSA.exists_isConj_mul_eq_not_commute (hG : IsCSA G) {a b c : G} (hc : c ≠ 1)
+    (hab : ¬Commute a b) (hbc : Commute b c) : ∃ a' b', IsConj a a' ∧ IsConj b b' ∧
+      a' * b' = a * b ∧ ¬Commute b' c :=
+  ⟨(a * b)⁻¹ * a * (a * b), (a * b)⁻¹ * b * (a * b), isConj_iff.2 ⟨(a * b)⁻¹, by rw [inv_inv]⟩,
+    isConj_iff.2 ⟨(a * b)⁻¹, by rw [inv_inv]⟩, by group,
+    hG.not_commute_conj_of_commute hc hbc
+      fun h => hab ((IsRightRegular.all b).commute_mul_right_iff.1 h).symm⟩
+
+/-- The inductive step of [VAR-I], Proposition 3: in a CSA group, if a list `m` that is not a
+commuting chain has entrywise conjugates `m'` with the same product and no two consecutive entries
+commuting, then so has `a :: m` for every `a ≠ 1`. -/
+private theorem IsCSA.exists_conj_cons (hG : IsCSA G) {a : G} {m m' : List G} (ha : a ≠ 1)
+    (hmc : ¬m.IsChain Commute) (hmm' : List.Forall₂ IsConj m m') (hprod : m'.prod = m.prod)
+    (hgp : m'.IsChain fun x y => ¬Commute x y) : ∃ l' : List G, List.Forall₂ IsConj (a :: m) l' ∧
+      l'.prod = (a :: m).prod ∧ l'.IsChain fun x y => ¬Commute x y := by
+  obtain _ | ⟨b, _ | ⟨c, r⟩⟩ := m'
+  · cases hmm'
+    exact absurd List.isChain_nil hmc
+  · rcases hmm' with _ | ⟨_, _ | _⟩
+    exact absurd (List.isChain_singleton _) hmc
+  obtain ⟨b', c', hb', hc', hbc', hgp'⟩ := hG.exists_isConj_isChain_cons ha hgp
+  rcases hmm' with _ | ⟨hb, _ | ⟨hc, hr⟩⟩
+  refine ⟨_, .cons (.refl a) (.cons (hb.trans hb') (.cons (hc.trans hc') hr)), ?_, hgp'⟩
+  simp only [List.prod_cons] at hprod ⊢
+  rw [← mul_assoc b', hbc', mul_assoc, hprod]
+
+/-- **Moving into general position.** In a CSA group, a list of nonidentity elements in which
+some two consecutive entries do not commute can be replaced, entry by entry, by conjugates with
+the same product in which no two consecutive entries commute. -/
+theorem IsCSA.exists_conj_isChain_not_commute (hG : IsCSA G) {l : List G} (hl : ∀ a ∈ l, a ≠ 1)
+    (hc : ¬l.IsChain Commute) : ∃ l' : List G, List.Forall₂ IsConj l l' ∧ l'.prod = l.prod ∧
+      l'.IsChain fun a b => ¬Commute a b := by
+  obtain ⟨n, hn⟩ : ∃ n, l.length = n := ⟨_, rfl⟩
+  induction n generalizing l with
+  | zero => exact absurd (List.length_eq_zero_iff.1 hn ▸ List.IsChain.nil) hc
+  | succ n ih =>
+  obtain _ | ⟨a, m⟩ := l
+  · simp at hn
+  obtain ⟨ha, hm⟩ := List.forall_mem_cons.1 hl
+  -- If the tail is not a commuting chain, move it into general position first.
+  by_cases hmc : m.IsChain Commute
+  swap
+  · obtain ⟨m', hmm', hprod, hgp⟩ := ih hm hmc (by simpa using hn)
+    exact hG.exists_conj_cons ha hmc hmm' hprod hgp
+  obtain _ | ⟨b, _ | ⟨c, r⟩⟩ := m
+  · exact absurd (List.isChain_singleton a) hc
+  · exact ⟨[a, b], .cons (.refl a) (.cons (.refl b) .nil), rfl, by simpa using hc⟩
+  -- Otherwise `a` does not commute with `b`, which commutes with `c`; conjugating `a` and `b`
+  -- makes the tail not a commuting chain.
+  obtain ⟨a', b', ha', hb', hab', hb'c⟩ := hG.exists_isConj_mul_eq_not_commute (hm c (by simp))
+    (fun h => hc (List.isChain_cons_cons.2 ⟨h, hmc⟩)) (List.isChain_cons_cons.1 hmc).1
+  have hmc' : ¬(b' :: c :: r).IsChain Commute := fun h => hb'c (List.isChain_cons_cons.1 h).1
+  obtain ⟨m', hmm', hprod, hgp⟩ := ih (List.forall_mem_cons.2
+    ⟨fun h => hm b (by simp) (isConj_one_left.1 (h ▸ hb')), (List.forall_mem_cons.1 hm).2⟩)
+    hmc' (by simpa using hn)
+  obtain ⟨l', hl', hprod', hgp'⟩ :=
+    hG.exists_conj_cons (fun h => ha (isConj_one_left.1 (h ▸ ha'))) hmc' hmm' hprod hgp
+  refine ⟨l', ?_, hprod'.trans (by simp only [List.prod_cons, ← mul_assoc, hab']), hgp'⟩
+  rcases hl' with _ | ⟨ha'', _ | ⟨hb'', hr'⟩⟩
+  exact .cons (ha'.trans ha'') (.cons (hb'.trans hb'') hr')
 
 end Group

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
+public import TauCeti.AlgebraicGeometry.ResidueDegree
+public import TauCeti.RingTheory.Length
 public import TauCeti.RingTheory.Flat.Rank
 
 /-!
@@ -35,6 +37,13 @@ and is `0` at every other point (`AlgebraicGeometry.Scheme.Hom.finrank_eq_zero_i
 
 Over the spectrum of a field `K`, a finite morphism `f : X ⟶ Spec K` has affine source, and its
 rank is the `K`-dimension of `Γ(X, ⊤)` (`AlgebraicGeometry.Scheme.Hom.finrank_eq_finrank_of_field`).
+This dimension is computed point by point: `X` has finitely many points, each local ring `𝒪_{X,x}`
+is Artinian, and the rank is the sum over the points `x` of the length of `𝒪_{X,x}` weighted by the
+residue degree `[κ(x) : K]`
+(`AlgebraicGeometry.Scheme.Hom.finrank_eq_finsum_residueDegree_mul_length`). For the intersection
+`D ∩ C` of two curves meeting properly on a regular surface over `K`, this writes the degree
+over `K` of the intersection as the sum of the local intersection multiplicities weighted by
+`[κ(x) : K]`.
 
 ## Main results
 
@@ -51,6 +60,8 @@ rank is the `K`-dimension of `Γ(X, ⊤)` (`AlgebraicGeometry.Scheme.Hom.finrank
   the points outside the image.
 * `AlgebraicGeometry.Scheme.Hom.finrank_eq_finrank_of_field`: over a field, the rank is the
   dimension of the global sections.
+* `AlgebraicGeometry.Scheme.Hom.finrank_eq_finsum_residueDegree_mul_length`: over a field, the rank
+  is the sum over the points of the lengths of the local rings times the residue degrees.
 
 ## Usage
 
@@ -61,6 +72,8 @@ For `e : X ≅ Y` in `Over S`, use `TauCeti.finrank_eq_of_nonempty_iso_over ⟨e
 
 * [Stacks Project, Tag 02KA](https://stacks.math.columbia.edu/tag/02KA): the degree of a finite
   locally free morphism.
+* [Stacks Project, Tag 00JA](https://stacks.math.columbia.edu/tag/00JA): an Artinian ring is the
+  product of its localizations at its maximal ideals.
 -/
 
 public section
@@ -221,5 +234,63 @@ theorem Scheme.Hom.finrank_eq_finrank_of_field {K : Type u} [Field K] {X : Schem
     Module.rankAtStalk_eq_finrank_of_free]
   -- The rank of a free module is the constant function with value its `finrank`.
   rfl
+
+/-- **Over a field, the rank is a sum of local lengths.** Let `f : X ⟶ Spec K` be finite.
+Then the rank of `f` is the sum over the finitely many points `x` of `X` of the length
+of the Artinian local ring `𝒪_{X,x}` times the residue degree `[κ(x) : K]`. -/
+theorem Scheme.Hom.finrank_eq_finsum_residueDegree_mul_length {K : Type u} [Field K]
+    {X : Scheme.{u}} (f : X ⟶ Spec (.of K)) [IsFinite f] (s : Spec (.of K)) :
+    f.finrank s = ∑ᶠ x : X,
+      f.residueDegree x * (Module.length (X.presheaf.stalk x) (X.presheaf.stalk x)).toNat := by
+  let : Algebra K Γ(X, ⊤) := ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom.toAlgebra
+  have : IsAffine X := isAffine_of_isAffineHom f
+  have : Module.Finite K Γ(X, ⊤) := f.moduleFinite_appTop rfl
+  have : IsArtinianRing Γ(X, ⊤) := IsArtinianRing.of_finite K Γ(X, ⊤)
+  have := Fintype.ofFinite (PrimeSpectrum Γ(X, ⊤))
+  have hU := isAffineOpen_top X
+  rw [f.finrank_eq_finrank_of_field rfl s, IsArtinianRing.finrank_eq_sum_primeSpectrum,
+    ← finsum_eq_sum_of_fintype]
+  -- The points of the affine scheme `X` are the primes of `Γ(X, ⊤)`.
+  let e : X ≃ PrimeSpectrum Γ(X, ⊤) :=
+    { toFun := fun x ↦ hU.primeIdealOf ⟨x, trivial⟩
+      invFun := hU.fromSpec
+      left_inv := fun x ↦ hU.fromSpec_primeIdealOf ⟨x, trivial⟩
+      right_inv := fun p ↦ hU.fromSpec.isOpenEmbedding.injective
+        (hU.fromSpec_primeIdealOf ⟨hU.fromSpec p, trivial⟩) }
+  rw [← finsum_comp_equiv e]
+  refine finsum_congr fun x ↦ ?_
+  -- The local ring `𝒪_{X,x}` is the localization of `Γ(X, ⊤)` at the prime of `x`.
+  let := X.presheaf.algebra_section_stalk (⟨x, trivial⟩ : (⊤ : X.Opens))
+  have := hU.isLocalization_stalk ⟨x, trivial⟩
+  let : Algebra K (X.presheaf.stalk x) :=
+    ((X.presheaf.germ ⊤ x trivial).hom.comp (algebraMap K Γ(X, ⊤))).toAlgebra
+  have : IsScalarTower K Γ(X, ⊤) (X.presheaf.stalk x) := IsScalarTower.of_algebraMap_eq' rfl
+  let φ := IsLocalization.algEquiv (hU.primeIdealOf ⟨x, trivial⟩).asIdeal.primeCompl
+    (Localization.AtPrime (hU.primeIdealOf ⟨x, trivial⟩).asIdeal) (X.presheaf.stalk x)
+  have h := TauCeti.finrank_eq_length_mul_finrank_residueField K
+    (X.presheaf.stalk x) (X.presheaf.stalk x)
+  have he : e x = hU.primeIdealOf ⟨x, trivial⟩ := rfl
+  rw [mul_comm, he, (φ.restrictScalars K).toLinearEquiv.finrank_eq, h,
+    f.finrank_residueField_stalk x rfl]
+
+/-- **Rank at a point via the fibre over its residue field.** For a finite flat morphism
+`g : X ⟶ S` and `p : S`, `g.finrank p` is the `S.residueField p`-dimension of the global sections
+of the fibre `Spec (S.residueField p) ×_S X`. -/
+theorem Scheme.Hom.finrank_eq_finrank_pullback_fromSpecResidueField
+    (g : X ⟶ S) [Flat g] [IsFinite g] (p : S)
+    [Algebra (S.residueField p) Γ(pullback (S.fromSpecResidueField p) g, ⊤)]
+    (hg : algebraMap (S.residueField p) Γ(pullback (S.fromSpecResidueField p) g, ⊤) =
+      ((Scheme.ΓSpecIso (S.residueField p)).inv ≫
+        (pullback.fst (S.fromSpecResidueField p) g).appTop).hom) :
+    g.finrank p =
+      Module.finrank (S.residueField p) Γ(pullback (S.fromSpecResidueField p) g, ⊤) := by
+  let r := S.fromSpecResidueField p
+  let q : Spec (S.residueField p) := IsLocalRing.closedPoint (S.residueField p)
+  calc g.finrank p = g.finrank (r q) := by rw [S.fromSpecResidueField_apply]
+    _ = (pullback.snd g r).finrank q := (Scheme.Hom.finrank_pullback_snd g r q).symm
+    _ = (pullback.fst r g).finrank q := by
+      rw [← pullbackSymmetry_hom_comp_fst g r, Scheme.Hom.finrank_comp_left_of_isIso]
+    _ = Module.finrank (S.residueField p) Γ(pullback r g, ⊤) :=
+      Scheme.Hom.finrank_eq_finrank_of_field (K := S.residueField p) (pullback.fst r g) hg q
 
 end AlgebraicGeometry

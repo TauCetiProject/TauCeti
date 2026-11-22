@@ -6,16 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Grading
+public import TauCeti.RingTheory.GradedAlgebra.Coarsen
 import Mathlib.GroupTheory.GroupAction.Ring
 import TauCeti.Algebra.CharP.Invertible
+import TauCeti.RingTheory.GradedAlgebra.Supercommutativity
 
 /-!
 # Supercommutativity of the signed symmetric algebra
 
 Homogeneous elements of `TauCeti.SignedSym G`, not just its generators, obey the Koszul
-commutation rule. In particular every odd homogeneous element has square zero when 2 is
-invertible in the coefficient ring. These identities allow the signed symmetric algebra to
-serve as a receiving supercommutative algebra in universal properties and tensor comparisons.
+commutation rule `a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a)`. In particular, over any Koszul-signed
+degree semiring `ι`, every homogeneous element whose degree has Koszul sign `1` (including degree
+`0`) lies in the center of `SignedSym G` over any commutative ring, and every homogeneous element
+whose degree has sign `-1` (including degree `1`) has square zero when `2` is invertible in the
+coefficient ring. For integer-graded modules, passing to `TauCeti.parityGrading` extends these
+identities to elements of pure parity across multiple integer degrees: even-parity elements lie in
+the center of `SignedSym G` over any commutative ring, and every element of odd parity has square
+zero when `2` is invertible in the coefficient ring. These identities allow the signed symmetric
+algebra to serve as a receiving supercommutative algebra in universal properties and tensor
+comparisons, for both integer and parity (`ZMod 2`) gradings.
 
 The proof uses `TauCeti.SignedSym.homogeneous_induction` from the grading API.
 The construction follows the supercommutative algebra of J. Pardon,
@@ -30,72 +39,151 @@ universe u v
 
 variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
-variable (G : InternalGrading R V)
+
+section General
+
+variable {ι : Type*} [DecidableEq ι] [CommSemiring ι] [Module ι (Additive ℤˣ)]
+variable (G : InternalGrading R V ι)
+
+private theorem generator_mul_eq_uzpow_smul_mul {p q : ι} {x : V} (hx : x ∈ G.piece p)
+    {b : SignedSym G} (hb : b ∈ signedSymPiece G q) :
+    generator G x * b = ((-1 : ℤˣ) ^ (p * q)) • (b * generator G x) := by
+  refine homogeneous_induction G (P := fun q b =>
+    generator G x * b = ((-1 : ℤˣ) ^ (p * q)) • (b * generator G x))
+    (by simp)
+    (fun _ _ hy => generator_mul_generator G hx hy)
+    (fun _ _ _ _ hb hc => by
+      rw [← mul_assoc, hb, smul_mul_assoc, mul_assoc, hc, mul_smul_comm, smul_smul,
+        ← mul_assoc, ← uzpow_add, ← mul_add])
+    (by simp [Units.smul_def])
+    (fun _ _ _ hb hc => by simp only [mul_add, add_mul, hb, hc, Units.smul_def, zsmul_add])
+    (fun _ r _ hb => by rw [mul_smul_comm, hb, smul_mul_assoc, smul_comm r])
+    hb
 
 /-- Homogeneous elements supercommute with the sign determined by their total input degrees.
 No assumption on the characteristic of the coefficient ring is needed. -/
-theorem mul_eq_negOnePow_smul_mul {p q : ℤ} {a b : SignedSym G}
+theorem mul_eq_uzpow_smul_mul {p q : ι} {a b : SignedSym G}
     (ha : a ∈ signedSymPiece G p) (hb : b ∈ signedSymPiece G q) :
-    a * b = ((p * q).negOnePow : ℤ) • (b * a) := by
-  -- Share the product step between the ring and its opposite.
-  have hmul {A : Type (max u v)} [Ring A] {x b c : A} {s t : ℤ}
-      (hb : x * b = s • (b * x)) (hc : x * c = t • (c * x)) :
-      x * (b * c) = (s * t) • ((b * c) * x) := by
-    calc
-      x * (b * c) = (x * b) * c := (mul_assoc _ _ _).symm
-      _ = s • (b * (x * c)) := by rw [hb]; simp only [smul_mul_assoc, mul_assoc]
-      _ = (s * t) • ((b * c) * x) := by
-        rw [hc]
-        simp only [mul_smul_comm, smul_smul, mul_assoc]
-  -- First commute a generator past a homogeneous expression, then induct on the other factor.
-  have hgen : ∀ (p : ℤ) (x : V), x ∈ G.piece p →
-      ∀ (q : ℤ) (b : SignedSym G), b ∈ signedSymPiece G q →
-        generator G x * b = ((p * q).negOnePow : ℤ) • (b * generator G x) := by
-    intro p x hx q b hb
-    refine homogeneous_induction G (P := fun q b =>
-      generator G x * b = ((p * q).negOnePow : ℤ) • (b * generator G x))
-      ?_ ?_ ?_ ?_ ?_ ?_ hb
-    · simp
-    · exact fun q y hy => generator_mul_generator G hx hy
-    · intro q r b c hb hc
-      simpa [Int.mul_add, Int.negOnePow_add] using hmul hb hc
-    · simp
-    · intro q b c hb hc
-      simp only [mul_add, add_mul, zsmul_add, hb, hc]
-    · intro q r b hb
-      rw [mul_smul_comm, hb, smul_mul_assoc, smul_comm r]
+    a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a) := by
   refine homogeneous_induction G (P := fun p a =>
-    a * b = ((p * q).negOnePow : ℤ) • (b * a)) ?_ ?_ ?_ ?_ ?_ ?_ ha
-  · simp
-  · exact fun p x hx => hgen p x hx q b hb
-  · intro p r a c ha hc
-    -- The same product rule in the opposite ring handles multiplication on the left.
-    simpa only [MulOpposite.unop_mul, MulOpposite.unop_smul, MulOpposite.unop_op,
-      Int.add_mul, Int.mul_add, Int.negOnePow_add, Units.val_mul, mul_comm] using
-      congrArg MulOpposite.unop
-      (hmul (x := MulOpposite.op b)
-        (b := MulOpposite.op c) (c := MulOpposite.op a)
-        (s := ((r * q).negOnePow : ℤ)) (t := ((p * q).negOnePow : ℤ))
-        (by simpa only [MulOpposite.op_mul, MulOpposite.op_smul] using
-          congrArg MulOpposite.op hc)
-        (by simpa only [MulOpposite.op_mul, MulOpposite.op_smul] using
-          congrArg MulOpposite.op ha))
-  · simp
-  · intro p a c ha hc
-    simp only [add_mul, mul_add, zsmul_add, ha, hc]
-  · intro p r a ha
-    rw [smul_mul_assoc, ha, mul_smul_comm, smul_comm r]
+    a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a))
+    (by simp)
+    (fun _ _ hx => generator_mul_eq_uzpow_smul_mul G hx hb)
+    (fun p r _ _ ha hc => by
+      rw [mul_assoc, hc, mul_smul_comm, ← mul_assoc, ha, smul_mul_assoc, smul_smul,
+        mul_comm ((-1 : ℤˣ) ^ (r * q)), ← uzpow_add, ← add_mul, mul_assoc])
+    (by simp [Units.smul_def])
+    (fun _ _ _ ha hc => by simp only [add_mul, mul_add, ha, hc, Units.smul_def, zsmul_add])
+    (fun _ r _ ha => by rw [smul_mul_assoc, ha, mul_smul_comm, smul_comm r])
+    ha
 
-/-- An odd homogeneous element squares to its own negative, over any commutative ring. -/
-theorem sq_eq_neg {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPiece G p) (hp : Odd p) :
-    a ^ 2 = -(a ^ 2) := by
-  simpa only [pow_two, Int.negOnePow_mul_self, Int.negOnePow_odd _ hp,
-    Units.val_neg, Units.val_one, neg_smul, one_smul] using
-    mul_eq_negOnePow_smul_mul G ha ha
+/-- Every homogeneous element whose degree has Koszul sign `1` commutes with all of
+`SignedSym G`. -/
+theorem commute_of_uzpow_eq_one {p : ι} {a : SignedSym G} (ha : a ∈ signedSymPiece G p)
+    (hp : (-1 : ℤˣ) ^ p = 1) (b : SignedSym G) : Commute a b :=
+  TauCeti.commute_of_mul_eq_uzpow_smul_mul (mul_eq_uzpow_smul_mul G) ha hp b
 
-/-- Every odd homogeneous element has square zero when 2 is invertible, in particular over ℚ. -/
-theorem sq_eq_zero [Invertible (2 : R)] {p : ℤ} {a : SignedSym G}
-    (ha : a ∈ signedSymPiece G p) (hp : Odd p) : a ^ 2 = 0 :=
+/-- Every homogeneous element whose degree has Koszul sign `1` lies in the center of
+`SignedSym G`. -/
+theorem mem_center_of_uzpow_eq_one {p : ι} {a : SignedSym G} (ha : a ∈ signedSymPiece G p)
+    (hp : (-1 : ℤˣ) ^ p = 1) : a ∈ Subalgebra.center R (SignedSym G) :=
+  Subalgebra.mem_center_iff.mpr fun b => (commute_of_uzpow_eq_one G ha hp b).symm
+
+/-- Every element of degree `0` (in particular, any even-parity element when `ι = ZMod 2`)
+commutes with all of `SignedSym G`. -/
+theorem commute_of_mem_zero {a : SignedSym G} (ha : a ∈ signedSymPiece G 0) (b : SignedSym G) :
+    Commute a b :=
+  TauCeti.commute_of_mul_eq_uzpow_smul_mul_of_mem_zero (mul_eq_uzpow_smul_mul G) ha b
+
+/-- Every element of degree `0` (in particular, any even-parity element when `ι = ZMod 2`) lies
+in the center of `SignedSym G`. -/
+theorem mem_center_of_mem_zero {a : SignedSym G} (ha : a ∈ signedSymPiece G 0) :
+    a ∈ Subalgebra.center R (SignedSym G) :=
+  Subalgebra.mem_center_iff.mpr fun b => (commute_of_mem_zero G ha b).symm
+
+/-- Generators whose degree has Koszul sign `1` are central in `SignedSym G`. -/
+theorem generator_mem_center_of_uzpow_eq_one {p : ι} {x : V} (hx : x ∈ G.piece p)
+    (hp : (-1 : ℤˣ) ^ p = 1) : generator G x ∈ Subalgebra.center R (SignedSym G) :=
+  mem_center_of_uzpow_eq_one G (generator_mem_signedSymPiece G hx) hp
+
+/-- Generators of degree `0` (in particular, even-parity generators when `ι = ZMod 2`) are
+central in `SignedSym G`. -/
+theorem generator_mem_center_of_mem_zero {x : V} (hx : x ∈ G.piece 0) :
+    generator G x ∈ Subalgebra.center R (SignedSym G) :=
+  mem_center_of_mem_zero G (generator_mem_signedSymPiece G hx)
+
+/-- A homogeneous element whose degree has Koszul sign `-1` squares to its own negative, over any
+commutative ring. -/
+theorem sq_eq_neg {p : ι} {a : SignedSym G} (ha : a ∈ signedSymPiece G p)
+    (hp : (-1 : ℤˣ) ^ p = -1) : a ^ 2 = -(a ^ 2) := by
+  rw [pow_two]
+  exact TauCeti.mul_self_eq_neg_of_mul_eq_uzpow_smul_mul (mul_eq_uzpow_smul_mul G) ha hp
+
+/-- Every homogeneous element whose degree has Koszul sign `-1` has square zero when `2` is
+invertible, in particular over `ℚ`. -/
+theorem sq_eq_zero [Invertible (2 : R)] {p : ι} {a : SignedSym G}
+    (ha : a ∈ signedSymPiece G p) (hp : (-1 : ℤˣ) ^ p = -1) : a ^ 2 = 0 :=
   eq_zero_of_eq_neg_of_invertible_two (R := R) (sq_eq_neg G ha hp)
+
+/-- An element of degree `1` (in particular, any odd-parity element when `ι = ZMod 2`) squares to
+its own negative. -/
+theorem sq_eq_neg_of_mem_one {a : SignedSym G} (ha : a ∈ signedSymPiece G 1) :
+    a ^ 2 = -(a ^ 2) :=
+  sq_eq_neg G ha (uzpow_one (-1))
+
+/-- An element of degree `1` (in particular, any odd-parity element when `ι = ZMod 2`) has square
+zero when `2` is invertible. -/
+theorem sq_eq_zero_of_mem_one [Invertible (2 : R)] {a : SignedSym G}
+    (ha : a ∈ signedSymPiece G 1) : a ^ 2 = 0 :=
+  sq_eq_zero G ha (uzpow_one (-1))
+
+end General
+
+section Int
+
+variable (G : InternalGrading R V ℤ)
+
+/-- Elements of pure parity supercommute with the sign determined by their parities, even when
+they combine multiple integer degrees. -/
+theorem mul_eq_uzpow_smul_mul_of_mem_parityGrading {i j : ZMod 2} {a b : SignedSym G}
+    (ha : a ∈ parityGrading (signedSymPiece G) i) (hb : b ∈ parityGrading (signedSymPiece G) j) :
+    a * b = ((-1 : ℤˣ) ^ (i * j)) • (b * a) :=
+  TauCeti.mul_eq_uzpow_smul_mul_of_mem_parityGrading (mul_eq_uzpow_smul_mul G) ha hb
+
+/-- Every element of even parity commutes with all of `SignedSym G`. -/
+theorem commute_of_mem_parityGrading_zero {a : SignedSym G}
+    (ha : a ∈ parityGrading (signedSymPiece G) 0) (b : SignedSym G) : Commute a b :=
+  TauCeti.commute_of_mul_eq_uzpow_smul_mul_of_mem_zero
+    (mul_eq_uzpow_smul_mul_of_mem_parityGrading G) ha b
+
+/-- Every element of even parity lies in the center of `SignedSym G`. -/
+theorem mem_center_of_mem_parityGrading_zero {a : SignedSym G}
+    (ha : a ∈ parityGrading (signedSymPiece G) 0) : a ∈ Subalgebra.center R (SignedSym G) :=
+  Subalgebra.mem_center_iff.mpr fun b => (commute_of_mem_parityGrading_zero G ha b).symm
+
+/-- Every element of odd parity squares to its own negative, over any commutative ring. -/
+theorem sq_eq_neg_of_mem_parityGrading_one {a : SignedSym G}
+    (ha : a ∈ parityGrading (signedSymPiece G) 1) : a ^ 2 = -(a ^ 2) := by
+  rw [pow_two]
+  exact TauCeti.mul_self_eq_neg_of_mul_eq_uzpow_smul_mul_of_mem_one
+    (mul_eq_uzpow_smul_mul_of_mem_parityGrading G) ha
+
+/-- Every element of odd parity has square zero when `2` is invertible in the coefficient ring,
+even if it sums terms of distinct odd integer degrees. -/
+theorem sq_eq_zero_of_mem_parityGrading_one [Invertible (2 : R)] {a : SignedSym G}
+    (ha : a ∈ parityGrading (signedSymPiece G) 1) : a ^ 2 = 0 :=
+  eq_zero_of_eq_neg_of_invertible_two (R := R) (sq_eq_neg_of_mem_parityGrading_one G ha)
+
+/-- Generators of even parity are central in `SignedSym G`. -/
+theorem generator_mem_center_of_mem_parityGrading_zero {x : V}
+    (hx : x ∈ parityGrading G.piece 0) : generator G x ∈ Subalgebra.center R (SignedSym G) :=
+  mem_center_of_mem_parityGrading_zero G (generator_mem_parityGrading G hx)
+
+/-- Generators of odd parity square to zero when `2` is invertible. -/
+theorem generator_sq_eq_zero_of_mem_parityGrading_one [Invertible (2 : R)] {x : V}
+    (hx : x ∈ parityGrading G.piece 1) : generator G x ^ 2 = 0 :=
+  sq_eq_zero_of_mem_parityGrading_one G (generator_mem_parityGrading G hx)
+
+end Int
 
 end TauCeti.SignedSym

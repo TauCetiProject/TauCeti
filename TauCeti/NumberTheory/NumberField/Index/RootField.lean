@@ -69,14 +69,14 @@ variable (hβ : β ∈ (minpoly ℚ (θ : K)).rootSet M)
 /-- The underlying element of `rootIntegralPrimitiveElement hβ` is the root `β`. -/
 @[simp]
 theorem coe_coe_rootIntegralPrimitiveElement :
-    (((rootIntegralPrimitiveElement hβ).1 : fixedField (stabilizer (M ≃ₐ[ℚ] M) β)) : M) = β :=
+    (((rootIntegralPrimitiveElement hβ).val : fixedField (stabilizer (M ≃ₐ[ℚ] M) β)) : M) = β :=
   (rfl)
 
 /-- The minimal polynomial over `ℤ` of a root, as an integral primitive element of its own field,
 is `minpoly ℤ θ`. -/
 @[simp]
 theorem minpoly_rootIntegralPrimitiveElement :
-    minpoly ℤ (rootIntegralPrimitiveElement hβ).1 = minpoly ℤ θ := by
+    minpoly ℤ (rootIntegralPrimitiveElement hβ).val = minpoly ℤ θ := by
   rw [← _root_.NumberField.RingOfIntegers.minpoly_coe]
   refine minpoly_int_eq_of_aeval_eq_zero ?_
   rw [← aeval_algebraMap_eq_zero_iff M, IntermediateField.algebraMap_apply,
@@ -87,7 +87,7 @@ theorem minpoly_rootIntegralPrimitiveElement :
 of a root of `minpoly ℚ θ` in its own field. -/
 theorem not_dvd_exponent_rootIntegralPrimitiveElement {p : ℕ} [Fact p.Prime]
     (hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p)))) :
-    ¬ p ∣ NumberField.RingOfIntegers.exponent (rootIntegralPrimitiveElement hβ).1 := fun h =>
+    ¬ p ∣ NumberField.RingOfIntegers.exponent (rootIntegralPrimitiveElement hβ).val := fun h =>
   (rootIntegralPrimitiveElement hβ).not_dvd_index_of_squarefree_map
     (by rwa [minpoly_rootIntegralPrimitiveElement])
     (h.trans (rootIntegralPrimitiveElement hβ).exponent_dvd_index)
@@ -95,7 +95,7 @@ theorem not_dvd_exponent_rootIntegralPrimitiveElement {p : ℕ} [Fact p.Prime]
 /-- The monic irreducible factors modulo `p` of the minimal polynomial of a root are those of
 `minpoly ℤ θ`. -/
 theorem monicFactorsMod_rootIntegralPrimitiveElement (p : ℕ) [Fact p.Prime] :
-    NumberField.RingOfIntegers.monicFactorsMod (rootIntegralPrimitiveElement hβ).1 p =
+    NumberField.RingOfIntegers.monicFactorsMod (rootIntegralPrimitiveElement hβ).val p =
       NumberField.RingOfIntegers.monicFactorsMod θ p := by
   simp only [NumberField.RingOfIntegers.monicFactorsMod, minpoly_rootIntegralPrimitiveElement]
 
@@ -120,7 +120,7 @@ theorem ramificationIdx_eq_one_of_liesOver_span
   have hf0 : (minpoly ℤ θ).map (Int.castRingHom (ZMod p)) ≠ 0 :=
     ((minpoly.monic θ.isIntegral).map _).ne_zero
   rw [UniqueFactorizationMonoid.multiplicity_eq_count_normalizedFactors
-    (UniqueFactorizationMonoid.irreducible_of_normalized_factor _ hφ) hf0,
+    (UniqueFactorizationMonoid.irreducible_of_normalized_factor _ hφ),
     UniqueFactorizationMonoid.normalize_normalized_factor _ hφ]
   exact Multiset.count_eq_one_of_mem
     ((UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors hf0).mp hsq) hφ

@@ -186,10 +186,10 @@ private theorem arg_sum_exitTimes_tendsto {γ : ℝ → ℂ} {s : ℂ} {l t₀ u
     (tendsto_arg_div_chord_right h_deriv_R h_at h_slit_plus h_toR)
 
 /-- **The per-window principal value at a simple pole**: at a transverse crossing `γ t₀ = s`
-with unique crossing on the window, non-zero one-sided derivative limits, and the slit-plane
-inputs at the window radius, the `ε`-truncated window integral of `(γ t - s)⁻¹ * deriv γ t`
-converges as `ε → 0⁺` to the log-norm difference of the window boundary plus the two boundary
-arguments. -/
+with non-zero one-sided derivative limits, and the slit-plane inputs at the window radius (which
+force the crossing to be unique on the window), the `ε`-truncated window integral of
+`(γ t - s)⁻¹ * deriv γ t` converges as `ε → 0⁺` to the log-norm difference of the window boundary
+plus the two boundary arguments. -/
 theorem perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ} {l t₀ u : ℝ}
     {L_R L_L : ℂ} {P : Set ℝ} (hlt : l < t₀) (htu : t₀ < u) (h_at : γ t₀ = s)
     (hγ_cont : ContinuousOn γ (Icc l u))
@@ -197,7 +197,6 @@ theorem perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ} {l t�
     (h_tendsto_L : Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L)) (hP : P.Countable)
     (hγ_diffP : ∀ t ∈ Ioo l u \ P, DifferentiableAt ℝ γ t)
     (hderiv_int : IntervalIntegrable (fun t => deriv γ t) MeasureTheory.volume l u)
-    (h_unique : ∀ t ∈ Icc l u, γ t = s → t = t₀)
     (h_slit_R : ∀ a b, t₀ < a → a ≤ b → b ≤ u → (γ b - s) / (γ a - s) ∈ Complex.slitPlane)
     (h_slit_L : ∀ b, l ≤ b → b < t₀ → (γ b - s) / (γ l - s) ∈ Complex.slitPlane)
     (h_slit_plus : (γ u - s) / L_R ∈ Complex.slitPlane)
@@ -209,6 +208,18 @@ theorem perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ} {l t�
         ((((-L_L) / (γ l - s)).arg + ((γ u - s) / L_R).arg : ℝ) : ℂ) *
           Complex.I)) := by
   classical
+  have h_unique : ∀ t ∈ Icc l u, γ t = s → t = t₀ := by
+    intro t ht hts
+    rcases lt_trichotomy t t₀ with h | h | h
+    · exfalso
+      have h0 := h_slit_L t ht.1 h
+      rw [hts, sub_self, zero_div] at h0
+      exact Complex.zero_notMem_slitPlane h0
+    · exact h
+    · exfalso
+      have h0 := h_slit_R t t h le_rfl ht.2
+      rw [hts, sub_self, div_zero] at h0
+      exact Complex.zero_notMem_slitPlane h0
   have hL_R : L_R ≠ 0 := fun h0 => by
     rw [h0, div_zero] at h_slit_plus
     exact Complex.zero_notMem_slitPlane h_slit_plus

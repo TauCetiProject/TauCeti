@@ -230,7 +230,7 @@ theorem TypeDStructure.boxDifferential_self_mem_boxGradedPart {N : TypeDStructur
   refine boxDifferential_mem_boxGradedPart (fun {s g m a} hm ha ↦ ?_) (fun {s m} hm ↦ ?_) hN hφ
   · rw [op_smul_eq_mul, smul_eq_mul, mul_inv_rev, inv_inv]
     exact hA hm ha
-  · rw [smul_eq_mul, mul_inv_rev, inv_inv, Subgroup.mem_center_iff.mp l.2 s⁻¹]
+  · rw [smul_eq_mul, mul_inv_rev, inv_inv, Subgroup.mem_center_iff.mp l.property s⁻¹]
     exact hd hm
 
 end BoxDifferential

@@ -28,7 +28,8 @@ and hence on idele classes.
 public section
 
 open IsDedekindDomain NumberField
-open scoped AdicCompletionExtension NumberField.LiesOver RestrictedProduct Valued
+open scoped AdicCompletionExtension RestrictedProduct Valued
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -49,23 +50,23 @@ theorem continuous_finiteAdeleNorm : Continuous (finiteAdeleNorm K L) := by
     -- in the norm's component formula; the type synonym has a different `DFunLike` instance.
     have h := (finiteAdeleNorm_apply (RestrictedProduct.inclusion _ _ hS x) v).trans
       (congrArg finprod (funext fun w ↦ congrArg (Algebra.norm (v.adicCompletion K))
-        (RestrictedProduct.inclusion_apply _ _ hS w.1)))
+        (RestrictedProduct.inclusion_apply _ _ hS w.val)))
     refine (congrArg (· ∈ v.adicCompletionIntegers K) h).mpr
       (finprod_norm_mem_adicCompletionIntegers K L x v ?_)
     intro w hwv
     have hw : w ∈ S := by
       by_contra hw
       exact hv ⟨w, hw, hwv⟩
-    exact Filter.eventually_principal.mp x.2 w hw
+    exact Filter.eventually_principal.mp x.property w hw
   · refine continuous_pi fun v ↦ ?_
     refine Continuous.congr ?_ fun x ↦
       ((finiteAdeleNorm_apply (RestrictedProduct.inclusion _ _ hS x) v).trans
         (congrArg finprod (funext fun w ↦ congrArg (Algebra.norm (v.adicCompletion K))
-          (RestrictedProduct.inclusion_apply _ _ hS w.1)))).symm
+          (RestrictedProduct.inclusion_apply _ _ hS w.val)))).symm
     refine continuous_finprod (fun w ↦ ?_) (locallyFinite_of_finite _)
     exact (TauCeti.continuous_algebraNorm_of_finiteDimensional
-      (v.adicCompletion K) (w.1.adicCompletion L)).comp
-        (RestrictedProduct.continuous_eval w.1)
+      (v.adicCompletion K) (w.val.adicCompletion L)).comp
+        (RestrictedProduct.continuous_eval w.val)
 
 omit [NumberField K] in
 /-- The relative norm of infinite adeles is continuous. -/
@@ -74,8 +75,8 @@ theorem continuous_infiniteAdeleNorm : Continuous (infiniteAdeleNorm K L) := by
   refine continuous_pi fun v ↦ ?_
   simp only [infiniteAdeleNorm_apply]
   refine continuous_finprod (fun w ↦ ?_) (locallyFinite_of_finite _)
-  exact (TauCeti.continuous_algebraNorm_of_finiteDimensional v.Completion w.1.Completion).comp
-    (continuous_apply w.1)
+  exact (TauCeti.continuous_algebraNorm_of_finiteDimensional v.Completion w.val.Completion).comp
+    (continuous_apply w.val)
 
 /-- The relative norm of full adeles is continuous. -/
 @[continuity, fun_prop]

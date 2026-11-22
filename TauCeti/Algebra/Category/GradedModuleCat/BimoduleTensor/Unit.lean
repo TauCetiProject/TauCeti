@@ -51,7 +51,7 @@ private theorem unitEquiv_symm_smul (a : A) (b : Aᵐᵒᵖ)
     unitEquiv.symm ((a ⊗ₜ[k] b) • x) = a * unitEquiv.symm x * unop b := by
   exact Bimodule.symm_smul (AlgHom.id k A) a b x.down
 
-variable (Γ : InternalGrading k A) [GradedAlgebra Γ.piece]
+variable (Γ : InternalGrading k A ℤ) [GradedAlgebra Γ.piece]
 
 /-- The universe-lifted regular graded bimodule of `A`. -/
 -- The concrete carrier and transported grading are used by the unit computation API.
@@ -110,7 +110,7 @@ theorem mem_bimoduleUnit_piece_iff (p : ℤ) (x : bimoduleUnit.{v} Γ) :
 section LeftUnitor
 
 variable {B : Type uB} [Ring B] [Algebra k B]
-  (Δ : InternalGrading k B) [GradedAlgebra Δ.piece]
+  (Δ : InternalGrading k B ℤ) [GradedAlgebra Δ.piece]
   (M : GradedModuleCat.{max v uA} (Γ.tensorProduct Δ.opposite).piece)
 
 /-- Restrict the envelope action to the left algebra factor. -/
@@ -265,7 +265,7 @@ end LeftUnitor
 section RightUnitor
 
 variable {B : Type uB} [Ring B] [Algebra k B]
-  (Δ : InternalGrading k B) [GradedAlgebra Δ.piece]
+  (Δ : InternalGrading k B ℤ) [GradedAlgebra Δ.piece]
   (M : GradedModuleCat.{max v uB} (Γ.tensorProduct Δ.opposite).piece)
 
 /-- Restrict the envelope action to the left algebra factor. -/
@@ -450,7 +450,7 @@ local notation "c" => ComplexShape.up ℤ
 /-- The unit complex of the graded bimodule setting of `Ξ`: the regular graded bimodule
 `GradedModuleCat.bimoduleUnit Ξ` placed in cohomological degree zero. -/
 noncomputable abbrev gradedBimoduleUnitComplex {A : Type uA} [Ring A] [Algebra k A]
-    (Ξ : InternalGrading k A) [GradedAlgebra Ξ.piece] :
+    (Ξ : InternalGrading k A ℤ) [GradedAlgebra Ξ.piece] :
     HomologicalComplex (GradedBimoduleCat k Ξ) c :=
   (HomologicalComplex.single (GradedBimoduleCat k Ξ) c 0).obj
     (GradedModuleCat.bimoduleUnit.{w} Ξ)

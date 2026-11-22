@@ -25,7 +25,7 @@ namespace TauCeti
 /-- A fibre-preserving map of total spaces is bijective exactly when each of its fibre maps is. -/
 theorem bijective_totalSpace_map_iff {B F₁ F₂ : Type*} {E₁ E₂ : B → Type*}
     {ϕ : ∀ x, E₁ x → E₂ x} :
-    Function.Bijective (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.2)) ↔
+    Function.Bijective (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.snd)) ↔
       ∀ x, Function.Bijective (ϕ x) := by
   refine ⟨fun h x ↦ ⟨fun v w hvw ↦ TotalSpace.mk_inj.1 (h.1 (by simp [hvw])), fun w ↦ ?_⟩,
     fun h ↦ ⟨fun ⟨x, v⟩ ⟨y, w⟩ hvw ↦ ?_, fun ⟨x, w⟩ ↦ ⟨⟨x, (h x).2 w |>.choose⟩, ?_⟩⟩⟩

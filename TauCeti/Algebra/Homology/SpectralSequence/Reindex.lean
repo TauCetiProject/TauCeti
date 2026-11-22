@@ -17,7 +17,9 @@ numbers and a bijection `f : κ' ≃ κ` of the index types which identifies the
 `c (r + d)` for every `r`, the **reindexed spectral sequence** `E.reindex d f hf hd` has page `r`
 equal to page `r + d` of `E`, with its object at `i : κ'` the object of `E` at `f i`
 (`CategoryTheory.SpectralSequence.reindex_page_X`) and the same differentials
-(`CategoryTheory.SpectralSequence.reindex_page_d`). Morphisms of spectral sequences are
+(`CategoryTheory.SpectralSequence.reindex_page_d`; read through the identifications
+`CategoryTheory.SpectralSequence.reindexPageXIso` of the objects, this is
+`CategoryTheory.SpectralSequence.reindex_page_d_eq`). Morphisms of spectral sequences are
 reindexed componentwise (`CategoryTheory.SpectralSequence.reindexFunctor`).
 
 This is how one spectral sequence is written in the indexing conventions of different sources:
@@ -82,6 +84,17 @@ noncomputable def reindexPageXIso (r r' : ℤ) (hr : r₀' ≤ r) (hr' : r + d =
     (i : κ) (hj : f j = i) :
     ((E.reindex d f hf hd).page r hr).X j ≅ (E.page r').X i :=
   eqToIso (by subst hr' hj; rfl)
+
+/-- Under the identifications `CategoryTheory.SpectralSequence.reindexPageXIso` of its objects, the
+differentials of the reindexed spectral sequence are those of `E`. -/
+lemma reindex_page_d_eq (r r' : ℤ) (hr : r₀' ≤ r) (hr' : r + d = r') (i j : κ') (a b : κ)
+    (ha : f i = a) (hb : f j = b) :
+    ((E.reindex d f hf hd).page r hr).d i j =
+      (E.reindexPageXIso d f hf hd r r' hr hr' i a ha).hom ≫ (E.page r').d a b ≫
+        (E.reindexPageXIso d f hf hd r r' hr hr' j b hb).inv := by
+  subst hr' ha hb
+  rw [reindexPageXIso, reindexPageXIso, eqToIso.hom, eqToIso.inv]
+  exact (conj_eqToHom_iff_heq' _ _ _ _).2 .rfl
 
 variable {E} {E' E'' : SpectralSequence C c r₀}
 

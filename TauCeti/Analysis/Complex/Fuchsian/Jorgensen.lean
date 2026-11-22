@@ -111,8 +111,6 @@ open Matrix.SpecialLinearGroup (dilation dilation_inv dilation_zpow conj_dilatio
   dilation_conj_apply_one_one diag_or_antidiag_of_conj_dilation trace_dilation
   trace_commutatorElement_dilation exists_tendsto_dilation_conj trace_mul_mul_inv)
 
-attribute [local simp] Matrix.adjugate_fin_two
-
 /-! ### Jørgensen's sequence for a dilation -/
 
 /-- The off-diagonal products `βₙ` of the iteration satisfy `βₙ₊₁ = -(1 + βₙ) βₙ (u - u⁻¹)²`. -/
