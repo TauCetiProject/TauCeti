@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!

@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 public import TauCeti.Analysis.PDE.EnergyForm.DifferenceQuotient
 import TauCeti.Analysis.Sobolev.DifferenceQuotient
 import TauCeti.Analysis.Sobolev.W1p.Density
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 import TauCeti.Topology.Instances.Matrix
 
 /-!

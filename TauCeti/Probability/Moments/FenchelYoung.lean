@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.CovariancePseudoInverse
 public import TauCeti.Probability.Moments.Covariance
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 
 /-!
 # The quadratic Fenchel–Young inequality in mean

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Independence.Integration
-public import TauCeti.MeasureTheory.Function.L2Space
+public import TauCeti.MeasureTheory.Function.L2Space.Basic
 public import TauCeti.Analysis.Convex.FiniteMean
 import TauCeti.Probability.Moments.Variance
 

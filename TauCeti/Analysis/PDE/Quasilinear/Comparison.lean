@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Weak
 import TauCeti.Analysis.Sobolev.Poincare.W1p0
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
 

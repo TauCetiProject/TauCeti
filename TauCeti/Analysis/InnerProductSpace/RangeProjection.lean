@@ -163,27 +163,9 @@ theorem contDiffAt_gramLeftInverse
 
 /-- An operator whose Gram operator `B† B` is invertible has closed range. -/
 theorem isClosed_range_of_isUnit_adjoint_comp {B : F →L[𝕜] V}
-    (hB : IsUnit (adjoint B ∘L B)) : IsClosed (Set.range B) := by
-  let P : V →L[𝕜] V := B ∘L Ring.inverse (adjoint B ∘L B) ∘L adjoint B
-  have hinv : Ring.inverse (adjoint B ∘L B) ∘L (adjoint B ∘L B) = 1 :=
-    Ring.inverse_mul_cancel _ hB
-  have hP : IsIdempotentElem P := by
-    rw [IsIdempotentElem, mul_def]
-    calc P ∘L P
-        = B ∘L (Ring.inverse (adjoint B ∘L B) ∘L (adjoint B ∘L B)) ∘L
-            Ring.inverse (adjoint B ∘L B) ∘L adjoint B := by
-          simp only [P, comp_assoc]
-      _ = P := by rw [hinv, one_def, id_comp]
-  have hrange : (P.range : Set V) = Set.range B := by
-    ext v
-    simp only [SetLike.mem_coe, LinearMap.mem_range, coe_coe, Set.mem_range]
-    refine ⟨fun ⟨w, hw⟩ ↦ ⟨Ring.inverse (adjoint B ∘L B) (adjoint B w), hw⟩,
-      fun ⟨x, hx⟩ ↦ ⟨B x, ?_⟩⟩
-    have hx' : (Ring.inverse (adjoint B ∘L B) ∘L (adjoint B ∘L B)) x = x := by
-      rw [hinv, one_def, id_apply]
-    simpa only [P, comp_apply, hx] using congrArg B hx'
-  rw [← hrange]
-  exact ContinuousLinearMap.IsIdempotentElem.isClosed_range hP
+    (hB : IsUnit (adjoint B ∘L B)) : IsClosed (Set.range B) :=
+  (show Function.LeftInverse (gramLeftInverse B) B from
+    gramLeftInverse_apply_apply hB).isClosed_range (gramLeftInverse B).continuous B.continuous
 
 /-- The range of an operator whose Gram operator `B† B` is invertible admits an orthogonal
 projection. -/
@@ -193,10 +175,23 @@ theorem hasOrthogonalProjection_range_of_isUnit_adjoint_comp {B : F →L[𝕜] V
     (by simpa only [LinearMap.coe_range, coe_coe] using isClosed_range_of_isUnit_adjoint_comp hB)
 
 /-- If `B† B G B† = B†`, the orthogonal projection onto the range of `B` is `B G B†`. -/
-theorem starProjection_range_eq_comp_comp_adjoint {B : F →L[𝕜] V}
-    [B.range.HasOrthogonalProjection] {G : F →L[𝕜] F}
+theorem starProjection_range_eq_comp_comp_adjoint {B : F →L[𝕜] V} {G : F →L[𝕜] F}
     (hG : adjoint B ∘L B ∘L G ∘L adjoint B = adjoint B) :
+    letI : B.range.HasOrthogonalProjection := ⟨fun v ↦ ⟨(B ∘L G ∘L adjoint B) v,
+      LinearMap.mem_range_self _ _, by
+      rintro _ ⟨x, rfl⟩
+      rw [coe_coe, ← adjoint_inner_right, map_sub]
+      have h := congr($hG v)
+      simp only [comp_apply] at h ⊢
+      rw [h, sub_self, inner_zero_right]⟩⟩
     B.range.starProjection = B ∘L G ∘L adjoint B := by
+  let : B.range.HasOrthogonalProjection := ⟨fun v ↦ ⟨(B ∘L G ∘L adjoint B) v,
+    LinearMap.mem_range_self _ _, by
+    rintro _ ⟨x, rfl⟩
+    rw [coe_coe, ← adjoint_inner_right, map_sub]
+    have h := congr($hG v)
+    simp only [comp_apply] at h ⊢
+    rw [h, sub_self, inner_zero_right]⟩⟩
   ext v
   refine Submodule.eq_starProjection_of_mem_of_inner_eq_zero (LinearMap.mem_range_self _ _) ?_
   rintro _ ⟨x, rfl⟩
@@ -208,16 +203,18 @@ theorem starProjection_range_eq_comp_comp_adjoint {B : F →L[𝕜] V}
 
 /-- The orthogonal projection onto the range of `B` is `B (B† B)⁻¹ B†`, that is `B` composed with
 `ContinuousLinearMap.gramLeftInverse B`, when the Gram operator `B† B` is invertible. -/
-theorem starProjection_range_eq {B : F →L[𝕜] V} [B.range.HasOrthogonalProjection]
-    (hB : IsUnit (adjoint B ∘L B)) :
+theorem starProjection_range_eq {B : F →L[𝕜] V} (hB : IsUnit (adjoint B ∘L B)) :
+    letI := hasOrthogonalProjection_range_of_isUnit_adjoint_comp hB
     B.range.starProjection = B ∘L gramLeftInverse B := by
   rw [gramLeftInverse_def]
   exact starProjection_range_eq_comp_comp_adjoint <| by
     simpa only [gramLeftInverse_def] using adjoint_comp_self_comp_gramLeftInverse hB
 
 /-- For an isometry `B`, the operator `B B†` is the orthogonal projection onto the range of `B`. -/
-theorem comp_adjoint_eq_starProjection_range {B : F →L[𝕜] V} (hB : Isometry B)
-    [B.range.HasOrthogonalProjection] : B ∘L adjoint B = B.range.starProjection := by
+theorem comp_adjoint_eq_starProjection_range {B : F →L[𝕜] V} (hB : Isometry B) :
+    letI := hasOrthogonalProjection_range_of_isUnit_adjoint_comp
+      ((isometry_iff_adjoint_comp_self B).1 hB ▸ isUnit_one)
+    B ∘L adjoint B = B.range.starProjection := by
   have h := (isometry_iff_adjoint_comp_self B).1 hB
   rw [starProjection_range_eq (h ▸ isUnit_one), gramLeftInverse_def, h, Ring.inverse_one,
     one_def, id_comp]

@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Complex.Wirtinger.FlatTorus.Basic
 import TauCeti.Analysis.Fourier.Torus.UnitCube
 import TauCeti.Analysis.InnerProductSpace.WeakSolution
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Norm
 

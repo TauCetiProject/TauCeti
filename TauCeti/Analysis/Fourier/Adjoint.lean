@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 
 /-!
 # The Fourier transform of pointwise adjoints

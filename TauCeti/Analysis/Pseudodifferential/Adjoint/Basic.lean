@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Pseudodifferential.RightQuantization
 import TauCeti.Analysis.Fourier.Adjoint
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 
 /-!
 # The adjoint of a quantization

@@ -10,7 +10,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Path
 import TauCeti.Analysis.InnerProductSpace.RankOne
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.LinearAlgebra.Submodule.Quotient
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 
 /-!
 # Localized metric variations make the linearized gradient trajectory equation onto

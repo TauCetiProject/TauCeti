@@ -11,7 +11,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.ReciprocalWeight
 import TauCeti.Analysis.Sobolev.BesselPotential.Conjugation
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 
 /-!
 # Formal adjoints on the Bessel-potential scale

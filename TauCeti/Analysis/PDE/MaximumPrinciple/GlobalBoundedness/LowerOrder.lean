@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Drift
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 
 /-!
 # Global boundedness of weak subsolutions with a drift

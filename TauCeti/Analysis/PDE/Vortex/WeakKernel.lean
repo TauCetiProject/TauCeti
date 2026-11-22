@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.Kernel.Dimension
 public import TauCeti.Analysis.PDE.Vortex.SobolevScale
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 import Mathlib.Algebra.Module.Submodule.Equiv
 
 /-!

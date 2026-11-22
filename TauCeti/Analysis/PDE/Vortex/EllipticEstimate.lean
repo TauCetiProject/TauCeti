@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.ExponentialRegularity
 import TauCeti.Analysis.Normed.Operator.Banach
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 
 /-!
 # Elliptic estimates on the Sobolev scale for the gauge-fixed vortex operator

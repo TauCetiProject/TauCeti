@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Analysis.PDE.Vortex.SpectralGap
 public import TauCeti.Analysis.InnerProductSpace.WeakSolution
-public import TauCeti.MeasureTheory.Function.L2Space
+public import TauCeti.MeasureTheory.Function.L2Space.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Lp
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.PDE.Vortex.WeightedEstimate

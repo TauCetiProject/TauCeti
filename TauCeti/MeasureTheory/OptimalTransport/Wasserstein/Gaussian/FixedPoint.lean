@@ -13,7 +13,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.FrechetMean
 public import TauCeti.Probability.Moments.Covariance
 import TauCeti.Analysis.Matrix.BuresFixedPoint
 import TauCeti.Analysis.Matrix.GeometricMean
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 import TauCeti.Probability.Moments.FenchelYoung
 import TauCeti.Probability.Distributions.Gaussian.Density
 

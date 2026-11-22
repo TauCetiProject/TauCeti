@@ -12,11 +12,15 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 
 A subspace that admits an orthogonal projection is the range of a continuous idempotent and is
 therefore closed. In a complete ambient inner-product space, such a subspace is itself complete.
-Closedness, completeness and existence of an orthogonal projection are equivalent there.
+Closedness, completeness and existence of an orthogonal projection are equivalent there. The
+orthogonal projection onto a projected subspace `U` sends any dense set to a set with closure `U`
+(`Submodule.closure_image_starProjection_of_dense`).
 
 The sum `U ⊔ V` of two orthogonal subspaces admitting orthogonal projections equals
 `(Uᗮ ⊓ Vᗮ)ᗮ` and is therefore closed (`Submodule.IsOrtho.sup_eq_orthogonal_inf_orthogonal`,
-`Submodule.IsOrtho.isClosed_sup`).
+`Submodule.IsOrtho.isClosed_sup`). It also admits an orthogonal projection equal to the sum of the
+two projections (`Submodule.IsOrtho.hasOrthogonalProjection_sup`,
+`Submodule.IsOrtho.starProjection_sup`).
 
 The completeness observation also appears in
 `ForTauCeti/Analysis/InnerProductSpace/ReducingSubspace.lean` of the
@@ -35,6 +39,20 @@ theorem isClosed_of_hasOrthogonalProjection (U : Submodule 𝕜 E) [U.HasOrthogo
     IsClosed (U : Set E) := by
   rw [← U.range_starProjection]
   exact ContinuousLinearMap.IsIdempotentElem.isClosed_range U.isIdempotentElem_starProjection
+
+/-- If `S` is dense in `E`, then the closure of the image of `S` under the orthogonal projection
+onto `U` equals `U`. -/
+theorem closure_image_starProjection_of_dense (U : Submodule 𝕜 E) [U.HasOrthogonalProjection]
+    {S : Set E} (hS : Dense S) :
+    closure (U.starProjection '' S) = (U : Set E) := by
+  refine Set.Subset.antisymm (closure_minimal ?_ U.isClosed_of_hasOrthogonalProjection) ?_
+  · rintro _ ⟨x, -, rfl⟩
+    exact U.starProjection_apply_mem x
+  · have hrange : Set.range U.starProjection = (U : Set E) := by
+      simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
+        congrArg SetLike.coe U.range_starProjection
+    rw [← hrange]
+    exact U.starProjection.continuous.range_subset_closure_image_dense hS
 
 /-- A subspace admitting an orthogonal projection is complete when the ambient space is. -/
 theorem isComplete_coe_of_hasOrthogonalProjection [CompleteSpace E] (U : Submodule 𝕜 E)
@@ -86,5 +104,37 @@ theorem sup_eq_orthogonal_inf_orthogonal (h : U ⟂ V) : U ⊔ V = (Uᗮ ⊓ V�
 theorem isClosed_sup (h : U ⟂ V) : IsClosed ((U ⊔ V : Submodule 𝕜 E) : Set E) := by
   rw [h.sup_eq_orthogonal_inf_orthogonal]
   exact Submodule.isClosed_orthogonal _
+
+/-- For orthogonal subspaces `U` and `V` admitting orthogonal projections, subtracting the sum of
+their orthogonal projections of `x` from `x` leaves a vector orthogonal to `U ⊔ V`. -/
+theorem sub_add_starProjection_mem_orthogonal (hUV : U.IsOrtho V) (x : E) :
+    x - (U.starProjection x + V.starProjection x) ∈ (U ⊔ V)ᗮ := by
+  rw [← Submodule.inf_orthogonal, Submodule.mem_inf]
+  refine ⟨?_, ?_⟩
+  · have hVx : V.starProjection x ∈ Uᗮ := hUV.symm (V.starProjection_apply_mem x)
+    simpa only [sub_add_eq_sub_sub] using
+      Submodule.sub_mem _ (U.sub_starProjection_mem_orthogonal x) hVx
+  · have hUx : U.starProjection x ∈ Vᗮ := hUV (U.starProjection_apply_mem x)
+    simpa only [sub_add_eq_sub_sub, sub_right_comm] using
+      Submodule.sub_mem _ (V.sub_starProjection_mem_orthogonal x) hUx
+
+/-- The sum of two orthogonal subspaces admitting orthogonal projections admits an orthogonal
+projection. -/
+theorem hasOrthogonalProjection_sup (hUV : U.IsOrtho V) :
+    (U ⊔ V).HasOrthogonalProjection :=
+  ⟨fun x ↦ ⟨U.starProjection x + V.starProjection x,
+    Submodule.add_mem_sup (U.starProjection_apply_mem x) (V.starProjection_apply_mem x),
+    hUV.sub_add_starProjection_mem_orthogonal x⟩⟩
+
+/-- The orthogonal projection onto the sum of two orthogonal subspaces is the sum of their
+orthogonal projections. -/
+theorem starProjection_sup (hUV : U.IsOrtho V) :
+    letI := hUV.hasOrthogonalProjection_sup
+    (U ⊔ V).starProjection = U.starProjection + V.starProjection := by
+  let := hUV.hasOrthogonalProjection_sup
+  ext x
+  exact Submodule.eq_starProjection_of_mem_orthogonal
+    (Submodule.add_mem_sup (U.starProjection_apply_mem x) (V.starProjection_apply_mem x))
+    (hUV.sub_add_starProjection_mem_orthogonal x)
 
 end Submodule.IsOrtho

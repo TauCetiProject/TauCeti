@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Cylinder
 public import TauCeti.Analysis.Sobolev.Circle.OfContinuousMap
 import TauCeti.Analysis.Fourier.Uniqueness
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.Normed.Module.FiniteDimension

@@ -24,7 +24,7 @@ import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian.Power
 import TauCeti.Analysis.Sobolev.Poincare.Schrodinger
 import TauCeti.Analysis.Sobolev.W1p.Density
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!

@@ -21,7 +21,7 @@ import TauCeti.Analysis.Sobolev.BesselPotential.ComplexInterpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.MatrixMultiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
 import TauCeti.MeasureTheory.Function.Jacobian
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 
 /-!

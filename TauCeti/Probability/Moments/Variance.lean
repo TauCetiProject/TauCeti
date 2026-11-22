@@ -9,11 +9,12 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.Moments.Variance
+public import TauCeti.MeasureTheory.Function.L2Space.MeanZero
 public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import TauCeti.MeasureTheory.Function.Lp.Norm
 public import TauCeti.MeasureTheory.Integral.Lebesgue.SetOfEqZero
 public import TauCeti.Probability.Moments.Mixture
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 
 /-!
@@ -55,6 +56,8 @@ variances and Borel--Cantelli almost-sure convergence to the mean from summable 
   composition with a measure-preserving measurable embedding.
 * `ProbabilityTheory.variance_eq_norm_sub_const_sq`: for `f ∈ L²(μ)` on a finite measure space,
   `Var[f; μ] = ‖f - ∫ f dμ‖²`.
+* `MeasureTheory.Measure.norm_starProjection_meanZeroL2_sq_eq_variance`: on a probability space,
+  the squared `L²` norm of the projection onto `L²₀(P)` equals the variance.
 * `ProbabilityTheory.tendsto_variance_of_tendsto_eLpNorm_sub`: variance is continuous under
   L² convergence on a finite measure space.
 * `TauCeti.Probability.evariance_integral_prod_le` and
@@ -87,9 +90,15 @@ theorem variance_eq_norm_sub_const_sq {α : Type*} [MeasurableSpace α] {μ : Me
   rw [variance_eq_integral (Lp.aestronglyMeasurable f).aemeasurable,
     ← Lp.integral_norm_sq_eq_norm_sq]
   refine integral_congr_ae ?_
-  filter_upwards [Lp.coeFn_sub f (Lp.const 2 μ (∫ x, f x ∂μ)),
-    Lp.coeFn_const 2 μ (∫ x, f x ∂μ)] with x hx hc
-  rw [hx, Pi.sub_apply, hc, Function.const_apply, Real.norm_eq_abs, sq_abs]
+  filter_upwards [Lp.coeFn_sub_const f (∫ x, f x ∂μ)] with x hx
+  rw [hx, Real.norm_eq_abs, sq_abs]
+
+/-- On a probability space, the squared `L²` norm of the projection onto `L²₀(P)` is the
+variance. -/
+theorem _root_.MeasureTheory.Measure.norm_starProjection_meanZeroL2_sq_eq_variance
+    {X : Type*} [MeasurableSpace X] {P : Measure X} [IsProbabilityMeasure P] (f : Lp ℝ 2 P) :
+    ‖(MeasureTheory.Measure.meanZeroL2 P).starProjection f‖ ^ 2 = variance (f : X → ℝ) P := by
+  rw [MeasureTheory.Measure.starProjection_meanZeroL2, variance_eq_norm_sub_const_sq]
 
 /-- The variance is continuous under L² convergence on a finite measure space. -/
 theorem tendsto_variance_of_tendsto_eLpNorm_sub {α ι : Type*} [MeasurableSpace α]

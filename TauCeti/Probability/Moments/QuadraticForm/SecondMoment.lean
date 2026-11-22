@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.Probability.Moments.WeightedTruncation
 import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 import TauCeti.Analysis.Matrix.DotProduct
 
 /-!

@@ -5,17 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Regular
-public import Mathlib.Probability.Moments.Variance
-public import Mathlib.Topology.ContinuousMap.Bounded.Basic
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
-import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
-import TauCeti.MeasureTheory.Function.L2Space
-import TauCeti.Probability.Moments.Variance
+import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 
 /-!
 # Mean-zero subspace of `L²`
@@ -24,11 +19,11 @@ On a finite measure space `(X, P)`, the closed subspace `L²₀(P)`
 (`MeasureTheory.Measure.meanZeroL2 P`) consists of square-integrable real functions with vanishing
 integral, defined as the orthogonal complement of the constant functions in `Lp ℝ 2 P`.
 
-`L²₀(P)` complements the one-dimensional subspace of constant functions and is complete, so it
-admits an orthogonal projection. On a finite measure space, the orthogonal projection onto `L²₀(P)`
-subtracts the `P`-average; on a probability space it subtracts the integral, and its squared norm is
-the variance. Both bounded measurable and (on a normal Borel space with a weakly regular measure)
-bounded continuous mean-zero functions are dense in `L²₀(P)`.
+`L²₀(P)` complements the subspace spanned by the constant function `1` (which is one-dimensional
+when `P ≠ 0`) and is complete, so it admits an orthogonal projection. On a finite measure space,
+the orthogonal projection onto `L²₀(P)` subtracts the `P`-average; on a probability space it
+subtracts the integral. Both bounded measurable and (on a normal Borel space with a weakly regular
+measure) bounded continuous mean-zero functions are dense in `L²₀(P)`.
 
 ## Main definitions
 
@@ -45,19 +40,22 @@ bounded continuous mean-zero functions are dense in `L²₀(P)`.
 * `MeasureTheory.Measure.starProjection_meanZeroL2_eq_sub_const_average`,
   `MeasureTheory.Measure.starProjection_meanZeroL2`: the orthogonal projection onto `L²₀(P)`
   subtracts the average (the mean on a probability space).
-* `MeasureTheory.Measure.norm_starProjection_meanZeroL2_sq_eq_variance`:
-  the squared `L²` norm of the projection onto `L²₀(P)` equals the variance on a probability
-  space.
 * `MeasureTheory.Measure.meanZeroL2_subset_closure_bounded`,
   `MeasureTheory.Measure.meanZeroL2_subset_closure_boundedContinuous`: density of bounded and
   bounded continuous mean-zero elements in `L²₀(P)`.
+
+## References
+
+* A. W. van der Vaart, *Asymptotic Statistics*, Cambridge University Press, 1998, §25.2,
+  pp. 360–362, for the orthogonal decomposition into constants and `L²₀(P)` and the centering
+  projection on probability spaces.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory Set Topology
+open MeasureTheory Set Topology
 open scoped ENNReal NNReal InnerProductSpace BoundedContinuousFunction
 
 namespace MeasureTheory.Measure
@@ -106,7 +104,7 @@ theorem meanZeroL2_dirac (x : X) : meanZeroL2 (dirac x) = ⊥ := by
     rw [← integral_dirac' g x hg, ← integral_congr_ae hfg]
     exact hf
   have hg0 : g =ᵐ[dirac x] (0 : X → ℝ) :=
-    (ae_dirac_iff (hg.measurable (measurableSet_singleton 0))).mpr hgx
+    (ae_eq_dirac' (a := x) hg.measurable).mono fun _ h ↦ h.trans hgx
   exact Lp.ext (hfg.trans (hg0.trans (Lp.coeFn_zero ℝ 2 (dirac x)).symm))
 
 /-- On a finite measure space, the orthogonal projection onto `L²₀(P)` subtracts the `P`-average. -/
@@ -135,13 +133,6 @@ theorem starProjection_meanZeroL2 {P : Measure X} [IsProbabilityMeasure P] (f : 
     (meanZeroL2 P).starProjection f = f - Lp.const 2 P (∫ x, f x ∂P) := by
   rw [starProjection_meanZeroL2_eq_sub_const_average, average_eq_integral]
 
-/-- On a probability space, the squared `L²` norm of the projection onto `L²₀(P)` is the
-variance. -/
-theorem norm_starProjection_meanZeroL2_sq_eq_variance {P : Measure X} [IsProbabilityMeasure P]
-    (f : Lp ℝ 2 P) :
-    ‖(meanZeroL2 P).starProjection f‖ ^ 2 = variance (f : X → ℝ) P := by
-  rw [starProjection_meanZeroL2, variance_eq_norm_sub_const_sq]
-
 /-- Bounded mean-zero elements are dense in `L²₀(P)`. -/
 theorem meanZeroL2_subset_closure_bounded (P : Measure X) [IsFiniteMeasure P] :
     (meanZeroL2 P : Set (Lp ℝ 2 P)) ⊆
@@ -152,15 +143,12 @@ theorem meanZeroL2_subset_closure_bounded (P : Measure X) [IsFiniteMeasure P] :
   refine ⟨Submodule.starProjection_apply_mem _ _, ?_⟩
   let s : SimpleFunc X ℝ := Lp.simpleFunc.toSimpleFunc ⟨v, hv⟩
   have hvs : (v : X → ℝ) =ᵐ[P] s := (Lp.simpleFunc.toSimpleFunc_eq_toFun ⟨v, hv⟩).symm
-  have hC (x : X) : |s x| ≤ (s.range.sup fun y ↦ ‖y‖₊ : ℝ≥0) := by
-    rw [← Real.norm_eq_abs, ← coe_nnNorm]
-    exact_mod_cast Finset.le_sup (f := fun y ↦ ‖y‖₊) (s.mem_range_self x)
-  refine ⟨(s.range.sup fun y ↦ ‖y‖₊ : ℝ≥0) + |⨍ x, v x ∂P|, ?_⟩
+  obtain ⟨C, hC⟩ := s.exists_forall_norm_le
+  refine ⟨C + |⨍ x, v x ∂P|, ?_⟩
   rw [starProjection_meanZeroL2_eq_sub_const_average]
-  filter_upwards [Lp.coeFn_sub v (Lp.const 2 P (⨍ x, v x ∂P)),
-    Lp.coeFn_const 2 P (⨍ x, v x ∂P), hvs] with x hsub hc hxs
-  rw [hsub, Pi.sub_apply, hc, Function.const_apply, hxs]
-  exact (abs_sub (s x) _).trans (add_le_add (hC x) le_rfl)
+  filter_upwards [Lp.coeFn_sub_const v (⨍ x, v x ∂P), hvs] with x hsub hxs
+  rw [hsub, hxs]
+  exact (abs_sub (s x) _).trans (add_le_add (Real.norm_eq_abs _ ▸ hC x) le_rfl)
 
 /-- On a normal space with its Borel σ-algebra and a weakly regular finite measure `P`, bounded
 continuous mean-zero functions are dense in `L²₀(P)`. -/
@@ -176,9 +164,9 @@ theorem meanZeroL2_subset_closure_boundedContinuous (P : Measure X) [IsFiniteMea
   set c := ⨍ x, (BoundedContinuousFunction.toLp 2 P ℝ g : X → ℝ) x ∂P
   refine ⟨g - BoundedContinuousFunction.const X c, ?_⟩
   rw [starProjection_meanZeroL2_eq_sub_const_average]
-  filter_upwards [Lp.coeFn_sub (BoundedContinuousFunction.toLp 2 P ℝ g) (Lp.const 2 P c),
-    Lp.coeFn_const 2 P c, BoundedContinuousFunction.coeFn_toLp 2 P ℝ g] with x hsub hc hg
-  rw [hsub, Pi.sub_apply, hc, Function.const_apply, hg]
+  filter_upwards [Lp.coeFn_sub_const (BoundedContinuousFunction.toLp 2 P ℝ g) c,
+    BoundedContinuousFunction.coeFn_toLp 2 P ℝ g] with x hsub hg
+  rw [hsub, hg]
   simp only [FunLike.coe_sub, BoundedContinuousFunction.const_apply, Pi.sub_apply]
 
 end MeasureTheory.Measure

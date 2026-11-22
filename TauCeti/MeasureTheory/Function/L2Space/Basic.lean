@@ -43,9 +43,11 @@ function is the integral of their pointwise inner product (`MeasureTheory.L2.inn
 in the other order for an L² function given by an almost-everywhere representative
 (`MeasureTheory.L2.toLp_inner_of_ae_eq`). The zero class pairs to zero with every function
 (`MeasureTheory.Lp.integral_inner_coeFn_zero_left`).
-On a finite measure space, the L² inner product of a constant function `Lp.const 2 μ c` with `f`
-is `⟪c, ∫ f ∂μ⟫` (`MeasureTheory.L2.inner_const_eq_inner_integral`), and for the scalar constant
-`1` it equals `∫ f ∂μ` (`MeasureTheory.L2.inner_const_one`).
+On a finite measure space, subtracting a constant `Lp.const p μ c` from an `Lᵖ` function agrees
+almost everywhere with subtracting `c` pointwise (`MeasureTheory.Lp.coeFn_sub_const`), the L²
+inner product of a constant function `Lp.const 2 μ c` with `f` is `⟪c, ∫ f ∂μ⟫`
+(`MeasureTheory.L2.inner_const_eq_inner_integral`), and for the scalar constant `1` it equals
+`∫ f ∂μ` (`MeasureTheory.L2.inner_const_one`).
 An L² function orthogonal to every L² function vanishing outside a measurable set vanishes
 almost everywhere on that set (`MeasureTheory.L2.ae_restrict_eq_zero_of_forall_inner_eq_zero`).
 The second moment of a finite sum of pairwise orthogonal functions with values in a real inner
@@ -310,6 +312,14 @@ theorem Lp.integral_inner_coeFn_zero_left {p : ℝ≥0∞} (g : α → E) :
     ∫ x, ⟪(0 : Lp E p μ) x, g x⟫_𝕜 ∂μ = 0 := by
   rw [integral_congr_ae ((Lp.coeFn_zero E p μ).mono fun x hx ↦ by
     rw [hx, Pi.zero_apply, inner_zero_left]), integral_zero]
+
+/-- On a finite measure space, subtracting a constant element `Lp.const p μ c` agrees almost
+everywhere with subtracting `c` pointwise. -/
+theorem Lp.coeFn_sub_const {F : Type*} [NormedAddCommGroup F] {p : ℝ≥0∞}
+    [IsFiniteMeasure μ] (f : Lp F p μ) (c : F) :
+    ⇑(f - Lp.const p μ c) =ᵐ[μ] fun x ↦ f x - c := by
+  filter_upwards [Lp.coeFn_sub f (Lp.const p μ c), Lp.coeFn_const p μ c] with x hx hc
+  rw [hx, Pi.sub_apply, hc, Function.const_apply]
 
 /-- On a finite measure space, the `L²` inner product of a constant function `Lp.const 2 μ c` with
 `f` equals `⟪c, ∫ x, f x ∂μ⟫`. -/
