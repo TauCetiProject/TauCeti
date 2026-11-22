@@ -30,8 +30,10 @@ central subalgebra provides. Transport of the center along an algebra equivalenc
   `Subalgebra.center_prod`.
 * `TauCeti.centerAlgEquivOfIsCentral` identifies the center of a central algebra with its base
   semiring when the scalar action is faithful. Its dimension is therefore one
-  (`TauCeti.finrank_center_of_isCentral`). For a product of two such algebras the center is the
-  split algebra `K × K` (`TauCeti.centerProdAlgEquivOfIsCentral`).
+  (`TauCeti.finrank_center_of_isCentral`), and over a field `k` below a central field `Z`
+  the center has the dimension of `Z` (`TauCeti.finrank_center_eq_of_isCentral`). For a
+  product of two such algebras the center is the split algebra `K × K`
+  (`TauCeti.centerProdAlgEquivOfIsCentral`).
 * `TauCeti.isCentral_iff_surjective_algebraMap` records that a commutative algebra is central
   exactly when its structure map is surjective, the precise sense in which centrality is a strong
   condition on a field extension.
@@ -269,5 +271,24 @@ theorem _root_.Algebra.IsCentral.of_algEquiv' (K : Type*) {D D' : Type*} [CommSe
     have ⟨k, hk⟩ := Algebra.IsCentral.out (K := K)
       ((MulEquivClass.apply_mem_center_iff e.symm).mpr hx)
     ⟨k, by simpa [Algebra.ofId] using congr(e $hk)⟩
+
+/-- A central algebra `B` over a field `Z` has centre `Z`: for any field `k` below `Z`, the centre
+of `B` over `k` has the dimension of `Z` over `k`. -/
+theorem finrank_center_eq_of_isCentral (k : Type*) [Field k] {B : Type*} [Ring B] [Algebra k B]
+    (Z : Type*) [Field Z] [Algebra k Z] [Algebra Z B] [IsScalarTower k Z B]
+    [Algebra.IsCentral Z B] [Nontrivial B] :
+    Module.finrank k (Subalgebra.center k B) = Module.finrank k Z := by
+  let f : Z →ₗ[k] Subalgebra.center k B :=
+    { toFun z := ⟨algebraMap Z B z,
+        Subalgebra.mem_center_iff.mpr fun y ↦ (Algebra.commutes z y).symm⟩
+      map_add' x y := by ext; simp
+      map_smul' r x := by ext; simp [Algebra.smul_def, IsScalarTower.algebraMap_apply k Z B] }
+  have hf : Function.Bijective f := by
+    refine ⟨fun x y h ↦ (algebraMap Z B).injective (congrArg Subtype.val h), fun x ↦ ?_⟩
+    have hx : (x : B) ∈ Subalgebra.center Z B := Subalgebra.mem_center_iff.mpr
+      (Subalgebra.mem_center_iff.mp x.property)
+    obtain ⟨z, hz⟩ := Algebra.mem_bot.mp (Algebra.IsCentral.out hx)
+    exact ⟨z, Subtype.ext hz⟩
+  exact (LinearEquiv.ofBijective f hf).finrank_eq.symm
 
 end TauCeti

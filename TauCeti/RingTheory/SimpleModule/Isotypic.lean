@@ -345,7 +345,7 @@ theorem disjoint_isotypicComponent (S S' : Type*) [AddCommGroup S] [Module R S]
 
 /-- The isotypic components of an `R`-algebra `B` as a left `B`-module are independent over `R`. -/
 theorem iSupIndep_isotypicComponents_restrictScalars (R : Type*) [CommRing R] {B : Type*} [Ring B]
-    [Algebra R B] : iSupIndep fun c : isotypicComponents B B ↦ c.1.restrictScalars R := by
+    [Algebra R B] : iSupIndep fun c : isotypicComponents B B ↦ c.val.restrictScalars R := by
   intro c
   simpa only [← Submodule.restrictScalars_iSup, Submodule.disjoint_restrictScalars_iff]
     using (sSupIndep_iff _).mp (sSupIndep_isotypicComponents B B) c

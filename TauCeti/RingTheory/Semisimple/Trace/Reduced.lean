@@ -13,6 +13,7 @@ import Mathlib.Algebra.DirectSum.LinearMap
 import Mathlib.RingTheory.SimpleModule.WedderburnArtin
 import Mathlib.RingTheory.SimpleRing.Congr
 import Mathlib.RingTheory.SimpleRing.Matrix
+import TauCeti.Algebra.Subalgebra.Center
 import TauCeti.LinearAlgebra.Matrix.Trace.LinearMap
 import TauCeti.LinearAlgebra.Trace.Basic
 import TauCeti.RingTheory.SimpleModule.Isotypic
@@ -102,19 +103,8 @@ variable (R : Type*) [CommRing R] {B : Type*} [Ring B] [Algebra R B]
 
 /-- The trace over `R` of left multiplication by `b` on a left ideal `c` of `B`. For an isotypic
 component `c` of a semisimple algebra it is the regular trace of the `c`-component of `b`. -/
-noncomputable def idealTrace (c : Submodule B B) : B →ₗ[R] R where
-  toFun b := LinearMap.trace R (c.restrictScalars R)
-    ((Algebra.lmul R B b).restrict fun _ hx ↦ c.smul_mem b hx)
-  map_add' a b := by
-    rw [← map_add]
-    congr 1
-    ext
-    simp
-  map_smul' r b := by
-    rw [RingHom.id_apply, ← map_smul]
-    congr 1
-    ext
-    simp
+noncomputable def idealTrace (c : Submodule B B) : B →ₗ[R] R :=
+  LinearMap.trace R c ∘ₗ (Algebra.lsmul R R c).toLinearMap
 
 variable {R}
 
@@ -136,14 +126,9 @@ theorem idealTrace_top (b : B) :
 /-- Cyclicity of `TauCeti.Algebra.idealTrace`: it takes the same value on `a * b` and `b * a`. -/
 theorem _root_.Submodule.idealTrace_mul_comm (c : Submodule B B) (a b : B) :
     TauCeti.Algebra.idealTrace R c (a * b) = TauCeti.Algebra.idealTrace R c (b * a) := by
-  have hmul : ∀ x y : B, ((Algebra.lmul R B (x * y)).restrict fun _ hz ↦ c.smul_mem (x * y) hz :
-      c.restrictScalars R →ₗ[R] c.restrictScalars R) =
-      ((Algebra.lmul R B x).restrict fun _ hz ↦ c.smul_mem x hz) *
-        ((Algebra.lmul R B y).restrict fun _ hz ↦ c.smul_mem y hz) := by
-    intro x y
-    ext
-    simp [mul_assoc]
-  rw [c.idealTrace_apply, c.idealTrace_apply, hmul, hmul, LinearMap.trace_mul_comm]
+  simp only [TauCeti.Algebra.idealTrace, LinearMap.coe_comp, Function.comp_apply,
+    AlgHom.toLinearMap_apply, map_mul]
+  exact LinearMap.trace_mul_comm R _ _
 
 /-- The trace of left multiplication by an element `b` of an isotypic component `c` vanishes on
 every other isotypic component. -/
@@ -153,7 +138,7 @@ theorem idealTrace_eq_zero_of_mem_isotypicComponents {c c' : Submodule B B}
   have h0 : ((Algebra.lmul R B b).restrict fun _ hx ↦ c'.smul_mem b hx :
       c'.restrictScalars R →ₗ[R] c'.restrictScalars R) = 0 := by
     ext x
-    simpa using mul_eq_zero_of_mem_isotypicComponents hc hc' hne hb x.2
+    simpa using mul_eq_zero_of_mem_isotypicComponents hc hc' hne hb x.property
   rw [c'.idealTrace_apply, h0, map_zero]
 
 end IdealTrace
@@ -223,14 +208,14 @@ theorem trace_lmul_eq_sum_idealTrace (b : B) :
       ∑ᶠ c ∈ isotypicComponents B B, idealTrace F c b := by
   classical
   let _ : Fintype (isotypicComponents B B) := Fintype.ofFinite _
-  have hint : DirectSum.IsInternal fun c : isotypicComponents B B ↦ c.1.restrictScalars F :=
+  have hint : DirectSum.IsInternal fun c : isotypicComponents B B ↦ c.val.restrictScalars F :=
     DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
       (iSupIndep_isotypicComponents_restrictScalars F) <| by
         rw [← Submodule.restrictScalars_iSup, ← sSup_eq_iSup', sSup_isotypicComponents,
           Submodule.restrictScalars_top]
   rw [← finsum_set_coe_eq_finsum_mem, finsum_eq_sum_of_fintype,
     LinearMap.trace_eq_sum_trace_restrict hint (f := Algebra.lmul F B b)
-      fun c _ hx ↦ c.1.smul_mem b hx]
+      fun c _ hx ↦ c.val.smul_mem b hx]
   rfl
 
 /-- The trace on an isotypic component `c` of left multiplication by `b ∈ c` is the regular trace
