@@ -358,7 +358,7 @@ theorem isItoIntegral_stoppedProcess_of_brownianIntegrable
     {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ) :
     IsItoIntegral ℱ P W (fun t ω ↦ if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
       (stoppedProcess I τ) := by
-  obtain ⟨J, hJito, -, -, -⟩ := hW.exists_isItoIntegral_of_brownianIntegrable hcont (hH.ite_le hτ)
+  obtain ⟨J, hJito, -, -⟩ := (hH.ite_le hτ).exists_isItoIntegral hW hcont
   exact hJito.congr (TauCeti.indist_of_ae_continuous
     (hI.ae_continuous.mono fun _ hω ↦ hω.stoppedProcess) hJito.ae_continuous fun T ↦
       (hW.stoppedProcess_ae_eq_l2Integral hcont hH hI hτ T).trans

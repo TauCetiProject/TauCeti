@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Process.Predictable.Measure
 public import TauCeti.MeasureTheory.Function.Lp.Iterated
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
 
 /-!
@@ -28,13 +29,14 @@ variable, held constant in time, belongs to the pathwise domain without any mome
 
 Time measure on `(0,T]` is written as the pullback of restricted real Lebesgue measure under
 `ℝ≥0 → ℝ`. By the native measurable-embedding restriction identity this is also the restriction
-of the pullback Lebesgue measure to `(0,T]`. Pathwise membership uses native `MemLp`, so square
-energy means a finite nonnegative lower integral, never the default value of a divergent
+of the pullback Lebesgue measure to `(0,T]`, that is `TauCeti.Probability.timeMeasure T`
+(`TauCeti.BrownianIntegrable.memLp_timeMeasure`). Pathwise membership uses native `MemLp`, so
+square energy means a finite nonnegative lower integral, never the default value of a divergent
 Bochner integral.
 
-Both domains are also closed under subtraction, and `BrownianIntegrable.memLp_timeMeasure`,
-`BrownianIntegrable.memLp_predictableMeasure`, and `brownianIntegrable_iff_memLp_predictableMeasure`
-bridge the expected-energy domain with `timeMeasure` and `ℱ.predictableMeasure`.
+Both domains are also closed under subtraction, and `BrownianIntegrable.memLp_predictableMeasure`
+and `brownianIntegrable_iff_memLp_predictableMeasure` bridge the expected-energy domain with
+`ℱ.predictableMeasure`.
 
 ## References
 
@@ -96,6 +98,12 @@ theorem locallyBrownianIntegrable_iff_nat : LocallyBrownianIntegrable ℱ P H �
       exact Measure.restrict_mono_set _ (Ioc_subset_Ioc_right (by exact_mod_cast hn))
     exact (hω n).mono_measure hmeasure
 
+/-- The finite expected square energy of a Brownian-integrable integrand, for Lebesgue time
+`TauCeti.Probability.timeMeasure T` on `(0,T]` times `P`. -/
+theorem BrownianIntegrable.memLp_timeMeasure (h : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
+    MemLp (Function.uncurry H) 2 ((Probability.timeMeasure T).prod P) := by
+  simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def] using h.memLp T
+
 /-- Finite expected energy on every finite horizon gives finite pathwise energy on all
 finite horizons simultaneously. -/
 theorem BrownianIntegrable.locallyBrownianIntegrable [SFinite P]
@@ -104,11 +112,6 @@ theorem BrownianIntegrable.locallyBrownianIntegrable [SFinite P]
   refine locallyBrownianIntegrable_iff_nat.2 ⟨h.isStronglyPredictable, fun n ↦ ?_⟩
   exact ((h.memLp n).comp_measurePreserving
     (Measure.measurePreserving_swap (μ := P) (ν := _))).ae_memLp_prod_right
-
-/-- A Brownian-integrable process belongs to `L²` of `(timeMeasure T).prod P`. -/
-theorem BrownianIntegrable.memLp_timeMeasure (hH : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
-    MemLp (Function.uncurry H) 2 ((Probability.timeMeasure T).prod P) := by
-  simpa only [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def] using hH.memLp T
 
 /-- A Brownian-integrable process belongs to `L²` of the finite-horizon predictable measure. -/
 theorem BrownianIntegrable.memLp_predictableMeasure (hH : BrownianIntegrable ℱ P H) (T : ℝ≥0) :

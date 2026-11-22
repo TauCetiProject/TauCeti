@@ -30,7 +30,9 @@ The remaining results assume that `S` has characteristic `p`, that every topolog
 element of `S` lies in the Jacobson radical (for instance, `S` is adically complete with respect to
 an open ideal, by `topologicalNilradical_le_jacobson_bot`), and that the topology of `S` is linear.
 In characteristic `p` the first Witt coordinate of a product is `(x y)₁ = x₀ ^ p y₁ + y₀ ^ p x₁`
-(`WittVector.mul_coeff_one_charP`). Hence `p + [ϖ] α` is primitive for every topologically
+(`WittVector.mul_coeff_one_charP`). So when `ξ₀` lies in the Jacobson radical, `y ξ` is
+distinguished exactly when `y` is a unit and `ξ` is distinguished, with no topology involved.
+Hence `p + [ϖ] α` is primitive for every topologically
 nilpotent `ϖ` and every `α`, primitivity is invariant under multiplication by units, and a multiple
 of a primitive element that is itself distinguished is a unit multiple. Over a perfect ring, every
 primitive element is moreover a unit multiple of some `p + [ϖ] α`.
@@ -65,6 +67,8 @@ properties used to construct the untilt `𝕎 R⁺ ⧸ (ξ)`.
 * `WittVector.isPrimitive_iff_exists_eq_unit_mul`: the primitive elements are exactly the unit
   multiples of the elements `p + [ϖ] α` with `ϖ` topologically nilpotent.
 * `WittVector.isPrimitive_units_mul`: primitivity is invariant under multiplication by units.
+* `WittVector.isDistinguished_mul_iff_of_coeff_zero_mem_jacobson`: if `ξ₀` lies in the Jacobson
+  radical, `y ξ` is distinguished exactly when `y` is a unit and `ξ` is distinguished.
 * `WittVector.IsPrimitive.isUnit_of_eq_mul`: if `ξ` is primitive and `ξ' = y ξ` is distinguished,
   `y` is a unit, and `WittVector.IsPrimitive.associated_of_dvd`: a primitive element dividing a
   distinguished one is associated to it.
@@ -182,6 +186,20 @@ theorem IsPrimitive.frobenius [TopologicalSpace S] {ξ : 𝕎 S} (h : ξ.IsPrimi
   ⟨by rw [coeff_frobenius_charP]; exact h.isTopologicallyNilpotent_coeff_zero.pow hp.out.ne_zero, by
     rw [isDistinguished_iff, coeff_frobenius_charP]; exact h.isDistinguished.pow p⟩
 
+/-- **Distinguishedness of a product.** In characteristic `p`, if the zeroth Witt coordinate of
+`ξ` lies in the Jacobson radical, then `y ξ` is distinguished exactly when `y` is a unit and `ξ` is
+distinguished: the first Witt coordinate of `y ξ` is `y₀ ^ p ξ₁ + ξ₀ ^ p y₁`
+(`WittVector.mul_coeff_one_charP`). -/
+theorem isDistinguished_mul_iff_of_coeff_zero_mem_jacobson {ξ : 𝕎 S}
+    (hξ : ξ.coeff 0 ∈ Ring.jacobson S) (y : 𝕎 S) :
+    (y * ξ).IsDistinguished ↔ IsUnit y ∧ ξ.IsDistinguished := by
+  have := isLocalHom_of_le_jacobson (le_refl (Ring.jacobson S))
+  have h₀ : Ideal.Quotient.mk (Ring.jacobson S) (ξ.coeff 0) = 0 :=
+    Ideal.Quotient.eq_zero_iff_mem.mpr hξ
+  rw [isDistinguished_iff, isDistinguished_iff, isUnit_iff_isUnit_coeff_zero (x := y),
+    mul_coeff_one_charP, ← isUnit_map_iff (Ideal.Quotient.mk (Ring.jacobson S))]
+  simp [h₀, hp.out.ne_zero, IsUnit.mul_iff]
+
 section Jacobson
 
 variable [TopologicalSpace S] [IsLinearTopology S S]
@@ -232,14 +250,10 @@ topological nilradical lies in the Jacobson radical (for instance, `S` is adical
 respect to an open ideal). If `ξ` is primitive and a multiple `ξ' = y ξ` is distinguished, then `y`
 is a unit (Kedlaya, *Sheaves, stacks, and shtukas*, Remark 2.3.5). -/
 theorem IsPrimitive.isUnit_of_eq_mul {ξ ξ' y : 𝕎 S} (hξ : ξ.IsPrimitive)
-    (hξ' : ξ'.IsDistinguished) (h : ξ' = y * ξ) : IsUnit y := by
-  rw [isDistinguished_iff, h, mul_coeff_one_charP] at hξ'
-  have hy := ((hξ.isTopologicallyNilpotent_coeff_zero.pow hp.out.ne_zero).mul_right
-      (-y.coeff 1)).isUnit_add_left
-      (by simpa only [Ideal.jacobson_bot] using hS) hξ'
-  rw [mul_neg, add_neg_cancel_right] at hy
-  exact isUnit_iff_isUnit_coeff_zero.mpr <|
-    (isUnit_pow_iff hp.out.ne_zero).mp (isUnit_of_mul_isUnit_left hy)
+    (hξ' : ξ'.IsDistinguished) (h : ξ' = y * ξ) : IsUnit y :=
+  ((isDistinguished_mul_iff_of_coeff_zero_mem_jacobson
+    (hS (IsTopologicallyNilpotent.mem_topologicalNilradical_iff.mpr
+        hξ.isTopologicallyNilpotent_coeff_zero)) y).mp (h ▸ hξ')).1
 
 /-- **A primitive element dividing a distinguished element is associated to it.** Under the
 hypotheses of `WittVector.IsPrimitive.isUnit_of_eq_mul`, if a primitive `ξ` divides a

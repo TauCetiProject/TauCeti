@@ -166,7 +166,8 @@ theorem apply_le_ciSup (f : UCB G) : m f ≤ ⨆ x, (f : G →ᵇ ℝ) x :=
 @[to_additive /-- An additive mean of a function is bounded in absolute value by its supremum
 norm. -/]
 theorem abs_apply_le_norm (f : UCB G) : |m f| ≤ ‖f‖ := by
-  simpa using PositiveLinearMap.abs_apply_le_mul_norm m (UCB.le_norm_smul_one (G := G)) f
+  simpa using PositiveLinearMap.abs_apply_le_mul_norm m (OrderHomClass.mono m)
+    (UCB.le_norm_smul_one (G := G)) f
 
 /-- A mean changes by at most the supremum distance between its arguments. -/
 @[to_additive /-- An additive mean changes by at most the supremum distance between its

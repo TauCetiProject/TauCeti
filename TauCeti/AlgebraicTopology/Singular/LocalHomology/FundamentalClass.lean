@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenE
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coefficients
 public import TauCeti.Topology.Sets.Opens
+import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 
 /-!
 # Integral and rational fundamental classes of an oriented manifold
@@ -98,6 +99,14 @@ homology isomorphism directly, without requiring Poincaré duality.
 * `TauCeti.HomologicalOrientation.singularHomologyMap_eq_of_mapFundamentalClass_eq`: maps of a
   compact connected oriented manifold with the same image of the fundamental class induce the same
   map on top-dimensional homology.
+* `TauCeti.uliftIntHomologyIso`, `TopPair.uliftIntSingularHomologyIso`: the coefficients `ULift ℤ`
+  of fundamental classes and the coefficient ring `ℤ` give naturally isomorphic absolute and
+  relative singular homology.
+* `TauCeti.isLocalOrientation_iff_span_uliftIntSingularHomologyIso_hom_eq_top`: read with
+  coefficients `ℤ`, the local orientations are the generators of the local homology.
+* `TauCeti.IsLocalOrientation.span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top`:
+  a class restricting to a local orientation restricts, read with coefficients `ℤ`, to a generator
+  of the local homology.
 
 ## Implementation notes
 
@@ -519,8 +528,7 @@ theorem mapFundamentalClass_eq_of_homotopic {f g : C(M, X)} (h : f.Homotopic g) 
     o.mapFundamentalClass hn f = o.mapFundamentalClass hn g := by
   rw [mapFundamentalClass_def, mapFundamentalClass_def]
   congr 2
-  exact TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor (C := ModuleCat.{0} ℤ)
-    (f := TopCat.ofHom f) (g := TopCat.ofHom g) h.some _ n
+  exact h.homologyMap_eq _ n
 
 /-- Reversing the orientation negates the image of the fundamental class. -/
 @[simp]
@@ -536,16 +544,9 @@ theorem singularHomologyπ_mapFundamentalClass (f : C(M, X)) :
       (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom (o.mapFundamentalClass hn f) =
       localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) f (subset_univ _) n
         (o.fundamentalClassOn hn isCompact_univ) := by
-  have h := congrArg (fun φ ↦ φ.hom (o.fundamentalClass hn))
-    (TopPair.singularHomologyπ_naturality (TopPair.ofSubsetMap (X := TopCat.of M)
-      (Y := TopCat.of X) (B := (univ : Set M)ᶜ) (B' := (univ : Set X)ᶜ) (TopCat.ofHom f)
-      fun _ hx ↦ (hx (mem_univ _)).elim) (ModuleCat.of ℤ (ULift.{0} ℤ)) n)
-  -- The ambient map of `ofSubsetMap` is `f` itself; its source is read as `(ofSubset _).fst`,
-  -- which `rw` does not identify with `TopCat.of M`.
-  erw [TopPair.ofSubsetMap_fst] at h
-  rw [← o.singularHomologyπ_fundamentalClass hn, localHomologyMap_def, mapFundamentalClass_def,
-    TauCeti.singularHomologyFunctor_obj_map]
-  exact h
+  rw [← o.singularHomologyπ_fundamentalClass hn, mapFundamentalClass_def,
+    singularHomologyFunctor_obj_map_hom_apply]
+  exact singularHomologyπ_univ_singularHomologyMap _ f _
 
 /-- **Fundamental classes are natural under homeomorphisms**: a homeomorphism `e : N ≃ₜ M`
 carries the fundamental class of the pulled-back orientation `o.comap` of `N` to the fundamental
@@ -557,15 +558,11 @@ theorem mapFundamentalClass_comap {N : Type} [TopologicalSpace N] [T2Space N] [C
   -- `f_*[N]` lies in the singular homology of `TopCat.of M`, read as `SSet.homology` here.
   refine o.eq_fundamentalClass hn
     (γ := (o.comap e.isOpenEmbedding).mapFundamentalClass hn (e : C(N, M))) fun y ↦ ?_
-  obtain ⟨x, rfl⟩ := e.surjective y
-  have hx : (e : C(N, M)) ⁻¹' {e x} ⊆ {x} := fun z hz ↦ e.injective hz
-  refine (singularHomologyToLocalHomology_apply _ (e x) _).trans ?_
-  rw [singularHomologyπ_mapFundamentalClass, ← ConcreteCategory.comp_apply,
-    localHomologyMap_comp_localHomologyRestriction,
-    ← localHomologyRestriction_comp_localHomologyMap (hS := singleton_subset_iff.2 (mem_univ x))
-      (h := hx),
-    ConcreteCategory.comp_apply, localHomologyRestriction_fundamentalClassOn (hx := mem_univ x),
-    comap_apply]
+  obtain ⟨x, rfl⟩ : ∃ x, (e : C(N, M)) x = y := e.surjective y
+  have hx : (e : C(N, M)) ⁻¹' {(e : C(N, M)) x} ⊆ {x} := fun z hz ↦ e.injective hz
+  rw [mapFundamentalClass_def, singularHomologyFunctor_obj_map_hom_apply,
+    singularHomologyToLocalHomology_singularHomologyMap _ _ hx,
+    singularHomologyToLocalHomology_fundamentalClass, comap_apply]
   exact e.isOpenEmbedding.localHomologyMap_localOrientationEquiv_symm x (o (e x)) hx
 
 /-- The image of the fundamental class of the pulled-back orientation `o.comap` under a composite
@@ -749,6 +746,13 @@ def uliftIntHomologyIso (X : TopCat.{0}) (k : ℕ) :
       (TopCat.toSSet.obj X).homology (ModuleCat.of ℤ ℤ) k :=
   ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).mapIso uliftIntIso).app X
 
+/-- The identification of singular homology with coefficients in `ULift ℤ` and in `ℤ` is the map
+induced on homology by the coefficient isomorphism `uliftIntIso`. -/
+theorem uliftIntHomologyIso_hom (X : TopCat.{0}) (k : ℕ) :
+    (uliftIntHomologyIso X k).hom =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).map uliftIntIso.hom).app X :=
+  (rfl)
+
 /-- Changing coefficients from `ULift ℤ` to `ℤ` commutes with the maps induced by continuous
 maps. -/
 @[reassoc]
@@ -757,5 +761,65 @@ theorem homologyMap_comp_uliftIntHomologyIso_hom {X Y : TopCat.{0}} (f : X ⟶ Y
         (uliftIntHomologyIso Y k).hom =
       (uliftIntHomologyIso X k).hom ≫ SSet.homologyMap (TopCat.toSSet.map f) (ModuleCat.of ℤ ℤ) k :=
   ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).map uliftIntIso.hom).naturality f
+
+end TauCeti
+
+namespace TopPair
+
+/-- Relative singular homology with coefficients in `ULift ℤ` is relative singular homology with
+coefficients in `ℤ`. It is induced by `TauCeti.uliftIntIso` on relative singular chains, and is
+natural in the pair (`TopPair.singularHomologyMap_comp_uliftIntSingularHomologyIso_hom`). -/
+def uliftIntSingularHomologyIso (P : TopPair.{0}) (k : ℕ) :
+    P.singularHomology (ModuleCat.of ℤ (ULift.{0} ℤ)) k ≅ P.singularHomology (ModuleCat.of ℤ ℤ) k :=
+  (HomologicalComplex.homologyFunctor _ _ k).mapIso
+    (((SSetPair.chainComplexFunctor (ModuleCat.{0} ℤ)).mapIso TauCeti.uliftIntIso).app
+      (toSSetPair.obj P))
+
+/-- Changing coefficients from `ULift ℤ` to `ℤ` commutes with the maps induced by maps of pairs. -/
+@[reassoc]
+theorem singularHomologyMap_comp_uliftIntSingularHomologyIso_hom {P P' : TopPair.{0}} (f : P ⟶ P')
+    (k : ℕ) :
+    P.singularHomologyMap f (ModuleCat.of ℤ (ULift.{0} ℤ)) k ≫
+        (uliftIntSingularHomologyIso P' k).hom =
+      (uliftIntSingularHomologyIso P k).hom ≫ P.singularHomologyMap f (ModuleCat.of ℤ ℤ) k := by
+  simp only [uliftIntSingularHomologyIso, Functor.mapIso_hom,
+    HomologicalComplex.homologyFunctor_map, Iso.app_hom, ← HomologicalComplex.homologyMap_comp]
+  -- The chain map induced by `f` with coefficients `R` is the value at `f` of the relative chain
+  -- functor `(SSetPair.chainComplexFunctor _).obj R`, so this is the naturality of the change of
+  -- coefficients.
+  exact congrArg (HomologicalComplex.homologyMap · k)
+    (((SSetPair.chainComplexFunctor (ModuleCat.{0} ℤ)).map TauCeti.uliftIntIso.hom).naturality
+      (toSSetPair.map f))
+
+end TopPair
+
+namespace TauCeti
+
+/-- A class of the integral local homology `Hₙ(M, M ∖ {x}; ULift ℤ)` is a local orientation exactly
+when, read with coefficients `ℤ`, it generates `Hₙ(M, M ∖ {x}; ℤ)`. -/
+theorem isLocalOrientation_iff_span_uliftIntSingularHomologyIso_hom_eq_top {M : Type}
+    [TopologicalSpace M] {x : M} {d : ℕ}
+    {z : localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) ({x} : Set M) d} :
+    IsLocalOrientation x d z ↔ ℤ ∙ (TopPair.uliftIntSingularHomologyIso _ d).hom z = ⊤ := by
+  rw [ModuleCat.span_singleton_apply_eq_top_iff, Submodule.span_singleton_eq_top_iff,
+    isLocalOrientation_iff]
+  -- `IsLocalOrientation` uses the `ℤ`-action of the additive group, `span` the module action.
+  exact forall_congr' fun _ ↦ exists_congr fun c ↦
+    Eq.congr_left (int_smul_eq_zsmul _ c _).symm
+
+/-- A class of `Hₙ(M, M ∖ S; ULift ℤ)` restricting to a local orientation at `x ∈ S` restricts,
+read with coefficients `ℤ`, to a generator of `Hₙ(M, M ∖ {x}; ℤ)`, since the change of
+coefficients commutes with restriction. -/
+theorem IsLocalOrientation.span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top
+    {M : Type} [TopologicalSpace M] {x : M} {S : Set M} (hx : x ∈ S) {d : ℕ}
+    {γ : localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) S d}
+    (hγ : IsLocalOrientation x d (localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ))
+      (Set.singleton_subset_iff.2 hx) d γ)) :
+    ℤ ∙ (localHomologyRestriction (ModuleCat.of ℤ ℤ) (Set.singleton_subset_iff.2 hx) d).hom
+      ((TopPair.uliftIntSingularHomologyIso _ d).hom γ) = ⊤ := by
+  rw [isLocalOrientation_iff_span_uliftIntSingularHomologyIso_hom_eq_top,
+    localHomologyRestriction_def, ← ConcreteCategory.comp_apply,
+    TopPair.singularHomologyMap_comp_uliftIntSingularHomologyIso_hom] at hγ
+  rwa [localHomologyRestriction_def]
 
 end TauCeti

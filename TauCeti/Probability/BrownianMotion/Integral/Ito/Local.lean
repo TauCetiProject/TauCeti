@@ -26,7 +26,7 @@ to the full local domain.
 
 Closed-level raw energy localizers `τ n := nnvolume.energyLocalizer H (n + 1)` reduce a locally
 Brownian-integrable integrand `H` to `BrownianIntegrable` cutoffs `Hloc n` without augmenting the
-filtration. On each stage, `exists_isItoIntegral_of_brownianIntegrable` constructs a continuous
+filtration. On each stage, `TauCeti.BrownianIntegrable.exists_isItoIntegral` constructs a continuous
 square-integrable martingale `U n`, and `L²` stopping compatibility
 (`isItoIntegral_stoppedProcess_of_brownianIntegrable`) yields stage consistency
 `stoppedProcess (U m) (τ n) ≡ᵐ[P] U n` for `n ≤ m`. Patching these stages produces a single
@@ -134,8 +134,9 @@ private theorem isItoIntegral_of_localized_stages
             (.of_forall (hb n j hj))) T⟩
   have hK_I_L2 : Tendsto
       (fun n ↦ eLpNorm (Finance.simpleGains (s n) (m n) (a n) W t - U n t) 2 P) atTop (𝓝 0) :=
-    hK_L2.congr fun n ↦ (hW.eLpNorm_sub_of_isItoIntegral (hK_brown n) (hHloc n)
-      (isItoIntegral_simpleGains hcont (hs n).monotoneOn (ha n)) (hUito n) t).symm
+    hK_L2.congr fun n ↦
+      (((isItoIntegral_simpleGains hcont (hs n).monotoneOn (ha n)).sub (hUito n)).eLpNorm_eq hW
+        ((hK_brown n).sub (hHloc n)) t).symm
   -- Step 2: the bad events `B n = {τ n ≤ t}` decrease to a null set as `n → ∞`.
   let B (n : ℕ) : Set Ω := {ω | energyLevelLocalizer H n ω ≤ (t : WithTop ℝ≥0)}
   have hB_inter : P (⋂ n, B n) = 0 :=
@@ -190,8 +191,8 @@ private theorem exists_isItoIntegral_aux
   have hloc := isLocalizingSequence_energyLevelLocalizer hH
   have hHloc (n : ℕ) := brownianIntegrable_energyLevelCutoff (P := P) hH.isStronglyPredictable n
   -- Step 1: build the localized `L²` martingale Itô integrals `U n` for each cutoff stage.
-  choose U hUito hUpred hUmart _ using fun n ↦
-    hW.exists_isItoIntegral_of_brownianIntegrable hcont (hHloc n)
+  choose U hUito hUpred hUmart using fun n ↦
+    (hHloc n).exists_isItoIntegral hW hcont
   -- Step 2: verify stage consistency `stoppedProcess (U m) (τ n) ≡ᵐ[P] U n` for `n ≤ m`.
   have hcompat (n m : ℕ) (hnm : n ≤ m) :
       stoppedProcess (U m) (energyLevelLocalizer H n) ≡ᵐ[P] U n := by

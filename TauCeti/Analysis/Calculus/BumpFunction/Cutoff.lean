@@ -267,9 +267,7 @@ theorem _root_.ContDiffOn.exists_contDiff_eventually_eq_prod_univ [NormedSpace �
     ∃ g : E × G → F, ContDiff ℝ k g ∧ ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ η, g (y, η) = f (y, η) := by
   obtain ⟨ψ, hψ, -, hψone, -, hψU⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one hU hKU
   have hψU' : tsupport (fun p : E × G => ψ p.1) ⊆ U ×ˢ univ :=
-    (closure_minimal (t := tsupport ψ ×ˢ (univ : Set G))
-      (fun p hp => ⟨subset_tsupport ψ hp, mem_univ p.2⟩)
-      ((isClosed_tsupport ψ).prod isClosed_univ)).trans (prod_mono hψU subset_rfl)
+    (tsupport_comp_subset_preimage ψ continuous_fst).trans fun _ hx => ⟨hψU hx, mem_univ _⟩
   refine ⟨fun p => ψ p.1 • f p, hf.contDiff_smul_of_tsupport_subset (hU.prod isOpen_univ)
     ((hψ.of_le (by simp)).comp contDiff_fst).contDiffOn hψU', fun x hx => ?_⟩
   filter_upwards [hψone x hx] with y hy η
@@ -742,7 +740,6 @@ theorem exists_contDiff_cutoff_annulus [InnerProductSpace ℝ E] [FiniteDimensio
     simp only [ρ]
     constructor <;> linarith
 
-
 open MeasureTheory Metric in
 /-- **Smooth plateaus on the line with uniformly bounded derivative.** There is a constant `C`
 such that around every centre `c` and for every radius `0 ≤ r`, some smooth `ψ : ℝ → ℝ` has
@@ -799,17 +796,17 @@ section ScaledCutoff
 
 open Metric
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
 /-- **Cutoff functions.** There is `C ≥ 0`, depending only on `E`, such that for every `c` and
 `r > 0` there is a smooth function `ρ : E → ℝ` with values in `[0, 1]`, equal to `1` on the closed
 ball of radius `r` about `c` and to `0` off the closed ball of radius `2 r`, whose derivative has
-norm at most `C * r⁻¹`. -/
+norm at most `C * r⁻¹`, is continuous, and vanishes off the closed ball of radius `2 r`. -/
 theorem exists_cutoff_fderiv_bound :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (c : E) (r : ℝ), 0 < r → ∃ (ρ : E → ℝ) (ρ' : E → E →L[ℝ] ℝ),
       (∀ n : ℕ∞, ContDiff ℝ n ρ) ∧ (∀ x, 0 ≤ ρ x ∧ ρ x ≤ 1) ∧ (∀ x ∈ closedBall c r, ρ x = 1) ∧
       (∀ x, 2 * r < dist x c → ρ x = 0) ∧ (∀ x, HasFDerivAt ρ (ρ' x) x) ∧
-      ∀ x, ‖ρ' x‖ ≤ C * r⁻¹ := by
+      (∀ x, ‖ρ' x‖ ≤ C * r⁻¹) ∧ Continuous ρ' ∧ ∀ x, 2 * r < dist x c → ρ' x = 0 := by
   let β : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
   have hβ : Continuous (fderiv ℝ β) := (β.contDiff (n := 1)).continuous_fderiv one_ne_zero
   obtain ⟨C, hC⟩ := hβ.bounded_above_of_compact_support (β.hasCompactSupport.fderiv (𝕜 := ℝ))
@@ -820,22 +817,25 @@ theorem exists_cutoff_fderiv_bound :
   refine ⟨fun x ↦ β (r⁻¹ • (x - c)), fun x ↦
     (fderiv ℝ β (r⁻¹ • (x - c))).comp (r⁻¹ • ContinuousLinearMap.id ℝ E), fun n ↦
     β.contDiff.comp (contDiff_const.smul (contDiff_id.sub contDiff_const)),
-    fun x ↦ ⟨β.nonneg, β.le_one⟩, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x ↦ ?_, fun x ↦ ?_⟩
+    fun x ↦ ⟨β.nonneg, β.le_one⟩, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x ↦ ?_, fun x ↦ ?_,
+    (hβ.comp (continuous_const.smul (continuous_id.sub continuous_const))).clm_comp
+      continuous_const, fun x hx ↦ ?_⟩
   · refine β.one_of_mem_closedBall ?_
     rw [mem_closedBall, dist_zero_right, hnorm]
     exact (inv_mul_le_one₀ hr).2 (mem_closedBall.1 hx)
-  · refine Function.notMem_support.1 fun hx' ↦ ?_
-    have hmem : r⁻¹ • (x - c) ∈ Function.support β := hx'
-    rw [β.support_eq, mem_ball, dist_zero_right, hnorm] at hmem
-    have h2 : r⁻¹ * dist x c < 2 := hmem
-    rw [inv_mul_lt_iff₀ hr] at h2
-    linarith
+  · refine β.zero_of_le_dist ?_
+    rw [dist_zero_right, hnorm]
+    exact (le_inv_mul_iff₀ hr).2 (by simp only [β]; linarith)
   · exact ((β.contDiff (n := 1)).differentiable one_ne_zero _).hasFDerivAt.comp x
       (((hasFDerivAt_id x).sub_const c).const_smul r⁻¹)
   · refine (ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_mul (hC _) ?_ (norm_nonneg _) hC0)
     refine (norm_smul_le r⁻¹ (ContinuousLinearMap.id ℝ E)).trans ?_
     rw [Real.norm_of_nonneg (inv_nonneg.2 hr.le)]
     exact mul_le_of_le_one_right (inv_nonneg.2 hr.le) ContinuousLinearMap.norm_id_le
+  · dsimp only
+    rw [fderiv_of_notMem_tsupport, ContinuousLinearMap.zero_comp]
+    rw [β.tsupport_eq, mem_closedBall, dist_zero_right, hnorm, not_le, lt_inv_mul_iff₀' hr]
+    exact hx
 
 end ScaledCutoff
 
@@ -843,7 +843,7 @@ section CutoffDecay
 
 open Metric
 
-variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup G]
+variable {G : Type*} [NormedSpace ℝ E] [NormedAddCommGroup G]
 
 /-- **Cutoff derivative against decaying data.** Let `χ` equal `1` on the closed ball of radius
 `R` about the origin and `0` outside radius `2 R`, with `‖Dχ‖ ≤ A`. If `‖x‖ ‖u x‖ ≤ M` for

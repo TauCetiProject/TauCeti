@@ -28,7 +28,9 @@ real-axis Schwarz reflection principle.
 
 It also names the standard real-axis Schwarz-reflection extension
 `z ↦ if 0 ≤ z.im then f z else conj (f (conj z))`, together with the pointwise API for the
-upper and lower half-planes and the conjugation symmetry forced by real boundary values.
+upper and lower half-planes and the conjugation symmetry forced by real boundary values. A
+conjugation-invariant set whose closed upper part is preconnected and meets the real axis is
+preconnected (`TauCeti.isPreconnected_of_isPreconnected_inter_im_nonneg_of_symmetric`).
 The closed upper branch is intentionally exposed through the pointwise simplifier
 `schwarzReflection_of_im_nonneg`, with subset-level wrappers for branch agreement and
 differentiability transfer.  The continuity lemmas record the topological gluing input for
@@ -270,6 +272,40 @@ lemma image_conj_inter_im_nonneg_of_symmetric {Ω : Set ℂ} (hΩ : Set.MapsTo (
   rw [hΩ.image_inter_eq_preimage_of_involutive starRingEnd_self_apply]
   ext z
   simp
+
+/-- A conjugation-invariant set whose closed upper part is preconnected and meets the real axis is
+preconnected: it is the union of its closed upper part and the conjugate of that part, the closed
+lower part, and the two share the real point. -/
+lemma isPreconnected_of_isPreconnected_inter_im_nonneg_of_symmetric {Ω : Set ℂ}
+    (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω) (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im})) {x : ℂ}
+    (hx : x ∈ Ω) (hx0 : x.im = 0) :
+    IsPreconnected Ω := by
+  have hU : Ω = Ω ∩ {z | 0 ≤ z.im} ∪ (starRingEnd ℂ) '' (Ω ∩ {z | 0 ≤ z.im}) := by
+    rw [image_conj_inter_im_nonneg_of_symmetric hΩ, ← inter_union_distrib_left]
+    exact (inter_eq_left.2 fun z _ ↦ le_total 0 z.im).symm
+  rw [hU]
+  exact hΩc.union x ⟨hx, hx0.ge⟩ ⟨x, ⟨hx, hx0.ge⟩, conj_eq_iff_im.2 hx0⟩
+    (hΩc.image _ Complex.continuous_conj.continuousOn)
+
+/-- The closed upper part of a conjugation-invariant open set `Ω`, if preconnected, lies in a
+preconnected open subset of `Ω`: `Ω` itself when the upper part meets the real axis
+(`TauCeti.isPreconnected_of_isPreconnected_inter_im_nonneg_of_symmetric`), and otherwise the upper
+part, which is then the open set `Ω ∩ {0 < im}`. This is the domain on which a reflected function
+is studied. -/
+lemma exists_isPreconnected_isOpen_superset_inter_im_nonneg_of_symmetric {Ω : Set ℂ}
+    (hΩo : IsOpen Ω) (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω)
+    (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im})) :
+    ∃ W ⊆ Ω, IsOpen W ∧ IsPreconnected W ∧ Ω ∩ {z | 0 ≤ z.im} ⊆ W := by
+  by_cases hr : ∃ x ∈ Ω ∩ {z | 0 ≤ z.im}, x.im = 0
+  · obtain ⟨x, hx, hx0⟩ := hr
+    exact ⟨Ω, subset_rfl, hΩo,
+      isPreconnected_of_isPreconnected_inter_im_nonneg_of_symmetric hΩ hΩc hx.1 hx0,
+      inter_subset_left⟩
+  · have hU : Ω ∩ {z | 0 ≤ z.im} = Ω ∩ {z | 0 < z.im} :=
+      Subset.antisymm (fun z hz ↦ ⟨hz.1, hz.2.out.lt_of_ne fun h ↦ hr ⟨z, hz, h.symm⟩⟩)
+        fun z hz ↦ ⟨hz.1, hz.2.out.le⟩
+    exact ⟨Ω ∩ {z | 0 < z.im}, inter_subset_left,
+      hΩo.inter (isOpen_lt continuous_const Complex.continuous_im), hU ▸ hΩc, hU.subset⟩
 
 /--
 Antiholomorphic-composition prerequisite for Schwarz reflection.
