@@ -200,16 +200,7 @@ theorem congr (h : IsFilteredPoissonProcess ℱ α N P) {M : ℝ≥0 → Ω → 
 theorem indep_comap_shift (h : IsFilteredPoissonProcess ℱ α N P) (s : ℝ≥0) :
     Indep (.comap (fun ω u ↦ N (s + u) ω - N s ω) inferInstance) (ℱ s) P := by
   have := h.isProbabilityMeasure
-  refine indep_of_indep_of_le_left (h.adapted.indep_comap_sub_Ici h.indep_sub s) ?_
-  have hg : Measurable fun (z : Set.Ici s → ℝ) (u : ℝ≥0) ↦
-      z ⟨s + u, Set.mem_Ici.mpr le_self_add⟩ := by
-    fun_prop
-  have hcomp : (fun ω u ↦ N (s + u) ω - N s ω) =
-      (fun (z : Set.Ici s → ℝ) (u : ℝ≥0) ↦ z ⟨s + u, Set.mem_Ici.mpr le_self_add⟩) ∘
-        fun ω (t : Set.Ici s) ↦ N t ω - N s ω :=
-    rfl
-  rw [hcomp, ← MeasurableSpace.comap_comp]
-  exact MeasurableSpace.comap_mono hg.comap_le
+  exact h.adapted.indep_comap_shift_sub h.indep_sub s
 
 /-- The future increment process `(N (s + u) - N s)_u` of a Poisson process relative to `ℱ` is a
 Poisson process of the same rate relative to its own natural filtration. -/

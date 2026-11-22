@@ -586,8 +586,8 @@ theorem mem_tripleMasseyIndeterminacy_and_mem_piece_iff {p r n : ℤ}
       (decompose 𝒜.cohomologyGrading.piece (t * z) (n - r + r) : 𝒜.Cohomology) at ht
     rw [add_sub_cancel] at hs
     rw [sub_add_cancel] at ht
-    refine ⟨_, (decompose 𝒜.cohomologyGrading.piece s (n - p)).2, _,
-      (decompose 𝒜.cohomologyGrading.piece t (n - r)).2, ?_⟩
+    refine ⟨_, (decompose 𝒜.cohomologyGrading.piece s (n - p)).property, _,
+      (decompose 𝒜.cohomologyGrading.piece t (n - r)).property, ?_⟩
     rw [hs, ht, ← Submodule.coe_add, ← DirectSum.add_apply, ← decompose_add,
       decompose_of_mem_same _ hw]
   · rintro ⟨s, hs, t, ht, rfl⟩

@@ -6,12 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
+public import Mathlib.Geometry.Manifold.Instances.Real
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 import Mathlib.Analysis.Calculus.Deriv.Slope
+import Mathlib.Topology.Covering.AddCircle
+import Mathlib.Topology.Homotopy.Lifting
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Topology.Instances.AddCircle.Lift
 
 /-!
-# Lifts of circle diffeomorphisms
+# Lifts of circle diffeomorphisms and of circle-valued homotopies
 
 Every `C^n` diffeomorphism `φ` of the circle `AddCircle T`, `n ≠ 0`, has a `C^n` lift
 `F : ℝ → ℝ`, `φ x = F x`, with either `F (x + T) = F x + T` and `F' > 0` (the
@@ -22,17 +26,27 @@ case). A continuous lift exists by `AddCircle.exists_continuous_lift`, and it is
 vanishes, while the lift of a homeomorphism is monotone of degree one or antitone of degree `-1`
 (`AddCircle.strictMono_or_strictAnti_of_lift`).
 
+The projection `ℝ → AddCircle T` is a covering map and a smooth local diffeomorphism, so smooth
+circle-valued homotopies lift smoothly as well. A `C^n` map `g : [0, 1] × M → AddCircle T` whose
+restriction to time zero lifts to a continuous `f : M → ℝ` has a `C^n` lift `G` with
+`G (0, x) = f x` (`AddCircle.exists_contMDiff_lift_unitInterval_prod`): Mathlib's homotopy lifting
+for covering maps (`IsCoveringMap.liftHomotopy`) gives a continuous lift, and a continuous lift of
+a `C^n` map through a `C^n` local diffeomorphism is `C^n`.
+
 ## Main declarations
 
 * `AddCircle.deriv_pos_or_deriv_neg_of_lift`: a continuous lift of a `C^n` diffeomorphism of the
   circle, `n ≠ 0`, has degree one and positive derivative, or degree `-1` and negative derivative.
 * `Diffeomorph.exists_addCircle_lift`: every `C^n` diffeomorphism of the circle, `n ≠ 0`, has a
   `C^n` lift of one of these two kinds.
+* `AddCircle.exists_contMDiff_lift_unitInterval_prod`: smooth homotopy lifting for the circle.
 
 ## References
 
 * B. Farb, D. Margalit, *A Primer on Mapping Class Groups*, Section 2.1, for lifts of circle
   homeomorphisms.
+* A. Hatcher, *Algebraic Topology*, Proposition 1.30, for the homotopy lifting property of
+  covering maps.
 -/
 
 public section
@@ -67,6 +81,29 @@ theorem deriv_pos_or_deriv_neg_of_lift {φ : AddCircle T ≃ₘ^n⟮𝓘(ℝ), �
   rcases strictMono_or_strictAnti_of_lift (φ := φ.toHomeomorph) hF hφ with ⟨hm, hper⟩ | ⟨ha, hper⟩
   · exact .inl ⟨hper, fun x ↦ hm.monotone.deriv_nonneg.lt_of_ne' (hne x)⟩
   · exact .inr ⟨hper, fun x ↦ ha.antitone.deriv_nonpos.lt_of_ne (hne x)⟩
+
+section Homotopy
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- **Smooth homotopy lifting for the circle.** A `C^n` map `g : [0, 1] × M → AddCircle T` whose
+restriction to time zero lifts to a continuous real function `f` has a `C^n` real lift `G`,
+`g q = G q`, with `G (0, x) = f x`. -/
+theorem exists_contMDiff_lift_unitInterval_prod {g : unitInterval × M → AddCircle T}
+    (hg : ContMDiff ((𝓡∂ 1).prod I) 𝓘(ℝ) n g) {f : M → ℝ} (hf : Continuous f)
+    (h₀ : ∀ x, g (0, x) = f x) :
+    ∃ G : unitInterval × M → ℝ, ContMDiff ((𝓡∂ 1).prod I) 𝓘(ℝ) n G ∧ (∀ q, g q = G q) ∧
+      ∀ x, G (0, x) = f x := by
+  have cov := isCoveringMap_coe T
+  have hlift := cov.liftHomotopy_lifts ⟨g, hg.continuous⟩ ⟨f, hf⟩ h₀
+  refine ⟨cov.liftHomotopy ⟨g, hg.continuous⟩ ⟨f, hf⟩ h₀, ?_,
+    fun q ↦ (congr_fun hlift q).symm, cov.liftHomotopy_zero _ _ h₀⟩
+  -- The continuous lift is `C^n` because the projection is a `C^n` local diffeomorphism.
+  exact ContMDiff.of_comp_isLocalDiffeomorph (isLocalDiffeomorph_coe T n)
+    (ContinuousMap.continuous _) (by rw [hlift]; exact hg)
+
+end Homotopy
 
 end AddCircle
 

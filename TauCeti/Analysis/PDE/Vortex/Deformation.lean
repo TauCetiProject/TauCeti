@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Basic
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
@@ -25,10 +26,16 @@ differentiable phases, and its first variation requires no phase regularity.
 Covariance of the equation requires `C²` phases. Where the section does not vanish,
 `∂bar_a α = 0` determines the connection from the section (`eq_of_forall_section_eq`).
 Where `∂bar_a α = 0`, the covariant derivative is complex linear,
-`d_a α (v) = v · d_a α (1)` (`covariantDerivative_eq_mul_of_equation_eq_zero`), and it controls
-the gradient of `|α|²` through `(∂_s |α|²)² + (∂_t |α|²)² = 4 |α|² |d_a α (1)|²`
+`d_a α (v) = v · d_a α (1)` (`covariantDerivative_eq_mul_of_equation_eq_zero`), so
+`|d_a α (v)| = |v| |d_a α (1)|` (`norm_covariantDerivative_eq_mul_of_equation_eq_zero`), and it
+controls the gradient of `|α|²` through `(∂_s |α|²)² + (∂_t |α|²)² = 4 |α|² |d_a α (1)|²`
 (`fderiv_normSq_apply_one_sq_add_apply_I_sq`), so `|d_a α (1)| ≤ |∇ |α|²|` where `|α|² ≥ 1 / 2`
 (`norm_covariantDerivative_one_le_norm_fderiv_normSq`).
+With the curvature equation, this linearity gives the energy density of a solution as
+`(65 / 64) (1 - |α|²)² + 2 |d_a α (1)|²` (`energyDensity_eq_of_equation_eq_zero`), so bounds on
+the modulus defect and on `|d_a α (1)|` bound it (`energyDensity_le_of_equation_eq_zero`); in
+particular it is continuous on a solution with continuous `b₁` and `C¹` section
+(`continuous_energyDensity_of_equation_eq_zero`).
 
 `equation_add_smul` gives the exact quadratic expansion, and `hasDerivAt_equation`
 identifies `linearizedEquation` as its first variation. For the charge-one infinitesimal
@@ -70,6 +77,32 @@ def sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℂ :=
 theorem sectionValue_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue x z = 2 * ((x z 2 : ℂ) + (x z 3 : ℂ) * I) := (rfl)
 
+/-- The real part of the section `α = 2 (p + i q)` is `2 p`. -/
+@[simp]
+theorem sectionValue_re (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    (sectionValue x z).re = 2 * x z 2 := by
+  simp [sectionValue_apply]
+
+/-- The imaginary part of the section `α = 2 (p + i q)` is `2 q`. -/
+@[simp]
+theorem sectionValue_im (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    (sectionValue x z).im = 2 * x z 3 := by
+  simp [sectionValue_apply]
+
+/-- The real part of `conj α_x α_y` in the field coordinates: `4 (p_x p_y + q_x q_y)`. -/
+theorem conj_sectionValue_mul_sectionValue_re (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    (starRingEnd ℂ (sectionValue x z) * sectionValue y z).re =
+      4 * (x z 2 * y z 2 + x z 3 * y z 3) := by
+  simp only [mul_re, conj_re, conj_im, sectionValue_re, sectionValue_im]
+  ring
+
+/-- The imaginary part of `conj α_x α_y` in the field coordinates: `4 (p_x q_y - q_x p_y)`. -/
+theorem conj_sectionValue_mul_sectionValue_im (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    (starRingEnd ℂ (sectionValue x z) * sectionValue y z).im =
+      4 * (x z 2 * y z 3 - x z 3 * y z 2) := by
+  simp only [mul_im, conj_re, conj_im, sectionValue_re, sectionValue_im]
+  ring
+
 /-- The section of a sum of fields is the sum of their sections. -/
 @[simp]
 theorem sectionValue_add (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
@@ -90,6 +123,28 @@ theorem sectionValue_sub (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue (x - y) z = sectionValue x z - sectionValue y z := by
   simp only [sectionValue_apply, Pi.sub_apply, PiLp.sub_apply, ofReal_sub]
   ring
+
+/-- The section is `c` exactly when the real section coordinates are `c.re / 2` and
+`c.im / 2`. -/
+theorem sectionValue_eq_iff {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z c : ℂ} :
+    sectionValue x z = c ↔ x z 2 = c.re / 2 ∧ x z 3 = c.im / 2 := by
+  simp only [Complex.ext_iff, sectionValue_apply, mul_re, mul_im, add_re, add_im, ofReal_re,
+    ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
+  constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
+
+/-- The section of the zero field vanishes. -/
+@[simp]
+theorem sectionValue_zero (z : ℂ) : sectionValue 0 z = 0 := by
+  simp [sectionValue_apply]
+
+/-- The section of a finite sum of fields is the sum of their sections. -/
+@[simp]
+theorem sectionValue_sum {ι : Type*} (s : Finset ι) (x : ι → ℂ → EuclideanSpace ℝ (Fin 4))
+    (z : ℂ) : sectionValue (∑ i ∈ s, x i) z = ∑ i ∈ s, sectionValue (x i) z := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [Finset.sum_insert hi, sectionValue_add, ih, Finset.sum_insert hi]
 
 /-- Two fields agree at a point when their connection coordinates and their sections agree
 there. -/
@@ -122,6 +177,14 @@ theorem norm_sectionValue_le (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) 
   rw [← sq_le_sq₀ (norm_nonneg _) (by positivity), sq_norm_sectionValue, mul_pow,
     EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
   nlinarith [sq_nonneg (x z 0), sq_nonneg (x z 1)]
+
+/-- The section of a field is bounded by its section coordinates: `|α| ≤ 2 (|p| + |q|)`. -/
+theorem norm_sectionValue_le_two_mul_abs_add_abs (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ‖sectionValue x z‖ ≤ 2 * (|x z 2| + |x z 3|) := by
+  rw [sectionValue_apply, norm_mul, Complex.norm_two]
+  gcongr
+  refine (norm_add_le _ _).trans ?_
+  rw [norm_mul, norm_I, mul_one, norm_real, norm_real, Real.norm_eq_abs, Real.norm_eq_abs]
 
 /-- The section of a field vanishes exactly where `p ^ 2 + q ^ 2` does, for `p, q` its real
 coordinates. -/
@@ -204,6 +267,12 @@ theorem contDiff_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {n : With
   exact contDiff_const.mul ((ofRealCLM.contDiff.comp hp).add
     ((ofRealCLM.contDiff.comp hq).mul contDiff_const))
 
+/-- The section of a continuous field is continuous. -/
+theorem continuous_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) :
+    Continuous (sectionValue x) :=
+  (contDiff_sectionValue (n := 0) (contDiff_zero.2 ((EuclideanSpace.proj 2).continuous.comp hx))
+    (contDiff_zero.2 ((EuclideanSpace.proj 3).continuous.comp hx))).continuous
+
 /-- The section `α = 2 (p + i q)` is differentiable wherever its real coordinates are. -/
 theorem differentiableAt_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
     (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
@@ -244,6 +313,74 @@ theorem fderiv_sectionValue_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : 
   simp only [Fin.isValue, smul_add, add_apply, smul_apply, ContinuousLinearMap.comp_apply,
     ofRealCLM_apply, smul_eq_mul]
   ring
+
+/-- Where the section is nonzero, its modulus `|α| = √|α|²` is differentiable, with derivative
+`d |α|² / (2 |α|)`. -/
+theorem hasFDerivAt_norm_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (hα : sectionValue x z ≠ 0) :
+    HasFDerivAt (fun w ↦ ‖sectionValue x w‖)
+      ((1 / (2 * ‖sectionValue x z‖)) • fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z) z := by
+  have hs : DifferentiableAt ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z := by fun_prop
+  have hsqrt (w : ℂ) : Real.sqrt (4 * (x w 2 ^ 2 + x w 3 ^ 2)) = ‖sectionValue x w‖ := by
+    rw [← sq_norm_sectionValue, Real.sqrt_sq (norm_nonneg _)]
+  have h := hs.hasFDerivAt.sqrt
+    (by rw [← sq_norm_sectionValue]; exact pow_ne_zero 2 (norm_ne_zero_iff.mpr hα))
+  simpa only [hsqrt] using h
+
+/-- Where `|α|² ≥ 1 / 4`, the derivative of the modulus `|α|` of the section is at most that of
+`|α|²`. -/
+theorem norm_fderiv_norm_sectionValue_le {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (hquarter : 1 / 4 ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) :
+    ‖fderiv ℝ (fun w ↦ ‖sectionValue x w‖) z‖ ≤
+      ‖fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z‖ := by
+  have hN : 1 / 2 ≤ ‖sectionValue x z‖ := by
+    nlinarith [sq_norm_sectionValue x z, norm_nonneg (sectionValue x z)]
+  rw [(hasFDerivAt_norm_sectionValue hp hq (norm_pos_iff.mp (by linarith))).fderiv, norm_smul,
+    Real.norm_eq_abs, abs_of_pos (by positivity)]
+  refine mul_le_of_le_one_left (norm_nonneg _) ?_
+  rw [div_le_one (by positivity)]
+  linarith
+
+/-- The derivative of a field is controlled by those of its connection coefficients and of its
+section: `‖D x‖ ≤ ‖D b₁‖ + ‖D b₂‖ + ‖D α‖ / 2`. -/
+theorem norm_fderiv_le_add_norm_fderiv_sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ‖fderiv ℝ x z‖ ≤ ‖fderiv ℝ (fun w ↦ x w 0) z‖ + ‖fderiv ℝ (fun w ↦ x w 1) z‖ +
+      ‖fderiv ℝ (sectionValue x) z‖ / 2 := by
+  by_cases hx : DifferentiableAt ℝ x z
+  swap
+  · rw [fderiv_zero_of_not_differentiableAt hx, norm_zero]
+    positivity
+  have hi := differentiableAt_euclidean.mp hx
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+  have h0 := (fderiv ℝ (fun w ↦ x w 0) z).le_opNorm v
+  have h1 := (fderiv ℝ (fun w ↦ x w 1) z).le_opNorm v
+  have hσ := (fderiv ℝ (sectionValue x) z).le_opNorm v
+  rw [fderiv_sectionValue_apply (hi 2) (hi 3)] at hσ
+  simp only [hx.fderiv_piLp_apply, Real.norm_eq_abs] at h0 h1 hσ
+  have hσsq : ‖(2 : ℂ) * ((fderiv ℝ x z v 2 : ℂ) + (fderiv ℝ x z v 3 : ℂ) * I)‖ ^ 2 =
+      4 * (fderiv ℝ x z v 2 ^ 2 + fderiv ℝ x z v 3 ^ 2) := by
+    rw [Complex.sq_norm, Complex.normSq_apply]
+    simp
+    ring
+  set A := ‖fderiv ℝ (fun w ↦ x w 0) z‖ * ‖v‖
+  set B := ‖fderiv ℝ (fun w ↦ x w 1) z‖ * ‖v‖
+  set S := ‖fderiv ℝ (sectionValue x) z‖ * ‖v‖
+  have hA : 0 ≤ A := by positivity
+  have hB : 0 ≤ B := by positivity
+  have hS : 0 ≤ S := by positivity
+  have hS' : 4 * (fderiv ℝ x z v 2 ^ 2 + fderiv ℝ x z v 3 ^ 2) ≤ S ^ 2 := by
+    rw [← hσsq]
+    exact pow_le_pow_left₀ (norm_nonneg _) hσ 2
+  have hsq : ‖fderiv ℝ x z v‖ ^ 2 ≤ (A + B + S / 2) ^ 2 := by
+    rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
+    nlinarith [sq_abs (fderiv ℝ x z v 0), sq_abs (fderiv ℝ x z v 1),
+      abs_nonneg (fderiv ℝ x z v 0), abs_nonneg (fderiv ℝ x z v 1), mul_nonneg hA hB,
+      mul_nonneg hA hS, mul_nonneg hB hS]
+  calc ‖fderiv ℝ x z v‖ ≤ A + B + S / 2 :=
+        (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hsq
+    _ = _ := by ring
 
 /-- The covariant derivative `d_a α`, with the charge-one connection `a = i(b₁ ds + b₂ dt)`.
 The argument `v` is an actual real tangent vector to the plane. -/
@@ -316,6 +453,18 @@ theorem continuous_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} 
     fderiv_sectionValue_apply ((hxi 2).differentiable one_ne_zero _)
       ((hxi 3).differentiable one_ne_zero _)]
   fun_prop
+
+/-- The covariant derivative of the section along `1` is continuous when `b₁` is continuous and
+the section is `C¹`; it does not involve `b₂`. -/
+theorem continuous_covariantDerivative_one {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hb : Continuous (fun w ↦ x w 0))
+    (hp : ContDiff ℝ 1 (fun w ↦ x w 2)) (hq : ContDiff ℝ 1 (fun w ↦ x w 3)) :
+    Continuous fun z ↦ covariantDerivative x z 1 := by
+  have hα : ContDiff ℝ 1 (sectionValue x) := contDiff_sectionValue hp hq
+  have h : Continuous fun z ↦ fderiv ℝ (sectionValue x) z 1 :=
+    (hα.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  simp only [covariantDerivative_apply, one_re, one_im, mul_one, mul_zero, add_zero]
+  exact h.add ((continuous_const.mul (continuous_ofReal.comp hb)).mul hα.continuous)
 
 /-- The real curvature coefficient: `F_a = i curvature ds ∧ dt`. -/
 def curvature (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
@@ -453,6 +602,58 @@ theorem covariantDerivative_eq_mul_of_equation_eq_zero {x : ℂ → EuclideanSpa
   calc (v.re : ℂ) * covariantDerivative x z 1 + v.im * (I * covariantDerivative x z 1) =
       (v.re + v.im * I) * covariantDerivative x z 1 := by ring
     _ = v * covariantDerivative x z 1 := by rw [re_add_im]
+
+/-- Where the holomorphicity rows `∂bar_a α = 0` hold, `|d_a α (v)| = |v| |d_a α (1)|`. -/
+theorem norm_covariantDerivative_eq_mul_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {z : ℂ} (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z)
+    (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) (h₁ : equation x z 1 = 0)
+    (h₂ : equation x z 2 = 0) (v : ℂ) :
+    ‖covariantDerivative x z v‖ = ‖v‖ * ‖covariantDerivative x z 1‖ := by
+  rw [covariantDerivative_eq_mul_of_equation_eq_zero hp hq h₁ h₂ v, norm_mul]
+
+/-- At a solution of the vortex equation the energy density is determined by the modulus defect
+and one covariant derivative: `|F_a|² + |d_a α|² + (1 - |α|²)² = (65 / 64) (1 - |α|²)² +
+2 |d_a α (1)|²`, since `curvature = -(1 - |α|²) / 8` and `|d_a α (i)| = |d_a α (1)|`. -/
+theorem energyDensity_eq_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (hsol : equation x z = 0) :
+    energyDensity x z = 65 / 64 * (1 - ‖sectionValue x z‖ ^ 2) ^ 2 +
+      2 * ‖covariantDerivative x z 1‖ ^ 2 := by
+  rw [energyDensity_apply, curvature_apply, curvature_eq_of_equation_eq_zero hsol,
+    ← sq_norm_sectionValue, covariantDerivative_eq_mul_of_equation_eq_zero hp hq
+      (by simp [hsol]) (by simp [hsol]) I, norm_mul, norm_I, one_mul]
+  ring
+
+/-- At a solution of the vortex equation, bounds `0 ≤ 1 - |α|² ≤ A` on the modulus defect and
+`|d_a α (1)| ≤ B` on one covariant derivative bound the energy density by
+`(65 / 64) A² + 2 B²` (`energyDensity_eq_of_equation_eq_zero`). -/
+theorem energyDensity_le_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    {A B : ℝ} (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z)
+    (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) (hsol : equation x z = 0)
+    (hdef₀ : 0 ≤ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (hdef : 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ A)
+    (hcov : ‖covariantDerivative x z 1‖ ≤ B) :
+    energyDensity x z ≤ 65 / 64 * A ^ 2 + 2 * B ^ 2 := by
+  rw [energyDensity_eq_of_equation_eq_zero hp hq hsol, sq_norm_sectionValue]
+  have := pow_le_pow_left₀ hdef₀ hdef 2
+  have := pow_le_pow_left₀ (norm_nonneg _) hcov 2
+  linarith
+
+/-- On a vortex whose `b₁` is continuous and whose section is `C¹`, the energy density is
+continuous: the equation gives `|d_a α (i)| = |d_a α (1)|` and `curvature = -(1 - |α|²) / 8`,
+neither of which involves `b₂`. -/
+theorem continuous_energyDensity_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hb : Continuous (fun w ↦ x w 0))
+    (hp : ContDiff ℝ 1 (fun w ↦ x w 2)) (hq : ContDiff ℝ 1 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0) :
+    Continuous (energyDensity x) := by
+  have heq : energyDensity x = fun z ↦ 65 / 64 * (1 - ‖sectionValue x z‖ ^ 2) ^ 2 +
+      2 * ‖covariantDerivative x z 1‖ ^ 2 :=
+    funext fun z ↦ energyDensity_eq_of_equation_eq_zero (hp.differentiable one_ne_zero z)
+      (hq.differentiable one_ne_zero z) (hsol z)
+  rw [heq]
+  have := (contDiff_sectionValue hp hq).continuous
+  have := continuous_covariantDerivative_one hb hp hq
+  fun_prop
 
 /-- The squared modulus of `d_a α (1) = 2 ((∂_s p - b₁ q) + i (∂_s q + b₁ p))`. -/
 theorem sq_norm_covariantDerivative_one {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
@@ -636,6 +837,21 @@ theorem gaugeDirection_smul (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ �
     gaugeDirection x (t • f) z = t • gaugeDirection x f z := by
   ext i
   fin_cases i <;> simp [fderiv_const_smul_field] <;> ring
+
+/-- The infinitesimal gauge action of a `C^(n+1)` phase at a `Cⁿ` field is `Cⁿ`. -/
+theorem contDiff_gaugeDirection {x : ℂ → EuclideanSpace ℝ (Fin 4)} {f : ℂ → ℝ}
+    {n : WithTop ℕ∞} (hx : ContDiff ℝ n x) (hf : ContDiff ℝ (n + 1) f) :
+    ContDiff ℝ n (gaugeDirection x f) := by
+  have hdf (v : ℂ) : ContDiff ℝ n fun z ↦ fderiv ℝ f z v :=
+    (hf.fderiv_right le_rfl).clm_apply contDiff_const
+  have hf' : ContDiff ℝ n f := hf.of_le le_self_add
+  have hx' (i : Fin 4) : ContDiff ℝ n fun z ↦ x z i := contDiff_euclidean.1 hx i
+  refine contDiff_euclidean.2 fun i ↦ ?_
+  fin_cases i
+  · simpa using (hdf 1).neg
+  · simpa using (hdf I).neg
+  · simpa using (hf'.mul (hx' 3)).neg
+  · simpa using hf'.mul (hx' 2)
 
 /-- The zero phase has zero infinitesimal gauge action. -/
 @[simp]

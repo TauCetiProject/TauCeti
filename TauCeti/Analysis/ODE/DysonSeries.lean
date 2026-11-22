@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -9,11 +9,14 @@ public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Analysis.Normed.Algebra.Exponential
+public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.Analysis.ODE.Caratheodory
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.SpecificLimits.Normed
+import Mathlib.Topology.Order.ProjIcc
+import TauCeti.Analysis.Calculus.Bilinear
 
 /-!
 # The Dyson series of a continuous path in a Banach algebra
@@ -55,10 +58,18 @@ one-parameter automorphism groups of C⋆-algebras.
   `Γ' t = p t * Γ t` (`TauCeti.hasDerivAt_dysonSeriesLeft`), and factoring as
   `Γ (t + d) = Γ t * Γ d` for a path of period `d` (`TauCeti.dysonSeriesLeft_add_of_periodic`),
   hence `Γ (n d) = Γ d ^ n` (`TauCeti.dysonSeriesLeft_natCast_mul_of_periodic`).
+* `TauCeti.exists_isInvertible_hasDerivAt_clm_Icc`: an invertible fundamental solution on a
+  closed interval, initialized at any included time.
+* `TauCeti.dysonSeriesLeft_mul_sub_mul_mul_eq`: rotating the left equation by a path `J` of
+  square roots of `-1` conjugates its series by `J`. For a loop `J` of bounded operators, the
+  rotated return map then has the same `det (1 - ·)`
+  (`TauCeti.det_one_sub_dysonSeriesLeft_mul_sub_mul_mul`).
 * `TauCeti.eq_dysonSeriesLeft_apply`: for a path of bounded operators, every solution of the
   time-dependent linear equation `w' t = M t (w t)` is `w t = dysonSeriesLeft M t (w 0)`.
 * `TauCeti.periodic_dysonSeriesLeft_apply_iff`: for a periodic path of bounded operators, such a
   solution is periodic exactly when its initial value is fixed by the propagator over one period.
+* `TauCeti.dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul`: more generally, if the initial
+  value lies in the `ε`-eigenspace of `Γ d ^ n`, the solution is twisted by `ε` along `n d`.
 * `TauCeti.apply_dysonSeriesLeft_apply_dysonSeriesLeft`: the propagator of a continuous path
   that is skew for a continuous bilinear map `B` preserves `B`.
 * `TauCeti.contDiff_dysonSeriesLeft`: the left series of a `Cⁿ` path is `Cⁿ⁺¹`.
@@ -74,6 +85,8 @@ one-parameter automorphism groups of C⋆-algebras.
   Theorem 3.1.33, for bounded perturbations and their Dyson expansions.
 * Bratteli--Robinson, *Operator Algebras and Quantum Statistical Mechanics 2*, second edition,
   Section 5.4.1, for the unitary cocycles of perturbed C⋆-dynamics.
+* Formalization references: https://github.com/frenzymath/lean-eval-submissions and
+  https://github.com/frenzymath/PoincareConjecture.
 -/
 
 public section
@@ -443,7 +456,61 @@ theorem contDiff_dysonSeriesLeft {n : ℕ} (hp : ContDiff ℝ n p) :
     rw [hderiv]
     exact_mod_cast hp.mul hU
 
+/-- **Rotating the left equation by a path of complex structures.** Let `J` be a differentiable
+path with `J t * J t = -1` and derivative `D`, and let `p` be continuous. Then the left Dyson
+series of the rotated path `J D - J p J` is `-J(t) Γ(t) J(0)` for the left Dyson series `Γ` of
+`p`: left multiplication by `J` carries solutions of `ξ' = p ξ` to solutions of the rotated
+equation. -/
+theorem dysonSeriesLeft_mul_sub_mul_mul_eq {J D : ℝ → B} (hJ : ∀ t, HasDerivAt J (D t) t)
+    (hJJ : ∀ t, J t * J t = -1) (hD : Continuous D) (hp : Continuous p) (t : ℝ) :
+    dysonSeriesLeft (fun t ↦ J t * D t - J t * p t * J t) t =
+      -(J t * dysonSeriesLeft p t * J 0) := by
+  have hJc : Continuous J := continuous_iff_continuousAt.2 fun t ↦ (hJ t).continuousAt
+  -- Differentiating `J * J = -1` gives `D J = -J D`.
+  have hDJ (t : ℝ) : D t * J t = -(J t * D t) := eq_neg_of_add_eq_zero_left <| by
+    simpa using (ContinuousLinearMap.mul ℝ B).apply_add_apply_eq_zero_of_const (hJ t) (hJ t) hJJ
+  have hf (t : ℝ) : HasDerivAt (fun t ↦ -(J t * dysonSeriesLeft p t * J 0))
+      ((J t * D t - J t * p t * J t) * -(J t * dysonSeriesLeft p t * J 0)) t := by
+    have h := (((hJ t).mul (hasDerivAt_dysonSeriesLeft hp t)).mul_const (J 0)).neg
+    convert h using 1
+    have h₁ : J t * D t * J t = D t := by
+      rw [mul_assoc, hDJ, mul_neg, ← mul_assoc, hJJ, neg_mul, one_mul, neg_neg]
+    have h₂ : J t * p t * J t * J t = -(J t * p t) := by
+      rw [mul_assoc _ (J t), hJJ, mul_neg, mul_one]
+    calc (J t * D t - J t * p t * J t) * -(J t * dysonSeriesLeft p t * J 0)
+        = -((J t * D t * J t) * dysonSeriesLeft p t * J 0) +
+            (J t * p t * J t * J t) * dysonSeriesLeft p t * J 0 := by noncomm_ring
+      _ = _ := by rw [h₁, h₂]; noncomm_ring
+  have h0 : -(J 0 * dysonSeriesLeft p 0 * J 0) = 1 := by
+    rw [dysonSeriesLeft_zero, mul_one, hJJ, neg_neg]
+  have h := eq_dysonSeriesLeft_mul (p := fun t ↦ J t * D t - J t * p t * J t)
+    ((hJc.mul hD).sub ((hJc.mul hp).mul hJc)) hf t
+  rw [h0, mul_one] at h
+  exact h.symm
+
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
+
+/-- A continuous linear equation on a closed interval admits an everywhere invertible
+fundamental solution starting at any included time. The original coefficient equation holds
+at every time of the interval, including its endpoints. -/
+theorem exists_isInvertible_hasDerivAt_clm_Icc {a b t₀ : ℝ}
+    (ht₀ : t₀ ∈ Icc a b) (A : ℝ → X →L[ℝ] X) (hA : ContinuousOn A (Icc a b)) :
+    ∃ P : ℝ → X →L[ℝ] X,
+      P t₀ = 1 ∧ (∀ t ∈ Icc a b, HasDerivAt P (A t * P t) t) ∧
+        ∀ t, (P t).IsInvertible := by
+  let B : ℝ → X →L[ℝ] X := fun t ↦ A (projIcc a b (ht₀.1.trans ht₀.2) (t + t₀))
+  have hB : Continuous B :=
+    (hA.comp_continuous (continuous_subtypeVal.comp continuous_projIcc)
+      (fun _ ↦ (projIcc a b (ht₀.1.trans ht₀.2) _).property)).comp
+        (continuous_id.add continuous_const)
+  refine ⟨fun t ↦ dysonSeriesLeft B (t - t₀), by simp, ?_, ?_⟩
+  · intro t ht
+    simpa only [Function.comp_def, id_eq, B, sub_add_cancel, projIcc_of_mem _ ht, one_smul] using
+      (hasDerivAt_dysonSeriesLeft hB (t - t₀)).scomp t ((hasDerivAt_id t).sub_const t₀)
+  · intro t
+    exact ContinuousLinearMap.IsInvertible.of_inverse
+      (dysonSeriesLeft_mul_dysonSeries_neg hB (t - t₀))
+      (dysonSeries_neg_mul_dysonSeriesLeft hB (t - t₀))
 
 /-- **The propagator of a time-dependent linear equation.** Every solution of `w' t = M t (w t)`
 for a continuous path `M` of bounded operators is `w t = dysonSeriesLeft M t (w 0)`. -/
@@ -459,13 +526,24 @@ theorem hasDerivAt_dysonSeriesLeft_apply {M : ℝ → X →L[ℝ] X} (hM : Conti
     HasDerivAt (fun t => dysonSeriesLeft M t x) (M t (dysonSeriesLeft M t x)) t := by
   simpa using (hasDerivAt_dysonSeriesLeft hM t).clm_apply (hasDerivAt_const t x)
 
+/-- **The return twist of the propagator.** For a continuous path `M` of period `d`, if `x` lies
+in the `ε`-eigenspace of `Ψ(d) ^ n`, where `Ψ = dysonSeriesLeft M`, then the solution
+`t ↦ Ψ t x` of `w' t = M t (w t)` satisfies `Ψ (t + n d) x = ε • Ψ t x`. -/
+theorem dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul {M : ℝ → X →L[ℝ] X} (hM : Continuous M)
+    {d : ℝ} (hper : Function.Periodic M d) {n : ℕ} {ε : ℝ} {x : X}
+    (hx : (dysonSeriesLeft M d ^ n) x = ε • x) (t : ℝ) :
+    dysonSeriesLeft M (t + n * d) x = ε • dysonSeriesLeft M t x := by
+  rw [dysonSeriesLeft_add_of_periodic hM (hper.nat_mul n),
+    dysonSeriesLeft_natCast_mul_of_periodic hM hper, mul_apply_eq_comp, hx, map_smul]
+
 /-- For a continuous path `M` of period `d`, the solution `t ↦ dysonSeriesLeft M t x` of
 `w' t = M t (w t)` has period `d` exactly when `x` is fixed by the propagator over one period. -/
 theorem periodic_dysonSeriesLeft_apply_iff {M : ℝ → X →L[ℝ] X} (hM : Continuous M) {d : ℝ}
     (hper : Function.Periodic M d) (x : X) :
     Function.Periodic (fun t => dysonSeriesLeft M t x) d ↔ dysonSeriesLeft M d x = x := by
   refine ⟨fun h => by simpa [dysonSeriesLeft_zero] using h 0, fun h t => ?_⟩
-  simp only [dysonSeriesLeft_add_of_periodic hM hper t, mul_apply_eq_comp, h]
+  simpa using dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul hM hper (n := 1) (ε := 1)
+    (by simpa using h) t
 
 /-- **The propagator of a skew path preserves the bilinear form.** If `M` is a continuous path of
 bounded operators with `B (M r u) w + B u (M r w) = 0`, then the propagator of
@@ -511,6 +589,29 @@ theorem eq_dysonSeriesLeft_apply_add_integral {M : ℝ → X →L[ℝ] X} (hM : 
   simp only [v, dysonSeriesLeft_zero, intervalIntegral.integral_same, add_zero,
     one_apply_eq_self, sub_self, map_zero] at h0
   exact sub_eq_zero.1 h0
+
+/-- **The rotated return map.** For a loop `J` of complex structures, `J t * J t = -1` and
+`J 1 = J 0`, the return map of the rotated equation `ξ' = (J D - J M J) ξ` of
+`dysonSeriesLeft_mul_sub_mul_mul_eq` is conjugate by `J 0` to that of `ξ' = M ξ`, so `1` minus
+either has the same determinant. -/
+theorem det_one_sub_dysonSeriesLeft_mul_sub_mul_mul {J D M : ℝ → X →L[ℝ] X}
+    (hJ : ∀ t, HasDerivAt J (D t) t) (hJJ : ∀ t, J t * J t = -1) (hD : Continuous D)
+    (hM : Continuous M) (hJ1 : J 1 = J 0) :
+    LinearMap.det ((1 - dysonSeriesLeft (fun t ↦ J t * D t - J t * M t * J t) 1 :
+      X →L[ℝ] X) : X →ₗ[ℝ] X) =
+      LinearMap.det ((1 - dysonSeriesLeft M 1 : X →L[ℝ] X) : X →ₗ[ℝ] X) := by
+  rw [dysonSeriesLeft_mul_sub_mul_mul_eq hJ hJJ hD hM, hJ1]
+  set j := J 0
+  set Ψ := dysonSeriesLeft M 1
+  have h : (1 - -(j * Ψ * j) : X →L[ℝ] X) = -j * (1 - Ψ) * j := by
+    calc (1 - -(j * Ψ * j) : X →L[ℝ] X) = -(j * j) * 1 + j * Ψ * j := by
+          rw [hJJ, neg_neg, mul_one, sub_neg_eq_add]
+      _ = -j * (1 - Ψ) * j := by noncomm_ring
+  have hj : ((-j : X →L[ℝ] X) : X →ₗ[ℝ] X) * (j : X →ₗ[ℝ] X) = 1 := by
+    rw [← ContinuousLinearMap.toLinearMap_mul, neg_mul, hJJ, neg_neg,
+      ContinuousLinearMap.toLinearMap_one]
+  rw [h, ContinuousLinearMap.toLinearMap_mul, ContinuousLinearMap.toLinearMap_mul, map_mul, map_mul,
+    mul_right_comm, ← map_mul, hj, map_one, one_mul]
 
 end Left
 

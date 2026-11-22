@@ -41,14 +41,14 @@ variable {K : Type u} [Field K] {L : Type v} [Field L] [Algebra K L]
 variable (n : ℕ) (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
 
 /-- Base change commutes with the inclusion of roots-of-unity cohomology into the Brauer group,
-read on the explicit roots-of-unity model. -/
-theorem brBaseChange_h2MuToBr_muNRepH2Equiv
+even if the roots-of-unity exponent is enlarged to a multiple after base change. -/
+theorem brBaseChange_h2MuToBr_muNRepH2Equiv_of_dvd {m : ℕ} (h : n ∣ m)
     (x : H2 (AbsoluteGaloisGroup K) (KummerCoeff K n)) :
     brBaseChange K L (h2MuToBr n K (muNRepH2Equiv n K x)) =
-      h2MuToBr n L (muNRepH2Equiv n L
+      h2MuToBr m L (muNRepH2Equiv m L
         (explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K n) (AbsoluteGaloisGroup L)
-          (KummerCoeff L n) (absoluteGaloisGroupMap τ) (kummerCoeffBaseChange n τ)
-          continuous_of_discreteTopology (kummerCoeffBaseChange_smul n τ) x)) := by
+          (KummerCoeff L m) (absoluteGaloisGroupMap τ) (kummerCoeffBaseChangeOfDvd τ h)
+          continuous_of_discreteTopology (kummerCoeffBaseChangeOfDvd_smul τ h) x)) := by
   rw [h2MuToBr_muNRepH2Equiv_eq_explicitCoeff2, h2MuToBr_muNRepH2Equiv_eq_explicitCoeff2,
     brBaseChange_apply K L τ, AddEquiv.symm_apply_apply]
   apply congrArg (unitsRepH2Equiv L)
@@ -60,11 +60,12 @@ theorem brBaseChange_h2MuToBr_muNRepH2Equiv
     (AbsoluteGaloisGroup L) (UnitsCoeff L) (absoluteGaloisGroupMap τ)
     (unitsCoeffBaseChange τ) continuous_of_discreteTopology (unitsCoeffBaseChange_smul τ)
   have hright := explicitMap2_comp (AbsoluteGaloisGroup K) (KummerCoeff K n)
-    (AbsoluteGaloisGroup L) (KummerCoeff L n) (absoluteGaloisGroupMap τ)
-    (kummerCoeffBaseChange n τ) continuous_of_discreteTopology (kummerCoeffBaseChange_smul n τ)
+    (AbsoluteGaloisGroup L) (KummerCoeff L m) (absoluteGaloisGroupMap τ)
+    (kummerCoeffBaseChangeOfDvd τ h) continuous_of_discreteTopology
+    (kummerCoeffBaseChangeOfDvd_smul τ h)
     (AbsoluteGaloisGroup L) (UnitsCoeff L) (ContinuousMonoidHom.id _)
-    (kummerCoeffInclHom L n).toAddMonoidHom continuous_of_discreteTopology
-    (fun g m ↦ (kummerCoeffInclHom L n).map_smul g m)
+    (kummerCoeffInclHom L m).toAddMonoidHom continuous_of_discreteTopology
+    (fun g y ↦ (kummerCoeffInclHom L m).map_smul g y)
   rw [explicitCoeff2_eq_explicitMap2, explicitCoeff2_eq_explicitMap2]
   refine DFunLike.congr_fun (hleft.symm.trans ((explicitMap2_congr_of_eq
     (AbsoluteGaloisGroup K) (KummerCoeff K n) (AbsoluteGaloisGroup L) (UnitsCoeff L)
@@ -74,7 +75,22 @@ theorem brBaseChange_h2MuToBr_muNRepH2Equiv
   · refine AddMonoidHom.ext fun y ↦ ?_
     apply Additive.toMul.injective
     simp only [AddMonoidHom.comp_apply, kummerCoeffInclHom_toAddMonoidHom,
-      toMul_unitsCoeffBaseChange, toMul_kummerCoeffIncl, toMul_kummerCoeffBaseChange]
+      toMul_unitsCoeffBaseChange, toMul_kummerCoeffIncl, toMul_kummerCoeffBaseChangeOfDvd]
+
+/-- With the exponent held fixed, the map to the Brauer group commutes with base change via
+`kummerCoeffBaseChange`. -/
+theorem brBaseChange_h2MuToBr_muNRepH2Equiv
+    (x : H2 (AbsoluteGaloisGroup K) (KummerCoeff K n)) :
+    brBaseChange K L (h2MuToBr n K (muNRepH2Equiv n K x)) =
+      h2MuToBr n L (muNRepH2Equiv n L
+        (explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K n) (AbsoluteGaloisGroup L)
+          (KummerCoeff L n) (absoluteGaloisGroupMap τ) (kummerCoeffBaseChange n τ)
+          continuous_of_discreteTopology (kummerCoeffBaseChange_smul n τ) x)) := by
+  rw [brBaseChange_h2MuToBr_muNRepH2Equiv_of_dvd n τ (dvd_refl n)]
+  have hmap : kummerCoeffBaseChangeOfDvd τ (dvd_refl n) = kummerCoeffBaseChange n τ := by
+    refine AddMonoidHom.ext fun y ↦ Additive.toMul.injective (Subtype.ext ?_)
+    rw [toMul_kummerCoeffBaseChangeOfDvd, toMul_kummerCoeffBaseChange]
+  rw [explicitMap2_congr_of_eq _ _ _ _ _ _ _ _ rfl hmap]
 
 /-- Transporting roots of unity preserves the coefficient pairing selected by a primitive root,
 provided that root is transported along the field map as well. -/

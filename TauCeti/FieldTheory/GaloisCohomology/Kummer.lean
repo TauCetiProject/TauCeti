@@ -10,7 +10,9 @@ public import TauCeti.Algebra.GroupWithZero.Units.Basic
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Norm
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 public import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
+public import TauCeti.FieldTheory.GaloisCohomology.Units.CoeffMap
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.ConnectingMapComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DeltaNaturality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
 public import TauCeti.RingTheory.Norm.Units
@@ -81,7 +83,7 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
   of separable closures over an arbitrary field extension.
 * `TauCeti.kummerCor`: corestriction `H¹(G_L, μₙ) → H¹(G_K, μₙ)` along a `K`-embedding of a
   finite extension, with its coefficient identifications `TauCeti.kummerCoeffMapSymm` and
-  `TauCeti.unitsCoeffMapSymm`; `TauCeti.unitsCoeffMap` is the inverse of the latter.
+  `TauCeti.unitsCoeffMapSymm` (`TauCeti.FieldTheory.GaloisCohomology.Units.CoeffMap`).
 
 ## Main results
 
@@ -449,7 +451,7 @@ def kummerCoeffPow {m : ℕ} (h : m ∣ n) :
     KummerCoeff K n →+[AbsoluteGaloisGroup K] KummerCoeff K m where
   toFun x := Additive.ofMul ⟨(x.toMul : (SeparableClosure K)ˣ) ^ (n / m), by
     rw [mem_rootsOfUnity, ← pow_mul, Nat.div_mul_cancel h]
-    exact (mem_rootsOfUnity _ _).1 x.toMul.2⟩
+    exact (mem_rootsOfUnity _ _).1 x.toMul.property⟩
   map_zero' := Additive.toMul.injective (Subtype.ext (by simp))
   map_add' x y := Additive.toMul.injective (Subtype.ext (by simp [mul_pow]))
   map_smul' g x := Additive.toMul.injective (Subtype.ext (by simp [smul_pow']))
@@ -516,11 +518,22 @@ theorem explicitIso_kummerMap (hn : IsUnit (n : K)) (a : Kˣ) :
   -- comparison isomorphism. Not a `rw` chain: each `rw` step re-checks a large motive.
   (rfl)
 
+/-- **The canonical Kummer map is the connecting map of the Kummer sequence.** The class of a unit
+`a` is the image under the degree-zero connecting map `δ⁰` of `kummerShortExact` of `a`, read in
+`H⁰(G_K, (Kˢ)ˣ)` through `baseUnitsEquivInvariants` and `explicitH0IsoContinuousCohomology`. -/
+theorem toAdd_kummerMapCanonical (hn : IsUnit (n : K)) (a : Kˣ) :
+    Multiplicative.toAdd (kummerMapCanonical K n hn a) =
+      (dsimp% only ((kummerShortExact K n hn).delta 0).hom
+        ((explicitH0IsoContinuousCohomology (AbsoluteGaloisGroup K) (UnitsCoeff K)).hom
+          (baseUnitsEquivInvariants K (Additive.ofMul a)))) := by
+  rw [ContCohomology.DiscreteShortExact.explicitIso_delta0, explicitIso_kummerMap, kummerMap_apply,
+    toAdd_ofAdd, explicitH1IsoContinuousCohomology_hom_apply, AddEquiv.apply_symm_apply]
+
 /-! ### Transport to another coefficient model -/
 
 /-- An equivariant equivalence from the Kummer coefficients to a discrete additive module
 transports continuity of the Galois action to that module. -/
-theorem kummerIsoTransportContinuousSMul
+theorem continuousSMul_of_kummerCoeff_equiv
     (μ : Type*) [AddCommGroup μ] [TopologicalSpace μ]
     [DiscreteTopology μ] [DistribMulAction (AbsoluteGaloisGroup K) μ]
     (e : KummerCoeff K n ≃+ μ)
@@ -540,9 +553,9 @@ def kummerIsoTransport (hn : IsUnit (n : K))
     (e : KummerCoeff K n ≃+ μ)
     (hequiv : ∀ (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n), e (g • x) = g • e x) :
     by
-      letI := kummerIsoTransportContinuousSMul K n μ e hequiv
+      letI := continuousSMul_of_kummerCoeff_equiv K n μ e hequiv
       exact powerClassQuotient Kˣ n ≃* Multiplicative (H1 (AbsoluteGaloisGroup K) μ) := by
-  letI := kummerIsoTransportContinuousSMul K n μ e hequiv
+  letI := continuousSMul_of_kummerCoeff_equiv K n μ e hequiv
   exact (kummerIso K n hn).trans <| AddEquiv.toMultiplicative <|
     explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K n) e
       continuous_of_discreteTopology continuous_of_discreteTopology hequiv
@@ -557,13 +570,13 @@ theorem kummerIsoTransport_apply (hn : IsUnit (n : K))
     (hequiv : ∀ (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n), e (g • x) = g • e x)
     (x : powerClassQuotient Kˣ n) :
     by
-      letI := kummerIsoTransportContinuousSMul K n μ e hequiv
+      letI := continuousSMul_of_kummerCoeff_equiv K n μ e hequiv
       exact kummerIsoTransport K n hn μ e hequiv x =
         Multiplicative.ofAdd
           (explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K n) e
             continuous_of_discreteTopology continuous_of_discreteTopology hequiv
             (Multiplicative.toAdd (kummerIso K n hn x))) := by
-  let _ := kummerIsoTransportContinuousSMul K n μ e hequiv
+  let _ := continuousSMul_of_kummerCoeff_equiv K n μ e hequiv
   rw [kummerIsoTransport, MulEquiv.trans_apply, AddEquiv.toMultiplicative_apply_apply]
 
 /-! ### Restriction along a field extension -/
@@ -600,6 +613,14 @@ theorem kummerCoeffMap_smul (g : AbsoluteGaloisGroup L) (x : KummerCoeff K n) :
       g • kummerCoeffMap K n L σ x :=
   Additive.toMul.injective <| Subtype.ext <| Units.ext <| by
     simp [Subgroup.smul_def, -map_smul]
+
+/-- The coefficient maps of restriction commute with the inclusion `μₙ ↪ (Kˢ)ˣ` of the Kummer
+sequence. -/
+@[simp]
+theorem unitsCoeffMap_kummerCoeffIncl (x : KummerCoeff K n) :
+    unitsCoeffMap K L σ (kummerCoeffIncl K n x) =
+      kummerCoeffIncl L n (kummerCoeffMap K n L σ x) :=
+  Additive.toMul.injective <| Units.ext <| by simp
 
 /-- **Restriction on the Kummer `H¹` along a `K`-embedding `σ : L →ₐ[K] Kˢ`**,
 `H¹(G_K, μₙ) → H¹(G_L, μₙ)`: restriction to the subgroup `Gal(Kˢ/σ(L)) ≤ G_K` fixing `σ(L)`,
@@ -854,90 +875,12 @@ theorem kummerCoeffMapSymm_smul (h : ↥σ.fieldRange.fixingSubgroup) (y : Kumme
   Additive.toMul.injective <| Subtype.ext <| Units.ext <| by
     simp [Subgroup.smul_def]
 
-/-- **The units of `Lˢ` as units of `Kˢ`**, along the identification of separable closures. It is
-the ambient coefficient map of the Kummer sequence for which `TauCeti.kummerCoeffMapSymm` is the
-map of `n`th roots of unity. -/
-def unitsCoeffMapSymm : UnitsCoeff L →+ UnitsCoeff K :=
-  MonoidHom.toAdditive (Units.map (separableClosureRingEquiv K L σ).toMonoidHom)
-
-/-- `unitsCoeffMapSymm` applies the identification of separable closures to a unit. -/
-@[simp]
-theorem toMul_unitsCoeffMapSymm (y : UnitsCoeff L) :
-    (unitsCoeffMapSymm K L σ y).toMul =
-      Units.map (separableClosureRingEquiv K L σ).toMonoidHom y.toMul :=
-  (rfl)
-
-/-- **`unitsCoeffMapSymm` is equivariant** along the inverse of `G_L ≃ₜ* Gal(Kˢ/σ(L))`. -/
-@[simp↓]
-theorem unitsCoeffMapSymm_smul (h : ↥σ.fieldRange.fixingSubgroup) (y : UnitsCoeff L) :
-    unitsCoeffMapSymm K L σ
-        (((absoluteGaloisGroupEquivFixingSubgroup K L σ).symm :
-          ↥σ.fieldRange.fixingSubgroup →ₜ* AbsoluteGaloisGroup L) h • y) =
-      h • unitsCoeffMapSymm K L σ y := by
-  refine Additive.toMul.injective ?_
-  rw [Subgroup.smul_def (α := UnitsCoeff K), toMul_unitsCoeffMapSymm, Additive.toMul_smul,
-    Additive.toMul_smul, toMul_unitsCoeffMapSymm]
-  exact Units.ext (by simp [absoluteGaloisGroupEquivFixingSubgroup_symm_apply])
-
-/-- **The units of `Kˢ` as units of `Lˢ`**, along the inverse of the identification of separable
-closures: the inverse of `TauCeti.unitsCoeffMapSymm` (`unitsCoeffMapSymm_unitsCoeffMap`), and the
-coefficient leg of restriction with unit coefficients, as `TauCeti.kummerCoeffMap` is for the
-roots of unity. -/
-def unitsCoeffMap : UnitsCoeff K →+ UnitsCoeff L :=
-  MonoidHom.toAdditive (Units.map (separableClosureRingEquiv K L σ).symm.toMonoidHom)
-
-/-- `unitsCoeffMap` applies the inverse identification of separable closures to a unit. -/
-@[simp]
-theorem toMul_unitsCoeffMap (x : UnitsCoeff K) :
-    (unitsCoeffMap K L σ x).toMul =
-      Units.map (separableClosureRingEquiv K L σ).symm.toMonoidHom x.toMul :=
-  (rfl)
-
-/-- **`unitsCoeffMap` is equivariant** along `G_L ≃ₜ* Gal(Kˢ/σ(L))`: an automorphism `g` of `Lˢ`
-over `L` acts on `(Kˢ)ˣ` through its image in the subgroup of `G_K` fixing `σ(L)`. -/
-@[simp↓]
-theorem unitsCoeffMap_smul (g : AbsoluteGaloisGroup L) (x : UnitsCoeff K) :
-    unitsCoeffMap K L σ
-        ((absoluteGaloisGroupEquivFixingSubgroup K L σ :
-          AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup) g • x) =
-      g • unitsCoeffMap K L σ x := by
-  refine Additive.toMul.injective ?_
-  rw [Subgroup.smul_def (α := UnitsCoeff K), toMul_unitsCoeffMap, Additive.toMul_smul,
-    Additive.toMul_smul, toMul_unitsCoeffMap]
-  exact Units.ext (by simp [absoluteGaloisGroupEquivFixingSubgroup_apply])
-
-/-- The two coefficient identifications of the units are inverse to each other. -/
-@[simp]
-theorem unitsCoeffMapSymm_unitsCoeffMap (x : UnitsCoeff K) :
-    unitsCoeffMapSymm K L σ (unitsCoeffMap K L σ x) = x :=
-  Additive.toMul.injective <| Units.ext <| by simp
-
-/-- The two coefficient identifications of the units are inverse to each other. -/
-@[simp]
-theorem unitsCoeffMap_unitsCoeffMapSymm (y : UnitsCoeff L) :
-    unitsCoeffMap K L σ (unitsCoeffMapSymm K L σ y) = y :=
-  Additive.toMul.injective <| Units.ext <| by simp
-
 /-- The coefficient maps commute with the inclusion `μₙ ↪ (Kˢ)ˣ` of the Kummer sequence. -/
 @[simp]
 theorem unitsCoeffMapSymm_kummerCoeffIncl (y : KummerCoeff L n) :
     unitsCoeffMapSymm K L σ (kummerCoeffIncl L n y) =
       kummerCoeffIncl K n (kummerCoeffMapSymm K n L σ y) :=
   Additive.toMul.injective <| Units.ext <| by simp
-
-/-- The coefficient map commutes with the `n`th power map of the Kummer sequence. -/
-@[simp]
-theorem unitsCoeffMapSymm_unitsCoeffPow (y : UnitsCoeff L) :
-    unitsCoeffMapSymm K L σ (unitsCoeffPow L n y) = unitsCoeffPow K n (unitsCoeffMapSymm K L σ y) :=
-  Additive.toMul.injective <| Units.ext <| by simp
-
-/-- The coefficient map carries the invariant of `G_L` attached to `b ∈ Lˣ` to the invariant of
-`Gal(Kˢ/σ(L))` attached to `b`. -/
-@[simp]
-theorem unitsCoeffMapSymm_coe_baseUnitsEquivInvariants (b : Lˣ) :
-    unitsCoeffMapSymm K L σ (baseUnitsEquivInvariants L (Additive.ofMul b)) =
-      embeddedUnitsInvariants K L σ b :=
-  Additive.toMul.injective <| Units.ext <| by simp [separableClosureRingEquiv_algebraMap]
 
 variable [FiniteDimensional K L]
 
@@ -1006,7 +949,7 @@ theorem kummerCor_kummerMap (hn : IsUnit (n : L)) (b : Lˣ) :
       (kummerCoeffMapSymm K n L σ) (unitsCoeffMapSymm K L σ) (unitsCoeffMapSymm K L σ)
       (kummerCoeffMapSymm_smul K n L σ) (unitsCoeffMapSymm_smul K L σ) (by simp) (by simp)
       (baseUnitsEquivInvariants L (Additive.ofMul b)) (embeddedUnitsInvariants K L σ b)
-      (unitsCoeffMapSymm_coe_baseUnitsEquivInvariants K L σ b).symm,
+      (unitsCoeffMapSymm_coe_baseUnitsEquivInvariants K L σ (.ofMul b)).symm,
     explicitCor0_embeddedUnitsInvariants]
 
 /-- **The norm square of the Kummer isomorphism** (NSW, the display after (6.2.1)): for a

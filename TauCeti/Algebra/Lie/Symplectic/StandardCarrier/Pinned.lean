@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.LieGeneration
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 import TauCeti.Algebra.Lie.Symplectic.Coordinates
-import TauCeti.Algebra.Lie.Weights.Dimension
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.System
 
 /-!
 # The pinned type-C algebra on the standard symplectic module
@@ -20,9 +18,9 @@ both signs of the simple-root generators in Bourbaki order, including the termin
 Thus the standard symplectic representation can be read as a faithful representation of the
 pinned algebra, with the same operators on its integral lattice.
 
-The construction uses `SpStd.isSerreSystem_rootGenerator`, `DynkinType.serreLiftEquiv`, and
-`SpStd.lieSpan_range_rootGenerator_eq_top`. The native matrix-entry coordinates and the
-root-space dimension count show that the resulting surjection is an isomorphism. This is a
+The construction applies `TauCeti.DynkinType.lieEquivOfIsSerreSystem` to
+`SpStd.isSerreSystem_rootGenerator`, `SpStd.lieSpan_range_rootGenerator_eq_top`, and the
+native matrix-entry dimension `TauCeti.LieAlgebra.Symplectic.finrank_sp`. This is a
 Lie-algebra comparison, not an identification of group schemes or of their points.
 
 ## References
@@ -48,74 +46,50 @@ private theorem isSerreSystem_pinned :
   simpa only [DynkinType.cartanMatrix_C, DynkinType.rank_C] using
     isSerreSystem_rootGenerator n
 
-private def pinnedLieHom :
-    (DynkinType.C (n + 1)).lieAlgebra ht →ₗ⁅ℚ⁆ sp (Fin (n + 1)) ℚ :=
-  (serreLift (isSerreSystem_pinned n)).comp
-    (DynkinType.serreLiftEquiv _ ht).symm.toLieHom
+private theorem lieSpan_pinned :
+    LieSubalgebra.lieSpan ℚ (sp (Fin (n + 1)) ℚ)
+      (Set.range (fun i : Fin (DynkinType.C (n + 1)).rank => rootGenerator n (.inl i)) ∪
+        Set.range (fun i : Fin (DynkinType.C (n + 1)).rank => rootGenerator n (.inr i))) = ⊤ := by
+  simpa only [DynkinType.rank_C, Sum.range_eq, Function.comp_def] using
+    lieSpan_range_rootGenerator_eq_top n
 
-private theorem pinnedLieHom_surjective : Function.Surjective (pinnedLieHom n ht) := by
-  have hspan : LieSubalgebra.lieSpan ℚ (sp (Fin (n + 1)) ℚ)
-      (Set.range (fun i => rootGenerator n (.inl i)) ∪
-        Set.range (fun i => rootGenerator n (.inr i))) = ⊤ := by
-    simpa only [Sum.range_eq, Function.comp_def] using
-      lieSpan_range_rootGenerator_eq_top n
-  exact (serreLift_surjective (isSerreSystem_pinned n) hspan).comp
-    (DynkinType.serreLiftEquiv _ ht).symm.surjective
-
-private theorem pinnedLieHom_bijective : Function.Bijective (pinnedLieHom n ht) := by
-  have hcard : ((DynkinType.C (n + 1)).cartanSubalgebra ht).root.card =
-      (DynkinType.C (n + 1)).numRoots := by
-    simpa only [Fintype.card_coe, Fintype.card_fin] using
-      (Fintype.card_congr ((DynkinType.C (n + 1)).rootEquiv ht)).symm
-  have hdim : Module.finrank ℚ ((DynkinType.C (n + 1)).lieAlgebra ht) =
-      Module.finrank ℚ (sp (Fin (n + 1)) ℚ) := by
-    rw [finrank_eq_finrank_cartan_add_card_root
-        ((DynkinType.C (n + 1)).cartanSubalgebra ht),
-      DynkinType.finrank_cartanSubalgebra, hcard,
-      TauCeti.LieAlgebra.Symplectic.finrank_sp, Fintype.card_fin,
-      DynkinType.rank_C, DynkinType.numRoots_C]
-    ring
-  exact ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).mpr
-    (pinnedLieHom_surjective n ht), pinnedLieHom_surjective n ht⟩
+private theorem finrank_sp_eq_rank_add_numRoots :
+    Module.finrank ℚ (sp (Fin (n + 1)) ℚ) =
+      (DynkinType.C (n + 1)).rank + (DynkinType.C (n + 1)).numRoots := by
+  rw [TauCeti.LieAlgebra.Symplectic.finrank_sp, Fintype.card_fin,
+    DynkinType.rank_C, DynkinType.numRoots_C]
+  ring
 
 /-- The pinned rational type-C Lie algebra is the native symplectic Lie algebra, with the
 numbered Cartan and positive and negative simple-root generators matched. -/
 def pinnedLieEquiv :
     (DynkinType.C (n + 1)).lieAlgebra ht ≃ₗ⁅ℚ⁆ sp (Fin (n + 1)) ℚ :=
-  LieEquiv.ofBijective (pinnedLieHom n ht) (pinnedLieHom_bijective n ht)
-
--- `LieEquiv.ofBijective` retains the underlying homomorphism; `LieHom.comp` evaluates
--- as function composition, so this is the defining composite of `pinnedLieHom`.
-private theorem pinnedLieEquiv_apply (x : (DynkinType.C (n + 1)).lieAlgebra ht) :
-    pinnedLieEquiv n ht x = serreLift (isSerreSystem_pinned n)
-      ((DynkinType.serreLiftEquiv _ ht).symm x) := rfl
+  (DynkinType.C (n + 1)).lieEquivOfIsSerreSystem ht (isSerreSystem_pinned n)
+    (lieSpan_pinned n) (finrank_sp_eq_rank_add_numRoots n)
 
 /-- The comparison sends each pinned Cartan generator to the standard simple coroot. -/
 @[simp]
 theorem pinnedLieEquiv_lieBasis_h (i : Fin (n + 1)) :
     pinnedLieEquiv n ht (((DynkinType.C (n + 1)).lieBasis ht).h i) =
-      cartanGenerator n i := by
-  rw [pinnedLieEquiv_apply]
-  exact (congrArg (serreLift (isSerreSystem_pinned n))
-    (DynkinType.serreLiftEquiv_symm_lieBasis_h _ ht i)).trans (serreLift_serreH _ i)
+      cartanGenerator n i :=
+  (DynkinType.C (n + 1)).lieEquivOfIsSerreSystem_lieBasis_h ht (isSerreSystem_pinned n)
+    (lieSpan_pinned n) (finrank_sp_eq_rank_add_numRoots n) i
 
 /-- The comparison sends each pinned raising generator to the standard positive simple root. -/
 @[simp]
 theorem pinnedLieEquiv_lieBasis_e (i : Fin (n + 1)) :
     pinnedLieEquiv n ht (((DynkinType.C (n + 1)).lieBasis ht).e i) =
-      rootGenerator n (.inl i) := by
-  rw [pinnedLieEquiv_apply]
-  exact (congrArg (serreLift (isSerreSystem_pinned n))
-    (DynkinType.serreLiftEquiv_symm_lieBasis_e _ ht i)).trans (serreLift_serreE _ i)
+      rootGenerator n (.inl i) :=
+  (DynkinType.C (n + 1)).lieEquivOfIsSerreSystem_lieBasis_e ht (isSerreSystem_pinned n)
+    (lieSpan_pinned n) (finrank_sp_eq_rank_add_numRoots n) i
 
 /-- The comparison sends each pinned lowering generator to the standard negative simple root. -/
 @[simp]
 theorem pinnedLieEquiv_lieBasis_f (i : Fin (n + 1)) :
     pinnedLieEquiv n ht (((DynkinType.C (n + 1)).lieBasis ht).f i) =
-      rootGenerator n (.inr i) := by
-  rw [pinnedLieEquiv_apply]
-  exact (congrArg (serreLift (isSerreSystem_pinned n))
-    (DynkinType.serreLiftEquiv_symm_lieBasis_f _ ht i)).trans (serreLift_serreF _ i)
+      rootGenerator n (.inr i) :=
+  (DynkinType.C (n + 1)).lieEquivOfIsSerreSystem_lieBasis_f ht (isSerreSystem_pinned n)
+    (lieSpan_pinned n) (finrank_sp_eq_rank_add_numRoots n) i
 
 /-- The inverse comparison recovers each numbered pinned Cartan generator. -/
 @[simp]

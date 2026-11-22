@@ -27,13 +27,26 @@ is at most `2 b`.
 * `ENNReal.toReal_one_sub_div`: `(1 - a / b).toReal = 1 - a.toReal / b.toReal` for `a ≤ b`.
 * `ENNReal.one_sub_one_div_toReal_nonneg`: for `1 ≤ p`, the Hölder exponent `1 - 1 / p.toReal`
   is nonnegative.
+* `ENNReal.one_le_toReal_sub_one`: a finite exponent `2 ≤ r` has `1 ≤ r.toReal - 1`.
 * `ENNReal.one_div_toReal_sub_one_div_toReal_nonneg`: for `0 < p ≤ q`, the exponent
   `1 / p.toReal - 1 / q.toReal` is nonnegative.
+* `ENNReal.two_le_of_toReal_inv_le`: an exponent `r ≠ 0` with `1 / r ≤ 1 / 2` satisfies `2 ≤ r`.
+* `ENNReal.one_sub_one_div_toReal_nonneg`, `ENNReal.toReal_inv_lt_one`: for `1 ≤ p` (resp.
+  `1 < p`), the Hölder exponent `1 - 1 / p.toReal` is nonnegative (resp. `p.toReal⁻¹ < 1`).
+* `ENNReal.one_div_toReal_sub_one_div_toReal_nonneg`, `ENNReal.toReal_inv_sub_toReal_inv_le_one`,
+  `ENNReal.toReal_inv_sub_toReal_inv_lt_one`: bounds in `[0, 1]` and `[0, 1)` on the reciprocal
+  exponent gap `p.toReal⁻¹ - q.toReal⁻¹`.
+* `ENNReal.natCast_lt_natCast_mul_iff`: `(n : ℝ≥0∞) < k * p ↔ (n : ℝ) * p.toReal⁻¹ < k` for
+  `p ≠ 0`.
 * `ENNReal.toNNReal_one_sub_div_pos`: `0 < (1 - a / b).toNNReal` for `a < b`.
+* `ENNReal.inv_le_inv_mul_add_and_inv_mul_le_inv`: for `n ≤ (j + 1) p`, the exponent
+  `q = (j + 1) p` satisfies `1/p ≤ 1/q + j/n` and `1/q ≤ 1/p`.
 * `ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one`: for `r > 1` and `n > 0` with
   `n (2 - r) < 2 r`, a finite exponent `t ≥ 2` with `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`.
 * `ENNReal.exists_inv_lt_inv_add_inv_two_and_inv_add_inv_le_iff`: for `0 < q < 2`, an exponent
   `s` with `q⁻¹ < s⁻¹ + 2⁻¹` and `p⁻¹ + s⁻¹ ≤ q⁻¹` exists exactly when `2 < p`.
+* `ENNReal.exists_le_lt_lt_add`: for `a ≤ 1`, `ν < 1`, `b ≠ 0` and `a < b + ν`, some `t` with
+  `a ≤ t ≤ 1` and `ν < t < b + ν`.
 * `ENNReal.le_mul_two_of_le_add_div_two`: the absorption step `a ≤ b + a / 2 → a ≤ 2 b` for
   finite `a`, as used in elliptic estimates.
 * `ENNReal.ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul`: the cancellation
@@ -88,6 +101,12 @@ theorem one_sub_one_div_toReal_nonneg {p : ℝ≥0∞} (hp : 1 ≤ p) : 0 ≤ 1 
       simpa using ENNReal.toReal_mono hp_top hp
     exact sub_nonneg.2 (div_le_one_of_le₀ h1p (by positivity))
 
+/-- A finite exponent `2 ≤ r` has `1 ≤ r - 1`, read in `ℝ`. -/
+theorem one_le_toReal_sub_one {r : ℝ≥0∞} (hr : r ≠ ∞) (hr2 : 2 ≤ r) : 1 ≤ r.toReal - 1 := by
+  have := toReal_mono hr hr2
+  simp only [toReal_ofNat] at this
+  linarith
+
 /-- For `0 < p ≤ q`, the difference `1 / p - 1 / q` of reciprocal exponents is nonnegative (with
 `1 / ∞` read as `0`). It is the exponent of the measure factor in the inclusion `L^q ⊆ Lᵖ` on a
 finite measure space. -/
@@ -96,11 +115,83 @@ theorem one_div_toReal_sub_one_div_toReal_nonneg {p q : ℝ≥0∞} (hp : p ≠ 
   simpa only [one_div, toReal_inv, sub_nonneg] using
     toReal_mono (inv_ne_top.2 hp) (ENNReal.inv_le_inv.2 hpq)
 
+/-- An exponent `r ≠ 0` with `1 / r ≤ 1 / 2` satisfies `2 ≤ r`. Along a Strichartz admissible
+pair this is the fact that the space exponent `r` lies on the `L^r` side of `L²`. -/
+theorem two_le_of_toReal_inv_le {r : ℝ≥0∞} (hr : r ≠ 0) (h : (r⁻¹).toReal ≤ 2⁻¹) : 2 ≤ r := by
+  rw [← ENNReal.inv_le_inv, ← ofReal_toReal (inv_ne_top.2 hr),
+    ← ofReal_toReal (a := 2⁻¹) (by simp)]
+  exact ofReal_le_ofReal (h.trans_eq (by simp))
+
+/-- For `1 < p`, the reciprocal exponent `p.toReal⁻¹` is strictly less than `1` (with `p = ∞`
+giving `0`). -/
+theorem toReal_inv_lt_one {p : ℝ≥0∞} (hp : 1 < p) : p.toReal⁻¹ < 1 := by
+  simpa only [toReal_inv, toReal_one] using
+    (toReal_lt_toReal (inv_ne_top.2 (zero_lt_one.trans hp).ne') one_ne_top).2
+      (ENNReal.inv_lt_one.2 hp)
+
+/-- For `1 ≤ p` and any `q`, the difference `p.toReal⁻¹ - q.toReal⁻¹` is at most `1`. -/
+theorem toReal_inv_sub_toReal_inv_le_one {p : ℝ≥0∞} (hp : 1 ≤ p) (q : ℝ≥0∞) :
+    p.toReal⁻¹ - q.toReal⁻¹ ≤ 1 := by
+  have hp1 : p.toReal⁻¹ ≤ 1 := by
+    simpa only [one_div, sub_nonneg] using one_sub_one_div_toReal_nonneg hp
+  have hq0 : 0 ≤ q.toReal⁻¹ := inv_nonneg.2 toReal_nonneg
+  linarith
+
+/-- When `1 ≤ p`, `q ≠ 0`, and `¬ (p = 1 ∧ q = ∞)`, the reciprocal gap `p.toReal⁻¹ - q.toReal⁻¹` is
+strictly below `1`. -/
+theorem toReal_inv_sub_toReal_inv_lt_one {p q : ℝ≥0∞} (hp : 1 ≤ p) (hq : q ≠ 0)
+    (hp1q : ¬ (p = 1 ∧ q = ∞)) : p.toReal⁻¹ - q.toReal⁻¹ < 1 := by
+  have hq0 : 0 ≤ q.toReal⁻¹ := inv_nonneg.2 toReal_nonneg
+  refine (toReal_inv_sub_toReal_inv_le_one hp q).lt_of_ne fun h1 => hp1q ?_
+  have hp_eq : p = 1 := by
+    by_contra hp_ne
+    linarith [toReal_inv_lt_one (hp.lt_of_ne' hp_ne)]
+  refine ⟨hp_eq, ?_⟩
+  by_contra hq_ne
+  have hq_pos : 0 < q.toReal⁻¹ := inv_pos.2 (toReal_pos hq hq_ne)
+  subst hp_eq
+  simp only [toReal_one, inv_one] at h1
+  linarith
+
+/-- For `p ≠ 0` in `ℝ≥0∞` and natural numbers `n` and `k`, `(n : ℝ≥0∞) < k * p` holds if and only
+if `(n : ℝ) * p.toReal⁻¹ < k` (with `∞.toReal⁻¹ = 0`). -/
+theorem natCast_lt_natCast_mul_iff {n k : ℕ} {p : ℝ≥0∞} (hp : p ≠ 0) :
+    (n : ℝ≥0∞) < k * p ↔ (n : ℝ) * p.toReal⁻¹ < k := by
+  rcases eq_or_ne k 0 with rfl | hk0
+  · simp [not_lt.2 (mul_nonneg (Nat.cast_nonneg n) (inv_nonneg.2 toReal_nonneg))]
+  rcases eq_or_ne p ∞ with rfl | hp_top
+  · simp [ENNReal.mul_top (Nat.cast_ne_zero.2 hk0), Nat.pos_of_ne_zero hk0]
+  rw [← toReal_lt_toReal (natCast_ne_top _) (mul_ne_top (natCast_ne_top _) hp_top),
+    toReal_natCast, toReal_mul, toReal_natCast, ← div_lt_iff₀ (toReal_pos hp hp_top),
+    div_eq_mul_inv]
+
 /-- **Absorption**: a finite quantity bounded by `b` plus half of itself is at most `2 b`. -/
 theorem le_mul_two_of_le_add_div_two {a b : ℝ≥0∞} (ha : a ≠ ∞) (h : a ≤ b + a / 2) :
     a ≤ b * 2 := by
   rw [← ENNReal.div_le_iff two_ne_zero ofNat_ne_top, ← ENNReal.sub_half ha]
   exact tsub_le_iff_right.2 h
+
+/-- **The equal-step exponent ladder.** For `n ≤ (j + 1) p`, the exponent `q = (j + 1) p`
+satisfies `1/p ≤ 1/q + j/n` and `1/q ≤ 1/p`: the ladder from `1/p` down to `1/q` in `j` equal
+steps `1/q` has every step at most `1/n`. These are the exponent hypotheses of the Sobolev
+embedding `W^{j+1,p} → W^{1,q}`. -/
+theorem inv_le_inv_mul_add_and_inv_mul_le_inv {n j : ℕ} {p : ℝ≥0}
+    (hkp : (n : ℝ≥0) ≤ (j + 1 : ℕ) * p) :
+    (p : ℝ≥0∞)⁻¹ ≤ (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ + j * (n : ℝ≥0∞)⁻¹ ∧
+      (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ ≤ (p : ℝ≥0∞)⁻¹ := by
+  rcases eq_or_ne p 0 with rfl | hp0
+  · simp
+  have hkp0 : ((j + 1 : ℕ) * p : ℝ≥0) ≠ 0 := mul_ne_zero (by positivity) hp0
+  have heq : (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ + j * (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ =
+      (p : ℝ≥0∞)⁻¹ := by
+    rw [← ENNReal.coe_inv hkp0, ← ENNReal.coe_inv hp0]
+    norm_cast
+    field_simp
+    push_cast
+    ring
+  refine ⟨heq.symm.le.trans ?_, le_self_add.trans_eq heq⟩
+  gcongr
+  exact_mod_cast hkp
 
 /-- **A finite exponent `t ≥ 2` complementing `r`.** For `n > 0` and `r > 1` with
 `n (2 - r) < 2 r`, there is a finite exponent `t ≥ 2` with `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`:
@@ -153,6 +244,18 @@ theorem exists_inv_lt_inv_add_inv_two_and_inv_add_inv_le_iff {p q : ℝ≥0∞} 
       calc q⁻¹ = q⁻¹ - p⁻¹ + p⁻¹ := (tsub_add_cancel_of_le hpq).symm
         _ < q⁻¹ - p⁻¹ + 2⁻¹ := ENNReal.add_lt_add_left (sub_ne_top hqtop) hp2
     · rw [inv_inv, add_tsub_cancel_of_le hpq]
+
+/-- **An exponent between two bounds.** If `a ≤ 1`, `ν < 1`, `b ≠ 0` and `a < b + ν`, some `t`
+with `a ≤ t ≤ 1` lies strictly between `ν` and `b + ν`. Read through `t = p'⁻¹`, this lowers an
+exponent `p` to an exponent `p'` with a finite Sobolev exponent, losing none of the margin
+`p⁻¹ < q⁻¹ + ν`. -/
+theorem exists_le_lt_lt_add {a b ν : ℝ≥0∞} (ha : a ≤ 1) (hν : ν < 1) (hb : b ≠ 0)
+    (hab : a < b + ν) : ∃ t, a ≤ t ∧ t ≤ 1 ∧ ν < t ∧ t < b + ν := by
+  rcases lt_or_ge ν a with h | h
+  · exact ⟨a, le_rfl, ha, h, hab⟩
+  obtain ⟨t, h₁, h₂⟩ := exists_between
+    (lt_min hν (add_comm ν b ▸ ENNReal.lt_add_right hν.ne_top hb))
+  exact ⟨t, h.trans h₁.le, (h₂.trans_le (min_le_left _ _)).le, h₁, h₂.trans_le (min_le_right _ _)⟩
 
 /-- Cancelling a finite nonzero denominator `m` against the factor `n` of a product:
 `ofReal (d ^ n / n) / m * ofReal (n * a) = ofReal (a * d ^ n / m)`. -/

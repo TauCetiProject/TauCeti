@@ -62,15 +62,15 @@ private theorem exists_supSeminorm_pow_eq_norm_of_isDomain [IsDomain A]
     supSeminorm K ((minpoly T f).coeff i) ^ (1 / ((minpoly T f).natDegree - i : ℝ)))
   obtain ⟨t, ht⟩ := exists_norm_coeff_eq_norm ((minpoly T f).coeff i)
   have hdvd : (minpoly T f).natDegree - i ∣ N.factorial :=
-    Nat.dvd_factorial (Nat.sub_pos_of_lt i.2)
+    Nat.dvd_factorial (Nat.sub_pos_of_lt i.isLt)
       ((Nat.sub_le _ _).trans (minpoly.natDegree_le_spanFinrank T f))
   obtain ⟨q, hq⟩ := hdvd
   refine ⟨coeff t (((minpoly T f).coeff i : T) : MvPowerSeries (Fin n) K) ^ q, ?_⟩
   have heq : supSeminorm K f ^ ((minpoly T f).natDegree - i) =
       ‖coeff t (((minpoly T f).coeff i : T) : MvPowerSeries (Fin n) K)‖ := by
     rw [hA.supSeminorm_eq_iSup_minpoly_coeff_rpow (A := T), ← hi,
-      ← Nat.cast_sub i.2.le, one_div,
-      Real.rpow_inv_natCast_pow (supSeminorm_nonneg _) (Nat.sub_ne_zero_of_lt i.2),
+      ← Nat.cast_sub i.isLt.le, one_div,
+      Real.rpow_inv_natCast_pow (supSeminorm_nonneg _) (Nat.sub_ne_zero_of_lt i.isLt),
       TauCeti.MvPowerSeries.supSeminorm_eq_norm, ht]
   rw [hq, pow_mul, heq, norm_pow]
 
@@ -87,9 +87,9 @@ theorem exists_supSeminorm_pow_eq_norm (hA : IsAffinoidAlgebra K A) :
     have : Finite (minimalPrimes A) := (minimalPrimes.finite_of_isNoetherianRing A).to_subtype
     let := Fintype.ofFinite (minimalPrimes A)
     have hcomp (𝔭 : minimalPrimes A) :
-        ∃ m : ℕ, 1 ≤ m ∧ ∀ f : A ⧸ 𝔭.1, ∃ c : K, supSeminorm K f ^ m = ‖c‖ := by
-      have : 𝔭.1.IsPrime := Ideal.IsMinimalPrime.isPrime 𝔭.2
-      exact (hA.quotient 𝔭.1).exists_supSeminorm_pow_eq_norm_of_isDomain
+        ∃ m : ℕ, 1 ≤ m ∧ ∀ f : A ⧸ 𝔭.val, ∃ c : K, supSeminorm K f ^ m = ‖c‖ := by
+      have : 𝔭.val.IsPrime := Ideal.IsMinimalPrime.isPrime 𝔭.property
+      exact (hA.quotient 𝔭.val).exists_supSeminorm_pow_eq_norm_of_isDomain
     choose m hmpos hm using hcomp
     refine ⟨∏ 𝔭, m 𝔭, Finset.one_le_prod fun 𝔭 _ ↦ hmpos 𝔭, fun f ↦ ?_⟩
     obtain ⟨𝔭, h𝔭, hsup⟩ := hA.exists_mem_minimalPrimes_supSeminorm_eq f

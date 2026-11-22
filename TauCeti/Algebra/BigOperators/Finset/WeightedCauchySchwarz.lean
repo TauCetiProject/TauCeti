@@ -17,6 +17,8 @@ moment by the square root of the corresponding weighted second moment.
 
 * `Finset.weighted_sum_abs_le_sqrt`: the weighted first-moment bound when the weights sum to at
   most one.
+* `Finset.sum_sum_abs_le_sqrt` and `Finset.sum_abs_le_sqrt`: uniform product and single-set
+  Cauchy--Schwarz bounds from a mean-square bound.
 -/
 
 public section
@@ -35,5 +37,42 @@ theorem weighted_sum_abs_le_sqrt {ι : Type*} (s : Finset ι) (w f : ι → ℝ)
   refine (sum_sq_le_sum_mul_sum_of_sq_le_mul s hw0 hg
     fun i _ => (by rw [mul_pow, sq_abs]; ring : _ = _).le).trans ?_
   exact (mul_le_mul hw1 hε (sum_nonneg hg) zero_le_one).trans_eq (one_mul ε)
+
+/-- **Uniform product Cauchy--Schwarz.** If the average over `s` of `∑ a ∈ t, f i a ^ 2` is at most
+`ε`, then `∑ i ∈ s, ∑ a ∈ t, |f i a| ≤ √(#t * ε) * #s`. -/
+theorem sum_sum_abs_le_sqrt {ι α : Type*} (s : Finset ι) (t : Finset α) (f : ι → α → ℝ)
+    {ε : ℝ} (hε : (∑ i ∈ s, ∑ a ∈ t, f i a ^ 2) / #s ≤ ε) :
+    ∑ i ∈ s, ∑ a ∈ t, |f i a| ≤ √(#t * ε) * #s := by
+  obtain rfl | hs := s.eq_empty_or_nonempty
+  · simp
+  obtain rfl | ht := t.eq_empty_or_nonempty
+  · simp
+  have hS : (0 : ℝ) < #s := Nat.cast_pos.2 hs.card_pos
+  have hT : (0 : ℝ) < #t := Nat.cast_pos.2 ht.card_pos
+  have hST : (0 : ℝ) < #s * #t := mul_pos hS hT
+  have hε₀ : 0 ≤ ε :=
+    (div_nonneg (sum_nonneg fun _ _ ↦ sum_nonneg fun _ _ ↦ sq_nonneg _) hS.le).trans hε
+  have hw1 : ∑ _p ∈ s ×ˢ t, ((#s : ℝ) * #t)⁻¹ ≤ 1 := by
+    rw [sum_const, card_product, nsmul_eq_mul, Nat.cast_mul, mul_inv_cancel₀ hST.ne']
+  have hsq : ∑ p ∈ s ×ˢ t, ((#s : ℝ) * #t)⁻¹ * f p.1 p.2 ^ 2 ≤ ε / #t := by
+    rw [← mul_sum, sum_product, inv_mul_eq_div, ← div_div]
+    exact div_le_div_of_nonneg_right hε hT.le
+  have hcs := weighted_sum_abs_le_sqrt (s ×ˢ t) (fun _ ↦ ((#s : ℝ) * #t)⁻¹)
+    (fun p ↦ f p.1 p.2) (fun _ _ ↦ inv_nonneg.2 hST.le) hw1 hsq
+  rw [← mul_sum, sum_product, inv_mul_le_iff₀ hST] at hcs
+  refine hcs.trans_eq ?_
+  calc ((#s : ℝ) * #t) * √(ε / #t)
+      = (√(ε / #t) * √((#t : ℝ) ^ 2)) * #s := by
+          rw [Real.sqrt_sq hT.le]; ring
+    _ = √(#t * ε) * #s := by
+          rw [← Real.sqrt_mul (div_nonneg hε₀ hT.le), sq, ← mul_assoc,
+            div_mul_cancel₀ _ hT.ne', mul_comm ε]
+
+/-- **Uniform Cauchy--Schwarz.** If the average over `s` of `f i ^ 2` is at most `ε`, then
+`∑ i ∈ s, |f i| ≤ √ε * #s`. -/
+theorem sum_abs_le_sqrt {ι : Type*} (s : Finset ι) (f : ι → ℝ)
+    {ε : ℝ} (hε : (∑ i ∈ s, f i ^ 2) / #s ≤ ε) :
+    ∑ i ∈ s, |f i| ≤ √ε * #s := by
+  simpa using s.sum_sum_abs_le_sqrt {()} (fun i _ ↦ f i) (by simpa using hε)
 
 end Finset

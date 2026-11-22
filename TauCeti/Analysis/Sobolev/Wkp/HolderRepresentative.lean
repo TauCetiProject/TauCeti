@@ -27,9 +27,9 @@ the existence of the embeddings; the Lipschitz-domain case is
 
 ## Method
 
-The induction on `j` is that of the `p = 2` interior statement
-`TauCeti.Wkp.exists_contDiffOn_ae_eq`: for `u ∈ W^{j+2,p}(Ω)`, the weak derivatives of `u` along
-an orthonormal basis lie in `W^{j+1,p}(Ω)`, and depend boundedly on `u`
+The induction on `j` is that of the interior statement
+`TauCeti.Wkp.exists_contDiffOn_ae_eq_of_forall_zeroAtInfty`: for `u ∈ W^{j+2,p}(Ω)`, the weak
+derivatives of `u` along an orthonormal basis lie in `W^{j+1,p}(Ω)`, and depend boundedly on `u`
 (`TauCeti.Wkp.lineDerivL`), so by induction they have representatives with the required bounds.
 They assemble into a continuous weak derivative of the Hölder representative of `u`, which is
 therefore its classical derivative.
@@ -118,7 +118,9 @@ theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_of_forall_holderSpaceL {Ω
       fun l => lineDerivL (b l) (j + 1)
     let A : Fin (finrank ℝ F) → ℝ →L[ℝ] (F →L[ℝ] ℝ) :=
       fun l => (ContinuousLinearMap.id ℝ ℝ).smulRight (innerSL ℝ (b l))
-    let c : ℝ≥0 := ∑ l, ‖A l‖₊ * (K * ‖D l‖₊)
+    have hA : ∀ l, ‖A l‖ = 1 := fun l => by
+      simp [A, ContinuousLinearMap.norm_smulRight_apply, b.orthonormal.1 l]
+    let c : ℝ≥0 := ∑ l, K * ‖D l‖₊
     refine ⟨max ‖T‖₊ c, fun u => ?_⟩
     obtain ⟨g, hug, hgb, hgH⟩ := exists_holderOnWith_of_holderSpaceL T hT u
     have hgc : ContinuousOn g Ω := hgH.continuousOn hα
@@ -144,7 +146,8 @@ theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_of_forall_holderSpaceL {Ω
       fun i hi l x hx => ((hGb l i hi).1 x hx).trans (by
         rw [mul_assoc]
         exact mul_le_mul_of_nonneg_left ((D l).le_opNorm u) K.coe_nonneg)
-    refine ⟨g, by exact_mod_cast hgD.contDiffOn_succ hgc hD, hug, fun i hi => ?_⟩
+    refine ⟨g, by exact_mod_cast contDiffOn_succ_of_forall_hasWeakLineDerivOn hgc hG hdG', hug,
+      fun i hi => ?_⟩
     rcases i with _ | i
     · refine ⟨fun x hx => ?_, holderOnWith_iteratedFDeriv_zero_iff.2 (hgH.mono_const ?_)⟩
       · rw [norm_iteratedFDeriv_zero]
@@ -154,14 +157,11 @@ theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_of_forall_holderSpaceL {Ω
     have hi : i ≤ j := Nat.le_of_succ_le_succ hi
     refine ⟨fun x hx => ?_, holderOnWith_iteratedFDeriv_succ_iff.2 <|
       HolderOnWith.of_dist_le fun x hx y hy => ?_⟩
-    · rw [← norm_iteratedFDeriv_fderiv, hit i hi x hx]
-      refine (norm_sum_le _ _).trans ?_
-      calc ∑ l, ‖(A l).compContinuousMultilinearMap (iteratedFDeriv ℝ i (G l) x)‖
-          ≤ ∑ l, ‖A l‖ * (K * ‖D l‖ * ‖u‖) := Finset.sum_le_sum fun l _ =>
-            ((A l).norm_compContinuousMultilinearMap_le _).trans
-              (mul_le_mul_of_nonneg_left (hGn i hi l x hx) (norm_nonneg _))
-        _ = c * ‖u‖ := by simp only [c, NNReal.coe_sum, NNReal.coe_mul, coe_nnNorm,
-              Finset.sum_mul, mul_assoc]
+    · calc ‖iteratedFDeriv ℝ (i + 1) g x‖ ≤ ∑ l, ‖iteratedFDeriv ℝ i (G l) x‖ :=
+            norm_iteratedFDeriv_succ_le_sum_of_forall_hasWeakLineDerivOn hgc hG hdG'
+              (by exact_mod_cast hi) hx
+        _ ≤ ∑ l, K * ‖D l‖ * ‖u‖ := Finset.sum_le_sum fun l _ => hGn i hi l x hx
+        _ = c * ‖u‖ := by simp only [c, NNReal.coe_sum, NNReal.coe_mul, coe_nnNorm, Finset.sum_mul]
         _ ≤ max ‖T‖₊ c * ‖u‖ := mul_le_mul_of_nonneg_right
           (by exact_mod_cast le_max_right _ _) (norm_nonneg u)
     · rw [hit i hi x hx, hit i hi y hy, dist_eq_norm, ← Finset.sum_sub_distrib]
@@ -177,7 +177,7 @@ theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_of_forall_holderSpaceL {Ω
                 gcongr
                 exact (D l).le_opNorm u) (norm_nonneg _))
         _ = c * ‖u‖ * dist x y ^ (α : ℝ) := by
-          simp only [c, NNReal.coe_sum, NNReal.coe_mul, coe_nnNorm, Finset.sum_mul, mul_assoc]
+          simp only [c, hA, one_mul, NNReal.coe_sum, NNReal.coe_mul, coe_nnNorm, Finset.sum_mul]
         _ ≤ ↑(max ‖T‖₊ c * ‖u‖₊) * dist x y ^ (α : ℝ) := by
           push_cast
           gcongr

@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Restriction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Torsion
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Cohomology
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality.Basic
 
 import TauCeti.Algebra.Module.ZMod.Dual
+import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Restriction
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.KernelWeilPairing
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separability
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Naturality
@@ -44,9 +44,6 @@ The coefficient pairing commutes with every field extension. Its values are comp
 ambient separable closure, with the images of the two kernel points specified explicitly to
 avoid casts across the degree and dual-isogeny base-change equalities. This supplies the
 coefficient-level localization identity for cup products along the isogeny Weil pairing.
-The cup product also commutes with restriction, with the target written using the native
-pairing over the extension. This identifies the local cup products as restrictions of one
-class for applications of Brauer reciprocity.
 
 ## Main definitions
 
@@ -68,7 +65,6 @@ class for applications of Brauer reciprocity.
 * `TauCeti.Isogeny.natCard_kerCoeff_dual`: `E₂(Kˢ)[φ̂]` and `E₁(Kˢ)[φ]` have the same order.
 * `TauCeti.Isogeny.kerCoeffWeilDual_bijective`: `E₂(Kˢ)[φ̂] ≅ Hom(E₁(Kˢ)[φ], μ_n)`.
 * `TauCeti.Isogeny.kerH1WeilPairing_eq_explicitCup11`: the cup product on cocycles.
-* `TauCeti.Isogeny.kerH1WeilPairing_kerRes`: the cup product commutes with field extension.
 
 ## Implementation notes
 
@@ -153,7 +149,7 @@ def kerCoeffWeilPairing : (ofIsogeny φ).KerCoeff →+ (ofIsogeny φ.dual).KerCo
   have vanishing (P : (ofIsogeny φ).KerCoeff) : ψ.ker ≤ (pairing P).ker := fun R hR ↦
     φ.torsionCoeffWeilPairing_eq_zero_of_pointCoeffMap_eq_zero hn
       (by
-        have hP : (ofIsogeny φ).pointCoeffMap (P : W₁.PointCoeff) = 0 := P.2
+        have hP : (ofIsogeny φ).pointCoeffMap (P : W₁.PointCoeff) = 0 := P.property
         simpa using hP)
       (by simpa [ψ, Subtype.ext_iff] using hR)
   let lift := ψ.liftOfSurjective (G₃ := KummerCoeff K φ.degree)
@@ -214,7 +210,7 @@ theorem coe_kerCoeffWeilPairing_baseChange {L : Type*} [Field L] [Algebra K L]
   let R' : (W₁⁄L).TorsionCoeff (φ.baseChange L).degree :=
     ⟨W₁.pointCoeffBaseChange τ R, by
       simpa only [hd, coe_torsionCoeffBaseChange] using
-        (W₁.torsionCoeffBaseChange τ φ.degree R).2⟩
+        (W₁.torsionCoeffBaseChange τ φ.degree R).property⟩
   have hR' : (R' : (W₁⁄L).PointCoeff) = W₁.pointCoeffBaseChange τ R := rfl
   have hQ' : (φ.baseChange L).torsionCoeffToDualKerCoeff R' = Q' := by
     apply Subtype.ext
@@ -424,69 +420,6 @@ theorem kerH1WeilPairing_explicitCoeff1_torsionCoeffToDualKerCoeff
   exact congrArg (dualityMap1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff
     (KummerCoeff K φ.degree) a)
     (φ.explicitCoeff1_kerCoeffWeilDual_torsionCoeffToDualKerCoeff hn b)
-
-/-! ### Base change of the Weil cup product -/
-
-variable {L : Type*} [Field L] [Algebra K L]
-  (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
-
-/-- The kernel Weil pairing commutes with coefficient restriction, using divisibility of the
-base-changed degree by the original degree and the native dual kernel over the extension. -/
-theorem kummerCoeffBaseChangeOfDvd_kerCoeffWeilPairing
-    (P : (ofIsogeny φ).KerCoeff) (Q : (ofIsogeny φ.dual).KerCoeff) :
-    kummerCoeffBaseChangeOfDvd τ (φ.degree_map (algebraMap K L)).symm.dvd
-        (φ.kerCoeffWeilPairing hn P Q) =
-      (φ.baseChange L).kerCoeffWeilPairing
-        (by
-          have hd : (φ.baseChange L).degree = φ.degree := φ.degree_map (algebraMap K L)
-          simpa only [hd, map_natCast] using hn.map (algebraMap K L))
-        (φ.kerCoeffBaseChange τ P) (φ.dualKerCoeffBaseChange τ Q) := by
-  apply Additive.toMul.injective
-  apply Subtype.ext
-  apply Units.ext
-  rw [toMul_kummerCoeffBaseChangeOfDvd, Units.coe_map]
-  exact (φ.coe_kerCoeffWeilPairing_baseChange hn τ _ P Q _ _
-    (φ.coe_kerCoeffBaseChange τ P) (φ.coe_dualKerCoeffBaseChange τ Q)).symm
-
-/-- Restricting the isogeny Weil cup product to any field extension is the native Weil
-cup product of the restricted kernel classes over that extension. -/
-theorem kerH1WeilPairing_kerRes
-    (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
-    (b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
-    (φ.baseChange L).kerH1WeilPairing
-        (by
-          have hd : (φ.baseChange L).degree = φ.degree := φ.degree_map (algebraMap K L)
-          simpa only [hd, map_natCast] using hn.map (algebraMap K L))
-        (φ.kerRes τ a) (φ.dualKerRes τ b) =
-      explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K φ.degree)
-        (AbsoluteGaloisGroup L) (KummerCoeff L (φ.baseChange L).degree)
-        (absoluteGaloisGroupMap τ)
-        (kummerCoeffBaseChangeOfDvd τ (φ.degree_map (algebraMap K L)).symm.dvd)
-        continuous_of_discreteTopology (kummerCoeffBaseChangeOfDvd_smul τ _)
-        (φ.kerH1WeilPairing hn a b) := by
-  simp only [kerH1WeilPairing_eq_explicitCup11, kerRes_eq_explicitMap1,
-    dualKerRes_eq_explicitMap1]
-  exact (explicitMap2_explicitCup11
-    (G := AbsoluteGaloisGroup K) (M := (ofIsogeny φ).KerCoeff)
-    (N := (ofIsogeny φ.dual).KerCoeff) (P := KummerCoeff K φ.degree)
-    (H := AbsoluteGaloisGroup L) (M' := (ofIsogeny (φ.baseChange L)).KerCoeff)
-    (N' := (ofIsogeny (φ.baseChange L).dual).KerCoeff)
-    (P' := KummerCoeff L (φ.baseChange L).degree)
-    (μ := φ.kerCoeffWeilPairing hn) (hμ := continuous_of_discreteTopology)
-    (hequiv := φ.kerCoeffWeilPairing_smul hn)
-    (μ' := (φ.baseChange L).kerCoeffWeilPairing
-      (by
-        have hd : (φ.baseChange L).degree = φ.degree := φ.degree_map (algebraMap K L)
-        simpa only [hd, map_natCast] using hn.map (algebraMap K L)))
-    (hμ' := continuous_of_discreteTopology)
-    (hequiv' := (φ.baseChange L).kerCoeffWeilPairing_smul _)
-    (φ := absoluteGaloisGroupMap τ)
-    (fM := φ.kerCoeffBaseChange τ) (fN := φ.dualKerCoeffBaseChange τ)
-    (fP := kummerCoeffBaseChangeOfDvd τ (φ.degree_map (algebraMap K L)).symm.dvd)
-    (hcM := continuous_of_discreteTopology) (hcN := continuous_of_discreteTopology)
-    (hcP := continuous_of_discreteTopology) (hfM := φ.kerCoeffBaseChange_smul τ)
-    (hfN := φ.dualKerCoeffBaseChange_smul τ) (hfP := kummerCoeffBaseChangeOfDvd_smul τ _)
-    (hpair := φ.kummerCoeffBaseChangeOfDvd_kerCoeffWeilPairing hn τ) a b).symm
 
 end TauCeti.Isogeny
 

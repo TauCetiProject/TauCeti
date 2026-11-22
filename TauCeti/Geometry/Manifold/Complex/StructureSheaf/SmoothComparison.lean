@@ -175,7 +175,7 @@ theorem smoothSheafIso_hom_naturality (f : X → Y) (hf : ContMDiff I J ω f) :
   intro x
   -- Expose the categorical composites, whose sections have different bundled orders.
   change smoothSectionsEquiv I X _ (precomp I X f hf U s) x =
-    smoothSectionsEquiv J Y U.unop s ⟨f x, x.2⟩
+    smoothSectionsEquiv J Y U.unop s ⟨f x, x.property⟩
   exact (smoothSectionsEquiv_apply _ _ _).trans
     ((precomp_apply I X f hf U s x).trans (smoothSectionsEquiv_apply U.unop s _).symm)
 

@@ -325,7 +325,7 @@ private abbrev completedLocallyConstantTests : Submodule ℤ_[p] C(Γ, ℤ_[p]) 
 
 private theorem dense_completedLocallyConstantTests :
     DenseRange (completedLocallyConstantTests (Γ := Γ) (p := p)).subtype := by
-  apply denseRange_subtype_val.mpr
+  apply denseRange_subtypeVal.mpr
   apply (dense_setOf_comp_quotientMk ℤ_[p]).mono
   rintro f ⟨U, g, hg⟩
   have hloc : IsLocallyConstant (f : Γ → ℤ_[p]) := by
@@ -379,7 +379,7 @@ private theorem ofCompletedGroupAlgebra_apply_locallyConstant
     ofCompletedGroupAlgebra x φ.toContinuousMap = completedLocallyConstantIntegral x φ := by
   have he := (completedIntegralOnLocallyConstantTests x).extend_eq
     (e := (completedLocallyConstantTests (Γ := Γ) (p := p)).subtypeL)
-    dense_completedLocallyConstantTests isUniformEmbedding_subtype_val.isUniformInducing
+    dense_completedLocallyConstantTests isUniformEmbedding_subtypeVal.isUniformInducing
     ⟨φ.toContinuousMap, ⟨φ, rfl⟩⟩
   rw [ofCompletedGroupAlgebra, coe_symm_toCLMEquiv]
   exact he.trans (completedIntegralOnLocallyConstantTests_apply x φ)
@@ -455,6 +455,32 @@ noncomputable def completedGroupAlgebraEquiv :
 theorem completedGroupAlgebraEquiv_apply (μ : D(Γ, ℤ_[p])) :
     completedGroupAlgebraEquiv μ = toCompletedGroupAlgebra μ :=
   AlgEquiv.ofBijective_apply _ _ _
+
+/-- Forgetting invertibility of `completedGroupAlgebraEquiv` gives `toCompletedGroupAlgebra`. -/
+@[simp]
+theorem toAlgHom_completedGroupAlgebraEquiv :
+    (completedGroupAlgebraEquiv (Γ := Γ) (p := p)).toAlgHom = toCompletedGroupAlgebra :=
+  AlgEquiv.toAlgHom_ofBijective _ _
+
+/-- `completedGroupAlgebraEquiv.symm` is a left inverse to `toCompletedGroupAlgebra`. -/
+@[simp]
+theorem completedGroupAlgebraEquiv_symm_toCompletedGroupAlgebra (μ : D(Γ, ℤ_[p])) :
+    completedGroupAlgebraEquiv.symm (toCompletedGroupAlgebra μ) = μ :=
+  completedGroupAlgebraEquiv.symm_apply_apply μ
+
+/-- `toCompletedGroupAlgebra` is a right inverse to `completedGroupAlgebraEquiv.symm`. -/
+@[simp]
+theorem toCompletedGroupAlgebra_completedGroupAlgebraEquiv_symm
+    (x : completedGroupAlgebra ℤ_[p] Γ) :
+    toCompletedGroupAlgebra (completedGroupAlgebraEquiv.symm x) = x :=
+  completedGroupAlgebraEquiv.apply_symm_apply x
+
+/-- `completedGroupAlgebraEquiv.symm` sends the group element `γ` in `ℤ_p[[Γ]]` to
+`dirac ℤ_[p] γ`. -/
+@[simp]
+theorem completedGroupAlgebraEquiv_symm_of (γ : Γ) :
+    completedGroupAlgebraEquiv.symm (completedGroupAlgebra.of ℤ_[p] Γ γ) = dirac ℤ_[p] γ := by
+  rw [← toCompletedGroupAlgebra_dirac, completedGroupAlgebraEquiv_symm_toCompletedGroupAlgebra]
 
 open Topology in
 /-- **The comparison is a homeomorphism.** For a profinite group `Γ`, the comparison of integral

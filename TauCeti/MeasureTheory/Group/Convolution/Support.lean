@@ -19,6 +19,9 @@ parametric integral is supported in `K * L`, and for compact `K` and `L` both th
 
 ## Main statements
 
+* `TauCeti.mem_support_and_inv_mul_mem_support`, `TauCeti.mem_tsupport_and_inv_mul_mem_tsupport`:
+  if `x` vanishes whenever `f r = 0` or `g (r⁻¹ * s) = 0`, then `x ≠ 0` puts `r` and `r⁻¹ * s` in
+  the (topological) supports of `f` and `g`.
 * `TauCeti.support_integral_subset_mul`: the parametric integral is supported in `K * L`.
 * `TauCeti.hasCompactSupport_uncurry_of_inv_mul_mem`: the integrand is compactly supported on
   `G × G`.
@@ -32,6 +35,22 @@ open MeasureTheory Function
 open scoped Pointwise
 
 namespace TauCeti
+
+/-- If `x` vanishes whenever `f r = 0` or `g (r⁻¹ * s) = 0`, then `x ≠ 0` places `r` in
+`support f` and `r⁻¹ * s` in `support g`. -/
+theorem mem_support_and_inv_mul_mem_support {G α β E : Type*} [Inv G] [Mul G] [Zero α] [Zero β]
+    [Zero E] {f : G → α} {g : G → β} {x : E} {s r : G}
+    (hx : x ≠ 0) (hf : f r = 0 → x = 0) (hg : g (r⁻¹ * s) = 0 → x = 0) :
+    r ∈ support f ∧ r⁻¹ * s ∈ support g :=
+  ⟨mem_support.2 (mt hf hx), mem_support.2 (mt hg hx)⟩
+
+/-- If `x` vanishes whenever `f r = 0` or `g (r⁻¹ * s) = 0`, then `x ≠ 0` places `r` in
+`tsupport f` and `r⁻¹ * s` in `tsupport g`. -/
+theorem mem_tsupport_and_inv_mul_mem_tsupport {G α β E : Type*} [Inv G] [Mul G]
+    [TopologicalSpace G] [Zero α] [Zero β] [Zero E] {f : G → α} {g : G → β} {x : E} {s r : G}
+    (hx : x ≠ 0) (hf : f r = 0 → x = 0) (hg : g (r⁻¹ * s) = 0 → x = 0) :
+    r ∈ tsupport f ∧ r⁻¹ * s ∈ tsupport g :=
+  (mem_support_and_inv_mul_mem_support hx hf hg).imp (subset_tsupport f ·) (subset_tsupport g ·)
 
 variable {G E : Type*} [Group G] [NormedAddCommGroup E] {F : G → G → E} {K L : Set G}
 
