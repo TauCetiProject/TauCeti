@@ -328,9 +328,8 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_pairOfPantsPerturbation_l
         (∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t)) + ∑ q, B q := by
   have h := abs_le.1
     (hω.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_sub_le hH hHs hB hu hx hE hA)
-  refine (setIntegral_mono_set hE (ae_restrict_of_forall_mem
-    isOpen_thricePuncturedSphereReal.measurableSet fun z hz ↦
-      floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)) (Eventually.of_forall hΩ)).trans ?_
+  refine (hω.setIntegral_floerEnergyDensity_mono_set hΩ
+    isOpen_thricePuncturedSphereReal.measurableSet hE hJ hfloer).trans ?_
   linarith [h.2]
 
 /-- **The one-sided lower bound on the topological energy of a pair-of-pants solution, for a
