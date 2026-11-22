@@ -15,7 +15,6 @@ import TauCeti.Analysis.Polynomial.Coleman.Coprime
 import TauCeti.RingTheory.PowerSeries.Dvd
 import TauCeti.RingTheory.PowerSeries.Entire.Coprime
 import TauCeti.RingTheory.PowerSeries.Entire.Division
-import TauCeti.Topology.Algebra.Algebra.Basic
 
 /-!
 # The Riesz–Coleman decomposition on model spaces
@@ -225,21 +224,20 @@ private theorem exists_inverse_aeval_reverse_of_isRieszProjection
     {u E : M →L[R] M} {Q : R[X]}
     (hEv : IsRieszProjection
       (Polynomial.aeval u (1 - Polynomial.C (Ring.inverse Q.leadingCoeff) * Q.reverse))
-      1 Q.natDegree E) :
+      1 Q.natDegree E)
+    (hsub : closure (Algebra.adjoin R
+          {Polynomial.aeval u (1 - Polynomial.C (Ring.inverse Q.leadingCoeff) * Q.reverse)} :
+            Set (M →L[R] M)) ⊆
+        closure (Algebra.adjoin R {u} : Set (M →L[R] M))) :
     ∃ w : M →L[R] M, Polynomial.aeval u Q.reverse * w = 1 - E ∧
       w * Polynomial.aeval u Q.reverse = 1 - E ∧ E * w = 0 ∧ w * E = 0 ∧
       w ∈ closure (Algebra.adjoin R {u} : Set (M →L[R] M)) := by
   set c := Ring.inverse Q.leadingCoeff
-  have hsub : closure (Algebra.adjoin R
-        {Polynomial.aeval u (1 - Polynomial.C c * Q.reverse)} : Set (M →L[R] M)) ⊆
-      closure (Algebra.adjoin R {u} : Set (M →L[R] M)) :=
-    closure_mono (Algebra.adjoin_le (Set.singleton_subset_iff.mpr
-      (Polynomial.aeval_mem_adjoin_singleton R u)))
   have h1v : (1 - (1 : R) • Polynomial.aeval u (1 - Polynomial.C c * Q.reverse) : M →L[R] M) =
       c • Polynomial.aeval u Q.reverse := by
     simp [Algebra.algebraMap_eq_smul_one]
   refine ⟨c • hEv.inverse, ?_, ?_, ?_, ?_,
-    (Algebra.adjoin R {u}).smul_mem_closure (hsub hEv.inverse_mem_closure_adjoin) c⟩
+    (Algebra.adjoin R {u}).topologicalClosure.smul_mem (hsub hEv.inverse_mem_closure_adjoin) c⟩
   · rw [mul_smul_comm, ← smul_mul_assoc, ← h1v, hEv.one_sub_smul_mul_inverse]
   · rw [smul_mul_assoc, ← mul_smul_comm, ← h1v, hEv.inverse_mul_one_sub_smul]
   · rw [mul_smul_comm, hEv.mul_inverse_eq_zero, smul_zero]
@@ -335,7 +333,7 @@ private theorem rieszColemanProjection_aux {u : C₀(I, R) →L[R] C₀(I, R)} (
     exact (Subalgebra.mem_centralizer_iff R).mp
       (Subalgebra.topologicalClosure_adjoin_le_centralizer_centralizer R {u} hET) u
       ((Subalgebra.mem_centralizer_iff R).mpr fun _ hy ↦ by rw [Set.mem_singleton_iff.mp hy])
-  have hex := exists_inverse_aeval_reverse_of_isRieszProjection hEv
+  have hex := exists_inverse_aeval_reverse_of_isRieszProjection hEv hsub
   have hunit_compl := isUnit_aeval_mul_one_sub_reverse_of_isRieszProjection hQ hEv hEu
   have hE_rc := hEv.isRowCompact hv
   have hrank := hEv.rankAtStalk_range hv hv_good

@@ -13,7 +13,6 @@ import Mathlib.Algebra.Polynomial.Div
 import Mathlib.Algebra.Polynomial.Smeval
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.Algebra.Ring.SpectralIdempotent
-import TauCeti.Topology.Algebra.Algebra.Basic
 
 /-!
 # Riesz–Coleman projections and topological polynomial spectral splittings
@@ -251,7 +250,7 @@ private theorem of_C_mul_aux (hE : IsRieszColemanProjection u Q E) {c : R} (hc :
     ⟨hE.isIdempotentElem, hE.commute, hE.mem_closure_adjoin,
       by rw [haeval, smul_mul_assoc, hE.aeval_reverse_mul_eq_zero, smul_zero],
       ⟨Ring.inverse c • hE.inverse, hinv₁, hinv₂, hinv₃, hinv₄,
-        (Algebra.adjoin R {u}).smul_mem_closure hE.inverse_mem_closure_adjoin _⟩⟩
+        (Algebra.adjoin R {u}).topologicalClosure.smul_mem hE.inverse_mem_closure_adjoin _⟩⟩
   exact ⟨hE', (hE'.eq_inverse hinv₁ hinv₃).symm⟩
 
 /-- Scaling `Q` by a unit scalar preserves Riesz–Coleman projections. -/

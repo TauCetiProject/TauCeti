@@ -11,7 +11,7 @@ public import Mathlib.Topology.Algebra.Algebra
 import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
-# Topological algebra kernels and subalgebra closures
+# Kernels of continuous algebra homomorphisms
 
 The kernel of a continuous algebra homomorphism into a `T₁` space is the preimage of the closed
 point `0`, so it is closed. This is the algebra counterpart of Mathlib's
@@ -19,14 +19,10 @@ point `0`, so it is closed. This is the algebra counterpart of Mathlib's
 quotient of a normed algebra by the kernel of a continuous homomorphism is found to be a normed
 algebra.
 
-The set closure of a subalgebra in a semitopological semiring is stable under scalar
-multiplication (`Subalgebra.smul_mem_closure`).
-
 ## Main results
 
 * `ContinuousAlgHom.isClosed_ker`: the kernel of a continuous algebra homomorphism into a `T₁`
   space is closed.
-* `Subalgebra.smul_mem_closure`: scalar multiplication preserves the closure of a subalgebra.
 -/
 
 public section
@@ -40,14 +36,3 @@ instance isClosed_ker {R A B : Type*} [CommSemiring R] [Semiring A] [Topological
   RingHom.isClosed_ker f.continuous
 
 end ContinuousAlgHom
-
-namespace Subalgebra
-
-/-- Scalar multiplication preserves the closure of a subalgebra in a semitopological semiring. -/
-theorem smul_mem_closure {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-    [TopologicalSpace A] [IsSemitopologicalSemiring A] (S : Subalgebra R A)
-    {a : A} (ha : a ∈ closure (S : Set A)) (r : R) : r • a ∈ closure (S : Set A) := by
-  rw [← topologicalClosure_coe] at ha ⊢
-  exact S.topologicalClosure.smul_mem ha r
-
-end Subalgebra
