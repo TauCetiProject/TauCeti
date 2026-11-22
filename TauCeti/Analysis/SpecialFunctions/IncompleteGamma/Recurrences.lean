@@ -157,21 +157,18 @@ theorem lowerIncompleteGamma_add_natCast {a : ℂ} (ha : ∀ m : ℕ, a ≠ -m) 
       TauCeti.sum_range_succ_ascPochhammer_mul_pow]
     ring
 
-/-- The reindexing behind the downward recurrences 8.8.8 and 8.8.10: the coefficient
-`(a − n + k + 1)_{n−k−1}` of the upward correction sum at `a − n` is `f (n − 1 − k)` for
-`f j = (a − j)ⱼ`, so that reversing the sum gives the downward correction sum. For `n ≤ k` both
-lengths truncate to `0` and both sides are `1`. -/
-private lemma ascPochhammer_eval_sub_natCast_add_add_one (a : ℂ) (n k : ℕ) :
-    (ascPochhammer ℂ (n - k - 1)).eval (a - n + k + 1) =
-      (ascPochhammer ℂ (n - 1 - k)).eval (a - ((n - 1 - k : ℕ) : ℂ)) := by
-  have hlen : n - k - 1 = n - 1 - k := by omega
-  rw [hlen]
-  rcases lt_or_ge k n with hk | hk
-  · rw [Nat.cast_sub (by omega), Nat.cast_sub (by omega)]
-    push_cast
-    ring_nf
-  · have h0 : n - 1 - k = 0 := by omega
-    rw [h0, ascPochhammer_zero, Polynomial.eval_one, Polynomial.eval_one]
+/-- The correction term of the upward recurrences 8.8.7 and 8.8.9 at `a − n` is the correction
+term of the downward recurrences 8.8.8 and 8.8.10:
+`z^{a−n} e^{−z} ∑_{k<n} (a − n + k + 1)_{n−k−1} z^k = z^{a−1} e^{−z} ∑_{k<n} (a − k)ₖ / z^k`
+for `z ≠ 0`. -/
+private lemma cpow_sub_natCast_mul_exp_mul_sum_ascPochhammer (a : ℂ) {z : ℂ} (hz : z ≠ 0)
+    (n : ℕ) :
+    z ^ (a - n) * cexp (-z) *
+        ∑ k ∈ range n, (ascPochhammer ℂ (n - k - 1)).eval (a - n + k + 1) * z ^ k =
+      z ^ (a - 1) * cexp (-z) * ∑ k ∈ range n, (ascPochhammer ℂ k).eval (a - k) / z ^ k := by
+  simp only [TauCeti.ascPochhammer_eval_sub_natCast_add_add_one a n]
+  rw [mul_right_comm _ (cexp (-z)), cpow_sub_natCast_mul_sum_mul_pow a hz n
+    fun j => (ascPochhammer ℂ j).eval (a - j), mul_right_comm _ (cexp (-z))]
 
 /-- **DLMF 8.8.8**: for `a − n ∉ −ℕ` and every `z`,
 `γ(a, z) = (a − n)ₙ γ(a − n, z) − z^{a−1} e^{−z} ∑_{k<n} (a − k)ₖ / z^k`, where
@@ -188,13 +185,8 @@ theorem lowerIncompleteGamma_eq_lowerIncompleteGamma_sub_natCast {a : ℂ} {n : 
     · simp
     have ha1 : a - 1 ≠ 0 := fun h => ha n (by push_cast; linear_combination h)
     simp [zero_cpow ha1]
-  have hre : ∀ k ∈ range n, (ascPochhammer ℂ (n - k - 1)).eval (a - n + k + 1) * z ^ k =
-      (ascPochhammer ℂ (n - 1 - k)).eval (a - ((n - 1 - k : ℕ) : ℂ)) * z ^ k := fun k _ => by
-    rw [ascPochhammer_eval_sub_natCast_add_add_one a n k]
   have h := lowerIncompleteGamma_add_natCast ha z n
-  rw [sub_add_cancel, sum_congr rfl hre, mul_right_comm _ (cexp (-z)),
-    cpow_sub_natCast_mul_sum_mul_pow a hz n fun j => (ascPochhammer ℂ j).eval (a - j)] at h
-  rw [h, mul_right_comm _ (cexp (-z))]
+  rwa [sub_add_cancel, cpow_sub_natCast_mul_exp_mul_sum_ascPochhammer a hz n] at h
 
 /-! ### The upper function `Γ` -/
 
@@ -264,13 +256,8 @@ theorem upperIncompleteGamma_eq_upperIncompleteGamma_sub_natCast {z : ℂ} (hz :
     upperIncompleteGamma a z =
       (ascPochhammer ℂ n).eval (a - n) * upperIncompleteGamma (a - n) z +
         z ^ (a - 1) * cexp (-z) * ∑ k ∈ range n, (ascPochhammer ℂ k).eval (a - k) / z ^ k := by
-  have hre : ∀ k ∈ range n, (ascPochhammer ℂ (n - k - 1)).eval (a - n + k + 1) * z ^ k =
-      (ascPochhammer ℂ (n - 1 - k)).eval (a - ((n - 1 - k : ℕ) : ℂ)) * z ^ k := fun k _ => by
-    rw [ascPochhammer_eval_sub_natCast_add_add_one a n k]
   have h := upperIncompleteGamma_add_natCast hz (a - n) n
-  rw [sub_add_cancel, sum_congr rfl hre, mul_right_comm _ (cexp (-z)),
-    cpow_sub_natCast_mul_sum_mul_pow a (slitPlane_ne_zero hz) n
-      fun j => (ascPochhammer ℂ j).eval (a - j)] at h
-  rw [h, mul_right_comm _ (cexp (-z))]
+  rwa [sub_add_cancel,
+    cpow_sub_natCast_mul_exp_mul_sum_ascPochhammer a (slitPlane_ne_zero hz) n] at h
 
 end Complex
