@@ -79,6 +79,7 @@ theorem PowerBasis.charpoly_lmul_gen {R S : Type*} [CommRing R] [Ring S] [Algebr
 open Polynomial in
 /-- **Power-basis coordinates of a polynomial evaluation**: the `i`-th coordinate of
 `aeval pb.gen q` in `pb.basis` is the coefficient of `X ^ i` in `q %ₘ pb.minpolyGen`. -/
+@[simp]
 theorem PowerBasis.basis_repr_aeval {R S : Type*} [CommRing R] [Ring S] [Algebra R S]
     (pb : PowerBasis R S) (q : R[X]) (i : Fin pb.dim) :
     pb.basis.repr (aeval pb.gen q) i = (q %ₘ pb.minpolyGen).coeff i := by

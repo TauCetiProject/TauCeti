@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Basic
 public import TauCeti.FieldTheory.FunctionField.Repartition.IndexOfSpecialty
+import TauCeti.FieldTheory.FunctionField.Place.Extension.PurelyInseparable
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.Equiv
 import TauCeti.FieldTheory.IntermediateField.ScalarTower
 import TauCeti.LinearAlgebra.Pi
@@ -60,6 +61,8 @@ The rings `𝒪_P · k'` and `𝒪'_P` come from
 
 ## Main results
 
+* `TauCeti.Place.singularityQuotientLinearEquiv`: when `F' / F` is purely inseparable,
+  `𝒪_{P'} ⧸ 𝒪_P · k'` is `k`-linearly isomorphic to `P.singularityQuotient k' F'`.
 * `TauCeti.Place.finiteDimensional_singularityQuotient`: `𝒪'_P ⧸ 𝒪_P · k'` is finite-dimensional.
 * `TauCeti.Place.singularityDegree_eq_zero_iff`: when `𝒪'_P ⧸ 𝒪_P · k'` is finite-dimensional,
   `δ_P = 0` exactly when `𝒪_P · k'` is integrally closed in `F'`.
@@ -72,11 +75,12 @@ The rings `𝒪_P · k'` and `𝒪'_P` come from
 * `TauCeti.finrank_le_finsum_singularityDegree_add_one` and
   `TauCeti.isIntegrallyClosedIn_of_forall_constantSpanIntegers_eq`: constant growth is bounded by
   `∑_P δ_P + 1`, so `δ_P = 0` everywhere implies `IsIntegrallyClosedIn k' F'`.
-* `TauCeti.forall_constantSpanIntegers_eq_of_one_le_genus_of_genus_eq` and
+* `TauCeti.finrank_eq_finrank_of_one_le_genus_of_genus_eq`,
+  `TauCeti.forall_constantSpanIntegers_eq_of_one_le_genus_of_genus_eq`, and
   `TauCeti.isIntegrallyClosedIn_of_one_le_genus_of_genus_eq`: for any algebraic constant field
   extension `F' = F · k'` in genus at least `1`, having `g(F' / k'') = g(F / k)` for an algebraic
-  extension `k'' / k'` inside `F'` exact in `F'` forces `𝒪_P · k' = 𝒪'_P` everywhere and exactness
-  of `k'` in `F'`.
+  extension `k'' / k'` inside `F'` exact in `F'` forces `[F' : F] = [k' : k]` (when finite),
+  `𝒪_P · k' = 𝒪'_P` everywhere, and exactness of `k'` in `F'`.
 * `TauCeti.genus_eq_genus_iff_forall_constantSpanIntegers_eq`: over exact constants, the genus is
   unchanged iff `𝒪_P · k'` is integrally closed at every place.
 * `TauCeti.riemannRochSpace_conorm_eq_span_of_forall_constantSpanIntegers_eq` and
@@ -153,6 +157,55 @@ theorem singularityDegree_eq_zero_iff [FiniteDimensional k' (singularityQuotient
     fun heq ↦ heq.ge⟩
 
 end Place
+
+variable (k F) in
+/-- When `F' / F` is purely inseparable, `P'` is the unique place over `P = P'|_F`, so `𝒪'_P`
+coincides with `𝒪_{P'}` and `P'.integers ⧸ P'.constantSpanSubmodule k F` is `k`-linearly isomorphic
+to `P.singularityQuotient k' F'`. -/
+noncomputable def Place.singularityQuotientLinearEquiv [Algebra.IsIntegral k k']
+    [IsPurelyInseparable F F'] (hF' : IsFunctionField k' F') (P' : Place k' F') :
+    letI := Place.integersAlgebraBase k P'
+    haveI := Place.isScalarTower_integersAlgebraBase k P'
+    haveI := Place.isScalarTower_integers_restrict k F P'
+    (P'.integers ⧸ P'.constantSpanSubmodule k F) ≃ₗ[k]
+      (P'.restrict k F).singularityQuotient k' F' :=
+  letI := Place.integersAlgebraBase k P'
+  haveI := Place.isScalarTower_integersAlgebraBase k P'
+  haveI := Place.isScalarTower_integers_restrict k F P'
+  let P := P'.restrict k F
+  have : IsIntegralClosure P'.integers P.integers F' := Place.isIntegralClosure_integers hF' P'
+  let e := IsIntegralClosure.equiv P.integers P'.integers F' (integralClosure P.integers F')
+  have he (z : P'.integers) : ((e z : integralClosure P.integers F') : F') = (z : F') :=
+    IsIntegralClosure.algebraMap_equiv P.integers P'.integers F' (integralClosure P.integers F') z
+  let toIC (z : F') (hz : z ∈ P.integralClosureSubmodule k' F') : integralClosure P.integers F' :=
+    ⟨z, (mem_integralClosure_iff P.integers F').2 ((P.mem_integralClosureSubmodule_iff k' F').1 hz)⟩
+  let eTop : P'.integers ≃ₗ[k] ↥(P.integralClosureSubmodule k' F') :=
+    { toFun := fun x ↦ ⟨((e x : integralClosure P.integers F') : F'),
+        (P.mem_integralClosureSubmodule_iff k' F').2
+          ((mem_integralClosure_iff P.integers F').1 (e x).property)⟩
+      invFun := fun y ↦ e.symm (toIC y.val y.property)
+      left_inv := fun x ↦ by simp [e, toIC]
+      right_inv := fun y ↦ Subtype.ext <| by simp [toIC]
+      map_add' := fun x y ↦ Subtype.ext <| by simp
+      map_smul' := fun c x ↦ Subtype.ext <| by
+        rw [RingHom.id_apply, Submodule.coe_smul_of_tower, he, Algebra.smul_def, Algebra.smul_def,
+          Subring.coe_mul, IsScalarTower.algebraMap_apply k k' P'.integers,
+          Place.coe_algebraMap_constants, ← IsScalarTower.algebraMap_apply k k' F', he] }
+  ((Submodule.Quotient.restrictScalarsEquiv k (P'.constantSpanSubmodule k F)).symm.trans
+    (Submodule.Quotient.equiv ((P'.constantSpanSubmodule k F).restrictScalars k)
+      (((P.constantSpanIntegers k' F').submoduleOf
+        (P.integralClosureSubmodule k' F')).restrictScalars k) eTop (by
+        ext ⟨z, hz⟩
+        simp only [Submodule.mem_map, Submodule.restrictScalars_mem,
+          Place.mem_constantSpanSubmodule_iff, eTop]
+        refine ⟨fun ⟨x, hx, hxz⟩ ↦ ?_, fun hz' ↦ ⟨e.symm (toIC z hz), ?_, Subtype.ext ?_⟩⟩
+        · have hxz' : (x : F') = z := by simpa [he] using congrArg Subtype.val hxz
+          exact hxz' ▸ hx
+        · have hz_eq : ((e.symm (toIC z hz) : P'.integers) : F') = z := by
+            simp [← he, toIC]
+          rwa [hz_eq]
+        · simp [toIC]))).trans
+    (Submodule.Quotient.restrictScalarsEquiv k _)
 
 /-! ### The local comparison -/
 
@@ -858,6 +911,19 @@ private theorem finite_exact_and_finrank_eq_of_one_le_genus [FiniteDimensional k
   have : FiniteDimensional E₀ F' := FiniteDimensional.right F E₀ F'
   refine ⟨hex', ?_⟩
   rw [← finrank_mul_finrank F E₀ F', hE₀_fin, one_mul, hdeg, IntermediateField.finrank_bot']
+
+/-- **In genus at least `1`, preserving the genus preserves the degree of a finite constant
+extension**: if `k` is the exact constant field of `F`, `F' = F · k'` is a finite constant field
+extension, `1 ≤ g(F / k)`, and `g(F' / k'') = g(F / k)` for some algebraic extension `k'' / k'`
+inside `F'` that is exact in `F'`, then `[F' : F] = [k' : k]`. -/
+theorem finrank_eq_finrank_of_one_le_genus_of_genus_eq [FiniteDimensional k k']
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (h : constantCompositum F k' F' = ⊤) (hg1 : 1 ≤ genus k F)
+    {k'' : Type*} [Field k''] [Algebra k' k''] [Algebra k'' F'] [IsScalarTower k' k'' F']
+    [Algebra.IsAlgebraic k' k''] (hex'' : IsIntegrallyClosedIn k'' F')
+    (hg : genus k'' F' = genus k F) :
+    finrank F F' = finrank k k' :=
+  (finite_exact_and_finrank_eq_of_one_le_genus hF hex h hg1 hex'' hg).2
 
 /-- **In genus at least `1`, preserving the genus forces every place to stay regular**: if `k` is
 the exact constant field of `F`, `F' = F · k'` is an algebraic constant field extension (finite or

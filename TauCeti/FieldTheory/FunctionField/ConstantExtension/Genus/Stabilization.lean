@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Basic
 import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.PoleDegree
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.Equiv
 import TauCeti.FieldTheory.IntermediateField.ScalarTower
 

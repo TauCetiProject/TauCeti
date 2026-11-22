@@ -8,14 +8,13 @@ module
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Change
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Stabilization
 import TauCeti.FieldTheory.FunctionField.Place.Extension.PurelyInseparable
+import TauCeti.FieldTheory.FunctionField.Place.OrderOfVanishing
 import TauCeti.FieldTheory.IntermediateField.Adjoin.PrimitiveElement
 import TauCeti.FieldTheory.PurelyInseparable.Basic
 import TauCeti.FieldTheory.PurelyInseparable.Exponent
 import TauCeti.LinearAlgebra.Matrix.Nonsingular.Basic
 import TauCeti.RingTheory.Length.Determinant
-import TauCeti.RingTheory.OrderOfVanishing
 import TauCeti.RingTheory.PowerBasis.Determinant
-import TauCeti.RingTheory.Valuation.Discrete.Order.Vanishing
 
 /-!
 # Tate's genus-change theorem in positive characteristic
@@ -101,55 +100,6 @@ variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 attribute [local instance 10] Place.algebraIntegersExtension Place.isScalarTowerIntegersExtension
 
-variable (k F) in
-/-- When `F' / F` is purely inseparable, `P'` is the unique place over `P = P'|_F`, so `𝒪'_P`
-coincides with `𝒪_{P'}` and `P'.integers ⧸ P'.constantSpanSubmodule k F` is `k`-linearly isomorphic
-to `P.singularityQuotient k' F'`. -/
-private noncomputable def Place.singularityQuotientLinearEquiv [Algebra.IsIntegral k k']
-    [IsPurelyInseparable F F'] (hF' : IsFunctionField k' F') (P' : Place k' F') :
-    letI := Place.integersAlgebraBase k P'
-    haveI := Place.isScalarTower_integersAlgebraBase k P'
-    haveI := Place.isScalarTower_integers_restrict k F P'
-    (P'.integers ⧸ P'.constantSpanSubmodule k F) ≃ₗ[k]
-      (P'.restrict k F).singularityQuotient k' F' :=
-  letI := Place.integersAlgebraBase k P'
-  haveI := Place.isScalarTower_integersAlgebraBase k P'
-  haveI := Place.isScalarTower_integers_restrict k F P'
-  let P := P'.restrict k F
-  have : IsIntegralClosure P'.integers P.integers F' := Place.isIntegralClosure_integers hF' P'
-  let e := IsIntegralClosure.equiv P.integers P'.integers F' (integralClosure P.integers F')
-  have he (z : P'.integers) : ((e z : integralClosure P.integers F') : F') = (z : F') :=
-    IsIntegralClosure.algebraMap_equiv P.integers P'.integers F' (integralClosure P.integers F') z
-  let toIC (z : F') (hz : z ∈ P.integralClosureSubmodule k' F') : integralClosure P.integers F' :=
-    ⟨z, (mem_integralClosure_iff P.integers F').2 ((P.mem_integralClosureSubmodule_iff k' F').1 hz)⟩
-  let eTop : P'.integers ≃ₗ[k] ↥(P.integralClosureSubmodule k' F') :=
-    { toFun := fun x ↦ ⟨((e x : integralClosure P.integers F') : F'),
-        (P.mem_integralClosureSubmodule_iff k' F').2
-          ((mem_integralClosure_iff P.integers F').1 (e x).property)⟩
-      invFun := fun y ↦ e.symm (toIC y.val y.property)
-      left_inv := fun x ↦ by simp [e, toIC]
-      right_inv := fun y ↦ Subtype.ext <| by simp [toIC]
-      map_add' := fun x y ↦ Subtype.ext <| by simp
-      map_smul' := fun c x ↦ Subtype.ext <| by
-        rw [RingHom.id_apply, Submodule.coe_smul_of_tower, he, Algebra.smul_def, Algebra.smul_def,
-          Subring.coe_mul, IsScalarTower.algebraMap_apply k k' P'.integers,
-          Place.coe_algebraMap_constants, ← IsScalarTower.algebraMap_apply k k' F', he] }
-  ((Submodule.Quotient.restrictScalarsEquiv k (P'.constantSpanSubmodule k F)).symm.trans
-    (Submodule.Quotient.equiv ((P'.constantSpanSubmodule k F).restrictScalars k)
-      (((P.constantSpanIntegers k' F').submoduleOf
-        (P.integralClosureSubmodule k' F')).restrictScalars k) eTop (by
-        ext ⟨z, hz⟩
-        simp only [Submodule.mem_map, Submodule.restrictScalars_mem,
-          Place.mem_constantSpanSubmodule_iff, eTop]
-        refine ⟨fun ⟨x, hx, hxz⟩ ↦ ?_, fun hz' ↦ ⟨e.symm (toIC z hz), ?_, Subtype.ext ?_⟩⟩
-        · have hxz' : (x : F') = z := by simpa [he] using congrArg Subtype.val hxz
-          exact hxz' ▸ hx
-        · have hz_eq : ((e.symm (toIC z hz) : P'.integers) : F') = z := by
-            simp [← he, toIC]
-          rwa [hz_eq]
-        · simp [toIC]))).trans
-    (Submodule.Quotient.restrictScalarsEquiv k _)
-
 /-- Comparing `𝒪_P`-length and `k'`-dimension identifies `p · δ_P` with `ord_P(det A) · deg P`. -/
 private theorem Place.mul_singularityDegree_eq_toNat_ord_det_mul_degree {n p : ℕ} (hp : p.Prime)
     [FiniteDimensional k k'] [IsPurelyInseparable F F'] (hk' : finrank k k' = p)
@@ -201,13 +151,8 @@ private theorem Place.mul_singularityDegree_eq_toNat_ord_det_mul_degree {n p : �
   let _ := Place.integersAlgebraBase k P'
   have := Place.isScalarTower_integersAlgebraBase k P'
   have := Place.isScalarTower_integers_restrict k F P'
-  let σ : P.integers ≃+* P.valuation.valuationSubring :=
-    RingEquiv.subringCongr (congrArg ValuationSubring.toSubring P.integers_def)
-  have hord : Ring.ord P.integers A.det = ((P.ord (A.det : F)).toNat : ℕ∞) := by
-    rw [← Ring.ord_ringEquiv σ A.det,
-      Valuation.ringOrd_valuationSubring_eq_toNat_ord P.valuation P.valuation_surjective
-        (by simpa [σ, RingEquiv.coe_subringCongr_apply] using hAdetF),
-      RingEquiv.coe_subringCongr_apply, P.ord_valuation]
+  have hord : Ring.ord P.integers A.det = ((P.ord (A.det : F)).toNat : ℕ∞) :=
+    P.ringOrd_integers_eq_toNat_ord hAdetF
   have hlen : (Module.length P.integers (P'.integers ⧸ P'.constantSpanSubmodule k F)).toNat =
       (P.ord (A.det : F)).toNat := by
     rw [← hrange, w.length_quotient_range_eq_length_quotient_range_toMatrix ψ,
@@ -220,32 +165,22 @@ private theorem Place.mul_singularityDegree_eq_toNat_ord_det_mul_degree {n p : �
     TauCeti.finrank_eq_length_mul_finrank_residueField k P.integers
       (P'.integers ⧸ P'.constantSpanSubmodule k F), hlen, P.degree_eq_finrank]
 
-/-- Valuation arithmetic translating `det A = dS ^ (p (p - 1) / 2)` into
+/-- Triangular-exponent arithmetic translating `det A = dS ^ (p (p - 1) / 2)` into
 `2 e(P' ∣ P) ord_P(det A) = p (p - 1) ord_{P'}(dS)`. -/
-private theorem Place.two_mul_ramificationIdx_mul_toNat_ord_eq {p : ℕ} (hp : p.Prime)
+private theorem Place.two_mul_ramificationIdx_mul_toNat_ord_eq {p : ℕ}
     [Algebra.IsIntegral F F'] (P' : Place k' F') {x : (P'.restrict k F).integers}
     {d : P'.integers} (hxd : algebraMap (P'.restrict k F).integers P'.integers x =
       d ^ (p * (p - 1) / 2)) :
     2 * Place.ramificationIdx F P' * ((P'.restrict k F).ord (x : F)).toNat =
       p * (p - 1) * (P'.ord (d : F')).toNat := by
-  have hval := congrArg (fun y : P'.integers ↦ P'.ord (y : F')) hxd
-  rw [Place.coe_algebraMap_integers, Place.ord_algebraMap_restrict k F P', Subring.coe_pow,
-    P'.ord_pow (d : F')] at hval
-  have hx_nn : 0 ≤ (P'.restrict k F).ord (x : F) :=
-    (P'.restrict k F).mem_integers_iff_ord_nonneg.1 x.property
-  have hd_nn : 0 ≤ P'.ord (d : F') := P'.mem_integers_iff_ord_nonneg.1 d.property
+  have h := Place.ramificationIdx_mul_toNat_ord_eq_of_algebraMap_eq_pow k F P'
+    x.property d.property (congrArg Subtype.val hxd)
   have h2 : 2 * (p * (p - 1) / 2) = p * (p - 1) :=
     Nat.mul_div_cancel' (Nat.even_mul_pred_self p).two_dvd
-  have h2z : (2 : ℤ) * ↑(p * (p - 1) / 2) = ↑p * (↑p - 1) := by
-    have := congrArg (Nat.cast : ℕ → ℤ) h2
-    have hp1 : 1 ≤ p := hp.pos
-    push_cast [hp1] at this ⊢
-    exact this
-  refine Nat.cast_injective (R := ℤ) ?_
-  have hp1 : 1 ≤ p := hp.pos
-  push_cast [hp1]
-  rw [Int.toNat_of_nonneg hx_nn, Int.toNat_of_nonneg hd_nn]
-  linear_combination 2 * hval + P'.ord (d : F') * h2z
+  calc 2 * Place.ramificationIdx F P' * ((P'.restrict k F).ord (x : F)).toNat
+      = 2 * (Place.ramificationIdx F P' * ((P'.restrict k F).ord (x : F)).toNat) := by ring
+    _ = 2 * (p * (p - 1) / 2) * (P'.ord (d : F')).toNat := by rw [h]; ring
+    _ = p * (p - 1) * (P'.ord (d : F')).toNat := by rw [h2]
 
 /-- **Local Tate–Schröer formula**: for a purely inseparable constant field extension `F' = F · k'`
 of prime degree `p` over a function field `F / k` with exact constants, given an `𝒪_P`-power
@@ -294,7 +229,7 @@ theorem Place.two_mul_singularityDegree_restrict_eq_of_finrank_eq_prime {p : ℕ
   rw [hf_int] at hfdet
   obtain ⟨-, hlen⟩ := P'.mul_singularityDegree_eq_toNat_ord_det_mul_degree hp hk' hF hex h hdim
     pb.basis hα
-  have hord_eq := P'.two_mul_ramificationIdx_mul_toNat_ord_eq hp hfdet
+  have hord_eq := P'.two_mul_ramificationIdx_mul_toNat_ord_eq hfdet
   have hef : Place.ramificationIdx F P' * Place.relativeDegree k F P' = p :=
     (Place.ramificationIdx_mul_relativeDegree_eq_finrank_of_isPurelyInseparable k F hF P').trans
       hFF'
