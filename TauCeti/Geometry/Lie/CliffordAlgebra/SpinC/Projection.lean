@@ -154,11 +154,9 @@ theorem realToSpecialOrthogonalSmoothRange_apply (g : G) :
 /-- The rotation projection is trivial on the central circle of `Spinᶜ(n)`. -/
 @[simp]
 theorem realToSpecialOrthogonalRange_comp_ofCircleContinuousMonoidHom :
-    (realToSpecialOrthogonalRange n hQ).comp (ofCircleContinuousMonoidHom _ hQ) = 1 :=
-  ContinuousMonoidHom.ext fun z ↦ by
-    rw [ContinuousMonoidHom.coe_comp, Function.comp_apply, ContinuousMonoidHom.coe_one,
-      Pi.one_apply, ofCircleContinuousMonoidHom_apply, realToSpecialOrthogonalRange_apply,
-      toSpecialOrthogonal_ofCircle, map_one]
+    (realToSpecialOrthogonalRange n hQ).comp (ofCircleContinuousMonoidHom _ hQ) = 1 := by
+  ext z
+  simp [realToSpecialOrthogonalRange_apply, toSpecialOrthogonal_ofCircle]
 
 /-- Restricting `realToSpecialOrthogonalRange` to `Spin(n)` recovers the compact Spin projection
 into `SO(n)`. -/
@@ -167,15 +165,9 @@ theorem realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom :
     (realToSpecialOrthogonalRange n hQ).comp (ofSpinContinuousMonoidHom _ hQ) =
       (realCliffordSpinToSpecialOrthogonalCarrierRange n).comp
         (realCliffordSpinContinuousMulEquivUnitsRange n :
-          spinGroup (realCliffordForm n 0) →ₜ* SpinUnitsRange) :=
-  ContinuousMonoidHom.ext fun s ↦ by
-    rw [ContinuousMonoidHom.coe_comp, Function.comp_apply,
-      ContinuousMonoidHom.coe_comp, Function.comp_apply,
-      ofSpinContinuousMonoidHom_apply, realToSpecialOrthogonalRange_apply,
-      toSpecialOrthogonal_ofSpin, realCliffordSpecialOrthogonalContinuousMulEquivRange_apply]
-    simp only [ContinuousMonoidHom.coe_coe, realCliffordSpinContinuousMulEquivUnitsRange_apply,
-      realCliffordSpinToSpecialOrthogonalCarrierRange_apply]
-    exact (realCliffordSpinToSpecialOrthogonalRange_apply_toUnits n s).symm
+          spinGroup (realCliffordForm n 0) →ₜ* SpinUnitsRange) := by
+  ext s
+  simp [realToSpecialOrthogonalRange_apply, toSpecialOrthogonal_ofSpin]
 
 local notation "πO" =>
   ContinuousMonoidHom.lieMap (I := IC) (I' := ISO) (realToSpecialOrthogonalRange n hQ)
@@ -206,15 +198,19 @@ theorem lieMap_realToSpecialOrthogonalRange_realDetLieLift (a : ℝ) :
 theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofSpin (X : 𝔰) :
     πO (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
       (ofSpinContinuousMonoidHom _ hQ) X) = realSpinToSpecialOrthogonalLieEquiv n X := by
-  have hlie := LieHom.congr_fun
-    (congrArg (ContinuousMonoidHom.lieMap (I := IS) (I' := ISO))
-      (realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom n hQ)) X
-  simpa only [ContinuousMonoidHom.lieMap_comp (I := IS) (I' := IC) (I'' := ISO),
-    ContinuousMonoidHom.lieMap_comp (I := IS) (I' := IS) (I'' := ISO),
-    LieHom.comp_apply, realSpinToSpecialOrthogonalLieEquiv_apply,
-    realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply,
-    realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap,
-    realSpinLieEquivUnitsRange_apply] using hlie
+  have hcomp :
+      (πO).comp (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
+        (ofSpinContinuousMonoidHom _ hQ)) =
+      (realSpinToSpecialOrthogonalLieEquiv n).toLieHom := by
+    have h := congrArg (ContinuousMonoidHom.lieMap (I := IS) (I' := ISO))
+      (realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom n hQ)
+    rw [ContinuousMonoidHom.lieMap_comp (I := IS) (I' := IC) (I'' := ISO),
+      ContinuousMonoidHom.lieMap_comp (I := IS) (I' := IS) (I'' := ISO),
+      ← realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap,
+      ← realCliffordSpinToSpecialOrthogonalRangeLieEquiv_toLieHom] at h
+    exact h.trans (congrArg ((realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).toLieHom.comp)
+      (LieHom.ext fun Y ↦ (realSpinLieEquivUnitsRange_apply n Y).symm))
+  exact LieHom.congr_fun hcomp X
 
 /-- Evaluating the rotation differential on `realSpinProdDetLinearEquiv (X, a)` projects onto the
 Spin factor via `realSpinToSpecialOrthogonalLieEquiv`. -/
