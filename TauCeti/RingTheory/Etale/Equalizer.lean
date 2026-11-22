@@ -321,7 +321,8 @@ private theorem etale_and_finite_subalgebra :
   have hρ := Function.rightInverse_surjInv
     (MulAction.toEndHom (M := G) (α := S)).mrangeRestrict_surjective
   rw [subalgebra_eq_equalizer G (σ := Function.surjInv _ ∘ Subtype.val ∘ t.equivFin.symm)
-    (by rw [← Function.comp_assoc, hρ.comp_eq_id]; simpa [Set.range_comp])]
+    (by rw [← Function.comp_assoc, hρ.comp_eq_id, Function.id_comp, Set.range_comp,
+      t.equivFin.symm.range_eq_univ, Set.image_univ, Subtype.range_coe_subtype]; exact ht)]
   exact ⟨inferInstance, inferInstance⟩
 
 /-- **The invariants of a finite étale algebra under a monoid acting through a finitely generated

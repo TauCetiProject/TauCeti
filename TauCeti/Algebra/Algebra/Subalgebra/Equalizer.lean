@@ -86,13 +86,18 @@ theorem subalgebra_eq_equalizer {R S : Type*} [CommSemiring R] [Semiring S] [Alg
   -- The stabilizer of `s` in the image of the action is a submonoid, so it is the whole image
   -- once it contains the image of every `σ i`.
   refine ⟨fun h i ↦ (h (σ i)).symm, fun h g ↦ ?_⟩
+  -- An element of `G` and its image in the image of the action move `s` alike: by definition,
+  -- `MulAction.toEndHom g` is the map `(g • ·)`.
+  have key (g : G) : (MulAction.toEndHom (M := G) (α := S)).mrangeRestrict g • s = g • s := by
+    rw [Submonoid.smul_def, MonoidHom.coe_mrangeRestrict, Function.End.smul_def]
+    rfl
   have hs : Submonoid.closure
       (Set.range ((MulAction.toEndHom (M := G) (α := S)).mrangeRestrict ∘ σ)) ≤
         MulAction.stabilizerSubmonoid _ s :=
     Submonoid.closure_le.2 <| Set.range_subset_iff.2 fun i ↦
-      MulAction.mem_stabilizerSubmonoid_iff.2 (h i).symm
-  exact MulAction.mem_stabilizerSubmonoid_iff.1 (hs (hσ ▸ Submonoid.mem_top
-    ((MulAction.toEndHom (M := G) (α := S)).mrangeRestrict g)))
+      MulAction.mem_stabilizerSubmonoid_iff.2 ((key (σ i)).trans (h i).symm)
+  rw [← key, ← MulAction.mem_stabilizerSubmonoid_iff]
+  exact hs (hσ ▸ Submonoid.mem_top _)
 
 end TauCeti.FixedPoints
 
