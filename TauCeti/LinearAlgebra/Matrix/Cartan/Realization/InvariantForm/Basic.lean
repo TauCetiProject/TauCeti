@@ -141,6 +141,7 @@ theorem form_coroot_coroot (i j : I) :
   rw [B.form_coroot_right, R.root_coroot, Matrix.map_apply]
 
 /-- The squared norm of the `i`-th simple coroot is `2 / d i`. -/
+@[simp high]
 theorem form_coroot_self (i : I) : B.form (R.coroot i) (R.coroot i) = 2 / A.symmetrizer i := by
   simp [A.isGeneralizedCartan.diag]
 

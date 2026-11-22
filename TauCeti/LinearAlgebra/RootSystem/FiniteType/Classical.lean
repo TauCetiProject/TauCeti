@@ -256,7 +256,7 @@ private lemma simpleCorootsB_vecMul_injective (n : ℕ) :
 theorem isFiniteType_cartanMatrix_B (n : ℕ) : IsFiniteType (CartanMatrix.B n) := by
   refine isFiniteType_of (fun i ↦ CartanMatrix.B_diag n i)
     (fun i j hij ↦ CartanMatrix.B_off_diag_nonpos n i j hij)
-    (d := fun i ↦ if i.val + 1 < n then 1 else 2) (fun i ↦ by positivity) ?_
+    (d := fun i ↦ if i.val + 1 < n then 1 else 2) ?_
   rw [← simpleCorootsB_mul_conjTranspose]
   exact Matrix.PosDef.mul_conjTranspose_self _ (simpleCorootsB_vecMul_injective n)
 

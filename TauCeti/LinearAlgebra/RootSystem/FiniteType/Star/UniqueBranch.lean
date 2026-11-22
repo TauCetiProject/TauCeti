@@ -57,7 +57,7 @@ omit [DecidableEq B] in
 private lemma matrix_apply_eq_neg_one_iff_adj (h : IsFiniteType A) {i j : B} (hij : i ≠ j)
     (hsl : A i j = 0 ∨ A i j = -1) :
     A i j = -1 ↔ (diagramGraph A).Adj i j := by
-  rw [h.diagramGraph_adj_iff]
+  rw [h.isGeneralizedCartan.diagramGraph_adj_iff]
   constructor
   · exact fun hij' ↦ ⟨hij, by omega⟩
   · rintro ⟨-, hij'⟩

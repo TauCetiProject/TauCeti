@@ -242,7 +242,7 @@ theorem existsUnique_dynkinType_of_card_eq_two (h : IsFiniteType A) (hcard : Fin
     have := h.isGeneralizedCartan.offDiag_nonpos y x hxy.symm
     have := hconn y x hxy.symm
     omega
-  have hprod : 1 ≤ A x y * A y x := h.one_le_apply_mul_apply (hconn x y hxy)
+  have hprod : 1 ≤ A x y * A y x := h.isGeneralizedCartan.one_le_apply_mul_apply (hconn x y hxy)
   have hmem := h.apply_mul_apply_mem_of_ne hxy
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hmem
   -- Existence: the Cartan product names the type, and its two entries orient the edge.

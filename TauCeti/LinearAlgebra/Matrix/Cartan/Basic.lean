@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 
 /-!
 # Entries of Cartan matrices
 
-Entry characterizations of the standard Cartan matrices across arbitrary rank:
+Entry characterizations of the standard Cartan matrices across arbitrary rank, together with
+closure and Cartan-product lemmas for `Matrix.IsGeneralizedCartan`:
 
 * `CartanMatrix.A_apply_eq_neg_one_iff`: entries equal to `-1` in the type-`A` Cartan matrix are
   exactly consecutive pairs of indices.
@@ -24,6 +26,11 @@ Entry characterizations of the standard Cartan matrices across arbitrary rank:
   adjacent-root Serre relations.
 * `CartanMatrix.toNat_neg_G₂`: the exponents of the higher Serre relations of type `G₂` are `0`,
   `3`, `1` and `0`.
+* `Matrix.IsGeneralizedCartan.submatrix`, `Matrix.IsGeneralizedCartan.fromBlocks`,
+  `Matrix.IsGeneralizedCartan.transpose`, `Matrix.IsGeneralizedCartan.transpose_iff`, and
+  `Matrix.IsGeneralizedCartan.one_le_apply_mul_apply`: closure of generalized Cartan matrices under
+  injective principal submatrices, block-diagonal sums, and transposition, plus the lower bound
+  `1 ≤ A i j * A j i` for nonzero entries.
 -/
 
 public section
@@ -72,3 +79,57 @@ theorem toNat_neg_G₂ : (-G₂ 0 0).toNat = 0 ∧ (-G₂ 0 1).toNat = 3 ∧
   decide
 
 end CartanMatrix
+
+namespace Matrix.IsGeneralizedCartan
+
+variable {ι κ : Type*} {A : Matrix ι ι ℤ}
+
+/-- A principal submatrix of a generalized Cartan matrix along an injective index map is a
+generalized Cartan matrix. -/
+protected theorem submatrix (h : A.IsGeneralizedCartan) {e : κ → ι}
+    (he : Function.Injective e) :
+    (A.submatrix e e).IsGeneralizedCartan where
+  diag i := h.diag (e i)
+  offDiag_nonpos i j hij := h.offDiag_nonpos (e i) (e j) (he.ne hij)
+  zero_comm i j := h.zero_comm (e i) (e j)
+
+/-- The block-diagonal matrix of two generalized Cartan matrices is a generalized Cartan
+matrix. -/
+protected theorem fromBlocks {B : Matrix κ κ ℤ} (hA : A.IsGeneralizedCartan)
+    (hB : B.IsGeneralizedCartan) :
+    (Matrix.fromBlocks A 0 0 B).IsGeneralizedCartan where
+  diag := by rintro (i | i) <;> simp [hA.diag, hB.diag]
+  offDiag_nonpos := by
+    rintro (i | i) (j | j) hij
+    · simpa using hA.offDiag_nonpos i j fun h ↦ hij (congrArg Sum.inl h)
+    · simp
+    · simp
+    · simpa using hB.offDiag_nonpos i j fun h ↦ hij (congrArg Sum.inr h)
+  zero_comm := by rintro (i | i) (j | j) <;> simp [hA.zero_comm, hB.zero_comm]
+
+/-- The transpose of a generalized Cartan matrix is a generalized Cartan matrix. -/
+protected theorem transpose (h : A.IsGeneralizedCartan) : Aᵀ.IsGeneralizedCartan where
+  diag i := h.diag i
+  offDiag_nonpos i j hij := h.offDiag_nonpos j i hij.symm
+  zero_comm i j := h.zero_comm j i
+
+@[simp]
+protected theorem transpose_iff : Aᵀ.IsGeneralizedCartan ↔ A.IsGeneralizedCartan :=
+  ⟨fun h ↦ by simpa using h.transpose, IsGeneralizedCartan.transpose⟩
+
+/-- **A nonzero entry has Cartan product at least `1`.** Off the diagonal both entries of such a
+transposed pair are at most `-1`: they are nonpositive, and neither vanishes, because the vanishing
+pattern is symmetric. On the diagonal the product is `2 * 2`. -/
+theorem one_le_apply_mul_apply (h : A.IsGeneralizedCartan) {i j : ι} (hne : A i j ≠ 0) :
+    1 ≤ A i j * A j i := by
+  rcases eq_or_ne i j with rfl | hij
+  · rw [h.diag]; norm_num
+  have hi : A i j ≤ -1 := by have := h.offDiag_nonpos i j hij; omega
+  have hj : A j i ≤ -1 := by
+    have hle := h.offDiag_nonpos j i hij.symm
+    have hne' : A j i ≠ 0 := fun hc ↦ hne ((h.zero_comm i j).mpr hc)
+    omega
+  rw [← neg_mul_neg]
+  exact one_le_mul_of_one_le_of_one_le (by omega) (by omega)
+
+end Matrix.IsGeneralizedCartan

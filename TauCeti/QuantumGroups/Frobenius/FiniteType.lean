@@ -91,30 +91,6 @@ theorem posDef_symmetrizedMatrix_modifiedDatum_iff {L : ℕ} (hL : 0 < L) :
   convert A.posDef_mul_modifiedDatum_cartan_iff hL (fun i ↦ (A.symmetrizer i : ℚ)) using 2 <;>
     ext i j <;> simp
 
-/-- Modifying a symmetrizable datum preserves `TauCeti.IsFiniteType`. -/
-@[simp]
-theorem isFiniteType_modifiedDatum_iff {L : ℕ} (hL : 0 < L) :
-    IsFiniteType (A.modifiedDatum L hL).cartan ↔ IsFiniteType A.cartan := by
-  have hw (i : I) : (0 : ℚ) < A.frobeniusOrder L i := Nat.cast_pos.mpr (A.frobeniusOrder_pos hL i)
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have := h.finite
-    obtain ⟨d, hd, hpd⟩ := h.exists_symmetrizer
-    refine isFiniteType_of A.isGeneralizedCartan.diag A.isGeneralizedCartan.offDiag_nonpos
-      (d := fun i ↦ d i / (A.frobeniusOrder L i : ℚ) ^ 2)
-      (fun i ↦ div_pos (hd i) (pow_pos (hw i) 2))
-      ((A.posDef_mul_modifiedDatum_cartan_iff hL _).mp ?_)
-    convert hpd using 1
-    ext i j
-    rw [_root_.Matrix.of_apply, _root_.Matrix.of_apply,
-      mul_div_cancel₀ _ (pow_ne_zero 2 (hw i).ne')]
-  · have := h.finite
-    obtain ⟨d, hd, hpd⟩ := h.exists_symmetrizer
-    exact isFiniteType_of (A.modifiedDatum L hL).isGeneralizedCartan.diag
-      (A.modifiedDatum L hL).isGeneralizedCartan.offDiag_nonpos
-      (d := fun i ↦ (A.frobeniusOrder L i : ℚ) ^ 2 * d i)
-      (fun i ↦ mul_pos (pow_pos (hw i) 2) (hd i))
-      ((A.posDef_mul_modifiedDatum_cartan_iff hL d).mpr hpd)
-
 /-- Modifying a symmetrizable datum preserves Mathlib's `Matrix.IsFiniteCartan`. -/
 theorem isFiniteCartan_modifiedDatum [Fintype I] [DecidableEq I]
     (hM : A.cartan.IsFiniteCartan) {L : ℕ} (hL : 0 < L) :
@@ -130,6 +106,26 @@ theorem isFiniteCartan_modifiedDatum [Fintype I] [DecidableEq I]
   convert (A.posDef_mul_modifiedDatum_cartan_iff hL fun i ↦ (d i : ℚ)).mpr hpd' using 1
   ext i j
   simp [mul_assoc]
+
+/-- Modifying a symmetrizable datum preserves `TauCeti.IsFiniteType`. -/
+@[simp]
+theorem isFiniteType_modifiedDatum_iff {L : ℕ} (hL : 0 < L) :
+    IsFiniteType (A.modifiedDatum L hL).cartan ↔ IsFiniteType A.cartan := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have hw (i : I) : (0 : ℚ) < A.frobeniusOrder L i := Nat.cast_pos.mpr (A.frobeniusOrder_pos hL i)
+    have := h.finite
+    obtain ⟨d, -, hpd⟩ := h.exists_symmetrizer
+    refine isFiniteType_of A.isGeneralizedCartan.diag A.isGeneralizedCartan.offDiag_nonpos
+      (d := fun i ↦ d i / (A.frobeniusOrder L i : ℚ) ^ 2)
+      ((A.posDef_mul_modifiedDatum_cartan_iff hL _).mp ?_)
+    convert hpd using 1
+    ext i j
+    rw [_root_.Matrix.of_apply, _root_.Matrix.of_apply,
+      mul_div_cancel₀ _ (pow_ne_zero 2 (hw i).ne')]
+  · have := h.finite
+    classical
+    have _ : Fintype I := Fintype.ofFinite I
+    exact (A.isFiniteCartan_modifiedDatum h.isFiniteCartan hL).isFiniteType
 
 /-- In finite type, the diagram is automatically bipartite (since it is acyclic), so Lusztig's
 conditions reduce to the inequalities `1 - aᵢⱼ ≤ ℓᵢ` for `i ≠ j` with `2 ≤ ℓⱼ`. -/

@@ -150,6 +150,7 @@ theorem dualForm_root_root (i j : I) :
   exact_mod_cast (A.symmetrizedMatrix_apply i j).symm
 
 /-- The squared norm of the `i`-th simple root is `2 * d i`. -/
+@[simp high]
 theorem dualForm_root_self (i : I) :
     B.dualForm hB (R.root i) (R.root i) = 2 * A.symmetrizer i := by
   simp [A.isGeneralizedCartan.diag, mul_comm]

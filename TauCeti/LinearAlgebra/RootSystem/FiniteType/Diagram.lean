@@ -74,9 +74,9 @@ variable {B : Type*} {A : Matrix B B ℤ}
 when both entries of the transposed pair are nonzero.
 
 For a generalized Cartan matrix, and so for a matrix of finite type, one of the two entries is
-nonzero exactly when the other is (`TauCeti.IsFiniteType.diagramGraph_adj_iff`), and the definition
-is the expected one. Asking for both is what makes the relation symmetric for an arbitrary matrix,
-where it is the diagram of the symmetrized vanishing pattern; the symmetrization that
+nonzero exactly when the other is (`Matrix.IsGeneralizedCartan.diagramGraph_adj_iff`), and the
+definition is the expected one. Asking for both is what makes the relation symmetric for an
+arbitrary matrix, where it is the diagram of the symmetrized vanishing pattern; the symmetrization
 `SimpleGraph.fromRel` performs is then a duplication, and `TauCeti.diagramGraph_adj` reads the
 adjacency back off. -/
 def diagramGraph (A : Matrix B B ℤ) : SimpleGraph B :=
@@ -191,16 +191,16 @@ theorem not_diagramGraph_D_adj {n : ℕ} (hn : n < 3) (i j : Fin n) :
   have hn' : n ≤ 2 := by omega
   simp [CartanMatrix.D, hn', hij] at h
 
-namespace IsFiniteType
-
-
-/-- **Adjacency in the diagram of a finite-type matrix is a single nonvanishing condition**, the
-vanishing pattern of such a matrix being symmetric. -/
-theorem diagramGraph_adj_iff (h : IsFiniteType A) {i j : B} :
+/-- **Adjacency in the diagram of a generalized Cartan matrix is a single nonvanishing condition**,
+the vanishing pattern of such a matrix being symmetric. -/
+theorem _root_.Matrix.IsGeneralizedCartan.diagramGraph_adj_iff (h : A.IsGeneralizedCartan)
+    {i j : B} :
     (diagramGraph A).Adj i j ↔ i ≠ j ∧ A i j ≠ 0 := by
   rw [diagramGraph_adj]
   exact ⟨fun hadj ↦ ⟨hadj.1, hadj.2.1⟩,
-    fun hadj ↦ ⟨hadj.1, hadj.2, fun hc ↦ hadj.2 ((h.isGeneralizedCartan.zero_comm _ _).mpr hc)⟩⟩
+    fun hadj ↦ ⟨hadj.1, hadj.2, fun hc ↦ hadj.2 ((h.zero_comm _ _).mpr hc)⟩⟩
+
+namespace IsFiniteType
 
 /-- **The diagram of a finite-type matrix is a forest.** No walk of the diagram that returns to its
 start is a cycle.
@@ -245,14 +245,14 @@ theorem exists_chain_of_reachable (h : IsFiniteType A) {u v : B}
   · exact q.getVert_length
   · exact hq.getVert_injOn
   · intro i hi
-    exact (h.diagramGraph_adj_iff.mp (q.adj_getVert_succ hi)).2
+    exact (h.isGeneralizedCartan.diagramGraph_adj_iff.mp (q.adj_getVert_succ hi)).2
   · intro i j hij hj
     by_contra hne
     have hne' : q.getVert i ≠ q.getVert j := fun heq ↦ by
       have := hq.getVert_injOn (by omega : i ≤ q.length) hj heq
       omega
     exact h.isAcyclic_diagramGraph.not_adj_getVert_of_add_one_lt hq hij hj
-      (h.diagramGraph_adj_iff.mpr ⟨hne', hne⟩)
+      (h.isGeneralizedCartan.diagramGraph_adj_iff.mpr ⟨hne', hne⟩)
 
 /-- **The degree bound in graph form**: no index of a finite-type matrix has four neighbours in the
 diagram, so a finite-type diagram branches into at most three arms. -/

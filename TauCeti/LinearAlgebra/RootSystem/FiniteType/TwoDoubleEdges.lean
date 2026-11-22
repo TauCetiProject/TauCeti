@@ -313,7 +313,7 @@ variable {B : Type*} {A : Matrix B B ℤ}
 double is the doubly ended chain**, as a principal submatrix. The orientation of the last edge is
 recorded by the boolean `b`, which the two hypotheses `hlast` and `hlast'` read in the two entries
 of that edge. -/
-private theorem submatrix_eq_twoDoubleEdgeCartanMatrix (h : IsFiniteType A) {v : ℕ → B}
+private theorem submatrix_eq_twoDoubleEdgeCartanMatrix (h : A.IsGeneralizedCartan) {v : ℕ → B}
     (hzero : ∀ s t, s + 1 < t → t < m + 3 → A (v s) (v t) = 0)
     (hsimple : ∀ s, 0 < s → s < m + 1 → A (v s) (v (s + 1)) = -1 ∧ A (v (s + 1)) (v s) = -1)
     (hfirst : A (v 1) (v 0) = -2) (hfirst' : A (v 0) (v 1) = -1)
@@ -342,11 +342,11 @@ private theorem submatrix_eq_twoDoubleEdgeCartanMatrix (h : IsFiniteType A) {v :
         rw [htop', hlast]
         split_ifs <;> first | omega | simp_all
   · -- The diagonal.
-    rw [heq, h.isGeneralizedCartan.diag, chainEntry_self]
+    rw [heq, h.diag, chainEntry_self]
     split_ifs <;> omega
   · -- Above the diagonal, the same three cases read backwards.
     rcases Nat.lt_or_ge ((j : ℕ) + 1) (i : ℕ) with hfar | hnear
-    · rw [(h.isGeneralizedCartan.zero_comm _ _).mpr (hzero _ _ hfar hi),
+    · rw [(h.zero_comm _ _).mpr (hzero _ _ hfar hi),
         chainEntry_eq_zero (by omega) (by omega) (by omega)]
       split_ifs <;> omega
     · have hsucc : (i : ℕ) = (j : ℕ) + 1 := by omega
@@ -378,13 +378,13 @@ private theorem not_two_le_of_chain_of_apply_eq_neg_two (h : IsFiniteType A)
     (h.isGeneralizedCartan.offDiag_nonpos _ _ hne) hlast
   · -- The two double edges point the same way along the chain.
     refine not_isFiniteType_twoDoubleEdgeCartanMatrix m false ?_
-    rw [← submatrix_eq_twoDoubleEdgeCartanMatrix h hzero hsimple hfirst hfirst'
+    rw [← submatrix_eq_twoDoubleEdgeCartanMatrix h.isGeneralizedCartan hzero hsimple hfirst hfirst'
       (by simpa using h1) (by simpa using h2)]
     exact h.submatrix fun i j hij ↦ Fin.ext
       (hv (Set.mem_Iio.2 i.isLt) (Set.mem_Iio.2 j.isLt) hij)
   · -- The two double edges point outwards towards the chain ends.
     refine not_isFiniteType_twoDoubleEdgeCartanMatrix m true ?_
-    rw [← submatrix_eq_twoDoubleEdgeCartanMatrix h hzero hsimple hfirst hfirst'
+    rw [← submatrix_eq_twoDoubleEdgeCartanMatrix h.isGeneralizedCartan hzero hsimple hfirst hfirst'
       (by simpa using h1) (by simpa using h2)]
     exact h.submatrix fun i j hij ↦ Fin.ext
       (hv (Set.mem_Iio.2 i.isLt) (Set.mem_Iio.2 j.isLt) hij)

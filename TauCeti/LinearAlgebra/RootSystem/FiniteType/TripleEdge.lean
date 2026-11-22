@@ -71,19 +71,19 @@ theorem eq_or_eq_of_apply_mul_apply_eq_three (h : IsFiniteType A)
     · subst v
       have hw : w = j := by
         by_contra hwj
-        have hiw : i ≠ w := (h.diagramGraph_adj_iff.mp hvw).1
+        have hiw : i ≠ w := (h.isGeneralizedCartan.diagramGraph_adj_iff.mp hvw).1
         have hzero := h.apply_eq_zero_of_apply_mul_apply_eq_three hiw (Ne.symm hwj) hij
-        exact (h.diagramGraph_adj_iff.mp hvw).2 hzero
+        exact (h.isGeneralizedCartan.diagramGraph_adj_iff.mp hvw).2 hzero
       subst w
       simpa only [H, SimpleGraph.Subgraph.induce_adj, SimpleGraph.Subgraph.top_adj,
         Set.mem_insert_iff, Set.mem_singleton_iff, true_or, or_true, true_and] using hvw
     · subst v
       have hw : w = i := by
         by_contra hwi
-        have hjw : j ≠ w := (h.diagramGraph_adj_iff.mp hvw).1
+        have hjw : j ≠ w := (h.isGeneralizedCartan.diagramGraph_adj_iff.mp hvw).1
         have hzero := h.apply_eq_zero_of_apply_mul_apply_eq_three hjw (Ne.symm hwi) (by
           simpa [mul_comm] using hij)
-        exact (h.diagramGraph_adj_iff.mp hvw).2 hzero
+        exact (h.isGeneralizedCartan.diagramGraph_adj_iff.mp hvw).2 hzero
       subst w
       simpa only [H, SimpleGraph.Subgraph.induce_adj, SimpleGraph.Subgraph.top_adj,
         Set.mem_insert_iff, Set.mem_singleton_iff, true_or, or_true, true_and] using hvw

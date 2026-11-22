@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Algebra.GCDMonoid.Finset
 public import Mathlib.Algebra.GCDMonoid.Nat
-public import Mathlib.LinearAlgebra.Matrix.Block
-public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Basic
 
 import Mathlib.Tactic.LinearCombination
 
@@ -115,6 +114,7 @@ theorem symmetrizedMatrix_apply (i j : I) :
   (rfl)
 
 /-- The diagonal entries of the symmetrized matrix are `2 * d i`. -/
+@[simp high]
 theorem symmetrizedMatrix_apply_self (i : I) :
     A.symmetrizedMatrix i i = 2 * A.symmetrizer i := by
   rw [symmetrizedMatrix_apply, A.isGeneralizedCartan.diag, mul_comm]
@@ -145,11 +145,7 @@ the symmetrizer `d (f i)`. For the inclusion of a subset `J ⊆ I` this is the L
 `J`. -/
 def restrict (f : J ↪ I) : SymmetrizableDatum J where
   cartan := A.cartan.submatrix f f
-  isGeneralizedCartan :=
-    { diag i := A.isGeneralizedCartan.diag (f i)
-      offDiag_nonpos i j hij :=
-        A.isGeneralizedCartan.offDiag_nonpos (f i) (f j) (f.injective.ne hij)
-      zero_comm i j := A.isGeneralizedCartan.zero_comm (f i) (f j) }
+  isGeneralizedCartan := A.isGeneralizedCartan.submatrix f.injective
   symmetrizer := A.symmetrizer ∘ f
   symmetrizer_pos i := A.symmetrizer_pos (f i)
   symmetrizes i j := A.symmetrizes (f i) (f j)
@@ -212,17 +208,7 @@ theorem reindex_reindex (e : I ≃ I') (e' : I' ≃ I'') :
 block-diagonal matrix of the two matrices, with the two symmetrizers side by side. -/
 def sum (A' : SymmetrizableDatum J) : SymmetrizableDatum (I ⊕ J) where
   cartan := fromBlocks A.cartan 0 0 A'.cartan
-  isGeneralizedCartan :=
-    { diag := by rintro (i | i) <;> simp [A.isGeneralizedCartan.diag, A'.isGeneralizedCartan.diag]
-      offDiag_nonpos := by
-        rintro (i | i) (j | j) hij
-        · simpa using A.isGeneralizedCartan.offDiag_nonpos i j fun h => hij (congrArg Sum.inl h)
-        · simp
-        · simp
-        · simpa using A'.isGeneralizedCartan.offDiag_nonpos i j fun h => hij (congrArg Sum.inr h)
-      zero_comm := by
-        rintro (i | i) (j | j) <;>
-          simp [A.isGeneralizedCartan.zero_comm, A'.isGeneralizedCartan.zero_comm] }
+  isGeneralizedCartan := A.isGeneralizedCartan.fromBlocks A'.isGeneralizedCartan
   symmetrizer := Sum.elim A.symmetrizer A'.symmetrizer
   symmetrizer_pos := by rintro (i | i) <;> simp [A.symmetrizer_pos, A'.symmetrizer_pos]
   symmetrizes := by rintro (i | i) (j | j) <;> simp [A.symmetrizes, A'.symmetrizes]
