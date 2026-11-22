@@ -80,8 +80,8 @@ variable
 exponential map is naturally defined. -/
 theorem contMDiffOn_prodMk_proj_riemannianExp :
     ContMDiffOn I.tangent (I.prod I) ∞
-      (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2))
-      {z | z.2 ∈ expDomain I M z.proj} :=
+      (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd))
+      {z | z.snd ∈ expDomain I M z.proj} :=
   (Bundle.contMDiff_proj (TangentSpace I)).contMDiffOn.prodMk
     contMDiffOn_riemannianExp_tangentBundle
 
@@ -90,10 +90,10 @@ tangent space of `TM` at `0_p` into horizontal and vertical parts, it sends `(u,
 `(u, u + v)`. -/
 theorem mfderiv_prodMk_proj_riemannianExp_zeroSection_apply (p : M) (u v : TangentSpace I p) :
     mfderiv I.tangent (I.prod I)
-      (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2))
+      (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd))
       (zeroSection E (TangentSpace I) p)
       ((TauCeti.Bundle.zeroSectionTangentEquiv (I := I) p).symm (u, v)) = (u, u + v) := by
-  set F := fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)
+  set F := fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd)
   have hFd : MDifferentiableAt I.tangent (I.prod I) F (zeroSection E (TangentSpace I) p) :=
     ((contMDiffOn_prodMk_proj_riemannianExp _ (zero_mem_expDomain p)).contMDiffAt
       (isOpen_setOfPred_mem_expDomain.mem_nhds (zero_mem_expDomain p))).mdifferentiableAt
@@ -131,7 +131,7 @@ theorem mfderiv_prodMk_proj_riemannianExp_zeroSection_apply (p : M) (u v : Tange
 tangent bundle to `M × M` is a local diffeomorphism at every zero vector. -/
 theorem isLocalDiffeomorphAt_prodMk_proj_riemannianExp_zeroSection (p : M) :
     IsLocalDiffeomorphAt I.tangent (I.prod I) ∞
-      (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2))
+      (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd))
       (zeroSection E (TangentSpace I) p) := by
   let e := TauCeti.Bundle.zeroSectionTangentEquiv (I := I) (F := E) (V := TangentSpace I) p
   let A : (TangentSpace I p × TangentSpace I p) ≃L[ℝ] (TangentSpace I p × TangentSpace I p) :=
@@ -152,9 +152,9 @@ fibre over `q`: the differential of `exp_q` is the vertical part of an invertibl
 theorem isLocalDiffeomorphAt_riemannianExp_of_prodMk {q : M} {v : TangentSpace I q}
     (hv : v ∈ expDomain I M q)
     (h : IsLocalDiffeomorphAt I.tangent (I.prod I) ∞
-      (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)) ⟨q, v⟩) :
+      (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd)) ⟨q, v⟩) :
     IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I q) I ∞ (riemannianExp I M q) v := by
-  set F := fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)
+  set F := fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd)
   let ι : TangentSpace I q → TangentBundle I M := TotalSpace.mk q
   have hFinv := h.isInvertible_mfderiv (by simp)
   have hFd := h.mdifferentiableAt (by simp)
@@ -192,15 +192,15 @@ theorem isLocalDiffeomorphAt_prodMk_proj_riemannianExp {q : M} {v : TangentSpace
     (hv : v ∈ expDomain I M q)
     (h : IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I q) I ∞ (riemannianExp I M q) v) :
     IsLocalDiffeomorphAt I.tangent (I.prod I) ∞
-      (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)) ⟨q, v⟩ := by
+      (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd)) ⟨q, v⟩ := by
   set z : TangentBundle I M := ⟨q, v⟩
   let ι : TangentSpace I q → TangentBundle I M := TotalSpace.mk q
-  have hzO : z ∈ {z : TangentBundle I M | z.2 ∈ expDomain I M z.proj} := hv
+  have hzO : z ∈ {z : TangentBundle I M | z.snd ∈ expDomain I M z.proj} := hv
   have hOopen := isOpen_setOfPred_mem_expDomain (I := I) (M := M)
   have hπd : MDifferentiableAt I.tangent I (π E (TangentSpace I)) z :=
     (Bundle.contMDiff_proj (TangentSpace I) z).mdifferentiableAt one_ne_zero
   have hexpd : MDifferentiableAt I.tangent I (fun z : TangentBundle I M ↦
-      riemannianExp I M z.proj z.2) z :=
+      riemannianExp I M z.proj z.snd) z :=
     ((contMDiffOn_riemannianExp_tangentBundle z hzO).contMDiffAt
       (hOopen.mem_nhds hzO)).mdifferentiableAt (by simp)
   have hιd : MDifferentiableAt 𝓘(ℝ, TangentSpace I q) I.tangent ι v :=
@@ -215,7 +215,7 @@ theorem isLocalDiffeomorphAt_prodMk_proj_riemannianExp {q : M} {v : TangentSpace
   obtain ⟨w, rfl⟩ : ξ ∈ (mfderiv 𝓘(ℝ, TangentSpace I q) I.tangent ι v).range := by
     rw [← ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk]
     exact hξ.1
-  have hfun : ((fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2) ∘ ι) =
+  have hfun : ((fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.snd) ∘ ι) =
       riemannianExp I M q := rfl
   rw [ContinuousLinearMap.coe_coe, ← mfderiv_comp_apply v hexpd hιd, hfun] at hξ
   rw [(h.isInvertible_mfderiv (by simp)).injective.eq_iff' (map_zero _) |>.1 hξ.2, map_zero]
@@ -225,7 +225,7 @@ theorem isLocalDiffeomorphAt_prodMk_proj_riemannianExp {q : M} {v : TangentSpace
 theorem isLocalDiffeomorphAt_prodMk_proj_riemannianExp_iff {q : M} {v : TangentSpace I q}
     (hv : v ∈ expDomain I M q) :
     IsLocalDiffeomorphAt I.tangent (I.prod I) ∞
-        (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)) ⟨q, v⟩ ↔
+        (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd)) ⟨q, v⟩ ↔
       IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I q) I ∞ (riemannianExp I M q) v :=
   ⟨isLocalDiffeomorphAt_riemannianExp_of_prodMk hv,
     isLocalDiffeomorphAt_prodMk_proj_riemannianExp hv⟩
@@ -240,8 +240,8 @@ theorem isLocalDiffeomorphOn_prodMk_proj_riemannianExp
     (hloc : ∀ q ∈ W,
       IsLocalDiffeomorphOn 𝓘(ℝ, TangentSpace I q) I ∞ (riemannianExp I M q) (Metric.ball 0 r)) :
     IsLocalDiffeomorphOn I.tangent (I.prod I) ∞
-      (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2))
-      {z | z.proj ∈ W ∧ ‖z.2‖ < r} := by
+      (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd))
+      {z | z.proj ∈ W ∧ ‖z.snd‖ < r} := by
   rintro ⟨⟨q, v⟩, hq, hv⟩
   have hvr : v ∈ Metric.ball 0 r := mem_ball_zero_iff.2 hv
   exact isLocalDiffeomorphAt_prodMk_proj_riemannianExp (hsub q hq hvr) (hloc q hq ⟨v, hvr⟩)
@@ -252,8 +252,8 @@ omit [I.Boundaryless] [T2Space M] in
 injective. -/
 theorem injOn_prodMk_proj_riemannianExp
     (hW : ∀ q ∈ W, InjOn (riemannianExp I M q) (Metric.ball 0 r)) :
-    InjOn (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2))
-      {z | z.proj ∈ W ∧ ‖z.2‖ < r} := by
+    InjOn (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd))
+      {z | z.proj ∈ W ∧ ‖z.snd‖ < r} := by
   rintro ⟨q, v⟩ ⟨hq, hv⟩ ⟨q', v'⟩ ⟨-, hv'⟩ h
   obtain ⟨rfl, h⟩ := Prod.mk.inj h
   exact congrArg (TotalSpace.mk q) (hW q hq (mem_ball_zero_iff.2 hv) (mem_ball_zero_iff.2 hv') h)
@@ -262,8 +262,8 @@ omit [I.Boundaryless] [T2Space M] in
 /-- The image of the tube of tangent vectors of norm less than `r` over `W` under
 `(x, v) ↦ (x, exp_x v)` consists of the pairs `(x, y)` with `x ∈ W` and `y ∈ exp_x '' B(0, r)`. -/
 theorem image_prodMk_proj_riemannianExp_setOf_norm_lt :
-    (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)) ''
-        {z | z.proj ∈ W ∧ ‖z.2‖ < r} =
+    (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd)) ''
+        {z | z.proj ∈ W ∧ ‖z.snd‖ < r} =
       {x : M × M | x.1 ∈ W ∧ x.2 ∈ riemannianExp I M x.1 '' Metric.ball 0 r} := by
   ext ⟨x, y⟩
   constructor

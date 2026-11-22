@@ -104,8 +104,8 @@ variable (k H) in
 `I / J`. -/
 private noncomputable def augmentationValue (x : congruenceSubgroup k H I) :
     AugmentationIdeal k H →ₗ[k] I.map (Ideal.Quotient.mk J) where
-  toFun a := ⟨Ideal.Quotient.mk J (x.1.ofConv a),
-    Ideal.mem_map_of_mem _ (apply_mem_of_mem_augmentationIdeal x.2 a)⟩
+  toFun a := ⟨Ideal.Quotient.mk J (x.val.ofConv a),
+    Ideal.mem_map_of_mem _ (apply_mem_of_mem_augmentationIdeal x.property a)⟩
   map_add' a b := by ext; simp
   map_smul' c a := by ext; simp [Algebra.smul_def]
 
@@ -116,13 +116,13 @@ private noncomputable def cotangentValue (hIJ : I * I ≤ J) (x : congruenceSubg
   Ideal.Cotangent.lift (augmentationValue k H x) fun a b ↦ by
     ext
     simpa [augmentationValue, ← map_mul, Ideal.Quotient.eq_zero_iff_mem] using
-      hIJ (Ideal.mul_mem_mul (apply_mem_of_mem_augmentationIdeal x.2 a)
-        (apply_mem_of_mem_augmentationIdeal x.2 b))
+      hIJ (Ideal.mul_mem_mul (apply_mem_of_mem_augmentationIdeal x.property a)
+        (apply_mem_of_mem_augmentationIdeal x.property b))
 
 private theorem coe_cotangentValue_cotangentMap (hIJ : I * I ≤ J) (x : congruenceSubgroup k H I)
     (h : H) :
     (cotangentValue k H hIJ x (cotangentMap k H h) : R ⧸ J) =
-      Ideal.Quotient.mk J (x.1.ofConv h - algebraMap k R (counit h)) := by
+      Ideal.Quotient.mk J (x.val.ofConv h - algebraMap k R (counit h)) := by
   rw [cotangentMap_apply, cotangentValue, Ideal.Cotangent.lift_toCotangent]
   simp [augmentationValue]
 
@@ -147,7 +147,7 @@ noncomputable def congruenceCotangentHom (hIJ : I * I ≤ J) :
     simp only [toAdd_ofAdd, toAdd_mul, LinearMap.add_apply, Submodule.coe_add,
       coe_cotangentValue_cotangentMap, Subgroup.coe_mul, ← map_add]
     rw [Ideal.Quotient.eq]
-    convert hIJ (mul_apply_sub_mem x.2 y.2 h) using 1
+    convert hIJ (mul_apply_sub_mem x.property y.property h) using 1
     ring
 
 /-- The linear map of a point `x ∈ G(R)_I` sends the cotangent class of `h` to `x(h) - ε(h)`
@@ -156,7 +156,7 @@ modulo `J`. -/
 theorem coe_congruenceCotangentHom_apply_cotangentMap (hIJ : I * I ≤ J)
     (x : congruenceSubgroup k H I) (h : H) :
     ((congruenceCotangentHom k H hIJ x).toAdd (cotangentMap k H h) : R ⧸ J) =
-      Ideal.Quotient.mk J (x.1.ofConv h - algebraMap k R (counit h)) :=
+      Ideal.Quotient.mk J (x.val.ofConv h - algebraMap k R (counit h)) :=
   coe_cotangentValue_cotangentMap hIJ x h
 
 /-- A point of `G(R)_I` gives the zero linear map exactly when it lies in `G(R)_J`. -/
@@ -181,7 +181,7 @@ private noncomputable def cotangentDerivation
   Derivation.mk'
     { toFun h := ⟨(CounitAlgebra.algEquivSelf k H (R ⧸ J)).symm (f (cotangentMap k H h)), by
         rw [Ideal.mem_comap, AlgEquiv.apply_symm_apply]
-        exact (f _).2⟩
+        exact (f _).property⟩
       map_add' a b := by ext; simp [-CounitAlgebra.algEquivSelf_symm_apply]
       map_smul' c a := by ext; simp [-CounitAlgebra.algEquivSelf_symm_apply] }
     fun a b ↦ by
@@ -237,7 +237,7 @@ theorem congruenceCotangentHom_surjective (hIJ : I * I ≤ J) (hJI : J ≤ I)
     rw [map_sub, hxh, Ideal.Quotient.mk_algebraMap, add_sub_cancel_left]
   have hmem : toConv x ∈ congruenceSubgroup k H I := by
     refine mem_congruenceSubgroup_iff.2 fun h ↦ ?_
-    have hf := (f.toAdd (cotangentMap k H h)).2
+    have hf := (f.toAdd (cotangentMap k H h)).property
     rwa [← hval, Ideal.mem_quotient_iff_mem_sup, sup_eq_left.2 hJI] at hf
   refine ⟨⟨toConv x, hmem⟩, Multiplicative.toAdd.injective (LinearMap.ext fun c ↦ ?_)⟩
   obtain ⟨h, rfl⟩ := (cotangentMap_surjective k H) c

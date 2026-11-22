@@ -119,7 +119,7 @@ private theorem awayToLocalization_mem (ha : a ∈ I)
     (z : Away (grade I) (monomialDegreeOne ha)) :
     awayToLocalization S ha z ∈ I.affineBlowup a S := by
   obtain ⟨n, x, hx, rfl⟩ := Away.mk_surjective (grade I) (monomialDegreeOne_mem_grade ha) z
-  exact (Ideal.mem_affineBlowup_iff ha).mpr ⟨n, _, (mem_reesAlgebra_iff I _).mp x.2 n,
+  exact (Ideal.mem_affineBlowup_iff ha).mpr ⟨n, _, (mem_reesAlgebra_iff I _).mp x.property n,
     algebraMap_pow_mul_awayToLocalization_mk S ha hx⟩
 
 private theorem exists_awayToLocalization_eq (ha : a ∈ I) {w : S}
@@ -135,7 +135,7 @@ private theorem bijective_awayToLocalization_codRestrict (ha : a ∈ I) :
     Function.Bijective
       ((awayToLocalization S ha).codRestrict _ (awayToLocalization_mem S ha)) :=
   ⟨fun _ _ h ↦ awayToLocalization_injective S ha (congr_arg Subtype.val h),
-    fun w ↦ (exists_awayToLocalization_eq S ha w.2).imp fun _ h ↦ Subtype.ext h⟩
+    fun w ↦ (exists_awayToLocalization_eq S ha w.property).imp fun _ h ↦ Subtype.ext h⟩
 
 /-- **The affine charts of the blowup.** For `a ∈ I`, the homogeneous localization
 `R[It]_(a t)` of the Rees algebra, the coordinate ring of the standard affine open `D₊(a t)` of
