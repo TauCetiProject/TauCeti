@@ -32,8 +32,7 @@ polylogarithms. In weight one the domain `{z | 1 - z ∈ Complex.slitPlane}` is 
 
 ## Main results
 
-* `TauCeti.Polylog.hasDerivAt_polylog_one`, `TauCeti.Polylog.deriv_polylog_one`, and
-  `TauCeti.Polylog.hasDerivAt_polylog_nat_add_two`:
+* `TauCeti.Polylog.hasDerivAt_polylog_one` and `TauCeti.Polylog.hasDerivAt_polylog_nat_add_two`:
   complex derivatives of weight one and weights `k + 2` on `{z | 1 - z ∈ Complex.slitPlane}`.
 * `TauCeti.Polylog.differentiableAt_polylog`, `TauCeti.Polylog.differentiableOn_polylog`,
   `TauCeti.Polylog.analyticAt_polylog`, and `TauCeti.Polylog.analyticOnNhd_polylog`:
@@ -75,11 +74,6 @@ theorem hasDerivAt_polylog_one {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
   · ext w
     simp [polylog_one]
   · ring
-
-/-- On the principal domain `{z | 1 - z ∈ Complex.slitPlane}`, `deriv (polylog 1) z = (1 - z)⁻¹`. -/
-theorem deriv_polylog_one {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
-    deriv (polylog 1) z = (1 - z)⁻¹ :=
-  (hasDerivAt_polylog_one hz).deriv
 
 /-- On the principal domain `{z | 1 - z ∈ Complex.slitPlane}`, `polylog (k + 2)` has complex
 derivative `(k !)⁻¹ * ∫ t in 0..1, (-Real.log t) ^ k / (1 - t * z)`. -/
