@@ -7,20 +7,18 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Base
 public import TauCeti.LinearAlgebra.RootSystem.Dominance
+import TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced.Dominance
 
 /-!
-# Integral root dominance under projection and scalar restriction
+# Integral root dominance under scalar restriction
 
-For a balanced root pairing `P`, the root-span projection `P.rootSpanProj` preserves integral root
-dominance and reflects it on pairs with the same central component (`y - x ∈ P.rootSpan R`). Under
-scalar restriction to a subfield `K`, membership in the positive root cone and integral root
-dominance in `P.restrictScalars' K` agree with those in `P`.
+Under scalar restriction of a balanced root pairing `P` to a subfield `K`, membership in the
+positive root cone and integral root dominance in `P.restrictScalars' K` agree with those in `P`.
+For `K = L`, this combines with `P.rootSpanProj` to compare integral root dominance in `P` with
+that of the projections in `P.restrictScalars' L`.
 
 ## Main results
 
-* `RootPairing.rootLE_coe_rootSpanProj_of_rootLE` and
-  `RootPairing.rootLE_coe_rootSpanProj_iff_of_sub_mem`: preservation and reflection of integral
-  root dominance under `P.rootSpanProj`.
 * `RootPairing.mem_posRootCone_restrictScalars'_iff` and `RootPairing.rootLE_restrictScalars'_iff`:
   positive root cone and integral dominance in `P.restrictScalars' K` agree with those in `P`.
 * `RootPairing.rootLE_restrictScalars'_self_rootSpanProj_of_rootLE` and
@@ -38,29 +36,6 @@ public section
 namespace RootPairing
 
 open Set Submodule TauCeti
-
-section RootSpanProj
-
-variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] (P : RootPairing ι R M N) [P.IsBalanced]
-
-/-- Projecting onto the root span preserves integral root dominance. -/
-theorem rootLE_coe_rootSpanProj_of_rootLE (b : P.Base) {x y : M} (h : P.rootLE b x y) :
-    P.rootLE b (P.rootSpanProj x : M) (P.rootSpanProj y : M) := by
-  have hmem := P.sub_mem_rootSpan_of_rootLE b h
-  rw [rootLE_iff_sub_mem_posRootCone] at h ⊢
-  simpa only [← Submodule.coe_sub, P.coe_rootSpanProj_sub_of_sub_mem hmem] using h
-
-/-- For weights whose difference lies in the root span (that is, weights with the same central
-component), integral root dominance after projecting onto the root span is equivalent to integral
-root dominance of the original weights. -/
-theorem rootLE_coe_rootSpanProj_iff_of_sub_mem (b : P.Base) {x y : M}
-    (h : y - x ∈ P.rootSpan R) :
-    P.rootLE b (P.rootSpanProj x : M) (P.rootSpanProj y : M) ↔ P.rootLE b x y := by
-  rw [rootLE_iff_sub_mem_posRootCone, rootLE_iff_sub_mem_posRootCone, ← Submodule.coe_sub,
-    P.coe_rootSpanProj_sub_of_sub_mem h]
-
-end RootSpanProj
 
 section RestrictScalars
 

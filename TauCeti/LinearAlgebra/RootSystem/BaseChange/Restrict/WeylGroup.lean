@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.ReflectionPerm
 

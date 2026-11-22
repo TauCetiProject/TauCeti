@@ -9,19 +9,14 @@ public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Base
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 
 /-!
-# Regular weights and dominant chambers under projection and scalar restriction
+# Regular weights and dominant chambers under scalar restriction
 
-For a balanced root pairing `P`, projecting onto `P.rootSpan R` via `P.rootSpanProj` preserves and
-reflects weight regularity and membership in the closed and open dominant chambers. Under scalar
-restriction to a subfield `K` (and in particular for `K = L`), regularity and chamber membership in
+Under scalar restriction of a balanced root pairing `P` to a subfield `K` (and in particular for
+`K = L`), weight regularity and membership in the closed and open dominant chambers in
 `P.restrictScalars' K` agree with those in `P`.
 
 ## Main results
 
-* `RootPairing.isRegularWeight_coe_rootSpanProj_iff`,
-  `RootPairing.coe_rootSpanProj_mem_dominantChamber_iff`, and
-  `RootPairing.coe_rootSpanProj_mem_openDominantChamber_iff`: `rootSpanProj` preserves and reflects
-  regularity and membership in the closed and open dominant chambers.
 * `RootPairing.isRegularWeight_restrictScalars'_iff`,
   `RootPairing.mem_dominantChamber_restrictScalars'_iff_of_nonneg_iff`, and
   `RootPairing.mem_openDominantChamber_restrictScalars'_iff_of_pos_iff`: regularity and chamber
@@ -39,36 +34,9 @@ public section
 
 namespace RootPairing
 
-open TauCeti
-
-section RootSpanProj
-
-variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] (P : RootPairing ι R M N) [P.IsBalanced]
-
-/-- Projecting onto the root span preserves and reflects weight regularity. -/
-@[simp]
-theorem isRegularWeight_coe_rootSpanProj_iff (x : M) :
-    P.IsRegularWeight (P.rootSpanProj x : M) ↔ P.IsRegularWeight x := by
-  simp only [isRegularWeight_iff, coroot'_coe_rootSpanProj]
-
-/-- Projecting onto the root span preserves and reflects membership in the closed dominant
-chamber. -/
-theorem coe_rootSpanProj_mem_dominantChamber_iff [Preorder R] (b : P.Base) (x : M) :
-    (P.rootSpanProj x : M) ∈ dominantChamber P b ↔ x ∈ dominantChamber P b := by
-  simp only [mem_dominantChamber, coroot'_coe_rootSpanProj]
-
-/-- Projecting onto the root span preserves and reflects membership in the open dominant
-chamber. -/
-theorem coe_rootSpanProj_mem_openDominantChamber_iff [Preorder R] (b : P.Base) (x : M) :
-    (P.rootSpanProj x : M) ∈ openDominantChamber P b ↔ x ∈ openDominantChamber P b := by
-  simp only [mem_openDominantChamber, coroot'_coe_rootSpanProj]
-
-end RootSpanProj
+open Set Submodule TauCeti
 
 section RestrictScalars
-
-open Set Submodule
 
 variable {ι L M N : Type*} [Field L] [AddCommGroup M] [AddCommGroup N] [Module L M] [Module L N]
   (P : RootPairing ι L M N) (K : Type*) [Field K] [Algebra K L]
@@ -104,8 +72,6 @@ theorem mem_openDominantChamber_restrictScalars'_iff_of_pos_iff [Preorder K] [Pr
 end RestrictScalars
 
 section SelfRestrictScalars
-
-open Set Submodule
 
 variable {ι L M N : Type*} [Field L] [AddCommGroup M] [AddCommGroup N] [Module L M] [Module L N]
   (P : RootPairing ι L M N) [P.IsBalanced] (b : P.Base)

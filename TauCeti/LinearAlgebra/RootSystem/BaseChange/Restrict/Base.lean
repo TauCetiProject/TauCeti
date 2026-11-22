@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Base
-public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced
+public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced.Basic
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Basic
 import TauCeti.LinearAlgebra.RootSystem.Height
 

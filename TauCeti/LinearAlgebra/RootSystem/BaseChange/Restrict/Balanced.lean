@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced
+public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced.Basic
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Basic
 
 /-!
@@ -13,8 +13,8 @@ public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Basic
 
 For a balanced root pairing `P` over a field `L`, the same-field restriction `P.restrictScalars' L`
 acts on `P.rootSpan L`. This file records how the root-span projection `P.rootSpanProj` from
-`TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced` intertwines reflections and automorphisms of
-`P` with those of `P.restrictScalars' L`.
+`TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced.Basic` intertwines reflections and
+automorphisms of `P` with those of `P.restrictScalars' L`.
 
 ## Main results
 
