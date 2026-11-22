@@ -79,18 +79,11 @@ theorem tmul_smul (c : Codomain σ) (a : 𝓞 K) (x : E) :
   rw [← TensorProduct.smul_tmul, TensorProduct.smul_tmul']
   rfl
 
-/-- On the complex fibre at `σ`, an element of `Codomain σ` acts as the corresponding complex
-number. -/
-theorem smul_eq_equiv_smul (c : Codomain σ) (u : Codomain σ ⊗[𝓞 K] E) :
-    c • u = equiv σ c • u :=
-  -- `equiv σ` is the identity of `ℂ`, and both actions multiply the left tensor factor by `c`.
-  (rfl)
-
 /-- Elements of `Codomain σ` pass between the factors of a complex tensor product of complex
 fibres, since they act as complex numbers. -/
 instance compatibleSMul :
-    TensorProduct.CompatibleSMul ℂ (Codomain σ) (Codomain σ ⊗[𝓞 K] E) (Codomain σ ⊗[𝓞 K] F) where
-  smul_tmul c u v := by rw [smul_eq_equiv_smul, smul_eq_equiv_smul, TensorProduct.smul_tmul]
+    TensorProduct.CompatibleSMul ℂ (Codomain σ) (Codomain σ ⊗[𝓞 K] E) (Codomain σ ⊗[𝓞 K] F) :=
+  .of_algebraMap_surjective _ _ fun c ↦ ⟨c, rfl⟩
 
 variable (E F)
 

@@ -15,7 +15,7 @@ import Mathlib.LinearAlgebra.TensorProduct.Projective
 
 For hermitian metrics `h` on `E` and `h'` on `F` over the ring of integers `O_K` of a number
 field, the tensor product metric on `E ⊗[𝓞 K] F` has, at every complex embedding `σ`, the form
-determined by `h_σ(x ⊗ y, x' ⊗ y') = h_σ(x, x') h'_σ(y, y')` on the complex fibre
+determined by `(h ⊗ h')_σ(x ⊗ y, x' ⊗ y') = h_σ(x, x') h'_σ(y, y')` on the complex fibre
 `(E ⊗ F)_σ = E_σ ⊗_ℂ F_σ`. This makes `E ⊗ F` a hermitian vector bundle, with
 `‖x ⊗ y‖_σ = ‖x‖_σ ‖y‖_σ`. Tensor products of hermitian line bundles give the group law of the
 arithmetic Picard group, along which the Arakelov degree is additive.
@@ -41,7 +41,7 @@ arithmetic Picard group, along which the Arakelov degree is additive.
 
 public noncomputable section
 
-open scoped TensorProduct ComplexConjugate
+open scoped TensorProduct
 
 namespace TauCeti
 
@@ -55,40 +55,18 @@ variable {E F G E' F' : Type*} [AddCommGroup E] [Module (𝓞 K) E] [AddCommGrou
   [AddCommGroup F'] [Module (𝓞 K) F']
 variable (h : HermitianMetric K E) (h' : HermitianMetric K F)
 
-/-- The tensor product form on `E_σ ⊗_ℂ F_σ`, determined by
-`(u ⊗ v, u' ⊗ v') ↦ h_σ(u, u') h'_σ(v, v')`. -/
-private def fiberTmulForm (σ : K →+* ℂ) :
-    (Codomain σ ⊗[𝓞 K] E) ⊗[ℂ] (Codomain σ ⊗[𝓞 K] F) →ₗ⋆[ℂ]
-      (Codomain σ ⊗[𝓞 K] E) ⊗[ℂ] (Codomain σ ⊗[𝓞 K] F) →ₗ[ℂ] ℂ :=
-  (TensorProduct.map₂ (h.form σ) (h'.form σ)).compr₂ₛₗ (TensorProduct.lid ℂ ℂ).toLinearMap
-
-private theorem fiberTmulForm_tmul_tmul (σ : K →+* ℂ) (u u' : Codomain σ ⊗[𝓞 K] E)
-    (v v' : Codomain σ ⊗[𝓞 K] F) :
-    fiberTmulForm h h' σ (u ⊗ₜ v) (u' ⊗ₜ v') = h.form σ u u' * h'.form σ v v' := by
-  simp [fiberTmulForm]
-
-private theorem conj_fiberTmulForm (σ : K →+* ℂ)
-    (a b : (Codomain σ ⊗[𝓞 K] E) ⊗[ℂ] (Codomain σ ⊗[𝓞 K] F)) :
-    conj (fiberTmulForm h h' σ a b) = fiberTmulForm h h' σ b a := by
-  induction a using TensorProduct.inductionOn with
-  | add a₁ a₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
-  | tmul u v =>
-    induction b using TensorProduct.inductionOn with
-    | add b₁ b₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
-    | tmul u' v' =>
-      rw [fiberTmulForm_tmul_tmul, fiberTmulForm_tmul_tmul, map_mul, h.conj_form, h'.conj_form]
-
 /-- The **tensor product** of hermitian metrics on `E` and `F`: the metric on `E ⊗[𝓞 K] F` whose
-form at `σ` is the tensor product form on `E_σ ⊗_ℂ F_σ`, determined by
-`h_σ(x ⊗ y, x' ⊗ y') = h_σ(x, x') h'_σ(y, y')`. -/
+form at `σ` is the tensor product form `LinearMap.sesqTmul` on `E_σ ⊗_ℂ F_σ`, determined by
+`(h ⊗ h')_σ(x ⊗ y, x' ⊗ y') = h_σ(x, x') h'_σ(y, y')`. -/
 def tmul : HermitianMetric K (E ⊗[𝓞 K] F) where
-  form σ := (fiberTmulForm h h' σ ∘ₛₗ (Codomain.tensorProductEquiv σ E F).toLinearMap).compl₂
-    (Codomain.tensorProductEquiv σ E F).toLinearMap
-  isSymm_form σ := LinearMap.isSymm_def.mpr fun u v ↦ conj_fiberTmulForm h h' σ _ _
+  form σ := ((h.form σ).sesqTmul (h'.form σ) ∘ₛₗ
+    (Codomain.tensorProductEquiv σ E F).toLinearMap).compl₂
+      (Codomain.tensorProductEquiv σ E F).toLinearMap
+  isSymm_form σ := LinearMap.isSymm_def.mpr fun u v ↦
+    ((h.isSymm_form σ).sesqTmul (h'.isSymm_form σ)).eq _ _
   form_self_pos σ u hu := by
     simp only [LinearMap.compl₂_apply, LinearMap.comp_apply, LinearEquiv.coe_coe]
-    exact apply_self_pos_of_apply_tmul_tmul (H := fiberTmulForm h h' σ)
-      (fun a b c d ↦ fiberTmulForm_tmul_tmul h h' σ a c b d) (h.isSymm_form σ) (h'.isSymm_form σ)
+    exact LinearMap.sesqTmul_apply_self_pos (h.isSymm_form σ) (h'.isSymm_form σ)
       (fun _ ↦ h.form_self_pos σ) (fun _ ↦ h'.form_self_pos σ)
       ((Codomain.tensorProductEquiv σ E F).map_ne_zero_iff.mpr hu)
   form_conjugate_tmul σ t t' := by
@@ -99,16 +77,17 @@ def tmul : HermitianMetric K (E ⊗[𝓞 K] F) where
       | add t₁ t₂ h₁ h₂ => simp only [TensorProduct.tmul_add, map_add, h₁, h₂]
       | tmul x' y' =>
         simp only [LinearMap.compl₂_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-          Codomain.tensorProductEquiv_tmul, fiberTmulForm_tmul_tmul, map_mul,
+          Codomain.tensorProductEquiv_tmul, LinearMap.sesqTmul_tmul_tmul, map_mul,
           h.form_conjugate_tmul, h'.form_conjugate_tmul]
 
-/-- On pure tensors, the tensor product form is `h_σ(x ⊗ y, x' ⊗ y') = h_σ(x, x') h'_σ(y, y')`. -/
+/-- On pure tensors, the tensor product form is
+`(h ⊗ h')_σ(x ⊗ y, x' ⊗ y') = h_σ(x, x') h'_σ(y, y')`. -/
 @[simp]
 theorem tmul_form_tmul_tmul (σ : K →+* ℂ) (x x' : E) (y y' : F) :
     (h.tmul h').form σ (1 ⊗ₜ (x ⊗ₜ y)) (1 ⊗ₜ (x' ⊗ₜ y')) =
       h.form σ (1 ⊗ₜ x) (1 ⊗ₜ x') * h'.form σ (1 ⊗ₜ y) (1 ⊗ₜ y') := by
   simp only [tmul, LinearMap.compl₂_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    Codomain.tensorProductEquiv_tmul, fiberTmulForm_tmul_tmul]
+    Codomain.tensorProductEquiv_tmul, LinearMap.sesqTmul_tmul_tmul]
 
 /-- In the tensor product, `‖x ⊗ y‖_σ = ‖x‖_σ ‖y‖_σ`. -/
 @[simp]
