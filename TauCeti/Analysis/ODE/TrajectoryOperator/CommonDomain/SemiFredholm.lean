@@ -214,17 +214,13 @@ private theorem norm_le_of_ae_prev_eq_smul (hSymm : ∀ x y : D, ⟪B x, ι y⟫
   -- `D_A w - D_B w = (A - B) w` is bounded by `c ‖ι ∘ u‖` on the window and vanishes off it.
   have hdiff : ‖familyDomainTrajectoryOperator ι AL w - domainTrajectoryOperator ι B w‖ ≤
       c * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) le_top u‖ := by
-    rw [← familyDomainTrajectoryOperator_toLp_const, ← sub_apply,
-      familyDomainTrajectoryOperator_sub, ContinuousLinearMap.comp_apply, prevL_apply]
-    have hm := ae_top_iff.1 (Lp.operatorMultiplication_ae
-      (AL - (memLp_top_const (μ := μ₀) B).toLp _) (prev _ w))
-    have hs := ae_top_iff.1 (Lp.coeFn_sub AL ((memLp_top_const (μ := μ₀) B).toLp _))
-    have hk := ae_top_iff.1 ((memLp_top_const (μ := μ₀) B).coeFn_toLp)
+    have hm := ae_top_iff.1
+      (familyDomainTrajectoryOperator_sub_domainTrajectoryOperator_ae ι AL B w)
     refine norm_le_mul_norm_restrictBaseL hc₀ u ?_ ?_
-    · filter_upwards [hm, hs, hk, ae_top_iff.1 hAL, hc, hw] with s h₁ h₂ h₃ h₄ h₅ h₆
-      rw [h₁, h₂, Pi.sub_apply, h₃, h₄, h₆, map_smul, norm_smul, Real.norm_eq_abs]
+    · filter_upwards [hm, ae_top_iff.1 hAL, hc, hw] with s h₁ h₂ h₃ h₄
+      rw [h₁, h₂, h₄, map_smul, norm_smul, Real.norm_eq_abs]
       by_cases hsW : s ∈ Ioo (-b) b
-      · exact (mul_le_mul (hφ s) (h₅ hsW _) (norm_nonneg _) zero_le_one).trans_eq (one_mul _)
+      · exact (mul_le_mul (hφ s) (h₃ hsW _) (norm_nonneg _) zero_le_one).trans_eq (one_mul _)
       · rw [hφ₀ s hsW, abs_zero, zero_mul]
         exact mul_nonneg hc₀ (norm_nonneg _)
     · filter_upwards [hm, hw] with s h₁ h₂ hsW
