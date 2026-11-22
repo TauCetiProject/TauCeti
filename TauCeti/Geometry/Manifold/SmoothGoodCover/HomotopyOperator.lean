@@ -35,6 +35,8 @@ products of members of `C` with intervals, possibly containing an endpoint of `[
 
 * `TauCeti.SmoothGoodCover.homotopyOperator`: the operator `K ω = h (Φ^* ω)` on a nonempty finite
   intersection of a smooth good cover.
+* `TauCeti.SmoothGoodCover.homotopyOperator_smul`, `TauCeti.SmoothGoodCover.homotopyOperator_add`,
+  `TauCeti.SmoothGoodCover.homotopyOperator_sub`: `K` is linear on continuous forms.
 * `TauCeti.SmoothGoodCover.isSmoothForm_homotopyOperator`: `K` preserves `C^r` regularity.
 * `TauCeti.SmoothGoodCover.mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv`: the
   homotopy formula `d (K ω) + K (d ω) = ω` in positive degree.
@@ -88,6 +90,35 @@ theorem homotopyOperator_def (θ : RoughForm I ↥(s.inf C.openSet) F (k + 1)) :
 theorem homotopyOperator_zero :
     C.homotopyOperator s hs hW (0 : RoughForm I ↥(s.inf C.openSet) F (k + 1)) = 0 := by
   rw [homotopyOperator_def, mpullback_zero, TauCeti.homotopyOperator_zero]
+
+/-- The homotopy operator of a smooth good cover commutes with real scalar multiplication of
+forms. -/
+@[simp]
+theorem homotopyOperator_smul (c : ℝ) (θ : RoughForm I ↥(s.inf C.openSet) F (k + 1)) :
+    C.homotopyOperator s hs hW (c • θ) = c • C.homotopyOperator s hs hW θ := by
+  rw [homotopyOperator_def, mpullback_smul, TauCeti.homotopyOperator_smul, homotopyOperator_def]
+
+/-- The homotopy operator of a smooth good cover is additive on continuous forms. -/
+theorem homotopyOperator_add [IsManifold I 1 M]
+    {θ η : RoughForm I ↥(s.inf C.openSet) F (k + 1)} (hθ : IsSmoothForm I 0 θ)
+    (hη : IsSmoothForm I 0 η) :
+    C.homotopyOperator s hs hW (θ + η) =
+      C.homotopyOperator s hs hW θ + C.homotopyOperator s hs hW η := by
+  have hΦ : ContMDiff (I.prod (𝓡∂ 1)) I ((0 : ℕ∞) + 1) (C.cylinderContract s hs hW) :=
+    (C.contMDiff_cylinderContract s hs hW).of_le (by exact_mod_cast le_top)
+  simp only [homotopyOperator_def, mpullback_add]
+  exact TauCeti.homotopyOperator_add (hθ.mpullback hΦ) (hη.mpullback hΦ)
+
+/-- The homotopy operator of a smooth good cover commutes with subtraction of continuous forms. -/
+theorem homotopyOperator_sub [IsManifold I 1 M]
+    {θ η : RoughForm I ↥(s.inf C.openSet) F (k + 1)} (hθ : IsSmoothForm I 0 θ)
+    (hη : IsSmoothForm I 0 η) :
+    C.homotopyOperator s hs hW (θ - η) =
+      C.homotopyOperator s hs hW θ - C.homotopyOperator s hs hW η := by
+  have hΦ : ContMDiff (I.prod (𝓡∂ 1)) I ((0 : ℕ∞) + 1) (C.cylinderContract s hs hW) :=
+    (C.contMDiff_cylinderContract s hs hW).of_le (by exact_mod_cast le_top)
+  simp only [homotopyOperator_def, mpullback_sub]
+  exact TauCeti.homotopyOperator_sub (hθ.mpullback hΦ) (hη.mpullback hΦ)
 
 /-- The homotopy operator of a smooth good cover preserves `C^r` regularity of forms. -/
 theorem isSmoothForm_homotopyOperator {r : ℕ∞} [IsManifold I 1 M] [IsManifold I (r + 1) M]
