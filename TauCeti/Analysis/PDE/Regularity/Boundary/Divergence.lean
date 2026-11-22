@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.Boundary.Oscillation
+import TauCeti.Algebra.Order.Ring.MaxOneMul
 import TauCeti.Analysis.PDE.Ellipticity.Extension
 import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -695,8 +696,7 @@ theorem exists_ae_value_le_mul_rpow_mul_add_of_mul_measureReal_le_measureReal_ba
   have hA : 0 ≤ A := by positivity
   have hτj : τ ^ j ≤ 4 ^ α * (ρ / R) ^ α :=
     hτα ▸ inv_rpow_pow_le_rpow_mul_div_rpow hα.le hρ hR hj2
-  have hMA : M + c * A ≤ max 1 c * (M + A) := by
-    nlinarith [le_max_left 1 c, le_max_right 1 c]
+  have hMA : M + c * A ≤ max 1 c * (M + A) := add_mul_le_max_one_mul_add hM hA
   calc _ = τ ^ j * (M + c * A) := by simp only [A]; ring
     _ ≤ (4 ^ α * (ρ / R) ^ α) * (max 1 c * (M + A)) :=
         mul_le_mul hτj hMA (by positivity) (by positivity)
