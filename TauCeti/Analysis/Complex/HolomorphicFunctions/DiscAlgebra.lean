@@ -136,6 +136,13 @@ theorem extend_apply (f : discAlgebra c R) (z : closedBall c R) :
     extend f z = (f : C(closedBall c R, ℂ)) z :=
   Subtype.val_injective.extend_apply _ _ _
 
+/-- On `closedBall c R`, the zero extension of `of c R g hc hd` agrees with `g`. -/
+@[simp]
+theorem extend_of (g : ℂ → ℂ) (hc : ContinuousOn g (closedBall c R))
+    (hd : DifferentiableOn ℂ g (ball c R)) {z : ℂ} (hz : z ∈ closedBall c R) :
+    extend (of c R g hc hd) z = g z :=
+  extend_apply (of c R g hc hd) ⟨z, hz⟩
+
 /-- The zero extension vanishes outside `closedBall c R`. -/
 @[simp]
 theorem extend_apply_of_notMem (f : discAlgebra c R) {z : ℂ} (hz : z ∉ closedBall c R) :
@@ -144,61 +151,17 @@ theorem extend_apply_of_notMem (f : discAlgebra c R) {z : ℂ} (hz : z ∉ close
   rintro ⟨w, rfl⟩
   exact hz w.property
 
-/-- The zero extension is injective on `discAlgebra c R`. -/
-theorem extend_injective : Function.Injective (extend (c := c) (R := R)) :=
-  (Function.extend_injective Subtype.val_injective (0 : ℂ → ℂ)).comp
-    (DFunLike.coe_injective.comp Subtype.val_injective)
-
-/-- Two elements of `discAlgebra c R` have equal zero extensions if and only if they are equal. -/
-@[simp]
-theorem extend_inj {f g : discAlgebra c R} : extend f = extend g ↔ f = g :=
-  extend_injective.eq_iff
-
-/-- The zero extension of `0` is `0`. -/
-@[simp]
-theorem extend_zero : extend (0 : discAlgebra c R) = 0 :=
-  Function.extend_zero Subtype.val
-
 /-- Zero extension commutes with addition. -/
 @[simp]
 theorem extend_add (f g : discAlgebra c R) : extend (f + g) = extend f + extend g := by
   simpa [extend, ← Pi.zero_def] using
     Function.extend_add Subtype.val (f : C(closedBall c R, ℂ)) g 0 0
 
-/-- Zero extension commutes with negation. -/
-@[simp]
-theorem extend_neg (f : discAlgebra c R) : extend (-f) = -extend f := by
-  simpa [extend, ← Pi.zero_def] using
-    Function.extend_neg Subtype.val (f : C(closedBall c R, ℂ)) 0
-
-/-- Zero extension commutes with subtraction. -/
-@[simp]
-theorem extend_sub (f g : discAlgebra c R) : extend (f - g) = extend f - extend g := by
-  simpa [extend, ← Pi.zero_def] using
-    Function.extend_sub Subtype.val (f : C(closedBall c R, ℂ)) g 0 0
-
 /-- Zero extension commutes with complex scalar multiplication. -/
 @[simp]
 theorem extend_smul (a : ℂ) (f : discAlgebra c R) : extend (a • f) = a • extend f := by
   simpa [extend, ← Pi.zero_def] using
     Function.extend_smul a Subtype.val (f : C(closedBall c R, ℂ)) 0
-
-/-- Zero extension commutes with multiplication. -/
-@[simp]
-theorem extend_mul (f g : discAlgebra c R) : extend (f * g) = extend f * extend g := by
-  simpa [extend, ← Pi.zero_def] using
-    Function.extend_mul Subtype.val (f : C(closedBall c R, ℂ)) g 0 0
-
-/-- Zero extension commutes with positive natural-number powers. -/
-@[simp]
-theorem extend_pow (f : discAlgebra c R) (n : ℕ) (hn : 0 < n) :
-    extend (f ^ n) = extend f ^ n := by
-  induction n with
-  | zero => cases hn
-  | succ n ih =>
-    rcases n with _ | n
-    · simp
-    · rw [pow_succ f, extend_mul, ih (Nat.succ_pos n), ← pow_succ]
 
 /-- The zero extension is continuous on `closedBall c R`. -/
 theorem continuousOn_extend (f : discAlgebra c R) :
@@ -377,14 +340,20 @@ theorem eq_dslope_of_coord_sub_algebraMap_mul_add {a : ℂ} (ha : a ∈ ball c R
     q = dslope ha f :=
   eq_dslopeLinear_of_coord_sub_algebraMap_mul_add ha h
 
-/-- Characterization of `dslope ha f` via the division identity
-`(coord c R - a) * q + f(a) = f`. -/
-theorem eq_dslope_iff {a : ℂ} (ha : a ∈ ball c R) {f q : discAlgebra c R} :
-    q = dslope ha f ↔
-      (coord c R - algebraMap ℂ (discAlgebra c R) a) * q +
-        algebraMap ℂ (discAlgebra c R) (extend f a) = f :=
-  ⟨fun hq => hq ▸ coord_sub_algebraMap_mul_dslope_add ha f,
-    eq_dslope_of_coord_sub_algebraMap_mul_add ha⟩
+/-- Division with remainder by `coord c R - a` in `discAlgebra c R`:
+`(coord c R - a) * q + c₀ = f` holds if and only if `q = dslope ha f` and `c₀ = extend f a`. -/
+theorem coord_sub_algebraMap_mul_add_eq_iff {a : ℂ} (ha : a ∈ ball c R)
+    {f q : discAlgebra c R} {c₀ : ℂ} :
+    (coord c R - algebraMap ℂ (discAlgebra c R) a) * q +
+        algebraMap ℂ (discAlgebra c R) c₀ = f ↔
+      q = dslope ha f ∧ c₀ = extend f a := by
+  refine ⟨fun h => ⟨eq_dslope_of_coord_sub_algebraMap_mul_add ha h, ?_⟩, ?_⟩
+  · have h0 := congrArg (fun g : discAlgebra c R =>
+        (g : C(closedBall c R, ℂ)) ⟨a, ball_subset_closedBall ha⟩) h
+    simpa [Algebra.algebraMap_eq_smul_one, mul_one,
+      extend_apply f ⟨a, ball_subset_closedBall ha⟩] using h0
+  · rintro ⟨rfl, rfl⟩
+    exact coord_sub_algebraMap_mul_dslope_add ha f
 
 /-- Construct an element of `discAlgebra c R` from an ambient function `g : ℂ → ℂ`, returning a
 default element `d` if `g` is not continuous on `closedBall c R` and holomorphic on `ball c R`. -/
