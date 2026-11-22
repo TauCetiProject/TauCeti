@@ -23,10 +23,11 @@ charted space modelled on `F` (`ModelWithCorners.boundaryChartedSpaceOfHomeomorp
 
 The construction also takes a map `π : H → F` extending `φ`, so that the charts read every point of
 their domain through `π`, without a membership proof. The charts themselves are built with
-`OpenPartialHomeomorph.subtypeCoord`. The construction and its characteristic lemmas abstract the
-model-specific ones of `TauCeti.boundaryChartedSpace` in
-`TauCeti/Geometry/Manifold/Boundary/Charts.lean` and `TauCeti.halfSpaceBoundaryChartedSpace` in
-`TauCeti/Geometry/Manifold/Boundary/ProductHalfSpace.lean`.
+`OpenPartialHomeomorph.subtypeCoord`. The boundary charted spaces `TauCeti.boundaryChartedSpace`
+in `TauCeti/Geometry/Manifold/Boundary/Charts.lean`, `TauCeti.halfSpaceBoundaryChartedSpace` in
+`TauCeti/Geometry/Manifold/Boundary/ProductHalfSpace.lean` and
+`TauCeti.euclideanQuadrantBoundaryChartedSpace` in `TauCeti/Geometry/Manifold/Corners/Boundary.lean`
+are instances of this construction.
 
 ## Main definitions
 
@@ -35,6 +36,8 @@ model-specific ones of `TauCeti.boundaryChartedSpace` in
 
 ## Main results
 
+* `ModelWithCorners.mem_boundary_iff_mem_frontier_range_of_finiteDimensional`: every chart reads
+  the boundary points of `M` as the points that `I` sends to the frontier of its range.
 * `ModelWithCorners.boundaryChartedSpaceOfHomeomorph_atlas` and the
   `boundaryChartedSpaceOfHomeomorph_chartAt_*` lemmas: the atlas of the boundary and the source,
   target, values and inverse of its charts.
@@ -52,9 +55,11 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E H : Type*} [NormedAddC
   {φ : {z : H // I z ∈ frontier (range I)} ≃ₜ F} {π : H → F}
   {e : OpenPartialHomeomorph M H}
 
-/-- A chart of `M` reads a point of its source on the boundary exactly when `I` sends the reading
-to the frontier of its range. -/
-private theorem mem_boundary_iff_mem_frontier_range {x : M} (hx : x ∈ e.source) :
+/-- A chart of `M`, in the atlas or not, reads a point of its source on the boundary exactly when
+`I` sends the reading to the frontier of its range. This is
+`ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional`, stated for the
+boundary set `I.boundary M`. -/
+theorem mem_boundary_iff_mem_frontier_range_of_finiteDimensional {x : M} (hx : x ∈ e.source) :
     x ∈ I.boundary M ↔ I (e x) ∈ frontier (range I) := by
   rw [ModelWithCorners.boundary, mem_ofPred_eq,
     isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional hx]
@@ -63,15 +68,15 @@ private theorem mem_boundary_iff_mem_frontier_range {x : M} (hx : x ∈ e.source
 is the reading of a boundary point. -/
 private theorem symm_symm_mem_boundary {y : F} (hy : (φ.symm y : H) ∈ e.target) :
     e.symm (φ.symm y) ∈ I.boundary M := by
-  rw [mem_boundary_iff_mem_frontier_range (e.map_target hy), e.right_inv hy]
+  rw [mem_boundary_iff_mem_frontier_range_of_finiteDimensional (e.map_target hy), e.right_inv hy]
   exact (φ.symm y).property
 
 /-- The homeomorphism of the model boundary recovers the chart value of a boundary point. -/
 private theorem symm_apply_apply_of_mem_boundary
     (hπ : ∀ z : {z : H // I z ∈ frontier (range I)}, π z = φ z) {x : M} (hx : x ∈ e.source)
     (hxb : x ∈ I.boundary M) : (φ.symm (π (e x)) : H) = e x := by
-  rw [show e x = ((⟨e x, (mem_boundary_iff_mem_frontier_range hx).1 hxb⟩ :
-    {z : H // I z ∈ frontier (range I)}) : H) from rfl, hπ, φ.symm_apply_apply]
+  have h := hπ ⟨e x, (mem_boundary_iff_mem_frontier_range_of_finiteDimensional hx).1 hxb⟩
+  rw [h, φ.symm_apply_apply]
 
 omit [FiniteDimensional 𝕜 E] in
 /-- An extension of the homeomorphism of the model boundary is continuous on the model boundary. -/
@@ -114,7 +119,8 @@ private theorem boundaryChart_apply (q : I.boundary M) :
 private theorem coe_boundaryChart_symm_apply {y : F} (hy : (φ.symm y : H) ∈ e.target) :
     ((boundaryChart φ π hπ p e).symm y : M) = e.symm (φ.symm y) := by
   unfold boundaryChart
-  exact OpenPartialHomeomorph.coe_subtypeCoord_symm_apply _ _ _ _ _ _ _ _ _ _ hy
+  apply OpenPartialHomeomorph.coe_subtypeCoord_symm_apply
+  exact hy
 
 variable (I M) in
 /-- The charted-space structure on the boundary `I.boundary M` of a charted space modelled on `H`,
