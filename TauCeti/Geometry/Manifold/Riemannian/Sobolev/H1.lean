@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.ContinuousMap
@@ -47,7 +48,8 @@ against a smooth function `φ` it is `∫ w Δ⁺φ dV`, where `Δ⁺ = -Δ` is 
 ## Main results
 
 * `TauCeti.Manifold.SobolevH1`: the Sobolev space `H¹(M)`, with
-  `TauCeti.Manifold.SobolevH1.ofSmooth` the inclusion of the smooth functions,
+  `TauCeti.Manifold.SobolevH1.ofSmooth` the inclusion of the smooth functions (injective by
+  `TauCeti.Manifold.SobolevH1.ofSmooth_injective`),
   `TauCeti.Manifold.SobolevH1.inner_ofSmooth` the inner product of two smooth functions, and
   `TauCeti.Manifold.SobolevH1.subsingleton_of_isEmpty` showing `H¹(M)` is a subsingleton on an empty
   manifold, and `TauCeti.Manifold.SobolevH1.nontrivial_of_nonempty` showing it is nontrivial on a
@@ -330,6 +332,16 @@ theorem toLp_ofSmooth_ae_eq (u : C^∞⟮I, M; ℝ⟯) :
     toLp (ofSmooth u) =ᵐ[riemannianVolume I M] u := by
   rw [toLp_ofSmooth]
   exact ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℝ) _ _
+
+/-- **Smooth functions embed into `H¹(M)`.** Two smooth functions with the same image in `H¹(M)`
+agree almost everywhere, hence everywhere, since the Riemannian volume charges every nonempty open
+set. -/
+theorem ofSmooth_injective : Function.Injective (ofSmooth (I := I) (M := M)) := fun u v huv ↦ by
+  have hu := toLp_ofSmooth_ae_eq u
+  rw [huv] at hu
+  exact ContMDiffMap.ext <| congrFun <|
+    Measure.eq_of_ae_eq (hu.symm.trans (toLp_ofSmooth_ae_eq v)) (map_continuous u)
+      (map_continuous v)
 
 /-- On a nonempty manifold, `H¹(M)` is nontrivial: the constant function `1` is nonzero, since its
 integral is the positive total volume. -/
