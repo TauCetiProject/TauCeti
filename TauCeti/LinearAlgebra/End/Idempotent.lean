@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.Algebra.Module.Submodule.Range
 public import Mathlib.Algebra.Ring.Idempotent
+public import Mathlib.LinearAlgebra.Projection
 
 /-!
 # Ranges of idempotent endomorphisms
@@ -70,10 +71,9 @@ variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {p : M →ₗ
 
 /-- An idempotent `p` corestricted to its range fixes the elements of its range. -/
 theorem rangeRestrict_coe (hp : IsIdempotentElem p) (y : LinearMap.range p) :
-    p.rangeRestrict y = y := by
-  obtain ⟨_, z, rfl⟩ := y
-  ext
-  rw [LinearMap.codRestrict_apply, ← mul_apply_eq_comp, hp.eq]
+    p.rangeRestrict y = y :=
+  -- `IsProj.codRestrict` of `p` onto its range is `p.rangeRestrict` up to proof irrelevance.
+  (isProj_range p hp).codRestrict_apply_cod y
 
 /-- An idempotent `p` corestricted to its range does not change when precomposed with `p`. -/
 theorem rangeRestrict_apply_self (hp : IsIdempotentElem p) (y : M) :
