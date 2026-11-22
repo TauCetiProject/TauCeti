@@ -39,9 +39,12 @@ by parts.
   `TauCeti.Probability.gaussianPDFReal_le`, and `TauCeti.Probability.gaussianPDF_le` — the density
   attains its global maximum `(√(2 * π * v))⁻¹` at the mean (with both sides vanishing when
   `v = 0`).
+* `TauCeti.Probability.tendsto_rpow_abs_sub_mul_gaussianPDFReal_cocompact` — every Gaussian
+  density `g` with mean `μ` satisfies `|x - μ| ^ s g(x) → 0` as `|x| → ∞`, for every real `s`; it
+  translates Mathlib's `tendsto_rpow_abs_mul_exp_neg_mul_sq_cocompact` by the mean.
 * `TauCeti.Probability.tendsto_gaussianPDFReal_cocompact` and
-  `TauCeti.Probability.tendsto_mul_gaussianPDFReal_cocompact` — every Gaussian density `g`
-  satisfies `g(x) → 0` and `x g(x) → 0` as `|x| → ∞`.
+  `TauCeti.Probability.tendsto_mul_gaussianPDFReal_cocompact` — its consequences `g(x) → 0` and
+  `x g(x) → 0` as `|x| → ∞`.
 * `TauCeti.Probability.hasDerivAt_gaussianPDFReal` — the derivative of the Gaussian density in
   its real argument is `-(x - μ) / v` times the density, for every variance.
 * `TauCeti.Probability.integrable_gaussianReal_iff_integrable_gaussianPDFReal_smul` — at positive
@@ -124,36 +127,40 @@ theorem gaussianPDF_le (μ : ℝ) (v : ℝ≥0) (x : ℝ) :
     gaussianPDF μ v x ≤ ENNReal.ofReal (√(2 * π * (v : ℝ)))⁻¹ :=
   ENNReal.ofReal_le_ofReal (gaussianPDFReal_le μ v x)
 
-/-- Every Gaussian density tends to `0` as `|x| → ∞` (at zero variance it vanishes
-identically). -/
-theorem tendsto_gaussianPDFReal_cocompact (μ : ℝ) (v : ℝ≥0) :
-    Tendsto (gaussianPDFReal μ v) (cocompact ℝ) (𝓝 0) := by
+/-- Every Gaussian density decays faster than any power of the distance to its mean:
+`|x - μ| ^ s * gaussianPDFReal μ v x → 0` as `|x| → ∞`, for every real exponent `s` (at zero
+variance the density vanishes identically).
+
+This is Mathlib's `tendsto_rpow_abs_mul_exp_neg_mul_sq_cocompact`, the decay of
+`|x| ^ s * exp (-a * x ^ 2)`, at `a = (2 * v)⁻¹`, translated by the mean. -/
+theorem tendsto_rpow_abs_sub_mul_gaussianPDFReal_cocompact (μ : ℝ) (v : ℝ≥0) (s : ℝ) :
+    Tendsto (fun x => |x - μ| ^ s * gaussianPDFReal μ v x) (cocompact ℝ) (𝓝 0) := by
   rcases eq_or_ne v 0 with rfl | hv
-  · exact gaussianPDFReal_zero_var μ ▸ tendsto_const_nhds
+  · simp [gaussianPDFReal_zero_var]
   have h := ((tendsto_rpow_abs_mul_exp_neg_mul_sq_cocompact (a := (2 * (v : ℝ))⁻¹)
-    (by positivity) 0).comp (Homeomorph.subRight μ).isClosedEmbedding.tendsto_cocompact).const_mul
+    (by positivity) s).comp (Homeomorph.subRight μ).isClosedEmbedding.tendsto_cocompact).const_mul
     (√(2 * π * (v : ℝ)))⁻¹
   rw [mul_zero] at h
   refine h.congr fun x => ?_
-  simp only [Function.comp_apply, Homeomorph.coe_subRight, rpow_zero, one_mul, gaussianPDFReal]
+  simp only [Function.comp_apply, Homeomorph.coe_subRight, gaussianPDFReal]
   ring_nf
 
+/-- Every Gaussian density tends to `0` as `|x| → ∞` (at zero variance it vanishes
+identically). The exponent `0` case of `tendsto_rpow_abs_sub_mul_gaussianPDFReal_cocompact`. -/
+theorem tendsto_gaussianPDFReal_cocompact (μ : ℝ) (v : ℝ≥0) :
+    Tendsto (gaussianPDFReal μ v) (cocompact ℝ) (𝓝 0) := by
+  simpa using tendsto_rpow_abs_sub_mul_gaussianPDFReal_cocompact μ v 0
+
 /-- Every Gaussian density decays faster than `1 / |x|`: `x * gaussianPDFReal μ v x → 0` as
-`|x| → ∞`. -/
+`|x| → ∞`. The centered weight `(x - μ) * gaussianPDFReal μ v x` is the exponent `1` case of
+`tendsto_rpow_abs_sub_mul_gaussianPDFReal_cocompact`. -/
 theorem tendsto_mul_gaussianPDFReal_cocompact (μ : ℝ) (v : ℝ≥0) :
     Tendsto (fun x => x * gaussianPDFReal μ v x) (cocompact ℝ) (𝓝 0) := by
-  rcases eq_or_ne v 0 with rfl | hv
-  · simp [gaussianPDFReal_zero_var]
-  -- the centered weight `(x - μ) * gaussianPDFReal μ v x` tends to `0`
-  have h₁ : Tendsto (fun x => (x - μ) * gaussianPDFReal μ v x) (cocompact ℝ) (𝓝 0) := by
-    have h := ((tendsto_rpow_abs_mul_exp_neg_mul_sq_cocompact (a := (2 * (v : ℝ))⁻¹)
-      (by positivity) 1).comp (Homeomorph.subRight μ).isClosedEmbedding.tendsto_cocompact).const_mul
-      (√(2 * π * (v : ℝ)))⁻¹
-    rw [mul_zero] at h
-    refine tendsto_zero_iff_norm_tendsto_zero.2 (h.congr fun x => ?_)
-    simp only [Function.comp_apply, Homeomorph.coe_subRight, rpow_one, gaussianPDFReal,
-      norm_mul, norm_eq_abs, abs_exp, abs_inv, abs_of_nonneg (sqrt_nonneg _)]
-    ring_nf
+  have h₁ : Tendsto (fun x => (x - μ) * gaussianPDFReal μ v x) (cocompact ℝ) (𝓝 0) :=
+    tendsto_zero_iff_norm_tendsto_zero.2 <|
+      (tendsto_rpow_abs_sub_mul_gaussianPDFReal_cocompact μ v 1).congr fun x => by
+        rw [rpow_one, norm_mul, norm_eq_abs, norm_eq_abs,
+          abs_of_nonneg (gaussianPDFReal_nonneg μ v x)]
   have h := h₁.add ((tendsto_gaussianPDFReal_cocompact μ v).const_mul μ)
   rw [mul_zero, add_zero] at h
   exact h.congr fun x => by ring
