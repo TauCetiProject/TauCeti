@@ -253,12 +253,21 @@ theorem d_eq_iff_forall_pderiv_eq (g : W) (ω : Omega K W) :
 
 /-- On `W = K⟨X_σ⟩†` in any characteristic, `d g = 0` iff all partial derivatives vanish. -/
 theorem d_eq_zero_iff_forall_pderiv_eq_zero (g : W) :
-    d K W g = 0 ↔ ∀ i, pderiv σ K i g = 0 := by
-  simpa using d_eq_iff_forall_pderiv_eq g 0
+    d K W g = 0 ↔ ∀ i, pderiv σ K i g = 0 := by simpa using d_eq_iff_forall_pderiv_eq g 0
+
+/-- In characteristic zero, `d f = 0` in `Ω¹_{W/K}` iff `f ∈ range (algebraMap K W)`. -/
+theorem d_eq_zero_iff_mem_range_algebraMap [CharZero K] (f : W) :
+    d K W f = 0 ↔ f ∈ Set.range (algebraMap K W) := by
+  rw [d_eq_zero_iff_forall_pderiv_eq_zero, forall_pderiv_eq_zero_iff]; rfl
+
+/-- In characteristic zero, `d f = 0` iff `f` equals its constant coefficient viewed in `W`. -/
+theorem d_eq_zero_iff_eq_algebraMap_constantCoeff [CharZero K] (f : W) :
+    d K W f = 0 ↔ f = algebraMap K W (MvPowerSeries.constantCoeff f.1) := by
+  rw [d_eq_zero_iff_mem_range_algebraMap]
+  exact ⟨by rintro ⟨c, rfl⟩; simp [MvPowerSeries.algebraMap_apply], fun h ↦ ⟨_, h.symm⟩⟩
 
 /-- The basis vectors are the differentials of the variables. -/
-@[simp]
-theorem washnitzerBasis_apply (i : σ) : washnitzerBasis σ K i = d K W (X σ K i) := by
+@[simp] theorem washnitzerBasis_apply (i : σ) : washnitzerBasis σ K i = d K W (X σ K i) := by
   classical
   refine (washnitzerBasis σ K).repr.injective (Finsupp.ext fun j ↦ ?_)
   rw [Module.Basis.repr_self, washnitzerBasis_repr_d]
@@ -272,7 +281,10 @@ theorem d_eq_sum [Fintype σ] (g : W) :
     d K W g = ∑ i, pderiv σ K i g • d K W (X σ K i) := by
   conv_lhs => rw [← (washnitzerBasis σ K).sum_repr (d K W g)]
   simp
-
 end Omega
 
+/-- In characteristic `p`, `d (X₀ ^ p) = 0` in `Ω¹_{K⟨X₀⟩† / K}`. -/
+theorem Omega.d_X_pow_charP {K : Type*} [NormedField K] [IsUltrametricDist K] (p : ℕ) [CharP K p] :
+    Omega.d K (washnitzerAlgebra (Fin 1) K) (washnitzerAlgebra.X (Fin 1) K 0 ^ p) = 0 := by
+  rw [(Omega.d K _).leibniz_pow, ← Nat.cast_smul_eq_nsmul K, CharP.cast_eq_zero, zero_smul]
 end TauCeti.Dagger

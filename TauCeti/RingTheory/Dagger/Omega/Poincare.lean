@@ -45,19 +45,6 @@ section DegreeZero
 variable {σ K : Type*} [Finite σ] [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
   [CharZero K]
 
-/-- In characteristic zero, `d f = 0` in `Ω¹_{W/K}` iff `f ∈ range (algebraMap K W)`. -/
-theorem d_eq_zero_iff_mem_range_algebraMap (f : washnitzerAlgebra σ K) :
-    d K (washnitzerAlgebra σ K) f = 0 ↔ f ∈ Set.range (algebraMap K (washnitzerAlgebra σ K)) := by
-  rw [d_eq_zero_iff_forall_pderiv_eq_zero, forall_pderiv_eq_zero_iff]; rfl
-
-/-- In characteristic zero, `d f = 0` iff `f` equals its constant coefficient viewed in `W`. -/
-theorem d_eq_zero_iff_eq_algebraMap_constantCoeff (f : washnitzerAlgebra σ K) :
-    d K (washnitzerAlgebra σ K) f = 0 ↔
-      f = algebraMap K (washnitzerAlgebra σ K) (MvPowerSeries.constantCoeff f.1) := by
-  rw [d_eq_zero_iff_mem_range_algebraMap]
-  exact ⟨by rintro ⟨c, rfl⟩; simp [MvPowerSeries.algebraMap_apply],
-    fun h ↦ ⟨MvPowerSeries.constantCoeff f.1, h.symm⟩⟩
-
 variable (σ K) in
 /-- In characteristic zero, closed `0`-forms on `W = K⟨X_σ⟩†` are `K`-linearly equivalent to `K`. -/
 noncomputable def closedFormsZeroWashnitzerEquiv :
@@ -103,13 +90,9 @@ noncomputable def deRhamCohomologyZeroWashnitzerEquiv :
       MvPowerSeries.constantCoeff (exteriorPower.zeroEquiv _ _ ω.1).1 := by
   rw [← deRhamCohomology.zeroEquivClosedForms_apply, deRhamCohomologyZeroWashnitzerEquiv,
     LinearEquiv.trans_symm, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply]; rfl
-
 end DegreeZero
-
 /-! ### Coordinate formula for `exteriorDeriv` and exactness in degree one -/
-
 section CoordinateFormula
-
 variable {σ K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 /-- Basis monomials `dX_{i₀} ∧ ⋯ ∧ dX_{i_{r-1}}` are killed by `exteriorDeriv`. -/
@@ -250,13 +233,9 @@ theorem existsUnique_d_eq_of_exteriorDeriv_one_eq_zero [Finite σ] [CharZero K]
   simpa only [d_eq_iff_forall_pderiv_eq] using
     existsUnique_pderiv_eq (fun i ↦ (washnitzerBasis σ K).repr ω i)
       ((exteriorDeriv_one_eq_zero_iff ω).mp hω) c
-
 end CoordinateFormula
-
 /-! ### The Poincaré lemma in all positive degrees -/
-
 section AllPositiveDegrees
-
 variable {σ K : Type*} [Finite σ] [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
   [CharZero K]
 
@@ -291,7 +270,6 @@ private theorem pderiv_repr_eq_zero_of_lt [LinearOrder σ] (q : ℕ) {i₀ k₀ 
   · exact fun h ↦ absurd (Finset.mem_attach w.1 ⟨k₀, hkw⟩) h
 
 section PoincareStep
-
 variable [LinearOrder σ] {q : ℕ} {i₀ : σ}
   {ω : ⋀[washnitzerAlgebra σ K]^(q + 1) (Omega K (washnitzerAlgebra σ K))}
 
@@ -408,9 +386,7 @@ private theorem poincare_step (q : ℕ) (i₀ : σ)
     simp only [not_exists, not_and, not_lt] at hex_lt
     have hi₀u : i₀ ∈ u.1 := le_antisymm hle_i₀ (hex_lt i hi) ▸ hi
     exact (exteriorDeriv_poincarePrimitive_repr_of_mem_of_forall_le hi₀u hex_lt).symm
-
 end PoincareStep
-
 /-- **The Poincaré lemma on a dagger polydisc (Grosse-Klönne)**: every closed `(q + 1)`-form on
 `W = K⟨X_σ⟩†` (`[Finite σ]`, `CharZero K`) is exact. -/
 theorem exists_exteriorDeriv_eq_of_exteriorDeriv_eq_zero (q : ℕ)
@@ -435,8 +411,7 @@ theorem exists_exteriorDeriv_eq_of_exteriorDeriv_eq_zero (q : ℕ)
     obtain ⟨i, hi⟩ := Finset.card_pos.mp (by rw [Set.powersetCard.card_eq s]; exact Nat.succ_pos q)
     have := hsupp s hne i hi; have := (e i).2; omega
   | succ k ih =>
-    intro m hm ω hdω hsupp
-    let i₀ : σ := e.symm ⟨m, by omega⟩
+    intro m hm ω hdω hsupp; let i₀ : σ := e.symm ⟨m, by omega⟩
     have hei₀ : (e i₀ : ℕ) = m := by simp [i₀]
     -- Under `LinearOrder.lift' e`, `i₀ ≤ i` is definitionally `e i₀ ≤ e i`.
     obtain ⟨η₀, hdω', hsupp'⟩ := poincare_step q i₀ hdω fun s hs i hi ↦
@@ -447,8 +422,7 @@ theorem exists_exteriorDeriv_eq_of_exteriorDeriv_eq_zero (q : ℕ)
 
 /-- In characteristic zero, exact and closed `(q + 1)`-forms on `W = K⟨X_σ⟩†` coincide. -/
 theorem exactForms_washnitzer_succ (q : ℕ) :
-    exactForms K (washnitzerAlgebra σ K) (q + 1) =
-      closedForms K (washnitzerAlgebra σ K) (q + 1) :=
+    exactForms K (washnitzerAlgebra σ K) (q + 1) = closedForms K (washnitzerAlgebra σ K) (q + 1) :=
   le_antisymm (exactForms_le_closedForms K _ (q + 1)) fun ω hω ↦
     (exactForms_succ K (washnitzerAlgebra σ K) q).symm ▸ LinearMap.mem_range.mpr
       (exists_exteriorDeriv_eq_of_exteriorDeriv_eq_zero q ((mem_closedForms K _ ω).mp hω))
@@ -461,21 +435,12 @@ theorem exactAt_deRhamComplex_washnitzer_succ (q : ℕ) :
 /-- **Vanishing of positive-degree overconvergent de Rham cohomology on a dagger polydisc.** -/
 instance instSubsingletonDeRhamCohomologyWashnitzerSucc (q : ℕ) :
     Subsingleton (deRhamCohomology K (washnitzerAlgebra σ K) (q + 1)) :=
-  subsingleton_deRhamCohomology_of_closedForms_le_exactForms K (washnitzerAlgebra σ K)
-    (exactForms_washnitzer_succ q).ge
+  subsingleton_deRhamCohomology_of_closedForms_le_exactForms K _ (exactForms_washnitzer_succ q).ge
 end AllPositiveDegrees
-
 /-! ### Failure of the polydisc Poincaré lemma in positive characteristic -/
-
 section CharP
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
-omit [CompleteSpace K] in
-/-- In characteristic `p`, `d (X₀ ^ p) = 0` in `Ω¹_{K⟨X₀⟩† / K}`. -/
-theorem d_X_pow_charP (p : ℕ) [CharP K p] :
-    d K (washnitzerAlgebra (Fin 1) K) (X (Fin 1) K 0 ^ p) = 0 := by
-  rw [(d K (washnitzerAlgebra (Fin 1) K)).leibniz_pow, ← Nat.cast_smul_eq_nsmul K,
-    CharP.cast_eq_zero, zero_smul]
 omit [CompleteSpace K] in
 /-- **Failure of the degree-zero Poincaré lemma in characteristic `p > 0`.** -/
 theorem exists_d_eq_zero_and_notMem_range_algebraMap_charP (p : ℕ) [CharP K p] [Fact p.Prime] :

@@ -21,8 +21,7 @@ namespace KaehlerDifferential
 variable (R A : Type*) [CommRing R] [CommRing A] [Algebra R A]
 
 /-- **The algebraic exterior derivative on `ExteriorAlgebra A Ω[A⁄R]`.** -/
-noncomputable def exteriorAlgebraDeriv :
-    ExteriorAlgebra A Ω[A⁄R] →ₗ[R] ExteriorAlgebra A Ω[A⁄R] :=
+noncomputable def exteriorAlgebraDeriv : ExteriorAlgebra A Ω[A⁄R] →ₗ[R] ExteriorAlgebra A Ω[A⁄R] :=
   (D R A).exteriorAlgebraDeriv (D R A).derTwistedExt.liftKaehlerDifferential
     (span_range_derivation R A) (D R A).derTwistedExt.liftKaehlerDifferential_comp_D
 
@@ -39,6 +38,8 @@ variable {R A}
     exteriorDeriv R A 0 ((exteriorPower.zeroEquiv A Ω[A⁄R]).symm a) =
       (exteriorPower.oneEquiv A Ω[A⁄R]).symm (D R A a) :=
   Derivation.exteriorDeriv_zero_symm _ _ _ _ a
+/-- **Pointwise homogeneous square-zero identity** `d (d ω) = 0` on Kähler `q`-forms, used for
+`simp` rewriting. -/
 @[simp] theorem exteriorDeriv_exteriorDeriv_apply (q : ℕ) (ω : ⋀[A]^q Ω[A⁄R]) :
     exteriorDeriv R A (q + 1) (exteriorDeriv R A q ω) = 0 :=
   Derivation.exteriorDeriv_exteriorDeriv_apply _ _ _ _ q ω
@@ -73,5 +74,4 @@ theorem mapSemilinear_exteriorDeriv {B : Type*} [CommRing B] [Algebra R B]
       exteriorDeriv R B q (exteriorPower.mapSemilinear q (KaehlerDifferential.mapSemilinear f) ω) :=
   mapSemilinear_exteriorDeriv_of_derivation _ _ _ _ f (KaehlerDifferential.mapSemilinear f)
     (KaehlerDifferential.mapSemilinear_D f) q ω
-
 end KaehlerDifferential

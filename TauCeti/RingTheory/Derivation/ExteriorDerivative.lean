@@ -21,7 +21,6 @@ or characteristic hypotheses.
 -/
 
 public section
-
 namespace Derivation
 
 /-- **The twisted extension `M × ⋀[A]^2 M` associated to a derivation `D : Derivation R A M`.**
@@ -37,11 +36,9 @@ structure TwistedExt {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A]
   fst : M
   /-- The `⋀[A]^2 M`-component of an element of `TwistedExt D`. -/
   snd : ⋀[A]^2 M
-
 namespace TwistedExt
 variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A]
   [AddCommGroup M] [Module R M] [Module A M] {D : Derivation R A M}
-
 instance : Zero (TwistedExt D) := ⟨⟨0, 0⟩⟩
 instance : Add (TwistedExt D) := ⟨fun x y ↦ ⟨x.fst + y.fst, x.snd + y.snd⟩⟩
 instance : Neg (TwistedExt D) := ⟨fun x ↦ ⟨-x.fst, -x.snd⟩⟩
@@ -113,19 +110,15 @@ noncomputable instance : Module R (TwistedExt D) := Module.compHom (TwistedExt D
 instance : IsScalarTower R A (TwistedExt D) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
 @[simp] theorem fst_smul_base (r : R) (x : TwistedExt D) : (r • x).fst = r • x.fst :=
   algebraMap_smul A r x.fst
-@[simp] theorem snd_smul_base (r : R) (x : TwistedExt D) : (r • x).snd = r • x.snd := by
-  rw [← algebraMap_smul A r x, snd_smul]
-  exact Subtype.ext <| by simp [algebraMap_smul]
+@[simp] theorem snd_smul_base (r : R) (x : TwistedExt D) : (r • x).snd = r • x.snd :=
+  Subtype.ext <| by rw [← algebraMap_smul A r x, snd_smul]; simp [algebraMap_smul]
 end TwistedExt
-
 section TwistedAlg
 variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A]
   [AddCommGroup M] [Module R M] [Module A M]
-
 @[ext] private structure TwistedAlg (_D : Derivation R A M) where
   fst : ExteriorAlgebra A M
   snd : ExteriorAlgebra A M
-
 namespace TwistedAlg
 variable {D : Derivation R A M}
 private instance : Zero (TwistedAlg D) := ⟨⟨0, 0⟩⟩
@@ -185,12 +178,9 @@ private noncomputable instance : Algebra A (TwistedAlg D) :=
     (algebraMap A (TwistedAlg D) a).fst = algebraMap A (ExteriorAlgebra A M) a := (rfl)
 @[simp] private theorem snd_algebraMap (a : A) :
     (algebraMap A (TwistedAlg D) a).snd = ExteriorAlgebra.ι A (D a) := (rfl)
-
 end TwistedAlg
 end TwistedAlg
-
 /-! ### Construction of the graded exterior derivative -/
-
 section ExteriorDeriv
 variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A]
   [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
@@ -231,7 +221,6 @@ private theorem eq_zero_of_gradedDeriv {B N : Type*} [CommRing B] [AddCommGroup 
 
 variable (D : Derivation R A M) (u : M →ₗ[A] TwistedExt D)
   (hspan : Submodule.span A (Set.range D) = ⊤) (hu : ∀ a, u (D a) = D.derTwistedExt a)
-
 include hspan hu in
 private theorem fst_lift_eq_id (m : M) : (u m).fst = m := DFunLike.congr_fun
   (LinearMap.ext_on_range hspan fun a ↦ congrArg TwistedExt.fst (hu a) :
@@ -268,13 +257,11 @@ noncomputable def exteriorAlgebraDeriv : ExteriorAlgebra A M →ₗ[R] ExteriorA
   toFun x := (twistedLift D u hspan hu x).snd
   map_add' x y := congrArg TwistedAlg.snd (map_add (twistedLift D u hspan hu) x y)
   map_smul' r x := by
-    have halg : (twistedLift D u hspan hu
-        (algebraMap A (ExteriorAlgebra A M) (algebraMap R A r))).snd = 0 := by
+    have halg : (twistedLift D u hspan hu (algebraMap A _ (algebraMap R A r))).snd = 0 := by
       rw [(twistedLift D u hspan hu).commutes]; simp
     rw [Algebra.smul_def, IsScalarTower.algebraMap_apply R A, map_mul, TwistedAlg.snd_mul, halg,
       zero_mul, zero_add, fst_twistedLift, CliffordAlgebra.involute.commutes,
       ← IsScalarTower.algebraMap_apply R A, ← Algebra.smul_def]; rfl
-
 private theorem exteriorAlgebraDeriv_apply (x : ExteriorAlgebra A M) :
     D.exteriorAlgebraDeriv u hspan hu x = (twistedLift D u hspan hu x).snd := (rfl)
 
@@ -285,8 +272,7 @@ private theorem exteriorAlgebraDeriv_apply (x : ExteriorAlgebra A M) :
 @[simp] theorem exteriorAlgebraDeriv_one : D.exteriorAlgebraDeriv u hspan hu 1 = 0 :=
   congrArg TwistedAlg.snd (map_one (twistedLift D u hspan hu))
 theorem exteriorAlgebraDeriv_ι (m : M) :
-    D.exteriorAlgebraDeriv u hspan hu (ExteriorAlgebra.ι A m) =
-      ((u m).snd : ExteriorAlgebra A M) :=
+    D.exteriorAlgebraDeriv u hspan hu (ExteriorAlgebra.ι A m) = ((u m).snd : ExteriorAlgebra A M) :=
   congrArg TwistedAlg.snd (ExteriorAlgebra.lift_ι_apply A _ _ m)
 @[simp] theorem exteriorAlgebraDeriv_ι_apply (a : A) :
     D.exteriorAlgebraDeriv u hspan hu (ExteriorAlgebra.ι A (D a)) = 0 := by
@@ -328,11 +314,12 @@ theorem exteriorAlgebraDeriv_involute (x : ExteriorAlgebra A M) :
       map_mul, neg_mul, mul_neg, neg_add]
   | add _ _ hx hy => rw [map_add, map_add, hx, hy, map_add, map_add, neg_add]
 
-/-- **Square-zero property (`d ∘ d = 0`) on `ExteriorAlgebra A M`.** -/
+/-- **Ambient-algebra square-zero identity (`d ∘ d = 0`) on `ExteriorAlgebra A M`**, for
+pointwise simplification of inhomogeneous elements. -/
 @[simp] theorem exteriorAlgebraDeriv_exteriorAlgebraDeriv (x : ExteriorAlgebra A M) :
-    D.exteriorAlgebraDeriv u hspan hu (D.exteriorAlgebraDeriv u hspan hu x) = 0 := by
+    D.exteriorAlgebraDeriv u hspan hu (D.exteriorAlgebraDeriv u hspan hu x) = 0 :=
   let δ := D.exteriorAlgebraDeriv u hspan hu
-  exact eq_zero_of_gradedDeriv D hspan id id (δ.toAddMonoidHom.comp δ.toAddMonoidHom)
+  eq_zero_of_gradedDeriv D hspan id id (δ.toAddMonoidHom.comp δ.toAddMonoidHom)
     (fun y z ↦ by
       simp only [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, id_eq]
       rw [exteriorAlgebraDeriv_mul, map_add, exteriorAlgebraDeriv_mul, exteriorAlgebraDeriv_mul,
@@ -345,9 +332,9 @@ theorem exteriorAlgebraDeriv_unique (δ' : ExteriorAlgebra A M →ₗ[R] Exterio
     (hd : ∀ a, δ' (ExteriorAlgebra.ι A (D a)) = 0)
     (hmul : ∀ x y, δ' (x * y) =
       δ' x * y + CliffordAlgebra.involute (Q := (0 : QuadraticForm A M)) x * δ' y) :
-    δ' = D.exteriorAlgebraDeriv u hspan hu := by
+    δ' = D.exteriorAlgebraDeriv u hspan hu :=
   let δ := D.exteriorAlgebraDeriv u hspan hu
-  exact LinearMap.ext fun x ↦ sub_eq_zero.mp <| eq_zero_of_gradedDeriv D hspan id
+  LinearMap.ext fun x ↦ sub_eq_zero.mp <| eq_zero_of_gradedDeriv D hspan id
     (CliffordAlgebra.involute (Q := (0 : QuadraticForm A M))) (δ' - δ).toAddMonoidHom
     (fun y z ↦ by
       simp only [LinearMap.toAddMonoidHom_coe, LinearMap.sub_apply, id_eq]
@@ -364,8 +351,7 @@ theorem mapSemilinear_exteriorAlgebraDeriv {B N : Type*} [CommRing B] [Algebra R
     ExteriorAlgebra.mapSemilinear g (D.exteriorAlgebraDeriv u hspan hu x) =
       D'.exteriorAlgebraDeriv u' hspan' hu' (ExteriorAlgebra.mapSemilinear g x) := by
   let Φ := ExteriorAlgebra.mapSemilinear g
-  let δ := D.exteriorAlgebraDeriv u hspan hu
-  let δ' := D'.exteriorAlgebraDeriv u' hspan' hu'
+  let δ := D.exteriorAlgebraDeriv u hspan hu; let δ' := D'.exteriorAlgebraDeriv u' hspan' hu'
   let Δ := Φ.toAddMonoidHom.comp δ.toAddMonoidHom - δ'.toAddMonoidHom.comp Φ.toAddMonoidHom
   have hΔ (z) : Δ z = Φ (δ z) - δ' (Φ z) := rfl
   refine sub_eq_zero.mp <| eq_zero_of_gradedDeriv D hspan Φ
@@ -418,9 +404,13 @@ theorem oneEquiv_exteriorDeriv_zero (ω : ⋀[A]^0 M) :
       D (exteriorPower.zeroEquiv A M ω) := by
   conv_lhs => rw [← (exteriorPower.zeroEquiv A M).symm_apply_apply ω, exteriorDeriv_zero_symm]
   exact LinearEquiv.apply_symm_apply _ _
+/-- **Pointwise homogeneous square-zero identity** `d (d ω) = 0` for a `q`-form `ω`, used for
+`simp` rewriting. -/
 @[simp] theorem exteriorDeriv_exteriorDeriv_apply (q : ℕ) (ω : ⋀[A]^q M) :
     D.exteriorDeriv u hspan hu (q + 1) (D.exteriorDeriv u hspan hu q ω) = 0 :=
   Subtype.ext (D.exteriorAlgebraDeriv_exteriorAlgebraDeriv u hspan hu ω.1)
+/-- **Bundled square-zero composition** `d_{q+1} ∘ₗ d_q = 0` as `R`-linear maps on exterior
+powers, used to assemble de Rham cochain complexes. -/
 theorem exteriorDeriv_comp_exteriorDeriv (q : ℕ) :
     (D.exteriorDeriv u hspan hu (q + 1)) ∘ₗ (D.exteriorDeriv u hspan hu q) = 0 :=
   LinearMap.ext (D.exteriorDeriv_exteriorDeriv_apply u hspan hu q)
@@ -463,6 +453,5 @@ theorem mapSemilinear_exteriorDeriv {B N : Type*} [CommRing B] [Algebra R B]
       D'.exteriorDeriv u' hspan' hu' q (exteriorPower.mapSemilinear q g ω) := Subtype.ext <| by
   simp only [exteriorPower.coe_mapSemilinear_apply, coe_exteriorDeriv_apply]
   exact mapSemilinear_exteriorAlgebraDeriv D u hspan hu D' u' hspan' hu' f g hg ω.1
-
 end ExteriorDeriv
 end Derivation

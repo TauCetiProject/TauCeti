@@ -223,9 +223,7 @@ theorem exteriorAlgebra_repr_coe_eq (b : Basis I R M) {r : ℕ} (ω : ⋀[R]^r M
   simp only [Finsupp.sum, Submodule.coe_sum, Submodule.coe_smul,
     ← ExteriorAlgebra.basis_eq_coe_basis, map_sum, map_smul, Basis.coord_apply, Basis.repr_self,
     Finsupp.single_apply, smul_eq_mul, mul_boole, ← Subtype.ext_iff, Finset.sum_ite_eq']
-  split_ifs with hu
-  · rfl
-  · exact (Finsupp.notMem_support_iff.mp hu).symm
+  split_ifs with hu <;> [rfl; exact (Finsupp.notMem_support_iff.mp hu).symm]
 
 /-- The `{k}`-coordinate of `(exteriorPower.oneEquiv R M).symm m` in `b.exteriorPower 1` equals
 the `k`-th coordinate of `m` in `b`. -/
@@ -241,15 +239,12 @@ theorem exteriorPower_one_repr_oneEquiv_symm (b : Basis I R M) (m : M) (k : I) :
     congr 1; funext j
     have hmem : (Set.powersetCard.ofFinEmbEquiv.symm
         (Set.powersetCard.ofCard (Finset.card_singleton i))) j ∈ ({i} : Finset I) := by
-      rw [Set.powersetCard.ofFinEmbEquiv_symm_apply]
-      exact Finset.orderEmbOfFin_mem _ _ j
+      rw [Set.powersetCard.ofFinEmbEquiv_symm_apply]; exact Finset.orderEmbOfFin_mem _ _ j
     exact congrArg b (Finset.mem_singleton.mp hmem).symm
   simp only [Finsupp.sum, map_sum, map_smul, hsingle, Basis.coord_apply, Basis.repr_self,
     Finsupp.single_apply, Subtype.ext_iff, Set.powersetCard.val_ofCard, Finset.singleton_inj,
     smul_eq_mul, mul_boole, Finset.sum_ite_eq']
-  split_ifs with hk
-  · rfl
-  · exact (Finsupp.notMem_support_iff.mp hk).symm
+  split_ifs with hk <;> [rfl; exact (Finsupp.notMem_support_iff.mp hk).symm]
 
 end Repr
 

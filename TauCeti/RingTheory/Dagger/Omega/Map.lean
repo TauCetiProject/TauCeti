@@ -38,7 +38,7 @@ section FiniteResidue
 variable {R A B : Type*} [CommRing R] [IsNoetherianRing R] [CommRing A] [CommRing B]
   [Algebra R A] [Algebra R B] [IsNoetherianRing B]
 
-/-- If `B` is noetherian with `R`-finite residue fields at maximal ideals, then every
+/-- If `B` is noetherian with maximal residue fields `B ⧸ m` module-finite over `R`, then every
 `f`-semilinear map `Ω[A⁄R] →ₛₗ[f.toRingHom] M` into a finite `B`-module vanishes on elements
 killed by `Omega.ofKaehler R A`. -/
 theorem map_eq_zero_of_ofKaehler_eq_zero {M : Type*} [AddCommGroup M]
@@ -70,7 +70,10 @@ theorem map_eq_zero_of_ofKaehler_eq_zero {M : Type*} [AddCommGroup M]
   exact (Submodule.Quotient.mk_eq_zero P).mp <|
     (ofKaehler_eq_zero_iff.mp hx) (LinearMap.ker q) (Module.Finite.equiv q.quotKerEquivRange.symm)
 
-/-- **Semilinear functoriality of `Omega` into a noetherian algebra with finite residue fields.** -/
+/-- **Semilinear functoriality of `Omega`** along `f : A →ₐ[R] B` when `R` and `B` are noetherian,
+every maximal residue field `B ⧸ m` is module-finite over `R`, and `Omega R B` is finite over `B`.
+The induced `f`-semilinear map `Omega R A →ₛₗ[f.toRingHom] Omega R B` sends `d R A a` to
+`d R B (f a)`. -/
 noncomputable def mapSemilinearOfFiniteResidue [Module.Finite B (Omega R B)]
     (hm : ∀ (m : Ideal B) [m.IsMaximal], Module.Finite R (B ⧸ m))
     (f : A →ₐ[R] B) : Omega R A →ₛₗ[f.toRingHom] Omega R B :=
@@ -128,8 +131,7 @@ theorem mapSemilinear_id [IsDaggerAlgebra K A] :
     (g : B →ₐ[K] C) (f : A →ₐ[K] B) (ω : Omega K A) :
     mapSemilinear (g.comp f) ω = mapSemilinear g (mapSemilinear f ω) := by
   obtain ⟨x, rfl⟩ := ofKaehler_surjective K A ω
-  rw [mapSemilinear_ofKaehler, mapSemilinear_ofKaehler, mapSemilinear_ofKaehler,
-    KaehlerDifferential.mapSemilinear_comp_apply]
+  simp only [mapSemilinear_ofKaehler, KaehlerDifferential.mapSemilinear_comp_apply]
 theorem mapSemilinear_comp [IsDaggerAlgebra K B] [IsDaggerAlgebra K C]
     (g : B →ₐ[K] C) (f : A →ₐ[K] B) :
     mapSemilinear (g.comp f) = (mapSemilinear g).comp (mapSemilinear f) :=
