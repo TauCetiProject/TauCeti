@@ -34,6 +34,8 @@ resolutions in the closed abelian category of curved differential graded right m
   whose terms are graded-projective curved right modules.
 * `TauCeti.CurvedDGRightModuleCat.LeftResolution.diff`: the horizontal differential
   `δ_n = π_{n+1} ≫ ι_n : P_{n+1} ⟶ P_n` of a left resolution.
+* `TauCeti.CurvedDGRightModuleCat.LeftResolution.aug`: the augmentation `π_0 ≫ syzygyZeroIso.hom`
+  from `P_0` to `M`.
 
 ## Main results
 
@@ -42,6 +44,9 @@ resolutions in the closed abelian category of curved differential graded right m
   from a graded-projective curved module with absolutely acyclic cone.
 * `TauCeti.CurvedDGRightModuleCat.LeftResolution.projective_ofGradedProjective_term`: every term
   of `LeftResolution.ofGradedProjective M` is graded-projective.
+* `TauCeti.CurvedDGRightModuleCat.LeftResolution.exact_diff_aug` and
+  `TauCeti.CurvedDGRightModuleCat.LeftResolution.exact_diff`: exactness of the augmented
+  resolution `⋯ ⟶ P_1 ⟶ P_0 ⟶ M ⟶ 0`.
 
 ## References
 
@@ -259,6 +264,40 @@ theorem diff_comp_diff (n : ℕ) : r.diff (n + 1) ≫ r.diff n = 0 := by
 theorem diff_comp_π (n : ℕ) : r.diff n ≫ r.π n = 0 := by
   simp only [diff_eq, Category.assoc, r.ι_comp_π, Limits.comp_zero]
 
+/-- The augmentation morphism `P_0 ⟶ M` of a left resolution, given by `π_0 ≫ syzygyZeroIso.hom`. -/
+noncomputable def aug :
+    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (r.term 0) ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M :=
+  r.π 0 ≫ r.syzygyZeroIso.hom
+
+/-- The augmentation factors as `r.π 0 ≫ r.syzygyZeroIso.hom`. -/
+theorem aug_eq : r.aug = r.π 0 ≫ r.syzygyZeroIso.hom :=
+  (rfl)
+
+/-- On elements, `closedHom r.aug` applies `π_0` followed by `syzygyZeroIso.hom`. -/
+@[simp]
+theorem closedHom_aug_apply (x : r.term 0) :
+    closedHom r.aug x = closedHom r.syzygyZeroIso.hom (closedHom (r.π 0) x) := by
+  rw [aug_eq, closedHom_comp, LinearMap.comp_apply]
+
+/-- The `0`-th horizontal differential followed by the augmentation vanishes. -/
+@[reassoc (attr := simp)]
+theorem diff_comp_aug : r.diff 0 ≫ r.aug = 0 := by
+  rw [aug_eq, ← Category.assoc, r.diff_comp_π 0, Limits.zero_comp]
+
+/-- In a left resolution, each `r.ι n` is a monomorphism. -/
+instance mono_ι (n : ℕ) : Mono (r.ι n) :=
+  (r.shortExact n).mono_f
+
+/-- In a left resolution, each `r.π n` is an epimorphism. -/
+instance epi_π (n : ℕ) : Epi (r.π n) :=
+  (r.shortExact n).epi_g
+
+/-- The augmentation `P_0 ⟶ M` of a left resolution is an epimorphism. -/
+instance epi_aug : Epi r.aug := by
+  rw [aug_eq]
+  exact epi_comp (r.π 0) r.syzygyZeroIso.hom
+
 /-- In a left resolution, `closedHom (r.ι n)` is injective. -/
 theorem injective_ι (n : ℕ) : Function.Injective (closedHom (r.ι n)) :=
   (shortExact_iff.1 (r.shortExact n)).1
@@ -267,9 +306,65 @@ theorem injective_ι (n : ℕ) : Function.Injective (closedHom (r.ι n)) :=
 theorem surjective_π (n : ℕ) : Function.Surjective (closedHom (r.π n)) :=
   (shortExact_iff.1 (r.shortExact n)).2.1
 
+/-- The augmentation `P_0 ⟶ M` is surjective on elements. -/
+theorem surjective_aug : Function.Surjective (closedHom r.aug) :=
+  (GradedModuleCat.epi_iff_surjective _).1
+    (inferInstance : Epi ((forgetDifferential (h := h)).map r.aug))
+
 /-- In a left resolution, `closedHom (r.ι n)` and `closedHom (r.π n)` are exact. -/
 theorem exact_ι_π (n : ℕ) : Function.Exact (closedHom (r.ι n)) (closedHom (r.π n)) :=
   (shortExact_iff.1 (r.shortExact n)).2.2
+
+/-- At elements, `closedHom (r.diff 0)` and `closedHom r.aug` are exact at `P_0`. -/
+theorem exact_closedHom_diff_aug : Function.Exact (closedHom (r.diff 0)) (closedHom r.aug) := by
+  intro x
+  constructor
+  · intro hx
+    have hπ : closedHom (r.π 0) x = 0 := by
+      have h' : closedHom r.syzygyZeroIso.hom (closedHom (r.π 0) x) = 0 := by
+        simpa only [closedHom_aug_apply] using hx
+      have hinj : Function.Injective (closedHom r.syzygyZeroIso.hom) :=
+        (GradedModuleCat.mono_iff_injective _).1
+          (inferInstance : Mono ((forgetDifferential (h := h)).map r.syzygyZeroIso.hom))
+      exact hinj (by simpa only [map_zero] using h')
+    obtain ⟨k, hk⟩ := (r.exact_ι_π 0 x).1 hπ
+    obtain ⟨y, hy⟩ := r.surjective_π 1 k
+    refine ⟨y, ?_⟩
+    rw [closedHom_diff_apply, hy, hk]
+  · rintro ⟨y, rfl⟩
+    have h0 := congrArg (fun l ↦ closedHom l y) r.diff_comp_aug
+    simpa only [closedHom_comp, LinearMap.comp_apply, closedHom_zero, LinearMap.zero_apply]
+      using h0
+
+/-- The augmented sequence `P_1 ⟶ P_0 ⟶ M` is exact at `P_0` in the closed abelian category. -/
+theorem exact_diff_aug : (ShortComplex.mk (r.diff 0) r.aug r.diff_comp_aug).Exact :=
+  ((ShortComplex.mk (r.diff 0) r.aug r.diff_comp_aug).exact_map_iff_of_faithful
+    (forgetDifferential (h := h))).1 (GradedModuleCat.exact_iff.2 r.exact_closedHom_diff_aug)
+
+/-- At elements, consecutive horizontal differentials `r.diff (n + 1)` and `r.diff n` are exact
+at `P_{n+1}`. -/
+theorem exact_closedHom_diff (n : ℕ) :
+    Function.Exact (closedHom (r.diff (n + 1))) (closedHom (r.diff n)) := by
+  intro x
+  constructor
+  · intro hx
+    have hπ : closedHom (r.π (n + 1)) x = 0 :=
+      r.injective_ι n (by simpa only [closedHom_diff_apply, map_zero] using hx)
+    obtain ⟨k, hk⟩ := (r.exact_ι_π (n + 1) x).1 hπ
+    obtain ⟨y, hy⟩ := r.surjective_π (n + 2) k
+    refine ⟨y, ?_⟩
+    rw [closedHom_diff_apply, hy, hk]
+  · rintro ⟨y, rfl⟩
+    have h0 := congrArg (fun l ↦ closedHom l y) (r.diff_comp_diff n)
+    simpa only [closedHom_comp, LinearMap.comp_apply, closedHom_zero, LinearMap.zero_apply]
+      using h0
+
+/-- Consecutive horizontal differentials `P_{n+2} ⟶ P_{n+1} ⟶ P_n` are exact in the closed
+abelian category. -/
+theorem exact_diff (n : ℕ) :
+    (ShortComplex.mk (r.diff (n + 1)) (r.diff n) (r.diff_comp_diff n)).Exact :=
+  ((ShortComplex.mk (r.diff (n + 1)) (r.diff n) (r.diff_comp_diff n)).exact_map_iff_of_faithful
+    (forgetDifferential (h := h))).1 (GradedModuleCat.exact_iff.2 (r.exact_closedHom_diff n))
 
 end LeftResolution
 

@@ -43,6 +43,8 @@ dimension.
 
 ## Main definitions
 
+* `TauCeti.CurvedDGRightModuleCat.CountableProjectiveCondition`: Positselski's countable-product
+  projective-dimension bound `(**)` for graded right `A`-modules.
 * `TauCeti.CurvedDGRightModuleCat.ContraderivedCategory.gradedProjectiveEquivalence`: under
   Positselski's countable-product projective-dimension bound `(**)`, the equivalence between the
   homotopy category of graded-projective curved right modules and the contraderived category.
@@ -92,10 +94,16 @@ local instance : SetLike.GradedMonoid (InternalGrading.ofDecomposition 𝒜).pie
 
 /-! ### Graded-projective replacement under Positselski's condition `(**)` -/
 
-/-- Under Positselski's countable-product projective-dimension bound `(**)`, every curved right
-module admits a closed morphism from a graded-projective curved right module whose mapping cone
-is contraacyclic. -/
-theorem exists_gradedProjective_contraacyclic_cone (d : ℕ)
+variable (𝒜) in
+/-- Positselski's countable-product projective-dimension condition `(**)` for graded right
+`A`-modules: there exists a uniform bound `d : ℕ` such that every countable product of projective
+graded right `A`-modules has projective dimension at most `d`. -/
+def CountableProjectiveCondition : Prop :=
+  ∃ d : ℕ, ∀ (P : ULift.{u} ℕ →
+      GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece),
+    (∀ n, Projective (P n)) → HasProjectiveDimensionLE (∏ᶜ P) d
+
+private theorem exists_gradedProjective_contraacyclic_cone_of_bound (d : ℕ)
     (hprod : ∀ (P : ULift.{u} ℕ →
         GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece),
       (∀ n, Projective (P n)) → HasProjectiveDimensionLE (∏ᶜ P) d)
@@ -128,6 +136,19 @@ theorem exists_gradedProjective_contraacyclic_cone (d : ℕ)
   exact ((contraacyclic R h).trW_iff_of_distinguished _
     (coneTriangle_distinguished (g ≫ r.prodTotalAug))).1 hcompW
 
+/-- Under Positselski's countable-product projective-dimension bound `(**)`, every curved right
+module admits a closed morphism from a graded-projective curved right module whose mapping cone
+is contraacyclic. -/
+theorem exists_gradedProjective_contraacyclic_cone (hprod : CountableProjectiveCondition 𝒜)
+    (M : CurvedDGRightModuleCat.{u, u, u} h) :
+    ∃ (Q : CurvedDGRightModuleCat.{u, u, u} h)
+      (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) Q ⟶
+        ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M),
+      Projective (toGradedModuleCat Q) ∧
+        contraacyclic R h (DGHomotopyCategory.of R (cone f)) := by
+  obtain ⟨d, hd⟩ := hprod
+  exact exists_gradedProjective_contraacyclic_cone_of_bound d hd M
+
 /-! ### The graded-projective model of `D_ctr` -/
 
 namespace ContraderivedCategory
@@ -152,18 +173,15 @@ instance faithful_gradedProjective_ι_comp_Q :
 
 variable (R h) in
 /-- **Positselski's graded-projective model of the contraderived category (Theorem 7.9(b)).**
-If every countable product of projective graded right `A`-modules has projective dimension at most
-`d`, then the restriction of the contraderived localization functor to the triangulated full
+If every countable product of projective graded right `A`-modules has uniformly bounded projective
+dimension, then the restriction of the contraderived localization functor to the triangulated full
 subcategory of graded-projective curved right modules is an equivalence. -/
-theorem isEquivalence_gradedProjective_ι_comp_Q (d : ℕ)
-    (hprod : ∀ (P : ULift.{u} ℕ →
-        GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece),
-      (∀ n, Projective (P n)) → HasProjectiveDimensionLE (∏ᶜ P) d) :
+theorem isEquivalence_gradedProjective_ι_comp_Q (hprod : CountableProjectiveCondition 𝒜) :
     ((gradedProjective R h).ι ⋙ Q R h).IsEquivalence := by
   refine ObjectProperty.isEquivalence_ι_comp_of_le_leftOrthogonal (Q R h)
     ((ObjectProperty.le_leftOrthogonal_iff_le_rightOrthogonal _ _).2
       (contraacyclic_le_rightOrthogonal_gradedProjective R h)) fun X ↦ ?_
-  obtain ⟨P, f, hP, hf⟩ := exists_gradedProjective_contraacyclic_cone d hprod X.underlying
+  obtain ⟨P, f, hP, hf⟩ := exists_gradedProjective_contraacyclic_cone hprod X.underlying
   refine ⟨DGHomotopyCategory.of R P, (dgClosedToHomotopy R).map f,
     (gradedProjective_iff _).2 hP, ?_⟩
   exact ((contraacyclic R h).trW_iff_of_distinguished _ (coneTriangle_distinguished f)).2 hf
@@ -172,22 +190,16 @@ variable (R h) in
 /-- Under Positselski's countable-product projective-dimension bound `(**)`, the triangulated full
 subcategory of graded-projective curved right modules is equivalent to the contraderived category
 via the localization functor. -/
-noncomputable def gradedProjectiveEquivalence (d : ℕ)
-    (hprod : ∀ (P : ULift.{u} ℕ →
-        GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece),
-      (∀ n, Projective (P n)) → HasProjectiveDimensionLE (∏ᶜ P) d) :
+noncomputable def gradedProjectiveEquivalence (hprod : CountableProjectiveCondition 𝒜) :
     (gradedProjective R h).FullSubcategory ≌ ContraderivedCategory R h :=
-  have := isEquivalence_gradedProjective_ι_comp_Q R h d hprod
+  have := isEquivalence_gradedProjective_ι_comp_Q R h hprod
   ((gradedProjective R h).ι ⋙ Q R h).asEquivalence
 
 /-- The forward functor of `gradedProjectiveEquivalence` is the restriction of the contraderived
 localization functor. -/
 @[simp]
-theorem gradedProjectiveEquivalence_functor (d : ℕ)
-    (hprod : ∀ (P : ULift.{u} ℕ →
-        GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece),
-      (∀ n, Projective (P n)) → HasProjectiveDimensionLE (∏ᶜ P) d) :
-    (gradedProjectiveEquivalence R h d hprod).functor =
+theorem gradedProjectiveEquivalence_functor (hprod : CountableProjectiveCondition 𝒜) :
+    (gradedProjectiveEquivalence R h hprod).functor =
       (gradedProjective R h).ι ⋙ Q R h :=
   (rfl)
 
@@ -199,7 +211,7 @@ theorem isEquivalence_of_hasProjectiveDimensionLE (d : ℕ)
     (hd : ∀ X : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece,
       HasProjectiveDimensionLE X d) :
     ((gradedProjective R h).ι ⋙ Q R h).IsEquivalence :=
-  isEquivalence_gradedProjective_ι_comp_Q R h d fun P _ ↦ hd (∏ᶜ P)
+  isEquivalence_gradedProjective_ι_comp_Q R h ⟨d, fun P _ ↦ hd (∏ᶜ P)⟩
 
 /-- The restriction of the contraderived localization functor to graded-projective curved right
 modules is a triangle functor. -/
