@@ -168,16 +168,13 @@ section KernelBridge
 
 variable (R : Type u) [CommSemiring R]
 
-private theorem ofDirectSum_of (n : ℕ) (t : (⨂[ℤ]^n) (Additive Rˣ)) :
-    TensorAlgebra.ofDirectSum (DirectSum.of (fun k ↦ (⨂[ℤ]^k) (Additive Rˣ)) n t) =
-      TensorPower.toTensorAlgebra t :=
-  DirectSum.toAddMonoid_of
-    (fun _ ↦ LinearMap.toAddMonoidHom TensorPower.toTensorAlgebra) n t
-
 private theorem toDirectSum_toTensorAlgebra (n : ℕ) (t : (⨂[ℤ]^n) (Additive Rˣ)) :
     TensorAlgebra.toDirectSum (TensorPower.toTensorAlgebra t) =
       DirectSum.of (fun k ↦ (⨂[ℤ]^k) (Additive Rˣ)) n t := by
-  rw [← ofDirectSum_of R n t, TensorAlgebra.toDirectSum_ofDirectSum]
+  rw [← show TensorAlgebra.ofDirectSum (DirectSum.of (fun k ↦ (⨂[ℤ]^k) (Additive Rˣ)) n t) =
+      TensorPower.toTensorAlgebra t from
+    DirectSum.toAddMonoid_of (fun _ ↦ LinearMap.toAddMonoidHom TensorPower.toTensorAlgebra) n t,
+    TensorAlgebra.toDirectSum_ofDirectSum]
 
 /-- The image of a pure tensor under `TensorPower.toTensorAlgebra` and `RingQuot.mkRingHom` is the
 corresponding Milnor symbol. -/
@@ -235,26 +232,17 @@ theorem mem_ker_mkRingHom_iff (z : TensorAlgebra ℤ (Additive Rˣ)) :
       {w | ∀ n, TensorAlgebra.toDirectSum w n ∈ relationSubmodule R n}
     have hadd : ∀ {x y}, x ∈ H → y ∈ H → x + y ∈ H := fun hx hy n ↦ by
       rw [map_add, DirectSum.add_apply]; exact Submodule.add_mem _ (hx n) (hy n)
-    let rc : RingCon (TensorAlgebra ℤ (Additive Rˣ)) :=
-      { r := fun x y ↦ x - y ∈ H
-        iseqv :=
-          ⟨fun _ _ ↦ by simp,
-           fun {x y} h n ↦ by
-             rw [show y - x = (-1 : ℤ) • (x - y) by abel, map_smul, DirectSum.smul_apply]
-             exact Submodule.smul_mem _ _ (h n),
-           fun {x y z} h₁ h₂ ↦ by
-             rw [show x - z = (x - y) + (y - z) by abel]; exact hadd h₁ h₂⟩
-        add' := fun {w x y z} h₁ h₂ ↦ by
-          rw [show w + y - (x + z) = (w - x) + (y - z) by abel]; exact hadd h₁ h₂
-        mul' := fun {w x y z} h₁ h₂ ↦ by
-          rw [show w * y - x * z = (w - x) * y + x * (y - z) by rw [sub_mul, mul_sub]; abel]
-          exact hadd
-            (fun n ↦ by rw [map_mul]; exact directSum_mul_mem_relationSubmodule R (.inl h₁) n)
-            (fun n ↦ by rw [map_mul]; exact directSum_mul_mem_relationSubmodule R (.inr h₂) n) }
-    have hrel : ∀ x y, milnorRel R x y → rc.mk' x = rc.mk' y := by
+    let I : TwoSidedIdeal (TensorAlgebra ℤ (Additive Rˣ)) :=
+      TwoSidedIdeal.mk' H (fun _ ↦ by simp) hadd
+        (fun {x} hx n ↦ by
+          rw [show -x = (-1 : ℤ) • x by abel, map_smul, DirectSum.smul_apply]
+          exact Submodule.smul_mem _ _ (hx n))
+        (fun hy n ↦ by rw [map_mul]; exact directSum_mul_mem_relationSubmodule R (.inr hy) n)
+        (fun hx n ↦ by rw [map_mul]; exact directSum_mul_mem_relationSubmodule R (.inl hx) n)
+    have hrel : ∀ x y, milnorRel R x y → I.ringCon.mk' x = I.ringCon.mk' y := by
       intro _ _ h
       rcases (milnorRel_def R _ _).mp h with ⟨a, b, hab, rfl, rfl⟩
-      refine rc.eq.mpr fun n ↦ ?_
+      refine I.ringCon.eq.mpr fun n ↦ ?_
       rw [sub_zero, map_mul, TensorAlgebra.toDirectSum_ι, TensorAlgebra.toDirectSum_ι,
         DirectSum.of_mul_of, TensorPower.tprod_mul_tprod]
       by_cases hn : 1 + 1 = n
@@ -262,9 +250,9 @@ theorem mem_ker_mkRingHom_iff (z : TensorAlgebra ℤ (Additive Rˣ)) :
         refine tprod_mem_relationSubmodule _ (i := 0) (by omega) ?_
         change (a : R) + (b : R) = 1; exact hab
       · rw [DirectSum.of_eq_of_ne (1 + 1) n _ (Ne.symm hn)]; exact Submodule.zero_mem _
-    have hq := RingQuot.lift_mkRingHom_apply rc.mk' hrel z
+    have hq := RingQuot.lift_mkRingHom_apply I.ringCon.mk' hrel z
     rw [RingHom.mem_ker.mp hz, map_zero] at hq
-    have hrc : z - 0 ∈ H := rc.eq.mp hq.symm
+    have hrc : z - 0 ∈ H := I.ringCon.eq.mp hq.symm
     rwa [sub_zero] at hrc
   · intro hz
     classical
@@ -272,7 +260,11 @@ theorem mem_ker_mkRingHom_iff (z : TensorAlgebra ℤ (Additive Rˣ)) :
     conv_lhs => rw [← DirectSum.sum_support_of (TensorAlgebra.toDirectSum z)]
     rw [map_sum, map_sum]
     exact Finset.sum_eq_zero fun n _ ↦ by
-      rw [ofDirectSum_of]
+      rw [show TensorAlgebra.ofDirectSum (DirectSum.of (fun k ↦ (⨂[ℤ]^k) (Additive Rˣ)) n
+          (TensorAlgebra.toDirectSum z n)) =
+          TensorPower.toTensorAlgebra (TensorAlgebra.toDirectSum z n) from
+        DirectSum.toAddMonoid_of
+          (fun _ ↦ LinearMap.toAddMonoidHom TensorPower.toTensorAlgebra) n _]
       exact mkRingHom_toTensorAlgebra_eq_zero_of_mem_relationSubmodule R (hz n)
 
 /-- A degree-`n` tensor lies in the kernel of the Steinberg quotient map if and only if it belongs

@@ -246,19 +246,11 @@ theorem isHomogeneous_ker_mkAlgHom :
       · rw [hx j, zero_mul]
       · rw [hy k, mul_zero]
     · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm hjk), Submodule.coe_zero, map_zero]
-  let rc : RingCon (TensorAlgebra ℤ (Additive Rˣ)) :=
-    { r := fun x y ↦ x - y ∈ H
-      iseqv := ⟨fun _ ↦ by simpa only [sub_self] using hH_zero,
-        fun h ↦ by simpa only [neg_sub] using hH_neg h,
-        fun {x y z} h₁ h₂ ↦ by rw [show x - z = (x - y) + (y - z) by abel]; exact hH_add h₁ h₂⟩
-      add' := fun {w x y z} h₁ h₂ ↦ by
-        rw [show w + y - (x + z) = (w - x) + (y - z) by abel]; exact hH_add h₁ h₂
-      mul' := fun {w x y z} h₁ h₂ ↦ by
-        rw [show w * y - x * z = (w - x) * y + x * (y - z) by rw [sub_mul, mul_sub]; abel]
-        exact hH_add (hH_mul (.inl h₁)) (hH_mul (.inr h₂)) }
-  have hrel : ∀ x y, milnorRel R x y → rc.mk' x = rc.mk' y := by
+  let I : TwoSidedIdeal (TensorAlgebra ℤ (Additive Rˣ)) :=
+    TwoSidedIdeal.mk' H hH_zero hH_add hH_neg (fun h ↦ hH_mul (.inr h)) (fun h ↦ hH_mul (.inl h))
+  have hrel : ∀ x y, milnorRel R x y → I.ringCon.mk' x = I.ringCon.mk' y := by
     rintro _ _ ⟨a, b, hab, rfl, rfl⟩
-    refine rc.eq.mpr ?_
+    refine I.ringCon.eq.mpr ?_
     change TensorAlgebra.ι ℤ (Additive.ofMul a) * TensorAlgebra.ι ℤ (Additive.ofMul b) - 0 ∈ H
     rw [sub_zero]
     have hmem : TensorAlgebra.ι ℤ (Additive.ofMul a) * TensorAlgebra.ι ℤ (Additive.ofMul b) ∈ 𝒜 2 :=
@@ -270,9 +262,9 @@ theorem isHomogeneous_ker_mkAlgHom :
       simpa only [map_zero] using RingQuot.mkRingHom_rel (r := milnorRel R) ⟨a, b, hab, rfl, rfl⟩
     · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm hi), Submodule.coe_zero, map_zero]
   intro i x hx
-  have hq := RingQuot.lift_mkRingHom_apply rc.mk' hrel x
+  have hq := RingQuot.lift_mkRingHom_apply I.ringCon.mk' hrel x
   rw [RingHom.mem_ker.mp hx, map_zero] at hq
-  have hrc : x - 0 ∈ H := rc.eq.mp hq.symm
+  have hrc : x - 0 ∈ H := I.ringCon.eq.mp hq.symm
   exact RingHom.mem_ker.mpr ((sub_zero x ▸ hrc) i)
 
 /-- `MilnorK.degree R` defines a graded monoid structure on `MilnorK R`. -/
@@ -289,36 +281,22 @@ theorem isInternal_degree : DirectSum.IsInternal (degree R) := by
     (RingQuot.mkRingHom (milnorRel R)).toIntAlgHom
   let 𝒜 : ℕ → Submodule ℤ (TensorAlgebra ℤ (Additive Rˣ)) :=
     fun n ↦ (TensorAlgebra.ι ℤ : Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n
-  let φ : (⨁ i, 𝒜 i) →+ (⨁ i, degree R i) := DirectSum.toAddMonoid fun i ↦
-    (DirectSum.of (fun k ↦ degree R k) i).comp
-      (AddMonoidHom.mk' (fun a : 𝒜 i ↦ (⟨f a.val, ⟨a.val, a.property, rfl⟩⟩ : degree R i))
-        fun _ _ ↦ Subtype.ext (map_add f _ _))
+  let ψ : ∀ i, 𝒜 i →+ degree R i := fun i ↦
+    AddMonoidHom.mk' (fun a : 𝒜 i ↦ (⟨f a.val, ⟨a.val, a.property, rfl⟩⟩ : degree R i))
+      fun _ _ ↦ Subtype.ext (map_add f _ _)
+  let φ : (⨁ i, 𝒜 i) →+ (⨁ i, degree R i) := DirectSum.map ψ
   have hφ_coe : ∀ w, DirectSum.coeAddMonoidHom (degree R) (φ w) =
       f (DirectSum.coeAddMonoidHom 𝒜 w) := fun w ↦ by
     induction w using DirectSum.induction_on with
     | zero => simp
-    | of i a => simp [φ]
+    | of i a => simp [φ, ψ]
     | add _ _ hx hy => simp [hx, hy]
   have hφ_apply : ∀ w i, ((φ w i : degree R i) : MilnorK R) =
       f (w i : TensorAlgebra ℤ (Additive Rˣ)) := fun w i ↦ by
-    induction w using DirectSum.induction_on with
-    | zero => simp
-    | of j a =>
-      by_cases hji : j = i
-      · subst hji; simp [φ]
-      · simp [φ, DirectSum.of_eq_of_ne j i _ (Ne.symm hji)]
-    | add _ _ hx hy => simp [hx, hy]
-  have hφ_surj : Function.Surjective φ := fun z ↦ by
-    induction z using DirectSum.induction_on with
-    | zero => exact ⟨0, map_zero φ⟩
-    | of i b =>
-      obtain ⟨a, ha, hab⟩ := b.property
-      refine ⟨DirectSum.of (fun k ↦ 𝒜 k) i ⟨a, ha⟩, ?_⟩
-      simp only [φ, DirectSum.toAddMonoid_of, AddMonoidHom.comp_apply, AddMonoidHom.mk'_apply]
-      exact congrArg _ (Subtype.ext hab)
-    | add _ _ hx hy =>
-      obtain ⟨wx, rfl⟩ := hx; obtain ⟨wy, rfl⟩ := hy
-      exact ⟨wx + wy, map_add φ wx wy⟩
+    rw [DirectSum.map_apply]; rfl
+  have hφ_surj : Function.Surjective φ := (DirectSum.map_surjective ψ).mpr fun i b ↦ by
+    obtain ⟨a, ha, hab⟩ := b.property
+    exact ⟨⟨a, ha⟩, Subtype.ext hab⟩
   constructor
   · intro x y hxy
     obtain ⟨wx, rfl⟩ := hφ_surj x; obtain ⟨wy, rfl⟩ := hφ_surj y
@@ -769,11 +747,7 @@ theorem subsingleton_degree_of_isCyclic_of_ringChar_ne_zero [IsCyclic Fˣ] (hcha
 /-- Milnor K-groups of finite fields vanish in every degree at least two. -/
 theorem finiteField_vanishing (F : Type u) [Field F] [Finite F] (n : ℕ) (hn : 2 ≤ n) :
     Subsingleton (degree F n) :=
-  subsingleton_degree_of_isCyclic_of_ringChar_ne_zero (fun h0 ↦ by
-    have : CharP F 0 := h0 ▸ ringChar.charP F
-    have : CharZero F := CharP.charP_to_charZero F
-    exact not_infinite_iff_finite.mpr ‹Finite F›
-      (Infinite.of_injective (Nat.cast : ℕ → F) Nat.cast_injective)) n hn
+  subsingleton_degree_of_isCyclic_of_ringChar_ne_zero (CharP.ringChar_ne_zero_of_finite F) n hn
 
 end FiniteField
 

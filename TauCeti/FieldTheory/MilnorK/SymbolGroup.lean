@@ -260,10 +260,7 @@ theorem subsingleton_of_isCyclic_of_ringChar_ne_zero [IsCyclic Fˣ] (hchar : rin
 
 /-- For every finite field `F`, `SymbolGroup F` vanishes. -/
 theorem subsingleton_of_finite [Finite F] : Subsingleton (SymbolGroup F) :=
-  subsingleton_iff_forall_eq 0 |>.mpr fun x ↦ by
-    induction x using SymbolGroup.inductionOn with
-    | symbol a b => exact isSteinbergPairing_symbol.eq_zero_of_finite a b
-    | add _ _ hx hy => rw [hx, hy, add_zero]
+  subsingleton_of_isCyclic_of_ringChar_ne_zero (CharP.ringChar_ne_zero_of_finite F)
 
 end Field
 

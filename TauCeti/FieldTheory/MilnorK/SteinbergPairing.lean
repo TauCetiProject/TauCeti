@@ -303,11 +303,7 @@ theorem eq_zero_of_isCyclic_of_ringChar_ne_zero [IsCyclic Fˣ] (hchar : ringChar
 
 /-- Every Steinberg pairing on a finite field is identically zero. -/
 theorem eq_zero_of_finite [Finite F] (hc : IsSteinbergPairing c) (a b : Fˣ) : c a b = 0 :=
-  hc.eq_zero_of_isCyclic_of_ringChar_ne_zero (fun h0 ↦ by
-    have : CharP F 0 := h0 ▸ ringChar.charP F
-    have : CharZero F := CharP.charP_to_charZero F
-    exact not_infinite_iff_finite.mpr ‹Finite F›
-      (Infinite.of_injective (Nat.cast : ℕ → F) Nat.cast_injective)) a b
+  hc.eq_zero_of_isCyclic_of_ringChar_ne_zero (CharP.ringChar_ne_zero_of_finite F) a b
 
 end Field
 
