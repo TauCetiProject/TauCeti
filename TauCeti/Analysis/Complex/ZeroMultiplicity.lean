@@ -29,7 +29,8 @@ of `∂bar f = a f`, for instance for the section of a plane vortex, and it is t
 topological argument principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow`. The exponent of such a
 factorization is unique (`TauCeti.eq_of_eventually_sub_pow_mul_eq`), so `f` has at most one zero
 multiplicity function (`TauCeti.IsZeroMultiplicity.unique`); it is positive exactly at the zeros of
-`f`.
+`f`, which are isolated, so `f` is nonzero on a dense set
+(`TauCeti.IsZeroMultiplicity.dense_setOf_ne_zero`).
 
 Near `z`, `f` vanishes to every order `k ≤ n z`: `‖f w‖ ≤ C ‖w - z‖ ^ k`
 (`TauCeti.IsZeroMultiplicity.exists_eventually_norm_le_mul_pow`).
@@ -117,6 +118,18 @@ theorem eq_zero_iff (h : IsZeroMultiplicity f n) {z : ℂ} : n z = 0 ↔ f z ≠
 /-- The multiplicity is positive exactly at the zeros of `f`. -/
 theorem pos_iff (h : IsZeroMultiplicity f n) {z : ℂ} : 0 < n z ↔ f z = 0 := by
   rw [Nat.pos_iff_ne_zero, Ne, h.eq_zero_iff, not_not]
+
+/-- The zeros of a function with a zero multiplicity function are isolated, so it is nonzero on a
+dense set. -/
+theorem dense_setOf_ne_zero (h : IsZeroMultiplicity f n) : Dense {z | f z ≠ 0} := by
+  refine fun z ↦ mem_closure_iff_frequently.2 ?_
+  obtain ⟨v, hv, hv₀, hf⟩ := isZeroMultiplicity_iff.1 h z
+  have hne : ∀ᶠ w in 𝓝[≠] z, f w ≠ 0 := by
+    filter_upwards [hf.filter_mono nhdsWithin_le_nhds,
+      (hv.eventually_ne hv₀).filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin] with w hw hvw hw₀
+    rw [hw]
+    exact mul_ne_zero (pow_ne_zero _ (sub_ne_zero.2 hw₀)) hvw
+  exact hne.frequently.filter_mono nhdsWithin_le_nhds
 
 /-- A function vanishes at `z` at least to every order `k` up to its multiplicity there:
 `‖f w‖ ≤ C ‖w - z‖ ^ k` near `z`. -/

@@ -213,6 +213,19 @@ theorem tendsto_normSq_of_tendsto_sectionValue_mul {phase : ℂ → ℂ}
     rw [Pi.div_apply, norm_mul, mul_div_cancel_right₀ _ hz]
   simpa only [sq_norm_sectionValue, one_pow] using hn.pow 2
 
+/-- A field whose section has the degree-`m` end framing `α(z) (z / |z|)^(-m) → 1` has section
+modulus `|α|` tending to one at infinity. -/
+theorem tendsto_norm_sectionValue_of_tendsto_sectionValue_mul_inv_pow {m : ℕ}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hframe : Filter.Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹)
+      (Filter.cocompact ℂ) (nhds 1)) :
+    Filter.Tendsto (fun z ↦ ‖sectionValue x z‖) (Filter.cocompact ℂ) (nhds 1) := by
+  rw [← norm_one (α := ℂ)]
+  refine hframe.norm.congr' ?_
+  filter_upwards [(isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact] with z hz
+  simp only [norm_mul, norm_inv, norm_pow, norm_div, norm_real, norm_norm,
+    div_self (norm_ne_zero_iff.2 hz), one_pow, inv_one, mul_one]
+
 /-- A field whose section has the degree-`m` end framing `α(z) (z / |z|)^(-m) → 1` has squared
 modulus `|α|² = 4 (p² + q²)` tending to one at infinity. -/
 theorem tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow {m : ℕ}

@@ -112,8 +112,8 @@ private def frameCoord : V →L[ℝ] ℂ × ℂ :=
   ((innerSL ℝ (e 0)).smulRight (1 : ℂ) + (innerSL ℝ (e 1)).smulRight I).prod (normalCoord e)
 
 /-- The second coordinate of `frameCoord e` is the normal coordinate. -/
-private theorem frameCoord_apply_snd (y : V) : (frameCoord e y).2 = normalCoord e y :=
-  (rfl)
+private theorem frameCoord_apply_snd (y : V) : (frameCoord e y).2 = normalCoord e y := by
+  simp [frameCoord]
 
 private theorem frameMap_frameCoord (y : V) : frameMap e (frameCoord e y) = y := by
   conv_rhs => rw [← e.sum_repr' y]
@@ -170,10 +170,10 @@ theorem exists_vortex_eq_mul_sectionValue_normalCoord (h₀ : J (e 0) = e 1)
       (contDiff_iff_contDiffAt.2 fun p ↦
         contDiffAt_pullback_continuousLinearMap Φ hb.contDiffAt)
       (fun p v w ↦ by
-        rw [Φ.extDeriv_pullback (hb.differentiable (by simp) _),
-          ContinuousAlternatingMap.compContinuousLinearMap_apply,
-          ContinuousAlternatingMap.compContinuousLinearMap_apply, Matrix.comp_vec2,
-          Matrix.comp_vec2, frameMap_I_smul h₀ h₂₃, frameMap_I_smul h₀ h₂₃, hJF])
+        rw [Φ.extDeriv_pullback (hb.differentiable (by simp) _)]
+        simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply]
+        rw [Matrix.comp_vec2, Matrix.comp_vec2]
+        simp only [Φ, frameMap_I_smul h₀ h₂₃, hJF])
       (hα.comp Φ.differentiable)
       (fun p ↦ by
         rw [← hpull, covariantDBar_comp J _ (hα _) Φ.differentiableAt
@@ -320,17 +320,8 @@ theorem exists_vortex_norm_eq_one_and_eq_normalConnection_sub_phaseForm (hb : Co
   obtain ⟨s, -, x, hx, hsol, hframe, hzero, h, hh, hh₀, hαh⟩ :=
     exists_vortex_eq_mul_sectionValue_normalCoord h₀ h₂₃ hb hJF hα hdbar (K := R)
       fun y hy hαy ↦ by simpa [hαy] using hR (Set.mem_Ici.2 hy)
-  -- The vortex section tends to unit modulus at infinity.
-  have hnorm : Tendsto (fun z ↦ ‖Vortex.sectionValue x z‖) (cocompact ℂ) (𝓝 1) := by
-    have h := (Real.continuous_sqrt.tendsto 1).comp
-      (Vortex.tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe)
-    rw [Real.sqrt_one] at h
-    refine h.congr fun z ↦ ?_
-    rw [Function.comp_apply, ← Vortex.sq_norm_sectionValue, Real.sqrt_sq (norm_nonneg _)]
-  have hdense : Dense {z | Vortex.sectionValue x z ≠ 0} := by
-    classical
-    refine (dense_univ.sdiff_finset s.toFinset).mono fun z hz ↦ ?_
-    simpa [← hzero.eq_zero_iff, Multiset.count_eq_zero] using hz
+  have hnorm := Vortex.tendsto_norm_sectionValue_of_tendsto_sectionValue_mul_inv_pow hframe
+  have hdense := hzero.dense_setOf_ne_zero
   have hbdd := isBounded_range_log_norm_sq_of_eq_mul_sectionValue_normalCoord h₀ h₂₃
     (hb.differentiable (by simp)) hdbar hC hlim (hx.of_le (by simp)) hsol hnorm hdense
     (hh.of_le (by simp)) hh₀ hαh
