@@ -193,10 +193,16 @@ lemma homologyTruncGETruncLTIso_hom_naturality {X X' : DerivedCategory C} (f : X
       (homologyTruncGETruncLTIso X q).hom ≫ (homologyFunctor C q).map f := by
   have := isIso_homologyFunctor_map_truncGEπ_app ((t.truncLT (q + 1)).obj X) (le_refl q)
   rw [← cancel_epi ((homologyFunctor C q).map ((t.truncGEπ q).app ((t.truncLT (q + 1)).obj X))),
-    homologyFunctor_map_truncGEπ_app_comp_homologyTruncGETruncLTIso_hom_assoc,
-    ← Functor.map_comp_assoc, ← (t.truncGEπ q).naturality, Functor.id_map, Functor.map_comp_assoc,
-    homologyFunctor_map_truncGEπ_app_comp_homologyTruncGETruncLTIso_hom, ← Functor.map_comp,
-    ← Functor.map_comp, NatTrans.naturality, Functor.id_map]
+    homologyFunctor_map_truncGEπ_app_comp_homologyTruncGETruncLTIso_hom_assoc]
+  -- Both sides are induced by `τ_{<q+1} X ⟶ X'`: use the naturality of `X ⟶ τ_{≥q} X`, then that
+  -- of `τ_{<q+1} X ⟶ X`.
+  calc _ = (homologyFunctor C q).map ((t.truncLT (q + 1)).map f) ≫
+          (homologyFunctor C q).map ((t.truncGEπ q).app ((t.truncLT (q + 1)).obj X')) ≫
+            (homologyTruncGETruncLTIso X' q).hom := by
+        simp only [← Functor.map_comp_assoc, t.truncGEπ_naturality]
+    _ = (homologyFunctor C q).map ((t.truncLT (q + 1)).map f ≫ (t.truncLTι (q + 1)).app X') := by
+        simp
+    _ = _ := by simp
 
 /-- The truncation `τ_{≥q} τ_{<q+1} X` is the cohomology `Hᵠ(X)` placed in degree `q`. On `Hᵠ` it
 induces `homologyTruncGETruncLTIso` (`homologyFunctor_map_truncGETruncLTIsoSingleFunctor_hom`). -/
