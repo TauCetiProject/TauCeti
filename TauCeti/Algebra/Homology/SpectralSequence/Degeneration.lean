@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.SpectralObject.HasSpectralSequence
 public import TauCeti.Algebra.Homology.SpectralSequence.SerreClass
 
 /-!
@@ -138,14 +139,6 @@ section Cohomological
 
 variable (E : SpectralSequence C (fun r ↦ ComplexShape.up' ((r, 1 - r) : ℤ × ℤ)) 2)
 
-/-- A differential of a cohomological spectral sequence raises the total degree by one. -/
-private lemma add_add_one_eq_of_rel {r : ℤ} {pq pq' : ℤ × ℤ}
-    (h : (ComplexShape.up' ((r, 1 - r) : ℤ × ℤ)).Rel pq pq') :
-    pq.1 + pq.2 + 1 = pq'.1 + pq'.2 := by
-  subst h
-  dsimp
-  lia
-
 /-- **Lacunary degeneration.** If of any two positions of the page `2` of a cohomological spectral
 sequence whose total degrees differ by one at least one carries the zero object, every
 differential on every page `r ≥ 2` vanishes, since a differential raises the total degree by
@@ -155,7 +148,8 @@ lemma page_d_eq_zero_of_isZero_or_isZero
       IsZero ((E.page 2).X pq) ∨ IsZero ((E.page 2).X pq'))
     (r : ℤ) (hr : 2 ≤ r) (pq pq' : ℤ × ℤ) : (E.page r hr).d pq pq' = 0 := by
   by_cases hrel : (ComplexShape.up' ((r, 1 - r) : ℤ × ℤ)).Rel pq pq'
-  · exact E.page_d_eq_zero_of_le le_rfl (h pq pq' (add_add_one_eq_of_rel hrel)) r hr
+  · exact E.page_d_eq_zero_of_le le_rfl
+      (h pq pq' (Abelian.SpectralObject.coreE₂Cohomological.hc r pq pq' hrel hr)) r hr
   · exact HomologicalComplex.shape _ _ _ hrel
 
 /-- **Survival in the lacunary case.** Let `pq` be a position of the page `2` of a cohomological
@@ -169,8 +163,9 @@ lemma nonempty_page_X_iso_page_two_X_of_isZero_or_isZero {pq : ℤ × ℤ}
   by_cases hpq : IsZero ((E.page 2).X pq)
   · exact ⟨(E.isZero_page_X_of_le le_rfl hpq r hr).iso hpq⟩
   -- Otherwise every object joined to `pq` by a differential vanishes, so `pq` survives.
-  refine ⟨E.pageXIsoOfLEOfIsZero le_rfl (fun s _ pq' hpq' ↦ (h pq' ?_).resolve_left hpq) r hr⟩
-  exact hpq'.imp add_add_one_eq_of_rel add_add_one_eq_of_rel
+  refine ⟨E.pageXIsoOfLEOfIsZero le_rfl (fun s hs pq' hpq' ↦ (h pq' ?_).resolve_left hpq) r hr⟩
+  exact hpq'.imp (fun hrel ↦ Abelian.SpectralObject.coreE₂Cohomological.hc s _ _ hrel hs)
+    (fun hrel ↦ Abelian.SpectralObject.coreE₂Cohomological.hc s _ _ hrel hs)
 
 end Cohomological
 

@@ -55,9 +55,10 @@ singular chains.
   (`TauCeti.toFilteredSpaceTopColumnEInfty`) vanishes exactly on the image of `Hₙ(X q)`
   (`TauCeti.toFilteredSpaceTopColumnEInfty_eq_zero_iff`).
   When `X a = ∅` and `X b = Y`, the filtration is finite and the spectral sequence converges
-  strongly (`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfFinite`). If moreover each
-  position joined to `(p, q)` by a differential carries the zero object on the first page, or
-  `(p, q)` does, the object at `(p, q)` survives to the graded homology
+  strongly (`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfFinite`). If moreover for
+  every position whose total degree differs by one from that of `(p, q)`, that position or
+  `(p, q)` carries the zero object on the first page, the object at `(p, q)` survives to the
+  graded homology
   (`TauCeti.nonempty_cokernel_abutmentFiltrationMap_iso_page_two_X_of_isZero_or_isZero`), by
   `CategoryTheory.SpectralSequence.nonempty_page_X_iso_page_two_X_of_isZero_or_isZero`.
   Filtrations that absorb every compact subset without reaching `Y`, such as the skeletal
