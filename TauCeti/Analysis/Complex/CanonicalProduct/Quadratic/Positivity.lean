@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Data.Set.Finite.Basic
@@ -42,6 +43,8 @@ this yields:
 
 ## Main results
 
+* `TauCeti.exists_polynomial_eval_of_eq_mul_pow_tprod_one_add_div_sq`: a paired quadratic product
+  with finitely many nonzero `γ n` is a complex polynomial.
 * `TauCeti.iteratedDeriv_im_eq_zero_and_re_nonneg_of_eq_mul_pow_tprod_one_add_div_sq`: reality and
   nonnegativity of all iterated derivatives on `[0, ∞)`.
 * `TauCeti.re_iteratedDeriv_zero_pos_of_eq_mul_pow_tprod_one_add_div_sq`: strict positivity of
@@ -73,6 +76,23 @@ private theorem eval_map_pairedPartialPoly (c : ℝ) (m : ℕ) (γ : ℕ → ℝ
   rw [one_add_div_sq_eq_one_add_inv_sq_mul]
   push_cast
   ring
+
+/-- A paired quadratic product with only finitely many nonzero entries `γ n` is the evaluation of a
+complex polynomial. -/
+theorem exists_polynomial_eval_of_eq_mul_pow_tprod_one_add_div_sq
+    {f : ℂ → ℂ} {c : ℝ} {m : ℕ} {γ : ℕ → ℝ}
+    (hf_eq : ∀ z : ℂ, f z = (c : ℂ) * z ^ m * ∏' n : ℕ, (1 + z ^ 2 / (γ n : ℂ) ^ 2))
+    (hfin : {n : ℕ | γ n ≠ 0}.Finite) :
+    ∃ P : Polynomial ℂ, ∀ z, f z = P.eval z := by
+  classical
+  refine ⟨(pairedPartialPoly c m γ hfin.toFinset).map (algebraMap ℝ ℂ), fun z ↦ ?_⟩
+  rw [eval_map_pairedPartialPoly, hf_eq z]
+  congr 1
+  rw [tprod_eq_prod (s := hfin.toFinset) fun n hn ↦ ?_]
+  have hγ0 : γ n = 0 := by
+    by_contra hne
+    exact hn (hfin.mem_toFinset.mpr hne)
+  simp [hγ0]
 
 /-- Every coefficient of `pairedPartialPoly c m γ s` is nonnegative when `0 ≤ c`. -/
 private theorem coeff_pairedPartialPoly_nonneg {c : ℝ} (hc : 0 ≤ c) (m : ℕ) (γ : ℕ → ℝ)
@@ -161,8 +181,9 @@ theorem iteratedDeriv_im_eq_zero_and_re_nonneg_of_eq_mul_pow_tprod_one_add_div_s
       (((Polynomial.derivative^[k] (pairedPartialPoly c m γ s)).eval x : ℝ) : ℂ) =
         iteratedDeriv k
           (fun w : ℂ ↦ ((pairedPartialPoly c m γ s).map (algebraMap ℝ ℂ)).eval w) (x : ℂ) := by
-    simpa only [Complex.coe_algebraMap] using
-      ((pairedPartialPoly c m γ s).iteratedDeriv_eval_map (algebraMap ℝ ℂ) k x).symm
+    rw [Polynomial.iteratedDeriv, Polynomial.iterate_derivative_map]
+    dsimp only
+    rw [← Complex.coe_algebraMap, Polynomial.eval_map_apply]
   open scoped ComplexOrder in
   have hle : (0 : ℂ) ≤ iteratedDeriv k f (x : ℂ) :=
     ge_of_tendsto' (htend.congr fun s ↦ (hreal_val s).symm) fun s ↦ by

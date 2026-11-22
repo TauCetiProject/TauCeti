@@ -25,6 +25,8 @@ entries, avoiding conditional branching in convergence and coefficient proofs.
   from inverse-square summability `∑' n, (γ n)⁻¹ ^ 2 < ∞`.
 * `TauCeti.one_le_tprod_one_add_div_sq`: on `ℝ`, the paired product is real and at least `1` in
   `ComplexOrder`.
+* `TauCeti.im_eq_zero_and_re_pos_of_eq_mul_pow_one_add_div_sq`: eventual real positivity of a
+  paired quadratic product forces its leading constant to be real and strictly positive.
 * `TauCeti.exists_nat_seq_tprod_one_add_div_sq`: flattening an arbitrary inverse-square-summable
   family with multiplicities into a `0`-padded `ℕ`-indexed sequence.
 -/
@@ -96,6 +98,40 @@ theorem one_le_tprod_one_add_div_sq {γ : ℕ → ℝ}
     (Finset.one_le_prod₀ fun n _ ↦ le_add_of_nonneg_right (by positivity))
 
 end
+
+/-- Evaluating `f z = a * z ^ m * ∏' n, (1 + z ^ 2 / (γ n) ^ 2)` at `x₀ = max R 1 > 0` shows
+that eventual real positivity of `f` forces the leading constant `a` to be real and strictly
+positive. -/
+theorem im_eq_zero_and_re_pos_of_eq_mul_pow_one_add_div_sq {f : ℂ → ℂ} {a : ℂ} {m : ℕ}
+    {γ : ℕ → ℝ} (hsum : Summable (fun n ↦ (γ n)⁻¹ ^ 2))
+    (hf_eq : ∀ z : ℂ, f z = a * z ^ m * ∏' n, (1 + z ^ 2 / (γ n : ℂ) ^ 2))
+    (hpositive : ∃ R : ℝ, ∀ x : ℝ, R ≤ x → (f (x : ℂ)).im = 0 ∧ 0 < (f (x : ℂ)).re) :
+    a.im = 0 ∧ 0 < a.re := by
+  obtain ⟨R, hR⟩ := hpositive
+  set x₀ : ℝ := max R 1
+  obtain ⟨hfx_im, hfx_re⟩ := hR x₀ (le_max_left R 1)
+  have hP_le : (1 : ℝ) ≤ (∏' n : ℕ, (1 + (x₀ : ℂ) ^ 2 / (γ n : ℂ) ^ 2)).re ∧
+      (0 : ℝ) = (∏' n : ℕ, (1 + (x₀ : ℂ) ^ 2 / (γ n : ℂ) ^ 2)).im := by
+    open scoped ComplexOrder in
+    exact Complex.le_def.mp (one_le_tprod_one_add_div_sq hsum x₀)
+  set P₀ : ℂ := ∏' n : ℕ, (1 + (x₀ : ℂ) ^ 2 / (γ n : ℂ) ^ 2) with hP₀_def
+  have hK_pos : 0 < x₀ ^ m * P₀.re :=
+    mul_pos (pow_pos (lt_of_lt_of_le zero_lt_one (le_max_right R 1)) m)
+      (zero_lt_one.trans_le hP_le.1)
+  have hP_coe : P₀ = (P₀.re : ℂ) := Complex.ext rfl hP_le.2.symm
+  have hfx_eval : f (x₀ : ℂ) = a * (((x₀ ^ m * P₀.re : ℝ) : ℂ)) := by
+    conv_lhs => rw [hf_eq (x₀ : ℂ), ← hP₀_def, hP_coe]
+    push_cast
+    ring
+  have ha_im : a.im = 0 := by
+    have him := congrArg Complex.im hfx_eval
+    rw [hfx_im, im_mul_ofReal] at him
+    exact (mul_eq_zero.mp him.symm).resolve_right hK_pos.ne'
+  have ha_re : 0 < a.re := by
+    have hre := congrArg Complex.re hfx_eval
+    rw [re_mul_ofReal] at hre
+    exact pos_of_mul_pos_left (hre ▸ hfx_re) hK_pos.le
+  exact ⟨ha_im, ha_re⟩
 
 /-- Any product `∏' i : α, (1 + z ^ 2 / (y i) ^ 2) ^ (m i)` with `0 < y i` and
 `∑' i, m i * (y i)⁻¹ ^ 2 < ∞` can be flattened into an `ℕ`-indexed paired product padded by `0`. -/

@@ -204,13 +204,10 @@ theorem AnalyticOnNhd.divisor_eq_of_eq_sub_pow_smul_of_ne
     have hf : AnalyticOnNhd 𝕜 f U := fun z hz ↦ by
       rw [hsmul]
       exact ((analyticAt_id.sub analyticAt_const).pow m).smul (hg z hz)
-    rw [MeromorphicOn.divisor_eq_analyticOrderNatAt hg.meromorphicOn (hg w hwU) hwU,
-      MeromorphicOn.divisor_eq_analyticOrderNatAt hf.meromorphicOn (hf w hwU) hwU,
-      analyticOrderNatAt, analyticOrderNatAt]
-    have hpow_an : AnalyticAt 𝕜 (fun z : 𝕜 ↦ (z - z₀) ^ m) w := by fun_prop
-    have hpow_ne : (w - z₀) ^ m ≠ 0 := pow_ne_zero m (sub_ne_zero.mpr hw)
-    rw [hsmul, analyticOrderAt_smul hpow_an (hg w hwU),
-      hpow_an.analyticOrderAt_eq_zero.mpr hpow_ne, zero_add]
+    rw [MeromorphicOn.divisor_apply hg.meromorphicOn hwU,
+      MeromorphicOn.divisor_apply hf.meromorphicOn hwU, hsmul,
+      meromorphicOrderAt_smul_of_ne_zero (g := fun z : 𝕜 ↦ (z - z₀) ^ m) (by fun_prop)
+        (pow_ne_zero m (sub_ne_zero.mpr hw))]
   · simp [hwU]
 
 /-- If `f z = (z - z₀) ^ m • g z` with `g` analytic on a neighbourhood of `U` and `g z₀ ≠ 0`, then
@@ -237,14 +234,12 @@ theorem AnalyticOnNhd.divisor_neg_eq_of_even
       (Set.mem_univ _),
     MeromorphicOn.divisor_eq_analyticOrderNatAt hg.meromorphicOn (hg ρ (Set.mem_univ _))
       (Set.mem_univ _), analyticOrderNatAt, analyticOrderNatAt]
-  have hcomp : g ∘ (-id : 𝕜 → 𝕜) = g := funext heven
-  have hsub : analyticOrderAt (fun z : 𝕜 ↦ -z - -ρ) ρ = 1 := by
-    have hfun : (fun z : 𝕜 ↦ -z - -ρ) = -(fun z : 𝕜 ↦ z - ρ) := funext fun z ↦ by
-      simp only [Pi.neg_apply]; ring
-    rw [hfun, analyticOrderAt_neg, analyticOrderAt_id_sub_const_self]
-  have hord := (hg (-ρ) (Set.mem_univ _)).analyticOrderAt_comp (g := (-id : 𝕜 → 𝕜))
-    (z₀ := ρ) analyticAt_id.neg
-  dsimp only [Pi.neg_apply, id_eq] at hord
+  have hcomp : g ∘ Neg.neg = g := funext heven
+  have hneg : AnalyticAt 𝕜 (fun z : 𝕜 ↦ -z) ρ := analyticAt_id.neg
+  have hsub : analyticOrderAt (fun z : 𝕜 ↦ -z - -ρ) ρ = 1 :=
+    hneg.analyticOrderAt_sub_eq_one_of_deriv_ne_zero (by rw [deriv_neg]; simp)
+  have hord := (hg (-ρ) (Set.mem_univ _)).analyticOrderAt_comp (g := fun z : 𝕜 ↦ -z)
+    (z₀ := ρ) hneg
   rw [hcomp, hsub, mul_one] at hord
   rw [hord]
 

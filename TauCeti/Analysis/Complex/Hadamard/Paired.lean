@@ -7,15 +7,15 @@ module
 
 public import Mathlib.Analysis.Analytic.Order
 public import TauCeti.Analysis.Complex.GrowthOrder.Centered
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
-import TauCeti.Analysis.Analytic.Reflection
-import TauCeti.Analysis.Calculus.Deriv.Polynomial
-import TauCeti.Analysis.Calculus.LogDeriv.Symmetry
+import Mathlib.Analysis.Calculus.LogDeriv
+import TauCeti.Analysis.Calculus.Deriv.Parity
 import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Basic
+import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Divisor
 import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Positivity
 import TauCeti.Analysis.Complex.GrowthOrder.Zero.Factorization
 import TauCeti.Analysis.Complex.GrowthOrder.Zero.Summability
 import TauCeti.Analysis.Complex.Hadamard.OrderOne
+import TauCeti.Analysis.Normed.Module.Parity
 
 /-!
 # Paired Hadamard factorization and positivity of derivatives
@@ -76,40 +76,6 @@ namespace TauCeti
 
 variable {f : ℂ → ℂ} {δ : ℂ}
 
-/-- Evaluating `f z = a * z ^ m * ∏' n, (1 + z ^ 2 / (γ n) ^ 2)` at `x₀ = max R 1 > 0` shows
-that eventual real positivity of `f` forces the leading constant `a` to be real and strictly
-positive. -/
-private theorem im_eq_zero_and_re_pos_of_eq_mul_pow_one_add_div_sq {a : ℂ} {m : ℕ} {γ : ℕ → ℝ}
-    (hsum : Summable (fun n ↦ (γ n)⁻¹ ^ 2))
-    (hf_eq : ∀ z : ℂ, f z = a * z ^ m * ∏' n, (1 + z ^ 2 / (γ n : ℂ) ^ 2))
-    (hpositive : ∃ R : ℝ, ∀ x : ℝ, R ≤ x → (f (x : ℂ)).im = 0 ∧ 0 < (f (x : ℂ)).re) :
-    a.im = 0 ∧ 0 < a.re := by
-  obtain ⟨R, hR⟩ := hpositive
-  set x₀ : ℝ := max R 1
-  obtain ⟨hfx_im, hfx_re⟩ := hR x₀ (le_max_left R 1)
-  have hP_le : (1 : ℝ) ≤ (∏' n : ℕ, (1 + (x₀ : ℂ) ^ 2 / (γ n : ℂ) ^ 2)).re ∧
-      (0 : ℝ) = (∏' n : ℕ, (1 + (x₀ : ℂ) ^ 2 / (γ n : ℂ) ^ 2)).im := by
-    open scoped ComplexOrder in
-    exact Complex.le_def.mp (one_le_tprod_one_add_div_sq hsum x₀)
-  set P₀ : ℂ := ∏' n : ℕ, (1 + (x₀ : ℂ) ^ 2 / (γ n : ℂ) ^ 2) with hP₀_def
-  have hK_pos : 0 < x₀ ^ m * P₀.re :=
-    mul_pos (pow_pos (lt_of_lt_of_le zero_lt_one (le_max_right R 1)) m)
-      (zero_lt_one.trans_le hP_le.1)
-  have hP_coe : P₀ = (P₀.re : ℂ) := Complex.ext rfl hP_le.2.symm
-  have hfx_eval : f (x₀ : ℂ) = a * (((x₀ ^ m * P₀.re : ℝ) : ℂ)) := by
-    conv_lhs => rw [hf_eq (x₀ : ℂ), ← hP₀_def, hP_coe]
-    push_cast
-    ring
-  have ha_im : a.im = 0 := by
-    have him := congrArg Complex.im hfx_eval
-    rw [hfx_im, im_mul_ofReal] at him
-    exact (mul_eq_zero.mp him.symm).resolve_right hK_pos.ne'
-  have ha_re : 0 < a.re := by
-    have hre := congrArg Complex.re hfx_eval
-    rw [re_mul_ofReal] at hre
-    exact pos_of_mul_pos_left (hre ▸ hfx_re) hK_pos.le
-  exact ⟨ha_im, ha_re⟩
-
 /-- **The paired Hadamard factorization theorem.** An entire function `f` satisfying
 `IsCenteredOrderOne f`, `f (-z) = δ * f z`, with all zeros on the imaginary axis and strictly
 positive real values for large positive reals, admits a locally uniformly convergent factorization
@@ -140,11 +106,13 @@ theorem pairedHadamard_factorization
     hf.orderLE_one.exists_eq_sub_pow_mul hf.differentiable (Function.ne_iff.mp hf_ne_zero) 0
   have hfg (z : ℂ) : f z = z ^ m * g z := by
     simpa only [sub_zero, analyticOrderNatAt] using hfg0 z
-  obtain ⟨hδ_eq, hg_even⟩ :=
-    eq_neg_one_pow_and_even_of_eq_pow_mul hfg hparity hg_diff.continuous.continuousAt hg0
+  obtain ⟨hδ_eq, hg_even⟩ := eq_neg_one_pow_and_even_of_eq_pow_smul
+    (fun z ↦ by simpa only [smul_eq_mul] using hfg z)
+    (fun z ↦ by simpa only [smul_eq_mul] using hparity z)
+    hg_diff.continuous.continuousAt hg0
   have hg_prod (z : ℂ) : g z = g 0 * divisorProductOne g z := by
     rw [hg_ord.eq_mul_cexp_logDeriv_mul_divisorProductOne hg_diff hg0 z,
-      hg_even.logDeriv_zero, zero_mul, exp_zero, mul_one]
+      logDeriv_apply, hg_even.deriv_zero, zero_div, zero_mul, exp_zero, mul_one]
   have hg_zeros (z : ℂ) (hgz : g z = 0) : z.re = 0 := hzeros z (by rw [hfg z, hgz, mul_zero])
   obtain ⟨γ, hγ_nonneg, hγ_sum, hdiv_eq⟩ := exists_paired_seq_divisorProductOne hg_diff hg0 hg_even
     hg_zeros (hg_ord.summable_divisor_toNat_mul_norm_inv_sq hg_diff (by norm_num))
@@ -164,25 +132,6 @@ theorem pairedHadamard_factorization
       fun z _ ↦ (hf_eq_c z).symm⟩
 
 /-! ### Derivative positivity for paired Hadamard products -/
-
-private theorem infinite_ne_zero_of_not_poly {c : ℝ} {m : ℕ} {γ : ℕ → ℝ}
-    (hprod_eq : ∀ z : ℂ, f z = (c : ℂ) * z ^ m * ∏' n : ℕ, (1 + z ^ 2 / (γ n : ℂ) ^ 2))
-    (hnonpoly : ¬ ∃ P : Polynomial ℂ, ∀ z, f z = P.eval z) :
-    {n : ℕ | γ n ≠ 0}.Infinite := by
-  classical
-  refine fun hfin ↦ hnonpoly
-    ⟨Polynomial.C (c : ℂ) * Polynomial.X ^ m *
-        ∏ n ∈ hfin.toFinset, (1 + Polynomial.C (((γ n : ℂ) ^ 2)⁻¹) * Polynomial.X ^ 2),
-      fun z ↦ ?_⟩
-  rw [hprod_eq z]
-  simp only [Polynomial.eval_mul, Polynomial.eval_C, Polynomial.eval_pow, Polynomial.eval_X,
-    Polynomial.eval_prod, Polynomial.eval_add, Polynomial.eval_one, div_eq_inv_mul]
-  congr 1
-  refine tprod_eq_prod fun n hn ↦ ?_
-  have hγ0 : γ n = 0 := by
-    by_contra hne
-    exact hn (hfin.mem_toFinset.mpr hne)
-  simp [hγ0]
 
 /-- **Nonnegative derivatives of the paired product.** Under the hypotheses of
 `TauCeti.pairedHadamard_factorization`, every iterated derivative `iteratedDeriv k f x` at a
@@ -213,7 +162,8 @@ theorem pairedHadamard_iteratedDeriv_zero_pos
   obtain ⟨c, γ, hc, _, hsum, _, _, hprod_eq, _⟩ :=
     pairedHadamard_factorization hf hparity hzeros hpositive
   exact re_iteratedDeriv_zero_pos_of_eq_mul_pow_tprod_one_add_div_sq
-    hc hsum hprod_eq (infinite_ne_zero_of_not_poly hprod_eq hnonpoly) j
+    hc hsum hprod_eq (fun hfin ↦ hnonpoly
+      (exists_polynomial_eval_of_eq_mul_pow_tprod_one_add_div_sq hprod_eq hfin)) j
 
 /-- **Strict positivity of derivatives for nonpolynomial paired Hadamard products.** Under the
 paired Hadamard hypotheses, if `f` is not a polynomial, then `(iteratedDeriv k f x).re > 0` for
@@ -229,7 +179,8 @@ theorem pairedHadamard_derivatives_positive
   obtain ⟨c, γ, hc, _, hsum, _, _, hprod_eq, _⟩ :=
     pairedHadamard_factorization hf hparity hzeros hpositive
   exact re_iteratedDeriv_pos_of_eq_mul_pow_tprod_one_add_div_sq
-    hc hsum hprod_eq (infinite_ne_zero_of_not_poly hprod_eq hnonpoly) k hx
+    hc hsum hprod_eq (fun hfin ↦ hnonpoly
+      (exists_polynomial_eval_of_eq_mul_pow_tprod_one_add_div_sq hprod_eq hfin)) k hx
 
 /-! ### Examples -/
 
@@ -248,34 +199,5 @@ example (k : ℕ) (x : ℝ) (hx : 0 ≤ x) :
   · have hc : (1 : ℂ) + (y : ℂ) ^ 2 = (((1 + y ^ 2 : ℝ) : ℂ)) := by push_cast; ring
     rw [hc, ofReal_im, ofReal_re]
     exact ⟨rfl, by positivity⟩
-
-/-- `Complex.cosh` satisfies the paired Hadamard hypotheses with `δ = 1` and is not a polynomial,
-so every iterated derivative `iteratedDeriv k Complex.cosh (x : ℂ)` has strictly positive real part
-for all `x > 0`. -/
-example (k : ℕ) (x : ℝ) (hx : 0 < x) :
-    0 < (iteratedDeriv k Complex.cosh (x : ℂ)).re := by
-  have hcosh_eq : Complex.cosh = fun z : ℂ ↦ (2 : ℂ)⁻¹ * (exp z + exp (-z)) := by
-    ext z; rw [Complex.cosh, div_eq_inv_mul, mul_comm]
-  have hf : IsCenteredOrderOne Complex.cosh := by
-    rw [hcosh_eq]
-    exact (isCenteredOrderOne_cexp.add isCenteredOrderOne_cexp.comp_neg).const_mul (2 : ℂ)⁻¹
-  have hzeros (z : ℂ) (hz : Complex.cosh z = 0) : z.re = 0 := by
-    rw [← Complex.cos_mul_I, Complex.cos_eq_zero_iff] at hz
-    obtain ⟨n, hn⟩ := hz
-    simpa using congrArg Complex.im hn
-  have hpos : ∃ R : ℝ, ∀ y : ℝ, R ≤ y → (Complex.cosh (y : ℂ)).im = 0 ∧
-      0 < (Complex.cosh (y : ℂ)).re :=
-    ⟨0, fun y _ ↦ by rw [← Complex.ofReal_cosh, ofReal_im, ofReal_re]; exact ⟨rfl, Real.cosh_pos y⟩⟩
-  have hnonpoly : ¬ ∃ P : Polynomial ℂ, ∀ z, Complex.cosh z = P.eval z := by
-    rintro ⟨P, hP⟩
-    set m : ℕ := P.natDegree + 1
-    have h1 : iteratedDeriv (2 * m) Complex.cosh 0 = 1 := by
-      rw [Complex.iteratedDeriv_even_cosh, Complex.cosh_zero]
-    have h0 : iteratedDeriv (2 * m) Complex.cosh 0 = 0 := by
-      rw [funext hP, P.iteratedDeriv, Polynomial.iterate_derivative_eq_zero (by omega)]
-      simp
-    exact one_ne_zero (h1.symm.trans h0)
-  exact pairedHadamard_derivatives_positive (δ := 1) hf
-    (fun z ↦ by simp [Complex.cosh_neg]) hzeros hpos hnonpoly k x hx
 
 end TauCeti

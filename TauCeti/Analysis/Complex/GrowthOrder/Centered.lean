@@ -86,36 +86,21 @@ end IsCenteredOrderOne
 theorem OrderLE.isCenteredOrderOne (h : OrderLE f 1) (hf : Differentiable ℂ f) :
     IsCenteredOrderOne f := by
   refine ⟨hf, fun ε hε ↦ ?_⟩
-  obtain ⟨c, _, hb⟩ := (h.isBigO (A' := 1 + ε) (by linarith)).exists_pos
-  obtain ⟨R, _, hR⟩ := Filter.hasBasis_cobounded_norm.mem_iff.mp hb.bound
-  obtain ⟨M, hM⟩ := (isCompact_closedBall (0 : ℂ) (max R 0)).exists_bound_of_continuousOn
-    hf.continuous.continuousOn
-  set C : ℝ := max 1 (max M c)
-  have hC1 : 1 ≤ C := le_max_left _ _
-  have hMC : M ≤ C := (le_max_left M c).trans (le_max_right _ _)
-  have hcC : c ≤ C := (le_max_right M c).trans (le_max_right _ _)
+  obtain ⟨c, _, hc⟩ := h.exists_norm_le_mul_exp_rpow hf.continuous (by linarith : (1 : ℝ) < 1 + ε)
+  set C : ℝ := max c 1
+  have hC1 : 1 ≤ C := le_max_right c 1
+  have hc_exp : c ≤ Real.exp C :=
+    (le_max_left c 1).trans ((le_add_of_nonneg_right zero_le_one).trans (Real.add_one_le_exp C))
   refine ⟨C, zero_lt_one.trans_le hC1, fun z ↦ ?_⟩
   have hr : 0 ≤ ‖z‖ ^ (1 + ε) := Real.rpow_nonneg (norm_nonneg z) _
-  by_cases hz : ‖z‖ ≤ max R 0
-  · have hfz : ‖f z‖ ≤ M := hM z (mem_closedBall_zero_iff.mpr hz)
-    have hle : M ≤ C * (1 + ‖z‖ ^ (1 + ε)) := by
-      nlinarith
-    exact hfz.trans (hle.trans ((le_add_of_nonneg_right zero_le_one).trans
-      (Real.add_one_le_exp _)))
-  · push Not at hz
-    have hfz : ‖f z‖ ≤ c * Real.exp (‖z‖ ^ (1 + ε)) := by
-      have hRz : R ≤ ‖z‖ := ((le_max_left R 0).trans_lt hz).le
-      simpa only [Set.mem_ofPred_eq, Real.norm_eq_abs, Real.abs_exp] using hR hRz
-    have hc_exp : c ≤ Real.exp C :=
-      hcC.trans ((le_add_of_nonneg_right zero_le_one).trans (Real.add_one_le_exp C))
-    have hr_exp : Real.exp (‖z‖ ^ (1 + ε)) ≤ Real.exp (C * ‖z‖ ^ (1 + ε)) :=
-      Real.exp_le_exp.mpr (by nlinarith)
-    calc ‖f z‖ ≤ c * Real.exp (‖z‖ ^ (1 + ε)) := hfz
-      _ ≤ Real.exp C * Real.exp (C * ‖z‖ ^ (1 + ε)) :=
-        mul_le_mul hc_exp hr_exp (Real.exp_nonneg _) (Real.exp_nonneg _)
-      _ = Real.exp (C * (1 + ‖z‖ ^ (1 + ε))) := by
-        rw [← Real.exp_add]
-        ring_nf
+  have hr_exp : Real.exp (‖z‖ ^ (1 + ε)) ≤ Real.exp (C * ‖z‖ ^ (1 + ε)) :=
+    Real.exp_le_exp.mpr (by nlinarith)
+  calc ‖f z‖ ≤ c * Real.exp (‖z‖ ^ (1 + ε)) := hc z
+    _ ≤ Real.exp C * Real.exp (C * ‖z‖ ^ (1 + ε)) :=
+      mul_le_mul hc_exp hr_exp (Real.exp_nonneg _) (Real.exp_nonneg _)
+    _ = Real.exp (C * (1 + ‖z‖ ^ (1 + ε))) := by
+      rw [← Real.exp_add]
+      ring_nf
 
 /-- `IsCenteredOrderOne f` holds if and only if `f` is entire and has order at most one. -/
 theorem isCenteredOrderOne_iff :

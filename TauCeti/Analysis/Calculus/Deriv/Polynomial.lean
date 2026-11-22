@@ -32,8 +32,6 @@ partial-fraction expansion of a rational function with a pole of order `m` at `a
 ## Main results
 
 * `Polynomial.iteratedDeriv`: the iterated derivative of a polynomial function.
-* `Polynomial.iteratedDeriv_eval_map`: evaluating the `k`-th iterated derivative of `p.map f` at
-  `f x` equals `f ((derivative^[k] p).eval x)`.
 * `Polynomial.hasDerivAt_eval_div_eval`: the quotient rule `(P / Q)' = W(Q, P) / Q²`.
 
 * `Polynomial.iteratedDeriv_eval_zero`: its value at `0` is `n !` times the coefficient of
@@ -62,15 +60,6 @@ protected theorem iteratedDeriv (p : 𝕜[X]) (n : ℕ) :
   | succ n ih =>
     rw [iteratedDeriv_succ', Function.iterate_succ_apply, ← ih]
     exact congrArg _ (funext fun x ↦ p.deriv)
-
-/-- Evaluating the `k`-th iterated derivative of a mapped polynomial `p.map f` at `f x` equals
-`f ((derivative^[k] p).eval x)`. -/
-theorem iteratedDeriv_eval_map {R 𝕜 : Type*} [CommSemiring R] [NontriviallyNormedField 𝕜]
-    (p : R[X]) (f : R →+* 𝕜) (k : ℕ) (x : R) :
-    iteratedDeriv k (fun w : 𝕜 ↦ (p.map f).eval w) (f x) = f ((derivative^[k] p).eval x) := by
-  rw [Polynomial.iteratedDeriv, Polynomial.iterate_derivative_map]
-  dsimp only
-  rw [eval_map_apply]
 
 /-- The `n`-th derivative of a polynomial function at `x` is `n !` times the Hasse derivative of
 order `n` at `x`. -/

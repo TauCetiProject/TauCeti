@@ -5,26 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.EvenFunction
 public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.Calculus.LogDeriv
-import TauCeti.Analysis.Calculus.Deriv.Parity
 
 /-!
 # Symmetries of logarithmic derivatives under affine reflection and conjugation
 
 This file records the elementary behavior of `logDeriv f = deriv f / f` under reflection
-`w ↦ a - w` (`TauCeti.logDeriv_comp_const_sub`), evenness at the origin
-(`Function.Even.logDeriv_zero`), conjugation `conj ∘ f ∘ conj` (`TauCeti.logDeriv_conj_conj`),
-and the combined affine-conjugation reflection `f (a - conj w) = u * conj (f w)`
-(`TauCeti.logDeriv_sub_conj_nhds_of_ne_zero`, `TauCeti.logDeriv_sub_conj_nhds`,
-`TauCeti.logDeriv_sub_conj`). None of these identities require differentiability of `f` (where `f`
-is not differentiable, both `deriv` and `logDeriv` vanish under Lean's totalized convention).
+`w ↦ a - w` (`TauCeti.logDeriv_comp_const_sub`), conjugation `conj ∘ f ∘ conj`
+(`TauCeti.logDeriv_conj_conj`), and the combined affine-conjugation reflection
+`f (a - conj w) = u * conj (f w)` (`TauCeti.logDeriv_sub_conj_nhds_of_ne_zero`,
+`TauCeti.logDeriv_sub_conj_nhds`, `TauCeti.logDeriv_sub_conj`). None of these identities
+require differentiability of `f` (where `f` is not differentiable, both `deriv` and `logDeriv`
+vanish under Lean's totalized convention).
 
 ## Main results
 
 * `TauCeti.logDeriv_comp_const_sub`: `logDeriv (fun w ↦ f (a - w)) x = -logDeriv f (a - x)`.
-* `Function.Even.logDeriv_zero`: `logDeriv f 0 = 0` for any even function `f` in characteristic `0`.
 * `TauCeti.logDeriv_conj_conj`: `logDeriv (conj ∘ f ∘ conj) z = conj (logDeriv f (conj z))`.
 * `TauCeti.logDeriv_sub_conj_nhds_of_ne_zero`, `TauCeti.logDeriv_sub_conj_nhds`,
   `TauCeti.logDeriv_sub_conj`: local germ and whole-space reflection identities
@@ -34,13 +31,6 @@ is not differentiable, both `deriv` and `logDeriv` vanish under Lean's totalized
 public section
 
 open ComplexConjugate Filter Topology
-
-/-- The logarithmic derivative of an even function vanishes at `0` over a field of characteristic
-zero, with no differentiability or nonvanishing assumption. -/
-theorem Function.Even.logDeriv_zero {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
-    [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] {f : 𝕜 → 𝕜'} (hf : f.Even) :
-    logDeriv f 0 = 0 := by
-  rw [logDeriv_apply, hf.deriv_zero, zero_div]
 
 namespace TauCeti
 
