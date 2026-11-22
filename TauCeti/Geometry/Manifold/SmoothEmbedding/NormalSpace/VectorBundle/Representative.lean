@@ -12,7 +12,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Smooth tangential corrections along an embedding
