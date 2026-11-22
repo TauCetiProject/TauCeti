@@ -104,6 +104,6 @@ theorem subsingleton_deRhamCohomology_one_of_simplyConnectedSpace [SimplyConnect
   refine subsingleton_of_forall_eq 0 fun c ↦ ?_
   obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective _ _ c
   rw [deRhamCohomology.mk_eq_zero_iff, exactForms_one_eq_closedForms_of_simplyConnectedSpace]
-  exact φ.2
+  exact φ.property
 
 end TauCeti

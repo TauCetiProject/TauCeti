@@ -151,7 +151,7 @@ theorem IsSMulRegular.span_singleton_subtype_rTensor_injective {x : R}
   have h (t : Ideal.span {x} ⊗[R] M) : ∃ m, t = x' ⊗ₜ m := by
     induction t using TensorProduct.inductionOn with
     | tmul y m =>
-      obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp y.2
+      obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp y.property
       exact ⟨a • m, by rw [← smul_tmul]; congr 1; ext; simp [x', ← ha]⟩
     | add t u ht hu =>
       obtain ⟨m, rfl⟩ := ht
@@ -200,7 +200,7 @@ theorem liftBaseChange_idealMap_surjective :
     map_le_iff_le_comap.mpr fun a ha ↦
       ⟨⟨algebraMap R S a, mem_map_of_mem _ ha⟩, ⟨1 ⊗ₜ ⟨a, ha⟩, by ext; simp⟩, rfl⟩
   intro y
-  obtain ⟨z, hz, hzy⟩ := hle y.2
+  obtain ⟨z, hz, hzy⟩ := hle y.property
   obtain ⟨x, rfl⟩ := hz
   exact ⟨x, Subtype.ext hzy⟩
 

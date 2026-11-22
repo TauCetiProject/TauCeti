@@ -34,10 +34,11 @@ For an ideal `I` of `R` and an `R`-algebra `S`, scalar extension sends `I`-power
 then `JS` kills `1 ⊗ m`. Conversely, for finitely generated `I`, flat scalar extension of a module
 without `I`-power torsion has no `IS`-power torsion.
 
-Extending the scalars of an abelian group `G` to a division ring `A` of characteristic zero kills
-its elements of finite additive order (`TauCeti.tmul_eq_zero_of_isOfFinAddOrder`), so
-`A ⊗[ℤ] G` sees `G` only modulo torsion; for instance `ℝ ⊗[ℤ] H²(X; ℤ)` forgets torsion classes.
-In particular a set generating `G` modulo torsion spans `A ⊗[ℤ] G`
+Extending the scalars of an abelian group `G` to a `ℚ`-vector space `A`, for instance a division
+ring of characteristic zero, kills its elements of finite additive order
+(`TauCeti.tmul_eq_zero_of_isOfFinAddOrder`), so `A ⊗[ℤ] G` sees `G` only modulo torsion; for
+instance `ℝ ⊗[ℤ] H²(X; ℤ)` forgets torsion classes. In particular, when `A` is moreover a ring, a
+set generating `G` modulo torsion spans `A ⊗[ℤ] G` over `A`
 (`TauCeti.span_one_tmul_eq_top_of_isOfFinAddOrder`).
 
 ## References
@@ -78,19 +79,18 @@ theorem isTorsionBy_tensorProduct_right {S : Type*} [Semiring S] [Module S M]
 
 /-- Tensoring a torsion commutative additive monoid on the left with any commutative additive
 monoid gives a torsion monoid. -/
-theorem isAddTorsion_tensorProduct_left {A B : Type*} [AddCommMonoid A] [AddCommMonoid B]
-    [Module R A] [Module R B] (h : IsAddTorsion A) : IsAddTorsion (A ⊗[R] B) := by
+theorem isAddTorsion_tensorProduct_left (h : IsAddTorsion M) : IsAddTorsion (M ⊗[R] N) := by
   intro t
   induction t using TensorProduct.inductionOn with
-  | tmul x y => exact ((TensorProduct.mk R A B).flip y).toAddMonoidHom.isOfFinAddOrder (h x)
+  | tmul x y => exact ((TensorProduct.mk R M N).flip y).toAddMonoidHom.isOfFinAddOrder (h x)
   | add x y hx hy => exact hx.add hy
 
 /-- Tensoring a torsion commutative additive monoid on the right with any commutative additive
 monoid gives a torsion monoid. -/
-theorem isAddTorsion_tensorProduct_right {A B : Type*} [AddCommMonoid A] [AddCommMonoid B]
-    [Module R A] [Module R B] (h : IsAddTorsion B) : IsAddTorsion (A ⊗[R] B) := fun t ↦ by
-  obtain ⟨u, rfl⟩ := (TensorProduct.comm R B A).surjective t
-  exact (TensorProduct.comm R B A).toAddMonoidHom.isOfFinAddOrder
+theorem isAddTorsion_tensorProduct_right (h : IsAddTorsion N) : IsAddTorsion (M ⊗[R] N) := by
+  intro t
+  obtain ⟨u, rfl⟩ := (TensorProduct.comm R N M).surjective t
+  exact (TensorProduct.comm R N M).toAddMonoidHom.isOfFinAddOrder
     (isAddTorsion_tensorProduct_left h u)
 
 /-- If `I • X = X` and `I` kills `K`, then `X ⊗ K = 0`: for `i ∈ I` one has
@@ -144,8 +144,10 @@ namespace TauCeti
 
 open TensorProduct Submodule Function
 
-variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] {I : Ideal R}
-  {M : Type*} [AddCommGroup M] [Module R M]
+section Semiring
+
+variable {R S M : Type*} [CommSemiring R] [Semiring S] [Algebra R S] [AddCommMonoid M]
+  [Module R M]
 
 /-- If an ideal `J` kills `m`, then the extended ideal `JS` kills `1 ⊗ m`. -/
 theorem map_le_torsionOf_one_tmul {J : Ideal R} {m : M}
@@ -156,13 +158,18 @@ theorem map_le_torsionOf_one_tmul {J : Ideal R} {m : M}
   rw [Ideal.mem_comap, Ideal.mem_torsionOf_iff, algebraMap_smul, ← tmul_smul,
     (mem_torsionBySet_iff _ _).mp hm ⟨a, ha⟩, tmul_zero]
 
+end Semiring
+
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] {I : Ideal R}
+  {M : Type*} [AddCommGroup M] [Module R M]
+
 /-- Base change sends `I`-power torsion elements to `IS`-power torsion elements. -/
 theorem one_tmul_mem_primaryComponent_map {m : M} (hm : m ∈ I.primaryComponent M) :
     (1 : S) ⊗ₜ[R] m ∈ (I.map (algebraMap R S)).primaryComponent (S ⊗[R] M) := by
   obtain ⟨n, hn⟩ := (Ideal.primaryComponent_mem _ _ _).mp hm
   refine (Ideal.primaryComponent_mem _ _ _).mpr ⟨n, (mem_torsionBySet_iff _ _).mpr fun a ↦ ?_⟩
   rw [← Ideal.mem_torsionOf_iff]
-  exact map_le_torsionOf_one_tmul hn (by rw [Ideal.map_pow]; exact a.2)
+  exact map_le_torsionOf_one_tmul hn (by rw [Ideal.map_pow]; exact a.property)
 
 /-- The base change of an `I`-power torsion module is `IS`-power torsion. -/
 theorem primaryComponent_map_tensorProduct_eq_top (hM : I.primaryComponent M = ⊤) :
@@ -183,18 +190,18 @@ theorem primaryComponent_map_tensorProduct_eq_bot [Module.Flat R S] (hI : I.FG)
   choose! n hn using fun g (hg : g ∈ G) ↦ hy _ (Finset.mem_image_of_mem _ hg)
   -- A single power `N` of every generator kills `y`.
   set N := G.sup n
-  have hN (g : G) : (g.1 ^ N) • y = 0 := by
-    rw [← algebraMap_smul S, map_pow, ← pow_mul_pow_sub _ (Finset.le_sup g.2), mul_comm,
-      mul_smul, hn _ g.2, smul_zero]
+  have hN (g : G) : (g.val ^ N) • y = 0 := by
+    rw [← algebraMap_smul S, map_pow, ← pow_mul_pow_sub _ (Finset.le_sup g.property), mul_comm,
+      mul_smul, hn _ g.property, smul_zero]
   -- Multiplication by the powers `g ^ N` is jointly injective on `M`, hence on `S ⊗[R] M`.
-  let φ : M →ₗ[R] G → M := LinearMap.pi fun g ↦ g.1 ^ N • LinearMap.id
+  let φ : M →ₗ[R] G → M := LinearMap.pi fun g ↦ g.val ^ N • LinearMap.id
   have hφ : Injective φ := by
     refine (injective_iff_map_eq_zero _).mpr fun m hm ↦ ?_
     have : m ∈ (Ideal.span (G : Set R)).primaryComponent M :=
       (Ideal.mem_primaryComponent_span_iff G).mpr fun g hg ↦ ⟨N, congr_fun hm ⟨g, hg⟩⟩
     rwa [hM, mem_bot] at this
   have key (x : S ⊗[R] M) :
-      piRight R R S (fun _ : G ↦ M) (φ.lTensor S x) = fun g ↦ g.1 ^ N • x := by
+      piRight R R S (fun _ : G ↦ M) (φ.lTensor S x) = fun g ↦ g.val ^ N • x := by
     induction x using TensorProduct.inductionOn with
     | tmul s m => ext g; simp [φ, piRightHom_tmul, tmul_smul]
     | add x y hx hy => ext g; simp_all [smul_add]
@@ -204,39 +211,33 @@ theorem primaryComponent_map_tensorProduct_eq_bot [Module.Flat R S] (hI : I.FG)
   exact funext hN
 
 /-- An element of finite additive order of an abelian group dies after extending scalars to a
-division ring of characteristic zero: if `n • m = 0` with `n > 0`, then
-`a ⊗ m = (n⁻¹ a) ⊗ (n • m) = 0`. So `A ⊗[ℤ] G` sees `G` only modulo torsion. -/
-theorem tmul_eq_zero_of_isOfFinAddOrder {A G : Type*} [DivisionRing A] [CharZero A]
+`ℚ`-vector space, for instance a division ring of characteristic zero: if `n • m = 0` with `n > 0`,
+then `a ⊗ m = (n⁻¹ a) ⊗ (n • m) = 0`. So `A ⊗[ℤ] G` sees `G` only modulo torsion. -/
+theorem tmul_eq_zero_of_isOfFinAddOrder {A G : Type*} [AddCommGroup A] [Module ℚ A]
     [AddCommGroup G] (a : A) {m : G} (hm : IsOfFinAddOrder m) : a ⊗ₜ[ℤ] m = 0 := by
   obtain ⟨n, hn, hnm⟩ := isOfFinAddOrder_iff_nsmul_eq_zero.mp hm
-  have hn' : (n : A) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
-  calc a ⊗ₜ[ℤ] m = ((n : ℤ) • ((n : A)⁻¹ * a)) ⊗ₜ[ℤ] m := by
-        rw [zsmul_eq_mul, Int.cast_natCast, ← mul_assoc, mul_inv_cancel₀ hn', one_mul]
+  calc a ⊗ₜ[ℤ] m = ((n : ℤ) • ((n : ℚ)⁻¹ • a)) ⊗ₜ[ℤ] m := by
+        rw [natCast_zsmul, ← Nat.cast_smul_eq_nsmul ℚ, smul_inv_smul₀ (Nat.cast_ne_zero.mpr hn.ne')]
     _ = 0 := by rw [TensorProduct.smul_tmul, natCast_zsmul, hnm, TensorProduct.tmul_zero]
 
 /-- If a set `s` generates an abelian group `G` modulo torsion, that is, every element of `G`
 differs from an element of the subgroup generated by `s` by an element of finite additive order,
-then the tensors `1 ⊗ x`, `x ∈ s`, span the scalar extension `A ⊗[ℤ] G` to a division ring `A` of
-characteristic zero. -/
-theorem span_one_tmul_eq_top_of_isOfFinAddOrder {A G : Type*} [DivisionRing A] [CharZero A]
+then the tensors `1 ⊗ x`, `x ∈ s`, span the scalar extension `A ⊗[ℤ] G` to a ring `A` that is a
+`ℚ`-vector space, for instance a division ring of characteristic zero. -/
+theorem span_one_tmul_eq_top_of_isOfFinAddOrder {A G : Type*} [Ring A] [Module ℚ A]
     [AddCommGroup G] {s : Set G}
     (hs : ∀ x : G, ∃ y ∈ AddSubgroup.closure s, IsOfFinAddOrder (x - y)) :
     Submodule.span A ((fun x ↦ (1 : A) ⊗ₜ[ℤ] x) '' s) = ⊤ := by
-  set S := Submodule.span A ((fun x ↦ (1 : A) ⊗ₜ[ℤ] x) '' s)
-  -- The tensors `1 ⊗ y` with `y` in the subgroup generated by `s` lie in `S`.
-  have hcl {y : G} (hy : y ∈ AddSubgroup.closure s) : (1 : A) ⊗ₜ[ℤ] y ∈ S := by
-    induction hy using AddSubgroup.closure_induction with
-    | mem x hx => exact Submodule.subset_span ⟨x, hx, rfl⟩
-    | zero => simp
-    | add x y _ _ hx hy => simpa [TensorProduct.tmul_add] using add_mem hx hy
-    | neg x _ hx => simpa [TensorProduct.tmul_neg] using neg_mem hx
+  -- The span is the base change of the subgroup generated by `s`.
+  simp only [← TensorProduct.mk_apply, ← Submodule.baseChange_span]
   refine Submodule.eq_top_iff'.mpr fun z ↦ ?_
   induction z using TensorProduct.inductionOn with
   | add z z' hz hz' => exact add_mem hz hz'
   | tmul r x =>
     obtain ⟨y, hy, hxy⟩ := hs x
+    rw [← Submodule.span_int_eq_addSubgroupClosure, Submodule.mem_toAddSubgroup] at hy
     rw [← sub_add_cancel x y, TensorProduct.tmul_add, tmul_eq_zero_of_isOfFinAddOrder r hxy,
-      zero_add, ← mul_one r, ← smul_eq_mul, ← TensorProduct.smul_tmul']
-    exact S.smul_mem r (hcl hy)
+      zero_add]
+    exact Submodule.tmul_mem_baseChange_of_mem r hy
 
 end TauCeti
