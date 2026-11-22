@@ -99,9 +99,8 @@ theorem not_nullhomotopic_of_compContinuousLinearMap_ne_zero
     (φ := leftInvariantSmoothForm I G ℝ (n + 1) α) ?_ ?_
   · rw [mem_closedForms, leftInvariantSmoothForm_val, mextDeriv_leftInvariantForm_eq_zero_iff]
     exact hα
-  · have h := congrArg Subtype.val (φ.mpullback_leftInvariantSmoothForm α)
-    rw [SmoothForm.coe_mpullback, leftInvariantSmoothForm_val, leftInvariantSmoothForm_val] at h
-    rw [ContinuousMap.coe_ofClass, leftInvariantSmoothForm_val, h]
+  · rw [ContinuousMap.coe_ofClass, leftInvariantSmoothForm_val,
+      mpullback_leftInvariantForm_of_contMDiffMonoidMorphism]
     exact (integralTopForm_ofTopForm_pos hk hβ
       (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (Set.subset_univ _)) h0).ne'
 

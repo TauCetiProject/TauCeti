@@ -96,15 +96,8 @@ the left-invariant one-form of `ν ∈ 𝔤*` back to the left-invariant one-for
 @[simp]
 theorem mpullback_leftInvariantForm (ν : Dual ℝ (GroupLieAlgebra I G)) :
     SmoothForm.mpullback φ φ.contMDiff_toFun ν.leftInvariantForm =
-      Dual.leftInvariantForm (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap) := by
-  apply Subtype.ext
-  funext k
-  ext v
-  obtain ⟨ξ, hξ⟩ := exists_mulInvariantVectorField_eq (v 0)
-  rw [SmoothForm.coe_mpullback, TauCeti.mpullback_apply, Dual.leftInvariantForm_apply,
-    Dual.leftInvariantForm_apply, ← hξ, φ.mfderiv_mulInvariantVectorField,
-    mfderiv_inv_mul_mulInvariantVectorField, mfderiv_inv_mul_mulInvariantVectorField,
-    LinearMap.comp_apply, ContinuousLinearMap.coe_coe]
+      Dual.leftInvariantForm (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap) :=
+  ν.mpullback_leftInvariantForm φ.toMonoidHom φ.contMDiff_toFun
 
 /-- **The left-invariant Kirillov form along a homomorphism.** A smooth homomorphism `φ : K → G`
 pulls the left-invariant Kirillov form `σ_ν` of `ν ∈ 𝔤*` back to the left-invariant Kirillov form
