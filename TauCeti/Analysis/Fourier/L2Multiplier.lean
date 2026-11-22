@@ -173,7 +173,7 @@ theorem norm_fourierMultiplierCLM_le : ‖fourierMultiplierCLM (E := E) F m‖ �
 norm at most `C`. -/
 theorem norm_fourierMultiplierCLM_toLp_le {g : E → ℂ} (hg : MemLp g ∞ volume) {C : ℝ}
     (hC : 0 ≤ C) (h : ∀ᵐ ξ ∂volume, ‖g ξ‖ ≤ C) : ‖fourierMultiplierCLM F (hg.toLp g)‖ ≤ C :=
-  (norm_fourierMultiplierCLM_le _).trans (Lp.norm_top_le_of_ae_bound hC
+  (norm_fourierMultiplierCLM_le _).trans (Lp.norm_le_of_ae_bound_top hC
     (by filter_upwards [hg.coeFn_toLp, h] with ξ hξ hξ'; rwa [hξ]))
 
 /-- The `L²` operator norm of the multiplier with symbol `m` is exactly `‖m‖_∞`, for nonzero
@@ -465,7 +465,7 @@ theorem tendsto_fourierMultiplierCLM_apply_self {ι : Type*} {l : Filter ι}
     (f : Lp F 2 (volume : Measure E)) :
     Tendsto (fun i ↦ fourierMultiplierCLM F (m i) f) l (𝓝 f) := by
   have hC' : ∀ᶠ i in l, ‖m i‖ ≤ max C 0 := hC.mono fun i hi ↦
-    Lp.norm_top_le_of_ae_bound (le_max_right C 0) (hi.mono fun ξ hξ ↦ hξ.trans (le_max_left C 0))
+    Lp.norm_le_of_ae_bound_top (le_max_right C 0) (hi.mono fun ξ hξ ↦ hξ.trans (le_max_left C 0))
   have h1 : MemLp (fun _ : E ↦ (1 : ℂ)) ∞ volume := memLp_top_const 1
   have h := tendsto_fourierMultiplierCLM_apply (F := F) (m₀ := h1.toLp _) hC'
     (by filter_upwards [hm, h1.coeFn_toLp] with ξ h₁ h₂; rwa [h₂]) f

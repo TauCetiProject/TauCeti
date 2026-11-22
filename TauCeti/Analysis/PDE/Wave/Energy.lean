@@ -11,7 +11,6 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.Deriv.OperatorFamily
 import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Strong solutions of the wave equation on `L²`: energy and Duhamel's formula
@@ -201,7 +200,7 @@ private theorem tendsto_truncate (x : Lp F 2 (volume : Measure E)) :
       ContinuousLinearMap.id_apply]
   conv_rhs => rw [← hid]
   refine Lp.tendsto_fourierMultiplierCLM_apply (C := 1) (Eventually.of_forall fun R ↦ ?_) ?_ x
-  · refine Lp.norm_top_le_of_ae_bound zero_le_one ?_
+  · refine Lp.norm_le_of_ae_bound_top zero_le_one ?_
     filter_upwards [(memLp_cutoff (E := E) R).coeFn_toLp] with ξ h
     rw [h]
     exact norm_cutoff_le _ ξ

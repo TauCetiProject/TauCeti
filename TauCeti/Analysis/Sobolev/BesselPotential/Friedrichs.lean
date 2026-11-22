@@ -15,7 +15,6 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.L2Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
-import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Friedrichs' commutator estimate on the Bessel-potential spaces `H^s(ℝⁿ)`
@@ -413,7 +412,7 @@ theorem exists_besselPotential_fourierMultiplierCLM_eq_and_norm_le_and_tendsto (
     refine tendsto_iff_seq_tendsto.2 fun e he ↦ ?_
     refine Lp.tendsto_fourierMultiplierCLM_apply (l := atTop) (m := fun n ↦ (hm (e n)).toLp _)
       (C := SchwartzMap.seminorm ℝ 0 0 θ)
-      (.of_forall fun n ↦ Lp.norm_top_le_of_ae_bound (by positivity) ?_) ?_ v
+      (.of_forall fun n ↦ Lp.norm_le_of_ae_bound_top (by positivity) ?_) ?_ v
     · filter_upwards [(hm (e n)).coeFn_toLp] with ζ hζ
       rw [hζ]
       exact hb (e n) ζ

@@ -492,7 +492,7 @@ theorem exists_norm_le_one_integral_mul_eq (v : Lp 𝕜 1 μ) :
     exact inv_mul_le_one_of_le₀ le_rfl (norm_nonneg _)
   have hu_mem : MemLp u₀ ∞ μ :=
     memLp_top_of_bound hu₀_sm.aestronglyMeasurable 1 (Filter.Eventually.of_forall hu₀_le)
-  refine ⟨hu_mem.toLp u₀, Lp.norm_top_le_of_ae_bound zero_le_one ?_, ?_⟩
+  refine ⟨hu_mem.toLp u₀, Lp.norm_le_of_ae_bound_top zero_le_one ?_, ?_⟩
   · filter_upwards [hu_mem.coeFn_toLp] with x hx
     rw [hx]
     exact hu₀_le x
