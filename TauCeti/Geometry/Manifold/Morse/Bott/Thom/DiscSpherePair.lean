@@ -130,16 +130,17 @@ end IsCriticalSubmanifold
 omit [FiniteDimensional ℝ E'] in
 variable [IsManifold I ∞ M] in
 /-- **A band whose critical points lie on an empty submanifold carries no relative homology.** If
-`a < c < b`, the band `f⁻¹[a, b]` of a smooth function `f` is compact and all its critical points
+`a ≤ b`, the band `f⁻¹[a, b]` of a smooth function `f` is compact and all its critical points
 lie on the image of an embedding of an empty manifold `S`, then the band has no critical points, so
-`Hₖ({f ≤ b}, {f ≤ a})` vanishes in every degree, with coefficients in any abelian category with
-coproducts. -/
+`Hₖ({f ≤ b}, {f ≤ a})` vanishes in every degree, with coefficients in any preadditive category
+with homology and coproducts. -/
 theorem isZero_singularHomology_sublevelPair_of_isEmpty [IsEmpty S] {i : SmoothEmbedding J I ∞ S M}
-    (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ} (hac : a < c) (hcb : c < b)
+    (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b : ℝ} (hab : a ≤ b)
     (hcompact : IsCompact (f ⁻¹' Icc a b)) (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i)
-    {C : Type v} [Category.{w} C] [Abelian C] [HasCoproducts.{u} C] (R : C) (k : ℕ) :
-    IsZero ((sublevelPair f (hac.trans hcb).le).singularHomology R k) :=
-  isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hfs _ hcompact
+    {C : Type v} [Category.{w} C] [Preadditive C] [CategoryWithHomology C] [HasCoproducts.{u} C]
+    (R : C) (k : ℕ) :
+    IsZero ((sublevelPair f hab).singularHomology R k) :=
+  isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hfs hab hcompact
     (fun _ hax hxb hx ↦ isEmptyElim (hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hx,
       hax, hxb⟩).choose) R k
 

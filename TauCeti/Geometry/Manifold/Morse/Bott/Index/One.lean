@@ -178,8 +178,8 @@ theorem nonempty_singularHomology_sublevelPair_succ_iso_twistedHomology
   | inl _ =>
     -- Over an empty critical submanifold the band has no critical points, and both groups vanish.
     have : IsEmpty (TopCat.of S) := inferInstanceAs (IsEmpty S)
-    exact ⟨(isZero_singularHomology_sublevelPair_of_isEmpty hfs hac hcb hcompact hcrit _ _).iso
-      (isZero_twistedHomology_of_isEmpty _ k)⟩
+    exact ⟨(isZero_singularHomology_sublevelPair_of_isEmpty hfs (hac.trans hcb).le hcompact hcrit
+      _ _).iso (isZero_twistedHomology_of_isEmpty _ k)⟩
   | inr _ =>
     -- The band has the homology of `(D_ε, S_ε)` for small `ε`, which the Thom isomorphism of the
     -- line bundle `ν⁻` computes.

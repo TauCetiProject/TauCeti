@@ -94,7 +94,8 @@ theorem isZero_singularHomology_sublevelPair_of_lt {r : ℕ}
     {C : Type*} [Category C] [Abelian C] [HasCoproducts.{0} C] (R : C) {k : ℕ} (hk : k < r) :
     IsZero ((sublevelPair f (hac.trans hcb).le).singularHomology R k) := by
   cases isEmpty_or_nonempty S with
-  | inl _ => exact isZero_singularHomology_sublevelPair_of_isEmpty hfs hac hcb hcompact hcrit R k
+  | inl _ =>
+    exact isZero_singularHomology_sublevelPair_of_isEmpty hfs (hac.trans hcb).le hcompact hcrit R k
   | inr _ =>
     have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
     have : IsManifold I (∞ + 2) M := .of_le (n := ∞) (by simp)
@@ -166,8 +167,8 @@ theorem nonempty_singularHomology_sublevelPair_iso_twistedHomology {r : ℕ}
   | inl _ =>
     -- Over an empty critical submanifold both groups vanish.
     have : IsEmpty (TopCat.of S) := inferInstanceAs (IsEmpty S)
-    exact ⟨(isZero_singularHomology_sublevelPair_of_isEmpty hfs hac hcb hcompact hcrit _ _).iso
-      (isZero_twistedHomology_of_isEmpty _ 0)⟩
+    exact ⟨(isZero_singularHomology_sublevelPair_of_isEmpty hfs (hac.trans hcb).le hcompact hcrit
+      _ _).iso (isZero_twistedHomology_of_isEmpty _ 0)⟩
   | inr _ =>
     -- The frames have size the dimension of the negative normal spaces, which is the index.
     have hr (s : S) : manifoldMorseIndex I f (i s) = r + 1 := by
