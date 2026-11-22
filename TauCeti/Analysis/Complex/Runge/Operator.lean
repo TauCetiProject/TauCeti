@@ -25,11 +25,18 @@ functions `g i : ℂ → ℂ` on `Ω` — all independent of `f` and of the targ
 
 `‖f w - ∑ i, (c i * g i w) • f (ζ i)‖ ≤ ε * M`  for all `w ∈ K`
 
-(`TauCeti.IsFilledIn.exists_norm_sub_sum_mul_smul_le`). Specializing `V` to the interior of a
-compact collar `L ⊆ U ∩ Ω` around `K` inside an open neighbourhood `U ⊇ K` yields uniform Runge
-approximation in any complex normed space (`TauCeti.Analysis.Complex.Runge.Approximation`), while
-applying the finite-rank operator fiberwise preserves continuous, smooth, and holomorphic dependence
-on external parameters (`TauCeti.Analysis.Complex.Runge.FiniteRank`).
+(`TauCeti.IsFilledIn.exists_norm_sub_sum_mul_smul_le`). For scalar targets `F = ℂ` (or
+finite-dimensional targets), the resulting linear map `f ↦ (w ↦ ∑ i, (c i * g i w) • f (ζ i))`
+has finite rank; for an arbitrary complex normed target `F`, it factors through the finite sample
+space `Fin N → F` (evaluating `f` at `N` fixed nodes and summing fixed scalar holomorphic multiples
+of those samples).
+
+Specializing `V` to the interior of a compact collar `L ⊆ U ∩ Ω` around `K` inside an open
+neighbourhood `U ⊇ K` yields the scalar finite-rank collar operator
+(`TauCeti.exists_finite_rank_runge_operator`) and uniform Runge approximation in any complex normed
+space (`TauCeti.Analysis.Complex.Runge.Approximation`), while applying the finite-sample operator
+fiberwise preserves continuous, smooth, and holomorphic dependence on external parameters
+(`TauCeti.Analysis.Complex.Runge.FiniteRank`).
 
 The proof combines the discretized Cauchy–Pompeiu formula
 (`IsCompact.exists_norm_sub_sum_mul_sub_inv_smul_le`), which approximates `f` uniformly on `K` by
@@ -41,8 +48,11 @@ on `K` by a function `g i` holomorphic on `Ω`.
 
 * `TauCeti.IsRungeCompactPair`: predicate asserting `IsOpen Ω`, `IsCompact K`, `K ⊆ Ω`, and
   `TauCeti.IsFilledIn K Ω`, with projection eliminators and `@[simp]` empty-set normal forms.
-* `TauCeti.IsFilledIn.exists_norm_sub_sum_mul_smul_le`: existence of the finite-rank evaluation
-  operator with uniform operator error bound `ε * M`, independent of the function and target space.
+* `TauCeti.IsFilledIn.exists_norm_sub_sum_mul_smul_le`: existence of the Runge approximation
+  operator factoring through `Fin N → F` with uniform operator error bound `ε * M`, independent of
+  the function and target space.
+* `TauCeti.exists_finite_rank_runge_operator`: scalar finite-rank Runge approximation operator on a
+  compact collar `L ⊆ U ∩ Ω` around `K`.
 
 ## References
 
@@ -107,13 +117,15 @@ theorem isRungeCompactPair_empty_left {K : Set ℂ} :
   ⟨fun h => subset_empty_iff.mp h.subset,
     fun h => h ▸ isRungeCompactPair_empty_right.mpr isOpen_empty⟩
 
-/-- **The finite-rank Runge operator.** Let `K` be a compact subset filled in an open set `Ω ⊆ ℂ`,
-and let `V ⊇ K` be open. For every `ε > 0` there are finitely many evaluation points `ζ i ∈ V \ K`,
-weights `c i : ℂ`, and functions `g i : ℂ → ℂ` holomorphic on `Ω` such that every `f : ℂ → F`
-into a complex normed space, holomorphic on `V` and bounded by `M` there, satisfies
-`‖f w - ∑ i, (c i * g i w) • f (ζ i)‖ ≤ ε * M` for all `w ∈ K`.
+/-- **The finite-sample Runge approximation operator.** Let `K` be a compact subset filled in an
+open set `Ω ⊆ ℂ`, and let `V ⊇ K` be open. For every `ε > 0` there are finitely many evaluation
+points `ζ i ∈ V \ K`, weights `c i : ℂ`, and functions `g i : ℂ → ℂ` holomorphic on `Ω` such that
+every `f : ℂ → F` into a complex normed space, holomorphic on `V` and bounded by `M` there,
+satisfies `‖f w - ∑ i, (c i * g i w) • f (ζ i)‖ ≤ ε * M` for all `w ∈ K`.
 
-The data `(N, ζ, c, g)` depend only on `K`, `V`, `Ω`, and `ε`, not on `f` or `F`. -/
+The operator factors through the finite sample space `Fin N → F` (and has finite rank when `F = ℂ`
+or `F` is finite-dimensional); the data `(N, ζ, c, g)` depend only on `K`, `V`, `Ω`, and `ε`, not
+on `f` or `F`. -/
 theorem IsFilledIn.exists_norm_sub_sum_mul_smul_le {K V Ω : Set ℂ} (hfill : IsFilledIn K Ω)
     (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hV : IsOpen V) (hKV : K ⊆ V)
     {ε : ℝ} (hε : 0 < ε) :
@@ -158,5 +170,36 @@ theorem IsFilledIn.exists_norm_sub_sum_mul_smul_le {K V Ω : Set ℂ} (hfill : I
           ‖∑ i, (c i * ((w - ζ i)⁻¹ - g i w)) • f (ζ i)‖ := norm_add_le _ _
     _ ≤ ε / 2 * M + ε / 2 * M := add_le_add (hdisc f M hf hM w hw) htail
     _ = ε * M := by ring
+
+/-- **Scalar finite-rank Runge operator.** For a Runge compact pair `(Ω, K)` and an open
+neighbourhood `U ⊇ K`, there exists a compact neighbourhood `L` of `K` inside `U ∩ Ω` such that for
+every `ε > 0` there are finitely many nodes `ζ j ∈ interior L`, weights `w j`, and `Ω`-holomorphic
+functions `g j` (all independent of `f`) giving a genuine finite-rank operator approximating every
+scalar `U`-holomorphic function `f : ℂ → ℂ` on `K` within `ε * B` for any upper bound `B ≥ 0` of
+`‖f‖` on `L`. -/
+theorem exists_finite_rank_runge_operator {Ω K U : Set ℂ}
+    (hRunge : IsRungeCompactPair Ω K) (hU : IsOpen U) (hKU : K ⊆ U) :
+    ∃ L : Set ℂ, IsCompact L ∧ K ⊆ interior L ∧ L ⊆ U ∩ Ω ∧
+      ∀ ε : ℝ, 0 < ε →
+        ∃ N : ℕ, ∃ ζ : Fin N → ℂ, ∃ w : Fin N → ℂ,
+          ∃ g : Fin N → ℂ → ℂ,
+            (∀ j, ζ j ∈ interior L) ∧
+            (∀ j, DifferentiableOn ℂ (g j) Ω) ∧
+            ∀ f : ℂ → ℂ, DifferentiableOn ℂ f U →
+              ∀ B : ℝ, 0 ≤ B → (∀ z ∈ L, ‖f z‖ ≤ B) →
+                ∀ z ∈ K,
+                  ‖f z - ∑ j, w j * f (ζ j) * g j z‖ ≤ ε * B := by
+  obtain ⟨W₂, hW₂, hKW₂, hW₂UO, hW₂c⟩ :=
+    exists_open_between_and_isCompact_closure hRunge.isCompact (hU.inter hRunge.isOpen)
+      (subset_inter hKU hRunge.subset)
+  have hKL : K ⊆ interior (closure W₂) := hKW₂.trans (hW₂.subset_interior_iff.mpr subset_closure)
+  refine ⟨closure W₂, hW₂c, hKL, hW₂UO, fun ε hε ↦ ?_⟩
+  obtain ⟨N, ζ, w, g, hζ, hg, hbound⟩ :=
+    hRunge.isFilledIn.exists_norm_sub_sum_mul_smul_le hRunge.isOpen hRunge.isCompact hRunge.subset
+      isOpen_interior hKL hε
+  refine ⟨N, ζ, w, g, fun j ↦ (hζ j).1, hg, fun f hf B _ hLB z hz ↦ ?_⟩
+  have h := hbound f B (hf.mono (interior_subset.trans (hW₂UO.trans inter_subset_left)))
+    (fun z hz ↦ hLB z (interior_subset hz)) z hz
+  simpa only [smul_eq_mul, mul_right_comm] using h
 
 end TauCeti

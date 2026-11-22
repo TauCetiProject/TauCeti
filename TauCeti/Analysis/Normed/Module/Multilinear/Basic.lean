@@ -27,7 +27,8 @@ bilinear map over `𝕜'` (`ContinuousLinearMap.compContinuousMultilinearMapMixe
 * `ContinuousLinearMap.norm_compContinuousMultilinearMap_sub_le`: the Lipschitz bound for
   postcomposition with a continuous linear map.
 * `ContinuousLinearMap.compContinuousMultilinearMapMixedL`: mixed-scalar postcomposition of a
-  continuous multilinear map with a continuous linear map, as a continuous bilinear map.
+  continuous multilinear map with a continuous linear map, as a continuous bilinear map, with
+  operator norm at most `1` (`ContinuousLinearMap.norm_compContinuousMultilinearMapMixedL_le`).
 -/
 
 public section
@@ -100,5 +101,16 @@ theorem compContinuousMultilinearMapMixedL_apply {𝕜 𝕜' ι : Type*} [Nontri
     compContinuousMultilinearMapMixedL 𝕜 𝕜' E G G' L Φ =
       (L.restrictScalars 𝕜).compContinuousMultilinearMap Φ :=
   (rfl)
+
+/-- The operator norm of `ContinuousLinearMap.compContinuousMultilinearMapMixedL` is at most
+`1`. -/
+theorem norm_compContinuousMultilinearMapMixedL_le {𝕜 𝕜' ι : Type*}
+    [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] [Fintype ι]
+    {E : ι → Type*} [∀ i, SeminormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
+    {G G' : Type*} [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedSpace 𝕜' G]
+    [IsScalarTower 𝕜 𝕜' G] [SMulCommClass 𝕜 𝕜' G] [SeminormedAddCommGroup G']
+    [NormedSpace 𝕜 G'] [NormedSpace 𝕜' G'] [IsScalarTower 𝕜 𝕜' G'] [SMulCommClass 𝕜 𝕜' G'] :
+    ‖compContinuousMultilinearMapMixedL 𝕜 𝕜' E G G'‖ ≤ 1 :=
+  LinearMap.mkContinuous₂_norm_le _ zero_le_one _
 
 end ContinuousLinearMap

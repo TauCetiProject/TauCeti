@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Analysis.Normed.Operator.Prod
+import TauCeti.Analysis.Normed.Operator.Bilinear
 
 /-!
 # Operator norms of maps into and out of a product
@@ -25,7 +27,11 @@ endomorphism `L` of `E × F`, each component of `L v - v` has norm at most `‖L
 so `L` moves each coordinate of `v` little when it is close to the identity.
 
 The map `x ↦ (x, f x)` into a product, the derivative of a graph map, has operator norm at most
-`max 1 ‖f‖` (`ContinuousLinearMap.opNorm_id_prod_le`).
+`max 1 ‖f‖` (`ContinuousLinearMap.opNorm_id_prod_le`). Precomposing continuous linear maps with
+the coordinate projections `fst` and `snd` has operator norm at most `1`
+(`ContinuousLinearMap.norm_compL_flip_fst_le`, `ContinuousLinearMap.norm_compL_flip_snd_le`), as
+does combining `snd`-precomposition with `lsmul.flip`
+(`ContinuousLinearMap.norm_compL_flip_snd_comp_lsmul_le`).
 -/
 
 public section
@@ -86,6 +92,28 @@ theorem norm_apply_fst_sub_fst_le (L : E × F →L[𝕜] E × F) (v : E × F) :
 theorem norm_apply_snd_sub_snd_le (L : E × F →L[𝕜] E × F) (v : E × F) :
     ‖(L v).2 - v.2‖ ≤ ‖L - 1‖ * ‖v‖ :=
   (_root_.norm_snd_le ((L - 1) v)).trans ((L - 1).le_opNorm v)
+
+/-- Precomposing continuous linear maps out of `E` with `fst : E × F →L[𝕜] E` has operator norm at
+most `1`. -/
+theorem norm_compL_flip_fst_le :
+    ‖(compL 𝕜 (E × F) E G).flip (fst 𝕜 E F)‖ ≤ 1 :=
+  (norm_compL_flip_le _).trans (norm_fst_le _ _ _)
+
+/-- Precomposing continuous linear maps out of `F` with `snd : E × F →L[𝕜] F` has operator norm at
+most `1`. -/
+theorem norm_compL_flip_snd_le :
+    ‖(compL 𝕜 (E × F) F G).flip (snd 𝕜 E F)‖ ≤ 1 :=
+  (norm_compL_flip_le _).trans (norm_snd_le _ _ _)
+
+/-- Precomposing scalar multiplication on `G` with the second projection `snd : E × R →L[𝕜] R` has
+operator norm at most `1`. -/
+theorem norm_compL_flip_snd_comp_lsmul_le {R : Type*} [SeminormedRing R] [NormedAlgebra 𝕜 R]
+    [Module R G] [IsBoundedSMul R G] [IsScalarTower 𝕜 R G] :
+    ‖((compL 𝕜 (E × R) R G).flip (snd 𝕜 E R)).comp (lsmul 𝕜 R (E := G)).flip‖ ≤ 1 :=
+  (opNorm_comp_le _ _).trans <|
+    (mul_le_mul (norm_compL_flip_snd_le (𝕜 := 𝕜) (E := E) (F := R) (G := G))
+      ((opNorm_flip _).trans_le opNorm_lsmul_le) (opNorm_nonneg _) zero_le_one).trans_eq
+      (one_mul 1)
 
 end ContinuousLinearMap
 

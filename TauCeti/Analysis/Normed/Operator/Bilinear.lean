@@ -47,8 +47,11 @@ invertible map and `X` tends to the identity. On Banach spaces the comparison op
 `B₀⁻¹ ∘ B` also tends to the identity as both maps tend to the same invertible map
 (`ContinuousLinearMap.IsInvertible.tendsto_inverse_comp`).
 
-Evaluating a `𝕜`-linear operator `f : E →L[𝕜] G` at `v : E` is also continuous and `𝕜'`-linear
-in `f` whenever `𝕜` and `𝕜'` commute on `G` (`ContinuousLinearMap.applyMixed`).
+Precomposing with a fixed continuous linear map `g` is bounded by `‖g‖` as an operator
+(`ContinuousLinearMap.norm_compL_flip_le`). Evaluating a `𝕜`-linear operator `f : E →L[𝕜] G` at
+`v : E` is also continuous and `𝕜'`-linear in `f` whenever `𝕜` and `𝕜'` commute on `G`
+(`ContinuousLinearMap.applyMixed`), with operator norm at most `‖v‖`
+(`ContinuousLinearMap.norm_applyMixed_le`).
 
 On normable spaces over nontrivially normed fields, with isometric scalar homomorphisms `σ₁₃`,
 `σ₂₃` and `σ₂₃` surjective, the flip of a continuous pairing `μ : E →SL[σ₁₃] F →SL[σ₂₃] H` is
@@ -66,6 +69,13 @@ namespace ContinuousLinearMap
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {V W G : Type*} [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
   [SeminormedAddCommGroup W] [NormedSpace 𝕜 W] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- Precomposition with a fixed continuous linear map `g : V →L[𝕜] W` has operator norm at most
+`‖g‖`. -/
+theorem norm_compL_flip_le (g : V →L[𝕜] W) :
+    ‖(compL 𝕜 V W G).flip g‖ ≤ ‖g‖ :=
+  opNorm_le_bound _ (norm_nonneg g) fun f ↦
+    (opNorm_comp_le f g).trans_eq (mul_comm _ _)
 
 /-- A family of continuous bilinear maps is a continuous bilinear map into the product. -/
 def piBilin {ι : Type*} {G : ι → Type*}
@@ -279,6 +289,14 @@ theorem applyMixed_apply {𝕜 𝕜' E G : Type*} [NontriviallyNormedField 𝕜]
     (v : E) (L : E →L[𝕜] G) :
     applyMixed 𝕜 𝕜' G v L = L v :=
   (rfl)
+
+/-- The operator norm of `ContinuousLinearMap.applyMixed` at `v` is at most `‖v‖`. -/
+theorem norm_applyMixed_le {𝕜 𝕜' E G : Type*} [NontriviallyNormedField 𝕜]
+    [NontriviallyNormedField 𝕜'] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedSpace 𝕜' G] [SMulCommClass 𝕜 𝕜' G]
+    (v : E) :
+    ‖applyMixed 𝕜 𝕜' G v‖ ≤ ‖v‖ :=
+  LinearMap.mkContinuous_norm_le _ (norm_nonneg v) _
 
 end MixedScalar
 

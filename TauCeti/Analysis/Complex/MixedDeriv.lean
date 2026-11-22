@@ -22,6 +22,7 @@ import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Normed.Module.Multilinear.Basic
 import TauCeti.Analysis.Normed.Module.Multilinear.Curry
 import TauCeti.Analysis.Normed.Operator.Bilinear
+import TauCeti.Analysis.Normed.Operator.Prod
 
 /-!
 # Mixed derivatives and Cauchy estimates for holomorphic slices
@@ -95,31 +96,6 @@ universe u v
 namespace TauCeti
 
 variable {X : Type u} [NormedAddCommGroup X] [NormedSpace ℝ X]
-
-/-! ### Auxiliary operator norm bounds -/
-
-private theorem norm_compL_flip_fst_le (G : Type*) [NormedAddCommGroup G] [NormedSpace ℝ G] :
-    ‖(ContinuousLinearMap.compL ℝ (X × ℂ) X G).flip (ContinuousLinearMap.fst ℝ X ℂ)‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun L ↦ by
-    simpa [ContinuousLinearMap.compL_apply] using
-      (ContinuousLinearMap.opNorm_comp_le L (ContinuousLinearMap.fst ℝ X ℂ)).trans
-        (mul_le_of_le_one_right (norm_nonneg L) (ContinuousLinearMap.norm_fst_le ℝ X ℂ))
-
-private theorem norm_compL_flip_snd_comp_lsmul_le (G : Type*) [NormedAddCommGroup G]
-    [NormedSpace ℂ G] :
-    ‖((ContinuousLinearMap.compL ℝ (X × ℂ) ℂ G).flip (ContinuousLinearMap.snd ℝ X ℂ)).comp
-        (ContinuousLinearMap.lsmul ℝ ℂ (E := G)).flip‖ ≤ 1 := by
-  have h1 :
-      ‖(ContinuousLinearMap.compL ℝ (X × ℂ) ℂ G).flip (ContinuousLinearMap.snd ℝ X ℂ)‖ ≤ 1 :=
-    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun L ↦ by
-      simpa [ContinuousLinearMap.compL_apply] using
-        (ContinuousLinearMap.opNorm_comp_le L (ContinuousLinearMap.snd ℝ X ℂ)).trans
-          (mul_le_of_le_one_right (norm_nonneg L) (ContinuousLinearMap.norm_snd_le ℝ X ℂ))
-  have h2 : ‖(ContinuousLinearMap.lsmul ℝ ℂ (E := G)).flip‖ ≤ 1 := by
-    rw [ContinuousLinearMap.opNorm_flip]
-    exact ContinuousLinearMap.opNorm_lsmul_le
-  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-    ((mul_le_mul h1 h2 (ContinuousLinearMap.opNorm_nonneg _) zero_le_one).trans_eq (one_mul 1))
 
 /-! ### Holomorphy of derivatives in the complex variable -/
 
@@ -501,11 +477,14 @@ private theorem norm_iteratedFDeriv_succ_prod_le {m : ℕ} (hW : IsOpen W) (hV :
   · have h1 := precompFst.iteratedFDeriv_comp_left hH₁at le_rfl
     exact (congrArg norm h1).le.trans
       ((precompFst.norm_compContinuousMultilinearMap_le _).trans
-        (mul_le_of_le_one_left (norm_nonneg _) (norm_compL_flip_fst_le (X := X) G)))
+        (mul_le_of_le_one_left (norm_nonneg _)
+          (ContinuousLinearMap.norm_compL_flip_fst_le (𝕜 := ℝ) (E := X) (F := ℂ) (G := G))))
   · have h2 := sndSmul.iteratedFDeriv_comp_left hH₂at le_rfl
     exact (congrArg norm h2).le.trans
       ((sndSmul.norm_compContinuousMultilinearMap_le _).trans
-        (mul_le_of_le_one_left (norm_nonneg _) (norm_compL_flip_snd_comp_lsmul_le (X := X) G)))
+        (mul_le_of_le_one_left (norm_nonneg _)
+          (ContinuousLinearMap.norm_compL_flip_snd_comp_lsmul_le
+            (𝕜 := ℝ) (E := X) (R := ℂ) (G := G))))
 
 /-- Inductive step from order `m + 1` to order `m + 2` in the total `C^m` Cauchy bound, applying
 the induction hypothesis on the half-radius disc `closedBall z (r / 2)` to both `fderiv_x H` and

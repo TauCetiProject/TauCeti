@@ -29,6 +29,8 @@ on `s` (`TauCeti.contDiffOn_tsum`) and that its iterated derivatives are compute
 eventually (`Filter.cofinite`, i.e. away from finitely many terms), the sum is still `C^N` on `s`
 (`TauCeti.contDiffOn_tsum_of_eventually`).
 
+* `TauCeti.hasFDerivAt_iteratedFDeriv_tsum_of_isOpen`: Fréchet derivative of the termwise `k`-th
+  iterated derivative series on an open set under summable derivative bounds.
 * `TauCeti.iteratedFDeriv_tsum_apply_of_isOpen`: termwise iterated derivatives of a series on an
   open set under full-index summable derivative bounds.
 * `TauCeti.contDiffOn_tsum`: `C^N` regularity of a series on an open set under full-index summable
@@ -76,7 +78,10 @@ section OpenSet
 
 variable {α : Type*} {N : ℕ∞} {f : α → E → F} {v : ℕ → α → ℝ} {s : Set E}
 
-private theorem hasFDerivAt_iteratedFDeriv_tsum_of_isOpen (hs : IsOpen s)
+/-- On an open set `s`, the series of `k`-th iterated derivatives of a series of `C^N` functions
+with summable uniform derivative bounds through order `k + 1 ≤ N` is Fréchet differentiable at
+every `x ∈ s`, with derivative equal to the termwise sum of `fderiv`. -/
+theorem hasFDerivAt_iteratedFDeriv_tsum_of_isOpen (hs : IsOpen s)
     (hf : ∀ i, ContDiffOn 𝕜 N (f i) s) (hv : ∀ k : ℕ, (k : ℕ∞) ≤ N → Summable (v k))
     (h'f : ∀ (k : ℕ) (i : α), ∀ x ∈ s, (k : ℕ∞) ≤ N → ‖iteratedFDeriv 𝕜 k (f i) x‖ ≤ v k i)
     {k : ℕ} (hk : ((k + 1 : ℕ) : ℕ∞) ≤ N) {x : E} (hx : x ∈ s) :

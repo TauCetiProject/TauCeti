@@ -47,14 +47,14 @@ The construction follows the Mittag–Leffler / Runge exhaustion scheme:
    `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_smul_with_holomorphic_param`. Then
    `v j` is jointly smooth on `s ×ˢ univ`, holomorphic in `q`, and for `j ≥ 1` holomorphic in `w`
    off `tsupport (χ j)` (in particular near `C j`).
-3. For `j ≥ 1`, apply the parametric finite-rank Runge approximation operator
+3. For `j ≥ 1`, apply the parametric Runge approximation operator
    (`TauCeti.IsFilledIn.exists_norm_iteratedFDeriv_sub_sum_mul_smul_le`) on `C j ⊆ Ω` to
    approximate `v j` by a finite linear combination `a j x w = ∑ i, (c i * g i w) • v j x (ζ i)`
    with `g i` holomorphic on `Ω`. Because the nodes `ζ i`, weights `c i`, and functions `g i` are
-   independent of `(x, F)`, applying the same finite-rank operator simultaneously shrinks all
-   parameter derivatives `iteratedFDeriv ℝ k (fun x' ↦ (v j - a j) x' w) x` for `k ≤ j` to at most
-   `2⁻ʲ` on `D j ×ˢ C j`, while preserving joint smoothness and `q`-holomorphy and leaving
-   `bar∂_z` unchanged on `Ω`.
+   independent of `(x, F)`, applying the same operator (which factors through `Fin N → F`, and is
+   finite-rank for scalar targets) simultaneously shrinks all parameter derivatives
+   `iteratedFDeriv ℝ k (fun x' ↦ (v j - a j) x' w) x` for `k ≤ j` to at most `2⁻ʲ` on `D j ×ˢ C j`,
+   while preserving joint smoothness and `q`-holomorphy and leaving `bar∂_z` unchanged on `Ω`.
 4. Put `u 0 = v 0` (i.e. `a 0 = 0`) and `u j = v j - a j` for `j ≥ 1`, and set
    `U x w = ∑' j, u j x w`. On any local box `ball x₀ ρ ×ˢ ball z₀ r` inside
    `D (m + 1) ×ˢ interior (C (m + 1))`, the Cauchy bound
@@ -117,7 +117,7 @@ private theorem exists_runge_corrected_shell {s : Set (P × Q)} {Ω K : Set ℂ}
   obtain ⟨L, hL, hKL, hLχ⟩ := exists_compact_between hK (isClosed_tsupport χ).isOpen_compl hKχ
   obtain ⟨M, hM0, hM⟩ := hv_cd.exists_pos_bound_iteratedFDeriv_partial_prod (hs.prod isOpen_univ)
     hD hL (prod_mono hDs (subset_univ L)) (by simp)
-  obtain ⟨N, ζ, c, g, -, hg, ha_cd_of, ha_q_of, happrox⟩ :=
+  obtain ⟨N, ζ, c, g, -, hg, ha_cd_of, ha_q_of, -, happrox⟩ :=
     hfill.exists_norm_iteratedFDeriv_sub_sum_mul_smul_le hΩ hK hKΩ isOpen_interior hKL
       (div_pos hε hM0)
   let a : P × Q → ℂ → F := fun x w ↦ ∑ i : Fin N, (c i * g i w) • v x (ζ i)
