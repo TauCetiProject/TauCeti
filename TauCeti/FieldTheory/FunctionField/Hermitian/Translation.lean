@@ -11,11 +11,11 @@ public import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.FieldTheory.Finite.Basic
 import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.Algebra.Group.Pow
-import TauCeti.FieldTheory.Finite.Frobenius
 import TauCeti.FieldTheory.Finite.PowAddSelf
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.RingTheory.Algebraic.Basic
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # The translations of the Hermitian function field
@@ -77,8 +77,8 @@ for each of the `q²` choices of `a`.
   satisfy the two conditions on `(a, b)`.
 * `TauCeti.IsHermitianCoordinates.finite_hermitianTranslations`: the translation group is
   finite over any finite constant field.
-* `TauCeti.IsHermitianCoordinates.natCard_hermitianTranslations`: over a field with `q²`
-  elements, the group of translations has order `q³`.
+* `TauCeti.IsHermitianCoordinates.natCard_hermitianTranslations`: over a field `K` with
+  `Nat.card K = q ^ 2`, the group of translations has order `q³`.
 
 ## References
 
@@ -364,13 +364,15 @@ theorem finite_hermitianTranslations [Finite K] :
   · rw [hy σ, hy τ, ha', hb']
 
 omit hq in
-/-- **The order of the translation group**: over a field with `q²` elements, `q = p ^ n`, the
-translations of the Hermitian function field form a group of order `q³`. -/
-theorem natCard_hermitianTranslations [Finite K] (hK : Nat.card K = (p ^ n) ^ 2) :
+/-- **The order of the translation group**: over a field `K` with `Nat.card K = q ^ 2`,
+`q = p ^ n`, the translations of the Hermitian function field form a group of order `q³`. No
+`[Finite K]` is assumed: the `Nat.card` equation implies it. -/
+theorem natCard_hermitianTranslations (hK : Nat.card K = (p ^ n) ^ 2) :
     Nat.card (hermitianTranslations K p n x y) = (p ^ n) ^ 3 := by
   classical
+  have := finite_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
   have := Fintype.ofFinite K
-  have hq := FiniteField.one_lt_pow_of_natCard_eq_sq hK
+  have hq := one_lt_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
   have hpow (a : K) : a ^ (p ^ n) ^ 2 = a := by
     rw [← hK, Nat.card_eq_fintype_card]
     exact _root_.FiniteField.pow_card a

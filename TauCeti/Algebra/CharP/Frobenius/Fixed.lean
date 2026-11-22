@@ -103,7 +103,8 @@ theorem mem_frobeniusFixedSubring_mul_iff_iterate_eq {m k : ℕ} {a : A} :
 /-- **An iterated Frobenius moves some element of a large domain.** On a domain of exponential
 characteristic `p` with more than `p ^ n` elements, finite or infinite, the iterate
 `x ↦ x ^ p ^ n` is not the identity, provided `1 < p ^ n`: its fixed elements are roots of
-`X ^ p ^ n - X`, of which there are at most `p ^ n`. -/
+`X ^ p ^ n - X`, of which there are at most `p ^ n`. The witness is a point where this polynomial
+does not vanish, supplied by Mathlib's `Polynomial.exists_eval_ne_zero_of_natDegree_lt_card`. -/
 theorem exists_iterateFrobenius_ne [IsDomain A] (hq : 1 < p ^ n)
     (hA : (p ^ n : ℕ) < Cardinal.mk A) : ∃ s : A, iterateFrobenius A p n s ≠ s := by
   -- A point where `X ^ p ^ n - X` does not vanish is one that the iterate moves.

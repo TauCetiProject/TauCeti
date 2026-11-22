@@ -9,7 +9,7 @@ public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.GroupTheory.Index
-import TauCeti.FieldTheory.Finite.Frobenius
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # The fibres of `b ↦ b ^ q + b` over a field with `q²` elements
@@ -60,9 +60,9 @@ variable {K : Type*} [Field K] {p n : ℕ} [ExpChar K p]
 theorem natCard_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
     (hc : c ^ p ^ n = c) : Nat.card {b : K // b ^ p ^ n + b = c} = p ^ n := by
   classical
-  have := finite_of_natCard_eq_pow (hK.trans (pow_mul p n 2).symm)
+  have := finite_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
   have := Fintype.ofFinite K
-  have hq := one_lt_pow_of_natCard_eq_sq hK
+  have hq := one_lt_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
   rw [Nat.card_eq_fintype_card] at hK
   set q := p ^ n with hqdef
   -- The additive maps `T b = b ^ q + b` and `T' c = c ^ q - c`.
@@ -110,11 +110,9 @@ theorem natCard_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
 /-- In a field with `q²` elements, every `c` with `c ^ q = c` is of the form `b ^ q + b`. -/
 theorem exists_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
     (hc : c ^ p ^ n = c) : ∃ b : K, b ^ p ^ n + b = c := by
-  have := finite_of_natCard_eq_pow (hK.trans (pow_mul p n 2).symm)
-  have : Finite {b : K // b ^ p ^ n + b = c} := Subtype.finite
   have hpos : 0 < Nat.card {b : K // b ^ p ^ n + b = c} := by
     rw [natCard_pow_add_self_eq hK hc]
-    exact pow_pos (expChar_pos K p) n
+    exact expChar_pow_pos K p n
   obtain ⟨⟨b, hb⟩⟩ := Nat.card_pos_iff.mp hpos |>.1
   exact ⟨b, hb⟩
 
@@ -137,16 +135,16 @@ a power of the exponential characteristic, and for `ε = (-1) ^ k`, some nonzero
 `b + ε b ^ q = 0`. -/
 theorem exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero
     (hK : Nat.card K = (p ^ n) ^ 2) (k : ℕ) : ∃ b ≠ (0 : K), b + (-1) ^ k * b ^ p ^ n = 0 := by
-  have := finite_of_natCard_eq_pow (hK.trans (pow_mul p n 2).symm)
+  have := finite_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
   rcases neg_one_pow_eq_or K k with h | h <;> rw [h]
   · -- The `q` roots of `b ^ q + b = 0` are not all zero.
     have : Finite {b : K // b ^ p ^ n + b = 0} := Subtype.finite
-    have hq := one_lt_pow_of_natCard_eq_sq hK
+    have hq := one_lt_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
     have hcard : 1 < Nat.card {b : K // b ^ p ^ n + b = 0} := by
-      rwa [natCard_pow_add_self_eq hK (zero_pow (pow_pos (expChar_pos K p) n).ne')]
+      rwa [natCard_pow_add_self_eq hK (zero_pow (expChar_pow_pos K p n).ne')]
     have : Nontrivial {b : K // b ^ p ^ n + b = 0} := Finite.one_lt_card_iff_nontrivial.mp hcard
     have hzero : (0 : K) ^ p ^ n + 0 = 0 := by
-      rw [zero_pow (pow_pos (expChar_pos K p) n).ne', add_zero]
+      rw [zero_pow (expChar_pow_pos K p n).ne', add_zero]
     obtain ⟨⟨b, hb⟩, hne⟩ := exists_ne (⟨0, hzero⟩ : {b : K // b ^ p ^ n + b = 0})
     refine ⟨b, fun hb0 ↦ hne (Subtype.ext hb0), ?_⟩
     rw [one_mul, add_comm, hb]
@@ -174,7 +172,7 @@ theorem natCard_add_pow_eq_pow_mul {q : ℕ} (hK : Nat.card K = q ^ 2) :
           exact Prod.ext rfl (by simpa using c.property)
         right_inv z := rfl }
     simpa using (Nat.card_congr e).trans hK
-  have : Finite K := Nat.finite_of_card_ne_zero (hK ▸ pow_ne_zero 2 hq)
+  have := finite_of_natCard_eq_pow hq hK
   let := Fintype.ofFinite K
   -- The square root of a finite field's order is a power of its characteristic.
   obtain ⟨p, hchar, n, hprime, hcard⟩ := _root_.FiniteField.card' K

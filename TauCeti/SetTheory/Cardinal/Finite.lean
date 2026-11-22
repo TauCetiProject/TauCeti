@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Basic.Denumerable
 import Mathlib.Data.Fintype.Card
+import Mathlib.SetTheory.Cardinal.NatCard
 
 /-!
 # Finite and extended cardinalities
@@ -30,7 +31,9 @@ including when both types are infinite.
 
 Finally, the cardinality `Nat.card` of an infinite type is `0`, and `0` is coprime only to `1`, so a
 type whose cardinality is coprime to that of an infinite type has `Nat.card` equal to `1`, and in
-particular is a subsingleton.
+particular is a subsingleton. For the same reason a type whose `Nat.card` is a power `q ^ k` of a
+nonzero `q` is finite, with no finiteness assumed; this is how a field given by `Nat.card K = q ^ 2`
+is shown finite.
 
 ## Main results
 
@@ -50,6 +53,9 @@ particular is a subsingleton.
   when `e' ∘ f = f' ∘ e` with `e` surjective and `e'` injective on the range of `f`.
 * `TauCeti.finite_of_natCast_card_ne_zero`: a type whose cardinality has a nonzero cast in an
   additive monoid with one is finite, since `Nat.card` vanishes on infinite types.
+* `TauCeti.finite_of_natCard_eq_pow` and `TauCeti.one_lt_of_natCard_eq_pow`: a type `α` with
+  `Nat.card α = q ^ k` for some `q ≠ 0` is finite, and if it is nontrivial then `1 < q`. Neither
+  assumes `[Finite α]`.
 * `Nat.Coprime.subsingleton_of_infinite`: if `Nat.card α` and `Nat.card β` are coprime and `α` is
   infinite, then `β` is a subsingleton.
 -/
@@ -156,6 +162,19 @@ theorem nonempty_equiv_of_enatCard_eq {α β : Type*} [Countable α] [Countable 
 theorem finite_of_natCast_card_ne_zero {α R : Type*} [AddMonoidWithOne R]
     (h : (Nat.card α : R) ≠ 0) : Finite α :=
   Nat.finite_of_card_ne_zero fun hcard ↦ h (by simp [hcard])
+
+/-- A type `α` with `Nat.card α = q ^ k` for some `q ≠ 0` is finite, since `Nat.card` of an
+infinite type is `0`. No `[Finite α]` is assumed: the `Nat.card` equation alone gives it. -/
+theorem finite_of_natCard_eq_pow {α : Type*} {q k : ℕ} (hq : q ≠ 0) (h : Nat.card α = q ^ k) :
+    Finite α :=
+  Nat.finite_of_card_ne_zero (h ▸ pow_ne_zero k hq)
+
+/-- A nontrivial type `α` with `Nat.card α = q ^ k` for some `q ≠ 0` has `1 < q`. No `[Finite α]`
+is assumed: `finite_of_natCard_eq_pow` gives it, and then `1 < Nat.card α = q ^ k`. -/
+theorem one_lt_of_natCard_eq_pow {α : Type*} [Nontrivial α] {q k : ℕ} (hq : q ≠ 0)
+    (h : Nat.card α = q ^ k) : 1 < q := by
+  have := finite_of_natCard_eq_pow hq h
+  exact lt_of_pow_lt_pow_left₀ k q.zero_le (by rw [one_pow, ← h]; exact Finite.one_lt_card)
 
 end TauCeti
 
