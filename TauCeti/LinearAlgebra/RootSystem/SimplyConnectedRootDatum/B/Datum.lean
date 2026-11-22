@@ -555,14 +555,6 @@ private lemma typeB_signedWeight_add_signedWeight_mem_closure (u v : Fin (2 * n)
   exact AddSubmonoid.add_mem _ (typeB_weight_mem_closure (le_of_lt (axis_lt u)))
     (typeB_weight_mem_closure (le_of_lt (axis_lt v)))
 
-private lemma typeB_signedWeight_sub_signedWeight_mem_closure (u v : Fin (2 * n)) (hu : sgn u = 1)
-    (hv : sgn v = -1)
-    (hle : axis u ≤ axis v) :
-    signedWeight u + signedWeight v ∈ AddSubmonoid.closure
-      (range fun i : Fin n => weight n (i : ℕ) - weight n ((i : ℕ) + 1)) := by
-  rw [signedWeight_def, signedWeight_def, hu, hv, one_smul, neg_one_smul, ← sub_eq_add_neg]
-  exact sub_mem_closure_of_le (n := n) (weight n) (le_of_lt (axis_lt v)) hle
-
 private lemma typeB_mem_closure_single {w : Fin n → ℤ} (hw : ∀ j, 0 ≤ w j) :
     w ∈ AddSubmonoid.closure (range fun i : Fin n => (Pi.single i 1 : Fin n → ℤ)) := by
   rw [← (Pi.basisFun ℤ (Fin n)).sum_repr w]
@@ -638,21 +630,14 @@ private lemma typeB_root_mem_or_neg_mem (k : Fin (2 * n ^ 2)) :
     rcases sgn_eq_one_or_neg_one u with hsu | hsu <;>
       rcases sgn_eq_one_or_neg_one v with hsv | hsv
     · exact Or.inl (typeB_signedWeight_add_signedWeight_mem_closure u v hsu hsv)
-    · rcases le_total (axis u) (axis v) with hle | hle
-      · exact Or.inl (typeB_signedWeight_sub_signedWeight_mem_closure u v hsu hsv hle)
-      · refine Or.inr ?_
-        rw [neg_add, ← signedWeight_opp, ← signedWeight_opp, add_comm]
-        exact typeB_signedWeight_sub_signedWeight_mem_closure (opp v) (opp u)
-          (by simp [sgn_opp, hsv])
-          (by simp [sgn_opp, hsu]) (by rwa [axis_opp, axis_opp])
-    · rcases le_total (axis v) (axis u) with hle | hle
-      · rw [add_comm]
-        exact Or.inl (typeB_signedWeight_sub_signedWeight_mem_closure v u hsv hsu hle)
-      · refine Or.inr ?_
-        rw [neg_add, ← signedWeight_opp, ← signedWeight_opp]
-        exact typeB_signedWeight_sub_signedWeight_mem_closure (opp u) (opp v)
-          (by simp [sgn_opp, hsu])
-          (by simp [sgn_opp, hsv]) (by rwa [axis_opp, axis_opp])
+    · rw [signedWeight_def, signedWeight_def, hsu, hsv, one_smul, neg_one_smul,
+        ← sub_eq_add_neg]
+      exact sub_mem_or_neg_mem_closure (n := n) (weight n) (le_of_lt (axis_lt u))
+        (le_of_lt (axis_lt v))
+    · rw [add_comm (signedWeight u), signedWeight_def, signedWeight_def, hsv, hsu, one_smul,
+        neg_one_smul, ← sub_eq_add_neg]
+      exact sub_mem_or_neg_mem_closure (n := n) (weight n) (le_of_lt (axis_lt v))
+        (le_of_lt (axis_lt u))
     · refine Or.inr ?_
       rw [neg_add, ← signedWeight_opp, ← signedWeight_opp]
       exact typeB_signedWeight_add_signedWeight_mem_closure (opp u) (opp v)

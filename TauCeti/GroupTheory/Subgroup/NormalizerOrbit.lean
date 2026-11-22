@@ -55,11 +55,11 @@ theorem normalizerOrbitMap_injective_iff (H : Subgroup G) :
         H.normalizerOrbitMap (Quotient.mk'' ⟨t, ht⟩) := by
       simpa only [normalizerOrbitMap_mk] using ConjAct.mk_eq_mk_iff_isConj.mpr hc.symm
     obtain ⟨n, hn⟩ := Quotient.eq''.mp (h heq)
-    exact ⟨n, n.2, congrArg Subtype.val hn⟩
+    exact ⟨n, n.property, congrArg Subtype.val hn⟩
   · intro h a b
     refine Quotient.inductionOn₂' a b fun a b hab ↦ ?_
     simp only [normalizerOrbitMap_mk, ConjAct.mk_eq_mk_iff_isConj] at hab
-    obtain ⟨n, hn, e⟩ := h a a.2 b b.2 hab
+    obtain ⟨n, hn, e⟩ := h a a.property b b.property hab
     exact (Quotient.eq''.mpr (orbitRel_apply.mpr ⟨⟨n, hn⟩, Subtype.ext e⟩)).symm
 
 /-- The map from `N(H)`-orbits to conjugation orbits is surjective exactly when the conjugates of
@@ -75,7 +75,7 @@ theorem normalizerOrbitMap_surjective_iff (H : Subgroup G) :
     | h t =>
       rw [normalizerOrbitMap_mk] at hq
       obtain ⟨c, rfl⟩ := isConj_iff.mp (ConjAct.mk_eq_mk_iff_isConj.mp hq)
-      exact Set.mem_iUnion.mpr ⟨c, t, t.2, rfl⟩
+      exact Set.mem_iUnion.mpr ⟨c, t, t.property, rfl⟩
   · intro h q
     induction q using Quotient.inductionOn' with
     | h g =>

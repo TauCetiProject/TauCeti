@@ -56,7 +56,7 @@ variable {α : Type*} [TopologicalSpace α] {n : ℕ} {A : Fin n → Set α}
 @[continuity, fun_prop]
 theorem continuous_ofFn_subtypeVal :
     Continuous fun x : ∀ i, ↥(A i) => ofFn fun i => (x i : α) :=
-  continuous_ofFn.comp (continuous_pi fun i => continuous_subtype_val.comp (continuous_apply i))
+  continuous_ofFn.comp (continuous_pi fun i => continuous_subtypeVal.comp (continuous_apply i))
 
 /-- The unordered tuples with one point in each member of a family of closed sets form a closed
 subspace of the symmetric power: the quotient map onto a symmetric power is closed. -/

@@ -306,7 +306,7 @@ theorem exists_isCompact_finite_connectedComponents_compl [LocallyConnectedSpace
   -- In a compact space the whole space works.
   by_cases hc : CompactSpace X
   · refine ⟨univ, isCompact_univ, by simp, ?_, fun x hx ↦ absurd (mem_univ x) hx⟩
-    have : IsEmpty ↥(univ : Set X)ᶜ := ⟨fun x ↦ x.2 (mem_univ _)⟩
+    have : IsEmpty ↥(univ : Set X)ᶜ := ⟨fun x ↦ x.property (mem_univ _)⟩
     exact Finite.of_surjective _ ConnectedComponents.surjective_coe
   have := not_compactSpace_iff.1 hc
   -- Enlarge `K` by a point, so that the neighbourhood `L₀` below is nonempty.
@@ -337,7 +337,7 @@ theorem exists_isCompact_finite_connectedComponents_compl [LocallyConnectedSpace
       ⟨x₀, interior_subset (hKL₀ (mem_insert x₀ K))⟩ hx)
   classical
   refine Finite.of_surjective
-    (fun z : {z : F // (z : X) ∈ Lᶜ} ↦ ConnectedComponents.mk (⟨z.1, z.2⟩ : ↥Lᶜ)) ?_
+    (fun z : {z : F // (z : X) ∈ Lᶜ} ↦ ConnectedComponents.mk (⟨z.val, z.property⟩ : ↥Lᶜ)) ?_
   rintro ⟨x, hx⟩
   obtain ⟨z, hzF, hzx⟩ := hF x hx
   have hzL : z ∈ Lᶜ := fun h ↦ hx ((congrArg (fun s ↦ IsCompact (closure s)) hzx).mp h)
