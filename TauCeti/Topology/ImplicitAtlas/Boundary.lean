@@ -95,11 +95,11 @@ structure ImplicitAtlasWithBoundary [DecidableEq A] (Γ : A → Type*) [∀ α, 
       (∃ n : ℕ, (n : ℤ) = d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) ∧
         ∃ e : OpenPartialHomeomorph (T J) (EuclideanSpace ℝ (Fin n) × ((α : ↥(J \ I)) → E α)),
           x.val ∈ e.source ∧ Disjoint e.source (boundary J) ∧ ∀ y ∈ e.source,
-            (e y).2 = fun α : ↥(J \ I) ↦ kuranishi J ⟨α.val, (Finset.mem_sdiff.1 α.property).1⟩ y) ∨
+            (e y).2 = kuranishiSdiff kuranishi I J y) ∨
       (∃ n : ℕ, (n + 1 : ℤ) = d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) ∧
         ∃ e : OpenPartialHomeomorph (T J) (EuclideanHalfSpace (n + 1) × ((α : ↥(J \ I)) → E α)),
           x.val ∈ e.source ∧ (∀ y ∈ e.source, y ∈ boundary J ↔ (e y).1.val 0 = 0) ∧ ∀ y ∈ e.source,
-            (e y).2 = fun α : ↥(J \ I) ↦ kuranishi J ⟨α.val, (Finset.mem_sdiff.1 α.property).1⟩ y)
+            (e y).2 = kuranishiSdiff kuranishi I J y)
 
 variable [DecidableEq A] {Γ : A → Type*} [∀ α, Group (Γ α)] [∀ α, Finite (Γ α)]
   {E : A → Type*} [∀ α, NormedAddCommGroup (E α)] [∀ α, NormedSpace ℝ (E α)]
@@ -329,8 +329,9 @@ noncomputable def boundaryAtlas :
     · rw [OpenPartialHomeomorph.hyperplaneChart_source]
       exact hxe
     · rw [OpenPartialHomeomorph.hyperplaneChart_source] at hy
-      rw [OpenPartialHomeomorph.hyperplaneChart_apply, Prod.map_snd, id_eq]
-      exact he y.val hy
+      rw [OpenPartialHomeomorph.hyperplaneChart_apply, Prod.map_snd, id_eq, he y.val hy]
+      ext α
+      simp only [kuranishiSdiff_apply, boundaryKuranishi_apply]
   exists_footprintMap_eq y := by
     obtain ⟨I, x, hreg, hx⟩ := 𝒜.exists_footprintMap_eq y.val
     exact ⟨I,
