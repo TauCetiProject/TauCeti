@@ -30,7 +30,8 @@ the map of singular chains with coefficients in any module
 (`TauCeti.ChainComplex.homotopyEquivalences_linearYonedaFunctor_map`). For pairs, the map of
 relative singular chains is a quasi-isomorphism by the five lemma; when its modules are projective
 it is a chain homotopy equivalence
-(`ChainComplex.homotopyEquivalences_linearYonedaFunctor_map_of_projective`).
+(`ChainComplex.homotopyEquivalences_linearYonedaFunctor_map_of_projective`). The same argument
+applies to any map of pairs inducing isomorphisms on relative homology.
 
 ## Main results
 
@@ -44,6 +45,10 @@ it is a chain homotopy equivalence
 * `TopPair.homotopyEquivalences_singularCochainComplexMap_of_isWeakHomotopyEquivalence`,
   `TopPair.isIso_singularCohomologyMap_of_isWeakHomotopyEquivalence`: the same for relative
   cohomology of pairs.
+* `TopPair.homotopyEquivalences_singularCochainComplexMap_of_isIso_singularHomologyMap`,
+  `TopPair.isIso_singularCohomologyMap_of_isIso_singularHomologyMap`: more generally, a map of
+  pairs inducing isomorphisms on relative homology with projective chain coefficients induces a
+  cochain homotopy equivalence of relative cochains, and isomorphisms on relative cohomology.
 * `TopPair.homotopyEquivalences_twistedCochainComplexMap_of_isWeakHomotopyEquivalence`,
   `TopPair.isIso_twistedCohomologyMap_of_isWeakHomotopyEquivalence`: the same for relative
   cohomology of pairs with local coefficients.
@@ -134,6 +139,27 @@ theorem isIso_singularCohomologyMap_of_isWeakHomotopyEquivalence
     IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) f n) :=
   have := (HomologicalComplex.mem_quasiIso_iff _).1 <| homotopyEquivalences_le_quasiIso _ _ _
     (homotopyEquivalences_singularCochainComplexMap_of_isWeakHomotopyEquivalence f R k M hfst hsnd)
+  inferInstance
+
+/-- **A map of pairs inducing isomorphisms on relative singular homology with projective chain
+coefficients induces a cochain homotopy equivalence of relative singular cochains**
+`Hom(C(Y, B; R), M) ⟶ Hom(C(X, A; R), M)`, with values in any module `M`. -/
+theorem homotopyEquivalences_singularCochainComplexMap_of_isIso_singularHomologyMap
+    (hf : ∀ n, IsIso (P.singularHomologyMap f R n)) :
+    HomologicalComplex.homotopyEquivalences _ _
+      (singularCochainComplexMap (R := R) (k := k) (M := M) f) :=
+  have : QuasiIso (singularChainComplexMap f R) :=
+    (quasiIso_iff _).2 fun n ↦ (quasiIsoAt_iff_isIso_homologyMap _ n).2 (hf n)
+  ChainComplex.homotopyEquivalences_linearYonedaFunctor_map_of_projective _ k M
+
+/-- **A map of pairs inducing isomorphisms on relative singular homology with projective chain
+coefficients induces isomorphisms on relative singular cohomology**
+`Hⁿ(Y, B; R, M) ≅ Hⁿ(X, A; R, M)`, with values in any module `M`. -/
+theorem isIso_singularCohomologyMap_of_isIso_singularHomologyMap
+    (hf : ∀ n, IsIso (P.singularHomologyMap f R n)) (n : ℕ) :
+    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) f n) :=
+  have := (HomologicalComplex.mem_quasiIso_iff _).1 <| homotopyEquivalences_le_quasiIso _ _ _
+    (homotopyEquivalences_singularCochainComplexMap_of_isIso_singularHomologyMap f R k M hf)
   inferInstance
 
 section Twisted
