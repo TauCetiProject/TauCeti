@@ -8,21 +8,27 @@ module
 public import Mathlib.Topology.Separation.Basic
 
 /-!
-# Specializing and generalizing maps into `T₁` spaces
+# Separation properties in `T₁` spaces
 
 In a `T₁` topological space, every specialization `x ⤳ y` is an equality (`specializes_iff_eq`), so
 any map into a `T₁` space trivially lifts both generalizations and specializations without any
-continuity assumption on the map.
+continuity assumption on the map. Furthermore, the complement of a point is open (`isOpen_ne`),
+so the points where a continuous map into a `T₁` space avoids finitely many given values form an
+open set.
 
 ## Main results
 
 * `TauCeti.generalizingMap_of_t1Space`: any map into a `T₁` space is a `GeneralizingMap`.
 * `TauCeti.specializingMap_of_t1Space`: any map into a `T₁` space is a `SpecializingMap`.
+* `TauCeti.isOpen_forall_ne`: the points where a continuous map into a `T₁` space avoids finitely
+  many values form an open set.
 -/
 
 public section
 
 namespace TauCeti
+
+section
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] [T1Space Y] {f : X → Y}
 
@@ -37,5 +43,15 @@ equalities. -/
 @[simp]
 theorem specializingMap_of_t1Space : SpecializingMap f :=
   fun x _ hx ↦ ⟨x, specializes_rfl, specializes_iff_eq.mp hx⟩
+
+end
+
+/-- The points where a continuous map into a `T1Space` avoids finitely many values `c i` form an
+open set. -/
+theorem isOpen_forall_ne {X Y ι : Type*} [TopologicalSpace X] [TopologicalSpace Y] [T1Space Y]
+    [Finite ι] {f : X → Y} (hf : Continuous f) {c : ι → Y} :
+    IsOpen {x : X | ∀ i, f x ≠ c i} := by
+  rw [Set.ofPred_forall]
+  exact isOpen_iInter_of_finite fun _ ↦ isOpen_ne.preimage hf
 
 end TauCeti
