@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Sobolev.Mollification.Interior
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
@@ -68,13 +69,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Ω : Opens E} {u : E → F} {Du : E → E →L[ℝ] F}
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
-private theorem integrableOn_of_isCompact_closure {G : Type*} [NormedAddCommGroup G]
-    {g : E → G} (hg : LocallyIntegrableOn g Ω μ) {V : Opens E}
-    (hVc : IsCompact (closure (V : Set E))) (hVΩ : closure (V : Set E) ⊆ Ω) :
-    IntegrableOn g V μ :=
-  (hg.integrableOn_compact_subset hVΩ hVc).mono_set subset_closure
-
 /-- **Interior derivative of a normalized-bump mollification.** If `u` has weak Fréchet derivative
 `Du` on `Ω`, `V` has compact closure in `Ω`, and `closedBall x φ.rOut ⊆ V`, then
 `φ.normed μ ⋆ V.indicator u` is Fréchet differentiable at `x` with derivative
@@ -84,10 +78,10 @@ theorem HasWeakFDerivOn.hasFDerivAt_normed_convolution_indicator (hu : HasWeakFD
     (φ : ContDiffBump (0 : E)) {x : E} (hx : closedBall x φ.rOut ⊆ V) :
     HasFDerivAt (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u)
       ((φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator Du) x) x := by
-  have huV : MemLp u 1 (μ.restrict V) :=
-    memLp_one_iff_integrable.2 (integrableOn_of_isCompact_closure hu.locallyIntegrableOn hVc hVΩ)
+  have huV : MemLp u 1 (μ.restrict V) := memLp_one_iff_integrable.2
+    (hu.locallyIntegrableOn.integrableOn_of_isCompact_closure hVc hVΩ)
   have hDuV : MemLp Du 1 (μ.restrict V) := memLp_one_iff_integrable.2
-    (integrableOn_of_isCompact_closure hu.locallyIntegrableOn_deriv hVc hVΩ)
+    (hu.locallyIntegrableOn_deriv.integrableOn_of_isCompact_closure hVc hVΩ)
   have h := (hu.mono (subset_closure.trans hVΩ)).hasFDerivAt_indicator_convolution_normed
     huV hDuV le_rfl le_rfl φ x hx
   simpa only [convolution_flip] using h
@@ -111,7 +105,7 @@ theorem HasWeakFDerivOn.contDiff_normed_convolution_indicator (hu : HasWeakFDeri
     ContDiff ℝ ∞ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u) := by
   have : CompleteSpace F := hu.completeSpace
   have huV : Integrable ((V : Set E).indicator u) μ :=
-    (integrableOn_of_isCompact_closure hu.locallyIntegrableOn hVc hVΩ).integrable_indicator
+    (hu.locallyIntegrableOn.integrableOn_of_isCompact_closure hVc hVΩ).integrable_indicator
       V.isOpen.measurableSet
   exact φ.hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) φ.contDiff_normed
     huV.locallyIntegrable
@@ -129,7 +123,7 @@ theorem HasWeakFDerivOn.eLpNorm_fderiv_normed_convolution_indicator_le
   have : CompleteSpace F := hu.completeSpace
   have : Fact (1 ≤ p) := ⟨hp1⟩
   have hDm_V : AEStronglyMeasurable Du (μ.restrict V) :=
-    (integrableOn_of_isCompact_closure hu.locallyIntegrableOn_deriv hVc hVΩ).aestronglyMeasurable
+    (hu.locallyIntegrableOn_deriv.integrableOn_of_isCompact_closure hVc hVΩ).aestronglyMeasurable
   have hDext : AEStronglyMeasurable ((V : Set E).indicator Du) μ :=
     (aestronglyMeasurable_indicator_iff V.isOpen.measurableSet).2 hDm_V
   have heq : fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u) =ᵐ[μ.restrict s]
@@ -141,7 +135,7 @@ theorem HasWeakFDerivOn.eLpNorm_fderiv_normed_convolution_indicator_le
         eLpNorm_congr_ae heq
     _ ≤ eLpNorm (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator Du) p μ :=
         eLpNorm_mono_measure _ Measure.restrict_le_self
-    _ ≤ eLpNorm ((V : Set E).indicator Du) p μ := eLpNorm_normed_convolution_le φ hDext
+    _ ≤ eLpNorm ((V : Set E).indicator Du) p μ := φ.eLpNorm_normed_convolution_le hDext
     _ = eLpNorm Du p (μ.restrict V) :=
         eLpNorm_indicator_eq_eLpNorm_restrict (f := Du) V.isOpen.measurableSet.nullMeasurableSet
 

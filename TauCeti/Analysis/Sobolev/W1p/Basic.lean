@@ -68,6 +68,8 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
 * `TauCeti.W1p.eLpNorm_two_eq_ofReal_sqrt_setIntegral`: on `s ⊆ Ω`, the `L²(s)` seminorm of the
   value of `w ∈ W^{1,2}(Ω)` is `√(∫_s w²)`.
 * `TauCeti.W1p.locallyIntegrableOn_gradient`: the weak gradient is locally integrable on `Ω`.
+* `TauCeti.W1p.eLpNorm_innerSL_gradient`: the `Lᵖ(Ω)` seminorm of `x ↦ innerSL ℝ (W1p.gradient u x)`
+  equals `‖W1p.gradient u‖ₑ`.
 * `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`: the weak gradient vanishes wherever
   the value vanishes on an open subset, and with it the whole jet
   (`TauCeti.W1p.coe_ae_eq_zero_of_value_ae_eq_zero`), and likewise off a closed set
@@ -821,6 +823,16 @@ theorem W1p.hasWeakFDerivOn (u : W1p mu Omega p) :
     HasWeakFDerivOn mu Omega (W1p.value u)
       (fun x => innerSL ℝ (W1p.gradient u x)) :=
   (mem_w1pSubmodule_iff_hasWeakFDerivOn u.val).mp u.property
+
+omit [FiniteDimensional ℝ E] in
+/-- The `Lᵖ(Ω)` seminorm of the weak Fréchet derivative field `x ↦ innerSL ℝ (W1p.gradient u x)`
+coincides with the extended norm `‖W1p.gradient u‖ₑ`. -/
+theorem W1p.eLpNorm_innerSL_gradient (u : W1p mu Omega p) :
+    eLpNorm (fun x => innerSL ℝ (W1p.gradient u x)) p (mu.restrict Omega) = ‖W1p.gradient u‖ₑ := by
+  rw [Lp.eNorm_def]
+  exact eLpNorm_congr_norm_ae
+    ((innerSL ℝ).continuous.comp_aestronglyMeasurable (Lp.aestronglyMeasurable _))
+    (Lp.aestronglyMeasurable _) (.of_forall fun x => innerSL_apply_norm ℝ (W1p.gradient u x))
 
 /-- The weak gradient of a Sobolev function is locally integrable on the domain, as its value
 component is. -/

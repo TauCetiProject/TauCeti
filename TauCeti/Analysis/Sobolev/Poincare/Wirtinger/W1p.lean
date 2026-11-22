@@ -75,14 +75,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)] {S : Set E}
 
-omit [FiniteDimensional ℝ E] in
-private theorem eLpNorm_innerSL_gradient {q : ℝ≥0∞} [Fact (1 ≤ q)] (u : W1p mu Omega q) :
-    eLpNorm (fun x ↦ innerSL ℝ (W1p.gradient u x)) q (mu.restrict Omega) = ‖W1p.gradient u‖ₑ := by
-  rw [Lp.eNorm_def]
-  exact eLpNorm_congr_norm_ae
-    ((innerSL ℝ).continuous.comp_aestronglyMeasurable (Lp.aestronglyMeasurable _))
-    (Lp.aestronglyMeasurable _) (.of_forall fun x ↦ innerSL_apply_norm ℝ (W1p.gradient u x))
-
 /-! ### The inequality on the whole domain -/
 
 /-- **The Poincaré–Wirtinger inequality on `W^{1,p}(Ω)`.**  Let `Ω` be a bounded convex open set
@@ -104,7 +96,7 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex
         C * ‖W1p.gradient v‖ₑ := by
     have h := (W1p.hasWeakFDerivOn v).eLpNorm_sub_setAverage_le_of_convex
       hconv hb hS hS0 Fact.out hq
-    rwa [eLpNorm_innerSL_gradient v] at h
+    rwa [W1p.eLpNorm_innerSL_gradient v] at h
   rcases ne_or_eq p ∞ with hp | rfl
   · exact hfin p hp u
   -- At `p = ∞`, lower `u` to the finite exponents `q ≥ 1` and let `q → ∞`.

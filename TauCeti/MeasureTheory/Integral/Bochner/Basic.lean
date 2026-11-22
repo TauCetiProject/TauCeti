@@ -37,6 +37,8 @@ for set and probability integrals.
 
 * `MeasureTheory.norm_integral_smul_le_of_support_subset`: a multiplier `g` bounded by `K` on a
   set containing the support of an integrable `f` gives `‖∫ g • f‖ ≤ K ∫ ‖f‖`.
+* `MeasureTheory.pos_of_integral_ne_zero_of_support_subset_ball`: a ball containing the support
+  of a function with nonzero integral has positive radius.
 
 ## Differences of integrals
 
@@ -1209,6 +1211,15 @@ theorem sqrt_integral_sq_le_of_ae_abs_sub_le {α : Type*} [MeasurableSpace α] {
     _ = _ := by
         rw [Real.sqrt_mul zero_le_two, Real.sqrt_mul (by positivity), Real.sqrt_mul zero_le_two,
           Real.sqrt_sq hW]
+
+/-- If a function has nonzero Bochner integral and its support is contained in a ball
+`Metric.ball c r`, then `0 < r`. -/
+theorem _root_.MeasureTheory.pos_of_integral_ne_zero_of_support_subset_ball
+    {X E : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure X} {f : X → E} {c : X} {r : ℝ}
+    (hf : ∫ x, f x ∂μ ≠ 0) (hsupp : Function.support f ⊆ Metric.ball c r) : 0 < r :=
+  let ⟨_, hx⟩ := exists_ne_zero_of_integral_ne_zero hf
+  Metric.pos_of_mem_ball (hsupp hx)
 
 end MeasureTheory
 

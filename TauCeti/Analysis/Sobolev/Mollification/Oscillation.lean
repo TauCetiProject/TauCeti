@@ -154,7 +154,7 @@ private def oscillationConst (E : Type*) [NormedAddCommGroup E] [NormedSpace ℝ
 
 omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
 /-- Monotonicity of the scale-invariant `p = n` oscillation constant in the aspect ratio bound. -/
-private theorem oscillationConst_le (φ : ContDiffBump (0 : E)) {κ : ℝ}
+private theorem le_oscillationConst (φ : ContDiffBump (0 : E)) {κ : ℝ}
     (hκ : φ.rOut ≤ κ * φ.rIn) :
     (1 + (φ.rOut / φ.rIn) ^ finrank ℝ E) * 2 ^ (finrank ℝ E + 1) *
         μ.real (ball (0 : E) 1) ^ (-(finrank ℝ E : ℝ)⁻¹) ≤
@@ -199,7 +199,7 @@ theorem HasWeakFDerivOn.tendsto_iSup_setLAverage_enorm_sub_normed_convolution_in
   refine (hu.setLAverage_enorm_sub_normed_convolution_le (φ i)
     (hball.trans (SetLike.coe_subset_coe.2 hVΩ))).trans ?_
   rw [hDu_eq]
-  exact mul_le_mul' (ENNReal.ofReal_le_ofReal (oscillationConst_le (φ i) hκi))
+  exact mul_le_mul' (ENNReal.ofReal_le_ofReal (le_oscillationConst (φ i) hκi))
     (le_iSup (fun c => eLpNorm ((V : Set E).indicator Du) (finrank ℝ E)
       (μ.restrict (ball c (φ i).rOut))) x)
 
@@ -222,7 +222,7 @@ theorem HasWeakFDerivOn.tendsto_iSup_setLAverage_enorm_sub_normed_convolution
   filter_upwards [hκ] with i hκi
   refine iSup_le fun x => ?_
   refine (hu.setLAverage_enorm_sub_normed_convolution_le (φ i) (subset_univ _)).trans ?_
-  exact mul_le_mul' (ENNReal.ofReal_le_ofReal (oscillationConst_le (φ i) hκi))
+  exact mul_le_mul' (ENNReal.ofReal_le_ofReal (le_oscillationConst (φ i) hκi))
     (le_iSup (fun c => eLpNorm Du (finrank ℝ E) (μ.restrict (ball c (φ i).rOut))) x)
 
 end TauCeti

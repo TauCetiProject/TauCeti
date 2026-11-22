@@ -62,6 +62,8 @@ the set where convergence is measured.
 * `TauCeti.compLpL_normedBumpLp`: this operator commutes with postcomposition by a continuous
   linear map.
 * `TauCeti.norm_normedBumpLp_le_one`: this averaging operator is an `Lᵖ` contraction.
+* `ContDiffBump.eLpNorm_normed_convolution_le`: normalized-bump convolution does not increase
+  the `Lᵖ` seminorm for `1 ≤ p ≤ ∞`.
 * `TauCeti.tendsto_normedBumpLp`: normalized bumps whose radii shrink to zero converge strongly
   to the identity on `Lᵖ`.
 * `TauCeti.tendsto_eLpNorm_normed_convolution_sub`: the same convergence for the classical
@@ -170,7 +172,7 @@ theorem norm_normedBumpLp_le_one (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
 
 /-- Convolution with a normalized smooth bump does not increase the `Lᵖ` seminorm,
 for `1 ≤ p ≤ ∞`. -/
-theorem eLpNorm_normed_convolution_le (phi : ContDiffBump (0 : E)) {f : E → F}
+theorem _root_.ContDiffBump.eLpNorm_normed_convolution_le (phi : ContDiffBump (0 : E)) {f : E → F}
     (hf : AEStronglyMeasurable f mu) :
     eLpNorm (phi.normed mu ⋆[lsmul ℝ ℝ, mu] f) p mu ≤ eLpNorm f p mu := by
   have h1 : eLpNorm (phi.normed mu) 1 mu = 1 := by

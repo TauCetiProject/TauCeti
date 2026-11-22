@@ -102,6 +102,8 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   gives integrability on every `(a, b]`.
 * `MeasureTheory.locallyIntegrableOn_iff_forall_isCompact_closure`: characterization by
   relatively compact open subdomains.
+* `MeasureTheory.LocallyIntegrableOn.integrableOn_of_isCompact_closure`: integrability on a
+  subset whose compact closure lies in the domain of local integrability.
 * `MeasureTheory.locallyIntegrableOn_indicator_const`: the indicator of a constant on a
   null-measurable set is locally integrable.
 * `MeasureTheory.LocallyIntegrableOn.indicator_of_isClosed`: local integrability of relative
@@ -461,6 +463,19 @@ theorem indicator_of_closure (hf : LocallyIntegrableOn f (s ∩ closure t) μ)
     exact hz' (subset_closure hz)
 
 end ClosureCutoff
+
+section RelativelyCompact
+
+variable {ε : Type*} [TopologicalSpace ε] [ContinuousENorm ε] [PseudoMetrizableSpace ε]
+  {f : X → ε} {s t : Set X}
+
+/-- A function locally integrable on `s` is integrable on every subset `t` whose closure is
+compact and contained in `s`. -/
+theorem integrableOn_of_isCompact_closure (hf : LocallyIntegrableOn f s μ)
+    (htc : IsCompact (closure t)) (hts : closure t ⊆ s) : IntegrableOn f t μ :=
+  (hf.integrableOn_compact_subset hts htc).mono_set subset_closure
+
+end RelativelyCompact
 
 end MeasureTheory.LocallyIntegrableOn
 

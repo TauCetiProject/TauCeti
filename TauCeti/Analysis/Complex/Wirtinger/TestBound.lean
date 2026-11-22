@@ -105,9 +105,9 @@ private theorem eLpNorm_fderiv_indicator_convolution_le [Fact (1 ≤ p)]
     _ ≤ C * (eLpNorm f₀ p volume + eLpNorm u₀ p volume) := by
       gcongr
       · exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans
-          (eLpNorm_normed_convolution_le ρ hf₀.aestronglyMeasurable)
+          (ρ.eLpNorm_normed_convolution_le hf₀.aestronglyMeasurable)
       · exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans
-          (eLpNorm_normed_convolution_le ρ hu₀.aestronglyMeasurable)
+          (ρ.eLpNorm_normed_convolution_le hu₀.aestronglyMeasurable)
     _ = _ := by
       rw [eLpNorm_indicator_eq_eLpNorm_restrict U.isOpen.measurableSet.nullMeasurableSet,
         eLpNorm_indicator_eq_eLpNorm_restrict U.isOpen.measurableSet.nullMeasurableSet]
