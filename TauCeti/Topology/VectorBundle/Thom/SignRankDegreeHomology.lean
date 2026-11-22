@@ -12,6 +12,7 @@ public import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 public import TauCeti.Topology.VectorBundle.Orientation.TwistedHomology.OverTrivialization
 public import TauCeti.Topology.VectorBundle.Thom.Class
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
+import TauCeti.AlgebraicTopology.Singular.Twisted.Equivalence
 import TauCeti.AlgebraicTopology.Singular.FiniteUnionInduction
 import TauCeti.Topology.Category.TopCat.Limits.Basic
 import TauCeti.Topology.Connected.PathConnected
@@ -673,16 +674,9 @@ private def univCoeffIso : signSystemOver R F E hι (univ : Set B) ≅
 private instance isIso_twistedHomologyMap_univPairMap (n : ℕ) :
     IsIso (TopPair.twistedHomologyMap (univPairMap F E)
       ((LocalCoefficientSystem.pullback (projMap F E)).obj (signLocalSystem F E R hι)) n) := by
-  refine TopPair.isIso_twistedHomologyMap_of_open_cover (univPairMap F E) _ ?_ ?_
-    (fun _ : Unit ↦ univ) (fun _ ↦ isOpen_univ) (iUnion_const univ) (fun _ ↦ .inr ?_) n
-  · rw [TopCat.restrictPreimagePairMap_fst]
-    exact Topology.IsEmbedding.subtypeVal
-  · rintro ⟨x, hx⟩ hx'
-    rw [TopPair.range_ofSubset_map, TopCat.restrictPreimagePairMap_fst_apply] at hx'
-    rw [TopPair.range_ofInclusion_map]
-    exact ⟨trivial, hx'⟩
-  · rintro x -
-    exact ⟨⟨x, trivial⟩, TopCat.restrictPreimagePairMap_fst_apply _ _ _ _⟩
+  have := TopCat.isIso_restrictPreimagePairMap (X := TopCat.of (TotalSpace F E)) (π F E)
+    (zeroSectionCompl F E) (S := univ) fun _ ↦ trivial
+  exact LocalCoefficientSystem.isIso_relativeTwistedHomologyMap_of_isIso _ _ n
 
 /-! ### The twisted fibre classes through the fibre inclusions -/
 
