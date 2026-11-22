@@ -62,6 +62,8 @@ such a sum is contained in that of `T`
   restriction to open subsets and linear changes of coordinates.
 * `Distribution.vectorWaveFrontSet_mapCLM_toSpanSingleton_delta`: the point mass `δ_{x₀} v` with
   `v ≠ 0` has wave front set `{x₀} × (E \ {0})`.
+* `Distribution.mapCLM_restrictScalars_mapCLM_toSpanSingleton_delta`: the components of a point
+  mass.
 
 ## References
 
@@ -117,15 +119,11 @@ wave front set: every component is a scalar multiple of `T`. -/
 theorem vectorWaveFrontSet_eq_waveFrontSet (T : 𝓓'(Ω, ℂ)) :
     T.vectorWaveFrontSet = T.waveFrontSet := by
   refine (iUnion_subset fun ℓ ↦ ?_).antisymm ?_
-  · have h : mapCLM (ℓ.restrictScalars ℝ) T = ℓ 1 • T := by
-      ext φ
-      simpa [mul_comm] using ℓ.map_smul (T φ) (1 : ℂ)
-    rw [h]
+  · rw [mapCLM_restrictScalars_eq_smul]
     exact waveFrontSet_smul_subset _ T
-  · have h : mapCLM ((ContinuousLinearMap.id ℂ ℂ).restrictScalars ℝ) T = T := by
-      ext φ
-      simp
-    exact h ▸ waveFrontSet_mapCLM_subset_vectorWaveFrontSet (.id ℂ ℂ) T
+  -- `(ContinuousLinearMap.id ℂ ℂ).restrictScalars ℝ` is `ContinuousLinearMap.id ℝ ℂ` by definition.
+  · exact (mapCLM_id T : mapCLM ((ContinuousLinearMap.id ℂ ℂ).restrictScalars ℝ) T = T) ▸
+      waveFrontSet_mapCLM_subset_vectorWaveFrontSet (.id ℂ ℂ) T
 
 /-! ### Linear maps of the values -/
 
@@ -140,11 +138,7 @@ theorem vectorWaveFrontSet_mapCLM_equiv (A : F ≃L[ℂ] F') (T : 𝓓'(Ω, F)) 
     (mapCLM ((A : F →L[ℂ] F').restrictScalars ℝ) T).vectorWaveFrontSet =
       T.vectorWaveFrontSet := by
   refine (vectorWaveFrontSet_mapCLM_subset _ T).antisymm ?_
-  have h : mapCLM ((A.symm : F' →L[ℂ] F).restrictScalars ℝ)
-      (mapCLM ((A : F →L[ℂ] F').restrictScalars ℝ) T) = T := by
-    ext φ
-    simp
-  conv_lhs => rw [← h]
+  conv_lhs => rw [← mapCLM_restrictScalars_symm_mapCLM A T]
   exact vectorWaveFrontSet_mapCLM_subset _ _
 
 /-! ### Scalar multiples -/
@@ -153,10 +147,7 @@ theorem vectorWaveFrontSet_mapCLM_equiv (A : F ≃L[ℂ] F') (T : 𝓓'(Ω, F)) 
 theorem vectorWaveFrontSet_smul_subset (c : ℂ) (T : 𝓓'(Ω, F)) :
     (c • T).vectorWaveFrontSet ⊆ T.vectorWaveFrontSet :=
   iUnion_subset fun ℓ ↦ by
-    have h : mapCLM (ℓ.restrictScalars ℝ) (c • T) = c • mapCLM (ℓ.restrictScalars ℝ) T := by
-      ext φ
-      simp
-    rw [h]
+    rw [mapCLM_restrictScalars_smul]
     exact (waveFrontSet_smul_subset c _).trans (waveFrontSet_mapCLM_subset_vectorWaveFrontSet ℓ T)
 
 /-- A nonzero scalar multiple of `T` has the same wave front set as `T`. -/
@@ -259,11 +250,7 @@ the wave front set of `T` lying over `Ω'`. -/
 theorem vectorWaveFrontSet_restrictCLM (h : Ω' ≤ Ω) (T : 𝓓'(Ω, F)) :
     (restrictCLM T : 𝓓'(Ω', F)).vectorWaveFrontSet =
       T.vectorWaveFrontSet ∩ (Ω' : Set E) ×ˢ univ := by
-  have hc (ℓ : F →L[ℂ] ℂ) : mapCLM (ℓ.restrictScalars ℝ) (restrictCLM T : 𝓓'(Ω', F)) =
-      restrictCLM (mapCLM (ℓ.restrictScalars ℝ) T) := by
-    ext φ
-    simp
-  simp only [vectorWaveFrontSet, hc, waveFrontSet_restrictCLM h, iUnion_inter]
+  simp only [vectorWaveFrontSet, mapCLM_restrictCLM, waveFrontSet_restrictCLM h, iUnion_inter]
 
 end Restriction
 
@@ -278,12 +265,8 @@ theorem vectorWaveFrontSet_compCLMOfContinuousLinearEquiv (e : E ≃L[ℝ] E) (h
     (hOV : MapsTo e.symm Ω V) (T : 𝓓'(Ω, F)) :
     (compCLMOfContinuousLinearEquiv e hVO T).vectorWaveFrontSet =
       Prod.map e ((e.symm : E →L[ℝ] E)†) ⁻¹' T.vectorWaveFrontSet := by
-  have hc (ℓ : F →L[ℂ] ℂ) : mapCLM (ℓ.restrictScalars ℝ) (compCLMOfContinuousLinearEquiv e hVO T) =
-      compCLMOfContinuousLinearEquiv e hVO (mapCLM (ℓ.restrictScalars ℝ) T) := by
-    ext φ
-    simp
-  simp only [vectorWaveFrontSet, hc, waveFrontSet_compCLMOfContinuousLinearEquiv e hVO hOV,
-    preimage_iUnion]
+  simp only [vectorWaveFrontSet, mapCLM_compCLMOfContinuousLinearEquiv,
+    waveFrontSet_compCLMOfContinuousLinearEquiv e hVO hOV, preimage_iUnion]
 
 end LinearEquiv
 
@@ -395,6 +378,16 @@ end Frame
 
 /-! ### Point masses -/
 
+omit [FiniteDimensional ℝ E] in
+/-- The components of the point mass `δ_{x₀} v : φ ↦ φ x₀ • v` are multiples of the complex point
+mass at `x₀`. -/
+theorem mapCLM_restrictScalars_mapCLM_toSpanSingleton_delta (ℓ : F →L[ℂ] ℂ) (x₀ : E) (v : F) :
+    mapCLM (ℓ.restrictScalars ℝ)
+      (mapCLM (ContinuousLinearMap.toSpanSingleton ℝ v) (delta x₀ : 𝓓'(Ω, ℝ))) =
+      ℓ v • mapCLM ofRealCLM (delta x₀ : 𝓓'(Ω, ℝ)) := by
+  ext φ
+  simp [mul_comm]
+
 /-- The point mass `δ_{x₀} v : φ ↦ φ x₀ • v` at `x₀ ∈ Ω` with value `v ≠ 0` has wave front set
 `{x₀} × (E \ {0})`. -/
 theorem vectorWaveFrontSet_mapCLM_toSpanSingleton_delta {x₀ : E} (hx₀ : x₀ ∈ Ω) {v : F}
@@ -402,19 +395,15 @@ theorem vectorWaveFrontSet_mapCLM_toSpanSingleton_delta {x₀ : E} (hx₀ : x₀
     (mapCLM (ContinuousLinearMap.toSpanSingleton ℝ v) (delta x₀ : 𝓓'(Ω, ℝ))).vectorWaveFrontSet =
       {x₀} ×ˢ {0}ᶜ := by
   -- Each component is the complex point mass at `x₀` times `ℓ v`, and some `ℓ v` is nonzero.
-  have hc (ℓ : F →L[ℂ] ℂ) : mapCLM (ℓ.restrictScalars ℝ)
-      (mapCLM (ContinuousLinearMap.toSpanSingleton ℝ v) (delta x₀ : 𝓓'(Ω, ℝ))) =
-      ℓ v • mapCLM ofRealCLM (delta x₀ : 𝓓'(Ω, ℝ)) := by
-    ext φ
-    simp [mul_comm]
   refine (iUnion_subset fun ℓ ↦ ?_).antisymm ?_
-  · rw [hc, ← waveFrontSet_delta hx₀]
+  · rw [mapCLM_restrictScalars_mapCLM_toSpanSingleton_delta, ← waveFrontSet_delta hx₀]
     exact waveFrontSet_smul_subset _ _
   · obtain ⟨ℓ, -, hℓ⟩ := exists_dual_vector ℂ v (norm_ne_zero_iff.2 hv)
     have hℓv : ℓ v ≠ 0 := by simp [hℓ, hv]
     have h := waveFrontSet_mapCLM_subset_vectorWaveFrontSet ℓ
       (mapCLM (ContinuousLinearMap.toSpanSingleton ℝ v) (delta x₀ : 𝓓'(Ω, ℝ)))
-    rwa [hc, waveFrontSet_smul hℓv, waveFrontSet_delta hx₀] at h
+    rwa [mapCLM_restrictScalars_mapCLM_toSpanSingleton_delta, waveFrontSet_smul hℓv,
+      waveFrontSet_delta hx₀] at h
 
 end FiniteDimensional
 

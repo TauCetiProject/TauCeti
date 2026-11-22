@@ -206,13 +206,13 @@ private theorem sq_norm_restrictValue_jetLp (T : ℝ) (ξ : S) :
   rw [h₁, h₂, jet_apply]
 
 /-- A semi-Fredholm estimate gives `‖f‖ ≤ √C (‖D f‖ + ‖f|_{[-T, T] × [0, 1]}‖)` on the jet `f` of
-a `C¹` element of `S` vanishing for `|s|` large. -/
-private theorem norm_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
-    {C T : ℝ} (hest : HasSemiFredholmEstimate S M C T) (ξ : S)
-    (hξ : ContDiff ℝ 1 (ξ : ℝ × ℝ → V)) {R : ℝ}
-    (hR : ∀ s t, R ≤ |s| → (ξ : ℝ × ℝ → V) (s, t) = 0) :
+an element of a space `S` of `C¹` sections vanishing for `|s|` large. -/
+theorem norm_jetLp_le [IsTestSpace S] {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ stripMeasure) {C T : ℝ} (hest : HasSemiFredholmEstimate S M C T) (ξ : S) :
     ‖jetLp S ξ‖ ≤
       √(max C 0) * (‖jetOperator stripMeasure M (jetLp S ξ)‖ + ‖restrictValue T (jetLp S ξ)‖) := by
+  obtain ⟨R, hR⟩ := IsTestSpace.exists_forall_le_abs_eq_zero _ ξ.property
+  have hξ := IsTestSpace.contDiff _ ξ.property
   set R₀ := max R 0
   have hR₀ : ∀ s t, R₀ ≤ |s| → (ξ : ℝ × ℝ → V) (s, t) = 0 := fun s t hs ↦
     hR s t ((le_max_left R 0).trans hs)
@@ -267,9 +267,7 @@ private theorem exists_compact_estimate [IsTestSpace S] [HasCompactRestriction S
       (continuous_const.mul (continuous_norm.comp (restrictValue T).continuous)))
   have hrange : Set.range (jetLp S) ⊆ P := by
     rintro _ ⟨ξ, rfl⟩
-    obtain ⟨R, hR⟩ := IsTestSpace.exists_forall_le_abs_eq_zero _ ξ.property
-    have hξ := IsTestSpace.contDiff _ ξ.property
-    have := norm_jetLp_le hM hest ξ hξ hR
+    have := norm_jetLp_le hM hest ξ
     simp only [P, mem_ofPred_eq]
     linarith
   intro x
@@ -353,7 +351,7 @@ theorem exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL [IsTestSpace S]
     rintro _ ⟨ξ, rfl⟩
     obtain ⟨R, hR⟩ := IsTestSpace.exists_forall_le_abs_eq_zero _ ξ.property
     have hξ := IsTestSpace.contDiff _ ξ.property
-    have h₁ := norm_jetLp_le hM hest ξ hξ hR
+    have h₁ := norm_jetLp_le hM hest ξ
     have h₂ := norm_restrictValue_jetLp_le hM T ξ hξ.continuous hR (hL2 ξ)
     simp only [P, mem_ofPred_eq]
     calc ‖jetLp S ξ‖

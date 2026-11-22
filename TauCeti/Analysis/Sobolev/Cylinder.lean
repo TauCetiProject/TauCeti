@@ -138,15 +138,19 @@ theorem mem_testSection_iff {ξ : ℝ × ℝ → V} : ξ ∈ testSection V ↔ C
 
 variable {ξ η : ℝ × ℝ → V}
 
-/-- The jet of a test section has period one in `t`. -/
-theorem jet_add_one (hξ : ξ ∈ testSection V) (s t : ℝ) : jet ξ (s, t + 1) = jet ξ (s, t) := by
-  obtain ⟨-, hξp, -⟩ := mem_testSection_iff.1 hξ
+/-- The jet of a map of period one in `t` has period one in `t`. -/
+theorem jet_add_one_of_periodic (hξp : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (s t : ℝ) :
+    jet ξ (s, t + 1) = jet ξ (s, t) := by
   have hper : (fun z ↦ ξ (z + ((0 : ℝ), (1 : ℝ)))) = ξ :=
     funext fun ⟨s, t⟩ ↦ by simpa using hξp s t
   have h := fderiv_comp_add_right (𝕜 := ℝ) (f := ξ) (x := (s, t)) ((0 : ℝ), (1 : ℝ))
   rw [hper] at h
   simp only [Prod.mk_add_mk, add_zero] at h
   simp [jet_apply, ← h, hξp]
+
+/-- The jet of a test section has period one in `t`. -/
+theorem jet_add_one (hξ : ξ ∈ testSection V) (s t : ℝ) : jet ξ (s, t + 1) = jet ξ (s, t) :=
+  jet_add_one_of_periodic (mem_testSection_iff.1 hξ).2.1 s t
 
 /-- The jet of a test section tends to zero as `|s| → ∞`. -/
 theorem tendsto_jet_comap_fst_cocompact (hξ : ξ ∈ testSection V) :

@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Basic
 import Mathlib.LinearAlgebra.Dimension.Torsion.Finite
 import TauCeti.FieldTheory.FunctionField.AffineModel.IntegralClosure
 import TauCeti.FieldTheory.FunctionField.Divisor.ProductFormula
+import TauCeti.GroupTheory.Subgroup.AdditiveRank
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.AffineClassNumber
 import TauCeti.RingTheory.DedekindDomain.SInteger.Rank
 
@@ -230,11 +231,11 @@ theorem finrank_units_holomorphyRing_compl (hF : IsFunctionField k F) [Finite k]
   have : Module.Finite ℤ (Additive (holomorphyRing T'ᶜ)ˣ) :=
     Module.Finite.iff_addGroup_fg.mpr (AddGroup.fg_iff_mul_fg.mpr (Group.fg_iff_monoid_fg.mpr hfg))
   have hle := holomorphyRing_antitone (Set.compl_subset_compl.mpr hT'T)
-  let f := (MonoidHom.toAdditive (Units.map (Subalgebra.inclusion hle).toMonoidHom)).toIntLinearMap
   calc (n : Cardinal) = Module.finrank ℤ (Additive (holomorphyRing T'ᶜ)ˣ) := by
         rw [hrank, hT'card, Nat.add_sub_cancel]
     _ = Module.rank ℤ (Additive (holomorphyRing T'ᶜ)ˣ) := Module.finrank_eq_rank _ _
     _ ≤ Module.rank ℤ (Additive (holomorphyRing Tᶜ)ˣ) :=
-        f.rank_le_of_injective (Units.map_injective (Subalgebra.inclusion_injective hle))
+        (Units.map (Subalgebra.inclusion hle).toMonoidHom).rank_additive_le_of_injective
+          (Units.map_injective (Subalgebra.inclusion_injective hle))
 
 end TauCeti

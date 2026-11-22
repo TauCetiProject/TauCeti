@@ -123,8 +123,7 @@ variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [N
 /-- A linear chart sends unit vectors over its base set to nonzero vectors. -/
 private theorem apply_snd_ne_zero_of_mem_sphereBundle {v : TauCeti.sphereBundle F E}
     (hv : (v : TotalSpace F E).proj ∈ e.baseSet) : (e v).2 ≠ 0 :=
-  (e.linearEquivAt ℝ _ hv).map_ne_zero_iff.2
-    (norm_ne_zero_iff.1 (by rw [mem_sphereBundle.1 v.property]; exact one_ne_zero))
+  (e.linearEquivAt ℝ _ hv).map_ne_zero_iff.2 (snd_ne_zero_of_mem_sphereBundle v.property)
 
 variable [FiberBundle F E] [VectorBundle ℝ F E]
 
