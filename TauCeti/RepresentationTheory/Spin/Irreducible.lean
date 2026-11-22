@@ -76,15 +76,20 @@ always contains the scalars, so it needs no such hypothesis, and neither does th
 The odd-dimensional case is the opposite of all this, and the last section records it. There, over
 a field with `2 ≠ 0`, the even subalgebra is a *single* block rather than a product, so the Fock
 action already carries it onto all of `Module.End K S` (`TauCeti.evenSpinAction_surjective`, which
-assumes `2 ≠ 0`), and the whole spinor module —
-not a half of it — is the irreducible object: `TauCeti.spinRep_isIrreducible_of_odd`.
-As soon as `P.W ≠ ⊥`, exterior parity still splits `S` as a vector space but no longer as a
-representation, which `TauCeti.not_forall_map_spinRep_spinPlus_le` and
-`TauCeti.not_forall_map_spinRep_spinMinus_le` record: neither half is `⊥` or everything, so
-irreducibility alone forbids either from being invariant. The `P.line = ⊥` carried by every
-statement of the even-dimensional half is precisely what fails. Dimension one is the exception:
-there `W = ⊥` and `S = K` is entirely even, so `S⁺ = S` and `S⁻ = 0` are both invariant, for want
-of anything to split.
+assumes `2 ≠ 0`). That surjectivity concerns the even Clifford algebra, not the Spin group: passing
+to the Spin group needs in addition that the Spin group linearly spans the even subalgebra. This
+file obtains that spanning from the square normalization of anisotropic values
+(`TauCeti.isIrreducible_spinRep_of_isSquare`), which holds in particular over a separably closed
+field (`TauCeti.spinRep_isIrreducible_of_odd`). Under either hypothesis the whole spinor module —
+not a half of it — is the irreducible object. As soon as `P.W ≠ ⊥`, exterior parity still splits
+`S` as a vector space but no longer as a representation: given irreducibility,
+`TauCeti.not_forall_map_spinRep_spinPlus_le_of_isIrreducible` and
+`TauCeti.not_forall_map_spinRep_spinMinus_le_of_isIrreducible` record that neither half is
+invariant, since neither is `⊥` or everything, and `TauCeti.not_forall_map_spinRep_spinPlus_le` and
+`TauCeti.not_forall_map_spinRep_spinMinus_le` are the separably closed cases. The `P.line = ⊥`
+carried by every statement of the even-dimensional half is precisely what fails. Dimension one is
+the exception: there `W = ⊥` and `S = K` is entirely even, so `S⁺ = S` and `S⁻ = 0` are both
+invariant, for want of anything to split.
 
 The two parities are separated by exactly one hypothesis, the surjectivity of
 `TauCeti.evenSpinAction`, and `TauCeti.isIrreducible_spinRep_comp_of_span_of_surjective` is stated

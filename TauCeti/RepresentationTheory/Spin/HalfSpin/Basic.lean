@@ -64,9 +64,10 @@ belong to the complex theory and are not proved here.
   subrepresentations of `spinRep`, for a polarization without a line summand.
 * `TauCeti.spinPlusAction` and `TauCeti.spinMinusAction`: the actions of the even Clifford
   subalgebra on the two summands, and `TauCeti.evenSpinActionProd` their product.
-* `TauCeti.spinPlusSubrepEquiv` and `TauCeti.spinMinusSubrepEquiv`: the two actions composed with
-  `CliffordAlgebra.spinGroupToEven` are equivalent to the two subrepresentations, keeping the
-  underlying exterior-algebra vector (`TauCeti.coe_spinPlusSubrepEquiv_apply` and its variants).
+* `TauCeti.spinPlusSubrepEquiv` and `TauCeti.spinMinusSubrepEquiv`: the two bundlings agree, in
+  that the two actions composed with `CliffordAlgebra.spinGroupToEven` are equivalent to the two
+  subrepresentations, keeping the underlying exterior-algebra vector
+  (`TauCeti.coe_spinPlusSubrepEquiv_apply` and its variants).
 
 ## Main results
 
@@ -81,11 +82,6 @@ belong to the complex theory and are not proved here.
   of `spinRep`, so the splitting is one of representations.
 * `TauCeti.nontrivial_spinPlus` and `TauCeti.nontrivial_spinMinus`: neither summand is zero, the
   odd one as soon as `W` is nonzero.
-* `TauCeti.coe_spinPlusAction_spinGroup_apply` and
-  `TauCeti.coe_spinMinusAction_spinGroup_apply`: the two bundlings agree, in that
-  the even-subalgebra actions restrict along the spin group to the subrepresentations of
-  `spinRep`; the `spinGroupToEven` variants expose the same equations for the canonical even
-  Clifford embedding.
 * `TauCeti.map_spinAction_spinPlus_le_spinMinus` and
   `TauCeti.map_spinAction_spinMinus_le_spinPlus`: an odd Clifford element carries each of the two
   summands into the other, so the invariance argument does not extend from the spin group — which
@@ -356,50 +352,6 @@ theorem mem_spinMinusSubrep (hline : P.line = ⊥) {s : ExteriorAlgebra K P.W} :
     s ∈ spinMinusSubrep P hline ↔ s ∈ spinMinus Q P := by
   rw [← Subrepresentation.mem_toSubmodule, toSubmodule_spinMinusSubrep]
 
-/-- The even-subalgebra action on `S⁺`, restricted to the spin group, is the representation
-carried by the even half-spin subrepresentation. -/
-theorem coe_spinPlusAction_spinGroup_apply (hline : P.line = ⊥) (g : spinGroup Q)
-    (s : spinPlus Q P) :
-    (spinPlusAction Q P hline ⟨g, spinGroup.mem_even g.property⟩ s : ExteriorAlgebra K P.W) =
-      ((spinPlusSubrep P hline).toRepresentation g
-        ⟨s, (mem_spinPlusSubrep P hline).2 s.property⟩ : ExteriorAlgebra K P.W) := by
-  simp only [coe_spinPlusAction_apply, Subrepresentation.toRepresentation_apply,
-    LinearMap.coe_restrict_apply, spinRep_apply]
-
-/-- The even-subalgebra action on `S⁻`, restricted to the spin group, is the representation
-carried by the odd half-spin subrepresentation. -/
-theorem coe_spinMinusAction_spinGroup_apply (hline : P.line = ⊥) (g : spinGroup Q)
-    (s : spinMinus Q P) :
-    (spinMinusAction Q P hline ⟨g, spinGroup.mem_even g.property⟩ s : ExteriorAlgebra K P.W) =
-      ((spinMinusSubrep P hline).toRepresentation g
-        ⟨s, (mem_spinMinusSubrep P hline).2 s.property⟩ : ExteriorAlgebra K P.W) := by
-  simp only [coe_spinMinusAction_apply, Subrepresentation.toRepresentation_apply,
-    LinearMap.coe_restrict_apply, spinRep_apply]
-
-/-- The even-subalgebra action on `S⁺`, restricted along `spinGroupToEven`, is the representation
-carried by the even half-spin subrepresentation. -/
-theorem coe_spinPlusAction_spinGroupToEven_apply (hline : P.line = ⊥) (g : spinGroup Q)
-    (s : spinPlus Q P) :
-    (spinPlusAction Q P hline (spinGroupToEven Q g) s : ExteriorAlgebra K P.W) =
-      ((spinPlusSubrep P hline).toRepresentation g
-        ⟨s, (mem_spinPlusSubrep P hline).2 s.property⟩ : ExteriorAlgebra K P.W) := by
-  have hspinGroupToEven : spinGroupToEven Q g = ⟨g, spinGroup.mem_even g.property⟩ :=
-    Subtype.ext (coe_spinGroupToEven_apply Q g)
-  rw [hspinGroupToEven]
-  exact coe_spinPlusAction_spinGroup_apply P hline g s
-
-/-- The even-subalgebra action on `S⁻`, restricted along `spinGroupToEven`, is the representation
-carried by the odd half-spin subrepresentation. -/
-theorem coe_spinMinusAction_spinGroupToEven_apply (hline : P.line = ⊥) (g : spinGroup Q)
-    (s : spinMinus Q P) :
-    (spinMinusAction Q P hline (spinGroupToEven Q g) s : ExteriorAlgebra K P.W) =
-      ((spinMinusSubrep P hline).toRepresentation g
-        ⟨s, (mem_spinMinusSubrep P hline).2 s.property⟩ : ExteriorAlgebra K P.W) := by
-  have hspinGroupToEven : spinGroupToEven Q g = ⟨g, spinGroup.mem_even g.property⟩ :=
-    Subtype.ext (coe_spinGroupToEven_apply Q g)
-  rw [hspinGroupToEven]
-  exact coe_spinMinusAction_spinGroup_apply P hline g s
-
 /-- **The spin representation is the sum of its two half-spin subrepresentations.** This is
 `TauCeti.isCompl_spinPlus_spinMinus` read in the lattice of subrepresentations of `spinRep`, where
 it says that the parity splitting of `S` is a splitting of the spin representation itself. -/
@@ -437,28 +389,6 @@ theorem map_spinAction_spinMinus_le_spinPlus (hline : P.line = ⊥) {x : Cliffor
   rw [spinPlus_def, ← hparity]
   exact spinAction_mem_evenOdd P hline hx hs
 
-/-- The even half-spin subrepresentation acts as the even half-spin action of the even part. -/
-theorem spinPlusSubrep_toRepresentation_apply_eq_spinPlusAction
-    (P : SpinPolarizationData Q) (hline : P.line = ⊥) (g : spinGroup Q) (p : spinPlus Q P) :
-    (LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm).symm
-      ((spinPlusSubrep P hline).toRepresentation g
-        (LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm p)) =
-      spinPlusAction Q P hline (spinGroupToEven Q g) p := by
-  apply Subtype.ext
-  exact (coe_spinPlusAction_spinGroupToEven_apply P hline g p).symm
-
-/-- The odd half-spin subrepresentation acts as the odd half-spin action of the even part. -/
-theorem spinMinusSubrep_toRepresentation_apply_eq_spinMinusAction
-    (P : SpinPolarizationData Q) (hline : P.line = ⊥) (g : spinGroup Q)
-    (s : (spinMinusSubrep P hline).toSubmodule) :
-    (LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm).symm
-      ((spinMinusSubrep P hline).toRepresentation g s) =
-      spinMinusAction Q P hline (spinGroupToEven Q g)
-        ((LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm).symm s) := by
-  apply Subtype.ext
-  simpa using (coe_spinMinusAction_spinGroupToEven_apply P hline g
-    ((LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm).symm s)).symm
-
 /-- **The even half-spin action restricted to the Spin group is the even half-spin
 subrepresentation**: the even-subalgebra action `TauCeti.spinPlusAction` composed with
 `CliffordAlgebra.spinGroupToEven` is equivalent to `TauCeti.spinPlusSubrep`, both acting on the
@@ -468,11 +398,12 @@ noncomputable def spinPlusSubrepEquiv (hline : P.line = ⊥) :
     Representation.Equiv ((spinPlusAction Q P hline).toMonoidHom.comp (spinGroupToEven Q))
       (spinPlusSubrep P hline).toRepresentation :=
   .mk (LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm) fun g ↦
-    LinearMap.ext fun s ↦ by
-      -- the subrepresentation statement, solved for the transported output
-      have hs := (LinearEquiv.symm_apply_eq _).1
-        (spinPlusSubrep_toRepresentation_apply_eq_spinPlusAction P hline g s)
-      exact hs.symm
+    LinearMap.ext fun s ↦ Subtype.ext <| by
+      simp only [AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe,
+        AlgHom.toRingHom_toMonoidHom, MonoidHom.coe_comp, MonoidHom.coe_ofClass,
+        Function.comp_apply, LinearMap.coe_comp, LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply,
+        coe_spinPlusAction_apply, coe_spinGroupToEven_apply,
+        Subrepresentation.toRepresentation_apply, spinRep_apply, LinearMap.coe_restrict_apply]
 
 /-- **The odd half-spin action restricted to the Spin group is the odd half-spin
 subrepresentation**: the even-subalgebra action `TauCeti.spinMinusAction` composed with
@@ -482,12 +413,12 @@ noncomputable def spinMinusSubrepEquiv (hline : P.line = ⊥) :
     Representation.Equiv ((spinMinusAction Q P hline).toMonoidHom.comp (spinGroupToEven Q))
       (spinMinusSubrep P hline).toRepresentation :=
   .mk (LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm) fun g ↦
-    LinearMap.ext fun s ↦ by
-      -- the subrepresentation statement, at the transported input
-      have hs := spinMinusSubrep_toRepresentation_apply_eq_spinMinusAction P hline g
-        (LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm s)
-      rw [LinearEquiv.symm_apply_apply, LinearEquiv.symm_apply_eq] at hs
-      exact hs.symm
+    LinearMap.ext fun s ↦ Subtype.ext <| by
+      simp only [AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe,
+        AlgHom.toRingHom_toMonoidHom, MonoidHom.coe_comp, MonoidHom.coe_ofClass,
+        Function.comp_apply, LinearMap.coe_comp, LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply,
+        coe_spinMinusAction_apply, coe_spinGroupToEven_apply,
+        Subrepresentation.toRepresentation_apply, spinRep_apply, LinearMap.coe_restrict_apply]
 
 /-- `TauCeti.spinPlusSubrepEquiv` keeps the underlying exterior-algebra vector. -/
 @[simp]

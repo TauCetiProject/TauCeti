@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Spin.Structure
 public import Mathlib.Algebra.Field.Defs
-public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.Algebra.Algebra.Prod
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Six.GeneralLinear
 import TauCeti.LinearAlgebra.Dual.End
@@ -280,6 +279,10 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
     .mk T.symm fun g ↦ LinearMap.ext fun s ↦ by
       have h := hT (spinGroupToEven Q g⁻¹) (T.symm s)
       rw [reverseEven_spinGroupToEven, inv_inv, LinearEquiv.apply_symm_apply] at h
+      -- Both restricted actions act through `spinGroupToEven Q`, and the dual one at `g⁻¹`.
+      simp only [AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe,
+        AlgHom.toRingHom_toMonoidHom, MonoidHom.comp_apply, MonoidHom.coe_ofClass,
+        LinearMap.comp_apply, LinearEquiv.coe_coe, Representation.dual_apply]
       exact T.symm_apply_eq.2 h.symm
   exact ⟨(spinMinusSubrepEquiv P hline).symm.trans (E.trans (spinPlusSubrepEquiv P hline).dual)⟩
 

@@ -8,7 +8,6 @@ module
 public import TauCeti.RepresentationTheory.Spin.Exceptional.Three.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.Restriction
 public import TauCeti.RepresentationTheory.Spin.Representation
-public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Spin.OddStructure
 import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action

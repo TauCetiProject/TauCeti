@@ -213,8 +213,9 @@ theorem _root_.AlgHom.isIrreducible_toMonoidHom_comp_of_span_eq_top [Nontrivial 
   rw [← AlgHom.range_eq_top, ← Algebra.toSubmodule_eq_top, toSubmodule_range_asAlgebraHom]
   -- The restricted action takes the values `F (φ g)`, the image under `F` of the range of `φ`.
   have hrange : Set.range (F.toMonoidHom.comp φ) = F.toLinearMap '' Set.range φ := by
-    rw [MonoidHom.coe_comp, Set.range_comp]
-    rfl
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe, AlgHom.toRingHom_toMonoidHom,
+      MonoidHom.coe_comp, MonoidHom.coe_ofClass, Set.range_comp, AlgHom.toLinearMap_apply,
+      AlgHom.coe_toLinearMap]
   rw [hrange, Submodule.span_image, hφ, Submodule.map_top, LinearMap.range_eq_top,
     AlgHom.coe_toLinearMap]
   exact hF

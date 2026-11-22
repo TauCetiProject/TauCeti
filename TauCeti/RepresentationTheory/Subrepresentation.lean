@@ -425,7 +425,9 @@ theorem AlgHom.mem_invtSubmodule_toMonoidHom_comp_iff_of_span_eq_top {R B H M : 
     (p : Submodule R M) :
     p ∈ Representation.invtSubmodule (F.toMonoidHom.comp φ) ↔
       ∀ b, p ∈ Module.End.invtSubmodule (F b) := by
-  simp only [Representation.mem_invtSubmodule, MonoidHom.comp_apply]
+  -- The restricted action acts by `F (φ g)`.
+  simp only [Representation.mem_invtSubmodule, MonoidHom.comp_apply, AlgHom.toRingHom_eq_coe,
+    RingHom.toMonoidHom_eq_coe, AlgHom.toRingHom_toMonoidHom, MonoidHom.coe_ofClass]
   refine ⟨fun hp b ↦ ?_, fun hp g ↦ hp (φ g)⟩
   -- The elements of `B` whose action preserves `p` form a submodule containing the image of `φ`.
   have hmem (c : B) : c ∈ (p.compatibleMaps p).comap F.toLinearMap ↔

@@ -49,7 +49,11 @@ theorem nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action
       ((stdSLRep K n).comp f)) := by
   refine ⟨(spinPlusSubrepEquiv P hline).symm.trans <| Representation.Equiv.ofBasisAction _ _
     (LinearEquiv.refl K _) b (fun s ↦ spinPlusAction Q P hline (spinGroupToEven Q s))
-    (fun _ _ ↦ rfl) fun s x ↦ ?_⟩
+    (fun _ _ ↦ by
+      simp only [AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe,
+        AlgHom.toRingHom_toMonoidHom, MonoidHom.comp_apply, MonoidHom.coe_ofClass,
+        LinearEquiv.refl_apply])
+    fun s x ↦ ?_⟩
   simp only [MonoidHom.comp_apply, stdSLRep_apply_apply]
   rw [hmatrix]
   exact LinearMap.toMatrix_mulVec_repr b b (spinPlusAction Q P hline (spinGroupToEven Q s)) x
@@ -67,7 +71,11 @@ theorem nonempty_spinMinusSubrep_equiv_stdSLRep_of_matrix_action
       ((stdSLRep K n).comp f)) := by
   refine ⟨(spinMinusSubrepEquiv P hline).symm.trans <| Representation.Equiv.ofBasisAction _ _
     (LinearEquiv.refl K _) b (fun s ↦ spinMinusAction Q P hline (spinGroupToEven Q s))
-    (fun _ _ ↦ rfl) fun s x ↦ ?_⟩
+    (fun _ _ ↦ by
+      simp only [AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe,
+        AlgHom.toRingHom_toMonoidHom, MonoidHom.comp_apply, MonoidHom.coe_ofClass,
+        LinearEquiv.refl_apply])
+    fun s x ↦ ?_⟩
   simp only [MonoidHom.comp_apply, stdSLRep_apply_apply]
   rw [hmatrix]
   exact LinearMap.toMatrix_mulVec_repr b b (spinMinusAction Q P hline (spinGroupToEven Q s)) x

@@ -22,12 +22,15 @@ Clifford action generates every endomorphism of the exterior model.
 
 The Spin group lies inside the even subalgebra (`spinGroup.mem_even`), so the Spin representation
 factors through the even Clifford action `TauCeti.evenSpinAction` along the inclusion
-`CliffordAlgebra.spinGroupToEven`. How much of the endomorphism algebra that restricted action
-reaches is
-exactly what distinguishes the two parities of the ambient dimension: in *positive* even dimension
-it splits off the two half-spin blocks, while in odd dimension it is still everything. Dimension
-zero is the degenerate exception to the even description, `W` being `⊥` there, so that `S = K` is
-one-dimensional, the odd block is zero and the even action is again onto.
+`CliffordAlgebra.spinGroupToEven`. That factorization holds over any commutative ring.
+
+For a finite-dimensional polarized quadratic space over a field of characteristic other than two,
+how much of the endomorphism algebra the even action reaches is exactly what distinguishes the two
+parities of the ambient dimension: in *positive* even dimension it splits off the two half-spin
+blocks, while in odd dimension it is still everything. Dimension zero is the degenerate exception
+to the even description, `W` being `⊥` there, so that `S = K` is one-dimensional, the odd block is
+zero and the even action is again onto. These parity comparisons are proved elsewhere; this file
+proves only the factorization and the surjectivity of the full Clifford action.
 
 ## Main definitions and results
 
