@@ -138,7 +138,7 @@ theorem apply_eq_zero_of_mem_cyclicCoboundaries_of_add_add_mul_eq_zero {n : ℕ}
   | succ n =>
     obtain ⟨ψ, rfl⟩ := (mem_cyclicCoboundaries_succ_iff _ _ _).1 hφ
     rw [coe_cyclicHochschildCoboundary_apply]
-    exact hochschildCoboundary_apply_eq_zero_of_add_add_mul_eq_zero ψ.2 hx
+    exact hochschildCoboundary_apply_eq_zero_of_add_add_mul_eq_zero ψ.property hx
 
 /-- A cyclic `0`-cochain is a cocycle exactly when it is a trace. -/
 theorem mem_cyclicCocycles_zero_iff {φ : cyclicCochains R A M 0} :
@@ -295,11 +295,11 @@ private theorem mem_cyclicCoboundaries_iff_complex (n : ℕ) (φ : cyclicCochain
     (cyclicCoboundaries_zero R A M) (cyclicCoboundaries_succ R A M) n φ
 
 private abbrev toCycles (n : ℕ) (φ : cyclicCocycles R A M n) :=
-  (cyclicCochainComplex R A M).moduleCatCyclesMk ((cyclicCochainComplexXIso R A M n).inv φ.1)
-    (n + 1) (CochainComplex.next ℕ n) ((mem_cyclicCocycles_iff_complex R A M n φ.1).1 φ.2)
+  (cyclicCochainComplex R A M).moduleCatCyclesMk ((cyclicCochainComplexXIso R A M n).inv φ.val)
+    (n + 1) (CochainComplex.next ℕ n) ((mem_cyclicCocycles_iff_complex R A M n φ.val).1 φ.property)
 
 private theorem iCycles_toCycles (n : ℕ) (φ : cyclicCocycles R A M n) :
-    (cyclicCochainComplex R A M).iCycles n (toCycles R A M n φ) = φ.1 :=
+    (cyclicCochainComplex R A M).iCycles n (toCycles R A M n φ) = φ.val :=
   (cyclicCochainComplex R A M).iCycles_moduleCatCyclesMk _ _ _ _ _
 
 namespace cyclicCohomology
@@ -424,7 +424,8 @@ def map (f : A →ₙₐ[R] B) (n : ℕ) : cyclicCohomology R B M n ⟶ cyclicCo
 theorem map_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : cyclicCocycles R B M n) :
     map M f n (mk R B M n φ) =
       mk R A M n
-        ⟨cyclicCochainsMap M (f : A →ₗ[R] B) n φ, cyclicCochainsMap_mem_cyclicCocycles f φ.2⟩ := by
+        ⟨cyclicCochainsMap M (f : A →ₗ[R] B) n φ, cyclicCochainsMap_mem_cyclicCocycles f φ.property⟩
+            := by
   rw [map, mk_apply, mk_apply, ← ConcreteCategory.comp_apply,
     HomologicalComplex.homologyπ_naturality, ConcreteCategory.comp_apply]
   congr 1

@@ -164,8 +164,8 @@ theorem edgeReachability_eq_pairMinimumValue_unitCutCapacity [Fintype V] (G : Si
   have hmap (S : Finset V) :
       S.map e.toEmbedding = G.toOfSimpleGraphFinset S := by
     ext x
-    have hx : x = G.toOfSimpleGraphVertex x.1 :=
-      Subtype.ext (G.toOfSimpleGraphVertex_val x.1).symm
+    have hx : x = G.toOfSimpleGraphVertex x.val :=
+      Subtype.ext (G.toOfSimpleGraphVertex_val x.val).symm
     rw [hx]
     simp [e]
   have he (S : Finset V) :

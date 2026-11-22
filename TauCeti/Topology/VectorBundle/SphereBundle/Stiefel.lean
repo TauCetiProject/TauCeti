@@ -136,7 +136,7 @@ def fiberIncl (b : B) : C(stiefel (E b) k, StiefelBundle F E k) where
   toFun x := ⟨b, x⟩
   continuous_toFun := continuous_iff.2 ⟨continuous_const, fun i ↦
     (FiberBundle.continuous_totalSpaceMk F E b).comp
-      ((continuous_apply i).comp continuous_subtype_val)⟩
+      ((continuous_apply i).comp continuous_subtypeVal)⟩
 
 variable {F E k}
 
@@ -186,7 +186,7 @@ variable (F k) in
 /-- The `i`th vector of a frame, as a point of the unit sphere bundle `S(E)`. -/
 def sphereProj (i : Fin k) : C(StiefelBundle F E k, sphereBundle F E) where
   toFun p := ⟨⟨p.proj, (p.frame : Fin k → E p.proj) i⟩,
-    mem_sphereBundle.2 (norm_eq_one_of_mem_stiefel p.frame.2 i)⟩
+    mem_sphereBundle.2 (norm_eq_one_of_mem_stiefel p.frame.property i)⟩
   continuous_toFun := (continuous_totalSpaceMk_frame i).subtype_mk _
 
 @[simp]

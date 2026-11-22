@@ -126,7 +126,8 @@ theorem map_stabilizer_eq_zpowers_cycleMap_of_vertex_eq_inr
   simp only [Subgroup.mem_map, MulAction.mem_stabilizer_iff, Subgroup.coe_subtype]
   constructor
   · rintro ⟨γ, hγ, rfl⟩
-    exact (σ.smul_eq_self_iff_mem_zpowers_cycleMap_of_vertex_eq_inr hj hmap hpar hdisj γ.2).1 hγ
+    exact (σ.smul_eq_self_iff_mem_zpowers_cycleMap_of_vertex_eq_inr hj hmap hpar hdisj γ.property).1
+        hγ
   · intro hg
     have hgΓ : g ∈ Γ := (Subgroup.zpowers_le.2 (σ.cycleMap_mem hmap j)) hg
     exact ⟨⟨g, hgΓ⟩,
@@ -144,7 +145,8 @@ theorem mem_orbit_iff_mem_cycle_of_vertex_eq_inr
   constructor
   · rintro ⟨g, hg⟩
     obtain ⟨m, -, -, -, hm⟩ :=
-      σ.exists_partialCycleMap_mul_zpow_eq_of_smul_idealVertex_eq hj hl hmap hpar hdisj g.2 hg
+      σ.exists_partialCycleMap_mul_zpow_eq_of_smul_idealVertex_eq hj hl hmap hpar hdisj g.property
+          hg
     exact ⟨m, hm⟩
   · rintro ⟨m, hm⟩
     refine ⟨⟨σ.partialCycleMap j m, σ.partialCycleMap_mem hmap j m⟩, ?_⟩

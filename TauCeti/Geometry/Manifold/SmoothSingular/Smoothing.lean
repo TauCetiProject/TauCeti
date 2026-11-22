@@ -129,18 +129,18 @@ private lemma quasiIso_iSup_nat {X : Type u} [TopologicalSpace X] [ChartedSpace 
 omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M]
     [HasExactColimitsOfShape (Discrete ℕ) C] in
 private lemma quasiIso_iff_of_opens_subset {S U : Opens M} (hU : (U : Set M) ⊆ (S : Set M))
-    {V : Opens S} (hUV : ∀ y : S, y ∈ V ↔ y.1 ∈ U) (R : C) :
+    {V : Opens S} (hUV : ∀ y : S, y ∈ V ↔ y.val ∈ U) (R : C) :
     QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I V).ι R) ↔
       QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R) := by
-  let f : U → V := fun z ↦ ⟨⟨z.1, hU z.2⟩, (hUV _).2 z.2⟩
-  let g : V → U := fun z ↦ ⟨z.1.1, (hUV z.1).1 z.2⟩
+  let f : U → V := fun z ↦ ⟨⟨z.val, hU z.property⟩, (hUV _).2 z.property⟩
+  let g : V → U := fun z ↦ ⟨z.val.val, (hUV z.val).1 z.property⟩
   have hf : ContMDiff I I ∞ f := by
     rw [← ContMDiff.subtypeVal_comp_iff, ← ContMDiff.subtypeVal_comp_iff]
-    exact contMDiff_subtype_val (I := I) (U := U)
+    exact contMDiff_subtypeVal (I := I) (U := U)
   have hg : ContMDiff I I ∞ g := by
     rw [← ContMDiff.subtypeVal_comp_iff]
-    exact (contMDiff_subtype_val (I := I) (U := S)).comp
-      (contMDiff_subtype_val (I := I) (U := V))
+    exact (contMDiff_subtypeVal (I := I) (U := S)).comp
+      (contMDiff_subtypeVal (I := I) (U := V))
   exact ⟨quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff_inv R hf hg
       (fun _ ↦ rfl) (fun _ ↦ rfl),
     quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff_inv R hg hf
@@ -150,26 +150,27 @@ omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M]
     [HasExactColimitsOfShape (Discrete ℕ) C] in
 private lemma quasiIso_of_convex_image_extChartAt (R : C) (x : M)
     {V : Opens (I.extChartAtOpens x)}
-    (hV : Convex ℝ ((fun y : I.extChartAtOpens x ↦ extChartAt I x y.1) '' (V : Set _))) :
+    (hV : Convex ℝ ((fun y : I.extChartAtOpens x ↦ extChartAt I x y.val) '' (V : Set _))) :
     QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I V).ι R) := by
   rcases (V : Set (I.extChartAtOpens x)).eq_empty_or_nonempty with hempty | ⟨c₀, hc₀⟩
   · have : IsEmpty V :=
-      ⟨fun z ↦ by have hz : z.1 ∈ (V : Set (I.extChartAtOpens x)) := z.2; rwa [hempty] at hz⟩
+      ⟨fun z ↦ by
+          have hz : z.val ∈ (V : Set (I.extChartAtOpens x)) := z.property; rwa [hempty] at hz⟩
     infer_instance
   · let W : Opens M :=
       ⟨Subtype.val '' (V : Set (I.extChartAtOpens x)),
-        (I.extChartAtOpens x).isOpen.isOpenMap_subtype_val _ V.isOpen⟩
+        (I.extChartAtOpens x).isOpen.isOpenMap_subtypeVal _ V.isOpen⟩
     have hW_sub : (W : Set M) ⊆ (extChartAt I x).source := by
       rintro _ ⟨y, -, rfl⟩
-      exact y.2
-    have hWV : ∀ y : I.extChartAtOpens x, y ∈ V ↔ y.1 ∈ W := fun y ↦
+      exact y.property
+    have hWV : ∀ y : I.extChartAtOpens x, y ∈ V ↔ y.val ∈ W := fun y ↦
       ⟨fun hy ↦ ⟨y, hy, rfl⟩, fun ⟨z, hz, hzy⟩ ↦ Subtype.ext hzy ▸ hz⟩
     have hW_im : extChartAt I x '' (W : Set M) =
-        (fun y : I.extChartAtOpens x ↦ extChartAt I x y.1) '' (V : Set _) := by
+        (fun y : I.extChartAtOpens x ↦ extChartAt I x y.val) '' (V : Set _) := by
       rw [Opens.coe_mk, Set.image_image]
-    let cW : W := ⟨c₀.1, c₀, hc₀, rfl⟩
+    let cW : W := ⟨c₀.val, c₀, hc₀, rfl⟩
     obtain ⟨F, hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_starConvex_image_extChartAt
-      (n := ⊤) hW_sub cW ((hW_im.symm ▸ hV).starConvex (Set.mem_image_of_mem _ cW.2))
+      (n := ⊤) hW_sub cW ((hW_im.symm ▸ hV).starConvex (Set.mem_image_of_mem _ cW.property))
     exact (quasiIso_iff_of_opens_subset hW_sub hWV R).2
       (quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff R hF cW h₀ h₁)
 
@@ -180,13 +181,13 @@ private lemma quasiIso_of_subset_extChartAt_source [LocallyCompactSpace M]
     QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R) := by
   have : LocallyCompactSpace (I.extChartAtOpens x) :=
     (I.extChartAtOpens x).isOpen.locallyCompactSpace
-  have hφ_inj : Function.Injective (fun y : I.extChartAtOpens x ↦ extChartAt I x y.1) :=
-    fun y₁ y₂ h ↦ Subtype.ext ((extChartAt I x).injOn y₁.2 y₂.2 h)
+  have hφ_inj : Function.Injective (fun y : I.extChartAtOpens x ↦ extChartAt I x y.val) :=
+    fun y₁ y₂ h ↦ Subtype.ext ((extChartAt I x).injOn y₁.property y₂.property h)
   have hW : ∀ V : Opens (I.extChartAtOpens x),
       QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I V).ι R) :=
     mayerVietoris_induction
       (fun V ↦ QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I V).ι R))
-      {V | Convex ℝ ((fun y : I.extChartAtOpens x ↦ extChartAt I x y.1) '' (V : Set _))}
+      {V | Convex ℝ ((fun y : I.extChartAtOpens x ↦ extChartAt I x y.val) '' (V : Set _))}
       (I.isBasis_convex_image_extChartAt x)
       (fun V₁ h₁ V₂ h₂ _ ↦ by
         rw [Set.mem_ofPred_eq, Opens.coe_inf, Set.image_inter hφ_inj]
@@ -199,7 +200,7 @@ private lemma quasiIso_of_subset_extChartAt_source [LocallyCompactSpace M]
       (fun s hs h ↦ quasiIso_iSup_nat R s hs h)
   let U' : Opens (I.extChartAtOpens x) :=
     Opens.comap (ContinuousMap.subtypeVal ((I.extChartAtOpens x : Opens M) : Set M)) U
-  have hUU' (y : I.extChartAtOpens x) : y ∈ U' ↔ y.1 ∈ U := by
+  have hUU' (y : I.extChartAtOpens x) : y ∈ U' ↔ y.val ∈ U := by
     rw [Opens.mem_comap, ContinuousMap.subtypeVal_apply]
   exact (quasiIso_iff_of_opens_subset hU hUU' R).1 (hW U')
 
@@ -242,7 +243,7 @@ instance quasiIso_chainComplexMap_smoothSingularSubcomplex_ι (R : C) :
     rw [← ContMDiff.subtypeVal_comp_iff]
     exact contMDiff_id (I := I)
   exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff_inv R
-    hf (contMDiff_subtype_val (I := I) (U := ⊤))
+    hf (contMDiff_subtypeVal (I := I) (U := ⊤))
     (fun _ ↦ rfl) (fun _ ↦ rfl)
     (quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_opens R ⊤)
 
@@ -449,6 +450,16 @@ theorem smoothSingularCohomologyIso_hom (n : ℕ) :
       HomologicalComplex.homologyMap
         (SSet.cochainComplexMap (smoothSingularSubcomplex I M).ι) n := by
   rw [smoothSingularCohomologyIso, asIso_hom]
+
+/-- Restricting the image of a smooth singular cohomology class under the inverse of
+`smoothSingularCohomologyIso` back to smooth singular chains recovers the class. -/
+@[simp]
+theorem homologyMap_cochainComplexMap_smoothSingularCohomologyIso_inv_apply (n : ℕ)
+    (x : (((smoothSingularSubcomplex I M : SSet).chainComplex R).linearYonedaObj k Y).homology n) :
+    HomologicalComplex.homologyMap
+        (SSet.cochainComplexMap (R := R) (k := k) (M := Y) (smoothSingularSubcomplex I M).ι) n
+        ((smoothSingularCohomologyIso I M R k Y n).inv x) = x := by
+  rw [← smoothSingularCohomologyIso_hom, Iso.inv_hom_id_apply]
 
 /-- The map induced on cohomology by the inverse of `smoothSingularCochainHomotopyEquiv` is the
 inverse of `smoothSingularCohomologyIso`. -/

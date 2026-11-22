@@ -83,25 +83,25 @@ variable {IM M}
 /-- A point of an open subset `V` of `U`, as a point of the image of `V` in `M`. -/
 private def toImage {U : Opens (TopCat.of M)} {V : Opens U} (x : V) :
     U.isOpenEmbedding.isOpenMap.functor.obj V :=
-  ⟨x.1.1, x.1, x.2, rfl⟩
+  ⟨x.val.val, x.val, x.property, rfl⟩
 
 /-- A point of the image in `M` of an open subset `V` of `U`, as a point of `V`. -/
 private def ofImage {U : Opens (TopCat.of M)} {V : Opens U}
     (y : U.isOpenEmbedding.isOpenMap.functor.obj V) : V :=
-  ⟨⟨y.1, Subtype.coe_image_subset _ _ y.2⟩, by
-    obtain ⟨a, ha, h⟩ := y.2
-    exact (Subtype.ext h : a = ⟨y.1, Subtype.coe_image_subset _ _ y.2⟩) ▸ ha⟩
+  ⟨⟨y.val, Subtype.coe_image_subset _ _ y.property⟩, by
+    obtain ⟨a, ha, h⟩ := y.property
+    exact (Subtype.ext h : a = ⟨y.val, Subtype.coe_image_subset _ _ y.property⟩) ▸ ha⟩
 
 private theorem contMDiff_toImage {U : Opens (TopCat.of M)} (V : Opens U) :
     ContMDiff IM IM ∞ (toImage : V → U.isOpenEmbedding.isOpenMap.functor.obj V) := by
   rw [← ContMDiff.subtypeVal_comp_iff]
-  exact (contMDiff_subtype_val.comp contMDiff_subtype_val :
-    ContMDiff IM IM ∞ fun x : V ↦ (x : U).1)
+  exact (contMDiff_subtypeVal.comp contMDiff_subtypeVal :
+    ContMDiff IM IM ∞ fun x : V ↦ (x : U).val)
 
 private theorem contMDiff_ofImage {U : Opens (TopCat.of M)} (V : Opens U) :
     ContMDiff IM IM ∞ (ofImage : U.isOpenEmbedding.isOpenMap.functor.obj V → V) := by
   rw [← ContMDiff.subtypeVal_comp_iff, ← ContMDiff.subtypeVal_comp_iff]
-  exact contMDiff_subtype_val
+  exact contMDiff_subtypeVal
 
 end Image
 
@@ -144,7 +144,7 @@ theorem restrictIso_hom_app_apply (U : Opens (TopCat.of M)) (V : Opens U)
     (f : C^∞⟮IM, U.isOpenEmbedding.isOpenMap.functor.obj V; I, R⟯) (x : V) :
     @DFunLike.coe (no_index C^∞⟮IM, V; I, R⟯) (no_index ↥V) (fun _ ↦ R) _
         (no_index ((restrictIso IM I R U).hom.hom.app (op V) f)) x =
-      f ⟨x.1.1, x.1, x.2, rfl⟩ :=
+      f ⟨x.val.val, x.val, x.property, rfl⟩ :=
   (rfl)
 
 /-- The inverse of the restriction isomorphism evaluates a section at the corresponding point
@@ -155,7 +155,7 @@ theorem restrictIso_inv_app_apply (U : Opens (TopCat.of M)) (V : Opens U)
     @DFunLike.coe (no_index C^∞⟮IM, U.isOpenEmbedding.isOpenMap.functor.obj V; I, R⟯)
         (no_index ↥(U.isOpenEmbedding.isOpenMap.functor.obj V)) (fun _ ↦ R) _
         (no_index ((restrictIso IM I R U).inv.hom.app (op V) g))
-        (no_index ⟨x.1.1, x.1, x.2, rfl⟩) =
+        (no_index ⟨x.val.val, x.val, x.property, rfl⟩) =
       g x :=
   (rfl)
 
@@ -175,7 +175,7 @@ theorem overIso_hom_app (U : Opens (TopCat.of M)) (V : Opens U) :
 /-- The stalk at a point `x` of an open subset `U` of the sheaf of smooth functions on `U` is the
 stalk at `x` of the sheaf of smooth functions on `M`. -/
 def stalkIso (U : Opens (TopCat.of M)) (x : U) :
-    (smoothSheafRing IM I U R).presheaf.stalk x ≅ (smoothSheafRing IM I M R).presheaf.stalk x.1 :=
+    (smoothSheafRing IM I U R).presheaf.stalk x ≅ (smoothSheafRing IM I M R).presheaf.stalk x.val :=
   (TopCat.Presheaf.stalkFunctor RingCat (X := TopCat.of U) x).mapIso
       ((sheafToPresheaf _ _).mapIso (restrictIso IM I R U)).symm ≪≫
     (AlgebraicGeometry.PresheafedSpace.mk (TopCat.of M)
@@ -187,7 +187,7 @@ germ of the corresponding smooth function on the image of `V` in `M`. -/
 theorem germ_stalkIso_hom (U : Opens (TopCat.of M)) (V : Opens U) (x : U) (hx : x ∈ V) :
     (smoothSheafRing IM I U R).presheaf.germ V x hx ≫ (stalkIso IM I R U x).hom =
       (restrictIso IM I R U).inv.hom.app (op V) ≫
-        (smoothSheafRing IM I M R).presheaf.germ (U.isOpenEmbedding.isOpenMap.functor.obj V) x.1
+        (smoothSheafRing IM I M R).presheaf.germ (U.isOpenEmbedding.isOpenMap.functor.obj V) x.val
           ⟨x, hx, rfl⟩ := by
   simp only [stalkIso]
   -- The presheaf of the restricted sheaf is that of `PresheafedSpace.restrict` only up to
@@ -242,7 +242,7 @@ theorem restrictIso_hom_app_apply (U : Opens (TopCat.of M)) (V : Opens U)
     (f : C^∞⟮IM, U.isOpenEmbedding.isOpenMap.functor.obj V; I, A⟯) (x : V) :
     @DFunLike.coe (no_index C^∞⟮IM, V; I, A⟯) (no_index ↥V) (fun _ ↦ A) _
         (no_index ((restrictIso IM I A U).hom.hom.app (op V) f)) x =
-      f ⟨x.1.1, x.1, x.2, rfl⟩ :=
+      f ⟨x.val.val, x.val, x.property, rfl⟩ :=
   (rfl)
 
 /-- The inverse of the restriction isomorphism evaluates a smooth group-valued section at the
@@ -253,7 +253,7 @@ theorem restrictIso_inv_app_apply (U : Opens (TopCat.of M)) (V : Opens U)
     @DFunLike.coe (no_index C^∞⟮IM, U.isOpenEmbedding.isOpenMap.functor.obj V; I, A⟯)
         (no_index ↥(U.isOpenEmbedding.isOpenMap.functor.obj V)) (fun _ ↦ A) _
         (no_index ((restrictIso IM I A U).inv.hom.app (op V) g))
-        (no_index ⟨x.1.1, x.1, x.2, rfl⟩) =
+        (no_index ⟨x.val.val, x.val, x.property, rfl⟩) =
       g x :=
   (rfl)
 

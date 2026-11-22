@@ -203,15 +203,15 @@ theorem _root_.Subgroup.hasUnitProOrder_subgroupOf_iff {H K : Subgroup U} (hHK :
     HasUnitProOrder A (H.subgroupOf K) ↔ HasUnitProOrder A H :=
   hasUnitProOrder_congr
     { toMulEquiv := Subgroup.subgroupOfEquivOfLe hHK
-      continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-      continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
+      continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
 
 /-- The top subgroup of `U` has invertible pro-order if and only if `U` does. -/
 @[simp]
 theorem hasUnitProOrder_top_iff : HasUnitProOrder A (⊤ : Subgroup U) ↔ HasUnitProOrder A U :=
   hasUnitProOrder_congr
     { toMulEquiv := Subgroup.topEquiv
-      continuous_toFun := continuous_subtype_val
+      continuous_toFun := continuous_subtypeVal
       continuous_invFun := continuous_id.subtype_mk _ }
 
 /-- On a discrete group `U` (finite or infinite), `HasUnitProOrder A U` holds if and only if
@@ -368,9 +368,9 @@ in `A`, then `U` itself has invertible pro-order in `A`. Neither openness of `H`
 theorem HasUnitProOrder.of_subgroup_of_isUnit_index {H : Subgroup U} (hH : HasUnitProOrder A H)
     (hind : IsUnit (H.index : A)) : HasUnitProOrder A U := by
   intro N
-  let V : OpenNormalSubgroup H := N.comap H.subtype continuous_subtype_val
+  let V : OpenNormalSubgroup H := N.comap H.subtype continuous_subtypeVal
   have hV : V.toSubgroup = N.toSubgroup.comap H.subtype :=
-    OpenNormalSubgroup.toSubgroup_comap N H.subtype continuous_subtype_val
+    OpenNormalSubgroup.toSubgroup_comap N H.subtype continuous_subtypeVal
   have hcard_img : IsUnit (Nat.card (H.map (QuotientGroup.mk' N.toSubgroup)) : A) := by
     rw [← Subgroup.index_comap_subtype_eq_card_map, ← hV, Subgroup.index_eq_card]
     exact hH V
@@ -389,7 +389,7 @@ theorem HasUnitProOrder.of_isOpen [SeparatelyContinuousMul U] [CompactSpace U]
   let M' : Subgroup U := M.toSubgroup.map H.subtype
   have hM'open : IsOpen (M' : Set U) := by
     rw [Subgroup.coe_map]
-    exact hH.isOpenMap_subtype_val _ M.toOpenSubgroup.isOpen
+    exact hH.isOpenMap_subtypeVal _ M.toOpenSubgroup.isOpen
   have hM'sub : M'.subgroupOf H = M.toSubgroup := by
     rw [Subgroup.subgroupOf, Subgroup.comap_map_eq_self_of_injective Subtype.val_injective]
   have hdvd : Nat.card (H ⧸ M.toSubgroup) ∣ M'.index := by
@@ -425,7 +425,7 @@ theorem HasUnitProOrder.isUnit_relIndex_openSubgroup [SeparatelyContinuousMul U]
     {K : OpenSubgroup U} (hK : HasUnitProOrder A K) (hKc : IsCompact (K : Set U))
     (H : OpenSubgroup U) : IsUnit ((H.toSubgroup.relIndex K.toSubgroup) : A) :=
   with_compact_openSubgroup hKc fun {_ _} ↦
-    hK.isUnit_index (H.isOpen.preimage continuous_subtype_val)
+    hK.isUnit_index (H.isOpen.preimage continuous_subtypeVal)
 
 /-- If `K` is a compact open subgroup of `G` with invertible pro-order in `A`, then every open
 subgroup `H ≤ K` also has invertible pro-order in `A`. -/
@@ -434,7 +434,7 @@ theorem HasUnitProOrder.mono_openSubgroup [SeparatelyContinuousMul U]
     (hHK : H ≤ K) : HasUnitProOrder A H :=
   with_compact_openSubgroup hKc fun {_ _} ↦
     (Subgroup.hasUnitProOrder_subgroupOf_iff hHK).mp
-      (hK.of_isOpen (H.isOpen.preimage continuous_subtype_val))
+      (hK.of_isOpen (H.isOpen.preimage continuous_subtypeVal))
 
 /-- In a profinite group, invertible pro-order passes to every subgroup `H` in the subspace
 topology. Closedness of `H` is not needed here (it is needed only when `H` must itself be
@@ -592,7 +592,8 @@ theorem hasCofinalUnitProOrder_of_discreteTopology [DiscreteTopology G] :
   let B : OpenSubgroup G := ⟨⊥, isOpen_discrete _⟩
   have hB : (B : Set G) = {1} := Subgroup.coe_bot
   have : Subsingleton B :=
-    ⟨fun x y ↦ Subtype.ext ((Subgroup.mem_bot.mp x.2).trans (Subgroup.mem_bot.mp y.2).symm)⟩
+    ⟨fun x y ↦ Subtype.ext ((Subgroup.mem_bot.mp x.property).trans
+        (Subgroup.mem_bot.mp y.property).symm)⟩
   refine ⟨B, hB ▸ isCompact_singleton, hasUnitProOrder_of_subsingleton, ?_⟩
   rw [hB, Set.singleton_subset_iff]
   exact mem_of_mem_nhds hs
@@ -623,19 +624,19 @@ theorem HasCofinalUnitProOrder.of_equiv {H : Type w} [Group H] [TopologicalSpace
     rintro ⟨x, hx, rfl⟩
     have hx' : e.symm (e x) ∈ K := (e.symm_apply_apply x).symm ▸ hx
     exact hx'
-  have hmem (x : K) : e x.1 ∈ K' := by
+  have hmem (x : K) : e x.val ∈ K' := by
     rw [← SetLike.mem_coe, hcoe]
-    exact ⟨x.1, x.2, rfl⟩
+    exact ⟨x.val, x.property, rfl⟩
   have hequiv : K ≃ₜ* K' :=
     { toMulEquiv :=
-        { toFun := fun x ↦ ⟨e x.1, hmem x⟩
-          invFun := fun y ↦ ⟨e.symm y.1, y.2⟩
-          left_inv := fun x ↦ Subtype.ext (e.symm_apply_apply x.1)
-          right_inv := fun y ↦ Subtype.ext (e.apply_symm_apply y.1)
-          map_mul' := fun x y ↦ Subtype.ext (map_mul e x.1 y.1) }
-      continuous_toFun := ((map_continuous e).comp continuous_subtype_val).subtype_mk hmem
-      continuous_invFun := ((map_continuous e.symm).comp continuous_subtype_val).subtype_mk
-        fun y ↦ y.2 }
+        { toFun := fun x ↦ ⟨e x.val, hmem x⟩
+          invFun := fun y ↦ ⟨e.symm y.val, y.property⟩
+          left_inv := fun x ↦ Subtype.ext (e.symm_apply_apply x.val)
+          right_inv := fun y ↦ Subtype.ext (e.apply_symm_apply y.val)
+          map_mul' := fun x y ↦ Subtype.ext (map_mul e x.val y.val) }
+      continuous_toFun := ((map_continuous e).comp continuous_subtypeVal).subtype_mk hmem
+      continuous_invFun := ((map_continuous e.symm).comp continuous_subtypeVal).subtype_mk
+        fun y ↦ y.property }
   refine ⟨K', hcoe ▸ hKc.image (map_continuous e), hKu.of_equiv hequiv, ?_⟩
   rw [hcoe, Set.image_subset_iff]
   exact hKs
@@ -658,11 +659,12 @@ theorem HasCofinalUnitProOrder.prod {H : Type w} [Group H] [TopologicalSpace H]
   have hequiv : (K₁ × K₂) ≃ₜ* K₁.prod K₂ :=
     { toMulEquiv := (Subgroup.prodEquiv K₁.toSubgroup K₂.toSubgroup).symm
       continuous_toFun :=
-        ((continuous_subtype_val.comp continuous_fst).prodMk
-          (continuous_subtype_val.comp continuous_snd)).subtype_mk fun x ↦ ⟨x.1.2, x.2.2⟩
+        ((continuous_subtypeVal.comp continuous_fst).prodMk
+          (continuous_subtypeVal.comp continuous_snd)).subtype_mk fun x ↦ ⟨x.1.property,
+              x.2.property⟩
       continuous_invFun :=
-        ((continuous_fst.comp continuous_subtype_val).subtype_mk fun x ↦ x.2.1).prodMk
-          ((continuous_snd.comp continuous_subtype_val).subtype_mk fun x ↦ x.2.2) }
+        ((continuous_fst.comp continuous_subtypeVal).subtype_mk fun x ↦ x.property.1).prodMk
+          ((continuous_snd.comp continuous_subtypeVal).subtype_mk fun x ↦ x.property.2) }
   refine ⟨K₁.prod K₂, ?_, (hK₁u.prod hK₂u).of_equiv hequiv, ?_⟩
   · rw [OpenSubgroup.coe_prod]
     exact hK₁c.prod hK₂c
@@ -682,11 +684,11 @@ private theorem HasCofinalUnitProOrder.of_prod_left {H : Type w} [Group H] [Topo
   let K₁ : OpenSubgroup G := ⟨K.toSubgroup.map (MonoidHom.fst G H), hK₁open⟩
   have hcoe : (K₁ : Set G) = Prod.fst '' (K : Set (G × H)) := Subgroup.coe_map _ _
   let p₁ : K →* K₁ :=
-    { toFun := fun x ↦ ⟨x.1.1, ⟨x.1, x.2, rfl⟩⟩
+    { toFun := fun x ↦ ⟨x.val.1, ⟨x.val, x.property, rfl⟩⟩
       map_one' := rfl
       map_mul' := fun _ _ ↦ rfl }
   have hp₁c : Continuous p₁ :=
-    (continuous_fst.comp continuous_subtype_val).subtype_mk fun x ↦ ⟨x.1, x.2, rfl⟩
+    (continuous_fst.comp continuous_subtypeVal).subtype_mk fun x ↦ ⟨x.val, x.property, rfl⟩
   have hp₁s : Function.Surjective p₁ := by
     rintro ⟨g, x, hx, rfl⟩
     exact ⟨⟨x, hx⟩, rfl⟩
@@ -713,11 +715,11 @@ theorem _root_.OpenSubgroup.hasCofinalUnitProOrder_iff (U : OpenSubgroup G) :
   constructor
   · intro hU s hs
     have hpre : Subtype.val ⁻¹' s ∈ 𝓝 (1 : U) :=
-      continuous_subtype_val.continuousAt.preimage_mem_nhds hs
+      continuous_subtypeVal.continuousAt.preimage_mem_nhds hs
     obtain ⟨K', hK'c, hK'u, hK's⟩ := hU (Subtype.val ⁻¹' s) hpre
     have hKopen : IsOpen ((K'.toSubgroup.map U.toSubgroup.subtype : Subgroup G) : Set G) := by
       rw [Subgroup.coe_map]
-      exact U.isOpen.isOpenMap_subtype_val _ K'.isOpen
+      exact U.isOpen.isOpenMap_subtypeVal _ K'.isOpen
     let K : OpenSubgroup G := ⟨K'.toSubgroup.map U.toSubgroup.subtype, hKopen⟩
     have hcoe : (K : Set G) = Subtype.val '' (K' : Set U) := Subgroup.coe_map _ _
     have hsub : K.toSubgroup.subgroupOf U.toSubgroup = K'.toSubgroup := by
@@ -726,14 +728,14 @@ theorem _root_.OpenSubgroup.hasCofinalUnitProOrder_iff (U : OpenSubgroup G) :
       refine (Subgroup.hasUnitProOrder_subgroupOf_iff (Subgroup.map_subtype_le K'.toSubgroup)).mp ?_
       rw [hsub]
       exact hK'u
-    exact ⟨K, hcoe ▸ hK'c.image continuous_subtype_val, hKu, hcoe ▸ Set.image_subset_iff.mpr hK's⟩
+    exact ⟨K, hcoe ▸ hK'c.image continuous_subtypeVal, hKu, hcoe ▸ Set.image_subset_iff.mpr hK's⟩
   · intro hG s hs
     have himg : (Subtype.val '' s : Set G) ∈ 𝓝 (1 : G) :=
-      U.isOpen.isOpenMap_subtype_val.image_mem_nhds hs
+      U.isOpen.isOpenMap_subtypeVal.image_mem_nhds hs
     obtain ⟨K, hKc, hKu, hKs⟩ := hG (Subtype.val '' s) himg
     have hKU : K.toSubgroup ≤ U.toSubgroup :=
-      fun g hg ↦ let ⟨u, _, hu⟩ := hKs hg; hu ▸ u.2
-    let K' : OpenSubgroup U := K.comap U.toSubgroup.subtype continuous_subtype_val
+      fun g hg ↦ let ⟨u, _, hu⟩ := hKs hg; hu ▸ u.property
+    let K' : OpenSubgroup U := K.comap U.toSubgroup.subtype continuous_subtypeVal
     have himg_K' : Subtype.val '' (K' : Set U) = (K : Set G) := by
       ext g
       simp only [K', Set.mem_image]
@@ -784,7 +786,7 @@ theorem hasCofinalUnitProOrder_iff_isUnit_of_isProP {p : ℕ} [Fact p.Prime]
       have himg : (Subtype.val : U → X) '' {(1 : U)} = {(1 : X)} := by
         rw [Set.image_singleton, OneMemClass.coe_one]
       rw [← himg]
-      exact U.isOpen.isOpenMap_subtype_val _ h1
+      exact U.isOpen.isOpenMap_subtypeVal _ h1
     exact discreteTopology_iff_isOpen_singleton_one.mpr
       (open_one U₀ (open_one K (isOpen_discrete _)))
   exact ((hproP.subgroup K.toSubgroup).hasUnitProOrder_iff).mp hKu

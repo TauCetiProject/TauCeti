@@ -25,7 +25,9 @@ linearized Floer operator on the end is `∂s + A`. This file shows that `A` is 
 real eigenvalues bounded away from `0` when the loop is nondegenerate.
 
 * **Symmetry.** For the real inner product of `H⁰`, `⟪A a, b⟫ = ⟪a, A b⟫` for `a, b ∈ H¹(F)`
-  (`CircleSobolev.real_inner_I_smul_loopOperator_comm`). The derivative term is symmetric by
+  (`CircleSobolev.real_inner_I_smul_loopOperator_comm`), and shifting `S` by a real multiple of the
+  constant loop `J₀` preserves infinitesimal symplecticity
+  (`CircleSobolev.im_inner_sub_smul_const_I_add_eq_zero`). The derivative term is symmetric by
   integration by parts on the circle (`CircleSobolev.inner_derivative_inclusion`), since `J₀ d/dt`
   multiplies the `n`-th Fourier coefficient by the real number `-2πn/T`. The zero-order term
   `-J₀ S_t` is a pointwise symmetric multiplication operator, and Parseval's identity
@@ -70,6 +72,29 @@ universe u
 namespace TauCeti
 
 namespace CircleSobolev
+
+/-- Shifting an infinitesimally symplectic loop `S` by a real multiple of `I • id` preserves
+infinitesimal symplecticity for `ω₀(v, w) = Im ⟪v, w⟫`. -/
+theorem im_inner_sub_smul_const_I_add_eq_zero (T : ℝ) {F : Type u} [NormedAddCommGroup F]
+    [InnerProductSpace ℂ F] {S : C(AddCircle T, F →L[ℝ] F)}
+    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) (δ : ℝ)
+    (t : AddCircle T) (v w : F) :
+    (inner ℂ
+        ((S - δ • ContinuousMap.const (AddCircle T) (I • ContinuousLinearMap.id ℝ F)) t v) w).im +
+      (inner ℂ v
+        ((S - δ • ContinuousMap.const (AddCircle T) (I • ContinuousLinearMap.id ℝ F)) t w)).im =
+      0 := by
+  simp only [ContinuousMap.sub_apply, ContinuousMap.smul_apply, ContinuousMap.const_apply,
+    sub_apply, smul_apply, ContinuousLinearMap.id_apply,
+    inner_sub_left, inner_sub_right, Complex.sub_im]
+  have h1 : (inner ℂ (δ • I • v) w).im = -δ * (inner ℂ v w).re := by
+    rw [← Complex.coe_smul, inner_smul_left, inner_smul_left]
+    simp
+  have h2 : (inner ℂ v (δ • I • w)).im = δ * (inner ℂ v w).re := by
+    rw [← Complex.coe_smul, inner_smul_right, inner_smul_right]
+    simp
+  rw [h1, h2]
+  linarith [hS t v w]
 
 variable (T : ℝ) [hT : Fact (0 < T)] {F : Type u} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [FiniteDimensional ℂ F] (S : C(AddCircle T, F →L[ℝ] F))

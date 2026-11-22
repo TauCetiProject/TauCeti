@@ -17,8 +17,9 @@ character `χ : G →* kˣ`. It acts on the one-dimensional `k`-module `k` by sc
 This file packages that action as `Representation.ofLinearCharacter χ`, bundles it as an object
 `FDRep.ofLinearCharacter χ` of `FDRep k G`, and records the facts every consumer of a linear
 character needs: over a field its character is `χ` and it is simple; over a commutative ring it
-has rank one. Restriction along a homomorphism pulls `χ` back, and two of these representations
-are isomorphic exactly when the two characters are equal.
+has rank one and `g` acts with characteristic polynomial `X - χ g`. Restriction along a
+homomorphism pulls `χ` back, and two of these representations are isomorphic exactly when the two
+characters are equal.
 
 The construction is the common core of the linear characters of the Borel subgroup and of
 `GL₂`; keeping it here avoids separate scalar-action implementations for each group. It is also
@@ -42,6 +43,8 @@ representation, and its irreducibility is what the Mackey criterion decides.
   representation.
 * `Representation.char_ofLinearCharacter` and `FDRep.char_ofLinearCharacter`: the trace character
   is the original character, coerced into the coefficient field.
+* `Representation.charpoly_ofLinearCharacter_apply`: over a commutative ring, `g` acts with
+  characteristic polynomial `X - χ g`.
 * `Representation.isIrreducible_ofLinearCharacter`: a line has no room for a proper nonzero
   subrepresentation.
 * `Representation.IsIrreducible.nonempty_equiv_ofLinearCharacter_iff`: an irreducible
@@ -125,6 +128,14 @@ theorem char_ofLinearCharacter [Field k] [Monoid G] (χ : G →* kˣ) (g : G) :
     intro x
     simp [mul_comm]
   rw [h, LinearMap.trace_smulRight, LinearMap.id_apply]
+
+/-- **The characteristic polynomial of a one-dimensional representation.** The element `g` acts
+on the line `k` with characteristic polynomial `X - χ g`. -/
+@[simp]
+theorem charpoly_ofLinearCharacter_apply [CommRing k] [Monoid G] (χ : G →* kˣ) (g : G) :
+    (ofLinearCharacter χ g).charpoly = Polynomial.X - Polynomial.C (χ g : k) := by
+  rw [← LinearMap.charpoly_toMatrix _ (Module.Basis.singleton Unit k)]
+  simp [Matrix.charpoly, Matrix.det_unique, LinearMap.toMatrix_apply]
 
 /-- A one-dimensional representation is irreducible, having no room for a proper nonzero
 subrepresentation. -/

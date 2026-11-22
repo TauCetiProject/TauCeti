@@ -450,7 +450,7 @@ theorem isPrimitiveIdempotent_matchedIdem (hR : IsPrimitiveIdempotent (1 : R)) {
       (basis R α).repr f (idOn t) = (basis R α).repr f (idOn S) := by
     classical
     rw [hsum, repr_matchedSum_apply, ite_ne_right_iff] at ht
-    exact repr_eq_of_matchedSetoid f.2 ((matchedSetoid M).iseqv.symm ht.1)
+    exact repr_eq_of_matchedSetoid f.property ((matchedSetoid M).iseqv.symm ht.1)
   refine ⟨Subtype.ext (isIdempotentElem_matchedIdem M s), fun h0 ↦ ?_,
     fun {f₁ f₂} h₁ h₂ h₁₂ h₂₁ hsum ↦ ?_⟩
   · have := congrArg (fun x : matchedSubalgebra R M ↦ (basis R α).repr x (idOn S)) h0

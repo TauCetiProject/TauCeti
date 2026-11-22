@@ -35,7 +35,7 @@ variable {K F : Type*} [Field K] [NumberField K] [Field F] [NumberField F] [Alge
 `K`. Unlike the finite place itself, it restricts to the base place without a power. -/
 noncomputable def relativeAbsValue (w : FinitePlace F) (K : Type*) [Field K] [NumberField K]
     [Algebra K F] : AbsoluteValue F ℝ :=
-  w.1.nonarchRpow w.add_le (inv_pos.mpr (Nat.cast_pos.mpr (w.localDegree_pos (K := K))))
+  w.val.nonarchRpow w.add_le (inv_pos.mpr (Nat.cast_pos.mpr (w.localDegree_pos (K := K))))
 
 /-- Evaluation of the relative absolute value. The bundled form is retained by the simplifier
 so that local-degree cancellation simplifies without expanding real powers. -/
@@ -53,7 +53,7 @@ theorem relativeAbsValue_pow_localDegree (w : FinitePlace F) (x : F) :
 
 /-- Taking the local-degree root preserves the equivalence class of a finite place. -/
 theorem isEquiv_relativeAbsValue (w : FinitePlace F) :
-    w.1.IsEquiv (w.relativeAbsValue K) := by
+    w.val.IsEquiv (w.relativeAbsValue K) := by
   rw [relativeAbsValue]
   exact AbsoluteValue.isEquiv_nonarchRpow _ _ _
 
@@ -65,7 +65,7 @@ theorem relativeAbsValue_algebraMap (w : FinitePlace F) (v : FinitePlace K)
 
 /-- The relative absolute value lies over the underlying absolute value of the base place. -/
 instance (w : FinitePlace F) (v : FinitePlace K) [w.LiesOver v] :
-    (w.relativeAbsValue K).LiesOver v.1 :=
+    (w.relativeAbsValue K).LiesOver v.val :=
   ⟨AbsoluteValue.ext fun x ↦ by
     rw [AbsoluteValue.under_def, AbsoluteValue.comp_apply, relativeAbsValue_algebraMap w v,
       coe_apply]⟩

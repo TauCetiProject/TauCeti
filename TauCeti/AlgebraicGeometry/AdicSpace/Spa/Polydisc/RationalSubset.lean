@@ -73,7 +73,7 @@ theorem mem_spaRationalFamily_iff_exists_polynomial
       by simpa using hmem, ?_⟩
     ext v
     simpa only [Set.mem_preimage, mem_rationalSubset_iff, Finset.mem_image] using
-      Set.ext_iff.mp heq.symm v.1
+      Set.ext_iff.mp heq.symm v.val
   · rintro ⟨G, p, c, hc, hmem, rfl⟩
     have hunit : IsUnit ((Polynomial.eval₂RingHom C X) (Polynomial.C c) : 𝒯 K) :=
       (hc.map Polynomial.C).map (Polynomial.eval₂RingHom C X)

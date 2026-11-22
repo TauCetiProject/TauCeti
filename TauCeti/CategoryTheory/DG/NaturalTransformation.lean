@@ -89,7 +89,7 @@ private theorem rightUnitor_inv_tensorHom_eComp_apply {X Y Z : D}
     (((ρ_ W).inv ≫ (φ ⊗ₘ a) ≫ eComp _ X Y Z).f n).hom w =
       dgComp R ((φ.f n).hom w) (unitElem a) (add_zero n) := by
   simp only [HomologicalComplex.comp_f, HomologicalComplex.rightUnitor_inv_f,
-    HomologicalComplex.rightUnitor'_inv, Category.assoc, tensorHom_def',
+    Category.assoc, tensorHom_def',
     HomologicalComplex.ι_whiskerRight_assoc, HomologicalComplex.ι_whiskerLeft_assoc,
     ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.MonoidalCategory.rightUnitor_inv_apply,
     ModuleCat.MonoidalCategory.whiskerLeft_apply, ModuleCat.MonoidalCategory.whiskerRight_apply]
@@ -105,7 +105,7 @@ private theorem leftUnitor_inv_tensorHom_eComp_apply {X Y Z : D}
     (((λ_ W).inv ≫ (a ⊗ₘ φ) ≫ eComp _ X Y Z).f n).hom w =
       dgComp R (unitElem a) ((φ.f n).hom w) (zero_add n) := by
   simp only [HomologicalComplex.comp_f, HomologicalComplex.leftUnitor_inv_f,
-    HomologicalComplex.leftUnitor'_inv, Category.assoc, tensorHom_def,
+    Category.assoc, tensorHom_def,
     HomologicalComplex.ι_whiskerRight_assoc, HomologicalComplex.ι_whiskerLeft_assoc,
     ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.MonoidalCategory.leftUnitor_inv_apply,
     ModuleCat.MonoidalCategory.whiskerLeft_apply, ModuleCat.MonoidalCategory.whiskerRight_apply]
