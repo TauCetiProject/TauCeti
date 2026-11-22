@@ -64,17 +64,31 @@ theorem totalDeriv_mem_stage (i : ι) {r : ℕ} {p : PolynomialJet R ι α}
   exact RelJetAlgebra.totalDeriv_mem_stage _ i
     ((RelJetAlgebra.polyJetEquivRel_mem_stage_iff r p).mpr hp)
 
-/-- Total differentiation as a linear map between consecutive finite stages. -/
+/-- Total differentiation as a linear map between consecutive finite stages, transported from
+`RelJetAlgebra.stageDeriv` along `RelJetAlgebra.polyJetStageEquiv`. -/
 def stageDeriv (i : ι) (r : ℕ) : stage R ι α r →ₗ[R] stage R ι α (r + 1) where
-  toFun p := ⟨totalDeriv i p, totalDeriv_mem_stage i p.property⟩
-  map_add' p q :=
-    Subtype.ext (map_add (totalDeriv i) (p : PolynomialJet R ι α) (q : PolynomialJet R ι α))
-  map_smul' c p := Subtype.ext ((totalDeriv i).toLinearMap.map_smul c (p : PolynomialJet R ι α))
+  toFun p :=
+    let q : RelJetAlgebra.stage (MvPolynomial ι R) ι α r :=
+      ⟨RelJetAlgebra.polyJetStageEquiv R ι α r p,
+        (RelJetAlgebra.polyJetStageEquiv R ι α r p).property⟩
+    let dq := RelJetAlgebra.stageDeriv (fun k ↦ MvPolynomial.pderiv (R := R) k) i r q
+    (RelJetAlgebra.polyJetStageEquiv R ι α (r + 1)).symm ⟨dq, dq.property⟩
+  map_add' p q := by
+    apply Subtype.ext
+    simp [RelJetAlgebra.coe_polyJetStageEquiv_symm, RelJetAlgebra.coe_stageDeriv,
+      RelJetAlgebra.coe_polyJetStageEquiv]
+  map_smul' c p := by
+    apply Subtype.ext
+    simp [RelJetAlgebra.coe_polyJetStageEquiv_symm, RelJetAlgebra.coe_stageDeriv,
+      RelJetAlgebra.coe_polyJetStageEquiv]
 
 @[simp]
 theorem coe_stageDeriv (i : ι) (r : ℕ) (p : stage R ι α r) :
     (stageDeriv i r p : PolynomialJet R ι α) = totalDeriv i p := by
-  rfl
+  simp only [stageDeriv, LinearMap.coe_mk, AddHom.coe_mk,
+    RelJetAlgebra.coe_polyJetStageEquiv_symm, RelJetAlgebra.coe_stageDeriv,
+    RelJetAlgebra.coe_polyJetStageEquiv, ← RelJetAlgebra.polyJetEquivRel_totalDeriv,
+    AlgEquiv.symm_apply_apply]
 
 /-- Finite-stage differentiation commutes with the transition inclusions. -/
 @[simp]
@@ -82,8 +96,33 @@ theorem stageDeriv_inclusion (i : ι) {r s : ℕ} (hrs : r ≤ s)
     (p : stage R ι α r) :
     stageDeriv i s (Subalgebra.inclusion (stage_mono hrs) p) =
       Subalgebra.inclusion (stage_mono (Nat.add_le_add_right hrs 1)) (stageDeriv i r p) := by
+  have hincl :
+      (⟨RelJetAlgebra.polyJetStageEquiv R ι α s (Subalgebra.inclusion (stage_mono hrs) p),
+          (RelJetAlgebra.polyJetStageEquiv R ι α s
+            (Subalgebra.inclusion (stage_mono hrs) p)).property⟩ :
+          ↥(RelJetAlgebra.stage (MvPolynomial ι R) ι α s)) =
+        Subalgebra.inclusion (RelJetAlgebra.stage_mono hrs)
+          ⟨RelJetAlgebra.polyJetStageEquiv R ι α r p,
+            (RelJetAlgebra.polyJetStageEquiv R ι α r p).property⟩ :=
+    Subtype.ext (congrArg Subtype.val (RelJetAlgebra.polyJetStageEquiv_inclusion hrs p))
+  have hderiv :
+      ((RelJetAlgebra.stageDeriv (α := α) (fun k ↦ MvPolynomial.pderiv (R := R) k) i s
+          ⟨RelJetAlgebra.polyJetStageEquiv R ι α s (Subalgebra.inclusion (stage_mono hrs) p),
+            (RelJetAlgebra.polyJetStageEquiv R ι α s
+              (Subalgebra.inclusion (stage_mono hrs) p)).property⟩ :
+            RelJetAlgebra.stage (MvPolynomial ι R) ι α (s + 1)) :
+          RelJetAlgebra (MvPolynomial ι R) ι α) =
+        ((RelJetAlgebra.stageDeriv (α := α) (fun k ↦ MvPolynomial.pderiv (R := R) k) i r
+          ⟨RelJetAlgebra.polyJetStageEquiv R ι α r p,
+            (RelJetAlgebra.polyJetStageEquiv R ι α r p).property⟩ :
+            RelJetAlgebra.stage (MvPolynomial ι R) ι α (r + 1)) :
+          RelJetAlgebra (MvPolynomial ι R) ι α) := by
+    rw [hincl, RelJetAlgebra.stageDeriv_inclusion (fun k ↦ MvPolynomial.pderiv (R := R) k) i hrs,
+      Subalgebra.coe_inclusion]
   apply Subtype.ext
-  simp
+  simp only [stageDeriv, LinearMap.coe_mk, AddHom.coe_mk,
+    RelJetAlgebra.coe_polyJetStageEquiv_symm, Subalgebra.coe_inclusion]
+  exact congrArg (RelJetAlgebra.polyJetEquivRel R ι α).symm hderiv
 
 /-- The finite-stage Leibniz rule uses the inclusion into the raised stage. -/
 theorem stageDeriv_mul (i : ι) (r : ℕ) (p q : stage R ι α r) :

@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
-public import TauCeti.RingTheory.Kaehler.DeRham.Basic
 public import TauCeti.RingTheory.Kaehler.DeRham.LieDerivative
-import Mathlib.Algebra.TrivSqZeroExt.Basic
 import Mathlib.RingTheory.Kaehler.Polynomial
 import TauCeti.RingTheory.Kaehler.MvPolynomial
 
@@ -23,9 +21,11 @@ transfers those coordinate formulas to the algebraic exterior derivative
 
 In addition, for any commutative ring `B`, `TauCeti.KaehlerDeRham.supportedForms B s` defines the
 `B`-subalgebra of forms supported on a set `s : Set σ` of variables. Both `extDeriv` and the grade
-involution preserve each `supportedForms B s`, while `Derivation.deRhamLieDeriv` maps forms
-supported on `s` to forms supported on `t ⊇ s` whenever the underlying derivation maps polynomials
-supported on `s` into those supported on `t`.
+involution preserve each `supportedForms B s`, while for an `R`-derivation `D` of
+`MvPolynomial σ B` that sends base constants `algebraMap B _ b` to elements killed by the relative
+Kähler differential `KaehlerDifferential.D B (MvPolynomial σ B)` (so `D.deRhamLieDeriv hB` is
+defined), `D.deRhamLieDeriv hB` maps forms supported on `s` to forms supported on `t ⊇ s`
+whenever `D` maps polynomials supported on `s` into those supported on `t`.
 
 ## Main definitions
 
@@ -158,26 +158,15 @@ theorem algebraMap_mem_supportedForms_iff {s : Set σ} {p : MvPolynomial σ B} :
         (ExteriorAlgebra (MvPolynomial σ B) (Ω[MvPolynomial σ B⁄B])) p ∈
       supportedForms B s ↔ p ∈ MvPolynomial.supported B s := by
   refine ⟨fun hp ↦ ?_, algebraMap_mem_supportedForms⟩
-  let π : ExteriorAlgebra (MvPolynomial σ B) (Ω[MvPolynomial σ B⁄B]) →ₐ[MvPolynomial σ B]
-      MvPolynomial σ B :=
-    _root_.ExteriorAlgebra.lift (MvPolynomial σ B) ⟨0, fun _ ↦ by simp⟩
-  have hmem : ∀ α ∈ supportedForms B s, π α ∈ MvPolynomial.supported B s := by
-    intro α hα
-    induction hα using Algebra.adjoin_induction with
-    | mem _ hx =>
-      rcases hx with ⟨q, hq, rfl⟩ | ⟨i, _, rfl⟩
-      · simpa [π] using hq
-      · simp [π]
-    | algebraMap b =>
-      rw [IsScalarTower.algebraMap_apply B (MvPolynomial σ B) _ b, AlgHom.commutes]
-      exact Subalgebra.algebraMap_mem _ b
-    | add _ _ _ _ hx hy =>
-      rw [map_add]
-      exact add_mem hx hy
-    | mul _ _ _ _ hx hy =>
-      rw [map_mul]
-      exact mul_mem hx hy
-  simpa [π] using hmem _ hp
+  let π : ExteriorAlgebra (MvPolynomial σ B) (Ω[MvPolynomial σ B⁄B]) →ₐ[B] MvPolynomial σ B :=
+    (ExteriorAlgebra.algebraMapInv (R := MvPolynomial σ B)
+      (M := Ω[MvPolynomial σ B⁄B])).restrictScalars B
+  have hle : supportedForms B s ≤ (MvPolynomial.supported B s).comap π := by
+    rw [supportedForms, Algebra.adjoin_le_iff]
+    rintro _ (⟨q, hq, rfl⟩ | ⟨i, _, rfl⟩)
+    · simpa [π, ExteriorAlgebra.algebraMap_leftInverse _ q] using hq
+    · simp [π, ExteriorAlgebra.algebraMapInv]
+  simpa [π, ExteriorAlgebra.algebraMap_leftInverse _ p] using hle hp
 
 /-- Over a nontrivial coefficient ring `B`, a coordinate one-form `dXᵢ` belongs to
 `supportedForms B s` if and only if `i ∈ s`. -/
@@ -195,30 +184,19 @@ theorem ι_D_X_mem_supportedForms_iff [Nontrivial B] {s : Set σ} {i : σ} :
   let ψ : ExteriorAlgebra (MvPolynomial σ B) Ω[MvPolynomial σ B⁄B] →ₐ[MvPolynomial σ B]
       TrivSqZeroExt (MvPolynomial σ B) (MvPolynomial σ B) :=
     _root_.ExteriorAlgebra.lift (MvPolynomial σ B) ⟨f, fun ω ↦ by
-      change f ω * f ω = 0
-      simp [f]⟩
-  have hmem : ∀ α ∈ supportedForms B s, (ψ α).snd = 0 := by
-    intro α hα
-    induction hα using Algebra.adjoin_induction with
-    | mem _ hx =>
-      rcases hx with ⟨p, _, rfl⟩ | ⟨j, hj, rfl⟩
-      · rw [AlgHom.commutes, TrivSqZeroExt.algebraMap_eq_inl, TrivSqZeroExt.snd_inl]
-      · have hji : j ≠ i := fun h ↦ his (h ▸ hj)
-        simp [ψ, f, hji]
-    | algebraMap b =>
-      rw [IsScalarTower.algebraMap_apply B (MvPolynomial σ B) _ b, AlgHom.commutes,
-        TrivSqZeroExt.algebraMap_eq_inl, TrivSqZeroExt.snd_inl]
-    | add _ _ _ _ hx hy =>
-      rw [map_add, TrivSqZeroExt.snd_add, hx, hy, add_zero]
-    | mul _ _ _ _ hx hy =>
-      rw [map_mul, TrivSqZeroExt.snd_mul, hx, hy, smul_zero, smul_zero, add_zero]
-  have h1 : (ψ (ι (MvPolynomial σ B) (KaehlerDifferential.D B (MvPolynomial σ B) (X i)))).snd =
-      0 :=
-    hmem _ hi
-  have h2 : (ψ (ι (MvPolynomial σ B) (KaehlerDifferential.D B (MvPolynomial σ B) (X i)))).snd =
-      1 := by
-    simp [ψ, f]
-  exact one_ne_zero (h2.symm.trans h1)
+      simp [f, TrivSqZeroExt.inr_mul_inr]⟩
+  have hle : supportedForms B s ≤
+      ((Algebra.ofId (MvPolynomial σ B)
+        (TrivSqZeroExt (MvPolynomial σ B) (MvPolynomial σ B))).range.restrictScalars B).comap
+        (ψ.restrictScalars B) := by
+    rw [supportedForms, Algebra.adjoin_le_iff]
+    rintro _ (⟨p, _, rfl⟩ | ⟨j, hj, rfl⟩)
+    · exact ⟨p, by simp⟩
+    · have hji : j ≠ i := fun h ↦ his (h ▸ hj)
+      exact ⟨0, by simp [ψ, f, hji]⟩
+  obtain ⟨p, hp⟩ := hle hi
+  have hsnd := congrArg TrivSqZeroExt.snd hp
+  simp [ψ, f, TrivSqZeroExt.algebraMap_eq_inl] at hsnd
 
 /-- A polynomial multiple of a form in `supportedForms B s` stays in `supportedForms B s` when
 the polynomial is supported on `s`. -/
