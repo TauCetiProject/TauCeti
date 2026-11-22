@@ -110,10 +110,20 @@ private theorem exists_w1p0_forall_energyFormH1_eq_and_sub
       aestronglyMeasurable_const aestronglyMeasurable_const (fun _ hx => h.upper_bound hx)
       (fun _ _ => by simp) (fun _ _ => by simp)
   refine ⟨w, hw', ?_, fun v => ?_⟩
-  · rw [sub_right_comm, ← ClosedSubmodule.mem_toSubmodule_iff] at *
-    exact Submodule.sub_mem _ hug w.property
+  · rw [sub_right_comm, ← ClosedSubmodule.mem_toSubmodule_iff]
+    exact Submodule.sub_mem _ ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hug) w.property
   · rw [energyFormH1_sub_left (b := 0) (c := 0) hcoeff, hu v, hw' v]
     ring
+
+/-- A set inside a ball of radius `ρ` has finite volume, at most the volume of the ball of radius
+`ρ` about `0`. -/
+private theorem measure_ne_top_and_measureReal_le_of_subset_ball
+    {s : Set (EuclideanSpace ℝ (Fin (n + 1)))} {z : EuclideanSpace ℝ (Fin (n + 1))} {ρ : ℝ}
+    (hball : s ⊆ ball z ρ) :
+    volume s ≠ ∞ ∧ volume.real s ≤ volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) ρ) := by
+  refine ⟨((measure_mono hball).trans_lt measure_ball_lt_top).ne, ?_⟩
+  rw [← Measure.addHaar_real_ball_center volume z ρ]
+  exact measureReal_mono hball measure_ball_lt_top.ne
 
 /-- The global Hölder estimate with zero boundary values
 (`TauCeti.PDE.exists_holderWith_preciseRepresentative_indicator_of_measureReal_ball_diff`), with
@@ -152,11 +162,7 @@ private theorem exists_holderWith_preciseRepresentative_indicator_of_subset_ball
     linarith
   refine ⟨α, C * R ^ (-(α : ℝ)) * (V ^ (2 / N - (r : ℝ)⁻¹) + R ^ (2 - N / r)), hα,
     by positivity, fun {Omega z a f w} hball hext h ha hf hw0 hw => ?_⟩
-  have hfin : volume (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ≠ ∞ :=
-    ((measure_mono hball).trans_lt measure_ball_lt_top).ne
-  have hΩV : volume.real (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ≤ V := by
-    rw [show V = volume.real (ball z ρ) from (Measure.addHaar_real_ball_center volume z ρ).symm]
-    exact measureReal_mono hball measure_ball_lt_top.ne
+  obtain ⟨hfin, hΩV⟩ := measure_ne_top_and_measureReal_le_of_subset_ball hball
   have hlam := h.pos
   refine (hmain hfin h ha hf hw0 hw hR hext).mono (Real.toNNReal_le_toNNReal ?_)
   rw [mul_div_assoc]
@@ -224,11 +230,7 @@ private theorem exists_ae_eq_and_holderOnWith_of_subset_ball_divergence
     sub_nonneg.2 (inv_anti₀ (by rw [hcard]; positivity) (by linarith))
   refine ⟨α, C * R ^ (-(α : ℝ)) * (P * (1 + |Lam| * V ^ (q : ℝ)⁻¹ / |lam|) + R + 1), hα, hα1,
     by positivity, fun {Omega z a F u g G K₀ K₁} hball hext h ha hF hug hu hgG hG hG0 => ?_⟩
-  have hfin : volume (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ≠ ∞ :=
-    ((measure_mono hball).trans_lt measure_ball_lt_top).ne
-  have hΩV : volume.real (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ≤ V := by
-    rw [show V = volume.real (ball z ρ) from (Measure.addHaar_real_ball_center volume z ρ).symm]
-    exact measureReal_mono hball measure_ball_lt_top.ne
+  obtain ⟨hfin, hΩV⟩ := measure_ne_top_and_measureReal_le_of_subset_ball hball
   have hlam := h.pos
   have hLam := h.upper_nonneg
   obtain ⟨v, hv, hvH⟩ := hmain hfin h ha hF hug hu hgG hG hG0 hR hext
