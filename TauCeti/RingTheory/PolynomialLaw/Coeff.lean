@@ -46,6 +46,9 @@ formalization in the DividedPowers project.
   `PolynomialLaw.coeff_optionElim_add`: coefficients are invariant under reindexing, ignore
   vectors with exponent zero, scale by `r ^ n` with a vector scaled by `r`, merge two equal
   vectors with a binomial coefficient, and split a sum of vectors along the antidiagonal.
+* `PolynomialLaw.coeff_optionElim_optionElim_zero` and
+  `PolynomialLaw.coeff_optionElim_add_of_exponent_one`: a vector in the second slot with exponent
+  zero is also ignored, so the coefficient in which a vector has exponent one is additive in it.
 * `PolynomialLaw.ext_coeff`: a law is determined by its coefficients on families indexed by
   `Fin n`.
 * `PolynomialLaw.IsHomogeneousOfDegree.coeff_eq_zero`: a law homogeneous of degree `d` has no
@@ -273,6 +276,43 @@ theorem coeff_optionElim_add (n : ℕ) (a b : M) (m : ι → M) (f : M →ₚₗ
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun q _ ↦ ?_
   rw [Finset.sum_ite_eq', Finsupp.if_mem_support]
+
+/-- A vector in the second slot with exponent zero does not contribute to a coefficient. -/
+theorem coeff_optionElim_optionElim_zero (n : ℕ) (a b : M) (m : ι → M) (f : M →ₚₗ[R] N)
+    (k : ι →₀ ℕ) :
+    coeff R N (Option.elim' a (Option.elim' b m)) f ((k.optionElim 0).optionElim n) =
+      coeff R N (Option.elim' a m) f (k.optionElim n) := by
+  classical
+  symm
+  let s : Option (Option ι) → MvPolynomial (Option ι) R :=
+    Option.elim' (X none) (Option.elim' 0 fun i ↦ X (some i))
+  have h (l : Option (Option ι) →₀ ℕ) :
+      (∏ o, s o ^ l o).coeff (k.optionElim n) =
+        if l = (k.optionElim 0).optionElim n then 1 else 0 := by
+    simp only [s, Fintype.prod_option, Option.elim'_none, Option.elim'_some]
+    rcases Nat.eq_zero_or_pos (l (some none)) with h0 | h0
+    · have hprod : (X none : MvPolynomial (Option ι) R) ^ l none *
+          ∏ i, X (some i) ^ l (some (some i)) =
+            ∏ o, X o ^ Option.elim' (l none) (fun i ↦ l (some (some i))) o := by
+        simp [Fintype.prod_option]
+      rw [h0, pow_zero, one_mul, hprod, coeff_prod_univ_X_pow]
+      congr 1
+      simp [Finsupp.ext_iff, Option.forall, h0]
+    · have hl : l ≠ (k.optionElim 0).optionElim n := by
+        rintro rfl
+        simp at h0
+      simp [zero_pow h0.ne', hl]
+  rw [coeff_eq_smul_of_sum_tmul_eq f (Option.elim' a (Option.elim' b m)) s (Option.elim' a m)
+    (by simp [s, Fintype.sum_option]) _ _ 1 h, _root_.one_smul]
+
+/-- The coefficient in which a vector `a` has exponent one is additive in `a`. -/
+theorem coeff_optionElim_add_of_exponent_one (a b : M) (m : ι → M) (f : M →ₚₗ[R] N)
+    (k : ι →₀ ℕ) :
+    coeff R N (Option.elim' (a + b) m) f (k.optionElim 1) =
+      coeff R N (Option.elim' a m) f (k.optionElim 1) +
+        coeff R N (Option.elim' b m) f (k.optionElim 1) := by
+  rw [coeff_optionElim_add, Finset.Nat.sum_antidiagonal_succ, Finset.Nat.antidiagonal_zero,
+    Finset.sum_singleton, coeff_optionElim_zero, coeff_optionElim_optionElim_zero, add_comm]
 
 /-- A polynomial law is determined by its coefficients on families indexed by `Fin n`. -/
 theorem ext_coeff {f g : M →ₚₗ[R] N}
