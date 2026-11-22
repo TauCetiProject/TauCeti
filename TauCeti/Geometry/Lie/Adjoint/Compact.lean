@@ -32,8 +32,8 @@ contains a copy of `so(3) ≅ 𝔰𝔲(2)`. Connectedness is not required.
   vanishes exactly on the centre.
 * `TauCeti.Lie.killingForm_derivedSeries_one_self_neg_of_compactSpace_of_ne_zero`:
   the derived algebra has negative-definite Killing form.
-* `TauCeti.Lie.exists_injective_lieHom_so_of_compactSpace`: a non-abelian Lie algebra of a compact
-  Lie group receives an injective homomorphism from `so(3) ≅ 𝔰𝔲(2)`.
+* `TauCeti.Lie.exists_injective_lieHom_soThree_of_compactSpace`: a non-abelian Lie algebra of a
+  compact Lie group receives an injective homomorphism from `so(3) ≅ 𝔰𝔲(2)`.
 
 ## References
 
@@ -135,11 +135,11 @@ theorem killingForm_derivedSeries_one_self_neg_of_compactSpace_of_ne_zero
 /-- **A non-abelian Lie algebra of a compact Lie group contains `so(3) ≅ 𝔰𝔲(2)`.** If the Lie
 algebra of a compact finite-dimensional real smooth Lie group is not abelian, it receives an
 injective Lie algebra homomorphism from `so(3)`. -/
-theorem exists_injective_lieHom_so_of_compactSpace
+theorem exists_injective_lieHom_soThree_of_compactSpace
     (hG : ¬IsLieAbelian (LeftInvariantDerivation I G)) :
     ∃ f : Orthogonal.so (Fin 3) ℝ →ₗ⁅ℝ⁆ LeftInvariantDerivation I G, Function.Injective f := by
   obtain ⟨B, hinv, hsymm, hpos, _⟩ :=
     exists_posDef_orthogonal_derivedSeries_one_eq_center_of_compactSpace (I := I) (G := G)
-  exact B.exists_injective_lieHom_so hsymm hpos hinv hG
+  exact B.exists_injective_lieHom_soThree hsymm hpos hinv hG
 
 end TauCeti.Lie

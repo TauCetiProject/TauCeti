@@ -87,22 +87,17 @@ theorem soThreeLieHom_soThreeEquiv (u : Fin 3 → R) :
 /-- The homomorphism `soThreeLieHom` sends the basis element `êᵢ` to `aᵢ`. -/
 theorem soThreeLieHom_soThreeEquiv_single (i : Fin 3) :
     soThreeLieHom a h₀ h₁ h₂ (soThreeEquiv R (Pi.single i 1)) = a i := by
-  rw [soThreeLieHom_soThreeEquiv]
-  simp [Pi.single_apply]
+  rw [soThreeLieHom_apply, LinearEquiv.symm_apply_apply, Fintype.linearCombination_apply_single,
+    one_smul]
 
 /-- **Lie algebra homomorphisms out of `so(3)` are determined by the images of `ê₀, ê₁, ê₂`.** -/
 theorem soThree_lieHom_ext {f g : so (Fin 3) R →ₗ⁅R⁆ L}
     (h : ∀ i, f (soThreeEquiv R (Pi.single i 1)) = g (soThreeEquiv R (Pi.single i 1))) :
-    f = g := by
-  refine LieHom.ext fun A ↦ ?_
-  obtain ⟨u, rfl⟩ := (soThreeEquiv R).surjective A
-  -- `û = ∑ᵢ uᵢ • êᵢ`, by linearity of the hat map.
-  have hu : soThreeEquiv R u = ∑ i, u i • soThreeEquiv R (Pi.single i 1) := by
-    simp_rw [← map_smul, ← map_sum]
-    congr 1
-    ext j
-    simp [Finset.sum_apply, Pi.single_apply]
-  simp [hu, map_sum, h]
+    f = g :=
+  -- The `êᵢ` are the image of the standard basis under the hat map.
+  LieHom.ext <| LinearMap.congr_fun <|
+    ((Pi.basisFun R (Fin 3)).map (soThreeEquiv R)).ext (f₁ := (f : so (Fin 3) R →ₗ[R] L))
+      (f₂ := g) fun i ↦ by simpa using h i
 
 /-- **`soThreeLieHom` is injective exactly when `a₀, a₁, a₂` are linearly independent.** -/
 theorem injective_soThreeLieHom_iff :

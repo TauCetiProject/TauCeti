@@ -71,6 +71,10 @@ The root plane of `so(3)` and its height Hessian are worked out in
   coordinates.
 * `TauCeti.IsRootPlane.le_orthogonal`: for an invariant form, root planes with
   `α(H)² ≠ α'(H)²` for some `H ∈ t` are orthogonal.
+* `TauCeti.lie_mem_of_lie_eq_smul`: if every `H ∈ t` rotates a pair `x, y` by `α(H)`
+  (`⁅H, x⁆ = α(H) y`, `⁅H, y⁆ = -α(H) x`, as `v, J v` on a root plane) and `t` contains every
+  element commuting with it, then `⁅x, y⁆ ∈ t`; an invariant form pairs `H ∈ t` with `⁅x, y⁆` to
+  `α(H) B(y, y)` (`LinearMap.BilinForm.lieInvariant.apply_lie_eq_mul_of_lie_eq_smul`).
 * `TauCeti.IsRootPlane.mem_lieAnnihilator_iff`: a root plane meets the stabilizer of `B p` only
   in `0` when `α(p) ≠ 0`, and lies in it when `α(p) = 0`.
 
@@ -103,6 +107,27 @@ structure IsRootPlane (B : LinearMap.BilinForm R L) (t : Submodule R L) (α : Du
   apply_left (v w : E) : B (J v) w = -B v (J w)
   /-- Every `H ∈ t` acts on the plane by `α(H) J`. -/
   lie_apply (H : t) (v : E) : ⁅(H : L), (v : L)⁆ = α H • (J v : L)
+
+/-! ### Root pairs -/
+
+section RootPair
+
+variable {t : Submodule R L} {α : Dual R t} {x y : L}
+
+/-- If every `H ∈ t` rotates the pair `x, y` by `α(H)`, then `⁅x, y⁆` commutes with `t`. -/
+theorem lie_lie_eq_zero_of_lie_eq_smul (hx : ∀ H : t, ⁅(H : L), x⁆ = α H • y)
+    (hy : ∀ H : t, ⁅(H : L), y⁆ = -(α H • x)) (H : t) : ⁅(H : L), ⁅x, y⁆⁆ = 0 := by
+  rw [leibniz_lie, hx, hy]
+  simp
+
+/-- If every `H ∈ t` rotates the pair `x, y` by `α(H)`, and `t` contains every element commuting
+with it, then `⁅x, y⁆ ∈ t`. -/
+theorem lie_mem_of_lie_eq_smul (ht : ∀ z : L, (∀ H : t, ⁅(H : L), z⁆ = 0) → z ∈ t)
+    (hx : ∀ H : t, ⁅(H : L), x⁆ = α H • y) (hy : ∀ H : t, ⁅(H : L), y⁆ = -(α H • x)) :
+    ⁅x, y⁆ ∈ t :=
+  ht _ (lie_lie_eq_zero_of_lie_eq_smul hx hy)
+
+end RootPair
 
 namespace IsRootPlane
 
@@ -273,3 +298,18 @@ end Stabilizer
 end IsRootPlane
 
 end TauCeti
+
+namespace LinearMap.BilinForm.lieInvariant
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] {B : LinearMap.BilinForm R L}
+  {t : Submodule R L} {α : Dual R t} {x y : L}
+
+/-- If every `H ∈ t` rotates the pair `x, y` by `α(H)`, then an invariant form pairs `H` with
+`⁅x, y⁆` to `α(H) B(y, y)`. -/
+theorem apply_lie_eq_mul_of_lie_eq_smul (hB : B.lieInvariant L)
+    (hx : ∀ H : t, ⁅(H : L), x⁆ = α H • y) (H : t) : B H ⁅x, y⁆ = α H * B y y := by
+  have h := hB x H y
+  simp [← lie_skew x (H : L), hx] at h
+  exact h.symm
+
+end LinearMap.BilinForm.lieInvariant
