@@ -276,19 +276,18 @@ theorem subtype_comp_toNonUnitalStarSubalgebraEquiv :
 
 /-- Every closed two-sided ideal of a star-ordered C⋆-algebra inherits the `StarOrderedRing`
 structure from the ambient algebra. -/
-instance instStarOrderedRing [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I where
-  le_iff x y := by
-    let e := I.toNonUnitalStarSubalgebraEquiv
-    have hle : x ≤ y ↔ e x ≤ e y := by
-      simp only [← Subtype.coe_le_coe, e, coe_toNonUnitalStarSubalgebraEquiv_apply]
-    have hcl : (AddSubmonoid.closure (Set.range fun s : I => star s * s)).map
-        (e : I →+ I.toNonUnitalStarSubalgebra) =
-        AddSubmonoid.closure (Set.range fun s : I.toNonUnitalStarSubalgebra => star s * s) := by
-      rw [AddMonoidHom.map_mclosure, ← Set.range_comp, ← (EquivLike.surjective e).range_comp]
-      simp [Function.comp_def, map_star]
-    rw [hle, StarOrderedRing.le_iff, (EquivLike.surjective e).exists]
-    refine exists_congr fun p => and_congr ?_ (by rw [← map_add, (EquivLike.injective e).eq_iff])
-    simp [← hcl, AddSubmonoid.mem_map, (EquivLike.injective e).eq_iff]
+instance instStarOrderedRing [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I :=
+  StarOrderedRing.of_nonneg_iff'
+    (fun h z => Subtype.coe_le_coe.mp (add_le_add_right (Subtype.coe_le_coe.mpr h) (z : A)))
+    fun x => by
+      let e := I.toNonUnitalStarSubalgebraEquiv
+      have _ : StarOrderedRing I.toNonUnitalStarSubalgebra :=
+        Subtype.starOrderedRing (𝕜 := ℂ) I.toNonUnitalStarSubalgebra
+      have hx : 0 ≤ x ↔ 0 ≤ e x := by
+        simp only [← Subtype.coe_le_coe, ZeroMemClass.coe_zero, e,
+          coe_toNonUnitalStarSubalgebraEquiv_apply]
+      rw [hx, _root_.CStarAlgebra.nonneg_iff_eq_star_mul_self, (EquivLike.surjective e).exists]
+      exact exists_congr fun s => by rw [← map_star, ← map_mul, (EquivLike.injective e).eq_iff]
 
 /-- The nonunital continuous functional calculus of an element in a closed two-sided ideal of a
 C⋆-algebra stays in the ideal. -/

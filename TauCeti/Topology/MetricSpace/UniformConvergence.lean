@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.Topology.UniformSpace.Ascoli
+import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
 # Pointwise closure extension and compact uniform convergence for eventually Lipschitz families
@@ -66,7 +67,8 @@ theorem tendstoUniformlyOn_of_lipschitzOnWith {l : Filter ι} {F : ι → X → 
       fun j => j.property).equicontinuousOn
   have hunif : TendstoUniformlyOn (fun j : S => F j.val) f (l.comap (↑)) s :=
     heq.tendstoUniformlyOn_of_tendsto hs fun x hx => (hpt x hx).comp tendsto_comap
-  exact fun u hu => by rw [← hmap, eventually_map]; exact hunif u hu
+  rw [← hmap]
+  exact tendstoUniformlyOn_map_iff.mpr hunif
 
 /-- If a family `F : ι → X → Y` is eventually `K`-Lipschitz along `l : Filter ι` and converges
 pointwise to `f` on a compact set `s`, then `F` converges uniformly to `f` on `s` along `l`. -/
