@@ -10,7 +10,6 @@ public import TauCeti.MeasureTheory.Measure.NNReal
 public import TauCeti.Probability.PointProcess.Poisson.Independence
 public import TauCeti.Probability.PointProcess.Poisson.Marking
 public import TauCeti.Probability.PointProcess.Poisson.Splitting
-import Mathlib.Data.Bool.Set
 import Mathlib.Probability.Independence.InfinitePi
 import TauCeti.MeasureTheory.MeasurableSpace.Embedding
 import TauCeti.MeasureTheory.Measure.Measurability
@@ -44,11 +43,10 @@ Borel space:
   (`IsPoissonRandomMeasure.exists_bernoulli_thinning_smul_nnvolume`).
 * Connecting the general marking and thinning results in `Poisson.Marking` with the temporal
   count-splitting API in `Poisson.Splitting` yields simultaneous count-path additivity,
-  interval and increment Poisson count laws, zero-rate boundary vanishing, and existential
-  temporal thinning bundles (`exists_independent_temporal_thinning`,
-  `exists_independent_temporal_thinning_const`, `exists_independent_temporal_thinning_smul`)
-  carrying independent complete natural count paths and simultaneous all-time count-path
-  additivity.
+  interval and increment Poisson count laws, and temporal thinning bundles
+  (`exists_independent_temporal_thinning`, `exists_independent_temporal_thinning_const`,
+  `exists_independent_temporal_thinning_smul`) carrying independent complete natural count paths
+  and simultaneous all-time count-path additivity.
 
 ## References
 
@@ -130,151 +128,6 @@ theorem hasLaw_nat_count_sub_of_compProd [IsLocallyFiniteMeasure Λ] [IsFiniteKe
       (Λ.compProd_Ioc_prod_lt_top κ B 0 t)
 
 end CoupledTemporal
-
-section BernoulliBoundary
-
-/-- Zero-intensity boundary case for an arbitrary marked temporal Poisson random measure: whenever
-the selected cylinder `univ ×ˢ B` has zero intensity, the `B`-projection vanishes almost surely and
-its cumulative count path is identically zero simultaneously at all times. -/
-theorem ae_map_fst_restrict_univ_prod_and_nat_count_eq_zero
-    {E : Type*} [MeasurableSpace E] {Γ : Measure (ℝ≥0 × E)} {M : Ω → Measure (ℝ≥0 × E)}
-    (hM : IsPoissonRandomMeasure P M Γ) {B : Set E} (hzero : Γ (univ ×ˢ B) = 0) :
-    (∀ᵐ ω ∂P, ((M ω).restrict (univ ×ˢ B)).map Prod.fst = 0) ∧
-    (∀ᵐ ω ∂P, ∀ t : ℝ≥0, ⌊(M ω (Ioc 0 t ×ˢ B)).toNNReal⌋₊ = 0) :=
-  ⟨hM.ae_map_fst_restrict_univ_prod_eq_zero hzero,
-    hM.ae_nat_count_prod_eq_zero (measure_mono_null (prod_mono (subset_univ _) Subset.rfl) hzero)⟩
-
-/-- Zero-rate constant-Bernoulli boundary case for any scaled intensity `r • Λ` (in particular
-homogeneous `r • nnvolume`): whenever the effective rate of colour `b` vanishes (covering `r = 0`,
-`b = true` with `p = 0`, and `b = false` with `p = 1`), the `b`-projection vanishes almost surely
-and its cumulative count path is identically zero simultaneously at all times. -/
-theorem ae_map_fst_restrict_singleton_and_nat_count_eq_zero_of_const_bernoulliMeasure_smul
-    {r : ℝ≥0} {p : unitInterval} {M : Ω → Measure (ℝ≥0 × Bool)}
-    (hM : IsPoissonRandomMeasure P M
-      (((r : ℝ≥0∞) • Λ).prod (bernoulliMeasure true false p)))
-    (b : Bool)
-    (hzero : r * (if b then unitInterval.toNNReal p else 1 - unitInterval.toNNReal p) = 0) :
-    (∀ᵐ ω ∂P, ((M ω).restrict (univ ×ˢ {b})).map Prod.fst = 0) ∧
-    (∀ᵐ ω ∂P, ∀ t : ℝ≥0, ⌊(M ω (Ioc 0 t ×ˢ {b})).toNNReal⌋₊ = 0) := by
-  apply hM.ae_map_fst_restrict_univ_prod_and_nat_count_eq_zero
-  rw [Measure.prod_prod, smul_apply, smul_eq_mul, bernoulliMeasure_apply_singleton_bool]
-  rcases mul_eq_zero.mp hzero with h | h <;> simp [h]
-
-end BernoulliBoundary
-
-section Existential
-
-/-- **Independent time-dependent thinning of an uncoloured temporal Poisson random measure.**
-Any Poisson random measure `N` on `ℝ≥0` with locally finite intensity `Λ` admits a
-measure-preserving extension carrying two independent thinned Poisson random measures with
-intensities `Λ.withDensity p` and `Λ.withDensity (1 - p)`, independent complete natural count
-paths, almost-sure measure additivity, and simultaneous natural count-path additivity at all
-times `t : ℝ≥0`. Endpoint values `0` and `1` and atomic intensities are allowed. -/
-theorem exists_independent_temporal_thinning [IsLocallyFiniteMeasure Λ]
-    (h : IsPoissonRandomMeasure P N Λ) {p : ℝ≥0 → unitInterval} (hp : Measurable p) :
-    ∃ P' : Measure (Ω × Measure (ℝ≥0 × Bool)),
-      MeasurePreserving Prod.fst P' P ∧
-      IndepFun (fun q => (q.2.restrict (univ ×ˢ {true})).map Prod.fst)
-        (fun q => (q.2.restrict (univ ×ˢ {false})).map Prod.fst) P' ∧
-      IndepFun (fun q (t : ℝ≥0) => ⌊(q.2 (Ioc 0 t ×ˢ {true})).toNNReal⌋₊)
-        (fun q (t : ℝ≥0) => ⌊(q.2 (Ioc 0 t ×ˢ {false})).toNNReal⌋₊) P' ∧
-      IsPoissonRandomMeasure P' (fun q => (q.2.restrict (univ ×ˢ {true})).map Prod.fst)
-        (Λ.withDensity fun x => (unitInterval.toNNReal (p x) : ℝ≥0∞)) ∧
-      IsPoissonRandomMeasure P' (fun q => (q.2.restrict (univ ×ˢ {false})).map Prod.fst)
-        (Λ.withDensity fun x => (unitInterval.toNNReal (unitInterval.symm (p x)) : ℝ≥0∞)) ∧
-      (∀ᵐ q ∂P',
-        ((q.2.restrict (univ ×ˢ {true})).map Prod.fst) +
-          ((q.2.restrict (univ ×ˢ {false})).map Prod.fst) = N q.1) ∧
-      (∀ᵐ q ∂P', ∀ t : ℝ≥0,
-        ⌊(N q.1 (Ioc 0 t)).toNNReal⌋₊ =
-          ⌊(q.2 (Ioc 0 t ×ˢ {true})).toNNReal⌋₊ +
-            ⌊(q.2 (Ioc 0 t ×ˢ {false})).toNNReal⌋₊) := by
-  let := h.isProbabilityMeasure
-  let κ : Kernel ℝ≥0 Bool := Kernel.bernoulli true false hp
-  let P' : Measure (Ω × Measure (ℝ≥0 × Bool)) := P ⊗ₘ (κ.marking.comap N h.measurable)
-  have hmp : MeasurePreserving Prod.fst P' P :=
-    ⟨measurable_fst, Measure.fst_compProd P (κ.marking.comap N h.measurable)⟩
-  have hfin : ∀ n, Λ (compactCovering ℝ≥0 n) < ∞ :=
-    fun n => (isCompact_compactCovering ℝ≥0 n).measure_lt_top
-  have hM : IsPoissonRandomMeasure P' Prod.snd (Λ ⊗ₘ κ) :=
-    h.isPoissonRandomMeasure_compProd_marking hfin
-  have hproj : ∀ᵐ q ∂P', q.2.map Prod.fst = N q.1 :=
-    h.ae_map_fst_compProd_marking hfin
-  obtain ⟨hind, htrue, hfalse, hadd⟩ :=
-    hM.indepFun_and_isPoissonRandomMeasure_of_compProd_bernoulli hproj
-  have hcount : ∀ᵐ q ∂P', ∀ t : ℝ≥0,
-      ⌊(N q.1 (Ioc 0 t)).toNNReal⌋₊ =
-        ⌊(q.2 (Ioc 0 t ×ˢ {true})).toNNReal⌋₊ +
-          ⌊(q.2 (Ioc 0 t ×ˢ {false})).toNNReal⌋₊ := by
-    simpa only [Bool.compl_singleton, Bool.not_true] using
-      hM.ae_nat_count_eq_add_compl_of_compProd hproj (measurableSet_singleton true)
-  exact ⟨P', hmp, hind, hM.indepFun_nat_count_prod_singleton_bool, htrue, hfalse, hadd, hcount⟩
-
-/-- **Independent constant `p`-thinning of an uncoloured temporal Poisson random measure.**
-Any Poisson random measure `N` on `ℝ≥0` with locally finite intensity `Λ` and any retention
-probability `p : unitInterval` (including `p = 0, 1`) admit a measure-preserving extension
-carrying two independent Poisson random measures with intensities `p • Λ` and `(1 - p) • Λ`,
-independent complete count paths, almost-sure measure additivity, and simultaneous natural
-count-path additivity at every time `t : ℝ≥0`. -/
-theorem exists_independent_temporal_thinning_const [IsLocallyFiniteMeasure Λ]
-    (h : IsPoissonRandomMeasure P N Λ) (p : unitInterval) :
-    ∃ P' : Measure (Ω × Measure (ℝ≥0 × Bool)),
-      MeasurePreserving Prod.fst P' P ∧
-      IndepFun (fun q => (q.2.restrict (univ ×ˢ {true})).map Prod.fst)
-        (fun q => (q.2.restrict (univ ×ˢ {false})).map Prod.fst) P' ∧
-      IndepFun (fun q (t : ℝ≥0) => ⌊(q.2 (Ioc 0 t ×ˢ {true})).toNNReal⌋₊)
-        (fun q (t : ℝ≥0) => ⌊(q.2 (Ioc 0 t ×ˢ {false})).toNNReal⌋₊) P' ∧
-      IsPoissonRandomMeasure P' (fun q => (q.2.restrict (univ ×ˢ {true})).map Prod.fst)
-        ((unitInterval.toNNReal p : ℝ≥0∞) • Λ) ∧
-      IsPoissonRandomMeasure P' (fun q => (q.2.restrict (univ ×ˢ {false})).map Prod.fst)
-        (((1 - unitInterval.toNNReal p : ℝ≥0) : ℝ≥0∞) • Λ) ∧
-      (∀ᵐ q ∂P',
-        ((q.2.restrict (univ ×ˢ {true})).map Prod.fst) +
-          ((q.2.restrict (univ ×ˢ {false})).map Prod.fst) = N q.1) ∧
-      (∀ᵐ q ∂P', ∀ t : ℝ≥0,
-        ⌊(N q.1 (Ioc 0 t)).toNNReal⌋₊ =
-          ⌊(q.2 (Ioc 0 t ×ˢ {true})).toNNReal⌋₊ +
-            ⌊(q.2 (Ioc 0 t ×ˢ {false})).toNNReal⌋₊) := by
-  obtain ⟨P', hmp, hind, hindc, htrue, hfalse, hadd, hcount⟩ :=
-    h.exists_independent_temporal_thinning (p := fun _ => p) measurable_const
-  rw [withDensity_const] at htrue hfalse
-  rw [unitInterval.toNNReal_symm] at hfalse
-  exact ⟨P', hmp, hind, hindc, htrue, hfalse, hadd, hcount⟩
-
-/-- **Independent constant `p`-thinning of a scaled temporal Poisson random measure.** Any Poisson
-random measure `N` on `ℝ≥0` of intensity `r • Λ` with locally finite `Λ` (in particular
-homogeneous `r • nnvolume`, including `r = 0`) and any retention probability `p : unitInterval`
-(including `p = 0, 1`) admit a measure-preserving extension carrying two independent Poisson random
-measures of intensities `(r * p) • Λ` and `(r * (1 - p)) • Λ` with independent complete count
-paths, almost-sure measure additivity, and simultaneous natural count-path additivity at every
-time `t : ℝ≥0`. -/
-theorem exists_independent_temporal_thinning_smul [IsLocallyFiniteMeasure Λ] {r : ℝ≥0}
-    (h : IsPoissonRandomMeasure P N ((r : ℝ≥0∞) • Λ)) (p : unitInterval) :
-    ∃ P' : Measure (Ω × Measure (ℝ≥0 × Bool)),
-      MeasurePreserving Prod.fst P' P ∧
-      IndepFun (fun q => (q.2.restrict (univ ×ˢ {true})).map Prod.fst)
-        (fun q => (q.2.restrict (univ ×ˢ {false})).map Prod.fst) P' ∧
-      IndepFun (fun q (t : ℝ≥0) => ⌊(q.2 (Ioc 0 t ×ˢ {true})).toNNReal⌋₊)
-        (fun q (t : ℝ≥0) => ⌊(q.2 (Ioc 0 t ×ˢ {false})).toNNReal⌋₊) P' ∧
-      IsPoissonRandomMeasure P' (fun q => (q.2.restrict (univ ×ˢ {true})).map Prod.fst)
-        (((r * unitInterval.toNNReal p : ℝ≥0) : ℝ≥0∞) • Λ) ∧
-      IsPoissonRandomMeasure P' (fun q => (q.2.restrict (univ ×ˢ {false})).map Prod.fst)
-        (((r * (1 - unitInterval.toNNReal p) : ℝ≥0) : ℝ≥0∞) • Λ) ∧
-      (∀ᵐ q ∂P',
-        ((q.2.restrict (univ ×ˢ {true})).map Prod.fst) +
-          ((q.2.restrict (univ ×ˢ {false})).map Prod.fst) = N q.1) ∧
-      (∀ᵐ q ∂P', ∀ t : ℝ≥0,
-        ⌊(N q.1 (Ioc 0 t)).toNNReal⌋₊ =
-          ⌊(q.2 (Ioc 0 t ×ˢ {true})).toNNReal⌋₊ +
-            ⌊(q.2 (Ioc 0 t ×ˢ {false})).toNNReal⌋₊) := by
-  have : IsLocallyFiniteMeasure ((r : ℝ≥0∞) • Λ) :=
-    Λ.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
-  obtain ⟨P', hmp, hind, hindc, htrue, hfalse, hadd, hcount⟩ :=
-    h.exists_independent_temporal_thinning_const p
-  rw [smul_smul, ← ENNReal.coe_mul, mul_comm] at htrue hfalse
-  exact ⟨P', hmp, hind, hindc, htrue, hfalse, hadd, hcount⟩
-
-end Existential
 
 end TauCeti.Probability.IsPoissonRandomMeasure
 
@@ -480,6 +333,112 @@ theorem IsPoissonRandomMeasure.exists_bernoulli_thinning_smul_nnvolume {Ω : Typ
   obtain ⟨η, hη, h₁, h₂, hind, hadd⟩ := hN.exists_bernoulli_thinning p
   rw [smul_smul, ← ENNReal.coe_mul] at h₁ h₂
   exact ⟨η, hη, h₁, h₂, hind, hadd⟩
+
+/-- **Independent time-dependent thinning of an uncoloured temporal Poisson random measure.**
+Any Poisson random measure `N` on `ℝ≥0` with locally finite intensity `Λ` admits a
+realization-level Markov kernel `η : Kernel (Measure ℝ≥0) (Measure ℝ≥0 × Measure ℝ≥0)` whose two
+outputs under `P ⊗ₘ η.comap N hN.measurable` are independent thinned Poisson random measures with
+intensities `Λ.withDensity p` and `Λ.withDensity (1 - p)`, independent complete natural count
+paths, almost-sure measure additivity, and simultaneous natural count-path additivity at all
+times `t : ℝ≥0`. Endpoint values `0` and `1` and atomic intensities are allowed. -/
+theorem IsPoissonRandomMeasure.exists_independent_temporal_thinning {Ω : Type*}
+    [MeasurableSpace Ω] {P : Measure Ω} {N : Ω → Measure ℝ≥0} {Λ : Measure ℝ≥0}
+    [IsLocallyFiniteMeasure Λ] (hN : IsPoissonRandomMeasure P N Λ)
+    {p : ℝ≥0 → unitInterval} (hp : Measurable p) :
+    ∃ η : Kernel (Measure ℝ≥0) (Measure ℝ≥0 × Measure ℝ≥0),
+      IsMarkovKernel η ∧
+      MeasurePreserving Prod.fst (P ⊗ₘ η.comap N hN.measurable) P ∧
+      IndepFun (fun q ↦ q.2.1) (fun q ↦ q.2.2) (P ⊗ₘ η.comap N hN.measurable) ∧
+      IndepFun (fun q (t : ℝ≥0) ↦ ⌊(q.2.1 (Ioc 0 t)).toNNReal⌋₊)
+        (fun q (t : ℝ≥0) ↦ ⌊(q.2.2 (Ioc 0 t)).toNNReal⌋₊) (P ⊗ₘ η.comap N hN.measurable) ∧
+      IsPoissonRandomMeasure (P ⊗ₘ η.comap N hN.measurable) (fun q ↦ q.2.1)
+        (Λ.withDensity fun x ↦ (unitInterval.toNNReal (p x) : ℝ≥0∞)) ∧
+      IsPoissonRandomMeasure (P ⊗ₘ η.comap N hN.measurable) (fun q ↦ q.2.2)
+        (Λ.withDensity fun x ↦ ((1 - unitInterval.toNNReal (p x) : ℝ≥0) : ℝ≥0∞)) ∧
+      (∀ᵐ q ∂(P ⊗ₘ η.comap N hN.measurable), q.2.1 + q.2.2 = N q.1) ∧
+      (∀ᵐ q ∂(P ⊗ₘ η.comap N hN.measurable), ∀ t : ℝ≥0,
+        ⌊(N q.1 (Ioc 0 t)).toNNReal⌋₊ =
+          ⌊(q.2.1 (Ioc 0 t)).toNNReal⌋₊ + ⌊(q.2.2 (Ioc 0 t)).toNNReal⌋₊) := by
+  let := hN.isProbabilityMeasure
+  obtain ⟨η, hη, h₁, h₂, hind, hadd⟩ := hN.exists_bernoulli_thinning_of_measurable hp
+  have hmp : MeasurePreserving Prod.fst (P ⊗ₘ η.comap N hN.measurable) P :=
+    ⟨measurable_fst, Measure.fst_compProd P (η.comap N hN.measurable)⟩
+  have hindc := hind.natFloor_toNNReal (A := fun t : ℝ≥0 ↦ Ioc 0 t) (B := fun t : ℝ≥0 ↦ Ioc 0 t)
+    (fun _ ↦ measurableSet_Ioc) (fun _ ↦ measurableSet_Ioc)
+  have hle {f : ℝ≥0 → ℝ≥0} (hf : ∀ x, f x ≤ 1) (n : ℕ) :
+      (Λ.withDensity fun x ↦ (f x : ℝ≥0∞)) (Ioc 0 (n : ℝ≥0)) < ∞ := by
+    rw [withDensity_apply _ measurableSet_Ioc]
+    exact (setLIntegral_mono' measurableSet_Ioc fun x _ ↦
+      ENNReal.coe_le_one_iff.mpr (hf x)).trans_lt
+      (by simpa using measure_Ioc_lt_top (μ := Λ) (a := 0) (b := (n : ℝ≥0)))
+  have hcount : ∀ᵐ q ∂(P ⊗ₘ η.comap N hN.measurable), ∀ t : ℝ≥0,
+      ⌊(N q.1 (Ioc 0 t)).toNNReal⌋₊ =
+        ⌊(q.2.1 (Ioc 0 t)).toNNReal⌋₊ + ⌊(q.2.2 (Ioc 0 t)).toNNReal⌋₊ :=
+    (h₁.ae_forall_nat_count_add_eq h₂ (hle fun x ↦ unitInterval.toNNReal_le_one _)
+      (hle fun _ ↦ tsub_le_self) hadd).mono fun _ hq t ↦ (hq t).symm
+  exact ⟨η, hη, hmp, hind, hindc, h₁, h₂, hadd, hcount⟩
+
+/-- **Independent constant `p`-thinning of an uncoloured temporal Poisson random measure.**
+Any Poisson random measure `N` on `ℝ≥0` with locally finite intensity `Λ` and any retention
+probability `p : unitInterval` (including `p = 0, 1`) admit a realization-level Markov kernel
+`η : Kernel (Measure ℝ≥0) (Measure ℝ≥0 × Measure ℝ≥0)` whose two outputs under
+`P ⊗ₘ η.comap N hN.measurable` are independent Poisson random measures with intensities `p • Λ`
+and `(1 - p) • Λ`, independent complete count paths, almost-sure measure additivity, and
+simultaneous natural count-path additivity at every time `t : ℝ≥0`. -/
+theorem IsPoissonRandomMeasure.exists_independent_temporal_thinning_const {Ω : Type*}
+    [MeasurableSpace Ω] {P : Measure Ω} {N : Ω → Measure ℝ≥0} {Λ : Measure ℝ≥0}
+    [IsLocallyFiniteMeasure Λ] (hN : IsPoissonRandomMeasure P N Λ) (p : unitInterval) :
+    ∃ η : Kernel (Measure ℝ≥0) (Measure ℝ≥0 × Measure ℝ≥0),
+      IsMarkovKernel η ∧
+      MeasurePreserving Prod.fst (P ⊗ₘ η.comap N hN.measurable) P ∧
+      IndepFun (fun q ↦ q.2.1) (fun q ↦ q.2.2) (P ⊗ₘ η.comap N hN.measurable) ∧
+      IndepFun (fun q (t : ℝ≥0) ↦ ⌊(q.2.1 (Ioc 0 t)).toNNReal⌋₊)
+        (fun q (t : ℝ≥0) ↦ ⌊(q.2.2 (Ioc 0 t)).toNNReal⌋₊) (P ⊗ₘ η.comap N hN.measurable) ∧
+      IsPoissonRandomMeasure (P ⊗ₘ η.comap N hN.measurable) (fun q ↦ q.2.1)
+        ((unitInterval.toNNReal p : ℝ≥0∞) • Λ) ∧
+      IsPoissonRandomMeasure (P ⊗ₘ η.comap N hN.measurable) (fun q ↦ q.2.2)
+        (((1 - unitInterval.toNNReal p : ℝ≥0) : ℝ≥0∞) • Λ) ∧
+      (∀ᵐ q ∂(P ⊗ₘ η.comap N hN.measurable), q.2.1 + q.2.2 = N q.1) ∧
+      (∀ᵐ q ∂(P ⊗ₘ η.comap N hN.measurable), ∀ t : ℝ≥0,
+        ⌊(N q.1 (Ioc 0 t)).toNNReal⌋₊ =
+          ⌊(q.2.1 (Ioc 0 t)).toNNReal⌋₊ + ⌊(q.2.2 (Ioc 0 t)).toNNReal⌋₊) := by
+  obtain ⟨η, hη, hmp, hind, hindc, h₁, h₂, hadd, hcount⟩ :=
+    hN.exists_independent_temporal_thinning (p := fun _ ↦ p) measurable_const
+  rw [withDensity_const] at h₁ h₂
+  exact ⟨η, hη, hmp, hind, hindc, h₁, h₂, hadd, hcount⟩
+
+/-- **Independent constant `p`-thinning of a scaled temporal Poisson random measure.** Any Poisson
+random measure `N` on `ℝ≥0` of intensity `r • Λ` with locally finite `Λ` (in particular
+homogeneous `r • nnvolume`, including `r = 0`) and any retention probability `p : unitInterval`
+(including `p = 0, 1`) admit a realization-level Markov kernel
+`η : Kernel (Measure ℝ≥0) (Measure ℝ≥0 × Measure ℝ≥0)` whose two outputs under
+`P ⊗ₘ η.comap N hN.measurable` are independent Poisson random measures of intensities `(r * p) • Λ`
+and `(r * (1 - p)) • Λ` with independent complete count paths, almost-sure measure additivity, and
+simultaneous natural count-path additivity at every time `t : ℝ≥0`. -/
+theorem IsPoissonRandomMeasure.exists_independent_temporal_thinning_smul {Ω : Type*}
+    [MeasurableSpace Ω] {P : Measure Ω} {N : Ω → Measure ℝ≥0} {Λ : Measure ℝ≥0}
+    [IsLocallyFiniteMeasure Λ] {r : ℝ≥0}
+    (hN : IsPoissonRandomMeasure P N ((r : ℝ≥0∞) • Λ)) (p : unitInterval) :
+    ∃ η : Kernel (Measure ℝ≥0) (Measure ℝ≥0 × Measure ℝ≥0),
+      IsMarkovKernel η ∧
+      MeasurePreserving Prod.fst (P ⊗ₘ η.comap N hN.measurable) P ∧
+      IndepFun (fun q ↦ q.2.1) (fun q ↦ q.2.2) (P ⊗ₘ η.comap N hN.measurable) ∧
+      IndepFun (fun q (t : ℝ≥0) ↦ ⌊(q.2.1 (Ioc 0 t)).toNNReal⌋₊)
+        (fun q (t : ℝ≥0) ↦ ⌊(q.2.2 (Ioc 0 t)).toNNReal⌋₊) (P ⊗ₘ η.comap N hN.measurable) ∧
+      IsPoissonRandomMeasure (P ⊗ₘ η.comap N hN.measurable) (fun q ↦ q.2.1)
+        (((r * unitInterval.toNNReal p : ℝ≥0) : ℝ≥0∞) • Λ) ∧
+      IsPoissonRandomMeasure (P ⊗ₘ η.comap N hN.measurable) (fun q ↦ q.2.2)
+        (((r * (1 - unitInterval.toNNReal p) : ℝ≥0) : ℝ≥0∞) • Λ) ∧
+      (∀ᵐ q ∂(P ⊗ₘ η.comap N hN.measurable), q.2.1 + q.2.2 = N q.1) ∧
+      (∀ᵐ q ∂(P ⊗ₘ η.comap N hN.measurable), ∀ t : ℝ≥0,
+        ⌊(N q.1 (Ioc 0 t)).toNNReal⌋₊ =
+          ⌊(q.2.1 (Ioc 0 t)).toNNReal⌋₊ + ⌊(q.2.2 (Ioc 0 t)).toNNReal⌋₊) := by
+  have : IsLocallyFiniteMeasure ((r : ℝ≥0∞) • Λ) :=
+    Λ.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
+  obtain ⟨η, hη, hmp, hind, hindc, h₁, h₂, hadd, hcount⟩ :=
+    hN.exists_independent_temporal_thinning_const p
+  rw [smul_smul, ← ENNReal.coe_mul, mul_comm] at h₁ h₂
+  exact ⟨η, hη, hmp, hind, hindc, h₁, h₂, hadd, hcount⟩
 
 end Temporal
 

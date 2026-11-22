@@ -94,16 +94,4 @@ theorem bernoulli_apply_singleton_right {X E : Type*} [MeasurableSpace X] [Measu
     Kernel.bernoulli a b hp x {b} = (unitInterval.toNNReal (unitInterval.symm (p x)) : ENNReal) :=
   bernoulliMeasure_apply_of_notMem_of_mem (p x) hb hab rfl
 
-/-- Evaluating the Boolean Bernoulli kernel `Kernel.bernoulli true false hp` at `{b}` gives
-`p x` for `b = true` and `unitInterval.symm (p x)` for `b = false`. -/
-theorem bernoulli_apply_singleton_bool {X : Type*} [MeasurableSpace X]
-    {p : X → unitInterval} (hp : Measurable p) (x : X) (b : Bool) :
-    Kernel.bernoulli true false hp x {b} =
-      (unitInterval.toNNReal (if b then p x else unitInterval.symm (p x)) : ENNReal) := by
-  cases b
-  · simp only [Bool.false_eq_true, ↓reduceIte]
-    exact bernoulli_apply_singleton_right (measurableSet_singleton false) (by decide) hp x
-  · simp only [↓reduceIte]
-    exact bernoulli_apply_singleton_left (measurableSet_singleton true) (by decide) hp x
-
 end ProbabilityTheory.Kernel

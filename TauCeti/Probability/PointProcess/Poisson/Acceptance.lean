@@ -112,7 +112,8 @@ theorem IsPoissonRandomMeasure.acceptance_compProd_bernoulli [SFinite Λ]
     IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ {b})).map Prod.fst)
       (Λ.withDensity fun x ↦
         (unitInterval.toNNReal (if b then p x else unitInterval.symm (p x)) : ℝ≥0∞)) := by
-  simpa only [Kernel.bernoulli_apply_singleton_bool] using
+  simpa only [Kernel.bernoulli_apply, bernoulliMeasure_apply_singleton_bool,
+    ← unitInterval.toNNReal_symm, apply_ite unitInterval.toNNReal] using
     hM.map_fst_restrict_univ_prod_compProd (measurableSet_singleton b)
 
 /-- If a product-space Poisson random measure has zero intensity on `univ ×ˢ B`, then the

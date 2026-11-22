@@ -153,29 +153,13 @@ theorem ae_map_fst_restrict_univ_prod_add_compl_of_ae_map_fst
   filter_upwards [hproj] with ω hω
   rw [(M ω).map_fst_restrict_univ_prod_add_compl hB, hω]
 
-/-- **Independent mark-partition splitting of a marked Poisson random measure.** For any marked
-Poisson random measure `M` on `X × E` of intensity `Γ` whose ground projection equals `N` almost
-surely and any measurable mark set `B`, the projected restrictions to `B` and `Bᶜ` are independent
-Poisson random measures with intensities `(Γ.restrict (univ ×ˢ B)).map Prod.fst` and
-`(Γ.restrict (univ ×ˢ Bᶜ)).map Prod.fst` summing to `N` almost surely. -/
-theorem IsPoissonRandomMeasure.indepFun_and_isPoissonRandomMeasure_map_fst_restrict_univ_prod_compl
-    {Γ : Measure (X × E)} {M : Ω → Measure (X × E)}
-    (hM : IsPoissonRandomMeasure P M Γ)
-    (hproj : ∀ᵐ ω ∂P, (M ω).map Prod.fst = N ω)
-    {B : Set E} (hB : MeasurableSet B) :
-    IndepFun (fun ω => ((M ω).restrict (univ ×ˢ B)).map Prod.fst)
-      (fun ω => ((M ω).restrict (univ ×ˢ Bᶜ)).map Prod.fst) P ∧
-    IsPoissonRandomMeasure P (fun ω => ((M ω).restrict (univ ×ˢ B)).map Prod.fst)
-      ((Γ.restrict (univ ×ˢ B)).map Prod.fst) ∧
-    IsPoissonRandomMeasure P (fun ω => ((M ω).restrict (univ ×ˢ Bᶜ)).map Prod.fst)
-      ((Γ.restrict (univ ×ˢ Bᶜ)).map Prod.fst) ∧
+private theorem ae_map_fst_restrict_univ_prod_true_add_false_of_ae_map_fst
+    {M : Ω → Measure (X × Bool)} (hproj : ∀ᵐ ω ∂P, (M ω).map Prod.fst = N ω) :
     ∀ᵐ ω ∂P,
-      ((M ω).restrict (univ ×ˢ B)).map Prod.fst +
-        ((M ω).restrict (univ ×ˢ Bᶜ)).map Prod.fst = N ω :=
-  ⟨hM.indepFun_map_fst_restrict_univ_prod hB hB.compl disjoint_compl_right,
-    (hM.restrict (MeasurableSet.univ.prod hB)).map measurable_fst,
-    (hM.restrict (MeasurableSet.univ.prod hB.compl)).map measurable_fst,
-    ae_map_fst_restrict_univ_prod_add_compl_of_ae_map_fst hproj hB⟩
+      ((M ω).restrict (univ ×ˢ {true})).map Prod.fst +
+        ((M ω).restrict (univ ×ˢ {false})).map Prod.fst = N ω := by
+  simpa only [Bool.compl_singleton, Bool.not_true] using
+    ae_map_fst_restrict_univ_prod_add_compl_of_ae_map_fst hproj (measurableSet_singleton true)
 
 /-- **Independent location-dependent Bernoulli thinning from a marked Poisson realization.**
 Given any Poisson random measure `M` on `X × Bool` with intensity
@@ -194,14 +178,12 @@ theorem IsPoissonRandomMeasure.indepFun_and_isPoissonRandomMeasure_of_compProd_b
       (Λ.withDensity fun x => (unitInterval.toNNReal (unitInterval.symm (p x)) : ℝ≥0∞)) ∧
     ∀ᵐ ω ∂P,
       ((M ω).restrict (univ ×ˢ {true})).map Prod.fst +
-        ((M ω).restrict (univ ×ˢ {false})).map Prod.fst = N ω := by
-  have hsplit := hM.indepFun_and_isPoissonRandomMeasure_map_fst_restrict_univ_prod_compl
-    hproj (measurableSet_singleton true)
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · simpa only [Bool.compl_singleton, Bool.not_true] using hsplit.1
-  · simpa only [↓reduceIte] using hM.acceptance_compProd_bernoulli true
-  · simpa only [Bool.false_eq_true, ↓reduceIte] using hM.acceptance_compProd_bernoulli false
-  · simpa only [Bool.compl_singleton, Bool.not_true] using hsplit.2.2.2
+        ((M ω).restrict (univ ×ˢ {false})).map Prod.fst = N ω :=
+  ⟨hM.indepFun_map_fst_restrict_univ_prod (measurableSet_singleton true)
+      (measurableSet_singleton false) (disjoint_singleton.mpr (by decide)),
+    by simpa only [↓reduceIte] using hM.acceptance_compProd_bernoulli true,
+    by simpa only [Bool.false_eq_true, ↓reduceIte] using hM.acceptance_compProd_bernoulli false,
+    ae_map_fst_restrict_univ_prod_true_add_false_of_ae_map_fst hproj⟩
 
 /-- **Independent constant Bernoulli thinning from a marked Poisson realization.** Given any
 Poisson random measure `M` on `X × Bool` with product intensity
@@ -220,15 +202,13 @@ theorem IsPoissonRandomMeasure.indepFun_and_isPoissonRandomMeasure_of_prod_berno
       (((1 - unitInterval.toNNReal p : ℝ≥0) : ℝ≥0∞) • Λ) ∧
     ∀ᵐ ω ∂P,
       ((M ω).restrict (univ ×ˢ {true})).map Prod.fst +
-        ((M ω).restrict (univ ×ˢ {false})).map Prod.fst = N ω := by
-  have hsplit := hM.indepFun_and_isPoissonRandomMeasure_map_fst_restrict_univ_prod_compl
-    hproj (measurableSet_singleton true)
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · simpa only [Bool.compl_singleton, Bool.not_true] using hsplit.1
-  · simpa only [↓reduceIte] using hM.acceptance_univ_prod_singleton_of_bernoulliMeasure true
-  · simpa only [Bool.false_eq_true, ↓reduceIte] using
-      hM.acceptance_univ_prod_singleton_of_bernoulliMeasure false
-  · simpa only [Bool.compl_singleton, Bool.not_true] using hsplit.2.2.2
+        ((M ω).restrict (univ ×ˢ {false})).map Prod.fst = N ω :=
+  ⟨hM.indepFun_map_fst_restrict_univ_prod (measurableSet_singleton true)
+      (measurableSet_singleton false) (disjoint_singleton.mpr (by decide)),
+    by simpa only [↓reduceIte] using hM.acceptance_univ_prod_singleton_of_bernoulliMeasure true,
+    by simpa only [Bool.false_eq_true, ↓reduceIte] using
+      hM.acceptance_univ_prod_singleton_of_bernoulliMeasure false,
+    ae_map_fst_restrict_univ_prod_true_add_false_of_ae_map_fst hproj⟩
 
 /-- Zero-intensity mark boundary case: for any marked Poisson random measure `M` whose ground
 projection equals `N` almost surely and any measurable mark set `B` with `Γ (univ ×ˢ B) = 0`, the
@@ -274,14 +254,6 @@ variable {Ω Ω' X E : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω']
   [MeasurableSpace X] [StandardBorelSpace X] [MeasurableSpace E]
   {P : Measure Ω} {P' : Measure Ω'} {N : Ω → Measure X} {Λ : Measure X} {κ : Kernel X E}
 
-private theorem sigmaFinite_of_cover {X : Type*} [MeasurableSpace X] {Λ : Measure X}
-    {s : ℕ → Set X} (hcover : ⋃ n, s n = univ) (hΛ : ∀ n, Λ (s n) < ∞) : SigmaFinite Λ :=
-  sigmaFinite_iff.mpr ⟨{
-    set := s
-    set_mem := fun _ => mem_univ _
-    finite := hΛ
-    spanning := hcover }⟩
-
 private theorem ae_eq_sum_markingOfCover_enumeration
     (h : IsPoissonRandomMeasure P N Λ) {s : ℕ → Set X}
     (hs : ∀ n, MeasurableSet (s n)) (hcover : ⋃ n, s n = univ)
@@ -289,7 +261,9 @@ private theorem ae_eq_sum_markingOfCover_enumeration
     (hrec : ∀ μ : Measure X, μ.IsIntegerValued → (∀ n, μ (s n) ≠ ∞) →
       μ = Measure.sum fun n => (e μ n).elim 0 Measure.dirac) :
     ∀ᵐ ω ∂P, N ω = Measure.sum fun n => (e (N ω) n).elim 0 Measure.dirac := by
-  have : SigmaFinite Λ := sigmaFinite_of_cover hcover hΛ
+  have : SigmaFinite Λ :=
+    ({ set := s, set_mem := fun _ => mem_univ _, finite := hΛ, spanning := hcover } :
+      Λ.FiniteSpanningSetsIn univ).sigmaFinite
   have hfin : ∀ n, ∀ᵐ ω ∂P, N ω (s n) < ∞ := fun n => h.ae_lt_top (hs n) (hΛ n)
   filter_upwards [h.ae_isIntegerValued, ae_all_iff.mpr hfin] with ω hωint hωfin
   exact hrec (N ω) hωint fun n => (hωfin n).ne
@@ -303,7 +277,9 @@ theorem IsPoissonRandomMeasure.isPoissonRandomMeasure_comp_markingOfCover
     (hΛ : ∀ n, Λ (s n) < ∞) :
     IsPoissonRandomMeasure ((κ.markingOfCover hs hcover) ∘ₘ (P.map N)) id (Λ ⊗ₘ κ) := by
   let := h.isProbabilityMeasure
-  have : SigmaFinite Λ := sigmaFinite_of_cover hcover hΛ
+  have : SigmaFinite Λ :=
+    ({ set := s, set_mem := fun _ => mem_univ _, finite := hΛ, spanning := hcover } :
+      Λ.FiniteSpanningSetsIn univ).sigmaFinite
   obtain ⟨e, he, hrec, hmark⟩ := κ.exists_enumeration_markingOfCover hs hcover
   have hrep := ae_eq_sum_markingOfCover_enumeration h hs hcover hΛ hrec
   rw [hmark, Measure.bind_map h.measurable.aemeasurable
