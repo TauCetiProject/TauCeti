@@ -31,6 +31,8 @@ transform of `t⁻¹ f(t⁻¹)` at `s` to that of `f` at `1 - s`.
   `(0, ∞)`, convergence at one exponent gives convergence at every exponent.
 * `TauCeti.mellinConvergent_ofReal_of_support_subset_Icc`: a real function supported in a compact
   interval of `(0, ∞)` with `x ↦ f x / x` integrable on `(0, ∞)` converges at every exponent.
+* `TauCeti.differentiable_mellin_of_support_subset_Icc`: a locally integrable function supported
+  in a compact interval of `(0, ∞)` has an entire Mellin transform.
 * `TauCeti.mellinConvergent_iff_integrable_exp_smul`, `TauCeti.mellin_eq_integral_exp_smul`:
   absolute convergence and value of the Mellin transform in logarithmic coordinates.
 * `TauCeti.mellinConvergent_inv_smul_comp_inv`, `TauCeti.mellin_inv_smul_comp_inv`: the Mellin
@@ -166,5 +168,23 @@ theorem mellinConvergent_ofReal_of_support_subset_Icc {f : ℝ → ℝ} {a b : �
     MellinConvergent (fun x ↦ (f x : ℂ)) s :=
   ((mellinConvergent_ofReal_zero_iff f).mpr hfi).of_support_subset_Icc ha
     (by simpa only [Function.support, ne_eq, ofReal_eq_zero] using hf) s
+
+/-- A function supported in a compact interval `[a, b] ⊆ (0, ∞)` and locally integrable on
+`(0, ∞)` has an entire Mellin transform: it vanishes near `0` and near `∞`, so every exponent lies
+inside the strip of Mathlib's differentiability criterion. -/
+theorem differentiable_mellin_of_support_subset_Icc {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {f : ℝ → E} {a b : ℝ} (ha : 0 < a)
+    (hf : Function.support f ⊆ Icc a b) (hfi : LocallyIntegrableOn f (Ioi 0)) :
+    Differentiable ℂ (mellin f) := fun s ↦ by
+  have hzero : ∀ t, t < a ∨ b < t → f t = 0 := fun t ht ↦
+    Function.notMem_support.mp fun h ↦ by
+      obtain ⟨h1, h2⟩ := hf h
+      rcases ht with ht | ht <;> linarith
+  refine mellin_differentiableAt_of_isBigO_rpow (a := s.re + 1) (b := s.re - 1) hfi ?_
+    (by linarith) ?_ (by linarith)
+  · exact (Filter.EventuallyEq.isBigO (Filter.eventually_gt_atTop b |>.mono fun t ht ↦
+      hzero t (Or.inr ht))).trans (Asymptotics.isBigO_zero _ _)
+  · exact (Filter.EventuallyEq.isBigO (Filter.mem_of_superset (Ioo_mem_nhdsGT ha)
+      fun t ht ↦ hzero t (Or.inl ht.2))).trans (Asymptotics.isBigO_zero _ _)
 
 end TauCeti
