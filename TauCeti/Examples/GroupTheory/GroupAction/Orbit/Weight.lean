@@ -35,11 +35,10 @@ example : (⊥ : Subgroup (Perm (Fin 3))).orbitWeight ({0} : Set (Fin 3)) 0 = 2 
     · rintro rfl
       exact ⟨0, mem_orbit_self 0, rfl, rfl⟩
   have hout : (Quotient.mk (orbitRel (⊥ : Subgroup (Perm (Fin 3))) (Fin 3)) 0).out = 0 := by
-    obtain ⟨γ, hγ⟩ := orbitRel_apply.mp (Quotient.exact
-      (Quotient.out_eq (Quotient.mk (orbitRel (⊥ : Subgroup (Perm (Fin 3))) (Fin 3)) 0)))
-    have hγ' : γ • (0 : Fin 3) = _ := hγ
-    rw [Subsingleton.elim γ 1, one_smul] at hγ'
-    exact hγ'.symm
+    obtain ⟨γ, hγ⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact
+      (Quotient.out_eq (Quotient.mk (orbitRel (⊥ : Subgroup (Perm (Fin 3))) (Fin 3)) 0))))
+    rw [Subsingleton.elim γ 1, one_smul] at hγ
+    exact hγ.symm
   refine ⟨?_, by rw [Subgroup.orbitCount_def, hN, Set.ncard_singleton]⟩
   rw [Subgroup.orbitWeight_eq_finsum_relIndex (Set.toFinite _) Quotient.out_eq, hN,
     finsum_mem_singleton, hout, Subgroup.relIndex_bot_left, Nat.card_eq_fintype_card]

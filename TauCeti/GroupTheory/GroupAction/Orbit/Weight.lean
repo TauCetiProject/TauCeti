@@ -27,9 +27,10 @@ are weighted when Selmer elements are counted as integral orbits (Bhargava–Sha
 same construction with `PGL₂(ℚ_p)` and `PGL₂(ℤ_p)` gives the local weight `m_p(f)`.
 
 The orbit map `g ↦ g • v` induces a map from the counted cosets onto the counted orbits, whose
-fibre over the orbit of `x` has `[stabilizer G x : Γ ⊓ stabilizer G x]` elements. Hence the orbit
-weight is the sum of these relative indices over the orbits, which is the stabilizer-sum
-description `Σ #Stab_G(x) / #Stab_Γ(x)` of the source when the stabilizers are finite.
+fibre over the orbit of `x` has `[stabilizer G x : Γ ⊓ stabilizer G x]` elements. Hence, when
+finitely many cosets are counted, the orbit weight is the sum of these relative indices over the
+orbits, which is the stabilizer-sum description `Σ #Stab_G(x) / #Stab_Γ(x)` of the source when the
+stabilizers are finite.
 
 ## Main definitions
 
@@ -43,12 +44,13 @@ description `Σ #Stab_G(x) / #Stab_Γ(x)` of the source when the stabilizers are
 * `Subgroup.orbitWeight_smul`: the orbit weight is constant on `G`-orbits.
 * `Subgroup.orbitWeight_eq_one_iff`, `Subgroup.orbitWeight_top`: the weight of a point of `Y` is
   one exactly when only elements of `Γ` keep it in `Y`, for instance when `Γ = G`.
-* `Subgroup.orbitWeight_eq_finsum_relIndex`: the orbit weight is the sum over the counted orbits
-  of the relative indices `Γ.relIndex (stabilizer G x)`.
+* `Subgroup.orbitWeight_eq_finsum_relIndex`: when finitely many cosets are counted, the orbit
+  weight is the sum over the counted orbits of the relative indices `Γ.relIndex (stabilizer G x)`.
 * `Subgroup.orbitCount_le_orbitWeight`,
-  `Subgroup.orbitWeight_le_card_stabilizer_mul_orbitCount`: `n ≤ w ≤ #Stab_G(v) · n`.
-* `Subgroup.orbitWeight_eq_orbitCount_iff`: `w = n` exactly when `Γ` contains the full
-  stabilizer of every point of `G • v ∩ Y`.
+  `Subgroup.orbitWeight_le_card_stabilizer_mul_orbitCount`: `n ≤ w ≤ #Stab_G(v) · n`, the first
+  inequality when finitely many cosets are counted and the second when `stabilizer G v` is finite.
+* `Subgroup.orbitWeight_eq_orbitCount_iff`: when finitely many cosets are counted, `w = n` exactly
+  when `Γ` contains the full stabilizer of every point of `G • v ∩ Y`.
 
 ## Implementation notes
 
@@ -225,9 +227,8 @@ private theorem orbitWeightCosets_eq_preimage :
       refine ⟨h • v, mem_orbit v h, hh, ?_⟩
       rw [← cosetOrbit_mk, ← cosetOrbit_mk, hhg]
     · rintro ⟨x, -, hx, hxg⟩
-      obtain ⟨γ, hγ⟩ := orbitRel_apply.mp (Quotient.exact hxg)
-      have hγ' : γ • g • v = x := hγ
-      refine ⟨γ * g, by rwa [mul_smul, ← Subgroup.smul_def, hγ'], Quotient.sound ?_⟩
+      obtain ⟨γ, hγ⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact hxg))
+      refine ⟨γ * g, by rwa [mul_smul, ← Subgroup.smul_def, hγ], Quotient.sound ?_⟩
       exact rightRel_apply.mpr (by simp)
 
 /-- The counted orbits are the image of the counted cosets. -/
@@ -272,10 +273,9 @@ private theorem ncard_cosetOrbit_fiber {x : α} (hx : x ∈ orbit G v) :
           have hk : Quotient.mk (rightRel Γ) k = Quotient.mk (rightRel Γ) ((a : G) * g) := hd.symm
           rw [← cosetOrbit_mk, hk, cosetOrbit_mk, mul_smul, mem_stabilizer_iff.mp a.property]
       · intro hk
-        obtain ⟨γ, hγ⟩ := orbitRel_apply.mp (Quotient.exact hk)
-        have hγ' : γ • g • v = k • v := hγ
+        obtain ⟨γ, hγ⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact hk))
         have ha : (γ : G)⁻¹ * k * g⁻¹ ∈ K := by
-          rw [mem_stabilizer_iff, mul_smul, mul_smul, inv_smul_smul, ← hγ', Subgroup.smul_def,
+          rw [mem_stabilizer_iff, mul_smul, mul_smul, inv_smul_smul, ← hγ, Subgroup.smul_def,
             inv_smul_smul]
         refine ⟨Quotient.mk _ ⟨_, ha⟩, Quotient.sound (rightRel_apply.mpr ?_)⟩
         simp [mul_assoc]
@@ -292,9 +292,8 @@ private theorem nonempty_cosetOrbit_fiber {x : α} (hx : x ∈ orbit G v) :
 private theorem mem_orbit_of_mk_mem_orbitCountClasses {y : α}
     (hy : Quotient.mk (orbitRel Γ α) y ∈ Γ.orbitCountClasses Y v) : y ∈ orbit G v := by
   obtain ⟨x, hxv, -, hxy⟩ := mem_orbitCountClasses.mp hy
-  obtain ⟨γ, hγ⟩ := orbitRel_apply.mp (Quotient.exact hxy.symm)
-  have hγ' : γ • x = y := hγ
-  rw [← orbit_eq_iff.mpr hxv, ← hγ', Subgroup.smul_def]
+  obtain ⟨γ, hγ⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact hxy.symm))
+  rw [← orbit_eq_iff.mpr hxv, ← hγ, Subgroup.smul_def]
   exact mem_orbit x (γ : G)
 
 /-- The fibre of the orbit map over a counted orbit consists of counted cosets. -/
@@ -353,10 +352,8 @@ theorem orbitWeight_le_card_stabilizer_mul_orbitCount [Finite (stabilizer G v)] 
       have hcard : Nat.card (stabilizer G o.out) = Nat.card (stabilizer G v) :=
         TauCeti.card_stabilizer_of_orbitRel
           (orbitRel_apply.mpr (mem_orbit_of_mk_mem_orbitCountClasses (by rwa [o.out_eq])))
-      rw [← hcard, ← relIndex_bot_left]
-      exact relIndex_le_of_le_left bot_le (by
-        rw [relIndex_bot_left, hcard]
-        exact (Nat.card_pos (α := stabilizer G v)).ne')
+      rw [← hcard]
+      exact Nat.le_of_dvd (by rw [hcard]; exact Nat.card_pos) (Γ.relIndex_dvd_card _)
     rw [orbitWeight_eq_finsum_relIndex hW (σ := Quotient.out) Quotient.out_eq,
       finsum_mem_eq_finite_toFinset_sum _ hN, orbitCount_def, Set.ncard_eq_toFinset_card _ hN,
       mul_comm, ← smul_eq_mul]
