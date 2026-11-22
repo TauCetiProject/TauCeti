@@ -178,7 +178,9 @@ theorem heckeLFunctionC_ne_zero_of_one_le_re_rat {𝔪 : Modulus ℚ} {χ : RayC
       (analyticAt_LFunction_of_ne_one_or_ne_one (ratDirichletCharacter χ) hψs)]
   exact DirichletCharacter.LFunction_ne_zero_of_one_le_re _ hψs hs
 
-/-- **Meromorphic order zero on `Re s ≥ 1` over `ℚ`.** -/
+/-- **Meromorphic order zero on `Re s ≥ 1` over `ℚ`.** For any modulus `𝔪` of `ℚ`, any ray class
+character `χ`, and any `s` with `1 ≤ s.re` such that `χ ≠ 1 ∨ s ≠ 1` (excluding the pole of the
+principal character `χ = 1` at `s = 1`), `meromorphicOrderAt (heckeLFunctionC χ) s = 0`. -/
 theorem meromorphicOrderAt_heckeLFunctionC_eq_zero_of_one_le_re_rat {𝔪 : Modulus ℚ}
     {χ : RayClassCharacter 𝔪} {s : ℂ} (h : χ ≠ 1 ∨ s ≠ 1) (hs : 1 ≤ s.re) :
     meromorphicOrderAt (heckeLFunctionC χ) s = 0 := by
