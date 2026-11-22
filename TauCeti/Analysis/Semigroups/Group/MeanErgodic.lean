@@ -10,10 +10,10 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import TauCeti.Analysis.PositiveDefinite.AddGroup
 public import TauCeti.Analysis.Semigroups.Group.PhaseShift
+import Mathlib.Analysis.InnerProductSpace.MeanErgodic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.RepresentationTheory.Continuous.Basic
-import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.Analysis.Bochner.CharFun.Bochner
 import TauCeti.Analysis.InnerProductSpace.Projection.RestrictScalars
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
@@ -28,15 +28,16 @@ atomic-mass identity for strongly continuous one-parameter groups (`StronglyCont
 
 On a real normed space `X`, the common fixed space `U.fixedSpace` of a C₀-group `U` is a closed
 subspace, and the orbit averages `T⁻¹ • ∫ t in 0..T, U t v` telescope on coboundaries `U s v - v`.
-When `U` contracts in both time directions (`∀ t, ‖U t‖ ≤ 1`) on a real Hilbert space `H`, the
-coboundaries span a dense subspace of `U.fixedSpaceᗮ`, yielding norm convergence of the orbit
-averages to the orthogonal projection `U.fixedSpace.starProjection v` without any separability
-assumption on `H`.
+When `U` contracts in both time directions (`∀ t, ‖U t‖ ≤ 1`) on a real Hilbert space `H`,
+splitting the orbit integral into unit intervals reduces convergence to Mathlib's discrete mean
+ergodic theorem for `U 1` applied to `∫ t in 0..1, U t v`; the coboundary estimate shows the
+limit is fixed at every time, and pairing with fixed vectors identifies it with
+`U.fixedSpace.starProjection v`.
 
 On a complex normed space, a complex-linear C₀-group has closed common eigenspaces
-`U.eigenspace hU ω = {u | ∀ t, U t u = exp (i ω t) • u}`, whose real restriction is the fixed
-space of the phase-shifted group `U.phaseShift hU ω`. For a unitary C₀-group on a complex Hilbert
-space, transferring the real-Hilbert mean ergodic theorem through `U.phaseShift` and
+`U.eigenspace hU ω = {u | ∀ t, U t u = exp (i ω t) • u}`, defined as the invariants of the
+phase-shifted group `U.phaseShift hU ω`. For a unitary C₀-group on a complex Hilbert space,
+transferring the real-Hilbert mean ergodic theorem through `U.phaseShift` and
 `Submodule.starProjection_restrictScalars_apply` gives convergence of the twisted averages
 `(T⁻¹ : ℂ) • ∫ t in 0..T, exp (-i ω t) • U t v` to `(U.eigenspace _ ω).starProjection v`.
 
@@ -209,57 +210,33 @@ theorem tendsto_average_orbit_apply_sub (U : StronglyContinuousGroup X)
   · simpa only [div_eq_mul_inv, mul_zero] using
       tendsto_inv_atTop_zero.const_mul (2 * |s| * ‖v‖)
 
-/-- The time-averaging operator `x ↦ T⁻¹ • ∫ t in 0..T, U t x` bundled as a real linear map. -/
-private def averageOp (U : StronglyContinuousGroup X) (T : ℝ) : X →ₗ[ℝ] X where
-  toFun x := T⁻¹ • ∫ t in (0 : ℝ)..T, U t x
-  map_add' a b := by
-    have hfun : (fun t : ℝ => U t (a + b)) = fun t : ℝ => U t a + U t b :=
-      funext fun t => (U t).map_add a b
-    rw [hfun, intervalIntegral.integral_add ((U.continuous_orbit a).intervalIntegrable 0 T)
-      ((U.continuous_orbit b).intervalIntegrable 0 T), smul_add]
-  map_smul' c a := by
-    have hfun : (fun t : ℝ => U t (c • a)) = fun t : ℝ => c • U t a :=
-      funext fun t => (U t).map_smul c a
-    rw [hfun, intervalIntegral.integral_smul, smul_comm]
-    rfl
+private theorem iterate_one_apply (U : StronglyContinuousGroup X) (n : ℕ) (x : X) :
+    (U 1)^[n] x = U (n : ℝ) x := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Function.iterate_succ_apply', ih, Nat.cast_succ, add_comm (n : ℝ) 1, U.map_add_apply]
 
-private theorem averageOp_apply (U : StronglyContinuousGroup X) (T : ℝ) (x : X) :
-    U.averageOp T x = T⁻¹ • ∫ t in (0 : ℝ)..T, U t x :=
-  rfl
-
-/-- The real submodule of vectors whose orbit averages tend to `0` as `T → ∞`. -/
-private def zeroAverageSubmodule (U : StronglyContinuousGroup X) : Submodule ℝ X where
-  carrier := {x : X | Tendsto (fun T : ℝ => U.averageOp T x) atTop (𝓝 0)}
-  zero_mem' := by simp [averageOp_apply]
-  add_mem' := fun {a b} ha hb => by
-    rw [Set.mem_ofPred_eq]
-    simpa only [add_zero] using (ha.add hb).congr fun T => ((U.averageOp T).map_add a b).symm
-  smul_mem' := fun c a ha => by
-    rw [Set.mem_ofPred_eq]
-    simpa only [smul_zero] using
-      (ha.const_smul c).congr fun T => ((U.averageOp T).map_smul c a).symm
-
-private theorem mem_zeroAverageSubmodule_iff (U : StronglyContinuousGroup X) (x : X) :
-    x ∈ U.zeroAverageSubmodule ↔
-      Tendsto (fun T : ℝ => T⁻¹ • ∫ t in (0 : ℝ)..T, U t x) atTop (𝓝 0) :=
-  Iff.rfl
-
-/-- The zero-average submodule is closed when `U` is contractive, because the averaging operators
-are uniformly contractive. -/
-private theorem isClosed_zeroAverageSubmodule (U : StronglyContinuousGroup X)
-    (hnorm : ∀ t : ℝ, ‖U t‖ ≤ 1) : IsClosed (U.zeroAverageSubmodule : Set X) := by
-  have hcoe : (U.zeroAverageSubmodule : Set X) =
-      {x : X | Tendsto (fun T : ℝ => T⁻¹ • ∫ t in (0 : ℝ)..T, U t x) atTop (𝓝 0)} := by
-    ext x
-    exact U.mem_zeroAverageSubmodule_iff x
-  have hLip : ∀ T : ℝ, LipschitzWith 1 (U.averageOp T) := by
-    intro T
-    refine LipschitzWith.mk_one fun x y => ?_
-    rw [dist_eq_norm, dist_eq_norm, ← map_sub, averageOp_apply]
-    exact U.norm_average_orbit_le hnorm T (x - y)
-  rw [hcoe]
-  exact (LipschitzWith.uniformEquicontinuous _ 1 hLip).equicontinuous.isClosed_setOfPred_tendsto
-    continuous_const
+private theorem birkhoffAverage_one_intervalIntegral (U : StronglyContinuousGroup X)
+    [CompleteSpace X] (N : ℕ) (v : X) :
+    birkhoffAverage ℝ (U 1) id N (∫ t in (0 : ℝ)..1, U t v) =
+      (N : ℝ)⁻¹ • ∫ t in (0 : ℝ)..(N : ℝ), U t v := by
+  have hterm (k : ℕ) :
+      (U 1)^[k] (∫ t in (0 : ℝ)..1, U t v) =
+        ∫ t in (k : ℝ)..((k + 1 : ℕ) : ℝ), U t v := by
+    rw [U.iterate_one_apply k,
+      ← (U (k : ℝ)).intervalIntegral_comp_comm ((U.continuous_orbit v).intervalIntegrable 0 1)]
+    have hfun : (fun t : ℝ => U (k : ℝ) (U t v)) = fun t : ℝ => U (t + (k : ℝ)) v := by
+      funext t
+      rw [← U.map_add_apply, add_comm]
+    rw [hfun, intervalIntegral.integral_comp_add_right (f := fun t : ℝ => U t v) (k : ℝ),
+      zero_add, add_comm 1 (k : ℝ), Nat.cast_succ]
+  rw [birkhoffAverage, birkhoffSum]
+  congr 1
+  simp_rw [id_eq, hterm]
+  simpa only [Nat.cast_zero] using
+    intervalIntegral.sum_integral_adjacent_intervals (a := fun k : ℕ => (k : ℝ))
+      (f := fun t : ℝ => U t v) fun k _ => (U.continuous_orbit v).intervalIntegrable _ _
 
 end RealNormed
 
@@ -267,48 +244,53 @@ end RealNormed
 
 section RealInnerProduct
 
-variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
 
-/-- The orthogonal complement of the span of all coboundaries `U s w - w` is the common fixed
-space of a contractive C₀-group. -/
-theorem orthogonal_span_sub_eq_fixedSpace (U : StronglyContinuousGroup H)
-    (hnorm : ∀ t : ℝ, ‖U t‖ ≤ 1) :
-    (Submodule.span ℝ {z : H | ∃ (s : ℝ) (w : H), z = U s w - w})ᗮ = U.fixedSpace := by
-  ext x
-  rw [Submodule.mem_orthogonal, mem_fixedSpace_iff]
-  constructor
-  · intro hx s
-    have hmem : U s x - x ∈ Submodule.span ℝ {z : H | ∃ (s : ℝ) (w : H), z = U s w - w} :=
-      Submodule.subset_span ⟨s, x, rfl⟩
-    have hzero : ⟪U s x - x, x⟫_ℝ = 0 := hx _ hmem
-    rw [inner_sub_left, sub_eq_zero] at hzero
-    refine eq_of_norm_le_re_inner_eq_norm_sq (𝕜 := ℝ) ?_ ?_
-    · exact (U.norm_map_apply_eq_of_norm_le_one s (hnorm s) (hnorm (-s)) x).le
-    · simpa only [RCLike.re_to_real, real_inner_self_eq_norm_sq] using hzero
-  · intro hx y hy
-    refine Submodule.span_induction ?_ (by simp) (fun a b _ _ ha hb => by
-      rw [inner_add_left, ha, hb, add_zero]) (fun c a _ ha => by
-      rw [inner_smul_left, ha, mul_zero]) hy
-    rintro _ ⟨s, w, rfl⟩
-    let L : H →ₗᵢ[ℝ] H :=
-      { toLinearMap := (U s).toLinearMap
-        norm_map' := U.norm_map_apply_eq_of_norm_le_one s (hnorm s) (hnorm (-s)) }
-    have hinner : ⟪U s w, x⟫_ℝ = ⟪w, x⟫_ℝ := by
+private theorem tendsto_average_orbit_birkhoff (U : StronglyContinuousGroup H)
+    (hnorm : ∀ t : ℝ, ‖U t‖ ≤ 1) (v : H) :
+    Tendsto (fun T : ℝ => T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) atTop
+      (𝓝 (((U 1).eqLocus (1 : H →L[ℝ] H)).orthogonalProjectionOnto
+        (∫ t in (0 : ℝ)..1, U t v) : H)) := by
+  let v₁ : H := ∫ t in (0 : ℝ)..1, U t v
+  let w : H := ((U 1).eqLocus (1 : H →L[ℝ] H)).orthogonalProjectionOnto v₁
+  have hBirkhoff : Tendsto (fun T : ℝ => T⁻¹ • ∫ t in (0 : ℝ)..(⌊T⌋₊ : ℝ), U t v) atTop
+      (𝓝 w) := by
+    have hdisc := ((U 1).tendsto_birkhoffAverage_orthogonalProjection (hnorm 1) v₁).comp
+      (tendsto_nat_floor_atTop (α := ℝ))
+    have hscaled : Tendsto (fun T : ℝ =>
+        ((⌊T⌋₊ : ℝ) / T) • birkhoffAverage ℝ (U 1) id ⌊T⌋₊ v₁) atTop (𝓝 ((1 : ℝ) • w)) :=
+      (tendsto_nat_floor_div_atTop (R := ℝ)).smul hdisc
+    rw [one_smul] at hscaled
+    refine hscaled.congr' ?_
+    filter_upwards [eventually_ge_atTop (1 : ℝ)] with T hT
+    have hN0 : (⌊T⌋₊ : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.floor_pos.mpr hT).ne'
+    rw [U.birkhoffAverage_one_intervalIntegral ⌊T⌋₊ v, smul_smul]
+    congr 1
+    field_simp
+  have htail : Tendsto (fun T : ℝ => T⁻¹ • ∫ t in (⌊T⌋₊ : ℝ)..T, U t v) atTop (𝓝 0) := by
+    refine squeeze_zero_norm' (a := fun T : ℝ => ‖v‖ / T) ?_ ?_
+    · filter_upwards [eventually_ge_atTop (1 : ℝ)] with T hT
+      have hTpos : 0 < T := lt_of_lt_of_le zero_lt_one hT
+      have hle : |T - (⌊T⌋₊ : ℝ)| ≤ 1 := by
+        rw [abs_of_nonneg (sub_nonneg.mpr (Nat.floor_le hTpos.le))]
+        linarith [Nat.lt_floor_add_one T]
+      rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hTpos]
       calc
-        ⟪U s w, x⟫_ℝ = ⟪L w, L x⟫_ℝ := by simp [L, hx s]
-        _ = ⟪w, x⟫_ℝ := L.inner_map_map w x
-    rw [inner_sub_left, hinner, sub_self]
-
-variable [CompleteSpace H]
-
-/-- The coboundaries `U s w - w` span a dense subspace of the orthogonal complement of
-`U.fixedSpace`. -/
-theorem topologicalClosure_span_sub_eq_orthogonal_fixedSpace (U : StronglyContinuousGroup H)
-    (hnorm : ∀ t : ℝ, ‖U t‖ ≤ 1) :
-    (Submodule.span ℝ {z : H | ∃ (s : ℝ) (w : H), z = U s w - w}).topologicalClosure =
-      U.fixedSpaceᗮ := by
-  rw [← Submodule.orthogonal_orthogonal_eq_closure,
-    U.orthogonal_span_sub_eq_fixedSpace hnorm]
+        T⁻¹ * ‖∫ t in (⌊T⌋₊ : ℝ)..T, U t v‖
+            ≤ T⁻¹ * (‖v‖ * |T - (⌊T⌋₊ : ℝ)|) :=
+          mul_le_mul_of_nonneg_left (U.norm_intervalIntegral_orbit_le hnorm _ _ v)
+            (inv_nonneg.mpr hTpos.le)
+        _ ≤ T⁻¹ * (‖v‖ * 1) :=
+          mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hle (norm_nonneg v))
+            (inv_nonneg.mpr hTpos.le)
+        _ = ‖v‖ / T := by rw [mul_one, div_eq_inv_mul]
+    · simpa only [div_eq_mul_inv, mul_zero] using tendsto_inv_atTop_zero.const_mul ‖v‖
+  have hadd := hBirkhoff.add htail
+  rw [add_zero] at hadd
+  refine hadd.congr fun T => ?_
+  have hcont := U.continuous_orbit v
+  rw [← smul_add, intervalIntegral.integral_add_adjacent_intervals
+    (hcont.intervalIntegrable 0 _) (hcont.intervalIntegrable _ T)]
 
 /-- **Continuous-time von Neumann mean ergodic theorem** on a real Hilbert space: for any
 contractive C₀-group, the orbit averages `T⁻¹ • ∫ t in 0..T, U t v` converge in norm to the
@@ -317,30 +299,59 @@ theorem tendsto_average_orbit_starProjection_fixedSpace (U : StronglyContinuousG
     (hnorm : ∀ t : ℝ, ‖U t‖ ≤ 1) (v : H) :
     Tendsto (fun T : ℝ => T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) atTop
       (𝓝 (U.fixedSpace.starProjection v)) := by
-  let w : H := U.fixedSpace.starProjection v
-  let y : H := v - w
-  have hw_tendsto : Tendsto (fun T : ℝ => T⁻¹ • ∫ t in (0 : ℝ)..T, U t w) atTop (𝓝 w) := by
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [eventually_gt_atTop (0 : ℝ)] with T hT
-    exact (U.average_orbit_of_mem_fixedSpace (Submodule.starProjection_apply_mem _ v) hT.ne').symm
-  have hspan_le : Submodule.span ℝ {z : H | ∃ (s : ℝ) (u : H), z = U s u - u} ≤
-      U.zeroAverageSubmodule := by
-    rw [Submodule.span_le]
-    rintro _ ⟨s, u, rfl⟩
-    exact (U.mem_zeroAverageSubmodule_iff _).mpr (U.tendsto_average_orbit_apply_sub hnorm s u)
-  have hclos_le : U.fixedSpaceᗮ ≤ U.zeroAverageSubmodule := by
-    rw [← U.topologicalClosure_span_sub_eq_orthogonal_fixedSpace hnorm]
-    exact Submodule.topologicalClosure_minimal _ hspan_le
-      (U.isClosed_zeroAverageSubmodule hnorm)
-  have hy_tendsto : Tendsto (fun T : ℝ => T⁻¹ • ∫ t in (0 : ℝ)..T, U t y) atTop (𝓝 0) :=
-    (U.mem_zeroAverageSubmodule_iff y).mp (hclos_le (Submodule.sub_starProjection_mem_orthogonal v))
-  have hv_eq : (fun T : ℝ => T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) =
-      fun T : ℝ => (T⁻¹ • ∫ t in (0 : ℝ)..T, U t w) + (T⁻¹ • ∫ t in (0 : ℝ)..T, U t y) := by
-    funext T
-    have hwy : w + y = v := by dsimp only [y]; rw [add_sub_cancel]
-    rw [← averageOp_apply, ← hwy, (U.averageOp T).map_add, averageOp_apply, averageOp_apply]
-  rw [hv_eq]
-  simpa only [add_zero] using hw_tendsto.add hy_tendsto
+  let w : H := ((U 1).eqLocus (1 : H →L[ℝ] H)).orthogonalProjectionOnto
+    (∫ t in (0 : ℝ)..1, U t v)
+  have htend : Tendsto (fun T : ℝ => T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) atTop (𝓝 w) :=
+    U.tendsto_average_orbit_birkhoff hnorm v
+  have hw_fixed : w ∈ U.fixedSpace := by
+    rw [mem_fixedSpace_iff]
+    intro s
+    have h1 : Tendsto (fun T : ℝ => U s (T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) -
+        T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) atTop (𝓝 (U s w - w)) :=
+      (((U s).continuous.tendsto w).comp htend).sub htend
+    have h2 : Tendsto (fun T : ℝ => U s (T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) -
+        T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) atTop (𝓝 0) := by
+      refine (U.tendsto_average_orbit_apply_sub hnorm s v).congr fun T => ?_
+      have hcont := U.continuous_orbit v
+      have hcomm : U s (∫ t in (0 : ℝ)..T, U t v) = ∫ t in (0 : ℝ)..T, U t (U s v) := by
+        rw [← (U s).intervalIntegral_comp_comm (hcont.intervalIntegrable 0 T)]
+        refine intervalIntegral.integral_congr fun t _ => ?_
+        rw [← U.map_add_apply, ← U.map_add_apply, add_comm]
+      have hsub : (fun t : ℝ => U t (U s v - v)) = fun t : ℝ => U t (U s v) - U t v :=
+        funext fun t => (U t).map_sub (U s v) v
+      rw [map_smul, hcomm, hsub, intervalIntegral.integral_sub
+        ((U.continuous_orbit (U s v)).intervalIntegrable 0 T) (hcont.intervalIntegrable 0 T),
+        smul_sub]
+    exact sub_eq_zero.mp (tendsto_nhds_unique h1 h2)
+  have hproj : U.fixedSpace.starProjection v = w := by
+    refine Submodule.eq_starProjection_of_mem_of_inner_eq_zero hw_fixed fun u hu => ?_
+    have hu_inner : ∀ T > (0 : ℝ), ⟪T⁻¹ • ∫ t in (0 : ℝ)..T, U t v, u⟫_ℝ = ⟪v, u⟫_ℝ := by
+      intro T hT
+      have hcomm : ⟪∫ t in (0 : ℝ)..T, U t v, u⟫_ℝ = ∫ t in (0 : ℝ)..T, ⟪U t v, u⟫_ℝ := by
+        rw [real_inner_comm, ← innerSL_apply_apply ℝ u,
+          ← (innerSL ℝ u).intervalIntegral_comp_comm
+            ((U.continuous_orbit v).intervalIntegrable 0 T)]
+        simp_rw [innerSL_apply_apply, real_inner_comm]
+      have hpt : (fun t : ℝ => ⟪U t v, u⟫_ℝ) = fun _ => ⟪v, u⟫_ℝ := by
+        funext t
+        let L : H →ₗᵢ[ℝ] H :=
+          { toLinearMap := (U (-t)).toLinearMap
+            norm_map' := U.norm_map_apply_eq_of_norm_le_one (-t) (hnorm (-t))
+              (by simpa only [neg_neg] using hnorm t) }
+        calc
+          ⟪U t v, u⟫_ℝ = ⟪L (U t v), L u⟫_ℝ := (L.inner_map_map (U t v) u).symm
+          _ = ⟪v, u⟫_ℝ := by simp [L, (U.mem_fixedSpace_iff u).mp hu (-t)]
+      rw [real_inner_smul_left, hcomm, hpt, intervalIntegral.integral_const, sub_zero, smul_eq_mul,
+        ← mul_assoc, inv_mul_cancel₀ hT.ne', one_mul]
+    have hlim : Tendsto (fun T : ℝ => ⟪T⁻¹ • ∫ t in (0 : ℝ)..T, U t v, u⟫_ℝ) atTop (𝓝 ⟪w, u⟫_ℝ) :=
+      htend.inner tendsto_const_nhds
+    have hconst : Tendsto (fun T : ℝ => ⟪T⁻¹ • ∫ t in (0 : ℝ)..T, U t v, u⟫_ℝ) atTop
+        (𝓝 ⟪v, u⟫_ℝ) :=
+      tendsto_const_nhds.congr' (by
+        filter_upwards [eventually_gt_atTop (0 : ℝ)] with T hT
+        exact (hu_inner T hT).symm)
+    rw [inner_sub_left, tendsto_nhds_unique hconst hlim, sub_self]
+  rwa [hproj]
 
 end RealInnerProduct
 
@@ -350,23 +361,47 @@ section ComplexNormed
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X]
 
+/-- Package a complex-linear C₀-group as a `ContRepresentation ℂ (Multiplicative ℝ) X`. -/
+private def toComplexContRep (U : StronglyContinuousGroup X)
+    (hU : U.toSemigroup.IsComplexLinear) :
+    ContRepresentation ℂ (Multiplicative ℝ) X :=
+  .ofMonoidHom
+    { toFun g :=
+        { toFun := U (Multiplicative.toAdd g)
+          map_add' := (U (Multiplicative.toAdd g)).map_add
+          map_smul' := U.map_smul_of_isComplexLinear hU (Multiplicative.toAdd g)
+          cont := (U (Multiplicative.toAdd g)).continuous }
+      map_one' := by ext x; simp
+      map_mul' g h := by ext x; simp }
+
+private theorem toComplexContRep_apply (U : StronglyContinuousGroup X)
+    (hU : U.toSemigroup.IsComplexLinear) (g : Multiplicative ℝ) (x : X) :
+    U.toComplexContRep hU g x = U (Multiplicative.toAdd g) x :=
+  rfl
+
 /-- The complex submodule of common eigenvectors of a complex-linear C₀-group at angular
 frequency `ω : ℝ`: the vectors satisfying `U t u = exp (i ω t) • u` for all `t : ℝ`. -/
 def eigenspace (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear) (ω : ℝ) :
-    Submodule ℂ X where
-  carrier := {u : X | ∀ t : ℝ, U t u = Complex.exp (ω * t * Complex.I) • u}
-  zero_mem' t := by rw [(U t).map_zero, smul_zero]
-  add_mem' hx hy t := by rw [(U t).map_add, hx t, hy t, smul_add]
-  smul_mem' c u hu t := by
-    rw [U.map_smul_of_isComplexLinear hU, hu t, smul_comm]
+    Submodule ℂ X :=
+  ((U.phaseShift hU ω).toComplexContRep (U.phaseShift_isComplexLinear hU ω)).invariants
 
 /-- Membership in `eigenspace` means satisfying the common eigenfunction equation at all real
 times. -/
 @[simp]
 theorem mem_eigenspace_iff (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear)
     (ω : ℝ) (u : X) :
-    u ∈ U.eigenspace hU ω ↔ ∀ t : ℝ, U t u = Complex.exp (ω * t * Complex.I) • u :=
-  (Iff.rfl)
+    u ∈ U.eigenspace hU ω ↔ ∀ t : ℝ, U t u = Complex.exp (ω * t * Complex.I) • u := by
+  rw [eigenspace, ContRepresentation.mem_invariants]
+  simp only [toComplexContRep_apply, phaseShift_apply_apply]
+  refine ⟨fun h t => ?_, fun h g => ?_⟩
+  · have ht : Complex.exp (-(ω * t * Complex.I)) • U t u = u := h (Multiplicative.ofAdd t)
+    calc
+      U t u = Complex.exp (ω * t * Complex.I) •
+          (Complex.exp (-(ω * t * Complex.I)) • U t u) := by
+        rw [smul_smul, ← Complex.exp_add, add_neg_cancel, Complex.exp_zero, one_smul]
+      _ = Complex.exp (ω * t * Complex.I) • u := by rw [ht]
+  · rw [h (Multiplicative.toAdd g), smul_smul, ← Complex.exp_add, neg_add_cancel,
+      Complex.exp_zero, one_smul]
 
 /-- Restricting scalars to `ℝ` identifies the common eigenspace at frequency `ω` with the common
 fixed space of the phase-shifted group `U.phaseShift hU ω`. -/
@@ -374,15 +409,10 @@ theorem eigenspace_restrictScalars (U : StronglyContinuousGroup X)
     (hU : U.toSemigroup.IsComplexLinear) (ω : ℝ) :
     (U.eigenspace hU ω).restrictScalars ℝ = (U.phaseShift hU ω).fixedSpace := by
   ext u
-  simp only [Submodule.restrictScalars_mem, mem_eigenspace_iff, mem_fixedSpace_iff,
-    phaseShift_apply_apply]
-  refine ⟨fun hu t => ?_, fun hu t => ?_⟩
-  · rw [hu t, smul_smul, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero, one_smul]
-  · calc
-      U t u = Complex.exp (ω * t * Complex.I) •
-          (Complex.exp (-(ω * t * Complex.I)) • U t u) := by
-        rw [smul_smul, ← Complex.exp_add, add_neg_cancel, Complex.exp_zero, one_smul]
-      _ = Complex.exp (ω * t * Complex.I) • u := by rw [hu t]
+  rw [Submodule.restrictScalars_mem, eigenspace, ContRepresentation.mem_invariants,
+    mem_fixedSpace_iff]
+  simp only [toComplexContRep_apply]
+  exact ⟨fun h t => h (Multiplicative.ofAdd t), fun h g => h (Multiplicative.toAdd g)⟩
 
 /-- At frequency `0`, the real restriction of the eigenspace is the fixed space. -/
 @[simp]
@@ -413,14 +443,13 @@ theorem eigenspace_phaseShift (U : StronglyContinuousGroup X)
 
 /-- Every common eigenspace of a complex-linear C₀-group is closed. -/
 theorem isClosed_eigenspace (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear)
-    (ω : ℝ) : IsClosed (U.eigenspace hU ω : Set X) := by
-  rw [← Submodule.coe_restrictScalars ℝ (U.eigenspace hU ω),
-    U.eigenspace_restrictScalars hU ω]
-  exact (U.phaseShift hU ω).isClosed_fixedSpace
+    (ω : ℝ) : IsClosed (U.eigenspace hU ω : Set X) :=
+  ((U.phaseShift hU ω).toComplexContRep (U.phaseShift_isComplexLinear hU ω)).isClosed_invariants
 
 instance eigenspace.completeSpace [CompleteSpace X] (U : StronglyContinuousGroup X)
     (hU : U.toSemigroup.IsComplexLinear) (ω : ℝ) : CompleteSpace (U.eigenspace hU ω) :=
-  (U.isClosed_eigenspace hU ω).completeSpace_coe
+  inferInstanceAs (CompleteSpace
+    ((U.phaseShift hU ω).toComplexContRep (U.phaseShift_isComplexLinear hU ω)).invariants)
 
 end ComplexNormed
 
@@ -429,24 +458,6 @@ end ComplexNormed
 section ComplexInnerProduct
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
-
-/-- Package a complex-linear C₀-group as a `ContRepresentation ℂ (Multiplicative ℝ) H`. -/
-private def toComplexContRep (U : StronglyContinuousGroup H)
-    (hU : U.toSemigroup.IsComplexLinear) :
-    ContRepresentation ℂ (Multiplicative ℝ) H :=
-  .ofMonoidHom
-    { toFun g :=
-        { toFun := U (Multiplicative.toAdd g)
-          map_add' := (U (Multiplicative.toAdd g)).map_add
-          map_smul' := U.map_smul_of_isComplexLinear hU (Multiplicative.toAdd g)
-          cont := (U (Multiplicative.toAdd g)).continuous }
-      map_one' := by ext x; simp
-      map_mul' g h := by ext x; simp }
-
-private theorem toComplexContRep_apply (U : StronglyContinuousGroup H)
-    (hU : U.toSemigroup.IsComplexLinear) (g : Multiplicative ℝ) (x : H) :
-    U.toComplexContRep hU g x = U (Multiplicative.toAdd g) x :=
-  rfl
 
 /-- The correlation function `t ↦ ⟪v, U t v⟫_ℂ` of a vector under a unitary C₀-group is positive
 definite. -/
@@ -484,10 +495,6 @@ private theorem continuous_intervalIntegral_cexp_mul_sub_mul_I (ω T : ℝ) :
     Continuous fun ξ : ℝ => ∫ t in (0 : ℝ)..T, Complex.exp (t * (ξ - ω) * Complex.I) :=
   intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (by fun_prop) 0 T
 
-private theorem isFiniteMeasure_volume_restrict_uIoc (a b : ℝ) :
-    IsFiniteMeasure (volume.restrict (Set.uIoc a b)) :=
-  ⟨by simp [Real.volume_uIoc]⟩
-
 /-- Spectral integral representation of the inner product between two twisted orbit vectors. -/
 private theorem inner_twisted_orbit_eq_integral (U : StronglyContinuousGroup H) (hU : U.IsUnitary)
     (v : H) {σ : Measure ℝ} (hσ : ∀ t : ℝ, ⟪v, U t v⟫_ℂ = charFun σ t) (ω s t : ℝ) :
@@ -522,7 +529,7 @@ private theorem intervalIntegral_inner_twisted_orbit_eq (U : StronglyContinuousG
         (∫ t in (0 : ℝ)..T, Complex.exp (t * (ξ - ω) * Complex.I)) ∂σ := by
   simp_rw [inner_twisted_orbit_eq_integral U hU v hσ ω s]
   have : IsFiniteMeasure (volume.restrict (Set.uIoc (0 : ℝ) T)) :=
-    isFiniteMeasure_volume_restrict_uIoc 0 T
+    Real.isFiniteMeasure_restrict_Ioc (min 0 T) (max 0 T)
   have hint : Integrable (Function.uncurry fun t ξ : ℝ =>
       conj (Complex.exp (s * (ξ - ω) * Complex.I)) * Complex.exp (t * (ξ - ω) * Complex.I))
       ((volume.restrict (Set.uIoc 0 T)).prod σ) :=
@@ -596,7 +603,7 @@ private theorem norm_intervalIntegral_twisted_sq_eq (U : StronglyContinuousGroup
       (U.continuous_orbit v)).intervalIntegrable 0 T
   have hK_cont : Continuous K := continuous_intervalIntegral_cexp_mul_sub_mul_I ω T
   have : IsFiniteMeasure (volume.restrict (Set.uIoc (0 : ℝ) T)) :=
-    isFiniteMeasure_volume_restrict_uIoc 0 T
+    Real.isFiniteMeasure_restrict_Ioc (min 0 T) (max 0 T)
   have hint2 : Integrable (Function.uncurry fun s ξ => conj (e s ξ) * K ξ)
       ((volume.restrict (Set.uIoc 0 T)).prod σ) :=
     Integrable.of_bound
