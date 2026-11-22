@@ -9,9 +9,10 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair
 public import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
 public import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 public import TauCeti.Topology.VectorBundle.Thom.Isomorphism
+public import TauCeti.Topology.VectorBundle.Thom.TwistedHomology
 
 /-!
-# The cohomology across a Morse–Bott level from a Thom class of the negative normal bundle
+# The cohomology across a Morse–Bott level from the Thom isomorphism of the negative normal bundle
 
 Let `i : S → M` be a nondegenerate critical submanifold of a smooth function `f` on a Hausdorff,
 second-countable, finite-dimensional, boundaryless manifold, on the level `f = c`, and let `g` be a
@@ -31,16 +32,23 @@ cohomology of `S`, shifted up by the index.
   (`nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isThomClass`).
 * Such a Thom class exists for every commutative ring `K` when `ν⁻` is oriented
   (`nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_orientation`), for instance
-  `K = ℤ`, and with no orientation when `1` is the only unit of `K`, as for `K = ZMod 2`
-  (`nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_subsingleton_units`).
+  `K = ℤ`, and with no orientation when `2 = 0` in `K`, as for `K = ZMod 2`
+  (`nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_two_eq_zero`).
+* For a non-orientable negative normal bundle the cohomology of `S` must be twisted by the
+  orientation local system `o(ν⁻)`. If `2` is invertible in `K` and `N` is an injective `K`-module,
+  for instance `K = N = ℚ`, then `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; o(ν⁻) ⊗ K, N)` with no
+  orientation of `ν⁻` (`nonempty_singularCohomology_sublevelPair_iso_twistedCohomology`), by the
+  twisted Thom isomorphism in cohomology
+  (`TauCeti.VectorBundleOrientationCover.thomPairSingularCohomologyEquivTwistedCohomology`).
 
 These are the cohomology forms of the homology statements in
 `TauCeti.Geometry.Manifold.Morse.Bott.Thom.Class`, and the actual-negative-bundle forms of
 `TauCeti.nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isThomClass` and its
 corollaries, which assume that `f` is already in a quadratic normal form on a tube and that the
-negative disc bundle is parametrized by the disc bundle of some vector bundle. For a non-orientable
-negative normal bundle and a ring in which `-1 ≠ 1`, the cohomology of `S` must be twisted by the
-orientation local system of `ν⁻`, which this file does not treat.
+negative disc bundle is parametrized by the disc bundle of some vector bundle. With twisted
+coefficients the cohomology across the level is computed here only over rings in which `2` is
+invertible and with injective values; over `ℤ` it needs the twisted Thom isomorphism with arbitrary
+coefficients, which this file does not treat.
 
 The Thom isomorphism needs the model fibre `Fin r → ℝ` of `ν⁻` in the universe of its base, so the
 manifolds, their models and the coefficient ring here live in `Type`.
@@ -53,8 +61,11 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
   `ν⁻` identifies `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N)` with `Hᵖ(S; K, N)`.
 * `nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_orientation`: the same for an
   oriented `ν⁻` and every commutative ring `K`.
-* `nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_subsingleton_units`: the same
-  for every `ν⁻` when `1` is the only unit of `K`.
+* `nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_two_eq_zero`: the same for
+  every `ν⁻` when `2 = 0` in `K`.
+* `nonempty_singularCohomology_sublevelPair_iso_twistedCohomology`: for every `ν⁻`, oriented or
+  not, `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; o(ν⁻) ⊗ K, N)` when `2` is invertible in `K` and `N` is
+  injective.
 
 ## References
 
@@ -170,15 +181,15 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_orien
     hac hcb hcompact hcrit hdim g hV u hu N hm
 
 include h hfs hc hac hcb hcompact hcrit in
-/-- **The cohomology across a Morse–Bott level mod `2`.** Let `i : S → M` be a nondegenerate
-critical submanifold of a smooth function `f` on a Hausdorff, second-countable, finite-dimensional,
-boundaryless manifold, with `S` nonempty, `f = c` along `i` and Morse index `r` at every point of
-`i`. Let `a < c < b` be such that the band `f⁻¹[a, b]` is compact and all its critical points lie
-on `i`, and let `K` be a commutative ring whose only unit is `1`, such as `ZMod 2`. Then with no
-orientation of the negative normal bundle, `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; K, N)` for every
-`K`-module `N` and every degree `p`. -/
-theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_subsingleton_units
-    (hr : ∀ s, manifoldMorseIndex I f (i s) = r) (K : Type) [CommRing K] [Subsingleton Kˣ]
+/-- **The cohomology across a Morse–Bott level in characteristic two.** Let `i : S → M` be a
+nondegenerate critical submanifold of a smooth function `f` on a Hausdorff, second-countable,
+finite-dimensional, boundaryless manifold, with `S` nonempty, `f = c` along `i` and Morse index `r`
+at every point of `i`. Let `a < c < b` be such that the band `f⁻¹[a, b]` is compact and all its
+critical points lie on `i`, and let `K` be a commutative ring in which `2 = 0`, such as `ZMod 2`.
+Then with no orientation of the negative normal bundle, `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; K, N)`
+for every `K`-module `N` and every degree `p`. -/
+theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_two_eq_zero
+    (hr : ∀ s, manifoldMorseIndex I f (i s) = r) (K : Type) [CommRing K] (h2 : (2 : K) = 0)
     (N : ModuleCat.{0} K) {p m : ℕ} (hm : r + p = m) :
     Nonempty ((sublevelPair f (hac.trans hcb).le).singularCohomology (ModuleCat.of K K) K N m ≅
       (TopCat.of S).singularCohomology (ModuleCat.of K K) K N p) := by
@@ -203,10 +214,53 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_subsi
   let := hV.fiberBundle
   have := hV.vectorBundle
   -- Every vector bundle has a Thom class with coefficients in `K`.
-  obtain ⟨u, hu, -⟩ := existsUnique_isThomClass_of_subsingleton_units (F := Fin r → ℝ)
-    (E := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) K
+  obtain ⟨u, hu⟩ := exists_isThomClass_of_two_eq_zero (F := Fin r → ℝ)
+    (E := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) K h2
   exact h.nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isThomClass hn hfs hc
     hac hcb hcompact hcrit hdim g hV u hu N hm
+
+/-! ### Coefficients twisted by the orientation of the negative normal bundle -/
+
+include h hfs hc hac hcb hcompact hcrit in
+/-- **The cohomology across a Morse–Bott level with coefficients twisted by the orientation of the
+negative normal bundle.** Under the hypotheses of
+`nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isThomClass`, let the negative
+normal bundle `ν⁻` of rank `r` be orientable or not, with orientation local system `o(ν⁻)`
+(`TauCeti.VectorBundleOrientationCover.signLocalSystem`). Then
+`Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; o(ν⁻) ⊗ K, N)` in every degree `p`, for every commutative
+ring `K` in which `2` is invertible and every injective `K`-module `N`; for instance `K = N = ℚ`,
+or any vector space `N` over a field `K` of characteristic other than `2`. -/
+theorem nonempty_singularCohomology_sublevelPair_iso_twistedCohomology
+    (K : Type) [CommRing K] [Invertible (2 : K)] (N : ModuleCat.{0} K) [Injective N] {p m : ℕ}
+    (hm : r + p = m) :
+    letI := i.normalSpaceFiberBundle hn hdim
+    haveI := i.normalSpaceVectorBundle hn hdim
+    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+    letI := hV.fiberBundle
+    haveI := hV.vectorBundle
+    Nonempty ((sublevelPair f (hac.trans hcb).le).singularCohomology (ModuleCat.of K K) K N m ≅
+      (VectorBundleOrientationCover.signLocalSystem (Fin r → ℝ)
+        (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) K (ι := Fin r)
+        (by simp)).twistedCohomology K N p) := by
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  let := hV.fiberBundle
+  have := hV.vectorBundle
+  -- The negative normal spaces have the dimension of the Morse index.
+  have hr (s : S) : manifoldMorseIndex I f (i s) = r := by
+    rw [← h.finrank_negativeNormalSpace hn g.toRiemannianMetric s, hV.finrank_eq s,
+      Fintype.card_fin]
+  -- The band has the cohomology of the Thom pair of `ν⁻`, which the twisted Thom isomorphism
+  -- computes, normalized by an orientation of the model fibre and a generator of
+  -- `Hʳ(ℝʳ, ℝʳ ∖ {0}; K) ≅ K`.
+  obtain ⟨e⟩ := h.nonempty_singularCohomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcompact
+    hcrit hdim g hr (ModuleCat.of K K) K N m
+  obtain ⟨u, hu⟩ := exists_span_singularCohomology_complSingleton_eq_top (k := K)
+    (OpenPartialHomeomorph.refl (Fin r → ℝ)) (mem_univ 0)
+  exact ⟨e ≪≫ (VectorBundleOrientationCover.thomPairSingularCohomologyEquivTwistedCohomology
+    (E := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) (by simp)
+    (Pi.basisFun ℝ (Fin r)).orientation hu (by rw [finrank_fin_fun]; omega) N).toModuleIso⟩
 
 end ThomClass
 
