@@ -279,9 +279,9 @@ theorem ker_mulVecLin_transpose_mul_diagonal_mul {R m n : Type*} [CommRing R] [L
   constructor
   · intro h
     have h' := congrArg (dotProduct x) h
-    rw [dotProduct_mulVec, dotProduct_zero, vecMul_transpose] at h'
+    rw [dotProduct_transpose_mulVec, dotProduct_zero] at h'
     have hs : w ⬝ᵥ (fun i ↦ (A *ᵥ x) i ^ 2) = 0 := by
-      simpa only [mulVec_diagonal, dotProduct, pow_two, mul_left_comm] using h'
+      simpa only [mulVec_diagonal, dotProduct, pow_two, mul_assoc] using h'
     have hz := (TauCeti.dotProduct_eq_zero_iff_of_pos hw (fun i ↦ sq_nonneg ((A *ᵥ x) i))).1 hs
     ext i
     exact sq_eq_zero_iff.1 (congrFun hz i)
@@ -296,10 +296,11 @@ theorem rank_transpose_mul_diagonal_mul {R m n : Type*} [Field R] [LinearOrder R
     (A : Matrix m n R) (w : m → R) (hw : ∀ i, 0 < w i) :
     (Aᵀ * diagonal w * A).rank = A.rank := by
   let := Fintype.ofFinite n
-  have h := (Aᵀ * diagonal w * A).mulVecLin.finrank_range_add_finrank_ker
-  rw [ker_mulVecLin_transpose_mul_diagonal_mul A w hw] at h
-  have h' := A.mulVecLin.finrank_range_add_finrank_ker
-  rw [finrank_range_mulVecLin] at h h'
+  have h := congrArg (fun S : Submodule R (n → R) ↦ Module.finrank R S)
+    (ker_mulVecLin_transpose_mul_diagonal_mul A w hw)
+  rw [finrank_ker_mulVecLin, finrank_ker_mulVecLin] at h
+  have hA := A.rank_le_card_width
+  have hGram := (Aᵀ * diagonal w * A).rank_le_card_width
   omega
 
 /-- After mapping a matrix and its positively weighted transpose from a linearly ordered field
@@ -325,8 +326,7 @@ theorem isCompl_ker_mulVecLin_transpose_mul_diagonal_range_map {R K m n : Type*}
     apply Submodule.disjoint_ker_of_finrank_le B.mulVecLin
     rw [← LinearMap.range_comp, ← mulVecLin_mul, finrank_range_mulVecLin,
       finrank_range_mulVecLin, hrank]
-  · have h := B.mulVecLin.finrank_range_add_finrank_ker
-    rw [finrank_range_mulVecLin] at h ⊢
+  · rw [finrank_ker_mulVecLin, finrank_range_mulVecLin, Module.finrank_fintype_fun_eq_card]
     omega
 
 end WeightedGram
