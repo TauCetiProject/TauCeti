@@ -9,10 +9,12 @@ public import TauCeti.Analysis.Distribution.SingularSupport
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Local
 public import TauCeti.Analysis.Holder.Zygmund
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Holder.JetBounds
 import TauCeti.Analysis.Holder.Localization
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Distributions that are `C^{k,α}` functions near a point
@@ -25,7 +27,10 @@ localized Schauder theorem is stated: if `P u` is `C^{k,α}` near `x` for an ell
 of order `m`, then `u` is `C^{k+m,α}` near `x`. The definition follows that of the singular
 support (`Distribution.singularSupport`), whose complement consists of the points near which `T`
 is a smooth function; a distribution smooth near `x` is `C^{k,α}` near `x` for every `k` and every
-`α ≤ 1` (`Distribution.isLocallyCkHolderAt_of_notMem_singularSupport`).
+`α ≤ 1` (`Distribution.isLocallyCkHolderAt_of_notMem_singularSupport`). Being `C^{k,α}` near `x`
+is preserved by sums and scalar multiples (`Distribution.IsLocallyCkHolderAt.add`,
+`Distribution.IsLocallyCkHolderAt.smul`) and is monotone in `k` and `α`
+(`Distribution.IsLocallyCkHolderAt.mono`).
 
 For `0 < α < 1` this is local membership in the Hölder–Zygmund space `𝒞^{k+α} = B^{k+α}_{∞,∞}`
 (`Distribution.isLocallyMemBesovAt_iff_isLocallyCkHolderAt`; the implication from `C^{k,α}` to
@@ -43,11 +48,12 @@ regularity, to classical Hölder regularity of distributions.
 If `χ T ∈ 𝒞^{k+α}` for a test function `χ` equal to one near `x`, then `χ T` is the tempered
 distribution of a bounded `C^{k,α}` function `g` (`TauCeti.BesovSpace.toCkHolderSpace`), and `T`
 agrees with `χ T`, hence with `g`, where `χ = 1`
-(`Distribution.isVanishingOn_sub_toDistribution_cutoffTempered`). Conversely, if `T` is the
+(`Distribution.apply_eq_integral_of_cutoffTempered_apply_eq_integral`). Conversely, if `T` is the
 function `f` on a ball around `x` on which `f` is `C^{k,α}`, then for a test function `χ` equal to
 one near `x` and supported in a smaller ball, the product `χ f` is a bounded `C^{k,α}` function on
 all of `E` (`TauCeti.CkHolderSpace.cutoff`), so it lies in `𝒞^{k+α}`
-(`TauCeti.BesovSpace.ofCkHolderSpace`), and it is the tempered distribution `χ T`.
+(`TauCeti.BesovSpace.ofCkHolderSpace`), and it is the tempered distribution `χ T`
+(`Distribution.cutoffTempered_eq_of_apply_eq_integral`).
 
 ## References
 
@@ -99,26 +105,112 @@ theorem isOpen_setOf_isLocallyCkHolderAt (T : 𝓓'(Ω, F)) :
   isOpen_iff_forall_mem_open.2 fun _ ⟨U, hU, hxU, hUΩ, hf⟩ ↦
     ⟨U, fun _ hy ↦ ⟨U, hU, hy, hUΩ, hf⟩, hU, hxU⟩
 
-/-- **A distribution smooth near `x` is `C^{k,α}` near `x`**, for every `k` and every `α ≤ 1`:
-on a ball whose closure lies where `T` is a smooth function `f`, the derivatives of `f` of orders
-`k` and `k + 1` are bounded, so the `k`-th derivative is Lipschitz, hence `α`-Hölder. -/
+/-- The zero distribution is `C^{k,α}` near every point of its domain. -/
+@[simp]
+theorem isLocallyCkHolderAt_zero_iff : (0 : 𝓓'(Ω, F)).IsLocallyCkHolderAt k α x ↔ x ∈ Ω :=
+  ⟨IsLocallyCkHolderAt.mem, fun hx ↦ ⟨Ω, Ω.isOpen, hx, subset_rfl, 0, contDiffOn_const,
+    ⟨0, (TauCeti.holderWith_iteratedFDeriv_const k α (0 : F)).holderOnWith _⟩, fun _ _ ↦ by simp⟩⟩
+
+section SMul
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
+
+/-- A scalar multiple of a distribution `C^{k,α}` near `x` is `C^{k,α}` near `x`. -/
+theorem IsLocallyCkHolderAt.smul {T : 𝓓'(Ω, F)} (h : T.IsLocallyCkHolderAt k α x) (c : 𝕜) :
+    (c • T).IsLocallyCkHolderAt k α x := by
+  obtain ⟨U, hU, hxU, hUΩ, f, hf, ⟨C, hC⟩, hT⟩ := h
+  refine ⟨U, hU, hxU, hUΩ, c • f, hf.const_smul c,
+    ⟨C * ‖c‖₊, (hC.smul c).congr fun y hy ↦ ?_⟩, fun φ hφ ↦ ?_⟩
+  · exact (iteratedFDeriv_const_smul_apply (hf.contDiffAt (hU.mem_nhds hy))).symm
+  · rw [smul_apply, hT φ hφ, ← integral_smul]
+    congr 1 with y
+    exact (smul_comm (φ y) c (f y)).symm
+
+/-- A nonzero scalar multiple of `T` is `C^{k,α}` near `x` exactly when `T` is. -/
+theorem isLocallyCkHolderAt_smul_iff {T : 𝓓'(Ω, F)} {c : 𝕜} (hc : c ≠ 0) :
+    (c • T).IsLocallyCkHolderAt k α x ↔ T.IsLocallyCkHolderAt k α x :=
+  ⟨fun h ↦ by simpa [smul_smul, inv_mul_cancel₀ hc] using h.smul c⁻¹, fun h ↦ h.smul c⟩
+
+end SMul
+
+/-- The negative of `T` is `C^{k,α}` near `x` exactly when `T` is. -/
+@[simp]
+theorem isLocallyCkHolderAt_neg_iff {T : 𝓓'(Ω, F)} :
+    (-T).IsLocallyCkHolderAt k α x ↔ T.IsLocallyCkHolderAt k α x := by
+  rw [← neg_one_smul ℝ T, isLocallyCkHolderAt_smul_iff (neg_ne_zero.2 one_ne_zero)]
+
+/-- The sum of two distributions `C^{k,α}` near `x` is `C^{k,α}` near `x`. -/
+theorem IsLocallyCkHolderAt.add {S T : 𝓓'(Ω, F)} (hS : S.IsLocallyCkHolderAt k α x)
+    (hT : T.IsLocallyCkHolderAt k α x) : (S + T).IsLocallyCkHolderAt k α x := by
+  obtain ⟨U, hU, hxU, hUΩ, f, hf, ⟨C, hC⟩, hSf⟩ := hS
+  obtain ⟨V, hV, hxV, -, g, hg, ⟨D, hD⟩, hTg⟩ := hT
+  refine ⟨U ∩ V, hU.inter hV, ⟨hxU, hxV⟩, inter_subset_left.trans hUΩ, f + g,
+    (hf.mono inter_subset_left).add (hg.mono inter_subset_right),
+    ⟨C + D, ((hC.mono inter_subset_left).add (hD.mono inter_subset_right)).congr fun y hy ↦ ?_⟩,
+    fun φ hφ ↦ ?_⟩
+  · exact (iteratedFDeriv_add_apply (hf.contDiffAt (hU.mem_nhds hy.1))
+      (hg.contDiffAt (hV.mem_nhds hy.2))).symm
+  have hφU := hφ.trans inter_subset_left
+  have hφV := hφ.trans inter_subset_right
+  have hfU := hf.continuousOn.locallyIntegrableOn (μ := volume) hU.measurableSet
+  have hgV := hg.continuousOn.locallyIntegrableOn (μ := volume) hV.measurableSet
+  rw [add_apply, hSf φ hφU, hTg φ hφV, ← integral_add
+    (hfU.integrable_smul_left_of_hasCompactSupport φ.continuous φ.hasCompactSupport hφU)
+    (hgV.integrable_smul_left_of_hasCompactSupport φ.continuous φ.hasCompactSupport hφV)]
+  simp [smul_add]
+
+/-- The difference of two distributions `C^{k,α}` near `x` is `C^{k,α}` near `x`. -/
+theorem IsLocallyCkHolderAt.sub {S T : 𝓓'(Ω, F)} (hS : S.IsLocallyCkHolderAt k α x)
+    (hT : T.IsLocallyCkHolderAt k α x) : (S - T).IsLocallyCkHolderAt k α x := by
+  rw [sub_eq_add_neg]
+  exact hS.add (isLocallyCkHolderAt_neg_iff.2 hT)
+
+/-- **Monotonicity in the exponent.** A distribution `C^{k,α}` near `x` is `C^{k,α'}` near `x`
+for `α' ≤ α`. -/
+theorem IsLocallyCkHolderAt.mono_exponent {T : 𝓓'(Ω, F)} (h : T.IsLocallyCkHolderAt k α x)
+    {α' : ℝ≥0} (hα : α' ≤ α) : T.IsLocallyCkHolderAt k α' x := by
+  obtain ⟨U, hU, hxU, hUΩ, f, hf, ⟨C, hC⟩, hT⟩ := h
+  refine ⟨U ∩ ball x 1, hU.inter isOpen_ball, ⟨hxU, mem_ball_self one_pos⟩,
+    inter_subset_left.trans hUΩ, f, hf.mono inter_subset_left,
+    HolderOnWith.exists_holderOnWith_of_le ⟨C, hC.mono inter_subset_left⟩ hα
+      (isBounded_ball.subset inter_subset_right), fun φ hφ ↦ hT φ (hφ.trans inter_subset_left)⟩
+
+/-- A distribution that is `C^{k + 1}` on a neighbourhood `U` of `x` is `C^{k,α}` near `x` for
+every `α ≤ 1`. -/
+theorem isLocallyCkHolderAt_of_contDiffOn {T : 𝓓'(Ω, F)} {U : Set E} (hU : IsOpen U)
+    (hxU : x ∈ U) (hUΩ : U ⊆ Ω) {f : E → F} (hf : ContDiffOn ℝ (k + 1 : ℕ) f U)
+    (hT : ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ U → T φ = ∫ y, φ y • f y) (hα : α ≤ 1) :
+    T.IsLocallyCkHolderAt k α x := by
+  obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.1 hU x hxU
+  have hsub : closedBall x (r / 2) ⊆ U := (closedBall_subset_ball (by linarith)).trans hrU
+  have hball : ball x (r / 2) ⊆ U := ball_subset_closedBall.trans hsub
+  obtain ⟨C, hC⟩ := hf.exists_holderOnWith_iteratedFDeriv hU hα (isCompact_closedBall x (r / 2))
+    hsub
+  exact ⟨ball x (r / 2), isOpen_ball, mem_ball_self (by positivity), hball.trans hUΩ, f,
+    (hf.mono hball).of_le (by exact_mod_cast k.le_succ), ⟨C, hC.mono ball_subset_closedBall⟩,
+    fun φ hφ ↦ hT φ (hφ.trans hball)⟩
+
+/-- A distribution `C^{k,α}` near `x` is `C^{k',α'}` near `x` for `k' < k` and every `α' ≤ 1`. -/
+theorem IsLocallyCkHolderAt.of_lt {T : 𝓓'(Ω, F)} (h : T.IsLocallyCkHolderAt k α x) {k' : ℕ}
+    (hk : k' < k) {α' : ℝ≥0} (hα' : α' ≤ 1) : T.IsLocallyCkHolderAt k' α' x :=
+  let ⟨_, hU, hxU, hUΩ, _, hf, _, hT⟩ := h
+  isLocallyCkHolderAt_of_contDiffOn hU hxU hUΩ (hf.of_le (by exact_mod_cast hk)) hT hα'
+
+/-- **Monotonicity.** A distribution `C^{k,α}` near `x` is `C^{k',α'}` near `x` for `k' ≤ k`,
+`α' ≤ α` and `α' ≤ 1`. -/
+theorem IsLocallyCkHolderAt.mono {T : 𝓓'(Ω, F)} (h : T.IsLocallyCkHolderAt k α x) {k' : ℕ}
+    (hk : k' ≤ k) {α' : ℝ≥0} (hα : α' ≤ α) (hα' : α' ≤ 1) : T.IsLocallyCkHolderAt k' α' x := by
+  rcases hk.eq_or_lt with rfl | hk
+  exacts [h.mono_exponent hα, h.of_lt hk hα']
+
+/-- **A distribution smooth near `x` is `C^{k,α}` near `x`**, for every `k` and every
+`α ≤ 1`. -/
 theorem isLocallyCkHolderAt_of_notMem_singularSupport {T : 𝓓'(Ω, F)} (hx : x ∈ Ω)
     (hT : x ∉ T.singularSupport) (k : ℕ) (hα : α ≤ 1) : T.IsLocallyCkHolderAt k α x := by
   obtain ⟨U, hU, hxU, f, hf, hTf⟩ := (notMem_singularSupport_iff hx).1 hT
-  obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.1 (hU.inter Ω.isOpen) x ⟨hxU, hx⟩
-  have hsub : closedBall x (r / 2) ⊆ U ∩ Ω :=
-    (closedBall_subset_ball (by linarith)).trans hrU
-  have hball : ball x (r / 2) ⊆ U ∩ Ω := ball_subset_closedBall.trans hsub
-  have hf' : ContDiffOn ℝ (k + 1 : ℕ) f U := hf.of_le (by exact_mod_cast le_top)
-  obtain ⟨M, hM0, hM⟩ := hf'.exists_nonneg_bound_iteratedFDeriv_of_isOpen hU
-    (isCompact_closedBall x (r / 2)) (hsub.trans inter_subset_left)
-  have hfb : ContDiffOn ℝ (k + 1 : ℕ) f (ball x (r / 2)) := hf'.mono (hball.trans inter_subset_left)
-  refine ⟨ball x (r / 2), isOpen_ball, mem_ball_self (by positivity),
-    hball.trans inter_subset_right, f, hfb.of_le (by exact_mod_cast k.le_succ),
-    ⟨⟨M, hM0⟩ + 2 * ⟨M, hM0⟩, ?_⟩, fun φ hφ ↦ hTf φ (hφ.trans (hball.trans inter_subset_left))⟩
-  exact hfb.holderOnWith_iteratedFDeriv_of_lt isOpen_ball (convex_ball x (r / 2)) k.lt_succ_self
-    hα (fun y hy ↦ hM k k.le_succ y (ball_subset_closedBall hy))
-    (fun y hy ↦ hM (k + 1) le_rfl y (ball_subset_closedBall hy))
+  exact isLocallyCkHolderAt_of_contDiffOn (hU.inter Ω.isOpen) ⟨hxU, hx⟩ inter_subset_right
+    ((hf.of_le (by exact_mod_cast le_top)).mono inter_subset_left)
+    (fun φ hφ ↦ hTf φ (hφ.trans inter_subset_left)) hα
 
 /-! ### Comparison with the Hölder–Zygmund scale -/
 
@@ -128,68 +220,25 @@ open TauCeti BoundedContinuousFunction
 
 variable {T : 𝓓'(Ω, ℂ)} (φ : ContDiffBump (0 : E))
 
-/-- If `χ T` is the tempered distribution of a bounded continuous function `g` and `χ = 1` on
-`V`, then `T` is the function `g` on the test functions supported in `V`. -/
-private theorem apply_eq_integral_of_cutoffTempered_eq {χ : 𝓓(Ω, ℂ)} {g : E →ᵇ ℂ}
-    (hg : (toLpTop volume ℂ g : 𝓢'(E, ℂ)) = T.cutoffTempered χ) {V : Set E}
-    (hχ : ∀ y ∈ V, χ y = 1) {ψ : 𝓓(Ω, ℝ)} (hψ : tsupport ψ ⊆ V) :
-    T ψ = ∫ y, ψ y • g y := by
-  have h := isVanishingOn_sub_toDistribution_cutoffTempered T hχ ψ hψ
-  rw [sub_apply, sub_eq_zero, toDistribution_apply, ← hg, Lp.toTemperedDistribution_apply] at h
-  rw [h]
-  refine integral_congr_ae ((coeFn_toLpTop volume (𝕜 := ℂ) g).mono fun y hy ↦ ?_)
-  simp [hy, TestFunction.toSchwartzMapCLM_apply, Complex.real_smul]
-
-/-- If `T` is the function `f` on the test functions supported in `U`, and `χ` is a real test
-function supported in `U`, then `χ T` is the tempered distribution of the function `χ f`, given
-as a bounded continuous function `g`. -/
-private theorem cutoffTempered_eq_of_apply_eq_integral {U : Set E} {f : E → ℂ}
-    (hT : ∀ ψ : 𝓓(Ω, ℝ), tsupport ψ ⊆ U → T ψ = ∫ y, ψ y • f y) {χ : 𝓓(Ω, ℝ)}
-    (hχU : tsupport χ ⊆ U) {g : E →ᵇ ℂ} (hg : ∀ y, g y = χ y • f y) :
-    T.cutoffTempered (TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM χ) =
-      (toLpTop volume ℂ g : 𝓢'(E, ℂ)) := by
-  refine (eq_cutoffTempered_of_forall T _ fun ψ ρ _ hρ ↦ ?_).symm
-  -- The complex test function `ρ = χ ψ` is real, so `T` pairs with it through its real part.
-  have hre : TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
-      (TestFunction.postcompCLM (𝕜 := ℝ) Complex.reCLM ρ) = ρ := by
-    ext y
-    simp [hρ]
-  have hρU : tsupport (TestFunction.postcompCLM (𝕜 := ℝ) Complex.reCLM ρ) ⊆ U := by
-    have h : ⇑(TestFunction.postcompCLM (𝕜 := ℝ) Complex.reCLM ρ) = fun y ↦ χ y * ψ y := by
-      ext y
-      simp [hρ]
-    rw [h]
-    exact (tsupport_mul_subset_left).trans hχU
-  rw [← hre, complexPairing_postcompCLM_ofRealCLM,
-    hT _ hρU, Lp.toTemperedDistribution_apply]
-  refine integral_congr_ae ((coeFn_toLpTop volume (𝕜 := ℂ) g).mono fun y hy ↦ ?_)
-  simp only [hy, hg, SchwartzMap.postcompCLM_apply, Function.comp_apply, Complex.ofRealCLM_apply,
-    TestFunction.postcompCLM_apply, Complex.reCLM_apply, hρ, Complex.real_smul]
-  simp only [Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, mul_zero, sub_zero]
-  push_cast
-  ring
-
-/-- **A distribution in `𝒞^{k+α}` near `x` is `C^{k,α}` near `x`**, for `k : ℕ` and `0 < α < 1`:
-where a cutoff `χ` equals one, `T` is the bounded `C^{k,α}` function representing `χ T`. -/
+/-- **A distribution in `𝒞^{k+α}` near `x` is `C^{k,α}` near `x`**, for `k : ℕ` and
+`0 < α < 1`. -/
 theorem IsLocallyMemBesovAt.isLocallyCkHolderAt (hα0 : 0 < α) (hα1 : α < 1)
     (h : T.IsLocallyMemBesovAt φ (k + α) ∞ ∞ x) : T.IsLocallyCkHolderAt k α x := by
   obtain ⟨χ, hχ, hB⟩ := isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered.1 h
   -- `χ T` is the tempered distribution of a bounded `C^{k,α}` function `g`.
   set g := BesovSpace.toCkHolderSpace ℂ φ k hα0 hα1 hB.toBesovSpace
-  have hg : (toLpTop volume ℂ g.toBoundedContinuousFunction : 𝓢'(E, ℂ)) =
-      T.cutoffTempered χ := by
-    rw [BesovSpace.toLpTop_toCkHolderSpace, MemBesov.toDistr_toBesovSpace]
+  have hg (ψ : 𝓢(E, ℂ)) : T.cutoffTempered χ ψ = ∫ y, ψ y • g y := by
+    rw [← MemBesov.toDistr_toBesovSpace hB, ← BesovSpace.toLpTop_toCkHolderSpace φ k hα0 hα1,
+      toTemperedDistribution_toLpTop_apply, CkHolderSpace.coe_toBoundedContinuousFunction]
   have hxΩ : x ∈ Ω := χ.tsupport_subset (subset_tsupport _ (by simp [hχ.self_of_nhds]))
-  refine ⟨interior {y | χ y = 1} ∩ Ω, isOpen_interior.inter Ω.isOpen,
+  exact ⟨interior {y | χ y = 1} ∩ Ω, isOpen_interior.inter Ω.isOpen,
     ⟨mem_interior_iff_mem_nhds.2 hχ, hxΩ⟩, inter_subset_right, g, g.contDiff.contDiffOn,
-    ⟨_, g.memHolder_iteratedFDeriv.holderWith.holderOnWith _⟩, fun ψ hψ ↦ ?_⟩
-  rw [apply_eq_integral_of_cutoffTempered_eq hg (V := interior {y | χ y = 1} ∩ Ω)
-    (fun y hy ↦ interior_subset hy.1) hψ]
-  simp
+    ⟨_, g.memHolder_iteratedFDeriv.holderWith.holderOnWith _⟩, fun ψ hψ ↦
+      T.apply_eq_integral_of_cutoffTempered_apply_eq_integral hg
+        (V := interior {y | χ y = 1} ∩ Ω) (fun y hy ↦ interior_subset hy.1) hψ⟩
 
-/-- **A distribution `C^{k,α}` near `x` is in `𝒞^{k+α}` near `x`**, for `k : ℕ` and `α ≤ 1`: for
-a cutoff `χ` equal to one near `x` and supported in a ball on which `T` is a `C^{k,α}` function
-`f`, the tempered distribution `χ T` is the bounded `C^{k,α}` function `χ f`. -/
+/-- **A distribution `C^{k,α}` near `x` is in `𝒞^{k+α}` near `x`**, for `k : ℕ` and
+`α ≤ 1`. -/
 theorem IsLocallyCkHolderAt.isLocallyMemBesovAt (hα : α ≤ 1) (h : T.IsLocallyCkHolderAt k α x) :
     T.IsLocallyMemBesovAt φ (k + α) ∞ ∞ x := by
   obtain ⟨U, hU, hxU, hUΩ, f, hf, ⟨C, hC⟩, hT⟩ := h
@@ -203,32 +252,27 @@ theorem IsLocallyCkHolderAt.isLocallyMemBesovAt (hα : α ≤ 1) (h : T.IsLocall
   obtain ⟨χ, -, hχ1, hχs⟩ := TestFunction.exists_cutoff_tsupport_subset (n := ⊤)
     isCompact_singleton isOpen_ball (singleton_subset_iff.2 (mem_ball_self (by positivity)))
     (hsU.trans hUΩ)
-  -- The derivatives of `χ` through order `k + 1` are bounded by its Schwartz seminorms.
-  set N : ℝ := ∑ i ∈ Finset.range (k + 2),
-    SchwartzMap.seminorm ℝ 0 i (TestFunction.toSchwartzMapCLM ℝ χ)
-  have hN0 : 0 ≤ N := Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _
-  have hN (i : ℕ) (hi : i ≤ k + 1) (y : E) : ‖iteratedFDeriv ℝ i χ y‖ ≤ N := by
-    have h := SchwartzMap.norm_iteratedFDeriv_le_seminorm ℝ
-      (TestFunction.toSchwartzMapCLM ℝ χ) i y
-    rw [TestFunction.coe_toSchwartzMapCLM] at h
-    exact h.trans (Finset.single_le_sum (f := fun j ↦
-      SchwartzMap.seminorm ℝ 0 j (TestFunction.toSchwartzMapCLM ℝ χ))
-      (fun _ _ ↦ apply_nonneg _ _) (Finset.mem_range.2 (by omega)))
+  obtain ⟨N, hN0, hN⟩ := χ.hasCompactSupport.exists_bound_iteratedFDeriv_of_contDiff (n := k + 1)
+    (χ.contDiff.of_le (by exact_mod_cast le_top))
   -- `χ f` is a bounded `C^{k,α}` function on `E`, and it is the tempered distribution `χ T`.
   set g := CkHolderSpace.cutoff (M := ⟨M, hM0⟩) (N := ⟨N, hN0⟩) (hf.mono hsU)
     (χ.contDiff.of_le (by exact_mod_cast le_top)) isOpen_ball (convex_ball x (r / 2)) hχs hα
-    (fun i hi y hy ↦ hM i hi y (ball_subset_closedBall hy)) hN (hC.mono hsU)
+    (fun i hi y hy ↦ hM i hi y (ball_subset_closedBall hy)) (fun i hi y ↦ hN i hi y)
+    (hC.mono hsU)
   have hχT : T.cutoffTempered (TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM χ) =
       (toLpTop volume ℂ g.toBoundedContinuousFunction : 𝓢'(E, ℂ)) :=
-    cutoffTempered_eq_of_apply_eq_integral hT (hχs.trans hsU) fun y ↦ by
+    cutoffTempered_eq_of_apply_eq_integral hT (hχs.trans hsU) fun ψ ↦ by
+      rw [toTemperedDistribution_toLpTop_apply]
+      congr 1 with y
       rw [CkHolderSpace.coe_toBoundedContinuousFunction]
-      exact CkHolderSpace.cutoff_apply ..
+      exact congrArg (ψ y • ·) (CkHolderSpace.cutoff_apply ..)
   refine isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered.2
-    ⟨_, ?_, hχT ▸ BesovSpace.toDistr_ofCkHolderSpace φ k g ▸
-      (BesovSpace.ofCkHolderSpace ℂ φ k α g).memBesov_toDistr⟩
-  rw [nhdsSet_singleton] at hχ1
-  filter_upwards [hχ1] with y hy
-  simp [hy]
+    ⟨TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM χ, ?_, ?_⟩
+  · rw [nhdsSet_singleton] at hχ1
+    filter_upwards [hχ1] with y hy
+    simp [hy]
+  · rw [hχT, ← BesovSpace.toDistr_ofCkHolderSpace φ k g]
+    exact (BesovSpace.ofCkHolderSpace ℂ φ k α g).memBesov_toDistr
 
 /-- **Local Hölder–Zygmund regularity is local Hölder regularity.** For `k : ℕ` and
 `0 < α < 1`, a complex distribution `T` lies in the Hölder–Zygmund space `𝒞^{k+α} = B^{k+α}_{∞,∞}`

@@ -28,14 +28,14 @@ near `x` when it is a `C^k` function with `α`-Hölder `k`-th derivative on a ne
 (`Distribution.IsLocallyCkHolderAt`). Every symbol elliptic above some radius
 (`TauCeti.Symbol.IsEllipticAbove.isLocallyCkHolderAt_of_quantizeDistribution`) and every elliptic
 classical symbol (`TauCeti.ClassicalSymbol.IsElliptic.isLocallyCkHolderAt_of_quantizeDistribution`)
-qualifies, and so does every differential operator `P = ∑ i ∈ t, c i g i ∂^(m i)` of order `M`
+qualifies, and so does every differential operator `P = ∑ i ∈ t, c i g i ∂^(v i)` of order `M`
 with smooth coefficients that is elliptic at every point of `ℝⁿ`
 (`Distribution.IsLocallyCkHolderAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp`): if `P T` is
 `C^{k,α}` near `x`, then `T` is `C^{k+M,α}` near `x`.
 
 Conversely, `Op(a)` maps `C^{k+m,α}` to `C^{k,α}` locally: if `T` is `C^{k+m,α}` near every point
 of the closed `R`-neighbourhood of a neighbourhood of `x`, then `Op(a) T` is `C^{k,α}` near `x`
-(`Distribution.IsLocallyCkHolderAt.quantizeDistribution`).
+(`Distribution.isLocallyCkHolderAt_quantizeDistribution`).
 
 ## The argument
 
@@ -89,7 +89,7 @@ theorem IsLocallyCkHolderAt.of_quantizeDistribution (ha : a.HasNearDiagonalKerne
 order `m` and kernel supported within distance `R` of the diagonal, and let `k + m = l` for
 natural numbers `k` and `l`. For `0 < α < 1`, if `T` is `C^{l,α}` near every point of the closed
 `R`-neighbourhood of a neighbourhood `V` of `x`, then `Op(a) T` is `C^{k,α}` near `x`. -/
-theorem IsLocallyCkHolderAt.quantizeDistribution (ha : a.HasNearDiagonalKernel R)
+theorem isLocallyCkHolderAt_quantizeDistribution (ha : a.HasNearDiagonalKernel R)
     (hm : k + m = l) (hα0 : 0 < α) (hα1 : α < 1) {V : Set (CoordinateSpace n)} (hV : V ∈ 𝓝 x)
     (h : ∀ y ∈ cthickening R V, T.IsLocallyCkHolderAt l α y) :
     (quantizeDistribution ha T).IsLocallyCkHolderAt k α x := by

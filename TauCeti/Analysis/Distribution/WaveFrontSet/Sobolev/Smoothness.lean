@@ -100,17 +100,9 @@ theorem notMem_singularSupport_iff_eventually_forall_isLocallySobolevAt {x : E} 
   -- A cutoff equal to one near `x` and supported where `T` has every Sobolev order.
   obtain ⟨χc, V, hV, hxV, hV1, hχcs⟩ := exists_eqOn_one_tsupport_subset (n := ⊤) (𝕜 := ℂ) h hx
   obtain ⟨g, hg, hTg⟩ := exists_contDiff_cutoffTempered_eq_integral fun s y hy ↦ hχcs hy s
-  refine (notMem_singularSupport_iff hx).2 ⟨V, hV, hxV, g, hg.contDiffOn, fun φ hφ ↦ ?_⟩
-  -- On `V` the cutoff is one, so `T φ` is the value of `χ T` on `φ`.
-  let ψ : 𝓢(E, ℂ) := HasCompactSupport.toSchwartzMap (f := fun y ↦ (φ y : ℂ))
-    (φ.hasCompactSupport.comp_left ofReal_zero) (ofRealCLM.contDiff.comp φ.contDiff)
-  have hψ (y : E) : ψ y = φ y := HasCompactSupport.toSchwartzMap_toFun _ _ y
-  have hφχ (y : E) : postcompCLM (𝕜 := ℝ) ofRealCLM φ y = χc y * ψ y := by
-    by_cases hy : y ∈ tsupport φ
-    · simp [hψ, hV1 (hφ hy)]
-    · simp [hψ, image_eq_zero_of_notMem_tsupport hy]
-  rw [← complexPairing_postcompCLM_ofRealCLM, ← cutoffTempered_apply T χc hφχ, hTg]
-  simp [hψ, Complex.real_smul]
+  -- On `V` the cutoff is one, so `T` is the function representing `χ T`.
+  exact (notMem_singularSupport_iff hx).2 ⟨V, hV, hxV, g, hg.contDiffOn, fun φ hφ ↦
+    T.apply_eq_integral_of_cutoffTempered_apply_eq_integral hTg (fun y hy ↦ hV1 hy) hφ⟩
 
 /-- **The singular support is the closure of the `H^s` singular supports.** The singular support
 of a complex distribution is the closure in `Ω` of the union over all real `s` of its `H^s`
