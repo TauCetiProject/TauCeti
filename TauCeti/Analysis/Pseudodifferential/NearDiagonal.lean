@@ -5,25 +5,29 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Amplitude.ProperSupport
+public import TauCeti.Analysis.Pseudodifferential.Amplitude.Expansion
 public import TauCeti.Analysis.Pseudodifferential.OffDiagonalKernel
+import TauCeti.Analysis.Calculus.BumpFunction.DiagonalCutoff
 
 /-!
 # Near-diagonal localization of pseudodifferential operators
 
 For any symbol `a(x, ξ)` of order `m` on `ℝⁿ` and any smooth spatial cutoff `χ(x, y)` equal to `1`
-on a neighborhood of every diagonal point `(x, x)`, splitting a compactly supported Schwartz input
-`u` at each output point `x` into `y ↦ χ(x, y) u(y)` and `y ↦ (1 - χ(x, y)) u(y)` decomposes
-`Op(a) u (x)` into the amplitude quantization of `χ(x, y) a(x, ξ)`
-(`TauCeti.Symbol.localizeAmplitude`) plus the integral operator with globally `C^∞` residual kernel
-`(1 - χ(x, y)) K_a(x, y)` (`TauCeti.Symbol.localizedOffDiagonalKernel`).
+near `y = x`, when `V` is complete and `u` is a compactly supported Schwartz function, splitting `u`
+at `x` into `y ↦ χ(x, y) u(y)` and `y ↦ (1 - χ(x, y)) u(y)` decomposes `Op(a) u (x)` into the
+amplitude quantization of `χ(x, y) a(x, ξ)` (`TauCeti.Symbol.localizeAmplitude`) plus the integral
+operator with residual kernel `(1 - χ(x, y)) K_a(x, y)`
+(`TauCeti.Symbol.localizedOffDiagonalKernel` in
+`TauCeti.Analysis.Pseudodifferential.OffDiagonalKernel`), which is globally `C^∞` when `χ = 1` on
+a joint neighborhood of every diagonal point `(x, x)`.
 
 Choosing `χ` properly supported via
 `TauCeti.exists_contDiff_hasProperSupport_eventuallyEq_one_diagonal` exhibits every
-pseudodifferential operator on `ℝⁿ` as a properly supported amplitude operator whose global left
-symbol differs from `a` by a smoothing symbol
-(`TauCeti.Symbol.isSmoothing_properLeftSymbol_localizeAmplitude_sub`) plus an integral operator with
-a globally smooth kernel (`TauCeti.Symbol.exists_hasProperSupport_amplitude_and_contDiff_kernel`).
+pseudodifferential operator on `ℝⁿ` (for complete `V` and `W`, on compactly supported Schwartz
+inputs) as a properly supported amplitude operator whose global left symbol differs from `a` by a
+smoothing symbol (`TauCeti.Symbol.isSmoothing_leftSymbol_localizeAmplitude_sub`, for complete `W`)
+plus an integral operator with a globally smooth kernel
+(`TauCeti.Symbol.exists_hasProperSupport_amplitude_and_contDiff_kernel`).
 
 Compare `TauCeti.Analysis.Pseudodifferential.ProperSupport`, which cuts off kernels directly at
 the symbol level for translation-invariant Schwartz factors `χ(x - y)`: here `χ(x, y)` is an
@@ -33,15 +37,17 @@ arbitrary smooth cutoff, giving both the localized amplitude and the explicit `C
 
 * `TauCeti.Symbol.localizeAmplitude`, `TauCeti.Symbol.diagonal_localizeAmplitude`,
   `TauCeti.Symbol.leftTerm_localizeAmplitude_succ`,
-  `TauCeti.Symbol.isSmoothing_properLeftSymbol_localizeAmplitude_sub`.
-* `TauCeti.Symbol.localizedOffDiagonalKernel`, `TauCeti.Symbol.contDiff_localizedOffDiagonalKernel`.
-* `TauCeti.Symbol.quantizeSchwartzValue_eq_quantizeSchwartzValue_properLeftSymbol_add_integral`,
-  `TauCeti.Symbol.exists_hasProperSupport_amplitude_and_contDiff_kernel`.
+  `TauCeti.Symbol.isSmoothing_leftSymbol_localizeAmplitude_sub`.
+* Near-diagonal decompositions:
+  `TauCeti.Symbol.quantizeSchwartzValue_eq_quantizeSchwartzValue_leftSymbol_add_integral`,
+  `TauCeti.Symbol.exists_hasProperSupport_amplitude_and_contDiff_kernel`, and
+  `quantizeSchwartzValue_eq_quantizeAmplitudeValue_add_integral_localizedOffDiagonalKernel`.
 
 ## References
 
+* M. E. Taylor, *Pseudodifferential Operators*, Princeton University Press, 1981, Chapter II,
+  §§1–2.
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1, pp. 68–72.
-* M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §1–§2.
 -/
 
 public section
@@ -91,130 +97,89 @@ theorem hasProperSupport_localizeAmplitude (a : Symbol n V W m)
     (a.localizeAmplitude χ hχ).HasProperSupport :=
   Amplitude.hasProperSupport_smulSpatial_of_cutoff _ hχ hχ_prop
 
-/-- When `χ` equals `1` on a neighborhood of each diagonal point `(x, x)`, the diagonal restriction
-of `a.localizeAmplitude χ hχ` recovers `a`. -/
+/-- When `χ(x, x) = 1` for every `x`, the diagonal restriction of `a.localizeAmplitude χ hχ`
+recovers `a`. -/
 theorem diagonal_localizeAmplitude (a : Symbol n V W m)
     {χ : CoordinateSpace n → CoordinateSpace n → ℝ} (hχ : ContDiff ℝ ∞ (uncurry χ))
-    (hχ_diag : ∀ x, uncurry χ =ᶠ[𝓝 (x, x)] 1) :
+    (hχ_diag : ∀ x, χ x x = 1) :
     (a.localizeAmplitude χ hχ).diagonal = a := by
   ext1
   funext ⟨x, ξ⟩
-  simp [show χ x x = 1 from (hχ_diag x).eq_of_nhds]
+  simp [hχ_diag x]
 
-/-- When `χ` equals `1` near the diagonal, every positive-index term `leftTerm (k + 1)` of
+private theorem eventuallyEq_ofLeft_slice_of_eventuallyEq_one (a : Symbol n V W m)
+    {χ : CoordinateSpace n → CoordinateSpace n → ℝ} (hχ : ContDiff ℝ ∞ (uncurry χ))
+    {x ξ : CoordinateSpace n} (hχ_diag : (fun y ↦ χ x y) =ᶠ[𝓝 x] 1) :
+    (fun q : CoordinateSpace n × CoordinateSpace n ↦
+        (a.localizeAmplitude χ hχ).coefficient (x, q.1, q.2))
+      =ᶠ[𝓝 (x, ξ)] fun q ↦ (Amplitude.ofLeft a).coefficient (x, q.1, q.2) := by
+  filter_upwards [(continuous_fst.tendsto (x, ξ)).eventually hχ_diag] with q hq
+  have hq1 : χ x q.1 = 1 := hq
+  simp [hq1]
+
+/-- When `χ(x, ·) = 1` near `x` for every `x`, every positive-index term `leftTerm (k + 1)` of
 `a.localizeAmplitude χ hχ` vanishes identically because `a(x, ξ)` does not depend on `y` and all
 `y`-derivatives of `χ` vanish on the diagonal. -/
 theorem leftTerm_localizeAmplitude_succ (a : Symbol n V W m)
     {χ : CoordinateSpace n → CoordinateSpace n → ℝ} (hχ : ContDiff ℝ ∞ (uncurry χ))
-    (hχ_diag : ∀ x, uncurry χ =ᶠ[𝓝 (x, x)] 1) (k : ℕ) :
+    (hχ_diag : ∀ x, (fun y ↦ χ x y) =ᶠ[𝓝 x] 1) (k : ℕ) :
     (a.localizeAmplitude χ hχ).leftTerm (k + 1) = 0 := by
   ext1
   funext ⟨x, ξ⟩
-  have hev : (a.localizeAmplitude χ hχ).coefficient =ᶠ[𝓝 (x, x, ξ)]
-      (Amplitude.ofLeft a).coefficient := by
-    have hcont : Continuous fun p : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n ↦
-        (p.1, p.2.1) :=
-      continuous_fst.prodMk (continuous_fst.comp continuous_snd)
-    filter_upwards [(hcont.tendsto (x, x, ξ)).eventually (hχ_diag x)] with p hp
-    simp [show χ p.1 p.2.1 = 1 from hp]
-  rw [Amplitude.coefficient_leftTerm, coefficient_zero, Pi.zero_apply]
-  suffices hsum : ∑ w : Fin (k + 1) → Fin n, iteratedFDerivAlong ℝ
-      (amplitudeDirections [] (List.ofFn w) (List.ofFn w))
-      (a.localizeAmplitude χ hχ).coefficient (x, x, ξ) = 0 by
-    rw [hsum, smul_zero]
-  refine Finset.sum_eq_zero fun w _ ↦ ?_
-  rw [(hev.iteratedFDerivAlong (𝕜 := ℝ) _).eq_of_nhds]
-  have hperm : (amplitudeDirections [] (List.ofFn w) (List.ofFn w)).Perm
-      (amplitudeDirections [] (List.ofFn (Fin.tail w)) (List.ofFn w) ++
-        [(0, EuclideanSpace.single (w 0) 1, 0)]) := by
-    rw [List.ofFn_succ]
-    simp only [amplitudeDirections_def, List.map_nil, List.nil_append, List.map_cons,
-      List.cons_append]
-    exact (List.perm_append_singleton _ _).symm
-  rw [hperm.iteratedFDerivAlong_eq (Amplitude.ofLeft a).contDiff_coefficient (by simp),
-    iteratedFDerivAlong_append, ← Amplitude.coefficient_spatialDerivSnd_eq_iteratedFDerivAlong,
-    Amplitude.spatialDerivSnd_ofLeft, Amplitude.coefficient_zero, iteratedFDerivAlong_zero,
-    Pi.zero_apply]
+  rw [Amplitude.coefficient_leftTerm_congr_of_eventuallyEq_snd
+      (a.eventuallyEq_ofLeft_slice_of_eventuallyEq_one hχ (hχ_diag x)) (k + 1),
+    Amplitude.leftTerm_ofLeft_succ, coefficient_zero]
 
-/-- **Symbol equivalence under near-diagonal localization.** When `χ` has proper output support and
-equals `1` near the diagonal, the left symbol of `a.localizeAmplitude χ hχ` differs from `a` by a
-smoothing symbol (`S^{-∞}`). -/
-theorem isSmoothing_properLeftSymbol_localizeAmplitude_sub [CompleteSpace W] (a : Symbol n V W m)
+/-- **Symbol equivalence under near-diagonal localization.** Requires `W` to be complete; when `χ`
+has proper output support and `χ(x, ·) = 1` near `x` for every `x`, the left symbol of
+`a.localizeAmplitude χ hχ` differs from `a` by a smoothing symbol (`S^{-∞}`). -/
+theorem isSmoothing_leftSymbol_localizeAmplitude_sub [CompleteSpace W] (a : Symbol n V W m)
     {χ : CoordinateSpace n → CoordinateSpace n → ℝ} (hχ : ContDiff ℝ ∞ (uncurry χ))
-    (hχ_out : HasProperOutputSupport χ) (hχ_diag : ∀ x, uncurry χ =ᶠ[𝓝 (x, x)] 1) :
-    (((a.localizeAmplitude χ hχ).properLeftSymbol
+    (hχ_out : HasProperOutputSupport χ) (hχ_diag : ∀ x, (fun y ↦ χ x y) =ᶠ[𝓝 x] 1) :
+    (((a.localizeAmplitude χ hχ).leftSymbol
       (a.hasProperOutputSupport_localizeAmplitude hχ hχ_out)) - a).IsSmoothing := by
   have hA := a.hasProperOutputSupport_localizeAmplitude hχ hχ_out
+  have hdiag : (a.localizeAmplitude χ hχ).diagonal = a :=
+    a.diagonal_localizeAmplitude hχ fun x ↦ (hχ_diag x).eq_of_nhds
   refine isSmoothing_iff_forall_nat.2 fun N ↦ ?_
   cases N with
   | zero =>
-    exact ⟨inclusion (by simp) ((a.localizeAmplitude χ hχ).properLeftSymbol hA - a),
+    exact ⟨inclusion (by simp) ((a.localizeAmplitude χ hχ).leftSymbol hA - a),
       coefficient_inclusion _ _⟩
   | succ N =>
-    refine ⟨(a.localizeAmplitude χ hχ).properLeftRemainder hA (N + 1), funext fun ⟨x, ξ⟩ ↦ ?_⟩
-    rw [Amplitude.coefficient_properLeftRemainder, Finset.sum_range_succ',
+    refine ⟨(a.localizeAmplitude χ hχ).leftRemainder hA (N + 1), funext fun ⟨x, ξ⟩ ↦ ?_⟩
+    rw [Amplitude.coefficient_leftRemainder, Finset.sum_range_succ',
       Finset.sum_eq_zero fun k _ ↦ by
         rw [a.leftTerm_localizeAmplitude_succ hχ hχ_diag k, coefficient_zero],
       zero_add, coefficient_sub, Pi.sub_apply, Pi.sub_apply, Amplitude.leftTerm_zero,
-      coefficient_inclusion, a.diagonal_localizeAmplitude hχ hχ_diag]
-
-/-- The residual off-diagonal kernel `(1 - χ(x, y)) • K_a(x, y)` obtained after cutting out a
-neighborhood of the diagonal by `χ`. -/
-def localizedOffDiagonalKernel (a : Symbol n V W m)
-    (χ : CoordinateSpace n → CoordinateSpace n → ℝ) (x y : CoordinateSpace n) : V →L[ℂ] W :=
-  (1 - χ x y) • a.offDiagonalKernel x y
-
-@[simp]
-theorem localizedOffDiagonalKernel_apply (a : Symbol n V W m)
-    (χ : CoordinateSpace n → CoordinateSpace n → ℝ) (x y : CoordinateSpace n) :
-    a.localizedOffDiagonalKernel χ x y = (1 - χ x y) • a.offDiagonalKernel x y := (rfl)
-
-theorem localizedOffDiagonalKernel_self (a : Symbol n V W m)
-    (χ : CoordinateSpace n → CoordinateSpace n → ℝ) (x : CoordinateSpace n) :
-    a.localizedOffDiagonalKernel χ x x = 0 := by
-  simp
-
-/-- **Global smoothness of the localized off-diagonal kernel.** Because `1 - χ` vanishes on a
-neighborhood of every diagonal point `(x, x)` and `offDiagonalKernel a` is `C^∞` away from the
-diagonal, `(x, y) ↦ (1 - χ(x, y)) • K_a(x, y)` is `C^∞` on the *entire* product `ℝⁿ × ℝⁿ`. -/
-theorem contDiff_localizedOffDiagonalKernel (a : Symbol n V W m)
-    {χ : CoordinateSpace n → CoordinateSpace n → ℝ} (hχ : ContDiff ℝ ∞ (uncurry χ))
-    (hχ_diag : ∀ x, uncurry χ =ᶠ[𝓝 (x, x)] 1) :
-    ContDiff ℝ ∞ (uncurry (a.localizedOffDiagonalKernel χ)) := by
-  refine contDiff_iff_contDiffAt.2 fun ⟨x, y⟩ ↦ ?_
-  rcases eq_or_ne x y with rfl | hxy
-  · refine (contDiffAt_const (c := (0 : V →L[ℂ] W))).congr_of_eventuallyEq ?_
-    filter_upwards [hχ_diag x] with ⟨x', y'⟩ h1
-    simp [localizedOffDiagonalKernel, show χ x' y' = 1 from h1]
-  · exact ((contDiff_const.sub hχ).contDiffAt (x := (x, y))).smul
-      (a.contDiffOn_offDiagonalKernel.contDiffAt (isClosed_diagonal.isOpen_compl.mem_nhds hxy))
+      coefficient_inclusion, hdiag]
 
 private theorem quantizeSchwartzValue_eq_integral_localizedOffDiagonalKernel_of_eq
     [CompleteSpace V] [CompleteSpace W] (a : Symbol n V W m)
     {χ : CoordinateSpace n → CoordinateSpace n → ℝ} {x : CoordinateSpace n}
-    (hχ_diag : uncurry χ =ᶠ[𝓝 (x, x)] 1) {u w : 𝓢(CoordinateSpace n, V)}
+    (hχ_diag : (fun y ↦ χ x y) =ᶠ[𝓝 x] 1) {u w : 𝓢(CoordinateSpace n, V)}
     (hs : HasCompactSupport fun y ↦ (1 - χ x y) • u y)
     (hw : ∀ y, w y = (1 - χ x y) • u y) :
     quantizeSchwartzValue a.coefficient w x =
       ∫ y, a.localizedOffDiagonalKernel χ x y (u y) := by
   have hx_notMem : x ∉ tsupport (w : CoordinateSpace n → V) := by
     refine notMem_tsupport_iff_eventuallyEq.2 ?_
-    filter_upwards [((continuous_const.prodMk continuous_id).tendsto x).eventually hχ_diag]
-      with y hy
-    simp [hw, show χ x y = 1 from hy]
+    filter_upwards [hχ_diag] with y hy
+    have hy1 : χ x y = 1 := hy
+    simp [hw, hy1]
   rw [a.quantizeSchwartzValue_eq_integral_offDiagonalKernel ((funext hw).symm ▸ hs) hx_notMem]
   congr 1 with y
   rw [hw, ContinuousLinearMap.map_smul_of_tower, localizedOffDiagonalKernel_apply, smul_apply]
 
-/-- **Near-diagonal decomposition of a pseudodifferential operator.** For any symbol `a`, any
-smooth cutoff `χ` equal to `1` near the diagonal, and any compactly supported Schwartz input `u`,
-`Op(a) u (x)` splits as the amplitude quantization of `χ(x, y) a(x, ξ)` plus the integral operator
-with globally smooth kernel `(1 - χ(x, y)) K_a(x, y)`. -/
+/-- **Near-diagonal decomposition of a pseudodifferential operator.** Requires `V` to be complete;
+for any symbol `a`, any smooth cutoff `χ` with `χ(x, ·) = 1` near `x`, and any compactly
+supported Schwartz input `u`, `Op(a) u (x)` splits as the amplitude quantization of
+`χ(x, y) a(x, ξ)` plus the integral operator with kernel `(1 - χ(x, y)) K_a(x, y)`. -/
 theorem quantizeSchwartzValue_eq_quantizeAmplitudeValue_add_integral_localizedOffDiagonalKernel
     [CompleteSpace V] (a : Symbol n V W m)
     {χ : CoordinateSpace n → CoordinateSpace n → ℝ} (hχ : ContDiff ℝ ∞ (uncurry χ))
-    (hχ_diag : ∀ x, uncurry χ =ᶠ[𝓝 (x, x)] 1) {u : 𝓢(CoordinateSpace n, V)}
-    (hu : HasCompactSupport (u : CoordinateSpace n → V)) (x : CoordinateSpace n) :
+    {u : 𝓢(CoordinateSpace n, V)} (hu : HasCompactSupport (u : CoordinateSpace n → V))
+    (x : CoordinateSpace n) (hχ_diag : (fun y ↦ χ x y) =ᶠ[𝓝 x] 1) :
     quantizeSchwartzValue a.coefficient u x =
       quantizeAmplitudeValue (a.localizeAmplitude χ hχ).coefficient u x +
         ∫ y, a.localizedOffDiagonalKernel χ x y (u y) := by
@@ -235,39 +200,37 @@ theorem quantizeSchwartzValue_eq_quantizeAmplitudeValue_add_integral_localizedOf
   conv_lhs => rw [hu_split]
   rw [quantizeSchwartzValue_add_right (a.continuous_coefficient_slice x).aestronglyMeasurable
     hC w₁ w₂, a.quantizeSchwartzValue_eq_integral_localizedOffDiagonalKernel_of_eq
-    (hχ_diag x) hs₂ hw₂]
+    hχ_diag hs₂ hw₂]
   congr 1
-  rw [← quantizeAmplitudeValue_eq_quantizeSchwartzValue a.coefficient w₁ x,
-    quantizeAmplitudeValue_def, quantizeAmplitudeValue_def]
-  refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-  dsimp only
-  rw [show (fun y ↦ a.coefficient (x, (2 * π) • ζ) (w₁ y)) =
-      fun y ↦ (a.localizeAmplitude χ hχ).coefficient (x, y, (2 * π) • ζ) (u y) from
-    funext fun y ↦ by
-      rw [hw₁, ContinuousLinearMap.map_smul_of_tower, coefficient_localizeAmplitude, smul_apply]]
+  rw [← quantizeAmplitudeValue_eq_quantizeSchwartzValue a.coefficient w₁ x]
+  refine quantizeAmplitudeValue_congr_apply_at fun y ξ ↦ ?_
+  rw [hw₁, ContinuousLinearMap.map_smul_of_tower, coefficient_localizeAmplitude, smul_apply]
 
-/-- When `χ` also has proper output support, `Op(a) u (x)` decomposes into the symbol quantization
-of the left symbol of `a.localizeAmplitude χ hχ` (which agrees with `a` modulo `S^{-∞}`) plus the
-smooth integral operator with kernel `a.localizedOffDiagonalKernel χ`. -/
-theorem quantizeSchwartzValue_eq_quantizeSchwartzValue_properLeftSymbol_add_integral
+/-- Requires `V` to be complete; when `χ` also has proper output support and `χ(x, ·) = 1` near
+`x`, for any compactly supported Schwartz input `u`, `Op(a) u (x)` decomposes into the symbol
+quantization of the left symbol of `a.localizeAmplitude χ hχ` (which agrees with `a` modulo `S^{-∞}`
+when `W` is complete) plus the integral operator with kernel `a.localizedOffDiagonalKernel χ`. -/
+theorem quantizeSchwartzValue_eq_quantizeSchwartzValue_leftSymbol_add_integral
     [CompleteSpace V] (a : Symbol n V W m)
     {χ : CoordinateSpace n → CoordinateSpace n → ℝ} (hχ : ContDiff ℝ ∞ (uncurry χ))
-    (hχ_out : HasProperOutputSupport χ) (hχ_diag : ∀ x, uncurry χ =ᶠ[𝓝 (x, x)] 1)
-    {u : 𝓢(CoordinateSpace n, V)} (hu : HasCompactSupport (u : CoordinateSpace n → V))
-    (x : CoordinateSpace n) :
+    (hχ_out : HasProperOutputSupport χ) {u : 𝓢(CoordinateSpace n, V)}
+    (hu : HasCompactSupport (u : CoordinateSpace n → V)) (x : CoordinateSpace n)
+    (hχ_diag : (fun y ↦ χ x y) =ᶠ[𝓝 x] 1) :
     quantizeSchwartzValue a.coefficient u x =
       quantizeSchwartzValue
-          ((a.localizeAmplitude χ hχ).properLeftSymbol
+          ((a.localizeAmplitude χ hχ).leftSymbol
             (a.hasProperOutputSupport_localizeAmplitude hχ hχ_out)).coefficient u x +
         ∫ y, a.localizedOffDiagonalKernel χ x y (u y) := by
-  rw [Amplitude.quantizeSchwartzValue_properLeftSymbol]
+  rw [Amplitude.quantizeSchwartzValue_leftSymbol]
   exact a.quantizeSchwartzValue_eq_quantizeAmplitudeValue_add_integral_localizedOffDiagonalKernel
-    hχ hχ_diag hu x
+    hχ hu x hχ_diag
 
 /-- **Decomposition of a pseudodifferential operator into a properly supported part and a smooth
-kernel.** Given `r < R` with `0 < R`, every symbol `a` of order `m` on `ℝⁿ` admits:
-* a properly supported amplitude `A` of order `m`, supported in `{(x, y) | ‖x - y‖ < R}`, whose
-  global left symbol differs from `a` by a smoothing symbol, and
+kernel.** Requires `V` and `W` to be complete; given `r < R` with `0 < R`, every symbol `a` of order
+`m` on `ℝⁿ` admits:
+* a properly supported amplitude `A` of order `m` whose closed spatial support
+  `tsupport (uncurry fun x y ξ ↦ A.coefficient (x, y, ξ))` is contained in `{(x, y) | ‖x - y‖ < R}`,
+  and whose global left symbol differs from `a` by a smoothing symbol, and
 * a globally `C^∞` operator kernel `K` on `ℝⁿ × ℝⁿ`, vanishing where `‖x - y‖ ≤ r`,
 such that `Op(a) u (x) = Op(A) u (x) + ∫ K(x, y) u(y) dy` for all compactly supported Schwartz
 functions `u`. -/
@@ -276,21 +239,37 @@ theorem exists_hasProperSupport_amplitude_and_contDiff_kernel
     (hR : 0 < R) (hrR : r < R) :
     ∃ (A : Amplitude n V W m) (hA : A.HasProperSupport)
       (K : CoordinateSpace n → CoordinateSpace n → V →L[ℂ] W),
-      ContDiff ℝ ∞ (uncurry K) ∧ ((A.properLeftSymbol hA.out) - a).IsSmoothing ∧
-      (∀ x y ξ, R ≤ ‖x - y‖ → A.coefficient (x, y, ξ) = 0) ∧
+      ContDiff ℝ ∞ (uncurry K) ∧ ((A.leftSymbol hA.out) - a).IsSmoothing ∧
+      tsupport (uncurry fun x y ξ ↦ A.coefficient (x, y, ξ)) ⊆
+        {p : CoordinateSpace n × CoordinateSpace n | ‖p.1 - p.2‖ < R} ∧
       (∀ x y, ‖x - y‖ ≤ r → K x y = 0) ∧
       ∀ u : 𝓢(CoordinateSpace n, V), HasCompactSupport (u : CoordinateSpace n → V) →
         ∀ x, quantizeSchwartzValue a.coefficient u x =
           quantizeAmplitudeValue A.coefficient u x + ∫ y, K x y (u y) := by
+  set R' : ℝ := (max r 0 + R) / 2
+  have hmax : max r 0 < R := max_lt hrR hR
+  have hR' : 0 < R' := lt_of_le_of_lt (le_max_right r 0) (by dsimp [R']; linarith)
+  have hrR' : r < R' := lt_of_le_of_lt (le_max_left r 0) (by dsimp [R']; linarith)
+  have hR'R : R' < R := by dsimp [R']; linarith
   obtain ⟨χ, hχ, -, hχ_prop, hχ_diag, hχ_one, hχ_zero⟩ :=
-    exists_contDiff_hasProperSupport_eventuallyEq_one_diagonal (E := CoordinateSpace n) hR hrR
+    exists_contDiff_hasProperSupport_eventuallyEq_one_diagonal (E := CoordinateSpace n) hR' hrR'
+  have hχ_fiber : ∀ x, (fun y ↦ χ x y) =ᶠ[𝓝 x] 1 := fun x ↦
+    ((continuous_const.prodMk continuous_id).tendsto x).eventually (hχ_diag x)
+  have hsupp : tsupport (uncurry fun x y ξ ↦
+        (a.localizeAmplitude χ hχ).coefficient (x, y, ξ)) ⊆
+      {p : CoordinateSpace n × CoordinateSpace n | ‖p.1 - p.2‖ < R} := by
+    have hcl : IsClosed {p : CoordinateSpace n × CoordinateSpace n | ‖p.1 - p.2‖ ≤ R'} :=
+      isClosed_le (continuous_fst.sub continuous_snd).norm continuous_const
+    refine (closure_minimal (fun p hp ↦ ?_) hcl).trans (fun p hp ↦ lt_of_le_of_lt hp hR'R)
+    by_contra hgt
+    refine hp (funext fun ξ ↦ ?_)
+    simp [uncurry_def, hχ_zero p.1 p.2 (not_le.1 hgt).le]
   exact ⟨a.localizeAmplitude χ hχ, a.hasProperSupport_localizeAmplitude hχ hχ_prop,
     a.localizedOffDiagonalKernel χ, a.contDiff_localizedOffDiagonalKernel hχ hχ_diag,
-    a.isSmoothing_properLeftSymbol_localizeAmplitude_sub hχ hχ_prop.out hχ_diag,
-    fun x y ξ hxy ↦ by simp [hχ_zero x y hxy], fun x y hxy ↦ by simp [hχ_one x y hxy],
-    fun u hu x ↦
+    a.isSmoothing_leftSymbol_localizeAmplitude_sub hχ hχ_prop.out hχ_fiber, hsupp,
+    fun x y hxy ↦ by simp [hχ_one x y hxy], fun u hu x ↦
       a.quantizeSchwartzValue_eq_quantizeAmplitudeValue_add_integral_localizedOffDiagonalKernel
-        hχ hχ_diag hu x⟩
+        hχ hu x (hχ_fiber x)⟩
 
 end Symbol
 

@@ -37,6 +37,9 @@ The nonemptiness hypotheses cannot be dropped: a map out of an empty space is pr
   embeddings rather than for subtypes.
 * `Continuous.isClosedEmbedding_fst_prod`: a parameter-preserving map `(p, x) ↦ (p, G (p, x))`
   with injective slices, compact second factor and Hausdorff target is a closed embedding.
+* `Continuous.isProperMap_restrict_biUnion` and `Continuous.isProperMap_restrict_union`: a
+  continuous map that is proper on each member of a finite family of subsets is proper on their
+  union.
 -/
 
 public section
@@ -168,3 +171,54 @@ theorem Continuous.isClosedEmbedding_fst_prod {P : Type*} [TopologicalSpace P] [
     rw [himage]
     exact isClosedMap_fst_of_compactSpace _
       ((hC.preimage (by fun_prop)).inter (isClosed_eq (by fun_prop) (by fun_prop)))
+
+/-- If `f : X → Y` is continuous and proper on each member of a finite family `S`, then `f`
+is proper on `⋃ i ∈ s, S i`. No separation axiom is needed. -/
+theorem Continuous.isProperMap_restrict_biUnion {ι : Type*} (s : Finset ι) (S : ι → Set X)
+    (hf : Continuous f) (hSf : ∀ i ∈ s, IsProperMap fun x : S i ↦ f x) :
+    IsProperMap fun x : ↥(⋃ i ∈ s, S i) ↦ f x := by
+  rw [isProperMap_iff_isClosedMap_and_compact_fibers]
+  refine ⟨hf.comp continuous_subtype_val, fun C hC ↦ ?_, fun y ↦ ?_⟩
+  · have himage : (fun x : ↥(⋃ i ∈ s, S i) ↦ f x) '' C =
+        ⋃ i : s, (fun x : S i.1 ↦ f x) ''
+          (Set.inclusion (Set.subset_biUnion_of_mem (u := S) i.2) ⁻¹' C) := by
+      ext y
+      simp only [Set.mem_image, Set.mem_iUnion, Set.mem_preimage]
+      refine ⟨?_, ?_⟩
+      · rintro ⟨⟨x, hx⟩, hxC, hxy⟩
+        rcases Set.mem_iUnion₂.1 hx with ⟨i, hi, hxi⟩
+        exact ⟨⟨i, hi⟩, ⟨x, hxi⟩, hxC, hxy⟩
+      · rintro ⟨⟨i, hi⟩, ⟨x, hxi⟩, hxC, hxy⟩
+        exact ⟨⟨x, Set.mem_biUnion hi hxi⟩, hxC, hxy⟩
+    rw [himage]
+    exact isClosed_iUnion_of_finite fun i : s ↦
+      (hSf i.1 i.2).isClosedMap _ (hC.preimage (Continuous.subtype_mk continuous_subtype_val _))
+  · have hfib : (fun x : ↥(⋃ i ∈ s, S i) ↦ f x) ⁻¹' {y} =
+        ⋃ i : s, Set.inclusion (Set.subset_biUnion_of_mem (u := S) i.2) ''
+          ((fun x : S i.1 ↦ f x) ⁻¹' {y}) := by
+      ext ⟨x, hx⟩
+      simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_iUnion, Set.mem_image]
+      refine ⟨?_, ?_⟩
+      · intro hxy
+        rcases Set.mem_iUnion₂.1 hx with ⟨i, hi, hxi⟩
+        exact ⟨⟨i, hi⟩, ⟨x, hxi⟩, hxy, rfl⟩
+      · rintro ⟨⟨i, hi⟩, ⟨x', hx'⟩, hxy, heq⟩
+        obtain rfl : x' = x := congrArg Subtype.val heq
+        exact hxy
+    rw [hfib]
+    exact isCompact_iUnion fun i : s ↦
+      ((hSf i.1 i.2).isCompact_preimage isCompact_singleton).image
+        (Continuous.subtype_mk continuous_subtype_val _)
+
+/-- If `f : X → Y` is continuous and proper on subsets `S₁` and `S₂`, then `f` is proper on
+`S₁ ∪ S₂`. No separation axiom is needed. -/
+theorem Continuous.isProperMap_restrict_union {S₁ S₂ : Set X} (hf : Continuous f)
+    (hf₁ : IsProperMap fun x : S₁ ↦ f x) (hf₂ : IsProperMap fun x : S₂ ↦ f x) :
+    IsProperMap fun x : ↥(S₁ ∪ S₂) ↦ f x := by
+  let S : Bool → Set X := Bool.rec S₂ S₁
+  have hcover : (⋃ b ∈ (Finset.univ : Finset Bool), S b) = S₁ ∪ S₂ := by
+    ext x
+    simp [S, Bool.exists_bool, or_comm]
+  exact (hf.isProperMap_restrict_biUnion Finset.univ S fun b _ ↦ Bool.casesOn b hf₂ hf₁).comp
+    (Homeomorph.setCongr hcover.symm).isProperMap
+

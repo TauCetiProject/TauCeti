@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Amplitude.Basic
+public import TauCeti.Analysis.Pseudodifferential.Amplitude.ProperSupport
 public import TauCeti.Analysis.Pseudodifferential.OutputSupport
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Convolution
+import Mathlib.Analysis.Normed.Module.Completion
+import Mathlib.Analysis.Normed.Operator.Extend
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.CoordinateDeriv.ParametricIntegral
 import TauCeti.Analysis.Fourier.Parametric
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -16,49 +19,61 @@ import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 /-!
 # The reduction of an amplitude to its left symbol
 
-An amplitude `a(x, y, ξ)` with compact support in the input position `y`
-(`TauCeti.Amplitude.HasCompactInputSupport`) is a left quantization. Its *left symbol*
+An amplitude `a(x, y, ξ)` with proper output support (`TauCeti.Amplitude.HasProperOutputSupport`)
+has a *left symbol*
 
 `c(x, ξ) = ∫ exp(2πi ⟪θ, x⟫) â(x, θ, ξ + 2πθ) dθ`,
 
-where `â(x, θ, ξ)` is the Fourier transform (with Mathlib's phase `exp(-2πi ⟪y, θ⟫)`) of the input
-slice `y ↦ a(x, y, ξ)`, is a symbol of order `m`, and its quantization is the quantization of the
-amplitude on Schwartz functions. In angular frequency,
-`c(x, ξ) = (2π)⁻ⁿ ∫∫ exp(i ⟪x - y, η - ξ⟫) a(x, y, η) dy dη`.
+where `â(x, θ, ξ)` is the Fourier transform (with Mathlib's phase `exp(-2πi ⟪y, θ⟫)`) of the
+compactly supported input slice `y ↦ a(x, y, ξ)`. This symbol `TauCeti.Amplitude.leftSymbol` has
+order `m` unconditionally on `V` and `W`; when `V` is complete, its quantization agrees with the
+quantization of `a` on Schwartz functions (`TauCeti.Amplitude.quantizeSchwartzValue_leftSymbol`).
+By extending coefficients to the completion of `V`, output-proper amplitudes map Schwartz functions
+to smooth functions (`TauCeti.Amplitude.HasProperOutputSupport.contDiff_quantizeAmplitudeValue`) and
+properly supported amplitudes preserve compactly supported Schwartz functions
+(`TauCeti.Amplitude.HasProperSupport.exists_schwartzMap_quantizeAmplitudeValue`) without
+completeness hypotheses on `V` or `W`.
+
+In angular frequency, `c(x, ξ) = (2π)⁻ⁿ ∫∫ exp(i ⟪x - y, η - ξ⟫) a(x, y, η) dy dη`.
 
 ## Main declarations
 
 * `TauCeti.Amplitude.leftIntegrand`: the integrand `exp(2πi ⟪θ, x⟫) â(x, θ, ξ + sθ)` of the left
   symbol, with the frequency shift scaled by a parameter `s`, and its bound
   `TauCeti.Amplitude.HasCompactInputSupport.exists_norm_leftIntegrand_le`, uniform for bounded `s`.
-* `TauCeti.Amplitude.leftSymbol`: the left symbol, with its formula
-  `TauCeti.Amplitude.coefficient_leftSymbol` and its derivatives
+* `TauCeti.Amplitude.leftSymbol`: the left symbol of an output-proper amplitude, with its formula
+  `TauCeti.Amplitude.coefficient_leftSymbol`, localization
+  `TauCeti.Amplitude.HasProperOutputSupport.exists_local_leftSymbol`, and derivatives
   `TauCeti.Amplitude.spatialDeriv_leftSymbol` (`∂_{x_j} c` is the left symbol of
   `∂_{x_j} a + ∂_{y_j} a`) and `TauCeti.Amplitude.frequencyDeriv_leftSymbol`.
-* `TauCeti.Amplitude.quantizeSchwartzValue_leftSymbol`: the reduction `Op(c) = Op(a)`, and
+* `TauCeti.Amplitude.quantizeSchwartzValue_leftSymbol`: the reduction `Op(c) = Op(a)` (for
+  complete `V`), and
   `TauCeti.Amplitude.coefficient_eq_coefficient_leftSymbol_of_forall_quantizeSchwartzValue_eq`:
-  `c` is the only symbol with this property.
+  `c` is the only symbol with this property (for complete `V` and `W`).
+* `TauCeti.Amplitude.HasProperOutputSupport.contDiff_quantizeAmplitudeValue` and
+  `TauCeti.Amplitude.HasProperSupport.exists_schwartzMap_quantizeAmplitudeValue`: smoothness and
+  `C_c^∞` preservation without completeness assumptions on `V` or `W`.
 * `TauCeti.Amplitude.leftSymbol_ofRight_ofSpatial`: the right quantization of multiplication by a
-  compactly supported `f(y)` has left symbol `f(x)`.
+  compactly supported `f(y)` has left symbol `f(x)` (for complete `V` and `W`).
 
 ## Proof outline
 
-Compact input support gives the rapid decay of `â` in `θ`, and Peetre's inequality
-`⟨ξ + 2πθ⟩^m ≤ C ⟨ξ⟩^m ⟨θ⟩^|m|` then bounds the integrand of `c` by `C ⟨ξ⟩^m ⟨θ⟩^(-(n + 1))`,
-locally uniformly in `x`. Differentiating under the integral sign, `∂_{ξ_j} c` is the left symbol
-of `∂_{ξ_j} a`; the derivative of the phase `exp(2πi ⟪θ, x⟫)` in `x_j` multiplies `â` by
-`2πi θⱼ`, which gives the Fourier transform of `∂_{y_j} a`, so `∂_{x_j} c` is the left symbol of
-`∂_{x_j} a + ∂_{y_j} a`. Smoothness and the symbol estimates follow by induction on the number of
-derivatives. The identity `Op(c) = Op(a)` follows from the convolution formula
-`𝓕(a(x, ·, η) u)(ζ) = ∫ â(x, ζ - ζ', η) û(ζ') dζ'`, Fubini's theorem for an integrand dominated by
-a convolution of integrable functions, and the change of frequency `ζ = ζ' + θ`. The construction
-parallels that of the adjoint symbol `TauCeti.Symbol.adjoint`: the formal adjoint of the
-quantization of a symbol `b(x, ξ)` is the right quantization of the pointwise adjoint `b(y, ξ)†`.
+For compact input support, rapid decay of `â` in `θ` and Peetre's inequality
+`⟨ξ + 2πθ⟩^m ≤ C ⟨ξ⟩^m ⟨θ⟩^|m|` bound `leftIntegrand` by `C ⟨ξ⟩^m ⟨θ⟩^(-(n + 1))`, locally
+uniformly in `x`. Differentiating under the integral sign gives `∂_{ξ_j} c` and `∂_{x_j} c`, and
+induction on the number of derivatives establishes smoothness and the symbol bounds. The identity
+`Op(c) = Op(a)` follows from the convolution formula
+`𝓕(a(x, ·, η) u)(ζ) = ∫ â(x, ζ - ζ', η) û(ζ') dζ'`, Fubini's theorem, and `ζ = ζ' + θ`.
+
+An amplitude with proper output support agrees near any compact set `K` of output positions with a
+compact-input amplitude obtained by multiplying by a compactly supported smooth cutoff `φ(x)`
+(`TauCeti.Amplitude.HasProperOutputSupport.hasCompactInputSupport_smulSpatial_fst`), so smoothness,
+symbol bounds, derivatives, and quantization extend verbatim from compact input support.
 
 ## References
 
-* M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I,
-  (1.21)–(1.28).
+* M. E. Taylor, *Pseudodifferential Operators*, Princeton University Press, 1981, Chapter II,
+  §§1–2.
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1.
 -/
 
@@ -447,15 +462,8 @@ private theorem HasCompactInputSupport.exists_norm_coordinateDeriv_leftCoeff_le
       Pi.add_apply, add_mul]
     exact (norm_add_le _ _).trans (add_le_add (hC₁ x hx ξ) (hC₂ x hx ξ))
 
-/-- **The left symbol of an amplitude.** For an amplitude `a` of order `m` with compact input
-support, the symbol of order `m`
-
-`c(x, ξ) = ∫ exp(2πi ⟪θ, x⟫) â(x, θ, ξ + 2πθ) dθ`,
-
-where `â(x, θ, ξ)` is the Fourier transform of the input slice `y ↦ a(x, y, ξ)` at `θ`. Its
-quantization is the quantization of the amplitude
-(`TauCeti.Amplitude.quantizeSchwartzValue_leftSymbol`). -/
-def leftSymbol (a : Amplitude n V W m) (ha : a.HasCompactInputSupport) : Symbol n V W m where
+private def compactLeftSymbol (a : Amplitude n V W m) (ha : a.HasCompactInputSupport) :
+    Symbol n V W m where
   coefficient := leftCoeff a
   contDiff_coefficient := contDiff_infty.2 fun k ↦ ha.contDiff_leftCoeff k
   exists_bound K hK α β := by
@@ -467,37 +475,26 @@ def leftSymbol (a : Amplitude n V W m) (ha : a.HasCompactInputSupport) : Symbol 
     rw [← hm']
     exact hC x hx ξ
 
-@[simp]
-theorem coefficient_leftSymbol (a : Amplitude n V W m) (ha : a.HasCompactInputSupport)
-    (x ξ : CoordinateSpace n) :
-    (a.leftSymbol ha).coefficient (x, ξ) =
-      ∫ θ, (𝐞 ⟪θ, x⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (x, y, ξ + (2 * π) • θ)) θ :=
-  (rfl)
-
-/-- Position derivatives of the left symbol: `∂_{x_j} c` is the left symbol of
-`∂_{x_j} a + ∂_{y_j} a`. -/
-theorem spatialDeriv_leftSymbol {a : Amplitude n V W m} (ha : a.HasCompactInputSupport)
-    (j : Fin n) :
-    Symbol.spatialDeriv j (a.leftSymbol ha) =
-      (spatialDerivFst j a).leftSymbol (ha.spatialDerivFst j) +
-        (spatialDerivSnd j a).leftSymbol (ha.spatialDerivSnd j) := by
+private theorem spatialDeriv_compactLeftSymbol {a : Amplitude n V W m}
+    (ha : a.HasCompactInputSupport) (j : Fin n) :
+    Symbol.spatialDeriv j (compactLeftSymbol a ha) =
+      compactLeftSymbol (spatialDerivFst j a) (ha.spatialDerivFst j) +
+        compactLeftSymbol (spatialDerivSnd j a) (ha.spatialDerivSnd j) := by
   ext1
   funext ⟨x, ξ⟩
   rw [Symbol.coefficient_spatialDeriv, Symbol.coefficient_add, Pi.add_apply]
   exact ha.coordinateDeriv_leftCoeff_fst j x ξ
 
-/-- Frequency derivatives of the left symbol: `∂_{ξ_j} c` is the left symbol of `∂_{ξ_j} a`. -/
-theorem frequencyDeriv_leftSymbol {a : Amplitude n V W m} (ha : a.HasCompactInputSupport)
-    (j : Fin n) :
-    Symbol.frequencyDeriv j (a.leftSymbol ha) =
-      (frequencyDeriv j a).leftSymbol (ha.frequencyDeriv j) := by
+private theorem frequencyDeriv_compactLeftSymbol {a : Amplitude n V W m}
+    (ha : a.HasCompactInputSupport) (j : Fin n) :
+    Symbol.frequencyDeriv j (compactLeftSymbol a ha) =
+      compactLeftSymbol (frequencyDeriv j a) (ha.frequencyDeriv j) := by
   ext1
   funext ⟨x, ξ⟩
   rw [Symbol.coefficient_frequencyDeriv]
   exact ha.coordinateDeriv_leftCoeff_snd j x ξ
 
-
-/-! ### The quantization of the left symbol -/
+/-! ### The quantization of the compact-input left symbol -/
 
 /-- The Fourier transform of the product `y ↦ a(x, y, η) u(y)` is the convolution
 `∫ â(x, ζ - ζ', η) û(ζ') dζ'` of the Fourier transforms. -/
@@ -552,15 +549,10 @@ private theorem HasCompactInputSupport.integrable_quantizeIntegrand {a : Amplitu
           (1 + ‖q.1 - q.2‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) * ‖𝓕 u q.2‖ := by gcongr
     _ = _ := by ring
 
-/-- **Reduction of an amplitude to its left symbol.** For an amplitude `a` with compact input
-support, the quantization of the left symbol is the quantization of the amplitude: for every
-Schwartz function `u`,
-
-`Op(c) u (x) = (2π)⁻ⁿ ∫∫ exp(i ⟪x - y, ξ⟫) a(x, y, ξ) u(y) dy dξ`, with `c = a.leftSymbol ha`. -/
-theorem quantizeSchwartzValue_leftSymbol [CompleteSpace V] [CompleteSpace W]
+private theorem quantizeSchwartzValue_compactLeftSymbol [CompleteSpace V] [CompleteSpace W]
     {a : Amplitude n V W m} (ha : a.HasCompactInputSupport) (u : 𝓢(CoordinateSpace n, V))
     (x : CoordinateSpace n) :
-    quantizeSchwartzValue (a.leftSymbol ha).coefficient u x =
+    quantizeSchwartzValue (compactLeftSymbol a ha).coefficient u x =
       quantizeAmplitudeValue a.coefficient u x := by
   set G : CoordinateSpace n → CoordinateSpace n → W := fun ζ ζ' ↦ 𝐞 ⟪ζ, x⟫ •
     𝓕 (fun y ↦ a.coefficient (x, y, (2 * π) • ζ)) (ζ - ζ') (𝓕 u ζ') with hGdef
@@ -575,20 +567,183 @@ theorem quantizeSchwartzValue_leftSymbol [CompleteSpace V] [CompleteSpace W]
   rw [hR, integral_integral_swap hG, quantizeSchwartzValue_def]
   refine integral_congr_ae (.of_forall fun ζ' ↦ ?_)
   beta_reduce
-  rw [← integral_add_right_eq_self (fun ζ ↦ G ζ ζ') ζ', coefficient_leftSymbol,
-    ContinuousLinearMap.integral_apply, Circle.smul_def, ← integral_smul]
+  rw [← integral_add_right_eq_self (fun ζ ↦ G ζ ζ') ζ']
+  have hcoeff : (compactLeftSymbol a ha).coefficient (x, (2 * π) • ζ') =
+      leftCoeff a (x, (2 * π) • ζ') := rfl
+  rw [hcoeff, leftCoeff, ContinuousLinearMap.integral_apply, Circle.smul_def, ← integral_smul]
   swap
   · exact ha.integrable_leftIntegrand (2 * π) (x, (2 * π) • ζ')
   refine integral_congr_ae (.of_forall fun θ ↦ ?_)
-  simp only [hGdef, add_sub_cancel_right, smul_add, smul_apply, Circle.smul_def,
+  simp only [hGdef, leftIntegrand, add_sub_cancel_right, smul_add, smul_apply, Circle.smul_def,
     smul_smul, inner_add_left, AddChar.map_add_eq_mul, Circle.coe_mul]
   rw [add_comm ((2 * π) • θ), mul_comm]
 
-/-- **Uniqueness of the left symbol.** A symbol, of any order, whose quantization agrees with that
-of an amplitude with compact input support on compactly supported Schwartz functions has the
-coefficient of the left symbol of the amplitude. -/
+/-! ### Localization and the left symbol of an output-proper amplitude -/
+
+private theorem leftCoeff_congr_slice {a b : Amplitude n V W m} {x : CoordinateSpace n}
+    (h : ∀ y η, b.coefficient (x, y, η) = a.coefficient (x, y, η)) (ξ : CoordinateSpace n) :
+    leftCoeff b (x, ξ) = leftCoeff a (x, ξ) := by
+  simp only [leftCoeff, leftIntegrand]
+  refine integral_congr_ae (.of_forall fun θ ↦ ?_)
+  dsimp only
+  rw [funext fun y ↦ h y _]
+
+private theorem HasProperOutputSupport.exists_local_compactLeftSymbol {a : Amplitude n V W m}
+    (ha : a.HasProperOutputSupport) {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    ∃ (U : Set (CoordinateSpace n)) (b : Amplitude n V W m) (hb : b.HasCompactInputSupport),
+      IsOpen U ∧ K ⊆ U ∧
+      (∀ x ∈ U, ∀ y ξ, b.coefficient (x, y, ξ) = a.coefficient (x, y, ξ)) ∧
+      (∀ x ∈ U, ∀ ξ, leftCoeff a (x, ξ) = (compactLeftSymbol b hb).coefficient (x, ξ)) := by
+  obtain ⟨φ, hφ, -, hK_int, hφ_supp, -⟩ := hK.exists_contDiff_cutoff isOpen_univ (Set.subset_univ K)
+  have hφ_uncurry : ContDiff ℝ ∞ (Function.uncurry fun x (_ : CoordinateSpace n) ↦ φ x) :=
+    hφ.comp contDiff_fst
+  set b := a.smulSpatial (fun x _ ↦ φ x) hφ_uncurry with hb_def
+  have hb : b.HasCompactInputSupport := ha.hasCompactInputSupport_smulSpatial_fst hφ_uncurry hφ_supp
+  have hcoeff : ∀ x ∈ interior (φ ⁻¹' {1}), ∀ y ξ,
+      b.coefficient (x, y, ξ) = a.coefficient (x, y, ξ) := fun x hx y ξ ↦ by
+    have hx1 : φ x = 1 := interior_subset hx
+    rw [hb_def, coefficient_smulSpatial, hx1, one_smul]
+  refine ⟨interior (φ ⁻¹' {1}), b, hb, isOpen_interior, hK_int, hcoeff,
+    fun x hx ξ ↦ (leftCoeff_congr_slice (hcoeff x hx) ξ).symm⟩
+
+private theorem contDiff_leftCoeff {a : Amplitude n V W m} (ha : a.HasProperOutputSupport) :
+    ContDiff ℝ ∞ (leftCoeff a) := by
+  refine contDiff_iff_contDiffAt.2 fun ⟨x₀, ξ₀⟩ ↦ ?_
+  obtain ⟨U, b, hb, hU, hx₀U, -, heq⟩ :=
+    ha.exists_local_compactLeftSymbol (isCompact_singleton (x := x₀))
+  refine (compactLeftSymbol b hb).contDiff_coefficient.contDiffAt.congr_of_eventuallyEq ?_
+  filter_upwards [(hU.prod isOpen_univ).mem_nhds ⟨hx₀U rfl, Set.mem_univ ξ₀⟩] with ⟨x, ξ⟩ hx
+  exact heq x hx.1 ξ
+
+private theorem exists_bound_leftCoeff {a : Amplitude n V W m} (ha : a.HasProperOutputSupport)
+    (K : Set (CoordinateSpace n)) (hK : IsCompact K) (α β : List (Fin n)) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ : CoordinateSpace n,
+      ‖mixedDeriv α β (leftCoeff a) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  obtain ⟨U, b, hb, hU, hKU, -, heq⟩ := ha.exists_local_compactLeftSymbol hK
+  obtain ⟨C, hC0, hC⟩ := (compactLeftSymbol b hb).exists_bound K hK α β
+  refine ⟨C, hC0, fun x hx ξ ↦ ?_⟩
+  have hcongr : mixedDeriv α β (leftCoeff a) x ξ =
+      mixedDeriv α β (compactLeftSymbol b hb).coefficient x ξ := by
+    refine mixedDeriv_congr_of_eventually ?_ α β ξ
+    filter_upwards [hU.mem_nhds (hKU hx)] with x' hx' η using heq x' hx' η
+  exact hcongr ▸ hC x hx ξ
+
+/-- **The left symbol of an amplitude.** For an amplitude `a` of order `m` with proper output
+support, the symbol of order `m`
+
+`c(x, ξ) = ∫ exp(2πi ⟪θ, x⟫) â(x, θ, ξ + 2πθ) dθ`,
+
+where `â(x, θ, ξ)` is the Fourier transform of the compactly supported input slice `y ↦ a(x, y, ξ)`
+at `θ`. Its quantization agrees with the quantization of `a` when `V` is complete
+(`TauCeti.Amplitude.quantizeSchwartzValue_leftSymbol`). -/
+def leftSymbol (a : Amplitude n V W m) (ha : a.HasProperOutputSupport) : Symbol n V W m where
+  coefficient := leftCoeff a
+  contDiff_coefficient := contDiff_leftCoeff ha
+  exists_bound := exists_bound_leftCoeff ha
+
+@[simp]
+theorem coefficient_leftSymbol (a : Amplitude n V W m) (ha : a.HasProperOutputSupport)
+    (x ξ : CoordinateSpace n) :
+    (a.leftSymbol ha).coefficient (x, ξ) =
+      ∫ θ, (𝐞 ⟪θ, x⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (x, y, ξ + (2 * π) • θ)) θ :=
+  (rfl)
+
+/-- Near any compact set `K` of output positions, an amplitude `a` with proper output support agrees
+on an open neighborhood `U` of `K` with an amplitude `b` of compact input support, and their left
+symbols agree on `U`. -/
+theorem HasProperOutputSupport.exists_local_leftSymbol {a : Amplitude n V W m}
+    (ha : a.HasProperOutputSupport) {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    ∃ (U : Set (CoordinateSpace n)) (b : Amplitude n V W m) (hb : b.HasCompactInputSupport),
+      IsOpen U ∧ K ⊆ U ∧
+      (∀ x ∈ U, ∀ y ξ, b.coefficient (x, y, ξ) = a.coefficient (x, y, ξ)) ∧
+      (∀ x ∈ U, ∀ ξ, (a.leftSymbol ha).coefficient (x, ξ) =
+        (b.leftSymbol hb.hasProperOutputSupport).coefficient (x, ξ)) :=
+  ha.exists_local_compactLeftSymbol hK
+
+private theorem symbol_spatialDeriv_eq_of_eqOn {s₁ s₂ : Symbol n V W m}
+    {U : Set (CoordinateSpace n)} (hU : IsOpen U) {x : CoordinateSpace n} (hx : x ∈ U)
+    (j : Fin n) (ξ : CoordinateSpace n)
+    (heq : ∀ x' ∈ U, ∀ η, s₁.coefficient (x', η) = s₂.coefficient (x', η)) :
+    (Symbol.spatialDeriv j s₁).coefficient (x, ξ) =
+      (Symbol.spatialDeriv j s₂).coefficient (x, ξ) := by
+  have hev : (fun x' ↦ s₁.coefficient (x', ξ)) =ᶠ[𝓝 x] fun x' ↦ s₂.coefficient (x', ξ) := by
+    filter_upwards [hU.mem_nhds hx] with x' hx' using heq x' hx' ξ
+  rw [Symbol.coefficient_spatialDeriv, Symbol.coefficient_spatialDeriv,
+    (hev.coordinateDeriv [j]).eq_of_nhds]
+
+private theorem amplitude_deriv_slice_eq_of_eqOn {a b : Amplitude n V W m}
+    {U : Set (CoordinateSpace n)} (hU : IsOpen U) {x : CoordinateSpace n} (hx : x ∈ U)
+    (hcoeff : ∀ x' ∈ U, ∀ y η, b.coefficient (x', y, η) = a.coefficient (x', y, η)) :
+    ∀ j : Fin n, ∀ y η,
+      (spatialDerivFst j b).coefficient (x, y, η) = (spatialDerivFst j a).coefficient (x, y, η) ∧
+      (spatialDerivSnd j b).coefficient (x, y, η) = (spatialDerivSnd j a).coefficient (x, y, η) ∧
+      (frequencyDeriv j b).coefficient (x, y, η) = (frequencyDeriv j a).coefficient (x, y, η) := by
+  intro j y η
+  have hev : b.coefficient =ᶠ[𝓝 (x, y, η)] a.coefficient := by
+    filter_upwards [(hU.preimage continuous_fst).mem_nhds hx] with p hp
+    exact hcoeff p.1 hp p.2.1 p.2.2
+  simp [coefficient_spatialDerivFst, coefficient_spatialDerivSnd, coefficient_frequencyDeriv,
+    hev.fderiv_eq]
+
+/-- Position derivatives of the left symbol: `∂_{x_j} c` is the left symbol of
+`∂_{x_j} a + ∂_{y_j} a`. -/
+theorem spatialDeriv_leftSymbol {a : Amplitude n V W m} (ha : a.HasProperOutputSupport)
+    (j : Fin n) :
+    Symbol.spatialDeriv j (a.leftSymbol ha) =
+      (spatialDerivFst j a).leftSymbol (ha.spatialDerivFst j) +
+        (spatialDerivSnd j a).leftSymbol (ha.spatialDerivSnd j) := by
+  ext1
+  funext ⟨x, ξ⟩
+  obtain ⟨U, b, hb, hU, hxU, hcoeff, heq⟩ :=
+    ha.exists_local_compactLeftSymbol (isCompact_singleton (x := x))
+  have hx : x ∈ U := hxU rfl
+  have hderiv := amplitude_deriv_slice_eq_of_eqOn hU hx hcoeff j
+  rw [symbol_spatialDeriv_eq_of_eqOn hU hx j ξ heq, spatialDeriv_compactLeftSymbol hb j,
+    Symbol.coefficient_add, Symbol.coefficient_add, Pi.add_apply, Pi.add_apply]
+  congr 1
+  · exact leftCoeff_congr_slice (fun y η ↦ (hderiv y η).1) ξ
+  · exact leftCoeff_congr_slice (fun y η ↦ (hderiv y η).2.1) ξ
+
+/-- Frequency derivatives of the left symbol: `∂_{ξ_j} c` is the left symbol of `∂_{ξ_j} a`. -/
+theorem frequencyDeriv_leftSymbol {a : Amplitude n V W m} (ha : a.HasProperOutputSupport)
+    (j : Fin n) :
+    Symbol.frequencyDeriv j (a.leftSymbol ha) =
+      (frequencyDeriv j a).leftSymbol (ha.frequencyDeriv j) := by
+  ext1
+  funext ⟨x, ξ⟩
+  obtain ⟨U, b, hb, hU, hxU, hcoeff, heq⟩ :=
+    ha.exists_local_compactLeftSymbol (isCompact_singleton (x := x))
+  have hx : x ∈ U := hxU rfl
+  have hderiv := amplitude_deriv_slice_eq_of_eqOn hU hx hcoeff j
+  have hev : (fun η ↦ (a.leftSymbol ha).coefficient (x, η)) =ᶠ[𝓝 ξ]
+      fun η ↦ (compactLeftSymbol b hb).coefficient (x, η) := .of_forall (heq x hx)
+  rw [Symbol.coefficient_frequencyDeriv, (hev.coordinateDeriv [j]).eq_of_nhds,
+    ← Symbol.coefficient_frequencyDeriv, frequencyDeriv_compactLeftSymbol hb j]
+  exact leftCoeff_congr_slice (fun y η ↦ (hderiv y η).2.2) ξ
+
+/-- **Reduction of an output-proper amplitude to its left symbol.** Requires `V` to be complete;
+for any amplitude `a` with proper output support and every Schwartz function `u`,
+`Op(a.leftSymbol ha) u = Op(a) u`. -/
+theorem quantizeSchwartzValue_leftSymbol [CompleteSpace V]
+    {a : Amplitude n V W m} (ha : a.HasProperOutputSupport) (u : 𝓢(CoordinateSpace n, V))
+    (x : CoordinateSpace n) :
+    quantizeSchwartzValue (a.leftSymbol ha).coefficient u x =
+      quantizeAmplitudeValue a.coefficient u x := by
+  by_cases hW : CompleteSpace W; swap
+  · simp [quantizeSchwartzValue_def, quantizeAmplitudeValue_def, integral_of_not_completeSpace hW]
+  obtain ⟨U, b, hb, -, hxU, hcoeff, heq⟩ :=
+    ha.exists_local_compactLeftSymbol (isCompact_singleton (x := x))
+  have hx : x ∈ U := hxU rfl
+  have heq_x : ∀ ξ, (a.leftSymbol ha).coefficient (x, ξ) =
+      (compactLeftSymbol b hb).coefficient (x, ξ) := heq x hx
+  rw [quantizeSchwartzValue_congr_left heq_x, quantizeSchwartzValue_compactLeftSymbol hb u x]
+  exact quantizeAmplitudeValue_congr_at u (hcoeff x hx)
+
+/-- **Uniqueness of the left symbol.** Requires `V` and `W` to be complete; a symbol, of any order,
+whose quantization agrees with that of an output-proper amplitude on compactly supported Schwartz
+functions has the coefficient of the left symbol of the amplitude. -/
 theorem coefficient_eq_coefficient_leftSymbol_of_forall_quantizeSchwartzValue_eq [CompleteSpace V]
-    [CompleteSpace W] {a : Amplitude n V W m} (ha : a.HasCompactInputSupport) {m' : ℝ}
+    [CompleteSpace W] {a : Amplitude n V W m} (ha : a.HasProperOutputSupport) {m' : ℝ}
     {b : Symbol n V W m'}
     (h : ∀ u : 𝓢(CoordinateSpace n, V), HasCompactSupport u →
       quantizeSchwartzValue b.coefficient u = quantizeAmplitudeValue a.coefficient u) :
@@ -596,14 +751,15 @@ theorem coefficient_eq_coefficient_leftSymbol_of_forall_quantizeSchwartzValue_eq
   Symbol.coefficient_eq_of_forall_quantizeSchwartzValue_eq fun u hu ↦
     (h u hu).trans (funext fun x ↦ (quantizeSchwartzValue_leftSymbol ha u x).symm)
 
-
 /-- The right quantization of multiplication by a compactly supported smooth `f` is
-multiplication by `f`, so the left symbol of its amplitude `f(y)` is `f(x)`. -/
+multiplication by `f`, so when `V` and `W` are complete the left symbol of its amplitude `f(y)`
+is `f(x)`. -/
 @[simp]
 theorem leftSymbol_ofRight_ofSpatial [CompleteSpace V] [CompleteSpace W]
     {f : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f) (hfs : HasCompactSupport f) :
     (ofRight (Symbol.ofSpatial f hf)).leftSymbol
-        ((Symbol.hasCompactSpatialSupport_ofSpatial_iff hf).2 hfs).hasCompactInputSupport_ofRight =
+        ((Symbol.hasCompactSpatialSupport_ofSpatial_iff hf).2 hfs
+          ).hasCompactInputSupport_ofRight.hasProperOutputSupport =
       Symbol.ofSpatial f hf := by
   refine Symbol.ext (coefficient_eq_coefficient_leftSymbol_of_forall_quantizeSchwartzValue_eq _
     fun u _ ↦ funext fun x ↦ ?_).symm
@@ -620,6 +776,89 @@ theorem leftSymbol_ofRight_ofSpatial [CompleteSpace V] [CompleteSpace W]
   simp only [coefficient_ofRight, hc]
   rw [← hgu, ← SchwartzMap.fourier_coe, ← Real.fourierInv_eq, ← SchwartzMap.fourierInv_coe,
     fourierInv_fourier_eq, hgu]
+
+/-! ### Smoothness and Schwartz mapping without completeness hypotheses -/
+
+private noncomputable def fromCompletionCLM [CompleteSpace W] :
+    (V →L[ℂ] W) →L[ℝ] (UniformSpace.Completion V →L[ℂ] W) :=
+  LinearMap.mkContinuous
+    { toFun := ContinuousLinearMap.fromCompletion
+      map_add' := fun f g ↦ ContinuousLinearMap.fromCompletion_unique (f + g) _ fun v ↦ by simp
+      map_smul' := fun c f ↦ ContinuousLinearMap.fromCompletion_unique (c • f) _ fun v ↦ by simp }
+    1 fun f ↦ by
+      rw [one_mul]
+      calc ‖f.fromCompletion‖
+          = ‖f.extend (UniformSpace.Completion.toComplL : V →L[ℂ] UniformSpace.Completion V)‖ := by
+            rw [ContinuousLinearMap.extend_completionToComplL]
+        _ ≤ ((1 : NNReal) : ℝ) * ‖f‖ :=
+            ContinuousLinearMap.opNorm_extend_le f UniformSpace.Completion.denseRange_coe
+              fun x ↦ by simp [UniformSpace.Completion.norm_coe]
+        _ = ‖f‖ := by simp
+
+private def extendCompletion [CompleteSpace W] (a : Amplitude n V W m) :
+    Amplitude n (UniformSpace.Completion V) W m where
+  coefficient p := fromCompletionCLM (a.coefficient p)
+  contDiff_coefficient := (fromCompletionCLM (V := V) (W := W)).contDiff.comp a.contDiff_coefficient
+  exists_bound K hK α γ β := by
+    obtain ⟨C, hC0, hC⟩ := a.exists_bound K hK α γ β
+    refine ⟨‖fromCompletionCLM (V := V) (W := W)‖ * C,
+      mul_nonneg (norm_nonneg (fromCompletionCLM (V := V) (W := W))) hC0, fun x y hxy ξ ↦ ?_⟩
+    rw [(fromCompletionCLM (V := V) (W := W)).iteratedFDerivAlong_comp_left
+      a.contDiff_coefficient (amplitudeDirections α γ β) (by simp), mul_assoc]
+    exact (ContinuousLinearMap.le_opNorm _ _).trans
+      (mul_le_mul_of_nonneg_left (hC x y hxy ξ)
+        (norm_nonneg (fromCompletionCLM (V := V) (W := W))))
+
+private theorem HasProperOutputSupport.extendCompletion_support [CompleteSpace W]
+    {a : Amplitude n V W m} (ha : a.HasProperOutputSupport) :
+    (Amplitude.extendCompletion a).HasProperOutputSupport := by
+  have h := hasProperOutputSupport_iff.mp ha
+  refine hasProperOutputSupport_iff.2 fun K hK ↦ ?_
+  obtain ⟨L, hL, hLa⟩ := h K hK
+  refine ⟨L, hL, fun x hx y hy ξ ↦ ?_⟩
+  dsimp [Amplitude.extendCompletion]
+  rw [hLa x hx y hy ξ, map_zero]
+
+/-- **Proper output support implies smooth outputs.** Unconditional on completeness of `V` and `W`:
+for any amplitude `a` with proper output support and any Schwartz function `u`, `Op(a) u` is `C^∞`
+on `ℝⁿ`. -/
+theorem HasProperOutputSupport.contDiff_quantizeAmplitudeValue
+    {a : Amplitude n V W m} (ha : a.HasProperOutputSupport) (u : 𝓢(CoordinateSpace n, V)) :
+    ContDiff ℝ ∞ (quantizeAmplitudeValue a.coefficient u) := by
+  by_cases hW : CompleteSpace W; swap
+  · have hzero : quantizeAmplitudeValue a.coefficient u = 0 :=
+      funext fun x ↦ by rw [quantizeAmplitudeValue_def, integral_of_not_completeSpace hW]; rfl
+    rw [hzero]
+    exact contDiff_const
+  let uExt : 𝓢(CoordinateSpace n, UniformSpace.Completion V) :=
+    u.postcompCLM (UniformSpace.Completion.toComplL : V →L[ℂ] UniformSpace.Completion V)
+  have hquant : quantizeAmplitudeValue a.coefficient u = quantizeSchwartzValue
+      ((extendCompletion a).leftSymbol ha.extendCompletion_support).coefficient uExt := by
+    funext x
+    rw [quantizeSchwartzValue_leftSymbol ha.extendCompletion_support uExt x]
+    refine quantizeAmplitudeValue_congr_apply_at fun y ξ ↦ ?_
+    have hcoe : uExt y = (u y : UniformSpace.Completion V) := SchwartzMap.postcompCLM_apply _ u y
+    exact hcoe ▸ (ContinuousLinearMap.fromCompletion_apply_coe (a.coefficient (x, y, ξ)) (u y)).symm
+  rw [hquant]
+  exact ((extendCompletion a).leftSymbol ha.extendCompletion_support
+    ).contDiff_quantizeSchwartzValue uExt
+
+/-- **Properly supported amplitudes preserve `C_c^∞` inside Schwartz space.** Unconditional on
+completeness of `V` and `W`: if `a` is properly supported and `u : 𝓢(ℝⁿ, V)` has compact support,
+then `Op(a) u` is the underlying function of a compactly supported Schwartz map `v : 𝓢(ℝⁿ, W)`, so
+properly supported amplitude operators can be composed directly without spatial cutoffs. -/
+theorem HasProperSupport.exists_schwartzMap_quantizeAmplitudeValue
+    {a : Amplitude n V W m} (ha : a.HasProperSupport) {u : 𝓢(CoordinateSpace n, V)}
+    (hu : HasCompactSupport (u : CoordinateSpace n → V)) :
+    ∃ v : 𝓢(CoordinateSpace n, W),
+      (v : CoordinateSpace n → W) = quantizeAmplitudeValue a.coefficient u ∧
+      HasCompactSupport (v : CoordinateSpace n → W) := by
+  have hsupp := ha.inp.hasCompactSupport_quantizeAmplitudeValue hu
+  have hsmooth := ha.out.contDiff_quantizeAmplitudeValue u
+  have hv : ((hsupp.toSchwartzMap hsmooth : 𝓢(CoordinateSpace n, W)) : CoordinateSpace n → W) =
+      quantizeAmplitudeValue a.coefficient u :=
+    funext (HasCompactSupport.toSchwartzMap_toFun hsupp hsmooth)
+  exact ⟨hsupp.toSchwartzMap hsmooth, hv, hv.symm ▸ hsupp⟩
 
 end Amplitude
 
