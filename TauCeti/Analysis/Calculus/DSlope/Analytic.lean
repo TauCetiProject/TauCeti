@@ -27,7 +27,7 @@ arbitrary sets. On the hyperplane the divided difference takes the coordinate-sl
   numerator criteria with complete target, including the base hyperplane and arbitrary sets.
 * `TauCeti.analyticAt_dslope_update`: the combined coordinate divided-difference theorem.
 * `AnalyticOnNhd.dslope_update`: coordinate divided differences preserve neighborhood
-  analyticity on sets preserved by the base-coordinate update.
+  analyticity when the function is analytic near both the source and updated points.
 -/
 
 public section
@@ -46,7 +46,7 @@ theorem AnalyticWithinAt.sub_update_of_dslope_update {s : Set (ι → 𝕜)}
     AnalyticWithinAt 𝕜 (fun z ↦ f z - f (Function.update z i ζ)) s x := by
   have hcoord : AnalyticAt 𝕜 (fun z : ι → 𝕜 ↦ z i) x :=
     (ContinuousLinearMap.proj (R := 𝕜) i).analyticAt x
-  simpa only [TauCeti.sub_smul_dslope_update] using
+  simpa only [sub_smul_dslope, Function.update_eq_self] using
     (hcoord.fun_sub (analyticAt_const (v := ζ))).analyticWithinAt.smul h
 
 /-- Away from its base hyperplane, a coordinate divided difference is analytic within a set
@@ -66,7 +66,8 @@ theorem TauCeti.analyticWithinAt_dslope_update_iff_of_ne {s : Set (ι → 𝕜)}
     have heq : (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) =ᶠ[𝓝 x]
         (fun z ↦ (z i - ζ)⁻¹ • (f z - f (Function.update z i ζ))) := by
       filter_upwards [hcoord.continuousAt.eventually_ne hne] with z hz
-      exact (eq_inv_smul_iff₀ (sub_ne_zero.mpr hz)).2 (sub_smul_dslope_update f z i ζ)
+      apply (eq_inv_smul_iff₀ (sub_ne_zero.mpr hz)).2
+      simp only [sub_smul_dslope, Function.update_eq_self]
     exact hquot.congr_of_eventuallyEq (heq.filter_mono nhdsWithin_le_nhds) heq.eq_of_nhds
 
 /-- Away from its base hyperplane, a coordinate divided difference is analytic exactly when
@@ -105,7 +106,8 @@ theorem TauCeti.analyticAt_dslope_update_iff [CompleteSpace F] (i : ι) (ζ : �
   by_cases hxi : x i = ζ
   · subst ζ
     obtain ⟨g, hg, hfactor⟩ := h.exists_eventuallyEq_coord_sub_smul i
-      (Filter.Eventually.of_forall (TauCeti.sub_update_apply_update f i _))
+      (Filter.Eventually.of_forall fun z ↦ by
+        simp only [Function.update_idem, sub_self, Pi.zero_apply])
     apply hg.congr
     apply (TauCeti.eventuallyEq_dslope_update_of_factorization ?_ hfactor).symm
     filter_upwards [hg.eventually_analyticAt] with z hgz hzi
@@ -133,11 +135,12 @@ theorem TauCeti.analyticAt_dslope_update [CompleteSpace F] (i : ι) (ζ : 𝕜)
   apply (analyticAt_dslope_update_iff i ζ).2
   exact hf.fun_sub hres.comp_update
 
-/-- If updating the coordinate to `ζ` preserves the set, the coordinate divided difference
-preserves analyticity near the set. -/
+/-- A coordinate divided difference is analytic near a source set if the function is analytic
+near that set and near a target set containing its base-coordinate updates. -/
 @[fun_prop]
-theorem AnalyticOnNhd.dslope_update [CompleteSpace F] {s : Set (ι → 𝕜)}
-    (hf : AnalyticOnNhd 𝕜 f s) (hupdate : Set.MapsTo (fun z ↦ Function.update z i ζ) s s) :
+theorem AnalyticOnNhd.dslope_update [CompleteSpace F] {s t : Set (ι → 𝕜)}
+    (hf : AnalyticOnNhd 𝕜 f s) (ht : AnalyticOnNhd 𝕜 f t)
+    (hupdate : Set.MapsTo (fun z ↦ Function.update z i ζ) s t) :
     AnalyticOnNhd 𝕜 (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) s := by
   intro x hx
-  exact TauCeti.analyticAt_dslope_update i ζ (hf x hx) (hf _ (hupdate hx))
+  exact TauCeti.analyticAt_dslope_update i ζ (hf x hx) (ht _ (hupdate hx))

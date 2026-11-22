@@ -56,6 +56,8 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
 * `FormalMultilinearSeries.mvCoeff_compContinuousLinearMap_eq_zero`: vanishing of all
   coefficients of a fixed total degree is preserved under precomposition by a continuous linear
   map.
+* `TauCeti.summable_norm_mul_pow_of_le`: weighted norm summability persists at smaller
+  nonnegative radii, for any family of natural-number degrees.
 * `TauCeti.norm_prod_pow_smul_le`, `TauCeti.summable_norm_prod_pow_smul_of_le`,
   `FormalMultilinearSeries.summable_norm_mvCoeff_mul_pow`, and
   `FormalMultilinearSeries.summable_norm_prod_pow_smul_mvCoeff`: normal summability at radius `ρ`
@@ -268,6 +270,16 @@ end NormedField
 end FormalMultilinearSeries
 
 namespace TauCeti
+
+/-- Weighted norm summability at a nonnegative radius `s` implies weighted norm summability at
+every radius `r ≤ s`, for any family of natural-number degrees. -/
+theorem summable_norm_mul_pow_of_le {κ F : Type*} [SeminormedAddGroup F]
+    {c : κ → F} {degree : κ → ℕ} {r s : ℝ≥0} (hrs : r ≤ s)
+    (h : Summable fun a ↦ ‖c a‖ * (s : ℝ) ^ degree a) :
+    Summable fun a ↦ ‖c a‖ * (r : ℝ) ^ degree a :=
+  h.of_nonneg_of_le (fun _ ↦ by positivity) fun _ ↦
+    mul_le_mul_of_nonneg_left
+      (pow_le_pow_left₀ r.coe_nonneg (NNReal.coe_le_coe.2 hrs) _) (norm_nonneg _)
 
 /-- If `‖y‖ ≤ ρ`, then the multi-index monomial `(∏ i, y i ^ α i) • v` has norm at most
 `‖v‖ * ρ ^ (∑ i, α i)`. -/

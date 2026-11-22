@@ -31,8 +31,6 @@ congruence, and coordinate factorization also use the derivative at the base poi
 * `TauCeti.dslope_mul`: the product rule for divided differences.
 * `Filter.EventuallyEq.dslope`: divided differences at `a` of functions with the same germ at `a`
   have the same germ at `a`.
-* `TauCeti.sub_smul_dslope_update`: a coordinate displacement times its divided difference
-  equals the coordinate-update numerator.
 * `TauCeti.eventuallyEq_dslope_update_of_factorization`: a local coordinate factorization
   identifies the coordinate divided difference with its factor.
 -/
@@ -107,49 +105,40 @@ theorem _root_.Filter.EventuallyEq.dslope {𝕜 E : Type*} [NontriviallyNormedFi
   · rw [dslope_of_ne _ hba, dslope_of_ne _ hba, slope_def_module, slope_def_module, hb,
       h.eq_of_nhds]
 
-/-- Multiplying a coordinate divided difference by the coordinate displacement recovers its
-numerator, including on the base hyperplane. The index type need not be finite. -/
-theorem sub_smul_dslope_update {𝕜 ι F : Type*} [NontriviallyNormedField 𝕜] [DecidableEq ι]
-    [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    (f : (ι → 𝕜) → F) (z : ι → 𝕜) (i : ι) (ζ : 𝕜) :
-    (z i - ζ) • dslope (fun w ↦ f (Function.update z i w)) ζ (z i) =
-      f z - f (Function.update z i ζ) := by
-  simpa only [Function.update_eq_self] using
-    sub_smul_dslope (fun w ↦ f (Function.update z i w)) ζ (z i)
-
 /-- A local factorization by a coordinate difference identifies the coordinate divided
 difference with its factor. On the base hyperplane only continuity of the factor's
-one-dimensional slices is needed; the index type can be infinite. -/
+one-dimensional slices is needed; the index type can be infinite and the base coordinate
+need not agree with the coordinate of the germ's center. -/
 theorem eventuallyEq_dslope_update_of_factorization {𝕜 ι F : Type*}
     [NontriviallyNormedField 𝕜] [DecidableEq ι]
     [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {f g : (ι → 𝕜) → F} {x : ι → 𝕜} {i : ι}
-    (hg : ∀ᶠ z in nhds x, z i = x i →
-      ContinuousAt (fun w ↦ g (Function.update z i w)) (x i))
-    (hfg : (fun z ↦ f z - f (Function.update z i (x i))) =ᶠ[nhds x]
-      fun z ↦ (z i - x i) • g z) :
-    (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) (x i) (z i)) =ᶠ[nhds x] g := by
+    {f g : (ι → 𝕜) → F} {x : ι → 𝕜} {i : ι} {ζ : 𝕜}
+    (hg : ∀ᶠ z in nhds x, z i = ζ →
+      ContinuousAt (fun w ↦ g (Function.update z i w)) ζ)
+    (hfg : (fun z ↦ f z - f (Function.update z i ζ)) =ᶠ[nhds x]
+      fun z ↦ (z i - ζ) • g z) :
+    (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) =ᶠ[nhds x] g := by
   filter_upwards [hfg.eventually_nhds, hg] with z hz hgz
-  by_cases hzi : z i = x i
-  · have huz : Function.update z i (x i) = z := by rw [← hzi, Function.update_eq_self]
-    have hu : ContinuousAt (Function.update z i) (x i) :=
+  by_cases hzi : z i = ζ
+  · have huz : Function.update z i ζ = z := by rw [← hzi, Function.update_eq_self]
+    have hu : ContinuousAt (Function.update z i) ζ :=
       continuousAt_const.update i continuousAt_id
     have heq := hu.tendsto.eventually (huz ▸ hz)
-    have heq' : (fun w ↦ f (Function.update z i w) - f z) =ᶠ[nhds (x i)]
-        (fun w ↦ (w - x i) • g (Function.update z i w)) := by
+    have heq' : (fun w ↦ f (Function.update z i w) - f z) =ᶠ[nhds ζ]
+        (fun w ↦ (w - ζ) • g (Function.update z i w)) := by
       filter_upwards [heq] with w hw
       simpa only [Function.update_self, Function.update_idem, huz] using hw
-    have hd : HasDerivAt (fun w ↦ (w - x i) • g (Function.update z i w))
-        (g z) (x i) := by
+    have hd : HasDerivAt (fun w ↦ (w - ζ) • g (Function.update z i w))
+        (g z) ζ := by
       simpa only [id_eq, one_smul, huz] using
-        ((hasDerivAt_id (x i)).sub_const (x i)).smul_of_eq_zero (hgz hzi) (sub_self (x i))
-    have hd' : HasDerivAt (fun w ↦ f (Function.update z i w)) (g z) (x i) :=
+        ((hasDerivAt_id ζ).sub_const ζ).smul_of_eq_zero (hgz hzi) (sub_self ζ)
+    have hd' : HasDerivAt (fun w ↦ f (Function.update z i w)) (g z) ζ :=
       (hasDerivAt_sub_const_iff (f z)).mp (hd.congr_of_eventuallyEq heq')
     simpa only [hzi, dslope_same] using hd'.deriv
-  · have hmul : (z i - x i) •
-        dslope (fun w ↦ f (Function.update z i w)) (x i) (z i) =
-          (z i - x i) • g z := by
-      rw [sub_smul_dslope_update]
+  · have hmul : (z i - ζ) •
+        dslope (fun w ↦ f (Function.update z i w)) ζ (z i) =
+          (z i - ζ) • g z := by
+      rw [sub_smul_dslope, Function.update_eq_self]
       exact mem_of_mem_nhds hz
     exact smul_right_injective _ (sub_ne_zero.mpr hzi) hmul
 
