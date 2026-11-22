@@ -132,15 +132,8 @@ theorem tendsto_integral_inv_log_principalValue {x : ℝ} (hx : 1 < x) :
   refine hlim.congr' ?_
   filter_upwards [Ioo_mem_nhdsGT (lt_min one_pos (sub_pos.mpr hx))] with ε ⟨hε0, hεm⟩
   have hε1 : ε < 1 := lt_of_lt_of_le hεm (min_le_left _ _)
-  have hεx : 1 + ε < x := by linarith [lt_of_lt_of_le hεm (min_le_right _ _)]
-  rw [← li_eq_integral_inv_log (by linarith) (by linarith)]
-  have hFTC : (∫ t in (1 + ε)..x, (log t)⁻¹) = li x - li (1 + ε) := by
-    refine intervalIntegral.integral_eq_sub_of_hasDerivAt
-      (fun t ht ↦ by
-        rw [uIcc_of_le hεx.le] at ht
-        exact hasDerivAt_li (by linarith [ht.1]) (by linarith [ht.1]))
-      (by simpa [pow_one] using intervalIntegrable_inv_log_pow 1 (by linarith) hx)
-  rw [hFTC]
+  rw [← li_eq_integral_inv_log (by linarith) (by linarith),
+    integral_inv_log_eq_li_sub_of_one_lt (by linarith) hx]
   ring
 
 /-- In exponential coordinates, `t ↦ li (exp t)` has derivative `exp u / u` at every `u ≠ 0`. -/

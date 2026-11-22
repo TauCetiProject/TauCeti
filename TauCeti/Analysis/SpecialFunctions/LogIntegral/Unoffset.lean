@@ -12,7 +12,6 @@ import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.NumberTheory.Harmonic.GammaDeriv
 import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
 import TauCeti.Analysis.SpecialFunctions.Integrals.ExpDiv
-import TauCeti.Analysis.SpecialFunctions.Integrals.InvLog
 import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
 
 /-!
@@ -40,6 +39,9 @@ follow as theorems.
 * `Real.hasDerivAt_li`, `Real.deriv_li`, `Real.differentiableAt_li`, `Real.continuousAt_li`,
   `Real.measurable_li` — derivative `(log x)⁻¹` and regularity of `li`.
 * `Real.tendsto_li_nhdsGT_zero` — `li x → 0` as `x → 0⁺`.
+* `Real.integral_inv_log_eq_li_sub`, `Real.integral_inv_log_eq_li_sub_of_lt_one`,
+  `Real.integral_inv_log_eq_li_sub_of_one_lt` — endpoint-difference formula
+  `∫ t in a..b, (log t)⁻¹ = li b - li a` on either branch `(0, 1)` or `(1, ∞)`.
 * `Real.logIntegral_eq_li_sub_li_two` and `Real.li_eq_logIntegral_add_li_two` — the offset
   identity `Li x = li x - li 2` for `x > 1`.
 * `Real.strictAntiOn_li_Ioo`, `Real.li_neg`, `Real.strictMonoOn_li_Ioi`,
@@ -208,17 +210,37 @@ theorem tendsto_li_nhdsGT_zero : Tendsto li (𝓝[>] 0) (𝓝 0) := by
 
 /-! ### Relation with `Li`, monotonicity, sign, and Soldner's constant -/
 
+/-- **Endpoint-difference formula** on either branch `(0, 1)` or `(1, ∞)` of `li`:
+if `a, b > 0` and `1 ∉ uIcc a b`, then `∫ t in a..b, (log t)⁻¹ = li b - li a`. -/
+theorem integral_inv_log_eq_li_sub {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (h1 : (1 : ℝ) ∉ uIcc a b) :
+    (∫ t in a..b, (log t)⁻¹) = li b - li a := by
+  refine intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t ht ↦ ?_)
+    (ContinuousOn.intervalIntegrable fun t ht ↦ ?_)
+  · exact hasDerivAt_li ((lt_min ha hb).trans_le ht.1) fun h ↦ h1 (h ▸ ht)
+  · have ht0 : 0 < t := (lt_min ha hb).trans_le ht.1
+    have ht1 : t ≠ 1 := fun h ↦ h1 (h ▸ ht)
+    exact ((continuousAt_log ht0.ne').inv₀
+      (log_ne_zero_of_pos_of_ne_one ht0 ht1)).continuousWithinAt
+
+/-- Signed interval integral of `(log t)⁻¹` on `(0, 1)`:
+`∫ t in a..b, (log t)⁻¹ = li b - li a` for `0 < a < 1` and `0 < b < 1`. -/
+theorem integral_inv_log_eq_li_sub_of_lt_one {a b : ℝ} (ha0 : 0 < a) (ha1 : a < 1)
+    (hb0 : 0 < b) (hb1 : b < 1) :
+    (∫ t in a..b, (log t)⁻¹) = li b - li a :=
+  integral_inv_log_eq_li_sub ha0 hb0 fun h ↦ by rcases mem_uIcc.mp h with h | h <;> linarith
+
+/-- Signed interval integral of `(log t)⁻¹` on `(1, ∞)`:
+`∫ t in a..b, (log t)⁻¹ = li b - li a` for `1 < a` and `1 < b`. -/
+theorem integral_inv_log_eq_li_sub_of_one_lt {a b : ℝ} (ha : 1 < a) (hb : 1 < b) :
+    (∫ t in a..b, (log t)⁻¹) = li b - li a :=
+  integral_inv_log_eq_li_sub (zero_lt_one.trans ha) (zero_lt_one.trans hb)
+    fun h ↦ by rcases mem_uIcc.mp h with h | h <;> linarith
+
 /-- **Offset identity**: for every `x > 1`, `Li x = li x - li 2`. -/
 theorem logIntegral_eq_li_sub_li_two {x : ℝ} (hx : 1 < x) :
     logIntegral x = li x - li 2 := by
-  rw [logIntegral_def]
-  refine intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t ht ↦ ?_)
-    (by simpa [pow_one] using intervalIntegrable_inv_log_pow 1 one_lt_two hx)
-  have ht1 : 1 < t := by
-    rcases mem_uIcc.mp ht with h | h
-    · exact one_lt_two.trans_le h.1
-    · exact hx.trans_le h.1
-  exact hasDerivAt_li (zero_lt_one.trans ht1) ht1.ne'
+  rw [logIntegral_def, integral_inv_log_eq_li_sub_of_one_lt one_lt_two hx]
 
 /-- Rearranged offset identity: for every `x > 1`, `li x = Li x + li 2`. -/
 theorem li_eq_logIntegral_add_li_two {x : ℝ} (hx : 1 < x) :
