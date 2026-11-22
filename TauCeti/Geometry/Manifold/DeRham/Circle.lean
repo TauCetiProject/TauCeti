@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.LogDeriv
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
 public import Mathlib.Geometry.Manifold.Instances.Sphere
+public import TauCeti.Geometry.Manifold.Instances.AddCircle.Circle
+public import TauCeti.Geometry.Manifold.Orientation.AddCircle
 
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
@@ -20,7 +22,7 @@ import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 import TauCeti.Topology.Circle.Arc
 
 /-!
-# The angular form on the circle, its de Rham class, pullback calculus, and integral
+# The angular form on the circle: de Rham class, pullback calculus, integral, time coordinate
 
 The angular form `dθ` on the unit circle `S¹ ⊆ ℂ` is the pullback, along the inclusion, of the
 `1`-form `x dy − y dx` on the plane `ℂ = ℝ²`. It is a smooth form on `S¹`, and it is closed for
@@ -46,6 +48,18 @@ negation, division into subtraction, negation into the identity, and integer pow
 multiplication; on `Circle` itself, `(· ^ k)^* dθ = k • dθ`
 (`TauCeti.mpullback_zpow_id_circleAngularForm`).
 
+The standard parametrization pulls `dθ` back to `dt` on `ℝ`
+(`TauCeti.mpullback_circleExp_circleAngularForm`). Through the identification
+`AddCircle.toCircle : AddCircle p → Circle`, `[t] ↦ exp (2π i t / p)`, of the circle of period
+`p > 0` with the unit circle (`AddCircle.diffeomorphCircle`), the angular form and the time form
+`dt_p` of `AddCircle p` therefore differ by the constant factor of the angle `θ = 2π t / p`: `dθ`
+pulls back to `(2π / p) dt_p` (`AddCircle.mpullback_toCircle_circleAngularForm`), and `dt_p`
+corresponds to `(p / 2π) dθ` on the unit circle
+(`AddCircle.mpullback_homeomorphCircle_symm_timeForm`).
+In particular the time form of the unit-period circle is `dθ / 2π`. Since the factor is positive,
+`toCircle` carries the positive orientation of `AddCircle p` to the counterclockwise orientation
+(`AddCircle.isOrientationPreservingAt_toCircle`).
+
 ## Main declarations
 
 * `TauCeti.planeAngularForm`: the `1`-form `x dy − y dx` on `ℂ`.
@@ -66,6 +80,10 @@ multiplication; on `Circle` itself, `(· ^ k)^* dθ = k • dθ`
   `TauCeti.mpullback_zpow_circleAngularForm`, `TauCeti.mpullback_neg_circleAngularForm`,
   `TauCeti.mpullback_zpow_id_circleAngularForm`: pullback calculus of `dθ` under group operations
   and integer powers.
+* `TauCeti.mpullback_circleExp_circleAngularForm`: `t ↦ exp (t i)` pulls `dθ` back to `dt`.
+* `AddCircle.mpullback_toCircle_circleAngularForm`: `toCircle` pulls `dθ` back to `(2π / p) dt_p`.
+* `AddCircle.mpullback_homeomorphCircle_symm_timeForm`: on the unit circle, `dt_p = (p / 2π) dθ`.
+* `AddCircle.isOrientationPreservingAt_toCircle`: `toCircle` preserves orientation.
 
 ## References
 
@@ -238,6 +256,23 @@ private theorem circleAngularForm_apply_smul_curveVelocity_circleExp (t c : ℝ)
     (fun _ ↦ Manifold.curveVelocity (𝓡 1) Circle.exp t)
   rw [circleAngularForm_apply_curveVelocity_circleExp] at h
   simpa using h
+
+/-- The standard parametrization `t ↦ exp (t i)` of the circle pulls the angular form `dθ` back to
+the differential `dt` of the coordinate of `ℝ`. -/
+@[simp]
+theorem mpullback_circleExp_circleAngularForm :
+    mpullback 𝓘(ℝ) (𝓡 1) Circle.exp circleAngularForm =
+      mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) := by
+  funext t
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  -- The tangent vector `v 0` of `ℝ` is a real number `w`.
+  obtain ⟨w, hw⟩ : ∃ w : ℝ, v 0 = w := ⟨v 0, rfl⟩
+  have hv : (fun i ↦ mfderiv 𝓘(ℝ) (𝓡 1) Circle.exp t (v i)) =
+      fun _ ↦ w • Manifold.curveVelocity (𝓡 1) Circle.exp t := by
+    funext i
+    rw [Subsingleton.elim i 0, hw, Manifold.mfderiv_apply_eq_smul_curveVelocity]
+  rw [mpullback_apply, hv, circleAngularForm_apply_smul_curveVelocity_circleExp,
+    mextDeriv_ofFunction_id_apply, hw]
 
 /-! The parametrization `z ↦ exp (z₀ i)` of the circle by the Euclidean line, used to compute
 the integral of the angular form. -/
@@ -453,7 +488,7 @@ theorem mpullback_inv_circleAngularForm_apply {f : M → Circle} {x : M}
     ((contMDiff_inv (𝓡 1) 1).mdifferentiableAt one_ne_zero).comp x hf
   have h := mpullback_mul_circleAngularForm_apply hf hinv
   have h1 : f * f⁻¹ = fun _ ↦ (1 : Circle) := funext fun y ↦ mul_inv_cancel (f y)
-  rw [h1, mpullback_const, Pi.zero_apply] at h
+  rw [h1, mpullback_const one_ne_zero, Pi.zero_apply] at h
   exact eq_neg_of_add_eq_zero_right h.symm
 
 /-- For a differentiable map `f : M → Circle`, `(f⁻¹)^* dθ = - f^* dθ`. -/
@@ -503,7 +538,7 @@ theorem mpullback_pow_circleAngularForm_apply {f : M → Circle} {x : M}
   induction n with
   | zero =>
     have h1 : (f ^ 0 : M → Circle) = fun _ ↦ (1 : Circle) := funext fun _ ↦ pow_zero _
-    rw [h1, mpullback_const]
+    rw [h1, mpullback_const one_ne_zero]
     simp
   | succ n ih =>
     have hpow : MDifferentiableAt I (𝓡 1) (f ^ n) x :=
@@ -564,7 +599,7 @@ theorem mpullback_neg_circleAngularForm_apply {f : M → Circle} {x : M}
     mpullback I (𝓡 1) (-f) circleAngularForm x = mpullback I (𝓡 1) f circleAngularForm x := by
   have hneg : -f = (fun _ : M ↦ (-1 : Circle)) * f := funext fun y ↦ (neg_one_mul (f y)).symm
   rw [hneg, mpullback_mul_circleAngularForm_apply mdifferentiableAt_const hf,
-    mpullback_const, Pi.zero_apply, zero_add]
+    mpullback_const one_ne_zero, Pi.zero_apply, zero_add]
 
 /-- For a differentiable map `f : M → Circle`, `(-f)^* dθ = f^* dθ`. -/
 theorem mpullback_neg_circleAngularForm {f : M → Circle} (hf : MDifferentiable I (𝓡 1) f) :
@@ -582,7 +617,7 @@ end PullbackAngularForm
 @[simp]
 theorem mpullback_mul_left_circleAngularForm (z₀ : Circle) :
     mpullback (𝓡 1) (𝓡 1) (z₀ * ·) circleAngularForm = circleAngularForm := by
-  simpa only [id_eq, mpullback_const, zero_add, mpullback_id] using
+  simpa only [id_eq, mpullback_const one_ne_zero, zero_add, mpullback_id] using
     mpullback_fun_mul_circleAngularForm (I := 𝓡 1) (mdifferentiable_const (c := z₀))
       mdifferentiable_id
 
@@ -590,7 +625,7 @@ theorem mpullback_mul_left_circleAngularForm (z₀ : Circle) :
 @[simp]
 theorem mpullback_mul_right_circleAngularForm (z₀ : Circle) :
     mpullback (𝓡 1) (𝓡 1) (· * z₀) circleAngularForm = circleAngularForm := by
-  simpa only [id_eq, mpullback_const, add_zero, mpullback_id] using
+  simpa only [id_eq, mpullback_const one_ne_zero, add_zero, mpullback_id] using
     mpullback_fun_mul_circleAngularForm (I := 𝓡 1) mdifferentiable_id
       (mdifferentiable_const (c := z₀))
 
@@ -626,3 +661,83 @@ theorem mpullback_neg_id_circleAngularForm :
     mdifferentiable_id
 
 end TauCeti
+
+/-! ### The angular form on the circles `AddCircle p` -/
+
+namespace AddCircle
+
+open TauCeti TauCeti.Manifold.Orientation
+open scoped Real
+
+variable (p : ℝ) [Fact (0 < p)]
+
+/-- **The angular form in the time coordinate.** The identification
+`toCircle : AddCircle p → Circle`, `[t] ↦ exp (2π i t / p)`, pulls the angular form `dθ` of the
+unit circle back to `(2π / p) • dt_p`, where `dt_p` is the time form of `AddCircle p`. Equivalently
+the angle is `θ = 2π t / p`, and `dt_p = (p / 2π) dθ`; for the unit period, `dt = dθ / 2π`. -/
+@[simp]
+theorem mpullback_toCircle_circleAngularForm :
+    mpullback 𝓘(ℝ) (𝓡 1) (toCircle : AddCircle p → Circle) circleAngularForm =
+      (2 * π / p) • (timeForm p).val := by
+  set c : ℝ := 2 * π / p
+  refine mpullback_coe_injective p ?_
+  have hmul : MDifferentiable 𝓘(ℝ) 𝓘(ℝ) fun t : ℝ ↦ c * t :=
+    (contDiff_const.mul contDiff_id).contMDiff.mdifferentiable one_ne_zero
+  -- Read on `ℝ`, `toCircle` is `Circle.exp` after multiplication by `c`, which pulls `dθ` back to
+  -- `dt` and then to `c • dt`.
+  have hcomp : (toCircle : AddCircle p → Circle) ∘ ((↑) : ℝ → AddCircle p) =
+      Circle.exp ∘ fun t : ℝ ↦ c * t :=
+    funext toCircle_apply_mk
+  rw [mpullback_smul, mpullback_coe_timeForm,
+    ← mpullback_comp ((contMDiff_coe p 1).mdifferentiable one_ne_zero)
+      ((contMDiff_toCircle p 1).mdifferentiable one_ne_zero), hcomp,
+    mpullback_comp hmul (contMDiff_circleExp.mdifferentiable one_ne_zero),
+    mpullback_circleExp_circleAngularForm]
+  funext t
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  rw [mpullback_apply, ((hasFDerivAt_id t).const_mul c).hasMFDerivAt.mfderiv, Pi.smul_apply,
+    ContinuousAlternatingMap.smul_apply, mextDeriv_ofFunction_id_apply,
+    mextDeriv_ofFunction_id_apply]
+  -- Tangent vectors of `ℝ` are real numbers, on which `c • id` acts by multiplication by `c`.
+  rfl
+
+/-- The identification `toCircle : AddCircle p → Circle` preserves orientation, from the positive
+orientation of `AddCircle p`, on which `dt_p` is positive, to the counterclockwise orientation of
+the unit circle, on which `dθ` is positive. -/
+theorem isOrientationPreservingAt_toCircle (x : AddCircle p) :
+    IsOrientationPreservingAt (AddCircle.orientation p) circleOrientation
+      (toCircle : AddCircle p → Circle) x := by
+  rw [← coe_diffeomorphCircle p 1]
+  let e := (diffeomorphCircle p 1).mfderivToContinuousLinearEquiv one_ne_zero x
+  let b : Module.Basis (Fin 1) ℝ (TangentSpace 𝓘(ℝ) x) := Module.Basis.singleton (Fin 1) ℝ
+  have hb (i : Fin 1) :
+      mfderiv 𝓘(ℝ) (𝓡 1) (diffeomorphCircle p 1) x (b i) = b.map e.toLinearEquiv i := by
+    rw [Module.Basis.map_apply, ContinuousLinearEquiv.coe_toLinearEquiv]
+    exact (DFunLike.congr_fun
+      ((diffeomorphCircle p 1).mfderivToContinuousLinearEquiv_coe one_ne_zero (x := x)) (b i)).symm
+  -- The basis `1` is positive for the orientation of `AddCircle p`, and its image is positive for
+  -- the counterclockwise orientation because `dθ` takes the positive value `2π / p` on it.
+  refine (isOrientationPreservingAt_iff_of_basis b _ hb).mpr
+    (iff_of_true (orientationAt_orientation p x).symm ?_)
+  rw [orientation_eq_orientationAt_circleOrientation_iff, ← funext hb, ← mpullback_apply,
+    coe_diffeomorphCircle, mpullback_toCircle_circleAngularForm]
+  -- The time form takes the value `1` on the basis vector `1`.
+  simp only [Pi.smul_apply, ContinuousAlternatingMap.smul_apply, timeForm_apply]
+  exact mul_pos (div_pos Real.two_pi_pos (Fact.out : 0 < p))
+    (one_pos.trans_eq (Module.Basis.singleton_apply (Fin 1) ℝ 0).symm)
+
+/-- **The time form on the unit circle.** Transported to the unit circle by the identification
+`AddCircle p ≃ Circle`, the time form `dt_p` is `(p / 2π) dθ`. -/
+theorem mpullback_homeomorphCircle_symm_timeForm :
+    mpullback (𝓡 1) 𝓘(ℝ) (homeomorphCircle (Fact.out : 0 < p).ne').symm (timeForm p).val =
+      (p / (2 * π)) • circleAngularForm := by
+  have hc : p / (2 * π) * (2 * π / p) = 1 := by
+    field_simp [(Fact.out : 0 < p).ne', Real.two_pi_pos.ne']
+  have ht : (timeForm p).val =
+      (p / (2 * π)) • mpullback 𝓘(ℝ) (𝓡 1) (toCircle : AddCircle p → Circle) circleAngularForm := by
+    rw [mpullback_toCircle_circleAngularForm, smul_smul, hc, one_smul]
+  -- The inverse homeomorphism is the inverse of the diffeomorphism `toCircle`.
+  rw [ht, mpullback_smul, ← coe_diffeomorphCircle p ω, ← coe_diffeomorphCircle_symm p ω,
+    mpullback_symm_mpullback (by simp)]
+
+end AddCircle

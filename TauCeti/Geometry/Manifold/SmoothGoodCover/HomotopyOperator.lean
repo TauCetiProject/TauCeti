@@ -138,7 +138,8 @@ theorem mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv [IsManifold I 
   -- end at time `0` is constant.
   have h := mextDeriv_homotopyOperator_mpullback_add_homotopyOperator_mpullback_mextDeriv
     ((C.contMDiff_cylinderContract s hs hW).of_le (by simp)) hθ
-  simp only [cylinderContract_one, cylinderContract_zero, mpullback_const, sub_zero] at h
+  simp only [cylinderContract_one, cylinderContract_zero, mpullback_const k.succ_ne_zero,
+    sub_zero] at h
   exact h.trans (mpullback_id θ)
 
 /-- **Local exactness on a smooth good cover.** On a nonempty finite intersection `W` of a smooth
