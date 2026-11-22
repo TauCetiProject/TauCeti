@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.AsymptoticSum
 public import TauCeti.Analysis.Pseudodifferential.Symbol.WeakParameter.Basic
-import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.Data.Set.Finite.List
 
 /-!
 # Asymptotic summation of weakly parameter-dependent symbols
