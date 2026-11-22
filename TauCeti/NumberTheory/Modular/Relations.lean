@@ -36,6 +36,7 @@ and hence also its opposite group.
 * `TauCeti.ModularGroup.tPrime`, `TauCeti.ModularGroup.coe_tPrime`,
   `TauCeti.ModularGroup.coe_T_mul_coe_S_sq_mul_coe_S`: the matrix `T′ = (1 0; 1 1)` and
   `U² * S = T′`.
+* `TauCeti.ModularGroup.closure_T_tPrime`: `T` and `T′` generate `SL(2, ℤ)`.
 -/
 
 public section
@@ -147,6 +148,14 @@ def tPrime : SL(2, ℤ) := ⟨!![1, 0; 1, 1], by decide +kernel⟩
 @[simp]
 theorem coe_tPrime : (tPrime : Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; 1, 1] :=
   (rfl)
+
+/-- `T` and `T′` generate `SL(2, ℤ)`: `S = (T T′⁻¹ T)⁻¹`. -/
+theorem closure_T_tPrime : Subgroup.closure {T, tPrime} = (⊤ : Subgroup SL(2, ℤ)) := by
+  rw [eq_top_iff, ← SpecialLinearGroup.SL2Z_generators, Subgroup.closure_le]
+  have hT : T ∈ Subgroup.closure {T, tPrime} := Subgroup.subset_closure (by simp)
+  have hT' : tPrime ∈ Subgroup.closure {T, tPrime} := Subgroup.subset_closure (by simp)
+  have hS : S = (T * tPrime⁻¹ * T)⁻¹ := by decide +kernel
+  exact Set.pair_subset (hS ▸ inv_mem (mul_mem (mul_mem hT (inv_mem hT')) hT)) hT
 
 /-- In `PSL(2, ℤ)`, `U² * S = T′` for `U = T * S`; in `SL(2, ℤ)` the product is `-T′`. -/
 @[simp]
