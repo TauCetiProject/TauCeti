@@ -617,9 +617,10 @@ of `H'_q` starting at nondegenerate fixed points of the time-one maps, as for no
 one-periodic orbits. Let `(J, K_s, K_t)` be Floer data on `S`, with `J` `C¹` and `K_s`, `K_t` `C²`
 along `u`, which far out on each end, beyond a height `R₁`, are cylindrical,
 `J(φ'_q(s, t)) = J_q(t)` for `C¹` families `J_q` compatible along `x_q`, with perturbation the
-pair-of-pants perturbation of `H`. Let `u` be a `C¹` solution on `S` of the Floer equation for
-these data, along which `J` is compatible, whose loops in each positive end chart `φ'_q` converge
-uniformly to `x_q` while the slice defects `∂t (u ∘ φ'_q) - X_{H'_q}` tend uniformly to zero. Then
+pair-of-pants perturbation of `H`. Let `u` be a `C¹` map on `S`, along which `J` is compatible,
+that solves the Floer equation for these data beyond `R₁` on each end, whose loops in each positive
+end chart `φ'_q` converge uniformly to `x_q` while the slice defects `∂t (u ∘ φ'_q) - X_{H'_q}` tend
+uniformly to zero. Then
 there are `C ≥ 0` and `T ≥ 0` such that every `C²` section `ξ` with compact support in `S` satisfies
 
 `∑_q ∫_{(T, ∞) × [0, 1]} (‖∂s (ξ ∘ φ'_q)‖² + ‖∂t (ξ ∘ φ'_q)‖² + ‖ξ ∘ φ'_q‖²)`
@@ -655,8 +656,9 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
     (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
     (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
     (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z)))
-    (hF : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J z (u z)) (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hF : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V))
     (hux : ∀ q, TendstoUniformlyOn (fun s t ↦ u (positiveEndChart q (s, t))) (x q) atTop
       (Icc 0 1))
     (hδ : ∀ q, TendstoUniformlyOn (fun s t ↦ sliceDefect
@@ -671,7 +673,7 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
           ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖ξ z‖ ^ 2) := by
   choose C R hend using fun q ↦
     ω.exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLinearization hH hHs q
-      (hX q) (hx q) (hnd q) (hJe q) (hJex q) (hJeq q) (hK q) hJ hu (fun z hz _ ↦ hF z hz)
+      (hX q) (hx q) (hnd q) (hJe q) (hJex q) (hJeq q) (hK q) hJ hu (hF q)
       (hux q) (hδ q)
   exact exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_ends
     ω hJ hKs hKt hu hc hend

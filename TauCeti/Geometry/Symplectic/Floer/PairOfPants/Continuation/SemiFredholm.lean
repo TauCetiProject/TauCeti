@@ -21,7 +21,7 @@ with pair-of-pants products, and their counts rest on the Fredholm theory of the
 operator `D_u` of this datum.
 
 This file proves the semi-Fredholm estimate for `D_u`, for any neck positions, as the theorem
-`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_continuation_add`
+`exists_forall_le_mul_integral_floerLinearization_pairOfPantsContinuationPerturbation_add`
 in the namespace `TauCeti.SymplecticForm`: when the ends of a solution `u` converge to
 nondegenerate orbits of the outer Hamiltonians `H_q`, with almost complex structures cylindrical far
 out on the ends and compatible along `u`, there are `C ≥ 0` and `T ≥ 0` such that
@@ -64,17 +64,16 @@ Hamiltonians `H'_q` of the outer Hamiltonians have globally Lipschitz suspended 
 let `x_q` be orbits of `H'_q` starting at nondegenerate fixed points of the time-one maps. Let
 `J(z)` be a family of almost complex structures, `C¹` along `u`, that is cylindrical far out on each
 end, `J(φ'_q(s, t)) = J_q(t)` for `s ≥ R₁` with `C¹` families `J_q` compatible along `x_q`. Let `u`
-be a `C¹` solution on `S` of the Floer equation for this datum, along which `J` is compatible, whose
-loops in each positive end chart `φ'_q` converge uniformly to `x_q` while the slice defects
-`∂t (u ∘ φ'_q) - X_{H'_q}` tend uniformly to zero. Then there are `C ≥ 0` and `T ≥ 0` such that
-every `C²` section `ξ` with compact support in `S` satisfies
+be a `C¹` map on `S`, along which `J` is compatible, that solves the Floer equation for this datum
+beyond `R₁` on each end, whose loops in each positive end chart `φ'_q` converge uniformly to `x_q`
+while the slice defects `∂t (u ∘ φ'_q) - X_{H'_q}` tend uniformly to zero. Then there are `C ≥ 0`
+and `T ≥ 0` such that every `C²` section `ξ` with compact support in `S` satisfies
 
 `∑_q ∫_{(T, ∞) × [0, 1]} (‖∂s (ξ ∘ φ'_q)‖² + ‖∂t (ξ ∘ φ'_q)‖² + ‖ξ ∘ φ'_q‖²)`
 `  + ∫_{S_T} (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C (∫ ‖D_u ξ‖² + ∫_{S_{T + 1}} ‖ξ‖²)`
 
 for the linearized Floer operator `D_u` of the datum. -/
-theorem
-  exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_continuation_add
+theorem exists_forall_le_mul_integral_floerLinearization_pairOfPantsContinuationPerturbation_add
     (ω : SymplecticForm V) {G H : Puncture → ℝ → V → ℝ} (hG : ∀ q, Periodic (G q) 1)
     (hH : ∀ q, Periodic (H q) 1) (hGs : ∀ q, ContDiff ℝ 2 (uncurry (G q)))
     (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) (L : Puncture → ℝ) {Λ : Puncture → ℝ≥0}
@@ -95,8 +94,8 @@ theorem
       (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
     (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
     (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z)))
-    (hF : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J z (u z)) (ω.perturbedFDeriv
+    (hF : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z)) (ω.perturbedFDeriv
         (fun z x ↦
           pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦
@@ -137,6 +136,6 @@ theorem
     (fun z hz ↦ contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH hGs hHs L hz (u z) 1)
     (fun z hz ↦
       contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH hGs hHs L hz (u z) Complex.I)
-    hu hc hF hux hδ
+    hu hc (fun q z hz hR ↦ hF q z hz ((le_max_left _ _).trans hR)) hux hδ
 
 end TauCeti.SymplecticForm

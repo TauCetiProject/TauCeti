@@ -349,11 +349,11 @@ private theorem exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_
 /-- **The end estimate along a Floer pair of pants.** Let `H` be jointly `C²` period-one
 Hamiltonians, and let `(J, K_s, K_t)` be Floer data on `S = ℂ ∖ {0, 1}` whose perturbation agrees
 with the pair-of-pants perturbation of `H` far out on the end `q`, beyond the height `R₁`, where `J`
-is a `C¹` family `J_q(t)`. Let `u` be a `C¹` map on `S`, along which `J` is `C¹`, that solves the
-Floer equation for these data beyond `R₁` on the end `q`, whose end `q`, read in the positive end
-chart `φ'_q`, converges uniformly to an orbit `x` of the positive end Hamiltonian `H'_q` starting at
-a nondegenerate fixed point of the time-one map, while the slice defect `∂t (u ∘ φ'_q) - X_{H'_q}`
-tends uniformly to zero, and along which `J_q` is compatible. Then there are `C` and `R` such that
+is a `C¹` family `J_q(t)` compatible along `x`. Let `u` be a `C¹` map on `S`, along which `J` is
+`C¹`, that solves the Floer equation for these data beyond `R₁` on the end `q`, whose end `q`, read
+in the positive end chart `φ'_q`, converges uniformly to an orbit `x` of the positive end
+Hamiltonian `H'_q` starting at a nondegenerate fixed point of the time-one map, while the slice
+defect `∂t (u ∘ φ'_q) - X_{H'_q}` tends uniformly to zero. Then there are `C` and `R` such that
 every `C²` section `ξ` with compact support in the part `±s > R` of the end satisfies
 
 `∫_{(0, ∞) × [0, 1]} (‖∂s (ξ ∘ φ'_q)‖² + ‖∂t (ξ ∘ φ'_q)‖² + ‖ξ ∘ φ'_q‖²) ≤ C ∫ ‖D_u ξ‖²`
