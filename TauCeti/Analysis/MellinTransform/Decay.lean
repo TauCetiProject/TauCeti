@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.MellinInversion
 
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Fourier.Decay
@@ -21,6 +22,12 @@ compact set. The Mellin transform integrates only over the positive half-line, s
 support need not be bounded or separated from zero. In particular, smooth functions with compact
 positive support separated from zero have decay of every finite order on vertical strips.
 This decay is used in absolutely convergent explicit formulas.
+
+A continuous function on the positive half-line with compact positive closed support is Mellin
+convergent at every exponent, and its Mellin transform is entire. For a `C¹` such function the
+Mellin transform divided by `s` is integrable on every vertical line `Re s = σ ≠ 0`, which is what
+Mellin inversion of the Mellin transform `mellin f s / s` of the upper tail `∫_{(x,∞)} f(y) dy/y`
+requires.
 
 Mellin transforms on vertical lines are Fourier transforms in the logarithmic coordinate.
 The estimate holds for complex normed-space targets without assuming completeness.
@@ -158,5 +165,88 @@ theorem exists_one_add_abs_im_pow_mul_norm_mellin_le {N : ℕ} {f : ℝ → E}
   exact (angular_mellin_bound f s N hfour).trans (by dsimp [C]; linarith)
 
 end Endpoint
+
+section CompactPositiveSupport
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- A compact positive closed support lies in an interval `[a, b]` with `0 < a`. -/
+private lemma exists_pos_mem_Icc_of_ne_zero {F : Type*} [Zero F] {f : ℝ → F}
+    (hc : IsCompact (tsupport f ∩ Ioi 0)) :
+    ∃ a b : ℝ, 0 < a ∧ ∀ t, 0 < t → f t ≠ 0 → t ∈ Icc a b := by
+  rcases (tsupport f ∩ Ioi 0).eq_empty_or_nonempty with he | hne
+  · refine ⟨1, 0, one_pos, fun t ht hft ↦ ?_⟩
+    have hmem : t ∈ tsupport f ∩ Ioi 0 := ⟨subset_tsupport f hft, ht⟩
+    simp [he] at hmem
+  · obtain ⟨a, ⟨-, ha⟩, hmin⟩ := hc.exists_isLeast hne
+    obtain ⟨b, hb⟩ := hc.bddAbove
+    exact ⟨a, b, ha, fun t ht hft ↦
+      ⟨hmin ⟨subset_tsupport f hft, ht⟩, hb ⟨subset_tsupport f hft, ht⟩⟩⟩
+
+/-- A function continuous on `(0, ∞)` whose positive closed support `tsupport f ∩ Ioi 0` is compact
+is Mellin convergent at every exponent. -/
+theorem mellinConvergent_of_isCompact_tsupport {f : ℝ → E} (hf : ContinuousOn f (Ioi 0))
+    (hc : IsCompact (tsupport f ∩ Ioi 0)) (s : ℂ) : MellinConvergent f s := by
+  have hK : ContinuousOn (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • f t) (tsupport f ∩ Ioi 0) :=
+    fun t ht ↦ ((Complex.continuousAt_ofReal_cpow_const _ _
+      (Or.inr (ne_of_gt ht.2))).continuousWithinAt).smul
+      ((hf t ht.2).mono inter_subset_right)
+  refine (hK.integrableOn_compact hc).of_forall_sdiff_eq_zero measurableSet_Ioi fun t ht ↦ ?_
+  rw [image_eq_zero_of_notMem_tsupport fun h ↦ ht.2 ⟨h, ht.1⟩, smul_zero]
+
+/-- The Mellin transform of a function continuous on `(0, ∞)` with compact positive closed support
+is entire. -/
+theorem differentiable_mellin_of_isCompact_tsupport {f : ℝ → E} (hf : ContinuousOn f (Ioi 0))
+    (hc : IsCompact (tsupport f ∩ Ioi 0)) : Differentiable ℂ (mellin f) := fun s ↦ by
+  obtain ⟨a, b, ha, hab⟩ := exists_pos_mem_Icc_of_ne_zero hc
+  have htop : f =ᶠ[Filter.atTop] fun _ ↦ 0 :=
+    (Filter.eventually_gt_atTop (max b 0)).mono fun t ht ↦ by
+      by_contra h
+      exact (lt_of_le_of_lt (le_max_left b 0) ht).not_ge
+        (hab t (lt_of_le_of_lt (le_max_right b 0) ht) h).2
+  have hbot : f =ᶠ[nhdsWithin 0 (Ioi 0)] fun _ ↦ 0 :=
+    Filter.mem_of_superset (Ioo_mem_nhdsGT ha) fun t ht ↦ by
+      by_contra h
+      exact ht.2.not_ge (hab t ht.1 h).1
+  exact mellin_differentiableAt_of_isBigO_rpow (a := s.re + 1) (b := s.re - 1)
+    (hf.locallyIntegrableOn measurableSet_Ioi)
+    (htop.trans_isBigO (Asymptotics.isBigO_zero _ _)) (by linarith)
+    (hbot.trans_isBigO (Asymptotics.isBigO_zero _ _)) (by linarith)
+
+/-- For a `C¹` function on `(0, ∞)` with compact positive closed support, `s ↦ mellin f s / s` is
+integrable on every vertical line `Re s = σ` with `σ ≠ 0`: the transform decays like `|Im s|⁻¹`
+and `1 / s` supplies a second factor `|Im s|⁻¹`. -/
+theorem verticalIntegrable_mellin_div {f : ℝ → ℂ} (hf : ContDiffOn ℝ 1 f (Ioi 0))
+    (hc : IsCompact (tsupport f ∩ Ioi 0)) {σ : ℝ} (hσ : σ ≠ 0) :
+    Complex.VerticalIntegrable (fun s ↦ mellin f s / s) σ := by
+  obtain ⟨C, hC0, hC⟩ := exists_one_add_abs_im_pow_mul_norm_mellin_le hf hc
+    (isCompact_singleton (x := σ))
+  have hσ0 : 0 < |σ| := abs_pos.mpr hσ
+  have hs0 (t : ℝ) : (σ : ℂ) + t * Complex.I ≠ 0 := fun h ↦
+    hσ (by simpa using congrArg Complex.re h)
+  let K : ℝ := C * (1 + |σ|) / |σ|
+  refine ((integrable_inv_one_add_sq.const_mul K).mono' ?_ (Filter.Eventually.of_forall
+    fun t ↦ ?_))
+  · exact ((differentiable_mellin_of_isCompact_tsupport hf.continuousOn hc).continuous.comp
+      (by fun_prop)).div (by fun_prop) hs0 |>.aestronglyMeasurable
+  · set s : ℂ := (σ : ℂ) + t * Complex.I
+    have hm : (1 + |t|) * ‖mellin f s‖ ≤ C := by simpa [s] using hC s (by simp [s])
+    have hre : |σ| ≤ ‖s‖ := by simpa [s] using Complex.abs_re_le_norm s
+    have him : |t| ≤ ‖s‖ := by simpa [s] using Complex.abs_im_le_norm s
+    have hsn : 0 < ‖s‖ := hσ0.trans_le hre
+    have hsq : 1 + t ^ 2 ≤ (1 + |t|) ^ 2 := by nlinarith [abs_nonneg t, sq_abs t]
+    have hlin : (1 + |t|) * |σ| ≤ ‖s‖ * (1 + |σ|) := by nlinarith [abs_nonneg σ]
+    have key : ‖mellin f s‖ * (1 + t ^ 2) ≤ K * ‖s‖ := calc
+      ‖mellin f s‖ * (1 + t ^ 2) ≤ ‖mellin f s‖ * (1 + |t|) ^ 2 := by gcongr
+      _ = ((1 + |t|) * ‖mellin f s‖) * (1 + |t|) := by ring
+      _ ≤ C * (1 + |t|) := by gcongr
+      _ ≤ K * ‖s‖ := by
+        rw [show K * ‖s‖ = C * (‖s‖ * (1 + |σ|)) / |σ| by ring, le_div_iff₀ hσ0, mul_assoc]
+        gcongr
+    rw [norm_div, div_le_iff₀ hsn, mul_right_comm, ← div_eq_mul_inv,
+      le_div_iff₀ (by positivity)]
+    exact key
+
+end CompactPositiveSupport
 
 end TauCeti
