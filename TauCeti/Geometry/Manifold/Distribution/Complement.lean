@@ -13,6 +13,7 @@ import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 import TauCeti.Geometry.Manifold.VectorBundle.ConstantRank
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Dual
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 
 /-!
@@ -64,36 +65,26 @@ variable [IsManifold I 1 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
 /-- The bundle map `v ↦ (⟪X₁ y, v⟫, …, ⟪X_k y, v⟫)` into the trivial bundle with fibre `ℝᵏ`
 is `C^n` where the vector fields `X i` are. -/
-private theorem contMDiffOn_pi_innerSL [IsManifold I (n + 1) M]
+private theorem contMDiffOn_pi_innerSL
     [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
     {X : Fin k → Π y : M, TangentSpace I y} {U : Set M} (hX : ∀ i, CMDiff[U] n (T% (X i))) :
     ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] (Fin k → ℝ))) n
       (fun y ↦ TotalSpace.mk' (E →L[ℝ] (Fin k → ℝ))
         (E := fun y : M ↦ TangentSpace I y →L[ℝ] Trivial M (Fin k → ℝ) y) y
         (ContinuousLinearMap.pi fun i ↦ innerSL ℝ (X i y))) U := by
-  let : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
-    TangentBundle.contMDiffVectorBundle
   intro x₀ hx₀
-  let e := trivializationAt E (TangentSpace I) x₀
   rw [contMDiffWithinAt_hom_bundle]
   refine ⟨contMDiffWithinAt_id, ?_⟩
-  -- The trivialization of the trivial bundle is the identity, so in coordinates the bundle map
-  -- is `u ↦ (⟪X i y, e⁻¹ u⟫)ᵢ`.
-  simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
-    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp]
-  refine (contMDiffWithinAt_inter' (mem_nhdsWithin_of_mem_nhds
-    (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt E _ x₀)))).mp ?_
   refine contMDiffWithinAt_clm_apply.mpr fun u ↦ contMDiffWithinAt_pi_module_iff.mpr fun i ↦ ?_
-  have hs := (Manifold.contMDiffOn_symm_baseSet (I := I) (n := n) (e := e) u).mono
-    (inter_subset_right : U ∩ e.baseSet ⊆ e.baseSet)
-  have hXi := (hX i).mono (inter_subset_left : U ∩ e.baseSet ⊆ U)
-  -- The inner products are those of a `C^n` family of bilinear forms `g`.
-  obtain ⟨g, hg, hgi⟩ := IsContMDiffRiemannianBundle.exists_contMDiff (IB := I) (n := n)
-    (F := E) (E := fun x : M ↦ TangentSpace I x)
-  have hx₀' : x₀ ∈ U ∩ e.baseSet := ⟨hx₀, mem_baseSet_trivializationAt E _ x₀⟩
-  exact ((hg.contMDiffAt (x := x₀)).contMDiffWithinAt.clm_bundle_apply₂_trivial (hXi x₀ hx₀')
-    (hs x₀ hx₀')).congr
-    (fun y hy ↦ by simp [hgi, e, e.symmL_apply hy.2]) (by simp [hgi, e, e.symmL_apply hx₀'.2])
+  -- Each coordinate of the bundle map is the covector field `⟪X i ·, ·⟫`, which is `C^n`.
+  have h := ((contMDiffWithinAt_hom_bundle _).mp (ContMDiffWithinAt.innerSL_bundle (F := E)
+    (V := fun x : M ↦ TangentSpace I x) (hX i x₀ hx₀))).2
+  -- The trivializations of the trivial bundles are the identity, so in coordinates both sides
+  -- are `u ↦ ⟪X i y, e⁻¹ u⟫` for the trivialization `e` of the tangent bundle at `x₀`.
+  simpa only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
+    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.pi_apply] using
+    contMDiffWithinAt_clm_apply.mp h u
 
 /-- **Orthogonal complements of distributions.** For a `C^n` Riemannian metric on a `C^(n + 1)`
 manifold modelled on a finite-dimensional real space, the orthogonal complements `(D x)ᗮ` of a

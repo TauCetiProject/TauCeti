@@ -382,8 +382,9 @@ theorem exists_isCoisotropicEmbedding_coisotropicModelForm {k r : ℕ} (hσ : σ
     (contMDiff_zeroSection ℝ _).isSmoothEmbedding_of_leftInverse (by simp)
       ((Bundle.contMDiff_proj (n := ∞) _).of_le (by simp)) fun q ↦ by simp
   let z : Q → U := fun q ↦ ⟨ζ q, hζU q⟩
+  have hzζ : (Subtype.val : U → _) ∘ z = ζ := rfl
   have hz : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, Fin r → ℝ)) ∞ z :=
-    TauCeti.isSmoothEmbedding_subtypeVal_comp_iff.1 hζ
+    TauCeti.isSmoothEmbedding_subtypeVal_comp_iff.1 (hzζ ▸ hζ)
   refine ⟨U, hU, z, hz.contMDiff, fun q ↦ rfl,
     (SmoothTwoForm.IsNondegenerate.isCoisotropicEmbedding_iff_of_isSmoothEmbedding hz).2 <|
       (hU.isNondegenerate.isCoisotropicMap_iff (J := I) (f := z)).2 fun q ↦
@@ -395,14 +396,14 @@ theorem exists_isCoisotropicEmbedding_coisotropicModelForm {k r : ℕ} (hσ : σ
       have h := (SymplecticForm.mem_orthogonal_iff.1 hw) _ ⟨v, rfl⟩
       rw [SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply, SmoothForm.eval₂_mpullback,
         Manifold.mfderiv_subtype_val_apply, Manifold.mfderiv_subtype_val_apply,
-        ContinuousLinearMap.coe_coe, ← Manifold.mfderiv_subtype_val_comp_apply (f := z)] at h
-      -- `Subtype.val ∘ z` is `ζ` by definition of `z`.
+        ContinuousLinearMap.coe_coe, ← Manifold.mfderiv_subtype_val_comp_apply (f := z), hzζ] at h
       exact h
     obtain ⟨v, -, rfl⟩ :=
       (forall_eval₂_coisotropicModelForm_mfderiv_zeroSection_eq_zero_iff σ hι q
         (hDK q).symm w).1 hw'
-    -- As above, `Subtype.val ∘ z` is `ζ` by definition of `z`.
-    exact ⟨v, by rw [ContinuousLinearMap.coe_coe, ← Manifold.mfderiv_subtype_val_comp_apply]; rfl⟩
+    exact ⟨v, by
+      rw [ContinuousLinearMap.coe_coe, ← Manifold.mfderiv_subtype_val_comp_apply, hzζ,
+        ContinuousLinearMap.coe_coe]⟩
   · rw [SmoothForm.mpullback_mpullback]
     exact mpullback_zeroSection_coisotropicModelForm σ hι
 
