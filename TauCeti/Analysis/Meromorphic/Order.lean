@@ -135,4 +135,16 @@ theorem _root_.Filter.BoundedAtFilter.meromorphicOrderAt_nonneg
 
 end Bounded
 
+section NonAnalytic
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {f : 𝕜 → E} {x : 𝕜}
+
+/-- A function with negative meromorphic order at `x` is not analytic at `x`. -/
+theorem not_analyticAt_of_meromorphicOrderAt_neg (h : meromorphicOrderAt f x < 0) :
+    ¬ AnalyticAt 𝕜 f x :=
+  fun ha ↦ h.not_ge ha.meromorphicOrderAt_nonneg
+
+end NonAnalytic
+
 end

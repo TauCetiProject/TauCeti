@@ -61,6 +61,12 @@ theorem MeromorphicAt.toMeromorphicNFAt_apply_eq_of_tendsto {f : 𝕜 → E} {x 
     han.continuousAt.continuousWithinAt.tendsto.congr' hf.eq_nhdsNE_toMeromorphicNFAt.symm
   exact tendsto_nhds_unique hlim' hlim
 
+/-- A function in meromorphic normal form at `x` with nonzero meromorphic order at `x` vanishes
+at `x`. -/
+theorem MeromorphicNFAt.apply_eq_zero_of_meromorphicOrderAt_ne_zero {f : 𝕜 → E} {x : 𝕜}
+    (hf : MeromorphicNFAt f x) (h : meromorphicOrderAt f x ≠ 0) : f x = 0 :=
+  not_not.mp (hf.meromorphicOrderAt_eq_zero_iff.not.mp h)
+
 end Pointwise
 
 namespace TauCeti

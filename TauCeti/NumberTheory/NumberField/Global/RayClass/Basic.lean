@@ -344,6 +344,14 @@ fractional ideal.** -/
   simp only [QuotientGroup.mk'_apply, FractionalIdeal.canonicalEquiv_self,
     RingEquiv.coe_mulEquiv_refl, hmap]
 
+/-- Taking the trivial-modulus ray class of an invertible fractional ideal embedded via
+`idealsPrimeToEquiv` corresponds under `oneEquivClassGroup` to its ordinary ideal class. -/
+@[simp] theorem rayClassMk_idealsPrimeToEquiv_symm_eq (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    rayClassMk (Modulus.one K) ((idealsPrimeToEquiv Modulus.support_one).symm I) =
+      oneEquivClassGroup.symm (ClassGroup.mk K I) := by
+  apply oneEquivClassGroup.injective
+  simp
+
 /-- At the trivial modulus the integral ideals prime to the modulus are the nonzero integral
 ideals. -/
 noncomputable def integralIdealsPrimeToOneEquiv :

@@ -105,7 +105,7 @@ theorem riemannZetaData_dual : riemannZetaData.dual = riemannZetaData := by
   · simp
   · simp
   · simp [completedRiemannZeta_conj]
-  · simp [AnalyticLFunctionData.single_zero_one_add_single_one_one_conj]
+  · simp [single_zero_one_add_single_one_one_conj]
 
 /-- On `Re s > 1`, the completed Riemann zeta function is `Γ_ℝ(s) ζ(s)`, the completion of the
 Dirichlet series with all coefficients `1`. -/
@@ -129,9 +129,11 @@ theorem riemannZetaData_hasMeromorphicContinuation :
     riemannZetaData.HasMeromorphicContinuation :=
   hasMeromorphicContinuation_of_polarOrder_eq_single_zero_one_add_single_one_one
     riemannZetaData_polarOrder
-    meromorphicOrderAt_completedRiemannZeta_zero
-    meromorphicOrderAt_completedRiemannZeta_one
-    fun _ h0 h1 ↦ analyticAt_completedRiemannZeta h0 h1
+    (by rw [riemannZetaData_completed]; exact meromorphicOrderAt_completedRiemannZeta_zero)
+    (by rw [riemannZetaData_completed]; exact meromorphicOrderAt_completedRiemannZeta_one)
+    fun _ h0 h1 ↦ by
+      rw [riemannZetaData_completed]
+      exact analyticAt_completedRiemannZeta h0 h1
 
 /-- The functional equation `Λ(s) = Λ(1 - s)` of the completed Riemann zeta function, with root
 number `1`. -/
@@ -139,7 +141,7 @@ theorem riemannZetaData_hasFunctionalEquation : riemannZetaData.HasFunctionalEqu
   norm_rootNumber := by simp
   polarOrder_one_sub_conj s := by
     simpa only [riemannZetaData_polarOrder] using
-      AnalyticLFunctionData.single_zero_one_add_single_one_one_one_sub_conj s
+      single_zero_one_add_single_one_one_one_sub_conj s
   completed_eq s _ _ := by
     rw [riemannZetaData_dual, riemannZetaData_rootNumber, one_mul, riemannZetaData_completed,
       completedRiemannZeta_one_sub]

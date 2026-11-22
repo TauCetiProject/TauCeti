@@ -10,9 +10,7 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Unfolding
 public import TauCeti.RingTheory.DedekindDomain.Different.Basic
 import TauCeti.Analysis.Meromorphic.Conj
-import TauCeti.Analysis.Meromorphic.Order
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
-import TauCeti.RingTheory.ClassGroup.Basic
 import TauCeti.RingTheory.FractionalIdeal.Norm
 import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
@@ -58,9 +56,8 @@ Hecke's functional equation `Z(I, 1 - s) = Z(I^∨, s)` against the trace dual
 
 ## Main results
 
-* `TauCeti.LFunctions.completedPartialZeta_eq_completedPartialZetaClass`,
-  `TauCeti.LFunctions.completedPartialZetaClass_inv_mk`: relating `completedPartialZeta` and
-  `completedPartialZetaClass`.
+* `TauCeti.LFunctions.completedPartialZeta_eq_completedPartialZetaClass`: relating
+  `completedPartialZeta` and `completedPartialZetaClass`.
 * `TauCeti.LFunctions.completedPartialZeta_eq_toMeromorphicNFOn`: identification of
   `completedPartialZeta I` with the normal form of
   `s ↦ (mellinKernelFEPair hD (idealLattice K I)).Λ (s / 2)`.
@@ -70,9 +67,9 @@ Hecke's functional equation `Z(I, 1 - s) = Z(I^∨, s)` against the trace dual
   `TauCeti.LFunctions.completedPartialZeta_eq_tsum_fundamentalCone`: representations on `Re s > 1`
   over ideal classes, the trivial-modulus ray-class Dirichlet series, principal products, and
   fundamental-cone lattice points.
-* `TauCeti.LFunctions.completedPartialZeta_eq_integral_unitCone`,
-  `TauCeti.LFunctions.hasMellin_mellinKernel_idealLattice_sub_mellinConstant_completedPartialZeta`,
-  `TauCeti.LFunctions.completedPartialZeta_eq_mellin`: cone-integral and Mellin-transform
+* `TauCeti.LFunctions.hasMellin_mellinKernel_idealLattice_sub_mellinConstant_completedPartialZeta`,
+  `TauCeti.LFunctions.completedPartialZeta_eq_mellin`,
+  `TauCeti.LFunctions.completedPartialZeta_eq_integral_unitCone`: Mellin-transform and cone-integral
   representations on `Re s > 1` (Neukirch VII (5.5)).
 * `TauCeti.LFunctions.analyticAt_completedPartialZetaClass_iff`,
   `TauCeti.LFunctions.tendsto_sub_one_mul_completedPartialZetaClass`,
@@ -81,9 +78,11 @@ Hecke's functional equation `Z(I, 1 - s) = Z(I^∨, s)` against the trace dual
   `TauCeti.LFunctions.meromorphicOrderAt_completedPartialZetaClass_zero`: regularity, simple
   poles at `0` and `1`, and their residues.
 * `TauCeti.LFunctions.completedPartialZetaClass_one_sub`,
+  `TauCeti.LFunctions.completedPartialZetaClass_one_sub_eventuallyEq`,
   `TauCeti.LFunctions.completedPartialZeta_one_sub`,
-  `TauCeti.LFunctions.completedPartialZetaClass_conj`: Hecke's functional equation and reflection
-  symmetry.
+  `TauCeti.LFunctions.completedPartialZeta_one_sub_eventuallyEq`,
+  `TauCeti.LFunctions.completedPartialZetaClass_conj`: Hecke's functional equation (pointwise and
+  as punctured germs) and reflection symmetry.
 
 ## References
 
@@ -151,18 +150,6 @@ def completedPartialZeta (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : ℂ → ℂ :
 theorem completedPartialZeta_eq_completedPartialZetaClass (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     completedPartialZeta I = completedPartialZetaClass (ClassGroup.mk K I)⁻¹ :=
   (rfl)
-
-/-- Evaluating `completedPartialZetaClass` on `(ClassGroup.mk K I)⁻¹` recovers
-`completedPartialZeta I`. -/
-theorem completedPartialZetaClass_inv_mk (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-    completedPartialZetaClass (ClassGroup.mk K I)⁻¹ = completedPartialZeta I :=
-  (rfl)
-
-/-- `completedPartialZeta I` depends on `I` only through its ideal class in `ClassGroup (𝓞 K)`. -/
-theorem completedPartialZeta_congr_class {I J : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
-    (h : ClassGroup.mk K I = ClassGroup.mk K J) :
-    completedPartialZeta I = completedPartialZeta J := by
-  simp [h]
 
 private theorem exists_fractionalIdeal_inv_mk (c : ClassGroup (𝓞 K)) :
     ∃ I : (FractionalIdeal (𝓞 K)⁰ K)ˣ, (ClassGroup.mk K I)⁻¹ = c := by
@@ -235,12 +222,6 @@ private theorem covolume_gamma_mul_eq (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s
         linear_combination
           (((|discr K| : ℤ) : ℂ) ^ (s / 2) * Gammaℝ s ^ r₁ * Gammaℂ s ^ r₂) * h2cancel
 
-private theorem rayClassMk_idealsPrimeToEquiv_symm_eq (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-    rayClassMk (Modulus.one K) ((idealsPrimeToEquiv Modulus.support_one).symm I) =
-      (oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹)⁻¹ := by
-  apply oneEquivClassGroup.injective
-  simp [idealsPrimeToEquiv_symm_apply]
-
 /-- On `Re s > 1`, `mellinKernel D (idealLattice K I) - mellinConstant K` has Mellin transform at
 `s / 2` equal to the completed partial zeta series of `I`. -/
 private theorem hasMellin_mellinKernel_idealLattice_sub_mellinConstant_tsum
@@ -252,7 +233,8 @@ private theorem hasMellin_mellinKernel_idealLattice_sub_mellinConstant_tsum
         ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹},
           (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)) := by
   have hm := hasMellin_mellinKernel_idealLattice_sub_mellinConstant I hD
-    (rayClassMk_idealsPrimeToEquiv_symm_eq I) hs
+    (c := oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹)
+    (by rw [rayClassMk_idealsPrimeToEquiv_symm_eq, ← map_inv, inv_inv]) hs
   rw [LSeries_rayClassCoeff_one_eq_tsum_oneEquivClassGroup _ hs, MulEquiv.apply_symm_apply] at hm
   simpa only [covolume_gamma_mul_eq] using hm
 
@@ -344,7 +326,8 @@ theorem completedPartialZetaClass_eq_tsum (c : ClassGroup (𝓞 K)) {s : ℂ} (h
           (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) := by
   obtain ⟨I, rfl⟩ := exists_fractionalIdeal_inv_mk (K := K) c
   let hD := isUnitFundamentalDomain_unitFundamentalDomain (K := K)
-  rw [completedPartialZetaClass_inv_mk, completedPartialZeta_eq_toMeromorphicNFOn hD I,
+  rw [← completedPartialZeta_eq_completedPartialZetaClass,
+    completedPartialZeta_eq_toMeromorphicNFOn hD I,
     toMeromorphicNFOn_apply_of_analyticAt (meromorphic_mellinKernelFEPair_Λ_div_two hD I)
       (analyticOnNhd_mellinKernelFEPair_Λ_div_two hD I s hs),
     mellinKernelFEPair_Λ_div_two_eq_tsum hD I hs]
@@ -402,40 +385,6 @@ theorem completedPartialZeta_eq_tsum_fundamentalCone (I : (FractionalIdeal (𝓞
     tsum_absNorm_cpow_eq_mul_tsum_idealLattice_fundamentalCone I hs]
   ring
 
-open scoped Classical in
-/-- **Cone-integral representation on `Re s > 1`**, Neukirch VII (5.5): over any unit fundamental
-domain `D`, `completedPartialZeta I s` is `(2 ^ r₂ / w) V_{σ(I)} ^ s` times the cone integral of
-`N(y) ^ (s / 2) (θ_{σ(I)}(y) - 1)`. -/
-theorem completedPartialZeta_eq_integral_unitCone {D : Set (realSpace K)}
-    (hD : IsUnitFundamentalDomain K D) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {s : ℂ}
-    (hs : 1 < s.re) :
-    completedPartialZeta I s =
-      (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
-        (ZLattice.covolume (idealLattice K I) ^ 2 : ℂ) ^ (s / 2) *
-        ∫ y in unitCone D, (archNorm y : ℂ) ^ (s / 2) *
-          (latticeTheta (idealLattice K I) y - 1) ∂archHaar K := by
-  have hw : (Units.torsionOrder K : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Units.torsionOrder_ne_zero K)
-  rw [completedPartialZeta_eq_completedPartialZetaClass,
-    completedPartialZetaClass_eq_mul_LSeries_rayClassCoeff_one _ hs,
-    integral_unitCone_archNorm_cpow_mul_latticeTheta_sub_one I hD hs,
-    (hasSum_norm_cpow_fundamentalCone_inter_idealLattice I
-      (rayClassMk_idealsPrimeToEquiv_symm_eq I) hs).tsum_eq]
-  have hcancel : (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
-        (ZLattice.covolume (idealLattice K I) ^ 2 : ℂ) ^ (s / 2) *
-        (Gammaℝ s ^ nrRealPlaces K * Gammaℝ (2 * s) ^ nrComplexPlaces K *
-          ((Units.torsionOrder K : ℂ) *
-            (FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℂ) ^ (-s) *
-            LSeries (normCoeff K (rayClassCoeff (Modulus.one K)
-              (oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹))) s)) =
-      ((2 : ℂ) ^ nrComplexPlaces K *
-          (ZLattice.covolume (idealLattice K I) ^ 2 : ℂ) ^ (s / 2) *
-          ((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℂ) ^ (-s) *
-          (Gammaℝ s ^ nrRealPlaces K * Gammaℝ (2 * s) ^ nrComplexPlaces K)) *
-        LSeries (normCoeff K (rayClassCoeff (Modulus.one K)
-          (oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹))) s := by
-    field_simp
-  rw [hcancel, covolume_gamma_mul_eq]
-
 /-- **Mellin-transform representation on `Re s > 1` (`HasMellin` form)**, Neukirch VII (5.5):
 `completedPartialZeta I s` is the Mellin transform at `s / 2` of
 `mellinKernel D (idealLattice K I) - mellinConstant K`. -/
@@ -455,6 +404,25 @@ theorem completedPartialZeta_eq_mellin {D : Set (realSpace K)}
       mellin (fun u ↦ mellinKernel D (idealLattice K I) u - mellinConstant K) (s / 2) :=
   (hasMellin_mellinKernel_idealLattice_sub_mellinConstant_completedPartialZeta hD I hs).2.symm
 
+open scoped Classical in
+/-- **Cone-integral representation on `Re s > 1`**, Neukirch VII (5.5): over any unit fundamental
+domain `D`, `completedPartialZeta I s` is `(2 ^ r₂ / w) V_{σ(I)} ^ s` times the cone integral of
+`N(y) ^ (s / 2) (θ_{σ(I)}(y) - 1)`. -/
+theorem completedPartialZeta_eq_integral_unitCone {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {s : ℂ}
+    (hs : 1 < s.re) :
+    completedPartialZeta I s =
+      (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
+        (ZLattice.covolume (idealLattice K I) ^ 2 : ℂ) ^ (s / 2) *
+        ∫ y in unitCone D, (archNorm y : ℂ) ^ (s / 2) *
+          (latticeTheta (idealLattice K I) y - 1) ∂archHaar K := by
+  have hm₁ := hasMellin_mellinKernel_idealLattice_sub_mellinConstant_completedPartialZeta hD I hs
+  have hm₂ := hasMellin_mellinKernel_sub hD.measurableSet hD.isBounded (idealLattice K I) s
+    (integrableOn_unitCone_archNorm_cpow_mul_latticeTheta_sub_one I hD hs)
+  simp only [mellinConstant_eq_mul_surfaceHaar_real hD, ofReal_mul, ofReal_div, ofReal_pow,
+    ofReal_ofNat, ofReal_natCast] at hm₁
+  exact hm₁.2.symm.trans hm₂.2
+
 /-! ### Regularity, poles, and residues -/
 
 /-- `completedPartialZetaClass c` is analytic away from `s = 0` and `s = 1`. -/
@@ -464,7 +432,8 @@ theorem analyticAt_completedPartialZetaClass (c : ClassGroup (𝓞 K)) {s : ℂ}
     AnalyticAt ℂ (completedPartialZetaClass c) s := by
   obtain ⟨I, rfl⟩ := exists_fractionalIdeal_inv_mk (K := K) c
   let hD := isUnitFundamentalDomain_unitFundamentalDomain (K := K)
-  rw [completedPartialZetaClass_inv_mk, completedPartialZeta_eq_toMeromorphicNFOn hD I,
+  rw [← completedPartialZeta_eq_completedPartialZetaClass,
+    completedPartialZeta_eq_toMeromorphicNFOn hD I,
     ← (meromorphicNFOn_toMeromorphicNFOn _ univ
       (mem_univ s)).meromorphicOrderAt_nonneg_iff_analyticAt,
     meromorphicOrderAt_toMeromorphicNFOn
@@ -488,29 +457,8 @@ theorem tendsto_sub_one_mul_completedPartialZetaClass (c : ClassGroup (𝓞 K)) 
     mellinKernelFEPair_g₀, ofReal_one, one_cpow, mul_one, smul_eq_mul, one_mul] at hres
   refine ((hres.comp hhalf).const_mul 2).congr' ?_
   filter_upwards [completedPartialZeta_eventuallyEq_mellinKernelFEPair_Λ hD I 1] with s hs
-  rw [Function.comp_apply, completedPartialZetaClass_inv_mk, hs]
+  rw [Function.comp_apply, ← completedPartialZeta_eq_completedPartialZetaClass, hs]
   push_cast
-  ring
-
-/-- **Residue of `completedPartialZetaClass c` at `s = 0`**, Neukirch VII (5.9):
-`lim_{s → 0} s Z(c, s) = -2 a₀ = -2 ^ r R / w`. -/
-theorem tendsto_mul_completedPartialZetaClass_zero (c : ClassGroup (𝓞 K)) :
-    Tendsto (fun s : ℂ ↦ s * completedPartialZetaClass c s) (𝓝[≠] 0)
-      (𝓝 (-(2 * mellinConstant K : ℂ))) := by
-  obtain ⟨I, rfl⟩ := exists_fractionalIdeal_inv_mk (K := K) c
-  let hD := isUnitFundamentalDomain_unitFundamentalDomain (K := K)
-  let P := mellinKernelFEPair hD (idealLattice K I)
-  have hhalf : Tendsto (fun s : ℂ ↦ s / 2) (𝓝[≠] 0) (𝓝[≠] 0) := by
-    simpa only [zero_div] using
-      ((continuous_id'.div_const (2 : ℂ)).continuousAt (x := 0)).tendsto_nhdsNE
-        fun _ _ ↦ (div_left_inj₀ two_ne_zero).mp
-  have hres := P.Λ_residue_zero
-  simp only [P, mellinKernelFEPair_f₀, smul_eq_mul] at hres
-  have hmul := (hres.comp hhalf).const_mul 2
-  rw [mul_neg] at hmul
-  refine hmul.congr' ?_
-  filter_upwards [completedPartialZeta_eventuallyEq_mellinKernelFEPair_Λ hD I 0] with s hs
-  rw [Function.comp_apply, completedPartialZetaClass_inv_mk, hs]
   ring
 
 /-- `completedPartialZetaClass c` has a simple pole at `s = 1`. -/
@@ -523,60 +471,18 @@ theorem meromorphicOrderAt_completedPartialZetaClass_one (c : ClassGroup (𝓞 K
     |>.meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul ha
       (tendsto_sub_one_mul_completedPartialZetaClass c)
 
-/-- `completedPartialZetaClass c` has a simple pole at `s = 0`. -/
-@[simp]
-theorem meromorphicOrderAt_completedPartialZetaClass_zero (c : ClassGroup (𝓞 K)) :
-    meromorphicOrderAt (completedPartialZetaClass c) 0 = (-1 : ℤ) := by
-  have ha : -(2 * mellinConstant K : ℂ) ≠ 0 :=
-    neg_ne_zero.mpr (mul_ne_zero two_ne_zero (ofReal_ne_zero.mpr (mellinConstant_ne_zero K)))
-  refine (meromorphic_completedPartialZetaClass c 0)
-    |>.meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul ha ?_
-  simpa only [sub_zero, smul_eq_mul] using tendsto_mul_completedPartialZetaClass_zero c
-
-/-- `completedPartialZetaClass c` is analytic at `s` if and only if `s ≠ 0` and `s ≠ 1`. -/
-@[simp]
-theorem analyticAt_completedPartialZetaClass_iff (c : ClassGroup (𝓞 K)) {s : ℂ} :
-    AnalyticAt ℂ (completedPartialZetaClass c) s ↔ s ≠ 0 ∧ s ≠ 1 := by
-  refine ⟨fun han ↦ ⟨?_, ?_⟩, fun ⟨h0, h1⟩ ↦ analyticAt_completedPartialZetaClass c h0 h1⟩
-  · rintro rfl
-    have hnonneg := han.meromorphicOrderAt_nonneg
-    simp only [meromorphicOrderAt_completedPartialZetaClass_zero, WithTop.coe_nonneg] at hnonneg
-    omega
-  · rintro rfl
-    have hnonneg := han.meromorphicOrderAt_nonneg
-    simp only [meromorphicOrderAt_completedPartialZetaClass_one, WithTop.coe_nonneg] at hnonneg
-    omega
-
-/-- As a meromorphic normal form, `completedPartialZetaClass c` takes the canonical value `0` at
-its pole `s = 0`. -/
-@[simp]
-theorem completedPartialZetaClass_zero (c : ClassGroup (𝓞 K)) :
-    completedPartialZetaClass c 0 = 0 :=
-  not_not.mp <| (meromorphicNFOn_completedPartialZetaClass c (mem_univ 0))
-    |>.meromorphicOrderAt_eq_zero_iff.not.mp (by simp)
-
 /-- As a meromorphic normal form, `completedPartialZetaClass c` takes the canonical value `0` at
 its pole `s = 1`. -/
 @[simp]
 theorem completedPartialZetaClass_one (c : ClassGroup (𝓞 K)) :
     completedPartialZetaClass c 1 = 0 :=
-  not_not.mp <| (meromorphicNFOn_completedPartialZetaClass c (mem_univ 1))
-    |>.meromorphicOrderAt_eq_zero_iff.not.mp (by simp)
+  (meromorphicNFOn_completedPartialZetaClass c (mem_univ 1))
+    |>.apply_eq_zero_of_meromorphicOrderAt_ne_zero (by simp)
 
-/-! ### Functional equation -/
-
-/-- **Hecke's functional equation for completed partial zeta functions**, Neukirch VII (5.9):
-`Z(I, 1 - s) = Z(I^∨, s)` for every `s : ℂ` (at the poles `0` and `1` both sides take the
-normal-form value `0`). -/
-theorem completedPartialZeta_one_sub (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s : ℂ) :
+private theorem completedPartialZeta_one_sub_of_ne (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
+    {s : ℂ} (h0 : s ≠ 0) (h1 : s ≠ 1) :
     completedPartialZeta I (1 - s) =
       completedPartialZeta (FractionalIdeal.dualEquiv ℤ ℚ I) s := by
-  by_cases h0 : s = 0
-  · subst h0
-    simp
-  by_cases h1 : s = 1
-  · subst h1
-    simp
   have h1s0 : 1 - s ≠ 0 := sub_ne_zero.mpr (Ne.symm h1)
   have h1s1 : 1 - s ≠ 1 := fun h ↦ h0 (sub_eq_self.mp h)
   let hD := isUnitFundamentalDomain_unitFundamentalDomain (K := K)
@@ -596,12 +502,90 @@ theorem completedPartialZeta_one_sub (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s 
     exact mellinKernel_mixedDual_idealLattice (FractionalIdeal.coe_dualEquiv ℤ ℚ I) _ u
   exact congrFun hcongr (s / 2)
 
-private theorem inv_mk_dualEquiv (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-    (ClassGroup.mk K (FractionalIdeal.dualEquiv ℤ ℚ I))⁻¹ =
-      (ClassGroup.mk K (FractionalIdeal.dualEquiv ℤ ℚ (1 : _)))⁻¹ *
-        ((ClassGroup.mk K I)⁻¹)⁻¹ := by
-  rw [FractionalIdeal.dualEquiv_eq_mul_inv]
-  simp [mul_comm]
+private theorem completedPartialZetaClass_one_sub_of_ne (c : ClassGroup (𝓞 K))
+    {s : ℂ} (h0 : s ≠ 0) (h1 : s ≠ 1) :
+    completedPartialZetaClass c (1 - s) =
+      completedPartialZetaClass
+        ((ClassGroup.mk K (FractionalIdeal.dualEquiv ℤ ℚ (1 : _)))⁻¹ * c⁻¹) s := by
+  obtain ⟨I, rfl⟩ := exists_fractionalIdeal_inv_mk (K := K) c
+  rw [← completedPartialZeta_eq_completedPartialZetaClass,
+    completedPartialZeta_one_sub_of_ne I h0 h1,
+    completedPartialZeta_eq_completedPartialZetaClass,
+    FractionalIdeal.classGroupMk_dualEquiv, mul_inv]
+
+/-- **Residue of `completedPartialZetaClass c` at `s = 0`**, Neukirch VII (5.9):
+`lim_{s → 0} s Z(c, s) = -2 a₀ = -2 ^ r R / w`. -/
+theorem tendsto_mul_completedPartialZetaClass_zero (c : ClassGroup (𝓞 K)) :
+    Tendsto (fun s : ℂ ↦ s * completedPartialZetaClass c s) (𝓝[≠] 0)
+      (𝓝 (-(2 * mellinConstant K : ℂ))) := by
+  let d : ClassGroup (𝓞 K) := (ClassGroup.mk K (FractionalIdeal.dualEquiv ℤ ℚ (1 : _)))⁻¹
+  have hsub : Tendsto (fun s : ℂ ↦ 1 - s) (𝓝[≠] (0 : ℂ)) (𝓝[≠] 1) := by
+    simpa only [sub_zero] using
+      ((continuous_sub_left (1 : ℂ)).continuousAt (x := (0 : ℂ))).tendsto_nhdsNE
+        fun _ _ h ↦ sub_right_injective h
+  have hlim := ((tendsto_sub_one_mul_completedPartialZetaClass (d * c⁻¹)).comp hsub).neg
+  refine hlim.congr' ?_
+  filter_upwards [self_mem_nhdsWithin,
+    nhdsWithin_le_nhds (eventually_ne_nhds (zero_ne_one : (0 : ℂ) ≠ 1))] with s hs0 hs1
+  have hfe := completedPartialZetaClass_one_sub_of_ne (d * c⁻¹) hs0 hs1
+  rw [mul_inv, mul_inv_cancel_left, inv_inv] at hfe
+  simp only [Function.comp_apply, hfe]
+  ring
+
+/-- `completedPartialZetaClass c` has a simple pole at `s = 0`. -/
+@[simp]
+theorem meromorphicOrderAt_completedPartialZetaClass_zero (c : ClassGroup (𝓞 K)) :
+    meromorphicOrderAt (completedPartialZetaClass c) 0 = (-1 : ℤ) := by
+  have ha : -(2 * mellinConstant K : ℂ) ≠ 0 :=
+    neg_ne_zero.mpr (mul_ne_zero two_ne_zero (ofReal_ne_zero.mpr (mellinConstant_ne_zero K)))
+  refine (meromorphic_completedPartialZetaClass c 0)
+    |>.meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul ha ?_
+  simpa only [sub_zero, smul_eq_mul] using tendsto_mul_completedPartialZetaClass_zero c
+
+/-- `completedPartialZetaClass c` is analytic at `s` if and only if `s ≠ 0` and `s ≠ 1`. -/
+@[simp]
+theorem analyticAt_completedPartialZetaClass_iff (c : ClassGroup (𝓞 K)) {s : ℂ} :
+    AnalyticAt ℂ (completedPartialZetaClass c) s ↔ s ≠ 0 ∧ s ≠ 1 := by
+  refine ⟨fun han ↦ ⟨?_, ?_⟩, fun ⟨h0, h1⟩ ↦ analyticAt_completedPartialZetaClass c h0 h1⟩
+  · rintro rfl
+    exact not_analyticAt_of_meromorphicOrderAt_neg
+      (by rw [meromorphicOrderAt_completedPartialZetaClass_zero]
+          exact WithTop.coe_lt_zero.mpr (by norm_num)) han
+  · rintro rfl
+    exact not_analyticAt_of_meromorphicOrderAt_neg
+      (by rw [meromorphicOrderAt_completedPartialZetaClass_one]
+          exact WithTop.coe_lt_zero.mpr (by norm_num)) han
+
+/-- As a meromorphic normal form, `completedPartialZetaClass c` takes the canonical value `0` at
+its pole `s = 0`. -/
+@[simp]
+theorem completedPartialZetaClass_zero (c : ClassGroup (𝓞 K)) :
+    completedPartialZetaClass c 0 = 0 :=
+  (meromorphicNFOn_completedPartialZetaClass c (mem_univ 0))
+    |>.apply_eq_zero_of_meromorphicOrderAt_ne_zero (by simp)
+
+/-! ### Functional equation -/
+
+/-- **Hecke's functional equation for completed partial zeta functions**, Neukirch VII (5.9):
+`Z(I, 1 - s) = Z(I^∨, s)` for every `s : ℂ` (at the poles `0` and `1` both sides take the
+normal-form value `0`). -/
+theorem completedPartialZeta_one_sub (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s : ℂ) :
+    completedPartialZeta I (1 - s) =
+      completedPartialZeta (FractionalIdeal.dualEquiv ℤ ℚ I) s := by
+  by_cases h0 : s = 0
+  · subst h0
+    simp
+  by_cases h1 : s = 1
+  · subst h1
+    simp
+  exact completedPartialZeta_one_sub_of_ne I h0 h1
+
+/-- Punctured-germ form of `TauCeti.LFunctions.completedPartialZeta_one_sub` at every point
+`s : ℂ` (poles included). -/
+theorem completedPartialZeta_one_sub_eventuallyEq (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s : ℂ) :
+    (fun z : ℂ ↦ completedPartialZeta I (1 - z)) =ᶠ[𝓝[≠] s]
+      completedPartialZeta (FractionalIdeal.dualEquiv ℤ ℚ I) :=
+  Eventually.of_forall (completedPartialZeta_one_sub I)
 
 /-- **Hecke's functional equation on ideal classes**, Neukirch VII (5.9):
 `completedPartialZetaClass c (1 - s) = completedPartialZetaClass ([𝔡] * c⁻¹) s`, where
@@ -612,8 +596,17 @@ theorem completedPartialZetaClass_one_sub (c : ClassGroup (𝓞 K)) (s : ℂ) :
       completedPartialZetaClass
         ((ClassGroup.mk K (FractionalIdeal.dualEquiv ℤ ℚ (1 : _)))⁻¹ * c⁻¹) s := by
   obtain ⟨I, rfl⟩ := exists_fractionalIdeal_inv_mk (K := K) c
-  rw [completedPartialZetaClass_inv_mk, completedPartialZeta_one_sub,
-    ← completedPartialZetaClass_inv_mk, inv_mk_dualEquiv]
+  rw [← completedPartialZeta_eq_completedPartialZetaClass, completedPartialZeta_one_sub,
+    completedPartialZeta_eq_completedPartialZetaClass, FractionalIdeal.classGroupMk_dualEquiv,
+    mul_inv]
+
+/-- Punctured-germ form of `TauCeti.LFunctions.completedPartialZetaClass_one_sub` at every point
+`s : ℂ` (poles included). -/
+theorem completedPartialZetaClass_one_sub_eventuallyEq (c : ClassGroup (𝓞 K)) (s : ℂ) :
+    (fun z : ℂ ↦ completedPartialZetaClass c (1 - z)) =ᶠ[𝓝[≠] s]
+      completedPartialZetaClass
+        ((ClassGroup.mk K (FractionalIdeal.dualEquiv ℤ ℚ (1 : _)))⁻¹ * c⁻¹) :=
+  Eventually.of_forall (completedPartialZetaClass_one_sub c)
 
 /-! ### Reflection symmetry -/
 

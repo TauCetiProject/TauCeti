@@ -368,17 +368,17 @@ theorem analyticAt_dedekindZetaC_iff {s : ℂ} :
     AnalyticAt ℂ (dedekindZetaC K) s ↔ s ≠ 1 := by
   refine ⟨fun han ↦ ?_, analyticAt_dedekindZetaC⟩
   rintro rfl
-  have hnonneg := han.meromorphicOrderAt_nonneg
-  simp only [meromorphicOrderAt_dedekindZetaC_one, WithTop.coe_nonneg] at hnonneg
-  omega
+  exact not_analyticAt_of_meromorphicOrderAt_neg
+    (by rw [meromorphicOrderAt_dedekindZetaC_one]
+        exact WithTop.coe_lt_zero.mpr (by norm_num)) han
 
 variable (K) in
 /-- As a meromorphic normal form, `dedekindZetaC K` takes the canonical value `0` at its pole
 `s = 1`. -/
 @[simp]
 theorem dedekindZetaC_one : dedekindZetaC K 1 = 0 :=
-  not_not.mp <| (meromorphicNFOn_dedekindZetaC K (mem_univ 1))
-    |>.meromorphicOrderAt_eq_zero_iff.not.mp (by simp)
+  (meromorphicNFOn_dedekindZetaC K (mem_univ 1))
+    |>.apply_eq_zero_of_meromorphicOrderAt_ne_zero (by simp)
 
 /-! ### Reflection symmetry -/
 

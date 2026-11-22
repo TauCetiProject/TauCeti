@@ -14,18 +14,16 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 # Average growth and `ofSeries` recovery for the Dedekind zeta card
 
 This downstream module proves that `TauCeti.LFunctions.dedekindZetaData K` satisfies
-`HasAverageCoefficientGrowth` and is recovered identically by `AnalyticLFunctionData.ofSeries`,
-keeping the card's growth and `ofSeries` results separate from
-`TauCeti.NumberTheory.LFunctions.DedekindZeta.Card.Basic`.
-
-The `ofSeries` recovery proof is adapted from `TauCeti.LFunctions.ofSeries_riemannZetaData`
-(`TauCeti.NumberTheory.LFunctions.Data.RiemannZeta`).
+`HasAverageCoefficientGrowth` and is uniquely reconstructed from its Dirichlet coefficients,
+conductor, gamma shifts, and polar divisor via `AnalyticLFunctionData.ofSeries`, recovering the
+same completed function (in meromorphic normal form at `0` and `1`) and root number `1` while
+keeping these results separate from `TauCeti.NumberTheory.LFunctions.DedekindZeta.Card.Basic`.
 
 ## Main results
 
 * `TauCeti.LFunctions.dedekindZetaData_hasAverageCoefficientGrowth`: average coefficient growth of
   `dedekindZetaData K`.
-* `TauCeti.LFunctions.ofSeries_dedekindZetaData`: exact normal-form recovery via
+* `TauCeti.LFunctions.ofSeries_dedekindZetaData`: exact normal-form and root-number recovery via
   `AnalyticLFunctionData.ofSeries`.
 -/
 
@@ -44,6 +42,9 @@ theorem dedekindZetaData_hasAverageCoefficientGrowth :
     (dedekindZetaData K).HasAverageCoefficientGrowth := by
   rw [AnalyticLFunctionData.hasAverageCoefficientGrowth_iff_abscissaOfAbsConv_le,
     funext (dedekindZetaData_coeff K), abscissaOfAbsConv_normCoeff_one K]
+
+/- Adapted from `TauCeti.LFunctions.ofSeries_riemannZetaData`
+(`TauCeti.NumberTheory.LFunctions.Data.RiemannZeta`). -/
 
 /-- Supplying the coefficients, conductor, gamma shifts, and polar divisor of `dedekindZetaData K`
 to `AnalyticLFunctionData.ofSeries` recovers `dedekindZetaData K` identically, including both the

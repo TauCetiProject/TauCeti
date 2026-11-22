@@ -16,19 +16,20 @@ collects the symmetry lemmas for that divisor under `s ↦ conj s` and `s ↦ 1 
 
 ## Main results
 
-* `TauCeti.LFunctions.AnalyticLFunctionData.single_zero_one_add_single_one_one_conj`: invariance
-  of `Finsupp.single 0 1 + Finsupp.single 1 1` under `conj`.
-* `TauCeti.LFunctions.AnalyticLFunctionData.single_zero_one_add_single_one_one_one_sub_conj`:
-  invariance of `Finsupp.single 0 1 + Finsupp.single 1 1` under `s ↦ 1 - conj s`.
+* `TauCeti.LFunctions.single_zero_one_add_single_one_one_conj`: invariance of
+  `Finsupp.single 0 1 + Finsupp.single 1 1` under `conj`.
+* `TauCeti.LFunctions.single_zero_one_add_single_one_one_one_sub_conj`: invariance of
+  `Finsupp.single 0 1 + Finsupp.single 1 1` under `s ↦ 1 - conj s`.
 * `hasMeromorphicContinuation_of_polarOrder_eq_single_zero_one_add_single_one_one`:
-  shared `HasMeromorphicContinuation` constructor for cards with simple poles at `0` and `1`.
+  shared `HasMeromorphicContinuation` constructor in `AnalyticLFunctionData` for cards with simple
+  poles at `0` and `1`.
 -/
 
 public section
 
 open Complex ComplexConjugate
 
-namespace TauCeti.LFunctions.AnalyticLFunctionData
+namespace TauCeti.LFunctions
 
 /-- The simple-pole divisor `Finsupp.single 0 1 + Finsupp.single 1 1` is invariant under complex
 conjugation. -/
@@ -49,6 +50,8 @@ theorem single_zero_one_add_single_one_one_one_sub_conj (s : ℂ) :
   rw [single_zero_one_add_single_one_one_conj]
   simp only [Finsupp.add_apply, Finsupp.single_apply, e0, e1]
   rw [add_comm]
+
+namespace AnalyticLFunctionData
 
 /-- Construct `HasMeromorphicContinuation` for an `AnalyticLFunctionData` card whose polar divisor
 is `Finsupp.single 0 1 + Finsupp.single 1 1` from simple poles at `0` and `1` and analyticity off
@@ -72,4 +75,6 @@ theorem hasMeromorphicContinuation_of_polarOrder_eq_single_zero_one_add_single_o
       rw [hpol] at hp
       exact ha p (by rintro rfl; simp at hp) (by rintro rfl; simp at hp)
 
-end TauCeti.LFunctions.AnalyticLFunctionData
+end AnalyticLFunctionData
+
+end TauCeti.LFunctions

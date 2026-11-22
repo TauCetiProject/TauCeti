@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.ClassGroup.Basic
 public import Mathlib.RingTheory.DedekindDomain.Different
 
 /-!
@@ -465,6 +466,13 @@ theorem dualEquiv_div_dualEquiv (J I : (FractionalIdeal S⁰ L)ˣ) :
     dualEquiv R K J / dualEquiv R K I = I / J := by
   rw [dualEquiv_eq_mul_inv R K J, dualEquiv_eq_mul_inv R K I, mul_div_mul_comm, div_self', one_mul,
     inv_div_inv]
+
+/-- The ideal class of the trace dual `dualEquiv R K I` is the class of the inverse different
+`dualEquiv R K 1` times `[I]⁻¹`. -/
+theorem classGroupMk_dualEquiv (I : (FractionalIdeal S⁰ L)ˣ) :
+    ClassGroup.mk L (dualEquiv R K I) =
+      ClassGroup.mk L (dualEquiv R K 1) * (ClassGroup.mk L I)⁻¹ := by
+  rw [dualEquiv_eq_mul_inv, map_mul, map_inv]
 
 end DualEquiv
 

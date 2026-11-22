@@ -25,14 +25,13 @@ function defines an analytic L-function card `TauCeti.LFunctions.dedekindZetaDat
 * completed function `TauCeti.LFunctions.completedDedekindZeta K`,
 * polar divisor consisting of simple poles at `0` and `1`.
 
-This lightweight module defines `dedekindZetaData K` and proves self-duality,
-`HasDirichletAgreement`, `HasMeromorphicContinuation`, and `HasFunctionalEquation`, keeping
-coefficient-growth and `AnalyticLFunctionData.ofSeries` recovery in
+This lightweight module defines `dedekindZetaData K` and exposes the field's degree, gamma factor
+(with right-half-plane nonvanishing), conductor cast, self-duality, `HasDirichletAgreement`,
+`HasMeromorphicContinuation`, and `HasFunctionalEquation` to the generic
+`TauCeti.LFunctions.AnalyticLFunctionData` API (supporting `(dedekindZetaData K).continuedL` and
+derived zero/L-function theory), while keeping coefficient-growth and
+`AnalyticLFunctionData.ofSeries` recovery in
 `TauCeti.NumberTheory.LFunctions.DedekindZeta.Card.Series`.
-
-The card definition and the self-duality, meromorphic-continuation, and functional-equation proofs
-are closely adapted from `TauCeti.LFunctions.riemannZetaData`
-(`TauCeti.NumberTheory.LFunctions.Data.RiemannZeta`) as their formal template.
 
 ## Main definitions
 
@@ -58,6 +57,10 @@ open Complex ComplexConjugate NumberField NumberField.InfinitePlace
 namespace TauCeti.LFunctions
 
 variable (K : Type*) [Field K] [NumberField K]
+
+/- The card definition and the self-duality, meromorphic-continuation, and functional-equation
+proofs below are closely adapted from `TauCeti.LFunctions.riemannZetaData`
+(`TauCeti.NumberTheory.LFunctions.Data.RiemannZeta`) as their formal template. -/
 
 /-- **The Dedekind zeta card** of a number field `K`. Coefficients
 `normCoeff K (1 : IdealArithmeticFunction K)`, conductor `|d_K|`, `r₁` real gamma shifts `0` and
@@ -138,7 +141,7 @@ theorem dedekindZetaData_dual : (dedekindZetaData K).dual = dedekindZetaData K :
   · simp
   · simp
   · simp [completedDedekindZeta_conj]
-  · simp [AnalyticLFunctionData.single_zero_one_add_single_one_one_conj]
+  · simp [single_zero_one_add_single_one_one_conj]
 
 /-- On `Re s > 1`, `completedDedekindZeta K` agrees with the completed Dirichlet series of
 `dedekindZetaData K`. -/
@@ -163,9 +166,11 @@ theorem dedekindZetaData_hasMeromorphicContinuation :
     (dedekindZetaData K).HasMeromorphicContinuation :=
   hasMeromorphicContinuation_of_polarOrder_eq_single_zero_one_add_single_one_one
     (dedekindZetaData_polarOrder K)
-    (meromorphicOrderAt_completedDedekindZeta_zero K)
-    (meromorphicOrderAt_completedDedekindZeta_one K)
-    fun _ h0 h1 ↦ analyticAt_completedDedekindZeta h0 h1
+    (by rw [dedekindZetaData_completed]; exact meromorphicOrderAt_completedDedekindZeta_zero K)
+    (by rw [dedekindZetaData_completed]; exact meromorphicOrderAt_completedDedekindZeta_one K)
+    fun _ h0 h1 ↦ by
+      rw [dedekindZetaData_completed]
+      exact analyticAt_completedDedekindZeta h0 h1
 
 /-- The completed Dedekind zeta function satisfies the functional equation `Λ_K(s) = Λ_K(1 - s)`
 with root number `1`. -/
@@ -174,7 +179,7 @@ theorem dedekindZetaData_hasFunctionalEquation :
   norm_rootNumber := by simp
   polarOrder_one_sub_conj s := by
     simpa only [dedekindZetaData_polarOrder] using
-      AnalyticLFunctionData.single_zero_one_add_single_one_one_one_sub_conj s
+      single_zero_one_add_single_one_one_one_sub_conj s
   completed_eq s _ _ := by
     rw [dedekindZetaData_dual, dedekindZetaData_rootNumber, one_mul, dedekindZetaData_completed,
       completedDedekindZeta_one_sub]

@@ -17,10 +17,10 @@ this identity by meromorphic continuation identifies `completedDedekindZeta ℚ`
 `completedRiemannZeta` as punctured germs at every point of `ℂ` (including the poles `0` and `1`)
 and pointwise away from `{0, 1}`.
 
-The germ-versus-pointwise comparison pair follows
-`TauCeti.LFunctions.dedekindZetaC_rat_eventuallyEq_riemannZeta` and
-`TauCeti.LFunctions.dedekindZetaC_rat_eq_riemannZeta`
-(`TauCeti.NumberTheory.LFunctions.DedekindZeta.Rational.Basic`) as its formal template.
+Use `TauCeti.LFunctions.completedDedekindZeta_rat_eventuallyEq_completedRiemannZeta` at or near
+the simple poles `0` and `1` (where only the punctured-germ comparison applies) and
+`TauCeti.LFunctions.completedDedekindZeta_rat_eq_completedRiemannZeta` for pointwise equality off
+`{0, 1}`.
 
 ## Main results
 
