@@ -37,6 +37,12 @@ on `J`, and so defines the first Chern number of `σ` on spheres.
   homomorphism of `(TM, J)` for one such `J`, with model fibre `ℂⁿ`, `2n = dim M`. By independence
   it is the clutching number homomorphism of `(TM, J)` for every tame `J` and every complex model
   fibre (`TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_eq_clutchingNumberHom`).
+* **Independence of the base point.** Transporting a class of `π₂(M, x)` along a path from `x`
+  to `y` does not change its first Chern number
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_homotopyGroupTransport`), because clutching
+  numbers do not (`TauCeti.clutchingNumberHom_homotopyGroupTransport`). In particular the first
+  Chern number is invariant under the action of the fundamental group on `π₂(M, x)`
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_fundamentalGroup_smul`).
 
 The first Chern number on spheres and the symplectic area of spheres
 (`TauCeti.sphereIntegralHom`) are the two periods of capped Hamiltonian Floer theory: the grading
@@ -56,6 +62,9 @@ with a cohomological first Chern class is made.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_eq_clutchingNumberHom`: the first Chern
   number is the clutching number homomorphism of the tangent bundle for any tame almost complex
   structure.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_homotopyGroupTransport`,
+  `TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_fundamentalGroup_smul`: the first Chern
+  number does not depend on the base point.
 
 ## References
 
@@ -139,6 +148,28 @@ theorem firstChernHom_apply_mk (h : σ.IsNondegenerate) (hJ : σ.Tames J) (n : �
     h.firstChernHom x (Additive.ofMul (Quotient.mk _ p)) =
       clutchingNumber G (J.toContMDiff n).toContinuousComplexStructure.Fiber p := by
   rw [firstChernHom_eq_clutchingNumberHom G h hJ n x, clutchingNumberHom_apply_mk]
+
+/-- **Base-point change.** The first Chern number at `y`, on the transport of a class of `π₂(M, x)`
+along a path from `x` to `y`, is the first Chern number at `x` on that class. -/
+@[simp]
+theorem firstChernHom_homotopyGroupTransport (h : σ.IsNondegenerate) {x y : M} (γ : Path x y)
+    (a : π_ 2 M x) :
+    h.firstChernHom y (Additive.ofMul (homotopyGroupTransport γ a)) =
+      h.firstChernHom x (Additive.ofMul a) := by
+  have : Fact (finrank ℝ E = 2 * finrank ℂ (EuclideanSpace ℂ (Fin (finrank ℝ E / 2)))) :=
+    ⟨two_mul_finrank_euclideanSpace h x⟩
+  have hJ := (exists_compatible h).choose_spec.tames
+  rw [firstChernHom_eq_clutchingNumberHom (EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) h hJ ⊤ y,
+    firstChernHom_eq_clutchingNumberHom (EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) h hJ ⊤ x,
+    clutchingNumberHom_homotopyGroupTransport]
+
+/-- The first Chern number is invariant under the action of the fundamental group on
+`π₂(M, x)`. -/
+theorem firstChernHom_fundamentalGroup_smul (h : σ.IsNondegenerate) {x : M}
+    (g : FundamentalGroup M x) (a : π_ 2 M x) :
+    h.firstChernHom x (Additive.ofMul (g • a)) = h.firstChernHom x (Additive.ofMul a) := by
+  obtain ⟨p, hp⟩ := Path.Homotopic.Quotient.mk_surjective g.toPath
+  rw [fundamentalGroup_smul_eq_transport hp.symm, firstChernHom_homotopyGroupTransport]
 
 end IsNondegenerate
 

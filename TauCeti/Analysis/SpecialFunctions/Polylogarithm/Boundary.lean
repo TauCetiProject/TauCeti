@@ -47,9 +47,9 @@ Specifically:
 ## Main declarations
 
 * `TauCeti.Polylog.continuousAt_polylog_of_im_ne_zero_or_re_le_one`,
-  `TauCeti.Polylog.continuousAt_polylog_iff`, `TauCeti.Polylog.continuousAt_polylog_at_one`, and
-  `TauCeti.Polylog.continuousOn_polylog_closedBall`: unrestricted continuity off `(1, ∞)` (and its
-  iff characterization for `2 ≤ n`), at `1`, and on the closed unit disc.
+  `TauCeti.Polylog.continuousAt_polylog_iff`, and
+  `TauCeti.Polylog.continuousAt_polylog_at_one`: unrestricted continuity off `(1, ∞)` (and its
+  iff characterization for `2 ≤ n`) and at `1`.
 * `TauCeti.Polylog.continuousWithinAt_polylog_im_nonpos` and
   `TauCeti.Polylog.continuousOn_polylog_im_nonpos`: continuity on the closed lower
   half-plane.
@@ -155,14 +155,6 @@ theorem continuousAt_polylog_of_im_ne_zero_or_re_le_one {n : ℤ} {z : ℂ} (hn 
 approach. -/
 theorem continuousAt_polylog_at_one {n : ℤ} (hn : 2 ≤ n) : ContinuousAt (polylog n) 1 :=
   continuousAt_polylog_of_im_ne_zero_or_re_le_one (Or.inr hn) (Or.inr (by simp))
-
-/-- For integer weight `n ≥ 2`, `polylog n` is continuous on the closed unit disc. -/
-theorem continuousOn_polylog_closedBall {n : ℤ} (hn : 2 ≤ n) :
-    ContinuousOn (polylog n) (Metric.closedBall 0 1) := by
-  intro z hz
-  rw [Metric.mem_closedBall, dist_zero_right] at hz
-  exact (continuousAt_polylog_of_im_ne_zero_or_re_le_one (Or.inr hn)
-    (Or.inr ((Complex.re_le_norm z).trans hz))).continuousWithinAt
 
 /-- Every integer-weight polylogarithm is continuous within the closed lower half-plane
 `{w | w.im ≤ 0}` at every point `z` with `z ≠ 1 ∨ 2 ≤ n`. -/

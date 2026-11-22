@@ -121,8 +121,7 @@ theorem preglueComposition_def (q : Puncture) (x : ℝ → V) (u u' : ℝ × ℝ
 
 /-- **On the receiving pair of pants the pre-glued composition is `u`.** At a point whose signed
 longitudinal coordinate on the end `q` is at most `R - 1`, the pre-glued composition is `u`. -/
-theorem preglueComposition_of_le
-    (h : q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ R - 1) :
+theorem preglueComposition_of_le (h : (positiveEndCoord q z).1 ≤ R - 1) :
     preglueComposition q x u u' R z = u z :=
   preglueEnd_of_le h
 
@@ -130,8 +129,7 @@ theorem preglueComposition_of_le
 is less than `R - 1`, the pre-glued composition agrees with `u`. -/
 theorem preglueComposition_eventuallyEq_of_lt
     (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter)
-    (h : q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re < R - 1) :
-    preglueComposition q x u u' R =ᶠ[𝓝 z] u :=
+    (h : (positiveEndCoord q z).1 < R - 1) : preglueComposition q x u u' R =ᶠ[𝓝 z] u :=
   preglueEnd_eventuallyEq_of_lt hz h
 
 /-- **On the inserted pair of pants the pre-glued composition is `u'`.** For an input `q` and
@@ -265,7 +263,7 @@ theorem isComplexLinearMap_perturbedFDeriv_preglueComposition_of_lt (ω : Symple
         pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) y v := by
     rw [plumbedPerturbation_of_re_endCoord_le hq hab (by linarith) y]
   rwa [ω.perturbedFDeriv_congr_of_eventuallyEq _ _ (preglueComposition_eventuallyEq_of_lt hz
-      (by rwa [endSign_eq_one hq, one_mul])),
+      (by rwa [fst_positiveEndCoord, endSign_eq_one hq, one_mul])),
     ω.perturbedFDeriv_congr
       (Ks' := fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x 1)
       (Kt' := fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)

@@ -46,6 +46,9 @@ Interval integrals of elementary functions in closed form or as series, continui
   `Jₙ = ∫ x in -1..1, xⁿ √(1 - x²)` satisfy `(n + 4) Jₙ₊₂ = (n + 1) Jₙ`.
 * `TauCeti.integral_exp_mul`: `∫ x in a..b, exp (c x) = (exp (c b) - exp (c a)) / c` for
   `c ≠ 0`, the real counterpart of Mathlib's `integral_exp_mul_complex`.
+* `TauCeti.integral_exp_mul_pos`, `TauCeti.integral_exp_mul_le`: the exponential integral
+  `E_λ(T) = ∫₀ᵀ e^{λr} dr` is positive for `T > 0` and at most `T e^{|λ|T}`;
+  `TauCeti.hasDerivAt_integral_exp_mul_sub`: `z ↦ E_λ(z - t)` has derivative `1` at `t`.
 * `TauCeti.integral_inv_mul_one_add_mul`:
   `∫ σ in s..t, 1 / (σ (1 + C σ)) = log (t / (1 + C t)) - log (s / (1 + C s))` for `s, t > 0` and
   `C ≥ 0`.
@@ -301,6 +304,37 @@ theorem integral_exp_mul {a b c : ℝ} (hc : c ≠ 0) :
     ∫ x in a..b, Real.exp (c * x) = (Real.exp (c * b) - Real.exp (c * a)) / c := by
   rw [intervalIntegral.integral_comp_mul_left (f := Real.exp) hc, integral_exp, smul_eq_mul,
     inv_mul_eq_div]
+
+/-- The function `E_λ(T) = ∫₀ᵀ e^{λr} dr` is positive for `T > 0`. -/
+theorem integral_exp_mul_pos (lam : ℝ) {T : ℝ} (hT : 0 < T) :
+    0 < ∫ r in 0..T, Real.exp (lam * r) :=
+  intervalIntegral.intervalIntegral_pos_of_pos_on
+    ((by fun_prop : Continuous fun r ↦ Real.exp (lam * r)).intervalIntegrable _ _)
+    (fun _ _ ↦ Real.exp_pos _) hT
+
+/-- The map `z ↦ ∫ r in 0..(z - t), exp (lam * r)` has derivative `1` at `t`. -/
+theorem hasDerivAt_integral_exp_mul_sub (lam t : ℝ) :
+    HasDerivAt (fun z ↦ ∫ r in 0..(z - t), Real.exp (lam * r)) 1 t := by
+  simpa using ((by fun_prop : Continuous fun r ↦ Real.exp (lam * r)).integral_hasStrictDerivAt
+    0 (t - t)).hasDerivAt.comp_sub_const t t
+
+/-- The function `E_λ(T) = ∫₀ᵀ e^{λr} dr` satisfies `E_λ(T) ≤ T e^{|λ|T}`. -/
+theorem integral_exp_mul_le (lam T : ℝ) :
+    ∫ r in 0..T, Real.exp (lam * r) ≤ T * Real.exp (|lam| * T) := by
+  have hc : Continuous fun r ↦ Real.exp (lam * r) := by fun_prop
+  rcases le_total 0 T with hT | hT
+  · have := intervalIntegral.integral_mono_on (g := fun _ ↦ Real.exp (|lam| * T)) hT
+      (hc.intervalIntegrable _ _) (intervalIntegrable_const (μ := MeasureTheory.volume))
+      fun r hr ↦ Real.exp_le_exp.2 <| by
+        nlinarith [le_abs_self lam, abs_nonneg lam, hr.1, hr.2]
+    simpa using this
+  · rw [intervalIntegral.integral_symm]
+    have := intervalIntegral.integral_mono_on (f := fun _ ↦ Real.exp (|lam| * T)) hT
+      (intervalIntegrable_const (μ := MeasureTheory.volume)) (hc.intervalIntegrable _ _)
+      fun r hr ↦ Real.exp_le_exp.2 <| by
+        nlinarith [le_abs_self lam, abs_nonneg lam, hr.1, hr.2]
+    simp only [intervalIntegral.integral_const, smul_eq_mul, zero_sub] at this
+    linarith
 
 /-- The integral of `σ ↦ 1 / (σ (1 + C σ))` between positive limits, for `C ≥ 0`: an
 antiderivative is `σ ↦ log (σ / (1 + C σ))`. -/

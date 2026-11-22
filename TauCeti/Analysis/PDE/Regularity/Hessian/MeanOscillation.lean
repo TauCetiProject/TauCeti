@@ -117,13 +117,14 @@ private theorem energyFormH1_eq_setIntegral_inner_smul_single
     energyFormH1 (fun _ => A) 0 0 (D k) (W1p.ofTestFunctionₗ volume Omega 2 φ) =
       ∫ x in Omega, ⟪f x • EuclideanSpace.single k 1,
         ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
-  have hA : ∀ i j, ContDiffOn ℝ ∞ (fun _ : EuclideanSpace ℝ (Fin (n + 1)) => A i j) Omega :=
+  have hA : ∀ i j, ContDiffOn ℝ 1 (fun _ : EuclideanSpace ℝ (Fin (n + 1)) => A i j) Omega :=
     fun _ _ => contDiffOn_const
   have hD' : ∀ j, HasWeakLineDerivOn volume Omega (W1p.value (Wkp.lowerOrder 1 u))
       (W1p.value (D j)) (EuclideanSpace.basisFun (Fin (n + 1)) ℝ j) := by
     simpa only [EuclideanSpace.basisFun_apply] using hD
   -- Move `∂ₖ` from `∂ₖu` onto the test function; the coefficients are constant.
-  rw [energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn hA (hD k) φ,
+  rw [energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn
+      (fun i j => (hA i j).of_le (by simp)) (hD k) φ,
     energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_of_hasWeakLineDerivOn hA hD']
   simp only [fderiv_fun_const, Pi.zero_apply, zero_apply, zero_mul, zero_add,
     EuclideanSpace.basisFun_apply]

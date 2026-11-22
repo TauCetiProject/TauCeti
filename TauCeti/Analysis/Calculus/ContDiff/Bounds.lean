@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.Lemmas
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
@@ -53,6 +55,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   `ℝ^ι` whose derivative has compact support has bounded squared gradient.
 * `ContDiffAt.exists_ball_bound_iteratedFDeriv`: on some ball around a point where a map is
   `C^n`, its derivatives of order at most `n` are bounded by one constant.
+* `ContDiffAt.exists_closedBall_differentiableAt_lipschitz_fderiv`: on some closed ball around a
+  point where a map is `C²`, it is differentiable with Lipschitz derivative.
 * `ContDiffOn.exists_norm_iteratedFDerivWithin_clm_apply_comp_le`: the linear bound on the
   derivatives of `z ↦ L z (φ (τ z))`.
 * `ContDiffOn.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp`: its consequence for uniform
@@ -60,8 +64,15 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 * `ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le`: for `x` in a compact set
   and `ξ` in a ball, the derivatives of a `C^k` function of `(x, ξ)` are bounded by every power of
   the Japanese bracket `(1 + ‖ξ‖ ^ 2) ^ (1 / 2)`.
+* `Continuous.exists_norm_le_one_add_norm_sq_rpow_of_norm_le`: on a ball, a continuous function
+  is bounded by every power of the Japanese bracket.
 * `ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm`: a smooth map which agrees outside a
   ball with a map of bounded order-`n` derivative has a bounded order-`n` derivative.
+* `ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl`: a `C^i` map, `1 ≤ i`, which is affine
+  outside a compact set has a bounded `i`-th derivative.
+* `ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_eq_zero_of_lt_norm`: the
+  order-`n` derivative of a `C^n` map vanishing outside a ball is bounded by every power of the
+  Japanese bracket.
 * `ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le`: composing on the left with a
   continuous linear map preserves a bound on the `k`-th derivative by a multiple of a weight.
 * `ContinuousLinearMap.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear`: the Leibniz bound for
@@ -80,6 +91,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 * `ContDiff.isBigO_iteratedFDeriv_smulRight`: the same for `y ↦ (f y).smulRight (g y)`.
 * `ContinuousLinearMap.isBigO_iteratedFDeriv_comp_left`: along any filter, if the order-`n`
   derivative of `f` is `O(ρ)`, then so is that of `y ↦ L (f y)`.
+* `ContinuousLinearMap.norm_iteratedFDeriv_comp_left_le_of_forall_le`: bounded derivatives of `f`
+  up to order `N` give bounded derivatives of `L ∘ f`, with the bound multiplied by `‖L‖`.
 * `TauCeti.norm_iteratedFDeriv_smul_le_of_isOpen`: the Leibniz bound for `z ↦ c z • f z` at a
   point of an open set on which both factors are smooth.
 -/
@@ -171,6 +184,20 @@ theorem ContDiffAt.exists_ball_bound_iteratedFDeriv {f : E → F} {x : E} {n : �
   exact (hr y hy i hi').le.trans (Finset.single_le_sum
     (f := fun i ↦ ‖iteratedFDeriv 𝕜 i f x‖ + 1) (fun _ _ ↦ by positivity) hi')
 
+/-- On some closed ball around a point `x` at which `f` is `C²`, the map `f` is differentiable
+and its derivative is Lipschitz. -/
+theorem ContDiffAt.exists_closedBall_differentiableAt_lipschitz_fderiv {𝕂 : Type*} [RCLike 𝕂]
+    {E' F' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕂 E'] [NormedAddCommGroup F']
+    [NormedSpace 𝕂 F'] {f : E' → F'} {x : E'} (hf : ContDiffAt 𝕂 2 f x) :
+    ∃ r > 0, ∃ K : NNReal, (∀ y ∈ Metric.closedBall x r, DifferentiableAt 𝕂 f y) ∧
+      ∀ y ∈ Metric.closedBall x r, ∀ z ∈ Metric.closedBall x r,
+        ‖fderiv 𝕂 f y - fderiv 𝕂 f z‖ ≤ K * ‖y - z‖ := by
+  obtain ⟨K, t₀, ht₀, hK⟩ := (hf.fderiv_right (m := 1) (by norm_num)).exists_lipschitzOnWith
+  obtain ⟨r, hr, hrf⟩ := Metric.nhds_basis_closedBall.eventually_iff.mp
+    ((hf.eventually (by simp)).and ht₀)
+  exact ⟨r, hr, K, fun y hy ↦ (hrf hy).1.differentiableAt (by norm_num), fun y hy z hz ↦ by
+    simpa [dist_eq_norm] using hK.dist_le_mul y (hrf hy).2 z (hrf hz).2⟩
+
 /-- On a compact set `K`, the order-`n` derivative of `z ↦ L z (φ (τ z))` is bounded by a constant
 multiple of any common bound `δ` for the derivatives of `φ` of order at most `n` along `τ '' K`.
 The constant depends on `L`, `τ`, `K` and `n` but not on `φ`. -/
@@ -244,13 +271,17 @@ theorem ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le {
       ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
   obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall (0 : F) R)).exists_bound_of_continuousOn
     (hf.continuous_iteratedFDeriv le_rfl).continuousOn
-  refine ⟨max C 0 / (1 + R ^ 2) ^ (-|r| / 2), by positivity, fun x hx ξ hξ ↦ ?_⟩
-  calc ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ max C 0 :=
-        (hC (x, ξ) ⟨hx, by simpa using hξ⟩).trans (le_max_left _ _)
-    _ = max C 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + R ^ 2) ^ (-|r| / 2) := by field_simp
-    _ ≤ max C 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
-        mul_le_mul_of_nonneg_left (TauCeti.one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow hξ r)
-          (by positivity)
+  obtain ⟨C', hC'0, hC'⟩ := TauCeti.exists_le_mul_one_add_norm_sq_rpow_of_norm_le (E := F) C R r
+  exact ⟨C', hC'0, fun x hx ξ hξ ↦ (hC (x, ξ) ⟨hx, by simpa using hξ⟩).trans (hC' ξ hξ)⟩
+
+/-- On a ball, a continuous function is bounded by every power of the Japanese bracket:
+`‖f ξ‖ ≤ C (1 + ‖ξ‖ ^ 2) ^ (r / 2)` for `‖ξ‖ ≤ R`. -/
+theorem Continuous.exists_norm_le_one_add_norm_sq_rpow_of_norm_le {E F : Type*}
+    [NormedAddCommGroup E] [ProperSpace E] [NormedAddCommGroup F] {f : E → F} (hf : Continuous f)
+    (R r : ℝ) : ∃ C, 0 ≤ C ∧ ∀ ξ, ‖ξ‖ ≤ R → ‖f ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  obtain ⟨M, hM⟩ := (isCompact_closedBall (0 : E) R).exists_bound_of_continuousOn hf.continuousOn
+  obtain ⟨C, hC0, hC⟩ := TauCeti.exists_le_mul_one_add_norm_sq_rpow_of_norm_le (E := E) M R r
+  exact ⟨C, hC0, fun ξ hξ ↦ (hM ξ (mem_closedBall_zero_iff.2 hξ)).trans (hC ξ hξ)⟩
 
 /-- A `C^n` map which agrees outside a ball with a map whose order-`n` derivative is bounded
 there has a bounded order-`n` derivative: on the closed ball the derivative is continuous, and
@@ -270,6 +301,46 @@ theorem ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm [ProperSpace E] 
     exact hfg y hy
   rw [(hfg'.iteratedFDeriv 𝕜 n).eq_of_nhds]
   exact (hg x hx).trans (le_max_right _ _)
+
+/-- A `C^i` map, `1 ≤ i`, which agrees outside a compact set with an affine map `x ↦ b + L x` has
+a bounded derivative of order `i`: outside a ball containing the compact set, its order-`i`
+derivative is that of the affine map, which is bounded by `‖L‖`. -/
+theorem ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl [ProperSpace E] {f : E → F} {i : ℕ}
+    (hf : ContDiff 𝕜 i f) (hi : 1 ≤ i) {K : Set E} (hK : IsCompact K) {b : F} {L : E →L[𝕜] F}
+    (hfK : EqOn f (fun x ↦ b + L x) Kᶜ) :
+    ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 i f x‖ ≤ C := by
+  obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall 0
+  refine hf.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm (R := R) (C := ‖L‖)
+    (fun x hx ↦ hfK fun hxK ↦ hx.not_ge (mem_closedBall_zero_iff.1 (hR hxK))) fun x _ ↦ ?_
+  -- The derivatives of positive order of the affine map are those of the constant `L`.
+  obtain ⟨j, rfl⟩ : ∃ j, i = j + 1 := ⟨i - 1, by omega⟩
+  have hfd : fderiv 𝕜 (fun x ↦ b + L x) = fun _ ↦ L := by
+    ext1 y
+    exact ((L.hasFDerivAt (x := y)).const_add b).fderiv
+  rw [← norm_iteratedFDeriv_fderiv, hfd]
+  rcases j with _ | j
+  · simp
+  · simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero j)]
+
+/-- The order-`n` derivative of a `C^n` map vanishing outside a ball is bounded by every power of
+the Japanese bracket: `‖D^n f(x)‖ ≤ C (1 + ‖x‖ ^ 2) ^ (r / 2)`. -/
+theorem ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_eq_zero_of_lt_norm
+    [ProperSpace E] {n : ℕ} {f : E → F} (hf : ContDiff 𝕜 n f) {R : ℝ}
+    (hf0 : ∀ x, R < ‖x‖ → f x = 0) (r : ℝ) :
+    ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ (r / 2) := by
+  obtain ⟨C, hC0, hC⟩ :=
+    (hf.continuous_iteratedFDeriv le_rfl).exists_norm_le_one_add_norm_sq_rpow_of_norm_le R r
+  refine ⟨C, fun x ↦ ?_⟩
+  rcases le_or_gt ‖x‖ R with hx | hx
+  · exact hC x hx
+  -- Outside the ball, `x` lies outside the topological support of `f`.
+  have hsupp : tsupport f ⊆ Metric.closedBall 0 R :=
+    closure_minimal (fun y hy ↦ mem_closedBall_zero_iff.2 (not_lt.1 (mt (hf0 y) hy)))
+      Metric.isClosed_closedBall
+  rw [image_eq_zero_of_notMem_tsupport fun h ↦
+      hx.not_ge (mem_closedBall_zero_iff.1 (hsupp (tsupport_iteratedFDeriv_subset n h))),
+    norm_zero]
+  positivity
 
 /-- Composing on the left with a continuous linear map `L` preserves a bound
 `‖D^k g x‖ ≤ C w x` on the `k`-th derivative of a `C^k` map `g` by a multiple of a weight `w`. -/
@@ -348,23 +419,18 @@ theorem ContDiffAt.norm_iteratedFDeriv_smul_const_le {A : Type*} [NormedRing A]
 open Asymptotics in
 /-- **Asymptotic bounds on the derivatives of a bilinear expression.** Along any filter, if the
 derivatives of order at most `n` of `f` and `g` are `O(ρ₁)` and `O(ρ₂)`, then the order-`n`
-derivative of `y ↦ B (f y) (g y)` is `O(ρ₁ ρ₂)`, by the Leibniz bound
-`ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear`. -/
+derivative of `y ↦ B (f y) (g y)` is `O(ρ₁ ρ₂)`. This is the case of global smoothness and
+index-independent bounds of `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear_of_contDiffAt`.
+-/
 theorem ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear {D : Type*} [NormedAddCommGroup D]
     [NormedSpace 𝕜 D] (B : E →L[𝕜] F →L[𝕜] G) {f : D → E} {g : D → F} {N : WithTop ℕ∞}
     (hf : ContDiff 𝕜 N f) (hg : ContDiff 𝕜 N g) {n : ℕ} (hn : n ≤ N) {l : Filter D}
     {ρ₁ ρ₂ : D → ℝ} (hfn : ∀ i ≤ n, iteratedFDeriv 𝕜 i f =O[l] ρ₁)
     (hgn : ∀ i ≤ n, iteratedFDeriv 𝕜 i g =O[l] ρ₂) :
-    iteratedFDeriv 𝕜 n (fun y ↦ B (f y) (g y)) =O[l] fun y ↦ ρ₁ y * ρ₂ y := by
-  have hsum : (fun y ↦ ‖B‖ * ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) *
-      ‖iteratedFDeriv 𝕜 i f y‖ * ‖iteratedFDeriv 𝕜 (n - i) g y‖) =O[l]
-        fun y ↦ ρ₁ y * ρ₂ y := by
-    refine IsBigO.const_mul_left (IsBigO.fun_sum fun i hi ↦ ?_) _
-    have hi' : i ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
-    exact ((hfn i hi').norm_left.const_mul_left _).mul (hgn (n - i) (Nat.sub_le n i)).norm_left
-  refine IsBigO.trans (IsBigO.of_bound 1 (Filter.Eventually.of_forall fun y ↦ ?_)) hsum
-  rw [one_mul, Real.norm_eq_abs]
-  exact (B.norm_iteratedFDeriv_le_of_bilinear hf hg y hn).trans (le_abs_self _)
+    iteratedFDeriv 𝕜 n (fun y ↦ B (f y) (g y)) =O[l] fun y ↦ ρ₁ y * ρ₂ y :=
+  B.isBigO_iteratedFDeriv_of_bilinear_of_contDiffAt (ρ₁ := fun _ ↦ ρ₁) (ρ₂ := fun _ ↦ ρ₂)
+    (.of_forall fun _ ↦ hf.contDiffAt) (.of_forall fun _ ↦ hg.contDiffAt) hn hfn hgn
+    fun _ _ ↦ isBigO_refl _ _
 
 open Asymptotics in
 /-- The case `(c, v) ↦ c.smulRight v` of `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear`:
@@ -390,6 +456,18 @@ theorem ContinuousLinearMap.isBigO_iteratedFDeriv_comp_left {D : Type*} [NormedA
     iteratedFDeriv 𝕜 n (fun y ↦ L (f y)) =O[l] ρ :=
   (IsBigO.of_bound ‖L‖ (Filter.Eventually.of_forall fun _ ↦
     L.norm_iteratedFDeriv_comp_left hf.contDiffAt hn)).trans hfn
+
+/-- If the derivatives of `f` of order at most `N` are bounded by `M`, those of `L ∘ f` are
+bounded by `‖L‖ * M`, for a continuous linear map `L`. The map `L` may be linear over a normed
+`𝕜`-algebra `𝕜'`, such as `ℂ` over `ℝ`. -/
+theorem ContinuousLinearMap.norm_iteratedFDeriv_comp_left_le_of_forall_le
+    {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] [NormedSpace 𝕜' F]
+    [IsScalarTower 𝕜 𝕜' F] [NormedSpace 𝕜' G] [IsScalarTower 𝕜 𝕜' G] (L : F →L[𝕜'] G)
+    {f : E → F} {N : ℕ} {M : ℝ} (hf : ContDiff 𝕜 N f)
+    (hbd : ∀ n ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ M) :
+    ∀ n ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 n (L ∘ f) x‖ ≤ ‖L‖ * M := fun n hn x ↦
+  ((L.restrictScalars 𝕜).norm_iteratedFDeriv_comp_left hf.contDiffAt (mod_cast hn)).trans
+    (mul_le_mul_of_nonneg_left (hbd n hn x) (norm_nonneg _))
 
 namespace TauCeti
 

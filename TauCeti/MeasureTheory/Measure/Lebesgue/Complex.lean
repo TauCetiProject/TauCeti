@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.Coordinates
@@ -13,6 +14,8 @@ public import Mathlib.Topology.Sets.Opens
 import TauCeti.Analysis.Complex.ReImTopology
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.Order.Compact
+import Mathlib.Analysis.Complex.Isometry
+import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Planar area of coordinate lines, graphs and rectangles
@@ -34,6 +37,8 @@ Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
 For any fixed `z : ℂ`, the affine factor `1 - t * z` vanishes at most once on `ℝ`
 (`Complex.subsingleton_one_sub_ofReal_mul_eq_zero`), so it is nonzero almost everywhere for every
 measure on `ℝ` with null singletons (`Complex.ae_one_sub_ofReal_mul_ne_zero`).
+Multiplication by a complex number of modulus one is a rotation, so it preserves integrals
+(`Complex.integral_comp_mul_left_of_norm_eq_one`).
 -/
 
 public section
@@ -176,6 +181,14 @@ theorem ae_one_sub_ofReal_mul_ne_zero (z : ℂ) {μ : Measure ℝ} [NullSingleto
     ∀ᵐ t : ℝ ∂μ, 1 - (t : ℂ) * z ≠ 0 := by
   rw [ae_iff]
   simpa [Classical.not_not] using (subsingleton_one_sub_ofReal_mul_eq_zero z).measure_zero μ
+
+/-- Multiplication by a complex number of modulus one preserves Lebesgue measure on `ℂ`, so it
+does not change integrals. -/
+theorem integral_comp_mul_left_of_norm_eq_one {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {c : ℂ} (hc : ‖c‖ = 1) (g : ℂ → E) :
+    ∫ z, g (c * z) = ∫ z, g z := by
+  set a : Circle := ⟨c, by simpa [Submonoid.unitSphere] using hc⟩
+  simpa only [rotation_apply] using MeasureTheory.integral_comp (rotation a) g
 
 end Complex
 
