@@ -32,6 +32,7 @@ generation statement. It also records which upper-triangular matrices lie in `K 
 
 * `TauCeti.GL2MirabolicPlus p`: the submonoid `P⁺` of `GL (Fin 2) ℚ_[p]`.
 * `TauCeti.GL2MirabolicPlus.frobenius p`: the matrix `φ = !![p, 0; 0, 1]`.
+* `TauCeti.GL2MirabolicPadicInt p`: the subgroup `P(ℤ_p) = P ∩ GL₂(ℤ_p)`.
 
 ## Main results
 
@@ -40,6 +41,10 @@ generation statement. It also records which upper-triangular matrices lie in `K 
 * `TauCeti.GL2MirabolicPlus.mk_mem_iff`: `!![a, b; 0, 1] ∈ P⁺` exactly when `a, b ∈ ℤ_p`.
 * `TauCeti.GL2MirabolicPlus.mem_and_inv_mem_iff`: the elements of `P⁺` whose inverse lies in `P⁺`
   are exactly the elements of `P(ℤ_p) = P ∩ GL₂(ℤ_p)`.
+* `TauCeti.GL2MirabolicPlus.frobenius_notMem_glPadicInt`: the integral matrix `φ` does not lie in
+  `GL₂(ℤ_p)`, so entrywise integrality alone does not characterise `GL₂(ℤ_p)`.
+* `TauCeti.GL2MirabolicPadicInt.mem_iff`: `P(ℤ_p)` consists of the mirabolic matrices whose
+  upper-left entry is a `p`-adic unit and whose upper-right entry is integral.
 * `TauCeti.GL2MirabolicPlus.exists_frobenius_pow_mul_mem`: every element of `P(ℚ_p)` is moved
   into `P⁺` by a power of `φ`.
 * `TauCeti.GL2MirabolicPlus.closure_insert_frobenius_inv_eq_gl2Mirabolic`: `P(ℚ_p)` is generated
@@ -49,6 +54,7 @@ generation statement. It also records which upper-triangular matrices lie in `K 
 
 * P. Colmez, *Représentations de `GL₂(ℚ_p)` et `(φ, Γ)`-modules*, Astérisque 330 (2010),
   Introduction §4 (Remarque 0.4) and §III.1.1.
+* V. Paškūnas, *The image of Colmez's Montreal functor*, Publ. Math. IHÉS 118 (2013), §1.
 -/
 
 public section
@@ -203,13 +209,19 @@ theorem frobenius_mem : frobenius p ∈ GL2MirabolicPlus p := by
   simpa using (Padic.norm_p_lt_one (p := p)).le
 
 variable (p) in
-/-- `φ⁻¹ = !![p⁻¹, 0; 0, 1]` does not lie in `P⁺`: otherwise `φ` would lie in `GL₂(ℤ_p)`, but its
-determinant `p` is not a unit of `ℤ_p`. -/
-theorem frobenius_inv_notMem : (frobenius p)⁻¹ ∉ GL2MirabolicPlus p := fun h ↦ by
-  have hdet := (GLPadicInt.mem_iff.mp (mem_and_inv_mem_iff.mp ⟨frobenius_mem p, h⟩).2).2
+/-- The integral matrix `φ = !![p, 0; 0, 1]` does not lie in `GL₂(ℤ_p)`, its determinant `p` not
+being a unit of `ℤ_p`: entrywise integrality alone does not characterise `GL₂(ℤ_p)`. -/
+theorem frobenius_notMem_glPadicInt : frobenius p ∉ GLPadicInt (Fin 2) p := fun h ↦ by
+  have hdet := (GLPadicInt.mem_iff.mp h).2
   rw [coe_frobenius, Matrix.det_fin_two_of] at hdet
   simp only [mul_one, mul_zero, sub_zero] at hdet
   exact (Padic.norm_p_lt_one (p := p)).ne hdet
+
+variable (p) in
+/-- `φ⁻¹ = !![p⁻¹, 0; 0, 1]` does not lie in `P⁺`: otherwise `φ` would lie in `GL₂(ℤ_p)`, but its
+determinant `p` is not a unit of `ℤ_p`. -/
+theorem frobenius_inv_notMem : (frobenius p)⁻¹ ∉ GL2MirabolicPlus p := fun h ↦
+  frobenius_notMem_glPadicInt p (mem_and_inv_mem_iff.mp ⟨frobenius_mem p, h⟩).2
 
 /-- **Every element of `P(ℚ_p)` is moved into `P⁺` by a power of `φ`**: multiplying
 `!![a, b; 0, 1]` on the left by `φ ^ k` multiplies `a` and `b` by `p ^ k`, which makes them
@@ -245,5 +257,53 @@ theorem closure_insert_frobenius_inv_eq_gl2Mirabolic :
       (Submonoid.subset_closure (Set.mem_insert_of_mem _ hk))
 
 end GL2MirabolicPlus
+
+/-- The integral mirabolic subgroup `P(ℤ_p) = P ∩ GL₂(ℤ_p)`: the matrices `!![a, b; 0, 1]` with
+`a ∈ ℤ_p^×` and `b ∈ ℤ_p`. -/
+noncomputable def GL2MirabolicPadicInt : Subgroup (GL (Fin 2) ℚ_[p]) :=
+  GL2Mirabolic ℚ_[p] ⊓ GLPadicInt (Fin 2) p
+
+namespace GL2MirabolicPadicInt
+
+/-- `P(ℤ_p)` is the intersection of the mirabolic subgroup with `GL₂(ℤ_p)`. -/
+theorem eq_inf : GL2MirabolicPadicInt p = GL2Mirabolic ℚ_[p] ⊓ GLPadicInt (Fin 2) p :=
+  (rfl)
+
+/-- `P(ℤ_p) ⊆ P`. -/
+theorem le_gl2Mirabolic : GL2MirabolicPadicInt p ≤ GL2Mirabolic ℚ_[p] :=
+  inf_le_left
+
+/-- `P(ℤ_p) ⊆ GL₂(ℤ_p)`. -/
+theorem le_glPadicInt : GL2MirabolicPadicInt p ≤ GLPadicInt (Fin 2) p :=
+  inf_le_right
+
+variable {p}
+
+/-- **Membership in `P(ℤ_p)`**: a mirabolic matrix `!![a, b; 0, 1]` lies in `GL₂(ℤ_p)` exactly when
+`a` is a `p`-adic unit and `b` is integral. -/
+theorem mem_iff {g : GL (Fin 2) ℚ_[p]} :
+    g ∈ GL2MirabolicPadicInt p ↔ g ∈ GL2Mirabolic ℚ_[p] ∧
+      ‖(g : Matrix (Fin 2) (Fin 2) ℚ_[p]) 0 0‖ = 1 ∧
+      ‖(g : Matrix (Fin 2) (Fin 2) ℚ_[p]) 0 1‖ ≤ 1 := by
+  rw [eq_inf, Subgroup.mem_inf, and_congr_right_iff]
+  intro hg
+  obtain ⟨hg₀, hg₁⟩ := GL2Mirabolic.mem_iff.mp hg
+  rw [GLPadicInt.mem_iff, GL2Mirabolic.det_eq hg]
+  refine ⟨fun h ↦ ⟨h.2, h.1 0 1⟩, fun h ↦ ⟨fun i j ↦ ?_, h.1⟩⟩
+  fin_cases i <;> fin_cases j <;> simp [h.1.le, h.2, hg₀, hg₁]
+
+/-- **Membership in `P(ℤ_p)`**: the mirabolic matrix `!![a, b; 0, 1]` lies in `P(ℤ_p)` exactly
+when `a` is a `p`-adic unit and `b` is integral. -/
+@[simp]
+theorem mk_mem_iff (a : ℚ_[p]ˣ) (b : ℚ_[p]) :
+    GL2Borel.mk a 1 b ∈ GL2MirabolicPadicInt p ↔ ‖(a : ℚ_[p])‖ = 1 ∧ ‖b‖ ≤ 1 := by
+  simp [mem_iff]
+
+variable (p) in
+/-- `P(ℤ_p) ⊆ P⁺`. -/
+theorem le_gl2MirabolicPlus : (GL2MirabolicPadicInt p).toSubmonoid ≤ GL2MirabolicPlus p :=
+  GL2MirabolicPlus.inf_glPadicInt_le p
+
+end GL2MirabolicPadicInt
 
 end TauCeti

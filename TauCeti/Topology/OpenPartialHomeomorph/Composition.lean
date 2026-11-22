@@ -107,17 +107,15 @@ theorem transOpenPartialHomeomorph_symm_transOpenPartialHomeomorph (h : X ≃ₜ
 inverse of `e` after `h.transOpenPartialHomeomorph e`. -/
 theorem eventuallyEq_symm_comp_transOpenPartialHomeomorph (h : X ≃ₜ Y)
     {e : OpenPartialHomeomorph Y Z} {x : X} (hx : h x ∈ e.source) :
-    h =ᶠ[𝓝 x] e.symm ∘ h.transOpenPartialHomeomorph e := by
-  filter_upwards [(h.transOpenPartialHomeomorph e).open_source.mem_nhds
-    (by simpa using hx)] with x' hx'
-  simp [e.left_inv (by simpa using hx')]
+    h =ᶠ[𝓝 x] e.symm ∘ h.transOpenPartialHomeomorph e :=
+  (h.continuous.tendsto x).eventually (e.eventually_left_inverse hx) |>.mono fun _ hx' ↦ by
+    simp [hx']
 
 /-- Near a point of the source of `e`, the inverse of the homeomorphism `h` is the inverse of
 `h.transOpenPartialHomeomorph e` after `e`. -/
 theorem symm_eventuallyEq_symm_transOpenPartialHomeomorph_comp (h : X ≃ₜ Y)
     {e : OpenPartialHomeomorph Y Z} {y : Y} (hy : y ∈ e.source) :
-    h.symm =ᶠ[𝓝 y] (h.transOpenPartialHomeomorph e).symm ∘ e := by
-  filter_upwards [e.open_source.mem_nhds hy] with y' hy'
-  simp [e.left_inv hy']
+    h.symm =ᶠ[𝓝 y] (h.transOpenPartialHomeomorph e).symm ∘ e :=
+  (e.eventually_left_inverse hy).mono fun _ hy' ↦ by simp [hy']
 
 end Homeomorph

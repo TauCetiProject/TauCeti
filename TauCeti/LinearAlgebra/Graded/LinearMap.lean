@@ -20,6 +20,11 @@ closure lemmas cover gradings by submodules, additive subgroups and additive sub
 distributive scalar action, and `LinearMap.homogeneousSubmodule` needs them to be additive
 submonoids closed under a module action, i.e. a submodule-valued grading.
 
+The degree index only needs an addition for the homogeneity predicate itself; the identity and
+restriction lemmas also use a zero (`AddZeroClass`), composition uses associativity
+(`AddSemigroup`), powers of endomorphisms use `AddMonoid`, and reindexing uses commutativity
+(`AddCommSemigroup`).
+
 The multilinear counterpart, and the degree calculus for substitution, are in
 `TauCeti.LinearAlgebra.Graded.Multilinear`.
 
@@ -32,6 +37,8 @@ The multilinear counterpart, and the degree calculus for substitution, are in
 ## Main results
 
 * `LinearMap.IsHomogeneous.comp`: degrees add under composition of linear maps.
+* `LinearMap.IsHomogeneous.pow`: the `k`-th power of an endomorphism of degree `q` has degree
+  `k • q`.
 * `LinearMap.IsHomogeneous.restrict_zero`, `LinearMap.IsHomogeneous.restrict_id`, and
   `LinearMap.IsHomogeneous.restrict_comp`: functoriality of `IsHomogeneous.restrict`.
 
@@ -42,8 +49,6 @@ The multilinear counterpart, and the degree calculus for substitution, are in
 
 public section
 
-namespace TauCeti
-
 universe uR uι uM uN uP
 
 namespace LinearMap
@@ -51,8 +56,12 @@ namespace LinearMap
 section Semiring
 
 variable {R : Type uR} {ι : Type uι} {M : Type uM} {N : Type uN} {σM : Type*} {σN : Type*}
-  [Semiring R] [AddMonoid ι] [AddCommMonoid M] [AddCommMonoid N]
+  [Semiring R] [AddCommMonoid M] [AddCommMonoid N]
   [Module R M] [Module R N] [SetLike σM M] [SetLike σN N]
+
+section Add
+
+variable [Add ι]
 
 /-- A linear map is homogeneous of degree `q` if it maps the degree-`p` piece of `𝒜` into the
 degree-`p + q` piece of `ℬ`. No direct-sum hypothesis on the families is needed. -/
@@ -86,22 +95,35 @@ theorem IsHomogeneous.add [AddMemClass σN N] {f g : M →ₗ[R] N} {𝒜 : ι �
   intro p x hx
   simpa using add_mem (hf hx) (hg hx)
 
+end Add
+
 /-- The identity linear map is homogeneous of degree zero. -/
 @[simp]
-theorem isHomogeneous_id (𝒜 : ι → σM) :
+theorem isHomogeneous_id [AddZeroClass ι] (𝒜 : ι → σM) :
     IsHomogeneous (LinearMap.id : M →ₗ[R] M) 𝒜 𝒜 0 := by
   intro p x hx
   simpa using hx
 
 /-- Degrees add under composition of linear maps. -/
 @[grind →]
-theorem IsHomogeneous.comp {P : Type uP} {σP : Type*} [AddCommMonoid P] [Module R P]
-    [SetLike σP P] {f : M →ₗ[R] N} {g : N →ₗ[R] P} {𝒜 : ι → σM}
+theorem IsHomogeneous.comp [AddSemigroup ι] {P : Type uP} {σP : Type*} [AddCommMonoid P]
+    [Module R P] [SetLike σP P] {f : M →ₗ[R] N} {g : N →ₗ[R] P} {𝒜 : ι → σM}
     {ℬ : ι → σN} {𝒞 : ι → σP} {q r : ι}
     (hg : IsHomogeneous g ℬ 𝒞 r) (hf : IsHomogeneous f 𝒜 ℬ q) :
     IsHomogeneous (g.comp f) 𝒜 𝒞 (q + r) := by
   intro p x hx
   simpa only [_root_.LinearMap.comp_apply, add_assoc] using hg (hf hx)
+
+/-- The `k`-th power of an endomorphism of degree `q` has degree `k • q`. -/
+theorem IsHomogeneous.pow [AddMonoid ι] {f : Module.End R M} {𝒜 : ι → σM} {q : ι}
+    (hf : IsHomogeneous f 𝒜 𝒜 q) (k : ℕ) : IsHomogeneous (f ^ k) 𝒜 𝒜 (k • q) := by
+  induction k with
+  | zero => simp [Module.End.one_eq_id]
+  | succ k ih => simpa [pow_succ, Module.End.mul_eq_comp, succ_nsmul'] using ih.comp hf
+
+section AddZeroClass
+
+variable [AddZeroClass ι]
 
 /-- A degree-zero homogeneous linear map restricts to a linear map on each graded piece. -/
 def IsHomogeneous.restrict {g : M →ₗ[R] N} {ℳ : ι → Submodule R M} {𝒩 : ι → Submodule R N}
@@ -136,17 +158,21 @@ composite of their piece restrictions. -/
 theorem IsHomogeneous.restrict_comp {P : Type uP} [AddCommMonoid P] [Module R P]
     {f : M →ₗ[R] N} {g : N →ₗ[R] P} {ℳ : ι → Submodule R M} {𝒩 : ι → Submodule R N}
     {𝒞 : ι → Submodule R P} (hg : IsHomogeneous g 𝒩 𝒞 0) (hf : IsHomogeneous f ℳ 𝒩 0) (k : ι)
-    (hcomp : IsHomogeneous (g.comp f) ℳ 𝒞 0 := by simpa only [add_zero] using hg.comp hf) :
+    (hcomp : IsHomogeneous (g.comp f) ℳ 𝒞 0 := by
+      intro p x hx
+      simpa only [_root_.LinearMap.comp_apply, add_zero] using hg (hf hx)) :
     hcomp.restrict k = (hg.restrict k).comp (hf.restrict k) := by
   ext x
   simp
+
+end AddZeroClass
 
 end Semiring
 
 section Neg
 
 variable {R : Type uR} {ι : Type uι} {M : Type uM} {N : Type uN} {σM : Type*} {σN : Type*}
-  [Semiring R] [AddMonoid ι] [AddCommMonoid M] [AddCommGroup N]
+  [Semiring R] [Add ι] [AddCommMonoid M] [AddCommGroup N]
   [Module R M] [Module R N] [SetLike σM M] [SetLike σN N]
 
 /-- The negative of a homogeneous linear map has the same degree. -/
@@ -171,7 +197,7 @@ section Scalars
 
 variable {R : Type uR} {S : Type*} {ι : Type uι} {M : Type uM} {N : Type uN}
   {σM : Type*} {σN : Type*}
-  [Semiring R] [AddMonoid ι] [AddCommMonoid M] [AddCommMonoid N]
+  [Semiring R] [Add ι] [AddCommMonoid M] [AddCommMonoid N]
   [Module R M] [Module R N] [SetLike σM M] [SetLike σN N]
 
 /-- A scalar multiple of a homogeneous linear map has the same degree. -/
@@ -192,6 +218,7 @@ def homogeneousSubmodule [Semiring S] [Module S N] [SMulCommClass R S N]
   add_mem' hf hg := hf.add hg
   smul_mem' s _ hf := hf.smul s
 
+/-- Membership in `homogeneousSubmodule` is homogeneity of the given degree. -/
 @[simp, grind =]
 theorem mem_homogeneousSubmodule [Semiring S] [Module S N] [SMulCommClass R S N]
     [AddSubmonoidClass σN N] [SMulMemClass σN S N]
@@ -204,7 +231,7 @@ end Scalars
 section Reindex
 
 variable {R : Type uR} {ι : Type uι} {M : Type uM} {N : Type uN} {σM : Type*} {σN : Type*}
-  [Semiring R] [AddCommMonoid ι] [AddCommMonoid M] [AddCommMonoid N]
+  [Semiring R] [AddCommSemigroup ι] [AddCommMonoid M] [AddCommMonoid N]
   [Module R M] [Module R N] [SetLike σM M] [SetLike σN N]
 
 /-- Translating the indices of both gradings by the same amount preserves homogeneity. -/
@@ -217,5 +244,3 @@ theorem IsHomogeneous.reindex {f : M →ₗ[R] N} {𝒜 : ι → σM} {ℬ : ι 
 end Reindex
 
 end LinearMap
-
-end TauCeti

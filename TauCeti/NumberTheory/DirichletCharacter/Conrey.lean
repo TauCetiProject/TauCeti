@@ -265,7 +265,7 @@ theorem conreyLocal_eq_one_iff {p e : ℕ} (hp : p.Prime) (m : (ZMod (p ^ e))ˣ)
         ofAdd_zero, map_one, mul_one, MonoidHom.one_apply] at h1
       simp only [conreyTwoPow_add_two_apply, ZMod.unitsTwoPowEquiv_five, toAdd_ofAdd, ofAdd_zero,
         map_one, one_mul, MonoidHom.one_apply] at h5
-      rw [zmodPairing_eq_one_iff, ofAdd_eq_one] at h1 h5
+      rw [zmodPairing_eq_one_iff, toAdd_ofAdd, toAdd_ofAdd, mul_one] at h1 h5
       apply (ZMod.unitsTwoPowEquiv e).injective
       rw [map_one, ← toAdd_eq_zero]
       exact Prod.ext h1 h5

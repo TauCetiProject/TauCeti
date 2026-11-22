@@ -94,6 +94,12 @@ theorem measurable_bernoulliFun_fract (k : ℕ) :
     Measurable (fun x : ℝ => bernoulliFun k (Int.fract x)) :=
   (continuous_bernoulliFun k).measurable.comp measurable_fract
 
+/-- The sawtooth `B₁({x}) = {x} - 1/2`, the periodic Bernoulli function of order one, has absolute
+value at most `1/2`. -/
+theorem abs_bernoulliFun_one_fract_le (x : ℝ) : |bernoulliFun 1 (Int.fract x)| ≤ 1 / 2 := by
+  rw [bernoulliFun_one, abs_le]
+  constructor <;> linarith [Int.fract_nonneg x, Int.fract_lt_one x]
+
 /-- One integration by parts against a shifted Bernoulli polynomial on `[t, t + 1]`. -/
 private theorem integral_bernoulliFun_sub_smul {u u' : ℝ → E} {t : ℝ} (k : ℕ)
     (hu : ContinuousOn u (Set.Icc t (t + 1)))

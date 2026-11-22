@@ -10,7 +10,9 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
+import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
 # Measurability, reciprocal bounds, and ratio asymptotics of the Gamma function
@@ -38,7 +40,11 @@ equivalence `Γ(n + 1 + s) ~ n ^ s * n!` along the natural numbers, valid for ev
 This is the form in which polynomial decay of Gamma quotients such as `Γ(n + a) / Γ(n + b)` enters
 summability and moment arguments for discrete laws with Beta-function masses. Euler's reflection
 formula is also recorded in the reciprocal form `Γ(s) sin (π s) = π / Γ(1 - s)` for `s ∉ -ℕ`,
-valid including at positive integers where both sides vanish.
+valid including at positive integers where both sides vanish. Over `ℂ`, Euler's
+limit formula is also written with the rising factorial `(s)ₙ = s (s + 1) ⋯ (s + n - 1)`:
+`n^(s - 1) n! / (s)ₙ → Γ(s)` and `(s)ₙ / (n^(s - 1) n!) → 1 / Γ(s)` for every complex `s`, both
+sides of either limit being `0` at the poles `s = -k`. The second limit is the asymptotic
+`(s)ₙ ∼ n^(s - 1) n! / Γ(s)` from which the growth of hypergeometric coefficients is read off.
 
 ## Main results
 
@@ -49,10 +55,12 @@ valid including at positive integers where both sides vanish.
 * `Real.exists_abs_inv_Gamma_le` — `(Real.Gamma s)⁻¹` is bounded on `[a, ∞)`.
 * `Real.Gamma_add_nat_div_Gamma_eq` — `Γ(x + n) / Γ x` is the rising factorial `x (x + 1) ⋯`.
 * `Real.prod_range_add_mul_Gamma` — `s (s + 1) ⋯ (s + n - 1) Γ s = Γ(s + n)` for positive `s`.
+* `Real.Gamma_le_one_of_mem_Icc` — `Γ s ≤ 1` for `s ∈ [1, 2]`.
 * `Real.Gamma_nat_add_half_eq_factorial` — `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
   `a < b`.
+* `Complex.Gamma_add_natCast_eq_ascPochhammer_eval_mul` — `Γ(c + k) = (c)ₖ Γ(c)` off the poles.
 * `Complex.ne_neg_natCast_of_re_pos`, `Complex.Gamma_ne_zero_of_im_ne_zero` — parameters with
   positive real part or nonzero imaginary part avoid `−ℕ`, so `Complex.Gamma` does not vanish off
   the real axis.
@@ -62,6 +70,8 @@ valid including at positive integers where both sides vanish.
 * `Complex.ne_neg_natCast_of_neg_one_lt_re_of_ne_zero`,
   `Real.ne_neg_natCast_of_neg_one_lt_of_ne_zero` — a nonzero parameter strictly to the right of
   `-1` avoids `−ℕ`.
+* `Real.ne_neg_natCast_of_mem_Ioo` — a real number strictly between `-(k + 1)` and `-k` avoids
+  `−ℕ`.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
@@ -76,6 +86,17 @@ valid including at positive integers where both sides vanish.
   `Γ(s) * sin (π * s) = π / Γ(1 - s)` for `s ∉ -ℕ`, including at positive integers where both
   sides vanish.
 * `Complex.Gamma_one_third_mul_Gamma_two_thirds` — `Γ(1/3) Γ(2/3) = 2π/√3`.
+* `Complex.tendsto_natCast_cpow_mul_factorial_div_ascPochhammer_eval`:
+  `n^(s - 1) n! / (s)ₙ → Γ(s)` (DLMF 5.8.1 in Pochhammer form).
+* `Complex.tendsto_ascPochhammer_eval_div_natCast_cpow_mul_factorial`:
+  `(s)ₙ / (n^(s - 1) n!) → (Γ(s))⁻¹`.
+
+## References
+
+* NIST Digital Library of Mathematical Functions, 5.8.1, <https://dlmf.nist.gov/5.8.E1>.
+
+The two Pochhammer forms of Euler's limit formula are adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file `DLMF/Hypergeometric/Basic/GaussSeries.lean`.
 -/
 
 public section
@@ -164,6 +185,12 @@ theorem prod_range_add_mul_Gamma {s : ℝ} (hs : 0 < s) (n : ℕ) :
     rw [Finset.prod_range_succ, mul_right_comm, ih, Nat.cast_succ, ← add_assoc,
       Gamma_add_one (by positivity), mul_comm]
 
+/-- The real Gamma function is at most `1` on `[1, 2]`: it is convex there, with
+`Γ 1 = Γ 2 = 1`. -/
+theorem Gamma_le_one_of_mem_Icc {s : ℝ} (hs : s ∈ Set.Icc (1 : ℝ) 2) : Gamma s ≤ 1 := by
+  simpa [Gamma_one, Gamma_two] using
+    convexOn_Gamma.le_max_of_mem_Icc (by norm_num : (1 : ℝ) ∈ Set.Ioi 0) (by norm_num) hs
+
 /-- The half-integer value `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`, the factorial form of
 `Real.Gamma_nat_add_half`, obtained from Legendre's duplication formula at `n + 1 / 2`. -/
 theorem Gamma_nat_add_half_eq_factorial (n : ℕ) :
@@ -246,6 +273,11 @@ theorem tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop {a b : ℝ} (hab :
 end Real
 
 namespace Complex
+
+/-- `Γ(c + k) = (c)ₖ Γ(c)` for `c` off the poles of `Γ`. -/
+theorem Gamma_add_natCast_eq_ascPochhammer_eval_mul {c : ℂ} (hc : ∀ m : ℕ, c ≠ -m) (k : ℕ) :
+    Gamma (c + k) = (ascPochhammer ℂ k).eval c * Gamma c := by
+  rw [← Gamma_add_nat_div_Gamma_eq c hc, div_mul_cancel₀ _ (Gamma_ne_zero hc)]
 
 /-- A complex number with positive real part is not a nonpositive integer. -/
 theorem ne_neg_natCast_of_re_pos {b : ℂ} (hb : 0 < b.re) (n : ℕ) :
@@ -336,6 +368,15 @@ theorem ne_neg_natCast_of_neg_one_lt_of_ne_zero {σ : ℝ} (hσ₀ : -1 < σ) (h
     σ ≠ -(n : ℝ) := fun hn ↦
   Complex.ne_neg_natCast_of_neg_one_lt_re_of_ne_zero (z := σ) (by simpa using hσ₀)
     (Complex.ofReal_ne_zero.mpr hσ) n (by exact_mod_cast hn)
+
+/-- A real number strictly between `-(k + 1)` and `-k` is not a nonpositive integer. -/
+theorem ne_neg_natCast_of_mem_Ioo {k : ℕ} {a : ℝ} (ha : a ∈ Set.Ioo (-(k + 1 : ℝ)) (-k))
+    (n : ℕ) : a ≠ -n := by
+  rintro rfl
+  have h₁ : (n : ℝ) < k + 1 := by linarith [ha.1]
+  have h₂ : (k : ℝ) < n := by linarith [ha.2]
+  norm_cast at h₁ h₂
+  omega
 
 /-- On `[1, ∞)`, the reciprocal Gamma function decays factorially along natural-number shifts:
 `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!`, the real specialization of
@@ -435,5 +476,46 @@ theorem Gamma_one_third_mul_Gamma_two_thirds :
   have h3 : (Real.sqrt 3 : ℂ) ≠ 0 := by simp
   rw [h, hs]
   field_simp
+
+open Polynomial
+
+/-- **Euler's limit formula in Pochhammer form.** For every complex `s`,
+`n^(s - 1) n! / (s)ₙ → Γ(s)` as `n → ∞`. -/
+theorem tendsto_natCast_cpow_mul_factorial_div_ascPochhammer_eval (s : ℂ) :
+    Tendsto (fun n : ℕ => (n : ℂ) ^ (s - 1) * n ! / (ascPochhammer ℂ n).eval s) atTop
+      (𝓝 (Gamma s)) := by
+  have hlin : Tendsto (fun n : ℕ => s / n + 1) atTop (𝓝 1) := by
+    simpa using (tendsto_const_div_atTop_nhds_zero_nat s).add_const 1
+  have h := (GammaSeq_tendsto_Gamma s).mul hlin
+  rw [mul_one] at h
+  refine h.congr' ?_
+  filter_upwards [eventually_ne_atTop 0,
+    (tendsto_natCast_atTop_atTop (R := ℝ)).eventually_gt_atTop ‖s‖] with n hn hs
+  have hn' : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hn
+  have hsn : s + n ≠ 0 := by
+    intro h
+    rw [eq_neg_of_add_eq_zero_left h, norm_neg, norm_natCast] at hs
+    exact lt_irrefl _ hs
+  rw [GammaSeq, Finset.prod_range_succ, ← TauCeti.ascPochhammer_eval_eq_prod_range,
+    cpow_sub _ _ hn', cpow_one]
+  rcases eq_or_ne ((ascPochhammer ℂ n).eval s) 0 with hp | hp
+  · simp [hp]
+  · field_simp
+
+/-- **Euler's limit formula for `1 / Γ` in Pochhammer form.** For every complex `s`,
+`(s)ₙ / (n^(s - 1) n!) → (Γ(s))⁻¹` as `n → ∞`; at the poles `s = -k` both sides are eventually
+`0`. -/
+theorem tendsto_ascPochhammer_eval_div_natCast_cpow_mul_factorial (s : ℂ) :
+    Tendsto (fun n : ℕ => (ascPochhammer ℂ n).eval s / ((n : ℂ) ^ (s - 1) * n !)) atTop
+      (𝓝 (Gamma s)⁻¹) := by
+  by_cases hs : ∀ m : ℕ, s ≠ -m
+  · simpa only [inv_div] using
+      (tendsto_natCast_cpow_mul_factorial_div_ascPochhammer_eval s).inv₀ (Gamma_ne_zero hs)
+  · push Not at hs
+    obtain ⟨k, rfl⟩ := hs
+    rw [Gamma_neg_nat_eq_zero, inv_zero]
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [eventually_gt_atTop k] with n hn
+    rw [ascPochhammer_eval_neg_natCast_of_lt hn, zero_div]
 
 end Complex
