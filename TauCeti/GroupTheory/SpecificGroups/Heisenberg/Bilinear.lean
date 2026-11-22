@@ -170,36 +170,64 @@ theorem bilinearExtension_center_eq_range_iff {B : LinearMap.BilinMap R W C} :
     Subgroup.center ((bilinearFactorSet B).Extension) =
       (FactorSet.inl (bilinearFactorSet B)).range ↔
       (B - B.flip).SeparatingLeft := by
-  rw [FactorSet.range_inl_eq_ker_rightHom]
-  simp only [SetLike.ext_iff, MonoidHom.mem_ker, FactorSet.rightHom_apply]
+  have h_le :
+      (FactorSet.inl (bilinearFactorSet B)).range ≤
+        Subgroup.center ((bilinearFactorSet B).Extension) := by
+    -- With the trivial action, the coefficient copy is central (library lemma, no re-derivation).
+    apply FactorSet.inl_range_le_center
+    intro g a
+    exact trivialMulDistribMulAction_smul g a
   constructor
-  · intro h w hw
-    have hw' : ⟨1, ofAdd w⟩ ∈ Subgroup.center ((bilinearFactorSet B).Extension) := by
+  · -- (→) centre = coefficient range implies the skew part is left-separating.
+    intro h_eq w hw
+    have hcentral : ⟨1, ofAdd w⟩ ∈ Subgroup.center ((bilinearFactorSet B).Extension) := by
       rw [bilinearExtension_mem_center_iff (B := B)]
       intro v
       have : B w v = B v w := by
-        have h0 := hw v
-        simp only [LinearMap.sub_apply, LinearMap.flip_apply] at h0
-        exact sub_eq_zero.mp h0
+        have := hw v
+        simp only [LinearMap.sub_apply, LinearMap.flip_apply] at this
+        exact sub_eq_zero.mp this
       exact this
-    simpa using congrArg Multiplicative.toAdd (h ⟨1, ofAdd w⟩ |>.mp hw')
-  · intro h p
-    constructor
-    · intro hp
-      have hmem : ∀ v, B p.right.toAdd v = B v p.right.toAdd := by
+    have hin_range : ⟨1, ofAdd w⟩ ∈ (FactorSet.inl (bilinearFactorSet B)).range := by
+      have h₁ : Subgroup.center _ = (FactorSet.inl _).range := h_eq
+      rw [h₁] at hcentral
+      exact hcentral
+    -- membership in the range is exactly `p.right = 1`, i.e. `p.right.toAdd = 0`.
+    simp only [FactorSet.range_inl_eq_ker_rightHom, MonoidHom.mem_ker,
+      FactorSet.rightHom_apply] at hin_range
+    have h₁ : ofAdd w = (1 : Multiplicative W) := by simpa using hin_range
+    have h₂ : w = 0 := by
+      have h₃ : (ofAdd w : Multiplicative W).toAdd = (1 : Multiplicative W).toAdd := by rw [h₁]
+      simp [toAdd_ofAdd, toAdd_one] at h₃ ⊢
+      simp_all
+    exact h₂
+  · -- (←) left-separating skew part implies centre = coefficient range.
+    intro h_sep
+    -- centre ⊆ range: a central element with space coordinate w has `(B - Bᵀ) w = 0`, so `w = 0`.
+    have h_subset :
+      Subgroup.center ((bilinearFactorSet B).Extension) ≤
+        (FactorSet.inl (bilinearFactorSet B)).range := by
+      intro p hp
+      have hmem : ∀ v : W, B p.right.toAdd v = B v p.right.toAdd := by
         rw [bilinearExtension_mem_center_iff] at hp
         exact hp
-      have h0 : ∀ v, (B - B.flip) p.right.toAdd v = 0 := by
+      have h0 : ∀ v : W, ((B - B.flip) p.right.toAdd) v = 0 := by
         intro v
         have := hmem v
         simp only [LinearMap.sub_apply, LinearMap.flip_apply] at this ⊢
-        exact sub_eq_zero.mpr this
-      have hr : p.right.toAdd = 0 := h _ h0
-      simpa [hr]
-    · intro hr
-      rw [bilinearExtension_mem_center_iff]
-      intro v
-      simp [hr]
+        simp_all
+      have hw : p.right.toAdd = 0 := h_sep p.right.toAdd h0
+      simp only [FactorSet.range_inl_eq_ker_rightHom, MonoidHom.mem_ker,
+        FactorSet.rightHom_apply, Multiplicative.ext_iff] at hp ⊢
+      simp_all
+    -- range ⊆ centre is `h_le`, so centre = range.
+    have h_eq :
+      Subgroup.center ((bilinearFactorSet B).Extension) =
+        (FactorSet.inl (bilinearFactorSet B)).range := by
+      apply le_antisymm
+      · exact h_subset
+      · exact h_le
+    exact h_eq
 
 end TauCeti.HeisenbergGroup.Bilinear
 
@@ -209,6 +237,15 @@ open LinearMap.BilinMap TauCeti
 
 variable {R : Type*} [CommSemiring R] {W C : Type*} [AddCommGroup W] [Module R W]
   [AddCommGroup C] [Module R C] [Invertible (2 : R)] {ω : LinearMap.BilinMap R W C}
+
+/- **Half of an alternating form has itself as its skew part**: `⅟2 • ω - (⅟2 • ω)ᵀ = ω`.
+This is the calculation shared by the half-form commutator and centre statements. -/
+lemma half_skew_eq_self (hω : ω.IsAlt) :
+    ⅟(2 : R) • ω - (⅟(2 : R) • ω).flip = ω := by
+  ext w v
+  simp only [LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.flip_apply]
+  rw [← hω.neg w v]
+  simp only [smul_neg, sub_eq_add_neg, neg_neg, ← add_smul, invOf_two_add_invOf_two, one_smul]
 
 /-- **The commutator in the half-alternating Heisenberg group**: for an alternating `ω` with `2`
 invertible, the commutator of two elements of the extension of `ω / 2` is the central element
@@ -222,10 +259,12 @@ theorem halfForm_commutatorElement_eq_inl (hω : ω.IsAlt)
   congr 1
   have key : (⅟(2 : R) • ω) p.right.toAdd q.right.toAdd
       - (⅟(2 : R) • ω) q.right.toAdd p.right.toAdd = ω p.right.toAdd q.right.toAdd := by
-    simp only [LinearMap.smul_apply]
-    rw [← hω.neg p.right.toAdd q.right.toAdd]
-    simp only [smul_neg, sub_eq_add_neg, neg_neg]
-    rw [← add_smul, invOf_two_add_invOf_two, one_smul]
+    calc
+      (⅟(2 : R) • ω) p.right.toAdd q.right.toAdd - (⅟(2 : R) • ω) q.right.toAdd p.right.toAdd
+        = ((⅟(2 : R) • ω) - (⅟(2 : R) • ω).flip) p.right.toAdd q.right.toAdd := by
+          simp [LinearMap.sub_apply, LinearMap.flip_apply]
+      _ = ω p.right.toAdd q.right.toAdd := by
+        rw [half_skew_eq_self hω]
   rw [key]
 
 /-- **The centre of the Heisenberg group**: for a nondegenerate alternating `ω` with `2`
@@ -237,11 +276,7 @@ theorem halfForm_center (hω : ω.IsAlt) (hωn : ω.Nondegenerate) :
     Subgroup.center ((bilinearFactorSet (⅟(2 : R) • ω)).Extension) =
       (FactorSet.inl (bilinearFactorSet (⅟(2 : R) • ω))).range := by
   rw [HeisenbergGroup.Bilinear.bilinearExtension_center_eq_range_iff]
-  have heq : ⅟(2 : R) • ω - (⅟(2 : R) • ω).flip = ω := by
-    ext w v
-    simp only [LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.flip_apply]
-    rw [← hω.neg w v]
-    simp only [smul_neg, sub_eq_add_neg, neg_neg, ← add_smul, invOf_two_add_invOf_two, one_smul]
+  have heq : ⅟(2 : R) • ω - (⅟(2 : R) • ω).flip = ω := half_skew_eq_self hω
   rw [heq]
   exact hωn.1
 
