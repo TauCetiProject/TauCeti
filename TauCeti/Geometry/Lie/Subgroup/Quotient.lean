@@ -5,10 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
+public import TauCeti.Geometry.Lie.FundamentalVectorField
+public import TauCeti.Geometry.Lie.InvariantVectorField.Distribution
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import TauCeti.Geometry.Manifold.GroupAction.Quotient
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import TauCeti.Topology.Algebra.Group.Quotient.RightRel
+import TauCeti.Geometry.Lie.IntegralCurve
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.Submersion.Basic
@@ -27,12 +32,24 @@ smooth manifold of dimension `dim G - dim K`, the **homogeneous space** of `G` b
 * the projection `G → G ⧸ K` is a smooth submersion (`Subgroup.isSubmersion_quotientMk`), so a
   map out of `G ⧸ K` is smooth exactly when its composite with the projection is;
 * its vertical directions at `g` are the tangent space at `g` of the coset `g K`, the image of the
-  differential of `k ↦ g k` at the identity of `K` (`Subgroup.ker_mfderiv_quotientMk`);
+  differential of `k ↦ g k` at the identity of `K` (`Subgroup.ker_mfderiv_quotientMk`), or
+  equivalently the left translate `d(L_g)(S)` of any subspace `S` of `𝔤` of dimension `dim K`
+  whose one-parameter subgroups lie in `K`
+  (`Subgroup.ker_mfderiv_quotientMk_eq_mulInvariantDistribution`);
+* the projection sends the generators of left multiplication on `G` to those of the action on
+  `G ⧸ K` (`Subgroup.mfderiv_quotientMk_fundamentalVectorField`);
 * `G` acts smoothly on `G ⧸ K` by left multiplication (`Subgroup.contMDiffSMul_quotientOfIsClosed`).
 
-The charts come from the quotient manifold theorem
-(`ProperSMul.instIsManifoldOrbitRelQuotient`) for the action of `K` on `G` by left multiplication,
-which is free, proper because `K` is closed, and smooth. Its orbits are the right cosets `K g`.
+More generally, if `G` acts smoothly on a boundaryless manifold `M` and `K` acts freely and
+properly, the orbit space `M ⧸ K` is a smooth manifold for the charts
+`Subgroup.orbitRelQuotientChartedSpaceOfIsClosed`
+(`Subgroup.isManifold_orbitRelQuotientOfIsClosed`), and the orbit projection is a smooth
+submersion (`Subgroup.isSubmersion_orbitRelQuotientMkOfIsClosed`).
+
+The charts of `G ⧸ K` come from the case `M = G` of this quotient manifold theorem
+(`ProperSMul.instIsManifoldOrbitRelQuotient`), for the action of `K` on `G` by left
+multiplication, which is free, proper because `K` is closed, and smooth. Its orbits are the right
+cosets `K g`.
 Inversion carries them to the left cosets, and Mathlib's bijection between the two coset spaces is
 a homeomorphism (`QuotientGroup.quotientRightRelHomeomorphQuotientLeftRel`); the charts of `G ⧸ K`
 are pulled back along its inverse (`Homeomorph.pullbackChartedSpace`). The charts are a definition
@@ -59,6 +76,8 @@ open scoped ContDiff Manifold
 
 namespace Subgroup
 
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
@@ -71,6 +90,66 @@ abbrev QuotientModelSpace : Type :=
   letI : T2Space G := I.t2Space_of_lieGroup ∞
   ProperSMul.QuotientModelSpace (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule E
 
+/-! ### Orbit spaces of closed subgroups -/
+
+section OrbitSpace
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
+  [ContMDiffSMul I I' ∞ G M] [ProperSMul K M] [IsCancelSMul K M]
+
+variable (I I' M) in
+/-- **The charts of the orbit space `M ⧸ K`** of a free proper action of a closed subgroup `K`, the
+charts of the quotient manifold theorem `ProperSMul.orbitRelQuotientChartedSpace` for the
+closed-subgroup structure of `K`. They are modelled on `ℝ^(dim M - dim K)`. -/
+@[instance_reducible]
+def orbitRelQuotientChartedSpaceOfIsClosed (hK : IsClosed (K : Set G)) :
+    letI : T2Space G := I.t2Space_of_lieGroup ∞
+    ChartedSpace
+      (ProperSMul.QuotientModelSpace (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule E')
+      (MulAction.orbitRel.Quotient K M) :=
+  letI : T2Space G := I.t2Space_of_lieGroup ∞
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
+  letI := d.chartedSpace
+  haveI := d.lieGroup
+  haveI := d.contMDiffSMul (I'' := I') (M := M)
+  ProperSMul.orbitRelQuotientChartedSpace
+    𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule) K I' M
+
+/-- **The quotient manifold theorem for a closed subgroup.** The orbit space of a free proper
+action of a closed subgroup `K` is a smooth manifold for the charts
+`Subgroup.orbitRelQuotientChartedSpaceOfIsClosed`. -/
+theorem isManifold_orbitRelQuotientOfIsClosed (hK : IsClosed (K : Set G)) :
+    letI : T2Space G := I.t2Space_of_lieGroup ∞
+    letI := orbitRelQuotientChartedSpaceOfIsClosed I I' M hK
+    IsManifold
+      𝓘(ℝ, ProperSMul.QuotientModelSpace (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule E')
+      ∞ (MulAction.orbitRel.Quotient K M) := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
+  let _ := d.chartedSpace
+  have := d.lieGroup
+  have := d.contMDiffSMul (I'' := I') (M := M)
+  exact ProperSMul.instIsManifoldOrbitRelQuotient
+
+/-- The orbit projection `M → M ⧸ K` of a free proper action of a closed subgroup is a smooth
+submersion. -/
+theorem isSubmersion_orbitRelQuotientMkOfIsClosed (hK : IsClosed (K : Set G)) :
+    letI : T2Space G := I.t2Space_of_lieGroup ∞
+    letI := orbitRelQuotientChartedSpaceOfIsClosed I I' M hK
+    IsSubmersion I'
+      𝓘(ℝ, ProperSMul.QuotientModelSpace (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule E')
+      ∞ (Quotient.mk (MulAction.orbitRel K M)) := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
+  let _ := d.chartedSpace
+  have := d.lieGroup
+  have := d.contMDiffSMul (I'' := I') (M := M)
+  exact ProperSMul.isSubmersion_quotientMk
+
+end OrbitSpace
+
 /-! ### The right coset space -/
 
 variable (I) in
@@ -80,15 +159,9 @@ of the action of `K` on `G` by left multiplication. -/
 private def rightChartedSpace (hK : IsClosed (K : Set G)) :
     ChartedSpace (QuotientModelSpace I K)
       (Quotient (QuotientGroup.rightRel K)) :=
-  letI : T2Space G := I.t2Space_of_lieGroup ∞
-  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
-  letI := d.chartedSpace
-  letI := d.lieGroup
-  haveI := d.contMDiffSMul
   haveI : IsClosed (K : Set G) := hK
   haveI : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  ProperSMul.orbitRelQuotientChartedSpace
-    𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule) K I G
+  orbitRelQuotientChartedSpaceOfIsClosed I I G hK
 
 variable (I) in
 /-- By the quotient manifold theorem, the charts of the right coset space `K \ G` form a smooth
@@ -97,14 +170,9 @@ private theorem isManifold_and_isSubmersion_right (hK : IsClosed (K : Set G)) :
     letI := rightChartedSpace I hK
     IsManifold 𝓘(ℝ, QuotientModelSpace I K) ∞ (Quotient (QuotientGroup.rightRel K)) ∧
       IsSubmersion I 𝓘(ℝ, QuotientModelSpace I K) ∞ (Quotient.mk (QuotientGroup.rightRel K)) := by
-  let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
-  let _ := d.chartedSpace
-  let _ := d.lieGroup
-  have := d.contMDiffSMul
   have : IsClosed (K : Set G) := hK
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  exact ⟨ProperSMul.instIsManifoldOrbitRelQuotient, ProperSMul.isSubmersion_quotientMk⟩
+  exact ⟨isManifold_orbitRelQuotientOfIsClosed hK, isSubmersion_orbitRelQuotientMkOfIsClosed hK⟩
 
 /-! ### The homogeneous space -/
 
@@ -216,6 +284,64 @@ theorem ker_mfderiv_quotientMk (hK : IsClosed (K : Set G)) (g : G) :
     (by rw [add_comm]; exact finrank_quotientModelSpace_add_finrank_lieSubalgebraOfSubgroup I K hK)
   rw [OneMemClass.coe_one, mul_one] at h
   exact h.symm
+
+/-- **Left-invariant vertical directions.** If the one-parameter subgroup `t ↦ exp (t ξ)` lies in
+`K`, the left-invariant vector field `ξ^L` is vertical for the projection `G → G ⧸ K`. -/
+theorem mfderiv_quotientMk_mulInvariantVectorField [T2Space G] (hK : IsClosed (K : Set G))
+    {ξ : GroupLieAlgebra I G} (hξ : ∀ t : ℝ, mulInvariantExp (I := I) (t • ξ) ∈ K) (g : G) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g
+      (mulInvariantVectorField ξ g) = 0 := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  -- The curve `t ↦ g exp (t ξ)` is the integral curve of `ξ^L` through `g`, and it stays in the
+  -- coset `g K`, so the projection is constant along it.
+  have hconst (t : ℝ) :
+      (QuotientGroup.mk (mulInvariantIntegralCurve ξ g t) : G ⧸ K) = QuotientGroup.mk g := by
+    rw [mulInvariantIntegralCurve_eq_const_mul]
+    beta_reduce
+    rw [← mulInvariantExp_smul]
+    exact QuotientGroup.mk_mul_of_mem g (hξ t)
+  have h := ((isMIntegralCurve_mulInvariantIntegralCurve ξ g).isMIntegralCurveAt 0)
+    |>.mfderiv_apply_eq_zero_of_eventuallyEq_const (J := 𝓘(ℝ, QuotientModelSpace I K))
+      ((contMDiff_quotientMk hK).mdifferentiableAt (by simp)) (Filter.Eventually.of_forall hconst)
+  rwa [mulInvariantIntegralCurve_zero] at h
+
+/-- **The vertical directions of a homogeneous space as a left-invariant distribution.** Let `S` be
+a subspace of `𝔤` whose one-parameter subgroups lie in `K` and whose dimension is that of the Lie
+algebra of `K`. Then the kernel of the differential at `g` of the projection `G → G ⧸ K` is the
+left translate `d(L_g)(S)`. -/
+theorem ker_mfderiv_quotientMk_eq_mulInvariantDistribution [T2Space G]
+    (hK : IsClosed (K : Set G))
+    {S : Submodule ℝ (GroupLieAlgebra I G)}
+    (hS : ∀ ξ ∈ S, ∀ t : ℝ, mulInvariantExp (I := I) (t • ξ) ∈ K)
+    (hdim : finrank ℝ S = finrank ℝ (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule)
+    (g : G) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    (mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g).ker =
+      mulInvariantDistribution S g := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
+  let _ := d.chartedSpace
+  refine (Submodule.eq_of_le_of_finrank_eq (fun v hv ↦ ?_) ?_).symm
+  · obtain ⟨ξ, hξ, rfl⟩ := mem_mulInvariantDistribution.1 hv
+    exact mfderiv_quotientMk_mulInvariantVectorField hK (hS ξ hξ) g
+  -- The kernel is the image of the injective differential of `k ↦ g k` on the Lie algebra of `K`.
+  rw [finrank_mulInvariantDistribution, hdim, ker_mfderiv_quotientMk hK g]
+  exact (LinearMap.finrank_range_of_inj (d.injective_mfderiv_mul_left_subtypeVal g 1)).symm
+
+/-- The projection `G → G ⧸ K` sends the generator `ξ_G(g)` of the action of `G` on itself by left
+multiplication to the generator `ξ_(G ⧸ K)([g])` of its action on the homogeneous space. -/
+theorem mfderiv_quotientMk_fundamentalVectorField (hK : IsClosed (K : Set G)) (g : G)
+    (ξ : GroupLieAlgebra I G) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g
+        (fundamentalVectorField I ξ g) =
+      fundamentalVectorField 𝓘(ℝ, QuotientModelSpace I K) ξ (g : G ⧸ K) := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  exact mfderiv_fundamentalVectorField_of_map_smul
+    ((contMDiff_quotientMk hK).mdifferentiableAt (by simp))
+    ((contMDiff_mul_right (I := I) (n := ∞)).mdifferentiableAt (by simp))
+    (fun h ↦ (MulAction.Quotient.smul_coe K h g).symm) ξ
 
 /-- **`G` acts smoothly on its homogeneous space** `G ⧸ K` by left multiplication. The action
 lifts along the submersion `(g, h) ↦ (g, [h])` to the multiplication of `G`, followed by the

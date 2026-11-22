@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Martingale.Basic
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
+public import TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry
 public import TauCeti.Probability.BrownianMotion.Integral.L2
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
@@ -18,31 +19,27 @@ import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Probability.Martingale.ContinuousLimit
 
 /-!
-# The continuous Brownian Itô integral on the expected square-energy domain
+# Further `L²` properties of the continuous Brownian Itô integral
 
-For `H` in `TauCeti.BrownianIntegrable ℱ P H`, this module constructs a predictable continuous
-martingale `I` with `TauCeti.Probability.IsItoIntegral ℱ P W H I` whenever `W` is a filtered
-pre-Brownian motion with a.s. continuous paths, together with a single sequence of bounded
-elementary gains converging in `L²(P)` and uniformly in probability on every `[0, T]` and a
-subsequence converging a.s. uniformly on every `[0, T]`. It also shows that every continuous Itô
-integral of `H` against any filtered pre-Brownian motion agrees with `hW.l2Integral T`, has zero
-expectation, satisfies the fixed-horizon and `(s, t]`-increment Itô isometries, varies
-continuously in `L²(P)`, and is a martingale when strongly adapted.
+Extending `TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry`, this module constructs a
+predictable continuous martingale `I` with `TauCeti.Probability.IsItoIntegral ℱ P W H I` together
+with a single sequence of bounded elementary gains converging in `L²(P)` and uniformly in
+probability on every `[0, T]` and a subsequence converging a.s. uniformly on every `[0, T]`. It
+also shows that every continuous Itô integral of `H` against any filtered pre-Brownian motion
+agrees with `hW.l2Integral T`, has zero expectation, satisfies the polarized and `(s, t]`-increment
+Itô isometries, and varies continuously in `L²(P)`.
 
 ## Main results
 
-* `TauCeti.BrownianIntegrable.exists_isItoIntegral_approx`,
-  `TauCeti.BrownianIntegrable.exists_isItoIntegral`: predictable continuous martingale Itô
+* `TauCeti.BrownianIntegrable.exists_isItoIntegral_approx`: predictable continuous martingale Itô
   integral for `BrownianIntegrable` integrands, with uniform-in-probability and a.s.-uniform
   elementary approximation.
-* `TauCeti.Probability.IsItoIntegral.ae_eq_l2Integral`, `memLp`, `toLp_eq_l2Integral`:
+* `TauCeti.Probability.IsItoIntegral.ae_eq_l2Integral`, `toLp_eq_l2Integral`:
   identification of `I T` with `hW.l2Integral T` in `L²(P)`.
-* `TauCeti.Probability.IsItoIntegral.eLpNorm_eq`, `eLpNorm_sub_eq`, `eLpNorm_simpleGains_sub_eq`,
-  `integral_eq_zero`, `integral_mul`, `integral_sq`, `integral_sub_sq`: zero expectation,
-  fixed-horizon and increment Itô isometries, and elementary-strategy `L²` comparison.
+* `TauCeti.Probability.IsItoIntegral.eLpNorm_sub_eq`, `eLpNorm_simpleGains_sub_eq`,
+  `integral_eq_zero`, `integral_mul`, `integral_sub_sq`: zero expectation, polarized and
+  increment Itô isometries, and elementary-strategy `L²` comparison.
 * `TauCeti.Probability.IsItoIntegral.continuous_toLp`: `L²(P)` continuity in time.
-* `TauCeti.Probability.IsItoIntegral.martingale`: strongly adapted `L²` Itô integrals are
-  martingales.
 
 ## References
 
@@ -142,18 +139,6 @@ theorem BrownianIntegrable.exists_isItoIntegral_approx
   exact ⟨I, n, τ, a, C, hIto, hIp, hIm, hτ₀, hτ, ha, hb, herr, fun T ↦ (hIlim T).2, hIunif,
     φ, hφ, hIpath.mono fun _ h ↦ h.2⟩
 
-/-- **Existence of the continuous `L²` Brownian Itô integral**: every `BrownianIntegrable`
-integrand against a filtered pre-Brownian motion `W` with a.s. continuous paths admits a
-predictable continuous martingale Itô integral on the raw filtration. -/
-theorem BrownianIntegrable.exists_isItoIntegral
-    (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
-    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hH : BrownianIntegrable ℱ P H) :
-    ∃ I : ℝ≥0 → Ω → ℝ, Probability.IsItoIntegral ℱ P W H I ∧ IsStronglyPredictable ℱ I ∧
-      Martingale I ℱ P := by
-  obtain ⟨I, _, _, _, _, hI, hIp, hIm, -⟩ := hH.exists_isItoIntegral_approx hW hcont
-  exact ⟨I, hI, hIp, hIm⟩
-
 namespace Probability.IsItoIntegral
 
 /-- Every continuous Itô integral of a `BrownianIntegrable` integrand agrees `P`-a.s. at horizon `T`
@@ -168,20 +153,12 @@ theorem ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
       (hW.l2Integral T ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H)) : Ω → ℝ)) 2 P)
       atTop (𝓝 0) := (tendsto_iff_edist_tendsto_0.mp (hlim T)).congr fun m ↦ by
     rw [Lp.edist_def]; exact eLpNorm_congr_ae (((hmem m T).coeFn_toLp).sub .rfl)
-  exact hI.ae_eq_of_approx hW (fun m ↦ (hτ m).monotoneOn) ha
+  exact hI.ae_eq_of_tendstoInMeasure hW (fun m ↦ (hτ m).monotoneOn) ha
     (fun _ hε ↦ MeasureTheory.tendsto_measure_lintegral_enorm_sq_of_tendsto_eLpNorm
       (.of_forall fun m ↦ (((Finance.isStronglyPredictable_simpleHolding (ha m)).sub
         hH.isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
       (herr T) hε)
     (tendstoInMeasure_of_tendsto_eLpNorm (by norm_num) hl2)
-
-/-- Every continuous Itô integral of a `BrownianIntegrable` integrand belongs to `L²(P)` at each
-finite horizon, without assuming path continuity of `W`. -/
-theorem memLp (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) (T : ℝ≥0) :
-    MemLp (I T) 2 P :=
-  (Lp.memLp (hW.l2Integral T ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H)))).ae_eq
-    (hI.ae_eq_l2Integral hW hH T).symm
 
 /-- At every horizon `T`, the `L²(P)` class of `I T` equals `hW.l2Integral T` applied to `H`,
 without assuming path continuity of `W`. -/
@@ -190,20 +167,6 @@ theorem toLp_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI.memLp hW hH T).toLp (I T) =
       hW.l2Integral T ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H)) :=
   Lp.ext ((hI.memLp hW hH T).coeFn_toLp.trans (hI.ae_eq_l2Integral hW hH T))
-
-/-- **`L²`-seminorm Itô isometry**: `eLpNorm (I T) 2 P` equals the `L²((timeMeasure T).prod P)`
-seminorm of `H` at every horizon `T`, without assuming path continuity of `W`. -/
-theorem eLpNorm_eq (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) (T : ℝ≥0) :
-    eLpNorm (I T) 2 P =
-      eLpNorm (Function.uncurry H) 2 ((timeMeasure T).prod P) := by
-  have hnorm : ‖(hI.memLp hW hH T).toLp (I T)‖ =
-      ‖(hH.memLp_predictableMeasure T).toLp (Function.uncurry H)‖ := by
-    rw [hI.toLp_eq_l2Integral hW hH T, (hW.l2Integral T).norm_map]
-  simp only [Lp.norm_toLp, ℱ.predictableMeasure_def,
-    eLpNorm_trim ℱ.predictable_le_prod hH.isStronglyPredictable] at hnorm
-  exact (ENNReal.toReal_eq_toReal_iff' (hI.memLp hW hH T).eLpNorm_lt_top.ne
-    (hH.memLp_timeMeasure T).eLpNorm_lt_top.ne).mp hnorm
 
 private theorem brownianIntegrable_indicator_Ioi (hH : BrownianIntegrable ℱ P H) (s : ℝ≥0) :
     BrownianIntegrable ℱ P (fun u ω ↦ (Ioi s).indicator (H · ω) u) := by
@@ -320,13 +283,6 @@ theorem integral_mul (hW : IsFilteredPreBrownianReal ℱ W P)
       (hK.memLp_predictableMeasure T).coeFn_toLp).mono fun _ ⟨h1, h2⟩ ↦ congrArg₂ (· * ·) h1 h2)]
   exact ℱ.integral_predictableMeasure P (hH.isStronglyPredictable.mul hK.isStronglyPredictable) T
 
-/-- **Bochner-integral Itô isometry**: `E[(I T)²] = E[∫_{(0, T]} H²]` for `BrownianIntegrable`
-`H`, without assuming path continuity of `W`. -/
-theorem integral_sq (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) (T : ℝ≥0) :
-    ∫ ω, I T ω ^ 2 ∂P = ∫ p, H p.1 p.2 ^ 2 ∂(timeMeasure T).prod P := by
-  simpa only [sq] using hI.integral_mul hW hH hH hI T
-
 /-- **`(s, t]`-increment Bochner-integral Itô isometry**: for `s ≤ t`,
 `E[(I t - I s)²] = E[∫_{(s, t]} H²]`, without assuming path continuity of `W`. -/
 theorem integral_sub_sq (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -342,24 +298,6 @@ theorem integral_sub_sq (hW : IsFilteredPreBrownianReal ℱ W P)
   filter_upwards [(Measure.quasiMeasurePreserving_fst (μ := timeMeasure t)
     (ν := P)).ae (ae_mem_Ioc_timeMeasure t)] with p hp
   by_cases hps : s < p.1 <;> simp [hps, hp.2]
-
-/-- Every strongly adapted continuous Itô integral of a `BrownianIntegrable` integrand is a true
-martingale on the raw filtration, without assuming path continuity of `W`. -/
-theorem martingale (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I)
-    (hI_adap : StronglyAdapted ℱ I) :
-    Martingale I ℱ P := by
-  let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  have : Fact (1 ≤ (2 : ℝ≥0∞)) := ⟨by norm_num⟩
-  obtain ⟨_, _, _, -, -, -, -, -, hMm, hmem, -, hlim⟩ :=
-    exists_simpleHolding_tendsto_l2Integral hW hH
-  obtain ⟨Z, hZm, hZlim⟩ := exists_martingale_of_cauchySeq_Lp hMm hmem fun T ↦ (hlim T).cauchySeq
-  refine hZm.congr hI_adap fun T ↦ ?_
-  have heq : (hZlim T).1.toLp (Z T) = (hI.memLp hW hH T).toLp (I T) :=
-    (tendsto_nhds_unique (tendsto_iff_edist_tendsto_0.mpr <| by
-      simpa only [Lp.edist_toLp_toLp] using (hZlim T).2) (hlim T)).trans
-      (hI.toLp_eq_l2Integral hW hH T).symm
-  exact ((heq ▸ (hZlim T).1.coeFn_toLp).symm).trans (hI.memLp hW hH T).coeFn_toLp
 
 end Probability.IsItoIntegral
 

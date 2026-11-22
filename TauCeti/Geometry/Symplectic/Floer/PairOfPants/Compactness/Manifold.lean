@@ -46,6 +46,12 @@ subsequence converges off a finite set `Z ⊆ Ω` of bubbling points with
 with locally bounded derivatives, the maps converge pointwise in `M`, and every disc about a point
 of `Z` eventually carries energy at least `δ`.
 
+Its first step, also in the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`, is
+`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPants_of_setIntegral_le`: the
+same conclusion with `#Z * δ ≤ A` for solutions on `Ω` alone whose energy over `Ω` is at most `A`,
+for structures tamed only over `D × C`. It serves pieces of other domains, such as the two pairs of
+pants of a plumbed four-punctured sphere, where the energy bound comes from elsewhere.
+
 Here the image of `Ω` is assumed to stay in one chart. Localizing the images of small discs into
 charts on a closed manifold, the bubbles at the points of `Z` and breaking along the three ends are
 not treated here.
@@ -83,18 +89,13 @@ theorem contDiffOn_pairOfPantsPerturbation_comp_symm {n : ℕ∞} {m : WithTop �
     ContDiffOn ℝ n (fun p : (ℝ × ℝ) × V ↦
         pairOfPantsPerturbation H (equivRealProdCLM.symm p.1) (φ.symm p.2) v)
       (thricePuncturedSphereReal ×ˢ φ.target) := by
-  rintro ⟨z, y⟩ ⟨hz, hy⟩
-  refine ContDiffAt.contDiffWithinAt ?_
-  -- The point `z` of `S` and the chart inverse `φ⁻¹` are `C^n` into the product `ℂ × M`.
-  have hsymm : ContMDiffAt 𝓘(ℝ, V) I n φ.symm y :=
-    (φ.symm.contMDiffOn.of_le hnm).contMDiffAt (φ.open_target.mem_nhds hy)
-  have hpair : ContMDiffAt 𝓘(ℝ, (ℝ × ℝ) × V) (𝓘(ℝ, ℂ).prod I) n
-      (fun p : (ℝ × ℝ) × V ↦ (equivRealProdCLM.symm p.1, φ.symm p.2)) (z, y) :=
-    ((equivRealProdCLM.symm.contDiff.comp contDiff_fst).contMDiff.contMDiffAt).prodMk
-      (hsymm.comp (z, y) contDiff_snd.contMDiff.contMDiffAt)
-  have hK := (contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩
-    (φ.symm y)).comp (z, y) hpair
-  exact (contMDiffAt_iff_contDiffAt.1 hK).clm_apply contDiffAt_const
+  refine (φ.contDiffOn_comp_symm_of_contMDiffOn
+    (K := fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x)
+    isOpen_thricePuncturedSphereReal ?_ hnm).clm_apply contDiffOn_const
+  rintro ⟨z, x⟩ ⟨hz, -⟩
+  exact ((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩ x).comp (z, x)
+    ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
+      contMDiff_snd).contMDiffAt).contMDiffWithinAt
 
 end Floer
 
@@ -106,6 +107,68 @@ variable [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [FiniteDimensional 
   [IsManifold I ⊤ M] {ω : SmoothTwoForm I M} {ω₀ : SymplecticForm V}
   {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
   {J' : ℝ × ℝ → V → AlmostComplexStructure V}
+
+/-- **Floer pairs of pants in a symplectic chart converge off finitely many bubbling points, for an
+energy bound over the part of the domain considered.** This is the compactness theorem for Floer
+solutions in a symplectic chart (`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset`)
+for the pair-of-pants perturbation `K` of period-one `C³` Hamiltonians `H_q` on `M`. Let `D ⊆ S`
+and `C ⊆ φ.source` be compact, let `φ` pull the symplectic form `ω₀` back to `ω` at the points of
+`C`, let the structures `J(z, x)` be tamed by `ω` over `D × C`, and let `J'` be the family `J` read
+in the chart, `C²` on an open set containing `D × φ(C)`. There is a threshold `δ > 0` such that for
+every open `Ω ⊆ D` and every sequence of `C³` solutions `uₖ` of `(du - X_K)^{0,1} = 0` on `Ω` with
+`uₖ(Ω) ⊆ C`, integrable energy density and energy over `Ω` at most `A`, a subsequence converges off
+a finite set `Z ⊆ Ω` with `#Z * δ ≤ A`, in the sense of the chart theorem. -/
+theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPants_of_setIntegral_le
+    (hω : ω.IsNondegenerate) (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞))
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
+    {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {C : Set M}
+    (hφ : ∀ x ∈ C, ∀ v w : TangentSpace I x,
+      ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
+    (hJJ' : ∀ z ∈ D, ∀ x ∈ C,
+      IsComplexLinearMap (J z x) (J' z (φ x)) (mvfderiv I φ x).toLinearMap) (hW : IsOpen W)
+    (hJ' : ContDiffOn ℝ 2
+      (fun p : (ℝ × ℝ) × V ↦ (J' p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hD : IsCompact D) (hDS : D ⊆ thricePuncturedSphereReal) (hC : IsCompact C)
+    (hCφ : C ⊆ φ.source) (hDCW : D ×ˢ (φ '' C) ⊆ W)
+    (hJt : ∀ z ∈ D, ∀ x ∈ C, (hω.symplecticFormAt x).Tames (J z x)) :
+    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃A : ℝ⦄, IsOpen Ω → Ω ⊆ D →
+      (∀ k, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 (u k) Ω) →
+      (∀ k, ∀ z ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u k z))
+        (ω.perturbedMFDeriv
+          (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x Complex.I)
+          (u k) z).toLinearMap) →
+      (∀ k, MapsTo (u k) Ω C) →
+      (∀ k, IntegrableOn (ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x Complex.I)
+        (u k)) Ω) →
+      (∀ k, ∫ z in Ω, ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x Complex.I)
+        (u k) z ≤ A) →
+      ∃ (ψ : ℕ → ℕ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → M), StrictMono ψ ∧
+        ↑Z ⊆ Ω ∧ Z.card * δ ≤ A ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity
+          (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x Complex.I) (u (ψ n)) y) ∧
+        (∀ K, IsCompact K → K ⊆ Ω \ ↑Z →
+          ∃ L, ∀ n, ∀ y ∈ K, ‖fderiv ℝ (φ ∘ u (ψ n)) y‖ ≤ L) ∧
+        ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) C ∧
+        TendstoLocallyUniformlyOn (fun n ↦ φ ∘ u (ψ n)) (φ ∘ v) atTop (Ω \ ↑Z) ∧
+        ∀ y ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (ψ n) y) atTop (𝓝 (v y)) := by
+  -- Read in the chart, the perturbation is `C³` on `S × φ(U)`, which contains `D × φ(C)`.
+  have hW' : IsOpen (W ∩ thricePuncturedSphereReal ×ˢ φ.target) :=
+    hW.inter (isOpen_thricePuncturedSphereReal.prod φ.open_target)
+  have hDCW' : D ×ˢ (φ '' C) ⊆ W ∩ thricePuncturedSphereReal ×ˢ φ.target := by
+    refine subset_inter hDCW (prod_mono hDS ?_)
+    rintro _ ⟨x, hx, rfl⟩
+    exact φ.toPartialEquiv.map_source (hCφ hx)
+  have hK (v : ℂ) := (contDiffOn_pairOfPantsPerturbation_comp_symm hH hHs φ
+    (WithTop.coe_le_coe.2 le_top) v).mono (inter_subset_right (s := W))
+  exact hω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset φ hφ hJJ' hW' (hK 1)
+    (hK Complex.I) (hJ'.mono inter_subset_left) hD hC hCφ hDCW' hJt
 
 /-- **Floer pairs of pants in a symplectic chart of a manifold converge off finitely many bubbling
 points.** Let `K` be the pair-of-pants perturbation of period-one `C³` Hamiltonians `H_q` on `M`
@@ -175,19 +238,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPant
   set Ks : ℝ × ℝ → M → ℝ := fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1
   set Kt : ℝ × ℝ → M → ℝ := fun z x ↦
     pairOfPantsPerturbation H (equivRealProdCLM.symm z) x Complex.I
-  -- Read in the chart, the perturbation is `C³` on `S × φ(U)`, which contains `D × φ(C)`.
-  have hW' : IsOpen (W ∩ thricePuncturedSphereReal ×ˢ φ.target) :=
-    hW.inter (isOpen_thricePuncturedSphereReal.prod φ.open_target)
-  have hDCW' : D ×ˢ (φ '' C) ⊆ W ∩ thricePuncturedSphereReal ×ˢ φ.target := by
-    refine subset_inter hDCW (prod_mono hDS ?_)
-    rintro _ ⟨x, hx, rfl⟩
-    exact φ.toPartialEquiv.map_source (hCφ hx)
-  have hK (v : ℂ) := (contDiffOn_pairOfPantsPerturbation_comp_symm hH hHs φ
-    (WithTop.coe_le_coe.2 le_top) v).mono (inter_subset_right (s := W))
-  obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset φ
-    (Ks := Ks) (Kt := Kt) hφ hJJ' hW' (hK 1) (hK Complex.I) (hJ'.mono inter_subset_left) hD hC
-    hCφ hDCW'
-    fun z hz x _ ↦ hJt z (hDS hz) x
+  obtain ⟨δ, hδ, hconv⟩ :=
+    hω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPants_of_setIntegral_le
+      φ hH hHs hφ hJJ' hW hJ' hD hDS hC hCφ hDCW fun z hz x _ ↦ hJt z (hDS hz) x
   refine ⟨δ, hδ, fun Ω u x A hΩ hΩD hu hfl hx hE hA htop huC ↦ ?_⟩
   have hΩS : Ω ⊆ thricePuncturedSphereReal := hΩD.trans hDS
   -- The energy over `Ω` is at most the energy over `S`, hence at most `A + B₀ + B₁ + B_∞`.
