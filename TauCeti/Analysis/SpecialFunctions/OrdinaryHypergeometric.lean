@@ -276,8 +276,7 @@ theorem ordinaryHypergeometric_gaussEquation (a b c : 𝕂) (hc : ∀ k : ℕ, (
   have h2 := hf.hasSum_mul_deriv_ofScalars hx
   have h3 := hf'.hasSum_mul_deriv_ofScalars hx
   have h4 : HasSum (fun n : ℕ ↦ ((n : 𝕂) - 1) * n * C n * x ^ n) (x * (x * deriv (deriv f) x)) := by
-    refine (hasSum_nat_add_iff' 1).mp ?_
-    simpa [pow_succ, mul_comm, mul_left_comm, mul_assoc] using h3.mul_left x
+    simpa [sq, mul_assoc, mul_comm, mul_left_comm] using hf.hasSum_sq_mul_deriv_deriv_ofScalars hx
   have hsum := (h3.add (h1.mul_left c)).sub ((h4.add (h2.mul_left (a + b + 1))).add
     (h0.mul_left (a * b)))
   -- by the coefficient recurrence, every term of the combined series vanishes

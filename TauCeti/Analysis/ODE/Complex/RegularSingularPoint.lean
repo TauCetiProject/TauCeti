@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Analytic.OfScalars
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Normed
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Data.Nat.Choose.Sum
 
 /-!
@@ -69,33 +70,6 @@ namespace TauCeti
 private theorem indicial_add_eq_mul {ρ f₀ g₀ : ℂ} (hρ : ρ * (ρ - 1) + f₀ * ρ + g₀ = 0) (s : ℂ) :
     (ρ + s) * (ρ + s - 1) + f₀ * (ρ + s) + g₀ = s * (s + (2 * ρ - 1 + f₀)) := by
   linear_combination hρ
-
-/-- If `s + β` never vanishes for `s ≥ 1`, then `|s + β|` is bounded below by a positive multiple
-of `s` for all `s ≥ 1`. -/
-private theorem exists_pos_mul_le_norm_natCast_add {β : ℂ}
-    (hβ : ∀ s : ℕ, 1 ≤ s → (s : ℂ) + β ≠ 0) :
-    ∃ c > 0, ∀ s : ℕ, 1 ≤ s → c * s ≤ ‖(s : ℂ) + β‖ := by
-  -- beyond `N` the bound `c = 1/2` holds; below it, take the least ratio `|s + β| / s`
-  set N := ⌈2 * ‖β‖⌉₊ + 1
-  obtain ⟨s₀, hs₀, hmin⟩ := (Icc 1 N).exists_min_image (fun s : ℕ ↦ ‖(s : ℂ) + β‖ / s)
-    ⟨1, mem_Icc.2 ⟨le_rfl, by omega⟩⟩
-  have hs₀1 : (0 : ℝ) < s₀ := by exact_mod_cast (mem_Icc.1 hs₀).1
-  have hpos : 0 < ‖(s₀ : ℂ) + β‖ / s₀ :=
-    div_pos (norm_pos_iff.2 (hβ s₀ (mem_Icc.1 hs₀).1)) hs₀1
-  refine ⟨min (1 / 2) (‖(s₀ : ℂ) + β‖ / s₀), lt_min (by norm_num) hpos, fun s hs ↦ ?_⟩
-  have hs' : (0 : ℝ) < s := by exact_mod_cast hs
-  by_cases hsN : s ≤ N
-  · calc min (1 / 2) (‖(s₀ : ℂ) + β‖ / s₀) * s ≤ (‖(s : ℂ) + β‖ / s) * s := by
-          gcongr
-          exact (min_le_right _ _).trans (hmin s (mem_Icc.2 ⟨hs, hsN⟩))
-      _ = ‖(s : ℂ) + β‖ := div_mul_cancel₀ _ hs'.ne'
-  · have hceil : 2 * ‖β‖ ≤ s := (Nat.le_ceil _).trans (by exact_mod_cast (by omega : _ ≤ s))
-    have htri : (s : ℝ) ≤ ‖(s : ℂ) + β‖ + ‖β‖ := by
-      simpa using norm_sub_le ((s : ℂ) + β) β
-    calc min (1 / 2) (‖(s₀ : ℂ) + β‖ / s₀) * s ≤ 1 / 2 * s := by
-          gcongr
-          exact min_le_left _ _
-      _ ≤ ‖(s : ℂ) + β‖ := by linarith
 
 /-- A term of the recursion at index `n + 1`, bounded through the bound `|aₖ| tᵏ ≤ Bₖ` on the
 earlier coefficients, when `fₛ tˢ` and `gₛ tˢ` are bounded by `M`. -/
@@ -160,7 +134,7 @@ private theorem norm_mul_pow_le_mul_choose {ρ β : ℂ} {fs gs a : ℕ → ℂ}
             exact norm_sum_le _ _
         _ ≤ ∑ k ∈ range (n + 1), (‖ρ‖ + 1) * (n + 1) * M * (‖a 0‖ * ((k + m).choose m : ℝ)) :=
             sum_le_sum fun k hk ↦ norm_recursion_term_mul_pow_le ht hM hfs hgs
-              (mem_range_succ_iff.1 hk) (ih k (by simp at hk; omega))
+              (mem_range_succ_iff.1 hk) (ih k (mem_range.1 hk))
         _ = (n + 1) * ‖a 0‖ * ((‖ρ‖ + 1) * M * ∑ k ∈ range (n + 1), ((k + m).choose m : ℝ)) := by
             rw [← mul_sum, ← mul_sum]
             ring
@@ -200,7 +174,7 @@ theorem le_radius_ofScalars_of_regularSingular {ρ : ℂ} {fs gs a : ℕ → ℂ
   set β : ℂ := 2 * ρ - 1 + fs 0
   have hQ (s : ℕ) : (ρ + s) * (ρ + s - 1) + fs 0 * (ρ + s) + gs 0 = s * (s + β) :=
     indicial_add_eq_mul hρ s
-  obtain ⟨c, hc, hcs⟩ := exists_pos_mul_le_norm_natCast_add (β := β) fun s hs ↦
+  obtain ⟨c, hc, hcs⟩ := Complex.exists_pos_mul_le_norm_natCast_add (β := β) fun s hs ↦
     (mul_ne_zero_iff.mp (hQ s ▸ hres s hs)).2
   obtain ⟨m, hm⟩ := exists_nat_ge ((‖ρ‖ + 1) * max Mf Mg / c)
   have hm' : (‖ρ‖ + 1) * max Mf Mg ≤ c * m := by
@@ -269,21 +243,16 @@ private theorem euler_form_eq_zero {ρ ζ F G : ℂ} {fs gs a : ℕ → ℂ} {S 
   have h1 := hS.hasSum_mul_deriv_ofScalars hζ
   have h2 := hS.hasSum_sq_mul_deriv_deriv_ofScalars hζ
   -- absolute convergence of the factors of the two Cauchy products
-  have hA : Summable fun n ↦ ‖a n * ζ ^ n‖ := by
-    simpa [ofScalars_apply_eq, mul_comm] using
-      (ofScalars ℂ a).summable_norm_apply (mem_eball_zero_iff.mpr (hζ.trans_le hS.r_le))
+  have hA := summable_norm_mul_pow_of_lt_radius a (hζ.trans_le hS.r_le)
   have hP : Summable fun n : ℕ ↦ ‖(ρ + n) * a n * ζ ^ n‖ := by
     refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
-      ((hA.mul_left ‖ρ‖).add (hS.summable_norm_natCast_mul_ofScalars hζ))
+      ((hA.mul_left ‖ρ‖).add (summable_norm_natCast_mul_ofScalars a
+        (hζ.trans_le hS.r_le)))
     rw [add_mul, add_mul]
     refine (norm_add_le _ _).trans_eq ?_
     rw [mul_assoc ρ, norm_mul]
-  have hfN : Summable fun n ↦ ‖fs n * ζ ^ n‖ := by
-    simpa [ofScalars_apply_eq, mul_comm] using
-      (ofScalars ℂ fs).summable_norm_apply (mem_eball_zero_iff.mpr hζf)
-  have hgN : Summable fun n ↦ ‖gs n * ζ ^ n‖ := by
-    simpa [ofScalars_apply_eq, mul_comm] using
-      (ofScalars ℂ gs).summable_norm_apply (mem_eball_zero_iff.mpr hζg)
+  have hfN := summable_norm_mul_pow_of_lt_radius fs hζf
+  have hgN := summable_norm_mul_pow_of_lt_radius gs hζg
   have hPsum : HasSum (fun n : ℕ ↦ (ρ + n) * a n * ζ ^ n) (ρ * S ζ + ζ * deriv S ζ) := by
     convert (h0.mul_left ρ).add h1 using 1
     ext n
@@ -376,9 +345,8 @@ theorem regularSingular_solution {z₀ ρ : ℂ} {r : ℝ} {f g w : ℂ → ℂ}
   have hgr := le_radius_ofScalars_of_summable gs fun ζ hζ0 hζ ↦ by
     simpa using (hg (ζ + z₀) (by simpa using hζ0) (by simpa using hlt' hζ)).summable
   have har := le_radius_ofScalars_of_regularSingular hfr hgr hρ hres ha
-  have hsum {ζ : ℂ} (hζ : ‖ζ‖ₑ < (ofScalars ℂ a).radius) : Summable fun s ↦ a s * ζ ^ s := by
-    simpa [ofScalars_apply_eq, mul_comm] using
-      ((ofScalars ℂ a).summable_norm_apply (mem_eball_zero_iff.mpr hζ)).of_norm
+  have hsum {ζ : ℂ} (hζ : ‖ζ‖ₑ < (ofScalars ℂ a).radius) : Summable fun s ↦ a s * ζ ^ s :=
+    (summable_norm_mul_pow_of_lt_radius a hζ).of_norm
   refine ⟨fun z hz ↦ hsum ((hlt hz).trans_le har), ?_⟩
   -- the sum `S` of the series, and `w` as a translate of `W(ζ) = ζ ^ ρ S(ζ)`
   set S : ℂ → ℂ := fun ζ ↦ ∑' s, a s * ζ ^ s
@@ -425,11 +393,11 @@ example {z : ℂ} (hz : z ∈ slitPlane) :
   · have h1 : (s : ℂ) ≠ 0 := by exact_mod_cast (by omega : s ≠ 0)
     have h2 : (s : ℂ) + 3 ≠ 0 := by exact_mod_cast (by omega : s + 3 ≠ 0)
     convert mul_ne_zero h1 h2 using 1
-    simp
+    simp only [Pi.zero_apply, ↓reduceIte]
     ring
   · have hs0 : s ≠ 0 := by omega
     simp only [hs0, ↓reduceIte, mul_zero]
     rw [eq_comm, neg_eq_zero]
-    exact sum_eq_zero fun k hk ↦ by simp [show s - k ≠ 0 by simp at hk; omega]
+    exact sum_eq_zero fun k hk ↦ by simp [Nat.sub_ne_zero_of_lt (mem_range.1 hk)]
 
 end TauCeti

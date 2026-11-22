@@ -19,10 +19,11 @@ block. It also evaluates the change-of-origin series of a scalar series on const
 uses this to express the iterated derivatives of a scalar power series over a complete nontrivially
 normed field, at any point of its ball of convergence, as the termwise differentiated series; at
 zero they recover the coefficients. Termwise differentiation of a scalar series represents the
-derivative on the same ball, and gives the Euler operator `y * f' y` as `∑ n * c n * y ^ n`, an
-absolutely convergent series, and `y ^ 2 * f'' y` as `∑ n * (n - 1) * c n * y ^ n`. It
-also computes the scalar series of `z ↦ f (z ^ m)` on a ball of radius at most `1` from that of
-`f`, in any normed algebra with `‖1‖ = 1`. Over a densely normed field, a scalar series that
+derivative on the same ball, and gives the Euler operator `y * f' y` as `∑ n * c n * y ^ n` and
+`y ^ 2 * f'' y` as `∑ n * (n - 1) * c n * y ^ n`. Inside the disc of convergence, both
+`∑ c n * y ^ n` and `∑ n * c n * y ^ n` converge absolutely. It also computes the scalar series
+of `z ↦ f (z ^ m)` on a ball of radius at most `1` from that of `f`, in any normed algebra with
+`‖1‖ = 1`. Over a densely normed field, a scalar series that
 converges at every nonzero point of a disk about the origin has radius at least that of the disk;
 in particular a scalar series whose sum has no zero in such a disk converges on it, because the
 sum is `0` wherever the series diverges.
@@ -210,20 +211,31 @@ theorem _root_.HasFPowerSeriesOnBall.hasSum_sq_mul_deriv_deriv_ofScalars {𝕂 :
     ring
   · simp
 
-/-- If `f` is the sum of the scalar power series `∑ c n * z ^ n` on the ball of radius `r`
-about `0`, then the series `∑ n * c n * y ^ n` of the Euler operator converges absolutely at every
-`y` in that ball. -/
-theorem _root_.HasFPowerSeriesOnBall.summable_norm_natCast_mul_ofScalars {𝕂 : Type*}
-    [NontriviallyNormedField 𝕂] [CompleteSpace 𝕂] {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞}
-    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r) {y : 𝕂} (hy : ‖y‖ₑ < r) :
+/-- Inside the disc of convergence of a scalar series `∑ c n * z ^ n`, the series converges
+absolutely. -/
+theorem summable_norm_mul_pow_of_lt_radius {𝕂 : Type*} [NontriviallyNormedField 𝕂] (c : ℕ → 𝕂)
+    {y : 𝕂} (hy : ‖y‖ₑ < (ofScalars 𝕂 c).radius) : Summable fun n : ℕ ↦ ‖c n * y ^ n‖ := by
+  refine ((ofScalars 𝕂 c).summable_norm_mul_pow hy).congr fun n ↦ ?_
+  rw [ofScalars_norm, coe_nnNorm, norm_mul, norm_pow]
+
+/-- Inside the disc of convergence of a scalar series `∑ c n * z ^ n`, the series
+`∑ n * c n * y ^ n` of the Euler operator converges absolutely. -/
+theorem summable_norm_natCast_mul_ofScalars {𝕂 : Type*} [NontriviallyNormedField 𝕂] (c : ℕ → 𝕂)
+    {y : 𝕂} (hy : ‖y‖ₑ < (ofScalars 𝕂 c).radius) :
     Summable fun n : ℕ ↦ ‖(n : 𝕂) * c n * y ^ n‖ := by
-  have h := ((ofScalars 𝕂 fun n : ℕ ↦ (n + 1) * c (n + 1)).summable_norm_apply
-    (mem_eball_zero_iff.mpr (hy.trans_le hf.deriv_ofScalars.r_le))).mul_left ‖y‖
-  -- the term of index `0` vanishes, and the others are `‖y‖` times those of the derivative series
-  refine (summable_nat_add_iff 1).mp (h.congr fun n ↦ ?_)
-  simp only [ofScalars_apply_eq, smul_eq_mul, norm_mul, norm_pow]
-  push_cast
-  ring
+  obtain ⟨a, ha, C, -, hC⟩ := (ofScalars 𝕂 c).norm_mul_pow_le_mul_pow_of_lt_radius hy
+  -- compare with `C ∑ n * aⁿ` for the geometric ratio `a < 1` given by the radius
+  refine .of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
+    ((summable_pow_mul_geometric_of_norm_lt_one 1 (r := a)
+      (by rw [Real.norm_of_nonneg ha.1.le]; exact ha.2)).mul_left C)
+  have hn := hC n
+  rw [ofScalars_norm, coe_nnNorm] at hn
+  calc ‖(n : 𝕂) * c n * y ^ n‖ = ‖(n : 𝕂)‖ * (‖c n‖ * ‖y‖ ^ n) := by
+        rw [norm_mul, norm_mul, norm_pow, mul_assoc]
+    _ ≤ n * (C * a ^ n) := by
+        gcongr
+        exact (Nat.norm_cast_le n).trans_eq (by rw [norm_one, mul_one])
+    _ = C * (n ^ 1 * a ^ n) := by ring
 
 /-- **Substituting `z ^ m` into a scalar power series.** Let `A` be a normed algebra over `𝕂`
 with `‖1‖ = 1`, for instance `𝕂` itself. If `f` is the sum of the scalar power series
