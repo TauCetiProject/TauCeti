@@ -26,9 +26,10 @@ A broken trajectory from `x` to `y`, parametrized by the values of `f`, is a Moo
 `θ : M → Y` which sends every critical point to one point `y₀`. In the construction of Barraud and
 Cornea, `Y = M` and `θ` is the composite of the collapse of an embedded tree through the critical
 points and a homotopy inverse of that collapse, a map homotopic to the identity which sends all
-the critical points to one point. Such a map exists on every path-connected manifold, in every
-dimension (`Set.Finite.exists_homotopic_id_forall_apply_eq`, applied to the finite set of critical
-points, `TauCeti.IsMorse.finite_criticalPoints`). This gives the evaluation of the compactified
+the critical points to one point. Such a map, even homotopic to the identity relative to `y₀`,
+exists on every preconnected manifold, in every dimension
+(`Set.Finite.exists_homotopicRel_id_apply_eq`, applied to the finite set of critical points,
+`TauCeti.IsMorse.finite_criticalPoints`). This gives the evaluation of the compactified
 spaces of trajectories into the Moore loops at `y₀`
 (`TauCeti.IsAdaptedPseudoGradient.morseLoopEvaluation`), multiplicative along the concatenation of
 broken trajectories (`TauCeti.IsAdaptedPseudoGradient.morseLoopEvaluation_morseRecordsConcat`).
@@ -122,8 +123,9 @@ theorem morseLoopEvaluation_morseRecordsConcat
     (v : hX.morseBrokenTrajectoryRecords y z ((c ⁻¹' Ioo (f z) (f y)).domRestrict c)) :
     hX.morseLoopEvaluation hf hdense hθ x z (hX.morseRecordsConcat (fun i ↦ hc i y) (u, v)) =
       hX.morseLoopEvaluation hf hdense hθ x y u * hX.morseLoopEvaluation hf hdense hθ y z v :=
-  MooreLoopSpace.ext <| by
-    simp [hX.morseLevelPath_morseRecordsConcat hf (hdense x z) (fun i ↦ hc i y) (u, v)]
+  mooreLoopEvaluation_mul _ _ hθ
+    (fun x z y u v ↦ hX.morseLevelPath_morseRecordsConcat hf (hdense x y) (fun i ↦ hc i z) (u, v))
+    x y z u v
 
 /-! ### The Barraud–Cornea cocycle -/
 
@@ -142,8 +144,11 @@ noncomputable def barraudCorneaCocycle
     TwistingCocycle (R := R) (A := loopChainAlgebra Y y₀ R)
       (cubicalChainGrading (MooreLoopSpace Y y₀) R)
       (cubicalChainDifferential (MooreLoopSpace Y y₀) R) (criticalPoints 𝓘(ℝ, E) f) ind :=
-  S.twistingCocycle (hX.morseLoopEvaluation hf hdense hθ)
-    (fun x y z u v ↦ hX.morseLoopEvaluation_morseRecordsConcat hf hdense hθ hc x y z u v)
+  S.mooreTwistingCocycle (c := ((↑) : criticalPoints 𝓘(ℝ, E) f → M))
+    (e := fun x y ↦ hX.morseLevelPath hf
+      (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense x y)))
+    (fun _ _ _ ↦ hX.source_morseLevelPath ..) (fun _ _ _ ↦ hX.target_morseLevelPath ..) hθ
+    fun x z y u v ↦ hX.morseLevelPath_morseRecordsConcat hf (hdense x y) (fun i ↦ hc i z) (u, v)
 
 /-- The entry of the Barraud–Cornea cocycle at `(x, y)` is the push-forward of the chain of the
 compactified space of trajectories from `x` to `y` along its evaluation into Moore loops. -/
@@ -154,7 +159,7 @@ theorem barraudCorneaCocycle_m
     (x y : criticalPoints 𝓘(ℝ, E) f) :
     (hX.barraudCorneaCocycle hf hdense hθ hc S).m x y =
       cubicalChainSumMap R (hX.morseLoopEvaluation hf hdense hθ x y) (S.chain x y) :=
-  S.twistingCocycle_m _ x y
+  S.mooreTwistingCocycle_m _ _ hθ _ x y
 
 end IsAdaptedPseudoGradient
 
