@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.DerivedCategory.Linear
 public import TauCeti.Algebra.Homology.DerivedCategory.KInjective
 public import TauCeti.Algebra.Homology.LinearHomComplex.Cohomology
 public import TauCeti.Algebra.Homology.LinearHomComplex.Homotopy
+public import TauCeti.Algebra.Homology.LinearHomComplex.KInjective
 
 /-!
 # The derived Hom complex of unbounded complexes
@@ -40,6 +41,8 @@ morphisms `K ⟶ L⟦n⟧` in `D(C)` (`TauCeti.linearHomComplexHomologyLinearEqu
 * `TauCeti.linearHomComplexHomologyLinearEquivOfIsKInjective`: for a K-injective complex `L`,
   the identification of the `n`-th cohomology of the linear Hom complex from `K` to `L` with
   `K ⟶ L⟦n⟧` in the derived category.
+* `TauCeti.derivedHomObjIsoOfQuasiIso`: `RHom(L, -)` computed by the linear Hom complex out of any
+  complex with a quasi-isomorphism to the K-injective replacement of `L`.
 
 ## Main results
 
@@ -299,5 +302,35 @@ theorem derivedHomHomologyLinearEquiv_naturality_left {L L' : DerivedCategory C}
       Qh.map t) ≫ (shiftKInjectiveReplacementIso M n).hom)
         (linearHomComplexHomologyLinearEquiv_homologyMap_precomp R f' w)).trans
       (hcomp _))
+
+/-- The derived Hom functor `RHom(L, -)` is computed by the linear Hom complex out of any complex
+`P` with a quasi-isomorphism `p` to the K-injective replacement of `L`: precomposition with `p` is
+a quasi-isomorphism of Hom complexes into every K-injective complex
+(`TauCeti.quasiIso_linearHomComplexPrecomp`). -/
+def derivedHomObjIsoOfQuasiIso (L : DerivedCategory C) {P : CochainComplex C ℤ}
+    (p : P ⟶ ((kInjectiveReplacement C).obj L).as) [QuasiIso p] :
+    (derivedHom R C).obj (op L) ≅ kInjectiveReplacement C ⋙
+      (linearHomComplexHomotopyFunctor R C).obj (op ((HomotopyCategory.quotient _ _).obj P)) ⋙
+        Qh :=
+  have : IsIso (Functor.whiskerLeft (kInjectiveReplacement C) (Functor.whiskerRight
+      ((linearHomComplexHomotopyFunctor R C).map ((HomotopyCategory.quotient _ _).map p).op)
+        Qh)) := by
+    rw [NatTrans.isIso_iff_isIso_app]
+    intro M
+    -- The component at `M` is the image under `Qh` of precomposition with `p` on the Hom complex
+    -- into the K-injective replacement of `M` (`linearHomComplexHomotopyFunctor_map_app`).
+    exact (isIso_Qh_map_iff _).2 ((HomotopyCategory.quotient_map_mem_quasiIso_iff _).2
+      ((HomologicalComplex.mem_quasiIso_iff _).2
+        (quasiIso_linearHomComplexPrecomp R p ((kInjectiveReplacement C).obj M).as)))
+  @asIso _ _ _ _ _ this
+
+/-- The component of `derivedHomObjIsoOfQuasiIso` at `M` is the image of precomposition with `p`
+on the linear Hom complex into the K-injective replacement of `M`. -/
+@[simp]
+lemma derivedHomObjIsoOfQuasiIso_hom_app (L : DerivedCategory C) {P : CochainComplex C ℤ}
+    (p : P ⟶ ((kInjectiveReplacement C).obj L).as) [QuasiIso p] (M : DerivedCategory C) :
+    (derivedHomObjIsoOfQuasiIso R L p).hom.app M = Qh.map ((HomotopyCategory.quotient _ _).map
+      (linearHomComplexPrecomp R p ((kInjectiveReplacement C).obj M).as)) :=
+  (rfl)
 
 end TauCeti
