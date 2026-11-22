@@ -254,7 +254,7 @@ finite-index subgroup `S` onto `S'` and the characters of `A` and `A'` agree alo
 the characters of the induced representations. The subgroup `S'` then has finite index too. -/
 theorem character_indFDRep_mulEquiv [S.FiniteIndex] {G' : Type*} [Group G'] {S' : Subgroup G'}
     (φ : G ≃* G') (hφ : ∀ g, φ g ∈ S' ↔ g ∈ S) (A : FDRep k S) (A' : FDRep k S')
-    (hA : ∀ s : S, A'.character ⟨φ s, (hφ s).2 s.2⟩ = A.character s) (g : G) :
+    (hA : ∀ s : S, A'.character ⟨φ s, (hφ s).2 s.property⟩ = A.character s) (g : G) :
     haveI : S'.FiniteIndex := @Subgroup.finiteIndex_of_finite_quotient _ _ S'
       (Finite.of_surjective _ (Subgroup.mk_mulEquiv_out_bijective φ hφ).surjective)
     (indFDRep (k := k) (G := G') A').character (φ g) =

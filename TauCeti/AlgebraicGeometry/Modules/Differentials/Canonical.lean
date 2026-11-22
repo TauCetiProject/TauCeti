@@ -128,7 +128,7 @@ variable [IsLocallyNoetherian X]
 variable (hdim : ∀ y : X, coheight y ≤ 1) (K : SchemeWeilDivisor X)
   (hK : ∀ y : CodimensionOnePoint X, WeilDivisor.coeff K y =
     weilDifferentialOrder hF hk
-      (weilDifferentialOfSeparating hF ht).2
+      (weilDifferentialOfSeparating hF ht).property
       (coe_weilDifferentialOfSeparating_ne_zero hF ht) (X.toPlace (k := k) (y : X)))
 
 include hF hdim hK in
@@ -229,15 +229,15 @@ theorem nonempty_iso_relativeDifferentials_canonicalBundle :
   have hω : (ω : Module.Dual k (repartitionSpace k X.functionField)) ≠ 0 :=
     coe_weilDifferentialOfSeparating_ne_zero hF ht
   let K := (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).symm
-    (weilDifferentialDivisor hF hk ω.2 hω)
+    (weilDifferentialDivisor hF hk ω.property hω)
   have hK (y : CodimensionOnePoint X) : WeilDivisor.coeff K y =
-      weilDifferentialOrder hF hk ω.2 hω (X.toPlace (k := k) (y : X)) := by
+      weilDifferentialOrder hF hk ω.property hω (X.toPlace (k := k) (y : X)) := by
     simp only [K, SchemeWeilDivisor.coeff_equivFunctionFieldDivisor_symm,
       coeff_weilDifferentialDivisor]
   obtain ⟨e⟩ := InvertibleSheaf.nonempty_iso_canonicalBundle_sheaf hex hdim hF hk (K := K) (by
     dsimp only [K]
     rw [(SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).apply_symm_apply]
-    exact divisorClass_weilDifferentialDivisor hF hk ω.2 hω)
+    exact divisorClass_weilDifferentialDivisor hF hk ω.property hω)
   exact ⟨relativeDifferentialsIsoDivisorSheaf ht hF hk hdim K hK ≪≫ e.symm⟩
 
 include hF hk hdim hex in

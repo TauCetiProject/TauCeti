@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Category.TopCat.Sphere
 public import TauCeti.Geometry.Manifold.Morse.Cell.Attachment
 public import TauCeti.Topology.Category.TopCat.Pushout
+import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 import TauCeti.AlgebraicTopology.Disk
 
 /-!
@@ -50,6 +51,8 @@ are reindexed to the standard discs by relabelling the coordinates
 * `TauCeti.IsMorse.exists_isPushout_sublevel_handles`: **Milnor's handle attachment theorem** in
   pushout form, for a Morse function with a compact band around a critical value, with one handle
   of index `λ` at each critical point of index `λ` on the level.
+* `TauCeti.IsMorse.exists_isPushout_sublevel_handle`: the theorem at a level with a single critical
+  point, with a single handle attached.
 
 ## References
 
@@ -110,7 +113,7 @@ private theorem isPushout_of_handles [Finite ι] [T2Space M] (hfc : Continuous f
   have hbd (i : ι) (s : TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (n - k i)) :
       f ((e i).symm (TopCat.diskBoundaryInclusion (k i) s.1, s.2) : M) ≤ c - ε := by
     rw [he, Homeomorph.apply_symm_apply, TopCat.coe_diskBoundaryInclusion_apply_down]
-    exact mem_sphere_zero_iff_norm.1 s.1.down.2
+    exact mem_sphere_zero_iff_norm.1 s.1.down.property
   have hmem (i : ι) (x : H i) (hx : f x ≤ c - ε) :
       ∃ s : TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (n - k i),
         (TopCat.diskBoundaryInclusion (k i) s.1, s.2) = e i x := by
@@ -121,16 +124,16 @@ private theorem isPushout_of_handles [Finite ι] [T2Space M] (hfc : Continuous f
   let α (i : ι) : TopCat.of (TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (n - k i)) ⟶
       TopCat.of {x | f x ≤ c - ε} :=
     TopCat.ofHom ⟨fun s ↦ ⟨(e i).symm (TopCat.diskBoundaryInclusion (k i) s.1, s.2), hbd i s⟩,
-      (continuous_subtype_val.comp ((e i).symm.continuous.comp
+      (continuous_subtypeVal.comp ((e i).symm.continuous.comp
         ((TopCat.diskBoundaryInclusion (k i)).hom.continuous.prodMap continuous_id))).subtype_mk _⟩
   let χ (i : ι) : TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (n - k i)) ⟶
       TopCat.of {x | f x ≤ c + ε} :=
     TopCat.ofHom ⟨fun w ↦ ⟨Φ.symm ((e i).symm w),
-        hup _ (Or.inr (mem_iUnion.2 ⟨i, ((e i).symm w).2⟩))⟩,
-      (Φ.symm.continuous.comp (continuous_subtype_val.comp (e i).symm.continuous)).subtype_mk _⟩
+        hup _ (Or.inr (mem_iUnion.2 ⟨i, ((e i).symm w).property⟩))⟩,
+      (Φ.symm.continuous.comp (continuous_subtypeVal.comp (e i).symm.continuous)).subtype_mk _⟩
   let j : TopCat.of {x | f x ≤ c - ε} ⟶ TopCat.of {x | f x ≤ c + ε} :=
-    TopCat.ofHom ⟨fun x ↦ ⟨Φ.symm x, hup _ (Or.inl x.2)⟩,
-      (Φ.symm.continuous.comp continuous_subtype_val).subtype_mk _⟩
+    TopCat.ofHom ⟨fun x ↦ ⟨Φ.symm x, hup _ (Or.inl x.property)⟩,
+      (Φ.symm.continuous.comp continuous_subtypeVal).subtype_mk _⟩
   have hα (i : ι) (s) : (α i s : M) = (e i).symm (TopCat.diskBoundaryInclusion (k i) s.1, s.2) :=
     rfl
   have hχ (i : ι) (w) : (χ i w : M) = Φ.symm ((e i).symm w) := rfl
@@ -151,7 +154,7 @@ private theorem isPushout_of_handles [Finite ι] [T2Space M] (hfc : Continuous f
     exact Subtype.ext (Φ.symm.injective (congrArg Subtype.val h))
   · -- `Φ` carries every point of `{f ≤ c + ε}` into the lower sublevel or into a handle.
     refine eq_univ_of_forall fun y ↦ ?_
-    obtain hy | hy := (hΦ y).2 y.2
+    obtain hy | hy := (hΦ y).2 y.property
     · exact Or.inl ⟨⟨Φ y, hy⟩, Subtype.ext (Φ.symm_apply_apply y)⟩
     · obtain ⟨i, hi⟩ := mem_iUnion.1 hy
       refine Or.inr (mem_iUnion.2 ⟨i, e i ⟨Φ y, hi⟩, Subtype.ext ?_⟩)
@@ -160,11 +163,11 @@ private theorem isPushout_of_handles [Finite ι] [T2Space M] (hfc : Continuous f
     rintro i l hil y ⟨⟨w, rfl⟩, ⟨w', hw'⟩⟩
     have h : ((e i).symm w : M) = (e l).symm w' :=
       Φ.symm.injective ((congrArg Subtype.val hw').symm)
-    exact absurd h ((hH hil).ne_of_mem ((e i).symm w).2 ((e l).symm w').2)
+    exact absurd h ((hH hil).ne_of_mem ((e i).symm w).property ((e l).symm w').property)
   · -- A handle meets the lower sublevel in its attaching region.
     intro i a b hab
     have h : (a : M) = (e i).symm b := Φ.symm.injective (congrArg Subtype.val hab)
-    obtain ⟨s, hs⟩ := hmem i ((e i).symm b) (h ▸ a.2)
+    obtain ⟨s, hs⟩ := hmem i ((e i).symm b) (h ▸ a.property)
     rw [Homeomorph.apply_symm_apply] at hs
     exact ⟨s, Subtype.ext (by rw [hα, hs, h]), hs⟩
   · -- The attaching maps are injective on compact spaces, with disjoint images.
@@ -178,11 +181,12 @@ private theorem isPushout_of_handles [Finite ι] [T2Space M] (hfc : Continuous f
     exact ⟨(TopCat.isClosedEmbedding_diskBoundaryInclusion (k i)).injective h'.1, h'.2⟩
   · rw [Function.onFun, disjoint_iff_forall_ne]
     rintro _ ⟨s, rfl⟩ _ ⟨s', rfl⟩ h
-    exact (hH hil).ne_of_mem ((e i).symm _).2 ((e l).symm _).2 (congrArg Subtype.val h)
+    exact (hH hil).ne_of_mem ((e i).symm _).property ((e l).symm _).property
+        (congrArg Subtype.val h)
   · -- The attaching regions lie in the level `f⁻¹(c - ε)`.
-    exact le_antisymm (α i s).2 (hge i _)
+    exact le_antisymm (α i s).property (hge i _)
   · -- `Φ` carries this point into the handle `H i` only, at the point `w` of the handle.
-    have hw : Φ (χ i w) ∈ H i := by rw [hχ, Φ.apply_symm_apply]; exact ((e i).symm w).2
+    have hw : Φ (χ i w) ∈ H i := by rw [hχ, Φ.apply_symm_apply]; exact ((e i).symm w).property
     have hwi (hw : Φ (χ i w) ∈ H i) : (⟨Φ (χ i w), hw⟩ : H i) = (e i).symm w :=
       Subtype.ext ((congrArg Φ (hχ i w)).trans (Φ.apply_symm_apply _))
     rw [hΦtop, mem_range_diskBoundaryInclusion_iff]
@@ -197,7 +201,7 @@ private theorem isPushout_of_handles [Finite ι] [T2Space M] (hfc : Continuous f
     have hH' : (x : M) ∉ ⋃ i, H i := by
       rw [mem_iUnion]
       rintro ⟨i, hi⟩
-      obtain ⟨s, hs⟩ := hrange i ⟨x, hi⟩ x.2
+      obtain ⟨s, hs⟩ := hrange i ⟨x, hi⟩ x.property
       exact hx i ⟨s, Subtype.ext hs⟩
     have hΦx : Φ (j x) = x := by rw [hj, Φ.apply_symm_apply]
     rw [hΦtop, hΦx]
@@ -296,6 +300,40 @@ theorem IsMorse.exists_isPushout_sublevel_handles (hf : IsMorse I f) {δ : ℝ} 
     (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
       (preimage_mono (Icc_subset_Icc (by linarith) (by linarith))))
     fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx.1, hband hx⟩, (hψp _).1⟩⟩
+
+/-- **Milnor's handle attachment theorem at a level with one critical point** (Milnor, Theorem 3.2).
+If the only critical point of the Morse function `f` on the level `f⁻¹(c)` is `p`, of index `k` and
+coindex `l = m - k`, then the coproducts of `TauCeti.IsMorse.exists_isPushout_sublevel_handles`
+have the single summand `p`: for some width `0 < ε ≤ δ`, the sublevel `M_{c+ε}` is the pushout of
+`M_{c-ε}` and the one handle `𝔻 k × 𝔻 l` along a closed embedding
+`α : ∂𝔻 k × 𝔻 l → M_{c-ε}` into the level `f⁻¹(c - ε)`. The level `f⁻¹(c + ε)` consists of the
+image of the top `𝔻 k × ∂𝔻 l` of the handle and of the points of `f⁻¹(c - ε)` off the attaching
+region. -/
+theorem IsMorse.exists_isPushout_sublevel_handle (hf : IsMorse I f) {δ : ℝ} (hδ : 0 < δ)
+    (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ))) {p : M}
+    (hp : criticalPoints I f ∩ f ⁻¹' {c} = {p}) {k l : ℕ} (hk : manifoldMorseIndex I f p = k)
+    (hl : Module.finrank ℝ E - k = l) :
+    ∃ ε, 0 < ε ∧ ε ≤ δ ∧
+      ∃ (α : TopCat.of (TopCat.diskBoundary.{u} k × TopCat.disk.{u} l) ⟶
+          TopCat.of {x | f x ≤ c - ε})
+        (χ : TopCat.of (TopCat.disk.{u} k × TopCat.disk.{u} l) ⟶ TopCat.of {x | f x ≤ c + ε})
+        (j : TopCat.of {x | f x ≤ c - ε} ⟶ TopCat.of {x | f x ≤ c + ε}),
+        IsPushout α (TopCat.ofHom ((TopCat.diskBoundaryInclusion k).hom.prodMap
+          (ContinuousMap.id _))) j χ ∧
+        IsClosedEmbedding α ∧ (∀ s, f (α s : M) = c - ε) ∧
+        (∀ w, f (χ w : M) = c + ε ↔ w.2 ∈ range (TopCat.diskBoundaryInclusion l)) ∧
+        ∀ x, x ∉ range α → (f (j x : M) = c + ε ↔ f (x : M) = c - ε) := by
+  subst hk hl
+  obtain ⟨ε, hε, hεδ, α, χ, j, hpush, hemb, -, hlev, htop, hj⟩ :=
+    hf.exists_isPushout_sublevel_handles hδ hcompact
+  -- The critical points on the level form a one-point type, whose point is `p`.
+  let _ : Unique ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
+    { default := ⟨p, by simp [hp]⟩
+      uniq := fun q ↦ Subtype.ext (by simpa [hp] using q.property) }
+  refine ⟨ε, hε, hεδ, α default, χ default, j, hpush.of_iso (coproductUniqueIso _) (Iso.refl _)
+    (coproductUniqueIso _) (Iso.refl _) ?_ ?_ ?_ ?_, hemb default, hlev default, htop default,
+    fun x hx ↦ hj x fun q ↦ Subsingleton.elim q default ▸ hx⟩
+  all_goals rw [← Iso.inv_comp_eq]; simp
 
 end HandlePushout
 

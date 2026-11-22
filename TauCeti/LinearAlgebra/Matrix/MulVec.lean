@@ -18,8 +18,8 @@ square-zero matrix annihilates every vector in two steps. This is the form in wh
 of a root operator reaches the vector it acts on.
 
 Over an ordered semiring, multiplication by an entrywise nonnegative matrix is monotone and
-preserves nonnegativity, and an entrywise strictly positive matrix sends a nonzero nonnegative
-vector to a strictly positive one.
+preserves nonnegativity, and a matrix whose row `i` is strictly positive sends a nonzero
+nonnegative vector to one whose coordinate `i` is strictly positive.
 
 When row `i` of a matrix vanishes off the diagonal, coordinate `i` of a product with a vector only
 sees coordinate `i` of that vector. In particular such a matrix maps the coordinate hyperplane
@@ -27,24 +27,34 @@ sees coordinate `i` of that vector. In particular such a matrix maps the coordin
 
 Subtracting a matrix from a constant diagonal matrix turns its eigenvector equation into a
 homogeneous linear system, with no multiplicative identity needed. An eigenvector of a matrix is an
-eigenvector of each of its powers.
+eigenvector of each of its powers, with the eigenvalue in any monoid of scalars whose action
+commutes with multiplication of the entries.
 
-The `σ`-sesquilinear form `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)` of a matrix `Q` scales by `σ c * c` along a
-line.
+For a matrix `Q` and a multiplicative map `σ`, the pairing `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)` scales by
+`σ c * c` along a line. When `σ` is also additive, such as a ring endomorphism, this pairing is
+the `σ`-sesquilinear form of `Q`.
+
+A matrix invariant under row and column reindexing sends vectors invariant under the column
+permutation to vectors invariant under the row map.
+
+A right null vector whose last coordinate is a unit lets the submatrix omitting the last column
+reproduce every product `A *ᵥ x`.
 
 ## Main results
 
-* `TauCeti.mulVec_mulVec_eq_zero_of_pow_two_eq_zero`: a square-zero matrix annihilates every
+* `Matrix.mulVec_mulVec_eq_zero_of_sq_eq_zero`: a square-zero matrix annihilates every
   vector in two multiplications.
 * `Matrix.mulVec_apply_eq_mul_of_forall_ne_eq_zero`: if row `i` of `A` vanishes off the diagonal,
   then `(A *ᵥ v) i = A i i * v i`.
+* `Matrix.mulVec_comp_of_submatrix_eq`: multiplying an `e₂`-invariant vector by an
+  `(e₁, e₂)`-invariant matrix yields an `e₁`-invariant vector.
 * `Matrix.diagonal_const_sub_mulVec_eq_zero_iff`: `(a - A) v = 0` for a constant diagonal `a`
   is the eigenvector equation `A v = a • v`.
 * `Matrix.pow_mulVec_eq_pow_smul`: if `A v = μ • v`, then `A ^ k v = μ ^ k • v`.
 * `Matrix.mulVec_mono` and `Matrix.mulVec_nonneg`: multiplication by an entrywise nonnegative
   matrix is monotone and preserves nonnegativity.
-* `Matrix.mulVec_pos`: a strictly positive matrix sends a nonzero nonnegative vector to a strictly
-  positive one.
+* `Matrix.mulVec_pos`: if row `i` of `A` is strictly positive, then `A` sends a nonzero
+  nonnegative vector to one whose coordinate `i` is strictly positive.
 * `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
   coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
@@ -54,20 +64,14 @@ public section
 
 open scoped Matrix
 
-namespace TauCeti
-
-variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- A square-zero matrix annihilates every vector in two multiplications. -/
-theorem mulVec_mulVec_eq_zero_of_pow_two_eq_zero {R : Type*} [Semiring R] {M : Matrix n n R}
-    (hM : M ^ 2 = 0) (v : n → R) : M *ᵥ M *ᵥ v = 0 := by
-  rw [Matrix.mulVec_mulVec, ← pow_two, hM, Matrix.zero_mulVec]
-
-end TauCeti
-
 namespace Matrix
 
 variable {m n : Type*} [Fintype n]
+
+/-- A square-zero matrix annihilates every vector in two multiplications. -/
+theorem mulVec_mulVec_eq_zero_of_sq_eq_zero [DecidableEq n] {R : Type*} [Semiring R]
+    {M : Matrix n n R} (hM : M ^ 2 = 0) (v : n → R) : M *ᵥ M *ᵥ v = 0 := by
+  rw [mulVec_mulVec, ← sq, hM, zero_mulVec]
 
 section NonUnitalNonAssocSemiring
 
@@ -78,7 +82,15 @@ variable {R : Type*} [NonUnitalNonAssocSemiring R]
 theorem mulVec_apply_eq_mul_of_forall_ne_eq_zero {A : Matrix n n R} {i : n}
     (h : ∀ j ≠ i, A i j = 0) (v : n → R) : (A *ᵥ v) i = A i i * v i := by
   simp only [mulVec, dotProduct]
-  exact Finset.sum_eq_single i (fun j _ hj ↦ by rw [h j hj, zero_mul]) (by simp)
+  exact Fintype.sum_eq_single i fun j hj ↦ by rw [h j hj, zero_mul]
+
+/-- Multiplying an `e₂`-invariant vector by an `(e₁, e₂)`-invariant matrix yields an `e₁`-invariant
+vector. -/
+theorem mulVec_comp_of_submatrix_eq {M : Matrix m n R} {e₁ : m → m} {e₂ : n ≃ n}
+    (hM : M.submatrix e₁ e₂ = M) {v : n → R} (hv : v ∘ e₂ = v) :
+    (M *ᵥ v) ∘ e₁ = M *ᵥ v := by
+  conv_rhs => rw [← hM, ← hv]
+  rw [submatrix_mulVec_equiv, Function.comp_assoc, Equiv.self_comp_symm, Function.comp_id]
 
 end NonUnitalNonAssocSemiring
 
@@ -98,25 +110,23 @@ theorem diagonal_const_sub_mulVec_eq_zero_iff [DecidableEq n] (A : Matrix n n R)
 
 end NonUnitalNonAssocRing
 
-section CommSemiring
-
-variable {R : Type*} [CommSemiring R] [DecidableEq n]
-
 /-- An eigenvector of a square matrix is an eigenvector of each of its powers, for the
-corresponding power of the eigenvalue. -/
-theorem pow_mulVec_eq_pow_smul {A : Matrix n n R} {v : n → R} {μ : R} (h : A *ᵥ v = μ • v)
-    (k : ℕ) : (A ^ k) *ᵥ v = μ ^ k • v := by
+corresponding power of the eigenvalue. The eigenvalue may lie in any monoid `S` whose action
+commutes with multiplication in `R`, so `R` need not be commutative. -/
+theorem pow_mulVec_eq_pow_smul [DecidableEq n] {R S : Type*} [Semiring R] [Monoid S]
+    [DistribMulAction S R] [SMulCommClass S R R] {A : Matrix n n R} {v : n → R} {μ : S}
+    (h : A *ᵥ v = μ • v) (k : ℕ) : (A ^ k) *ᵥ v = μ ^ k • v := by
   induction k with
   | zero => simp
   | succ k ih => rw [pow_succ, ← mulVec_mulVec, h, mulVec_smul, ih, smul_smul, ← pow_succ']
 
-end CommSemiring
-
-/-- Along a line the `σ`-sesquilinear form `h(x, y) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)` scales by `σ c * c`:
-`h(c v, c v) = σ c * c * h(v, v)`. -/
-theorem comp_smul_dotProduct_mulVec_smul {R : Type*} [CommSemiring R] (Q : Matrix n n R)
-    (σ : R →+* R) (c : R) (v : n → R) :
-    (σ ∘ (c • v)) ⬝ᵥ (Q *ᵥ (c • v)) = σ c * c * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
+/-- For a multiplicative map `σ`, the pairing `h(x, y) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)` scales by `σ c * c`
+along a line: `h(c v, c v) = σ c * c * h(v, v)`. When `σ` is also additive, such as a ring
+endomorphism, `h` is the `σ`-sesquilinear form of `Q`. The left multiplications of `R` must
+commute (`SMulCommClass R R R`), but `R` need not be commutative or unital. -/
+theorem comp_smul_dotProduct_mulVec_smul {R F : Type*} [NonUnitalSemiring R]
+    [SMulCommClass R R R] [FunLike F R R] [MulHomClass F R R] (Q : Matrix n n R) (σ : F) (c : R)
+    (v : n → R) : (σ ∘ (c • v)) ⬝ᵥ (Q *ᵥ (c • v)) = σ c * c * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
   rw [TauCeti.map_comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul,
     smul_eq_mul, mul_assoc]
 
@@ -140,13 +150,13 @@ section StrictOrderedSemiring
 variable {R : Type*} [Semiring R] [PartialOrder R] [IsStrictOrderedRing R] {A : Matrix m n R}
   {y : n → R}
 
-/-- A strictly positive matrix sends a nonzero nonnegative vector to a vector all of whose entries
-are strictly positive. -/
-theorem mulVec_pos (hA : ∀ i j, 0 < A i j) (hy : 0 ≤ y) (hy0 : y ≠ 0) (i : m) :
+/-- If row `i` of `A` is strictly positive, then for a nonzero nonnegative vector `y` the
+coordinate `i` of `A *ᵥ y` is strictly positive. -/
+theorem mulVec_pos {i : m} (hA : ∀ j, 0 < A i j) (hy : 0 ≤ y) (hy0 : y ≠ 0) :
     0 < (A *ᵥ y) i := by
   obtain ⟨j, hj⟩ := Function.ne_iff.1 hy0
-  exact Finset.sum_pos' (fun k _ => mul_nonneg (hA i k).le (hy k))
-    ⟨j, Finset.mem_univ j, mul_pos (hA i j) ((hy j).lt_of_ne' hj)⟩
+  exact Finset.sum_pos' (fun k _ => mul_nonneg (hA k).le (hy k))
+    ⟨j, Finset.mem_univ j, mul_pos (hA j) ((hy j).lt_of_ne' hj)⟩
 
 end StrictOrderedSemiring
 
