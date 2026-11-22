@@ -253,6 +253,17 @@ theorem IsDeltaMap.comp {g : B →+* C} {f : A →+* B} (hg : IsDeltaMap p g)
 
 end IsDeltaMap
 
+/-- Along a surjective ring homomorphism `f : A → B` out of a `δ`-ring, there is at most one
+`δ`-structure on `B` making `f` a `δ`-map. -/
+theorem ext_of_surjective {B : Type*} [CommRing B] [DeltaRing p A] {f : A →+* B}
+    (hf : Function.Surjective f) {d₁ d₂ : DeltaRing p B} (h₁ : letI := d₁; IsDeltaMap p f)
+    (h₂ : letI := d₂; IsDeltaMap p f) : d₁ = d₂ := by
+  refine DeltaRing.ext (funext fun x => ?_)
+  obtain ⟨a, rfl⟩ := hf x
+  -- Both `d₁` and `d₂` are local instances, so the structures are passed explicitly.
+  exact (@IsDeltaMap.map_delta p A _ B _ _ d₁ f h₁ a).symm.trans
+    (@IsDeltaMap.map_delta p A _ B _ _ d₂ f h₂ a)
+
 section Frobenius
 
 variable [Fact p.Prime] [DeltaRing p A]
