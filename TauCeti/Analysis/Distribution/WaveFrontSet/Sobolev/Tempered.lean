@@ -209,6 +209,20 @@ theorem integral_fourierInv_mul_localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω,
     FourierTransform.fourier_fourierInv_eq]
   simp only [smul_eq_mul]
 
+/-- **Fourier inversion for `φ T`, shifted.** Averaging the localized Fourier transform of `T`
+against the inverse Fourier transform of a Schwartz function `a` multiplies the cutoff by `a`:
+`∫ 𝓕⁻ a ζ T (φ e_(η + ζ)) dζ = T (a φ e_η)`. -/
+theorem integral_fourierInv_mul_localFourier_add (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (a : 𝓢(E, ℂ))
+    {φa : 𝓓(Ω, ℂ)} (hφa : ∀ x, φa x = a x * φ x) (η : E) :
+    ∫ ζ, 𝓕⁻ a ζ * T.localFourier φ (η + ζ) = T.localFourier φa η := by
+  simp_rw [← localFourier_bilinLeftCLM_fourierAtom T φ η]
+  rw [integral_fourierInv_mul_localFourier, localFourier_def,
+    cutoffTempered_apply (χ := bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
+      (TauCeti.contDiff_fourierAtom η) φa)]
+  intro x
+  simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply', hφa]
+  ring
+
 /-! ### Bessel-potential spaces -/
 
 section Sobolev

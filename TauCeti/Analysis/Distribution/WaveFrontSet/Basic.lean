@@ -213,6 +213,17 @@ theorem localFourier_smulLeftCLM (T : 𝓓'(Ω, ℂ)) {g : E → ℝ} (hg : Cont
   ext x
   simp [bilinLeftCLM_apply, mul_assoc]
 
+/-- Modulating the cutoff by the Fourier atom `e_ζ` shifts the localized Fourier transform by `ζ`:
+`T ((φ e_ζ) e_η) = T (φ e_(ζ + η))`. -/
+theorem localFourier_bilinLeftCLM_fourierAtom (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (ζ η : E) :
+    T.localFourier (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom ζ)
+      φ) η = T.localFourier φ (ζ + η) := by
+  rw [localFourier_def, localFourier_def]
+  congr 1
+  ext x
+  simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply', TauCeti.fourierAtom_add_left]
+  ring
+
 /-- The localized Fourier transform of a restriction `T|_{Ω'}` with cutoff `φ` is that of `T`
 with cutoff `φ` extended by zero. -/
 @[simp]
