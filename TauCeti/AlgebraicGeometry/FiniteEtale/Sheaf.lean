@@ -10,7 +10,9 @@ public import Mathlib.CategoryTheory.Functor.ReflectsIso.Limits
 public import Mathlib.CategoryTheory.Sites.Point.Skyscraper
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Exactness
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Over
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
+public import TauCeti.CategoryTheory.Sites.ConstantSheaf
 public import TauCeti.CategoryTheory.Sites.Point.Representable
 
 /-!
@@ -40,7 +42,9 @@ of points of the small étale site, and stalk functors preserve colimits and fin
 Therefore `toSheaf` preserves every colimit, and every finite limit, that all geometric fibre
 functors preserve (`TauCeti.FiniteEtaleScheme.preservesColimit_toSheaf`,
 `TauCeti.FiniteEtaleScheme.preservesLimit_toSheaf`). In particular it preserves finite limits,
-finite coproducts, quotients by finite groups and epimorphisms.
+finite coproducts, quotients by finite groups and epimorphisms. As an application, the sheaf of
+sections of `trivialCover S M` is the constant étale sheaf with value `M`
+(`TauCeti.FiniteEtaleScheme.toSheafTrivialCoverIso`).
 
 ## Main definitions
 
@@ -58,6 +62,10 @@ finite coproducts, quotients by finite groups and epimorphisms.
 * `TauCeti.FiniteEtaleScheme.preservesColimit_toSheaf`,
   `TauCeti.FiniteEtaleScheme.preservesLimit_toSheaf`: the sheaf-of-sections functor preserves
   the colimits and finite limits preserved by all geometric fibre functors.
+* `TauCeti.FiniteEtaleScheme.toSheafOfHomIdIso`: the sheaf of sections of `ofHom (𝟙 S)` is the
+  constant sheaf on `PUnit`.
+* `TauCeti.FiniteEtaleScheme.toSheafTrivialCoverIso`: the sheaf of sections of `trivialCover S M`
+  is the constant étale sheaf with value `M`.
 * Instances: `toSheaf S` preserves finite limits, finite coproducts, quotients by finite groups
   and epimorphisms.
 
@@ -214,5 +222,33 @@ instance : (toSheaf S).PreservesEpimorphisms where
     -- On stalks the map is that of geometric fibres, and geometric fibre functors preserve
     -- epimorphisms.
     exact (Functor.PreservesEpimorphisms.of_iso (toSheafCompSheafFiberIso _).symm).preserves f
+
+/-- The sheaf of sections of the base `S` itself is the constant sheaf on a singleton. -/
+noncomputable def toSheafOfHomIdIso (S : Scheme.{u}) :
+    (toSheaf S).obj (ofHom (𝟙 S)) ≅
+      (constantSheaf (Scheme.smallEtaleTopology S) (Type u)).obj PUnit.{u + 1} :=
+  have := preservesLimitsOfShape_pempty_of_preservesTerminal (toSheaf S)
+  ((isTerminalOfHomId S).isTerminalObj (toSheaf S)).uniqueUpToIso
+      (Sheaf.isTerminalTerminal (Scheme.smallEtaleTopology S) Types.isTerminalPUnit.{u}) ≪≫
+    (asIso ((sheafificationAdjunction (Scheme.smallEtaleTopology S) (Type u)).counit.app
+      (Sheaf.terminal (Scheme.smallEtaleTopology S) Types.isTerminalPUnit.{u}))).symm
+
+/-- The sheaf of sections of `trivialCover S M` is the constant étale sheaf with value `M`. -/
+noncomputable def toSheafTrivialCoverIso (S : Scheme.{u}) (M : Type u) [Finite M] :
+    (toSheaf S).obj (trivialCover S M) ≅
+      (constantSheaf (Scheme.smallEtaleTopology S) (Type u)).obj M :=
+  haveI : Fintype M := Fintype.ofFinite M
+  have := hasColimitsOfShape_of_hasFiniteColimits
+    (C := Sheaf (Scheme.smallEtaleTopology S) (Type u)) (Discrete M)
+  have := (constantSheafAdj (Scheme.smallEtaleTopology S) (Type u)
+      (Scheme.Etale.mkIdTerminal S)).isLeftAdjoint
+  (toSheaf S).mapIso
+      ((trivialCover.isColimit S M).coconePointUniqueUpToIso
+        (colimit.isColimit (Discrete.functor fun _ : M ↦ ofHom (𝟙 S)))) ≪≫
+    PreservesCoproduct.iso (toSheaf S) (fun _ : M ↦ ofHom (𝟙 S)) ≪≫
+    Sigma.mapIso (fun _ ↦ toSheafOfHomIdIso S) ≪≫
+    (PreservesCoproduct.iso (constantSheaf (Scheme.smallEtaleTopology S) (Type u)) _).symm ≪≫
+    (constantSheaf (Scheme.smallEtaleTopology S) (Type u)).mapIso
+      (Types.coproductIso _ ≪≫ Equiv.toIso (Equiv.sigmaPUnit M))
 
 end TauCeti.FiniteEtaleScheme

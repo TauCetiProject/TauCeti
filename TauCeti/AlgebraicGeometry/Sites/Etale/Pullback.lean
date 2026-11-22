@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Sites.AffineEtale
 public import Mathlib.AlgebraicGeometry.Sites.EtalePoint
 public import Mathlib.CategoryTheory.Limits.MorphismProperty
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Over
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 public import TauCeti.CategoryTheory.Sites.ConstantSheaf
 public import TauCeti.CategoryTheory.Sites.Point.Comap
 public import TauCeti.CategoryTheory.Sites.Pullback
@@ -23,10 +24,12 @@ preserves finite limits and covering sieves, giving direct image `f.smallEtalePu
 weak sheafification) inverse image `f.smallEtalePullback A`:
 
 * **Pseudofunctoriality**: `smallEtalePullbackId`, `smallEtalePullbackComp`,
-  `smallEtalePullbackCongr`, and `smallEtalePullbackConstantSheafIso`.
+  `smallEtalePullbackCongr`, `smallEtalePullbackConstantSheafIso`, and
+  `yonedaCompSmallEtalePullbackIso`.
 * **Étale morphism case**: for étale `j : X ⟶ Y`, `j.smallEtaleMap ⊣ j.smallEtaleBaseChange`
   yields `isRightAdjoint_smallEtalePushforward_of_etale`, `smallEtalePullbackIsoMapPushforward`,
-  and `AlgebraicGeometry.Scheme.Etale.smallEtalePullbackIsoOver`.
+  `yonedaCompSmallEtaleMapPushforwardIso`, and
+  `AlgebraicGeometry.Scheme.Etale.smallEtalePullbackIsoOver`.
 * **Geometric stalks and exactness**: `smallEtalePullbackCompSheafFiberIso` identifies stalks at
   `s : Spec Ω ⟶ X` with stalks at `s ≫ f`, and `preservesFiniteLimits_smallEtalePullback` deduces
   left exactness from the conservative family of geometric points.
@@ -235,6 +238,54 @@ noncomputable abbrev smallEtalePullbackIsoMapPushforward (j : X ⟶ Y) [Etale j]
     j.smallEtalePullback A ≅
       j.smallEtaleMap.sheafPushforwardContinuous A (smallEtaleTopology X) (smallEtaleTopology Y) :=
   j.smallEtaleMapBaseChangeAdj.sheafPullbackIso A (smallEtaleTopology X) (smallEtaleTopology Y)
+
+/-- Pulling back a representable étale sheaf along any morphism of schemes `f : X ⟶ Y` recovers
+the representable sheaf of the base change. -/
+noncomputable def yonedaCompSmallEtalePullbackIso (f : X ⟶ Y) :
+    (smallEtaleTopology Y).yoneda ⋙ f.smallEtalePullback (Type u) ≅
+      f.smallEtaleBaseChange ⋙ (smallEtaleTopology X).yoneda :=
+  Functor.yonedaCompSheafPullbackIso f.smallEtaleBaseChange
+    (smallEtaleTopology Y) (smallEtaleTopology X)
+
+/-- For an étale morphism `j : X ⟶ Y`, precomposing a representable étale sheaf along
+`j.smallEtaleMap` recovers the representable sheaf of the base change. -/
+noncomputable def yonedaCompSmallEtaleMapPushforwardIso (j : X ⟶ Y) [Etale j] :
+    (smallEtaleTopology Y).yoneda ⋙ j.smallEtaleMap.sheafPushforwardContinuous (Type u)
+        (smallEtaleTopology X) (smallEtaleTopology Y) ≅
+      j.smallEtaleBaseChange ⋙ (smallEtaleTopology X).yoneda :=
+  Functor.isoWhiskerLeft (smallEtaleTopology Y).yoneda
+      (j.smallEtalePullbackIsoMapPushforward (Type u)).symm ≪≫
+    j.yonedaCompSmallEtalePullbackIso
+
+@[simp]
+lemma yonedaCompSmallEtaleMapPushforwardIso_hom_app_hom_app_apply (j : X ⟶ Y) [Etale j]
+    (V : Y.Etale) (W : X.Etale) (s : j.smallEtaleMap.obj W ⟶ V) :
+    dsimp% (((j.yonedaCompSmallEtaleMapPushforwardIso).hom.app V).hom.app (Opposite.op W)) s =
+      j.smallEtaleMapBaseChangeAdj.homEquiv W V s :=
+  j.smallEtaleMapBaseChangeAdj.sheafPullbackIso_inv_comp_yonedaCompSheafPullbackIso_hom_app_apply
+    (smallEtaleTopology X) (smallEtaleTopology Y) V W s
+
+@[simp]
+lemma yonedaCompSmallEtaleMapPushforwardIso_inv_app_hom_app_apply (j : X ⟶ Y) [Etale j]
+    (V : Y.Etale) (W : X.Etale) (t : W ⟶ j.smallEtaleBaseChange.obj V) :
+    dsimp% (((j.yonedaCompSmallEtaleMapPushforwardIso).inv.app V).hom.app (Opposite.op W)) t =
+      (j.smallEtaleMapBaseChangeAdj.homEquiv W V).symm t :=
+  j.smallEtaleMapBaseChangeAdj.yonedaCompSheafPullbackIso_inv_comp_sheafPullbackIso_hom_app_apply
+    (smallEtaleTopology X) (smallEtaleTopology Y) V W t
+
+lemma yonedaCompSmallEtalePullbackIso_hom_app_of_etale (j : X ⟶ Y) [Etale j] (V : Y.Etale) :
+    j.yonedaCompSmallEtalePullbackIso.hom.app V =
+      (j.smallEtalePullbackIsoMapPushforward (Type u)).hom.app
+          ((smallEtaleTopology Y).yoneda.obj V) ≫
+        j.yonedaCompSmallEtaleMapPushforwardIso.hom.app V := by
+  simp [yonedaCompSmallEtaleMapPushforwardIso]
+
+lemma yonedaCompSmallEtalePullbackIso_inv_app_of_etale (j : X ⟶ Y) [Etale j] (V : Y.Etale) :
+    j.yonedaCompSmallEtalePullbackIso.inv.app V =
+      j.yonedaCompSmallEtaleMapPushforwardIso.inv.app V ≫
+        (j.smallEtalePullbackIsoMapPushforward (Type u)).inv.app
+          ((smallEtaleTopology Y).yoneda.obj V) := by
+  simp [yonedaCompSmallEtaleMapPushforwardIso]
 
 end PushforwardPullback
 

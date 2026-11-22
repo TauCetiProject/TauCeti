@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Sites.LocalSite
 public import Mathlib.CategoryTheory.Sites.SheafCohomology.Basic
 public import TauCeti.Algebra.Category.Grp.Projective
 public import TauCeti.Algebra.Category.ModuleCat.ForgetCorepresentable
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Over
 
 /-!
 # Étale sheaves on a separably closed field
@@ -165,10 +166,6 @@ theorem toPresheafFiber_pointSmallEtaleSheafFiberIso_hom_app (F : Sheaf (smallEt
   simp
 
 end EtalePoint
-
-/-- The identity of `S`, as an object of the small étale site of `S`, is a terminal object. -/
-noncomputable def Etale.mkIdTerminal (S : Scheme.{u}) : IsTerminal (Etale.mk (𝟙 S)) :=
-  IsTerminal.isTerminalOfObj (Etale.forget S) _ Over.mkIdTerminal
 
 section SepClosed
 

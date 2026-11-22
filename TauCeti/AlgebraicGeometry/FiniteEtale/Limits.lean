@@ -24,6 +24,9 @@ the remaining half of (G2), are not treated here.
 
 ## Main results
 
+* `TauCeti.FiniteEtaleScheme.trivialCover`: the trivial finite étale cover of `S` indexed by a
+  finite type `M`, with summand inclusions `trivialCover.ι`, universal map `trivialCover.desc`,
+  and extensionality `trivialCover.hom_ext`.
 * `TauCeti.FiniteEtaleScheme.isOpenImmersion_hom_left`,
   `TauCeti.FiniteEtaleScheme.isClosedImmersion_hom_left`: the underlying morphism of a
   monomorphism of finite étale schemes is an open and closed immersion.
@@ -274,6 +277,50 @@ instance : Balanced (FiniteEtaleScheme S) where
     have : IsIso (((finiteEtaleSchemeProperty S).ι ⋙ Over.forget S).map f) :=
       (isIso_iff_isOpenImmersion_and_surjective f.hom.left).mpr ⟨inferInstance, inferInstance⟩
     exact isIso_of_reflects_iso f ((finiteEtaleSchemeProperty S).ι ⋙ Over.forget S)
+
+section TrivialCover
+
+/-- The trivial finite étale cover of `S` indexed by a finite type `M`: the coproduct of `M`
+copies of the identity `S ⟶ S`. -/
+noncomputable def trivialCover (S : Scheme.{u}) (M : Type u) [Finite M] : FiniteEtaleScheme S :=
+  ∐ fun _ : M ↦ ofHom (𝟙 S)
+
+namespace trivialCover
+
+/-- The `m`-th summand inclusion `ofHom (𝟙 S) ⟶ trivialCover S M`. -/
+noncomputable def ι {S : Scheme.{u}} {M : Type u} [Finite M] (m : M) :
+    ofHom (𝟙 S) ⟶ trivialCover S M :=
+  Sigma.ι (fun _ : M ↦ ofHom (𝟙 S)) m
+
+/-- The morphism out of `trivialCover S M` induced by a family of morphisms
+`ofHom (𝟙 S) ⟶ X`. -/
+noncomputable def desc {S : Scheme.{u}} {M : Type u} [Finite M] {X : FiniteEtaleScheme S}
+    (f : M → (ofHom (𝟙 S) ⟶ X)) : trivialCover S M ⟶ X :=
+  Sigma.desc f
+
+/-- Composing a summand inclusion with `trivialCover.desc f` recovers `f m`. -/
+@[reassoc (attr := simp)]
+theorem ι_desc {S : Scheme.{u}} {M : Type u} [Finite M] {X : FiniteEtaleScheme S}
+    (f : M → (ofHom (𝟙 S) ⟶ X)) (m : M) :
+    ι m ≫ desc f = f m :=
+  Sigma.ι_comp_desc f m
+
+/-- Two morphisms out of `trivialCover S M` are equal if they agree on every summand inclusion. -/
+@[ext]
+theorem hom_ext {S : Scheme.{u}} {M : Type u} [Finite M] {X : FiniteEtaleScheme S}
+    {g₁ g₂ : trivialCover S M ⟶ X} (h : ∀ m : M, ι m ≫ g₁ = ι m ≫ g₂) : g₁ = g₂ :=
+  Sigma.hom_ext _ _ h
+
+/-- The colimit cocone exhibiting `trivialCover S M` as the coproduct of `M` copies of
+`ofHom (𝟙 S)`. -/
+noncomputable def isColimit (S : Scheme.{u}) (M : Type u) [Finite M] :
+    IsColimit (Cofan.mk (trivialCover S M) (ι (S := S) (M := M))) :=
+  Cofan.IsColimit.mk _ (fun s ↦ desc s.inj) (fun s m ↦ ι_desc s.inj m)
+    (fun s _ hg ↦ hom_ext fun m ↦ (hg m).trans (ι_desc s.inj m).symm)
+
+end trivialCover
+
+end TrivialCover
 
 end FiniteEtaleScheme
 

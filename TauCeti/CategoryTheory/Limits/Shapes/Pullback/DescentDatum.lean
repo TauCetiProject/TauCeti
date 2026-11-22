@@ -67,6 +67,9 @@ construct.
   canonical descent datum, the descent datum on `Z ⟶ X₀ ×_S S'` relative to the base change
   `X₀ ×_S S' ⟶ X₀` of `p`, with `TauCeti.DescentDatum.Hom.ofOverBaseChange` translating effectivity
   of it back to effectivity of `D`, compatibly with `f` (`Hom.comp_ofOverBaseChange`).
+* `TauCeti.DescentDatum.map L D`: transport of descent data and their morphisms along a
+  pullback-preserving functor `L`, with reflection of descent-datum morphisms along faithful
+  functors (`Hom.ofMap`) and compatibility with canonical base-change data (`baseChangeMapHom`).
 
 A descent datum `D` is *effective* when there are an object `X` over `S` and a morphism
 `baseChange p X ⟶ D` of descent data which is an isomorphism over `S'`.
@@ -935,6 +938,236 @@ theorem Hom.comp_ofOverBaseChange {W : Over X₀.left}
   refine pullback.hom_ext ?_ ?_ <;> simp [-Hom.hom_left_snd, reassoc_of% hh, ← pullback.condition]
 
 end OverBaseChange
+
+section Map
+
+variable {D : Type*} [Category* D] [HasPullbacks D] (L : C ⥤ D)
+  [PreservesLimitsOfShape WalkingCospan L] {X Y : Over S'}
+
+/-- Action-space comparison isomorphism for a pullback-preserving functor `L : C ⥤ D`. -/
+noncomputable def mapActionIso (p : S' ⟶ S) (X : Over S') :
+    pullback (L.map p) (L.map X.hom ≫ L.map p) ≅ L.obj (pullback p (X.hom ≫ p)) :=
+  (pullback.congrHom rfl (L.map_comp X.hom p)).symm ≪≫
+    (PreservesPullback.iso L p (X.hom ≫ p)).symm
+
+/-- The action-space comparison for `L` commutes with the first projection. -/
+@[reassoc (attr := simp)]
+theorem mapActionIso_hom_fst (p : S' ⟶ S) (X : Over S') :
+    (mapActionIso L p X).hom ≫ L.map (pullback.fst p (X.hom ≫ p)) =
+      pullback.fst (L.map p) (L.map X.hom ≫ L.map p) := by
+  simp [mapActionIso]
+
+/-- The action-space comparison for `L` commutes with the second projection. -/
+@[reassoc (attr := simp)]
+theorem mapActionIso_hom_snd (p : S' ⟶ S) (X : Over S') :
+    (mapActionIso L p X).hom ≫ L.map (pullback.snd p (X.hom ≫ p)) =
+      pullback.snd (L.map p) (L.map X.hom ≫ L.map p) := by
+  simp [mapActionIso]
+
+/-- The inverse action-space comparison for `L` commutes with the first projection. -/
+@[reassoc (attr := simp)]
+theorem mapActionIso_inv_fst (p : S' ⟶ S) (X : Over S') :
+    (mapActionIso L p X).inv ≫ pullback.fst (L.map p) (L.map X.hom ≫ L.map p) =
+      L.map (pullback.fst p (X.hom ≫ p)) := by
+  simp [mapActionIso]
+
+/-- The inverse action-space comparison for `L` commutes with the second projection. -/
+@[reassoc (attr := simp)]
+theorem mapActionIso_inv_snd (p : S' ⟶ S) (X : Over S') :
+    (mapActionIso L p X).inv ≫ pullback.snd (L.map p) (L.map X.hom ≫ L.map p) =
+      L.map (pullback.snd p (X.hom ≫ p)) := by
+  simp [mapActionIso]
+
+/-- Naturality of `(mapActionIso L p _).inv` in morphisms `g : X ⟶ Y` over `S'`. -/
+@[reassoc]
+theorem mapActionIso_inv_naturality (p : S' ⟶ S) (g : X ⟶ Y) :
+    L.map (pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') g.left (𝟙 S) (by simp) (by simp)) ≫
+        (mapActionIso L p Y).inv =
+      (mapActionIso L p X).inv ≫
+        pullback.map (L.map p) (L.map X.hom ≫ L.map p) (L.map p) (L.map Y.hom ≫ L.map p)
+          (𝟙 (L.obj S')) (L.map g.left) (𝟙 (L.obj S)) (by simp)
+          (by rw [Category.comp_id, ← Category.assoc (L.map g.left),
+            ← L.map_comp g.left Y.hom, Over.w]) := by
+  apply pullback.hom_ext
+  · rw [Category.assoc, mapActionIso_inv_fst, ← L.map_comp, pullback.lift_fst, Category.assoc,
+      pullback.lift_fst, Category.comp_id, mapActionIso_inv_fst_assoc, Category.comp_id]
+  · rw [Category.assoc, mapActionIso_inv_snd, ← L.map_comp, pullback.lift_snd, Category.assoc,
+      pullback.lift_snd, mapActionIso_inv_snd_assoc, L.map_comp]
+
+/-- Naturality of `(mapActionIso L p _).hom` in morphisms `g : X ⟶ Y` over `S'`. -/
+@[reassoc]
+theorem mapActionIso_hom_naturality (p : S' ⟶ S) (g : X ⟶ Y) :
+    pullback.map (L.map p) (L.map X.hom ≫ L.map p) (L.map p) (L.map Y.hom ≫ L.map p)
+        (𝟙 (L.obj S')) (L.map g.left) (𝟙 (L.obj S)) (by simp)
+        (by rw [Category.comp_id, ← Category.assoc (L.map g.left),
+          ← L.map_comp g.left Y.hom, Over.w]) ≫
+      (mapActionIso L p Y).hom =
+    (mapActionIso L p X).hom ≫
+      L.map (pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') g.left (𝟙 S) (by simp) (by simp)) := by
+  refine (cancel_mono (mapActionIso L p Y).inv).mp ?_
+  rw [Category.assoc, Iso.hom_inv_id, Category.comp_id, Category.assoc, mapActionIso_inv_naturality,
+    Iso.hom_inv_id_assoc]
+
+/-- Transport a descent datum along a pullback-preserving functor `L : C ⥤ D`. -/
+noncomputable def map (D₀ : DescentDatum p X) :
+    DescentDatum (L.map p) (Over.mk (L.map X.hom)) where
+  act := (mapActionIso L p X).hom ≫ L.map D₀.act
+  act_hom := by
+    dsimp only [Over.mk_hom]
+    rw [Category.assoc, ← L.map_comp D₀.act X.hom, D₀.act_hom]
+    exact mapActionIso_hom_fst L p X
+  lift_act := by
+    dsimp only [Over.mk_left, Over.mk_hom]
+    have hlift : pullback.lift (L.map X.hom) (𝟙 (L.obj X.left)) (by simp) =
+        L.map (pullback.lift X.hom (𝟙 X.left) (by simp)) ≫ (mapActionIso L p X).inv := by
+      refine pullback.hom_ext ?_ ?_
+      · rw [pullback.lift_fst, Category.assoc, mapActionIso_inv_fst, ← L.map_comp,
+          pullback.lift_fst]
+      · rw [pullback.lift_snd, Category.assoc, mapActionIso_inv_snd, ← L.map_comp,
+          pullback.lift_snd, L.map_id]
+    rw [hlift, Category.assoc, Iso.inv_hom_id_assoc, ← L.map_comp, D₀.lift_act, L.map_id]
+  act_assoc := by
+    dsimp only [Over.mk_left, Over.mk_hom]
+    let e₁ := mapActionIso L p X
+    let eQ : pullback (L.map p)
+        (pullback.fst (L.map p) (L.map X.hom ≫ L.map p) ≫ L.map p) ≅
+        L.obj (pullback p (pullback.fst p (X.hom ≫ p) ≫ p)) :=
+      asIso (pullback.map _ _ _ _ (𝟙 (L.obj S')) e₁.hom (𝟙 (L.obj S))
+          (by simp) (by rw [Category.comp_id, L.map_comp, mapActionIso_hom_fst_assoc])) ≪≫
+        (PreservesPullback.iso L _ _).symm
+    have heQ_fst : eQ.hom ≫ L.map (pullback.fst p _) = pullback.fst _ _ := by
+      simp [eQ]
+    have heQ_snd : eQ.hom ≫ L.map (pullback.snd p _) = pullback.snd _ _ ≫ e₁.hom := by
+      simp [eQ]
+    let aL : pullback p (pullback.fst p (X.hom ≫ p) ≫ p) ⟶ pullback p (X.hom ≫ p) :=
+      pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
+        (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫ D₀.act)
+        (by rw [Category.assoc, D₀.act_hom_assoc]; exact pullback.condition)
+    let aR : pullback p (pullback.fst p (X.hom ≫ p) ≫ p) ⟶ pullback p (X.hom ≫ p) :=
+      pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
+        (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫ pullback.snd p (X.hom ≫ p))
+        (by
+          rw [Category.assoc, ← pullback.condition (f := p) (g := X.hom ≫ p)]
+          exact pullback.condition)
+    have hact_p : L.map D₀.act ≫ L.map X.hom ≫ L.map p =
+        L.map (pullback.fst p (X.hom ≫ p)) ≫ L.map p := by
+      rw [← Category.assoc, ← L.map_comp, D₀.act_hom]
+    have hL : pullback.lift (pullback.fst _ _) (pullback.snd _ _ ≫ e₁.hom ≫ L.map D₀.act)
+          (by
+            rw [Category.assoc, Category.assoc, hact_p, mapActionIso_hom_fst_assoc]
+            exact pullback.condition) =
+        eQ.hom ≫ L.map aL ≫ e₁.inv := by
+      refine pullback.hom_ext ?_ ?_
+      · rw [pullback.lift_fst, Category.assoc, Category.assoc, mapActionIso_inv_fst,
+          ← L.map_comp aL, pullback.lift_fst, heQ_fst]
+      · rw [pullback.lift_snd, Category.assoc, Category.assoc, mapActionIso_inv_snd,
+          ← L.map_comp aL, pullback.lift_snd, L.map_comp, ← Category.assoc, ← heQ_snd,
+          Category.assoc]
+    have hR : pullback.lift (pullback.fst _ _) (pullback.snd _ _ ≫ pullback.snd _ _)
+          (by
+            rw [Category.assoc, ← pullback.condition (f := L.map p) (g := L.map X.hom ≫ L.map p)]
+            exact pullback.condition) =
+        eQ.hom ≫ L.map aR ≫ e₁.inv := by
+      refine pullback.hom_ext ?_ ?_
+      · rw [pullback.lift_fst, Category.assoc, Category.assoc, mapActionIso_inv_fst,
+          ← L.map_comp aR, pullback.lift_fst, heQ_fst]
+      · rw [pullback.lift_snd, Category.assoc, Category.assoc, mapActionIso_inv_snd,
+          ← L.map_comp aR, pullback.lift_snd, L.map_comp, ← Category.assoc, heQ_snd,
+          Category.assoc]
+        exact congrArg (pullback.snd _ _ ≫ ·) (mapActionIso_hom_snd L p X).symm
+    rw [hL, hR]
+    simp only [Category.assoc, Iso.inv_hom_id_assoc, ← L.map_comp, e₁]
+    exact congrArg (eQ.hom ≫ L.map ·) D₀.act_assoc
+
+/-- The action of the transported descent datum `D₀.map L`. -/
+@[simp]
+theorem map_act (D₀ : DescentDatum p X) :
+    (D₀.map L).act = (mapActionIso L p X).hom ≫ L.map D₀.act :=
+  (rfl)
+
+/-- Transport a morphism of descent data along a pullback-preserving functor `L : C ⥤ D`. -/
+noncomputable def Hom.map {D₀ : DescentDatum p X} {E₀ : DescentDatum p Y} (f : Hom D₀ E₀) :
+    Hom (D₀.map L) (E₀.map L) where
+  hom := Over.homMk (L.map f.hom.left) (by simp only [Over.mk_hom]; rw [← L.map_comp, Over.w])
+  map_act := by
+    simp only [Over.mk_left, Over.mk_hom, Over.homMk_left, DescentDatum.map_act]
+    rw [mapActionIso_hom_naturality_assoc, ← L.map_comp _ E₀.act, f.map_act,
+      L.map_comp D₀.act f.hom.left, Category.assoc]
+
+/-- The underlying morphism of `f.map L` is `L.map f.hom.left`. -/
+@[simp]
+theorem Hom.map_hom_left {D₀ : DescentDatum p X} {E₀ : DescentDatum p Y} (f : Hom D₀ E₀) :
+    (f.map L).hom.left = L.map f.hom.left :=
+  (rfl)
+
+/-- Reflect a morphism of descent data along a faithful pullback-preserving functor `L`. -/
+def Hom.ofMap [L.Faithful] {D₀ : DescentDatum p X} {E₀ : DescentDatum p Y} (g : X ⟶ Y)
+    (h : Hom (D₀.map L) (E₀.map L)) (hg : h.hom.left = L.map g.left) : Hom D₀ E₀ where
+  hom := g
+  map_act := L.map_injective <| by
+    have hact := congrArg ((mapActionIso L p X).inv ≫ ·) h.map_act
+    simp only [Over.mk_left, Over.mk_hom, hg, DescentDatum.map_act, Category.assoc,
+      Iso.inv_hom_id_assoc] at hact
+    have hnat' : (mapActionIso L p X).inv ≫
+        pullback.map (L.map p) (L.map X.hom ≫ L.map p) (L.map p) (L.map Y.hom ≫ L.map p)
+          (𝟙 (L.obj S')) (L.map g.left) (𝟙 (L.obj S)) (by simp)
+          (by rw [Category.comp_id, ← Category.assoc (L.map g.left),
+            ← L.map_comp g.left Y.hom, Over.w]) ≫
+        (mapActionIso L p Y).hom =
+        L.map (pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') g.left (𝟙 S) (by simp)
+          (by simp)) := by
+      rw [← Category.assoc, ← mapActionIso_inv_naturality L p g, Category.assoc, Iso.inv_hom_id,
+        Category.comp_id]
+    rw [L.map_comp _ E₀.act, L.map_comp D₀.act g.left, ← hnat', ← hact]
+    simp only [Category.assoc]
+
+/-- The underlying morphism of `Hom.ofMap L g h hg` is `g`. -/
+@[simp]
+theorem Hom.ofMap_hom [L.Faithful] {D₀ : DescentDatum p X} {E₀ : DescentDatum p Y} (g : X ⟶ Y)
+    (h : Hom (D₀.map L) (E₀.map L)) (hg : h.hom.left = L.map g.left) :
+    (Hom.ofMap L g h hg).hom = g :=
+  (rfl)
+
+/-- Transporting a canonical base-change descent datum along a pullback-preserving functor `L`
+identifies with the canonical base-change descent datum of the image. -/
+noncomputable def baseChangeMapHom (p : S' ⟶ S) (X₀ : Over S) :
+    Hom ((baseChange p X₀).map L) (baseChange (L.map p) (Over.mk (L.map X₀.hom))) where
+  hom := Over.homMk (PreservesPullback.iso L X₀.hom p).hom
+    (PreservesPullback.iso_hom_snd L X₀.hom p)
+  map_act := by
+    have hfst := baseChange_act_fst (L.map p) (Over.mk (L.map X₀.hom))
+    have hsnd := baseChange_act_snd (L.map p) (Over.mk (L.map X₀.hom))
+    simp only [Over.mk_left, Over.mk_hom, Over.pullback_obj_left, Over.pullback_obj_hom,
+      Over.homMk_left, DescentDatum.map_act] at hfst hsnd ⊢
+    refine pullback.hom_ext ?_ ?_
+    · rw [Category.assoc, hfst]
+      simp only [pullback.lift_snd_assoc]
+      rw [Category.assoc, PreservesPullback.iso_hom_fst, Category.assoc, Category.assoc,
+        PreservesPullback.iso_hom_fst, ← L.map_comp (baseChange p X₀).act,
+        baseChange_act_fst, L.map_comp, mapActionIso_hom_snd_assoc]
+      rfl
+    · rw [Category.assoc, hsnd]
+      simp only [pullback.lift_fst, Category.comp_id]
+      rw [Category.assoc, Category.assoc, PreservesPullback.iso_hom_snd,
+        ← L.map_comp (baseChange p X₀).act, baseChange_act_snd, mapActionIso_hom_fst]
+      rfl
+
+/-- The underlying morphism of `baseChangeMapHom L p X₀` is `PreservesPullback.iso L X₀.hom p`. -/
+@[simp]
+theorem baseChangeMapHom_hom_left (p : S' ⟶ S) (X₀ : Over S) :
+    (baseChangeMapHom L p X₀).hom.left = (PreservesPullback.iso L X₀.hom p).hom :=
+  (rfl)
+
+/-- The canonical base-change comparison `baseChangeMapHom L p X₀` is an isomorphism of descent
+data. -/
+instance isIso_baseChangeMapHom_hom (p : S' ⟶ S) (X₀ : Over S) :
+    IsIso (baseChangeMapHom L p X₀).hom := by
+  suffices IsIso ((Over.forget (L.obj S')).map (baseChangeMapHom L p X₀).hom) from
+    isIso_of_reflects_iso _ (Over.forget (L.obj S'))
+  rw [Over.forget_map, baseChangeMapHom_hom_left]
+  infer_instance
+
+end Map
 
 end DescentDatum
 

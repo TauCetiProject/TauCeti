@@ -8,6 +8,8 @@ module
 public import Mathlib.AlgebraicGeometry.Sites.Proetale
 public import Mathlib.CategoryTheory.Sites.Subcanonical
 public import Mathlib.CategoryTheory.Sites.SubcanonicalOver
+import Mathlib.CategoryTheory.Sites.EffectiveEpimorphic
+import TauCeti.AlgebraicGeometry.Sites.Etale.Localization
 
 /-!
 # The étale topologies are subcanonical
@@ -21,6 +23,9 @@ Consequently `(Scheme.smallEtaleTopology S).yoneda` is a fully faithful functor 
 étale over `S` to étale sheaves of sets on `S`. This is how an étale `S`-scheme, for example a
 finite étale cover, is regarded as an étale sheaf.
 
+In particular, every surjective morphism in `S.Etale` generates a covering sieve and is therefore
+an effective epimorphism (`AlgebraicGeometry.Scheme.Etale.effectiveEpi_of_surjective`).
+
 ## Main results
 
 * `AlgebraicGeometry.Scheme.etaleTopology.Subcanonical`: the big étale topology is subcanonical.
@@ -28,6 +33,8 @@ finite étale cover, is regarded as an étale sheaf.
   étale site of `S` to `Over S` is continuous.
 * `(AlgebraicGeometry.Scheme.smallEtaleTopology S).Subcanonical`: the small étale topology is
   subcanonical.
+* `AlgebraicGeometry.Scheme.Etale.effectiveEpi_of_surjective`: surjective morphisms in `S.Etale`
+  are effective epimorphisms.
 
 ## References
 
@@ -65,5 +72,16 @@ instance (S : Scheme.{u}) :
 /-- Representable presheaves on the small étale site of a scheme are sheaves. -/
 instance (S : Scheme.{u}) : (smallEtaleTopology S).Subcanonical :=
   GrothendieckTopology.subcanonical_of_full_of_faithful (Etale.forget S) _ (etaleTopology.over S)
+
+/-- A surjective morphism in the small étale site of `S` is an effective epimorphism, because it
+generates a covering sieve for the subcanonical small étale topology. -/
+theorem Etale.effectiveEpi_of_surjective {S : Scheme.{u}} {U V : S.Etale} (f : U ⟶ V)
+    [Surjective f.left] : EffectiveEpi f := by
+  refine (Sieve.effectiveEpimorphic_singleton f).mp
+    ((Presieve.EffectiveEpimorphic.iff_forall_isSheafFor_yoneda _).mpr fun W ↦ ?_)
+  rw [Presieve.isSheafFor_iff_generate]
+  exact (GrothendieckTopology.Subcanonical.isSheaf_of_isRepresentable
+    (J := smallEtaleTopology S) (yoneda.obj W))
+    (Sieve.generate (.singleton f)) (mem_smallEtaleTopology_singleton_of_surjective f)
 
 end AlgebraicGeometry.Scheme

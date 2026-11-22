@@ -252,6 +252,10 @@ end Hom
 
 namespace Etale
 
+/-- The identity of `S`, as an object of the small étale site of `S`, is a terminal object. -/
+noncomputable def mkIdTerminal (S : Scheme.{u}) : IsTerminal (Etale.mk (𝟙 S)) :=
+  IsTerminal.isTerminalOfObj (Etale.forget S) _ CategoryTheory.Over.mkIdTerminal
+
 variable {S : Scheme.{u}} (U : S.Etale)
 
 /-- The slice category `CategoryTheory.Over U` of `S.Etale` over `U` is equivalent to the small
