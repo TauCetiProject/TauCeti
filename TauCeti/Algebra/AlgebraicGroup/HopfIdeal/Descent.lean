@@ -130,23 +130,24 @@ theorem _root_.Module.Basis.mem_coefficientHopfIdeal_iff_of_forall_map_mem
     (hI : ∀ σ : L ≃ₐ[k] L, ∀ x ∈ I, TensorProduct.map σ.toLinearMap LinearMap.id x ∈ I)
     (h : H) : h ∈ b.coefficientHopfIdeal I ↔ 1 ⊗ₜ[k] h ∈ I := by
   conv_rhs => rw [← b.baseChangeHopfIdeal_coefficientHopfIdeal_of_forall_map_mem I hI,
-    mem_baseChangeHopfIdeal_iff, baseChangeMap_apply_tmul,
-    Module.FaithfullyFlat.one_tmul_eq_zero_iff, _root_.CommHopfAlgCat.mkQuotient_eq_zero_iff]
+    one_tmul_mem_baseChangeHopfIdeal_iff]
 
 /-- Along a Galois extension `L / k`, a Hopf ideal of `L ⊗[k] H` is the base change of a Hopf ideal
-of `H` exactly when it is stable under the scalar-factor Galois action, and that Hopf ideal of `H`
-is then unique. Geometrically, a closed subgroup of the base-changed group is defined over `k`
-exactly when it is stable under `Gal(L / k)`. -/
+of `H` exactly when it is fixed by the scalar-factor Galois transport `mapBaseChangeHopfIdeal`,
+and that Hopf ideal of `H` is then unique. Geometrically, a closed subgroup of the base-changed
+group is defined over `k` exactly when it is stable under `Gal(L / k)`. -/
 theorem existsUnique_baseChangeHopfIdeal_eq_iff (I : HopfIdeal L (baseChange (K := L) H)) :
     (∃! J : HopfIdeal k H, baseChangeHopfIdeal (K := L) J = I) ↔
-      ∀ σ : L ≃ₐ[k] L, ∀ x ∈ I, TensorProduct.map σ.toLinearMap LinearMap.id x ∈ I := by
+      ∀ σ : L ≃ₐ[k] L, mapBaseChangeHopfIdeal σ I = I := by
   constructor
-  · rintro ⟨J, rfl, -⟩ σ x hx
-    exact map_mem_baseChangeHopfIdeal J σ.toAlgHom hx
+  · rintro ⟨J, rfl, -⟩ σ
+    exact mapBaseChangeHopfIdeal_baseChangeHopfIdeal σ J
   · intro hI
     classical
     let b := Module.Free.chooseBasis k L
-    have hb := b.baseChangeHopfIdeal_coefficientHopfIdeal_of_forall_map_mem I hI
+    have hmem : ∀ σ : L ≃ₐ[k] L, ∀ x ∈ I, TensorProduct.map σ.toLinearMap LinearMap.id x ∈ I :=
+      fun σ x hx ↦ hI σ ▸ (mem_mapBaseChangeHopfIdeal_map_iff σ I x).mpr hx
+    have hb := b.baseChangeHopfIdeal_coefficientHopfIdeal_of_forall_map_mem I hmem
     exact ⟨b.coefficientHopfIdeal I, hb, fun J hJ ↦
       baseChangeHopfIdeal_injective (hJ.trans hb.symm)⟩
 
