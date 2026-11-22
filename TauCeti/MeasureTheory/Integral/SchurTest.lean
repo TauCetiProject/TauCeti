@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Measure.Prod
 
@@ -48,11 +49,6 @@ Tonelli's theorem.
 The statements are in `ℝ≥0∞`, so they need no integrability hypotheses, and the bounds on the row
 and column integrals are only required almost everywhere.
 
-For counting measure on `ℕ` and the banded kernel `1_{|j - k| < L}`, the bilinear form of Schur's
-test bounds a double sum of `a j * b k` over the band `|j - k| < L` by `2 L` times the `ℓ²` norms
-of `a` and `b`. This is the form of Cauchy–Schwarz used to pair almost orthogonal
-Littlewood–Paley blocks.
-
 ## Main declarations
 
 * `TauCeti.lintegral_rpow_lintegral_mul_le_of_inv_add_inv_eq`: Young's inequality for integral
@@ -66,10 +62,9 @@ Littlewood–Paley blocks.
 * `TauCeti.memLp_lintegral_mul`: hence the kernel maps `Lᵖ` to `Lᵖ` for finite `A` and `B`.
 * `TauCeti.lintegral_lintegral_mul_mul_le`: Schur's test for the bilinear form
   `∫∫ f(x) k(x, y) g(y)`, bounded by `‖f‖_p ‖g‖_q` for Hölder conjugate `p` and `q`.
+* `TauCeti.tsum_tsum_mul_mul_le`: the bilinear form of a convolution kernel on a countable group.
 * `TauCeti.lintegral_lintegral_mul_indicator_ball_mul_le`: the bilinear form for the kernel
   `1_{|x - y| < R}` on the real line, whose rows and columns have length `2R`.
-* `ENNReal.tsum_sum_Ico_mul_le`: the bilinear form for counting measure on `ℕ` and the kernel
-  `1_{|j - k| < L}`, as a bound on a banded double sum.
 
 ## References
 
@@ -340,6 +335,28 @@ theorem measurable_uncurry_indicator_ball {γ : Type*} [PseudoMetricSpace γ] [M
   exact measurable_one.indicator
     (measurableSet_lt (measurable_snd.dist measurable_fst) measurable_const)
 
+/-- **Schur's test for a convolution kernel on a countable group**: for `w, y : G → ℝ≥0∞`,
+`∑_{k, l} w(k - l) yₖ yₗ ≤ (∑ₘ w(m)) ∑ₖ yₖ²`. This is `TauCeti.lintegral_lintegral_mul_mul_le`
+for the counting measure, whose rows and columns all have sum `∑ₘ w(m)`. -/
+theorem tsum_tsum_mul_mul_le {G : Type*} [AddGroup G] [Countable G] (w y : G → ℝ≥0∞) :
+    ∑' k, ∑' l, w (k - l) * (y k * y l) ≤ (∑' m, w m) * ∑' k, y k ^ 2 := by
+  let _ : MeasurableSpace G := ⊤
+  set W := ∑' m, w m
+  have hrow (k : G) : ∫⁻ l, w (k - l) ∂Measure.count ≤ W := by
+    rw [lintegral_count]; exact ((Equiv.subLeft k).tsum_eq w).le
+  have hcol (l : G) : ∫⁻ k, w (k - l) ∂Measure.count ≤ W := by
+    rw [lintegral_count]; exact ((Equiv.subRight l).tsum_eq w).le
+  have hnorm : eLpNorm y 2 Measure.count ^ 2 = ∑' k, y k ^ 2 := by
+    rw [eLpNorm_two_sq_eq_lintegral_sq (measurable_of_countable y).aemeasurable, lintegral_count]
+  have h := lintegral_lintegral_mul_mul_le (μ := Measure.count) (ν := Measure.count)
+    (k := fun k l : G ↦ w (k - l)) (measurable_of_countable _).aemeasurable
+    (measurable_of_countable y).aemeasurable (measurable_of_countable y).aemeasurable
+    (p := 2) (q := 2) (ae_of_all _ hrow) (ae_of_all _ hcol)
+  simp only [lintegral_count] at h
+  refine (h.trans_eq ?_).trans_eq' (tsum_congr fun k ↦ tsum_congr fun l ↦ by ring)
+  rw [mul_assoc, ← sq, hnorm, ← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
+  norm_num
+
 /-- **Schur's test** for the kernel `1_{|x - y| < R}` on the real line: its rows and columns have
 length `2R`, so for Hölder conjugate `p` and `q`,
 `∫∫_{|x - y| < R} f(x) g(y) dx dy ≤ 2R ‖f‖_p ‖g‖_q`. -/
@@ -365,51 +382,3 @@ theorem lintegral_lintegral_mul_indicator_ball_mul_le {f g : ℝ → ℝ≥0∞}
     sub_add_cancel, ENNReal.rpow_one] at h
 
 end TauCeti
-
-namespace ENNReal
-
-open MeasureTheory
-
-/-- **Cauchy–Schwarz for a banded double sum.** Summing `a j * b k` over the pairs of natural
-numbers with `|j - k| < L` gives at most `2 L (∑ a²)^{1/2} (∑ b²)^{1/2}`, since each index
-occurs in fewer than `2 L` of these pairs. No summability hypotheses are needed; both sides may be
-infinite. This is Schur's test `TauCeti.lintegral_lintegral_mul_mul_le` for counting measure and
-the kernel `1_{|j - k| < L}`. -/
-theorem tsum_sum_Ico_mul_le (L : ℕ) (a b : ℕ → ℝ≥0∞) :
-    ∑' j, ∑ k ∈ Finset.Ico (j + 1 - L) (j + L), a j * b k ≤
-      2 * L * ((∑' j, a j ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by
-  set W : ℕ → Finset ℕ := fun j ↦ Finset.Ico (j + 1 - L) (j + L)
-  -- The indicator kernel of the windows `W j` is symmetric, since `k ∈ W j` says `|j - k| < L`,
-  -- and each window has at most `2 L` elements.
-  set κ : ℕ → ℕ → ℝ≥0∞ := fun j k ↦ (W j : Set ℕ).indicator 1 k
-  have hrow (j : ℕ) : ∫⁻ k, κ j k ∂Measure.count ≤ 2 * L := by
-    have hcard : (W j).card ≤ 2 * L := by
-      simp only [W, Nat.card_Ico]
-      omega
-    simp only [κ]
-    rw [lintegral_indicator_one (Finset.measurableSet _), Measure.count_apply_finset]
-    exact_mod_cast hcard
-  have hmem (j k : ℕ) : k ∈ W j ↔ j ∈ W k := by
-    simp only [W, Finset.mem_Ico]
-    omega
-  have hcol (k : ℕ) : ∫⁻ j, κ j k ∂Measure.count ≤ 2 * L := by
-    refine (lintegral_congr fun j ↦ ?_).trans_le (hrow k)
-    simp only [κ, Set.indicator_apply, Finset.mem_coe, Pi.one_apply, hmem j k]
-  have h := TauCeti.lintegral_lintegral_mul_mul_le Measurable.of_discrete.aemeasurable
-    Measurable.of_discrete.aemeasurable Measurable.of_discrete.aemeasurable (p := 2) (q := 2)
-    (ae_of_all _ hrow) (ae_of_all _ hcol) (f := a) (g := b)
-  simp only [lintegral_count, eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ofNat_ne_top
-    Measurable.of_discrete.aestronglyMeasurable, eNorm_eq_self, toReal_ofNat, one_div,
-    rpow_two] at h
-  calc ∑' j, ∑ k ∈ W j, a j * b k = ∑' j, ∑' k, a j * (κ j k * b k) := by
-        refine tsum_congr fun j ↦ ?_
-        rw [sum_eq_tsum_indicator]
-        refine tsum_congr fun k ↦ ?_
-        simp only [κ, Set.indicator_const_mul, ← Set.indicator_mul_left, Pi.one_apply, one_mul]
-    _ ≤ _ := h
-    _ = 2 * L * ((∑' j, a j ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by
-        -- The constants `(2 L) ^ (1 - 2⁻¹)` and `(2 L) ^ 2⁻¹` of Schur's test multiply to `2 L`.
-        rw [← rpow_add_of_nonneg (x := 2 * (L : ℝ≥0∞)) _ _ (by norm_num) (by norm_num),
-          sub_add_cancel, rpow_one, mul_assoc (2 * (L : ℝ≥0∞))]
-
-end ENNReal

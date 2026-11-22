@@ -36,7 +36,9 @@ without measure theory. It gives the triangle inequality for gauges defined as `
 such as the Hilbert–Schmidt energy of an operator. Hölder's inequality holds for such sums in the
 same way, extending `ENNReal.inner_le_Lp_mul_Lq` and `NNReal.inner_le_Lp_mul_Lq_tsum`. The `ℓᵖ`
 norm of such a family is antitone in the exponent, which gives the inclusions between Schatten
-classes of operators.
+classes of operators. A double sum of `a j * b k` over the band `|j - k| < L` is bounded by
+`2 L` times the `ℓ²` norms of `a` and `b`, the form of Cauchy–Schwarz used to pair almost
+orthogonal Littlewood–Paley blocks.
 
 Mathlib states the two-point weighted AM-GM inequality in `ℝ≥0∞` with `ℝ≥0` weights
 (`ENNReal.geom_mean_le_arith_mean2_weighted`); it is restated here for the real weights `1 - θ`
@@ -69,6 +71,7 @@ of a higher-order Sobolev space.
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
 * `ENNReal.inner_le_Lp_mul_Lq_tsum`: Hölder's inequality for unconditional sums in `ℝ≥0∞`.
 * `ENNReal.Lq_le_Lp_tsum`: the `ℓᵖ` norm of an `ℝ≥0∞`-valued family is antitone in `p`.
+* `ENNReal.tsum_sum_mul_le_of_card_le`: Cauchy–Schwarz for a banded double sum in `ℝ≥0∞`.
 * `Real.Lq_le_Lp_of_nonneg`: the same for finite sums of nonnegative reals.
 * `Real.Lp_le_mul_Lp_of_nonneg`: termwise domination `0 ≤ f i ≤ c * g i` bounds the finite
   `ℓᵖ` expression of `f` by `c` times that of `g`.
@@ -258,6 +261,62 @@ theorem Lq_le_Lp_tsum {ι : Type*} (f : ι → ℝ≥0∞) {p q : ℝ} (hp : 0 <
     _ ≤ ∑' i, f i ^ p * S ^ (q - p) := by gcongr with i; exact hfS i
     _ = S ^ q := by
         rw [ENNReal.tsum_mul_right, ← hSp, ← rpow_add_of_nonneg _ _ hp.le hpq', add_sub_cancel]
+
+
+/-- **Cauchy–Schwarz for a banded double sum.** Let `W i` be finite sets of indices, each with at
+most `L` elements, such that every index `k` lies in at most `L` of them. Summing `a i * b k` over
+the pairs with `k ∈ W i` gives at most `L (∑ a²)^{1/2} (∑ b²)^{1/2}`. No summability hypotheses
+are needed; both sides may be infinite. -/
+theorem tsum_sum_mul_le_of_card_le {ι : Type*} [DecidableEq ι] (W : ι → Finset ι) {L : ℕ}
+    (hW : ∀ i, (W i).card ≤ L) (hW' : ∀ (s : Finset ι) (k : ι), (s.filter (k ∈ W ·)).card ≤ L)
+    (a b : ι → ℝ≥0∞) :
+    ∑' i, ∑ k ∈ W i, a i * b k ≤
+      L * ((∑' i, a i ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by
+  rw [_root_.tsum_eq_iSup_sum]
+  refine iSup_le fun s ↦ ?_
+  -- Cauchy–Schwarz over the finite set `T` of pairs `(i, k)` with `i ∈ s` and `k ∈ W i`, in which
+  -- each first index `i` and each second index `k` occurs at most `L` times.
+  set T := s.sigma W
+  have ha : ∑ x ∈ T, a x.1 ^ (2 : ℝ) ≤ L * ∑' i, a i ^ 2 := by
+    rw [Finset.sum_sigma]
+    simp only [rpow_two, Finset.sum_const, nsmul_eq_mul]
+    calc ∑ i ∈ s, ((W i).card : ℝ≥0∞) * a i ^ 2 ≤ ∑ i ∈ s, (L : ℝ≥0∞) * a i ^ 2 := by
+          gcongr with i
+          exact_mod_cast hW i
+      _ ≤ L * ∑' i, a i ^ 2 := by
+          rw [← Finset.mul_sum]
+          gcongr
+          exact _root_.sum_le_tsum _
+  have hb : ∑ x ∈ T, b x.2 ^ (2 : ℝ) ≤ L * ∑' k, b k ^ 2 := by
+    rw [Finset.sum_sigma, Finset.sum_comm' (t' := s.biUnion W)
+      (s' := fun k ↦ s.filter (k ∈ W ·))]
+    · simp only [rpow_two, Finset.sum_const, nsmul_eq_mul]
+      calc ∑ k ∈ s.biUnion W, ((s.filter (k ∈ W ·)).card : ℝ≥0∞) * b k ^ 2
+          ≤ ∑ k ∈ s.biUnion W, (L : ℝ≥0∞) * b k ^ 2 := by
+            gcongr with k
+            exact_mod_cast hW' s k
+        _ ≤ L * ∑' k, b k ^ 2 := by
+            rw [← Finset.mul_sum]
+            gcongr
+            exact _root_.sum_le_tsum _
+    · intro i k
+      simp only [Finset.mem_filter, Finset.mem_biUnion]
+      exact ⟨fun h ↦ ⟨⟨h.1, h.2⟩, i, h.1, h.2⟩, fun h ↦ h.1⟩
+  have hL : ((L : ℝ≥0∞) ^ (2⁻¹ : ℝ)) * (L : ℝ≥0∞) ^ (2⁻¹ : ℝ) = L := by
+    rw [← rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
+    norm_num
+  calc ∑ i ∈ s, ∑ k ∈ W i, a i * b k = ∑ x ∈ T, a x.1 * b x.2 := by
+        rw [Finset.sum_sigma]
+    _ ≤ (∑ x ∈ T, a x.1 ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) * (∑ x ∈ T, b x.2 ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) :=
+        inner_le_Lp_mul_Lq T (fun x ↦ a x.1) (fun x ↦ b x.2) Real.HolderConjugate.two_two
+    _ ≤ (L * ∑' i, a i ^ 2) ^ (2⁻¹ : ℝ) * (L * ∑' k, b k ^ 2) ^ (2⁻¹ : ℝ) := by
+        rw [one_div]
+        gcongr
+    _ = (L : ℝ≥0∞) ^ (2⁻¹ : ℝ) * (L : ℝ≥0∞) ^ (2⁻¹ : ℝ) *
+          ((∑' i, a i ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by
+        rw [mul_rpow_of_nonneg _ _ (by norm_num), mul_rpow_of_nonneg (L : ℝ≥0∞) _ (by norm_num)]
+        ring
+    _ = L * ((∑' i, a i ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by rw [hL]
 
 end ENNReal
 
