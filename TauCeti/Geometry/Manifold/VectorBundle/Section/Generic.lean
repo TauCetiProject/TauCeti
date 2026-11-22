@@ -50,6 +50,17 @@ namespace ContMDiffSection
 
 variable {n : ℕ∞ω}
 
+/-- If the base `finrank` does not exceed the fibre `finrank`, the positive-part Smale
+threshold is bounded by any differentiability order at least one. No finite-dimensionality
+assumption is needed for this numerical bound. -/
+theorem toNat_sub_add_one_le_of_finrank_le
+    {X F : Type*} [AddCommMonoid X] [Module ℝ X] [AddCommMonoid F] [Module ℝ F]
+    (h : finrank ℝ X ≤ finrank ℝ F) (hn : 1 ≤ n) :
+    (((finrank ℝ X : ℤ) - finrank ℝ F).toNat + 1 : ℕ) ≤ n := by
+  have hi : (finrank ℝ X : ℤ) - finrank ℝ F ≤ 0 :=
+    sub_nonpos.mpr (by exact_mod_cast h)
+  simpa only [Int.toNat_of_nonpos hi, zero_add, Nat.cast_one] using hn
+
 section AffineFamily
 
 variable {X H M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
@@ -92,16 +103,11 @@ theorem contMDiff_affineFamily (s₀ : ContMDiffSection I F n V)
   have hs (t : Finset ι) :
       ContMDiff (I.prod 𝓘(ℝ, ι → ℝ)) (I.prod 𝓘(ℝ, F)) n
         (fun z : M × (ι → ℝ) ↦ (⟨z.1, ∑ i ∈ t, z.2 i • s i z.1⟩ : TotalSpace F V)) := by
-    induction t using Finset.induction_on with
-    | empty =>
-      simpa only [Finset.sum_empty, Function.comp_def, zeroSection] using
-        (contMDiff_zeroSection ℝ V).comp contMDiff_fst
-    | @insert i t hi ih =>
-      have ha : ContMDiff (I.prod 𝓘(ℝ, ι → ℝ)) 𝓘(ℝ, ℝ) n
-          (fun z : M × (ι → ℝ) ↦ z.2 i) :=
-        (ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ).contDiff.contMDiff.comp contMDiff_snd
-      have hb := ha.smul_totalSpace ((s i).contMDiff.comp contMDiff_fst)
-      simpa only [Finset.sum_insert hi, Function.comp_def] using hb.add_sectionAlong ih
+    refine ContMDiff.sum_sectionAlong t (fun i (z : M × (ι → ℝ)) ↦ z.2 i • s i z.1) contMDiff_fst ?_
+    intro i _
+    have ha : ContMDiff (I.prod 𝓘(ℝ, ι → ℝ)) 𝓘(ℝ, ℝ) n (fun z : M × (ι → ℝ) ↦ z.2 i) :=
+      (ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ).contDiff.contMDiff.comp contMDiff_snd
+    exact ha.smul_totalSpace ((s i).contMDiff.comp contMDiff_fst)
   simpa only [affineFamily_apply, Function.comp_def] using
     (s₀.contMDiff.comp contMDiff_fst).add_sectionAlong (hs Finset.univ)
 
@@ -239,10 +245,7 @@ theorem mem_residual_setOf_affineFamily_ne_zero
   have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (pos_of_gt hdim)
   let : IsManifold 𝓘(ℝ, X) 1 M := IsManifold.of_le (n := n) hn
   filter_upwards [mem_residual_setOf_isRegular_affineFamily s₀ s hspan
-    (by
-      have hi : (finrank ℝ X : ℤ) - finrank ℝ F ≤ 0 :=
-        sub_nonpos.mpr (by exact_mod_cast hdim.le)
-      simpa only [Int.toNat_eq_zero.mpr hi, zero_add, Nat.cast_one] using hn)] with a ha
+    (toNat_sub_add_one_le_of_finrank_le hdim.le hn)] with a ha
   apply (TauCeti.isRegularSectionParameter_iff_forall_ne_zero_of_index_neg ?_).mp ha
   intro x _
   rw [TauCeti.index_sectionLinearization_of_finiteDimensional]
@@ -278,7 +281,7 @@ theorem mem_residual_setOf_regular_and_finite_zero_affineFamily
   have := finiteDimensional_of_span s hspan
   let : IsManifold 𝓘(ℝ, X) 1 M := IsManifold.of_le (n := n) hn
   filter_upwards [mem_residual_setOf_isRegular_affineFamily s₀ s hspan
-    (by simpa [hdim] using hn)] with a ha
+    (toNat_sub_add_one_le_of_finrank_le hdim.le hn)] with a ha
   refine ⟨ha, TauCeti.finite_sectionZero_of_contMDiff (I := 𝓘(ℝ, X))
     (ENat.one_le_iff_ne_zero_withTop.mp hn)
     (affineFamily s₀ s a).contMDiff ?_
