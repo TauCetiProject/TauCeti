@@ -124,9 +124,11 @@ def serreSpectralObjectPullbackAbutmentIso {g : B' ⟶ B} (hg : g.hom.IsWeakHomo
   -- The projection `B' ×_B E ⟶ E` is a weak homotopy equivalence, since `g` is one.
   haveI := (isWeakHomotopyEquivalence_pullbackSnd hp hg).isIso_singularHomologyMap
     (ModuleCat.of R R) n
-  filteredSpaceAbutmentIso (ModuleCat.of R R) (monotone_preimageSkeleton _) n ≪≫
-    asIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
-      (ModuleCat.of R R)).map (_root_.TopCat.pullbackSnd g p))
+  -- The isomorphism is elaborated on its own, so that its source is the singular homology of the
+  -- pullback in the form of the instance above rather than the homology of its chains.
+  chainFiltrationAbutmentIso (singularChains R) (monotone_preimageSkeleton _) n ≪≫
+    (asIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
+      (ModuleCat.of R R)).map (_root_.TopCat.pullbackSnd g p)) :)
 
 /-- The isomorphism `TauCeti.TopCat.serreSpectralObjectPullbackAbutmentIso` is the abutment
 isomorphism of the spectral sequence of the base change, followed by the map induced by the
@@ -135,7 +137,7 @@ projection `B' ×_B E ⟶ E`. -/
 lemma serreSpectralObjectPullbackAbutmentIso_hom {g : B' ⟶ B}
     (hg : g.hom.IsWeakHomotopyEquivalence) (n : ℕ) :
     (serreSpectralObjectPullbackAbutmentIso hp R C hg n).hom =
-      (filteredSpaceAbutmentIso (ModuleCat.of R R) (monotone_preimageSkeleton _) n).hom ≫
+      (chainFiltrationAbutmentIso (singularChains R) (monotone_preimageSkeleton _) n).hom ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
           (ModuleCat.of R R)).map (_root_.TopCat.pullbackSnd g p) :=
   (rfl)
@@ -195,7 +197,7 @@ the spectral sequence of the pullback, followed by the map induced by the projec
 @[simp]
 lemma arbitraryBaseSerreAbutmentIso_hom (n : ℕ) :
     (arbitraryBaseSerreAbutmentIso hp R n).hom =
-      (filteredSpaceAbutmentIso (ModuleCat.of R R) (monotone_preimageSkeleton _) n).hom ≫
+      (chainFiltrationAbutmentIso (singularChains R) (monotone_preimageSkeleton _) n).hom ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
           (ModuleCat.of R R)).map (_root_.TopCat.pullbackSnd (sigmaCWApproximationMap B) p) :=
   serreSpectralObjectPullbackAbutmentIso_hom ..

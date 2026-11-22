@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Alternating.Curry
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 public import TauCeti.LinearAlgebra.BilinearMap.BaseChange
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # Extension of scalars for alternating one- and two-forms
@@ -100,7 +101,7 @@ theorem liftBaseChangeFinTwo_swap (ω : E [⋀^Fin 2]→L[𝕜] F) (X Y : A ⊗[
     ω.liftBaseChangeFinTwo A Y X = -ω.liftBaseChangeFinTwo A X Y := by
   have h : (ω.liftBaseChangeFinTwo A).flip = -ω.liftBaseChangeFinTwo A := by
     ext v w
-    simpa using ω.map_swap ![v, w] (i := 0) (j := 1) (by decide)
+    simpa using ω.apply_vecCons_swap v w
   simpa using LinearMap.congr_fun₂ h X Y
 
 /-- The `A`-bilinear extension of a two-form is alternating: it vanishes on equal arguments. -/

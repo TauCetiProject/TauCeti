@@ -94,9 +94,10 @@ private theorem exists_notMem_image_closedBall (hEF : finrank ℝ F = finrank �
   by_contra! h
   have hne {x : E} (hx : x ∈ sphere (0 : E) 1) : f x ≠ y := fun h ↦ hy ⟨x, hx, h⟩
   have hc : Continuous fun x : sphere (0 : E) 1 ↦ f x :=
-    hf.comp_continuous continuous_subtype_val fun x ↦ sphere_subset_closedBall x.2
+    hf.comp_continuous continuous_subtypeVal fun x ↦ sphere_subset_closedBall x.property
   have hi : Injective fun x : sphere (0 : E) 1 ↦ f x := fun x x' h ↦ Subtype.ext <|
-    eq_of_apply_eq hinj (sphere_subset_closedBall x.2) (sphere_subset_closedBall x'.2) h (hne x.2)
+    eq_of_apply_eq hinj (sphere_subset_closedBall x.property) (sphere_subset_closedBall x'.property)
+        h (hne x.property)
   -- The complement of `f(∂Q)` is the image of the open ball, which is connected.
   have hrange : (range fun x : sphere (0 : E) 1 ↦ f x)ᶜ = f '' ball 0 1 := by
     ext z
@@ -106,8 +107,8 @@ private theorem exists_notMem_image_closedBall (hEF : finrank ℝ F = finrank �
       rw [← closedBall_sdiff_sphere]
       exact ⟨hx, fun hxs ↦ hz ⟨⟨x, hxs⟩, rfl⟩⟩
     · rintro ⟨x, hx, rfl⟩ ⟨s, hs⟩
-      exact sphere_disjoint_ball.ne_of_mem s.2 hx <| eq_of_apply_eq hinj
-        (sphere_subset_closedBall s.2) (ball_subset_closedBall hx) hs (hne s.2)
+      exact sphere_disjoint_ball.ne_of_mem s.property hx <| eq_of_apply_eq hinj
+        (sphere_subset_closedBall s.property) (ball_subset_closedBall hx) hs (hne s.property)
   exact not_isPreconnected_compl_range_sphere hEF hc hi
     (hrange ▸ isPreconnected_ball.image f (hf.mono ball_subset_closedBall))
 
@@ -231,7 +232,7 @@ theorem isCellularSet_preimage_singleton_of_injOn (hn : 1 ≤ finrank ℝ E)
       exact_mod_cast (by omega : 1 < finrank ℝ F)
     have : Infinite (sphere (0 : F) 1) := Set.Infinite.to_subtype <|
       IsPreconnected.infinite_of_nontrivial (isPreconnected_sphere hF 0 1)
-        ⟨p, p.2, q, q.2, Subtype.coe_injective.ne hpq⟩
+        ⟨p, p.property, q, q.property, Subtype.coe_injective.ne hpq⟩
     exact (Set.toFinite _).infinite_compl.nonempty
   obtain ⟨w, rfl⟩ := hgs z
   -- The cell `Q`: a large closed ball in the stereographic chart from `w`, read on `E`. It

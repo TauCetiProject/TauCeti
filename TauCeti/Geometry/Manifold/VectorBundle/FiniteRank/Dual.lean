@@ -66,7 +66,7 @@ theorem contMDiff_dualFiberEquiv (A : FiniteRankBundleCore 𝕜 B) :
       (fun p : A.dual.core.TotalSpace ↦
         TotalSpace.mk' ((Fin A.rank → 𝕜) →L[𝕜] 𝕜)
           (E := fun x ↦ A.core.Fiber x →L[𝕜] Trivial B 𝕜 x) p.proj
-          (dualFiberEquiv A p.proj p.2)) := by
+          (dualFiberEquiv A p.proj p.snd)) := by
   intro p
   rw [contMDiffAt_hom_bundle]
   refine ⟨contMDiffAt_proj _, ?_⟩
@@ -83,7 +83,7 @@ theorem contMDiff_dualFiberEquiv (A : FiniteRankBundleCore 𝕜 B) :
     |>.contMDiffAt.comp p hc).congr_of_eventuallyEq ?_
   filter_upwards [hU] with q hq
   exact (A.dualFiberEquiv_inCoordinates p.proj q.proj
-    ((A.dual.core.mem_localTriv_source p.proj q).1 hq) q.2)
+    ((A.dual.core.mem_localTriv_source p.proj q).1 hq) q.snd)
 
 /-- The dual core and Mathlib's dual bundle are `C^n` diffeomorphic by the canonical
 `𝕜`-linear identification of each coordinate vector with a functional. -/
@@ -108,7 +108,7 @@ theorem dualTotalSpaceDiffeomorph_toHomeomorph (A : FiniteRankBundleCore 𝕜 B)
 @[simp]
 theorem dualTotalSpaceDiffeomorph_apply (A : FiniteRankBundleCore 𝕜 B)
     (p : A.dual.core.TotalSpace) :
-    A.dualTotalSpaceDiffeomorph I n p = ⟨p.proj, dualFiberEquiv A p.proj p.2⟩ :=
+    A.dualTotalSpaceDiffeomorph I n p = ⟨p.proj, dualFiberEquiv A p.proj p.snd⟩ :=
   bundleDiffeomorph_apply _ _ p
 
 /-- The inverse comparison records the coefficients of the functional in the same fibre. -/
@@ -117,7 +117,7 @@ theorem dualTotalSpaceDiffeomorph_symm_apply (A : FiniteRankBundleCore 𝕜 B)
     (p : TotalSpace ((Fin A.rank → 𝕜) →L[𝕜] 𝕜)
       (fun x ↦ A.core.Fiber x →L[𝕜] Trivial B 𝕜 x)) :
     (A.dualTotalSpaceDiffeomorph I n).symm p =
-      ⟨p.proj, (dualFiberEquiv A p.proj).symm p.2⟩ :=
+      ⟨p.proj, (dualFiberEquiv A p.proj).symm p.snd⟩ :=
   bundleDiffeomorph_symm_apply _ _ p
 
 end TauCeti.FiniteRankBundleCore

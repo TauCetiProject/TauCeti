@@ -203,7 +203,7 @@ theorem Irreducible.not_isSquare_algebraMap_breve {π : 𝒪[E]} (hπ : Irreduci
   have hz1 : valuation (Breve E) z ≤ 1 := by
     refine (pow_le_one_iff_of_nonneg zero_le two_ne_zero).1 ?_
     rw [← map_pow, sq, ← hz, ← Valuation.HasExtension.val_algebraMap (vA := valuation (Breve E))]
-    exact (algebraMap 𝒪[E] 𝒪[Breve E] π).2
+    exact (algebraMap 𝒪[E] 𝒪[Breve E] π).property
   let z₀ : 𝒪[Breve E] := ⟨z, hz1⟩
   have hsq : algebraMap 𝒪[E] 𝒪[Breve E] π = z₀ * z₀ :=
     Subtype.ext (by simpa [z₀, Valuation.HasExtension.val_algebraMap] using hz)

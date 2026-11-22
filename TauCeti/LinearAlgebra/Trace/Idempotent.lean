@@ -90,7 +90,7 @@ theorem LinearMap.trace_mul_eq_mul_trace_restrict_range {c f : Module.End K M} {
     have hres : (a⁻¹ • c * f).restrict (fun x _ => hmem x) = f.restrict hf :=
       LinearMap.ext fun x => Subtype.ext <| by
         rw [LinearMap.coe_restrict_apply, LinearMap.coe_restrict_apply, mul_apply_eq_comp,
-          hfix _ (hf x x.2)]
+          hfix _ (hf x x.property)]
     have htrace := _root_.LinearMap.trace_restrict_eq_of_forall_mem _ (a⁻¹ • c * f) hmem
     rw [hres, smul_mul_assoc, map_smul, smul_eq_mul] at htrace
     rw [htrace, ← mul_assoc, mul_inv_cancel₀ ha, one_mul]
@@ -111,7 +111,7 @@ theorem LinearMap.trace_sub_mul_eq_mul_trace_restrict_ker {c f : Module.End K M}
     simpa [mul_apply_eq_comp] using sub_eq_zero.mpr hcx.symm
   have hres : ((a • 1 - c) * f).restrict (fun x _ ↦ hmem x) = a • f.restrict hf := by
     ext x
-    simp [mul_apply_eq_comp, _root_.LinearMap.mem_ker.mp (hf x x.2)]
+    simp [mul_apply_eq_comp, _root_.LinearMap.mem_ker.mp (hf x x.property)]
   have h := _root_.LinearMap.trace_restrict_eq_of_forall_mem _ ((a • 1 - c) * f) hmem
   rw [hres, map_smul, smul_eq_mul] at h
   exact h.symm

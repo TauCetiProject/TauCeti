@@ -148,7 +148,7 @@ theorem generatorEmbedding_groupEquivSuzukiGroup_mk
     (x : ↥(commutator (of m hvalid).FixedPoints)) :
     generatorEmbedding m hvalid (groupEquivSuzukiGroup m hvalid (x : (of m hvalid).Group)) =
       (((x : (of m hvalid).FixedPoints) : (of m hvalid).toRankTwoBLieIndex.AmbientGroup) :
-        GL (Fin 4) (of m hvalid).1.Closure) := by
+        GL (Fin 4) (of m hvalid).val.Closure) := by
   rw [groupEquivSuzukiGroup_mk, ← coe_coe_suzukiGroupEquivFixedPoints_apply m hvalid,
     MulEquiv.apply_symm_apply]
 

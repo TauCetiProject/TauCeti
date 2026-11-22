@@ -609,13 +609,11 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
   set W := Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ioi 0)
   set U := Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)
   have hW : Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0) = Wᗮ :=
-    (hsymplus.orthogonal_pointSpectralSubspace_Ioi_zero (LinearMap.ker_eq_bot.2
-      (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
-        (le_inv_mul_iff₀ hα).2 (hplus v)))).symm
+    (hsymplus.orthogonal_pointSpectralSubspace_Ioi_zero
+      (ContinuousLinearMap.ker_eq_bot_of_forall_mul_norm_le hα hplus)).symm
   have hU : Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Ioi 0) = Uᗮ :=
-    (hsymminus.orthogonal_pointSpectralSubspace_Iio_zero (LinearMap.ker_eq_bot.2
-      (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
-        (le_inv_mul_iff₀ hα).2 (hminus v)))).symm
+    (hsymminus.orthogonal_pointSpectralSubspace_Iio_zero
+      (ContinuousLinearMap.ker_eq_bot_of_forall_mul_norm_le hα hminus)).symm
   rw [hW, hU, Submodule.inf_orthogonal]
   have h1 := Submodule.finrank_sup_add_finrank_inf_eq W U
   have h2 := (W ⊔ U).finrank_add_finrank_orthogonal
