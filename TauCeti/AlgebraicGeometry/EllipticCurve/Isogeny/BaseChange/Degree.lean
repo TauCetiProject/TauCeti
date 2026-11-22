@@ -45,7 +45,7 @@ extensions, such as an algebraic closure of an imperfect field.
 ## Main results
 
 * `TauCeti.Isogeny.degree_map` and `TauCeti.Isogeny.degree_baseChange`: `deg (φ.map f) = deg φ`
-  and `deg (φ.baseChange L) = deg φ`.
+  and `deg (φ.baseChange K) = deg φ`.
 * `TauCeti.Isogeny.isUnit_degree_map_of_isUnit`, `TauCeti.Isogeny.isUnit_degree_map`,
   `TauCeti.Isogeny.isUnit_degree_baseChange_of_isUnit`, and
   `TauCeti.Isogeny.isUnit_degree_baseChange`: invertibility of `deg φ` persists under any field
@@ -219,6 +219,12 @@ theorem degree_map (φ : Isogeny W₁ W₂) (f : F →+* K) : (φ.map f).degree 
     (Module.Basis.mk (linearIndependent_functionFieldMap_basis φ f b)
       (span_functionFieldMap_basis φ f b).ge), Fintype.card_fin]
 
+/-- `degree_map` for `φ.baseChange K`, stated between the base-changed curves `W₁⁄K` and `W₂⁄K`,
+which are not syntactically the curves of `φ.map (algebraMap F K)`. -/
+theorem degree_baseChange [Algebra F K] {W₁ W₂ : WeierstrassCurve F}
+    (φ : Isogeny W₁.toAffine W₂.toAffine) : (φ.baseChange K).degree = φ.degree :=
+  degree_map φ _
+
 /-- If `deg φ` is invertible in `F`, then `deg (φ.map f)` is invertible in `K` for every
 homomorphism of fields `f : F →+* K`. -/
 theorem isUnit_degree_map_of_isUnit (φ : Isogeny W₁ W₂) (f : F →+* K)
@@ -231,16 +237,6 @@ every homomorphism of fields `f : F →+* K`. -/
 theorem isUnit_degree_map [CharZero F] (φ : Isogeny W₁ W₂) (f : F →+* K) :
     IsUnit ((φ.map f).degree : K) :=
   φ.isUnit_degree_map_of_isUnit f φ.isUnit_degree
-
-/-- Base change along `algebraMap F L` preserves the degree of an isogeny.
-Stated separately from `degree_map` because `(W₁⁄L).toAffine` and
-`W₁.toAffine.map (algebraMap F L)` are not definitionally equal at reducible transparency, so
-`simp` does not rewrite `(φ.baseChange L).degree` using `degree_map`. -/
-@[simp]
-theorem degree_baseChange {W₁ W₂ : WeierstrassCurve F} (φ : Isogeny W₁.toAffine W₂.toAffine)
-    (L : Type*) [Field L] [Algebra F L] :
-    (φ.baseChange L).degree = φ.degree :=
-  φ.degree_map (algebraMap F L)
 
 /-- If `deg φ` is invertible in `F`, then `deg (φ.baseChange L)` is invertible in any field
 extension `L` of `F`. -/

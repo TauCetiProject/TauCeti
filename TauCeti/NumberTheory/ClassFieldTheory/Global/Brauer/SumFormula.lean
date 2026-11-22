@@ -45,9 +45,10 @@ the product formula for the local Artin symbols on cyclotomic extensions
 
 * `TauCeti.ClassFieldTheory.brLocalization_injective`: the Hasse principle: a Brauer class of `K`
   with trivial localizations at all places is zero.
-* `TauCeti.ClassFieldTheory.sumLocalInv_brLocalization_eq_zero` and
-  `TauCeti.ClassFieldTheory.finsum_finiteInvAt_add_sum_infiniteInvAt_eq_zero`: the local
-  invariants of every Brauer class of `K` sum to zero.
+* `TauCeti.ClassFieldTheory.sumLocalInv_brLocalization_eq_zero`: the local invariants of every
+  Brauer class of `K` sum to zero.
+* `TauCeti.ClassFieldTheory.finsum_finiteInvAt_add_sum_infiniteInvAt_eq_zero`: the same, written
+  as a `finsum` over the finite places plus a sum over the infinite places.
 
 ## References
 
@@ -132,15 +133,13 @@ theorem sumLocalInv_brLocalization_eq_zero (x : Br K) :
     rw [show x = (u * a) • x + (v * b) • x by rw [← add_zsmul, huv, one_zsmul], map_add, map_add,
       ihb (by omega) _ hxb, iha (by omega) _ hxa, add_zero]
 
-/-- **The sum formula in `finsum` form.** The finite-place local invariants of a Brauer class of
-`K`, summed via `finsum`, together with its archimedean local invariants, sum to zero. -/
+/-- **The sum formula over all places.** The finite-place local invariants of a Brauer class of
+the number field `K` have finite support (`hasFiniteSupport_finiteInvAt`), so their `finsum` is
+an honest finite sum; together with the archimedean invariants it is zero. -/
 theorem finsum_finiteInvAt_add_sum_infiniteInvAt_eq_zero (x : Br K) :
-    (∑ᶠ v : IsDedekindDomain.HeightOneSpectrum (NumberField.RingOfIntegers K),
-      finiteInvAt K v x) + ∑ w : NumberField.InfinitePlace K, infiniteInvAt K w x = 0 := by
-  classical
+    ∑ᶠ v, finiteInvAt K v x + ∑ w, infiniteInvAt K w x = 0 := by
   rw [finsum_eq_sum_of_support_subset _ (s := brauerSupport K x)
-    (fun v hv ↦ (mem_brauerSupport K).2 hv),
-    ← sumLocalInv_brLocalization K x (fun _ hv ↦ hv)]
-  exact sumLocalInv_brLocalization_eq_zero K x
+      fun v hv ↦ (mem_brauerSupport K).2 hv,
+    ← sumLocalInv_brLocalization K x subset_rfl, sumLocalInv_brLocalization_eq_zero]
 
 end TauCeti.ClassFieldTheory

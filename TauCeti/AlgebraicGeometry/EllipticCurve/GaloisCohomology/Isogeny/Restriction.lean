@@ -42,8 +42,10 @@ the image of a local Kummer map of `φ` serve as the local condition of the `φ`
 
 * `TauCeti.Isogeny.pointCoeffMap_baseChange_pointCoeffBaseChange`: the action of an isogeny over
   `K` on the points over the separable closures commutes with restriction along `τ`.
-* `TauCeti.Isogeny.pointRes_kerCoeffIncl`: restriction commutes with
-  `H¹(G, E₁[φ]) → H¹(G, E₁)`.
+* `TauCeti.Isogeny.pointRes_kerCoeffIncl`, `TauCeti.Isogeny.pointRes_dualKerCoeffIncl`:
+  restriction commutes with `H¹(G, E₁[φ]) → H¹(G, E₁)` and `H¹(G, E₂[φ̂]) → H¹(G, E₂)`.
+* `TauCeti.Isogeny.dualKerRes_eq_explicitMap1`: `dualKerRes` is the pullback along `τ` and
+  `dualKerCoeffBaseChange`.
 * `TauCeti.Isogeny.kerH1Congr_kerRes` and
   `TauCeti.Isogeny.kerH1Congr_kerRes_eq_explicitMap1`: compatibility of restriction with kernel
   congruence.
@@ -211,6 +213,17 @@ theorem explicitCoeff1_kerCoeffIncl_dualKerRes
     pointRes_eq_explicitMap1, dualKerRes_eq_explicitMap1]
   exact explicitMap1_explicitMap1_of_comp_eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     (by ext; rfl) (by ext; simp) c
+
+/-- **Restriction of the dual kernel commutes with `H¹(G, E₂[φ̂]) → H¹(G, E₂)`**, by
+`pointRes_kerCoeffIncl` for `φ̂`. This identifies the local Selmer conditions of `φ̂` with the
+kernel conditions of the dual of the base change of `φ`. Not `@[simp]`: `pointRes_kerCoeffIncl`
+already rewrites its left-hand side, into the kernel of the base change of `φ̂`. -/
+theorem pointRes_dualKerCoeffIncl (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
+    W₂.pointRes τ
+        (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology c) =
+      explicitCoeff1 _ _ (ofIsogeny (φ.baseChange L).dual).kerCoeffIncl
+        continuous_of_discreteTopology (φ.dualKerRes τ c) := by
+  rw [pointRes_kerCoeffIncl, explicitCoeff1_kerCoeffIncl_dualKerRes]
 
 variable [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
   [DecidableEq K] [DecidableEq L]

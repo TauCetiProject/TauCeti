@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 public import TauCeti.NumberTheory.Padics.BilinearForm.GaussSum
-import TauCeti.Algebra.Group.AddChar
+import TauCeti.Algebra.Group.AddChar.Basic
 import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.GaussSum
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.Submodule.Compl

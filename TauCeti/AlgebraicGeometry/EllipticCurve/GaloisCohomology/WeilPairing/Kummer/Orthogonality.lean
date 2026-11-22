@@ -15,7 +15,9 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairi
 For an isogeny `φ : E₁ → E₂` of degree `n` invertible in an arbitrary field `K`, the Kummer
 images of `E₂(K)` in `H¹(K, E₁[φ])` and of `E₁(K)` in `H¹(K, E₂[φ̂])` are orthogonal under both
 the isogeny Weil cup product in `H²(K, μ_n)` and its Brauer-valued pairing in `Br K`. The kernels
-of the maps to point-coefficient cohomology satisfy the same vanishing.
+of the maps to point-coefficient cohomology satisfy the same vanishing, both over `K` and after
+restriction along any field extension `L/K` in which `n` is invertible
+(`TauCeti.Isogeny.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero`).
 
 No local-field or unramified-cohomology hypotheses are needed here; nonarchimedean local Tate
 duality is in `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/WeilPairing/Local.lean`,
@@ -128,6 +130,34 @@ theorem kerWeilBrauerPairing_eq_zero_of_mem_ker
       continuous_of_discreteTopology).ker) :
     φ.kerWeilBrauerPairing hn a b = 0 := by
   simp only [kerWeilBrauerPairing_apply, φ.kerH1WeilPairing_eq_zero_of_mem_ker hn ha hb, map_zero]
+
+end TauCeti.Isogeny
+
+namespace TauCeti.Isogeny
+
+open WeierstrassCurve TauCeti.ContCohomology
+open Hom (ofIsogeny)
+
+/-- **The Selmer local conditions are orthogonal after restriction.** Let `L/K` be any extension
+in which the degree of `φ` is invertible. If the images of `a ∈ H¹(K, E₁[φ])` and
+`b ∈ H¹(K, E₂[φ̂])` in `H¹(L, E₁)` and `H¹(L, E₂)` are trivial, then the Brauer-valued isogeny
+Weil cup of their restrictions, for the base change of `φ` and its dual, vanishes. -/
+theorem kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero
+    {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
+    (φ : Isogeny W₁.toAffine W₂.toAffine)
+    {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
+    {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
+    {L : Type*} [Field L] [Algebra K L] (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
+    (hnL : IsUnit ((φ.baseChange L).degree : L))
+    (ha : W₁.pointRes τ
+      (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology a) = 0)
+    (hb : W₂.pointRes τ
+      (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology b) = 0) :
+    (φ.baseChange L).kerWeilBrauerPairing hnL (φ.kerRes τ a) (φ.dualKerRes τ b) = 0 := by
+  refine ((φ.baseChange L).kerWeilBrauerPairing_eq_zero_iff hnL _ _).2
+    ((φ.baseChange L).kerH1WeilPairing_eq_zero_of_mem_ker hnL ?_ ?_)
+  · rw [AddMonoidHom.mem_ker, ← pointRes_kerCoeffIncl, ha]
+  · rw [AddMonoidHom.mem_ker, ← pointRes_dualKerCoeffIncl, hb]
 
 end TauCeti.Isogeny
 

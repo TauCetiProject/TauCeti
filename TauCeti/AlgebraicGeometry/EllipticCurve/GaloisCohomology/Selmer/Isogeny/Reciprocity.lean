@@ -104,9 +104,18 @@ theorem sum_toRatAddCircle_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_re
           (φ.kerRes (τ (.inl v)) a) (φ.dualKerRes (τ (.inl v)) b)) = 0 :=
   have ha' := φ.kerRes_mem_ker_of_mem_selmerGroup_relax τ S ha
   have hb' := φ.dual.kerRes_mem_ker_of_mem_selmerGroup_relax τ S hb
-  φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero
+  φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero a b
     (fun v ↦ τ (.inl v)) (fun w ↦ τ (.inr w)) S
-    (fun v hv ↦ ⟨ha'.1 v hv, hb'.1 v hv⟩) (fun w _ ↦ ⟨ha'.2 w, hb'.2 w⟩)
+    (fun v hv ↦ by rw [pointRes_kerCoeffIncl, ← AddMonoidHom.mem_ker]; exact ha'.1 v hv)
+    (fun v hv ↦ by
+      rw [pointRes_dualKerCoeffIncl, ← AddMonoidHom.mem_ker, AddMonoidHom.mem_ker,
+        φ.explicitCoeff1_kerCoeffIncl_dualKerRes]
+      exact hb'.1 v hv)
+    (fun w ↦ by rw [pointRes_kerCoeffIncl, ← AddMonoidHom.mem_ker]; exact ha'.2 w)
+    (fun w ↦ by
+      rw [pointRes_dualKerCoeffIncl, ← AddMonoidHom.mem_ker, AddMonoidHom.mem_ker,
+        φ.explicitCoeff1_kerCoeffIncl_dualKerRes]
+      exact hb'.2 w)
 
 /-- **Global Selmer reciprocity in `ℤ/(deg φ)ℤ`.** If `a` belongs to the `S`-relaxed `φ`-Selmer
 group and `b` belongs to the `S`-relaxed `φ̂`-Selmer group, then the sum over `v ∈ S` of their
@@ -121,15 +130,24 @@ theorem sum_ringEquivCongr_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_re
     (hb : b ∈ ((φ.dual.selmerStructure τ).relax
       (Sum.inl '' (S : Set (HeightOneSpectrum (𝓞 K))))).selmerGroup) :
     ∑ v ∈ S,
-      ZMod.ringEquivCongr (φ.degree_baseChange (v.adicCompletion K))
+      ZMod.ringEquivCongr (φ.degree_baseChange (K := v.adicCompletion K))
         ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
           (φ.isUnit_degree_baseChange (v.adicCompletion K))
           (φ.kerRes (τ (.inl v)) a) (φ.dualKerRes (τ (.inl v)) b)) = 0 :=
   have ha' := φ.kerRes_mem_ker_of_mem_selmerGroup_relax τ S ha
   have hb' := φ.dual.kerRes_mem_ker_of_mem_selmerGroup_relax τ S hb
-  φ.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero
+  φ.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero a b
     (fun v ↦ τ (.inl v)) (fun w ↦ τ (.inr w)) S
-    (fun v hv ↦ ⟨ha'.1 v hv, hb'.1 v hv⟩) (fun w _ ↦ ⟨ha'.2 w, hb'.2 w⟩)
+    (fun v hv ↦ by rw [pointRes_kerCoeffIncl, ← AddMonoidHom.mem_ker]; exact ha'.1 v hv)
+    (fun v hv ↦ by
+      rw [pointRes_dualKerCoeffIncl, ← AddMonoidHom.mem_ker, AddMonoidHom.mem_ker,
+        φ.explicitCoeff1_kerCoeffIncl_dualKerRes]
+      exact hb'.1 v hv)
+    (fun w ↦ by rw [pointRes_kerCoeffIncl, ← AddMonoidHom.mem_ker]; exact ha'.2 w)
+    (fun w ↦ by
+      rw [pointRes_dualKerCoeffIncl, ← AddMonoidHom.mem_ker, AddMonoidHom.mem_ker,
+        φ.explicitCoeff1_kerCoeffIncl_dualKerRes]
+      exact hb'.2 w)
 
 /-- **Single-place Selmer orthogonality.** Two global classes `a ∈ H¹(K, E₁[φ])` and
 `b ∈ H¹(K, E₂[φ̂])` satisfying their respective local Selmer conditions at every place except

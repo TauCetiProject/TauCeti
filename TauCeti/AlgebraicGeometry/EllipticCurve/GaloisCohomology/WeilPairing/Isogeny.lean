@@ -433,7 +433,7 @@ variable {L : Type*} [Field L] [Algebra K L] (τ : SeparableClosure K →ₐ[K] 
 
 /-- **The isogeny Weil pairing commutes with field extension on `KummerCoeff`**: transporting
 points along `τ` and `φ.ofIsogeny_dual_baseChange L` matches transporting roots of unity
-along `τ` and `φ.degree_baseChange L`. -/
+along `τ` and `φ.degree_baseChange`. -/
 theorem kerCoeffWeilPairing_kerCoeffBaseChange
     (P : (ofIsogeny φ).KerCoeff) (Q : (ofIsogeny φ.dual).KerCoeff) :
     (φ.baseChange L).kerCoeffWeilPairing
@@ -441,7 +441,7 @@ theorem kerCoeffWeilPairing_kerCoeffBaseChange
         (φ.kerCoeffBaseChange τ P)
         (kerCoeffCongrHom (φ.ofIsogeny_dual_baseChange L)
           (φ.dual.kerCoeffBaseChange τ Q)) =
-      kummerCoeffInclusion L (dvd_of_eq (φ.degree_baseChange L).symm)
+      kummerCoeffInclusion L (dvd_of_eq (φ.degree_baseChange (K := L)).symm)
         (kummerCoeffBaseChange φ.degree τ (φ.kerCoeffWeilPairing hn P Q)) := by
   have hnL : IsUnit ((φ.baseChange L).degree : L) :=
     φ.isUnit_degree_baseChange_of_isUnit hn L
@@ -467,7 +467,7 @@ theorem kerH1WeilPairing_kerRes
         (φ.kerRes τ a)
         (kerH1Congr (φ.ofIsogeny_dual_baseChange L) (φ.dual.kerRes τ b)) =
       explicitCoeff2 _ _
-        (kummerCoeffInclusion L (dvd_of_eq (φ.degree_baseChange L).symm))
+        (kummerCoeffInclusion L (dvd_of_eq (φ.degree_baseChange (K := L)).symm))
         continuous_of_discreteTopology
         (explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K φ.degree)
           (AbsoluteGaloisGroup L) (KummerCoeff L φ.degree) (absoluteGaloisGroupMap τ)
@@ -475,7 +475,7 @@ theorem kerH1WeilPairing_kerRes
           (kummerCoeffBaseChange_smul φ.degree τ) (φ.kerH1WeilPairing hn a b)) := by
   have hnL : IsUnit ((φ.baseChange L).degree : L) :=
     φ.isUnit_degree_baseChange_of_isUnit hn L
-  have hd : φ.degree ∣ (φ.baseChange L).degree := dvd_of_eq (φ.degree_baseChange L).symm
+  have hd : φ.degree ∣ (φ.baseChange L).degree := dvd_of_eq (φ.degree_baseChange (K := L)).symm
   have h1 := (((φ.baseChange L).kerH1WeilPairing_eq_explicitCup11 hnL _ _).trans
     (congrArg₂ (fun x y ↦ explicitCup11 (AbsoluteGaloisGroup L)
       (ofIsogeny (φ.baseChange L)).KerCoeff (ofIsogeny (φ.baseChange L).dual).KerCoeff

@@ -20,7 +20,8 @@ Over a nonarchimedean local field `K`, for an isogeny `φ : E₁ → E₂` of de
   both the Weil cup product and local Tate duality, since `H²(G_K ⧸ I_K, μ_n^{I_K})` vanishes
   (`AddMonoidHom.explicitCup11_eq_zero_of_mem_unramifiedH1`).
 
-Field-level Kummer orthogonality is in
+Field-level Kummer and Selmer-kernel orthogonality (including
+`TauCeti.Isogeny.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero`) are in
 `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/WeilPairing/Kummer/Orthogonality.lean`,
 and local Tate Kummer and Selmer-kernel orthogonality (including
 `TauCeti.Isogeny.localTateKerWeilQuotientPairing`) are in
