@@ -9,7 +9,6 @@ public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 import Mathlib.Algebra.GroupWithZero.Action.Regular
 import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Module
 import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import TauCeti.LinearAlgebra.SesquilinearForm.Basic
 
