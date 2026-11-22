@@ -55,6 +55,9 @@ exactness of closed `1`-forms on simply connected manifolds and the period homom
 * `TauCeti.PrimitiveSpace.eventually_value_eq_add_const` and
   `TauCeti.PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq`: near each parameter, a
   continuous map into `PrimitiveSpace φ` runs along the graph of a translate of a local primitive.
+* `TauCeti.PrimitiveSpace.value_sub_value_eq_of_isPreconnected`: over a preconnected set of
+  parameters mapped into the domain of a primitive, the value of such a map changes as the
+  primitive does.
 
 ## References
 
@@ -391,6 +394,25 @@ theorem eventually_value_eq_add_const {X : Type*} [TopologicalSpace X] {Γ : X �
     with s ⟨y, hy, hys⟩
   rw [← hys]
   exact ⟨hy, rfl⟩
+
+/-- **Lifts change value as local primitives do.** If a continuous map `Γ` into
+`PrimitiveSpace φ` sends a preconnected set `s` into the domain `U` of a primitive `g` of `φ`, then
+between two parameters in `s` the value of `Γ` changes by the increment of `g`. -/
+theorem value_sub_value_eq_of_isPreconnected {X : Type*} [TopologicalSpace X]
+    {Γ : X → PrimitiveSpace φ} (hΓ : Continuous Γ) (hg : IsPrimitiveOn φ g U) {s : Set X}
+    (hs : IsPreconnected s) (hsU : ∀ t ∈ s, proj φ (Γ t) ∈ U) {a b : X} (ha : a ∈ s)
+    (hb : b ∈ s) :
+    value φ (Γ b) - value φ (Γ a) = g (proj φ (Γ b)) - g (proj φ (Γ a)) := by
+  -- the difference between the value of `Γ` and `g` is locally constant on `s`
+  suffices value φ (Γ a) - g (proj φ (Γ a)) = value φ (Γ b) - g (proj φ (Γ b)) by
+    rw [sub_eq_sub_iff_sub_eq_sub, this]
+  refine hs.induction₂ (fun a b ↦ value φ (Γ a) - g (proj φ (Γ a)) =
+    value φ (Γ b) - g (proj φ (Γ b))) (fun t ht ↦ ?_) (fun _ _ _ _ _ _ h h' ↦ h.trans h')
+    (fun _ _ _ _ h ↦ h.symm) ha hb
+  filter_upwards [nhdsWithin_le_nhds
+    (eventually_value_eq_add_const hΓ.continuousAt hg (hsU t ht))] with t' ht'
+  rw [ht'.2]
+  abel
 
 /-- **The covering space of local primitives.** Projecting `PrimitiveSpace φ` to the point is a
 covering map when every point lies in an open set carrying a primitive of `φ`. Over an open set `U`
