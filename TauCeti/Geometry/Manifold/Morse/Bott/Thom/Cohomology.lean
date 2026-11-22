@@ -31,8 +31,8 @@ cohomology of `S`, shifted up by the index.
   (`nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isThomClass`).
 * Such a Thom class exists for every commutative ring `K` when `ν⁻` is oriented
   (`nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_orientation`), for instance
-  `K = ℤ`, and with no orientation when `1` is the only unit of `K`, as for `K = ZMod 2`
-  (`nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_subsingleton_units`).
+  `K = ℤ`, and with no orientation when `2 = 0` in `K`, as for `K = ZMod 2`
+  (`nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_two_eq_zero`).
 
 These are the cohomology forms of the homology statements in
 `TauCeti.Geometry.Manifold.Morse.Bott.Thom.Class`, and the actual-negative-bundle forms of
@@ -53,8 +53,8 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
   `ν⁻` identifies `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N)` with `Hᵖ(S; K, N)`.
 * `nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_orientation`: the same for an
   oriented `ν⁻` and every commutative ring `K`.
-* `nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_subsingleton_units`: the same
-  for every `ν⁻` when `1` is the only unit of `K`.
+* `nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_two_eq_zero`: the same for
+  every `ν⁻` when `2 = 0` in `K`.
 
 ## References
 
@@ -84,7 +84,7 @@ variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace �
   [SecondCountableTopology M] {E' H' P : Type*} {S : Type} [NormedAddCommGroup E']
   [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
   [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [J.Boundaryless] [TopologicalSpace S]
-  [ChartedSpace H' S] [IsManifold J ∞ S] [Nonempty S] [NormedAddCommGroup P] [NormedSpace ℝ P]
+  [ChartedSpace H' S] [IsManifold J ∞ S] [NormedAddCommGroup P] [NormedSpace ℝ P]
   [FiniteDimensional ℝ P] {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M} (hn : (∞ : ℕ∞ω) ≠ 0)
   (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ}
   (hc : ∀ s, f (i s) = c) (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
@@ -100,9 +100,9 @@ variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace �
 include h hfs hc hac hcb hcompact hcrit in
 /-- **A Thom class of the negative normal bundle computes the cohomology across a Morse–Bott
 level.** Let `i : S → M` be a nondegenerate critical submanifold of a smooth function `f` on a
-Hausdorff, second-countable, finite-dimensional, boundaryless manifold, with `S` nonempty and
-`f = c` along `i`, and let `g` be a smooth fibre metric on its normal bundle. Let `a < c < b` be
-such that the band `f⁻¹[a, b]` is compact and all its critical points lie on `i`. Suppose that the
+Hausdorff, second-countable, finite-dimensional, boundaryless manifold, with `f = c` along `i`, and
+let `g` be a smooth fibre metric on its normal bundle. Let `a < c < b` be such that the band
+`f⁻¹[a, b]` is compact and all its critical points lie on `i`. Suppose that the
 negative normal spaces relative to `g` have continuous local frames of size `r`, so that they form
 the negative normal bundle `ν⁻` of rank `r`, and let `u` be a Thom class of `ν⁻` with coefficients
 in a commutative ring `K`. Then `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; K, N)` for every `K`-module
@@ -170,15 +170,15 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_orien
     hac hcb hcompact hcrit hdim g hV u hu N hm
 
 include h hfs hc hac hcb hcompact hcrit in
-/-- **The cohomology across a Morse–Bott level mod `2`.** Let `i : S → M` be a nondegenerate
-critical submanifold of a smooth function `f` on a Hausdorff, second-countable, finite-dimensional,
-boundaryless manifold, with `S` nonempty, `f = c` along `i` and Morse index `r` at every point of
-`i`. Let `a < c < b` be such that the band `f⁻¹[a, b]` is compact and all its critical points lie
-on `i`, and let `K` be a commutative ring whose only unit is `1`, such as `ZMod 2`. Then with no
-orientation of the negative normal bundle, `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; K, N)` for every
-`K`-module `N` and every degree `p`. -/
-theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_subsingleton_units
-    (hr : ∀ s, manifoldMorseIndex I f (i s) = r) (K : Type) [CommRing K] [Subsingleton Kˣ]
+/-- **The cohomology across a Morse–Bott level in characteristic two.** Let `i : S → M` be a
+nondegenerate critical submanifold of a smooth function `f` on a Hausdorff, second-countable,
+finite-dimensional, boundaryless manifold, with `f = c` along `i` and Morse index `r`
+at every point of `i`. Let `a < c < b` be such that the band `f⁻¹[a, b]` is compact and all its
+critical points lie on `i`, and let `K` be a commutative ring in which `2 = 0`, such as `ZMod 2`.
+Then with no orientation of the negative normal bundle, `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; K, N)`
+for every `K`-module `N` and every degree `p`. -/
+theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_two_eq_zero
+    (hr : ∀ s, manifoldMorseIndex I f (i s) = r) (K : Type) [CommRing K] (h2 : (2 : K) = 0)
     (N : ModuleCat.{0} K) {p m : ℕ} (hm : r + p = m) :
     Nonempty ((sublevelPair f (hac.trans hcb).le).singularCohomology (ModuleCat.of K K) K N m ≅
       (TopCat.of S).singularCohomology (ModuleCat.of K K) K N p) := by
@@ -203,8 +203,8 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_subsi
   let := hV.fiberBundle
   have := hV.vectorBundle
   -- Every vector bundle has a Thom class with coefficients in `K`.
-  obtain ⟨u, hu, -⟩ := existsUnique_isThomClass_of_subsingleton_units (F := Fin r → ℝ)
-    (E := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) K
+  obtain ⟨u, hu⟩ := exists_isThomClass_of_two_eq_zero (F := Fin r → ℝ)
+    (E := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) K h2
   exact h.nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isThomClass hn hfs hc
     hac hcb hcompact hcrit hdim g hV u hu N hm
 

@@ -213,34 +213,8 @@ private theorem isZero_singularCohomology_collar {a' : ℝ} (hf : Continuous f) 
     (hLN : f ⁻¹' {a} ⊆ f ⁻¹' Icc a a') (R : C) (k : Type*) [Ring k] [Linear k C] (N : C)
     (n : ℕ) :
     IsZero ((TopPair.ofInclusion (X := TopCat.of M) hLN).singularCohomology R k N n) := by
-  have hval (x : f ⁻¹' Icc a a') (s : ℝ) (hs₀ : 0 ≤ s) (hs₁ : s ≤ 1) :
-      f (φ (s * (f x - a)) x) = f x - s * (f x - a) := by
-    have hx : a ≤ f x ∧ f x ≤ a' := x.property
-    exact hφf x _ (mul_nonneg hs₀ (by linarith)) (by nlinarith) hx.2
-  have hmem (x : f ⁻¹' Icc a a') (s : ℝ) (hs₀ : 0 ≤ s) (hs₁ : s ≤ 1) :
-      φ (s * (f x - a)) x ∈ f ⁻¹' Icc a a' := by
-    have hx : a ≤ f x ∧ f x ≤ a' := x.property
-    rw [mem_preimage, hval x s hs₀ hs₁, mem_Icc]
-    constructor <;> nlinarith
-  let r : C(f ⁻¹' Icc a a', f ⁻¹' {a}) :=
-    { toFun := fun x ↦ ⟨φ (1 * (f x - a)) x, by
-        rw [mem_preimage, hval x 1 zero_le_one le_rfl, mem_singleton_iff]
-        ring⟩
-      continuous_toFun := by
-        refine Continuous.subtype_mk ?_ _
-        exact φ.continuous (by fun_prop) (by fun_prop) }
-  refine TopPair.isZero_singularCohomology_ofInclusion_of_homotopyRel hLN r
-    { toFun := fun p ↦ ⟨φ ((1 - (p.1 : ℝ)) * (f p.2 - a)) p.2,
-        hmem p.2 _ (by linarith [p.1.property.2]) (by linarith [p.1.property.1])⟩
-      continuous_toFun := by
-        refine Continuous.subtype_mk ?_ _
-        exact φ.continuous (by fun_prop) (by fun_prop)
-      map_zero_left := fun x ↦ Subtype.ext (by simp [r])
-      map_one_left := fun x ↦ Subtype.ext (by simp [Flow.map_zero_apply])
-      prop' := fun t x hx ↦ by
-        have hxa : f x = a := hx
-        ext
-        simp [r, hxa] } R k N n
+  obtain ⟨r, ⟨G⟩⟩ := exists_collarDeformation hf φ hφf hLN
+  exact TopPair.isZero_singularCohomology_ofInclusion_of_homotopyRel hLN r G R k N n
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
 /-- The excision step: for a collar `f⁻¹[a, a']` with `a < a'`, or with `a' = b`, excising
@@ -275,7 +249,7 @@ private theorem isIso_singularCohomologyMap_excision_collar {a' : ℝ} (hf : Con
     by_cases hx : f x.val < a'
     · exact ⟨true, Or.inl hx⟩
     rcases hlt with hlt | rfl
-    · exact ⟨false, show a < f x.val by linarith⟩
+    · exact ⟨false, hlt.trans_le (le_of_not_gt hx)⟩
     · exact ⟨true, Or.inr le_rfl⟩
   · cases i
     · refine Or.inr fun x (hx : a < f x.val) ↦ ⟨⟨x.val, hx.le, x.property⟩, ?_⟩

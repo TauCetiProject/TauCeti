@@ -128,13 +128,14 @@ theorem isIso_homologyMap_map_sublevelPair_of_mfderiv_ne_zero (hf : ContMDiff I 
   rwa [h]
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
-/-- A collar `f⁻¹[a, a']` which the flow `φ` crosses at unit speed carries no homology relative to
-its lower level `f⁻¹(a)`: following the flow down to the level `a` is a strong deformation
-retraction. -/
-private theorem isZero_singularHomology_collar {a' : ℝ} (hf : Continuous f) (φ : Flow ℝ M)
+/-- A collar `f⁻¹[a, a']` which a flow `φ` crosses at unit speed strongly deformation retracts
+onto its lower level `f⁻¹(a)`. -/
+theorem exists_collarDeformation {a' : ℝ} (hf : Continuous f) (φ : Flow ℝ M)
     (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ a' → f (φ t x) = f x - t)
-    (hLN : f ⁻¹' {a} ⊆ f ⁻¹' Icc a a') (R : C) (n : ℕ) :
-    IsZero ((TopPair.ofInclusion (X := TopCat.of M) hLN).singularHomology R n) := by
+    (hLN : f ⁻¹' {a} ⊆ f ⁻¹' Icc a a') :
+    ∃ r : C(f ⁻¹' Icc a a', f ⁻¹' {a}),
+      Nonempty (((ContinuousMap.inclusion hLN).comp r).HomotopyRel (ContinuousMap.id _)
+        {x | (x : M) ∈ f ⁻¹' {a}}) := by
   -- Along the flow line of `x` in the collar, `f` takes the value `f x - s * (f x - a)` at time
   -- `s * (f x - a)`, for `0 ≤ s ≤ 1`.
   have hval (x : f ⁻¹' Icc a a') (s : ℝ) (hs₀ : 0 ≤ s) (hs₁ : s ≤ 1) :
@@ -153,18 +154,29 @@ private theorem isZero_singularHomology_collar {a' : ℝ} (hf : Continuous f) (�
       continuous_toFun := by
         refine Continuous.subtype_mk ?_ _
         exact φ.continuous (by fun_prop) (by fun_prop) }
-  refine TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel hLN r
-    { toFun := fun p ↦ ⟨φ ((1 - (p.1 : ℝ)) * (f p.2 - a)) p.2,
-        hmem p.2 _ (by linarith [p.1.property.2]) (by linarith [p.1.property.1])⟩
-      continuous_toFun := by
-        refine Continuous.subtype_mk ?_ _
-        exact φ.continuous (by fun_prop) (by fun_prop)
-      map_zero_left := fun x ↦ Subtype.ext (by simp [r])
-      map_one_left := fun x ↦ Subtype.ext (by simp [Flow.map_zero_apply])
-      prop' := fun t x hx ↦ by
-        have hxa : f x = a := hx
-        ext
-        simp [r, hxa] } R n
+  exact ⟨r, ⟨{
+    toFun := fun p ↦ ⟨φ ((1 - (p.1 : ℝ)) * (f p.2 - a)) p.2,
+      hmem p.2 _ (by linarith [p.1.property.2]) (by linarith [p.1.property.1])⟩
+    continuous_toFun := by
+      refine Continuous.subtype_mk ?_ _
+      exact φ.continuous (by fun_prop) (by fun_prop)
+    map_zero_left := fun x ↦ Subtype.ext (by simp [r])
+    map_one_left := fun x ↦ Subtype.ext (by simp [Flow.map_zero_apply])
+    prop' := fun t x hx ↦ by
+      have hxa : f x = a := hx
+      ext
+      simp [r, hxa] }⟩⟩
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
+/-- A collar `f⁻¹[a, a']` which the flow `φ` crosses at unit speed carries no homology relative to
+its lower level `f⁻¹(a)`: following the flow down to the level `a` is a strong deformation
+retraction. -/
+private theorem isZero_singularHomology_collar {a' : ℝ} (hf : Continuous f) (φ : Flow ℝ M)
+    (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ a' → f (φ t x) = f x - t)
+    (hLN : f ⁻¹' {a} ⊆ f ⁻¹' Icc a a') (R : C) (n : ℕ) :
+    IsZero ((TopPair.ofInclusion (X := TopCat.of M) hLN).singularHomology R n) := by
+  obtain ⟨r, ⟨G⟩⟩ := exists_collarDeformation hf φ hφf hLN
+  exact TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel hLN r G R n
 
 variable {A : Type v} [Category.{w} A] [HasCoproducts.{u} A] [Abelian A]
 
@@ -202,7 +214,7 @@ private theorem isIso_singularHomologyMap_excision_collar {a' : ℝ} (hf : Conti
     by_cases hx : f x.val < a'
     · exact ⟨true, Or.inl hx⟩
     rcases hlt with hlt | rfl
-    · exact ⟨false, show a < f x.val by linarith⟩
+    · exact ⟨false, hlt.trans_le (le_of_not_gt hx)⟩
     · exact ⟨true, Or.inr le_rfl⟩
   · cases i
     · refine Or.inr fun x (hx : a < f x.val) ↦ ⟨⟨x.val, hx.le, x.property⟩, ?_⟩

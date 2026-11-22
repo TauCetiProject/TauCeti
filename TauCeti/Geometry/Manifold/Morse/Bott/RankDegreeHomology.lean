@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair
 public import TauCeti.Topology.VectorBundle.Orientation.RankDegreeHomology
 public import TauCeti.Topology.VectorBundle.Orientation.TwistedHomology.Basic
 import TauCeti.Geometry.Manifold.Topology
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
+import TauCeti.Topology.VectorBundle.EulerClass
 
 /-!
 # The homology across a Morse–Bott level in the degree of the index
@@ -26,7 +28,8 @@ degrees `j < r`, and also in the degree `j = r` when the index `r` is positive, 
 orientation of `ν⁻`:
 
 * below the index the relative homology vanishes, with any coefficients
-  (`isZero_singularHomology_sublevelPair_of_lt`);
+  (`isZero_singularHomology_sublevelPair_of_lt`), and likewise the relative cohomology when the
+  chain coefficients are projective (`isZero_singularCohomology_sublevelPair_of_lt`);
 * in the degree of a positive index, `Hᵣ({f ≤ b}, {f ≤ a}; ℤ) ≅ H₀(S; o(ν⁻))`
   (`nonempty_singularHomology_sublevelPair_iso_twistedHomology`, stated for index `r + 1`).
 
@@ -48,8 +51,8 @@ For instance, a critical circle of index one whose negative normal bundle is a M
 contributes `ℤ/2` in degree one, not the group `H₀(S¹; ℤ) = ℤ` that constant coefficients would
 give.
 
-The model fibre `Fin r → ℝ` of `ν⁻` lies in `Type`, and the computation of the Thom pair needs its
-base and fibres in the same universe, so `M`, `S` and the model space of `M` live in `Type`.
+For the twisted-homology and orientability statements in the second part, `M`, `S` and the model
+space of `M` live in `Type`.
 
 ## References
 
@@ -68,15 +71,19 @@ open AlgebraicTopology Bundle CategoryTheory Limits Module Set Topology
 open TauCeti.VectorBundleOrientationCover TauCeti.LocalCoefficientSystem
 open scoped ContDiff Manifold
 
+universe u
+
 namespace TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold
 
-variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
+section VanishingBelowIndex
+
+variable {E : Type u} {H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
-  [SecondCountableTopology M] {E' H' : Type*} {S : Type} [NormedAddCommGroup E']
+  [SecondCountableTopology M] {E' H' : Type*} {S : Type u} [NormedAddCommGroup E']
   [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} [J.Boundaryless] [TopologicalSpace S] [ChartedSpace H' S]
-  [IsManifold J ∞ S] {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M} (hn : (∞ : ℕ∞ω) ≠ 0)
+  [IsManifold J ∞ S] {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M}
   (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ}
   (hc : ∀ s, f (i s) = c) (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
   (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i)
@@ -86,7 +93,7 @@ include hfs hcompact hcrit in
 /-- If the critical submanifold is empty, the band has no critical points, so it carries no
 relative homology. -/
 private theorem isZero_singularHomology_sublevelPair_of_isEmpty [IsEmpty S]
-    {C : Type*} [Category C] [Abelian C] [HasCoproducts.{0} C] (R : C) (k : ℕ) :
+    {C : Type*} [Category C] [Abelian C] [HasCoproducts.{u} C] (R : C) (k : ℕ) :
     IsZero ((sublevelPair f (hac.trans hcb).le).singularHomology R k) :=
   isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hfs _ hcompact
     (fun _ hax hxb hx ↦ isEmptyElim (hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hx,
@@ -101,7 +108,7 @@ all its critical points lie on `i`. Then `Hₖ({f ≤ b}, {f ≤ a}) = 0` for `k
 in any abelian category with coproducts. -/
 theorem isZero_singularHomology_sublevelPair_of_lt {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
-    {C : Type*} [Category C] [Abelian C] [HasCoproducts.{0} C] (R : C) {k : ℕ} (hk : k < r) :
+    {C : Type*} [Category C] [Abelian C] [HasCoproducts.{u} C] (R : C) {k : ℕ} (hk : k < r) :
     IsZero ((sublevelPair f (hac.trans hcb).le).singularHomology R k) := by
   cases isEmpty_or_nonempty S with
   | inl _ => exact isZero_singularHomology_sublevelPair_of_isEmpty hfs hac hcb hcompact hcrit R k
@@ -115,22 +122,58 @@ theorem isZero_singularHomology_sublevelPair_of_lt {r : ℕ}
     have : T2Space S := i.isEmbedding.t2Space
     -- Choose a smooth fibre metric `g` on the normal bundle, modelled on a Euclidean space; the
     -- negative normal spaces relative to `g` form a vector bundle of rank `r`.
-    have hdim : finrank ℝ (EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ E'))) =
-        finrank ℝ E - finrank ℝ E' := finrank_euclideanSpace_fin
+    let P₀ := EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ E'))
+    have hdim : finrank ℝ P₀ = finrank ℝ E - finrank ℝ E' := finrank_euclideanSpace_fin
     let := i.normalSpaceFiberBundle hn hdim
     let := i.normalSpaceVectorBundle hn hdim
     have := i.normalSpaceContMDiffVectorBundle hn (m := ∞) (by simp) hdim
     obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := J) (n := ⊤)
-      (F := EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ E'))) (E := fun s ↦ i.NormalSpace s hn)
-    let := subbundleTopology (EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ E')))
-      (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+      (F := P₀) (E := fun s ↦ i.NormalSpace s hn)
     have hV := h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn (k := ∞) (by simp)
       (fun s ↦ (hfs (i s)).of_le (by simp)) hdim g hr
-    let := hV.fiberBundle
-    have := hV.vectorBundle
+    have hVu := hV.hasLocalSubbundleFrames.comp_equiv Equiv.ulift
+    let := subbundleTopology P₀ (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+    let := subbundleTopology P₀ (F' := ULift.{u} (Fin r) → ℝ)
+      (h.negativeNormalSpace hn g.toRiemannianMetric)
+    let := hVu.fiberBundle
+    have := hVu.vectorBundle
+    have hrank : finrank ℝ (ULift.{u} (Fin r) → ℝ) = r := by
+      rw [Module.finrank_pi, Fintype.card_ulift, Fintype.card_fin]
     obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcompact
       hcrit hdim g hr R k
-    exact (isZero_singularHomology_thomPair_of_compactSpace R (by simpa using hk)).of_iso e
+    have hzero : IsZero ((thomPair (ULift.{u} (Fin r) → ℝ)
+        fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s).singularHomology R k) :=
+      isZero_singularHomology_thomPair_of_compactSpace R (hrank.symm ▸ hk)
+    exact hzero.of_iso (e ≪≫ TopPair.singularHomologyMapIso R
+      (subbundleThomPairModelIso P₀ (Fin r → ℝ) (ULift.{u} (Fin r) → ℝ)
+        (h.negativeNormalSpace hn g.toRiemannianMetric)) k)
+
+include h hfs hc hac hcb hcompact hcrit in
+/-- **Across a Morse–Bott level the relative cohomology vanishes below the index.** Under the
+hypotheses of `isZero_singularHomology_sublevelPair_of_lt`, the relative singular cohomology
+`Hᵐ({f ≤ b}, {f ≤ a}; R, N)` vanishes for every `m < r` whenever the chain coefficient object
+`R` is projective. -/
+theorem isZero_singularCohomology_sublevelPair_of_lt {r : ℕ}
+    (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
+    {C : Type*} [Category C] [Abelian C] [HasCoproducts.{u} C] (R : C) [Projective R]
+    (k : Type*) [Ring k] [Linear k C] (N : C) {m : ℕ} (hmr : m < r) :
+    IsZero ((sublevelPair f (hac.trans hcb).le).singularCohomology R k N m) :=
+  TopPair.isZero_singularCohomology_of_isZero_singularHomology _ R N m fun _ hj ↦
+    h.isZero_singularHomology_sublevelPair_of_lt hfs hc hac hcb hcompact hcrit hr R
+      (hj.trans_lt hmr)
+
+end VanishingBelowIndex
+
+variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  [SecondCountableTopology M] {E' H' : Type*} {S : Type} [NormedAddCommGroup E']
+  [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [J.Boundaryless] [TopologicalSpace S] [ChartedSpace H' S]
+  [IsManifold J ∞ S] {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M} (hn : (∞ : ℕ∞ω) ≠ 0)
+  (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ}
+  (hc : ∀ s, f (i s) = c) (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+  (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i)
 
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
   (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
