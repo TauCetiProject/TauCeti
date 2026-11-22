@@ -32,7 +32,9 @@ permutations gives the action of `Equiv.Perm ι` on a tensor power by algebra au
 Applying algebra equivalences factorwise gives `PiTensorProduct.congrAlgEquiv`, the algebra
 version of Mathlib's `PiTensorProduct.congr`, compatible with `PiTensorProduct.mapAlgHom` and
 `PiTensorProduct.reindexAlgEquiv`; `PiTensorProduct.productMap` and `PiTensorProduct.mulAlgHom` are
-likewise invariant under `PiTensorProduct.reindexAlgEquiv` and `PiTensorProduct.permAlgEquiv`.
+likewise invariant under `PiTensorProduct.reindexAlgEquiv` and `PiTensorProduct.permAlgEquiv`, and
+`PiTensorProduct.fiberwiseMul` commutes with reindexing along a commuting square of index maps
+(`PiTensorProduct.reindex_fiberwiseMul`).
 
 For finite index types, the tensor product of the split algebras `κ i → R` is the split algebra
 of functions on `Π i, κ i` (`PiTensorProduct.piScalarAlgEquiv`), built from Mathlib's
@@ -277,6 +279,32 @@ theorem mulAlgHom_permAlgEquiv (π : Equiv.Perm σ) (x : ⨂[R] _ : σ, B) :
   rw [← AlgEquiv.toLinearEquiv_apply, permAlgEquiv_toLinearEquiv, mulAlgHom_reindex]
 
 end MulAlgHom
+
+section FiberwiseMul
+
+variable {σ τ σ' τ' : Type*} [Fintype σ] [DecidableEq τ] [Fintype σ'] [DecidableEq τ']
+  {B : Type*} [CommSemiring B] [Algebra R B]
+
+/-- `PiTensorProduct.fiberwiseMul` is natural in the index map: reindexing along bijections of the
+source and target carries multiplication along `f` to multiplication along `f'` when the square
+`eτ ∘ f = f' ∘ eσ` commutes. -/
+theorem reindex_fiberwiseMul (eσ : σ ≃ σ') (eτ : τ ≃ τ') {f : σ → τ} {f' : σ' → τ'}
+    (h : eτ ∘ f = f' ∘ eσ) (x : ⨂[R] _ : σ, B) :
+    reindex R (fun _ ↦ B) eτ (fiberwiseMul (R := R) (A := fun _ ↦ B) f x) =
+      fiberwiseMul (A := fun _ ↦ B) f' (reindex R (fun _ ↦ B) eσ x) := by
+  classical
+  -- Both composites send the factor inclusion at `i` to the factor inclusion at `eτ (f i)`.
+  have key : (reindexAlgEquiv (R := R) (fun _ ↦ B) eτ).toAlgHom.comp
+      (fiberwiseMul (A := fun _ ↦ B) f) =
+      (fiberwiseMul (A := fun _ ↦ B) f').comp (reindexAlgEquiv (fun _ ↦ B) eσ).toAlgHom :=
+    algHom_ext fun i ↦ AlgHom.ext fun a ↦ by
+      simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, fiberwiseMul_singleAlgHom,
+        reindexAlgEquiv_singleAlgHom]
+      exact congrArg (singleAlgHom · a) (congr_fun h i)
+  simpa only [← reindexAlgEquiv_toLinearEquiv, AlgEquiv.toLinearEquiv_apply, AlgHom.comp_apply,
+    AlgEquiv.coe_toAlgHom] using DFunLike.congr_fun key x
+
+end FiberwiseMul
 
 /-- The tensor product over an empty family of algebras is the base algebra. -/
 noncomputable def isEmptyAlgEquiv (ι : Type*) [IsEmpty ι] (A : ι → Type*)

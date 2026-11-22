@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.PiTensorProduct
 public import TauCeti.RingTheory.PiTensorProduct.Basic
 
 /-!
-# Factorwise algebra homomorphisms on indexed tensor products
+# Factorwise algebra homomorphisms and product maps on indexed tensor products
 
 Given families of `R`-algebras `A` and `B` indexed by `ι`, a family of `R`-algebra homomorphisms
 `f : ∀ i, A i →ₐ[R] B i` induces an `R`-algebra homomorphism on the indexed tensor product
@@ -19,10 +19,18 @@ and matching `Algebra.TensorProduct.map` for binary tensor products.
 We record functoriality of `PiTensorProduct.mapAlgHom` and show that applying `LinearMap.mul` in
 every factor via `PiTensorProduct.map₂` recovers multiplication on the indexed tensor product.
 
+Algebra maps `f j : A j → S` out of a finite family of `R`-algebras into a commutative algebra
+`S` induce `PiTensorProduct.productMap f : (⨂[R] j, A j) →ₐ[R] S`, sending `⨂ₜ xⱼ` to
+`∏ⱼ f j (x j)`. Every algebra map from `⨂[R] j, A j` to a commutative algebra arises this way from
+its restrictions to the factors; in particular, a finite tensor product of commutative algebras
+is their coproduct. This is the indexed analogue of `Algebra.TensorProduct.productMap`.
+
 ## Main definitions
 
 * `PiTensorProduct.mapAlgHom`: the `R`-algebra homomorphism `(⨂[R] i, A i) →ₐ[R] ⨂[R] i, B i`
   induced by a family `f : ∀ i, A i →ₐ[R] B i`.
+* `PiTensorProduct.productMap`: the algebra map out of a finite tensor product of algebras into a
+  commutative algebra induced by algebra maps out of the factors.
 
 ## Main results
 
@@ -32,6 +40,13 @@ every factor via `PiTensorProduct.map₂` recovers multiplication on the indexed
   `PiTensorProduct.mapAlgHom_mapAlgHom`: functoriality of `mapAlgHom`.
 * `PiTensorProduct.map₂_mul_apply`: applying `LinearMap.mul` in each factor via
   `PiTensorProduct.map₂` (`PiTensorProduct.map₂_mul`) to two tensors multiplies them.
+* `PiTensorProduct.productMap_tprod`, `PiTensorProduct.productMap_singleAlgHom`: the values of
+  `PiTensorProduct.productMap` on pure tensors and on the factor inclusions.
+* `PiTensorProduct.productMap_comp_singleAlgHom'`, `PiTensorProduct.comp_productMap`: an algebra
+  map into a commutative algebra is the product map of its restrictions to the factors, and
+  postcomposition acts factorwise.
+* `PiTensorProduct.productMap_reindex`: invariance of `PiTensorProduct.productMap` under
+  reindexing.
 -/
 
 public section
@@ -100,5 +115,74 @@ theorem map₂_mul_apply (x y : ⨂[R] i, A i) : map₂ (fun i ↦ LinearMap.mul
   rw [map₂_mul, LinearMap.mul_apply']
 
 end Map
+
+section ProductMap
+
+variable {τ : Type*} {A : τ → Type*} [∀ j, Semiring (A j)] [∀ j, Algebra R (A j)]
+  [Fintype τ] {S : Type*} [CommSemiring S] [Algebra R S]
+
+/-- The algebra map `⨂[R] j, A j → S` induced by algebra maps `f j : A j → S` into a commutative
+algebra: it sends `⨂ₜ xⱼ` to `∏ⱼ f j (x j)`. Every algebra map from `⨂[R] j, A j` to a commutative
+algebra arises this way from its restrictions to the factors
+(`PiTensorProduct.productMap_comp_singleAlgHom'`, uniqueness by `PiTensorProduct.algHom_ext`); in
+particular a finite tensor product of commutative algebras is their coproduct. It is the indexed
+analogue of `Algebra.TensorProduct.productMap`. -/
+noncomputable def productMap (f : ∀ j, A j →ₐ[R] S) : (⨂[R] j, A j) →ₐ[R] S :=
+  liftAlgHom ((MultilinearMap.mkPiAlgebra R τ S).compLinearMap fun j ↦ (f j).toLinearMap)
+    (by simp only [MultilinearMap.compLinearMap_apply, MultilinearMap.mkPiAlgebra_apply,
+      AlgHom.toLinearMap_apply, Pi.one_apply, map_one, Finset.prod_const_one])
+    (fun x y ↦ by
+      simp only [MultilinearMap.compLinearMap_apply, MultilinearMap.mkPiAlgebra_apply,
+        AlgHom.toLinearMap_apply, Pi.mul_apply, map_mul, Finset.prod_mul_distrib])
+
+/-- `PiTensorProduct.productMap f` sends a pure tensor to the product of the images of its
+factors. -/
+@[simp]
+theorem productMap_tprod (f : ∀ j, A j →ₐ[R] S) (x : ∀ j, A j) :
+    productMap f (tprod R x) = ∏ j, f j (x j) :=
+  -- `lift.tprod` evaluates the multilinear map, which is the product by definition.
+  (liftAlgHom_apply _ _ _ _).trans (lift.tprod _)
+
+/-- `PiTensorProduct.productMap f` restricts to `f j` on the factor inclusion at `j`. It is a
+pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite the factor inclusion first. -/
+@[simp↓]
+theorem productMap_singleAlgHom [DecidableEq τ] (f : ∀ j, A j →ₐ[R] S) (j : τ) (a : A j) :
+    productMap f (singleAlgHom j a) = f j a := by
+  rw [singleAlgHom_apply, productMap_tprod, Finset.prod_eq_single j (fun k _ hk ↦ ?_) (by simp),
+    MonoidHom.mulSingle_apply, Pi.mulSingle_eq_same]
+  rw [MonoidHom.mulSingle_apply, Pi.mulSingle_eq_of_ne hk, map_one]
+
+/-- `PiTensorProduct.productMap f` restricts to `f j` along the factor inclusion at `j`. -/
+@[simp]
+theorem productMap_comp_singleAlgHom [DecidableEq τ] (f : ∀ j, A j →ₐ[R] S) (j : τ) :
+    (productMap f).comp (singleAlgHom j) = f j :=
+  AlgHom.ext (productMap_singleAlgHom f j)
+
+/-- An algebra map from `⨂[R] j, A j` to a commutative algebra is the product map of its
+restrictions to the factors. -/
+@[simp]
+theorem productMap_comp_singleAlgHom' [DecidableEq τ] (g : (⨂[R] j, A j) →ₐ[R] S) :
+    productMap (fun j ↦ g.comp (singleAlgHom j)) = g :=
+  algHom_ext fun j ↦ productMap_comp_singleAlgHom _ j
+
+/-- Postcomposing `PiTensorProduct.productMap f` with an algebra map into another commutative
+algebra postcomposes each factor map. -/
+@[simp]
+theorem comp_productMap {T : Type*} [CommSemiring T] [Algebra R T] (h : S →ₐ[R] T)
+    (f : ∀ j, A j →ₐ[R] S) : h.comp (productMap f) = productMap fun j ↦ h.comp (f j) := by
+  classical
+  exact algHom_ext fun j ↦ by
+    rw [AlgHom.comp_assoc, productMap_comp_singleAlgHom, productMap_comp_singleAlgHom]
+
+/-- `PiTensorProduct.productMap` is invariant under reindexing the factors along a bijection. -/
+@[simp]
+theorem productMap_reindex {τ' : Type*} [Fintype τ'] (e : τ ≃ τ') (f : ∀ j, A j →ₐ[R] S)
+    (x : ⨂[R] j, A j) :
+    productMap (fun k ↦ f (e.symm k)) (reindex R A e x) = productMap f x := by
+  induction x using PiTensorProduct.induction_on with
+  | smul_tprod r a => simp [reindex_tprod, e.symm.prod_comp fun j ↦ f j (a j)]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+end ProductMap
 
 end PiTensorProduct

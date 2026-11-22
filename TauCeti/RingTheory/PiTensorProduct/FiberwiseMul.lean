@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PiTensorProduct
+public import TauCeti.RingTheory.PiTensorProduct.Map
 import Mathlib.Data.Fintype.Sum
 
 /-!
 # Multiplying the factors of a tensor product of commutative algebras along fibres
 
-Algebra maps `f j : A j → S` out of a finite family of `R`-algebras into a commutative algebra
-induce `PiTensorProduct.productMap f`, sending `⨂ₜ xⱼ` to `∏ⱼ f j (x j)`. In particular, a finite
-tensor product of commutative `R`-algebras is their coproduct. A map `f : σ → τ` of finite index
-types therefore induces an algebra map between tensor products of commutative algebras
+Algebra maps out of the factors of a finite tensor product into a commutative algebra combine into
+an algebra map out of the whole product, `PiTensorProduct.productMap`. Combining the factor
+inclusions in this way, a map `f : σ → τ` from a finite index type to an index type with decidable
+equality induces an algebra map between tensor products of commutative algebras
 
 ```text
 ⨂_{i : σ} A (f i) → ⨂_{j : τ} A j,     ⨂ₜ xᵢ ↦ ∏ᵢ (1 ⊗ ⋯ ⊗ xᵢ ⊗ ⋯ ⊗ 1),
@@ -32,17 +32,12 @@ together gives an algebra map from `⨂_{i : σ} B` to `B` itself. It is the ind
 
 ## Main definitions
 
-* `PiTensorProduct.productMap`: the algebra map out of a finite tensor product of algebras into a
-  commutative algebra induced by algebra maps out of the factors.
 * `PiTensorProduct.fiberwiseMul`: the algebra map along `f : σ → τ`.
 * `PiTensorProduct.mulAlgHom`: multiplication of all the factors of a finite tensor power of a
   commutative algebra.
 
 ## Main results
 
-* `PiTensorProduct.productMap_tprod`, `PiTensorProduct.productMap_singleAlgHom`,
-  `PiTensorProduct.productMap_reindex`: the values of `PiTensorProduct.productMap` on pure tensors
-  and on the factor inclusions, and its invariance under reindexing.
 * `PiTensorProduct.fiberwiseMul_tprod`, `PiTensorProduct.fiberwiseMul_singleAlgHom`: its values on
   pure tensors and on the factor inclusions.
 * `PiTensorProduct.fiberwiseMul_id`, `PiTensorProduct.fiberwiseMul_comp`: functoriality in `f`.
@@ -54,8 +49,6 @@ together gives an algebra map from `⨂_{i : σ} B` to `B` itself. It is the ind
   tensor is the pure tensor of the products over the fibres.
 * `PiTensorProduct.toLinearMap_fiberwiseMul_equiv`: along a bijection it is
   `PiTensorProduct.reindex`.
-* `PiTensorProduct.reindex_fiberwiseMul`: it commutes with reindexing along a commuting square of
-  index maps.
 * `PiTensorProduct.fiberwiseMul_sum_map`: multiplication on a disjoint union is the tensor
   product of the multiplications on its two summands.
 * `PiTensorProduct.fiberwiseMul_fiberwiseMul_surjInv`: along a surjection it has a right inverse,
@@ -68,67 +61,14 @@ open scoped TensorProduct
 
 namespace PiTensorProduct
 
-variable {R : Type*} [CommSemiring R] {σ τ υ : Type*}
+variable {R : Type*} [CommSemiring R] {σ τ υ : Type*} {A : τ → Type*}
+  [∀ j, CommSemiring (A j)] [∀ j, Algebra R (A j)]
 
-section ProductMap
-
-variable {A : τ → Type*} [∀ j, Semiring (A j)] [∀ j, Algebra R (A j)]
-  [Fintype τ] {S : Type*} [CommSemiring S] [Algebra R S]
-
-/-- The algebra map `⨂[R] j, A j → S` induced by algebra maps `f j : A j → S` into a commutative
-algebra: it sends `⨂ₜ xⱼ` to `∏ⱼ f j (x j)`. Every algebra map from `⨂[R] j, A j` to a commutative
-algebra arises this way from its restrictions to the factors
-(`PiTensorProduct.productMap_singleAlgHom`, uniqueness by `PiTensorProduct.algHom_ext`); in
-particular a finite tensor product of commutative algebras is their coproduct. It is the indexed
-analogue of `Algebra.TensorProduct.productMap`. -/
-noncomputable def productMap (f : ∀ j, A j →ₐ[R] S) : (⨂[R] j, A j) →ₐ[R] S :=
-  liftAlgHom ((MultilinearMap.mkPiAlgebra R τ S).compLinearMap fun j ↦ (f j).toLinearMap)
-    (by simp only [MultilinearMap.compLinearMap_apply, MultilinearMap.mkPiAlgebra_apply,
-      AlgHom.toLinearMap_apply, Pi.one_apply, map_one, Finset.prod_const_one])
-    (fun x y ↦ by
-      simp only [MultilinearMap.compLinearMap_apply, MultilinearMap.mkPiAlgebra_apply,
-        AlgHom.toLinearMap_apply, Pi.mul_apply, map_mul, Finset.prod_mul_distrib])
-
-/-- `PiTensorProduct.productMap f` sends a pure tensor to the product of the images of its
-factors. -/
-@[simp]
-theorem productMap_tprod (f : ∀ j, A j →ₐ[R] S) (x : ∀ j, A j) :
-    productMap f (tprod R x) = ∏ j, f j (x j) :=
-  -- `lift.tprod` evaluates the multilinear map, which is the product by definition.
-  (liftAlgHom_apply _ _ _ _).trans (lift.tprod _)
-
-/-- `PiTensorProduct.productMap f` restricts to `f j` on the factor inclusion at `j`. It is a
-pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite the factor inclusion first. -/
-@[simp↓]
-theorem productMap_singleAlgHom [DecidableEq τ] (f : ∀ j, A j →ₐ[R] S) (j : τ) (a : A j) :
-    productMap f (singleAlgHom j a) = f j a := by
-  rw [singleAlgHom_apply, productMap_tprod, Finset.prod_eq_single j (fun k _ hk ↦ ?_) (by simp),
-    MonoidHom.mulSingle_apply, Pi.mulSingle_eq_same]
-  rw [MonoidHom.mulSingle_apply, Pi.mulSingle_eq_of_ne hk, map_one]
-
-/-- `PiTensorProduct.productMap f` restricts to `f j` along the factor inclusion at `j`. -/
-@[simp]
-theorem productMap_comp_singleAlgHom [DecidableEq τ] (f : ∀ j, A j →ₐ[R] S) (j : τ) :
-    (productMap f).comp (singleAlgHom j) = f j :=
-  AlgHom.ext (productMap_singleAlgHom f j)
-
-/-- `PiTensorProduct.productMap` is invariant under reindexing the factors along a bijection. -/
-@[simp]
-theorem productMap_reindex {τ' : Type*} [Fintype τ'] (e : τ ≃ τ') (f : ∀ j, A j →ₐ[R] S)
-    (x : ⨂[R] j, A j) :
-    productMap (fun k ↦ f (e.symm k)) (reindex R A e x) = productMap f x := by
-  induction x using PiTensorProduct.induction_on with
-  | smul_tprod r a => simp [reindex_tprod, e.symm.prod_comp fun j ↦ f j (a j)]
-  | add x y hx hy => simp only [map_add, hx, hy]
-
-end ProductMap
-
-variable {A : τ → Type*} [∀ j, CommSemiring (A j)] [∀ j, Algebra R (A j)]
-
-/-- The algebra map `⨂_{i : σ} A (f i) → ⨂_{j : τ} A j` induced by a map `f : σ → τ` of finite
-index types: it sends `⨂ₜ x` to the product over `i` of `x i` placed in the slot `f i`. The
-factors in each fibre of `f` are multiplied together, and slots outside the range of `f` get `1`.
-It is the product map of the factor inclusions `singleAlgHom (f i)`. -/
+/-- The algebra map `⨂_{i : σ} A (f i) → ⨂_{j : τ} A j` induced by a map `f : σ → τ` from a finite
+index type to an index type with decidable equality: it sends `⨂ₜ x` to the product over `i` of
+`x i` placed in the slot `f i`. The factors in each fibre of `f` are multiplied together, and slots
+outside the range of `f` get `1`. It is the product map of the factor inclusions
+`singleAlgHom (f i)`. -/
 noncomputable def fiberwiseMul [Fintype σ] [DecidableEq τ] (f : σ → τ) :
     (⨂[R] i, A (f i)) →ₐ[R] ⨂[R] j, A j :=
   productMap fun i ↦ singleAlgHom (A := A) (f i)
@@ -230,26 +170,6 @@ theorem toLinearMap_fiberwiseMul_equiv (e : σ ≃ τ) :
   funext j
   rw [Finset.prod_eq_single (e.symm j) (fun i hij hi ↦ ?_) (by simp)]
   exact absurd (e.eq_symm_apply.mpr (Finset.mem_filter.mp hij).2) hi
-
-/-- `PiTensorProduct.fiberwiseMul` is natural in the index map: reindexing along bijections of the
-source and target carries multiplication along `f` to multiplication along `f'` when the square
-`eτ ∘ f = f' ∘ eσ` commutes. -/
-theorem reindex_fiberwiseMul {σ' τ' : Type*} [Fintype σ'] [DecidableEq τ']
-    (eσ : σ ≃ σ') (eτ : τ ≃ τ') {f : σ → τ} {f' : σ' → τ'}
-    (h : eτ ∘ f = f' ∘ eσ) (x : ⨂[R] _ : σ, B) :
-    reindex R (fun _ ↦ B) eτ (fiberwiseMul (R := R) (A := fun _ ↦ B) f x) =
-      fiberwiseMul (A := fun _ ↦ B) f' (reindex R (fun _ ↦ B) eσ x) := by
-  induction x using PiTensorProduct.induction_on with
-  | smul_tprod r y =>
-    simp only [map_smul, reindex_tprod, fiberwiseMul_tprod_eq_tprod_prod]
-    congr 2
-    funext j
-    -- `eσ` matches the fibre of `f` over `eτ.symm j` with the fibre of `f'` over `j`.
-    refine Finset.prod_equiv eσ (fun i ↦ ?_) fun i _ ↦ by simp
-    have := congr_fun h i
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Function.comp_apply] at this ⊢
-    rw [← this, Equiv.eq_symm_apply]
-  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- Multiplication along a disjoint union of index maps acts separately on its two tensor
 factors, through the native sum-indexed tensor equivalence. -/
