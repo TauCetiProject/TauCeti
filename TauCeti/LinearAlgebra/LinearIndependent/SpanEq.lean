@@ -20,7 +20,9 @@ finite field, reduce the size of each group to a count of independent tuples in 
 ## Main results
 
 * `Submodule.linearIndependentSpanEqEquiv`: linearly independent families in `V` spanning `W`
-  are equivalent to linearly independent families in `W`.
+  are equivalent to linearly independent families in `W`, with its value on elements given by
+  `Submodule.linearIndependentSpanEqEquiv_apply_coe` and
+  `Submodule.linearIndependentSpanEqEquiv_symm_apply_coe_coe`.
 -/
 
 public section
@@ -44,5 +46,22 @@ def linearIndependentSpanEqEquiv (W : Submodule K V) [FiniteDimensional K W]
       map_subtype_top]⟩
   left_inv _ := rfl
   right_inv _ := rfl
+
+variable (W : Submodule K V) [FiniteDimensional K W] (hW : finrank K W = Fintype.card ι)
+
+/-- `Submodule.linearIndependentSpanEqEquiv` keeps each vector of the family, viewed in `W`. -/
+@[simp]
+theorem linearIndependentSpanEqEquiv_apply_coe
+    (s : {s : {s : ι → V // LinearIndependent K s} // span K (Set.range s.val) = W}) (i : ι) :
+    ((W.linearIndependentSpanEqEquiv hW s).val i : V) = s.val.val i :=
+  (rfl)
+
+/-- The inverse of `Submodule.linearIndependentSpanEqEquiv` views a family in `W` as a family
+in `V`. -/
+@[simp]
+theorem linearIndependentSpanEqEquiv_symm_apply_coe_coe
+    (t : {t : ι → W // LinearIndependent K t}) :
+    ((W.linearIndependentSpanEqEquiv hW).symm t).val.val = Subtype.val ∘ t.val :=
+  (rfl)
 
 end Submodule
