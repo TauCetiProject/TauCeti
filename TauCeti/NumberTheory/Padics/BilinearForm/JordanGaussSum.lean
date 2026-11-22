@@ -94,7 +94,7 @@ private theorem IsJordanSplitting.sum_stdAddChar_dotProduct_two_pow_smul_toMatri
           stdAddChar (PadicInt.toZModPow 3 (C w w)) := by
   have h2 : (2 : ℤ_[2]) ^ i ∈ nonZeroDivisors ℤ_[2] :=
     mem_nonZeroDivisors_of_ne_zero (pow_ne_zero i two_ne_zero)
-  have hCs : C.IsSymm := (isSymm_smul_iff (IsSMulRegular.of_ne_zero (pow_ne_zero i two_ne_zero))).mp
+  have hCs : C.IsSymm := (IsSMulRegular.of_ne_zero (pow_ne_zero i two_ne_zero)).isSymm_smul_iff.mp
     (hC ▸ hB.restrict (N i))
   have hdet : IsUnit (C.toMatrix d).det :=
     d.isUnit_det_of_isPerfPair d C ((h.isModular i).isPerfPair_of_smul_eq h2 hC)

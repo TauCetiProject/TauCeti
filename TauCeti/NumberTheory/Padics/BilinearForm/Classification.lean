@@ -119,8 +119,8 @@ theorem IsJordanSplitting.equivalent_restrict_iff (h : B.IsJordanSplitting 2 N)
   have h2 : (2 : ℤ_[2]) ^ i ∈ nonZeroDivisors ℤ_[2] :=
     mem_nonZeroDivisors_of_ne_zero (pow_ne_zero i (two_ne_zero : (2 : ℤ_[2]) ≠ 0))
   have h2r : IsLeftRegular ((2 : ℤ_[2]) ^ i) := (isRegular_iff_mem_nonZeroDivisors.mpr h2).left
-  have hCs : C.IsSymm := (isSymm_smul_iff h2r.isSMulRegular).mp (hC ▸ hB.restrict (N i))
-  have hC's : C'.IsSymm := (isSymm_smul_iff h2r.isSMulRegular).mp (hC' ▸ hB'.restrict (N' i))
+  have hCs : C.IsSymm := h2r.isSMulRegular.isSymm_smul_iff.mp (hC ▸ hB.restrict (N i))
+  have hC's : C'.IsSymm := h2r.isSMulRegular.isSymm_smul_iff.mp (hC' ▸ hB'.restrict (N' i))
   set d'' := d'.reindex (Fintype.equivOfCardEq hcard).symm
   rw [← hC, ← hC', equivalent_smul_iff h2,
     hCs.equivalent_iff_two_dvd_iff_and_χ₈_eq_and_eight_dvd hC's d d''
@@ -173,8 +173,9 @@ private theorem IsJordanSplitting.equivalent_restrict_of_isSquare_five_mul
   have := h''.free k
   have := h''.finite k
   obtain ⟨C'', hC'', hC''p⟩ := isModular_def.mp (h''.isModular k)
-  have hC''s : C''.IsSymm := (isSymm_smul_iff (IsSMulRegular.of_ne_zero
-    (pow_ne_zero k (two_ne_zero : (2 : ℤ_[2]) ≠ 0)))).mp (hC'' ▸ hB'.restrict (N'' k))
+  have hC''s : C''.IsSymm := (IsSMulRegular.of_ne_zero
+    (pow_ne_zero k (two_ne_zero : (2 : ℤ_[2]) ≠ 0))).isSymm_smul_iff.mp
+      (hC'' ▸ hB'.restrict (N'' k))
   obtain ⟨w'', hw''⟩ := hC''s.exists_isCharacteristic PadicInt.two_dvd_sq_sub_self
   -- Bases of `N' k` and `N'' k` of the same size `n`.
   set n := Fintype.card ι'
@@ -536,8 +537,8 @@ theorem IsJordanSplitting.equivalent_iff_of_forall_even_or_even [Module.Finite �
       choose w'' hw'' using fun i ↦ by
         have := h''.free i
         have := hC''p i
-        exact ((isSymm_smul_iff (IsSMulRegular.of_ne_zero
-          (pow_ne_zero i (two_ne_zero : (2 : ℤ_[2]) ≠ 0)))).mp
+        exact ((IsSMulRegular.of_ne_zero
+          (pow_ne_zero i (two_ne_zero : (2 : ℤ_[2]) ≠ 0))).isSymm_smul_iff.mp
           (hC'' i ▸ hB'.restrict (N'' i))).exists_isCharacteristic PadicInt.two_dvd_sq_sub_self
       let (i : ℕ) := h''.free i
       let (i : ℕ) := h''.finite i
