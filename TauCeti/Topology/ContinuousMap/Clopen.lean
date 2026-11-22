@@ -103,7 +103,7 @@ private theorem norm_zeroExtendClopenFn (s : Clopens X) (f : C(s, E)) :
     · rw [zeroExtendClopenFn_apply_not_mem s f hx, norm_zero]
       exact norm_nonneg f
   · refine (norm_le _ (norm_nonneg (zeroExtendClopenFn s f))).2 fun x ↦ ?_
-    rw [← zeroExtendClopenFn_apply_mem s f x.2]
+    rw [← zeroExtendClopenFn_apply_mem s f x.property]
     exact norm_coe_le_norm (zeroExtendClopenFn s f) x
 
 end Norm
@@ -145,7 +145,7 @@ theorem norm_zeroExtendClopen (s : Clopens X) (f : C(s, E)) :
 theorem restrict_zeroExtendClopen (s : Clopens X) (f : C(s, E)) :
     (zeroExtendClopen R s f).restrict s = f := by
   ext x
-  exact zeroExtendClopen_apply_mem (R := R) s f x.2
+  exact zeroExtendClopen_apply_mem (R := R) s f x.property
 
 /-- A continuous function is the sum of the extensions by zero of its restrictions to a clopen
 subset and to the complementary clopen. -/

@@ -27,8 +27,9 @@ scalar field, the group and the representation to share one universe, so here `�
 `Q` all live in one universe `Type u`.
 
 In Sunada's construction of isospectral manifolds, `T` and `S₁`, `S₂` are the Laplacians of a
-`Q`-invariant Riemannian metric on `M` and of the quotient metrics; neither those operators nor
-their intertwining is constructed here.
+`Q`-invariant Riemannian metric on `M` and of the quotient metrics; that application is
+`Subgroup.AlmostConjugate.nonempty_linearEquiv_eigenspace_smoothLaplaceBeltrami` in
+`TauCeti.Geometry.Manifold.Quotient.Isospectral`.
 
 ## Main results
 

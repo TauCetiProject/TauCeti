@@ -131,7 +131,7 @@ representative-independence instead. The source's correction-map fibre block (`:
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup DoubleCoset
+open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup DoubleCoset TauCeti
   HeckeRing.GLn
 
 open scoped MatrixGroups ModularForm Pointwise HeckeCosetModule
@@ -229,7 +229,7 @@ theorem twistedHeckeSlashSum_twistedHeckeSlashSum_eq_sum_nsmul
           (f ∣[k] (rightCosetRep D₁ q.1 * rightCosetRep D₂ q.2))]
   refine Finset.sum_congr rfl fun D _ ↦ ?_
   exact sum_nebentypus_smul_slash_eq_nsmul_twistedHeckeSlashSum k χ D _ _
-    (fun i ↦ pairCoset_eq_iff.mp i.2)
+    (fun i ↦ pairCoset_eq_iff.mp i.property)
     (fun _ hx ↦ card_pairs_pairCoset_rightCoset_eq_multiplicity hx) f hf
 
 open Classical in
@@ -245,7 +245,7 @@ theorem twistedHeckeSlashSumCharEnd_mul_eq_sum_nsmul :
             twistedHeckeSlashSumCharEnd k χ D := by
   ext f x
   have h := congrFun
-    (twistedHeckeSlashSum_twistedHeckeSlashSum_eq_sum_nsmul k χ D₁ D₂ f f.2) x
+    (twistedHeckeSlashSum_twistedHeckeSlashSum_eq_sum_nsmul k χ D₁ D₂ f f.property) x
   simpa [mul_apply_eq_comp] using h
 
 end Assembly
@@ -374,7 +374,7 @@ theorem twistedHeckeSlashSumCharEnd_mul_of_doubleCoset_eq_mul
       twistedHeckeSlashSumCharEnd k χ D₃ := by
   ext f x
   have := congrFun (twistedHeckeSlashSum_twistedHeckeSlashSum_eq_twistedHeckeSlashSum k χ D₁ D₂
-    a b hcover₁ hinj₁ hcover₂ hinj₂ D₃ hD₃ hinj₃ f f.2) x
+    a b hcover₁ hinj₁ hcover₂ hinj₂ D₃ hD₃ hinj₃ f f.property) x
   simpa [mul_apply_eq_comp] using this
 
 include hcover₁ hinj₁ hcover₂ hinj₂ in

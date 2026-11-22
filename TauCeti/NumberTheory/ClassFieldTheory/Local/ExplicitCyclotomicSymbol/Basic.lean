@@ -62,15 +62,6 @@ open scoped TauCeti.ExactDivisor
 
 namespace TauCeti
 
-private def padicPrimeUnit (p : ℕ) [Fact p.Prime] : ℚ_[p]ˣ :=
-  Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
-
-/-- `TauCeti.Padic.isUniformizer_natCast_self`, unfolded and restated for `padicPrimeUnit`. -/
-private theorem normalizedValuation_padicPrimeUnit (p : ℕ) [Fact p.Prime] :
-    normalizedValuation ℚ_[p] (padicPrimeUnit p) = .ofAdd 1 := by
-  rw [padicPrimeUnit]
-  exact (isUniformizer_def _).1 (Padic.isUniformizer_natCast_self p)
-
 private def padicUnitReduction (p j : ℕ) [Fact p.Prime] :
     unitFiltration ℚ_[p] 0 →* (ZMod (p ^ j))ˣ :=
   (PadicInt.unitsToZModPow j).toMonoidHom.comp
@@ -103,7 +94,7 @@ private theorem unitsEquivIntProd_eq_of_padic_decomposition (p : ℕ) [Fact p.Pr
         (.ofAdd k, padicIntegerUnitToFiltration p w) := by
   have hx_units : x = (padicPrimeUnit p) ^ k * padicIntegerUnitToFiltration p w := by
     apply Units.ext
-    simpa [padicPrimeUnit, coe_padicIntegerUnitToFiltration] using hx
+    simpa [coe_padicIntegerUnitToFiltration] using hx
   rw [hx_units]
   have h := (unitsEquivIntProd ℚ_[p] (padicPrimeUnit p)
     (normalizedValuation_padicPrimeUnit p)).apply_symm_apply

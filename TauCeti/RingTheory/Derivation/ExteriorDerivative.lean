@@ -240,7 +240,7 @@ private noncomputable def twistedLift : ExteriorAlgebra A M →ₐ[A] TwistedAlg
     rw [TwistedAlg.snd_mul, TwistedAlg.snd_zero]; dsimp only [L, LinearMap.coe_mk, AddHom.coe_mk]
     rw [CliffordAlgebra.involute_ι, neg_mul,
       ExteriorAlgebra.ι_mul_eq_involute_mul m ((u m).snd : ExteriorAlgebra A M),
-      TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower (u m).snd.2]; simp⟩
+      TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower (u m).snd.property]; simp⟩
 
 private theorem fst_twistedLift (x : ExteriorAlgebra A M) :
     (twistedLift D u hspan hu x).fst = x := by
@@ -309,7 +309,7 @@ theorem exteriorAlgebraDeriv_involute (x : ExteriorAlgebra A M) :
   | algebraMap _ => simp
   | ι m =>
     rw [CliffordAlgebra.involute_ι, map_neg, exteriorAlgebraDeriv_ι,
-      TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower (u m).snd.2]; simp
+      TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower (u m).snd.property]; simp
   | mul _ _ hx hy =>
     rw [map_mul, exteriorAlgebraDeriv_mul, hx, hy, exteriorAlgebraDeriv_mul, map_add, map_mul,
       map_mul, neg_mul, mul_neg, neg_add]
@@ -381,20 +381,20 @@ theorem exteriorAlgebraDeriv_mem_exteriorPower {q : ℕ} {x : ExteriorAlgebra A 
     obtain ⟨m, rfl⟩ := hw
     rw [exteriorAlgebraDeriv_mul, exteriorAlgebraDeriv_ι, CliffordAlgebra.involute_ι, neg_mul]
     have h₁ : ((u m).snd : ExteriorAlgebra A M) * x ∈ ⋀[A]^(i + 1 + 1) M :=
-      Nat.add_comm 2 i ▸ SetLike.mul_mem_graded (u m).snd.2 hx
+      Nat.add_comm 2 i ▸ SetLike.mul_mem_graded (u m).snd.property hx
     exact add_mem h₁ (neg_mem (TauCeti.ExteriorAlgebra.ι_mul_mem_exteriorPower m ih))
 
 /-- **The `q`-th exterior derivative `⋀[A]^q M →ₗ[R] ⋀[A]^(q + 1) M`** associated to `D` and
 `u : M →ₗ[A] TwistedExt D`. -/
 noncomputable def exteriorDeriv (q : ℕ) : ⋀[A]^q M →ₗ[R] ⋀[A]^(q + 1) M where
-  toFun ω := ⟨D.exteriorAlgebraDeriv u hspan hu ω.1,
-    D.exteriorAlgebraDeriv_mem_exteriorPower u hspan hu ω.2⟩
-  map_add' ω₁ ω₂ := Subtype.ext (map_add (D.exteriorAlgebraDeriv u hspan hu) ω₁.1 ω₂.1)
-  map_smul' r ω := Subtype.ext ((D.exteriorAlgebraDeriv u hspan hu).map_smul r ω.1)
+  toFun ω := ⟨D.exteriorAlgebraDeriv u hspan hu ω.val,
+    D.exteriorAlgebraDeriv_mem_exteriorPower u hspan hu ω.property⟩
+  map_add' ω₁ ω₂ := Subtype.ext (map_add (D.exteriorAlgebraDeriv u hspan hu) ω₁.val ω₂.val)
+  map_smul' r ω := Subtype.ext ((D.exteriorAlgebraDeriv u hspan hu).map_smul r ω.val)
 
 @[simp] theorem coe_exteriorDeriv_apply (q : ℕ) (ω : ⋀[A]^q M) :
     (D.exteriorDeriv u hspan hu q ω : ExteriorAlgebra A M) =
-      D.exteriorAlgebraDeriv u hspan hu ω.1 := (rfl)
+      D.exteriorAlgebraDeriv u hspan hu ω.val := (rfl)
 @[simp] theorem exteriorDeriv_zero_symm (a : A) :
     D.exteriorDeriv u hspan hu 0 ((exteriorPower.zeroEquiv A M).symm a) =
       (exteriorPower.oneEquiv A M).symm (D a) := Subtype.ext <| by
@@ -409,7 +409,7 @@ theorem oneEquiv_exteriorDeriv_zero (ω : ⋀[A]^0 M) :
 `simp` rewriting. -/
 @[simp] theorem exteriorDeriv_exteriorDeriv_apply (q : ℕ) (ω : ⋀[A]^q M) :
     D.exteriorDeriv u hspan hu (q + 1) (D.exteriorDeriv u hspan hu q ω) = 0 :=
-  Subtype.ext (D.exteriorAlgebraDeriv_exteriorAlgebraDeriv u hspan hu ω.1)
+  Subtype.ext (D.exteriorAlgebraDeriv_exteriorAlgebraDeriv u hspan hu ω.val)
 /-- **Bundled square-zero composition** `d_{q+1} ∘ₗ d_q = 0` as `R`-linear maps on exterior
 powers, used to assemble de Rham cochain complexes. -/
 theorem exteriorDeriv_comp_exteriorDeriv (q : ℕ) :
@@ -419,7 +419,7 @@ theorem exteriorDeriv_comp_exteriorDeriv (q : ℕ) :
 theorem exteriorDeriv_smul (q : ℕ) (a : A) (ω : ⋀[A]^q M) :
     D.exteriorDeriv u hspan hu q (a • ω) =
       TauCeti.ExteriorAlgebra.wedgeLeft (D a) q ω + a • D.exteriorDeriv u hspan hu q ω :=
-  Subtype.ext <| by simpa using D.exteriorAlgebraDeriv_smul u hspan hu a ω.1
+  Subtype.ext <| by simpa using D.exteriorAlgebraDeriv_smul u hspan hu a ω.val
 /-- Every pure wedge product `D b₀ ∧ ⋯ ∧ D b_{q-1}` of exact differentials is closed (`d = 0`). -/
 @[simp] theorem exteriorDeriv_ιMulti_comp_D {q : ℕ} (b : Fin q → A) :
     D.exteriorDeriv u hspan hu q (exteriorPower.ιMulti A q (D ∘ b)) = 0 := by
@@ -445,7 +445,8 @@ theorem exteriorDeriv_wedge (p q : ℕ) (ω : ⋀[A]^p M) (η : ⋀[A]^q M) :
       LinearEquiv.ofEq _ _ (congrArg (⋀[A]^· M) (Nat.add_right_comm p 1 q))
         (exteriorPower.wedge A M (p + 1) q (D.exteriorDeriv u hspan hu p ω) η) +
         (-1 : A) ^ p • exteriorPower.wedge A M p (q + 1) ω (D.exteriorDeriv u hspan hu q η) :=
-  Subtype.ext <| by simpa using D.exteriorAlgebraDeriv_mul_of_mem_exteriorPower u hspan hu ω.2 η.1
+  Subtype.ext <| by
+    simpa using D.exteriorAlgebraDeriv_mul_of_mem_exteriorPower u hspan hu ω.property η.val
 /-- **Semilinear naturality of `exteriorDeriv`.** -/
 theorem mapSemilinear_exteriorDeriv {B N : Type*} [CommRing B] [Algebra R B]
     [AddCommGroup N] [Module R N] [Module B N] [IsScalarTower R B N]
@@ -456,6 +457,6 @@ theorem mapSemilinear_exteriorDeriv {B N : Type*} [CommRing B] [Algebra R B]
     exteriorPower.mapSemilinear (q + 1) g (D.exteriorDeriv u hspan hu q ω) =
       D'.exteriorDeriv u' hspan' hu' q (exteriorPower.mapSemilinear q g ω) := Subtype.ext <| by
   simp only [exteriorPower.coe_mapSemilinear_apply, coe_exteriorDeriv_apply]
-  exact mapSemilinear_exteriorAlgebraDeriv D u hspan hu D' u' hspan' hu' f g hg ω.1
+  exact mapSemilinear_exteriorAlgebraDeriv D u hspan hu D' u' hspan' hu' f g hg ω.val
 end ExteriorDeriv
 end Derivation

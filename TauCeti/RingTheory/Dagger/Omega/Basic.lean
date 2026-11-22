@@ -262,7 +262,7 @@ theorem d_eq_zero_iff_mem_range_algebraMap [CharZero K] (f : W) :
 
 /-- In characteristic zero, `d f = 0` iff `f` equals its constant coefficient viewed in `W`. -/
 theorem d_eq_zero_iff_eq_algebraMap_constantCoeff [CharZero K] (f : W) :
-    d K W f = 0 ↔ f = algebraMap K W (MvPowerSeries.constantCoeff f.1) := by
+    d K W f = 0 ↔ f = algebraMap K W (MvPowerSeries.constantCoeff f.val) := by
   rw [d_eq_zero_iff_mem_range_algebraMap]
   exact ⟨by rintro ⟨c, rfl⟩; simp [MvPowerSeries.algebraMap_apply], fun h ↦ ⟨_, h.symm⟩⟩
 

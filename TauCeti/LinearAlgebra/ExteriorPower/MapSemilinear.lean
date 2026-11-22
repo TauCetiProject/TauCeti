@@ -48,13 +48,13 @@ variable {A B C M N P : Type*} [CommRing A] [CommRing B] [CommRing C]
 /-- **Semilinear functoriality of exterior powers.** A `σ`-semilinear map `g : M →ₛₗ[σ] N`
 induces `⋀[A]^n M →ₛₗ[σ] ⋀[B]^n N` sending `v₀ ∧ ⋯ ∧ vₙ₋₁` to `g v₀ ∧ ⋯ ∧ g vₙ₋₁`. -/
 noncomputable def mapSemilinear (n : ℕ) (g : M →ₛₗ[σ] N) : ⋀[A]^n M →ₛₗ[σ] ⋀[B]^n N where
-  toFun x := ⟨ExteriorAlgebra.mapSemilinear g x.1,
-    ExteriorAlgebra.mapSemilinear_mem_exteriorPower g x.2⟩
-  map_add' x y := Subtype.ext (map_add (ExteriorAlgebra.mapSemilinear g) x.1 y.1)
-  map_smul' a x := Subtype.ext (ExteriorAlgebra.mapSemilinear_smul g a x.1)
+  toFun x := ⟨ExteriorAlgebra.mapSemilinear g x.val,
+    ExteriorAlgebra.mapSemilinear_mem_exteriorPower g x.property⟩
+  map_add' x y := Subtype.ext (map_add (ExteriorAlgebra.mapSemilinear g) x.val y.val)
+  map_smul' a x := Subtype.ext (ExteriorAlgebra.mapSemilinear_smul g a x.val)
 
 @[simp] theorem coe_mapSemilinear_apply (n : ℕ) (g : M →ₛₗ[σ] N) (x : ⋀[A]^n M) :
-    (mapSemilinear n g x : ExteriorAlgebra B N) = ExteriorAlgebra.mapSemilinear g x.1 := (rfl)
+    (mapSemilinear n g x : ExteriorAlgebra B N) = ExteriorAlgebra.mapSemilinear g x.val := (rfl)
 @[simp] theorem mapSemilinear_apply_ιMulti (n : ℕ) (g : M →ₛₗ[σ] N) (v : Fin n → M) :
     mapSemilinear n g (ιMulti A n v) = ιMulti B n (g ∘ v) :=
   Subtype.ext (ExteriorAlgebra.mapSemilinear_ιMulti g v)
@@ -68,7 +68,7 @@ theorem mapSemilinear_id_apply (n : ℕ) (x : ⋀[A]^n M) :
     mapSemilinear n (LinearMap.id : M →ₗ[A] M) x = x := DFunLike.congr_fun (mapSemilinear_id n) x
 theorem mapSemilinear_comp [RingHomCompTriple σ τ ρ] (n : ℕ) (h : N →ₛₗ[τ] P) (g : M →ₛₗ[σ] N) :
     mapSemilinear n (h.comp g) = (mapSemilinear n h).comp (mapSemilinear n g) :=
-  LinearMap.ext fun x ↦ Subtype.ext (ExteriorAlgebra.mapSemilinear_comp_apply h g x.1)
+  LinearMap.ext fun x ↦ Subtype.ext (ExteriorAlgebra.mapSemilinear_comp_apply h g x.val)
 @[simp] theorem mapSemilinear_comp_apply [RingHomCompTriple σ τ ρ] (n : ℕ) (h : N →ₛₗ[τ] P)
     (g : M →ₛₗ[σ] N) (x : ⋀[A]^n M) :
     mapSemilinear n (h.comp g) x = mapSemilinear n h (mapSemilinear n g x) :=
@@ -99,7 +99,7 @@ theorem mapSemilinear_comp [RingHomCompTriple σ τ ρ] (n : ℕ) (h : N →ₛ�
 theorem mapSemilinear_wedge (p q : ℕ) (g : M →ₛₗ[σ] N) (x : ⋀[A]^p M) (y : ⋀[A]^q M) :
     mapSemilinear (p + q) g (wedge A M p q x y) =
       wedge B N p q (mapSemilinear p g x) (mapSemilinear q g y) :=
-  Subtype.ext (map_mul (ExteriorAlgebra.mapSemilinear g) x.1 y.1)
+  Subtype.ext (map_mul (ExteriorAlgebra.mapSemilinear g) x.val y.val)
 /-- `mapSemilinear` intertwines left exterior multiplication by a vector. -/
 theorem mapSemilinear_wedgeLeft (n : ℕ) (g : M →ₛₗ[σ] N) (m : M) (x : ⋀[A]^n M) :
     mapSemilinear (n + 1) g (TauCeti.ExteriorAlgebra.wedgeLeft m n x) =

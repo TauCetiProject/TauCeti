@@ -19,14 +19,20 @@ indices. An endomorphism diagonal in the original basis acts diagonally in this 
 basis, with eigenvalues given by products over the indexing subsets. Their sum is the trace.
 
 A basis indexed by `Fin n` identifies the degree-`n` exterior power with the scalars by sending an
-exterior product to its determinant against that basis. The induced endomorphism acts by its
-determinant in this degree. These formulas hold over every commutative ring, including the zero
-ring. When the ring is nontrivial, `n` is the module's rank and this is its top exterior power.
+exterior product to its determinant against that basis. More generally, any finite linearly ordered
+basis induces a trivialisation `Module.Basis.exteriorPowerFinrankEquiv` of the degree-`finrank`
+exterior power sending its exterior-power basis vector to `1`. The induced endomorphism acts by its
+determinant in this degree, and a change of `n` vectors by a square matrix multiplies their
+exterior product by its determinant. These formulas hold over every commutative ring, including
+the zero ring. When the ring is nontrivial, `n` is the module's rank and this is its top exterior
+power.
 
 ## Main definitions
 
 * `Module.Basis.exteriorPowerTopEquiv` identifies the degree-`n` exterior power with the scalars
   for a basis indexed by `Fin n`.
+* `Module.Basis.exteriorPowerFinrankEquiv` identifies the degree-`Module.finrank R M` exterior
+  power with the scalars for any finite linearly ordered basis.
 
 ## Main results
 
@@ -38,10 +44,15 @@ ring. When the ring is nontrivial, `n` is the module's rank and this is its top 
   of the wedge of a basis indexed by `Fin n`.
 * `Module.Basis.map_exteriorPower_top_eq_det_smul` gives the degree-`n` action as its determinant
   for a basis indexed by `Fin n`.
+* `Module.Basis.exteriorPowerTopEquiv_map` gives the scalar coordinate formula for every
+  endomorphism in this identification.
 * `LinearMap.map_exteriorPower_finrank_eq_det_smul` gives the action in degree `Module.finrank`
   as its determinant.
 * `Module.Basis.trace_map_exteriorPower_top` gives the degree-`n` trace as the determinant
   for a basis indexed by `Fin n`.
+* `exteriorPower.ιMulti_sum_smul` and `AlternatingMap.map_sum_smul`: replacing a family of `n`
+  vectors by its combinations with the rows of a square matrix `A` multiplies its exterior
+  product, and the value of every alternating map on it, by `det A`.
 
 ## References
 
@@ -183,6 +194,14 @@ lemma _root_.Module.Basis.exteriorPowerTopEquiv_symm_apply (b : Module.Basis (Fi
     b.exteriorPowerTopEquiv.symm r = r • ιMulti R n ⇑b := by
   simp [Module.Basis.exteriorPowerTopEquiv]
 
+/-- In top exterior-power coordinates, every endomorphism acts by its determinant. This includes
+singular maps, rank zero and the zero coefficient ring. -/
+theorem _root_.Module.Basis.exteriorPowerTopEquiv_map (b : Module.Basis (Fin n) R M)
+    (f : M →ₗ[R] M) (x : ⋀[R]^n M) :
+    b.exteriorPowerTopEquiv (map n f x) = LinearMap.det f * b.exteriorPowerTopEquiv x := by
+  rw [b.map_exteriorPower_top_eq_det_smul, LinearMap.smul_apply, LinearMap.id_apply, map_smul,
+    smul_eq_mul]
+
 /-- For a basis indexed by `Fin n`, every element of the degree-`n` exterior power is a multiple
 of the exterior product of the basis. -/
 lemma _root_.Module.Basis.exists_smul_ιMulti_eq (b : Module.Basis (Fin n) R M) (x : ⋀[R]^n M) :
@@ -202,9 +221,81 @@ theorem _root_.Module.Basis.trace_map_exteriorPower_top
     -- The top exterior power is one-dimensional, the diagonal case `Nat.choose n n = 1`.
     simp [b.map_exteriorPower_top_eq_det_smul f, Module.finrank_eq_card_basis b]
 
+/-- Replacing a family of `n` vectors by the combinations `∑ i, A j i • v i` with the rows of a
+square matrix `A` multiplies its exterior product by `det A`. No independence of `v` is needed. -/
+theorem ιMulti_sum_smul (A : Matrix (Fin n) (Fin n) R) (v : Fin n → M) :
+    ιMulti R n (fun j ↦ ∑ i, A j i • v i) = A.det • ιMulti R n v := by
+  classical
+  -- Both families are images under the synthesis map `Fin n → R → M` of `v`: the rows of `A`
+  -- and the standard basis, whose determinant against each other is `det A`.
+  let L := Fintype.linearCombination R v
+  have hrows : (fun j ↦ ∑ i, A j i • v i) = L ∘ Matrix.of.symm A := by
+    ext j
+    simp [L, Fintype.linearCombination_apply]
+  have hbasis : v = L ∘ Pi.basisFun R (Fin n) := by
+    ext i
+    simp [L, Fintype.linearCombination_apply_single]
+  rw [hrows, ← map_apply_ιMulti, (Pi.basisFun R (Fin n)).exteriorPower_ιMulti_eq_det_smul,
+    Pi.basisFun_det_apply, Equiv.apply_symm_apply, map_smul, map_apply_ιMulti, ← hbasis]
+
+/-- For a finite linearly ordered basis `b` of `M`, the induced trivialisation of the
+degree-`Module.finrank R M` exterior power sending its exterior-power basis vector to `1`. -/
+noncomputable def _root_.Module.Basis.exteriorPowerFinrankEquiv
+    {ι : Type*} [LinearOrder ι] [Fintype ι] (b : Module.Basis ι R M) :
+    ⋀[R]^(Module.finrank R M) M ≃ₗ[R] R :=
+  open Classical in
+  if h : Nontrivial R then
+    haveI : Subsingleton (Set.powersetCard ι (Module.finrank R M)) :=
+      Set.powersetCard.subsingleton_of_card_eq (Module.finrank_eq_card_basis b)
+    (b.exteriorPower (Module.finrank R M)).repr.trans
+      (Finsupp.uniqueLinearEquiv R R ⟨Finset.univ, by simp [Module.finrank_eq_card_basis b]⟩)
+  else
+    haveI : Subsingleton R := not_nontrivial_iff_subsingleton.mp h
+    haveI : Subsingleton (⋀[R]^(Module.finrank R M) M) := Module.subsingleton R _
+    LinearEquiv.ofSubsingleton (⋀[R]^(Module.finrank R M) M) R
+
+/-- `b.exteriorPowerFinrankEquiv` sends every exterior-power basis vector in degree
+`Module.finrank R M` to `1`. -/
+@[simp]
+theorem _root_.Module.Basis.exteriorPowerFinrankEquiv_apply_ιMulti_family
+    {ι : Type*} [LinearOrder ι] [Fintype ι] (b : Module.Basis ι R M)
+    (s : Set.powersetCard ι (Module.finrank R M)) :
+    b.exteriorPowerFinrankEquiv (ιMulti_family R (Module.finrank R M) b s) = 1 := by
+  rcases subsingleton_or_nontrivial R with _ | h
+  · exact Subsingleton.elim _ _
+  · have : Subsingleton (Set.powersetCard ι (Module.finrank R M)) :=
+      Set.powersetCard.subsingleton_of_card_eq (Module.finrank_eq_card_basis b)
+    rw [Module.Basis.exteriorPowerFinrankEquiv, dite_eq_left h, LinearEquiv.trans_apply,
+      Finsupp.uniqueLinearEquiv_apply,
+      Subsingleton.elim ⟨Finset.univ, by simp [Module.finrank_eq_card_basis b]⟩ s,
+      ← basis_apply, Module.Basis.repr_self, Finsupp.single_eq_same]
+
+/-- The inverse of `b.exteriorPowerFinrankEquiv` sends a scalar to that multiple of any
+exterior-power basis vector in degree `Module.finrank R M`. -/
+theorem _root_.Module.Basis.exteriorPowerFinrankEquiv_symm_apply_eq_smul
+    {ι : Type*} [LinearOrder ι] [Fintype ι] (b : Module.Basis ι R M)
+    (s : Set.powersetCard ι (Module.finrank R M)) (r : R) :
+    b.exteriorPowerFinrankEquiv.symm r = r • b.exteriorPower (Module.finrank R M) s := by
+  apply b.exteriorPowerFinrankEquiv.injective
+  simp
+
 end Top
 
 end exteriorPower
+
+namespace AlternatingMap
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {n : ℕ}
+
+/-- An alternating map takes the combinations `∑ i, A j i • v i` of a family with the rows of a
+square matrix `A` to `det A` times its value on the family. -/
+theorem map_sum_smul (f : M [⋀^Fin n]→ₗ[R] N) (A : Matrix (Fin n) (Fin n) R) (v : Fin n → M) :
+    f (fun j ↦ ∑ i, A j i • v i) = A.det • f v := by
+  rw [← exteriorPower.alternatingMapLinearEquiv_apply_ιMulti, exteriorPower.ιMulti_sum_smul,
+    map_smul, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
+
+end AlternatingMap
 
 namespace Module.Basis
 
@@ -216,7 +307,7 @@ variable {R M I : Type*} [CommRing R] [AddCommGroup M] [Module R M] [LinearOrder
 coordinate at `u`. -/
 theorem exteriorAlgebra_repr_coe_eq (b : Basis I R M) {r : ℕ} (ω : ⋀[R]^r M)
     (u : Set.powersetCard I r) :
-    b.ExteriorAlgebra.repr ω.1 u.1 = (b.exteriorPower r).repr ω u := by
+    b.ExteriorAlgebra.repr ω.val u.val = (b.exteriorPower r).repr ω u := by
   classical
   rw [← Basis.coord_apply]
   conv_lhs => rw [← (b.exteriorPower r).linearCombination_repr ω, Finsupp.linearCombination_apply]
@@ -281,6 +372,6 @@ theorem map_toMatrix_exteriorPower (φ : R →+* S) (n : ℕ) (A : Matrix J I R)
   simp only [Matrix.map_apply, Module.Basis.toMatrix_exteriorPower_map, RingHom.map_det]
   congr 1
   ext
-  simp [← Matrix.toLin_eq_toLin']
+  simp
 
 end RingHom

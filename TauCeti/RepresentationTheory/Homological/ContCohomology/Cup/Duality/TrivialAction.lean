@@ -186,12 +186,12 @@ end FreeModules
 section Embedding
 
 variable {A : Type uA} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
-  [DistribMulAction G A] [ContinuousSMul G A] [Finite A] (hA : ∀ a : A, n • a = 0)
+  [DistribMulAction G A] [Finite A] (hA : ∀ a : A, n • a = 0)
   (hAtriv : ∀ (g : G) (a : A), g • a = a)
 
 include hN e hA hAtriv
 
-omit [IsTopologicalGroup G] [ContinuousSMul G N] [ContinuousSMul G A] in
+omit [IsTopologicalGroup G] [ContinuousSMul G N] in
 /-- A finite module `A` with trivial action killed by `n` embeds into a free module `Nᵏ`, with a
 cokernel that is again finite with trivial action and killed by `n`. The embedding is given by
 all maps `A → N`, which separate the points of `A`. -/

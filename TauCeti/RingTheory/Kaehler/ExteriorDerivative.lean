@@ -32,7 +32,7 @@ noncomputable def exteriorDeriv (q : ℕ) : ⋀[A]^q Ω[A⁄R] →ₗ[R] ⋀[A]^
 
 variable {R A}
 @[simp] theorem coe_exteriorDeriv_apply (q : ℕ) (ω : ⋀[A]^q Ω[A⁄R]) :
-    (exteriorDeriv R A q ω : ExteriorAlgebra A Ω[A⁄R]) = exteriorAlgebraDeriv R A ω.1 :=
+    (exteriorDeriv R A q ω : ExteriorAlgebra A Ω[A⁄R]) = exteriorAlgebraDeriv R A ω.val :=
   Derivation.coe_exteriorDeriv_apply _ _ _ _ q ω
 @[simp] theorem exteriorDeriv_zero_symm (a : A) :
     exteriorDeriv R A 0 ((exteriorPower.zeroEquiv A Ω[A⁄R]).symm a) =

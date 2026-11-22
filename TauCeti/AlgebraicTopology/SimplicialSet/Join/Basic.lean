@@ -48,6 +48,8 @@ on standard simplices, and `SSet.join.homEquiv` identifies its maps from `X` wit
 
 ## Main results
 
+* `SSet.join.hom_ext_stdSimplex`: maps from a join to a standard simplex are determined by
+  their restrictions to the two factors.
 * `SSet.join.homEquiv`: maps `X ⟶ K ⋆ L` correspond to join data on `X`, naturally in `X`
   (`SSet.join.homEquiv_comp`); this is the representability `SSet.join.representableBy`.
 * `SSet.join.edge_mem_joinFiber_zero`: an edge of `K ⋆ L` ending over the vertex `0` lies over
@@ -443,8 +445,8 @@ private def ofFiber (e : Fin 2) {T : SSet.{u}}
       (g : stdSimplex.obj m ⟶ stdSimplex.obj n),
       c (d.precomp g) = (joinFiber d.p e).fromPreimage g ≫ c d) :
     (joinFiber (π K L) e : SSet) ⟶ T where
-  app n := ↾fun x ↦ (c (objEquiv x.1)).app n
-    ⟨yonedaEquiv (𝟙 _), (mem_joinFiber_π_iff x.1 e).1 x.2⟩
+  app n := ↾fun x ↦ (c (objEquiv x.val)).app n
+    ⟨yonedaEquiv (𝟙 _), (mem_joinFiber_π_iff x.val e).1 x.property⟩
   naturality n m f := by
     ext ⟨x, hx⟩
     induction n using Opposite.rec with | op n
@@ -701,6 +703,27 @@ lemma inr_app_univ_right_app {n : SimplexCategoryᵒᵖ} (x : (join K L).obj n)
     (inr K L).app n ((univ K L).right.app n ⟨x, hx⟩) = x :=
   -- Elaborated without the expected type, which is only definitionally equal.
   (ConcreteCategory.congr_hom (NatTrans.congr_app (univ_right_comp_inr K L) n) ⟨x, hx⟩ :)
+
+/-- Maps from a join to a standard simplex are determined by their restrictions to the two
+factors: every vertex of the join comes from one of them. -/
+theorem hom_ext_stdSimplex {K L : SSet.{u}} {k : ℕ} {σ σ' : join K L ⟶ Δ[k]}
+    (h₀ : inl K L ≫ σ = inl K L ≫ σ') (h : inr K L ≫ σ = inr K L ≫ σ') : σ = σ' := by
+  refine stdSimplex.hom_ext fun y ↦ ?_
+  by_cases hy : (univ K L).p.app _ y 0 = 0
+  · have hy' : y ∈ (joinFiber (univ K L).p 0).obj _ := by
+      rw [mem_joinFiber_iff]
+      intro j
+      fin_cases j
+      exact hy
+    rw [← inl_app_univ_left_app y hy']
+    exact ConcreteCategory.congr_hom (NatTrans.congr_app h₀ _) _
+  · have hy' : y ∈ (joinFiber (univ K L).p 1).obj _ := by
+      rw [mem_joinFiber_iff]
+      intro j
+      fin_cases j
+      exact Fin.eq_one_of_ne_zero _ hy
+    rw [← inr_app_univ_right_app y hy']
+    exact ConcreteCategory.congr_hom (NatTrans.congr_app h _) _
 
 variable (K L) in
 /-- The inclusion of `K` lands in the part of the join over the vertex `0`. -/
@@ -960,7 +983,7 @@ lemma mem_range_map_ι_id_iff (A : K.Subcomplex) {n : SimplexCategory} (s : (joi
       JoinData.postcomp_left_app]
     exact Subtype.property _
   · rintro k _ ⟨y, rfl⟩
-    exact h k y.1 y.2
+    exact h k y.val y.property
   · rw [objEquiv_map_app, Equiv.apply_symm_apply]
     -- `Subcomplex.lift (objEquiv s).left _ ≫ A.ι` is `(objEquiv s).left` by definition, since
     -- `Subcomplex.lift` only restricts the codomain.
@@ -982,7 +1005,7 @@ lemma mem_range_map_id_ι_iff (B : L.Subcomplex) {n : SimplexCategory} (s : (joi
       JoinData.postcomp_right_app]
     exact Subtype.property _
   · rintro k _ ⟨y, rfl⟩
-    exact h k y.1 y.2
+    exact h k y.val y.property
   · rw [objEquiv_map_app, Equiv.apply_symm_apply]
     -- `Subcomplex.lift (objEquiv s).right _ ≫ B.ι` is `(objEquiv s).right` by definition, since
     -- `Subcomplex.lift` only restricts the codomain.
@@ -1049,9 +1072,9 @@ lemma range_join_map_ι_ι :
   refine ⟨join.objEquiv.symm ⟨(join.objEquiv s).p, lift (join.objEquiv s).left ?_,
     lift (join.objEquiv s).right ?_⟩, join.objEquiv.injective ?_⟩
   · rintro k _ ⟨y, rfl⟩
-    exact hA k y.1 y.2
+    exact hA k y.val y.property
   · rintro k _ ⟨y, rfl⟩
-    exact hB k y.1 y.2
+    exact hB k y.val y.property
   · rw [join.objEquiv_map_app, Equiv.apply_symm_apply]
     -- `lift _ _ ≫ ι` is the original map by definition, since `lift` only restricts the codomain.
     exact JoinData.ext rfl (fun _ _ _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl)
@@ -1121,12 +1144,12 @@ private lemma exists_fromPreimage_horn_ι_comp_eq {T : SSet.{u}} [Quasicategory 
     induction k using Opposite.rec with | op k
     induction k using SimplexCategory.rec with | _ k
     simp only [Subfunctor.top_obj, Set.mem_univ, iff_true, mem_joinFiber_iff]
-    exact fun j ↦ (stdSimplex.hom_app_apply q x.1 j).trans (hq _)
+    exact fun j ↦ (stdSimplex.hom_app_apply q x.val j).trans (hq _)
   obtain ⟨τ, hτ⟩ := Quasicategory.hornFilling'
     ((Subcomplex.topIso _).inv ≫ Subcomplex.homOfLE htop.ge ≫ φ) h₀ hₙ
   refine ⟨(joinFiber q e).ι ≫ τ, ?_⟩
   ext k x
-  exact (ConcreteCategory.congr_hom (NatTrans.congr_app hτ k) x.1).symm
+  exact (ConcreteCategory.congr_hom (NatTrans.congr_app hτ k) x.val).symm
 
 include h₀ hₙ in
 /-- Join data on an inner horn lying entirely over the vertex `0` of `Δ[1]` is the restriction of

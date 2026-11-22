@@ -52,7 +52,7 @@ def exteriorDeriv (q : ℕ) : ⋀[A]^q (Omega R A) →ₗ[R] ⋀[A]^(q + 1) (Ome
 section ExteriorDerivLemmas
 variable {R A}
 @[simp] theorem coe_exteriorDeriv_apply (q : ℕ) (ω : ⋀[A]^q (Omega R A)) :
-    (exteriorDeriv R A q ω : ExteriorAlgebra A (Omega R A)) = exteriorAlgebraDeriv R A ω.1 :=
+    (exteriorDeriv R A q ω : ExteriorAlgebra A (Omega R A)) = exteriorAlgebraDeriv R A ω.val :=
   Derivation.coe_exteriorDeriv_apply _ _ _ _ q ω
 @[simp] theorem exteriorAlgebraDeriv_algebraMap (a : A) :
     exteriorAlgebraDeriv R A (algebraMap A (ExteriorAlgebra A (Omega R A)) a) =
@@ -198,7 +198,8 @@ def mk (q : ℕ) : closedForms R A q →ₗ[R] deRhamCohomology R A q :=
 theorem mk_eq_moduleCatHomologyClass (q : ℕ) :
     mk R A q = (deRhamComplex R A).moduleCatHomologyClass (Z := closedForms R A q)
         (CochainComplex.next ℕ q) ((deRhamComplexXIso R A q).inv.hom ∘ₗ (closedForms R A q).subtype)
-        (fun ω ↦ deRhamComplex_d_eq_zero_of_mem_closedForms R A q ω.2) := LinearMap.ext fun _ ↦ by
+        (fun ω ↦ deRhamComplex_d_eq_zero_of_mem_closedForms R A q ω.property) :=
+  LinearMap.ext fun _ ↦ by
   rw [mk, HomologicalComplex.moduleCatCohomologyClassOfIso_apply,
     HomologicalComplex.moduleCatHomologyClass_apply]; rfl
 
@@ -207,13 +208,13 @@ theorem mk_surjective (q : ℕ) : Function.Surjective (mk R A q) :=
   (deRhamComplex R A).moduleCatCohomologyClassOfIso_surjective _ _ _ _ q
 /-- A closed `q`-form represents zero in `deRhamCohomology R A q` iff it is exact. -/
 @[simp] theorem mk_eq_zero_iff (q : ℕ) (ω : closedForms R A q) :
-    mk R A q ω = 0 ↔ ω.1 ∈ exactForms R A q :=
+    mk R A q ω = 0 ↔ ω.val ∈ exactForms R A q :=
   (deRhamComplex R A).moduleCatCohomologyClassOfIso_eq_zero_iff _ _ (exactForms R A) _ _
     (HomologicalComplex.moduleCat_mem_iff_exists_d_eq_inv _ _ _ (deRhamComplex_d R A)
       (exactForms_zero R A) (exactForms_succ R A)) q ω
 /-- Two closed `q`-forms represent the same cohomology class iff their difference is exact. -/
 theorem mk_eq_iff (q : ℕ) (ω η : closedForms R A q) :
-    mk R A q ω = mk R A q η ↔ (ω - η).1 ∈ exactForms R A q := by
+    mk R A q ω = mk R A q η ↔ (ω - η).val ∈ exactForms R A q := by
   rw [← sub_eq_zero, ← map_sub, mk_eq_zero_iff]
 /-- The kernel of `deRhamCohomology.mk R A q` is the restriction of `exactForms R A q` to
 `closedForms R A q`, since `mk` is only defined on closed forms. -/
@@ -236,7 +237,7 @@ theorem subsingleton_deRhamCohomology_of_closedForms_le_exactForms {q : ℕ}
     (h : closedForms R A q ≤ exactForms R A q) : Subsingleton (deRhamCohomology R A q) :=
   subsingleton_of_forall_eq 0 fun c ↦
     have ⟨ω, hc⟩ := deRhamCohomology.mk_surjective R A q c
-    hc ▸ (deRhamCohomology.mk_eq_zero_iff R A q ω).mpr (h ω.2)
+    hc ▸ (deRhamCohomology.mk_eq_zero_iff R A q ω).mpr (h ω.property)
 
 /-- `deRhamComplex R A` is exact in degree `q + 1` iff every closed `(q + 1)`-form is exact. -/
 theorem exactAt_deRhamComplex_succ_iff (q : ℕ) :
@@ -292,16 +293,16 @@ namespace closedForms
 def map (f : A →ₐ[K] B) (q : ℕ) : closedForms K A q →ₗ[K] closedForms K B q :=
   ((formsMap f q).domRestrict (closedForms K A q)).codRestrict (closedForms K B q) fun ω ↦ by
     rw [mem_closedForms, LinearMap.domRestrict_apply, exteriorDeriv_formsMap,
-      (mem_closedForms K A ω.1).mp ω.2, map_zero]
+      (mem_closedForms K A ω.val).mp ω.property, map_zero]
 @[simp] theorem coe_map (f : A →ₐ[K] B) (q : ℕ) (ω : closedForms K A q) :
-    (map f q ω).1 = formsMap f q ω.1 := (rfl)
+    (map f q ω).val = formsMap f q ω.val := (rfl)
 @[simp] theorem map_id (q : ℕ) : map (AlgHom.id K A) q = LinearMap.id :=
   LinearMap.ext fun _ ↦ Subtype.ext (by simp)
 theorem map_comp (g : B →ₐ[K] C) (f : A →ₐ[K] B) (q : ℕ) :
     map (g.comp f) q = (map g q) ∘ₗ (map f q) :=
   LinearMap.ext fun _ ↦ Subtype.ext (by simp [formsMap_comp])
 theorem map_mem_exactForms (f : A →ₐ[K] B) : ∀ (q : ℕ) (ω : closedForms K A q),
-    ω.1 ∈ exactForms K A q → (map f q ω).1 ∈ exactForms K B q
+    ω.val ∈ exactForms K A q → (map f q ω).val ∈ exactForms K B q
   | 0, ω, hω => by rw [exactForms_zero, Submodule.mem_bot] at hω ⊢; rw [coe_map, hω, map_zero]
   | q + 1, _, ⟨η, hη⟩ => ⟨formsMap f q η, by rw [exteriorDeriv_formsMap, hη]; rfl⟩
 end closedForms
@@ -371,7 +372,7 @@ theorem homologyMap_map (f : A →ₐ[K] B) (q : ℕ) :
     HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
   refine (HomologicalComplex.moduleCatCohomologyClassOfIso_eq_homologyπ _ _ _ _ _ _ _ ?_).symm
   rw [HomologicalComplex.iCycles_moduleCatCyclesMk]
-  simpa using ConcreteCategory.congr_hom (map_f f q) ((deRhamComplexXIso K A q).inv ω.1)
+  simpa using ConcreteCategory.congr_hom (map_f f q) ((deRhamComplexXIso K A q).inv ω.val)
 end deRhamComplex
 end ComplexFunctoriality
 

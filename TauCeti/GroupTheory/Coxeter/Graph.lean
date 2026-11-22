@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Coxeter.Artin
-public import Mathlib.Combinatorics.SimpleGraph.Basic
+public import TauCeti.GroupTheory.Coxeter.Matrix
+public import Mathlib.Combinatorics.SimpleGraph.Maps
+public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 
 /-!
 # The simply laced Artin presentation of a graph
@@ -23,7 +25,11 @@ distinct indices exactly when their entry is not `2`, that is, when the correspo
 reflections do not commute. Entries `0`, which encode infinite order, are edges too. This forgets
 the edge labels, and on simply laced matrices it inverts the first construction
 (`SimpleGraph.graph_coxeterMatrix`). Simple reflections whose indices are not adjacent in the
-Coxeter graph commute (`CoxeterSystem.commute_simple_of_not_adj`).
+Coxeter graph commute (`CoxeterSystem.commute_simple_of_not_adj`), indices in distinct connected
+components of the Coxeter graph have entry `2` (`CoxeterMatrix.eq_two_of_connectedComponentMk_ne`),
+and the Coxeter graph of the restriction of `M` to a set of indices is the induced graph
+(`CoxeterMatrix.graph_restrict`), which is connected for a connected component
+(`CoxeterMatrix.connected_graph_restrict_supp`).
 -/
 
 public section
@@ -116,6 +122,29 @@ def graph : SimpleGraph B where
 
 @[simp]
 theorem graph_adj {i j : B} : M.graph.Adj i j ↔ i ≠ j ∧ M i j ≠ 2 := Iff.rfl
+
+/-- Indices in distinct connected components of the Coxeter graph have Coxeter matrix entry `2`:
+their simple reflections commute. -/
+theorem eq_two_of_connectedComponentMk_ne {i j : B}
+    (h : M.graph.connectedComponentMk i ≠ M.graph.connectedComponentMk j) : M i j = 2 := by
+  by_contra hij
+  refine h ?_
+  by_cases hne : i = j
+  · rw [hne]
+  · exact SimpleGraph.ConnectedComponent.connectedComponentMk_eq_of_adj
+      (M.graph_adj.mpr ⟨hne, hij⟩)
+
+/-- **The Coxeter graph of a restriction is the induced graph** on the chosen indices. -/
+theorem graph_restrict (J : Set B) : (M.restrict J).graph = M.graph.induce J := by
+  ext i j
+  simp [Subtype.coe_injective.ne_iff]
+
+/-- **The restriction to a connected component of the Coxeter graph has connected Coxeter
+graph.** -/
+theorem connected_graph_restrict_supp (K : M.graph.ConnectedComponent) :
+    (M.restrict K.supp).graph.Connected := by
+  rw [graph_restrict]
+  exact K.connected_toSimpleGraph
 
 end CoxeterMatrix
 

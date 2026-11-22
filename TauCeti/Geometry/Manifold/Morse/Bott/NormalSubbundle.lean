@@ -14,7 +14,7 @@ import TauCeti.Geometry.Manifold.Morse.Bott.Index
 import TauCeti.Geometry.Manifold.Morse.Bott.NegativeNormal
 import TauCeti.Geometry.Manifold.VectorBundle.ComplementarySubbundle
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -326,7 +326,7 @@ theorem contMDiff_projection_negativeNormalSpace
       (fun w : TotalSpace P (fun s ↦ i.NormalSpace s hn) ↦
         TotalSpace.mk' P (E := fun s ↦ i.NormalSpace s hn) w.proj ((h.negativeNormalSpace hn
           g.toRiemannianMetric w.proj).projection (h.positiveNormalSpace hn g.toRiemannianMetric
-            w.proj) (h.isCompl_negativeNormalSpace_positiveNormalSpace hn _ _ w.proj) w.2)) := by
+            w.proj) (h.isCompl_negativeNormalSpace_positiveNormalSpace hn _ _ w.proj) w.snd)) := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -351,7 +351,7 @@ theorem contMDiff_projection_negativeNormalSpace
   obtain ⟨hidem, hrange, hker, -, -⟩ := hps w.proj hw
   -- Split the coordinate vector `y` of `w` along the range and the kernel of `p`.
   set y := (e w).2
-  have hy : w.2 = e.symmₗ ℝ w.proj (p w.proj y) + e.symmₗ ℝ w.proj (y - p w.proj y) := by
+  have hy : w.snd = e.symmₗ ℝ w.proj (p w.proj y) + e.symmₗ ℝ w.proj (y - p w.proj y) := by
     rw [← map_add, add_sub_cancel, e.symmₗ_apply hw, e.symm_proj_apply w hw]
   have hneg : e.symmₗ ℝ w.proj (p w.proj y) ∈
       h.negativeNormalSpace hn g.toRiemannianMetric w.proj :=
@@ -387,7 +387,7 @@ theorem contMDiff_projection_positiveNormalSpace
         TotalSpace.mk' P (E := fun s ↦ i.NormalSpace s hn) w.proj ((h.positiveNormalSpace hn
           g.toRiemannianMetric w.proj).projection (h.negativeNormalSpace hn g.toRiemannianMetric
             w.proj) (h.isCompl_negativeNormalSpace_positiveNormalSpace hn _ _ w.proj).symm
-          w.2)) := by
+          w.snd)) := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -445,7 +445,7 @@ theorem exists_bundleDiffeomorph_negativeNormalSpace
         ≃ₘ^k⟮J.prod 𝓘(ℝ, Fin r → ℝ), J.prod 𝓘(ℝ, Fin r → ℝ)⟯
         TotalSpace (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g'.toRiemannianMetric s),
       ∀ v, Φ v = ⟨v.proj, h.negativeNormalSpaceEquiv hn g.toRiemannianMetric g'.toRiemannianMetric
-        v.proj v.2⟩ := by
+        v.proj v.snd⟩ := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -468,8 +468,8 @@ theorem exists_bundleDiffeomorph_negativeNormalSpace
         TotalSpace.mk' (Fin r → ℝ)
           (E := fun s ↦ h.negativeNormalSpace hn g'.toRiemannianMetric s) v.proj
           ((h.negativeNormalSpaceEquiv hn g.toRiemannianMetric g'.toRiemannianMetric
-            v.proj).toContinuousLinearEquiv v.2)) := fun v ↦
-    (hV'.contMDiffAt_totalSpace_mk (b := TotalSpace.proj)
+            v.proj).toContinuousLinearEquiv v.snd)) := fun v ↦
+    (hV'.contMDiffAt_totalSpace_mk le_rfl (b := TotalSpace.proj)
       ((contMDiff_projection_negativeNormalSpace hn h hk hf hdim g').comp
         hV.contMDiff_totalSpace_inclusion v) fun _ ↦ Submodule.coe_mem _).congr_of_eventuallyEq
       (.of_forall fun w ↦ TotalSpace.mk_inj.mpr <| Subtype.ext <| by simp)
@@ -507,7 +507,7 @@ theorem exists_bundleDiffeomorph_positiveNormalSpace
         ≃ₘ^k⟮J.prod 𝓘(ℝ, Fin r → ℝ), J.prod 𝓘(ℝ, Fin r → ℝ)⟯
         TotalSpace (Fin r → ℝ) (fun s ↦ h.positiveNormalSpace hn g'.toRiemannianMetric s),
       ∀ v, Φ v = ⟨v.proj, h.positiveNormalSpaceEquiv hn g.toRiemannianMetric g'.toRiemannianMetric
-        v.proj v.2⟩ := by
+        v.proj v.snd⟩ := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -530,8 +530,8 @@ theorem exists_bundleDiffeomorph_positiveNormalSpace
         TotalSpace.mk' (Fin r → ℝ)
           (E := fun s ↦ h.positiveNormalSpace hn g'.toRiemannianMetric s) v.proj
           ((h.positiveNormalSpaceEquiv hn g.toRiemannianMetric g'.toRiemannianMetric
-            v.proj).toContinuousLinearEquiv v.2)) := fun v ↦
-    (hV'.contMDiffAt_totalSpace_mk (b := TotalSpace.proj)
+            v.proj).toContinuousLinearEquiv v.snd)) := fun v ↦
+    (hV'.contMDiffAt_totalSpace_mk le_rfl (b := TotalSpace.proj)
       ((contMDiff_projection_positiveNormalSpace hn h hk hf hdim g').comp
         hV.contMDiff_totalSpace_inclusion v) fun _ ↦ Submodule.coe_mem _).congr_of_eventuallyEq
       (.of_forall fun w ↦ TotalSpace.mk_inj.mpr <| Subtype.ext <| by simp)
@@ -568,7 +568,7 @@ theorem contMDiff_normalMetricChange
     ContMDiff (J.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, P)) k
       (fun v : TotalSpace P (fun s ↦ i.NormalSpace s hn) ↦
         TotalSpace.mk' P (E := fun s ↦ i.NormalSpace s hn) v.proj
-          (h.normalMetricChange hn g₀.toRiemannianMetric g₁.toRiemannianMetric v.proj v.2)) := by
+          (h.normalMetricChange hn g₀.toRiemannianMetric g₁.toRiemannianMetric v.proj v.snd)) := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -633,7 +633,7 @@ theorem normalMetricChangeDiffeomorph_apply
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     h.normalMetricChangeDiffeomorph hn hk hf hdim g₀ g₁ v =
-      ⟨v.proj, h.normalMetricChange hn g₀.toRiemannianMetric g₁.toRiemannianMetric v.proj v.2⟩ :=
+      ⟨v.proj, h.normalMetricChange hn g₀.toRiemannianMetric g₁.toRiemannianMetric v.proj v.snd⟩ :=
   haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -662,7 +662,7 @@ theorem normalMetricChangeDiffeomorph_symm_apply
     letI := i.normalSpaceVectorBundle hn hdim
     (h.normalMetricChangeDiffeomorph hn hk hf hdim g₀ g₁).symm v =
       ⟨v.proj,
-        (h.normalMetricChange hn g₀.toRiemannianMetric g₁.toRiemannianMetric v.proj).symm v.2⟩ :=
+        (h.normalMetricChange hn g₀.toRiemannianMetric g₁.toRiemannianMetric v.proj).symm v.snd⟩ :=
   haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -702,7 +702,7 @@ theorem exists_bundleDiffeomorph_prod_negativeNormalSpace_positiveNormalSpace
             fun s ↦ h.positiveNormalSpace hn g.toRiemannianMetric s)
         ≃ₘ^k⟮J.prod 𝓘(ℝ, (Fin r → ℝ) × (Fin r' → ℝ)), J.prod 𝓘(ℝ, P)⟯
         TotalSpace P (fun s ↦ i.NormalSpace s hn),
-      ∀ v, Φ v = ⟨v.proj, (v.2.1 : i.NormalSpace v.proj hn) + v.2.2⟩ := by
+      ∀ v, Φ v = ⟨v.proj, (v.snd.1 : i.NormalSpace v.proj hn) + v.snd.2⟩ := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self

@@ -11,6 +11,7 @@ import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import Mathlib.NumberTheory.LSeries.Dirichlet
 import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.Analysis.Asymptotics.Lemmas
+import TauCeti.Analysis.MellinTransform.UpperTail
 import TauCeti.NumberTheory.AbelSummation
 
 /-!
@@ -38,8 +39,14 @@ Probabilistic Number Theory*, Chapter II.1).
 * `TauCeti.LSeries.differentiableOn_mul_integral_of_isBigO`: under the bound `A(n) = O(n ^ r)`,
   the function `s ↦ s * ∫ t in Set.Ioi 1, A(⌊t⌋₊) * t ^ (-(s + 1))` is
   complex-differentiable on `{s | r < s.re}`.
-* `TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO`: under the same bound the integral
-  converges absolutely on `{s | r < s.re}`.
+* `TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO`,
+  `TauCeti.LSeries.integrableOn_sum_mul_log_mul_cpow_of_isBigO`, and
+  `TauCeti.LSeries.integrableOn_sum_mul_one_sub_mul_log_mul_cpow_of_isBigO`: under the same bound,
+  the partial-summation integral, its `log t`-weighted companion, and the derivative integrand all
+  converge absolutely on `{s | r < s.re}`.
+* `TauCeti.LSeries.hasDerivAt_mul_integral_of_isBigO`: under the same bound, the complex derivative
+  of `z ↦ z * ∫ t in Set.Ioi 1, A(⌊t⌋₊) * t ^ (-(z + 1))` at `s` (`r < s.re`) is
+  `∫ t in Set.Ioi 1, A(⌊t⌋₊) * (1 - s * log t) * t ^ (-(s + 1))`.
 * `TauCeti.LSeries.norm_mul_integral_le_of_bound`: uniformly bounded partial sums give the
   explicit bound `C * ‖s‖ / s.re` on `Re(s) > 0`.
 * `TauCeti.LSeries.exists_differentiableOn_eq_LSeries_sub_div_of_isBigO`: if instead the partial
@@ -57,23 +64,7 @@ open scoped Topology
 
 namespace TauCeti.LSeries
 
-/-- The integral in `LSeries_eq_mul_integral` is a Mellin transform of the partial-sum step
-function, evaluated at `-s`. -/
-private theorem integral_Ioi_one_eq_mellin (f : ℕ → ℂ) (s : ℂ) :
-    ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(s + 1)) =
-      mellin (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (-s) := by
-  set A : ℝ → ℂ := fun t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k
-  have hEq : Set.EqOn (fun t : ℝ ↦ (t : ℂ) ^ (-s - 1) • A t)
-      ((Set.Ici (1 : ℝ)).indicator fun t ↦ A t * (t : ℂ) ^ (-(s + 1))) (Set.Ioi 0) := by
-    intro t _
-    dsimp only
-    by_cases h1 : 1 ≤ t
-    · rw [Set.indicator_of_mem (Set.mem_Ici.mpr h1), smul_eq_mul, mul_comm, neg_add']
-    · have hA : A t = 0 := sum_Icc_one_natFloor_eq_zero f (not_le.mp h1)
-      rw [Set.indicator_of_notMem (by simpa using h1), hA, smul_zero]
-  rw [mellin, setIntegral_congr_fun measurableSet_Ioi hEq,
-    setIntegral_indicator measurableSet_Ici,
-    Set.inter_eq_right.mpr (Set.Ici_subset_Ioi.mpr zero_lt_one), integral_Ici_eq_integral_Ioi]
+/-! ### The partial-summation integral -/
 
 /-- **Holomorphy of the partial-summation integral.** If the partial sums
 `∑ k ∈ Icc 1 n, f k` are `O(n ^ r)`, then
@@ -86,33 +77,62 @@ theorem differentiableOn_mul_integral_of_isBigO (f : ℕ → ℂ) {r : ℝ}
     (hO : (fun n ↦ ∑ k ∈ Icc 1 n, f k) =O[atTop] fun n ↦ (n : ℝ) ^ r) :
     DifferentiableOn ℂ
       (fun s : ℂ ↦ s * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(s + 1)))
-      {s | r < s.re} := by
-  intro s hs
-  have hmellin : DifferentiableAt ℂ
-      (fun z : ℂ ↦ mellin (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (-z)) s :=
-    (mellin_differentiableAt_of_isBigO_rpow (a := -r)
-      ((locallyIntegrableOn_sum_Icc_natFloor f 1).mono_set Set.Ioi_subset_Ici_self)
-      (by rw [neg_neg]; exact hO.comp_natFloor_rpow) (by simpa using hs)
-      (isBigO_sum_Icc_natFloor_nhdsGT_zero f _) (sub_one_lt (-s).re)).comp s
-      differentiableAt_id.neg
-  simp_rw [integral_Ioi_one_eq_mellin]
-  exact (differentiableAt_id.mul hmellin).differentiableWithinAt
+      {s | r < s.re} :=
+  differentiableOn_id.mul <| differentiableOn_integral_mul_cpow_of_isBigO hO.comp_natFloor_rpow
 
 /-- If the partial sums `∑ k ∈ Icc 1 n, f k` are `O(n ^ r)`, the partial-summation integral
 converges absolutely on the half-plane `r < Re s`. -/
 theorem integrableOn_sum_mul_cpow_of_isBigO (f : ℕ → ℂ) {r : ℝ}
     (hO : (fun n ↦ ∑ k ∈ Icc 1 n, f k) =O[atTop] fun n ↦ (n : ℝ) ^ r) {s : ℂ} (hs : r < s.re) :
     IntegrableOn (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(s + 1)))
+      (Set.Ioi 1) :=
+  integrableOn_mul_cpow_of_isBigO
+    ((locallyIntegrableOn_sum_Icc_natFloor f 1).mono_set (Set.Ici_subset_Ici.mpr zero_le_one))
+    hO.comp_natFloor_rpow hs
+
+/-- If the partial sums `∑ k ∈ Icc 1 n, f k` are `O(n ^ r)`, the log-weighted partial-summation
+integral converges absolutely on the half-plane `r < Re s`. -/
+theorem integrableOn_sum_mul_log_mul_cpow_of_isBigO (f : ℕ → ℂ) {r : ℝ}
+    (hO : (fun n ↦ ∑ k ∈ Icc 1 n, f k) =O[atTop] fun n ↦ (n : ℝ) ^ r) {s : ℂ} (hs : r < s.re) :
+    IntegrableOn
+      (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (Real.log t : ℂ) * (t : ℂ) ^ (-(s + 1)))
+      (Set.Ioi 1) :=
+  integrableOn_mul_log_mul_cpow_of_isBigO
+    ((locallyIntegrableOn_sum_Icc_natFloor f 1).mono_set (Set.Ici_subset_Ici.mpr zero_le_one))
+    hO.comp_natFloor_rpow hs
+
+/-- If the partial sums `∑ k ∈ Icc 1 n, f k` are `O(n ^ r)`, the derivative integrand
+`t ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (1 - s * log t) * t ^ (-(s + 1))` appearing in
+`hasDerivAt_mul_integral_of_isBigO` is integrable on `(1, ∞)` for `r < Re s`. -/
+theorem integrableOn_sum_mul_one_sub_mul_log_mul_cpow_of_isBigO (f : ℕ → ℂ) {r : ℝ}
+    (hO : (fun n ↦ ∑ k ∈ Icc 1 n, f k) =O[atTop] fun n ↦ (n : ℝ) ^ r) {s : ℂ} (hs : r < s.re) :
+    IntegrableOn
+      (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (1 - s * Real.log t) * (t : ℂ) ^ (-(s + 1)))
       (Set.Ioi 1) := by
-  have hconv : MellinConvergent (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (-s) :=
-    mellinConvergent_of_isBigO_rpow (a := -r)
-      ((locallyIntegrableOn_sum_Icc_natFloor f 1).mono_set Set.Ioi_subset_Ici_self)
-      (by rw [neg_neg]; exact hO.comp_natFloor_rpow) (by simpa using hs)
-      (isBigO_sum_Icc_natFloor_nhdsGT_zero f _) (sub_one_lt (-s).re)
-  refine (hconv.mono_set (Set.Ioi_subset_Ioi zero_le_one)).congr_fun (fun t _ ↦ ?_)
-    measurableSet_Ioi
-  dsimp only
-  rw [smul_eq_mul, mul_comm, neg_add']
+  refine ((integrableOn_sum_mul_cpow_of_isBigO f hO hs).sub
+    ((integrableOn_sum_mul_log_mul_cpow_of_isBigO f hO hs).const_mul s)).congr_fun
+    (fun t _ ↦ ?_) measurableSet_Ioi
+  simp only [Pi.sub_apply]
+  ring
+
+/-- **Derivative of the partial-summation continuation.** If the partial sums
+`∑ k ∈ Icc 1 n, f k` are `O(n ^ r)`, then on the half-plane `r < Re s` the complex derivative of
+`z ↦ z * ∫ t in Set.Ioi 1, (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * t ^ (-(z + 1))` is
+`∫ t in Set.Ioi 1, (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (1 - s * log t) * t ^ (-(s + 1))`. -/
+theorem hasDerivAt_mul_integral_of_isBigO (f : ℕ → ℂ) {r : ℝ}
+    (hO : (fun n ↦ ∑ k ∈ Icc 1 n, f k) =O[atTop] fun n ↦ (n : ℝ) ^ r) {s : ℂ} (hs : r < s.re) :
+    HasDerivAt
+      (fun z : ℂ ↦ z * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(z + 1)))
+      (∫ t in Set.Ioi (1 : ℝ),
+        (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (1 - s * Real.log t) * (t : ℂ) ^ (-(s + 1))) s := by
+  have hd := (hasDerivAt_id s).mul <| hasDerivAt_integral_mul_cpow_of_isBigO
+    ((locallyIntegrableOn_sum_Icc_natFloor f 1).mono_set (Set.Ici_subset_Ici.mpr zero_le_one))
+    hO.comp_natFloor_rpow hs
+  refine hd.congr_deriv ?_
+  rw [id_eq, one_mul, mul_neg, ← sub_eq_add_neg, ← integral_const_mul,
+    ← integral_sub (integrableOn_sum_mul_cpow_of_isBigO f hO hs)
+      ((integrableOn_sum_mul_log_mul_cpow_of_isBigO f hO hs).const_mul s)]
+  exact setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ by ring
 
 /-- If partial sums are bounded by `C`, their partial-summation continuation has norm at most
 `C * ‖s‖ / s.re` on `Re(s) > 0`. -/
@@ -120,22 +140,11 @@ theorem norm_mul_integral_le_of_bound (f : ℕ → ℂ) {C : ℝ}
     (hf : ∀ n, ‖∑ k ∈ Icc 1 n, f k‖ ≤ C) {s : ℂ} (hs : 0 < s.re) :
     ‖s * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) *
       (t : ℂ) ^ (-(s + 1))‖ ≤ C * ‖s‖ / s.re := by
-  have hbound : ‖∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) *
-      (t : ℂ) ^ (-(s + 1))‖ ≤ C / s.re := by
-    calc
-      _ ≤ ∫ t in Set.Ioi (1 : ℝ), C * t ^ (-(s.re + 1)) := by
-        refine norm_integral_le_of_norm_le ((integrableOn_Ioi_rpow_of_lt
-          (by linarith : -(s.re + 1) < -1) zero_lt_one).const_mul C) ?_
-        filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-        rw [norm_mul, norm_cpow_eq_rpow_re_of_pos (zero_lt_one.trans ht)]
-        simp only [neg_re, add_re, one_re]
-        exact mul_le_mul_of_nonneg_right (hf _) (Real.rpow_nonneg (zero_lt_one.trans ht).le _)
-      _ = C / s.re := by
-        rw [integral_const_mul, integral_Ioi_rpow_of_lt (by linarith) zero_lt_one,
-          Real.one_rpow]
-        ring
+  have h := norm_integral_mul_cpow_le_of_bound (g := fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) one_pos
+    (fun _ _ ↦ hf _) hs
+  rw [Real.one_rpow, mul_one] at h
   rw [norm_mul, mul_comm C, mul_div_assoc]
-  exact mul_le_mul_of_nonneg_left hbound (norm_nonneg _)
+  exact mul_le_mul_of_nonneg_left h (norm_nonneg _)
 
 /-- **Continuation of an L-series with its pole at `s = 1` removed.** If the partial sums
 `∑ k ∈ Icc 1 n, f k` are `κ n + O(n ^ r)` and `LSeries f` converges absolutely on
