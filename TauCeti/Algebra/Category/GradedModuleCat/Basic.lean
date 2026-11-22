@@ -138,6 +138,15 @@ theorem map_mem (f : M ⟶ N) {p : ℤ} {x : M} (hx : x ∈ M.grading.piece p) :
     f.hom x ∈ N.grading.piece p := by
   simpa using f.isHomogeneous.map_mem hx
 
+/-- Every morphism of graded modules preserves the positive-degree action `A₊ M`. -/
+theorem map_mem_positive_smul_top (f : M ⟶ N) {x : M}
+    (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) :
+    f.hom x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k N) := by
+  refine Submodule.smul_induction_on hx (fun a ha y _ ↦ ?_) (fun _ _ hx hy ↦ by
+    simpa only [map_add] using Submodule.add_mem _ hx hy)
+  rw [map_smul]
+  exact Submodule.smul_mem_smul ha Submodule.mem_top
+
 /-- A graded surjection preserves vanishing of a homogeneous piece. In particular, a quotient
 of a module concentrated in one degree is concentrated in that degree. -/
 theorem piece_eq_bot_of_surjective (f : M ⟶ N)

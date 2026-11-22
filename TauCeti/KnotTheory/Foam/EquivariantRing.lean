@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.PositiveWeight
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
+public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.PositiveWeight
 import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.Tactic.FinCases
-import TauCeti.Algebra.Module.GradedModule.Idempotent
+import TauCeti.Algebra.Module.GradedModule.Idempotent.Basic
+import TauCeti.Algebra.Module.GradedModule.Idempotent.PID
 import TauCeti.LinearAlgebra.Pi
 
 /-!
