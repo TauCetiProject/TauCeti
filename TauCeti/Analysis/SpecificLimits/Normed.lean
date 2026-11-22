@@ -16,8 +16,7 @@ The norms of the powers of an element in the open unit ball form a summable seri
 the seminorm is not normalized. The same holds after multiplication by bounded coefficients.
 Completeness then gives summability in the ring itself. In a complete seminormed group, a
 sequence whose consecutive norms shrink by factors `C ρᵏ` with `ρ < 1` is summable, by the ratio
-test; conversely, norm divergence of partial sums over `Ico N n` does not depend on the starting
-index `N`. In any normed ring with summable geometric series, shifted polynomial-geometric
+test. In any normed ring with summable geometric series, shifted polynomial-geometric
 series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`.
 
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
@@ -62,28 +61,6 @@ theorem summable_mul_pow_of_norm_le {K : Type*} [SeminormedRing K] [CompleteSpac
     {b : ℕ → K} {C : ℝ} (hb : ∀ n, ‖b n‖ ≤ C) {q : K} (hq : ‖q‖ < 1) :
     Summable (fun n : ℕ ↦ b n * q ^ n) :=
   (summable_norm_mul_pow_of_norm_le hb hq).of_norm
-
-/-- Divergence in norm of partial sums `∑ m ∈ Ico N n, T m` does not depend on the starting index
-`N`. -/
-theorem tendsto_norm_sum_Ico_atTop_iff {E : Type*} [SeminormedAddCommGroup E] {T : ℕ → E}
-    (N M : ℕ) :
-    Filter.Tendsto (fun n => ‖∑ m ∈ Finset.Ico N n, T m‖) Filter.atTop Filter.atTop ↔
-      Filter.Tendsto (fun n => ‖∑ m ∈ Finset.Ico M n, T m‖) Filter.atTop Filter.atTop := by
-  have hmp (N M : ℕ)
-      (hN : Filter.Tendsto (fun n => ‖∑ m ∈ Finset.Ico N n, T m‖) Filter.atTop Filter.atTop) :
-      Filter.Tendsto (fun n => ‖∑ m ∈ Finset.Ico M n, T m‖) Filter.atTop Filter.atTop := by
-    let K := max N M
-    let C := (∑ m ∈ Finset.Ico N K, T m) - ∑ m ∈ Finset.Ico M K, T m
-    refine Filter.tendsto_atTop_mono' Filter.atTop ?_
-      (Filter.tendsto_atTop_add_const_right Filter.atTop (-‖C‖) hN)
-    filter_upwards [Filter.eventually_ge_atTop K] with n hn
-    have hdiff : (∑ m ∈ Finset.Ico N n, T m) - C = ∑ m ∈ Finset.Ico M n, T m := by
-      rw [← Finset.sum_Ico_consecutive T (le_max_left N M) hn,
-        ← Finset.sum_Ico_consecutive T (le_max_right N M) hn]
-      simp only [C]
-      abel
-    simpa only [← sub_eq_add_neg, hdiff] using norm_sub_norm_le (∑ m ∈ Finset.Ico N n, T m) C
-  exact ⟨hmp N M, hmp M N⟩
 
 /-- A sequence whose consecutive norms shrink by a factor `C ρᵏ` with `ρ < 1` is summable. -/
 theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] [CompleteSpace E]

@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Intervals
-public import Mathlib.Algebra.Order.Monoid.Defs
 public import Mathlib.Algebra.Ring.Defs
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Algebra.Order.Group.Unbundled.Basic
 
 /-!
 # Telescoping bounds for intervals under multiplicative step growth
