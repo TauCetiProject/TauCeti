@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.MappingSpace.FreeLoop
 public import TauCeti.Topology.MappingTorus.LocalProduct
 public import TauCeti.Topology.PathSpace.Seamed
 import TauCeti.Algebra.AddCircle
 import TauCeti.Topology.Instances.AddCircle.UnitInterval
-import TauCeti.Topology.MappingSpace.FreeLoop
 
 /-!
 # Sections of a mapping torus and seamed paths
@@ -25,7 +25,9 @@ projection of the mapping torus to the circle: the seam is exactly the identific
 `(γ 0, 0)` with `(φ (γ 0), 1)`. Conversely the fibre coordinates of a section form a seamed path.
 This identifies the seamed path space with the space of sections, as topological spaces
 (`TauCeti.SeamedPath.sectionHomeomorph`). Through it, a loop of seamed paths is a loop of
-sections, which sweeps a torus in the mapping torus rather than in `F`.
+sections, which sweeps a torus in the mapping torus rather than in `F`. Read on the unit circle, a
+section is a free loop in the mapping torus (`TauCeti.SeamedPath.sectionLoop`), so a loop of seamed
+paths is a loop of free loops of the mapping torus.
 
 ## Main definitions
 
@@ -33,6 +35,8 @@ sections, which sweeps a torus in the mapping torus rather than in `F`.
   `(t : UnitAddCircle)`.
 * `TauCeti.SeamedPath.sectionHomeomorph φ`: the homeomorphism from the `φ`-seamed paths to the
   continuous sections of the projection `MappingTorus φ → UnitAddCircle`.
+* `TauCeti.SeamedPath.sectionLoop φ`: the section of a seamed path as a free loop of the mapping
+  torus, parametrized by the unit circle.
 
 ## References
 
@@ -232,6 +236,22 @@ theorem mk_sectionHomeomorph_symm_apply
     mk φ (((sectionHomeomorph φ).symm s).val t) t = s.val t := by
   rw [sectionHomeomorph_symm_apply]
   exact mk_fiberCoord φ (s.property _)
+
+/-- **The free loop of a seamed path**: the section `t ↦ mk φ (γ t) t` of a `φ`-seamed path `γ`,
+read on the unit circle through `t ↦ exp (2πit)` (`TauCeti.unitToCircle`). A loop of seamed paths is
+thereby a loop of free loops of the mapping torus, which sweeps out a torus there. -/
+def sectionLoop : C(SeamedPath φ, C(Circle, MappingTorus φ)) where
+  toFun γ := circleMapHomeomorphClosedUnitPath.symm
+    (unitAddCircleMapHomeomorphClosedUnitPath (sectionHomeomorph φ γ).val)
+  continuous_toFun := circleMapHomeomorphClosedUnitPath.symm.continuous.comp
+    (unitAddCircleMapHomeomorphClosedUnitPath.continuous.comp
+      (continuous_subtypeVal.comp (sectionHomeomorph φ).continuous))
+
+/-- The free loop of a seamed path `γ` passes through `mk φ (γ t) t` at `exp (2πit)`. -/
+@[simp]
+theorem sectionLoop_unitToCircle (γ : SeamedPath φ) (t : I) :
+    sectionLoop φ γ (unitToCircle t) = mk φ (γ.val t) t := by
+  simp [sectionLoop]
 
 end SeamedPath
 
