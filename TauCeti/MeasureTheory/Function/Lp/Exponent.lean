@@ -16,7 +16,8 @@ import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 On a finite measure space `ν`, `L^q(ν) ⊆ Lᵖ(ν)` for `p ≤ q` (Mathlib's
 `MeasureTheory.Lp.antitone`), with `‖f‖_p ≤ ν(univ) ^ (1/p - 1/q) ‖f‖_q`
 (`MeasureTheory.eLpNorm_le_eLpNorm_mul_rpow_measure_univ`). This file bundles the inclusion as a
-continuous linear map, which does not change the underlying almost everywhere equivalence class.
+continuous linear map, which does not change the underlying almost everywhere equivalence class,
+and lowers the exponent of uniform `Lᵖ` bounds on families of functions.
 
 ## Main definitions
 
@@ -36,6 +37,8 @@ continuous linear map, which does not change the underlying almost everywhere eq
   identity at `p = q` and transitivity.
 * `ContinuousLinearMap.compLpL_ofExponentLEL`: the inclusion commutes with postcomposition by a
   continuous linear map.
+* `MeasureTheory.exists_eLpNorm_le_mul_enorm_of_eLpNorm_le`: a bound `‖v u‖_p ≤ K ‖u‖` for every
+  `u` gives, for each `q ≤ p`, a constant `C` with `‖v u‖_q ≤ C ‖u‖` for every `u`.
 
 ## References
 
@@ -146,3 +149,35 @@ theorem _root_.ContinuousLinearMap.compLpL_ofExponentLEL {𝕜' E : Type*}
   rw [hp, coeFn_ofExponentLEL, coeFn_ofExponentLEL, hq]
 
 end MeasureTheory.Lp
+
+namespace MeasureTheory
+
+open scoped ENNReal NNReal
+
+/-- **Lowering the exponent of a uniform bound.** Let `μ` be a finite measure and `q ≤ p`. If
+`‖v u‖_{Lᵖ(μ)} ≤ K ‖u‖` for every `u`, then there is a constant `C`, depending on `q` but not on
+`u`, with `‖v u‖_{L^q(μ)} ≤ C ‖u‖` for every `u`, by Hölder's inequality. -/
+theorem exists_eLpNorm_le_mul_enorm_of_eLpNorm_le {α X F : Type*} [MeasurableSpace α]
+    {μ : Measure α} [ENorm X] [TopologicalSpace F] [ContinuousENorm F] {p q : ℝ≥0∞}
+    (hμ : μ Set.univ ≠ ∞) (hq : q ≤ p) {v : X → α → F} {K : ℝ≥0}
+    (hv : ∀ u, eLpNorm (v u) p μ ≤ K * ‖u‖ₑ) :
+    ∃ C : ℝ≥0, ∀ u, eLpNorm (v u) q μ ≤ C * ‖u‖ₑ := by
+  rcases eq_or_ne q 0 with rfl | hq0
+  · -- `eLpNorm f 0 μ` vanishes for an a.e. strongly measurable `f`; otherwise it is
+    -- `∞ = eLpNorm f p μ`.
+    refine ⟨K, fun u ↦ le_trans ?_ (hv u)⟩
+    by_cases hf : AEStronglyMeasurable (v u) μ
+    · simp [hf]
+    · simp [eLpNorm, hf]
+  set c := μ Set.univ ^ (1 / q.toReal - 1 / p.toReal)
+  have hc : c ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg
+    (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg hq0 hq) hμ
+  refine ⟨K * c.toNNReal, fun u ↦ ?_⟩
+  calc eLpNorm (v u) q μ ≤ eLpNorm (v u) p μ * c :=
+        eLpNorm_le_eLpNorm_mul_rpow_measure_univ_of_pos hq (pos_iff_ne_zero.2 hq0)
+    _ ≤ K * ‖u‖ₑ * c := by gcongr; exact hv u
+    _ = ↑(K * c.toNNReal) * ‖u‖ₑ := by
+        rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hc]
+        ring
+
+end MeasureTheory

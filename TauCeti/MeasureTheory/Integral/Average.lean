@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Analysis.Convex.Continuous
 import Mathlib.Analysis.Convex.Integral

@@ -111,7 +111,7 @@ theorem norm_familyDomainTrajectoryOperator_le (ι : D →L[ℝ] H) (A : Lp (D �
     ‖familyDomainTrajectoryOperator (p := p) ι A‖ ≤ 1 + ‖A‖ := by
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
   rw [familyDomainTrajectoryOperator_apply]; refine (norm_add_le _ _).trans ?_
-  rw [ContinuousLinearMap.norm_apply_one_compLpL_apply, one_add_mul]
+  rw [ContinuousLinearMap.compLpL_apply, ContinuousLinearMap.norm_apply_one_compLp, one_add_mul]
   exact add_le_add (norm_weakFDeriv_le _ u) ((Lp.norm_operatorMultiplication_apply_le _ _).trans
     (mul_le_mul_of_nonneg_left (norm_prev_le _ u) (norm_nonneg _)))
 
@@ -444,7 +444,7 @@ theorem norm_domainTrajectoryOperator_sq (hSymm : ∀ x y : D, ⟪A x, ι y⟫_�
       ‖weakFDeriv (ι.compLpL 2 μ₀) u‖ ^ 2 + ‖A.compLpL 2 μ₀ (prev (ι.compLpL 2 μ₀) u)‖ ^ 2 := by
   rw [domainTrajectoryOperator_apply, norm_add_sq_real,
     inner_weakFDeriv_apply_one_compLpL_eq_zero hSymm u, mul_zero, add_zero,
-    ContinuousLinearMap.norm_apply_one_compLpL_apply]
+    ContinuousLinearMap.compLpL_apply, ContinuousLinearMap.norm_apply_one_compLp]
 
 /-- On `L²(ℝ)` for `ι`-symmetric `A`, `‖(ι ∘ u)'‖ ≤ ‖(∂s ∘ ι + A) u‖`. -/
 theorem norm_weakFDeriv_le_norm_domainTrajectoryOperator

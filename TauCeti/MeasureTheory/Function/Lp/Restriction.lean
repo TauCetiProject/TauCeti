@@ -13,6 +13,7 @@ public import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.Exponent
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Restriction and set integration on finite-measure sets
@@ -54,6 +55,13 @@ finite-measure sets.
   form a closed set.
 * `MeasureTheory.LpToLpRestrictCLM_eq_zero_iff`: the restriction of an `Lᵖ` class to a set vanishes
   exactly when the class vanishes almost everywhere on that set.
+* `MeasureTheory.MemLp.integrableOn_of_subset` and
+  `MeasureTheory.MemLp.integrableOn_norm_sub_sq_of_subset`: a function in `Lᵖ(t)`, `1 ≤ p`, is
+  integrable on every subset of `t` of finite measure, and for `p = 2` so is its squared distance
+  to any constant.
+* `MeasureTheory.MemLp.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow`: Hölder's
+  inequality bounding the integral of `‖g‖²` over a subset `s ⊆ t` of finite measure by
+  `‖g‖²_{L^q(t)} μ(s)^{1 - 2/q}`, `2 ≤ q`.
 -/
 
 public section
@@ -244,5 +252,62 @@ theorem LpToLpRestrictCLM_eq_zero_iff {E F 𝕜 : Type*} [MeasurableSpace E] [No
     LpToLpRestrictCLM E F 𝕜 μ p s f = 0 ↔ f =ᵐ[μ.restrict s] 0 :=
   Lp.eq_zero_iff_ae_eq_zero.trans
     ⟨(LpToLpRestrictCLM_coeFn 𝕜 s f).symm.trans, (LpToLpRestrictCLM_coeFn 𝕜 s f).trans⟩
+
+section Subset
+
+open scoped ENNReal
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F] {g : X → F}
+  {s t : Set X}
+
+/-- A function in `Lᵖ(t)`, `1 ≤ p`, is integrable on every subset `s ⊆ t` of finite measure. -/
+theorem MemLp.integrableOn_of_subset {p : ℝ≥0∞}
+    (hg : MemLp g p (μ.restrict t)) (hp : 1 ≤ p) (hst : s ⊆ t) (hs : μ s ≠ ⊤) :
+    IntegrableOn g s μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  exact (hg.mono_measure (Measure.restrict_mono hst le_rfl)).integrable hp
+
+/-- For a function `g` in `L²(t)`, the squared distance `‖g - c‖²` to a constant `c` is integrable
+on every subset `s ⊆ t` of finite measure. -/
+theorem MemLp.integrableOn_norm_sub_sq_of_subset
+    (hg : MemLp g 2 (μ.restrict t)) (hst : s ⊆ t) (hs : μ s ≠ ⊤) (c : F) :
+    IntegrableOn (fun x ↦ ‖g x - c‖ ^ 2) s μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  exact ((hg.mono_measure (Measure.restrict_mono hst le_rfl)).sub
+    (memLp_const c)).integrable_norm_pow two_ne_zero
+
+/-- **Hölder's inequality for the `L²` mass on a subset.** For `2 ≤ q` and a function `g` in
+`L^q(t)`, the integral of `‖g‖²` over a subset `s ⊆ t` of finite measure is at most
+`‖g‖²_{L^q(t)} μ(s)^{1 - 2/q}`. -/
+theorem MemLp.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow {q : ℝ≥0∞}
+    (hg : MemLp g q (μ.restrict t)) (hq : 2 ≤ q) (hst : s ⊆ t) (hs : μ s ≠ ⊤) :
+    ∫ x in s, ‖g x‖ ^ 2 ∂μ ≤
+      (eLpNorm g q (μ.restrict t)).toReal ^ 2 * μ.real s ^ (1 - 2 / q.toReal) := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  have hgs : MemLp g q (μ.restrict s) := hg.mono_measure (Measure.restrict_mono hst le_rfl)
+  have hexp : 0 ≤ 1 / 2 - 1 / q.toReal := by
+    simpa only [ENNReal.toReal_ofNat] using
+      ENNReal.one_div_toReal_sub_one_div_toReal_nonneg two_ne_zero hq
+  -- Hölder's inequality on `s`: `‖g‖_{L²(s)} ≤ ‖g‖_{L^q(t)} μ(s)^{1/2-1/q}`.
+  have hH : (eLpNorm g 2 (μ.restrict s)).toReal ≤
+      (eLpNorm g q (μ.restrict t)).toReal * μ.real s ^ (1 / 2 - 1 / q.toReal) := by
+    have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (μ := μ.restrict s) (p := 2) (q := q) hq
+      hgs.aestronglyMeasurable
+    rw [Measure.restrict_apply_univ, ENNReal.toReal_ofNat] at h
+    have hmono := eLpNorm_mono_measure g (p := q) (Measure.restrict_mono hst (le_refl μ))
+    refine (ENNReal.toReal_mono (ENNReal.mul_ne_top hg.eLpNorm_ne_top
+      (ENNReal.rpow_ne_top_of_nonneg hexp hs)) (h.trans (mul_le_mul_left hmono _))).trans_eq ?_
+    rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, measureReal_def]
+  -- `∫_s ‖g‖² = ‖g‖²_{L²(s)}`.
+  rw [integral_norm_sq_eq_toReal_eLpNorm_sq hgs.aestronglyMeasurable]
+  calc _ ≤ ((eLpNorm g q (μ.restrict t)).toReal * μ.real s ^ (1 / 2 - 1 / q.toReal)) ^ 2 :=
+        pow_le_pow_left₀ ENNReal.toReal_nonneg hH 2
+    _ = _ := by
+      rw [mul_pow, ← Real.rpow_mul_natCast measureReal_nonneg]
+      congr 2
+      push_cast
+      ring
+
+end Subset
 
 end MeasureTheory

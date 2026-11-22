@@ -132,7 +132,7 @@ theorem norm_nonautonomousDomainTrajectoryOperator_le (ι : D →L[ℝ] H) (A : 
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
   rw [nonautonomousDomainTrajectoryOperator_apply, one_add_mul]
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-  · rw [ContinuousLinearMap.norm_apply_one_compLpL_apply]
+  · rw [ContinuousLinearMap.compLpL_apply, ContinuousLinearMap.norm_apply_one_compLp]
     exact norm_weakFDeriv_le _ u
   · exact (Lp.norm_operatorMultiplication_apply_le A _).trans
       (mul_le_mul_of_nonneg_left (norm_prev_le _ u) (norm_nonneg _))

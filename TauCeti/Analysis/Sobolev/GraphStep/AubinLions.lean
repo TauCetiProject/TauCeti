@@ -269,7 +269,8 @@ private theorem norm_restrictBaseL_sub_stepApprox_le
         eLpNorm ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL p _ (weakFDeriv base u)) p
           (volume.restrict (Omega : Set ℝ)) :=
       eLpNorm_congr_ae hcomp.symm
-    rw [hg_eq, ← Lp.norm_def, ContinuousLinearMap.norm_apply_one_compLpL_apply]
+    rw [hg_eq, ← Lp.norm_def, ContinuousLinearMap.compLpL_apply,
+      ContinuousLinearMap.norm_apply_one_compLp]
     exact norm_weakFDeriv_le base u
   have hh : 0 ≤ (b - a) / N := div_nonneg (sub_pos.2 hab).le N.cast_nonneg
   rw [Lp.norm_def]
