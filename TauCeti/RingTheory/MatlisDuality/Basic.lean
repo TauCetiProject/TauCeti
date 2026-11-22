@@ -216,6 +216,20 @@ theorem congrCoeff_trans (f : E ≃ₗ[R] E') (f' : E' ≃ₗ[R] E'') :
   ext
   simp
 
+/-- Changing the coefficients commutes with dualizing a morphism of left modules. -/
+@[simp]
+theorem congrCoeff_comp_map (f : E ≃ₗ[R] E') (g : N →ₗ[A] N') :
+    (congrCoeff (A := A) (N := N) f).toLinearMap ∘ₗ map g =
+      map (R := R) (E := E') g ∘ₗ (congrCoeff f).toLinearMap := by
+  ext
+  simp
+
+@[simp]
+theorem congrCoeff_map_apply (f : E ≃ₗ[R] E') (g : N →ₗ[A] N') (φ : MatlisDual R E N') :
+    congrCoeff (A := A) f (map g φ) = map g (congrCoeff (A := A) f φ) := by
+  ext
+  simp
+
 end Left
 
 section Right
@@ -324,6 +338,20 @@ theorem congrCoeffOp_refl :
 @[simp]
 theorem congrCoeffOp_trans (f : E ≃ₗ[R] E') (f' : E' ≃ₗ[R] E'') :
     congrCoeffOp (A := A) (N := N) (f.trans f') = (congrCoeffOp f).trans (congrCoeffOp f') := by
+  ext
+  simp
+
+/-- Changing the coefficients commutes with dualizing a morphism of right modules. -/
+@[simp]
+theorem congrCoeffOp_comp_mapOp (f : E ≃ₗ[R] E') (g : N →ₗ[Aᵐᵒᵖ] N') :
+    (congrCoeffOp (A := A) (N := N) f).toLinearMap ∘ₗ mapOp g =
+      mapOp (R := R) (E := E') g ∘ₗ (congrCoeffOp f).toLinearMap := by
+  ext
+  simp
+
+@[simp]
+theorem congrCoeffOp_mapOp_apply (f : E ≃ₗ[R] E') (g : N →ₗ[Aᵐᵒᵖ] N') (φ : MatlisDual R E N') :
+    congrCoeffOp (A := A) f (mapOp g φ) = mapOp g (congrCoeffOp (A := A) f φ) := by
   ext
   simp
 

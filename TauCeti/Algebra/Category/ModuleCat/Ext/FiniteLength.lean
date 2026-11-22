@@ -6,13 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import TauCeti.Algebra.Category.ModuleCat.HomCocycle
 public import Mathlib.RingTheory.Artinian.Ring
 public import Mathlib.RingTheory.FiniteLength
 public import TauCeti.CategoryTheory.Exact.Abelian
 public import TauCeti.CategoryTheory.Exact.YonedaExt.BaerSum
-import Mathlib.LinearAlgebra.StdBasis
-import Mathlib.RingTheory.HopkinsLevitzki
+import TauCeti.Algebra.Module.LinearMap.FiniteLength
 import TauCeti.Algebra.Category.ModuleCat.Quotient
 import TauCeti.Algebra.Module.Projective.FinitePresentation
 import TauCeti.CategoryTheory.Exact.Projective
@@ -31,8 +29,8 @@ over `R` (`LinearMap.isFiniteLength_ext1_cokernel`). Neither `f` nor `P₁` need
 projective, and neither `A` nor `P₀ ⧸ range f` need be finitely generated over `R`. For a field
 `R` this is the finite-dimensionality of `Ext¹` from finite-dimensional relations and coefficients.
 
-The same holds for Mathlib's derived `Ext¹`, through the description of `Ext¹(P₀ ⧸ range f, N)` by
-Hom cocycles (`LinearMap.isFiniteLength_ext_cokernel`).
+The same holds for Mathlib's derived `Ext¹` (`LinearMap.isFiniteLength_ext_cokernel`, in
+`TauCeti/Algebra/Category/ModuleCat/HomCocycle.lean`).
 
 Over an Artin algebra, every finitely generated module has such a presentation, so `Ext¹` between
 finitely generated modules has finite length over the base ring (`ModuleCat.isFiniteLength_ext1`).
@@ -54,18 +52,6 @@ open scoped ModuleCat.Algebra
 universe u v w t
 
 variable {R : Type u} {A : Type v} [CommRing R] [Ring A] [Algebra R A]
-
-/-- Linear maps from a finitely generated module to a module of finite length form a module of
-finite length. -/
-private theorem isFiniteLength_linearMap (P N : Type*) [AddCommGroup P] [Module R P]
-    [Module.Finite R P] [AddCommGroup N] [Module R N] (hN : IsFiniteLength R N) :
-    IsFiniteLength R (P →ₗ[R] N) := by
-  obtain ⟨n, g, hg⟩ := Module.Finite.exists_fin' R P
-  obtain ⟨_, _⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp hN
-  -- Precomposing with a surjection `Rⁿ → P` embeds `Hom_R(P, N)` into `Hom_R(Rⁿ, N) ≅ Nⁿ`.
-  have : IsFiniteLength R ((Fin n → R) →ₗ[R] N) := (Module.piEquiv (Fin n) R N).isFiniteLength
-    (isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩)
-  exact this.of_injective (f := g.lcomp R N) fun _ _ h ↦ (LinearMap.cancel_right hg).mp h
 
 namespace LinearMap
 
@@ -101,26 +87,6 @@ theorem isFiniteLength_ext1_cokernel (f : P₁ →ₗ[A] P₀) {N : ModuleCat.{t
   have hι : Function.Injective ι := fun a b h ↦ ModuleCat.hom_ext
     ((cancel_right f.surjective_rangeRestrict).mp (restrictScalars_injective R h))
   exact ((isFiniteLength_linearMap P₁ N hN).of_injective hι).of_surjective hc
-
-end LinearMap
-
-namespace LinearMap
-
-variable {P₀ P₁ : Type max u v w} [AddCommGroup P₀] [Module A P₀] [Module.Projective A P₀]
-  [AddCommGroup P₁] [Module A P₁] [Module R P₁] [IsScalarTower R A P₁] [Module.Finite R P₁]
-
-/-- **Derived `Ext¹` of a cokernel has finite length**, the counterpart for Mathlib's derived `Ext`
-of `LinearMap.isFiniteLength_ext1_cokernel`. For `f : P₁ → P₀` with `P₀` projective, the Hom
-cocycles `Hom_A(P₁, N) ⊆ Hom_R(P₁, N)` modulo coboundaries compute `Ext¹(P₀ ⧸ range f, N)`
-(`LinearMap.homCocycleQuotientEquivExt`). -/
-theorem isFiniteLength_ext_cokernel (f : P₁ →ₗ[A] P₀) {N : ModuleCat.{max u v w} A}
-    (hN : IsFiniteLength R N) :
-    IsFiniteLength R (Abelian.Ext (ModuleCat.of A (P₀ ⧸ range f)) N 1) := by
-  have hP : IsFiniteLength R (P₁ →ₗ[A] N) := (isFiniteLength_linearMap P₁ N hN).of_injective
-    (f := restrictScalarsₗ R A P₁ N R) (restrictScalars_injective R)
-  have : IsFiniteLength R (HomCocycleQuotient (k := R) f N) :=
-    (hP.of_injective (Submodule.injective_subtype _)).of_surjective (Submodule.mkQ_surjective _)
-  exact (homCocycleQuotientEquivExt (k := R) f N).isFiniteLength this
 
 end LinearMap
 

@@ -8,12 +8,10 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Translate
 public import TauCeti.CategoryTheory.AlmostSplit.Sequence
-import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.FGModuleCat.Injective
 import TauCeti.Algebra.Category.FGModuleCat.Projective
 import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Sequence
 import TauCeti.CategoryTheory.AlmostSplit.Equivalence
-import TauCeti.RingTheory.MatlisDuality.ArtinAlgebra
 
 /-!
 # Almost-split sequences in `FGModuleCat` over an Artin algebra
@@ -41,7 +39,9 @@ one ending at `τ⁻ N`, using `τ τ⁻ N ≅ N`
   `FGModuleCat.exists_isAlmostSplit_arInverseTranslate`: almost-split sequences with the
   translates as their other ends.
 * `FGModuleCat.exists_isAlmostSplit` and `FGModuleCat.exists_isAlmostSplit_of_not_injective`: the
-  existence of almost-split sequences, taking for `E` an injective hull of `R ⧸ J(R)`.
+  existence of almost-split sequences, taking for `E` a module given by
+  `TauCeti.exists_injective_finite_length_quotient_linearMap_eq_one`, for instance an injective
+  hull of `R ⧸ J(R)`.
 
 ## Implementation notes
 
@@ -122,10 +122,8 @@ sequence of `FGModuleCat A`. -/
 theorem exists_isAlmostSplit (M : FGModuleCat.{max u v w} A) (hM : Indecomposable M.obj)
     (hP : ¬ Projective M) :
     ∃ S : ShortComplex (FGModuleCat.{max u v w} A), S.IsAlmostSplit ∧ Nonempty (S.X₃ ≅ M) := by
-  obtain ⟨E, _, _, f, hf, -⟩ := exists_isInjectiveEnvelope_quotient_jacobson R
-  have := hf.moduleInjective
-  obtain ⟨S, hS, -, h₃⟩ := exists_isAlmostSplit_arTranslate R E
-    hf.length_quotient_linearMap_eq_one M hM hP
+  obtain ⟨E, _, _, _, -, hE⟩ := exists_injective_finite_length_quotient_linearMap_eq_one R
+  obtain ⟨S, hS, -, h₃⟩ := exists_isAlmostSplit_arTranslate R E hE M hM hP
   exact ⟨S, hS, h₃⟩
 
 /-- **Almost-split sequences starting at a module.** Over an Artin algebra, every finitely
@@ -134,11 +132,8 @@ sequence of `FGModuleCat A`. -/
 theorem exists_isAlmostSplit_of_not_injective (M : FGModuleCat.{max u v w} A)
     (hM : Indecomposable M.obj) (hI : ¬ Injective M) :
     ∃ S : ShortComplex (FGModuleCat.{max u v w} A), S.IsAlmostSplit ∧ Nonempty (S.X₁ ≅ M) := by
-  obtain ⟨E, _, _, f, hf, hfl⟩ := exists_isInjectiveEnvelope_quotient_jacobson R
-  have := hf.moduleInjective
-  have := (isFiniteLength_iff_isNoetherian_isArtinian.mp hfl).1
-  obtain ⟨S, hS, h₁, -⟩ := exists_isAlmostSplit_arInverseTranslate R E
-    hf.length_quotient_linearMap_eq_one M hM hI
+  obtain ⟨E, _, _, _, _, hE⟩ := exists_injective_finite_length_quotient_linearMap_eq_one R
+  obtain ⟨S, hS, h₁, -⟩ := exists_isAlmostSplit_arInverseTranslate R E hE M hM hI
   exact ⟨S, hS, h₁⟩
 
 end FGModuleCat

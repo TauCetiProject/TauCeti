@@ -51,6 +51,8 @@ at most one-dimensional over `R ⧸ 𝔪` because `J(R)` is a radical ideal.
 * `TauCeti.IsInjectiveEnvelope.isFiniteLength_quotient_jacobson` and
   `TauCeti.exists_isInjectiveEnvelope_quotient_jacobson`: over a commutative Artinian ring, every
   injective hull of `R ⧸ J(R)` has finite length, and one exists in the universe of `R`.
+* `TauCeti.exists_injective_finite_length_quotient_linearMap_eq_one`: over a commutative Artinian
+  ring, a finitely generated injective `E` with each `Hom_R(R ⧸ 𝔪, E)` of length one exists.
 
 ## References
 
@@ -228,6 +230,18 @@ theorem exists_isInjectiveEnvelope_quotient_jacobson :
       IsInjectiveEnvelope f ∧ IsFiniteLength R E := by
   obtain ⟨E, _, _, f, hf⟩ := exists_isInjectiveEnvelope R (R ⧸ Ring.jacobson R)
   exact ⟨E, _, _, f, hf, hf.isFiniteLength_quotient_jacobson⟩
+
+variable (R) in
+/-- **A coefficient module for Matlis duality.** A commutative Artinian ring has a finitely
+generated injective module `E` such that each `Hom_R(R ⧸ 𝔪, E)` has length one, for instance an
+injective hull of `R ⧸ J(R)`. -/
+theorem exists_injective_finite_length_quotient_linearMap_eq_one :
+    ∃ (E : Type u) (_ : AddCommGroup E) (_ : Module R E), Module.Injective R E ∧
+      Module.Finite R E ∧ ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1 := by
+  obtain ⟨E, _, _, f, hf, -⟩ := exists_isInjectiveEnvelope_quotient_jacobson R
+  have := hf.moduleInjective
+  exact ⟨E, _, _, this, finite_of_forall_isMaximal hf.length_quotient_linearMap_eq_one,
+    hf.length_quotient_linearMap_eq_one⟩
 
 end Artinian
 

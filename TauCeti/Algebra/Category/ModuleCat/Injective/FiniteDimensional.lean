@@ -17,7 +17,7 @@ Every finitely generated module over a finite-dimensional algebra embeds into a 
 generated ambient injective module. The injective term stays in the universe of the original
 module.
 
-This is the case of a field of `ModuleCat.exists_injectivePresentation_finite_of_isArtinianRing`.
+This is the case of a field of `ModuleCat.exists_injectivePresentation_finite`.
 Over a field the smallness of the algebra in the universe of a nonzero module is automatic.
 
 ## References
@@ -50,6 +50,6 @@ theorem exists_injectivePresentation_of_finite (M : ModuleCat.{w} A) [Module.Fin
       let : Module k M := Module.compHom M (algebraMap k A)
       exact small_of_injective (smul_left_injective k hm)
     exact Module.Finite.small k A
-  exact exists_injectivePresentation_finite_of_isArtinianRing k M
+  exact exists_injectivePresentation_finite k M
 
 end ModuleCat

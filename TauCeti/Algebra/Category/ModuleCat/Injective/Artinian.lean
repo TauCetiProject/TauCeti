@@ -16,7 +16,7 @@ import Mathlib.RingTheory.Finiteness.Small
 
 Every finitely generated module over an Artin algebra, an algebra finitely generated as a module
 over a commutative Artinian ring, embeds into a finitely generated ambient injective module
-(`ModuleCat.exists_injectivePresentation_finite_of_isArtinianRing`). The injective term stays in
+(`ModuleCat.exists_injectivePresentation_finite`). The injective term stays in
 the universe of the original module, provided the algebra is small there.
 
 This packages `TauCeti.exists_isInjectiveEnvelope_finite` as Mathlib's `InjectivePresentation`.
@@ -43,7 +43,7 @@ variable (R : Type u) {A : Type v} [CommRing R] [IsArtinianRing R] [Ring A] [Alg
 include R in
 /-- A finitely generated module over an Artin algebra has an ambient injective presentation with
 finitely generated target, in the same universe as the source when the algebra is small there. -/
-theorem exists_injectivePresentation_finite_of_isArtinianRing [Small.{w} A]
+theorem exists_injectivePresentation_finite [Small.{w} A]
     (M : ModuleCat.{w} A) [Module.Finite A M] :
     ∃ I : InjectivePresentation M, Module.Finite A I.J := by
   let : Module R M := moduleOfAlgebra R M
