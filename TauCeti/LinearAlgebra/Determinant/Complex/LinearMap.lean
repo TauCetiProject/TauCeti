@@ -227,96 +227,6 @@ theorem isComplexPositiveDetLine_or_isComplexPositiveDetLine_neg [FiniteDimensio
   exact isComplexPositiveTMulDual_or_isComplexPositiveTMulDual_neg
     (f.detLineRestrictScalarsEquiv.map_ne_zero_iff.2 hz)
 
-/-! ### Transport along commuting squares -/
-
-section Transport
-
-variable {M' N' : Type*} [AddCommGroup M'] [Module ℂ M'] [Module ℝ M'] [IsScalarTower ℝ ℂ M']
-  [AddCommGroup N'] [Module ℂ N'] [Module ℝ N'] [IsScalarTower ℝ ℂ N'] {f' : M' →ₗ[ℂ] N'}
-  (e₁ : M ≃ₗ[ℝ] M') (e₂ : N ≃ₗ[ℝ] N')
-  (h : f'.restrictScalars ℝ ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f.restrictScalars ℝ)
-
-variable (f) in
-/-- Under `LinearMap.detLineRestrictScalarsEquiv`, transport along a commuting square of real
-isomorphisms is the isomorphism of determinant lines induced by the isomorphisms of complex
-kernels and cokernels (`LinearMap.kerCongrOfComp`, `LinearMap.cokerCongrOfComp`). -/
-theorem detLineRestrictScalarsEquiv_detLineCongr (z : (f.restrictScalars ℝ).detLine) :
-    f'.detLineRestrictScalarsEquiv ((f.restrictScalars ℝ).detLineCongr e₁ e₂ h z) =
-      TensorProduct.congr (LinearEquiv.detLineCongr (kerCongrOfComp f e₁ e₂ h))
-        (LinearEquiv.detLineCongr (cokerCongrOfComp f e₁ e₂ h)).symm.dualMap
-        (f.detLineRestrictScalarsEquiv z) := by
-  -- The kernel and cokernel isomorphisms induced by the square, read on either side.
-  have hk : (e₁.ofSubmodules _ _ ((f.restrictScalars ℝ).map_ker_eq_ker_of_comp_eq e₁.surjective
-      e₂.injective h)).trans (f'.kerRestrictScalarsEquiv ℝ).symm =
-      (f.kerRestrictScalarsEquiv ℝ).symm.trans (kerCongrOfComp f e₁ e₂ h) :=
-    LinearEquiv.ext fun x ↦ Subtype.ext (by simp only [LinearEquiv.trans_apply,
-      coe_kerRestrictScalarsEquiv_symm_apply, coe_kerCongrOfComp_apply,
-      LinearEquiv.ofSubmodules_apply])
-  have hc : (f'.cokerRestrictScalarsEquiv ℝ).symm.trans (Submodule.Quotient.equiv _ _ e₂
-      ((f.restrictScalars ℝ).map_range_eq_range_of_comp_eq e₁.surjective h)).symm =
-      (cokerCongrOfComp f e₁ e₂ h).symm.trans (f.cokerRestrictScalarsEquiv ℝ).symm := by
-    refine LinearEquiv.ext fun y ↦ ?_
-    induction y using Submodule.Quotient.induction_on with
-    | H y => simp [Submodule.Quotient.equiv_symm]
-  -- The same identities between the induced isomorphisms of determinant lines.
-  have hk' (x) := by
-    simpa only [LinearEquiv.detLineCongr_trans, LinearEquiv.trans_apply] using
-      LinearEquiv.congr_fun (congrArg LinearEquiv.detLineCongr hk) x
-  have hc' (w) := by
-    simpa only [LinearEquiv.detLineCongr_trans, LinearEquiv.trans_apply] using
-      LinearEquiv.congr_fun (congrArg LinearEquiv.detLineCongr hc) w
-  induction z using TensorProduct.inductionOn with
-  | add a b ha hb => simp only [map_add, ha, hb]
-  | tmul x φ =>
-    rw [detLineCongr_tmul, detLineRestrictScalarsEquiv_tmul, detLineRestrictScalarsEquiv_tmul,
-      TensorProduct.congr_tmul, hk']
-    congr 1
-    exact LinearMap.ext fun w ↦ by
-      simp only [LinearEquiv.dualMap_apply, comp_apply, LinearEquiv.coe_coe,
-        LinearEquiv.detLineCongr_symm, hc']
-
-/-- Transport along a commuting square of real isomorphisms commuting with `I`, that is, of
-complex-linear isomorphisms, preserves the complex orientation of the determinant line of a
-complex-linear map. -/
-theorem IsComplexPositiveDetLine.detLineCongr {z : (f.restrictScalars ℝ).detLine}
-    (hz : f.IsComplexPositiveDetLine z) (he₁ : ∀ x, e₁ (I • x) = I • e₁ x)
-    (he₂ : ∀ y, e₂ (I • y) = I • e₂ y) :
-    f'.IsComplexPositiveDetLine ((f.restrictScalars ℝ).detLineCongr e₁ e₂ h z) := by
-  set g₁ := kerCongrOfComp f e₁ e₂ h
-  set g₂ := cokerCongrOfComp f e₁ e₂ h
-  let G₁ : ker f ≃ₗ[ℂ] ker f' := .ofBijective
-    (g₁.toLinearMap.complexOfMapISmul (kerCongrOfComp_smul f e₁ e₂ h he₁))
-    (by simpa using g₁.bijective)
-  let G₂ : (N ⧸ range f) ≃ₗ[ℂ] N' ⧸ range f' := .ofBijective
-    (g₂.toLinearMap.complexOfMapISmul (cokerCongrOfComp_smul f e₁ e₂ h he₂))
-    (by simpa using g₂.bijective)
-  have hG₁ : G₁.restrictScalars ℝ = g₁ := LinearEquiv.ext fun _ ↦ by simp [G₁]
-  have hG₂ : G₂.restrictScalars ℝ = g₂ := LinearEquiv.ext fun _ ↦ by simp [G₂]
-  have := IsComplexPositiveTMulDual.congr_detLineCongr hz G₁ G₂
-  rw [hG₁, hG₂] at this
-  rw [isComplexPositiveDetLine_iff, detLineRestrictScalarsEquiv_detLineCongr]
-  exact this
-
-/-- **The determinant sign of a conjugate-linear transport.** Transport along a commuting square
-of real isomorphisms anticommuting with `I`, that is, of conjugate-linear isomorphisms, maps a
-complex positive element of the determinant line of `f` to `(-1) ^ (k + c)` times a complex
-positive element of the determinant line of `f'`, where `k` and `c` are the complex dimensions of
-the kernel and the cokernel of `f`. The sign is `(-1)` to the complex index `k - c`. -/
-theorem IsComplexPositiveDetLine.neg_one_pow_smul_detLineCongr [FiniteDimensional ℂ (ker f)]
-    [FiniteDimensional ℂ (N ⧸ range f)] {z : (f.restrictScalars ℝ).detLine}
-    (hz : f.IsComplexPositiveDetLine z) (he₁ : ∀ x, e₁ (I • x) = -(I • e₁ x))
-    (he₂ : ∀ y, e₂ (I • y) = -(I • e₂ y)) :
-    f'.IsComplexPositiveDetLine ((-1 : ℝ) ^ (finrank ℂ (ker f) + finrank ℂ (N ⧸ range f)) •
-      (f.restrictScalars ℝ).detLineCongr e₁ e₂ h z) := by
-  have he₁' (x : M) : e₁ (I • x) = (-I) • e₁ x := by rw [he₁, neg_smul]
-  have he₂' (y : N) : e₂ (I • y) = (-I) • e₂ y := by rw [he₂, neg_smul]
-  rw [isComplexPositiveDetLine_iff, map_smul, detLineRestrictScalarsEquiv_detLineCongr]
-  exact IsComplexPositiveTMulDual.neg_one_pow_smul_congr_detLineCongr hz _ _
-    (fun x ↦ by rw [kerCongrOfComp_smul f e₁ e₂ h he₁' x, neg_smul])
-    (fun y ↦ by rw [cokerCongrOfComp_smul f e₁ e₂ h he₂' y, neg_smul])
-
-end Transport
-
 section KerCoker
 
 /-! ### Transport along isomorphisms of kernels and cokernels -/
@@ -404,6 +314,71 @@ theorem IsComplexPositiveDetLine.detLineCongrKerCoker {z : (f.restrictScalars �
   exact key
 
 end KerCoker
+
+/-! ### Transport along commuting squares -/
+
+section Transport
+
+variable {M' N' : Type*} [AddCommGroup M'] [Module ℂ M'] [Module ℝ M'] [IsScalarTower ℝ ℂ M']
+  [AddCommGroup N'] [Module ℂ N'] [Module ℝ N'] [IsScalarTower ℝ ℂ N'] {f' : M' →ₗ[ℂ] N'}
+  (e₁ : M ≃ₗ[ℝ] M') (e₂ : N ≃ₗ[ℝ] N')
+  (h : f'.restrictScalars ℝ ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f.restrictScalars ℝ)
+
+variable (f) in
+/-- Under `LinearMap.detLineRestrictScalarsEquiv`, transport along a commuting square of real
+isomorphisms is the isomorphism of determinant lines induced by the isomorphisms of complex
+kernels and cokernels (`LinearMap.kerCongrOfComp`, `LinearMap.cokerCongrOfComp`). -/
+theorem detLineRestrictScalarsEquiv_detLineCongr (z : (f.restrictScalars ℝ).detLine) :
+    f'.detLineRestrictScalarsEquiv ((f.restrictScalars ℝ).detLineCongr e₁ e₂ h z) =
+      TensorProduct.congr (LinearEquiv.detLineCongr (kerCongrOfComp f e₁ e₂ h))
+        (LinearEquiv.detLineCongr (cokerCongrOfComp f e₁ e₂ h)).symm.dualMap
+        (f.detLineRestrictScalarsEquiv z) := by
+  rw [detLineCongr_eq_detLineCongrKerCoker, detLineRestrictScalarsEquiv_detLineCongrKerCoker]
+  -- `kerCongrOfComp` and `cokerCongrOfComp` are these composites; as their definitions are not
+  -- exposed, identify them pointwise.
+  congr 4
+  · exact LinearEquiv.ext fun x ↦ Subtype.ext (by simp only [LinearEquiv.trans_apply,
+      coe_kerRestrictScalarsEquiv_symm_apply, coe_kerCongrOfComp_apply,
+      LinearEquiv.ofSubmodules_apply, coe_kerRestrictScalarsEquiv_apply])
+  · refine congrArg LinearEquiv.detLineCongr (LinearEquiv.ext fun y ↦ ?_)
+    induction y using Submodule.Quotient.induction_on with
+    | H y => simp [Submodule.Quotient.equiv_apply]
+
+/-- Transport along a commuting square of real isomorphisms commuting with `I`, that is, of
+complex-linear isomorphisms, preserves the complex orientation of the determinant line of a
+complex-linear map. -/
+theorem IsComplexPositiveDetLine.detLineCongr {z : (f.restrictScalars ℝ).detLine}
+    (hz : f.IsComplexPositiveDetLine z) (he₁ : ∀ x, e₁ (I • x) = I • e₁ x)
+    (he₂ : ∀ y, e₂ (I • y) = I • e₂ y) :
+    f'.IsComplexPositiveDetLine ((f.restrictScalars ℝ).detLineCongr e₁ e₂ h z) := by
+  rw [detLineCongr_eq_detLineCongrKerCoker]
+  refine hz.detLineCongrKerCoker (fun x y hxy ↦ ?_) (fun y y' hy ↦ ?_)
+  · simp only [LinearEquiv.ofSubmodules_apply] at hxy ⊢
+    rw [hxy, he₁]
+  · simp only [Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe,
+      Submodule.Quotient.eq, LinearMap.mem_range, restrictScalars_apply] at hy ⊢
+    obtain ⟨m, hm⟩ := hy
+    exact ⟨I • m, by rw [map_smul, hm, he₂, smul_sub]⟩
+
+/-- **The determinant sign of a conjugate-linear transport.** Transport along a commuting square
+of real isomorphisms anticommuting with `I`, that is, of conjugate-linear isomorphisms, maps a
+complex positive element of the determinant line of `f` to `(-1) ^ (k + c)` times a complex
+positive element of the determinant line of `f'`, where `k` and `c` are the complex dimensions of
+the kernel and the cokernel of `f`. The sign is `(-1)` to the complex index `k - c`. -/
+theorem IsComplexPositiveDetLine.neg_one_pow_smul_detLineCongr [FiniteDimensional ℂ (ker f)]
+    [FiniteDimensional ℂ (N ⧸ range f)] {z : (f.restrictScalars ℝ).detLine}
+    (hz : f.IsComplexPositiveDetLine z) (he₁ : ∀ x, e₁ (I • x) = -(I • e₁ x))
+    (he₂ : ∀ y, e₂ (I • y) = -(I • e₂ y)) :
+    f'.IsComplexPositiveDetLine ((-1 : ℝ) ^ (finrank ℂ (ker f) + finrank ℂ (N ⧸ range f)) •
+      (f.restrictScalars ℝ).detLineCongr e₁ e₂ h z) := by
+  have he₁' (x : M) : e₁ (I • x) = (-I) • e₁ x := by rw [he₁, neg_smul]
+  have he₂' (y : N) : e₂ (I • y) = (-I) • e₂ y := by rw [he₂, neg_smul]
+  rw [isComplexPositiveDetLine_iff, map_smul, detLineRestrictScalarsEquiv_detLineCongr]
+  exact IsComplexPositiveTMulDual.neg_one_pow_smul_congr_detLineCongr hz _ _
+    (fun x ↦ by rw [kerCongrOfComp_smul f e₁ e₂ h he₁' x, neg_smul])
+    (fun y ↦ by rw [cokerCongrOfComp_smul f e₁ e₂ h he₂' y, neg_smul])
+
+end Transport
 
 section Endomorphism
 

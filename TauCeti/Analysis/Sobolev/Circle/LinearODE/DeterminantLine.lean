@@ -664,9 +664,9 @@ omit hT in
 `I`. -/
 private theorem dysonSeries_neg_I_smul (hS : ∀ t v, S t (I • v) = I • S t v) (t : ℝ) (v : E) :
     dysonSeries (-fun t : ℝ ↦ S t) t (I • v) = I • dysonSeries (-fun t : ℝ ↦ S t) t v :=
-  (DFunLike.congr_fun (commute_dysonSeries_neg (AddCircle.continuous_comp_coe S)
-    (a := I • ContinuousLinearMap.id ℝ E) (fun s ↦ ContinuousLinearMap.ext fun w ↦ by
-      simp [hS]) t) v).symm
+  (DFunLike.congr_fun (commute_dysonSeries (AddCircle.continuous_comp_coe S).neg
+    (a := I • ContinuousLinearMap.id ℝ E) (fun s ↦ Commute.neg_right <|
+      ContinuousLinearMap.ext fun w ↦ by simp [hS]) t) v).symm
 
 omit hT in
 /-- For a loop of complex-linear maps, `1 - Ψ(T)` commutes with multiplication by `I`. -/

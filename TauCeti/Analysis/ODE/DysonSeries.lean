@@ -70,8 +70,8 @@ one-parameter automorphism groups of C⋆-algebras.
 * `TauCeti.dysonSeriesLeft_const`: the left series of a constant path `a` is `t ↦ exp (t • a)`.
 * `TauCeti.dysonSeries_neg_mul_dysonSeriesLeft`, `TauCeti.dysonSeriesLeft_mul_dysonSeries_neg`:
   the Dyson series of `-p` is the inverse of the left Dyson series of `p`.
-* `TauCeti.commute_dysonSeriesLeft`, `TauCeti.commute_dysonSeries_neg`: an element commuting with
-  every value of `p` commutes with both.
+* `TauCeti.commute_dysonSeries`, `TauCeti.commute_dysonSeriesLeft`: an element commuting with
+  every value of `p` commutes with both Dyson series of `p`.
 * `TauCeti.eq_dysonSeriesLeft_apply_add_integral`: variation of constants, every solution of
   `w' t = M t (w t) + f t` is `w t = Γ t (w 0 + ∫₀ᵗ Γ(s)⁻¹ (f s) ds)`.
 
@@ -303,6 +303,16 @@ theorem eq_mul_dysonSeries (hp : Continuous p) {f : ℝ → B}
   rw [mul_assoc]
   exact (hasDerivAt_dysonSeries hp t).const_mul (f 0)
 
+/-- An element commuting with every value of a continuous path `p` commutes with its Dyson
+series: `a Γ` and `Γ a` both solve `X' = X p` with initial value `a`. -/
+theorem commute_dysonSeries (hp : Continuous p) {a : B} (ha : ∀ s, Commute a (p s)) (t : ℝ) :
+    Commute a (dysonSeries p t) :=
+  congrFun (eq_of_hasDerivAt_mul hp (f := fun s => a * dysonSeries p s)
+    (g := fun s => dysonSeries p s * a)
+    (fun s => by simpa only [mul_assoc] using (hasDerivAt_dysonSeries hp s).const_mul a)
+    (fun s => ((hasDerivAt_dysonSeries hp s).mul_const a).congr_deriv (by
+      rw [mul_assoc, mul_assoc, (ha s).eq])) (t₀ := 0) (by simp)) t
+
 section Star
 
 variable [StarRing B] [ContinuousStar B]
@@ -435,25 +445,13 @@ theorem isUnit_dysonSeriesLeft (hp : Continuous p) (t : ℝ) : IsUnit (dysonSeri
     rfl⟩
 
 /-- An element commuting with every value of a continuous path `p` commutes with its left Dyson
-series: `a Γ` and `Γ a` both solve `X' = p X` with initial value `a`. -/
+series. This is `TauCeti.commute_dysonSeries` in the opposite algebra. -/
 theorem commute_dysonSeriesLeft (hp : Continuous p) {a : B} (ha : ∀ s, Commute a (p s))
     (t : ℝ) : Commute a (dysonSeriesLeft p t) := by
-  let L : ℝ → B →L[ℝ] B := fun s => ContinuousLinearMap.mul ℝ B (p s)
-  have hL : Continuous L := (ContinuousLinearMap.mul ℝ B).continuous.comp hp
-  have h : (fun s => a * dysonSeriesLeft p s) = fun s => dysonSeriesLeft p s * a := by
-    refine hL.eq_of_hasDerivAt_clm_apply (fun s => ?_) (fun s => ?_) (t₀ := 0) (by simp)
-    · exact ((hasDerivAt_dysonSeriesLeft hp s).const_mul a).congr_deriv (by
-        simp only [L, ContinuousLinearMap.mul_apply', ← mul_assoc, (ha s).eq])
-    · exact ((hasDerivAt_dysonSeriesLeft hp s).mul_const a).congr_deriv (by
-        simp only [L, ContinuousLinearMap.mul_apply', mul_assoc])
-  exact congrFun h t
-
-/-- An element commuting with every value of a continuous path `p` commutes with the Dyson series
-of `-p`, the inverse of the left Dyson series of `p`. -/
-theorem commute_dysonSeries_neg (hp : Continuous p) {a : B} (ha : ∀ s, Commute a (p s))
-    (t : ℝ) : Commute a (dysonSeries (-p) t) :=
-  (commute_dysonSeriesLeft hp ha t).units_inv_right (u := ⟨_, _,
-    dysonSeriesLeft_mul_dysonSeries_neg hp t, dysonSeries_neg_mul_dysonSeriesLeft hp t⟩)
+  have h := commute_dysonSeries (p := fun s => MulOpposite.op (p s))
+    (MulOpposite.continuous_op.comp hp) (a := MulOpposite.op a) (fun s => (ha s).op) t
+  rw [← op_dysonSeriesLeft] at h
+  exact h.unop
 
 /-- The left Dyson series of a `Cⁿ` path is `Cⁿ⁺¹`. -/
 theorem contDiff_dysonSeriesLeft {n : ℕ} (hp : ContDiff ℝ n p) :
