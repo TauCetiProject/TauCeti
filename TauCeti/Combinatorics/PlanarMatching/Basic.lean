@@ -73,8 +73,9 @@ variable {k : ℕ}
 
 /-- Two planar matchings are equal when they match every point with the same partner. -/
 @[ext]
-theorem ext {x y : PlanarMatching k} (h : ∀ a, x.1.val a = y.1.val a) : x = y :=
-  Subtype.ext <| Subtype.ext <| Equiv.ext h
+theorem ext {x y : PlanarMatching k} (h : ∀ a, x.val.val a = y.val.val a) : x = y := by
+  ext a : 2
+  exact h a
 
 /-- There is no planar matching of an odd number of points. -/
 theorem isEmpty_of_not_even (hk : ¬ Even k) : IsEmpty (PlanarMatching k) :=
@@ -84,20 +85,20 @@ theorem isEmpty_of_not_even (hk : ¬ Even k) : IsEmpty (PlanarMatching k) :=
 /-- **Arcs are nested.** If the point `b` lies strictly inside the arc `{a, x a}`, with `a < x a`,
 then so does its partner `x b`: an arc starting inside another arc ends inside it. -/
 theorem val_apply_mem_Ioo (x : PlanarMatching k) {a b : Fin k} (hab : a < b)
-    (hb : b < x.1.val a) : x.1.val b ∈ Set.Ioo a (x.1.val a) :=
-  x.2.apply_mem_Ioo x.1.2.involutive hab hb
+    (hb : b < x.val.val a) : x.val.val b ∈ Set.Ioo a (x.val.val a) :=
+  x.property.apply_mem_Ioo x.val.property.involutive hab hb
 
 /-- **The innermost cup lemma.** A planar matching of at least one point joins some point `a` to
 the next point `a + 1`. Equivalently, its diagram has an arc enclosing no other boundary point. -/
 theorem exists_val_apply_eq_val_add_one (x : PlanarMatching k) (hk : k ≠ 0) :
-    ∃ a : Fin k, (x.1.val a : ℕ) = a + 1 := by
-  have h1 : x.1.val ≠ 1 := fun h => x.1.apply_ne ⟨0, Nat.pos_of_ne_zero hk⟩ (by simp [h])
-  obtain ⟨a, ha, hin⟩ := x.2.exists_forall_apply_eq_self x.1.prop.involutive h1
+    ∃ a : Fin k, (x.val.val a : ℕ) = a + 1 := by
+  have h1 : x.val.val ≠ 1 := fun h => x.val.apply_ne ⟨0, Nat.pos_of_ne_zero hk⟩ (by simp [h])
+  obtain ⟨a, ha, hin⟩ := x.property.exists_forall_apply_eq_self x.val.prop.involutive h1
   refine ⟨a, le_antisymm ?_ (Fin.lt_def.mp ha)⟩
   -- A point strictly inside the innermost arc would be a fixed point of the matching.
   by_contra! h
-  have hlt : (a : ℕ) + 1 < k := h.trans (x.1.val a).isLt
-  exact x.1.apply_ne ⟨a + 1, hlt⟩ <| hin _ (Fin.lt_def.mpr (Nat.lt_succ_self _))
+  have hlt : (a : ℕ) + 1 < k := h.trans (x.val.val a).isLt
+  exact x.val.apply_ne ⟨a + 1, hlt⟩ <| hin _ (Fin.lt_def.mpr (Nat.lt_succ_self _))
     (Fin.lt_def.mpr h)
 
 /-! ### Rotation -/
@@ -128,7 +129,7 @@ theorem coe_rotate_symm_apply (x : PlanarMatching k) :
 
 /-- Rotation moves the arc `{a, x a}` to `{finRotate k a, finRotate k (x a)}`. -/
 theorem rotate_apply_val_apply (x : PlanarMatching k) (a : Fin k) :
-    (rotate k x).1.val (finRotate k a) = finRotate k (x.1.val a) := by
+    (rotate k x).val.val (finRotate k a) = finRotate k (x.val.val a) := by
   rw [coe_rotate_apply, PerfectMatching.congr_val_apply_apply]
 
 /-- The perfect matching underlying the `j`-fold rotation of a planar matching is its transport
@@ -169,9 +170,9 @@ theorem coe_reflect_apply (x : PlanarMatching k) :
 
 /-- Reflection moves the arc `{a, x a}` to `{Fin.rev a, Fin.rev (x a)}`. -/
 theorem reflect_apply_val_apply (x : PlanarMatching k) (a : Fin k) :
-    (reflect k x).1.val (Fin.rev a) = Fin.rev (x.1.val a) := by
+    (reflect k x).val.val (Fin.rev a) = Fin.rev (x.val.val a) := by
   rw [coe_reflect_apply]
-  exact PerfectMatching.congr_val_apply_apply Fin.revPerm x.1 a
+  exact PerfectMatching.congr_val_apply_apply Fin.revPerm x.val a
 
 /-- Reflection is an involution. -/
 @[simp]
@@ -245,8 +246,8 @@ theorem coe_cast_apply (h : k = k') (x : PlanarMatching k) :
 
 /-- Transport along `k = k'` moves the arc `{a, x a}` to `{Fin.cast h a, Fin.cast h (x a)}`. -/
 theorem cast_apply_val_apply (h : k = k') (x : PlanarMatching k) (a : Fin k) :
-    (cast h x).1.val (Fin.cast h a) = Fin.cast h (x.1.val a) :=
-  PerfectMatching.congr_val_apply_apply (finCongr h) x.1 a
+    (cast h x).val.val (Fin.cast h a) = Fin.cast h (x.val.val a) :=
+  PerfectMatching.congr_val_apply_apply (finCongr h) x.val a
 
 /-- Transport along an equality `k = k` is the identity. -/
 @[simp]
@@ -304,7 +305,7 @@ def nested (n : ℕ) : PlanarMatching (n + n) :=
 
 /-- The fully nested planar matching joins each point to its order reversal. -/
 @[simp]
-theorem nested_val (n : ℕ) : (nested n).1.val = Fin.revPerm := (rfl)
+theorem nested_val (n : ℕ) : (nested n).val.val = Fin.revPerm := (rfl)
 
 /-- There is a planar matching of `k` points exactly when `k` is even: an odd number of points
 has none, and an even number `j + j` has the nested one. -/
@@ -323,7 +324,7 @@ end PlanarMatching
 `{0, 2}, {1, 3}` is a perfect matching that is not. -/
 example :
     (∃ x : PlanarMatching 4,
-        x.1.val = (Equiv.swap (0 : Fin 4) 3 * Equiv.swap 1 2 : Perm (Fin 4))) ∧
+        x.val.val = (Equiv.swap (0 : Fin 4) 3 * Equiv.swap 1 2 : Perm (Fin 4))) ∧
       ∃ D : PerfectMatching (Fin 4),
         D.val = (Equiv.swap (0 : Fin 4) 2 * Equiv.swap 1 3 : Perm (Fin 4)) ∧
           ¬ D.val.IsNoncrossingMatching :=
@@ -334,8 +335,8 @@ example : Fintype.card (PlanarMatching 6) = 5 := by decide
 
 /-- Rotating the nested matching `{0, 3}, {1, 2}` of four points gives the matching
 `{1, 0}, {2, 3}` of consecutive points. -/
-example (x : PlanarMatching 4) (hx : x.1.val = swap 0 3 * swap 1 2) :
-    (PlanarMatching.rotate 4 x).1.val = swap 0 1 * swap 2 3 := by
+example (x : PlanarMatching 4) (hx : x.val.val = swap 0 3 * swap 1 2) :
+    (PlanarMatching.rotate 4 x).val.val = swap 0 1 * swap 2 3 := by
   rw [PlanarMatching.coe_rotate_apply, PerfectMatching.congr_val, hx]
   decide
 

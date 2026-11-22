@@ -62,7 +62,7 @@ theorem le_span_of_triangular (e : Basis (Fin n) ℝ E) {v : Fin n → E}
   -- Induction on the number `k` of leading coordinates that may be nonzero.
   suffices h : ∀ k ≤ n, ∀ x ∈ L, (∀ i : Fin n, k ≤ i → e.repr x i = 0) →
       x ∈ span ℤ (Set.range v) from
-    fun x hx ↦ h n le_rfl x hx fun i hi ↦ absurd i.2 (not_lt.2 hi)
+    fun x hx ↦ h n le_rfl x hx fun i hi ↦ absurd i.isLt (not_lt.2 hi)
   intro k
   induction k with
   | zero =>
@@ -107,7 +107,7 @@ private theorem exists_repr_generator (e : Basis (Fin n) ℝ E) (he : ∀ i, e i
     rcases ht1.eq_or_lt with h | h
     · exact Or.inl h
     · refine Or.inr ⟨fract e x, ⟨fract_mem_fundamentalDomain e x, ?_⟩, ?_⟩
-      · exact L.sub_mem hx (hspan (floor e x).2)
+      · exact L.sub_mem hx (hspan (floor e x).property)
       · dsimp only
         rw [repr_fract_apply, Int.fract_eq_self.2 ⟨ht0.le, h⟩]
   have h1 : (1 : ℝ) ∈ T :=

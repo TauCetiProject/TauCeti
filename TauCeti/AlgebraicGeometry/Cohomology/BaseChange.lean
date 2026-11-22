@@ -255,7 +255,7 @@ private lemma nonempty_linearEquiv_tensor_cohomology_one_structureModule [Module
     fun _ ↦ IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   have hUV' : g ⁻¹ᵁ U ⊔ g ⁻¹ᵁ V = ⊤ := by
     rw [← Scheme.Hom.preimage_sup, hUV, Scheme.Hom.preimage_top]
-  have hUVc : IsCompact ((U ⊓ V : X.Opens) : Set X) := hUc.inter_of_isOpen hVc U.2 V.2
+  have hUVc : IsCompact ((U ⊓ V : X.Opens) : Set X) := hUc.inter_of_isOpen hVc U.is_open' V.is_open'
   -- The vertical maps pull back sections along `g`.
   let σU : Γ(structureModule X, U) →ₗ[R] Γ(structureModule Y, g ⁻¹ᵁ U) :=
     sectionsBaseChange H (W := U) (W' := g ⁻¹ᵁ U) le_rfl

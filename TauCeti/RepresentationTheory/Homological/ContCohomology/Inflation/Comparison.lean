@@ -83,7 +83,7 @@ theorem ofDiscreteModulePair_quotientMk_subtype :
   simp only [cast_eq]
   -- The transport is now gone. Express the dictionary value in the module carrier so
   -- ofDiscreteModuleQuotient_apply matches, without unfolding the quotient construction.
-  change ((ofDiscreteModuleQuotient G M N m).1 : M) = (m : M)
+  change ((ofDiscreteModuleQuotient G M N m).val : M) = (m : M)
   exact ofDiscreteModuleQuotient_apply G M N m
 
 variable [IsTopologicalGroup G]

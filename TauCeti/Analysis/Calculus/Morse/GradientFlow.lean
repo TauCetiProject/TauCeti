@@ -9,12 +9,15 @@ public import Mathlib.Dynamics.Flow
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.ODE.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
--- Private: monotonicity, constant-curve recognition, and the fundamental theorem of calculus are
--- used only in proofs; no declaration below exposes their APIs.
+-- Private: monotonicity, constant-curve recognition, time reparametrization, the fundamental
+-- theorem of calculus and the gradient of `-f` are used only in proofs; no declaration below
+-- exposes their APIs.
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.ODE.Transform
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.Deriv.Slope
+import TauCeti.Analysis.Calculus.Gradient
 
 /-!
 # Negative gradient trajectories
@@ -50,6 +53,8 @@ route to Morse homology.
 * `IsIntegralCurveOn.antitoneOn_comp_neg_gradient` and
   `IsIntegralCurveOn.strictAntiOn_comp_neg_gradient`: Lyapunov monotonicity and strict
   descent away from critical points.
+* `IsIntegralCurve.exists_pos_forall_dist_lt_mem_Ioo`: near a point which is not critical, a
+  global trajectory passes only at nearby times.
 * `IsIntegralCurveOn.intervalIntegrable_norm_gradient_sq`: finite energy on compact time
   intervals.
 * `IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub` and
@@ -58,6 +63,9 @@ route to Morse homology.
   intervals.
 * `IsIntegralCurveOn.mul_sq_le_sub_of_le_norm_gradient`: a lower bound `κ` on the speed during a
   time interval of length `ℓ` makes `f` drop by at least `ℓ κ²`.
+* `IsIntegralCurveOn.comp_neg_neg_gradient` and `IsIntegralCurve.comp_neg_neg_gradient`:
+  reversing time turns a negative gradient trajectory of `f` on `s` (or for all time) into one
+  of `-f` on `-s` (or for all time).
 * `IsIntegralCurve.gradient_eq_zero_of_eventually_const_value`: a trajectory on which
   `f` is eventually constant passes through critical points.
 * `IsIntegralCurve.gradient_eq_zero_of_periodic` and
@@ -83,7 +91,7 @@ route to Morse homology.
 public section
 
 open Filter Function InnerProductSpace MeasureTheory Set
-open scoped Gradient Interval Topology
+open scoped Gradient Interval Pointwise Topology
 
 section
 
@@ -211,6 +219,13 @@ theorem mul_sq_le_sub_of_le_norm_gradient {κ : ℝ} (hab : a ≤ b)
     (intervalIntegrable_norm_gradient_sq a b (hγ.mono hsub) hf) fun t ht ↦
       pow_le_pow_left₀ hκ (hle t (by rwa [uIcc_of_le hab])) 2
 
+/-- **Time reversal.** Reversing time turns a negative gradient trajectory of `f` on `s` into a
+negative gradient trajectory of `-f` on `-s`. For instance a trajectory on `(-∞, a]` becomes one
+on `[-a, ∞)`, by `Set.neg_Iic`. -/
+theorem comp_neg_neg_gradient (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) s) :
+    IsIntegralCurveOn (fun t ↦ γ (-t)) (fun _ x ↦ -∇ (-f) x) (-s) := by
+  convert hγ.comp_mul (-1) using 1 <;> ext <;> simp
+
 end IsIntegralCurveOn
 
 namespace IsIntegralCurve
@@ -239,6 +254,42 @@ theorem strictAnti_comp_neg_gradient
     (fun t ↦ hasDerivAt_comp_neg_gradient hγ
       (by_contra fun h ↦ hcrit t (gradient_eq_zero_of_not_differentiableAt h)))
     fun t ↦ neg_lt_zero.mpr (sq_pos_of_ne_zero (norm_ne_zero_iff.mpr (hcrit t)))
+
+/-- **Near a regular point, a trajectory passes only at nearby times.** If `γ s₀` is not a
+critical point of `f`, then for every `δ > 0` there is a ball around `γ s₀` that the global
+negative gradient trajectory `γ` meets only at times within `δ` of `s₀`. The value of `f`
+decreases along `γ`, with negative derivative at `s₀`, and the ball is chosen so small that `f`
+stays strictly between its values at two times within `δ` before and after `s₀`. -/
+theorem exists_pos_forall_dist_lt_mem_Ioo
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ∀ t, DifferentiableAt ℝ f (γ t))
+    {s₀ : ℝ} (hcrit : ∇ f (γ s₀) ≠ 0) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ r > 0, ∀ s, dist (γ s) (γ s₀) < r → s ∈ Ioo (s₀ - δ) (s₀ + δ) := by
+  have hanti := antitone_comp_neg_gradient hγ hf
+  -- `-(f ∘ γ)` has positive derivative at `s₀`, so `f ∘ γ` drops strictly on both sides of `s₀`.
+  have hd := (hasDerivAt_comp_neg_gradient hγ (hf s₀)).neg
+  have hpos : 0 < -(-‖∇ f (γ s₀)‖ ^ 2) := by
+    rw [neg_neg]; exact pow_pos (norm_pos_iff.2 hcrit) 2
+  obtain ⟨t₁, ht₁, ht₁I⟩ := ((hd.hasDerivWithinAt.eventually_nhdsLT_lt_of_pos hpos).and
+    (Ioo_mem_nhdsLT (by linarith : s₀ - δ < s₀))).exists
+  obtain ⟨t₂, ht₂, ht₂I⟩ := ((hd.hasDerivWithinAt.eventually_nhdsGT_lt_of_pos hpos).and
+    (Ioo_mem_nhdsGT (by linarith : s₀ < s₀ + δ))).exists
+  simp only [Pi.neg_apply, Function.comp_apply, neg_lt_neg_iff] at ht₁ ht₂
+  -- Points close to `γ s₀` have values of `f` strictly between those at `t₁` and `t₂`.
+  set ε := min (f (γ t₁) - f (γ s₀)) (f (γ s₀) - f (γ t₂))
+  have hε0 : 0 < ε := lt_min (by linarith) (by linarith)
+  obtain ⟨r, hr, hfr⟩ := Metric.continuousAt_iff.1 (hf s₀).continuousAt ε hε0
+  refine ⟨r, hr, fun s hs ↦ ?_⟩
+  have hfs := hfr hs
+  rw [Real.dist_eq, abs_lt] at hfs
+  constructor
+  · by_contra h
+    have := hanti (show s ≤ t₁ by linarith [ht₁I.1])
+    simp only [Function.comp_apply] at this
+    linarith [min_le_left (f (γ t₁) - f (γ s₀)) (f (γ s₀) - f (γ t₂))]
+  · by_contra h
+    have := hanti (show t₂ ≤ s by linarith [ht₂I.2])
+    simp only [Function.comp_apply] at this
+    linarith [min_le_right (f (γ t₁) - f (γ s₀)) (f (γ s₀) - f (γ t₂))]
 
 /-- **Energy identity for a global negative gradient trajectory.**  The drop in `f` between two
 times equals the integral of the squared norm of its gradient along the trajectory. -/
@@ -314,6 +365,13 @@ theorem eq_const_of_tendsto (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
   funext t
   rw [hconst t]
   exact tendsto_nhds_unique tendsto_const_nhds (htop.congr hconst)
+
+/-- **Time reversal.** Reversing time turns a global negative gradient trajectory of `f` into a
+global negative gradient trajectory of `-f`. -/
+theorem comp_neg_neg_gradient (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) :
+    IsIntegralCurve (fun t ↦ γ (-t)) (fun _ x ↦ -∇ (-f) x) := by
+  rw [← isIntegralCurveOn_univ] at *
+  simpa using hγ.comp_neg_neg_gradient
 
 end IsIntegralCurve
 
