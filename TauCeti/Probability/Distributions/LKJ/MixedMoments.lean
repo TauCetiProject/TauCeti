@@ -414,10 +414,6 @@ private theorem integral_triangle_lkjMeasure_three {η : ℝ} (hη : 0 < η) :
   let μ : strictLowerTriangle 3 → Measure ℝ := fun ij ↦
     (betaMeasure (lkjPartialCorrelationShape 3 η ij)
       (lkjPartialCorrelationShape 3 η ij)).map (fun x ↦ -1 + 2 * x)
-  let _ (ij : strictLowerTriangle 3) : IsProbabilityMeasure (μ ij) :=
-    let _ := isProbabilityMeasureBeta (lkjPartialCorrelationShape_pos hη ij)
-      (lkjPartialCorrelationShape_pos hη ij)
-    (Measure.isProbabilityMeasure_map_iff (by fun_prop)).2 inferInstance
   let f : Matrix (Fin 3) (Fin 3) ℝ → ℝ := fun M ↦ M 2 1 * M 2 0 * M 1 0
   have hf : Continuous f := by fun_prop
   rw [← integral_map (f := f) measurable_subtypeVal.aemeasurable hf.aestronglyMeasurable,
@@ -494,25 +490,31 @@ private theorem integral_triangle_lkjMeasure_three {η : ℝ} (hη : 0 < η) :
   have hzero :
       (∫ z, ∏ ij : strictLowerTriangle 3, z ij ^ 1 * (1 - z ij ^ 2) ^ r₂ ij ∂Measure.pi μ) =
         0 := by
-    rw [integral_fintype_prod_eq_prod (fun ij x ↦ x ^ 1 * (1 - x ^ 2) ^ r₂ ij)]
-    refine Finset.prod_eq_zero (Finset.mem_univ z21) ?_
-    simp only [r₂, ↓reduceIte]
-    rw [integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
-      (lkjPartialCorrelationShape_pos hη z21)
-      (by simpa using lkjPartialCorrelationShape_pos hη z21) 1]
-    simp
-  rw [hzero, add_zero]
-  have hsq :
-      (∫ z, ∏ ij : strictLowerTriangle 3, z ij ^ n₁ ij * (1 - z ij ^ 2) ^ (0 : ℝ) ∂Measure.pi μ) =
-        (∫ x, x ^ 2 ∂μ z10) * (∫ x, x ^ 2 ∂μ z20) * (∫ _ : ℝ, (1 : ℝ) ∂μ z21) := by
-    simp_rw [Real.rpow_zero, mul_one]
-    rw [integral_fintype_prod_eq_prod (fun ij x ↦ x ^ n₁ ij),
-      huniv, Finset.prod_insert (by decide), Finset.prod_insert (by decide), Finset.prod_singleton]
-    simp [n₁, show z10 ≠ z21 by decide, show z20 ≠ z21 by decide]
-  rw [hsq, integral_sq_map_centered_betaMeasure (lkjPartialCorrelationShape_pos hη z10),
-    integral_sq_map_centered_betaMeasure (lkjPartialCorrelationShape_pos hη z20),
-    integral_const, probReal_univ, smul_eq_mul, mul_one, mul_one,
-    lkjPartialCorrelationShape_eq, lkjPartialCorrelationShape_eq]
+    rw [integral_prod_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
+      (lkjPartialCorrelationShape 3 η) r₂ (fun _ ↦ 1) (lkjPartialCorrelationShape_pos hη)
+      fun ij ↦ by
+        have hpos := lkjPartialCorrelationShape_pos hη ij
+        dsimp [r₂]
+        split_ifs <;> positivity]
+    exact Finset.prod_eq_zero (Finset.mem_univ z21) (by simp)
+  rw [hzero, add_zero, integral_prod_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
+    (lkjPartialCorrelationShape 3 η) (fun _ ↦ (0 : ℝ)) n₁ (lkjPartialCorrelationShape_pos hη)
+    fun ij ↦ by simpa using lkjPartialCorrelationShape_pos hη ij,
+    huniv, Finset.prod_insert (by decide), Finset.prod_insert (by decide), Finset.prod_singleton]
+  have hterm (ij : strictLowerTriangle 3) :
+      beta (((2 : ℝ) + 1) / 2) (lkjPartialCorrelationShape 3 η ij) /
+          beta (1 / 2) (lkjPartialCorrelationShape 3 η ij) =
+        1 / (2 * lkjPartialCorrelationShape 3 η ij + 1) := by
+    have ha := lkjPartialCorrelationShape_pos hη ij
+    have hthree : ((2 : ℝ) + 1) / 2 = 1 / 2 + 1 := by norm_num
+    rw [hthree, beta_add_one_left (by norm_num) (by positivity),
+      mul_div_cancel_right₀ _ (beta_pos (by norm_num) ha).ne']
+    field_simp
+    ring
+  simp only [n₁, show z10 ≠ z21 by decide, show z20 ≠ z21 by decide, even_two, Even.zero,
+    ↓reduceIte, add_zero, Nat.cast_ofNat, Nat.cast_zero, zero_add]
+  rw [div_self (beta_pos (by norm_num) (lkjPartialCorrelationShape_pos hη z21)).ne',
+    hterm z10, hterm z20, lkjPartialCorrelationShape_eq, lkjPartialCorrelationShape_eq]
   norm_num [z10, z20]
   field_simp
   ring
