@@ -401,9 +401,10 @@ theorem jacobiBracket_eq_apply_reebVectorField_mul_jacobiBracket (hV : CMDiff �
         α.jacobiBracket (fun y ↦ α.val y ![V y]) (fun y ↦ α.val y ![W y]) x := by
   rw [← hD.apply_mlieBracket_contactVectorField hV hW hαD,
     ← hD.apply_mlieBracket_contactVectorField hV hW hβD]
-  exact DFunLike.congr_fun (apply_eq_smul_of_kerDistribution_le
-    (hαD.self_of_nhds.trans hβD.self_of_nhds.symm).le (apply_reebVectorField_of_isContactFormAt
-      (hD.isContactFormAt_of_eventually_kerDistribution_eq (by simp) hαD))) _
+  simpa only [ContinuousAlternatingMap.smul_apply, smul_eq_mul] using
+    DFunLike.congr_fun (apply_eq_smul_of_kerDistribution_le
+      (hαD.self_of_nhds.trans hβD.self_of_nhds.symm).le (apply_reebVectorField_of_isContactFormAt
+        (hD.isContactFormAt_of_eventually_kerDistribution_eq (by simp) hαD))) _
 
 /-- **The bracket of sections of the contact line is determined by the local Jacobi brackets.** A
 vector field `Z` represents the bracket `[[X_V, X_W]]` of the sections `[V]` and `[W]` of the
