@@ -42,6 +42,8 @@ apply to complex manifolds. Two properties tie it to the complex structure:
 * `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold_apply`,
   `TauCeti.SmoothAlmostComplexStructure.toEndomorphism_ofComplexManifold`: it acts on each tangent
   space as multiplication by `i`.
+* `SmoothAlmostComplexStructure.orientation_eq_orientationAt_of_apply_one_eq_ofComplexManifold`:
+  on a Riemann surface with its canonical orientation, every frame `(e, i e)` is positive.
 * `TauCeti.SmoothAlmostComplexStructure.inTangentCoordinates_ofComplexManifold`: it is
   multiplication by `i` in the tangent coordinates of any chart.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_ofComplexManifold_self`: on a complex normed
@@ -93,6 +95,26 @@ space. -/
 @[simp]
 theorem ofComplexManifold_apply (x : M) (v : E) : ofComplexManifold E M x v = Complex.I • v :=
   ofTangentCoordChangeISMul_apply (fun h v ↦ tangentCoordChange_smul ℝ (𝕜' := ℂ) h _ v) x v
+
+open Module in
+/-- **A Riemann surface is oriented by its complex frames.** For the canonical orientation of a
+Riemann surface `N`, reindexed from `Fin (2 * finrank ℂ ℂ)` to `Fin 2`, every frame `(e, i e)` of
+a tangent plane is positive: in the basis `(1, i)` of the tangent plane `ℂ`, which induces the
+canonical orientation, it has determinant `|e|² > 0`. -/
+theorem orientation_eq_orientationAt_of_apply_one_eq_ofComplexManifold {N : Type*}
+    [TopologicalSpace N] [ChartedSpace ℂ N] [IsManifold 𝓘(ℂ, ℂ) ∞ N] (h : 2 * finrank ℂ ℂ = 2)
+    (c : N) (b : Basis (Fin 2) ℝ (TangentSpace 𝓘(ℝ, ℂ) c))
+    (hb : b 1 = ofComplexManifold ℂ N c (b 0)) :
+    b.orientation = ((complexManifoldOrientation ℂ N).reindex (finCongr h)).orientationAt c := by
+  rw [orientationAt_reindex_complexManifoldOrientation_complex]
+  -- The tangent plane `TangentSpace 𝓘(ℝ, ℂ) c` is `ℂ` itself.
+  let b' : Basis (Fin 2) ℝ ℂ := b
+  have hb' : b' 1 = Complex.I * b' 0 := hb.trans (ofComplexManifold_apply (M := N) c (b' 0))
+  change b'.orientation = Complex.orientation
+  rw [Complex.orientation, eq_comm, Basis.orientation_eq_iff_det_pos, Basis.det_apply,
+    Matrix.det_fin_two]
+  simp only [Basis.toMatrix_apply, Complex.coe_basisOneI_repr, hb']
+  simpa [Complex.normSq_apply] using Complex.normSq_pos.2 (b'.ne_zero 0)
 
 /-- The real differential of an inverse complex chart intertwines multiplication by `i` with
 its induced almost complex structure. -/

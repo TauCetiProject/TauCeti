@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Degree.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 public import TauCeti.Geometry.Manifold.Orientation.Basic
-public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 
@@ -40,11 +39,6 @@ is such a point, so the signed count `degreeAtRegularValue` of the fibre over `y
 cardinality (`TauCeti.degreeAtRegularValue_eq_ncard_of_isPseudoholomorphicAt`): a pseudoholomorphic
 map covers its regular values with no cancellation of signs.
 
-On a Riemann surface with the canonical orientation of its complex structure, every frame
-`(e, i e)` is positive
-(`SmoothAlmostComplexStructure.orientation_eq_orientationAt_of_apply_one_eq_ofComplexManifold`),
-so these results apply to holomorphic curves.
-
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
@@ -56,7 +50,7 @@ public section
 noncomputable section
 
 open Module
-open scoped ContDiff Manifold TauCeti.ComplexManifold
+open scoped ContDiff
 
 namespace TauCeti
 
@@ -123,25 +117,6 @@ theorem integralTopForm_pos_of_forall_nonneg
   exact integralTopForm_pos o hη hc
     (fun c b hb ↦ j.apply_basis_nonneg_of_forall_nonneg (ho c) (hnn c) b hb)
     ⟨c₀, b₀, ho c₀ b₀ (by rw [hb₀]; simp), hb₀ ▸ hpos⟩
-
-/-- **A Riemann surface is oriented by its complex frames.** For the canonical orientation of a
-Riemann surface `N`, reindexed from `Fin (2 * finrank ℂ ℂ)` to `Fin 2`, every frame `(e, i e)` of
-a tangent plane is positive: in the basis `(1, i)` of the tangent plane `ℂ`, which induces the
-canonical orientation, it has determinant `|e|² > 0`. -/
-theorem orientation_eq_orientationAt_of_apply_one_eq_ofComplexManifold {N : Type*}
-    [TopologicalSpace N] [ChartedSpace ℂ N] [IsManifold 𝓘(ℂ, ℂ) ∞ N] (h : 2 * finrank ℂ ℂ = 2)
-    (c : N) (b : Basis (Fin 2) ℝ (TangentSpace 𝓘(ℝ, ℂ) c))
-    (hb : b 1 = ofComplexManifold ℂ N c (b 0)) :
-    b.orientation = ((complexManifoldOrientation ℂ N).reindex (finCongr h)).orientationAt c := by
-  rw [orientationAt_reindex_complexManifoldOrientation_complex]
-  -- The tangent plane `TangentSpace 𝓘(ℝ, ℂ) c` is `ℂ` itself.
-  let b' : Basis (Fin 2) ℝ ℂ := b
-  have hb' : b' 1 = Complex.I * b' 0 := hb.trans (ofComplexManifold_apply (M := N) c (b' 0))
-  change b'.orientation = Complex.orientation
-  rw [Complex.orientation, eq_comm, Basis.orientation_eq_iff_det_pos, Basis.det_apply,
-    Matrix.det_fin_two]
-  simp only [Basis.toMatrix_apply, Complex.coe_basisOneI_repr, hb']
-  simpa [Complex.normSq_apply] using Complex.normSq_pos.2 (b'.ne_zero 0)
 
 end SmoothAlmostComplexStructure
 

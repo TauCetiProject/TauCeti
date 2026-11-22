@@ -22,15 +22,16 @@ sends the direction `∂_(inl j)` of the real part of `z_j` to the direction `�
 imaginary part, and `∂_(inr j)` to `-∂_(inl j)` (`TauCeti.torusAlmostComplexStructure_apply_inl`,
 `TauCeti.torusAlmostComplexStructure_apply_inr`). Since `π` pulls the standard symplectic form
 `ω_T` back to the standard form of `ι → ℂ`, which is compatible with multiplication by `i`, the
-structure is compatible with `ω_T` (`TauCeti.compatible_torusSymplecticForm`).
+structure is compatible with `ω_T` (`TauCeti.compatible_torusAlmostComplexStructure`).
 
-A pseudoholomorphic sphere in `T` is constant
-(`TauCeti.apply_eq_of_isPseudoholomorphic_torusAlmostComplexStructure`). More generally, let `C` be
-a compact connected simply connected boundaryless surface with an almost complex structure `j`,
+A pseudoholomorphic sphere in `T`, for any almost complex structure tamed by `ω_T`, is constant
+(`TauCeti.apply_eq_of_isPseudoholomorphic_of_tames_torusSymplecticForm`). More generally, let `C`
+be a compact connected simply connected boundaryless surface with an almost complex structure `j`,
 oriented so that the frames `(e, j e)` are positive, and let `w : C → T` be smooth and
-pseudoholomorphic. Its energy is its symplectic area `∫_C w^* ω_T`, which vanishes because `C` is
-simply connected (`TauCeti.integralTopForm_mpullback_torusSymplecticForm_eq_zero`), and a map of
-zero energy for a tame structure is constant. This is the torus half of the identification of the
+pseudoholomorphic for an `ω_T`-tame structure. Its energy is its symplectic area `∫_C w^* ω_T`,
+which vanishes because `C` is simply connected
+(`TauCeti.integralTopForm_mpullback_torusSymplecticForm_eq_zero`), and a map of zero energy for a
+tame structure is constant. This is the torus half of the identification of the
 pseudoholomorphic spheres of `S²(a) × T` for the product structure, in Gromov's proof of the
 nonsqueezing theorem.
 
@@ -48,9 +49,10 @@ nonsqueezing theorem.
 * `TauCeti.isPseudoholomorphic_complexPiTorusCover`,
   `TauCeti.eq_torusAlmostComplexStructure_iff_isPseudoholomorphic`: the covering map is
   pseudoholomorphic, and this characterizes the structure.
-* `TauCeti.compatible_torusSymplecticForm`: the structure is compatible with `ω_T`.
-* `TauCeti.apply_eq_of_isPseudoholomorphic_torusAlmostComplexStructure`: pseudoholomorphic maps
-  from a compact connected simply connected surface to the torus are constant.
+* `TauCeti.compatible_torusAlmostComplexStructure`: the structure is compatible with `ω_T`.
+* `TauCeti.apply_eq_of_isPseudoholomorphic_of_tames_torusSymplecticForm`: pseudoholomorphic maps
+  from a compact connected simply connected surface to the torus, for an `ω_T`-tame structure, are
+  constant.
 
 ## References
 
@@ -161,7 +163,7 @@ theorem eq_torusAlmostComplexStructure_iff_isPseudoholomorphic
 /-- **The standard structure of the torus is compatible with its standard symplectic form.** The
 covering map pulls `ω_T` back to the standard form of `ι → ℂ`, which is compatible with
 multiplication by `i`. -/
-theorem compatible_torusSymplecticForm :
+theorem compatible_torusAlmostComplexStructure :
     (torusSymplecticForm p).Compatible (torusAlmostComplexStructure p) := by
   rw [torusAlmostComplexStructure, SmoothAlmostComplexStructure.compatible_descend_iff,
     mpullback_complexPiTorusCover_torusSymplecticForm]
@@ -174,22 +176,24 @@ variable {E H C : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [IsManifold I ∞ C] [BoundarylessManifold I C] [T2Space C] [CompactSpace C]
   [SimplyConnectedSpace C] {j : SmoothAlmostComplexStructure I C}
   {o : Manifold.Orientation I C (Fin 2)} {w : C → ∀ i, AddCircle (p i)}
+  {K : SmoothAlmostComplexStructure (ModelWithCorners.pi fun _ : ι ⊕ ι ↦ 𝓘(ℝ))
+    (∀ i, AddCircle (p i))}
 
 /-- **Pseudoholomorphic spheres in the torus are constant.** Let `C` be a compact simply connected
 boundaryless surface with an almost complex structure `j`, oriented so that the frames `(e, j e)`
-are positive. A smooth map `w : C → T` that is pseudoholomorphic for the standard structure of the
-torus is constant: its energy is its symplectic area `∫_C w^* ω_T`, which vanishes since `C` is
-simply connected. -/
-theorem apply_eq_of_isPseudoholomorphic_torusAlmostComplexStructure
+are positive, and let `K` be an almost complex structure on the torus tamed by `ω_T`, such as the
+standard one (`TauCeti.compatible_torusAlmostComplexStructure`). A smooth map `w : C → T` that is
+pseudoholomorphic for `K` is constant: its energy is its symplectic area `∫_C w^* ω_T`, which
+vanishes since `C` is simply connected. -/
+theorem apply_eq_of_isPseudoholomorphic_of_tames_torusSymplecticForm
     (ho : ∀ c (b : Module.Basis (Fin 2) ℝ (TangentSpace I c)), b 1 = j c (b 0) →
       b.orientation = o.orientationAt c)
     (hw : ContMDiff I (ModelWithCorners.pi fun _ : ι ⊕ ι ↦ 𝓘(ℝ)) ∞ w)
-    (hhol : IsPseudoholomorphic j (torusAlmostComplexStructure p) w) (c c' : C) :
+    (hK : (torusSymplecticForm p).Tames K) (hhol : IsPseudoholomorphic j K w) (c c' : C) :
     w c = w c' := by
-  have h : (torusSymplecticForm p).energy (torusAlmostComplexStructure p) j o w = 0 := by
+  have h : (torusSymplecticForm p).energy K j o w = 0 := by
     rw [SmoothTwoForm.energy_eq_integralTopForm_mpullback (isPseudoholomorphic_iff.1 hhol),
       ← integralTopForm_mpullback_torusSymplecticForm_eq_zero o hw, SmoothForm.coe_mpullback]
-  exact (compatible_torusSymplecticForm p).tames.apply_eq_of_energy_eq_zero ho
-    (hw.of_le (by simp)) h c c'
+  exact hK.apply_eq_of_energy_eq_zero ho (hw.of_le (by simp)) h c c'
 
 end TauCeti

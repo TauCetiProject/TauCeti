@@ -40,8 +40,9 @@ and a monodromy map this is precisely the vertical seam equation.
 The smooth product `TauCeti.SmoothAlmostComplexStructure.prod` of two smooth almost complex
 structures is the block structure with a vertical block independent of the domain point. It is
 compatible with the product of two compatible forms
-(`TauCeti.SmoothAlmostComplexStructure.compatible_prod`), and a map into the product is
-pseudoholomorphic for it exactly when both of its components are
+(`TauCeti.SmoothAlmostComplexStructure.compatible_prod`), it is the finite-regularity product at
+every finite order (`TauCeti.SmoothAlmostComplexStructure.prod_toContMDiff`), and a map into the
+product is pseudoholomorphic for it exactly when both of its components are
 (`TauCeti.SmoothAlmostComplexStructure.isPseudoholomorphicAt_prod_iff`): the two projections are
 pseudoholomorphic, and the differential of a map into a product is the pair of the differentials
 of its components.
@@ -556,6 +557,14 @@ theorem prod_apply (p : P × M) (v : TangentSpace (I.prod I') p) :
       (J p.1 (Manifold.tangentSpaceProdEquiv p v).1,
         L p.2 (Manifold.tangentSpaceProdEquiv p v).2) := by
   simp only [prod, prodFamily_apply, almostComplexStructureAt_apply]
+
+/-- Viewing the smooth product at finite regularity gives the finite-regularity product. -/
+@[simp]
+theorem prod_toContMDiff (n : ℕ∞) :
+    (prod J L).toContMDiff n =
+      ContMDiffAlmostComplexStructure.prod (J.toContMDiff n) (L.toContMDiff n) := by
+  ext p v
+  simp only [toContMDiff_apply, prod_apply, ContMDiffAlmostComplexStructure.prod_apply]
 
 variable {J L}
 
