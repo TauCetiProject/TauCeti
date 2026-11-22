@@ -33,12 +33,21 @@ inclusion on degree-zero homology.  For a path-connected fibre the monodromy act
 `H₀(F)`, so `wangδ` is surjective onto `H₀(F)` (`TauCeti.MappingTorus.epi_wangδ_zero`).  With
 coefficients in a commutative ring `k`, exactness identifies the cokernel of `𝟙 - φ_*` on
 `Hₙ(F)` with the image of the fibre in `Hₙ(T_φ)` (`TauCeti.MappingTorus.wangCokernelEquiv`).
+When the Wang connecting morphism `Hₙ₊₁(T_φ) ⟶ Hₙ(F)` is onto, this gives the Wang short exact
+sequence `0 ⟶ Hₙ₊₁(F) ⧸ range (𝟙 - φ_*) ⟶ Hₙ₊₁(T_φ) ⟶ Hₙ(F) ⟶ 0`
+(`TauCeti.MappingTorus.wangCokernelShortComplex_shortExact`).
 
 When `𝟙 - φ_*` is a monomorphism on `Hₙ(F)`, the Wang connecting morphism `Hₙ₊₁(T_φ) ⟶ Hₙ(F)`
 vanishes (`TauCeti.MappingTorus.wangδ_eq_zero`), so the fibre inclusion is an epimorphism on
 `Hₙ₊₁` (`TauCeti.MappingTorus.epi_homologyMap_fibreInclusionChainMap_succ`). If moreover `φ_*` is
 the identity on `Hₙ₊₁(F)`, the fibre inclusion is an isomorphism `Hₙ₊₁(F) ≅ Hₙ₊₁(T_φ)`
 (`TauCeti.MappingTorus.isIso_homologyMap_fibreInclusionChainMap_succ`).
+
+The Wang connecting morphism is natural for maps of mapping tori: if `g : F → G` satisfies
+`g ∘ φ = ψ ∘ g`, then `g × 𝟙ℝ` and the induced map `T_φ → T_ψ` form a morphism of the short exact
+sequences of the infinite cyclic covers (`TauCeti.MappingTorus.cyclicCoverShortComplexMap`), so
+`wangδ` commutes with the induced maps on homology (`TauCeti.MappingTorus.wangδ_naturality`, and
+`TauCeti.MappingTorus.singularHomologyMap_map_comp_wangδ` for the maps on singular homology).
 -/
 
 public section
@@ -278,6 +287,120 @@ theorem isIso_homologyMap_fibreInclusionChainMap_succ (n : ℕ)
   have := mono_homologyMap_fibreInclusionChainMap φ R (n + 1) hφ
   isIso_of_mono_of_epi _
 
+section Naturality
+
+/-! ### Naturality of the Wang connecting morphism -/
+
+variable {G : Type w} [TopologicalSpace G] (ψ : G ≃ₜ G) (g : C(F, G))
+  (h : Function.Semiconj g φ ψ)
+
+/-- The deck transformations of two mapping tori are intertwined by `g × 𝟙ℝ` on singular chains of
+the cylinders, for a map `g` intertwining the monodromies. -/
+@[reassoc]
+lemma deckChainMap_comp_map_prodMap (h : Function.Semiconj g φ ψ) :
+    deckChainMap φ R ≫ ((singularChainComplexFunctor A).obj R).map
+        (TopCat.ofHom (g.prodMap (ContinuousMap.id ℝ))) =
+      ((singularChainComplexFunctor A).obj R).map
+          (TopCat.ofHom (g.prodMap (ContinuousMap.id ℝ))) ≫ deckChainMap ψ R := by
+  rw [deckChainMap_def, deckChainMap_def, ← Functor.map_comp, ← Functor.map_comp]
+  congr 1
+  ext p
+  · simpa using h p.1
+  · simp
+
+/-- The covering maps of two mapping tori are intertwined by `g × 𝟙ℝ` on the cylinders and the
+induced map of mapping tori, on singular chains. -/
+@[reassoc]
+lemma coverChainMap_comp_mappingTorusChainMap :
+    coverChainMap φ R ≫ mappingTorusChainMap φ R ψ g h =
+      ((singularChainComplexFunctor A).obj R).map
+          (TopCat.ofHom (g.prodMap (ContinuousMap.id ℝ))) ≫ coverChainMap ψ R := by
+  rw [coverChainMap_def, coverChainMap_def, mappingTorusChainMap_def, ← Functor.map_comp,
+    ← Functor.map_comp]
+  congr 1
+  ext p
+  simp [coverMap_apply]
+
+/-- The morphism of short exact sequences of chains of the infinite cyclic covers induced by a map
+`g` intertwining the monodromies: `g × 𝟙ℝ` on the cylinders and the induced map of mapping tori. -/
+def cyclicCoverShortComplexMap : cyclicCoverShortComplex φ R ⟶ cyclicCoverShortComplex ψ R where
+  τ₁ := ((singularChainComplexFunctor A).obj R).map
+    (TopCat.ofHom (g.prodMap (ContinuousMap.id ℝ)))
+  τ₂ := ((singularChainComplexFunctor A).obj R).map
+    (TopCat.ofHom (g.prodMap (ContinuousMap.id ℝ)))
+  τ₃ := mappingTorusChainMap φ R ψ g h
+  comm₁₂ := by
+    rw [Preadditive.comp_sub, Preadditive.sub_comp, Category.comp_id, Category.id_comp,
+      deckChainMap_comp_map_prodMap φ R ψ g h]
+  comm₂₃ := (coverChainMap_comp_mappingTorusChainMap φ R ψ g h).symm
+
+/-- On the chains of the source cylinder, the morphism of infinite cyclic cover sequences is
+`g × 𝟙ℝ`. -/
+@[simp]
+lemma cyclicCoverShortComplexMap_τ₁ :
+    (cyclicCoverShortComplexMap φ R ψ g h).τ₁ = ((singularChainComplexFunctor A).obj R).map
+      (TopCat.ofHom (g.prodMap (ContinuousMap.id ℝ))) :=
+  (rfl)
+
+/-- On the chains of the middle cylinder, the morphism of infinite cyclic cover sequences is
+`g × 𝟙ℝ`. -/
+@[simp]
+lemma cyclicCoverShortComplexMap_τ₂ :
+    (cyclicCoverShortComplexMap φ R ψ g h).τ₂ = ((singularChainComplexFunctor A).obj R).map
+      (TopCat.ofHom (g.prodMap (ContinuousMap.id ℝ))) :=
+  (rfl)
+
+/-- On the chains of the mapping tori, the morphism of infinite cyclic cover sequences is the chain
+map induced by the map of mapping tori. -/
+@[simp]
+lemma cyclicCoverShortComplexMap_τ₃ :
+    (cyclicCoverShortComplexMap φ R ψ g h).τ₃ = mappingTorusChainMap φ R ψ g h :=
+  (rfl)
+
+/-- **Naturality of the Wang connecting morphism.** For a map `g : F → G` intertwining the
+monodromies, `g ∘ φ = ψ ∘ g`, the Wang connecting morphisms `Hₙ₊₁(T_φ) ⟶ Hₙ(F)` and
+`Hₙ₊₁(T_ψ) ⟶ Hₙ(G)` commute with the induced maps `Hₙ₊₁(T_φ) ⟶ Hₙ₊₁(T_ψ)` and
+`Hₙ(F) ⟶ Hₙ(G)`. -/
+@[reassoc]
+theorem wangδ_naturality (n : ℕ) :
+    wangδ φ R n ≫ homologyMap (fibreChainMap R g) n =
+      homologyMap (mappingTorusChainMap φ R ψ g h) (n + 1) ≫ wangδ ψ R n := by
+  have hδ := HomologicalComplex.HomologySequence.δ_naturality
+    (cyclicCoverShortComplexMap φ R ψ g h) (cyclicCoverShortComplex_shortExact φ R)
+    (cyclicCoverShortComplex_shortExact ψ R) (n + 1) n (by simp)
+  -- The projections of the cylinders onto the fibres intertwine `g × 𝟙ℝ` with `g`.
+  have hfst : ((singularChainComplexFunctor A).obj R).map
+        (TopCat.ofHom (ContinuousMap.HomotopyEquiv.prodZeroSection F ℝ).symm.toFun) ≫
+          fibreChainMap R g =
+      ((singularChainComplexFunctor A).obj R).map
+          (TopCat.ofHom (g.prodMap (ContinuousMap.id ℝ))) ≫
+        ((singularChainComplexFunctor A).obj R).map
+          (TopCat.ofHom (ContinuousMap.HomotopyEquiv.prodZeroSection G ℝ).symm.toFun) := by
+    rw [fibreChainMap_def, ← Functor.map_comp, ← Functor.map_comp]
+    congr 1
+    ext p
+    simp
+  rw [wangδ_def, wangδ_def, Category.assoc, ← homologyMap_comp, hfst, homologyMap_comp,
+    ← Category.assoc, ← Category.assoc]
+  exact congrArg (· ≫ _) hδ
+
+/-- **Naturality of the Wang connecting morphism**, stated with the maps induced on singular
+homology by the map of mapping tori and by `g`. -/
+@[reassoc]
+theorem singularHomologyMap_map_comp_wangδ (n : ℕ) :
+    ((singularHomologyFunctor A (n + 1)).obj R).map (TopCat.ofHom (map φ ψ g h)) ≫
+        wangδ ψ R n =
+      wangδ φ R n ≫ ((singularHomologyFunctor A n).obj R).map (TopCat.ofHom g) := by
+  have hnat := wangδ_naturality φ R ψ g h n
+  rw [fibreChainMap_def, mappingTorusChainMap_def] at hnat
+  -- `hnat` is stated with `homologyMap (((singularChainComplexFunctor A).obj R).map f) n`.
+  -- Mathlib defines `singularHomologyFunctor A n` as `singularChainComplexFunctor A` followed by
+  -- `homologyFunctor _ _ n`, so `((singularHomologyFunctor A n).obj R).map f` unfolds to exactly
+  -- this: the two statements agree definitionally.
+  exact hnat.symm
+
+end Naturality
+
 section ModuleCat
 
 variable {k : Type w} [CommRing k]
@@ -326,6 +449,54 @@ theorem coe_wangCokernelEquiv_mk (n : ℕ)
     (wangCokernelEquiv φ n (Submodule.Quotient.mk x) : _) =
       (homologyMap (fibreInclusionChainMap φ (ModuleCat.of k k)) n).hom x :=
   (rfl)
+
+/-- **The Wang short complex**
+`Hₙ₊₁(F) ⧸ range (𝟙 - φ_*) ⟶ Hₙ₊₁(T_φ) ⟶ Hₙ(F)`: the map induced by the fibre inclusion on the
+cokernel of `𝟙 - φ_*`, followed by the Wang connecting morphism. Its objects are exposed so that
+`Ext` groups of `Hₙ₊₁(T_φ)` can be stated as `Ext` groups of its middle term. -/
+@[expose] def wangCokernelShortComplex (n : ℕ) : ShortComplex (ModuleCat.{w} k) where
+  X₁ := ModuleCat.of k ((((singularChainComplexFunctor (ModuleCat.{w} k)).obj
+      (ModuleCat.of k k)).obj (TopCat.of F)).homology (n + 1) ⧸ LinearMap.range
+        (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) (n + 1)).hom))
+  X₂ := (((singularChainComplexFunctor (ModuleCat.{w} k)).obj
+      (ModuleCat.of k k)).obj (TopCat.of (MappingTorus φ))).homology (n + 1)
+  X₃ := (((singularChainComplexFunctor (ModuleCat.{w} k)).obj
+      (ModuleCat.of k k)).obj (TopCat.of F)).homology n
+  f := ConcreteCategory.ofHom (Submodule.liftQ _
+    (homologyMap (fibreInclusionChainMap φ (ModuleCat.of k k)) (n + 1)).hom
+    (ker_homologyMap_fibreInclusionChainMap φ (n + 1)).ge)
+  g := wangδ φ (ModuleCat.of k k) n
+  zero := by
+    ext x
+    -- On the class of `x` the composite is `wangδ (ι_* x)`, which vanishes as `ι_* ≫ wangδ = 0`.
+    simp [← ModuleCat.comp_apply, homologyMap_fibreInclusionChainMap_comp_wangδ]
+
+/-- The first map of the Wang short complex sends the class of `x` to the image of `x` under the
+fibre inclusion. -/
+@[simp]
+theorem wangCokernelShortComplex_f_mk (n : ℕ)
+    (x : (((singularChainComplexFunctor (ModuleCat.{w} k)).obj (ModuleCat.of k k)).obj
+      (TopCat.of F)).homology (n + 1)) :
+    (wangCokernelShortComplex φ n).f.hom (Submodule.Quotient.mk x) =
+      (homologyMap (fibreInclusionChainMap φ (ModuleCat.of k k)) (n + 1)).hom x :=
+  Submodule.liftQ_apply _ _ x
+
+/-- The second map of the Wang short complex is the Wang connecting morphism. -/
+@[simp]
+theorem wangCokernelShortComplex_g (n : ℕ) :
+    (wangCokernelShortComplex (k := k) φ n).g = wangδ φ (ModuleCat.of k k) n :=
+  (rfl)
+
+/-- **The Wang short exact sequence.** If the Wang connecting morphism `Hₙ₊₁(T_φ) ⟶ Hₙ(F)` is
+onto, then `0 ⟶ Hₙ₊₁(F) ⧸ range (𝟙 - φ_*) ⟶ Hₙ₊₁(T_φ) ⟶ Hₙ(F) ⟶ 0` is short exact. -/
+theorem wangCokernelShortComplex_shortExact (n : ℕ) [Epi (wangδ φ (ModuleCat.of k k) n)] :
+    (wangCokernelShortComplex (k := k) φ n).ShortExact where
+  exact := (ShortComplex.moduleCat_exact_iff_ker_sub_range _).2 fun y hy ↦ by
+    obtain ⟨x, rfl⟩ := (range_homologyMap_fibreInclusionChainMap φ n).ge hy
+    exact ⟨Submodule.Quotient.mk x, wangCokernelShortComplex_f_mk φ n x⟩
+  mono_f := (ModuleCat.mono_iff_injective _).2 <| LinearMap.ker_eq_bot.1 <|
+    Submodule.ker_liftQ_eq_bot _ _ _ (ker_homologyMap_fibreInclusionChainMap φ (n + 1)).le
+  epi_g := by rw [wangCokernelShortComplex_g]; exact ‹Epi (wangδ φ (ModuleCat.of k k) n)›
 
 end ModuleCat
 

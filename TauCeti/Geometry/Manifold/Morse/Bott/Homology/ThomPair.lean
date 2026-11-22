@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.DiscBundle
 public import TauCeti.Geometry.Manifold.Morse.Bott.HessianMetric
 public import TauCeti.Geometry.Manifold.Morse.Deformation.Homology
 public import TauCeti.Topology.VectorBundle.Attachment
-import TauCeti.Geometry.Manifold.Morse.Bott.ThomPair
+import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair
 import TauCeti.Geometry.Manifold.Morse.Deformation.Cohomology
 import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Metric
 import TauCeti.Topology.Maps.IsEmpty
@@ -53,12 +53,10 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 * `exists_singularHomology_sublevelPair_iso_thomPair` and
   `exists_singularCohomology_sublevelPair_iso_thomPair`: identification with the relative homology
   and cohomology of the Thom pair `(ν⁻, ν⁻₀)` across `[c - ε, c + ε]`.
-* `nonempty_singularHomology_sublevelPair_iso_thomPair`,
-  `nonempty_singularHomology_sublevelPair_iso_thomPair_of_preconnectedSpace`, and
-  `nonempty_singularHomology_bandPair_iso_thomPair`: identification with `Hₙ(ν⁻, ν⁻₀; R)` on an
-  arbitrary compact isolated band `[a, b]`.
-* `nonempty_singularCohomology_sublevelPair_iso_thomPair`,
-  `nonempty_singularCohomology_sublevelPair_iso_thomPair_of_preconnectedSpace`, and
+* `nonempty_singularHomology_sublevelPair_iso_thomPair_of_preconnectedSpace` and
+  `nonempty_singularHomology_bandPair_iso_thomPair`: identification with `Hₙ(ν⁻, ν⁻₀; R)` on a
+  connected submanifold or a cobordism band `(f⁻¹[a, b], f⁻¹(a))`.
+* `nonempty_singularCohomology_sublevelPair_iso_thomPair_of_preconnectedSpace` and
   `nonempty_singularCohomology_bandPair_iso_thomPair`: the corresponding identifications in
   relative singular cohomology.
 * `isZero_singularHomology_sublevelPair_of_lt_index` and
@@ -592,13 +590,8 @@ theorem exists_singularCohomology_sublevelPair_iso_thomPair
 
 /-! ### Arbitrary compact isolated bands and consequences -/
 
-/-- **Relative homology across a compact Morse–Bott submanifold equals that of the Thom pair.**
-Let `i : S → M` be a compact nondegenerate critical submanifold of a smooth function `f` on a
-boundaryless manifold, on the level `f = c` with constant Morse index `r`, and let `g` be a smooth
-fibre metric on its normal bundle. For any compact band `f⁻¹[a, b]` with `a < c < b` whose
-critical points all lie on `i`, `Hₙ({f ≤ b}, {f ≤ a}; R) ≅ Hₙ(ν⁻, ν⁻₀; R)` in every degree, with
-coefficients in any abelian category with coproducts. -/
-theorem nonempty_singularHomology_sublevelPair_iso_thomPair
+/-- Helper for arbitrary compact isolated bands covering both empty and nonempty `S`. -/
+private theorem singularHomology_sublevelPair_iso_thomPair_aux
     (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {c a b : ℝ}
     (hc : ∀ s, f (i s) = c) (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
@@ -640,6 +633,7 @@ theorem nonempty_singularHomology_sublevelPair_iso_thomPair
   exact ⟨singularHomologySublevelPairIsoOfCriticalValue hfs hac hcb (by linarith) (by linarith)
     hcomp hcompε (hval hcrit) (hval hcritε) R m ≪≫ eThom⟩
 
+omit [CompactSpace S] in
 /-- **Relative homology across a connected compact Morse–Bott submanifold.** On a connected
 compact Morse–Bott submanifold the Morse index is constant, so the relative homology of any
 compact isolated band around its level is that of the Thom pair of its negative normal bundle of
@@ -660,9 +654,10 @@ theorem nonempty_singularHomology_sublevelPair_iso_thomPair_of_preconnectedSpace
     Nonempty ((sublevelPair f (hac.trans hcb).le).singularHomology R m ≅
       (thomPair (Fin (manifoldMorseIndex I f (i s₀)) → ℝ)
         (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s)).singularHomology R m) :=
-  h.nonempty_singularHomology_sublevelPair_iso_thomPair hn hfs hc hdim g
+  have : Nonempty S := ⟨s₀⟩
+  h.nonempty_singularHomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcomp hcrit hdim g
     (fun s ↦ (h.isLocallyConstant_manifoldMorseIndex hn).apply_eq_of_preconnectedSpace s s₀)
-    hac hcb hcomp hcrit R m
+    R m
 
 /-- **Relative homology of a compact cobordism across a Morse–Bott submanifold.** Under the
 hypotheses of `nonempty_singularHomology_sublevelPair_iso_thomPair`, the lower level `a` is
@@ -691,17 +686,12 @@ theorem nonempty_singularHomology_bandPair_iso_thomPair
       obtain ⟨s, rfl⟩ := hcrit ⟨hxc, le_of_eq hx.symm, hx.le.trans (hac.trans hcb).le⟩
       exact hac.ne (hx.symm.trans (hc s))
   have := isIso_singularHomologyMap_bandPairInclusion hfs (hac.trans hcb).le hcomp ha R m
-  obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_thomPair hn hfs hc hdim g hr hac hcb
+  obtain ⟨e⟩ := h.singularHomology_sublevelPair_iso_thomPair_aux hn hfs hc hdim g hr hac hcb
     hcomp hcrit R m
   exact ⟨asIso (TopPair.singularHomologyMap (bandPairInclusion f (hac.trans hcb).le) R m) ≪≫ e⟩
 
-/-- **Relative cohomology across a compact Morse–Bott submanifold equals that of the Thom pair.**
-Let `i : S → M` be a compact nondegenerate critical submanifold of a smooth function `f` on a
-boundaryless manifold, on the level `f = c` with constant Morse index `r`, and let `g` be a smooth
-fibre metric on its normal bundle. For any compact band `f⁻¹[a, b]` with `a < c < b` whose
-critical points all lie on `i`, `Hⁿ({f ≤ b}, {f ≤ a}; R, M') ≅ Hⁿ(ν⁻, ν⁻₀; R, M')` in every
-degree, with arbitrary coefficients in any `k`-linear abelian category with coproducts. -/
-theorem nonempty_singularCohomology_sublevelPair_iso_thomPair
+/-- Cohomology helper for arbitrary compact isolated bands covering both empty and nonempty `S`. -/
+private theorem singularCohomology_sublevelPair_iso_thomPair_aux
     (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {c a b : ℝ}
     (hc : ∀ s, f (i s) = c) (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
@@ -745,6 +735,7 @@ theorem nonempty_singularCohomology_sublevelPair_iso_thomPair
   exact ⟨singularCohomologySublevelPairIsoOfCriticalValue hfs hac hcb (by linarith) (by linarith)
     hcomp hcompε (hval hcrit) (hval hcritε) R k M' m ≪≫ eThom⟩
 
+omit [CompactSpace S] in
 /-- **Relative cohomology across a connected compact Morse–Bott submanifold.** On a connected
 compact Morse–Bott submanifold the Morse index is constant, so the relative cohomology of any
 compact isolated band around its level is that of the Thom pair of its negative normal bundle of
@@ -767,9 +758,10 @@ theorem nonempty_singularCohomology_sublevelPair_iso_thomPair_of_preconnectedSpa
       (thomPair (Fin (manifoldMorseIndex I f (i s₀)) → ℝ)
         (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s)).singularCohomology
         R k M' m) :=
-  h.nonempty_singularCohomology_sublevelPair_iso_thomPair hn hfs hc hdim g
+  have : Nonempty S := ⟨s₀⟩
+  h.nonempty_singularCohomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcomp hcrit hdim g
     (fun s ↦ (h.isLocallyConstant_manifoldMorseIndex hn).apply_eq_of_preconnectedSpace s s₀)
-    hac hcb hcomp hcrit R k M' m
+    R k M' m
 
 /-- **Relative cohomology of a compact cobordism across a Morse–Bott submanifold.** Under the
 hypotheses of `nonempty_singularCohomology_sublevelPair_iso_thomPair`, the lower level `a` is
@@ -800,7 +792,7 @@ theorem nonempty_singularCohomology_bandPair_iso_thomPair
       obtain ⟨s, rfl⟩ := hcrit ⟨hxc, le_of_eq hx.symm, hx.le.trans (hac.trans hcb).le⟩
       exact hac.ne (hx.symm.trans (hc s))
   have := isIso_singularCohomologyMap_bandPairInclusion hfs (hac.trans hcb).le hcomp ha R k M' m
-  obtain ⟨e⟩ := h.nonempty_singularCohomology_sublevelPair_iso_thomPair hn hfs hc hdim g hr hac hcb
+  obtain ⟨e⟩ := h.singularCohomology_sublevelPair_iso_thomPair_aux hn hfs hc hdim g hr hac hcb
     hcomp hcrit R k M' m
   exact ⟨(asIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M')
     (bandPairInclusion f (hac.trans hcb).le) m)).symm ≪≫ e⟩
@@ -843,8 +835,8 @@ theorem isZero_singularHomology_sublevelPair_of_lt_index
   have : T2Space S := i.isEmbedding.t2Space
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
-  obtain ⟨g⟩ := i.nonempty_contMDiffRiemannianMetric_normalSpace (m' := ⊤) hn (by simp) hdim
-  obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_thomPair hn hfs hc hdim g hr hac hcb
+  obtain ⟨g⟩ := i.nonempty_contMDiffRiemannianMetric_normalSpace hn hdim
+  obtain ⟨e⟩ := h.singularHomology_sublevelPair_iso_thomPair_aux hn hfs hc hdim g hr hac hcb
     hcomp hcrit R m
   let hV := h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn (by simp)
     (fun s ↦ (hfs (i s)).of_le (by simp)) hdim g hr
@@ -900,8 +892,8 @@ theorem nonempty_singularHomology_sublevelPair_iso_singularHomology_zero
   have : T2Space S := i.isEmbedding.t2Space
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
-  obtain ⟨g⟩ := i.nonempty_contMDiffRiemannianMetric_normalSpace (m' := ⊤) hn (by simp) hdim
-  obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_thomPair hn hfs hc hdim g hr hac hcb
+  obtain ⟨g⟩ := i.nonempty_contMDiffRiemannianMetric_normalSpace hn hdim
+  obtain ⟨e⟩ := h.singularHomology_sublevelPair_iso_thomPair_aux hn hfs hc hdim g hr hac hcb
     hcomp hcrit (ModuleCat.of K K) r
   let hV := h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn (by simp)
     (fun s ↦ (hfs (i s)).of_le (by simp)) hdim g hr

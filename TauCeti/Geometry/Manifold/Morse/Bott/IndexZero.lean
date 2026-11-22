@@ -163,9 +163,7 @@ private theorem exists_isIso_singularHomologyMap_union_range [T2Space M]
   have hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E' := finrank_euclideanSpace_fin
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have : T2Space S := i.isEmbedding.t2Space
-  obtain ⟨g⟩ := i.nonempty_contMDiffRiemannianMetric_normalSpace (m' := ⊤) hn (by simp) hdim
+  obtain ⟨g⟩ := i.nonempty_contMDiffRiemannianMetric_normalSpace hn hdim
   obtain ⟨Θ, -, hΘi, -, ε₀, hε₀, hmain⟩ :=
     h.exists_isIso_singularHomologyMap_negativeDiscBundle hn hfs hc hdim g
   refine ⟨ε₀, hε₀, fun ε hε hεε₀ hcompact hcrit ↦ ?_⟩

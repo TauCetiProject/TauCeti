@@ -42,11 +42,13 @@ consequences:
 2. **Matrix presentations** (`TauCeti.Hive.eqMatrix`, `TauCeti.Hive.rhombusMatrix`,
    `TauCeti.Hive.mem_fixedBoundary_iff_mulVec`, `TauCeti.Hive.exists_boundary_eq_iff_mulVec`):
    `eqMatrix R n` and `rhombusMatrix R n` are defined over any ring `R` by base change from `ℤ`
-   (`TauCeti.Hive.map_intCast_eqMatrix`, `TauCeti.Hive.map_intCast_rhombusMatrix`), and over any
-   partially ordered ring `R` with order-compatible addition (`[IsOrderedAddMonoid R]`, in
-   particular `ℤ`, `ℚ`, `ℝ`), fixed-boundary hives are characterized as the solutions of
-   `eqMatrix R n *ᵥ f = eqRHS B` and `rhombusMatrix R n *ᵥ f ≤ 0`; a hive with boundary `B` exists
-   exactly when this system is feasible.
+   (`TauCeti.Hive.map_intCast_eqMatrix`, `TauCeti.Hive.map_intCast_rhombusMatrix`) and are
+   preserved by ring homomorphisms (`TauCeti.Hive.map_eqMatrix`, `TauCeti.Hive.map_rhombusMatrix`,
+   `TauCeti.Hive.eqRHS_map`), and over any partially ordered ring `R` with order-compatible
+   addition (`[IsOrderedAddMonoid R]`, in particular `ℤ`, `ℚ`, `ℝ`), fixed-boundary hives are
+   characterized as the solutions of `eqMatrix R n *ᵥ f = eqRHS B` and
+   `rhombusMatrix R n *ᵥ f ≤ 0`; a hive with boundary `B` exists exactly when this system is
+   feasible.
 3. **Compact real polytopes and proper boundary projection** (`TauCeti.Hive.properCone`,
    `TauCeti.Hive.isConvexPolyhedron_realFibre`, `TauCeti.Hive.isCompact_realFibre`,
    `TauCeti.Hive.isProperMap_boundary_properCone`): `‖f‖ ≤ 3 * n * ‖boundaryLinear ℝ n ℝ f‖` makes
@@ -181,6 +183,17 @@ def eqRHS {R : Type*} [Zero R] {n : ℕ} (B : Fin 3 → Fin n → R) : EqConstra
 @[simp] theorem eqRHS_inr {R : Type*} [Zero R] {n : ℕ} (B : Fin 3 → Fin n → R) (s : Fin 3)
     (i : Fin n) : eqRHS B (Sum.inr (s, i)) = B s i := (rfl)
 
+/-- Maps preserving `0` commute with `eqRHS`. -/
+@[simp] theorem eqRHS_map {R S F : Type*} [Zero R] [Zero S] [FunLike F R S] [ZeroHomClass F R S]
+    {n : ℕ} (f : F) (B : Fin 3 → Fin n → R) : eqRHS (fun s i => f (B s i)) = f ∘ eqRHS B := by
+  ext (⟨⟨⟩⟩ | ⟨s, i⟩) <;> simp
+
+/-- Pairing `z` with `eqRHS B` pairs the boundary components of `z` with those of `B`. -/
+theorem dotProduct_eqRHS {R : Type*} [NonUnitalNonAssocSemiring R] {n : ℕ}
+    (z : EqConstraintIndex n → R) (B : Fin 3 → Fin n → R) :
+    z ⬝ᵥ eqRHS B = ∑ s, (fun i => z (.inr (s, i))) ⬝ᵥ B s := by
+  simp [dotProduct, Fintype.sum_sum_type, Fintype.sum_prod_type]
+
 /-- Inequality constraint matrix over `R` encoding `f b + f d - (f a + f c) ≤ 0` on `Rhombus n`. -/
 def rhombusMatrix (R : Type*) [Ring R] (n : ℕ) : Matrix (Rhombus n) (Vertex n) R :=
   fun r => Pi.single r.val.2.1 1 + Pi.single r.val.2.2.2 1 -
@@ -210,6 +223,14 @@ theorem rhombusMatrix_mulVec_nonpos_iff {n : ℕ} {R : Type*} [Ring R] [PartialO
   exact ⟨fun hf a b c d hr => by simpa using hf ⟨(a, b, c, d), hr⟩,
     fun hf r => by simpa using hf r.property⟩
 
+/-- Pairing `y` with `rhombusMatrix R n *ᵥ f` is minus the `y`-weighted sum of the rhombus slacks
+of `f`. -/
+theorem dotProduct_rhombusMatrix_mulVec {n : ℕ} {R : Type*} [Ring R] (y : Rhombus n → R)
+    (f : Vertex n → R) :
+    y ⬝ᵥ (rhombusMatrix R n *ᵥ f) =
+      -∑ r : Rhombus n, y r * rhombusSlack f r.val.1 r.val.2.1 r.val.2.2.1 r.val.2.2.2 := by
+  simp [dotProduct, rhombusMatrix_mulVec_apply]
+
 /-- Over any ring `R`, `eqMatrix R n` is the base change of `eqMatrix ℤ n`. -/
 @[simp] theorem map_intCast_eqMatrix (R : Type*) [Ring R] (n : ℕ) :
     (eqMatrix ℤ n).map (Int.cast : ℤ → R) = eqMatrix R n := by
@@ -219,6 +240,22 @@ theorem rhombusMatrix_mulVec_nonpos_iff {n : ℕ} {R : Type*} [Ring R] [PartialO
 @[simp] theorem map_intCast_rhombusMatrix (R : Type*) [Ring R] (n : ℕ) :
     (rhombusMatrix ℤ n).map (Int.cast : ℤ → R) = rhombusMatrix R n := by
   ext r q; simp [rhombusMatrix, Pi.single_apply]
+
+/-- Ring homomorphisms carry `eqMatrix` over one ring to `eqMatrix` over the other. -/
+@[simp] theorem map_eqMatrix {n : ℕ} {R S F : Type*} [Ring R] [Ring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) : (eqMatrix R n).map f = eqMatrix S n := by
+  rw [← map_intCast_eqMatrix R n, Matrix.map_map, ← map_intCast_eqMatrix S n]
+  congr 1
+  ext k
+  simp
+
+/-- Ring homomorphisms carry `rhombusMatrix` over one ring to `rhombusMatrix` over the other. -/
+@[simp] theorem map_rhombusMatrix {n : ℕ} {R S F : Type*} [Ring R] [Ring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) : (rhombusMatrix R n).map f = rhombusMatrix S n := by
+  rw [← map_intCast_rhombusMatrix R n, Matrix.map_map, ← map_intCast_rhombusMatrix S n]
+  congr 1
+  ext k
+  simp
 
 /-- Matrix characterization of fixed-boundary normalized hives over any partially ordered ring with
 order-compatible addition. -/
@@ -231,14 +268,24 @@ theorem mem_fixedBoundary_iff_mulVec {n : ℕ} {R : Type*} [Ring R] [PartialOrde
     fun ⟨heq, hconc⟩ => ⟨by simpa using congrFun heq (Sum.inl ()), hconc,
       by ext s i; simpa using congrFun heq (Sum.inr (s, i))⟩⟩
 
+/-- A hive solves the equations of the fixed-boundary system for its own boundary. -/
+theorem eqMatrix_mulVec_coe {n : ℕ} {R : Type*} [Ring R] [PartialOrder R] [IsOrderedAddMonoid R]
+    (h : Hive n R) : eqMatrix R n *ᵥ (h : Vertex n → R) = eqRHS h.boundary :=
+  ((mem_fixedBoundary_iff_mulVec h.boundary h).mp
+    ⟨h.apply_cornerA, h.isRhombusConcave, boundaryLinear_coe ℤ h⟩).1
+
+/-- A hive solves the rhombus inequalities of the fixed-boundary system. -/
+theorem rhombusMatrix_mulVec_coe_nonpos {n : ℕ} {R : Type*} [Ring R] [PartialOrder R]
+    [IsOrderedAddMonoid R] (h : Hive n R) : rhombusMatrix R n *ᵥ (h : Vertex n → R) ≤ 0 :=
+  rhombusMatrix_mulVec_nonpos_iff.mpr h.isRhombusConcave
+
 /-- A hive with boundary `B` exists exactly when the matrix system of
 `TauCeti.Hive.mem_fixedBoundary_iff_mulVec` is feasible. -/
 theorem exists_boundary_eq_iff_mulVec {n : ℕ} {R : Type*} [Ring R] [PartialOrder R]
     [IsOrderedAddMonoid R] (B : Fin 3 → Fin n → R) :
     (∃ h : Hive n R, h.boundary = B) ↔
       ∃ f, rhombusMatrix R n *ᵥ f ≤ 0 ∧ eqMatrix R n *ᵥ f = eqRHS B := by
-  refine ⟨fun ⟨h, hB⟩ => ⟨h, ((mem_fixedBoundary_iff_mulVec B h).mp
-    ⟨h.apply_cornerA, h.isRhombusConcave, (boundaryLinear_coe ℤ h).trans hB⟩).symm⟩,
+  refine ⟨fun ⟨h, hB⟩ => ⟨h, h.rhombusMatrix_mulVec_coe_nonpos, hB ▸ h.eqMatrix_mulVec_coe⟩,
     fun ⟨f, hR, hE⟩ => ?_⟩
   obtain ⟨hA, hconc, hB⟩ := (mem_fixedBoundary_iff_mulVec B f).mpr ⟨hE, hR⟩
   exact ⟨⟨f, hA, fun hr => (isRhombusConcave_def f).mp hconc hr⟩, (boundary_def _).trans hB⟩

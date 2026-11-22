@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.XYIdealMaximal
 import TauCeti.RingTheory.ClassGroup.Basic
 import TauCeti.RingTheory.FractionalIdeal.Divisibility
 import TauCeti.RingTheory.FractionalIdeal.Operations
+import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Ideal.Quotient.Invertible
 import Mathlib.LinearAlgebra.DirectSum.Finite
 import Mathlib.LinearAlgebra.FreeModule.Norm

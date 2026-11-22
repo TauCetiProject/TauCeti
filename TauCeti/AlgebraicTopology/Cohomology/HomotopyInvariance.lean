@@ -40,9 +40,8 @@ below are `Mathlib/AlgebraicTopology/SingularHomology/HomotopyInvariance.lean`
 * `TopPair.isIso_singularCohomologyMap_ofInclusionMap_inclusion_of_homotopyRel`: a strong
   deformation retraction of the ambient space onto an intermediate subset does not change relative
   cohomology.
-* `TopPair.isZero_singularCohomology_of_homotopy` and
-  `TopPair.isZero_singularCohomology_ofInclusion_of_homotopyRel`: a pair whose ambient space
-  deforms into its subspace has no relative cohomology.
+* `TopPair.isZero_singularCohomology_ofInclusion_of_homotopyRel`: a pair with a strong deformation
+  retraction onto its subspace has no relative cohomology.
 * `ContinuousMap.HomotopyEquiv.isIso_singularCohomologyMap` and
   `ContinuousMap.HomotopyEquiv.singularCohomologyIso`: the induced isomorphism on singular
   cohomology for a bundled homotopy equivalence of spaces.
@@ -218,17 +217,6 @@ lemma isIso_singularCohomologyMap (f : P ⟶ P') (f' : P' ⟶ P) (H : Homotopy (
   · rw [← singularCohomologyMap_comp, H.congr_singularCohomologyMap R k M n,
       singularCohomologyMap_id]
 
-/-- **A pair whose identity deforms into its subspace has no relative cohomology**: if the identity
-of `P` is homotopic, as a map of pairs, to a map whose map of ambient spaces factors through the
-subspace, as when the subspace is a strong deformation retract, then the relative singular
-cohomology of `P` vanishes in every degree. -/
-lemma isZero_singularCohomology_of_homotopy {f : P ⟶ P} (H : Homotopy (𝟙 P) f)
-    (g : P.fst ⟶ P.snd) (hg : g ≫ P.map = Hom.fst f) (R : C)
-    (k : Type*) [Ring k] [Linear k C] (M : C) (n : ℕ) :
-    IsZero (P.singularCohomology R k M n) := by
-  rw [IsZero.iff_id_eq_zero, ← singularCohomologyMap_id, H.congr_singularCohomologyMap R k M n]
-  exact singularCohomologyMap_eq_zero_of_fac R k M f g hg n
-
 /-- **Enlarging the subspace along a deformation.** Let `B ⊆ N` be subsets of `X` and let `H` be a
 homotopy from the identity of `X` to a map `ρ` carrying `N` into `B`.  If `H` keeps `B` inside `B`
 and `N` inside `N` at every time, the inclusion `(X, B) ⟶ (X, N)` induces isomorphisms on relative
@@ -277,21 +265,24 @@ theorem isIso_singularCohomologyMap_ofInclusionMap_inclusion_of_homotopyRel {X :
 
 /-- **A pair with a strong deformation retraction onto its subspace has no relative cohomology.**
 If `s ⊆ t` and `t` deformation retracts onto `s` relative to `s`, the relative singular cohomology
-of `(t, s)` vanishes in every degree. -/
+of `(t, s)` vanishes in every degree. This is the cohomology form of
+`TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel`. -/
 theorem isZero_singularCohomology_ofInclusion_of_homotopyRel {X : TopCat.{w}} {s t : Set X}
     (hst : s ⊆ t) (r : C(t, s))
     (G : ((ContinuousMap.inclusion hst).comp r).HomotopyRel (ContinuousMap.id t)
       {x | (x : X) ∈ s})
     (R : C) (k : Type*) [Ring k] [Linear k C] (M : C) (n : ℕ) :
     IsZero ((ofInclusion hst).singularCohomology R k M n) := by
-  refine isZero_singularCohomology_of_homotopy
-    (f := ofInclusionMap hst hst ((ContinuousMap.inclusion hst).comp r) fun x _ ↦ (r x).property)
-    ?_ (TopCat.ofHom r)
-    (by ext x; exact (ofInclusionMap_fst_apply (hst := hst) (hst' := hst) _ _ x).symm) R k M n
-  rw [← ofInclusionMap_id]
-  refine ofInclusionHomotopy G.symm.toHomotopy fun τ x hx ↦ ?_
-  have h : G.symm.toHomotopy (τ, x) = x := G.symm.eq_fst τ hx
-  rw [h]
-  exact hx
+  -- The identity of the pair is homotopic to the retraction, which factors through `s`.
+  let f := ofInclusionMap hst hst ((ContinuousMap.inclusion hst).comp r) fun x _ ↦ (r x).property
+  have H : Homotopy (𝟙 (ofInclusion hst)) f := by
+    rw [← ofInclusionMap_id]
+    refine ofInclusionHomotopy G.symm.toHomotopy fun τ x hx ↦ ?_
+    have h : G.symm.toHomotopy (τ, x) = x := G.symm.eq_fst τ hx
+    rw [h]
+    exact hx
+  rw [IsZero.iff_id_eq_zero, ← singularCohomologyMap_id, H.congr_singularCohomologyMap R k M n]
+  exact singularCohomologyMap_eq_zero_of_fac R k M f (TopCat.ofHom r)
+    (by ext x; exact (ofInclusionMap_fst_apply (hst := hst) (hst' := hst) _ _ x).symm) n
 
 end TopPair
