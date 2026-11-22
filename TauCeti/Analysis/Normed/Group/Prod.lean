@@ -17,8 +17,8 @@ The norm on a product of seminormed groups is the maximum of the coordinate norm
 `Prod.min_mul_norm_pow_le_add` bounds a weighted sum of `n`-th powers of coordinate norms below
 by `min a b * ‖x‖ ^ n`, provided at least one coefficient is nonnegative. The other coefficient
 may be negative, allowing the estimate to apply to quadratic forms with a signed mass term.
-`Prod.norm_sq_le_sq_add_sq` and `Prod.norm_mul_self_le_sq_add_sq_add_sq` bound the squared sup
-norm on `ℝ²` and `ℝ³` by the sum of the squares of the coordinates.
+`Prod.norm_mul_self_le_sq_add_sq_add_sq` bounds the squared sup norm on `ℝ³` by the sum of the
+squares of the coordinates.
 `TauCeti.exists_setOf_norm_fst_sq_add_norm_snd_sq_lt_subset` shows that the round balls
 `‖z.1‖² + ‖z.2‖² < r²` form a basis of neighbourhoods of the origin.
 -/
@@ -36,13 +36,6 @@ theorem Prod.min_mul_norm_pow_le_add {E F : Type*} [SeminormedAddGroup E] [Semin
     simp only [Prod.norm_def, min_eq_left, min_eq_right, max_eq_left, max_eq_right, hab, hx]
       at h ⊢ <;>
     nlinarith [pow_le_pow_left₀ (norm_nonneg _) hx n]
-
-/-- The square of the sup norm on `ℝ²` is at most the sum of the squares of the coordinates. -/
-theorem Prod.norm_sq_le_sq_add_sq (v : ℝ × ℝ) : ‖v‖ ^ 2 ≤ v.1 ^ 2 + v.2 ^ 2 := by
-  rw [Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs]
-  rcases le_total |v.1| |v.2| with h | h
-  · rw [max_eq_right h, sq_abs]; nlinarith [sq_nonneg v.1]
-  · rw [max_eq_left h, sq_abs]; nlinarith [sq_nonneg v.2]
 
 /-- The square of the sup norm on `ℝ³` is at most the sum of the squares of the coordinates. -/
 theorem Prod.norm_mul_self_le_sq_add_sq_add_sq (v : ℝ × ℝ × ℝ) :

@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.Complex.Conformal.Area
+import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.Analysis.Complex.RemovableSingularity
 import TauCeti.Analysis.Sobolev.Poincare.Slab
 import TauCeti.Geometry.Symplectic.JHolomorphic.Line
@@ -92,8 +93,7 @@ theorem integral_inv_sq_mul_norm_sq_le {χ : ℝ × ℝ → V} {R : ℝ} (hR : 0
   -- Read `χ` as the map `f = χ ∘ equivRealProdCLM` of `ℂ`.
   set f : ℂ → V := χ ∘ equivRealProdCLM
   have hsq (w : ℂ) : (equivRealProdCLM w).1 ^ 2 + (equivRealProdCLM w).2 ^ 2 = ‖w‖ ^ 2 := by
-    rw [Complex.sq_norm, Complex.normSq_apply]
-    simp [sq]
+    rw [← sq_norm_equivRealProdCLM_symm, ContinuousLinearEquiv.symm_apply_apply]
   have hfw (w : ℂ) : χ (equivRealProdCLM w) = f w := (Function.comp_apply ..).symm
   rw [← volume_preserving_equiv_real_prod.integral_comp'
       fun p ↦ ((p.1 ^ 2 + p.2 ^ 2) ^ 2)⁻¹ * ‖χ p‖ ^ 2,

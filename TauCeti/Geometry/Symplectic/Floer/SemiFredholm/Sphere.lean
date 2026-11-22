@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.Complex.EquivRealProd
-import TauCeti.Analysis.Normed.Group.Prod
 import TauCeti.Analysis.Sobolev.Poincare.Infinity
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Floer.InteriorEstimate
@@ -153,23 +152,6 @@ private theorem exists_forall_integral_norm_fderiv_sq_le_of_eq_base (h₀ : ω.C
   rw [hD, div_mul_eq_mul_div, le_div_iff₀' ha]
   rw [integral_const_mul] at hup
   exact (hlow.trans_eq hid).trans hup
-
-/-- The Euclidean norm `|w|` of a point `w` of `ℝ × ℝ ≅ ℂ` has `|w|² = s² + t²`, and it lies
-between the sup norm `‖w‖` and twice the sup norm. -/
-private theorem norm_equivRealProdCLM_symm (z : ℝ × ℝ) :
-    ‖Complex.equivRealProdCLM.symm z‖ ^ 2 = z.1 ^ 2 + z.2 ^ 2 ∧
-      ‖z‖ ≤ ‖Complex.equivRealProdCLM.symm z‖ ∧ ‖Complex.equivRealProdCLM.symm z‖ ≤ 2 * ‖z‖ := by
-  have hsq : ‖Complex.equivRealProdCLM.symm z‖ ^ 2 = z.1 ^ 2 + z.2 ^ 2 := by
-    rw [Complex.sq_norm, Complex.normSq_apply]
-    simp [sq]
-  have hre : ‖Complex.equivRealProdCLM.symm z‖ ≤ |z.1| + |z.2| := by
-    simpa using Complex.norm_le_abs_re_add_abs_im (Complex.equivRealProdCLM.symm z)
-  refine ⟨hsq, le_of_pow_le_pow_left₀ two_ne_zero (norm_nonneg _)
-    ((Prod.norm_sq_le_sq_add_sq z).trans hsq.ge), ?_⟩
-  have h₁ := norm_fst_le z
-  have h₂ := norm_snd_le z
-  rw [Real.norm_eq_abs] at h₁ h₂
-  linarith
 
 omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
 /-- Off the disc `|w| < R` the weight `|w|⁻⁴` is at most `R⁻⁴`, and it dominates the weight
@@ -327,15 +309,15 @@ theorem exists_forall_integral_le_mul_integral_floerLinearization_add_of_eq_base
       ‖ξ z‖ ^ 2 ≤ ∫ z in closedBall 0 (2 * R + 2), ‖ξ z‖ ^ 2 :=
     setIntegral_mono_set (hξ.continuous.integrable_norm_sq_of_hasCompactSupport hξc).integrableOn
       (Eventually.of_forall fun _ ↦ sq_nonneg _) (Eventually.of_forall fun z (hz : _ ≤ r) ↦
-        mem_closedBall_zero_iff.2 (((norm_equivRealProdCLM_symm z).2.1.trans hz).trans hr))
+        mem_closedBall_zero_iff.2 (((norm_le_norm_equivRealProdCLM_symm z).trans hz).trans hr))
   exact le_mul_add_of_bounds
     (integral_le_setIntegral_add_integral (hξ.of_le one_le_two) hξc
       ((hψ2.smul hξ).of_le one_le_two) hχc fun z hz ↦ by simp [(hψ0 z hz.le).eq_of_nhds])
     (hdisc hξ hξc)
     (integral_le_mul_integral_norm_fderiv_sq (R := 2 * R) (by positivity)
       ((hψ2.smul hξ).of_le one_le_two) hχc fun z hz ↦ hχ0 z (lt_of_pow_lt_pow_left₀ 2
-        (by positivity) ((norm_equivRealProdCLM_symm z).1.trans_lt hz)).le)
-    (hinf (hψ2.smul hξ) hχc fun z hz ↦ hχ0 z ((norm_equivRealProdCLM_symm z).2.2.trans
+        (by positivity) ((sq_norm_equivRealProdCLM_symm z).trans_lt hz)).le)
+    (hinf (hψ2.smul hξ) hχc fun z hz ↦ hχ0 z ((norm_equivRealProdCLM_symm_le_two_mul z).trans
       (by linarith [le_max_left T 1])))
     (hY (hξ.of_le one_le_two) hξc) (hsq _ (by linarith)) (hsq _ (by linarith))
     (integral_nonneg fun _ ↦ sq_nonneg _)
