@@ -101,6 +101,12 @@ theorem comulCurried_amiceTerm (n : ℕ) (e : E) :
 
 end Curried
 
+private theorem div_pow_eq_zero_of_mem_antidiagonal {p h n : ℕ} {ij : ℕ × ℕ}
+    (hn : n < p ^ h) (hij : ij ∈ Finset.antidiagonal n) :
+    ij.1 / p ^ h = 0 ∧ ij.2 / p ^ h = 0 := by
+  rw [Finset.mem_antidiagonal] at hij
+  exact ⟨Nat.div_eq_of_lt (by omega), Nat.div_eq_of_lt (by omega)⟩
+
 /-- **Vandermonde formula for `comul` on unweighted Amice basis vectors.** When `n < p ^ h`, so
 that `⌊n / pʰ⌋! = 1` and `amiceTerm p h n 1` represents `x choose n`, stage comultiplication
 expands `amiceTerm p h n 1` into `∑_{i + j = n} prodMul (amiceTerm p h i 1) (amiceTerm p h j 1)`. -/
@@ -115,11 +121,8 @@ theorem comul_amiceTerm_of_lt {p : ℕ} [Fact p.Prime] {h n : ℕ}
   apply (curryEquiv R R).injective
   rw [curryEquiv_comul, comulCurried_amiceTerm, map_sum]
   refine Finset.sum_congr rfl fun ij hij ↦ ?_
-  have hij' := Finset.mem_antidiagonal.mp hij
-  have hn0 : n / p ^ h = 0 := Nat.div_eq_of_lt hn
-  have hi0 : ij.1 / p ^ h = 0 := Nat.div_eq_of_lt (by omega)
-  have hj0 : ij.2 / p ^ h = 0 := Nat.div_eq_of_lt (by omega)
-  simp only [hn0, hi0, hj0, Nat.factorial_zero, mul_one, Nat.div_one, one_smul]
+  obtain ⟨hi0, hj0⟩ := div_pow_eq_zero_of_mem_antidiagonal hn hij
+  simp only [Nat.div_eq_of_lt hn, hi0, hj0, Nat.factorial_zero, mul_one, Nat.div_one, one_smul]
   rw [curryEquiv_prodMul_eq_compLeft, compLeft_amiceTerm, ContinuousLinearMap.toSpanSingleton_apply,
     one_smul]
 

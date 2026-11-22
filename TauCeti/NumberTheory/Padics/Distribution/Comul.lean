@@ -539,12 +539,11 @@ private theorem translateCLM_zero (c : AnalyticStage p h E) : translateCLM S 0 c
 
 private theorem translateCLM_add (x y : ℤ_[p]) (c : AnalyticStage p h E) :
     translateCLM S (x + y) c = translateCLM S x (translateCLM S y c) := by
-  simp only [translateCLM_eq_translateCLM_padicInt S]
-  rw [add_comm x y, translateCLM_apply, ← eval_eval_comulCurried ℤ_[p] (comulCurried ℤ_[p] c) y x,
+  simp only [translateCLM_eq_translateCLM_padicInt S, translateCLM_apply]
+  rw [add_comm x y, ← eval_eval_comulCurried ℤ_[p] (comulCurried ℤ_[p] c) y x,
     comulCurried_comulCurried ℤ_[p] c,
     eval_compLeft ℤ_[p] (comulCurried (p := p) (h := h) (E := E) ℤ_[p])
       (exists_norm_comulCurried_le ℤ_[p]) (comulCurried ℤ_[p] c) y]
-  rfl
 
 /-- **Translation on an analytic stage.** Translating the argument by `x : ℤ_p` defines a linear
 isometry equivalence `LA_h(E) ≃ₗᵢ[S] LA_h(E)` with `eval (translate S x c) y = eval c (x + y)`. -/
@@ -581,8 +580,8 @@ theorem eval_comulCurried_apply (c : AnalyticStage p h E) (i : ZMod (p ^ h) × �
       comulCurried ℤ_[p] c i := by
     ext j
     simp only [compLeft_apply, evalCLM_apply, comulCurried_apply_apply]
-    rw [← DFunLike.congr_fun (congrLeft_prodComm_comul ℤ_[p] c) (j, i), congrLeft_apply]
-    rfl
+    rw [← DFunLike.congr_fun (congrLeft_prodComm_comul ℤ_[p] c) (j, i), congrLeft_apply,
+      Homeomorph.prodComm_symm, Homeomorph.coe_prodComm, Prod.swap_prod_mk]
   rw [← hrow, eval_compLeft ℤ_[p], evalCLM_apply]
 
 /-- Evaluating the translate of `c` by `x` at `y` gives `eval S c (x + y)`. -/
@@ -605,8 +604,8 @@ theorem translate_add (x y : ℤ_[p]) (c : AnalyticStage p h E) :
 @[simp]
 theorem translate_symm (x : ℤ_[p]) :
     (translate (p := p) (h := h) (E := E) S x).symm = translate S (-x) := by
-  ext c
-  rfl
+  refine LinearIsometryEquiv.ext fun c ↦ ?_
+  rw [LinearIsometryEquiv.symm_apply_eq, ← translate_add, add_neg_cancel, translate_zero]
 
 /-- Translation commutes with the coordinatewise action of a bounded continuous linear map
 compatible with the `ℤ_p`-action. -/
@@ -621,8 +620,7 @@ theorem translate_compLeft {F R : Type*} [NormedAddCommGroup F] [Module ℤ_[p] 
   have hu' : ∃ C, ∀ e, ‖u' e‖ ≤ C * ‖e‖ := hu
   have hcomp : ∀ d : AnalyticStage p h E, compLeft u hu d = compLeft u' hu' d := fun d ↦ by
     ext i
-    simp only [compLeft_apply]
-    rfl
+    simp only [compLeft_apply, u', ContinuousLinearMap.coe_restrictScalars']
   rw [hcomp, hcomp, translate_eq_translate_padicInt S',
     translate_eq_translate_padicInt S, translate_eq_eval_comulCurried,
     translate_eq_eval_comulCurried, comulCurried_compLeft ℤ_[p] u' hu', eval_compLeft ℤ_[p]]

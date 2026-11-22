@@ -143,21 +143,9 @@ functionals. -/
 theorem convolveFunRightStage_comp {h : ℕ} (φ ψ : AnalyticStage p h K →L[K] K) :
     convolveFunRightStage (φ.comp (convolveFunRightStage ψ)) =
       (convolveFunRightStage φ).comp (convolveFunRightStage ψ) := by
-  refine ContinuousLinearMap.ext fun c ↦ ?_
-  rw [ContinuousLinearMap.comp_apply, convolveFunRightStage_apply_eq,
-    convolveFunRightStage_apply_eq, convolveFunRightStage_apply_eq, comulCurried_compLeft K,
-    comulCurried_comulCurried K,
-    compLeft_comp (α := ZMod (p ^ h) × ℕ) φ (convolveFunRightStage ψ)
-      (φ.bound.imp fun _ hb ↦ hb.2)
-      ⟨‖convolveFunRightStage ψ‖, (convolveFunRightStage ψ).le_opNorm⟩,
-    ContinuousLinearMap.comp_apply,
-    ← ContinuousLinearMap.comp_apply (compLeft (compLeft ψ (ψ.bound.imp fun _ hb ↦ hb.2))
-      (exists_norm_compLeft_apply_le ψ (ψ.bound.imp fun _ hb ↦ hb.2)))
-      (compLeft (comulCurried K) (exists_norm_comulCurried_le K)),
-    ← compLeft_comp (α := ZMod (p ^ h) × ℕ) (compLeft ψ (ψ.bound.imp fun _ hb ↦ hb.2))
-      (comulCurried K) (exists_norm_compLeft_apply_le ψ (ψ.bound.imp fun _ hb ↦ hb.2))
-      (exists_norm_comulCurried_le K)]
-  rfl
+  ext c i
+  simp only [ContinuousLinearMap.comp_apply, convolveFunRightStage_apply_eq,
+    comulCurried_compLeft, comulCurried_comulCurried, compLeft_apply]
 
 /-- Stage-level right convolution with coordinate evaluation at `(0, 0)` is the identity
 operator. -/
