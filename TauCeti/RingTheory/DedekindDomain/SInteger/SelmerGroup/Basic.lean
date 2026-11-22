@@ -207,7 +207,7 @@ noncomputable def fromUnitsNDivisible :
     unitsNDivisible (S.integer K) K n →* selmerGroup (R := R) (K := K) (S := S) (n := n) :=
   ((QuotientGroup.mk' (powMonoidHom n : Kˣ →* Kˣ).range).comp
     (unitsNDivisible (S.integer K) K n).subtype).codRestrict _
-      fun u ↦ (mk_mem_selmerGroup_iff_mem_unitsNDivisible K S n (u : Kˣ)).mpr u.2
+      fun u ↦ (mk_mem_selmerGroup_iff_mem_unitsNDivisible K S n (u : Kˣ)).mpr u.property
 
 /-- Underneath the codomain restriction, `fromUnitsNDivisible` is the quotient map. -/
 @[simp]
@@ -337,7 +337,7 @@ theorem exists_mul_pow_mem_unit
   refine ⟨c⁻¹, ?_⟩
   rw [powMonoidHom_apply] at hc
   rw [inv_pow, hc, mul_inv_rev, inv_inv, mul_inv_cancel_left]
-  exact u.2
+  exact u.property
 
 /-! ### Finiteness -/
 

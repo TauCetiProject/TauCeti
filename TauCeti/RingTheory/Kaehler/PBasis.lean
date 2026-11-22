@@ -93,7 +93,7 @@ theorem derivation_mem_span_of_mem_adjoin {M : Type*} [AddCommMonoid M] [Module 
   | add u v _ _ hu hv => rw [map_add]; exact S.add_mem hu hv
   | smul c u _ hu =>
     rw [Subfield.smul_def, smul_eq_mul, d.leibniz,
-      d.map_eq_zero_of_mem_fieldRange_frobenius c.2, smul_zero, add_zero]
+      d.map_eq_zero_of_mem_fieldRange_frobenius c.property, smul_zero, add_zero]
     exact S.smul_mem (c : k) hu
 
 /-- For any family `b : ι → k`, every element of the intermediate field `k ^ p(range b)` has
@@ -142,15 +142,15 @@ theorem IsPBasis.derivation_ext {b : ι → k} (hb : IsPBasis p b) {M : Type*} [
           map_add' := d.map_add
           map_smul' := fun c x ↦ by
             rw [RingHom.id_apply, Subfield.smul_def, smul_eq_mul, d.leibniz,
-              d.map_eq_zero_of_mem_fieldRange_frobenius c.2, smul_zero, add_zero,
+              d.map_eq_zero_of_mem_fieldRange_frobenius c.property, smul_zero, add_zero,
               ← Subfield.smul_def] }
       map_one_eq_zero' := d.map_one_eq_zero
       leibniz' := d.leibniz }
-  let B : Module.Basis ι k Ω[k⁄(frobenius k p).fieldRange] := hb.kaehlerBasis (fun c ↦ c.2)
+  let B : Module.Basis ι k Ω[k⁄(frobenius k p).fieldRange] := hb.kaehlerBasis (fun c ↦ c.property)
   have hlift : (promote d₁).liftKaehlerDifferential = (promote d₂).liftKaehlerDifferential :=
     B.ext fun i ↦ by
       dsimp only [B]
-      rw [hb.kaehlerBasis_apply (fun c ↦ c.2) i,
+      rw [hb.kaehlerBasis_apply (fun c ↦ c.property) i,
         Derivation.liftKaehlerDifferential_comp_D (promote d₁),
         Derivation.liftKaehlerDifferential_comp_D (promote d₂)]
       exact h i
@@ -244,7 +244,7 @@ theorem D_eq_zero_iff_mem_fieldRange_frobenius
         (Set.range (Empty.elim : Empty → k)) := by
     rw [Set.range_eq_empty, IntermediateField.adjoin_empty, IntermediateField.mem_bot]
     rintro ⟨c, hc⟩
-    exact hnot (hc ▸ c.2)
+    exact hnot (hc ▸ c.property)
   have hopt : IsPIndependent p (Option.elim' x (Empty.elim : Empty → k)) :=
     (isPIndependent_option_iff (isPIndependent_empty _) x).mpr hnot_adjoin
   have hlin := (isPIndependent_iff_linearIndependent_D hR _).mp hopt

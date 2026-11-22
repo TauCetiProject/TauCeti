@@ -47,27 +47,27 @@ open scoped Classical in
 private noncomputable def filtrationStep
     (N : {N : AddSubgroup M // ∀ g : G, ∀ x ∈ N, g • x ∈ N}) :
     {N : AddSubgroup M // ∀ g : G, ∀ x ∈ N, g • x ∈ N} :=
-  if h : N.1 = ⊤ then N else
-    ⟨N.1 ⊔ AddSubgroup.zmultiples
-        (exists_notMem_nsmul_mem_smul_sub_mem_of_isProP hG htors N.2 h).choose,
-      smul_mem_sup_zmultiples N.2
-        (exists_notMem_nsmul_mem_smul_sub_mem_of_isProP hG htors N.2 h).choose_spec.2.2⟩
+  if h : N.val = ⊤ then N else
+    ⟨N.val ⊔ AddSubgroup.zmultiples
+        (exists_notMem_nsmul_mem_smul_sub_mem_of_isProP hG htors N.property h).choose,
+      smul_mem_sup_zmultiples N.property
+        (exists_notMem_nsmul_mem_smul_sub_mem_of_isProP hG htors N.property h).choose_spec.2.2⟩
 
 private theorem filtrationStep_of_ne_top
-    {N : {N : AddSubgroup M // ∀ g : G, ∀ x ∈ N, g • x ∈ N}} (h : N.1 ≠ ⊤) :
-    ∃ x : M, (filtrationStep hG htors N).1 = N.1 ⊔ AddSubgroup.zmultiples x ∧
-      x ∉ N.1 ∧ p • x ∈ N.1 ∧ ∀ g : G, g • x - x ∈ N.1 :=
+    {N : {N : AddSubgroup M // ∀ g : G, ∀ x ∈ N, g • x ∈ N}} (h : N.val ≠ ⊤) :
+    ∃ x : M, (filtrationStep hG htors N).val = N.val ⊔ AddSubgroup.zmultiples x ∧
+      x ∉ N.val ∧ p • x ∈ N.val ∧ ∀ g : G, g • x - x ∈ N.val :=
   ⟨_, by simp [filtrationStep, h],
-    (exists_notMem_nsmul_mem_smul_sub_mem_of_isProP hG htors N.2 h).choose_spec⟩
+    (exists_notMem_nsmul_mem_smul_sub_mem_of_isProP hG htors N.property h).choose_spec⟩
 
 private theorem filtrationStep_of_eq_top
-    {N : {N : AddSubgroup M // ∀ g : G, ∀ x ∈ N, g • x ∈ N}} (h : N.1 = ⊤) :
+    {N : {N : AddSubgroup M // ∀ g : G, ∀ x ∈ N, g • x ∈ N}} (h : N.val = ⊤) :
     filtrationStep hG htors N = N := by
   simp [filtrationStep, h]
 
 private theorem le_filtrationStep (N : {N : AddSubgroup M // ∀ g : G, ∀ x ∈ N, g • x ∈ N}) :
-    N.1 ≤ (filtrationStep hG htors N).1 := by
-  by_cases h : N.1 = ⊤
+    N.val ≤ (filtrationStep hG htors N).val := by
+  by_cases h : N.val = ⊤
   · rw [filtrationStep_of_eq_top hG htors h]
   · obtain ⟨x, hx, -⟩ := filtrationStep_of_ne_top hG htors h
     rw [hx]
@@ -80,20 +80,20 @@ private noncomputable def filtrationChain (i : ℕ) :
     rw [AddSubgroup.mem_bot] at hx ⊢
     rw [hx, smul_zero]⟩
 
-private theorem filtrationChain_zero : (filtrationChain hG htors 0).1 = ⊥ := rfl
+private theorem filtrationChain_zero : (filtrationChain hG htors 0).val = ⊥ := rfl
 
 private theorem filtrationChain_succ (i : ℕ) :
     filtrationChain hG htors (i + 1) = filtrationStep hG htors (filtrationChain hG htors i) :=
   Function.iterate_succ_apply' _ _ _
 
-private theorem monotone_filtrationChain : Monotone fun i ↦ (filtrationChain hG htors i).1 :=
+private theorem monotone_filtrationChain : Monotone fun i ↦ (filtrationChain hG htors i).val :=
   monotone_nat_of_le_succ fun i ↦ by
     rw [filtrationChain_succ]
     exact le_filtrationStep hG htors _
 
 /-- Once the trivial filtration reaches `⊤` it stays there. -/
-private theorem filtrationChain_eq_top_of_le {n : ℕ} (hn : (filtrationChain hG htors n).1 = ⊤) :
-    ∀ i, n ≤ i → (filtrationChain hG htors i).1 = ⊤ := by
+private theorem filtrationChain_eq_top_of_le {n : ℕ} (hn : (filtrationChain hG htors n).val = ⊤) :
+    ∀ i, n ≤ i → (filtrationChain hG htors i).val = ⊤ := by
   intro i hi
   induction i, hi using Nat.le_induction with
   | base => exact hn
@@ -102,14 +102,14 @@ private theorem filtrationChain_eq_top_of_le {n : ℕ} (hn : (filtrationChain hG
 /-- The orders along the trivial filtration: the `i`-th term has order `p ^ i` as long as `i` is
 at most the `p`-adic valuation of `|M|`. -/
 private theorem natCard_filtrationChain :
-    ∀ i ≤ padicValNat p (Nat.card M), Nat.card (filtrationChain hG htors i).1 = p ^ i := by
+    ∀ i ≤ padicValNat p (Nat.card M), Nat.card (filtrationChain hG htors i).val = p ^ i := by
   intro i
   induction i with
   | zero => intro _; simp [filtrationChain_zero]
   | succ i ih =>
     intro hi
     have hcard := ih (Nat.le_of_succ_le hi)
-    have hne : (filtrationChain hG htors i).1 ≠ ⊤ := by
+    have hne : (filtrationChain hG htors i).val ≠ ⊤ := by
       intro htop
       rw [htop, AddSubgroup.card_top,
         htors.natCard_eq_pow_padicValNat_of_forall_exists_nsmul_eq_zero] at hcard
@@ -133,12 +133,12 @@ theorem exists_filtration_of_isProP :
       ∀ i < padicValNat p (Nat.card M), ∃ x : M, N (i + 1) = N i ⊔ AddSubgroup.zmultiples x ∧
         x ∉ N i ∧ p • x ∈ N i ∧ ∀ g : G, g • x - x ∈ N i := by
   have hcard := natCard_filtrationChain hG htors
-  refine ⟨fun i ↦ (filtrationChain hG htors i).1, filtrationChain_zero hG htors,
+  refine ⟨fun i ↦ (filtrationChain hG htors i).val, filtrationChain_zero hG htors,
     monotone_filtrationChain hG htors, filtrationChain_eq_top_of_le hG htors ?_,
-    fun i ↦ (filtrationChain hG htors i).2, hcard, fun i hi ↦ ?_⟩
+    fun i ↦ (filtrationChain hG htors i).property, hcard, fun i hi ↦ ?_⟩
   · rw [← AddSubgroup.card_eq_iff_eq_top, hcard _ le_rfl]
     exact htors.natCard_eq_pow_padicValNat_of_forall_exists_nsmul_eq_zero.symm
-  · have hne : (filtrationChain hG htors i).1 ≠ ⊤ := by
+  · have hne : (filtrationChain hG htors i).val ≠ ⊤ := by
       intro htop
       have := hcard i hi.le
       rw [htop, AddSubgroup.card_top,

@@ -12,6 +12,10 @@ public import TauCeti.FieldTheory.PurelyInseparable.TensorProduct
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 public import TauCeti.RingTheory.Smooth.Regular
 
+import TauCeti.RingTheory.RingHom.FaithfullyFlat
+import TauCeti.RingTheory.Flat.Noetherian
+import TauCeti.RingTheory.RegularLocalRing.Descent
+
 /-!
 # Geometrically regular algebras over a field
 
@@ -35,6 +39,8 @@ is a field, hence regular, but `L ⊗[k] L` is not reduced, so `L` is not geomet
   finite purely inseparable extension in any universe is a regular ring.
 * `AlgEquiv.geometricallyRegular`: geometric regularity is invariant under isomorphisms of
   `k`-algebras.
+* `TauCeti.Excellence.GeometricallyRegular.of_faithfullyFlat`: geometric regularity descends
+  along faithfully flat maps of `k`-algebras, including Noetherianity.
 * `TauCeti.Excellence.GeometricallyRegular.of_smooth`: a smooth `k`-algebra is geometrically
   regular; this covers `k` itself, the zero algebra and polynomial rings in finitely many
   variables.
@@ -56,6 +62,7 @@ is a field, hence regular, but `L ⊗[k] L` is not reduced, so `L` is not geomet
 
 * The Stacks Project, Section 10.166 (Geometrically regular algebras), Lemma 10.166.1 and
   Definition 10.166.2.
+* The Stacks Project, Lemma 15.42.7, Tag 07NT, for the faithfully flat descent argument.
 -/
 
 public section
@@ -110,6 +117,22 @@ theorem _root_.AlgEquiv.geometricallyRegular (e : B ≃ₐ[k] B') [Geometrically
     isNoetherianRing_of_ringEquiv B e.toRingEquiv
   isRegularRing_tensorProduct L _ _ _ _ :=
     .of_ringEquiv (Algebra.TensorProduct.congr (AlgEquiv.refl : L ≃ₐ[k] L) e).toRingEquiv
+
+/-- Geometric regularity descends along a faithfully flat homomorphism of algebras over a
+field. Noetherianity of the source algebra follows by descent. -/
+theorem of_faithfullyFlat {C : Type*} [CommRing C] [Algebra k C] [Algebra B C]
+    [IsScalarTower k B C] [Module.FaithfullyFlat B C] [GeometricallyRegular k C] :
+    GeometricallyRegular k B where
+  isNoetherianRing := by
+    have := (inferInstance : GeometricallyRegular k C).isNoetherianRing
+    exact .of_faithfullyFlat C
+  isRegularRing_tensorProduct L _ _ _ _ := by
+    have hf : (IsScalarTower.toAlgHom k B C).toRingHom.FaithfullyFlat :=
+      RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance
+    let f := Algebra.TensorProduct.lTensor (S := k) L (IsScalarTower.toAlgHom k B C)
+    let : Algebra (L ⊗[k] B) (L ⊗[k] C) := f.toAlgebra
+    have : Module.FaithfullyFlat (L ⊗[k] B) (L ⊗[k] C) := hf.lTensor (S := k) L
+    exact IsRegularRing.of_faithfullyFlat (S := L ⊗[k] C)
 
 /-- A smooth algebra over a field is geometrically regular: its base change to any field is smooth
 over that field, hence regular. -/

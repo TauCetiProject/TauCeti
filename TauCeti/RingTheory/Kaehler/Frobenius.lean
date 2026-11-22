@@ -105,7 +105,7 @@ def kaehlerEquivFrobeniusRange
     KaehlerDifferential.map R (frobenius k p).fieldRange k k
   let bwd : Ω[k⁄(frobenius k p).fieldRange] →ₗ[k] Ω[k⁄R] :=
     (derivationOfMapZero (D R k)
-      fun c ↦ D_eq_zero_of_mem_fieldRange_frobenius c.2).liftKaehlerDifferential
+      fun c ↦ D_eq_zero_of_mem_fieldRange_frobenius c.property).liftKaehlerDifferential
   LinearEquiv.ofLinearMap fwd bwd
     (Derivation.liftKaehlerDifferential_unique _ _ (by
       ext x

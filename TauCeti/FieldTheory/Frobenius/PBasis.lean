@@ -210,7 +210,7 @@ theorem IsPIndependent.comp {b : ι → k} (hb : IsPIndependent p b) {f : ι' �
   have : NeZero p := ⟨expChar_ne_zero k p⟩
   have hcomp : pMonomial p (b ∘ f) = pMonomial p b ∘ Finsupp.mapDomain f :=
     funext fun e ↦ pMonomial_comp_of_injective p b hf e
-  rw [IsPIndependent, hcomp]
+  rw [isPIndependent_iff, hcomp]
   exact hb.linearIndependent.comp _ (Finsupp.mapDomain_injective hf)
 
 /-- `p`-independence is invariant under reindexing by an equivalence. -/
@@ -257,12 +257,12 @@ theorem isPIndependent_iff_finset (b : ι → k) :
   have hsub : pMonomial p b ∘ (Subtype.val : t → ι →₀ Fin p) =
       (fun g : s →₀ Fin p ↦ pMonomial p (fun i : s ↦ b i) g) ∘ (fun f : t ↦ proj f) := by
     ext f
-    have hpm : pMonomial p (fun i : s ↦ b i) (proj f.1) = pMonomial p b (emb (proj f.1)) :=
-      pMonomial_comp_of_injective p b Subtype.val_injective (proj f.1)
-    rw [Function.comp_apply, Function.comp_apply, hpm, hsect f.1 f.2]
+    have hpm : pMonomial p (fun i : s ↦ b i) (proj f.val) = pMonomial p b (emb (proj f.val)) :=
+      pMonomial_comp_of_injective p b Subtype.val_injective (proj f.val)
+    rw [Function.comp_apply, Function.comp_apply, hpm, hsect f.val f.property]
   rw [hsub]
   refine (h s).linearIndependent.comp _ fun f₁ f₂ heq ↦ Subtype.ext ?_
-  rw [← hsect f₁.1 f₁.2, ← hsect f₂.1 f₂.2, heq]
+  rw [← hsect f₁.val f₁.property, ← hsect f₂.val f₂.property, heq]
 
 private theorem isPIndependent_sUnion_of_chain {c : Set (Set k)}
     (hc : ∀ t ∈ c, IsPIndependent p ((↑) : t → k)) (hch : IsChain (· ⊆ ·) c) (hcne : c.Nonempty) :
@@ -277,10 +277,11 @@ private theorem isPIndependent_sUnion_of_chain {c : Set (Set k)}
     exact hx
   obtain ⟨t, htc, hFt⟩ := hch.directedOn.exists_mem_subset_of_finite_of_subset_sUnion hcne
     (Finset.finite_toSet _) hsub
-  let f : F → t := fun x ↦ ⟨x.1.1, hFt (Finset.mem_coe.mpr (Finset.mem_image_of_mem _ x.2))⟩
+  let f : F → t := fun x ↦
+    ⟨x.val.val, hFt (Finset.mem_coe.mpr (Finset.mem_image_of_mem _ x.property))⟩
   have hf : Function.Injective f := fun x y hxy ↦
     Subtype.ext (Subtype.ext (congrArg (Subtype.val : t → k) hxy))
-  have hcomp : (((↑) : t → k) ∘ f) = fun x : F ↦ (x.1 : k) := rfl
+  have hcomp : (((↑) : t → k) ∘ f) = fun x : F ↦ (x.val : k) := rfl
   rw [← hcomp]
   exact (hc t htc).comp hf
 
@@ -455,9 +456,9 @@ private theorem isPIndependent_option_of_notMem_adjoin {b : ι → k} (hb : IsPI
   have hpow : LinearIndependent E (fun n : Fin p ↦ x ^ (n : ℕ)) := by
     rw [linearIndependent_iff']
     intro s c hc n hn
-    have hc' : ∑ m ∈ s, (⟨(c m : k), (c m).2⟩ : E.toSubfield) • x ^ (m : ℕ) = 0 := by
+    have hc' : ∑ m ∈ s, (⟨(c m : k), (c m).property⟩ : E.toSubfield) • x ^ (m : ℕ) = 0 := by
       simpa only [Subfield.smul_def, IntermediateField.smul_def] using hc
-    have h0 := linearIndependent_iff'.mp hpow_sub s (fun m ↦ ⟨c m, (c m).2⟩) hc' n hn
+    have h0 := linearIndependent_iff'.mp hpow_sub s (fun m ↦ ⟨c m, (c m).property⟩) hc' n hn
     exact Subtype.ext (congrArg Subtype.val h0)
   have hm_mem : ∀ e : ι →₀ Fin p, pMonomial p b e ∈ E := fun e ↦ by
     rw [← IntermediateField.mem_toSubalgebra, ← Subalgebra.mem_toSubmodule,
@@ -477,7 +478,7 @@ private theorem isPIndependent_option_of_notMem_adjoin {b : ι → k} (hb : IsPI
     rw [Function.comp_apply, Algebra.smul_def]
     exact (mul_comm (pMonomial p b f.some) (x ^ (f none : ℕ))).trans
       (pMonomial_option_elim p x b f).symm
-  rw [IsPIndependent, ← hcomp]
+  rw [isPIndependent_iff, ← hcomp]
   exact (linearIndependent_equiv eEquiv).mpr hprod
 
 /-- Adjoining `x` to a `p`-independent family `b` preserves `p`-independence iff `x` does not lie
@@ -646,7 +647,7 @@ theorem isPBasis_empty_iff_perfectRing [IsEmpty ι] (b : ι → k) :
   · intro h
     refine PerfectRing.ofSurjective k p fun x ↦ ?_
     obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp (h x)
-    obtain ⟨a, ha⟩ := c.2
+    obtain ⟨a, ha⟩ := c.property
     rw [Subfield.smul_def, smul_eq_mul, mul_one] at hc
     exact ⟨a, ha.trans hc⟩
   · intro _ x

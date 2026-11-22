@@ -46,7 +46,7 @@ public section
 /-- A prime, as an element of the subtype `Nat.Primes`, is prime: the `Fact` instance under which
 the prime-indexed API, for instance the `p`-adic integers `ℤ_[p]`, can be used for `p : Nat.Primes`.
 -/
-instance Nat.Primes.instFactPrime (p : Nat.Primes) : Fact (p : ℕ).Prime := ⟨p.2⟩
+instance Nat.Primes.instFactPrime (p : Nat.Primes) : Fact (p : ℕ).Prime := ⟨p.property⟩
 
 /-- A prime natural number is nonzero. -/
 instance Nat.Prime.instNeZero (p : ℕ) [hp : Fact p.Prime] : NeZero p := ⟨hp.out.ne_zero⟩

@@ -107,7 +107,7 @@ theorem linearIndependent_pow_of_notMem_subfield {p : ℕ} [Fact p.Prime] {k : T
     intro y hy
     have hy' : (y : k) ^ p = x ^ p := congrArg Subtype.val hy
     have : (y : k) = x := frobenius_inj k p hy'
-    exact hx (this ▸ y.2)
+    exact hx (this ▸ y.property)
   let f : Polynomial E := Polynomial.X ^ p - Polynomial.C a
   have hirr : Irreducible f := irreducible_X_pow_sub_C_of_prime hp ha
   have hmonic : f.Monic := Polynomial.monic_X_pow_sub_C a hp.ne_zero
