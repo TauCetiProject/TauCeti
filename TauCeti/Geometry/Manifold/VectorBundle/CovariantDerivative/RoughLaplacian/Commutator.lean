@@ -153,8 +153,7 @@ theorem covariantDerivative_roughLaplacian_eq_sum
     hneg.congr_of_eventuallyEq (hloc.mono fun y hy ↦ by simp only [hy])
   rw [cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq hlap hneg univ_mem hloc,
     cov.isCovariantDerivativeOnUniv.neg hsum,
-    TauCeti.Manifold.covariantDerivative_sum cov.isCovariantDerivativeOnUniv (Set.mem_univ x)
-      fun i _ ↦ hterm i]
+    cov.isCovariantDerivativeOnUniv.sum fun i _ ↦ hterm i]
   -- Differentiate each term by the Leibniz rule; the terms with `∇Fᵢ` and `∇Dᵢ` cancel.
   have hexp (i : Fin (Module.finrank ℝ E)) :
       cov (fun y ↦ covT.hom cov (cov σ) y (Fr i y) (Du i y)) x v =
