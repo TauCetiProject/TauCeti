@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Multiplier.Nondegenerate
 public import TauCeti.Topology.Algebra.Star.Idealizer
-import TauCeti.Analysis.CStarAlgebra.Multiplier.Ideal
 import TauCeti.Analysis.CStarAlgebra.Quotient
+import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
 
 /-!
 # Essential-ideal universal property and concrete idealizer models of multiplier algebras

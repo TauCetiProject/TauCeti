@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Unitization
-public import TauCeti.Analysis.CStarAlgebra.Ideal
+public import TauCeti.Analysis.CStarAlgebra.Annihilator
 
 /-!
 # Unitization module action on closed ideals of C⋆-algebras
 
 Left `Unitization ℂ A`-module structure `TwoSidedIdeal.unitizationModule` on a closed two-sided
-ideal `I` of a nonunital C⋆-algebra `A`, induced by `TwoSidedIdeal.mulLeftEnd`.
+ideal `I` of a nonunital C⋆-algebra `A`, induced by `TwoSidedIdeal.mulLeftEnd`, together with the
+comparison between `I.annihilator` and `Module.annihilator (Unitization ℂ A) I`.
 -/
 
 public section
@@ -74,6 +75,63 @@ theorem isScalarTower_unitizationModule :
     IsScalarTower ℂ (Unitization ℂ A) I := by
   let _ := I.unitizationModule
   exact ⟨fun r u x => Subtype.ext <| by simp [smul_add, mul_smul, smul_mul_assoc]⟩
+
+theorem mem_annihilator_unitization_iff {u : Unitization ℂ A} :
+    (letI := I.unitizationModule; u ∈ Module.annihilator (Unitization ℂ A) I) ↔
+      ∀ x ∈ I, u.fst • x + u.snd * x = 0 := by
+  let _ := I.unitizationModule
+  rw [Module.mem_annihilator]
+  refine ⟨fun h x hx => ?_, fun h x => Subtype.ext ?_⟩
+  · simpa [coe_unitizationModule_smul] using congrArg Subtype.val (h ⟨x, hx⟩)
+  · simpa [coe_unitizationModule_smul] using h x x.property
+
+/-- The annihilator of a closed two-sided ideal `I` is the preimage in `A` of the module
+annihilator of `I` under the left action of the unitization. -/
+theorem annihilator_eq_comap_toTwoSided_annihilator :
+    letI := I.unitizationModule
+    I.annihilator = (Module.annihilator (Unitization ℂ A) I).toTwoSided.comap
+      (Unitization.inrNonUnitalAlgHom ℂ A) := by
+  let _ : Module (Unitization ℂ A) I := I.unitizationModule
+  ext a
+  simp [mem_comap, Module.mem_annihilator, ← Subtype.coe_inj]
+
+/-- For a closed two-sided ideal `I` of a nonunital C⋆-algebra `A`, the preimage of
+`(Module.annihilator (Unitization ℂ A) I).toTwoSided` along `Unitization.inrNonUnitalAlgHom ℂ A` is
+closed. -/
+theorem isClosed_comap_toTwoSided_annihilator :
+    letI := I.unitizationModule
+    IsClosed
+      ((TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom ℂ A)
+          (Module.annihilator (Unitization ℂ A) I).toTwoSided : TwoSidedIdeal A) : Set A) := by
+  let _ := I.unitizationModule
+  rw [← I.annihilator_eq_comap_toTwoSided_annihilator]
+  exact I.isClosed_annihilator
+
+/-- For a closed two-sided ideal `I` of a nonunital C⋆-algebra `A`, the preimage of
+`(Module.annihilator (Unitization ℂ A) I).toTwoSided` along `Unitization.inrNonUnitalAlgHom ℂ A` is
+closed under complex scalar multiplication. -/
+theorem smul_mem_comap_toTwoSided_annihilator (c : ℂ) {a : A} :
+    letI := I.unitizationModule
+    a ∈ TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom ℂ A)
+          (Module.annihilator (Unitization ℂ A) I).toTwoSided →
+      c • a ∈ TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom ℂ A)
+          (Module.annihilator (Unitization ℂ A) I).toTwoSided := by
+  let _ := I.unitizationModule
+  rw [← I.annihilator_eq_comap_toTwoSided_annihilator]
+  exact I.smul_mem_annihilator c
+
+/-- For a closed two-sided ideal `I` of a nonunital C⋆-algebra `A`, the preimage of
+`(Module.annihilator (Unitization ℂ A) I).toTwoSided` along `Unitization.inrNonUnitalAlgHom ℂ A` is
+closed under `star`. -/
+theorem star_mem_comap_toTwoSided_annihilator {a : A} :
+    letI := I.unitizationModule
+    a ∈ TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom ℂ A)
+          (Module.annihilator (Unitization ℂ A) I).toTwoSided →
+      star a ∈ TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom ℂ A)
+          (Module.annihilator (Unitization ℂ A) I).toTwoSided := by
+  let _ := I.unitizationModule
+  rw [← I.annihilator_eq_comap_toTwoSided_annihilator]
+  exact star_mem_annihilator_of_cstar
 
 end Unitization
 

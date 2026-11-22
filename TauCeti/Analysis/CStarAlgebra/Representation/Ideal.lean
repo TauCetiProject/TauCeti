@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Multiplier.Ideal
 public import TauCeti.Analysis.CStarAlgebra.Representation.Multiplier
+public import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
 
 /-!
 # Extensions of Hilbert-space representations from closed ideals

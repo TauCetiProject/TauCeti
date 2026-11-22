@@ -147,6 +147,15 @@ theorem isClosedEssential_iff_isEssential_of_star_mem
   rw [isClosedEssential_iff_annihilator_eq_bot_of_star_mem hI,
     annihilator_eq_bot_iff_isEssential hI]
 
+/-- In a `T₁` topological proper star ring, a self-adjoint ideal is essential exactly when it meets
+every nonzero closed two-sided ideal. -/
+theorem isEssential_iff_forall_isClosed
+    [SeparatelyContinuousMul A] [T1Space A] [StarRing A] [IsProperStar A]
+    {I : TwoSidedIdeal A} (hI : ∀ x ∈ I, star x ∈ I) :
+    I.IsEssential ↔ ∀ J : TwoSidedIdeal A, IsClosed (J : Set A) → Disjoint I J → J = ⊥ := by
+  rw [← isClosedEssential_iff_isEssential_of_star_mem hI, isClosedEssential_iff]
+  simp only [disjoint_iff]
+
 end ClosedEssentialRing
 
 end TwoSidedIdeal

@@ -33,14 +33,6 @@ instance isClosed_annihilator (I : TwoSidedIdeal A) : IsClosed (I.annihilator : 
   rw [hset]
   exact isClosed_biInter fun x _ ↦ isClosed_singleton.preimage (continuous_mul_const x)
 
-/-- In a `T₁` topological proper star ring, a self-adjoint ideal is essential exactly when it meets
-every nonzero closed two-sided ideal. -/
-theorem isEssential_iff_forall_isClosed [StarRing A] [IsProperStar A] {I : TwoSidedIdeal A}
-    (hI : ∀ x ∈ I, star x ∈ I) :
-    I.IsEssential ↔ ∀ J : TwoSidedIdeal A, IsClosed (J : Set A) → Disjoint I J → J = ⊥ :=
-  ⟨fun h _ _ ↦ h.eq_bot_of_disjoint, fun h ↦ (annihilator_eq_bot_iff_isEssential hI).mp <|
-    h _ (isClosed_annihilator I) (disjoint_annihilator hI)⟩
-
 end Annihilator
 
 section ClosedAnnihilator
