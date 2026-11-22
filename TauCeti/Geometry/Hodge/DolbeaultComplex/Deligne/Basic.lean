@@ -146,29 +146,13 @@ theorem deligneDiff_of_le {p a : ℤ} (h : 2 * p ≤ a) (x : A) :
     X.deligneDiff p a x = X.d x := by
   rw [deligneDiff, ite_eq_right (by omega), ite_eq_right (by omega)]
 
-/-- The set of types `(r, s)` with `r < p` and `s < p` is closed under exchanging indices. -/
-private theorem swap_mem_lowTypes (p : ℤ) (i : ℤ × ℤ) :
-    i.swap ∈ {i : ℤ × ℤ | i.1 < p ∧ i.2 < p} ↔ i ∈ {i : ℤ × ℤ | i.1 < p ∧ i.2 < p} := by
-  simp only [Set.mem_ofPred_eq, Prod.fst_swap, Prod.snd_swap, and_comm]
-
-/-- The projection of `d` onto the types `(r, s)` with `r < p` and `s < p` kills `d y` whenever
-it kills `y`: `d` only raises types. -/
-private theorem supportedProj_d_sub_supportedProj (p : ℤ) (y : A) :
-    supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p}
-      (X.d (y - supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y)) = 0 := by
-  induction y using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => simp
-  | @homogeneous i y =>
-    by_cases hi : i ∈ {i : ℤ × ℤ | i.1 < p ∧ i.2 < p}
-    · rw [supportedProj_of_mem y.property hi, sub_self, map_zero, map_zero]
-    · obtain ⟨r, s⟩ := i
-      simp only [Set.mem_ofPred_eq, not_and_or, not_lt] at hi
-      rw [supportedProj_of_notMem y.property (by simp only [Set.mem_ofPred_eq]; omega), sub_zero,
-        d_apply, map_add, supportedProj_of_notMem (X.del_mem y.property)
-          (by simp only [Set.mem_ofPred_eq]; omega),
-        supportedProj_of_notMem (X.delBar_mem y.property)
-          (by simp only [Set.mem_ofPred_eq]; omega), add_zero]
-  | add y z hy hz => rw [map_add, add_sub_add_comm, map_add, map_add, hy, hz, add_zero]
+/-- Conjugation commutes with the projection onto the types `(r, s)` with `r < p` and `s < p`, a
+set of types stable under exchanging indices. -/
+theorem conj_supportedProj_low (p : ℤ) (y : A) :
+    X.conj.toEquiv (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y) =
+      supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} (X.conj.toEquiv y) :=
+  X.conj_supportedProj (fun i ↦ by simp only [Set.mem_ofPred_eq, Prod.fst_swap, Prod.snd_swap,
+    and_comm]) y
 
 /-- `∂∂bar` kills every projection of `d` onto a set of types. -/
 private theorem del_delBar_supportedProj_d (S : Set (ℤ × ℤ)) (y : A) :
@@ -194,8 +178,15 @@ theorem deligneDiff_deligneDiff (p a : ℤ) (x : A) :
     X.deligneDiff p (a + 1) (X.deligneDiff p a x) = 0 := by
   rcases lt_trichotomy (a + 1 + 1) (2 * p) with h | h | h
   · rw [deligneDiff_of_lt h, deligneDiff_of_lt (by omega), map_neg, map_neg, neg_neg]
-    have hd := supportedProj_d_sub_supportedProj (X := X) p (X.d x)
-    rwa [map_sub, d_d, zero_sub, map_neg, neg_eq_zero] at hd
+    -- Split `d x` along the types `(r, s)` with `r, s < p` and the others: `d` carries no type
+    -- of the second kind into the first, and `d d x = 0`.
+    have hc := X.supportedProj_d_supportedProj_eq_zero (S := {i : ℤ × ℤ | i.1 < p ∧ i.2 < p})
+      (T := {i | i.1 < p ∧ i.2 < p}ᶜ)
+      (fun i hi ↦ by simp only [Set.mem_compl_iff, Set.mem_ofPred_eq] at hi ⊢; omega) (X.d x)
+    have hs := supportedProj_union 𝒜 {i : ℤ × ℤ | i.1 < p ∧ i.2 < p} disjoint_compl_right (X.d x)
+    rw [Set.union_compl_self, supportedProj_univ] at hs
+    have hd := congrArg (fun y ↦ supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} (X.d y)) hs
+    rwa [map_add, map_add, d_d, map_zero, hc, add_zero, eq_comm] at hd
   · rw [deligneDiff_of_eq h, deligneDiff_of_lt (by omega), map_neg, map_neg,
       del_delBar_supportedProj_d, neg_zero, smul_zero, neg_zero]
   · rcases eq_or_lt_of_le (Int.add_one_le_iff.2 h) with h' | h'
@@ -210,18 +201,15 @@ theorem deligneDiff_mem {p a : ℤ} {x : A} (hx : x ∈ X.delignePiece p a) :
   · rw [mem_delignePiece_of_lt (by omega)] at hx
     rw [mem_delignePiece_of_lt h, deligneDiff_of_lt h]
     refine ⟨neg_mem ?_, neg_mem ?_⟩
-    · have hd := X.d_mem_iSup (T := {i : ℤ × ℤ | i.1 + i.2 = a})
-        (fun i hi ↦ by simp only [Set.mem_ofPred_eq] at hi ⊢; omega) hx.1
-      have hle : (⨆ i : ↥({i : ℤ × ℤ | i.1 < p ∧ i.2 < p} ∩ {i : ℤ × ℤ | i.1 + i.2 = a}), 𝒜 i) ≤
-          ⨆ i : {i : ℤ × ℤ | i.1 + i.2 = a + 1 - 1 ∧ i.1 < p ∧ i.2 < p}, 𝒜 i := by
-        refine iSup_mono' fun i ↦ ⟨⟨i, ?_⟩, le_rfl⟩
-        obtain ⟨i, hi₁, hi₂⟩ := i
-        simp only [Set.mem_ofPred_eq] at hi₁ hi₂ ⊢
-        omega
-      exact hle (supportedProj_mem_iSup_inter hd)
+    · have hD : {i : ℤ × ℤ | i.1 + i.2 = a - 1 ∧ i.1 < p ∧ i.2 < p} ⊆ {i | i.1 + i.2 = a - 1} :=
+        fun _ hi ↦ hi.1
+      have hL : ({i : ℤ × ℤ | i.1 < p ∧ i.2 < p} ∩ {i | i.1 + i.2 = a}) ⊆
+          {i | i.1 + i.2 = a + 1 - 1 ∧ i.1 < p ∧ i.2 < p} :=
+        fun _ hi ↦ ⟨hi.2.trans (add_sub_cancel_right a 1).symm, hi.1⟩
+      exact mem_iSup_of_subset hL (supportedProj_mem_iSup_inter
+        (X.d_mem_iSup_degree (sub_add_cancel a 1) (mem_iSup_of_subset hD hx.1)))
     · exact X.conj.map_mem_twist X.conj (f := supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} ∘ₗ X.d)
-        (fun y ↦ by simp only [LinearMap.comp_apply, conj_supportedProj X (swap_mem_lowTypes p),
-          conj_d]) hx.2
+        (fun y ↦ by simp only [LinearMap.comp_apply, conj_supportedProj_low, conj_d]) hx.2
   · rw [mem_delignePiece_of_lt (by omega)] at hx
     rw [mem_delignePiece_of_le h.ge, deligneDiff_of_eq h]
     refine ⟨neg_mem (nsmul_mem ?_ 2), neg_mem (nsmul_mem ?_ 2)⟩
@@ -238,10 +226,8 @@ theorem deligneDiff_mem {p a : ℤ} {x : A} (hx : x ∈ X.delignePiece p a) :
       rwa [sub_add_cancel] at h₁
   · rw [mem_delignePiece_of_le (by omega)] at hx
     rw [mem_delignePiece_of_le (by omega), deligneDiff_of_le (by omega)]
-    refine ⟨X.d_mem_iSup (fun i hi ↦ ?_) hx.1, ?_⟩
-    · simp only [Set.mem_ofPred_eq] at hi ⊢
-      omega
-    · exact X.conj.map_mem_twist X.conj (conj_d X) hx.2
+    exact ⟨X.d_mem_iSup (fun i hi ↦ by simp only [Set.mem_ofPred_eq] at hi ⊢; omega) hx.1,
+      X.conj.map_mem_twist X.conj (conj_d X) hx.2⟩
 
 variable (X)
 
