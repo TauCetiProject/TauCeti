@@ -48,8 +48,8 @@ lemma whiskeringLeft₂FlipIso_hom_app_app (G : D₁ ⥤ D₂ ⥤ H) (X₂ : C�
 @[simp]
 lemma whiskeringLeft₂FlipIso_inv_app_app (G : D₁ ⥤ D₂ ⥤ H) (X₂ : C₂) (X₁ : C₁) :
     (((L₁.whiskeringLeft₂FlipIso L₂ G).inv).app X₂).app X₁ = 𝟙 _ := by
-  simp only [whiskeringLeft₂FlipIso, NatIso.ofComponents_inv_app, Iso.refl_inv]
-  rfl
+  simpa only [whiskeringLeft₂FlipIso_hom_app_app, Category.comp_id] using
+    (L₁.whiskeringLeft₂FlipIso L₂ G).inv_hom_id_app_app X₂ X₁
 
 /-- Naturality of `whiskeringLeft₂FlipIso` in the bifunctor argument. -/
 @[reassoc]
@@ -79,8 +79,8 @@ lemma whiskeringRightFlipIso_hom_app_app {C₁ C₂ D E : Type*} [Category* C₁
 lemma whiskeringRightFlipIso_inv_app_app {C₁ C₂ D E : Type*} [Category* C₁] [Category* C₂]
     [Category* D] [Category* E] (T : C₁ ⥤ C₂ ⥤ D) (G : D ⥤ E) (X₂ : C₂) (X₁ : C₁) :
     (((T.whiskeringRightFlipIso G).inv).app X₂).app X₁ = 𝟙 _ := by
-  simp only [whiskeringRightFlipIso, NatIso.ofComponents_inv_app, Iso.refl_inv]
-  rfl
+  simpa only [whiskeringRightFlipIso_hom_app_app, Category.comp_id] using
+    (T.whiskeringRightFlipIso G).inv_hom_id_app_app X₂ X₁
 
 /-- Naturality of `whiskeringRightFlipIso` in the bifunctor argument. -/
 @[reassoc]
