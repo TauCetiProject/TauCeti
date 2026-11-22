@@ -15,7 +15,9 @@ import TauCeti.Analysis.Normed.Module.Dual.ClusterPt
 Let `A` be a normed algebra with a bounded approximate identity, and let `E` be a bounded
 `A`-bimodule with left action `L` and right action `R`. Write `E_L = L.essentialSubmodule` and
 `E_R = R.essentialSubmodule` for the one-sided essential submodules, and
-`E_ess = essentialBimoduleSubmodule L R = E_L ⊓ E_R` for the two-sided essential submodule.
+`E_ess = essentialBimoduleSubmodule L R` for the two-sided essential submodule (the closed linear
+span of `A · E · A`, which coincides with `E_L ⊓ E_R` in the presence of a bounded approximate
+identity).
 
 Using the basic derivation restriction and Hahn–Banach residual lemmas from
 `TauCeti.Analysis.Normed.Algebra.Derivation.Basic`, this file proves the classical reductions of
@@ -32,7 +34,7 @@ innerness for bounded derivations into dual bimodules to essential submodules (R
    reduction.
 3. **Two-sided reduction.** Applying the left- and right-essential reductions successively shows
    that in the presence of a bounded two-sided approximate identity, `D` is inner as soon as its
-   restriction to `E_L ⊓ E_R` is inner.
+   restriction to `E_ess = E_L ⊓ E_R` is inner.
 
 ## Main results
 
@@ -57,6 +59,22 @@ open Filter Topology Submodule ContinuousLinearMap
 namespace TauCeti
 
 section Reduction
+
+/-- Lift an ambient intertwining identity `T (M₁ a x) = M₂ b (T x)` to restricted actions along a
+map `ι : p₁ → p₂` compatible with the subtype inclusions (`(ι x : E₂) = T (x : E₁)`). -/
+private theorem restrictAction_intertwine {𝕜 B₁ B₂ E₁ E₂ : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup B₁] [NormedSpace 𝕜 B₁]
+    [SeminormedAddCommGroup B₂] [NormedSpace 𝕜 B₂]
+    [SeminormedAddCommGroup E₁] [NormedSpace 𝕜 E₁]
+    [SeminormedAddCommGroup E₂] [NormedSpace 𝕜 E₂]
+    {M₁ : B₁ →L[𝕜] E₁ →L[𝕜] E₁} {M₂ : B₂ →L[𝕜] E₂ →L[𝕜] E₂}
+    {p₁ : Submodule 𝕜 E₁} {p₂ : Submodule 𝕜 E₂}
+    {hp₁ : ∀ a x, x ∈ p₁ → M₁ a x ∈ p₁} {hp₂ : ∀ b y, y ∈ p₂ → M₂ b y ∈ p₂}
+    {ι : p₁ → p₂} (T : E₁ → E₂) (hι : ∀ x : p₁, (ι x : E₂) = T (x : E₁))
+    {a : B₁} {b : B₂} (hM : ∀ x : E₁, T (M₁ a x) = M₂ b (T x)) (x : p₁) :
+    ι (M₁.restrictAction p₁ hp₁ a x) = M₂.restrictAction p₂ hp₂ b (ι x) :=
+  Subtype.ext <| by
+    rw [hι, coe_restrictAction_apply, hM, ← hι, coe_restrictAction_apply]
 
 variable {𝕜 A E : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜] [ProperSpace 𝕜]
   [NonUnitalSeminormedRing A] [NormedSpace 𝕜 A]
@@ -170,21 +188,23 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_rightEssential
     hLop hRop hLRop hCop hlop Dop hDop ⟨-(ψ₀.comp eSub), fun a ↦ by
       ext x
       have hx := congr($(hψ₀ a.unop) (eSub x))
-      have hRe : R.restrictAction R.essentialSubmodule
-            (fun a x _ ↦ apply_mem_essentialSubmodule R a x) a.unop (eSub x) =
-          eSub (Lop.restrictAction Lop.essentialSubmodule
-            (fun a y _ ↦ apply_mem_essentialSubmodule Lop a y) a x) :=
-        Subtype.ext (by simp [Lop, unopL, heSub_coe])
-      have hLe : L.restrictAction R.essentialSubmodule
-            (fun a _ hx ↦ apply_mem_essentialSubmodule_of_comm
-              (fun b c y ↦ (hLR c b y).symm) a hx) a.unop (eSub x) =
-          eSub (Rop.restrictAction Lop.essentialSubmodule
-            (fun a _ hx ↦ apply_mem_essentialSubmodule_of_comm hLRop a hx) a x) :=
-        Subtype.ext (by simp [Rop, unopL, heSub_coe])
+      have hRe :
+          eSub (Lop.restrictAction Lop.essentialSubmodule (fun a x _ ↦
+              apply_mem_essentialSubmodule Lop a x) a x) =
+            R.restrictAction R.essentialSubmodule (fun a x _ ↦
+              apply_mem_essentialSubmodule R a x) a.unop (eSub x) :=
+        restrictAction_intertwine id heSub_coe (fun y ↦ by simp [Lop, unopL]) x
+      have hLe :
+          eSub (Rop.restrictAction Lop.essentialSubmodule (fun a _ hx ↦
+              apply_mem_essentialSubmodule_of_comm hLRop a hx) a x) =
+            L.restrictAction R.essentialSubmodule (fun a _ hx ↦
+              apply_mem_essentialSubmodule_of_comm (fun b c y ↦ (hLR c b y).symm) a hx) a.unop
+              (eSub x) :=
+        restrictAction_intertwine id heSub_coe (fun y ↦ by simp [Rop, unopL]) x
       simp only [comp_apply, Submodule.subtypeL_apply, heSub_coe, sub_apply,
         dualAction_apply_apply, neg_apply, Dop, unopL, ContinuousLinearEquiv.coe_coe,
         MulOpposite.opContinuousLinearEquiv_symm_apply] at hx ⊢
-      rw [hx, hRe, hLe]
+      rw [hx, ← hRe, ← hLe]
       abel⟩
   refine ⟨-φ, fun a ↦ ?_⟩
   ext x
@@ -207,9 +227,9 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_essential
     (hEss : ∃ ψ₀ : StrongDual 𝕜 (essentialBimoduleSubmodule L R),
       ∀ a, (D a).comp (essentialBimoduleSubmodule L R).subtypeL =
         dualAction (R.restrictAction (essentialBimoduleSubmodule L R) fun a _ hx ↦
-          apply_right_mem_essentialBimoduleSubmodule hLR a hx) a ψ₀ -
+          apply_right_mem_essentialBimoduleSubmodule hR hLR a hx) a ψ₀ -
         dualAction (L.restrictAction (essentialBimoduleSubmodule L R) fun a _ hx ↦
-          apply_left_mem_essentialBimoduleSubmodule hLR a hx) a ψ₀) :
+          apply_left_mem_essentialBimoduleSubmodule hL a hx) a ψ₀) :
     ∃ φ : StrongDual 𝕜 E, ∀ a, D a = dualAction R a φ - dualAction L a φ := by
   have := hl.neBot
   let EL := L.essentialSubmodule
@@ -236,8 +256,11 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_essential
   refine exists_eq_dualAction_sub_dualAction_of_restrict_rightEssential hLL hRL hLRL hC
     hl.tendsto_mul_right DL hDL ?_
   let ELR := RL.essentialSubmodule
-  have hELR_mem (x : ELR) : (x.val : E) ∈ essentialBimoduleSubmodule L R := by
-    refine (mem_essentialBimoduleSubmodule_iff L R).2 ⟨x.val.property, ?_⟩
+  have hELR_mem (x : ELR) :
+      (EL.subtypeL.comp ELR.subtypeL) x ∈ essentialBimoduleSubmodule L R := by
+    simp only [comp_apply, Submodule.subtypeL_apply]
+    rw [essentialBimoduleSubmodule_eq_inf hR hLR hC hl.tendsto_mul_left]
+    refine ⟨x.val.property, ?_⟩
     exact (essentialSubmodule_le_iff (M := RL) (p := R.essentialSubmodule.comap EL.subtype)
       ((isClosed_essentialSubmodule R).preimage continuous_subtypeVal)).2
       (fun a y ↦ by
@@ -246,18 +269,21 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_essential
       x.property
   let ι : ELR →L[𝕜] essentialBimoduleSubmodule L R :=
     (EL.subtypeL.comp ELR.subtypeL).codRestrict (essentialBimoduleSubmodule L R) hELR_mem
-  have hι_coe (x : ELR) : (ι x : E) = (x.val : E) := rfl
+  have hι_coe (x : ELR) : (ι x : E) = (x.val : E) := by
+    simp only [ι, coe_codRestrict_apply, comp_apply, Submodule.subtypeL_apply]
   have hιR (a : A) (x : ELR) :
       ι (RL.restrictAction ELR (fun a y _ ↦ apply_mem_essentialSubmodule RL a y) a x) =
         R.restrictAction (essentialBimoduleSubmodule L R)
-          (fun a _ hx ↦ apply_right_mem_essentialBimoduleSubmodule hLR a hx) a (ι x) :=
-    Subtype.ext (by simp only [hι_coe, coe_restrictAction_apply, RL])
+          (fun a _ hx ↦ apply_right_mem_essentialBimoduleSubmodule hR hLR a hx) a (ι x) :=
+    restrictAction_intertwine EL.subtype hι_coe
+      (fun y ↦ coe_restrictAction_apply R EL hRL_inv a y) x
   have hιL (a : A) (x : ELR) :
       ι (LL.restrictAction ELR (fun a _ hy ↦
           apply_mem_essentialSubmodule_of_comm (fun b c y ↦ (hLRL c b y).symm) a hy) a x) =
         L.restrictAction (essentialBimoduleSubmodule L R)
-          (fun a _ hx ↦ apply_left_mem_essentialBimoduleSubmodule hLR a hx) a (ι x) :=
-    Subtype.ext (by simp only [hι_coe, coe_restrictAction_apply, LL])
+          (fun a _ hx ↦ apply_left_mem_essentialBimoduleSubmodule hL a hx) a (ι x) :=
+    restrictAction_intertwine EL.subtype hι_coe
+      (fun y ↦ coe_restrictAction_apply L EL hLL_inv a y) x
   obtain ⟨ψ₀, hψ₀⟩ := hEss
   refine ⟨precomp 𝕜 ι ψ₀, fun a ↦ ?_⟩
   have h1 : (DL a).comp ELR.subtypeL =

@@ -10,8 +10,8 @@ import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Analysis.LocallyConvex.WeakSpace
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
 import TauCeti.Analysis.Normed.Module.DoubleDual
+import TauCeti.Analysis.Normed.Module.Dual.Adjoint
 import TauCeti.Analysis.Normed.Module.Dual.Basic
-import TauCeti.Analysis.Normed.Module.Dual.Functoriality
 import TauCeti.Topology.MetricSpace.SimultaneousApproximation
 
 /-!
@@ -27,14 +27,15 @@ No completeness or separability is assumed, and seminormed spaces are allowed. T
 Banach–Alaoglu (`WeakDual.isCompact_closedBall`), Goldstine's theorem relates weak compactness
 of the unit ball of `E` to reflexivity of `E`.
 
-Combined with weak-star continuity of bidual adjoints and convex weak-norm closure
-(`Convex.toWeakSpace_closure`), Goldstine's theorem turns exact operator identities solved in a
-bidual ball into norm-bounded approximate solutions in the original space: if `Φ ∈ E**` has
-`‖Φ‖ ≤ r` and `T** Φ = J_F y`, then `y ∈ closure (T '' closedBall 0 r)`. Applied to a finite
-product, finitely many equations `Sᵢ** Φ = J (zᵢ)` can be approximately solved simultaneously in
-norm by a single vector of norm at most `r`, and for an arbitrary family of equations this yields
-a proper filter eventually bounded in norm by `r` along which every `Sₖ x → zₖ` (used to construct
-bounded approximate identities and bounded approximate diagonals from bidual witnesses).
+Combined with the bipolar closed-ball criterion
+(`ContinuousLinearMap.mem_closure_image_closedBall_iff`), Goldstine's theorem turns exact operator
+identities solved in a bidual ball into norm-bounded approximate solutions in the original space: if
+`Φ ∈ E**` has `‖Φ‖ ≤ r` and `T** Φ = J_F y`, then `y ∈ closure (T '' closedBall 0 r)`. Applied to a
+finite product, finitely many equations `Sᵢ** Φ = J (zᵢ)` can be approximately solved
+simultaneously in norm by a single vector of norm at most `r`, and for an arbitrary family of
+equations this yields a proper filter eventually bounded in norm by `r` along which every
+`Sₖ x → zₖ` (used to construct bounded approximate identities and bounded approximate diagonals
+from bidual witnesses).
 
 ## Main results
 
@@ -142,34 +143,12 @@ theorem mem_closure_image_closedBall_of_precomp_precomp_eq (T : E →L[𝕜] F)
     {Φ : StrongDual 𝕜 (StrongDual 𝕜 E)} {r : ℝ} (hr : ‖Φ‖ ≤ r) {y : F}
     (hy : precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) Φ =
       inclusionInDoubleDual 𝕜 F y) :
-    y ∈ closure (T '' closedBall 0 r) := by
-  let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
-  let : IsScalarTower ℝ 𝕜 E := .restrictScalars ℝ 𝕜 E
-  let : NormedSpace ℝ F := .restrictScalars ℝ 𝕜 F
-  let : IsScalarTower ℝ 𝕜 F := .restrictScalars ℝ 𝕜 F
-  -- Goldstine places `Φ` in the weak-star closure of the `r`-ball of `E`; `T**` pushes this to
-  -- the weak-star bidual of `F`.
-  have hΦ : StrongDual.toWeakDual Φ ∈
-      closure (inclusionInDoubleDualWeak 𝕜 E '' (toWeakSpace 𝕜 E '' closedBall 0 r)) := by
-    rw [closure_image_inclusionInDoubleDualWeak_closedBall, map_zero, mem_preimage,
-      StrongDual.toStrongDual_toWeakDual]
-    exact (mem_closedBall_zero_iff (E := StrongDual 𝕜 (StrongDual 𝕜 E))).2 hr
-  have himg := image_closure_subset_closure_image T.continuous_toWeakDual_precomp_precomp
-    (mem_image_of_mem _ hΦ)
-  simp only [StrongDual.toStrongDual_toWeakDual, hy, image_image,
-    T.toWeakDual_precomp_precomp_inclusionInDoubleDualWeak] at himg
-  have hy' : inclusionInDoubleDualWeak 𝕜 F (toWeakSpace 𝕜 F y) ∈
-      closure (inclusionInDoubleDualWeak 𝕜 F '' (toWeakSpace 𝕜 F '' (T '' closedBall 0 r))) := by
-    simpa only [inclusionInDoubleDualWeak_apply, LinearEquiv.symm_apply_apply, image_image]
-      using himg
-  -- Pull back along the inducing canonical map into `F**`, then upgrade weak closure to norm
-  -- closure by convexity of `T '' closedBall 0 r`.
-  rw [← mem_preimage,
-    ← (isInducing_inclusionInDoubleDualWeak 𝕜 F).closure_eq_preimage_closure_image] at hy'
-  have hconv : Convex ℝ (T '' closedBall 0 r) :=
-    (convex_closedBall 0 r).linear_image ((T : E →ₗ[𝕜] F).restrictScalars ℝ)
-  rw [← hconv.toWeakSpace_closure 𝕜] at hy'
-  exact (toWeakSpace 𝕜 F).injective.mem_set_image.1 hy'
+    y ∈ closure (T '' closedBall 0 r) :=
+  (T.mem_closure_image_closedBall_iff ((norm_nonneg Φ).trans hr)).2 fun g ↦ by
+    have hg : g y = Φ (g.comp T) := by
+      simpa only [precomp_apply, comp_apply, dual_def] using congr($(hy.symm) g)
+    rw [hg]
+    exact (Φ.le_opNorm (g.comp T)).trans (mul_le_mul_of_nonneg_right hr (norm_nonneg _))
 
 /-- Pointwise form of `mem_closure_image_closedBall_of_precomp_precomp_eq`: if `‖Φ‖ ≤ r` and
 `Φ (f ∘ T) = f y` for every `f ∈ F*`, then `y ∈ closure (T '' closedBall 0 r)`. -/

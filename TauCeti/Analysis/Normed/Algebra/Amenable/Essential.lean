@@ -69,9 +69,9 @@ theorem isAmenable_iff_essential {𝕜 : Type v} {A : Type u} [NontriviallyNorme
     let Eess := essentialBimoduleSubmodule L R
     have : CompleteSpace Eess := (isClosed_essentialBimoduleSubmodule L R).completeSpace_coe
     have hL_inv : ∀ a, ∀ x ∈ Eess, L a x ∈ Eess :=
-      fun a _ hx ↦ apply_left_mem_essentialBimoduleSubmodule hLR a hx
+      fun a _ hx ↦ apply_left_mem_essentialBimoduleSubmodule hL a hx
     have hR_inv : ∀ a, ∀ x ∈ Eess, R a x ∈ Eess :=
-      fun a _ hx ↦ apply_right_mem_essentialBimoduleSubmodule hLR a hx
+      fun a _ hx ↦ apply_right_mem_essentialBimoduleSubmodule hR hLR a hx
     let Less : A →L[𝕜] Eess →L[𝕜] Eess := L.restrictAction Eess hL_inv
     let Ress : A →L[𝕜] Eess →L[𝕜] Eess := R.restrictAction Eess hR_inv
     have hLess : ∀ a b x, Less (a * b) x = Less a (Less b x) :=
@@ -85,7 +85,7 @@ theorem isAmenable_iff_essential {𝕜 : Type v} {A : Type u} [NontriviallyNorme
         (essentialBimoduleSubmodule_le_left L R) hL_inv
     have hR_top : Ress.essentialSubmodule = ⊤ :=
       essentialSubmodule_restrictAction_eq_top_right R hR hC hl.tendsto_mul_left Eess
-        (essentialBimoduleSubmodule_le_right L R) hR_inv
+        (essentialBimoduleSubmodule_le_right hLR) hR_inv
     let Dess : A →L[𝕜] StrongDual 𝕜 Eess := (precomp 𝕜 Eess.subtypeL) ∘L D
     have hDess := precomp_subtypeL_comp_derivation Eess hL_inv hR_inv hD
     obtain ⟨ψ₀, hψ₀⟩ := h Eess Less Ress hLess hRess hLRess hL_top hR_top Dess hDess

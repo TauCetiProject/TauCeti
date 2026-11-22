@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.ApproximateUnit
-public import TauCeti.Analysis.Normed.Algebra.HochschildCohomology.Complex
 public import TauCeti.Analysis.Normed.Module.Dual.Bimodule
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Analysis.Normed.Module.Completion
@@ -25,7 +23,8 @@ with `a · x = L a x` and `x · a = R a x`, and the dual `E*` carries the dual a
 `TauCeti.Analysis.Normed.Module.Dual.Bimodule`: the left action is `dualAction R` and the right
 action is `dualAction L`. A bounded derivation is a bounded operator `D` with
 `D (a * b) = a · D b + D a · b`, and it is inner when `D a = a · φ - φ · a` for some `φ ∈ E*`.
-Equivalently, the first bounded Hochschild cohomology `H¹(A, E*)` vanishes for every such `E`.
+Equivalently, the first bounded Hochschild cohomology `H¹(A, E*)` vanishes for every such `E` (see
+`TauCeti.Analysis.Normed.Algebra.Amenable.Cohomology`).
 
 This file defines `TauCeti.IsAmenable`, proves basic examples (`TauCeti.isAmenable_self`,
 `TauCeti.isAmenable_of_subsingleton`), establishes universe-polymorphic bidual innerness
@@ -35,7 +34,8 @@ normed algebra over `ℝ` or `ℂ` has a bounded two-sided approximate identity
 `J_A : A →L[𝕜] A**` for the one-sided actions `(mul, 0)` and `(0, mul.flip)` and using Goldstine's
 theorem and Dixon's combination.
 
-For Johnson's virtual and bounded approximate diagonal characterizations, see
+For innerness on invariant bidual kernels, see `TauCeti.Analysis.Normed.Algebra.Amenable.Bidual`,
+and for Johnson's virtual and bounded approximate diagonal characterizations, see
 `TauCeti.Analysis.Normed.Algebra.Amenable.Diagonal`.
 
 ## Main definitions
@@ -44,8 +44,6 @@ For Johnson's virtual and bounded approximate diagonal characterizations, see
 
 ## Main results
 
-* `TauCeti.isAmenable_iff_forall_subsingleton_hochschildBimoduleCohomology_one`: amenability is
-  the vanishing of `H¹(A, E*)` for all Banach bimodules `E` in the universe of `A`.
 * `TauCeti.isAmenable_self` and `TauCeti.isAmenable_of_subsingleton`: the base field and the zero
   algebra are amenable.
 * `TauCeti.IsAmenable.exists_eq_bidual_dualAction_sub_dualAction`: every bounded derivation from an
@@ -106,23 +104,6 @@ def IsAmenable : Prop :=
       ∀ D : A →L[𝕜] StrongDual 𝕜 E,
         (∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a)) →
           ∃ φ : StrongDual 𝕜 E, ∀ a, D a = dualAction R a φ - dualAction L a φ
-
-/-- A normed algebra is amenable exactly when the first bounded Hochschild cohomology
-`H¹(A, E*)` vanishes for every Banach `A`-bimodule `E` in the universe of `A`. -/
-theorem isAmenable_iff_forall_subsingleton_hochschildBimoduleCohomology_one :
-    IsAmenable 𝕜 A ↔ ∀ (E : Type u) [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-      (L R : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b x, L (a * b) x = L a (L b x))
-      (hR : ∀ a b x, R (a * b) x = R b (R a x)) (hLR : ∀ a b x, L a (R b x) = R b (L a x)),
-        Subsingleton (hochschildBimoduleCohomology (dualAction R) (dualAction L)
-          (dualAction_mul_apply_of_right hR) (dualAction_mul_apply_of_left hL)
-          (dualAction_apply_dualAction_apply_comm hLR) 1) := by
-  constructor
-  · intro h E _ _ _ L R hL hR hLR
-    exact (hochschildBimoduleCohomology.subsingleton_one_iff _ _ _ _ _).2
-      (h E L R hL hR hLR)
-  · intro h E _ _ _ L R hL hR hLR
-    exact (hochschildBimoduleCohomology.subsingleton_one_iff _ _ _ _ _).1
-      (h E L R hL hR hLR)
 
 variable {𝕜 A}
 
