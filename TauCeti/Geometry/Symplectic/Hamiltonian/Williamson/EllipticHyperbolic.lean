@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Nondegenerate
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Toral
+import TauCeti.Algebra.Polynomial.RingDivision
 import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Plane
 import TauCeti.Geometry.Symplectic.Plane
 import TauCeti.Geometry.Symplectic.Restrict
@@ -115,9 +116,7 @@ private theorem apply_eq_zero_of_mem_maxGenEigenspace_sq_sub
   refine ((LinearMap.mem_skewAdjointSubmodule A).1 hA).apply_eq_zero_of_mem_maxGenEigenspace_aeval
     ?_ hv hw
   rw [comp_neg_X_sq_sub_C]
-  have h := (isCoprime_X_sub_C_of_isUnit_sub (sub_ne_zero.2 hμν).isUnit).map
-    (compRingHom (X ^ 2 : ℝ[X]))
-  simpa using h
+  exact isCoprime_sub_C_of_isUnit_sub (X ^ 2) (sub_ne_zero.2 hμν).isUnit
 
 /-- An eigenvector of `A²` for `μ` is killed by `A² - μ`. -/
 private theorem mem_maxGenEigenspace_sq_sub {μ : ℝ} {v : V} (hv : A (A v) = μ • v) :
