@@ -30,9 +30,8 @@ Let `Γ` be a discrete subgroup of a locally compact topological group `G` whose
   for a compactly supported bump function `ψ` equal to `1` on a compact set meeting every coset
   `g Γ`; both sums are locally finite because `Γ` meets every compact set in a finite set
   (`Subgroup.finite_preimage_coe_of_isCompact`).
-* **Compactness.** If `Γ` is finite, then `G` is compact (`Subgroup.compactSpace_of_finite`): it
-  is covered by the finitely many translates of a compact set meeting every coset `g Γ`. This
-  does not use discreteness.
+* **Compactness.** If `Γ` is finite, then `G` is compact (`Subgroup.compactSpace_of_finite`), as
+  the projection `G → G ⧸ Γ` is proper. This uses neither discreteness nor local compactness.
 
 Real homomorphisms are written multiplicatively, as `χ : Γ →* Multiplicative ℝ`, so that they
 apply to groups written multiplicatively.
@@ -45,13 +44,13 @@ Lie group with semisimple Lie algebra has finite fundamental group.
 
 * `Subgroup.finite_preimage_coe_of_isCompact`: a discrete subgroup meets every compact set in a
   finite set.
+* `Subgroup.compactSpace_of_finite`: if `Γ` is finite and `G ⧸ Γ` is compact, `G` is compact.
 * `Subgroup.exists_isOpen_isCompact_forall_exists_mul_mem`: an open neighbourhood of `1` inside a
   compact set, meeting every coset `g Γ`.
 * `Subgroup.fg_of_compactSpace_quotient`: a discrete subgroup with compact coset space of a
   connected locally compact group is finitely generated.
 * `Subgroup.exists_continuousMap_mul_eq_add`: every real homomorphism on `Γ` is
   `γ ↦ f (g γ) - f g` for a continuous `f : G → ℝ`.
-* `Subgroup.compactSpace_of_finite`: if `Γ` is finite and `G ⧸ Γ` is compact, `G` is compact.
 
 ## References
 
@@ -76,6 +75,19 @@ theorem finite_preimage_coe_of_isCompact {G : Type*} [Group G] [TopologicalSpace
     (hK : IsCompact K) : ((↑) ⁻¹' K : Set Γ).Finite :=
   tendsto_cofinite_cocompact_iff.mp
     (Γ.tendsto_coe_cofinite_of_isDiscrete (isDiscrete_iff_discreteTopology.mpr ‹_›)) K hK
+
+/-- **A finite subgroup with compact coset space has compact ambient group.** If `Γ` is finite
+and `G ⧸ Γ` is compact, then `G` is compact: the projection `G → G ⧸ Γ` is closed with compact
+fibres `g Γ`, hence proper. Neither local compactness nor discreteness is needed. -/
+theorem compactSpace_of_finite {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+    (Γ : Subgroup G) [CompactSpace (G ⧸ Γ)] [Finite Γ] : CompactSpace G := by
+  have hΓ : IsCompact (Γ : Set G) := (Set.toFinite _).isCompact
+  have hp : IsProperMap ((↑) : G → G ⧸ Γ) :=
+    isProperMap_iff_isClosedMap_and_compact_fibers.mpr ⟨QuotientGroup.continuous_mk,
+      QuotientGroup.isClosedMap_coe hΓ, QuotientGroup.mk_surjective.forall.mpr fun g ↦ by
+        simpa [← image_singleton, QuotientGroup.preimage_image_mk_eq_mul] using
+          isCompact_singleton.mul hΓ⟩
+  exact ⟨by simpa using hp.isCompact_preimage isCompact_univ⟩
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] (Γ : Subgroup G) [CompactSpace (G ⧸ Γ)]
@@ -181,16 +193,5 @@ theorem exists_continuousMap_mul_eq_add [DiscreteTopology Γ]
   simp only [ContinuousMap.coe_mk, hSγ, hTγ]
   field_simp
   ring
-
-/-- **A finite subgroup with compact coset space has compact ambient group.** If `Γ` is finite
-and `G ⧸ Γ` is compact, then `G` is compact: it is covered by the finitely many translates `K γ⁻¹`
-of a compact set `K` meeting every coset `g Γ`. -/
-theorem compactSpace_of_finite [Finite Γ] : CompactSpace G := by
-  obtain ⟨U, K, -, -, hK, hUK, hcov⟩ := Γ.exists_isOpen_isCompact_forall_exists_mul_mem
-  have hcover : (⋃ γ : Γ, (· * (γ : G)⁻¹) '' K) = Set.univ :=
-    Set.eq_univ_of_forall fun g ↦ by
-      obtain ⟨γ, hγΓ, hgγ⟩ := hcov g
-      exact Set.mem_iUnion.mpr ⟨⟨γ, hγΓ⟩, g * γ, hUK hgγ, mul_inv_cancel_right g γ⟩
-  exact ⟨hcover ▸ isCompact_iUnion fun γ ↦ hK.image (continuous_mul_const _)⟩
 
 end Subgroup
