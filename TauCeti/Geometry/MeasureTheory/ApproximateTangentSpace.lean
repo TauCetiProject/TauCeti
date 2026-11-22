@@ -9,7 +9,6 @@ public import Mathlib.Topology.ContinuousMap.CompactlySupported
 public import TauCeti.Geometry.Euclidean.Volume.Measure
 import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.Vague
 
 /-!
@@ -25,9 +24,10 @@ the push-forward of `μ` by the dilation `y ↦ r⁻¹ • (y - x)`, multiplied 
 space** of `μ` at `x` with multiplicity `θ ∈ (0, ∞)` when the blow-ups `μ_{x,r}` converge to
 `θ μHE[k]⌞T` against every compactly supported continuous function as `r → 0⁺`
 (`MeasureTheory.Measure.HasApproxTangentSpace`). Approximate tangent spaces of measures are the
-notion of tangent plane used for rectifiable and integral varifolds: a measure that has an
-approximate tangent space with positive finite multiplicity almost everywhere is the weight of a
-rectifiable varifold.
+notion of tangent plane used for rectifiable and integral varifolds: by the rectifiability
+criterion (Simon, Theorem 11.8, not proved here), a locally finite measure with a `k`-dimensional
+approximate tangent space of positive multiplicity at `μ`-almost every point is `θ μHE[k]⌞Γ` for a
+countably `k`-rectifiable set `Γ`, that is, the weight of a rectifiable `k`-varifold.
 
 ## Main results
 
@@ -171,10 +171,9 @@ theorem blowUp_euclideanHausdorffMeasure (hr : 0 < r) :
     rw [← coe_dilation hr.ne', ← (dilation x hr.ne').image_symm, coe_dilation_symm,
       ← image_smul, ← image_vadd, image_image]
     simp [add_comm]
-  rw [blowUp_apply hs, hpre, measure_vadd, euclideanHausdorffMeasure_smul₀ k hr.ne',
-    ENNReal.smul_def, smul_eq_mul, ← mul_assoc, Real.nnNorm_of_nonneg hr.le, ENNReal.coe_pow,
-    ← ENNReal.ofReal_eq_coe_nnreal hr.le, ← mul_pow, ENNReal.inv_mul_cancel (by simp [hr])
-    (by simp), one_pow, one_mul]
+  rw [blowUp_apply hs, hpre, measure_vadd, euclideanHausdorffMeasure_smul₀ k hr.ne']
+  simp [ENNReal.smul_def, ← mul_assoc, ← mul_pow, ← Real.eNorm_of_nonneg hr.le, eNorm_eq_nnNorm,
+    ENNReal.inv_mul_cancel, hr.ne']
 
 end Hausdorff
 
@@ -221,55 +220,10 @@ structure HasApproxTangentSpace (μ : Measure E) (x : E) (T : Submodule ℝ E) (
     Tendsto (fun r ↦ ∫ y, f y ∂μ.blowUp (finrank ℝ T) x r) (𝓝[>] 0)
       (𝓝 (θ * ∫ y, f y ∂μHE[finrank ℝ T].restrict (T : Set E)))
 
-/-- The measure `μHE[k]⌞T` of a measurable set `s` is the volume of the part of `s` in `T`. -/
-private theorem euclideanHausdorffMeasure_restrict_apply (T : Submodule ℝ E) {s : Set E}
-    (hs : MeasurableSet s) :
-    μHE[finrank ℝ T].restrict (T : Set E) s = volume (Subtype.val ⁻¹' s : Set T) := by
-  rw [T.euclideanHausdorffMeasure_restrict_eq_map, map_apply measurable_subtype_coe hs]
-
-private theorem euclideanHausdorffMeasure_restrict_sphere (T : Submodule ℝ E) :
-    μHE[finrank ℝ T].restrict (T : Set E) (sphere 0 1) = 0 := by
-  have hpre : (Subtype.val ⁻¹' sphere (0 : E) 1 : Set T) = sphere 0 1 := by
-    ext y
-    simp
-  rw [euclideanHausdorffMeasure_restrict_apply T isClosed_sphere.measurableSet, hpre,
-    Measure.addHaar_sphere_of_ne_zero volume (0 : T) one_ne_zero]
-
-private theorem euclideanHausdorffMeasure_restrict_ball (T : Submodule ℝ E) :
-    μHE[finrank ℝ T].restrict (T : Set E) (ball 0 1) =
-      volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) 1) := by
-  have hpre : (Subtype.val ⁻¹' ball (0 : E) 1 : Set T) = ball 0 1 := by
-    ext y
-    simp
-  rw [euclideanHausdorffMeasure_restrict_apply T measurableSet_ball, hpre,
-    TauCeti.volume_ball_eq_of_finrank_eq finrank_euclideanSpace_fin.symm 0 0 1]
-
-private theorem euclideanHausdorffMeasure_restrict_closedBall (T : Submodule ℝ E) :
-    μHE[finrank ℝ T].restrict (T : Set E) (closedBall 0 1) =
-      volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) 1) := by
-  have hpre : (Subtype.val ⁻¹' closedBall (0 : E) 1 : Set T) = closedBall 0 1 := by
-    ext y
-    simp
-  rw [euclideanHausdorffMeasure_restrict_apply T measurableSet_closedBall, hpre,
-    addHaar_unitClosedBall_eq_addHaar_unitBall,
-    TauCeti.volume_ball_eq_of_finrank_eq finrank_euclideanSpace_fin.symm 0 0 1]
-
-/-- If `μHE[k]` restricts to the same measure on a subspace `T₁` of dimension `k` and on a
-subspace `T₂`, then `T₁ ≤ T₂`: every ball about a point of `T₁` has positive mass. -/
-private theorem le_of_euclideanHausdorffMeasure_restrict_eq {k : ℕ} (h₁ : finrank ℝ T₁ = k)
-    (h : μHE[k].restrict (T₁ : Set E) = μHE[k].restrict (T₂ : Set E)) : T₁ ≤ T₂ := by
-  intro v hv
-  by_contra hv₂
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 T₂.isClosed_of_finiteDimensional.isOpen_compl v hv₂
-  have h0 : μHE[k].restrict (T₂ : Set E) (ball v ε) = 0 := by
-    rw [restrict_apply measurableSet_ball, Set.disjoint_iff_inter_eq_empty.1
-      (Set.subset_compl_iff_disjoint_right.1 hball), measure_empty]
-  subst h₁
-  rw [← h, euclideanHausdorffMeasure_restrict_apply T₁ measurableSet_ball] at h0
-  have hpre : (Subtype.val ⁻¹' ball v ε : Set T₁) = ball ⟨v, hv⟩ ε := by
-    ext; simp [dist_eq_norm]
-  rw [hpre] at h0
-  exact (measure_ball_pos volume _ hε).ne' h0
+/-- The unit ball of a Euclidean space has positive volume. -/
+private theorem volume_unitBall_ne_zero (k : ℕ) :
+    volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1) ≠ 0 :=
+  (measure_ball_pos volume _ one_pos).ne'
 
 namespace HasApproxTangentSpace
 
@@ -289,7 +243,8 @@ private theorem tendsto_blowUp_apply (h : μ.HasApproxTangentSpace x T θ) {s : 
     rw [integral_smul_nnreal_measure, NNReal.smul_def, smul_eq_mul]
     exact (h.tendsto_integral f).comp tendsto_comap
   have hfr0 : (θ • ν) (frontier s) = 0 :=
-    measure_mono_null hfr (by simp [ν, euclideanHausdorffMeasure_restrict_sphere])
+    measure_mono_null hfr
+      (by simp [ν, Submodule.euclideanHausdorffMeasure_restrict_sphere T.zero_mem one_ne_zero])
   have hlim := tendsto_measure_of_null_frontier_of_tendsto_integral_compactlySupported hconv hs
     hsb.isCompact_closure hfr0
   rw [smul_apply, ENNReal.smul_def, smul_eq_mul] at hlim
@@ -297,15 +252,15 @@ private theorem tendsto_blowUp_apply (h : μ.HasApproxTangentSpace x T θ) {s : 
 
 private theorem tendsto_blowUp_closedBall (h : μ.HasApproxTangentSpace x T θ) :
     Tendsto (fun r ↦ μ.blowUp (finrank ℝ T) x r (closedBall 0 1)) (𝓝[>] 0)
-      (𝓝 (θ * volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) 1))) := by
-  simpa [euclideanHausdorffMeasure_restrict_closedBall] using
+      (𝓝 (θ * volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) 1))) := by
+  simpa [Submodule.euclideanHausdorffMeasure_restrict_closedBall T.zero_mem] using
     h.tendsto_blowUp_apply measurableSet_closedBall isBounded_closedBall
       frontier_closedBall_subset_sphere
 
 private theorem tendsto_blowUp_ball (h : μ.HasApproxTangentSpace x T θ) :
     Tendsto (fun r ↦ μ.blowUp (finrank ℝ T) x r (ball 0 1)) (𝓝[>] 0)
       (𝓝 (θ * volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) 1))) := by
-  simpa [euclideanHausdorffMeasure_restrict_ball] using
+  simpa [Submodule.euclideanHausdorffMeasure_restrict_ball T.zero_mem] using
     h.tendsto_blowUp_apply measurableSet_ball isBounded_ball frontier_ball_subset_sphere
 
 /-- `r ^ (-k) m / ω = m / (r ^ k ω)`, the conversion between the mass of a blow-up and a density
@@ -316,20 +271,30 @@ private theorem inv_pow_mul_div_eq {r : ℝ} (hr : 0 < r) (k : ℕ) (m ω : ℝ�
     ENNReal.mul_inv (Or.inl (pow_ne_zero _ (by simp [hr]))) (Or.inl (by simp)), ENNReal.inv_pow]
   ring
 
+/-- If the blow-up masses `r ^ (-k) m r` tend to `θ ω`, then the density ratios `m r / V r` tend to
+`θ`, where `V r = r ^ k ω`. -/
+private theorem tendsto_div_of_tendsto_inv_pow_mul {k : ℕ} {m V : ℝ → ℝ≥0∞} {ω : ℝ≥0∞}
+    (hω : ω ≠ 0) (hω' : ω ≠ ∞)
+    (hlim : Tendsto (fun r ↦ (ENNReal.ofReal r)⁻¹ ^ k * m r) (𝓝[>] 0) (𝓝 (θ * ω)))
+    (hV : ∀ r, 0 < r → V r = ENNReal.ofReal (r ^ k) * ω) :
+    Tendsto (fun r ↦ m r / V r) (𝓝[>] 0) (𝓝 θ) := by
+  have hlim := ENNReal.Tendsto.div_const hlim (Or.inr hω)
+  rw [ENNReal.mul_div_cancel_right hω hω'] at hlim
+  refine hlim.congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with r (hr : 0 < r)
+  rw [hV r hr, inv_pow_mul_div_eq hr]
+
 /-- **The multiplicity is the density.** If `μ` has approximate tangent space `T` of dimension `k`
 with multiplicity `θ` at `x`, then `μ (closedBall x r) / (ω_k r ^ k) → θ` as `r → 0⁺`, where
 `ω_k r ^ k` is the volume of a ball of radius `r` in `k`-dimensional Euclidean space. -/
 theorem tendsto_measure_closedBall_div (h : μ.HasApproxTangentSpace x T θ) :
     Tendsto (fun r ↦ μ (closedBall x r) /
       volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) r)) (𝓝[>] 0) (𝓝 θ) := by
-  set ω := volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) 1)
-  have hω : ω ≠ 0 := (measure_ball_pos volume _ one_pos).ne'
-  have hlim := ENNReal.Tendsto.div_const h.tendsto_blowUp_closedBall (Or.inr hω)
-  rw [ENNReal.mul_div_cancel_right hω measure_ball_lt_top.ne] at hlim
-  refine hlim.congr' ?_
+  refine tendsto_div_of_tendsto_inv_pow_mul (measure_closedBall_pos volume _ one_pos).ne'
+    measure_closedBall_lt_top.ne (h.tendsto_blowUp_closedBall.congr' ?_) fun r hr ↦ by
+      rw [addHaar_closedBall' volume 0 hr.le, finrank_euclideanSpace_fin]
   filter_upwards [self_mem_nhdsWithin] with r (hr : 0 < r)
-  rw [blowUp_apply_closedBall hr, mul_one, addHaar_closedBall volume 0 hr.le,
-    finrank_euclideanSpace_fin, inv_pow_mul_div_eq hr]
+  rw [blowUp_apply_closedBall hr, mul_one]
 
 /-- **The multiplicity is the density**, for open balls: if `μ` has approximate tangent space `T`
 of dimension `k` with multiplicity `θ` at `x`, then `μ (ball x r) / (ω_k r ^ k) → θ` as
@@ -337,14 +302,11 @@ of dimension `k` with multiplicity `θ` at `x`, then `μ (ball x r) / (ω_k r ^ 
 theorem tendsto_measure_ball_div (h : μ.HasApproxTangentSpace x T θ) :
     Tendsto (fun r ↦ μ (ball x r) /
       volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) r)) (𝓝[>] 0) (𝓝 θ) := by
-  set ω := volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) 1)
-  have hω : ω ≠ 0 := (measure_ball_pos volume _ one_pos).ne'
-  have hlim := ENNReal.Tendsto.div_const h.tendsto_blowUp_ball (Or.inr hω)
-  rw [ENNReal.mul_div_cancel_right hω measure_ball_lt_top.ne] at hlim
-  refine hlim.congr' ?_
+  refine tendsto_div_of_tendsto_inv_pow_mul (volume_unitBall_ne_zero _) measure_ball_lt_top.ne
+    (h.tendsto_blowUp_ball.congr' ?_) fun r hr ↦ by
+      rw [addHaar_ball_of_pos volume 0 hr, finrank_euclideanSpace_fin]
   filter_upwards [self_mem_nhdsWithin] with r (hr : 0 < r)
-  rw [blowUp_apply_ball hr, mul_one, addHaar_ball_of_pos volume 0 hr, finrank_euclideanSpace_fin,
-    inv_pow_mul_div_eq hr]
+  rw [blowUp_apply_ball hr, mul_one]
 
 /-- An approximate tangent space at `x` has at most the dimension of any other one: blowing up in
 a higher dimension would multiply the masses of the unit ball by a factor tending to infinity. -/
@@ -352,23 +314,23 @@ private theorem finrank_le (h₁ : μ.HasApproxTangentSpace x T₁ θ₁)
     (h₂ : μ.HasApproxTangentSpace x T₂ θ₂) : finrank ℝ T₁ ≤ finrank ℝ T₂ := by
   by_contra! hlt
   obtain ⟨m, hm⟩ := Nat.exists_eq_add_of_lt hlt
-  have hω (k : ℕ) : volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1) ≠ 0 :=
-    (measure_ball_pos volume _ one_pos).ne'
+  have hθω :=
+    mul_ne_zero (ENNReal.coe_ne_zero.2 h₂.ne_zero) (volume_unitBall_ne_zero (finrank ℝ T₂))
   -- The scale factor `r ^ (-(m + 1))` tends to infinity.
   have hinf : Tendsto (fun r : ℝ ↦ (ENNReal.ofReal r)⁻¹ ^ (m + 1)) (𝓝[>] 0) (𝓝 ∞) := by
     have h0 : Tendsto ENNReal.ofReal (𝓝[>] 0) (𝓝 0) := by
       simpa using (ENNReal.continuous_ofReal.tendsto 0).mono_left nhdsWithin_le_nhds
     simpa [Function.comp_def] using (ENNReal.continuous_pow (m + 1)).continuousAt.tendsto.comp
       (tendsto_inv_iff.2 h0)
-  have hprod := ENNReal.Tendsto.mul hinf (Or.inl ENNReal.top_ne_zero) h₂.tendsto_blowUp_closedBall
-    (Or.inl (mul_ne_zero (ENNReal.coe_ne_zero.2 h₂.ne_zero) (hω _)))
-  rw [ENNReal.top_mul (mul_ne_zero (ENNReal.coe_ne_zero.2 h₂.ne_zero) (hω _))] at hprod
-  have heq : (fun r ↦ μ.blowUp (finrank ℝ T₁) x r (closedBall 0 1)) =ᶠ[𝓝[>] 0]
-      fun r ↦ (ENNReal.ofReal r)⁻¹ ^ (m + 1) * μ.blowUp (finrank ℝ T₂) x r (closedBall 0 1) := by
+  have hprod := ENNReal.Tendsto.mul hinf (Or.inl ENNReal.top_ne_zero) h₂.tendsto_blowUp_ball
+    (Or.inl hθω)
+  rw [ENNReal.top_mul hθω] at hprod
+  have heq : (fun r ↦ μ.blowUp (finrank ℝ T₁) x r (ball 0 1)) =ᶠ[𝓝[>] 0]
+      fun r ↦ (ENNReal.ofReal r)⁻¹ ^ (m + 1) * μ.blowUp (finrank ℝ T₂) x r (ball 0 1) := by
     filter_upwards with r
-    rw [blowUp_apply measurableSet_closedBall, blowUp_apply measurableSet_closedBall, hm]
+    rw [blowUp_apply measurableSet_ball, blowUp_apply measurableSet_ball, hm]
     ring
-  have := tendsto_nhds_unique (h₁.tendsto_blowUp_closedBall.congr' heq) hprod
+  have := tendsto_nhds_unique (h₁.tendsto_blowUp_ball.congr' heq) hprod
   exact ENNReal.mul_ne_top ENNReal.coe_ne_top measure_ball_lt_top.ne this
 
 /-- **Uniqueness of approximate tangent spaces.** A locally finite measure has at most one
@@ -379,12 +341,10 @@ theorem unique (h₁ : μ.HasApproxTangentSpace x T₁ θ₁) (h₂ : μ.HasAppr
   set k := finrank ℝ T₂
   -- The multiplicities are the limits of the same masses of the unit ball.
   have hθ : θ₁ = θ₂ := by
-    have l₁ := h₁.tendsto_blowUp_closedBall
+    have l₁ := h₁.tendsto_blowUp_ball
     rw [hk] at l₁
-    have hω : volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1) ≠ 0 :=
-      (measure_ball_pos volume _ one_pos).ne'
-    exact_mod_cast (ENNReal.mul_left_inj hω measure_ball_lt_top.ne).1
-      (tendsto_nhds_unique l₁ h₂.tendsto_blowUp_closedBall)
+    exact_mod_cast (ENNReal.mul_left_inj (volume_unitBall_ne_zero k) measure_ball_lt_top.ne).1
+      (tendsto_nhds_unique l₁ h₂.tendsto_blowUp_ball)
   subst hθ
   -- The limit measures `μHE[k]⌞Tᵢ` have the same integrals, hence are equal.
   have hint (f : C_c(E, ℝ)) : ∫ y, f y ∂μHE[k].restrict (T₁ : Set E) =
@@ -397,8 +357,7 @@ theorem unique (h₁ : μ.HasApproxTangentSpace x T₁ θ₁) (h₂ : μ.HasAppr
     rw [← hk]
     infer_instance
   have hν := Measure.ext_of_integral_eq_on_compactlySupported hint
-  exact ⟨(le_of_euclideanHausdorffMeasure_restrict_eq hk hν).antisymm
-    (le_of_euclideanHausdorffMeasure_restrict_eq rfl hν.symm), rfl⟩
+  exact ⟨Submodule.eq_of_euclideanHausdorffMeasure_restrict_eq hν hk rfl, rfl⟩
 
 end HasApproxTangentSpace
 
