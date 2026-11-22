@@ -560,25 +560,52 @@ private theorem antipode_eq (x : QuantizedEnvelopingAlgebra D q) :
 
 variable {D q}
 
+/-- Coproduct of `Eᵢ` under the canonical generic `instBialgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`): `Δ(Eᵢ) = Eᵢ ⊗ 1 + Kᵢ ⊗ Eᵢ`. For arbitrary `q` with an
+explicit Serre-factorial proof `hserre`, see `comulAlgHom_e`. -/
 theorem comul_e (i : ι) :
     Coalgebra.comul (R := K) (e D q i) = e D q i ⊗ₜ[K] 1 + simpleK D q i ⊗ₜ[K] e D q i := by
   rw [comul_eq, comulAlgHom_e]
+
+/-- Coproduct of `Fᵢ` under the canonical generic `instBialgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`): `Δ(Fᵢ) = Fᵢ ⊗ Kᵢ⁻¹ + 1 ⊗ Fᵢ`. For arbitrary `q` with an
+explicit Serre-factorial proof `hserre`, see `comulAlgHom_f`. -/
 theorem comul_f (i : ι) :
     Coalgebra.comul (R := K) (f D q i) = f D q i ⊗ₜ[K] simpleKInv D q i + 1 ⊗ₜ[K] f D q i := by
   rw [comul_eq, comulAlgHom_f]
+
+/-- Coproduct of `K_y` under the canonical generic `instBialgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`): `Δ(K_y) = K_y ⊗ K_y`. For arbitrary `q` with an
+explicit Serre-factorial proof `hserre`, see `comulAlgHom_k`. -/
 theorem comul_k (y : Y) :
     Coalgebra.comul (R := K) (k D q y) = k D q y ⊗ₜ[K] k D q y := by
   rw [comul_eq, comulAlgHom_k]
+
+/-- Coproduct of `Kᵢ` under the canonical generic `instBialgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`): `Δ(Kᵢ) = Kᵢ ⊗ Kᵢ`. See `comulAlgHom_simpleK` for the
+explicit Serre-hypothesis version. -/
 theorem comul_simpleK (i : ι) :
     Coalgebra.comul (R := K) (simpleK D q i) = simpleK D q i ⊗ₜ[K] simpleK D q i := by
   rw [simpleK_def, comul_k]
+
+/-- Coproduct of `Kᵢ⁻¹` under the canonical generic `instBialgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`): `Δ(Kᵢ⁻¹) = Kᵢ⁻¹ ⊗ Kᵢ⁻¹`. See
+`comulAlgHom_simpleKInv` for the explicit Serre-hypothesis version. -/
 theorem comul_simpleKInv (i : ι) :
     Coalgebra.comul (R := K) (simpleKInv D q i) = simpleKInv D q i ⊗ₜ[K] simpleKInv D q i := by
   rw [simpleKInv_def, comul_k]
+
+/-- Coproduct of `normalizedE D q i` (`Kᵢ⁻¹ Eᵢ`) under the canonical generic `instBialgebra`
+instance (`[Fact (IsGenericQuantumParameter q)]`). See `comulAlgHom_normalizedE` for the
+explicit Serre-hypothesis version. -/
 theorem comul_normalizedE (i : ι) :
     Coalgebra.comul (R := K) (normalizedE D q i) =
       normalizedE D q i ⊗ₜ[K] simpleKInv D q i + 1 ⊗ₜ[K] normalizedE D q i := by
   rw [comul_eq, comulAlgHom_normalizedE]
+
+/-- Coproduct of `normalizedF D q i` (`Fᵢ Kᵢ`) under the canonical generic `instBialgebra`
+instance (`[Fact (IsGenericQuantumParameter q)]`). See `comulAlgHom_normalizedF` for the
+explicit Serre-hypothesis version. -/
 theorem comul_normalizedF (i : ι) :
     Coalgebra.comul (R := K) (normalizedF D q i) =
       normalizedF D q i ⊗ₜ[K] 1 + simpleK D q i ⊗ₜ[K] normalizedF D q i := by
@@ -624,22 +651,50 @@ theorem comul_chevalleyInvolution (x : QuantizedEnvelopingAlgebra D q) :
   comulAlgHom_chevalleyInvolution D q
     (fun i j _ => quantumFactorial_serreLength_ne_zero D Fact.out i j) x
 
+/-- Counit of `Eᵢ` under the canonical generic `instBialgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`): `ε(Eᵢ) = 0`. See `counitAlgHom_e` for the unconditional
+version valid for every `q : K`. -/
 theorem counit_e (i : ι) : Coalgebra.counit (R := K) (e D q i) = 0 := by
   rw [counit_eq, counitAlgHom_e]
+
+/-- Counit of `Fᵢ` under the canonical generic `instBialgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`): `ε(Fᵢ) = 0`. See `counitAlgHom_f` for the unconditional
+version valid for every `q : K`. -/
 theorem counit_f (i : ι) : Coalgebra.counit (R := K) (f D q i) = 0 := by
   rw [counit_eq, counitAlgHom_f]
+
+/-- Counit of `K_y` under the canonical generic `instBialgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`): `ε(K_y) = 1`. See `counitAlgHom_k` for the unconditional
+version valid for every `q : K`. -/
 theorem counit_k (y : Y) : Coalgebra.counit (R := K) (k D q y) = 1 := by
   rw [counit_eq, counitAlgHom_k]
+
+/-- Counit of `Kᵢ` under the canonical generic `instBialgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`): `ε(Kᵢ) = 1`. See `counitAlgHom_simpleK` for the
+unconditional version valid for every `q : K`. -/
 theorem counit_simpleK (i : ι) : Coalgebra.counit (R := K) (simpleK D q i) = 1 := by
   rw [simpleK_def, counit_k]
+
+/-- Counit of `Kᵢ⁻¹` under the canonical generic `instBialgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`): `ε(Kᵢ⁻¹) = 1`. See `counitAlgHom_simpleKInv` for the
+unconditional version valid for every `q : K`. -/
 theorem counit_simpleKInv (i : ι) : Coalgebra.counit (R := K) (simpleKInv D q i) = 1 := by
   rw [simpleKInv_def, counit_k]
+
+/-- Counit of `normalizedE D q i` under the canonical generic `instBialgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`): `ε(Kᵢ⁻¹ Eᵢ) = 0`. See `counitAlgHom_normalizedE` for
+the unconditional version valid for every `q : K`. -/
 theorem counit_normalizedE (i : ι) :
     Coalgebra.counit (R := K) (normalizedE D q i) = 0 := by
   rw [counit_eq, counitAlgHom_normalizedE]
+
+/-- Counit of `normalizedF D q i` under the canonical generic `instBialgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`): `ε(Fᵢ Kᵢ) = 0`. See `counitAlgHom_normalizedF` for the
+unconditional version valid for every `q : K`. -/
 theorem counit_normalizedF (i : ι) :
     Coalgebra.counit (R := K) (normalizedF D q i) = 0 := by
   rw [counit_eq, counitAlgHom_normalizedF]
+
 /-- Under the canonical generic `instBialgebra` instance (`[Fact (IsGenericQuantumParameter q)]`),
 the Chevalley involution preserves the counit: `ε(ω x) = ε x`. See
 `counitAlgHom_chevalleyInvolution` and `counitAlgHom_comp_chevalleyInvolution` for the
@@ -647,28 +702,60 @@ unconditional versions valid for every `q : K`. -/
 theorem counit_chevalleyInvolution (x : QuantizedEnvelopingAlgebra D q) :
     Coalgebra.counit (R := K) (chevalleyInvolution D q x) = Coalgebra.counit (R := K) x := by
   rw [counit_eq, counit_eq, counitAlgHom_chevalleyInvolution]
+
+/-- Under the canonical generic `instBialgebra` instance (`[Fact (IsGenericQuantumParameter q)]`),
+the induced map `map φ q` along a morphism of Cartan data preserves the counit:
+`ε'(map φ q x) = ε x`. See `counitAlgHom_comp_map` for the unconditional version valid for every
+`q : K`. -/
 theorem counit_map {X' Y' : Type*} [AddCommGroup X'] [AddCommGroup Y']
     {D' : CartanDatum ι X' Y'} (φ : CartanDatum.Hom D D') (x : QuantizedEnvelopingAlgebra D q) :
     Coalgebra.counit (R := K) (map φ q x) = Coalgebra.counit (R := K) x := by
   rw [counit_eq, counit_eq]; exact AlgHom.congr_fun (counitAlgHom_comp_map φ q) x
 
+/-- Antipode of `Eᵢ` under the canonical generic `instHopfAlgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`): `S(Eᵢ) = -(Kᵢ⁻¹ Eᵢ)`. See `antipodeLinearEquiv_e` in
+`Antipode.lean` for the unconditional version valid for every `q : K`. -/
 theorem antipode_e (i : ι) :
     HopfAlgebra.antipode K (e D q i) = -(simpleKInv D q i * e D q i) := by
   rw [antipode_eq, antipodeLinearEquiv_e]
+
+/-- Antipode of `Fᵢ` under the canonical generic `instHopfAlgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`): `S(Fᵢ) = -(Fᵢ Kᵢ)`. See `antipodeLinearEquiv_f` in
+`Antipode.lean` for the unconditional version valid for every `q : K`. -/
 theorem antipode_f (i : ι) :
     HopfAlgebra.antipode K (f D q i) = -(f D q i * simpleK D q i) := by
   rw [antipode_eq, antipodeLinearEquiv_f]
+
+/-- Antipode of `K_y` under the canonical generic `instHopfAlgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`): `S(K_y) = K_(-y)`. See `antipodeLinearEquiv_k` in
+`Antipode.lean` for the unconditional version valid for every `q : K`. -/
 theorem antipode_k (y : Y) : HopfAlgebra.antipode K (k D q y) = k D q (-y) := by
   rw [antipode_eq, antipodeLinearEquiv_k]
+
+/-- Antipode of `Kᵢ` under the canonical generic `instHopfAlgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`): `S(Kᵢ) = Kᵢ⁻¹`. See `antipodeLinearEquiv_simpleK` in
+`Antipode.lean` for the unconditional version valid for every `q : K`. -/
 theorem antipode_simpleK (i : ι) :
     HopfAlgebra.antipode K (simpleK D q i) = simpleKInv D q i := by
   rw [simpleK_def, antipode_k, simpleKInv_def]
+
+/-- Antipode of `Kᵢ⁻¹` under the canonical generic `instHopfAlgebra` instance
+(`[Fact (IsGenericQuantumParameter q)]`): `S(Kᵢ⁻¹) = Kᵢ`. See `antipodeLinearEquiv_simpleKInv` in
+`Antipode.lean` for the unconditional version valid for every `q : K`. -/
 theorem antipode_simpleKInv (i : ι) :
     HopfAlgebra.antipode K (simpleKInv D q i) = simpleK D q i := by
   rw [simpleKInv_def, antipode_k, neg_neg, simpleK_def]
+
+/-- Under the canonical generic `instHopfAlgebra` instance (`[Fact (IsGenericQuantumParameter q)]`),
+`S(Eᵢ) = -normalizedE D q i`. See `antipodeLinearEquiv_e_eq_neg_normalizedE` in `Antipode.lean`
+for the unconditional version valid for every `q : K`. -/
 theorem antipode_e_eq_neg_normalizedE (i : ι) :
     HopfAlgebra.antipode K (e D q i) = -normalizedE D q i := by
   rw [antipode_e, normalizedE_def]
+
+/-- Under the canonical generic `instHopfAlgebra` instance (`[Fact (IsGenericQuantumParameter q)]`),
+`S(Fᵢ) = -normalizedF D q i`. See `antipodeLinearEquiv_f_eq_neg_normalizedF` in `Antipode.lean`
+for the unconditional version valid for every `q : K`. -/
 theorem antipode_f_eq_neg_normalizedF (i : ι) :
     HopfAlgebra.antipode K (f D q i) = -normalizedF D q i := by
   rw [antipode_f, normalizedF_def]
@@ -717,14 +804,22 @@ theorem antipode_antipode_of_pairing_root {y : Y}
     HopfAlgebra.antipode K (HopfAlgebra.antipode K x) = k D q (-y) * x * k D q y := by
   rw [antipode_eq, antipode_eq, antipodeLinearEquiv_antipodeLinearEquiv_of_pairing_root D q hρ x]
 
+/-- Squared antipode on `Eᵢ` under `instHopfAlgebra`: `S²(Eᵢ) = qᵢ⁻² • Eᵢ`. See
+`antipodeLinearEquiv_antipodeLinearEquiv_e` in `Antipode.lean` for the unconditional version. -/
 theorem antipode_antipode_e (i : ι) :
     HopfAlgebra.antipode K (HopfAlgebra.antipode K (e D q i)) =
       (q ^ D.symmetrizer i)⁻¹ ^ 2 • e D q i := by
   rw [antipode_eq, antipode_eq, antipodeLinearEquiv_antipodeLinearEquiv_e]
+
+/-- Squared antipode on `Fᵢ` under `instHopfAlgebra`: `S²(Fᵢ) = qᵢ² • Fᵢ`. See
+`antipodeLinearEquiv_antipodeLinearEquiv_f` in `Antipode.lean` for the unconditional version. -/
 theorem antipode_antipode_f (i : ι) :
     HopfAlgebra.antipode K (HopfAlgebra.antipode K (f D q i)) =
       (q ^ D.symmetrizer i) ^ 2 • f D q i := by
   rw [antipode_eq, antipode_eq, antipodeLinearEquiv_antipodeLinearEquiv_f]
+
+/-- Squared antipode on `K_y` under `instHopfAlgebra`: `S²(K_y) = K_y`. See
+`antipodeLinearEquiv_antipodeLinearEquiv_k` in `Antipode.lean` for the unconditional version. -/
 theorem antipode_antipode_k (y : Y) :
     HopfAlgebra.antipode K (HopfAlgebra.antipode K (k D q y)) = k D q y := by
   rw [antipode_eq, antipode_eq, antipodeLinearEquiv_antipodeLinearEquiv_k]

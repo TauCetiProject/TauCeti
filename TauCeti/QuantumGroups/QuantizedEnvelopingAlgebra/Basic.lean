@@ -578,6 +578,7 @@ theorem e_mul_f_sub_f_mul_e_of_ne {i j : ι} (hij : i ≠ j) :
 theorem commute_e_f {i j : ι} (hij : i ≠ j) : Commute (e D q i) (f D q j) :=
   sub_eq_zero.mp (e_mul_f_sub_f_mul_e_of_ne D q hij)
 
+/-- Off-diagonal commutation `Eᵢ Fⱼ = Fⱼ Eᵢ` for `i ≠ j`. -/
 theorem e_mul_f_of_ne {i j : ι} (hij : i ≠ j) : e D q i * f D q j = f D q j * e D q i :=
   (commute_e_f D q hij).eq
 
@@ -872,10 +873,15 @@ noncomputable def chevalleyInvolution :
 @[simp] theorem chevalleyInvolution_simpleKInv (i : ι) :
     chevalleyInvolution D q (simpleKInv D q i) = simpleK D q i := by
   rw [simpleKInv_def, chevalleyInvolution_k, neg_neg, simpleK_def]
+/-- The Chevalley involution exchanges raising and lowering divided powers at the same arbitrary
+parameter `q' : K`, with no genericity assumption on `q` or `q'`. -/
 theorem chevalleyInvolution_quantumDividedPower_e (q' : K) (i : ι) (n : ℕ) :
     chevalleyInvolution D q (quantumDividedPower q' (e D q i) n) =
       quantumDividedPower q' (f D q i) n := by
   simp
+
+/-- The Chevalley involution exchanges lowering and raising divided powers at the same arbitrary
+parameter `q' : K`, with no genericity assumption on `q` or `q'`. -/
 theorem chevalleyInvolution_quantumDividedPower_f (q' : K) (i : ι) (n : ℕ) :
     chevalleyInvolution D q (quantumDividedPower q' (f D q i) n) =
       quantumDividedPower q' (e D q i) n := by

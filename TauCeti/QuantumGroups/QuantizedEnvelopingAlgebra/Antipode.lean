@@ -327,9 +327,12 @@ theorem antipodeLinearEquiv_apply (x : QuantizedEnvelopingAlgebra D q) :
 @[simp] theorem antipodeLinearEquiv_simpleKInv (i : ι) :
     antipodeLinearEquiv D q (simpleKInv D q i) = simpleK D q i := by
   simp [simpleK_def, simpleKInv_def]
+/-- Express `S(Eᵢ)` as `-normalizedE D q i`, unconditionally in `q : K`. -/
 theorem antipodeLinearEquiv_e_eq_neg_normalizedE (i : ι) :
     antipodeLinearEquiv D q (e D q i) = -normalizedE D q i := by
   rw [antipodeLinearEquiv_e, normalizedE_def]
+
+/-- Express `S(Fᵢ)` as `-normalizedF D q i`, unconditionally in `q : K`. -/
 theorem antipodeLinearEquiv_f_eq_neg_normalizedF (i : ι) :
     antipodeLinearEquiv D q (f D q i) = -normalizedF D q i := by
   rw [antipodeLinearEquiv_f, normalizedF_def]
