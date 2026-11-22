@@ -135,22 +135,37 @@ theorem mvfderiv_coe_fundamentalVectorField_delzantLevel (z : delzantLevel i u c
       weightGenerator (-ξ) z := by
   let _ := hΔ.delzantLevelChartedSpace hi
   have := hΔ.contMDiffVAdd_delzantLevel hi
+  have hcoe := (hΔ.contMDiff_coe_delzantLevel hi (m := ∞)).mdifferentiableAt (x := z) (by simp)
   have horbit : MDifferentiableAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
       𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ)
       (fun g : Multiplicative (ι → AddCircle (2 * π)) ↦ g • z) 1 :=
     ((contMDiff_id.smul contMDiff_const : ContMDiff _ _ ∞ _) 1).mdifferentiableAt (by simp)
-  -- The composite of the orbit map with the inclusion is `g ↦ torusRotation g.toAdd z`. The
-  -- multiplicative copy of the torus carries the charts of the torus, with `1 = 0`, so its
-  -- derivative at `1` is the derivative of the rotation orbit map at `0`.
-  exact (mvfderiv_apply_eq_mfderiv_apply _ _ _).trans
-    ((congrArg (mfderiv 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ)
+  have hrot : MDifferentiableAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
       𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
-      ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) z)
-      (fundamentalVectorField_apply (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-        (G := Multiplicative (ι → AddCircle (2 * π))) ξ z)).trans
-    ((mfderiv_comp_apply_of_eq (1 : Multiplicative _)
-      ((hΔ.contMDiff_coe_delzantLevel hi (m := ∞)).mdifferentiableAt (by simp)) horbit
-      (one_smul _ z) ξ).symm.trans (mfderiv_torusRotation_zero _ ξ)))
+      (fun θ : ι → AddCircle (2 * π) ↦ torusRotation θ z) 0 :=
+    ((contMDiff_torusRotation.comp (contMDiff_id.prodMk contMDiff_const) : ContMDiff _ _ ∞ _)
+      0).mdifferentiableAt (by simp)
+  have htoAdd : MDifferentiableAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+      (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+      (Multiplicative.toAdd : Multiplicative (ι → AddCircle (2 * π)) → ι → AddCircle (2 * π)) 1 :=
+    ((Multiplicative.contMDiff_toAdd : ContMDiff _ _ ∞ _) 1).mdifferentiableAt (by simp)
+  -- The multiplicative copy of the torus carries the charts of the torus, so forgetting the type
+  -- tag, which is the identity on the underlying torus, has the identity as derivative.
+  have hdtoAdd : mfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+      (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+      (Multiplicative.toAdd : Multiplicative (ι → AddCircle (2 * π)) → ι → AddCircle (2 * π)) 1
+        ξ = ξ :=
+    congrArg (· ξ) (mfderiv_id (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+      (M := Multiplicative (ι → AddCircle (2 * π))) (x := 1))
+  -- The composite of the orbit map with the inclusion is the rotation orbit map after `toAdd`.
+  have hcomp : ((↑) ∘ fun g : Multiplicative (ι → AddCircle (2 * π)) ↦ g • z) =
+      (fun θ ↦ torusRotation θ z) ∘ Multiplicative.toAdd :=
+    funext fun g ↦ by
+      rw [Function.comp_apply, Function.comp_apply, ← toAdd_vadd, coe_vadd_delzantLevel]
+  rw [mvfderiv_apply_eq_mfderiv_apply, fundamentalVectorField_apply
+      (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (G := Multiplicative (ι → AddCircle (2 * π))) ξ z,
+    ← mfderiv_comp_apply_of_eq 1 hcoe horbit (one_smul _ z) ξ, hcomp,
+    mfderiv_comp_apply_of_eq 1 hrot htoAdd toAdd_one ξ, hdtoAdd, mfderiv_torusRotation_zero]
 
 /-- **The fundamental vector fields on the Delzant quotient** are the images under the projection
 `π : Z → M_Δ` of those on the level: `ξ_M([z]) = dπ (ξ_Z(z))`, since `π` is equivariant. -/
@@ -265,9 +280,10 @@ theorem hamiltonianTorusData_delzantQuotientSymplecticForm
   have := hΔ.isManifold_delzantQuotient hi
   have := hΔ.contMDiffVAdd_delzantQuotient hi
   refine SmoothTwoForm.hamiltonianTorusData_iff.2
-    ⟨fun g ↦ hΔ.mpullback_vadd_delzantQuotientSymplecticForm hi g.toAdd,
-      hΔ.isMomentMap_delzantQuotientSymplecticForm hi hβ, fun g q ↦ ?_⟩
-  rw [← toAdd_vadd, DelzantQuotient.reducedMomentMap_vadd']
+    ⟨fun g ↦ ?_, hΔ.isMomentMap_delzantQuotientSymplecticForm hi hβ, fun g q ↦ ?_⟩
+  · simp only [← toAdd_vadd]
+    exact hΔ.mpullback_vadd_delzantQuotientSymplecticForm hi g.toAdd
+  · rw [← toAdd_vadd, DelzantQuotient.reducedMomentMap_vadd']
 
 end IsDelzant
 
