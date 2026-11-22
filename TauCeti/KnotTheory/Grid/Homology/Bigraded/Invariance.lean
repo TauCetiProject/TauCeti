@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Homology.Bigraded.CyclicPermutation
 public import TauCeti.KnotTheory.Grid.Homology.Commutation.Invariance
+public import TauCeti.KnotTheory.Grid.Homology.Transpose
 public import TauCeti.KnotTheory.Grid.Move.Components
 public import TauCeti.KnotTheory.Grid.Move.Stabilization
 public import TauCeti.KnotTheory.Grid.Stabilization.Bigraded

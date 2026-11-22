@@ -29,10 +29,11 @@ class of a cycle `z` to the class of its image, and shows that this map is bijec
 diagram with an odd number of components, preserves the Alexander grading.
 
 For a knot grid `G`, the diagram `G'` is again a knot grid, and `U` acts on both homologies as
-any one variable. Since `σ` commutes with the evaluation `V_j ↦ U`, the map on homology is an
-isomorphism of graded `R[U]`-modules of Alexander degree zero
-(`GridDiagram.IsKnot.unblockedHomologyIsomorphic_stabilizeX`). Only this one stabilization type is
-treated here; the other stabilization types and commutation moves are not.
+any one variable. Since `σ` commutes with the evaluation `V_j ↦ U` and the map also preserves the
+`O`-Maslov grading (`Stabilization/Bigraded.lean`), it is an isomorphism of bigraded
+`R[U]`-modules (`GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_stabilizeX`, in
+`Homology/Bigraded/Invariance.lean`). Only this one stabilization type is treated here; the other
+stabilization types and commutation moves are not.
 
 ## Main definitions
 
@@ -55,8 +56,6 @@ treated here; the other stabilization types and commutation moves are not.
   the map on homology is bijective.
 * `OddComponentGridDiagram.stabilizeXHomologyMap_mem_alexanderUnblockedHomologyGrading_piece`:
   it preserves the Alexander grading.
-* `TauCeti.GridDiagram.IsKnot.unblockedHomologyIsomorphic_stabilizeX`: for a knot grid, `GH⁻(G)`
-  and `GH⁻(G')` are isomorphic as Alexander-graded `R[U]`-modules.
 
 ## References
 
@@ -296,28 +295,5 @@ theorem stabilizeXHomologyMap_mem_alexanderUnblockedHomologyGrading_piece {a : �
   exact key _ hz
 
 end OddComponentGridDiagram
-
-namespace GridDiagram.IsKnot
-
-variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (s : Fin n)
-  (K : Type*) [CommRing K] [CharP K 2]
-
-/-- **`GH⁻` is invariant under `X`-stabilization.** The stabilization of a knot grid `G` splitting
-the `X`-marking of column `s` is a knot grid whose `GH⁻` is isomorphic to `GH⁻(G)` as an
-Alexander-graded `K[U]`-module. -/
-theorem unblockedHomologyIsomorphic_stabilizeX :
-    hG.UnblockedHomologyIsomorphic
-      ((G.isKnot_stabilizeX s.castSucc (G.X s).castSucc s).mpr hG) K := by
-  refine (UnblockedHomologyIsomorphic.of_semilinearMap
-    (fun p ↦ by rw [AlgHom.coe_toRingHom, aeval_rename, Function.comp_def])
-    (G.stabilizeXHomologyMap s K) (G.stabilizeXHomologyMap_bijective s K) fun a y hy ↦ ?_).symm
-  rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
-    ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff]
-  rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
-    ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy
-  exact OddComponentGridDiagram.stabilizeXHomologyMap_mem_alexanderUnblockedHomologyGrading_piece
-    _ s K hy
-
-end GridDiagram.IsKnot
 
 end TauCeti

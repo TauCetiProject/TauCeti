@@ -13,9 +13,9 @@ public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
 # Invariance of `GH⁻` under cyclic permutation
 
 Cyclically permuting the rows or the columns of a grid diagram is a grid move
-(`GridDiagram.IsMove.cyclicRows`, `GridDiagram.IsMove.cyclicColumns`). This file shows that the
-unblocked grid homology `GH⁻` of a knot grid, as an Alexander-graded `R[U]`-module, does not
-change under either move.
+(`GridDiagram.IsMove.cyclicRows`, `GridDiagram.IsMove.cyclicColumns`). This file constructs the
+equivalences that either move induces on the unblocked grid homology `GH⁻` and shows that they
+preserve the Alexander grading.
 
 The chain-level input is that relabeling every grid state by the cyclic permutation intertwines
 the two unblocked differentials, after renaming the variables `V_c` along the same permutation
@@ -30,13 +30,14 @@ the renaming of the variables (`GridDiagram.unblockedHomologyRelabelColumnsFinRo
 Both moves preserve the Alexander grading of grid states (`Grading/CyclicPermutation.lean`), so
 both equivalences preserve the Alexander grading of `GH⁻`
 (`OddComponentGridDiagram.unblockedHomologyEquivOfIntertwining_mem_piece`, in
-`Homology/Alexander.lean`). On a knot grid every variable acts as
-`U`, and renaming the variables does not change the evaluation `V_c ↦ U`, so both equivalences
-are graded `R[U]`-isomorphisms of degree zero
-(`GridDiagram.IsKnot.unblockedHomologyIsomorphic_relabelRows_finRotate`,
-`GridDiagram.IsKnot.unblockedHomologyIsomorphic_relabelColumns_finRotate`), so the invariants `τ`
-agree (`GridDiagram.IsKnot.UnblockedHomologyIsomorphic.tau_eq`, in `Homology/Tau.lean`).
-The corresponding statements for fully blocked grid homology are in `Homology/Symmetry.lean`.
+`Homology/Alexander.lean`). They also preserve the full `(O-Maslov, Alexander)` bigrading
+(`Homology/Bigraded/CyclicPermutation.lean`), so on a knot grid, where every variable acts as `U`
+and renaming the variables does not change the evaluation `V_c ↦ U`, both moves preserve `GH⁻` as
+a bigraded `R[U]`-module
+(`GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_relabelRows_finRotate`,
+`GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_relabelColumns_finRotate`, in
+`Homology/Bigraded/Invariance.lean`). The corresponding statements for fully blocked grid
+homology are in `Homology/Symmetry.lean`.
 
 ## Main definitions
 
@@ -46,9 +47,9 @@ The corresponding statements for fully blocked grid homology are in `Homology/Sy
 
 ## Main results
 
-* `TauCeti.GridDiagram.IsKnot.unblockedHomologyIsomorphic_relabelRows_finRotate`,
-  `TauCeti.GridDiagram.IsKnot.unblockedHomologyIsomorphic_relabelColumns_finRotate`: `GH⁻` of a
-  knot grid is invariant under the cyclic permutation moves as an Alexander-graded `R[U]`-module.
+* `TauCeti.OddComponentGridDiagram.relabelRowsEquiv_mem_alexanderChainMinusPiece`,
+  `TauCeti.OddComponentGridDiagram.relabelColumnsRenameEquiv_mem_alexanderChainMinusPiece`: the
+  chain-level relabelings preserve the Alexander grading.
 
 ## References
 
@@ -145,46 +146,5 @@ theorem relabelColumnsRenameEquiv_mem_alexanderChainMinusPiece {a : ℤ}
   simpa only [alexanderℤ_relabelColumns_finRotate, Finsupp.degree_mapDomain] using hc
 
 end OddComponentGridDiagram
-
-/-! ### Invariance of the graded `K[U]`-module `GH⁻` -/
-
-namespace GridDiagram.IsKnot
-
-variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (K : Type*) [CommRing K] [CharP K 2]
-
-/-- **Cyclic permutation of the rows preserves `GH⁻`** of a knot grid as an Alexander-graded
-`K[U]`-module. -/
-theorem unblockedHomologyIsomorphic_relabelRows_finRotate :
-    hG.UnblockedHomologyIsomorphic ((G.isKnot_relabelRows (finRotate n)).mpr hG) K := by
-  refine .of_semilinearMap (σ := RingHom.id _) (fun _ ↦ rfl)
-    (G.unblockedHomologyRelabelRowsFinRotateEquiv K).toLinearMap
-    (G.unblockedHomologyRelabelRowsFinRotateEquiv K).bijective fun a y hy ↦ ?_
-  have hG' : hG.toOddComponentGridDiagram.relabelRows (finRotate n) =
-      ((G.isKnot_relabelRows (finRotate n)).mpr hG).toOddComponentGridDiagram :=
-    Subtype.ext (hG.toOddComponentGridDiagram.val_relabelRows _)
-  rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
-    ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy ⊢
-  exact hG.toOddComponentGridDiagram.unblockedHomologyEquivOfIntertwining_mem_piece K _ _ _
-    (fun _ _ hc ↦ hG' ▸
-      hG.toOddComponentGridDiagram.relabelRowsEquiv_mem_alexanderChainMinusPiece K hc) hy
-
-/-- **Cyclic permutation of the columns preserves `GH⁻`** of a knot grid as an Alexander-graded
-`K[U]`-module. -/
-theorem unblockedHomologyIsomorphic_relabelColumns_finRotate :
-    hG.UnblockedHomologyIsomorphic ((G.isKnot_relabelColumns (finRotate n)).mpr hG) K := by
-  refine .of_semilinearMap (fun p ↦ ?_)
-    (G.unblockedHomologyRelabelColumnsFinRotateEquiv K).toLinearMap
-    (G.unblockedHomologyRelabelColumnsFinRotateEquiv K).bijective fun a y hy ↦ ?_
-  · simp [aeval_rename, Function.comp_def]
-  · have hG' : hG.toOddComponentGridDiagram.relabelColumns (finRotate n) =
-        ((G.isKnot_relabelColumns (finRotate n)).mpr hG).toOddComponentGridDiagram :=
-      Subtype.ext (hG.toOddComponentGridDiagram.val_relabelColumns _)
-    rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
-      ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy ⊢
-    exact hG.toOddComponentGridDiagram.unblockedHomologyEquivOfIntertwining_mem_piece K _ _ _
-      (fun _ _ hc ↦ hG' ▸
-        hG.toOddComponentGridDiagram.relabelColumnsRenameEquiv_mem_alexanderChainMinusPiece K hc) hy
-
-end GridDiagram.IsKnot
 
 end TauCeti

@@ -22,9 +22,10 @@ Hence for a knot grid the two homologies are isomorphic as Alexander-graded `R[U
 (`GridDiagram.IsKnot.unblockedHomologyIsomorphic_transpose`).
 
 The reflection exchanges row and column commutations (`GridDiagram.isColumnCommutation_transpose`).
-So the invariance of `GH⁻` under row commutations follows from
-`GridDiagram.IsKnot.unblockedHomologyIsomorphic_transpose` and its invariance under column
-commutations.
+So the invariance of `GH⁻` under row commutations follows from its invariance under the
+diagonal reflection and under column commutations
+(`GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_of_isCommutation`, in
+`Homology/Bigraded/Invariance.lean`).
 
 ## Main definitions
 
