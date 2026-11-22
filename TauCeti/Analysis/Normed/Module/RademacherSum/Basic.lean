@@ -32,7 +32,10 @@ the family; in particular `n` copies of a vector `y` of a real normed space have
 
 * `TauCeti.expect_units_apply_mul_apply` and
   `TauCeti.expect_units_apply_mul_apply_mul_apply_mul_apply`: the sign-cube averages of products
-  of two and of four Rademacher signs.
+  of two and of four Rademacher signs; `TauCeti.sum_units_apply_mul_apply_mul_apply_mul_apply`
+  is the integer sum form of the latter.
+* `TauCeti.sum_sum_units_smul_mul_self_mul_mul_self`: in a non-unital ring, the pairing expansion
+  of the fourth power of a Rademacher sum, summed over the sign cube.
 * `TauCeti.rademacherSecondMoment`: the Rademacher second moment `R₂(y)`.
 * `TauCeti.rademacherMoment_two`: `rademacherMoment 2 y = rademacherSecondMoment y`.
 * `TauCeti.rademacherSecondMoment_comp_equiv`: invariance under reindexing.
@@ -98,28 +101,83 @@ theorem expect_units_apply_mul_apply_mul_apply_mul_apply (i j k l : ι) :
       (if i = j ∧ k = l then 1 else 0) + (if i = k ∧ j = l then 1 else 0) +
         (if i = l ∧ j = k then 1 else 0) - 2 * if i = j ∧ j = k ∧ k = l then 1 else 0 := by
   -- If `i` matches one of `j, k, l`, the two signs `εᵢ` cancel and two signs remain.
+  have hcancel (a b : ι) (h : ∀ ε : ι → ℤˣ, ((ε i : ℤ) : ℝ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ) =
+      (ε i : ℤ) * (ε i : ℤ) * ((ε a : ℤ) * (ε b : ℤ))) :
+      𝔼 ε : ι → ℤˣ, ((ε i : ℤ) : ℝ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ) =
+        if a = b then 1 else 0 := by
+    simp_rw [h, units_apply_mul_self, one_mul, expect_units_apply_mul_apply]
   by_cases hij : i = j
   · subst hij
-    simp_rw [units_apply_mul_self, one_mul, expect_units_apply_mul_apply]
+    rw [hcancel k l fun ε ↦ by ring]
     split_ifs <;> grind
   by_cases hik : i = k
   · subst hik
-    have h (ε : ι → ℤˣ) : ((ε i : ℤ) : ℝ) * (ε j : ℤ) * (ε i : ℤ) * (ε l : ℤ) =
-        ((ε j : ℤ) : ℝ) * (ε l : ℤ) := by
-      linear_combination ((ε j : ℤ) : ℝ) * (ε l : ℤ) * units_apply_mul_self ε i
-    simp_rw [h, expect_units_apply_mul_apply]
+    rw [hcancel j l fun ε ↦ by ring]
     split_ifs <;> grind
   by_cases hil : i = l
   · subst hil
-    have h (ε : ι → ℤˣ) : ((ε i : ℤ) : ℝ) * (ε j : ℤ) * (ε k : ℤ) * (ε i : ℤ) =
-        ((ε j : ℤ) : ℝ) * (ε k : ℤ) := by
-      linear_combination ((ε j : ℤ) : ℝ) * (ε k : ℤ) * units_apply_mul_self ε i
-    simp_rw [h, expect_units_apply_mul_apply]
+    rw [hcancel j k fun ε ↦ by ring]
     split_ifs <;> grind
   -- Otherwise `εᵢ` occurs once, and flipping it negates the product.
   simp_rw [mul_assoc]
   rw [expect_units_apply_mul_eq_zero i fun ε ↦ by simp [Ne.symm hij, Ne.symm hik, Ne.symm hil]]
   simp [hij, hik, hil]
+
+/-- The sign-cube sum of a product of four signs, in integers: the average of
+`expect_units_apply_mul_apply_mul_apply_mul_apply` multiplied by the number of sign patterns. -/
+theorem sum_units_apply_mul_apply_mul_apply_mul_apply (i j k l : ι) :
+    ∑ ε : ι → ℤˣ, (ε i : ℤ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ) =
+      Fintype.card (ι → ℤˣ) * ((if i = j ∧ k = l then 1 else 0) +
+        (if i = k ∧ j = l then 1 else 0) + (if i = l ∧ j = k then 1 else 0) -
+          2 * if i = j ∧ j = k ∧ k = l then 1 else 0) := by
+  have h := expect_units_apply_mul_apply_mul_apply_mul_apply i j k l
+  rw [Fintype.expect_eq_sum_div_card, div_eq_iff (Nat.cast_ne_zero.2 Fintype.card_ne_zero)] at h
+  exact_mod_cast h.trans (mul_comm _ _)
+
+/-- The pairing expansion of the fourth power of a Rademacher sum in a non-unital ring: summed over
+the sign cube, `(∑ i, εᵢ xᵢ)⁴` is the number of sign patterns times
+`(∑ xᵢ²)² + ∑ i, xᵢ (∑ j, xⱼ²) xᵢ + ∑ i, ∑ j, xᵢ xⱼ xᵢ xⱼ - 2 ∑ i, xᵢ⁴`. -/
+theorem sum_sum_units_smul_mul_self_mul_mul_self {A : Type*} [NonUnitalRing A] (x : ι → A) :
+    ∑ ε : ι → ℤˣ,
+        (∑ i, ε i • x i) * (∑ i, ε i • x i) * ((∑ i, ε i • x i) * (∑ i, ε i • x i)) =
+      Fintype.card (ι → ℤˣ) • ((∑ i, x i * x i) * (∑ i, x i * x i) +
+        ∑ i, x i * (∑ j, x j * x j) * x i + ∑ i, ∑ j, x i * x j * (x i * x j) -
+          2 • ∑ i, x i * x i * (x i * x i)) := by
+  set v : ι → ι → ι → ι → A := fun i j k l ↦ x l * x k * (x j * x i)
+  have hS (ε : ι → ℤˣ) :
+      (∑ i, ε i • x i) * (∑ i, ε i • x i) * ((∑ i, ε i • x i) * (∑ i, ε i • x i)) =
+        ∑ i, ∑ j, ∑ k, ∑ l, ((ε i : ℤ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ)) • v i j k l := by
+    simp only [v, Units.smul_def, sum_mul, mul_sum, mul_smul_comm, smul_mul_assoc, smul_sum,
+      smul_smul, ← mul_assoc]
+  have hswap (f : (ι → ℤˣ) → ι → ι → ι → ι → A) :
+      ∑ ε, ∑ i, ∑ j, ∑ k, ∑ l, f ε i j k l = ∑ i, ∑ j, ∑ k, ∑ l, ∑ ε, f ε i j k l := by
+    rw [sum_comm]; refine sum_congr rfl fun i _ ↦ ?_
+    rw [sum_comm]; refine sum_congr rfl fun j _ ↦ ?_
+    rw [sum_comm]; refine sum_congr rfl fun k _ ↦ ?_
+    rw [sum_comm]
+  -- Each pairing collapses two of the four index sums.
+  have hA : ∑ i, ∑ j, ∑ k, ∑ l, (if i = j ∧ k = l then (1 : ℤ) else 0) • v i j k l =
+      (∑ i, x i * x i) * (∑ i, x i * x i) := by
+    simp [v, ite_and, sum_mul, mul_sum, mul_assoc]
+  have hB : ∑ i, ∑ j, ∑ k, ∑ l, (if i = l ∧ j = k then (1 : ℤ) else 0) • v i j k l =
+      ∑ i, x i * (∑ j, x j * x j) * x i := by
+    simp [v, ite_and, sum_mul, mul_sum, mul_assoc]
+  have hC : ∑ i, ∑ j, ∑ k, ∑ l, (if i = k ∧ j = l then (1 : ℤ) else 0) • v i j k l =
+      ∑ i, ∑ j, x i * x j * (x i * x j) := by
+    rw [sum_comm]
+    simp [v, ite_and]
+  have hD : ∑ i, ∑ j, ∑ k, ∑ l, (if i = j ∧ j = k ∧ k = l then (1 : ℤ) else 0) • v i j k l =
+      ∑ i, x i * x i * (x i * x i) := by
+    simp [v, ite_and]
+  -- Move the sign-cube sum inside and evaluate it by the pairing count.
+  simp_rw [hS]
+  rw [hswap]
+  simp_rw [← sum_smul, sum_units_apply_mul_apply_mul_apply_mul_apply, mul_smul, natCast_zsmul,
+    ← smul_sum]
+  congr 1
+  simp only [add_smul, sub_smul, mul_smul, sum_add_distrib, sum_sub_distrib, ← smul_sum]
+  rw [hA, hB, hC, hD]
+  abel
 
 end Signs
 

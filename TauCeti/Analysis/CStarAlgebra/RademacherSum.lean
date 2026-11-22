@@ -32,6 +32,9 @@ product of four signs keeps exactly the index patterns that match in pairs, so
 * `C = ∑ i, ∑ j, xᵢ xⱼ xᵢ xⱼ`,
 * `D = ∑ i, xᵢ⁴`.
 
+This pairing expansion, `TauCeti.sum_sum_units_smul_mul_self_mul_mul_self`, holds in any
+non-unital ring and lives with the other sign-cube averages in `RademacherSum/Basic.lean`.
+
 The coefficients need not commute, so `A`, `B` and `C` differ in general. When the `xᵢ` are
 self-adjoint elements of a C⋆-algebra, `D ≥ 0` and `𝔼 S⁴ ≥ 0`, so `‖𝔼 S⁴‖ ≤ ‖A + B + C‖`. Each of
 `‖A‖` and `‖B‖` is at most `‖∑ i, xᵢ²‖²`, and the Cauchy–Schwarz bound for finite sums, applied to
@@ -52,8 +55,6 @@ truncation changes.
 * `TauCeti.sum_star_mul_le_card_inv_smul_sum_star_mul` and
   `TauCeti.sum_mul_star_le_card_inv_smul_sum_mul_star`: orthogonality of the Rademacher
   coefficients, in column and row form.
-* `TauCeti.sum_sum_units_smul_mul_self_mul_mul_self`: in a non-unital ring, the sum of `S(ε)⁴`
-  over the sign cube is `card • (A + B + C - 2 D)`.
 * `TauCeti.norm_card_inv_smul_sum_sum_units_smul_mul_self_mul_mul_self_le`: for self-adjoint
   coefficients in a non-unital C⋆-algebra, `‖𝔼 S⁴‖ ≤ 3 ‖∑ i, xᵢ²‖²`.
 
@@ -78,59 +79,6 @@ open scoped BigOperators
 namespace TauCeti
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- The sign-cube sum of a product of four signs, in integers: the average of
-`expect_units_apply_mul_apply_mul_apply_mul_apply` multiplied by the number of sign patterns. -/
-private theorem sum_units_apply_mul_apply_mul_apply_mul_apply (i j k l : ι) :
-    ∑ ε : ι → ℤˣ, (ε i : ℤ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ) =
-      Fintype.card (ι → ℤˣ) * ((if i = j ∧ k = l then 1 else 0) +
-        (if i = k ∧ j = l then 1 else 0) + (if i = l ∧ j = k then 1 else 0) -
-          2 * if i = j ∧ j = k ∧ k = l then 1 else 0) := by
-  have h := expect_units_apply_mul_apply_mul_apply_mul_apply i j k l
-  rw [Fintype.expect_eq_sum_div_card, div_eq_iff (by positivity)] at h
-  exact_mod_cast h.trans (mul_comm _ _)
-
-section Ring
-
-variable {A : Type*} [NonUnitalRing A]
-
-/-- The pairing expansion of the fourth power of a Rademacher sum: summed over the sign cube,
-`(∑ i, εᵢ xᵢ)⁴` is the number of sign patterns times
-`(∑ xᵢ²)² + ∑ i, xᵢ (∑ j, xⱼ²) xᵢ + ∑ i, ∑ j, xᵢ xⱼ xᵢ xⱼ - 2 ∑ i, xᵢ⁴`. -/
-theorem sum_sum_units_smul_mul_self_mul_mul_self (x : ι → A) :
-    ∑ ε : ι → ℤˣ,
-        (∑ i, ε i • x i) * (∑ i, ε i • x i) * ((∑ i, ε i • x i) * (∑ i, ε i • x i)) =
-      Fintype.card (ι → ℤˣ) • ((∑ i, x i * x i) * (∑ i, x i * x i) +
-        ∑ i, x i * (∑ j, x j * x j) * x i + ∑ i, ∑ j, x i * x j * (x i * x j) -
-          2 • ∑ i, x i * x i * (x i * x i)) := by
-  have hS (ε : ι → ℤˣ) :
-      (∑ i, ε i • x i) * (∑ i, ε i • x i) * ((∑ i, ε i • x i) * (∑ i, ε i • x i)) =
-        ∑ i, ∑ j, ∑ k, ∑ l,
-          ((ε i : ℤ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ)) • (x l * x k * (x j * x i)) := by
-    simp only [Units.smul_def, sum_mul, mul_sum, mul_smul_comm, smul_mul_assoc, smul_sum,
-      smul_smul, ← mul_assoc]
-  have hswap (f : (ι → ℤˣ) → ι → ι → ι → ι → A) :
-      ∑ ε, ∑ i, ∑ j, ∑ k, ∑ l, f ε i j k l = ∑ i, ∑ j, ∑ k, ∑ l, ∑ ε, f ε i j k l := by
-    rw [sum_comm]; refine sum_congr rfl fun i _ ↦ ?_
-    rw [sum_comm]; refine sum_congr rfl fun j _ ↦ ?_
-    rw [sum_comm]; refine sum_congr rfl fun k _ ↦ ?_
-    rw [sum_comm]
-  -- Move the sign-cube sum inside and evaluate it by the pairing count.
-  simp_rw [hS]
-  rw [hswap]
-  simp_rw [← sum_smul, sum_units_apply_mul_apply_mul_apply_mul_apply, mul_smul, natCast_zsmul,
-    ← smul_sum]
-  congr 1
-  -- Each pairing collapses two of the four index sums.
-  simp only [add_smul, sub_smul, sum_add_distrib, sum_sub_distrib, ite_and, ite_smul, one_smul,
-    zero_smul, mul_ite, mul_one, mul_zero, sum_ite_irrel, sum_ite_eq, mem_univ, ↓reduceIte,
-    sum_const_zero, mul_assoc, mul_sum, sum_mul, smul_sum]
-  rw [sum_comm (f := fun i j ↦ x j * (x i * (x j * x i)))]
-  congr 1
-  · exact add_right_comm _ _ _
-  · simp [two_smul]
-
-end Ring
 
 section CStarAlgebra
 
@@ -228,8 +176,17 @@ private theorem sum_star_sub_mul_sub (Φ : (ι → ℤˣ) → A) (y : ι → A)
     rw [sum_comm]
     simp_rw [← sum_smul, h2, mul_ite, mul_one, mul_zero, ite_smul, zero_smul, sum_ite_eq,
       mem_univ, ite_true]
-  simp only [star_sub, star_sum, star_smul, star_trivial, sub_mul, mul_sub, sum_mul, mul_sum,
-    smul_mul_assoc, mul_smul_comm, sum_sub_distrib, smul_sub, e1, e2, e3, sub_self, sub_zero]
+  -- Expand the square into `Φ⋆Φ`, the two cross terms and the square of the Rademacher part.
+  have hexp : ∑ ε : ι → ℤˣ,
+      star (Φ ε - ∑ k, ((ε k : ℤ) : ℝ) • y k) * (Φ ε - ∑ k, ((ε k : ℤ) : ℝ) • y k) =
+        ∑ ε, star (Φ ε) * Φ ε - ∑ ε : ι → ℤˣ, ∑ k, ((ε k : ℤ) : ℝ) • (star (Φ ε) * y k) -
+          ∑ ε : ι → ℤˣ, ∑ k, ((ε k : ℤ) : ℝ) • (star (y k) * Φ ε) +
+          ∑ ε : ι → ℤˣ, ∑ k, ((ε k : ℤ) : ℝ) • ∑ l, ((ε l : ℤ) : ℝ) • (star (y l) * y k) := by
+    simp only [star_sub, star_sum, star_smul, star_trivial, sub_mul, mul_sub, sum_mul, mul_sum,
+      smul_mul_assoc, mul_smul_comm, smul_sub, sum_sub_distrib]
+    abel
+  rw [hexp, e1, e2, e3]
+  abel
 
 /-- Orthogonality of the Rademacher coefficients of a C⋆-algebra-valued function on the sign
 cube: if `yₖ = 𝔼 εₖ Φ(ε)`, then `∑ k, yₖ⋆ yₖ ≤ 𝔼 Φ⋆Φ`, the expectations being averages over the
