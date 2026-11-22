@@ -100,9 +100,8 @@ variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSp
   [TopologicalSpace.PseudoMetrizableSpace X] [TopologicalSpace.SeparableSpace X]
 
 /-- On a separable pseudo-metrizable space with measurable open sets, the topology of weak
-convergence of finite measures is first countable. The neighbourhoods of `0` are pulled back from
-the mass, and those of a nonzero finite measure from the mass and the normalization, which lies
-in the pseudo-metrizable space of probability measures. -/
+convergence of finite measures is first countable. In particular, a cluster point of a sequence of
+finite measures is the limit of a subsequence (`MapClusterPt.tendsto_subseq`). -/
 instance instFirstCountableTopology : FirstCountableTopology (FiniteMeasure X) where
   nhds_generated_countable μ := by
     by_cases hzero : μ = 0
