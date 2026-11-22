@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.BrownianMotion.Basic
-public import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Basic
+public import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Measure
+public import TauCeti.Probability.Independence.Process.HasIndepIncrements
 import Mathlib.Probability.Independence.Process.Basic
 import TauCeti.Probability.Independence.Pi
+import TauCeti.Probability.Independence.Filtration
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Matrix Brownian motion
@@ -22,7 +25,13 @@ variance `t / n` off the diagonal and `2 t / (β n)` on it, and at time `1` from
 GOE or the GUE. It is the matrix process whose ordered eigenvalues Dyson's theorem describes.
 
 Everything here except the laws holds path by path. The laws are stated for coordinates that are
-independent pre-Brownian motions, with independence of the coordinates as random paths.
+independent pre-Brownian motions, with independence of the coordinates as random paths. The laws
+of whole paths also assume each coordinate measurable at every time, so that the path is a
+random variable for the product σ-algebra on paths.
+
+Conjugation invariance of the path law reduces questions about the eigenvalues of matrix Brownian
+motion from a general symmetric or Hermitian start to a start at the real diagonal matrix of its
+eigenvalues, since conjugation does not change eigenvalues.
 
 ## Main definitions
 
@@ -41,6 +50,13 @@ independent pre-Brownian motions, with independence of the coordinates as random
   `√(t - s)` times the GOE or GUE.
 * `TauCeti.Probability.indepFun_matrixBrownian_shift`: the increments after `t₀` are independent
   of the path up to `t₀`.
+* `TauCeti.Probability.hasIndepIncrements_matrixBrownian`: independent increments.
+* `TauCeti.Probability.identDistrib_linearMap_matrixBrownian`: the image of the path under a
+  real-linear map preserving the GOE or GUE law is matrix Brownian motion in law, started at the
+  image of `H₀`.
+* `TauCeti.Probability.identDistrib_mul_matrixBrownian_one_mul_conjTranspose` and
+  `TauCeti.Probability.identDistrib_mul_matrixBrownian_two_mul_conjTranspose`: orthogonal
+  (`β = 1`) and unitary (`β = 2`) conjugation invariance of the path law.
 
 ## References
 
@@ -174,17 +190,18 @@ theorem hasLaw_matrixBrownian (hB : ∀ ij, IsPreBrownianReal (B ij) P)
   exact (⟨by fun_prop, rfl⟩ : HasLaw (H₀ + ·) _ _).comp h
 
 /-- **The law of an increment.** With independent pre-Brownian coordinates, for `s ≤ t` the
-increment of matrix Brownian motion over `[s, t]` has the law of `√(t - s)` times the GOE
-(`β = 1`) or GUE (`β = 2`). -/
+increment of matrix Brownian motion over `[s, t]` has the law `gaussianEnsembleLaw β n` of the
+GOE (`β = 1`) or GUE (`β ≠ 1`), scaled by `√(t - s)`. -/
 theorem hasLaw_matrixBrownian_sub (hB : ∀ ij, IsPreBrownianReal (B ij) P)
     (hindep : iIndepFun (fun ij ω t ↦ B ij t ω) P) {s t : ℝ≥0} (hst : s ≤ t) :
     HasLaw (fun ω ↦ matrixBrownian β n H₀ B t ω - matrixBrownian β n H₀ B s ω)
-      ((Measure.pi fun _ : Fin n × Fin n ↦ gaussianReal 0 1).map
-        fun x ↦ √(t - s : ℝ≥0) • gaussianEnsemble β n x) P := by
+      ((gaussianEnsembleLaw β n).map (√(t - s : ℝ≥0) • ·)) P := by
   have hdist : nndist (t : ℝ) s = t - s := by
     refine NNReal.eq ?_
     rw [coe_nndist, Real.dist_eq, abs_of_nonneg (sub_nonneg.2 (NNReal.coe_le_coe.2 hst)),
       NNReal.coe_sub hst]
+  rw [gaussianEnsembleLaw_def, Measure.map_map (by fun_prop) measurable_gaussianEnsemble,
+    Function.comp_def]
   simp_rw [matrixBrownian_sub_matrixBrownian]
   exact hasLaw_gaussianEnsemble β (fun ij ↦ hdist ▸ (hB ij).hasLaw_sub t s)
     (hindep.comp (fun _ f ↦ f t - f s) fun _ ↦ by fun_prop)
@@ -235,6 +252,99 @@ theorem indepFun_matrixBrownian_shift (hB : ∀ ij, IsPreBrownianReal (B ij) P)
   convert h using 1 <;> funext ω t
   · exact matrixBrownian_sub_matrixBrownian _ _ ω
   · exact matrixBrownian_def _ ω
+
+/-- **Independent increments.** With independent pre-Brownian coordinates, each measurable at
+every time, matrix Brownian motion has independent increments: its increments over consecutive
+time intervals are mutually independent. -/
+theorem hasIndepIncrements_matrixBrownian (hB : ∀ ij, IsPreBrownianReal (B ij) P)
+    (hBm : ∀ ij t, Measurable (B ij t)) (hindep : iIndepFun (fun ij ω t ↦ B ij t ω) P) :
+    HasIndepIncrements (matrixBrownian β n H₀ B) P := by
+  have := hindep.isProbabilityMeasure
+  have hm (t : ℝ≥0) : StronglyMeasurable (matrixBrownian β n H₀ B t) :=
+    (measurable_matrixBrownian (hBm · t)).stronglyMeasurable
+  refine Adapted.hasIndepIncrements (ℱ := Filtration.natural _ hm)
+    (fun t ↦ (Filtration.stronglyAdapted_natural hm t).measurable) fun s t hst ↦ ?_
+  -- the increment over `[s, t]` is the value at `t - s` of the increment process after `s`
+  have h := (indepFun_matrixBrownian_shift (β := β) (H₀ := H₀) hB hindep s).comp
+    (measurable_pi_apply (t - s)) measurable_id
+  simp only [Function.comp_def, id, add_tsub_cancel_of_le hst] at h
+  rw [Filtration.natural_eq_comap]
+  exact (IndepFun_iff_Indep _ _ _).1 h
+
+/-- **Invariance in law under a linear symmetry of the ensemble.** Let `L` be a real-linear map
+of complex matrices that preserves the law `gaussianEnsembleLaw β n` of the GOE (`β = 1`) or
+GUE (`β ≠ 1`). With independent pre-Brownian coordinates, each measurable at every time, the
+image under `L` of matrix Brownian motion started at `H₀` has, as a process, the law of matrix
+Brownian motion started at `L H₀`. -/
+theorem identDistrib_linearMap_matrixBrownian (hB : ∀ ij, IsPreBrownianReal (B ij) P)
+    (hBm : ∀ ij t, Measurable (B ij t)) (hindep : iIndepFun (fun ij ω t ↦ B ij t ω) P)
+    (L : Matrix (Fin n) (Fin n) ℂ →ₗ[ℝ] Matrix (Fin n) (Fin n) ℂ)
+    (hL : (gaussianEnsembleLaw β n).map L = gaussianEnsembleLaw β n) :
+    IdentDistrib (fun ω t ↦ L (matrixBrownian β n H₀ B t ω))
+      (fun ω t ↦ matrixBrownian β n (L H₀) B t ω) P P := by
+  have := hindep.isProbabilityMeasure
+  have hLm : Measurable L := L.continuous_of_finiteDimensional.measurable
+  have hm (t : ℝ≥0) : Measurable (matrixBrownian β n 0 B t) :=
+    measurable_matrixBrownian (hBm · t)
+  have hY := hasIndepIncrements_matrixBrownian (β := β) (H₀ := 0) hB hBm hindep
+  -- each increment is `√(t - s)` times the ensemble, whose law `L` preserves
+  have hlaw (s t : ℝ≥0) (hst : s ≤ t) : IdentDistrib
+      (fun ω ↦ L (matrixBrownian β n 0 B t ω) - L (matrixBrownian β n 0 B s ω))
+      (fun ω ↦ matrixBrownian β n 0 B t ω - matrixBrownian β n 0 B s ω) P P := by
+    have hinc := hasLaw_matrixBrownian_sub (β := β) (H₀ := 0) hB hindep hst
+    have hLinc : HasLaw L ((gaussianEnsembleLaw β n).map (√(t - s : ℝ≥0) • ·))
+        ((gaussianEnsembleLaw β n).map (√(t - s : ℝ≥0) • ·)) := by
+      refine ⟨hLm.aemeasurable, ?_⟩
+      rw [Measure.map_map hLm (by fun_prop),
+        show ⇑L ∘ (√(t - s : ℝ≥0) • ·) = (√(t - s : ℝ≥0) • ·) ∘ ⇑L from
+          funext fun A ↦ map_smul L _ A,
+        ← Measure.map_map (by fun_prop) hLm, hL]
+    have h := hLinc.comp hinc
+    simp only [Function.comp_def, map_sub] at h
+    exact ⟨h.aemeasurable, hinc.aemeasurable, h.map_eq.trans hinc.map_eq.symm⟩
+  have h0 := ae_matrixBrownian_zero (β := β) (H₀ := 0) hB
+  have h := (hY.map' hLm).identDistrib hY (fun t ↦ hLm.comp (hm t)) hm
+    (by filter_upwards [h0] with ω hω using by simp [bot_eq_zero', hω])
+    (by filter_upwards [h0] with ω hω using by simp [bot_eq_zero', hω]) hlaw
+  -- add the start `L H₀` to both paths
+  have hshift : Measurable fun (f : ℝ≥0 → Matrix (Fin n) (Fin n) ℂ) t ↦ L H₀ + f t := by
+    fun_prop
+  convert h.comp hshift using 1 <;> funext ω t <;> simp [matrixBrownian_def]
+
+/-- **Orthogonal invariance in law** (`β = 1`). For a fixed orthogonal matrix `U`, the conjugate
+`U H(·) Uᵀ` of real symmetric matrix Brownian motion `H` started at `H₀` has, as a process, the
+law of real symmetric matrix Brownian motion started at `U H₀ Uᵀ`. -/
+theorem identDistrib_mul_matrixBrownian_one_mul_conjTranspose
+    (hB : ∀ ij, IsPreBrownianReal (B ij) P) (hBm : ∀ ij t, Measurable (B ij t))
+    (hindep : iIndepFun (fun ij ω t ↦ B ij t ω) P) (U : Matrix.orthogonalGroup (Fin n) ℝ) :
+    IdentDistrib
+      (fun ω t ↦ (U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal *
+        matrixBrownian 1 n H₀ B t ω * ((U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal)ᴴ)
+      (fun ω t ↦ matrixBrownian 1 n ((U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal * H₀ *
+        ((U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal)ᴴ) B t ω) P P := by
+  have h := identDistrib_linearMap_matrixBrownian (H₀ := H₀) hB hBm hindep
+    (LinearMap.mulLeftRight ℝ (((U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal),
+      ((U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal)ᴴ))
+    (by convert map_mul_mul_conjTranspose_gaussianEnsembleLaw_one U using 2
+        exact funext fun _ ↦ LinearMap.mulLeftRight_apply _ _ _)
+  simpa only [LinearMap.mulLeftRight_apply] using h
+
+/-- **Unitary invariance in law** (`β = 2`). For a fixed unitary matrix `U`, the conjugate
+`U H(·) Uᴴ` of complex Hermitian matrix Brownian motion `H` started at `H₀` has, as a process,
+the law of complex Hermitian matrix Brownian motion started at `U H₀ Uᴴ`. -/
+theorem identDistrib_mul_matrixBrownian_two_mul_conjTranspose
+    (hB : ∀ ij, IsPreBrownianReal (B ij) P) (hBm : ∀ ij t, Measurable (B ij t))
+    (hindep : iIndepFun (fun ij ω t ↦ B ij t ω) P) (U : Matrix.unitaryGroup (Fin n) ℂ) :
+    IdentDistrib
+      (fun ω t ↦ (U : Matrix (Fin n) (Fin n) ℂ) * matrixBrownian 2 n H₀ B t ω *
+        (U : Matrix (Fin n) (Fin n) ℂ)ᴴ)
+      (fun ω t ↦ matrixBrownian 2 n ((U : Matrix (Fin n) (Fin n) ℂ) * H₀ *
+        (U : Matrix (Fin n) (Fin n) ℂ)ᴴ) B t ω) P P := by
+  have h := identDistrib_linearMap_matrixBrownian (H₀ := H₀) hB hBm hindep
+    (LinearMap.mulLeftRight ℝ ((U : Matrix (Fin n) (Fin n) ℂ), (U : Matrix (Fin n) (Fin n) ℂ)ᴴ))
+    (by convert map_mul_mul_conjTranspose_gaussianEnsembleLaw_two U using 2
+        exact funext fun _ ↦ LinearMap.mulLeftRight_apply _ _ _)
+  simpa only [LinearMap.mulLeftRight_apply] using h
 
 end Law
 

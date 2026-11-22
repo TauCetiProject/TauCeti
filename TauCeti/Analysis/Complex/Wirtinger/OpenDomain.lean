@@ -63,18 +63,12 @@ The construction follows the Mittag–Leffler / Runge exhaustion scheme:
    `(1 + 2^k / r)^k * 2⁻ʲ`, so `TauCeti.contDiffOn_tsum_of_eventually` gives joint smoothness on
    `s ×ˢ Ω`. Splitting at `m + 1` shows both `bar∂_z U = f` and holomorphy in `q`.
 
-In the parameter-free case, a direct Mittag–Leffler exhaustion using `C^n` cut-off Cauchy
-transforms and Runge's theorem (`TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt`) yields a
-`C^n` solution for every `n : ℕ∞` with `1 ≤ n`.
-
 ## Main results
 
 * `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_with_holomorphic_param`: global smooth
   solution of `bar∂_z u = f` on `s ×ˢ Ω`, preserving holomorphy in `q`.
 * `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_with_param`: specialization to purely
   smooth parameters `s ⊆ P`.
-* `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq`: parameter-free global `C^n`
-  (`1 ≤ n`) solution of `bar∂ u = f` on an arbitrary open set `Ω ⊆ ℂ`.
 
 ## References
 
@@ -421,60 +415,5 @@ theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_with_param
     fun _ hp ↦ ⟨⟨hp.1, mem_univ _⟩, hp.2⟩
 
 end GlobalSolver
-
-section ParameterFree
-
-variable {F : Type uF} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
-
-/-- **Global `bar∂` solver on an arbitrary open set in `ℂ`.** Every `C^n` function `f : ℂ → F`
-(`1 ≤ n`) on an open set `Ω ⊆ ℂ` with values in a complex Banach space `F` satisfies `bar∂ u = f`
-on `Ω` for some `C^n` function `u : ℂ → F` on `Ω`. -/
-theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq
-    {n : ℕ∞} {Ω : Set ℂ} {f : ℂ → F} (hn : 1 ≤ n) (hΩ : IsOpen Ω) (hf : ContDiffOn ℝ n f Ω) :
-    ∃ u : ℂ → F,
-      ContDiffOn ℝ n u Ω ∧ ∀ z ∈ Ω, conjWirtingerDeriv u z 1 = f z := by
-  obtain ⟨C, hC_cpt, hC_step, hC_uni, hC_fill⟩ := hΩ.exists_isFilledIn_compact_exhaustion
-  have hC_mono : Monotone C := monotone_nat_of_le_succ fun j ↦ (hC_step j).trans interior_subset
-  have hC_sub (j : ℕ) : C j ⊆ Ω := hC_uni ▸ subset_iUnion C j
-  -- Local `C^n` solutions `h k` with `bar∂ (h k) = f` on `C (k + 1)`.
-  have hloc (k : ℕ) : ∃ h : ℂ → F, ContDiff ℝ n h ∧
-      ∀ z ∈ C (k + 1), conjWirtingerDeriv h z 1 = f z := by
-    obtain ⟨ψ, hψ_cd, -, hψ_one, hψ_cpt, hψ_ts⟩ :=
-      (hC_cpt (k + 1)).exists_contDiff_cutoff hΩ (hC_sub (k + 1))
-    obtain ⟨h, hh, hheq⟩ := exists_contDiff_conjWirtingerDeriv_apply_one_eq_of_hasCompactSupport
-      hn (hf.contDiff_smul_of_tsupport_subset hΩ
-        (hψ_cd.of_le (by exact_mod_cast le_top)).contDiffOn hψ_ts) hψ_cpt.smul_right
-    refine ⟨h, hh, fun z hz ↦ ?_⟩
-    have hψz : ψ z = 1 := by simpa using interior_subset (hψ_one hz)
-    simpa [hψz] using hheq z
-  choose h hh hh_eq using hloc
-  have hn0 : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans_le hn).ne'
-  have hd (k : ℕ) : Differentiable ℝ (h k) := (hh k).differentiable hn0
-  -- Consecutive differences `h (k + 1) - h k` are holomorphic on `interior (C (k + 1))`.
-  have hdiff (k : ℕ) : DifferentiableOn ℂ (h (k + 1) - h k) (interior (C (k + 1))) := fun z hz ↦ by
-    refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero
-      ((hd (k + 1)).sub (hd k) z)).2 ?_).differentiableWithinAt
-    rw [conjWirtingerDeriv_sub (hd (k + 1) z) (hd k z), sub_apply,
-      hh_eq (k + 1) z (hC_mono (k + 1).le_succ (interior_subset hz)),
-      hh_eq k z (interior_subset hz), sub_self]
-  -- Runge corrections `g k` holomorphic on `Ω`, approximating `h (k + 1) - h k` within `2⁻ᵏ`.
-  have happrox (k : ℕ) : ∃ g : ℂ → F, DifferentiableOn ℂ g Ω ∧
-      ∀ z ∈ C k, ‖(h (k + 1) - h k) z - g z‖ < (1 / 2 : ℝ) ^ k :=
-    (hC_fill k).exists_differentiableOn_norm_sub_lt hΩ (hC_cpt k) (hC_sub k) isOpen_interior
-      (hC_step k) (hdiff k) (by positivity)
-  choose g hg hg_lt using happrox
-  set u : ℂ → F := fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - g k) z
-  have hglue := contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add (G := u) (n := n) (U := Ω)
-    (v := fun _ : Unit ↦ (1 : ℂ)) (f := fun _ ↦ f) (by exact_mod_cast hn) fun z hz ↦ by
-      obtain ⟨m, hm⟩ := mem_iUnion.1 (hC_uni.symm ▸ hz)
-      obtain ⟨K, hK, huK⟩ :=
-        exists_differentiableOn_eqOn_add_tsum_exhaustion hC_mono hC_sub hg hdiff hg_lt (m + 1)
-      exact ⟨interior (C (m + 1)), isOpen_interior, hC_step m hm, h (m + 1), K,
-        (hh (m + 1)).contDiffOn,
-        fun w hw _ ↦ hh_eq (m + 1) w (hC_mono (m + 1).le_succ (interior_subset hw)),
-        hK.contDiffOn isOpen_interior, huK⟩
-  exact ⟨u, hglue.1, fun z hz ↦ hglue.2 z hz ()⟩
-
-end ParameterFree
 
 end TauCeti

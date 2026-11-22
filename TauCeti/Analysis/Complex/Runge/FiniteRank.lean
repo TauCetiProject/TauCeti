@@ -37,9 +37,7 @@ The proof combines the discretized Cauchy–Pompeiu formula
 (`IsCompact.exists_norm_sub_sum_mul_sub_inv_smul_le`), which approximates `f` uniformly on `K` by
 fixed simple fractions `(w - ζ i)⁻¹`, with simple-fraction Runge approximation
 (`TauCeti.IsFilledIn.exists_differentiableOn_norm_inv_sub_lt`), which replaces each `(w - ζ i)⁻¹`
-on `K` by a function `g i` holomorphic on `Ω`. As an immediate consequence we obtain Runge's
-approximation theorem for holomorphic maps into any complex normed space
-(`TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt`).
+on `K` by a function `g i` holomorphic on `Ω`.
 
 ## Main results
 
@@ -50,8 +48,6 @@ approximation theorem for holomorphic maps into any complex normed space
 * `TauCeti.IsFilledIn.exists_norm_iteratedFDeriv_sub_sum_mul_smul_le`: parametric finite-rank Runge
   approximation preserving joint smoothness and parameter holomorphy and bounding all iterated
   parameter derivatives uniformly by `ε * M`.
-* `TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt`: Runge's approximation theorem for
-  holomorphic functions with values in a complex normed space.
 
 ## References
 
@@ -193,27 +189,5 @@ theorem IsFilledIn.exists_norm_iteratedFDeriv_sub_sum_mul_smul_le {K V Ω : Set 
         (by exact_mod_cast Nat.le_succ k)).comp x (contDiffAt_id.prodMk contDiffAt_const)
     rw [iteratedFDeriv_sub_sum_mul_smul ζ c g (hslice w (hKV hw)) fun i ↦ hslice (ζ i) (hζ i).1]
     exact happrox φ M hφ_hol hM w hw
-
-/-- **Runge's approximation theorem** for functions into a complex normed space. If a compact set
-`K` is filled in an open set `Ω ⊆ ℂ` and `f : ℂ → F` is holomorphic on an open neighbourhood `V`
-of `K`, then `f` is uniformly approximable on `K` by functions holomorphic on `Ω`. -/
-theorem IsFilledIn.exists_differentiableOn_norm_sub_lt {K V Ω : Set ℂ} (hfill : IsFilledIn K Ω)
-    (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hV : IsOpen V) (hKV : K ⊆ V)
-    {F : Type u} [NormedAddCommGroup F] [NormedSpace ℂ F] {f : ℂ → F}
-    (hf : DifferentiableOn ℂ f V) {ε : ℝ} (hε : 0 < ε) :
-    ∃ g : ℂ → F, DifferentiableOn ℂ g Ω ∧ ∀ w ∈ K, ‖f w - g w‖ < ε := by
-  obtain ⟨L, hL, hKL, hLV⟩ := exists_compact_between hK hV hKV
-  obtain ⟨M, hM⟩ := hL.exists_bound_of_continuousOn (hf.continuousOn.mono hLV)
-  set M' : ℝ := max M 1
-  have hM' : 0 < M' := lt_of_lt_of_le zero_lt_one (le_max_right M 1)
-  obtain ⟨N, ζ, c, g, -, hg, happrox⟩ :=
-    hfill.exists_norm_sub_sum_mul_smul_le.{u} hΩ hK hKΩ isOpen_interior hKL
-      (ε := (ε / 2) / M') (by positivity)
-  refine ⟨fun w ↦ ∑ i, (c i * g i w) • f (ζ i), ?_, fun w hw ↦ ?_⟩
-  · exact DifferentiableOn.fun_sum fun i _ ↦ ((hg i).const_mul (c i)).smul_const (f (ζ i))
-  · have hle := happrox f M' (hf.mono (interior_subset.trans hLV))
-      (fun z hz ↦ (hM z (interior_subset hz)).trans (le_max_left M 1)) w hw
-    rw [div_mul_cancel₀ _ hM'.ne'] at hle
-    exact hle.trans_lt (half_lt_self hε)
 
 end TauCeti
