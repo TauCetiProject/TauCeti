@@ -42,9 +42,11 @@ version is not defined here.
   coresolution with `n` terms by finitely generated projective-injective modules.
 * `TauCeti.two_le_dominantDimension_iff`: `dom.dim Γ ≥ 2` exactly when `Γ` has an injective
   copresentation by finitely generated projective-injective modules.
-* `TauCeti.two_le_dominantDimension_end_of_isGenerator`: **Müller's criterion, forward
-  direction**: the endomorphism ring of a finitely presented generator that is injective over it
-  has dominant dimension at least two.
+* `TauCeti.two_le_dominantDimension_end_of_projective_of_injective`: **Müller's criterion,
+  forward direction**: the endomorphism ring `Γ` of a finitely presented module that is finitely
+  generated, projective and injective over `Γ` has dominant dimension at least two.
+* `TauCeti.two_le_dominantDimension_end_of_isGenerator`: the same for a finitely presented
+  generator that is injective over its endomorphism ring.
 * `TauCeti.dominantDimension_eq_top_of_injective`: a left self-injective ring has dominant
   dimension `⊤`.
 * `TauCeti.dominantDimension_int`: `dominantDimension ℤ = 0`.
@@ -102,11 +104,12 @@ theorem two_le_dominantDimension_iff (Γ : Type u) [Ring Γ] :
             (Module.Finite Γ I₁ ∧ Projective I₁ ∧ Injective I₁) := by
   rw [← Nat.cast_ofNat, TauCeti.natCast_le_dominantDimension_iff, ObjectProperty.isSyzygy_two_iff]
 
-/-- **Müller's criterion, forward direction, for a generator.** Let `M` be a finitely presented
-generator of the category of `A`-modules that is injective over its endomorphism ring `Γ`. Then `Γ`
-has dominant dimension at least two. -/
-theorem two_le_dominantDimension_end_of_isGenerator {A : Type u} [Ring A] (M : Type v)
-    [AddCommGroup M] [Module A M] [Module.FinitePresentation A M] [Module.IsGenerator A M]
+/-- **Müller's criterion, forward direction.** Let `M` be a finitely presented `A`-module that is
+finitely generated, projective and injective over its endomorphism ring `Γ`. Then `Γ` has dominant
+dimension at least two. -/
+theorem two_le_dominantDimension_end_of_projective_of_injective {A : Type u} [Ring A]
+    (M : Type v) [AddCommGroup M] [Module A M] [Module.FinitePresentation A M]
+    [Module.Finite (Module.End A M) M] [Module.Projective (Module.End A M) M]
     [Module.Injective (Module.End A M) M] : 2 ≤ dominantDimension (Module.End A M) := by
   obtain ⟨n, m, q, r, hq, hqr⟩ := Module.FinitePresentation.exists_fin' A M
   -- `Hom_A(-, M)` and `Hom_A(Aᵏ, M) ≅ Mᵏ` give the exact sequence `0 → Γ → Mⁿ → Mᵐ`.
@@ -128,6 +131,17 @@ theorem two_le_dominantDimension_end_of_isGenerator {A : Type u} [Ring A] (M : T
     ModuleCat.hom_ext hfg.linearMap_comp_eq_zero,
     (ModuleCat.mono_iff_injective _).2 ((e n).injective.comp hq.injective_linearMapComp_right),
     (ShortComplex.moduleCat_exact_iff _).2 fun x hx ↦ (hfg x).1 hx, hM n, hM m⟩
+
+/-- **Müller's criterion, forward direction, for a generator.** Let `M` be a finitely presented
+generator of the category of `A`-modules that is injective over its endomorphism ring `Γ`. Then `Γ`
+has dominant dimension at least two. -/
+theorem two_le_dominantDimension_end_of_isGenerator {A : Type u} [Ring A] (M : Type v)
+    [AddCommGroup M] [Module A M] [Module.FinitePresentation A M] [Module.IsGenerator A M]
+    [Module.Injective (Module.End A M) M] : 2 ≤ dominantDimension (Module.End A M) :=
+  -- A generator is finitely generated and projective over its endomorphism ring.
+  have := Module.IsGenerator.finite_end (R := A) (M := M)
+  have := Module.IsGenerator.projective_end (R := A) (M := M)
+  two_le_dominantDimension_end_of_projective_of_injective M
 
 /-- **A left self-injective ring has dominant dimension `⊤`**, through the coresolution
 `0 → Γ → Γ → 0 → 0 → ⋯`. -/

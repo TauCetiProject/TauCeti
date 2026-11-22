@@ -13,10 +13,8 @@ public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Duality
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.AdditiveClosure
 
 import Mathlib.RingTheory.Finiteness.Small
-import TauCeti.Algebra.Category.FGModuleCat.End
 import TauCeti.Algebra.Category.FGModuleCat.Injective
 import TauCeti.Algebra.Subalgebra.Center
-import TauCeti.CategoryTheory.Preadditive.Projectivization
 import TauCeti.RingTheory.Artinian.Subalgebra
 
 /-!
@@ -49,15 +47,10 @@ every separator `M`, and dually an injective object lies in `add M` for every co
 (`FGModuleCat.additiveClosure_of_isCoseparator_of_injective`).
 
 Over an Artin algebra, with `A` small in the module universe, a coseparator `M` is injective over
-its endomorphism ring `Γ`
-(`FGModuleCat.injective_end_of_isCoseparator`), dually to a generator being projective over it
-(`TauCeti.Module.IsGenerator.projective_end`). The dual `D A` lies in `add M`, so by
-projectivization (`TauCeti.finiteProjectiveModules_preadditiveCoyonedaObj_obj`) `Hom_A(M, D A)` is a
-projective right `Γ`-module. The Hom-tensor adjunction
-(`TauCeti.MatlisDual.equivLinearMapDualRegular`) identifies it with the dual `D M`, and by
-biduality `M` is the dual of this projective right module, hence injective
-(`TauCeti.moduleInjective_of_projective_op_matlisDual`). To stay in the universe of `M`, the proof
-uses the centre of `A` as base ring and a shrunk copy of `D A`.
+its endomorphism ring (`FGModuleCat.injective_end_of_isCoseparator`), dually to a generator being
+projective over it (`TauCeti.Module.IsGenerator.projective_end`): by projectivization and the
+Hom-tensor adjunction its dual is projective over the endomorphism ring, and Matlis biduality
+returns to `M`. This is the cogenerator half of the Morita-Tachikawa correspondence.
 
 The two halves are not symmetric outside the categorical statements. Over every ring the regular
 module is a finitely generated projective generator, so separators of `mod R` have the elementwise
@@ -265,50 +258,6 @@ theorem isGeneratorCogenerator_iff_forall_indecomposable (R : Type u) [CommRing 
     (FGModuleCat.isSeparator_iff_forall_indecomposable M)
       (FGModuleCat.isCoseparator_iff_forall_indecomposable R M)
 
-section EndOp
-
-attribute [local instance] RingHomInvPair.of_ringEquiv
-
-open MatlisDual
-
-/-- If an object `X` of `add M` has as underlying module the dual `D_R A` of the right regular
-module, then `D_R M` is a projective right module over `Γ = Module.End A M`. -/
-private theorem projective_end_op_matlisDual_of_additiveClosure {R : Type*} [CommRing R]
-    {E : Type*} [AddCommGroup E] [Module R E] {A : Type*} [Ring A] [Algebra R A]
-    {M X : FGModuleCat.{w} A} [Module R M.obj] [IsScalarTower R A M.obj]
-    (hX : additiveClosure M X) (e : X.obj ≃ₗ[A] MatlisDual R E A) :
-    Module.Projective (Module.End A M.obj)ᵐᵒᵖ (MatlisDual R E M.obj) := by
-  -- By projectivization, `Hom(M, X)` is a projective right module over `End M`.
-  have : Module.Projective (End M)ᵐᵒᵖ (M ⟶ X) :=
-    (finiteProjectiveModules_iff.1 (finiteProjectiveModules_preadditiveCoyonedaObj_obj hX)).2
-  -- Postcomposition with `e` and the Hom-tensor adjunction identify `Hom(M, X)` with `D_R M`,
-  -- semilinearly along the isomorphism `(End M)ᵐᵒᵖ ≅ Γᵐᵒᵖ`.
-  let σ := RingEquiv.op (FGModuleCat.endRingEquiv M)
-  let e' : (M ⟶ X) ≃ₛₗ[(σ : (End M)ᵐᵒᵖ →+* (Module.End A M.obj)ᵐᵒᵖ)]
-      MatlisDual R E M.obj :=
-    { toFun f := equivLinearMapDualRegular.symm (e.toLinearMap ∘ₗ f.hom.hom)
-      invFun φ := ObjectProperty.homMk
-        (ModuleCat.ofHom (e.symm.toLinearMap ∘ₗ equivLinearMapDualRegular φ))
-      map_add' f g := by simp [LinearMap.comp_add]
-      map_smul' g f := by
-        apply (equivLinearMapDualRegular (A := A)).injective
-        -- The right action of `Γ` on `D_R M` is dualization of endomorphisms.
-        have hσ (γ : (Module.End A M.obj)ᵐᵒᵖ) (φ : MatlisDual R E M.obj) :
-            γ • φ = MatlisDual.map γ.unop φ :=
-          MatlisDual.ext fun x ↦ by simp [Module.End.smul_def]
-        rw [hσ, equivLinearMapDualRegular_map, LinearEquiv.apply_symm_apply,
-          LinearEquiv.apply_symm_apply]
-        ext x
-        simp [End.smul_left, σ]
-      left_inv f := by
-        ext x
-        simp
-      right_inv φ := by
-        simp }
-  exact .of_equiv e'
-
-end EndOp
-
 /-- **A coseparator is injective over its endomorphism ring.** Over an Artin algebra `A`, a
 coseparator `M` of `mod A` is an injective module over `Module.End A M`. The modules may live in
 any universe in which `A` is small. -/
@@ -335,7 +284,7 @@ theorem _root_.FGModuleCat.injective_end_of_isCoseparator (R : Type u) [CommRing
   let X := FGModuleCat.of A (Shrink.{w} (MatlisDual C E A))
   have : Injective X := FGModuleCat.injective_of_moduleInjective X
   -- As an injective object, `X` lies in `add M`; so `D_C M` is projective over `End M`.
-  have := projective_end_op_matlisDual_of_additiveClosure (R := C)
+  have := FGModuleCat.projective_end_op_matlisDual_of_additiveClosure (R := C)
     (FGModuleCat.additiveClosure_of_isCoseparator_of_injective R hM X) e
   exact moduleInjective_of_projective_op_matlisDual hf.length_quotient_linearMap_eq_one
     (isFiniteLength_of_finite_trans C A M.obj)

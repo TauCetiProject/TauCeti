@@ -16,14 +16,9 @@ Let `A` be an Artin algebra and `M` a generator-cogenerator of `mod A`, with end
 Morita-Tachikawa correspondence: `Γ` has dominant dimension at least two
 (`TauCeti.two_le_dominantDimension_end`).
 
-The proof follows Müller. As a generator, `M` is a finitely generated projective `Γ`-module
-(`TauCeti.Module.IsGenerator.finite_end` and `TauCeti.Module.IsGenerator.projective_end`). As a
-cogenerator, `M` is an injective `Γ`-module (`FGModuleCat.injective_end_of_isCoseparator`). A
-presentation `Aᵐ → Aⁿ → M → 0` and the left exact functor `Hom_A(-, M)` then give an exact sequence
-`0 → Γ → Mⁿ → Mᵐ` of `Γ`-modules whose last two terms are finitely generated, projective and
-injective. This last step holds over any ring, for a finitely presented generator that is
-injective over its endomorphism ring
-(`TauCeti.two_le_dominantDimension_end_of_isGenerator`).
+It combines Müller's criterion (`TauCeti.two_le_dominantDimension_end_of_isGenerator`), for a
+finitely presented generator that is injective over its endomorphism ring, with the injectivity of
+a coseparator over its endomorphism ring (`FGModuleCat.injective_end_of_isCoseparator`).
 
 ## Main results
 

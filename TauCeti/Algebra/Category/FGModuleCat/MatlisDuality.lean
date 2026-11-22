@@ -13,9 +13,11 @@ public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Basic
 public import TauCeti.RingTheory.Artinian.FiniteLength
 public import TauCeti.RingTheory.MatlisDuality.ArtinAlgebra
 
+import TauCeti.Algebra.Category.FGModuleCat.End
 import TauCeti.Algebra.Category.FGModuleCat.Generator.Basic
 import TauCeti.Algebra.Category.FGModuleCat.Projective
 import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Duality
+import TauCeti.CategoryTheory.Preadditive.Projectivization
 
 /-!
 # The Matlis duality between left and right modules over an Artin algebra
@@ -50,6 +52,8 @@ direct sum of copies of `D A`.
   `mod A`.
 * `TauCeti.IsInjectiveEnvelope.additiveClosure_fgModuleCatMatlisDualRegular_of_injective`: every
   injective object of `mod A` lies in `add (D A)`.
+* `FGModuleCat.projective_end_op_matlisDual_of_additiveClosure`: if `D A` lies in `add M`, then the
+  dual `D M` is a projective right module over the endomorphism ring of `M`.
 
 ## References
 
@@ -62,7 +66,7 @@ noncomputable section
 
 open CategoryTheory Opposite TauCeti TauCeti.MatlisDual
 
-universe u v t
+universe u v t w
 
 namespace TauCeti
 
@@ -250,5 +254,52 @@ theorem IsInjectiveEnvelope.additiveClosure_fgModuleCatMatlisDualRegular_of_inje
         (Φ.functor.obj (op I)))
 
 end Regular
+
+section EndOp
+
+attribute [local instance] RingHomInvPair.of_ringEquiv
+
+open MatlisDual
+
+/-- **Duals of `add M` and projectivization**: if an object `X` of `add M` has as underlying module
+the dual `D_R A` of the right regular module, then the dual `D_R M` is a projective right module
+over `Γ = Module.End A M`. By projectivization `Hom_A(M, X)` is a projective right `Γ`-module, and
+the Hom-tensor adjunction `TauCeti.MatlisDual.equivLinearMapDualRegular` identifies it with
+`D_R M`. -/
+theorem _root_.FGModuleCat.projective_end_op_matlisDual_of_additiveClosure {R : Type*} [CommRing R]
+    {E : Type*} [AddCommGroup E] [Module R E] {A : Type*} [Ring A] [Algebra R A]
+    {M X : FGModuleCat.{w} A} [Module R M.obj] [IsScalarTower R A M.obj]
+    (hX : additiveClosure M X) (e : X.obj ≃ₗ[A] MatlisDual R E A) :
+    Module.Projective (Module.End A M.obj)ᵐᵒᵖ (MatlisDual R E M.obj) := by
+  -- By projectivization, `Hom(M, X)` is a projective right module over `End M`.
+  have : Module.Projective (End M)ᵐᵒᵖ (M ⟶ X) :=
+    (finiteProjectiveModules_iff.1 (finiteProjectiveModules_preadditiveCoyonedaObj_obj hX)).2
+  -- Postcomposition with `e` and the Hom-tensor adjunction identify `Hom(M, X)` with `D_R M`,
+  -- semilinearly along the isomorphism `(End M)ᵐᵒᵖ ≅ Γᵐᵒᵖ`.
+  let σ := RingEquiv.op (FGModuleCat.endRingEquiv M)
+  let e' : (M ⟶ X) ≃ₛₗ[(σ : (End M)ᵐᵒᵖ →+* (Module.End A M.obj)ᵐᵒᵖ)]
+      MatlisDual R E M.obj :=
+    { toFun f := equivLinearMapDualRegular.symm (e.toLinearMap ∘ₗ f.hom.hom)
+      invFun φ := ObjectProperty.homMk
+        (ModuleCat.ofHom (e.symm.toLinearMap ∘ₗ equivLinearMapDualRegular φ))
+      map_add' f g := by simp [LinearMap.comp_add]
+      map_smul' g f := by
+        apply (equivLinearMapDualRegular (A := A)).injective
+        -- The right action of `Γ` on `D_R M` is dualization of endomorphisms.
+        have hσ (γ : (Module.End A M.obj)ᵐᵒᵖ) (φ : MatlisDual R E M.obj) :
+            γ • φ = MatlisDual.map γ.unop φ :=
+          MatlisDual.ext fun x ↦ by simp [Module.End.smul_def]
+        rw [hσ, equivLinearMapDualRegular_map, LinearEquiv.apply_symm_apply,
+          LinearEquiv.apply_symm_apply]
+        ext x
+        simp [End.smul_left, σ]
+      left_inv f := by
+        ext x
+        simp
+      right_inv φ := by
+        simp }
+  exact .of_equiv e'
+
+end EndOp
 
 end TauCeti
