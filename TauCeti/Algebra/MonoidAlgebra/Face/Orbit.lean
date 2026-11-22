@@ -18,8 +18,9 @@ public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 # Diagonalizable-group orbits, stabilizers, and orbit normalization of semigroup algebras
 
 Let `S` be an additive submonoid of an abelian group `G` and `R` a commutative semiring. For any
-commutative `R`-algebra `A`, the character group
-`Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ` of the diagonalizable group
+commutative `R`-algebra `A`, the group of `A`-points
+`Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ` (i.e. `A`-valued characters of the
+character module `AddSubgroup.closure (S : Set G)`) of the diagonalizable group
 `Spec R[AddSubgroup.closure S]` (a split torus when `AddSubgroup.closure S` is finite-rank free
 abelian, e.g. when `S.FG` and `G` is torsion-free) acts on `A`-points
 `AddMonoidAlgebra R S →ₐ[R] A` via `S.torusCoaction R`.
@@ -30,23 +31,30 @@ abelian, e.g. when `S.FG` and `G` is torsion-free) acts on `A`-points
    R[AddSubgroup.closure S ⧸ F.faceSubgroup]` induces a trivial coaction on `F.orbitMap R`, and on
    `A`-points `SaturatedAddSubmonoid.stabilizerDistinguishedPointMulEquiv` identifies the
    stabilizer of `F.distinguishedPoint R A` with
-   `Multiplicative (AddSubgroup.closure S ⧸ F.faceSubgroup) →* Aˣ`.
+   `Multiplicative (AddSubgroup.closure S ⧸ F.faceSubgroup) →* Aˣ` (the `A`-points of the
+   stabilizer diagonalizable group with quotient character module
+   `AddSubgroup.closure S ⧸ F.faceSubgroup`).
 2. **Orbit–face bijection on geometric points.** Over a nontrivial domain `A`, `S.pointSupport x :
-   SaturatedAddSubmonoid S` is character-invariant and recovers `F` on `F.distinguishedPoint R A`.
-   Over any field `K`, `SaturatedAddSubmonoid.pointSupportSubtypeEquivChar` identifies the
-   `F`-stratum with `Multiplicative F.faceSubgroup →* Kˣ`. Whenever `[RootableBy Kˣ ℕ]` (in
-   particular over any algebraically closed field `K`), `Additive Kˣ` is Baer-injective over `ℤ`,
-   so each support stratum is a single orbit (`SaturatedAddSubmonoid.setOf_pointSupport_eq_orbit`)
-   and `S.faceOrbitEquiv R K` gives the geometric orbit–face bijection.
-3. **Positive-multiple saturation comparison on each orbit.** For arbitrary `R`, `G`, and `S`,
+   SaturatedAddSubmonoid S` is invariant under the action of `A`-points and recovers `F` on
+   `F.distinguishedPoint R A`. Over any field `K`,
+   `SaturatedAddSubmonoid.pointSupportSubtypeEquivChar` identifies the `F`-stratum (`K`-points of
+   the localized orbit scheme `Spec R[F.faceSubgroup]`) with
+   `Multiplicative F.faceSubgroup →* Kˣ`. Whenever `[RootableBy Kˣ ℕ]` (in particular over any
+   algebraically closed field `K`), `Additive Kˣ` is Baer-injective over `ℤ`, so character
+   extension shows each support stratum is a single pointwise orbit
+   (`SaturatedAddSubmonoid.setOf_pointSupport_eq_orbit`) and `S.faceOrbitEquiv R K` gives the
+   geometric orbit–face bijection.
+3. **Positive-multiple saturation comparison on each stratum.** For arbitrary `R`, `G`, and `S`,
    precomposition with the saturation inclusion `R[S] →ₐ[R] R[S_sat]` pulls `pointSupport` back
-   along `S.nsmulSaturationInfClosureFaceOrderIso` and corresponds on the `F`-stratum
-   (`SaturatedAddSubmonoid.fiberMapDomainAlgHomEquivOrbitSaturationCharHom`) to
-   `F.orbitSaturationCharHom A`. Whenever `[RootableBy Aˣ ℕ]`, this map is surjective; over an
-   algebraically closed field `K` with `S.FG`, every fiber over the `F`-orbit has cardinality
-   `Nat.card Q_F` (`Q_F = F.faceSubgroup.nsmulSaturation ⧸ F.faceSubgroup`) when invertible in `K`,
-   in char `0` injectivity holds iff `F.faceSubgroup` is saturated, and in char `p > 0` it is
-   bijective when `Q_F` is `p`-primary.
+   along `S.nsmulSaturationInfClosureFaceOrderIso` and corresponds on `A`-points of the localized
+   orbit schemes (`SaturatedAddSubmonoid.pointOfChar_comp_mapDomainAlgHom_inclusion_nsmulSaturation`
+   and, over a field `K`, `SaturatedAddSubmonoid.fiberMapDomainAlgHomEquivOrbitSaturationCharHom`)
+   to `F.orbitSaturationCharHom A`. Whenever `[RootableBy Aˣ ℕ]`, this map on `A`-points of the
+   localized orbit schemes is surjective; over an algebraically closed field `K` with `S.FG`, every
+   fiber over a `K`-point on the `F`-orbit has cardinality `Nat.card Q_F`
+   (`Q_F = F.faceSubgroup.nsmulSaturation ⧸ F.faceSubgroup`) when invertible in `K`, in char `0`
+   injectivity holds iff `F.faceSubgroup` is saturated, and in char `p > 0` it is bijective when
+   `Q_F` is `p`-primary.
 4. **Comparison with normalization.** Under `[IsDomain R] [IsIntegrallyClosed R]` and
    `[Module.IsTorsionFree ℤ G]`,
    `TauCeti.AddMonoidAlgebra.isIntegralClosure_nsmulSaturation_inf_closure_fractionRing`
@@ -58,15 +66,17 @@ abelian, e.g. when `S.FG` and `G` is torsion-free) acts on `A`-points
 
 * `AddSubmonoid.instMulActionCharAlgHom`, `SaturatedAddSubmonoid.distinguishedPoint`,
   `SaturatedAddSubmonoid.stabilizerBialgHom`, and
-  `SaturatedAddSubmonoid.stabilizerDistinguishedPointMulEquiv`: character action and stabilizers.
-* `AddSubmonoid.pointSupport`, `SaturatedAddSubmonoid.pointSupportSubtypeEquivChar`,
+  `SaturatedAddSubmonoid.stabilizerDistinguishedPointMulEquiv`: diagonalizable-group action on
+  `A`-points and stabilizers.
+* `AddSubmonoid.pointSupport`, `SaturatedAddSubmonoid.pointOfChar`,
+  `SaturatedAddSubmonoid.pointSupportSubtypeEquivChar`,
   `SaturatedAddSubmonoid.setOf_pointSupport_eq_orbit`, and `AddSubmonoid.faceOrbitEquiv`:
-  orbit–face decomposition and bijection on geometric points.
+  localized orbit strata, pointwise orbit–face decomposition, and bijection on geometric points.
 * `SaturatedAddSubmonoid.orbitSaturationCharHom`,
   `SaturatedAddSubmonoid.card_fiber_orbitSaturationCharHom`,
   `SaturatedAddSubmonoid.fiberMapDomainAlgHomEquivOrbitSaturationCharHom`, and
   `SaturatedAddSubmonoid.card_fiber_mapDomainAlgHom_inclusion_nsmulSaturation`: unrestricted
-  saturation comparison on orbits and geometric fibers.
+  saturation comparison on localized orbit schemes and geometric fibers.
 * `AddSubmonoid.fiberIntegralClosureEquivMapDomainAlgHom`,
   `AddSubmonoid.exists_ringHom_comp_algebraMap_eq_of_isIntegralClosure`,
   `SaturatedAddSubmonoid.card_fiber_ringHom_of_isIntegralClosure`,
@@ -92,10 +102,10 @@ section TorusAction
 variable {G : Type*} [AddCommGroup G] (S : AddSubmonoid G)
   {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
 
-/-- Scalar action of the diagonalizable character group
-`Multiplicative (AddSubgroup.closure S) →* Aˣ` (a torus character group when
-`AddSubgroup.closure S` is finite-rank free abelian) on `A`-points
-`AddMonoidAlgebra R S →ₐ[R] A` induced by `S.torusCoaction R`. -/
+/-- Scalar action of the group of `A`-points (i.e. `A`-valued characters)
+`Multiplicative (AddSubgroup.closure S) →* Aˣ` of the diagonalizable group
+`Spec R[AddSubgroup.closure S]` (a split torus when `AddSubgroup.closure S` is finite-rank free
+abelian) on `A`-points `AddMonoidAlgebra R S →ₐ[R] A` induced by `S.torusCoaction R`. -/
 noncomputable instance instSMulCharAlgHom :
     SMul (Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ)
       (AddMonoidAlgebra R S →ₐ[R] A) where
@@ -104,7 +114,7 @@ noncomputable instance instSMulCharAlgHom :
       (AddMonoidAlgebra.lift R A _ ((Units.coeHom A).comp χ)) x
       fun _ _ ↦ Commute.all _ _).comp (S.torusCoaction R)
 
-/-- Explicit definition of the diagonalizable character action on `A`-points. -/
+/-- Explicit definition of the diagonalizable-group action on `A`-points. -/
 theorem smul_algHom_def {S : AddSubmonoid G}
     (χ : Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ)
     (x : AddMonoidAlgebra R S →ₐ[R] A) :
@@ -113,8 +123,9 @@ theorem smul_algHom_def {S : AddSubmonoid G}
         (AddMonoidAlgebra.lift R A _ ((Units.coeHom A).comp χ)) x
         fun _ _ ↦ Commute.all _ _).comp (S.torusCoaction R) := (rfl)
 
-/-- Acting by a character `χ : Multiplicative (AddSubgroup.closure S) →* Aˣ` scales
-`x (single s r)` by `χ (S.toGroupClosure s)`. -/
+/-- Acting by an `A`-point (an `A`-valued character)
+`χ : Multiplicative (AddSubgroup.closure S) →* Aˣ` scales `x (single s r)` by
+`χ (S.toGroupClosure s)`. -/
 @[simp]
 theorem smul_algHom_single_apply {S : AddSubmonoid G}
     (χ : Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ)
@@ -123,9 +134,10 @@ theorem smul_algHom_single_apply {S : AddSubmonoid G}
   rw [smul_algHom_def, AlgHom.comp_apply]
   simp
 
-/-- The diagonalizable character group `Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ`
-(a split torus character group when `AddSubgroup.closure S` is finite-rank free abelian) acts on
-`A`-points `AddMonoidAlgebra R S →ₐ[R] A` via `S.torusCoaction R`. -/
+/-- The group of `A`-points (i.e. `A`-valued characters)
+`Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ` of the diagonalizable group
+`Spec R[AddSubgroup.closure S]` (a split torus when `AddSubgroup.closure S` is finite-rank free
+abelian) acts on `A`-points `AddMonoidAlgebra R S →ₐ[R] A` via `S.torusCoaction R`. -/
 noncomputable instance instMulActionCharAlgHom :
     MulAction (Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ)
       (AddMonoidAlgebra R S →ₐ[R] A) where
@@ -217,7 +229,7 @@ theorem map_stabilizerBialgHom_orbitMap_comp_torusCoaction (R : Type*) [CommSemi
       ← one_def, F.orbitMap_single_of_mem R hs, Algebra.TensorProduct.includeRight_apply]
   · simp [F.orbitMap_single_of_notMem R hs]
 
-/-- A character `χ : Multiplicative (AddSubgroup.closure S) →* Aˣ` fixes
+/-- An `A`-valued character `χ : Multiplicative (AddSubgroup.closure S) →* Aˣ` fixes
 `F.distinguishedPoint R A` if and only if `χ` is trivial on `F.faceSubgroup`. -/
 theorem mem_stabilizer_distinguishedPoint_iff {R A : Type*} [CommSemiring R] [CommSemiring A]
     [Algebra R A] {χ : Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ} :
@@ -240,8 +252,11 @@ theorem mem_stabilizer_distinguishedPoint_iff {R A : Type*} [CommSemiring R] [Co
     · simp [F.distinguishedPoint_single_of_notMem R A hs]
 
 /-- Canonical multiplicative isomorphism between the stabilizer of `F.distinguishedPoint R A` in
-the diagonalizable character group and
-`Multiplicative (AddSubgroup.closure S ⧸ F.faceSubgroup) →* Aˣ`. -/
+the group of `A`-points `Multiplicative (AddSubgroup.closure S) →* Aˣ` of `Spec
+R[AddSubgroup.closure S]` and the group of `A`-valued characters
+`Multiplicative (AddSubgroup.closure S ⧸ F.faceSubgroup) →* Aˣ` (the `A`-points of the
+stabilizer diagonalizable group with quotient character module
+`AddSubgroup.closure S ⧸ F.faceSubgroup`). -/
 noncomputable def stabilizerDistinguishedPointMulEquiv (R A : Type*) [CommSemiring R]
     [CommSemiring A] [Algebra R A] :
     MulAction.stabilizer (Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ)
@@ -252,8 +267,8 @@ noncomputable def stabilizerDistinguishedPointMulEquiv (R A : Type*) [CommSemiri
     exact ⟨fun h x ↦ h x.toAdd.val x.toAdd.property, fun h g hg ↦ h (.ofAdd ⟨g, hg⟩)⟩)).trans
     (F.faceSubgroup.kerCompHomSubtypeMulEquiv Aˣ)
 
-/-- Applying `stabilizerDistinguishedPointMulEquiv` on the class of `g` evaluates the character at
-`g`. -/
+/-- Applying `stabilizerDistinguishedPointMulEquiv` on the class of `g` evaluates the `A`-valued
+character at `g`. -/
 @[simp]
 theorem stabilizerDistinguishedPointMulEquiv_apply (R A : Type*) [CommSemiring R] [CommSemiring A]
     [Algebra R A]
@@ -300,7 +315,7 @@ def pointSupport (x : AddMonoidAlgebra R S →ₐ[R] A) : SaturatedAddSubmonoid 
 theorem mem_pointSupport_iff {S : AddSubmonoid G} {x : AddMonoidAlgebra R S →ₐ[R] A} {s : S} :
     s ∈ S.pointSupport x ↔ x (single s 1) ≠ 0 := Iff.rfl
 
-/-- `pointSupport` is invariant under the action of
+/-- `pointSupport` is invariant under the action of `A`-points
 `Multiplicative (AddSubgroup.closure S) →* Aˣ`. -/
 @[simp]
 theorem pointSupport_smul {S : AddSubmonoid G}
@@ -335,8 +350,10 @@ section OrbitParametrization
 
 variable {G : Type*} [AddCommGroup G] {S : AddSubmonoid G} (F : SaturatedAddSubmonoid S)
 
-/-- The `A`-point of `Spec R[S]` on the `F`-orbit attached to a character
-`ψ : Multiplicative F.faceSubgroup →* Aˣ`. -/
+/-- The `A`-point of `Spec R[S]` factoring through the localized orbit scheme
+`Spec R[F.faceSubgroup]` via `F.orbitMap R` attached to an `A`-valued character
+`ψ : Multiplicative F.faceSubgroup →* Aˣ`. (Over a field `K` with `[RootableBy Kˣ ℕ]`,
+character extension places all such `K`-points in the orbit of `F.distinguishedPoint R K`.) -/
 noncomputable def pointOfChar (R : Type*) [CommSemiring R] {A : Type*} [CommSemiring A]
     [Algebra R A] (ψ : Multiplicative F.faceSubgroup →* Aˣ) : AddMonoidAlgebra R S →ₐ[R] A :=
   (AddMonoidAlgebra.lift R A F.faceSubgroup ((Units.coeHom A).comp ψ)).comp (F.orbitMap R)
@@ -368,14 +385,15 @@ theorem pointOfChar_single_of_notMem (R : Type*) [CommSemiring R] {A : Type*} [C
     [Algebra R A] (ψ : Multiplicative F.faceSubgroup →* Aˣ) {s : S} (hs : s ∉ F) (r : R) :
     F.pointOfChar R ψ (single s r) = 0 := by simp [pointOfChar, F.orbitMap_single_of_notMem R hs]
 
-/-- At the trivial character `1`, `F.pointOfChar R 1` is `F.distinguishedPoint R A`. -/
+/-- At the trivial `A`-valued character `1`, `F.pointOfChar R 1` is `F.distinguishedPoint R A`. -/
 @[simp]
 theorem pointOfChar_one (R A : Type*) [CommSemiring R] [CommSemiring A] [Algebra R A] :
     F.pointOfChar R (1 : Multiplicative F.faceSubgroup →* Aˣ) = F.distinguishedPoint R A := by
   ext s
   by_cases hs : s ∈ F <;> simp [hs, Algebra.algebraMap_eq_smul_one]
 
-/-- Equivariance of `F.pointOfChar R` under the diagonalizable-group character action. -/
+/-- Equivariance of `F.pointOfChar R` under the action of `A`-points of
+`Spec R[AddSubgroup.closure S]` via restriction to `F.faceSubgroup`. -/
 @[simp]
 theorem smul_pointOfChar (R : Type*) [CommSemiring R] {A : Type*} [CommSemiring A] [Algebra R A]
     (χ : Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ)
@@ -407,7 +425,7 @@ theorem pointOfChar_injective (R A : Type*) [CommSemiring R] [CommSemiring A] [A
   rw [← ofAdd_toAdd g, ← map_mul, ← ofAdd_add, hab, honF a, ← hab, ofAdd_add, map_mul, honF b]
 
 /-- Over any field `K` that is an `R`-algebra, every `K`-point of `Spec R[S]` with support `F`
-arises from a character `Multiplicative F.faceSubgroup →* Kˣ`. -/
+arises from a `K`-valued character `Multiplicative F.faceSubgroup →* Kˣ`. -/
 theorem exists_pointOfChar_eq_of_pointSupport_eq {R K : Type*} [CommSemiring R] [Field K]
     [Algebra R K] {x : AddMonoidAlgebra R S →ₐ[R] K} (hx : S.pointSupport x = F) :
     ∃ ψ : Multiplicative F.faceSubgroup →* Kˣ, F.pointOfChar R ψ = x := by
@@ -439,8 +457,9 @@ theorem exists_pointOfChar_eq_of_pointSupport_eq {R K : Type*} [CommSemiring R] 
   · have hx0 : x (single s 1) = 0 := by_contra fun hne ↦ hs (hx ▸ hne)
     rw [F.pointOfChar_single_of_notMem R ψ hs, hx0]
 
-/-- Over any field `K` that is an `R`-algebra, `K`-points of `Spec R[S]` with support `F` correspond
-bijectively to characters `Multiplicative F.faceSubgroup →* Kˣ`. -/
+/-- Over any field `K` that is an `R`-algebra, `K`-points of `Spec R[S]` with support `F` (i.e.
+`K`-points of the localized orbit scheme `Spec R[F.faceSubgroup]`) correspond bijectively to
+`K`-valued characters `Multiplicative F.faceSubgroup →* Kˣ`. -/
 noncomputable def pointSupportSubtypeEquivChar (R K : Type*) [CommSemiring R] [Field K]
     [Algebra R K] : {x : AddMonoidAlgebra R S →ₐ[R] K // S.pointSupport x = F} ≃
       (Multiplicative F.faceSubgroup →* Kˣ) :=
@@ -469,8 +488,9 @@ theorem coe_pointSupportSubtypeEquivChar_apply_toFaceSubgroup (R K : Type*) [Com
 
 /-- Over any field `K` with divisible unit group (`[RootableBy Kˣ ℕ]`, automatic when `K` is
 algebraically closed), the set of `K`-points of `Spec R[S]` with support `F` equals the orbit of
-`F.distinguishedPoint R K` under `Multiplicative (AddSubgroup.closure S) →* Kˣ` (the torus orbit
-when `AddSubgroup.closure S` is finite-rank free abelian). -/
+`F.distinguishedPoint R K` under the group of `K`-points
+`Multiplicative (AddSubgroup.closure S) →* Kˣ` of `Spec R[AddSubgroup.closure S]` (the torus
+orbit when `AddSubgroup.closure S` is finite-rank free abelian). -/
 theorem setOf_pointSupport_eq_orbit (R K : Type*) [CommSemiring R] [Field K] [RootableBy Kˣ ℕ]
     [Algebra R K] :
     {x : AddMonoidAlgebra R S →ₐ[R] K | S.pointSupport x = F} =
@@ -498,11 +518,11 @@ variable {G : Type*} [AddCommGroup G] (S : AddSubmonoid G)
 
 /-- **Orbit–face bijection on geometric points.** Over any field `K` that is an `R`-algebra with
 `[RootableBy Kˣ ℕ]` (in particular any algebraically closed field `K`), the faces
-`SaturatedAddSubmonoid S` of `S` correspond bijectively to the orbits of the diagonalizable
-character group `(Multiplicative (AddSubgroup.closure S) →* Kˣ)` on `K`-points
-`R[S] →ₐ[R] K` (torus orbits when `AddSubgroup.closure S` is finite-rank free abelian, e.g. when
-`S.FG` and `G` is torsion-free), sending `F` to the orbit of `F.distinguishedPoint R K` and an
-orbit `⟦x⟧` to `S.pointSupport x`. -/
+`SaturatedAddSubmonoid S` of `S` correspond bijectively to the orbits of the group of `K`-points
+`(Multiplicative (AddSubgroup.closure S) →* Kˣ)` of the diagonalizable group
+`Spec R[AddSubgroup.closure S]` (torus orbits when `AddSubgroup.closure S` is finite-rank free
+abelian, e.g. when `S.FG` and `G` is torsion-free) on `K`-points `R[S] →ₐ[R] K`, sending `F` to
+the orbit of `F.distinguishedPoint R K` and an orbit `⟦x⟧` to `S.pointSupport x`. -/
 noncomputable def faceOrbitEquiv (R K : Type*) [CommSemiring R] [Field K] [RootableBy Kˣ ℕ]
     [Algebra R K] :
     SaturatedAddSubmonoid S ≃
@@ -557,14 +577,16 @@ theorem _root_.AddSubmonoid.pointSupport_comp_mapDomainAlgHom_inclusion_nsmulSat
           (AddSubgroup.closure (S : Set G)).toAddSubmonoid).pointSupport y) :=
   SetLike.ext fun _ ↦ by simp [SaturatedAddSubmonoid.mem_comap]
 
-/-- Character restriction from `F.faceSubgroup.nsmulSaturation` to `F.faceSubgroup`, governing the
-positive-multiple saturation map `Spec K[S_sat] → Spec K[S]` on the `F`-orbit. -/
+/-- Restriction of `A`-valued characters from `F.faceSubgroup.nsmulSaturation` to
+`F.faceSubgroup`, governing the positive-multiple saturation morphism on localized orbit schemes
+`Spec R[F.faceSubgroup.nsmulSaturation] ⟶ Spec R[F.faceSubgroup]` (via `A`-points along
+`Spec R[S_sat] ⟶ Spec R[S]`). -/
 def orbitSaturationCharHom (F : SaturatedAddSubmonoid S) (A : Type*) [CommSemiring A] :
     (Multiplicative F.faceSubgroup.nsmulSaturation →* Aˣ) →*
       (Multiplicative F.faceSubgroup →* Aˣ) :=
   MonoidHom.compHom' (AddSubgroup.inclusion F.faceSubgroup.le_nsmulSaturation).toMultiplicative
 
-/-- Evaluating `orbitSaturationCharHom` restricts a character along
+/-- Evaluating `orbitSaturationCharHom` restricts an `A`-valued character along
 `F.faceSubgroup ≤ F.faceSubgroup.nsmulSaturation`. -/
 @[simp]
 theorem orbitSaturationCharHom_apply (F : SaturatedAddSubmonoid S) {A : Type*} [CommSemiring A]
@@ -572,9 +594,9 @@ theorem orbitSaturationCharHom_apply (F : SaturatedAddSubmonoid S) {A : Type*} [
     F.orbitSaturationCharHom A ψ (.ofAdd g) =
       ψ (.ofAdd (AddSubgroup.inclusion F.faceSubgroup.le_nsmulSaturation g)) := (rfl)
 
-/-- Under `faceSubgroupNSMulSaturationEquiv`, precomposing a point on the saturated `F`-stratum
-with the saturation inclusion `R[S] →ₐ[R] R[S_sat]` corresponds to
-`F.orbitSaturationCharHom A`. -/
+/-- Under `faceSubgroupNSMulSaturationEquiv`, precomposing an `A`-point of the localized saturated
+`F`-orbit scheme `Spec R[F_sat.faceSubgroup]` with the saturation inclusion
+`R[S] →ₐ[R] R[S_sat]` corresponds to `F.orbitSaturationCharHom A`. -/
 theorem pointOfChar_comp_mapDomainAlgHom_inclusion_nsmulSaturation (F : SaturatedAddSubmonoid S)
     (R : Type*) [CommSemiring R] {A : Type*} [CommSemiring A] [Algebra R A]
     (ψ : Multiplicative F.faceSubgroup.nsmulSaturation →* Aˣ) :
@@ -606,14 +628,18 @@ theorem pointOfChar_comp_mapDomainAlgHom_inclusion_nsmulSaturation (F : Saturate
       F.pointOfChar_single_of_notMem R _ hs]
 
 /-- Whenever `[RootableBy Aˣ ℕ]` (in particular over any algebraically closed field), saturation
-maps the `F_sat`-orbit surjectively onto the `F`-orbit in every characteristic. -/
+induces a surjective map `F.orbitSaturationCharHom A` on `A`-points of the localized orbit schemes
+`Spec R[F_sat.faceSubgroup] → Spec R[F.faceSubgroup]` in every characteristic. (Over a field `K`
+with `[RootableBy Kˣ ℕ]`, these `K`-points coincide with the `F_sat`- and `F`-orbits.) -/
 theorem orbitSaturationCharHom_surjective (F : SaturatedAddSubmonoid S) (A : Type*)
     [CommSemiring A] [RootableBy Aˣ ℕ] : Function.Surjective (F.orbitSaturationCharHom A) :=
   fun ψ ↦ RootableBy.exists_monoidHom_comp_toMultiplicative_eq
     (AddSubgroup.inclusion_injective F.faceSubgroup.le_nsmulSaturation) ψ
 
-/-- The kernel of `F.orbitSaturationCharHom A` is canonically isomorphic to the character group
-of the saturation quotient of `F.faceSubgroup` in `F.faceSubgroup.nsmulSaturation`. -/
+/-- The kernel of `F.orbitSaturationCharHom A` is canonically isomorphic to the group of `A`-valued
+characters `Multiplicative (F.faceSubgroup.nsmulSaturation ⧸
+F.faceSubgroup.addSubgroupOf F.faceSubgroup.nsmulSaturation) →* Aˣ` of the saturation quotient
+of `F.faceSubgroup` in `F.faceSubgroup.nsmulSaturation`. -/
 def orbitSaturationCharHomKerEquiv (F : SaturatedAddSubmonoid S) (A : Type*) [CommSemiring A] :
     (F.orbitSaturationCharHom A).ker ≃*
       (Multiplicative (F.faceSubgroup.nsmulSaturation ⧸
@@ -640,8 +666,8 @@ theorem orbitSaturationCharHomKerEquiv_symm_apply_coe (F : SaturatedAddSubmonoid
 
 /-- When `S` is finitely generated and the order of the saturation quotient
 `Q_F = F.faceSubgroup.nsmulSaturation ⧸ F.faceSubgroup` is invertible in an algebraically closed
-field `K`, the kernel of `F.orbitSaturationCharHom K` (the fiber over the trivial character `1`)
-has cardinality `Nat.card Q_F`. -/
+field `K`, the kernel of `F.orbitSaturationCharHom K` (the fiber over the trivial `K`-valued
+character `1`) has cardinality `Nat.card Q_F`. -/
 theorem card_orbitSaturationCharHom_ker (hS : S.FG) (F : SaturatedAddSubmonoid S) (K : Type*)
     [Field K] [IsAlgClosed K] [NeZero ((Nat.card (F.faceSubgroup.nsmulSaturation ⧸
       F.faceSubgroup.addSubgroupOf F.faceSubgroup.nsmulSaturation) : ℕ) : K)] :
@@ -663,8 +689,8 @@ theorem card_orbitSaturationCharHom_ker (hS : S.FG) (F : SaturatedAddSubmonoid S
 
 /-- When `S` is finitely generated and the order of `Q_F = F.faceSubgroup.nsmulSaturation ⧸
 F.faceSubgroup` is invertible in an algebraically closed field `K`, every fiber
-`(F.orbitSaturationCharHom K) ⁻¹' {ψ}` over an arbitrary character `ψ` has cardinality
-`Nat.card Q_F`. -/
+`(F.orbitSaturationCharHom K) ⁻¹' {ψ}` over an arbitrary `K`-valued character `ψ` has
+cardinality `Nat.card Q_F`. -/
 theorem card_fiber_orbitSaturationCharHom (hS : S.FG) (F : SaturatedAddSubmonoid S) (K : Type*)
     [Field K] [IsAlgClosed K] [NeZero ((Nat.card (F.faceSubgroup.nsmulSaturation ⧸
       F.faceSubgroup.addSubgroupOf F.faceSubgroup.nsmulSaturation) : ℕ) : K)]
@@ -735,8 +761,8 @@ theorem orbitSaturationCharHom_bijective_of_charP (F : SaturatedAddSubmonoid S) 
 
 /-- Over any field `K`, for any `K`-point `x : R[S] →ₐ[R] K` with support `F`, the fiber of
 points of `R[S.nsmulSaturation ⊓ AddSubgroup.closure S]` lying over `x` is canonically equivalent
-via `pointSupportSubtypeEquivChar` to the fiber of `F.orbitSaturationCharHom K` over the character
-of `x`. -/
+via `pointSupportSubtypeEquivChar` to the fiber of `F.orbitSaturationCharHom K` over the
+`K`-valued character of `x`. -/
 noncomputable def fiberMapDomainAlgHomEquivOrbitSaturationCharHom
     (F : SaturatedAddSubmonoid S) (R K : Type*) [CommSemiring R] [Field K] [Algebra R K]
     {x : AddMonoidAlgebra R S →ₐ[R] K} (hx : S.pointSupport x = F) :
