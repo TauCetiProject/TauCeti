@@ -30,11 +30,10 @@ finitely many unparametrized trajectories, the finiteness needed for the Morse d
 
 The same convergence facts control the levels of an unstable set. A limit of points of `W^u(p)`
 lies in the unstable set of `p` itself or of a critical point of strictly smaller value, so the
-level `W^u(p) ∩ {f = c}` is compact when no critical value lies in `[c, f p)`, and the forward
-orbits of a compact set of noncritical points all descend below the next critical value after a
-common time. These are the dynamical
-inputs of the Morse--Smale genericity argument, which perturbs `f` on a band below each critical
-value.
+level `W^u(p) ∩ {f = c}` is compact when no critical value lies in `[c, f p)`. When no critical
+value lies in `[c₁, c)`, the forward orbits of a compact set of noncritical points of value at
+most `c` all descend below `c₁` after a common time. These are the dynamical inputs of the
+Morse--Smale genericity argument, which perturbs `f` on a band below each critical value.
 
 The compact-sublevel hypothesis is the usual properness condition for a bounded-below Morse
 function on Euclidean space. On a compact manifold, compactness comes from the ambient space

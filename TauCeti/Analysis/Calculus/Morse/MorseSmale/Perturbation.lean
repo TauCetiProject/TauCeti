@@ -950,7 +950,9 @@ theorem exists_pos_forall_value_negativeGradientFlow_perturb_lt (hd : Differenti
         exact hT x hx))
   obtain ⟨ε, hε, hεC⟩ := Metric.eventually_nhds_iff.1 hev
   refine ⟨min ε 1, lt_min hε one_pos, fun s hs K' hf' x hx ↦ ?_⟩
-  have h1 := hεC (show dist s 0 < ε by simpa using hs.trans_le (min_le_left _ _)) x hx
+  have hsε : dist s 0 < ε := by
+    simpa only [dist_zero_right] using hs.trans_le (min_le_left _ _)
+  have h1 := hεC hsε x hx
   rwa [perturbedFlow_apply_of_norm_le hd hf hh hc
     (hs.le.trans (min_le_right _ _)) hf'] at h1
 

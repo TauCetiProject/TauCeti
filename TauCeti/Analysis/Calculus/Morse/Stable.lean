@@ -41,6 +41,9 @@ embedded submanifold (`TauCeti.Analysis.Calculus.Morse.GlobalChart`).
   limiting critical value.
 * `Flow.IsNegativeGradient.value_ge_of_mem_unstableSet`: unstable-set points lie below
   the limiting critical value.
+* `Flow.IsNegativeGradient.value_le_of_mem_closure_stableSet` and
+  `Flow.IsNegativeGradient.value_ge_of_mem_closure_unstableSet`: the same bounds on the closures,
+  for a differentiable `f`.
 * `Flow.IsNegativeGradient.value_le_of_mem_unstableSet_inter_stableSet`: a connecting
   trajectory goes from a weakly higher critical value to a lower one.
 * `Flow.IsNegativeGradient.value_lt_of_mem_unstableSet_inter_stableSet`: the inequality is
@@ -96,6 +99,13 @@ theorem IsNegativeGradient.value_ge_of_mem_closure_unstableSet (hφ : IsNegative
     (hf : Differentiable ℝ f) (hx : x ∈ closure (unstableSet φ p)) : f x ≤ f p :=
   ((isClosed_le hf.continuous continuous_const).closure_subset_iff.2 fun _ hw ↦
     hφ.value_ge_of_mem_unstableSet hw (fun _ ↦ hf _) hf.continuous.continuousAt) hx
+
+/-- A point in the closure of the stable set of `p` has value at least `f p`, for a differentiable
+`f`. -/
+theorem IsNegativeGradient.value_le_of_mem_closure_stableSet (hφ : IsNegativeGradient φ f)
+    (hf : Differentiable ℝ f) (hx : x ∈ closure (stableSet φ p)) : f p ≤ f x :=
+  ((isClosed_le continuous_const hf.continuous).closure_subset_iff.2 fun _ hw ↦
+    hφ.value_le_of_mem_stableSet hw (fun _ ↦ hf _) hf.continuous.continuousAt) hx
 
 /-- If an orbit converges to `p` in backward time and to `q` in forward time, then `f q ≤ f p`. -/
 theorem IsNegativeGradient.value_le_of_mem_unstableSet_inter_stableSet
