@@ -57,6 +57,7 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
   coefficients of a fixed total degree is preserved under precomposition by a continuous linear
   map.
 * `TauCeti.norm_prod_pow_smul_le`, `TauCeti.summable_norm_prod_pow_smul_of_le`,
+  `TauCeti.hasSum_prod_pow_smul_of_le`,
   `FormalMultilinearSeries.summable_norm_mvCoeff_mul_pow`, and
   `FormalMultilinearSeries.summable_norm_prod_pow_smul_mvCoeff`: normal summability at radius `ρ`
   implies absolute summability on `‖y‖ ≤ ρ`, and the multi-index series converges
@@ -288,6 +289,16 @@ theorem summable_norm_prod_pow_smul_of_le {𝕜 : Type*} [NormedField 𝕜] {ι 
     Summable fun β : ι → ℕ ↦ ‖(∏ i, y i ^ β i) • d β‖ :=
   hd.of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun β ↦ norm_prod_pow_smul_le hy β (d β)
 
+/-- On the closed polydisc `‖y‖ ≤ ρ`, a normally summable multi-index series in a complete
+target converges to its sum. No positivity assumption on the radius is needed. -/
+theorem hasSum_prod_pow_smul_of_le {𝕜 : Type*} [NormedField 𝕜] {ι : Type*}
+    [Fintype ι] {F : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+    {d : (ι → ℕ) → F} {ρ : ℝ} {y : ι → 𝕜}
+    (hd : Summable fun β : ι → ℕ ↦ ‖d β‖ * ρ ^ (∑ i, β i)) (hy : ‖y‖ ≤ ρ) :
+    HasSum (fun β : ι → ℕ ↦ (∏ i, y i ^ β i) • d β)
+      (∑' β : ι → ℕ, (∏ i, y i ^ β i) • d β) :=
+  (summable_norm_prod_pow_smul_of_le hd hy).of_norm.hasSum
+
 /-- Shifting a normally summable multi-index coefficient family by `m` in coordinate `i`
 preserves normal summability at every positive radius. Only the real-valued norm of the
 coefficients is used. -/
@@ -318,12 +329,9 @@ theorem hasSum_monomial_shift_single {𝕜 ι F : Type*} [CommMonoid 𝕜] [Fint
       by_contra! hmi
       rw [hrange] at hα
       have hle : Pi.single i m ≤ α := by
-        intro j
-        by_cases hji : j = i
-        · subst j
-          simpa only [Pi.single_eq_same] using hmi
-        · rw [Pi.single_eq_of_ne hji]
-          exact Nat.zero_le (α j)
+        simpa only [Pi.single] using
+          (update_le_iff.mpr ⟨hmi, fun j _ ↦ Nat.zero_le (α j)⟩ :
+            Function.update (0 : ι → ℕ) i m ≤ α)
       exact hα hle
     simp [hzero α hi]
   · refine (h.const_smul (y i ^ m)).congr_fun fun α ↦ ?_
@@ -647,7 +655,7 @@ theorem exists_hasFPowerSeriesOnBall_tsum [CompleteSpace F] (c : (ι → ℕ) �
       HasFPowerSeriesOnBall (fun z : ι → 𝕜 ↦ ∑' α : ι → ℕ, (∏ i, z i ^ α i) • c α) p 0 r ∧
         ∀ α, p.mvCoeff α = c α := by
   refine exists_hasFPowerSeriesOnBall_of_hasSum hr hsum fun y hy ↦ ?_
-  simpa only [zero_add] using (summable_norm_prod_pow_smul_of_le hsum hy.le).of_norm.hasSum
+  simpa only [zero_add] using hasSum_prod_pow_smul_of_le hsum hy.le
 
 /-- **Uniqueness of normally convergent multi-index series**: if a multi-index series converges
 normally on a polydisc of positive radius and vanishes near the origin (in particular if it

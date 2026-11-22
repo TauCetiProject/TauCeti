@@ -22,9 +22,10 @@ slices `y ↦ f (x, y)` with `x` near `p.1` (`AnalyticAt.eventually_analyticAt_c
 Concatenating two finite families of vectors, `p ↦ Sum.elim p.1 p.2`, is analytic
 (`TauCeti.analyticAt_sumElim`, `TauCeti.analyticOnNhd_sumElim`), as is the slice
 `ζ ↦ Sum.elim x (fun _ ↦ ζ)` fixing the first block (`TauCeti.analyticAt_sumElim_const`).
-An updated finite family is analytic within a set exactly when its replacement and its retained
-components are analytic there (`TauCeti.analyticWithinAt_update_iff`), with the analogous pointwise
-criterion `TauCeti.analyticAt_update_iff`. The component replacement rules are
+An updated finite family is analytic exactly when its replacement and its retained components are
+analytic. The pointwise criteria are `TauCeti.analyticWithinAt_update_iff` and
+`TauCeti.analyticAt_update_iff`, and the setwise criteria are `TauCeti.analyticOn_update_iff` and
+`TauCeti.analyticOnNhd_update_iff`. The component replacement rules are
 `AnalyticWithinAt.update`, `AnalyticAt.update`, `AnalyticOn.update`, and `AnalyticOnNhd.update`.
 
 Finite sums of functions admitting power series on a common ball admit the summed power series on
@@ -127,6 +128,30 @@ theorem AnalyticAt.update (hf : AnalyticAt 𝕜 f x) (hg : AnalyticAt 𝕜 g x) 
     AnalyticAt 𝕜 (fun z ↦ Function.update (f z) i (g z)) x := by
   simpa only [analyticWithinAt_univ] using
     (hf.analyticWithinAt (s := Set.univ)).update hg.analyticWithinAt
+
+/-- An updated family is analytic on `s` exactly when the replacement and all retained
+components are analytic on `s`. -/
+theorem TauCeti.analyticOn_update_iff {s : Set E} :
+    AnalyticOn 𝕜 (fun z ↦ Function.update (f z) i (g z)) s ↔
+      AnalyticOn 𝕜 g s ∧ ∀ j ≠ i, AnalyticOn 𝕜 (fun z ↦ f z j) s := by
+  constructor
+  · intro h
+    exact ⟨fun z hz ↦ (analyticWithinAt_update_iff.1 (h z hz)).1,
+      fun j hj z hz ↦ (analyticWithinAt_update_iff.1 (h z hz)).2 j hj⟩
+  · rintro ⟨hg, hf⟩ z hz
+    exact analyticWithinAt_update_iff.2 ⟨hg z hz, fun j hj ↦ hf j hj z hz⟩
+
+/-- An updated family is analytic near `s` exactly when the replacement and all retained
+components are analytic near `s`. -/
+theorem TauCeti.analyticOnNhd_update_iff {s : Set E} :
+    AnalyticOnNhd 𝕜 (fun z ↦ Function.update (f z) i (g z)) s ↔
+      AnalyticOnNhd 𝕜 g s ∧ ∀ j ≠ i, AnalyticOnNhd 𝕜 (fun z ↦ f z j) s := by
+  constructor
+  · intro h
+    exact ⟨fun z hz ↦ (analyticAt_update_iff.1 (h z hz)).1,
+      fun j hj z hz ↦ (analyticAt_update_iff.1 (h z hz)).2 j hj⟩
+  · rintro ⟨hg, hf⟩ z hz
+    exact analyticAt_update_iff.2 ⟨hg z hz, fun j hj ↦ hf j hj z hz⟩
 
 /-- Updating one component of a finite family analytic on `s` by a function analytic on `s`
 preserves analyticity on `s`. -/

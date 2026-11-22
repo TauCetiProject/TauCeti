@@ -67,12 +67,8 @@ theorem exists_analyticOnNhd_eq_coord_pow_smul [CompleteSpace F] {f : (ι → �
     have hyball : y ∈ Metric.eball 0 (s : ℝ≥0∞) := mem_eball_zero_iff.2 hys
     have hnorm : ‖y‖ < (s : ℝ) := by
       simpa only [Metric.eball_coe, mem_ball_zero_iff] using hyball
-    have hgsum (v : ι → 𝕜) (hv : ‖v‖ < (s : ℝ)) :
-        HasSum (fun α : ι → ℕ ↦ (∏ j, v j ^ α j) • d α) (g v) :=
-      (summable_norm_prod_pow_smul_of_le hd hv.le).of_norm.hasSum
-    obtain ⟨p, hp, -⟩ := exists_hasFPowerSeriesOnBall_of_hasSum (f := g) (x := 0) hs hd
-      (fun v hv ↦ by simpa only [zero_add] using hgsum v hv)
-    exact ⟨hp.analyticAt_of_mem hyball, hgsum y hnorm⟩
+    obtain ⟨p, hp, -⟩ := exists_hasFPowerSeriesOnBall_tsum (𝕜 := 𝕜) d hs hd
+    exact ⟨hp.analyticAt_of_mem hyball, hasSum_prod_pow_smul_of_le hd hnorm.le⟩
   exact ⟨g, fun y hy ↦ (hpoint y hy).1, fun y hy ↦
     (hf y hy).unique (hasSum_monomial_shift_single i m hzero (hpoint y hy).2)⟩
 
@@ -117,8 +113,8 @@ theorem AnalyticAt.exists_sub_update_eventuallyEq_coord_sub_smul [CompleteSpace 
   have hrestrict := hf.fun_comp_of_eq hupdate (Function.update_eq_self i x)
   have hfupdate : AnalyticAt 𝕜 f (Function.update x i (x i)) := by
     simpa only [Function.update_eq_self] using hf
-  obtain ⟨g, hg, hfg⟩ := (hf.sub hrestrict).exists_eventuallyEq_coord_sub_pow_smul i 1
+  obtain ⟨g, hg, hfg⟩ := (hf.fun_sub hrestrict).exists_eventuallyEq_coord_sub_pow_smul i 1
     (fun α hα ↦ by
-      rw [hf.mvTaylorCoeff_sub hrestrict, hfupdate.mvTaylorCoeff_comp_update,
-        ite_eq_left (Nat.lt_one_iff.1 hα), Function.update_eq_self, sub_self])
-  exact ⟨g, hg, hfg.mono fun z hz ↦ by simpa only [Pi.sub_apply, pow_one] using hz⟩
+      rw [hf.mvTaylorCoeff_fun_sub hrestrict, hfupdate.mvTaylorCoeff_comp_update]
+      simp only [Nat.lt_one_iff.1 hα, ite_true, Function.update_eq_self, sub_self])
+  exact ⟨g, hg, hfg.mono fun z hz ↦ by simpa only [pow_one] using hz⟩
