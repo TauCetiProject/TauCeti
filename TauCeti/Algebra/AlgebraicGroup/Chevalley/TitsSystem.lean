@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Intersection
 public import TauCeti.GroupTheory.TitsSystem.Comap
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Multiplication
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Borel
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Word
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.GroupTheory.DoubleCoset.Map
 

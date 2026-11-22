@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Quotient
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Borel
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.BigCell.Positive
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Word
 
 /-!
 # Intersections of the Borel and positive subgroups with the Weyl subgroup
@@ -18,13 +18,12 @@ finite fields, `𝔽₂`, and the zero ring), the intersection of `D.borelSubgro
 `D.weylSubgroup A` is the actual weight-lattice torus `(D.torusPoints A).range`, and the positive
 subgroup `D.positivePoints A` meets `D.weylSubgroup A` trivially.
 
-When `A` is nontrivial, decomposing any `g ∈ B(A) ∩ N(A)` as `u * t` with `u ∈ U(A)` and
-`t ∈ T(A)` puts `u ∈ U(A) ∩ N(A)`. Writing `u` as a Weyl word times a torus point, the block-LDU
-criterion `D.geckWeylWordProd_eq_one_of_list_prod_eq_torusPoints_mul_positive` forces the word to
-evaluate to `1` in `W`, so `D.weylQuotientMulEquiv A` sends `[u]` to `1`. Hence
-`u ∈ U(A) ∩ T(A) = ⊥`, so `g ∈ T(A)`. Combining `B(A) ∩ N(A) = T(A)` with `U(A) ∩ T(A) = ⊥` from
-`Chevalley.Borel` immediately gives `U(A) ∩ N(A) = ⊥`, and over fields `D.ker_weylProjection`
-yields `D.weylProjection K g = 1` for `g ∈ B(K) ∩ N(K)`.
+When `A` is nontrivial, writing any `g ∈ B(A) ∩ N(A)` as a Weyl word times an actual torus point
+puts the Weyl word in `B(A)`. By `ChevalleyDatum.geckWeylWordProd_eq_one_of_mem_borelSubgroup`, the
+word spells `1` in `W`, so `D.weylQuotientMulEquiv A` sends `[g]` to `1`. Hence `g ∈ T_D(A)`.
+Combining `B(A) ∩ N(A) = T_D(A)` with `U(A) ∩ T_D(A) = ⊥` from `Chevalley.Borel` gives
+`U(A) ∩ N(A) = ⊥`, and over fields `D.ker_weylProjection` yields `D.weylProjection K g = 1` for
+`g ∈ B(K) ∩ N(K)`.
 
 ## Main results
 
@@ -40,6 +39,8 @@ yields `D.weylProjection K g = 1` for `g ∈ B(K) ∩ N(K)`.
   pointwise membership criterion for `B(A) ∩ N(A) = T(A)`.
 * `TauCeti.DynkinType.ChevalleyDatum.normal_borelSubgroup_subgroupOf_weylSubgroup`:
   `B(A) ∩ N(A)` is normal in `N(A)`.
+* `TauCeti.DynkinType.ChevalleyDatum.weylSubgroup_conj_torusPoints_mem_borelSubgroup`:
+  `D.weylSubgroup A` conjugates actual torus points into `D.borelSubgroup A`.
 * `TauCeti.DynkinType.ChevalleyDatum.weylProjection_eq_one_of_mem_borelSubgroup`:
   any element of `N(K)` lying in `B(K)` has trivial Weyl projection.
 
@@ -58,94 +59,61 @@ universe v
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 variable (A : Type v) [CommRing A]
 
-private theorem weylQuotientMulEquiv_list_prod_mul_torusPoints [Nontrivial A]
-    (l : List (Fin t.rank)) (s : Fin t.rank → Aˣ) :
-    D.weylQuotientMulEquiv A
-        (QuotientGroup.mk
-          ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod * D.torusPoints A s,
-            mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup A l)
-              (D.torusPoints_mem_weylSubgroup A s)⟩) =
-      t.geckWeylWordProd ht l := by
-  have hword (m : List (Fin t.rank)) :
-      D.weylQuotientMulEquiv A
-          (QuotientGroup.mk
-            ⟨(m.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
-              D.list_prod_map_weylElement_mem_weylSubgroup A m⟩) =
-        t.geckWeylWordProd ht m := by
-    induction m with
-    | nil =>
-      have hone : (⟨([].map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
-          D.list_prod_map_weylElement_mem_weylSubgroup A []⟩ : D.weylSubgroup A) = 1 :=
-        Subtype.ext rfl
-      rw [hone, QuotientGroup.mk_one, map_one, geckWeylWordProd_nil]
-    | cons i m ih =>
-      have hsplit : (⟨((i :: m).map fun j => D.weylElement (t.simpleIndex ht j) A 1).prod,
-          D.list_prod_map_weylElement_mem_weylSubgroup A (i :: m)⟩ : D.weylSubgroup A) =
-          ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩ *
-            ⟨(m.map fun j => D.weylElement (t.simpleIndex ht j) A 1).prod,
-              D.list_prod_map_weylElement_mem_weylSubgroup A m⟩ :=
-        Subtype.ext rfl
-      rw [hsplit, QuotientGroup.mk_mul, map_mul, D.weylQuotientMulEquiv_mk_weylElement A i, ih,
-        geckWeylWordProd_cons]
-  have hmul : (⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod *
-      D.torusPoints A s,
-      mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup A l)
-        (D.torusPoints_mem_weylSubgroup A s)⟩ : D.weylSubgroup A) =
-      ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
-        D.list_prod_map_weylElement_mem_weylSubgroup A l⟩ *
-        ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ :=
-    Subtype.ext rfl
-  rw [hmul, QuotientGroup.mk_mul, map_mul, hword l, D.weylQuotientMulEquiv_mk_torusPoints A s,
-    mul_one]
+/-- Over any nontrivial commutative ring, if a product of pinned simple Weyl representatives
+equals an actual torus point times a positive point, then the Weyl word evaluates to `1` in the
+Weyl group. -/
+theorem geckWeylWordProd_eq_one_of_list_prod_eq_torusPoints_mul_positive [Nontrivial A]
+    {l : List (Fin t.rank)} {s : Fin t.rank → Aˣ} {u : D.points A}
+    (hu : u ∈ D.positivePoints A)
+    (h : (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod =
+      D.torusPoints A s * u) :
+    t.geckWeylWordProd ht l = 1 :=
+  D.geckWeylWordProd_eq_one_of_mem_borelSubgroup A l <| h ▸
+    mul_mem (D.range_torusPoints_le_borelSubgroup A ⟨s, rfl⟩)
+      (D.positivePoints_le_borelSubgroup A hu)
+
+/-- Conjugating any point of the actual weight-lattice torus by an element of `D.weylSubgroup A`
+stays inside `D.borelSubgroup A`. -/
+theorem weylSubgroup_conj_torusPoints_mem_borelSubgroup (w : D.weylSubgroup A)
+    (s : Fin t.rank → Aˣ) :
+    (w : D.points A) * D.torusPoints A s * (w : D.points A)⁻¹ ∈ D.borelSubgroup A :=
+  D.range_torusPoints_le_borelSubgroup A <|
+    (Subgroup.mem_normalizer_iff.mp
+      (D.weylSubgroup_le_normalizer_range_torusPoints A w.property)
+      (D.torusPoints A s)).mp ⟨s, rfl⟩
 
 /-- Over any commutative ring, the intersection of the Borel subgroup with the Weyl subgroup is
 the actual weight-lattice torus. -/
 @[simp]
 theorem borelSubgroup_inf_weylSubgroup_eq_range_torusPoints :
     D.borelSubgroup A ⊓ D.weylSubgroup A = (D.torusPoints A).range := by
-  rcases subsingleton_or_nontrivial A with hsub | hnontriv
+  rcases subsingleton_or_nontrivial A with _ | _
   · apply le_antisymm
     · rintro g -
       exact ⟨1, Subtype.ext (Subsingleton.elim _ _)⟩
     · exact le_inf (D.range_torusPoints_le_borelSubgroup A) (D.range_torusPoints_le_weylSubgroup A)
   · apply le_antisymm
     · rintro g ⟨hgB, hgW⟩
-      obtain ⟨u, huP, s, rfl⟩ := (D.mem_borelSubgroup_iff A).mp hgB
-      have huW : u ∈ D.weylSubgroup A := by
-        have hts : (D.torusPoints A s)⁻¹ ∈ D.weylSubgroup A := by
+      obtain ⟨l, s, hls⟩ := (D.mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints A).mp hgW
+      have hwB : (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈
+          D.borelSubgroup A := by
+        have hts : (D.torusPoints A s)⁻¹ ∈ D.borelSubgroup A := by
           rw [← (D.torusPoints A).map_inv]
-          exact D.torusPoints_mem_weylSubgroup A s⁻¹
-        simpa only [mul_inv_cancel_right] using Subgroup.mul_mem _ hgW hts
-      obtain ⟨l, s₁, hls⟩ := (D.mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints A).mp huW
-      let u' : D.points A := D.torusPoints A s₁ * u * (D.torusPoints A s₁)⁻¹
-      have hu'P : u' ∈ D.positivePoints A :=
-        (Subgroup.mem_normalizer_iff.mp
-          (D.range_torusPoints_le_normalizer_positivePoints A ⟨s₁, rfl⟩) u).mp huP
-      have hwprod' :
-          (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod =
-            D.torusPoints A s₁⁻¹ * u' := by
-        rw [eq_mul_inv_of_mul_eq hls, (D.torusPoints A).map_inv]
-        dsimp only [u']
-        group
+          exact D.range_torusPoints_le_borelSubgroup A ⟨s⁻¹, rfl⟩
+        simpa only [← hls, mul_inv_cancel_right] using Subgroup.mul_mem _ hgB hts
       have hword : t.geckWeylWordProd ht l = 1 :=
-        D.geckWeylWordProd_eq_one_of_list_prod_eq_torusPoints_mul_positive A hu'P hwprod'
-      have hq : D.weylQuotientMulEquiv A (QuotientGroup.mk ⟨u, huW⟩) = 1 := by
-        have hsub : (⟨u, huW⟩ : D.weylSubgroup A) =
-            ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod * D.torusPoints A s₁,
-              mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup A l)
-                (D.torusPoints_mem_weylSubgroup A s₁)⟩ :=
-          Subtype.ext hls.symm
-        rw [hsub, D.weylQuotientMulEquiv_list_prod_mul_torusPoints A l s₁, hword]
-      have hmk : (QuotientGroup.mk ⟨u, huW⟩ :
+        D.geckWeylWordProd_eq_one_of_mem_borelSubgroup A l hwB
+      have hsub : (⟨g, hgW⟩ : D.weylSubgroup A) =
+          ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod * D.torusPoints A s,
+            mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup A l)
+              (D.torusPoints_mem_weylSubgroup A s)⟩ :=
+        Subtype.ext hls.symm
+      have hq : D.weylQuotientMulEquiv A (QuotientGroup.mk ⟨g, hgW⟩) = 1 := by
+        rw [hsub, D.weylQuotientMulEquiv_list_prod_mul_torusPoints A l s, hword]
+      have hmk : (QuotientGroup.mk ⟨g, hgW⟩ :
           D.weylSubgroup A ⧸ ((D.torusPoints A).range).subgroupOf (D.weylSubgroup A)) = 1 :=
         (D.weylQuotientMulEquiv A).injective (hq.trans (map_one _).symm)
-      have huT : u ∈ (D.torusPoints A).range :=
-        (QuotientGroup.eq_one_iff (⟨u, huW⟩ : D.weylSubgroup A)).mp hmk
-      have hu1 : u = 1 := Subgroup.mem_bot.mp <| by
-        rw [← D.positivePoints_inf_range_torusPoints_eq_bot A]
-        exact ⟨huP, huT⟩
-      rw [hu1, one_mul]
-      exact ⟨s, rfl⟩
+      exact (QuotientGroup.eq_one_iff (⟨g, hgW⟩ : D.weylSubgroup A)).mp hmk
     · exact le_inf (D.range_torusPoints_le_borelSubgroup A) (D.range_torusPoints_le_weylSubgroup A)
 
 /-- Over any commutative ring, the intersection of the Weyl subgroup with the Borel subgroup is

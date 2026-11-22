@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.LinearAlgebra.RootSystem.Inversions.Exchange
@@ -354,9 +353,8 @@ theorem existsUnique_mul_mul_eq_of_mem_bruhatCell (n : D.weylSubgroup K) {g : D.
   obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
   obtain ⟨u₁, hu₁, s, rfl⟩ := (D.mem_borelSubgroup_iff K).mp hb₁
   have ht' : (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) ∈ D.borelSubgroup K := by
-    have hnorm := D.weylSubgroup_le_normalizer_range_torusPoints K n⁻¹.property
-    exact D.range_torusPoints_le_borelSubgroup K
-      ((Subgroup.mem_normalizer_iff.mp hnorm (D.torusPoints K s)).mp ⟨s, rfl⟩)
+    simpa only [Subgroup.coe_inv, inv_inv] using
+      D.weylSubgroup_conj_torusPoints_mem_borelSubgroup K n⁻¹ s
   obtain ⟨u, hu, b₀, hb₀, heq⟩ :=
     D.exists_inversionPoints_mul_borelSubgroup_of_ncard_eq K _ n rfl hu₁
   let bFinal := b₀ * ((n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K)) * b₂

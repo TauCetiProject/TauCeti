@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 public import TauCeti.GroupTheory.DoubleCoset.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Intersection
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
@@ -149,22 +149,17 @@ private theorem exists_weylElement_mul_borelSubgroup_mul_eq
   let r := D.weylElement (t.simpleIndex ht i) K 1
   obtain ⟨u, hu, s, rfl⟩ := (D.mem_borelSubgroup_iff K).mp hb
   obtain ⟨v, hv, u₀, rfl⟩ := (D.mem_positivePoints_iff_exists_mul_rootSubgroupPoints K i u).mp hu
-  have hv' : r * v * r⁻¹ ∈ D.borelSubgroup K := by
-    have hmem := (Subgroup.mem_normalizer_iff.mp
-      (D.weylElement_mem_normalizer_positivePoints_diff_singleton K i 1) v).mp hv
-    have hle :
-        (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
-          (D.rootSubgroupPoints γ K).range) ≤ D.positivePoints K := by
-      refine iSup₂_le fun γ hγ => ?_
-      rintro _ ⟨w, rfl⟩
-      exact D.rootSubgroupPoints_mem_positivePoints K hγ.1 w
-    exact D.positivePoints_le_borelSubgroup K (hle hmem)
-  have htnorm := D.weylSubgroup_le_normalizer_range_torusPoints K (inv_mem n.property)
-  obtain ⟨s', hs'⟩ := (Subgroup.mem_normalizer_iff.mp htnorm (D.torusPoints K s)).mp ⟨s, rfl⟩
-  have hts' : D.torusPoints K s' ∈ D.borelSubgroup K :=
-    D.range_torusPoints_le_borelSubgroup K ⟨s', rfl⟩
-  refine ⟨r * v * r⁻¹, hv', D.torusPoints K s', hts', toAdd u₀, ?_⟩
-  rw [ofAdd_toAdd, hs']
+  have hv' : r * v * r⁻¹ ∈ D.borelSubgroup K :=
+    D.positivePoints_le_borelSubgroup K
+      (D.iSup_rootSubgroupPoints_diff_singleton_le_positivePoints K i
+        ((Subgroup.mem_normalizer_iff.mp
+          (D.weylElement_mem_normalizer_positivePoints_diff_singleton K i 1) v).mp hv))
+  have hts' : (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) ∈ D.borelSubgroup K := by
+    simpa only [Subgroup.coe_inv, inv_inv] using
+      D.weylSubgroup_conj_torusPoints_mem_borelSubgroup K n⁻¹ s
+  refine ⟨r * v * r⁻¹, hv', (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K), hts',
+    toAdd u₀, ?_⟩
+  rw [ofAdd_toAdd]
   dsimp only [r]
   group
 

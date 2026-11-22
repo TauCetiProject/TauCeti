@@ -80,6 +80,15 @@ theorem weylElement_mem_weylSubgroup (A : Type v) [CommRing A] (i : Fin t.rank) 
     D.weylElement (t.simpleIndex ht i) A 1 ∈ D.weylSubgroup A :=
   Subgroup.subset_closure (Or.inr ⟨i, rfl⟩)
 
+/-- Every product of pinned simple Weyl representatives belongs to `D.weylSubgroup A`. -/
+theorem list_prod_map_weylElement_mem_weylSubgroup (A : Type v) [CommRing A]
+    (l : List (Fin t.rank)) :
+    (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈ D.weylSubgroup A := by
+  apply Subgroup.list_prod_mem
+  intro x hx
+  obtain ⟨i, _, rfl⟩ := List.mem_map.mp hx
+  exact D.weylElement_mem_weylSubgroup A i
+
 private theorem map_weylElement_one {A : Type*} {B : Type*} [CommRing A] [CommRing B]
     (f : A →+* B) (i : Fin t.rank) :
     (D.pointsPresentation A).map (D.pointsPresentation B) f
