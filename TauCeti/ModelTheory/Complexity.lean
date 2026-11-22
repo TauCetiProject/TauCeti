@@ -16,6 +16,10 @@ quantifier-free when every member of the family is, as are the disjunction and c
 list of quantifier-free formulas. Conversely, an implication, a negation, a conjunction, a
 disjunction or a biconditional is quantifier-free only when its constituents are.
 
+A formula is equality-free (`FirstOrder.Language.BoundedFormula.IsEqualityFree`) when none of its
+atomic subformulas is an equation. On quantifier-free formulas this is the class whose truth is a
+purely propositional matter, since an equation `t = t` holds in every structure.
+
 In an algebraic language, every atomic formula holds in a subsingleton structure: atomic
 formulas can only assert equality of terms. Every homomorphism preserves atomic formulas
 (`FirstOrder.Language.BoundedFormula.IsAtomic.realize_comp_hom`); Mathlib's
@@ -107,6 +111,70 @@ theorem isQF_not_iff : φ.not.IsQF ↔ φ.IsQF :=
 @[simp]
 theorem isQF_iff_iff : (φ.iff ψ).IsQF ↔ φ.IsQF ∧ ψ.IsQF :=
   isQF_inf_iff.trans <| by simp only [isQF_imp_iff, and_comm (a := ψ.IsQF), and_self]
+
+/-- A formula is equality-free when none of its atomic subformulas is an equation: it is built
+from `⊥` and relation atoms by implication and universal quantification. -/
+inductive IsEqualityFree : ∀ {n : ℕ}, L.BoundedFormula α n → Prop
+  | falsum {n : ℕ} : IsEqualityFree (falsum : L.BoundedFormula α n)
+  | rel {n l : ℕ} (R : L.Relations l) (ts : Fin l → L.Term (α ⊕ Fin n)) :
+    IsEqualityFree (R.boundedFormula ts)
+  | imp {n : ℕ} {φ₁ φ₂ : L.BoundedFormula α n} (h₁ : IsEqualityFree φ₁)
+    (h₂ : IsEqualityFree φ₂) : IsEqualityFree (φ₁.imp φ₂)
+  | all {n : ℕ} {φ : L.BoundedFormula α (n + 1)} (h : IsEqualityFree φ) :
+    IsEqualityFree φ.all
+
+@[simp]
+theorem isEqualityFree_bot : (⊥ : L.BoundedFormula α n).IsEqualityFree :=
+  IsEqualityFree.falsum
+
+/-- An equation is not equality-free. -/
+@[simp]
+theorem not_isEqualityFree_bdEqual (t₁ t₂ : L.Term (α ⊕ Fin n)) :
+    ¬(t₁.bdEqual t₂).IsEqualityFree := nofun
+
+@[simp]
+theorem isEqualityFree_boundedFormula {l : ℕ} (R : L.Relations l)
+    (ts : Fin l → L.Term (α ⊕ Fin n)) : (R.boundedFormula ts).IsEqualityFree :=
+  IsEqualityFree.rel R ts
+
+/-- An implication is equality-free exactly when its two sides are. -/
+@[simp]
+theorem isEqualityFree_imp_iff : (φ.imp ψ).IsEqualityFree ↔ φ.IsEqualityFree ∧ ψ.IsEqualityFree :=
+  ⟨fun | .imp h₁ h₂ => ⟨h₁, h₂⟩, fun h => h.1.imp h.2⟩
+
+/-- A universal formula is equality-free exactly when its body is. -/
+@[simp]
+theorem isEqualityFree_all_iff {φ : L.BoundedFormula α (n + 1)} :
+    φ.all.IsEqualityFree ↔ φ.IsEqualityFree :=
+  ⟨fun | .all h => h, IsEqualityFree.all⟩
+
+/-- A negation is equality-free exactly when the negated formula is. -/
+@[simp]
+theorem isEqualityFree_not_iff : φ.not.IsEqualityFree ↔ φ.IsEqualityFree :=
+  isEqualityFree_imp_iff.trans (and_iff_left isEqualityFree_bot)
+
+@[simp]
+theorem isEqualityFree_top : (⊤ : L.BoundedFormula α n).IsEqualityFree :=
+  isEqualityFree_not_iff.2 isEqualityFree_bot
+
+/-- A disjunction is equality-free exactly when its two disjuncts are. -/
+@[simp]
+theorem isEqualityFree_sup_iff :
+    (φ ⊔ ψ).IsEqualityFree ↔ φ.IsEqualityFree ∧ ψ.IsEqualityFree :=
+  isEqualityFree_imp_iff.trans <| by rw [isEqualityFree_not_iff]
+
+/-- A conjunction is equality-free exactly when its two conjuncts are. -/
+@[simp]
+theorem isEqualityFree_inf_iff :
+    (φ ⊓ ψ).IsEqualityFree ↔ φ.IsEqualityFree ∧ ψ.IsEqualityFree :=
+  isEqualityFree_not_iff.trans <| isEqualityFree_imp_iff.trans <| by rw [isEqualityFree_not_iff]
+
+/-- A biconditional is equality-free exactly when its two sides are. -/
+@[simp]
+theorem isEqualityFree_iff_iff :
+    (φ.iff ψ).IsEqualityFree ↔ φ.IsEqualityFree ∧ ψ.IsEqualityFree :=
+  isEqualityFree_inf_iff.trans <| by
+    simp only [isEqualityFree_imp_iff, and_comm (a := ψ.IsEqualityFree), and_self]
 
 end FirstOrder.Language.BoundedFormula
 
