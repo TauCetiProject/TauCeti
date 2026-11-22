@@ -9,11 +9,12 @@ public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Algebra.Lie.Prod
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Representation
 import TauCeti.Algebra.Lie.GeneralLinear.Finrank
+import TauCeti.Algebra.Lie.Orthogonal.TypeD.Finrank
 import TauCeti.Algebra.Lie.SpecialLinear.Root.Generation
-import TauCeti.LinearAlgebra.CliffordAlgebra.CliffordExteriorSquare
 import TauCeti.LinearAlgebra.Matrix.ToLin
 import TauCeti.RepresentationTheory.Spin.Dimension
 import TauCeti.RepresentationTheory.Spin.Exceptional.Four.RootOperators
+import TauCeti.RepresentationTheory.Spin.Polarization.Faithful
 
 /-!
 # The half-spin Lie modules of `so₄`: the isomorphism `D₂ ≅ A₁ × A₁`
@@ -44,22 +45,26 @@ simple-root bivectors act by matrix units
 chain root pair moves between `w₀` and `w₁`, inside `S⁻`, and the fork root pair moves between
 `1` and `w₀ ∧ w₁`, inside `S⁺`. Hence the image of `so₄` contains the raising and lowering matrices
 of each factor, with zero in the other factor. These generate `sl₂` as a Lie algebra
-(`TauCeti.lieSpan_specialLinear_adjacent_single_eq_top`), so the image contains `sl₂ × sl₂`. Both
-`so₄ ≅ ⋀²V` and `sl₂ × sl₂` have dimension six, which forces the image to be `sl₂ × sl₂` and the
-paired action to be injective.
+(`TauCeti.eq_top_of_specialLinear_adjacent_single_mem`), so the image contains `sl₂ × sl₂`. Both
+`so₄` and `sl₂ × sl₂` have dimension six (`TauCeti.LieAlgebra.Orthogonal.finrank_typeD`), which
+forces the image to be `sl₂ × sl₂`. The paired action is injective in every rank
+(`TauCeti.SpinPolarizationData.typeDSpinPlusLieRep_prod_typeDSpinMinusLieRep_injective`).
 
 ## Main definitions and results
 
 All declarations are in the namespace `TauCeti.SpinPolarizationData`.
 
-* `typeDSpinPlusLieRep_prod_typeDSpinMinusLieRep_injective_of_card_eq_two`: `so₄` acts faithfully
-  on `S⁺ × S⁻`.
+* `trace_typeDSpinPlusLieRep_eq_zero_of_card_eq_two` and
+  `trace_typeDSpinMinusLieRep_eq_zero_of_card_eq_two`: `so₄` acts on each half-spin module by
+  trace-zero endomorphisms.
 * `mem_range_typeDSpinPlusLieRep_prod_typeDSpinMinusLieRep_iff_of_card_eq_two`: the image of the
   paired action consists of the pairs of trace-zero endomorphisms.
 * `mem_range_typeDSpinPlusLieRep_iff_of_card_eq_two` and
   `mem_range_typeDSpinMinusLieRep_iff_of_card_eq_two`: each half-spin image is `sl₂`.
 * `typeDHalfSpinLieEquivSlProdSl`: the Lie algebra isomorphism `so₄ ≃ sl₂ × sl₂` given by the
   matrices of the two half-spin actions.
+* `typeDSpinPlusLieModuleEquivStd` and `typeDSpinMinusLieModuleEquivStd`: through this
+  isomorphism, `S⁺` and `S⁻` are the standard modules of the first and second factor `sl₂`.
 
 ## References
 
@@ -82,18 +87,6 @@ variable {K : Type u} [Field K] [Invertible (2 : K)] {V : Type v} [AddCommGroup 
   {ι : Type w} [Fintype ι] [DecidableEq ι] (b : Basis ι K P.W) (hline : P.line = ⊥)
 
 /-! ### Dimension -/
-
-include b hline in
-/-- The split type-`D` Lie algebra of rank two has dimension `6 = (4 choose 2)`, read off from its
-quadratic Clifford realization `so₄ ≅ ⋀²V`. -/
-private theorem finrank_typeD_of_card_eq_two (hι : Fintype.card ι = 2) :
-    finrank K (LieAlgebra.Orthogonal.typeD ι K) = 6 := by
-  have : Module.Free K V := Module.Free.of_basis (P.typeDBasis b hline)
-  have : Module.Finite K V := Module.Finite.of_basis (P.typeDBasis b hline)
-  rw [(P.typeDQuadraticEquiv b hline).toLinearEquiv.finrank_eq,
-    ← (bivectorExteriorEquivQuadraticLieSubalgebra Q).finrank_eq, exteriorPower.finrank_eq,
-    finrank_eq_card_basis (P.typeDBasis b hline), Fintype.card_sum, hι]
-  rfl
 
 omit [Invertible (2 : K)] in
 private theorem finrank_sl_toSubmodule_fin_two :
@@ -155,15 +148,12 @@ private theorem toMatrix_eq_single_of_restrict (b₂ : Basis (Fin 2) K P.W)
     (h : LinearMap.toMatrixAlgEquiv (spinFourExteriorBasis P b₂) (spinAction Q P y) =
       Matrix.single p q 1) (hg : Function.Injective g)
     {i j : Fin 2} (hp : g i = p) (hq : g j = q) :
-    LinearMap.toMatrix B B f = Matrix.single i j 1 := by
-  ext a c
-  have hc : f (B c) = if j = c then B i else 0 := Subtype.ext <| by
+    LinearMap.toMatrix B B f = Matrix.single i j 1 :=
+  B.toMatrixAlgEquiv_eq_single_of_apply_basis f i j 1 fun c ↦ Subtype.ext <| by
     rw [P.apply_basis_of_toMatrixAlgEquiv_eq_single b₂ B hB hf h, ← hq, ← hp]
     by_cases hjc : j = c
     · simp [hjc, hB]
     · simp [hjc, hg.ne hjc]
-  rw [LinearMap.toMatrix_apply, hc, Matrix.single_apply]
-  by_cases hjc : j = c <;> simp [hjc, Finsupp.single_apply]
 
 omit [Invertible (2 : K)] in
 /-- If the column of the matrix unit is not a coordinate of the half-spin module, the restricted
@@ -266,10 +256,8 @@ modules. -/
 private noncomputable def matrixPairLieHom (B : Basis κ K (spinPlus Q P))
     (B' : Basis κ' K (spinMinus Q P)) :
     LieAlgebra.Orthogonal.typeD ι K →ₗ⁅K⁆ Matrix κ κ K × Matrix κ' κ' K :=
-  { ((LinearMap.toMatrix B B).toLinearMap ∘ₗ (P.typeDSpinPlusLieRep b hline).toLinearMap).prod
-      ((LinearMap.toMatrix B' B').toLinearMap ∘ₗ (P.typeDSpinMinusLieRep b hline).toLinearMap) with
-    map_lie' := fun {x y} ↦ Prod.ext (by simp [Ring.lie_def, LinearMap.toMatrix_mul])
-      (by simp [Ring.lie_def, LinearMap.toMatrix_mul]) }
+  ((LinearMap.toMatrixAlgEquiv B).toLieEquiv.toLieHom.comp (P.typeDSpinPlusLieRep b hline)).prod
+    ((LinearMap.toMatrixAlgEquiv B').toLieEquiv.toLieHom.comp (P.typeDSpinMinusLieRep b hline))
 
 private theorem matrixPairLieHom_apply (B : Basis κ K (spinPlus Q P))
     (B' : Basis κ' K (spinMinus Q P)) (x : LieAlgebra.Orthogonal.typeD ι K) :
@@ -328,16 +316,6 @@ private theorem coordinateLieHom_root_pairs (hι : Fintype.card ι = 2) :
   · exact P.toMatrix_eq_single_of_restrict b₂ _ hminus (hM _) (by simpa [minusIndex] using hneg 0)
       minusIndex_injective (i := 1) (j := 0) rfl rfl
 
-omit [Invertible (2 : K)] in
-/-- A Lie subalgebra of `sl₂` containing the raising and lowering matrices is everything. -/
-private theorem eq_top_of_single_mem (S : LieSubalgebra K (SpecialLinear.sl (Fin 2) K))
-    (he : SpecialLinear.single (0 : Fin 2) 1 zero_ne_one (1 : K) ∈ S)
-    (hf : SpecialLinear.single (1 : Fin 2) 0 one_ne_zero (1 : K) ∈ S) : S = ⊤ := by
-  rw [eq_top_iff, ← lieSpan_specialLinear_adjacent_single_eq_top (r := 1),
-    LieSubalgebra.lieSpan_le]
-  rintro _ (⟨i, rfl⟩ | ⟨i, rfl⟩) <;> obtain rfl := Subsingleton.elim i 0
-  exacts [he, hf]
-
 /-- Every pair of trace-zero matrices is the pair of matrices, in the coordinate bases, of the
 actions of an element of `so₄` on `S⁺` and `S⁻`. -/
 private theorem sl_prod_sl_le_range_coordinateLieHom (hι : Fintype.card ι = 2) :
@@ -351,12 +329,14 @@ private theorem sl_prod_sl_le_range_coordinateLieHom (hι : Fintype.card ι = 2)
   have hmem {A : Matrix (Fin 2) (Fin 2) K × Matrix (Fin 2) (Fin 2) K} {a : sl₂ × sl₂}
       (ha : inc a = A) (x) (hx : P.coordinateLieHom b hline hι x = A) : a ∈ T :=
     (LieSubalgebra.mem_comap ..).2 ((LieHom.mem_range _ _).2 ⟨x, hx.trans ha.symm⟩)
-  have hinl : T.comap (LieHom.inl K sl₂ sl₂) = ⊤ := eq_top_of_single_mem _
-    (hmem (by simp [inc, SpecialLinear.val_single]) x₁ hx₁)
-    (hmem (by simp [inc, SpecialLinear.val_single]) x₂ hx₂)
-  have hinr : T.comap (LieHom.inr K sl₂ sl₂) = ⊤ := eq_top_of_single_mem _
-    (hmem (by simp [inc, SpecialLinear.val_single]) x₃ hx₃)
-    (hmem (by simp [inc, SpecialLinear.val_single]) x₄ hx₄)
+  have hinl : T.comap (LieHom.inl K sl₂ sl₂) = ⊤ :=
+    eq_top_of_specialLinear_adjacent_single_mem 1 K
+      (fun i ↦ hmem (by fin_cases i; simp [inc, SpecialLinear.val_single]) x₁ hx₁)
+      (fun i ↦ hmem (by fin_cases i; simp [inc, SpecialLinear.val_single]) x₂ hx₂)
+  have hinr : T.comap (LieHom.inr K sl₂ sl₂) = ⊤ :=
+    eq_top_of_specialLinear_adjacent_single_mem 1 K
+      (fun i ↦ hmem (by fin_cases i; simp [inc, SpecialLinear.val_single]) x₃ hx₃)
+      (fun i ↦ hmem (by fin_cases i; simp [inc, SpecialLinear.val_single]) x₄ hx₄)
   rintro ⟨A, A'⟩ ⟨hA, hA'⟩
   have h : ((⟨A, hA⟩, ⟨A', hA'⟩) : sl₂ × sl₂) ∈ T := by
     have h₁ : ((⟨A, hA⟩, 0) : sl₂ × sl₂) ∈ T :=
@@ -381,34 +361,18 @@ private theorem range_coordinateLieHom (hι : Fintype.card ι = 2) :
       (SpecialLinear.sl (Fin 2) K).toSubmodule.prod (SpecialLinear.sl (Fin 2) K).toSubmodule := by
   refine (Submodule.eq_of_le_of_finrank_le (P.sl_prod_sl_le_range_coordinateLieHom b hline hι)
     ?_).symm
+  have h6 : finrank K (LieAlgebra.Orthogonal.typeD ι K) = 6 := by
+    rw [TauCeti.LieAlgebra.Orthogonal.finrank_typeD, hι]
+    rfl
   have : Module.Finite K (LieAlgebra.Orthogonal.typeD ι K) :=
-    Module.finite_of_finrank_pos (by rw [finrank_typeD_of_card_eq_two P b hline hι]; omega)
-  rw [finrank_sl_prod_sl, ← finrank_typeD_of_card_eq_two P b hline hι]
+    Module.finite_of_finrank_pos (by omega)
+  rw [finrank_sl_prod_sl, ← h6]
   exact LinearMap.finrank_range_le _
-
-private theorem injective_coordinateLieHom (hι : Fintype.card ι = 2) :
-    Function.Injective (P.coordinateLieHom b hline hι) := by
-  have : Module.Finite K (LieAlgebra.Orthogonal.typeD ι K) :=
-    Module.finite_of_finrank_pos (by rw [finrank_typeD_of_card_eq_two P b hline hι]; omega)
-  have h := LinearMap.finrank_range_add_finrank_ker (P.coordinateLieHom b hline hι).toLinearMap
-  rw [range_coordinateLieHom P b hline hι, finrank_sl_prod_sl,
-    finrank_typeD_of_card_eq_two P b hline hι] at h
-  exact LinearMap.ker_eq_bot.mp (Submodule.finrank_eq_zero.mp (by omega))
 
 /-! ### The image of `so₄` in `End S⁺ × End S⁻` -/
 
-/-- **`so₄` acts faithfully on the sum of its half-spin modules.** For an even polarization with
-`dim W = 2`, an element of the split type-`D` Lie algebra is determined by its actions on `S⁺`
-and `S⁻`. -/
-theorem typeDSpinPlusLieRep_prod_typeDSpinMinusLieRep_injective_of_card_eq_two
-    (hι : Fintype.card ι = 2) :
-    Function.Injective ((P.typeDSpinPlusLieRep b hline).prod (P.typeDSpinMinusLieRep b hline)) :=
-  fun x y h ↦ P.injective_coordinateLieHom b hline hι <| by
-    rw [LieHom.prod_apply, LieHom.prod_apply, Prod.mk.injEq] at h
-    rw [matrixPairLieHom_apply, matrixPairLieHom_apply, h.1, h.2]
-
 /-- Every element of `so₄` acts on the even half-spin module by an endomorphism of trace zero. -/
-theorem trace_typeDSpinPlusLieRep_of_card_eq_two (hι : Fintype.card ι = 2)
+theorem trace_typeDSpinPlusLieRep_eq_zero_of_card_eq_two (hι : Fintype.card ι = 2)
     (x : LieAlgebra.Orthogonal.typeD ι K) :
     LinearMap.trace K (spinPlus Q P) (P.typeDSpinPlusLieRep b hline x) = 0 := by
   have hx : P.coordinateLieHom b hline hι x ∈ (SpecialLinear.sl (Fin 2) K).toSubmodule.prod
@@ -420,7 +384,7 @@ theorem trace_typeDSpinPlusLieRep_of_card_eq_two (hι : Fintype.card ι = 2)
   rw [LinearMap.trace_eq_matrix_trace K (plusBasis P (P.basisFinTwo b hι)), h]
 
 /-- Every element of `so₄` acts on the odd half-spin module by an endomorphism of trace zero. -/
-theorem trace_typeDSpinMinusLieRep_of_card_eq_two (hι : Fintype.card ι = 2)
+theorem trace_typeDSpinMinusLieRep_eq_zero_of_card_eq_two (hι : Fintype.card ι = 2)
     (x : LieAlgebra.Orthogonal.typeD ι K) :
     LinearMap.trace K (spinMinus Q P) (P.typeDSpinMinusLieRep b hline x) = 0 := by
   have hx : P.coordinateLieHom b hline hι x ∈ (SpecialLinear.sl (Fin 2) K).toSubmodule.prod
@@ -442,8 +406,8 @@ theorem mem_range_typeDSpinPlusLieRep_prod_typeDSpinMinusLieRep_iff_of_card_eq_t
   rw [LieHom.mem_range]
   refine ⟨fun ⟨x, hx⟩ ↦ ?_, fun ⟨hf, hf'⟩ ↦ ?_⟩
   · rw [LieHom.prod_apply, Prod.mk.injEq] at hx
-    exact ⟨hx.1 ▸ P.trace_typeDSpinPlusLieRep_of_card_eq_two b hline hι x,
-      hx.2 ▸ P.trace_typeDSpinMinusLieRep_of_card_eq_two b hline hι x⟩
+    exact ⟨hx.1 ▸ P.trace_typeDSpinPlusLieRep_eq_zero_of_card_eq_two b hline hι x,
+      hx.2 ▸ P.trace_typeDSpinMinusLieRep_eq_zero_of_card_eq_two b hline hι x⟩
   set Bp := plusBasis P (P.basisFinTwo b hι)
   set Bm := minusBasis P (P.basisFinTwo b hι)
   have hA : (LinearMap.toMatrix Bp Bp f, LinearMap.toMatrix Bm Bm f') ∈
@@ -464,7 +428,7 @@ algebra if and only if its trace vanishes. -/
 theorem mem_range_typeDSpinPlusLieRep_iff_of_card_eq_two (hι : Fintype.card ι = 2)
     {f : Module.End K (spinPlus Q P)} :
     f ∈ (P.typeDSpinPlusLieRep b hline).range ↔ LinearMap.trace K (spinPlus Q P) f = 0 := by
-  refine ⟨fun ⟨x, hx⟩ ↦ hx ▸ P.trace_typeDSpinPlusLieRep_of_card_eq_two b hline hι x,
+  refine ⟨fun ⟨x, hx⟩ ↦ hx ▸ P.trace_typeDSpinPlusLieRep_eq_zero_of_card_eq_two b hline hι x,
     fun hf ↦ ?_⟩
   obtain ⟨x, hx⟩ :=
     (P.mem_range_typeDSpinPlusLieRep_prod_typeDSpinMinusLieRep_iff_of_card_eq_two b hline hι
@@ -477,7 +441,7 @@ algebra if and only if its trace vanishes. -/
 theorem mem_range_typeDSpinMinusLieRep_iff_of_card_eq_two (hι : Fintype.card ι = 2)
     {f : Module.End K (spinMinus Q P)} :
     f ∈ (P.typeDSpinMinusLieRep b hline).range ↔ LinearMap.trace K (spinMinus Q P) f = 0 := by
-  refine ⟨fun ⟨x, hx⟩ ↦ hx ▸ P.trace_typeDSpinMinusLieRep_of_card_eq_two b hline hι x,
+  refine ⟨fun ⟨x, hx⟩ ↦ hx ▸ P.trace_typeDSpinMinusLieRep_eq_zero_of_card_eq_two b hline hι x,
     fun hf ↦ ?_⟩
   obtain ⟨x, hx⟩ :=
     (P.mem_range_typeDSpinPlusLieRep_prod_typeDSpinMinusLieRep_iff_of_card_eq_two b hline hι
@@ -497,15 +461,14 @@ noncomputable def typeDHalfSpinLieEquivSlProdSl (hι : Fintype.card ι = 2)
   LieEquiv.ofBijective
     { toFun x := (⟨(P.matrixPairLieHom b hline B B' x).1, by
           rw [SpecialLinear.mem_sl_iff, matrixPairLieHom_apply, ← LinearMap.trace_eq_matrix_trace,
-            P.trace_typeDSpinPlusLieRep_of_card_eq_two b hline hι]⟩,
+            P.trace_typeDSpinPlusLieRep_eq_zero_of_card_eq_two b hline hι]⟩,
         ⟨(P.matrixPairLieHom b hline B B' x).2, by
           rw [SpecialLinear.mem_sl_iff, matrixPairLieHom_apply, ← LinearMap.trace_eq_matrix_trace,
-            P.trace_typeDSpinMinusLieRep_of_card_eq_two b hline hι]⟩)
+            P.trace_typeDSpinMinusLieRep_eq_zero_of_card_eq_two b hline hι]⟩)
       map_add' x y := Prod.ext (Subtype.ext (by simp)) (Subtype.ext (by simp))
       map_smul' c x := Prod.ext (Subtype.ext (by simp)) (Subtype.ext (by simp))
       map_lie' {x y} := Prod.ext (Subtype.ext (by simp)) (Subtype.ext (by simp)) }
-    ⟨fun x y h ↦ P.typeDSpinPlusLieRep_prod_typeDSpinMinusLieRep_injective_of_card_eq_two
-        b hline hι <| by
+    ⟨fun x y h ↦ P.typeDSpinPlusLieRep_prod_typeDSpinMinusLieRep_injective b hline <| by
           simp only [LieHom.coe_mk, Prod.mk.injEq, Subtype.mk.injEq, matrixPairLieHom_apply,
             EmbeddingLike.apply_eq_iff_eq] at h
           rw [LieHom.prod_apply, LieHom.prod_apply, h.1, h.2],
@@ -545,6 +508,125 @@ theorem coe_typeDHalfSpinLieEquivSlProdSl_apply_snd (hι : Fintype.card ι = 2)
     ((P.typeDHalfSpinLieEquivSlProdSl b hline hι B B' x).2 : Matrix κ' κ' K) =
       LinearMap.toMatrix B' B' (P.typeDSpinMinusLieRep b hline x) :=
   -- `(rfl)`, not `rfl`: the body of `typeDHalfSpinLieEquivSlProdSl` is not `@[expose]`d.
+  (rfl)
+
+
+/-- Through the isomorphism `so₄ ≃ sl₂ × sl₂`, a pair of trace-zero matrices acts on `S⁺` by the
+endomorphism with the first matrix in the basis `B`. -/
+@[simp]
+theorem typeDSpinPlusLieRep_typeDHalfSpinLieEquivSlProdSl_symm_apply (hι : Fintype.card ι = 2)
+    (B : Basis κ K (spinPlus Q P)) (B' : Basis κ' K (spinMinus Q P))
+    (p : SpecialLinear.sl κ K × SpecialLinear.sl κ' K) :
+    P.typeDSpinPlusLieRep b hline ((P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').symm p) =
+      Matrix.toLin B B (p.1 : Matrix κ κ K) := by
+  rw [← LinearMap.toMatrix_symm, LinearEquiv.eq_symm_apply,
+    ← P.coe_typeDHalfSpinLieEquivSlProdSl_apply_fst b hline hι B B', LieEquiv.apply_symm_apply]
+
+/-- Through the isomorphism `so₄ ≃ sl₂ × sl₂`, a pair of trace-zero matrices acts on `S⁻` by the
+endomorphism with the second matrix in the basis `B'`. -/
+@[simp]
+theorem typeDSpinMinusLieRep_typeDHalfSpinLieEquivSlProdSl_symm_apply (hι : Fintype.card ι = 2)
+    (B : Basis κ K (spinPlus Q P)) (B' : Basis κ' K (spinMinus Q P))
+    (p : SpecialLinear.sl κ K × SpecialLinear.sl κ' K) :
+    P.typeDSpinMinusLieRep b hline ((P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').symm p) =
+      Matrix.toLin B' B' (p.2 : Matrix κ' κ' K) := by
+  rw [← LinearMap.toMatrix_symm, LinearEquiv.eq_symm_apply,
+    ← P.coe_typeDHalfSpinLieEquivSlProdSl_apply_snd b hline hι B B', LieEquiv.apply_symm_apply]
+
+/-! ### The half-spin modules as standard modules -/
+
+/-- **`S⁺` is the standard module of the first factor `sl₂`.** Make `S⁺` a module over `so₄`
+through its half-spin action, and `κ → K` through the first component of
+`typeDHalfSpinLieEquivSlProdSl` followed by the matrix action. Then taking coordinates in `B` is
+an equivalence of Lie modules. -/
+noncomputable def typeDSpinPlusLieModuleEquivStd (hι : Fintype.card ι = 2)
+    (B : Basis κ K (spinPlus Q P)) (B' : Basis κ' K (spinMinus Q P)) :
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
+      LieRingModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
+      LieModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (κ → K) :=
+      LieRingModule.compLieHom _ ((SpecialLinear.sl κ K).incl.comp
+        ((LieHom.fst K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (κ → K) :=
+      LieModule.compLieHom _ ((SpecialLinear.sl κ K).incl.comp
+        ((LieHom.fst K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
+    spinPlus Q P ≃ₗ⁅K, LieAlgebra.Orthogonal.typeD ι K⁆ (κ → K) :=
+  letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
+    LieRingModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
+  letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (κ → K) :=
+    LieRingModule.compLieHom _ ((SpecialLinear.sl κ K).incl.comp
+      ((LieHom.fst K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
+  { B.equivFun with
+    map_lie' := fun {x s} ↦ by
+      simp only [LieRingModule.compLieHom_apply, LieHom.coe_comp, Function.comp_apply,
+        LieEquiv.coe_toLieHom, LieHom.coe_fst, LieSubalgebra.coe_incl, Matrix.lie_apply,
+        Module.End.lie_apply, AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
+        coe_typeDHalfSpinLieEquivSlProdSl_apply_fst, Basis.equivFun_apply,
+        LinearMap.toMatrix_mulVec_repr] }
+
+/-- The Lie module equivalence `typeDSpinPlusLieModuleEquivStd` takes coordinates in `B`. -/
+@[simp]
+theorem typeDSpinPlusLieModuleEquivStd_apply (hι : Fintype.card ι = 2)
+    (B : Basis κ K (spinPlus Q P)) (B' : Basis κ' K (spinMinus Q P)) (s : spinPlus Q P) :
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
+      LieRingModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
+      LieModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (κ → K) :=
+      LieRingModule.compLieHom _ ((SpecialLinear.sl κ K).incl.comp
+        ((LieHom.fst K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (κ → K) :=
+      LieModule.compLieHom _ ((SpecialLinear.sl κ K).incl.comp
+        ((LieHom.fst K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
+    P.typeDSpinPlusLieModuleEquivStd b hline hι B B' s = B.equivFun s :=
+  (rfl)
+
+/-- **`S⁻` is the standard module of the second factor `sl₂`.** Make `S⁻` a module over `so₄`
+through its half-spin action, and `κ' → K` through the second component of
+`typeDHalfSpinLieEquivSlProdSl` followed by the matrix action. Then taking coordinates in `B'` is
+an equivalence of Lie modules. -/
+noncomputable def typeDSpinMinusLieModuleEquivStd (hι : Fintype.card ι = 2)
+    (B : Basis κ K (spinPlus Q P)) (B' : Basis κ' K (spinMinus Q P)) :
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinMinus Q P) :=
+      LieRingModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (spinMinus Q P) :=
+      LieModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (κ' → K) :=
+      LieRingModule.compLieHom _ ((SpecialLinear.sl κ' K).incl.comp
+        ((LieHom.snd K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (κ' → K) :=
+      LieModule.compLieHom _ ((SpecialLinear.sl κ' K).incl.comp
+        ((LieHom.snd K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
+    spinMinus Q P ≃ₗ⁅K, LieAlgebra.Orthogonal.typeD ι K⁆ (κ' → K) :=
+  letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinMinus Q P) :=
+    LieRingModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
+  letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (κ' → K) :=
+    LieRingModule.compLieHom _ ((SpecialLinear.sl κ' K).incl.comp
+      ((LieHom.snd K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
+  { B'.equivFun with
+    map_lie' := fun {x s} ↦ by
+      simp only [LieRingModule.compLieHom_apply, LieHom.coe_comp, Function.comp_apply,
+        LieEquiv.coe_toLieHom, LieHom.coe_snd, LieSubalgebra.coe_incl, Matrix.lie_apply,
+        Module.End.lie_apply, AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
+        coe_typeDHalfSpinLieEquivSlProdSl_apply_snd, Basis.equivFun_apply,
+        LinearMap.toMatrix_mulVec_repr] }
+
+/-- The Lie module equivalence `typeDSpinMinusLieModuleEquivStd` takes coordinates in `B'`. -/
+@[simp]
+theorem typeDSpinMinusLieModuleEquivStd_apply (hι : Fintype.card ι = 2)
+    (B : Basis κ K (spinPlus Q P)) (B' : Basis κ' K (spinMinus Q P)) (s : spinMinus Q P) :
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinMinus Q P) :=
+      LieRingModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (spinMinus Q P) :=
+      LieModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (κ' → K) :=
+      LieRingModule.compLieHom _ ((SpecialLinear.sl κ' K).incl.comp
+        ((LieHom.snd K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (κ' → K) :=
+      LieModule.compLieHom _ ((SpecialLinear.sl κ' K).incl.comp
+        ((LieHom.snd K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
+    P.typeDSpinMinusLieModuleEquivStd b hline hι B B' s = B'.equivFun s :=
   (rfl)
 
 end TauCeti.SpinPolarizationData
