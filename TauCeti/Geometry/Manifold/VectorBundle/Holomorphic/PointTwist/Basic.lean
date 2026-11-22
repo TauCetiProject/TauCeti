@@ -548,14 +548,12 @@ theorem signedPointTwistCore_trivializationAt_of_ne {x z : X} {s : Bool} (h : z 
   classical
   rw [signedPointTwistCore_trivializationAt, decide_eq_false h]
 
-omit [IsManifold 𝓘(ℂ) n X] in
 /-- Away from `x`, the twisted vector vanishes exactly when the vector does. -/
 theorem pointTwistMul_eq_zero_iff_of_ne {x z : X} (h : z ≠ x) (v : E z) :
     pointTwistMul F E x z v = 0 ↔ v = 0 := by
   refine ⟨fun hv ↦ ?_, fun hv ↦ by rw [hv, map_zero]⟩
   rw [← pointTwistDiv_pointTwistMul (F := F) h v, hv, map_zero]
 
-omit [IsManifold 𝓘(ℂ) n X] in
 /-- The twisted vector vanishes exactly at `x` and where the vector does. -/
 @[simp] theorem pointTwistMul_eq_zero_iff {x z : X} (v : E z) :
     pointTwistMul F E x z v = 0 ↔ z = x ∨ v = 0 := by

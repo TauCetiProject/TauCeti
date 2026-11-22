@@ -157,7 +157,7 @@ include R in
 /-- A linear trivialization sends a vector over its base set to zero exactly when the vector is
 zero. -/
 theorem snd_apply_eq_zero_iff {v : TotalSpace F E} (hv : v.proj ∈ e.baseSet) :
-    (e v).2 = 0 ↔ v.2 = 0 :=
+    (e v).2 = 0 ↔ v.snd = 0 :=
   not_iff_not.1 (e.snd_apply_ne_zero_iff R hv)
 
 include R in

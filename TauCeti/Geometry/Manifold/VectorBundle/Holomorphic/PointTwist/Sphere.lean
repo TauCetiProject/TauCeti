@@ -20,7 +20,7 @@ section of the degree-zero bundle `OnePoint.twistCore 0`.
 
 The Euler number of this twist is one: `⟨e(𝒪(∞)_ℝ), [ℙ¹]⟩ = 1`
 (`TauCeti.evalFundamentalClass_complexEulerClass_pointTwist_infty`), which reads
-`c₁(𝒪(1))[ℙ¹] = 1` once `c₁` is defined as this Euler class.
+`c₁(𝒪(1))[ℙ¹] = 1` by `TauCeti.lineFirstChernClass_def`.
 -/
 
 public section

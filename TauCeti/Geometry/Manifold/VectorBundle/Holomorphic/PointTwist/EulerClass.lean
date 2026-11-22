@@ -21,10 +21,10 @@ file proves that twisting at a point raises the Euler number of the underlying o
 bundle by one:
 `⟨e(L(x)_ℝ), [X]⟩ = ⟨e(L_ℝ), [X]⟩ + 1`
 (`TauCeti.evalFundamentalClass_complexEulerClass_pointTwist`). Here `e(L_ℝ)` is the Euler class of
-`L` with its canonical complex orientation (`TauCeti.complexEulerClass`), the class that the first
-Chern class `c₁(L)` is compared with, and `[X]` is the fundamental class of the canonical
-orientation of `X`. Once the first Chern class is defined as this Euler class, this is the Chern
-class half of step 4 of the proof of the Riemann–Roch formula for real Cauchy–Riemann operators
+`L` with its canonical complex orientation (`TauCeti.complexEulerClass`), which defines the native
+line first Chern class (`TauCeti.lineFirstChernClass_def`), and `[X]` is the fundamental class of
+the canonical orientation of `X`. With the given section witness, this is the Chern-number half
+of step 4 of the proof of the Riemann–Roch formula for real Cauchy–Riemann operators
 (McDuff–Salamon, Theorem C.1.10).
 
 The proof counts zeros. Let `s` be a continuous section of `L` with finitely many zeros, nonzero at
@@ -46,8 +46,9 @@ Summing over zeros
 (`TauCeti.VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_sectionIndex`) gives the
 formula. For the trivial bundle the constant section `1` gives `⟨e(𝒪(x)_ℝ), [X]⟩ = 1`
 (`TauCeti.evalFundamentalClass_complexEulerClass_pointTwist_trivial`). On the Riemann sphere with
-`x = ∞` this is the Euler number `⟨e(𝒪(∞)_ℝ), [ℙ¹]⟩ = 1`, which reads `c₁(𝒪(1))[ℙ¹] = 1` once `c₁`
-is defined as this Euler class (`TauCeti.evalFundamentalClass_complexEulerClass_pointTwist_infty`,
+`x = ∞` this is the Euler number `⟨e(𝒪(∞)_ℝ), [ℙ¹]⟩ = 1`, hence the native line-Chern number
+`c₁(𝒪(1))[ℙ¹] = 1` by `TauCeti.lineFirstChernClass_def`
+(`TauCeti.evalFundamentalClass_complexEulerClass_pointTwist_infty`,
 in `TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.Sphere`).
 
 ## Main results
@@ -61,8 +62,9 @@ in `TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.Sphere`).
 
 ## Implementation notes
 
-The section `s` with finitely many zeros and `s x ≠ 0` is a hypothesis; any continuous section has
-this property after a generic perturbation. The local index at `x` is computed for the model fibre
+The section `s` with finitely many zeros and `s x ≠ 0` is a hypothesis. Constructing such a witness
+through generic sections requires the smooth real bundle data of that separate construction.
+The local index at `x` is computed for the model fibre
 `ℂ`, where the chart of `X` at `x` takes values in the model fibre, as the sign of a Jacobian
 determinant requires. Away from `x` the model fibre is any complex line.
 
@@ -287,8 +289,8 @@ end Line
 /-- **The point twist of the trivial line bundle has Euler number one.** On a compact Riemann
 surface `X`, the twist `𝒪(x)` of the trivial line bundle at a point satisfies
 `⟨e(𝒪(x)_ℝ), [X]⟩ = 1`. On the Riemann sphere with `x = ∞` this is the Euler number
-`⟨e(𝒪(∞)_ℝ), [ℙ¹]⟩ = 1`, which reads `c₁(𝒪(1))[ℙ¹] = 1` once `c₁` is defined as this Euler
-class. -/
+`⟨e(𝒪(∞)_ℝ), [ℙ¹]⟩ = 1`, hence `c₁(𝒪(1))[ℙ¹] = 1` by the native line first Chern
+class definition. -/
 theorem evalFundamentalClass_complexEulerClass_pointTwist_trivial [CompactSpace X] (x : X) :
     ((complexHomologicalOrientation X).evalFundamentalClass Complex.finrank_real_complex
         (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id X)

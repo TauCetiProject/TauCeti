@@ -79,15 +79,16 @@ theorem sectionIndex_eq_of_snd_apply_eq {z : M} {U : Set M} (hU : IsOpen U) (hz 
   have hWe₂ : V ∩ U ⊆ e₂.baseSet := fun x hx ↦ hUe₂ hx.2
   have hWz₂ : ∀ x ∈ V ∩ U, s₂ x = 0 → x = z := fun x hx h ↦ hVz x hx.1 ((hzero x hx.2).1 h)
   -- The common fibre coordinate on `V ∩ U`.
-  let σ : C(↥(V ∩ U), F) := ⟨fun x ↦ (e₁ (TotalSpace.mk' F x.1 (s₁ x.1))).2,
-    (e₁.continuousOn_snd_apply_mk hs₁).comp_continuous continuous_subtype_val fun x ↦ hWe₁ x.2⟩
+  let σ : C(↥(V ∩ U), F) := ⟨fun x ↦ (e₁ (TotalSpace.mk' F x.val (s₁ x.val))).2,
+    (e₁.continuousOn_snd_apply_mk hs₁).comp_continuous continuous_subtypeVal
+      fun x ↦ hWe₁ x.property⟩
   have hσz : σ ⁻¹' ({0} : Set F) ⊆ {(⟨z, hzW⟩ : ↥(V ∩ U))} := fun x hx ↦ Subtype.ext
-    (hVz x.1 x.2.1 ((e₁.snd_apply_eq_zero_iff ℝ (v := TotalSpace.mk' F x.1 (s₁ x.1))
-      (hWe₁ x.2)).1 hx))
+    (hVz x.val x.property.1 ((e₁.snd_apply_eq_zero_iff ℝ (v := TotalSpace.mk' F x.val (s₁ x.val))
+      (hWe₁ x.property)).1 hx))
   have h₁ := o₁.localHomologyMap_eq_sectionIndex_smul hF oM hs₁ e₁ hW hzW
     (fun x hx ↦ hVz x hx.1) hWe₁ (fun x hx ↦ ho₁ x hx.2) σ (fun _ ↦ rfl) hσz
   have h₂ := o₂.localHomologyMap_eq_sectionIndex_smul hF oM hs₂ e₂ hW hzW hWz₂ hWe₂
-    (fun x hx ↦ ho₂ x hx.2) σ (fun x ↦ (hcoord x.1 x.2.2).symm) hσz
+    (fun x hx ↦ ho₂ x hx.2) σ (fun x ↦ (hcoord x.val x.property.2).symm) hσz
   rw [← ω.kronecker_localCohomologyClass_zsmul hF (o₂.sectionIndex hF oM hs₂ z), ← h₂, h₁,
     ω.kronecker_localCohomologyClass_zsmul hF]
 
