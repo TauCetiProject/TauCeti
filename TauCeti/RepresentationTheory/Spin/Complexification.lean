@@ -24,12 +24,15 @@ choosing polarization data `P` for `Q_L`, the real Spin group acts on the spinor
 
 This action has the same invariant subspaces and intertwiners as the even Clifford algebra of
 `Q_L`: the `L`-linear span of the real Spin group is that whole even algebra
-(`QuadraticMap.Anisotropic.span_range_spinGroupBaseChange_eq_even`). The irreducibility theorems
-for groups spanning the even Clifford algebra therefore apply to it. In positive even dimension,
-the two half-spin representations of the real group are irreducible and inequivalent; in odd
-dimension, the whole spin representation is irreducible. This is a statement about the real
-group, and does not follow from the irreducibility of the complex Spin group: it says that the
-compact real form already sees all of the complex spin modules.
+(`QuadraticMap.Anisotropic.span_range_spinGroupBaseChange_eq_even`). Combined with
+`AlgHom.mem_invtSubmodule_toMonoidHom_comp_iff_of_span_eq_top` and
+`AlgHom.isIntertwiningMap_toMonoidHom_comp_iff_of_span_eq_top`, this span theorem transfers
+invariant subspaces and intertwiners between the real group and the even algebra. The
+irreducibility theorems for groups spanning the even Clifford algebra therefore apply to it. In
+positive even dimension, the two half-spin representations of the real group are irreducible and
+inequivalent; in odd dimension, the whole spin representation is irreducible. This is a statement
+about the real group, and does not follow from the irreducibility of the complex Spin group: it
+says that the compact real form already sees all of the complex spin modules.
 
 The half-spin statements assume polarization data without a line remainder (`P.line = ⊥`), so
 that they concern even dimension. There, in dimension zero, the real Spin group is trivial,

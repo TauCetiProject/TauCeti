@@ -121,8 +121,8 @@ theorem spinGroupBaseChange_injective [FaithfulSMul R A] (Q : QuadraticForm R M)
 
 /-- **The image of the Spin group under extension of scalars spans the even Clifford algebra of
 the scalar extension** as soon as the Spin group of `Q` spans the even Clifford algebra of `Q`.
-Over `ℂ`, this is the statement that a real Spin group with this spanning property has
-complex-linear span the whole complex even Clifford algebra. -/
+Over `ℂ`, this says that the complexified Clifford values of a real Spin group with this
+spanning property have complex-linear span the whole complex even Clifford algebra. -/
 theorem _root_.TauCeti.span_range_spinGroupBaseChange_eq_even {Q : QuadraticForm R M}
     (hspan : Submodule.span R (spinGroup Q : Set (CliffordAlgebra Q)) = (even Q).toSubmodule) :
     Submodule.span A (Set.range fun g : spinGroup Q ↦
@@ -132,7 +132,7 @@ theorem _root_.TauCeti.span_range_spinGroupBaseChange_eq_even {Q : QuadraticForm
       (spinGroupBaseChange (A := A) Q g : CliffordAlgebra (Q.baseChange A))) =
       ofBaseChangeAux A Q '' (spinGroup Q : Set (CliffordAlgebra Q)) := by
     simp only [coe_spinGroupBaseChange_apply]
-    exact (Set.range_comp (ofBaseChangeAux A Q) Subtype.val).trans (congrArg _ Subtype.range_coe)
+    exact (Set.image_eq_range (ofBaseChangeAux A Q) (spinGroup Q : Set (CliffordAlgebra Q))).symm
   calc
     _ = Submodule.span A (Submodule.span R
           ((ofBaseChangeAux A Q).toLinearMap '' (spinGroup Q : Set (CliffordAlgebra Q))) :

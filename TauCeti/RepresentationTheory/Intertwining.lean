@@ -61,6 +61,8 @@ taking invariants under it.
   the dual representations.
 * `Representation.isIntertwiningMap_iff_of_closure_eq_top`: equivariance may be tested on a
   generating set of the group.
+* `AlgHom.isIntertwiningMap_toMonoidHom_comp_iff_of_span_eq_top`: equivariance under a monoid
+  acting through a spanning image in an algebra is equivariance under the whole algebra.
 
 -/
 
@@ -462,6 +464,27 @@ theorem isIntertwiningMap_iff_of_closure_eq_top {A G V W : Type*} [Semiring A] [
     intro v
     calc f (ρ g⁻¹ v) = σ g⁻¹ (σ g (f (ρ g⁻¹ v))) := (σ.inv_self_apply g _).symm
       _ = σ g⁻¹ (f v) := by rw [← hg, ρ.self_inv_apply]
+
+/-- **Equivariance under a spanning monoid is equivariance under the whole algebra.** If the image
+of `φ : H →* B` spans the `A`-algebra `B`, a linear map intertwines the restrictions along `φ` of
+two algebra actions `F` and `G` exactly when it intertwines `F b` and `G b` for every `b : B`. -/
+theorem _root_.AlgHom.isIntertwiningMap_toMonoidHom_comp_iff_of_span_eq_top {A B H V W : Type*}
+    [CommSemiring A] [Semiring B] [Algebra A B] [Monoid H]
+    [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+    (F : B →ₐ[A] Module.End A V) (G : B →ₐ[A] Module.End A W) (φ : H →* B)
+    (hφ : Submodule.span A (Set.range φ) = ⊤) (f : V →ₗ[A] W) :
+    IsIntertwiningMap (F.toMonoidHom.comp φ) (G.toMonoidHom.comp φ) f ↔
+      ∀ b v, f (F b v) = G b (f v) := by
+  refine ⟨fun hf b v ↦ ?_, fun h ↦ ⟨fun g v ↦ h (φ g) v⟩⟩
+  -- Both sides are linear in `b`: `F b` postcomposed with `f`, and `G b` precomposed with `f`.
+  have hext : LinearMap.llcomp A V V W f ∘ₗ F.toLinearMap =
+      LinearMap.lcomp A W f ∘ₗ G.toLinearMap :=
+    LinearMap.ext_on_range hφ fun g ↦ LinearMap.ext fun v ↦ by
+      simpa only [LinearMap.coe_comp, AlgHom.coe_toLinearMap, Function.comp_apply,
+        LinearMap.llcomp_apply, LinearMap.lcomp_apply, MonoidHom.comp_apply,
+        RingHom.toMonoidHom_eq_coe, AlgHom.toRingHom_eq_coe, MonoidHom.coe_ofClass,
+        RingHom.coe_coe] using hf.isIntertwining g v
+  exact LinearMap.congr_fun (LinearMap.congr_fun hext b) v
 
 namespace Equiv
 
