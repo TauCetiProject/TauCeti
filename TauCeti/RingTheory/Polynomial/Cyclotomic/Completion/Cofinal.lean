@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.Cyclotomic.Completion.Topology
+public import TauCeti.RingTheory.Polynomial.Cyclotomic.Completion.Basic
 public import TauCeti.RingTheory.Polynomial.FamilyLimit
 import TauCeti.RingTheory.AdjoinRoot.Basic
 

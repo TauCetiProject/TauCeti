@@ -15,7 +15,6 @@ import Mathlib.RingTheory.AdicCompletion.Topology
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 import TauCeti.Topology.Discrete
-import TauCeti.Topology.UniformSpace.DiscreteUniformity
 
 /-!
 # Inverse-limit topology and universal property of the cyclotomic completion
