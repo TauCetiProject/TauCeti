@@ -48,8 +48,8 @@ for every `f ∈ L²(V, F)` (`TauCeti.exists_eLpNorm_tsum_enorm_fourierMultiplie
 the homogeneous square function
 (`TauCeti.exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_littlewoodPaley_sq_rpow_le` and
 `TauCeti.exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_littlewoodPaley_sq_rpow`).
-These assume `V` nontrivial, except the forward homogeneous inequality, which holds trivially in
-dimension `0`, where every homogeneous cutoff vanishes. Neither side is assumed finite, so in
+Only the reverse homogeneous inequality assumes `V` nontrivial: in dimension `0` every homogeneous
+cutoff vanishes, and so does the homogeneous square function. Neither side is assumed finite, so in
 particular `f ∈ Lᵖ` exactly when `S f ∈ Lᵖ`. The constants of the homogeneous inequalities do not
 see any scale, which is what estimates with homogeneous Sobolev and Besov norms, such as the
 Strichartz estimates for the wave equation, need.
@@ -109,8 +109,7 @@ The last section bounds a single homogeneous block `Pⱼ` on every `Lᵖ`, `1 �
 the scale: `‖Pⱼ f‖_p ≤ ‖𝓕⁻ ψ₀‖₁ ‖f‖_p` for `f ∈ L²`
 (`ContDiffBump.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le`), and `‖Pⱼ‖ ≤ 1` on `L²`
 (`ContDiffBump.norm_fourierMultiplierCLM_littlewoodPaley_le`). In dimension `0` every block
-vanishes (`ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero`), which gives the
-dimension-`0` case of the forward homogeneous square function inequality. The blocks near `Pⱼ`
+vanishes (`ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero`). The blocks near `Pⱼ`
 reproduce it (`ContDiffBump.sum_fourierMultiplierCLM_fourierMultiplierCLM_littlewoodPaley`), and
 together with the reconstruction `∑_{-N < j ≤ N} Pⱼ f → f`
 (`ContDiffBump.tendsto_sum_fourierMultiplierCLM_littlewoodPaley`) this gives the duality of the
@@ -252,11 +251,17 @@ private theorem kernel_apply [DecidableEq ι] (s : Finset ι) (z : V) :
   exact SchwartzMap.fourierInv_postcompCLM_apply _ (σ i) z
 
 /-- **Hörmander's condition for the `ℓ²`-valued kernels**, uniformly in the truncation:
-`∫_{‖x‖ > 2 ‖h‖} ‖K_s (x - h) - K_s x‖ dx ≤ B`. -/
-private theorem exists_setIntegral_norm_kernel_sub_sub_le [DecidableEq ι] [Nontrivial V]
-    (hP : IsDyadic ψ σ e) :
+`∫_{‖x‖ > 2 ‖h‖} ‖K_s (x - h) - K_s x‖ dx ≤ B`. In dimension `0` the domain of integration is
+empty. -/
+private theorem exists_setIntegral_norm_kernel_sub_sub_le [DecidableEq ι] (hP : IsDyadic ψ σ e) :
     ∃ B, 0 ≤ B ∧ ∀ (s : Finset ι) (h : V),
       ∫ x in {x | 2 * ‖h‖ < ‖x‖}, ‖kernel σ s (x - h) - kernel σ s x‖ ≤ B := by
+  rcases subsingleton_or_nontrivial V with hV | hV
+  · refine ⟨0, le_rfl, fun s h ↦ ?_⟩
+    have h0 : {x : V | 2 * ‖h‖ < ‖x‖} = ∅ := by
+      ext x
+      simp [Subsingleton.elim x 0, Subsingleton.elim h 0]
+    rw [h0, Measure.restrict_empty, integral_zero_measure]
   set N := finrank ℝ V
   have hN : finrank ℝ V < 2 * N := by have := finrank_pos (R := ℝ) (M := V); omega
   obtain ⟨C, hC, hK⟩ := SchwartzMap.exists_setIntegral_norm_fourierInv_sum_sub_sub_le
@@ -369,23 +374,23 @@ private theorem coeFn_block (i : ι) (f : Lp F 2 (volume : Measure V)) :
     block σ i f =ᵐ[volume] fun x ↦ ∫ z, 𝓕⁻ (σ i) (x - z) • f z :=
   (σ i).coeFn_fourierMultiplierCLM_toLp f
 
-private theorem ae_sqFun_eq_integral [DecidableEq ι] [Countable ι] (s : Finset ι)
+private theorem ae_sqFun_eq_integral [DecidableEq ι] (s : Finset ι)
     (f : Lp F 2 (volume : Measure V)) :
     ∀ᵐ x, Lp.lpPi 2 s (block σ) f x = ∫ z, sqKernel σ s x z (f z) := by
-  filter_upwards [Lp.coeFn_lpPi 2 s (block σ) f, ae_all_iff.2 fun i ↦ coeFn_block (σ := σ) i f]
-    with x hx hix
+  filter_upwards [Lp.coeFn_lpPi 2 s (block σ) f,
+    s.eventually_all.2 fun i _ ↦ coeFn_block (σ := σ) i f] with x hx hix
   rw [hx]
   simp only [sqKernel, sum_apply, coe_comp, Function.comp_apply, lsmul_apply,
     lp.singleContinuousLinearMap_apply]
   rw [integral_finsetSum _ fun i _ ↦ ?_]
-  · refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [hix i]
+  · refine Finset.sum_congr rfl fun i hi ↦ ?_
+    rw [hix i hi]
     exact ((lp.singleContinuousLinearMap ℝ (fun _ : ι ↦ F) 2 i).integral_comp_comm
       ((𝓕⁻ (σ i)).integrable_sub_smul one_le_two (Lp.memLp f) x)).symm
   · exact (lp.singleContinuousLinearMap ℝ (fun _ : ι ↦ F) 2 i).integrable_comp
       ((𝓕⁻ (σ i)).integrable_sub_smul one_le_two (Lp.memLp f) x)
 
-private theorem ae_sqFunAdj_eq_integral [Countable ι] (s : Finset ι)
+private theorem ae_sqFunAdj_eq_integral (s : Finset ι)
     (g : Lp (lp (fun _ : ι ↦ F) 2) 2 (volume : Measure V)) :
     ∀ᵐ x, sqFunAdj σ s g x = ∫ z, sqKernelAdj σ s x z (g z) := by
   set u : ι → Lp F 2 (volume : Measure V) := fun i ↦
@@ -396,14 +401,14 @@ private theorem ae_sqFunAdj_eq_integral [Countable ι] (s : Finset ι)
     ((𝓕⁻ (σ i)).integrable_sub_smul one_le_two (Lp.memLp (u i)) x).congr
       ((hu i).mono fun z hz ↦ by simp [hz])
   filter_upwards [Lp.coeFn_fun_finsetSum s fun i ↦ block σ i (u i),
-    ae_all_iff.2 fun i ↦ coeFn_block (σ := σ) i (u i)] with x hx hix
+    s.eventually_all.2 fun i _ ↦ coeFn_block (σ := σ) i (u i)] with x hx hix
   rw [sqFunAdj, sum_apply]
   simp only [comp_apply]
   rw [hx]
   simp only [sqKernelAdj, sum_apply, coe_comp, Function.comp_apply, lsmul_apply, lp.evalCLM_apply]
   rw [integral_finsetSum _ fun i _ ↦ hint i x]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [hix i]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [hix i hi]
   exact integral_congr_ae ((hu i).mono fun z hz ↦ by simp [hz])
 
 /-- The symbols `ψᵢ` are real, so the blocks are self-adjoint. -/
@@ -433,7 +438,7 @@ private theorem sqFunAdj_lpPi_block [DecidableEq ι] (s : Finset ι)
   exact Finset.sum_congr rfl fun i hi ↦ congrArg _ (Lp.evalCLM_compLp_lpPi 2 (block σ) hi f)
 
 /-- The symbol `∑ᵢ ψᵢ²` of `∑ᵢ Δᵢ²` is bounded uniformly in the set of indices. -/
-private theorem exists_norm_sum_toLp_symbol_smul_le [Countable ι] (hP : IsDyadic ψ σ e) :
+private theorem exists_norm_sum_toLp_symbol_smul_le (hP : IsDyadic ψ σ e) :
     ∃ L : ℝ, 0 ≤ L ∧ ∀ s : Finset ι,
       ‖∑ i ∈ s, ((σ i).toLp ∞ volume • (σ i).toLp ∞ volume : Lp ℂ ∞ (volume : Measure V))‖ ≤
         L := by
@@ -442,13 +447,13 @@ private theorem exists_norm_sum_toLp_symbol_smul_le [Countable ι] (hP : IsDyadi
   refine Lp.norm_le_of_ae_bound_top hL0 ?_
   filter_upwards [Lp.coeFn_fun_finsetSum s fun i ↦
       ((σ i).toLp ∞ volume • (σ i).toLp ∞ volume : Lp ℂ ∞ (volume : Measure V)),
-    ae_all_iff.2 fun i ↦ Lp.coeFn_lpSMul (r := ∞) ((σ i).toLp ∞ (volume : Measure V))
+    s.eventually_all.2 fun i _ ↦ Lp.coeFn_lpSMul (r := ∞) ((σ i).toLp ∞ (volume : Measure V))
       ((σ i).toLp ∞ volume),
-    ae_all_iff.2 fun i ↦ (σ i).coeFn_toLp ∞ (volume : Measure V)] with ξ h₁ h₂ h₃
-  -- Rewrite with `h₂` before `simp`: otherwise `smul_eq_mul` turns the `L^∞` product `•` into `*`
-  -- first, and `h₂` no longer matches.
-  rw [h₁, Finset.sum_congr rfl fun i _ ↦ h₂ i]
-  simp only [Pi.smul_apply', h₃, hP.apply_eq, smul_eq_mul, ← Complex.ofReal_mul,
+    s.eventually_all.2 fun i _ ↦ (σ i).coeFn_toLp ∞ (volume : Measure V)] with ξ h₁ h₂ h₃
+  -- Rewrite with `h₂` and `h₃` before `simp`: otherwise `smul_eq_mul` turns the `L^∞` product `•`
+  -- into `*` first, and `h₂` no longer matches.
+  rw [h₁, Finset.sum_congr rfl fun i hi ↦ by rw [h₂ i hi, Pi.smul_apply', h₃ i hi]]
+  simp only [hP.apply_eq, smul_eq_mul, ← Complex.ofReal_mul,
     ← Complex.ofReal_sum, Complex.norm_real, Real.norm_eq_abs]
   rw [abs_of_nonneg (Finset.sum_nonneg fun i _ ↦ mul_self_nonneg _)]
   simpa [sq] using hL s ξ
@@ -456,7 +461,7 @@ private theorem exists_norm_sum_toLp_symbol_smul_le [Countable ι] (hP : IsDyadi
 /-- **The `L²` bound for the blocks**, uniformly in the set of indices:
 `∑_{i ∈ s} ‖Δᵢ f‖² = Re ⟪f, ∑_{i ∈ s} Δᵢ² f⟫ ≤ L ‖f‖²`, since `∑_{i ∈ s} Δᵢ²` is the multiplier
 with symbol `∑_{i ∈ s} ψᵢ²`. -/
-private theorem exists_sum_norm_block_sq_le [Countable ι] (hP : IsDyadic ψ σ e) :
+private theorem exists_sum_norm_block_sq_le (hP : IsDyadic ψ σ e) :
     ∃ L : ℝ, 0 ≤ L ∧ ∀ (s : Finset ι) (f : Lp F 2 (volume : Measure V)),
       ∑ i ∈ s, ‖block σ i f‖ ^ 2 ≤ L * ‖f‖ ^ 2 := by
   obtain ⟨L, hL0, hL⟩ := exists_norm_sum_toLp_symbol_smul_le hP
@@ -477,7 +482,7 @@ private theorem exists_sum_norm_block_sq_le [Countable ι] (hP : IsDyadic ψ σ 
     _ = L * ‖f‖ ^ 2 := by ring
 
 /-- **The `L²` bound**, uniformly in the truncation: `‖(Δᵢ f)_{i ∈ s}‖ ≤ √L ‖f‖`. -/
-private theorem exists_norm_sqFun_apply_le [DecidableEq ι] [Countable ι] (hP : IsDyadic ψ σ e) :
+private theorem exists_norm_sqFun_apply_le [DecidableEq ι] (hP : IsDyadic ψ σ e) :
     ∃ L : ℝ, 0 ≤ L ∧ ∀ (s : Finset ι) (f : Lp F 2 (volume : Measure V)),
       ‖Lp.lpPi 2 s (block σ) f‖ ≤ √L * ‖f‖ := by
   obtain ⟨L, hL0, hL⟩ := exists_sum_norm_block_sq_le (F := F) hP
@@ -491,7 +496,7 @@ private theorem exists_norm_sqFun_apply_le [DecidableEq ι] [Countable ι] (hP :
 
 /-- **The Calderón–Zygmund bound for the truncated square functions**, uniformly in the
 truncation. -/
-private theorem exists_eLpNorm_sqFun_le [DecidableEq ι] [Countable ι] [Nontrivial V]
+private theorem exists_eLpNorm_sqFun_le [DecidableEq ι]
     (hP : IsDyadic ψ σ e) {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     ∃ C : ℝ≥0, ∀ (s : Finset ι) (f : Lp F 2 (volume : Measure V)),
       eLpNorm (Lp.lpPi 2 s (block σ) f) p volume ≤ C * eLpNorm f p volume := by
@@ -519,7 +524,7 @@ private theorem exists_eLpNorm_sqFun_le [DecidableEq ι] [Countable ι] [Nontriv
 /-- **The square function inequality for a dyadic family**:
 `‖(∑ᵢ ‖Δᵢ f‖²)^{1/2}‖_p ≤ C ‖f‖_p`. The full square sum is the increasing limit of the square sums
 over the indices with `|e i| ≤ n`. -/
-private theorem exists_eLpNorm_tsum_le [Countable ι] [Nontrivial V]
+private theorem exists_eLpNorm_tsum_le
     (hP : IsDyadic ψ σ e) {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     ∃ C : ℝ≥0, ∀ m : ι → Lp ℂ (∞ : ℝ≥0∞) (volume : Measure V),
       (∀ i, m i =ᵐ[volume] fun ξ ↦ (ψ i ξ : ℂ)) →
@@ -630,7 +635,7 @@ private theorem enorm_inner_sum_fourierMultiplierCLM_le
 `‖f‖_p ≤ C ‖(∑ᵢ ‖Δᵢ f‖²)^{1/2}‖_p`, given neighbourhoods `W i`, of indices whose labels under
 an injective `c : ι → ℤ` lie within `L` of the label of `i`, on which the symbols sum to `1` on the
 support of `ψᵢ`, and partial sums of the blocks converging to the identity in `L²`. -/
-private theorem exists_eLpNorm_le_mul_eLpNorm_tsum [Countable ι] [Nontrivial V]
+private theorem exists_eLpNorm_le_mul_eLpNorm_tsum
     (hP : IsDyadic ψ σ e) (W : ι → Finset ι) {c : ι → ℤ} (hc : Function.Injective c) {L : ℕ}
     (hWL : ∀ i k, k ∈ W i → |c k - c i| < L)
     (hW : ∀ i ξ, (∑ k ∈ W i, ψ k ξ) * ψ i ξ = ψ i ξ) (t : ℕ → Finset ι)
@@ -651,6 +656,8 @@ private theorem exists_eLpNorm_le_mul_eLpNorm_tsum [Countable ι] [Nontrivial V]
   refine ⟨(2 * L : ℕ) * C, fun m hm f ↦ ?_⟩
   have hm' : ∀ i, m i = (σ i).toLp ∞ volume := fun i ↦ eq_toLp_symbol hP (hm i)
   simp_rw [hm']
+  -- The labels `e` are injective, so the indices are countable and the square sums measurable.
+  have : Countable ι := hP.injective.countable
   set S : Lp F 2 (volume : Measure V) → V → ℝ≥0∞ := fun f x ↦
     (∑' i, ‖Lp.fourierMultiplierCLM F ((σ i).toLp ∞ volume) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ)
   have hS : ∀ f, AEMeasurable (S f) := fun f ↦
@@ -710,8 +717,8 @@ private theorem isDyadic_inhomogeneousLittlewoodPaley (φ : ContDiffBump (0 : V)
 end LittlewoodPaleySquare
 
 open LittlewoodPaleySquare in
-/-- **The Littlewood–Paley square function inequality.** Let `V` be a real inner product space
-of finite dimension `n ≥ 1`, let `φ` be a smooth bump function on `V`, and let `1 < p < ∞`. Let
+/-- **The Littlewood–Paley square function inequality.** Let `V` be a finite-dimensional real
+inner product space, let `φ` be a smooth bump function on `V`, and let `1 < p < ∞`. Let
 `Δⱼ` be the `L²` Fourier multipliers with the pieces `ψ₀ = φ`, `ψⱼ = φ (2^{-j} ·) - φ (2^{1-j} ·)`
 of the inhomogeneous Littlewood–Paley partition as symbols. For every complex Hilbert space `F`
 there is a constant `C` such that for every `f ∈ L²(V, F)`,
@@ -719,7 +726,7 @@ there is a constant `C` such that for every `f ∈ L²(V, F)`,
 `‖(∑ⱼ ‖Δⱼ f‖²)^{1/2}‖_p ≤ C ‖f‖_p`.
 
 Each symbol enters as any element of `L^∞` almost everywhere equal to `ψⱼ`. -/
-theorem exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow_le [Nontrivial V]
+theorem exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow_le
     [MeasurableSpace V] [BorelSpace V] [CompleteSpace F] (φ : ContDiffBump (0 : V))
     {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     ∃ C : ℝ≥0, ∀ m : ℕ → Lp ℂ (∞ : ℝ≥0∞) (volume : Measure V),
@@ -834,8 +841,8 @@ variable {V F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteD
 /-! ### The reverse inequality -/
 
 open LittlewoodPaleySquare in
-/-- **The reverse Littlewood–Paley square function inequality.** Let `V` be a real inner product
-space of finite dimension `n ≥ 1`, let `φ` be a smooth bump function on `V`, and let `1 < p < ∞`.
+/-- **The reverse Littlewood–Paley square function inequality.** Let `V` be a finite-dimensional
+real inner product space, let `φ` be a smooth bump function on `V`, and let `1 < p < ∞`.
 Let `Δⱼ` be the `L²` Fourier multipliers with the pieces `ψ₀ = φ`,
 `ψⱼ = φ (2^{-j} ·) - φ (2^{1-j} ·)` of the inhomogeneous Littlewood–Paley partition as symbols.
 For every complex Hilbert space `F` there is a constant `C` such that for every `f ∈ L²(V, F)`,
@@ -844,7 +851,7 @@ For every complex Hilbert space `F` there is a constant `C` such that for every 
 
 Neither side is assumed finite: in particular `f ∈ Lᵖ` as soon as its square function is. Each
 symbol enters as any element of `L^∞` almost everywhere equal to `ψⱼ`. -/
-theorem exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow [Nontrivial V]
+theorem exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow
     [MeasurableSpace V] [BorelSpace V] [CompleteSpace F] (φ : ContDiffBump (0 : V))
     {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     ∃ C : ℝ≥0, ∀ m : ℕ → Lp ℂ (∞ : ℝ≥0∞) (volume : Measure V),
@@ -897,18 +904,6 @@ theorem exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_littlewoodPaley_sq_rpow_l
       ∀ f : Lp F 2 (volume : Measure V),
         eLpNorm (fun x ↦ (∑' j, ‖Lp.fourierMultiplierCLM F (m j) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ)) p
           volume ≤ C * eLpNorm f p volume := by
-  rcases subsingleton_or_nontrivial V with hV | hV
-  · -- On the zero space every cutoff vanishes at the only point `0`, so every block is `0`.
-    refine ⟨0, fun m hm f ↦ ?_⟩
-    rw [ENNReal.coe_zero, zero_mul, nonpos_iff_eq_zero]
-    have h0 : ∀ j, Lp.fourierMultiplierCLM F (m j) f =ᵐ[volume] 0 := fun j ↦ by
-      rw [ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero (hm j), zero_apply]
-      exact Lp.coeFn_zero _ _ _
-    have hS : (fun x ↦ (∑' j : ℤ, ‖Lp.fourierMultiplierCLM F (m j) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ))
-        =ᵐ[volume] 0 := by
-      filter_upwards [ae_all_iff.2 h0] with x hx
-      simp [hx]
-    rw [eLpNorm_congr_ae hS, eLpNorm_zero]
   obtain ⟨e, hP⟩ := isDyadic_littlewoodPaley φ
   exact exists_eLpNorm_tsum_le hP hp hp_top
 
