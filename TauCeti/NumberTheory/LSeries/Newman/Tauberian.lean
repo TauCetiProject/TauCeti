@@ -48,7 +48,7 @@ only concerns the imaginary axis: `newmanLaplace_tendsto_integral_of_analyticAt`
 
 public section
 
-open Filter MeasureTheory Set Metric Complex
+open Filter MeasureTheory Set Complex
 open scoped Topology Real Interval
 
 namespace TauCeti.LSeries

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Passage
-public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local
+public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Basic
 
 /-!
 # The passage of an adapted pseudo-gradient through a Morse box
@@ -68,8 +68,8 @@ theorem splitCoord_linearFlow (t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ)
     φ.splitCoord (φ.linearFlow t z) = splitQuadraticFlow t (φ.splitCoord z) := by
   apply WithLp.ofLp_injective
   ext i
-  · simp [splitQuadraticFlow_apply, i.2]
-  · simp [splitQuadraticFlow_apply, (φ.weight_eq_neg_one_or_eq_one i).resolve_right i.2]
+  · simp [splitQuadraticFlow_apply, i.property]
+  · simp [splitQuadraticFlow_apply, (φ.weight_eq_neg_one_or_eq_one i).resolve_right i.property]
 
 end MorseChart
 

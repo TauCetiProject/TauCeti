@@ -82,17 +82,17 @@ finite-dimensional vector space, and these lines form a vector bundle over the s
 operators (`TauCeti.FredholmDetLine.vectorBundle`). Use `TauCeti.FredholmDetLine.linearEquiv` to
 pass to the determinant line itself. -/
 def FredholmDetLine (T : {T : E →L[𝕜] F // T.IsFredholm}) : Type _ :=
-  (T.1 : E →ₗ[𝕜] F).detLine
+  (T.val : E →ₗ[𝕜] F).detLine
 
 namespace FredholmDetLine
 
 variable {T : {T : E →L[𝕜] F // T.IsFredholm}}
 
 instance : AddCommGroup (FredholmDetLine 𝕜 E F T) :=
-  inferInstanceAs (AddCommGroup (T.1 : E →ₗ[𝕜] F).detLine)
+  inferInstanceAs (AddCommGroup (T.val : E →ₗ[𝕜] F).detLine)
 
 instance : Module 𝕜 (FredholmDetLine 𝕜 E F T) :=
-  inferInstanceAs (Module 𝕜 (T.1 : E →ₗ[𝕜] F).detLine)
+  inferInstanceAs (Module 𝕜 (T.val : E →ₗ[𝕜] F).detLine)
 
 /-- The determinant line of a Fredholm operator carries its topology as a finite-dimensional
 vector space, the finest topology making addition and scalar multiplication continuous. -/
@@ -104,14 +104,14 @@ instance : ContinuousAdd (FredholmDetLine 𝕜 E F T) := IsModuleTopology.toCont
 
 variable (T) in
 /-- The fibre of `TauCeti.FredholmDetLine` over `T` is the determinant line of `T`. -/
-def linearEquiv : FredholmDetLine 𝕜 E F T ≃ₗ[𝕜] (T.1 : E →ₗ[𝕜] F).detLine :=
+def linearEquiv : FredholmDetLine 𝕜 E F T ≃ₗ[𝕜] (T.val : E →ₗ[𝕜] F).detLine :=
   LinearEquiv.refl 𝕜 _
 
 omit [CompleteSpace 𝕜] [CompleteSpace E] in
 /-- The determinant line of a Fredholm operator is a line. -/
 @[simp]
 theorem finrank_eq_one : finrank 𝕜 (FredholmDetLine 𝕜 E F T) = 1 :=
-  (linearEquiv T).finrank_eq.trans T.2.finrank_detLine
+  (linearEquiv T).finrank_eq.trans (LinearMap.finrank_detLine _)
 
 variable {Λ G : Type*} [NormedAddCommGroup Λ] [NormedSpace 𝕜 Λ] [FiniteDimensional 𝕜 Λ]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
@@ -120,8 +120,8 @@ variable {Λ G : Type*} [NormedAddCommGroup Λ] [NormedSpace 𝕜 Λ] [FiniteDim
 identifies the determinant line of `T` with the fixed line `det G ⊗ (det Λ)^*`, which is then
 identified with `𝕜` by a fixed isomorphism depending only on `Λ` and `G`. -/
 def chartCoord (D₂ : Λ →L[𝕜] F) (q : E × Λ →L[𝕜] G)
-    (h : ((T.1.coprod D₂).prod q).IsInvertible) : FredholmDetLine 𝕜 E F T ≃ₗ[𝕜] 𝕜 :=
-  linearEquiv T ≪≫ₗ detLineChartEquiv T.1 D₂ q h ≪≫ₗ LinearEquiv.ofFinrankEq _ _ (by
+    (h : ((T.val.coprod D₂).prod q).IsInvertible) : FredholmDetLine 𝕜 E F T ≃ₗ[𝕜] 𝕜 :=
+  linearEquiv T ≪≫ₗ detLineChartEquiv T.val D₂ q h ≪≫ₗ LinearEquiv.ofFinrankEq _ _ (by
     rw [finrank_tensorProduct, Subspace.dual_finrank_eq, TauCeti.finrank_detLine,
       TauCeti.finrank_detLine, finrank_self])
 
@@ -129,8 +129,8 @@ omit [CompleteSpace 𝕜] [CompleteSpace E] in
 /-- A chart coordinate is the kernel chart `ContinuousLinearMap.detLineChartEquiv`, followed by an
 identification of the fixed line `det G ⊗ (det Λ)^*` with `𝕜` that does not depend on `T`. -/
 theorem chartCoord_def (D₂ : Λ →L[𝕜] F) (q : E × Λ →L[𝕜] G)
-    (h : ((T.1.coprod D₂).prod q).IsInvertible) :
-    chartCoord D₂ q h = linearEquiv T ≪≫ₗ detLineChartEquiv T.1 D₂ q h ≪≫ₗ
+    (h : ((T.val.coprod D₂).prod q).IsInvertible) :
+    chartCoord D₂ q h = linearEquiv T ≪≫ₗ detLineChartEquiv T.val D₂ q h ≪≫ₗ
       LinearEquiv.ofFinrankEq _ _ (by
         rw [finrank_tensorProduct, Subspace.dual_finrank_eq, TauCeti.finrank_detLine,
           TauCeti.finrank_detLine, finrank_self]) :=
@@ -139,7 +139,7 @@ theorem chartCoord_def (D₂ : Λ →L[𝕜] F) (q : E × Λ →L[𝕜] G)
 omit [CompleteSpace 𝕜] [CompleteSpace E] in
 /-- A chart coordinate is a homeomorphism onto `𝕜`. -/
 theorem isInducing_chartCoord (D₂ : Λ →L[𝕜] F) (q : E × Λ →L[𝕜] G)
-    (h : ((T.1.coprod D₂).prod q).IsInvertible) : IsInducing (chartCoord D₂ q h) :=
+    (h : ((T.val.coprod D₂).prod q).IsInvertible) : IsInducing (chartCoord D₂ q h) :=
   (Homeomorph.mk (chartCoord D₂ q h).toEquiv
     (IsModuleTopology.continuous_of_linearMap (chartCoord D₂ q h).toLinearMap)
     (IsModuleTopology.continuous_of_linearMap
@@ -153,13 +153,13 @@ private theorem exists_continuous_chartCoord_symm_eq_smul {X : Type*} [Topologic
     {Λ₃ G₃ : Type*} [NormedAddCommGroup Λ₃] [NormedSpace 𝕜 Λ₃] [FiniteDimensional 𝕜 Λ₃]
     [NormedAddCommGroup G₃] [NormedSpace 𝕜 G₃] [FiniteDimensional 𝕜 G₃]
     {D₂ : Λ →L[𝕜] F} {q : E × Λ →L[𝕜] G} {D₃ : Λ₃ →L[𝕜] F} {q₃ : E × Λ₃ →L[𝕜] G₃}
-    (h : ∀ x, (((S x).1.coprod D₂).prod q).IsInvertible)
-    (h₃ : ∀ x, (((S x).1.coprod D₃).prod q₃).IsInvertible) (x₀ : X) :
+    (h : ∀ x, (((S x).val.coprod D₂).prod q).IsInvertible)
+    (h₃ : ∀ x, (((S x).val.coprod D₃).prod q₃).IsInvertible) (x₀ : X) :
     ∃ c : X → 𝕜, Continuous c ∧ (∀ x, c x ≠ 0) ∧ ∀ x v,
       chartCoord D₃ q₃ (h₃ x) ((chartCoord D₂ q (h x)).symm v) =
         c x • chartCoord D₃ q₃ (h₃ x₀) ((chartCoord D₂ q (h x₀)).symm v) := by
   obtain ⟨c, hc, hc0, hcv⟩ := exists_continuous_detLineChartEquiv_symm_eq_smul
-    (continuous_subtype_val.comp hS) h₃ h x₀
+    (continuous_subtypeVal.comp hS) h₃ h x₀
   refine ⟨c, hc, hc0, fun x v ↦ ?_⟩
   simp only [chartCoord, linearEquiv, LinearEquiv.trans_apply, LinearEquiv.symm_trans_apply]
   rw [← map_smul]
@@ -171,11 +171,11 @@ omit [FiniteDimensional 𝕜 G] in
 /-- The Fredholm operators `T` for which the stabilized pair `(T.coprod D₂).prod q` is invertible
 form an open set. -/
 theorem isOpen_setOf_isInvertible_prod_coprod :
-    IsOpen {T : {T : E →L[𝕜] F // T.IsFredholm} | ((T.1.coprod D₂).prod q).IsInvertible} := by
+    IsOpen {T : {T : E →L[𝕜] F // T.IsFredholm} | ((T.val.coprod D₂).prod q).IsInvertible} := by
   have : CompleteSpace Λ := FiniteDimensional.completeSpace 𝕜 Λ
-  have hc : Continuous fun T : {T : E →L[𝕜] F // T.IsFredholm} ↦ (T.1.coprod D₂).prod q :=
+  have hc : Continuous fun T : {T : E →L[𝕜] F // T.IsFredholm} ↦ (T.val.coprod D₂).prod q :=
     (prodL (E := E × Λ) (F := F) (G := G) 𝕜).continuous.comp
-      ((continuous_subtype_val.continuousLinearMapCoprod continuous_const).prodMk
+      ((continuous_subtypeVal.continuousLinearMapCoprod continuous_const).prodMk
         continuous_const)
   exact isOpen_setOfPred_isInvertible.preimage hc
 
@@ -184,22 +184,22 @@ open scoped Classical in
 `(T.coprod D₂).prod q` is invertible, the determinant line of `T` is identified with `𝕜` by the
 kernel chart coordinate `TauCeti.FredholmDetLine.chartCoord`. -/
 def pretrivialization : Pretrivialization 𝕜 (π 𝕜 (FredholmDetLine 𝕜 E F)) where
-  toFun p := ⟨p.proj, if h : ((p.proj.1.coprod D₂).prod q).IsInvertible then
-    chartCoord D₂ q h p.2 else 0⟩
-  invFun p := ⟨p.1, if h : ((p.1.1.coprod D₂).prod q).IsInvertible then
+  toFun p := ⟨p.proj, if h : ((p.proj.val.coprod D₂).prod q).IsInvertible then
+    chartCoord D₂ q h p.snd else 0⟩
+  invFun p := ⟨p.1, if h : ((p.1.val.coprod D₂).prod q).IsInvertible then
     (chartCoord D₂ q h).symm p.2 else 0⟩
-  source := TotalSpace.proj ⁻¹' {T | ((T.1.coprod D₂).prod q).IsInvertible}
-  target := {T | ((T.1.coprod D₂).prod q).IsInvertible} ×ˢ univ
+  source := TotalSpace.proj ⁻¹' {T | ((T.val.coprod D₂).prod q).IsInvertible}
+  target := {T | ((T.val.coprod D₂).prod q).IsInvertible} ×ˢ univ
   map_source' _ h := ⟨h, mem_univ _⟩
   map_target' _ h := h.1
   left_inv' := by
-    rintro ⟨T, v⟩ (h : ((T.1.coprod D₂).prod q).IsInvertible)
+    rintro ⟨T, v⟩ (h : ((T.val.coprod D₂).prod q).IsInvertible)
     simp only [dite_eq_left h, LinearEquiv.symm_apply_apply]
   right_inv' := by
-    rintro ⟨T, c⟩ ⟨h : ((T.1.coprod D₂).prod q).IsInvertible, -⟩
+    rintro ⟨T, c⟩ ⟨h : ((T.val.coprod D₂).prod q).IsInvertible, -⟩
     simp only [dite_eq_left h, LinearEquiv.apply_symm_apply]
   open_target := (isOpen_setOf_isInvertible_prod_coprod D₂ q).prod isOpen_univ
-  baseSet := {T | ((T.1.coprod D₂).prod q).IsInvertible}
+  baseSet := {T | ((T.val.coprod D₂).prod q).IsInvertible}
   open_baseSet := isOpen_setOf_isInvertible_prod_coprod D₂ q
   source_eq := (rfl)
   target_eq := (rfl)
@@ -209,23 +209,23 @@ def pretrivialization : Pretrivialization 𝕜 (π 𝕜 (FredholmDetLine 𝕜 E 
 invertible. -/
 @[simp]
 theorem mem_pretrivialization_baseSet_iff :
-    T ∈ (pretrivialization D₂ q).baseSet ↔ ((T.1.coprod D₂).prod q).IsInvertible := (Iff.rfl)
+    T ∈ (pretrivialization D₂ q).baseSet ↔ ((T.val.coprod D₂).prod q).IsInvertible := (Iff.rfl)
 
 open scoped Classical in
 private theorem pretrivialization_apply (p : TotalSpace 𝕜 (FredholmDetLine 𝕜 E F)) :
-    pretrivialization D₂ q p = (p.proj, if h : ((p.proj.1.coprod D₂).prod q).IsInvertible then
-      chartCoord D₂ q h p.2 else 0) := (rfl)
+    pretrivialization D₂ q p = (p.proj, if h : ((p.proj.val.coprod D₂).prod q).IsInvertible then
+      chartCoord D₂ q h p.snd else 0) := (rfl)
 
 variable {D₂ q}
 
 /-- Over its base set, a kernel chart reads the determinant line in the chart coordinate. -/
-theorem pretrivialization_apply_mk (h : ((T.1.coprod D₂).prod q).IsInvertible)
+theorem pretrivialization_apply_mk (h : ((T.val.coprod D₂).prod q).IsInvertible)
     (v : FredholmDetLine 𝕜 E F T) :
     pretrivialization D₂ q ⟨T, v⟩ = (T, chartCoord D₂ q h v) := by
   rw [pretrivialization_apply, dite_eq_left h]
 
 /-- Over its base set, the inverse of a kernel chart is the inverse chart coordinate. -/
-theorem pretrivialization_symm_apply (h : ((T.1.coprod D₂).prod q).IsInvertible) (c : 𝕜) :
+theorem pretrivialization_symm_apply (h : ((T.val.coprod D₂).prod q).IsInvertible) (c : 𝕜) :
     (pretrivialization D₂ q).symm T c = (chartCoord D₂ q h).symm c := by
   have key := (pretrivialization D₂ q).apply_mk_symm h c
   rw [pretrivialization_apply_mk h, Prod.mk.injEq] at key
@@ -252,11 +252,12 @@ theorem continuousOn_pretrivialization_coordChange :
   · rw [hU]
     exact continuousOn_empty _
   rw [continuousOn_iff_continuous_domRestrict]
-  obtain ⟨c, hc, -, hcv⟩ := exists_continuous_chartCoord_symm_eq_smul continuous_subtype_val
-    (fun T : U ↦ T.2.1) (fun T : U ↦ T.2.2) ⟨T₀, hT₀⟩
+  obtain ⟨c, hc, -, hcv⟩ := exists_continuous_chartCoord_symm_eq_smul continuous_subtypeVal
+    (fun T : U ↦ T.property.1) (fun T : U ↦ T.property.2) ⟨T₀, hT₀⟩
   refine (hc.smul (continuous_const (y := chartCoord D₃ q₃ hT₀.2
     ((chartCoord D₂ q hT₀.1).symm 1)))).congr fun T ↦ ?_
-  rw [domRestrict_apply, pretrivialization_symm_apply T.2.1, pretrivialization_apply_mk T.2.2,
+  rw [domRestrict_apply, pretrivialization_symm_apply T.property.1,
+      pretrivialization_apply_mk T.property.2,
     hcv, Pi.smul_apply']
 
 /-- The transition between two kernel charts is multiplication by a continuous scalar on the
@@ -281,7 +282,7 @@ private theorem exists_pretrivialization (T : {T : E →L[𝕜] F // T.IsFredhol
     ∃ e : Pretrivialization 𝕜 (π 𝕜 (FredholmDetLine 𝕜 E F)),
       (∃ (n m : ℕ) (D₂ : (Fin n → 𝕜) →L[𝕜] F) (q : E × (Fin n → 𝕜) →L[𝕜] (Fin m → 𝕜)),
         e = pretrivialization D₂ q) ∧ T ∈ e.baseSet := by
-  obtain ⟨n, m, D₂, q, h⟩ := T.2.exists_isInvertible_prod_coprod
+  obtain ⟨n, m, D₂, q, h⟩ := T.property.exists_isInvertible_prod_coprod
   exact ⟨_, ⟨n, m, D₂, q, rfl⟩, h⟩
 
 /-- **The determinant line bundle as a vector prebundle.** Its atlas consists of the kernel charts
@@ -344,7 +345,7 @@ instance : MemTrivializationAtlas (trivialization D₂ q) :=
 
 @[simp]
 theorem trivialization_baseSet :
-    (trivialization D₂ q).baseSet = {T | ((T.1.coprod D₂).prod q).IsInvertible} := (rfl)
+    (trivialization D₂ q).baseSet = {T | ((T.val.coprod D₂).prod q).IsInvertible} := (rfl)
 
 /-- The trivialization of a kernel chart is the kernel chart. -/
 @[simp]
@@ -354,14 +355,14 @@ theorem trivialization_toPretrivialization :
 /-- Over its base set, the trivialization of a kernel chart reads the determinant line in the chart
 coordinate. -/
 theorem trivialization_apply_mk {T : {T : E →L[𝕜] F // T.IsFredholm}}
-    (h : ((T.1.coprod D₂).prod q).IsInvertible) (v : FredholmDetLine 𝕜 E F T) :
+    (h : ((T.val.coprod D₂).prod q).IsInvertible) (v : FredholmDetLine 𝕜 E F T) :
     trivialization D₂ q ⟨T, v⟩ = (T, chartCoord D₂ q h v) :=
   pretrivialization_apply_mk h v
 
 /-- Over its base set, the inverse of the trivialization of a kernel chart is the inverse chart
 coordinate. -/
 theorem trivialization_symm_apply {T : {T : E →L[𝕜] F // T.IsFredholm}}
-    (h : ((T.1.coprod D₂).prod q).IsInvertible) (c : 𝕜) :
+    (h : ((T.val.coprod D₂).prod q).IsInvertible) (c : 𝕜) :
     (trivialization D₂ q).symm T c = (chartCoord D₂ q h).symm c :=
   pretrivialization_symm_apply h c
 

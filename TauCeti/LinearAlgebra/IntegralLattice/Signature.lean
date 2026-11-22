@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Gram
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
+import TauCeti.Algebra.Order.BigOperators.Ring.Finset
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 
 /-!
@@ -123,7 +124,7 @@ theorem determinant_eq_neg_one_pow_sigNeg_mul_discriminant :
   obtain ⟨v, hv⟩ := LinearMap.BilinForm.exists_orthogonal_basis
     (LinearMap.BilinForm.isSymm_iff.mp L.isSymm)
   let e := (Module.Free.chooseBasis ℤ L).reindex (L.rationalBasis.indexEquiv v)
-  let b := e.extendOfIsLattice ℚ
+  let b := e.extendOfIsFullLattice ℚ
   set d : Fin (Module.finrank ℚ V) → ℚ := fun i ↦ L.form (v i) (v i)
   have hd : ∀ i, d i ≠ 0 := hv.not_isOrtho_basis_self_of_separatingLeft hnd.1
   have hdiag : LinearMap.BilinForm.toMatrix v L.form = Matrix.diagonal d := by
@@ -147,14 +148,8 @@ theorem determinant_eq_neg_one_pow_sigNeg_mul_discriminant :
     ring
   -- The sign of `∏ i, d i` is `(-1) ^ L.sigNeg`, and `(b.toMatrix v).det ^ 2` is positive.
   have habs : ∏ i, |d i| = (-1) ^ L.sigNeg * ∏ i, d i := by
-    have hsign : (-1 : ℚ) ^ (Finset.univ.filter fun i ↦ d i < 0).card =
-        ∏ i, if d i < 0 then -1 else 1 := by
-      rw [Finset.prod_ite, Finset.prod_const, Finset.prod_const_one, mul_one]
-    rw [hneg, hsign, ← Finset.prod_mul_distrib]
-    refine Finset.prod_congr rfl fun i _ ↦ ?_
-    split_ifs with h
-    · rw [abs_of_neg h]; ring
-    · rw [abs_of_nonneg (not_lt.mp h)]; ring
+    rw [hneg]
+    exact Finset.prod_abs_eq_neg_one_pow_card_filter_neg_mul_prod Finset.univ d
   have hpos : (0 : ℚ) < (-1) ^ L.sigNeg * L.determinant := by
     have h := Finset.prod_pos fun i (_ : i ∈ Finset.univ) ↦ abs_pos.mpr (hd i)
     rw [habs, ← hdet, ← mul_assoc] at h
@@ -337,9 +332,9 @@ theorem IsIndefinite.exists_carrier_pos_and_neg (hL : L.IsIndefinite) :
     ∃ x y : L, 0 < L.form x x ∧ L.form y y < 0 := by
   obtain ⟨⟨p, hp⟩, ⟨q, hq⟩⟩ := L.isIndefinite_iff_exists_pos_and_exists_neg.mp hL
   obtain ⟨s, hs, hsp⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier
-    Submodule.IsLattice.span_eq_top p
+    Submodule.IsFullLattice.span_eq_top p
   obtain ⟨t, ht, htq⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier
-    Submodule.IsLattice.span_eq_top q
+    Submodule.IsFullLattice.span_eq_top q
   have hscale (r : ℤ) (z : V) : L.form (r • z) (r • z) = (r : ℚ) ^ 2 * L.form z z := by
     simp only [← Int.cast_smul_eq_zsmul ℚ, map_smul, LinearMap.smul_apply, smul_eq_mul]
     ring

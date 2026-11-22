@@ -9,22 +9,25 @@ public import Mathlib.RingTheory.Etale.Field
 public import Mathlib.FieldTheory.Perfect
 
 /-!
-# Finite reduced algebras over perfect fields
+# Étale algebras over perfect fields
 
-A finite reduced commutative algebra over a perfect field is étale. This permits finite
-affine quotients to be recognized as finite étale schemes from their coordinate algebras.
+An algebra over a perfect field is étale exactly when it is finite and reduced. This permits
+finite affine quotients to be recognized as finite étale schemes from their coordinate algebras.
 -/
 
 public section
 
 namespace TauCeti
 
-/- Mathlib's Artinian decomposition `IsArtinianRing.equivPi` gives finite field-extension
-factors, which are separable over the perfect base field; `Algebra.Etale.iff_exists_algEquiv_prod`
-recognizes such a product as étale. -/
-/-- A finite reduced commutative algebra over a perfect field is étale. -/
-theorem algebraEtale_of_finite_of_isReduced (k A : Type*) [Field k] [PerfectField k]
-    [CommRing A] [Algebra k A] [Module.Finite k A] [IsReduced A] : Algebra.Etale k A := by
+/- Étale algebras over any field are finite and reduced by Mathlib's unramified theory. For the
+converse, Mathlib's Artinian decomposition `IsArtinianRing.equivPi` gives finite field-extension
+factors, which are separable over the perfect base field;
+`Algebra.Etale.iff_exists_algEquiv_prod` recognizes such a product as étale. -/
+/-- An algebra over a perfect field is étale if and only if it is finite and reduced. -/
+theorem algebraEtale_iff_finite_and_isReduced {k A : Type*} [Field k] [PerfectField k]
+    [CommRing A] [Algebra k A] : Algebra.Etale k A ↔ Module.Finite k A ∧ IsReduced A := by
+  refine ⟨fun _ ↦ ⟨Algebra.FormallyUnramified.finite_of_free k A,
+    Algebra.FormallyUnramified.isReduced_of_field k A⟩, fun ⟨_, _⟩ ↦ ?_⟩
   have : IsArtinianRing A := .of_finite k A
   let _ (m : MaximalSpectrum A) : Field (A ⧸ m.asIdeal) := Ideal.Quotient.field _
   -- Each factor `A ⧸ m` is finite over `k` as a quotient of `A`, and separable as `k` is perfect.

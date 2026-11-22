@@ -133,7 +133,7 @@ theorem exists_weylGroup_repr_smul_pos_and_neg {x : M} (hx₀ : x ≠ 0)
     have hαα : 0 < P.RootForm (P.root i) (P.root i) :=
       (P.zero_le_rootForm _).lt_of_ne fun h' ↦ P.ne_zero i (P.rootForm_anisotropic _ h'.symm)
     rw [toInvariantForm_form, hsymm] at h
-    nlinarith [(mem_openDominantChamber P b _).mp hwv i i.2]
+    nlinarith [(mem_openDominantChamber P b _).mp hwv i i.property]
   -- Expanding `w • x` in the simple roots, `B(w • x, w • v) = 0` is a vanishing positive-weighted
   -- sum of its coefficients.
   set c := b.toWeightBasis.repr (w • x)

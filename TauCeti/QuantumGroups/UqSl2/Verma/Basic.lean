@@ -10,8 +10,6 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 public import TauCeti.QuantumGroups.UqSl2.Commutator
 public import TauCeti.QuantumGroups.UqSl2.Weights
 
-import Mathlib.Tactic
-
 /-!
 # Verma modules of `U_q(sl₂)`
 
@@ -27,12 +25,14 @@ Writing `v_j = F^j v₀`, the action of the generators is
 * `K v_j = q^(-2j) μ v_j` and `K⁻¹ v_j = q^(2j) μ⁻¹ v_j`,
 * `E v₀ = 0` and `E v_(j + 1) = [j + 1]_q (q^(-j) μ - q^j μ⁻¹) / (q - q⁻¹) v_j`,
 
-where `[r]_q` is the symmetric quantum integer. When `q` and `μ` are nonzero, the vectors `v_j`
-form a basis of `M(μ)`.
+where `[r]_q` is the symmetric quantum integer. At `q = ±1` the quotient by `q - q⁻¹` in the last
+formula is Lean's `x / 0 = 0`; the formula still holds there, because `E` and `F` commute in
+`UqSl2 (±1)`. When `q` and `μ` are nonzero, the vectors `v_j` form a basis of `M(μ)`.
 
-The coefficient of `E` shows where `M(μ)` acquires singular vectors: at a generic parameter,
-`E v_(j + 1) = 0` exactly when `μ² = q^(2j)`, that is, when `μ = ± q^j` is the highest weight of
-one of the signed simple modules `L_j^±`. In that case `v_(j + 1)` is a vector of weight
+The coefficient of `E` shows where `M(μ)` acquires singular vectors: at a generic parameter and
+for nonzero `μ` (for `μ = 0` the module `M(0)` is zero, since `K` is a unit and `K - 0` lies in
+the ideal), `E v_(j + 1) = 0` exactly when `μ² = q^(2j)`, that is, when `μ = ± q^j` is the highest
+weight of one of the signed simple modules `L_j^±`. In that case `v_(j + 1)` is a vector of weight
 `q^(-2(j + 1)) μ` killed by `E` inside `M(μ)`.
 
 ## Main definitions
@@ -160,16 +160,8 @@ theorem k_smul_vec_zero : k q • vec q μ 0 = μ • vec q μ 0 := by
   exact k_sub_algebraMap_mem_vermaIdeal μ
 
 /-- The action of `K⁻¹` on the highest vector. -/
-theorem kInv_smul_vec_zero : kInv q • vec q μ 0 = μ⁻¹ • vec q μ 0 := by
-  rcases eq_or_ne μ 0 with rfl | hμ
-  · -- For `μ = 0` the highest vector is `K⁻¹ K v₀ = 0`.
-    have h : vec q 0 0 = 0 := by
-      rw [← one_smul (UqSl2 q) (vec q 0 0), ← kInv_mul_k, mul_smul, k_smul_vec_zero, zero_smul,
-        smul_zero]
-    rw [h, smul_zero, smul_zero]
-  · calc kInv q • vec q μ 0 = μ⁻¹ • kInv q • μ • vec q μ 0 := by
-          rw [smul_comm (kInv q) μ, inv_smul_smul₀ hμ]
-      _ = μ⁻¹ • vec q μ 0 := by rw [← k_smul_vec_zero, ← mul_smul, kInv_mul_k, one_smul]
+theorem kInv_smul_vec_zero : kInv q • vec q μ 0 = μ⁻¹ • vec q μ 0 :=
+  kInv_smul_of_mem_weightSpace (mem_weightSpace_iff.mpr k_smul_vec_zero)
 
 /-- The action of `K`: `K v_j = q^(-2j) μ v_j`. -/
 @[simp]
@@ -486,15 +478,23 @@ theorem vec_ne_zero (hq : q ≠ 0) (hμ : μ ≠ 0) (j : ℕ) : vec q μ j ≠ 0
 
 /-! ### Singular vectors -/
 
-/-- The singular-vector criterion: at a generic parameter and for nonzero `μ`, the vector
-`v_(j + 1)` is killed by `E` exactly when `μ² = q^(2j)`. -/
-theorem e_smul_vec_succ_eq_zero_iff (hq : IsGenericQuantumParameter q) (hμ : μ ≠ 0) (j : ℕ) :
-    e q • vec q μ (j + 1) = 0 ↔ μ ^ 2 = q ^ (2 * j) := by
-  have hq0 := hq.ne_zero
-  rw [e_smul_vec_succ, smul_eq_zero, or_iff_left (vec_ne_zero hq0 hμ j),
-    div_eq_zero_iff, or_iff_left hq.sub_inv_ne_zero, mul_eq_zero,
-    or_iff_right (quantumInteger_ne_zero hq (by omega)), sub_eq_zero, inv_pow, pow_mul']
-  have hx : q ^ j ≠ 0 := pow_ne_zero _ hq0
+/-- The singular-vector criterion: for `q ≠ 0` with `q ^ (2 * (j + 1)) ≠ 1` (for instance at a
+generic parameter) and nonzero `μ`, the vector `v_(j + 1)` is killed by `E` exactly when
+`μ² = q^(2j)`. -/
+theorem e_smul_vec_succ_eq_zero_iff (hq : q ≠ 0) (hμ : μ ≠ 0) (j : ℕ)
+    (hj : q ^ (2 * (j + 1)) ≠ 1) : e q • vec q μ (j + 1) = 0 ↔ μ ^ 2 = q ^ (2 * j) := by
+  have hsub : q - q⁻¹ ≠ 0 := by
+    intro h
+    have hsq : q ^ 2 = 1 := by
+      field_simp at h
+      linear_combination h
+    exact hj (by rw [pow_mul, hsq, one_pow])
+  have hqi : quantumInteger q (j + 1) ≠ 0 := fun h => hj (by
+    exact_mod_cast (quantumInteger_eq_zero_iff hq (j + 1)).mp h)
+  rw [e_smul_vec_succ, smul_eq_zero, or_iff_left (vec_ne_zero hq hμ j),
+    div_eq_zero_iff, or_iff_left hsub, mul_eq_zero, or_iff_right hqi, sub_eq_zero, inv_pow,
+    pow_mul']
+  have hx : q ^ j ≠ 0 := pow_ne_zero _ hq
   generalize q ^ j = x at hx ⊢
   constructor <;> intro h <;> field_simp at h ⊢ <;> linear_combination h
 

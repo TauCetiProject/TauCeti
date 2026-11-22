@@ -70,6 +70,13 @@ namespace SurfaceModel
 
 attribute [instance] finite_face
 
+/-- A surface model is determined by its underlying polygonal complex. -/
+theorem toPolygonalComplex_injective :
+    Function.Injective
+      (toPolygonalComplex : SurfaceModel.{u, v, w} → PolygonalComplex.{u, v, w}) := by
+  rintro ⟨⟩ ⟨⟩ rfl
+  rfl
+
 variable (S : SurfaceModel.{u, v, w})
 
 /-- Every germ of a surface model has degree one or two in its link. -/

@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Euclidean.Plane
+public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Basic
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.HalfDisc.Basic
-public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.LinearIsometry
+public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.ContDiff
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
@@ -28,20 +29,33 @@ of the analysis of pseudoholomorphic curves:
 On both, forgetting the highest weak derivative is a compact operator `W^{k+1,p} → W^{k,p}` for
 every `k` and every `1 ≤ p ≤ ∞`, and for `2 < k p` every member of `W^{k,p}` has a representative
 which is Hölder of exponent `1 - 2/(k p)` up to the boundary, depending linearly and boundedly on
-it. These are global statements on the closed disc and the closed half-disc; the local forms on
-open subsets of `ℂ` and of the closed upper half-plane are stated for `TauCeti.MemWkpLoc` in
-`TauCeti.Analysis.Sobolev.Local`.
+it. These are global statements on the closed disc and the closed half-disc; local forms of the
+compactness and Morrey statements on open subsets of `ℂ` and of the closed upper half-plane are
+stated for `TauCeti.MemWkpLoc` in `TauCeti.Analysis.Sobolev.Local.Compactness`,
+`TauCeti.Analysis.Sobolev.Local.Morrey` and `TauCeti.Analysis.Sobolev.Local.Morrey.HalfDisc`.
+Finally, for `p > 2`, members of `W^{j+1,p}` have `Cʲ` representatives whose derivatives of order
+at most `j` are Hölder of exponent `1 - 2/p` up to the boundary.
+
+The compactness statement also holds on the translates `{z | |z - x| < r, 0 < Im z}` of the
+half-disc by real points `x`, the upper halves of the discs centred on the real axis, since a
+translation is an affine isometry. These cover the closed upper half-plane near the axis, which is
+how they enter the local compactness statement up to the axis.
 
 ## Main declarations
 
 * `TauCeti.Wkp.isCompactOperator_lowerOrderL_complexBall`,
-  `TauCeti.Wkp.isCompactOperator_lowerOrderL_complexHalfDisc`: Rellich–Kondrachov.
+  `TauCeti.Wkp.isCompactOperator_lowerOrderL_complexHalfDisc`,
+  `TauCeti.Wkp.isCompactOperator_lowerOrderL_upperHalf_complexBall`: Rellich–Kondrachov.
 * `TauCeti.Wkp.exists_morreyEmbeddingL_complexBall`,
   `TauCeti.Wkp.exists_morreyEmbeddingL_complexHalfDisc`: the Morrey embedding
   `W^{k+1,p} → C^{0,1-2/q}` for `1/p - k/2 ≤ 1/q ≤ 1/p` and `2 < q < ∞`.
 * `TauCeti.Wkp.exists_holderEmbeddingL_complexBall`,
   `TauCeti.Wkp.exists_holderEmbeddingL_complexHalfDisc`: the Hölder embedding
   `W^{k,p} → C^{0,1-2/(k p)}` for `2 < k p`.
+* `TauCeti.Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_complexBall` and, for a half-disc
+  with arbitrary real centre,
+  `TauCeti.Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_complexBall_upperHalf`:
+  `C^{j,1-2/p}` representatives of members of `W^{j+1,p}` for `p > 2`.
 
 ## References
 
@@ -87,6 +101,16 @@ private theorem isBounded_complexHalfDisc (r : ℝ) :
   rw [mem_ball, dist_zero_right, ← Complex.equivRealProdL2Swap.norm_map]
   exact (mem_halfDisc.1 hz).1
 
+/-- In the coordinates `(im z, re z)`, the upper half of the disc `ball x r` centred at a real
+point `x` is the model half-disc translated by `(0, x)`. -/
+private theorem image_upperHalf_complexBall (x r : ℝ) :
+    Complex.equivRealProdL2Swap '' ((⟨ball (x : ℂ) r, isOpen_ball⟩ : Opens ℂ).upperHalf : Set ℂ) =
+      AffineIsometryEquiv.constVAdd ℝ (WithLp 2 (ℝ × ℝ)) (Complex.equivRealProdL2Swap x) ''
+        (halfDisc r : Set (WithLp 2 (ℝ × ℝ))) := by
+  rw [Complex.equivRealProdL2Swap.image_eq_preimage_symm]
+  ext ⟨a, b⟩
+  simp
+
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- **Rellich–Kondrachov on a disc.** On a disc `Metric.ball c r` of `ℂ`, forgetting the highest
@@ -109,6 +133,19 @@ theorem isCompactOperator_lowerOrderL_complexHalfDisc (r : ℝ) (k : ℕ) :
   obtain ⟨L, hL⟩ := exists_isLipschitzDomainWith_image_complexHalfDisc r
   exact isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image (L := L)
     Complex.equivRealProdL2Swap hL (isBounded_complexHalfDisc r) k
+
+/-- **Rellich–Kondrachov on a half-disc centred on the real axis.** On the upper half
+`ball x r ∩ {0 < im}` of a disc of `ℂ` centred at a real point `x`, forgetting the highest weak
+derivative is a compact operator `W^{k+1,p} → W^{k,p}` for every `k` and every `1 ≤ p ≤ ∞`. -/
+theorem isCompactOperator_lowerOrderL_upperHalf_complexBall (x r : ℝ) (k : ℕ) :
+    IsCompactOperator (lowerOrderL (mu := volume) (p := p)
+      (Omega := (⟨ball (x : ℂ) r, isOpen_ball⟩ : Opens ℂ).upperHalf) k) := by
+  obtain ⟨L, hL⟩ := exists_isLipschitzDomainWith_halfDisc r
+  refine isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image (L := L)
+    Complex.equivRealProdL2Swap ?_
+    (isBounded_ball.subset fun _ hz => (Opens.mem_upperHalf.1 hz).1) k
+  rw [image_upperHalf_complexBall]
+  exact hL.image_affineIsometryEquiv _
 
 /-- **Morrey's embedding on a disc.** On a disc `Metric.ball c r` of `ℂ`, if
 `1/p - k/2 ≤ 1/q ≤ 1/p` with `2 < q < ∞`, every `u ∈ W^{k+1,p}` agrees almost everywhere with a
@@ -184,6 +221,51 @@ theorem exists_holderEmbeddingL_complexHalfDisc {p : ℝ≥0} [Fact (1 ≤ (p : 
     (by simpa [Complex.finrank_real_complex] using hkp)
   rw [Complex.finrank_real_complex, Nat.cast_ofNat] at h
   exact h
+
+/-- **`C^{j,1-2/p}` up to the boundary of a disc.** On a disc `Metric.ball c r` of `ℂ`, for
+`2 < p < ∞` there is a constant `K` such that every `u ∈ W^{j+1,p}` agrees almost everywhere with a
+function `g` that is `Cʲ` on the disc, and whose derivatives of order `i ≤ j` are bounded by
+`K ‖u‖` and Hölder of exponent `1 - 2/p` with constant `K ‖u‖` on the disc. In particular they
+extend continuously to the closed disc. -/
+theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_complexBall {p : ℝ≥0}
+    [Fact (1 ≤ (p : ℝ≥0∞))] (c : ℂ) (r : ℝ) (hp : 2 < p) (j : ℕ) :
+    ∃ K : ℝ≥0, ∀ u : Wkp volume (⟨ball c r, isOpen_ball⟩ : Opens ℂ) p (j + 1), ∃ g : ℂ → ℝ,
+      ContDiffOn ℝ j g (ball c r) ∧
+      (value (j + 1) u : ℂ → ℝ) =ᵐ[volume.restrict (ball c r)] g ∧ ∀ i ≤ j,
+        (∀ z ∈ ball c r, ‖iteratedFDeriv ℝ i g z‖ ≤ K * ‖u‖) ∧
+          HolderOnWith (K * ‖u‖₊) (1 - 2 / p) (iteratedFDeriv ℝ i g) (ball c r) := by
+  have h := exists_contDiffOn_holderOnWith_iteratedFDeriv_of_isLipschitzDomainWith_image
+    (p := p) Complex.equivRealProdL2 (Ω := ⟨ball c r, isOpen_ball⟩)
+    (isLipschitzDomainWith_image_complexBall c r) isBounded_ball
+    (by simpa [Complex.finrank_real_complex] using hp) j
+  rw [Complex.finrank_real_complex, Nat.cast_ofNat] at h
+  exact h
+
+/-- **`C^{j,1-2/p}` up to the boundary of a planar half-disc with real centre.** On the half-disc
+`{z | |z - x| < r, 0 < Im z}` centred at a real point `x`, for `2 < p < ∞` there is a constant
+`K` such that every `u ∈ W^{j+1,p}` agrees almost everywhere with a function `g` that is `Cʲ` on the
+half-disc, and whose derivatives of order `i ≤ j` are bounded by `K ‖u‖` and Hölder of exponent
+`1 - 2/p` with constant `K ‖u‖` on the half-disc. -/
+theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_complexBall_upperHalf {p : ℝ≥0}
+    [Fact (1 ≤ (p : ℝ≥0∞))] (x r : ℝ) (hp : 2 < p) (j : ℕ) :
+    ∃ K : ℝ≥0, ∀ u : Wkp volume (Opens.upperHalf ⟨ball (x : ℂ) r, isOpen_ball⟩) p (j + 1),
+      ∃ g : ℂ → ℝ, ContDiffOn ℝ j g (ball (x : ℂ) r ∩ {z | 0 < z.im}) ∧
+        (value (j + 1) u : ℂ → ℝ) =ᵐ[volume.restrict (ball (x : ℂ) r ∩ {z | 0 < z.im})] g ∧
+        ∀ i ≤ j, (∀ z ∈ ball (x : ℂ) r ∩ {z | 0 < z.im}, ‖iteratedFDeriv ℝ i g z‖ ≤ K * ‖u‖) ∧
+          HolderOnWith (K * ‖u‖₊) (1 - 2 / p) (iteratedFDeriv ℝ i g)
+            (ball (x : ℂ) r ∩ {z | 0 < z.im}) := by
+  obtain ⟨L, hL⟩ := exists_isLipschitzDomainWith_halfDisc r
+  have h := exists_contDiffOn_holderOnWith_iteratedFDeriv_of_isLipschitzDomainWith_image
+    (p := p) Complex.equivRealProdL2Swap (Ω := Opens.upperHalf ⟨ball (x : ℂ) r, isOpen_ball⟩)
+    (by rw [image_upperHalf_complexBall]; exact hL.image_affineIsometryEquiv _)
+    (isBounded_ball.subset fun _ hz => (Opens.mem_upperHalf.1 hz).1)
+    (by simpa [Complex.finrank_real_complex] using hp) j
+  rw [Complex.finrank_real_complex, Nat.cast_ofNat] at h
+  obtain ⟨K, hK⟩ := h
+  refine ⟨K, fun u => ?_⟩
+  obtain ⟨g, hg, hug, hb⟩ := hK u
+  simp only [← SetLike.mem_coe, Opens.coe_upperHalf, Opens.coe_mk] at hg hug hb
+  exact ⟨g, hg, hug, hb⟩
 
 end Wkp
 

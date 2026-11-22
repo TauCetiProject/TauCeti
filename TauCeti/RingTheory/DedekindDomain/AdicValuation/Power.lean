@@ -59,7 +59,7 @@ theorem exists_pow_eq_adicCompletion_iff (v : HeightOneSpectrum R) {n : ℕ} {a 
       apply (pow_le_one_iff hn0).mp
       rw [← map_pow, hx]
       exact (mem_adicCompletionIntegers R K v).mp
-        (algebraMap R (v.adicCompletionIntegers K) a).2
+        (algebraMap R (v.adicCompletionIntegers K) a).property
     let y : v.adicCompletionIntegers K := ⟨x, hxint⟩
     have hy : y ^ n = algebraMap R (v.adicCompletionIntegers K) a := by
       apply Subtype.ext

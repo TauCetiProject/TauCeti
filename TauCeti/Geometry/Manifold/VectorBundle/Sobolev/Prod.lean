@@ -267,9 +267,11 @@ coordinates of the projections and inclusions of `F × F'` in the bases `Module.
 def prodEquiv :
     SobolevSection (A.prod h) μ p k ≃L[ℝ]
       SobolevSection A μ p k × SobolevSection (A.ofBaseSet h) μ p k :=
-  ContinuousLinearEquiv.equivOfInverse ((fstL A h μ p k).prod (sndL A h μ p k)) (pairL A h μ p k)
-    (fun w ↦ SectionChartData.eq_of_chartValueL_ae_eq fun i ↦
+  ContinuousLinearEquiv.ofContinuousLinearMap ((fstL A h μ p k).prod (sndL A h μ p k))
+    (pairL A h μ p k)
+    (h₂ := ContinuousLinearMap.ext fun w ↦ SectionChartData.eq_of_chartValueL_ae_eq fun i ↦
       (ae_restrict_image_prod_iff (A := A) (h := h)).2 <| by
+      dsimp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply]
       filter_upwards [chartValueL_inlData_add_inrData_ae (h := h) (fstData h μ p k w)
           (sndData h μ p k w) i,
         chartValueL_fstData_ae (w : (A.prod h).sectionChartData.SobolevData μ p k) i,
@@ -277,8 +279,9 @@ def prodEquiv :
         with y h₁ h₂ h₃
       rw [ContinuousLinearMap.prod_apply, coe_pairL, coe_fstL, coe_sndL]
       exact h₁.trans (Prod.ext h₂ h₃))
-    fun w ↦ by
+    (h₁ := ContinuousLinearMap.ext fun w ↦ by
       obtain ⟨u, v⟩ := w
+      dsimp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply]
       refine Prod.ext (SectionChartData.eq_of_chartValueL_ae_eq fun i ↦ ?_)
         (SectionChartData.eq_of_chartValueL_ae_eq fun i ↦
           (ae_restrict_image_ofBaseSet_iff (A := A) (h := h)).2 ?_)
@@ -295,17 +298,17 @@ def prodEquiv :
             (v : (A.ofBaseSet h).sectionChartData.SobolevData μ p k) i] with y h₁ h₂
         rw [ContinuousLinearMap.prod_apply, coe_sndL, coe_pairL]
         rw [coe_pairL] at h₁
-        exact h₁.trans (congrArg Prod.snd h₂)
+        exact h₁.trans (congrArg Prod.snd h₂))
 
 private theorem prodEquiv_apply (w : SobolevSection (A.prod h) μ p k) :
     prodEquiv A h μ p k w = (fstL A h μ p k w, sndL A h μ p k w) := by
-  rw [prodEquiv, ContinuousLinearEquiv.equivOfInverse_apply, ContinuousLinearMap.prod_apply]
+  rw [prodEquiv, ContinuousLinearEquiv.coe_ofContinuousLinearMap, ContinuousLinearMap.prod_apply]
 
 private theorem prodEquiv_symm_apply
     (w : SobolevSection A μ p k × SobolevSection (A.ofBaseSet h) μ p k) :
     (prodEquiv A h μ p k).symm w = pairL A h μ p k w := by
-  rw [prodEquiv, ContinuousLinearEquiv.symm_equivOfInverse,
-    ContinuousLinearEquiv.equivOfInverse_apply]
+  rw [prodEquiv, ContinuousLinearEquiv.symm_ofContinuousLinearMap,
+    ContinuousLinearEquiv.coe_ofContinuousLinearMap]
 
 variable {A h μ p k}
 

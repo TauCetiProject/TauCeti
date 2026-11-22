@@ -64,7 +64,7 @@ local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 /-- The point `2 vₙ v - eₙ` of the unit sphere, for a unit vector `v`. -/
 private def toSphereAux (v : sphere (0 : E) 1) : sphere (0 : E) 1 :=
   ⟨(2 * (v : E) (Fin.last n)) • (v : E) - EuclideanSpace.single (Fin.last n) 1, by
-    have hv : ‖(v : E)‖ = 1 := mem_sphere_zero_iff_norm.1 v.2
+    have hv : ‖(v : E)‖ = 1 := mem_sphere_zero_iff_norm.1 v.property
     rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
       norm_sub_sq_real, norm_smul, inner_smul_left, EuclideanSpace.inner_single_right,
       PiLp.norm_single, hv]
@@ -138,7 +138,7 @@ private theorem coe_singleLast :
 private theorem norm_add_single_sq (w : sphere (0 : E) 1) :
     ‖(w : E) + EuclideanSpace.single (Fin.last n) 1‖ ^ 2 = 2 * (1 + (w : E) (Fin.last n)) := by
   rw [norm_add_sq_real, EuclideanSpace.inner_single_right, PiLp.norm_single,
-    mem_sphere_zero_iff_norm.1 w.2]
+    mem_sphere_zero_iff_norm.1 w.property]
   simp only [one_mul, norm_one, conj_trivial]
   ring
 
@@ -179,7 +179,7 @@ private theorem toSphereInv_toSphere {p : RealProjectiveSpace n}
       (2 * (v : E) (Fin.last n)) • (v : E) := by
     rw [coe_toSphere_mk, sub_add_cancel]
   have hnorm : ‖(2 * (v : E) (Fin.last n)) • (v : E)‖ = |2 * (v : E) (Fin.last n)| := by
-    rw [norm_smul, mem_sphere_zero_iff_norm.1 v.2, mul_one, Real.norm_eq_abs]
+    rw [norm_smul, mem_sphere_zero_iff_norm.1 v.property, mul_one, Real.norm_eq_abs]
   simp only [Subtype.ext_iff, coe_neg_sphere, hs, hnorm, smul_smul]
   rcases hvn.lt_or_gt with h | h
   · right
@@ -192,7 +192,7 @@ private theorem continuousOn_toSphereInv :
   set T := {w : sphere (0 : E) 1 | (w : E) + EuclideanSpace.single (Fin.last n) 1 ≠ 0}
   let s : T → E := fun w ↦ ((w : sphere (0 : E) 1) : E) + EuclideanSpace.single (Fin.last n) 1
   have hs : Continuous s := by fun_prop
-  have hs0 (w : T) : s w ≠ 0 := w.2
+  have hs0 (w : T) : s w ≠ 0 := w.property
   -- On `T`, the local inverse is the class of the normalisation of `w + eₙ`.
   let g : T → sphere (0 : E) 1 := fun w ↦ ⟨‖s w‖⁻¹ • s w, by
     rw [mem_sphere_zero_iff_norm]
@@ -279,7 +279,7 @@ private theorem isIso_singularHomologyMap_toSpherePairMap (k : ℕ) :
         (Y := TopCat.of (toSphereChart n).target) (toSphereChart n).toHomeomorphSourceTarget
         (B := Subtype.val ⁻¹' {basePoint n}ᶜ)
         (B' := Subtype.val ⁻¹' {toSphereChart n (basePoint n)}ᶜ)
-        fun z ↦ ((toSphereChart n).injOn.eq_iff z.2 hx).not.symm).hom ≫
+        fun z ↦ ((toSphereChart n).injOn.eq_iff z.property hx).not.symm).hom ≫
       TopPair.excisionMap (X := TopCat.of (sphere (0 : E) 1)) (toSphereChart n).target
         {toSphereChart n (basePoint n)}ᶜ := by
     apply TopPair.hom_ext_of_fst
