@@ -49,6 +49,8 @@ of `q`, and the gaps between equally spaced times are the length divided by `m +
 
 * `TauCeti.Manifold.sample_cyclicDistanceCutBrokenGeodesic_mem_cyclicDistanceCut`: the equally
   spaced samples of a broken geodesic through a tuple of a distance cut lie in a distance cut.
+* `TauCeti.Manifold.coe_cyclicDistanceCutSampleBrokenGeodesicHomotopy_apply_zero`: the slide keeps
+  the first vertex.
 * `TauCeti.Manifold.homotopic_cyclicDistanceCutRepeatFirstIterate_sampleBrokenGeodesic`:
   `ιᵐ⁻¹ ∘ ⋯ ∘ ιⁿ ≃ evₘ₊₁ ∘ geoⁿ` as maps `𝓛ⁿM → 𝓛ᵐM`.
 
@@ -214,6 +216,26 @@ def cyclicDistanceCutSampleBrokenGeodesicHomotopy {n k : ℕ} {δ : Fin (n + 1) 
     ext j
     simp only [slideTimes_one, coe_cyclicDistanceCutSampleBrokenGeodesic_apply,
       MoorePath.sample_apply, MooreFreeLoopSpace.length_toMoorePath]
+
+/-- **The slide keeps the first vertex.** For the vertex `0` both families of times are `0`, so at
+every time of the slide the first vertex is the base point `q₀` of the broken geodesic through `q`.
+So the slide restricts to the tuples with a prescribed first vertex. -/
+@[simp]
+theorem coe_cyclicDistanceCutSampleBrokenGeodesicHomotopy_apply_zero {n k : ℕ}
+    {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + k + 1) → ℝ} (hδ : ∀ i, δ i < r)
+    (hδδ' : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j)
+    (hm : ∀ j, ∑ i, δ i ≤ ((n + k + 1 : ℕ) : ℝ) * δ' j)
+    (p : unitInterval × cyclicDistanceCut (X := M) δ) :
+    (cyclicDistanceCutSampleBrokenGeodesicHomotopy hr hδ hδδ' hm p : Fin (n + k + 1) → M) 0 =
+      p.2.val 0 := by
+  have h0 : slideTimes hr hδ p.1 p.2 (0 : Fin (n + k + 1)) = 0 := by
+    simp [slideTimes]
+  have happ : (cyclicDistanceCutSampleBrokenGeodesicHomotopy hr hδ hδδ' hm p :
+      Fin (n + k + 1) → M) 0 =
+      (cyclicDistanceCutBrokenGeodesic hr hδ p.2).toMoorePath (slideTimes hr hδ p.1 p.2 0) :=
+    (rfl)
+  rw [happ, h0, ← MoorePath.source_def, MooreFreeLoopSpace.source_toMoorePath,
+    cyclicDistanceCutBrokenGeodesic_apply, basepoint_brokenGeodesicLoop]
 
 /-- **`ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ ≃ evₙ₊ₖ₊₁ ∘ geoⁿ`.** For cut-offs `δ i < r` with `δ (j - k) ≤ δ' j` and
 `∑ i, δ i ≤ (n + k + 1) * δ' j` for every `j`, repeating the first vertex `k` more times and

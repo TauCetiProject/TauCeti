@@ -36,6 +36,11 @@ arbitrary pseudometric space, before any geodesic interpolation is chosen.
   with cut-offs `δ` into the cut with cut-offs `δ'` when `δ (j - k) ≤ δ' j` for every `j`. This
   is the iterate `ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ` (`TauCeti.cyclicDistanceCutRepeatFirstIterate`).
 
+The tuples of the cut with a prescribed first vertex `x` form the **based distance cut**
+`𝓛ⁿ_x Q` (`TauCeti.basedCyclicDistanceCut`). Their closed broken geodesics are loops based at `x`,
+and repeating the first vertex maps based cuts into each other
+(`TauCeti.basedCyclicDistanceCutRepeatFirstIterate`).
+
 The sampling of compact families of free Moore loops into these cuts is in
 `TauCeti.Topology.PathSpace.Moore.Sampling`.
 
@@ -45,6 +50,8 @@ The sampling of compact families of free Moore loops into these cuts is in
 * `TauCeti.cyclicDistanceCutRepeatFirst`: the map between cuts repeating the first vertex.
 * `TauCeti.cyclicDistanceCutRepeatFirstIterate`: the map between cuts repeating the first vertex
   several times.
+* `TauCeti.basedCyclicDistanceCut δ x`: the tuples of the cut with first vertex `x`, and
+  `TauCeti.basedCyclicDistanceCutRepeatFirstIterate`, the restriction of the previous map to them.
 
 ## Main results
 
@@ -303,5 +310,64 @@ theorem cyclicDistanceCutRepeatFirst_cyclicDistanceCutRepeatFirstIterate {k : �
     exact congrArg q.val (Fin.ext (by simp))
   · rw [Fin.cons_succ, coe_cyclicDistanceCutRepeatFirstIterate_apply]
     exact congrArg q.val (Fin.ext (by simp))
+
+/-! ### Based distance cuts -/
+
+/-- **The based distance cut** at `x`: the tuples of the distance cut with cut-offs `δ` whose
+first vertex is `x`. The closed broken geodesics through its tuples are loops based at `x`, so it
+plays for the based loop space the role the distance cut plays for the free loop space. -/
+def basedCyclicDistanceCut (δ : Fin (n + 1) → ℝ) (x : X) : Set (Fin (n + 1) → X) :=
+  {q | q ∈ cyclicDistanceCut δ ∧ q 0 = x}
+
+@[simp]
+theorem mem_basedCyclicDistanceCut {δ : Fin (n + 1) → ℝ} {x : X} {q : Fin (n + 1) → X} :
+    q ∈ basedCyclicDistanceCut δ x ↔ q ∈ cyclicDistanceCut δ ∧ q 0 = x :=
+  Iff.rfl
+
+/-- The based distance cut at `x` is the part of the distance cut with first vertex `x`. -/
+theorem basedCyclicDistanceCut_eq_inter (δ : Fin (n + 1) → ℝ) (x : X) :
+    basedCyclicDistanceCut δ x = cyclicDistanceCut δ ∩ (fun q ↦ q 0) ⁻¹' {x} :=
+  (rfl)
+
+theorem basedCyclicDistanceCut_subset (δ : Fin (n + 1) → ℝ) (x : X) :
+    basedCyclicDistanceCut δ x ⊆ cyclicDistanceCut δ :=
+  fun _ hq ↦ hq.1
+
+/-- In a `T₁` space the based distance cut is closed. -/
+theorem isClosed_basedCyclicDistanceCut [T1Space X] (δ : Fin (n + 1) → ℝ) (x : X) :
+    IsClosed (basedCyclicDistanceCut δ x) := by
+  rw [basedCyclicDistanceCut_eq_inter]
+  exact (isClosed_cyclicDistanceCut δ).inter (isClosed_singleton.preimage (continuous_apply 0))
+
+/-- In a compact `T₁` space the based distance cut is compact. -/
+theorem isCompact_basedCyclicDistanceCut [CompactSpace X] [T1Space X] (δ : Fin (n + 1) → ℝ)
+    (x : X) : IsCompact (basedCyclicDistanceCut δ x) :=
+  (isClosed_basedCyclicDistanceCut δ x).isCompact
+
+/-- The constant tuple at `x` lies in the based distance cut at `x` for nonnegative cut-offs. -/
+theorem const_mem_basedCyclicDistanceCut {δ : Fin (n + 1) → ℝ} (hδ : 0 ≤ δ) (x : X) :
+    (fun _ ↦ x) ∈ basedCyclicDistanceCut δ x :=
+  ⟨const_mem_cyclicDistanceCut hδ x, rfl⟩
+
+/-- **Repeating the first vertex several times maps based distance cuts into each other**: it
+keeps the first vertex. This is the restriction of
+`TauCeti.cyclicDistanceCutRepeatFirstIterate` to the based distance cuts at `x`. -/
+def basedCyclicDistanceCutRepeatFirstIterate (k : ℕ) {δ : Fin (n + 1) → ℝ}
+    {δ' : Fin (n + k + 1) → ℝ} (h : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j) (x : X) :
+    C(basedCyclicDistanceCut (X := X) δ x, basedCyclicDistanceCut (X := X) δ' x) where
+  toFun q := ⟨fun j ↦ q.val ⟨j - k, by omega⟩,
+    repeatFirstIterate_mem_cyclicDistanceCut h q.property.1,
+    (congrArg q.val (Fin.ext (Nat.zero_sub k))).trans q.property.2⟩
+  continuous_toFun := by
+    refine Continuous.subtype_mk (continuous_pi fun _ ↦ ?_) _
+    exact (continuous_apply _).comp continuous_subtypeVal
+
+@[simp]
+theorem coe_basedCyclicDistanceCutRepeatFirstIterate_apply (k : ℕ) {δ : Fin (n + 1) → ℝ}
+    {δ' : Fin (n + k + 1) → ℝ} (h : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j) (x : X)
+    (q : basedCyclicDistanceCut (X := X) δ x) (j : Fin (n + k + 1)) :
+    (basedCyclicDistanceCutRepeatFirstIterate k h x q : Fin (n + k + 1) → X) j =
+      q.val ⟨j - k, by omega⟩ :=
+  (rfl)
 
 end TauCeti
