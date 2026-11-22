@@ -50,6 +50,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Test the live CI page script
+        run: node --test tests/ci-live.test.mjs
       - name: Install browser test dependencies
         run: |
           npm ci

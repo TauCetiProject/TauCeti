@@ -85,7 +85,7 @@ def relCWComplex (E : Subcomplex C) : RelCWComplex C E where
     intro ⟨n, i⟩ _ ⟨m, j⟩ _ hne
     refine pairwiseDisjoint (C := C) (mem_univ ⟨n, i⟩) (mem_univ ⟨m, j⟩) ?_
     exact Function.injective_id.sigma_map (fun _ ↦ Subtype.val_injective) |>.ne hne
-  disjointBase' n i := E.disjoint_openCell_subcomplex_of_notMem i.2
+  disjointBase' n i := E.disjoint_openCell_subcomplex_of_notMem i.property
   mapsTo n i := by
     classical
     obtain ⟨J, hJ⟩ := cellFrontier_subset_base_union_finite_closedCell (C := C) n (i : cell C n)
@@ -193,7 +193,8 @@ subcomplex. -/
 lemma mem_iff_mem_base_or_exists_mem_openCell (E : Subcomplex C) {x : X} :
     x ∈ E ↔ x ∈ D ∨ ∃ (n : ℕ) (j : cell C n), j ∈ E.I n ∧ x ∈ openCell n j := by
   rw [← SetLike.mem_coe, ← E.union, mem_union, mem_iUnion₂]
-  exact or_congr_right ⟨fun ⟨n, j, hx⟩ ↦ ⟨n, j, j.2, hx⟩, fun ⟨n, j, hj, hx⟩ ↦ ⟨n, ⟨j, hj⟩, hx⟩⟩
+  exact or_congr_right ⟨fun ⟨n, j, hx⟩ ↦ ⟨n, j, j.property, hx⟩, fun ⟨n, j, hj, hx⟩ ↦ ⟨n, ⟨j, hj⟩,
+      hx⟩⟩
 
 /-! ### The lattice of subcomplexes -/
 
@@ -205,8 +206,8 @@ instance instMin : Min (Subcomplex C) where
       closed' := A.closed.inter B.closed
       union' := by
         refine subset_antisymm (union_subset (subset_inter A.base_subset B.base_subset)
-          (iUnion₂_subset fun n j ↦ subset_inter (A.openCell_subset_of_mem_I j.2.1)
-            (B.openCell_subset_of_mem_I j.2.2))) fun x ⟨hxA, hxB⟩ ↦ ?_
+          (iUnion₂_subset fun n j ↦ subset_inter (A.openCell_subset_of_mem_I j.property.1)
+            (B.openCell_subset_of_mem_I j.property.2))) fun x ⟨hxA, hxB⟩ ↦ ?_
         obtain hD | ⟨n, j, hj, hxj⟩ := A.mem_iff_mem_base_or_exists_mem_openCell.1 hxA
         · exact .inl hD
         · exact .inr (mem_iUnion₂.2 ⟨n, ⟨j, hj, (B.mem_I_iff_of_mem_openCell hxj).2 hxB⟩, hxj⟩) }
@@ -220,7 +221,7 @@ instance instMax : Max (Subcomplex C) where
       union' := by
         refine subset_antisymm (union_subset (A.base_subset.trans subset_union_left)
           (iUnion₂_subset fun n j ↦ ?_)) fun x hx ↦ ?_
-        · exact j.2.elim (fun h ↦ (A.openCell_subset_of_mem_I h).trans subset_union_left)
+        · exact j.property.elim (fun h ↦ (A.openCell_subset_of_mem_I h).trans subset_union_left)
             fun h ↦ (B.openCell_subset_of_mem_I h).trans subset_union_right
         · obtain hx | hx := hx
           · obtain hD | ⟨n, j, hj, hxj⟩ := A.mem_iff_mem_base_or_exists_mem_openCell.1 hx
@@ -330,7 +331,7 @@ lemma le_iff_I_subset {F E : Subcomplex C} : F ≤ E ↔ ∀ n, F.I n ⊆ E.I n 
     exact Or.inr (mem_iUnion₂.2 ⟨n, ⟨i, hi⟩, hx⟩)
   · rw [← SetLike.coe_subset_coe, ← F.union, ← E.union]
     exact union_subset_union_right D
-      (iUnion_mono fun n ↦ iUnion_mono' fun j ↦ ⟨⟨j, h n j.2⟩, subset_rfl⟩)
+      (iUnion_mono fun n ↦ iUnion_mono' fun j ↦ ⟨⟨j, h n j.property⟩, subset_rfl⟩)
 
 end
 
@@ -348,8 +349,8 @@ def ofLE {F E : Subcomplex C} (h : F ≤ E) : Subcomplex (E : Set X) where
     rw [← F.union]
     congr 1
     refine iUnion_congr fun n ↦ iUnion_congr_of_surjective
-      (fun j ↦ ⟨(j.1 : E.I n).1, j.2⟩)
-      (fun j ↦ ⟨⟨⟨j.1, le_iff_I_subset.1 h n j.2⟩, j.2⟩, rfl⟩) fun j ↦ rfl
+      (fun j ↦ ⟨(j.val : E.I n).val, j.property⟩)
+      (fun j ↦ ⟨⟨⟨j.val, le_iff_I_subset.1 h n j.property⟩, j.property⟩, rfl⟩) fun j ↦ rfl
 
 /-- As a set, `ofLE h` is the subcomplex `F`. -/
 @[simp]
@@ -375,15 +376,15 @@ def ofBaseSubsetSkeletonLTOne {S : Set X} (hDS : D ⊆ S) (hS : S ⊆ (skeletonL
       cases n with
       | zero =>
         rw [closedCell_zero_eq_singleton]
-        exact singleton_subset_iff.2 j.2
-      | succ n => exact j.2.elim)
+        exact singleton_subset_iff.2 j.property
+      | succ n => exact j.property.elim)
     (by
       refine Subset.antisymm (union_subset hDS (iUnion₂_subset fun n j ↦ ?_)) fun x hx ↦ ?_
       · cases n with
         | zero =>
           rw [openCell_zero_eq_singleton]
-          exact singleton_subset_iff.2 j.2
-        | succ n => exact j.2.elim
+          exact singleton_subset_iff.2 j.property
+        | succ n => exact j.property.elim
       · obtain hxD | ⟨m, hm, j, hxj⟩ := RelCWComplex.mem_skeletonLT_iff.1 (hS hx)
         · exact Or.inl hxD
         · obtain rfl : m = 0 := Nat.lt_one_iff.1 (Nat.cast_lt.1 (hm.trans_eq Nat.cast_one.symm))
@@ -417,9 +418,9 @@ lemma coe_skeletonLT_skeletonLT (n m : ℕ∞) :
     (skeletonLT (skeletonLT C m : Set X) n : Set X) = skeletonLT C (min n m) := by
   ext x
   simp only [SetLike.mem_coe, mem_skeletonLT_iff, lt_min_iff]
-  refine or_congr_right ⟨fun ⟨k, hk, j, hj⟩ ↦ ⟨k, ⟨hk, ?_⟩, j.1, by simpa using hj⟩,
+  refine or_congr_right ⟨fun ⟨k, hk, j, hj⟩ ↦ ⟨k, ⟨hk, ?_⟩, j.val, by simpa using hj⟩,
     fun ⟨k, hk, j, hj⟩ ↦ ⟨k, hk.1, ⟨j, ?_⟩, by simpa using hj⟩⟩
-  · simpa only [skeletonLT_I, mem_ofPred_eq] using j.2
+  · simpa only [skeletonLT_I, mem_ofPred_eq] using j.property
   · simpa only [skeletonLT_I, mem_ofPred_eq] using hk.2
 
 end Topology.RelCWComplex

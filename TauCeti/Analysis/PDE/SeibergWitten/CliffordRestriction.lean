@@ -178,7 +178,7 @@ theorem cliffordRestriction_mul_add_swap (hkl : 2 + 2 = finrank ℝ V) (x y : �
         cliffordRestriction o ρ y * cliffordRestriction o ρ x =
       ((2 * (⟪x, y⟫ + ⟪o.hodgeStar hkl x, y⟫) : ℝ) : ℂ) • 1 := by
   ext ψ
-  have hψ := mem_positiveHalfSpinors.1 ψ.2
+  have hψ := mem_positiveHalfSpinors.1 ψ.property
   have h := congrArg (fun a ↦ ρ a (ψ : W))
     (bivectorExterior_mul_bivectorExterior_add_swap o hQ hkl x y)
   simp only [map_add, map_mul, map_sub, map_smul, AlgHom.commutes, LinearMap.add_apply,
@@ -205,7 +205,7 @@ private theorem trace_restrictBivector (x : ⋀[ℝ]^2 V) :
     rw [mem_positiveHalfSpinors, ← mul_apply_eq_comp, ← map_mul, hΓ]
   have hres : restrictBivector o ρ x = (ρ a).restrict (fun w _ ↦ hmem w) := by
     ext ψ
-    have hψ := mem_positiveHalfSpinors.1 ψ.2
+    have hψ := mem_positiveHalfSpinors.1 ψ.property
     simp [coe_restrictBivector_apply, ha, add_mul,
       (commute_chirality_bivectorExterior (Q := Q) o x).eq, hψ]
     module
@@ -238,7 +238,7 @@ theorem trace_cliffordRestriction_mul (hkl : 2 + 2 = finrank ℝ V) (x y : ⋀[�
 theorem cliffordRestriction_eq_zero_of_hodgeStar_eq_neg (hkl : 2 + 2 = finrank ℝ V)
     {x : ⋀[ℝ]^2 V} (hx : o.hodgeStar hkl x = -x) : cliffordRestriction o ρ x = 0 := by
   ext ψ
-  have hψ := mem_positiveHalfSpinors.1 ψ.2
+  have hψ := mem_positiveHalfSpinors.1 ψ.property
   have h : ρ (bivectorExterior Q x) ψ = -ρ (bivectorExterior Q x) ψ := by
     conv_lhs => rw [← hψ, ← mul_apply_eq_comp, ← map_mul,
       bivectorExterior_mul_chirality_of_hodgeStar_eq_neg o hQ hkl hx, map_neg, LinearMap.neg_apply]

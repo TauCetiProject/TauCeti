@@ -57,7 +57,7 @@ theorem cotangentDualBaseChangeEquiv_tmul_rootVector
     tangentMatrix_derivationComp_rootSubgroup, LinearEquiv.apply_symm_apply,
     tangentMatrix_cotangentLinearEquiv_rootVector]
   simpa only [smul_eq_mul, mul_one] using
-    ((LieAlgebra.SpecialLinear.single p.1.1 p.1.2 p.2).map_smul c 1)
+    ((LieAlgebra.SpecialLinear.single p.val.1 p.val.2 p.property).map_smul c 1)
 
 end
 

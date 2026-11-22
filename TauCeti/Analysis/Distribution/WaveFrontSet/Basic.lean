@@ -49,6 +49,8 @@ not microlocally smooth.
 
 * `Distribution.isOpen_setOf_isMicrolocallySmoothAt`, `Distribution.isOpen_diff_waveFrontSet`:
   the wave front set is closed in `Ω × (E \ {0})`.
+* `Distribution.isClosed_insert_zero_image_snd_waveFrontSet_inter`: the frequencies of the wave
+  front set over a compact set, together with `0`, form a closed set.
 * `Distribution.smul_mem_waveFrontSet_iff`: it is conic in the frequency variable.
 * `Distribution.waveFrontSet_subset_dsupport`: it lies over the support of `T`.
 * `Distribution.localFourier_smulLeftCLM`, `Distribution.localFourier_restrictCLM`: the localized
@@ -290,6 +292,29 @@ theorem isOpen_diff_waveFrontSet (T : 𝓓'(Ω, ℂ)) :
   rw [h]
   exact (Ω.isOpen.prod isOpen_compl_singleton).inter T.isOpen_setOf_isMicrolocallySmoothAt
 
+/-- The frequencies of the wave front set of `T` over a compact set `K ⊆ Ω`, together with `0`,
+form a closed set: microlocal smoothness is an open condition, and `K` is compact. -/
+theorem isClosed_insert_zero_image_snd_waveFrontSet_inter {K : Set E} (hK : IsCompact K)
+    (hKΩ : K ⊆ Ω) (T : 𝓓'(Ω, ℂ)) :
+    IsClosed (insert 0 (Prod.snd '' (T.waveFrontSet ∩ K ×ˢ univ))) := by
+  have hmem (ζ : E) : ζ ∈ (insert 0 (Prod.snd '' (T.waveFrontSet ∩ K ×ˢ univ)))ᶜ ↔
+      ¬ζ = 0 ∧ ∀ x, (x, ζ) ∈ T.waveFrontSet → x ∉ K := by
+    simp only [mem_compl_iff, mem_insert_iff, mem_image, mem_inter_iff, mem_prod, mem_univ,
+      and_true, Prod.exists, exists_eq_right, not_or, not_exists, not_and]
+  refine isOpen_compl_iff.1 (isOpen_iff_mem_nhds.2 fun ζ hζ ↦ ?_)
+  obtain ⟨hζ0, hζK⟩ := (hmem ζ).1 hζ
+  -- Near `ζ`, the distribution is microlocally smooth at every point of `K`.
+  have hsmooth : ∀ x ∈ K, ∀ᶠ p : E × E in 𝓝 (ζ, x), T.IsMicrolocallySmoothAt p.2 p.1 := by
+    intro x hx
+    have hx' : T.IsMicrolocallySmoothAt x ζ := by
+      by_contra hns
+      exact hζK x (mem_waveFrontSet_iff.2 ⟨hKΩ hx, hζ0, hns⟩) hx
+    exact ((isOpen_setOf_isMicrolocallySmoothAt T).preimage continuous_swap).mem_nhds hx'
+  filter_upwards [hK.eventually_forall_of_forall_eventually
+    (P := fun ζ' x ↦ T.IsMicrolocallySmoothAt x ζ') hsmooth,
+    isOpen_ne.mem_nhds hζ0] with ζ' hζ' hζ'0
+  exact (hmem ζ').2 ⟨hζ'0, fun x hx hxK ↦ (mem_waveFrontSet_iff.1 hx).2.2 (hζ' x hxK)⟩
+
 /-! ### Scalar multiples and conjugation -/
 
 /-- A scalar multiple of `T` is microlocally smooth wherever `T` is. -/
@@ -387,6 +412,7 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
 
+omit [FiniteDimensional ℝ E] in
 /-- The localized Fourier transform vanishes for a cutoff whose support is disjoint from the
 support of the distribution. -/
 theorem localFourier_eq_zero_of_disjoint_dsupport {T : 𝓓'(Ω, ℂ)} {φ : 𝓓(Ω, ℂ)}
@@ -409,6 +435,11 @@ theorem isMicrolocallySmoothAt_of_notMem_dsupport {T : 𝓓'(Ω, ℂ)} {x : E} (
     (fun N => ⟨0, fun η => ?_⟩) ξ
   simp [localFourier_eq_zero_of_disjoint_dsupport
     (disjoint_left.2 fun _ hy => (hφ hy).1 : Disjoint (tsupport φ) (dsupport T)) η]
+
+/-- The zero distribution is microlocally smooth in every direction at every point of `Ω`. -/
+theorem isMicrolocallySmoothAt_zero {x : E} (hx : x ∈ Ω) (ξ : E) :
+    (0 : 𝓓'(Ω, ℂ)).IsMicrolocallySmoothAt x ξ :=
+  isMicrolocallySmoothAt_of_notMem_dsupport hx (by simp) ξ
 
 /-- The wave front set lies over the support of the distribution. -/
 theorem waveFrontSet_subset_dsupport (T : 𝓓'(Ω, ℂ)) :
@@ -564,7 +595,7 @@ private theorem isMicrolocallySmoothAt_ofFun_one_map_subtype_of_notMem (V : Subm
     inter_subset_right (1 : ℂ)
   -- The cutoff vanishes on `V`, so the localized Fourier transform vanishes identically.
   have hg : (fun v : V => φ v) = 0 :=
-    funext fun v => image_eq_zero_of_notMem_tsupport fun h => (hφ h).1 v.2
+    funext fun v => image_eq_zero_of_notMem_tsupport fun h => (hφ h).1 v.property
   exact isMicrolocallySmoothAt_of_forall_decay (φ := φ) (by simp [hφx])
     (fun N => ⟨0, fun η => by simp [hg, Real.fourier_eq]⟩) ξ
 

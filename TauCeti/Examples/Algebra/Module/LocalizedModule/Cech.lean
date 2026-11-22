@@ -23,12 +23,12 @@ open LocalizedModule TauCeti
 example : ¬ Function.Injective (cechLocalizationAugmentation ℤ (Fin.elim0 : Fin 0 → ℤ)) := by
   intro h
   refine one_ne_zero (h (funext fun S ↦ ?_))
-  have hS : S.1 = ∅ := Subsingleton.elim _ _
-  exact absurd S.2 (by simp [hS])
+  have hS : S.val = ∅ := Subsingleton.elim _ _
+  exact absurd S.property (by simp [hS])
 
 -- The differential sends the cochain with values `2` at `{0}` and `5` at `{1}` to `5 - 2 = 3`.
 example : cechLocalizationDifferential ℚ (fun _ : Fin 2 ↦ (1 : ℚ)) 0
-    (fun S ↦ mk (if (0 : Fin 2) ∈ S.1 then 2 else 5) 1) ⟨{0, 1}, rfl⟩ = mk 3 1 := by
+    (fun S ↦ mk (if (0 : Fin 2) ∈ S.val then 2 else 5) 1) ⟨{0, 1}, rfl⟩ = mk 3 1 := by
   rw [cechLocalizationDifferential_apply]
   -- `simp` lists `attach` of `{0, 1}` up to the attached singleton `{1}`, computed here.
   have h1 : ({1} : Finset (Fin 2)).attach = {⟨1, Finset.mem_singleton_self 1⟩} := rfl

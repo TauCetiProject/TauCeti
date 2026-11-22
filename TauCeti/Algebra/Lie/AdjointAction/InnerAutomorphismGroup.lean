@@ -113,7 +113,7 @@ theorem map_lie_of_mem_intLieAlgebra {g : LinearMap.GeneralLinearGroup K L}
 /-- An element of `Int L`, as an automorphism of the Lie algebra `L`. -/
 def intLieAlgebraLieEquiv (g : intLieAlgebra K L) : L ≃ₗ⁅K⁆ L :=
   { (g : LinearMap.GeneralLinearGroup K L).toLinearEquiv with
-    map_lie' := map_lie_of_mem_intLieAlgebra g.2 _ _ }
+    map_lie' := map_lie_of_mem_intLieAlgebra g.property _ _ }
 
 /-- `TauCeti.intLieAlgebraLieEquiv g` acts as `g` does. -/
 @[simp]

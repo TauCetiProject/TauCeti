@@ -46,13 +46,15 @@ kernels are tested. On an open subset `W` of the `L^p` product `WithLp p (E × D
 * `TestFunction.prodSMulCLM`: the continuous linear map `φ ↦ ((x, t) ↦ ψ t • φ x)`.
 * `TestFunction.prodSMulCLM_apply`: its values.
 * `TestFunction.tsupport_prodSMulCLM_subset`: its support lies in `tsupport φ ×ˢ tsupport ψ`.
+* `TestFunction.prodSMulCLM_add`, `TestFunction.prodSMulCLM_smul`: its linearity in `ψ`.
 * `TestFunction.sliceRight`: the slice `y ↦ φ (x, y)` of a test function on a product, with its
   support `TestFunction.tsupport_sliceRight_subset`, derivative bound
   `TestFunction.norm_iteratedFDeriv_sliceRight_le` and derivatives
   `TestFunction.sliceRight_lineDerivOp_zero_prod`.
 * `TestFunction.tensor`: the tensor product `(x, y) ↦ φ x * ψ y` of complex test functions on
   `Ω` and `O`, with `TestFunction.tensor_apply`, its support `TestFunction.tsupport_tensor_subset`
-  and its bilinearity.
+  and its bilinearity. `TestFunction.postcompCLM_ofRealCLM_prodSMulCLM`: on real test functions it
+  is the complexification of `TestFunction.prodSMulCLM`.
 * `TestFunction.exists_nhds_prod_cutoff`: products of test functions supported near a point
   of an open subset of `WithLp p (E × D)` are test functions on it.
 * `ContDiffMapSupportedIn.tensor`: the tensor product `(x, y) ↦ φ x * ψ y` of complex smooth
@@ -146,6 +148,18 @@ theorem prodSMulCLM_apply (φ : 𝓓(Ω, F)) (p : E × D) :
 theorem tsupport_prodSMulCLM_subset (φ : 𝓓(Ω, F)) :
     tsupport (prodSMulCLM ψ hV φ) ⊆ tsupport φ ×ˢ tsupport ψ :=
   tsupport_snd_smul_fst_subset _ _
+
+/-- The tensor product is additive in the fixed factor `ψ`. -/
+theorem prodSMulCLM_add (ψ ψ' : 𝓓(O, ℝ)) :
+    prodSMulCLM (F := F) (ψ + ψ') hV = prodSMulCLM ψ hV + prodSMulCLM ψ' hV := by
+  ext φ p
+  simp [add_smul]
+
+/-- The tensor product is homogeneous in the fixed factor `ψ`. -/
+theorem prodSMulCLM_smul (c : ℝ) (ψ : 𝓓(O, ℝ)) :
+    prodSMulCLM (F := F) (c • ψ) hV = c • prodSMulCLM ψ hV := by
+  ext φ p
+  simp [mul_smul]
 
 /-! ### Slices -/
 
@@ -299,6 +313,15 @@ theorem tensor_smul_right (c : ℂ) (φ : 𝓓^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(O, �
     φ.tensor (c • ψ) hV = c • φ.tensor ψ hV := by
   ext p
   simp [mul_left_comm]
+
+/-- The complexification of the tensor product `(x, y) ↦ ψ y • φ x` of real test functions is the
+tensor product of their complexifications. -/
+theorem postcompCLM_ofRealCLM_prodSMulCLM (ψ : 𝓓(O, ℝ)) (φ : 𝓓(Ω, ℝ)) :
+    postcompCLM (𝕜 := ℝ) Complex.ofRealCLM (prodSMulCLM ψ hV φ) =
+      (postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ).tensor
+        (postcompCLM (𝕜 := ℝ) Complex.ofRealCLM ψ) hV := by
+  ext p
+  simp [mul_comm]
 
 end Tensor
 
