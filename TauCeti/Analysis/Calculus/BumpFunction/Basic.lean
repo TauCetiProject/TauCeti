@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Basic
+public import Mathlib.Basic.Complex.Basic
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Bump functions with support in a ball
@@ -14,6 +16,8 @@ On a real normed space with smooth bump functions, every open ball contains the 
 support of a smooth bump function centred at its centre. Multiplying the identity by such a bump
 gives a smooth map into the ball that is the identity near its centre; composing with it turns a
 map defined only on a ball into a globally defined map with the same germ at the centre.
+Conversely, the rescaled bump `φ (R⁻¹ ·)` of a bump `φ` centred at `0` vanishes off the ball of
+radius `R φ.rOut`.
 
 ## Main results
 
@@ -21,6 +25,8 @@ map defined only on a ball into a globally defined map with the same germ at the
   support lies in the ball of radius `r` around `c`.
 * `TauCeti.exists_contDiff_eventuallyEq_id_forall_mem_ball`: a smooth map into the ball of radius
   `r` about `0` which is the identity near `0`.
+* `ContDiffBump.apply_inv_smul_eq_zero_of_le_norm`, `ContDiffBump.ofReal_apply_inv_smul_eq_zero`:
+  the rescaled bump `φ (R⁻¹ ·)`, `R > 0`, vanishes off the ball of radius `R φ.rOut`.
 -/
 
 public section
@@ -58,3 +64,24 @@ theorem exists_contDiff_eventuallyEq_id_forall_mem_ball {E : Type*} [NormedAddCo
       exact mem_ball_self hr
 
 end TauCeti
+
+namespace ContDiffBump
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [HasContDiffBump E]
+  (φ : ContDiffBump (0 : E))
+
+/-- The rescaled bump function `φ (R⁻¹ ·)`, `R > 0`, vanishes outside the open ball of radius
+`R φ.rOut`. -/
+theorem apply_inv_smul_eq_zero_of_le_norm {R : ℝ} (hR : 0 < R) {ξ : E}
+    (hξ : R * φ.rOut ≤ ‖ξ‖) : φ (R⁻¹ • ξ) = 0 :=
+  φ.zero_of_le_dist (by
+    rwa [dist_zero_right, TauCeti.norm_inv_smul_of_nonneg hR.le, le_div_iff₀ hR, mul_comm])
+
+/-- The complex rescaled bump function `φ (R⁻¹ ·)`, `R > 0`, vanishes outside the closed ball of
+radius `R φ.rOut`. -/
+theorem ofReal_apply_inv_smul_eq_zero {R : ℝ} (hR : 0 < R) :
+    ∀ ξ ∈ (Metric.closedBall (0 : E) (R * φ.rOut))ᶜ, (φ (R⁻¹ • ξ) : ℂ) = 0 := fun ξ hξ ↦ by
+  rw [Set.mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le] at hξ
+  rw [φ.apply_inv_smul_eq_zero_of_le_norm hR hξ.le, Complex.ofReal_zero]
+
+end ContDiffBump
