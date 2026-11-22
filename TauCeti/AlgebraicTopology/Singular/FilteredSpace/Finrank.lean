@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Monomial
+public import TauCeti.Algebra.Homology.SpectralObject.Finrank
+public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
 public import TauCeti.AlgebraicTopology.Singular.Triple.Finrank
 import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 import TauCeti.Algebra.Homology.EulerCharacteristic.MorseInequalities
@@ -76,11 +78,20 @@ relative homology of one `i`-cell for each critical point of index `i` in it. Fo
 function it has that of the negative disc bundles of its critical submanifolds, by Bott's
 theorem; with these contributions the statements above are the Morse–Bott inequalities.
 
+When the filtration is finite, `X a = ∅` and `X b = Y`, the spectral sequence of the filtration
+(`TauCeti.filteredSpaceSpectralSequence`) converges to the homology of `Y`, and the dimensions add
+up: if `Hₙ(Y; V)` is finite-dimensional, then on every page `r ≥ 2` with `r ≥ b - a + 1` its
+dimension is the sum of the dimensions of the objects of total degree `-n`
+(`Monotone.finrank_singularHomology_eq_sum_finrank_filteredSpaceSpectralSequence_page_X`). These
+objects are the graded pieces of the filtration of `Hₙ(Y; V)` by the images of the `Hₙ(X q; V)`.
+
 ## References
 
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
   Section 5.
 * R. Bott, *Nondegenerate critical manifolds*, Annals of Mathematics 60 (1954), 248–261.
+* J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
+  Section 2.2, the convergence of the spectral sequence of a filtered complex.
 -/
 
 public section
@@ -278,6 +289,50 @@ theorem finrank_singularHomology_ofInclusion_eq_sum_of_eq_zero_or {a b : ℤ} (h
       simpa only [Nat.cast_sum] using
         hX.sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_le V hab m
           fun q hq i _ ↦ h q hq i) hc) n
+
+end Monotone
+
+end Int
+
+section Int
+
+variable {Y : TopCat.{w}} {X : ℤ → Set Y} (hX : Monotone X) {k : Type*} [Ring k]
+  [IsNoetherianRing k] [StrongRankCondition k] [HasRankNullity.{w} k] (V : ModuleCat.{w} k)
+
+namespace Monotone
+
+open TauCeti
+
+/-- **The dimension of the homology of a finitely filtered space.** Let `X : ℤ → Set Y` be an
+increasing family of subsets of `Y` with `X a = ∅` and `X b = Y`, and let `Hₙ(Y; V)` be
+finite-dimensional. On every page `r ≥ 2` with `b - a + 1 ≤ r` of the spectral sequence of the
+filtration, the dimension of `Hₙ(Y; V)` is the sum, over `a ≤ q < b`, of the dimensions of the
+objects at `(-n - q, q)`, the positions of total degree `-n`. These pages are the limit page, so
+this is the numerical form of the strong convergence
+`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfFinite`. -/
+theorem finrank_singularHomology_eq_sum_finrank_filteredSpaceSpectralSequence_page_X {a b : ℤ}
+    (hab : a ≤ b) (ha : X a = ∅) (hb : X b = Set.univ) (n : ℕ)
+    [Module.Finite k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} k) n).obj V).obj
+      Y)]
+    {r : ℤ} (hr : 2 ≤ r) (hrab : b - a + 1 ≤ r) :
+    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} k) n).obj V).obj Y) =
+      ∑ q ∈ Finset.Ico a b,
+        finrank k (((filteredSpaceSpectralSequence V hX).page r).X (-n - q, q) : ModuleCat k) := by
+  -- The abutment in degree `-n` is `Hₙ(Y; V)`, filtered with `F_a = 0` and `F_b` everything.
+  let e : (filteredSpaceSpectralObject V hX).abutment (-n) ≅
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} k) n).obj V).obj Y :=
+    chainFiltrationAbutmentIso
+      ((AlgebraicTopology.singularChainComplexFunctor (ModuleCat.{w} k)).obj V) hX n
+  have : Module.Finite k ((filteredSpaceSpectralObject V hX).abutment (-n)) :=
+    Module.Finite.equiv e.symm.toLinearEquiv
+  rw [← e.toLinearEquiv.finrank_eq, (filteredSpaceSpectralObject V hX).finrank_abutment_eq_sum hab
+    (CochainComplex.isZero_filtrationAbutmentFiltration _ _ (singularChainFiltration_eq_bot V ha) _)
+    (CochainComplex.isIso_filtrationAbutmentFiltrationι _ _ (chainFiltration_eq_top _ hb) _)]
+  -- On the page `r` each object of total degree `-n` is the corresponding graded piece.
+  refine Finset.sum_congr rfl fun q hq ↦ ?_
+  obtain ⟨hq₁, hq₂⟩ := Finset.mem_Ico.1 hq
+  rw [(filteredSpaceSpectralSequencePageXIsoGradedOfFinite V hX ha hb r hr (-n - q, q) (by lia)
+    (by lia)).toLinearEquiv.finrank_eq, sub_add_cancel]
 
 end Monotone
 
