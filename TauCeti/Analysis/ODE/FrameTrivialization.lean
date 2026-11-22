@@ -22,8 +22,9 @@ with `S_Φ(t) = Φ(t)⁻¹ (S(t) Φ(t) - Φ'(t))` (`TauCeti.trivializedCoeff`), 
 `TauCeti/Geometry/Symplectic/FrameTrivialization.lean` and
 `TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator/Trivialization.lean`. When `Φ, ζ` are
 differentiable at `t` and `Φ t` is invertible, `Φ t` intertwines `ζ' - S_Φ(t) ζ` with `ξ' - S_t ξ`;
-`trivializedCoeff Φ S` is continuous (for complete `F`, `C¹` invertible `Φ`, continuous `S`),
-inherits `T`-periodicity, and sends `S_t - δ • K_t` to `S_Φ(t) - δ • K₀`. Adapts
+`trivializedCoeff Φ S` is `C^n` for complete `F`, `C^(n+1)` invertible `Φ` and `C^n` `S` (in
+particular continuous for `C¹` `Φ` and continuous `S`), inherits `T`-periodicity, and sends
+`S_t - δ • K_t` to `S_Φ(t) - δ • K₀`. Adapts
 `TauCeti.frameConnection`
 (`TauCeti/Geometry/Symplectic/JHolomorphic/OrbitTorus/Trivialization.lean`).
 
@@ -91,15 +92,23 @@ theorem hasDerivAt_clm_apply_iff_hasDerivAt_trivializedCoeff {Φ : ℝ → F →
     exact (sub_eq_zero.1 (hΦ.injective (hsub.trans (map_zero (Φ t)).symm))) ▸ hζ.hasDerivAt
   · rw [trivializedCoeff_apply, hΦ.self_apply_inverse]; abel
 
+/-- For complete `F`, a `C^(n+1)` frame `Φ` with invertible values and a `C^n` coefficient `S`,
+`trivializedCoeff Φ S` is `C^n`. -/
+theorem contDiff_trivializedCoeff [CompleteSpace F] {n : ℕ} {Φ : ℝ → F →L[ℝ] V}
+    {S : ℝ → V →L[ℝ] V} (hΦ : ContDiff ℝ (n + 1) Φ) (hinv : ∀ t, (Φ t).IsInvertible)
+    (hS : ContDiff ℝ n S) : ContDiff ℝ n (trivializedCoeff Φ S) := by
+  have hΦn : ContDiff ℝ n Φ := hΦ.of_le (by norm_cast; omega)
+  have hderiv : ContDiff ℝ n (deriv Φ) := (contDiff_succ_iff_deriv.1 hΦ).2.2
+  have hinverse : ContDiff ℝ n fun t ↦ (Φ t).inverse := contDiff_iff_contDiffAt.2 fun t ↦
+    ((hinv t).contDiffAt_map_inverse (n := n)).comp t hΦn.contDiffAt
+  exact hinverse.clm_comp ((hS.clm_comp hΦn).sub hderiv)
+
 /-- For complete `F`, `C¹` `Φ` with invertible values, and continuous `S`, `trivializedCoeff Φ S`
 is continuous. -/
 theorem continuous_trivializedCoeff [CompleteSpace F] {Φ : ℝ → F →L[ℝ] V} {S : ℝ → V →L[ℝ] V}
     (hΦ : ContDiff ℝ 1 Φ) (hinv : ∀ t, (Φ t).IsInvertible) (hS : Continuous S) :
-    Continuous (trivializedCoeff Φ S) := by
-  have hderiv : Continuous (deriv Φ) := contDiff_zero.1 (contDiff_succ_iff_deriv.1 hΦ).2.2
-  have hinverse : Continuous fun t ↦ (Φ t).inverse := continuous_iff_continuousAt.2 fun t ↦
-    ((hinv t).contDiffAt_map_inverse (n := 0)).continuousAt.comp hΦ.continuous.continuousAt
-  exact hinverse.clm_comp ((hS.clm_comp hΦ.continuous).sub hderiv)
+    Continuous (trivializedCoeff Φ S) :=
+  (contDiff_trivializedCoeff (n := 0) (by simpa using hΦ) hinv (contDiff_zero.2 hS)).continuous
 
 /-- Periodicity of `Φ` and `S` passes to `trivializedCoeff Φ S`. -/
 theorem periodic_trivializedCoeff {Φ : ℝ → F →L[ℝ] V} {S : ℝ → V →L[ℝ] V} {T : ℝ}
