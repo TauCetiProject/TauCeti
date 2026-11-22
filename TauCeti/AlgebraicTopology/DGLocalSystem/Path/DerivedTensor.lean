@@ -293,9 +293,14 @@ every `n`-cell `j`. There is a row-finite twisting cocycle `m` over the loop cha
 `C_*(Ω_b B; R)` on the cells of `B`, the generator of an `n`-cell in degree `-n`, whose free module
 `K_m` maps to the chains `C_*(P_b B; R)` on the based path space by a map `g` such that:
 
+* `g` sends the generator of an `n`-cell into degree `-n` of the chains over the `n`-skeleton,
+  to the chain of the cell `TauCeti.cellPathChain H R τ` modulo the chains over the lower skeleta,
+  and commutes with the differentials;
 * the row of an `n`-cell only involves cells of dimension `< n`, so `K_m` is semi-free;
-* `g` sends the generator of each cell to the chain of the cell `TauCeti.cellPathChain H R τ`,
-  modulo the chains over the lower skeleta, and commutes with the differentials;
+* `g` is a quasi-isomorphism relative to the skeleta: for every `k`, a cycle of `K_m` on the cells
+  of dimension `< k` whose image bounds a chain over the `(k - 1)`-skeleton is, together with that
+  chain, the image of a pair of the same kind; and `g` is a quasi-isomorphism onto
+  `C_*(P_b B; R)`, in the same form without the restrictions on dimension;
 * the composite of `g` with the augmentation `C_*(P_b B; R) → R` kills no nonzero class: every
   cycle of `K_m` whose image has augmentation zero is a boundary;
 * for every DG right module `𝓕` over `C_*(Ω_b B; R)`, the twisted complex `𝓕 ⊗ K_m` computes the
@@ -311,11 +316,45 @@ theorem exists_semifreeModel_localizedFunctor_iso_derivedTensor_loopChainAugment
         (cubicalChainDifferential (MooreLoopSpace B b) R) (Σ n, cell C n) fun x ↦ (x.1 : ℤ))
       (g : (Σ n, cell C n) → cubicalChainModule (MoorePathFrom B b) H R)
       (hm : WellFounded fun y x ↦ y ∈ (m.m x).support),
-      (∀ x, m.m x ∈ Finsupp.supported (loopChainAlgebra B b R) (loopChainAlgebra B b R)
-        {y | y.1 < x.1}) ∧
+      (∀ x, g x ∈ cubicalChainModuleGrading (MoorePathFrom B b) H R (-(x.1 : ℤ))) ∧
+      (∀ x, g x ∈ pathFromChainSkeleton b C H R x.1) ∧
       (∀ x, g x - cellPathChain H R τ x.1 x.2 ∈ pathFromChainSkeleton b C H R ((x.1 : ℤ) - 1)) ∧
       (∀ x, Finsupp.linearCombination (loopChainAlgebra B b R) g (m.m x) =
         cubicalChainModuleDifferential (MoorePathFrom B b) H R (g x)) ∧
+      (∀ x, m.m x ∈ Finsupp.supported (loopChainAlgebra B b R) (loopChainAlgebra B b R)
+        {y | y.1 < x.1}) ∧
+      (∀ (k : ℕ) (u : (Σ n, cell C n) →₀ loopChainAlgebra B b R)
+          (w : cubicalChainModule (MoorePathFrom B b) H R),
+        u ∈ Finsupp.supported (loopChainAlgebra B b R) (loopChainAlgebra B b R) {y | y.1 < k} →
+        rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+          (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+          (d := cubicalChainDifferential (MooreLoopSpace B b) R) m.m u = 0 →
+        Finsupp.linearCombination (loopChainAlgebra B b R) g u =
+          cubicalChainModuleDifferential (MoorePathFrom B b) H R w →
+        w ∈ pathFromChainSkeleton b C H R ((k : ℤ) - 1) →
+        ∃ (u' : (Σ n, cell C n) →₀ loopChainAlgebra B b R)
+          (w' : cubicalChainModule (MoorePathFrom B b) H R),
+          u' ∈ Finsupp.supported (loopChainAlgebra B b R) (loopChainAlgebra B b R) {y | y.1 < k} ∧
+            w' ∈ pathFromChainSkeleton b C H R ((k : ℤ) - 1) ∧
+            rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+              (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+              (d := cubicalChainDifferential (MooreLoopSpace B b) R) m.m u' = u ∧
+            Finsupp.linearCombination (loopChainAlgebra B b R) g u' +
+              cubicalChainModuleDifferential (MoorePathFrom B b) H R w' = w) ∧
+      (∀ (u : (Σ n, cell C n) →₀ loopChainAlgebra B b R)
+        (w : cubicalChainModule (MoorePathFrom B b) H R),
+        rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+          (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+          (d := cubicalChainDifferential (MooreLoopSpace B b) R) m.m u = 0 →
+        Finsupp.linearCombination (loopChainAlgebra B b R) g u =
+          cubicalChainModuleDifferential (MoorePathFrom B b) H R w →
+        ∃ (u' : (Σ n, cell C n) →₀ loopChainAlgebra B b R)
+          (w' : cubicalChainModule (MoorePathFrom B b) H R),
+          rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+            (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+            (d := cubicalChainDifferential (MooreLoopSpace B b) R) m.m u' = u ∧
+          Finsupp.linearCombination (loopChainAlgebra B b R) g u' +
+            cubicalChainModuleDifferential (MoorePathFrom B b) H R w' = w) ∧
       (∀ u, rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
           (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
           (d := cubicalChainDifferential (MooreLoopSpace B b) R) m.m u = 0 →
@@ -334,9 +373,9 @@ theorem exists_semifreeModel_localizedFunctor_iso_derivedTensor_loopChainAugment
           (derivedTensorLocalizerMorphism (loopChain_isDGAlgebra B b R)
             (loopChainAugmentation B b R).bimoduleGrading
             (loopChainAugmentation B b R).bimoduleDifferential).localizedFunctor L₁ L₂) := by
-  obtain ⟨m, g, hgdeg, -, hgc, hgd, hms, hwf, -, hgrel⟩ :=
+  obtain ⟨m, g, hgdeg, hgF, hgc, hgd, hms, hwf, hK, hgrel⟩ :=
     exists_semifreeModel_pathFromChain (H := H) (R := R) τ hC
-  refine ⟨m, g, hwf, hms, hgc, hgd, fun u hu hε ↦ ?_, fun L₁ _ L₂ _ ↦
+  refine ⟨m, g, hwf, hgdeg, hgF, hgc, hgd, hms, hK, hgrel, fun u hu hε ↦ ?_, fun L₁ _ L₂ _ ↦
     nonempty_localizedFunctor_iso_derivedTensor_loopChainAugmentation L₁ L₂ hwf hgdeg hgd hgrel⟩
   -- The comparison with the path chains and their augmentation are quasi-isomorphisms, so their
   -- composite `K_m → R` is one: a cycle of augmentation zero is a boundary.
