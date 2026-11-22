@@ -89,6 +89,24 @@ theorem wangClass_hom_apply {k : Type*} [Ring k] [HasCoproducts.{w} (ModuleCat.{
   -- `wangClass` only definitionally, so `rw [wangClass_def]` cannot form the motive.
   (rfl)
 
+/-- `TauCeti.MappingTorus.wangClass_hom_apply` for a class of `H₁(T_φ; k)` written as the homology
+of `TauCeti.singularChains k`, the spelling of `ContinuousMap.singularHomologyMap`. -/
+theorem wangClass_hom_apply_singularChains {k : Type w} [Ring k]
+    (c : ((singularChains k).obj (TopCat.of (MappingTorus φ))).homology 1) :
+    (wangClass (ModuleCat.of k k) φ).hom c =
+      ((TopCat.of F).singularHomology₀ε (ModuleCat.of k k)).hom
+        ((wangδ φ (ModuleCat.of k k) 0).hom c) :=
+  (rfl)
+
+/-- For a path-connected fibre, the Wang class of a class `c ∈ H₁(T_φ)` vanishes exactly when its
+image `δ c ∈ H₀(F)` under the Wang connecting morphism does, since the augmentation is injective. -/
+theorem wangClass_hom_eq_zero_iff {k : Type*} [Ring k] [HasCoproducts.{w} (ModuleCat.{v} k)]
+    (U : ModuleCat.{v} k) [PathConnectedSpace F]
+    (c : ((singularHomologyFunctor (ModuleCat.{v} k) 1).obj U).obj (TopCat.of (MappingTorus φ))) :
+    (wangClass U φ).hom c = 0 ↔ (wangδ φ U 0).hom c = 0 := by
+  rw [wangClass_hom_apply, ← map_zero ((TopCat.of F).singularHomology₀ε U).hom]
+  exact ((ModuleCat.mono_iff_injective _).1 inferInstance).eq_iff
+
 /-- **Naturality of the Wang class.** For a map `g : F → G` intertwining the monodromies,
 `g ∘ φ = ψ ∘ g`, the Wang class of `T_φ` is the pullback of the Wang class of `T_ψ` along the
 induced map of mapping tori. -/

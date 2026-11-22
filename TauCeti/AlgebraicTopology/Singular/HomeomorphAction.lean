@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.GroupTheory.OrderOfElement
 public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 
@@ -42,6 +43,8 @@ classes of the two rulings of `S² × S²`, which the swap exchanges.
 * `Homeomorph.singularHomologyMap_symm_apply_apply`,
   `Homeomorph.singularHomologyMap_apply_symm_apply`: the maps induced by a homeomorphism and by its
   inverse are mutually inverse.
+* `Homeomorph.isOfFinAddOrder_singularHomologyMap_iff`: a homeomorphism preserves and reflects
+  finite order of singular homology classes.
 * `Homeomorph.singularHomologyAction_eq_one_of_homotopic`: homeomorphisms homotopic to the identity
   act trivially.
 * `Homeomorph.singularHomologyAction_prodComm_ne_one`: the factor swap of `X × X` acts nontrivially
@@ -118,6 +121,17 @@ theorem singularHomologyMap_apply_symm_apply {Y : Type u} [TopologicalSpace Y] (
       (ContinuousMap.singularHomologyMap k m (e.symm : C(Y, X)) y) = y := by
   rw [← ContinuousMap.singularHomologyMap_comp, toContinuousMap_comp_symm,
     ContinuousMap.singularHomologyMap_id]
+
+variable {m} in
+/-- A class of singular homology has finite order exactly when its image under a homeomorphism
+does. -/
+theorem isOfFinAddOrder_singularHomologyMap_iff {Y : Type u} [TopologicalSpace Y] (e : X ≃ₜ Y)
+    {x : ((TauCeti.singularChains k).obj (TopCat.of X)).homology m} :
+    IsOfFinAddOrder (ContinuousMap.singularHomologyMap k m (e : C(X, Y)) x) ↔
+      IsOfFinAddOrder x :=
+  Function.Injective.isOfFinAddOrder_iff
+    (f := (ContinuousMap.singularHomologyMap k m (e : C(X, Y))).toAddMonoidHom)
+    (Function.LeftInverse.injective e.singularHomologyMap_symm_apply_apply)
 
 variable {R m} in
 /-- **Homeomorphisms homotopic to the identity act trivially on singular homology.** -/
