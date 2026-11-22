@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.FDeriv.Smul
-public import TauCeti.Geometry.Manifold.Complex.LocalOrientation
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Linear
+public import TauCeti.Geometry.Manifold.Complex.FundamentalClass
 public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Complex.EulerClass
 public import TauCeti.Topology.VectorBundle.Orientation.SectionIndex.Comparison
@@ -39,7 +40,8 @@ continuous section of `L(x)` whose zeros are those of `s` together with `x`.
   chart `(x, true)` of `L(x)`, with `g` continuous and `g (φ x) ≠ 0`. Its derivative at `φ x` is
   multiplication by `g (φ x)`, of determinant `|g (φ x)|² > 0` over `ℝ`, and the centred chart
   carries the canonical local orientation of `X` to that of `ℂ`
-  (`TauCeti.localHomologyMap_sub_complexHomologicalOrientation`), so its local index is `1`
+  by the canonical maximal-atlas and chart/linear-equivalence orientation comparisons,
+  so its local index is `1`
   (`TauCeti.sectionIndex_pointTwistMul_self`).
 
 Summing over zeros
@@ -205,47 +207,48 @@ theorem sectionIndex_pointTwistMul_self (x : X) {s : ∀ z, L z}
   set eL := trivializationAt ℂ L x
   -- The preferred chart of the point twist at `x`, its chart `(x, true)`.
   set e := trivializationAt ℂ (pointTwistCore ℂ L x).Fiber x
-  have he : e = (pointTwistCore ℂ L x).localTriv (x, true) :=
-    signedPointTwistCore_trivializationAt_self ℂ L x true
   -- The fibre coordinate `g` of `s` in the chart of `L` at `x`.
   set g : X → ℂ := fun z ↦ (eL (TotalSpace.mk' ℂ z (s z))).2
   have hxL : x ∈ eL.baseSet := mem_baseSet_trivializationAt ℂ L x
   have hgx : g x ≠ 0 := (eL.snd_apply_ne_zero_iff ℂ (v := TotalSpace.mk' ℂ x (s x)) hxL).2 hsx
   have heb : ∀ {z}, z ∈ e.baseSet → z ∈ eL.baseSet ∧ z ∈ φ.source := fun hz ↦ by
-    rw [he] at hz
+    rw [show e = _ from signedPointTwistCore_trivializationAt_self ℂ L x true] at hz
     simpa using mem_signedPointTwistCore_baseSet.1 hz
   -- The neighbourhood `U` of `x` on which `s` does not vanish.
   set U := e.baseSet ∩ (eL.baseSet ∩ g ⁻¹' {0}ᶜ)
   have hU : IsOpen U := e.open_baseSet.inter
     ((eL.continuousOn_snd_apply_mk hs).isOpen_inter_preimage eL.open_baseSet isOpen_compl_singleton)
-  have hxe : x ∈ e.baseSet := mem_baseSet_trivializationAt ℂ _ x
-  have hxU : x ∈ U := ⟨hxe, hxL, hgx⟩
+  have hxU : x ∈ U := ⟨mem_baseSet_trivializationAt ℂ _ x, hxL, hgx⟩
   have hUz : ∀ y ∈ U, pointTwistMul ℂ L x y (s y) = 0 → y = x := fun y hy h0 ↦ by
     refine ((pointTwistMul_eq_zero_iff (s y)).1 h0).resolve_right fun hsy ↦ hy.2.2 ?_
     exact (eL.snd_apply_eq_zero_iff ℂ (v := TotalSpace.mk' ℂ y (s y)) hy.2.1).2 hsy
   have hUφ : U ⊆ φ.source := fun _ hy ↦ (heb hy.1).2
-  have hω : Orientation.reindex ℝ ℂ (finCongr (by rw [finrank_self])) (complexOrientation ℂ) =
-      Complex.orientation :=
-    reindex_complexOrientation_complex
   have hA := hasFDerivAt_pointTwistMul_chartAt x hs
   -- Over `ℝ`, multiplication by `g x` has determinant `|g x|²`.
   have hdet' : ((ContinuousLinearMap.id ℝ ℂ).smulRight (g x)).det = Complex.normSq (g x) := by
-    rw [← Algebra.norm_complex_apply, Algebra.norm_apply, ContinuousLinearMap.det]
-    congr 1
-    ext w
-    simp [mul_comm]
-  have hdet : ((ContinuousLinearMap.id ℝ ℂ).smulRight (g x)).det ≠ 0 := by
-    rw [hdet']
-    exact (Complex.normSq_pos.2 hgx).ne'
+    simp [ContinuousLinearMap.det, LinearMap.det_complex, Complex.normSq_apply]
+  -- The zero of the fibre of the point twist is the zero of its model fibre `ℂ`.
   rw [VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt _ _ _ _ e φ hU hxU hUz
-    (by
-      -- The zero of the fibre of the point twist is the zero of its model fibre `ℂ`.
-      rw [pointTwistMul_self]
-      rfl) inter_subset_left hUφ
+    (congrArg (fun f : L x →L[ℂ] ℂ ↦ f (s x)) (pointTwistMul_self ℂ L x))
+    inter_subset_left hUφ
     (fun y hy ↦ (VectorBundleOrientation.mapOrientation_reindex_complex ℂ
-      (pointTwistCore ℂ L x).Fiber _ e (inter_subset_left hy)).trans hω)
-    (localHomologyMap_sub_complexHomologicalOrientation (k := 1)
-      (IsManifold.chart_mem_maximalAtlas x) (hUφ hxU) _) hA hdet, hdet',
+      (pointTwistCore ℂ L x).Fiber _ e (inter_subset_left hy)).trans
+        reindex_complexOrientation_complex)
+    (by
+      rw [complexHomologicalOrientation_apply x]
+      have hσ : (((ContinuousLinearEquiv.refl ℝ ℂ : ℂ →L[ℝ] ℂ) : C(ℂ, ℂ)).comp
+          ((⟨fun y ↦ y - φ x, by fun_prop⟩ : C(ℂ, ℂ)).comp φ.sourceRestrict)) =
+          (⟨fun y : φ.source ↦ φ y - φ x,
+            φ.continuousOn.domRestrict.sub continuous_const⟩ : C(φ.source, ℂ)) :=
+        ContinuousMap.ext fun y ↦ congrArg (fun z ↦ z - φ x) (φ.sourceRestrict_apply y)
+      have hφ := φ.localHomologyMap_chart_localOrientationOfOrientedChart (hUφ hxU)
+        (ContinuousLinearEquiv.refl ℝ ℂ) Complex.orientation
+        Complex.finrank_real_complex Complex.finrank_real_complex (by
+          rw [hσ]
+          exact fun y hy ↦ Subtype.ext (φ.injOn y.property (hUφ hxU) (sub_eq_zero.1 hy)))
+      simp only [hσ] at hφ
+      simpa only [ContinuousLinearEquiv.refl, φ, Orientation.map_refl, Equiv.refl_apply] using hφ)
+    hA (hdet'.trans_ne (Complex.normSq_pos.2 hgx).ne'), hdet',
     sign_pos (Complex.normSq_pos.2 hgx), SignType.coe_one]
 
 /-! ### The Euler number of the point twist -/
