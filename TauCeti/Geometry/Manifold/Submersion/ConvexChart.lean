@@ -17,9 +17,9 @@ finite-dimensional real normed space, and let `x` be a regular point of `f`: the
 (`ContMDiffOn.exists_domChart_mem_maximalAtlas_of_surjective_mfderiv`), `f` reads near `x` as a
 surjective linear map `F × K → F` in a suitable chart. The preimage of a small ball under that
 chart is then a convexity chart of `f` in the sense of the local-to-global principle
-(`TauCeti.IsConvexChart`): `f` maps it onto a ball, it is open onto that ball, and its fibres
-are images of convex slices of the ball, hence connected
-(`ContMDiffOn.exists_isConvexChart_subset_of_surjective_mfderiv`).
+(`TauCeti.IsConvexChart`): `f` maps it onto the open convex image of the ball under that linear
+map, it is open onto that image, and its fibres are images of convex slices of the ball, hence
+preconnected (`ContMDiffOn.exists_isConvexChart_subset_of_surjective_mfderiv`).
 
 So near regular points every smooth map into a finite-dimensional space is locally convex. In the
 convexity theorems for moment maps this supplies the convexity charts at the points where the
@@ -67,6 +67,8 @@ theorem _root_.ContMDiffOn.exists_isConvexChart_subset_of_surjective_mfderiv {U 
     ⟨L.symm (v, 0), by simp [g]⟩
   have hfe : EqOn f (g ∘ e) e.source := fun z hz ↦ by
     have hz' : z ∈ (φ.extend I).source := by rwa [φ.extend_source]
+    -- At `φ.extend I z = I (φ z)`, `hEq` reads `f (φ.symm (φ z)) = (L (I (φ z))).1` (the target
+    -- chart of the model space `F` is the identity), which is `f z = g (e z)` by `φ.left_inv`.
     simpa [extChartAt_model_space_eq_id, φ.left_inv hz, e, g] using
       hEq ((φ.extend I).map_source hz')
   -- Shrink to the preimage of a ball inside the image of `N`.

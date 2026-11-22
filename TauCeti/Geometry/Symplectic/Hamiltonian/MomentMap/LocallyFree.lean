@@ -118,14 +118,15 @@ theorem mfderiv_toContinuousLinearMap_apply
       ContinuousLinearMap.apply ℝ ℝ ξ ∘
         fun y ↦ (LinearMap.toContinuousLinearMap (μ y) : StrongDual ℝ E) := by
     ext y
-    simp only [comp_apply, ContinuousLinearMap.apply_apply]
-    -- `LinearMap.toContinuousLinearMap` keeps the underlying function.
-    exact (LinearMap.coe_toContinuousLinearMap' (μ y)).symm ▸ rfl
+    -- `μ y` lives in `Module.Dual ℝ (GroupLieAlgebra I G)`, not syntactically `E →ₗ[ℝ] ℝ`, so
+    -- `simp` cannot use `LinearMap.coe_toContinuousLinearMap'`; we apply it directly.
+    exact (congrFun (LinearMap.coe_toContinuousLinearMap' (μ y)) ξ).symm
   have h' := mfderiv_comp_apply x (ContinuousLinearMap.apply ℝ ℝ ξ).mdifferentiableAt hf v
   rw [← hcomp, (ContinuousLinearMap.apply ℝ ℝ ξ).mfderiv_eq] at h'
-  -- Both sides are `dμ_ξ (v)`, up to the evaluation of `LinearMap.toContinuousLinearMap`.
+  -- Both sides are `dμ_ξ (v)`.
   exact h'.symm.trans ((mvfderiv_apply_eq_mfderiv_apply (fun y ↦ μ y ξ) x v).symm.trans
-    (h.differential_apply x v ξ).symm)
+    ((h.differential_apply x v ξ).symm.trans
+      (congrFun (LinearMap.coe_toContinuousLinearMap' (h.differential x v)) ξ).symm))
 
 end Regular
 
@@ -157,8 +158,7 @@ theorem exists_isConvexChart_subset_of_isotropy_eq_bot
   obtain ⟨v, hv⟩ := (h.differential_surjective_iff hσ).2 hx (φ : E →ₗ[ℝ] ℝ)
   refine ⟨v, ?_⟩
   rw [h.mfderiv_toContinuousLinearMap_apply, hv]
-  -- `LinearMap.toContinuousLinearMap` keeps the underlying function.
-  exact ContinuousLinearMap.ext fun _ ↦ rfl
+  exact ContinuousLinearMap.coe_injective (LinearMap.coe_toContinuousLinearMap _)
 
 end RegularChart
 
@@ -270,6 +270,8 @@ theorem mem_fixedPoints_or_isotropy_eq_bot_of_finrank_eq_one
   have htop : (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊤ := by
     rw [← LieSubalgebra.toSubmodule_inj, LieSubalgebra.top_toSubmodule]
     refine Submodule.eq_top_of_finrank_eq (le_antisymm (Submodule.finrank_le _) ?_)
+    -- `GroupLieAlgebra I G` is the tangent space at `1`, which is the model space `E` by
+    -- definition, so `hE` is its dimension.
     rw [show Module.finrank ℝ (GroupLieAlgebra I G) = 1 from hE, Nat.one_le_iff_ne_zero,
       Ne, Submodule.finrank_eq_zero, LieSubalgebra.toSubmodule_eq_bot]
     exact hx
