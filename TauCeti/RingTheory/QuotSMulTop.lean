@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
@@ -55,7 +56,6 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 * `QuotSMulTop.subsingleton_of_isUnit`: `M ⧸ x M` is trivial for a unit `x`.
 * `QuotSMulTop.subsingleton_iff_smul_right_surjective`: `M ⧸ x M` is trivial exactly when
   multiplication by `x` on `M` is surjective.
-* `Submodule.smul_top_le_smul_top_of_dvd`: `b M ≤ a M` when `a ∣ b`.
 * `QuotSMulTop.mulPow_injective` and `QuotSMulTop.exact_mulPow`: the sequence
   `0 → M ⧸ x M → M ⧸ xᵏ⁺¹ M → M ⧸ xᵏ M → 0` is exact, the first map being injective when `x` is
   `M`-regular.
@@ -146,21 +146,6 @@ theorem quotSMulTopSelfEquiv_symm_mk (I : Ideal R) (r : R) :
   (rfl)
 
 end Ideal
-
-namespace Submodule
-
-variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-
-/-- If `a` divides `b`, then `b M ≤ a M`. -/
-theorem smul_top_le_smul_top_of_dvd {a b : R} (h : a ∣ b) :
-    b • (⊤ : Submodule R M) ≤ a • ⊤ := by
-  obtain ⟨c, rfl⟩ := h
-  intro _ hm
-  obtain ⟨m, -, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).1 hm
-  rw [mul_smul]
-  exact smul_mem_pointwise_smul _ _ ⊤ mem_top
-
-end Submodule
 
 namespace QuotSMulTop
 

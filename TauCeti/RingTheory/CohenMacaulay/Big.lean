@@ -51,7 +51,9 @@ of regular sequences (`RingTheory.Sequence.IsRegular.not_prod_pow_smul_top_le` a
 * `Module.IsBalancedBigCohenMacaulay.isBigCohenMacaulay`: balanced big Cohen–Macaulay modules are
   big Cohen–Macaulay.
 * `Module.isBalancedBigCohenMacaulay_iff_of_ringKrullDim_eq_zero`: over a local ring of dimension
-  zero, such as a field, both notions mean `M ≠ 𝔪 M`.
+  zero, such as a field, the balanced notion means `M ≠ 𝔪 M`, and
+  `Module.isBigCohenMacaulay_iff_of_ringKrullDim_eq_zero` says the same for the big notion over a
+  Noetherian local ring of dimension zero.
 * `Module.IsCohenMacaulay.isRegular_of_isSystemOfParameters`: in a finite Cohen–Macaulay module of
   full dimension every system of parameters is a regular sequence.
 * `Module.isBigCohenMacaulay_iff_isCohenMacaulay_and_supportDim_eq` and
