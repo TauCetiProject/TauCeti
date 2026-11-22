@@ -82,6 +82,12 @@ theorem rOut_shrinking (hR : 0 < R) (n : ℕ) :
     (shrinking hR n : ContDiffBump c).rOut = R / (n + 1) :=
   (rfl)
 
+/-- The outer radius of `ContDiffBump.shrinking` is at most `R`. -/
+theorem rOut_shrinking_le (hR : 0 < R) (n : ℕ) :
+    (shrinking hR n : ContDiffBump c).rOut ≤ R := by
+  rw [rOut_shrinking]
+  exact div_le_self hR.le (by simp)
+
 /-- The outer radius of `ContDiffBump.shrinking` is twice its inner radius. -/
 theorem rOut_shrinking_eq_two_mul_rIn (hR : 0 < R) (n : ℕ) :
     (shrinking hR n : ContDiffBump c).rOut = 2 * (shrinking hR n : ContDiffBump c).rIn := by
@@ -104,8 +110,7 @@ theorem exists_seq_tendsto_rOut_closedBall_subset {E : Type*} [PseudoMetricSpace
       ∀ n, ∀ x ∈ K, closedBall x (ρ n).rOut ⊆ U := by
   obtain ⟨δ, hδ, hδU⟩ := hK.exists_cthickening_subset_open hU hKU
   refine ⟨shrinking hδ, tendsto_rOut_shrinking hδ, fun n x hx => ?_⟩
-  rw [rOut_shrinking]
-  exact (closedBall_subset_closedBall (div_le_self hδ.le (by simp))).trans
+  exact (closedBall_subset_closedBall (rOut_shrinking_le hδ n)).trans
     ((closedBall_subset_cthickening hx δ).trans hδU)
 
 /-- On a relatively compact open subdomain, a shrinking sequence of normalized bump kernels
