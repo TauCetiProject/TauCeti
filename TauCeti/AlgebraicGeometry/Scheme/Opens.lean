@@ -520,6 +520,7 @@ noncomputable def CommSq.rightSheafMap (h : CommSq i j f g) :
 
 /-- The transported structure-sheaf map on an open is the pullback on sections along the
 right edge, restricted to the inverse image along the left path. -/
+@[simp]
 theorem CommSq.rightSheafMap_app (h : CommSq i j f g) (U : Z.Opens) :
     h.rightSheafMap.hom.app (Opposite.op U) =
       j.appLE (g ⁻¹ᵁ U) (i ⁻¹ᵁ f ⁻¹ᵁ U) (h.preimage_preimage_eq U).le := by

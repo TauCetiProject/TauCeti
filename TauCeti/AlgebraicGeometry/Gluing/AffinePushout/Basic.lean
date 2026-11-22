@@ -254,7 +254,8 @@ theorem isPushout_base_SpecMap_pullback (hp : Surjective p) :
   -- given by Mathlib's `Types.isPushout_of_isPullback_of_mono'`.
   apply IsPushout.of_isPushout_forget
   · refine (Types.isPushout_of_isPullback_of_mono' hSet ?_ ?_).flip
-    · change Set.range (comap (p.pullbackSnd q)) ∪
+    · -- Forgetting to types sends `Spec.map` to `PrimeSpectrum.comap` on the same points.
+      change Set.range (comap (p.pullbackSnd q)) ∪
         Set.range (comap (p.pullbackFst q)) = Set.univ
       rw [Set.union_comm, ← Set.Sum.elim_range]
       exact (p.surjective_sumElim_comap_pullback q hp).range_eq

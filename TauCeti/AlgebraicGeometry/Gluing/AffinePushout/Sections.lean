@@ -201,6 +201,7 @@ private theorem isPullback_sheafSquare :
   refine (PullbackCone.isLimitMapConeEquiv _ (E x)).symm ?_
   have h : IsPullback ((E x).map (p.leftMap q)) ((E x).map (p.rightMap q))
       ((E x).map (p.leftOverlapMap q)) ((E x).map (p.rightOverlapMap q)) := by
+    -- Forgetting the sheaf and evaluating at `V x` takes a morphism to its `.hom.app` component.
     change IsPullback ((p.leftMap q).hom.app _) ((p.rightMap q).hom.app _)
       ((p.leftOverlapMap q).hom.app _) ((p.rightOverlapMap q).hom.app _)
     rw [leftMap_app, rightMap_app, leftOverlapMap_app, rightOverlapMap_app]
