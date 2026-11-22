@@ -18,6 +18,7 @@ Clifford action makes the target Clifford module a module for the original Lie a
 ## Main results
 
 * `CliffordAlgebra.quadraticLift`: the quadratic realization of a skew-adjoint Lie action.
+* `CliffordAlgebra.quadraticLiftToEven`: the same lift, valued in the even Clifford subalgebra.
 * `CliffordAlgebra.quadraticLift_lie_ι`: its defining action on Clifford generators.
 * `CliffordAlgebra.quadraticLift_injective_iff`: the lift is injective exactly when the
   skew-adjoint action it lifts is.
@@ -72,6 +73,31 @@ theorem quadraticLift_mem_quadraticLieSubalgebra {K : Type u} [Field K]
     (θ : L →ₗ⁅K⁆ skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q)) (x : L) :
     quadraticLift Q hQ θ x ∈ quadraticLieSubalgebra Q :=
   (soEquivQuadratic Q hQ (θ x)).property
+
+/-- The quadratic lift of a skew-adjoint Lie action, valued in the even Clifford subalgebra: every
+quadratic element is even (`CliffordAlgebra.quadraticLieSubalgebra_le_even`). -/
+noncomputable def quadraticLiftToEven {K : Type u} [Field K]
+    {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+    [Invertible (2 : K)] (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    {L : Type w} [LieRing L] [LieAlgebra K L]
+    (θ : L →ₗ⁅K⁆ skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q)) :
+    L →ₗ⁅K⁆ even Q where
+  toFun x := ⟨quadraticLift Q hQ θ x,
+    quadraticLieSubalgebra_le_even Q (quadraticLift_mem_quadraticLieSubalgebra Q hQ θ x)⟩
+  map_add' x y := SetCoe.ext ((quadraticLift Q hQ θ).map_add x y)
+  map_smul' r x := SetCoe.ext ((quadraticLift Q hQ θ).map_smul r x)
+  map_lie' := SetCoe.ext ((quadraticLift Q hQ θ).map_lie _ _)
+
+/-- Coercing the even-valued quadratic lift to the Clifford algebra recovers the quadratic
+lift. -/
+@[simp, grind =]
+theorem coe_quadraticLiftToEven_apply {K : Type u} [Field K]
+    {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+    [Invertible (2 : K)] (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    {L : Type w} [LieRing L] [LieAlgebra K L]
+    (θ : L →ₗ⁅K⁆ skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q)) (x : L) :
+    ((quadraticLiftToEven Q hQ θ x : even Q) : CliffordAlgebra Q) = quadraticLift Q hQ θ x := by
+  rfl
 
 /-- The quadratic lift acts on Clifford generators through the supplied skew-adjoint action. -/
 @[grind =]

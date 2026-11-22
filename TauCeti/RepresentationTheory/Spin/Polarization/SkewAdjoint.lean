@@ -40,8 +40,8 @@ the two half-spin summands `S⁺` and `S⁻`, and restricts to them.
   realization.
 * `TauCeti.SpinPolarizationData.lie_soSpinLieRep_cliffordOperator`: its commutator with the
   Clifford operator of a vector.
-* `TauCeti.SpinPolarizationData.soSpinLieRep_eq_half_commutator`: its value on an infinitesimal
-  rotation is the half-commutator of two Clifford operators.
+* `TauCeti.SpinPolarizationData.soSpinLieRep_eq_invOf_two_smul_cliffordOperator_mul_sub`: its
+  value on an infinitesimal rotation is the half-commutator of two Clifford operators.
 * `TauCeti.SpinPolarizationData.soSpinLieRep_apply_eq_mul_contractLeft_sub`: the value on the
   rotation of an isotropic pair is a number operator shifted by a scalar.
 * `TauCeti.SpinPolarizationData.typeBSpinLieRep_eq_soSpinLieRep_comp` and
@@ -124,7 +124,7 @@ theorem soSpinLieRep_eq_spinAction_bivector
 /-- **The spin operator of an infinitesimal rotation is a half-commutator.** A skew-adjoint
 endomorphism acting on vectors as `x ↦ polar Q b x • a - polar Q a x • b` acts on the spinor
 module by `⅟2 • (c(a) c(b) - c(b) c(a))`, where `c` is the Clifford operator of a vector. -/
-theorem soSpinLieRep_eq_half_commutator
+theorem soSpinLieRep_eq_invOf_two_smul_cliffordOperator_mul_sub
     (f : skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q)) (a b : V)
     (hf : ∀ x, (f : Module.End K V) x =
       QuadraticMap.polar Q b x • a - QuadraticMap.polar Q a x • b) :
@@ -235,32 +235,12 @@ end Coordinates
 
 /-! ### The half-spin representations of `𝔰𝔬(Q)` -/
 
-/-- The quadratic realization of `𝔰𝔬(Q)`, valued in the even Clifford subalgebra. -/
-private noncomputable def soToEvenLieHom :
-    skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q) →ₗ⁅K⁆ CliffordAlgebra.even Q := by
-  let hQ := P.nondegenerate ((isUnit_of_invertible (2 : K)).isSMulRegular K)
-  let f := quadraticLift Q hQ LieHom.id
-  exact {
-    toFun := fun x => ⟨f x,
-      quadraticLieSubalgebra_le_even Q (quadraticLift_mem_quadraticLieSubalgebra Q hQ _ x)⟩
-    map_add' := fun x y => SetCoe.ext (f.map_add x y)
-    map_smul' := fun r x => SetCoe.ext (f.map_smul r x)
-    map_lie' := @fun x y => SetCoe.ext (f.map_lie x y) }
-
-/-- Coercing the even Clifford image of a skew-adjoint endomorphism recovers its quadratic
-Clifford realization. -/
-private theorem coe_soToEvenLieHom_apply (hQ : Q.Nondegenerate)
-    (f : skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q)) :
-    ((P.soToEvenLieHom f : CliffordAlgebra.even Q) : CliffordAlgebra Q) =
-      (soEquivQuadratic Q hQ f : CliffordAlgebra Q) := by
-  rw [soToEvenLieHom]
-  exact (quadraticLift_apply Q _ LieHom.id f).trans (by rw [LieHom.id_apply])
-
 /-- **The even half-spin representation of `𝔰𝔬(Q)`**: in even dimension the spin representation
 preserves the even half-spin summand `S⁺`, and this is its restriction there. -/
 noncomputable def soSpinPlusLieRep (hline : P.line = ⊥) :
     skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q) →ₗ⁅K⁆ Module.End K (spinPlus Q P) :=
-  (spinPlusAction Q P hline).toLieHom.comp P.soToEvenLieHom
+  (spinPlusAction Q P hline).toLieHom.comp <|
+    quadraticLiftToEven Q (P.nondegenerate_of_line_eq_bot hline) LieHom.id
 
 /-- After coercion to the spinor module, the even half-spin action of `𝔰𝔬(Q)` is the spin
 action. -/
@@ -271,13 +251,14 @@ theorem coe_soSpinPlusLieRep_apply (hline : P.line = ⊥)
       P.soSpinLieRep f s := by
   have hQ := P.nondegenerate_of_line_eq_bot hline
   rw [soSpinPlusLieRep, LieHom.comp_apply, AlgHom.toLieHom_apply, coe_spinPlusAction_apply,
-    P.coe_soToEvenLieHom_apply hQ, P.soSpinLieRep_apply hQ]
+    coe_quadraticLiftToEven_apply, quadraticLift_apply, LieHom.id_apply, P.soSpinLieRep_apply hQ]
 
 /-- **The odd half-spin representation of `𝔰𝔬(Q)`**: in even dimension the spin representation
 preserves the odd half-spin summand `S⁻`, and this is its restriction there. -/
 noncomputable def soSpinMinusLieRep (hline : P.line = ⊥) :
     skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q) →ₗ⁅K⁆ Module.End K (spinMinus Q P) :=
-  (spinMinusAction Q P hline).toLieHom.comp P.soToEvenLieHom
+  (spinMinusAction Q P hline).toLieHom.comp <|
+    quadraticLiftToEven Q (P.nondegenerate_of_line_eq_bot hline) LieHom.id
 
 /-- After coercion to the spinor module, the odd half-spin action of `𝔰𝔬(Q)` is the spin
 action. -/
@@ -288,7 +269,7 @@ theorem coe_soSpinMinusLieRep_apply (hline : P.line = ⊥)
       P.soSpinLieRep f s := by
   have hQ := P.nondegenerate_of_line_eq_bot hline
   rw [soSpinMinusLieRep, LieHom.comp_apply, AlgHom.toLieHom_apply, coe_spinMinusAction_apply,
-    P.coe_soToEvenLieHom_apply hQ, P.soSpinLieRep_apply hQ]
+    coe_quadraticLiftToEven_apply, quadraticLift_apply, LieHom.id_apply, P.soSpinLieRep_apply hQ]
 
 section Coordinates
 
