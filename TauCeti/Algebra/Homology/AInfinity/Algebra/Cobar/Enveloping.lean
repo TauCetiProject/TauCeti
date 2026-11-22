@@ -510,12 +510,6 @@ noncomputable abbrev envelopingMap (hf : f.IsAugmented ε ε') :
     ε'.envelopingAugmentation.comp hf.envelopingMap = ε.envelopingAugmentation :=
   ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.cobarHom_ext _ fun _ ↦ by simp
 
-/-- The identity augmented `A∞` morphism induces the identity DG algebra morphism on `U(A, ε)`. -/
-@[simp] theorem envelopingMap_id (ε : 𝒜.Augmentation) :
-    (AInfinityHom.isAugmented_id ε).envelopingMap =
-      DGAlgHom.id ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential := by
-  rw [envelopingMap, AInfinityHom.IsAugmented.reducedHom_id, AInfinityHom.cobarBarMap_id]
-
 /-- `envelopingMap` preserves composition of augmented `A∞` morphisms. -/
 theorem envelopingMap_comp (hg : g.IsAugmented ε' ε'') (hf : f.IsAugmented ε ε') :
     (hg.comp hf).envelopingMap = hg.envelopingMap.comp hf.envelopingMap := by
