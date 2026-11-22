@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Quotient.Isospectral
+public import TauCeti.Geometry.Manifold.DifferentialOperator.LaplaceType.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Regularity
 
 /-!
@@ -34,15 +34,6 @@ inclusion of the smooth functions restricts to a linear equivalence
 
 from the `(-μ)`-eigenspace of the Laplace–Beltrami operator `Δ = div grad` on smooth functions.
 
-Consequently **Sunada's theorem** holds for the weak eigenspaces. Let a finite group `Q` act on a
-closed manifold `M` by isometries, and let `K₁`, `K₂` be almost-conjugate subgroups acting freely,
-with metrics on the orbit spaces making the orbit projections local isometries. Then the weak
-`μ`-eigenspaces in `H¹(M ⧸ K₁)` and `H¹(M ⧸ K₂)` are linearly equivalent for every `μ`
-(`Subgroup.AlmostConjugate.nonempty_linearEquiv_weakEigenspace`), so they have the same dimension
-(`Subgroup.AlmostConjugate.finrank_weakEigenspace_eq`). This transfers the smooth version
-`Subgroup.AlmostConjugate.nonempty_linearEquiv_eigenspace_smoothLaplaceBeltrami` through
-`weakEigenspaceEquiv` on both quotients.
-
 ## Main results
 
 * `TauCeti.Manifold.SobolevH1.weakEigenspace`: the weak eigenspaces of `Δ⁺` in `H¹(M)`, with
@@ -52,15 +43,6 @@ with metrics on the orbit spaces making the orbit projections local isometries. 
   eigenfunction exactly when it is a classical one.
 * `TauCeti.Manifold.SobolevH1.weakEigenspaceEquiv`: for a smooth metric, every weak eigenfunction
   is smooth, and the weak eigenspace is the smooth eigenspace.
-* `Subgroup.AlmostConjugate.nonempty_linearEquiv_weakEigenspace`,
-  `Subgroup.AlmostConjugate.finrank_weakEigenspace_eq`: Sunada's theorem for the weak eigenspaces.
-
-## References
-
-* T. Sunada, *Riemannian coverings and isospectral manifolds*, Ann. of Math. **121** (1985),
-  169–186.
-* P. Bérard, *Transplantation et isospectralité I*, Séminaire de Théorie spectrale et
-  géométrie **9** (1990–1991), §II, Theorem 17, p. 159.
 -/
 
 public section
@@ -167,14 +149,6 @@ variable [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
 attribute [local instance] instIsContinuousRiemannianBundleOfContMDiffInfty
 
-omit [I.Boundaryless] [CompactSpace M] [T2Space M] [MeasurableSpace M] [BorelSpace M] in
-/-- A smooth function is a `(-μ)`-eigenfunction of `Δ = div grad` exactly when `-Δu = μ u`. -/
-private theorem mem_eigenspace_smoothLaplaceBeltrami_neg_iff {μ : ℝ} {u : C^∞⟮I, M; ℝ⟯} :
-    u ∈ End.eigenspace (smoothLaplaceBeltrami I M) (-μ) ↔
-      ∀ x, -laplaceBeltrami I u x = μ * u x := by
-  simp only [End.mem_eigenspace_iff, ContMDiffMap.ext_iff, smoothLaplaceBeltrami_apply,
-    ContMDiffMap.coe_smul, Pi.smul_apply, smul_eq_mul, neg_mul, neg_eq_iff_eq_neg]
-
 variable (I M) in
 /-- **Weak eigenfunctions are smooth.** On a closed manifold with a smooth metric, the inclusion of
 the smooth functions into `H¹(M)` restricts to a linear equivalence from the `(-μ)`-eigenspace of
@@ -183,13 +157,15 @@ the Laplace–Beltrami operator `Δ = div grad` on smooth functions onto the wea
 def weakEigenspaceEquiv (μ : ℝ) :
     End.eigenspace (smoothLaplaceBeltrami I M) (-μ) ≃ₗ[ℝ] weakEigenspace I M μ :=
   LinearEquiv.ofBijective
-    (ofSmooth.restrict fun _ hu ↦
-      ofSmooth_mem_weakEigenspace_iff.2 (mem_eigenspace_smoothLaplaceBeltrami_neg_iff.1 hu))
+    (ofSmooth.restrict fun _ hu ↦ ofSmooth_mem_weakEigenspace_iff.2 fun x ↦ by
+      rw [mem_eigenspace_smoothLaplaceBeltrami_iff.1 hu x]
+      ring)
     ⟨fun _ _ huv ↦ Subtype.ext (ofSmooth_injective (congrArg Subtype.val huv)), fun w ↦ by
       obtain ⟨u, hwu, hu⟩ :=
         exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_of_dirichletForm_eq_mul
           (mem_weakEigenspace_iff_forall_ofSmooth.1 w.property)
-      exact ⟨⟨u, mem_eigenspace_smoothLaplaceBeltrami_neg_iff.2 hu⟩, Subtype.ext hwu.symm⟩⟩
+      exact ⟨⟨u, mem_eigenspace_smoothLaplaceBeltrami_iff.2 fun x ↦ by linarith [hu x]⟩,
+        Subtype.ext hwu.symm⟩⟩
 
 @[simp]
 theorem coe_weakEigenspaceEquiv_apply (μ : ℝ)
@@ -197,57 +173,13 @@ theorem coe_weakEigenspaceEquiv_apply (μ : ℝ)
     (weakEigenspaceEquiv I M μ u : SobolevH1 I M) = ofSmooth (u : C^∞⟮I, M; ℝ⟯) :=
   (rfl)
 
+/-- **Weak eigenfunctions are smooth.** The smooth eigenfunction corresponding to a weak
+eigenfunction `w` under `weakEigenspaceEquiv` is `w` itself, viewed in `H¹(M)`. -/
+@[simp]
+theorem ofSmooth_weakEigenspaceEquiv_symm_apply (μ : ℝ) (w : weakEigenspace I M μ) :
+    ofSmooth ((weakEigenspaceEquiv I M μ).symm w : C^∞⟮I, M; ℝ⟯) = w := by
+  rw [← coe_weakEigenspaceEquiv_apply, LinearEquiv.apply_symm_apply]
+
 end Regularity
 
 end TauCeti.Manifold.SobolevH1
-
-namespace Subgroup.AlmostConjugate
-
-open TauCeti TauCeti.Manifold
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  {M : Type} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [CompactSpace M]
-  {Q : Type} [Group Q] [Finite Q] [MulAction Q M] [ContMDiffConstSMul I ∞ Q M]
-  [ContinuousConstSMul Q M] [T2Space M] [LocallyCompactSpace M]
-  {K₁ K₂ : Subgroup Q} [IsCancelSMul K₁ M] [IsCancelSMul K₂ M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [MeasurableSpace (MulAction.orbitRel.Quotient K₁ M)]
-  [BorelSpace (MulAction.orbitRel.Quotient K₁ M)]
-  [RiemannianBundle (fun x : MulAction.orbitRel.Quotient K₁ M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : MulAction.orbitRel.Quotient K₁ M ↦ TangentSpace I x)]
-  [MeasurableSpace (MulAction.orbitRel.Quotient K₂ M)]
-  [BorelSpace (MulAction.orbitRel.Quotient K₂ M)]
-  [RiemannianBundle (fun x : MulAction.orbitRel.Quotient K₂ M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : MulAction.orbitRel.Quotient K₂ M ↦ TangentSpace I x)]
-
-attribute [local instance] SobolevH1.instIsContinuousRiemannianBundleOfContMDiffInfty
-
-/-- **Sunada's theorem** for the weak eigenspaces. Let a finite group `Q` act on a closed manifold
-`M` by isometries, and let `K₁`, `K₂` be almost-conjugate subgroups of `Q` acting freely on `M`.
-Give the orbit spaces `M ⧸ K₁` and `M ⧸ K₂` smooth metrics for which the orbit projections are
-local Riemannian isometries. Then for every `μ` the weak `μ`-eigenspaces of `Δ⁺` in `H¹(M ⧸ K₁)`
-and in `H¹(M ⧸ K₂)` are linearly equivalent. -/
-theorem nonempty_linearEquiv_weakEigenspace (h : K₁.AlmostConjugate K₂)
-    (hQ : ∀ q : Q, IsLocalRiemannianIsometry I I (q • · : M → M))
-    (h₁ : IsLocalRiemannianIsometry I I (Quotient.mk (MulAction.orbitRel K₁ M)))
-    (h₂ : IsLocalRiemannianIsometry I I (Quotient.mk (MulAction.orbitRel K₂ M))) (μ : ℝ) :
-    Nonempty (SobolevH1.weakEigenspace I (MulAction.orbitRel.Quotient K₁ M) μ ≃ₗ[ℝ]
-      SobolevH1.weakEigenspace I (MulAction.orbitRel.Quotient K₂ M) μ) :=
-  let ⟨e⟩ := h.nonempty_linearEquiv_eigenspace_smoothLaplaceBeltrami hQ h₁ h₂ (-μ)
-  ⟨(SobolevH1.weakEigenspaceEquiv I _ μ).symm ≪≫ₗ e ≪≫ₗ SobolevH1.weakEigenspaceEquiv I _ μ⟩
-
-/-- **Equal multiplicities.** Under the hypotheses of
-`Subgroup.AlmostConjugate.nonempty_linearEquiv_weakEigenspace`, the weak eigenspaces of `Δ⁺` in
-`H¹(M ⧸ K₁)` and in `H¹(M ⧸ K₂)` have the same `finrank`. -/
-theorem finrank_weakEigenspace_eq (h : K₁.AlmostConjugate K₂)
-    (hQ : ∀ q : Q, IsLocalRiemannianIsometry I I (q • · : M → M))
-    (h₁ : IsLocalRiemannianIsometry I I (Quotient.mk (MulAction.orbitRel K₁ M)))
-    (h₂ : IsLocalRiemannianIsometry I I (Quotient.mk (MulAction.orbitRel K₂ M))) (μ : ℝ) :
-    finrank ℝ (SobolevH1.weakEigenspace I (MulAction.orbitRel.Quotient K₁ M) μ) =
-      finrank ℝ (SobolevH1.weakEigenspace I (MulAction.orbitRel.Quotient K₂ M) μ) :=
-  let ⟨e⟩ := h.nonempty_linearEquiv_weakEigenspace hQ h₁ h₂ μ
-  e.finrank_eq
-
-end Subgroup.AlmostConjugate

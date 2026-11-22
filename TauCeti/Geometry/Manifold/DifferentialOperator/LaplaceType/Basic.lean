@@ -39,6 +39,8 @@ is `h ↦ h Δf + 2 ⟪grad f, grad h⟫` and that its double commutators are mu
   real-linear map to `C^∞(M)`.
 * `TauCeti.smoothLaplaceBeltrami I M`: the Laplace–Beltrami operator of a smooth metric as a
   real-linear endomorphism of `C^∞(M)`.
+* `TauCeti.mem_eigenspace_smoothLaplaceBeltrami_iff`: `u` is a `μ`-eigenfunction of `Δ` exactly
+  when `Δu = μ u` everywhere.
 * `TauCeti.IsLaplaceType D c`: `D` is of Laplace type with constant `c`.
 
 ## Main results
@@ -234,6 +236,14 @@ def smoothLaplaceBeltrami : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ�
 theorem smoothLaplaceBeltrami_apply (f : C^∞⟮I, M; ℝ⟯) (x : M) :
     smoothLaplaceBeltrami I M f x = laplaceBeltrami I f x :=
   (rfl)
+
+/-- A smooth function `u` is a `μ`-eigenfunction of the Laplace–Beltrami operator `Δ = div grad`
+exactly when `Δu = μ u` everywhere. -/
+theorem mem_eigenspace_smoothLaplaceBeltrami_iff {μ : ℝ} {u : C^∞⟮I, M; ℝ⟯} :
+    u ∈ Module.End.eigenspace (smoothLaplaceBeltrami I M) μ ↔
+      ∀ x, laplaceBeltrami I u x = μ * u x := by
+  simp only [Module.End.mem_eigenspace_iff, ContMDiffMap.ext_iff, smoothLaplaceBeltrami_apply,
+    ContMDiffMap.coe_smul, Pi.smul_apply, smul_eq_mul]
 
 /-- The commutator of the Laplace–Beltrami operator with multiplication by `f`:
 `[Δ, f] h = h Δf + 2 ⟪grad f, grad h⟫`. -/
