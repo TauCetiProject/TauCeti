@@ -41,7 +41,7 @@ The computation has three steps.
   at its rest point `p`. The field of `ε F` is `ε X_F`, whose linearization is `ε L`, so by the
   variational equation at a rest point
   (`TauCeti.hasDerivAt_mfderiv_timeDependentFlowOf_of_forall_eq_zero`) `Ψ' = ε L Ψ` with `Ψ(0) = 1`,
-  and `Ψ(t) = exp (t ε L)` (`mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul`).
+  and `Ψ(t) = exp (t ε L)` (`mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul_eq_exp`).
 * **The linearization is infinitesimally symplectic.** At a critical point the Hessian is
   `Hess F (p) (w, u) = σ_p(L w, u)`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.criticalHessian_apply_eq_eval₂_fderiv`). As the Hessian
@@ -64,8 +64,8 @@ Hamiltonian: for small `ε > 0`, every one-periodic orbit `γ` of `ε F` starts 
 
 In the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`:
 
-* `mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul`: at a critical point, the linearized
-  flow of `ε F` is the exponential `exp (t ε L)` of the linearization of `X_F`.
+* `mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul_eq_exp`: at a critical point, the
+  linearized flow of `ε F` is the exponential `exp (t ε L)` of the linearization of `X_F`.
 * `symplecticFormAt_fderiv_mpullbackWithin_hamiltonianVectorField_apply`: at a critical point,
   `σ_p(L w, u)` is the critical Hessian `Hess F (p) (w, u)`.
 * `isSkewAdjoint_fderiv_mpullbackWithin_hamiltonianVectorField`: at a critical point, the
@@ -124,7 +124,7 @@ two-form, `F` a `C³` function and `p` a critical point of `F`, and let `L` be t
 chart image of `p` of the coordinate expression of `X_F` in the preferred chart at `p`. For all
 `ε` and `t`, the differential at `p` of the flow of the autonomous Hamiltonian `ε F` from time `0`
 to time `t` is `exp (t ε L)`. -/
-theorem mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul (h : σ.IsNondegenerate)
+theorem mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul_eq_exp (h : σ.IsNondegenerate)
     (hF : ContMDiff I 𝓘(ℝ) 3 F) (hcrit : mvfderiv I F p = 0) (ε t : ℝ) :
     (mfderiv I I (timeDependentFlowOf (fun _ ↦ σ.hamiltonianVectorField (ε • F)) 0 t) p :
         E →L[ℝ] E) =
@@ -214,7 +214,7 @@ theorem symplecticFormAt_mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul
   have hskew : (h.symplecticFormAt p).toBilinForm.IsSkewAdjoint ((t * ε) • L) := fun x y ↦
     (hL.smul (t * ε) x y).trans
       (congrArg ((h.symplecticFormAt p).toBilinForm x) (smul_neg (t * ε) (L y)))
-  rw [mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul h hF hcrit ε t]
+  rw [mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul_eq_exp h hF hcrit ε t]
   exact LinearMap.IsSkewAdjoint.apply_exp_apply_exp (V := E) hskew u v
 
 attribute [local instance] TauCeti.normedAlgebraRatOfReal in
@@ -236,7 +236,7 @@ theorem exists_path_mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul
       source' := by simp
       target' := by simp }
   exact ⟨_, Ψ, fun t ↦
-    (mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul h hF hcrit ε t).symm⟩
+    (mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul_eq_exp h hF hcrit ε t).symm⟩
 
 /-- **The Conley–Zehnder index of the constant orbits of a small Hamiltonian on a manifold.** Let
 `σ` be a nondegenerate two-form on a boundaryless manifold of dimension `2n` and `p` a
@@ -267,7 +267,7 @@ theorem eventually_conleyZehnderIndex_eq_manifoldMorseIndex_sub (h : σ.IsNondeg
     (isSymm_toBilinForm_criticalHessian (hF2 p)) hQnd]
     with ε hε A B Ψ hΨ hΨt
   rw [hε Ψ hΨ fun t ↦ (hΨt t).trans
-      (mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul h hF hcrit ε t),
+      (mfderiv_timeDependentFlowOf_hamiltonianVectorField_smul_eq_exp h hF hcrit ε t),
     manifoldMorseIndex_eq_sigNeg_criticalHessian]
   -- The two sides differ only in reading the model space `E` as `TangentSpace I p`.
   rfl
