@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Homology.ComplexShape.Signs
 public import TauCeti.Algebra.Homology.Embedding.Regrade
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
+import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
 # Regrading tensor products of chain complexes
@@ -51,6 +52,10 @@ product on `C^k = CF_(n-k)`, with `n₁ = n₂ = n₀ = n`.
   the isomorphism, whose `hom` is `ChainComplex.regradeTensorHom`, and of its inverse on summands.
 * `ChainComplex.regradeTensorHom_naturality`, `ChainComplex.regradeTensorIso_inv_naturality`: the
   comparison is natural in both complexes.
+* `ChainComplex.regradeTensorHom_associativity`: the comparison is compatible with the associators
+  of chain and cochain complexes, after identifying the regradings by `(n₁ + n₂) + n₃` and
+  `n₁ + (n₂ + n₃)` through `ChainComplex.regradeIsoOfEq`. On the summand `K_p ⊗ L_q ⊗ M_r` both
+  composites carry the sign `(-1)^(n₁ q + n₁ r + n₂ r)`, so no correcting sign is needed.
 
 The tensor product of the regradings exists whenever `K ⊗ L` does, since their summands agree;
 this is an instance. The tensor signs on `ComplexShape.down ℤ` that define `K ⊗ L` are
@@ -318,5 +323,118 @@ lemma regradeTensorIso_inv_naturality {K₂ L₂ : ChainComplex C ℤ} [K₂.Has
   rw [← cancel_epi (regradeTensorIso n₁ n₂ K L).hom, Iso.hom_inv_id_assoc, regradeTensorIso_hom,
     ← regradeTensorHom_naturality_assoc, ← regradeTensorIso_hom, Iso.hom_inv_id,
     Category.comp_id]
+
+end ChainComplex
+
+/-! ### Compatibility with the associators -/
+
+namespace ChainComplex
+
+open HomologicalComplex ComplexShape
+
+section Associator
+
+variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C] [MonoidalPreadditive C]
+  [HasZeroObject C] [∀ X₁ X₂ : GradedObject ℤ C, GradedObject.HasTensor X₁ X₂]
+  [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
+  [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
+  [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
+  (n₁ n₂ n₃ : ℤ) (K L M : ChainComplex C ℤ)
+
+/-- `ChainComplex.ι_regradeTensorHom_f` for the chain complexes `K ⊗ L` and `M`, with the summand
+inclusion read in the regrading of `HomologicalComplex.tensorObj K L`, the codomain of
+`ChainComplex.regradeTensorHom n₁ n₂ K L`. -/
+@[reassoc]
+private lemma ι_regradeTensorHom_f_tensorObj_left (a b k : ℤ) (h : a + b = k) :
+    ιTensorObj ((HomologicalComplex.tensorObj K L).restriction
+          (embeddingUpIntDownIntSub (n₁ + n₂)))
+        (M.restriction (embeddingUpIntDownIntSub n₃)) a b k h ≫
+        (regradeTensorHom (n₁ + n₂) n₃ (K ⊗ L) M).f k =
+      regradeTensorSummand (n₁ + n₂) n₃ (K ⊗ L) M a b k h :=
+  ι_regradeTensorHom_f (n₁ + n₂) n₃ (K ⊗ L) M a b k h
+
+/-- `ChainComplex.ι_regradeTensorHom_f` for the chain complexes `K` and `L ⊗ M`, with the summand
+inclusion read in the regrading of `HomologicalComplex.tensorObj L M`, the codomain of
+`ChainComplex.regradeTensorHom n₂ n₃ L M`. -/
+private lemma ι_regradeTensorHom_f_tensorObj_right (a b k : ℤ) (h : a + b = k) :
+    ιTensorObj (K.restriction (embeddingUpIntDownIntSub n₁))
+        ((HomologicalComplex.tensorObj L M).restriction
+          (embeddingUpIntDownIntSub (n₂ + n₃))) a b k h ≫
+        (regradeTensorHom n₁ (n₂ + n₃) K (L ⊗ M)).f k =
+      regradeTensorSummand n₁ (n₂ + n₃) K (L ⊗ M) a b k h :=
+  ι_regradeTensorHom_f n₁ (n₂ + n₃) K (L ⊗ M) a b k h
+
+/-- On the summand `K_(n₁ - a) ⊗ L_(n₂ - b) ⊗ M_(n₃ - c)`, the two composites of
+`ChainComplex.regradeTensorHom_associativity` are the associator of `C` with the signs
+`(-1)^(n₁ (n₂ - b) + (n₁ + n₂) (n₃ - c))` and `(-1)^(n₂ (n₃ - c) + n₁ (n₂ + n₃ - (b + c)))`, which
+agree. -/
+private lemma regradeTensorSummand_associativity (a b c k : ℤ) (h : a + b + c = k) :
+    ((n₁ * (n₂ - b)).negOnePow • ιTensorObj K L (n₁ - a) (n₂ - b) (n₁ + n₂ - (a + b))
+          (by omega)) ▷ M.X (n₃ - c) ≫
+        (((n₁ + n₂) * (n₃ - c)).negOnePow • ιTensorObj (K ⊗ L) M (n₁ + n₂ - (a + b)) (n₃ - c)
+          (n₁ + n₂ + n₃ - k) (by omega)) ≫
+        (α_ K L M).hom.f (n₁ + n₂ + n₃ - k) ≫
+          ((HomologicalComplex.tensorObj K (L ⊗ M)).XIsoOfEq
+            (show n₁ + n₂ + n₃ - k = n₁ + (n₂ + n₃) - k by ring)).hom =
+      (α_ (K.X (n₁ - a)) (L.X (n₂ - b)) (M.X (n₃ - c))).hom ≫
+        K.X (n₁ - a) ◁ ((n₂ * (n₃ - c)).negOnePow •
+          ιTensorObj L M (n₂ - b) (n₃ - c) (n₂ + n₃ - (b + c)) (by omega)) ≫
+        ((n₁ * (n₂ + n₃ - (b + c))).negOnePow •
+          ιTensorObj K (L ⊗ M) (n₁ - a) (n₂ + n₃ - (b + c)) (n₁ + (n₂ + n₃) - k) (by omega)) := by
+  simp only [Units.smul_def, zsmul_whiskerRight, whiskerLeft_zsmul, Preadditive.zsmul_comp,
+    Preadditive.comp_zsmul, smul_smul]
+  rw [ι_ι_associator_hom_assoc K L M (n₁ - a) (n₂ - b) (n₃ - c) (n₁ + n₂ - (a + b))
+    (n₂ + n₃ - (b + c)) (n₁ + n₂ + n₃ - k) (by omega) (by omega) (by omega) (by omega),
+    ιTensorObj_comp_XIsoOfEq_hom]
+  congr 1
+  rw [← Units.val_mul, ← Units.val_mul, ← Int.negOnePow_add, ← Int.negOnePow_add]
+  congr 2
+  ring
+
+/-- **The regrading of tensor products is compatible with the associators.** For chain complexes
+`K`, `L`, `M` and integers `n₁`, `n₂`, `n₃`, the two ways of comparing the tensor product of the
+regradings of `K` by `n₁`, `L` by `n₂` and `M` by `n₃` with the regrading of `K ⊗ (L ⊗ M)` by
+`n₁ + n₂ + n₃` agree: first comparing `K ⊗ L` and then applying the associator of chain complexes,
+or first applying the associator of cochain complexes and then comparing `L ⊗ M`. The two
+regradings by `(n₁ + n₂) + n₃` and `n₁ + (n₂ + n₃)` are identified by
+`ChainComplex.regradeIsoOfEq`.
+
+On the summand `K_p ⊗ L_q ⊗ M_r` both composites are the associator of `C` with the sign
+`(-1)^(n₁ q + n₁ r + n₂ r)`. So a degree-shifting product that is associative on the chain level
+remains associative after regrading, with no sign correction. This is the form of the
+compatibility that the associator of the regraded Floer complexes `C^k = CF_(n-k)` requires.
+
+This is the associativity axiom of a lax monoidal functor
+(`CategoryTheory.Functor.LaxMonoidal.associativity`) for the regrading, up to the
+identification of the shifts. -/
+@[reassoc]
+theorem regradeTensorHom_associativity :
+    regradeTensorHom n₁ n₂ K L ▷ M.restriction (embeddingUpIntDownIntSub n₃) ≫
+        regradeTensorHom (n₁ + n₂) n₃ (K ⊗ L) M ≫
+          restrictionMap (α_ K L M).hom (embeddingUpIntDownIntSub (n₁ + n₂ + n₃)) ≫
+            (regradeIsoOfEq (add_assoc n₁ n₂ n₃) (K ⊗ (L ⊗ M))).hom =
+      (α_ (K.restriction (embeddingUpIntDownIntSub n₁))
+          (L.restriction (embeddingUpIntDownIntSub n₂))
+          (M.restriction (embeddingUpIntDownIntSub n₃))).hom ≫
+        K.restriction (embeddingUpIntDownIntSub n₁) ◁ regradeTensorHom n₂ n₃ L M ≫
+          regradeTensorHom n₁ (n₂ + n₃) K (L ⊗ M) := by
+  ext k
+  refine mapBifunctor₁₂.hom_ext (fun a b c h ↦ ?_)
+  replace h : a + b + c = k := h
+  rw [mapBifunctor₁₂.ι_eq_whiskerRight _ _ _ a b c (a + b) k rfl h]
+  simp only [comp_f, Category.assoc]
+  rw [ι_whiskerRight_assoc, ← comp_whiskerRight_assoc, ι_regradeTensorHom_f,
+    ι_regradeTensorHom_f_tensorObj_left_assoc, ι_ι_associator_hom_assoc _ _ _ a b c (a + b)
+      (b + c) k rfl rfl h (by omega), ι_whiskerLeft_assoc, ← whiskerLeft_comp_assoc,
+    ι_regradeTensorHom_f, ι_regradeTensorHom_f_tensorObj_right]
+  rw [regradeTensorSummand_def, regradeTensorSummand_def, regradeTensorSummand_def,
+    regradeTensorSummand_def]
+  rw [restrictionMap_f, regradeIsoOfEq_hom_f]
+  -- The summands of the regraded complexes are those of `K`, `L`, `M` and their tensor products
+  -- by definition of `HomologicalComplex.restriction`, so the identity between plain summands
+  -- closes the goal.
+  exact regradeTensorSummand_associativity n₁ n₂ n₃ K L M a b c k h
+
+end Associator
 
 end ChainComplex

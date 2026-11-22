@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
+public import TauCeti.MeasureTheory.Function.Lp.One
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Distribution.TemperateGrowth
@@ -50,6 +51,8 @@ function by a function of temperate growth multiplies the function pointwise
   and their companions: the embedding `Lᵖ → 𝓢'` is linear, stated on the coercion.
 * `MeasureTheory.MemLp.toTemperedDistribution_toLp`: the `Lᵖ` class of a function of temperate
   growth is its tempered distribution `Function.HasTemperateGrowth.toTemperedDistribution`.
+* `MeasureTheory.Lp.toTemperedDistribution_one`: the constant one of `L^∞` is integration
+  against `μ`.
 * `MeasureTheory.Lp.toTemperedDistribution_injective`: an `Lᵖ` function is determined by its
   tempered distribution.
 * `MeasureTheory.Lp.toTemperedDistribution_eq_toTemperedDistribution_iff`,
@@ -149,6 +152,14 @@ theorem _root_.MeasureTheory.MemLp.toTemperedDistribution_toLp [SecondCountableT
   ext g
   rw [Lp.toTemperedDistribution_apply]
   exact integral_congr_ae <| hmem.coeFn_toLp.mono fun x hx ↦ by simp [hx]
+
+/-- As a tempered distribution, the constant one of `L^∞` is integration against `μ`. -/
+@[simp]
+theorem toTemperedDistribution_one [SecondCountableTopology E] :
+    ((1 : Lp ℂ ⊤ μ) : 𝓢'(E, ℂ)) = μ.toTemperedDistribution := by
+  rw [one_def, MemLp.toTemperedDistribution_toLp _ (Function.HasTemperateGrowth.const 1)]
+  ext g
+  simp
 
 end Linear
 
