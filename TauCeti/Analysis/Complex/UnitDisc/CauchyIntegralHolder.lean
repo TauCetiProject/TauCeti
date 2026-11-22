@@ -13,7 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
-import TauCeti.Analysis.Complex.CircleRotation
+import TauCeti.Analysis.Complex.Circle.Rotation
 import TauCeti.Analysis.Complex.PowerSeries.FourierCoeff
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.Analysis.Holder.MeanValue
@@ -47,7 +47,7 @@ Taylor coefficients as nonnegative Fourier coefficients of its boundary values.
 **Derivatives.** Suppose that at every point `w` of the circle `t ↦ φ (e^{it} w)` has a derivative
 `v w` at `t = 0`, with `v` continuous on the circle. Then `φ` is Lipschitz on the circle
 (`TauCeti.lipschitzOnWith_sphere_of_hasDerivAt_exp_mul` in
-`TauCeti.Analysis.Complex.CircleRotation`), and integrating by parts along the circle shows that
+`TauCeti.Analysis.Complex.Circle.Rotation`), and integrating by parts along the circle shows that
 the tangential derivative `(i z) F'(z)` is the Cauchy integral of `v`
 (`TauCeti.I_mul_smul_deriv_two_pi_I_inv_smul_circleIntegral_sub_inv_smul`). Passing to the limit
 from the circles of radius `r < 1`, the boundary values of the extension `G` of `F` have the

@@ -175,9 +175,12 @@ theorem DiffContOnCl.fourierCoeffOn_circleMap_eq_of_hasSum [CompleteSpace E] {H 
     norm_num
   -- The series converges at `z = 1 / 2`, so its radius of convergence is at least `1 / 2`.
   have hr : ((2⁻¹ : ℝ≥0) : ℝ≥0∞) ≤ p.radius := by
-    refine p.le_radius_of_tendsto (l := 0) ?_
+    have hn (n : ℕ) : ‖p n‖ * ((2⁻¹ : ℝ≥0) : ℝ) ^ n = ‖((2⁻¹ : ℝ≥0) : ℂ) ^ n • a n‖ := by
+      rw [ContinuousMultilinearMap.norm_mkPiRing, norm_smul, norm_pow, Complex.norm_real,
+        Real.norm_eq_abs, NNReal.abs_eq, mul_comm]
     have := (ha _ hhalf).summable.tendsto_atTop_zero.norm
-    simpa [p, ContinuousMultilinearMap.norm_mkPiRing, norm_smul, norm_pow, mul_comm] using this
+    rw [norm_zero] at this
+    exact p.le_radius_of_tendsto (l := 0) (this.congr fun n ↦ (hn n).symm)
   have h₂ : HasFPowerSeriesOnBall H p 0 ((2⁻¹ : ℝ≥0) : ℝ≥0∞) :=
     { r_le := hr
       r_pos := by simp

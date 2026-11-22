@@ -14,7 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import TauCeti.Topology.Circle.Metric
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Rotations of the plane and derivatives along the unit circle
@@ -24,8 +24,8 @@ The rotation `t ↦ e^{it} z` of a point `z` of the plane preserves its norm and
 the unit circle when `t ↦ φ (e^{it} w)` is differentiable at `t = 0`; this is the derivative of the
 boundary values of `φ` in the angle. Such a derivative at every point of the circle gives the
 derivative of `t ↦ φ (e^{it} w)` at every `t`, and a bound `M` on it makes `φ` `2 M`-Lipschitz on
-the circle, since the arc between two points is at most twice their distance
-(`TauCeti.abs_le_two_mul_norm_exp_I_mul_ofReal_sub_one`).
+the circle, since the arc between two points is at most `π / 2` times their distance
+(`Complex.abs_arg_le_pi_div_two_mul_norm_sub_one`).
 
 ## Main declarations
 
@@ -96,8 +96,11 @@ theorem lipschitzOnWith_sphere_of_hasDerivAt_exp_mul {φ v : ℂ → E} {M : ℝ
     (mem_univ 0) (mem_univ s)
   simp only [ofReal_zero, mul_zero, exp_zero, one_mul, hws, sub_zero, Real.norm_eq_abs] at hmv
   have hchord : |s| ≤ 2 * dist w w' := by
-    rw [dist_eq_norm, ← hws, ← sub_one_mul, norm_mul, hw1', mul_one]
-    exact abs_le_two_mul_norm_exp_I_mul_ofReal_sub_one (abs_arg_le_pi _)
+    have h := abs_arg_le_pi_div_two_mul_norm_sub_one (z := w / w')
+      (by rw [norm_div, hw1, hw1', div_one])
+    rw [div_sub_one (norm_ne_zero_iff.1 (by rw [hw1']; exact one_ne_zero)), norm_div, hw1',
+      div_one, ← dist_eq_norm] at h
+    exact h.trans (by gcongr; linarith [Real.pi_le_four])
   rw [dist_eq_norm]
   calc ‖φ w - φ w'‖ ≤ M * |s| := hmv
     _ ≤ M * (2 * dist w w') := by gcongr

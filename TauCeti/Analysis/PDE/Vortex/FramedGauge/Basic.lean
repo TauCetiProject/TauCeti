@@ -10,7 +10,7 @@ public import TauCeti.Analysis.PDE.Vortex.Deformation
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Complex.Isometry
 import Mathlib.Algebra.Group.Action.Basic
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Complex.Euclidean.Four
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 

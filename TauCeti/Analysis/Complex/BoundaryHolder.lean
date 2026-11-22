@@ -13,7 +13,7 @@ public import TauCeti.Analysis.Complex.AbsMax
 public import TauCeti.Analysis.Complex.Basic
 public import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 public import TauCeti.Topology.MetricSpace.Holder
-import TauCeti.Analysis.Complex.CircleRotation
+import TauCeti.Analysis.Complex.Circle.Rotation
 
 /-!
 # Hölder boundary values of holomorphic functions on a disc

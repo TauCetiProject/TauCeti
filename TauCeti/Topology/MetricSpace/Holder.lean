@@ -13,7 +13,6 @@ import Mathlib.Analysis.MeanInequalitiesPow
 import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
 import Mathlib.Topology.ExtendFrom
 import Mathlib.Topology.Instances.ENNReal.Lemmas
-import Mathlib.Topology.UniformSpace.UniformEmbedding
 import TauCeti.Analysis.SpecificLimits.DyadicSum
 
 /-!
@@ -31,9 +30,10 @@ A function which is Hölder continuous on a dense subset `s` of a pseudo-emetric
 values in a complete emetric space extends to a function which is Hölder continuous on the whole
 space, with the same constant and exponent.
 
-For a positive exponent, the extension is the uniformly continuous extension along the dense
-inclusion `s → X`, and the Hölder inequality passes from `s × s` to its closure because both of its
-sides are continuous. For exponent zero the Hölder condition only bounds the distances by the
+For a positive exponent, the extension at a point of the closure of `s` is the limit of the
+function along `s` (Mathlib's `extendFrom`), and the Hölder inequality passes from `s × s` to its
+closure because both of its sides are continuous; the closure of a dense set is the whole space.
+For exponent zero the Hölder condition only bounds the distances by the
 constant, and the extension is the function itself on `s` and a constant off `s`, which need not
 be continuous.
 
@@ -154,50 +154,6 @@ public section
 
 open Set Filter Topology
 open scoped NNReal ENNReal
-
-/-- **Hölder functions extend from dense sets.** If `f` is Hölder continuous with constant `C` and
-exponent `r` on a dense set `s`, and the target is complete, then some function which is Hölder
-continuous with constant `C` and exponent `r` on the whole space agrees with `f` on `s`. For
-`r = 0` the Hölder condition only bounds the distances by `C`, so the extension need not be
-continuous.
-Compare `LipschitzOnWith.extend_real`, which needs no density but only applies to real values. -/
-theorem HolderOnWith.extend_of_dense {X Y : Type*} [PseudoEMetricSpace X] [EMetricSpace Y]
-    [CompleteSpace Y] {C r : ℝ≥0} {f : X → Y} {s : Set X} (hf : HolderOnWith C r f s)
-    (hs : Dense s) : ∃ g : X → Y, HolderWith C r g ∧ EqOn f g s := by
-  classical
-  rcases eq_or_ne r 0 with rfl | hr
-  · -- Exponent zero: the condition says `edist ≤ C`; extend by a constant off `s`.
-    have key : ∀ x ∈ s, ∀ y ∈ s, edist (f x) (f y) ≤ C := fun x hx y hy => by
-      simpa using hf x hx y hy
-    rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
-    · have hX : IsEmpty X := ⟨fun x => by simpa using hs.nonempty_iff.2 ⟨x⟩⟩
-      exact ⟨f, fun x => (hX.false x).elim, by simp⟩
-    · refine ⟨fun x => if x ∈ s then f x else f x₀, fun x y => ?_, fun x hx => by simp [hx]⟩
-      have h0 : edist x y ^ (((0 : ℝ≥0) : ℝ)) = 1 := by simp
-      rw [h0, mul_one]
-      by_cases hx : x ∈ s <;> by_cases hy : y ∈ s <;> simp only [hx, hy, ite_true, ite_false]
-      · exact key _ hx _ hy
-      · exact key _ hx _ hx₀
-      · exact key _ hx₀ _ hy
-      · simp
-  replace hr : 0 < r := pos_iff_ne_zero.2 hr
-  have hu : UniformContinuous (s.domRestrict f) := hf.holderWith.uniformContinuous hr
-  have hi := isUniformInducing_val s
-  have hd : DenseRange ((↑) : s → X) := hs.denseRange_subtypeVal
-  set g := (hi.isDenseInducing hd).extend (s.domRestrict f)
-  have hg : Continuous g := (uniformContinuous_uniformly_extend hi hd hu).continuous
-  have heq : EqOn f g s := fun x hx => (uniformly_extend_of_ind hi hd hu ⟨x, hx⟩).symm
-  refine ⟨g, fun x y => ?_, heq⟩
-  -- The Hölder inequality for `g` holds on the dense set `s × s`, and defines a closed set.
-  have hclosed : IsClosed {q : X × X | edist (g q.1) (g q.2) ≤ C * edist q.1 q.2 ^ (r : ℝ)} :=
-    isClosed_le (hg.fst'.edist hg.snd')
-      ((ENNReal.continuous_const_mul ENNReal.coe_ne_top).comp
-        (ENNReal.continuous_rpow_const.comp continuous_edist))
-  have hsub : s ×ˢ s ⊆ {q : X × X | edist (g q.1) (g q.2) ≤ C * edist q.1 q.2 ^ (r : ℝ)} :=
-    fun q hq => by
-      simp only [mem_ofPred_eq, ← heq hq.1, ← heq hq.2]
-      exact hf q.1 hq.1 q.2 hq.2
-  exact hclosed.closure_subset_iff.2 hsub ((hs.prod hs).closure_eq.symm ▸ mem_univ (x, y))
 
 /-- A Hölder bound stated with `dist` gives `HolderOnWith`, which is phrased with `edist`. This is
 the converse of `HolderOnWith.dist_le`. -/
@@ -562,6 +518,35 @@ theorem HolderOnWith.exists_eqOn_holderOnWith_closure {X Y : Type*} [PseudoEMetr
   refine ⟨extendFrom s f, heq, (hf.congr heq.symm).of_subset_closure subset_rfl fun x hx ↦ ?_⟩
   exact (tendsto_extendFrom (hlim x hx)).congr'
     (eventually_nhdsWithin_of_forall fun y hy ↦ (heq hy).symm)
+
+/-- **Hölder functions extend from dense sets.** If `f` is Hölder continuous with constant `C` and
+exponent `r` on a dense set `s`, and the target is complete, then some function which is Hölder
+continuous with constant `C` and exponent `r` on the whole space agrees with `f` on `s`. For
+`r = 0` the Hölder condition only bounds the distances by `C`, so the extension need not be
+continuous.
+Compare `LipschitzOnWith.extend_real`, which needs no density but only applies to real values. -/
+theorem HolderOnWith.extend_of_dense {X Y : Type*} [PseudoEMetricSpace X] [EMetricSpace Y]
+    [CompleteSpace Y] {C r : ℝ≥0} {f : X → Y} {s : Set X} (hf : HolderOnWith C r f s)
+    (hs : Dense s) : ∃ g : X → Y, HolderWith C r g ∧ EqOn f g s := by
+  classical
+  rcases eq_or_ne r 0 with rfl | hr
+  · -- Exponent zero: the condition says `edist ≤ C`; extend by a constant off `s`.
+    have key : ∀ x ∈ s, ∀ y ∈ s, edist (f x) (f y) ≤ C := fun x hx y hy => by
+      simpa using hf x hx y hy
+    rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
+    · have hX : IsEmpty X := ⟨fun x => by simpa using hs.nonempty_iff.2 ⟨x⟩⟩
+      exact ⟨f, fun x => (hX.false x).elim, by simp⟩
+    · refine ⟨fun x => if x ∈ s then f x else f x₀, fun x y => ?_, fun x hx => by simp [hx]⟩
+      have h0 : edist x y ^ (((0 : ℝ≥0) : ℝ)) = 1 := by simp
+      rw [h0, mul_one]
+      by_cases hx : x ∈ s <;> by_cases hy : y ∈ s <;> simp only [hx, hy, ite_true, ite_false]
+      · exact key _ hx _ hy
+      · exact key _ hx _ hx₀
+      · exact key _ hx₀ _ hy
+      · simp
+  obtain ⟨g, hgf, hg⟩ := hf.exists_eqOn_holderOnWith_closure (pos_iff_ne_zero.2 hr)
+  rw [hs.closure_eq, holderOnWith_univ] at hg
+  exact ⟨g, hg, hgf.symm⟩
 
 /-- A pointwise limit of maps that are `r`-Hölder with a common constant `C` is `r`-Hölder with
 constant `C`. -/
