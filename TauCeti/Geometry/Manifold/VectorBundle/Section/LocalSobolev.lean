@@ -253,6 +253,18 @@ theorem IsLocallySobolevAt.neg {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} 
     (h : IsLocallySobolevAt s T x) : IsLocallySobolevAt s (-T) x := by
   simpa using h.smul (-1)
 
+/-- A nonzero real multiple of `T` is `H^s` near `x` exactly when `T` is. -/
+theorem isLocallySobolevAt_smul_iff {s : ℝ} {a : ℝ} (ha : a ≠ 0)
+    {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M} :
+    IsLocallySobolevAt s (a • T) x ↔ IsLocallySobolevAt s T x :=
+  ⟨fun h ↦ by simpa [smul_smul, inv_mul_cancel₀ ha] using h.smul a⁻¹, fun h ↦ h.smul a⟩
+
+/-- The negative of `T` is `H^s` near `x` exactly when `T` is. -/
+@[simp]
+theorem isLocallySobolevAt_neg_iff {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M} :
+    IsLocallySobolevAt s (-T) x ↔ IsLocallySobolevAt s T x := by
+  rw [← neg_one_smul ℝ T, isLocallySobolevAt_smul_iff (neg_ne_zero.2 one_ne_zero)]
+
 /-- A difference of functionals `H^s` near `x` is `H^s` near `x`. -/
 theorem IsLocallySobolevAt.sub {s : ℝ} {T T' : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
     (h : IsLocallySobolevAt s T x) (h' : IsLocallySobolevAt s T' x) :
@@ -296,12 +308,20 @@ theorem sobolevSingularSupport_smul_subset (s : ℝ) (a : ℝ) (T : BundleTest I
     sobolevSingularSupport I s (a • T) ⊆ sobolevSingularSupport I s T :=
   fun _ hx h ↦ hx (h.smul a)
 
+/-- A nonzero real multiple of `T` has the same `H^s` singular support as `T`. -/
+@[simp]
+theorem sobolevSingularSupport_smul (s : ℝ) {a : ℝ} (ha : a ≠ 0)
+    (T : BundleTest I F V →L_c[ℝ] ℝ) :
+    sobolevSingularSupport I s (a • T) = sobolevSingularSupport I s T := by
+  ext x
+  simp [isLocallySobolevAt_smul_iff ha]
+
 /-- The negative of `T` has the same `H^s` singular support as `T`. -/
 @[simp]
 theorem sobolevSingularSupport_neg (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) :
-    sobolevSingularSupport I s (-T) = sobolevSingularSupport I s T :=
-  Subset.antisymm (by simpa using sobolevSingularSupport_smul_subset s (-1) T)
-    (by simpa using sobolevSingularSupport_smul_subset s (-1) (-T))
+    sobolevSingularSupport I s (-T) = sobolevSingularSupport I s T := by
+  ext x
+  simp
 
 /-- The `H^s` singular support of a difference lies in the union of the `H^s` singular
 supports. -/
@@ -406,7 +426,7 @@ theorem sobolevSingularSupport_delta [Nontrivial E] {s : ℝ}
     have hv := h ((trivializationAt F V p).continuousLinearMapAt ℝ p u)
     rw [chartComponent_delta_of_mem _ _ _ _ hp,
       (trivializationAt F V p).symmL_continuousLinearMapAt (hct hp),
-      isLocallySobolevAt_smul_iff (Complex.ofReal_ne_zero.2 hu)] at hv
+      Distribution.isLocallySobolevAt_smul_iff (Complex.ofReal_ne_zero.2 hu)] at hv
     exact (notMem_sobolevSingularSupport_iff (c.map_source hp)).2 hv
       (by simp [hdelta _ (c.map_source hp)])
 
