@@ -105,14 +105,17 @@ include h
 `WithMetric` copies via the identity diffeomorphism. -/
 def riemannianIsometryOfInnerEq : RiemannianIsometry I I (WithMetric g₁) (WithMetric g₂) :=
   letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₁.toRiemannianMetric⟩
-  (riemannianIsometry g₁).trans (riemannianIsometryOfInner g₂ h).symm
+  (riemannianIsometry g₁).trans
+    (riemannianIsometryOfInner g₂
+      fun x v w ↦ (g₁.inner_riemannianBundle x v w).trans (h x v w)).symm
 
 /-- Evaluating `riemannianIsometryOfInnerEq` at `x` returns `toWithMetric g₂ x.ofWithMetric`. -/
 @[simp] theorem riemannianIsometryOfInnerEq_apply (x : WithMetric g₁) :
     riemannianIsometryOfInnerEq g₁ g₂ h x = toWithMetric g₂ x.ofWithMetric :=
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₁.toRiemannianMetric⟩
   (RiemannianIsometry.trans_apply _ _ x).trans <|
-    (riemannianIsometryOfInner_symm_apply g₂ h _).trans
+    (riemannianIsometryOfInner_symm_apply g₂
+      (fun x v w ↦ (g₁.inner_riemannianBundle x v w).trans (h x v w)) _).trans
       (congrArg (toWithMetric g₂) (congrFun (coe_riemannianIsometry g₁) x))
 
 /-- Evaluating the inverse of `riemannianIsometryOfInnerEq` at `x` returns

@@ -114,6 +114,14 @@ theorem isNormalDomain_ball_of_lt_injectivityRadiusAt {p : M} {r : ℝ} (hr₀ :
   exact hRnorm.ball (Metric.ball_subset_ball ((ENNReal.ofReal_lt_ofReal_iff_of_nonneg hr₀.le).1
     hrR).le) hr₀
 
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- A tangent vector belongs to `Metric.ball 0 r` iff its extended norm is strictly less than
+`ENNReal.ofReal r`. -/
+private theorem mem_ball_zero_iff_enorm_lt {p : M} {v : TangentSpace I p} {r : ℝ} :
+    v ∈ Metric.ball 0 r ↔ ‖v‖ₑ < ENNReal.ofReal r := by
+  rw [← Metric.eball_ofReal, Metric.mem_eball, edist_zero_right]
+
 /-- Every tangent vector of extended norm strictly less than `inj(p)` lies in a normal tangent ball
 at `p` whose radius is still strictly below `inj(p)`. -/
 theorem exists_isNormalDomain_ball_of_enorm_lt_injectivityRadiusAt {p : M} {v : TangentSpace I p}
@@ -122,8 +130,8 @@ theorem exists_isNormalDomain_ball_of_enorm_lt_injectivityRadiusAt {p : M} {v : 
       IsNormalDomain I M p (Metric.ball 0 r) := by
   obtain ⟨r, -, hvr, hr⟩ := ENNReal.lt_iff_exists_real_btwn.1 hv
   have hr₀ : 0 < r := ENNReal.ofReal_pos.1 (zero_le.trans_lt hvr)
-  exact ⟨r, hr₀, mem_ball_zero_iff.2 ((ENNReal.ofReal_lt_ofReal_iff hr₀).1 (by rwa [ofReal_norm])),
-    hr, isNormalDomain_ball_of_lt_injectivityRadiusAt hr₀ hr⟩
+  exact ⟨r, hr₀, mem_ball_zero_iff_enorm_lt.2 hvr, hr,
+    isNormalDomain_ball_of_lt_injectivityRadiusAt hr₀ hr⟩
 
 /-- Every tangent vector with `‖v‖ₑ < inj(p)` belongs to `expDomain I M p`. -/
 theorem mem_expDomain_of_enorm_lt_injectivityRadiusAt {p : M} {v : TangentSpace I p}
@@ -152,10 +160,9 @@ theorem injOn_riemannianExp_eball_injectivityRadiusAt (p : M) :
   intro v hv w hw hvw; simp only [Metric.mem_eball, edist_zero_right] at hv hw
   obtain ⟨r, -, hmr, hr⟩ := ENNReal.lt_iff_exists_real_btwn.1 (max_lt hv hw)
   have hr₀ : 0 < r := ENNReal.ofReal_pos.1 (zero_le.trans_lt hmr)
-  have hmem {u : TangentSpace I p} (hu : ‖u‖ₑ < ENNReal.ofReal r) : u ∈ Metric.ball 0 r :=
-    mem_ball_zero_iff.2 ((ENNReal.ofReal_lt_ofReal_iff hr₀).1 (by rwa [ofReal_norm]))
   exact (isNormalDomain_ball_of_lt_injectivityRadiusAt hr₀ hr).injOn
-    (hmem ((le_max_left _ _).trans_lt hmr)) (hmem ((le_max_right _ _).trans_lt hmr)) hvw
+    (mem_ball_zero_iff_enorm_lt.2 ((le_max_left _ _).trans_lt hmr))
+    (mem_ball_zero_iff_enorm_lt.2 ((le_max_right _ _).trans_lt hmr)) hvw
 
 /-- When `0 < inj(p)`, the extended metric ball `Metric.eball 0 (inj(p))`—which is a tangent ball
 when `inj(p) < ⊤` and `Set.univ` when `inj(p) = ⊤`—is the maximal open-ball normal domain at `p`. -/
@@ -180,8 +187,8 @@ theorem isNormalDomain_eball_iff_le_injectivityRadiusAt {p : M} {r : ℝ≥0∞}
       ((convex_eball (0 : TangentSpace I p) r).starConvex (Metric.mem_eball_self hr))⟩
   have hs' : 0 < (s : ℝ) := NNReal.coe_pos.2 hs
   have hsub : Metric.ball (0 : TangentSpace I p) (s : ℝ) ⊆ Metric.eball 0 r := fun v hv ↦ by
-    rw [Metric.mem_eball, edist_zero_right, ← ofReal_norm]
-    exact ((ENNReal.ofReal_lt_ofReal_iff hs').2 (mem_ball_zero_iff.1 hv)).trans
+    rw [Metric.mem_eball, edist_zero_right]
+    exact (mem_ball_zero_iff_enorm_lt.1 hv).trans
       (by simpa only [ENNReal.ofReal_coe_nnreal] using hsr)
   simpa only [ENNReal.ofReal_coe_nnreal] using (h.ball hsub hs').ofReal_le_injectivityRadiusAt
 

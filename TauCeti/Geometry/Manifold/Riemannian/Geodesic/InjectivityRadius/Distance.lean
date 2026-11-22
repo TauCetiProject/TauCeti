@@ -117,9 +117,7 @@ theorem image_riemannianExp_eball_injectivityRadiusAt (p : M) :
     obtain ⟨v, hv, rfl⟩ : q ∈ riemannianExp I M p '' Metric.ball 0 r := by
       rwa [(isNormalDomain_ball_of_lt_injectivityRadiusAt hr₀ hr).image_riemannianExp_ball
         subset_rfl, Metric.mem_eball']
-    exact ⟨v, by
-      rw [Metric.mem_eball, edist_zero_right, ← ofReal_norm]
-      exact ((ENNReal.ofReal_lt_ofReal_iff hr₀).2 (mem_ball_zero_iff.1 hv)).trans hr, rfl⟩
+    exact ⟨v, Metric.eball_subset_eball hr.le (by rwa [Metric.eball_ofReal]), rfl⟩
 
 /-! ### Existence and uniqueness of minimizing geodesics below `inj(p)` and `inj(M)` -/
 
@@ -284,8 +282,9 @@ private theorem with_ofRiemannianMetric {P : (M → M → ℝ≥0∞) → Prop}
     (V := fun x : M ↦ TangentSpace I x)
   let : EMetricSpace M := EMetricSpace.ofRiemannianMetric I M
   have h1 := h
-  rwa [show (edist : M → M → ℝ≥0∞) = riemannianEDist I from
-    funext₂ (IsRiemannianManifold.out (I := I))] at h1
+  have hedist : @edist M (EMetricSpace.ofRiemannianMetric I M).toEDist = riemannianEDist I :=
+    funext₂ (IsRiemannianManifold.out (I := I))
+  rwa [hedist] at h1
 
 /-- **Intrinsic radial distance below `inj(p)`.** Requires no `IsRiemannianManifold` instance on
 `M`. -/

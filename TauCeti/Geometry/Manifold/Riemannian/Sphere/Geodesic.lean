@@ -262,7 +262,7 @@ theorem isGeodesicCurveOn_riemannianExp_smul_sphere_univ (p : sphere (0 : E) 1)
     (v : TangentSpace (𝓡 n) p) :
     pathELength (𝓡 n) (fun t : ℝ ↦ riemannianExp (𝓡 n) (sphere (0 : E) 1) p (t • v)) 0 1 =
       ‖v‖ₑ := by
-  rw [funext (riemannianExp_smul p v), pathELength_maximalGeodesic (by simp) (by simp), sub_zero,
+  rw [pathELength_riemannianExp_smul_of_mem_geodesicInterval (by simp) (by simp), sub_zero,
     ENNReal.ofReal_one, mul_one]
 
 /-- The ambient inner product of `p` with `exp_p v` on the unit sphere is `cos ‖v‖`. -/
