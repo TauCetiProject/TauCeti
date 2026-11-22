@@ -17,9 +17,9 @@ import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
 This module complements the additive amenability API in
 `TauCeti.GroupTheory.Amenable.Basic`, `TauCeti.GroupTheory.Amenable.Finite`,
-`TauCeti.GroupTheory.Amenable.Discrete`, and `TauCeti.GroupTheory.Amenable.DiscreteFoelner`
-with additive versions of finite products, subgroups and extensions of discrete groups, directed
-unions, and Følner characterizations.
+`TauCeti.GroupTheory.Amenable.Discrete`, `TauCeti.GroupTheory.Amenable.Quotient`, and
+`TauCeti.GroupTheory.Amenable.DiscreteFoelner` with additive versions of finite products, subgroups
+and extensions of discrete groups, directed unions, and Følner characterizations.
 
 ## Main results
 
@@ -29,9 +29,6 @@ unions, and Følner characterizations.
   `TauCeti.AddAmenable.of_ker_le_range`, `TauCeti.addAmenable_iff_addSubgroup_quotient`, and
   `TauCeti.AddAmenable.of_addSubgroup_quotient`: subgroups and extensions of discrete additive
   groups.
-* `TauCeti.AddAmenable.quotient`, `TauCeti.AddAmenable.range`,
-  `TauCeti.AddAmenable.range_of_discreteTopology`, `TauCeti.addAmenable_quotient_ker_iff_range`,
-  and `TauCeti.addAmenable_quotient_ker_iff_of_surjective`: quotients and images.
 * `TauCeti.AddAmenable.of_forall_finset_subset_range`, `TauCeti.addAmenable_iSup_of_directed`,
   `TauCeti.AddAmenable.of_directed_of_iSup_eq_top`, and `TauCeti.AddAmenable.of_forall_fg`:
   directed unions and reduction to finitely generated additive subgroups.
@@ -95,70 +92,6 @@ theorem addAmenable_pi_iff {ι : Type*} [Finite ι] {A : ι → Type*} [∀ i, A
 attribute [to_additive existing addAmenable_pi_iff] amenable_pi_iff
 
 end Prod
-
-section QuotientAndRange
-
-variable {A B : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
-  [AddGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B]
-
-/-- The quotient of an amenable additive topological group by a normal additive subgroup, with the
-quotient topology, is amenable. -/
-instance AddAmenable.quotient [AddAmenable A] (N : AddSubgroup A) [N.Normal] :
-    AddAmenable (A ⧸ N) :=
-  .of_denseRange ⟨QuotientAddGroup.mk' N, continuous_quot_mk⟩
-    (QuotientAddGroup.mk'_surjective N).denseRange
-
-attribute [to_additive existing] Amenable.quotient
-
-/-- The range of a continuous additive homomorphism out of an amenable additive topological group,
-with the subspace topology, is amenable. -/
-theorem AddAmenable.range [AddAmenable A] (φ : A →ₜ+ B) : AddAmenable φ.range :=
-  .of_denseRange ⟨φ.rangeRestrict, φ.continuous.subtype_mk _⟩
-    φ.rangeRestrict_surjective.denseRange
-
-attribute [to_additive existing] Amenable.range
-
-section DiscreteTopology
-
-variable [DiscreteTopology A]
-
-/-- The range of an additive homomorphism out of an amenable discrete additive group is amenable,
-for every additive-group topology on the target. -/
-instance AddAmenable.range_of_discreteTopology [AddAmenable A] (φ : A →+ B) :
-    AddAmenable φ.range :=
-  .of_surjective φ.rangeRestrict φ.rangeRestrict_surjective
-
-attribute [to_additive existing] Amenable.range_of_discreteTopology
-
-/-- For an additive homomorphism `φ` of discrete additive groups, the quotient `A ⧸ φ.ker` is
-amenable exactly when the image `φ.range` is. -/
-theorem addAmenable_quotient_ker_iff_range [DiscreteTopology B] (φ : A →+ B) :
-    AddAmenable (A ⧸ φ.ker) ↔ AddAmenable φ.range := by
-  have := QuotientAddGroup.discreteTopology (isOpen_discrete (φ.ker : Set A))
-  exact ContinuousAddEquiv.addAmenable_iff
-    { QuotientAddGroup.quotientKerEquivRange φ with
-      continuous_toFun := continuous_of_discreteTopology
-      continuous_invFun := continuous_of_discreteTopology }
-
-attribute [to_additive existing addAmenable_quotient_ker_iff_range]
-  amenable_quotient_ker_iff_range
-
-/-- For a surjective additive homomorphism `φ : A →+ B` of discrete additive groups, the quotient
-`A ⧸ φ.ker` is amenable exactly when `B` is. -/
-theorem addAmenable_quotient_ker_iff_of_surjective [DiscreteTopology B] {φ : A →+ B}
-    (hφ : Function.Surjective φ) : AddAmenable (A ⧸ φ.ker) ↔ AddAmenable B := by
-  have := QuotientAddGroup.discreteTopology (isOpen_discrete (φ.ker : Set A))
-  exact ContinuousAddEquiv.addAmenable_iff
-    { QuotientAddGroup.quotientKerEquivOfSurjective φ hφ with
-      continuous_toFun := continuous_of_discreteTopology
-      continuous_invFun := continuous_of_discreteTopology }
-
-attribute [to_additive existing addAmenable_quotient_ker_iff_of_surjective]
-  amenable_quotient_ker_iff_of_surjective
-
-end DiscreteTopology
-
-end QuotientAndRange
 
 section SubgroupAndExtension
 

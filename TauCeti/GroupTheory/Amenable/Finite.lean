@@ -151,6 +151,34 @@ end Uniform
 
 end Mean
 
+namespace AddMean
+
+section Uniform
+
+variable {A : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A] [Finite A]
+
+/-- The uniform mean on a finite additive group is left invariant, since left addition permutes
+the additive group. -/
+theorem isLeftInvariant_uniform : (uniform A).IsLeftInvariant := by
+  have := Fintype.ofFinite A
+  refine isLeftInvariant_iff.2 fun a f => ?_
+  simp only [uniform_apply, AddUCB.leftTranslation_apply]
+  exact Fintype.expect_equiv (Equiv.addLeft (-a)) _ _ fun _ => rfl
+
+/-- A left-invariant additive mean on a finite additive group is the uniform mean. -/
+theorem IsLeftInvariant.eq_uniform {m : AddMean A} (hm : m.IsLeftInvariant) : m = uniform A := by
+  have := Fintype.ofFinite A
+  refine ext fun f => ?_
+  have h := congr(m $(AddUCB.sum_leftTranslation f))
+  simp only [map_sum, hm.apply_leftTranslation, Finset.sum_const, Finset.card_univ,
+    nsmul_eq_mul, map_algebraMap] at h
+  rw [uniform_apply_eq_sum_div_card, ← h, mul_div_cancel_left₀]
+  exact Nat.cast_ne_zero.2 Fintype.card_ne_zero
+
+end Uniform
+
+end AddMean
+
 namespace Mean
 
 section Uniform
@@ -158,23 +186,20 @@ section Uniform
 variable [Finite G]
 
 /-- The uniform mean is left invariant, since left multiplication permutes the group. -/
-@[to_additive
-  /-- The uniform mean on a finite additive group is left invariant, since left addition permutes
-  the additive group. -/]
+@[to_additive existing]
 theorem isLeftInvariant_uniform : (uniform G).IsLeftInvariant := by
   have := Fintype.ofFinite G
-  refine isLeftInvariant_iff_leftTranslationEquiv.2 fun g f => ?_
-  simp only [uniform_apply, UCB.leftTranslationEquiv_apply]
+  refine isLeftInvariant_iff.2 fun g f => ?_
+  simp only [uniform_apply, UCB.leftTranslation_apply]
   exact Fintype.expect_equiv (Equiv.mulLeft g⁻¹) _ _ fun _ => rfl
 
 /-- A left-invariant mean on a finite group is the uniform mean. -/
-@[to_additive
-  /-- A left-invariant additive mean on a finite additive group is the uniform mean. -/]
+@[to_additive existing]
 theorem IsLeftInvariant.eq_uniform {m : Mean G} (hm : m.IsLeftInvariant) : m = uniform G := by
   have := Fintype.ofFinite G
   refine ext fun f => ?_
-  have h := congr(m $(UCB.sum_leftTranslationEquiv f))
-  simp only [map_sum, hm.apply_leftTranslationEquiv, Finset.sum_const, Finset.card_univ,
+  have h := congr(m $(UCB.sum_leftTranslation f))
+  simp only [map_sum, hm.apply_leftTranslation, Finset.sum_const, Finset.card_univ,
     nsmul_eq_mul, map_algebraMap] at h
   rw [uniform_apply_eq_sum_div_card, ← h, mul_div_cancel_left₀]
   exact Nat.cast_ne_zero.2 Fintype.card_ne_zero

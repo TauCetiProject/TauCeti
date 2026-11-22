@@ -69,41 +69,21 @@ theorem coe_discreteAlgEquiv_symm (f : G →ᵇ ℝ) :
     ((discreteAlgEquiv G).symm f : G →ᵇ ℝ) = f :=
   (discreteAlgEquiv G).apply_symm_apply f
 
-/-- The inverse discrete identification intertwines left translation (unbundled form). -/
-@[to_additive discreteAlgEquiv_symm_compContinuous_addLeft
-  /-- The inverse discrete identification intertwines left translation. -/]
-theorem discreteAlgEquiv_symm_compContinuous_mulLeftEquiv (g : G) (f : G →ᵇ ℝ) :
-    (discreteAlgEquiv G).symm (f.compContinuous (ContinuousMap.mulLeft g⁻¹)) =
-      leftTranslationEquiv g ((discreteAlgEquiv G).symm f) := by
-  ext x
-  simp [leftTranslationEquiv_apply]
-
-attribute [simp] AddUCB.discreteAlgEquiv_symm_compContinuous_addLeft
-
 /-- The inverse discrete identification intertwines left translation. -/
 @[simp]
 theorem discreteAlgEquiv_symm_compContinuous_mulLeft (g : G) (f : G →ᵇ ℝ) :
     (discreteAlgEquiv G).symm (f.compContinuous (ContinuousMap.mulLeft g⁻¹)) =
-      leftTranslation g ((discreteAlgEquiv G).symm f) :=
-  discreteAlgEquiv_symm_compContinuous_mulLeftEquiv g f
-
-/-- The inverse discrete identification intertwines right translation (unbundled form). -/
-@[to_additive discreteAlgEquiv_symm_compContinuous_addRight
-  /-- The inverse discrete identification intertwines right translation. -/]
-theorem discreteAlgEquiv_symm_compContinuous_mulRightEquiv (g : G) (f : G →ᵇ ℝ) :
-    (discreteAlgEquiv G).symm (f.compContinuous (ContinuousMap.mulRight g)) =
-      rightTranslationEquiv g ((discreteAlgEquiv G).symm f) := by
+      leftTranslation g ((discreteAlgEquiv G).symm f) := by
   ext x
-  simp [rightTranslationEquiv_apply]
-
-attribute [simp] AddUCB.discreteAlgEquiv_symm_compContinuous_addRight
+  simp
 
 /-- The inverse discrete identification intertwines right translation. -/
 @[simp]
 theorem discreteAlgEquiv_symm_compContinuous_mulRight (g : G) (f : G →ᵇ ℝ) :
     (discreteAlgEquiv G).symm (f.compContinuous (ContinuousMap.mulRight g)) =
-      rightTranslation g ((discreteAlgEquiv G).symm f) :=
-  discreteAlgEquiv_symm_compContinuous_mulRightEquiv g f
+      rightTranslation g ((discreteAlgEquiv G).symm f) := by
+  ext x
+  simp
 
 /-- The inverse discrete identification preserves and reflects the pointwise order. -/
 @[to_additive (attr := simp)
@@ -182,27 +162,48 @@ theorem norm_compRightAlgHomOfDiscrete_apply_le (r : G → H) (f : UCB H) :
   (f : H →ᵇ ℝ).norm_compContinuous_le _
 
 /-- If `r (φ h * x) = h * r x` for a homomorphism `φ : H →* G`, then the pullback along `r`
-intertwines unbundled left translation by `h` with left translation by `φ h`. -/
-@[to_additive compRightAlgHomOfDiscrete_leftTranslation
-  /-- If `r (φ h + x) = h + r x` for an additive homomorphism `φ : H →+ G`, then the pullback
-  along `r` intertwines left translation by `h` with left translation by `φ h`. -/]
-theorem compRightAlgHomOfDiscrete_leftTranslationEquiv (φ : H →* G) {r : G → H}
-    (hr : ∀ h x, r (φ h * x) = h * r x) (h : H) (f : UCB H) :
-    compRightAlgHomOfDiscrete r (leftTranslationEquiv h f) =
-      leftTranslationEquiv (φ h) (compRightAlgHomOfDiscrete r f) := by
-  ext x
-  simp [leftTranslationEquiv_apply, ← map_inv, hr]
-
-/-- If `r (φ h * x) = h * r x` for a homomorphism `φ : H →* G`, then the pullback along `r`
 intertwines left translation by `h` with left translation by `φ h`. -/
 theorem compRightAlgHomOfDiscrete_leftTranslation (φ : H →* G) {r : G → H}
     (hr : ∀ h x, r (φ h * x) = h * r x) (h : H) (f : UCB H) :
     compRightAlgHomOfDiscrete r (leftTranslation h f) =
-      leftTranslation (φ h) (compRightAlgHomOfDiscrete r f) :=
-  compRightAlgHomOfDiscrete_leftTranslationEquiv φ hr h f
+      leftTranslation (φ h) (compRightAlgHomOfDiscrete r f) := by
+  ext x
+  simp [← map_inv, hr]
 
 end CompRight
 
 end UCB
+
+namespace AddUCB
+
+variable {A : Type*} [AddGroup A] [TopologicalSpace A] [DiscreteTopology A]
+
+/-- The inverse discrete identification intertwines left translation. -/
+@[simp]
+theorem discreteAlgEquiv_symm_compContinuous_addLeft (a : A) (f : A →ᵇ ℝ) :
+    (discreteAlgEquiv A).symm (f.compContinuous (ContinuousMap.addLeft (-a))) =
+      leftTranslation a ((discreteAlgEquiv A).symm f) := by
+  ext x
+  simp
+
+/-- The inverse discrete identification intertwines right translation. -/
+@[simp]
+theorem discreteAlgEquiv_symm_compContinuous_addRight (a : A) (f : A →ᵇ ℝ) :
+    (discreteAlgEquiv A).symm (f.compContinuous (ContinuousMap.addRight a)) =
+      rightTranslation a ((discreteAlgEquiv A).symm f) := by
+  ext x
+  simp
+
+/-- If `r (φ b + x) = b + r x` for an additive homomorphism `φ : B →+ A`, then the pullback
+along `r` intertwines left translation by `b` with left translation by `φ b`. -/
+theorem compRightAlgHomOfDiscrete_leftTranslation {B : Type*} [AddGroup B] [TopologicalSpace B]
+    [IsTopologicalAddGroup B] (φ : B →+ A) {r : A → B}
+    (hr : ∀ b x, r (φ b + x) = b + r x) (b : B) (f : AddUCB B) :
+    compRightAlgHomOfDiscrete r (leftTranslation b f) =
+      leftTranslation (φ b) (compRightAlgHomOfDiscrete r f) := by
+  ext x
+  simp [← map_neg, hr]
+
+end AddUCB
 
 end TauCeti

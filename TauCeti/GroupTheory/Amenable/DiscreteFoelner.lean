@@ -333,8 +333,8 @@ private theorem exists_sum_tsum_abs_sub_lt_multiplicative_iff {A : Type*} [AddGr
     ⟨fun h x ↦ h _, fun h x ↦ h (Multiplicative.toAdd x)⟩
   have hfin : p.HasFiniteSupport ↔ (p ∘ Multiplicative.ofAdd).HasFiniteSupport := by
     simp only [Function.HasFiniteSupport, Function.support_comp_eq_preimage]
-    refine ⟨fun h ↦ h.preimage Multiplicative.ofAdd.injective.injOn, fun h ↦ ?_⟩
-    simpa [Set.preimage_preimage] using h.preimage Multiplicative.toAdd.injective.injOn
+    exact ⟨fun h ↦ h.preimage Multiplicative.ofAdd.injective.injOn,
+      fun h ↦ h.of_preimage Multiplicative.ofAdd.surjective⟩
   have h1 : ∑' x, p x = ∑' x, (p ∘ Multiplicative.ofAdd) x :=
     (Multiplicative.ofAdd.tsum_eq p).symm
   have hsum :
@@ -365,10 +365,7 @@ theorem addAmenable_iff_exists_sum_tsum_abs_sub_lt :
   refine ⟨fun h K ε hε ↦ (exists_sum_tsum_abs_sub_lt_multiplicative_iff K).1
     (h (K.image Multiplicative.ofAdd) ε hε), fun h K ε hε ↦ ?_⟩
   have hK : (K.image Multiplicative.toAdd).image Multiplicative.ofAdd = K := by
-    ext x
-    simp only [Finset.mem_image]
-    exact ⟨by rintro ⟨a, ⟨y, hy, rfl⟩, rfl⟩; simpa using hy,
-      fun hx ↦ ⟨Multiplicative.toAdd x, ⟨x, hx, rfl⟩, by simp⟩⟩
+    simp [Finset.image_image, Function.comp_def]
   simpa [hK] using
     (exists_sum_tsum_abs_sub_lt_multiplicative_iff (K.image Multiplicative.toAdd)).2
       (h (K.image Multiplicative.toAdd) ε hε)
