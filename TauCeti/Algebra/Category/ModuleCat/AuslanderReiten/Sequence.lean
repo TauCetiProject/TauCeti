@@ -8,15 +8,10 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Formula
 public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Translate
 public import TauCeti.CategoryTheory.AlmostSplit.Sequence
-import Mathlib.Algebra.Category.ModuleCat.Injective
-import Mathlib.Algebra.Category.ModuleCat.Projective
-import Mathlib.Algebra.Category.ModuleCat.Ulift
-import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.Algebra.Category.ModuleCat.Ext.FiniteLength
+import TauCeti.Algebra.Category.ModuleCat.ULift
 import TauCeti.CategoryTheory.AlmostSplit.Equivalence
-import TauCeti.CategoryTheory.Functor.LocalEnd
 import TauCeti.CategoryTheory.AlmostSplit.Minimal
-import TauCeti.RingTheory.Artinian.FiniteLength
 
 /-!
 # Existence of almost-split sequences over an Artin algebra
@@ -207,58 +202,6 @@ section Lift
 
 /-! ### Descending to modules in a smaller universe -/
 
-/-- A finitely generated module in a larger universe comes from a module in universe `w`. -/
-private theorem exists_uliftFunctor_obj_iso [Small.{w} A] (X : ModuleCat.{max u v w} A)
-    [Module.Finite A X] :
-    ∃ X₀ : ModuleCat.{w} A, Module.Finite A X₀ ∧
-      Nonempty ((uliftFunctor.{max u v, w} A).obj X₀ ≅ X) := by
-  have : Small.{w} X := Module.Finite.small A X
-  exact ⟨of A (Shrink.{w} X), Module.Finite.equiv (Shrink.linearEquiv A X).symm,
-    ⟨(ULift.moduleEquiv.trans (Shrink.linearEquiv A X)).toModuleIso⟩⟩
-
-/-- An almost-split sequence in a larger universe whose terms come from universe `w` descends to
-an almost-split sequence in universe `w`. -/
-private theorem exists_isAlmostSplit_of_uliftFunctor {S : ShortComplex (ModuleCat.{max u v w} A)}
-    (hS : S.IsAlmostSplit) {X₁ X₂ X₃ : ModuleCat.{w} A}
-    (e₁ : (uliftFunctor.{max u v, w} A).obj X₁ ≅ S.X₁)
-    (e₂ : (uliftFunctor.{max u v, w} A).obj X₂ ≅ S.X₂)
-    (e₃ : (uliftFunctor.{max u v, w} A).obj X₃ ≅ S.X₃) :
-    ∃ (i : X₁ ⟶ X₂) (p : X₂ ⟶ X₃) (h : i ≫ p = 0), (ShortComplex.mk i p h).IsAlmostSplit := by
-  let F := uliftFunctor.{max u v, w} A
-  let i := F.preimage (e₁.hom ≫ S.f ≫ e₂.inv)
-  let p := F.preimage (e₂.hom ≫ S.g ≫ e₃.inv)
-  have h : i ≫ p = 0 := F.map_injective (by simp [i, p])
-  exact ⟨i, p, h, F.isAlmostSplit_of_map (ShortComplex.isAlmostSplit_of_iso
-    (ShortComplex.isoMk e₁.symm e₂.symm e₃.symm (by simp [i]) (by simp [p])) hS)⟩
-
-/-- The universe lift of an indecomposable finitely generated module is indecomposable. -/
-private theorem indecomposable_uliftFunctor_obj [IsArtinianRing A] {M : ModuleCat.{w} A}
-    [Module.Finite A M] (hM : Indecomposable M) :
-    Indecomposable ((uliftFunctor.{max u v, w} A).obj M) := by
-  let F := uliftFunctor.{max u v, w} A
-  have := (indecomposable_iff_isLocalRing_end M (isFiniteLength_of_finite A M)).mp hM
-  have := F.isLocalRing_end_obj (X := M) fun h ↦ hM.1 ((Limits.IsZero.iff_id_eq_zero _).mpr
-    (F.map_injective (by rw [F.map_id, F.map_zero]; exact (Limits.IsZero.iff_id_eq_zero _).mp h)))
-  exact indecomposable_of_isLocalRing_end
-
-/-- A module whose universe lift is projective is projective. -/
-private theorem projective_of_uliftFunctor_obj {M : ModuleCat.{w} A}
-    (h : Projective ((uliftFunctor.{max u v, w} A).obj M)) : Projective M :=
-  have : Module.Projective A (ULift.{max u v} M) :=
-    have := h
-    ((uliftFunctor.{max u v, w} A).obj M).projective_of_module_projective
-  have : Module.Projective A M :=
-    Module.Projective.of_equiv (ULift.moduleEquiv : ULift.{max u v} M ≃ₗ[A] M)
-  M.projective_of_categoryTheory_projective
-
-/-- A module whose universe lift is injective is injective. -/
-private theorem injective_of_uliftFunctor_obj {N : ModuleCat.{w} A}
-    (h : Injective ((uliftFunctor.{max u v, w} A).obj N)) : Injective N := by
-  have : Module.Injective A (ULift.{max u v} N) := (Module.injective_iff_injective_object A _).mpr h
-  have : Module.Injective A N :=
-    ((Module.Baer.of_injective this).of_equiv ULift.moduleEquiv).injective
-  exact (Module.injective_iff_injective_object A N).mp this
-
 include R
 
 /-- **The Auslander–Reiten theorem, existence on the right.** Over an Artin algebra, a finitely
@@ -275,14 +218,13 @@ theorem exists_isAlmostSplit_of_not_projective [Small.{w} A] (M : ModuleCat.{w} 
   have : Module.Finite A (F.obj M) := Module.Finite.equiv ULift.moduleEquiv.symm
   obtain ⟨E, _, _, _, -, hE⟩ := exists_injective_finite_length_quotient_linearMap_eq_one R
   obtain ⟨Y, i, p, h, hY, hS⟩ := exists_isAlmostSplit_arTranslate.{u, v, w} R E hE (F.obj M)
-    (indecomposable_uliftFunctor_obj.{u, v, w} hiM)
-    fun hp ↦ hpM (projective_of_uliftFunctor_obj.{u, v, w} hp)
+    (F.indecomposable_obj_of_map_bijective hiM ((fullyFaithfulUliftFunctor A).map_bijective M M))
+    fun hp ↦ hpM ((projective_uliftFunctor_obj_iff.{v, w, max u v} M).mp hp)
   have : Module.Finite A (arTranslate R E (F.obj M)) := Module.Finite.of_injective i.hom
     ((ModuleCat.mono_iff_injective i).mp hS.shortExact.mono_f)
-  obtain ⟨X₀, _, ⟨e₁⟩⟩ := exists_uliftFunctor_obj_iso.{u, v, w} (arTranslate R E (F.obj M))
-  obtain ⟨Y₀, _, ⟨e₂⟩⟩ := exists_uliftFunctor_obj_iso.{u, v, w} Y
-  obtain ⟨i', p', h', hS'⟩ :=
-    exists_isAlmostSplit_of_uliftFunctor.{u, v, w} hS e₁ e₂ (Iso.refl (F.obj M))
+  obtain ⟨X₀, _, ⟨e₁⟩⟩ := exists_uliftFunctor_obj_iso.{v, w, max u v} (arTranslate R E (F.obj M))
+  obtain ⟨Y₀, _, ⟨e₂⟩⟩ := exists_uliftFunctor_obj_iso.{v, w, max u v} Y
+  obtain ⟨i', p', h', hS'⟩ := F.exists_isAlmostSplit_of_obj_iso hS e₁ e₂ (Iso.refl (F.obj M))
   exact ⟨X₀, Y₀, i', p', h', inferInstance, inferInstance, hS'⟩
 
 /-- Over an Artin algebra, a finitely generated module ends an almost-split sequence of `A`-modules
@@ -310,12 +252,12 @@ theorem exists_isAlmostSplit_of_not_injective [Small.{w} A] (N : ModuleCat.{w} A
   have : Module.Finite A (F.obj N) := Module.Finite.equiv ULift.moduleEquiv.symm
   obtain ⟨E, _, _, _, -, hE⟩ := exists_injective_finite_length_quotient_linearMap_eq_one R
   obtain ⟨M, _, hiM, hpM, ⟨e⟩⟩ := exists_nonempty_iso_arTranslate.{u, v, w} hE (F.obj N)
-    (indecomposable_uliftFunctor_obj.{u, v, w} hiN)
-    fun h ↦ hinj (injective_of_uliftFunctor_obj.{u, v, w} h)
+    (F.indecomposable_obj_of_map_bijective hiN ((fullyFaithfulUliftFunctor A).map_bijective N N))
+    fun h ↦ hinj ((injective_uliftFunctor_obj_iff.{v, w, max u v} N).mp h)
   obtain ⟨Y, i, p, h, hY, hS⟩ := exists_isAlmostSplit_arTranslate R E hE M hiM hpM
-  obtain ⟨Y₀, _, ⟨e₂⟩⟩ := exists_uliftFunctor_obj_iso.{u, v, w} Y
-  obtain ⟨M₀, _, ⟨e₃⟩⟩ := exists_uliftFunctor_obj_iso.{u, v, w} M
-  obtain ⟨i', p', h', hS'⟩ := exists_isAlmostSplit_of_uliftFunctor.{u, v, w} hS e.symm e₂ e₃
+  obtain ⟨Y₀, _, ⟨e₂⟩⟩ := exists_uliftFunctor_obj_iso.{v, w, max u v} Y
+  obtain ⟨M₀, _, ⟨e₃⟩⟩ := exists_uliftFunctor_obj_iso.{v, w, max u v} M
+  obtain ⟨i', p', h', hS'⟩ := F.exists_isAlmostSplit_of_obj_iso hS e.symm e₂ e₃
   exact ⟨Y₀, M₀, i', p', h', inferInstance, inferInstance, hS'⟩
 
 /-- Over an Artin algebra, a finitely generated module starts an almost-split sequence of

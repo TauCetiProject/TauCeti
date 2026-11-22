@@ -17,7 +17,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Length
 import Mathlib.Algebra.Category.ModuleCat.AB
 import Mathlib.RingTheory.HopkinsLevitzki
-import TauCeti.Algebra.Category.FGModuleCat.AlmostSplit
+import TauCeti.Algebra.Category.FGModuleCat.AlmostSplit.Basic
 import TauCeti.Algebra.Category.FGModuleCat.Injective
 import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
 import TauCeti.Algebra.Category.FGModuleCat.Projective

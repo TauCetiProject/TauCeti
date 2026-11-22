@@ -15,7 +15,9 @@ Equivalences preserve and reflect almost-split morphisms and almost-split sequen
 For almost-split morphisms, reflection holds for any fully faithful functor, for instance the
 inclusion of a full subcategory (`CategoryTheory.Functor.isRightAlmostSplit_of_map`,
 `CategoryTheory.Functor.isLeftAlmostSplit_of_map`), and between abelian categories it reflects
-almost-split sequences (`CategoryTheory.Functor.isAlmostSplit_of_map`). The essential
+almost-split sequences (`CategoryTheory.Functor.isAlmostSplit_of_map`); almost-split sequences
+whose terms lie in its essential image descend along it
+(`CategoryTheory.Functor.exists_isAlmostSplit_of_obj_iso`). The essential
 surjectivity is needed for preservation: the factorization property must hold for every object of
 the target category. This allows almost-split sequences to be transported between module categories
 and equivalent categories of representations.
@@ -114,5 +116,20 @@ theorem isAlmostSplit_of_map {C D : Type*} [Category* C] [Category* D] [Abelian 
   ⟨ShortExact.reflects_shortExact_of_faithful F h.shortExact,
     F.isLeftAlmostSplit_of_map S.f h.isLeftAlmostSplit_f,
     F.isRightAlmostSplit_of_map S.g h.isRightAlmostSplit_g⟩
+
+/-- **Descending an almost-split sequence along a fully faithful functor.** Let `F` be a fully
+faithful functor between abelian categories, and `S` an almost-split sequence whose terms are
+isomorphic to `F.obj X₁`, `F.obj X₂` and `F.obj X₃`. Then there is an almost-split sequence
+`X₁ ⟶ X₂ ⟶ X₃`, the preimage of `S` under `F`. -/
+theorem exists_isAlmostSplit_of_obj_iso {C D : Type*} [Category* C] [Category* D] [Abelian C]
+    [Abelian D] (F : C ⥤ D) [F.PreservesZeroMorphisms] [F.Full] [F.Faithful]
+    {S : ShortComplex D} (hS : S.IsAlmostSplit) {X₁ X₂ X₃ : C} (e₁ : F.obj X₁ ≅ S.X₁)
+    (e₂ : F.obj X₂ ≅ S.X₂) (e₃ : F.obj X₃ ≅ S.X₃) :
+    ∃ (i : X₁ ⟶ X₂) (p : X₂ ⟶ X₃) (h : i ≫ p = 0), (ShortComplex.mk i p h).IsAlmostSplit := by
+  let i := F.preimage (e₁.hom ≫ S.f ≫ e₂.inv)
+  let p := F.preimage (e₂.hom ≫ S.g ≫ e₃.inv)
+  have h : i ≫ p = 0 := F.map_injective (by simp [i, p])
+  exact ⟨i, p, h, F.isAlmostSplit_of_map (ShortComplex.isAlmostSplit_of_iso
+    (ShortComplex.isoMk e₁.symm e₂.symm e₃.symm (by simp [i]) (by simp [p])) hS)⟩
 
 end CategoryTheory.Functor
