@@ -250,7 +250,7 @@ def toX : L s₀ a Φ ⟶ TopCat.of X :=
     { pt := TopCat.of X
       ι := NatTrans.ofSequence
         (fun k ↦ TopCat.ofHom ⟨fun w ↦ ((stage s₀ a Φ k).h w : X),
-          continuous_subtype_val.comp (stage s₀ a Φ k).h.toFun.continuous⟩)
+          continuous_subtypeVal.comp (stage s₀ a Φ k).h.toFun.continuous⟩)
         fun k ↦ by
           rw [tower_map_succ]
           ext w
@@ -266,7 +266,7 @@ theorem toX_ιL (k : ℕ) (w : (stage s₀ a Φ k).W) :
 theorem monotone_Z : Monotone Z :=
   monotone_nat_of_le_succ fun k z hz ↦ by
     have h : (Φ k (adjInr (a k) ⟨z, hz⟩) : X) = z := hΦ k ⟨z, hz⟩
-    exact h ▸ (Φ k (adjInr (a k) ⟨z, hz⟩)).2
+    exact h ▸ (Φ k (adjInr (a k) ⟨z, hz⟩)).property
 
 theorem exists_homotopyEquiv (hZX : ⋃ k, Z k = univ) (hZc : IsCoherentWith (range Z))
     (hZH : ∀ k, HasHomotopyExtensionProperty ((↑) ⁻¹' Z k : Set (Z (k + 1)))) :

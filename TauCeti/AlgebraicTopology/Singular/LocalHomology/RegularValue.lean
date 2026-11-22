@@ -185,7 +185,7 @@ theorem degree_comap_eq_ncard_sub_ncard {U V : TopologicalSpace.Opens E} [Precon
     · rintro ⟨⟨hwU, hp⟩, hw⟩
       exact ⟨⟨w, hwU⟩, ⟨Subtype.ext ((hφ ⟨w, hwU⟩).symm.trans hw), hp⟩, rfl⟩
     · rintro ⟨z, ⟨hz, hp⟩, rfl⟩
-      exact ⟨⟨z.2, hp⟩, (hφ z).trans (congrArg Subtype.val hz)⟩
+      exact ⟨⟨z.property, hp⟩, (hφ z).trans (congrArg Subtype.val hz)⟩
   simp_rw [e]
   rw [Finset.sum_sub_distrib, Finset.sum_boole, Finset.sum_boole,
     hcount (fun t ↦ 0 < t), hcount (fun t ↦ t < 0)]

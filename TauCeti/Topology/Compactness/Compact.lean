@@ -16,8 +16,13 @@ import TauCeti.Topology.Separation.InvFunOn
 # Compactness utilities
 
 General lemmas about compact and σ-compact subsets of topological spaces, limits along
-ultrafilters of families eventually in a compact set, and families whose values tend to the
-cocompact filter, whose images therefore lie in no fixed compact set.
+ultrafilters of families eventually in a compact set, families whose values tend to the
+cocompact filter, whose images therefore lie in no fixed compact set, and passing from constants
+valid near each point of a compact set to one constant valid on all of it. Maps converging
+continuously on a compact set eventually map it into any open set containing the image under the
+limit (`IsCompact.eventually_forall_mem_of_tendsto_prod_nhds`). The fibres over `w` of a closed set
+`C ⊆ P × X` that near `w₀` all lie in a fixed compact set are eventually contained in every open
+neighbourhood of the fibre over `w₀` (`IsClosed.eventually_preimage_prodMk_subset`).
 
 A continuous injection on a compact set `K` restricts to a closed embedding of `K`
 (`IsCompact.isClosedEmbedding_domRestrict`), so neighbourhoods of a point of `K`
@@ -47,6 +52,22 @@ theorem _root_.IsCompact.inter_of_forall_exists {U S : Set X} (hU : IsCompact U)
   rw [heq]
   exact htf.isCompact_biUnion fun x hx ↦ hWc x (htU hx)
 
+/-- **A locally valid constant is uniform over a compact set.** Let `p a y` be a property of a
+constant `a` at a point `y`, preserved when `a` moves up for a directed relation `r`. If near each
+point of a compact set `K`, within `K`, some constant works, then one constant works on all of `K`.
+-/
+theorem _root_.IsCompact.exists_forall_of_forall_exists_eventually {α : Type*}
+    {r : α → α → Prop} [IsDirected α r] [Nonempty α] {K : Set X} (hK : IsCompact K)
+    {p : α → X → Prop} (hp : ∀ ⦃a b⦄, r a b → ∀ ⦃y⦄, p a y → p b y)
+    (h : ∀ y ∈ K, ∃ a, ∀ᶠ z in 𝓝[K] y, p a z) : ∃ a, ∀ y ∈ K, p a y := by
+  refine hK.induction_on (p := fun t ↦ ∃ a, ∀ y ∈ t, p a y)
+    ⟨Classical.arbitrary α, fun _ h ↦ h.elim⟩ (fun _ _ hst ⟨a, ha⟩ ↦ ⟨a, fun y hy ↦ ha y (hst hy)⟩)
+    (fun _ _ ⟨a, ha⟩ ⟨b, hb⟩ ↦ ?_) fun y hy ↦ ?_
+  · obtain ⟨c, hac, hbc⟩ := directed_of r a b
+    exact ⟨c, fun y hy ↦ hy.elim (fun hy ↦ hp hac (ha y hy)) fun hy ↦ hp hbc (hb y hy)⟩
+  · obtain ⟨a, ha⟩ := h y hy
+    exact ⟨_, ha, a, fun _ h ↦ h⟩
+
 /-- **Connected components of a compact set are compact.** The connected component of a compact
 set `K` at a point is closed in `K`, hence compact; it is empty at a point outside `K`. -/
 protected theorem _root_.IsCompact.connectedComponentIn {K : Set X} (hK : IsCompact K)
@@ -54,7 +75,7 @@ protected theorem _root_.IsCompact.connectedComponentIn {K : Set X} (hK : IsComp
   by_cases hx : x ∈ K
   · have : CompactSpace K := isCompact_iff_compactSpace.1 hK
     rw [connectedComponentIn_eq_image hx]
-    exact isClosed_connectedComponent.isCompact.image continuous_subtype_val
+    exact isClosed_connectedComponent.isCompact.image continuous_subtypeVal
   · rw [connectedComponentIn_eq_empty hx]
     exact isCompact_empty
 
@@ -99,7 +120,7 @@ theorem _root_.IsCompact.exists_mem_nhds_inter_preimage_subset {Y : Type*} [Topo
     (hinj : InjOn f K) {x : X} (hx : x ∈ K) {s : Set X} (hs : s ∈ 𝓝 x) :
     ∃ t ∈ 𝓝 (f x), K ∩ f ⁻¹' t ⊆ s := by
   -- Inside `K`, the neighbourhoods of `x` are read through `f`.
-  have hs' := continuous_subtype_val.continuousAt (x := (⟨x, hx⟩ : K)).preimage_mem_nhds hs
+  have hs' := continuous_subtypeVal.continuousAt (x := (⟨x, hx⟩ : K)).preimage_mem_nhds hs
   rw [(hK.isClosedEmbedding_domRestrict hf hinj).isInducing.nhds_eq_comap, mem_comap] at hs'
   obtain ⟨t, ht, hts⟩ := hs'
   refine ⟨t, ht, fun p ⟨hpK, hpt⟩ ↦ hts (a := ⟨p, hpK⟩) ?_⟩
@@ -186,13 +207,45 @@ theorem _root_.IsCompact.prod_inter_setOf_eq {Y Z : Type*} [TopologicalSpace Y]
     (ht : IsCompact t) {f : X → Z} {g : Y → Z} (hf : ContinuousOn f s) (hg : ContinuousOn g t) :
     IsCompact (s ×ˢ t ∩ {z | f z.1 = g z.2}) := by
   have : CompactSpace (s ×ˢ t) := isCompact_iff_compactSpace.1 (hs.prod ht)
-  have hf' : Continuous fun z : s ×ˢ t ↦ f z.1.1 :=
+  have hf' : Continuous fun z : s ×ˢ t ↦ f z.val.1 :=
     (hf.comp continuousOn_fst fun _ hz ↦ (mem_prod.1 hz).1).domRestrict
-  have hg' : Continuous fun z : s ×ˢ t ↦ g z.1.2 :=
+  have hg' : Continuous fun z : s ×ˢ t ↦ g z.val.2 :=
     (hg.comp continuousOn_snd fun _ hz ↦ (mem_prod.1 hz).2).domRestrict
-  convert (isClosed_eq hf' hg').isCompact.image continuous_subtype_val using 1
+  convert (isClosed_eq hf' hg').isCompact.image continuous_subtypeVal using 1
   ext z
-  exact ⟨fun hz ↦ ⟨⟨z, hz.1⟩, hz.2, rfl⟩, by rintro ⟨z, hz, rfl⟩; exact ⟨z.2, hz⟩⟩
+  exact ⟨fun hz ↦ ⟨⟨z, hz.1⟩, hz.2, rfl⟩, by rintro ⟨z, hz, rfl⟩; exact ⟨z.property, hz⟩⟩
+
+/-- The points of a compact set `C` that a map continuous on `C` sends into a closed set `K` form
+a compact set. -/
+theorem _root_.IsCompact.inter_preimage {Y : Type*} [TopologicalSpace Y] {C : Set X}
+    {K : Set Y} {Φ : X → Y} (hC : IsCompact C) (hΦ : ContinuousOn Φ C) (hK : IsClosed K) :
+    IsCompact (C ∩ Φ ⁻¹' K) := by
+  have : CompactSpace C := isCompact_iff_compactSpace.1 hC
+  rw [← Subtype.image_preimage_coe]
+  exact (hK.preimage hΦ.domRestrict).isCompact.image continuous_subtypeVal
+
+/-- **Solutions on an isolating set are compact.** Let `Φ` be a continuous family of maps
+`X → Y` parametrized by a compact space `P`, and let `U` be a set with compact closure on whose
+frontier no map of the family takes the value `y`. Then the solutions in `P × U` of
+`Φ (p, x) = y` form a compact set. -/
+theorem isCompact_setOf_apply_eq_of_frontier {P Y : Type*} [TopologicalSpace P] [CompactSpace P]
+    [TopologicalSpace Y] [T1Space Y] {U : Set X} (hU : IsCompact (closure U))
+    {Φ : P × X → Y} (hΦc : Continuous Φ) {y : Y} (hΦ : ∀ p, ∀ x ∈ frontier U, Φ (p, x) ≠ y) :
+    IsCompact {z : P × U | Φ (z.1, z.2) = y} := by
+  have hK : IsCompact ((univ : Set P) ×ˢ closure U ∩ Φ ⁻¹' {y}) :=
+    (isCompact_univ.prod hU).inter_right (isClosed_singleton.preimage hΦc)
+  let j : P × U → P × X := Prod.map id Subtype.val
+  have hj : IsInducing j := IsInducing.id.prodMap IsInducing.subtypeVal
+  -- The solutions in `P × closure U` avoid `P × frontier U`, so they lie in `P × U`.
+  have hsub : (univ : Set P) ×ˢ closure U ∩ Φ ⁻¹' {y} ⊆ range j := by
+    rintro ⟨p, x⟩ ⟨⟨-, hxc⟩, hxy⟩
+    have hxU : x ∈ U := by
+      by_contra hxU
+      exact hΦ p x ⟨hxc, fun h ↦ hxU (interior_subset h)⟩ hxy
+    exact ⟨(p, ⟨x, hxU⟩), rfl⟩
+  convert (hj.isCompact_preimage_iff hsub).2 hK using 1
+  ext ⟨p, x⟩
+  simp [j, subset_closure x.property]
 
 /-- A compact set contains no infinite subset all of whose subsets are closed: such a subset would
 be closed, hence compact, and discrete. -/
@@ -214,6 +267,69 @@ theorem _root_.Topology.IsInducing.isCompact_preimage_of_subset_union {Y : Type*
     Set.ext fun z ↦ and_iff_left_of_imp fun hz ↦ hdisj.notMem_of_mem_left ⟨hz, mem_range_self z⟩
   exact h ▸ (hj.isCompact_preimage_iff (K := K \ V) fun _ ⟨hz, hz'⟩ ↦
     (hKV hz).resolve_right hz').2 (hK.diff hV)
+
+/-- In a compact Hausdorff space `X`, the punctured space `{x : X // x ≠ x₀}` is compact if and
+only if `x₀` is an isolated point (`{x₀}` is open). -/
+theorem compactSpace_complSingleton_iff_isOpen_singleton [CompactSpace X] [T2Space X] {x₀ : X} :
+    CompactSpace {x : X // x ≠ x₀} ↔ IsOpen ({x₀} : Set X) := by
+  refine ⟨fun _ ↦ ?_, fun hx ↦ isCompact_iff_compactSpace.mp hx.isClosed_compl.isCompact⟩
+  rw [← isClosed_compl_iff]
+  have hrange : range (Subtype.val : {x : X // x ≠ x₀} → X) = {x₀}ᶜ := by ext; simp
+  rw [← hrange]
+  exact (isCompact_range continuous_subtypeVal).isClosed
+
+/-- In a compact space `X`, the inclusion of `{x : X // x ≠ x₀}` into `X` tends to `x₀` along the
+cocompact filter. -/
+theorem tendsto_subtypeVal_cocompact_nhds [CompactSpace X] (x₀ : X) :
+    Tendsto (Subtype.val : {x : X // x ≠ x₀} → X) (cocompact {x : X // x ≠ x₀}) (𝓝 x₀) := by
+  rw [hasBasis_cocompact.tendsto_left_iff]
+  intro N hN
+  obtain ⟨U, hU₁, hU₂, hU₃⟩ := mem_nhds_iff.mp hN
+  refine ⟨Subtype.val ⁻¹' Uᶜ, ?_, by simpa using (mapsTo_preimage Subtype.val U).mono_right hU₁⟩
+  have hsub : Uᶜ ⊆ range (Subtype.val : {x : X // x ≠ x₀} → X) := fun x hx ↦
+    ⟨⟨x, fun h ↦ hx (h ▸ hU₃)⟩, rfl⟩
+  rw [Topology.IsEmbedding.subtypeVal.isCompact_iff, image_preimage_eq_iff.mpr hsub]
+  exact hU₂.isClosed_compl.isCompact
+
+/-- In a T₀ space, a compact closed subset `S` is contained in an open subset `U` as soon as every
+closed point in `S` belongs to `U`. -/
+theorem _root_.IsCompact.subset_of_isClosed_of_forall_isClosed_singleton [T0Space X]
+    {S U : Set X} (hSc : IsCompact S) (hS : IsClosed S) (hU : IsOpen U)
+    (h : ∀ z ∈ S, IsClosed ({z} : Set X) → z ∈ U) : S ⊆ U := by
+  intro z hzS
+  by_contra hzU
+  have : CompactSpace S := isCompact_iff_compactSpace.1 hSc
+  obtain ⟨⟨w, hwS⟩, hwU, hwcl⟩ :=
+    (hU.preimage continuous_subtypeVal).isClosed_compl.exists_closed_singleton ⟨⟨z, hzS⟩, hzU⟩
+  exact hwU (h w hwS (by simpa [image_singleton] using
+    hS.isClosedEmbedding_subtypeVal.isClosedMap _ hwcl))
+
+/-- If maps `f i` converge to `g` continuously at every point of a compact set `A`, that is
+`f p.1 p.2 → g a` as `p → (l, a)`, and `g` maps `A` into an open set `t`, then eventually along
+`l` the map `f i` maps `A` into `t`. -/
+theorem _root_.IsCompact.eventually_forall_mem_of_tendsto_prod_nhds {Y ι : Type*}
+    [TopologicalSpace Y] {l : Filter ι} {f : ι → X → Y} {g : X → Y} {A : Set X} {t : Set Y}
+    (hA : IsCompact A) (ht : IsOpen t)
+    (hconv : ∀ a ∈ A, Tendsto (fun p : ι × X ↦ f p.1 p.2) (l ×ˢ 𝓝 a) (𝓝 (g a)))
+    (hmem : ∀ a ∈ A, g a ∈ t) : ∀ᶠ i in l, ∀ a ∈ A, f i a ∈ t := by
+  have h := hA.mem_prod_nhdsSet_of_forall (s := {p : ι × X | f p.1 p.2 ∈ t})
+    fun a ha ↦ (hconv a ha).eventually (ht.mem_nhds (hmem a ha))
+  exact (Filter.Eventually.curry h).mono fun _ hi ↦ hi.self_of_nhdsSet
+
+/-- **Fibres of a closed set vary upper semicontinuously.** Let `C ⊆ P × X` be closed, and suppose
+that for `w` near `w₀` the fibre `{x | (w, x) ∈ C}` lies in a fixed compact set `K`. Then every
+open set `U` containing the fibre over `w₀` contains the fibres over all `w` near `w₀`. -/
+theorem _root_.IsClosed.eventually_preimage_prodMk_subset {P : Type*} [TopologicalSpace P]
+    {C : Set (P × X)} (hC : IsClosed C) {K : Set X} (hK : IsCompact K) {w₀ : P}
+    (hKC : ∀ᶠ w in 𝓝 w₀, Prod.mk w ⁻¹' C ⊆ K) {U : Set X} (hU : IsOpen U)
+    (hCU : Prod.mk w₀ ⁻¹' C ⊆ U) : ∀ᶠ w in 𝓝 w₀, Prod.mk w ⁻¹' C ⊆ U := by
+  -- On the compact set `K \ U` the fibre over `w₀` is empty, hence so are nearby fibres.
+  have hev : ∀ᶠ w in 𝓝 w₀, ∀ x ∈ K \ U, (w, x) ∉ C :=
+    (hK.diff hU).eventually_forall_of_forall_eventually fun x hx ↦
+      hC.isOpen_compl.mem_nhds fun h ↦ hx.2 (hCU h)
+  filter_upwards [hKC, hev] with w hwK hwU x hx
+  by_contra hxU
+  exact hwU x ⟨hwK hx, hxU⟩ hx
 
 section TubeLemma
 

@@ -8,6 +8,8 @@ module
 public import TauCeti.Topology.Circle.Degree
 public import TauCeti.Topology.Homotopy.Cube.Basic
 
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+
 /-!
 # The degree of a circle-valued map around the boundary of the square
 
@@ -23,9 +25,13 @@ The degree only sees `Γ` on the boundary (`TauCeti.squareBoundaryDegree_congr`)
 laws of a winding number:
 
 * **products:** for `Γ` and `Γ'` continuous on the boundary,
-  `deg (Γ * Γ') = deg Γ + deg Γ'` (`TauCeti.squareBoundaryDegree_mul`);
+  `deg (Γ * Γ') = deg Γ + deg Γ'` (`TauCeti.squareBoundaryDegree_mul`), and hence
+  `deg (Γ ^ n) = n deg Γ` (`TauCeti.squareBoundaryDegree_pow`);
+* **inverses:** `deg Γ⁻¹ = -deg Γ` (`TauCeti.squareBoundaryDegree_inv`);
 * **maps defined on the whole square:** if `Γ` is continuous on all of `I²`, its boundary loop is
-  null-homotopic, so `deg Γ = 0` (`TauCeti.squareBoundaryDegree_eq_zero_of_continuous`);
+  null-homotopic, so `deg Γ = 0` (`TauCeti.squareBoundaryDegree_eq_zero_of_continuous`), and
+  multiplying any map by `Γ` does not change its degree
+  (`TauCeti.squareBoundaryDegree_mul_of_continuous`);
 * **homotopy:** a family `H (τ, ·)`, `τ ∈ I`, continuous on `I × ∂I²`, has constant degree
   (`TauCeti.squareBoundaryDegree_eq_of_homotopy`);
 * **subdivision:** if `Γ` is also continuous on the vertical segment `s = 1/2`, the degree of `Γ`
@@ -38,18 +44,30 @@ The proofs read the degree as the sum of the angles swept along the four edges
 (`Circle.angleChange`): the shared edge `s = 1/2` of the two halves is run once in each
 direction and cancels.
 
+The basic map of nonzero degree is the direction `TauCeti.squareCenterDirection` of a point from
+the centre of the square, the point `c / ‖c‖` of the circle for its offset
+`c = (s - 1/2) + (t - 1/2) i` from the centre (`TauCeti.squareCenterOffset`). Its degree is `1`
+(`TauCeti.squareBoundaryDegree_squareCenterDirection`): along each edge the direction sweeps a
+quarter turn, as the arguments of the corners `(±1 ± i) / 2` show.
+
 ## Main definitions
 
 * `TauCeti.squareBoundaryLoop`: the boundary of the square as a loop based at `(0, 0)`.
 * `TauCeti.squareBoundaryDegree`: the degree of a circle-valued map around the boundary.
+* `TauCeti.squareCenterOffset`, `TauCeti.squareCenterDirection`: the offset of a point of the
+  square from the centre, as a complex number, and its direction.
 
 ## Main results
 
 * `TauCeti.squareBoundaryDegree_eq_degree`: the degree is that of the loop `Γ ∘ ∂I²`.
 * `TauCeti.squareBoundaryDegree_congr`, `TauCeti.squareBoundaryDegree_mul`,
+  `TauCeti.squareBoundaryDegree_pow`, `TauCeti.squareBoundaryDegree_inv`,
   `TauCeti.squareBoundaryDegree_eq_zero_of_continuous`,
+  `TauCeti.squareBoundaryDegree_mul_of_continuous`,
   `TauCeti.squareBoundaryDegree_eq_of_homotopy`, `TauCeti.squareBoundaryDegree_eq_add`: the laws
   above.
+* `TauCeti.squareBoundaryDegree_squareCenterDirection`: the direction from the centre has
+  degree `1`.
 
 ## References
 
@@ -174,6 +192,29 @@ theorem squareBoundaryDegree_mul (hΓ : ContinuousOn Γ (Cube.boundary (Fin 2)))
     squareBoundaryDegree_eq_degree hΓ', ← Circle.degree_mul]
   exact Circle.degree_congr _ _ fun _ ↦ rfl
 
+/-- **Powers.** The degree around the boundary of the square of the `n`-th power of a map
+continuous on the boundary is `n` times its degree. -/
+theorem squareBoundaryDegree_pow (hΓ : ContinuousOn Γ (Cube.boundary (Fin 2))) (n : ℕ) :
+    squareBoundaryDegree (Γ ^ n) = n * squareBoundaryDegree Γ := by
+  induction n with
+  | zero => rw [pow_zero, Nat.cast_zero, zero_mul]; exact squareBoundaryDegree_const 1
+  | succ n ih =>
+    rw [pow_succ, squareBoundaryDegree_mul (hΓ.pow n) hΓ, ih]
+    push_cast
+    ring
+
+/-- **Inverses.** The degree around the boundary of the square of the pointwise inverse of a map
+is the negative of its degree. No continuity is assumed: if `Γ` is not continuous on the boundary,
+neither is `Γ⁻¹`, and both degrees are `0`. -/
+@[simp]
+theorem squareBoundaryDegree_inv : squareBoundaryDegree Γ⁻¹ = -squareBoundaryDegree Γ := by
+  by_cases hΓ : ContinuousOn Γ (Cube.boundary (Fin 2))
+  · have h := squareBoundaryDegree_mul hΓ hΓ.inv
+    rw [mul_inv_cancel, Pi.one_def, squareBoundaryDegree_const] at h
+    omega
+  · rw [squareBoundaryDegree_of_not_continuousOn hΓ,
+      squareBoundaryDegree_of_not_continuousOn fun h ↦ hΓ (by simpa using h.inv), neg_zero]
+
 /-- **Homotopy invariance.** If `H` is continuous on `I × ∂I²`, the maps `H (0, ·)` and
 `H (1, ·)` have the same degree around the boundary of the square. -/
 theorem squareBoundaryDegree_eq_of_homotopy {H : I × (Fin 2 → I) → Circle}
@@ -199,6 +240,18 @@ theorem squareBoundaryDegree_eq_zero_of_continuous (h : Continuous Γ) :
   simp only [ContinuousMap.Homotopy.apply_zero, ContinuousMap.Homotopy.apply_one,
     ContinuousMap.const_apply, ContinuousMap.id_apply, squareBoundaryDegree_const] at hH
   exact hH.symm
+
+/-- **Factors defined on the whole square.** Multiplying by a map continuous on the whole square
+does not change the degree around the boundary. No continuity of `Γ` is assumed: if `Γ` is not
+continuous on the boundary, neither is the product, and both degrees are `0`. -/
+theorem squareBoundaryDegree_mul_of_continuous (hΓ' : Continuous Γ') :
+    squareBoundaryDegree (Γ * Γ') = squareBoundaryDegree Γ := by
+  by_cases hΓ : ContinuousOn Γ (Cube.boundary (Fin 2))
+  · rw [squareBoundaryDegree_mul hΓ hΓ'.continuousOn,
+      squareBoundaryDegree_eq_zero_of_continuous hΓ', add_zero]
+  · refine (squareBoundaryDegree_of_not_continuousOn fun h ↦ hΓ ?_).trans
+      (squareBoundaryDegree_of_not_continuousOn hΓ).symm
+    simpa using h.mul hΓ'.inv.continuousOn
 
 /-! ### Subdivision along the first coordinate -/
 
@@ -284,6 +337,13 @@ private theorem pathAngle_horizontal_eq_add {a b : Fin 2 → I} (γ : Path a b) 
     simp only [Path.map', Path.coe_mk_mk, comp_apply, hγ] <;>
     exact congrArg Γ (square_ext (by simp [ht]) (by simp))
 
+/-- An integer is the degree of `Γ` around the boundary of the square once its multiple of `2π`
+is the multiple `squareBoundaryDegree Γ * 2π`. -/
+private theorem squareBoundaryDegree_eq_of_mul_two_pi {n : ℤ}
+    (h : (squareBoundaryDegree Γ : ℝ) * (2 * Real.pi) = n * (2 * Real.pi)) :
+    squareBoundaryDegree Γ = n := by
+  exact_mod_cast mul_right_cancel₀ (by positivity : (2 * Real.pi : ℝ) ≠ 0) h
+
 /-- **Subdivision.** If `Γ` is continuous on the boundary of the square and on the vertical
 segment `s = 1/2`, its degree around the boundary is the sum of the degrees of its restrictions
 to the left and right halves of the square. -/
@@ -320,6 +380,127 @@ theorem squareBoundaryDegree_eq_add
     rw [Int.cast_add, add_mul, squareBoundaryDegree_mul_two_pi hL,
       squareBoundaryDegree_mul_two_pi hR, key, hseam]
     ring
-  exact_mod_cast (mul_right_cancel₀ (by positivity : (2 * Real.pi : ℝ) ≠ 0) hsum).symm
+  exact squareBoundaryDegree_eq_of_mul_two_pi hsum.symm
+
+/-! ### The direction from the centre -/
+
+/-- The position of a point `(s, t)` of the square relative to the centre `(1/2, 1/2)`, as the
+complex number `(s - 1/2) + (t - 1/2) i`. -/
+def squareCenterOffset (y : Fin 2 → I) : ℂ :=
+  ((y 0 : ℝ) - 1 / 2 : ℝ) + ((y 1 : ℝ) - 1 / 2 : ℝ) * Complex.I
+
+/-- The real part of the offset from the centre is `s - 1/2`. -/
+@[simp]
+theorem re_squareCenterOffset (y : Fin 2 → I) : (squareCenterOffset y).re = (y 0 : ℝ) - 1 / 2 := by
+  simp [squareCenterOffset]
+
+/-- The imaginary part of the offset from the centre is `t - 1/2`. -/
+@[simp]
+theorem im_squareCenterOffset (y : Fin 2 → I) : (squareCenterOffset y).im = (y 1 : ℝ) - 1 / 2 := by
+  simp [squareCenterOffset]
+
+@[fun_prop]
+theorem continuous_squareCenterOffset : Continuous squareCenterOffset := by
+  unfold squareCenterOffset
+  fun_prop
+
+/-- The centre of the square is not on its boundary. -/
+theorem squareCenterOffset_ne_zero_of_mem {y : Fin 2 → I} (hy : y ∈ Cube.boundary (Fin 2)) :
+    squareCenterOffset y ≠ 0 := by
+  intro h0
+  simp only [Complex.ext_iff, re_squareCenterOffset, im_squareCenterOffset, Complex.zero_re,
+    Complex.zero_im, sub_eq_zero] at h0
+  obtain ⟨i, hi | hi⟩ := hy <;> fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one] at hi <;>
+    norm_num [hi] at h0
+
+/-- The direction of a point of the square from its centre, the point `c / ‖c‖` of the circle for
+`c = squareCenterOffset y` (`TauCeti.coe_squareCenterDirection`). It is `1` at the centre. -/
+def squareCenterDirection (y : Fin 2 → I) : Circle :=
+  Circle.exp (Complex.arg (squareCenterOffset y))
+
+/-- Away from the centre, the direction from the centre is `c / ‖c‖` for the offset `c`. -/
+theorem coe_squareCenterDirection {y : Fin 2 → I} (hy : squareCenterOffset y ≠ 0) :
+    (squareCenterDirection y : ℂ) = squareCenterOffset y / ‖squareCenterOffset y‖ := by
+  rw [squareCenterDirection, Circle.coe_exp, Complex.exp_arg_mul_I hy]
+
+/-- The direction from the centre is continuous on the boundary of the square. -/
+theorem continuousOn_squareCenterDirection :
+    ContinuousOn squareCenterDirection (Cube.boundary (Fin 2)) :=
+  (Topology.IsInducing.subtypeVal.continuousOn_iff).2 <|
+    (continuous_squareCenterOffset.continuousOn.div
+      (Complex.continuous_ofReal.comp continuous_squareCenterOffset.norm).continuousOn
+      fun y hy ↦ by simpa using squareCenterOffset_ne_zero_of_mem hy).congr
+    fun y hy ↦ coe_squareCenterDirection (squareCenterOffset_ne_zero_of_mem hy)
+
+/-- Along a path of the square, the angle swept by a map is the change of any continuous lift of
+it along `Circle.exp`. -/
+private theorem pathAngle_eq_sub {a b : Fin 2 → I} (γ : Path a b) (h : ContinuousOn Γ (range γ))
+    {θ : I → ℝ} (hθ : Continuous θ) (hθΓ : ∀ t, Circle.exp (θ t) = Γ (γ t)) :
+    pathAngle γ Γ = θ 1 - θ 0 := by
+  rw [pathAngle_eq γ h]
+  exact Circle.angleChange_eq_sub _ hθ hθΓ
+
+/-- Along an edge of the square that avoids the closed negative real axis, as seen from the
+centre, the direction from the centre sweeps the angle between the arguments of the ends. -/
+private theorem pathAngle_squareCenterDirection_eq_arg_sub {a b : Fin 2 → I} (γ : Path a b)
+    (hrange : range γ ⊆ Cube.boundary (Fin 2))
+    (hslit : ∀ t, squareCenterOffset (γ t) ∈ Complex.slitPlane) :
+    pathAngle γ squareCenterDirection =
+      Complex.arg (squareCenterOffset b) - Complex.arg (squareCenterOffset a) := by
+  rw [pathAngle_eq_sub γ (continuousOn_squareCenterDirection.mono hrange)
+    (continuous_iff_continuousAt.2 fun t ↦ (Complex.continuousAt_arg (hslit t)).comp
+      (f := fun s ↦ squareCenterOffset (γ s)) (by fun_prop)) fun t ↦ rfl]
+  simp only [comp_apply, Path.source, Path.target]
+
+/-- Along an edge of the square that avoids the closed positive real axis, as seen from the
+centre, the direction from the centre sweeps the angle between the arguments of the negated
+ends. -/
+private theorem pathAngle_squareCenterDirection_eq_arg_neg_sub {a b : Fin 2 → I} (γ : Path a b)
+    (hrange : range γ ⊆ Cube.boundary (Fin 2))
+    (hslit : ∀ t, -squareCenterOffset (γ t) ∈ Complex.slitPlane) :
+    pathAngle γ squareCenterDirection =
+      Complex.arg (-squareCenterOffset b) - Complex.arg (-squareCenterOffset a) := by
+  have hθ : Continuous fun t ↦ Complex.arg (-squareCenterOffset (γ t)) + Real.pi :=
+    (continuous_iff_continuousAt.2 fun t ↦ (Complex.continuousAt_arg (hslit t)).comp
+      (f := fun s ↦ -squareCenterOffset (γ s)) (by fun_prop)).add continuous_const
+  rw [pathAngle_eq_sub γ (continuousOn_squareCenterDirection.mono hrange) hθ
+    fun t ↦ Circle.ext ?_]
+  · simp only [Path.source, Path.target]
+    ring
+  have hne := squareCenterOffset_ne_zero_of_mem (hrange (mem_range_self t))
+  rw [Circle.exp_add, Circle.coe_mul, Circle.coe_exp, Complex.exp_arg_mul_I (neg_ne_zero.2 hne),
+    coe_squareCenterDirection hne, Circle.coe_exp, Complex.exp_pi_mul_I, norm_neg]
+  ring
+
+/-- **The direction from the centre has degree one.** Running once counterclockwise around the
+boundary of the square, the direction of the point from the centre of the square turns once
+counterclockwise around the circle. -/
+theorem squareBoundaryDegree_squareCenterDirection :
+    squareBoundaryDegree squareCenterDirection = 1 := by
+  -- The four edges, read through the arguments of the corners as seen from the centre.
+  have hbot := pathAngle_squareCenterDirection_eq_arg_sub squareBottom range_squareBottom
+    fun t ↦ Complex.mem_slitPlane_iff.2 (Or.inr (by norm_num [squareBottom]))
+  have hright := pathAngle_squareCenterDirection_eq_arg_sub squareRight range_squareRight
+    fun t ↦ Complex.mem_slitPlane_iff.2 (Or.inl (by norm_num [squareRight]))
+  have htop := pathAngle_squareCenterDirection_eq_arg_sub squareTop range_squareTop
+    fun t ↦ Complex.mem_slitPlane_iff.2 (Or.inr (by norm_num [squareTop]))
+  have hleft := pathAngle_squareCenterDirection_eq_arg_neg_sub squareLeft range_squareLeft
+    fun t ↦ Complex.mem_slitPlane_iff.2 (Or.inl (by norm_num [squareLeft]))
+  -- Every corner is `±z` or `±conj z` for the upper right corner `z = (1 + i) / 2`.
+  set z : ℂ := squareCenterOffset ![1, 1]
+  have hz : 0 < z.im := by norm_num [z]
+  have h00 : squareCenterOffset ![0, 0] = -z := by apply Complex.ext <;> norm_num [z]
+  have h10 : squareCenterOffset ![1, 0] = (starRingEnd ℂ) z := by
+    apply Complex.ext <;> norm_num [z]
+  have h01 : squareCenterOffset ![0, 1] = -(starRingEnd ℂ) z := by
+    apply Complex.ext <;> norm_num [z]
+  have hconj : Complex.arg ((starRingEnd ℂ) z) = -Complex.arg z := by
+    have hπ : Complex.arg z ≠ Real.pi := fun h ↦ hz.ne' (Complex.arg_eq_pi_iff.1 h).2
+    simp [Complex.arg_conj, hπ]
+  have key := squareBoundaryDegree_mul_two_pi continuousOn_squareCenterDirection
+  rw [hbot, hright, htop, hleft, h00, h10, h01, neg_neg, neg_neg,
+    Complex.arg_neg_eq_arg_sub_pi_of_im_pos hz,
+    Complex.arg_neg_eq_arg_add_pi_of_im_neg (by simpa using hz), hconj] at key
+  exact squareBoundaryDegree_eq_of_mul_two_pi (by rw [key]; push_cast; ring)
 
 end TauCeti

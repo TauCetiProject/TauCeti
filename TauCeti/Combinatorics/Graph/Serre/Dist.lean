@@ -108,7 +108,7 @@ theorem exists_src_eq_and_tgt_eq_of_dist_eq_one {a b : Γ.V} (h : Γ.dist a b = 
   obtain ⟨p, hp⟩ := exists_length_eq_dist hab
   obtain ⟨c, e, q, hq, rfl⟩ := p.eq_toPath_comp_of_length_eq_succ (hp.trans h)
   obtain rfl := q.eq_of_length_zero hq
-  exact ⟨e.1, e.2.1, e.2.2⟩
+  exact ⟨e.val, e.property.1, e.property.2⟩
 
 /-- Joined vertices are joined by a sequence of vertices, each joined to the next by a path and at
 distance at most one from it, that reaches the second vertex after as many steps as their
@@ -181,8 +181,8 @@ theorem Path.nodup_darts_of_length_eq_dist {a b : Γ.V} {p : Γ.Path a b}
     rw [List.mem_singleton] at hf
     subst hf
     obtain ⟨q, r, rfl⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ p hg
-    have h₁ := dist_le_length (q.cons (Γ.dart f.1))
-    have h₂ : Γ.dist a (Γ.tgt f.1) = Γ.dist a d := by rw [f.2.2]
+    have h₁ := dist_le_length (q.cons (Γ.dart f.val))
+    have h₂ : Γ.dist a (Γ.tgt f.val) = Γ.dist a d := by rw [f.property.2]
     simp only [Quiver.Path.length_cons, Quiver.Path.length_comp] at hp h₁
     lia
 
@@ -210,7 +210,7 @@ theorem Path.dist_tgt_src_add_two_le {a b : Γ.V} (p : Γ.Path a b) {e f : Γ.E}
       Option.some.injEq] at he
     subst hf he
     have := dist_le_length q
-    rw [f'.2.2, e'.2.1, Quiver.Path.length_comp, Quiver.Path.length_toPath,
+    rw [f'.property.2, e'.property.1, Quiver.Path.length_comp, Quiver.Path.length_toPath,
       Quiver.Path.length_cons]
     omega
 

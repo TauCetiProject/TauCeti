@@ -113,11 +113,11 @@ variable {K : Type u} {L : Type v} {M : Type w} {N : Type w₁} [Field K] [LieRi
 generalized weight spaces. -/
 private noncomputable def genWeightSpaceProdEquiv (χ : L → K) :
     genWeightSpace (M × N) χ ≃ₗ[K] genWeightSpace M χ × genWeightSpace N χ where
-  toFun p := (⟨(p : M × N).1, (mem_genWeightSpace_prod_iff.mp p.2).1⟩,
-    ⟨(p : M × N).2, (mem_genWeightSpace_prod_iff.mp p.2).2⟩)
+  toFun p := (⟨(p : M × N).1, (mem_genWeightSpace_prod_iff.mp p.property).1⟩,
+    ⟨(p : M × N).2, (mem_genWeightSpace_prod_iff.mp p.property).2⟩)
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-  invFun q := ⟨((q.1 : M), (q.2 : N)), mem_genWeightSpace_prod_iff.mpr ⟨q.1.2, q.2.2⟩⟩
+  invFun q := ⟨((q.1 : M), (q.2 : N)), mem_genWeightSpace_prod_iff.mpr ⟨q.1.property, q.2.property⟩⟩
   left_inv _ := rfl
   right_inv _ := rfl
 

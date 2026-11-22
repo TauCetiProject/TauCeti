@@ -131,6 +131,15 @@ theorem heatDuhamelPotential_smul (c : ℝ) (f : ℝ → E → F) (t : ℝ) (x :
   simp only [heatDuhamelPotential_def, Pi.smul_apply, convolution_smul]
   exact intervalIntegral.integral_smul c _
 
+/-- The Duhamel heat potential commutes with a continuous linear equivalence of the values. -/
+theorem heatDuhamelPotential_comp_continuousLinearEquiv {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (L : F ≃L[ℝ] G) (f : ℝ → E → F) (t : ℝ) (x : E) :
+    heatDuhamelPotential (fun s y ↦ L (f s y)) t x = L (heatDuhamelPotential f t x) := by
+  have hconv : ∀ s, (heatKernel (t - s) ⋆ fun y ↦ L (f s y)) x =
+      L ((heatKernel (t - s) ⋆ f s) x) := fun s ↦ by
+    simp only [convolution_lsmul, ← L.integral_comp_comm, map_smul]
+  simp only [heatDuhamelPotential_def, hconv, intervalIntegral, ← L.integral_comp_comm, map_sub]
+
 /-- The Duhamel heat potential vanishes at time zero. -/
 @[simp]
 theorem heatDuhamelPotential_zero (f : ℝ → E → F) : heatDuhamelPotential f 0 = 0 := by
@@ -686,7 +695,7 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
       2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by
     simpa only [mul_assoc, ← hh_def, show 2 * t' - t = t' - h by rw [hh_def]; ring] using
       norm_integral_le_of_ae_norm_le_mul_sub_rpow (A := K * H)
-        (by positivity) hh hbig hα₂' (hK hfM hH htt' |>.mono fun s hs hsI => hs hsI x)
+        hh hbig hα₂' (hK hfM hH htt' |>.mono fun s hs hsI => hs hsI x)
   have hb := norm_intervalIntegral_sub_le_of_sub_le (c := C₁ * H) (β := (α : ℝ) / 2)
     (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) (by linarith) hs₀ htt'.le (hint ht le_rfl)
     (hint (by linarith) htt'.le) hfar
