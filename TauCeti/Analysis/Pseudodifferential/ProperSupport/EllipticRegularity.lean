@@ -213,8 +213,8 @@ theorem quantizeTempered_cutoffTempered (ha : a.HasNearDiagonalKernel R) (hp : p
     simp only [h0, map_zero, mul_zero]
 
 /-- **Nested cutoffs at a point.** Let `U` be a neighbourhood of `x` and let `R` be a radius.
-There are test functions `φ`, `ψ` and `χ`, with `φ = 1` near `x`, `ψ` supported in `U` and equal to
-one near the support of `φ`, and `χ = 1` on the closed `R`-neighbourhood of the support of `ψ`,
+There are test functions `φ`, `ψ` and `χ`, with `φ = 1` near `x`, `ψ` supported in `U` with
+`tsupport φ ⊆ tsupport ψ`, and `χ = 1` on the closed `R`-neighbourhood of the support of `ψ`,
 together with the compactly supported Schwartz function `φS = φ`. For the given symbol `a`, `ψ a`
 agrees with `a` near the support of `φS`. -/
 theorem exists_cutoffs_of_mem_nhds {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
@@ -379,9 +379,8 @@ theorem vectorSobolevSingularSupport_subset_vectorSobolevSingularSupport_quantiz
   set bV := Module.finBasis ℂ V
   set bW := Module.finBasis ℂ W
   -- The coordinates of `Op(a) T` are `H^s` on a common neighbourhood `U` of `x`.
-  have hk := (notMem_vectorSobolevSingularSupport_iff_forall_isLocallySobolevAt (mem_univ x)).1 hPx
-  choose U hU hUs using fun k ↦
-    (hk (bW.coord k).toContinuousLinearMap).exists_nhds_forall_memSobolev_cutoffTempered
+  have hk := (notMem_vectorSobolevSingularSupport_iff_forall_basis bW (mem_univ x)).1 hPx
+  choose U hU hUs using fun k ↦ (hk k).exists_nhds_forall_memSobolev_cutoffTempered
   obtain ⟨φ, ψ, χ, φS, hφx, hψU, hφψ, hχψ, hφS, hφSc, hpa⟩ :=
     exists_cutoffs_of_mem_nhds a R (Filter.iInter_mem.2 hU)
   -- Some `u ∈ H^r` has the cut-off coordinates `χ (c_j ∘ T)`, and `Op(ψ a) u ∈ H^s`.
@@ -398,11 +397,9 @@ theorem vectorSobolevSingularSupport_subset_vectorSobolevSingularSupport_quantiz
   -- Interior elliptic regularity gives `φ u ∈ H^(s + m)`; its coordinates are `φ (c_j ∘ T)`.
   have hreg := memSobolev_smulLeftCLM_of_memSobolev_quantizeSobolev hab hφSc hp hpa u hv
   rw [hφS] at hreg
-  rw [vectorSobolevSingularSupport_eq_iUnion_basis _ bV T, mem_iUnion] at hx
-  obtain ⟨j, hj⟩ := hx
-  refine (mem_sobolevSingularSupport_iff.1 hj).2
-    (isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered.2
-      ⟨φ, by simp [hφx.self_of_nhds], ?_⟩)
+  refine (notMem_vectorSobolevSingularSupport_iff_forall_basis bV (mem_univ x)).2 (fun j ↦
+    isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered.2
+      ⟨φ, by simp [hφx.self_of_nhds], ?_⟩) hx
   rw [← postcomp_smulLeftCLM_toDistr bV T
     (fun y hy ↦ hχψ y (Metric.self_subset_cthickening _ (hφψ hy))) u hu j]
   exact hreg.postcomp _
@@ -466,15 +463,13 @@ theorem singularSupport_subset_singularSupport_quantizeDistribution {V W : Type*
       (notMem_singularSupport_iff_eventually_forall_isLocallySobolevAt (mem_univ x)).1 (hPx k)
   refine (notMem_singularSupport_iff_eventually_forall_isLocallySobolevAt (mem_univ x)).2 ?_ hj
   filter_upwards [hev] with y hy s
-  have hy' : y ∉ (quantizeDistribution ha T).vectorSobolevSingularSupport (s - m) := by
-    rw [vectorSobolevSingularSupport_eq_iUnion_basis _ bW, mem_iUnion, not_exists]
-    exact fun k hk ↦ (mem_sobolevSingularSupport_iff.1 hk).2 (hy k _)
+  have hy' : y ∉ (quantizeDistribution ha T).vectorSobolevSingularSupport (s - m) :=
+    (notMem_vectorSobolevSingularSupport_iff_forall_basis bW (mem_univ y)).2 fun k ↦ hy k _
   have hT : y ∉ T.vectorSobolevSingularSupport (s - m + m) := fun h ↦ hy'
     (vectorSobolevSingularSupport_subset_vectorSobolevSingularSupport_quantizeDistribution
       ha hab (s - m) T h)
-  rw [sub_add_cancel, vectorSobolevSingularSupport_eq_iUnion_basis _ bV, mem_iUnion,
-    not_exists] at hT
-  exact by_contra fun h ↦ hT j (mem_sobolevSingularSupport_iff.2 ⟨mem_univ y, h⟩)
+  rw [sub_add_cancel] at hT
+  exact (notMem_vectorSobolevSingularSupport_iff_forall_basis bV (mem_univ y)).1 hT j
 
 end Distribution
 

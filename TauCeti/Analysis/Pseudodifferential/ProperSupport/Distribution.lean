@@ -556,14 +556,11 @@ theorem adjointTestFunctionCLM_map {V' W' : Type*} [NormedAddCommGroup V']
       (SchwartzMap.ext fun y ↦ ?_)
     simp [HasCompactSupport.toSchwartzMap_toFun]
   rw [← integral_inner_quantizeTestFunctionCLM]
-  simp only [TestFunction.postcompCLM_apply, Function.comp_apply,
-    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.adjoint_inner_right]
   have h := integral_inner_quantizeTestFunctionCLM ha
     (TestFunction.postcompCLM (K.restrictScalars ℝ) u)
     (TestFunction.postcompCLM ((ContinuousLinearMap.adjoint L).restrictScalars ℝ) φ)
-  simp only [TestFunction.postcompCLM_apply, Function.comp_apply,
-    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.adjoint_inner_right] at h
-  simp only [hq, h]
+  simpa [TestFunction.postcompCLM_apply, Function.comp_apply,
+    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.adjoint_inner_right, hq] using h
 
 end Adjoint
 
