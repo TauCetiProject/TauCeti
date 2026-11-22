@@ -177,12 +177,12 @@ instance finite_content_eq (μ : YoungDiagram) (w : ℕ → ℕ) :
     exact Finset.mem_image.mpr ⟨c, hc, rfl⟩
   refine Finite.of_injective
     (fun (T : {T : _root_.SemistandardYoungTableau μ // ⇑(content T) = w}) (c : ↥μ.cells) =>
-      (⟨T.1 (c : ℕ × ℕ).1 (c : ℕ × ℕ).2, hmem T.1 T.2 _ c.2⟩ :
+      (⟨T.val (c : ℕ × ℕ).1 (c : ℕ × ℕ).2, hmem T.val T.property _ c.property⟩ :
         ↥(μ.cells.image fun d => T₀ d.1 d.2))) fun T T' hTT' => ?_
   refine Subtype.ext (_root_.SemistandardYoungTableau.ext fun i j => ?_)
   by_cases hij : (i, j) ∈ μ
   · exact congrArg Subtype.val (congrFun hTT' ⟨(i, j), hij⟩)
-  · rw [T.1.zeros hij, T'.1.zeros hij]
+  · rw [T.val.zeros hij, T'.val.zeros hij]
 
 end SemistandardYoungTableau
 
@@ -203,12 +203,12 @@ variable {n : ℕ} {μ : YoungDiagram}
 
 /-- The entries of a tableau written in the alphabet `{0, …, n - 1}` all use letters of that
 alphabet. -/
-theorem entry_lt (T : BoundedSSYT n μ) {i c : ℕ} (h : (i, c) ∈ μ) : T.1 i c < n :=
-  T.2 i c h
+theorem entry_lt (T : BoundedSSYT n μ) {i c : ℕ} (h : (i, c) ∈ μ) : T.val i c < n :=
+  T.property i c h
 
 /-- A tableau written in the alphabet `{0, …, n - 1}` uses no letter outside that alphabet. -/
 theorem content_eq_zero (T : BoundedSSYT n μ) {i : ℕ} (hi : n ≤ i) :
-    T.1.content i = 0 := by
+    T.val.content i = 0 := by
   rw [SemistandardYoungTableau.content_apply, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
   intro c hc hci
   have := entry_lt T ((YoungDiagram.mem_cells _).mp hc)
@@ -218,13 +218,13 @@ theorem content_eq_zero (T : BoundedSSYT n μ) {i : ℕ} (hi : n ≤ i) :
 column, so a column of more than `n` cells cannot be filled from an `n`-letter alphabet. -/
 theorem isEmpty_of_lt_colLen (h : n < μ.colLen 0) : IsEmpty (BoundedSSYT n μ) := by
   refine ⟨fun T => absurd (entry_lt T (YoungDiagram.mem_iff_lt_colLen.mpr h)) (not_lt.mpr ?_)⟩
-  exact SemistandardYoungTableau.le_entry T.1 (YoungDiagram.mem_iff_lt_colLen.mpr h)
+  exact SemistandardYoungTableau.le_entry T.val (YoungDiagram.mem_iff_lt_colLen.mpr h)
 
 /-- The empty shape has a unique tableau, the empty one. -/
 instance (n : ℕ) : Unique (BoundedSSYT n (⊥ : YoungDiagram)) where
   default := ⟨_root_.SemistandardYoungTableau.highestWeight ⊥, fun _ _ hic => absurd hic (by simp)⟩
   uniq T := Subtype.ext <| _root_.SemistandardYoungTableau.ext fun _ _ => by
-    rw [T.1.zeros (by simp), _root_.SemistandardYoungTableau.highestWeight_apply,
+    rw [T.val.zeros (by simp), _root_.SemistandardYoungTableau.highestWeight_apply,
       ite_eq_right (by simp)]
 
 end BoundedSSYT
@@ -236,7 +236,8 @@ Mathlib's `SemistandardYoungTableau μ` allows unbounded entries and is infinite
 of `μ` is needed: for a shape taller than `n` the type is empty, columns being strict. -/
 instance finite_boundedSSYT (n : ℕ) (μ : YoungDiagram) : Finite (BoundedSSYT n μ) := by
   refine Finite.of_injective (β := μ.cells → Fin n)
-    (fun T x => ⟨T.1 x.1.1 x.1.2, T.2 _ _ ((YoungDiagram.mem_cells _).mp x.2)⟩) ?_
+    (fun T x => ⟨T.val x.val.1 x.val.2, T.property _ _ ((YoungDiagram.mem_cells _).mp x.property)⟩)
+        ?_
   rintro ⟨T, hT⟩ ⟨T', hT'⟩ h
   refine Subtype.ext (_root_.SemistandardYoungTableau.ext fun i c => ?_)
   by_cases hc : (i, c) ∈ μ
@@ -264,7 +265,7 @@ theorem diagramKostkaNumber_ne_zero_iff {μ : YoungDiagram} {w : ℕ → ℕ} :
     diagramKostkaNumber μ w ≠ 0 ↔
       ∃ T : _root_.SemistandardYoungTableau μ, ⇑(SemistandardYoungTableau.content T) = w := by
   rw [diagramKostkaNumber_def, Nat.card_ne_zero]
-  exact ⟨fun h => h.1.elim fun T => ⟨T.1, T.2⟩, fun ⟨T, hT⟩ => ⟨⟨⟨T, hT⟩⟩, inferInstance⟩⟩
+  exact ⟨fun h => h.1.elim fun T => ⟨T.val, T.property⟩, fun ⟨T, hT⟩ => ⟨⟨⟨T, hT⟩⟩, inferInstance⟩⟩
 
 /-- **The diagonal Kostka number is `1`**: the highest-weight tableau is the only semistandard
 tableau of shape `μ` whose content is the row lengths of `μ`. -/
@@ -274,8 +275,8 @@ theorem diagramKostkaNumber_rowLen (μ : YoungDiagram) : diagramKostkaNumber μ 
   refine ⟨⟨fun T T' => Subtype.ext ?_⟩,
     ⟨⟨_root_.SemistandardYoungTableau.highestWeight μ,
       SemistandardYoungTableau.content_highestWeight μ⟩⟩⟩
-  rw [SemistandardYoungTableau.eq_highestWeight_of_content_eq_rowLen T.2,
-    SemistandardYoungTableau.eq_highestWeight_of_content_eq_rowLen T'.2]
+  rw [SemistandardYoungTableau.eq_highestWeight_of_content_eq_rowLen T.property,
+    SemistandardYoungTableau.eq_highestWeight_of_content_eq_rowLen T'.property]
 
 /-- **Partial-sum bound for a nonzero Kostka number**: if `K_{μ w} ≠ 0` then every partial sum of
 `w` is bounded by the corresponding partial sum of the row lengths of `μ`.  For partitions this

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.W1p.Convex
+public import TauCeti.Analysis.Sobolev.W1p.LipschitzRepresentative
 import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 
 /-!
@@ -36,58 +36,34 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {μ : Measure E} [μ.IsAddHaarMeasure]
 
-local instance : (μ.restrict ((⊤ : Opens E) : Set E)).IsOpenPosMeasure := by
-  simpa using (inferInstance : μ.IsOpenPosMeasure)
-
-private def boundedContinuousRepresentative (u : W1p μ (⊤ : Opens E) ∞) : E →ᵇ ℝ :=
-  BoundedContinuousFunction.ofNormedAddCommGroup
-    (preciseRepresentative μ (value u)) (lipschitzWith_preciseRepresentative u).continuous
-    ‖value u‖ (fun x ↦ norm_preciseRepresentative_le u (Opens.mem_top x))
-
-private theorem toLpTop_boundedContinuousRepresentative (u : W1p μ (⊤ : Opens E) ∞) :
-    BoundedContinuousFunction.toLpTop (μ.restrict ((⊤ : Opens E) : Set E)) ℝ
-      (boundedContinuousRepresentative u) =
-      value u := by
-  apply Lp.ext
-  have h := BoundedContinuousFunction.coeFn_toLpTop
-    (μ.restrict ((⊤ : Opens E) : Set E)) (𝕜 := ℝ) (boundedContinuousRepresentative u)
-  simp only [boundedContinuousRepresentative,
-    BoundedContinuousFunction.coe_ofNormedAddCommGroup] at h
-  exact h.trans (ae_eq_preciseRepresentative u).symm
-
 /-- The bounded Lipschitz representative of a whole-space `W^{1,∞}` function, as a continuous
 linear map. Its norm is controlled by the value component alone. -/
 def boundedContinuousRepresentativeL : W1p μ (⊤ : Opens E) ∞ →L[ℝ] (E →ᵇ ℝ) :=
-  LinearMap.mkContinuous
-    { toFun := boundedContinuousRepresentative
-      map_add' := fun u v ↦ by
-        apply BoundedContinuousFunction.toLpTop_injective
-          (μ.restrict ((⊤ : Opens E) : Set E)) (𝕜 := ℝ)
-        simp only [map_add, toLpTop_boundedContinuousRepresentative, value_add]
-      map_smul' := fun c u ↦ by
-        apply BoundedContinuousFunction.toLpTop_injective
-          (μ.restrict ((⊤ : Opens E) : Set E)) (𝕜 := ℝ)
-        simp only [RingHom.id_apply, map_smul, toLpTop_boundedContinuousRepresentative,
-          value_smul] }
-    1 (fun u ↦ by
-      simp only [LinearMap.coe_mk, AddHom.coe_mk, one_mul]
-      rw [← BoundedContinuousFunction.norm_toLpTop
-        (μ.restrict ((⊤ : Opens E) : Set E)) (𝕜 := ℝ),
-        toLpTop_boundedContinuousRepresentative]
-      exact norm_value_le u)
+  (BoundedContinuousFunction.compContinuousCLM ℝ ℝ
+    ⟨fun x : E ↦ ⟨x, subset_closure (Opens.mem_top x)⟩,
+      continuous_id.subtype_mk _⟩).comp
+    (HolderSpace.toBoundedContinuousFunctionCLM.comp
+      (lipschitzRepresentativeL (by simpa only [Opens.coe_top] using convex_univ)))
 
 /-- Evaluating the bounded continuous representative gives the precise representative. -/
 theorem boundedContinuousRepresentativeL_apply (u : W1p μ (⊤ : Opens E) ∞) (x : E) :
     boundedContinuousRepresentativeL u x = preciseRepresentative μ (value u) x := by
-  simp [boundedContinuousRepresentativeL, boundedContinuousRepresentative]
+  simpa only [boundedContinuousRepresentativeL, ContinuousLinearMap.comp_apply,
+    BoundedContinuousFunction.compContinuousCLM_apply,
+    BoundedContinuousFunction.compContinuous_apply,
+    HolderSpace.toBoundedContinuousFunctionCLM_apply, HolderSpace.toBoundedContinuousFunction_apply,
+    ContinuousMap.coe_mk] using
+      (lipschitzRepresentativeL_apply (by simpa only [Opens.coe_top] using convex_univ)
+        u (Opens.mem_top x))
 
 /-- The bounded continuous representative agrees almost everywhere with the original value. -/
 theorem value_ae_eq_boundedContinuousRepresentativeL (u : W1p μ (⊤ : Opens E) ∞) :
     value u =ᵐ[μ] boundedContinuousRepresentativeL u := by
-  have h : value u =ᵐ[μ] preciseRepresentative μ (value u) := by
-    simpa using ae_eq_preciseRepresentative u
-  exact h.trans (Filter.Eventually.of_forall fun x ↦
-    (boundedContinuousRepresentativeL_apply u x).symm)
+  have hΩ : Convex ℝ ((⊤ : Opens E) : Set E) := by simpa only [Opens.coe_top] using convex_univ
+  filter_upwards [ae_lipschitzRepresentativeL_eq hΩ u] with x hx
+  rw [boundedContinuousRepresentativeL_apply, ← lipschitzRepresentativeL_apply hΩ u
+    (Opens.mem_top x)]
+  exact (hx (Opens.mem_top x)).symm
 
 /-- A bounded continuous function is the canonical representative exactly when it agrees
 almost everywhere with the Sobolev value. -/
@@ -116,11 +92,13 @@ norm of the Sobolev value. -/
 @[simp↓]
 theorem norm_boundedContinuousRepresentativeL (u : W1p μ (⊤ : Opens E) ∞) :
     ‖boundedContinuousRepresentativeL u‖ = ‖value u‖ := by
-  rw [← BoundedContinuousFunction.norm_toLpTop
-    (μ.restrict ((⊤ : Opens E) : Set E)) (𝕜 := ℝ)]
-  simpa only [boundedContinuousRepresentativeL, LinearMap.mkContinuous_apply,
-    LinearMap.coe_mk, AddHom.coe_mk] using
-    congrArg norm (toLpTop_boundedContinuousRepresentative u)
+  let ν := μ.restrict ((⊤ : Opens E) : Set E)
+  have : ν.IsOpenPosMeasure := by simpa [ν] using (inferInstance : μ.IsOpenPosMeasure)
+  rw [← BoundedContinuousFunction.norm_toLpTop ν (𝕜 := ℝ)]
+  congr 1
+  exact Lp.ext ((BoundedContinuousFunction.coeFn_toLpTop ν (𝕜 := ℝ)
+    (boundedContinuousRepresentativeL u)).trans
+      (ae_restrict_of_ae (value_ae_eq_boundedContinuousRepresentativeL u).symm))
 
 /-- The Lipschitz constant of the representative is bounded by the weak-gradient norm. -/
 theorem lipschitzWith_boundedContinuousRepresentativeL (u : W1p μ (⊤ : Opens E) ∞) :

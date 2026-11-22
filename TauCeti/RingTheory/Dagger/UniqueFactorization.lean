@@ -22,10 +22,11 @@ Write `W = K⟨X⟩†` and `W' = K⟨X, Y⟩†`, with `Y = X none`, and evalua
 number of variables. Since `W'` is a noetherian domain, it suffices that every irreducible
 `f ∈ W'` is prime. A triangular automorphism makes `f` distinguished in `Y` with a unit
 coefficient in the distinguished degree, and overconvergent Weierstrass preparation writes it as
-a unit multiple of a monic polynomial `ω ∈ W[Y]`. Overconvergent Weierstrass division compares
-divisibility by `ω` in `W[Y]` and in `W'`, so `ω` is irreducible in `W[Y]`, hence prime, since
-`W[Y]` is a unique factorisation domain by induction and Gauss's lemma. So `ω` and `f` are prime
-in `W'`.
+a unit multiple of a monic polynomial `ω ∈ W[Y]`
+(`washnitzerAlgebra.exists_associated_polynomialToOption`). Overconvergent Weierstrass division
+compares divisibility by `ω` in `W[Y]` and in `W'`, so `ω` is irreducible in `W[Y]`, hence prime,
+since `W[Y]` is a unique factorisation domain by induction and Gauss's lemma. So `ω` and `f` are
+prime in `W'`.
 
 ## Main results
 
@@ -57,7 +58,6 @@ variable {σ K : Type*} [NormedField K] [IsUltrametricDist K]
 
 local notation "W" => washnitzerAlgebra σ K
 local notation "W'" => washnitzerAlgebra (Option σ) K
-local notation "Tate" => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
 
 section UniqueFactorization
 
@@ -67,28 +67,16 @@ variable [CompleteSpace K]
 private theorem uniqueFactorizationMonoid_option [Finite σ] [UniqueFactorizationMonoid W] :
     UniqueFactorizationMonoid W' := by
   refine { irreducible_iff_prime := fun {f} ↦ ⟨fun hf ↦ ?_, Prime.irreducible⟩ }
-  -- Make `f` distinguished in `Y`, and pass to its image `g` under the automorphism.
-  obtain ⟨α, hα, s, hd, hu⟩ := exists_triangularEquiv_isDistinguished_isUnit f hf.ne_zero
-  let e := triangularEquiv (R := K) α hα
-  rw [← MulEquiv.prime_iff e.toMulEquiv]
-  rw [← MulEquiv.irreducible_iff e.toMulEquiv] at hf
-  set g : W' := e f
-  -- Weierstrass preparation: `g = u * ω(Y)` with `u` a unit and `ω` monic.
-  obtain ⟨u, ω, hu', hm, hg⟩ := exists_isUnit_isMonicOfDegree_mul_polynomialToOption_eq hd hu
-  have hω : PowerSeries.IsDistinguished 1 s (ω.map (toTate σ K).toRingHom : PowerSeries Tate) := by
-    rw [← hg, map_mul, map_mul, Subring.coe_mul,
-      restrictedOptionEquiv_toTate_polynomialToOption] at hd
-    exact hd.of_isUnit_mul one_pos
-      ((hu'.map (toTate _ K)).map restrictedOptionEquiv.toRingHom)
-  have hassoc : Associated (polynomialToOption ω) g := by
-    rw [← hg, mul_comm]
-    exact associated_mul_unit_right _ _ hu'
-  have hirr := hassoc.symm.irreducible hf
+  -- Up to an automorphism `E`, `f` is associated to `ω(Y)` with `ω` monic and distinguished.
+  obtain ⟨E, s, ω, hω, hm, hassoc⟩ := exists_associated_polynomialToOption f hf.ne_zero
+  have hirr : Irreducible (polynomialToOption ω) :=
+    (MulEquiv.irreducible_iff E).mp (hassoc.irreducible hf)
   -- `ω` is irreducible, hence prime, in the unique factorisation domain `K⟨X⟩†[Y]`.
   have hωp : Prime ω := UniqueFactorizationMonoid.irreducible_iff_prime.mp
     (irreducible_of_irreducible_polynomialToOption hω hm hirr)
-  -- So `ω(Y)`, hence `g`, is prime in `K⟨X, Y⟩†`.
-  exact hassoc.prime ((prime_polynomialToOption_iff hω hm).mpr hωp)
+  -- So `ω(Y)`, hence `f`, is prime in `K⟨X, Y⟩†`.
+  exact hassoc.symm.prime
+    ((MulEquiv.prime_iff E).mpr ((prime_polynomialToOption_iff hω hm).mpr hωp))
 
 /-- **Monsky–Washnitzer algebras are unique factorisation domains.** Over a complete ultrametric
 normed field `K`, the algebra `K⟨X⟩†` of overconvergent power series in finitely many variables

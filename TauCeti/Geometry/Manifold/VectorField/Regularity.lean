@@ -10,7 +10,6 @@ public import Mathlib.Geometry.Manifold.VectorField.Pullback
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
-import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
@@ -21,8 +20,14 @@ manifold differential of a function to tangent vectors whose base point varies.
 
 ## Main results
 
+* `contMDiff_tangentBundleModelSpaceHomeomorph_symm_prodMk_const`: a constant model vector gives a
+  smooth section of the tangent bundle of a model space.
 * `contMDiff_tangentBundle_mk_zero`: smoothness of the zero tangent vector over a varying point.
 * `contMDiff_tangentBundle_mk_constBase`: smoothness of a varying model vector over a fixed point.
+* `contMDiff_tangentBundle_mk_modelSpace`: smoothness of a varying model vector over a varying
+  point of the model space.
+* `ContMDiff.contDiff_tangentBundle_mk_constBase`: a `C^n` function on the tangent bundle is `C^n`
+  along each tangent fibre.
 * `TauCeti.mdifferentiableAt_mvfderiv_apply`: a directional derivative of a `C²` function
   along a differentiable vector field is differentiable at the point.
 * `ContMDiffAt.contMDiffAt_mvfderiv_apply`: applying the differential of a function that is
@@ -57,6 +62,8 @@ manifold differential of a function to tangent vectors whose base point varies.
   chart centre, these pullbacks are the coordinates in the tangent-bundle trivialization.
 * `MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm`:
   differentiability of these coordinate expressions without a completeness assumption.
+* `MDifferentiableAt.differentiableAt_mpullbackWithin_extChartAt_symm`: on a boundaryless model,
+  these coordinate expressions are differentiable at the chart image of the point.
 * `ContMDiffWithinAt.contDiffWithinAt_mpullbackWithin_extChartAt_symm`: `C^n` regularity of
   these coordinate expressions, over any model with corners.
 * `TauCeti.eventually_hasDerivAt_extChartAt_family`: read in the chart at `y`, the points near `y`
@@ -117,34 +124,47 @@ theorem contMDiff_tangentBundle_mk_constBase {v : N → E}
       (fun p => TotalSpace.mk' E x (v p) : N → TangentBundle I M) := by
   intro p
   rw [Bundle.contMDiffAt_totalSpace_iff]
-  constructor
-  · exact contMDiffAt_const
-  · have hx : x ∈ (extChartAt I x).source := mem_extChartAt_source _
-    have hfun :
-        (fun q : N =>
-          (trivializationAt E (TangentSpace I) x (TotalSpace.mk' E x (v q))).2) = v := by
-      funext q
-      rw [TangentBundle.trivializationAt_apply]
-      -- Both fibers are over `x`, so their coordinate change is the identity on the model space.
-      change tangentCoordChange I x x x (v q) = v q
-      rw [tangentCoordChange_self hx]
-    rw [hfun]
-    exact hv p
+  refine ⟨contMDiffAt_const, (hv p).congr_of_eventuallyEq ?_⟩
+  filter_upwards with q
+  rw [TangentBundle.trivializationAt_apply]
+  -- Both fibers are over `x`, so their coordinate change is the identity on the model space.
+  change tangentCoordChange I x x x (v q) = v q
+  exact tangentCoordChange_self (mem_extChartAt_source x)
+
+/-- A model-space vector over a model-space point, both varying smoothly, gives a smooth map into
+the tangent bundle of the model space. -/
+theorem contMDiff_tangentBundle_mk_modelSpace {f v : N → E}
+    (hf : ContMDiff J 𝓘(𝕜, E) n f) (hv : ContMDiff J 𝓘(𝕜, E) n v) :
+    ContMDiff J 𝓘(𝕜, E).tangent n
+      (fun p => TotalSpace.mk' E (f p) (v p) : N → TangentBundle 𝓘(𝕜, E) E) := by
+  have hpair : ContMDiff J 𝓘(𝕜, E).tangent n (fun p : N ↦ (f p, v p)) := hf.prodMk hv
+  rw [chartedSpaceSelf_prod] at hpair
+  have h := contMDiff_tangentBundleModelSpaceHomeomorph_symm.comp hpair
+  -- The inverse homeomorphism is `(TotalSpace.toProd E E).symm`, whose inverse function sends
+  -- `(a, b)` to the bundle point `⟨a, b⟩` by definition, so `h` is the claim.
+  rw [tangentBundleModelSpaceHomeomorph_coe_symm] at h
+  exact h
+
+/-- A `C^n` function on the tangent bundle is `C^n` along the tangent fibre over each point. -/
+theorem ContMDiff.contDiff_tangentBundle_mk_constBase {g : TangentBundle I M → F}
+    (hg : ContMDiff I.tangent 𝓘(𝕜, F) n g) (x : M) :
+    ContDiff 𝕜 n fun w : E ↦ g (TotalSpace.mk' E x w) :=
+  contMDiff_iff_contDiff.1 (hg.comp (contMDiff_tangentBundle_mk_constBase contMDiff_id x))
 
 end TangentBundleInputs
 
 /-- If `f` is `C^n` at a point, its differential evaluated on tangent vectors is `C^m` at
 every vector over that point, provided `m + 1 ≤ n`. -/
 theorem ContMDiffAt.contMDiffAt_mvfderiv_apply {f : M → F} {p : TangentBundle I M}
-    (hf : ContMDiffAt I 𝓘(𝕜, F) n f p.1) (hmn : m + 1 ≤ n) :
+    (hf : ContMDiffAt I 𝓘(𝕜, F) n f p.proj) (hmn : m + 1 ≤ n) :
     ContMDiffAt I.tangent 𝓘(𝕜, F) m
-      (fun q : TangentBundle I M ↦ mvfderiv I f q.1 q.2) p := by
+      (fun q : TangentBundle I M ↦ mvfderiv I f q.proj q.snd) p := by
   have h := (contMDiff_snd_tangentBundle_modelSpace F 𝓘(𝕜, F) (n := m)).contMDiffAt.comp p
     (hf.contMDiffAt_tangentMap hmn)
   -- `NormedSpace.fromTangentSpace` is definitionally the identity on `F`, identifying
   -- `TangentSpace 𝓘(𝕜, F) (f q.1)` with `F` in the equality below.
   exact h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun q ↦
-    (mvfderiv_apply_eq_mfderiv_apply f q.1 q.2).trans tangentMap_snd.symm)
+    (mvfderiv_apply_eq_mfderiv_apply f q.proj q.snd).trans tangentMap_snd.symm)
 
 /-- The map that applies the differential of a `C^n` function to tangent vectors is `C^m` on the
 tangent bundle when `m + 1 ≤ n`. -/
@@ -152,8 +172,8 @@ theorem ContMDiff.contMDiff_mvfderiv_apply {f : M → F}
     (hf : ContMDiff I 𝓘(𝕜, F) n f)
     (hmn : m + 1 ≤ n) :
     ContMDiff I.tangent 𝓘(𝕜, F) m
-      (fun p : TangentBundle I M => mvfderiv I f p.1 p.2) :=
-  fun p ↦ (hf p.1).contMDiffAt_mvfderiv_apply hmn
+      (fun p : TangentBundle I M => mvfderiv I f p.proj p.snd) :=
+  fun p ↦ (hf p.proj).contMDiffAt_mvfderiv_apply hmn
 
 /-- The derivative of a `C^n` function along a `C^m` vector field is `C^m` on an open set, when
 `m + 1 ≤ n`. This is the set-local form of `ContMDiff.contMDiff_mvfderiv_apply`: only the germ of
@@ -265,13 +285,10 @@ differentiable in the vector space sense. This is the differentiable counterpart
 theorem mdifferentiableWithinAt_vectorSpace_iff_differentiableWithinAt
     {V : Π x : E, TangentSpace 𝓘(𝕜, E) x} {s : Set E} {x : E} :
     MDiffAt[s] (T% V) x ↔ DifferentiableWithinAt 𝕜 V s x := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · exact MDifferentiableWithinAt.differentiableWithinAt <|
-      ((contMDiff_snd_tangentBundle_modelSpace E 𝓘(𝕜, E) (n := 1)).mdifferentiable one_ne_zero
-        _).comp_mdifferentiableWithinAt _ h
-  · refine (mdifferentiableWithinAt_totalSpace ..).2 ⟨mdifferentiableWithinAt_id, ?_⟩
-    convert! h.mdifferentiableWithinAt with y
-    simp
+  convert! (mdifferentiableWithinAt_section (F := E)
+    (𝓘(𝕜, E)) V (u := s) (b₀ := x)).trans
+      mdifferentiableWithinAt_iff_differentiableWithinAt using 1
+  simp
 
 /-- A vector field on a normed space is differentiable in the manifold sense iff it is
 differentiable in the vector space sense. -/
@@ -449,9 +466,19 @@ theorem MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartA
   have heq := VectorField.trivializationAt_snd_eventuallyEq_mpullbackWithin_extChartAt_symm V x
   exact hd.congr_of_eventuallyEq
     (heq.symm.filter_mono (nhdsWithin_mono _ inter_subset_right))
-    (by
-      rw [extChartAt_to_inv]
-      exact VectorField.mpullbackWithin_extChartAt_symm_apply V (mem_extChartAt_source x))
+    (heq.symm.self_of_nhdsWithin (mem_range_self (chartAt H x x)))
+
+/-- On a boundaryless model, a vector field which is differentiable at `x` as a tangent-bundle
+section has an inverse-chart pullback differentiable at the chart image of `x`. -/
+theorem MDifferentiableAt.differentiableAt_mpullbackWithin_extChartAt_symm [I.Boundaryless]
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x) :
+    DifferentiableAt 𝕜
+      (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I))
+      (extChartAt I x x) := by
+  have h := MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm
+    (hV.mdifferentiableWithinAt (s := univ))
+  rw [preimage_univ, univ_inter] at h
+  exact h.differentiableAt (by rw [I.range_eq_univ]; exact univ_mem)
 
 /-- A vector field which is `C^n` as a tangent-bundle section within a set has a `C^n`
 inverse-chart pullback within the corresponding chart set. Unlike

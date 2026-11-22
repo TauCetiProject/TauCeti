@@ -224,7 +224,7 @@ private theorem necklaceFunctional_relator_mul_ofPath (hW : IsSignlessNecklaceWe
   -- The product with the backtrack along `w` is the closed path `p` followed by the backtrack,
   -- whose necklace is a rotation of `v w L`.
   have hrot (w : G.neighborSet v) :
-      necklaceFunctional k G W (backtrackElem G k ((G.mem_neighborSet v w).1 w.2) *
+      necklaceFunctional k G W (backtrackElem G k ((G.mem_neighborSet v w).1 w.property) *
           ofPath ⟨vertex G v, vertex G v, p⟩) =
         W ((v :: (w : V) :: p.vertices.dropLast.map (vertexEquiv G).symm : List V) :
           Cycle V) := by

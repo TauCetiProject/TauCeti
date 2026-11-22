@@ -7,19 +7,20 @@ module
 
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 public import TauCeti.Geometry.Symplectic.StandardCompatible
+public import TauCeti.Geometry.Symplectic.StripShear
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Unipotent
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import Mathlib.LinearAlgebra.FixedSubmodule
-public import Mathlib.LinearAlgebra.Transvection.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.VectorBundle.Riemannian
 
 /-!
 # The symplectic shear of the plane
 
-The shear `S(q, p) = (q + p, p)` of `ℝ²` (`TauCeti.linearPlaneShear`), the transvection
-`x ↦ x + p(x) • (1, 0)` of Mathlib's `LinearEquiv.transvection`, preserves the standard symplectic
+The shear `S(q, p) = (q + p, p)` of `ℝ²` (`TauCeti.linearPlaneShear`), the shear of the strip
+with twist `1` (`TauCeti.linearPlaneShear_eq_stripShear_one`), preserves the standard symplectic
 form `ω = dq ∧ dp` (`TauCeti.isSymplectomorphism_linearPlaneShear`). It shows what goes wrong in the
 fixed-locus theorem for groups of symplectomorphisms when no invariant metric is assumed:
 
@@ -29,7 +30,8 @@ fixed-locus theorem for groups of symplectomorphisms when no invariant metric is
   `S` has an isotropic vector (`TauCeti.not_isIsometry_linearPlaneShear`, from
   `TauCeti.BilinForm.IsIsometry.eq_one_of_isNilpotent_sub_one`);
 * hence, reading the derivative of `S` at its fixed point `0`, it preserves no Riemannian metric
-  on `ℝ²`, smooth or not (`TauCeti.not_forall_inner_mfderiv_linearPlaneShear`).
+  on `ℝ²`, smooth or not (`TauCeti.not_forall_inner_mfderiv_linearPlaneShear`, through the
+  fixed-point form `TauCeti.fixedPointDerivative_eq_one_of_isNilpotent_sub_one`).
 
 For a group `K` of symplectomorphisms preserving a Riemannian metric, the common fixed set is a
 union of symplectic submanifolds, with tangent spaces the common fixed subspaces of the
@@ -52,19 +54,22 @@ open Manifold
 
 namespace TauCeti
 
-/-- The shear `(q, p) ↦ (q + p, p)` of the plane: the transvection `x ↦ x + x.2 • (1, 0)`. -/
+/-- The shear `(q, p) ↦ (q + p, p)` of the plane: the shear of the strip with twist `1`. -/
 def linearPlaneShear : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ :=
-  (LinearEquiv.transvection (f := LinearMap.snd ℝ ℝ ℝ) (v := ((1 : ℝ), (0 : ℝ)))
-    (LinearMap.snd_apply _)).toContinuousLinearEquiv
+  stripShear 1
+
+/-- The shear of the plane is the shear of the strip with twist `1`, so the `stripShear` API
+(inverse, composition, determinant) applies to it. -/
+theorem linearPlaneShear_eq_stripShear_one : linearPlaneShear = stripShear 1 :=
+  (rfl)
 
 @[simp]
 theorem linearPlaneShear_apply (x : ℝ × ℝ) : linearPlaneShear x = (x.1 + x.2, x.2) := by
-  simp [linearPlaneShear, LinearMap.transvection.apply, Prod.ext_iff]
+  simp [linearPlaneShear]
 
 @[simp]
 theorem linearPlaneShear_symm_apply (x : ℝ × ℝ) : linearPlaneShear.symm x = (x.1 - x.2, x.2) := by
-  rw [ContinuousLinearEquiv.symm_apply_eq, linearPlaneShear_apply]
-  simp
+  simp [linearPlaneShear]
 
 /-- The shear preserves the standard symplectic form `ω = dq ∧ dp` of the plane. -/
 theorem isSymplectomorphism_linearPlaneShear :
@@ -111,22 +116,18 @@ theorem not_forall_inner_mfderiv_linearPlaneShear
       g.inner (linearPlaneShear x) (mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) linearPlaneShear x v)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) linearPlaneShear x w) = g.inner x v w := by
   intro h
-  -- At the fixed point `0`, the differential of the shear is the shear itself, so `g₀` would be
-  -- an inner product preserved by the shear.
-  have hmf : mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) linearPlaneShear 0 =
-      (linearPlaneShear : (ℝ × ℝ) →L[ℝ] ℝ × ℝ) :=
-    linearPlaneShear.mfderiv_eq
-  have h0 : ∀ v w : ℝ × ℝ, g.inner 0 (linearPlaneShear v) (linearPlaneShear w) = g.inner 0 v w := by
-    intro v w
-    have := h 0 v w
-    rw [hmf] at this
-    generalize hy : linearPlaneShear (0 : ℝ × ℝ) = y at this
-    rw [map_zero] at hy
-    subst hy
-    exact this
-  -- The tangent space at `0` is `ℝ × ℝ` by definition, so `g₀` is a bilinear form on `ℝ × ℝ`,
-  -- anisotropic because it is positive definite.
-  exact not_isIsometry_linearPlaneShear (B := (g.inner 0).toBilinForm)
-    (QuadraticMap.PosDef.anisotropic (g.pos 0)) (BilinForm.isIsometry_iff.2 h0)
+  let : Bundle.RiemannianBundle (fun x : ℝ × ℝ ↦ TangentSpace 𝓘(ℝ, ℝ × ℝ) x) := ⟨g⟩
+  -- At the fixed point `0`, the differential of the shear is the shear itself, which is unipotent
+  -- and not the identity.
+  let x₀ : {x // linearPlaneShear x = x} := ⟨0, map_zero _⟩
+  have hD₀ : fixedPointDerivative 𝓘(ℝ, ℝ × ℝ) linearPlaneShear x₀ =
+      (linearPlaneShear : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ) :=
+    linearPlaneShear.hasFDerivAt.hasMFDerivAt.fixedPointDerivative_eq
+  have hN : IsNilpotent ((linearPlaneShear : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ) - 1) :=
+    ⟨2, LinearMap.ext fun x ↦ by simp [pow_two, Prod.ext_iff]⟩
+  have h1 := LinearMap.congr_fun (hD₀ ▸ fixedPointDerivative_eq_one_of_isNilpotent_sub_one x₀
+    (fun v w ↦ h 0 v w) (hD₀ ▸ hN)) (0, 1)
+  have h2 : linearPlaneShear ((0, 1) : ℝ × ℝ) = (0, 1) := h1
+  simp at h2
 
 end TauCeti

@@ -37,10 +37,15 @@ for radii arbitrarily close to `ρ` from the right holds at `ρ` when `f` is rig
 The balls about a point `z` have measures tending to `μ {z}` as the radius decreases to `0`,
 once one of them has finite measure (`TauCeti.tendsto_measure_ball_nhdsGT_zero`). Dually, the
 integrals of a function integrable on a ball over the concentric balls of smaller radius tend to
-its integral over the ball (`MeasureTheory.IntegrableOn.tendsto_integral_ball_nhdsLT`).
+its integral over the ball (`MeasureTheory.IntegrableOn.tendsto_integral_ball_nhdsLT`), and, for a
+locally finite measure vanishing on points, the integrals of a function integrable on a set `S`
+over the parts of `S` in the balls about a point tend to `0` with the radius
+(`MeasureTheory.IntegrableOn.tendsto_setIntegral_ball_nhds_zero`).
 
 ## Main results
 
+* `TauCeti.measure_ball_inter_ne_top`: the intersection of a ball with any set has finite
+  measure.
 * `TauCeti.monotone_measureReal_inter_ball`: `ρ ↦ μ(s ∩ ball x₀ ρ)` is monotone.
 * `TauCeti.ball_ae_eq_ball_of_measure_eq`: concentric balls of equal measure agree a.e.
 * `TauCeti.measure_ball_symmDiff_ball_le`: concentric balls are no farther apart in measure than
@@ -55,6 +60,8 @@ its integral over the ball (`MeasureTheory.IntegrableOn.tendsto_integral_ball_nh
   `μ {z}`.
 * `MeasureTheory.IntegrableOn.tendsto_integral_ball_nhdsLT`: as `r → R⁻`, the integral over
   `ball x r` tends to the integral over `ball x R`.
+* `MeasureTheory.IntegrableOn.tendsto_setIntegral_ball_nhds_zero`: as `ρ → 0`, the integral over
+  `S ∩ ball x ρ` of a function integrable on `S` tends to `0`.
 -/
 
 public section
@@ -65,6 +72,12 @@ open MeasureTheory Metric Filter Set
 open scoped ENNReal Topology symmDiff
 
 variable {E : Type*} [PseudoMetricSpace E] [ProperSpace E] [MeasurableSpace E]
+
+/-- The intersection of a ball with any set has finite measure, for a measure that is finite on
+compact sets of a proper space. -/
+theorem measure_ball_inter_ne_top {μ : Measure E} [IsFiniteMeasureOnCompacts μ] {x : E} {r : ℝ}
+    {s : Set E} : μ (ball x r ∩ s) ≠ ⊤ :=
+  (measure_inter_lt_top_of_left_ne_top measure_ball_lt_top.ne).ne
 
 /-- For a measure finite on compact sets, the measure `m(ρ) = μ(s ∩ ball x₀ ρ)` of `s` in the
 balls about `x₀` is monotone in the radius. -/
@@ -208,5 +221,35 @@ theorem tendsto_integral_ball_nhdsLT {f : X → F} {x : X} {R : ℝ}
       refine tendsto_const_nhds.congr' ?_
       filter_upwards [self_mem_nhdsWithin] with r hr
       rw [indicator_of_notMem fun h ↦ hz (ball_subset_ball (le_of_lt hr) h)]
+
+end MeasureTheory.IntegrableOn
+
+namespace MeasureTheory.IntegrableOn
+
+open Metric Filter
+open scoped Topology
+
+variable {X F : Type*} [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure X}
+
+/-- For a locally finite measure vanishing on points, the integrals of a function integrable on `S`
+over the parts of `S` in the balls about `x` tend to `0` as the radius tends to `0`. -/
+theorem tendsto_setIntegral_ball_nhds_zero [IsLocallyFiniteMeasure μ] [NullSingletonClass μ]
+    {f : X → F} {S : Set X} (hf : IntegrableOn f S μ) (x : X) :
+    Tendsto (fun ρ ↦ ∫ z in ball x ρ, f z ∂μ.restrict S) (𝓝 0) (𝓝 0) := by
+  refine Integrable.tendsto_setIntegral_nhds_zero hf ?_
+  -- Some closed ball about `x` has finite measure, so the closed balls shrink to `μ {x} = 0`.
+  obtain ⟨o, hxo, ho, hμo⟩ := μ.exists_isOpen_measure_lt_top x
+  obtain ⟨ε, hε, hεo⟩ := Metric.isOpen_iff.1 ho x hxo
+  have hfin : μ (cthickening (ε / 2) {x}) ≠ ⊤ := by
+    rw [cthickening_singleton x (half_pos hε).le]
+    exact ((measure_mono ((closedBall_subset_ball (half_lt_self hε)).trans hεo)).trans_lt
+      hμo).ne
+  have h := tendsto_measure_cthickening_of_isClosed ⟨ε / 2, half_pos hε, hfin⟩
+    (isClosed_singleton (x := x))
+  rw [measure_singleton] at h
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ ↦ zero_le)
+    fun ρ ↦ (Measure.restrict_apply_le _ _).trans <| measure_mono fun y hy ↦
+      mem_cthickening_of_dist_le y x ρ _ rfl (mem_ball.1 hy).le
 
 end MeasureTheory.IntegrableOn
