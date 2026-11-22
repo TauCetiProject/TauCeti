@@ -63,7 +63,6 @@ dimension at most `d` has projective dimension at most `d + 1`. -/
 theorem hasProjectiveDimensionLT_succ_of_isColimit [Small.{v} R] {c : Cocone F} (hc : IsColimit c)
     (n : ℕ) (h : ∀ i, HasProjectiveDimensionLT (F.obj i) n) :
     HasProjectiveDimensionLT c.pt (n + 1) := by
-  have : AB4OfSize.{0} (ModuleCat.{v} R) := AB4OfSize_shrink.{0, v} _
   have hsum (m : ℕ) (hm : n ≤ m) : HasProjectiveDimensionLT (of R (⨁ i, F.obj i)) m :=
     hasProjectiveDimensionLT_of_isColimit_cofan (coproductCoconeIsColimit fun i ↦ F.obj i) m
       fun i ↦ hasProjectiveDimensionLT_of_ge _ n m hm
