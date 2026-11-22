@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Defs
-import Mathlib.Analysis.Normed.Group.Basic
 import Mathlib.Analysis.Normed.Group.Bounded
-import Mathlib.Topology.MetricSpace.Bounded
-import TauCeti.Algebra.Order.BigOperators.Sum.IcoMulLe
+import TauCeti.Algebra.Order.BigOperators.Ring.Finset
 import TauCeti.Analysis.SpecificLimits.Basic
 
 /-!
@@ -19,11 +17,12 @@ For any sequence `f : ℕ → R` in a preordered, not necessarily associative ri
 addition satisfying `c * f k ≤ f (k + 1)` on `Finset.Ico M m` (`M ≤ m`), telescoping gives the
 finite-horizon bound `(c - 1) * ∑ j ∈ Finset.Ico M m, f j + f M ≤ f m`
 (`TauCeti.sub_one_mul_sum_Ico_add_le_of_mul_le`). In a seminormed additive group `E`, combining this
-with the triangle inequality when `1 ≤ c` and `c * ‖u k‖ ≤ ‖u (k + 1)‖` on `Finset.Ico M m` yields
+with the triangle inequality when `1 ≤ c`, `M ≤ m`, and `c * ‖u k‖ ≤ ‖u (k + 1)‖` on
+`Finset.Ico M m` yields
 `(c - 2) * ‖u m‖ + ‖u M‖ ≤ (c - 1) * ‖∑ j ∈ Finset.Ico M (m + 1), u j‖`.
 
 Norm divergence of partial sums over `Finset.Ico N n` does not depend on the starting index `N`
-(`TauCeti.tendsto_norm_sum_Ico_atTop_iff`). At `c = 2`, the bound specializes to
+(`TauCeti.tendsto_norm_sum_Ico_atTop_iff`). At `c = 2` (with `M ≤ m`), the bound specializes to
 `‖u M‖ ≤ ‖∑ j ∈ Finset.Ico M (m + 1), u j‖`. Thus if a sequence `u : ℕ → E` grows by at least a
 factor of `c ≥ 2` from each index to the next (`c * ‖u m‖ ≤ ‖u (m + 1)‖` eventually) and has norms
 that do not vanish eventually (`∃ᶠ m in atTop, 0 < ‖u m‖`), then the norms of the partial sums
@@ -106,7 +105,7 @@ theorem tendsto_norm_sum_Ico_atTop_of_mul_norm_le {E : Type*} [SeminormedAddComm
     hstep.mono fun m hm ↦ (mul_le_mul_of_nonneg_right hc (norm_nonneg (u m))).trans hm
   obtain ⟨M₀, hM₀⟩ := eventually_atTop.1 hstep2
   have hnorm_atTop : Tendsto (fun m ↦ ‖u m‖) atTop atTop :=
-    tendsto_atTop_of_mul_le one_lt_two hstep2 hne
+    tendsto_atTop_of_eventually_geom_le one_lt_two hstep2 hne
   rw [tendsto_atTop]
   intro K
   obtain ⟨M₁, hM₁⟩ := eventually_atTop.1 (hnorm_atTop.eventually_ge_atTop (2 * K))

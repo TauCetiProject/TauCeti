@@ -15,8 +15,8 @@ sequences under eventual multiplicative step growth.
 
 ## Main results
 
-* `TauCeti.tendsto_atTop_of_mul_le`: if `1 < c`, `c * v m ≤ v (m + 1)` eventually, and `0 < v m`
-  frequently, then `v n → +∞`.
+* `TauCeti.tendsto_atTop_of_eventually_geom_le`: if `1 < c`, `c * v m ≤ v (m + 1)` eventually,
+  and `0 < v m` frequently, then `v n → +∞`.
 -/
 
 public section
@@ -27,7 +27,7 @@ namespace TauCeti
 
 /-- If `1 < c`, `c * v m ≤ v (m + 1)` eventually, and `0 < v m` frequently, then `v n → +∞` as
 `n → ∞`. -/
-theorem tendsto_atTop_of_mul_le {v : ℕ → ℝ} {c : ℝ} (hc : 1 < c)
+theorem tendsto_atTop_of_eventually_geom_le {v : ℕ → ℝ} {c : ℝ} (hc : 1 < c)
     (hstep : ∀ᶠ m in atTop, c * v m ≤ v (m + 1)) (hne : ∃ᶠ m in atTop, 0 < v m) :
     Tendsto v atTop atTop := by
   obtain ⟨M₀, hM₀⟩ := eventually_atTop.1 hstep
