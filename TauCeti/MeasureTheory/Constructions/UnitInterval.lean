@@ -109,10 +109,13 @@ theorem cellIdx_eq_iff_of_succ_lt (hi : i + 1 < m) (x : I) :
     mul_comm (x : ℝ)]
 
 /-- The top cell is closed at `1`: `cellIdx m x = m - 1` exactly when
-`(m - 1) / m ≤ x`. -/
+`(m - 1) / m ≤ x`. At `m = 0` both sides hold, through the junk values `0 - 1 = 0` and `0 / 0 = 0`.
+-/
 @[simp]
-theorem cellIdx_eq_sub_one_iff (hm : 0 < m) (x : I) :
+theorem cellIdx_eq_sub_one_iff (x : I) :
     cellIdx m x = m - 1 ↔ ((m - 1 : ℕ) : ℝ) / m ≤ (x : ℝ) := by
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · simpa [cellIdx] using x.property.1
   have hmR : (0 : ℝ) < m := by exact_mod_cast hm
   have hmin : cellIdx m x = m - 1 ↔ m - 1 ≤ ⌊(m : ℝ) * (x : ℝ)⌋₊ := by
     simp only [cellIdx]
@@ -157,8 +160,8 @@ theorem volume_preimage_cellIdx (hi : i < m) :
       have hset : cellIdx m ⁻¹' {i} = Ici (⟨(i : ℝ) / m, hα⟩ : I) := by
         ext x
         simp only [mem_preimage, mem_singleton_iff, mem_Ici, ← Subtype.coe_le_coe]
-        have hi_top : i = m - 1 := by omega
-        simpa [hi_top] using cellIdx_eq_sub_one_iff hm0 x
+        obtain rfl : i = m - 1 := by omega
+        exact cellIdx_eq_sub_one_iff x
       rw [hset, _root_.unitInterval.volume_Ici]
       congr 1
       have : (i : ℝ) + 1 = m := by exact_mod_cast heq
