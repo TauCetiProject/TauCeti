@@ -228,7 +228,7 @@ of the generator `1`. -/
 theorem coe_formalPointsIntMulEquiv_apply (I : Ideal A) (f : formalPoints R (Multiplicative ℤ) I) :
     ((formalPointsIntMulEquiv R I f : Aˣ) : A) =
       f.1.ofConv (MonoidAlgebra.single (Multiplicative.ofAdd 1) 1) := by
-  simp [formalPointsIntMulEquiv, zpowersMulHom, zpowersHom]
+  simp [formalPointsIntMulEquiv]
 
 /-- The formal point of `D(ℤ)` attached to a principal unit `u` sends the group-like element of
 `k : ℤ` to `u ^ k`. -/
@@ -237,7 +237,7 @@ theorem formalPointsIntMulEquiv_symm_apply_single (I : Ideal A) (u : I.principal
     (k : ℤ) :
     ((formalPointsIntMulEquiv R I).symm u).1.ofConv
         (MonoidAlgebra.single (Multiplicative.ofAdd k) 1) = ((u : Aˣ) ^ k : Aˣ) := by
-  simp [formalPointsIntMulEquiv, zpowersMulHom, zpowersHom]
+  simp [formalPointsIntMulEquiv]
 
 end FormalPoints
 
