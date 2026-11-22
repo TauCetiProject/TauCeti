@@ -48,7 +48,7 @@ private theorem locallyOfFiniteType_restrict_chart {f : X ⟶ Y} {W : Opens Y} {
       ((Opens.map (X.ofRestrict ((Opens.map f.base).obj W).isOpenEmbedding).base).obj
         U).isOpenEmbedding) ≫ f.restrictPreimage W) := by
   set R : Opens YA := (Opens.map eV.inv.base).obj
-    ((Opens.map (Y.ofRestrict V.isOpenEmbedding).base).obj W) with hR
+    ((Opens.map (Y.ofRestrict V.isOpenEmbedding).base).obj W)
   have w := restrictPreimage_comp_eq_of_chart eU eV hfac R
   let eK := IsOpenImmersion.isoOfRangeEq _ _ (range_restrict_chart_source_eq (W := W) eU eV hfac)
   let eO := IsOpenImmersion.isoOfRangeEq _ _ (range_restrict_chart_target_eq (W := W) eV)
@@ -80,7 +80,7 @@ theorem LocallyOfFiniteType.restrictPreimage {f : X ⟶ Y} (hf : LocallyOfFinite
           K.isOpenEmbedding) ≫ f.restrictPreimage W) := by
     intro x
     obtain ⟨U, hx, V, -, A, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ, hφ,
-      hsheaf, eU, eV, hfac⟩ := (chartLocally_iff f).mp ((locallyOfFiniteType_iff f).mp hf) x.1
+      hsheaf, eU, eV, hfac⟩ := (chartLocally_iff f).mp ((locallyOfFiniteType_iff f).mp hf) x.val
     have hsA : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
         (presentationLimitPresheaf P S.plus) :=
       ObjectProperty.prop_of_iso isSheafy eV (isSheafy_restrict _ hY)

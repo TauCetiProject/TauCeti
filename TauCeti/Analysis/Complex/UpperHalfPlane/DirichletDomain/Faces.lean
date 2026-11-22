@@ -42,6 +42,8 @@ open scoped MatrixGroups
 
 namespace TauCeti.UpperHalfPlane
 
+section SMul
+
 variable {G : Type*} [SMul G ℍ]
 
 /-- A face indexed by an element moving the centre is cut out by its perpendicular bisector. -/
@@ -73,19 +75,26 @@ theorem smul_eq_of_nontrivial_dirichletFace_inter {p : ℍ} {g g' : G} (hg : g �
   exact eq_of_dist_eq_dist_of_dist_eq_dist hg.symm hg'.symm hxy (mem_dirichletFace.mp hx.1).2
     (mem_dirichletFace.mp hy.1).2 (mem_dirichletFace.mp hx.2).2 (mem_dirichletFace.mp hy.2).2
 
-/-- On its supporting bisector the face imposes just the Dirichlet-domain inequalities. -/
+/-- Restricted along `geodesicLine (perpBisector p (g • p))`, the face imposes just the
+Dirichlet-domain inequalities. For an index `g` moving the centre this line is the supporting
+bisector of the face; for an index fixing the centre it is an arbitrary line through the centre,
+and the face is the whole domain. -/
 @[simp]
-theorem preimage_geodesicLine_dirichletFace {p : ℍ} {g : G} (hg : g • p ≠ p) :
+theorem preimage_geodesicLine_dirichletFace {p : ℍ} {g : G} :
     geodesicLine (perpBisector p (g • p)) ⁻¹' dirichletFace p g =
       geodesicLine (perpBisector p (g • p)) ⁻¹' dirichletDomain G p := by
-  rw [dirichletFace_eq_inter_range_geodesicLine hg, preimage_inter,
-    preimage_range, inter_univ]
+  by_cases hg : g • p = p
+  · rw [dirichletFace_eq_dirichletDomain_of_smul_eq hg]
+  · rw [dirichletFace_eq_inter_range_geodesicLine hg, preimage_inter,
+      preimage_range, inter_univ]
 
-/-- The parameters of a nontrivial equality face on its supporting bisector form an interval. -/
-theorem ordConnected_preimage_geodesicLine_dirichletFace {p : ℍ} {g : G}
-    (hg : g • p ≠ p) :
+/-- The parameters of an equality face along `geodesicLine (perpBisector p (g • p))` form an
+interval. For an index `g` moving the centre this line is the supporting bisector of the face; for
+an index fixing the centre it is an arbitrary line through the centre, and the face is the whole
+domain. -/
+theorem ordConnected_preimage_geodesicLine_dirichletFace {p : ℍ} {g : G} :
     (geodesicLine (perpBisector p (g • p)) ⁻¹' dirichletFace p g).OrdConnected := by
-  rw [preimage_geodesicLine_dirichletFace hg]
+  rw [preimage_geodesicLine_dirichletFace]
   exact ordConnected_preimage_geodesicLine_dirichletDomain G
 
 /-- A face indexed by an element moving the centre lies on the boundary of the domain.
@@ -125,7 +134,7 @@ theorem exists_dirichletFace_eq_geodesicSegment {p : ℍ} {g : G} (hg : g • p 
     (isometry_geodesicLine k).isClosedEmbedding.isCompact_preimage
       (Metric.isCompact_of_isClosed_isBounded (isClosed_dirichletFace p g) hb)
   have hconn : IsConnected S :=
-    ⟨hS, (ordConnected_preimage_geodesicLine_dirichletFace hg).isPreconnected⟩
+    ⟨hS, ordConnected_preimage_geodesicLine_dirichletFace.isPreconnected⟩
   have hab := eq_Icc_of_connected_compact hconn hcompact
   refine ⟨geodesicLine k (sInf S), geodesicLine k (sSup S), ?_⟩
   rw [geodesicSegment_geodesicLine, uIcc_of_le (nonempty_Icc.mp (hab ▸ hS)),
@@ -135,9 +144,9 @@ variable [ProperlyDiscontinuousSMul G ℍ]
 
 /-- The boundary is exactly the union of the faces indexed by elements moving the centre. -/
 theorem frontier_dirichletDomain_eq_iUnion_dirichletFace {p : ℍ} :
-    frontier (dirichletDomain G p) = ⋃ g : {g : G // g • p ≠ p}, dirichletFace p g.1 := by
+    frontier (dirichletDomain G p) = ⋃ g : {g : G // g • p ≠ p}, dirichletFace p g.val := by
   apply subset_antisymm (frontier_dirichletDomain_subset_iUnion_dirichletFace p)
-  exact iUnion_subset fun g ↦ dirichletFace_subset_frontier g.2
+  exact iUnion_subset fun g ↦ dirichletFace_subset_frontier g.property
 
 /-- A point is in the interior exactly when all constraints from indices moving the centre
 are strict. Local finiteness of the constraints is essential for the reverse implication. -/
@@ -150,9 +159,9 @@ theorem mem_interior_dirichletDomain_iff {p z : ℍ} :
   refine lt_of_le_of_ne (mem_dirichletDomain.mp hzD g) fun he ↦ ?_
   exact (dirichletFace_subset_frontier hg (mem_dirichletFace.mpr ⟨hzD, he⟩)).2 hz
 
-end TauCeti.UpperHalfPlane
+end SMul
 
-namespace TauCeti.UpperHalfPlane
+section MulAction
 
 variable {G : Type*} [Group G] [MulAction G ℍ]
 
@@ -167,15 +176,9 @@ theorem eq_of_nontrivial_dirichletFace_inter {p : ℍ}
   exact TauCeti.smul_ne_of_ne_one G ℍ hp (g := g'⁻¹ * g)
     (fun h' ↦ hne (inv_mul_eq_one.1 h').symm) (by rw [mul_smul, he, inv_smul_smul])
 
-end TauCeti.UpperHalfPlane
-
-namespace TauCeti.UpperHalfPlane
-
-variable {G : Type*} [Group G] [MulAction G ℍ] [IsIsometricSMul G ℍ]
-  [ProperlyDiscontinuousSMul G ℍ]
+variable [IsIsometricSMul G ℍ]
 
 open scoped Pointwise in
-omit [ProperlyDiscontinuousSMul G ℍ] in
 /-- **An element moving the centre moves the interior of the Dirichlet domain off itself.** If
 `g • p ≠ p`, then the translate `g • interior D` of the interior of the Dirichlet domain `D`
 centred at `p` is disjoint from `interior D`. -/
@@ -189,5 +192,7 @@ theorem disjoint_smul_interior_dirichletDomain {p : ℍ} {g : G} (hg : g • p �
   have hf := (inv_smul_mem_dirichletDomain_iff (interior_subset hw) g⁻¹).mp
     (by simpa using interior_subset hz')
   exact (dirichletFace_subset_frontier hg' hf).2 hw
+
+end MulAction
 
 end TauCeti.UpperHalfPlane

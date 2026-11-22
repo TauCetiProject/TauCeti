@@ -20,8 +20,8 @@ import TauCeti.Topology.MetricSpace.Holder
 
 Mathlib's `Real.sigmoid` maps `ℝ` increasingly onto `Set.Ioo 0 1`. Its inverse on that interval is
 the logit `u ↦ log (u / (1 - u))`. This file records the facts about the pair that are used to
-transport the uniform law on the unit interval along the logit: the logit is a right inverse of
-the sigmoid, and the logit of a level lies below a point exactly when the level lies below the
+transport the uniform law on the unit interval along the logit: the logit is a two-sided inverse
+of the sigmoid, and the logit of a level lies below a point exactly when the level lies below the
 sigmoid of that point. It also writes the derivative `σ (1 - σ)` of the sigmoid in terms of the
 exponential.
 
@@ -36,8 +36,13 @@ coefficients, as for option prices of linear growth in the spot `exp x`.
 ## Main results
 
 * `Real.sigmoid_log_div_one_sub` — `sigmoid (log (u / (1 - u))) = u` for `0 < u < 1`;
+* `Real.log_sigmoid_div_one_sub` — `log (sigmoid x / (1 - sigmoid x)) = x`;
 * `Real.log_div_one_sub_le_iff` — `log (u / (1 - u)) ≤ y ↔ u ≤ sigmoid y` for `0 < u < 1`;
 * `Real.measurable_logit_affine` — affine transformations of the logit are measurable;
+* `Real.continuousOn_log_div_one_sub`, `Real.tendsto_log_div_one_sub_nhdsGT_zero`,
+  `Real.tendsto_log_div_one_sub_nhdsLT_one` — the logit is continuous on the open unit interval
+  and tends to `-∞` and `+∞` at its two ends, so a curve `ℝ → X` with limits at `±∞`, read along
+  it, extends to a path on the closed unit interval;
 * `Real.sigmoid_mul_one_sub_sigmoid` — the derivative of the sigmoid is
   `sigmoid y * (1 - sigmoid y) = exp (-y) / (1 + exp (-y)) ^ 2`;
 * `Real.exists_iteratedDeriv_sigmoid_eq_eval` — every derivative of the sigmoid is a polynomial
@@ -57,17 +62,14 @@ interval. -/
 @[simp]
 theorem sigmoid_log_div_one_sub {u : ℝ} (h0 : 0 < u) (h1 : u < 1) :
     sigmoid (log (u / (1 - u))) = u := by
-  have h1' : 0 < 1 - u := sub_pos.mpr h1
-  rw [sigmoid_def, exp_neg, exp_log (div_pos h0 h1'), inv_div]
-  field_simp
-  ring
+  rw [sigmoid_def, exp_neg, exp_log (div_pos h0 (sub_pos.2 h1))]
+  field
 
 /-- The logit is a left inverse of the sigmoid. -/
 @[simp]
 theorem log_sigmoid_div_one_sub (x : ℝ) :
-    log (sigmoid x / (1 - sigmoid x)) = x := by
-  apply sigmoid_injective
-  exact sigmoid_log_div_one_sub (sigmoid_pos x) (sigmoid_lt_one x)
+    log (sigmoid x / (1 - sigmoid x)) = x :=
+  sigmoid_injective <| sigmoid_log_div_one_sub (sigmoid_pos x) (sigmoid_lt_one x)
 
 /-- On the open unit interval, the logit of `u` lies below `y` exactly when `u` lies below the
 sigmoid of `y`. -/
@@ -80,6 +82,39 @@ theorem log_div_one_sub_le_iff {u y : ℝ} (h0 : 0 < u) (h1 : u < 1) :
 theorem measurable_logit_affine (m s : ℝ) :
     Measurable fun u : ℝ => m + s * log (u / (1 - u)) := by
   fun_prop
+
+open Filter Set Topology in
+/-- The logit `u ↦ log (u / (1 - u))` is continuous on the open unit interval. -/
+theorem continuousOn_log_div_one_sub :
+    ContinuousOn (fun u : ℝ ↦ log (u / (1 - u))) (Ioo 0 1) :=
+  ((continuousOn_id (s := Ioo (0 : ℝ) 1)).div (continuousOn_const.sub continuousOn_id) fun _ hu ↦
+    (sub_pos.2 hu.2).ne').log fun _ hu ↦ (div_pos hu.1 (sub_pos.2 hu.2)).ne'
+
+open Filter Set Topology in
+/-- The logit `u ↦ log (u / (1 - u))` tends to `-∞` at the left end of the unit interval. -/
+theorem tendsto_log_div_one_sub_nhdsGT_zero :
+    Tendsto (fun u : ℝ ↦ log (u / (1 - u))) (𝓝[>] 0) atBot := by
+  have h : Tendsto (fun u : ℝ ↦ u / (1 - u)) (𝓝[>] 0) (𝓝[>] 0) := by
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
+    · have h : ContinuousAt (fun u : ℝ ↦ u / (1 - u)) 0 := by fun_prop (disch := norm_num)
+      simpa using h.tendsto.mono_left nhdsWithin_le_nhds
+    · filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu using div_pos hu.1 (sub_pos.2 hu.2)
+  exact tendsto_log_nhdsGT_zero.comp h
+
+open Filter Set Topology in
+/-- The logit `u ↦ log (u / (1 - u))` tends to `+∞` at the right end of the unit interval. -/
+theorem tendsto_log_div_one_sub_nhdsLT_one :
+    Tendsto (fun u : ℝ ↦ log (u / (1 - u))) (𝓝[<] 1) atTop := by
+  have h₁ : Tendsto (fun u : ℝ ↦ 1 - u) (𝓝[<] 1) (𝓝[>] 0) := by
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
+    · have h : Tendsto (fun u : ℝ ↦ 1 - u) (𝓝 1) (𝓝 0) := by
+        simpa using (continuous_sub_left (1 : ℝ)).tendsto 1
+      exact h.mono_left nhdsWithin_le_nhds
+    · filter_upwards [self_mem_nhdsWithin] with u hu using sub_pos.2 hu
+  have h₂ : Tendsto (fun u : ℝ ↦ u / (1 - u)) (𝓝[<] 1) atTop :=
+    (tendsto_id.mono_left nhdsWithin_le_nhds).pos_mul_atTop one_pos
+      (tendsto_inv_nhdsGT_zero.comp h₁)
+  exact tendsto_log_atTop.comp h₂
 
 /-- The derivative `sigmoid y * (1 - sigmoid y)` of the sigmoid, written through the
 exponential. -/
@@ -117,17 +152,14 @@ theorem memHolder_iteratedDeriv_sigmoid (n : ℕ) {α : NNReal} (hα : α ≤ 1)
   obtain ⟨C₀, hC₀⟩ := exists_abs_iteratedDeriv_sigmoid_le n
   obtain ⟨C₁, hC₁⟩ := exists_abs_iteratedDeriv_sigmoid_le (n + 1)
   have hL : LipschitzWith C₁.toNNReal (iteratedDeriv n sigmoid) := by
-    refine lipschitzWith_of_nnnorm_deriv_le
+    refine lipschitzWith_of_nnNorm_deriv_le
       (contDiff_sigmoid.differentiable_iteratedDeriv n (WithTop.coe_lt_top _)) fun x => ?_
-    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs, ← iteratedDeriv_succ]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs, ← iteratedDeriv_succ]
     exact (hC₁ x).trans (Real.le_coe_toNNReal C₁)
-  have hD (x : ℝ) (_ : x ∈ Set.univ) (y : ℝ) (_ : y ∈ Set.univ) :
-      dist (iteratedDeriv n sigmoid x) (iteratedDeriv n sigmoid y) ≤ (2 * C₀).toNNReal := by
-    rw [Real.dist_eq]
-    linarith [abs_sub (iteratedDeriv n sigmoid x) (iteratedDeriv n sigmoid y), hC₀ x, hC₀ y,
-      Real.le_coe_toNNReal (2 * C₀)]
-  exact ⟨_, holderOnWith_univ.1 (HolderOnWith.of_le_of_dist_le
-    (fun x _ y _ _ => (holderWith_one.2 hL).dist_le x y) hD hα one_pos)⟩
+  refine ⟨_, holderOnWith_univ.1 (hL.lipschitzOnWith.holderOnWith_of_norm_le
+    (M := C₀.toNNReal) (fun x _ => ?_) hα)⟩
+  rw [Real.norm_eq_abs]
+  exact (hC₀ x).trans (Real.le_coe_toNNReal C₀)
 
 /-- The sigmoid is the derivative of `x ↦ log (1 + exp x)`. -/
 theorem hasDerivAt_log_one_add_exp (x : ℝ) :

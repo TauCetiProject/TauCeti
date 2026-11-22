@@ -96,9 +96,7 @@ jobs:
   # publication failures are reported separately.
   build-data:
     # Data and publication must not wait behind the hosted build backlog.
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     env:
       REFRESH_SITE_DATA: ${{ github.event_name != 'push' }}
     outputs:
@@ -134,10 +132,9 @@ jobs:
       # that the rest of this change exists to keep fresh. Restoring the retained generated set
       # first makes "keep the previous one" true for the generated data too.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@b0d0a33c94de44d8b8747880127725ae26b9084b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: b0d0a33c94de44d8b8747880127725ae26b9084b
           project-directory: .
       - name: Restore the last published data assets
         id: retained-data
@@ -245,6 +242,7 @@ jobs:
       # and may wait for a depleted GitHub budget. That cold path can be expensive; push deploys
       # skip this scan rather than depending on its runtime.
       - name: Restore the previous pull-request snapshot
+        id: pr-snapshot
         if: env.REFRESH_SITE_DATA == 'true'
         uses: actions/cache/restore@v4
         with:
@@ -252,12 +250,21 @@ jobs:
           # A run-specific key lets a refresh save its snapshot; the prefix restores the newest
           # previous snapshot. This restore and the corresponding save do not run on pushes.
           # Snapshots saved on 2026-11-10 lost the bors receipts and scoreboards beyond GitHub's
-          # comment pagination limit, which cannot be refetched. The v3 prefix skips them; until
-          # a v3 snapshot exists, the exact key below restores the last one before that loss.
+          # comment pagination limit, which cannot be refetched. The v3 prefix skips them.
           key: pr-snapshot-v3-${{ github.run_id }}
           restore-keys: |
             pr-snapshot-v3-
-            pr-snapshot-42716799007
+
+      # The last snapshot before that loss, only when no v3 snapshot was restored. It used to be
+      # a second restore key of the step above, but GitHub then restored it on every run instead
+      # of the newest v3 snapshot (the v3 entries were never read), so each run refetched every
+      # pull request that changed since 9 Nov.
+      - name: Fall back to the last snapshot before the receipt loss
+        if: env.REFRESH_SITE_DATA == 'true' && steps.pr-snapshot.outputs.cache-matched-key == ''
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/pr-snapshot.json
+          key: pr-snapshot-42716799007
 
       # PR history and current queue state come from GitHub rather than git. The generator
       # paginates both the PR connection and each label timeline, and bounds contributor
@@ -324,7 +331,7 @@ jobs:
       # requests and the dominant cost of this job. Publishing the result means
       # anything asking "where is the queue stuck" reads a file instead of
       # repeating the fetch.
-      - name: Checkout the pinned merge policy (read-only)
+      - name: Checkout the merge policy (read-only)
         if: env.REFRESH_SITE_DATA == 'true'
         id: merge-policy
         continue-on-error: true
@@ -518,9 +525,7 @@ jobs:
     # this job wants from build-data is the artifact, and it copes with that being absent.
     needs: build-data
     if: ${{ !cancelled() }}
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     env:
       # Preserve the four-worker setting of the previous hosted build shape.
       LEAN_NUM_THREADS: "4"
@@ -560,10 +565,9 @@ jobs:
       # checkout above already carries the committed fallbacks, so the site still builds and
       # deploys, and report-data-freshness is what makes the run red about it.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@b0d0a33c94de44d8b8747880127725ae26b9084b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: b0d0a33c94de44d8b8747880127725ae26b9084b
           project-directory: .
       - name: Lay down the generated data
         id: site-data
@@ -813,9 +817,7 @@ jobs:
     # an unexplained skip must not authorize publishing an old site over the live one. And
     # `!cancelled()`, so cancelling the run stops here rather than deploying on the way out.
     if: ${{ !cancelled() && needs.build-site.result == 'failure' }}
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     outputs:
       # Which cached site was republished. report-data-freshness compares it against this run's
       # own key, because "the site could not be built" and "the site built and then the upload
@@ -902,9 +904,7 @@ jobs:
     # Skipped only when neither produced anything, which is the case where there is genuinely
     # nothing to publish.
     if: ${{ !cancelled() && (needs.build-site.result == 'success' || needs.fallback-site.result == 'success') }}
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -923,8 +923,7 @@ jobs:
   # that a GitHub hiccup costs a stale chart rather than a whole missed site publish. What was
   # missing is the other half. A warning annotation notifies nobody, so the PR-statistics step
   # failed on every run for two days, pipeline-health.json was never published at all, and every
-  # run was green. Running after `deploy` keeps the site publishing while making the run red, and
-  # a red scheduled run is what stuck_alerts.py's failing-scheduler detector watches for.
+  # run was green. Running after `deploy` keeps the site publishing while making the run red.
   # Data can go stale two independent ways, and this job reports both. A generator can fail, which
   # is what it was originally written for. Or every generator can succeed and the results never get
   # published, which is what happened across 2026-09-22: pipeline-health.json was derived cleanly on
@@ -940,9 +939,7 @@ jobs:
     # there is anything worth reporting is a question for the step, which can see the deploy result.
     # It is not a question the `if:` has the information to answer.
     if: always()
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     steps:
       - name: Report what is serving stale data
         env:
@@ -1029,15 +1026,27 @@ jobs:
     if: ${{ !cancelled()
         && needs.build-site.result == 'success' && needs.deploy.result == 'success'
         && needs.build-site.outputs.docs-source-sha != '' && github.ref == 'refs/heads/main' }}
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
-    permissions:
-      contents: write
+    runs-on: ubuntu-24.04
+    permissions: {}
     steps:
+      # Not `github.token`: moving a ref across a change to .github/workflows/ needs the
+      # `workflows` permission, which the workflow token cannot be granted. GitHub lets the
+      # workflow token through when the target's workflow files match the commit being run, but
+      # `docgen` trails main, so its target usually does not, and the update fails with HTTP 403
+      # ("Resource not accessible by integration").
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: TauCetiProject
+          repositories: TauCeti
+          permission-contents: write
+          permission-workflows: write
+
       - name: Point the docgen branch at the documented commit
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           CANDIDATE: ${{ needs.build-site.outputs.docs-source-sha }}
           REPO: ${{ github.repository }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}

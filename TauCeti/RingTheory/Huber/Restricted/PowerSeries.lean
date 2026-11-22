@@ -65,8 +65,8 @@ where the convergent/restricted power series ring is (5.6.1) in §5.6.
 ## Provenance
 
 This module is a port of AINTLIB's `projects/AdicSpaces/Adic spaces/RestrictedPowerSeries.lean`,
-the roadmap's designated prior formalisation of this material. Three groups, because the port and
-this PR did different things to different declarations.
+a prior formalisation of this material. The declarations fall into groups according to how much
+of each is AINTLIB's.
 
 **AINTLIB's in definition, statement and proof.** `restrictedMvPowerSeriesSubring`,
 `restrictedMvPowerSeriesSubring.instAlgebra`, `IsRestricted.finite_coeff_notMem`, the private
@@ -137,13 +137,13 @@ The name `isRestricted_iff` needs care: the port introduced it for the `coeff`-f
 lemma, which is now `isRestricted_iff_coeff`. The statement the name carries here — unfolding
 through `Filter.ZeroAtFilter` at coefficients asking only for a `0` and a topology — is new.
 
-That originality claim was checked against **both** AINTLIB sources the roadmap designates for
-this material, not only `RestrictedPowerSeries.lean`. AINTLIB's `TateAlgebra.lean`,
-`TateAlgebraTopology.lean` and `TateAlgebraWedhorn.lean` build `TateAlgebra A` for a *ring* `A`
+That originality claim holds against AINTLIB's other development of this material too, not only
+`RestrictedPowerSeries.lean`. AINTLIB's `TateAlgebra.lean`, `TateAlgebraTopology.lean` and
+`TateAlgebraWedhorn.lean` build `TateAlgebra A` for a *ring* `A`
 (`[CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]`) throughout; their `Submodule`
 occurrences are ideals of that ring viewed as submodules, not coefficients in a module. There is
-no `M⟨X⟩` there, and §0.5's "restricted series with coefficients in a complete topological module"
-has no AINTLIB counterpart to credit.
+no `M⟨X⟩` there, so restricted series with coefficients in a topological module have no AINTLIB
+counterpart to credit.
 
 The port additionally moves the declarations into the `TauCeti.Huber` namespace, opts into the
 Lean module system with the definition bodies unexposed — hence the added `isRestricted_iff_coeff`,
@@ -172,8 +172,8 @@ This is the canonical concrete definition. `M⟨T₁, …, Tₖ⟩` is cut out o
 coefficient function — see `isRestricted_iff`, which is `Iff.rfl`. The closure
 lemmas delegate to `zero_zeroAtFilter` and `ZeroAtFilter.add`/`.neg`/`.smul`, and
 `restrictedMvPowerSeriesSubmodule` *is* `Filter.zeroAtFilterSubmodule` at that filter rather than
-a reconstruction of it. The Huber-specific names are kept because `M⟨T₁, …, Tₖ⟩` is the object the
-roadmap names, but no closure property is proved here that Mathlib already has.
+a reconstruction of it. The Huber-specific names are kept because `M⟨T₁, …, Tₖ⟩` is the object
+Huber theory works with, but no closure property is proved here that Mathlib already has.
 
 `isRestricted_iff` unfolds the predicate through `Filter.ZeroAtFilter`, which is the form the
 delegations use and what module coefficients admit; `isRestricted_iff_coeff` unfolds it through
@@ -711,9 +711,9 @@ theorem restrictedMvPowerSeriesSubmoduleMap_surjective {k : ℕ} {A M N : Type*}
     (hopen : nhds (0 : N) ≤ Filter.map φ (nhds (0 : M))) :
     Function.Surjective (restrictedMvPowerSeriesSubmoduleMap (k := k) φ hφ) := by
   intro g
-  obtain ⟨f, hfg, hf⟩ := TauCeti.exists_lift_tendsto_cofinite_nhds φ hsurj hopen
-    (fun s ↦ ((g : MvPowerSeries (Fin k) N) : (Fin k →₀ ℕ) → N) s)
-    (isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp g.2))
+  obtain ⟨f, hfg, hf⟩ := TauCeti.exists_lift_tendsto_cofinite_nhds φ hopen
+    (fun s ↦ ((g : MvPowerSeries (Fin k) N) : (Fin k →₀ ℕ) → N) s) (fun _ ↦ hsurj _)
+    (isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp g.property))
   -- `MvPowerSeries (Fin k) M` is a plain `def` for `(Fin k →₀ ℕ) → M`, and the lift `f` is produced
   -- at the bare function type. The `show` is what makes it elaborate as a series so that
   -- `IsRestricted` applies — the file's standing idiom, documented at `IsRestricted.map`.
@@ -809,7 +809,7 @@ theorem restrictedMvPowerSeriesSubmoduleMap_range_eq_ker {k : ℕ} {A M N P : Ty
       (LinearMap.surjective_rangeRestrict u) hstrict
       ⟨show MvPowerSeries (Fin k) ↥(LinearMap.range u) from fun s ↦ ⟨_, hcoef s⟩,
         mem_restrictedMvPowerSeriesSubmodule.mpr (isRestricted_iff.mpr
-          (tendsto_subtype_rng.mpr (isRestricted_iff.mp c.2)))⟩
+          (tendsto_subtype_rng.mpr (isRestricted_iff.mp c.property)))⟩
     -- `u = (range u).subtype ∘ u.rangeRestrict`, so reading `hb` coefficientwise and forgetting
     -- the membership proof is already the required equality.
     refine ⟨b, restrictedMvPowerSeriesSubmodule_ext fun s ↦ ?_⟩
@@ -826,10 +826,10 @@ tensor-product API, which produces the subring. -/
 noncomputable def restrictedMvPowerSeriesSubringLinearEquiv (k : ℕ) (A : Type*) [CommRing A]
     [TopologicalSpace A] [NonarchimedeanRing A] :
     restrictedMvPowerSeriesSubring k A ≃ₗ[A] restrictedMvPowerSeriesSubmodule k A A where
-  toFun f := ⟨f.1, mem_restrictedMvPowerSeriesSubmodule.mpr
-    (mem_restrictedMvPowerSeriesSubring.mp f.2)⟩
-  invFun g := ⟨g.1, mem_restrictedMvPowerSeriesSubring.mpr
-    (mem_restrictedMvPowerSeriesSubmodule.mp g.2)⟩
+  toFun f := ⟨f.val, mem_restrictedMvPowerSeriesSubmodule.mpr
+    (mem_restrictedMvPowerSeriesSubring.mp f.property)⟩
+  invFun g := ⟨g.val, mem_restrictedMvPowerSeriesSubring.mpr
+    (mem_restrictedMvPowerSeriesSubmodule.mp g.property)⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
@@ -879,8 +879,8 @@ noncomputable def restrictedMvPowerSeriesSubmodulePiEquiv (k : ℕ) (A : Type*) 
     [∀ i, Module A (M i)] [∀ i, ContinuousAdd (M i)] [∀ i, ContinuousConstSMul A (M i)] :
     restrictedMvPowerSeriesSubmodule k A (∀ i, M i) ≃ₗ[A]
       ∀ i, restrictedMvPowerSeriesSubmodule k A (M i) where
-  toFun f i := ⟨fun s ↦ f.1 s i, isRestricted_pi_iff.mp f.2 i⟩
-  invFun g := ⟨fun s i ↦ (g i).1 s, isRestricted_pi_iff.mpr fun i ↦ (g i).2⟩
+  toFun f i := ⟨fun s ↦ f.val s i, isRestricted_pi_iff.mp f.property i⟩
+  invFun g := ⟨fun s i ↦ (g i).val s, isRestricted_pi_iff.mpr fun i ↦ (g i).property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl

@@ -104,7 +104,7 @@ def totalizations : ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat
   ObjectProperty.ofObj fun S : {S : ShortComplex
       (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)) //
       S.ShortExact} ↦
-    DGHomotopyCategory.of R (totalization S.1)
+    DGHomotopyCategory.of R (totalization S.val)
 
 variable {S} in
 /-- The totalization of a short exact sequence belongs to the class of totalizations. -/
@@ -122,7 +122,7 @@ theorem totalizations_le_iff
         (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)),
         S.ShortExact → Q (DGHomotopyCategory.of R (totalization S)) := by
   rw [totalizations, ObjectProperty.ofObj_le_iff]
-  exact ⟨fun H S hS ↦ H ⟨S, hS⟩, fun H S ↦ H S.1 S.2⟩
+  exact ⟨fun H S hS ↦ H ⟨S, hS⟩, fun H S ↦ H S.val S.property⟩
 
 open ZeroObject in
 instance : (totalizations R h).Nonempty :=
@@ -270,22 +270,22 @@ theorem absolutelyAcyclic_le_iff
     absolutelyAcyclic R h ≤ Q ↔ totalizations R h ≤ Q :=
   (totalizations R h).triangEnvelope_le_iff
 
-/-- The universal property of the coacyclic class: it is contained in every isomorphism-closed
+/-- The universal property of the coacyclic class: it is contained in every
 triangulated subcategory of the curved homotopy category containing all totalizations and closed
 under coproducts indexed by `Type u`. -/
 theorem coacyclic_le_iff
     {Q : ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h))}
-    [Q.IsTriangulated] [Q.IsClosedUnderIsomorphisms]
+    [Q.IsTriangulated]
     [∀ J : Type u, Q.IsClosedUnderColimitsOfShape (Discrete J)] :
     coacyclic R h ≤ Q ↔ totalizations R h ≤ Q :=
   (totalizations R h).localizingClosure_le_iff
 
 /-- The universal property of the contraacyclic class: it is contained in every
-isomorphism-closed triangulated subcategory of the curved homotopy category containing all
+triangulated subcategory of the curved homotopy category containing all
 totalizations and closed under products indexed by `Type u`. -/
 theorem contraacyclic_le_iff
     {Q : ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h))}
-    [Q.IsTriangulated] [Q.IsClosedUnderIsomorphisms]
+    [Q.IsTriangulated]
     [∀ J : Type u, Q.IsClosedUnderLimitsOfShape (Discrete J)] :
     contraacyclic R h ≤ Q ↔ totalizations R h ≤ Q :=
   (totalizations R h).colocalizingClosure_le_iff

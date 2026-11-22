@@ -11,6 +11,7 @@ import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import TauCeti.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Distribution.BumpComp
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Normed.Operator.Surjective
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Dynamics.Flow.Variational
@@ -111,7 +112,7 @@ private theorem span_insert_gradient_range_contribution_eq_top {r : ℕ∞} (hr 
     Submodule.span ℝ (insert (∇ f x)
       (range fun g : {g : E → ℝ // IsAdmissiblePerturbation f g ∧ ContDiff ℝ r g ∧
           tsupport g ⊆ W} ↦
-        contribution f hf x T g.1)) = ⊤ := by
+        contribution f hf x T g.val)) = ⊤ := by
   have hfs : ContDiff ℝ 2 f := hfr.of_le (WithTop.coe_le_coe.2 hr)
   set φ := negativeGradientFlow f hf
   set N : ℝ → E →L[ℝ] E := fun σ ↦ fderiv ℝ (φ (-σ)) (φ σ x)
@@ -126,13 +127,12 @@ private theorem span_insert_gradient_range_contribution_eq_top {r : ℕ∞} (hr 
   have hyx : ⟪∇ f x, y⟫ = 0 :=
     Submodule.inner_right_of_mem_orthogonal (Submodule.subset_span (mem_insert _ _)) hyV
   have hyk : ∀ g : {g : E → ℝ // IsAdmissiblePerturbation f g ∧ ContDiff ℝ r g ∧
-      tsupport g ⊆ W}, ⟪contribution f hf x T g.1, y⟫ = 0 := fun g ↦
+      tsupport g ⊆ W}, ⟪contribution f hf x T g.val, y⟫ = 0 := fun g ↦
     Submodule.inner_right_of_mem_orthogonal
       (Submodule.subset_span (mem_insert_of_mem _ (mem_range_self g))) hyV
   -- The covectors `⟪y, N σ ·⟫`, as vectors.
   set m : ℝ → E := fun σ ↦ ContinuousLinearMap.adjoint (N σ) y
-  have hm : Continuous m :=
-    ((ContinuousLinearMap.adjoint (𝕜 := ℝ)).continuous.comp hN).clm_apply continuous_const
+  have hm : Continuous m := hN.clm_adjoint.clm_apply continuous_const
   -- They annihilate the flow direction.
   have hmgrad : ∀ σ, fderiv ℝ f (φ σ x) (m σ) = 0 := fun σ ↦ by
     have hNg : N σ (∇ f (φ σ x)) = ∇ f x := by
@@ -186,16 +186,17 @@ private theorem span_insert_gradient_range_contribution_eq_top {r : ℕ∞} (hr 
   -- Hence `⟪w, m σ₀⟫ = 0` for every `w`.
   have hm0 : m σ₀ = 0 := by
     have hF : Continuous fun σ ↦ f (φ σ x) := hfs.continuous.comp hγ
-    have h0 := eq_zero_of_forall_intervalIntegral_mul_contDiffBump_comp
+    have hFa := IsIntegralCurve.strictAnti_comp_neg_gradient
+      ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve x)
+      (fun t ↦ (gradient_negativeGradientFlow_eq_zero_iff f hf x t).not.2 hx)
+    have h0 := ContinuousOn.eq_zero_of_forall_intervalIntegral_mul_contDiffBump_comp
       (g := fun σ ↦ θ (φ σ x) * ⟪m σ₀, m σ⟫ + ⟪m σ₀, φ σ x⟫ * fderiv ℝ θ (φ σ x) (m σ))
       ((θ.continuous.comp hγ).mul (continuous_const.inner hm) |>.add
         ((continuous_const.inner hγ).mul
           ((((θ.contDiff (n := 1)).continuous_fderiv one_ne_zero).comp hγ).clm_apply
             hm))).continuousOn
-      hF.continuousOn ((IsIntegralCurve.strictAnti_comp_neg_gradient
-        ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve x)
-        (fun t ↦ (gradient_negativeGradientFlow_eq_zero_iff f hf x t).not.2 hx)).strictAntiOn _)
-      hσ₀ (hkey (m σ₀))
+      hF.continuousOn (fun _ _ hσ ↦ hFa.injective hσ) (hσ₀.1.trans hσ₀.2)
+      (Ioo_subset_Icc_self hσ₀) (hkey (m σ₀))
     have hθz' : θ (φ σ₀ x) = 1 := hθz
     have hθ'z' : fderiv ℝ θ (φ σ₀ x) = 0 := hθ'z
     simpa [hθz', hθ'z'] using h0
@@ -228,16 +229,17 @@ theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top {r : ℕ∞
   have hfs : ContDiff ℝ 2 f := hfr.of_le (WithTop.coe_le_coe.2 hr)
   set φ := negativeGradientFlow f hf
   set S := range fun g : {g : E → ℝ // IsAdmissiblePerturbation f g ∧ ContDiff ℝ r g ∧
-    tsupport g ⊆ W} ↦ contribution f hf x T g.1
+    tsupport g ⊆ W} ↦ contribution f hf x T g.val
   obtain ⟨v, hvS, hvspan, -⟩ := Submodule.exists_fun_fin_finrank_span_eq ℝ S
   choose g hg using hvS
-  refine ⟨_, fun i ↦ (g i).1, fun i ↦ (g i).2.1, fun i ↦ (g i).2.2.1, fun i ↦ (g i).2.2.2, ?_⟩
-  have hgc : ∀ i, ContDiff ℝ 2 (g i).1 := fun i ↦ (g i).2.1.contDiff
-  have hgs : ∀ i, HasCompactSupport (g i).1 := fun i ↦ (g i).2.1.hasCompactSupport
+  refine ⟨_, fun i ↦ (g i).val, fun i ↦ (g i).property.1, fun i ↦ (g i).property.2.1, fun i ↦
+      (g i).property.2.2, ?_⟩
+  have hgc : ∀ i, ContDiff ℝ 2 (g i).val := fun i ↦ (g i).property.1.contDiff
+  have hgs : ∀ i, HasCompactSupport (g i).val := fun i ↦ (g i).property.1.hasCompactSupport
   set MT := fderiv ℝ (φ T) x
   set L : EuclideanSpace ℝ (Fin (Module.finrank ℝ (Submodule.span ℝ S))) →ₗ[ℝ] E :=
     ContinuousLinearMap.toLinearMap (((ContinuousLinearMap.fst ℝ E _).comp
-      ((fderiv ℝ (perturbedFlow f (fun i ↦ (g i).1) hf hgc hgs T) (x, 0)).comp
+      ((fderiv ℝ (perturbedFlow f (fun i ↦ (g i).val) hf hgc hgs T) (x, 0)).comp
         (ContinuousLinearMap.inr ℝ E _))) :
       EuclideanSpace ℝ (Fin (Module.finrank ℝ (Submodule.span ℝ S))) →L[ℝ] E)
   have hφd : ∀ t, Differentiable ℝ (φ t) := differentiable_negativeGradientFlow_apply f hf hfs
@@ -246,10 +248,10 @@ theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top {r : ℕ∞
     refine ⟨-EuclideanSpace.single i 1, ?_⟩
     have hD := fst_fderiv_perturbedFlow_apply_eq_neg_integral hfs hf hgc hgs x
       (-EuclideanSpace.single i 1) T
-    have hsum : ∀ p, ∑ j, (-EuclideanSpace.single i (1 : ℝ)) j • ∇ (g j).1 p = -∇ (g i).1 p :=
+    have hsum : ∀ p, ∑ j, (-EuclideanSpace.single i (1 : ℝ)) j • ∇ (g j).val p = -∇ (g i).val p :=
       fun p ↦ by simp
     calc L (-EuclideanSpace.single i 1)
-        = (fderiv ℝ (perturbedFlow f (fun i ↦ (g i).1) hf hgc hgs T) (x, 0)
+        = (fderiv ℝ (perturbedFlow f (fun i ↦ (g i).val) hf hgc hgs T) (x, 0)
             (0, -EuclideanSpace.single i 1)).1 := by simp [L]
       _ = MT (v i) := by
         rw [hD, ← hg i]
@@ -412,8 +414,9 @@ theorem exists_admissible_forall_mem_range_fderiv_perturbedFlow_sup_span_eq_top 
             (ContinuousLinearMap.inr ℝ E (EuclideanSpace ℝ (Fin n))))) :
             EuclideanSpace ℝ (Fin n) →ₗ[ℝ] E) ⊔
         (ℝ ∙ ∇ f (negativeGradientFlow f hf T x)) = ⊤ := fun x ↦ by
-    obtain ⟨σ, hσ, hσW⟩ := hCW x x.2
-    exact exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top hr hfr hf (hcrit x x.2) hσ
+    obtain ⟨σ, hσ, hσW⟩ := hCW x x.property
+    exact exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top hr hfr hf
+        (hcrit x x.property) hσ
       (hW.mem_nhds hσW)
   choose n h hh hhr hhW hspan using key
   -- Each family spans on an open set of start points.

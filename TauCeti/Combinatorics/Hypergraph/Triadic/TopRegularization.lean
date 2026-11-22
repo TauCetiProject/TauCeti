@@ -227,8 +227,7 @@ theorem exists_topRegularOverMostPolyads [Finite κ] [Fintype κ₂] (S : PairSk
   have hgood := hT.resolve_right fun h ↦ by
     linarith only [h, hK, H.polyadEnergy_nonneg S, H.polyadEnergy_le_one T]
   let C : TriadicComplex3 V := ⟨m, T, univ⟩
-  have hdec : C.IsPolyadDecomposition :=
-    C.isPolyadDecomposition_iff_ofTriple_mem.2 fun _ ↦ mem_univ _
+  have hdec : C.IsPolyadDecomposition := C.isPolyadDecomposition_of_polyads_eq_univ rfl
   refine ⟨C, π, by rw [topRegularRefinementBound_def, ← hKdef]; exact hm, hV, hπ, hrev, rfl, ?_⟩
   have hsum : ∑ P ∈ C.polyads, (#P.support : ℝ) = (Fintype.card V).descFactorial 3 := by
     exact_mod_cast hdec.sum_card_support

@@ -13,9 +13,9 @@ import Mathlib.RingTheory.Finiteness.Finsupp
 # Finite-dimensional eigenspaces of compact operators
 
 This file develops Riesz--Schauder input used for compact perturbations of Fredholm operators. A
-compact operator on a normed space has a finite-dimensional eigenspace at every nonzero scalar.
-More generally, every finite stage of the corresponding generalized eigenspace is finite
-dimensional.
+compact operator on a Hausdorff topological vector space over a complete nontrivially normed field
+has a finite-dimensional eigenspace at every nonzero scalar. More generally, every finite stage of
+the corresponding generalized eigenspace is finite dimensional.
 
 The eigenspace proof restricts the compact operator to its eigenspace, where it is a nonzero
 scalar multiple of the identity. Compactness of that identity forces finite dimensionality. The
@@ -24,14 +24,14 @@ maps stage `n + 1` into stage `n`, and its kernel embeds into the ordinary eigen
 
 Mathlib proves the eigenspace result as
 `ContinuousLinearMap.finite_dimensional_eigenspace` in the setting of complete inner-product
-spaces over `RCLike` fields. The argument used there needs neither an inner product nor completeness
-of the ambient space; the declarations below record it over arbitrary complete nontrivially normed
-fields, the generality required by Fredholm theory.
+spaces over `RCLike` fields. The argument used there needs neither a norm nor completeness of the
+ambient space; the declarations below record it for Hausdorff topological vector spaces over
+arbitrary complete nontrivially normed fields, which covers the Banach spaces of Fredholm theory.
 
 ## Main declarations
 
-* `IsCompactOperator.finiteDimensional_eigenspace`: a nonzero eigenspace of a compact operator is
-  finite dimensional.
+* `IsCompactOperator.finiteDimensional_eigenspace`: the eigenspace of a compact operator at a
+  nonzero scalar is finite dimensional.
 * `IsCompactOperator.finiteDimensional_genEigenspace_nat`: every finite-order generalized
   eigenspace at a nonzero scalar is finite dimensional.
 
@@ -46,13 +46,15 @@ open Module End
 namespace IsCompactOperator
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [T2Space E]
+  [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E]
 variable {T : E →L[𝕜] E} {μ : 𝕜}
 
-/-- A nonzero eigenspace of a compact operator on a normed space is finite dimensional.
+/-- The eigenspace of a compact operator on a Hausdorff topological vector space at a nonzero
+scalar is finite dimensional.
 
 Unlike Mathlib's `ContinuousLinearMap.finite_dimensional_eigenspace`, this needs no inner product
-and works over any complete nontrivially normed field. -/
+or norm on the space and works over any complete nontrivially normed field. -/
 theorem finiteDimensional_eigenspace (hT : IsCompactOperator T)
     (hμ : μ ≠ 0) :
     FiniteDimensional 𝕜 (eigenspace T.toLinearMap μ) := by
@@ -72,9 +74,7 @@ theorem finiteDimensional_genEigenspace_nat (hT : IsCompactOperator T)
   have := hT.finiteDimensional_eigenspace hμ
   induction n with
   | zero =>
-    -- Normalize the coerced induction index to the `ℕ∞` zero used by `genEigenspace_zero`.
-    change FiniteDimensional 𝕜 (genEigenspace T.toLinearMap μ (0 : ℕ∞))
-    rw [genEigenspace_zero]
+    rw [Nat.cast_zero, genEigenspace_zero]
     infer_instance
   | succ n ih =>
     rw [← Submodule.fg_iff_finiteDimensional]

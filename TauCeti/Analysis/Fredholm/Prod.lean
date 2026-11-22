@@ -8,6 +8,9 @@ module
 public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
+public import TauCeti.Analysis.Normed.Lp.ProdLp
+
+import TauCeti.LinearAlgebra.Prod
 
 /-!
 # Products of Fredholm operators
@@ -24,9 +27,15 @@ and cokernels and is provided by `TauCeti.Topology.Algebra.Module.ContinuousLine
 * `ContinuousLinearMap.index_prodMap`: the Fredholm index is additive under products.
 * `ContinuousLinearMap.isFredholm_prodMap_iff`: conversely, a product is Fredholm only if both
   factors are.
+* `ContinuousLinearMap.isFredholm_withLpProdMap_iff`: the same for the block sum on an `L^p`
+  product.
+* `ContinuousLinearMap.isFredholm_inl`: the inclusion of a factor beside a finite-dimensional
+  space is Fredholm.
 -/
 
 public section
+
+open scoped ENNReal
 
 namespace ContinuousLinearMap
 
@@ -50,13 +59,13 @@ lemma IsFredholm.prodMap
   · -- `LinearMap.isStrictMap_prodMap` is stated for the underlying linear maps.
     change Topology.IsStrictMap ⇑((T : E₁ →ₗ[K] F₁).prodMap (S : E₂ →ₗ[K] F₂))
     exact LinearMap.isStrictMap_prodMap hT.isStrictMap hS.isStrictMap
-  · rw [ContinuousLinearMap.coe_prodMap T S, LinearMap.range_prodMap]
+  · rw [coe_prodMap T S, LinearMap.range_prodMap]
     exact hT.isClosed_range.prod hS.isClosed_range
-  · rw [ContinuousLinearMap.coe_prodMap T S, LinearMap.ker_prodMap]
-    exact (Submodule.prodEquiv _ _).symm.finiteDimensional
-  · rw [ContinuousLinearMap.coe_prodMap T S, LinearMap.range_prodMap]
-    exact (Submodule.quotientProdEquiv _ _).symm.finiteDimensional
-  · rw [ContinuousLinearMap.coe_prodMap T S, LinearMap.ker_prodMap]
+  · rw [coe_prodMap T S]
+    infer_instance
+  · rw [coe_prodMap T S]
+    infer_instance
+  · rw [coe_prodMap T S, LinearMap.ker_prodMap]
     obtain ⟨PT, hPT⟩ := hT.closedComplemented_ker
     obtain ⟨PS, hPS⟩ := hS.closedComplemented_ker
     let P : E₁ × E₂ →L[K] E₁ × E₂ :=
@@ -75,10 +84,10 @@ lemma IsFredholm.of_prodMap_left (h : IsFredholm (T.prodMap S)) : IsFredholm T :
   have hker := h.finite_ker
   have hcoker := h.finite_coker
   have hrange := h.isClosed_range
-  rw [coe_prodMap, LinearMap.ker_prodMap] at hker
-  rw [coe_prodMap, LinearMap.range_prodMap] at hcoker hrange
-  have := (Submodule.prodEquiv T.ker S.ker).finiteDimensional
-  have := (Submodule.quotientProdEquiv T.range S.range).finiteDimensional
+  rw [coe_prodMap] at hker hcoker
+  rw [coe_prodMap, LinearMap.range_prodMap] at hrange
+  have := (LinearMap.kerProdMapEquiv (T : E₁ →ₗ[K] F₁) (S : E₂ →ₗ[K] F₂)).finiteDimensional
+  have := (LinearMap.cokerProdMapEquiv (T : E₁ →ₗ[K] F₁) (S : E₂ →ₗ[K] F₂)).finiteDimensional
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · -- `LinearMap.isStrictMap_prodMap_iff` is stated for the underlying linear maps.
     exact (LinearMap.isStrictMap_prodMap_iff (fₗ := (T : E₁ →ₗ[K] F₁))
@@ -91,7 +100,7 @@ lemma IsFredholm.of_prodMap_left (h : IsFredholm (T.prodMap S)) : IsFredholm T :
       LinearMap.fst_surjective
   · obtain ⟨P, hP⟩ := h.closedComplemented_ker
     have hmem (x : E₁) : (P (x, 0) : E₁ × E₂).1 ∈ T.ker :=
-      congr($(LinearMap.mem_ker.mp (P (x, 0)).2).1)
+      congr($(LinearMap.mem_ker.mp (P (x, 0)).property).1)
     refine ⟨((fst K E₁ E₂).comp ((Submodule.subtypeL _).comp (P.comp (inl K E₁ E₂)))).codRestrict
       _ hmem, fun x ↦ Subtype.ext ?_⟩
     have hx : ((x : E₁), (0 : E₂)) ∈ (T.prodMap S : E₁ × E₂ →ₗ[K] F₁ × F₂).ker := by
@@ -112,5 +121,30 @@ lemma IsFredholm.of_prodMap_right (h : IsFredholm (T.prodMap S)) : IsFredholm S 
 @[simp]
 lemma isFredholm_prodMap_iff : IsFredholm (T.prodMap S) ↔ IsFredholm T ∧ IsFredholm S :=
   ⟨fun h ↦ ⟨h.of_prodMap_left, h.of_prodMap_right⟩, fun h ↦ h.1.prodMap h.2⟩
+
+/-- An `L^p` block sum of operators is Fredholm if and only if both blocks are. -/
+@[simp]
+lemma isFredholm_withLpProdMap_iff {p : ℝ≥0∞} :
+    IsFredholm (T.withLpProdMap p S) ↔ IsFredholm T ∧ IsFredholm S := by
+  rw [isFredholm_iff_of_comp_eq (S := T.prodMap S) (WithLp.prodContinuousLinearEquiv p K E₁ E₂)
+    (WithLp.prodContinuousLinearEquiv p K F₁ F₂) (by ext x <;> simp), isFredholm_prodMap_iff]
+
+section Inclusion
+
+variable (F₁ F₂) [T1Space F₂] [FiniteDimensional K F₂]
+
+/-- The inclusion `y ↦ (y, 0)` of `F₁` into `F₁ × F₂` is Fredholm when `F₂` is finite
+dimensional. -/
+lemma isFredholm_inl : IsFredholm (inl K F₁ F₂) := by
+  refine Topology.IsClosedEmbedding.isFredholm ⟨isEmbedding_prodMkLeft 0, ?_⟩ ?_
+  · have : Set.range (inl K F₁ F₂) = Prod.snd ⁻¹' {0} := by
+      ext ⟨y, g⟩
+      simp [eq_comm]
+    rw [this]
+    exact isClosed_singleton.preimage continuous_snd
+  · rw [coe_inl, LinearMap.range_inl]
+    exact Submodule.CoFG.ker _
+
+end Inclusion
 
 end ContinuousLinearMap

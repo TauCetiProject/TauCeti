@@ -52,10 +52,13 @@ strict isomorphism `FormalGroup.logIso` from `Ê` to the additive formal group l
   `w`-equation identifies the tangent slope through the same denominator.
 * `WeierstrassCurve.inv_evalEval_polynomialY_smul_derivation_div`: for any derivation `D` on a
   field and any solution `(q, w)` of the `w`-equation, `(2y + a₁x + a₃)⁻¹ • D x` at the point
-  `(x, y) = (q / w, -1 / w)` is `D q` scaled by the inverse of the denominator at `(q, w)`. This is
-  the change of coordinates from `(x, y)` to `(z, w)` in `ω`.
-* `WeierstrassCurve.inv_mul_derivation_div_subst_formalW`: over a domain with `2 ≠ 0`, the same
-  identity at the point with a series parameter `q`, read in a fraction field of the series ring.
+  `(x, y) = (q / w, -1 / w)` is `D q` scaled by the inverse of the denominator at `(q, w)`. Division
+  is the totalized division of a field, so this is an identity for every `(q, w)`, including
+  `w = 0`; for `w ≠ 0` it is the change of coordinates from `(x, y)` to `(z, w)` in `ω`.
+* `WeierstrassCurve.inv_smul_derivation_div_subst_formalW_of_neg_two_add_ne_zero` and
+  `WeierstrassCurve.inv_mul_derivation_div_subst_formalW`: the same identity with a series parameter
+  `q` (totalized division, so also for `q = 0`) under `-2 + a₁q + a₃w(q) ≠ 0`, and in particular
+  over a ring with `2 ≠ 0` in a fraction field of the series ring.
 * `WeierstrassCurve.invariantDifferential_formalGroup_mul_formalInvariantDifferentialDenom`: the
   invariant differential of `Ê` times the denominator is `1`.
 * `WeierstrassCurve.subst_pderiv_formalGroup`: `F_X(0, T)` is the denominator.
@@ -179,14 +182,15 @@ theorem coeff_two_formalInvariantDifferentialDenom :
 /-! ### The invariant differential in the coordinates `(z, w)` -/
 
 /-- **The invariant differential in the coordinates `z = -x / y`, `w = -1 / y`.** Let `D` be a
-derivation over `R` on a field `K`, and let `(q, w)` solve the `w`-equation of `W` with `w ≠ 0`, so
-that `(x, y) = (q / w, -1 / w)` is a point of `W⁄K`. If `2y + a₁x + a₃` and the denominator
+derivation over `R` on a field `K`, and let `(q, w)` solve the `w`-equation of `W`, so that
+`(x, y) = (q / w, -1 / w)` is a point of `W⁄K` when `w ≠ 0`. If `2y + a₁x + a₃` and the denominator
 `1 - a₁q - a₂q² - 2a₃w - 2a₄qw - 3a₆w²` do not vanish, then
 `(2y + a₁x + a₃)⁻¹ • D x = (1 - a₁q - a₂q² - 2a₃w - 2a₄qw - 3a₆w²)⁻¹ • D q`. The hypothesis on
-`2y + a₁x + a₃` is stated in the cleared form `-2 + a₁q + a₃w ≠ 0`. -/
+`2y + a₁x + a₃` is stated in the cleared form `-2 + a₁q + a₃w ≠ 0`, which is equivalent to it
+when `w ≠ 0`. -/
 theorem inv_evalEval_polynomialY_smul_derivation_div {K M : Type*} [Field K] [Algebra R K]
     [AddCommGroup M] [Module R M] [Module K M]
-    (D : Derivation R K M) {q w : K} (hw : w ≠ 0) (heq : w = wEquationRHS W q w)
+    (D : Derivation R K M) {q w : K} (heq : w = wEquationRHS W q w)
     (hG : 1 - algebraMap R K W.a₁ * q - algebraMap R K W.a₂ * q ^ 2 -
       2 * algebraMap R K W.a₃ * w - 2 * algebraMap R K W.a₄ * (q * w) -
       3 * algebraMap R K W.a₆ * w ^ 2 ≠ 0)
@@ -196,6 +200,10 @@ theorem inv_evalEval_polynomialY_smul_derivation_div {K M : Type*} [Field K] [Al
         2 * algebraMap R K W.a₃ * w - 2 * algebraMap R K W.a₄ * (q * w) -
         3 * algebraMap R K W.a₆ * w ^ 2)⁻¹ • D q := by
   rw [wEquationRHS_def] at heq
+  by_cases hw : w = 0
+  · subst hw
+    obtain rfl : q = 0 := pow_eq_zero_iff (n := 3) (by norm_num) |>.1 (by simpa using heq.symm)
+    simp
   have hd := congrArg D heq
   have hD (r : R) : D (algebraMap R K r) = 0 := D.map_algebraMap r
   rw [Affine.evalEval_polynomialY, D.leibniz_div]
@@ -234,15 +242,19 @@ variable {σ KK : Type*} [Field KK] [Algebra R KK] [Algebra (MvPowerSeries σ R)
   [IsScalarTower R (MvPowerSeries σ R) KK]
 
 omit [Algebra R KK] [IsScalarTower R (MvPowerSeries σ R) KK] in
-/-- The denominator at a parameter `q` has constant coefficient `1`, so it does not vanish. -/
-private theorem algebraMap_subst_formalInvariantDifferentialDenom_ne_zero [IsDomain R]
-    [IsFractionRing (MvPowerSeries σ R) KK] {q : MvPowerSeries σ R} (hq : constantCoeff q = 0) :
+/-- The denominator at a parameter `q` has constant coefficient `1`, so it is a unit and its image
+in `KK` does not vanish. -/
+private theorem algebraMap_subst_formalInvariantDifferentialDenom_ne_zero
+    {q : MvPowerSeries σ R} (hq : constantCoeff q = 0) :
     algebraMap (MvPowerSeries σ R) KK
       (PowerSeries.subst q W.formalInvariantDifferentialDenom) ≠ 0 := by
-  refine (map_ne_zero_iff _ (IsFractionRing.injective (MvPowerSeries σ R) KK)).2 fun h ↦ ?_
-  have := congrArg constantCoeff h
-  rw [PowerSeries.constantCoeff_subst_of_constantCoeff_zero hq] at this
-  simp at this
+  have hmul : PowerSeries.subst q W.formalInvariantDifferentialDenom *
+      PowerSeries.subst q (PowerSeries.invOfUnit W.formalInvariantDifferentialDenom 1) = 1 := by
+    rw [← PowerSeries.subst_mul (.of_constantCoeff_zero hq),
+      PowerSeries.mul_invOfUnit _ _ W.constantCoeff_formalInvariantDifferentialDenom,
+      ← PowerSeries.coe_substAlgHom (.of_constantCoeff_zero hq), map_one]
+  exact left_ne_zero_of_mul_eq_one
+    (by simpa only [map_mul, map_one] using congrArg (algebraMap (MvPowerSeries σ R) KK) hmul)
 
 /-- The denominator at a parameter `q`, written out in `KK`. -/
 private theorem algebraMap_subst_formalInvariantDifferentialDenom {q : MvPowerSeries σ R}
@@ -284,13 +296,38 @@ private theorem algebraMap_subst_formalW_eq_wEquationRHS {q : MvPowerSeries σ R
   rw [← algebraMap_wEquationRHS,
     ← subst_formalW_wEquation _ (PowerSeries.HasSubst.of_constantCoeff_zero hq)]
 
-/-- **The invariant differential at a point with a series parameter.** Over a domain `R` in which
-`2 ≠ 0`, at the point `(x, y) = (q / w(q), -1 / w(q))` with parameter `q ≠ 0`, every derivation
-`D` satisfies `(2y + a₁x + a₃)⁻¹ · D x = G(q)⁻¹ · D q`, where
+/-- **The invariant differential at a point with a series parameter** under explicit non-vanishing
+of `-2 + a₁q + a₃w(q)` (covering characteristic `2` as well). Put `(x, y) = (q / w(q), -1 / w(q))`
+in `KK` with totalized division; every `R`-derivation `D : Derivation R KK M` satisfies
+`(2y + a₁x + a₃)⁻¹ • D x = G(q)⁻¹ • D q`, where `G` is `formalInvariantDifferentialDenom`. -/
+theorem inv_smul_derivation_div_subst_formalW_of_neg_two_add_ne_zero
+    {M : Type*} [AddCommGroup M] [Module R M] [Module KK M]
+    (D : Derivation R KK M) {q : MvPowerSeries σ R} (hq : constantCoeff q = 0)
+    (hu : -2 + algebraMap R KK W.a₁ * algebraMap (MvPowerSeries σ R) KK q +
+      algebraMap R KK W.a₃ *
+        algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)) ≠ 0) :
+    ((W⁄KK).toAffine.polynomialY.evalEval
+        (algebraMap (MvPowerSeries σ R) KK q /
+          algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)))
+        (-1 / algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W))))⁻¹ •
+        D (algebraMap (MvPowerSeries σ R) KK q /
+          algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W))) =
+      (algebraMap (MvPowerSeries σ R) KK
+        (PowerSeries.subst q W.formalInvariantDifferentialDenom))⁻¹ •
+        D (algebraMap (MvPowerSeries σ R) KK q) := by
+  have hG0 := W.algebraMap_subst_formalInvariantDifferentialDenom_ne_zero (KK := KK) hq
+  rw [W.algebraMap_subst_formalInvariantDifferentialDenom hq] at hG0 ⊢
+  exact W.inv_evalEval_polynomialY_smul_derivation_div D
+    (W.algebraMap_subst_formalW_eq_wEquationRHS hq) hG0 hu
+
+/-- **The invariant differential at a point with a series parameter.** Over a ring `R` in which
+`2 ≠ 0`, put `(x, y) = (q / w(q), -1 / w(q))` for the parameter `q`, with totalized division
+(this is an affine point exactly when `q ≠ 0`; the identity also holds for `q = 0`). Every
+derivation `D` satisfies `(2y + a₁x + a₃)⁻¹ · D x = G(q)⁻¹ · D q`, where
 `G = 1 - a₁z - a₂z² - 2a₃w - 2a₄zw - 3a₆w²` is `formalInvariantDifferentialDenom`. -/
-theorem inv_mul_derivation_div_subst_formalW [IsDomain R] [IsFractionRing (MvPowerSeries σ R) KK]
+theorem inv_mul_derivation_div_subst_formalW [IsFractionRing (MvPowerSeries σ R) KK]
     (h2 : (2 : R) ≠ 0) (D : Derivation R KK KK)
-    {q : MvPowerSeries σ R} (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
+    {q : MvPowerSeries σ R} (hq : constantCoeff q = 0) :
     ((W⁄KK).toAffine.polynomialY.evalEval
         (algebraMap (MvPowerSeries σ R) KK q /
           algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)))
@@ -300,12 +337,9 @@ theorem inv_mul_derivation_div_subst_formalW [IsDomain R] [IsFractionRing (MvPow
       (algebraMap (MvPowerSeries σ R) KK
         (PowerSeries.subst q W.formalInvariantDifferentialDenom))⁻¹ *
         D (algebraMap (MvPowerSeries σ R) KK q) := by
-  have hG0 := W.algebraMap_subst_formalInvariantDifferentialDenom_ne_zero (KK := KK) hq
-  rw [W.algebraMap_subst_formalInvariantDifferentialDenom hq] at hG0 ⊢
   simpa only [smul_eq_mul] using
-    W.inv_evalEval_polynomialY_smul_derivation_div D
-    (W.algebraMap_subst_formalW_ne_zero hq hq0)
-    (W.algebraMap_subst_formalW_eq_wEquationRHS hq) hG0 (W.neg_two_add_ne_zero h2 hq)
+    W.inv_smul_derivation_div_subst_formalW_of_neg_two_add_ne_zero D hq
+      (W.neg_two_add_ne_zero h2 hq)
 
 end SeriesParameter
 
@@ -417,9 +451,9 @@ private theorem pderiv_mul_subst_formalInvariantDifferentialDenom_universal :
     (fun _ ↦ hQx ▸ hQy ▸ evalEval_polynomialY_div_ne_zero hc₁ h₁)
     (e ▸ hSx ▸ hSy ▸ evalEval_polynomialY_div_ne_zero hFc hF0)
   rw [e, hPx, hPy, hQx, hQy, hSx, hSy, smul_eq_mul, smul_eq_mul, smul_eq_mul,
-    Universal.curve.inv_mul_derivation_div_subst_formalW two_ne_zero D hc₀ h₀,
-    Universal.curve.inv_mul_derivation_div_subst_formalW two_ne_zero D hc₁ h₁,
-    Universal.curve.inv_mul_derivation_div_subst_formalW two_ne_zero D hFc hF0] at key
+    Universal.curve.inv_mul_derivation_div_subst_formalW two_ne_zero D hc₀,
+    Universal.curve.inv_mul_derivation_div_subst_formalW two_ne_zero D hc₁,
+    Universal.curve.inv_mul_derivation_div_subst_formalW two_ne_zero D hFc] at key
   simp only [hD, pderiv_X_self, pderiv_X_of_ne (show (1 : Fin 2) ≠ 0 by simp), map_one,
     _root_.map_zero, mul_one, mul_zero, add_zero] at key
   apply IsFractionRing.injective UnivSeries UnivField

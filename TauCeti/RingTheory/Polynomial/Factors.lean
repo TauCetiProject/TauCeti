@@ -14,6 +14,7 @@ import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.PrincipalIdealDomain
+import TauCeti.RingTheory.UniqueFactorizationDomain.NormalizedFactors
 
 /-!
 # The monic irreducible factors of a polynomial over a field
@@ -46,8 +47,6 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
 * `Polynomial.Factors.isCoprime`: distinct factors are coprime.
 * `Polynomial.Factors.span_eq_iInf_span`: for `f` nonzero and squarefree,
   `(f) = ⨅ p, (p)`.
-* `Polynomial.sum_natDegree_normalizedFactors`: the degrees of the normalized irreducible
-  factors, counted with multiplicity, sum to the degree.
 * `Polynomial.map_natDegree_normalizedFactors_eq_singleton_iff`: those degrees form a singleton
   exactly when the polynomial is irreducible.
 * `Polynomial.count_one_map_natDegree_normalizedFactors`: a nonzero squarefree polynomial has as
@@ -80,11 +79,11 @@ abbrev Factors (f : K[X]) : Type _ := {p : K[X] // Irreducible p ∧ p.Monic ∧
 
 namespace Factors
 
-lemma irreducible (p : f.Factors) : Irreducible (p : K[X]) := p.2.1
+lemma irreducible (p : f.Factors) : Irreducible (p : K[X]) := p.property.1
 
-lemma monic (p : f.Factors) : (p : K[X]).Monic := p.2.2.1
+lemma monic (p : f.Factors) : (p : K[X]).Monic := p.property.2.1
 
-lemma dvd (p : f.Factors) : (p : K[X]) ∣ f := p.2.2.2
+lemma dvd (p : f.Factors) : (p : K[X]) ∣ f := p.property.2.2
 
 lemma ne_zero (p : f.Factors) : (p : K[X]) ≠ 0 := p.irreducible.ne_zero
 
@@ -111,7 +110,7 @@ lemma normalizedFactors_eq_map_univ_val [Fintype f.Factors] [DecidableEq K]
     ((UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors hf).1 hsq)
     (Finset.univ.nodup.map Subtype.val_injective)).2 fun p => ?_
   rw [Polynomial.mem_normalizedFactors_iff hf, Multiset.mem_map]
-  exact ⟨fun hp => ⟨⟨p, hp⟩, Finset.mem_univ _, rfl⟩, fun ⟨q, _, hq⟩ => hq ▸ q.2⟩
+  exact ⟨fun hp => ⟨⟨p, hp⟩, Finset.mem_univ _, rfl⟩, fun ⟨q, _, hq⟩ => hq ▸ q.property⟩
 
 /-- The zero polynomial has infinitely many distinct monic irreducible factors, since every monic
 irreducible polynomial divides it. -/
@@ -149,17 +148,11 @@ lemma subsingleton_iff_exists_associated_pow :
     Subsingleton f.Factors ↔ ∃ q : K[X], Irreducible q ∧ ∃ n : ℕ, Associated (q ^ n) f := by
   classical
   by_cases hf : f = 0
-  · subst f
-    constructor
-    · intro h
-      let x : (0 : K[X]).Factors := ⟨X, irreducible_X, monic_X, dvd_zero X⟩
-      let y : (0 : K[X]).Factors :=
-        ⟨X - C 1, irreducible_X_sub_C 1, monic_X_sub_C 1, dvd_zero (X - C 1)⟩
-      have hxy : (x : K[X]) = y := congrArg Subtype.val (h.elim x y)
-      have := congrArg (coeff · 0) hxy
-      simp [x, y] at this
-    · rintro ⟨q, hq, n, hq0⟩
-      exact ((pow_ne_zero n hq.ne_zero) (hq0.eq_zero_iff.mpr rfl)).elim
+  · -- Both sides fail: `0` has infinitely many factors and is not associated to a power of an
+    -- irreducible polynomial.
+    subst f
+    exact iff_of_false (not_subsingleton _) fun ⟨q, hq, n, hq0⟩ ↦
+      pow_ne_zero n hq.ne_zero (hq0.eq_zero_iff.mpr rfl)
   refine ⟨fun h ↦ ?_, fun ⟨q, hq, n, hqf⟩ ↦ ⟨fun a b ↦ Subtype.ext ?_⟩⟩
   · by_cases hu : IsUnit f
     · exact ⟨X, irreducible_X, 0, by rw [pow_zero]; exact (associated_one_iff_isUnit.mpr hu).symm⟩
@@ -178,23 +171,13 @@ noncomputable def linearEquivRoots :
     {p : f.Factors // (p : K[X]).natDegree = 1} ≃ {x : K // f.eval x = 0} where
   toFun p := ⟨-((p : f.Factors) : K[X]).coeff 0,
     eval_eq_zero_of_dvd_of_eval_eq_zero (p : f.Factors).dvd <| by
-      conv_lhs => rw [(p : f.Factors).monic.eq_X_add_C p.2]
+      conv_lhs => rw [(p : f.Factors).monic.eq_X_add_C p.property]
       simp⟩
   invFun x := ⟨⟨X - C (x : K), irreducible_X_sub_C _, monic_X_sub_C _,
-    dvd_iff_isRoot.mpr x.2⟩, natDegree_X_sub_C _⟩
-  left_inv p := by
-    refine Subtype.ext (Subtype.ext ?_)
-    -- `invFun (toFun p)` is the monic linear polynomial with the recorded root; the `change`
-    -- only replaces it by that polynomial, which is how `invFun` is defined.
-    change X - C (-((p : f.Factors) : K[X]).coeff 0) = _
-    conv_rhs => rw [(p : f.Factors).monic.eq_X_add_C p.2]
-    rw [map_neg, sub_neg_eq_add]
-  right_inv x := by
-    refine Subtype.ext ?_
-    -- likewise `toFun (invFun x)` is by definition the negated constant coefficient of
-    -- `X - C x`, which is what the `change` displays.
-    change -(X - C (x : K)).coeff 0 = _
-    simp
+    dvd_iff_isRoot.mpr x.property⟩, natDegree_X_sub_C _⟩
+  left_inv p := Subtype.ext <| Subtype.ext <| by
+    simpa using ((p : f.Factors).monic.eq_X_add_C p.property).symm
+  right_inv x := Subtype.ext <| by simp
 
 /-- `linearEquivRoots` sends a monic linear factor to the root it records, the negated constant
 coefficient. -/
@@ -209,16 +192,12 @@ lemma linearEquivRoots_symm_apply (x : {x : K // f.eval x = 0}) :
     ((linearEquivRoots.symm x : f.Factors) : K[X]) = X - C (x : K) :=
   (rfl)
 
-/-- Distinct monic irreducible factors of `f` are coprime: each spans a maximal ideal, and the
-two ideals differ because a monic polynomial is determined by the ideal it spans. -/
+/-- Distinct monic irreducible factors of `f` are coprime. -/
 lemma isCoprime {p q : f.Factors} (hne : p ≠ q) : IsCoprime (p : K[X]) (q : K[X]) :=
-  (Ideal.isCoprime_span_singleton_iff _ _).mp <| Ideal.isCoprime_iff_sup_eq.mpr <|
-    Ideal.IsMaximal.coprime_of_ne
-      (PrincipalIdealRing.isMaximal_of_irreducible p.irreducible)
-      (PrincipalIdealRing.isMaximal_of_irreducible q.irreducible)
-      fun h ↦ hne <| Subtype.ext <| eq_of_monic_of_associated p.monic q.monic <|
-        Ideal.span_singleton_eq_span_singleton.mp h
+  p.irreducible.coprime_iff_not_dvd.mpr fun h ↦ hne <| Subtype.ext <|
+    eq_of_monic_of_associated p.monic q.monic (p.irreducible.associated_of_dvd q.irreducible h)
 
+/-- Distinct monic irreducible factors of `f` span coprime ideals. -/
 lemma isCoprime_span {p q : f.Factors} (hne : p ≠ q) :
     IsCoprime (Ideal.span {(p : K[X])}) (Ideal.span {(q : K[X])}) :=
   (Ideal.isCoprime_span_singleton_iff _ _).mpr (isCoprime hne)
@@ -231,13 +210,14 @@ lemma associated_prod [Fintype f.Factors] (hsq : Squarefree f) :
   rw [Finset.prod_eq_multiset_prod, ← normalizedFactors_eq_map_univ_val hsq]
   exact prod_normalizedFactors hsq.ne_zero
 
-/-- The degrees of the distinct monic irreducible factors of `f ≠ 0` sum to at most the
-degree of `f`. -/
-lemma sum_natDegree_le [Fintype f.Factors] (hf : f ≠ 0) :
+/-- The degrees of the distinct monic irreducible factors of `f` sum to at most the degree of
+`f`. The `Fintype` instance forces `f ≠ 0`, by `finite_iff`. -/
+lemma sum_natDegree_le [Fintype f.Factors] :
     ∑ p : f.Factors, (p : K[X]).natDegree ≤ f.natDegree := by
   rw [← natDegree_prod _ _ fun p _ ↦ p.ne_zero]
   exact natDegree_le_of_dvd
-    (Fintype.prod_dvd_of_coprime (fun p q hpq ↦ isCoprime hpq) fun p ↦ p.dvd) hf
+    (Fintype.prod_dvd_of_coprime (fun p q hpq ↦ isCoprime hpq) fun p ↦ p.dvd)
+    (finite_iff.mp inferInstance)
 
 /-- For `f` nonzero and squarefree, the ideal `(f)` is the intersection of the ideals `(p)` over
 the monic irreducible factors `p` of `f`. This is the input for the Chinese Remainder
@@ -275,32 +255,12 @@ the cost of forgetting multiplicities. The lemmas below are the counterparts for
 
 variable [DecidableEq K]
 
-/-- The degrees of the normalized irreducible factors of a polynomial over a field, counted with
-multiplicity, sum to its degree. -/
-lemma sum_natDegree_normalizedFactors (g : K[X]) :
-    ((normalizedFactors g).map natDegree).sum = g.natDegree := by
-  by_cases hg : g = 0
-  · simp [hg]
-  · rw [← natDegree_multiset_prod _ (zero_notMem_normalizedFactors g)]
-    exact natDegree_eq_of_degree_eq (degree_eq_degree_of_associated (prod_normalizedFactors hg))
-
-/-- A polynomial over a field with exactly one normalized irreducible factor, counted with
-multiplicity, is irreducible. -/
-lemma irreducible_of_card_normalizedFactors_eq_one {g : K[X]}
-    (h : (normalizedFactors g).card = 1) : Irreducible g := by
-  obtain ⟨q, hq⟩ := Multiset.card_eq_one.mp h
-  have hg : g ≠ 0 := by rintro rfl; simp at h
-  have hprod := prod_normalizedFactors hg
-  rw [hq, Multiset.prod_singleton] at hprod
-  exact hprod.irreducible
-    (irreducible_of_normalized_factor q (hq ▸ Multiset.mem_singleton_self q))
-
 /-- The degrees of the normalized irreducible factors of a polynomial over a field form the
 singleton `{g.natDegree}` exactly when the polynomial is irreducible. -/
 @[simp]
 lemma map_natDegree_normalizedFactors_eq_singleton_iff {g : K[X]} :
     (normalizedFactors g).map natDegree = {g.natDegree} ↔ Irreducible g := by
-  refine ⟨fun h ↦ irreducible_of_card_normalizedFactors_eq_one ?_, fun h ↦ ?_⟩
+  refine ⟨fun h ↦ card_normalizedFactors_eq_one_iff.mp ?_, fun h ↦ ?_⟩
   · simpa using congrArg Multiset.card h
   · rw [normalizedFactors_irreducible h, Multiset.map_singleton, natDegree_normalize]
 
@@ -314,11 +274,11 @@ lemma count_one_map_natDegree_normalizedFactors {g : K[X]} (hsq : Squarefree g) 
   let _ : Fintype g.Factors := Fintype.ofFinite _
   -- Squarefreeness lists the normalized factors as the distinct factors `g.Factors`; the linear
   -- ones correspond to the roots through `Factors.linearEquivRoots`.
-  rw [Multiset.count_map, Factors.normalizedFactors_eq_map_univ_val hsq, Multiset.filter_map,
-    Multiset.card_map, ← Finset.filter_val, Finset.card_val]
-  simp only [Function.comp_apply, eq_comm (a := 1)]
-  rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card,
-    Nat.card_congr Factors.linearEquivRoots, ← Nat.card_eq_finsetCard]
+  have hlin : ((normalizedFactors g).map natDegree).count 1 =
+      Nat.card {p : g.Factors // (p : K[X]).natDegree = 1} := by
+    simp [Multiset.count_map, Factors.normalizedFactors_eq_map_univ_val hsq, eq_comm (a := 1),
+      Fintype.card_subtype, Finset.card_def]
+  rw [hlin, Nat.card_congr Factors.linearEquivRoots, ← Nat.card_eq_finsetCard]
   exact Nat.card_congr (Equiv.subtypeEquivRight fun x ↦ by simp [hg])
 
 /-- The product of a duplicate-free multiset of monic irreducible polynomials is monic and

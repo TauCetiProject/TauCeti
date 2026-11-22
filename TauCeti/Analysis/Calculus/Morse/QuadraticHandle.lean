@@ -5,10 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Topology.Homeomorph.Lemmas
+import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Milnor's handle in the quadratic model is a product of discs
@@ -47,6 +53,12 @@ exactly on the core `v = 0` (`TauCeti.quadraticHandleMap_snd_eq_zero_iff`).
 The cutoff is assumed continuous, nonincreasing, larger than `ε` at `ε`, and positive exactly on
 `(-∞, 2ε)`; the last condition makes the handle end where the cutoff does.
 
+The file also records the one-variable step of Milnor's proof that the lowered model has no
+critical points off the core: along the curve scaling `v` by `t`, the lowered function is
+`t ↦ C + t²‖v‖² - μ(a + 2t²‖v‖²)`, and for a nonincreasing cutoff `μ` its derivative
+`2‖v‖²(1 - 2μ')` at `t = 1` vanishes only if `v = 0`
+(`TauCeti.eq_zero_of_hasDerivAt_add_sq_mul_sub_comp`).
+
 ## Main declarations
 
 * `TauCeti.quadraticHandle`: Milnor's handle in the quadratic model.
@@ -54,6 +66,8 @@ The cutoff is assumed continuous, nonincreasing, larger than `ε` at `ε`, and p
 * `TauCeti.bijOn_quadraticHandleMap`: the rescaling maps the handle bijectively onto the product
   of the closed unit balls.
 * `TauCeti.quadraticHandleHomeomorph`: the homeomorphism of the handle with `D^λ × D^(m-λ)`.
+* `TauCeti.eq_zero_of_hasDerivAt_add_sq_mul_sub_comp`: the one-variable step of Milnor's
+  critical-point argument.
 
 ## References
 
@@ -99,6 +113,22 @@ theorem mem_quadraticHandle_or_eq_of_le (hμ₀ : ∀ r, 2 * ε ≤ r → μ r =
   · rw [hμ₀ _ (not_le.1 h₃).le, sub_zero] at h₂
     exact .inr (le_antisymm h₂ h₁)
 
+open Filter Topology in
+/-- **The one-variable step of Milnor's argument.** Along the curve scaling the positive
+coordinates by `t`, Milnor's function is `t ↦ C + t² b - μ(a + 2t² b)` near `t = 1`. If its
+derivative at `1`, which is `2b(1 - 2μ'(a + 2b))`, vanishes for a nonincreasing differentiable
+cutoff `μ`, then `b = 0`. -/
+theorem eq_zero_of_hasDerivAt_add_sq_mul_sub_comp (hμ : Differentiable ℝ μ)
+    (hμa : Antitone μ) {h : ℝ → ℝ} {a b C : ℝ}
+    (heq : h =ᶠ[𝓝 1] fun t ↦ C + t ^ 2 * b - μ (a + 2 * (t ^ 2 * b))) (hd : HasDerivAt h 0 1) :
+    b = 0 := by
+  have hq := (hasDerivAt_pow 2 (1 : ℝ)).mul_const b
+  have hg := (hq.const_add C).sub ((hμ _).hasDerivAt.comp 1 ((hq.const_mul 2).const_add a))
+  have hval := (hg.congr_of_eventuallyEq heq).unique hd
+  have h : b * (2 - 4 * deriv μ (a + 2 * (1 ^ 2 * b))) = 0 := by linear_combination hval
+  have := hμa.deriv_nonpos (x := a + 2 * (1 ^ 2 * b))
+  exact (mul_eq_zero.1 h).resolve_right (by linarith)
+
 variable [NormedSpace ℝ Eᵤ] [NormedSpace ℝ Eₛ]
 
 /-- The rescaling `(u, v) ↦ ((‖v‖² + ε)^(-1/2) • u, (‖u‖² + μ(‖u‖² + 2‖v‖²) - ε)^(-1/2) • v)`
@@ -111,16 +141,6 @@ theorem quadraticHandleMap_apply (z : Eᵤ × Eₛ) :
     quadraticHandleMap ε μ z = ((√(‖z.2‖ ^ 2 + ε))⁻¹ • z.1,
       (√(‖z.1‖ ^ 2 + μ (‖z.1‖ ^ 2 + 2 * ‖z.2‖ ^ 2) - ε))⁻¹ • z.2) :=
   (rfl)
-
-/-- The squared norm of a vector scaled by the square root of `a ≥ 0` is multiplied by `a`. -/
-private theorem norm_sqrt_smul_sq {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {a : ℝ}
-    (ha : 0 ≤ a) (x : F) : ‖√a • x‖ ^ 2 = a * ‖x‖ ^ 2 := by
-  simp [norm_smul, mul_pow, Real.sq_sqrt ha]
-
-/-- The squared norm of a vector scaled by the inverse square root of `a ≥ 0` is divided by `a`. -/
-private theorem norm_inv_sqrt_smul_sq {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {a : ℝ} (ha : 0 ≤ a) (x : F) : ‖(√a)⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 / a := by
-  simp [norm_smul, mul_pow, Real.sq_sqrt ha, div_eq_inv_mul]
 
 /-! ### The handle in the coordinates `s = ‖u‖²`, `t = ‖v‖²`
 
@@ -238,7 +258,6 @@ private theorem exists_div_eq (hε : 0 < ε) (hμ : Continuous μ) (hμ₀ : ∀
     nlinarith
   obtain ⟨t₀, ⟨ht₀0, ht₀T⟩, ht₀⟩ :=
     intermediate_value_Icc' hT0 hcont.continuousOn ⟨hT, h0.le⟩
-  have ht₀pos : 0 < t₀ := ht₀0.lt_of_ne (by rintro rfl; linarith)
   -- Along `[0, t₀]` the second coordinate runs continuously from `0` to `1`.
   have hden (t : ℝ) (ht : t ∈ Icc 0 t₀) : 0 < σ * (t + ε) + μ (σ * (t + ε) + 2 * t) - ε := by
     have hle : h t₀ ≤ h t := hanti ht.2

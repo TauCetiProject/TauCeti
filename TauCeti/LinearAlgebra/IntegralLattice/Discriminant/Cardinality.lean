@@ -47,8 +47,6 @@ Gram matrix of `b`: the coefficient of `b j` along the dual vector indexed by `i
 ## References
 
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md` (Layer 2).
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean`.
 -/
 
 public section
@@ -132,7 +130,7 @@ theorem inv_smul_mem_carrier_of_forall_dvd (L : IntegralLattice V) {p : ℕ}
   have hpx : p • x = 0 := by
     rw [← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff,
       Submodule.coe_smul_of_tower, ← Nat.cast_smul_eq_nsmul ℚ]
-    simpa only [smul_smul, mul_inv_cancel₀ hp₀, one_smul] using v.2
+    simpa only [smul_smul, mul_inv_cancel₀ hp₀, one_smul] using v.property
   have horder : addOrderOf x = 1 := Nat.eq_one_of_dvd_coprimes hp
     (addOrderOf_dvd_of_nsmul_eq_zero hpx)
     ((addOrderOf_dvd_natCard x).trans (L.natCard_discriminantGroup).dvd)
@@ -218,7 +216,7 @@ theorem exists_mem_dualCarrier_eq_nsmul (hn : ∀ x : L.DiscriminantGroup, n •
     ((L.mem_carrierInDual_iff ⟨x, L.le_dualCarrier hx⟩).mpr hx))
   have hy' := congrArg Subtype.val hy
   rw [nsmulAddMonoidHom_apply, Submodule.coe_smul_of_tower] at hy'
-  exact ⟨y, y.2, hy'.symm⟩
+  exact ⟨y, y.property, hy'.symm⟩
 
 end Torsion
 

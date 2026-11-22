@@ -21,6 +21,7 @@ over these vectors is `choose (N + card s - 1) (k + card s - 1)`.
 
 The first two binomial moments, stated with denominators cleared, give the mean exponent
 `N / card s` and the mean `choose (f i) 2`, namely `N (N - 1) / (card s (card s + 1))`.
+The second raw moment is `N (2 N + card s - 1) / (card s (card s + 1))`.
 These exact finite counts are the inputs to exponential-moment estimates for
 multihomogeneous auxiliary polynomials; in particular no limiting distribution is needed
 to estimate their tails.
@@ -109,5 +110,35 @@ theorem card_mul_card_add_one_mul_sum_finsuppAntidiag_choose_two
   rw [Nat.add_sub_cancel_right] at h₁
   rw [hsub] at h₂
   nlinarith [congrArg (fun x ↦ x * (N - 1)) h₁, congrArg (fun x ↦ x * (m + 1)) h₂]
+
+/-- The second raw moment of an exponent of a uniformly counted degree-`N` monomial,
+with denominators cleared. Together with the mean this controls quadratic exponential bounds. -/
+theorem card_mul_card_add_one_mul_sum_finsuppAntidiag_sq
+    {s : Finset ι} {i : ι} (hi : i ∈ s) (N : ℕ) :
+    s.card * (s.card + 1) * (∑ f ∈ finsuppAntidiag s N, (f i) ^ 2) =
+      N * (2 * N + s.card - 1) * (finsuppAntidiag s N).card := by
+  have hpoint (n : ℕ) : n ^ 2 = 2 * n.choose 2 + n := by
+    have h := Nat.choose_succ_right_eq n 1
+    simp only [Nat.choose_one_right] at h
+    cases n with
+    | zero => simp
+    | succ n => simp only [Nat.add_sub_cancel] at h; nlinarith only [h]
+  calc
+    _ = 2 * (s.card * (s.card + 1) * ∑ f ∈ finsuppAntidiag s N, (f i).choose 2) +
+        (s.card + 1) * (s.card * ∑ f ∈ finsuppAntidiag s N, f i) := by
+      simp_rw [hpoint, sum_add_distrib, ← mul_sum]
+      ring
+    _ = 2 * (N * (N - 1) * (finsuppAntidiag s N).card) +
+        (s.card + 1) * (N * (finsuppAntidiag s N).card) := by
+      rw [card_mul_card_add_one_mul_sum_finsuppAntidiag_choose_two hi,
+        card_mul_sum_finsuppAntidiag_apply hi]
+    _ = _ := by
+      cases N with
+      | zero => simp
+      | succ N =>
+        have hsub : 2 * (N + 1) + s.card - 1 = 2 * N + s.card + 1 := by omega
+        rw [hsub]
+        simp only [Nat.add_sub_cancel]
+        ring
 
 end Finset

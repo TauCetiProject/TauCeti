@@ -321,19 +321,32 @@ private theorem signlessPreprojectiveD4FrobeniusFunctional_mk_ofPath
   rw [signlessPreprojectiveD4FrobeniusFunctional, LinearMap.comp_apply, LinearEquiv.coe_coe, h,
     Submodule.liftQ_apply, d4SocleFunctionalAux_ofPath]
 
+/-- The socle sign of the reversal of a list of vertices vanishes unless the list is a walk. -/
+private theorem signlessPreprojectiveD4SocleSign_reverse_of_not_isChain {l : List (Fin 4)}
+    (hl : ¬ l.IsChain zigzagD4Graph.Adj) : signlessPreprojectiveD4SocleSign l.reverse = 0 := by
+  by_cases hlen : l.length = 5
+  · match l, hlen with
+    | [a, b, c, d, e], _ =>
+      revert hl a b c d e
+      decide
+  · exact signlessPreprojectiveD4SocleSign_of_length_ne (by simpa using hlen)
+
 /-- The Frobenius functional takes the class of a walk to the socle sign of its vertices, read
 from the first vertex. -/
-theorem signlessPreprojectiveD4FrobeniusFunctional_signlessWord (l : List (Fin 4))
-    (hl : l.IsChain zigzagD4Graph.Adj) (hne : l ≠ []) :
+theorem signlessPreprojectiveD4FrobeniusFunctional_signlessWord (l : List (Fin 4)) :
     φ (W l) = signlessPreprojectiveD4SocleSign l.reverse := by
-  obtain ⟨i, r, rfl⟩ : ∃ i r, l = i :: r := by
-    cases l with
-    | nil => exact absurd rfl hne
-    | cons i r => exact ⟨i, r, rfl⟩
-  obtain ⟨a, p, hp, hv⟩ := exists_ofPath_eq_signlessWord k i r hl
-  rw [← hp, signlessPreprojectiveD4FrobeniusFunctional_mk_ofPath]
-  simp only [hv, List.map_map]
-  simp [Function.comp_def, vertexEquiv_symm_vertex]
+  by_cases hl : l.IsChain zigzagD4Graph.Adj
+  · obtain ⟨i, r, rfl⟩ | rfl : (∃ i r, l = i :: r) ∨ l = [] := by
+      cases l with
+      | nil => exact Or.inr rfl
+      | cons i r => exact Or.inl ⟨i, r, rfl⟩
+    · obtain ⟨a, p, hp, hv⟩ := exists_ofPath_eq_signlessWord k i r hl
+      rw [← hp, signlessPreprojectiveD4FrobeniusFunctional_mk_ofPath]
+      simp only [hv, List.map_map]
+      simp [Function.comp_def, vertexEquiv_symm_vertex]
+    · simp [signlessWord_nil, signlessPreprojectiveD4SocleSign]
+  · rw [signlessWord_eq_zero_of_not_isChain k hl, map_zero,
+      signlessPreprojectiveD4SocleSign_reverse_of_not_isChain hl, Int.cast_zero]
 
 /-! ### The basis walks and the Gram matrix -/
 
@@ -356,10 +369,6 @@ private def d4Gram (s t : List (Fin 4)) : ℤ :=
 
 private theorem isChain_of_mem_signlessPreprojectiveD4BasisWalks :
     ∀ t ∈ T, t ≠ [] ∧ t.IsChain zigzagD4Graph.Adj := by
-  decide
-
-private theorem isChain_append_of_mem_signlessPreprojectiveD4BasisWalks :
-    ∀ s ∈ T, ∀ t ∈ T, s.getLast? = t.head? → (s.dropLast ++ t).IsChain zigzagD4Graph.Adj := by
   decide
 
 /-- Every column of the Gram matrix has exactly one nonzero entry. -/
@@ -391,41 +400,39 @@ private theorem signlessPreprojectiveD4FrobeniusFunctional_mul {s t : List (Fin 
   by_cases h : s.getLast hs₀ = j
   · rw [ite_eq_left h, ite_eq_left (congrArg some h)]
     exact signlessPreprojectiveD4FrobeniusFunctional_signlessWord k _
-      (isChain_append_of_mem_signlessPreprojectiveD4BasisWalks s hs _ ht
-        (by rw [hlast, h, List.head?_cons])) (by simp)
   · rw [ite_eq_right h, ite_eq_right (fun h' => h (Option.some.inj h')), map_zero, Int.cast_zero]
 
 /-- A combination of the rows of the Gram matrix which vanishes in every column is trivial. -/
 private theorem eq_zero_of_forall_sum_mul_d4Gram {c : T → k}
     (hc : ∀ u : T, ∑ t : T, c t * d4Gram t u = 0) (t : T) : c t = 0 := by
-  obtain ⟨u, hu, htu, -⟩ := existsUnique_d4Gram_ne_zero_right t.1 t.2
+  obtain ⟨u, hu, htu, -⟩ := existsUnique_d4Gram_ne_zero_right t.val t.property
   obtain ⟨t', ht', -, huniq⟩ := existsUnique_d4Gram_ne_zero_left u hu
-  have ht : t = ⟨t', ht'⟩ := Subtype.ext (huniq t t.2 htu)
+  have ht : t = ⟨t', ht'⟩ := Subtype.ext (huniq t t.property htu)
   -- Only the row `t` contributes to the column `u`.
   have hzero (t'' : T) (ht'' : t'' ≠ t) : d4Gram t'' u = 0 := by
     by_contra h0
-    exact ht'' (Subtype.ext ((huniq _ t''.2 h0).trans (congrArg Subtype.val ht).symm))
+    exact ht'' (Subtype.ext ((huniq _ t''.property h0).trans (congrArg Subtype.val ht).symm))
   have h := hc ⟨u, hu⟩
   rw [Finset.sum_eq_single t (fun t'' _ ht'' => by rw [hzero t'' ht'', Int.cast_zero, mul_zero])
     (by simp)] at h
-  have hsq := congrArg (Int.cast : ℤ → k) (d4Gram_mul_self t t.2 u hu htu)
+  have hsq := congrArg (Int.cast : ℤ → k) (d4Gram_mul_self t t.property u hu htu)
   rw [Int.cast_mul, Int.cast_one] at hsq
   rw [← mul_one (c t), ← hsq, ← mul_assoc, h, zero_mul]
 
 /-- A combination of the columns of the Gram matrix which vanishes in every row is trivial. -/
 private theorem eq_zero_of_forall_sum_d4Gram_mul {c : T → k}
     (hc : ∀ s : T, ∑ u : T, d4Gram s u * c u = 0) (u : T) : c u = 0 := by
-  obtain ⟨t, ht, htu, -⟩ := existsUnique_d4Gram_ne_zero_left u.1 u.2
+  obtain ⟨t, ht, htu, -⟩ := existsUnique_d4Gram_ne_zero_left u.val u.property
   obtain ⟨u', hu', -, huniq⟩ := existsUnique_d4Gram_ne_zero_right t ht
-  have hu : u = ⟨u', hu'⟩ := Subtype.ext (huniq u u.2 htu)
+  have hu : u = ⟨u', hu'⟩ := Subtype.ext (huniq u u.property htu)
   -- Only the column `u` contributes to the row `t`.
   have hzero (u'' : T) (hu'' : u'' ≠ u) : d4Gram t u'' = 0 := by
     by_contra h0
-    exact hu'' (Subtype.ext ((huniq _ u''.2 h0).trans (congrArg Subtype.val hu).symm))
+    exact hu'' (Subtype.ext ((huniq _ u''.property h0).trans (congrArg Subtype.val hu).symm))
   have h := hc ⟨t, ht⟩
   rw [Finset.sum_eq_single u (fun u'' _ hu'' => by rw [hzero u'' hu'', Int.cast_zero, zero_mul])
     (by simp)] at h
-  have hsq := congrArg (Int.cast : ℤ → k) (d4Gram_mul_self t ht u u.2 htu)
+  have hsq := congrArg (Int.cast : ℤ → k) (d4Gram_mul_self t ht u u.property htu)
   rw [Int.cast_mul, Int.cast_one] at hsq
   rw [← one_mul (c u), ← hsq, mul_assoc, h, mul_zero]
 
@@ -437,7 +444,7 @@ theorem linearIndependent_signlessWord_D4 :
   refine eq_zero_of_forall_sum_mul_d4Gram k fun u => ?_
   have h := congrArg (fun x => φ (x * W u)) hc
   simp only [Finset.sum_mul, map_sum, smul_mul_assoc, map_smul, zero_mul, map_zero,
-    signlessPreprojectiveD4FrobeniusFunctional_mul k (Subtype.prop _) u.2, smul_eq_mul] at h
+    signlessPreprojectiveD4FrobeniusFunctional_mul k (Subtype.prop _) u.property, smul_eq_mul] at h
   exact h
 
 /-! ### Spanning -/
@@ -637,12 +644,12 @@ theorem isFrobeniusFunctional_signlessPreprojectiveD4FrobeniusFunctional :
     conv_lhs => rw [← b.sum_repr x]
     simp only [Finset.sum_mul, map_sum, smul_mul_assoc, map_smul, smul_eq_mul, b,
       signlessPreprojectiveD4Basis_apply,
-      signlessPreprojectiveD4FrobeniusFunctional_mul k (Subtype.prop _) u.2]
+      signlessPreprojectiveD4FrobeniusFunctional_mul k (Subtype.prop _) u.property]
   have hright (y : Π) (s : T) : φ (W s * y) = ∑ u : T, d4Gram s u * b.repr y u := by
     conv_lhs => rw [← b.sum_repr y]
     simp only [Finset.mul_sum, map_sum, mul_smul_comm, map_smul, smul_eq_mul, b,
       signlessPreprojectiveD4Basis_apply,
-      signlessPreprojectiveD4FrobeniusFunctional_mul k s.2 (Subtype.prop _), mul_comm]
+      signlessPreprojectiveD4FrobeniusFunctional_mul k s.property (Subtype.prop _), mul_comm]
   refine LinearMap.isFrobeniusFunctional_iff.mpr ⟨fun x hx => ?_, fun y hy => ?_⟩
   · refine b.repr.injective (Finsupp.ext fun t => ?_)
     rw [map_zero, Finsupp.coe_zero, Pi.zero_apply]
@@ -664,7 +671,7 @@ theorem isSymmetricFrobeniusFunctional_signlessPreprojectiveD4FrobeniusFunctiona
     apply neg_eq_iff_add_eq_zero.mpr
     rw [← two_mul, h2, zero_mul]
   have hgram (s t : T) : (d4Gram s t : k) = d4Gram t s := by
-    rcases d4Gram_eq_or_neg s s.2 t t.2 with h | h
+    rcases d4Gram_eq_or_neg s s.property t t.property with h | h
     · rw [h]
     · rw [h, Int.cast_neg, hneg]
   have hpair : (LinearMap.mul k Π).compr₂ (φ) = ((LinearMap.mul k Π).compr₂ (φ)).flip := by
@@ -674,8 +681,8 @@ theorem isSymmetricFrobeniusFunctional_signlessPreprojectiveD4FrobeniusFunctiona
     intro t
     simpa only [LinearMap.compr₂_apply, LinearMap.mul_apply', LinearMap.flip_apply,
       signlessPreprojectiveD4Basis_apply,
-      signlessPreprojectiveD4FrobeniusFunctional_mul k s.2 t.2,
-      signlessPreprojectiveD4FrobeniusFunctional_mul k t.2 s.2] using hgram s t
+      signlessPreprojectiveD4FrobeniusFunctional_mul k s.property t.property,
+      signlessPreprojectiveD4FrobeniusFunctional_mul k t.property s.property] using hgram s t
   exact LinearMap.congr_fun₂ hpair
 
 end CommRing
@@ -709,7 +716,7 @@ private noncomputable def d4SignlessEquivPreprojective :
   (orientationSignlessPreprojectiveAlgebraEquiv o k).trans
     (symmetrifySignlessPreprojectiveAlgebraEquiv k
       (c := fun i => zigzagD4Coloring ((OrientedQuiver.vertexEquiv _ o).symm i))
-      fun _ _ a => zigzagD4Coloring.valid a.1)
+      fun _ _ a => zigzagD4Coloring.valid a.val)
 
 /-- **The preprojective algebra of every orientation of `D₄` is left self-injective** over every
 field. -/

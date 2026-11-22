@@ -96,13 +96,13 @@ assignment `φ` of the vertices of `J` to distinct parts of `P` contributes the 
 nonedge density `1 - d(φ i, φ j)` otherwise (`SimpleGraph.patternDensity`). -/
 noncomputable def coarseInducedGraphEstimate (P : Finpartition (univ : Finset V)) : ℝ :=
   ∑ φ : ι → P.parts with Injective φ, (∏ i, (#(φ i : Finset V) : ℝ)) *
-    ∏ p : {p : ι × ι // p.1 < p.2}, G.patternDensity (J.Adj p.1.1 p.1.2) (φ p.1.1) (φ p.1.2)
+    ∏ p : {p : ι × ι // p.1 < p.2}, G.patternDensity (J.Adj p.val.1 p.val.2) (φ p.val.1) (φ p.val.2)
 
 theorem coarseInducedGraphEstimate_def (P : Finpartition (univ : Finset V)) :
     J.coarseInducedGraphEstimate G P =
       ∑ φ : ι → P.parts with Injective φ, (∏ i, (#(φ i : Finset V) : ℝ)) *
         ∏ p : {p : ι × ι // p.1 < p.2},
-          G.patternDensity (J.Adj p.1.1 p.1.2) (φ p.1.1) (φ p.1.2) := (rfl)
+          G.patternDensity (J.Adj p.val.1 p.val.2) (φ p.val.1) (φ p.val.2) := (rfl)
 
 /-- The coarse prediction is nonnegative: edge and nonedge densities lie in `[0, 1]`. -/
 theorem coarseInducedGraphEstimate_nonneg (P : Finpartition (univ : Finset V)) :
@@ -131,7 +131,7 @@ theorem inducedGraphCount3_eq_card_embedding :
     J.inducedGraphCount3 G = Fintype.card (J ↪g G) := by
   rw [inducedGraphCount3_def, ← Fintype.card_subtype]
   exact Fintype.card_congr
-    { toFun g := ⟨⟨g.1, g.2.1⟩, fun {i j} ↦ (g.2.2 i j).symm⟩
+    { toFun g := ⟨⟨g.val, g.property.1⟩, fun {i j} ↦ (g.property.2 i j).symm⟩
       invFun f := ⟨f, f.injective, fun _ _ ↦ f.map_adj_iff.symm⟩
       left_inv _ := rfl
       right_inv _ := rfl }
@@ -227,13 +227,13 @@ private lemma abs_card_induced_sub_le {Q : Finpartition (univ : Finset V)} {τ :
     |(#{g ∈ Fintype.piFinset (fun i ↦ (φ i : Finset V)) |
         ∀ i j, J.Adj i j ↔ G.Adj (g i) (g j)} : ℝ) -
       (∏ i, (#(φ i : Finset V) : ℝ)) * ∏ p : {p : Fin 3 × Fin 3 // p.1 < p.2},
-        G.patternDensity (J.Adj p.1.1 p.1.2) (φ p.1.1) (φ p.1.2)| ≤
+        G.patternDensity (J.Adj p.val.1 p.val.2) (φ p.val.1) (φ p.val.2)| ≤
       3 * τ * ∏ i, (#(φ i : Finset V) : ℝ) + ∑ p : {p : Fin 3 × Fin 3 // p.1 < p.2},
-        if ((φ p.1.1 : Finset V), (φ p.1.2 : Finset V)) ∈ Q.nonUniforms G τ then
+        if ((φ p.val.1 : Finset V), (φ p.val.2 : Finset V)) ∈ Q.nonUniforms G τ then
           ∏ i, (#(φ i : Finset V) : ℝ) else 0 := by
   have hvol₀ : 0 ≤ ∏ i, (#(φ i : Finset V) : ℝ) := by positivity
   have hterm₀ (p : {p : Fin 3 × Fin 3 // p.1 < p.2}) :
-      0 ≤ if ((φ p.1.1 : Finset V), (φ p.1.2 : Finset V)) ∈ Q.nonUniforms G τ then
+      0 ≤ if ((φ p.val.1 : Finset V), (φ p.val.2 : Finset V)) ∈ Q.nonUniforms G τ then
         ∏ i, (#(φ i : Finset V) : ℝ) else 0 := by
     split_ifs
     · exact hvol₀
@@ -244,17 +244,18 @@ private lemma abs_card_induced_sub_le {Q : Finpartition (univ : Finset V)} {τ :
   simp only [not_forall, exists_prop] at hgood
   obtain ⟨i, j, hij, hnot⟩ := hgood
   have hmem : ((φ i : Finset V), (φ j : Finset V)) ∈ Q.nonUniforms G τ :=
-    (Q.mk_mem_nonUniforms G).2 ⟨(φ i).2, (φ j).2, Subtype.coe_injective.ne (hφ.ne hij.ne), hnot⟩
+    (Q.mk_mem_nonUniforms G).2 ⟨(φ i).property, (φ j).property, Subtype.coe_injective.ne
+        (hφ.ne hij.ne), hnot⟩
   have hbad : ∏ i, (#(φ i : Finset V) : ℝ) ≤ ∑ p : {p : Fin 3 × Fin 3 // p.1 < p.2},
-      if ((φ p.1.1 : Finset V), (φ p.1.2 : Finset V)) ∈ Q.nonUniforms G τ then
+      if ((φ p.val.1 : Finset V), (φ p.val.2 : Finset V)) ∈ Q.nonUniforms G τ then
         ∏ i, (#(φ i : Finset V) : ℝ) else 0 :=
     le_of_eq_of_le (ite_eq_left hmem).symm
       (single_le_sum (fun p _ ↦ hterm₀ p) (mem_univ ⟨(i, j), hij⟩))
   have hpred₀ : 0 ≤ ∏ p : {p : Fin 3 × Fin 3 // p.1 < p.2},
-      (G.patternDensity (J.Adj p.1.1 p.1.2) (φ p.1.1) (φ p.1.2) : ℝ) :=
+      (G.patternDensity (J.Adj p.val.1 p.val.2) (φ p.val.1) (φ p.val.2) : ℝ) :=
     prod_nonneg fun p _ ↦ G.patternDensity_nonneg _ _ _
   have hpred₁ : ∏ p : {p : Fin 3 × Fin 3 // p.1 < p.2},
-      (G.patternDensity (J.Adj p.1.1 p.1.2) (φ p.1.1) (φ p.1.2) : ℝ) ≤ 1 :=
+      (G.patternDensity (J.Adj p.val.1 p.val.2) (φ p.val.1) (φ p.val.2) : ℝ) ≤ 1 :=
     prod_le_one₀ (fun p _ ↦ G.patternDensity_nonneg _ _ _) fun p _ ↦ G.patternDensity_le_one _ _ _
   -- Both the count and the prediction lie between `0` and the volume.
   have hcount := card_induced_le_prod_card J G Q φ
@@ -269,19 +270,19 @@ private lemma sum_prod_card_nonUniforms_le {Q : Finpartition (univ : Finset V)}
     (hQ : Q.IsEquipartition) {τ : ℝ} (hτ : 0 < τ) (hQG : Q.IsUniform G τ)
     (p : {p : Fin 3 × Fin 3 // p.1 < p.2}) :
     ∑ φ : Fin 3 → Q.parts,
-        (if ((φ p.1.1 : Finset V), (φ p.1.2 : Finset V)) ∈ Q.nonUniforms G τ then
+        (if ((φ p.val.1 : Finset V), (φ p.val.2 : Finset V)) ∈ Q.nonUniforms G τ then
           ∏ i, (#(φ i : Finset V) : ℝ) else 0) ≤
       4 * τ * Fintype.card V ^ 3 := by
   have h₁ := Q.sum_piFinset_apply_part (ι := Fin 3) fun A ↦
-    (if (A p.1.1, A p.1.2) ∈ Q.nonUniforms G τ then 1 else 0 : ℝ)
-  have h₂ := Fintype.sum_piFinset_apply_apply (ne_of_lt p.2) (fun _ ↦ (univ : Finset V))
+    (if (A p.val.1, A p.val.2) ∈ Q.nonUniforms G τ then 1 else 0 : ℝ)
+  have h₂ := Fintype.sum_piFinset_apply_apply (ne_of_lt p.property) (fun _ ↦ (univ : Finset V))
     fun x y ↦ (if (Q.part x, Q.part y) ∈ Q.nonUniforms G τ then 1 else 0 : ℝ)
-  have h₃ : ∏ k ∈ univ \ {p.1.1, p.1.2}, #(univ : Finset V) = Fintype.card V := by
-    simp [card_sdiff, ne_of_lt p.2]
+  have h₃ : ∏ _ ∈ univ \ {p.val.1, p.val.2}, #(univ : Finset V) = Fintype.card V := by
+    simp [card_sdiff, ne_of_lt p.property]
   rw [h₃, nsmul_eq_mul] at h₂
   rw [Fintype.piFinset_univ] at h₁ h₂
   calc _ = ∑ φ : Fin 3 → Q.parts, (∏ i, #(φ i : Finset V)) •
-        (if ((φ p.1.1 : Finset V), (φ p.1.2 : Finset V)) ∈ Q.nonUniforms G τ then 1 else 0 :
+        (if ((φ p.val.1 : Finset V), (φ p.val.2 : Finset V)) ∈ Q.nonUniforms G τ then 1 else 0 :
           ℝ) := by
         refine sum_congr rfl fun φ _ ↦ ?_
         split_ifs <;> simp
@@ -313,7 +314,7 @@ theorem abs_sum_card_induced_sub_coarseInducedGraphEstimate_le
   -- The error at an assignment is at most `3 τ` times its volume plus its volume once for each
   -- of its pairs of parts that is not uniform, and the latter add up to `12 τ (card V) ^ 3`.
   have hbad : ∑ φ : Fin 3 → Q.parts, ∑ p : {p : Fin 3 × Fin 3 // p.1 < p.2},
-      (if ((φ p.1.1 : Finset V), (φ p.1.2 : Finset V)) ∈ Q.nonUniforms G τ then
+      (if ((φ p.val.1 : Finset V), (φ p.val.2 : Finset V)) ∈ Q.nonUniforms G τ then
         ∏ i, (#(φ i : Finset V) : ℝ) else 0) ≤ 12 * τ * Fintype.card V ^ 3 := by
     have hpairs : Fintype.card {p : Fin 3 × Fin 3 // p.1 < p.2} = 3 := by decide
     rw [sum_comm]

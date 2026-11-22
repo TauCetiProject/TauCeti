@@ -80,7 +80,7 @@ theorem setLIntegral_preimage_singleton_eq_lintegral_ker (L : E →ₗ[ℝ] F)
     [FiniteDimensional ℝ (ker L)] (w : E) (g : E → ℝ≥0∞) :
     ∫⁻ x in L ⁻¹' {L w}, g x ∂μHE[finrank ℝ (ker L)] = ∫⁻ a : ker L, g (w + a) := by
   let φ : ker L → E := fun a ↦ w + a
-  have hφ : Isometry φ := (isometry_add_left w).comp isometry_subtype_coe
+  have hφ : Isometry φ := (isometry_add_left w).comp isometry_subtypeVal
   have hrange : Set.range φ = L ⁻¹' {L w} := by
     ext x
     refine ⟨?_, fun hx ↦ ⟨⟨x - w, by simp_all⟩, by simp [φ]⟩⟩
@@ -111,7 +111,7 @@ private theorem exists_orthogonal_ker_equiv (L : E →ₗ[ℝ] F) (hL : Function
   have hMinj : Function.Injective M := by
     refine (injective_iff_map_eq_zero M).2 fun w hw ↦ Subtype.ext ?_
     have hk : (w : E) ∈ ker L := by simpa [M] using hw
-    exact inner_self_eq_zero.1 (Submodule.inner_right_of_mem_orthogonal hk w.2)
+    exact inner_self_eq_zero.1 (Submodule.inner_right_of_mem_orthogonal hk w.property)
   have hMbij : Function.Bijective M :=
     ⟨hMinj, (injective_iff_surjective_of_finrank_eq_finrank hdim).mp hMinj⟩
   let e : W ≃L[ℝ] F := (LinearEquiv.ofBijective M hMbij).toContinuousLinearEquiv
@@ -119,7 +119,7 @@ private theorem exists_orthogonal_ker_equiv (L : E →ₗ[ℝ] F) (hL : Function
     simp [e, M, LinearEquiv.ofBijective_apply]
   refine ⟨e, ?_, fun g y ↦ ?_⟩
   · -- Lebesgue measure on `F` is the image of Lebesgue measure on `W`, scaled by the Jacobian.
-    ext t ht
+    ext t _
     rw [_root_.smul_apply, MeasurableEquiv.map_apply, smul_eq_mul,
       normDet_adjoint_eq_normDet_comp_subtype L hL,
       ← M.euclideanHausdorffMeasure_image_eq_normDet_mul_volume, hdim,
@@ -140,7 +140,7 @@ theorem measurable_setLIntegral_preimage_singleton (L : E →ₗ[ℝ] F) (hL : F
   obtain ⟨e, -, hfib⟩ := L.exists_orthogonal_ker_equiv hL
   simp_rw [hfib]
   exact (Measurable.lintegral_prod_right' (f := fun q : (ker L)ᗮ × ker L ↦ g (q.1 + q.2))
-    (hg.comp (measurable_fst.subtype_coe.add measurable_snd.subtype_coe))).comp
+    (hg.comp (measurable_fst.subtypeVal.add measurable_snd.subtypeVal))).comp
     e.symm.continuous.measurable
 
 /-- **The coarea formula for linear maps.** Integrating over the fibres of `L`, each with the
@@ -298,7 +298,10 @@ This permits null modifications of Borel representatives before taking sections.
 theorem ae_nullMeasurableSet_restrict_preimage_singleton (L : E →ₗ[ℝ] F)
     {s : Set E} (hs : NullMeasurableSet s volume) :
     ∀ᵐ y : F, NullMeasurableSet s (μHE[finrank ℝ E - finrank ℝ F].restrict (L ⁻¹' {y})) := by
-  filter_upwards [ae_ae_eq_restrict_preimage_singleton L hs.toMeasurable_ae_eq] with y hy
-  exact (measurableSet_toMeasurable volume s).nullMeasurableSet.congr hy
+  -- The function form applies to the membership predicates of the two sets.
+  filter_upwards [ae_ae_eq_restrict_preimage_singleton L (f := (· ∈ toMeasurable volume s))
+    (g := (· ∈ s)) (hs.toMeasurable_ae_eq.mono fun _ h ↦ propext h)] with y hy
+  exact (measurableSet_toMeasurable volume s).nullMeasurableSet.congr
+    (hy.mono fun _ h ↦ Iff.of_eq h)
 
 end LinearMap

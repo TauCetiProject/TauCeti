@@ -304,12 +304,7 @@ theorem torpedoMetric_inner (y : F) (v w : TangentSpace 𝓘(ℝ, F) y) :
     (torpedoMetric F).inner y v w = exp (2 * torpedoExponent ‖y‖) *
       ⟪NormedSpace.fromTangentSpace y v, NormedSpace.fromTangentSpace y w⟫_ℝ := by
   rw [torpedoMetric, ContMDiffRiemannianMetric.rescale_inner,
-    ContMDiffRiemannianMetric.ofLE_inner]
-  -- The standard metric `riemannianMetricVectorSpace` has `innerSL ℝ` as its inner product on
-  -- each fibre, and `TangentSpace` is a type synonym for `F` whose canonical identification
-  -- `fromTangentSpace` is the identity, so both sides agree definitionally; this is the same
-  -- transport as in `TauCeti.Manifold.inner_tangentSpace_vectorSpace`.
-  rfl
+    ContMDiffRiemannianMetric.ofLE_inner, riemannianMetricVectorSpace_inner]
 
 /-- On the ball of radius `e⁻²` the torpedo metric is `(2 R / (1 + ‖y‖²))² ⟪v, w⟫`, the round
 metric of the sphere of radius `R = torpedoCapRadius` in stereographic coordinates. -/
@@ -361,26 +356,15 @@ theorem scalarCurvature_torpedoMetric_of_ge {y : F} (h : exp (-1) ≤ ‖y‖) :
     torpedoSlope_of_ge hs, deriv_torpedoSlope_of_ge hs]
   simp
 
-/-- A lower bound for the scalar curvature away from the centre extends to the centre, by continuity
-of the scalar curvature, since the punctured space is dense. -/
-private theorem le_scalarCurvature_torpedoMetric_of_forall_ne_zero [Nontrivial F] {c : ℝ}
-    (h : ∀ y : F, y ≠ 0 → c ≤ (torpedoMetric F).scalarCurvature y) (y : F) :
-    c ≤ (torpedoMetric F).scalarCurvature y := by
-  have hy : y ∈ closure ({0}ᶜ : Set F) := by rw [closure_compl_singleton]; trivial
-  exact le_on_closure (fun z hz ↦ h z hz) continuous_const.continuousOn
-    (torpedoMetric F).continuous_scalarCurvature.continuousOn hy
-
 /-- **The torpedo metric has nonnegative scalar curvature** in every dimension, including the
 dimensions `n ≤ 2` in which it does not have positive scalar curvature. -/
 theorem scalarCurvature_torpedoMetric_nonneg (y : F) : 0 ≤ (torpedoMetric F).scalarCurvature y := by
   rcases subsingleton_or_nontrivial F with hF | hF
-  · -- In dimension zero the Ricci tensor is a bilinear form on the zero space, of trace zero.
-    let _ : RiemannianBundle (fun z : F ↦ TangentSpace 𝓘(ℝ, F) z) :=
-      ⟨(torpedoMetric F).toRiemannianMetric⟩
-    have : Subsingleton (TangentSpace 𝓘(ℝ, F) y) := inferInstanceAs (Subsingleton F)
-    rw [ContMDiffRiemannianMetric.scalarCurvature_def, CovariantDerivative.scalarCurvature_apply,
-      Subsingleton.elim (CovariantDerivative.ricciTensor _ y) 0, map_zero]
-  refine le_scalarCurvature_torpedoMetric_of_forall_ne_zero (fun z hz ↦ ?_) y
+  · exact ((torpedoMetric F).scalarCurvature_eq_zero_of_subsingleton y).ge
+  -- The punctured space is dense, so it suffices to bound the scalar curvature away from the
+  -- centre.
+  refine (torpedoMetric F).le_scalarCurvature_of_dense (dense_compl_singleton 0)
+    (fun z hz ↦ ?_) y
   -- Away from the centre, `(n - 1) e^(-2 w) ((n - 2) (1 - v²) - 2 v')` has a vanishing first
   -- factor when `n = 1` and only nonnegative factors when `n ≥ 2`.
   rw [scalarCurvature_torpedoMetric_of_ne_zero hz]
@@ -415,7 +399,6 @@ private theorem exists_pos_le_exp_mul_one_sub_torpedoSlope_sq :
   rcases le_or_gt s (-2) with hs | hs
   · -- On the round cap `e^(-2 w) = cosh² s / R²` and `1 - v² = 1 / cosh² s`.
     refine (min_le_right _ _).trans ((min_le_right _ _).trans_eq ?_)
-    have hc := cosh_pos s
     simp only [torpedoProfile_of_le hs, torpedoSlope_of_le hs, neg_sq, tanh_eq_sinh_div_cosh]
     have harg : -2 * (log torpedoCapRadius - log (cosh s)) =
         log (cosh s ^ 2) - log (torpedoCapRadius ^ 2) := by
@@ -453,7 +436,7 @@ theorem exists_pos_le_scalarCurvature_torpedoMetric (hn : 3 ≤ finrank ℝ F) :
       mul_nonneg h4 (mul_nonneg h3.le (neg_nonneg.2 h2))]
   -- It extends to the centre by continuity.
   have : Nontrivial F := Module.nontrivial_of_finrank_pos (lt_of_lt_of_le (by norm_num) hn)
-  exact le_scalarCurvature_torpedoMetric_of_forall_ne_zero hne
+  exact (torpedoMetric F).le_scalarCurvature_of_dense (dense_compl_singleton 0) hne
 
 /-- **The torpedo metric has positive scalar curvature** in dimension `n ≥ 3`. -/
 theorem hasPositiveScalarCurvature_torpedoMetric (hn : 3 ≤ finrank ℝ F) :

@@ -107,7 +107,7 @@ theorem isClosed_singularSupport [FiniteDimensional ℝ V] [Finite ι]
     IsClosed (singularSupport W) := by
   unfold singularSupport
   exact (isClosed_iUnion_of_finite fun i =>
-    isClosed_intrinsicFrontier (affineSpan ℝ (W i)).closed_of_finiteDimensional).union
+    isClosed_intrinsicFrontier (affineSpan ℝ (W i)).isClosed_of_finiteDimensional).union
     (isClosed_iUnion_of_finite fun i => isClosed_iUnion_of_finite fun j =>
       isClosed_iUnion_of_finite fun _ => (hclosed i).inter (hclosed j))
 
@@ -147,6 +147,40 @@ theorem exists_finite_singularSupport_cover [FiniteDimensional ℝ V] [Finite ι
       have hne := (Finset.mem_filter.mp hp).2
       exact (affineSpan ℝ (W i)).finrank_direction_inf_add_one_lt
         (affineSpan ℝ (W j)) (hdim i) (hdim j) hne
+
+/-- The singular support of countably many codimension-one polyhedra has a countable
+cover by affine subspaces of codimension at least two. No local finiteness is needed. -/
+theorem exists_countable_singularSupport_cover [Countable ι]
+    (W : ι → Set V) (hpoly : ∀ i, IsConvexPolyhedron (W i))
+    (hdim : ∀ i, Module.finrank ℝ (affineSpan ℝ (W i)).direction + 1 = Module.finrank ℝ V) :
+    ∃ S : Set (AffineSubspace ℝ V), S.Countable ∧
+      singularSupport W ⊆ ⋃ A ∈ S, (A : Set V) ∧
+      ∀ A ∈ S, Module.finrank ℝ A.direction + 1 < Module.finrank ℝ V := by
+  classical
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · exact ⟨∅, Set.countable_empty, by simp [singularSupport], by simp⟩
+  let : FiniteDimensional ℝ V := .of_finrank_pos (by
+    have := hdim (Classical.arbitrary ι)
+    omega)
+  -- Every singular point is already singular for a two-member subfamily.
+  let pair (p : ι × ι) : Bool → Set V := fun b => W (if b then p.1 else p.2)
+  choose S hcover hS using fun p : ι × ι =>
+    exists_finite_singularSupport_cover (pair p)
+      (fun b => hpoly (if b then p.1 else p.2))
+      (fun b => hdim (if b then p.1 else p.2))
+  refine ⟨⋃ p, (S p : Set (AffineSubspace ℝ V)),
+    Set.countable_iUnion (fun p => (S p).countable_toSet), ?_, ?_⟩
+  · intro x hx
+    have hp : ∃ p, x ∈ singularSupport (pair p) := by
+      rcases mem_singularSupport.mp hx with ⟨i, hi⟩ | ⟨i, j, hij, hi, hj⟩
+      · exact ⟨(i, i), mem_singularSupport.mpr (Or.inl ⟨true, hi⟩)⟩
+      · exact ⟨(i, j), mem_singularSupport.mpr (Or.inr ⟨true, false, hij, hi, hj⟩)⟩
+    obtain ⟨p, hp⟩ := hp
+    obtain ⟨A, hA, hxA⟩ := Set.mem_iUnion₂.mp (hcover p hp)
+    exact Set.mem_iUnion₂.mpr ⟨A, Set.mem_iUnion.mpr ⟨p, hA⟩, hxA⟩
+  · intro A hA
+    obtain ⟨p, hp⟩ := Set.mem_iUnion.mp hA
+    exact hS p A hp
 
 end TauCeti
 

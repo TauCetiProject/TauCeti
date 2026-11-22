@@ -39,6 +39,9 @@ Temperley–Lieb diagrams.
 * `TauCeti.PlanarMatching.glueMiddle_append_nested`,
   `TauCeti.PlanarMatching.glueMiddle_nested_append`: gluing next to a fully nested matching
   changes nothing.
+* `TauCeti.PlanarMatching.reflect_append`, `TauCeti.PlanarMatching.reflect_contract`,
+  `TauCeti.PlanarMatching.glueMiddle_reflect`, `TauCeti.PlanarMatching.glueMiddleCircles_reflect`:
+  compatibility of juxtaposition, contraction, and middle gluing with reflection.
 
 ## Implementation notes
 
@@ -66,27 +69,27 @@ variable {k l : ℕ}
 
 /-- The involution underlying the juxtaposition of two planar matchings. -/
 private def appendPerm (x : PlanarMatching k) (y : PlanarMatching l) : Perm (Fin (k + l)) :=
-  finSumFinEquiv.permCongr (x.1.val.sumCongr y.1.val)
+  finSumFinEquiv.permCongr (x.val.val.sumCongr y.val.val)
 
 private theorem appendPerm_castAdd (x : PlanarMatching k) (y : PlanarMatching l) (i : Fin k) :
-    appendPerm x y (Fin.castAdd l i) = Fin.castAdd l (x.1.val i) := by
+    appendPerm x y (Fin.castAdd l i) = Fin.castAdd l (x.val.val i) := by
   simp [appendPerm]
 
 private theorem appendPerm_natAdd (x : PlanarMatching k) (y : PlanarMatching l) (j : Fin l) :
-    appendPerm x y (Fin.natAdd k j) = Fin.natAdd k (y.1.val j) := by
+    appendPerm x y (Fin.natAdd k j) = Fin.natAdd k (y.val.val j) := by
   simp [appendPerm]
 
 private theorem isPerfectMatching_appendPerm (x : PlanarMatching k) (y : PlanarMatching l) :
     IsPerfectMatching (appendPerm x y) := by
   refine isPerfectMatching_iff.mpr ⟨fun i => ?_, fun i => ?_⟩
   · refine Fin.addCases (fun i => ?_) (fun j => ?_) i
-    · rw [appendPerm_castAdd, appendPerm_castAdd, x.1.apply_apply]
-    · rw [appendPerm_natAdd, appendPerm_natAdd, y.1.apply_apply]
+    · rw [appendPerm_castAdd, appendPerm_castAdd, x.val.apply_apply]
+    · rw [appendPerm_natAdd, appendPerm_natAdd, y.val.apply_apply]
   · refine Fin.addCases (fun i => ?_) (fun j => ?_) i
     · rw [appendPerm_castAdd]
-      exact fun h => x.1.apply_ne i (Fin.castAdd_injective _ _ h)
+      exact fun h => x.val.apply_ne i (Fin.castAdd_injective _ _ h)
     · rw [appendPerm_natAdd]
-      exact fun h => y.1.apply_ne j (Fin.natAdd_injective _ _ h)
+      exact fun h => y.val.apply_ne j (Fin.natAdd_injective _ _ h)
 
 private theorem isNoncrossingMatching_appendPerm (x : PlanarMatching k) (y : PlanarMatching l) :
     (appendPerm x y).IsNoncrossingMatching := by
@@ -97,7 +100,8 @@ private theorem isNoncrossingMatching_appendPerm (x : PlanarMatching k) (y : Pla
     induction b using Fin.addCases with
     | left i' =>
       simp only [appendPerm_castAdd, Fin.lt_def, Fin.val_castAdd] at hab hb hlt
-      exact Equiv.Perm.isNoncrossingMatching_iff.mp x.2 (Fin.lt_def.mpr hab) (Fin.lt_def.mpr hb)
+      exact Equiv.Perm.isNoncrossingMatching_iff.mp x.property (Fin.lt_def.mpr hab)
+          (Fin.lt_def.mpr hb)
         (Fin.lt_def.mpr hlt)
     | right j' =>
       simp only [appendPerm_castAdd, Fin.lt_def, Fin.val_castAdd, Fin.val_natAdd] at hb
@@ -109,7 +113,7 @@ private theorem isNoncrossingMatching_appendPerm (x : PlanarMatching k) (y : Pla
       omega
     | right j' =>
       simp only [appendPerm_natAdd, Fin.natAdd_lt_natAdd_iff] at hab hb hlt
-      exact Equiv.Perm.isNoncrossingMatching_iff.mp y.2 hab hb hlt
+      exact Equiv.Perm.isNoncrossingMatching_iff.mp y.property hab hb hlt
 
 /-- **Juxtaposition** of planar matchings: the arcs of `x` on the first `k` boundary points,
 followed by the arcs of `y`, shifted by `k`, on the last `l`. -/
@@ -119,13 +123,13 @@ def append (x : PlanarMatching k) (y : PlanarMatching l) : PlanarMatching (k + l
 /-- Juxtaposition keeps the arcs of the left factor. -/
 @[simp]
 theorem append_val_castAdd (x : PlanarMatching k) (y : PlanarMatching l) (i : Fin k) :
-    (append x y).1.val (Fin.castAdd l i) = Fin.castAdd l (x.1.val i) :=
+    (append x y).val.val (Fin.castAdd l i) = Fin.castAdd l (x.val.val i) :=
   appendPerm_castAdd x y i
 
 /-- Juxtaposition keeps the arcs of the right factor, shifted by the size of the left one. -/
 @[simp]
 theorem append_val_natAdd (x : PlanarMatching k) (y : PlanarMatching l) (j : Fin l) :
-    (append x y).1.val (Fin.natAdd k j) = Fin.natAdd k (y.1.val j) :=
+    (append x y).val.val (Fin.natAdd k j) = Fin.natAdd k (y.val.val j) :=
   appendPerm_natAdd x y j
 
 /-! ### Contraction of two consecutive points -/
@@ -322,16 +326,16 @@ private theorem skip_unskip (a : Fin (k + 1)) (y : Fin (k + 2))
 partners of each other. -/
 private abbrev reconnectPair (x : PlanarMatching (k + 2)) (a : Fin (k + 1)) :
     PerfectMatching (Fin (k + 2)) :=
-  x.1.reconnect a.castSucc a.succ
+  x.val.reconnect a.castSucc a.succ
 
 private theorem succ_ne_castSucc (a : Fin (k + 1)) : a.succ ≠ a.castSucc :=
   Fin.castSucc_lt_succ.ne'
 
 private theorem isAdjacentReconnect (x : PlanarMatching (k + 2)) (a : Fin (k + 1)) :
-    IsAdjacentReconnect x.1.val (reconnectPair x a).val a.castSucc a.succ where
-  noncrossing := x.2
-  involutive := x.1.prop.involutive
-  apply_ne := x.1.apply_ne
+    IsAdjacentReconnect x.val.val (reconnectPair x a).val a.castSucc a.succ where
+  noncrossing := x.property
+  involutive := x.val.prop.involutive
+  apply_ne := x.val.apply_ne
   adjacent w hw := by
     rw [Fin.mem_uIoo_iff_val, Fin.val_castSucc, Fin.val_succ] at hw
     omega
@@ -341,13 +345,13 @@ private theorem isAdjacentReconnect (x : PlanarMatching (k + 2)) (a : Fin (k + 1
   apply_of_ne z h₁ h₂ := by
     have hne := succ_ne_castSucc a
     split_ifs with h₃ h₄
-    · rw [← x.1.apply_eq_of_apply_eq h₃]
+    · rw [← x.val.apply_eq_of_apply_eq h₃]
       exact PerfectMatching.reconnect_val_val_self hne
-    · rw [← x.1.apply_eq_of_apply_eq h₄]
+    · rw [← x.val.apply_eq_of_apply_eq h₄]
       exact PerfectMatching.reconnect_val_val_right hne
     · refine PerfectMatching.reconnect_val_of_ne h₁ h₂ (fun h => h₃ ?_) (fun h => h₄ ?_)
-      · rw [h, x.1.apply_apply]
-      · rw [h, x.1.apply_apply]
+      · rw [h, x.val.apply_apply]
+      · rw [h, x.val.apply_apply]
 
 private theorem reconnectPair_val_skip_ne (x : PlanarMatching (k + 2)) (a : Fin (k + 1))
     (i : Fin k) :
@@ -391,10 +395,10 @@ now joined to the partner of `a + 1`, a point whose partner was `a + 1` to the p
 every other point keeps its partner. -/
 theorem succAbove_succAbove_contract_val (x : PlanarMatching (k + 2)) (a : Fin (k + 1))
     (i : Fin k) :
-    a.castSucc.succAbove (a.succAbove ((x.contract a).1.val i)) =
-      if x.1.val (a.castSucc.succAbove (a.succAbove i)) = a.castSucc then x.1.val a.succ
-      else if x.1.val (a.castSucc.succAbove (a.succAbove i)) = a.succ then x.1.val a.castSucc
-      else x.1.val (a.castSucc.succAbove (a.succAbove i)) := by
+    a.castSucc.succAbove (a.succAbove ((x.contract a).val.val i)) =
+      if x.val.val (a.castSucc.succAbove (a.succAbove i)) = a.castSucc then x.val.val a.succ
+      else if x.val.val (a.castSucc.succAbove (a.succAbove i)) = a.succ then x.val.val a.castSucc
+      else x.val.val (a.castSucc.succAbove (a.succAbove i)) := by
   have h := skip_contractFun x a i
   rw [(isAdjacentReconnect x a).apply_of_ne _ (skip_ne_castSucc a i) (skip_ne_succ a i)] at h
   unfold skip at h
@@ -423,7 +427,7 @@ def glueMiddleCircles : (m : ℕ) → PlanarMatching (n + m + (m + p)) → ℕ
   | 0, _ => 0
   | m + 1, x =>
     glueMiddleCircles m ((cast (by omega) x).contract ⟨n + m, by omega⟩) +
-      if (cast (k' := n + m + (m + p) + 2) (by omega) x).1.val ⟨n + m, by omega⟩ =
+      if (cast (k' := n + m + (m + p) + 2) (by omega) x).val.val ⟨n + m, by omega⟩ =
           ⟨n + m + 1, by omega⟩ then 1 else 0
 
 @[simp]
@@ -443,7 +447,7 @@ theorem glueMiddleCircles_succ (m : ℕ) (x : PlanarMatching (n + (m + 1) + (m +
     glueMiddleCircles (m + 1) x =
       glueMiddleCircles m ((cast (k' := n + m + (m + p) + 2) (by omega) x).contract
         ⟨n + m, by omega⟩) +
-      if (cast (k' := n + m + (m + p) + 2) (by omega) x).1.val ⟨n + m, by omega⟩ =
+      if (cast (k' := n + m + (m + p) + 2) (by omega) x).val.val ⟨n + m, by omega⟩ =
           ⟨n + m + 1, by omega⟩ then 1 else 0 := (rfl)
 
 end Glue
@@ -460,13 +464,13 @@ variable {K K' : ℕ}
 /-- The partner of the boundary point numbered `q`, as a number; numbers outside the boundary are
 fixed. -/
 private def pv (x : PlanarMatching K) (q : ℕ) : ℕ :=
-  if h : q < K then x.1.val ⟨q, h⟩ else q
+  if h : q < K then x.val.val ⟨q, h⟩ else q
 
 private theorem pv_of_lt (x : PlanarMatching K) {q : ℕ} (h : q < K) :
-    pv x q = x.1.val ⟨q, h⟩ := by
+    pv x q = x.val.val ⟨q, h⟩ := by
   simp [pv, h]
 
-private theorem pv_coe (x : PlanarMatching K) (i : Fin K) : pv x i = x.1.val i :=
+private theorem pv_coe (x : PlanarMatching K) (i : Fin K) : pv x i = x.val.val i :=
   pv_of_lt x i.isLt
 
 private theorem pv_lt (x : PlanarMatching K) {q : ℕ} (h : q < K) : pv x q < K := by
@@ -474,11 +478,11 @@ private theorem pv_lt (x : PlanarMatching K) {q : ℕ} (h : q < K) : pv x q < K 
   exact Fin.isLt _
 
 private theorem pv_pv (x : PlanarMatching K) {q : ℕ} (h : q < K) : pv x (pv x q) = q := by
-  rw [pv_of_lt x h, pv_coe, x.1.apply_apply]
+  rw [pv_of_lt x h, pv_coe, x.val.apply_apply]
 
 private theorem pv_ne (x : PlanarMatching K) {q : ℕ} (h : q < K) : pv x q ≠ q := by
   rw [pv_of_lt x h]
-  exact fun h' => x.1.apply_ne _ (Fin.ext h')
+  exact fun h' => x.val.apply_ne _ (Fin.ext h')
 
 private theorem ext_pv {x y : PlanarMatching K} (h : ∀ q < K, pv x q = pv y q) : x = y :=
   PlanarMatching.ext fun i => Fin.ext <| by rw [← pv_coe, ← pv_coe, h i i.isLt]
@@ -520,17 +524,17 @@ private def unskipN (a v : ℕ) : ℕ := if v < a then v else v - 2
 private theorem pv_contract (x : PlanarMatching (k + 2)) (a : Fin (k + 1)) {q : ℕ} (hq : q < k) :
     pv (x.contract a) q = unskipN a (joinN x a (pv x (skipN a q))) := by
   set i : Fin k := ⟨q, hq⟩
-  have hc : (x.contract a).1.val i = contractFun x a i := PerfectMatching.ofInvolutive_apply _ _ _
+  have hc : (x.contract a).val.val i = contractFun x a i := PerfectMatching.ofInvolutive_apply _ _ _
   have h₁ := skip_contractFun x a i
   rw [(isAdjacentReconnect x a).apply_of_ne _ (skip_ne_castSucc a i) (skip_ne_succ a i)] at h₁
   have hs : skipN a q = skip a i := by rw [coe_skip, skipN]
-  have hA : pv x a = x.1.val a.castSucc := by rw [← Fin.val_castSucc a, pv_coe]
-  have hA' : pv x (a + 1) = x.1.val a.succ := by rw [← Fin.val_succ a, pv_coe]
-  have h₂ : joinN x a (x.1.val (skip a i)) = skip a (contractFun x a i) := by
+  have hA : pv x a = x.val.val a.castSucc := by rw [← Fin.val_castSucc a, pv_coe]
+  have hA' : pv x (a + 1) = x.val.val a.succ := by rw [← Fin.val_succ a, pv_coe]
+  have h₂ : joinN x a (x.val.val (skip a i)) = skip a (contractFun x a i) := by
     rw [h₁, joinN, hA, hA']
-    have e₁ : ((x.1.val (skip a i) : ℕ) = a) ↔ x.1.val (skip a i) = a.castSucc := by
+    have e₁ : ((x.val.val (skip a i) : ℕ) = a) ↔ x.val.val (skip a i) = a.castSucc := by
       rw [Fin.ext_iff, Fin.val_castSucc]
-    have e₂ : ((x.1.val (skip a i) : ℕ) = a + 1) ↔ x.1.val (skip a i) = a.succ := by
+    have e₂ : ((x.val.val (skip a i) : ℕ) = a + 1) ↔ x.val.val (skip a i) = a.succ := by
       rw [Fin.ext_iff, Fin.val_succ]
     simp only [e₁, e₂]
     split_ifs <;> rfl
@@ -539,8 +543,8 @@ private theorem pv_contract (x : PlanarMatching (k + 2)) (a : Fin (k + 1)) {q : 
 
 /-! ### Contracting next to a nested block -/
 
-/-- The number of the boundary point `q` after `2 * j` points are inserted before position `c`. -/
-private def ins (c j q : ℕ) : ℕ := if q < c then q else q + 2 * j
+/-- The number of the boundary point `q` after `l` points are inserted before position `c`. -/
+private def ins (c l q : ℕ) : ℕ := if q < c then q else q + l
 
 /-- `x` is the planar matching `f` with the fully nested matching of `2 * j` points inserted before
 position `c`: the inserted points `c, …, c + 2 * j - 1` are joined in nested pairs, and every
@@ -550,7 +554,7 @@ private structure IsNestedInsert (x : PlanarMatching K) (f : PlanarMatching N) (
   card_eq : K = N + 2 * j
   le : c ≤ N
   block : ∀ s < j, pv x (c + s) = c + 2 * j - 1 - s
-  outside : ∀ q < N, pv x (ins c j q) = ins c j (pv f q)
+  outside : ∀ q < N, pv x (ins c (2 * j) q) = ins c (2 * j) (pv f q)
 
 private theorem IsNestedInsert.cast {x : PlanarMatching K} {f : PlanarMatching N} {c j : ℕ}
     (h : IsNestedInsert x f c j) (hK : K = K') : IsNestedInsert (cast hK x) f c j where
@@ -582,7 +586,7 @@ private theorem IsNestedInsert.contract_left {x : PlanarMatching (k + 2)} {f : P
   have b₀' : pv x (a + 1 + 2 * j + 1) = a + 1 := by
     rw [show a + 1 + 2 * j + 1 = a + 1 + 2 * (j + 1) - 1 - 0 by omega, ← b₀, pv_pv x (by omega)]
   have hfa := h.outside a (by omega)
-  rw [show ins (a + 1) (j + 1) a = a by simp only [ins]; split_ifs <;> omega] at hfa
+  rw [show ins (a + 1) (2 * (j + 1)) a = a by simp only [ins]; split_ifs <;> omega] at hfa
   refine ⟨⟨by omega, by omega, fun s hs => ?_, fun q hq => ?_⟩, ?_⟩
   · rw [pv_contract _ _ (by omega), show skipN a (a + s) = a + 1 + (s + 1) by
       simp only [skipN]; split_ifs <;> omega, h.block (s + 1) (by omega)]
@@ -593,11 +597,11 @@ private theorem IsNestedInsert.contract_left {x : PlanarMatching (k + 2)} {f : P
     rw [pv_contract _ _ (by simp only [ins]; split_ifs <;> omega)]
     by_cases hqa : q = a
     · subst hqa
-      rw [show skipN a (ins a j a) = a + 1 + 2 * j + 1 by
+      rw [show skipN a (ins a (2 * j) a) = a + 1 + 2 * j + 1 by
           simp only [skipN, ins]; split_ifs <;> omega, b₀']
       simp only [joinN, ite_eq_right (show (a : ℕ) + 1 ≠ a by omega), hfa, unskipN, ins]
       split_ifs <;> omega
-    · rw [show skipN a (ins a j q) = ins (a + 1) (j + 1) q by
+    · rw [show skipN a (ins a (2 * j) q) = ins (a + 1) (2 * (j + 1)) q by
         simp only [skipN, ins]; split_ifs <;> omega, h.outside q hq]
       simp only [joinN, unskipN, ins]
       split_ifs <;> omega
@@ -613,13 +617,12 @@ private theorem IsNestedInsert.contract_right {x : PlanarMatching (k + 2)} {f : 
     (hc' : c' = c + 1) : IsNestedInsert (x.contract a) f c' j ∧ pv x a ≠ a + 1 := by
   subst hc'
   have hK := h.card_eq
-  have hle := h.le
   have b₀ := h.block 0 (by omega)
   rw [add_zero] at b₀
   have b₀' : pv x a = c := by
     rw [ha, show c + 2 * j + 1 = c + 2 * (j + 1) - 1 - 0 by omega, ← b₀, pv_pv x (by omega)]
   have hfc := h.outside c (by omega)
-  rw [show ins c (j + 1) c = a + 1 by simp only [ins]; split_ifs <;> omega] at hfc
+  rw [show ins c (2 * (j + 1)) c = a + 1 by simp only [ins]; split_ifs <;> omega] at hfc
   refine ⟨⟨by omega, by omega, fun s hs => ?_, fun q hq => ?_⟩, ?_⟩
   · rw [pv_contract _ _ (by omega), show skipN a (c + 1 + s) = c + (s + 1) by
       simp only [skipN]; split_ifs <;> omega, h.block (s + 1) (by omega)]
@@ -629,12 +632,12 @@ private theorem IsNestedInsert.contract_right {x : PlanarMatching (k + 2)} {f : 
     have hwq := pv_ne f hq
     rw [pv_contract _ _ (by simp only [ins]; split_ifs <;> omega)]
     by_cases hqc : q = c
-    · rw [hqc, show skipN a (ins (c + 1) j c) = c by
+    · rw [hqc, show skipN a (ins (c + 1) (2 * j) c) = c by
           simp only [skipN, ins]; split_ifs <;> omega, b₀]
       rw [hqc] at hw hwq
       simp only [joinN, unskipN, ins] at hfc ⊢
       split_ifs at hfc ⊢ <;> omega
-    · rw [show skipN a (ins (c + 1) j q) = ins c (j + 1) q by
+    · rw [show skipN a (ins (c + 1) (2 * j) q) = ins c (2 * (j + 1)) q by
         simp only [skipN, ins]; split_ifs <;> omega, h.outside q hq]
       simp only [joinN, unskipN, ins]
       split_ifs <;> omega
@@ -644,7 +647,7 @@ private theorem IsNestedInsert.contract_right {x : PlanarMatching (k + 2)} {f : 
 /-- No circle is closed by contracting a pair `a`, `a + 1` that is not an arc. -/
 private theorem val_ne_of_pv_ne {x : PlanarMatching (k + 2)} {a : Fin (k + 1)} {b : Fin (k + 2)}
     (h : pv x a ≠ a + 1) (ha : (a : ℕ) < k + 2) (hb : (b : ℕ) = a + 1) :
-    x.1.val ⟨a, ha⟩ ≠ b := fun h' => h (by rw [pv_of_lt x ha, h', hb])
+    x.val.val ⟨a, ha⟩ ≠ b := fun h' => h (by rw [pv_of_lt x ha, h', hb])
 
 /-- Gluing across the middle when the right half begins with a nested block: all strands are
 pulled straight, so the result is the left half and no circle is closed. -/
@@ -680,8 +683,8 @@ private theorem isNestedInsert_append_nested {n p : ℕ} (x : PlanarMatching (n 
   · rw [pv_append_right _ _ (by omega) (by omega), pv_nested _ (by omega)]
     omega
   · have := pv_lt x hq
-    rw [show ins (n + p) p q = q from ite_eq_left hq, pv_append_left _ _ hq,
-      show ins (n + p) p (pv x q) = pv x q from ite_eq_left this]
+    rw [show ins (n + p) (2 * p) q = q from ite_eq_left hq, pv_append_left _ _ hq,
+      show ins (n + p) (2 * p) (pv x q) = pv x q from ite_eq_left this]
 
 private theorem isNestedInsert_nested_append {n p : ℕ} (x : PlanarMatching (n + p)) :
     IsNestedInsert ((nested n).append x) x (n - n) n := by
@@ -689,9 +692,9 @@ private theorem isNestedInsert_nested_append {n p : ℕ} (x : PlanarMatching (n 
   · rw [Nat.sub_self, zero_add, pv_append_left _ _ (by omega), pv_nested _ (by omega)]
     omega
   · have := pv_lt x hq
-    rw [show ins (n - n) n q = n + n + q by simp only [ins]; split_ifs <;> omega,
+    rw [show ins (n - n) (2 * n) q = n + n + q by simp only [ins]; split_ifs <;> omega,
       pv_append_right _ _ (by omega) (by omega), show n + n + q - (n + n) = q by omega,
-      show ins (n - n) n (pv x q) = n + n + pv x q by simp only [ins]; split_ifs <;> omega]
+      show ins (n - n) (2 * n) (pv x q) = n + n + pv x q by simp only [ins]; split_ifs <;> omega]
 
 /-- Gluing a planar matching to the fully nested matching on its right pulls every strand
 straight: the result is the planar matching itself. -/
@@ -718,6 +721,161 @@ theorem glueMiddle_nested_append {n p : ℕ} (x : PlanarMatching (n + p)) :
 theorem glueMiddleCircles_nested_append {n p : ℕ} (x : PlanarMatching (n + p)) :
     glueMiddleCircles n ((nested n).append x) = 0 :=
   (glueMiddle_of_isNestedInsert_right n le_rfl _ (isNestedInsert_nested_append x)).2
+
+/-! ### Partner helpers, transport, and reflection -/
+
+private theorem coe_unskip_eq_unskipN (a : Fin (k + 1)) (y : Fin (k + 2))
+    (hy : y ≠ a.castSucc ∧ y ≠ a.succ) :
+    (unskip a y hy : ℕ) = unskipN a y := rfl
+
+private theorem skipN_lt_and_ne {a q : ℕ} (hq : q < k) :
+    skipN a q < k + 2 ∧ skipN a q ≠ a ∧ skipN a q ≠ a + 1 := by
+  simp only [skipN]
+  exact ⟨by split_ifs <;> omega, by split_ifs <;> omega, by split_ifs <;> omega⟩
+
+private theorem unskipN_skipN (a q : ℕ) : unskipN a (skipN a q) = q := by
+  simp only [unskipN, skipN]; split_ifs <;> omega
+
+private theorem skipN_unskipN {a q : ℕ} (h₁ : q ≠ a) (h₂ : q ≠ a + 1) :
+    skipN a (unskipN a q) = q := by
+  simp only [skipN, unskipN]; split_ifs <;> omega
+
+private theorem unskipN_reflect {k a b q : ℕ} (hab : a + b = k) (hq : q < k + 2)
+    (h₁ : q ≠ a) (h₂ : q ≠ a + 1) :
+    unskipN b (k + 2 - 1 - q) = k - 1 - unskipN a q := by
+  simp only [unskipN]; split_ifs <;> omega
+
+private theorem val_mk_eq_mk_iff (x : PlanarMatching K) {q r : ℕ} (hq : q < K) (hr : r < K) :
+    x.val.val ⟨q, hq⟩ = ⟨r, hr⟩ ↔ pv x q = r := by
+  rw [pv_of_lt x hq, Fin.ext_iff]
+
+private theorem val_castSucc_eq_succ_iff (x : PlanarMatching (k + 2)) (a : Fin (k + 1)) :
+    x.val.val a.castSucc = a.succ ↔ pv x a = (a : ℕ) + 1 := by
+  rw [← Fin.val_castSucc a, pv_coe, Fin.ext_iff, Fin.val_succ, Fin.val_castSucc]
+
+private theorem joinN_pv_ne (x : PlanarMatching (k + 2)) (a : Fin (k + 1)) {s : ℕ}
+    (hsa : s ≠ a) (hsa' : s ≠ (a : ℕ) + 1) :
+    joinN x a (pv x s) ≠ a ∧ joinN x a (pv x s) ≠ (a : ℕ) + 1 := by
+  have _ := a.isLt
+  by_cases hs : s < k + 2
+  · have hne_a : pv x a ≠ a := pv_ne x (by omega)
+    have hne_a' : pv x ((a : ℕ) + 1) ≠ (a : ℕ) + 1 := pv_ne x (by omega)
+    simp only [joinN]
+    split_ifs with h₁ h₂
+    · exact ⟨fun h => hsa' <| (pv_pv x hs).symm.trans
+        ((congrArg (pv x) (h₁.trans h.symm)).trans (pv_pv x (by omega))), hne_a'⟩
+    · exact ⟨hne_a, fun h => hsa <| (pv_pv x hs).symm.trans
+        ((congrArg (pv x) (h₂.trans h.symm)).trans (pv_pv x (by omega)))⟩
+    · exact ⟨h₁, h₂⟩
+  · simp only [joinN, pv, hs, dite_false]; split_ifs <;> omega
+
+/-- Juxtaposition commutes with transport of planar matchings. -/
+theorem append_cast {k k' l l' : ℕ} (hk : k = k') (hl : l = l')
+    (x : PlanarMatching k) (y : PlanarMatching l) :
+    (cast hk x).append (cast hl y) = cast (congrArg₂ (· + ·) hk hl) (x.append y) := by
+  subst hk hl; simp
+
+/-- Contracting consecutive boundary points commutes with transport. -/
+theorem contract_cast {k k' : ℕ} (h : k = k') (x : PlanarMatching (k + 2)) (a : Fin (k + 1)) :
+    (cast (congrArg (· + 2) h) x).contract (Fin.cast (congrArg (· + 1) h) a) =
+      cast h (x.contract a) := by
+  subst h; simp
+
+private theorem pv_reflect (x : PlanarMatching K) {q : ℕ} (hq : q < K) :
+    pv (reflect K x) q = K - 1 - pv x (K - 1 - q) := by
+  have hrev : (⟨q, hq⟩ : Fin K) = Fin.rev ⟨K - 1 - q, by omega⟩ := by
+    ext; simp only [Fin.val_rev]; omega
+  rw [pv_of_lt _ hq, pv_of_lt x (by omega), hrev, reflect_apply_val_apply, Fin.val_rev]; omega
+
+/-- Reflecting a juxtaposition reverses the order of the two factors and reflects each. -/
+theorem reflect_append {k l : ℕ} (x : PlanarMatching k) (y : PlanarMatching l) :
+    reflect (k + l) (x.append y) = cast (Nat.add_comm l k) ((reflect l y).append (reflect k x)) :=
+  ext_pv fun q hq => by
+    rw [pv_reflect _ hq, pv_cast]
+    by_cases hql : q < l
+    · have _ := pv_lt y (q := l - 1 - q) (by omega)
+      have hidx : k + l - 1 - q - k = l - 1 - q := by omega
+      rw [pv_append_right _ _ (by omega) (by omega), pv_append_left _ _ hql, pv_reflect _ hql, hidx]
+      omega
+    · have _ := pv_lt x (q := k + l - 1 - q) (by omega)
+      have hidx : k - 1 - (q - l) = k + l - 1 - q := by omega
+      rw [pv_append_left _ _ (by omega), pv_append_right _ _ (by omega) (by omega),
+        pv_reflect _ (by omega), hidx]; omega
+
+/-- Reflecting a contraction at `a` is contracting the reflected matching at `Fin.rev a`. -/
+theorem reflect_contract {k : ℕ} (x : PlanarMatching (k + 2)) (a : Fin (k + 1)) :
+    reflect k (x.contract a) = (reflect (k + 2) x).contract (Fin.rev a) :=
+  ext_pv fun q hq => by
+    have _ := a.isLt
+    have hrev : (Fin.rev a : ℕ) = k - a := by simp [Fin.val_rev]
+    have hskip : k + 2 - 1 - skipN (Fin.rev a) q = skipN a (k - 1 - q) := by
+      simp only [skipN, hrev]; split_ifs <;> omega
+    set s := skipN a (k - 1 - q)
+    have hs : s < k + 2 ∧ s ≠ a ∧ s ≠ (a : ℕ) + 1 := skipN_lt_and_ne (by omega)
+    have _ := pv_lt x hs.1; have _ := pv_lt x (q := a) (by omega)
+    have _ := pv_lt x (q := (a : ℕ) + 1) (by omega)
+    have hjoin : joinN (reflect (k + 2) x) (Fin.rev a) (k + 2 - 1 - pv x s) =
+        k + 2 - 1 - joinN x a (pv x s) := by
+      have hrev₀ : k + 2 - 1 - (k - a + 1) = a := by omega
+      have hrev₁ : k + 2 - 1 - (k - a) = (a : ℕ) + 1 := by omega
+      simp only [joinN, hrev]
+      rw [pv_reflect _ (by omega), pv_reflect _ (by omega), hrev₀, hrev₁]
+      split_ifs <;> omega
+    obtain ⟨hne₁, hne₂⟩ := joinN_pv_ne x a hs.2.1 hs.2.2
+    have hlt_j : joinN x a (pv x s) < k + 2 := by simp only [joinN]; split_ifs <;> omega
+    rw [pv_reflect _ hq, pv_contract _ _ (by omega), pv_contract _ _ hq,
+      pv_reflect _ (skipN_lt_and_ne hq).1, hskip, hjoin]
+    exact (unskipN_reflect (by omega) hlt_j hne₁ hne₂).symm
+
+private theorem reflect_glueMiddle_aux {n p : ℕ} :
+    ∀ (m : ℕ) (x : PlanarMatching (n + m + (m + p))),
+      glueMiddle m (cast (by omega) (reflect (n + m + (m + p)) x)) =
+        cast (Nat.add_comm n p) (reflect (n + p) (glueMiddle m x)) ∧
+      glueMiddleCircles (n := p) (p := n) m (cast (by omega) (reflect (n + m + (m + p)) x)) =
+        glueMiddleCircles (n := n) (p := p) m x
+  | 0, x => ⟨by simp [← cast_reflect], rfl⟩
+  | m + 1, x => by
+    let y : PlanarMatching (n + m + (m + p) + 2) := cast (by omega) x
+    let a : Fin (n + m + (m + p) + 1) := ⟨n + m, by omega⟩
+    have hy : cast (k' := p + m + (m + n) + 2) (by omega)
+        (cast (k' := p + (m + 1) + (m + 1 + n)) (by omega)
+          (reflect (n + (m + 1) + (m + 1 + p)) x)) =
+        cast (k' := p + m + (m + n) + 2) (by omega) (reflect (n + m + (m + p) + 2) y) := by
+      simp [y, ← cast_reflect]
+    have hrev : (⟨p + m, by omega⟩ : Fin (p + m + (m + n) + 1)) =
+        Fin.cast (by omega) (Fin.rev a) := by ext; simp only [a, Fin.val_cast, Fin.val_rev]; omega
+    have hc : (cast (k' := p + m + (m + n) + 2) (by omega)
+        (reflect (n + m + (m + p) + 2) y)).contract ⟨p + m, by omega⟩ =
+        cast (k' := p + m + (m + n)) (by omega) (reflect (n + m + (m + p)) (y.contract a)) := by
+      rw [hrev, contract_cast (by omega), ← reflect_contract]
+    have hind : ((cast (k' := p + m + (m + n) + 2) (by omega)
+        (reflect (n + m + (m + p) + 2) y)).val.val ⟨p + m, by omega⟩ = ⟨p + m + 1, by omega⟩) ↔
+        y.val.val ⟨n + m, by omega⟩ = ⟨n + m + 1, by omega⟩ := by
+      have hidx : n + m + (m + p) + 2 - 1 - (p + m) = n + m + 1 := by omega
+      rw [val_mk_eq_mk_iff, val_mk_eq_mk_iff, pv_cast, pv_reflect _ (by omega), hidx]
+      have _ := pv_lt y (q := n + m + 1) (by omega)
+      refine ⟨fun h => ?_, fun h => ?_⟩
+      · have hp : pv y (n + m + 1) = n + m := by omega
+        exact (congrArg (pv y) hp.symm).trans (pv_pv y (by omega))
+      · have hp := pv_pv y (q := n + m) (by omega)
+        rw [h] at hp; omega
+    obtain ⟨ih₁, ih₂⟩ := reflect_glueMiddle_aux m (y.contract a)
+    exact ⟨by rw [glueMiddle_succ, glueMiddle_succ, hy, hc, ih₁],
+      by rw [glueMiddleCircles_succ (n := p) (p := n), glueMiddleCircles_succ (n := n) (p := p),
+           hy, hc, ih₂]; simp only [hind, y, a]⟩
+
+/-- Gluing across the middle commutes with reflection, swapping the two outer boundary sizes. -/
+theorem glueMiddle_reflect {n p : ℕ} (m : ℕ) (x : PlanarMatching (n + m + (m + p))) :
+    glueMiddle m (cast (by omega) (reflect (n + m + (m + p)) x)) =
+      cast (Nat.add_comm n p) (reflect (n + p) (glueMiddle m x)) :=
+  (reflect_glueMiddle_aux m x).1
+
+/-- Reflecting a planar matching before gluing across the middle closes the same number of
+circles. -/
+theorem glueMiddleCircles_reflect {n p : ℕ} (m : ℕ) (x : PlanarMatching (n + m + (m + p))) :
+    glueMiddleCircles (n := p) (p := n) m (cast (by omega) (reflect (n + m + (m + p)) x)) =
+      glueMiddleCircles (n := n) (p := p) m x :=
+  (reflect_glueMiddle_aux m x).2
 
 end Partner
 

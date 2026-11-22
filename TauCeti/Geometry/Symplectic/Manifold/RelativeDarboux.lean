@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
+public import TauCeti.Geometry.Manifold.DifferentialForm.Opens.PartialDiffeomorph
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.TwoForm.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
@@ -42,12 +43,23 @@ partial diffeomorphism of the model space, which the chart at `i p` carries back
 The main theorem only needs `p` and `i p` to be interior points; the boundaryless form is
 `TauCeti.SmoothTwoForm.exists_partialDiffeomorph_fix_immersion_mpullback_eq`.
 
+Restricted to its source and target, the partial diffeomorphism is a diffeomorphism
+`φ : U₀ → U₁` of open subsets of `M` around `i p`, pulling the restriction of `σ₁` to `U₁` back to
+the restriction of `σ₀` to `U₀`, and fixing `i q` for `q` near `p`
+(`TauCeti.SmoothTwoForm.exists_diffeomorph_opens_of_mpullback_eq`). For `Q` a point it relates any
+two closed two-forms nondegenerate at that point, as in Darboux's theorem; for an embedded
+submanifold `Q` it relates two symplectic forms with equal pullbacks to `Q` near each point of `Q`,
+by a germ fixing `Q`.
+
 ## Main results
 
 * `TauCeti.SmoothTwoForm.exists_partialDiffeomorph_fix_immersion_mpullback_eq_of_isInteriorPoint`:
   the relative Darboux theorem at interior points.
 * `TauCeti.SmoothTwoForm.exists_partialDiffeomorph_fix_immersion_mpullback_eq`: the relative
   Darboux theorem on boundaryless manifolds.
+* `TauCeti.SmoothTwoForm.exists_diffeomorph_opens_of_mpullback_eq_of_isInteriorPoint`,
+  `TauCeti.SmoothTwoForm.exists_diffeomorph_opens_of_mpullback_eq`: the same theorems for a
+  diffeomorphism between open subsets of `M`.
 
 ## References
 
@@ -78,14 +90,14 @@ and pulls the coordinate expressions of `σ₀` and `σ₁` back to the same for
 `p`, `σ₀` and `σ₁` have the same pullback along `i` near `p`, and `p` is an interior point. -/
 private theorem eventually_contDiffAt_and_compContinuousLinearMap_eq {σ₀ σ₁ : SmoothTwoForm I M}
     {i : Q → M} {p : Q} (hp : J.IsInteriorPoint p) (hi : ∀ᶠ q in 𝓝 p, ContMDiffAt J I ∞ i q)
-    (htan : ∀ᶠ q in 𝓝 p, mpullback J I i σ₁.1 q = mpullback J I i σ₀.1 q) :
+    (htan : ∀ᶠ q in 𝓝 p, mpullback J I i σ₁.val q = mpullback J I i σ₀.val q) :
     ∀ᶠ y in 𝓝 (extChartAt J p p),
       ContDiffAt ℝ ∞ (extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y ∧
       ContinuousAlternatingMap.compContinuousLinearMap
-          (RoughForm.inChartAt σ₁.1 (i p) ((extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y))
+          (RoughForm.inChartAt σ₁.val (i p) ((extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y))
           (fderiv ℝ (extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y) =
         ContinuousAlternatingMap.compContinuousLinearMap
-          (RoughForm.inChartAt σ₀.1 (i p) ((extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y))
+          (RoughForm.inChartAt σ₀.val (i p) ((extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y))
           (fderiv ℝ (extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y) := by
   have hsrc : ∀ᶠ q in 𝓝 p, i q ∈ (extChartAt I (i p)).source :=
     (hi.self_of_nhds.continuousAt).preimage_mem_nhds (extChartAt_source_mem_nhds (i p))
@@ -101,12 +113,12 @@ private theorem eventually_contDiffAt_and_compContinuousLinearMap_eq {σ₀ σ�
   -- through the pullback along `i`.
   have hflat (σ : SmoothTwoForm I M) :
       ContinuousAlternatingMap.compContinuousLinearMap
-          (RoughForm.inChartAt σ.1 (i p) ((extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y))
+          (RoughForm.inChartAt σ.val (i p) ((extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y))
           (fderiv ℝ (extChartAt I (i p) ∘ i ∘ (extChartAt J p).symm) y) =
-        mpullback 𝓘(ℝ, E') J (extChartAt J p).symm (mpullback J I i σ.1) y := by
+        mpullback 𝓘(ℝ, E') J (extChartAt J p).symm (mpullback J I i σ.val) y := by
     rw [← TauCeti.mpullback_comp_at hψd hid,
-      ← mpullbackWithin_univ (I := 𝓘(ℝ, E')) (i ∘ (extChartAt J p).symm) σ.1,
-      RoughForm.mpullbackWithin_eq_compContinuousLinearMap (f := i ∘ (extChartAt J p).symm) σ.1
+      ← mpullbackWithin_univ (I := 𝓘(ℝ, E')) (i ∘ (extChartAt J p).symm) σ.val,
+      RoughForm.mpullbackWithin_eq_compContinuousLinearMap (f := i ∘ (extChartAt J p).symm) σ.val
         (i p) hφy (hid.comp y hψd).mdifferentiableWithinAt uniqueDiffWithinAt_univ,
       fderivWithin_univ, Function.comp_apply]
   refine ⟨hiy.contDiffAt_extChartAt_comp_extChartAt_symm hy hφy, ?_⟩
@@ -123,15 +135,15 @@ theorem exists_partialDiffeomorph_fix_immersion_mpullback_eq_of_isInteriorPoint
     {σ₀ σ₁ : SmoothTwoForm I M} (hσ₀ : σ₀.IsClosed) (hσ₁ : σ₁.IsClosed) {i : Q → M} {p : Q}
     (hp : J.IsInteriorPoint p) (hip : I.IsInteriorPoint (i p))
     (hi : ∀ᶠ q in 𝓝 p, ContMDiffAt J I ∞ i q) (hinj : Function.Injective (mfderiv J I i p))
-    (htan : ∀ᶠ q in 𝓝 p, mpullback J I i σ₁.1 q = mpullback J I i σ₀.1 q)
+    (htan : ∀ᶠ q in 𝓝 p, mpullback J I i σ₁.val q = mpullback J I i σ₀.val q)
     (hnd₀ : (σ₀.bilinFormAt (i p)).Nondegenerate) (hnd₁ : (σ₁.bilinFormAt (i p)).Nondegenerate) :
     ∃ Φ : PartialDiffeomorph I I M M ∞, i p ∈ Φ.source ∧ (∀ᶠ q in 𝓝 p, Φ (i q) = i q) ∧
-      ∀ x ∈ Φ.source, mpullback I I Φ σ₁.1 x = σ₀.1 x := by
+      ∀ x ∈ Φ.source, mpullback I I Φ σ₁.val x = σ₀.val x := by
   have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
   -- The preferred charts `φ` at `i p` and `ψ` at `p`, and `i` read in them.
   set φ := extChartAt I (i p) with hφ
-  set ψ := extChartAt J p with hψ
+  set ψ := extChartAt J p
   let g : E' → E := φ ∘ i ∘ ψ.symm
   have hgψ (q : Q) (hq : q ∈ ψ.source) : g (ψ q) = φ (i q) := by
     simp only [g, Function.comp_apply, ψ.left_inv hq]
@@ -181,12 +193,62 @@ theorem exists_partialDiffeomorph_fix_immersion_mpullback_eq [BoundarylessManifo
     [BoundarylessManifold J Q] {σ₀ σ₁ : SmoothTwoForm I M} (hσ₀ : σ₀.IsClosed)
     (hσ₁ : σ₁.IsClosed) {i : Q → M} {p : Q} (hi : ∀ᶠ q in 𝓝 p, ContMDiffAt J I ∞ i q)
     (hinj : Function.Injective (mfderiv J I i p))
-    (htan : ∀ᶠ q in 𝓝 p, mpullback J I i σ₁.1 q = mpullback J I i σ₀.1 q)
+    (htan : ∀ᶠ q in 𝓝 p, mpullback J I i σ₁.val q = mpullback J I i σ₀.val q)
     (hnd₀ : (σ₀.bilinFormAt (i p)).Nondegenerate) (hnd₁ : (σ₁.bilinFormAt (i p)).Nondegenerate) :
     ∃ Φ : PartialDiffeomorph I I M M ∞, i p ∈ Φ.source ∧ (∀ᶠ q in 𝓝 p, Φ (i q) = i q) ∧
-      ∀ x ∈ Φ.source, mpullback I I Φ σ₁.1 x = σ₀.1 x :=
+      ∀ x ∈ Φ.source, mpullback I I Φ σ₁.val x = σ₀.val x :=
   exists_partialDiffeomorph_fix_immersion_mpullback_eq_of_isInteriorPoint hσ₀ hσ₁
     (BoundarylessManifold.isInteriorPoint) (BoundarylessManifold.isInteriorPoint) hi hinj htan
     hnd₀ hnd₁
+
+open TopologicalSpace in
+/-- **The point-germ relative Darboux theorem between open sets, at interior points.** Let
+`i : Q → M` be smooth near `p` with injective differential at `p`, where `p` and `i p` are interior
+points, and let `σ₀`, `σ₁` be closed two-forms on `M`, nondegenerate at `i p`, whose pullbacks
+along `i` agree near `p`. Then there are open subsets `U₀ ∋ i p` and `U₁` of `M` and a
+diffeomorphism `φ : U₀ → U₁` which fixes `i q` for every `q` near `p` and pulls the restriction of
+`σ₁` to `U₁` back to the restriction of `σ₀` to `U₀`. -/
+theorem exists_diffeomorph_opens_of_mpullback_eq_of_isInteriorPoint {σ₀ σ₁ : SmoothTwoForm I M}
+    (hσ₀ : σ₀.IsClosed) (hσ₁ : σ₁.IsClosed) {i : Q → M} {p : Q} (hp : J.IsInteriorPoint p)
+    (hip : I.IsInteriorPoint (i p)) (hi : ∀ᶠ q in 𝓝 p, ContMDiffAt J I ∞ i q)
+    (hinj : Function.Injective (mfderiv J I i p))
+    (htan : ∀ᶠ q in 𝓝 p, mpullback J I i σ₁.val q = mpullback J I i σ₀.val q)
+    (hnd₀ : (σ₀.bilinFormAt (i p)).Nondegenerate) (hnd₁ : (σ₁.bilinFormAt (i p)).Nondegenerate) :
+    ∃ (U₀ U₁ : Opens M) (φ : U₀ ≃ₘ⟮I, I⟯ U₁), i p ∈ U₀ ∧
+      (∀ᶠ q in 𝓝 p, ∃ h : i q ∈ U₀, (φ ⟨i q, h⟩ : M) = i q) ∧
+      SmoothForm.mpullback φ φ.contMDiff
+          (SmoothForm.mpullback (Subtype.val : U₁ → M) contMDiff_subtypeVal σ₁) =
+        SmoothForm.mpullback (Subtype.val : U₀ → M) contMDiff_subtypeVal σ₀ := by
+  obtain ⟨Φ, hpΦ, hfix, hΦ⟩ :=
+    exists_partialDiffeomorph_fix_immersion_mpullback_eq_of_isInteriorPoint hσ₀ hσ₁ hp hip hi hinj
+      htan hnd₀ hnd₁
+  have hsrc : ∀ᶠ q in 𝓝 p, i q ∈ Φ.source :=
+    hi.self_of_nhds.continuousAt.preimage_mem_nhds (Φ.open_source.mem_nhds hpΦ)
+  refine ⟨_, _, Φ.toDiffeomorphSourceTarget, hpΦ, ?_,
+    (SmoothForm.mpullback_toDiffeomorphSourceTarget_eq_iff Φ).2 hΦ⟩
+  filter_upwards [hsrc, hfix] with q hq hq'
+  exact ⟨hq, (Φ.toDiffeomorphSourceTarget_apply_coe _).trans hq'⟩
+
+open TopologicalSpace in
+/-- **The point-germ relative Darboux theorem between open sets** (for `Q` a point, the Darboux
+theorem: Cannas da Silva, Theorem 8.1). Let `i : Q → M` be a map between boundaryless manifolds,
+smooth near `p` with injective differential at `p`, for instance an embedded submanifold, and let
+`σ₀`, `σ₁` be closed two-forms on `M`, nondegenerate at `i p`, whose pullbacks along `i` agree
+near `p`. These pullbacks may have any rank. Then there are open subsets `U₀ ∋ i p` and `U₁` of `M`
+and a diffeomorphism `φ : U₀ → U₁` which fixes `i q` for every `q` near `p` and pulls the
+restriction of `σ₁` to `U₁` back to the restriction of `σ₀` to `U₀`. -/
+theorem exists_diffeomorph_opens_of_mpullback_eq [BoundarylessManifold I M]
+    [BoundarylessManifold J Q] {σ₀ σ₁ : SmoothTwoForm I M} (hσ₀ : σ₀.IsClosed)
+    (hσ₁ : σ₁.IsClosed) {i : Q → M} {p : Q} (hi : ∀ᶠ q in 𝓝 p, ContMDiffAt J I ∞ i q)
+    (hinj : Function.Injective (mfderiv J I i p))
+    (htan : ∀ᶠ q in 𝓝 p, mpullback J I i σ₁.val q = mpullback J I i σ₀.val q)
+    (hnd₀ : (σ₀.bilinFormAt (i p)).Nondegenerate) (hnd₁ : (σ₁.bilinFormAt (i p)).Nondegenerate) :
+    ∃ (U₀ U₁ : Opens M) (φ : U₀ ≃ₘ⟮I, I⟯ U₁), i p ∈ U₀ ∧
+      (∀ᶠ q in 𝓝 p, ∃ h : i q ∈ U₀, (φ ⟨i q, h⟩ : M) = i q) ∧
+      SmoothForm.mpullback φ φ.contMDiff
+          (SmoothForm.mpullback (Subtype.val : U₁ → M) contMDiff_subtypeVal σ₁) =
+        SmoothForm.mpullback (Subtype.val : U₀ → M) contMDiff_subtypeVal σ₀ :=
+  exists_diffeomorph_opens_of_mpullback_eq_of_isInteriorPoint hσ₀ hσ₁
+    BoundarylessManifold.isInteriorPoint BoundarylessManifold.isInteriorPoint hi hinj htan hnd₀ hnd₁
 
 end TauCeti.SmoothTwoForm

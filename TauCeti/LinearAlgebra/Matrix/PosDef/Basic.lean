@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Localization.Integer
 import Mathlib.Algebra.Order.Star.Rat
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 
 /-!
 # Positive definiteness over the rationals
@@ -44,6 +45,8 @@ ring without zero divisors is positive definite exactly when its single entry is
   nonempty index type forces the star to be trivial.
 * `Matrix.PosDef.exists_sq_le_of_dotProduct_mulVec_le`: for a positive definite matrix `S`, the
   vectors `c` with `c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w` have uniformly bounded coordinates.
+* `Matrix.PosDef.eq_of_eq_smul_of_trace_eq_trace_inv`: two positive definite scalar multiples
+  with `Tr M = Tr M⁻¹` are equal.
 -/
 
 public section
@@ -245,7 +248,7 @@ theorem exists_sq_le_of_dotProduct_mulVec_le {S : Matrix B B K} (hS : S.PosDef) 
   rcases isEmpty_or_nonempty B with hB | hB
   · exact ⟨0, fun _ _ k ↦ isEmptyElim k⟩
   have := hS.trivialStar
-  set F : LinearMap.BilinForm K (B → K) := Matrix.toBilin' S with hFdef
+  set F : LinearMap.BilinForm K (B → K) := Matrix.toBilin' S
   have hFapply : ∀ u v : B → K, F u v = u ⬝ᵥ S *ᵥ v := fun u v ↦ Matrix.toBilin'_apply' S u v
   have hnonneg : ∀ u : B → K, 0 ≤ F u u := fun u ↦ by
     simpa [hFapply] using hS.posSemidef.dotProduct_mulVec_nonneg u
@@ -260,5 +263,38 @@ theorem exists_sq_le_of_dotProduct_mulVec_le {S : Matrix B B K} (hS : S.PosDef) 
     _ ≤ F z z * F (u k) (u k) := F.apply_sq_le_mul_of_apply_le_apply hnonneg hsymm hle _
     _ ≤ F z z * ∑ k, F (u k) (u k) := mul_le_mul_of_nonneg_left
         (Finset.single_le_sum (fun j _ ↦ hnonneg (u j)) (Finset.mem_univ k)) (hnonneg z)
+
+/-- If two positive definite matrices satisfy `F = c • G` and both are normalized by
+`Tr M = Tr M⁻¹`, then `F = G`. -/
+theorem eq_of_eq_smul_of_trace_eq_trace_inv {n K : Type*} [Fintype n] [DecidableEq n]
+    [Field K] [PartialOrder K] [StarRing K] [IsOrderedCancelAddMonoid K]
+    {F G : Matrix n n K} {c : K} (hF : F.PosDef) (hG : G.PosDef) (hFG : F = c • G)
+    (htrF : F.trace = F⁻¹.trace) (htrG : G.trace = G⁻¹.trace) :
+    F = G := by
+  rcases isEmpty_or_nonempty n with _ | _
+  · exact Subsingleton.elim F G
+  · have hFtr : 0 < F.trace := hF.trace_pos
+    have hGtr : 0 < G.trace := hG.trace_pos
+    have hc : c = c⁻¹ := by
+      apply mul_right_cancel₀ hGtr.ne'
+      calc
+        c * G.trace = F.trace := by rw [hFG, Matrix.trace_smul, smul_eq_mul]
+        _ = F⁻¹.trace := htrF
+        _ = c⁻¹ * G⁻¹.trace := by
+          rw [hFG, Matrix.nonsing_inv_smul, Matrix.trace_smul, smul_eq_mul]
+        _ = c⁻¹ * G.trace := by rw [htrG]
+    have hc0 : c ≠ 0 := by
+      rintro rfl
+      rw [hFG, zero_smul, Matrix.trace_zero] at hFtr
+      exact lt_irrefl 0 hFtr
+    have hcsq : c * c = 1 := by
+      conv_rhs => rw [← mul_inv_cancel₀ hc0]
+      rw [← hc]
+    rcases mul_self_eq_one_iff.mp hcsq with rfl | rfl
+    · rw [hFG, one_smul]
+    · exfalso
+      have hsum : F.trace + G.trace = 0 := by
+        rw [hFG, neg_one_smul, Matrix.trace_neg, neg_add_cancel]
+      exact (add_pos hFtr hGtr).ne' hsum
 
 end Matrix.PosDef

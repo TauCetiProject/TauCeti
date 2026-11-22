@@ -357,7 +357,7 @@ private lemma tsum_geometric_level_le_rpow {ε u : ℝ} (hε : 0 < ε) (hu0 : 0 
   have hpow : u ^ (1 + ε) = u * exp (ε * log u) := by
     rw [rpow_add hu, rpow_one, rpow_def_of_pos hu, mul_comm (log u)]
   have hqm : q ^ m = exp (-(ε * m)) := by
-    rw [hq, ← exp_nat_mul]; congr 1; ring
+    rw [hq, ← exp_natCast_mul]; congr 1; ring
   have hm1 : -log u ≤ m := Nat.le_ceil _
   have hm2 : (m : ℝ) < -log u + 1 := Nat.ceil_lt_add_one (neg_nonneg.2 (log_nonpos hu0 hu1))
   rw [hpow, hqm]
@@ -385,11 +385,10 @@ private lemma summable_rpow_and_le_of_levelSum_le (hμ0 : ∀ j, 0 ≤ μ j) (h�
     Summable (fun j ↦ μ j ^ (1 + ε)) ∧
       ∑' k : ℕ, (1 - exp (-ε)) * exp (-ε) ^ k * levelSum μ k ≤ ∑' j, μ j ^ (1 + ε) ∧
       ∑' j, μ j ^ (1 + ε) ≤ exp ε * ∑' k : ℕ, (1 - exp (-ε)) * exp (-ε) ^ k * levelSum μ k := by
-  set q := exp (-ε) with hq
+  set q := exp (-ε)
   have hq0 : 0 ≤ q := (exp_pos _).le
   have hq1 : q < 1 := Real.exp_lt_one_iff.2 (by linarith)
   set F : ℕ → ℕ → ℝ := fun k j ↦ (1 - q) * q ^ k * (if exp (-(k : ℝ)) ≤ μ j then μ j else 0)
-    with hF
   have hF0 : 0 ≤ Function.uncurry F := fun p ↦
     mul_nonneg (mul_nonneg (sub_nonneg.2 hq1.le) (pow_nonneg hq0 _)) (ite_nonneg (hμ0 _) le_rfl)
   have hrow : ∀ k, Summable (F k) := fun k ↦ (summable_levelTerm hμ hμt k).mul_left _

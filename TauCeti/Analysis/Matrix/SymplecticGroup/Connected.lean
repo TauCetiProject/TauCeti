@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.Polar.Symplectic
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Connected
 public import TauCeti.Topology.Algebra.Matrix.Realify
+import TauCeti.Topology.Algebra.SymplecticGroup
 
 /-!
 # Path connectedness of the real symplectic group
@@ -41,7 +42,7 @@ theorem isPathConnected_symplecticGroup :
     IsPathConnected (symplecticGroup n ℝ : Set (Matrix (n ⊕ n) (n ⊕ n) ℝ)) := by
   let f : unitaryGroup n ℂ → Matrix (n ⊕ n) (n ⊕ n) ℝ := fun U ↦ (U : Matrix n n ℂ).realify
   have hf : Continuous f :=
-    isClosedEmbedding_realify.continuous.comp continuous_subtype_val
+    isClosedEmbedding_realify.continuous.comp continuous_subtypeVal
   have hrange : Set.range f =
       ((symplecticGroup n ℝ ⊓ orthogonalGroup (n ⊕ n) ℝ :
         Submonoid (Matrix (n ⊕ n) (n ⊕ n) ℝ)) : Set _) := by
@@ -55,7 +56,7 @@ theorem isPathConnected_symplecticGroup :
   have hU : (u.polarUnitary : Matrix (n ⊕ n) (n ⊕ n) ℝ) ∈
       (symplecticGroup n ℝ ⊓ orthogonalGroup (n ⊕ n) ℝ :
         Submonoid (Matrix (n ⊕ n) (n ⊕ n) ℝ)) :=
-    ⟨SymplecticGroup.polarUnitary_mem hA, u.polarUnitary.2⟩
+    ⟨SymplecticGroup.polarUnitary_mem hA, u.polarUnitary.property⟩
   exact ((hconn.joinedIn 1 (Submonoid.one_mem _) _ hU).mono
     (fun _ h ↦ h.1)).trans (SymplecticGroup.joinedIn_polarUnitary hA).symm
 
@@ -76,25 +77,8 @@ namespace TauCeti
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- The real symplectic subgroup of the general linear group is path connected. -/
-instance instPathConnectedSpaceGLSymplectic : PathConnectedSpace (GLSymplectic n ℝ) := by
-  have hc : Continuous (GLSymplectic.ofSymplecticGroup n ℝ) := by
-    apply Units.continuous_iff.mpr
-    constructor
-    · simpa only [Function.comp_def, GLSymplectic.coe_ofSymplecticGroup] using
-        (continuous_subtype_val : Continuous fun S : Matrix.symplecticGroup n ℝ ↦
-          (S : Matrix (n ⊕ n) (n ⊕ n) ℝ))
-    · simp only [← map_inv, GLSymplectic.coe_ofSymplecticGroup, SymplecticGroup.coe_inv]
-      exact (continuous_const.matrix_mul continuous_subtype_val.matrix_transpose).matrix_mul
-        continuous_const
-  let f : Matrix.symplecticGroup n ℝ → GLSymplectic n ℝ := fun S ↦
-    ⟨GLSymplectic.ofSymplecticGroup n ℝ S, GLSymplectic.ofSymplecticGroup_mem n ℝ S⟩
-  have hf : Function.Surjective f := by
-    intro A
-    refine ⟨GLSymplectic.mulEquivSymplecticGroup n ℝ A, ?_⟩
-    apply Subtype.ext
-    apply Units.ext
-    simp only [f, GLSymplectic.coe_ofSymplecticGroup,
-      GLSymplectic.coe_mulEquivSymplecticGroup]
-  exact hf.pathConnectedSpace (hc.subtype_mk _)
+instance instPathConnectedSpaceGLSymplectic : PathConnectedSpace (GLSymplectic n ℝ) :=
+  (GLSymplectic.symplecticGroupContinuousMulEquiv n ℝ).surjective.pathConnectedSpace
+    (GLSymplectic.symplecticGroupContinuousMulEquiv n ℝ).continuous
 
 end TauCeti

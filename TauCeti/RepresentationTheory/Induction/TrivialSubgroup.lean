@@ -137,7 +137,7 @@ theorem coindBotFunctor_obj (X : ModuleCat.{u} k) : (coindBotFunctor k G).obj X 
 @[simp]
 theorem coindBotFunctor_map_hom_apply_coe {X Y : ModuleCat.{u} k} (f : X ⟶ Y)
     (x : coindBot k G X) (g : G) :
-    (((coindBotFunctor k G).map f).hom x).1 g = f.hom (x.1 g) :=
+    (((coindBotFunctor k G).map f).hom x).val g = f.hom (x.val g) :=
   (rfl)
 
 /-- The canonical embedding of a representation `A` into the representation coinduced from the
@@ -149,7 +149,7 @@ def coindBotUnit (A : Rep k G) : A ⟶ coindBot k G A.V :=
 /-- The embedding into the coinduced representation sends `a` to the function `g ↦ A.ρ g a`. -/
 @[simp]
 theorem coindBotUnit_hom_apply_coe (A : Rep k G) (a : A) (g : G) :
-    (dsimp% only (((coindBotUnit A).hom a).1 g)) = A.ρ g a :=
+    (dsimp% only (((coindBotUnit A).hom a).val g)) = A.ρ g a :=
   (rfl)
 
 /-- The embedding into the coinduced representation is a monomorphism. -/
@@ -196,22 +196,22 @@ theorem coindBotMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C) :
 @[simp]
 theorem coindBotMap_hom_apply_coe {A B : Rep k G} (f : A ⟶ B)
     (x : coindBot k G A.V) (g : G) :
-    (dsimp% only (((coindBotMap f).hom x).1 g)) = f.hom (x.1 g) :=
+    (dsimp% only (((coindBotMap f).hom x).val g)) = f.hom (x.val g) :=
   coindBotFunctor_map_hom_apply_coe ((forget₂ (Rep k G) (ModuleCat k)).map f) x g
 
 /-- The embedding into a coinduced representation is natural in the representation. -/
 @[reassoc]
 theorem coindBotUnit_naturality {A B : Rep k G} (f : A ⟶ B) :
     f ≫ coindBotUnit B = coindBotUnit A ≫ coindBotMap f := by
-  apply Rep.hom_ext
+  apply hom_ext
   apply Representation.IntertwiningMap.ext
   ext a g
   -- Evaluate the two composites as maps into the coinduced function space.
-  change ((coindBotUnit B).hom (f.hom a)).1 g =
-    ((coindBotMap f).hom ((coindBotUnit A).hom a)).1 g
+  change ((coindBotUnit B).hom (f.hom a)).val g =
+    ((coindBotMap f).hom ((coindBotUnit A).hom a)).val g
   rw [coindBotUnit_hom_apply_coe, coindBotMap_hom_apply_coe,
     coindBotUnit_hom_apply_coe]
-  exact (Rep.hom_comm_apply f g a).symm
+  exact (hom_comm_apply f g a).symm
 
 /-- The canonical embedding into coinduction, as a natural transformation. -/
 @[expose] def coindBotUnitNatTrans : 𝟭 (Rep k G) ⟶ coindBotRepFunctor (k := k) (G := G) where
@@ -244,14 +244,14 @@ def coindBotEquivPi (X : Type u) [AddCommGroup X] [Module k X] :
 /-- The identification of the coinduced module with functions is the underlying function. -/
 @[simp]
 theorem coindBotEquivPi_apply (X : Type u) [AddCommGroup X] [Module k X] (f : coindBot k G X) :
-    (dsimp% only (coindBotEquivPi k G X f)) = f.1 :=
+    (dsimp% only (coindBotEquivPi k G X f)) = f.val :=
   (rfl)
 
 /-- The inverse identification of functions with the coinduced module is the underlying
 function. -/
 @[simp]
 theorem coindBotEquivPi_symm_apply_coe (X : Type u) [AddCommGroup X] [Module k X] (f : G → X) :
-    (dsimp% only (((coindBotEquivPi k G X).symm f).1)) = f :=
+    (dsimp% only (((coindBotEquivPi k G X).symm f).val)) = f :=
   (rfl)
 
 /-- Evaluation at `1` is a `k`-linear retraction of the embedding of a representation into the
@@ -270,11 +270,11 @@ def toCoindBot (A : Rep k G) {X : Type u} [AddCommGroup X] [Module k X]
 @[simp]
 theorem toCoindBot_hom_apply_coe (A : Rep k G) {X : Type u} [AddCommGroup X] [Module k X]
     (r : A.V →ₗ[k] X) (a : A) (g : G) :
-    (dsimp% only (((toCoindBot A r).hom a).1 g)) = r (A.ρ g a) := by
+    (dsimp% only (((toCoindBot A r).hom a).val g)) = r (A.ρ g a) := by
   -- The underlying map of a composite of representations is the composite of the underlying maps;
   -- `Rep.hom_comp` does not fire here because the middle object is `coindBot k G A.V` on one side
   -- and `(coindBotFunctor k G).obj _` on the other.
-  change (((coindBotFunctor k G).map (ModuleCat.ofHom r)).hom ((coindBotUnit A).hom a)).1 g = _
+  change (((coindBotFunctor k G).map (ModuleCat.ofHom r)).hom ((coindBotUnit A).hom a)).val g = _
   rw [coindBotFunctor_map_hom_apply_coe, ModuleCat.hom_ofHom, coindBotUnit_hom_apply_coe]
 
 /-- If `r` is a retraction of `f : A ⟶ B`, then `f` followed by `n ↦ (g ↦ r (g • n))` is the
@@ -282,13 +282,13 @@ embedding of `A` into its coinduced representation. -/
 @[reassoc]
 theorem comp_toCoindBot_of_leftInverse {A B : Rep k G} (f : A ⟶ B) {r : B.V →ₗ[k] A.V}
     (hr : Function.LeftInverse r f.hom) : f ≫ toCoindBot B r = coindBotUnit A := by
-  apply Rep.hom_ext
+  apply hom_ext
   apply Representation.IntertwiningMap.ext
   ext a : 1
   refine Subtype.ext (funext fun g ↦ ?_)
   -- Evaluate both sides as functions `G → A`.
-  change ((toCoindBot B r).hom (f.hom a)).1 g = ((coindBotUnit A).hom a).1 g
-  rw [toCoindBot_hom_apply_coe, coindBotUnit_hom_apply_coe, ← Rep.hom_comm_apply, hr]
+  change ((toCoindBot B r).hom (f.hom a)).val g = ((coindBotUnit A).hom a).val g
+  rw [toCoindBot_hom_apply_coe, coindBotUnit_hom_apply_coe, ← hom_comm_apply, hr]
 
 end Coinduction
 
@@ -338,7 +338,7 @@ theorem indBot_hom_ext {X : Type u} [AddCommGroup X] [Module k X] {B : Rep k G}
         f'.hom
           (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) X) 1 x)) :
     f = f' :=
-  (indResHomEquiv (⊥ : Subgroup G).subtype _ B).injective <| Rep.hom_ext <|
+  (indResHomEquiv (⊥ : Subgroup G).subtype _ B).injective <| hom_ext <|
     IntertwiningMap.ext <| LinearMap.ext h
 
 /-- The canonical projection from the representation induced from the trivial subgroup on the
@@ -399,9 +399,9 @@ theorem indBotMap_hom_mk {A B : Rep k G} (f : A ⟶ B) (g : G) (a : A) :
 theorem indBotCounit_naturality {A B : Rep k G} (f : A ⟶ B) :
     indBotMap f ≫ indBotCounit B = indBotCounit A ≫ f :=
   indBot_hom_ext fun a ↦ by
-    rw [Rep.hom_comp, Rep.hom_comp, IntertwiningMap.comp_apply, IntertwiningMap.comp_apply,
+    rw [hom_comp, hom_comp, IntertwiningMap.comp_apply, IntertwiningMap.comp_apply,
       indBotMap_hom_mk, indBotCounit_hom_mk, indBotCounit_hom_mk]
-    exact (Rep.hom_comm_apply f 1⁻¹ a).symm
+    exact (hom_comm_apply f 1⁻¹ a).symm
 
 /-- The morphism `⟦g ⊗ₜ x⟧ ↦ g⁻¹ • s x` to a representation from the representation induced from
 the trivial subgroup, attached to a `k`-linear map `s`. -/
@@ -427,8 +427,8 @@ theorem fromIndBot_comp_of_rightInverse {A B : Rep k G} (f : B ⟶ A)
     {s : A.V →ₗ[k] B.V} (hs : Function.RightInverse s f.hom) :
     fromIndBot B s ≫ f = indBotCounit A :=
   indBot_hom_ext fun a ↦ by
-    rw [Rep.hom_comp, IntertwiningMap.comp_apply, fromIndBot_hom_mk, indBotCounit_hom_mk,
-      Rep.hom_comm_apply, hs a]
+    rw [hom_comp, IntertwiningMap.comp_apply, fromIndBot_hom_mk, indBotCounit_hom_mk,
+      hom_comm_apply, hs a]
 
 /-- Induction on the underlying module, viewed as an endofunctor of representations. -/
 @[expose] def indBotRepFunctor : Rep k G ⥤ Rep k G :=
@@ -582,8 +582,8 @@ def resCoindBotIso (X : Type u) [AddCommGroup X] [Module k X] :
     -- forward map is a composite of `LinearEquiv.funCongrLeft` and `LinearEquiv.curry`: `simp`
     -- normalizes these into `Function.curry`/`funLeft` forms in which the argument
     -- `groupEquivQuotientProdSubgroup.symm (y, h)` is no longer exposed for its evaluation lemma.
-    change f.1 (Subgroup.groupEquivQuotientProdSubgroup.symm (y, h) * s) =
-      f.1 (Subgroup.groupEquivQuotientProdSubgroup.symm (y, h * s))
+    change f.val (Subgroup.groupEquivQuotientProdSubgroup.symm (y, h) * s) =
+      f.val (Subgroup.groupEquivQuotientProdSubgroup.symm (y, h * s))
     rw [Subgroup.groupEquivQuotientProdSubgroup_symm_apply,
       Subgroup.groupEquivQuotientProdSubgroup_symm_apply, Subgroup.coe_mul, mul_assoc]
 
@@ -591,9 +591,9 @@ def resCoindBotIso (X : Type u) [AddCommGroup X] [Module k X] :
 @[simp]
 theorem resCoindBotIso_hom_hom_apply_coe (X : Type u) [AddCommGroup X] [Module k X]
     (f : coindBot k G X) (s : S) (y : G ⧸ S) :
-    (dsimp% only ((((resCoindBotIso S X).hom.hom f).1 s) y)) = f.1 (y.out * s) :=
+    (dsimp% only ((((resCoindBotIso S X).hom.hom f).val s) y)) = f.val (y.out * s) :=
   -- The forward map evaluates `f` at the point of `G` with coset `y` and subgroup part `s`.
-  congrArg f.1 (Subgroup.groupEquivQuotientProdSubgroup_symm_apply y s)
+  congrArg f.val (Subgroup.groupEquivQuotientProdSubgroup_symm_apply y s)
 
 /-- The inverse of the restriction of a coinduced representation to `S`: a function
 `F : S → (G ⧸ S → X)` goes to `g ↦ F (⟦g⟧.out⁻¹ * g) ⟦g⟧`, read through Mathlib's decomposition
@@ -601,8 +601,8 @@ theorem resCoindBotIso_hom_hom_apply_coe (X : Type u) [AddCommGroup X] [Module k
 @[simp]
 theorem resCoindBotIso_inv_hom_apply_coe (X : Type u) [AddCommGroup X] [Module k X]
     (F : coindBot k S (G ⧸ S → X)) (g : G) :
-    (dsimp% only (((resCoindBotIso S X).inv.hom F).1 g)) =
-      F.1 (Subgroup.groupEquivQuotientProdSubgroup g).2 (g : G ⧸ S) :=
+    (dsimp% only (((resCoindBotIso S X).inv.hom F).val g)) =
+      F.val (Subgroup.groupEquivQuotientProdSubgroup g).2 (g : G ⧸ S) :=
   (rfl)
 
 /-- The restriction to a subgroup `S` of a representation induced from the trivial subgroup of `G`
@@ -656,9 +656,9 @@ variable (S : Subgroup G) (X : Type u) [AddCommGroup X] [Module k X]
 /-- An `S`-invariant function `G → X` in `Coind_⊥^G X` is constant on the cosets of `S`. -/
 private theorem coindBot_apply_eq_of_mem_invariants
     {f : coindBot k G X} (hf : f ∈ Representation.invariants ((coindBot k G X).ρ.comp S.subtype))
-    {a b : G} (hab : (a : G ⧸ S) = b) : f.1 a = f.1 b := by
+    {a b : G} (hab : (a : G ⧸ S) = b) : f.val a = f.val b := by
   obtain ⟨s, rfl⟩ : ∃ s : S, b = a * s := ⟨⟨a⁻¹ * b, QuotientGroup.eq.1 hab⟩, by simp⟩
-  exact (congrArg (fun f : coindBot k G X => f.1 a) (hf s)).symm
+  exact (congrArg (fun f : coindBot k G X => f.val a) (hf s)).symm
 
 variable [S.Normal]
 
@@ -669,29 +669,29 @@ subgroup of `G` are coinduced from the trivial subgroup of `G ⧸ S`: an `S`-inv
 def quotientToInvariantsCoindBotIso :
     (coindBot k G X).quotientToInvariants S ≅ coindBot k (G ⧸ S) X :=
   mkIso <| .mk
-    { toFun f := ⟨fun y => f.1.1 y.out, mem_coindV_bot k _⟩
+    { toFun f := ⟨fun y => f.val.val y.out, mem_coindV_bot k _⟩
       map_add' _ _ := rfl
       map_smul' _ _ := rfl
-      invFun F := ⟨⟨fun g => F.1 g, mem_coindV_bot k _⟩, fun s => by
+      invFun F := ⟨⟨fun g => F.val g, mem_coindV_bot k _⟩, fun s => by
         ext g
-        exact congrArg F.1 (QuotientGroup.mk_mul_of_mem g s.2)⟩
+        exact congrArg F.val (QuotientGroup.mk_mul_of_mem g s.property)⟩
       left_inv f := by
         ext g
-        exact coindBot_apply_eq_of_mem_invariants S X f.2 (QuotientGroup.out_eq' _)
+        exact coindBot_apply_eq_of_mem_invariants S X f.property (QuotientGroup.out_eq' _)
       right_inv F := by
         ext y
-        exact congrArg F.1 (QuotientGroup.out_eq' y) }
+        exact congrArg F.val (QuotientGroup.out_eq' y) }
     fun y => by
       induction y using QuotientGroup.induction_on with | H g => ?_
       ext f y
-      exact coindBot_apply_eq_of_mem_invariants S X f.2 (by simp)
+      exact coindBot_apply_eq_of_mem_invariants S X f.property (by simp)
 
 /-- The `S`-invariants of a coinduced representation, as a function on `G ⧸ S`: `f ↦ (y ↦ f y.out)`.
 -/
 @[simp]
 theorem quotientToInvariantsCoindBotIso_hom_hom_apply_coe
     (f : (coindBot k G X).quotientToInvariants S) (y : G ⧸ S) :
-    (dsimp% only (((quotientToInvariantsCoindBotIso S X).hom.hom f).1 y)) = f.1.1 y.out :=
+    (dsimp% only (((quotientToInvariantsCoindBotIso S X).hom.hom f).val y)) = f.val.val y.out :=
   (rfl)
 
 /-- An invariant function has the same value at a representative and at the chosen representative
@@ -700,13 +700,13 @@ the forward isomorphism on cosets of representatives. -/
 @[simp]
 theorem quotientToInvariants_coindBot_apply_out_mk
     (f : (coindBot k G X).quotientToInvariants S) (g : G) :
-    f.1.1 (QuotientGroup.mk g : G ⧸ S).out = f.1.1 g :=
-  coindBot_apply_eq_of_mem_invariants S X f.2 (QuotientGroup.out_eq' _)
+    f.val.val (QuotientGroup.mk g : G ⧸ S).out = f.val.val g :=
+  coindBot_apply_eq_of_mem_invariants S X f.property (QuotientGroup.out_eq' _)
 
 /-- A function on `G ⧸ S`, as an `S`-invariant function on `G`: `F ↦ (g ↦ F ⟦g⟧)`. -/
 @[simp]
 theorem quotientToInvariantsCoindBotIso_inv_hom_apply_coe_coe (F : coindBot k (G ⧸ S) X) (g : G) :
-    (dsimp% only (((quotientToInvariantsCoindBotIso S X).inv.hom F).1.1 g)) = F.1 g :=
+    (dsimp% only (((quotientToInvariantsCoindBotIso S X).inv.hom F).val.val g)) = F.val g :=
   (rfl)
 
 end Invariants

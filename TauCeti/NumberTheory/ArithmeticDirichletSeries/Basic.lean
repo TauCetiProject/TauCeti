@@ -294,11 +294,10 @@ theorem zeroExtend_mul (f g : IdealArithmeticFunction K) :
   simpa [zeroExtend_eq_extend] using
     (Function.extend_mul (Subtype.val : (Ideal (𝓞 K))⁰ → Ideal (𝓞 K)) f g 0 0)
 
-/-- **Rejection test.** The everywhere-one function on *all* integral ideals is not the zero
-extension of any ideal arithmetic function, since its value at `⊥` is one rather than zero. This
-is the roadmap's zero-ideal rejection test. Compare
-`TauCeti.IdealArithmeticFunction.zeroExtend_one_apply`, which computes the zero extension of the
-constant function `1` on the *nonzero* ideals. -/
+/-- **The constant `1` on all ideals is not a zero extension.** The everywhere-one function on
+*all* integral ideals is not the zero extension of any ideal arithmetic function, since its value
+at `⊥` is one rather than zero. Compare `TauCeti.IdealArithmeticFunction.zeroExtend_one_apply`,
+which computes the zero extension of the constant function `1` on the *nonzero* ideals. -/
 theorem not_exists_zeroExtend_eq_one :
     ¬ ∃ f : IdealArithmeticFunction K, f.zeroExtend = (1 : Ideal (𝓞 K) → ℂ) := by
   rw [exists_zeroExtend_eq_iff]
@@ -391,7 +390,7 @@ theorem map_zero (e : K ≃+* L) : map e (0 : IdealArithmeticFunction K) = 0 := 
 theorem map_one (e : K ≃+* L) : map e (1 : IdealArithmeticFunction K) = 1 := by
   ext J
   have hJ : Ideal.comap (RingOfIntegers.mapRingEquiv e) (J : Ideal (𝓞 L)) ≠ ⊥ := fun h ↦
-    mem_nonZeroDivisors_iff_ne_zero.mp J.2 ((Ideal.comap_mapRingEquiv_eq_bot_iff _ e).mp h)
+    mem_nonZeroDivisors_iff_ne_zero.mp J.property ((Ideal.comap_mapRingEquiv_eq_bot_iff _ e).mp h)
   simp [hJ]
 
 /-- Transport preserves pointwise addition. -/

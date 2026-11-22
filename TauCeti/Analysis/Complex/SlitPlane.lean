@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Complex.Convex
 
 /-!
 # Geometry of the complex slit plane
@@ -14,10 +14,15 @@ The quotient `z₂ / z₁` of two points of an open half-plane through the origi
 nonpositive real, so it lies in `Complex.slitPlane`. The half-plane is encoded by a normal
 direction `a`: its members are the `z` with `0 < (conj a * z).re`. Specializations to the
 four axis-aligned half-planes cover the common cases. Points within distance `1` of `1` lie in
-the right half-plane, so this applies to quotients of nearly equal points. A relative
+the right half-plane, so this applies to quotients of nearly equal points; correspondingly, the
+closed ball around `1` of radius `r` lies in the slit plane iff `r < 1`. A relative
 displacement smaller than the distance to a pole also gives a slit-plane quotient; in particular
-`1 + a / z` lies in the slit plane when `‖a‖ < ‖z‖`. A product of two points in the right
-half-plane lies in the slit plane as well, and positive real scaling preserves it.
+`1 + a / z` lies in the slit plane when `‖a‖ < ‖z‖`. So does `b / a` when the triangle inequality
+`‖a - b‖ ≤ ‖a‖ + ‖b‖` is strict, the symmetric form of Rouché's hypothesis. A product of two
+points in the right half-plane lies in the slit plane as well, and positive real scaling preserves
+it.
+
+For a point `z ≠ 1` of the unit circle, `-z` lies in the slit plane.
 
 Translating a point of the slit plane by a nonnegative real number keeps it in the slit plane,
 and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane.
@@ -32,20 +37,41 @@ For `x ∈ slitPlane ∪ {0}`, the quotient `a / (t + x)` is continuous for `t >
 
 These criteria feed logarithm evaluations of index integrals: a curve piece confined to a
 half-plane about the winding point has slit-compatible chord ratios, so its index integral
-is a principal logarithm.
+is a principal logarithm. The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is open,
+star-convex about every real point `x < 1` (in particular about `0`), and preconnected, and is
+preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
+`{z : ℂ | 1 - z ^ m ∈ slitPlane}` is open, star-convex about `0`, and connected for `0 < m`.
 
 ## Main declarations
 
+* `Complex.closedBall_one_subset_slitPlane_iff`
+* `Complex.conj_mem_slitPlane`, `Complex.mem_slitPlane_iff_add_ofReal_ne_zero`
+* `Complex.neg_mem_slitPlane_of_norm_eq_one`
+* `Complex.one_sub_mul_ofReal_mem_slitPlane`, `Complex.one_sub_ofReal_mul_mem_slitPlane`,
+  `Complex.one_sub_sub_neg_mul_ofReal_mem_slitPlane`
+* `Complex.isOpen_setOf_one_sub_mem_slitPlane`,
+  `Complex.starConvex_setOf_one_sub_mem_slitPlane`,
+  `Complex.starConvex_ofReal_setOf_one_sub_mem_slitPlane`,
+  `Complex.starConvex_zero_setOf_one_sub_mem_slitPlane`,
+  `Complex.isPreconnected_setOf_one_sub_mem_slitPlane`
+* `Complex.isOpen_setOf_one_sub_pow_mem_slitPlane`,
+  `Complex.starConvex_zero_setOf_one_sub_pow_mem_slitPlane`,
+  `Complex.isConnected_setOf_one_sub_pow_mem_slitPlane`
 * `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`, `TauCeti.one_add_div_mem_slitPlane`
+* `TauCeti.mem_slitPlane_of_norm_one_sub_lt_one_add`,
+  `TauCeti.div_mem_slitPlane_of_norm_sub_lt_add`
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
 * `TauCeti.re_pos_of_norm_sub_one_lt_one`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
 * `TauCeti.mul_mem_slitPlane_of_re_pos`
 * `TauCeti.ofReal_mul_mem_slitPlane`, `TauCeti.div_ofReal_mem_slitPlane`
 * `TauCeti.sub_mem_slitPlane_of_im_le_zero`
-* `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
+* `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.add_ofReal_mem_slitPlane`,
+  `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
 * `TauCeti.ofReal_mem_slitPlane_union_zero`, `TauCeti.mem_slitPlane_union_zero_iff`
-* `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
+* `TauCeti.ne_neg_natCast_of_mem_slitPlane`
+* `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`,
+  `TauCeti.exists_pos_forall_mem_mul_one_add_le_norm_add_of_isCompact`
 * `TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add`
 * `TauCeti.exists_norm_div_ofReal_add_mul_le`, `TauCeti.continuousOn_div_ofReal_add`
 * `TauCeti.exists_norm_inv_ofReal_add_le` -- `(t + p)⁻¹ = O((1 + t)⁻¹)` for `p ∈ slitPlane`
@@ -78,6 +104,40 @@ theorem div_sub_mem_slitPlane_of_dist_lt_dist
   have hsub : (y - w) / (x - w) = 1 + (y - x) / (x - w) := by field_simp; ring
   rw [hsub]
   exact one_add_div_mem_slitPlane (by simpa only [dist_eq_norm] using h)
+
+/-- If the triangle inequality `‖1 - w‖ ≤ 1 + ‖w‖` is strict at `w`, then `w` lies in the slit
+plane. Indeed equality holds exactly on the nonpositive reals, where `‖1 - w‖` and `1 + ‖w‖` are
+both `1 - w.re`, and those are exactly the points the slit plane omits. -/
+theorem mem_slitPlane_of_norm_one_sub_lt_one_add {w : ℂ} (h : ‖1 - w‖ < 1 + ‖w‖) :
+    w ∈ slitPlane := by
+  by_contra hw
+  rw [mem_slitPlane_iff] at hw
+  push Not at hw
+  obtain ⟨hre, him⟩ := hw
+  have hwe : w = (w.re : ℂ) := by
+    apply Complex.ext <;> simp [him]
+  rw [hwe] at h
+  have h1 : (1 : ℂ) - (w.re : ℂ) = ((1 - w.re : ℝ) : ℂ) := by push_cast; ring
+  rw [h1, Complex.norm_real, Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs,
+    abs_of_nonneg (by linarith : (0 : ℝ) ≤ 1 - w.re), abs_of_nonpos hre] at h
+  linarith
+
+/-- **The symmetric Rouché condition.** If the triangle inequality `‖a - b‖ ≤ ‖a‖ + ‖b‖` is
+strict, then `b / a` lies in the slit plane: dividing by `‖a‖ > 0` gives the hypothesis of
+`TauCeti.mem_slitPlane_of_norm_one_sub_lt_one_add`. -/
+theorem div_mem_slitPlane_of_norm_sub_lt_add {a b : ℂ} (h : ‖a - b‖ < ‖a‖ + ‖b‖) :
+    b / a ∈ slitPlane := by
+  have ha : a ≠ 0 := by
+    rintro rfl
+    simp at h
+  have hpos : (0 : ℝ) < ‖a‖ := norm_pos_iff.2 ha
+  refine mem_slitPlane_of_norm_one_sub_lt_one_add ?_
+  have e : (1 : ℂ) - b / a = (a - b) / a := by field_simp
+  rw [e, norm_div, norm_div, div_lt_iff₀ hpos]
+  have e2 : (1 + ‖b‖ / ‖a‖) * ‖a‖ = ‖a‖ + ‖b‖ := by
+    field_simp
+  rw [e2]
+  exact h
 
 /-- The ratio of two members of an open half-plane through the origin lies in the slit
 plane. The half-plane with normal direction `a` is `{z | 0 < (conj a * z).re}`; degenerate
@@ -153,6 +213,12 @@ theorem ofReal_add_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {t : ℝ} (ht 
   rw [add_re, ofReal_re]
   positivity
 
+/-- Translating a point of the slit plane on the right by a nonnegative real number keeps it in the
+slit plane. -/
+theorem add_ofReal_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {t : ℝ} (ht : 0 ≤ t) :
+    z + (t : ℂ) ∈ slitPlane := by
+  simpa only [add_comm] using ofReal_add_mem_slitPlane hz ht
+
 /-- Translating a point of `slitPlane ∪ {0}` by a positive real number lands in the slit
 plane. -/
 theorem ofReal_add_mem_slitPlane_of_mem_union {z : ℂ} (hz : z ∈ slitPlane ∪ {0}) {t : ℝ}
@@ -176,6 +242,13 @@ theorem mem_slitPlane_union_zero_iff {z : ℂ} :
   rw [← Complex.not_lt_zero_iff, Set.mem_union, Complex.mem_slitPlane_iff_not_le_zero,
     Set.mem_singleton_iff, lt_iff_le_and_ne]
   tauto
+
+/-- A point of the slit plane is never a nonpositive integer. -/
+theorem ne_neg_natCast_of_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) (n : ℕ) :
+    z ≠ -(n : ℂ) := by
+  refine ne_of_mem_of_not_mem hz ?_
+  rw [← ofReal_natCast, neg_ofReal_mem_slitPlane]
+  exact (Nat.cast_nonneg n).not_gt
 
 /-- On a small ball around a point of the slit plane, the distance from `w` to the point `-x`
 of the closed negative half-axis is bounded below by a fixed multiple of `1 + x`. -/
@@ -220,6 +293,24 @@ theorem exists_pos_mul_one_add_le_norm_ofReal_add {x : ℂ} (hx : x ∈ slitPlan
   rw [add_comm (t : ℂ)]
   exact h x (Metric.mem_ball_self hc) ⟨t, ht⟩
 
+/-- On a compact subset of the slit plane, `‖z + t‖` is uniformly bounded below by a positive
+multiple of `1 + t` for all `t ≥ 0`. -/
+theorem exists_pos_forall_mem_mul_one_add_le_norm_add_of_isCompact {K : Set ℂ}
+    (hK : IsCompact K) (hsub : K ⊆ slitPlane) :
+    ∃ c > 0, ∀ z ∈ K, ∀ t : ℝ, 0 ≤ t → c * (1 + t) ≤ ‖z + (t : ℂ)‖ := by
+  choose r hr_pos hr using fun z : K ↦
+    exists_pos_forall_mem_ball_mul_one_add_le_norm_add (hsub z.property)
+  have hcov : K ⊆ ⋃ z : K, Metric.ball (z : ℂ) (r z) := fun z hz ↦
+    Set.mem_iUnion.mpr ⟨⟨z, hz⟩, Metric.mem_ball_self (hr_pos ⟨z, hz⟩)⟩
+  obtain ⟨s, hs⟩ := hK.elim_finite_subcover (fun z : K ↦ Metric.ball (z : ℂ) (r z))
+    (fun _ ↦ Metric.isOpen_ball) hcov
+  rcases s.eq_empty_or_nonempty with rfl | hne
+  · refine ⟨1, one_pos, fun z hz ↦ ?_⟩
+    exact False.elim (by simpa using hs hz)
+  · refine ⟨s.inf' hne r, (Finset.lt_inf'_iff hne).mpr fun z _ ↦ hr_pos z, fun z hz t ht ↦ ?_⟩
+    obtain ⟨w, hw, hzw⟩ := Set.mem_iUnion₂.mp (hs hz)
+    exact (mul_le_mul_of_nonneg_right (s.inf'_le r hw) (by linarith)).trans (hr w z hzw ⟨t, ht⟩)
+
 /-- For `x ∈ slitPlane ∪ {0}`, the term `x / (t + x) · t` is bounded for `t > 0`. -/
 theorem exists_norm_div_ofReal_add_mul_le {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) :
     ∃ C, 0 ≤ C ∧ ∀ t : ℝ, 0 < t → ‖x / ((t : ℂ) + x) * t‖ ≤ C := by
@@ -249,5 +340,122 @@ theorem exists_norm_inv_ofReal_add_le {p : ℂ} (hp : p ∈ slitPlane) :
   exact inv_anti₀ (by positivity) (h t ht)
 
 end TauCeti
+
+namespace Complex
+
+/-- A point off the slit plane is real. -/
+theorem im_eq_zero_of_notMem_slitPlane {z : ℂ} (hz : z ∉ slitPlane) : z.im = 0 :=
+  by_contra fun h => hz (mem_slitPlane_iff.mpr (Or.inr h))
+
+/-- Complex conjugation preserves membership in the slit plane. -/
+@[simp]
+theorem conj_mem_slitPlane {z : ℂ} : (starRingEnd ℂ) z ∈ slitPlane ↔ z ∈ slitPlane := by
+  simp [mem_slitPlane_iff]
+
+/-- A complex number lies in the slit plane if and only if no nonnegative real translate
+vanishes. -/
+theorem mem_slitPlane_iff_add_ofReal_ne_zero {z : ℂ} :
+    z ∈ slitPlane ↔ ∀ t : ℝ, 0 ≤ t → z + (t : ℂ) ≠ 0 := by
+  refine ⟨fun hz t ht ↦ slitPlane_ne_zero (TauCeti.add_ofReal_mem_slitPlane hz ht),
+    fun h ↦ by_contra fun hz ↦ ?_⟩
+  have him : z.im = 0 := im_eq_zero_of_notMem_slitPlane hz
+  have hre : z.re ≤ 0 := le_of_not_gt fun hp ↦ hz (mem_slitPlane_iff.mpr (Or.inl hp))
+  refine h (-z.re) (neg_nonneg.mpr hre) ?_
+  apply Complex.ext <;> simp [him]
+
+open scoped ComplexOrder in
+/-- A point `z ≠ 1` of the unit circle has `-z` in the slit plane: `-z` is a nonpositive real
+number only if `z` is a nonnegative real number of modulus one, that is, `z = 1`. -/
+theorem neg_mem_slitPlane_of_norm_eq_one {z : ℂ} (hz : ‖z‖ = 1) (hz1 : z ≠ 1) :
+    -z ∈ slitPlane := by
+  rw [mem_slitPlane_iff_not_le_zero, neg_nonpos]
+  intro h
+  exact hz1 (by rw [eq_coe_norm_of_nonneg h, hz, ofReal_one])
+
+/-- Scaling `z` by a real number in `[0, 1]` preserves slit-plane membership of `1 - z`. -/
+theorem one_sub_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
+    {t : ℝ} (ht : t ∈ Set.Icc 0 1) : 1 - z * t ∈ slitPlane := by
+  have h := starConvex_one_slitPlane.add_smul_sub_mem hz ht.1 ht.2
+  convert h using 1
+  simp only [real_smul]
+  ring
+
+/-- Reflecting the Euler segment by `t = 1 - u` preserves its slit-plane condition. -/
+theorem one_sub_sub_neg_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
+    {u : ℝ} (hu : u ∈ Set.Icc 0 1) : (1 - z) - (-z) * (u : ℂ) ∈ slitPlane := by
+  have hreflect : (1 - z) - (-z) * (u : ℂ) = 1 - z * ((1 - u : ℝ) : ℂ) := by
+    push_cast
+    ring
+  rw [hreflect]
+  exact one_sub_mul_ofReal_mem_slitPlane hz
+    ⟨sub_nonneg.mpr hu.2, sub_le_self _ hu.1⟩
+
+/-- Left-multiplying `z` by a real number in `[0, 1]` preserves slit-plane membership of `1 - z`. -/
+theorem one_sub_ofReal_mul_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
+    {t : ℝ} (ht : t ∈ Set.Icc 0 1) : 1 - t * z ∈ slitPlane := by
+  rw [mul_comm]
+  exact one_sub_mul_ofReal_mem_slitPlane hz ht
+
+/-- The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is open. -/
+theorem isOpen_setOf_one_sub_mem_slitPlane : IsOpen {z : ℂ | 1 - z ∈ slitPlane} :=
+  isOpen_slitPlane.preimage (continuous_const.sub continuous_id)
+
+open scoped ComplexOrder in
+/-- The principal cut plane `{w : ℂ | 1 - w ∈ slitPlane}` is star-convex about every `z < 1` in
+the complex partial order. -/
+theorem starConvex_setOf_one_sub_mem_slitPlane {z : ℂ} (hz : z < 1) :
+    StarConvex ℝ z {w : ℂ | 1 - w ∈ slitPlane} := by
+  have heq : (Set.Ici (1 : ℂ))ᶜ = {w : ℂ | 1 - w ∈ slitPlane} := by
+    ext w
+    simp [Complex.mem_slitPlane_iff_not_le_zero]
+  exact heq ▸ starConvex_compl_Ici hz
+
+/-- The principal cut plane `{w : ℂ | 1 - w ∈ slitPlane}` is star-convex about every real number
+`x < 1`. -/
+theorem starConvex_ofReal_setOf_one_sub_mem_slitPlane {x : ℝ} (hx : x < 1) :
+    StarConvex ℝ (x : ℂ) {w : ℂ | 1 - w ∈ slitPlane} := by
+  open scoped ComplexOrder in
+  exact starConvex_setOf_one_sub_mem_slitPlane (by exact_mod_cast hx)
+
+/-- The principal cut plane `{w : ℂ | 1 - w ∈ slitPlane}` is star-convex about `0`. -/
+theorem starConvex_zero_setOf_one_sub_mem_slitPlane :
+    StarConvex ℝ (0 : ℂ) {w : ℂ | 1 - w ∈ slitPlane} := by
+  open scoped ComplexOrder in
+  exact starConvex_setOf_one_sub_mem_slitPlane one_pos
+
+/-- The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is preconnected. -/
+theorem isPreconnected_setOf_one_sub_mem_slitPlane :
+    IsPreconnected {z : ℂ | 1 - z ∈ slitPlane} :=
+  (starConvex_zero_setOf_one_sub_mem_slitPlane.isPathConnected (by simp)).isConnected.isPreconnected
+
+/-- The pullback `{z : ℂ | 1 - z ^ m ∈ slitPlane}` is open for every `m : ℕ`. -/
+theorem isOpen_setOf_one_sub_pow_mem_slitPlane (m : ℕ) : IsOpen {z : ℂ | 1 - z ^ m ∈ slitPlane} :=
+  isOpen_slitPlane.preimage (continuous_const.sub (continuous_pow m))
+
+/-- The pullback `{z : ℂ | 1 - z ^ m ∈ slitPlane}` is star-convex about `0` for every `m : ℕ`. -/
+theorem starConvex_zero_setOf_one_sub_pow_mem_slitPlane (m : ℕ) :
+    StarConvex ℝ 0 {z : ℂ | 1 - z ^ m ∈ slitPlane} := by
+  rw [starConvex_zero_iff]
+  intro z hz a ha₀ ha₁
+  rw [Set.mem_ofPred, real_smul, mul_pow, ← ofReal_pow, mul_comm ((a ^ m : ℝ) : ℂ)]
+  exact one_sub_mul_ofReal_mem_slitPlane hz ⟨pow_nonneg ha₀ m, pow_le_one₀ ha₀ ha₁⟩
+
+/-- For `0 < m`, the pullback `{z : ℂ | 1 - z ^ m ∈ slitPlane}` is connected. -/
+theorem isConnected_setOf_one_sub_pow_mem_slitPlane {m : ℕ} (hm : 0 < m) :
+    IsConnected {z : ℂ | 1 - z ^ m ∈ slitPlane} := by
+  have h0 : (0 : ℂ) ∈ {z : ℂ | 1 - z ^ m ∈ slitPlane} := by
+    simp [zero_pow hm.ne', one_mem_slitPlane]
+  exact ((starConvex_zero_setOf_one_sub_pow_mem_slitPlane m).isPathConnected h0).isConnected
+
+/-- A closed ball centered at `1` lies in the slit plane iff its radius is strictly less than
+`1`. -/
+@[simp]
+theorem closedBall_one_subset_slitPlane_iff {r : ℝ} :
+    Metric.closedBall (1 : ℂ) r ⊆ slitPlane ↔ r < 1 := by
+  refine ⟨fun h => lt_of_not_ge fun hr => zero_notMem_slitPlane (h ?_),
+    fun hr => (Metric.closedBall_subset_ball hr).trans ball_one_subset_slitPlane⟩
+  simpa [Metric.mem_closedBall] using hr
+
+end Complex
 
 end

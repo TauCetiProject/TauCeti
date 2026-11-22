@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.GradedAlgebra.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
-public import TauCeti.RingTheory.GradedAlgebra.DegreeOne
+public import TauCeti.RingTheory.GradedAlgebra.Degree.One
 
 /-!
 # Graded algebras generated in degree one
@@ -45,6 +45,8 @@ degree if this holds over every affine open.
   component of positive degree of `⨁ n, Γ(Aₙ, U)`.
 * `CategoryTheory.CommMon.epi_hom_hom_of_epi_one`: if `A` is generated in degree one,
   `φ : Bₙ ⟶ Aₙ` is an epimorphism of module sheaves for every `n > 0`.
+* `CategoryTheory.CommMon.IsGeneratedInDegreeOne.of_epi`: if `φ : B ⟶ A` is an epimorphism in
+  every degree and `B` is generated in degree one, then so is `A`.
 -/
 
 public section
@@ -141,5 +143,23 @@ theorem epi_hom_hom_of_epi_one
   have := congrArg (· i) hy
   simp only [CommMon.gradedSectionsGradedHom_apply, CommMon.gradedSectionsMap_apply] at this
   exact this.trans (DirectSum.of_eq_same (β := fun i ↦ Γ(A.X i, U)) i x)
+
+omit [Epi (φ.hom.hom 1)] in
+/-- **Generation in degree one passes to quotients.** If `φ : B ⟶ A` is an epimorphism of
+quasicoherent module sheaves in every degree and `B` is generated in degree one, then so is `A`. -/
+theorem IsGeneratedInDegreeOne.of_epi [∀ n, (A.X n).IsQuasicoherent]
+    [∀ n, (B.X n).IsQuasicoherent] [∀ n, Epi (φ.hom.hom n)] (h : B.IsGeneratedInDegreeOne) :
+    A.IsGeneratedInDegreeOne := by
+  rw [CommMon.isGeneratedInDegreeOne_iff_adjoin_zero_union_one_eq_top] at h ⊢
+  intro U hU
+  have himage : CommMon.gradedSectionsMap φ U ''
+      ((B.gradedSectionsGrading U 0 : Set (⨁ n, Γ(B.X n, U))) ∪ B.gradedSectionsGrading U 1) ⊆
+      (A.gradedSectionsGrading U 0 : Set (⨁ n, Γ(A.X n, U))) ∪ A.gradedSectionsGrading U 1 := by
+    rintro _ ⟨y, hy | hy, rfl⟩
+    · exact Or.inl (by simpa using (CommMon.gradedSectionsGradedHom φ U).map_mem hy)
+    · exact Or.inr (by simpa using (CommMon.gradedSectionsGradedHom φ U).map_mem hy)
+  rw [← top_le_iff, ← CommMon.range_gradedSectionsMap_eq_top_of_epi φ U hU, ← Algebra.map_top,
+    ← h U hU, ← Algebra.adjoin_image]
+  exact Algebra.adjoin_mono himage
 
 end CategoryTheory.CommMon

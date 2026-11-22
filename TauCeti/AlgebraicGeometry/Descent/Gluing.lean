@@ -39,6 +39,9 @@ datum on `Y ×_S S'` to `D`, an isomorphism because it is one over each affine o
 * `TauCeti.DescentDatum.exists_baseChange_hom_isIso_of_forall_affineOpens`: a descent datum
   relative to a surjective, flat and quasi-compact morphism is effective if its restrictions over
   the affine opens of the base are effective.
+* `TauCeti.DescentDatum.exists_baseChange_hom_isIso_of_forall_affineOpens_pullbackAlong`: a descent
+  datum relative to a surjective, flat and quasi-compact morphism is effective if its base changes
+  to the affine opens of the base are effective.
 
 ## References
 
@@ -60,17 +63,17 @@ section Glue
 
 variable {D} (Y : S.affineOpens → Over S)
   (g : ∀ U : S.affineOpens,
-    Hom (baseChange p (Y U)) (D.restrict _ (D.isStable_comp_preimage U.1)))
+    Hom (baseChange p (Y U)) (D.restrict _ (D.isStable_comp_preimage U.val)))
   [∀ U, IsIso (g U).hom]
 
 /-- The piece over `U`, as a morphism of descent data into `D`: an isomorphism onto the
 restriction of `D` to the preimage of `U`. -/
 private noncomputable def pieceHom (U : S.affineOpens) : Hom (baseChange p (Y U)) D :=
-  (D.restrictHom _ (D.isStable_comp_preimage U.1)).comp (g U)
+  (D.restrictHom _ (D.isStable_comp_preimage U.val)).comp (g U)
 
 omit [∀ U, IsIso (g U).hom] in
 private theorem pieceHom_hom_left (U : S.affineOpens) :
-    (pieceHom Y g U).hom.left = (g U).hom.left ≫ ((X.hom ≫ p) ⁻¹ᵁ U.1).ι := by
+    (pieceHom Y g U).hom.left = (g U).hom.left ≫ ((X.hom ≫ p) ⁻¹ᵁ U.val).ι := by
   simp only [pieceHom, Hom.comp_hom, Over.comp_left, restrictHom_hom_left]
 
 private instance (U : S.affineOpens) : IsOpenImmersion (pieceHom Y g U).hom.left := by
@@ -79,7 +82,7 @@ private instance (U : S.affineOpens) : IsOpenImmersion (pieceHom Y g U).hom.left
   infer_instance
 
 private theorem range_pieceHom (U : S.affineOpens) :
-    Set.range (pieceHom Y g U).hom.left = (X.hom ≫ p) ⁻¹' U.1 := by
+    Set.range (pieceHom Y g U).hom.left = (X.hom ≫ p) ⁻¹' U.val := by
   have : IsIso (g U).hom.left := (Over.forget S').map_isIso (g U).hom
   rw [pieceHom_hom_left, ← Scheme.Hom.coe_opensRange, Scheme.Hom.opensRange_comp_of_isIso,
     Scheme.Hom.coe_opensRange, Scheme.Opens.range_ι]
@@ -88,9 +91,9 @@ private theorem range_pieceHom (U : S.affineOpens) :
 include g in
 /-- Each piece lies over its affine open. -/
 private theorem hom_mem [Surjective p] (U : S.affineOpens) (y : (Y U).left) :
-    (Y U).hom y ∈ U.1 := by
+    (Y U).hom y ∈ U.val := by
   obtain ⟨y', rfl⟩ := (pullback.fst (Y U).hom p).surjective y
-  have h : (pieceHom Y g U).hom.left y' ∈ (X.hom ≫ p) ⁻¹' U.1 :=
+  have h : (pieceHom Y g U).hom.left y' ∈ (X.hom ≫ p) ⁻¹' U.val :=
     range_pieceHom Y g U ▸ ⟨y', rfl⟩
   have hw : (pieceHom Y g U).hom.left ≫ X.hom = pullback.snd (Y U).hom p :=
     Over.w (pieceHom Y g U).hom
@@ -101,8 +104,8 @@ private theorem hom_mem [Surjective p] (U : S.affineOpens) (y : (Y U).left) :
 include g in
 /-- The structure morphism of a piece, which factors through its affine open. -/
 private noncomputable def toOpen [Surjective p] (U : S.affineOpens) :
-    (Y U).left ⟶ U.1.toScheme :=
-  IsOpenImmersion.lift U.1.ι (Y U).hom <| by
+    (Y U).left ⟶ U.val.toScheme :=
+  IsOpenImmersion.lift U.val.ι (Y U).hom <| by
     rintro _ ⟨y, rfl⟩
     rw [Scheme.Opens.range_ι]
     exact hom_mem Y g U y
@@ -110,14 +113,14 @@ private noncomputable def toOpen [Surjective p] (U : S.affineOpens) :
 include g in
 @[reassoc (attr := simp)]
 private theorem toOpen_ι [Surjective p] (U : S.affineOpens) :
-    toOpen Y g U ≫ U.1.ι = (Y U).hom :=
+    toOpen Y g U ≫ U.val.ι = (Y U).hom :=
   IsOpenImmersion.lift_fac _ _ _
 
 /-- The morphism of descent data `Y V ×_S S' ⟶ Y U ×_S S'` factoring the piece over `V` through
 the piece over `U`. -/
 private noncomputable def transitionBaseChange {U V : S.affineOpens} (h : V ≤ U) :
     Hom (baseChange p (Y V)) (baseChange p (Y U)) :=
-  (g U).inv.comp ((pieceHom Y g V).codRestrict (D.isStable_comp_preimage U.1) (by
+  (g U).inv.comp ((pieceHom Y g V).codRestrict (D.isStable_comp_preimage U.val) (by
     rw [range_pieceHom]
     exact Set.preimage_mono h))
 
@@ -178,7 +181,7 @@ private instance isOpenImmersion_transition {U V : S.affineOpens} (h : V ≤ U) 
       inferInstance⟩ this
 
 private theorem range_transition {U V : S.affineOpens} (h : V ≤ U) :
-    Set.range (transition Y g h).left = (Y U).hom ⁻¹' V.1 := by
+    Set.range (transition Y g h).left = (Y U).hom ⁻¹' V.val := by
   refine subset_antisymm ?_ fun y hy ↦ ?_
   · rintro _ ⟨y, rfl⟩
     rw [Set.mem_preimage, ← Scheme.Hom.comp_apply, Over.w]
@@ -369,11 +372,11 @@ private instance (U : S.affineOpens) :
 variable {Y g} in
 /-- A point of the glued scheme lies in the piece over `U` exactly when it lies over `U`. -/
 private theorem mem_range_ιGlued_iff {U : S.affineOpens} {y : (glued Y g).left} :
-    y ∈ Set.range (ιGlued Y g U).left ↔ (glued Y g).hom y ∈ U.1 := by
+    y ∈ Set.range (ιGlued Y g U).left ↔ (glued Y g).hom y ∈ U.val := by
   -- The index type of the cover is only definitionally the type of affine opens, so the
   -- characterization of the pieces is combined by `Iff.trans` rather than by rewriting.
   exact (Set.ext_iff.mp ((gluingData Y g).preimage_toBase_eq_range_ι U) y).symm.trans
-    (Set.ext_iff.mp (Scheme.Opens.range_ι U.1) _)
+    (Set.ext_iff.mp (Scheme.Opens.range_ι U.val) _)
 
 variable {Y g} in
 /-- A point of `glued ×_S S'` lies in the base change of the piece over `U` exactly when it lies
@@ -381,7 +384,7 @@ over `U`. -/
 private theorem mem_range_ιGluedBaseChange_iff {U : S.affineOpens}
     {z : ((Over.pullback p).obj (glued Y g)).left} :
     z ∈ Set.range (ιGluedBaseChange Y g U).hom.left ↔
-      p (pullback.snd (glued Y g).hom p z) ∈ U.1 := by
+      p (pullback.snd (glued Y g).hom p z) ∈ U.val := by
   have h : (ιGluedBaseChange Y g U).hom.left = pullback.map _ _ _ _
       (ιGlued Y g U).left (𝟙 S') (𝟙 S) (by simp) (by simp) := by
     refine pullback.hom_ext ?_ ?_ <;> simp [ιGluedBaseChange]
@@ -452,7 +455,7 @@ private noncomputable def toXHom : Hom (baseChange p (glued Y g)) D where
       ιGluedBaseChange_toX]
 
 private theorem preimage_toX (U : S.affineOpens) :
-    (toX Y g).left ⁻¹ᵁ ((X.hom ≫ p) ⁻¹ᵁ U.1).ι.opensRange =
+    (toX Y g).left ⁻¹ᵁ ((X.hom ≫ p) ⁻¹ᵁ U.val).ι.opensRange =
       (ιGluedBaseChange Y g U).hom.left.opensRange := by
   have hw : (toX Y g).left ≫ X.hom = pullback.snd (glued Y g).hom p := Over.w (toX Y g)
   ext z
@@ -462,22 +465,22 @@ private theorem preimage_toX (U : S.affineOpens) :
     Scheme.Hom.comp_apply]
 
 private instance isIso_toX : IsIso (toX Y g).left := by
-  have hW : ⨆ U : S.affineOpens, (X.hom ≫ p) ⁻¹ᵁ U.1 = ⊤ := by
+  have hW : ⨆ U : S.affineOpens, (X.hom ≫ p) ⁻¹ᵁ U.val = ⊤ := by
     rw [← Scheme.Hom.preimage_iSup, iSup_affineOpens_eq_top, Scheme.Hom.preimage_top]
   refine IsZariskiLocalAtTarget.of_iSup_eq_top (P := MorphismProperty.isomorphisms Scheme) _ hW
     fun U ↦ ?_
-  have hrange : Set.range (pieceHom Y g U).hom.left = Set.range ((X.hom ≫ p) ⁻¹ᵁ U.1).ι := by
+  have hrange : Set.range (pieceHom Y g U).hom.left = Set.range ((X.hom ≫ p) ⁻¹ᵁ U.val).ι := by
     rw [range_pieceHom, Scheme.Opens.range_ι]
     rfl
-  let eU := IsOpenImmersion.isoOfRangeEq (pieceHom Y g U).hom.left ((X.hom ≫ p) ⁻¹ᵁ U.1).ι
+  let eU := IsOpenImmersion.isoOfRangeEq (pieceHom Y g U).hom.left ((X.hom ≫ p) ⁻¹ᵁ U.val).ι
     hrange
   have hpb : IsPullback eU.hom (ιGluedBaseChange Y g U).hom.left
-      ((X.hom ≫ p) ⁻¹ᵁ U.1).ι (toX Y g).left :=
+      ((X.hom ≫ p) ⁻¹ᵁ U.val).ι (toX Y g).left :=
     IsOpenImmersion.isPullback _ _ _ _
       (by rw [ιGluedBaseChange_toX, IsOpenImmersion.isoOfRangeEq_hom_fac])
       (preimage_toX Y g U)
   let i := hpb.isoIsPullback _ _ (isPullback_morphismRestrict (toX Y g).left _)
-  have h : (toX Y g).left ∣_ ((X.hom ≫ p) ⁻¹ᵁ U.1) = i.inv ≫ eU.hom := by
+  have h : (toX Y g).left ∣_ ((X.hom ≫ p) ⁻¹ᵁ U.val) = i.inv ≫ eU.hom := by
     rw [Iso.eq_inv_comp, IsPullback.isoIsPullback_hom_fst]
   rw [MorphismProperty.isomorphisms.iff, h]
   infer_instance
@@ -493,10 +496,25 @@ effective: there are a scheme `Y` over `S` and an isomorphism from the canonical
 theorem exists_baseChange_hom_isIso_of_forall_affineOpens [Surjective p] [Flat p]
     [QuasiCompact p]
     (h : ∀ U : S.affineOpens, ∃ (Y : Over S)
-      (g : Hom (baseChange p Y) (D.restrict _ (D.isStable_comp_preimage U.1))), IsIso g.hom) :
+      (g : Hom (baseChange p Y) (D.restrict _ (D.isStable_comp_preimage U.val))), IsIso g.hom) :
     ∃ (Y : Over S) (g : Hom (baseChange p Y) D), IsIso g.hom := by
   choose Y g hg using h
   have : IsIso ((Over.forget S').map (toXHom Y g).hom) := isIso_toX Y g
   exact ⟨glued Y g, toXHom Y g, isIso_of_reflects_iso _ (Over.forget S')⟩
+
+variable {D} in
+/-- **Effectivity of descent data is local on the base**, in terms of base change. Let
+`p : S' ⟶ S` be surjective, flat and quasi-compact, and let `D` be a descent datum relative to `p`
+on `X ⟶ S'`. If, for every affine open `U` of `S`, the base change `D.pullbackAlong U.ι` of `D` to
+`U`, relative to `U ×_S S' ⟶ U`, is effective, then `D` is effective. -/
+theorem exists_baseChange_hom_isIso_of_forall_affineOpens_pullbackAlong [Surjective p] [Flat p]
+    [QuasiCompact p]
+    (h : ∀ U : S.affineOpens, ∃ (Y₀ : Over U.val.toScheme)
+      (f : Hom (baseChange (pullback.fst U.val.ι p) Y₀) (D.pullbackAlong U.val.ι)), IsIso f.hom) :
+    ∃ (Y : Over S) (g : Hom (baseChange p Y) D), IsIso g.hom := by
+  refine exists_baseChange_hom_isIso_of_forall_affineOpens fun U ↦ ?_
+  obtain ⟨Y₀, f, hf⟩ := h U
+  obtain ⟨g, hg, -⟩ := f.exists_baseChange_hom_isIso_restrict_of_pullbackAlong
+  exact ⟨_, g, hg⟩
 
 end TauCeti.DescentDatum

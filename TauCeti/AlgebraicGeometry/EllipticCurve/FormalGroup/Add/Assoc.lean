@@ -268,10 +268,9 @@ private theorem subst_formalW_ne_zero {q : MvPowerSeries σ O} (hq : constantCoe
     exact one_ne_zero hc
   · rw [map_pow, hq, zero_pow hd, smul_zero]
 
-variable [IsFractionRing (MvPowerSeries σ O) KK]
-
-/-- The `w`-expansion at a nonzero parameter stays nonzero after being pushed into `KK`: the
-localization map of a fraction field is injective, so it cannot introduce a zero.
+variable [FaithfulSMul (MvPowerSeries σ O) KK] in
+/-- The `w`-expansion at a nonzero parameter stays nonzero after being pushed into `KK`: a
+faithful algebra map is injective, so it cannot introduce a zero.
 
 Every parametrized point of this file needs its `w`-coordinate invertible in `KK`, so this is the
 form `subst_formalW_ne_zero` is actually used in. -/
@@ -281,7 +280,9 @@ theorem algebraMap_subst_formalW_ne_zero {q : MvPowerSeries σ O}
   have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
   have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
   exact W.subst_formalW_ne_zero hq hq0
-    (IsFractionRing.injective (MvPowerSeries σ O) KK (by rw [h, map_zero]))
+    (FaithfulSMul.algebraMap_injective (MvPowerSeries σ O) KK (by rw [h, map_zero]))
+
+variable [IsFractionRing (MvPowerSeries σ O) KK]
 
 /-- The point of the base-changed curve carried by the parameter `q`: the solution `(q, w(q))` of
 the `w`-equation, read in `KK` and in the affine coordinates `(q / w, -1 / w)` of the chart. -/
@@ -383,7 +384,7 @@ private theorem thetaPoint_add_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0)
   have hns₁ := chord_point_nonsingular (fracCurve W σ KK) hwq₁ hw₁0 hΔ
   have hns₂ := chord_point_nonsingular (fracCurve W σ KK) hwq₂ hw₂0 hΔ
   obtain ⟨h₃, hadd⟩ := chord_point_add (fracCurve W σ KK) hwq₁ hwq₂ hslope hNint hT₃ hwTeq hA
-    hw₁0 hw₂0 hwT0 hxρ hns₁ hns₂
+    hwT0 hxρ hns₁ hns₂
   rw [W.thetaPoint_eq_some hΔ h₁ hq₁0 hns₁, W.thetaPoint_eq_some hΔ h₂ hq₂0 hns₂]
   exact ⟨h₃, hadd⟩
 

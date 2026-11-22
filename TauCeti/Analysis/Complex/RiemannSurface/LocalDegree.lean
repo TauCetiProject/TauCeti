@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.Normed.Module.Connected
-import TauCeti.Topology.OpenPartialHomeomorph.ClosedBall
+import TauCeti.Logic.Equiv.PartialEquiv
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
 
@@ -234,12 +234,12 @@ private theorem fiber_count_of_ne [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(�
   refine ⟨?_, hbij.finite_iff_finite.mpr S.finite_toSet, hsum2.trans hcount'⟩
   -- The count is positive, so `S` is nonempty, and `hbij` carries a point of the fibre onto it.
   obtain ⟨z, hz⟩ : S.Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty]
+    rw [← Finset.ne_empty_iff_nonempty]
     rintro rfl
     rw [Finset.sum_empty] at hcount'
     exact hpos.ne' hcount'.symm
   obtain ⟨x', hx', -⟩ := hbij.2.2 (Finset.mem_coe.2 hz)
-  exact Set.nonempty_iff_ne_empty.1 ⟨x', hx'⟩
+  exact Set.ne_empty_iff_nonempty.2 ⟨x', hx'⟩
 
 /-- The chart form of `TauCeti.RiemannSurface.exists_nhds_localMultiplicity_fiber_sum`, read in
 arbitrary charts `e` at `x` and `e'` at `f x` of the maximal atlases, with the neighbourhood `U`
@@ -293,8 +293,9 @@ private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
   have hV : (e' : Y → ℂ) ⁻¹' Metric.ball (e' (f x)) δ ∩ e'.source ∈ 𝓝 (f x) := by
     refine inter_mem ?_ (e'.open_source.mem_nhds hfx)
     exact (e'.continuousAt hfx).preimage_mem_nhds (Metric.ball_mem_nhds (e' (f x)) hδ)
-  have hcenter := e.preimage_singleton_inter_symm_image_ball_eq_singleton hx hr fun z hz hzne ↦
-    hisol z (Metric.ball_subset_closedBall hz) hzne
+  have hcenter : f ⁻¹' {f x} ∩ e.symm '' Metric.ball (e x) r = {x} :=
+    e.toPartialEquiv.preimage_singleton_inter_symm_image_eq_singleton hx (Metric.mem_ball_self hr)
+      fun z hz hzne ↦ hisol z (Metric.ball_subset_closedBall hz) hzne
   refine ⟨e.symm '' Metric.ball (e x) r, hU, ?_,
     (e' : Y → ℂ) ⁻¹' Metric.ball (e' (f x)) δ ∩ e'.source, hV, hcenter, ?_⟩
   · rintro _ ⟨z, hz, rfl⟩
@@ -305,7 +306,7 @@ private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
     subst hcentral
     refine ⟨?_, ?_, ?_⟩
     · rw [hcenter]
-      exact Set.singleton_ne_empty x
+      exact (Set.singleton_nonempty x).ne_empty
     · rw [hcenter]
       exact Set.finite_singleton x
     · rw [hcenter, finsum_mem_eq_finite_toFinset_sum _ (Set.finite_singleton x)]

@@ -74,7 +74,7 @@ variable {d : Type*} [Fintype d] {K : Compacts (d → ℝ)}
 
 /-- The lift of a smooth function on the torus, multiplied by a cutoff `χ` supported in `K`. -/
 private def cutoffLift (χ : 𝓓_{K}(d → ℝ, ℂ)) : smoothFunctions d →ₗ[ℂ] 𝓓_{K}(d → ℝ, ℂ) where
-  toFun f := bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) (mem_smoothFunctions.1 f.2) χ
+  toFun f := bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) (mem_smoothFunctions.1 f.property) χ
   map_add' f g := by
     ext x
     simp [mul_add]
@@ -95,7 +95,7 @@ private theorem supSeminorm_cutoffLift_le (χ : 𝓓_{K}(d → ℝ, ℂ)) {f : s
       2 ^ k * ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K k χ * M := by
   have hM0 := hf.nonneg
   refine Seminorm.finset_sup_apply_le (by positivity) fun i hi ↦ ?_
-  exact seminorm_bilinLeftCLM_mul_le χ (mem_smoothFunctions.1 f.2)
+  exact seminorm_bilinLeftCLM_mul_le χ (mem_smoothFunctions.1 f.property)
     (fun j hj x ↦ hf.norm_iteratedFDeriv_le hj x) (Finset.mem_Iic.1 hi)
 
 /-- On a set meeting none of its nonzero integer translates, a cutoff equal to one on the
@@ -197,7 +197,7 @@ private theorem derivBound_periodizeProd {S₁ : Set (a → ℝ)} {S₂ : Set (b
 private def cutoffLiftProd (χ : 𝓓_{L}((a → ℝ) × (b → ℝ), ℂ)) :
     smoothFunctions (a ⊕ b) →ₗ[ℂ] 𝓓_{L}((a → ℝ) × (b → ℝ), ℂ) where
   toFun h := bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ)
-    ((mem_smoothFunctions.1 h.2).comp (splitEquiv a b).symm.contDiff) χ
+    ((mem_smoothFunctions.1 h.property).comp (splitEquiv a b).symm.contDiff) χ
   map_add' f g := by
     ext x
     simp [mul_add]
@@ -219,10 +219,11 @@ private theorem supSeminorm_cutoffLiftProd_le (χ : 𝓓_{L}((a → ℝ) × (b �
     (hh : DerivBound k M (h : UnitAddTorus (a ⊕ b) → ℂ)) {i : ℕ} (hi : i ≤ k) :
     N[ℂ]_{L, i} (cutoffLiftProd χ h) ≤
       2 ^ k * ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ L k χ * M :=
-  seminorm_bilinLeftCLM_mul_le χ ((mem_smoothFunctions.1 h.2).comp (splitEquiv a b).symm.contDiff)
+  seminorm_bilinLeftCLM_mul_le χ ((mem_smoothFunctions.1 h.property).comp
+      (splitEquiv a b).symm.contDiff)
     (fun j hj x ↦ by
       have h' := (((splitEquiv a b).symm : (a → ℝ) × (b → ℝ) →L[ℝ] (a ⊕ b → ℝ))
-        |>.norm_iteratedFDeriv_comp_right_le (mem_smoothFunctions.1 h.2) x (i := j)
+        |>.norm_iteratedFDeriv_comp_right_le (mem_smoothFunctions.1 h.property) x (i := j)
           (mod_cast le_top)).trans (mul_le_of_le_one_right
           (norm_nonneg _) (pow_le_one₀ (norm_nonneg _)
             (ContinuousLinearEquiv.opNorm_sumPiEquivProdPi_symm_le (𝕜 := ℝ))))
@@ -234,7 +235,7 @@ private theorem cutoffLiftProd_tensor {K₁ : Compacts (a → ℝ)} {K₂ : Comp
     (g : smoothFunctions b) :
     cutoffLiftProd (χ₁.tensor χ₂)
         ⟨tensor (f : UnitAddTorus a → ℂ) (g : UnitAddTorus b → ℂ),
-          tensor_mem_smoothFunctions f.2 g.2⟩ =
+          tensor_mem_smoothFunctions f.property g.property⟩ =
       (cutoffLift χ₁ f).tensor (cutoffLift χ₂ g) := by
   ext p
   simp only [cutoffLiftProd_apply, ContDiffMapSupportedIn.tensor_apply, cutoffLift_apply,
@@ -361,7 +362,6 @@ theorem exists_schwartzKernel_supportedIn
       ‖schwartzKernel B' hB' (periodizeProd Φ)‖ ≤
         max C' 0 * (Finset.Iic N').sup (fun i ↦ N[ℂ]_{K₁ ×ˢ K₂, i}) Φ := by
     have hΦ := derivBound_periodizeProd hK₁' hK₂' hKK Φ N'
-    have hΦ0 := hΦ.nonneg
     refine (hC'N' _ _ hΦ).trans ?_
     gcongr
     · exact le_max_left _ _

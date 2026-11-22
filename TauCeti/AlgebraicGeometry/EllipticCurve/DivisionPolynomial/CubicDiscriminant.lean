@@ -29,7 +29,7 @@ The proof is two ring identities, and neither mentions a curve. Writing
 so anything dividing `f(x)` and `Q(x)` divides `f'(x)²`; the second expresses
 `Cubic.discr ⟨1, a₂, a₄, a₆⟩` as a combination of `f(x)` and `f'(x)²`. Both are stated for an
 arbitrary divisor `d`. Both are pure cubic algebra and live in `TauCeti.Algebra.CubicDiscriminant`
-(`TauCeti.Cubic.dvd_derivative_sq` and `TauCeti.Cubic.dvd_discr`), which this file imports. `Ψ₃`
+(`TauCeti.Cubic.dvd_derivative_sq_iff` and `TauCeti.Cubic.dvd_discr`), which this file imports. `Ψ₃`
 enters only here: for `a₁ = a₃ = 0` it evaluates to exactly that `Q(x)`, and the curve equation
 makes `y²` a divisor of `f(x)`.
 
@@ -46,17 +46,18 @@ torsion, integrality or ellipticity hypothesis.
 an arbitrary commutative ring finite order says nothing about divisibility; the divisibility is
 extracted in the integral Nagell–Lutz setting, from the coordinate formula for `2 • P` together
 with the integrality of the coordinates. Both of those are point-level results that this file does
-not contain. Read the hypothesis as the shape a later torsion argument is expected to supply, not
-as a consequence of torsion.
+not contain. Read the hypothesis as the shape a torsion argument supplies, not as a consequence of
+torsion.
 
-This is an ingredient for the Nagell–Lutz milestone of `TauCetiRoadmap/EllipticCurves/README.md`,
-Layer 6, item "The torsion subgroup and Nagell–Lutz", whose short-model target `lutz_nagell` asks
-for `y = 0 ∨ y² ∣ Δ`; it is the sharp algebraic form of that second conjunct's divisibility step.
+This is the algebraic step of the discriminant half of the Nagell–Lutz theorem,
+`y_eq_zero_or_sq_dvd_cubic_discr_of_torsion`, which supplies `y² ∣ Ψ₃(x)` for a torsion point with
+integral coordinates through `sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃_rat`. On the short model it
+gives the classical `y² ∣ 4A³ + 27B²` of `lutz_nagell_sharp`.
 
 ## Provenance
 
-Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), pinned by
-that roadmap at `dev/modular-curves @ 9fec8eba7652`:
+Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), at
+`dev/modular-curves @ 9fec8eba7652`:
 `LutzNagell/LutzNagellTheorem/PIDMain.lean`, the algebraic core of
 `lutz_nagell_cubicDisc_discriminant` (:438). The source states the conclusion as the raw polynomial
 `4a₄³ + 27a₆² + 4a₂³a₆ − a₂²a₄² − 18a₂a₄a₆` and reaches it inside a torsion argument; here it is
@@ -99,8 +100,8 @@ theorem sq_dvd_cubic_discr (ha₁ : W.a₁ = 0) (ha₃ : W.a₃ = 0)
     y ^ 2 ∣ (_root_.Cubic.mk 1 W.a₂ W.a₄ W.a₆).discr :=
   have hf : y ^ 2 ∣ x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x + W.a₆ := hcurve ▸ dvd_rfl
   Cubic.dvd_discr hf
-    (Cubic.dvd_derivative_sq hf (WeierstrassCurve.eval_Ψ₃_of_a₁_eq_zero_of_a₃_eq_zero W ha₁ ha₃ ▸
-        hΨ₃))
+    ((Cubic.dvd_derivative_sq_iff hf).2
+      (WeierstrassCurve.eval_Ψ₃_of_a₁_eq_zero_of_a₃_eq_zero W ha₁ ha₃ ▸ hΨ₃))
 
 end
 

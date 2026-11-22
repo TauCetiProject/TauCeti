@@ -304,7 +304,7 @@ This statement includes the zero rational function, whose reduced denominator is
 @[simp]
 theorem ord_adicOfIrreducible_neg_iff {q : k[X]} (hq : Irreducible q) {f : RatFunc k} :
     (adicOfIrreducible hq).ord f < 0 ↔ q ∣ f.denom := by
-  rcases eq_or_ne f 0 with rfl | hf
+  rcases eq_or_ne f 0 with rfl | _
   · simp only [ord_zero, lt_self_iff_false, RatFunc.denom_zero, false_iff]
     exact hq.not_dvd_one
   · rw [ord_adicOfIrreducible hq]
@@ -374,20 +374,31 @@ theorem residue_adicOfIrreducible_eq_zero_iff {q : k[X]} (hq : Irreducible q)
   · rw [(adicOfIrreducible hq).residue_eq_zero_iff_ord_pos hf,
       ord_adicOfIrreducible_pos_iff hq hf]
 
+/-- The value of a polynomial `p` at the place `t = a` is `p(a)`, since `t - a` divides
+`p - p(a)`. -/
+@[simp]
+theorem residue_algebraMap_adicOfIrreducible_X_sub_C (a : k) (p : k[X])
+    (hp : algebraMap k[X] (RatFunc k) p ∈ (adicOfIrreducible (irreducible_X_sub_C a)).integers) :
+    IsLocalRing.residue (adicOfIrreducible (irreducible_X_sub_C a)).integers
+        ⟨algebraMap k[X] (RatFunc k) p, hp⟩ =
+      algebraMap k (adicOfIrreducible (irreducible_X_sub_C a)).ResidueField (p.eval a) := by
+  rw [IsScalarTower.algebraMap_apply k (adicOfIrreducible (irreducible_X_sub_C a)).integers,
+    IsLocalRing.ResidueField.algebraMap_eq, ← sub_eq_zero, ← map_sub,
+    residue_adicOfIrreducible_eq_zero_iff]
+  have h : ((⟨algebraMap k[X] (RatFunc k) p, hp⟩ -
+      algebraMap k (adicOfIrreducible (irreducible_X_sub_C a)).integers (p.eval a) :
+        (adicOfIrreducible (irreducible_X_sub_C a)).integers) : RatFunc k) =
+      algebraMap k[X] (RatFunc k) (p - C (p.eval a)) := by
+    simp [RatFunc.algebraMap_C]
+  rw [h, RatFunc.num_algebraMap, dvd_iff_isRoot, IsRoot.def, eval_sub, eval_C, sub_self]
+
 /-- The value of the function `t` at the place `t = a` is `a`. -/
 @[simp]
 theorem residue_X_adicOfIrreducible_X_sub_C (a : k) :
     IsLocalRing.residue (adicOfIrreducible (irreducible_X_sub_C a)).integers
         ⟨RatFunc.X, X_mem_integers_adicOfIrreducible _⟩ =
       algebraMap k (adicOfIrreducible (irreducible_X_sub_C a)).ResidueField a := by
-  rw [IsScalarTower.algebraMap_apply k (adicOfIrreducible (irreducible_X_sub_C a)).integers,
-    IsLocalRing.ResidueField.algebraMap_eq, ← sub_eq_zero, ← map_sub,
-    residue_adicOfIrreducible_eq_zero_iff]
-  have h : ((⟨RatFunc.X, X_mem_integers_adicOfIrreducible _⟩ -
-      algebraMap k (adicOfIrreducible (irreducible_X_sub_C a)).integers a :
-        (adicOfIrreducible (irreducible_X_sub_C a)).integers) : RatFunc k) =
-      algebraMap k[X] (RatFunc k) (X - C a) := by
-    simp [RatFunc.algebraMap_X, RatFunc.algebraMap_C]
-  rw [h, RatFunc.num_algebraMap]
+  simpa [RatFunc.algebraMap_X] using residue_algebraMap_adicOfIrreducible_X_sub_C a X
+    (RatFunc.algebraMap_X (K := k) ▸ X_mem_integers_adicOfIrreducible _)
 
 end TauCeti.Place

@@ -103,7 +103,7 @@ private theorem smul_vertex_eq (hP : P.carrier = dirichletDomain Γ p)
         (h : PSL(2, ℝ)) • leftHalfPlane (P.sideGeodesic i) := by
       rw [hs, leftHalfPlane_mul_dilation, sideGeodesic_def, sideGeodesic_def, vertex_smul,
         vertex_smul, leftHalfPlane_geodesicFromTo_smul _ (P.vertex_ne_vertex_add_one i)]
-    refine notMem_leftHalfPlane_of_range_eq_perpBisector hhp.symm hbis
+    refine notMem_leftHalfPlane_of_range_eq_perpBisector hbis
       ((P.mem_interior_carrier_iff p).1 hpint j) ?_
     rw [hleft]
     exact smul_mem_smul_set ((P.mem_interior_carrier_iff p).1 hpint i)
@@ -176,7 +176,7 @@ theorem existsUnique_sidePairing_of_carrier_eq_dirichletDomain
       map_pair := fun i ↦ by rw [he, hg_pair, inv_inv, Subgroup.coe_inv, inv_inv]
       map_smul_vertex := fun i ↦ (hvert i).1
       map_smul_vertex_add_one := fun i ↦ (hvert i).2 }
-  refine ⟨σ, fun i ↦ ((g i)⁻¹ : Γ).2, fun τ hτ ↦ ?_⟩
+  refine ⟨σ, fun i ↦ ((g i)⁻¹ : Γ).property, fun τ hτ ↦ ?_⟩
   -- a side pairing by elements of `Γ` pairs each side along the face of the inverse map
   have hmap (i : Fin n) : τ.map i = σ.map i := by
     have hti := (existsUnique_side_eq_dirichletFace hP hp i).unique (hg i)

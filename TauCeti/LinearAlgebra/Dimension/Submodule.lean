@@ -18,9 +18,12 @@ finite-dimensional space whose dimensions sum to more than the ambient dimension
 nontrivially, as do three subspaces whose dimensions sum to more than twice the ambient dimension,
 and a subspace of rank greater than the rank of a linear map `f` meets `ker f`
 nontrivially. Dually, the preimage of a subspace `W` under a linear map out of an
-`m`-dimensional space has codimension at most the codimension of `W`. A set spans a subspace of
-dimension at least `n` exactly when it contains `n` linearly independent vectors. Two disjoint
-subspaces of a finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
+`m`-dimensional space has codimension at most the codimension of `W`; without finiteness, the
+codimension (the rank of the quotient) of a preimage is at most that of the submodule, and the
+codimension of an intersection is at most the sum of the codimensions. A set spans a subspace of
+dimension at least `n` exactly when it contains `n` linearly independent vectors, and a subspace
+of rank at least `k` contains a subspace of rank exactly `k`. Two disjoint subspaces of a
+finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
 A subspace of dimension at least three contains `x` outside `𝕜 ∙ a` and `z` outside
 `span 𝕜 {a, x}`.
 A finite-dimensional subspace spanning the whole space together with `V`, of dimension at most the
@@ -34,7 +37,9 @@ surjective one, and composing on the left with a map that does not lower the dim
 does not enlarge the kernel. Conjugating an endomorphism by a linear equivalence preserves the
 dimension of its kernel.
 The kernel of a surjection from a finite-dimensional space has dimension the difference of the
-dimensions.
+dimensions, an endomorphism of a finite-dimensional space has kernel and cokernel of the same
+dimension, and the preimage of a submodule `p` inside another submodule `q` has the same
+`finrank` as the intersection `p ⊓ q` (`Submodule.finrank_comap_subtype`).
 -/
 
 public section
@@ -111,6 +116,15 @@ theorem finrank_add_finrank_le_finrank_comap_add_finrank {M N : Type*} [AddCommG
   rw [hker] at h₁
   omega
 
+/-- The codimension of an intersection is at most the sum of the codimensions:
+`E ⧸ (p ⊓ q)` embeds into `(E ⧸ p) × (E ⧸ q)`. No finiteness is assumed. -/
+theorem rank_quotient_inf_le (p q : Submodule 𝕜 E) :
+    Module.rank 𝕜 (E ⧸ (p ⊓ q)) ≤ Module.rank 𝕜 (E ⧸ p) + Module.rank 𝕜 (E ⧸ q) := by
+  have hker : LinearMap.ker (p.mkQ.prod q.mkQ) = p ⊓ q := by
+    rw [LinearMap.ker_prod, ker_mkQ, ker_mkQ]
+  rw [← rank_prod', ← hker, (p.mkQ.prod q.mkQ).quotKerEquivRange.rank_eq]
+  exact Submodule.rank_le _
+
 /-- A set spans a subspace of dimension at least `n` exactly when it contains `n` linearly
 independent vectors. -/
 theorem le_finrank_span_iff_exists_linearIndependent {s : Set E} [Module.Finite 𝕜 (span 𝕜 s)]
@@ -138,6 +152,43 @@ theorem isCompl_of_codisjoint_of_finrank_le {V S : Submodule 𝕜 E} [FiniteDime
   refine ⟨disjoint_def.mpr fun x hxV hxS ↦ ?_, h⟩
   have : φ ⟨x, hxS⟩ = φ 0 := by simpa [φ] using hxV
   simpa using congrArg Subtype.val (hinj this)
+
+/-- A subspace of rank at least `k` contains a subspace of rank exactly `k`: the span of `k`
+linearly independent vectors of it. The rank of `M` may be an infinite cardinal. -/
+theorem exists_le_rank_eq {M : Submodule 𝕜 E} {k : ℕ} (hk : (k : Cardinal) ≤ Module.rank 𝕜 M) :
+    ∃ N ≤ M, Module.rank 𝕜 N = k := by
+  obtain ⟨v, hv⟩ := exists_linearIndependent_of_le_rank hk
+  have hv' : LinearIndependent 𝕜 (M.subtype ∘ v) := hv.map' M.subtype M.ker_subtype
+  have := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range (M.subtype ∘ v))
+  refine ⟨span 𝕜 (Set.range (M.subtype ∘ v)),
+    span_le.mpr (Set.range_subset_iff.mpr fun i ↦ (v i).property), ?_⟩
+  rw [← Module.finrank_eq_rank, finrank_span_eq_card hv', Fintype.card_fin]
+
+/-- The linear-algebra core of the transverse level disc, kernel part. If `T` has dimension
+`dim G + 1`, `T` and the kernel of a surjection `π` span the space, and some `v ∈ T` with
+`dg v ≠ 0` for a linear form `dg` lies in the kernel of `π`, then `T ⊓ ker dg` meets `ker π`
+trivially, that is, `π` is injective on `T ⊓ ker dg`. -/
+theorem disjoint_inf_ker_ker_of_finrank_eq_succ {G : Type*} [AddCommGroup G] [Module 𝕜 G]
+    {T : Submodule 𝕜 E} {π : E →ₗ[𝕜] G} {dg : E →ₗ[𝕜] 𝕜} {v : E}
+    (hπs : Function.Surjective π) (hTπ : T ⊔ LinearMap.ker π = ⊤)
+    (hdim : Module.finrank 𝕜 T = Module.finrank 𝕜 G + 1) (hvs : v ∈ T) (hvπ : π v = 0)
+    (hgv : dg v ≠ 0) :
+    Disjoint (T ⊓ LinearMap.ker dg) (LinearMap.ker π) := by
+  have : FiniteDimensional 𝕜 T := Module.finite_of_finrank_eq_succ hdim
+  have hv0 : v ≠ 0 := by rintro rfl; exact hgv (map_zero _)
+  have hsurj : Function.Surjective (π.domRestrict T) :=
+    (LinearMap.surjective_domRestrict_iff hπs).2 (codisjoint_iff.2 hTπ)
+  have : FiniteDimensional 𝕜 G := Module.Finite.of_surjective _ hsurj
+  have hker : LinearMap.ker (π.domRestrict T) = (T ⊓ LinearMap.ker π).comap T.subtype := by
+    rw [LinearMap.ker_domRestrict, Submodule.comap_inf, Submodule.comap_subtype_self, top_inf_eq]
+  have hkerπ := LinearMap.finrank_range_add_finrank_ker (π.domRestrict T)
+  rw [LinearMap.range_eq_top_of_surjective _ hsurj, finrank_top, hker,
+    (Submodule.comapSubtypeEquivOfLe inf_le_left).finrank_eq] at hkerπ
+  have hline : T ⊓ LinearMap.ker π = 𝕜 ∙ v :=
+    eq_span_singleton_of_mem_of_finrank_eq_one (by omega) ⟨hvs, hvπ⟩ hv0
+  rw [disjoint_iff, inf_right_comm, hline]
+  exact (Submodule.disjoint_span_singleton_of_notMem
+    (s := LinearMap.ker dg) fun h ↦ hgv (LinearMap.mem_ker.1 h)).symm.eq_bot
 
 /-- A subspace with more dimensions than a finite set has elements contains a vector outside the
 span of the set. -/
@@ -172,6 +223,35 @@ theorem lift_rank_le_of_disjoint_ker [Ring 𝕜] {M : Type u} {N : Type v}
   apply (f.rangeRestrict.domRestrict V).lift_rank_le_of_injective
   simpa only [LinearMap.injective_domRestrict_iff, LinearMap.ker_rangeRestrict] using h
 
+/-- The preimage of a submodule has codimension at most that of the submodule:
+`M ⧸ p.comap f` embeds into `N ⧸ p`. No finiteness is assumed. -/
+theorem lift_rank_quotient_comap_le [Ring 𝕜] {M : Type u} {N : Type v}
+    [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+    (p : Submodule 𝕜 N) (f : M →ₗ[𝕜] N) :
+    Cardinal.lift.{v} (Module.rank 𝕜 (M ⧸ p.comap f)) ≤
+      Cardinal.lift.{u} (Module.rank 𝕜 (N ⧸ p)) := by
+  apply LinearMap.lift_rank_le_of_injective ((p.comap f).mapQ p f le_rfl)
+  rw [← LinearMap.ker_eq_bot, ker_mapQ, mkQ_map_self]
+
+/-- The preimage of a submodule of codimension at most `n` has codimension at most `n`. -/
+theorem rank_quotient_comap_le_of_le [Ring 𝕜] {M : Type u} {N : Type v}
+    [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+    {p : Submodule 𝕜 N} {n : ℕ} (hp : Module.rank 𝕜 (N ⧸ p) ≤ n) (f : M →ₗ[𝕜] N) :
+    Module.rank 𝕜 (M ⧸ p.comap f) ≤ n :=
+  Cardinal.lift_le_nat_iff.mp ((p.lift_rank_quotient_comap_le f).trans
+    (Cardinal.lift_le_nat_iff.mpr hp))
+
+/-- A submodule of rank greater than `n` contains a nonzero vector of the kernel of every linear
+map `f` of rank at most `n`. -/
+theorem exists_mem_ker_ne_zero_of_rank_lt [Ring 𝕜] {M : Type u} {N : Type v}
+    [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+    {V : Submodule 𝕜 M} {f : M →ₗ[𝕜] N} {n : ℕ} (hV : n < Module.rank 𝕜 V) (hf : f.rank ≤ n) :
+    ∃ x ∈ V, x ∈ LinearMap.ker f ∧ x ≠ 0 := by
+  by_contra! h
+  have hle := (lift_rank_le_of_disjoint_ker (disjoint_def.mpr h)).trans (Cardinal.lift_le.mpr hf)
+  rw [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at hle
+  exact hle.not_gt hV
+
 /-- The rank of a product of free submodules is the sum of their ranks. -/
 theorem rank_prod [Semiring 𝕜] [StrongRankCondition 𝕜] {M : Type u} {N : Type v}
     [AddCommMonoid M] [Module 𝕜 M] [AddCommMonoid N] [Module 𝕜 N]
@@ -179,6 +259,13 @@ theorem rank_prod [Semiring 𝕜] [StrongRankCondition 𝕜] {M : Type u} {N : T
     Module.rank 𝕜 (V.prod W) =
       Cardinal.lift.{v} (Module.rank 𝕜 V) + Cardinal.lift.{u} (Module.rank 𝕜 W) := by
   rw [(V.prodEquiv W).rank_eq, _root_.rank_prod]
+
+/-- The dimension of a submodule `p` pulled back to `q` via `q.subtype` equals the dimension of the
+intersection `p ⊓ q`. -/
+theorem finrank_comap_subtype {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    (p q : Submodule R M) :
+    finrank R ↥(p.comap q.subtype) = finrank R ↥(p ⊓ q) := by
+  rw [← q.finrank_map_subtype_eq, map_comap_eq, range_subtype, inf_comm]
 
 end Submodule
 
@@ -235,6 +322,15 @@ theorem finrank_ker_eq_sub_of_surjective {K : Type*} {M : Type v} {N : Type*} [R
     Module.finrank K (ker f) = Module.finrank K M - Module.finrank K N := by
   have h := (ker f).finrank_quotient_add_finrank
   rw [(f.quotKerEquivOfSurjective hf).finrank_eq] at h
+  omega
+
+/-- An endomorphism of a finite-dimensional vector space has kernel and cokernel of the same
+dimension. -/
+theorem finrank_quotient_range_eq_finrank_ker {K V : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [FiniteDimensional K V] (T : V →ₗ[K] V) :
+    Module.finrank K (V ⧸ range T) = Module.finrank K (ker T) := by
+  have h₁ := Submodule.finrank_quotient_add_finrank (range T)
+  have h₂ := T.finrank_range_add_finrank_ker
   omega
 
 end LinearMap

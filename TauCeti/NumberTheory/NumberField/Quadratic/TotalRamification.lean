@@ -52,7 +52,8 @@ except for the two `TauCeti.NumberField` results whose names are written out in 
 * `TauCeti.NumberField.eq_map_span_of_absNorm_eq_sq_of_mem_ramifiedPrimes`: every ideal of
   absolute norm `p ^ 2` is the ideal `p 𝓞 K`; hence
   `TauCeti.NumberField.isPrincipal_of_absNorm_eq_sq_of_mem_ramifiedPrimes`: it is principal.
-* `map_eq_self_of_mem_ramifiedPrimes`: any ring automorphism of `𝓞 K` fixes `𝔭`.
+* `map_eq_self_of_mem_ramifiedPrimes`: any ring automorphism of `𝓞 K` fixes `𝔭`, and
+  `map_eq_self_of_liesOver_of_mem_ramifiedPrimes` fixes every ideal above `p`.
 * `mem_ramifiedPrimes_iff_ramificationIdx_eq_two`: conversely, `e = 2` characterises the ramified
   primes among the rational primes.
 -/
@@ -71,7 +72,7 @@ indices and inertia degrees of the primes of `𝓞 K` satisfy `∑ e(𝔭) f(�
 private theorem sum_ramificationIdx_mul_inertiaDeg_eq_two (hK : finrank ℚ K = 2)
     [(span {(p : ℤ)} : Ideal ℤ).IsMaximal] :
     ∑ q : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K),
-      q.1.ramificationIdx ℤ * q.1.inertiaDeg ℤ = 2 := by
+      q.val.ramificationIdx ℤ * q.val.inertiaDeg ℤ = 2 := by
   rw [Ideal.sum_ramification_inertia_eq_finrank, NumberField.RingOfIntegers.rank K, hK]
 
 /-- **The engine of the file.** If some prime `𝔭` of `𝓞 K` above a rational prime `p` has
@@ -96,7 +97,8 @@ private theorem totallyRamified_aux (hK : finrank ℚ K = 2) (hp : p.Prime)
   have hsum := sum_ramificationIdx_mul_inertiaDeg_eq_two (K := K) (p := p) hK
   rw [← Finset.add_sum_erase _ _ (Finset.mem_univ x), hx1] at hsum
   -- The summand at `𝔭` already accounts for the whole sum, so the remaining ones vanish.
-  have hrest : ∑ q ∈ Finset.univ.erase x, q.1.ramificationIdx ℤ * q.1.inertiaDeg ℤ = 0 := by omega
+  have hrest : ∑ q ∈ Finset.univ.erase x, q.val.ramificationIdx ℤ * q.val.inertiaDeg ℤ = 0
+      := by omega
   have hxval : 𝔭.ramificationIdx ℤ * 𝔭.inertiaDeg ℤ = 2 := by omega
   -- `e ∣ 2` and `2` is prime, so `e = 2`; then `f = 1`.
   have heone : 𝔭.ramificationIdx ℤ = 2 :=
@@ -107,9 +109,9 @@ private theorem totallyRamified_aux (hK : finrank ℚ K = 2) (hp : p.Prime)
     by_contra hne
     exact absurd ((Finset.sum_eq_zero_iff.mp hrest) q
         (Finset.mem_erase.mpr ⟨hne, Finset.mem_univ q⟩))
-      (Nat.mul_ne_zero (Ideal.ramificationIdx_pos ℤ q.1).ne' (Ideal.inertiaDeg_pos q.1 ℤ).ne')
+      (Nat.mul_ne_zero (Ideal.ramificationIdx_pos ℤ q.val).ne' (Ideal.inertiaDeg_pos q.val ℤ).ne')
   exact ⟨heone, hfone, hx1 ▸ Set.eq_singleton_iff_unique_mem.mpr
-    ⟨x.2, fun q hq => congrArg Subtype.val (huniq ⟨q, hq.1, hq.2⟩)⟩⟩
+    ⟨x.property, fun q hq => congrArg Subtype.val (huniq ⟨q, hq.1, hq.2⟩)⟩⟩
 
 /-- A ramified rational prime admits a prime of `𝓞 K` above it with ramification index `≠ 1`. -/
 private theorem exists_ramificationIdx_ne_one (hmem : p ∈ ramifiedPrimes K) :
@@ -204,6 +206,26 @@ theorem map_eq_self_of_mem_ramifiedPrimes (σ : 𝓞 K ≃+* 𝓞 K) :
   have hmemset : Ideal.map σ 𝔭 ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) :=
     ⟨inferInstance, hlo⟩
   rwa [primesOver_eq_singleton_of_mem_ramifiedPrimes hK hmem 𝔭, Set.mem_singleton_iff] at hmemset
+
+/-- **A ring automorphism fixes every ideal above a ramified prime.** In a degree-two number field,
+any ideal `I` of `𝓞 K` lying over a ramified rational prime `p` is fixed by every ring automorphism
+`σ` of `𝓞 K`: `I` divides `p 𝓞 K = 𝔭 ^ 2`, so it is a power of the unique prime `𝔭` above `p`, which
+`σ` fixes by `map_eq_self_of_mem_ramifiedPrimes`. -/
+theorem map_eq_self_of_liesOver_of_mem_ramifiedPrimes (I : Ideal (𝓞 K))
+    [I.LiesOver (span {(p : ℤ)})] (σ : 𝓞 K ≃+* 𝓞 K) :
+    Ideal.map σ I = I := by
+  have hp := prime_of_mem_ramifiedPrimes hmem
+  have := Fact.mk hp
+  obtain ⟨𝔭, _, _⟩ := (inferInstance : Nonempty ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)))
+  have hne : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    simpa using Int.natCast_ne_zero.mpr hp.ne_zero
+  have h𝔭 : Prime 𝔭 :=
+    Ideal.prime_of_isPrime (Ideal.ne_bot_of_liesOver_of_ne_bot hne 𝔭) inferInstance
+  have hle : 𝔭 ^ 2 ≤ I := by
+    rw [← map_span_eq_sq_of_mem_ramifiedPrimes hK hmem 𝔭, Ideal.map_le_iff_le_comap]
+    exact (Ideal.LiesOver.over (p := span {(p : ℤ)}) (P := I)).le
+  obtain ⟨i, -, hi⟩ := (dvd_prime_pow h𝔭 2).1 (Ideal.dvd_iff_le.2 hle)
+  rw [associated_iff_eq.1 hi, Ideal.map_pow, map_eq_self_of_mem_ramifiedPrimes hK hmem 𝔭 σ]
 
 omit hmem in
 /-- **Ramification index `2` characterises the ramified primes of a quadratic field.** For a

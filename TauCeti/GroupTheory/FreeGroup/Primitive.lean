@@ -79,15 +79,15 @@ theorem inv {G : Type u} [Group G] {x : G} (hx : IsPrimitive x) : IsPrimitive x�
 
 /-- A primitive element is not a proper power. -/
 theorem not_isProperPower {G : Type u} [Group G] {x : G} (hx : IsPrimitive x) :
-    ¬ Group.IsProperPower x := by
+    ¬ TauCeti.IsProperPower x := by
   obtain ⟨ι, b, i, rfl⟩ := hx
   intro hp
   exact FreeGroup.not_isProperPower_of i (by
-    simpa using Group.IsProperPower.map b.repr hp)
+    simpa using TauCeti.IsProperPower.map b.repr hp)
 
 /-- A primitive element is nontrivial. -/
 theorem ne_one {G : Type u} [Group G] {x : G} (hx : IsPrimitive x) : x ≠ 1 :=
-  Group.ne_one_of_not_isProperPower hx.not_isProperPower
+  TauCeti.ne_one_of_not_isProperPower hx.not_isProperPower
 
 /-- Some homomorphism sends a primitive element to the generator
 `Multiplicative.ofAdd 1` of the infinite cyclic group. -/
@@ -138,13 +138,13 @@ open scoped commutatorElement
 theorem not_isPrimitive_pow {G : Type u} [Group G] (x : G) {n : ℕ} (hn : 2 ≤ n) :
     ¬ IsPrimitive (x ^ n) := by
   intro h
-  exact h.not_isProperPower (Group.isProperPower_pow x hn)
+  exact h.not_isProperPower (TauCeti.isProperPower_pow x hn)
 
 /-- A proper integer power cannot be a primitive element. -/
 theorem not_isPrimitive_zpow {G : Type u} [Group G] (x : G) {n : ℤ}
     (hn : 2 ≤ n.natAbs) : ¬ IsPrimitive (x ^ n) := by
   intro h
-  exact h.not_isProperPower (Group.isProperPower_zpow x hn)
+  exact h.not_isProperPower (TauCeti.isProperPower_zpow x hn)
 
 /-- A square cannot be a primitive element. -/
 @[simp] theorem not_isPrimitive_sq {G : Type u} [Group G] (x : G) :
@@ -156,7 +156,7 @@ theorem not_isPrimitive_of_mem_commutator {G : Type u} [Group G] {x : G}
     (hx : x ∈ commutator G) : ¬ IsPrimitive x := by
   intro h
   obtain ⟨f, hf⟩ := h.exists_monoidHom_apply_eq_ofAdd_one
-  have hcomm : f x = 1 := (Abelianization.commutator_le_ker f hx)
+  have hcomm : f x = 1 := (Group.Abelianization.commutator_le_ker f hx)
   have hone : (Multiplicative.ofAdd (1 : ℤ)) ≠ 1 := by decide
   exact hone (hf ▸ hcomm)
 

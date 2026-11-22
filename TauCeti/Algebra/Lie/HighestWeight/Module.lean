@@ -172,7 +172,8 @@ theorem lieSpan_toSubmodule_le_of_isHighestWeightVector (hv : IsHighestWeightVec
     (hstab : ∀ x ∈ negativeNilradical H b, ∀ m ∈ N, ⁅x, m⁆ ∈ N) :
     (LieSubmodule.lieSpan K L {v} : Submodule K M) ≤ N := by
   refine (lieSpan_toSubmodule_le_lieSpan_negativeNilradical hv).trans fun m hm => ?_
-  exact (LieSubmodule.lieSpan_le (N := ({ __ := N, lie_mem := fun {x _} hm => hstab x x.2 _ hm } :
+  exact (LieSubmodule.lieSpan_le (N :=
+      ({ __ := N, lie_mem := fun {x _} hm => hstab x x.property _ hm } :
     LieSubmodule K ↥(negativeNilradical H b) M))).mpr (Set.singleton_subset_iff.mpr hvN) hm
 
 /-- **A highest weight module is exhausted by the negative nilradical acting on its generator.** A
@@ -194,7 +195,7 @@ private theorem lie_mem_genWeightSpaceSpan_of_mem_negativeNilradical {S T : Set 
     ⁅x, m⁆ ∈ genWeightSpaceSpan H M T := by
   rw [mem_negativeNilradical, rootSpaceSpan_eq_iSup] at hx
   exact LieSubmodule.iSup_induction _ (motive := fun x => ⁅x, m⁆ ∈ genWeightSpaceSpan H M T) hx
-    (fun gamma _ hy => lie_mem_genWeightSpaceSpan hy (hST gamma gamma.2) hm)
+    (fun gamma _ hy => lie_mem_genWeightSpaceSpan hy (hST gamma gamma.property) hm)
     (by simp) (fun y z hy hz => by rw [add_lie]; exact add_mem hy hz)
 
 variable (b) in
@@ -380,8 +381,7 @@ theorem genWeightSpace_eq_span_singleton_of_isHighestWeightVector_of_lieSpan_eq_
   -- the `lam`-weight space meets those strictly lower weight spaces trivially
   have hdisj : Disjoint (genWeightSpace M ((lam : Dual K H) : H → K))
       (genWeightSpaceSpan H M (strictLowerSet b lam)) :=
-    (iSupIndep_genWeightSpace K H M ((lam : Dual K H) : H → K)).mono_right
-      (genWeightSpaceSpan_le_iff.mpr fun chi hchi => le_iSup₂_of_le chi hchi.2 le_rfl)
+    disjoint_genWeightSpace_genWeightSpaceSpan H M fun h => h.2 rfl
   have hdisj' : (genWeightSpace M ((lam : Dual K H) : H → K) : Submodule K M) ⊓
       (genWeightSpaceSpan H M (strictLowerSet b lam) : Submodule K M) = ⊥ := by
     rw [← LieSubmodule.inf_toSubmodule, disjoint_iff.mp hdisj, LieSubmodule.bot_toSubmodule]

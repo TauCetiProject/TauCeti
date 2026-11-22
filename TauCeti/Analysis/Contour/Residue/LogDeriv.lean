@@ -12,11 +12,10 @@ public import TauCeti.Analysis.Contour.Residue.SimplePole
 # The residue of the logarithmic derivative is the meromorphic order
 
 For `f : ℂ → ℂ` meromorphic at `z₀` of order `n = meromorphicOrderAt f z₀`, the residue of the
-logarithmic derivative there is exactly that order:
-`TauCeti.Contour.residue (logDeriv f) z₀ = n`. This is the residue-form of the argument principle,
-the identity `Res_{z₀}(f'/f) = ord_{z₀} f` that the roadmap names as the local statement its
-contour form (`TauCeti.Contour.argumentPrinciple`) integrates: a zero of order `k` contributes
-`+k` and a pole of order `k` contributes `−k`.
+logarithmic derivative there is exactly that order: `TauCeti.Contour.residue (logDeriv f) z₀ = n`.
+This is the residue-form of the argument principle, the identity `Res_{z₀}(f'/f) = ord_{z₀} f`, the
+local statement that its contour form (`TauCeti.Contour.argumentPrinciple`) integrates: a zero of
+order `k` contributes `+k` and a pole of order `k` contributes `−k`.
 
 The mechanism is the simple-pole splitting of the logarithmic derivative
 (`TauCeti.Contour.logDeriv_eventuallyEq_principalPart`): near `z₀` there is `g` analytic and
@@ -30,9 +29,8 @@ analytic tail `logDeriv g` contributes no residue, so only the simple-pole princ
 
 * `TauCeti.Contour.residue_logDeriv_eq_meromorphicOrderAt` — `residue (logDeriv f) z₀ = n` when
   `meromorphicOrderAt f z₀ = n`: the residue of `f'/f` is the order of `f` at `z₀`.
-
-These are Layer 2 targets of the contour-integration roadmap, feeding the argument principle and,
-ultimately, the valence formula's interior-orbit sum.
+* `MeromorphicAt.isBigO_logDeriv_sub_order_div` — subtracting `n / (z - z₀)` leaves a bounded
+  remainder near `z₀`, for every finite integer order `n`.
 
 ## Provenance
 
@@ -40,8 +38,7 @@ The simple-pole splitting `logDeriv_eventuallyEq_principalPart` and the residue 
 the AINTLIB `LeanModularForms` project (the argument-principle and residue material of
 `ForMathlib/GeneralizedResidueTheory/Residue.lean` and
 `.../Residue/GeneralizedTheoremBase.lean`, where the residue theorem is applied to `logDeriv f`),
-here specialised to Mathlib's `meromorphicOrderAt` API and the raw-function design of the
-contour-integration roadmap.
+here specialised to Mathlib's `meromorphicOrderAt` API.
 
 ## References
 
@@ -51,7 +48,7 @@ contour-integration roadmap.
 
 public section
 
-open Filter Topology Complex
+open Asymptotics Filter Topology Complex
 
 namespace TauCeti.Contour
 
@@ -66,7 +63,7 @@ theorem residue_logDeriv_eq_meromorphicOrderAt {f : ℂ → ℂ} {z₀ : ℂ} {n
   -- Near `z₀`, `logDeriv f` splits into its simple-pole principal part `n · (· − z₀)⁻¹` plus the
   -- analytic tail `logDeriv g` (with `g` the analytic non-vanishing local factor of `f`).
   obtain ⟨g, hg_an, hg_ne, hgerm⟩ := logDeriv_eventuallyEq_principalPart hf hn
-  have hlogg_an : AnalyticAt ℂ (logDeriv g) z₀ := analyticAt_logDeriv_of_analyticAt hg_an hg_ne
+  have hlogg_an : AnalyticAt ℂ (logDeriv g) z₀ := hg_an.logDeriv hg_ne
   have hA : MeromorphicAt (fun z => (n : ℂ) * (z - z₀)⁻¹) z₀ :=
     analyticAt_const.meromorphicAt.mul (meromorphicAt_sub_inv z₀)
   have hB : MeromorphicAt (logDeriv g) z₀ := hlogg_an.meromorphicAt
@@ -79,5 +76,16 @@ theorem residue_logDeriv_eq_meromorphicOrderAt {f : ℂ → ℂ} {z₀ : ℂ} {n
     residue_add hA hB, residue_const_mul_sub_inv, residue_eq_zero_of_analyticAt hlogg_an, add_zero]
 
 end TauCeti.Contour
+
+open TauCeti.Contour in
+/-- For a meromorphic function of finite integer order, its logarithmic derivative differs from
+the corresponding simple principal part by a bounded term on a punctured neighbourhood.
+Positive, negative and zero orders of the original function are all allowed. -/
+theorem MeromorphicAt.isBigO_logDeriv_sub_order_div {f : ℂ → ℂ} {z₀ : ℂ} {n : ℤ}
+    (hf : MeromorphicAt f z₀) (horder : meromorphicOrderAt f z₀ = (n : WithTop ℤ)) :
+    (_root_.logDeriv f - fun z ↦ (n : ℂ) / (z - z₀)) =O[𝓝[≠] z₀] (1 : ℂ → ℂ) := by
+  simpa only [residue_logDeriv_eq_meromorphicOrderAt hf horder, smul_eq_mul, div_eq_mul_inv,
+    mul_comm] using
+    hf.logDeriv.isBigO_sub_inv_smul_residue (neg_one_le_meromorphicOrderAt_logDeriv hf)
 
 end

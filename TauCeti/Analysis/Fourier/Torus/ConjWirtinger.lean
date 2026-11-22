@@ -89,9 +89,6 @@ theorem conjWirtingerMultiplier_ne_zero {n : Fin 2 → ℤ} (hn : n ≠ 0) :
 /-- For `n ≠ 0`, the Fourier multiplier of `∂bar` has norm at least `1`. -/
 private theorem one_le_norm_conjWirtingerMultiplier {n : Fin 2 → ℤ} (hn : n ≠ 0) :
     1 ≤ ‖(π * I * (n 0 + I * n 1) : ℂ)‖ := by
-  have hz : (n 0 + I * n 1 : ℂ) ≠ 0 := by
-    intro h
-    exact conjWirtingerMultiplier_ne_zero hn (by rw [h, mul_zero])
   have h1 : 1 ≤ ‖(n 0 + I * n 1 : ℂ)‖ := by
     obtain ⟨i, hi⟩ := Function.ne_iff.1 hn
     have hi' : (1 : ℝ) ≤ |(n i : ℝ)| := by
@@ -274,9 +271,9 @@ open _root_.UnitAddTorus
 /-- The Cauchy-Riemann operator `∂bar` as a complex-linear map on the smooth functions on the square
 torus. -/
 def conjWirtingerDerivₗ : smoothFunctions (Fin 2) →ₗ[ℂ] smoothFunctions (Fin 2) where
-  toFun f := ⟨UnitAddTorus.conjWirtingerDeriv f, conjWirtingerDeriv_mem_smoothFunctions f.2⟩
-  map_add' f g := Subtype.ext (UnitAddTorus.conjWirtingerDeriv_add f.2 g.2)
-  map_smul' c f := Subtype.ext (conjWirtingerDeriv_smul f.2 c)
+  toFun f := ⟨UnitAddTorus.conjWirtingerDeriv f, conjWirtingerDeriv_mem_smoothFunctions f.property⟩
+  map_add' f g := Subtype.ext (UnitAddTorus.conjWirtingerDeriv_add f.property g.property)
+  map_smul' c f := Subtype.ext (conjWirtingerDeriv_smul f.property c)
 
 @[simp]
 theorem coe_conjWirtingerDerivₗ_apply (f : smoothFunctions (Fin 2)) :
@@ -292,13 +289,13 @@ theorem ker_conjWirtingerDerivₗ :
   have h0 : ⇑(mFourier (0 : Fin 2 → ℤ)) = 1 := by simp [mFourier_zero]
   constructor
   · intro h
-    obtain ⟨c, hc⟩ := (conjWirtingerDeriv_eq_zero_iff f.2).1 (congrArg Subtype.val h)
+    obtain ⟨c, hc⟩ := (conjWirtingerDeriv_eq_zero_iff f.property).1 (congrArg Subtype.val h)
     refine ⟨c, Subtype.ext ?_⟩
     rw [Submodule.coe_smul, coe_mFourierSmooth, h0, hc]
     funext z
     simp
   · rintro ⟨c, rfl⟩
-    refine Subtype.ext ((conjWirtingerDeriv_eq_zero_iff (c • mFourierSmooth 0).2).2 ⟨c, ?_⟩)
+    refine Subtype.ext ((conjWirtingerDeriv_eq_zero_iff (c • mFourierSmooth 0).property).2 ⟨c, ?_⟩)
     rw [Submodule.coe_smul, coe_mFourierSmooth, h0]
     funext z
     simp
@@ -308,10 +305,10 @@ theorem range_conjWirtingerDerivₗ :
     LinearMap.range conjWirtingerDerivₗ = LinearMap.ker (mFourierCoeffₗ (0 : Fin 2 → ℤ)) := by
   ext g
   rw [LinearMap.mem_range, LinearMap.mem_ker, mFourierCoeffₗ_apply,
-    ← exists_conjWirtingerDeriv_eq_iff g.2]
+    ← exists_conjWirtingerDeriv_eq_iff g.property]
   constructor
   · rintro ⟨f, rfl⟩
-    exact ⟨f, f.2, rfl⟩
+    exact ⟨f, f.property, rfl⟩
   · rintro ⟨f, hf, hfg⟩
     exact ⟨⟨f, hf⟩, Subtype.ext hfg⟩
 

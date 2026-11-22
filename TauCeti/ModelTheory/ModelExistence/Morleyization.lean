@@ -101,7 +101,7 @@ theorem countable_relations_morleyize [Countable (Σ n, L.Relations n)] (hΦ : �
   have := hΦ.to_subtype
   let e : (Σ n, (morleyize L Φ).Relations n) → (Σ n, L.Relations n) ⊕ Φ
     | ⟨n, Sum.inl R⟩ => Sum.inl ⟨n, R⟩
-    | ⟨n, Sum.inr φ⟩ => Sum.inr ⟨⟨n, φ.1⟩, φ.2⟩
+    | ⟨n, Sum.inr φ⟩ => Sum.inr ⟨⟨n, φ.val⟩, φ.property⟩
   refine Function.Injective.countable (f := e) ?_
   rintro ⟨n, R | ⟨φ, hφ⟩⟩ ⟨m, R' | ⟨ψ, hψ⟩⟩ h <;>
     simp only [e, Sum.inl.injEq, Sum.inr.injEq, reduceCtorEq, Subtype.mk.injEq,
@@ -143,7 +143,7 @@ def morleyExpansion : (morleyize L Φ).Structure M where
   funMap f x := Structure.funMap (L := L) f x
   RelMap
     | Sum.inl R, x => Structure.RelMap R x
-    | Sum.inr φ, x => φ.1.Realize Empty.elim x
+    | Sum.inr φ, x => φ.val.Realize Empty.elim x
 
 variable {Φ M}
 
@@ -187,7 +187,7 @@ def definingAxiom {n : ℕ} (φ : L.BoundedFormulaω Empty n) (hφ : ⟨n, φ⟩
 variable (Φ) in
 /-- The **defining theory** of the Morleyization: the defining axioms of all members of `Φ`. -/
 def definingTheory : (morleyize L Φ).Theoryω :=
-  Set.range fun p : Φ => definingAxiom Φ p.1.2 p.2
+  Set.range fun p : Φ => definingAxiom Φ p.val.2 p.property
 
 theorem mem_definingTheory {ψ : (morleyize L Φ).Sentenceω} :
     ψ ∈ definingTheory Φ ↔
@@ -311,7 +311,7 @@ def unMorleyize : ∀ {n : ℕ}, (morleyize L Φ).BoundedFormulaω α n → L.Bo
   | _, equal t₁ t₂ => equal t₁.unMorleyize t₂.unMorleyize
   | _, rel (Sum.inl R) ts => rel R fun i => (ts i).unMorleyize
   | _, rel (Sum.inr φ) ts =>
-      substBounds (fun i => (ts i).unMorleyize) (TauCeti.BoundedFormulaInf.subst φ.1 Empty.elim)
+      substBounds (fun i => (ts i).unMorleyize) (TauCeti.BoundedFormulaInf.subst φ.val Empty.elim)
   | _, imp φ ψ => φ.unMorleyize.imp ψ.unMorleyize
   | _, all φ => φ.unMorleyize.all
   | _, iSup φs => iSup fun i => (φs i).unMorleyize
@@ -432,7 +432,7 @@ def Equiv.morleyEquiv (e : M ≃[L] N) (Φ : Set (Σ n, L.BoundedFormulaω Empty
   { e.toEquiv with
     map_fun' := fun f x => e.map_fun f x
     map_rel' := fun R x => by
-      rcases R with R | ⟨φ, hφ⟩
+      rcases R with R | ⟨φ, _⟩
       · exact e.map_rel R x
       · have := StrongHomClass.realize_boundedFormulaInf e φ (v := Empty.elim) (xs := x)
         rwa [Subsingleton.elim (e ∘ (Empty.elim : Empty → M)) Empty.elim] at this }

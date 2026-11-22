@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Covering.Quotient
+import TauCeti.Algebra.Group.Action.Pow
 import TauCeti.Topology.Covering.Quotient
+import Mathlib.Tactic.Group
 
 /-!
 # The balanced product of a quotient covering map with a discrete set
@@ -40,6 +42,9 @@ there for an abstract presentation of `E / H` rather than for a fixed model.
 * `TauCeti.BalancedProduct.equivSelf` and `homeomorphSelf`: the regular label action recovers
   `E`, sending `⟦e, g⟧` to `g⁻¹ • e`.
 * The centre of `G` acts on `E ×_G A` through the labels (`TauCeti.BalancedProduct.center_smul_mk`).
+  Along a path of labels whose steps are carried to central translates by `l`, the classes of the
+  endpoints differ by a power of `l` (`TauCeti.BalancedProduct.mk_inv_prod_ofFn_smul`).
+* `TauCeti.BalancedProduct.orbitProj`: the projection `⟦e, a⟧ ↦ ⟦a⟧` onto the orbit space of `A`.
 * `TauCeti.isQuotientCoveringMap_quotientMk_of_smul_disjoint`: an action with locally pairwise
   disjoint translates presents its orbit space as a quotient covering map.
 * `TauCeti.BalancedProduct.isQuotientCoveringMap_mk`: the class map `E × A → E ×_G A` is one such.
@@ -200,7 +205,7 @@ theorem mapRight_comp (f : A → B) (hf : ∀ (g : G) a, f (g • a) = g • f a
 central element is an equivariant map of labels. -/
 instance : MulAction (Subgroup.center G) (BalancedProduct G E A) where
   smul c := mapRight ((c : G) • ·) fun g a => by
-    rw [smul_smul, smul_smul, Subgroup.mem_center_iff.mp c.2 g]
+    rw [smul_smul, smul_smul, Subgroup.mem_center_iff.mp c.property g]
   one_smul z := Quotient.inductionOn z fun ⟨e, a⟩ =>
     (mapRight_mk _ _ e a).trans (congrArg (mk G e) (one_smul G a))
   mul_smul c c' z := Quotient.inductionOn z fun ⟨e, a⟩ =>
@@ -212,6 +217,31 @@ instance : MulAction (Subgroup.center G) (BalancedProduct G E A) where
 theorem center_smul_mk (c : Subgroup.center G) (e : E) (a : A) :
     c • mk G e a = mk G e ((c : G) • a) :=
   (rfl)
+
+/-- Translating the point by a central element `c` translates the class by `c⁻¹`. -/
+theorem mk_center_smul_left (c : Subgroup.center G) (e : E) (a : A) :
+    mk G ((c : G) • e) a = c⁻¹ • mk G e a := by
+  rw [mk_smul_left, center_smul_mk, Subgroup.coe_inv]
+
+/-- Along a path of labels `a 0, …, a n` in which the step `i` is carried by `g i` to a central
+translate, `g i • a (i + 1) = l • a i`, the class of the endpoint, paired with `e` translated by the
+inverse of the product of the `g i`, is `l ^ n` times the class of the starting point. -/
+theorem mk_inv_prod_ofFn_smul {n : ℕ} (l : Subgroup.center G) (g : Fin n → G)
+    (a : Fin (n + 1) → A) (h : ∀ i, g i • a i.succ = (l : G) • a i.castSucc) (e : E) :
+    mk G ((List.ofFn g).prod⁻¹ • e) (a (Fin.last n)) = l ^ n • mk G e (a 0) := by
+  rw [mk_smul_left, inv_inv,
+    prod_ofFn_smul_eq_pow_smul (fun i ↦ Subgroup.mem_center_iff.mp l.property (g i)) h,
+    ← Subgroup.coe_pow, ← center_smul_mk]
+
+/-- The form of `TauCeti.BalancedProduct.mk_inv_prod_ofFn_smul` in which `e` is first translated by
+`l ^ n k⁻¹` for a central `k`: along a path of `n` steps, the class of the endpoint is then `k`
+times the class of the starting point. -/
+theorem mk_inv_prod_ofFn_pow_mul_inv_smul {n : ℕ} (l k : Subgroup.center G) (g : Fin n → G)
+    (a : Fin (n + 1) → A) (h : ∀ i, g i • a i.succ = (l : G) • a i.castSucc) (e : E) :
+    mk G ((List.ofFn g).prod⁻¹ • (l : G) ^ n • (k : G)⁻¹ • e) (a (Fin.last n)) =
+      k • mk G e (a 0) := by
+  rw [mk_inv_prod_ofFn_smul l g a h, ← Subgroup.coe_pow, ← Subgroup.coe_inv, mk_center_smul_left,
+    mk_center_smul_left, smul_inv_smul, inv_inv]
 
 /-- The map induced by a continuous equivariant label map is continuous. -/
 theorem continuous_mapRight [TopologicalSpace E] [TopologicalSpace A] [TopologicalSpace B]
@@ -249,6 +279,23 @@ theorem proj_mapRight {B : Type*} [MulAction G B] (f : A → B)
     proj B hq (mapRight f hf z) = proj A hq z :=
   Quotient.inductionOn z fun _ => rfl
 
+/-! ### The projection onto the orbit space of the labels -/
+
+/-- The projection `⟦e, a⟧ ↦ ⟦a⟧` of the balanced product onto the orbit space of `A`. -/
+def orbitProj : BalancedProduct G E A → MulAction.orbitRel.Quotient G A :=
+  Quotient.map Prod.snd fun _ _ ⟨g, hg⟩ => ⟨g, congrArg Prod.snd hg⟩
+
+@[simp]
+theorem orbitProj_mk (e : E) (a : A) :
+    orbitProj (mk G e a) = Quotient.mk (MulAction.orbitRel G A) a :=
+  (rfl)
+
+theorem orbitProj_surjective [Nonempty E] :
+    Function.Surjective (orbitProj : BalancedProduct G E A → _) := by
+  intro x
+  induction x using Quotient.inductionOn with
+  | h a => exact ⟨mk G (Classical.arbitrary E) a, rfl⟩
+
 section Covering
 
 variable [TopologicalSpace E] [TopologicalSpace X] [TopologicalSpace A]
@@ -282,7 +329,6 @@ private theorem isOpen_of_isOpen_preimage_inter_sheet (hqc : IsQuotientCoveringM
     {U : Set E} (hUo : IsOpen U) (a : A) {W : Set X} (hWV : W ⊆ q '' U)
     (hW : IsOpen (proj A hq ⁻¹' W ∩ Quotient.mk (MulAction.orbitRel G (E × A)) '' (U ×ˢ {a}))) :
     IsOpen W := by
-  have hcsG : ContinuousConstSMul G E := hqc.toContinuousConstSMul
   -- The slice at `a` of the preimage of that open set, cut down to `U`, is `q ⁻¹' W ∩ U`.
   have hslice : IsOpen (q ⁻¹' W ∩ U) := by
     have hopen : IsOpen (Quotient.mk (MulAction.orbitRel G (E × A)) ⁻¹'
@@ -387,14 +433,14 @@ noncomputable def fiberEquiv [IsCancelSMul G E]
     A ≃ proj A hq ⁻¹' {x} := by
   refine Equiv.ofBijective (fun a => ⟨mk G (e : E) a, ?_⟩) ⟨?_, ?_⟩
   · rw [Set.mem_preimage, Set.mem_singleton_iff, proj_mk]
-    exact e.2
+    exact e.property
   · intro a a' hEq
     obtain ⟨g, hg, rfl⟩ := mk_eq_mk_iff.mp (congrArg Subtype.val hEq)
     rw [IsCancelSMul.eq_one_of_smul hg, one_smul]
   · rintro ⟨z, hz⟩
     obtain ⟨⟨w, b⟩, rfl⟩ := Quotient.mk''_surjective z
     rw [Set.mem_preimage, Set.mem_singleton_iff, proj_mk] at hz
-    obtain ⟨g, hge⟩ := MulAction.mem_orbit_iff.mp (hfiber (hz.trans e.2.symm))
+    obtain ⟨g, hge⟩ := MulAction.mem_orbit_iff.mp (hfiber (hz.trans e.property.symm))
     exact ⟨g⁻¹ • b, Subtype.ext <| by dsimp only; rw [← mk_smul_left, hge]⟩
 
 variable (A) in

@@ -191,9 +191,6 @@ private theorem wignerCoordinate_variance_bound (n : ℕ)
       8 * V / (n + 1 : ℝ) ^ 2 := by
   have hV : 0 ≤ V :=
     (variance_nonneg (wignerCoordinateSquare ξ η (n + 1) (.inl 0)) P).trans (hv (.inl 0))
-  have hN : 1 ≤ (n + 1 : ℝ) := by
-    have hn0 : (0 : ℝ) ≤ n := Nat.cast_nonneg n
-    linarith
   have hn : (n + 1 : ℝ) ≠ 0 := by positivity
   have hc : (Fintype.card (Fin (n + 1) ⊕ FinStrictUpper (n + 1)) : ℝ) ≤
       2 * (n + 1 : ℝ) ^ 2 := by
@@ -282,20 +279,21 @@ theorem tendsto_second_spectralMoment_sub_mean_probability
       ∫ ω, (∫ x, x ^ 2 ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) ∂P n|})
       atTop (𝓝 0) := by
-  have hinv : Tendsto (fun n : ℕ ↦ (n + 1 : ℝ)⁻¹) atTop (𝓝 0) := by
-    simpa only [one_div] using (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
-  have hreal : Tendsto (fun n : ℕ ↦ (8 * V / (n + 1 : ℝ) ^ 2) / ε ^ 2)
-      atTop (𝓝 0) := by
-    convert ((hinv.pow 2).const_mul (8 * V)).div_const (ε ^ 2) using 1
-    · ext n
-      simp [div_eq_mul_inv, inv_pow]
-    · simp
-  have hbound : Tendsto (fun n : ℕ ↦ ENNReal.ofReal
-      ((8 * V / (n + 1 : ℝ) ^ 2) / ε ^ 2)) atTop (𝓝 0) := by
-    simpa using ENNReal.tendsto_ofReal hreal
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hbound
-    (fun _ ↦ bot_le) (fun n ↦ measure_second_spectralMoment_sub_mean_ge n
-      (hindep n) (hmem n) (hvar n) hε)
+  have hmem' (n : ℕ) : MemLp (fun ω ↦ ∫ x, x ^ 2
+      ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
+        (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) 2 (P n) := by
+    simp_rw [integral_sq_spectralMeasure_wignerMatrix_weighted]
+    exact memLp_finsetSum Finset.univ fun i _ ↦ (hmem n i).const_mul _
+  have hvar' : Tendsto (fun n ↦ Var[fun ω ↦ ∫ x, x ^ 2
+      ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
+        (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ); P n]) atTop (𝓝 0) :=
+    squeeze_zero (fun n ↦ variance_nonneg _ _)
+      (fun n ↦ variance_second_spectralMoment_le n (hindep n) (hmem n) (hvar n))
+      (by
+        simpa using tendsto_const_nhds.div_atTop
+          ((tendsto_pow_atTop two_ne_zero).comp
+            (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)))
+  exact tendsto_measure_abs_sub_integral_ge_of_tendsto_variance hmem' hvar' hε
 
 /-- The variance bound applies in particular when the original Wigner coordinates are jointly
 independent. -/

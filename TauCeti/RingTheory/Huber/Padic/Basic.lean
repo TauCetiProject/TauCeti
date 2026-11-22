@@ -7,16 +7,17 @@ module
 
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.Algebra.Ring.Compact
-public import TauCeti.RingTheory.Huber.Adic
+public import TauCeti.RingTheory.AdicRing.Basic
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
-# The p-adic integers are a Huber ring, and not a Tate ring
+# The p-adic integers are an adic ring, a Huber ring, and not a Tate ring
 
-`ℤ_[p]` with its norm topology is a Huber ring, with `(ℤ_[p], (p))` as a pair of definition, and
-it is not a Tate ring. It is the roadmap's Layer-0 example after the discrete case, and the first
-to separate `TauCeti.Huber.IsHuberRing` from `TauCeti.Huber.IsTateRing`: the topology is adic for
-the proper ideal `(p)`, so no unit is topologically nilpotent.
+`ℤ_[p]` with its norm topology is an adic ring of finite ideal type and hence a Huber ring, with
+`(ℤ_[p], (p))` as a pair of definition, and it is not a Tate ring. After the discrete case it is
+the simplest example, and it separates `TauCeti.Huber.IsHuberRing` from
+`TauCeti.Huber.IsTateRing`: the topology is adic for the proper ideal `(p)`, so no unit is
+topologically nilpotent.
 
 ## Main results
 
@@ -28,8 +29,9 @@ the proper ideal `(p)`, so no unit is topologically nilpotent.
 * `TauCeti.Huber.PadicInt.instIsLinearTopology`: consequently `ℤ_[p]` is linearly topologized,
   and `TauCeti.Huber.PadicInt.isTopologicallyNilpotent_iff_dvd`: its topologically nilpotent
   elements are the multiples of `p`.
-* `TauCeti.Huber.PadicInt.isHuberRing` and `TauCeti.Huber.PadicInt.not_isTateRing`: the two
-  halves of the example.
+* `TauCeti.Huber.PadicInt.isAdicRing`, `TauCeti.Huber.PadicInt.isHuberRing`, and
+  `TauCeti.Huber.PadicInt.not_isTateRing`: `ℤ_[p]` is an adic ring of finite ideal type (hence a
+  Huber ring) and not a Tate ring.
 
 ## Implementation notes
 
@@ -94,11 +96,14 @@ theorem isTopologicallyNilpotent_iff_dvd {c : ℤ_[p]} :
     (maximalIdeal.isMaximal ℤ_[p]).isPrime.radical, _root_.PadicInt.maximalIdeal_eq_span_p,
     Ideal.mem_span_singleton]
 
+/-- **`ℤ_[p]` is an adic ring of finite ideal type**, with `(p)` as a finitely generated ideal of
+definition. -/
+instance isAdicRing : IsAdicRing ℤ_[p] :=
+  ⟨maximalIdeal ℤ_[p], IsNoetherian.noetherian _, isAdic_maximalIdeal, inferInstance⟩
+
 /-- **`ℤ_[p]` is a Huber ring**, with `(ℤ_[p], (p))` as a pair of definition: the norm topology
 is the adic topology of the principal ideal `(p)`. -/
-instance isHuberRing : IsHuberRing ℤ_[p] :=
-  isHuberRing_of_isAdic _ isAdic_maximalIdeal
-    (by rw [_root_.PadicInt.maximalIdeal_eq_span_p]; exact Submodule.fg_span_singleton _)
+instance isHuberRing : IsHuberRing ℤ_[p] := inferInstance
 
 /-- **`ℤ_[p]` is not a Tate ring**: it admits no pseudouniformiser. Together with
 `TauCeti.Huber.PadicInt.isHuberRing` this separates `IsHuberRing` from `IsTateRing`. -/

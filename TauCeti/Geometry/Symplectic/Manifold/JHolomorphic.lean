@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
+import TauCeti.Geometry.Symplectic.JHolomorphic.ComplexDifferentiable
 
 /-!
 # Pseudoholomorphic maps between almost complex manifolds
@@ -42,15 +43,22 @@ model vector space, so the naming records a difference of setting, not of mathem
 * `TauCeti.IsPseudoholomorphicAt.comp`: pseudoholomorphic maps compose.
 * `TauCeti.IsPseudoholomorphicAt.of_comp`: a map whose composite with a pseudoholomorphic
   immersion is pseudoholomorphic is pseudoholomorphic.
+* `OpenPartialHomeomorph.MDifferentiable.isPseudoholomorphicAt_symm`: the inverse of a
+  differentiable open partial homeomorphism that is pseudoholomorphic is pseudoholomorphic.
 * `TauCeti.isPseudoholomorphicAt_neg_neg_iff` and its within-set, setwise, and global analogues:
   reversing both structures changes nothing.
 * `TauCeti.isPseudoholomorphicAt_stdComplexLine_iff`: for a curve out of the standard complex
   line the equation reduces to the single coordinate identity `∂_t w = J(w) ∂_s w`.
+* `TauCeti.isComplexLinearMap_mfderiv_of_stdComplexLineImag_eq`: a curve satisfying the
+  Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` for `mfderiv` at a point has complex-linear `mfderiv`
+  there.
 * `TauCeti.isPseudoholomorphicAt_iff_isJHolomorphicAt` and its within-set, setwise, and global
   analogues: on model vector spaces the predicate is the normed-space one.
 * `TauCeti.isPseudoholomorphicAt_constSmooth_iff` and its within-set, setwise, and global
   analogues: for constant structures on model vector spaces it is the flat, constant-structure
   predicate.
+* `TauCeti.IsPseudoholomorphicOn.differentiableOn_comp`: a pseudoholomorphic function to a complex
+  normed space, composed with a pseudoholomorphic map out of one, is complex differentiable.
 
 No regularity beyond the existence of a derivative is imposed: as with the normed-space predicates,
 smoothness of `u` is a separate hypothesis for the results that need it, and taming or compatibility
@@ -261,6 +269,30 @@ theorem isPseudoholomorphicAt_iff_mfderiv :
         ∀ w, mfderiv I I' u x (j x w) = J (u x) (mfderiv I I' u x w) := by
   refine ⟨fun hu ↦ ⟨hu.mdifferentiableAt, hu.mfderiv_apply_commute⟩, fun hu ↦ ?_⟩
   exact isPseudoholomorphicAt_of_hasMFDerivAt hu.1.hasMFDerivAt hu.2
+
+/-- A map pseudoholomorphic at a point stays so after replacing it by a map that agrees with it
+near the point. -/
+theorem IsPseudoholomorphicAt.congr_of_eventuallyEq {u₁ : M → M'}
+    (hu : IsPseudoholomorphicAt j J u x) (h : u₁ =ᶠ[nhds x] u) :
+    IsPseudoholomorphicAt j J u₁ x := by
+  rw [isPseudoholomorphicAt_iff_mfderiv] at hu ⊢
+  refine ⟨hu.1.congr_of_eventuallyEq h, fun w ↦ ?_⟩
+  rw [h.mfderiv_eq, h.eq_of_nhds]
+  exact hu.2 w
+
+/-- The inverse of a differentiable open partial homeomorphism is pseudoholomorphic at a point of
+its target when the homeomorphism itself is pseudoholomorphic at the preimage of that point. -/
+theorem _root_.OpenPartialHomeomorph.MDifferentiable.isPseudoholomorphicAt_symm
+    {e : OpenPartialHomeomorph M M'} (he : e.MDifferentiable I I') {z : M'} (hz : z ∈ e.target)
+    (hu : IsPseudoholomorphicAt j J e (e.symm z)) : IsPseudoholomorphicAt J j e.symm z := by
+  refine isPseudoholomorphicAt_of_hasMFDerivAt (he.mdifferentiableAt_symm hz).hasMFDerivAt
+    fun w ↦ he.mfderiv_injective (e.map_target hz) ?_
+  -- Apply the differential of `e` at `e.symm z`, which inverts that of `e.symm` at `z` and
+  -- intertwines `j` with `J`.
+  have hinv (a : TangentSpace I' z) :
+      mfderiv I I' e (e.symm z) (mfderiv I' I e.symm z a) = a :=
+    DFunLike.congr_fun (he.comp_symm_deriv hz) a
+  rw [hu.mfderiv_apply_commute, hinv, hinv, e.right_inv hz]
 
 /-- The derivative within a set of a map pseudoholomorphic there intertwines the two almost
 complex structures, provided the set has unique manifold derivatives at the point. -/
@@ -510,6 +542,19 @@ theorem IsPseudoholomorphicAt.mfderiv_stdComplexLineImag {J : SmoothAlmostComple
     rfl
   simpa only [hz] using hw.mfderiv_apply_commute stdComplexLineReal
 
+/-- A curve `u` from the standard complex line satisfying the Cauchy--Riemann equation
+`∂ₜu = J(u) ∂ₛu` for `mfderiv` at `z` has complex-linear `mfderiv` at `z`. No differentiability is
+assumed: `mfderiv` is zero where `u` is not differentiable. -/
+theorem isComplexLinearMap_mfderiv_of_stdComplexLineImag_eq
+    {J : SmoothAlmostComplexStructure I' M'} {u : ℝ × ℝ → M'} {z : ℝ × ℝ}
+    (hCR : mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I' u z stdComplexLineImag =
+      J (u z) (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I' u z stdComplexLineReal)) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J.almostComplexStructureAt (u z))
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I' u z).toLinearMap :=
+  (isComplexLinearMap_stdComplexLine_iff _).2 (by
+    simp only [SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
+    exact hCR)
+
 end StandardLine
 
 /-! ### Comparison with the normed-space predicates -/
@@ -614,6 +659,26 @@ theorem isPseudoholomorphic_constSmooth_iff (Jv : AlmostComplexStructure V)
   exact isConstStructureJHolomorphicAt_iff Jv Jw u x
 
 end ModelSpace
+
+/-! ### Holomorphic functions along pseudoholomorphic maps -/
+
+section ComplexModelSpace
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℝ V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] [FiniteDimensional ℝ W]
+
+/-- A function `f : M' → W` that is pseudoholomorphic on `r` for the structure `w ↦ i w` of a
+complex normed space `W`, composed with a map `g : V → M'` that is pseudoholomorphic on `s` for the
+structure `v ↦ i v` and maps `s` into `r`, is complex differentiable on `s`. -/
+theorem IsPseudoholomorphicOn.differentiableOn_comp {f : M' → W} {r : Set M'}
+    (hf : IsPseudoholomorphicOn J (AlmostComplexStructure.ofComplexModule W).constSmooth f r)
+    {g : V → M'} {s : Set V}
+    (hg : IsPseudoholomorphicOn (AlmostComplexStructure.ofComplexModule V).constSmooth J g s)
+    (hgs : Set.MapsTo g s r) : DifferentiableOn ℂ (f ∘ g) s :=
+  isConstStructureJHolomorphicOn_ofComplexModule_iff.1
+    ((isPseudoholomorphicOn_constSmooth_iff _ _ _ _).1 (hf.comp hg hgs))
+
+end ComplexModelSpace
 
 end TauCeti
 

@@ -20,8 +20,22 @@ assumed, so the theorem detects complements of `N` from a subgroup such as a Syl
 The proof follows Gaschütz. The projection along the local complement is a crossed map on `H`
 which is the identity on `N`. Its crossed transfer to `G`, raised to an inverse of `[G : H]`
 modulo `|N|`, is a crossed map on `G` which is still the identity on `N`
-(`TauCeti.exists_isMulCocycle₁_eq_of_coprime_index`), and the zero locus of such a map is a
-complement of `N` (`Subgroup.exists_complement_iff_crossedProjection`).
+(`TauCeti.crossedTransfer_pow_inv_index_apply_of_mem`), and the zero locus of such a map is a
+complement of `N` (`Subgroup.isComplement'_zeroLocus`). This zero locus is
+`Subgroup.IsLocalComplement.gaschutzComplement`; it is the zero locus of the crossed transfer
+itself. Changing the transversal multiplies the crossed transfer by a principal crossed map, so
+the complements obtained from two transversals are conjugate by an element of `N`
+(`Subgroup.IsLocalComplement.gaschutzComplement_changeTransversal`). Every complement `D` of `N`
+containing `K` arises in this way: along a transversal of `H` with values in `D`, the crossed
+transfer of the projection along `K` is the `[G : H]`-th power of the crossed projection along `D`
+(`Subgroup.IsLocalComplement.crossedTransfer_leftProjection_apply`), normalizing by the modular
+inverse of `[G : H]` recovers that crossed projection
+(`Subgroup.IsLocalComplement.crossedTransfer_leftProjection_pow_inv_index_eq_crossedProjection`),
+and the Gaschütz complement is `D`
+(`Subgroup.IsLocalComplement.gaschutzComplement_eq_of_forall_mem`).
+For `H = N` and the local complement `⊥`, the projection is the identity of `N`
+(`Subgroup.IsComplement'.crossedTransfer_id_apply`), and when `[G : N]` is prime to `|N|` every
+complement of `N` is a Gaschütz complement.
 
 The theorem fails for non-abelian `N`: in the central product of `SL(2, 3)` and a cyclic group
 of order `4`, the quaternion group `Q₈` has a complement in a Sylow `2`-subgroup, of index `3`,
@@ -39,13 +53,144 @@ surjections of finite groups.
 
 public section
 
-open scoped IsMulCommutative
+open scoped IsMulCommutative Pointwise
+open groupCohomology TauCeti
 
 namespace Subgroup
 
 variable {G : Type*} [Group G] {N K H : Subgroup G} [N.Normal] [IsMulCommutative N]
 
-attribute [local instance] conjugationAction
+attribute [local instance] conjugationAction Subgroup.fintypeQuotientOfFiniteIndex
+
+namespace IsLocalComplement
+
+variable (h : N.IsLocalComplement K H)
+
+variable [H.FiniteIndex] (t : G ⧸ H → G)
+  (ht : ∀ u : G ⧸ H, (QuotientGroup.mk (t u) : G ⧸ H) = u)
+
+/-- **The crossed transfer along a complement.** Let `D` be a complement of `N` containing `K`, and
+`t` a transversal of `H` with values in `D`. The crossed transfer of the projection along `K` is
+the `[G : H]`-th power of the crossed projection along `D`. -/
+theorem crossedTransfer_leftProjection_apply {D : Subgroup G} (hD : N.IsComplement' D)
+    (hKD : K ≤ D) (htD : ∀ u, t u ∈ D) (g : G) :
+    crossedTransfer H t ht h.leftProjection g = hD.crossedProjection g ^ H.index := by
+  have hc : h.leftProjection = fun x : H => hD.crossedProjection x :=
+    funext (h.leftProjection_eq_crossedProjection hD hKD)
+  rw [hc, crossedTransfer_restrict H t ht hD.isMulCocycle₁_crossedProjection]
+  simp [fun u => hD.crossedProjection_coe_right ⟨t u, htD u⟩]
+
+/-- The normalized crossed transfer of the left projection, read in `Additive N`, is a
+`1`-cocycle. -/
+private theorem isCocycle₁_crossedTransfer_leftProjection_pow :
+    IsCocycle₁ fun g => Additive.ofMul
+      (crossedTransfer H t ht h.leftProjection g ^ ((H.index : ZMod (Nat.card N))⁻¹).val) := by
+  intro g k
+  rw [← Additive.ofMul_smul, ← ofMul_mul]
+  exact congrArg Additive.ofMul
+    ((isMulCocycle₁_crossedTransfer H t ht h.isMulCocycle₁_leftProjection).pow _ g k)
+
+/-- **The Gaschütz complement** of a local complement `K` of `N` in `H`, along a transversal `t`
+of `H`: the zero locus of the crossed transfer `T_t c` of the projection `c` along `K`, raised
+to an inverse `e` of `[G : H]` modulo `|N|`. When `[G : H]` is prime to `|N|` it is the zero
+locus of `T_t c` itself (`Subgroup.IsLocalComplement.mem_gaschutzComplement`) and a complement
+of `N` in `G` (`Subgroup.IsLocalComplement.isComplement'_gaschutzComplement`); another
+transversal gives a conjugate of it by an element of `N`
+(`Subgroup.IsLocalComplement.gaschutzComplement_changeTransversal`). -/
+noncomputable def gaschutzComplement : Subgroup G :=
+  zeroLocus (h.isCocycle₁_crossedTransfer_leftProjection_pow t ht)
+
+/-- Membership in the Gaschütz complement means that the normalized crossed transfer is
+trivial, without any coprimality assumption. -/
+@[simp]
+theorem mem_gaschutzComplement_iff_pow_eq_one {g : G} :
+    g ∈ h.gaschutzComplement t ht ↔
+      crossedTransfer H t ht h.leftProjection g ^ ((H.index : ZMod (Nat.card N))⁻¹).val = 1 := by
+  rw [gaschutzComplement, mem_zeroLocus, ofMul_eq_zero]
+
+/-- When `[G : H]` is prime to `|N|`, the Gaschütz complement consists of the elements at which
+the crossed transfer of the projection along `K` is trivial. -/
+theorem mem_gaschutzComplement (hcop : Nat.Coprime H.index (Nat.card N)) {g : G} :
+    g ∈ h.gaschutzComplement t ht ↔ crossedTransfer H t ht h.leftProjection g = 1 := by
+  rw [h.mem_gaschutzComplement_iff_pow_eq_one]
+  refine ⟨fun hg => ?_, fun hg => by rw [hg, one_pow]⟩
+  rw [← pow_zmod_val_inv_pow hcop.symm (crossedTransfer H t ht h.leftProjection g), hg, one_pow]
+
+/-- The normalized crossed transfer of the left projection is the identity on `N`. -/
+private theorem crossedTransfer_leftProjection_pow_apply_coe
+    (hcop : Nat.Coprime H.index (Nat.card N)) (n : N) :
+    crossedTransfer H t ht h.leftProjection n ^ ((H.index : ZMod (Nat.card N))⁻¹).val = n :=
+  (crossedTransfer_pow_inv_index_apply_of_mem H t ht hcop h.left_le
+    h.smul_leftProjection_of_mem n.property).trans (h.leftProjection_left n)
+
+/-- When `[G : H]` is prime to `|N|`, the Gaschütz complement is a complement of `N` in `G`. -/
+theorem isComplement'_gaschutzComplement (hcop : Nat.Coprime H.index (Nat.card N)) :
+    N.IsComplement' (h.gaschutzComplement t ht) :=
+  isComplement'_zeroLocus _ fun n =>
+    congrArg Additive.ofMul (h.crossedTransfer_leftProjection_pow_apply_coe t ht hcop n)
+
+/-- The crossed projection along the Gaschütz complement is the crossed transfer of the
+projection along `K`, raised to the inverse of `[G : H]` modulo `|N|`. -/
+theorem crossedProjection_gaschutzComplement (hcop : Nat.Coprime H.index (Nat.card N)) (g : G) :
+    (h.isComplement'_gaschutzComplement t ht hcop).crossedProjection g =
+      crossedTransfer H t ht h.leftProjection g ^ ((H.index : ZMod (Nat.card N))⁻¹).val :=
+  crossedProjection_zeroLocus _ (fun n =>
+    congrArg Additive.ofMul (h.crossedTransfer_leftProjection_pow_apply_coe t ht hcop n)) g
+
+/-- **Change of transversal.** The Gaschütz complements along two transversals `t` and `t'` are
+conjugate by `a ^ e ∈ N`, where `a = ∏ v, t v • c ((t v)⁻¹ * t' v)` is the element of
+`TauCeti.crossedTransfer_changeTransversal` for the projection `c` along `K`, and `e` is the
+inverse of `[G : H]` modulo `|N|`. In general they are not conjugate by `a` itself. -/
+theorem gaschutzComplement_changeTransversal (hcop : Nat.Coprime H.index (Nat.card N))
+    (t' : G ⧸ H → G) (ht' : ∀ u : G ⧸ H, (QuotientGroup.mk (t' u) : G ⧸ H) = u) :
+    h.gaschutzComplement t' ht' = MulAut.conj (((∏ v : G ⧸ H, t v • h.leftProjection
+      ⟨transversalDiff H t t' v, transversalDiff_mem H t t' ht ht' v⟩) ^
+        ((H.index : ZMod (Nat.card N))⁻¹).val : N) : G) • h.gaschutzComplement t ht := by
+  rw [(h.isComplement'_gaschutzComplement t ht hcop).eq_conj_smul_iff_crossedProjection_eq
+    (h.isComplement'_gaschutzComplement t' ht' hcop)]
+  intro x
+  rw [h.crossedProjection_gaschutzComplement t' ht' hcop,
+    h.crossedProjection_gaschutzComplement t ht hcop,
+    crossedTransfer_changeTransversal H t ht t' ht' h.isMulCocycle₁_leftProjection, mul_pow,
+    div_pow, smul_pow']
+
+/-- When `[G : H]` is coprime to `|N|`, `K ≤ D` for a global complement `D` of `N`, and `t` takes
+values in `D`, normalizing the crossed transfer of `h.leftProjection` by the modular inverse of
+`[G : H]` recovers `hD.crossedProjection`. -/
+theorem crossedTransfer_leftProjection_pow_inv_index_eq_crossedProjection
+    (hcop : Nat.Coprime H.index (Nat.card N)) {D : Subgroup G}
+    (hD : N.IsComplement' D) (hKD : K ≤ D) (htD : ∀ u : G ⧸ H, t u ∈ D) (g : G) :
+    crossedTransfer H t ht h.leftProjection g ^ ((H.index : ZMod (Nat.card N))⁻¹).val =
+      hD.crossedProjection g := by
+  rw [h.crossedTransfer_leftProjection_apply t ht hD hKD htD,
+    pow_pow_zmod_val_inv hcop.symm]
+
+/-- **Every complement containing `K` is a Gaschütz complement.** Let `D` be a complement of `N`
+containing `K`, and `t` a transversal of `H` with values in `D`. When `[G : H]` is prime to `|N|`,
+the Gaschütz complement along `t` is `D`. -/
+theorem gaschutzComplement_eq_of_forall_mem (hcop : Nat.Coprime H.index (Nat.card N))
+    {D : Subgroup G} (hD : N.IsComplement' D) (hKD : K ≤ D) (htD : ∀ u, t u ∈ D) :
+    h.gaschutzComplement t ht = D := by
+  ext g
+  rw [h.mem_gaschutzComplement_iff_pow_eq_one,
+    h.crossedTransfer_leftProjection_pow_inv_index_eq_crossedProjection t ht hcop hD hKD htD,
+    hD.crossedProjection_eq_one_iff]
+
+end IsLocalComplement
+
+/-- **The crossed transfer of the identity along a complement.** Let `D` be a complement of `N`
+and `t` a transversal of `N` with values in `D`. The crossed transfer of the identity of `N` along
+`t` is the `[G : N]`-th power of the crossed projection along `D`: this is
+`Subgroup.IsLocalComplement.crossedTransfer_leftProjection_apply` for the local complement `⊥` of
+`N` in itself. -/
+theorem IsComplement'.crossedTransfer_id_apply {D : Subgroup G} (hD : N.IsComplement' D)
+    [N.FiniteIndex] (t : G ⧸ N → G) (ht : ∀ u : G ⧸ N, (QuotientGroup.mk (t u) : G ⧸ N) = u)
+    (htD : ∀ u, t u ∈ D) (g : G) :
+    crossedTransfer N t ht id g = hD.crossedProjection g ^ N.index := by
+  have h : N.IsLocalComplement ⊥ N := N.isLocalComplement_bot_self
+  -- for `H = N`, the inclusion of `N` into `H` in `leftProjection_left` is the identity
+  have hc : h.leftProjection = id := funext h.leftProjection_left
+  rw [← hc, h.crossedTransfer_leftProjection_apply t ht hD bot_le htD]
 
 /-- **Gaschütz's splitting theorem.** Let `N` be an abelian normal subgroup of `G` with a local
 complement `K` in a subgroup `H`, and let `[G : H]` be prime to `|N|`. Then `N` has a complement
@@ -60,22 +205,15 @@ theorem IsLocalComplement.exists_isComplement'_of_coprime_index (h : N.IsLocalCo
     subst hcop
     exact ⟨⊤, isComplement'_bot_top⟩
   have : H.FiniteIndex := ⟨hH⟩
-  -- On `N` the left projection is the identity, hence equivariant for conjugation by `G`.
-  have hequiv (g : G) (x y : H) (hx : (x : G) ∈ N) (hy : (y : G) = g * x * g⁻¹) :
-      g • h.leftProjection x = h.leftProjection y := by
-    obtain ⟨x, hxH⟩ := x
-    obtain ⟨y, hyH⟩ := y
-    dsimp only at hx hy
-    subst hy
-    have hx' : h.leftProjection ⟨x, hxH⟩ = ⟨x, hx⟩ := h.leftProjection_left ⟨x, hx⟩
-    have hy' : h.leftProjection ⟨_, hyH⟩ = ⟨_, ‹N.Normal›.conj_mem x hx g⟩ :=
-      h.leftProjection_left ⟨_, ‹N.Normal›.conj_mem x hx g⟩
-    rw [hx', hy']
-    exact Subtype.ext (coe_conjugationAction_smul N g _)
-  obtain ⟨d, hd, hdN⟩ := TauCeti.exists_isMulCocycle₁_eq_of_coprime_index hcop h.left_le
-    h.isMulCocycle₁_leftProjection hequiv
-  refine N.exists_complement_iff_crossedProjection.mpr ⟨d, hd, fun n => ?_⟩
-  rw [hdN n n.property]
-  exact h.leftProjection_left n
+  exact ⟨_, h.isComplement'_gaschutzComplement _ (fun u => u.out_eq') hcop⟩
+
+/-- **Gaschütz's splitting theorem**, as a criterion. If `N ≤ H` and `[G : H]` is prime to
+`|N|`, then the abelian normal subgroup `N` has a complement in `G` if and only if it has a local
+complement in `H`. -/
+theorem exists_isComplement'_iff_exists_isLocalComplement_of_coprime_index (hNH : N ≤ H)
+    (hcop : Nat.Coprime H.index (Nat.card N)) :
+    (∃ D : Subgroup G, N.IsComplement' D) ↔ ∃ K : Subgroup G, N.IsLocalComplement K H :=
+  ⟨fun ⟨D, hD⟩ => ⟨D ⊓ H, hD.isLocalComplement_inf hNH⟩,
+    fun ⟨_, hK⟩ => hK.exists_isComplement'_of_coprime_index hcop⟩
 
 end Subgroup

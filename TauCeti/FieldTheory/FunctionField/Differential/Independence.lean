@@ -165,8 +165,6 @@ private theorem weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_c
       derivativeOfSeparating hx y • weilDifferentialOfSeparating hF hx := by
   let := weilDifferentialSpaceModule hF
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
-  -- The rational place `P'` makes `k'` the exact constant field of `F'`.
-  have hex' : IsIntegrallyClosedIn k' F' := P'.isIntegrallyClosedIn_of_degree_eq_one hdeg
   have hx' : Transcendental k' (algebraMap F F' x) :=
     ((transcendental_algebraMap_iff (algebraMap F F').injective).mpr hx).extendScalars k'
   have hy' : Transcendental k' (algebraMap F F' y) :=
@@ -205,7 +203,7 @@ theorem weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul (hF : IsFunc
       derivativeOfSeparating hx y • weilDifferentialOfSeparating hF hx := by
   -- Choose a place `P` with residue field separable over `k`, at which `x` and `y` are units and
   -- some `q(x)` and `r(y)` are prime elements.
-  obtain ⟨P, hPsep, hP⟩ := ((Place.infinite_setOf_isSeparable_residueField hF hx).sdiff
+  obtain ⟨P, hPsep, hP⟩ := ((Place.infinite_setOf_isSeparable_residueField hF (x := x)).sdiff
     (((Place.finite_setOf_forall_irreducible_ord_aeval_ne_one hF hx).union
       (Place.finite_setOf_forall_irreducible_ord_aeval_ne_one hF hy)).union
         ((Place.finite_setOf_ord_ne_zero hF x).union
@@ -234,16 +232,16 @@ theorem Place.ord_derivativeOfSeparating_eq_sub (P : Place k F)
     (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F]
     (hy : Transcendental k y) [Algebra.IsSeparable k⟮y⟯ F] :
     P.ord (derivativeOfSeparating hx y) =
-      weilDifferentialOrder hF hex (weilDifferentialOfSeparating hF hy).2
+      weilDifferentialOrder hF hex (weilDifferentialOfSeparating hF hy).property
           (by simpa using weilDifferentialOfSeparating_ne_zero hF hy) P -
-        weilDifferentialOrder hF hex (weilDifferentialOfSeparating hF hx).2
+        weilDifferentialOrder hF hex (weilDifferentialOfSeparating hF hx).property
           (by simpa using weilDifferentialOfSeparating_ne_zero hF hx) P := by
   let := weilDifferentialSpaceModule hF
   have hchain := congrArg Subtype.val
     (weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul hF hex hx hy)
   rw [coe_weilDifferentialSpaceModule_smul] at hchain
   rw [weilDifferentialOrder_eq_ord_add_of_eq_repartitionDualMul hF hex _ _
-    (weilDifferentialOfSeparating hF hx).2
+    (weilDifferentialOfSeparating hF hx).property
     (by simpa using weilDifferentialOfSeparating_ne_zero hF hx) hchain P, add_sub_cancel_right]
 
 /-- **The Kähler–Weil comparison does not depend on the separating element** (Stichtenoth,

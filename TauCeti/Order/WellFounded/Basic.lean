@@ -37,21 +37,21 @@ universe u v
 open Relation
 
 /-- **Choices by well-founded recursion.** Let `V F x v` say that `v` is an admissible value at
-`x` for a function `F`, depending only on the values of `F` at the `r`-predecessors of `x`. If an
-admissible value exists at `x` as soon as `F` takes admissible values at all `r`-predecessors of
-`x`, then some function takes admissible values everywhere. -/
-theorem exists_forall_of_forall_exists {α : Type u} {X : Sort v} [Nonempty X]
-    {r : α → α → Prop} (hr : WellFounded r) (V : (α → X) → α → X → Prop)
-    (hV : ∀ ⦃x v⦄ ⦃F F' : α → X⦄, (∀ y, r y x → F y = F' y) → V F x v → V F' x v)
-    (hex : ∀ x (F : α → X), (∀ y, r y x → V F y (F y)) → ∃ v, V F x v) :
-    ∃ G : α → X, ∀ x, V G x (G x) := by
+`x`, in a type `X x`, for a dependent function `F`, depending only on the values of `F` at the
+`r`-predecessors of `x`. If an admissible value exists at `x` as soon as `F` takes admissible
+values at all `r`-predecessors of `x`, then some function takes admissible values everywhere. -/
+theorem exists_forall_of_forall_exists {α : Type u} {X : α → Sort v} [∀ x, Nonempty (X x)]
+    {r : α → α → Prop} (hr : WellFounded r) (V : (∀ x, X x) → ∀ x, X x → Prop)
+    (hV : ∀ ⦃x v⦄ ⦃F F' : ∀ x, X x⦄, (∀ y, r y x → F y = F' y) → V F x v → V F' x v)
+    (hex : ∀ x (F : ∀ x, X x), (∀ y, r y x → V F y (F y)) → ∃ v, V F x v) :
+    ∃ G : ∀ x, X x, ∀ x, V G x (G x) := by
   classical
   -- Recurse along the transitive closure, extending the earlier values arbitrarily.
-  let F (x : α) (IH : ∀ y, TransGen r y x → X) : α → X := fun y ↦
-    if hy : TransGen r y x then IH y hy else Classical.arbitrary X
-  let step (x : α) (IH : ∀ y, TransGen r y x → X) : X :=
+  let F (x : α) (IH : ∀ y, TransGen r y x → X y) : ∀ y, X y := fun y ↦
+    if hy : TransGen r y x then IH y hy else Classical.arbitrary (X y)
+  let step (x : α) (IH : ∀ y, TransGen r y x → X y) : X x :=
     if hc : ∀ y, r y x → V (F x IH) y (F x IH y) then (hex x _ hc).choose
-    else Classical.arbitrary X
+    else Classical.arbitrary (X x)
   refine ⟨hr.transGen.fix step, fun x ↦ hr.transGen.induction
     (C := fun x ↦ V (hr.transGen.fix step) x (hr.transGen.fix step x)) x fun x ih ↦ ?_⟩
   have hF : ∀ y, TransGen r y x →
@@ -75,11 +75,11 @@ theorem exists_mem_forall_not_rel {α : Type u} {r : α → α → Prop} (hr : W
   -- On the finite set `s`, the converse of the transitive closure of `r` is a strict order,
   -- hence well-founded, and a minimal element for it is related to nothing in `s`.
   have := hs.to_subtype
-  let rel : s → s → Prop := fun a b ↦ TransGen r b.1 a.1
+  let rel : s → s → Prop := fun a b ↦ TransGen r b.val a.val
   have : IsTrans s rel := ⟨fun _ _ _ hab hbc ↦ hbc.trans hab⟩
-  have : Std.Irrefl rel := ⟨fun a ↦ hr.transGen.irrefl.irrefl a.1⟩
+  have : Std.Irrefl rel := ⟨fun a ↦ hr.transGen.irrefl.irrefl a.val⟩
   obtain ⟨a, -, ha⟩ := (Finite.wellFounded_of_trans_of_irrefl rel).has_min Set.univ
     ⟨⟨hne.some, hne.some_mem⟩, Set.mem_univ _⟩
-  exact ⟨a.1, a.2, fun b hb hab ↦ ha ⟨b, hb⟩ (Set.mem_univ _) (.single hab)⟩
+  exact ⟨a.val, a.property, fun b hb hab ↦ ha ⟨b, hb⟩ (Set.mem_univ _) (.single hab)⟩
 
 end WellFounded

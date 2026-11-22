@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Sort
+import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Fintype.Fin
 import TauCeti.Data.Finset.Sort
+import TauCeti.Data.Set.Finite
 
 /-!
 # Sorted tuples
@@ -18,8 +20,8 @@ how often each value occurs. Two monotone tuples in which every value `a` occurs
 
 For an injective tuple `b` in a linear order, the increasing rearrangement `b ∘ Tuple.sort b` is
 the increasing enumeration of the set of entries of `b`, so it only depends on that set. The entry
-`b k` sits at position `(Tuple.sort b).symm k`, the number of entries below `b k`, and deleting the
-entry at `k` from `b` deletes the entry at that position from the rearrangement.
+`b k` sits at position `(Tuple.sort b).symm k`, the number of entries below `b k`. For every tuple,
+deleting the entry at `k` from `b` deletes the entry at that position from the rearrangement.
 
 ## Main results
 
@@ -29,8 +31,8 @@ entry at `k` from `b` deletes the entry at that position from the rearrangement.
   the same increasing rearrangement.
 * `Tuple.val_sort_symm_apply`: the position of `b k` in the increasing rearrangement of an
   injective tuple `b` is the number of entries below `b k`.
-* `Tuple.comp_succAbove_comp_sort`: deleting an entry of an injective tuple commutes with the
-  increasing rearrangement.
+* `Tuple.comp_succAbove_comp_sort`: deleting an entry of a tuple commutes with the increasing
+  rearrangement.
 -/
 
 public section
@@ -44,9 +46,7 @@ theorem Monotone.eq_of_card_filter_eq (hf : Monotone f) (hg : Monotone g)
     (h : ∀ a, #{i | f i = a} = #{i | g i = a}) : f = g := by
   refine List.ofFn_injective ((List.perm_iff_count.2 fun a ↦ ?_).eq_of_sortedLE
     hf.sortedLE_ofFn hg.sortedLE_ofFn)
-  have hcount (u : Fin n → α) : #{i | u i = a} = (List.ofFn u).count a := by
-    simp
-  rw [← hcount, ← hcount, h]
+  rw [List.count_ofFn, List.count_ofFn, h]
 
 /-- Two antitone tuples in which every value occurs equally often are equal. -/
 theorem Antitone.eq_of_card_filter_eq (hf : Antitone f) (hg : Antitone g)
@@ -62,15 +62,23 @@ theorem strictMono_comp_sort {b : Fin m → β} (hb : Function.Injective b) :
     StrictMono (b ∘ sort b) :=
   (monotone_sort b).strictMono_of_injective (hb.comp (sort b).injective)
 
+/-- For a tuple with distinct entries, a permutation gives a strictly increasing rearrangement
+exactly when it is the sorting permutation. -/
+theorem strictMono_comp_perm_iff_sort_eq {b : Fin m → β} (hb : Function.Injective b)
+    (σ : Equiv.Perm (Fin m)) : StrictMono (b ∘ σ) ↔ sort b = σ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ strictMono_comp_sort hb⟩
+  have heq := unique_monotone (monotone_sort b) h.monotone
+  exact DFunLike.ext _ _ fun i ↦ hb (congrFun heq i)
+
 /-- Rearranging a tuple does not change its set of entries. -/
 theorem range_comp_sort (b : Fin m → β) : Set.range (b ∘ sort b) = Set.range b :=
   (sort b).surjective.range_comp b
 
 /-- The increasing rearrangement of an injective tuple only depends on its set of entries. -/
 theorem comp_sort_eq_comp_sort_of_range_eq {b b' : Fin m → β} (hb : Function.Injective b)
-    (hb' : Function.Injective b') (h : Set.range b = Set.range b') :
-    b ∘ sort b = b' ∘ sort b' :=
-  ((strictMono_comp_sort hb).range_inj_of_wellFoundedLT (strictMono_comp_sort hb')).1 <| by
+    (h : Set.range b = Set.range b') : b ∘ sort b = b' ∘ sort b' := by
+  have hb' : Function.Injective b' := hb.of_range_eq h
+  exact ((strictMono_comp_sort hb).range_inj_of_wellFoundedLT (strictMono_comp_sort hb')).1 <| by
     rw [range_comp_sort, range_comp_sort, h]
 
 /-- The increasing rearrangement of an injective tuple is the increasing enumeration of its set of
@@ -89,17 +97,24 @@ theorem val_sort_symm_apply {b : Fin m → β} (hb : Function.Injective b) (k : 
     filter_image, card_image_of_injective _ hb] at h
   exact h.symm
 
-/-- Deleting the entry at `k` from an injective tuple `b` deletes the entry at
-`(sort b).symm k` from its increasing rearrangement. -/
-theorem comp_succAbove_comp_sort {n : ℕ} {b : Fin (n + 1) → β} (hb : Function.Injective b)
-    (k : Fin (n + 1)) :
+/-- Deleting the entry at `k` from a tuple `b` deletes the entry at `(sort b).symm k` from its
+increasing rearrangement. -/
+theorem comp_succAbove_comp_sort {n : ℕ} {b : Fin (n + 1) → β} (k : Fin (n + 1)) :
     (b ∘ k.succAbove) ∘ sort (b ∘ k.succAbove) = (b ∘ sort b) ∘ ((sort b).symm k).succAbove := by
-  rw [comp_sort_eq_orderEmbOfFin (hb.comp Fin.succAbove_right_injective)]
-  refine (orderEmbOfFin_unique _ (fun x ↦ ?_)
-    ((strictMono_comp_sort hb).comp (Fin.strictMono_succAbove _))).symm
-  have hk : sort b (((sort b).symm k).succAbove x) ≠ k := fun h ↦
-    Fin.succAbove_ne _ x ((Equiv.symm_apply_eq _).2 h.symm).symm
-  obtain ⟨z, hz⟩ := Fin.exists_succAbove_eq hk
-  exact mem_image.2 ⟨z, mem_univ _, congrArg b hz⟩
+  refine Monotone.eq_of_card_filter_eq (monotone_sort _)
+    ((monotone_sort b).comp (Fin.strictMono_succAbove _).monotone) fun a ↦ ?_
+  have h1 := Fin.sum_univ_succAbove (fun x ↦ if b (sort b x) = a then 1 else 0 : Fin (n + 1) → ℕ)
+    ((sort b).symm k)
+  have h2 := Fin.sum_univ_succAbove (fun y ↦ if b y = a then 1 else 0 : Fin (n + 1) → ℕ) k
+  have h3 := Equiv.sum_comp (sort b) (fun y ↦ if b y = a then 1 else 0 : Fin (n + 1) → ℕ)
+  have h4 := Equiv.sum_comp (sort (b ∘ k.succAbove))
+    (fun i : Fin n ↦ if b (k.succAbove i) = a then 1 else 0 : Fin n → ℕ)
+  simp only [Equiv.apply_symm_apply, Function.comp_apply] at h1 h4 ⊢
+  simp only [card_filter]
+  -- Both sides count the occurrences of `a` among the entries of `b` other than the one at `k`:
+  -- `h2` and `h3` reindex the total count along `sort b`, `h1` splits off the position
+  -- `(sort b).symm k` from it, and `h4` reindexes the left-hand side along
+  -- `sort (b ∘ k.succAbove)`.
+  omega
 
 end Tuple

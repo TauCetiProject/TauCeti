@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Decay
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Puncture
+import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
@@ -59,16 +60,8 @@ private theorem exists_energy_power_bound
   have hfull : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) (ball z₀ R) := by
     rw [IntegrableOn, ← Measure.restrict_congr_set (sdiff_null_ae_eq_self
       (s := ball z₀ R) (measure_singleton z₀))]
-    refine ((henergy.mono_set sdiff_subset).const_mul ((1 + max M 0) ^ 2)).mono' ?_ ?_
-    · exact ((hu.continuousOn_fderiv_of_isOpen (isOpen_ball.sdiff isClosed_singleton)
-        (by norm_num)).norm.pow 2).aestronglyMeasurable
-          (measurableSet_ball.diff (measurableSet_singleton _))
-    · filter_upwards [ae_restrict_mem
-        (measurableSet_ball.diff (measurableSet_singleton z₀))] with z hz
-      rw [Real.norm_of_nonneg (sq_nonneg _)]
-      have hop : ‖fderiv ℝ u z‖ ≤ (1 + max M 0) * ‖fderiv ℝ u z 1‖ :=
-        (fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz) ((hJ z hz).trans (le_max_left _ _)) le_rfl
-      simpa only [mul_pow] using pow_le_pow_left₀ (norm_nonneg _) hop 2
+    exact integrableOn_norm_fderiv_sq_of_apply_I_eq
+      (measurableSet_ball.diff (measurableSet_singleton _)) hCR hJ (henergy.mono_set sdiff_subset)
   let b := R / 2
   let α := 2 * c / (1 + M) ^ 2
   let E := ∫ z in ball z₀ b, ‖fderiv ℝ u z 1‖ ^ 2
@@ -98,8 +91,8 @@ theorem exists_pos_norm_fderiv_le_rpow
   have hM : 0 ≤ M := (norm_nonneg _).trans (hbound _ hmem)
   -- Normalize the energy power bound, then choose a radius below the mean-value threshold.
   let β := c / (1 + M) ^ 2
-  have hβ : 0 < β := by dsimp [β]; positivity
-  obtain ⟨A, hA, hpower⟩ := exists_energy_power_bound hg hc hR
+  have _ : 0 < β := by dsimp [β]; positivity
+  obtain ⟨A, _, hpower⟩ := exists_energy_power_bound hg hc hR
     (hu.of_le (by norm_num)) hCR htame hbound henergy
   obtain ⟨δ, hδ, hmean⟩ :=
     exists_pos_sq_norm_fderiv_one_le_energy hW hJ hK hKW hJsq hu hCR huK henergy
@@ -114,7 +107,6 @@ theorem exists_pos_norm_fderiv_le_rpow
   have hε : 0 < ε := lt_min hη (by positivity)
   have hεR : ε < R := (min_le_right _ _).trans_lt (by linarith)
   let B := 32 * A * (2 : ℝ) ^ (2 * β) / Real.pi
-  have hB : 0 ≤ B := by dsimp [B]; positivity
   let C := (1 + M) * (Real.sqrt B + 1)
   have hC : 0 < C := by dsimp [C]; positivity
   refine ⟨ε, hε, hεR, C, hC, fun z hz ↦ ?_⟩

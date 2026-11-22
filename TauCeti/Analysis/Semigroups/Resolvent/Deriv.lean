@@ -152,10 +152,17 @@ theorem hasDerivAt_resolventFun (hb : S.HasGrowthBound omega M) {lambda : ℝ}
     _ ≤ |mu - lambda| * (c / C * C) := by gcongr
     _ = c * |mu - lambda| := by rw [div_mul_cancel₀ _ hCpos.ne']; ring
 
-/-- The derivative of the resolvent in the spectral parameter. -/
-theorem deriv_resolventFun (hb : S.HasGrowthBound omega M) {lambda : ℝ} (hl : omega < lambda) :
-    deriv (S.resolventFun hb) lambda = -(S.resolventFun hb lambda ^ 2) :=
-  (S.hasDerivAt_resolventFun hb hl).deriv
+/-- The derivative of the resolvent in the spectral parameter. At and below the growth exponent
+both sides vanish: `resolventFun` is identically `0` on `(-∞, omega]`. -/
+theorem deriv_resolventFun (hb : S.HasGrowthBound omega M) {lambda : ℝ} :
+    deriv (S.resolventFun hb) lambda = -(S.resolventFun hb lambda ^ 2) := by
+  rcases lt_or_ge omega lambda with hl | hl
+  · exact (S.hasDerivAt_resolventFun hb hl).deriv
+  · rw [S.resolventFun_of_le hb hl, zero_pow two_ne_zero, neg_zero]
+    exact HasDerivWithinAt.deriv_eq_zero
+      ((hasDerivWithinAt_const lambda (Set.Iic omega) (0 : X →L[ℝ] X)).congr
+        (fun y hy => S.resolventFun_of_le hb hy) (S.resolventFun_of_le hb hl))
+      (uniqueDiffOn_Iic omega lambda hl)
 
 /-- The resolvent is differentiable on the half-line above the growth exponent. -/
 theorem differentiableOn_resolventFun (hb : S.HasGrowthBound omega M) :
@@ -186,25 +193,34 @@ theorem hasDerivAt_resolventFun_pow (hb : S.HasGrowthBound omega M) {lambda : �
       rw [Finset.sum_congr rfl hterm, Finset.sum_const, Finset.card_range, smul_neg]
 
 /-- **The iterated derivative of the resolvent**:
-`dⁿR(lambda)/dlambdaⁿ = (-1)ⁿ n! R(lambda)ⁿ⁺¹`. -/
-theorem iteratedDeriv_resolventFun (hb : S.HasGrowthBound omega M) (n : ℕ) {lambda : ℝ}
-    (hl : omega < lambda) :
+`dⁿR(lambda)/dlambdaⁿ = (-1)ⁿ n! R(lambda)ⁿ⁺¹`. At and below the growth exponent both sides vanish:
+`resolventFun` is identically `0` on `(-∞, omega]`. -/
+theorem iteratedDeriv_resolventFun (hb : S.HasGrowthBound omega M) (n : ℕ) {lambda : ℝ} :
     iteratedDeriv n (S.resolventFun hb) lambda
       = ((-1 : ℝ) ^ n * n !) • S.resolventFun hb lambda ^ (n + 1) := by
   induction n generalizing lambda with
   | zero => simp
   | succ n ih =>
-      have heq : iteratedDeriv n (S.resolventFun hb)
-          =ᶠ[𝓝 lambda] fun l => ((-1 : ℝ) ^ n * n !) • S.resolventFun hb l ^ (n + 1) := by
-        filter_upwards [isOpen_Ioi.mem_nhds (Set.mem_Ioi.mpr hl)] with l hl' using ih hl'
-      have hderiv : HasDerivAt
-          (fun l => ((-1 : ℝ) ^ n * n !) • S.resolventFun hb l ^ (n + 1))
-          (((-1 : ℝ) ^ n * n !) • -((n + 1) • S.resolventFun hb lambda ^ (n + 1 + 1))) lambda :=
-        (S.hasDerivAt_resolventFun_pow hb hl (n + 1)).const_smul ((-1 : ℝ) ^ n * n !)
-      rw [iteratedDeriv_succ, heq.deriv_eq, hderiv.deriv]
-      match_scalars
-      push_cast [Nat.factorial_succ]
-      ring
+      rcases lt_or_ge omega lambda with hl | hl
+      · have heq : iteratedDeriv n (S.resolventFun hb)
+            =ᶠ[𝓝 lambda] fun l => ((-1 : ℝ) ^ n * n !) • S.resolventFun hb l ^ (n + 1) :=
+          Filter.Eventually.of_forall fun l => ih
+        have hderiv : HasDerivAt
+            (fun l => ((-1 : ℝ) ^ n * n !) • S.resolventFun hb l ^ (n + 1))
+            (((-1 : ℝ) ^ n * n !) • -((n + 1) • S.resolventFun hb lambda ^ (n + 1 + 1)))
+              lambda :=
+          (S.hasDerivAt_resolventFun_pow hb hl (n + 1)).const_smul ((-1 : ℝ) ^ n * n !)
+        rw [iteratedDeriv_succ, heq.deriv_eq, hderiv.deriv]
+        match_scalars
+        push_cast [Nat.factorial_succ]
+        ring
+      · have hz : ∀ mu ≤ omega, iteratedDeriv n (S.resolventFun hb) mu = 0 := fun mu hmu => by
+          rw [ih, S.resolventFun_of_le hb hmu, zero_pow n.succ_ne_zero, smul_zero]
+        rw [iteratedDeriv_succ, S.resolventFun_of_le hb hl, zero_pow (Nat.succ_ne_zero _),
+          smul_zero]
+        exact HasDerivWithinAt.deriv_eq_zero
+          ((hasDerivWithinAt_const lambda (Set.Iic omega) (0 : X →L[ℝ] X)).congr hz (hz lambda hl))
+          (uniqueDiffOn_Iic omega lambda hl)
 
 /-- The resolvent is smooth on the half-line above the growth exponent. -/
 theorem contDiffOn_resolventFun (hb : S.HasGrowthBound omega M) :
@@ -216,7 +232,7 @@ theorem contDiffOn_resolventFun (hb : S.HasGrowthBound omega M) :
   | succ n ih =>
       rw [Nat.cast_succ, contDiffOn_succ_iff_deriv_of_isOpen isOpen_Ioi]
       refine ⟨S.differentiableOn_resolventFun hb, by simp, ?_⟩
-      exact ((ih.pow 2).neg).congr fun l hl => S.deriv_resolventFun hb hl
+      exact ((ih.pow 2).neg).congr fun l _ => S.deriv_resolventFun hb
 
 end StronglyContinuousSemigroup
 
@@ -232,12 +248,13 @@ theorem hasDerivAt_resolventFun {lambda : ℝ} (h : 0 < lambda) :
   rw [S.resolventFun_eq]
   exact S.toStronglyContinuousSemigroup.hasDerivAt_resolventFun S.hasGrowthBound h
 
-/-- The iterated derivative of the contraction resolvent. -/
-theorem iteratedDeriv_resolventFun (n : ℕ) {lambda : ℝ} (h : 0 < lambda) :
+/-- The iterated derivative of the contraction resolvent. For `lambda ≤ 0` both sides vanish:
+`resolventFun` is identically `0` on `(-∞, 0]`. -/
+theorem iteratedDeriv_resolventFun (n : ℕ) {lambda : ℝ} :
     iteratedDeriv n S.resolventFun lambda
       = ((-1 : ℝ) ^ n * n !) • S.resolventFun lambda ^ (n + 1) := by
   rw [S.resolventFun_eq]
-  exact S.toStronglyContinuousSemigroup.iteratedDeriv_resolventFun S.hasGrowthBound n h
+  exact S.toStronglyContinuousSemigroup.iteratedDeriv_resolventFun S.hasGrowthBound n
 
 /-- The contraction resolvent is smooth on `(0, ∞)`. -/
 theorem contDiffOn_resolventFun : ContDiffOn ℝ ∞ S.resolventFun (Set.Ioi 0) := by

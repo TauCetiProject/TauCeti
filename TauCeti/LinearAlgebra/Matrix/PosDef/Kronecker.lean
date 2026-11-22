@@ -20,6 +20,8 @@ holds over a nonassociative semiring with an arbitrary star operation.
 ## Main results
 
 * `Matrix.IsSymm.kronecker`: the Kronecker product of symmetric matrices is symmetric.
+* `Matrix.star_dotProduct_one_kronecker_mulVec`: for finite index types, the quadratic expression
+  for `1 ⊗ₖ A` decomposes into the expressions for `A` on its blocks.
 * `Matrix.finsupp_sum_one_kronecker`: the finitely supported quadratic expression for `1 ⊗ₖ A`
   decomposes into the expressions for `A` on its blocks.
 * `Matrix.PosDef.one_kronecker`: if `A` is positive definite, so is `1 ⊗ₖ A`.
@@ -51,11 +53,9 @@ theorem finsupp_sum_one_kronecker [NonAssocSemiring R] [Star R] [DecidableEq m]
     (A : Matrix n n R) (x : m × n →₀ R) :
     (x.sum fun i xi => x.sum fun j xj => star xi * ((1 : Matrix m m R) ⊗ₖ A) i j * xj) =
       x.curry.sum (fun _ y => y.sum fun i yi => y.sum fun j yj => star yi * A i j * yj) := by
-  classical
   rw [← Finsupp.uncurry_curry x]
   simp only [Finsupp.sum_uncurry_index, Finsupp.curry_uncurry]
-  refine Finsupp.sum_congr fun i hi => ?_
-  refine Finsupp.sum_congr fun a ha => ?_
+  refine Finsupp.sum_congr fun i hi => Finsupp.sum_congr fun a _ => ?_
   simp [Matrix.one_apply, mul_ite, ite_mul, Finsupp.sum, Finset.sum_ite_irrel,
     -Finsupp.support_curry, Finsupp.mem_support_iff.mp hi]
 
@@ -63,16 +63,12 @@ theorem finsupp_sum_one_kronecker [NonAssocSemiring R] [Star R] [DecidableEq m]
 theorem PosDef.one_kronecker [Ring R] [PartialOrder R] [StarRing R]
     [IsOrderedAddMonoid R] [DecidableEq m] {A : Matrix n n R}
     (hA : A.PosDef) : ((1 : Matrix m m R) ⊗ₖ A).PosDef := by
-  classical
   refine ⟨?_, fun x hx => ?_⟩
   · rw [Matrix.one_kronecker, isHermitian_reindex_iff, isHermitian_blockDiagonal_iff]
     exact fun _ => hA.isHermitian
   -- Group the test vector by blocks; each nonzero block contributes a positive term.
   have hc : x.curry ≠ 0 := by
-    intro h
-    apply hx
-    ext ⟨i, j⟩
-    exact congrArg (fun y : m →₀ n →₀ R => y i j) h
+    simpa only [Finsupp.coe_curryAddEquiv] using Finsupp.curryAddEquiv.map_ne_zero_iff.2 hx
   rw [finsupp_sum_one_kronecker]
   exact Finsupp.sum_pos (fun i hi => hA.2 (Finsupp.mem_support_iff.mp hi)) hc
 

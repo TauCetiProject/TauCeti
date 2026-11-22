@@ -14,17 +14,16 @@ import TauCeti.Probability.Moments.Basic
 # Moment determinacy of finite measures with finite exponential moments
 
 A finite measure on `ℝ` whose exponential moments are finite in a neighbourhood of the origin is
-determined by its sequence of polynomial moments `∫ xⁿ dμ`.  This is the analytic engine behind the
-completeness step (**B1**) of the `OrthogonalL2Bases` roadmap
-(`TauCetiRoadmap/OrthogonalL2Bases/README.md`, *Part B1 — Completeness toolkit (moment
-determinacy)*): the roadmap's `ae_eq_zero_of_forall_moment_eq_zero`-style lemmas rest on the fact
-that "vanishing moments" pins a distribution down, which for finite measures is exactly the
-determinacy result proved here.
+determined, among finite measures that also have finite exponential moments near the origin, by
+its sequence of polynomial moments `∫ xⁿ dμ`.  This is the analytic engine behind
+completeness of polynomials in weighted `L²` spaces: the `ae_eq_zero_of_forall_moment_eq_zero`
+lemmas of `TauCeti.Probability.Moments.VanishingMoments` rest on the fact that "vanishing moments"
+pins a distribution down, which for finite measures is exactly the determinacy result proved here.
 
-The mechanism is the one the roadmap describes — the (complex) moment-generating function is
-analytic on a strip around the imaginary axis, and its Taylor coefficients at `0` are the moments,
-so matching moments force the two functions to agree, hence the characteristic functions agree and
-the measures coincide.  The proof stays inside Mathlib's `ProbabilityTheory.complexMGF` /
+The mechanism: the (complex) moment-generating function is analytic on a strip around the
+imaginary axis, and its Taylor coefficients at `0` are the moments, so matching moments force the
+two functions to agree, hence the characteristic functions agree and the measures coincide.  The
+proof stays inside Mathlib's `ProbabilityTheory.complexMGF` /
 `MeasureTheory.charFun` API:
 
 * `ProbabilityTheory.analyticAt_complexMGF` and `analyticOnNhd_complexMGF` supply the analyticity
@@ -55,9 +54,9 @@ moment-generating function takes on an arbitrarily small neighbourhood of the or
 * `TauCeti.charFun_eq_of_forall_integral_pow_eq`: matching moments (and finite exponential moments
   near `0`) give equal characteristic functions.
 * `TauCeti.Measure.ext_of_forall_integral_pow_eq`: matching moments determine a finite measure on
-  `ℝ`.
+  `ℝ` with exponential moments near `0`, among such measures.
 * `TauCeti.Measure.ext_of_forall_integral_pow_eq_of_exists_integrable_exp`: the same conclusion from
-  the roadmap's exponential-moment hypothesis `∃ a > 0, Integrable (fun x => exp (a * |x|)) μ`,
+  the exponential-moment hypothesis `∃ a > 0, Integrable (fun x => exp (a * |x|)) μ`,
   which already puts `0` in the interior of the integrability strip.  This is the form the
   completeness argument consumes: the hypothesis holds for Gaussian decay and automatically for
   compactly supported measures.
@@ -209,7 +208,8 @@ theorem charFun_eq_of_forall_integral_pow_eq (hμ : (0 : ℝ) ∈ interior (inte
     (hEqNear.filter_mono nhdsWithin_le_nhds).frequently
 
 /-- **Moment determinacy for finite measures on `ℝ`.** A finite measure on `ℝ` with finite
-exponential moments near `0` is determined by its polynomial moments `∫ xⁿ`.  Combines
+exponential moments near `0` is determined by its polynomial moments `∫ xⁿ`, among finite measures
+that also have exponential moments near `0` (the hypothesis `hν`).  Combines
 `charFun_eq_of_forall_integral_pow_eq` with `MeasureTheory.Measure.ext_of_charFun`.
 Finiteness follows from the exponential-moment hypothesis at zero. -/
 theorem Measure.ext_of_forall_integral_pow_eq
@@ -239,10 +239,11 @@ private lemma zero_mem_interior_integrableExpSet_id_of_exists_integrable_exp
     _ = |t| * |x| := abs_mul t x
     _ ≤ a * |x| := mul_le_mul_of_nonneg_right (abs_lt.mpr ht).le (abs_nonneg x)
 
-/-- **Moment determinacy, exponential-moment form (the roadmap's B1 hypothesis).** A finite measure
-on `ℝ` for which some exponential moment `∫ e^{a|x|} dμ` with `a > 0` is finite is determined by its
-polynomial moments.  This is the form the completeness argument consumes: the hypothesis holds for
-Gaussian decay and automatically for compactly supported measures. -/
+/-- **Moment determinacy, exponential-moment form.** A finite measure on `ℝ` for which some
+exponential moment `∫ e^{a|x|} dμ` with `a > 0` is finite is determined by its polynomial moments,
+among finite measures for which such an exponential moment is also finite (the hypothesis `hν`).
+This is the form the completeness argument consumes: the hypothesis holds for Gaussian decay and
+automatically for compactly supported measures. -/
 theorem Measure.ext_of_forall_integral_pow_eq_of_exists_integrable_exp
     (hμ : ∃ a : ℝ, 0 < a ∧ Integrable (fun x => Real.exp (a * |x|)) μ)
     (hν : ∃ a : ℝ, 0 < a ∧ Integrable (fun x => Real.exp (a * |x|)) ν)

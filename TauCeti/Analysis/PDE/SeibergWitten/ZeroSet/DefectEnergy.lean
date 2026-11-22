@@ -146,7 +146,11 @@ theorem inv_two_le_one_sub_norm_sq_sub_norm_sq_of_eq_zero {C r ρ : ℝ} (hC : 0
     nlinarith [hw y, mul_le_mul_of_nonneg_left (hw y) (div_nonneg hC hr₀.le)]
   linarith
 
-variable [MeasurableSpace E] [OpensMeasurableSpace E]
+variable [MeasurableSpace E]
+
+section OpensMeasurable
+
+variable [OpensMeasurableSpace E]
 
 /-- **The defect energy of a small ball about a zero.** Under the coarse large-parameter bounds
 on the closed ball of radius `ρ` about a zero `x₀` of `α`, with `r ≥ 1`, `r ≥ 8 C` and
@@ -165,11 +169,12 @@ theorem ofReal_mul_measure_le_setLIntegral_of_eq_zero {μ : Measure E} {C r ρ :
   rw [← setLIntegral_const]
   refine setLIntegral_mono' measurableSet_closedBall fun y hy ↦ ENNReal.ofReal_le_ofReal ?_
   have := inv_two_le_one_sub_norm_sq_sub_norm_sq_of_eq_zero hC hr hrC hρ hα hmod hβ hgrad h₀ hy
-  have hr₀ : 0 ≤ r := zero_le_one.trans hr
   calc r / 8 = r / 4 * 2⁻¹ := by ring
     _ ≤ r / 4 * |1 - ‖α y‖ ^ 2 - ‖β y‖ ^ 2| := by
       gcongr
       exact this.trans (le_abs_self _)
+
+end OpensMeasurable
 
 variable [FiniteDimensional ℝ E] [BorelSpace E]
 
@@ -188,7 +193,6 @@ theorem ofReal_mul_measure_ball_le_setLIntegral_of_eq_zero {μ : Measure E} [μ.
     (h₀ : α x₀ = 0) :
     ENNReal.ofReal (r / 8 * ρ ^ finrank ℝ E) * μ (ball 0 1) ≤
       ∫⁻ y in closedBall x₀ ρ, ENNReal.ofReal (r / 4 * |1 - ‖α y‖ ^ 2 - ‖β y‖ ^ 2|) ∂μ := by
-  have hr₀ : 0 ≤ r := zero_le_one.trans hr
   refine le_of_eq_of_le ?_
     (ofReal_mul_measure_le_setLIntegral_of_eq_zero (μ := μ) hC hr hrC hρ hα hmod hβ hgrad h₀)
   rw [Measure.addHaar_closedBall μ x₀ hρ₀, ← mul_assoc,

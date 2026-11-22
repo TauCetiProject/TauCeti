@@ -58,11 +58,21 @@ variable {α β γ δ : Type*} [MeasurableSpace α] [MeasurableSpace β]
   [MeasurableSpace γ] [MeasurableSpace δ]
 
 /-- Pushing independent coordinates through separate kernels preserves their product law. -/
-theorem parallelComp_comp_prod (μ : Measure α) (ν : Measure β) [SFinite μ] [SFinite ν]
+theorem parallelComp_comp_prod (μ : Measure α) (ν : Measure β) [SFinite ν]
     (κ : Kernel α γ) (η : Kernel β δ) [IsSFiniteKernel κ] [IsSFiniteKernel η] :
     (κ ∥ₖ η) ∘ₘ (μ.prod ν) = (κ ∘ₘ μ).prod (η ∘ₘ ν) := by
-  rw [prod_comp_left, prod_comp_right, comp_assoc,
-    Kernel.parallelComp_comp_parallelComp, Kernel.comp_id, Kernel.id_comp]
+  have key (x : α) : (κ ∥ₖ η) ∘ₘ ((dirac x).prod ν) = (κ x).prod (η ∘ₘ ν) := by
+    have h : (κ ∥ₖ η) ∘ₘ ((dirac x).prod ν) = (κ ∘ₘ dirac x).prod (η ∘ₘ ν) := by
+      rw [prod_comp_left, prod_comp_right, comp_assoc,
+        Kernel.parallelComp_comp_parallelComp, Kernel.comp_id, Kernel.id_comp]
+    simpa only [dirac_bind κ.measurable] using h
+  have hprod : ∀ x : α, map (Prod.mk x) ν = (dirac x).prod ν := fun x => (dirac_prod x).symm
+  rw [prod_eq_of_sfinite μ ν, prod_eq_of_sfinite (κ ∘ₘ μ) (η ∘ₘ ν),
+    bind_bind (Measurable.map_prodMk_left (ν := ν)).aemeasurable (Kernel.aemeasurable _),
+    bind_bind κ.aemeasurable (Measurable.map_prodMk_left (ν := η ∘ₘ ν)).aemeasurable]
+  congr 1
+  funext x
+  rw [← prod_eq_of_sfinite (κ x) (η ∘ₘ ν), ← key x, hprod]
 
 end MeasureTheory.Measure
 
@@ -70,11 +80,13 @@ namespace ProbabilityTheory.Kernel
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
   {κ : Kernel α α} {η : Kernel β β} [IsSFiniteKernel κ] [IsSFiniteKernel η]
-  {μ : Measure α} {ν : Measure β} [SFinite μ] [SFinite ν]
+  {μ : Measure α} {ν : Measure β}
 
 /-- The product of invariant measures is invariant for independent coordinate evolution. -/
 theorem Invariant.parallelComp (hκ : κ.Invariant μ) (hη : η.Invariant ν) :
     (κ ∥ₖ η).Invariant (μ.prod ν) := by
-  rw [Invariant, Measure.parallelComp_comp_prod, hκ.def, hη.def]
+  by_cases hν : SFinite ν
+  · rw [Invariant, Measure.parallelComp_comp_prod, hκ.def, hη.def]
+  · rw [Invariant, Measure.prod_eq_zero_of_not_sfinite hν, Measure.bind_zero_left]
 
 end ProbabilityTheory.Kernel

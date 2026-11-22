@@ -81,8 +81,8 @@ theorem isometry_riemannianExp_smul_of_forall_dist_eq {u : TangentSpace I p} (hu
   have hs : (s : ℝ) ≤ max s t + 1 := (le_max_left _ _).trans (le_add_of_nonneg_right zero_le_one)
   have ht : (t : ℝ) ≤ max s t + 1 := (le_max_right _ _).trans (le_add_of_nonneg_right zero_le_one)
   rw [Subtype.dist_eq, Real.dist_eq]
-  exact key _ _ _ ((mem_Ici.1 s.2).trans_lt ((le_max_left _ _).trans_lt (lt_add_one _)))
-    ⟨s.2, hs⟩ ⟨t.2, ht⟩
+  exact key _ _ _ ((mem_Ici.1 s.property).trans_lt ((le_max_left _ _).trans_lt (lt_add_one _)))
+    ⟨s.property, hs⟩ ⟨t.property, ht⟩
 
 /-- In a complete noncompact Riemannian manifold, every point `p` has a unit tangent vector `u`
 such that `t ↦ exp_p (t • u)` is an isometric embedding of `[0, ∞)`. -/
@@ -94,7 +94,7 @@ theorem exists_norm_eq_one_isometry_riemannianExp_smul [CompleteSpace M] [Noncom
   have hS := isClosed_setOf_dist_riemannianExp_eq_norm ha
   -- The unit vectors `u` with `n • u` minimizing.
   set K : ℕ → Set (TangentSpace I p) := fun n ↦
-    sphere 0 1 ∩ (fun u ↦ (n : ℝ) • u) ⁻¹' {v | dist p (riemannianExp I M p v) = ‖v‖} with hK
+    sphere 0 1 ∩ (fun u ↦ (n : ℝ) • u) ⁻¹' {v | dist p (riemannianExp I M p v) = ‖v‖}
   have hKclosed (n : ℕ) : IsClosed (K n) :=
     isClosed_sphere.inter (hS.preimage (continuous_const_smul _))
   have hKmono (n : ℕ) : K (n + 1) ⊆ K n := by

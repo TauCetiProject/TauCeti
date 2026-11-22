@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.NormSq
 import TauCeti.Data.Fin.Basic
 
@@ -265,8 +266,11 @@ theorem volume_carrier_inter_strip (h₀ : P.vertex 0 = .inr ∞) {i : Fin n} (h
   have hv := P.vertex_ne_inr_infty_of_vertex_zero h₀ hi
   have hv' := P.vertex_ne_inr_infty_of_vertex_zero h₀ hi'
   have hlt := P.re_toComplex_vertex_lt_of_vertex_zero h₀ hi hi'
-  rw [heq, volume_idealRegionAbove hρ (Complex.re_mem_Icc_of_normSq_sub_eq hρ.le hi₁).1
-    (Complex.re_mem_Icc_of_normSq_sub_eq hρ.le hi₂).2,
+  -- both vertices lie on the semicircle, so their real parts lie in `[m - ρ, m + ρ]`
+  have hre₁ := Complex.re_mem_Icc_of_normSq_sub_le _ hρ.le hi₁.le
+  have hre₂ := Complex.re_mem_Icc_of_normSq_sub_le _ hρ.le hi₂.le
+  rw [Complex.ofReal_re] at hre₁ hre₂
+  rw [heq, volume_idealRegionAbove hρ hre₁.1 hre₂.2,
     vertexAngle_infty_of_re_lt hρ hv hv' hi₁ hi₂ hlt,
     vertexAngle_infty_of_lt_re hρ hv hv' hi₁ hi₂ hlt]
   congr 1
@@ -316,8 +320,7 @@ theorem interiorAngle_eq_add_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) {i : 
   | inl A =>
     rw [hv, toComplex_inl] at hA₁ hA₂
     rw [hv, toComplex_inl, coe_re] at hpA hAq
-    exact vertexAngle_eq_add_of_mem_circles (P.vertex_ne_inr_infty_of_vertex_zero h₀ hi₁)
-      (P.vertex_ne_inr_infty_of_vertex_zero h₀ hi') hA₁ hp₁ hA₂ hq₂ hpA hAq
+    exact vertexAngle_eq_add_of_mem_circles hA₁ hp₁ hA₂ hq₂ hpA hAq
       (sub_neg.1 (neg_of_mul_neg_right hp₂ hκ₂.le))
 
 /-! ### Moving an ideal vertex to `∞` -/

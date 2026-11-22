@@ -27,10 +27,10 @@ subrepresentation, because relabeling a tableau translates its polytabloid:
 `e_{σt} = σ · e_t`.  Since the symmetric group acts transitively on tableaux, `S^μ` is in fact
 the span of the orbit of a single polytabloid.
 
-The conventions here are the ones the Schur-Weyl roadmap pins, and they have to be used
-together: `M^μ` is a **left** module on the **left** cosets of the Young subgroup, the polytabloid
-is the **column** antisymmetrization `b_t · {t}` of the tabloid, and the Young symmetrizer is
-`c_t = a_t b_t`.  The opposite choices produce the dual Specht module.
+The conventions here have to be used together: `M^μ` is a **left** module on the **left** cosets
+of the Young subgroup, the polytabloid is the **column** antisymmetrization `b_t · {t}` of the
+tabloid, and the Young symmetrizer is `c_t = a_t b_t`.  The opposite choices produce the dual
+Specht module.
 
 The bridge between the two indexings is `rowYoungConjugator t`, the permutation carrying the
 consecutive-block labeling of the shape of `μ` to the labeling of `t`: its coset is the tabloid of
@@ -78,8 +78,6 @@ here do not require characteristic zero.
 ## References
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapters 3 and 4.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 3, "Polytabloids and the Specht module".
 -/
 
 public section
@@ -114,6 +112,13 @@ theorem tabloid_relabel (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ) :
     tabloid (relabel σ t) = σ • tabloid t := by
   rw [tabloid_def, tabloid_def, rowYoungConjugator_relabel, MulAction.Quotient.smul_coe,
     smul_eq_mul]
+
+/-- The tabloid of the row-superstandard tableau is the identity coset of
+`youngSubgroup (shapePartition μ)`. -/
+@[simp]
+theorem tabloid_rowSuperstandard (μ : YoungDiagram) :
+    tabloid (StandardYoungTableau.rowSuperstandard μ).toTableau = QuotientGroup.mk 1 := by
+  rw [tabloid_def, rowYoungConjugator_rowSuperstandard]
 
 /-- Every `μ`-tabloid is the tabloid of a tableau. -/
 theorem tabloid_surjective : Function.Surjective (tabloid (μ := μ)) := by
@@ -163,7 +168,7 @@ theorem smul_tabloid_injective (t : YoungTableau μ) :
   intro q r h
   have hrow : (q : Equiv.Perm (Fin μ.card))⁻¹ * r ∈ rowSubgroup t := smul_tabloid_eq_iff.mp h
   have hcol : (q : Equiv.Perm (Fin μ.card))⁻¹ * r ∈ colSubgroup t :=
-    mul_mem (inv_mem q.2) r.2
+    mul_mem (inv_mem q.property) r.property
   have hmem : (q : Equiv.Perm (Fin μ.card))⁻¹ * r ∈ rowSubgroup t ⊓ colSubgroup t :=
     Subgroup.mem_inf.mpr ⟨hrow, hcol⟩
   rw [rowSubgroup_inf_colSubgroup_eq_bot t, Subgroup.mem_bot, inv_mul_eq_one] at hmem
@@ -267,7 +272,7 @@ theorem polytabloid_coeff_eq_zero_of_forall_ne (t : YoungTableau μ)
   classical
   rw [polytabloid_eq_sum, MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply]
   refine Finset.sum_eq_zero fun q _ => ?_
-  have hne := h (q : Equiv.Perm (Fin μ.card)) q.2
+  have hne := h (q : Equiv.Perm (Fin μ.card)) q.property
   simp [MonoidAlgebra.coeff_single, hne]
 
 /-- Polytabloids are nonzero. -/
@@ -365,7 +370,7 @@ theorem spechtSubrepresentation_span_orbit_polytabloid_eq_top (t : YoungTableau 
     (s := fun σ : Equiv.Perm (Fin μ.card) =>
       (permutationModule (R := R) (shapePartition μ)).ρ σ (polytabloid (R := R) t))
     fun σ => ((spechtSubrepresentation (R := R) μ).toRepresentation σ
-      ⟨polytabloid (R := R) t, polytabloid_mem_spechtSubrepresentation t⟩).2).2
+      ⟨polytabloid (R := R) t, polytabloid_mem_spechtSubrepresentation t⟩).property).2
     (spechtSubrepresentation_eq_span_orbit t).symm
 
 /-- The Specht module is nonzero. -/

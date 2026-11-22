@@ -29,15 +29,15 @@ followed by a fixed-point-free involution, so a strand cannot return to its own 
 Stacking a permutation diagram onto a diagram creates no new strand, because a permutation diagram
 has neither a cap nor a cup: it only renames the boundary points that the strands of the other
 diagram end at, that is, it relabels that boundary in the sense of
-`TauCeti.BrauerDiagram.relabel`. The consequence that Layer 9 of the Schur--Weyl roadmap is after
-is the multiplicativity `TauCeti.composeDiagram_permToBrauer`: stacking two permutation diagrams
-gives the permutation diagram of the product, so `σ ↦ permToBrauer σ` turns the group law of `Sₖ`
-into the multiplication of the Brauer algebra on the diagram basis. That is the sense in which the
-symmetric group sits inside the Brauer algebra: once the loop-weighted multiplication of the
-Brauer algebra is available, this is what will make it restrict to the group algebra `ℂ[Sₖ]` along
-`permToBrauer`, since no loop can close up in the middle when one of the two diagrams has only
-through strands. The middle-loop count itself is built in
-`TauCeti/Combinatorics/Brauer/LoopCount.lean`.
+`TauCeti.BrauerDiagram.relabel`. The main consequence is the multiplicativity
+`TauCeti.composeDiagram_permToBrauer`: stacking two permutation diagrams gives the permutation
+diagram of the product, so `σ ↦ permToBrauer σ` turns the group law of `Sₖ` into the
+multiplication of the Brauer algebra on the diagram basis. That is the sense in which the
+symmetric group sits inside the Brauer algebra: since no loop can close up in the middle when one
+of the two diagrams has only through strands, the loop-weighted multiplication of the Brauer
+algebra multiplies permutation diagrams as `Sₖ` multiplies permutations, so the group algebra of
+`Sₖ` maps into the Brauer algebra along `permToBrauer` (`TauCeti.BrauerAlgebra.ofPerm`). The
+middle-loop count itself is built in `TauCeti/Combinatorics/Brauer/LoopCount.lean`.
 
 ## Main definitions
 
@@ -75,8 +75,6 @@ through strands. The middle-loop count itself is built in
 
 * [R. Brauer, *On algebras which are connected with the semisimple continuous groups*][brauer1937],
   Annals of Mathematics 38 (1937), 857-872.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9.
 -/
 
 public section
@@ -645,21 +643,21 @@ composite**: the composite joins the bottom endpoint of a through strand of `D�
 endpoint of the through strand of `D₁` that continues it. -/
 theorem composeDiagram_val_inl_eq_inr_throughEquiv
     (i : {i : Fin k // D₂.IsThrough (Sum.inl i)})
-    (h : D₁.IsThrough (Sum.inl (D₂.throughEquiv i).1)) :
-    (composeDiagram D₁ D₂).val (Sum.inl i.1) = Sum.inr (D₁.throughEquiv ⟨_, h⟩).1 :=
+    (h : D₁.IsThrough (Sum.inl (D₂.throughEquiv i).val)) :
+    (composeDiagram D₁ D₂).val (Sum.inl i.val) = Sum.inr (D₁.throughEquiv ⟨_, h⟩).val :=
   composeDiagram_val_inl_eq_inr_of_through D₁ D₂ (D₂.inr_throughEquiv i).symm
     (D₁.inr_throughEquiv ⟨_, h⟩).symm
 
 /-- **The caps of `D₂` are caps of the composite**: the composite matches a capped bottom point
 of `D₂` with the other end of that cap. -/
 theorem composeDiagram_val_inl_eq_inl_capMatching (i : {i : Fin k // D₂.IsCap (Sum.inl i)}) :
-    (composeDiagram D₁ D₂).val (Sum.inl i.1) = Sum.inl (D₂.capMatching.val i).1 :=
+    (composeDiagram D₁ D₂).val (Sum.inl i.val) = Sum.inl (D₂.capMatching.val i).val :=
   composeDiagram_val_inl_eq_inl_of_cap_lower D₁ D₂ (D₂.inl_capMatching i).symm
 
 /-- **The cups of `D₁` are cups of the composite**: the composite matches a cupped top point of
 `D₁` with the other end of that cup. -/
 theorem composeDiagram_val_inr_eq_inr_cupMatching (j : {j : Fin k // D₁.IsCup (Sum.inr j)}) :
-    (composeDiagram D₁ D₂).val (Sum.inr j.1) = Sum.inr (D₁.cupMatching.val j).1 :=
+    (composeDiagram D₁ D₂).val (Sum.inr j.val) = Sum.inr (D₁.cupMatching.val j).val :=
   composeDiagram_val_inr_eq_inr_of_cup_upper D₁ D₂ (D₁.inr_cupMatching j).symm
 
 /-- Every capped bottom point of `D₂` is a capped bottom point of the composite. -/
@@ -717,7 +715,7 @@ extended past the middle boundary, because the permutation diagram has no cap: a
 which leaves at the top point `σ a`. -/
 @[simp]
 theorem composeDiagram_permToBrauer_left : composeDiagram (permToBrauer σ) D = D.relabel 1 σ := by
-  refine Subtype.ext (Equiv.ext fun x => ?_)
+  ext x
   rcases x with i | j
   · rcases h : D.val (Sum.inl i) with i' | a
     · rw [composeDiagram_val_inl_eq_inl_of_cap_lower _ D h]
@@ -741,7 +739,7 @@ is extended past the middle boundary, because the permutation diagram has no cup
 @[simp]
 theorem composeDiagram_permToBrauer_right :
     composeDiagram D (permToBrauer τ) = D.relabel τ⁻¹ 1 := by
-  refine Subtype.ext (Equiv.ext fun x => ?_)
+  ext x
   rcases x with i | j
   · rcases h : D.val (Sum.inl (τ i)) with a' | j'
     · rw [composeDiagram_val_inl_eq_inl_of_cap_upper (D₁ := D) (D₂ := permToBrauer τ) (a := τ i)

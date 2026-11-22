@@ -56,10 +56,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {a : 𝕜}
 
 /-- Every meromorphic germ at `a` is the germ of `(z - a)⁻ᴺ h z` for some `N` and some `h`
 analytic at `a`. -/
-private theorem exists_eq_inv_pow_mul (φ : meromorphicGerms 𝕜 a) :
+theorem exists_eq_inv_pow_mul (φ : meromorphicGerms 𝕜 a) :
     ∃ N : ℕ, ∃ h : 𝕜 → 𝕜, AnalyticAt 𝕜 h a ∧
       (φ : Germ (𝓝[≠] a) 𝕜) = (fun z ↦ ((z - a) ^ N)⁻¹ * h z : 𝕜 → 𝕜) := by
-  obtain ⟨f, ⟨N, hN⟩, hφ⟩ := mem_meromorphicGerms_iff.1 φ.2
+  obtain ⟨f, ⟨N, hN⟩, hφ⟩ := mem_meromorphicGerms_iff.1 φ.property
   refine ⟨N, _, hN, hφ.symm.trans (Germ.coe_eq.2 ?_)⟩
   filter_upwards [self_mem_nhdsWithin] with z (hz : z ≠ a)
   rw [smul_eq_mul, inv_mul_cancel_left₀ (pow_ne_zero N (sub_ne_zero.2 hz))]
@@ -76,7 +76,6 @@ private theorem single_mul_taylorSeries_eq {N M : ℕ} {h k : 𝕜 → 𝕜} (hh
   -- by continuity.
   have hNM : c ^ M * h =ᶠ[𝓝[≠] a] c ^ N * k := by
     filter_upwards [hhk, self_mem_nhdsWithin] with z hz (hza : z ≠ a)
-    have hz' : z - a ≠ 0 := sub_ne_zero.2 hza
     simp only [Pi.mul_apply, Pi.pow_apply, c]
     field_simp at hz ⊢
     linear_combination hz
@@ -116,7 +115,6 @@ private theorem coe_eq_inv_pow_add_mul {φ : meromorphicGerms 𝕜 a} {N : ℕ} 
       (fun z ↦ ((z - a) ^ (N + M))⁻¹ * ((z - a) ^ M * h z) : 𝕜 → 𝕜) := by
   rw [hφ, Germ.coe_eq]
   filter_upwards [self_mem_nhdsWithin] with z (hz : z ≠ a)
-  have hz' : z - a ≠ 0 := sub_ne_zero.2 hz
   field_simp
   ring
 

@@ -68,11 +68,11 @@ are separate later steps.
   polynomial to every point acts by multivariate polynomials in the chart coordinates, including
   at tuples where points collide.
 
-Lane F4.1 of the analytic Heegaard Floer roadmap opens with "`Sym^g(Σ)` geometry: smooth complex
-structure (elementary symmetric functions), the totally real tori `T_α`, `T_β`, …", after
-Ozsváth--Szabó ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1). This file supplies
-the algebra the first clause rests on, the correspondence between an unordered tuple and its monic
-polynomial, and stops there; the linear algebra behind the second clause is
+The geometry of `Sym^g(Σ)` that analytic Heegaard Floer theory starts from is its smooth complex
+structure, through elementary symmetric functions, together with the totally real tori `T_α`,
+`T_β`, after Ozsváth--Szabó ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1).
+This file supplies the algebra the first of these rests on, the correspondence between an unordered
+tuple and its monic polynomial, and stops there; the linear algebra behind the second is
 `TauCeti.IsMaximalTotallyReal.finrank_eq_half` in
 `TauCeti/LinearAlgebra/TotallyReal/Finrank.lean`. Vieta's formulas,
 the root multiset of a split monic polynomial, the multiset-to-polynomial map itself, and the
@@ -114,11 +114,11 @@ theorem coe_toMonic (s : Sym R n) : (toMonic s : R[X]) = ofMultiset (s : Multise
 
 @[simp]
 theorem monic_toMonic (s : Sym R n) : (toMonic s : R[X]).Monic :=
-  (toMonic s).2.1
+  (toMonic s).property.1
 
 @[simp]
 theorem natDegree_toMonic (s : Sym R n) : (toMonic s : R[X]).natDegree = n :=
-  (toMonic s).2.2
+  (toMonic s).property.2
 
 @[simp]
 theorem toMonic_nil : (toMonic (Sym.nil : Sym R 0) : R[X]) = 1 := by
@@ -268,13 +268,13 @@ multiplicity. -/
 @[expose]
 noncomputable def monicEquiv : Sym K n ≃ { p : K[X] // p.Monic ∧ p.natDegree = n } where
   toFun := toMonic
-  invFun p := Sym.mk p.1.roots <| by
-    rw [splits_iff_card_roots.mp (IsAlgClosed.splits p.1), p.2.2]
+  invFun p := Sym.mk p.val.roots <| by
+    rw [splits_iff_card_roots.mp (IsAlgClosed.splits p.val), p.property.2]
   left_inv s := Sym.coe_injective (roots_toMonic s)
   right_inv p := Subtype.ext <| by
     rw [coe_toMonic]
-    simpa using prod_multiset_X_sub_C_of_monic_of_roots_card_eq p.2.1
-      (splits_iff_card_roots.mp (IsAlgClosed.splits p.1))
+    simpa using prod_multiset_X_sub_C_of_monic_of_roots_card_eq p.property.1
+      (splits_iff_card_roots.mp (IsAlgClosed.splits p.val))
 
 @[simp]
 theorem monicEquiv_apply (s : Sym K n) : monicEquiv K n s = toMonic s :=
@@ -282,7 +282,7 @@ theorem monicEquiv_apply (s : Sym K n) : monicEquiv K n s = toMonic s :=
 
 @[simp]
 theorem coe_monicEquiv_symm_apply (p : { p : K[X] // p.Monic ∧ p.natDegree = n }) :
-    (((monicEquiv K n).symm p : Sym K n) : Multiset K) = p.1.roots :=
+    (((monicEquiv K n).symm p : Sym K n) : Multiset K) = p.val.roots :=
   rfl
 
 /-- The **elementary symmetric chart** on the `n`-th symmetric power of an algebraically closed
@@ -301,7 +301,7 @@ theorem coeffEquiv_apply_eq_coeff (s : Sym K n) (i : Fin n) :
     coeffEquiv K n s i = (toMonic s : K[X]).coeff i := by
   have hne : (i : ℕ) ≠ (toMonic s : K[X]).natDegree := by
     rw [natDegree_toMonic]
-    exact i.2.ne
+    exact i.isLt.ne
   rw [coeffEquiv, Equiv.trans_apply, Equiv.trans_apply, monicEquiv_apply,
     degreeLTEquiv_toEquiv_apply, coe_monicEquivDegreeLT_apply]
   exact eraseLead_coeff_of_ne _ hne
@@ -311,7 +311,7 @@ tuple, in decreasing order and with alternating signs. -/
 @[simp]
 theorem coeffEquiv_apply (s : Sym K n) (i : Fin n) :
     coeffEquiv K n s i = (-1) ^ (n - (i : ℕ)) * (s : Multiset K).esymm (n - (i : ℕ)) := by
-  rw [coeffEquiv_apply_eq_coeff, coeff_toMonic s i.2.le]
+  rw [coeffEquiv_apply_eq_coeff, coeff_toMonic s i.isLt.le]
 
 /-- The chart of an unordered tuple presented by an ordered one `f : Fin n → K` reads off the
 coefficients of the product of the linear factors of `f`. -/
@@ -431,7 +431,7 @@ theorem exists_map_eval_esymm_eq_eval (q : K[X]) :
   classical
   have hftsf : ∀ k : ℕ, ∃ W : MvPolynomial (Fin n) K,
       MvPolynomial.aeval (fun j : Fin n => esymm (Fin n) K ((j : ℕ) + 1)) W =
-        MvPolynomial.bind₁ (fun i : Fin n => Polynomial.aeval (MvPolynomial.X i) q)
+        MvPolynomial.aeval (fun i : Fin n => Polynomial.aeval (MvPolynomial.X i) q)
           (esymm (Fin n) K k) := fun k => by
     obtain ⟨W, hW⟩ := (esymmAlgHom_fin_bijective K n).surjective
       ⟨_, (esymm_isSymmetric (Fin n) K k).bind₁_aeval_X q⟩
@@ -455,9 +455,9 @@ theorem exists_map_eval_esymm_eq_eval (q : K[X]) :
       refine congrArg (fun g => MvPolynomial.aeval g (esymm (Fin n) K k))
         (_root_.funext fun j => (congrFun (Polynomial.coe_aeval_eq_eval (v j)) q).symm)
     _ = MvPolynomial.aeval v
-          (MvPolynomial.bind₁ (fun j : Fin n => Polynomial.aeval (MvPolynomial.X j) q)
+          (MvPolynomial.aeval (fun j : Fin n => Polynomial.aeval (MvPolynomial.X j) q)
             (esymm (Fin n) K k)) := by
-      rw [MvPolynomial.aeval_bind₁]
+      rw [MvPolynomial.comp_aeval_apply]
       refine congrArg (fun g => MvPolynomial.aeval g (esymm (Fin n) K k))
         (_root_.funext fun j => ?_)
       calc

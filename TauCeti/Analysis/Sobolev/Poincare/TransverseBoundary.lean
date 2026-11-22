@@ -24,9 +24,14 @@ estimate, this allows both endpoint values to be nonzero.
 The analytic step is the usual fundamental-theorem-of-calculus proof of the Poincaré
 inequality (see L. C. Evans, *Partial Differential Equations*, Chapter 5), followed by
 Cauchy–Schwarz. It uses Mathlib's
-`enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc` and
-`TauCeti.rpow_lintegral_le_measure_univ_rpow_mul`. The additional endpoint estimate comes from
-the bounded-below property of the injective subtraction map on the product of the subspaces.
+`eNorm_sub_le_lintegral_deriv_of_contDiffOn_Icc` and
+`TauCeti.rpow_lintegral_le_measure_univ_rpow_mul`, in the extended-valued form
+`TauCeti.eNorm_sub_sq_le_lintegral_eNorm_deriv_sq`. Averaging that displacement bound over the
+interval also bounds the value of a path at any time by its value and speed energies, with no
+boundary condition and in any real normed space
+(`TauCeti.ofReal_mul_eNorm_sq_le_lintegral_eNorm_sq_add_lintegral_eNorm_deriv_sq`). The additional
+endpoint estimate comes from the bounded-below property of the injective subtraction map on the
+product of the subspaces.
 -/
 
 public section
@@ -37,6 +42,52 @@ open MeasureTheory Set
 open scoped ENNReal
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- On a closed interval, the squared extended displacement between two times of a continuously
+differentiable path is bounded by the interval length times its squared-speed integral. -/
+theorem eNorm_sub_sq_le_lintegral_eNorm_deriv_sq {v : ℝ → V} {a b s t : ℝ}
+    (hv : ContDiffOn ℝ 1 v (Icc a b)) (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
+    ‖v t - v s‖ₑ ^ 2 ≤ ENNReal.ofReal (b - a) * ∫⁻ r in Icc a b, ‖deriv v r‖ₑ ^ 2 := by
+  wlog hst : s ≤ t generalizing s t
+  · rw [eNorm_sub_rev]
+    exact this ht hs (le_of_not_ge hst)
+  -- Cauchy–Schwarz on the interval, in the form of Jensen's inequality for the square.
+  have hHolder := rpow_lintegral_le_measure_univ_rpow_mul
+    (μ := volume.restrict (Icc a b)) (u := fun r ↦ ‖deriv v r‖ₑ) (r := 2) (by norm_num)
+  norm_num at hHolder
+  refine le_trans ?_ hHolder
+  gcongr
+  exact (eNorm_sub_le_lintegral_deriv_of_contDiffOn_Icc (hv.mono (Icc_subset_Icc hs.1 ht.2))
+    hst).trans (lintegral_mono_set (Icc_subset_Icc hs.1 ht.2))
+
+/-- On a closed interval `[a, b]`, the squared norm of a continuously differentiable path at any
+time is controlled by its value and speed energies:
+`(b - a) ‖v t‖² ≤ 2 ∫ ‖v‖² + 2 (b - a)² ∫ ‖v'‖²`. No boundary condition is needed. -/
+theorem ofReal_mul_eNorm_sq_le_lintegral_eNorm_sq_add_lintegral_eNorm_deriv_sq {v : ℝ → V}
+    {a b t : ℝ} (hv : ContDiffOn ℝ 1 v (Icc a b)) (ht : t ∈ Icc a b) :
+    ENNReal.ofReal (b - a) * ‖v t‖ₑ ^ 2 ≤ 2 * (∫⁻ u in Icc a b, ‖v u‖ₑ ^ 2) +
+      2 * ENNReal.ofReal (b - a) ^ 2 * ∫⁻ u in Icc a b, ‖deriv v u‖ₑ ^ 2 := by
+  set J := ∫⁻ u in Icc a b, ‖deriv v u‖ₑ ^ 2
+  have hpt : ∀ u ∈ Icc a b, ‖v t‖ₑ ^ 2 ≤ 2 * ‖v u‖ₑ ^ 2 + 2 * (ENNReal.ofReal (b - a) * J) := by
+    intro u hu
+    calc ‖v t‖ₑ ^ 2 ≤ (‖v u‖ₑ + ‖v t - v u‖ₑ) ^ 2 := by
+          gcongr
+          simpa using eNorm_add_le (v u) (v t - v u)
+      _ ≤ 2 * (‖v u‖ₑ ^ 2 + ‖v t - v u‖ₑ ^ 2) := by
+          simpa [ENNReal.rpow_two, show (2 : ℝ) - 1 = 1 by norm_num] using
+            ENNReal.rpow_add_le_mul_rpow_add_rpow _ _ one_le_two
+      _ ≤ 2 * ‖v u‖ₑ ^ 2 + 2 * (ENNReal.ofReal (b - a) * J) := by
+          rw [mul_add]
+          gcongr
+          exact eNorm_sub_sq_le_lintegral_eNorm_deriv_sq hv hu ht
+  calc ENNReal.ofReal (b - a) * ‖v t‖ₑ ^ 2 = ∫⁻ _ in Icc a b, ‖v t‖ₑ ^ 2 := by
+        rw [setLIntegral_const, Real.volume_Icc, mul_comm]
+    _ ≤ ∫⁻ u in Icc a b, (2 * ‖v u‖ₑ ^ 2 + 2 * (ENNReal.ofReal (b - a) * J)) :=
+        setLIntegral_mono' measurableSet_Icc hpt
+    _ = _ := by
+        rw [lintegral_add_right _ measurable_const, lintegral_const_mul' _ _ (by simp),
+          setLIntegral_const, Real.volume_Icc]
+        ring
 
 /-- On a closed interval, the squared displacement of a continuously differentiable path is
 bounded by the interval length times its squared-speed integral. -/
@@ -51,22 +102,11 @@ theorem norm_sub_sq_le_integral_norm_deriv_sq {v : ℝ → V} {a b t : ℝ}
     rw [← restrict_Ioo_eq_restrict_Icc]
     filter_upwards [self_mem_ae_restrict measurableSet_Ioo] with r hr
     exact derivWithin_of_mem_nhds (Icc_mem_nhds hr.1 hr.2)
-  have hFTC : ‖v t - v a‖ₑ ≤ ∫⁻ r in Icc a b, ‖deriv v r‖ₑ :=
-    (enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc
-      (hv.mono (Icc_subset_Icc_right ht.2)) ht.1).trans
-      (lintegral_mono_set (Icc_subset_Icc_right ht.2))
-  have hHolder : (∫⁻ r in Icc a b, ‖deriv v r‖ₑ) ^ 2 ≤
-      ENNReal.ofReal (b - a) * ∫⁻ r in Icc a b, ‖deriv v r‖ₑ ^ 2 := by
-    have h := rpow_lintegral_le_measure_univ_rpow_mul
-      (μ := volume.restrict (Icc a b)) (u := fun r ↦ ‖deriv v r‖ₑ)
-      (r := 2) (by norm_num)
-    norm_num at h
-    exact h
   have hi : IntegrableOn (fun r ↦ ‖deriv v r‖ ^ 2) (Icc a b) :=
     (hd.norm.pow 2).integrableOn_Icc.congr (by
       filter_upwards [heq] with r hr
       exact congrArg (fun x : V ↦ ‖x‖ ^ 2) hr)
-  have hbound := (pow_le_pow_left' hFTC 2).trans hHolder
+  have hbound := eNorm_sub_sq_le_lintegral_eNorm_deriv_sq hv ⟨le_rfl, hab⟩ ht
   have hconv : (∫⁻ r in Icc a b, ‖deriv v r‖ₑ ^ 2) =
       ENNReal.ofReal (∫ r in Icc a b, ‖deriv v r‖ ^ 2) := by
     rw [ofReal_integral_eq_lintegral_ofReal hi (Filter.Eventually.of_forall fun r ↦ sq_nonneg _)]

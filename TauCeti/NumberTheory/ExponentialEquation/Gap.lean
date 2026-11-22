@@ -179,7 +179,7 @@ theorem mul_rpow_neg_le_sub_of_mem_factoredNumbers {S : Finset ℕ} (hS : ∀ p 
     have hcast (z : ℕ) (hz : z ∈ Nat.factoredNumbers S) :
         ∏ p ∈ S, ((p : ℕ) : ℝ) ^ padicValNat p z = z := by
       exact_mod_cast prod_pow_padicValNat_eq_self_of_mem_factoredNumbers hS hz
-    have hp0 (p : S) : ((p : ℕ) : ℝ) ≠ 0 := by exact_mod_cast (hS p p.2).ne_zero
+    have hp0 (p : S) : ((p : ℕ) : ℝ) ≠ 0 := by exact_mod_cast (hS p p.property).ne_zero
     simp only [e, zpow_sub₀ (hp0 _), zpow_natCast]
     rw [Finset.prod_div_distrib, Finset.prod_coe_sort S (fun p ↦ ((p : ℕ) : ℝ) ^ padicValNat p x),
       Finset.prod_coe_sort S (fun p ↦ ((p : ℕ) : ℝ) ^ padicValNat p y), hcast x hx, hcast y hy]
@@ -218,7 +218,6 @@ theorem div_mul_rpow_le_sub_of_mem_factoredNumbers {S : Finset ℕ} (hS : ∀ p 
     {x y : ℕ} (hx : x ∈ Nat.factoredNumbers S) (hy : y ∈ Nat.factoredNumbers S) (hxy : x < y) :
     (y : ℝ) / ((exp 1 / log 2) ^ C * log y ^ C) ≤ y - x := by
   have hy1 : (1 : ℝ) ≤ y := by exact_mod_cast (show 1 ≤ y by omega)
-  have hlog2 : 0 < log 2 := log_pos one_lt_two
   convert mul_rpow_neg_le_sub_of_mem_factoredNumbers hS hC hLB hx hy hxy using 1
   rw [div_eq_mul_inv, ← mul_rpow (by positivity) (log_nonneg hy1), ← rpow_neg (by positivity),
     div_mul_comm, mul_comm (exp 1)]

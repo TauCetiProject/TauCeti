@@ -27,10 +27,12 @@ these into equivalences of Hecke decomposition quotients.
 
 For an action of `G` on a type, translation by `g` carries the orbits of a subgroup `H` onto the
 orbits of its conjugate `g H g⁻¹`. If the action is faithful, a point stabilizer acts faithfully
-by conjugation on every transitive normal subgroup.
+by conjugation on every transitive normal subgroup. The stabilizer of `g • a` in a normal
+subgroup is the conjugate by `g` of the stabilizer of `a`.
 
 ## Main statements
 
+* `ConjAct.mk_eq_mk_iff_isConj`: conjugation orbits are the classes of `IsConj`.
 * `MonoidHom.map_conjNormal_val`: a homomorphism from a normal subgroup to a commutative monoid is
   unchanged by conjugation by an element of that subgroup.
 * `Subgroup.conjugationAction`: the explicit conjugation action on a normal subgroup.
@@ -46,11 +48,20 @@ by conjugation on every transitive normal subgroup.
   element of the normalizer of `Γ₁` conjugates `(gΓ₂g⁻¹).subgroupOf Γ₁`.
 * `TauCeti.MulAction.orbitRel_smul_smul_iff_of_conjAct_smul_eq`: `g • x` and `g • y` lie in the
   same orbit of `g H g⁻¹` exactly when `x` and `y` lie in the same orbit of `H`.
+* `TauCeti.MulAction.stabilizer_smul_eq_conjNormal_smul`: for a normal subgroup `N`, the
+  stabilizer of `g • a` in `N` is the conjugate by `g` of the stabilizer of `a` in `N`.
 * `Subgroup.stabilizer_conjNormal_injective`: in a faithful action, the conjugation map
   from a point stabilizer to `MulAut N` is injective for every transitive normal subgroup `N`.
 -/
 
 public section
+
+/-- Two elements of a group lie in one orbit of the conjugation action exactly when they are
+conjugate. -/
+theorem ConjAct.mk_eq_mk_iff_isConj {G : Type*} [Group G] {x y : G} :
+    (Quotient.mk'' x : MulAction.orbitRel.Quotient (ConjAct G) G) = Quotient.mk'' y ↔
+      IsConj x y :=
+  Quotient.eq''.trans (by rw [ConjAct.orbitRel_conjAct])
 
 namespace MonoidHom
 
@@ -177,6 +188,17 @@ theorem orbitRel_smul_smul_iff_of_conjAct_smul_eq {G X : Type*} [Group G] [MulAc
   · simpa [mul_assoc] using hk
   · rw [mul_smul, mul_smul, inv_smul_smul, hkx]
 
+open _root_.MulAction in
+/-- For a normal subgroup `N`, the stabilizer of `g • a` in `N` is the conjugate by `g` of the
+stabilizer of `a` in `N`. This is the form of `MulAction.stabilizer_smul_eq_stabilizer_map_conj`
+for the action of a normal subgroup. -/
+theorem stabilizer_smul_eq_conjNormal_smul {G X : Type*} [Group G] [MulAction G X]
+    {N : Subgroup G} [N.Normal] (g : G) (a : X) :
+    stabilizer N (g • a) = (MulAut.conjNormal g : MulAut N) • stabilizer N a := by
+  ext n
+  simp [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, Subgroup.smul_def, mul_smul,
+    inv_smul_eq_iff]
+
 end TauCeti.MulAction
 
 open _root_.MulAction in
@@ -194,4 +216,4 @@ theorem Subgroup.stabilizer_conjNormal_injective {G X : Type*} [Group G] [MulAct
     have hc := congrArg (fun f : MulAut N ↦ ((f n : N) : G)) hh
     simpa only [MulAut.conjNormal_apply, MulAut.one_apply, mul_inv_eq_iff_eq_mul] using hc
   rw [OneMemClass.coe_one, subgroup_smul_def, ← mul_smul, hcomm, mul_smul,
-    mem_stabilizer_iff.mp h.2, one_smul]
+    mem_stabilizer_iff.mp h.property, one_smul]

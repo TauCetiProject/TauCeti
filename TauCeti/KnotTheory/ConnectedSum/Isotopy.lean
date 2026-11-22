@@ -114,7 +114,7 @@ theorem exists_smoothAmbientIsotopic_isConnectedSumPosition_of_two_le (hn : 2 �
   let z₀ : Circle := ⟨-Complex.I, by simp [Submonoid.unitSphere]⟩
   have hz₀ : (z₀ : ℂ) = -Complex.I := rfl
   obtain ⟨K₁, hK₁, h₀, h₁⟩ := SmoothEmbedding.exists_smoothAmbientIsotopic_mfderiv_eq hn
-    (by simp) K ((greatCircle (n := n) ι).contMDiff.mdifferentiableAt (by simp))
+    (by simp) K
     ((greatCircle (n := n) ι).isImmersion.mfderiv_injective (by simp) z₀)
   obtain ⟨K', hK', hpos⟩ :=
     exists_smoothAmbientIsotopic_isConnectedSumPosition_of_mfderiv_eq hz₀ h₀ h₁

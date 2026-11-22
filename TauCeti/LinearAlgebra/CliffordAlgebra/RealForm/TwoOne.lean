@@ -79,8 +79,8 @@ noncomputable def realCliffordTwoOneVectorEquivSymmetric :
     (Fin 3 → ℝ) ≃ₗ[ℝ] selfAdjoint.submodule ℝ (Matrix (Fin 2) (Fin 2) ℝ) where
   toFun v := ⟨realCliffordTwoOneVectorMatrix v,
     (realCliffordTwoOneVectorMatrix_isHermitian v).isSelfAdjoint⟩
-  invFun A := ![A.1 0 1, (A.1 1 1 - A.1 0 0) / 2,
-    -(A.1 0 0 + A.1 1 1) / 2]
+  invFun A := ![A.val 0 1, (A.val 1 1 - A.val 0 0) / 2,
+    -(A.val 0 0 + A.val 1 1) / 2]
   map_add' v w := by
     apply Subtype.ext
     ext i j
@@ -93,9 +93,9 @@ noncomputable def realCliffordTwoOneVectorEquivSymmetric :
     funext i
     fin_cases i <;> simp [realCliffordTwoOneVectorMatrix]
   right_inv A := by
-    have hA := A.2
+    have hA := A.property
     -- Expose the self-adjoint subtype predicate as the matrix equation used below.
-    change IsSelfAdjoint (A.1 : Matrix (Fin 2) (Fin 2) ℝ) at hA
+    change IsSelfAdjoint (A.val : Matrix (Fin 2) (Fin 2) ℝ) at hA
     rw [isSelfAdjoint_iff] at hA
     have h01 := congrFun (congrFun hA 0) 1
     apply Subtype.ext
@@ -116,8 +116,8 @@ theorem coe_realCliffordTwoOneVectorEquivSymmetric_apply (v : Fin 3 → ℝ) :
 theorem realCliffordTwoOneVectorEquivSymmetric_symm_apply
     (A : selfAdjoint.submodule ℝ (Matrix (Fin 2) (Fin 2) ℝ)) :
     realCliffordTwoOneVectorEquivSymmetric.symm A =
-      ![A.1 0 1, (A.1 1 1 - A.1 0 0) / 2,
-        -(A.1 0 0 + A.1 1 1) / 2] := (rfl)
+      ![A.val 0 1, (A.val 1 1 - A.val 0 0) / 2,
+        -(A.val 0 0 + A.val 1 1) / 2] := (rfl)
 
 /-- The determinant in the symmetric-matrix model is the negative signature `(2,1)` form. -/
 theorem realCliffordTwoOneVectorEquivSymmetric_det (v : Fin 3 → ℝ) :

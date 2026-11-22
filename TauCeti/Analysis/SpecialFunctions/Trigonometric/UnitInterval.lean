@@ -13,15 +13,16 @@ public import TauCeti.Topology.Instances.AddCircle.UnitInterval
 /-!
 # Trigonometric functions on the unit interval
 
-The cosine `t ↦ cos (π t)` is injective on the unit interval `I`, and the sine `t ↦ sin (π t)` is
-positive on its interior. The point `(cos 2πt, sin 2πt)` runs once around the unit circle as `t`
-runs over `I`: it reaches every point, it is `(1, 0)` only at the end points, and it is injective
-away from the end points.
+The cosine `t ↦ cos (π t)` is strictly decreasing on the unit interval `I`, and the sine
+`t ↦ sin (π t)` is positive on its interior. The point `(cos 2πt, sin 2πt)` runs once around the
+unit circle as `t` runs over `I`: it reaches every point, it is `(1, 0)` only at the end points,
+and it is injective away from the end points.
 
 ## Main declarations
 
-* `TauCeti.cos_pi_mul_injective`: `t ↦ cos (π t)` is injective on `I`.
-* `TauCeti.sin_pi_mul_pos`: `sin (π t) > 0` for `t ∈ I` different from `0` and `1`.
+* `TauCeti.cos_pi_mul_strictAnti`: `t ↦ cos (π t)` is strictly decreasing on `I`.
+* `TauCeti.sin_pi_mul_nonneg` and `TauCeti.sin_pi_mul_pos`: `sin (π t) ≥ 0` for `t ∈ I`, and
+  `sin (π t) > 0` for `t ∈ I` different from `0` and `1`.
 * `TauCeti.exists_cos_sin_two_pi_mul_eq`, `TauCeti.eq_zero_or_eq_one_of_cos_two_pi_mul_eq_one` and
   `TauCeti.eq_or_of_cos_sin_two_pi_mul_eq`: `t ↦ (cos 2πt, sin 2πt)` covers the unit circle, meets
   `(1, 0)` only at the end points of `I`, and identifies only the two end points.
@@ -34,17 +35,22 @@ open scoped unitInterval
 
 namespace TauCeti
 
-/-- `t ↦ cos (π t)` is injective on the unit interval. -/
-theorem cos_pi_mul_injective : Function.Injective (fun t : I => cos (π * t)) := by
-  intro a b h
-  refine Subtype.ext (mul_left_cancel₀ pi_ne_zero (Real.injOn_cos ?_ ?_ h))
-  · exact ⟨by positivity [a.2.1], mul_le_of_le_one_right pi_pos.le a.2.2⟩
-  · exact ⟨by positivity [b.2.1], mul_le_of_le_one_right pi_pos.le b.2.2⟩
+/-- `t ↦ cos (π t)` is strictly decreasing on the unit interval. -/
+theorem cos_pi_mul_strictAnti : StrictAnti (fun t : I => cos (π * t)) := by
+  intro a b hab
+  refine strictAntiOn_cos ?_ ?_ (mul_lt_mul_of_pos_left (Subtype.coe_lt_coe.2 hab) pi_pos)
+  · exact ⟨by positivity [a.property.1], mul_le_of_le_one_right pi_pos.le a.property.2⟩
+  · exact ⟨by positivity [b.property.1], mul_le_of_le_one_right pi_pos.le b.property.2⟩
+
+/-- `sin (π t)` is nonnegative on the unit interval. -/
+theorem sin_pi_mul_nonneg (t : I) : 0 ≤ sin (π * t) :=
+  sin_nonneg_of_nonneg_of_le_pi (by positivity [t.property.1])
+    (mul_le_of_le_one_right pi_pos.le t.property.2)
 
 /-- `sin (π t)` is positive on the open unit interval. -/
 theorem sin_pi_mul_pos {t : I} (h0 : t ≠ 0) (h1 : t ≠ 1) : 0 < sin (π * t) := by
-  have ht0 : 0 < (t : ℝ) := lt_of_le_of_ne t.2.1 fun h => h0 (Subtype.ext h.symm)
-  have ht1 : (t : ℝ) < 1 := lt_of_le_of_ne t.2.2 fun h => h1 (Subtype.ext h)
+  have ht0 : 0 < (t : ℝ) := lt_of_le_of_ne t.property.1 fun h => h0 (Subtype.ext h.symm)
+  have ht1 : (t : ℝ) < 1 := lt_of_le_of_ne t.property.2 fun h => h1 (Subtype.ext h)
   exact sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [pi_pos])
 
 /-- Every point `(a, b)` of the unit circle is `(cos 2πt, sin 2πt)` for some `t` in the unit

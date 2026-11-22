@@ -7,8 +7,8 @@ module
 
 public import Mathlib.RepresentationTheory.Stabilizer
 public import TauCeti.Algebra.Lie.Coadjoint
-public import TauCeti.Algebra.Lie.Heisenberg
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
+public import TauCeti.Algebra.Lie.Heisenberg.Basic
+public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Basic
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 
@@ -63,7 +63,7 @@ Kirillov–Kostant–Souriau form `ω_ν([ξ], [η]) = ν ⁅ξ, η⁆` of `Modu
 on the orbit tangent vectors (`Module.Dual.apply_heisenbergZ_mul_kksForm`). So when `r` is a unit
 (over a field, when `r ≠ 0`) the form is `ω = dp ∧ dq / r`.
 
-Finally, the trace pairing `⟨M, A⟩ = tr (M A)` of `TauCeti/Algebra/Lie/Heisenberg.lean`
+Finally, the trace pairing `⟨M, A⟩ = tr (M A)` of `TauCeti/Algebra/Lie/Heisenberg/Basic.lean`
 identifies the dual of the Heisenberg Lie algebra with the strictly lower triangular matrices
 (`TauCeti.heisenbergDualEquiv`); it only sees the strictly lower triangular part of `M`
 (`TauCeti.ker_heisenbergTracePairing`). This pairing is equivariant
@@ -145,7 +145,7 @@ algebra: `g A g⁻¹ = A + ⁅g - 1, A⁆`, because every product of three stric
 theorem toMatrix_mul_mul_toMatrix_inv (a : HeisenbergGroup R) (A : heisenberg R) :
     toMatrix a * (A : Matrix (Fin 3) (Fin 3) R) * toMatrix a⁻¹ =
       (A : Matrix (Fin 3) (Fin 3) R) + (⁅a.nilpotentPart, A⁆ : heisenberg R) := by
-  have hA := mem_strictUpperTriangular_iff.mp A.2
+  have hA := mem_strictUpperTriangular_iff.mp A.property
   rw [lie_eq_smul_heisenbergZ]
   ext i j
   fin_cases i <;> fin_cases j <;>
@@ -161,7 +161,7 @@ def adjointRepresentation : Representation R (HeisenbergGroup R) (heisenberg R) 
   toFun a :=
     { toFun A := ⟨toMatrix a * A * toMatrix a⁻¹, by
         rw [toMatrix_mul_mul_toMatrix_inv]
-        exact add_mem A.2 (⁅a.nilpotentPart, A⁆ : heisenberg R).2⟩
+        exact add_mem A.property (⁅a.nilpotentPart, A⁆ : heisenberg R).property⟩
       map_add' A B := Subtype.ext (by simp [Matrix.mul_add, Matrix.add_mul])
       map_smul' c A := Subtype.ext (by simp) }
   map_one' := LinearMap.ext fun A => Subtype.ext (by simp)
@@ -210,8 +210,8 @@ theorem mem_range_adjointRepresentation_apply_iff {A B : heisenberg R} :
   · rintro ⟨h01, h12, h02⟩
     obtain ⟨s, t, hst⟩ := Ideal.mem_span_pair.mp h02
     refine ⟨t • heisenbergX R - s • heisenbergY R, ?_⟩
-    have hA := mem_strictUpperTriangular_iff.mp A.2
-    have hB := mem_strictUpperTriangular_iff.mp B.2
+    have hA := mem_strictUpperTriangular_iff.mp A.property
+    have hB := mem_strictUpperTriangular_iff.mp B.property
     dsimp only
     rw [lie_eq_smul_heisenbergZ]
     refine Subtype.ext (Matrix.ext fun i j => ?_)

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.Analysis.Complex.ExponentialBounds
+import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.Calculus.Deriv.LocallyFinite
@@ -126,7 +127,7 @@ private theorem exists_differentiable_approx {g : ℝ → ℝ} (hg : ContDiff �
   have hF : Differentiable ℂ F :=
     differentiable_intervalIntegral_mul_cexp_neg_mul_sub_sq _
   have hFx (x : ℝ) : F x = (heatKernel t ⋆ g) x := by
-    rw [heatKernel_convolution_eq_intervalIntegral ((subset_tsupport g).trans hgs) hab,
+    rw [heatKernel_convolution_eq_intervalIntegral ((subset_tsupport g).trans hgs),
       ← intervalIntegral.integral_ofReal]
     refine intervalIntegral.integral_congr fun y _ ↦ ?_
     simp only [hA, hc]
@@ -224,7 +225,7 @@ private theorem exists_analyticOnNhd_abs_sub_lt_of_pos {f : ℝ → ℝ} (hf : C
         push Not at hk
         linarith
   -- The sum `H` of the entire approximations is holomorphic on the strip.
-  set H : ℂ → ℂ := fun z ↦ ∑' k, F k z with hH_def
+  set H : ℂ → ℂ := fun z ↦ ∑' k, F k z
   have hH (x₀ : ℝ) : DifferentiableOn ℂ H (U x₀) := by
     obtain ⟨u, hu, hFu⟩ := hdom x₀
     exact differentiableOn_tsum_of_summable_norm hu (fun k ↦ (hFd k).differentiableOn) (hUo x₀) hFu

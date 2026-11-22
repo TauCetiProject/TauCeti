@@ -123,8 +123,8 @@ theorem mem_range_genericPoint_germ_iff (L : InvertibleSheaf X) {U : X.Opens}
             (((genericPoint_spec X).specializes (Set.mem_univ (x : X))).mem_open V.isOpen hx) s =
               q := by
       intro x
-      obtain ⟨t, ht⟩ := hq x x.2
-      obtain ⟨V, hVU, hx, s, rfl⟩ := L.obj.presheaf.exists_le_germ_eq t x.2
+      obtain ⟨t, ht⟩ := hq x x.property
+      obtain ⟨V, hVU, hx, s, rfl⟩ := L.obj.presheaf.exists_le_germ_eq t x.property
       refine ⟨V, hx, hVU, s, ?_⟩
       exact (ConcreteCategory.congr_hom (L.obj.presheaf.germ_stalkSpecializes hx _) s).symm.trans ht
     choose V hx hVU s hs using hlocal

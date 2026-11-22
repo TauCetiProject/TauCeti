@@ -78,8 +78,13 @@ vector space with an additive Haar measure.
 * `MeasureTheory.Lp.integral_convolutionL`: `∫ (h ⋆ f) = (∫ h) • ∫ f`.
 * `MeasureTheory.Lp.convolutionL_toL1_ae_eq`: for compactly supported continuous `h` and `f`, the
   convolution `h ⋆ f` is represented by `x ↦ ∫ y, h y • f (y⁻¹ * x) dμ`.
+* `MeasureTheory.Lp.convolutionL_ofRealCLM_compLp_left`: convolving on the left with a real `L¹`
+  kernel coerced into an `RCLike` field agrees with convolving with the real kernel directly.
 * `MeasureTheory.Lp.modularInversion_convolutionL`: the modular inversion reverses convolution,
   `J (h ⋆ k) = J k ⋆ J h`.
+* `MeasureTheory.Lp.convolutionL_ofRealCLM_compLp_right_eq_integral_smul_rightTranslation_inv`:
+  for `h ∈ L¹(G, μ; 𝕜)` (`[RCLike 𝕜]`) and `k ∈ L¹(G, μ; ℝ)`, right convolution with `k` is the
+  Bochner integral `∫ z, k z • R_(z⁻¹) h ∂μ` of weighted right translates.
 
 ## References
 
@@ -230,8 +235,11 @@ theorem convolutionL_nonneg {h : Lp ℝ 1 μ} {f : Lp ℝ p μ} (hh : 0 ≤ h) (
   exact smul_nonneg hy (by simpa using leftTranslation_mono y hf)
 
 /-- The integral of a convolution is the product of the integrals: `∫ (h ⋆ f) = (∫ h) • ∫ f`. -/
-theorem integral_convolutionL [CompleteSpace E] (h : Lp 𝕜 1 μ) (f : Lp E 1 μ) :
+theorem integral_convolutionL (h : Lp 𝕜 1 μ) (f : Lp E 1 μ) :
     ∫ x, convolutionL μ 1 ENNReal.one_ne_top h f x ∂μ = (∫ x, h x ∂μ) • ∫ x, f x ∂μ := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp [integral_of_not_completeSpace hE]
   rw [← L1.integral_eq_integral, L1.integral_eq, convolutionL_apply,
     ← L1.integralCLM.integral_comp_comm
       (integrable_smul_leftTranslation ENNReal.one_ne_top (L1.integrable_coeFn h) f)]
@@ -277,6 +285,21 @@ theorem convolutionL_toL1_ae_eq [CompleteSpace E] {h : G → 𝕜} {f : G → E}
   -- Fubini's theorem for the compactly supported continuous integrand `(y, x) ↦ F x y`.
   exact integral_integral_swap_of_hasCompactSupport (f := fun y x => F x y)
     (hFc.comp continuous_swap) (hFs.comp_homeomorph (Homeomorph.prodComm G G))
+
+/-- Convolving on the left with a real `L¹` kernel coerced into an `RCLike` scalar field `𝕜` agrees
+with convolving with the real kernel directly. -/
+theorem convolutionL_ofRealCLM_compLp_left [IsScalarTower ℝ 𝕜 E] (k : Lp ℝ 1 μ) (u : Lp E p μ) :
+    convolutionL μ p hp ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp k) u =
+      convolutionL μ p hp k u := by
+  rw [convolutionL_apply, convolutionL_apply]
+  refine integral_congr_ae ?_
+  filter_upwards [(RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).coeFn_compLp k] with y hy
+  rw [RCLike.ofRealCLM_apply] at hy
+  rw [hy, leftTranslation_apply, leftTranslation_apply]
+  refine Lp.ext ?_
+  filter_upwards [coeFn_smul (k y : 𝕜) (DomMulAct.mk y⁻¹ • u),
+    coeFn_smul (k y) (DomMulAct.mk y⁻¹ • u)] with x h₁ h₂
+  rw [h₁, h₂, Pi.smul_apply, Pi.smul_apply, ← RCLike.algebraMap_eq_ofReal, algebraMap_smul]
 
 end RCLike
 
@@ -339,6 +362,39 @@ theorem modularInversion_convolutionL (h k : Lp 𝕜 1 μ) :
   obtain rfl : v = _ :=
     Lp.ext (hv.trans (hgc.integrable_of_hasCompactSupport (μ := μ) hgs).coeFn_toL1.symm)
   exact modularInversion_convolutionL_toL1 hfc hfs hgc hgs
+
+/-- **Right convolution as a Bochner integral of right translates.** For `h ∈ L¹(G, μ; 𝕜)` over an
+`RCLike` field `𝕜` and a real kernel `k ∈ L¹(G, μ; ℝ)`, convolving `h` on the right with `k` equals
+`∫ z, k z • R_(z⁻¹) h ∂μ`. -/
+theorem convolutionL_ofRealCLM_compLp_right_eq_integral_smul_rightTranslation_inv
+    (h : Lp 𝕜 1 μ) (k : Lp ℝ 1 μ) :
+    convolutionL μ 1 ENNReal.one_ne_top h ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp k) =
+      ∫ z, k z • rightTranslation μ 1 𝕜 z⁻¹ h ∂μ := by
+  apply (modularInversion (E := 𝕜) μ 1 𝕜).injective
+  have hJ : ⇑(modularInversion (E := 𝕜) μ 1 ℝ) = ⇑(modularInversion (E := 𝕜) μ 1 𝕜) :=
+    funext fun u => Lp.ext <| (coeFn_modularInversion (𝕜 := ℝ) u).trans
+      (coeFn_modularInversion (𝕜 := 𝕜) u).symm
+  have hcomm := (modularInversion (E := 𝕜) μ 1 ℝ).toContinuousLinearEquiv.integral_comp_comm
+    (μ := μ) fun z => k z • rightTranslation μ 1 𝕜 z⁻¹ h
+  rw [LinearIsometryEquiv.coe_toContinuousLinearEquiv, hJ] at hcomm
+  rw [modularInversion_convolutionL, modularInversion_ofRealCLM_compLp,
+    convolutionL_ofRealCLM_compLp_left, convolutionL_apply, ← hcomm]
+  have hinner (z : G) :
+      modularInversion μ 1 𝕜 (k z • rightTranslation μ 1 𝕜 z⁻¹ h) =
+        k z • leftTranslation μ 1 ℝ z⁻¹ (modularInversion μ 1 𝕜 h) := by
+    have hJz : modularInversion (E := 𝕜) μ 1 𝕜 = (modularInversion (E := 𝕜) μ 1 ℝ : _ → _) :=
+      hJ.symm
+    rw [congr_fun hJz _, map_smul, ← congr_fun hJz _, rightTranslation_apply,
+      modularInversion_modularInversion, leftTranslation_apply, leftTranslation_apply]
+  simp_rw [hinner]
+  have hinv := integral_inv_eq_integral_modularCharacter_smul_of_regular (μ := μ)
+    fun y => k y⁻¹ • leftTranslation μ 1 ℝ y (modularInversion μ 1 𝕜 h)
+  simp only [inv_inv] at hinv
+  rw [hinv]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_modularInversion (𝕜 := ℝ) k] with y hy
+  rw [ENNReal.toReal_one, inv_one, Real.rpow_one, smul_eq_mul] at hy
+  rw [hy, smul_smul]
 
 end ModularInversion
 section RightTranslation

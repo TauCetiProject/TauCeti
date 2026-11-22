@@ -93,7 +93,7 @@ private theorem extendLabel_of_mem {g : U.sym2 → ι} {z : Sym2 V} (hz : z ∈ 
   dite_eq_left hz
 
 private theorem extendLabel_update_of_ne (g : U.sym2 → ι) (e : U.sym2) (v : ι) {z : Sym2 V}
-    (hz : z ≠ e.1) : extendLabel U (Function.update g e v) z = extendLabel U g z := by
+    (hz : z ≠ e.val) : extendLabel U (Function.update g e v) z = extendLabel U g z := by
   unfold extendLabel
   split_ifs
   · exact Function.update_of_ne (fun h ↦ hz (congrArg Subtype.val h)) _ _
@@ -109,24 +109,16 @@ variable [DecidableEq κ] [Fintype ι] [DecidableEq ι]
 `(c, i)` from a `1 / |ι|` share of the indicator of `c`. -/
 private noncomputable def splitDev (S : PairColorSystem κ V) (c : κ) (i : ι) (x y : V) (v : ι) :
     ℝ :=
-  if S.colorOfPair x y = some c then (if v = i then 1 else 0) - (Fintype.card ι : ℝ)⁻¹ else 0
+  Fintype.labelDev (S.colorOfPair x y = some c) i v
 
 variable (S : PairColorSystem κ V) (c : κ) (i : ι)
 
-/-- The deviation has mean zero over the labels. -/
-private theorem sum_splitDev [Nonempty ι] (x y : V) : ∑ v, splitDev S c i x y v = 0 := by
-  unfold splitDev
-  split_ifs
-  · simp [sum_sub_distrib]
-  · simp
+private theorem sum_splitDev [Nonempty ι] (x y : V) : ∑ v, splitDev S c i x y v = 0 :=
+  Fintype.sum_labelDev ..
 
 private theorem abs_splitDev_le_one [Nonempty ι] (x y : V) (v : ι) :
-    |splitDev S c i x y v| ≤ 1 := by
-  have hq : (1 : ℝ) ≤ Fintype.card ι := by exact_mod_cast Fintype.card_pos
-  have h₀ : 0 < (Fintype.card ι : ℝ)⁻¹ := by positivity
-  have h₁ : (Fintype.card ι : ℝ)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ hq
-  unfold splitDev
-  split_ifs <;> rw [abs_le] <;> constructor <;> linarith
+    |splitDev S c i x y v| ≤ 1 :=
+  Fintype.abs_labelDev_le_one ..
 
 /-- On a rectangle, the deviations add up to the count of the split color minus a `1 / |ι|`
 share of the count of the original color. -/
@@ -137,8 +129,7 @@ private theorem sum_sum_splitDev (f : Sym2 V → ι) (s t : Finset V) :
   simp only [card_filter, sum_product, Nat.cast_sum, Nat.cast_ite, Nat.cast_one, Nat.cast_zero,
     sum_div, ← sum_sub_distrib, colorOfPair_split_eq_some_iff]
   refine sum_congr rfl fun x _ ↦ sum_congr rfl fun y _ ↦ ?_
-  unfold splitDev
-  split_ifs <;> simp_all [div_eq_mul_inv]
+  rw [splitDev, Fintype.labelDev_eq]
 
 /-- A bound on the count discrepancy of a split color, relative to the number of ordered distinct
 pairs of the rectangle, bounds its density discrepancy. -/
@@ -249,12 +240,12 @@ private theorem sum_degenerate_le (A B : Finset V) :
   have hI' (a : V) (s : Finset V) : ∑ b ∈ s, (if b = a then (1 : ℝ) else 0) ≤ 1 := by
     rw [sum_ite_eq']
     split_ifs <;> norm_num
-  have h₁ : ∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A, (if x = x' then (1 : ℝ) else 0) ≤
+  have h₁ : ∑ _ ∈ B, ∑ _ ∈ B, ∑ x ∈ A, ∑ x' ∈ A, (if x = x' then (1 : ℝ) else 0) ≤
       #B * #B * #A := by
     calc _ ≤ ∑ _y ∈ B, ∑ _y' ∈ B, ∑ _x ∈ A, (1 : ℝ) :=
           sum_le_sum fun _ _ ↦ sum_le_sum fun _ _ ↦ sum_le_sum fun x _ ↦ hI x A
       _ = _ := by simp only [sum_const, nsmul_eq_mul, mul_one, mul_assoc]
-  have h₂ : ∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A, (if y = y' then (1 : ℝ) else 0) ≤
+  have h₂ : ∑ y ∈ B, ∑ y' ∈ B, ∑ _ ∈ A, ∑ _ ∈ A, (if y = y' then (1 : ℝ) else 0) ≤
       #B * (#A * #A) := by
     calc _ = ∑ y ∈ B, ∑ y' ∈ B, (#A : ℝ) * (#A * if y = y' then 1 else 0) := by
           simp only [sum_const, nsmul_eq_mul]
@@ -386,7 +377,6 @@ theorem exists_split_abs_card_sub_le [Fintype κ] (𝒜 : Finset (Finset V)) {N 
     have hκ : (1 : ℝ) ≤ Fintype.card κ := by
       have : Nonempty κ := ⟨c⟩
       exact_mod_cast Fintype.card_pos
-    have hι : (1 : ℝ) ≤ Fintype.card ι := by exact_mod_cast Fintype.card_pos
     simp only [Nat.cast_zero, mul_zero]
     positivity
   obtain ⟨f, hf⟩ := exists_forall_splitBox_le (ι := ι) S 𝒜 hN₀ hN

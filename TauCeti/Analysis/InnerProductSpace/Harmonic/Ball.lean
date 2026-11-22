@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Normed.Module.Ball
 /-!
 # Ball normalizations for harmonic functions
 
-The PDE roadmap's Lane C uses translations and dilations to reduce local arguments on a ball
+Translations and dilations reduce local arguments about harmonic functions on a ball
 `Metric.ball x r` to arguments on the unit ball. The files
 `TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry` and
 `TauCeti.Analysis.InnerProductSpace.Harmonic.Dilation` prove the underlying invariance of

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.CoefficientField
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.Basic
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Laurent expansions over the residue field, and residues at places with separable residue field
@@ -257,6 +258,14 @@ theorem mem_filtration_iff_le_order_powerSeriesExpansionResidueField (n : ℕ) (
     ← mem_filtration_iff_le_order_completionIntegersEquivPowerSeriesResidueField,
     completionIntegersEmbedding_apply, completionEmbedding_mem_filtration_iff]
 
+/-- A function regular at `P` vanishes to order at least `n` exactly when its power-series
+expansion has vanishing `n`-truncation. -/
+theorem trunc_powerSeriesExpansionResidueField_eq_zero_iff (n : ℕ) (x : P.integers) :
+    PowerSeries.trunc n (P.powerSeriesExpansionResidueField ht x) = 0 ↔
+      (x : F) ∈ P.filtration n := by
+  rw [PowerSeries.trunc_eq_zero_iff_le_order,
+    mem_filtration_iff_le_order_powerSeriesExpansionResidueField]
+
 /-- The chosen uniformizer expands as the power-series variable. -/
 @[simp]
 theorem powerSeriesExpansionResidueField_uniformizer :
@@ -277,8 +286,8 @@ theorem exists_trunc_powerSeriesExpansionResidueField_eq (g : PowerSeries P.Resi
   set e := P.completionIntegersEquivPowerSeriesResidueField ht'
   -- Approximate the completed function with expansion `g` by a function regular at `P`.
   obtain ⟨y, hy⟩ := P.exists_filtration_sub_completionEmbedding_mem n
-    ⟨(e.symm g : P.Completion), P.completionPlace.mem_filtration_zero_iff.mpr (e.symm g).2⟩
-  have hyint : (y : F) ∈ P.integers := P.mem_filtration_zero_iff.mp y.2
+    ⟨(e.symm g : P.Completion), P.completionPlace.mem_filtration_zero_iff.mpr (e.symm g).property⟩
+  have hyint : (y : F) ∈ P.integers := P.mem_filtration_zero_iff.mp y.property
   refine ⟨⟨y, hyint⟩, ?_⟩
   have hdiff : ((e.symm g - P.completionIntegersEmbedding ⟨y, hyint⟩ :
       P.completionPlace.integers) : P.Completion) ∈ P.completionPlace.filtration n := by
@@ -433,7 +442,7 @@ theorem residueResidueField_mul_inv_uniformizer (u : P.integers) :
     simp at ht
   have hu : t ^ (0 + 1) * (u * t⁻¹) = u := by
     rw [zero_add, pow_one, mul_left_comm, mul_inv_cancel₀ ht0, mul_one]
-  have hmem : t ^ (0 + 1) * (u * t⁻¹) ∈ P.integers := by rw [hu]; exact u.2
+  have hmem : t ^ (0 + 1) * (u * t⁻¹) ∈ P.integers := by rw [hu]; exact u.property
   -- The power-series expansion is taken of `t ^ (0 + 1) * (u * t⁻¹)` as an element of
   -- `P.integers`; identify that element with `u`.
   have hsub : (⟨t ^ (0 + 1) * (u * t⁻¹), hmem⟩ : P.integers) = u := Subtype.ext hu

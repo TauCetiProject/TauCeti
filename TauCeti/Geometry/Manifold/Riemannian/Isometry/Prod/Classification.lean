@@ -53,16 +53,23 @@ variable
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
   {a b : ℝ}
 
+omit [Nonempty M] [Nonempty N] in
 /-- Distinct constant Ricci eigenvalues force every product isometry to preserve the two
 factors. The factor maps are Riemannian isometries, with no separation hypothesis on the
-original map. -/
+original map. If a factor is empty, so is the product, and the statement holds trivially. -/
 theorem prodCongrHom_surjective_of_ricciTensor_eq_smul_inner
     (hM : ∀ x u v, (leviCivitaConnection I M).ricciTensor x u v = a * inner ℝ u v)
     (hN : ∀ y u v, (leviCivitaConnection J N).ricciTensor y u v = b * inner ℝ u v)
     (hab : a ≠ b) : Function.Surjective (prodCongrHom I M J N) := by
   intro Q
-  obtain ⟨x₀⟩ := ‹Nonempty M›
-  obtain ⟨y₀⟩ := ‹Nonempty N›
+  rcases isEmpty_or_nonempty M with hMe | hMn
+  · exact ⟨1, RiemannianIsometry.ext fun p ↦ isEmptyElim p.1⟩
+  rcases isEmpty_or_nonempty N with hNe | hNn
+  · exact ⟨1, RiemannianIsometry.ext fun p ↦ isEmptyElim p.2⟩
+  have := hMn
+  have := hNn
+  obtain ⟨x₀⟩ := hMn
+  obtain ⟨y₀⟩ := hNn
   have hsep := (Q.mdifferentiable.eq_prodMap_iff_mfderiv_mixed_eq_zero x₀ y₀).mpr
     ⟨fun p v => (Q.fst_mfderiv_eq_zero_iff_of_ricciTensor_eq_smul_inner p
         (hM p.1) (hN p.2) (hM (Q p).1) (hN (Q p).2) hab (0, v)).mpr rfl,

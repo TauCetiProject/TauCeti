@@ -71,12 +71,9 @@ namespace HeisenbergGroup
 
 open Multiplicative
 
-variable {p : ℕ} {R : Type*} [Ring R] [TopologicalSpace R] [IsTopologicalRing R]
-  [CompactSpace R] [T2Space R]
-
-omit [IsTopologicalRing R] [CompactSpace R] [T2Space R] in
 /-- The Heisenberg group over a ring whose additive group is pro-`p` is pro-`p`. -/
-theorem isProP (hR : IsProP p (Multiplicative R)) : IsProP p (HeisenbergGroup R) := by
+theorem isProP {p : ℕ} {R : Type*} [Ring R] [TopologicalSpace R]
+    (hR : IsProP p (Multiplicative R)) : IsProP p (HeisenbergGroup R) := by
   classical
   -- The quotient map `(x, y, z) ↦ (x, y)` onto `R × R`, whose kernel is the `z`-axis.
   let f : HeisenbergGroup R →* Multiplicative (R × R) :=
@@ -88,8 +85,6 @@ theorem isProP (hR : IsProP p (Multiplicative R)) : IsProP p (HeisenbergGroup R)
     { toFun c := ⟨0, 0, c.toAdd⟩
       map_one' := by ext <;> simp
       map_mul' a b := by ext <;> simp }
-  have hf : Continuous f :=
-    continuous_ofAdd.comp (continuous_x.prodMk continuous_y)
   have hfopen : IsOpenMap f := by
     have h : ⇑f = ofAdd ∘ Prod.map id Prod.fst ∘ homeomorphProd := by
       ext a <;> simp [f]

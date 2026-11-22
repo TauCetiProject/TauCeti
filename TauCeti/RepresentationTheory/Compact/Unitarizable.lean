@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.InvariantForm
 public import Mathlib.Analysis.InnerProductSpace.Positive
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.RepresentationTheory.Compact.BilinearForm
 
 /-!
@@ -117,7 +118,7 @@ private noncomputable def gramFamily : C(G, V →L[𝕜] V) where
   toFun g := (ContinuousLinearMap.adjoint (π g)).comp (π g)
   continuous_toFun :=
     (ContinuousLinearMap.compL 𝕜 V V V).continuous₂.comp
-      (((ContinuousLinearMap.adjoint (𝕜 := 𝕜) (E := V) (F := V)).continuous.comp hπ).prodMk hπ)
+      (hπ.clm_adjoint.prodMk hπ)
 
 /-- The Gram operator of the Haar-averaged inner product
 `⟪v, w⟫_G = ∫ g, ⟪π g v, π g w⟫ ∂(haarProb G)` of a continuous representation of a compact group.
@@ -238,6 +239,7 @@ theorem adjoint_comp_gramOperator_comp (g : G) :
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.adjoint_inner_right,
     inner_gramOperator_map_map]
 
+omit [MeasurableSpace G] [BorelSpace G] in
 /-- **Weyl's unitarian trick.** Every continuous representation of a compact group on a Hilbert
 space carries a `G`-invariant positive-definite Hermitian form, represented by a positive-definite
 self-adjoint operator `S` with `(π g)† ∘ S ∘ (π g) = S`.
@@ -248,8 +250,9 @@ does not itself produce an `IsUnitary` representation;
 `ContRepresentation.exists_isUnitary_congr` does, for a finite-dimensional carrier. -/
 theorem isUnitarizable :
     ∃ S : V →L[𝕜] V, IsSelfAdjoint S ∧ (∀ v : V, v ≠ 0 → 0 < re ⟪S v, v⟫_𝕜) ∧
-      ∀ g : G, (ContinuousLinearMap.adjoint (π g)).comp (S.comp (π g)) = S :=
-  ⟨gramOperator π hπ, isSelfAdjoint_gramOperator π hπ,
+      ∀ g : G, (ContinuousLinearMap.adjoint (π g)).comp (S.comp (π g)) = S := by
+  borelize G
+  exact ⟨gramOperator π hπ, isSelfAdjoint_gramOperator π hπ,
     fun _ hv ↦ re_inner_gramOperator_self_pos π hπ hv, adjoint_comp_gramOperator_comp π hπ⟩
 
 /-- Averaging a form that is already invariant changes nothing: the Gram operator of a unitary

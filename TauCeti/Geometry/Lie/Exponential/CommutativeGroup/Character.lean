@@ -8,8 +8,10 @@ module
 public import TauCeti.Geometry.Lie.ContinuousFunctor
 public import TauCeti.Geometry.Lie.Exponential.Circle
 public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
-public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Geometry.Lie.Subgroup.Commutative
+public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The period lattice and the real weights of circle characters
@@ -33,14 +35,17 @@ exponential of the circle is `Circle.exp`. It is characterized by
 
 (`ContinuousMonoidHom.apply_lieExp_eq_circleExp_lieWeight`, `ContinuousMonoidHom.eq_lieWeight`).
 The weight of a product of characters is the sum of the weights, and the weight of `χ ∘ f` is
-`α_χ ∘ df`. On the period lattice weights take integer values: for `λ ∈ ker(exp)` the number
-`α_χ(λ) / (2π)` is an integer.
+`α_χ ∘ df`. Even for noncommutative `G`, weights vanish on Lie brackets and are invariant under
+the group adjoint action. On the period lattice weights take integer values: for `λ ∈ ker(exp)`
+the number `α_χ(λ) / (2π)` is an integer.
 
 For connected `G` these weights are exactly the integral functionals: a character is determined
 by its weight, and every real-linear functional taking integer values on `Λ_ℤ` is the weight of a
 character (`ContinuousMonoidHom.range_lieWeight`). So the character group of a torus is the
 lattice dual to `Λ_ℤ`. For the circle itself `Λ_ℤ` corresponds to `ℤ ⊆ ℝ` and the identity
-character has weight one, which fixes the normalization.
+character has weight one, which fixes the normalization. More generally the character `z ↦ z ^ n`
+of the circle has weight `n` at the generator of `Circle.exp`
+(`ContinuousMonoidHom.lieWeight_circleExpGenerator_eq_intCast_iff`).
 
 This is the normalization of weights of torus actions: a commutative group acting on `ℂ` through
 a character `χ` acts by `exp(ξ) · z = e^{i α_χ(ξ)} z`.
@@ -61,12 +66,17 @@ a character `χ` acts by `exp(ξ) · z = e^{i α_χ(ξ)} z`.
   satisfying it.
 * `ContinuousMonoidHom.lieWeight_mul`, `ContinuousMonoidHom.lieWeight_comp`: weights are additive
   in the character and natural in the group.
+* `ContinuousMonoidHom.lieWeight_lie`, `ContinuousMonoidHom.lieWeight_Ad`: weights vanish on
+  brackets and are adjoint-invariant, including for noncommutative groups.
 * `ContinuousMonoidHom.exists_lieWeight_apply_eq_intCast_mul_of_mem_ker`,
   `ContinuousMonoidHom.exists_lieWeight_apply_eq_intCast_of_mem_periodLattice`: integrality of
   weights on the kernel of the exponential and on the period lattice.
 * `ContinuousMonoidHom.lieWeight_injective`, `ContinuousMonoidHom.range_lieWeight`: for connected
   `G`, characters correspond exactly to functionals taking integer values on `Λ_ℤ`.
-* `TauCeti.mem_periodLattice_circle`, `ContinuousMonoidHom.lieWeight_id_circle`: the circle case.
+* `TauCeti.mem_periodLattice_circle`, `TauCeti.circleExpGenerator_mem_periodLattice`,
+  `ContinuousMonoidHom.lieWeight_id_circle`,
+  `ContinuousMonoidHom.lieWeight_circleExpGenerator_eq_intCast_iff`: the circle case; a
+  continuous endomorphism of the circle is the power `z ↦ z ^ n` exactly when its weight is `n`.
 
 ## References
 
@@ -129,7 +139,7 @@ instance discreteTopology_periodLattice : DiscreteTopology (periodLattice I G) :
   DiscreteTopology.of_continuous_injective
     (f := fun X : periodLattice I G ↦
       (⟨(2 * π) • (X : LeftInvariantDerivation I G),
-        mem_ker_lieExpAddMonoidHom.2 (mem_periodLattice.1 X.2)⟩ :
+        mem_ker_lieExpAddMonoidHom.2 (mem_periodLattice.1 X.property)⟩ :
         (lieExpAddMonoidHom (I := I) (G := G)).ker))
     (by fun_prop)
     (fun X Y h ↦ Subtype.ext (smul_right_injective _ two_pi_pos.ne' (congrArg Subtype.val h)))
@@ -175,6 +185,10 @@ theorem mem_periodLattice_circle {X : LeftInvariantDerivation (𝓡 1) Circle} :
   refine exists_congr fun n ↦ ?_
   constructor <;> intro h <;> nlinarith [two_pi_pos]
 
+/-- The generator of `Circle.exp` lies in the period lattice of the circle. -/
+theorem circleExpGenerator_mem_periodLattice : circleExpGenerator ∈ periodLattice (𝓡 1) Circle :=
+  mem_periodLattice_circle.2 ⟨1, by rw [circleLieAlgebraEquiv_apply_generator, Int.cast_one]⟩
+
 end TauCeti
 
 namespace ContinuousMonoidHom
@@ -213,6 +227,12 @@ def lieWeight (χ : G →ₜ* Circle) : Module.Dual ℝ (LeftInvariantDerivation
 theorem lieWeight_apply (χ : G →ₜ* Circle) (X : LeftInvariantDerivation I G) :
     lieWeight χ X = circleLieAlgebraEquiv (lieMap (I := I) (I' := 𝓡 1) χ X) :=
   (rfl)
+
+/-- The weight of a circle character vanishes on Lie brackets. -/
+@[simp]
+theorem lieWeight_lie (χ : G →ₜ* Circle) (X Y : LeftInvariantDerivation I G) :
+    lieWeight χ ⁅X, Y⁆ = 0 := by
+  rw [lieWeight_apply, LieHom.map_lie, LieModule.IsTrivial.trivial, map_zero]
 
 /-- **Naturality of weights.** The weight of `χ ∘ f` is the weight of `χ` composed with the Lie
 map of `f`. -/
@@ -261,6 +281,21 @@ theorem eq_lieWeight {χ : G →ₜ* Circle} {α : Module.Dual ℝ (LeftInvarian
       field_simp, Circle.exp_sub, ← hX, div_self']
   exact Circle.exp_pi_ne_one hπ
 
+omit [T2Space G] [BoundarylessManifold I G] in
+/-- The weight of a circle character is invariant under the group adjoint action. -/
+@[simp]
+theorem lieWeight_Ad (χ : G →ₜ* Circle) (g : G) (X : LeftInvariantDerivation I G) :
+    lieWeight χ (Lie.Ad (I := I) g X) = lieWeight χ X := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  have : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
+  have h := eq_lieWeight (I := I) (χ := χ)
+    (α := (lieWeight χ).comp (Lie.Ad (I := I) g).toLinearEquiv.toLinearMap) (fun Y ↦ by
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv]
+      rw [← apply_lieExp_eq_circleExp_lieWeight, ← Lie.conj_lieExp (I := I) g Y]
+      simp only [map_mul, map_inv]
+      rw [mul_comm (χ g), mul_inv_cancel_right])
+  exact LinearMap.congr_fun h X
+
 /-- The trivial character has weight zero. -/
 @[simp]
 theorem lieWeight_one : lieWeight (I := I) (1 : G →ₜ* Circle) = 0 :=
@@ -302,6 +337,27 @@ theorem lieWeight_id_circle :
     lieWeight (I := 𝓡 1) (ContinuousMonoidHom.id Circle) = circleLieAlgebraEquiv.toLinearMap :=
   (eq_lieWeight fun X ↦ by
     rw [coe_id, id_eq, LinearEquiv.coe_coe, ← lieExp_circle, LinearEquiv.symm_apply_apply]).symm
+
+/-- **The degree of a circle endomorphism is its weight at the generator**: a continuous
+endomorphism `f` of the circle is `z ↦ z ^ n` exactly when its weight at the generator of
+`Circle.exp` is `n`. -/
+theorem lieWeight_circleExpGenerator_eq_intCast_iff (f : Circle →ₜ* Circle) (n : ℤ) :
+    lieWeight (I := 𝓡 1) f circleExpGenerator = n ↔ ∀ z, f z = z ^ n := by
+  constructor
+  · intro hf z
+    obtain ⟨t, rfl⟩ := Circle.exp_surjective z
+    -- The circle Lie algebra is spanned by the generator, so `α_f(X) = c(X) α_f(∂_θ)`.
+    have hX : lieWeight (I := 𝓡 1) f (circleLieAlgebraEquiv.symm t) = t * n := by
+      conv_lhs => rw [← circleLieAlgebraEquiv_smul_circleExpGenerator
+        (circleLieAlgebraEquiv.symm t)]
+      rw [map_smul, smul_eq_mul, hf, LinearEquiv.apply_symm_apply]
+    rw [← lieExp_circle, apply_lieExp_eq_circleExp_lieWeight, hX, lieExp_circle,
+      ← Circle.exp_zsmul, zsmul_eq_mul, mul_comm]
+  · intro hf
+    have h : f = ContinuousMonoidHom.id Circle ^ n := ext fun z ↦ by
+      rw [hf, ContinuousMonoidHom.zpow_apply, coe_id, id_eq]
+    rw [h, lieWeight_zpow, lieWeight_id_circle, LinearMap.smul_apply, LinearEquiv.coe_coe,
+      circleLieAlgebraEquiv_apply_generator, zsmul_one]
 
 /-! ### Integrality of weights -/
 

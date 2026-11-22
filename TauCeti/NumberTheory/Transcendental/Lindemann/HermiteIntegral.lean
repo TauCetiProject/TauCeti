@@ -70,17 +70,13 @@ noncomputable def hermiteIntegral (f : ℂ[X]) (z : ℂ) : ℂ :=
 private theorem hasDerivAt_neg_cexp_mul_eval_sumIDeriv (f : ℂ[X]) (z : ℂ) (t : ℝ) :
     HasDerivAt (fun t : ℝ ↦ -(cexp ((1 - t) • z) * (sumIDeriv f).eval (t • z)))
       (z * (cexp ((1 - t) • z) * f.eval (t • z))) t := by
-  have hlin : HasDerivAt (fun t : ℝ ↦ t • z) z t := by
-    simpa using (hasDerivAt_id t).smul_const z
-  have hexp : HasDerivAt (fun t : ℝ ↦ cexp ((1 - t) • z)) (cexp ((1 - t) • z) * -z) t := by
-    have h : HasDerivAt (fun t : ℝ ↦ (1 - t) • z) (-z) t := by
-      simpa using ((hasDerivAt_id t).const_sub 1).smul_const z
-    exact h.cexp
-  refine ((hexp.mul (((sumIDeriv f).hasDerivAt (t • z)).comp t hlin)).neg).congr_deriv ?_
-  have hS : (sumIDeriv f).eval (t • z) =
-      f.eval (t • z) + (derivative (sumIDeriv f)).eval (t • z) := by
-    conv_lhs => rw [sumIDeriv_eq_self_add f, eval_add]
-  rw [Function.comp_apply, hS]
+  -- The derivatives of `t ↦ t • z` and of `t ↦ exp ((1 - t) • z)`.
+  have hlin := (hasDerivAt_id' t).smul_const z
+  have hexp := (((hasDerivAt_id' t).const_sub 1).smul_const z).cexp
+  refine ((hexp.mul (((sumIDeriv f).hasDerivAt (t • z)).comp t hlin)).fun_neg).congr_deriv ?_
+  -- Split off `f` from `sumIDeriv f = f + (sumIDeriv f)'`; the derivative terms then cancel.
+  nth_rw 1 [sumIDeriv_eq_self_add f]
+  simp only [neg_smul, one_smul, eval_add, Function.comp_apply]
   ring
 
 /-- **Hermite's identity**: integration by parts evaluates Hermite's integral as
@@ -106,23 +102,22 @@ theorem hermiteIntegral_eq_exp_mul_integral (f : ℂ[X]) (z : ℂ) :
 theorem norm_hermiteIntegral_le {f : ℂ[X]} {z : ℂ} {C : ℝ}
     (hC : ∀ u : ℂ, ‖u‖ ≤ ‖z‖ → ‖f.eval u‖ ≤ C) :
     ‖hermiteIntegral f z‖ ≤ ‖z‖ * Real.exp ‖z‖ * C := by
-  have hC₀ : 0 ≤ C := (norm_nonneg _).trans (hC 0 (by simp))
+  -- On `[0, 1]`, both `t • z` and `(1 - t) • z` lie in the closed disc of radius `‖z‖`.
+  have hle {s : ℝ} (h₀ : 0 ≤ s) (h₁ : s ≤ 1) : ‖s • z‖ ≤ ‖z‖ := by
+    rw [norm_smul, Real.norm_of_nonneg h₀]
+    exact mul_le_of_le_one_left (norm_nonneg _) h₁
   have hpt : ∀ t ∈ Set.uIoc (0 : ℝ) 1,
       ‖cexp ((1 - t) • z) * f.eval (t • z)‖ ≤ Real.exp ‖z‖ * C := by
     intro t ht
     rw [Set.uIoc_of_le zero_le_one] at ht
-    have ht₀ : 0 ≤ 1 - t := sub_nonneg.2 ht.2
-    rw [norm_mul, norm_exp]
-    refine mul_le_mul ?_ (hC _ ?_) (norm_nonneg _) (Real.exp_pos _).le
-    · refine Real.exp_le_exp.2 ((re_le_norm _).trans ?_)
-      rw [norm_smul, Real.norm_of_nonneg ht₀]
-      exact mul_le_of_le_one_left (norm_nonneg _) (by linarith [ht.1])
-    · rw [norm_smul, Real.norm_of_nonneg ht.1.le]
-      exact mul_le_of_le_one_left (norm_nonneg _) ht.2
-  have hint := norm_integral_le_of_norm_le_const hpt
-  rw [sub_zero, abs_one, mul_one] at hint
+    rw [norm_mul]
+    gcongr
+    · exact (norm_exp_le_exp_norm _).trans <| Real.exp_le_exp.2 <|
+        hle (sub_nonneg.2 ht.2) (sub_le_self _ ht.1.le)
+    · exact hC _ (hle ht.1.le ht.2)
   rw [hermiteIntegral, norm_mul, mul_assoc]
   gcongr
+  simpa using norm_integral_le_of_norm_le_const hpt
 
 /-- Hermite's integral vanishes at `z = 0`. -/
 @[simp]
@@ -141,10 +136,13 @@ theorem hermiteIntegral_add (f g : ℂ[X]) (z : ℂ) :
   simp only [hermiteIntegral_eq_sumIDeriv, map_add, eval_add]
   ring
 
-/-- Hermite's integral is homogeneous in the polynomial. -/
+/-- Hermite's integral is homogeneous in the polynomial, for any scalars acting on `ℂ` through
+multiplication (such as `ℕ`, `ℤ`, `ℚ`, `ℝ` or `ℂ` itself). -/
 @[simp]
-theorem hermiteIntegral_smul (c : ℂ) (f : ℂ[X]) (z : ℂ) :
-    hermiteIntegral (c • f) z = c • hermiteIntegral f z := by
+theorem hermiteIntegral_smul {S : Type*} [SMulZeroClass S ℂ] [IsScalarTower S ℂ ℂ] (c : S)
+    (f : ℂ[X]) (z : ℂ) : hermiteIntegral (c • f) z = c • hermiteIntegral f z := by
+  -- Reduce to complex scalars through `c • w = (c • 1) • w`.
+  rw [← smul_one_smul ℂ c f, ← smul_one_smul ℂ c (hermiteIntegral f z)]
   simp only [hermiteIntegral_eq_sumIDeriv, map_smul, eval_smul, smul_eq_mul]
   ring
 
@@ -158,7 +156,7 @@ theorem hermiteIntegral_C_mul (c : ℂ) (f : ℂ[X]) (z : ℂ) :
 @[simp]
 theorem hermiteIntegral_neg (f : ℂ[X]) (z : ℂ) :
     hermiteIntegral (-f) z = -hermiteIntegral f z := by
-  simpa using hermiteIntegral_smul (-1) f z
+  simpa using hermiteIntegral_smul (-1 : ℂ) f z
 
 /-- Hermite's integral commutes with subtraction of polynomials. -/
 @[simp]

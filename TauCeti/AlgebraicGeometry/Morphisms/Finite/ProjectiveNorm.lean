@@ -5,7 +5,7 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AffineScheme
+public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 public import TauCeti.RingTheory.Norm.Projective
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 
@@ -49,11 +49,11 @@ theorem mem_basicOpen_projectiveNorm_iff {X Y : Scheme.{u}} (f : Y ⟶ X) [IsFin
   have hV : IsAffineOpen (f ⁻¹ᵁ U) := hU.preimage f
   let p := hU.primeIdealOf ⟨x, hx⟩
   have hnorm := not_congr (Algebra.projectiveNorm_mem_iff (p := p.asIdeal) (x := s))
-  rw [hU.mem_basicOpen_iff_notMem_primeIdealOf hx]
+  rw [hU.mem_basicOpen_iff_notMem_primeIdealOf ⟨x, hx⟩]
   refine hnorm.trans ⟨?_, ?_⟩
   · intro h y hy
     have hyU : y ∈ f ⁻¹ᵁ U := (Scheme.Hom.mem_preimage (f := f)).mpr (hy.symm ▸ hx)
-    rw [hV.mem_basicOpen_iff_notMem_primeIdealOf hyU]
+    rw [hV.mem_basicOpen_iff_notMem_primeIdealOf ⟨y, hyU⟩]
     intro hs
     apply h
     refine ⟨(hV.primeIdealOf ⟨y, hyU⟩).asIdeal, ⟨inferInstance, ⟨?_⟩⟩, hs⟩

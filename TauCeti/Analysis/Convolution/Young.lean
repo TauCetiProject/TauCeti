@@ -41,7 +41,7 @@ needs any integrability hypothesis.
 
 ## `L¹ ⋆ Lᵖ ⊆ Lᵖ` for the Bochner convolution
 
-Let `μ` be a σ-finite right-invariant measure on a measurable additive group `G`, and let
+Let `μ` be an s-finite right-invariant measure on a measurable additive group `G`, and let
 `L : E →L[𝕜] E' →L[𝕜] F` be a continuous bilinear map. For `1 ≤ p ≤ ∞`, an integrable `f` and
 `g ∈ Lᵖ(μ)`, the convolution `(f ⋆[L] g)(x) = ∫ L (f t) (g (x - t)) dμ(t)` satisfies
 
@@ -157,21 +157,21 @@ variable {𝕜 G E E' F : Type*} [NontriviallyNormedField 𝕜]
 `‖(f ⋆[L] g)(x)‖ ≤ ∫ ‖L‖ ‖f t‖ ‖g (x - t)‖ dμ(t)`, in extended nonnegative form. -/
 theorem enorm_convolution_le_lintegral [Sub G] [MeasurableSpace G] (μ : Measure G) (x : G) :
     ‖(f ⋆[L, μ] g) x‖ₑ ≤ ∫⁻ t, ‖L‖ₑ * ‖f t‖ₑ * ‖g (x - t)‖ₑ ∂μ :=
-  (enorm_integral_le_lintegral_enorm _).trans <| lintegral_mono fun _ ↦ L.le_opENorm₂ _ _
+  (eNorm_integral_le_lintegral_eNorm _).trans <| lintegral_mono fun _ ↦ L.le_opENorm₂ _ _
 
 variable [AddGroup G] [MeasurableSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
-  {μ : Measure G} [SigmaFinite μ] [IsAddRightInvariant μ]
+  {μ : Measure G} [SFinite μ] [IsAddRightInvariant μ]
 
 /-- **Young's inequality** for convolution with an integrable function: for `1 ≤ p ≤ ∞`,
 `‖f ⋆[L] g‖_p ≤ ‖L‖ ‖f‖₁ ‖g‖_p`. -/
 theorem eLpNorm_convolution_le (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ)
     {p : ℝ≥0∞} (hp : 1 ≤ p) :
     eLpNorm (f ⋆[L, μ] g) p μ ≤ ‖L‖ₑ * eLpNorm f 1 μ * eLpNorm g p μ := by
-  rw [eLpNorm_one_eq_lintegral_enorm hf]
+  rw [eLpNorm_one_eq_lintegral_eNorm hf]
   rcases eq_or_ne p ∞ with rfl | hp_top
   · -- For `p = ∞`, `‖g (x - t)‖ ≤ ‖g‖_∞` for almost every `t`, for every `x`.
     rw [eLpNorm_exponent_top hg, eLpNorm_exponent_top (hf.convolution L hg)]
-    refine eLpNormEssSup_le_of_ae_enorm_bound <| Filter.Eventually.of_forall fun x ↦
+    refine eLpNormEssSup_le_of_ae_eNorm_bound <| Filter.Eventually.of_forall fun x ↦
       (enorm_convolution_le_lintegral L μ x).trans ?_
     have hgx : ∀ᵐ t ∂μ, ‖g (x - t)‖ₑ ≤ eLpNormEssSup g μ :=
       (quasiMeasurePreserving_sub_left_of_right_invariant μ x).ae ae_le_eLpNormEssSup
@@ -179,8 +179,8 @@ theorem eLpNorm_convolution_le (hf : AEStronglyMeasurable f μ) (hg : AEStrongly
         ≤ ∫⁻ t, ‖L‖ₑ * ‖f t‖ₑ * eLpNormEssSup g μ ∂μ :=
           lintegral_mono_ae <| hgx.mono fun t ht ↦ by gcongr
       _ = ‖L‖ₑ * (∫⁻ t, ‖f t‖ₑ ∂μ) * eLpNormEssSup g μ := by
-          rw [lintegral_mul_const'' _ (hf.enorm.const_mul _),
-            lintegral_const_mul'' _ hf.enorm]
+          rw [lintegral_mul_const'' _ (hf.eNorm.const_mul _),
+            lintegral_const_mul'' _ hf.eNorm]
   -- For `p < ∞`, Minkowski's integral inequality moves the `Lᵖ` norm inside the integral.
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
   have hr : 1 ≤ p.toReal := by
@@ -189,13 +189,13 @@ theorem eLpNorm_convolution_le (hf : AEStronglyMeasurable f μ) (hg : AEStrongly
   set r := p.toReal
   have hmeas : AEMeasurable (Function.uncurry fun x t ↦ ‖L‖ₑ * ‖f t‖ₑ * ‖g (x - t)‖ₑ)
       (μ.prod μ) :=
-    (aemeasurable_const.mul hf.enorm.comp_snd).mul
+    (aemeasurable_const.mul hf.eNorm.comp_snd).mul
       (hg.comp_quasiMeasurePreserving
-        (quasiMeasurePreserving_sub_of_right_invariant μ μ)).enorm
+        (quasiMeasurePreserving_sub_of_right_invariant μ μ)).eNorm
   have hg_tr (t : G) : ∫⁻ x, ‖g (x - t)‖ₑ ^ r ∂μ = ∫⁻ x, ‖g x‖ₑ ^ r ∂μ :=
     lintegral_sub_right_eq_self (fun x ↦ ‖g x‖ₑ ^ r) t
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top (hf.convolution L hg),
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hg]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top (hf.convolution L hg),
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hg]
   calc (∫⁻ x, ‖(f ⋆[L, μ] g) x‖ₑ ^ r ∂μ) ^ (1 / r)
       ≤ (∫⁻ x, (∫⁻ t, ‖L‖ₑ * ‖f t‖ₑ * ‖g (x - t)‖ₑ ∂μ) ^ r ∂μ) ^ (1 / r) := by
         gcongr with x
@@ -205,7 +205,7 @@ theorem eLpNorm_convolution_le (hf : AEStronglyMeasurable f μ) (hg : AEStrongly
     _ = ∫⁻ t, ‖L‖ₑ * ‖f t‖ₑ * (∫⁻ x, ‖g x‖ₑ ^ r ∂μ) ^ (1 / r) ∂μ := by
         refine lintegral_congr fun t ↦ ?_
         have hne : (‖L‖ₑ * ‖f t‖ₑ) ^ r ≠ ∞ :=
-          ENNReal.rpow_ne_top_of_nonneg hr0.le (ENNReal.mul_ne_top enorm_ne_top enorm_ne_top)
+          ENNReal.rpow_ne_top_of_nonneg hr0.le (ENNReal.mul_ne_top eNorm_ne_top eNorm_ne_top)
         have h : ∫⁻ x, (‖L‖ₑ * ‖f t‖ₑ * ‖g (x - t)‖ₑ) ^ r ∂μ =
             (‖L‖ₑ * ‖f t‖ₑ) ^ r * ∫⁻ x, ‖g x‖ₑ ^ r ∂μ := by
           rw [← hg_tr t, ← lintegral_const_mul' _ _ hne]
@@ -213,8 +213,8 @@ theorem eLpNorm_convolution_le (hf : AEStronglyMeasurable f μ) (hg : AEStrongly
         rw [h, ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul,
           mul_one_div_cancel hr0.ne', ENNReal.rpow_one]
     _ = ‖L‖ₑ * (∫⁻ t, ‖f t‖ₑ ∂μ) * (∫⁻ x, ‖g x‖ₑ ^ r ∂μ) ^ (1 / r) := by
-        rw [lintegral_mul_const'' _ (hf.enorm.const_mul _),
-          lintegral_const_mul'' _ hf.enorm]
+        rw [lintegral_mul_const'' _ (hf.eNorm.const_mul _),
+          lintegral_const_mul'' _ hf.eNorm]
 
 end Convolution
 
@@ -231,17 +231,17 @@ private theorem eLpNorm_lconvolution_top_le {p r : ℝ≥0∞} (hpr : p⁻¹ + r
     eLpNorm (f ⋆ₗ[μ] g) ∞ μ ≤ eLpNorm f p μ * eLpNorm g r μ := by
   have : ENNReal.HolderTriple p r 1 := ⟨by rw [hpr, inv_one]⟩
   rw [eLpNorm_exponent_top (aemeasurable_lconvolution hf hg).aestronglyMeasurable]
-  refine eLpNormEssSup_le_of_ae_enorm_bound (Filter.Eventually.of_forall fun x ↦ ?_)
+  refine eLpNormEssSup_le_of_ae_eNorm_bound (Filter.Eventually.of_forall fun x ↦ ?_)
   have hgx : AEMeasurable (fun y ↦ g (-y + x)) μ := by
     simp_rw [neg_add_eq_sub]
     exact hg.comp_quasiMeasurePreserving
       (Measure.measurePreserving_sub_left μ x).quasiMeasurePreserving
   calc ‖(f ⋆ₗ[μ] g) x‖ₑ = eLpNorm (fun y ↦ f y * g (-y + x)) 1 μ := by
-        rw [eLpNorm_one_eq_lintegral_enorm (f := fun y ↦ f y * g (-y + x))
+        rw [eLpNorm_one_eq_lintegral_eNorm (f := fun y ↦ f y * g (-y + x))
           (hf.mul hgx).aestronglyMeasurable]
         simp [lconvolution_def]
     _ ≤ 1 * eLpNorm f p μ * eLpNorm (fun y ↦ g (-y + x)) r μ :=
-        eLpNorm_le_eLpNorm_mul_eLpNorm_of_enorm (· * ·) 1
+        eLpNorm_le_eLpNorm_mul_eLpNorm_of_eNorm (· * ·) 1
           (fun hf hg ↦ (hf.aemeasurable.mul hg.aemeasurable).aestronglyMeasurable)
           hf.aestronglyMeasurable hgx.aestronglyMeasurable (Filter.Eventually.of_forall
             fun _ ↦ by simp)
@@ -326,11 +326,11 @@ theorem eLpNorm_lconvolution_le {p q r : ℝ≥0∞} (hp : 1 ≤ p) (hr : 1 ≤ 
   have hpq' : p.toReal ≤ q.toReal := by
     have : q.toReal⁻¹ ≤ p.toReal⁻¹ := by linarith [inv_le_one_of_one_le₀ hr']
     exact (inv_le_inv₀ (ENNReal.toReal_pos hq0 hq) (by linarith)).1 this
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hq
       (aemeasurable_lconvolution hf hg).aestronglyMeasurable,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hf.aestronglyMeasurable,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hr0 hr_top hg.aestronglyMeasurable]
-  simp only [enorm_eq_self]
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hf.aestronglyMeasurable,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hr0 hr_top hg.aestronglyMeasurable]
+  simp only [eNorm_eq_self]
   exact lintegral_rpow_lconvolution_le hp' hpq' hpqr' hf hg
 
 open scoped Convolution in
@@ -347,7 +347,7 @@ theorem eLpNorm_convolution_le_of_inv_add_inv_eq {𝕜 E E' F : Type*} [Nontrivi
     eLpNorm (f ⋆[L, μ] g) q μ ≤ ‖L‖ₑ * eLpNorm f p μ * eLpNorm g r μ := by
   have hpt : ∀ x, ‖(f ⋆[L, μ] g) x‖ₑ ≤
       ‖L‖ₑ * ‖((fun t ↦ ‖f t‖ₑ) ⋆ₗ[μ] fun t ↦ ‖g t‖ₑ) x‖ₑ := fun x ↦ by
-    rw [enorm_eq_self, lconvolution_def, ← lintegral_const_mul' _ _ enorm_ne_top]
+    rw [eNorm_eq_self, lconvolution_def, ← lintegral_const_mul' _ _ eNorm_ne_top]
     refine (enorm_convolution_le_lintegral L μ x).trans_eq (lintegral_congr fun t ↦ ?_)
     rw [neg_add_eq_sub, mul_assoc]
   calc eLpNorm (f ⋆[L, μ] g) q μ
@@ -356,8 +356,8 @@ theorem eLpNorm_convolution_le_of_inv_add_inv_eq {𝕜 E E' F : Type*} [Nontrivi
           (Filter.Eventually.of_forall hpt)
     _ ≤ ‖L‖ₑ * (eLpNorm (fun t ↦ ‖f t‖ₑ) p μ * eLpNorm (fun t ↦ ‖g t‖ₑ) r μ) := by
         gcongr
-        exact eLpNorm_lconvolution_le hp hr hpqr hf.enorm hg.enorm
+        exact eLpNorm_lconvolution_le hp hr hpqr hf.eNorm hg.eNorm
     _ = ‖L‖ₑ * eLpNorm f p μ * eLpNorm g r μ := by
-        rw [eLpNorm_enorm f hf, eLpNorm_enorm g hg, mul_assoc]
+        rw [eLpNorm_eNorm f hf, eLpNorm_eNorm g hg, mul_assoc]
 
 end MeasureTheory

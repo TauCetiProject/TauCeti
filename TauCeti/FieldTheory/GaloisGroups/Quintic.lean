@@ -158,14 +158,15 @@ theorem HasGaloisLabel.exists_isRoot_specialize_quinticF20Spec_iff (h : HasGaloi
   rw [← isSolvable_gal_iff_exists_isRoot_specialize_quinticF20Spec hf h.separable h.irreducible
     h.natDegree_eq hres, h.isSolvable_iff_five]
 
-/-- **The first row of the quintic table: `5T5`.** Away from characteristic `2`, an irreducible
-monic quintic whose discriminant is not a square and whose `F₂₀` resolvent has no root in the base
-field has the full symmetric group on its five roots. -/
+/-- **The first row of the quintic table: `5T5`.** An irreducible monic quintic whose
+discriminant is not a square (so the characteristic is not `2`) and whose `F₂₀` resolvent has no
+root in the base field has the full symmetric group on its five roots. -/
 theorem hasGaloisLabel_five_four_of_not_isSquare_discr_of_forall_not_isRoot (hf : f.Monic)
-    (hchar : ringChar F ≠ 2) (hirr : Irreducible f) (hdeg : f.natDegree = 5)
+    (hirr : Irreducible f) (hdeg : f.natDegree = 5)
     (hdisc : ¬ IsSquare f.discr)
     (hroot : ∀ a : F, ¬ (quinticF20Spec.specialize F f).IsRoot a) :
     HasGaloisLabel f (⟨4, by simp⟩ : TransitiveGroupIndex 5) := by
+  have hchar : ringChar F ≠ 2 := fun h => hdisc (isSquare_discr_of_char_two h)
   have hsep : f.Separable := hf.discr_ne_zero_iff.mp fun h0 => hdisc ⟨0, by simp [h0]⟩
   obtain ⟨j, hj, -⟩ := existsUnique_hasGaloisLabel_five hsep hirr hdeg
   have hsol : ¬ (j : ℕ) < 3 := fun hlt =>
@@ -173,9 +174,7 @@ theorem hasGaloisLabel_five_four_of_not_isSquare_discr_of_forall_not_isRoot (hf 
   have hpar : ¬ ((j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3) := fun hp =>
     hdisc ((hj.isSquare_discr_iff_five hchar).mpr hp)
   have hlt : (j : ℕ) < 5 := by simpa [numTransitiveGroups_five] using j.isLt
-  have hval : (j : ℕ) = 4 := by omega
-  have : j = ⟨4, by simp⟩ := Fin.ext hval
-  exact this ▸ hj
+  exact (Fin.ext (show (j : ℕ) = 4 by omega) : j = ⟨4, by simp⟩) ▸ hj
 
 /-- **The second row of the quintic table: `5T4`.** Away from characteristic `2`, an irreducible
 separable monic quintic whose discriminant is a square and whose `F₂₀` resolvent has no root in
@@ -189,26 +188,24 @@ theorem hasGaloisLabel_five_three_of_isSquare_discr_of_forall_not_isRoot (hf : f
   have hsol : ¬ (j : ℕ) < 3 := fun hlt =>
     (hj.exists_isRoot_specialize_quinticF20Spec_of_lt_three hf hlt).elim hroot
   have hpar := (hj.isSquare_discr_iff_five hchar).mp hdisc
-  have hval : (j : ℕ) = 3 := by omega
-  have : j = ⟨3, by simp⟩ := Fin.ext hval
-  exact this ▸ hj
+  exact (Fin.ext (show (j : ℕ) = 3 by omega) : j = ⟨3, by simp⟩) ▸ hj
 
-/-- **The third row of the quintic table: `5T3`.** Away from characteristic `2`, an irreducible
-monic quintic whose discriminant is not a square and whose separable `F₂₀` resolvent has a root in
-the base field has the Frobenius group of order twenty on its five roots. -/
+/-- **The third row of the quintic table: `5T3`.** An irreducible monic quintic whose
+discriminant is not a square (so the characteristic is not `2`) and whose separable `F₂₀`
+resolvent has a root in the base field has the Frobenius group of order twenty on its five
+roots. -/
 theorem hasGaloisLabel_five_two_of_not_isSquare_discr_of_isRoot (hf : f.Monic)
-    (hchar : ringChar F ≠ 2) (hirr : Irreducible f) (hdeg : f.natDegree = 5)
+    (hirr : Irreducible f) (hdeg : f.natDegree = 5)
     (hdisc : ¬ IsSquare f.discr) (hres : ResolventSeparationEvidence quinticF20Spec f) {a : F}
     (ha : (quinticF20Spec.specialize F f).IsRoot a) :
     HasGaloisLabel f (⟨2, by simp⟩ : TransitiveGroupIndex 5) := by
+  have hchar : ringChar F ≠ 2 := fun h => hdisc (isSquare_discr_of_char_two h)
   have hsep : f.Separable := hf.discr_ne_zero_iff.mp fun h0 => hdisc ⟨0, by simp [h0]⟩
   obtain ⟨j, hj, -⟩ := existsUnique_hasGaloisLabel_five hsep hirr hdeg
   have hsol := (hj.exists_isRoot_specialize_quinticF20Spec_iff hf hres).mp ⟨a, ha⟩
   have hpar : ¬ ((j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3) := fun hp =>
     hdisc ((hj.isSquare_discr_iff_five hchar).mpr hp)
-  have hval : (j : ℕ) = 2 := by omega
-  have : j = ⟨2, by simp⟩ := Fin.ext hval
-  exact this ▸ hj
+  exact (Fin.ext (show (j : ℕ) = 2 by omega) : j = ⟨2, by simp⟩) ▸ hj
 
 /-- **The fourth row of the quintic table: `5T1` or `5T2`.** Away from characteristic `2`, an
 irreducible separable monic quintic whose discriminant is a square and whose separable `F₂₀`

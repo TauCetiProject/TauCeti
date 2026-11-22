@@ -130,7 +130,7 @@ private theorem exact_unitFiltrationSubtypeInt_valuationInt :
   rw [AddMonoidHom.coe_toIntLinearMap, MonoidHom.coe_toAdditiveLeft, comp_apply, comp_apply,
     toAdd_eq_zero,
     ← MonoidHom.mem_ker, ker_normalizedValuation]
-  exact ⟨fun hx ↦ ⟨Additive.ofMul ⟨x.toMul, hx⟩, rfl⟩, by rintro ⟨y, rfl⟩; exact y.toMul.2⟩
+  exact ⟨fun hx ↦ ⟨Additive.ofMul ⟨x.toMul, hx⟩, rfl⟩, by rintro ⟨y, rfl⟩; exact y.toMul.property⟩
 
 private theorem surjective_valuationInt : Surjective (valuationInt (L := L)) := fun n ↦
   (normalizedValuation_surjective (K := L) (Multiplicative.ofAdd n)).imp fun _ hx ↦
@@ -176,7 +176,7 @@ instance finite_quotSMulTop_additive_unitFiltration (n : ℕ) [NeZero (n : L)] (
     (fun x ↦ ?_) (injective_unitFiltrationInclusionInt (Nat.zero_le i))
   rw [AddMonoidHom.coe_toIntLinearMap, QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_zero_iff,
     Additive.mem_toAddSubgroup, Subgroup.mem_subgroupOf]
-  exact ⟨fun hx ↦ ⟨Additive.ofMul ⟨_, hx⟩, rfl⟩, by rintro ⟨y, rfl⟩; exact y.toMul.2⟩
+  exact ⟨fun hx ↦ ⟨Additive.ofMul ⟨_, hx⟩, rfl⟩, by rintro ⟨y, rfl⟩; exact y.toMul.property⟩
 
 end LocalField
 
@@ -305,7 +305,6 @@ private noncomputable def deepUnitLogHom {n : ℕ}
   map_zero' := by simp
   map_add' u v := by simp
   map_smul' σ u := Subtype.ext <| by
-    have hn1 : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr fun h ↦ by simp [h] at hn
     rw [AlgEquiv.coe_smul_integerRing, coe_deepUnitExpLogEquiv_apply,
       coe_deepUnitExpLogEquiv_apply, Additive.toMul_smul, AlgEquiv.val_coe_smul_unitFiltration]
     exact (AlgEquiv.map_log σ (u.toMul : Lˣ)).symm

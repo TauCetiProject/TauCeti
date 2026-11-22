@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 public import TauCeti.Analysis.Calculus.Morse.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Morse functions on smooth manifolds
@@ -229,6 +229,11 @@ theorem isMorseOn_univ {I : ModelWithCorners ℝ E H} : IsMorseOn I f univ ↔ I
 theorem isMorseOn_empty {I : ModelWithCorners ℝ E H} : IsMorseOn I f ∅ :=
   ⟨contMDiffOn_empty, fun _ hx ↦ hx.elim⟩
 
+/-- Every function on an empty manifold is Morse. -/
+theorem isMorse_of_isEmpty [IsEmpty M] {I : ModelWithCorners ℝ E H} : IsMorse I f := by
+  rw [← isMorseOn_univ, univ_eq_empty_iff.2 ‹_›]
+  exact isMorseOn_empty
+
 /-- A function is Morse exactly when it is smooth and all of its critical points are
 nondegenerate. -/
 theorem isMorse_iff {I : ModelWithCorners ℝ E H} :
@@ -256,10 +261,10 @@ theorem IsMorse.isManifoldNondegenerateCriticalPoint {I : ModelWithCorners ℝ E
 
 /-- A point where the derivative of a Morse function vanishes is a nondegenerate critical
 point. -/
-theorem IsMorse.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero [ChartedSpace E M]
-    [IsManifold 𝓘(ℝ, E) ∞ M] (hf : IsMorse 𝓘(ℝ, E) f) {x : M}
-    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
-    IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x :=
+theorem IsMorse.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
+    {I : ModelWithCorners ℝ E H} [I.Boundaryless] (hf : IsMorse I f)
+    (hx : mfderiv I 𝓘(ℝ) f x = 0) :
+    IsManifoldNondegenerateCriticalPoint I f x :=
   hf.isManifoldNondegenerateCriticalPoint
     (mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm.1 hx)
 
@@ -289,6 +294,20 @@ theorem isMorse_modelSpace_iff {V : Type*} [NormedAddCommGroup V] [NormedSpace �
     IsMorse (modelWithCornersSelf ℝ V) h ↔
       ContDiff ℝ ∞ h ∧ HasNondegenerateCriticalPointsOn h univ := by
   rw [IsMorse, isMorseOn_modelSpace_iff, contDiffOn_univ]
+
+/-- On a manifold modelled on a zero-dimensional space every function is a Morse function: the
+manifold is discrete, so every function is smooth, and in a chart the function is a function on
+the zero space, whose Hessian is invertible. -/
+theorem isMorse_of_subsingleton [Subsingleton E] {I : ModelWithCorners ℝ E H} : IsMorse I f := by
+  have : Subsingleton H := I.injective.subsingleton
+  have : DiscreteTopology M := ChartedSpace.discreteTopology H M
+  refine isMorse_iff.2 ⟨contMDiff_of_discreteTopology, fun x _ ↦ ?_⟩
+  -- In the chart at `x`, `f` reads as a function on the zero space `E`, hence a constant.
+  have hc : f ∘ (extChartAt I x).symm = fun _ ↦ f x := funext fun y ↦ by
+    rw [Subsingleton.elim y (extChartAt I x x), Function.comp_apply, extChartAt_to_inv]
+  rw [isManifoldNondegenerateCriticalPoint_iff, hc]
+  refine ⟨contDiffAt_const, fderiv_const_apply _, ?_⟩
+  exact .of_inverse (g := 0) (Subsingleton.elim _ _) (Subsingleton.elim _ _)
 
 end TauCeti
 

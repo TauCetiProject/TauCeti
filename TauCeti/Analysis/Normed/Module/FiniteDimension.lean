@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.Analysis.LocallyConvex.Polar
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
@@ -16,9 +17,12 @@ public import TauCeti.Topology.Algebra.Module.FiniteDimension
 Over a complete nontrivially normed field every linear functional on a finite-dimensional normed
 space is continuous, so the continuous dual `E →L[𝕜] 𝕜` coincides with the algebraic dual
 `Module.Dual 𝕜 E`. Mathlib records that coincidence as the linear equivalence
-`LinearMap.toContinuousLinearMap`; this file reads off two consequences of it that dimension
-counts need: the continuous dual has the same dimension as the space, and every continuous
-functional on a space injecting into it extends to it.
+`LinearMap.toContinuousLinearMap`; this file reads off consequences of it that dimension counts
+need: every continuous functional on a space injecting into it extends to it, hence the annihilator
+of a subspace in the continuous dual has the complementary dimension, and the subspace is its
+common kernel. That the continuous dual has the same dimension as the space,
+`ContinuousLinearMap.dual_finrank_eq`, holds for any finite-dimensional Hausdorff topological vector
+space and is in `TauCeti.Topology.Algebra.Module.FiniteDimension`.
 
 Two complements of the same space in a finite-dimensional space are continuously linearly
 isomorphic. This allows pointwise choices of complements to be identified with a single model.
@@ -38,10 +42,14 @@ vectors span those subspaces.
 
 ## Main results
 
-* `ContinuousLinearMap.dual_finrank_eq`: in finite dimensions the continuous dual has the same
-  dimension as the space.
 * `ContinuousLinearMap.surjective_compL_flip_of_injective`: precomposition with an injective map
   into a finite-dimensional space is surjective on continuous duals.
+* `StrongDual.finrank_add_finrank_polarSubmodule`: a subspace and its annihilator in the continuous
+  dual have complementary dimensions.
+* `StrongDual.mem_iff_forall_mem_polarSubmodule`: a subspace is the common kernel of its
+  annihilator in the continuous dual.
+* `TauCeti.finiteDimensional_of_finite_sphere`: a real normed space with a finite unit sphere is
+  finite-dimensional.
 * `TauCeti.nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv`: complements of
   the same space in a finite-dimensional space are isomorphic.
 * `TauCeti.exists_isOpen_linearIndependent_span_range_eq`: a continuous family of vectors in
@@ -66,15 +74,6 @@ namespace TauCeti
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
 
-/-- In finite dimensions the continuous dual `E →L[𝕜] 𝕜` has the same dimension as `E`: every
-linear functional on a finite-dimensional space is continuous, so the continuous dual coincides
-with the algebraic one. -/
-theorem _root_.ContinuousLinearMap.dual_finrank_eq :
-    Module.finrank 𝕜 (E →L[𝕜] 𝕜) = Module.finrank 𝕜 E := by
-  rw [← LinearEquiv.finrank_eq
-    (LinearMap.toContinuousLinearMap : (E →ₗ[𝕜] 𝕜) ≃ₗ[𝕜] E →L[𝕜] 𝕜)]
-  exact Subspace.dual_finrank_eq
-
 /-- Precomposition with an injective continuous linear map `L : F →L[𝕜] E` into a
 finite-dimensional space is surjective on continuous duals: every continuous functional on `F`
 is `g ∘L L` for some continuous functional `g` on `E`, since every linear functional on `E` is
@@ -86,6 +85,35 @@ theorem _root_.ContinuousLinearMap.surjective_compL_flip_of_injective {F : Type*
   obtain ⟨g, hg⟩ := LinearMap.dualMap_surjective_of_injective (f := L.toLinearMap) hL
     f.toLinearMap
   exact ⟨LinearMap.toContinuousLinearMap g, ContinuousLinearMap.ext (LinearMap.congr_fun hg)⟩
+
+/-- In finite dimensions a subspace `S` and its annihilator `S°` in the continuous dual have
+complementary dimensions: `dim S + dim S° = dim E`. -/
+theorem _root_.StrongDual.finrank_add_finrank_polarSubmodule (S : Submodule 𝕜 E) :
+    Module.finrank 𝕜 S + Module.finrank 𝕜 (StrongDual.polarSubmodule 𝕜 S) =
+      Module.finrank 𝕜 E := by
+  -- Restriction to `S` is onto the continuous dual of `S`, with kernel `S°`.
+  let res : (E →L[𝕜] 𝕜) →L[𝕜] S →L[𝕜] 𝕜 := (ContinuousLinearMap.compL 𝕜 S E 𝕜).flip S.subtypeL
+  have hrange : LinearMap.range (res : (E →L[𝕜] 𝕜) →ₗ[𝕜] S →L[𝕜] 𝕜) = ⊤ :=
+    LinearMap.range_eq_top.mpr
+      (ContinuousLinearMap.surjective_compL_flip_of_injective S.injective_subtype)
+  have hker : LinearMap.ker (res : (E →L[𝕜] 𝕜) →ₗ[𝕜] S →L[𝕜] 𝕜) =
+      StrongDual.polarSubmodule 𝕜 S := by
+    ext p
+    simp [res, StrongDual.mem_polarSubmodule, ContinuousLinearMap.ext_iff]
+  have hrn := LinearMap.finrank_range_add_finrank_ker (res : (E →L[𝕜] 𝕜) →ₗ[𝕜] S →L[𝕜] 𝕜)
+  rwa [hrange, hker, finrank_top, ContinuousLinearMap.dual_finrank_eq,
+    ContinuousLinearMap.dual_finrank_eq] at hrn
+
+/-- In finite dimensions a vector lies in a subspace `S` exactly when every functional of the
+annihilator `S°` in the continuous dual vanishes on it: `S` is the common kernel of `S°`. -/
+theorem _root_.StrongDual.mem_iff_forall_mem_polarSubmodule (S : Submodule 𝕜 E) {v : E} :
+    v ∈ S ↔ ∀ p ∈ StrongDual.polarSubmodule 𝕜 S, p v = 0 := by
+  refine ⟨fun hv p hp ↦ (StrongDual.mem_polarSubmodule 𝕜 S p).mp hp v hv, fun h ↦ ?_⟩
+  by_contra hv
+  -- A linear functional separating `v` from `S` is continuous in finite dimensions.
+  obtain ⟨a, ha, haS⟩ := Submodule.exists_le_ker_of_notMem hv
+  exact ha (h (LinearMap.toContinuousLinearMap a)
+    ((StrongDual.mem_polarSubmodule 𝕜 S _).mpr fun w hw ↦ LinearMap.mem_ker.mp (haS hw)))
 
 /-- Over a complete field, two complements of the same space `V` in a finite-dimensional space `W`
 are continuously linearly isomorphic: both have dimension `finrank W - finrank V`. -/
@@ -141,6 +169,20 @@ theorem exists_isOpen_linearIndependent_span_range_eq {X : Type*} [TopologicalSp
     (Set.range_subset_iff.mpr (hYW y hy.1))) ?_
   rw [finrank_span_eq_card hy.2, Fintype.card_fin, hW y hy.1]
 
+/-- A real normed space whose unit sphere is finite is finite-dimensional: the sphere spans the
+space, since every nonzero vector is a multiple of a unit vector. -/
+theorem finiteDimensional_of_finite_sphere {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (h : Finite (Metric.sphere (0 : V) 1)) : FiniteDimensional ℝ V := by
+  have hspan : Submodule.span ℝ (Metric.sphere (0 : V) 1) = ⊤ := by
+    refine eq_top_iff.2 fun x _ ↦ ?_
+    by_cases hx : x = 0
+    · simp [hx]
+    have hx' : x = ‖x‖ • (‖x‖⁻¹ • x) := by
+      rw [smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.2 hx), one_smul]
+    rw [hx']
+    exact Submodule.smul_mem _ _ (Submodule.subset_span (by simp [norm_smul, hx]))
+  exact Module.finite_def.2 (hspan ▸ Submodule.fg_span (Set.toFinite _))
+
 section Star
 
 open scoped ComplexConjugate
@@ -176,8 +218,8 @@ theorem _root_.IsCompact.exists_continuousLinearEquiv_mapsTo_ball {X : Type*}
   have ht0 : 0 < t := by positivity
   set L : X →L[ℝ] Fin (Module.finrank ℝ X) → ℝ := t • (e : X →L[ℝ] _)
   set A : (Fin (Module.finrank ℝ X) → ℝ) →L[ℝ] X := t⁻¹ • (e.symm : _ →L[ℝ] X)
-  refine ⟨.equivOfInverse L A (fun z ↦ by simp [L, A, ht0.ne'])
-    (fun y ↦ by simp [L, A, ht0.ne']), fun z hz ↦ ?_⟩
+  refine ⟨.ofContinuousLinearMap L A (ContinuousLinearMap.ext fun y ↦ by simp [L, A, ht0.ne'])
+    (ContinuousLinearMap.ext fun z ↦ by simp [L, A, ht0.ne']), fun z hz ↦ ?_⟩
   rw [mem_ball_zero_iff]
   calc ‖L z‖ = t * ‖e z‖ := by simp [L, norm_smul, abs_of_pos ht0]
     _ ≤ t * |R| := mul_le_mul_of_nonneg_left ((hR z hz).trans (le_abs_self R)) ht0.le
@@ -215,7 +257,7 @@ theorem continuous_equivFunL_of_continuous (h : ∀ i, Continuous fun y ↦ B y 
   rw [h', continuous_iff_continuousAt]
   intro y
   have := (B y).finiteDimensional_of_finite
-  have := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.completeSpace 𝕜 F
   exact ContinuousAt.comp (g := ContinuousLinearMap.inverse)
     (contDiffAt_map_inverse (n := 0) (B y).equivFunL.symm).continuousAt
     (continuous_equivFunL_symm_of_continuous h).continuousAt

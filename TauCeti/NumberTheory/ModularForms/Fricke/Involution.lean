@@ -58,8 +58,7 @@ independently of `z`. The remaining ingredient is that `W²` acts trivially on `
 
 Ported from the AINTLIB `LeanModularForms` project
 ([`LeanModularForms/HeckeRIngs/GL2/Fricke.lean`](https://github.com/CBirkbeck/AINTLIB),
-commit `340875adfb2`, Apache-2.0, Chris Birkbeck), realizing part of Layer 6 of the ModularForms
-roadmap.
+commit `340875adfb2`, Apache-2.0, Chris Birkbeck).
 
 AINTLIB states these over `ℚ` and pushes to `ℝ` through a `glMap` transport at every step; here,
 as already in `Fricke/Operator.lean`, `frickeGL` is read at `ℝ` directly and no transport

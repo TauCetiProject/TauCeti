@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
+public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
+public import TauCeti.Topology.MappingSpace.HomotopyGroup
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 public import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
-public import TauCeti.Topology.Homotopy.SerreFibration.Section
+public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 public import TauCeti.Topology.MappingSpace.Fibration
 
 /-!
@@ -17,8 +18,9 @@ public import TauCeti.Topology.MappingSpace.Fibration
 Evaluation `𝓛Q = C(S¹, Q) → Q` at `1 ∈ S¹` is a Hurewicz fibration
 (`TauCeti.isHurewiczFibration_mappingSpaceEval_one`) with fibre the based loops
 `Ω_x Q = Map_*(S¹, Q)` over `x`, and the constant loops are a section. So its exact homotopy
-sequence splits (`TauCeti.TopCat.fibrationBoundary_eq_of_section`): for `n ≥ 1` there are split
-short exact sequences of groups
+sequence splits (`TauCeti.injective_homotopyGroupMap_basedMap_val`,
+`TauCeti.mem_range_homotopyGroupMap_basedMap_val_iff`): for `n ≥ 1` there are split short exact
+sequences of groups
 
 `1 → π_{n+1}(Q, x) → π_n(𝓛Q, x) → π_n(Q, x) → 1`,
 
@@ -34,27 +36,43 @@ constant loops: the fundamental group of the contractible free loops keeps both 
 classes `π₂(Q)` of its based-loop fibre and the fundamental group of `Q`. This is the evaluation
 sequence of the contractible loop space underlying the capped loop cover of Floer theory.
 
+The splitting shows that the constant loops `i_Q : Q → 𝓛₀Q` are injective on every homotopy group,
+and onto `π_{m+1}(𝓛₀Q, x)` exactly when `π_{m+2}(Q, x)` vanishes. Since every contractible loop is
+joined to a constant loop, `i_Q` is a weak homotopy equivalence exactly when all the homotopy
+groups of `Q` of dimension at least two vanish
+(`TauCeti.isWeakHomotopyEquivalence_constContractibleLoop_iff`), and for a path-connected `Q`
+exactly when `Q` is aspherical
+(`TauCeti.isWeakHomotopyEquivalence_constContractibleLoop_iff_isAspherical`). The same holds for
+evaluation `𝓛₀Q → Q`, its retraction. For a torus, for instance, the constant loops are a weak
+homotopy equivalence; for `S²` they are not, since `π₁(𝓛₀S²)` contains `π₂(S²) = ℤ`.
+
 ## Main declarations
 
-* `TauCeti.injective_homotopyGroupMap_basedMapCircle_val`: the based loops inject into the free
-  loops on positive-dimensional homotopy groups.
-* `TauCeti.mem_range_homotopyGroupMap_basedMapCircle_val_iff`: the image is the kernel of
-  evaluation.
 * `TauCeti.basedMapCircleHomotopyGroupMulEquiv`: the loop-space shift `π_n(Ω_x Q) ≅ π_{n+1}(Q, x)`
   on the based-loop fibre.
 * `TauCeti.freeLoopHomotopyGroupHom`: the injection `π_{n+1}(Q, x) → π_n(𝓛Q, x)`, with
   `TauCeti.injective_freeLoopHomotopyGroupHom` and `TauCeti.range_freeLoopHomotopyGroupHom`,
-  split by `TauCeti.mapHom_mappingSpaceEval_comp_mapHom_const`.
+  split by `TauCeti.mapHom_mappingSpaceEval_comp_mapHom_const`, the general splitting of
+  evaluation by the constant maps.
 * `TauCeti.contractibleLoopsHomotopyGroupMulEquiv`: `π_n(𝓛₀Q, x) ≅ π_n(𝓛Q, x)` for `n ≥ 1`.
 * `TauCeti.contractibleLoopHomotopyGroupHom`: the injection `π_{n+1}(Q, x) → π_n(𝓛₀Q, x)`, with
   `TauCeti.injective_contractibleLoopHomotopyGroupHom` and
   `TauCeti.range_contractibleLoopHomotopyGroupHom`, split by
   `TauCeti.mapHom_basepointContractibleLoop_comp_mapHom_constContractibleLoop`.
+* `TauCeti.isWeakHomotopyEquivalence_constContractibleLoop_iff`,
+  `TauCeti.isWeakHomotopyEquivalence_basepointContractibleLoop_iff`: the constant loops
+  `Q → 𝓛₀Q`, and evaluation `𝓛₀Q → Q`, are weak homotopy equivalences exactly when the homotopy
+  groups of `Q` of dimension at least two vanish at every point.
+* `TauCeti.isWeakHomotopyEquivalence_constContractibleLoop_iff_isAspherical`,
+  `TauCeti.IsAspherical.isWeakHomotopyEquivalence_constContractibleLoop`: for a path-connected
+  `Q`, exactly when `Q` is aspherical.
 
 ## References
 
 * G. W. Whitehead, *Elements of Homotopy Theory*, GTM 61, Springer, 1978, Chapters I and IV.8.
 * A. Hatcher, *Algebraic Topology*, Section 4.2, the long exact sequence of a fibration.
+* J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
+  Applications to cotangent bundles*, arXiv:2404.07953, §5 (the constant loops `i_Q`).
 -/
 
 public section
@@ -69,93 +87,7 @@ namespace TauCeti
 
 variable {Q : Type u} [TopologicalSpace Q] (x : Q) {N : Type*}
 
-/-! ### The evaluation fibration as a morphism of `TopCat` -/
-
-/-- Evaluation of free loops at `1 ∈ S¹`, as a morphism of topological spaces. -/
-private abbrev freeLoopEval : _root_.TopCat.of C(Circle, Q) ⟶ _root_.TopCat.of Q :=
-  _root_.TopCat.ofHom (mappingSpaceEval 1)
-
-/-- The constant loop at `x`, as a point of the fibre of evaluation over `x`. -/
-private def freeLoopEvalFiberConst : (freeLoopEval (Q := Q)).fiber x :=
-  ⟨ContinuousMap.const Circle x, by simp⟩
-
-private theorem mem_serreFibrations_freeLoopEval :
-    TopCat.serreFibrations (freeLoopEval (Q := Q)) :=
-  isHurewiczFibration_mappingSpaceEval_one.{0}.mem_serreFibrations
-
-/-- The constant loops are a section of evaluation. -/
-private theorem freeLoopConst_comp_freeLoopEval :
-    _root_.TopCat.ofHom ContinuousMap.const' ≫ freeLoopEval (Q := Q) = 𝟙 _ := by
-  ext q
-  simp
-
-/-- The fibre of evaluation over `x` is the space of based loops at `x`. -/
-private def freeLoopEvalFiberHomeomorph :
-    (freeLoopEval (Q := Q)).fiber x ≃ₜ BasedMap Circle Q 1 x :=
-  Homeomorph.setCongr (t := {f : C(Circle, Q) | f 1 = x}) (by ext; simp [mappingSpaceEval_apply])
-
-private theorem freeLoopEvalFiberHomeomorph_freeLoopEvalFiberConst :
-    freeLoopEvalFiberHomeomorph x (freeLoopEvalFiberConst x) =
-      ⟨ContinuousMap.const Circle x, ContinuousMap.const_apply x 1⟩ :=
-  Subtype.ext rfl
-
-/-- Pushed into the free loops, the based loops at `x` give the fibre inclusion. -/
-private theorem subtypeVal_comp_freeLoopEvalFiberHomeomorph :
-    (⟨Subtype.val, continuous_subtype_val⟩ : C(BasedMap Circle Q 1 x, C(Circle, Q))).comp
-      ⟨freeLoopEvalFiberHomeomorph x, (freeLoopEvalFiberHomeomorph x).continuous⟩ =
-      ((freeLoopEval (Q := Q)).fiberι x).hom :=
-  ContinuousMap.ext fun f ↦ (TopCat.Hom.fiberι_apply _ _ f).symm
-
-/-- On homotopy groups, the inclusion of the based loops is the fibre inclusion of evaluation,
-up to the identification of the fibre with the based loops. -/
-private theorem homotopyGroupMap_basedMapCircle_val_eq :
-    HomotopyGroup.map (N := N)
-        (x := (⟨ContinuousMap.const Circle x, ContinuousMap.const_apply x 1⟩ :
-          BasedMap Circle Q 1 x))
-        ⟨Subtype.val, continuous_subtype_val⟩ rfl =
-      HomotopyGroup.map ((freeLoopEval (Q := Q)).fiberι x).hom
-          (TopCat.Hom.fiberι_apply _ _ (freeLoopEvalFiberConst x)) ∘
-        (HomotopyGroup.homeomorphEquivOfEq (freeLoopEvalFiberHomeomorph x)
-          (freeLoopEvalFiberHomeomorph_freeLoopEvalFiberConst x)).symm := by
-  funext a
-  obtain ⟨a, rfl⟩ := (HomotopyGroup.homeomorphEquivOfEq (freeLoopEvalFiberHomeomorph x)
-    (freeLoopEvalFiberHomeomorph_freeLoopEvalFiberConst x)).surjective a
-  rw [Function.comp_apply, Equiv.symm_apply_apply, HomotopyGroup.homeomorphEquivOfEq_apply,
-    HomotopyGroup.map_comp_apply]
-  exact HomotopyGroup.map_congr (subtypeVal_comp_freeLoopEvalFiberHomeomorph x) _ _ a
-
 /-! ### Based loops in free loops -/
-
-/-- **The based loops inject into the free loops on homotopy groups.** In positive dimension, the
-inclusion `Ω_x Q → 𝓛Q` of the loops based at `x` induces an injection on homotopy groups at the
-constant loop: evaluation has the constant loops as a section, so the boundary maps of its exact
-homotopy sequence vanish. -/
-theorem injective_homotopyGroupMap_basedMapCircle_val [Finite N] [Nonempty N] :
-    Function.Injective (HomotopyGroup.map (N := N)
-      (x := (⟨ContinuousMap.const Circle x, ContinuousMap.const_apply x 1⟩ : BasedMap Circle Q 1 x))
-      ⟨Subtype.val, continuous_subtype_val⟩ rfl) := by
-  rw [homotopyGroupMap_basedMapCircle_val_eq]
-  exact (TopCat.injective_homotopyGroupMap_fiberι_of_section (e := freeLoopEvalFiberConst x)
-    mem_serreFibrations_freeLoopEval freeLoopConst_comp_freeLoopEval rfl).comp
-      (Equiv.injective _)
-
-/-- **Exactness at the free loops.** In every dimension, a class of `π_N(𝓛Q)` at the constant
-loop at `x` comes from the based loops exactly when its evaluation at `1 ∈ S¹` is trivial. -/
-theorem mem_range_homotopyGroupMap_basedMapCircle_val_iff [Finite N]
-    {a : HomotopyGroup N C(Circle, Q) (ContinuousMap.const Circle x)} :
-    a ∈ Set.range (HomotopyGroup.map (N := N)
-      (x := (⟨ContinuousMap.const Circle x, ContinuousMap.const_apply x 1⟩ : BasedMap Circle Q 1 x))
-      ⟨Subtype.val, continuous_subtype_val⟩ rfl) ↔
-      HomotopyGroup.map (mappingSpaceEval 1) (leftInverse_mappingSpaceEval_const 1 x) a =
-        (⟦GenLoop.const⟧ : HomotopyGroup N Q x) := by
-  have h := congrFun (homotopyGroupMap_basedMapCircle_val_eq (N := N) x)
-  refine Iff.trans ?_ (TopCat.mem_range_homotopyGroupMap_fiberι_iff (e := freeLoopEvalFiberConst x)
-    mem_serreFibrations_freeLoopEval)
-  constructor
-  · rintro ⟨b, rfl⟩
-    exact ⟨_, (h b).symm⟩
-  · rintro ⟨c, rfl⟩
-    exact ⟨_, (h _).trans (congrArg _ (Equiv.symm_apply_apply _ c))⟩
 
 /-- **The based-loop fibre computes the next homotopy group.** The loop-space shift
 `π_{m+1}(Ω_x Q) ≅ π_{m+2}(Q, x)`, on the based loops `Map_*(S¹, Q)` at the constant loop. -/
@@ -187,11 +119,10 @@ theorem basedMapCircleHomotopyGroupMulEquiv_apply (m : ℕ)
 
 /-- The injection `π_{m+2}(Q, x) → π_{m+1}(𝓛Q, x)` at the constant loop: the inverse of the
 loop-space shift `TauCeti.basedMapCircleHomotopyGroupMulEquiv`, followed by the inclusion of the
-based loops. -/
+based loops (`TauCeti.basedMapHomotopyGroupHom`). -/
 def freeLoopHomotopyGroupHom (m : ℕ) :
     π_ (m + 2) Q x →* π_ (m + 1) C(Circle, Q) (ContinuousMap.const Circle x) :=
-  (HomotopyGroup.mapHom ⟨Subtype.val, continuous_subtype_val⟩ rfl).comp
-    (basedMapCircleHomotopyGroupMulEquiv x m).symm.toMonoidHom
+  basedMapHomotopyGroupHom (basedMapCircleHomotopyGroupMulEquiv x m)
 
 /-- On the loop-space shift of a class of based loops, `TauCeti.freeLoopHomotopyGroupHom` is the
 map induced by the inclusion of the based loops. Not `@[simp]`: the simp normal form unfolds
@@ -200,41 +131,23 @@ theorem freeLoopHomotopyGroupHom_basedMapCircleHomotopyGroupMulEquiv (m : ℕ)
     (a : π_ (m + 1) (BasedMap Circle Q 1 x)
       ⟨ContinuousMap.const Circle x, ContinuousMap.const_apply x 1⟩) :
     freeLoopHomotopyGroupHom x m (basedMapCircleHomotopyGroupMulEquiv x m a) =
-      HomotopyGroup.map ⟨Subtype.val, continuous_subtype_val⟩ rfl a := by
-  rw [freeLoopHomotopyGroupHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    MulEquiv.symm_apply_apply, HomotopyGroup.mapHom_apply]
+      HomotopyGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ rfl a :=
+  basedMapHomotopyGroupHom_apply_mulEquiv _ a
 
 /-- The injection `π_{m+2}(Q, x) → π_{m+1}(𝓛Q, x)` is injective. -/
 theorem injective_freeLoopHomotopyGroupHom (m : ℕ) :
-    Function.Injective (freeLoopHomotopyGroupHom x m) := by
-  rw [freeLoopHomotopyGroupHom, MonoidHom.coe_comp]
-  exact (injective_homotopyGroupMap_basedMapCircle_val x).comp (MulEquiv.injective _)
+    Function.Injective (freeLoopHomotopyGroupHom x m) :=
+  injective_basedMapHomotopyGroupHom
+    isHurewiczFibration_mappingSpaceEval_one.{0}.mem_serreFibrations _
 
 /-- **Exactness of the free-loop sequence.** The image of `π_{m+2}(Q, x) → π_{m+1}(𝓛Q, x)` is the
 kernel of evaluation `π_{m+1}(𝓛Q, x) → π_{m+1}(Q, x)`. -/
 theorem range_freeLoopHomotopyGroupHom (m : ℕ) :
     (freeLoopHomotopyGroupHom x m).range =
       (HomotopyGroup.mapHom (N := Fin (m + 1)) (mappingSpaceEval (X := Q) 1)
-        (leftInverse_mappingSpaceEval_const 1 x)).ker := by
-  ext a
-  rw [MonoidHom.mem_ker, HomotopyGroup.mapHom_apply, ← HomotopyGroup.mk_const_eq_one,
-    ← mem_range_homotopyGroupMap_basedMapCircle_val_iff]
-  constructor
-  · rintro ⟨b, rfl⟩
-    exact ⟨_, rfl⟩
-  · rintro ⟨b, rfl⟩
-    exact ⟨basedMapCircleHomotopyGroupMulEquiv x m b,
-      freeLoopHomotopyGroupHom_basedMapCircleHomotopyGroupMulEquiv x m b⟩
-
-/-- **The constant loops split the free-loop sequence.** Evaluation undoes the constant loops on
-homotopy groups. -/
-theorem mapHom_mappingSpaceEval_comp_mapHom_const [DecidableEq N] [Nonempty N] :
-    (HomotopyGroup.mapHom (mappingSpaceEval (X := Q) 1)
-        (leftInverse_mappingSpaceEval_const 1 x)).comp
-        (HomotopyGroup.mapHom (N := N) (x := x) ContinuousMap.const' rfl) =
-      MonoidHom.id (HomotopyGroup N Q x) :=
-  MonoidHom.ext fun a ↦ HomotopyGroup.map_map_of_comp_eq_id _ _ rfl _
-    (mappingSpaceEval_comp_const' 1) a
+        (leftInverse_mappingSpaceEval_const 1 x)).ker :=
+  range_basedMapHomotopyGroupHom
+    isHurewiczFibration_mappingSpaceEval_one.{0}.mem_serreFibrations _
 
 /-! ### Contractible free loops -/
 
@@ -244,20 +157,16 @@ loop, since `𝓛₀Q` contains its path component. -/
 def contractibleLoopsHomotopyGroupMulEquiv [DecidableEq N] [Nonempty N] :
     HomotopyGroup N (contractibleLoops Q) (constContractibleLoop x) ≃*
       HomotopyGroup N C(Circle, Q) (ContinuousMap.const Circle x) :=
-  MulEquiv.ofBijective
-    (HomotopyGroup.mapHom ⟨Subtype.val, continuous_subtype_val⟩ (coe_constContractibleLoop x)) <| by
-      rw [HomotopyGroup.mapHom, MonoidHom.coe_mk, OneHom.coe_mk]
-      refine HomotopyGroup.bijective_map_subtypeVal_of_pathComponent_subset ?_ _
-      rw [coe_constContractibleLoop]
-      exact pathComponent_const_subset_contractibleLoops x
+  HomotopyGroup.subtypeValMulEquivOfPathComponentSubset
+    (by rw [coe_constContractibleLoop]; exact pathComponent_const_subset_contractibleLoops x)
+    (coe_constContractibleLoop x)
 
 @[simp]
 theorem contractibleLoopsHomotopyGroupMulEquiv_apply [DecidableEq N] [Nonempty N]
     (a : HomotopyGroup N (contractibleLoops Q) (constContractibleLoop x)) :
     contractibleLoopsHomotopyGroupMulEquiv x a =
-      HomotopyGroup.map ⟨Subtype.val, continuous_subtype_val⟩ (coe_constContractibleLoop x) a := by
-  rw [contractibleLoopsHomotopyGroupMulEquiv, MulEquiv.ofBijective_apply,
-    HomotopyGroup.mapHom_apply]
+      HomotopyGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ (coe_constContractibleLoop x) a :=
+  HomotopyGroup.subtypeValMulEquivOfPathComponentSubset_apply _ _ a
 
 /-- The injection `π_{m+2}(Q, x) → π_{m+1}(𝓛₀Q, x)` at the constant loop: the injection into the
 free loops, which lands in the contractible free loops. -/
@@ -314,5 +223,93 @@ theorem mapHom_basepointContractibleLoop_comp_mapHom_constContractibleLoop [Deci
       MonoidHom.id (HomotopyGroup N Q x) :=
   MonoidHom.ext fun a ↦ HomotopyGroup.map_map_of_comp_eq_id _ _ rfl _
     basepointContractibleLoop_comp_constContractibleLoop a
+
+/-! ### When the constant loops are a weak homotopy equivalence -/
+
+/-- **The constant loops are injective on homotopy groups.** Evaluation at the basepoint is a left
+inverse of the map `π_N(Q, x) → π_N(𝓛₀Q, x)` induced by the constant loops. -/
+theorem injective_map_constContractibleLoop :
+    Function.Injective (HomotopyGroup.map (N := N) (constContractibleLoop (Q := Q))
+      (rfl : constContractibleLoop x = constContractibleLoop x)) :=
+  Function.LeftInverse.injective fun a ↦ HomotopyGroup.map_map_of_comp_eq_id _ _ rfl
+    (basepointContractibleLoop_constContractibleLoop x)
+    basepointContractibleLoop_comp_constContractibleLoop a
+
+/-- **The constant loops are onto `π_{m+1}(𝓛₀Q, x)` exactly when `π_{m+2}(Q, x)` is trivial.** In
+the split exact sequence `1 → π_{m+2}(Q, x) → π_{m+1}(𝓛₀Q, x) → π_{m+1}(Q, x) → 1`, the section
+given by the constant loops is onto exactly when the kernel of evaluation, a copy of
+`π_{m+2}(Q, x)`, is trivial. -/
+theorem surjective_map_constContractibleLoop_iff (m : ℕ) :
+    Function.Surjective (HomotopyGroup.map (N := Fin (m + 1)) (constContractibleLoop (Q := Q))
+        (rfl : constContractibleLoop x = constContractibleLoop x)) ↔
+      Subsingleton (π_ (m + 2) Q x) := by
+  set ε := HomotopyGroup.mapHom (N := Fin (m + 1)) (basepointContractibleLoop (Q := Q))
+    (basepointContractibleLoop_constContractibleLoop x)
+  have hε : Function.LeftInverse ε (HomotopyGroup.map constContractibleLoop rfl) :=
+    fun a ↦ DFunLike.congr_fun
+      (mapHom_basepointContractibleLoop_comp_mapHom_constContractibleLoop (N := Fin (m + 1)) x) a
+  -- A section is onto exactly when its retraction is injective, that is, when the kernel of
+  -- evaluation, the image of the injection of `π_{m+2}(Q, x)`, is trivial.
+  have hsurj : Function.Surjective (HomotopyGroup.map constContractibleLoop rfl) ↔
+      Function.Injective ε :=
+    ⟨fun hs ↦ (hε.rightInverse_of_surjective hs).injective,
+      fun hi ↦ (hε.rightInverse_of_injective hi).surjective⟩
+  rw [hsurj, ← MonoidHom.ker_eq_bot_iff,
+    ← range_contractibleLoopHomotopyGroupHom, MonoidHom.range_eq_bot_iff]
+  exact ⟨fun h ↦ ⟨fun a b ↦ injective_contractibleLoopHomotopyGroupHom x m <| by
+      rw [h, MonoidHom.one_apply, MonoidHom.one_apply]⟩,
+    fun _ ↦ MonoidHom.ext fun a ↦ by rw [Subsingleton.elim a 1, map_one, MonoidHom.one_apply]⟩
+
+/-- **The constant loops `Q → 𝓛₀Q` are a weak homotopy equivalence exactly when every homotopy
+group of `Q` of dimension at least two vanishes, at every point.** They are a bijection on path
+components, since every contractible loop is joined to a constant loop and evaluation is a
+retraction, and they are injective on homotopy groups
+(`TauCeti.injective_map_constContractibleLoop`). They are onto `π_{m+1}(𝓛₀Q, x)` exactly when
+`π_{m+2}(Q, x)` vanishes (`TauCeti.surjective_map_constContractibleLoop_iff`). -/
+theorem isWeakHomotopyEquivalence_constContractibleLoop_iff :
+    (constContractibleLoop (Q := Q)).IsWeakHomotopyEquivalence ↔
+      ∀ (x : Q) (m : ℕ), Subsingleton (π_ (m + 2) Q x) := by
+  rw [ContinuousMap.isWeakHomotopyEquivalence_iff_joined]
+  refine ⟨fun h x m ↦ (surjective_map_constContractibleLoop_iff x m).1 (h.2.2 m x).2,
+    fun h ↦ ⟨fun γ ↦ ?_, fun a b hab ↦ ?_, fun m x ↦
+      ⟨injective_map_constContractibleLoop x, (surjective_map_constContractibleLoop_iff x m).2
+        (h x m)⟩⟩⟩
+  · -- A path from a contractible loop to a constant loop stays among the contractible loops.
+    obtain ⟨q, hq⟩ := mem_contractibleLoops_iff.1 γ.property
+    have hq' : constContractibleLoop q = ⟨_, const_mem_contractibleLoops q⟩ :=
+      Subtype.ext (coe_constContractibleLoop q)
+    refine ⟨q, hq' ▸ ?_⟩
+    exact ((isPathConnected_pathComponent.joinedIn _ (mem_pathComponent_self _) _
+      hq.symm).mono (pathComponent_const_subset_contractibleLoops q)).joined_subtype
+  · simpa only [basepointContractibleLoop_constContractibleLoop] using
+      hab.map basepointContractibleLoop.continuous
+
+/-- **Evaluation `𝓛₀Q → Q` at the basepoint is a weak homotopy equivalence exactly when every
+homotopy group of `Q` of dimension at least two vanishes, at every point.** It is a retraction of
+the constant loops, so by two out of three it is a weak homotopy equivalence exactly when they are
+(`TauCeti.isWeakHomotopyEquivalence_constContractibleLoop_iff`). -/
+theorem isWeakHomotopyEquivalence_basepointContractibleLoop_iff :
+    (basepointContractibleLoop (Q := Q)).IsWeakHomotopyEquivalence ↔
+      ∀ (x : Q) (m : ℕ), Subsingleton (π_ (m + 2) Q x) := by
+  have hid : ((basepointContractibleLoop (Q := Q)).comp
+      constContractibleLoop).IsWeakHomotopyEquivalence := by
+    rw [basepointContractibleLoop_comp_constContractibleLoop]
+    exact .id
+  rw [← isWeakHomotopyEquivalence_constContractibleLoop_iff]
+  exact ⟨fun h ↦ h.of_postcomp hid, fun h ↦ h.of_precomp hid⟩
+
+/-- **For a path-connected space, the constant loops `Q → 𝓛₀Q` are a weak homotopy equivalence
+exactly when `Q` is aspherical.** On a path-connected space the vanishing of the higher homotopy
+groups at one point gives it at every point. -/
+theorem isWeakHomotopyEquivalence_constContractibleLoop_iff_isAspherical [PathConnectedSpace Q] :
+    (constContractibleLoop (Q := Q)).IsWeakHomotopyEquivalence ↔ IsAspherical Q x := by
+  rw [isWeakHomotopyEquivalence_constContractibleLoop_iff]
+  exact ⟨fun h ↦ .mk inferInstance (h x), fun h y ↦ (h.of_basepoint y).subsingleton_homotopyGroup⟩
+
+/-- **The constant loops of an aspherical space are a weak homotopy equivalence `Q → 𝓛₀Q`.** -/
+theorem IsAspherical.isWeakHomotopyEquivalence_constContractibleLoop {x : Q}
+    (h : IsAspherical Q x) : (constContractibleLoop (Q := Q)).IsWeakHomotopyEquivalence :=
+  haveI := h.pathConnectedSpace
+  (isWeakHomotopyEquivalence_constContractibleLoop_iff_isAspherical x).2 h
 
 end TauCeti

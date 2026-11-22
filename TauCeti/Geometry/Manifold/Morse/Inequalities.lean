@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.BigOperators.Ring.Finset
+public import TauCeti.AlgebraicTopology.Singular.BettiNumber
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Sublevel
-public import TauCeti.AlgebraicTopology.Singular.Triple.Finrank
+public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Finrank
 public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
 public import TauCeti.Geometry.Manifold.Morse.Deformation.Homology
 import TauCeti.Algebra.BigOperators.AlternatingSum
@@ -72,10 +73,10 @@ equality.
 
 The coefficients of `Q` are ranks of boundary maps. Cut the band at regular values
 `a = s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1) = b` so that each piece `f⁻¹[s j, s (j + 1)]` contains at most one
-critical value; on a compact manifold such values exist
-(`TauCeti.IsMorse.exists_regular_sublevel_partition`). Each piece then has `bᵢ = cᵢ dim V`, and
-summing the defects of subadditivity of `Sₙ` over the triples
-`(M_{s (j + 2)}, M_{s (j + 1)}, M_{s 0})` (`TauCeti.sum_range_finrank_range_singularHomologyδ_eq`)
+critical value; on a compact manifold such values exist, since a Morse function has finitely many
+critical values (`TauCeti.exists_monotone_isCriticalBand_of_finite_image_criticalPoints`). Each
+piece then has `bᵢ = cᵢ dim V`, and summing the defects of subadditivity of `Sₙ` over the triples
+`(M_{s (j + 2)}, M_{s (j + 1)}, M_{s 0})` (`Monotone.sum_range_finrank_range_singularHomologyδ_eq`)
 shows that the coefficient of `tⁿ` in `Q` is the sum over `j < N` of the ranks of the connecting
 maps `Hₙ₊₁(M_{s (j + 2)}, M_{s (j + 1)}) ⟶ Hₙ(M_{s (j + 1)}, M_{s 0})`
 (`TauCeti.IsMorse.coeff_eq_sum_range_finrank_range_singularHomologyδ_sublevelPair`).
@@ -83,9 +84,11 @@ maps `Hₙ₊₁(M_{s (j + 2)}, M_{s (j + 1)}) ⟶ Hₙ(M_{s (j + 1)}, M_{s 0})`
 ## Main results
 
 * `TauCeti.IsMorse.finrank_singularHomology_sublevelPair_le`,
-  `TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_le` and
-  `TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_eq`: the weak
-  and strong Morse inequalities and Euler's equality for a compact band between regular values.
+  `TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_le`,
+  `TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_eq` and
+  `sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_eq_of_manifoldMorseIndex_ne`:
+  the weak and strong Morse inequalities and Euler's equality for a compact band between regular
+  values (for `n ≥ dim M`, or whenever no critical point in `(a, b]` has index `n + 1`).
 * `TauCeti.IsMorse.exists_sum_range_monomial_sublevelPair_eq_add_mul`,
   `TauCeti.IsMorse.sum_range_finrank_singularHomology_sublevelPair_le` and
   `TauCeti.IsMorse.finrank_singularHomology_sublevelPair_eq_of_forall_ne_add_one`: the Morse
@@ -124,7 +127,7 @@ maps `Hₙ₊₁(M_{s (j + 2)}, M_{s (j + 1)}) ⟶ Hₙ(M_{s (j + 1)}, M_{s 0})`
   `TauCeti.IsMorse.coeff_eq_sum_range_finrank_range_singularHomologyδ`: on a compact manifold, the
   coefficients of `Q` as sums of ranks of connecting maps along a cut of the values of `f` into
   pieces with at most one critical value each, which exists by
-  `TauCeti.IsMorse.exists_regular_sublevel_partition`.
+  `TauCeti.exists_monotone_isCriticalBand_of_finite_image_criticalPoints`.
 
 ## References
 
@@ -314,7 +317,8 @@ private theorem MorseInequalities.trans {a m b : ℝ} {ham : a ≤ m} {hmb : m �
   · refine (T.finrank_singularHomology_totalPair_le V n).trans ?_
     rw [hcount, add_mul]
     exact add_le_add hw₁ hw₂
-  · refine (T.sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_le V n).trans ?_
+  · refine (T.sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_le V n
+      (fun i _ ↦ (h₁ i).1) (fun i _ ↦ (h₂ i).1)).trans ?_
     rw [hsum, mul_add]
     exact add_le_add hs₁ hs₂
   · -- Above the dimension of `M`, `Hₙ₊₁({f ≤ b}, {f ≤ m})` vanishes by the weak inequality.
@@ -329,7 +333,8 @@ private theorem MorseInequalities.trans {a m b : ℝ} {ham : a ≤ m} {hmb : m �
             finrank k ((sublevelPair f ham).singularHomology V i : ModuleCat k) +
           ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
             finrank k ((sublevelPair f hmb).singularHomology V i : ModuleCat k) :=
-      T.sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_eq V n hzero
+      T.sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_eq V n
+        (fun i _ ↦ (h₁ i).1) (fun i _ ↦ (h₂ i).1) hzero
     rw [h, he₁ hn, he₂ hn, hsum, mul_add]
 
 /-- **The Morse inequalities across a compact band between regular values**, by induction over its
@@ -470,6 +475,54 @@ theorem IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_
       finrank k V * ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
         {x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i}.ncard :=
   (hf.morseInequalities V hab hcompact ha hb n).2.2.2 hn
+
+namespace IsMorse
+
+/-- **Euler's equality for a band at a degree with no critical point of index `n + 1`.** Let `f` be
+a Morse function, and `a ≤ b` regular values with compact band `f⁻¹[a, b]`. If no critical point of
+`f` with value in `(a, b]` has Morse index `n + 1`, then
+`∑ᵢ₌₀ⁿ (-1)ⁱ bᵢ = (∑ᵢ₌₀ⁿ (-1)ⁱ cᵢ) dim V`, generalizing
+`IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_eq` beyond `n ≥ dim M`.
+-/
+theorem sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_eq_of_manifoldMorseIndex_ne
+    (hf : IsMorse I f) {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) {n : ℕ}
+    (hno : ∀ x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b, manifoldMorseIndex I f x ≠ n + 1) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
+        finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k) =
+      finrank k V * ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
+        {x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i}.ncard := by
+  have hc0 : {x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b |
+      manifoldMorseIndex I f x = n + 1}.ncard = 0 :=
+    bandCount_eq_zero_of_forall fun x hx hIoc ↦ hno x ⟨hx, hIoc⟩
+  have hb0 : finrank k ((sublevelPair f hab).singularHomology V (n + 1) : ModuleCat k) = 0 :=
+    Nat.eq_zero_of_le_zero <|
+      (hf.finrank_singularHomology_sublevelPair_le V hab hcompact ha hb (n + 1)).trans_eq
+        (by rw [hc0, zero_mul])
+  have hle₁ :=
+    hf.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_le V hab hcompact ha hb n
+  have hle₂ :=
+    hf.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_le V hab hcompact ha hb
+      (n + 1)
+  rw [sum_range_succ_neg_one_pow_sub_mul (fun i ↦
+        (finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k) : ℤ)) n,
+      sum_range_succ_neg_one_pow_sub_mul (fun i ↦
+        ({x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i}.ncard : ℤ)) n,
+      hb0, hc0] at hle₂
+  have heq : ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
+        finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k) =
+      finrank k V * ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
+        {x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i}.ncard := by
+    push_cast at hle₂
+    linarith
+  rw [sum_range_neg_one_pow_sub_mul (fun i ↦
+        (finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k) : ℤ)) n,
+      sum_range_neg_one_pow_sub_mul (fun i ↦
+        ({x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i}.ncard : ℤ)) n,
+      mul_left_comm] at heq
+  exact mul_left_cancel₀ (pow_ne_zero n (neg_ne_zero.2 one_ne_zero)) heq
+
+end IsMorse
 
 /-- **The Morse polynomial identity for a band.** Let `f` be a Morse function, and `a ≤ b` regular
 values with compact band `f⁻¹[a, b]`. Write `bᵢ` for the dimension of `Hᵢ({f ≤ b}, {f ≤ a}; V)`
@@ -612,7 +665,7 @@ theorem IsMorse.sum_range_finrank_range_singularHomologyδ_sublevelPair_eq (hf :
       (hreg j (by lia)) (hreg (j + 1) (by lia)) (hcrit j hj) i]
     push_cast
     ring
-  have h := TauCeti.sum_range_finrank_range_singularHomologyδ_eq hA V hfin n
+  have h := hA.sum_range_finrank_range_singularHomologyδ_eq V n fun j hj i _ ↦ hfin j hj i
   linarith
 
 /-- **The coefficients of the quotient polynomial are ranks of connecting maps.** Let `f` be a
@@ -764,20 +817,6 @@ The band of `-f` between `-b` and `-a` is the band of `f` relative to its upper 
 `dim M - i` of `f`. So the statements for the band pair of `-f` give the Morse inequalities for the
 upper band pair `(f⁻¹[a, b], f⁻¹(b))`, with the critical points counted by their complementary
 index. -/
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
-/-- The critical points of index `i` of `-f` with values in `(-b, -a]` are the critical points of
-`f` with values in `[a, b)` and complementary index `dim M - i`. -/
-private theorem IsMorse.setOf_neg_band_eq (hf : IsMorse I f) (a b : ℝ) (i : ℕ) :
-    {x ∈ criticalPoints I (-f) ∩ (-f) ⁻¹' Ioc (-b) (-a) | manifoldMorseIndex I (-f) x = i} =
-      {x ∈ criticalPoints I f ∩ f ⁻¹' Ico a b | manifoldMorseIndex I f x + i = finrank ℝ E} := by
-  ext x
-  simp only [criticalPoints_neg, mem_ofPred_eq, mem_inter_iff, mem_preimage, Pi.neg_apply,
-    mem_Ioc, mem_Ico, neg_lt_neg_iff, neg_le_neg_iff]
-  constructor <;> rintro ⟨⟨hx, h₁, h₂⟩, h₃⟩ <;>
-  · have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-    exact ⟨⟨hx, h₂, h₁⟩, by omega⟩
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
 /-- The hypotheses on `f` over `[a, b]` hold for `-f` over `[-b, -a]`. -/
@@ -993,6 +1032,22 @@ theorem IsMorse.finrank_singularHomology_le (hf : IsMorse I f) (n : ℕ) :
   obtain ⟨a, b, hab, h, he, hc, -⟩ := hf.exists_morseInequalities_univ V
   rw [(he n).some.toLinearEquiv.finrank_eq, ← hc]
   exact (h n).2.1
+
+/-- The singular homology of a compact boundaryless manifold carrying a Morse function has
+zero finrank in degrees above the dimension of the manifold. -/
+theorem IsMorse.finrank_singularHomology_eq_zero_of_finrank_lt (hf : IsMorse I f)
+    {j : ℕ} (hj : finrank ℝ E < j) :
+    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) j).obj V).obj
+      (TopCat.of M)) = 0 := by
+  have h := hf.finrank_singularHomology_le V j
+  simpa [criticalCount_eq_zero_of_finrank_lt hj] using h
+
+/-- The singular Betti numbers of a compact boundaryless manifold carrying a Morse function
+vanish above its dimension. -/
+theorem IsMorse.bettiNumber_eq_zero_of_finrank_lt (hf : IsMorse I f)
+    {j : ℕ} (hj : finrank ℝ E < j) : bettiNumber k M j = 0 := by
+  rw [bettiNumber_def]
+  exact hf.finrank_singularHomology_eq_zero_of_finrank_lt (ModuleCat.of k k) hj
 
 /-- **The strong Morse inequalities.** For a Morse function `f` on a compact boundaryless manifold
 `M`, write `bᵢ` for the dimension of `Hᵢ(M; V)` and `cᵢ` for the number of critical points of

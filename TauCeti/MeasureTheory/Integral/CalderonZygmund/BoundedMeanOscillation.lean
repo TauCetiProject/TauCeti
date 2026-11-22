@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Function.Lp.Operator.LocalBound
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Singular integral operators map bounded functions to functions of bounded mean oscillation
@@ -77,7 +78,7 @@ public section
 
 namespace TauCeti
 
-open MeasureTheory Metric Set
+open _root_.MeasureTheory Metric Set
 open scoped ENNReal
 
 section Kernel
@@ -114,22 +115,14 @@ theorem enorm_integral_sub_integral_le_of_hormander {K : X → X → E →L[ℝ]
           · rw [hy' (mem_closedBall.2 (not_lt.1 h))]
             simp
       _ = (∫⁻ y in {y | 2 * dist x x' < dist y x'}, ‖K x y - K x' y‖ₑ ∂μ) * M :=
-          lintegral_mul_const'' _ hKd.enorm.restrict
+          lintegral_mul_const'' _ hKd.eNorm.restrict
       _ ≤ B * M := by gcongr
-  rcases eq_or_ne (B * M) ∞ with hBM | hBM
-  · simp [hBM]
-  have hint : Integrable (fun y => (K x y - K x' y) (b y)) μ :=
-    ⟨(ContinuousLinearMap.apply ℝ F).aestronglyMeasurable_comp₂ hb hKd,
-      hlint.trans_lt hBM.lt_top⟩
-  by_cases hx' : Integrable (fun y => K x' y (b y)) μ
-  · have hx : Integrable (fun y => K x y (b y)) μ :=
-      (hint.add hx').congr (.of_forall fun y => by simp)
-    rw [← integral_sub hx hx']
-    refine (enorm_integral_le_lintegral_enorm _).trans (le_of_eq_of_le ?_ hlint)
-    simp
-  · have hx : ¬Integrable (fun y => K x y (b y)) μ := fun hx =>
-      hx' ((hx.sub hint).congr (.of_forall fun y => by simp))
-    simp [integral_undef hx, integral_undef hx']
+  have hmeas (z : X) (hKz : AEStronglyMeasurable (K z) μ) :
+      AEStronglyMeasurable (fun y => K z y (b y)) μ := by
+    simpa using (ContinuousLinearMap.apply ℝ F).aestronglyMeasurable_comp₂ hb hKz
+  refine (MeasureTheory.enorm_integral_sub_integral_le_lintegral_enorm_sub (hmeas x hKx)
+    (hmeas x' hKx')).trans (le_of_eq_of_le ?_ hlint)
+  simp
 
 end Kernel
 
@@ -218,7 +211,7 @@ theorem setLAverage_enorm_sub_setAverage_le_of_hormander_of_measure_closedBall_l
       exact ae_le_eLpNormEssSup
     filter_upwards [hf₂, hfM] with y h1 h2
     rw [h1]
-    exact (enorm_indicator_le_enorm_self _ _).trans h2
+    exact (eNorm_indicator_le_eNorm_self _ _).trans h2
   have hvan : ∀ᵐ y ∂μ, y ∈ closedBall c (5 * r) → f₂ y = 0 := by
     filter_upwards [hf₂] with y h hy
     rw [h, indicator_of_notMem (notMem_compl_iff.2 hy)]
@@ -234,7 +227,7 @@ theorem setLAverage_enorm_sub_setAverage_le_of_hormander_of_measure_closedBall_l
           refine lintegral_mono_ae ?_
           filter_upwards [ae_restrict_of_ae hTf, ha] with x h1 h2
           rw [h1, Pi.add_apply, add_sub_assoc]
-          exact (enorm_add_le _ _).trans (by gcongr)
+          exact (eNorm_add_le _ _).trans (by gcongr)
       _ = ∫⁻ x in closedBall c r, ‖T (f - f₂) x‖ₑ ∂μ + B * M * μ (closedBall c r) := by
           rw [lintegral_add_right _ measurable_const, setLIntegral_const]
       _ ≤ D ^ (2⁻¹ : ℝ) * ‖T‖ₑ * M * μ (closedBall c r) + B * M * μ (closedBall c r) := by

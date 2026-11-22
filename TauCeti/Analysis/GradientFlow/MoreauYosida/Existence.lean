@@ -46,7 +46,9 @@ limit of a subsequence is a resolvent step.
 
 * `TauCeti.moreauYosida_le_moreauYosida_add`: the bound
   `φ_{τ₀}(x₀) ≤ φ_τ(x) + d(x, x₀)² / (2 (τ₀ - τ))` for `τ < τ₀` and `d(x, x₀) < ∞`, and
-  `TauCeti.moreauYosida_ne_bot_of_lt`: coercivity propagates.
+  `TauCeti.moreauYosida_ne_bot_of_lt`,
+  `TauCeti.moreauYosida_ne_bot_of_forall_one_add_mul_pos`: propagation of coercivity to smaller
+  time steps and across `1 + m τ > 0` to points at finite extended distance from `x₀`.
 * `TauCeti.le_liminf_apply_add_edist_sq_div`: the penalized energy `φ + d(x, ·)² / (2τ)` is
   lower semicontinuous along any convergence for which `φ` and `d(x, ·)` are.
 * `TauCeti.moreauYosidaResolvent_nonempty`: under the hypotheses above, the resolvent `J_τ x` is
@@ -161,7 +163,6 @@ theorem edist_sq_div_le_add (hττ₀ : τ < τ₀) (x x₀ z : X) :
   simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_mul, ENNReal.toReal_ofNat,
     ENNReal.coe_toReal, ENNReal.toReal_sub_of_le (ENNReal.coe_le_coe.2 hττ₀.le)
       ENNReal.coe_ne_top]
-  have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hτ)
   have hsr : (0 : ℝ) < τ₀ - τ := sub_pos.2 (NNReal.coe_lt_coe.2 hττ₀)
   calc (edist x₀ z).toReal ^ 2 / (2 * τ₀)
       ≤ ((edist x x₀).toReal + (edist x z).toReal) ^ 2 / (2 * τ₀) := by gcongr
@@ -208,6 +209,35 @@ theorem moreauYosida_ne_bot_of_lt (hττ₀ : τ < τ₀) (hx : edist x x₀ ≠
   rw [h, EReal.bot_add, le_bot_iff] at this
   exact h₀ this
 
+/-- **Propagation of coercivity across `1 + m τ > 0`.** If `φ_σ(x₀) ≠ ⊥` holds for every time step
+`σ > 0` satisfying `1 + m σ > 0`, then `φ_τ(x) ≠ ⊥` holds for every time step `τ ≥ 0` with
+`1 + m τ > 0` and every point `x` at finite extended distance from `x₀`. -/
+theorem moreauYosida_ne_bot_of_forall_one_add_mul_pos {m : ℝ}
+    (hmτ : 0 < 1 + m * τ) (hx : edist x x₀ ≠ ⊤)
+    (h : ∀ {σ : ℝ≥0}, 0 < σ → 0 < 1 + m * σ → moreauYosida φ σ x₀ ≠ ⊥) :
+    moreauYosida φ τ x ≠ ⊥ := by
+  have hτ₀ : ∃ τ₀ : ℝ≥0, τ < τ₀ ∧ 0 < 1 + m * τ₀ := by
+    rcases le_or_gt 0 m with hm | hm
+    · refine ⟨τ + 1, lt_add_one τ, ?_⟩
+      push_cast
+      nlinarith
+    · have hm_pos : 0 < -m := neg_pos.2 hm
+      have hτ_lt : (τ : ℝ) < (-m)⁻¹ := by
+        rw [inv_eq_one_div, lt_div_iff₀ hm_pos]
+        linarith
+      set r : ℝ := ((τ : ℝ) + (-m)⁻¹) / 2
+      have hr_pos : 0 ≤ r := by positivity
+      refine ⟨r.toNNReal, ?_, ?_⟩
+      · rw [← NNReal.coe_lt_coe, Real.coe_toNNReal r hr_pos]
+        dsimp [r]
+        linarith
+      · rw [Real.coe_toNNReal r hr_pos]
+        have hr_lt : r < (-m)⁻¹ := by dsimp [r]; linarith
+        have : r * (-m) < 1 := by rw [← lt_div_iff₀ hm_pos, ← inv_eq_one_div]; exact hr_lt
+        linarith
+  obtain ⟨τ₀, hττ₀, hmτ₀⟩ := hτ₀
+  exact moreauYosida_ne_bot_of_lt hττ₀ hx (h (zero_le.trans_lt hττ₀) hmτ₀)
+
 /-- **Propagation of coercivity**, real form. If `φ_{τ₀}(x₀) = m` is a real number, `τ < τ₀`,
 and `x` lies within the real distance `D` of `x₀`, then `m - D² / (2 (τ₀ - τ)) ≤ φ_τ(x)`. -/
 theorem coe_sub_div_le_moreauYosida {m D : ℝ} (hττ₀ : τ < τ₀) (hm : moreauYosida φ τ₀ x₀ = m)
@@ -240,15 +270,12 @@ private theorem toReal_edist_sq_mul_le (hττ' : τ < τ') {A B : ℝ}
   have hτ' : 0 < τ' := zero_le.trans_lt hττ'
   have hP' : edist x v ^ 2 / (2 * τ') ≠ ⊤ :=
     ENNReal.div_ne_top (by finiteness) (by simp [hτ'.ne'])
-  have hA' := hA ▸ moreauYosida_le φ τ' hv
   have htop : φ v ≠ ⊤ := by
     rintro h
     rw [h, EReal.top_add_of_ne_bot (EReal.coe_ennreal_ne_bot _), top_le_iff] at hB
     exact EReal.coe_ne_top _ hB
-  have hbot : φ v ≠ ⊥ := by
-    rintro h
-    rw [h, EReal.bot_add, le_bot_iff] at hA'
-    exact EReal.coe_ne_bot _ hA'
+  have hbot : φ v ≠ ⊥ := apply_ne_bot_of_moreauYosida_ne_bot hv (hA ▸ EReal.coe_ne_bot A)
+  have hA' := hA ▸ moreauYosida_le φ τ' hv
   obtain ⟨a, ha⟩ : ∃ a : ℝ, φ v = a := ⟨_, (EReal.coe_toReal htop hbot).symm⟩
   -- With `τ = 0` the penalty is `⊤` away from `x`, so `v` is at distance `0` from `x`.
   rcases eq_or_ne τ 0 with rfl | hτ
@@ -264,7 +291,6 @@ private theorem toReal_edist_sq_mul_le (hττ' : τ < τ') {A B : ℝ}
   rw [ha, EReal.coe_le_coe_add_coe_ennreal_iff hP'] at hA'
   simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_mul, ENNReal.toReal_ofNat,
     ENNReal.coe_toReal] at hB hA'
-  have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
   have hττ'r : (τ : ℝ) < τ' := NNReal.coe_lt_coe.2 hττ'
   have key : (edist x v).toReal ^ 2 * (τ' - τ) / (2 * τ * τ') ≤ B - A := by
     have : (edist x v).toReal ^ 2 * (τ' - τ) / (2 * τ * τ') =
@@ -295,10 +321,7 @@ theorem moreauYosidaResolvent_nonempty {l : X → Filter X}
     (moreauYosidaResolvent φ τ x).Nonempty := by
   -- If `φ_τ(x) = ⊤`, every point at finite distance from `x` is a minimizer, `x` itself included.
   rcases eq_or_ne (moreauYosida φ τ x) ⊤ with htop | htop
-  · refine ⟨x, mem_moreauYosidaResolvent_iff.2 ⟨by simp, fun z hz ↦ ?_⟩⟩
-    have := moreauYosida_le φ τ hz
-    rw [htop, top_le_iff] at this
-    exact this ▸ le_top
+  · exact ⟨x, self_mem_moreauYosidaResolvent_of_eq_top htop⟩
   -- Coercivity at an intermediate time step `τ < τ' < τ₀` makes `φ_{τ'}(x)` and `φ_τ(x)` real.
   obtain ⟨τ', hττ', hτ'τ₀⟩ := exists_between hττ₀
   have hmono := antitone_moreauYosida φ x hττ'.le

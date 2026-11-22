@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
-public import TauCeti.Geometry.Manifold.Measure
+public import TauCeti.Geometry.Manifold.Measure.AE
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 
@@ -25,6 +25,10 @@ boundary or corners.
   zero exactly when its image in the chart is null for an additive Haar measure.
 * `TauCeti.isNullSet_iff_riemannianVolume_eq_zero`: a set is chartwise null exactly when it has
   Riemannian volume zero.
+* `TauCeti.ae_riemannianVolume`: almost everywhere for the Riemannian volume of any continuous
+  metric means almost everywhere for the chartwise null sets, `TauCeti.Manifold.ae I M`.
+* `TauCeti.nullSingletonClass_riemannianVolume`: on a manifold of positive dimension, every point
+  has Riemannian volume zero.
 -/
 
 public noncomputable section
@@ -68,7 +72,7 @@ private theorem riemannianVolume_eq_zero_iff_image_of_measurableSet {α : M} {s 
   constructor
   · intro hz
     have ha := (lintegral_eq_zero_iff' (hd.aemeasurable him)).mp hz
-    have hfalse : ∀ᵐ y ∂(Module.finBasis ℝ E).addHaar.restrict (e '' s), False := by
+    have hfalse : ∀ᵐ _ ∂(Module.finBasis ℝ E).addHaar.restrict (e '' s), False := by
       filter_upwards [ae_restrict_mem him, ha] with y hy hyzero
       obtain ⟨x, hx, rfl⟩ := hy
       have hp := chartVolumeDensity_pos (I := I) α (by
@@ -101,7 +105,7 @@ private theorem riemannianVolume_eq_zero_iff_finBasis_image {α : M} {s : Set M}
     let A := toMeasurable μ (e '' s)
     let t := Subtype.val '' (e.source.domRestrict e ⁻¹' A)
     have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
-      MeasurableEmbedding.subtype_coe (isOpen_extChartAt_source α).measurableSet
+      MeasurableEmbedding.subtypeVal (isOpen_extChartAt_source α).measurableSet
     have htm : MeasurableSet t := hval.measurableSet_image.mpr
       ((measurableSet_toMeasurable _ _).preimage
         (measurableEmbedding_extChartAt_restrict α).measurable)
@@ -156,6 +160,23 @@ theorem isNullSet_iff_riemannianVolume_eq_zero {s : Set M} :
 theorem IsNullSet.riemannianVolume_eq_zero {s : Set M} (hs : IsNullSet I s) :
     riemannianVolume I M s = 0 := isNullSet_iff_riemannianVolume_eq_zero.mp hs
 
+/-- **Almost everywhere does not depend on the metric.** The almost-everywhere filter of the
+Riemannian volume of a continuous metric is the almost-everywhere filter of chartwise null sets. -/
+theorem ae_riemannianVolume : ae (riemannianVolume I M) = Manifold.ae I M :=
+  Manifold.ae_eq_iff_forall_measure_eq_zero_iff.2 fun _ ↦
+    isNullSet_iff_riemannianVolume_eq_zero.symm
+
 end Null
+
+section NullSingleton
+
+attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
+
+/-- On a manifold of positive dimension, every point has Riemannian volume zero. -/
+instance nullSingletonClass_riemannianVolume [Nontrivial E] :
+    NullSingletonClass (riemannianVolume I M) :=
+  ⟨fun x ↦ (countable_singleton x).isNullSet.riemannianVolume_eq_zero⟩
+
+end NullSingleton
 
 end TauCeti

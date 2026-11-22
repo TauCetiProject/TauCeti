@@ -105,12 +105,6 @@ a prescribed element inside.
 
 ## References
 
-This supplies a prerequisite for
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`,
-Layer 6 ("Elementary and hyperelementary subgroups"), which asks for exactly these two predicates
-"from these orientations, with their basic closure properties", as the indexing sets of Artin's and
-Brauer's induction theorems.
-
 * J.-P. Serre, *Linear Representations of Finite Groups*, Springer GTM 42 (1977), Part II, §10.
 -/
 
@@ -231,8 +225,8 @@ theorem exists_pow_mem_of_isComplement' {C P : Subgroup G} (hP : IsPGroup p P)
   obtain ⟨k, hk⟩ := hP b
   refine ⟨k, ?_⟩
   have hk' : (b : G) ^ p ^ k = 1 := by exact_mod_cast hk
-  rw [(hcomm a a.2 b b.2).mul_pow, hk', mul_one]
-  exact pow_mem a.2 _
+  rw [(hcomm a a.property b b.property).mul_pow, hk', mul_one]
+  exact pow_mem a.property _
 
 /-- A `p`-elementary group is `p`-hyperelementary: the cyclic factor is normal, and the quotient by
 it is the `p`-group factor. -/
@@ -333,11 +327,11 @@ private theorem exists_mem_comap_mul_mem_comap_eq {C P : Subgroup G}
   have hcop : Nat.Coprime n m := Nat.Coprime.pow_left _ hcop
   have hb : (b : G) ^ n = 1 := by exact_mod_cast hk
   have hyn : f (y ^ n) ∈ C := by
-    rw [map_pow, ← hab, (hcomm a a.2 b b.2).mul_pow, hb, mul_one]
-    exact pow_mem a.2 _
+    rw [map_pow, ← hab, (hcomm a a.property b b.property).mul_pow, hb, mul_one]
+    exact pow_mem a.property _
   have hym : f (y ^ m) ∈ P := by
-    rw [map_pow, ← hab, (hcomm a a.2 b b.2).mul_pow, ha, one_mul]
-    exact pow_mem b.2 _
+    rw [map_pow, ← hab, (hcomm a a.property b b.property).mul_pow, ha, one_mul]
+    exact pow_mem b.property _
   obtain ⟨i, j, hij⟩ := exists_zpow_mul_zpow_eq_of_coprime (G := H) hcop
   exact ⟨(y ^ n) ^ i, zpow_mem (mem_comap.mpr hyn) _,
     (y ^ m) ^ j, zpow_mem (mem_comap.mpr hym) _, hij y⟩
@@ -430,7 +424,7 @@ theorem IsPElementary.isNilpotent [Finite G] [Fact p.Prime] (h : IsPElementary p
   have hcenter : C ≤ Subgroup.center G := fun c hc => Subgroup.mem_center_iff.mpr fun g => by
     obtain ⟨⟨a, b⟩, rfl⟩ := hcompl.2 g
     have hca : Commute c a := congrArg Subtype.val (mul_comm (⟨c, hc⟩ : C) a)
-    exact (hca.mul_right (hcomm c hc b b.2)).eq.symm
+    exact (hca.mul_right (hcomm c hc b b.property)).eq.symm
   have : Group.IsNilpotent (G ⧸ C) :=
     IsPGroup.isNilpotent (isPGroup_quotient_of_forall_exists_pow_mem
       (exists_pow_mem_of_isComplement' hP hcomm hcompl))
@@ -488,7 +482,7 @@ theorem isPElementary_sup_of_commute {C Q : Subgroup G} (hC : IsCyclic C)
       intro z hz hz'
       rw [mem_subgroupOf] at hz hz'
       exact Subtype.ext (disjoint_def.1 hdisj hz hz')
-    · have hz : (z : G) ∈ (↑(C ⊔ Q) : Set G) := z.2
+    · have hz : (z : G) ∈ (↑(C ⊔ Q) : Set G) := z.property
       rw [coe_mul_of_left_le_normalizer_right C Q hnorm] at hz
       obtain ⟨c, hc, y, hy, hcy⟩ := hz
       exact ⟨⟨c, hCle hc⟩, mem_subgroupOf.2 hc, ⟨y, hQle hy⟩, mem_subgroupOf.2 hy,
@@ -630,9 +624,10 @@ factor `⟨s⟩`. It is the projection of the direct product `⟨s⟩ × P` onto
 along which class functions of `⟨s⟩` are pulled back to the `p`-elementary subgroup. -/
 noncomputable def pFreePartHom [Fact p.Prime] (hs : ¬ p ∣ orderOf s) :
     ↥(pElementaryOfSylow s P) →* ↥(zpowers s) where
-  toFun x := ⟨pFreePart p (x : G), pFreePart_mem_zpowers_of_mem_pElementaryOfSylow s P hs x.2⟩
+  toFun x := ⟨pFreePart p (x : G), pFreePart_mem_zpowers_of_mem_pElementaryOfSylow s P hs
+      x.property⟩
   map_one' := Subtype.ext (by simp [pFreePart_one])
-  map_mul' x y := Subtype.ext (pFreePart_mul_of_mem_pElementaryOfSylow s P hs x.2 y.2)
+  map_mul' x y := Subtype.ext (pFreePart_mul_of_mem_pElementaryOfSylow s P hs x.property y.property)
 
 @[simp]
 theorem coe_pFreePartHom_apply [Fact p.Prime] (hs : ¬ p ∣ orderOf s)
@@ -646,7 +641,7 @@ theorem pFreePartHom_inclusion_apply [Fact p.Prime] (hs : ¬ p ∣ orderOf s)
     pFreePartHom s P hs (Subgroup.inclusion (zpowers_le_pElementaryOfSylow s P) c) = c := by
   apply Subtype.ext
   exact (eq_pFreePart Fact.out (Commute.one_right (c : G)) (mul_one (c : G))
-    (fun h => hs (h.trans (orderOf_dvd_of_mem_zpowers c.2))) (k := 0) (by simp)).symm
+    (fun h => hs (h.trans (orderOf_dvd_of_mem_zpowers c.property))) (k := 0) (by simp)).symm
 
 /-- The `p`-free-part projection maps onto the cyclic factor. -/
 theorem pFreePartHom_surjective [Fact p.Prime] (hs : ¬ p ∣ orderOf s) :
@@ -673,23 +668,12 @@ works, with no `p`-elementary conclusion. -/
 theorem exists_mem_pElementaryOfSylow (x : G) :
     ∃ P : Sylow p (centralizer ({pFreePart p x} : Set G)),
       x ∈ pElementaryOfSylow (pFreePart p x) P := by
-  by_cases h : p.Prime ∧ orderOf x ≠ 0
-  swap
-  · have hfree : pFreePart p x = x := by
-      rcases not_and_or.1 h with hp | hx
-      · exact pFreePart_of_not_prime hp x
-      · exact pFreePart_of_orderOf_eq_zero p (not_not.1 hx)
-    obtain ⟨P⟩ := (inferInstance : Nonempty (Sylow p (centralizer ({pFreePart p x} : Set G))))
-    exact ⟨P, (congrArg (· ∈ pElementaryOfSylow (pFreePart p x) P) hfree).mp
-      (self_mem_pElementaryOfSylow (pFreePart p x) P)⟩
-  obtain ⟨hp, hx⟩ := h
-  have := Fact.mk hp
   have hu : pPart p x ∈ centralizer ({pFreePart p x} : Set G) :=
     mem_centralizer_singleton_iff.2 (commute_pFreePart_pPart p x).symm.eq
   have hQ : IsPGroup p (zpowers (⟨pPart p x, hu⟩ :
       centralizer ({pFreePart p x} : Set G))) := by
     refine IsPGroup.of_card_dvd_pow (n := (orderOf x).factorization p) ?_
-    rw [Nat.card_zpowers, orderOf_mk, orderOf_pPart Fact.out hx]
+    rw [Nat.card_zpowers, orderOf_mk, orderOf_pPart]
   obtain ⟨P, hP⟩ := hQ.exists_le_sylow
   refine ⟨P, ?_⟩
   have hmem : pFreePart p x * pPart p x ∈ pElementaryOfSylow (pFreePart p x) P :=

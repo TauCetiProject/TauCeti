@@ -68,11 +68,10 @@ characteristic of its homology remains a separate step.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.4, "Euler
-characteristic = Alexander polynomial, via the grid determinant formula", by supplying the Euler
-characteristic side of that equation; the grid determinant side is `Determinant.lean`. The
-conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.3 and
-Chapter 4.
+This is the Euler characteristic side of the identification of the graded Euler characteristic of
+grid homology with the Alexander polynomial via the grid determinant formula; the grid determinant
+side is `Determinant.lean`. The conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for
+Knots and Links*, Chapter 3.3 and Chapter 4.
 -/
 
 public section
@@ -87,13 +86,13 @@ variable {n : ℕ} (G : OddComponentGridDiagram n)
 
 private theorem maslovOℤ_mem_maslovSupport {a : ℤ} {x : GridState n}
     (hx : G.alexanderℤ x = a) :
-    G.1.maslovOℤ x ∈ G.maslovSupport a :=
+    G.val.maslovOℤ x ∈ G.maslovSupport a :=
   (G.mem_maslovSupport_iff a _).2 ⟨x, Prod.ext (G.bidegree_fst x) (hx ▸ G.bidegree_snd x)⟩
 
 private theorem filter_bidegree_eq (a m : ℤ) :
     (Finset.univ.filter fun x : GridState n => G.bidegree x = (m, a)) =
       (Finset.univ.filter fun x : GridState n => G.alexanderℤ x = a).filter
-        fun x => G.1.maslovOℤ x = m := by
+        fun x => G.val.maslovOℤ x = m := by
   rw [Finset.filter_filter]
   refine Finset.filter_congr fun x _ => ?_
   rw [Prod.ext_iff, G.bidegree_fst x, G.bidegree_snd x]
@@ -167,16 +166,16 @@ that degree, weighted by the parity of their `O`-Maslov grading. -/
 theorem alexanderEulerChar_eq_sum_states (R : Type*) [Ring R] [StrongRankCondition R] (a : ℤ) :
     G.alexanderEulerChar R a =
       ∑ x ∈ Finset.univ.filter fun x : GridState n => G.alexanderℤ x = a,
-        ((G.1.maslovOℤ x).negOnePow : ℤ) := by
+        ((G.val.maslovOℤ x).negOnePow : ℤ) := by
   rw [G.alexanderEulerChar_eq_sum_maslovSupport R a,
-    ← Finset.sum_fiberwise_of_maps_to (g := fun x : GridState n => G.1.maslovOℤ x)
+    ← Finset.sum_fiberwise_of_maps_to (g := fun x : GridState n => G.val.maslovOℤ x)
       (t := G.maslovSupport a)
       (fun x hx => G.maslovOℤ_mem_maslovSupport (Finset.mem_filter.1 hx).2)]
   refine Finset.sum_congr rfl fun m _ => ?_
   have hconst : ∑ x ∈ (Finset.univ.filter fun x : GridState n => G.alexanderℤ x = a).filter
-        (fun x => G.1.maslovOℤ x = m), ((G.1.maslovOℤ x).negOnePow : ℤ) =
+        (fun x => G.val.maslovOℤ x = m), ((G.val.maslovOℤ x).negOnePow : ℤ) =
       ∑ _x ∈ (Finset.univ.filter fun x : GridState n => G.alexanderℤ x = a).filter
-        (fun x => G.1.maslovOℤ x = m), (m.negOnePow : ℤ) :=
+        (fun x => G.val.maslovOℤ x = m), (m.negOnePow : ℤ) :=
     Finset.sum_congr rfl fun x hx => by rw [(Finset.mem_filter.1 hx).2]
   rw [hconst, G.filter_bidegree_eq a m, Finset.sum_const, nsmul_eq_mul, mul_comm]
 
@@ -198,7 +197,7 @@ theorem alexanderEulerChar_eq_zero_of_notMem (R : Type*) [Ring R] {a : ℤ}
   · refine finsum_eq_zero_of_forall_eq_zero fun m => ?_
     have hsub : Subsingleton (G.BigradedChainPiece R (m, a)) :=
       ⟨fun x y => DFinsupp.ext fun i => (ha ((G.mem_alexanderSupport_iff a).2
-        ⟨i.1, by rw [← G.bidegree_snd i.1, i.2]⟩)).elim⟩
+        ⟨i.val, by rw [← G.bidegree_snd i.val, i.property]⟩)).elim⟩
     have hzero : Module.finrank R (G.alexanderGradedObject R a m) = 0 := by
       rw [G.alexanderGradedObject_apply]
       exact Module.finrank_zero_of_subsingleton
@@ -256,7 +255,7 @@ noncomputable def gradedEulerChar (R : Type*) [Semiring R] : ℤ[T;T⁻¹] :=
 states of the diagram by their bidegree turns the rank-weighted sum over occupied degrees into the
 sum over states. -/
 theorem gradedEulerChar_eq_stateSum (R : Type*) [Semiring R] [StrongRankCondition R] :
-    G.gradedEulerChar R = G.1.stateSum := by
+    G.gradedEulerChar R = G.val.stateSum := by
   rw [gradedEulerChar, bigradedPoincareSeries, map_sum, map_sum]
   rw [GridDiagram.stateSum_def,
     ← Finset.sum_fiberwise_of_maps_to (g := fun x : GridState n => G.bidegree x)
@@ -266,14 +265,14 @@ theorem gradedEulerChar_eq_stateSum (R : Type*) [Semiring R] [StrongRankConditio
   rw [Bigraded.euler_single, map_mul, map_natCast, doubleExponents_single,
     G.finrank_bigradedChainPiece R]
   have hconst : ∑ x ∈ Finset.univ.filter (fun x : GridState n => G.bidegree x = (m, a)),
-        ((G.1.maslovOℤ x).negOnePow : ℤˣ) • (T (G.1.alexanderTwoℤ x) : ℤ[T;T⁻¹]) =
+        ((G.val.maslovOℤ x).negOnePow : ℤˣ) • (T (G.val.alexanderTwoℤ x) : ℤ[T;T⁻¹]) =
       ∑ _x ∈ Finset.univ.filter (fun x : GridState n => G.bidegree x = (m, a)),
         (m.negOnePow : ℤˣ) • (T (2 * a) : ℤ[T;T⁻¹]) :=
     Finset.sum_congr rfl fun x hx => by
       have hg := (Finset.mem_filter.1 hx).2
-      have hm : G.1.maslovOℤ x = m := by
+      have hm : G.val.maslovOℤ x = m := by
         rw [← G.bidegree_fst x, hg]
-      have ha : G.1.alexanderTwoℤ x = 2 * a := by
+      have ha : G.val.alexanderTwoℤ x = 2 * a := by
         rw [← G.two_mul_alexanderℤ x, ← G.bidegree_snd x, hg]
       rw [hm, ha]
   rw [hconst, Finset.sum_const, nsmul_eq_mul, Units.smul_def, zsmul_eq_mul,
@@ -290,9 +289,9 @@ determinant of the weight matrix of the diagram. -/
 theorem gradedEulerChar_eq_smul_T_mul_det_weightMatrix (R : Type*) [Semiring R]
     [StrongRankCondition R] :
     G.gradedEulerChar R =
-      (Equiv.Perm.sign G.1.O.toPerm * ((n : ℤ) + 1).negOnePow) •
-        (T G.1.alexanderTwoShift * G.1.weightMatrix.det) := by
-  rw [G.gradedEulerChar_eq_stateSum R, G.1.stateSum_eq_smul_T_mul_det_weightMatrix]
+      (Equiv.Perm.sign G.val.O.toPerm * ((n : ℤ) + 1).negOnePow) •
+        (T G.val.alexanderTwoShift * G.val.weightMatrix.det) := by
+  rw [G.gradedEulerChar_eq_stateSum R, G.val.stateSum_eq_smul_T_mul_det_weightMatrix]
 
 /-- The ungraded Euler characteristic of the grid chain module vanishes on every grid of size at
 least two: the Euler characteristics of the Alexander degrees cancel.
@@ -301,7 +300,7 @@ This is the graded Euler characteristic evaluated at `T = 1`, where the weight m
 determinant formula acquires two equal rows. -/
 theorem sum_alexanderEulerChar_eq_zero (R : Type*) [Ring R] [StrongRankCondition R] (hn : 2 ≤ n) :
     ∑ a ∈ G.alexanderSupport, G.alexanderEulerChar R a = 0 := by
-  rw [← G.1.sum_negOnePow_maslovOℤ_eq_zero hn,
+  rw [← G.val.sum_negOnePow_maslovOℤ_eq_zero hn,
     ← Finset.sum_fiberwise_of_maps_to (g := fun x : GridState n => G.alexanderℤ x)
       (t := G.alexanderSupport)
       (fun x _ => (G.mem_alexanderSupport_iff _).2 ⟨x, rfl⟩)]
@@ -372,8 +371,8 @@ weighted by the parity of their Maslov grading, is the coefficient of `T^{2a}` i
 theorem alexanderEulerChar_eq_coeff_smul_T_mul_det_weightMatrix (R : Type*) [Ring R]
     [StrongRankCondition R] (a : ℤ) :
     G.alexanderEulerChar R a =
-      ((Equiv.Perm.sign G.1.O.toPerm * ((n : ℤ) + 1).negOnePow) •
-        (T G.1.alexanderTwoShift * G.1.weightMatrix.det) : ℤ[T;T⁻¹]).coeff (2 * a) := by
+      ((Equiv.Perm.sign G.val.O.toPerm * ((n : ℤ) + 1).negOnePow) •
+        (T G.val.alexanderTwoShift * G.val.weightMatrix.det) : ℤ[T;T⁻¹]).coeff (2 * a) := by
   rw [← G.gradedEulerChar_eq_smul_T_mul_det_weightMatrix R, G.coeff_gradedEulerChar_two_mul R a]
 
 end OddComponentGridDiagram

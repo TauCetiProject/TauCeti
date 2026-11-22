@@ -110,9 +110,7 @@ is `Q` itself only by unfolding a semireducible definition; as in the neighbouri
 
 ## References
 
-This implements the reflection at a sink of the reflection functors of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. See
-Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and
+See Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and
 Derksen--Weyman, *An Introduction to Quiver Representations*, Ch. 2.
 -/
 
@@ -578,8 +576,8 @@ theorem reflectionFunctor_map_app_self_apply
           (reflectionFunctor_obj i hi M)).trans (reflectRep_obj_self M hi)).symm ≫
         ((reflectionFunctor i hi).map η).app i ≫
         eqToHom ((congrArg (fun R : QuiverRep k (Reflect Q i) ↦ R.obj i)
-          (reflectionFunctor_obj i hi N)).trans (reflectRep_obj_self N hi))) f).1 e
-      = η.app e.1 (f.1 e) := by
+          (reflectionFunctor_obj i hi N)).trans (reflectRep_obj_self N hi))) f).val e
+      = η.app e.1 (f.val e) := by
   have hM : (congrArg (fun R : QuiverRep k (Reflect Q i) ↦ R.obj i)
       (reflectionFunctor_obj i hi M)).trans (reflectRep_obj_self M hi)
       = reflectRep_obj_self M hi := Subsingleton.elim _ _
@@ -588,7 +586,7 @@ theorem reflectionFunctor_map_app_self_apply
       = reflectRep_obj_self N hi := Subsingleton.elim _ _
   rw [hM, hN]
   exact congrArg (fun g : ModuleCat.of k (LinearMap.ker (incomingSum M i)) ⟶
-      ModuleCat.of k (LinearMap.ker (incomingSum N i)) ↦ (g f).1 e)
+      ModuleCat.of k (LinearMap.ker (incomingSum N i)) ↦ (g f).val e)
     (reflectionFunctor_map_app_self η hi)
 
 /-- Away from the reflected vertex, reflection leaves the components of a morphism unchanged. The
@@ -755,18 +753,22 @@ theorem isZero_reflectRep {i : Q} (hi : IsSink i)
     ModuleCat.isZero_of_subsingleton _
 
 /-- **Reflection preserves finite-dimensionality.** The reflected space at the sink is a subspace
-of a finite product of vertex spaces of `M`, and away from the sink the vertex spaces are those of
-`M`. This is what carries the finite-dimensionality hypothesis of
-`TauCeti.dimVector_reflectRep` through a sequence of reflections. -/
+of the product of the vertex spaces of `M` at the sources of the arrows into the sink; none of
+these sources is the sink itself, because a sink carries no loop, so only vertex spaces away from
+the sink enter. The vertex space of `M` at the sink is merely the codomain of the map whose kernel
+is taken, so it need not be finite-dimensional. Away from the sink the vertex spaces are those of
+`M`. This is what carries the finite-dimensionality hypothesis of `TauCeti.dimVector_reflectRep`
+through a sequence of reflections. -/
 theorem finiteDimensional_reflectRep_obj {i : Q} (hi : IsSink i)
-    (h : ∀ a : Q, FiniteDimensional k (M.obj a)) (j : Q) :
+    (h : ∀ a : Q, a ≠ i → FiniteDimensional k (M.obj a)) (j : Q) :
     FiniteDimensional k ((reflectRep M hi).obj j) := by
   rcases eq_or_ne j i with rfl | hj
-  · have hpi : ∀ e : Σ b : Q, (b ⟶ j), FiniteDimensional k (M.obj e.1) := fun e ↦ h e.1
+  · have hpi : ∀ e : Σ b : Q, (b ⟶ j), FiniteDimensional k (M.obj e.1) :=
+      fun e ↦ h e.1 (hi.ne_of_hom e.2)
     rw [reflectRep_obj_self M hi]
     exact FiniteDimensional.finiteDimensional_submodule _
   · rw [reflectRep_obj_of_ne M hi hj]
-    exact h j
+    exact h j hj
 
 /-- If every source of an arrow into the sink vanishes, the reflected dimension at the sink is
 zero. -/

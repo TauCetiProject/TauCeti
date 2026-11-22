@@ -29,16 +29,49 @@ of that action are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`.
   `T = (T S) S⁻¹`.
 * `TauCeti.Matrix.SpecialLinearGroup.apply_smul_eq_of_S_smul_of_T_smul`: a function on an
   `SL₂(ℤ)`-set that is invariant under `S` and `T` is invariant under all of `SL₂(ℤ)`.
+* `TauCeti.Matrix.SpecialLinearGroup.eq_of_le_of_perm_S_T`: a subgroup `H ≤ K ≤ SL₂(ℤ)` equals `K`
+  when a family `R i` (with `R 0 = 1` and meeting `K` only at `0`) has its left cosets `R i · H`
+  permuted under left multiplication by `S` and `T`.
 
 * `TauCeti.Matrix.SpecialLinearGroup.vecMul_map_modularGroup_S`,
   `TauCeti.Matrix.SpecialLinearGroup.vecMul_map_modularGroup_T`: `r S = (r₂, -r₁)` and
   `r T = (r₁, r₁ + r₂)`.
+* `TauCeti.ModularGroup.mul_T_zpow_apply_apply_zero`,
+  `TauCeti.ModularGroup.mul_T_zpow_apply_apply_one`, `TauCeti.ModularGroup.mul_S_apply_apply_zero`,
+  `TauCeti.ModularGroup.mul_S_apply_apply_one`, `TauCeti.ModularGroup.neg_mul_S_apply_apply_zero`,
+  `TauCeti.ModularGroup.neg_mul_S_apply_apply_one`: the columns of `γ Tⁿ`, `γ S` and `-(γ S)` in
+  terms of those of `γ`.
+* `Matrix.SpecialLinearGroup.coe_mul_T_zpow`, `Matrix.SpecialLinearGroup.coe_mul_S`: explicit
+  `2 × 2` matrices of `γ * T ^ n` and `γ * S` for `γ ∈ SL₂(ℤ)`.
 -/
 
 public section
 
 open Matrix
 open scoped MatrixGroups
+
+namespace Matrix.SpecialLinearGroup
+
+/-- Multiplying `γ ∈ SL₂(ℤ)` on the right by `Tⁿ` adds `n` times the first column to the second. -/
+theorem coe_mul_T_zpow (γ : SL(2, ℤ)) (n : ℤ) :
+    (↑(γ * ModularGroup.T ^ n) : Matrix (Fin 2) (Fin 2) ℤ) =
+      !![γ 0 0, γ 0 0 * n + γ 0 1; γ 1 0, γ 1 0 * n + γ 1 1] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [Matrix.SpecialLinearGroup.coe_mul, ModularGroup.coe_T_zpow, Matrix.mul_apply,
+      Fin.sum_univ_two]
+
+/-- Multiplying `γ ∈ SL₂(ℤ)` on the right by `S` swaps the columns and negates the new second
+column. -/
+theorem coe_mul_S (γ : SL(2, ℤ)) :
+    (↑(γ * ModularGroup.S) : Matrix (Fin 2) (Fin 2) ℤ) =
+      !![γ 0 1, -γ 0 0; γ 1 1, -γ 1 0] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [Matrix.SpecialLinearGroup.coe_mul, ModularGroup.coe_S, Matrix.mul_apply,
+      Fin.sum_univ_two]
+
+end Matrix.SpecialLinearGroup
 
 namespace TauCeti.Matrix.SpecialLinearGroup
 
@@ -91,6 +124,30 @@ theorem apply_smul_eq_of_S_smul_of_T_smul {X α : Type*} [MulAction SL(2, ℤ) X
   | mul g h _ _ hg hh => rw [mul_smul, hg, hh]
   | inv g _ hg => rw [← hg, smul_inv_smul]
 
+open ModularGroup in
+/-- If `H ≤ K ≤ SL(2, ℤ)` and `R : Fin n → SL(2, ℤ)` with `R 0 = 1` meets `K` only at `0` while
+left multiplication by `S` and `T` permutes the left cosets `R i · H`, then `H = K`. -/
+theorem eq_of_le_of_perm_S_T {n : ℕ} [NeZero n] {H K : Subgroup SL(2, ℤ)} (hle : H ≤ K)
+    (R : Fin n → SL(2, ℤ)) (hR0 : R 0 = 1) (hRK : ∀ i, R i ∈ K → i = 0)
+    (hS : ∃ σ : Equiv.Perm (Fin n), ∀ i, (R (σ i))⁻¹ * S * R i ∈ H)
+    (hT : ∃ σ : Equiv.Perm (Fin n), ∀ i, (R (σ i))⁻¹ * T * R i ∈ H) :
+    H = K := by
+  let M : Subgroup SL(2, ℤ) :=
+    { carrier := {g | ∃ σ : Equiv.Perm (Fin n), ∀ i, (R (σ i))⁻¹ * g * R i ∈ H}
+      one_mem' := ⟨1, fun i ↦ by simp [one_mem]⟩
+      mul_mem' := fun ⟨σ₁, h₁⟩ ⟨σ₂, h₂⟩ ↦
+        ⟨σ₁ * σ₂, fun i ↦ by simpa [mul_assoc] using mul_mem (h₁ (σ₂ i)) (h₂ i)⟩
+      inv_mem' := fun ⟨σ, h⟩ ↦
+        ⟨σ⁻¹, fun i ↦ by simpa [mul_assoc] using inv_mem (h (σ⁻¹ i))⟩ }
+  have hMtop : M = ⊤ := by
+    rw [eq_top_iff, ← SpecialLinearGroup.SL2Z_generators, Subgroup.closure_le]
+    exact Set.pair_subset hS hT
+  refine le_antisymm hle fun k hk ↦ ?_
+  obtain ⟨σ, hσ⟩ : k ∈ M := hMtop.symm ▸ Subgroup.mem_top k
+  have hi : (R (σ 0))⁻¹ * k ∈ H := by simpa [hR0] using hσ 0
+  have hRσ : R (σ 0) ∈ K := by simpa using inv_mem (mul_mem (hle hi) (inv_mem hk))
+  simpa [hRK (σ 0) hRσ, hR0] using hi
+
 /-- The row vector `r` multiplied on the right by `S = [[0, -1], [1, 0]]` is `(r₂, -r₁)`. -/
 theorem vecMul_map_modularGroup_S {R : Type u} [Ring R] (r : Fin 2 → R) :
     r ᵥ* (ModularGroup.S : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom R) = ![r 1, -r 0] := by
@@ -105,3 +162,46 @@ theorem vecMul_map_modularGroup_T {R : Type u} [Ring R] (r : Fin 2 → R) :
   fin_cases i <;> simp [ModularGroup.coe_T, vecMul, dotProduct, Fin.sum_univ_two]
 
 end TauCeti.Matrix.SpecialLinearGroup
+
+namespace TauCeti.ModularGroup
+
+open _root_.ModularGroup
+
+/-- `S² = -I` in the integral modular group. -/
+@[simp]
+theorem S_sq : S ^ 2 = (-1 : SL(2, ℤ)) :=
+  by rw [pow_two, S_mul_S_eq]
+
+/-- `S⁴ = I` in the integral modular group. -/
+theorem S_pow_four : S ^ 4 = (1 : SL(2, ℤ)) := by
+  calc
+    S ^ 4 = (S ^ 2) ^ 2 := pow_mul S 2 2
+    _ = 1 := by rw [S_sq]; decide
+
+/-- The first column of `γ Tⁿ` is that of `γ`. -/
+theorem mul_T_zpow_apply_apply_zero (γ : SL(2, ℤ)) (n : ℤ) (i : Fin 2) :
+    (γ * T ^ n) i 0 = γ i 0 := by
+  simp [Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The second column of `γ Tⁿ` is `n` times the first column of `γ` plus its second column. -/
+theorem mul_T_zpow_apply_apply_one (γ : SL(2, ℤ)) (n : ℤ) (i : Fin 2) :
+    (γ * T ^ n) i 1 = γ i 0 * n + γ i 1 := by
+  simp [Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The first column of `γ S` is the second column of `γ`. -/
+theorem mul_S_apply_apply_zero (γ : SL(2, ℤ)) (i : Fin 2) : (γ * S) i 0 = γ i 1 := by
+  simp [Matrix.SpecialLinearGroup.coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The second column of `γ S` is minus the first column of `γ`. -/
+theorem mul_S_apply_apply_one (γ : SL(2, ℤ)) (i : Fin 2) : (γ * S) i 1 = -γ i 0 := by
+  simp [Matrix.SpecialLinearGroup.coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The first column of `-(γ S)` is minus the second column of `γ`. -/
+theorem neg_mul_S_apply_apply_zero (γ : SL(2, ℤ)) (i : Fin 2) : (-(γ * S)) i 0 = -γ i 1 := by
+  rw [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, mul_S_apply_apply_zero]
+
+/-- The second column of `-(γ S)` is the first column of `γ`. -/
+theorem neg_mul_S_apply_apply_one (γ : SL(2, ℤ)) (i : Fin 2) : (-(γ * S)) i 1 = γ i 0 := by
+  rw [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, mul_S_apply_apply_one, neg_neg]
+
+end TauCeti.ModularGroup

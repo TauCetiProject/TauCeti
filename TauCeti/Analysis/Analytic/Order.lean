@@ -19,7 +19,11 @@ monotone under domination (`=O`), hence invariant under equivalence up to consta
 and characterized by comparison with the powers `(z - z₀) ^ n`, and at a zero the divided
 difference `dslope f a` has order one less than `f`. The order is finite at a point with a
 punctured neighbourhood free of zeros, in particular wherever the zeros nearby are confined to a
-finite set. The finiteness of the zero set itself on a compact is
+finite set, and, over a connected, locally connected field, at every point of an open set on
+which the function is analytic with compact zero set. The exponent `m` of a local factorization
+`(w - z) ^ m v w`, with `v` continuous and nonzero at `z`, is unique, and multiplying an analytic
+function by a factor continuous and nonzero at `z` keeps its order as that exponent. The
+finiteness of the zero set itself on a compact is
 `AnalyticOnNhd.finite_setOf_mem_and_eq_zero_of_isCompact`, provided by
 `TauCeti.Analysis.Analytic.IsolatedZeros`, which mentions no order.
 
@@ -39,10 +43,15 @@ finite set. The finiteness of the zero set itself on a compact is
 * `AnalyticAt.analyticOrderAt_le_of_isBigO` and `AnalyticAt.analyticOrderAt_eq_of_isTheta`: an
   analytic function dominated by `f` vanishes to at least the order of `f`, so analytic functions
   equivalent up to constant factors have the same order.
-* `AnalyticAt.analyticOrderAt_eq_natCast_iff_isTheta` and
-  `AnalyticAt.analyticOrderAt_eq_top_iff_forall_isBigO`: an analytic function has order `n`
-  exactly when it is comparable to `(z - z₀) ^ n`, and infinite order exactly when it is
-  `O((z - z₀) ^ n)` for every `n`.
+* `AnalyticAt.natCast_le_analyticOrderAt_of_eventually_eq_pow_smul`: a factorization
+  `(z - z₀) ^ n • u z` with `u` continuous at `z₀` forces order at least `n`.
+* `AnalyticAt.natCast_le_analyticOrderAt_iff_isBigO`,
+  `AnalyticAt.analyticOrderAt_eq_natCast_iff_isTheta`, and
+  `AnalyticAt.analyticOrderAt_eq_top_iff_forall_isBigO`: an analytic function has order at least `n`
+  exactly when it is `O((z - z₀) ^ n)`, order `n` exactly when it is comparable to `(z - z₀) ^ n`,
+  and infinite order exactly when it is `O((z - z₀) ^ n)` for every `n`.
+* `TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt`: a function of analytic order at least
+  `T ≥ 1` at `z₀` satisfies `g w - g z₀ = o(‖w - z₀‖ ^ (T - 1))`.
 * `TauCeti.isTheta_pow_sub_pow_sub_iff`: powers of `z - z₀` of different exponents are not
   comparable near `z₀`.
 * `AnalyticAt.analyticOrderAt_dslope_add_one`: at a zero `a` of `f`, the divided difference
@@ -51,6 +60,15 @@ finite set. The finiteness of the zero set itself on a compact is
   ball has finite order at its centre.
 * `TauCeti.analyticOrderAt_ne_top_of_zeros_subset`: if the zeros in an open set `U` lie in a
   finite set, the order is finite at every point of `U`.
+* `AnalyticOnNhd.analyticOrderAt_ne_top_of_isCompact`,
+  `AnalyticOnNhd.one_le_analyticOrderNatAt_of_isCompact`: over a connected, locally connected
+  field, an analytic function on an open set with compact zero set has finite order at every
+  point, and positive finite order at each of its zeros.
+* `TauCeti.eq_of_eventually_sub_pow_mul_eq`: the exponent of a local factorization
+  `(w - z) ^ m v w`, with `v` continuous and nonzero at `z`, is unique.
+* `TauCeti.exists_eventually_mul_eq_sub_pow_mul`, `TauCeti.eq_of_eventually_mul_eq_sub_pow_mul`:
+  for `Φ` continuous and nonzero at `z` and `σ` analytic of order `n` at `z`, `Φ σ` factors with
+  exponent `n`, and every such factorization has exponent `n`.
 
 ## References
 
@@ -156,6 +174,22 @@ theorem _root_.AnalyticAt.analyticOrderAt_le_of_isBigO {E F : Type*} [NormedAddC
     norm_ne_zero_iff.2 (pow_ne_zero _ (sub_ne_zero.2 hz))).frequently).filter_mono
       nhdsWithin_le_nhds
 
+/-- A function analytic at `z₀` that factors near `z₀` as `(z - z₀) ^ n • u z`, with `u` only
+continuous at `z₀`, vanishes to order at least `n` there. Mathlib's `natCast_le_analyticOrderAt`
+characterizes the order by such factorizations with an analytic factor `u`. -/
+theorem _root_.AnalyticAt.natCast_le_analyticOrderAt_of_eventually_eq_pow_smul {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {g u : 𝕜 → E} {n : ℕ} (hg : AnalyticAt 𝕜 g z₀)
+    (hu : ContinuousAt u z₀) (h : ∀ᶠ z in 𝓝 z₀, g z = (z - z₀) ^ n • u z) :
+    (n : ℕ∞) ≤ analyticOrderAt g z₀ := by
+  have hO : g =O[𝓝 z₀] fun z ↦ (z - z₀) ^ n :=
+    Asymptotics.IsBigO.congr' (by
+      simpa only [smul_eq_mul, mul_one] using
+        (Asymptotics.isBigO_refl (fun z ↦ (z - z₀) ^ n) (𝓝 z₀)).smul
+          (hu.norm.isBoundedUnder_le.isBigO_one 𝕜 (f := u)))
+      (h.mono fun z hz ↦ hz.symm) EventuallyEq.rfl
+  have hle := hg.analyticOrderAt_le_of_isBigO hO
+  rwa [← Pi.pow_def, analyticOrderAt_centeredMonomial] at hle
+
 /-- Two functions analytic at `z₀` that are equivalent up to constant factors near `z₀` vanish to
 the same order there. -/
 theorem _root_.AnalyticAt.analyticOrderAt_eq_of_isTheta {E F : Type*} [NormedAddCommGroup E]
@@ -163,6 +197,20 @@ theorem _root_.AnalyticAt.analyticOrderAt_eq_of_isTheta {E F : Type*} [NormedAdd
     (hf : AnalyticAt 𝕜 f z₀) (hg : AnalyticAt 𝕜 g z₀) (hfg : f =Θ[𝓝 z₀] g) :
     analyticOrderAt f z₀ = analyticOrderAt g z₀ :=
   le_antisymm (hg.analyticOrderAt_le_of_isBigO hfg.2) (hf.analyticOrderAt_le_of_isBigO hfg.isBigO)
+
+/-- A function analytic at `z₀` vanishes to order at least `n` there exactly when it is
+`O(‖z - z₀‖ⁿ)` near `z₀`. -/
+theorem _root_.AnalyticAt.natCast_le_analyticOrderAt_iff_isBigO {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} (hf : AnalyticAt 𝕜 f z₀) {n : ℕ} :
+    (n : ℕ∞) ≤ analyticOrderAt f z₀ ↔ f =O[𝓝 z₀] fun z ↦ (z - z₀) ^ n := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨g, hg, hfg⟩ := (natCast_le_analyticOrderAt hf).1 h
+    refine Asymptotics.IsBigO.congr' ?_ (hfg.mono fun _ hz ↦ hz.symm) EventuallyEq.rfl
+    simpa only [smul_eq_mul, mul_one] using
+      (Asymptotics.isBigO_refl (fun z ↦ (z - z₀) ^ n) (𝓝 z₀)).smul
+        (hg.continuousAt.norm.isBoundedUnder_le.isBigO_one 𝕜)
+  · have hn : analyticOrderAt (fun z ↦ (z - z₀) ^ n) z₀ = n := analyticOrderAt_centeredMonomial
+    exact hn ▸ hf.analyticOrderAt_le_of_isBigO h
 
 /-- A function analytic at `z₀` has order `n` there exactly when its size is comparable to
 `‖z - z₀‖ ^ n` near `z₀`. -/
@@ -237,7 +285,108 @@ theorem analyticOrderAt_ne_top_of_zeros_subset {E : Type*} [NormedAddCommGroup E
   exact analyticOrderAt_ne_top_of_forall_ne_zero hρ fun w hw hwz hw0 ↦
     (hball hw).2 ⟨hzeros w (hball hw).1 hw0, hwz⟩
 
+/-- **A function with a compact zero set has finite order.** If `f` is analytic on an open set
+`U` of a connected, locally connected field and its zero set `{z ∈ U | f z = 0}` is compact, then
+`f` has finite order at every point of `U`: otherwise `f` would vanish on the component of `U`
+through that point, which would then be a compact open subset of the field. -/
+theorem _root_.AnalyticOnNhd.analyticOrderAt_ne_top_of_isCompact [PreconnectedSpace 𝕜]
+    [LocallyConnectedSpace 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜}
+    (hf : AnalyticOnNhd 𝕜 f U) (hU : IsOpen U) (hz₀ : z₀ ∈ U)
+    (hK : IsCompact {z ∈ U | f z = 0}) : analyticOrderAt f z₀ ≠ ⊤ := by
+  intro htop
+  set C := connectedComponentIn U z₀
+  have hCU : C ⊆ U := connectedComponentIn_subset U z₀
+  have hCK : C ⊆ {z ∈ U | f z = 0} := fun z hz ↦ by
+    have : analyticOrderAt f z = ⊤ := by
+      by_contra h
+      exact (hf.mono hCU).analyticOrderAt_ne_top_of_isPreconnected
+        isPreconnected_connectedComponentIn hz (mem_connectedComponentIn hz₀) h htop
+    exact ⟨hCU hz, (analyticOrderAt_eq_top.1 this).self_of_nhds⟩
+  have hclosed : IsClosed C := by
+    refine closure_subset_iff_isClosed.1 ?_
+    refine isPreconnected_connectedComponentIn.closure.subset_connectedComponentIn
+      (subset_closure (mem_connectedComponentIn hz₀)) ?_
+    exact (closure_minimal hCK hK.isClosed).trans fun z hz ↦ hz.1
+  have hCuniv : C = Set.univ :=
+    IsClopen.eq_univ ⟨hclosed, hU.connectedComponentIn⟩ ⟨z₀, mem_connectedComponentIn hz₀⟩
+  exact noncompact_univ 𝕜 (hK.of_isClosed_subset isClosed_univ (hCuniv ▸ hCK))
+
+/-- **A zero with a compact zero set has positive finite order.** If `f` is analytic on an open
+set `U` of a connected, locally connected field, vanishes at `z₀ ∈ U`, and its zero set
+`{z ∈ U | f z = 0}` is compact, then `f` vanishes to a positive natural order at `z₀`. -/
+theorem _root_.AnalyticOnNhd.one_le_analyticOrderNatAt_of_isCompact [PreconnectedSpace 𝕜]
+    [LocallyConnectedSpace 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜}
+    (hf : AnalyticOnNhd 𝕜 f U) (hU : IsOpen U) (hz₀ : z₀ ∈ U) (hf₀ : f z₀ = 0)
+    (hK : IsCompact {z ∈ U | f z = 0}) : 1 ≤ analyticOrderNatAt f z₀ := by
+  have hnetop := hf.analyticOrderAt_ne_top_of_isCompact hU hz₀ hK
+  have : (analyticOrderNatAt f z₀ : ℕ∞) ≠ 0 := by
+    rw [Nat.cast_analyticOrderNatAt hnetop]
+    exact analyticOrderAt_ne_zero.2 ⟨hf z₀ hz₀, hf₀⟩
+  exact Nat.one_le_iff_ne_zero.2 (by exact_mod_cast this)
+
+/-- The exponent of a local factorization `(w - z) ^ m * v w`, with `v` continuous and nonzero at
+`z`, is unique. -/
+theorem eq_of_eventually_sub_pow_mul_eq {z : 𝕜} {m n : ℕ} {u v : 𝕜 → 𝕜}
+    (hu : ContinuousAt u z) (hu₀ : u z ≠ 0) (hv : ContinuousAt v z) (hv₀ : v z ≠ 0)
+    (h : ∀ᶠ w in 𝓝 z, (w - z) ^ m * u w = (w - z) ^ n * v w) : m = n := by
+  wlog hmn : m < n generalizing m n u v
+  · rcases (not_lt.mp hmn).eq_or_lt with h' | h'
+    · exact h'.symm
+    · exact (this hv hv₀ hu hu₀ (h.mono fun w hw ↦ hw.symm) h').symm
+  exfalso
+  -- Off `z`, cancelling `(w - z) ^ m` gives `u w = (w - z) ^ (n - m) * v w`, which tends to `0`.
+  have hlim : Tendsto (fun w ↦ (w - z) ^ (n - m) * v w) (𝓝[≠] z) (𝓝 (u z)) := by
+    refine (hu.tendsto.mono_left nhdsWithin_le_nhds).congr' ?_
+    filter_upwards [nhdsWithin_le_nhds h, self_mem_nhdsWithin] with w hw hwz
+    apply mul_left_cancel₀ (pow_ne_zero m (sub_ne_zero.mpr hwz))
+    rw [hw, ← mul_assoc, ← pow_add, Nat.add_sub_cancel' hmn.le]
+  have h0 : Tendsto (fun w ↦ (w - z) ^ (n - m) * v w) (𝓝[≠] z) (𝓝 0) := by
+    have hc : ContinuousAt (fun w ↦ (w - z) ^ (n - m) * v w) z :=
+      ((continuousAt_id.sub continuousAt_const).pow _).mul hv
+    simpa [zero_pow (Nat.sub_ne_zero_of_lt hmn)] using hc.tendsto.mono_left nhdsWithin_le_nhds
+  exact hu₀ (tendsto_nhds_unique hlim h0)
+
+/-- If `Φ` is continuous and nonzero at `z` and `σ` is analytic with a zero of order `n` at `z`,
+then `Φ σ` factors near `z` as `(w - z) ^ n` times a function continuous and nonzero at `z`. -/
+theorem exists_eventually_mul_eq_sub_pow_mul {Φ σ : 𝕜 → 𝕜} {z : 𝕜} {n : ℕ}
+    (hΦ : ContinuousAt Φ z) (hΦ₀ : Φ z ≠ 0) (hσ : AnalyticAt 𝕜 σ z)
+    (hn : analyticOrderAt σ z = n) :
+    ∃ v : 𝕜 → 𝕜, ContinuousAt v z ∧ v z ≠ 0 ∧ ∀ᶠ w in 𝓝 z, Φ w * σ w = (w - z) ^ n * v w := by
+  obtain ⟨g, hg, hg₀, hgσ⟩ := hσ.analyticOrderAt_eq_natCast.mp hn
+  refine ⟨fun w ↦ Φ w * g w, hΦ.mul hg.continuousAt, mul_ne_zero hΦ₀ hg₀, ?_⟩
+  filter_upwards [hgσ] with w hw
+  rw [hw, smul_eq_mul]
+  ring
+
+/-- The zero orders of `Φ σ` are those of `σ`: for `Φ` continuous and nonzero at `z` and `σ`
+analytic with a zero of order `n` at `z`, every local factorization `Φ σ = (w - z) ^ m v`, with `v`
+continuous and nonzero at `z`, has `m = n`. -/
+theorem eq_of_eventually_mul_eq_sub_pow_mul {Φ σ v : 𝕜 → 𝕜} {z : 𝕜} {m n : ℕ}
+    (hΦ : ContinuousAt Φ z) (hΦ₀ : Φ z ≠ 0) (hσ : AnalyticAt 𝕜 σ z)
+    (hn : analyticOrderAt σ z = n) (hv : ContinuousAt v z) (hv₀ : v z ≠ 0)
+    (h : ∀ᶠ w in 𝓝 z, Φ w * σ w = (w - z) ^ m * v w) : m = n := by
+  obtain ⟨u, hu, hu₀, hσu⟩ := exists_eventually_mul_eq_sub_pow_mul hΦ hΦ₀ hσ hn
+  exact eq_of_eventually_sub_pow_mul_eq hv hv₀ hu hu₀ <| by
+    filter_upwards [h, hσu] with w hw hw'
+    rw [← hw, hw']
+
 end TauCeti
+
+/-- A function with analytic order at least `T ≥ 1` at `z₀` satisfies
+`g w - g z₀ = o(‖w - z₀‖ ^ (T - 1))` near `z₀`. No analyticity assumption is needed because a
+positive `analyticOrderAt` already forces `g` to be analytic and vanish at `z₀`. -/
+theorem TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt {𝕜 : Type*}
+    [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {g : 𝕜 → E}
+    {z₀ : 𝕜} {T : ℕ} (hT : 1 ≤ T) (h : (T : ℕ∞) ≤ analyticOrderAt g z₀) :
+    Asymptotics.IsLittleO (𝓝 z₀) (fun w ↦ g w - g z₀) (fun w ↦ ‖w - z₀‖ ^ (T - 1)) := by
+  have hne : analyticOrderAt g z₀ ≠ 0 := ((Nat.cast_pos.2 hT).trans_le h).ne'
+  obtain ⟨hg, hg₀⟩ := analyticOrderAt_ne_zero.1 hne
+  have hO : (fun w ↦ g w - g z₀) =O[𝓝 z₀] fun w ↦ ‖w - z₀‖ ^ T := by
+    simpa only [hg₀, sub_zero, norm_pow] using
+      (hg.natCast_le_analyticOrderAt_iff_isBigO.1 h).norm_right
+  exact hO.trans_isLittleO (Asymptotics.isLittleO_pow_sub_pow_sub z₀ (Nat.sub_lt hT zero_lt_one))
 
 /-- Outside zero and at most one additional scalar, subtracting a function from
 a scalar multiple of a monomial has order equal to the minimum of their orders. The

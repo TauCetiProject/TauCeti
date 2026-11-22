@@ -98,7 +98,7 @@ theorem integral_eq_analyticRemainder_add_sum (decomp : PolarPartDecomposition f
       + 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber s C * residue f s := by
   classical
   -- The single-curve splitting, applied to each generator in the canonical support.
-  have hgen : ∀ γ ∈ FreeAbelianGroup.support C,
+  have hgen : ∀ γ ∈ FreeAddCommGroup.support C,
       (∫ t in γ.a..γ.b, deriv (⇑γ) t • f (γ t))
         = (∫ t in γ.a..γ.b, deriv (⇑γ) t • decomp.analyticRemainder (γ t))
           + 2 * (Real.pi : ℂ) * Complex.I *
@@ -108,7 +108,7 @@ theorem integral_eq_analyticRemainder_add_sum (decomp : PolarPartDecomposition f
       (fun t ht hmem ↦ hoff _ (Finset.mem_coe.mp hmem) (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩))
   calc
     integral f C
-        = ∑ γ ∈ FreeAbelianGroup.support C, FreeAbelianGroup.coeff γ C •
+        = ∑ γ ∈ FreeAddCommGroup.support C, FreeAddCommGroup.coeff γ C •
             ((∫ t in γ.a..γ.b, deriv (⇑γ) t • decomp.analyticRemainder (γ t))
               + 2 * (Real.pi : ℂ) * Complex.I *
                   ∑ s ∈ S, TauCeti.Contour.windingNumber (⇑γ) γ.a γ.b s * residue f s) := by
@@ -153,7 +153,7 @@ theorem classicalResidueTheorem_nullHomologous (hU : IsOpen U)
       (Finset.sum_filter_of_ne fun s _ hs ↦ not_not.mp fun hsU ↦
         hs (by rw [isNullHomologous_iff.mp hnull s hsU, zero_mul])).symm⟩
   rw [hsum]
-  have decomp : PolarPartDecomposition f T U := .ofMeromorphic hU hfT hmeroT
+  have decomp : PolarPartDecomposition f T U := .ofMeromorphic hfT hmeroT
   rw [integral_eq_analyticRemainder_add_sum decomp hCU fun s hs ↦ hoff s (hTS s hs),
     homologyCauchyTheorem hU hCU decomp.analyticRemainder_differentiableOn hnull, zero_add]
 
@@ -190,8 +190,8 @@ theorem cauchyIntegralFormula_iteratedDeriv_nullHomologous {z : ℂ} (hU : IsOpe
     exact (hf.analyticOnNhd hU s hsU).meromorphicAt.div (by fun_prop)
   · exact fun s hs ↦ (Finset.mem_singleton.mp hs) ▸ hoff
 
-/-- **Cauchy's integral formula for a cycle** (roadmap Layer 3). For `f` holomorphic on an open `U`,
-`C` a contour cycle in `U` that is null-homologous there, and `z` off the trace of `C`,
+/-- **Cauchy's integral formula for a cycle.** For `f` holomorphic on an open `U`, `C` a contour
+cycle in `U` that is null-homologous there, and `z` off the trace of `C`,
 
 `Cycle.integral (fun w ↦ f w / (w − z)) C = 2πi · n_z(C) · f z`,
 

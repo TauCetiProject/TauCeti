@@ -142,7 +142,7 @@ private theorem affineHom_naturality {U V : X.AffineZariskiSite} (i : V ⟶ U)
   refine ((A.relativeProjTwistingSheafGlueData n).transition_app_apply i _ _).trans ?_
   refine (congrArg _ (Proj.twistingSheafMap_app_toTwistingSheaf
     (A.restrictGradedSectionsGradedHom ((toOpensFunctor X).map i))
-    (A.irrelevant_le_map_restrictGradedSectionsGradedHom_toOpensFunctor i) _ h _)).trans ?_
+    (A.irrelevant_le_map_restrictGradedSections_toOpensFunctor i) _ h _)).trans ?_
   exact (Proj.res_toTwistingSheaf h _ _).trans (congrArg _ (Subtype.ext
     ((A.restrictGradedSectionsGradedHom_apply _ _).trans
       (A.restrictGradedSections_of ((toOpensFunctor X).map i) j a))))
@@ -159,10 +159,11 @@ private theorem affineHom_smul (U : X.AffineZariskiSite) (r : Γ(X, U.toOpens))
   refine Eq.trans ?_ (congrArg _ (π_app_affineHom A h U a)).symm
   have hv (x : chartPreimage A U) :
       (((colimit.ι A.relativeProjGluingData.functor U ≫ A.relativeProjToBase).app U.toOpens
-        r).1 x).val =
+        r).val x).val =
         Localization.mk (algebraMap Γ(X, U.toOpens) (⨁ n, Γ(A.X n, U.toOpens)) r) 1 := by
     rw [Scheme.Hom.app_eq_appLE]
-    exact Proj.val_appLE_apply U.2 _ _ (A.relativeProjCover_f_relativeProjToBase U) le_rfl r x
+    exact Proj.val_appLE_apply U.property _ _ (A.relativeProjCover_f_relativeProjToBase U) le_rfl r
+        x
   refine Proj.twistingSheaf.ext fun x ↦ (Proj.toTwistingSheaf_apply_apply ..).trans
     (Eq.trans ?_ (Proj.twistingSheaf.smul_apply
       ((colimit.ι A.relativeProjGluingData.functor U ≫ A.relativeProjToBase).app U.toOpens r) _

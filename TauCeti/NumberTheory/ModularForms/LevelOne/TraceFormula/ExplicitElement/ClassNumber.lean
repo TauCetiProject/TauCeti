@@ -142,24 +142,24 @@ private theorem finsum_eq_sum_divisorsAntidiagonal (g : Matrix (Fin 2) (Fin 2) �
     (hinj : Set.InjOn φ n.toNat.divisorsAntidiagonal)
     (hsupp : ∀ M ∈ traceDetFiber (Fin 2) t n, g M ≠ 0 →
       ∃ p ∈ n.toNat.divisorsAntidiagonal, φ p = M) :
-    (Function.support fun M : traceDetFiber (Fin 2) t n ↦ g M.1).Finite ∧
-      ∑ᶠ M : traceDetFiber (Fin 2) t n, g M.1 = ∑ p ∈ n.toNat.divisorsAntidiagonal, g (φ p) := by
+    (Function.support fun M : traceDetFiber (Fin 2) t n ↦ g M.val).Finite ∧
+      ∑ᶠ M : traceDetFiber (Fin 2) t n, g M.val = ∑ p ∈ n.toNat.divisorsAntidiagonal, g (φ p) := by
   classical
   set s : Finset (traceDetFiber (Fin 2) t n) :=
-    n.toNat.divisorsAntidiagonal.attach.image fun p ↦ ⟨φ p.1, hφ p.1 p.2⟩ with hs
-  have hsub : (Function.support fun M : traceDetFiber (Fin 2) t n ↦ g M.1) ⊆ s := by
+    n.toNat.divisorsAntidiagonal.attach.image fun p ↦ ⟨φ p.val, hφ p.val p.property⟩ with hs
+  have hsub : (Function.support fun M : traceDetFiber (Fin 2) t n ↦ g M.val) ⊆ s := by
     intro M hM
-    obtain ⟨p, hp, hpM⟩ := hsupp M.1 M.2 hM
+    obtain ⟨p, hp, hpM⟩ := hsupp M.val M.property hM
     exact Finset.mem_image.mpr ⟨⟨p, hp⟩, Finset.mem_attach _ _, Subtype.ext hpM⟩
   refine ⟨s.finite_toSet.subset hsub, ?_⟩
   rw [finsum_eq_sum_of_support_subset _ hsub, hs, Finset.sum_image fun p _ q _ h ↦
-    Subtype.ext (hinj p.2 q.2 (congrArg Subtype.val h))]
+    Subtype.ext (hinj p.property q.property (congrArg Subtype.val h))]
   exact Finset.sum_attach _ fun p ↦ g (φ p)
 
 /-- The matrices with `a = c` are `(u, t - u - v; u, t - u)` for `n = u v`. -/
 private theorem finsum_corr₁ (hn : 0 < n) :
-    (Function.support fun M : traceDetFiber (Fin 2) t n ↦ corr₁ M.1).Finite ∧
-      ∑ᶠ M : traceDetFiber (Fin 2) t n, corr₁ M.1 = ∑ p ∈ n.toNat.divisorsAntidiagonal,
+    (Function.support fun M : traceDetFiber (Fin 2) t n ↦ corr₁ M.val).Finite ∧
+      ∑ᶠ M : traceDetFiber (Fin 2) t n, corr₁ M.val = ∑ p ∈ n.toNat.divisorsAntidiagonal,
         chainWeight₃ (2 * p.1 - t) (p.1 + p.2 - t) p.1 := by
   obtain ⟨hfin, hsum⟩ := finsum_eq_sum_divisorsAntidiagonal (t := t) (n := n) corr₁
     (fun p ↦ !![(p.1 : ℤ), t - p.1 - p.2; p.1, t - p.1])
@@ -193,8 +193,8 @@ private theorem finsum_corr₁ (hn : 0 < n) :
 
 /-- The matrices with `b = d < 0` are `(t + u, -u; t + u + v, -u)` for `n = u v`. -/
 private theorem finsum_corr₂ (hn : 0 < n) :
-    (Function.support fun M : traceDetFiber (Fin 2) t n ↦ corr₂ M.1).Finite ∧
-      ∑ᶠ M : traceDetFiber (Fin 2) t n, corr₂ M.1 = ∑ p ∈ n.toNat.divisorsAntidiagonal,
+    (Function.support fun M : traceDetFiber (Fin 2) t n ↦ corr₂ M.val).Finite ∧
+      ∑ᶠ M : traceDetFiber (Fin 2) t n, corr₂ M.val = ∑ p ∈ n.toNat.divisorsAntidiagonal,
         chainWeight₃ p.1 (t + 2 * p.1) (t + p.1 + p.2) := by
   obtain ⟨hfin, hsum⟩ := finsum_eq_sum_divisorsAntidiagonal (t := t) (n := n) corr₂
     (fun p ↦ !![t + p.1, -(p.1 : ℤ); t + p.1 + p.2, -(p.1 : ℤ)])
@@ -227,8 +227,8 @@ private theorem finsum_corr₂ (hn : 0 < n) :
 
 /-- The matrices with `d = 0` are `(t, -v; u, 0)` for `n = u v`. -/
 private theorem finsum_corr₃ (hn : 0 < n) :
-    (Function.support fun M : traceDetFiber (Fin 2) t n ↦ corr₃ M.1).Finite ∧
-      ∑ᶠ M : traceDetFiber (Fin 2) t n, corr₃ M.1 = ∑ p ∈ n.toNat.divisorsAntidiagonal,
+    (Function.support fun M : traceDetFiber (Fin 2) t n ↦ corr₃ M.val).Finite ∧
+      ∑ᶠ M : traceDetFiber (Fin 2) t n, corr₃ M.val = ∑ p ∈ n.toNat.divisorsAntidiagonal,
         (chainWeight₃ p.2 t p.1 + chainWeight₄ 0 t p.2 p.1) := by
   obtain ⟨hfin, hsum⟩ := finsum_eq_sum_divisorsAntidiagonal (t := t) (n := n) corr₃
     (fun p ↦ !![t, -(p.2 : ℤ); p.1, 0])
@@ -259,8 +259,8 @@ private theorem finsum_corr₃ (hn : 0 < n) :
 
 /-- The matrices with `a = 0` are `(0, -v; u, t)` for `n = u v`. -/
 private theorem finsum_corr₄ (hn : 0 < n) :
-    (Function.support fun M : traceDetFiber (Fin 2) t n ↦ corr₄ M.1).Finite ∧
-      ∑ᶠ M : traceDetFiber (Fin 2) t n, corr₄ M.1 = ∑ p ∈ n.toNat.divisorsAntidiagonal,
+    (Function.support fun M : traceDetFiber (Fin 2) t n ↦ corr₄ M.val).Finite ∧
+      ∑ᶠ M : traceDetFiber (Fin 2) t n, corr₄ M.val = ∑ p ∈ n.toNat.divisorsAntidiagonal,
         chainWeight₄ 0 (-t) p.1 p.2 := by
   obtain ⟨hfin, hsum⟩ := finsum_eq_sum_divisorsAntidiagonal (t := t) (n := n) corr₄
     (fun p ↦ !![0, -(p.2 : ℤ); p.1, t])
@@ -326,8 +326,8 @@ and determinant `n + t + 1` have the same sum as those of trace `t` and determin
 The translation `M ↦ M + 1` is a bijection between these matrices, it fixes the discriminant
 `t² - 4 n`, and its effect on the weights cancels in total. -/
 theorem finsum_weight_traceDetFiber_add_two (hn : 0 < n) :
-    ∑ᶠ M : traceDetFiber (Fin 2) (t + 2) (n + t + 1), weight M.1 =
-      ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.1 := by
+    ∑ᶠ M : traceDetFiber (Fin 2) (t + 2) (n + t + 1), weight M.val =
+      ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val := by
   obtain ⟨h₁, e₁⟩ := finsum_corr₁ (t := t) hn
   obtain ⟨h₂, e₂⟩ := finsum_corr₂ (t := t) hn
   obtain ⟨h₃, e₃⟩ := finsum_corr₃ (t := t) hn
@@ -466,7 +466,7 @@ private theorem sum_reducedForms_chainWeight₄ (D : ℕ) [NeZero D] :
     ∑ f ∈ reducedForms D, chainWeight₄ 0 f.b f.a f.c = ∑ f ∈ reducedForms D, sixWeight f := by
   rw [← sub_eq_zero, ← Finset.sum_sub_distrib]
   refine Finset.sum_involution (fun f _ ↦ negMiddle f) (fun f hf ↦ ?_) (fun f hf hne ↦ ?_)
-    (fun f hf ↦ ?_) (fun f hf ↦ ?_)
+    (fun f hf ↦ ?_) (fun f _ ↦ ?_)
   · unfold negMiddle
     split_ifs with hs
     · rw [chainWeight₄_sub_sixWeight hf,
@@ -501,17 +501,18 @@ private theorem sum_reducedForms_chainWeight₄ (D : ℕ) [NeZero D] :
 /-- The weighted count `sum_reducedForms_chainWeight₄` over all forms of discriminant `-D`. -/
 private theorem finsum_chainWeight₄_forms (D : ℕ) [NeZero D] :
     (Function.support fun f : {f : BinaryQuadraticForm ℤ // f.discrim = -(D : ℤ)} ↦
-      chainWeight₄ 0 f.1.b f.1.a f.1.c).Finite ∧
-    ∑ᶠ f : {f : BinaryQuadraticForm ℤ // f.discrim = -(D : ℤ)}, chainWeight₄ 0 f.1.b f.1.a f.1.c =
+      chainWeight₄ 0 f.val.b f.val.a f.val.c).Finite ∧
+    ∑ᶠ f : {f : BinaryQuadraticForm ℤ // f.discrim = -(D : ℤ)}, chainWeight₄ 0 f.val.b f.val.a
+        f.val.c =
       ∑ f ∈ reducedForms D, sixWeight f := by
   classical
   have hsub : (Function.support fun f : {f : BinaryQuadraticForm ℤ // f.discrim = -(D : ℤ)} ↦
-      chainWeight₄ 0 f.1.b f.1.a f.1.c) ⊆
+      chainWeight₄ 0 f.val.b f.val.a f.val.c) ⊆
       ((reducedForms D).subtype fun f ↦ f.discrim = -(D : ℤ) : Set _) := by
     intro f hf
     obtain ⟨h0, h1, h2⟩ := le_of_chainWeight₄_ne_zero hf
     rw [Finset.mem_coe, Finset.mem_subtype]
-    refine (mem_reducedForms (NeZero.ne D)).mpr ⟨f.2, ?_⟩
+    refine (mem_reducedForms (NeZero.ne D)).mpr ⟨f.property, ?_⟩
     rw [isReducedForm_iff, abs_of_nonneg h0]
     exact ⟨h1, h2, fun _ ↦ h0⟩
   refine ⟨Finset.finite_toSet _ |>.subset hsub, ?_⟩
@@ -527,7 +528,7 @@ private def formEquiv {D : ℕ} (h : t ^ 2 - 4 * n = -D) :
 
 /-- `formEquiv h` sends a matrix `M` to its form `Q_M`. -/
 private theorem coe_formEquiv {D : ℕ} (h : t ^ 2 - 4 * n = -D) (M : traceDetFiber (Fin 2) t n) :
-    (formEquiv h M : BinaryQuadraticForm ℤ) = BinaryQuadraticForm.ofMatrix M.1 := by
+    (formEquiv h M : BinaryQuadraticForm ℤ) = BinaryQuadraticForm.ofMatrix M.val := by
   simp [formEquiv]
 
 open BinaryQuadraticForm in
@@ -535,19 +536,19 @@ open BinaryQuadraticForm in
 in the form `-2 ∑ sixWeight`. -/
 private theorem finsum_weight_of_le {D : ℕ} [NeZero D] (h : t ^ 2 - 4 * n = -D)
     (ht : t ≤ -D) :
-    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.1 =
+    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val =
       -(2 * ∑ f ∈ reducedForms D, sixWeight f) := by
   obtain ⟨hfin, hsum⟩ := finsum_chainWeight₄_forms D
   set g : {f : BinaryQuadraticForm ℤ // f.discrim = -(D : ℤ)} → ℤ :=
-    fun f ↦ chainWeight₄ 0 f.1.b f.1.a f.1.c
+    fun f ↦ chainWeight₄ 0 f.val.b f.val.a f.val.c
   -- `⟨a, b, c⟩ ↦ ⟨a, -b, c⟩` and `⟨a, b, c⟩ ↦ S • ⟨a, b, c⟩ = ⟨c, -b, a⟩` on the forms of
   -- discriminant `-D`
   let e₁ : {f : BinaryQuadraticForm ℤ // f.discrim = -(D : ℤ)} ≃
       {f : BinaryQuadraticForm ℤ // f.discrim = -(D : ℤ)} :=
-    { toFun f := ⟨f.1.reflected, by rw [discrim_reflected, f.2]⟩
-      invFun f := ⟨f.1.reflected, by rw [discrim_reflected, f.2]⟩
-      left_inv f := Subtype.ext f.1.reflected_reflected
-      right_inv f := Subtype.ext f.1.reflected_reflected }
+    { toFun f := ⟨f.val.reflected, by rw [discrim_reflected, f.property]⟩
+      invFun f := ⟨f.val.reflected, by rw [discrim_reflected, f.property]⟩
+      left_inv f := Subtype.ext f.val.reflected_reflected
+      right_inv f := Subtype.ext f.val.reflected_reflected }
   let e₂ : {f : BinaryQuadraticForm ℤ // f.discrim = -(D : ℤ)} ≃
       {f : BinaryQuadraticForm ℤ // f.discrim = -(D : ℤ)} :=
     (MulAction.toPerm (α := SpecialLinearGroup (Fin 2) ℤ) ModularGroup.S).subtypeEquiv
@@ -555,11 +556,11 @@ private theorem finsum_weight_of_le {D : ℕ} [NeZero D] (h : t ^ 2 - 4 * n = -D
   have hfin₁ : (Function.support (g ∘ e₁)).Finite := hfin.preimage e₁.injective.injOn
   have hfin₂ : (Function.support (g ∘ e₂)).Finite := hfin.preimage e₂.injective.injOn
   have hD : (0 : ℤ) < D := by exact_mod_cast NeZero.pos D
-  calc ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.1
+  calc ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val
       = ∑ᶠ M : traceDetFiber (Fin 2) t n,
           -((g ∘ e₁) (formEquiv h M) + (g ∘ e₂) (formEquiv h M)) :=
         finsum_congr fun M ↦ by
-          rw [weight_eq_of_le hD M.2 h ht]
+          rw [weight_eq_of_le hD M.property h ht]
           simp only [Function.comp_apply, g, e₁, e₂, Equiv.coe_fn_mk, Equiv.subtypeEquiv_apply,
             MulAction.toPerm_apply, coe_formEquiv, reflected_a, reflected_b, reflected_c, S_smul]
     _ = ∑ᶠ f, -((g ∘ e₁) f + (g ∘ e₂) f) :=
@@ -582,10 +583,10 @@ The hypothesis `D ≠ 0` is needed: for `t = 2 a` and `n = a²` with `a > 0` the
 `2`, the weight of the scalar matrix `a • 1`, while `-12 H(0) = 1`. -/
 theorem finsum_weight_traceDetFiber_eq_neg_twelve_mul_hurwitzClassNumber {D : ℕ} [NeZero D]
     (h : t ^ 2 - 4 * n = -D) :
-    ∑ᶠ M : traceDetFiber (Fin 2) t n, (weight M.1 : ℚ) = -12 * hurwitzClassNumber D := by
+    ∑ᶠ M : traceDetFiber (Fin 2) t n, (weight M.val : ℚ) = -12 * hurwitzClassNumber D := by
   -- descend from `t` to a trace `≤ -D` in steps of `2`, keeping `t² - 4 n = -D`
   have key (k : ℕ) : ∀ t n : ℤ, t ^ 2 - 4 * n = -D → t ≤ 2 * k - D →
-      ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.1 =
+      ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val =
         -(2 * ∑ f ∈ reducedForms D, sixWeight f) := by
     induction k with
     | zero => exact fun t n h ht ↦ finsum_weight_of_le h (by simpa using ht)

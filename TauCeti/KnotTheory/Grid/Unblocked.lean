@@ -13,6 +13,7 @@ public import TauCeti.KnotTheory.Grid.Grading.MarkingCount
 public import TauCeti.RingTheory.MvPolynomial.ConstantCoeffReduction
 import TauCeti.KnotTheory.Grid.Rectangle.Count
 import TauCeti.KnotTheory.Grid.Rectangle.Swap
+import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 
 /-!
 # The unblocked grid complex `GC⁻`
@@ -65,8 +66,6 @@ assignment, which `SignAssignment/Differential.lean` does.
   relabels columns and renames the coefficient variables.
 * `TauCeti.GridChain.renameMatrixMap`: the semilinear map on `GC⁻` over a renaming of the
   variables with prescribed matrix coefficients.
-* `TauCeti.GridChain.gaugeEquiv`: the diagonal automorphism `x ↦ f(x) x` of `GC⁻` for a sign
-  `f(x) ∈ ℤˣ` on each grid state.
 * `TauCeti.GridDiagram.unblockedDifferential`: the unblocked differential, as a linear map over
   the polynomial ring.
 
@@ -117,11 +116,8 @@ assignment, which `SignAssignment/Differential.lean` does.
 
 ## References
 
-This supplies `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3, "The complexes and
-`∂² = 0`", specifically its "Then unblocked `GC⁻` over `𝔽₂[V₁,…,Vₙ]`" clause, together with the
-roadmap convention "Fix once whether differentials drop Maslov by 1 and preserve Alexander
-(unblocked)". The definitions and the bidegree computation follow Ozsváth--Stipsicz--Szabó, *Grid
-Homology for Knots and Links*, Chapter 4.6.
+The definitions and the bidegree computation follow Ozsváth--Stipsicz--Szabó, *Grid Homology for
+Knots and Links*, Chapter 4.6.
 -/
 
 public section
@@ -227,17 +223,15 @@ noncomputable def matrixMap (M : GridState n → GridState n → MvPolynomial (F
 /-- The matrix coefficients of the map with matrix coefficients `M`. -/
 theorem matrixMap_single_apply (M : GridState n → GridState n → MvPolynomial (Fin n) R)
     (x y : GridState n) (p : MvPolynomial (Fin n) R) :
-    matrixMap R M (Finsupp.single x p) y = p * M x y := by
-  rw [matrixMap, Finsupp.linearCombination_single, Finsupp.smul_apply, smul_eq_mul,
-    Finsupp.equivFunOnFinite_symm_apply_apply]
+    matrixMap R M (Finsupp.single x p) y = p * M x y :=
+  Finsupp.linearCombination_equivFunOnFinite_symm_single_apply M x y p
 
 /-- The coefficient formula for the map with matrix coefficients `M` on an arbitrary chain. -/
 @[simp]
 theorem matrixMap_apply_apply (M : GridState n → GridState n → MvPolynomial (Fin n) R)
     (c : GridChainMinus R n) (y : GridState n) :
-    matrixMap R M c y = c.sum fun x p => p * M x y := by
-  rw [matrixMap, Finsupp.linearCombination_apply]
-  simp [Finsupp.sum_apply]
+    matrixMap R M c y = c.sum fun x p => p * M x y :=
+  Finsupp.linearCombination_equivFunOnFinite_symm_apply M c y
 
 /-- The map on `GC⁻` with matrix coefficients `M`, semilinear over the renaming of the variables
 by `σ`: it sends the generator `x` with coefficient `p` to `∑ y, rename σ p * M x y • y`. -/
@@ -294,67 +288,6 @@ theorem exists_eq_mapDomain_add_of_mem_support_sum_rename_mul (c : GridChainMinu
   rw [support_rename_of_injective σ.injective, Finset.mem_image] at hd'
   obtain ⟨d, hd, rfl⟩ := hd'
   exact ⟨x, d, hd, w, hw, rfl⟩
-
-end GridChain
-
-/-! ### The diagonal gauge automorphism -/
-
-namespace GridChain
-
-variable {n : ℕ} (R : Type*) [CommRing R]
-
-/-- The linear map underlying `gaugeEquiv`. -/
-private noncomputable def gaugeMap (f : GridState n → ℤˣ) :
-    GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x =>
-    Finsupp.single x ((f x : ℤ) • (1 : MvPolynomial (Fin n) R))
-
-private theorem gaugeMap_single (f : GridState n → ℤˣ) (x : GridState n)
-    (a : MvPolynomial (Fin n) R) :
-    gaugeMap R f (Finsupp.single x a) = Finsupp.single x ((f x : ℤ) • a) := by
-  rw [gaugeMap, Finsupp.linearCombination_single, Finsupp.smul_single, smul_eq_mul,
-    mul_smul_comm, mul_one]
-
-private theorem gaugeMap_involutive (f : GridState n → ℤˣ) :
-    Function.Involutive (gaugeMap R f) := fun c => by
-  induction c using Finsupp.induction_linear with
-  | zero => rw [map_zero, map_zero]
-  | add c d hc hd => rw [map_add, map_add, hc, hd]
-  | single x a =>
-      rw [gaugeMap_single, gaugeMap_single, smul_smul, ← Units.val_mul, Int.units_mul_self,
-        Units.val_one, one_smul]
-
-/-- The diagonal automorphism of `GC⁻` multiplying the generator of each grid state `x` by the
-sign `f x`. It is its own inverse. -/
-noncomputable def gaugeEquiv (f : GridState n → ℤˣ) :
-    GridChainMinus R n ≃ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  LinearEquiv.ofInvolutive (gaugeMap R f) (gaugeMap_involutive R f)
-
-/-- The gauge automorphism multiplies the generator of a grid state by its sign. -/
-@[simp]
-theorem gaugeEquiv_single (f : GridState n → ℤˣ) (x : GridState n)
-    (a : MvPolynomial (Fin n) R) :
-    gaugeEquiv R f (Finsupp.single x a) = Finsupp.single x ((f x : ℤ) • a) :=
-  gaugeMap_single R f x a
-
-/-- The gauge automorphism multiplies the coefficient of each grid state `y` by its sign. -/
-@[simp]
-theorem gaugeEquiv_apply_apply (f : GridState n → ℤˣ) (c : GridChainMinus R n) (y : GridState n) :
-    gaugeEquiv R f c y = (f y : ℤ) • c y := by
-  induction c using Finsupp.induction_linear with
-  | zero => simp
-  | add c d hc hd => rw [map_add, Finsupp.add_apply, Finsupp.add_apply, hc, hd, smul_add]
-  | single x a =>
-      rw [gaugeEquiv_single]
-      rcases eq_or_ne x y with rfl | hxy
-      · simp
-      · rw [Finsupp.single_eq_of_ne hxy.symm, Finsupp.single_eq_of_ne hxy.symm, smul_zero]
-
-/-- The gauge automorphism is its own inverse. -/
-@[simp]
-theorem gaugeEquiv_symm (f : GridState n → ℤˣ) : (gaugeEquiv R f).symm = gaugeEquiv R f :=
-  LinearEquiv.ext fun c => (gaugeEquiv R f).symm_apply_eq.mpr <| by
-    rw [gaugeEquiv, LinearEquiv.coe_ofInvolutive, gaugeMap_involutive R f c]
 
 end GridChain
 
@@ -840,7 +773,7 @@ theorem constantCoeff_sum_OMonomial {x y : GridState n} (s : Finset (GridRectang
     simp
   have h₂ : ∀ r ∈ s.filter fun r => ¬G.OColumns r.toGridRectangle = ∅,
       constantCoeff (G.OMonomial R r.toGridRectangle) = 0 := fun r hr => by
-    obtain ⟨c, hc⟩ := Finset.nonempty_iff_ne_empty.mpr (Finset.mem_filter.mp hr).2
+    obtain ⟨c, hc⟩ := Finset.ne_empty_iff_nonempty.1 (Finset.mem_filter.mp hr).2
     rw [G.OMonomial_eq_monomial R, MvPolynomial.constantCoeff_monomial]
     have hsum : (∑ c ∈ G.OColumns r.toGridRectangle, Finsupp.single c 1) ≠
         (0 : Fin n →₀ ℕ) := by
@@ -929,7 +862,7 @@ theorem unblockedDifferentialOnGenerator_support_subset (x : GridState n) :
   intro y hy
   rw [Finsupp.mem_support_iff, unblockedDifferentialOnGenerator_apply] at hy
   have hne : (G.unblockedRectangles x y).Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty]
+    rw [← Finset.ne_empty_iff_nonempty]
     intro he
     rw [unblockedCoefficient, he, Finset.sum_empty] at hy
     exact hy rfl

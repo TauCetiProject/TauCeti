@@ -142,7 +142,7 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk (σ : G) :
 theorem doubleCosetQuotientEquivPrimesOverOfIsInvariant_symm_apply_eq_mk_iff
     (q : p.primesOver C) (σ : G) :
     (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C).symm q = DoubleCoset.mk H _ σ ↔
-      q.1 = (σ • Q).under C := by
+      q.val = (σ • Q).under C := by
   rw [Equiv.symm_apply_eq, Subtype.ext_iff, doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk]
 
 /-- **The double-coset law is compatible with the action of `G`.** Indexing the primes of `C`
@@ -162,8 +162,8 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsInvariant_natural {H' : Subgroup G
     [FaithfulSMul C' B] [Algebra.IsInvariant C' B H'] [SMulCommClass H' C' B]
     (q : DoubleCoset.Quotient (H : Set G) (stabilizer G Q : Set G)) :
     (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H' C'
-        (DoubleCoset.quotientMapOfLELeft h (stabilizer G Q) q)).1 =
-      (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C q).1.under C' := by
+        (DoubleCoset.quotientMapOfLELeft h (stabilizer G Q) q)).val =
+      (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C q).val.under C' := by
   induction q using Quotient.inductionOn' with
   | h σ =>
     simp only [DoubleCoset.quotientMapOfLELeft_apply_mk,
@@ -249,7 +249,6 @@ double coset. -/
 theorem ramificationIdx_mul_inertiaDeg_under_smul_mul_card (sigma : G) :
     ((sigma • Q).under C).ramificationIdx A * ((sigma • Q).under C).inertiaDeg A * Nat.card H =
       Nat.card (DoubleCoset.doubleCoset sigma (H : Set G) (stabilizer G Q : Set G)) := by
-  have := IsGaloisGroup.finite G A B
   rw [Q.ramificationIdx_mul_inertiaDeg_under_smul_eq_relIndex H C,
     TauCeti.card_doubleCoset_eq_card_mul_relIndex, mul_comm]
 
@@ -327,7 +326,7 @@ theorem sum_ramificationIdx_mul_inertiaDeg_doubleCosetOfIsInvariant_eq_finrank :
   let _ : Fintype (p.primesOver C) := Fintype.ofEquiv _ e
   rw [finsum_eq_sum_of_fintype]
   rw [e.sum_comp fun q : p.primesOver C =>
-    q.1.ramificationIdx A * q.1.inertiaDeg A]
+    q.val.ramificationIdx A * q.val.inertiaDeg A]
   exact Ideal.sum_ramification_inertia_eq_finrank p C
 
 end RankIdentity

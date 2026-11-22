@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Bilinear
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 
 /-!
 # Cyclic finite quadratic modules
@@ -53,8 +53,6 @@ The rank-two analogue, presenting a form on the Klein four-group by its three no
   discriminant forms and §1.8 for the cyclic forms written `q_θ^{(p)}` in the full-norm
   convention.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-
-This is part of Layer 3 of `TauCetiRoadmap/IntegralLattices/README.md`.
 -/
 
 public section

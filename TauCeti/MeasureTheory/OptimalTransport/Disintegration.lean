@@ -47,8 +47,7 @@ uniqueness of optimal plans.
 * the corresponding declarations in `TauCeti.Coupling` specialize these results to the bundled
   probability-coupling type.
 
-This is Layer 0, item 3 of the optimal-transport roadmap. The construction and uniqueness theorem
-consume Mathlib's `MeasureTheory.Measure.disintegrate` and
+The construction and uniqueness theorem consume Mathlib's `MeasureTheory.Measure.disintegrate` and
 `ProbabilityTheory.eq_condKernel_of_measure_eq_compProd`; no disintegration is rebuilt here.
 
 ## References
@@ -174,6 +173,7 @@ theorem ae_exists_condKernel_eq_dirac (hπ : IsCoupling π μ ν) {s : Set (X ×
     simpa using (congrArg (fun m : Measure Y ↦ m Set.univ) hae).symm
   rw [hae, hy1, one_smul]
 
+omit [Nonempty Y] in
 /-- Two finite couplings with the same source marginal, concentrated on a common set whose
 sections are `μ`-almost all subsingletons, are equal. In particular their target marginals
 agree. -/
@@ -181,6 +181,9 @@ theorem eq_of_ae_mem_of_subsingleton {π' : Measure (X × Y)} {ν' : Measure Y}
     (hπ : IsCoupling π μ ν) (hπ' : IsCoupling π' μ ν') {s : Set (X × Y)}
     (hs : ∀ᵐ z ∂π, z ∈ s) (hs' : ∀ᵐ z ∂π', z ∈ s)
     (hsub : ∀ᵐ x ∂μ, {y | (x, y) ∈ s}.Subsingleton) : π = π' := by
+  rcases isEmpty_or_nonempty Y with hY | _
+  · have : IsEmpty (X × Y) := ⟨fun z ↦ hY.false z.2⟩
+    exact Subsingleton.elim _ _
   let _ : IsFiniteMeasure μ := by
     rw [← hπ.fst_eq]
     infer_instance
@@ -202,62 +205,63 @@ variable {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
 law and regular conditional kernel. -/
 @[simp]
 theorem compProd_condKernel (π : Coupling μ ν) :
-    μ.toMeasure ⊗ₘ π.1.toMeasure.condKernel = π.1.toMeasure :=
-  π.2.compProd_condKernel
+    μ.toMeasure ⊗ₘ π.val.toMeasure.condKernel = π.val.toMeasure :=
+  π.property.compProd_condKernel
 
 /-- The regular conditional kernel of a bundled probability coupling averages to its prescribed
 target law. -/
 @[simp]
 theorem condKernel_comp (π : Coupling μ ν) :
-    π.1.toMeasure.condKernel ∘ₘ μ.toMeasure = ν.toMeasure :=
-  π.2.condKernel_comp
+    π.val.toMeasure.condKernel ∘ₘ μ.toMeasure = ν.toMeasure :=
+  π.property.condKernel_comp
 
 /-- A finite kernel is a version of the regular conditional kernel of a bundled probability
 coupling exactly when it reconstructs the coupling from its source law. -/
 theorem ae_eq_condKernel_iff_compProd_eq (π : Coupling μ ν) (κ : Kernel X Y)
     [IsFiniteKernel κ] :
-    κ =ᵐ[μ.toMeasure] π.1.toMeasure.condKernel ↔ μ.toMeasure ⊗ₘ κ = π.1.toMeasure :=
-  π.2.ae_eq_condKernel_iff_compProd_eq κ
+    κ =ᵐ[μ.toMeasure] π.val.toMeasure.condKernel ↔ μ.toMeasure ⊗ₘ κ = π.val.toMeasure :=
+  π.property.ae_eq_condKernel_iff_compProd_eq κ
 
 /-- The coordinate conditional distribution of a bundled probability coupling reconstructs its
 underlying joint law. -/
 @[simp]
 theorem compProd_condDistrib (π : Coupling μ ν) :
-    μ.toMeasure ⊗ₘ condDistrib Prod.snd Prod.fst π.1.toMeasure = π.1.toMeasure :=
-  π.2.compProd_condDistrib
+    μ.toMeasure ⊗ₘ condDistrib Prod.snd Prod.fst π.val.toMeasure = π.val.toMeasure :=
+  π.property.compProd_condDistrib
 
 /-- The coordinate conditional distribution of a bundled probability coupling averages to its
 target law. -/
 @[simp]
 theorem condDistrib_comp (π : Coupling μ ν) :
-    condDistrib Prod.snd Prod.fst π.1.toMeasure ∘ₘ μ.toMeasure = ν.toMeasure :=
-  π.2.condDistrib_comp
+    condDistrib Prod.snd Prod.fst π.val.toMeasure ∘ₘ μ.toMeasure = ν.toMeasure :=
+  π.property.condDistrib_comp
 
 /-- The coordinate conditional distribution and regular conditional kernel of a bundled
 probability coupling agree almost everywhere under its source law. -/
 theorem condDistrib_ae_eq_condKernel (π : Coupling μ ν) :
-    condDistrib Prod.snd Prod.fst π.1.toMeasure =ᵐ[μ.toMeasure]
-      π.1.toMeasure.condKernel :=
-  π.2.condDistrib_ae_eq_condKernel
+    condDistrib Prod.snd Prod.fst π.val.toMeasure =ᵐ[μ.toMeasure]
+      π.val.toMeasure.condKernel :=
+  π.property.condDistrib_ae_eq_condKernel
 
 /-- A bundled coupling concentrated on a set with almost everywhere subsingleton sections has
 Dirac conditional laws at points of those sections. -/
 theorem ae_exists_condKernel_eq_dirac (π : Coupling μ ν) {s : Set (X × Y)}
-    (hs : ∀ᵐ z ∂π.1.toMeasure, z ∈ s)
+    (hs : ∀ᵐ z ∂π.val.toMeasure, z ∈ s)
     (hsub : ∀ᵐ x ∂μ.toMeasure, {y | (x, y) ∈ s}.Subsingleton) :
     ∀ᵐ x ∂μ.toMeasure, ∃ y, (x, y) ∈ s ∧
-      π.1.toMeasure.condKernel x = Measure.dirac y :=
-  π.2.ae_exists_condKernel_eq_dirac hs hsub
+      π.val.toMeasure.condKernel x = Measure.dirac y :=
+  π.property.ae_exists_condKernel_eq_dirac hs hsub
 
+omit [Nonempty Y] in
 /-- Bundled couplings with the same source and almost everywhere the same uniquely determined
 partner in a set have equal underlying plan measures. -/
 theorem eq_of_ae_mem_of_subsingleton {ν' : ProbabilityMeasure Y}
     (π : Coupling μ ν) (π' : Coupling μ ν') {s : Set (X × Y)}
-    (hs : ∀ᵐ z ∂π.1.toMeasure, z ∈ s)
-    (hs' : ∀ᵐ z ∂π'.1.toMeasure, z ∈ s)
+    (hs : ∀ᵐ z ∂π.val.toMeasure, z ∈ s)
+    (hs' : ∀ᵐ z ∂π'.val.toMeasure, z ∈ s)
     (hsub : ∀ᵐ x ∂μ.toMeasure, {y | (x, y) ∈ s}.Subsingleton) :
-    π.1.toMeasure = π'.1.toMeasure :=
-  π.2.eq_of_ae_mem_of_subsingleton π'.2 hs hs' hsub
+    π.val.toMeasure = π'.val.toMeasure :=
+  π.property.eq_of_ae_mem_of_subsingleton π'.property hs hs' hsub
 
 end Coupling
 

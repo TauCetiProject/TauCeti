@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Jet
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.AlongCurve
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Smoothness
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Hom
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 
 /-!
 # Fourth covariant derivatives at a zero of a Jacobi field
@@ -130,8 +130,8 @@ private theorem IsGeodesicCurveOn.mdifferentiableWithinAt_derivJacobiOperator
           (leviCivitaConnection I M) (γ r)) (curveVelocityWithin I γ s r)).flip
           (curveVelocityWithin I γ s r)).flip (curveVelocityWithin I γ s r))) s a := by
   intro normEnd spaceEnd normTwo spaceTwo normThree spaceThree
-    normFiberEnd spaceFiberEnd normFiberTwo spaceFiberTwo normFiberThree spaceFiberThree
-    monoidEnd monoidTwo monoidThree
+    normFiberEnd spaceFiberEnd normFiberTwo spaceFiberTwo normFiberThree _
+    monoidEnd monoidTwo _
   have hvel : ContMDiffWithinAt 𝓘(ℝ, ℝ) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r) (curveVelocityWithin I γ s r)) s a := by
     simpa only [funext (curveVelocityLiftWithin_apply (I := I) γ s)] using

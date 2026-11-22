@@ -63,6 +63,8 @@ directions before taking products.
 * `TauCeti.Grid.cIoo_finRotate_eq_empty`, `TauCeti.Grid.cIco_eq_singleton_iff`: the arcs from a
   point to its cyclic successor are empty and a single point, and these are the only one-point
   half-open arcs; `TauCeti.Grid.cIoo_castSucc_succ` is the case of `r.castSucc` and `r.succ`.
+* `TauCeti.Grid.ne_finRotate_of_mem_cIoo`: an open arc containing a point does not end at the
+  cyclic successor of its initial endpoint.
 * `TauCeti.Grid.mem_cIco`: membership in the clockwise half-open arc.
 * `TauCeti.Grid.card_cIco`: the length of a half-open arc in standard representatives.
 * `TauCeti.Grid.cIco_union_swap`: opposite nondegenerate half-open arcs partition the grid.
@@ -75,7 +77,8 @@ directions before taking products.
   into two open arcs and the cutting point itself.
 * `TauCeti.Grid.cIoo_subset_cIoo_right_of_mem_cIoo`,
   `TauCeti.Grid.cIoo_subset_cIoo_left_of_mem_cIoo`: the two pieces of that cut are contained in
-  the arc they cut.
+  the arc they cut; `TauCeti.Grid.cIoo_subset_cIoo_left_of_mem_cIco` allows the cutting point to
+  be the initial endpoint.
 * `TauCeti.Grid.Noninterleaving`: two endpoint pairs lie on the same cyclic side of each other.
 * `TauCeti.Grid.noninterleaving_rev`: non-interleaving is preserved by reversing every endpoint
   with `Fin.rev`, exchanging the two endpoints within each pair.
@@ -107,6 +110,10 @@ directions before taking products.
   `β`.
 * `TauCeti.Grid.ite_mem_cIco_finRotate_eq`: the arc from `finRotate n α` to `finRotate n β` is
   the complement of `α` and of the open arc from `β` to `α`.
+* `TauCeti.Grid.ite_mem_cIco_finRotate_sub_ite_mem_cIco`,
+  `TauCeti.Grid.ite_mem_cIco_finRotate_add_ite_mem_cIco`: a step from `s` to its cyclic successor
+  enters a half-open arc at its initial endpoint and leaves it at its terminal endpoint, and the
+  two indicators of the step add up to twice that of the open arc plus those of the endpoints.
 * `TauCeti.Grid.ite_mem_cIco_finRotate_sub_one_add_two_mul_eq`: the crossing count for a shifted
   arc after cutting a half-open arc at an interior point.
 * `TauCeti.Grid.notMem_cIco_of_cIco_union`: a point missing both halves of a half-open arc
@@ -124,10 +131,9 @@ directions before taking products.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/HeegaardFloer/README.md`, Lane G.3, "The
-complexes and `∂² = 0`", where the annular cases in the juxtaposition proof use the fact that
-the two complementary cyclic intervals partition the non-endpoint columns or rows. The
-terminology follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+The annular cases in the juxtaposition proof of `∂² = 0` for grid complexes use the fact that the
+two complementary cyclic intervals partition the non-endpoint columns or rows. The terminology
+follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
 -/
 
 public section
@@ -568,6 +574,14 @@ theorem cIoo_subset_cIoo_left_of_mem_cIoo {a b c : Fin n} (h : b ∈ cIoo a c) :
   rw [← cIoo_union_insert_cIoo_eq_cIoo_of_mem_cIoo h]
   exact Finset.subset_union_right.trans' (Finset.subset_insert _ _)
 
+/-- The open arc from a point of a half-open arc to its terminal endpoint is contained in the open
+arc with the same endpoints; the point may be the initial endpoint itself. -/
+theorem cIoo_subset_cIoo_left_of_mem_cIco {a b c : Fin n} (h : b ∈ cIco a c) :
+    cIoo b c ⊆ cIoo a c := by
+  rcases eq_or_ne b a with rfl | hba
+  · exact subset_rfl
+  · exact cIoo_subset_cIoo_left_of_mem_cIoo (mem_cIoo_of_mem_cIco h hba)
+
 /-- A point `v` strictly inside the arc from `u` to `w` cuts every arc from `u` to a point `s` of
 the arc from `v` to `w`, counted. -/
 theorem ite_mem_cIco_eq_add_of_mem_cIoo {u v w s : Fin n} (hv : v ∈ cIoo u w)
@@ -929,6 +943,40 @@ theorem ite_mem_cIco_finRotate_eq {s α β : Fin n} (hαβ : α ≠ β) :
     simp only [hband.mpr hs', hsα, hs, ite_true, ite_false]
     omega
 
+/-- **Stepping across a half-open arc.** For distinct endpoints, moving from `s` to its cyclic
+successor enters the half-open arc from `a` to `b` exactly when the successor is `a`, and leaves
+it exactly when the successor is `b`; for `a = b` the arc is empty and both sides vanish. On a
+grid, with `a` and `b` naming rows of squares and `s` a row of squares, the step is the
+horizontal grid line between the rows `s` and `finRotate n s`. -/
+theorem ite_mem_cIco_finRotate_sub_ite_mem_cIco (a b s : Fin n) :
+    ((if finRotate n s ∈ cIco a b then 1 else 0 : ℤ) - if s ∈ cIco a b then 1 else 0) =
+      (if finRotate n s = a then 1 else 0 : ℤ) - if finRotate n s = b then 1 else 0 := by
+  cases n with
+  | zero => exact s.elim0
+  | succ m =>
+    have hs := val_finRotate_cases s
+    have := a.isLt
+    have := b.isLt
+    simp only [mem_cIco, ne_eq, Fin.ext_iff, ite_prop_iff_or]
+    split_ifs <;> omega
+
+/-- **The two sides of a step across a half-open arc.** For distinct endpoints, a row of squares
+`s` and its cyclic successor both lie on the half-open arc from `a` to `b` when the successor lies
+on the open arc, exactly one of them does when the successor is an endpoint, and neither does
+otherwise. On a grid this counts the squares of a band of rows meeting a horizontal grid line. -/
+theorem ite_mem_cIco_finRotate_add_ite_mem_cIco {a b : Fin n} (hab : a ≠ b) (s : Fin n) :
+    ((if finRotate n s ∈ cIco a b then 1 else 0 : ℤ) + if s ∈ cIco a b then 1 else 0) =
+      2 * (if finRotate n s ∈ cIoo a b then 1 else 0 : ℤ) + (if finRotate n s = a then 1 else 0) +
+        if finRotate n s = b then 1 else 0 := by
+  cases n with
+  | zero => exact s.elim0
+  | succ m =>
+    have hs := val_finRotate_cases s
+    have := a.isLt
+    have := b.isLt
+    simp only [mem_cIco, mem_cIoo, ne_eq, Fin.ext_iff, ite_prop_iff_or] at hab ⊢
+    split_ifs <;> omega
+
 /-- **Cutting a half-open arc at an interior point.** Let `s` lie on the half-open arc from `B`
 to `T` and let `α ≠ β`. The crossing count of `T` for the arc from `finRotate n α` to
 `finRotate n β`, corrected by the positions of `α` and `β` relative to the cut at `s`, vanishes
@@ -978,6 +1026,13 @@ theorem cIoo_finRotate_eq_empty (a : Fin n) : cIoo a (finRotate n a) = ∅ := by
     rw [coe_finRotate]
     split_ifs with h₁ h₂ <;> simp only [Fin.ext_iff, Fin.val_last] at h₁ <;> omega
 
+/-- An open cyclic interval containing a point does not end at the cyclic successor of its
+initial endpoint. -/
+theorem ne_finRotate_of_mem_cIoo {a b x : Fin n} (h : x ∈ cIoo a b) : b ≠ finRotate n a := by
+  rintro rfl
+  rw [cIoo_finRotate_eq_empty] at h
+  exact Finset.notMem_empty x h
+
 /-- The open cyclic interval between consecutive rows `r.castSucc` and `r.succ` of a grid with one
 more row is empty. -/
 theorem cIoo_castSucc_succ (r : Fin n) : cIoo r.castSucc r.succ = ∅ := by
@@ -1005,7 +1060,7 @@ theorem mem_cIoo_finRotate_left_iff {a x : Fin n} :
     have ha := val_finRotate_cases a
     have := a.isLt; have := x.isLt
     simp only [mem_cIoo, ne_eq, Fin.ext_iff]
-    rcases ha with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> rw [h2] <;> split_ifs <;> omega
+    rcases ha with ⟨h1, h2⟩ | ⟨_, h2⟩ <;> rw [h2] <;> split_ifs <;> omega
 
 /-- An endpoint pair whose second point is the cyclic successor of its first is non-interleaving
 with every endpoint pair whose first point avoids the first and whose second point avoids the
@@ -1036,6 +1091,7 @@ theorem cIco_eq_singleton_iff {a b c : Fin n} :
     have hab : a ≠ b := by
       rintro rfl
       simp at h
+      exact (Finset.singleton_nonempty c).ne_empty h.symm
     have hac : a = c := Finset.mem_singleton.mp (h ▸ left_mem_cIco hab)
     subst c
     refine ⟨rfl, ?_, hab⟩

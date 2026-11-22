@@ -74,7 +74,7 @@ theorem diagonalOracleLoss_eq_offDiagonal_add {ι : Type*} [Fintype ι] [Decidab
           Complex.normSq (T i j - Matrix.diagonal (fun k => (d k : ℂ)) i j)) =
         ∑ i, ∑ j ∈ Finset.univ.erase i, Complex.normSq (T i j) := by
     apply Finset.sum_congr rfl
-    intro i hi
+    intro i _
     apply Finset.sum_congr rfl
     intro j hj
     have hji : j ≠ i := (Finset.mem_erase.mp hj).1
@@ -85,7 +85,7 @@ theorem diagonalOracleLoss_eq_offDiagonal_add {ι : Type*} [Fintype ι] [Decidab
   rw [hoff]
   congr 1
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   have hest : Matrix.diagonal (fun k => (d k : ℂ)) i i = (d i : ℂ) := by simp
   rw [hest]
   simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
@@ -112,7 +112,7 @@ theorem diagonalOracleLoss_le {ι : Type*} [Fintype ι] [DecidableEq ι]
     (T : Matrix ι ι ℂ) (d : ι → ℝ) :
     diagonalOracleLoss T (diagonalOracle T) ≤ diagonalOracleLoss T d := by
   rw [diagonalOracleLoss_eq_oracle_add d]
-  exact le_add_of_nonneg_right (Finset.sum_nonneg fun i hi => sq_nonneg _)
+  exact le_add_of_nonneg_right (Finset.sum_nonneg fun i _ => sq_nonneg _)
 
 /-- Equality with the oracle loss characterizes the oracle. -/
 theorem diagonalOracleLoss_eq_iff {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -180,8 +180,8 @@ divided by the block's cardinality. -/
 theorem diagonalBlockAverage_eq_trace_compression {ι : Type*}
     (T : Matrix ι ι ℂ) (s : Finset ι) :
     diagonalBlockAverage T s =
-      (Matrix.trace (T.submatrix (fun i : {i // i ∈ s} => i.1)
-        (fun i : {i // i ∈ s} => i.1))).re / s.card := by
+      (Matrix.trace (T.submatrix (fun i : {i // i ∈ s} => i.val)
+        (fun i : {i // i ∈ s} => i.val))).re / s.card := by
   classical
   simp only [diagonalBlockAverage, Matrix.trace, Matrix.diag_apply, Matrix.submatrix_apply,
     Complex.re_sum]

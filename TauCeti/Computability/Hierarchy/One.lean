@@ -18,7 +18,8 @@ the reverse implication uses finite successful computations of an oracle program
 oracle is essential to computing bounded simulation.
 
 This gives the ordinary characterization by `REPred` at the empty oracle, the index presentation
-by oracle-program domains, and one-one completeness of the relative jump for Σ⁰₁ predicates.
+by oracle-program domains, and one-one and many-one completeness of the relative jump `Z'` and its
+complement `(Z')ᶜ` for `Σ⁰₁` and `Π⁰₁` predicates.
 No program index is extracted computably from a semantic pointclass-membership proof.
 
 ## References
@@ -39,28 +40,14 @@ of a partial function recursive in `Z`, by least-witness search. -/
 theorem IsSigma.exists_recursiveIn_domain (h : IsSigma Z 1 p) :
     ∃ f : α →. ℕ, RecursiveIn {Z.oracle} f ∧ ∀ x, p x ↔ (f x).Dom := by
   obtain ⟨b, hb, heq⟩ := isSigma_one_iff.1 h
-  have hnot := Primrec.not.computableIn.comp hb
-  unfold ComputableIn RecursiveIn at hnot
-  refine ⟨fun x => Nat.rfind fun y => Part.some (b (x, y)), ?_, fun x => ?_⟩
-  · -- Compare encodings, keeping invalid input codes undefined. Numerical search succeeds
-    -- at zero, so negate the Boolean matrix to exchange its codes.
-    unfold RecursiveIn
-    exact hnot.rfind.of_eq fun n => by
-      cases e : decode (α := α) n with
-      | none =>
-        simpa [e, decode_prod_val] using Nat.rfind_zero_none (fun _ => Part.none) rfl
-      | some x =>
-        simp only [decode_prod_val, Nat.unpair_pair, decode_nat, Option.map_some, e,
-          Option.bind_some, Part.map_some, Part.map_eq_map, Part.coe_some, Part.bind_some]
-        congr 1
-        funext y
-        cases b (x, y) <;> rfl
-  · refine (heq x).trans ⟨?_, ?_⟩
-    · rintro ⟨y, hy⟩
-      exact Nat.rfind_dom.2 ⟨y, by simp [hy], fun _ => trivial⟩
-    · intro hdom
-      obtain ⟨y, hy, -⟩ := Nat.rfind_dom.1 hdom
-      exact ⟨y, (Part.mem_some_iff.1 hy).symm⟩
+  refine ⟨fun x => Nat.rfind fun y => Part.some (b (x, y)),
+    RecursiveIn.rfind (ComputableIn₂.recursiveIn₂ (f := fun x y => b (x, y)) hb), fun x => ?_⟩
+  refine (heq x).trans ⟨?_, ?_⟩
+  · rintro ⟨y, hy⟩
+    exact Nat.rfind_dom.2 ⟨y, by simp [hy], fun _ => trivial⟩
+  · intro hdom
+    obtain ⟨y, hy, -⟩ := Nat.rfind_dom.1 hdom
+    exact ⟨y, (Part.mem_some_iff.1 hy).symm⟩
 
 /-- The domain of an oracle program is Σ⁰₁: a number belongs exactly when a finite successful
 run is found at some fuel bound. -/
@@ -79,7 +66,7 @@ theorem isSigma_one_dom_eval (c : Code) :
     simp [eq_comm]
   simp only [Part.dom_iff_mem, Code.mem_eval_iff_exists_evaln hanswers,
     Option.isSome_iff_exists]
-  exact ⟨fun ⟨y, k, d, hd, _⟩ => ⟨k, d, hd⟩,
+  exact ⟨fun ⟨_, k, d, hd, _⟩ => ⟨k, d, hd⟩,
     fun ⟨k, d, hd⟩ => ⟨d.output, k, d, hd, rfl⟩⟩
 
 /-- **The first relativized Post equivalence.** Σ⁰₁ predicates relative to `Z` are exactly the
@@ -111,9 +98,7 @@ theorem isSigma_one_empty_iff_rePred : IsSigma ∅ 1 p ↔ REPred p := by
   rw [isSigma_one_iff_exists_recursiveIn_domain]
   constructor
   · rintro ⟨f, hf, heq⟩
-    have hf' : Partrec f := hf.partrec_of_oracle fun g hg => by
-      rw [Set.mem_singleton_iff.1 hg, Set.oracle_empty]
-      exact Partrec.const' _
+    have hf' : Partrec f := by simpa using hf
     exact hf'.dom_re.of_eq fun x => (heq x).symm
   · intro hp
     refine ⟨fun x => (Part.assert (p x) fun _ => Part.some ()).map fun _ => 0,
@@ -134,5 +119,36 @@ theorem IsSigma.oneOneReducible_jump (h : IsSigma Z 1 p) :
       (fun n => (Part.bind (decode (α := α) n) fun x => (f x).map encode).Dom) :=
     ⟨encode, Computable.encode, encode_injective, fun x => by simpa using heq x⟩
   exact hred.trans (Z.oneOneReducible_jump_of_recursiveIn hf)
+
+/-- A predicate is `Σ⁰₁` relative to `Z` if and only if it reduces one-one to `Z'`. -/
+theorem isSigma_one_iff_oneOneReducible_jump :
+    IsSigma Z 1 p ↔ OneOneReducible p (· ∈ Z.jump) :=
+  ⟨IsSigma.oneOneReducible_jump, isSigma_one_jump.of_oneOneReducible⟩
+
+/-- A predicate is `Σ⁰₁` relative to `Z` if and only if it reduces many-one to `Z'`. -/
+theorem isSigma_one_iff_manyOneReducible_jump :
+    IsSigma Z 1 p ↔ ManyOneReducible p (· ∈ Z.jump) :=
+  ⟨fun h => h.oneOneReducible_jump.to_many_one, isSigma_one_jump.of_manyOneReducible⟩
+
+/-- The complement `(Z')ᶜ` is `Π⁰₁` relative to `Z`. -/
+theorem isPi_one_compl_jump : IsPi Z 1 (· ∈ Z.jumpᶜ) :=
+  (isPi_not_iff.2 isSigma_one_jump).of_eq fun _ => Iff.rfl
+
+/-- Every `Π⁰₁(Z)` predicate reduces one-one to `(Z')ᶜ`. -/
+theorem IsPi.oneOneReducible_compl_jump (h : IsPi Z 1 p) :
+    OneOneReducible p (· ∈ Z.jumpᶜ) := by
+  classical
+  obtain ⟨f, hf, hinj, heq⟩ := (isSigma_not_iff.2 h).oneOneReducible_jump
+  exact ⟨f, hf, hinj, fun x => (not_iff_comm.1 (heq x)).symm⟩
+
+/-- A predicate is `Π⁰₁` relative to `Z` if and only if it reduces one-one to `(Z')ᶜ`. -/
+theorem isPi_one_iff_oneOneReducible_compl_jump :
+    IsPi Z 1 p ↔ OneOneReducible p (· ∈ Z.jumpᶜ) :=
+  ⟨IsPi.oneOneReducible_compl_jump, isPi_one_compl_jump.of_oneOneReducible⟩
+
+/-- A predicate is `Π⁰₁` relative to `Z` if and only if it reduces many-one to `(Z')ᶜ`. -/
+theorem isPi_one_iff_manyOneReducible_compl_jump :
+    IsPi Z 1 p ↔ ManyOneReducible p (· ∈ Z.jumpᶜ) :=
+  ⟨fun h => h.oneOneReducible_compl_jump.to_many_one, isPi_one_compl_jump.of_manyOneReducible⟩
 
 end TauCeti.ArithmeticalHierarchy

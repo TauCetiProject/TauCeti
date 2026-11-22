@@ -13,17 +13,18 @@ import Mathlib.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
-# The Newtonian kernel in dimension at least three
+# The Newtonian kernel away from dimension two
 
-For `3 ≤ n`, this file defines the Newtonian kernel for the negative Laplacian on
+For `n = 1` and `3 ≤ n`, this file defines the Newtonian kernel for the negative Laplacian on
 `EuclideanSpace ℝ (Fin n)`:
 
 `Gₙ(x) = (n (n - 2) ωₙ)⁻¹ ‖x‖²⁻ⁿ`,
 
 where `ωₙ` is the volume of the Euclidean unit ball.  It proves the full Fréchet derivative
 formula and the pointwise equation `Δ Gₙ = 0` away from the pole, together with translated
-versions for a pole at an arbitrary point.  The dimension-three specialization recovers the
-classical kernel `1 / (4π‖x‖)`.
+versions for a pole at an arbitrary point.  The dimension-one specialization is `-|x| / 2` and
+the dimension-three specialization recovers the classical kernel `1 / (4π‖x‖)`.  The planar
+kernel is the logarithmic one, `TauCeti.planarNewtonianKernel`.
 
 The normalization and formulas follow Evans, *Partial Differential Equations*, Section 2.2.
 The distributional identity `-Δ Gₙ = δ₀` is proved from the derivative formula here in
@@ -31,12 +32,13 @@ The distributional identity `-Δ Gₙ = δ₀` is proved from the derivative for
 
 ## Main declarations
 
-* `TauCeti.newtonianKernel`: the normalized kernel in dimension `n ≥ 3`.
+* `TauCeti.newtonianKernel`: the normalized kernel in dimension `n = 1` or `n ≥ 3`.
 * `TauCeti.hasFDerivAt_newtonianKernel`: its derivative away from the origin.
 * `TauCeti.norm_fderiv_newtonianKernel`: the `‖x‖ ^ (1 - n)` operator norm of that derivative.
 * `TauCeti.laplacian_newtonianKernel`: the pointwise equation `Δ Gₙ = 0` away from the origin.
 * `TauCeti.harmonicAt_newtonianKernel_sub`: harmonicity of the kernel with a translated pole.
-* `TauCeti.newtonianKernel_three`: the familiar three-dimensional formula.
+* `TauCeti.newtonianKernel_one`, `TauCeti.newtonianKernel_three`: the familiar one- and
+  three-dimensional formulas.
 -/
 
 public section
@@ -51,10 +53,11 @@ open scoped RealInnerProductSpace
 
 /-- The Newtonian kernel for the negative Laplacian on `ℝⁿ`.
 
-For `3 ≤ n`, this normalization is the fundamental solution, and the exponent `2 - n` is
-negative.  Lean's convention for a negative real power of zero makes the kernel take the value
-zero at the pole in these dimensions.  Results that need the higher-dimensional regime state it
-as a hypothesis rather than carrying it in the definition. -/
+For `n = 1` and `3 ≤ n`, this normalization is the fundamental solution.  For `3 ≤ n` the
+exponent `2 - n` is negative, and Lean's convention for a negative real power of zero makes the
+kernel take the value zero at the pole.  In dimensions zero and two the normalizing constant is
+`0⁻¹ = 0`, so the kernel vanishes identically.  Results that need a particular dimensional
+regime state it as a hypothesis rather than carrying it in the definition. -/
 def newtonianKernel (n : ℕ) (x : EuclideanSpace ℝ (Fin n)) : ℝ :=
   ((n : ℝ) * ((n : ℝ) - 2) *
       volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
@@ -69,6 +72,12 @@ theorem newtonianKernel_def (n : ℕ) (x : EuclideanSpace ℝ (Fin n)) :
       ‖x‖ ^ (2 - (n : ℝ)) := by
   rw [newtonianKernel]
 
+/-- The Newtonian kernel is measurable. -/
+@[fun_prop]
+theorem measurable_newtonianKernel (n : ℕ) : Measurable (newtonianKernel n) := by
+  rw [funext (newtonianKernel_def n)]
+  fun_prop
+
 /-- The totalized Newtonian kernel takes the value zero at its pole. -/
 @[simp]
 theorem newtonianKernel_zero (n : ℕ) :
@@ -78,6 +87,18 @@ theorem newtonianKernel_zero (n : ℕ) :
   · have hexp : 2 - (n : ℝ) ≠ 0 := by
       exact sub_ne_zero.mpr (by exact_mod_cast hn.symm)
     simp [newtonianKernel, Real.zero_rpow hexp]
+
+/-- In dimension two the normalizing constant of the Newtonian kernel is `0⁻¹ = 0`, so the totalized
+kernel `TauCeti.newtonianKernel 2` is the zero function. -/
+@[simp]
+theorem newtonianKernel_two : newtonianKernel 2 = 0 :=
+  funext fun y ↦ by simp [newtonianKernel_def]
+
+/-- In dimension zero the Euclidean space is a single point, the pole, so the totalized kernel
+`TauCeti.newtonianKernel 0` is the zero function. -/
+@[simp]
+theorem newtonianKernel_dim_zero : newtonianKernel 0 = 0 :=
+  funext fun x ↦ by rw [Subsingleton.elim x 0, newtonianKernel_zero, Pi.zero_apply]
 
 /-- The Newtonian kernel is radial, hence invariant under orthogonal transformations. -/
 @[simp]
@@ -106,6 +127,15 @@ theorem volume_real_unitBall_pos (n : ℕ) :
   exact ENNReal.toReal_pos
     (measure_ball_pos volume (0 : EuclideanSpace ℝ (Fin n)) zero_lt_one).ne'
     measure_ball_ne_top
+
+/-- Away from its pole, and outside dimension two, the Newtonian kernel does not vanish. -/
+theorem newtonianKernel_ne_zero (n : ℕ) (hn : n ≠ 2) {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) :
+    newtonianKernel n x ≠ 0 := by
+  have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (by rintro rfl; exact hx (Subsingleton.elim _ _))
+  have hn2 : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hn)
+  have hvol := (volume_real_unitBall_pos n).ne'
+  rw [newtonianKernel_def]
+  positivity
 
 /-- Away from the pole, the normalized Newtonian kernel is strictly positive. -/
 theorem newtonianKernel_pos (n : ℕ) (hn : 3 ≤ n)
@@ -157,7 +187,7 @@ theorem newtonianKernel_lt_newtonianKernel_of_norm_lt (n : ℕ) (hn : n ≠ 2)
     newtonianKernel n y < newtonianKernel n x := by
   rw [newtonianKernel_def, newtonianKernel_def,
     ← Real.sq_rpow_div_two (norm_nonneg y), ← Real.sq_rpow_div_two (norm_nonneg x)]
-  exact newtonianKernel_rpow_sq_lt n hn (pos_of_ne_zero_euclideanSpace hx)
+  exact newtonianKernel_rpow_sq_lt n hn (pos_of_ne_euclideanSpace hx)
     (by positivity) (by nlinarith [norm_nonneg x, norm_nonneg y])
 
 /-- The Fréchet derivative of the Newtonian kernel away from its pole. -/
@@ -248,6 +278,15 @@ theorem fderiv_newtonianKernel_apply (n : ℕ) (hn : n ≠ 2)
   rw [fderiv_newtonianKernel n hn x]
   simp only [smul_apply, smul_eq_mul, innerSL_apply_apply]
   ring
+
+/-- The gradient of the Newtonian kernel at its pole is zero, by the junk-value conventions: in
+dimension two the kernel is `0`, and otherwise the gradient formula holds at `0` with value `0`. -/
+@[simp]
+theorem fderiv_newtonianKernel_zero (n : ℕ) : fderiv ℝ (newtonianKernel n) 0 = 0 := by
+  rcases eq_or_ne n 2 with rfl | hn
+  · simp
+  · ext v
+    simp [fderiv_newtonianKernel_apply n hn 0 v]
 
 /-- The operator norm of the derivative of the Newtonian kernel decays like `‖x‖ ^ (1 - n)`. -/
 @[simp]
@@ -400,6 +439,16 @@ theorem harmonicOnNhd_newtonianKernel_sub (n : ℕ)
     HarmonicOnNhd (fun x ↦ newtonianKernel n (x - a)) ({a}ᶜ : Set _) := by
   intro x hx
   exact harmonicAt_newtonianKernel_sub n (Set.mem_compl_singleton_iff.mp hx)
+
+/-- In dimension one the Newtonian kernel is `-|x| / 2`, whose second derivative is `-δ₀`. -/
+theorem newtonianKernel_one (x : EuclideanSpace ℝ (Fin 1)) :
+    newtonianKernel 1 x = -‖x‖ / 2 := by
+  have hvol : volume.real (ball (0 : EuclideanSpace ℝ (Fin 1)) 1) = 2 := by
+    rw [Measure.real_def, InnerProductSpace.volume_ball_of_dim_odd (k := 0) (by simp)]
+    norm_num
+  rw [newtonianKernel_def, hvol]
+  norm_num
+  ring
 
 /-- In dimension three the Newtonian kernel is the classical function `1 / (4π‖x‖)`. -/
 theorem newtonianKernel_three (x : EuclideanSpace ℝ (Fin 3)) :

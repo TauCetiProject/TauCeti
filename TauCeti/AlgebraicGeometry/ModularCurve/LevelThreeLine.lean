@@ -32,9 +32,9 @@ a primitive cube root of unity is adjoined. This curve has `c₄ = 9 μ (μ³ + 
 This file shows that, when `3` is invertible in `R`, the ring `R[μ, (μ³ - 1)⁻¹]` is a free module
 of rank twelve over the polynomial ring `R[u]`. Since `R[u]` is then the polynomial ring `R[j]` of
 the `j`-line, the level-three line is a finite free cover of degree twelve of the `j`-line. If
-moreover `R` contains a root `ζ` of `T² + T + 1` and `2` is a nonzerodivisor, the substitutions
-`μ ↦ ζ μ` and `μ ↦ (μ + 2) / (μ - 1)` generate a finite group of automorphisms over `R[u]`, the
-tetrahedral group, whose ring of invariants is exactly `R[u]`. This is the ring-theoretic input for
+moreover `R` contains a root `ζ` of `T² + T + 1`, the substitutions `μ ↦ ζ μ` and
+`μ ↦ (μ + 2) / (μ - 1)` generate a finite group of automorphisms over `R[u]`, the tetrahedral
+group, whose ring of invariants is exactly `R[u]`. This is the ring-theoretic input for
 identifying the coarse `j`-line away from `3` through the universal curve with a basis of its
 `3`-torsion (Katz–Mazur 2.2.11 and 8.2.1).
 
@@ -76,8 +76,10 @@ kills `μ^k` unless `3 ∣ k`, and keeps `3 μ^{3j}`. The conjugates of `μ³` a
 rotations of `w = σ(μ)³`; they are the roots of `V (V + 8)³ - u (V - 1)³`, so their power sums lie
 in `R[u]`. To compute these, `w (μ³ - 1)³ = (μ + 2)³ (μ² + μ + 1)³` is split as `A + μ B + μ² C`
 with `A`, `B`, `C` polynomials in `μ³`. The orbit sum of a point `a` of the level-three ring
-therefore lies in `R[u]`. If `a` is invariant this sum is `12 a`, and comparing coefficients in the
-basis `1, μ, …, μ¹¹` shows that `a ∈ R[u]` once `12` is a nonzerodivisor.
+therefore lies in `R[u]`. If `a` is invariant, the orbit sum of `μ³ a` is `a` times the orbit sum
+`3 (u - 24)` of `μ³`, and since `3 (u - 24)` is a unit times a monic polynomial, comparing
+coefficients in the basis `1, μ, …, μ¹¹` shows that `a ∈ R[u]`. (Using the orbit sum `12 a` of
+`a` itself instead would need `2` to be a nonzerodivisor.)
 
 ## Main definitions and results
 
@@ -184,11 +186,10 @@ element `μ³ - 1`, whose cube is `Δ / 27`, is a unit: with `d = μ³ - 1`, the
 theorem isUnit_mu_pow_three_sub_one (h3 : IsUnit (3 : R)) : IsUnit (mu R ^ 3 - 1) := by
   set d := mu R ^ 3 - 1
   set u := algebraMap R[X] (LevelThreeRing R) X
-  have h729 : IsUnit (729 : LevelThreeRing R) := by
-    convert (h3.map (algebraMap R (LevelThreeRing R))).pow 6 using 1
-    norm_num [map_ofNat]
   refine isUnit_of_mul_isUnit_left (y := -(d ^ 3 + (28 - u) * d ^ 2 + 270 * d + 972)) ?_
-  convert h729 using 1
+  -- by the defining identity, the product is `3⁶`
+  convert (h3.map (algebraMap R (LevelThreeRing R))).pow 6 using 1
+  rw [map_ofNat]
   linear_combination -mu_pow_three_mul_mu_pow_three_add_eight_pow_three R
 
 section lift
@@ -325,10 +326,11 @@ private theorem rotationAlgHom_mu (ω : R) (hω : ω ^ 3 = 1) :
 private theorem rotationAlgHom_comp_rotationAlgHom {ω ω' : R} (hω : ω ^ 3 = 1)
     (hω' : ω' ^ 3 = 1) (h : ω * ω' = 1) :
     (rotationAlgHom ω hω).comp (rotationAlgHom ω' hω') = AlgHom.id R[X] _ := by
+  have h' : algebraMap R (LevelThreeRing R) ω * algebraMap R (LevelThreeRing R) ω' = 1 := by
+    rw [← map_mul, h, map_one]
   refine algHom_ext' ?_
-  rw [AlgHom.comp_apply, rotationAlgHom_mu, map_mul, AlgHom.map_algebraMap,
-    rotationAlgHom_mu, AlgHom.id_apply, ← mul_assoc, ← map_mul, mul_comm ω' ω, h, map_one,
-    one_mul]
+  simp only [AlgHom.comp_apply, rotationAlgHom_mu, map_mul, AlgHom.map_algebraMap, AlgHom.id_apply]
+  linear_combination mu R * h'
 
 /-- The **rotation** `μ ↦ ζ μ` of the level-three line by an element `ζ` with `ζ³ = 1`, an
 automorphism of the level-three ring over the `u`-line. -/
@@ -361,14 +363,12 @@ private theorem isUnit_addTwoDivSubOne_pow_three_sub_one (h3 : IsUnit (3 : R)) :
     isUnit_of_mul_isUnit_right (x := mu R - 1) <| by
       convert isUnit_mu_pow_three_sub_one R h3 using 1
       ring
-  have h9 : IsUnit (9 : LevelThreeRing R) := by
-    convert (h3.map (algebraMap R (LevelThreeRing R))).pow 2 using 1
-    norm_num [map_ofNat]
-  have e : addTwoDivSubOne h3 ^ 3 - 1 = 9 * (mu R ^ 2 + mu R + 1) * i ^ 3 := by
-    rw [addTwoDivSubOne]
+  have e : addTwoDivSubOne h3 ^ 3 - 1 =
+      algebraMap R (LevelThreeRing R) 3 ^ 2 * (mu R ^ 2 + mu R + 1) * i ^ 3 := by
+    rw [addTwoDivSubOne, map_ofNat]
     linear_combination ((i * (mu R - 1)) ^ 2 + i * (mu R - 1) + 1) * hi
   rw [e]
-  exact (h9.mul hq).mul ((Units.isUnit _).pow 3)
+  exact (((h3.map _).pow 2).mul hq).mul ((Units.isUnit _).pow 3)
 
 /-- The substitution `μ ↦ (μ + 2) / (μ - 1)`, as an `R`-algebra endomorphism. -/
 private noncomputable def addTwoDivSubOneAlgHom (h3 : IsUnit (3 : R)) :
@@ -420,11 +420,10 @@ private theorem addTwoDivSubOneAlgHom_comp_addTwoDivSubOneAlgHom (h3 : IsUnit (3
     have h := congrArg (addTwoDivSubOneAlgHom h3) hx
     rwa [map_mul, map_sub, map_add, map_one, map_ofNat, addTwoDivSubOneAlgHom_mu] at h
   -- and `x - 1 = 3 / (μ - 1)` is a unit with `μ (x - 1) = x + 2`
-  have h3' : IsUnit (3 : LevelThreeRing R) := by
-    simpa [map_ofNat] using h3.map (algebraMap R (LevelThreeRing R))
   have hx1 : IsUnit (x - 1) := by
     refine isUnit_of_mul_isUnit_left (y := m - 1) ?_
-    convert h3' using 1
+    convert h3.map (algebraMap R (LevelThreeRing R)) using 1
+    rw [map_ofNat]
     linear_combination hx
   refine hx1.mul_right_cancel ?_
   rw [hσx]
@@ -455,9 +454,8 @@ theorem addTwoDivSubOneAut_addTwoDivSubOneAut (h3 : IsUnit (3 : R)) (a : LevelTh
 /-- The **tetrahedral group** of the level-three line: for a root `ζ` of `T² + T + 1`, the group of
 automorphisms of the level-three ring over the `u`-line generated by the rotation `μ ↦ ζ μ` and the
 involution `μ ↦ (μ + 2) / (μ - 1)`. Its elements are the twelve substitutions `τ^a` and
-`τ^a σ τ^b`, `a, b < 3` (`TauCeti.LevelThreeRing.mem_tetrahedralGroup_iff`), and, when `2` is a
-nonzerodivisor, its ring of invariants is `R[u]`
-(`TauCeti.LevelThreeRing.isInvariant_tetrahedralGroup`). -/
+`τ^a σ τ^b`, `a, b < 3` (`TauCeti.LevelThreeRing.mem_tetrahedralGroup_iff`), and its ring of
+invariants is `R[u]` (`TauCeti.LevelThreeRing.isInvariant_tetrahedralGroup`). -/
 noncomputable def tetrahedralGroup (ζ : R) (hζ : ζ ^ 2 + ζ + 1 = 0) (h3 : IsUnit (3 : R)) :
     Subgroup (LevelThreeRing R ≃ₐ[R[X]] LevelThreeRing R) :=
   Subgroup.closure
@@ -661,14 +659,9 @@ private theorem rotationSum_addTwoDivSubOneAut_mu_pow_three_pow_mul :
     rw [hwm, hx]
     ring
   -- the rotation fixes every polynomial in `μ³`
-  have hA : τ A = A := by
-    simp only [A]; generalize m ^ 3 = ν at hν ⊢; simp [hν, map_ofNat]
-  have hB : τ B = B := by
-    simp only [B]; generalize m ^ 3 = ν at hν ⊢; simp [hν, map_ofNat]
-  have hC : τ C = C := by
-    simp only [C]; generalize m ^ 3 = ν at hν ⊢; simp [hν, map_ofNat]
-  have hDk (k : ℕ) : τ ((m ^ 3 - 1) ^ k) = (m ^ 3 - 1) ^ k := by
-    generalize m ^ 3 = ν at hν ⊢; simp [hν]
+  obtain ⟨hA, hB, hC, hDk⟩ : τ A = A ∧ τ B = B ∧ τ C = C ∧
+      ∀ k : ℕ, τ ((m ^ 3 - 1) ^ k) = (m ^ 3 - 1) ^ k := by
+    simp only [A, B, C]; generalize m ^ 3 = ν at hν ⊢; simp [hν, map_ofNat]
   have hw2 : w ^ 2 * (m ^ 3 - 1) ^ 6 = (w * (m ^ 3 - 1) ^ 3) ^ 2 := by ring
   have hw3 : w ^ 3 * (m ^ 3 - 1) ^ 9 = (w * (m ^ 3 - 1) ^ 3) ^ 3 := by ring
   refine ⟨?_, ?_, ?_⟩
@@ -717,6 +710,20 @@ private theorem orbitSum_apply (y : LevelThreeRing R) :
       rotationSum hζ y + rotationSum hζ (addTwoDivSubOneAut h3 (rotationSum hζ y)) :=
   rfl
 
+/-- The orbit sum of `μ^{3j}` is `3 (μ^{3j} + Σ (τ^b w)^j)` with `w = σ(μ)³`, three times the
+`j`-th power sum of the orbit of `μ³`. -/
+private theorem orbitSum_mu_pow_three_pow (j : ℕ) :
+    orbitSum hζ h3 ((mu R ^ 3) ^ j) =
+      3 * (rotationSum hζ ((addTwoDivSubOneAut h3 (mu R) ^ 3) ^ j) + (mu R ^ 3) ^ j) := by
+  set τ := rotationAut ζ (pow_three_eq_one_of_sq_add_add_one_eq_zero hζ)
+  have hT : rotationSum hζ ((mu R ^ 3) ^ j) = 3 * (mu R ^ 3) ^ j := by
+    simpa using rotationSum_add_mu_mul_add_mu_sq_mul hζ (A := (mu R ^ 3) ^ j) (B := 0) (C := 0)
+      (by rw [map_pow, rotationAut_mu_pow_three hζ]) (map_zero τ) (map_zero τ)
+  have h3mul (y : LevelThreeRing R) : rotationSum hζ (3 * y) = 3 * rotationSum hζ y := by
+    rw [mul_comm, rotationSum_mul hζ (map_ofNat τ 3), mul_comm]
+  simp only [orbitSum_apply, hT, map_mul, map_ofNat, map_pow, h3mul]
+  ring
+
 /-- The orbit sum of every basis vector `μ ^ k`, `k < 12`, lies in `R[u]`: it vanishes unless
 `3 ∣ k`, and for `k = 3 j` it is three times the `j`-th power sum of the orbit of `μ³`. -/
 private theorem orbitSum_mu_pow_mem {k : ℕ} (hk : k < 12) :
@@ -724,22 +731,12 @@ private theorem orbitSum_mu_pow_mem {k : ℕ} (hk : k < 12) :
   set τ := rotationAut ζ (pow_three_eq_one_of_sq_add_add_one_eq_zero hζ)
   have hfix (j : ℕ) : τ ((mu R ^ 3) ^ j) = (mu R ^ 3) ^ j := by
     rw [map_pow, rotationAut_mu_pow_three hζ]
-  have h3fix : τ 3 = 3 := map_ofNat τ 3
   obtain ⟨j, r, hr, rfl⟩ : ∃ j r, r < 3 ∧ k = 3 * j + r :=
     ⟨k / 3, k % 3, Nat.mod_lt _ (by norm_num), (Nat.div_add_mod k 3).symm⟩
   rw [pow_add, pow_mul, Submodule.mem_one]
   interval_cases r
-  · -- `k = 3 j`: the orbit sum is `3 (μ^{3j} + Σ (τ^b w)^j)` with `w = σ(μ)³`
-    have hT : rotationSum hζ ((mu R ^ 3) ^ j * mu R ^ 0) = 3 * (mu R ^ 3) ^ j := by
-      simpa using rotationSum_add_mu_mul_add_mu_sq_mul hζ (A := (mu R ^ 3) ^ j) (B := 0) (C := 0)
-        (hfix j) (map_zero τ) (map_zero τ)
-    have hO : orbitSum hζ h3 ((mu R ^ 3) ^ j * mu R ^ 0) =
-        3 * (rotationSum hζ ((addTwoDivSubOneAut h3 (mu R) ^ 3) ^ j) + (mu R ^ 3) ^ j) := by
-      have h3mul (y : LevelThreeRing R) : rotationSum hζ (3 * y) = 3 * rotationSum hζ y := by
-        rw [mul_comm, rotationSum_mul hζ h3fix, mul_comm]
-      rw [orbitSum_apply, hT, map_mul, map_ofNat, map_pow, map_pow, h3mul]
-      ring
-    rw [hO]
+  · -- `k = 3 j`: the orbit sum is three times the `j`-th power sum of the orbit of `μ³`
+    rw [pow_zero, mul_one, orbitSum_mu_pow_three_pow hζ h3]
     obtain ⟨h₁, h₂, h₃⟩ := rotationSum_addTwoDivSubOneAut_mu_pow_three_pow hζ h3
     have hj : j < 4 := by omega
     interval_cases j
@@ -765,12 +762,11 @@ private theorem orbitSum_mu_pow_mem {k : ℕ} (hk : k < 12) :
 end invariants
 
 /-- **The invariants of the tetrahedral group.** Let `ζ` be a root of `T² + T + 1` in `R`, and
-suppose that `3` is invertible and `2` is a nonzerodivisor in `R`. A point of the level-three ring
-fixed by the rotation `μ ↦ ζ μ` and the involution `μ ↦ (μ + 2) / (μ - 1)` lies in `R[u]`. Thus
-the `u`-line, which is the `j`-line since `j = 27 u`, is the quotient of the level-three line by
-the tetrahedral group. -/
-theorem isInvariant_tetrahedralGroup {ζ : R} (hζ : ζ ^ 2 + ζ + 1 = 0) (h3 : IsUnit (3 : R))
-    (h2 : (2 : R) ∈ nonZeroDivisors R) :
+suppose that `3` is invertible in `R`. A point of the level-three ring fixed by the rotation
+`μ ↦ ζ μ` and the involution `μ ↦ (μ + 2) / (μ - 1)` lies in `R[u]`. Thus the `u`-line, which is
+the `j`-line since `j = 27 u`, is the quotient of the level-three line by the tetrahedral group.
+No hypothesis on `2` is needed. -/
+theorem isInvariant_tetrahedralGroup {ζ : R} (hζ : ζ ^ 2 + ζ + 1 = 0) (h3 : IsUnit (3 : R)) :
     Algebra.IsInvariant R[X] (LevelThreeRing R) (tetrahedralGroup ζ hζ h3) := by
   refine ⟨fun a ha => ?_⟩
   have hτ : rotationAut ζ (pow_three_eq_one_of_sq_add_add_one_eq_zero hζ) a = a :=
@@ -784,22 +780,27 @@ theorem isInvariant_tetrahedralGroup {ζ : R} (hζ : ζ ^ 2 + ζ + 1 = 0) (h3 : 
   have hdim : pb.dim = 12 :=
     (AdjoinRoot.powerBasis'_dim _).trans (natDegree_levelThreeRelation R)
   have hgen : pb.gen = mu R := AdjoinRoot.powerBasis'_gen _
-  -- The orbit sum of `a` is `12 a`, and it lies in `R[u]`.
-  obtain ⟨c, hc⟩ : ∃ c, algebraMap R[X] (LevelThreeRing R) c = (12 : R[X]) • a := by
+  -- The orbit sum of `μ³ a` is `a` times the orbit sum `3 (u - 24)` of `μ³`, and it lies in
+  -- `R[u]`. Using `μ³ a` rather than `a`, whose orbit sum is `12 a`, avoids dividing by `2`.
+  obtain ⟨c, hc⟩ : ∃ c, algebraMap R[X] (LevelThreeRing R) c = (3 * (X - 24) : R[X]) • a := by
     refine Submodule.mem_one.mp ?_
-    have : orbitSum hζ h3 a = (12 : R[X]) • a := by
-      simp only [orbitSum_apply, rotationSum_apply, map_add, hτ, hσ, Algebra.smul_def, map_ofNat]
-      ring
-    rw [← this, ← pb.basis.sum_repr a, map_sum]
+    have hμ := orbitSum_mu_pow_three_pow hζ h3 1
+    rw [pow_one, pow_one, (rotationSum_addTwoDivSubOneAut_mu_pow_three_pow hζ h3).1] at hμ
+    have : orbitSum hζ h3 (mu R ^ 3 * a) = (3 * (X - 24) : R[X]) • a := by
+      calc orbitSum hζ h3 (mu R ^ 3 * a) = orbitSum hζ h3 (mu R ^ 3) * a := by
+            simp only [orbitSum_apply, rotationSum_apply, map_add, map_mul, hτ, hσ]
+            ring
+        _ = (3 * (X - 24) : R[X]) • a := by rw [hμ, Algebra.smul_def, map_mul, map_ofNat]
+    rw [← this, ← pb.basis.sum_repr (mu R ^ 3 * a), map_sum]
     refine Submodule.sum_mem _ fun j _ => ?_
     rw [map_smul, pb.basis_eq_pow, hgen]
-    exact Submodule.smul_mem _ _ (orbitSum_mu_pow_mem hζ h3 (hdim ▸ j.2))
-  -- Since `12` is a nonzerodivisor, `a` itself lies in `R[u]`.
-  have h12 : (12 : R[X]) ∈ nonZeroDivisors R[X] := by
-    refine mem_nonZeroDivisors_of_coeff_mem 0 ?_
-    have : (12 : R) = 2 * 2 * 3 := by norm_num
-    simpa [this] using mul_mem (mul_mem h2 h2) h3.mem_nonZeroDivisors
-  exact pb.exists_algebraMap_eq_of_algebraMap_eq_smul h12 hc
+    exact Submodule.smul_mem _ _ (orbitSum_mu_pow_mem hζ h3 (hdim ▸ j.isLt))
+  -- Since `3 (u - 24)` is a unit times a monic polynomial, it is a nonzerodivisor, so `a` itself
+  -- lies in `R[u]`.
+  have hnzd : (3 * (X - 24) : R[X]) ∈ nonZeroDivisors R[X] := by
+    rw [← map_ofNat C 3, ← map_ofNat C 24]
+    exact mul_mem (h3.map C).mem_nonZeroDivisors (monic_X_sub_C _).mem_nonZeroDivisors
+  exact pb.exists_algebraMap_eq_of_algebraMap_eq_smul hnzd hc
 
 end tetrahedral
 

@@ -168,7 +168,7 @@ theorem genusCharFunCoprimeIdealHom_eq_of_span_mul_eq_span_mul
       genusCharFunCoprimeIdealHom (fun P hP => hs P (hts hP)) J := by
   have hx : x ≠ 0 := by
     have hJ0 : (J : Ideal (𝓞 K)) ≠ 0 :=
-      mem_nonZeroDivisors_iff_ne_zero.mp J.1.property
+      mem_nonZeroDivisors_iff_ne_zero.mp J.val.property
     have hspany : Ideal.span ({y} : Set (𝓞 K)) ≠ 0 := by
       rw [ne_eq, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]
       exact hy
@@ -186,7 +186,7 @@ theorem genusCharFunCoprimeIdealHom_eq_of_span_mul_eq_span_mul
     exact_mod_cast hnorm
   have hcopAbsX : IsCoprime ((Algebra.norm ℤ x).natAbs : ℤ) (∏ P ∈ t, P) := by
     have hJcop : IsCoprime (Ideal.absNorm (J : Ideal (𝓞 K)) : ℤ) (∏ P ∈ t, P) :=
-      (mem_genusCharFunCoprimeIdealSubmonoid_iff J.1).mp J.property
+      (mem_genusCharFunCoprimeIdealSubmonoid_iff J.val).mp J.property
     have hcopAbsX' :
         IsCoprime (((Algebra.norm ℤ y).natAbs : ℤ) * Ideal.absNorm (J : Ideal (𝓞 K)))
           (∏ P ∈ t, P) := by
@@ -222,13 +222,13 @@ theorem genusCharFunCoprimeIdealHom_eq_one_of_eq_span_singleton
     genusCharFunCoprimeIdealHom (fun P hP => hs P (hts hP)) I = 1 := by
   have hx : x ≠ 0 := by
     have hI0 : (I : Ideal (𝓞 K)) ≠ 0 :=
-      mem_nonZeroDivisors_iff_ne_zero.mp I.1.property
+      mem_nonZeroDivisors_iff_ne_zero.mp I.val.property
     intro hx
     apply hI0
     simp [hI, hx]
   have hcop : IsCoprime (Algebra.norm ℤ x) (∏ P ∈ t, P) := by
     have hIcop : IsCoprime (Ideal.absNorm (I : Ideal (𝓞 K)) : ℤ) (∏ P ∈ t, P) :=
-      (mem_genusCharFunCoprimeIdealSubmonoid_iff I.1).mp I.property
+      (mem_genusCharFunCoprimeIdealSubmonoid_iff I.val).mp I.property
     have hnorm := congrArg Ideal.absNorm hI
     rw [Ideal.absNorm_span_singleton] at hnorm
     have hnorm' : (Ideal.absNorm (I : Ideal (𝓞 K)) : ℤ) =

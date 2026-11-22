@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.MayerVietoris
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
 public import TauCeti.AlgebraicTopology.Singular.Relative
+public import TauCeti.CategoryTheory.Abelian.CommSq
 public import TauCeti.Topology.Category.TopPair
 
 /-!
@@ -58,6 +59,15 @@ corner pair with `(A ∪ B, C ∪ D)`.
   `TopCat.relativeMayerVietoris_exact₃`: exactness at `Hₘ(X, U ∩ V)`, at
   `Hₙ(X, U) ⊞ Hₙ(X, V)` and at `Hₙ(X, U ∪ V)`.
 * `TopCat.epi_relativeMayerVietorisFromBiprod_zero`: surjectivity at the degree-zero endpoint.
+* `TopCat.relativeMayerVietoris_isPullback`: the square of `Hₖ(X, U ∩ V)`, `Hₖ(X, U)`,
+  `Hₖ(X, V)` and `Hₖ(X, U ∪ V)` is a pullback square when `Hₖ₊₁(X, U ∪ V)` vanishes.
+* `TopCat.relativeMayerVietorisChainToBiprod`, `TopCat.relativeMayerVietorisChainFromBiprod`: the
+  maps `C(X, U ∩ V) ⟶ C(X, U) ⊞ C(X, V) ⟶ C(X, U ∪ V)` of relative singular chain complexes.
+* `TopCat.mono_relativeMayerVietorisChainToBiprod` and
+  `TopCat.quasiIso_cokernelDesc_relativeMayerVietorisChainFromBiprod`: on chains the first map is
+  a monomorphism, and for open `U` and `V`, with `W = U ∩ V` and `Z = U ∪ V`, the second map
+  induces a quasi-isomorphism from the cokernel of the first map, so the sequence is short exact
+  up to quasi-isomorphism.
 * `TopCat.mono_relativeMayerVietorisToBiprod`: injectivity of the first map when
   `Hₖ₊₁(X, U ∪ V)` vanishes.
 * `TopCat.relativeMayerVietorisToBiprod_naturality`,
@@ -185,19 +195,13 @@ private lemma toSSetPair_map_ofSubsetMap_right {A B : Set X} (h : A ⊆ B) :
     (TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) h)).right = 𝟙 (toSSet.obj X) :=
   (congrArg toSSet.map (TopPair.ofSubsetMap_fst (𝟙 X) h)).trans (toSSet.map_id X)
 
-private lemma mono_toSSetPair_map_ofSubsetMap_left {A B : Set X} (h : A ⊆ B) :
-    Mono (TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) h)).left := by
-  rw [toSSetPair_map_ofSubsetMap_left]
-  exact Functor.map_mono _ _
-
 private lemma mono_toSSetPair_map_ofSubsetMap_right {A B : Set X} (h : A ⊆ B) :
     Mono (TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) h)).right := by
   refine ⟨fun g g' hgh ↦ ?_⟩
   rw [toSSetPair_map_ofSubsetMap_right] at hgh
   exact (Category.comp_id g).symm.trans (hgh.trans (Category.comp_id g'))
 
-attribute [local instance] mono_toSSetPair_map_ofSubsetMap_left
-  mono_toSSetPair_map_ofSubsetMap_right
+attribute [local instance] mono_toSSetPair_map_ofSubsetMap_right
 
 private lemma isPushout_left :
     IsPushout (TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) Set.inter_subset_left)).left
@@ -286,7 +290,7 @@ lemma exists_iso_comp_smallSingularSubcomplexToUnion :
         (CategoryTheory.mono_iff_injective (f.app n)).1 inferInstance
       refine (isIso_iff_bijective _).2 ⟨fun x y hxy ↦ Subtype.ext ?_, fun y ↦ ?_⟩
       · exact hinj (congrArg Subtype.val hxy)
-      · exact (D.mem_range_fromPreimage_app_iff f y).2 (smallSubcomplex_le_range U V n y.2)
+      · exact (D.mem_range_fromPreimage_app_iff f y).2 (smallSubcomplex_le_range U V n y.property)
     exact NatIso.isIso_of_isIso_app _
   rw [← preimage_smallSingularSubcomplex]
   refine ⟨asIso (D.fromPreimage f), ?_⟩
@@ -361,24 +365,31 @@ lemma quasiIso_chainComplexMap_smallSingularSubcomplexToUnion
     (fun i ↦ by fin_cases i; exacts [hU, hV])
     (by
       rw [← Set.preimage_iUnion, Set.iUnion_vecCons_pair]
-      exact Set.eq_univ_of_forall fun x ↦ x.2)
+      exact Set.eq_univ_of_forall fun x ↦ x.property)
   have hcomp : SSet.chainComplexMap (e.hom ≫ smallSingularSubcomplexToUnion U V) R =
       SSet.chainComplexMap e.hom R ≫ SSet.chainComplexMap (smallSingularSubcomplexToUnion U V) R :=
     Functor.map_comp _ _ _
   rw [← he, hcomp] at hq
   exact quasiIso_of_comp_left (SSet.chainComplexMap e.hom R) _
 
-private lemma isIso_homologyMap_smallPairToUnion (hU : IsOpen U) (hV : IsOpen V) (n : ℕ) :
-    IsIso (SSetPair.homologyMap (smallSingularSubcomplexPairToUnion U V) R n) := by
+/-- For open `U` and `V`, the relative chains of `X` modulo its singular simplices lying in `U` or
+in `V` include into the relative chains of `(X, U ∪ V)` by a quasi-isomorphism. -/
+private lemma quasiIso_chainComplexMap_smallPairToUnion (hU : IsOpen U) (hV : IsOpen V) :
+    QuasiIso (SSetPair.chainComplexMap (smallSingularSubcomplexPairToUnion U V) R) := by
   have : QuasiIso (SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).left R) :=
     quasiIso_chainComplexMap_smallSingularSubcomplexToUnion R U V
-      (hU.preimage continuous_subtype_val) (hV.preimage continuous_subtype_val)
+      (hU.preimage continuous_subtypeVal) (hV.preimage continuous_subtypeVal)
   have : IsIso (SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).right R) := by
     rw [chainComplexMap_smallSingularSubcomplexPairToUnion_right]
     exact IsIso.id _
   have : QuasiIso (SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).right R) :=
     quasiIso_of_isIso _
-  exact SSetPair.isIso_homologyMap_of_quasiIso _ R n
+  exact SSetPair.quasiIso_chainComplexMap _ R
+
+private lemma isIso_homologyMap_smallPairToUnion (hU : IsOpen U) (hV : IsOpen V) (n : ℕ) :
+    IsIso (SSetPair.homologyMap (smallSingularSubcomplexPairToUnion U V) R n) := by
+  have := quasiIso_chainComplexMap_smallPairToUnion R U V hU hV
+  infer_instance
 
 private lemma relativeMayerVietorisToBiprod_eq (n : ℕ) :
     relativeMayerVietorisToBiprod R U V n =
@@ -493,13 +504,141 @@ lemma relativeMayerVietoris_exact₃ (n m : ℕ) (h : m + 1 = n := by lia) :
   · simp [homologyMap_smallPairToUnion_comp_relativeMayerVietorisδ R hU hV n m h]
 
 include hU hV in
+/-- **The relative Mayer–Vietoris square is a pullback.** If `Hₖ₊₁(X, U ∪ V)` vanishes, the square
+of the maps `Hₖ(X, U ∩ V) ⟶ Hₖ(X, U)`, `Hₖ(X, U ∩ V) ⟶ Hₖ(X, V)`, `Hₖ(X, U) ⟶ Hₖ(X, U ∪ V)` and
+`Hₖ(X, V) ⟶ Hₖ(X, U ∪ V)` induced by the identity of `X` is a pullback square: the sequence is
+exact at `Hₖ(X, U) ⊞ Hₖ(X, V)` and begins with a monomorphism. -/
+lemma relativeMayerVietoris_isPullback {k : ℕ}
+    (h : IsZero ((TopPair.ofSubset (U ∪ V)).singularHomology R (k + 1))) :
+    IsPullback
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) (Set.inter_subset_left (s := U)
+        (t := V))) R k)
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.inter_subset_right) R k)
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.subset_union_left) R k)
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.subset_union_right) R k) := by
+  have sq : CommSq
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) (Set.inter_subset_left (s := U)
+        (t := V))) R k)
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.inter_subset_right) R k)
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.subset_union_left) R k)
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.subset_union_right) R k) := by
+    have hw := relativeMayerVietorisToBiprod_fromBiprod R U V k
+    rw [← Category.id_comp (relativeMayerVietorisFromBiprod R U V k), ← biprod.total] at hw
+    simp only [Preadditive.add_comp, Preadditive.comp_add, Category.assoc,
+      relativeMayerVietorisToBiprod_fst_assoc, relativeMayerVietorisToBiprod_snd_assoc,
+      inl_relativeMayerVietorisFromBiprod, inr_relativeMayerVietorisFromBiprod,
+      Preadditive.neg_comp, add_neg_eq_zero] at hw
+    exact ⟨hw⟩
+  -- The short complex of the square is the relative Mayer–Vietoris sequence at
+  -- `Hₖ(X, U) ⊞ Hₖ(X, V)`, componentwise by the identity.
+  have e : sq.shortComplex ≅
+      ShortComplex.mk _ _ (relativeMayerVietorisToBiprod_fromBiprod R U V k) := by
+    refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_
+    · dsimp [CommSq.shortComplex]
+      apply biprod.hom_ext <;> simp
+    · dsimp [CommSq.shortComplex]
+      apply biprod.hom_ext' <;> simp
+  obtain ⟨hex, hmono⟩ := (ShortComplex.exact_and_mono_f_iff_of_iso e).2
+    ⟨relativeMayerVietoris_exact₂ R hU hV k, mono_relativeMayerVietorisToBiprod R hU hV h⟩
+  exact IsPullback.of_exact_shortComplex sq hex hmono
+
 /-- The map `H₀(X, U) ⊞ H₀(X, V) ⟶ H₀(X, U ∪ V)` at the end of the relative Mayer–Vietoris
-sequence is an epimorphism. -/
+sequence is an epimorphism, for any subspaces `U` and `V`: already `H₀(X, U) ⟶ H₀(X, U ∪ V)` is,
+as the maps `H₀(X) ⟶ H₀(X, A)` are. -/
 lemma epi_relativeMayerVietorisFromBiprod_zero : Epi (relativeMayerVietorisFromBiprod R U V 0) := by
-  have := isIso_homologyMap_smallPairToUnion R U V hU hV 0
-  have := SSetPair.epi_mayerVietorisFromBiprod_zero R (isPushout_left U V) (isPushout_right U V)
-  rw [← mayerVietorisFromBiprod_comp_homologyMap_smallPairToUnion]
-  exact epi_comp _ _
+  have hj : Epi (TopPair.singularHomologyMap
+      (TopPair.ofSubsetMap (𝟙 X) (Set.subset_union_left (s := U) (t := V))) R 0) := by
+    have : Epi ((TopPair.ofSubset U).singularHomologyπ R 0 ≫ TopPair.singularHomologyMap
+        (TopPair.ofSubsetMap (𝟙 X) (Set.subset_union_left (s := U) (t := V))) R 0) := by
+      have : Epi ((TopPair.ofSubset (U ∪ V)).singularHomologyπ R 0) := inferInstance
+      rwa [← TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id (R := R)
+        (Set.subset_union_left (s := U) (t := V)) 0] at this
+    exact epi_of_epi ((TopPair.ofSubset U).singularHomologyπ R 0) _
+  unfold relativeMayerVietorisFromBiprod
+  infer_instance
+
+/-! ### The sequence of chain complexes -/
+
+section Chains
+
+variable {W Z : Set X} (hWU : W ⊆ U) (hWV : W ⊆ V) (hUZ : U ⊆ Z) (hVZ : V ⊆ Z)
+
+/-- The first map `C(X, W) ⟶ C(X, U) ⊞ C(X, V)` of the relative Mayer–Vietoris sequence of
+singular chain complexes, for `W ⊆ U ∩ V`, with components `i_U` and `-i_V` induced by the identity
+of `X`. -/
+abbrev relativeMayerVietorisChainToBiprod :
+    (TopPair.ofSubset W).singularChainComplex R ⟶
+      (TopPair.ofSubset U).singularChainComplex R ⊞ (TopPair.ofSubset V).singularChainComplex R :=
+  biprod.lift (TopPair.singularChainComplexMap (TopPair.ofSubsetMap (𝟙 X) hWU) R)
+    (-TopPair.singularChainComplexMap (TopPair.ofSubsetMap (𝟙 X) hWV) R)
+
+/-- The second map `C(X, U) ⊞ C(X, V) ⟶ C(X, Z)` of the relative Mayer–Vietoris sequence of
+singular chain complexes, for `U ∪ V ⊆ Z`, the sum of the maps `j_U` and `j_V` induced by the
+identity of `X`. -/
+abbrev relativeMayerVietorisChainFromBiprod :
+    (TopPair.ofSubset U).singularChainComplex R ⊞ (TopPair.ofSubset V).singularChainComplex R ⟶
+      (TopPair.ofSubset Z).singularChainComplex R :=
+  biprod.desc (TopPair.singularChainComplexMap (TopPair.ofSubsetMap (𝟙 X) hUZ) R)
+    (TopPair.singularChainComplexMap (TopPair.ofSubsetMap (𝟙 X) hVZ) R)
+
+/-- The two maps of the relative Mayer–Vietoris sequence of singular chain complexes compose to
+zero, since both composites `C(X, W) ⟶ C(X, Z)` are induced by the identity of `X`. -/
+@[reassoc]
+lemma relativeMayerVietorisChainToBiprod_fromBiprod :
+    relativeMayerVietorisChainToBiprod R hWU hWV ≫
+      relativeMayerVietorisChainFromBiprod R hUZ hVZ = 0 :=
+  SSetPair.mayerVietoris_chainComplex_zero R _ _ _ _ (by
+    simp only [← Functor.map_comp]
+    exact congrArg TopPair.toSSetPair.map (TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl))
+
+/-- The first map `C(X, W) ⟶ C(X, U) ⊞ C(X, V)` of the relative Mayer–Vietoris sequence of
+singular chain complexes is a monomorphism when `W = U ∩ V`, for any subsets `U` and `V`: a chain
+of `X` which lies in `C(U)` modulo `C(U ∩ V)` and in `C(V)` modulo `C(U ∩ V)` lies in `C(U ∩ V)`. -/
+theorem mono_relativeMayerVietorisChainToBiprod (hW : U ∩ V ⊆ W) :
+    Mono (relativeMayerVietorisChainToBiprod R hWU hWV) := by
+  obtain rfl : W = U ∩ V := (Set.subset_inter hWU hWV).antisymm hW
+  exact (SSetPair.shortExact_mayerVietoris R (isPushout_left U V) (isPushout_right U V)).mono_f
+
+include hU hV in
+/-- **The relative Mayer–Vietoris sequence of singular chain complexes is exact up to
+quasi-isomorphism.** For open sets `U` and `V` of `X`, `W = U ∩ V` and `Z = U ∪ V`, the second
+map `C(X, U) ⊞ C(X, V) ⟶ C(X, Z)` induces a quasi-isomorphism from the cokernel of the first map
+`C(X, W) ⟶ C(X, U) ⊞ C(X, V)`, which is a monomorphism
+(`TopCat.mono_relativeMayerVietorisChainToBiprod`). So the total complex of the three-term complex
+`C(X, U ∩ V) ⟶ C(X, U) ⊞ C(X, V) ⟶ C(X, U ∪ V)` is acyclic. The cokernel is the complex of chains
+of `X` relative to the singular simplices lying in `U` or in `V`, and the map from it is the
+small-chain theorem for the cover of `U ∪ V` by `U` and `V`. -/
+theorem quasiIso_cokernelDesc_relativeMayerVietorisChainFromBiprod (hW : U ∩ V ⊆ W)
+    (hZ : Z ⊆ U ∪ V) :
+    QuasiIso (cokernel.desc _ _
+      (relativeMayerVietorisChainToBiprod_fromBiprod R hWU hWV hUZ hVZ)) := by
+  obtain rfl : W = U ∩ V := (Set.subset_inter hWU hWV).antisymm hW
+  obtain rfl : Z = U ∪ V := hZ.antisymm (Set.union_subset hUZ hVZ)
+  have := quasiIso_chainComplexMap_smallPairToUnion R U V hU hV
+  -- The cokernel of the first map is the last term of the short exact sequence of singular pairs
+  -- modulo the singular simplices lying in `U` or in `V`, and the comparison of that term with
+  -- `(X, U ∪ V)` carries its last map to the second map.
+  have w := SSetPair.mayerVietoris_chainComplex_zero R _ _ _ _
+    (MorphismProperty.Arrow.Hom.ext (isPushout_left U V).w (isPushout_right U V).w)
+  have hS := SSetPair.shortExact_mayerVietoris R (isPushout_left U V) (isPushout_right U V)
+  have := hS.epi_g
+  have : IsIso (cokernel.desc _ _ w) := hS.exact.isIso_cokernelDesc
+  have he : cokernel.desc _ _ (relativeMayerVietorisChainToBiprod_fromBiprod R hWU hWV hUZ hVZ) =
+      cokernel.desc _ _ w ≫
+        SSetPair.chainComplexMap (smallSingularSubcomplexPairToUnion U V) R := by
+    refine coequalizer.hom_ext ?_
+    rw [cokernel.π_desc, cokernel.π_desc_assoc]
+    apply biprod.hom_ext'
+    · simp only [biprod.inl_desc, biprod.inl_desc_assoc, ← Functor.map_comp]
+      exact congrArg (SSetPair.chainComplexMap · R)
+        (toSmallPair_comp_smallPairToUnion U V _ Set.subset_union_left).symm
+    · simp only [biprod.inr_desc, biprod.inr_desc_assoc, ← Functor.map_comp]
+      exact congrArg (SSetPair.chainComplexMap · R)
+        (toSmallPair_comp_smallPairToUnion U V _ Set.subset_union_right).symm
+  rw [he]
+  infer_instance
+
+end Chains
 
 /-! ### Naturality -/
 
@@ -696,8 +835,7 @@ lemma inr_pairMayerVietorisFromBiprod (n : ℕ) :
 
 /-! #### The square of singular pairs -/
 
-attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_left
-  TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
+attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
 
 /-- The pair formed by the singular simplices of `X` lying in `A` or in `B` and those lying in `C`
 or in `D`. For `A` and `B` open in `A ∪ B` and `C` and `D` open in `C ∪ D`, the small-chain theorem
@@ -942,8 +1080,7 @@ include hA hB hC hD in
 two pairs is an epimorphism. -/
 lemma epi_pairMayerVietorisFromBiprod_zero : Epi (pairMayerVietorisFromBiprod R hCA hDB 0) := by
   have := isIso_homologyMap_smallSingularPairToUnion R hCA hDB hA hB hC hD 0
-  have := SSetPair.epi_mayerVietorisFromBiprod_zero R (isPushout_toSmallSingularPair_left hCA hDB)
-    (isPushout_toSmallSingularPair_right hCA hDB)
+  have := SSetPair.epi_mayerVietorisFromBiprod_zero R (isPushout_toSmallSingularPair_right hCA hDB)
   rw [← mayerVietorisFromBiprod_comp_homologyMap_smallSingularPairToUnion]
   exact epi_comp _ _
 

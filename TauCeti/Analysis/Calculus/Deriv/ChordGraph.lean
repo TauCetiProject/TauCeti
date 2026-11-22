@@ -132,18 +132,18 @@ theorem exists_continuousMap_comp_eq_of_norm_deriv_le_mul_deriv {x x' : ℝ → 
   have hxab : x a ≤ x b := (hmaps (left_mem_Icc.2 hab)).2
   -- By the intermediate value theorem, `x` is a strictly increasing bijection of `[a, b]` onto
   -- `[x a, x b]`, hence an order isomorphism and a homeomorphism `e`.
-  let S : Icc a b → Icc (x a) (x b) := fun t ↦ ⟨x t, hmaps t.2⟩
-  have hS : StrictMono S := fun t u htu ↦ hmono t.2 u.2 htu
+  let S : Icc a b → Icc (x a) (x b) := fun t ↦ ⟨x t, hmaps t.property⟩
+  have hS : StrictMono S := fun t u htu ↦ hmono t.property u.property htu
   have hsurj : Function.Surjective S := fun ξ ↦ by
-    obtain ⟨t, ht, htξ⟩ := intermediate_value_Icc hab hxc ξ.2
+    obtain ⟨t, ht, htξ⟩ := intermediate_value_Icc hab hxc ξ.property
     exact ⟨⟨t, ht⟩, Subtype.ext htξ⟩
   let e : Icc a b ≃ₜ Icc (x a) (x b) := (hS.orderIsoOfSurjective S hsurj).toHomeomorph
   have he : ∀ t (ht : t ∈ Icc a b), e ⟨t, ht⟩ = ⟨x t, hmaps ht⟩ := fun t ht ↦ by
     rw [OrderIso.coe_toHomeomorph, StrictMono.coe_orderIsoOfSurjective]
   let g : C(ℝ, W) :=
     ⟨fun ξ ↦ w (e.symm (projIcc (x a) (x b) hxab ξ)),
-      hwc.comp_continuous (continuous_subtype_val.comp (e.symm.continuous.comp continuous_projIcc))
-        fun ξ ↦ (e.symm _).2⟩
+      hwc.comp_continuous (continuous_subtypeVal.comp (e.symm.continuous.comp continuous_projIcc))
+        fun ξ ↦ (e.symm _).property⟩
   have hg : ∀ t ∈ Icc a b, g (x t) = w t := fun t ht ↦ by
     simp only [g, ContinuousMap.coe_mk, projIcc_of_mem hxab (hmaps ht), ← he t ht,
       e.symm_apply_apply]
@@ -362,7 +362,7 @@ theorem exists_graph_over_chord (hγ : ContDiff ℝ 1 γ) (hderiv : ∀ t, deriv
       ∃ g : C(ℝ, LinearMap.ker (φ : E →ₗ[ℝ] ℝ)), (∀ ξ ∉ Ioo 0 1, g ξ = 0) ∧
         (∀ ξ ∈ Icc 0 1, ‖g ξ‖ ≤ ε * ‖γ b - γ a‖ * min ξ (1 - ξ)) ∧
         ∀ t ∈ Icc a b, γ t = γ a + φ (γ t - γ a) • (γ b - γ a) + (g (φ (γ t - γ a)) : E) := by
-  set θ := min (1 / 2) (ε / 4) with hθ_def
+  set θ := min (1 / 2) (ε / 4)
   have hθ : 0 < θ := by positivity
   have hθ2 : θ ≤ 1 / 2 := min_le_left _ _
   have hθε : θ ≤ ε / 4 := min_le_right _ _

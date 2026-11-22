@@ -16,7 +16,9 @@ optimisation arguments over matrices and over measures use: the tangent line at 
 lies below the graph at every nonnegative point, the gap between the graph and that tangent line
 is bounded below and above, and the loss of the function at a point that gives up a small amount
 of its value is bounded by the tangent line. It also records the strong monotonicity of the
-logarithm on `(0, M]` and of the exponential on `[log m, ∞)`.
+logarithm on `(0, M]` and of the exponential on `[log m, ∞)`, and that `x ↦ x * log x`, extended
+to the whole line by Mathlib's convention `log x = log |x|`, satisfies Zygmund's condition: its
+second differences are `O(|h|)`, although it is not Lipschitz near `0`.
 
 ## Main results
 
@@ -36,8 +38,13 @@ logarithm on `(0, M]` and of the exponential on `[log m, ∞)`.
 * `Real.mul_sq_log_sub_log_le_sub_mul_log_sub_log`: for `m ≤ p, q` with `0 < p, q`,
   `m * (log p - log q) ^ 2 ≤ (p - q) * (log p - log q)`, the strong monotonicity of the
   exponential on `[log m, ∞)`.
+* `Real.abs_mul_log_le_one_add_sq`: `|x * log x| ≤ 1 + x ^ 2` for every real `x`.
+* `Real.abs_add_mul_log_add_add_sub_mul_log_sub_sub_two_mul_mul_log_le`: Zygmund's condition
+  `|(x + h) log (x + h) + (x - h) log (x - h) - 2 x log x| ≤ 30 |h|`.
 * `Real.le_sub_div_log_sub_log`: for `m ≤ a, b` with `0 < a, b` and `log a ≠ log b`,
   `m ≤ (a - b) / (log a - log b)`, the difference quotient form of the preceding estimate.
+* `Real.mul_abs_log_sub_log_le`, `Real.abs_log_sub_log_le`: Lipschitz bounds
+  `m * |log a - log b| ≤ |a - b|` for `m ≤ a, b` and `|log a - log b| ≤ |a - b|` on `[1, ∞)`.
 
 `Real.mul_log_sub_mul_log_ge` is the tangent line at `a`, whose slope `log a + 1` is the
 derivative `Real.deriv_mul_log` of the function. It is stated for `u = 0` as well, where the
@@ -65,14 +72,14 @@ namespace Real
 the graph at every nonnegative `u`: with the slope `log a + 1` of `Real.deriv_mul_log`,
 `u * log u - a * log a ≥ (u - a) * (log a + 1)`. -/
 theorem mul_log_sub_mul_log_ge {a u : ℝ} (ha : 0 < a) (hu : 0 ≤ u) :
-    u * Real.log u - a * Real.log a ≥ (u - a) * (Real.log a + 1) := by
+    u * log u - a * log a ≥ (u - a) * (log a + 1) := by
   rcases hu.eq_or_lt with rfl | hu
-  · simp only [Real.log_zero, mul_zero, zero_sub]
+  · simp only [log_zero, mul_zero, zero_sub]
     linarith
   -- Scale `log a - log u ≤ a / u - 1` by `u`.
-  have hlog : Real.log a - Real.log u ≤ a / u - 1 := by
-    rw [← Real.log_div ha.ne' hu.ne']
-    exact Real.log_le_sub_one_of_pos (div_pos ha hu)
+  have hlog : log a - log u ≤ a / u - 1 := by
+    rw [← log_div ha.ne' hu.ne']
+    exact log_le_sub_one_of_pos (div_pos ha hu)
   have hau : a / u * u = a := div_mul_cancel₀ a hu.ne'
   linarith [mul_le_mul_of_nonneg_left hlog hu.le]
 
@@ -80,7 +87,7 @@ theorem mul_log_sub_mul_log_ge {a u : ℝ} (ha : 0 < a) (hu : 0 ≤ u) :
 provided `a = 0` whenever `b = 0`. For `0 < b` it is the supporting line
 `Real.mul_log_sub_mul_log_ge` at `b`; the proviso excludes `b = 0 < a`, where it fails. -/
 theorem sub_le_mul_log_sub_mul_log {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : b = 0 → a = 0) :
-    a - b ≤ a * Real.log a - a * Real.log b := by
+    a - b ≤ a * log a - a * log b := by
   rcases hb.eq_or_lt with rfl | hb
   · simp [hab rfl]
   nlinarith [mul_log_sub_mul_log_ge hb ha]
@@ -93,15 +100,15 @@ theorem sub_le_mul_log_sub_mul_log {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (ha
 The case `x = 0`, which the hypotheses force together with `t = 0` and which makes both sides
 zero, is included. -/
 theorem sub_mul_log_le {x t : ℝ} (ht0 : 0 ≤ t) (htx : t ≤ x / 2) :
-    (x - t) * Real.log (x - t) - x * Real.log x ≤ -t * (Real.log x - Real.log 2 + 1) := by
+    (x - t) * log (x - t) - x * log x ≤ -t * (log x - log 2 + 1) := by
   rcases (show 0 ≤ x by linarith).eq_or_lt with rfl | hx0
   · obtain rfl : t = 0 := by linarith
     simp
   have hxt0 : 0 < x - t := by linarith
   have h1 := mul_log_sub_mul_log_ge hxt0 hx0.le
-  have h2 : Real.log x - Real.log 2 ≤ Real.log (x - t) := by
-    rw [← Real.log_div hx0.ne' two_ne_zero]
-    exact Real.log_le_log (by positivity) (by linarith)
+  have h2 : log x - log 2 ≤ log (x - t) := by
+    rw [← log_div hx0.ne' two_ne_zero]
+    exact log_le_log (by positivity) (by linarith)
   linarith [mul_le_mul_of_nonneg_left h2 ht0]
 
 /-- The logarithm is strongly monotone on `(0, M]`: for `0 < p, q ≤ M`,
@@ -109,22 +116,22 @@ theorem sub_mul_log_le {x t : ℝ} (ht0 : 0 ≤ t) (htx : t ≤ x / 2) :
 sum of the gaps of the supporting lines `Real.mul_log_sub_mul_log_ge` of `u ↦ u * log u` at `p`
 and at `q`, so this bounds that symmetrised gap below by `(p - q) ^ 2 / M`. -/
 theorem sq_sub_le_mul_sub_mul_log_sub_log {p q M : ℝ} (hp : 0 < p) (hq : 0 < q) (hpM : p ≤ M)
-    (hqM : q ≤ M) : (p - q) ^ 2 ≤ M * ((p - q) * (Real.log p - Real.log q)) := by
+    (hqM : q ≤ M) : (p - q) ^ 2 ≤ M * ((p - q) * (log p - log q)) := by
   wlog hqp : q ≤ p generalizing p q
   · have h := this hq hp hqM hpM (le_of_not_ge hqp)
     linarith
   -- Scale `log p - log q ≥ 1 - q / p` by `p * (p - q) ≥ 0`, then enlarge `p` to `M`.
-  have hlog : 1 - q / p ≤ Real.log p - Real.log q := by
-    rw [← Real.log_div hp.ne' hq.ne']
-    simpa [inv_div] using Real.one_sub_inv_le_log_of_pos (div_pos hp hq)
+  have hlog : 1 - q / p ≤ log p - log q := by
+    rw [← log_div hp.ne' hq.ne']
+    simpa [inv_div] using one_sub_inv_le_log_of_pos (div_pos hp hq)
   have hpq : 0 ≤ p - q := sub_nonneg.2 hqp
   have hsq : (p - q) ^ 2 = p * ((p - q) * (1 - q / p)) := by field_simp
-  have hgap : 0 ≤ (p - q) * (Real.log p - Real.log q) :=
-    mul_nonneg hpq (sub_nonneg.2 (Real.log_le_log hq hqp))
+  have hgap : 0 ≤ (p - q) * (log p - log q) :=
+    mul_nonneg hpq (sub_nonneg.2 (log_le_log hq hqp))
   rw [hsq]
-  calc p * ((p - q) * (1 - q / p)) ≤ p * ((p - q) * (Real.log p - Real.log q)) :=
+  calc p * ((p - q) * (1 - q / p)) ≤ p * ((p - q) * (log p - log q)) :=
         mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hlog hpq) hp.le
-    _ ≤ M * ((p - q) * (Real.log p - Real.log q)) := mul_le_mul_of_nonneg_right hpM hgap
+    _ ≤ M * ((p - q) * (log p - log q)) := mul_le_mul_of_nonneg_right hpM hgap
 
 /-- The exponential is strongly monotone on `[log m, ∞)`: for `0 < p, q` with `m ≤ p, q`,
 `m * (log p - log q) ^ 2 ≤ (p - q) * (log p - log q)`. Equivalently, for `log p ≠ log q` the
@@ -133,35 +140,176 @@ difference quotient `(p - q) / (log p - log q)` of `exp` between `log q` and `lo
 point and its logarithm exchanged. -/
 theorem mul_sq_log_sub_log_le_sub_mul_log_sub_log {p q m : ℝ} (hp : 0 < p) (hq : 0 < q)
     (hmp : m ≤ p) (hmq : m ≤ q) :
-    m * (Real.log p - Real.log q) ^ 2 ≤ (p - q) * (Real.log p - Real.log q) := by
+    m * (log p - log q) ^ 2 ≤ (p - q) * (log p - log q) := by
   wlog hqp : q ≤ p generalizing p q
   · have h := this hq hp hmq hmp (le_of_not_ge hqp)
     linarith
   -- Scale `q (log p - log q) ≤ p - q`, from `log y ≤ y - 1`, by `log p - log q ≥ 0`.
-  have hlog : q * (Real.log p - Real.log q) ≤ p - q := by
-    have h := Real.log_le_sub_one_of_pos (div_pos hp hq)
-    rw [Real.log_div hp.ne' hq.ne'] at h
-    calc q * (Real.log p - Real.log q) ≤ q * (p / q - 1) := mul_le_mul_of_nonneg_left h hq.le
+  have hlog : q * (log p - log q) ≤ p - q := by
+    have h := log_le_sub_one_of_pos (div_pos hp hq)
+    rw [log_div hp.ne' hq.ne'] at h
+    calc q * (log p - log q) ≤ q * (p / q - 1) := mul_le_mul_of_nonneg_left h hq.le
       _ = p - q := by field_simp
-  have hgap : 0 ≤ Real.log p - Real.log q := sub_nonneg.2 (Real.log_le_log hq hqp)
-  calc m * (Real.log p - Real.log q) ^ 2 ≤ q * (Real.log p - Real.log q) ^ 2 :=
+  have hgap : 0 ≤ log p - log q := sub_nonneg.2 (log_le_log hq hqp)
+  calc m * (log p - log q) ^ 2 ≤ q * (log p - log q) ^ 2 :=
         mul_le_mul_of_nonneg_right hmq (sq_nonneg _)
-    _ = (q * (Real.log p - Real.log q)) * (Real.log p - Real.log q) := by ring
-    _ ≤ (p - q) * (Real.log p - Real.log q) := mul_le_mul_of_nonneg_right hlog hgap
+    _ = (q * (log p - log q)) * (log p - log q) := by ring
+    _ ≤ (p - q) * (log p - log q) := mul_le_mul_of_nonneg_right hlog hgap
 
 /-- The difference quotient of `exp` between `log b` and `log a` is at least `m` when `m ≤ a, b`:
 for `log a ≠ log b`, `m ≤ (a - b) / (log a - log b)`. -/
 theorem le_sub_div_log_sub_log {a b m : ℝ} (ha : 0 < a) (hb : 0 < b)
-    (hma : m ≤ a) (hmb : m ≤ b) (h₀ : Real.log a - Real.log b ≠ 0) :
-    m ≤ (a - b) / (Real.log a - Real.log b) := by
-  have hmono := Real.mul_sq_log_sub_log_le_sub_mul_log_sub_log ha hb hma hmb
-  have hD2 : 0 < (Real.log a - Real.log b) ^ 2 :=
+    (hma : m ≤ a) (hmb : m ≤ b) (h₀ : log a - log b ≠ 0) :
+    m ≤ (a - b) / (log a - log b) := by
+  have hmono := mul_sq_log_sub_log_le_sub_mul_log_sub_log ha hb hma hmb
+  have hD2 : 0 < (log a - log b) ^ 2 :=
     lt_of_le_of_ne (sq_nonneg _) (pow_ne_zero 2 h₀).symm
-  have hquot : (a - b) / (Real.log a - Real.log b) =
-      (a - b) * (Real.log a - Real.log b) / (Real.log a - Real.log b) ^ 2 := by
+  have hquot : (a - b) / (log a - log b) =
+      (a - b) * (log a - log b) / (log a - log b) ^ 2 := by
     field_simp
   rw [hquot, le_div_iff₀ hD2]
   exact hmono
+
+/-- For `m ≤ a` and `m ≤ b`, `m * |log a - log b| ≤ |a - b|`. -/
+theorem mul_abs_log_sub_log_le {a b m : ℝ} (hma : m ≤ a) (hmb : m ≤ b) :
+    m * |log a - log b| ≤ |a - b| := by
+  rcases le_or_gt m 0 with hm | hm
+  · exact (mul_nonpos_of_nonpos_of_nonneg hm (abs_nonneg _)).trans (abs_nonneg _)
+  · rcases eq_or_ne (log a - log b) 0 with h₀ | h₀
+    · simp [h₀]
+    · have hpos : 0 < |log a - log b| := abs_pos.2 h₀
+      have hsq : m * |log a - log b| ^ 2 ≤ |a - b| * |log a - log b| := by
+        rw [sq_abs, ← abs_mul]
+        exact (mul_sq_log_sub_log_le_sub_mul_log_sub_log (hm.trans_le hma) (hm.trans_le hmb)
+          hma hmb).trans (le_abs_self _)
+      rw [sq, ← mul_assoc] at hsq
+      exact le_of_mul_le_mul_right hsq hpos
+
+/-- `Real.log` is `1`-Lipschitz on `[1, ∞)`: for `1 ≤ a` and `1 ≤ b`,
+`|log a - log b| ≤ |a - b|`. -/
+theorem abs_log_sub_log_le {a b : ℝ} (ha : 1 ≤ a) (hb : 1 ≤ b) :
+    |log a - log b| ≤ |a - b| := by
+  simpa using mul_abs_log_sub_log_le ha hb
+
+/-- The function `x ↦ x * log x` is at most quadratic in size: `|x * log x| ≤ 1 + x ^ 2` for every
+real `x`. -/
+theorem abs_mul_log_le_one_add_sq (x : ℝ) : |x * log x| ≤ 1 + x ^ 2 := by
+  -- Below `1` in absolute value the function is bounded by `1`; above, `0 ≤ log |x| ≤ |x|`.
+  rw [abs_mul, ← log_abs]
+  rcases le_or_gt |x| 1 with hx | hx
+  · rcases (abs_nonneg x).eq_or_lt with h0 | h0
+    · rw [← h0]
+      simp only [zero_mul]
+      positivity
+    · have := abs_log_mul_self_lt |x| h0 hx
+      rw [mul_comm, abs_mul, abs_abs] at this
+      nlinarith [sq_nonneg x]
+  · have hlog : 0 ≤ log |x| := log_nonneg hx.le
+    have hle : log |x| ≤ |x| := (log_le_sub_one_of_pos (by positivity)).trans (by linarith)
+    rw [abs_of_nonneg hlog, ← sq_abs x, sq]
+    nlinarith [abs_nonneg x]
+
+/-- For `t ≥ 2` the second difference of `x ↦ x * log x` with step `1` is at most `2` in absolute
+value. -/
+private theorem abs_add_one_mul_log_add_add_sub_one_mul_log_sub_sub_two_mul_mul_log_le_two
+    {t : ℝ} (ht : 2 ≤ t) :
+    |(t + 1) * log (t + 1) + (t - 1) * log (t - 1) - 2 * (t * log t)| ≤ 2 := by
+  -- The second difference is `t log (1 - 1 / t²) + log ((t + 1) / (t - 1))`, and the two terms
+  -- lie in `[-1, 0]` and `[0, 2]`.
+  have ha : 0 < t + 1 := by linarith
+  have hb : 0 < t - 1 := by linarith
+  have ht0 : 0 < t := by linarith
+  -- `log ((t + 1) (t - 1) / t²)` lies in `[-1 / (t² - 1), 0]`.
+  have hy : 0 < (t + 1) * (t - 1) / t ^ 2 := by positivity
+  have hlogy : log ((t + 1) * (t - 1) / t ^ 2) = log (t + 1) + log (t - 1) - 2 * log t := by
+    rw [log_div (by positivity) (by positivity), log_mul ha.ne' hb.ne', log_pow]
+    push_cast
+    ring
+  have hy1 : log ((t + 1) * (t - 1) / t ^ 2) ≤ 0 :=
+    (log_le_sub_one_of_pos hy).trans (by rw [sub_nonpos, div_le_one (by positivity)]; nlinarith)
+  have hy2 : -1 / (t ^ 2 - 1) ≤ log ((t + 1) * (t - 1) / t ^ 2) := by
+    refine le_trans (le_of_eq ?_) (one_sub_inv_le_log_of_pos hy)
+    have : t ^ 2 - 1 ≠ 0 := by nlinarith
+    field_simp
+    ring
+  -- `log ((t + 1) / (t - 1))` lies in `[0, 2 / (t - 1)]`.
+  have hz : log (t + 1) - log (t - 1) = log ((t + 1) / (t - 1)) := (log_div ha.ne' hb.ne').symm
+  have hz1 : 0 ≤ log ((t + 1) / (t - 1)) :=
+    log_nonneg ((one_le_div hb).2 (by linarith))
+  have hz2 : log ((t + 1) / (t - 1)) ≤ 2 :=
+    (log_le_sub_one_of_pos (div_pos ha hb)).trans (by
+      rw [sub_le_iff_le_add, div_le_iff₀ hb]
+      linarith)
+  have hsplit : (t + 1) * log (t + 1) + (t - 1) * log (t - 1) - 2 * (t * log t) =
+      t * log ((t + 1) * (t - 1) / t ^ 2) + log ((t + 1) / (t - 1)) := by
+    rw [hlogy, ← hz]
+    ring
+  have hty : -1 ≤ t * log ((t + 1) * (t - 1) / t ^ 2) := by
+    have h1 : -1 ≤ t * (-1 / (t ^ 2 - 1)) := by
+      rw [mul_div_assoc', le_div_iff₀ (by nlinarith)]
+      nlinarith
+    exact h1.trans (mul_le_mul_of_nonneg_left hy2 ht0.le)
+  rw [hsplit, abs_le]
+  constructor <;> nlinarith [mul_nonpos_of_nonneg_of_nonpos ht0.le hy1]
+
+/-- The second difference of `x ↦ x * log x` with step `1` is bounded: for every real `t`,
+`|(t + 1) log (t + 1) + (t - 1) log (t - 1) - 2 t log t| ≤ 30`. -/
+private theorem abs_add_one_mul_log_add_add_sub_one_mul_log_sub_sub_two_mul_mul_log_le
+    (t : ℝ) :
+    |(t + 1) * log (t + 1) + (t - 1) * log (t - 1) - 2 * (t * log t)| ≤ 30 := by
+  -- The case `t ≤ -2` follows from the case `t ≥ 2` by oddness.
+  rcases le_or_gt 2 t with ht | ht
+  · exact (abs_add_one_mul_log_add_add_sub_one_mul_log_sub_sub_two_mul_mul_log_le_two ht).trans
+      (by norm_num)
+  rcases le_or_gt t (-2) with ht' | ht'
+  · have := abs_add_one_mul_log_add_add_sub_one_mul_log_sub_sub_two_mul_mul_log_le_two
+      (t := -t) (by linarith)
+    have hodd : (-t + 1) * log (-t + 1) + (-t - 1) * log (-t - 1) - 2 * (-t * log (-t)) =
+        -((t + 1) * log (t + 1) + (t - 1) * log (t - 1) - 2 * (t * log t)) := by
+      rw [show -t + 1 = -(t - 1) by ring, show -t - 1 = -(t + 1) by ring, log_neg_eq_log,
+        log_neg_eq_log, log_neg_eq_log]
+      ring
+    rw [hodd, abs_neg] at this
+    exact this.trans (by norm_num)
+  · -- For `|t| < 2` each of the three terms is bounded.
+    have h₁ := abs_mul_log_le_one_add_sq (t + 1)
+    have h₂ := abs_mul_log_le_one_add_sq (t - 1)
+    have h₃ := abs_mul_log_le_one_add_sq t
+    have hsq : t ^ 2 ≤ 4 := by nlinarith
+    calc |(t + 1) * log (t + 1) + (t - 1) * log (t - 1) - 2 * (t * log t)|
+        ≤ |(t + 1) * log (t + 1)| + |(t - 1) * log (t - 1)| + 2 * |t * log t| := by
+          simpa [sub_eq_add_neg, abs_mul] using
+            abs_add_three ((t + 1) * log (t + 1)) ((t - 1) * log (t - 1)) (-(2 * (t * log t)))
+      _ ≤ 30 := by nlinarith
+
+/-- **`x ↦ x * log x` satisfies Zygmund's condition.** Its second differences are at most a
+multiple of the step: `|(x + h) log (x + h) + (x - h) log (x - h) - 2 x log x| ≤ 30 |h|`. The
+function is not Lipschitz near `0`, where its derivative `log |x| + 1` is unbounded. -/
+theorem abs_add_mul_log_add_add_sub_mul_log_sub_sub_two_mul_mul_log_le (x h : ℝ) :
+    |(x + h) * log (x + h) + (x - h) * log (x - h) - 2 * (x * log x)| ≤ 30 * |h| := by
+  rcases eq_or_ne h 0 with rfl | hh
+  · simp only [add_zero, sub_zero, abs_zero, mul_zero]
+    rw [abs_nonpos_iff]
+    ring
+  -- Reduce to `h = 1` by the scaling `(h u) log (h u) = h u log h + h (u log u)`, whose first term
+  -- is linear in `u` and so has vanishing second differences.
+  have hscale (u : ℝ) : h * u * log (h * u) = h * u * log h + h * (u * log u) := by
+    rcases eq_or_ne u 0 with rfl | hu
+    · simp
+    · rw [log_mul hh hu]
+      ring
+  set t := x / h with ht
+  have hx : x = h * t := by
+    rw [ht]
+    field_simp
+  have heq : (x + h) * log (x + h) + (x - h) * log (x - h) - 2 * (x * log x) =
+      h * ((t + 1) * log (t + 1) + (t - 1) * log (t - 1) - 2 * (t * log t)) := by
+    rw [hx, show h * t + h = h * (t + 1) by ring, show h * t - h = h * (t - 1) by ring,
+      hscale, hscale, ← mul_assoc, hscale]
+    ring
+  rw [heq, abs_mul, mul_comm 30]
+  exact mul_le_mul_of_nonneg_left
+    (abs_add_one_mul_log_add_add_sub_one_mul_log_sub_sub_two_mul_mul_log_le t) (abs_nonneg h)
 
 end Real
 

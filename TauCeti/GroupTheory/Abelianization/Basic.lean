@@ -11,20 +11,21 @@ public import Mathlib.GroupTheory.QuotientGroup.Basic
 /-!
 # Elementary facts about the abelianization
 
-Conjugate elements have the same image in the abelianization (`Abelianization.of_inv_mul_mul`),
+Conjugate elements have the same image in the abelianization
+(`Group.Abelianization.of_inv_mul_mul`),
 and written additively, the abelianization map sends products to sums in either order
-(`Abelianization.ofMul_of_add_ofMul_of`). An element has trivial image exactly when it lies in
-the commutator subgroup (`Abelianization.of_eq_one_iff`), so the abelianization map of a
-commutative group is injective (`Abelianization.of_injective`), and isomorphisms out of an
-abelianization are determined by their values on classes (`Abelianization.mulEquiv_ext`).
+(`Group.Abelianization.ofMul_of_add_ofMul_of`). An element has trivial image exactly when it lies in
+the commutator subgroup (`Group.Abelianization.of_eq_one_iff`), so the abelianization map of a
+commutative group is injective (`Group.Abelianization.of_injective`), and isomorphisms out of an
+abelianization are determined by their values on classes (`Group.Abelianization.mulEquiv_ext`).
 Every element of the additive abelianization is the class of a group element
-(`Abelianization.exists_eq_ofMul_of`). The abelianization of a product of two groups is the
-product of their abelianizations (`Abelianization.prodMulEquiv`).
+(`Group.Abelianization.exists_eq_ofMul_of`). The abelianization of a product of two groups is the
+product of their abelianizations (`Group.Abelianization.prodMulEquiv`).
 -/
 
 public section
 
-namespace Abelianization
+namespace Group.Abelianization
 
 variable {G : Type*} [Group G]
 
@@ -37,7 +38,6 @@ lemma of_inv_mul_mul (p q : G) : of (p⁻¹ * q * p) = of q := by
 of `p` and `q`. -/
 lemma ofMul_of_add_ofMul_of (p q : G) :
     Additive.ofMul (of p) + Additive.ofMul (of q) = Additive.ofMul (of (q * p)) := by
-  rw [← ofMul_mul]
   simp [mul_comm]
 
 /-- An element has trivial image in the abelianization exactly when it is in the commutator
@@ -47,7 +47,8 @@ theorem of_eq_one_iff {g : G} : of g = 1 ↔ g ∈ commutator G := by
   rw [← MonoidHom.mem_ker, ker_of]
 
 /-- Written additively, every element of the abelianization is the class of a group element. -/
-theorem exists_eq_ofMul_of (x : Additive (Abelianization G)) : ∃ g : G, x = .ofMul (of g) := by
+theorem exists_eq_ofMul_of (x : Additive (Group.Abelianization G)) : ∃ g : G, x = .ofMul (of
+    g) := by
   obtain ⟨g, hg⟩ : ∃ g, of g = x.toMul := QuotientGroup.mk_surjective x.toMul
   exact ⟨g, by rw [hg, ofMul_toMul]⟩
 
@@ -56,21 +57,21 @@ theorem of_injective [IsMulCommutative G] : Function.Injective (of (G := G)) :=
   (MonoidHom.ker_eq_bot_iff _).1 (by rw [ker_of, commutator_eq_bot])
 
 /-- Two isomorphisms out of an abelianization agree if they agree on the classes of elements. -/
-theorem mulEquiv_ext {M : Type*} [Monoid M] {e e' : Abelianization G ≃* M}
+theorem mulEquiv_ext {M : Type*} [Monoid M] {e e' : Group.Abelianization G ≃* M}
     (h : ∀ x : G, e (of x) = e' (of x)) : e = e' :=
   MulEquiv.toMonoidHom_injective (hom_ext _ _ (MonoidHom.ext h))
 
 /-- **The abelianization of a product** of two groups is the product of their abelianizations:
 the class of `(g, h)` corresponds to the pair of the classes of `g` and `h`. -/
-def prodMulEquiv (H : Type*) [Group H] :
-    Abelianization (G × H) ≃* Abelianization G × Abelianization H :=
+def prodMulEquiv {H : Type*} [Group H] :
+    Group.Abelianization (G × H) ≃* Group.Abelianization G × Group.Abelianization H :=
   (QuotientGroup.quotientMulEquivOfEq (by
-    rw [commutator_def, commutator_def, commutator_def, ← Subgroup.top_prod_top,
-      Subgroup.commutator_prod_prod])).trans (QuotientGroup.prodMulEquiv _ _)
+    simp only [commutator_def, ← Subgroup.top_prod_top, Subgroup.commutator_prod_prod])).trans
+    (QuotientGroup.prodMulEquiv _ _)
 
 @[simp]
-theorem prodMulEquiv_of (H : Type*) [Group H] (gh : G × H) :
-    prodMulEquiv H (of gh) = (of gh.1, of gh.2) :=
+theorem prodMulEquiv_of {H : Type*} [Group H] (gh : G × H) :
+    prodMulEquiv (of gh) = (of gh.1, of gh.2) :=
   (rfl)
 
-end Abelianization
+end Group.Abelianization

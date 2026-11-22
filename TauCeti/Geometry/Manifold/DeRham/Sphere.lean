@@ -41,7 +41,7 @@ kernel of the degree-zero connecting map is the line of constant classes
 one-dimensional. The suspension isomorphism carries this to `Hⁿ(Sⁿ)` for every `n ≥ 1`
 (`TauCeti.finrank_deRhamCohomology_sphere_self`). Together with the connectedness of `Sⁿ` and the
 vanishing of de Rham cohomology above the dimension, this computes `H^k(Sⁿ)` in every degree
-(`TauCeti.finrank_deRhamCohomology_sphere`).
+(`TauCeti.rank_deRhamCohomology_sphere`).
 
 ## Main results
 
@@ -52,8 +52,10 @@ vanishing of de Rham cohomology above the dimension, this computes `H^k(Sⁿ)` i
 * `TauCeti.subsingleton_deRhamCohomology_sphere`: `H^k(Sⁿ) = 0` for `0 < k < n`.
 * `TauCeti.finrank_deRhamCohomology_zero_sphere_of_finrank_eq_one`: `H⁰(S⁰)` is two-dimensional.
 * `TauCeti.finrank_deRhamCohomology_sphere_self`: `Hⁿ(Sⁿ)` is one-dimensional for `n ≥ 1`.
-* `TauCeti.finrank_deRhamCohomology_sphere`: for `n ≥ 1`, `H^k(Sⁿ)` is one-dimensional when
-  `k = 0` or `k = n`, and zero otherwise.
+* `TauCeti.rank_deRhamCohomology_sphere`: for `n ≥ 1`, `H^k(Sⁿ)` has rank one when `k = 0` or
+  `k = n`, and rank zero, so vanishes, otherwise.
+* `TauCeti.finrank_deRhamCohomology_sphere`: the `Module.finrank` of `H^k(Sⁿ)` in every degree, for
+  `n ≥ 1`.
 
 ## References
 
@@ -110,12 +112,9 @@ theorem subsingleton_deRhamCohomology_sphere_one (hn : 1 < n) :
   rw [(deRhamCohomology.equivOfDiffeomorph
     (Diffeomorph.ofTop _ (compl_singleton_sup_compl_singleton_neg_eq_top v)) 1).toEquiv
       |>.subsingleton_congr]
-  refine subsingleton_of_forall_eq 0 fun c ↦ ?_
-  obtain ⟨d, rfl⟩ := deRhamCohomology.mayerVietorisδ_surjective
+  exact subsingleton_deRhamCohomology_one_sup
     (subsingleton_deRhamCohomology_sphere_compl_singleton v 0)
-    (subsingleton_deRhamCohomology_sphere_compl_singleton (-v) 0) c
-  obtain ⟨r, rfl⟩ := deRhamCohomology.exists_eq_const d
-  exact deRhamCohomology.mayerVietorisδ_const U V r
+    (subsingleton_deRhamCohomology_sphere_compl_singleton (-v) 0)
 
 end Cover
 
@@ -153,7 +152,7 @@ theorem nonempty_linearEquiv_deRhamCohomology_sphere_succ [Fact (finrank ℝ E =
 /-- One suspension step: if `H^{k+1}(Sⁿ)` vanishes for the unit sphere of `ℝⁿ⁺¹`, then
 `H^{k+2}(Sⁿ⁺¹)` vanishes for the unit sphere of an `(n + 2)`-dimensional space. -/
 private theorem subsingleton_deRhamCohomology_sphere_succ_succ [Fact (finrank ℝ E = n + 1 + 1)]
-    {k : ℕ} (h : Subsingleton
+    {k : ℕ} (_ : Subsingleton
       (deRhamCohomology (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (k + 1))) :
     Subsingleton (deRhamCohomology (𝓡 (n + 1)) (sphere (0 : E) 1) (k + 2)) :=
   (nonempty_linearEquiv_deRhamCohomology_sphere_succ (E := E) k).some.toEquiv.symm.subsingleton
@@ -195,7 +194,7 @@ real inner product space consists of two points, so `H⁰(S⁰)` is two-dimensio
 theorem finrank_deRhamCohomology_zero_sphere_of_finrank_eq_one [Fact (finrank ℝ E = 1)] :
     finrank ℝ (deRhamCohomology (𝓡 0) (sphere (0 : E) 1) 0) = 2 := by
   obtain ⟨e⟩ := nonempty_sphere (E := E) (m := 0) Fact.out
-  have hS := sphere_eq_pair_of_finrank_eq_one Fact.out e.2
+  have hS := sphere_eq_pair_of_finrank_eq_one Fact.out e.property
   have := discreteTopology_sphere_of_finrank_eq_one (E := E) Fact.out 0 1
   rw [finrank_deRhamCohomology_zero_of_discreteTopology, Nat.card_coe_set_eq, hS,
     Set.ncard_pair (fun h ↦ ne_neg_of_mem_unit_sphere ℝ e (Subtype.ext h) : (e : E) ≠ -e)]
@@ -262,13 +261,16 @@ theorem finrank_deRhamCohomology_sphere_self [Fact (finrank ℝ E = n + 1)] (hn 
       (finrank_deRhamCohomology_sphere_euclideanSpace_self m)
 
 /-- **The de Rham cohomology of spheres.** For `n ≥ 1`, the de Rham cohomology `H^k(Sⁿ)` of the
-unit sphere `Sⁿ` of an `(n + 1)`-dimensional real inner product space is one-dimensional in degrees
-`0` and `n`, and zero in every other degree. -/
-theorem finrank_deRhamCohomology_sphere [Fact (finrank ℝ E = n + 1)] (hn : 0 < n) (k : ℕ) :
-    finrank ℝ (deRhamCohomology (𝓡 n) (sphere (0 : E) 1) k) = if k = 0 ∨ k = n then 1 else 0 := by
+unit sphere `Sⁿ` of an `(n + 1)`-dimensional real inner product space has rank one in degrees `0`
+and `n`, and rank zero in every other degree: it is a line in degrees `0` and `n` and vanishes in
+every other degree. -/
+theorem rank_deRhamCohomology_sphere [Fact (finrank ℝ E = n + 1)] (hn : 0 < n) (k : ℕ) :
+    Module.rank ℝ (deRhamCohomology (𝓡 n) (sphere (0 : E) 1) k) =
+      if k = 0 ∨ k = n then 1 else 0 := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
   split_ifs with h
-  · rcases h with rfl | rfl
+  · rw [rank_eq_one_iff_finrank_eq_one]
+    rcases h with rfl | rfl
     · -- The sphere of a space of dimension at least two is connected.
       have : ConnectedSpace (sphere (0 : E) 1) :=
         isConnected_iff_connectedSpace.mp <| isConnected_sphere
@@ -282,7 +284,16 @@ theorem finrank_deRhamCohomology_sphere [Fact (finrank ℝ E = n + 1)] (hn : 0 <
       · exact subsingleton_deRhamCohomology_sphere (Nat.pos_of_ne_zero h.1) hk
       · exact subsingleton_deRhamCohomology_of_finrank_lt (𝓡 n) (sphere (0 : E) 1)
           (by rwa [finrank_euclideanSpace_fin])
-    exact finrank_zero_of_subsingleton
+    exact rank_subsingleton' ℝ _
+
+/-- **The dimension of the de Rham cohomology of spheres.** For `n ≥ 1`, the de Rham cohomology
+`H^k(Sⁿ)` of the unit sphere `Sⁿ` of an `(n + 1)`-dimensional real inner product space has
+`finrank` one in degrees `0` and `n` and `finrank` zero in every other degree. As `finrank` is also
+zero on an infinite-dimensional space, this alone does not say that the cohomology vanishes in the
+other degrees; that is `TauCeti.rank_deRhamCohomology_sphere`. -/
+theorem finrank_deRhamCohomology_sphere [Fact (finrank ℝ E = n + 1)] (hn : 0 < n) (k : ℕ) :
+    finrank ℝ (deRhamCohomology (𝓡 n) (sphere (0 : E) 1) k) = if k = 0 ∨ k = n then 1 else 0 :=
+  finrank_eq_of_rank_eq <| (rank_deRhamCohomology_sphere hn k).trans <| by split_ifs <;> simp
 
 end TopDegree
 

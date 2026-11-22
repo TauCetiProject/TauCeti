@@ -21,6 +21,7 @@ public import TauCeti.Topology.Covering.Quotient
 import Mathlib.Analysis.LocallyConvex.HahnBanach
 import TauCeti.Algebra.Module.ZLattice.Ker
 import TauCeti.Geometry.Manifold.Immersion.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Topology.Algebra.Module.DiscretePreimage
 
 /-!
@@ -115,6 +116,12 @@ The following results also have additive counterparts in the `AddSubgroup` names
 * `Submodule.instLieAddGroupOrbitRelQuotient`: the quotient of a locally compact normed space by a
   discrete submodule is a `C^n` additive Lie group; for `𝕜 = ℂ` and `n = ω` it is a complex Lie
   group.
+* `Submodule.exists_eventuallyEq_sub_of_mem_atlas_orbitRelQuotient`: the orbit projection
+  read in a quotient chart is locally a translation by a submodule element.
+* `Submodule.hasMFDerivAt_orbitRelQuotient_mk`, `Submodule.mfderiv_orbitRelQuotient_mk`: the
+  differential of the orbit projection is the identity in quotient coordinates.
+* `Submodule.mfderiv_orbitRelQuotient_mk_eq`: the derivative of the orbit projection is the same
+  at every representative of a class.
 * `Submodule.contMDiff_orbitRelQuotient_of_comp_mk`: a map of quotients by discrete submodules
   induced by a `C^n` map of the ambient spaces is `C^n`.
 * `Submodule.contMDiff_orbitRelQuotientMap`: a `C^n` semilinear map carrying `L` into `L'` induces
@@ -253,6 +260,82 @@ instance Submodule.instLieAddGroupOrbitRelQuotient :
   IsLocalDiffeomorph.lieAddGroup
     (AddMonoidHom.mk' (_root_.Quotient.mk (AddAction.orbitRel L E)) L.orbitRelQuotient_mk_add)
     TauCeti.isLocalDiffeomorph_addQuotientMk _root_.Quotient.mk_surjective
+
+section Differential
+
+open Filter Function Set Topology
+
+/-- In a chart of a quotient by a discrete submodule, the orbit projection is locally a
+translation by a submodule element. -/
+theorem Submodule.exists_eventuallyEq_sub_of_mem_atlas_orbitRelQuotient
+    {c : OpenPartialHomeomorph (AddAction.orbitRel.Quotient L E) E}
+    (hc : c ∈ atlas E (AddAction.orbitRel.Quotient L E)) {x : E}
+    (hx : _root_.Quotient.mk (AddAction.orbitRel L E) x ∈ c.source) :
+    ∃ l ∈ L, (c ∘ _root_.Quotient.mk (AddAction.orbitRel L E)) =ᶠ[𝓝 x] fun y ↦ y - l := by
+  let q := _root_.Quotient.mk (AddAction.orbitRel L E)
+  have hmem : c (q x) ∈ c.target := c.map_source hx
+  have hrep : q (c (q x)) = q x :=
+    TauCeti.addQuotientMk_apply_of_mem_atlas_addQuotient hc hx
+  set l := x - c (q x)
+  have hl : l ∈ L := (L.orbitRelQuotient_mk_eq_mk_iff).mp hrep.symm
+  have htend : Tendsto (fun y : E ↦ y - l) (𝓝 x) (𝓝 (c (q x))) := by
+    have h : Tendsto (fun y : E ↦ y - l) (𝓝 x) (𝓝 (x - l)) :=
+      (continuous_id.sub continuous_const).tendsto x
+    simpa only [l, sub_sub_cancel] using h
+  refine ⟨l, hl, ?_⟩
+  filter_upwards [htend (c.open_target.mem_nhds hmem)] with y hy
+  have hy' : q (y - l) = q y := by
+    apply (L.orbitRelQuotient_mk_eq_mk_iff).mpr
+    rw [sub_sub_cancel_left]
+    exact neg_mem hl
+  have hs : c.symm (y - l) = q (y - l) :=
+    TauCeti.symm_eq_addQuotientMk_of_mem_atlas_addQuotient hc hy
+  exact (congrArg c hy'.symm).trans ((congrArg c hs.symm).trans (c.right_inv hy))
+
+/-- The differential of the orbit projection by a discrete submodule is the identity,
+with tangent spaces read in the quotient charts. -/
+theorem Submodule.hasMFDerivAt_orbitRelQuotient_mk (x : E) :
+    HasMFDerivAt 𝓘(𝕜, E) 𝓘(𝕜, E) (_root_.Quotient.mk (AddAction.orbitRel L E)) x
+      (ContinuousLinearMap.id 𝕜 E) := by
+  obtain ⟨l, -, hc⟩ := L.exists_eventuallyEq_sub_of_mem_atlas_orbitRelQuotient
+    (chart_mem_atlas E (_root_.Quotient.mk (AddAction.orbitRel L E) x)) (mem_chart_source _ _)
+  refine ⟨continuous_quotient_mk'.continuousAt, ?_⟩
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, modelWithCornersSelf_coe,
+    range_id, hasFDerivWithinAt_univ, extChartAt_coe, PartialEquiv.refl_symm,
+    PartialEquiv.refl_coe, Function.id_comp, Function.comp_id, id_eq]
+  convert ((hasFDerivAt_id x).sub_const l).congr_of_eventuallyEq hc using 1
+  ext
+  rfl
+
+/-- The manifold derivative of the orbit projection by a discrete submodule is the identity. -/
+@[simp]
+theorem Submodule.mfderiv_orbitRelQuotient_mk (x : E) :
+    mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) (_root_.Quotient.mk (AddAction.orbitRel L E)) x =
+      ContinuousLinearMap.id 𝕜 E :=
+  (L.hasMFDerivAt_orbitRelQuotient_mk x).mfderiv
+
+end Differential
+
+variable {L} in
+/-- The derivative of the orbit projection `E → E ⧸ L` is the same at every representative of a
+class: translations by `L` have derivative the identity. -/
+theorem Submodule.mfderiv_orbitRelQuotient_mk_eq {z w : E}
+    (h : _root_.Quotient.mk (AddAction.orbitRel L E) z =
+      _root_.Quotient.mk (AddAction.orbitRel L E) w) (v : E) :
+    mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) (_root_.Quotient.mk (AddAction.orbitRel L E)) z v =
+      mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) (_root_.Quotient.mk (AddAction.orbitRel L E)) w v := by
+  obtain ⟨l, rfl⟩ := _root_.Quotient.exact h.symm
+  have hd := TauCeti.mfderiv_addQuotientMk_vadd_apply (I := 𝓘(𝕜, E)) (n := 1) one_ne_zero
+    ((TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(𝕜, E)) (n := 1)
+      (l +ᵥ z)).mdifferentiableAt one_ne_zero) v
+  rw [← hd]
+  congr 1
+  have ht : (fun u : E ↦ l +ᵥ u) = fun u ↦ (l : E) + u :=
+    funext fun u ↦ by rw [Submodule.vadd_def, vadd_eq_add]
+  rw [ht, mfderiv_eq_fderiv, fderiv_const_add, fderiv_fun_id]
+  rw [ContinuousLinearMap.id_comp]
+  -- `fromTangentSpace z` is the identity of `E`, read as the tangent space at `z`.
+  exact NormedSpace.fromTangentSpace_symm_apply (𝕜 := 𝕜) ((l : E) + z) v
 
 variable {L} in
 /-- A map `g` of quotients by discrete submodules that is induced by a `C^n` map `f` of the ambient
@@ -449,7 +532,7 @@ theorem Submodule.isSmoothEmbedding_orbitRelQuotientMap_subtype (L : Submodule �
   refine ⟨L.isImmersion_orbitRelQuotientMap_subtype V hV, ?_⟩
   -- A continuous injection of a compact space into a Hausdorff space is an embedding.
   refine (Continuous.isClosedEmbedding ?_ ?_).isEmbedding
-  · exact Submodule.continuous_orbitRelQuotientMap _ _ _ continuous_subtype_val
+  · exact Submodule.continuous_orbitRelQuotientMap _ _ _ continuous_subtypeVal
   · exact (Submodule.orbitRelQuotientMap_injective_iff _ _ _ _).2 le_rfl
 
 /-- Let a linear map `f : E → E'` over `𝕜 = ℝ` or `ℂ` carry a full lattice `L` into a discrete
@@ -510,7 +593,7 @@ theorem Submodule.isOpenEmbedding_orbitRelQuotientToKerOrbitRelQuotientMap :
   have hj : Set.range j = _root_.Quotient.mk (AddAction.orbitRel L E) '' (LinearMap.ker f) :=
     (Submodule.range_orbitRelQuotientMap _ _ _ _).trans <| congrArg _ <| by ext; simp
   -- The range is the trace of `U` on the kernel.
-  convert hU.preimage continuous_subtype_val using 1
+  convert hU.preimage continuous_subtypeVal using 1
   ext ⟨z, hz⟩
   have hzK : z ∈ _root_.Quotient.mk (AddAction.orbitRel L E) '' (f ⁻¹' L') := hK ▸ hz
   have hzU : z ∈ U ↔ z ∈ Set.range j := by

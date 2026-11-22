@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ProjectiveLin
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Complex.Pompeiu.Basic
 import TauCeti.Analysis.Complex.RemovableSingularity
-import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.LocalExactness
+import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ModelSpace
 
 /-!
 # Dolbeault cohomology of the projective line
@@ -31,7 +31,7 @@ in the coordinate `t` and in the coordinate `s` respectively. For each
 piece, with coefficient `c(t) d(conj t)` say, the Cauchy transform `u = T c` solves
 `∂bar u = c d(conj t)` on `ℂ` (`HasCompactSupport.conjWirtingerDeriv_cauchyTransform`). Off the
 support of `c` it is holomorphic, and it tends to `0` at infinity
-(`HasCompactSupport.differentiableAt_cauchyTransform_of_notMem_tsupport` and
+(`TauCeti.hasDerivAt_cauchyTransform_of_notMem_tsupport` and
 `HasCompactSupport.tendsto_cauchyTransform_cobounded`), so `s ↦ u (1 / s)` has a removable
 singularity at `s = 0` (`TauCeti.contDiff_update_comp_inv`). Hence `u` extends by `0` to a smooth
 function on `ℂℙ¹` (`TauCeti.ProjectiveLine.contMDiff_indicator_affineOpen`). Its `∂bar` agrees
@@ -84,21 +84,21 @@ private theorem exists_delBar_eq_of_hasCompactSupport
     {β : SmoothForm 𝓘(ℝ, Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ)) F 1}
     (hβ : β.IsOfType (ofComplexManifold (Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ))) 0 1) (i : Fin 2)
     (hc : HasCompactSupport fun t ↦
-      (SmoothForm.mpullback (affineParam i) (contMDiff_affineParam_real i) β).1 t ![(1 : ℂ)]) :
+      (SmoothForm.mpullback (affineParam i) (contMDiff_affineParam_real i) β).val t ![(1 : ℂ)]) :
     ∃ f : SmoothForm 𝓘(ℝ, Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ)) F 0,
       (ofComplexManifold (Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ))).delBar f = β := by
   set η := SmoothForm.mpullback (affineParam i) (contMDiff_affineParam_real i) β
-  set c : ℂ → F := fun t ↦ η.1 t ![(1 : ℂ)]
+  set c : ℂ → F := fun t ↦ η.val t ![(1 : ℂ)]
   have hcs : ContDiff ℝ ∞ c := by
-    let Θ : ℂ → ℂ [⋀^Fin 1]→L[ℝ] F := fun y ↦ η.1 y
+    let Θ : ℂ → ℂ [⋀^Fin 1]→L[ℝ] F := fun y ↦ η.val y
     have hd : ContDiff ℝ ∞ Θ := isSmoothForm_modelSpace_iff.1 η.isSmoothForm
     exact (ContinuousAlternatingMap.apply ℝ ℂ F ![(1 : ℂ)]).contDiff.comp hd
   set u := cauchyTransform c
   have hu : ContDiff ℝ ∞ u := hc.contDiff_cauchyTransform hcs
   obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
   have hhol (w : ℂ) (hw : R < ‖w‖) : DifferentiableAt ℂ u w := by
-    refine hc.differentiableAt_cauchyTransform_of_notMem_tsupport (hcs.of_le (by simp))
-      fun h ↦ ?_
+    refine (hasDerivAt_cauchyTransform_of_notMem_tsupport
+      (hcs.continuous.integrable_of_hasCompactSupport hc) fun h ↦ ?_).differentiableAt
     have := hR h
     rw [mem_closedBall, dist_zero_right] at this
     linarith
@@ -113,7 +113,7 @@ private theorem exists_delBar_eq_of_hasCompactSupport
   refine ⟨f, mpullback_affineParam_injective i ?_⟩
   rw [mpullback_delBar _ _ (isPseudoholomorphic_affineParam i)]
   -- In the coordinate `t`, both sides are conjugate-linear with coefficient `c(t) = ∂bar u(t)`.
-  have hfun : (fun y ↦ (SmoothForm.mpullback (affineParam i) (contMDiff_affineParam_real i) f).1
+  have hfun : (fun y ↦ (SmoothForm.mpullback (affineParam i) (contMDiff_affineParam_real i) f).val
       y 0) = u := by
     rw [← indicator_affineOpen_comp_affineParam i u]
     funext y
@@ -121,7 +121,8 @@ private theorem exists_delBar_eq_of_hasCompactSupport
     exact RoughForm.ofFunction_apply _ _ _
   refine Subtype.ext (funext fun t ↦ ContinuousAlternatingMap.ext fun v ↦ ?_)
   obtain ⟨w, rfl⟩ : ∃ w : ℂ, v = ![w] := ⟨v 0, by ext k; fin_cases k; rfl⟩
-  have hη : (η.1 t : ℂ [⋀^Fin 1]→L[ℝ] F).IsOfType (Complex.I • ContinuousLinearMap.id ℝ ℂ) 0 1 := by
+  have hη : (η.val t : ℂ [⋀^Fin 1]→L[ℝ] F).IsOfType (Complex.I • ContinuousLinearMap.id ℝ ℂ) 0 1
+      := by
     simpa only [toEndomorphism_ofComplexManifold] using
       (hβ.mpullback _ (isPseudoholomorphic_affineParam i)).apply t
   have hη' := hη.map_smul_conj w (1 : ℂ)
@@ -173,8 +174,8 @@ theorem IsOfType.exists_delBar_eq_projectivization
       simpa only [coe_funSMulₗ, Complex.coe_smul] using (hα.apply x).smul (g x : ℂ)⟩
   have hcoeff (g : C^∞⟮𝓘(ℝ, Fin 1 → ℂ), ℙ ℂ (Fin 2 → ℂ); ℝ⟯) (l : Fin 2) :
       (fun t ↦ (SmoothForm.mpullback (affineParam l) (contMDiff_affineParam_real l)
-        (funSMulₗ g α)).1 t ![(1 : ℂ)]) = fun t ↦ g (affineParam l t) •
-          (SmoothForm.mpullback (affineParam l) (contMDiff_affineParam_real l) α).1 t
+        (funSMulₗ g α)).val t ![(1 : ℂ)]) = fun t ↦ g (affineParam l t) •
+          (SmoothForm.mpullback (affineParam l) (contMDiff_affineParam_real l) α).val t
             ![(1 : ℂ)] := by
     funext t
     simp only [SmoothForm.mpullback_apply, coe_funSMulₗ, ContinuousAlternatingMap.smul_apply]
@@ -207,7 +208,7 @@ instance instSubsingletonProjectivizationZeroOne :
   obtain ⟨φ, rfl⟩ := mk_surjective 0 1 a
   rw [mk_eq_zero_iff, mem_exactForms_succ]
   obtain ⟨f, hf⟩ := ((((ofComplexManifold (Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ))).mem_typeForms 0 1
-    φ.1.1).1 φ.1.2)).exists_delBar_eq_projectivization
+    φ.val.val).1 φ.val.property)).exists_delBar_eq_projectivization
   exact ⟨⟨f, ((ofComplexManifold _ _).mem_typeForms 0 0 f).2
     (SmoothForm.isOfType_zero_zero f _)⟩, hf⟩
 

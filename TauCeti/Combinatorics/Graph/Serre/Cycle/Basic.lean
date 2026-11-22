@@ -44,8 +44,8 @@ variable (Γ : SerreGraph) (O : Set Γ.E)
 coordinate even when its reverse is chosen as well. -/
 noncomputable def incidenceBoundary (R : Type*) [Ring R] :
     (O →₀ R) →ₗ[R] (Γ.V →₀ R) :=
-  Finsupp.linearCombination R fun e => Finsupp.single (Γ.tgt e.1) 1 -
-    Finsupp.single (Γ.src e.1) 1
+  Finsupp.linearCombination R fun e => Finsupp.single (Γ.tgt e.val) 1 -
+    Finsupp.single (Γ.src e.val) 1
 
 /-- The integral incidence boundary of the chosen darts. -/
 noncomputable abbrev integralCycleBoundary : (O →₀ ℤ) →ₗ[ℤ] (Γ.V →₀ ℤ) :=
@@ -74,7 +74,7 @@ theorem modTwoCycleSpace_def :
 
 @[simp] theorem incidenceBoundary_single (R : Type*) [Ring R] (e : O) (r : R) :
     Γ.incidenceBoundary O R (Finsupp.single e r) =
-      r • (Finsupp.single (Γ.tgt e.1) 1 - Finsupp.single (Γ.src e.1) 1) := by
+      r • (Finsupp.single (Γ.tgt e.val) 1 - Finsupp.single (Γ.src e.val) 1) := by
   simp [incidenceBoundary]
 
 /-- A chain is an integral cycle exactly when its signed incidence boundary vanishes. -/
@@ -89,7 +89,7 @@ theorem modTwoCycleSpace_def :
 
 /-- The incidence column of a loop vanishes over any ring. -/
 theorem incidenceBoundary_single_eq_zero_of_loop (R : Type*) [Ring R] (e : O)
-    (h : Γ.src e.1 = Γ.tgt e.1) :
+    (h : Γ.src e.val = Γ.tgt e.val) :
     Γ.incidenceBoundary O R (Finsupp.single e 1) = 0 := by
   rw [incidenceBoundary_single, one_smul, ← h, sub_self]
 
@@ -97,19 +97,40 @@ theorem incidenceBoundary_single_eq_zero_of_loop (R : Type*) [Ring R] (e : O)
 theorem incidenceBoundary_single_eq_zero_iff (R : Type*) [Ring R] [Nontrivial R]
     (e : O) :
     Γ.incidenceBoundary O R (Finsupp.single e 1) = 0 ↔
-      Γ.src e.1 = Γ.tgt e.1 := by
+      Γ.src e.val = Γ.tgt e.val := by
   rw [incidenceBoundary_single, one_smul, sub_eq_zero]
   exact (Finsupp.single_left_inj (one_ne_zero : (1 : R) ≠ 0)).trans eq_comm
 
+/-- The incidence boundary vanishes identically when every chosen dart is a loop. -/
+theorem incidenceBoundary_eq_zero (R : Type*) [Ring R] (h : ∀ e ∈ O, Γ.src e = Γ.tgt e) :
+    Γ.incidenceBoundary O R = 0 := by
+  apply Finsupp.lhom_ext
+  intro e r
+  simp [h e.val e.property]
+
+/-- Over a nontrivial ring, the incidence boundary vanishes identically exactly when every
+chosen dart is a loop. Thus a single dart that is not a loop excludes zero incidence. -/
+theorem incidenceBoundary_eq_zero_iff (R : Type*) [Ring R] [Nontrivial R] :
+    Γ.incidenceBoundary O R = 0 ↔ ∀ e ∈ O, Γ.src e = Γ.tgt e :=
+  ⟨fun h e he => (incidenceBoundary_single_eq_zero_iff R ⟨e, he⟩).mp (by simp [h]),
+    incidenceBoundary_eq_zero R⟩
+
+/-- The difference of two parallel darts, with the same source and the same target, is a
+cycle over any ring. -/
+theorem single_sub_single_mem_ker_incidenceBoundary (R : Type*) [Ring R] {e f : O}
+    (hsrc : Γ.src f.val = Γ.src e.val) (htgt : Γ.tgt f.val = Γ.tgt e.val) :
+    Finsupp.single f (1 : R) - Finsupp.single e 1 ∈ (Γ.incidenceBoundary O R).ker := by
+  simp [hsrc, htgt]
+
 /-- An individual dart is an integral cycle exactly when it is a loop. -/
 theorem single_mem_cycleLattice_iff (e : O) :
-    Finsupp.single e (1 : ℤ) ∈ Γ.cycleLattice O ↔ Γ.src e.1 = Γ.tgt e.1 := by
+    Finsupp.single e (1 : ℤ) ∈ Γ.cycleLattice O ↔ Γ.src e.val = Γ.tgt e.val := by
   rw [mem_cycleLattice_iff]
   exact incidenceBoundary_single_eq_zero_iff ℤ e
 
 /-- An individual dart is a binary cycle exactly when it is a loop. -/
 theorem single_mem_modTwoCycleSpace_iff (e : O) :
-    Finsupp.single e (1 : ZMod 2) ∈ Γ.modTwoCycleSpace O ↔ Γ.src e.1 = Γ.tgt e.1 := by
+    Finsupp.single e (1 : ZMod 2) ∈ Γ.modTwoCycleSpace O ↔ Γ.src e.val = Γ.tgt e.val := by
   rw [mem_modTwoCycleSpace_iff]
   exact incidenceBoundary_single_eq_zero_iff (ZMod 2) e
 
@@ -168,15 +189,15 @@ end
 theorem Hom.incidenceBoundary_mapDomain {Δ : SerreGraph} (f : Γ.Hom Δ)
     {O' : Set Δ.E} (hO : Set.MapsTo f.mapE O O') (R : Type*) [Ring R] (c : O →₀ R) :
     Δ.incidenceBoundary O' R
-        (Finsupp.mapDomain (fun e : O ↦ ⟨f.mapE e.1, hO e.2⟩ : O → O') c) =
+        (Finsupp.mapDomain (fun e : O ↦ ⟨f.mapE e.val, hO e.property⟩ : O → O') c) =
       Finsupp.mapDomain f.mapV (Γ.incidenceBoundary O R c) := by
   classical
-  let mapE : O → O' := fun e => ⟨f.mapE e.1, hO e.2⟩
+  let mapE : O → O' := fun e => ⟨f.mapE e.val, hO e.property⟩
   have hcol (e : O) :
       (Finsupp.lmapDomain R R f.mapV)
-          (Finsupp.single (Γ.tgt e.1) 1 - Finsupp.single (Γ.src e.1) 1) =
-        Finsupp.single (Δ.tgt (mapE e).1) 1 -
-          Finsupp.single (Δ.src (mapE e).1) 1 := by
+          (Finsupp.single (Γ.tgt e.val) 1 - Finsupp.single (Γ.src e.val) 1) =
+        Finsupp.single (Δ.tgt (mapE e).val) 1 -
+          Finsupp.single (Δ.src (mapE e).val) 1 := by
     simp [mapE, Finsupp.lmapDomain_apply, Finsupp.mapDomain_sub]
   simpa only [incidenceBoundary, LinearMap.comp_apply, Finsupp.lmapDomain_apply, mapE] using
     congrArg (fun g => g c)
@@ -187,7 +208,7 @@ theorem Hom.incidenceBoundary_mapDomain {Δ : SerreGraph} (f : Γ.Hom Δ)
 theorem Hom.map_ker_incidenceBoundary_le {Δ : SerreGraph} (f : Γ.Hom Δ)
     {O' : Set Δ.E} (hO : Set.MapsTo f.mapE O O') (R : Type*) [Ring R] :
     Submodule.map (Finsupp.lmapDomain R R
-        (fun e : O ↦ ⟨f.mapE e.1, hO e.2⟩ : O → O')) (Γ.incidenceBoundary O R).ker ≤
+        (fun e : O ↦ ⟨f.mapE e.val, hO e.property⟩ : O → O')) (Γ.incidenceBoundary O R).ker ≤
       (Δ.incidenceBoundary O' R).ker := by
   intro y hy
   obtain ⟨c, hc, rfl⟩ := Submodule.mem_map.mp hy
@@ -199,9 +220,9 @@ cycle is a pushforward. In particular this applies to graph isomorphisms carryin
 theorem Hom.map_ker_incidenceBoundary_eq {Δ : SerreGraph} (f : Γ.Hom Δ)
     {O' : Set Δ.E} (hO : Set.MapsTo f.mapE O O') (R : Type*) [Ring R]
     (hV : Function.Injective f.mapV)
-    (hE : Function.Surjective (fun e : O ↦ ⟨f.mapE e.1, hO e.2⟩ : O → O')) :
+    (hE : Function.Surjective (fun e : O ↦ ⟨f.mapE e.val, hO e.property⟩ : O → O')) :
     Submodule.map (Finsupp.lmapDomain R R
-        (fun e : O ↦ ⟨f.mapE e.1, hO e.2⟩ : O → O')) (Γ.incidenceBoundary O R).ker =
+        (fun e : O ↦ ⟨f.mapE e.val, hO e.property⟩ : O → O')) (Γ.incidenceBoundary O R).ker =
       (Δ.incidenceBoundary O' R).ker := by
   refine le_antisymm (f.map_ker_incidenceBoundary_le hO R) ?_
   intro c hc
@@ -215,7 +236,7 @@ theorem Hom.map_ker_incidenceBoundary_eq {Δ : SerreGraph} (f : Γ.Hom Δ)
 theorem Hom.map_cycleLattice_le {Δ : SerreGraph} (f : Γ.Hom Δ)
     {O' : Set Δ.E} (hO : Set.MapsTo f.mapE O O') :
     Submodule.map (Finsupp.lmapDomain ℤ ℤ
-        (fun e : O ↦ ⟨f.mapE e.1, hO e.2⟩ : O → O')) (Γ.cycleLattice O) ≤
+        (fun e : O ↦ ⟨f.mapE e.val, hO e.property⟩ : O → O')) (Γ.cycleLattice O) ≤
       Δ.cycleLattice O' :=
   f.map_ker_incidenceBoundary_le hO ℤ
 
@@ -223,7 +244,7 @@ theorem Hom.map_cycleLattice_le {Δ : SerreGraph} (f : Γ.Hom Δ)
 theorem Hom.map_modTwoCycleSpace_le {Δ : SerreGraph} (f : Γ.Hom Δ)
     {O' : Set Δ.E} (hO : Set.MapsTo f.mapE O O') :
     Submodule.map (Finsupp.lmapDomain (ZMod 2) (ZMod 2)
-        (fun e : O ↦ ⟨f.mapE e.1, hO e.2⟩ : O → O')) (Γ.modTwoCycleSpace O) ≤
+        (fun e : O ↦ ⟨f.mapE e.val, hO e.property⟩ : O → O')) (Γ.modTwoCycleSpace O) ≤
       Δ.modTwoCycleSpace O' :=
   f.map_ker_incidenceBoundary_le hO (ZMod 2)
 
@@ -231,9 +252,9 @@ theorem Hom.map_modTwoCycleSpace_le {Δ : SerreGraph} (f : Γ.Hom Δ)
 integral cycle lattice with the target lattice. -/
 theorem Hom.map_cycleLattice_eq {Δ : SerreGraph} (f : Γ.Hom Δ)
     {O' : Set Δ.E} (hO : Set.MapsTo f.mapE O O') (hV : Function.Injective f.mapV)
-    (hE : Function.Surjective (fun e : O ↦ ⟨f.mapE e.1, hO e.2⟩ : O → O')) :
+    (hE : Function.Surjective (fun e : O ↦ ⟨f.mapE e.val, hO e.property⟩ : O → O')) :
     Submodule.map (Finsupp.lmapDomain ℤ ℤ
-        (fun e : O ↦ ⟨f.mapE e.1, hO e.2⟩ : O → O')) (Γ.cycleLattice O) =
+        (fun e : O ↦ ⟨f.mapE e.val, hO e.property⟩ : O → O')) (Γ.cycleLattice O) =
       Δ.cycleLattice O' :=
   f.map_ker_incidenceBoundary_eq hO ℤ hV hE
 
@@ -241,9 +262,9 @@ theorem Hom.map_cycleLattice_eq {Δ : SerreGraph} (f : Γ.Hom Δ)
 binary cycle space with the target space. -/
 theorem Hom.map_modTwoCycleSpace_eq {Δ : SerreGraph} (f : Γ.Hom Δ)
     {O' : Set Δ.E} (hO : Set.MapsTo f.mapE O O') (hV : Function.Injective f.mapV)
-    (hE : Function.Surjective (fun e : O ↦ ⟨f.mapE e.1, hO e.2⟩ : O → O')) :
+    (hE : Function.Surjective (fun e : O ↦ ⟨f.mapE e.val, hO e.property⟩ : O → O')) :
     Submodule.map (Finsupp.lmapDomain (ZMod 2) (ZMod 2)
-        (fun e : O ↦ ⟨f.mapE e.1, hO e.2⟩ : O → O')) (Γ.modTwoCycleSpace O) =
+        (fun e : O ↦ ⟨f.mapE e.val, hO e.property⟩ : O → O')) (Γ.modTwoCycleSpace O) =
       Δ.modTwoCycleSpace O' :=
   f.map_ker_incidenceBoundary_eq hO (ZMod 2) hV hE
 
@@ -280,32 +301,35 @@ theorem single_sub_single_mem_range_incidenceBoundary {a b : Γ.V}
     exact (sub_add_sub_cancel _ _ _).symm
 
 /-- A boundary-zero chain supported on a dart set with injective boundary vanishes.
-The chain may be written in any larger ambient dart set. -/
+The chain may be written in any ambient dart set. -/
 theorem eq_zero_of_incidenceBoundary_eq_zero
-    (hsub : F ⊆ O) (hinj : Function.Injective (Γ.incidenceBoundary F R)) (c : O →₀ R)
+    (hinj : Function.Injective (Γ.incidenceBoundary F R)) (c : O →₀ R)
     (hc : Γ.incidenceBoundary O R c = 0) (hs : ∀ e ∈ c.support, e.val ∈ F) :
     c = 0 := by
   classical
-  let i : F → O := Set.inclusion hsub
-  have hi : Function.Injective i := Set.inclusion_injective hsub
-  let b := Finsupp.comapDomain i c hi.injOn
-  have hb : Finsupp.mapDomain i b = c := by
-    apply Finsupp.mapDomain_comapDomain i hi c
+  let b := Finsupp.comapDomain (Set.inclusion (Set.inter_subset_left : O ∩ F ⊆ O)) c
+    (Set.inclusion_injective _).injOn
+  have hb : Finsupp.mapDomain (Set.inclusion (Set.inter_subset_left : O ∩ F ⊆ O)) b = c := by
+    apply Finsupp.mapDomain_comapDomain _ (Set.inclusion_injective _) c
     intro e he
-    exact ⟨⟨e.val, hs e he⟩, Subtype.ext rfl⟩
-  have hboundary : Γ.incidenceBoundary F R b = 0 := by
-    rw [← Γ.incidenceBoundary_mapDomain_inclusion hsub R b, hb, hc]
-  have hbzero : b = 0 := hinj (hboundary.trans (map_zero _).symm)
+    exact ⟨⟨e.val, e.property, hs e he⟩, rfl⟩
+  have hboundary : Γ.incidenceBoundary F R
+      (Finsupp.mapDomain (Set.inclusion (Set.inter_subset_right : O ∩ F ⊆ F)) b) = 0 := by
+    rw [incidenceBoundary_mapDomain_inclusion, ← incidenceBoundary_mapDomain_inclusion
+      (Set.inter_subset_left : O ∩ F ⊆ O), hb, hc]
+  have hbzero : b = 0 :=
+    Finsupp.mapDomain_injective (Set.inclusion_injective _)
+      (by simpa using hinj (hboundary.trans (map_zero _).symm))
   rw [← hb, hbzero, Finsupp.mapDomain_zero]
 
-/-- If the boundary is injective on a dart subset, chains in any larger dart set are
+/-- If the boundary is injective on a dart subset, chains in any ambient dart set are
 determined by their boundaries and their coordinates outside that subset. -/
 theorem eq_of_incidenceBoundary_eq_of_forall_notMem
-    (hsub : F ⊆ O) (hinj : Function.Injective (Γ.incidenceBoundary F R)) (c d : O →₀ R)
+    (hinj : Function.Injective (Γ.incidenceBoundary F R)) (c d : O →₀ R)
     (hboundary : Γ.incidenceBoundary O R c = Γ.incidenceBoundary O R d)
     (hchord : ∀ e : O, e.val ∉ F → c e = d e) : c = d := by
   apply sub_eq_zero.mp
-  apply eq_zero_of_incidenceBoundary_eq_zero hsub hinj (c - d)
+  apply eq_zero_of_incidenceBoundary_eq_zero hinj (c - d)
   · simp [hboundary]
   · intro e he
     by_contra h

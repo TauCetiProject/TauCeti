@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Glue
+public import TauCeti.CategoryTheory.Exact.Functor
 public import Mathlib.Algebra.Homology.HomotopyCategory.MappingCone
 public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
 public import Mathlib.CategoryTheory.ObjectProperty.Shift
@@ -34,6 +35,7 @@ conflations `Wₙ ↣ Kⁿ⁺¹ ⊞ Lⁿ ↠ Wₙ₊₁` of the cone.
   through conflations.
 * `TauCeti.ExactStructure.acyclic`: the acyclic complexes of an exact structure, characterized by
   `TauCeti.ExactStructure.acyclic_iff`.
+* `TauCeti.ExactStructure.AcyclicData.map`: acyclicity data mapped by a conflation-exact functor.
 
 ## Main results
 
@@ -46,6 +48,8 @@ conflations `Wₙ ↣ Kⁿ⁺¹ ⊞ Lⁿ ↠ Wₙ₊₁` of the cone.
 * `TauCeti.ExactStructure.AcyclicData.acyclic_of_truncation`: a complex mapping to an acyclic
   complex by an isomorphism in negative degrees, onto the cycles `Z⁰` in degree `0`, and vanishing
   above, is acyclic.
+* `TauCeti.ExactStructure.IsConflationExact.map_acyclic`: a conflation-exact functor preserves
+  acyclic complexes.
 
 ## References
 
@@ -189,6 +193,17 @@ theorem p_descZ {T : C} (n : ℤ) (k : K.X n ⟶ T) (hk : h.i n ≫ k = 0) :
   (E.isKernelCokernelPair _ (h.conflation n)).g_desc k hk
 
 instance (n : ℤ) : Epi (h.p n) := (E.isDeflation_g (h.conflation n)).epi
+
+instance (n : ℤ) : Mono (h.i n) := (E.isInflation_f (h.conflation n)).mono
+
+/-- The morphism into the cycles `Zⁿ` induced by a morphism into `Kⁿ` killed by `Kⁿ ↠ Zⁿ⁺¹`. -/
+noncomputable def liftZ {T : C} (n : ℤ) (k : T ⟶ K.X n) (hk : k ≫ h.p n = 0) : T ⟶ h.Z n :=
+  (E.isKernelCokernelPair _ (h.conflation n)).lift k hk
+
+@[reassoc (attr := simp)]
+theorem liftZ_i {T : C} (n : ℤ) (k : T ⟶ K.X n) (hk : k ≫ h.p n = 0) :
+    h.liftZ n k hk ≫ h.i n = k :=
+  (E.isKernelCokernelPair _ (h.conflation n)).lift_f k hk
 
 end descZ
 
@@ -341,7 +356,6 @@ theorem acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) (hK : E.
   open CochainComplex.mappingCone in
   obtain ⟨A⟩ := hK
   obtain ⟨B⟩ := hL
-  have hA (n : ℤ) := E.isKernelCokernelPair _ (A.conflation n)
   have hB (n : ℤ) := E.isKernelCokernelPair _ (B.conflation n)
   -- The chain map restricts to the cycles.
   have hz (n : ℤ) : (A.i n ≫ φ.f n) ≫ B.p n = 0 := by
@@ -350,9 +364,9 @@ theorem acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) (hK : E.
     rw [Category.assoc, Category.assoc, B.fac, φ.comm, ← A.fac, Category.assoc,
       reassoc_of% (A.zero n), zero_comp]
   let g (n : ℤ) : A.Z n ⟶ B.Z n :=
-    (KernelFork.IsLimit.lift' (hB n).fIsKernel (A.i n ≫ φ.f n) (hz n)).1
+    (KernelFork.IsLimit.lift' (hB n).fIsKernel (A.i n ≫ φ.f n) (hz n)).val
   have hg (n : ℤ) : g n ≫ B.i n = A.i n ≫ φ.f n :=
-    (KernelFork.IsLimit.lift' (hB n).fIsKernel (A.i n ≫ φ.f n) (hz n)).2
+    (KernelFork.IsLimit.lift' (hB n).fIsKernel (A.i n ≫ φ.f n) (hz n)).property
   have hpg (n : ℤ) : A.p n ≫ g (n + 1) = φ.f n ≫ B.p n := by
     have := (hB (n + 1)).mono_f
     rw [← cancel_mono (B.i (n + 1)), Category.assoc, hg, ← Category.assoc, A.fac, Category.assoc,
@@ -392,7 +406,7 @@ theorem acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) (hK : E.
   refine ⟨{
     Z := W
     i m := -(e m ≫ A.i (m + 1)) ≫ (inl φ).v (m + 1) m (by lia) + v m ≫ (inr φ).f m
-    p m := (fst φ).1.v m (m + 1) rfl ≫ pushout.inl (A.i (m + 1)) (g (m + 1)) +
+    p m := (fst φ).val.v m (m + 1) rfl ≫ pushout.inl (A.i (m + 1)) (g (m + 1)) +
       (snd φ).v m m (add_zero m) ≫ B.p m ≫ pushout.inr (A.i (m + 1)) (g (m + 1))
     zero m := ?_
     conflation m := ?_
@@ -407,7 +421,7 @@ theorem acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) (hK : E.
     exact ShortComplex.isoMk (Iso.refl _)
       (show K.X (m + 1) ⊞ L.X m ≅ (CochainComplex.mappingCone φ).X m from
       { hom := biprod.desc (-(inl φ).v (m + 1) m (by lia)) ((inr φ).f m)
-        inv := biprod.lift (-(fst φ).1.v m (m + 1) rfl) ((snd φ).v m m (add_zero m))
+        inv := biprod.lift (-(fst φ).val.v m (m + 1) rfl) ((snd φ).v m m (add_zero m))
         hom_inv_id := by apply biprod.hom_ext' <;> apply biprod.hom_ext <;> simp
         inv_hom_id := by simp [biprod.lift_desc, id_X φ m (m + 1) rfl] })
       (show W (m + 1) ≅ W (m + 1) from
@@ -450,7 +464,7 @@ theorem acyclic_mappingCone_of_isPushout {K L : CochainComplex C ℤ} (φ : K �
   refine ⟨{
     Z := B
     i m := j m ≫ (inr φ).f m - q m ≫ (inl φ).v (m + 1) m (by lia)
-    p m := (fst φ).1.v m (m + 1) rfl ≫ v (m + 1) + (snd φ).v m m (add_zero m) ≫ u m
+    p m := (fst φ).val.v m (m + 1) rfl ≫ v (m + 1) + (snd φ).v m m (add_zero m) ≫ u m
     zero m := by simp [(sq m).w]
     conflation m := ?_
     fac m := ?_ }⟩
@@ -499,6 +513,29 @@ theorem acyclic_mappingCone_of_iso {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} 
     E.acyclic (CochainComplex.mappingCone φ₁) :=
   E.acyclic.prop_of_iso (HomologicalComplex.homotopyCofiber.mapArrowIso φ₂ φ₁
     (fun j ↦ ⟨j - 1, by simp⟩) (Arrow.isoMk a b comm.symm).symm) h
+
+section Functor
+
+variable {D : Type*} [Category D] [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
+  {E} {E' : ExactStructure D} {F : C ⥤ D} [F.Additive]
+
+/-- Acyclicity data mapped by a conflation-exact functor: the cycles, inflations and deflations
+are the images under `F`. -/
+def AcyclicData.map (hF : E.IsConflationExact E' F) {K : CochainComplex C ℤ}
+    (h : E.AcyclicData K) : E'.AcyclicData ((F.mapHomologicalComplex (.up ℤ)).obj K) where
+  Z n := F.obj (h.Z n)
+  i n := F.map (h.i n)
+  p n := F.map (h.p n)
+  zero n := by rw [← F.map_comp, h.zero, F.map_zero]
+  conflation n := hF.map_conflation (h.conflation n)
+  fac n := by rw [← F.map_comp, h.fac]; rfl
+
+/-- **A conflation-exact functor preserves acyclic complexes.** -/
+theorem IsConflationExact.map_acyclic (hF : E.IsConflationExact E' F) {K : CochainComplex C ℤ}
+    (hK : E.acyclic K) : E'.acyclic ((F.mapHomologicalComplex (.up ℤ)).obj K) :=
+  (((E.acyclic_iff K).1 hK).some.map hF).acyclic
+
+end Functor
 
 end ExactStructure
 

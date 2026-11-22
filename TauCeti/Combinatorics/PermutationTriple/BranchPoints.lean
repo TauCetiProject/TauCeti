@@ -76,9 +76,6 @@ and only on isomorphism classes, since `swap1Inf` is an involution only up to re
   Mathematical Sciences 141, Springer 2004, §1.5.
 * E. Girondo, G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins d'Enfants*,
   London Mathematical Society Student Texts 79, Cambridge University Press 2012, §4.
-* Tau Ceti Project, [Belyi branch-point operations prototype][branch-point-prototype].
-
-[branch-point-prototype]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/318e636435644f93eea44901d3d75bd1e9204e1d/TauCetiRoadmap/BelyiMaps/Suggested.lean
 -/
 
 public section
@@ -728,23 +725,23 @@ variable {n : ℕ}
 
 /-- Reorder the branch points of a connected triple. -/
 def reindexBranchPoints (t : ConnectedTriple n) (ρ : Perm (Fin 3)) : ConnectedTriple n :=
-  ⟨t.1.reindexBranchPoints ρ,
-    (PermutationTriple.isConnected_reindexBranchPoints_iff t.1 ρ).2 t.2⟩
+  ⟨t.val.reindexBranchPoints ρ,
+    (PermutationTriple.isConnected_reindexBranchPoints_iff t.val ρ).2 t.property⟩
 
 @[simp]
 theorem coe_reindexBranchPoints (t : ConnectedTriple n) (ρ : Perm (Fin 3)) :
-    (t.reindexBranchPoints ρ).1 = t.1.reindexBranchPoints ρ := (rfl)
+    (t.reindexBranchPoints ρ).val = t.val.reindexBranchPoints ρ := (rfl)
 
 /-- Reordering the branch points along the identity permutation changes nothing. -/
 @[simp]
 theorem reindexBranchPoints_one (t : ConnectedTriple n) : t.reindexBranchPoints 1 = t :=
-  Subtype.ext (PermutationTriple.reindexBranchPoints_one t.1)
+  Subtype.ext (PermutationTriple.reindexBranchPoints_one t.val)
 
 /-- Reordering the branch points commutes with relabeling the sheets. -/
 @[simp]
 theorem reindexBranchPoints_smul (τ : Perm (Fin n)) (t : ConnectedTriple n) (ρ : Perm (Fin 3)) :
     (τ • t).reindexBranchPoints ρ = τ • t.reindexBranchPoints ρ :=
-  Subtype.ext (PermutationTriple.reindexBranchPoints_smul t.1 ρ τ)
+  Subtype.ext (PermutationTriple.reindexBranchPoints_smul t.val ρ τ)
 
 end ConnectedTriple
 
@@ -781,7 +778,7 @@ instance : MulAction (Perm (Fin 3))ᵐᵒᵖ (ConnectedIsoClass n) where
     simp only [ConnectedTriple.coe_reindexBranchPoints]
     exact (PermutationTriple.equivalent_iff_exists_smul_eq.2 (by
       obtain ⟨τ, hτ⟩ := PermutationTriple.equivalent_iff_exists_smul_eq.1
-        (PermutationTriple.equivalent_reindexBranchPoints_reindexBranchPoints t.1 ρ ρ')
+        (PermutationTriple.equivalent_reindexBranchPoints_reindexBranchPoints t.val ρ ρ')
       exact ⟨τ⁻¹, by rw [← hτ, inv_smul_smul]⟩))
 
 end ConnectedIsoClass

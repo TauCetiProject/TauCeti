@@ -182,7 +182,7 @@ private theorem exists_lineDeriv_eq_sub
       (f := fun t => g (y - t • h)) (a := 0) (b := 1) (C := 1) fun t _ => hg _
   · simpa [hΦ] using intervalIntegral.integral_nonneg zero_le_one fun t _ => hg (y - t • h)
   · rw [hΦ']
-    exact (g.continuous.hasLineDerivAt_intervalIntegral_comp_sub y).lineDeriv
+    simpa using (g.continuous.hasLineDerivAt_intervalIntegral_comp_sub 0 1 y).lineDeriv
 
 omit [FiniteDimensional ℝ E] in
 /-- Pairing the difference `u (· + h) - u` with a test function `g` on `V` amounts to pairing `u`

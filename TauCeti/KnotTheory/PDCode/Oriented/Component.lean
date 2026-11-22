@@ -15,6 +15,11 @@ public import TauCeti.GroupTheory.Perm.Basic
 set of crossing-free circle labels. Its cardinality is the native component count. The
 constructor `componentOfOutgoing` assigns an outgoing half-edge to its component, independently
 of the point chosen along that traversal.
+`crossingComponentOfHalfEdge` also accepts incoming half-edges, and is invariant
+under arc pairing and passing straight through a crossing. `apply_crossingComponentOfHalfEdge`
+evaluates maps on crossing-bearing components at arbitrary half-edges from their action on
+outgoing half-edges, and `liftCrossingComponent` descends crossing-turn- and arc-invariant
+half-edge functions to `CrossingComponent`.
 
 `componentEquiv` transports these components along an equivalence of outgoing traversals and
 an explicit bijection of crossing-free labels. It preserves identities and composition;
@@ -72,6 +77,114 @@ theorem componentOfOutgoing_componentPermOutgoing (D : OrientedPDCode n)
   rw [componentOfOutgoing_eq_iff]
   exact sameCycle_apply_left.mpr (SameCycle.refl _ _)
 
+section HalfEdge
+
+variable (D : OrientedPDCode n)
+
+/-- The crossing-bearing component containing a half-edge, irrespective of its direction.
+An incoming half-edge is represented by the outgoing half-edge at the other end of its arc. -/
+def crossingComponentOfHalfEdge (h : Fin (4 * n)) : D.CrossingComponent :=
+  if hh : D.orientation h = true then ⟦⟨h, hh⟩⟧
+  else ⟦⟨D.edgePair.val h, by simpa using hh⟩⟧
+
+/-- An outgoing half-edge represents its own crossing-bearing component. -/
+@[simp] theorem crossingComponentOfHalfEdge_of_outgoing (h : Fin (4 * n))
+    (hh : D.orientation h = true) :
+    D.crossingComponentOfHalfEdge h = ⟦⟨h, hh⟩⟧ := by
+  simp [crossingComponentOfHalfEdge, hh]
+
+/-- An incoming half-edge is represented by the outgoing end of its arc. -/
+@[simp] theorem crossingComponentOfHalfEdge_of_incoming (h : Fin (4 * n))
+    (hh : D.orientation h = false) :
+    D.crossingComponentOfHalfEdge h =
+      ⟦⟨D.edgePair.val h, by simp [hh]⟩⟧ := by
+  simp [crossingComponentOfHalfEdge, hh]
+
+/-- The arbitrary-half-edge assignment agrees with the outgoing component constructor. -/
+@[simp] theorem inl_crossingComponentOfHalfEdge
+    (h : {h : Fin (4 * n) // D.orientation h = true}) :
+    Sum.inl (D.crossingComponentOfHalfEdge h) = D.componentOfOutgoing h := by
+  simp [crossingComponentOfHalfEdge, h.property, componentOfOutgoing]
+
+/-- The two ends of an arc belong to the same crossing-bearing component. -/
+@[simp] theorem crossingComponentOfHalfEdge_edgePair (h : Fin (4 * n)) :
+    D.crossingComponentOfHalfEdge (D.edgePair.val h) = D.crossingComponentOfHalfEdge h := by
+  cases hh : D.orientation h <;> simp [crossingComponentOfHalfEdge, hh]
+
+/-- Passing straight through a crossing does not change the link component. -/
+@[simp] theorem crossingComponentOfHalfEdge_crossingTurn (h : Fin (4 * n)) :
+    D.crossingComponentOfHalfEdge (D.crossingTurn h) = D.crossingComponentOfHalfEdge h := by
+  cases hh : D.orientation h with
+  | false =>
+    have he : D.orientation (D.edgePair.val h) = true := by simp [hh]
+    rw [crossingComponentOfHalfEdge_of_outgoing D _ (by simp [hh])]
+    have ht := sameCycle_apply_left.mpr
+      (SameCycle.refl D.componentPermOutgoing ⟨D.edgePair.val h, he⟩)
+    have hv : D.componentPermOutgoing ⟨D.edgePair.val h, he⟩ =
+        ⟨D.crossingTurn h, by simp [hh]⟩ := by
+      apply Subtype.ext
+      simp
+    rw [hv] at ht
+    exact (Quotient.sound ht).trans (by simp [crossingComponentOfHalfEdge, hh])
+  | true =>
+    have he : D.orientation (D.edgePair.val (D.crossingTurn h)) = true := by simp [hh]
+    have ht := sameCycle_apply_left.mpr
+      (SameCycle.refl D.componentPermOutgoing ⟨D.edgePair.val (D.crossingTurn h), he⟩)
+    have hv : D.componentPermOutgoing ⟨D.edgePair.val (D.crossingTurn h), he⟩ =
+        ⟨h, hh⟩ := by
+      apply Subtype.ext
+      simp
+    rw [hv] at ht
+    rw [crossingComponentOfHalfEdge_of_outgoing D h hh]
+    exact (by simp [crossingComponentOfHalfEdge, hh] :
+      D.crossingComponentOfHalfEdge (D.crossingTurn h) =
+        ⟦⟨D.edgePair.val (D.crossingTurn h), he⟩⟧).trans (Quotient.sound ht.symm)
+
+/-- A function on crossing-bearing components agrees with an arc-invariant half-edge function on
+every half-edge once it agrees on outgoing half-edges. -/
+theorem apply_crossingComponentOfHalfEdge {α : Sort*} (φ : D.CrossingComponent → α)
+    (g : Fin (4 * n) → α)
+    (hedge : ∀ x, g (D.edgePair.val x) = g x)
+    (hout : ∀ h : {h : Fin (4 * n) // D.orientation h = true}, φ ⟦h⟧ = g h.val)
+    (x : Fin (4 * n)) :
+    φ (D.crossingComponentOfHalfEdge x) = g x := by
+  cases hx : D.orientation x with
+  | true =>
+    rw [crossingComponentOfHalfEdge_of_outgoing D x hx, hout]
+  | false =>
+    rw [crossingComponentOfHalfEdge_of_incoming D x hx, hout, hedge]
+
+/-- Descend a half-edge function invariant under crossing turns and arc pairing to the
+crossing-bearing components of `D`. -/
+def liftCrossingComponent {α : Sort*} (f : Fin (4 * n) → α)
+    (hturn : ∀ x, f (D.crossingTurn x) = f x)
+    (hedge : ∀ x, f (D.edgePair.val x) = f x) :
+    D.CrossingComponent → α :=
+  Quotient.lift (fun x ↦ f x.val) fun _ _ hxy ↦
+    hxy.apply_eq_of_apply_eq (f := fun x ↦ f x.val) fun x ↦ by
+      simp only [componentPermOutgoing_apply, PDCode.componentPerm_apply, hturn, hedge]
+
+/-- Evaluating `liftCrossingComponent` on an outgoing traversal class evaluates the underlying
+half-edge function at that representative. -/
+@[simp] theorem liftCrossingComponent_mk {α : Sort*} (f : Fin (4 * n) → α)
+    (hturn : ∀ x, f (D.crossingTurn x) = f x)
+    (hedge : ∀ x, f (D.edgePair.val x) = f x)
+    (h : {h : Fin (4 * n) // D.orientation h = true}) :
+    D.liftCrossingComponent f hturn hedge ⟦h⟧ = f h.val := by
+  simp only [liftCrossingComponent, Quotient.lift_mk]
+
+/-- Evaluating `liftCrossingComponent` on the crossing component of any half-edge, incoming or
+outgoing, recovers the underlying half-edge function. -/
+@[simp] theorem liftCrossingComponent_crossingComponentOfHalfEdge {α : Sort*}
+    (f : Fin (4 * n) → α)
+    (hturn : ∀ x, f (D.crossingTurn x) = f x)
+    (hedge : ∀ x, f (D.edgePair.val x) = f x) (x : Fin (4 * n)) :
+    D.liftCrossingComponent f hturn hedge (D.crossingComponentOfHalfEdge x) = f x :=
+  D.apply_crossingComponentOfHalfEdge _ f hedge
+    (fun h ↦ D.liftCrossingComponent_mk f hturn hedge h) x
+
+end HalfEdge
+
 /-- The number of crossing-bearing component classes is the native crossing-component count. -/
 @[simp] theorem card_crossingComponent (D : OrientedPDCode n) :
     Nat.card D.CrossingComponent = D.toPDCode.crossingComponentCount := by
@@ -112,6 +225,30 @@ def componentEquiv (D : OrientedPDCode n) (E : OrientedPDCode m)
       E.componentOfOutgoing (e h) := by
   simp only [componentEquiv, componentOfOutgoing, Equiv.sumCongr_apply, Sum.map_inl,
     sameCycleQuotientCongr_mk]
+
+/-- If an outgoing half-edge equivalence acts on labels by a map commuting with arc pairing, then
+component transport carries every half-edge's crossing-bearing component along that map. -/
+theorem componentEquiv_inl_crossingComponentOfHalfEdge (D : OrientedPDCode n)
+    (E : OrientedPDCode m)
+    (e : {h : Fin (4 * n) // D.orientation h = true} ≃
+      {h : Fin (4 * m) // E.orientation h = true})
+    (he : E.componentPermOutgoing = e.permCongr D.componentPermOutgoing)
+    (isolated : Fin D.crossinglessComponentCount ≃ Fin E.crossinglessComponentCount)
+    (f : Fin (4 * n) → Fin (4 * m))
+    (hf : ∀ h : {h : Fin (4 * n) // D.orientation h = true}, (e h).val = f h.val)
+    (hedge : ∀ x, E.edgePair.val (f x) = f (D.edgePair.val x))
+    (x : Fin (4 * n)) :
+    D.componentEquiv E e he isolated (.inl (D.crossingComponentOfHalfEdge x)) =
+      .inl (E.crossingComponentOfHalfEdge (f x)) :=
+  D.apply_crossingComponentOfHalfEdge
+    (fun c ↦ D.componentEquiv E e he isolated (.inl c))
+    (fun x ↦ .inl (E.crossingComponentOfHalfEdge (f x)))
+    (fun x ↦ by rw [← hedge x, E.crossingComponentOfHalfEdge_edgePair])
+    (fun h ↦ by
+      have hsub : e h = ⟨f h.val, hf h ▸ (e h).property⟩ := Subtype.ext (hf h)
+      rw [← componentOfOutgoing_def, componentEquiv_componentOfOutgoing, hsub,
+        ← inl_crossingComponentOfHalfEdge])
+    x
 
 /-- Component transport acts on crossing-free circles by the supplied bijection. -/
 @[simp] theorem componentEquiv_inr (D : OrientedPDCode n) (E : OrientedPDCode m)
