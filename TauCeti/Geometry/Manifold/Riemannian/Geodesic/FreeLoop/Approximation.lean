@@ -283,9 +283,11 @@ homotopy starts at the first sampled vertex. -/
 theorem basepoint_brokenPathDurationHomotopy (p : unitInterval ×
     MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1)) :
     (brokenPathDurationHomotopy hr n p).basepoint = (p.2 : MooreFreeLoopSpace M).basepoint := by
-  rw [← MooreFreeLoopSpace.source_toMoorePath, ← MooreFreeLoopSpace.closedSample_zero _ (n + 1)]
-  -- the broken loop of the homotopy is a broken Moore path through the closed sampled vertices
-  exact source_brokenMoorePath _ _ _ _ _
+  obtain ⟨s, γ⟩ := p
+  rw [← MooreFreeLoopSpace.source_toMoorePath, toMoorePath_brokenPathDurationHomotopy hr n s γ
+      fun i ↦ ⟨MooreFreeLoopSpace.closedSample_mem_of_mem_arcsWithin γ.property i,
+        eq_of_arcDuration_eq_zero n⟩,
+    source_brokenMoorePath, MooreFreeLoopSpace.closedSample_zero]
 
 /-- **The homotopy from a free loop to the broken geodesic through its sampled vertices keeps the
 base point.** So it restricts to the loops based at a point. -/

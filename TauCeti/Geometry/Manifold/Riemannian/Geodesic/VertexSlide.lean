@@ -122,7 +122,6 @@ theorem coe_cyclicDistanceCutSampleBrokenGeodesic_apply {n : ℕ} {δ : Fin (n +
   (rfl)
 
 /-- The first sample of the broken geodesic through `q` is its base point, the first vertex `q₀`. -/
-@[simp]
 theorem coe_cyclicDistanceCutSampleBrokenGeodesic_apply_zero {n : ℕ} {δ : Fin (n + 1) → ℝ}
     (hδ : ∀ i, δ i < r) (m : ℕ) {δ' : Fin (m + 1) → ℝ}
     (hm : ∀ j, ∑ i, δ i ≤ ((m + 1 : ℕ) : ℝ) * δ' j) (q : cyclicDistanceCut (X := M) δ) :

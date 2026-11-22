@@ -376,12 +376,11 @@ keeps the first vertex. This is the restriction of
 def basedCyclicDistanceCutRepeatFirstIterate (k : ℕ) {δ : Fin (n + 1) → ℝ}
     {δ' : Fin (n + k + 1) → ℝ} (h : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j) (x : X) :
     C(basedCyclicDistanceCut (X := X) δ x, basedCyclicDistanceCut (X := X) δ' x) where
-  toFun q := ⟨fun j ↦ q.val ⟨j - k, by omega⟩,
-    repeatFirstIterate_mem_cyclicDistanceCut h q.property.1,
+  toFun q := ⟨cyclicDistanceCutRepeatFirstIterate k h ⟨q.val, q.property.1⟩,
+    (cyclicDistanceCutRepeatFirstIterate k h _).property,
     (congrArg q.val (Fin.ext (Nat.zero_sub k))).trans q.property.2⟩
-  continuous_toFun := by
-    refine Continuous.subtype_mk (continuous_pi fun _ ↦ ?_) _
-    exact (continuous_apply _).comp continuous_subtypeVal
+  continuous_toFun := (continuous_subtypeVal.comp
+    ((map_continuous _).comp (continuous_subtypeVal.subtype_mk _))).subtype_mk _
 
 @[simp]
 theorem coe_basedCyclicDistanceCutRepeatFirstIterate_apply (k : ℕ) {δ : Fin (n + 1) → ℝ}
@@ -389,7 +388,7 @@ theorem coe_basedCyclicDistanceCutRepeatFirstIterate_apply (k : ℕ) {δ : Fin (
     (q : basedCyclicDistanceCut (X := X) δ x) (j : Fin (n + k + 1)) :
     (basedCyclicDistanceCutRepeatFirstIterate k h x q : Fin (n + k + 1) → X) j =
       q.val ⟨j - k, by omega⟩ :=
-  (rfl)
+  coe_cyclicDistanceCutRepeatFirstIterate_apply k h ⟨q.val, q.property.1⟩ j
 
 /-! ### The sequence of distance cuts -/
 
