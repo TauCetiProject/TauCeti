@@ -64,16 +64,16 @@ variable {B F : Type*} {E : B → Type*} [∀ b, AddCommGroup (E b)]
 
 variable (F) in
 /-- The bundle projection restricted to the points `v` of the total space whose fibre component
-lies in the subgroup `L v.proj`. For a family of lattices this is the projection of the lattice
-bundle, a covering map (`TauCeti.isCoveringMap_latticeProj`). -/
-@[expose] def latticeProj (L : ∀ b, AddSubgroup (E b)) :
+lies in the subgroup `L v.proj`. For a family of lattices locally spanned by continuous frames,
+this is a covering map (`TauCeti.isCoveringMap_latticeProj`). -/
+def latticeProj (L : ∀ b, AddSubgroup (E b)) :
     {v : TotalSpace F E // v.snd ∈ L v.proj} → B :=
   fun v ↦ v.val.proj
 
 @[simp]
 theorem latticeProj_apply (L : ∀ b, AddSubgroup (E b))
     (v : {v : TotalSpace F E // v.snd ∈ L v.proj}) : latticeProj F L v = v.val.proj :=
-  rfl
+  (rfl)
 
 variable (F) in
 /-- The fibre of `latticeProj F L` over `b` is the subgroup `L b`. -/
@@ -87,6 +87,12 @@ def latticeProjFiberEquiv (L : ∀ b, AddSubgroup (E b)) (b : B) :
     rintro ⟨⟨⟨x, w⟩, hw⟩, rfl⟩
     rfl
   right_inv _ := rfl
+
+@[simp]
+theorem latticeProjFiberEquiv_mk (L : ∀ b, AddSubgroup (E b)) {b : B} (w : E b) (hw : w ∈ L b)
+    (h : latticeProj F L ⟨⟨b, w⟩, hw⟩ ∈ ({b} : Set B)) :
+    latticeProjFiberEquiv F L b ⟨⟨⟨b, w⟩, hw⟩, h⟩ = ⟨w, hw⟩ :=
+  (rfl)
 
 @[simp]
 theorem latticeProjFiberEquiv_symm_apply (L : ∀ b, AddSubgroup (E b)) (b : B) (w : L b) :
@@ -124,7 +130,7 @@ private theorem latticeProjFiberEquiv_fiberAdd {L : ∀ b, AddSubgroup (E b)} {b
 
 /-- A point of the fibre over `b` which is the value at some `z` of a section `s` corresponds to
 `s b ∈ L b`. -/
-private theorem latticeProjFiberEquiv_eq_of_val_eq {L : ∀ b, AddSubgroup (E b)} {s : ∀ b, E b}
+theorem latticeProjFiberEquiv_eq_of_val_eq {L : ∀ b, AddSubgroup (E b)} {s : ∀ b, E b}
     {b z : B} (v : latticeProj F L ⁻¹' {b}) (hv : v.val.val = ⟨z, s z⟩) (hb : s b ∈ L b) :
     latticeProjFiberEquiv F L b v = ⟨s b, hb⟩ := by
   obtain ⟨⟨⟨x, w⟩, hw⟩, rfl⟩ := v

@@ -96,7 +96,8 @@ theorem latticeMonodromy_mk_mvfderiv
     latticeMonodromy hL (.mk γ) ⟨mvfderiv J g x, hgΛ x (γ.source ▸ hγ 0)⟩ =
       ⟨mvfderiv J g y, hgΛ y (γ.target ▸ hγ 1)⟩ :=
   latticeMonodromy_mk_of_continuousOn hL
-    (fun b hb ↦ ((hg b hb).contMDiffAt_totalSpaceMk_mvfderiv (n := 0)).continuousAt
+    (fun b hb ↦ ((zero_add (1 : WithTop ℕ∞)).symm ▸ hg b hb :
+      ContMDiffAt J 𝓘(ℝ) (0 + 1) g b).contMDiffAt_totalSpaceMk_mvfderiv.continuousAt
       |>.continuousWithinAt) hgΛ γ hγ
 
 /-- **Global action coordinates force trivial monodromy.** If the period lattice of a regular
@@ -110,6 +111,7 @@ theorem latticeMonodromyHom_eq_one_of_periodLattice_eq_closure_mvfderiv {ι : Ty
     (hΛ : ∀ b, h.periodLattice hσc b = AddSubgroup.closure (range fun i ↦ mvfderiv J (g i) b))
     (x : B) : latticeMonodromyHom hL x = 1 :=
   latticeMonodromyHom_eq_one hL
-    (fun i ↦ ((hg i).contMDiff_totalSpaceMk_mvfderiv (n := 0)).continuous) hΛ x
+    (fun i ↦ ((zero_add (1 : WithTop ℕ∞)).symm ▸ hg i :
+      ContMDiff J 𝓘(ℝ) (0 + 1) (g i)).contMDiff_totalSpaceMk_mvfderiv.continuous) hΛ x
 
 end TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianTorusFibration
