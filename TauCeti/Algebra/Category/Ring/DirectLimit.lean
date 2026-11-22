@@ -8,101 +8,166 @@ module
 public import Mathlib.Algebra.Category.Ring.FilteredColimits
 public import Mathlib.Algebra.Colimit.DirectLimit
 public import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
+public import TauCeti.Order.Interval.Set.Directed
 
 /-!
 # Directed colimits in `CommRingCat` as direct limits of algebras
 
-Let `F : I ⥤ CommRingCat` be a diagram over a directed preorder `I`, and `i₀ : I` a stage. On the
-tail `{i : I // i₀ ≤ i}` above `i₀`, each `F.obj i` is an `F.obj i₀`-algebra through
+Let `F : I ⥤ CommRingCat` be a diagram over a preorder `I`, and `i₀ : I` a stage. On the tail
+`Set.Ici i₀` above `i₀`, each stage `F.obj i` is an `F.obj i₀`-algebra through
 `F.map (homOfLE _)`, and so is `colimit F` through `colimit.ι F i₀`. The maps of `F` between the
-stages of the tail are then `F.obj i₀`-algebra maps, and Mathlib's generic direct limit of this
-directed system of algebras is the categorical colimit: there is an `F.obj i₀`-algebra
-isomorphism from it to `colimit F` sending the canonical map from each stage to the colimit
-injection. Results about direct limits of algebras, such as base change along them, thereby apply
-to colimits of directed diagrams in `CommRingCat`.
+stages of the tail are then `F.obj i₀`-algebra maps forming a directed system, and so are the
+colimit injections from these stages. When `I` is directed, Mathlib's generic direct limit of this
+system is the categorical colimit: the map out of it induced by the colimit injections is an
+`F.obj i₀`-algebra isomorphism onto `colimit F`. Results about direct limits of algebras, such as
+base change along them, thereby apply to colimits of directed diagrams in `CommRingCat`.
 
-## Main results
+The index type may live in a smaller universe than the rings, as in
+`Mathlib/Algebra/Category/Ring/FilteredColimits.lean`.
 
-* `CategoryTheory.Functor.exists_directLimit_tail_algEquiv_colimit`: the direct limit of the tail
-  above `i₀`, with the maps of `F` as transition maps, is isomorphic to `colimit F` as an
-  `F.obj i₀`-algebra, compatibly with the maps from the stages.
+## Main declarations
+
+* `CategoryTheory.Functor.tailAlgebra`, `CategoryTheory.Functor.colimitAlgebra`: the
+  `F.obj i₀`-algebra structures on the stages above `i₀` and on `colimit F`.
+* `CategoryTheory.Functor.tailTransition`: the maps of `F` between the stages above `i₀`, as
+  `F.obj i₀`-algebra maps; they form a directed system.
+* `CategoryTheory.Functor.tailToColimit`: the colimit injections from the stages above `i₀`, as
+  `F.obj i₀`-algebra maps.
+* `CategoryTheory.Functor.directLimitTailToColimit`: the induced map from the direct limit of the
+  tail to `colimit F`.
+* `CategoryTheory.Functor.directLimitTailAlgEquivColimit`: for directed `I`, this map is an
+  `F.obj i₀`-algebra isomorphism.
 -/
 
-public section
+@[expose] public section
 
 open CategoryTheory CategoryTheory.Limits
 
 namespace CategoryTheory.Functor
 
-universe u
+universe v u
+
+section Algebra
+
+variable {I : Type v} [Preorder I] (F : I ⥤ CommRingCat.{u}) (i₀ : I)
+
+/-- A stage `F.obj i` of the tail `Set.Ici i₀` is an `F.obj i₀`-algebra through the map of `F`
+from `i₀` to `i`. -/
+abbrev tailAlgebra (i : Set.Ici i₀) : Algebra (F.obj i₀) (F.obj i) :=
+  (F.map (homOfLE i.property)).hom.toAlgebra
+
+/-- The colimit of `F` is an `F.obj i₀`-algebra through the colimit injection `colimit.ι F i₀`. -/
+noncomputable abbrev colimitAlgebra [HasColimit F] :
+    Algebra (F.obj i₀) (colimit F : CommRingCat.{u}) :=
+  (colimit.ι F i₀).hom.toAlgebra
+
+end Algebra
+
+attribute [local instance] tailAlgebra colimitAlgebra
+
+section Tail
+
+variable {I : Type v} [Preorder I] (F : I ⥤ CommRingCat.{u}) (i₀ : I)
+
+/-- The transition maps of the tail of `F` above `i₀`: the maps of `F` between stages in
+`Set.Ici i₀`, as `F.obj i₀`-algebra maps. -/
+def tailTransition (i j : Set.Ici i₀) (h : i ≤ j) : F.obj i →ₐ[F.obj i₀] F.obj j :=
+  { (F.map (homOfLE h)).hom with
+    commutes' a :=
+      (ConcreteCategory.congr_hom (F.map_comp (homOfLE i.property) (homOfLE h)) a).symm }
+
+@[simp]
+theorem tailTransition_apply (i j : Set.Ici i₀) (h : i ≤ j) (x : F.obj i) :
+    F.tailTransition i₀ i j h x = (F.map (homOfLE h)).hom x :=
+  rfl
+
+/-- The maps of `F` between the stages above `i₀` form a directed system. -/
+instance instDirectedSystemTailTransition :
+    DirectedSystem (fun i : Set.Ici i₀ ↦ F.obj i) (F.tailTransition i₀ · · ·) where
+  map_self i x := by simp
+  map_map _ _ _ hij hjk x :=
+    (ConcreteCategory.congr_hom (F.map_comp (homOfLE hij) (homOfLE hjk)) x).symm
+
+variable [HasColimit F]
+
+/-- The colimit injections from the stages of the tail of `F` above `i₀`, as `F.obj i₀`-algebra
+maps. -/
+noncomputable def tailToColimit (i : Set.Ici i₀) : F.obj i →ₐ[F.obj i₀] (colimit F : CommRingCat) :=
+  { (colimit.ι F i).hom with
+    commutes' a := ConcreteCategory.congr_hom (colimit.w F (homOfLE i.property)) a }
+
+@[simp]
+theorem tailToColimit_apply (i : Set.Ici i₀) (x : F.obj i) :
+    F.tailToColimit i₀ i x = (colimit.ι F i).hom x :=
+  rfl
+
+variable [IsDirectedOrder (Set.Ici i₀)]
+
+/-- The `F.obj i₀`-algebra map from the direct limit of the tail of `F` above `i₀` to
+`colimit F` induced by the colimit injections. Only the tail needs to be directed; it is when `I`
+is (`Set.Ici.isDirectedOrder`). -/
+noncomputable def directLimitTailToColimit :
+    DirectLimit (fun i : Set.Ici i₀ ↦ F.obj i) (F.tailTransition i₀) →ₐ[F.obj i₀]
+      (colimit F : CommRingCat) :=
+  DirectLimit.Algebra.lift _ _ _ (F.tailToColimit i₀) fun _ _ h x ↦
+    ConcreteCategory.congr_hom (colimit.w F (homOfLE h)) x
+
+@[simp]
+theorem directLimitTailToColimit_mk (i : Set.Ici i₀) (x : F.obj i) :
+    F.directLimitTailToColimit i₀ ⟦⟨i, x⟩⟧ = (colimit.ι F i).hom x :=
+  rfl
+
+theorem directLimitTailToColimit_of (i : Set.Ici i₀) (x : F.obj i) :
+    F.directLimitTailToColimit i₀ (DirectLimit.Algebra.of _ (F.tailTransition i₀) i x) =
+      (colimit.ι F i).hom x :=
+  DirectLimit.Algebra.lift_of ..
+
+end Tail
+
+section Colimit
+
+variable {I : Type v} [Preorder I] [IsDirectedOrder I] (F : I ⥤ CommRingCat.{max v u}) (i₀ : I)
+  [HasColimit F]
+
+/-- The map from the direct limit of the tail of `F` above `i₀` to `colimit F` is bijective. -/
+theorem bijective_directLimitTailToColimit :
+    Function.Bijective (F.directLimitTailToColimit i₀) := by
+  -- The directed preorder `I` is filtered, and the forgetful functor preserves filtered colimits
+  -- indexed by `I`, as `Concrete.colimit_exists_rep` and `colimit_exists_of_rep_eq` need.
+  have : Nonempty I := ⟨i₀⟩
+  have := preservesFilteredColimitsOfSize_shrink.{v, u, v, u} (forget CommRingCat.{max v u})
+  refine ⟨(injective_iff_map_eq_zero _).mpr fun z hz ↦ ?_, fun r ↦ ?_⟩
+  · obtain ⟨i, x, rfl⟩ := DirectLimit.exists_eq_mk _ z
+    rw [← DirectLimit.Algebra.of_apply, directLimitTailToColimit_of] at hz
+    rw [← DirectLimit.Algebra.of_apply]
+    obtain ⟨k, f, _, hk⟩ :=
+      Concrete.colimit_exists_of_rep_eq F x 0 (hz.trans (map_zero (colimit.ι F i).hom).symm)
+    let k' : Set.Ici i₀ := ⟨k, i.property.trans (leOfHom f)⟩
+    rw [← DirectLimit.Algebra.of_f (G := fun i : Set.Ici i₀ ↦ F.obj i) (leOfHom f : i ≤ k') x,
+      tailTransition_apply]
+    exact (congrArg _ (hk.trans (map_zero _))).trans (map_zero _)
+  · obtain ⟨i, x, rfl⟩ := Concrete.colimit_exists_rep F r
+    obtain ⟨j, h₀j, hij⟩ := exists_ge_ge i₀ i
+    exact ⟨DirectLimit.Algebra.of _ (F.tailTransition i₀) ⟨j, h₀j⟩ ((F.map (homOfLE hij)).hom x),
+      (directLimitTailToColimit_of ..).trans (ConcreteCategory.congr_hom (colimit.w F _) x)⟩
 
 /-- The direct limit of the tail of `F` above the stage `i₀` is the colimit of `F`, as an
-`F.obj i₀`-algebra: there are `F.obj i₀`-algebra transition maps on the stages `F.obj i` with
-`i₀ ≤ i`, which are the maps of `F`, and an `F.obj i₀`-algebra isomorphism from their direct limit
-to `colimit F` that sends the canonical map from each stage to the colimit injection. -/
-theorem exists_directLimit_tail_algEquiv_colimit
-    {I : Type u} [Preorder I] [IsDirected I (· ≤ ·)]
-    (F : I ⥤ CommRingCat.{u}) (i₀ : I) :
-    let J := {i : I // i₀ ≤ i}
-    letI : Nonempty J := ⟨⟨i₀, le_rfl⟩⟩
-    letI : IsDirectedOrder J := ⟨fun i j ↦ by
-      obtain ⟨k, hik, hjk⟩ := exists_ge_ge i.val j.val
-      exact ⟨⟨k, i.property.trans hik⟩, hik, hjk⟩⟩
-    letI : ∀ j : J, Algebra (F.obj i₀) (F.obj j.val) :=
-      fun j ↦ (F.map (homOfLE j.property)).hom.toAlgebra
-    letI : Algebra (F.obj i₀) (colimit F : CommRingCat.{u}) :=
-      (colimit.ι F i₀).hom.toAlgebra
-    ∃ (f : ∀ i j : J, i ≤ j → F.obj i.val →ₐ[F.obj i₀] F.obj j.val)
-      (hf : DirectedSystem (fun j : J ↦ F.obj j.val) (f · · ·)),
-      (∀ i j h x, f i j h x = (F.map (homOfLE h)).hom x) ∧
-      letI := hf
-      ∃ e : DirectLimit (fun j : J ↦ F.obj j.val) f ≃ₐ[F.obj i₀] (colimit F : CommRingCat.{u}),
-        ∀ j x, e (DirectLimit.Algebra.of _ f j x) = (colimit.ι F j.val).hom x := by
-  -- With `Nonempty I`, the directed preorder `I` is filtered, as the colimit-representative
-  -- lemmas `Concrete.colimit_exists_rep` and `Concrete.colimit_exists_of_rep_eq` below need.
-  have : Nonempty I := ⟨i₀⟩
-  let : Algebra (F.obj i₀) (colimit F : CommRingCat.{u}) := (colimit.ι F i₀).hom.toAlgebra
-  let J := {i : I // i₀ ≤ i}
-  let : Nonempty J := ⟨⟨i₀, le_rfl⟩⟩
-  let : IsDirectedOrder J := ⟨fun i j ↦ by
-    obtain ⟨k, hik, hjk⟩ := exists_ge_ge i.val j.val
-    exact ⟨⟨k, i.property.trans hik⟩, hik, hjk⟩⟩
-  let : ∀ j : J, Algebra (F.obj i₀) (F.obj j.val) :=
-    fun j ↦ (F.map (homOfLE j.property)).hom.toAlgebra
-  let trans (i j : J) (h : i ≤ j) : F.obj i.val →ₐ[F.obj i₀] F.obj j.val :=
-    { (F.map (homOfLE h)).hom with
-      commutes' := fun a ↦ congrArg (fun f : F.obj i₀ ⟶ F.obj j.val ↦ f a)
-        (F.map_comp (homOfLE i.property) (homOfLE h)).symm }
-  let incl (j : J) : F.obj j.val →ₐ[F.obj i₀] (colimit F : CommRingCat.{u}) :=
-    { (colimit.ι F j.val).hom with
-      commutes' := fun a ↦ congrArg (fun f : F.obj i₀ ⟶ colimit F ↦ f a)
-        (colimit.w F (homOfLE j.property)) }
-  have : DirectedSystem (fun j : J ↦ F.obj j.val) (trans · · ·) :=
-    { map_self := fun i a ↦ by
-        -- Expose the functor map defining this DirectLimit transition.
-        change F.map (homOfLE (le_refl i.val)) a = a
-        simp
-      map_map := fun _ _ _ hij hjk a ↦
-        (ConcreteCategory.congr_hom (F.map_comp (homOfLE hij) (homOfLE hjk)) a).symm }
-  let g := DirectLimit.Algebra.lift _ trans _ incl fun i j h a ↦
-    ConcreteCategory.congr_hom (colimit.w F (homOfLE h)) a
-  -- Both compatibilities hold by construction: `trans i j h` is `F.map (homOfLE h)` with an
-  -- algebra-map proof attached, and `g (of j x) = incl j x` is `DirectLimit.Algebra.lift_of`.
-  refine ⟨trans, inferInstance, fun _ _ _ _ ↦ rfl, AlgEquiv.ofBijective g ⟨?_, ?_⟩,
-    fun _ _ ↦ rfl⟩
-  · intro x y hxy
-    obtain ⟨i, a, rfl⟩ := DirectLimit.exists_eq_mk _ x
-    obtain ⟨j, b, rfl⟩ := DirectLimit.exists_eq_mk _ y
-    -- Expose the defining lift on representatives for the colimit equality criterion.
-    change colimit.ι F i.val a = colimit.ι F j.val b at hxy
-    obtain ⟨k, u, v, he⟩ := Concrete.colimit_exists_of_rep_eq F a b hxy
-    exact Quotient.sound ⟨⟨k, i.property.trans (leOfHom u)⟩, leOfHom u, leOfHom v, he⟩
-  · intro r
-    obtain ⟨i, a, ha⟩ := Concrete.colimit_exists_rep F r
-    obtain ⟨j, h₀j, hij⟩ := exists_ge_ge i₀ i
-    refine ⟨DirectLimit.Algebra.of _ trans ⟨j, h₀j⟩ (F.map (homOfLE hij) a), ?_⟩
-    -- Expose the lift on this representative for colimit naturality.
-    change colimit.ι F j (F.map (homOfLE hij) a) = r
-    exact (ConcreteCategory.congr_hom (colimit.w F (homOfLE hij)) a).trans ha
+`F.obj i₀`-algebra: the map induced by the colimit injections is an isomorphism. -/
+noncomputable def directLimitTailAlgEquivColimit :
+    DirectLimit (fun i : Set.Ici i₀ ↦ F.obj i) (F.tailTransition i₀) ≃ₐ[F.obj i₀]
+      (colimit F : CommRingCat) :=
+  AlgEquiv.ofBijective _ (F.bijective_directLimitTailToColimit i₀)
+
+@[simp]
+theorem directLimitTailAlgEquivColimit_mk (i : Set.Ici i₀) (x : F.obj i) :
+    F.directLimitTailAlgEquivColimit i₀ ⟦⟨i, x⟩⟧ = (colimit.ι F i).hom x :=
+  (AlgEquiv.ofBijective_apply ..).trans (directLimitTailToColimit_mk ..)
+
+theorem directLimitTailAlgEquivColimit_of (i : Set.Ici i₀) (x : F.obj i) :
+    F.directLimitTailAlgEquivColimit i₀ (DirectLimit.Algebra.of _ (F.tailTransition i₀) i x) =
+      (colimit.ι F i).hom x :=
+  (AlgEquiv.ofBijective_apply ..).trans (directLimitTailToColimit_of ..)
+
+end Colimit
 
 end CategoryTheory.Functor

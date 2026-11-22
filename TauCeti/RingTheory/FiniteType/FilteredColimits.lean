@@ -7,9 +7,6 @@ module
 
 public import TauCeti.RingTheory.TensorProduct.DirectLimit
 public import TauCeti.Algebra.Category.Ring.DirectLimit
-public import Mathlib.Algebra.Category.Ring.Colimits
-public import Mathlib.Algebra.Category.Ring.FilteredColimits
-public import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 public import Mathlib.RingTheory.FiniteType
 public import TauCeti.RingTheory.TensorProduct.Maps
 public import TauCeti.RingTheory.TensorProduct.IsIntegral
@@ -54,34 +51,23 @@ theorem exists_integral_tensor_generators_of_colimit
           (Algebra.TensorProduct.map (AlgHom.id (F.obj i₀) (F.obj j)) φ₀).toRingHom.IsIntegralElem
             ((1 : F.obj j) ⊗ₜ[F.obj i₀] x) := by
   classical
-  have : Nonempty I := ⟨i₀⟩
-  let S := F.obj i₀
-  let R := colimit F
-  let : Algebra S R := (colimit.ι F i₀).hom.toAlgebra
+  let := F.colimitAlgebra i₀
+  let : ∀ i : Set.Ici i₀, Algebra (F.obj i₀) (F.obj i) := F.tailAlgebra i₀
   intro hint
-  let J := {i : I // i₀ ≤ i}
-  let : Nonempty J := ⟨⟨i₀, le_rfl⟩⟩
-  let : IsDirectedOrder J := ⟨fun i j ↦ by
-    obtain ⟨k, hik, hjk⟩ := exists_ge_ge i.val j.val
-    exact ⟨⟨k, i.property.trans hik⟩, hik, hjk⟩⟩
-  let T : J → Type u := fun j ↦ F.obj j.val
-  let : ∀ j, CommRing (T j) := fun j ↦ inferInstance
-  let : ∀ j, Algebra S (T j) := fun j ↦ (F.map (homOfLE j.property)).hom.toAlgebra
-  obtain ⟨trans, htrans, -, e, -⟩ := F.exists_directLimit_tail_algEquiv_colimit i₀
-  have : DirectedSystem T (trans · · ·) := htrans
-  have hsingle (x : C₀) (hx : x ∈ s) :
-      ∃ j, (Algebra.TensorProduct.map (AlgHom.id S (T j)) φ₀).IsIntegralElem
-        ((1 : T j) ⊗ₜ[S] x) :=
-    AlgEquiv.exists_integral_tensor_element e φ₀ x (hint x hx)
+  have hsingle (x : C₀) (hx : x ∈ s) : ∃ j : Set.Ici i₀,
+      (Algebra.TensorProduct.map (AlgHom.id (F.obj i₀) (F.obj j)) φ₀).IsIntegralElem
+        ((1 : F.obj j) ⊗ₜ[F.obj i₀] x) :=
+    AlgEquiv.exists_integral_tensor_element (F.directLimitTailAlgEquivColimit i₀) φ₀ x (hint x hx)
   choose stage hstage using fun x : s ↦ hsingle x.val x.property
   obtain ⟨j, hj⟩ := (Finset.univ.image stage).exists_le
   refine ⟨j.val, j.property, ?_⟩
   intro l hjl x hx
   let x' : s := ⟨x, hx⟩
-  let l' : J := ⟨l, j.property.trans hjl⟩
+  let l' : Set.Ici i₀ := ⟨l, j.property.trans hjl⟩
   have hle : stage x' ≤ l' :=
     (hj _ (Finset.mem_image.mpr ⟨x', Finset.mem_univ _, rfl⟩)).trans hjl
-  exact AlgHom.isIntegralElem_tensorProductMap_one_tmul (trans (stage x') l' hle) φ₀ x (hstage x')
+  exact AlgHom.isIntegralElem_tensorProductMap_one_tmul
+    (F.tailTransition i₀ (stage x') l' hle) φ₀ x (hstage x')
 
 end CategoryTheory.Functor
 end
