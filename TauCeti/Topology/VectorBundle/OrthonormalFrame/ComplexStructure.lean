@@ -237,6 +237,9 @@ theorem exists_trivialization_unitaryFrames {B : Type*} [TopologicalSpace B] {F 
   -- An orthonormal basis `β` of `V` adapted to `J₀`, `β 1 = J₀ (β 0)` and `β 3 = J₀ (β 2)`.
   let J₀' : AlmostComplexStructure V :=
     ⟨(J₀ : V →L[ℝ] V).toLinearMap, LinearMap.ext fun v ↦ by simpa using hJ₀ v⟩
+  -- `J₀'` is built from `(J₀ : V →L[ℝ] V).toLinearMap`, so `J₀' v` unfolds to `J₀ v`: this lets
+  -- `Unitary.inner_map_map J₀` say that `J₀'` is orthogonal, and `hβ₁`, `hβ₃` (about `J₀'`) serve
+  -- below as statements about `J₀ : V →L[ℝ] V`.
   obtain ⟨β, -, hβ₁, hβ₃⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis_of_norm_eq_one
     (J := J₀') (Unitary.inner_map_map J₀)
     ((stdOrthonormalBasis ℝ V).orthonormal.1 ⟨0, by omega⟩)
