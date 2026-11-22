@@ -19,7 +19,8 @@ argument (`CategoryTheory.Functor.whiskeringLeft₂FlipIso_naturality`).
 Similarly, flipping a bifunctor commutes with target postcomposition via
 `CategoryTheory.Functor.whiskeringRightFlipIso`, with identity component equations
 (`CategoryTheory.Functor.whiskeringRightFlipIso_hom_app_app` and
-`CategoryTheory.Functor.whiskeringRightFlipIso_inv_app_app`).
+`CategoryTheory.Functor.whiskeringRightFlipIso_inv_app_app`) and naturality in the bifunctor
+argument (`CategoryTheory.Functor.whiskeringRightFlipIso_naturality`).
 -/
 
 public section
@@ -80,6 +81,17 @@ lemma whiskeringRightFlipIso_inv_app_app {C₁ C₂ D E : Type*} [Category* C₁
     (((T.whiskeringRightFlipIso G).inv).app X₂).app X₁ = 𝟙 _ := by
   simp only [whiskeringRightFlipIso, NatIso.ofComponents_inv_app, Iso.refl_inv]
   rfl
+
+/-- Naturality of `whiskeringRightFlipIso` in the bifunctor argument. -/
+@[reassoc]
+lemma whiskeringRightFlipIso_naturality {C₁ C₂ D E : Type*} [Category* C₁] [Category* C₂]
+    [Category* D] [Category* E] {T₁ T₂ : C₁ ⥤ C₂ ⥤ D} (G : D ⥤ E) (f : T₁ ⟶ T₂) :
+    (flipFunctor _ _ _).map (whiskerRight f ((whiskeringRight _ _ _).obj G)) ≫
+        (T₂.whiskeringRightFlipIso G).hom =
+      (T₁.whiskeringRightFlipIso G).hom ≫
+        whiskerRight ((flipFunctor _ _ _).map f) ((whiskeringRight _ _ _).obj G) := by
+  ext X₂ X₁
+  simp
 
 end Whiskering
 
