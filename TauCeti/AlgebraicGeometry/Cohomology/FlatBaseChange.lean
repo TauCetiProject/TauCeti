@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.BaseChange
 public import TauCeti.AlgebraicGeometry.Cohomology.Pullback
+public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
 import Mathlib.Algebra.FiveLemma
 import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 import TauCeti.AlgebraicGeometry.Scheme.Induction
@@ -610,10 +611,7 @@ theorem finrank_cohomology_trivial_eq_of_isPullback [CompactSpace X]
     [QuasiSeparatedSpace X] (n : ℕ) :
     Module.finrank K (Cohomology (InvertibleSheaf.trivial Y).obj n) =
       Module.finrank k (Cohomology (InvertibleSheaf.trivial X).obj n) := by
-  let e : (Scheme.Modules.pullback g).obj (InvertibleSheaf.trivial X).obj ≅
-      (InvertibleSheaf.trivial Y).obj :=
-    (Scheme.Modules.pullback g).mapIso (InvertibleSheaf.trivialObjIsoUnit X) ≪≫
-      Scheme.Modules.pullbackObjUnitIso g ≪≫ (InvertibleSheaf.trivialObjIsoUnit Y).symm
+  let e := InvertibleSheaf.pullbackTrivialObjIso g
   rw [← finrank_cohomology_congr K e n, finrank_cohomology_pullback_eq_of_isPullback H]
 
 include H in
@@ -623,10 +621,7 @@ theorem finiteDimensional_cohomology_trivial_of_isPullback [CompactSpace X]
     [QuasiSeparatedSpace X] (n : ℕ)
     [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj n)] :
     FiniteDimensional K (Cohomology (InvertibleSheaf.trivial Y).obj n) := by
-  let e : (Scheme.Modules.pullback g).obj (InvertibleSheaf.trivial X).obj ≅
-      (InvertibleSheaf.trivial Y).obj :=
-    (Scheme.Modules.pullback g).mapIso (InvertibleSheaf.trivialObjIsoUnit X) ≪≫
-      Scheme.Modules.pullbackObjUnitIso g ≪≫ (InvertibleSheaf.trivialObjIsoUnit Y).symm
+  let e := InvertibleSheaf.pullbackTrivialObjIso g
   exact (finiteDimensional_cohomology_congr K e n).mp
     (finiteDimensional_cohomology_pullback_of_isPullback H _ n)
 

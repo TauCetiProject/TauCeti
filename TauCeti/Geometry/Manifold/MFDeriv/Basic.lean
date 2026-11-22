@@ -16,10 +16,12 @@ manifold-derivative API.
 
 ## Main results
 
-* `TauCeti.mfderiv_comp_of_apply_eq_self`: the chain rule at a fixed point `f x = x`, with both
-  derivatives taken at `x`, so the composite is an endomorphism of the single tangent space
-  `T_x M`.
+* `TauCeti.mfderiv_comp_of_apply_eq_self`: the chain rule at a fixed point `f x = x` of the
+  inner map, with both derivatives taken at `x`, so no cast between `T_(f x) M` and `T_x M` is
+  needed.
 * `HasMFDerivAt.iterate`: the chain rule for iterates at a fixed point, `d(f^[n])_x = (df_x) ^ n`.
+* `TauCeti.mdifferentiableAt_iterate`: if `f` is differentiable at the first `n` points of the
+  orbit of `x`, then `f^[n]` is differentiable at `x`.
 * `TauCeti.mfderiv_injective_of_leftInverse`: a map with a left inverse differentiable along its
   image has injective derivative.
 * `TauCeti.mfderiv_apply_mfderiv_of_eventuallyEq_comp`: if `Φ ∘ Ψ = κ` near `x`, then `dΦ` takes
@@ -27,6 +29,8 @@ manifold-derivative API.
 * `TauCeti.mfderiv_comp_const_add_smul_apply`: the chain rule for the affine reparametrization
   `w ↦ c + ε • w` of a map from a normed space, `d(u(c + ε •))_w = ε • du_(c + ε • w)`, with no
   differentiability hypothesis.
+* `TauCeti.finiteDimensional_of_injective_mfderiv`: a map into a finite-dimensional manifold
+  whose differential is injective at some point has a finite-dimensional source model.
 -/
 
 public section
@@ -39,11 +43,13 @@ variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup
   [NormedSpace 𝕜 E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M]
   [ChartedSpace H M] {x : M}
 
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] in
 /-- The chain rule at a fixed point: if `f x = x`, the derivative of `g ∘ f` at `x` is the
 composite of the derivatives of `g` and `f` at `x`, the tangent space at `f x` being that at `x`. -/
-theorem mfderiv_comp_of_apply_eq_self {f g : M → M} (hg : MDifferentiableAt I I g x)
+theorem mfderiv_comp_of_apply_eq_self {f : M → M} {g : M → N} (hg : MDifferentiableAt I J g x)
     (hf : MDifferentiableAt I I f x) (hfx : f x = x) :
-    mfderiv I I (g ∘ f) x = (mfderiv I I g x).comp (mfderiv I I f x) := by
+    mfderiv I J (g ∘ f) x = (mfderiv I J g x).comp (mfderiv I I f x) := by
   have h := mfderiv_comp_of_eq hg hf hfx
   -- `mfderiv_comp_of_eq` takes the derivative of `g` at `f x`; replace that point by `x`.
   generalize hz : f x = z at h
@@ -63,6 +69,16 @@ theorem _root_.HasMFDerivAt.iterate {f : M → M} {f' : TangentSpace I x →L[�
     -- Move the derivative of `f^[n]` to the point `f x`, where the chain rule evaluates it.
     have ihn' : HasMFDerivAt I I f^[n] (f x) (f' ^ n) := by rw [hx]; exact ihn
     exact ihn'.comp x hf
+
+/-- **Iterates of a map differentiable along an orbit.** If `f` is differentiable at the points
+`f^[m] x`, `m < n`, of the orbit of `x`, then `f^[n]` is differentiable at `x`. -/
+theorem mdifferentiableAt_iterate {f : M → M} {n : ℕ}
+    (hf : ∀ m < n, MDifferentiableAt I I f (f^[m] x)) : MDifferentiableAt I I f^[n] x := by
+  induction n with
+  | zero => exact mdifferentiableAt_id
+  | succ n ih =>
+    rw [Function.iterate_succ']
+    exact (hf n n.lt_succ_self).comp x (ih fun m hm ↦ hf m (hm.trans n.lt_succ_self))
 
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
   {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] in
@@ -123,5 +139,15 @@ theorem mfderiv_comp_const_add_smul_apply (u : F → M) (c w : F) (ε : 𝕜) (v
     exact hu (by simpa [Function.comp_def, smul_smul, hε] using h'.comp (c + ε • w) hψ)
   rw [mfderiv_zero_of_not_mdifferentiableAt hu, mfderiv_zero_of_not_mdifferentiableAt hu']
   exact (smul_zero ε).symm
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [FiniteDimensional 𝕜 E']
+  [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] in
+/-- A map into a finite-dimensional manifold whose differential is injective at some point has a
+finite-dimensional model space. -/
+theorem finiteDimensional_of_injective_mfderiv {f : M → N}
+    (hinj : Function.Injective (mfderiv I J f x)) : FiniteDimensional 𝕜 E := by
+  have : FiniteDimensional 𝕜 (TangentSpace I x) :=
+    Module.Finite.of_injective (mfderiv I J f x).toLinearMap hinj
+  exact (tangentSpaceCastModel I x).toLinearEquiv.finiteDimensional
 
 end TauCeti

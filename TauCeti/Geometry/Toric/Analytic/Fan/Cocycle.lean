@@ -66,7 +66,7 @@ theorem analyticOverlapHomeomorph_mem (σ τ υ : Φ.cones)
     ((Φ.analyticOverlapHomeomorph hΦ σ τ x) :
       (Φ.analyticAffineChartDiagram).obj τ) ∈
         Φ.analyticOverlapOpens hΦ τ υ := by
-  obtain ⟨z, hz⟩ := Φ.exists_analyticTripleOverlap hΦ σ τ υ x x.2 h
+  obtain ⟨z, hz⟩ := Φ.exists_analyticTripleOverlap hΦ σ τ υ x x.property h
   have hx : x = ⟨(Φ.analyticAffineChartDiagram).map
       (homOfLE (inf_le_left.trans inf_le_left)) z,
       Φ.mem_analyticOverlapOpens_of_le hΦ
@@ -82,20 +82,20 @@ theorem analyticOverlapHomeomorph_cocycle (σ τ υ : Φ.cones)
     (h : (x : (Φ.analyticAffineChartDiagram).obj σ) ∈
       Φ.analyticOverlapOpens hΦ σ υ) :
     (((Φ.analyticOverlapHomeomorph hΦ τ υ)
-      ⟨(Φ.analyticOverlapHomeomorph hΦ σ τ x).1,
-        Φ.analyticOverlapHomeomorph_mem hΦ σ τ υ x h⟩).1) =
-      ((Φ.analyticOverlapHomeomorph hΦ σ υ) ⟨x.1, h⟩).1 := by
-  obtain ⟨z, hz⟩ := Φ.exists_analyticTripleOverlap hΦ σ τ υ x x.2 h
+      ⟨(Φ.analyticOverlapHomeomorph hΦ σ τ x).val,
+        Φ.analyticOverlapHomeomorph_mem hΦ σ τ υ x h⟩).val) =
+      ((Φ.analyticOverlapHomeomorph hΦ σ υ) ⟨x.val, h⟩).val := by
+  obtain ⟨z, hz⟩ := Φ.exists_analyticTripleOverlap hΦ σ τ υ x x.property h
   have hx : x = ⟨(Φ.analyticAffineChartDiagram).map
       (homOfLE (inf_le_left.trans inf_le_left)) z,
       Φ.mem_analyticOverlapOpens_of_le hΦ
         (inf_le_left.trans inf_le_left) (inf_le_left.trans inf_le_right) z⟩ :=
     Subtype.ext hz.symm
-  have ht : (Φ.analyticOverlapHomeomorph hΦ σ τ x).1 =
+  have ht : (Φ.analyticOverlapHomeomorph hΦ σ τ x).val =
       (Φ.analyticAffineChartDiagram).map
         (homOfLE (inf_le_left.trans inf_le_right)) z := by
     rw [hx, Φ.analyticOverlapHomeomorph_apply_of_le hΦ]
-  have ht' : (⟨(Φ.analyticOverlapHomeomorph hΦ σ τ x).1,
+  have ht' : (⟨(Φ.analyticOverlapHomeomorph hΦ σ τ x).val,
       Φ.analyticOverlapHomeomorph_mem hΦ σ τ υ x h⟩ :
       Φ.analyticOverlapOpens hΦ τ υ) =
       ⟨(Φ.analyticAffineChartDiagram).map
@@ -104,7 +104,7 @@ theorem analyticOverlapHomeomorph_cocycle (σ τ υ : Φ.cones)
           (inf_le_left.trans inf_le_right) inf_le_right z⟩ := Subtype.ext ht
   rw [ht', Φ.analyticOverlapHomeomorph_apply_of_le hΦ
     (inf_le_left.trans inf_le_right) inf_le_right z]
-  have hx' : (⟨x.1, h⟩ : Φ.analyticOverlapOpens hΦ σ υ) =
+  have hx' : (⟨x.val, h⟩ : Φ.analyticOverlapOpens hΦ σ υ) =
       ⟨(Φ.analyticAffineChartDiagram).map
         (homOfLE (inf_le_left.trans inf_le_left)) z,
         Φ.mem_analyticOverlapOpens_of_le hΦ

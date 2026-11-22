@@ -32,6 +32,8 @@ none of the further theory built on it.
 * `TauCeti.MonoidAlgebra.mem_ideal_smul_top_iff`: an element of `R[M]` lies in `I • R[M]` exactly
   when its coefficients lie in `I`, and `TauCeti.MonoidAlgebra.mapRingHom_eq_zero_iff`: the kernel
   of the coefficientwise map along `f : R →+* S` is `ker f • R[M]`.
+* `MonoidAlgebra.mem_rangeS_mapRingHom_iff` and its additive form characterize the image of
+  a coefficient homomorphism by the image membership of every coefficient.
 * The `IsAddTorsionFree (MonoidAlgebra R M)` and `HasUniqueDiv (MonoidAlgebra R M)` instances:
   `R[M]` inherits the absence of additive torsion from its coefficients, as `M →₀ R` does in
   Mathlib.
@@ -41,6 +43,11 @@ none of the further theory built on it.
 * `MonoidAlgebra.single_mem_nonZeroDivisors` and `MonoidAlgebra.mrange_of_le_nonZeroDivisors`:
   for a cancellative monoid `M`, monomials with non-zero-divisor coefficients (in particular
   coefficient-one monomials) are non-zero-divisors in `R[M]`.
+* `MonoidAlgebra.addSubgroupClosure_range_of`: the basis monomials generate `ℤ[M]` as an additive
+  group.
+* `MonoidAlgebra.isRegular_single_one` and `MonoidAlgebra.isRegular_natCast`: for an arbitrary
+  monoid `M`, a regular element of `R` placed at the identity, for instance a regular natural
+  number, is regular in `R[M]`.
 * `MonoidAlgebra.singleOneUnit`: in a group algebra, `single g 1` as a unit with inverse
   `single g⁻¹ 1`, and `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by it
   conjugates the indices of the coefficients.
@@ -125,6 +132,19 @@ theorem mapRingHom_eq_zero_iff [Monoid M] {S : Type*} [Semiring S] (f : R →+* 
       x ∈ RingHom.ker f • (⊤ : Submodule R (MonoidAlgebra R M)) := by
   rw [mem_ideal_smul_top_iff, ← MonoidAlgebra.coeff_inj]
   simp [Finsupp.ext_iff, MonoidAlgebra.coeff_mapRingHom]
+
+/-- A monoid-algebra element comes from a coefficient map exactly when each coefficient does.
+No injectivity or surjectivity assumption on the coefficient map is needed. -/
+@[to_additive (dont_translate := R S)
+/-- An additive monoid-algebra element comes from a coefficient map exactly when each
+coefficient does. No injectivity or surjectivity assumption on the coefficient map is needed. -/]
+theorem _root_.MonoidAlgebra.mem_rangeS_mapRingHom_iff {R : Type*} [Semiring R]
+    {M S : Type*} [Semiring S] [Monoid M] (f : R →+* S)
+    (p : MonoidAlgebra S M) :
+    p ∈ (MonoidAlgebra.mapRingHom M f).rangeS ↔ ∀ m, p.coeff m ∈ f.rangeS := by
+  rw [← SetLike.mem_coe, RingHom.coe_rangeS, MonoidAlgebra.coe_mapRingHom,
+    MonoidAlgebra.range_map]
+  simp
 
 /-- **The monoid algebra of a commutative torsion monoid is integral over its coefficients.**
 Every basis element `single g 1` with `g ^ n = 1` is a root of the monic polynomial `X ^ n - 1`. -/
@@ -236,6 +256,26 @@ theorem single_mem_nonZeroDivisors {R M : Type*} [Semiring R] [Monoid M] [IsCanc
   · ext t
     exact hrR (f.coeff t) (by simpa using congr(($hf).coeff (t * m)))
 
+/-- A regular element `r` of `R`, placed at the identity of `M`, is regular in `R[M]`: both
+products with `single 1 r` multiply every coefficient by `r`. No cancellativity of `M` is
+needed. -/
+@[to_additive (dont_translate := R)
+/-- A regular element `r` of `R`, placed at the zero of `M`, is regular in `R[M]`: both
+products with `single 0 r` multiply every coefficient by `r`. -/]
+theorem isRegular_single_one {R M : Type*} [Semiring R] [MulOneClass M] {r : R}
+    (hr : IsRegular r) : IsRegular (single 1 r : MonoidAlgebra R M) :=
+  ⟨fun x y h => coeff_injective <| Finsupp.ext fun m =>
+      hr.left (by simpa [coeff_single_one_mul] using congr(($h).coeff m)),
+    fun x y h => coeff_injective <| Finsupp.ext fun m =>
+      hr.right (by simpa [coeff_mul_single_one] using congr(($h).coeff m))⟩
+
+/-- A natural number that is regular in `R` stays regular in `R[M]`. -/
+@[to_additive (dont_translate := R)
+/-- A natural number that is regular in `R` stays regular in `R[M]`. -/]
+theorem isRegular_natCast {R M : Type*} [Semiring R] [MulOneClass M] {n : ℕ}
+    (hn : IsRegular (n : R)) : IsRegular (n : MonoidAlgebra R M) := by
+  simpa [natCast_def] using isRegular_single_one (M := M) hn
+
 /-- For a cancellative monoid `M`, every coefficient-one monomial in `MonoidHom.mrange (of R M)`
 is a non-zero-divisor of `R[M]`. -/
 theorem mrange_of_le_nonZeroDivisors {R M : Type*} [Semiring R] [Monoid M] [IsCancelMul M] :
@@ -264,6 +304,19 @@ omit [CommSemiring R] in
 theorem coeff_single_mul_mul_single_inv [Semiring R] (g h : G) (x : MonoidAlgebra R G) :
     (single g (1 : R) * x * single g⁻¹ 1).coeff h = x.coeff (g⁻¹ * h * g) := by
   simp [mul_assoc]
+
+/-- The basis monomials `of ℤ M m` generate the integral monoid algebra `ℤ[M]` as an additive
+group. -/
+theorem addSubgroupClosure_range_of {M : Type*} [MulOneClass M] :
+    AddSubgroup.closure (Set.range (of ℤ M)) = ⊤ := by
+  refine (AddSubgroup.eq_top_iff' _).2 fun x => ?_
+  induction x using MonoidAlgebra.induction_linear with
+  | zero => exact zero_mem _
+  | add x y hx hy => exact add_mem hx hy
+  | single m c =>
+    have h : single m c = c • of ℤ M m := by rw [of_apply, smul_single, smul_eq_mul, mul_one]
+    rw [h]
+    exact zsmul_mem (AddSubgroup.subset_closure (Set.mem_range_self m)) c
 
 end MonoidAlgebra
 

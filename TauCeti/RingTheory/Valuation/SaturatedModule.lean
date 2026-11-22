@@ -117,10 +117,10 @@ theorem IsValuationSaturated.mem_of_forall_smul_mem {P : Type*} [AddCommGroup P]
     {M : Submodule V P} (hM : IsValuationSaturated V m M) {a : V} (ha : a ∈ m)
     (hreg : IsSMulRegular P a) {w : P} (hw : ∀ b ∈ m, b • w ∈ M) : w ∈ M := by
   obtain ⟨x, hx⟩ := hM.2 (LinearMap.codRestrict M ((LinearMap.toSpanSingleton V P w).comp m.subtype)
-    fun b ↦ hw b b.2)
+    fun b ↦ hw b b.property)
   -- The value of the cod-restricted map at `a` is `a • w` by definition.
   have hxa : a • (x : P) = a • w := congrArg Subtype.val (LinearMap.congr_fun hx ⟨a, ha⟩)
-  exact hreg hxa ▸ x.2
+  exact hreg hxa ▸ x.property
 
 /-- A submodule `N` of an `m`-saturated submodule `M` is again `m`-saturated when every `x ∈ M`
 with `a • x ∈ N` for all `a ∈ m` already lies in `N`. -/
@@ -134,7 +134,8 @@ theorem IsValuationSaturated.of_le_of_forall_smul_mem {P : Type*} [AddCommGroup 
   obtain ⟨x, hx⟩ := hM.2 ((Submodule.inclusion hNM).comp f)
   have hxa (a : m) : (a : V) • (x : P) = f a := by
     simpa using congrArg Subtype.val (LinearMap.congr_fun hx a)
-  refine ⟨⟨x, h x x.2 fun a ha ↦ hxa ⟨a, ha⟩ ▸ (f ⟨a, ha⟩).2⟩, LinearMap.ext fun a ↦ ?_⟩
+  refine ⟨⟨x, h x x.property fun a ha ↦ hxa ⟨a, ha⟩ ▸ (f ⟨a, ha⟩).property⟩,
+      LinearMap.ext fun a ↦ ?_⟩
   exact Subtype.ext (by simpa using hxa a)
 
 /-- A zero module is saturated with respect to every ideal. -/
@@ -190,7 +191,7 @@ theorem not_isValuationSaturated_ideal_ideal [IsDomain V] (hbot : m ≠ ⊥) (ht
     simpa using congrArg Subtype.val (LinearMap.congr_fun hx ⟨a, ha⟩)
   have hx1 : (x : V) = 1 := by
     simpa using mul_left_cancel₀ ha0 (hax.trans (mul_one a).symm)
-  exact htop ((Ideal.eq_top_iff_one m).2 (hx1 ▸ x.2))
+  exact htop ((Ideal.eq_top_iff_one m).2 (hx1 ▸ x.property))
 
 end Basic
 

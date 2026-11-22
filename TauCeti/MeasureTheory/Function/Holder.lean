@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Function.Holder
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import TauCeti.MeasureTheory.Function.Lp.One
+import Mathlib.Analysis.InnerProductSpace.Continuous
 
 /-!
 # Hölder estimates for pointwise pairings
@@ -20,13 +24,25 @@ integration-by-parts arguments:
   `ContinuousLinearMap.memLp_of_bilin` to evaluation.
 * `MeasureTheory.MemLp.integrable_bilinear_apply`: more generally, an essentially bounded field of
   continuous bilinear maps applied to an `L^p` function and an `L^q` function is integrable.
+* `MeasureTheory.MemLp.integrable_inner_of_holderConjugate`: Hölder's inequality makes the
+  pointwise inner product `⟪h, g⟫` of `h ∈ L^q` and `g ∈ L^{q'}` integrable.
 * `ContinuousLinearMap.lpPairing_mul_eq_integral`: the Hölder pairing
   `ContinuousLinearMap.lpPairing` of the multiplication of a complete normed algebra is the
   integral of the product.
+* `ContinuousLinearMap.integrableOn_of_bilin_of_continuousOn_of_ae_mem`: a continuous bilinear
+  pairing of a function integrable on a set `s` with a function continuous on a compact set `K` of
+  full measure for `μ.restrict s` is integrable on `s`.
+* `ContinuousLinearMap.integrable_of_bilin_of_continuousOn`: a continuous bilinear pairing of a
+  function integrable on a compact set `K` and vanishing almost everywhere off `K` with a function
+  continuous on `K` is integrable.
+* `ContinuousLinearMap.norm_lpPairing_apply_apply_le`: Hölder's inequality
+  `‖B.lpPairing μ p q g f‖ ≤ ‖B‖ * ‖g‖ * ‖f‖` for the integral pairing of a bilinear map `B`.
 * `TauCeti.enorm_integral_smul_le`: Hölder's inequality `‖∫ a • f‖ ≤ ‖a‖_p ‖f‖_q` for the
   Bochner integral of a pointwise scalar multiple, for any boundedly acting scalars.
 * `MeasureTheory.Lp.sum_smul` and `MeasureTheory.Lp.smul_sum`: the heterogeneous scalar
   multiplication `Lᵖ × L^q → Lʳ` distributes over finite sums in each factor.
+* `MeasureTheory.MemLp.toLp_smul_toLp`: the product of the classes of `f` and `g` is the class of
+  `f • g`; `MeasureTheory.Lp.one_smul`: the constant one of `L^∞` acts trivially.
 -/
 
 public section
@@ -75,6 +91,23 @@ end Bilinear
 
 end MeasureTheory.MemLp
 
+namespace MeasureTheory
+
+open scoped InnerProductSpace
+
+variable {α 𝕜 H : Type*} [MeasurableSpace α] [RCLike 𝕜] [NormedAddCommGroup H]
+  [InnerProductSpace 𝕜 H] {μ : Measure α}
+
+/-- Hölder's inequality makes the pairing `x ↦ ⟪h x, g x⟫` integrable for `h ∈ L^q` and
+`g ∈ L^{q'}`. For `q = q' = 2` this is `MeasureTheory.MemLp.integrable_inner`. -/
+theorem MemLp.integrable_inner_of_holderConjugate {q q' : ℝ≥0∞} [q.HolderConjugate q']
+    {h g : α → H} (hh : MemLp h q μ) (hg : MemLp g q' μ) :
+    Integrable (fun x => ⟪h x, g x⟫_𝕜) μ :=
+  memLp_one_iff_integrable.1 <| hh.of_bilin (fun a b => ⟪a, b⟫_𝕜) 1 hg continuous_inner
+    (ae_of_all _ fun x => by simpa [← NNReal.coe_le_coe] using norm_inner_le_norm (h x) (g x))
+
+end MeasureTheory
+
 namespace ContinuousLinearMap
 
 open MeasureTheory
@@ -89,6 +122,67 @@ product. -/
 theorem lpPairing_mul_eq_integral (g : Lp R q μ) (f : Lp R q' μ) :
     (mul 𝕜 R).lpPairing μ q q' g f = ∫ x, g x * f x ∂μ := by
   simp [lpPairing_eq_integral]
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+variable {α 𝕜 E F G : Type*} [TopologicalSpace α] [MeasurableSpace α] [OpensMeasurableSpace α]
+  [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedAddCommGroup F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 E] [NormedSpace 𝕜 F] [NormedSpace 𝕜 G] {μ : Measure α}
+
+/-- A continuous bilinear pairing of a function integrable on a set `s` with a function continuous
+on a compact set `K` of full measure for `μ.restrict s` (that is, `∀ᵐ x ∂μ.restrict s, x ∈ K`) is
+integrable on `s`. Neither `s` nor `K` needs to be measurable. -/
+theorem integrableOn_of_bilin_of_continuousOn_of_ae_mem (B : E →L[𝕜] F →L[𝕜] G) {f : α → E}
+    {g : α → F} {s K : Set α} (hf : IntegrableOn f s μ) (hg : ContinuousOn g K)
+    (hK : IsCompact K) (hsK : ∀ᵐ x ∂μ.restrict s, x ∈ K) :
+    IntegrableOn (fun x ↦ B (f x) (g x)) s μ := by
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hg
+  -- `K` need not be measurable, so measure `g` on a measurable `T ⊆ K` of full measure.
+  obtain ⟨T, hTae, hTm, hTK⟩ := hsK.exists_measurable_mem
+  have hgT : AEStronglyMeasurable g ((μ.restrict s).restrict T) :=
+    (hg.aestronglyMeasurable_of_subset_isCompact hK hTm hTK).mono_measure
+      (Measure.restrict_mono subset_rfl Measure.restrict_le_self)
+  rw [Measure.restrict_eq_self_of_ae_mem hTae] at hgT
+  exact B.integrable_of_bilin_of_bdd_right C hf hgT (hsK.mono fun x hx ↦ hC x hx)
+
+/-- A continuous bilinear pairing of a function integrable on a compact set `K` and vanishing
+almost everywhere off `K` with a function continuous on `K` is integrable. The domain need not be
+Hausdorff, and `K` need not be measurable. -/
+theorem integrable_of_bilin_of_continuousOn (B : E →L[𝕜] F →L[𝕜] G) {f : α → E} {K : Set α}
+    (hf : IntegrableOn f K μ) (hK : IsCompact K) (hfK : ∀ᵐ x ∂μ, x ∉ K → f x = 0) {g : α → F}
+    (hg : ContinuousOn g K) : Integrable (fun x => B (f x) (g x)) μ := by
+  have hfi := hf.integrable_of_ae_notMem_eq_zero hfK
+  -- `K` need not be measurable, so integrate over the support of `f` instead: it is
+  -- null-measurable, and almost all of it lies in `K`.
+  refine (B.integrableOn_of_bilin_of_continuousOn_of_ae_mem (s := Function.support f)
+    hfi.integrableOn hg hK ?_).integrable_of_forall_notMem_eq_zero fun x hx ↦ ?_
+  · filter_upwards [ae_restrict_mem₀ hfi.aestronglyMeasurable.nullMeasurableSet_support,
+      ae_restrict_of_ae hfK] with x hx hxK
+    exact by_contra fun h ↦ Function.mem_support.mp hx (hxK h)
+  · simp [Function.notMem_support.mp hx]
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+variable {α 𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  [NormedSpace ℝ G] [SMulCommClass ℝ 𝕜 G] [CompleteSpace G] {mα : MeasurableSpace α}
+  {μ : Measure α} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q]
+
+/-- **Hölder's inequality** for the integral pairing `lpPairing` of a bilinear map `B`. -/
+theorem norm_lpPairing_apply_apply_le (B : E →L[𝕜] F →L[𝕜] G) (g : Lp E p μ) (f : Lp F q μ) :
+    ‖B.lpPairing μ p q g f‖ ≤ ‖B‖ * ‖g‖ * ‖f‖ := by
+  have h : B.lpPairing μ p q g f = L1.integral (B.holder 1 g f) := by
+    simp [lpPairing, L1.integral_eq' 𝕜]
+  rw [h]
+  exact (L1.norm_integral_le _).trans (B.norm_holder_apply_apply_le _ _)
 
 end ContinuousLinearMap
 
@@ -114,6 +208,22 @@ protected theorem smul_sum (s : Finset ι) (f : Lp 𝕜 p μ) (g : ι → Lp E q
   induction s using Finset.induction_on with
   | empty => simp
   | insert i s hi ih => rw [Finset.sum_insert hi, Finset.sum_insert hi, Lp.add_smul, ih]
+
+/-- The heterogeneous product of the `Lp` classes of `f` and `g` is the class of the pointwise
+product `f • g`. -/
+theorem _root_.MeasureTheory.MemLp.toLp_smul_toLp {f : α → 𝕜} {g : α → E} (hf : MemLp f p μ)
+    (hg : MemLp g q μ) : (hf.toLp f • hg.toLp g : Lp E r μ) = (hf.smul hg).toLp (f • g) :=
+  MemLp.toLp_congr _ _ <| by
+    filter_upwards [hf.coeFn_toLp, hg.coeFn_toLp] with x h₁ h₂
+    rw [Pi.smul_apply', h₁, h₂, Pi.smul_apply']
+
+omit [p.HolderTriple q r] in
+/-- The constant one of `L^∞` acts trivially on every `L^q` function. -/
+@[simp]
+protected theorem one_smul (g : Lp E q μ) : ((1 : Lp 𝕜 ∞ μ) • g : Lp E q μ) = g := by
+  conv_lhs => rw [one_def, ← Lp.toLp_coeFn g (Lp.memLp g), MemLp.toLp_smul_toLp]
+  conv_rhs => rw [← Lp.toLp_coeFn g (Lp.memLp g)]
+  exact MemLp.toLp_congr _ _ (.of_forall fun x ↦ by simp)
 
 end MeasureTheory.Lp
 
