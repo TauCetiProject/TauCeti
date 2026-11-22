@@ -39,7 +39,8 @@ needed for Auslander–Reiten duality in an exact category:
 criteria for a conflation. For a short exact sequence of an abelian category, use
 `CategoryTheory.ShortComplex.ShortExact.isAlmostSplit_iff_isLeftAlmostSplit` and
 `CategoryTheory.ShortComplex.ShortExact.isAlmostSplit_iff_isRightAlmostSplit`, which need no
-conflation.
+conflation, and `CategoryTheory.ShortComplex.ShortExact.isAlmostSplit_iff_extClass` for the
+corresponding criterion through Mathlib's `CategoryTheory.ShortComplex.ShortExact.extClass`.
 
 ## Main results
 

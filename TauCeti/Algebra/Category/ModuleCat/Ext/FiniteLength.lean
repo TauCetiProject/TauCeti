@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.FiniteLength
 public import TauCeti.CategoryTheory.Exact.Abelian
 public import TauCeti.CategoryTheory.Exact.YonedaExt.BaerSum
 import TauCeti.Algebra.Module.LinearMap.FiniteLength
+import Mathlib.Algebra.Category.ModuleCat.Projective
 import TauCeti.Algebra.Category.ModuleCat.Quotient
 import TauCeti.Algebra.Module.Projective.FinitePresentation
 import TauCeti.CategoryTheory.Exact.Projective
@@ -70,10 +71,7 @@ theorem isFiniteLength_ext1_cokernel (f : P₁ →ₗ[A] P₀) {N : ModuleCat.{t
   let e : (ExactStructure.abelian (ModuleCat.{t} A)).Extension S.X₃ S.X₁ :=
     ⟨S.X₂, S.f, S.g, S.zero, (abelian_conflation _).mpr (range f).shortExact_quotientShortComplex⟩
   have hP : (ExactStructure.abelian _).isProjective e.obj :=
-    (abelian_isProjective_iff _).mpr ⟨fun g p hp ↦ by
-      obtain ⟨h, hh⟩ := Module.projective_lifting_property p.hom g.hom
-        ((ModuleCat.epi_iff_surjective p).mp hp)
-      exact ⟨ModuleCat.ofHom h, ModuleCat.hom_ext hh⟩⟩
+    (abelian_isProjective_iff _).mpr (ModuleCat.projective_of_categoryTheory_projective _)
   -- As `P₀` is projective, every class is a cobase change of the class of `e`.
   let c : (S.X₁ ⟶ N) →ₗ[R] (ExactStructure.abelian _).Ext1 S.X₃ N :=
     { toFun a := (Ext1.mk e).pushout a

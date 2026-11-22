@@ -39,14 +39,14 @@ one ending at `τ⁻ N`, using `τ τ⁻ N ≅ N`
   `FGModuleCat.exists_isAlmostSplit_arInverseTranslate`: almost-split sequences with the
   translates as their other ends.
 * `FGModuleCat.exists_isAlmostSplit` and `FGModuleCat.exists_isAlmostSplit_of_not_injective`: the
-  existence of almost-split sequences, taking for `E` a module given by
-  `TauCeti.exists_injective_finite_length_quotient_linearMap_eq_one`, for instance an injective
-  hull of `R ⧸ J(R)`.
+  existence of almost-split sequences, from `ModuleCat.exists_isAlmostSplit_of_not_projective` and
+  `ModuleCat.exists_isAlmostSplit_of_not_injective`.
 
 ## Implementation notes
 
-The modules live in any universe `max u v w` containing those of `R` and `A`, while `E` lives in
-the universe of `R`, as for `ModuleCat.arTranslate`.
+In the theorems naming a translate, the modules live in any universe `max u v w` containing those
+of `R` and `A`, while `E` lives in the universe of `R`, as for `ModuleCat.arTranslate`. The
+existence theorems that do not name `E` hold in any universe in which `A` is small.
 
 ## References
 
@@ -118,22 +118,32 @@ include R
 
 /-- **Almost-split sequences ending at a module.** Over an Artin algebra, every finitely
 generated indecomposable module that is not projective in `FGModuleCat A` ends an almost-split
-sequence of `FGModuleCat A`. -/
-theorem exists_isAlmostSplit (M : FGModuleCat.{max u v w} A) (hM : Indecomposable M.obj)
+sequence of `FGModuleCat A`. The modules live in any universe in which `A` is small. -/
+theorem exists_isAlmostSplit [Small.{w} A] (M : FGModuleCat.{w} A) (hM : Indecomposable M.obj)
     (hP : ¬ Projective M) :
-    ∃ S : ShortComplex (FGModuleCat.{max u v w} A), S.IsAlmostSplit ∧ Nonempty (S.X₃ ≅ M) := by
-  obtain ⟨E, _, _, _, -, hE⟩ := exists_injective_finite_length_quotient_linearMap_eq_one R
-  obtain ⟨S, hS, -, h₃⟩ := exists_isAlmostSplit_arTranslate R E hE M hM hP
-  exact ⟨S, hS, h₃⟩
+    ∃ S : ShortComplex (FGModuleCat.{w} A), S.IsAlmostSplit ∧ Nonempty (S.X₃ ≅ M) := by
+  have : IsArtinianRing A := IsArtinianRing.of_finite R A
+  obtain ⟨X, Y, i, p, h, hX, hY, hS⟩ := ModuleCat.exists_isAlmostSplit_of_not_projective R M.obj
+    hM ((projective_obj_iff M).not.mpr hP)
+  let S : ShortComplex (FGModuleCat.{w} A) :=
+    ShortComplex.mk (X₁ := ⟨X, (ModuleCat.isFG_iff _).mpr hX⟩)
+      (X₂ := ⟨Y, (ModuleCat.isFG_iff _).mpr hY⟩) (X₃ := M) (ObjectProperty.homMk i)
+      (ObjectProperty.homMk p) ((ObjectProperty.ι _).map_injective h)
+  exact ⟨S, (ObjectProperty.ι _).isAlmostSplit_of_map hS, ⟨Iso.refl _⟩⟩
 
 /-- **Almost-split sequences starting at a module.** Over an Artin algebra, every finitely
 generated indecomposable module that is not injective in `FGModuleCat A` starts an almost-split
-sequence of `FGModuleCat A`. -/
-theorem exists_isAlmostSplit_of_not_injective (M : FGModuleCat.{max u v w} A)
+sequence of `FGModuleCat A`. The modules live in any universe in which `A` is small. -/
+theorem exists_isAlmostSplit_of_not_injective [Small.{w} A] (M : FGModuleCat.{w} A)
     (hM : Indecomposable M.obj) (hI : ¬ Injective M) :
-    ∃ S : ShortComplex (FGModuleCat.{max u v w} A), S.IsAlmostSplit ∧ Nonempty (S.X₁ ≅ M) := by
-  obtain ⟨E, _, _, _, _, hE⟩ := exists_injective_finite_length_quotient_linearMap_eq_one R
-  obtain ⟨S, hS, h₁, -⟩ := exists_isAlmostSplit_arInverseTranslate R E hE M hM hI
-  exact ⟨S, hS, h₁⟩
+    ∃ S : ShortComplex (FGModuleCat.{w} A), S.IsAlmostSplit ∧ Nonempty (S.X₁ ≅ M) := by
+  have : IsArtinianRing A := IsArtinianRing.of_finite R A
+  obtain ⟨Y, Z, i, p, h, hY, hZ, hS⟩ := ModuleCat.exists_isAlmostSplit_of_not_injective R M.obj
+    hM ((injective_obj_iff M).not.mpr hI)
+  let S : ShortComplex (FGModuleCat.{w} A) :=
+    ShortComplex.mk (X₁ := M) (X₂ := ⟨Y, (ModuleCat.isFG_iff _).mpr hY⟩)
+      (X₃ := ⟨Z, (ModuleCat.isFG_iff _).mpr hZ⟩) (ObjectProperty.homMk i)
+      (ObjectProperty.homMk p) ((ObjectProperty.ι _).map_injective h)
+  exact ⟨S, (ObjectProperty.ι _).isAlmostSplit_of_map hS, ⟨Iso.refl _⟩⟩
 
 end FGModuleCat
