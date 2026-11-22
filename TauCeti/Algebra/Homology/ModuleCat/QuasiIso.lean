@@ -18,7 +18,10 @@ cycle of `K` whose image is a boundary is itself a boundary
 (`HomologicalComplex.moduleCat_quasiIsoAt_iff`, and `CochainComplex.moduleCat_quasiIsoAt_iff` for
 cochain complexes indexed by `ℤ`). These are surjectivity and injectivity of the
 induced map on homology, written on representatives; the first condition alone is surjectivity
-(`HomologicalComplex.moduleCat_epi_homologyMap_iff`).
+(`HomologicalComplex.moduleCat_epi_homologyMap_iff`). Read through these conditions, homology
+commutes with directed unions: a chain map which restricts to quasi-isomorphisms on the stages of a
+directed exhaustion of its source and target by subcomplexes is a quasi-isomorphism
+(`HomologicalComplex.moduleCat_quasiIso_of_forall_exists`).
 
 For the cochain complexes `TauCeti.gradedCochainComplex` assembled from graded modules, the two
 conditions in all degrees combine into one statement about homogeneous elements
@@ -34,6 +37,9 @@ quasi-isomorphism can be propagated along a filtration one generator degree at a
 * `HomologicalComplex.moduleCat_quasiIsoAt_iff`: quasi-isomorphisms in one degree, on elements.
 * `CochainComplex.moduleCat_quasiIsoAt_iff`: the same for cochain complexes indexed by `ℤ`, with
   neighbouring degrees `n - 1` and `n + 1`.
+* `HomologicalComplex.moduleCat_quasiIso_of_forall_exists`: a chain map that restricts to
+  quasi-isomorphisms on a directed exhaustion of its source and target by subcomplexes is a
+  quasi-isomorphism.
 * `TauCeti.quasiIso_gradedCochainComplexHom_iff`: quasi-isomorphisms of graded cochain complexes
   are the maps whose relative cycles are relative boundaries.
 -/
@@ -120,6 +126,50 @@ theorem moduleCat_quasiIsoAt_iff (φ : K ⟶ L) {n p m : ι} (hp : c.prev n = p)
     rw [hmap, hzero] at hz'
     obtain ⟨b, hb⟩ := hz'
     exact (hzero x hx).2 (hinj x hx b hb)
+
+/-- **Quasi-isomorphisms pass to exhaustive unions, on elements.** Let `φ : K ⟶ L` be a chain map
+of complexes of modules, and let `φ' i : K' i ⟶ L' i` be quasi-isomorphisms with degreewise
+injective chain maps `a i : K' i ⟶ K` and `b i : L' i ⟶ L` intertwining `φ' i` with `φ`. If every
+element of `K` and every element of `L` lie in the images of `a i` and `b i` for a common index
+`i`, as for the inclusions of a directed family of subcomplexes exhausting `K` and `L`, then `φ`
+is a quasi-isomorphism.
+
+This is the commutation of homology with such directed unions, stated on elements: a cycle of `L`
+and a primitive of the image of a cycle of `K` are each seen at one stage, where `φ' i` already
+inverts them. No colimit cocone of complexes has to be constructed. -/
+theorem moduleCat_quasiIso_of_forall_exists {ι' : Type*} (φ : K ⟶ L)
+    {K' L' : ι' → HomologicalComplex (ModuleCat R) c} (φ' : ∀ i, K' i ⟶ L' i)
+    (hφ' : ∀ i, QuasiIso (φ' i)) (a : ∀ i, K' i ⟶ K) (b : ∀ i, L' i ⟶ L)
+    (hab : ∀ i, φ' i ≫ b i = a i ≫ φ) (ha : ∀ i n, Function.Injective ((a i).f n))
+    (hb : ∀ i n, Function.Injective ((b i).f n))
+    (hex : ∀ n p (x : K.X n) (y : L.X p),
+      ∃ i, (∃ x', (a i).f n x' = x) ∧ ∃ y', (b i).f p y' = y) :
+    QuasiIso φ := by
+  -- `φ' i` followed by `b i` is `a i` followed by `φ`, on elements.
+  have hab' (i : ι') (n : ι) (x' : (K' i).X n) : (b i).f n ((φ' i).f n x') = φ.f n ((a i).f n x') :=
+    by rw [← ModuleCat.comp_apply, ← comp_f, hab, comp_f, ModuleCat.comp_apply]
+  rw [quasiIso_iff]
+  intro n
+  refine (moduleCat_quasiIsoAt_iff φ rfl rfl).2 ⟨fun y hy ↦ ?_, fun x hx z hz ↦ ?_⟩
+  · -- A cycle `y` of `L` comes from a cycle `y'` of some `L' i`, which `φ' i` hits up to a
+    -- boundary.
+    obtain ⟨i, -, y', rfl⟩ := hex n n 0 y
+    have hy' : (L' i).d n (c.next n) y' = 0 :=
+      hb i _ (by rw [← Hom.comm_apply, hy, map_zero])
+    obtain ⟨x', hx', w', hw'⟩ :=
+      ((moduleCat_quasiIsoAt_iff (φ' i) rfl rfl).1 ((hφ' i).quasiIsoAt n)).1 y' hy'
+    refine ⟨(a i).f n x', by rw [Hom.comm_apply, hx', map_zero], (b i).f _ w', ?_⟩
+    rw [Hom.comm_apply, hw', map_sub, hab']
+  · -- A cycle `x` of `K` with `φ x = d z`: see `x` and `z` at a common stage `i`, where the cycle
+    -- `x'` over `x` has image `d z'`, so it bounds there.
+    obtain ⟨i, ⟨x', rfl⟩, z', rfl⟩ := hex n _ x z
+    have hx' : (K' i).d n (c.next n) x' = 0 :=
+      ha i _ (by rw [← Hom.comm_apply, hx, map_zero])
+    have hz' : (L' i).d (c.prev n) n z' = (φ' i).f n x' :=
+      hb i n (by rw [← Hom.comm_apply, hz, hab'])
+    obtain ⟨u', hu'⟩ :=
+      ((moduleCat_quasiIsoAt_iff (φ' i) rfl rfl).1 ((hφ' i).quasiIsoAt n)).2 x' hx' z' hz'
+    exact ⟨(a i).f _ u', by rw [Hom.comm_apply, hu']⟩
 
 end HomologicalComplex
 

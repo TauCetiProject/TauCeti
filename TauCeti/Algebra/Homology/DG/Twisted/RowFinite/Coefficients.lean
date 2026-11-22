@@ -23,7 +23,11 @@ from the tensor construction, rather than a second Maurer–Cartan sign calculat
 A morphism of DG right modules, applied to every coefficient, commutes with these differentials
 and so gives a morphism of twisted complexes
 (`TauCeti.RowFiniteTwistingCocycle.coefficientCochainComplexMap`); it is a quasi-isomorphism
-exactly when every relative cycle of coefficient vectors is a relative boundary.
+exactly when every relative cycle of coefficient vectors is a relative boundary. When the
+morphism is injective, so is its coefficient map
+(`TauCeti.RowFiniteTwistingCocycle.injective_coefficientCochainComplexMap_f`), and its image
+consists of the coefficient vectors whose coefficients all lie in the image of the morphism
+(`TauCeti.RowFiniteTwistingCocycle.exists_coefficientCochainComplexMap_f_eq`).
 
 The characteristic formula on a homogeneous elementary vector is
 `D(single x α) = single x (dM α) + (-1)^|α| ∑_y single y (α · m x y)`,
@@ -376,6 +380,43 @@ theorem coefficientCochainComplexXEquiv_coefficientCochainComplexMap_f_apply
       Finsupp.mapRange.linearMap (f.toLinearMap.restrictScalars R)
         (m.coefficientCochainComplexXEquiv hM n x) :=
   gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply _ _ _ n x
+
+/-- The coefficient map of an injective morphism of DG right modules is injective in every
+degree. -/
+theorem injective_coefficientCochainComplexMap_f {f : DGRightModuleHom hM hN}
+    (hf : Function.Injective f) (n : ℤ) :
+    Function.Injective ((m.coefficientCochainComplexMap hM hN f).f n) := by
+  intro x y hxy
+  apply (m.coefficientCochainComplexXEquiv hM n).injective
+  apply Subtype.ext
+  apply Finsupp.mapRange_injective _ (map_zero f) hf
+  simpa using congrArg (fun z ↦ (m.coefficientCochainComplexXEquiv hN n z : P →₀ N)) hxy
+
+/-- **Lifting coefficient vectors along an injective morphism.** A coefficient vector all of whose
+coefficients lie in the image of an injective morphism `f` of DG right modules is the image of a
+coefficient vector of the same total degree under the coefficient map of `f`. -/
+theorem exists_coefficientCochainComplexMap_f_eq {f : DGRightModuleHom hM hN}
+    (hf : Function.Injective f) {n : ℤ} (x : (m.coefficientCochainComplex hN).X n)
+    (hx : ∀ z, (m.coefficientCochainComplexXEquiv hN n x : P →₀ N) z ∈ Set.range f) :
+    ∃ x', (m.coefficientCochainComplexMap hM hN f).f n x' = x := by
+  obtain ⟨g, hg⟩ : (m.coefficientCochainComplexXEquiv hN n x : P →₀ N) ∈
+      Set.range (Finsupp.mapRange f (map_zero f)) := by
+    rw [Finsupp.range_mapRange]
+    exact hx
+  -- The coefficients of the preimage `g` have the right degrees, since `f` reflects degrees.
+  have hfh : LinearMap.IsHomogeneous (f.toLinearMap.restrictScalars R) ℳ 𝒩 0 :=
+    LinearMap.isHomogeneous_def.2 fun _ _ hy ↦ by rw [add_zero]; exact f.map_mem' hy
+  have hgdeg : g ∈ rowFiniteTotalGrading ℳ ind n := by
+    rw [mem_rowFiniteTotalGrading_iff]
+    intro z
+    refine hfh.mem_of_injective hf ?_
+    rw [add_zero]
+    convert (mem_rowFiniteTotalGrading_iff 𝒩 ind).1
+      (m.coefficientCochainComplexXEquiv hN n x).property z using 1
+    exact DFunLike.congr_fun hg z
+  refine ⟨(m.coefficientCochainComplexXEquiv hM n).symm ⟨g, hgdeg⟩,
+    (m.coefficientCochainComplexXEquiv hN n).injective (Subtype.ext ?_)⟩
+  simpa using hg
 
 end CoefficientMap
 
