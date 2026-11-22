@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.EllipticEstimate
+public import TauCeti.Analysis.PDE.Vortex.ExponentialRegularity
 public import TauCeti.Analysis.PDE.Vortex.Kernel.Decay
 public import TauCeti.Analysis.PDE.Vortex.WeakKernel
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
@@ -153,8 +153,8 @@ private theorem abs_inner_le_of_mem_weakGaugeFixedKernel (hx : ContDiff ℝ ∞ 
     rw [L2.inner_def, L2.inner_def]
     refine integral_congr_ae ?_
     filter_upwards [he'.coeFn_toLp, hf.coeFn_toLp] with z hez hfz
-    rw [hez, hfz, real_inner_smul_left, real_inner_smul_right, ← mul_assoc, ← Real.exp_add]
-    simp
+    simp only [hez, hfz, real_inner_smul_left, real_inner_smul_right, ← mul_assoc, ← Real.exp_add,
+      ← add_mul, add_neg_cancel, zero_mul, Real.exp_zero, one_mul]
   rw [hinner, ← Lp.norm_toLp _ he', ← Lp.norm_toLp _ hf]
   exact abs_real_inner_le_norm _ _
 
@@ -247,10 +247,13 @@ theorem exists_norm_exp_mul_smul_sub_starProjection_le_mul_norm {s : ℝ} (hs : 
     memLp_of_mem_sobolevFields ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq hs).2 ⟨v, hv⟩)
   obtain ⟨w, hw, hwK⟩ := hKproj f hf
   refine ⟨v - w, fun a ↦ ?_, ?_⟩
-  · filter_upwards [(inclusionLp hs).map_sub (v a) (w a) ▸ Lp.coeFn_sub _ _, hv a, hw a,
+  · have hsub : ⇑(inclusionLp hs (v a - w a)) =ᵐ[volume]
+        ⇑(inclusionLp hs (v a)) - ⇑(inclusionLp hs (w a)) := by
+      rw [map_sub]
+      exact Lp.coeFn_sub _ _
+    filter_upwards [hsub, hv a, hw a,
       Lp.coeFn_sub f ((weakGaugeFixedKernel x).starProjection f)] with z hz hvz hwz hfz
-    rw [Pi.sub_apply, hz, Pi.sub_apply, hvz, hwz, hfz, Pi.sub_apply, smul_sub, PiLp.sub_apply,
-      Complex.ofReal_sub]
+    simp only [Pi.sub_apply, hz, hvz, hwz, hfz, smul_sub, PiLp.sub_apply, Complex.ofReal_sub]
   · -- `‖exp(c ρ) f‖_(L²) ≤ 4 ‖v‖`.
     have hN : (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume).toReal ≤
         4 * ‖v‖ :=
