@@ -10,22 +10,35 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 /-!
 # Elementary inequalities in seminormed rings
 
-This file records elementary consequences of the submultiplicativity of the norm, exact
-positive-power norms without `NormOneClass`, an estimate for `‖w - 1‖` with `‖w‖ = 1` when the
-norm is multiplicative, convergence to `0` of finite partial products when factors tend to `0`
-cofinitely (`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm bounds for powers of units —
-including the shell lemma `Units.exists_lt_norm_zpow_lt` showing that the norms of integer powers
-of a unit `u` with `‖u‖ < 1` in a nontrivial normed ring visit every open interval `(a, b)` with
-`0 ≤ a` and `a * ‖u⁻¹‖ < b`.
+This file records elementary consequences of the submultiplicativity of the norm (for instance, a
+nonzero idempotent has norm at least `1`: `IsIdempotentElem.one_le_norm`), exact positive-power
+norms without `NormOneClass`, an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is
+multiplicative, convergence to `0` of finite partial products when factors tend to `0` cofinitely
+(`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm bounds for powers of units — including the
+shell lemma `Units.exists_lt_norm_zpow_lt` showing that the norms of integer powers of a unit `u`
+with `‖u‖ < 1` in a nontrivial normed ring visit every open interval `(a, b)` with `0 ≤ a` and
+`a * ‖u⁻¹‖ < b`.
+
+The affine estimate `TauCeti.sub_mul_mem_closedBall_of_norm_le` bounds the distance of
+`w₀ - w₁ * u` from `w₀` using a bound on the norm of `u`.
 
 Among the former are the estimates `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`
 (`TauCeti.norm_mul_sub_le_left`) and `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`
-(`TauCeti.norm_mul_sub_le_right`), which compare a product with `c` through the product with `b`.
+(`TauCeti.norm_mul_sub_le_right`), which compare a product with `c` through the product with `b`,
+and `‖a * c - b * d‖ₑ ≤ ‖a - b‖ₑ + ‖c - d‖ₑ` for `‖b‖ ≤ 1` and `‖c‖ ≤ 1`
+(`TauCeti.enorm_mul_sub_mul_le`), which bounds the change of a product of two factors.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- If `‖u‖ ≤ ρ`, then `w₀ - w₁ * u` lies in the closed ball of radius `‖w₁‖ * ρ` about `w₀`. -/
+theorem sub_mul_mem_closedBall_of_norm_le {R : Type*} [NonUnitalSeminormedRing R]
+    (w₀ w₁ : R) {u : R} {ρ : ℝ} (hu : ‖u‖ ≤ ρ) :
+    w₀ - w₁ * u ∈ Metric.closedBall w₀ (‖w₁‖ * ρ) := by
+  rw [mem_closedBall_iff_norm, sub_sub_cancel_left, norm_neg]
+  exact norm_mul_le_of_le le_rfl hu
 
 /-- A product of two elements in the open unit ball again belongs to the open unit ball. -/
 theorem norm_mul_lt_one {K : Type*} [NonUnitalSeminormedRing K] (u v : K) (hu : ‖u‖ < 1)
@@ -50,6 +63,19 @@ theorem norm_mul_sub_le_right {R : Type*} [NonUnitalSeminormedRing R] (e a b c :
     ‖a * e - c‖ ≤ ‖a - b‖ * ‖e‖ + ‖b * e - c‖ := by
   rw [← sub_add_sub_cancel (a * e) (b * e) c, ← sub_mul]
   exact (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
+
+/-- Replacing the factors `b` and `d` of `b * d` by `a` and `c` changes the product by at most the
+sum of the two changes, `‖a * c - b * d‖ₑ ≤ ‖a - b‖ₑ + ‖c - d‖ₑ`, when `‖b‖ ≤ 1` and `‖c‖ ≤ 1`.
+This is the normed counterpart of `TauCeti.abs_mul_sub_mul_le`. -/
+theorem enorm_mul_sub_mul_le {R : Type*} [NonUnitalSeminormedRing R] {a b c d : R}
+    (hb : ‖b‖ ≤ 1) (hc : ‖c‖ ≤ 1) : ‖a * c - b * d‖ₑ ≤ ‖a - b‖ₑ + ‖c - d‖ₑ := by
+  have h : ‖a * c - b * d‖ ≤ ‖a - b‖ + ‖c - d‖ := by
+    rw [← sub_add_sub_cancel (a * c) (b * c) (b * d), ← sub_mul, ← mul_sub]
+    exact norm_add_le_of_le ((norm_mul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) hc))
+      ((norm_mul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) hb))
+  rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_add (norm_nonneg _)
+    (norm_nonneg _)]
+  exact ENNReal.ofReal_le_ofReal h
 
 /-- Consecutive powers stay in the open unit ball when the first factor is strictly inside
 and the second factor is in the closed unit ball. -/
@@ -290,5 +316,15 @@ theorem tendsto_finsetProd_cofinite_zero {ι R : Type*} [SeminormedCommRing R] {
   exact hs.not_gt hprod
 
 end TauCeti
+
+namespace IsIdempotentElem
+
+/-- A nonzero idempotent in a normed ring has norm at least `1`. -/
+theorem one_le_norm {R : Type*} [NonUnitalNormedRing R] {p : R} (hp : IsIdempotentElem p)
+    (hp0 : p ≠ 0) : 1 ≤ ‖p‖ :=
+  (le_mul_iff_one_le_right (norm_pos_iff.mpr hp0)).mp <| by
+    simpa only [hp.eq] using norm_mul_le p p
+
+end IsIdempotentElem
 
 end
