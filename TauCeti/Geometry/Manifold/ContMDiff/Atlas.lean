@@ -46,8 +46,6 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
 
 * `OpenPartialHomeomorph.toDiffeomorphSourceTarget`: a maximal-atlas chart as a native C^n
   diffeomorphism between its intrinsic open source and target, including models with corners.
-* `OpenPartialHomeomorph.contDiffOn_symm_trans`: the transition between two charts into the model
-  vector space that are `C^n` with `C^n` inverses is `C^n`.
 * `TauCeti.extChartAtDiffeomorph`: on a boundaryless model, the extended chart at a point as a
   native `C^n` diffeomorphism from `TauCeti.chartSourceOpens` onto `TauCeti.extChartTargetOpens`,
   the open target of the chart in the model vector space.
@@ -241,14 +239,6 @@ theorem toDiffeomorphSourceTarget_symm_apply_coe (c : OpenPartialHomeomorph M H)
     ((c.toDiffeomorphSourceTarget hc).symm x : M) = c.symm x := by
   unfold toDiffeomorphSourceTarget
   rfl
-
-/-- The transition `c ∘ c'⁻¹` from a chart `c'` into the model vector space with `C^n` inverse to a
-`C^n` chart `c` is `C^n` on its source. -/
-theorem contDiffOn_symm_trans {c c' : OpenPartialHomeomorph M E}
-    (hc : ContMDiffOn I 𝓘(𝕜, E) n c c.source) (hcs' : ContMDiffOn 𝓘(𝕜, E) I n c'.symm c'.target) :
-    ContDiffOn 𝕜 n (c'.symm.trans c) (c'.symm.trans c).source := by
-  rw [trans_source, coe_trans]
-  exact contMDiffOn_iff_contDiffOn.1 (hc.comp (hcs'.mono Set.inter_subset_left) fun _ hy ↦ hy.2)
 
 end OpenPartialHomeomorph
 
