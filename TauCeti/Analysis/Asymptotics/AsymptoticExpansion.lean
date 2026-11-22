@@ -261,7 +261,7 @@ theorem single_zero (c : E) :
     HasAsymptoticExpansion l φ (Pi.single 0 c) (fun x => φ 0 x • c) := by
   intro N
   rcases N with _ | N
-  · simpa using isBigO_smul_const_self (φ 0) c
+  · simpa using isBigO_smul_const_self (φ 0) c (norm_smul_le · c)
   · simpa [Pi.single_apply, smul_ite, sum_ite_eq'] using isBigO_zero (φ (N + 1)) l
 
 /-- If, for every `N`, the remainder after `N + 1` terms is `o(φ N)`, then `f` has the
@@ -270,7 +270,7 @@ property. -/
 theorem of_isLittleO
     (h : ∀ N, (fun x => f x - ∑ n ∈ range (N + 1), φ n x • a n) =o[l] φ N) :
     HasAsymptoticExpansion l φ a f := fun N =>
-  ((h N).isBigO.add (isBigO_smul_const_self (φ N) (a N))).congr_left fun x => by
+  ((h N).isBigO.add (isBigO_smul_const_self (φ N) (a N) (norm_smul_le · _))).congr_left fun x => by
     rw [sum_range_succ]; abel
 
 /-- For an asymptotic scale, the remainder after `N + 1` terms is `o(φ N)`. -/
@@ -308,7 +308,7 @@ theorem IsAsymptoticScale.hasAsymptoticExpansion_single (hφ : IsAsymptoticScale
   by_cases hk : k < N
   · simpa [Pi.single_apply, smul_ite, sum_ite_eq', hk] using isBigO_zero (φ N) l
   · simpa [Pi.single_apply, smul_ite, sum_ite_eq', hk] using
-      (isBigO_smul_const_self (φ k) c).trans (hφ.isBigO_of_le (not_lt.mp hk))
+      (isBigO_smul_const_self (φ k) c (norm_smul_le · c)).trans (hφ.isBigO_of_le (not_lt.mp hk))
 
 /-- For an asymptotic scale, an expansion is the same as `o(φ N)` remainders after `N + 1`
 terms. -/

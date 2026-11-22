@@ -85,7 +85,7 @@ evaluations of elliptic integrals.
 * `Asymptotics.isLittleO_smul_const_self_iff`: if `ψ` is frequently nonzero, then `ψ • c = o(ψ)`
   if and only if `c = 0`.
 * `Asymptotics.isBigO_smul_const_self`: `u • c = O(u)` for a scalar function `u` and a constant
-  vector `c`.
+  vector `c` with `‖r • c‖ ≤ ‖r‖ * ‖c‖` for every scalar `r`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici`: `f = O(g)` at `atTop` gives `f = O(g)` on `[a, ∞)`
   when `f` is bounded on each `[a, b]` and `‖g‖` is bounded below on `[a, ∞)` by a positive
   constant.
@@ -254,11 +254,12 @@ theorem isLittleO_smul_const_self_iff {α 𝕜 E : Type*} [NormedAddGroup 𝕜] 
     positivity
 
 /-- **A scalar function times a constant vector is big-O of the scalar function:**
-`(fun x => u x • c) =O[l] u`, with constant `‖c‖`. -/
-theorem isBigO_smul_const_self {α 𝕜 E : Type*} [Norm 𝕜] [Norm E] [SMul 𝕜 E] [NormSMulClass 𝕜 E]
-    {l : Filter α} (u : α → 𝕜) (c : E) :
+`(fun x => u x • c) =O[l] u`, with constant `‖c‖`, whenever scalar multiplication satisfies
+`‖r • c‖ ≤ ‖r‖ * ‖c‖` at `c`. This holds for every bounded action, by `norm_smul_le`. -/
+theorem isBigO_smul_const_self {α 𝕜 E : Type*} [Norm 𝕜] [Norm E] [SMul 𝕜 E]
+    {l : Filter α} (u : α → 𝕜) (c : E) (hc : ∀ r : 𝕜, ‖r • c‖ ≤ ‖r‖ * ‖c‖) :
     (fun x => u x • c) =O[l] u :=
-  IsBigO.of_bound ‖c‖ (Eventually.of_forall fun x => by rw [norm_smul, mul_comm])
+  IsBigO.of_bound ‖c‖ (Eventually.of_forall fun x => (hc (u x)).trans_eq (mul_comm _ _))
 
 /-- **An eventual `O((log x)⁻¹)` bound holds on a whole half-line `[a, ∞)` (`a > 1`).** If
 `f = O((log x)⁻¹)` at `atTop` and `f` is bounded on every compact interval `[a, b]`, then there is
