@@ -54,23 +54,14 @@ open Complex hiding exp continuous_exp log
 namespace Complex
 
 /-- Along the line `t = σ + i y` with `σ < 0` and `-σ < Re a`, the product `Γ(a + t) Γ(-t) x^t`
-is integrable for `x > 0`: `Γ(a + t) Γ(-t)` is `Γ(s) Γ(a - s)` at `s = -t` and `‖x^t‖ = x^σ`. -/
+is integrable for `x > 0`, by `Complex.integrable_Gamma_add_mul_Gamma_neg_mul_cpow`. -/
 private lemma verticalIntegrable_Gamma_add_mul_Gamma_neg_mul_cpow {a : ℂ} {σ x : ℝ} (hσ : σ < 0)
     (hσa : -σ < a.re) (hx : 0 < x) :
-    VerticalIntegrable (fun t ↦ Gamma (a + t) * Gamma (-t) * (x : ℂ) ^ t) σ := by
-  have hG : Integrable fun y : ℝ ↦ Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) := by
-    refine (verticalIntegrable_Gamma_mul_Gamma_sub (a := a) (σ := -σ)
-      (fun n hn ↦ by linarith [n.cast_nonneg' (α := ℝ)])
-      (fun n hn ↦ by linarith [n.cast_nonneg' (α := ℝ)])).comp_neg.congr
-      (ae_of_all _ fun y ↦ ?_)
-    have h : ((-σ : ℝ) : ℂ) + ((-y : ℝ) : ℂ) * I = -(σ + y * I) := by push_cast; ring
-    simp only [h, sub_neg_eq_add]
-    ring
-  refine hG.mul_bdd (c := x ^ σ) (Continuous.aestronglyMeasurable ?_) (ae_of_all _ fun y ↦ ?_)
-  · exact (by fun_prop : Continuous fun y : ℝ ↦ (σ : ℂ) + y * I).const_cpow
-      (.inl (ofReal_ne_zero.mpr hx.ne'))
-  · rw [norm_cpow_eq_rpow_re_of_pos hx]
-    simp
+    VerticalIntegrable (fun t ↦ Gamma (a + t) * Gamma (-t) * (x : ℂ) ^ t) σ :=
+  integrable_Gamma_add_mul_Gamma_neg_mul_cpow
+    (fun n _ ↦ by linarith [n.cast_nonneg' (α := ℝ)])
+    (fun n _ ↦ by linarith [n.cast_nonneg' (α := ℝ)])
+    (ofReal_mem_slitPlane.mpr hx)
 
 /-- The integrand of DLMF 15.6.6 inserted into Euler's integral at `-x`: on `ℝ × (0, 1]`, the
 function `(y, r) ↦ r^{b + t - 1} (1 - r)^{c - b - 1} Γ(a + t) Γ(-t) x^t` with `t = σ + i y` is
@@ -158,21 +149,26 @@ theorem eulerIntegral_neg_eq_mellinBarnes {a b c : ℂ} {σ x : ℝ} (hσ : σ <
         (Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * (x : ℂ) ^ (σ + y * I)) =
         (r : ℂ) ^ (b - 1) * (1 - (r : ℂ)) ^ (c - b - 1) * (Gamma (a + (σ + y * I)) *
           Gamma (-(σ + y * I)) * ((x * r : ℝ) : ℂ) ^ (σ + y * I)) := by
-      rw [ofReal_mul, ofReal_mul_cpow hx.le,
-        show b + (σ + y * I) - 1 = b - 1 + (σ + y * I) by ring, cpow_add _ _ hr0]
+      have hexp : b + (σ + y * I) - 1 = b - 1 + (σ + y * I) := by ring
+      rw [ofReal_mul, ofReal_mul_cpow hx.le, hexp, cpow_add _ _ hr0]
       ring
     simp_rw [hsplit]
     have hmb := integral_Gamma_add_mul_Gamma_neg_mul_cpow hσ (neg_lt.mp hσa)
       (ofReal_mem_slitPlane.mpr (mul_pos hx hr.1))
-    rw [integral_const_mul,
-      show (2 * π * Gamma a)⁻¹ * ((r : ℂ) ^ (b - 1) * (1 - (r : ℂ)) ^ (c - b - 1) *
-          ∫ y : ℝ, Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) *
-            ((x * r : ℝ) : ℂ) ^ (σ + y * I)) =
-        (Gamma a)⁻¹ * ((r : ℂ) ^ (b - 1) * (1 - (r : ℂ)) ^ (c - b - 1) *
-          ((2 * π : ℂ)⁻¹ * ∫ y : ℝ, Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) *
-            ((x * r : ℝ) : ℂ) ^ (σ + y * I))) by ring,
-      hmb, show (1 - (-x : ℂ) * r) = 1 + ((x * r : ℝ) : ℂ) by push_cast; ring]
-    field_simp
+    have harg : (1 - (-x : ℂ) * r) = 1 + ((x * r : ℝ) : ℂ) := by push_cast; ring
+    set Ixr : ℂ := ∫ y : ℝ, Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) *
+      ((x * r : ℝ) : ℂ) ^ (σ + y * I)
+    calc (r : ℂ) ^ (b - 1) * (1 - (r : ℂ)) ^ (c - b - 1) * (1 - (-x : ℂ) * r) ^ (-a)
+        = (Gamma a)⁻¹ * ((r : ℂ) ^ (b - 1) * (1 - (r : ℂ)) ^ (c - b - 1) *
+            (Gamma a * (1 + ((x * r : ℝ) : ℂ)) ^ (-a))) := by
+          rw [harg]; field_simp
+      _ = (Gamma a)⁻¹ * ((r : ℂ) ^ (b - 1) * (1 - (r : ℂ)) ^ (c - b - 1) *
+            ((2 * π : ℂ)⁻¹ * Ixr)) := by
+          rw [hmb]
+      _ = (2 * π * Gamma a)⁻¹ * ∫ y : ℝ, (r : ℂ) ^ (b - 1) *
+            (1 - (r : ℂ)) ^ (c - b - 1) * (Gamma (a + (σ + y * I)) *
+              Gamma (-(σ + y * I)) * ((x * r : ℝ) : ℂ) ^ (σ + y * I)) := by
+          rw [integral_const_mul]; dsimp [Ixr]; ring
   rw [eulerIntegral_def, intervalIntegral.integral_of_le zero_le_one,
     setIntegral_congr_fun measurableSet_Ioc hinner, integral_const_mul,
     ← integral_integral_swap (integrable_eulerMellinBarnesIntegrand hσ hσa hσb hbc hx)]

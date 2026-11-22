@@ -89,6 +89,8 @@ the integral sign.
   full-line L¹ bound for all-order Perron kernels, with separate first/last-factor margins.
 * `TauCeti.isTheta_cpow_div_ascPochhammer`: the all-order Perron kernel decays as
   `|t|⁻(j+1)` uniformly on every bounded set of real parts.
+* `TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp`: product bound for two polynomial–exponential
+  profiles `(1 + |y|) ^ R * exp (α * |y|)` with signed rates.
 * `TauCeti.integrable_cpow_smul_of_norm_le_exp_neg_mul_abs`,
   `TauCeti.integrable_cpow_neg_smul_of_norm_le_exp_neg_mul_abs`: integrability on `ℝ` of
   `y ↦ w ^ (±(σ + i y)) • g y` whenever `|arg w| < α` and
@@ -410,15 +412,22 @@ private lemma neg_contour_eq (σ y : ℝ) :
     ((-σ : ℝ) : ℂ) + (-y : ℝ) * I = -((σ : ℂ) + y * I) := by
   push_cast; ring
 
-private lemma mul_rpow_exp_margin_eq {K m α' C R α y : ℝ} :
-    (K * (1 + |y|) ^ m * Real.exp (α' * |y|)) * (C * (1 + |y|) ^ R * Real.exp (-α * |y|)) =
-      (K * C) * ((1 + |y|) ^ (R + m) * Real.exp (-((α - α') * |y|))) := by
-  have h1y : 0 < 1 + |y| := by linarith [abs_nonneg y]
-  calc (K * (1 + |y|) ^ m * Real.exp (α' * |y|)) * (C * (1 + |y|) ^ R * Real.exp (-α * |y|))
-      = (K * C) * ((1 + |y|) ^ R * (1 + |y|) ^ m *
-          (Real.exp (α' * |y|) * Real.exp (-α * |y|))) := by ring
-    _ = (K * C) * ((1 + |y|) ^ (R + m) * Real.exp (-((α - α') * |y|))) := by
-        rw [← Real.rpow_add h1y, ← Real.exp_add]; ring_nf
+/-- Product bound for two nonnegative quantities bounded by polynomial–exponential profiles
+`C * (1 + |y|) ^ R * exp (α * |y|)` with signed rates `α₁` and `α₂`. -/
+theorem mul_le_mul_one_add_abs_rpow_mul_exp {x₁ x₂ C₁ R₁ α₁ C₂ R₂ α₂ y : ℝ}
+    (hx₁ : 0 ≤ x₁) (hx₂ : 0 ≤ x₂)
+    (h₁ : x₁ ≤ C₁ * (1 + |y|) ^ R₁ * Real.exp (α₁ * |y|))
+    (h₂ : x₂ ≤ C₂ * (1 + |y|) ^ R₂ * Real.exp (α₂ * |y|)) :
+    x₁ * x₂ ≤ C₁ * C₂ * (1 + |y|) ^ (R₁ + R₂) * Real.exp ((α₁ + α₂) * |y|) := by
+  have h1y : 0 < 1 + |y| := by positivity
+  calc x₁ * x₂
+      ≤ (C₁ * (1 + |y|) ^ R₁ * Real.exp (α₁ * |y|)) *
+          (C₂ * (1 + |y|) ^ R₂ * Real.exp (α₂ * |y|)) :=
+        mul_le_mul h₁ h₂ hx₂ (hx₁.trans h₁)
+    _ = C₁ * C₂ * ((1 + |y|) ^ R₁ * (1 + |y|) ^ R₂) *
+          (Real.exp (α₁ * |y|) * Real.exp (α₂ * |y|)) := by ring
+    _ = C₁ * C₂ * (1 + |y|) ^ (R₁ + R₂) * Real.exp ((α₁ + α₂) * |y|) := by
+        rw [← Real.rpow_add h1y, ← Real.exp_add, ← add_mul]
 
 private lemma norm_cpow_deriv_smul_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     {σ y r₀ r₁ α' α C R : ℝ} {w : ℂ} {v : E} (hr₀ : 0 < r₀) (hw_lo : r₀ ≤ ‖w‖)
@@ -436,13 +445,11 @@ private lemma norm_cpow_deriv_smul_le {E : Type*} [NormedAddCommGroup E] [Normed
       zero_add] at h
     simpa [Real.rpow_one, mul_assoc] using h
   rw [norm_smul]
-  calc ‖((σ : ℂ) + y * I) * w ^ ((σ : ℂ) + y * I - 1)‖ * ‖v‖
-      ≤ ((max |σ| 1 * max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1))) * (1 + |y|) ^ (1 : ℝ) *
-          Real.exp (α' * |y|)) * (C * (1 + |y|) ^ R * Real.exp (-α * |y|)) :=
-        mul_le_mul hmul hv (norm_nonneg _) (by positivity)
-    _ = (max |σ| 1 * max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1)) * C) *
-          ((1 + |y|) ^ (R + 1) * Real.exp (-((α - α') * |y|))) :=
-        mul_rpow_exp_margin_eq
+  refine (mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _) hmul hv).trans_eq ?_
+  rw [mul_assoc]
+  congr 2
+  · congr 1; ring
+  · congr 1; ring
 
 /-- If `g : ℝ → E` is strongly measurable and satisfies
 `‖g y‖ ≤ C (1 + |y|) ^ R e^{-α |y|}` almost everywhere, then `y ↦ w ^ (σ + i y) • g y` is
@@ -469,12 +476,11 @@ theorem integrable_cpow_smul_of_norm_le_exp_neg_mul_abs {E : Type*} [NormedAddCo
       ‖w ^ ((σ : ℂ) + y * I)‖ ≤ ‖w‖ ^ σ * (1 + |y|) ^ (0 : ℝ) * Real.exp (|w.arg| * |y|) := by
     simpa using Complex.norm_cpow_le_rpow_mul_exp_abs_arg_mul_abs_im w ((σ : ℂ) + y * I)
   rw [norm_smul]
-  calc ‖w ^ ((σ : ℂ) + y * I)‖ * ‖g y‖
-      ≤ (‖w‖ ^ σ * (1 + |y|) ^ (0 : ℝ) * Real.exp (|w.arg| * |y|)) *
-          (C * (1 + |y|) ^ R * Real.exp (-α * |y|)) :=
-        mul_le_mul hpow hgy (norm_nonneg _) (by positivity)
-    _ = ‖w‖ ^ σ * C * ((1 + |y|) ^ R * Real.exp (-(δ * |y|))) := by
-        rw [mul_rpow_exp_margin_eq, add_zero]
+  refine (mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _) hpow hgy).trans_eq ?_
+  rw [mul_assoc, zero_add]
+  congr 3
+  dsimp [δ]
+  ring
 
 /-- Negated-exponent companion to `TauCeti.integrable_cpow_smul_of_norm_le_exp_neg_mul_abs`:
 `y ↦ w ^ (-(σ + i y)) • g y` is integrable on `ℝ` whenever `|arg w| < α`. -/

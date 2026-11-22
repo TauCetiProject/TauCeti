@@ -276,19 +276,20 @@ private theorem continuous_and_norm_Gamma_mul_Gamma_sub_le {a : ℂ} {σ : ℝ}
   obtain ⟨C₂, hC₂, h₂⟩ := TauCeti.exists_norm_Gamma_sub_I_le (w := a - σ)
     (by simpa [sub_re] using haσ)
   refine ⟨hcont, C₁ * C₂, mul_pos hC₁ hC₂, fun y ↦ ?_⟩
-  have h1y : 0 < 1 + |y| := by linarith [abs_nonneg y]
-  have h2y := h₂ y
-  simp only [sub_re, ofReal_re] at h2y
+  have h1 : ‖Gamma (σ + y * I)‖ ≤
+      C₁ * (1 + |y|) ^ (σ - 1 / 2) * Real.exp (-(π / 2) * |y|) :=
+    (h₁ y).trans_eq (by congr 2; ring)
+  have h2y : ‖Gamma (a - σ - y * I)‖ ≤
+      C₂ * (1 + |y|) ^ (a.re - σ - 1 / 2) * Real.exp (-(π / 2) * |y|) := by
+    have h := h₂ y
+    simp only [sub_re, ofReal_re] at h
+    exact h.trans_eq (by congr 2; ring)
   rw [hsub, norm_mul]
-  calc ‖Gamma (σ + y * I)‖ * ‖Gamma (a - σ - y * I)‖
-      ≤ (C₁ * (1 + |y|) ^ (σ - 1 / 2) * Real.exp (-(π * |y| / 2))) *
-          (C₂ * (1 + |y|) ^ (a.re - σ - 1 / 2) * Real.exp (-(π * |y| / 2))) :=
-        mul_le_mul (h₁ y) h2y (norm_nonneg _) (by positivity)
-    _ = C₁ * C₂ * ((1 + |y|) ^ (σ - 1 / 2) * (1 + |y|) ^ (a.re - σ - 1 / 2)) *
-          (Real.exp (-(π * |y| / 2)) * Real.exp (-(π * |y| / 2))) := by ring
-    _ = C₁ * C₂ * (1 + |y|) ^ (a.re - 1) * Real.exp (-π * |y|) := by
-        rw [← Real.rpow_add h1y, ← Real.exp_add]
-        ring_nf
+  refine (TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _) h1
+    h2y).trans_eq ?_
+  congr 1
+  · congr 2; ring
+  · congr 1; ring
 
 /-- For `z ∈ Complex.slitPlane` and `σ : ℝ` avoiding the poles of `Γ(s)` and `Γ(a - s)`, the
 Mellin–Barnes integrand `y ↦ Γ(σ + i y) Γ(a - (σ + i y)) z^{-(σ + i y)}` is integrable on `ℝ`. -/
