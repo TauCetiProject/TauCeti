@@ -33,6 +33,8 @@ open CategoryTheory
 universe u v
 namespace AlgebraicGeometry.Scheme
 
+open TauCeti.AlgebraicGeometry.Scheme
+
 /-- The generating families for the finite-type h-site. -/
 def finiteTypeHPrecoverage (S : Scheme.{u}) : Precoverage (S.FiniteType) :=
   hPrecoverage.comap (FiniteType.forget S ⋙ Over.forget S)
