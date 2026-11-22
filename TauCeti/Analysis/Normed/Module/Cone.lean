@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.Normed.Operator.Basic
+import Mathlib.Topology.Order.Compact
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Topology.MetricSpace.CoboundedImage
 
 /-!
 # Rapid decay in conic neighbourhoods
@@ -34,13 +37,25 @@ Fourier transform of a tensor product inherits the decay of one of its factors.
 In a proper space, if every unit vector of a closed cone lies in an open cone, finitely many of
 these cones cover the nonzero vectors of the closed cone, by compactness of the unit sphere. This
 is how conditions imposed direction by direction combine into one condition on a whole closed
-cone of frequencies.
+cone of frequencies. By the same compactness, a continuous linear map `L` with no zeros on the
+nonzero vectors of a closed cone `V` is bounded below there, `‖η‖ ≤ c ‖L η‖`, and maps `V` to a
+closed cone. This is how a closed cone of frequencies is transported along the transpose of a
+linear map.
+
+Applying a linear automorphism `B`, the image of a smaller cone also separates: there are an open
+cone `Γ'` around `B η₀` and `c > 0` such that `B ζ` is at distance at least `c (‖ξ‖ + ‖ζ‖)` from
+every `ξ ∈ Γ'` whenever `ζ ∉ Γ` or `‖ζ‖ < c ‖ξ‖`. This is how a cone in which a localized Fourier
+transform decays is transported along the transposed derivative of a change of variables.
 
 ## Main results
 
 * `IsOpen.exists_cone_exists_smul_mem`: the open cone over an open set containing `ξ`.
 * `IsOpen.exists_cone_closedBall_subset`: an open cone `Γ` containing `ξ` contains a smaller open
   cone `Γ'` containing `ξ` such that `closedBall η (c * ‖η‖) ⊆ Γ` for every `η ∈ Γ'`.
+* `IsOpen.exists_cone_mul_add_le_norm_sub`: for a linear automorphism `B`, an open cone `Γ'`
+  around `B η₀` with `c (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖` for `ξ ∈ Γ'` and `ζ ∉ Γ` or `‖ζ‖ < c ‖ξ‖`.
+* `TauCeti.mem_of_mem_closure_of_forall_closedBall_subset`: the nonzero points of the closure of
+  such a `Γ'` still lie in `Γ`.
 * `TauCeti.exists_one_add_norm_pow_mul_norm_le_of_hasSum`: decay of order `N` on `Γ'` of a
   superposition of translates of a function decaying at order `N` on `Γ`, with rapidly decreasing
   coefficients, bounded by a weighted `ℓ¹` norm of the coefficients.
@@ -59,13 +74,19 @@ cone of frequencies.
 * `TauCeti.exists_finset_diff_singleton_subset_biUnion`: if every unit vector of a closed cone `V`
   lies in an open cone, finitely many of these cones cover the nonzero vectors of `V`;
   `TauCeti.exists_finset_compl_singleton_subset_biUnion` is the case `V = E`.
+* `ContinuousLinearMap.exists_norm_le_mul_norm_apply_of_isClosed_cone_of_apply_eq_zero_imp`,
+  `ContinuousLinearMap.isClosed_image_of_isClosed_cone_of_apply_eq_zero_imp`: a continuous linear
+  map without zeros on the nonzero vectors of a closed cone is bounded below on it and maps it to
+  a closed set.
 * `TauCeti.exists_forall_le_of_diff_singleton_subset_biUnion`: bounds on finitely many sets
   covering the nonzero elements of `V` combine into one bound on `V`.
 * `TauCeti.exists_finset_subset_biUnion_interior_and_isOpen_cone`: finitely many of given
   neighbourhoods of the points of a compact set cover it, and the corresponding open cones
   intersect in an open cone.
-* `TauCeti.forall_smul_mem_neg`: the negative of a set closed under multiplication by positive
-  reals is closed under multiplication by positive reals.
+* `TauCeti.forall_smul_mem_neg`, `TauCeti.forall_smul_mem_compl`, `TauCeti.forall_smul_mem_add`,
+  `TauCeti.forall_smul_mem_insert_zero`: the negative and the complement of a set closed under
+  multiplication by positive reals, the sum of two such sets, and such a set with `0` adjoined, are
+  closed under multiplication by positive reals.
 
 ## References
 
@@ -131,11 +152,107 @@ theorem exists_cone_closedBall_subset {Γ : Set E} (hΓ : IsOpen Γ)
       _ = r := add_halves r
   simpa [smul_smul, inv_mul_cancel₀ ht.ne'] using hcone t⁻¹ (inv_pos.2 ht) _ htζ
 
+/-- If `ζ` is at distance more than `c₂ ‖ν‖` from `ν`, with `0 < c₂ ≤ 1`, then `B ζ` is at
+distance at least a fixed multiple of `‖B ν‖ + ‖ζ‖` from `B ν`. -/
+private theorem mul_add_le_norm_sub_of_mul_lt_norm_sub (B : E ≃L[ℝ] E) {c₂ : ℝ} (hc₂ : 0 < c₂)
+    (hc₂1 : c₂ ≤ 1) {ν ζ : E} (hfar : c₂ * ‖ν‖ < ‖ζ - ν‖) :
+    c₂ / (3 * (1 + ‖(B : E →L[ℝ] E)‖) * (1 + ‖(B.symm : E →L[ℝ] E)‖)) * (‖B ν‖ + ‖ζ‖) ≤
+      ‖B ζ - B ν‖ := by
+  set M := ‖(B : E →L[ℝ] E)‖
+  set M' := ‖(B.symm : E →L[ℝ] E)‖
+  have hM : 0 ≤ M := norm_nonneg _
+  have hM' : 0 ≤ M' := norm_nonneg _
+  have hξν : ‖B ν‖ ≤ M * ‖ν‖ := (B : E →L[ℝ] E).le_opNorm ν
+  have hζν : ‖ζ - ν‖ ≤ M' * ‖B ζ - B ν‖ := by
+    have h : B.symm (B ζ - B ν) = ζ - ν := by simp
+    rw [← h]
+    exact (B.symm : E →L[ℝ] E).le_opNorm _
+  have hζ' : ‖ζ‖ ≤ ‖ζ - ν‖ + ‖ν‖ := by simpa using norm_add_le (ζ - ν) ν
+  have h1 : c₂ * ‖B ν‖ ≤ M * ‖ζ - ν‖ :=
+    calc c₂ * ‖B ν‖ ≤ c₂ * (M * ‖ν‖) := mul_le_mul_of_nonneg_left hξν hc₂.le
+      _ = M * (c₂ * ‖ν‖) := by ring
+      _ ≤ M * ‖ζ - ν‖ := mul_le_mul_of_nonneg_left hfar.le hM
+  have h2 : c₂ * ‖ζ‖ ≤ 2 * ‖ζ - ν‖ := by nlinarith [norm_nonneg (ζ - ν)]
+  have hsum : c₂ * (‖B ν‖ + ‖ζ‖) ≤ 3 * (1 + M) * ‖ζ - ν‖ := by
+    nlinarith [h1, h2, norm_nonneg (ζ - ν)]
+  calc c₂ / (3 * (1 + M) * (1 + M')) * (‖B ν‖ + ‖ζ‖)
+      ≤ 3 * (1 + M) * ‖ζ - ν‖ / (3 * (1 + M) * (1 + M')) := by
+        rw [div_mul_eq_mul_div]
+        gcongr
+    _ = ‖ζ - ν‖ / (1 + M') := by field_simp
+    _ ≤ ‖B ζ - B ν‖ := by
+        rw [div_le_iff₀ (by positivity)]
+        nlinarith [norm_nonneg (B ζ - B ν)]
+
+/-- If `ζ` is small compared with `ξ`, `‖ζ‖ < c ‖ξ‖` with `4 c (1 + ‖B‖) ≤ 1`, then
+`c (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖`. -/
+private theorem mul_add_le_norm_sub_of_norm_lt (B : E →L[ℝ] E) {c : ℝ} (hc : 0 < c)
+    (hcB : c * (4 * (1 + ‖B‖)) ≤ 1) {ξ ζ : E} (hζ : ‖ζ‖ < c * ‖ξ‖) :
+    c * (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖ := by
+  have hM : 0 ≤ ‖B‖ := norm_nonneg _
+  have hBζ : ‖B ζ‖ ≤ ‖B‖ * ‖ζ‖ := B.le_opNorm ζ
+  have htri : ‖ξ‖ ≤ ‖B ζ - ξ‖ + ‖B ζ‖ := by
+    have h := norm_le_norm_add_norm_sub' ξ (B ζ)
+    rw [norm_sub_rev] at h
+    linarith
+  have h1 : ‖B‖ * ‖ζ‖ ≤ ‖B‖ * (c * ‖ξ‖) := mul_le_mul_of_nonneg_left hζ.le hM
+  have h2 : c * ‖ζ‖ ≤ c * (c * ‖ξ‖) := mul_le_mul_of_nonneg_left hζ.le hc.le
+  have hcoef : c + c * c + ‖B‖ * c ≤ 1 := by nlinarith
+  have hX : (c + c * c + ‖B‖ * c) * ‖ξ‖ ≤ ‖ξ‖ := by
+    simpa using mul_le_mul_of_nonneg_right hcoef (norm_nonneg ξ)
+  nlinarith [h1, h2, hX, htri, hBζ]
+
+/-- **Separation from a cone.** Let `Γ` be an open set closed under multiplication by positive
+reals, `η₀ ∈ Γ`, and `B` a continuous linear automorphism. There are an open set `Γ'` closed under
+multiplication by positive reals with `B η₀ ∈ Γ'` and `c > 0` such that for every `ξ ∈ Γ'` and
+every `ζ` which lies outside `Γ`, or is small compared with `ξ`, the vector `B ζ` is far from `ξ`:
+`c (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖` whenever `ζ ∉ Γ` or `‖ζ‖ < c ‖ξ‖`. -/
+theorem exists_cone_mul_add_le_norm_sub {Γ : Set E} (hΓ : IsOpen Γ)
+    (hcone : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) {η₀ : E} (hη₀ : η₀ ∈ Γ) (B : E ≃L[ℝ] E) :
+    ∃ Γ' : Set E, IsOpen Γ' ∧ B η₀ ∈ Γ' ∧ (∀ t : ℝ, 0 < t → ∀ ξ ∈ Γ', t • ξ ∈ Γ') ∧
+      ∃ c > 0, ∀ ξ ∈ Γ', ∀ ζ, (ζ ∉ Γ ∨ ‖ζ‖ < c * ‖ξ‖) → c * (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖ := by
+  obtain ⟨Γ'', hΓ'', hη₀'', hcone'', c₁, hc₁, hball⟩ := hΓ.exists_cone_closedBall_subset hcone hη₀
+  set M := ‖(B : E →L[ℝ] E)‖
+  set c₂ := min c₁ 1
+  have hc₂ : 0 < c₂ := lt_min hc₁ one_pos
+  set c := min (c₂ / (3 * (1 + M) * (1 + ‖(B.symm : E →L[ℝ] E)‖))) (1 / (4 * (1 + M)))
+  have hc : 0 < c := lt_min (by positivity) (by positivity)
+  refine ⟨B.symm ⁻¹' Γ'', hΓ''.preimage B.symm.continuous, by simpa using hη₀'',
+    fun t ht ξ hξ ↦ by simpa using hcone'' t ht _ hξ, c, hc, fun ξ hξ ζ hζ ↦ ?_⟩
+  rcases hζ with hζ | hζ
+  · -- `ζ` lies outside the ball of radius `c₁ ‖B⁻¹ ξ‖ ≥ c₂ ‖B⁻¹ ξ‖` about `B⁻¹ ξ`.
+    have hfar : c₂ * ‖B.symm ξ‖ < ‖ζ - B.symm ξ‖ := by
+      by_contra h
+      refine hζ (hball _ hξ (mem_closedBall.2 ?_))
+      rw [dist_eq_norm]
+      exact (not_lt.1 h).trans (by gcongr; exact min_le_left _ _)
+    have h := mul_add_le_norm_sub_of_mul_lt_norm_sub B hc₂ (min_le_right _ _) hfar
+    rw [B.apply_symm_apply] at h
+    exact (mul_le_mul_of_nonneg_right (min_le_left _ _) (by positivity)).trans h
+  · have hcB : c ≤ 1 / (4 * (1 + M)) := min_le_right _ _
+    exact mul_add_le_norm_sub_of_norm_lt _ hc ((le_div_iff₀ (by positivity)).1 hcB) hζ
+
 end IsOpen
 
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E]
+
+/-- If the closed ball of radius `c ‖η‖` about every point `η` of `Γ'` lies in `Γ`, then so does
+every nonzero point of the closure of `Γ'`. For an open cone `Γ'` as in
+`IsOpen.exists_cone_closedBall_subset`, the closure of `Γ'` is a closed cone whose nonzero points
+lie in `Γ`. -/
+theorem mem_of_mem_closure_of_forall_closedBall_subset {Γ Γ' : Set E} {c : ℝ} (hc : 0 < c)
+    (hΓ' : ∀ η ∈ Γ', closedBall η (c * ‖η‖) ⊆ Γ) {ξ : E} (hξ : ξ ∈ closure Γ') (hξ0 : ξ ≠ 0) :
+    ξ ∈ Γ := by
+  obtain ⟨η, hη, hξη⟩ := Metric.mem_closure_iff.1 hξ (c * ‖ξ‖ / (1 + c)) (by positivity)
+  refine hΓ' η hη (mem_closedBall.2 ?_)
+  -- `dist ξ η (1 + c) < c ‖ξ‖ ≤ c (‖η‖ + dist ξ η)`.
+  have hnorm : ‖ξ‖ ≤ ‖η‖ + dist ξ η := by
+    rw [dist_eq_norm]
+    exact norm_le_norm_add_norm_sub' ξ η
+  rw [lt_div_iff₀ (by positivity)] at hξη
+  nlinarith
 
 /-- **A translate by a small shift.** If `‖v‖ ≤ c ‖η‖` with `c ≤ 1 / 2` and the closed ball of
 radius `c ‖η‖` about `η` lies in a set `Γ` on which `(1 + ‖ζ‖) ^ n ‖F ζ‖ ≤ C₁`, then
@@ -459,4 +576,88 @@ theorem forall_smul_mem_neg [Module ℝ E] {Γ : Set E}
   rw [Set.mem_neg, ← smul_neg]
   exact hcone t ht _ (Set.mem_neg.1 hη)
 
+/-- The complement of a set closed under multiplication by positive reals is again closed under
+multiplication by positive reals. -/
+theorem forall_smul_mem_compl [Module ℝ E] {Γ : Set E}
+    (hcone : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) :
+    ∀ t : ℝ, 0 < t → ∀ η ∈ Γᶜ, t • η ∈ Γᶜ := fun t ht η hη htη ↦
+  hη (by simpa [smul_smul, inv_mul_cancel₀ ht.ne'] using hcone t⁻¹ (inv_pos.2 ht) _ htη)
+
+open Pointwise in
+/-- The sum `Γ₁ + Γ₂` of two sets closed under multiplication by positive reals is again closed
+under multiplication by positive reals. -/
+theorem forall_smul_mem_add [Module ℝ E] {Γ₁ Γ₂ : Set E}
+    (hc₁ : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ₁, t • η ∈ Γ₁) (hc₂ : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ₂, t • η ∈ Γ₂) :
+    ∀ t : ℝ, 0 < t → ∀ η ∈ Γ₁ + Γ₂, t • η ∈ Γ₁ + Γ₂ := by
+  rintro t ht _ ⟨a, ha, b, hb, rfl⟩
+  exact ⟨t • a, hc₁ t ht a ha, t • b, hc₂ t ht b hb, (smul_add t a b).symm⟩
+
+/-- Adjoining `0` to a set closed under multiplication by positive reals keeps it closed under
+multiplication by positive reals. -/
+theorem forall_smul_mem_insert_zero [Module ℝ E] {Γ : Set E}
+    (hc : ∀ t : ℝ, 0 < t → ∀ ξ ∈ Γ, t • ξ ∈ Γ) :
+    ∀ t : ℝ, 0 < t → ∀ ξ ∈ insert 0 Γ, t • ξ ∈ insert 0 Γ := by
+  rintro t ht ξ (rfl | hξ)
+  · simp
+  · exact Set.mem_insert_of_mem _ (hc t ht ξ hξ)
+
 end TauCeti
+
+namespace ContinuousLinearMap
+
+open Filter
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E] {F : Type*}
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {V : Set E}
+
+/-- **A linear map is bounded below on a closed cone where it has no zeros.** Let `V` be a closed
+subset of a proper real normed space closed under multiplication by positive reals. If a
+continuous linear map `L` vanishes on no nonzero vector of `V`, then `‖η‖ ≤ c ‖L η‖` on `V` for
+some `c ≥ 0`: the norm of `L` has a positive minimum on the compact set of unit vectors of `V`. -/
+theorem exists_norm_le_mul_norm_apply_of_isClosed_cone_of_apply_eq_zero_imp (L : E →L[ℝ] F)
+    (hV : IsClosed V) (hVcone : ∀ t : ℝ, 0 < t → ∀ η ∈ V, t • η ∈ V)
+    (hL : ∀ η ∈ V, L η = 0 → η = 0) : ∃ c, 0 ≤ c ∧ ∀ η ∈ V, ‖η‖ ≤ c * ‖L η‖ := by
+  set S := V ∩ sphere (0 : E) 1
+  -- The direction of a nonzero vector of `V` is a unit vector of `V`.
+  have hdir {η : E} (hη : η ∈ V) (hη0 : η ≠ 0) : ‖η‖⁻¹ • η ∈ S :=
+    ⟨hVcone _ (inv_pos.2 (norm_pos_iff.2 hη0)) η hη,
+      by simp [norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 hη0)]⟩
+  rcases S.eq_empty_or_nonempty with hS | hS
+  · -- Here `V ⊆ {0}`.
+    refine ⟨0, le_rfl, fun η hη ↦ ?_⟩
+    by_contra h
+    have hη0 : η ≠ 0 := fun h0 ↦ h (by simp [h0])
+    exact (hS ▸ hdir hη hη0 : _ ∈ (∅ : Set E))
+  obtain ⟨ξ₀, hξ₀, hmin⟩ := ((isCompact_sphere (0 : E) 1).inter_left hV).exists_isMinOn hS
+    (continuous_norm.comp L.continuous).continuousOn
+  have hm : 0 < ‖L ξ₀‖ := norm_pos_iff.2 fun h ↦ by
+    simpa [hL ξ₀ hξ₀.1 h] using hξ₀.2
+  refine ⟨‖L ξ₀‖⁻¹, inv_nonneg.2 hm.le, fun η hη ↦ ?_⟩
+  rcases eq_or_ne η 0 with rfl | hη0
+  · simp
+  have h := hmin (hdir hη hη0)
+  simp only [mem_ofPred_eq, Function.comp_apply, map_smul, norm_smul, norm_inv, norm_norm] at h
+  rw [inv_mul_eq_div, le_div_iff₀ (norm_pos_iff.2 hη0)] at h
+  rw [inv_mul_eq_div, le_div_iff₀ hm, mul_comm]
+  exact h
+
+/-- **The image of a closed cone under a linear map without zeros on it is closed.** If a
+continuous linear map `L` on a proper real normed space vanishes on no nonzero vector of a closed
+cone `V`, then `L '' V` is closed: `L` is bounded below on `V`
+(`ContinuousLinearMap.exists_norm_le_mul_norm_apply_of_isClosed_cone_of_apply_eq_zero_imp`), so
+it tends to infinity along `V` (`TauCeti.isClosed_image_of_tendsto_cobounded`). -/
+theorem isClosed_image_of_isClosed_cone_of_apply_eq_zero_imp (L : E →L[ℝ] F) (hV : IsClosed V)
+    (hVcone : ∀ t : ℝ, 0 < t → ∀ η ∈ V, t • η ∈ V) (hL : ∀ η ∈ V, L η = 0 → η = 0) :
+    IsClosed (L '' V) := by
+  obtain ⟨c, hc, hle⟩ :=
+    L.exists_norm_le_mul_norm_apply_of_isClosed_cone_of_apply_eq_zero_imp hV hVcone hL
+  refine TauCeti.isClosed_image_of_tendsto_cobounded hV L.continuous.continuousOn ?_
+  rw [← Metric.cobounded_eq_cocompact, ← tendsto_norm_atTop_iff_cobounded]
+  refine tendsto_atTop_mono' _ ?_
+    ((tendsto_norm_cobounded_atTop.mono_left inf_le_left).atTop_div_const (by positivity :
+      (0 : ℝ) < c + 1))
+  filter_upwards [mem_inf_of_right (mem_principal_self V)] with η hη
+  rw [div_le_iff₀ (by positivity)]
+  nlinarith [hle η hη, norm_nonneg η, norm_nonneg (L η)]
+
+end ContinuousLinearMap

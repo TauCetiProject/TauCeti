@@ -120,6 +120,8 @@ dyadic intervals.
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
 * `Real.rpow_neg_le_mul_rpow_neg`: `y ^ (-q) ≤ a ^ q x ^ (-q)` for `0 < x ≤ a y`, `a ≥ 0` and
   `q ≥ 0`.
+* `Real.rpow_le_max_mul_rpow`: `x ^ s ≤ max (a ^ s) (b ^ s) y ^ s` for `a y ≤ x ≤ b y`, `0 < a`
+  and `0 < y`.
 * `Real.exists_pos_lt_one_lt_rpow`: for `θ < 1` and any `β`, some `τ ∈ (0, 1)` has `θ < τ ^ β`.
 * `Real.rpow_add_mul_rpow_sub_one_mul_sub_le_rpow`,
   `Real.rpow_add_mul_rpow_sub_one_mul_sub_lt_rpow`, and
@@ -228,6 +230,26 @@ theorem rpow_neg_le_mul_rpow_neg {x y a q : ℝ} (hx : 0 < x) (ha : 0 ≤ a) (hq
   calc y ^ (-q) = a ^ q * ((a ^ q)⁻¹ * y ^ (-q)) :=
         (mul_inv_cancel_left₀ (rpow_pos_of_pos ha q).ne' _).symm
     _ ≤ a ^ q * x ^ (-q) := by gcongr
+
+/-- Powers of comparable positive quantities are comparable: if `a y ≤ x ≤ b y` with `0 < a` and
+`0 < y`, then `x ^ s ≤ max (a ^ s) (b ^ s) * y ^ s` for every real exponent `s`. The maximum is
+`b ^ s` for `s ≥ 0` and `a ^ s` for `s ≤ 0`. -/
+theorem rpow_le_max_mul_rpow {a b x y : ℝ} (ha : 0 < a) (hy : 0 < y) (hax : a * y ≤ x)
+    (hxb : x ≤ b * y) (s : ℝ) : x ^ s ≤ max (a ^ s) (b ^ s) * y ^ s := by
+  have hb : 0 ≤ b := by
+    by_contra hb
+    nlinarith [mul_pos ha hy]
+  rcases le_total 0 s with hs | hs
+  · calc x ^ s ≤ (b * y) ^ s := rpow_le_rpow (by nlinarith [mul_pos ha hy]) hxb hs
+      _ = b ^ s * y ^ s := mul_rpow hb hy.le
+      _ ≤ max (a ^ s) (b ^ s) * y ^ s := by
+          gcongr
+          exact le_max_right _ _
+  · calc x ^ s ≤ (a * y) ^ s := rpow_le_rpow_of_nonpos (mul_pos ha hy) hax hs
+      _ = a ^ s * y ^ s := mul_rpow ha.le hy.le
+      _ ≤ max (a ^ s) (b ^ s) * y ^ s := by
+          gcongr
+          exact le_max_left _ _
 
 /-- For `θ < 1` and any exponent `β`, some ratio `τ ∈ (0, 1)` has `θ < τ ^ β`. -/
 theorem exists_pos_lt_one_lt_rpow {θ : ℝ} (hθ : θ < 1) (β : ℝ) :

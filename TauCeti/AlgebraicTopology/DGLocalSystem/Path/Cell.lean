@@ -30,7 +30,8 @@ homology of this pair, up to the shift by the dimension of the cube:
 over every commutative ring `k` (`TauCeti.MoorePathPullback.cubicalHomologyCubeBoundaryEquiv`,
 `TauCeti.MoorePathPullback.isCubicalRepresentative_cubicalHomologyCubeBoundaryEquiv`). Here
 `z · c₀` is the left action of chains on loops on chains on the pullback,
-`TauCeti.NormalizedCubicalChain.leftAct`.
+`TauCeti.NormalizedCubicalChain.leftAct`. Below degree `m + 1` the relative homology vanishes
+(`TauCeti.MoorePathPullback.isZero_cubicalHomology_of_lt`).
 
 The map `(ω, d) ↦ ω · (d, τ d)` from `Ω_b X × Iᵐ⁺¹` to the pullback is, up to the interchange of
 the factors, the fibre homotopy trivialization `TauCeti.MoorePathPullback.fiberHomotopyEquiv` of
@@ -85,6 +86,9 @@ which free generators, one for each `(m + 1)`-cell, are compared with the relati
   is the disjoint union of the pullbacks over the single cells.
 * `TauCeti.isCubicalRepresentative_cellPathPullbackHomologyEquiv`: for a cycle `z` of `Ω_b B`, the
   chain `z · cⱼ` represents the image of `[z]` in the summand of the cell `j`.
+* `TauCeti.MoorePathPullback.isZero_cubicalHomology_of_lt`,
+  `TauCeti.isZero_cubicalHomology_cellPathPullbackPair_of_lt`: below the dimension of the cube, or
+  of the cells, the relative homology vanishes.
 
 ## References
 
@@ -166,6 +170,19 @@ def cubicalHomologyCubeBoundaryEquiv (q : ℕ) :
   cubicalHomologyCubeBoundaryPairProdLeftEquiv k (TopCat.of (MooreLoopSpace X b)) m q ≪≫ₗ
     (asIso (homologyMap (TopPair.cubicalChainComplexMap k (smulSectionPairMap τ h₀ h₁))
       (q + (m + 1)))).toLinearEquiv
+
+include τ h₀ h₁ in
+/-- **The relative homology of the based path fibration over a cube vanishes below the dimension of
+the cube**: given a continuous family `τ` of Moore paths from `b` to the points of
+`f : Iᵐ⁺¹ → X`, `Hⱼ(f^*P_b X, f^*P_b X|_{∂Iᵐ⁺¹}; k) = 0` for `j < m + 1`, over every commutative
+ring `k`. -/
+theorem isZero_cubicalHomology_of_lt {j : ℕ} (hj : j < m + 1) :
+    IsZero (((TopPair.ofSubset (X := TopCat.of (MoorePathPullback f b))
+      (proj f b ⁻¹' Cube.boundary (Fin (m + 1)))).cubicalChainComplex k).homology j) :=
+  have := isIso_homologyMap_smulSectionPairMap τ h₀ h₁ k j
+  (isZero_cubicalHomology_cubeBoundaryPair_prodLeft_of_lt k (TopCat.of (MooreLoopSpace X b)) m
+    hj).of_iso
+    (asIso (homologyMap (TopPair.cubicalChainComplexMap k (smulSectionPairMap τ h₀ h₁)) j)).symm
 
 /-- The **section cube** `d ↦ (d, τ d)` of the pullback of the based Moore path fibration along
 `f`, given by the family `τ` of paths from `b` to the points `f d`. -/
@@ -496,6 +513,19 @@ private def isColimitCofanCellHomologyLeg (q : ℕ) :
       Sigma.hom_ext _ _ fun j ↦ by simp [cellHomologyLeg]]
     infer_instance
   Cofan.isColimitOfIsIsoSigmaDesc (hc := this) _
+
+include γ in
+/-- **The relative homology of the based path fibration over the cells vanishes below their
+dimension**: for the pullback `P` of `P_b B → B` to the disks of the `(m + 1)`-cells and its part
+`∂P` over the boundary spheres, `Hⱼ(P, ∂P; k) = 0` for `j < m + 1`, over every commutative ring
+`k`. It is the sum of the relative homology modules over the single cells. -/
+theorem isZero_cubicalHomology_cellPathPullbackPair_of_lt {j : ℕ} (hj : j < m + 1) :
+    IsZero (((cellPathPullbackPair b C (m + 1)).cubicalChainComplex k).homology j) :=
+  (IsZero.iff_id_eq_zero _).2 <| Cofan.IsColimit.hom_ext
+    (TopPair.isColimitCofanCubicalHomologyOfIsColimit k
+      (isColimitCofanCellCubePathPullbackPairι b C (m + 1)) j) _ _ fun i ↦
+    (MoorePathPullback.isZero_cubicalHomology_of_lt (cellCubeRadialPaths γ i)
+      (source_cellCubeRadialPaths γ i) (target_cellCubeRadialPaths γ i) k hj).eq_of_src _ _
 
 /-- The inclusion of the pullback over the cube of `j` carries its section cube to the section
 cube of `j`. -/
