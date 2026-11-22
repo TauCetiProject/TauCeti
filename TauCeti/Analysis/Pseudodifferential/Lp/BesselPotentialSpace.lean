@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Distribution.TemperedDistribution.MulLeft
 public import TauCeti.Analysis.Pseudodifferential.BesselPotentialSpace
 public import TauCeti.Analysis.Pseudodifferential.Lp.CalderonZygmund
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
-import TauCeti.Analysis.Pseudodifferential.Composition.Uniform
-import TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier
+import TauCeti.Analysis.Pseudodifferential.UniformSobolev
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 
@@ -18,24 +18,26 @@ import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 
 Let `a` be a symbol of order `m` on `ℝⁿ`, with values in operators `V →L[ℂ] W` between complex
 Hilbert spaces, whose estimates `‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C_{α,β} ⟨ξ⟩^(m - |β|)` hold uniformly in
-the position (`TauCeti.Symbol.IsUniform`), and let `1 < p < ∞`. This file proves that the left
-quantization `Op(a)` extends from Schwartz functions to a bounded operator
-`H^{s,p}(ℝⁿ; V) → H^{s - m,p}(ℝⁿ; W)` between Mathlib's Bessel-potential spaces, for every real
-`s` (`TauCeti.Symbol.quantizeUniformBesselPotentialSpace`). For `p = 2` this is the Sobolev mapping
-theorem `TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM`; for symbols with compact spatial
-support it is `TauCeti.Symbol.quantizeBesselPotentialSpace`
-(`TauCeti.Symbol.quantizeUniformBesselPotentialSpace_eq_quantizeBesselPotentialSpace`).
-Uniform symbols of order `0` include the multiplications by smooth operator-valued functions `f`
-all of whose derivatives are bounded (`TauCeti.Symbol.isUniform_ofSpatial_iff`,
-`TauCeti.Symbol.quantizeUniformCLM_ofSpatial_apply`), so these act boundedly on every `H^{s,p}`.
+the position (`TauCeti.Symbol.IsUniform`), and let `1 < p < ∞`. This file proves that the operator
+`TauCeti.Symbol.quantizeUniformBesselPotentialSpace : H^{s,p}(ℝⁿ; V) → H^{s - m,p}(ℝⁿ; W)` between
+Mathlib's Bessel-potential spaces extends the left quantization `Op(a)` from Schwartz functions, for
+every real `s` (`TauCeti.Symbol.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM`).
+For `p = 2` this is the Sobolev mapping theorem
+`TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM`; for symbols with compact spatial support
+and finite-dimensional normed fibres it is
+`HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM` in the
+namespace `TauCeti.Symbol`. Uniform symbols of order `0` include the multiplications by smooth
+operator-valued functions `f` all of whose derivatives are bounded
+(`TauCeti.Symbol.isUniform_ofSpatial_iff`), so these act boundedly on every `H^{s,p}`
+(`TauCeti.Symbol.toDistr_quantizeUniformBesselPotentialSpace_ofSpatial`).
 
 ## The argument
 
 Write `J^t` for the Bessel multiplier, the Fourier multiplier with symbol `⟨ζ⟩ ^ t`, so that the
-`H^{r,p}` norm of a Schwartz function `v` is the `Lᵖ` norm of `J^r v`. Since compositions of
-uniform symbols are uniform (`TauCeti.Symbol.IsUniform.exists_quantizeUniformCLM_comp`) and
-composition with `J^s` on the right is exact
-(`TauCeti.Symbol.quantizeUniformCLM_comp_besselMultiplier`),
+`H^{r,p}` norm of a Schwartz function `v` is the `Lᵖ` norm of `J^r v`
+(`SchwartzMap.norm_toBesselPotentialSpaceCLM_eq_eLpNorm`). Conjugation by Bessel multipliers
+reduces the order to `0`
+(`TauCeti.Symbol.IsUniform.exists_besselMultiplier_comp_quantizeUniformCLM_eq`):
 
 `J^{s - m} ∘ Op(a) = Op(b) ∘ J^s`
 
@@ -47,9 +49,8 @@ functions.
 
 ## Main declarations
 
-* `TauCeti.Symbol.quantizeUniformBesselPotentialSpace`: the bounded operator
-  `H^{s,p} → H^{s - m,p}`, which extends `Op(a)` from Schwartz functions
-  (`TauCeti.Symbol.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM`).
+* `TauCeti.Symbol.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM`: the operator
+  `H^{s,p} → H^{s - m,p}` extends `Op(a)` from Schwartz functions.
 * `TauCeti.Symbol.quantizeUniformBesselPotentialSpace_add`,
   `TauCeti.Symbol.quantizeUniformBesselPotentialSpace_smul` and their consequences: the operator is
   linear in the symbol.
@@ -60,8 +61,8 @@ functions.
   orders `s` agree as maps of tempered distributions.
 * `TauCeti.Symbol.toDistr_quantizeUniformBesselPotentialSpace_comp`: composition of uniform
   quantizations on `H^{s,p}`.
-* `TauCeti.Symbol.quantizeUniformBesselPotentialSpace_eq_quantizeBesselPotentialSpace`: for symbols
-  with compact spatial support it is `TauCeti.Symbol.quantizeBesselPotentialSpace`.
+* `TauCeti.Symbol.toDistr_quantizeUniformBesselPotentialSpace_ofSpatial`: for finite-dimensional
+  fibres, the symbol `f(x)` quantizes to multiplication by `f`.
 
 ## References
 
@@ -83,52 +84,8 @@ namespace Symbol
 
 variable {n : ℕ} {m m' : ℝ}
 
-/-- **Pseudodifferential operators with uniform symbols on `H^{s,p}`.** For a symbol `a` of order
-`m` whose estimates are uniform in the position, the left quantization `Op(a)` as a bounded
-operator `H^{s,p}(ℝⁿ; V) → H^{s - m,p}(ℝⁿ; W)`. For complex Hilbert spaces `V` and `W` and
-`1 < p < ∞` it extends `Op(a)` from Schwartz functions: on a Schwartz function `u` it is the
-Schwartz function `Op(a) u`
-(`TauCeti.Symbol.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM`), and by density of
-the Schwartz functions it is the unique continuous linear map with this property
-(`BesselPotentialSpace.continuousLinearMap_ext`). Otherwise its value is unspecified. -/
-def quantizeUniformBesselPotentialSpace {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-    [CompleteSpace V] [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W]
-    (a : Symbol n V W m) (ha : a.IsUniform) (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
-    H^{s, p}(CoordinateSpace n, V) →L[ℂ] H^{s - m, p}(CoordinateSpace n, W) :=
-  ((toBesselPotentialSpaceCLM (E := CoordinateSpace n) (F := W) (s - m) p).comp
-    (quantizeUniformCLM a ha)).toLinearMap.extendOfNorm
-      (toBesselPotentialSpaceCLM (E := CoordinateSpace n) (F := V) s p).toLinearMap
-
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
-
-/-- **Conjugation by Bessel multipliers.** For a uniform symbol `a` of order `m` and every real
-`s` there is a uniform symbol `b` of order `0` with `J^{s - m} ∘ Op(a) = Op(b) ∘ J^s` on Schwartz
-space. -/
-private theorem IsUniform.exists_besselMultiplier_comp_quantizeUniformCLM_eq {a : Symbol n V W m}
-    (ha : a.IsUniform) (s : ℝ) :
-    ∃ (b : Symbol n V W 0) (hb : b.IsUniform),
-      fourierMultiplierCLM W
-          (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ ((s - m) / 2) : ℝ) : ℂ)) ∘L
-        quantizeUniformCLM a ha =
-      quantizeUniformCLM b hb ∘L fourierMultiplierCLM V
-        (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) := by
-  -- `J^{s - m} ∘ Op(a) = Op(c)` for a uniform symbol `c` of order `s`.
-  obtain ⟨c, hc, hcomp⟩ :=
-    (isUniform_besselPotential (V := W) (n := n) (s - m)).exists_quantizeUniformCLM_comp ha
-  have hJ : quantizeUniformCLM (besselPotential (s - m)) (isUniform_besselPotential _) =
-      fourierMultiplierCLM W
-        (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ ((s - m) / 2) : ℝ) : ℂ)) := by
-    ext u x
-    rw [quantizeUniformCLM_apply, quantizeSchwartzValue_besselPotential]
-  -- `Op(c) = Op(b) ∘ J^s` for `b = c ⟨ξ / 2π⟩ ^ (-s)`, of order `s + -s = 0`.
-  have hc' := hc.comp (isUniform_besselPotential (V := V) (n := n) (-s))
-  have h0 : s - m + m + -s ≤ 0 := by linarith
-  refine ⟨Symbol.inclusion h0 (c.comp (besselPotential (-s))), hc'.inclusion h0, ?_⟩
-  rw [← hJ, hcomp, quantizeUniformCLM_inclusion hc' h0, quantizeUniformCLM_comp_besselMultiplier]
-  exact quantizeUniformCLM_congr _ _ (by
-    rw [coefficient_comp_besselPotential_comp_besselPotential, neg_add_cancel,
-      coefficient_comp_besselPotential_zero])
 
 /-- **The `H^{s,p}` estimate on Schwartz functions.** For a uniform symbol `a` of order `m` and
 `1 < p < ∞`, `‖Op(a) u‖_{H^{s - m,p}} ≤ C ‖u‖_{H^{s,p}}` for every Schwartz function `u`. -/
@@ -141,15 +98,11 @@ private theorem IsUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformC
   obtain ⟨b, hb, hab⟩ := ha.exists_besselMultiplier_comp_quantizeUniformCLM_eq s
   obtain ⟨C, hC⟩ := hb.exists_eLpNorm_quantizeSchwartzValue_le_of_one_lt hp hp_top
   refine ⟨C, fun u ↦ ?_⟩
-  -- The `H^{r,p}` norm of a Schwartz function `v` is the `Lᵖ` norm of `J^r v`.
-  rw [← BesselPotentialSpace.norm_toLp_eq, ← BesselPotentialSpace.norm_toLp_eq,
-    toLp_toBesselPotentialSpaceCLM, toLp_toBesselPotentialSpaceCLM, norm_toLp, norm_toLp,
-    ← ContinuousLinearMap.comp_apply, hab, ContinuousLinearMap.comp_apply, coe_quantizeUniformCLM,
-    ← ENNReal.coe_toReal C, ← ENNReal.toReal_mul]
-  exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top
-    ((fourierMultiplierCLM V
-      (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u).memLp p).eLpNorm_ne_top)
-    (hC _)
+  -- `J^{s - m} (Op(a) u) = Op(b) (J^s u)`, and `Op(b)` is bounded on `Lᵖ`.
+  rw [norm_toBesselPotentialSpaceCLM_eq_eLpNorm, norm_toBesselPotentialSpaceCLM_eq_eLpNorm,
+    ← ContinuousLinearMap.comp_apply, hab, ContinuousLinearMap.comp_apply, coe_quantizeUniformCLM]
+  refine (ENNReal.toReal_mono ?_ (hC _)).trans_eq (by simp [ENNReal.toReal_mul])
+  exact ENNReal.mul_ne_top ENNReal.coe_ne_top (SchwartzMap.memLp _ p volume).eLpNorm_ne_top
 
 variable {a : Symbol n V W m} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
@@ -162,7 +115,7 @@ theorem quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM (ha : a.Is
     a.quantizeUniformBesselPotentialSpace ha s p (toBesselPotentialSpaceCLM s p u) =
       toBesselPotentialSpaceCLM (s - m) p (quantizeUniformCLM a ha u) := by
   obtain ⟨C, hC⟩ := ha.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le s hp hp_top
-  exact LinearMap.extendOfNorm_eq (denseRange_toBesselPotentialSpaceCLM s hp_top) ⟨C, hC⟩ u
+  exact quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM_of_norm_le ha hp_top hC u
 
 /-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` is additive in the symbol. -/
 theorem quantizeUniformBesselPotentialSpace_add {b : Symbol n V W m} (ha : a.IsUniform)
@@ -270,17 +223,32 @@ theorem toDistr_quantizeUniformBesselPotentialSpace_comp {U : Type*} [NormedAddC
     simp [hp, hp_top, ← habc]
   simpa using congrArg (fun T ↦ T u) key
 
-/-- **Comparison with compact spatial support.** For finite-dimensional complex Hilbert spaces and
-a symbol with compact spatial support, the operator `Op(a) : H^{s,p} → H^{s - m,p}` of this file is
-the operator `TauCeti.Symbol.quantizeBesselPotentialSpace` built from the Fourier transform of `a`
-in the position. -/
-theorem quantizeUniformBesselPotentialSpace_eq_quantizeBesselPotentialSpace
-    [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] (ha : a.HasCompactSpatialSupport) (s : ℝ)
-    (hp : 1 < p) (hp_top : p ≠ ∞) :
-    a.quantizeUniformBesselPotentialSpace ha.isUniform s p =
-      a.quantizeBesselPotentialSpace ha s p := by
-  refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
-  simp [hp, hp_top]
+open scoped ContDiff in
+/-- **Multiplication operators.** Let `1 < p < ∞` and let `V` and `W` be finite-dimensional. For a
+smooth `f : ℝⁿ → (V →L[ℂ] W)` all of whose derivatives are bounded, so that the symbol `f(x)` of
+order `0` is uniform (`TauCeti.Symbol.isUniform_ofSpatial_iff`), this symbol quantizes to
+multiplication by `f` on `H^{s,p}`. -/
+theorem toDistr_quantizeUniformBesselPotentialSpace_ofSpatial [FiniteDimensional ℂ V]
+    [FiniteDimensional ℂ W] {f : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
+    (ha : (ofSpatial f hf).IsUniform) (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
+    (u : H^{s, p}(CoordinateSpace n, V)) :
+    ((ofSpatial f hf).quantizeUniformBesselPotentialSpace ha s p u).toDistr =
+      TemperedDistribution.mulLeftCLM f u.toDistr := by
+  have hA : f.HasTemperateGrowth := by
+    simpa [coefficient_ofSpatial] using ha.hasTemperateGrowth_coefficient_slice 0
+  have key : BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L
+        (ofSpatial f hf).quantizeUniformBesselPotentialSpace ha s p =
+      TemperedDistribution.mulLeftCLM f ∘L BesselPotentialSpace.toDistrCLM _ _ _ _ := by
+    refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun v ↦ ?_
+    simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply,
+      quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM ha s hp hp_top,
+      SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
+    rw [TemperedDistribution.mulLeftCLM_toTemperedDistributionCLM_eq hA]
+    congr 1
+    ext x
+    rw [quantizeUniformCLM_ofSpatial_apply, SchwartzMap.bilinLeftCLM_apply]
+    rfl
+  simpa using congrArg (fun T ↦ T u) key
 
 end Symbol
 

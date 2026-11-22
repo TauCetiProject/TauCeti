@@ -32,10 +32,13 @@ Let `a` be a symbol of order `m` on `ℝⁿ` (`TauCeti.Symbol n V W m`) that van
 outside a compact set, with values in operators between finite-dimensional complex normed spaces
 `V` and `W`, and let `1 < p < ∞`. Its left quantization `Op(a)` extends from Schwartz functions to
 a bounded operator `H^{s,p}(ℝⁿ; V) → H^{s - m,p}(ℝⁿ; W)` between Mathlib's Bessel-potential spaces,
-for every real `s` (`TauCeti.Symbol.quantizeBesselPotentialSpace`). This is the `Lᵖ` form
-of the Sobolev mapping theorem `TauCeti.Symbol.exists_quantizeSobolev` for `p = 2`; it is the
-estimate behind the `Lᵖ` versions of local elliptic regularity
-(`TauCeti.Symbol.memSobolev_smulLeftCLM_of_memSobolev_quantizeBesselPotentialSpace`).
+for every real `s`. This file defines this extension for every symbol whose estimates are uniform
+in the position (`TauCeti.Symbol.quantizeUniformBesselPotentialSpace`) and proves that it extends
+`Op(a)` for symbols with compact spatial support; for complex Hilbert fibres and uniform symbols
+this is proved in `TauCeti/Analysis/Pseudodifferential/Lp/BesselPotentialSpace.lean`. This is the
+`Lᵖ` form of the Sobolev mapping theorem `TauCeti.Symbol.exists_quantizeSobolev` for `p = 2`; it is
+the estimate behind the `Lᵖ` versions of local elliptic regularity
+(`TauCeti.Symbol.memSobolev_smulLeftCLM_of_memSobolev_quantizeUniformBesselPotentialSpace`).
 
 ## The argument
 
@@ -64,32 +67,36 @@ Every constant in this argument is linear in the bounds on the Fourier slices of
 controlled by continuous seminorms of `a` uniformly over the symbols vanishing outside a fixed
 compact set (`TauCeti.Symbol.exists_norm_iteratedFDeriv_fourier_slice_le_seminorm`). So the
 operator norm of `Op(a) : H^{s,p} → H^{s - m,p}` is at most a continuous seminorm of `a` on such
-symbols (`TauCeti.Symbol.exists_norm_quantizeBesselPotentialSpace_le_seminorm`), and a continuous
-family of them has quantizations that depend continuously on the parameter in the operator norm
-(`TauCeti.Symbol.continuous_quantizeBesselPotentialSpace`). Unlike the case `p = 2`
+symbols (`TauCeti.Symbol.exists_norm_quantizeUniformBesselPotentialSpace_le_seminorm`), and a
+continuous family of them has quantizations that depend continuously on the parameter in the
+operator norm
+(`TauCeti.Symbol.continuous_quantizeUniformBesselPotentialSpace`). Unlike the case `p = 2`
 (`TauCeti.Symbol.exists_norm_quantizeSobolev_le_sum_seminorm`), the seminorm involves frequency
 derivatives of `a` of order up to `n + 1`, through Mihlin's condition.
 
 ## Main declarations
 
-* `TauCeti.Symbol.quantizeBesselPotentialSpace`: the bounded operator `H^{s,p} → H^{s - m,p}`,
-  which extends `Op(a)` from Schwartz functions
-  (`TauCeti.Symbol.quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM`).
-* `TauCeti.Symbol.exists_norm_quantizeBesselPotentialSpace_le_seminorm`: for symbols vanishing
-  outside a fixed compact set, the operator norm is at most a continuous seminorm of the symbol.
-* `TauCeti.Symbol.continuous_quantizeBesselPotentialSpace`: continuity of `Op(a)` in the operator
-  norm along a continuous family of such symbols.
-* `TauCeti.Symbol.quantizeBesselPotentialSpace_add`,
-  `TauCeti.Symbol.quantizeBesselPotentialSpace_smul` and their consequences: the operator is linear
-  in the symbol.
-* `TauCeti.Symbol.quantizeBesselPotentialSpace_inclusion`,
-  `TauCeti.Symbol.quantizeBesselPotentialSpace_comp_inclusion`: compatibility with raising the order
-  of the symbol and with the inclusions `H^{s,p} ⊆ H^{r,p}`.
-* `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_congr`: the operators for different orders
-  `s` and for symbols with the same coefficient agree as maps of tempered distributions.
-* `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_ofSpatial_smul_id`: the symbol `φ(x)`
-  quantizes to multiplication by `φ`.
-* `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_sharp`: `Op(a # b) = Op(a) ∘ Op(b)`.
+All in the namespace `TauCeti.Symbol`:
+
+* `quantizeUniformBesselPotentialSpace`: the bounded operator `H^{s,p} → H^{s - m,p}`, which for
+  symbols with compact spatial support extends `Op(a)` from Schwartz functions
+  (`HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM`).
+* `exists_norm_quantizeUniformBesselPotentialSpace_le_seminorm`: for symbols vanishing outside a
+  fixed compact set, the operator norm is at most a continuous seminorm of the symbol.
+* `continuous_quantizeUniformBesselPotentialSpace`: continuity of `Op(a)` in the operator norm
+  along a continuous family of such symbols.
+* `HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_add`,
+  `HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_smul` and their consequences: the
+  operator is linear in the symbol.
+* `HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_inclusion`,
+  `HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_comp_inclusion`: compatibility with
+  raising the order of the symbol and with the inclusions `H^{s,p} ⊆ H^{r,p}`.
+* `HasCompactSpatialSupport.toDistr_quantizeUniformBesselPotentialSpace_congr`: the operators for
+  different orders `s` and for symbols with the same coefficient agree as maps of tempered
+  distributions.
+* `toDistr_quantizeUniformBesselPotentialSpace_ofSpatial_smul_id`: the symbol `φ(x)` quantizes to
+  multiplication by `φ`.
+* `toDistr_quantizeUniformBesselPotentialSpace_sharp`: `Op(a # b) = Op(a) ∘ Op(b)`.
 
 ## References
 
@@ -534,86 +541,107 @@ private theorem HasCompactSpatialSupport.exists_norm_toBesselPotentialSpaceCLM_q
 
 /-! ### The operator on `H^{s,p}` -/
 
-/-- **Pseudodifferential operators with compact spatial support on `H^{s,p}`.** For a symbol `a`
-of order `m` with compact spatial support between finite-dimensional complex normed spaces, the
-left quantization `Op(a)` as a bounded operator `H^{s,p}(ℝⁿ; V) → H^{s - m,p}(ℝⁿ; W)`. For
-`1 < p < ∞` it extends `Op(a)` from Schwartz functions: on a Schwartz function `u` it is the
-Schwartz function `Op(a) u`
-(`TauCeti.Symbol.quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM`), and by density of the
-Schwartz functions it is the unique continuous linear map with this property
-(`BesselPotentialSpace.continuousLinearMap_ext`). For other exponents its value is unspecified.
-Its counterpart on `H^s = H^{s,2}` for Hilbert fibres is `TauCeti.Symbol.quantizeSobolev`. -/
-def quantizeBesselPotentialSpace {m : ℝ} (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport)
-    (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
+omit [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] in
+/-- **Pseudodifferential operators on `H^{s,p}`.** For a symbol `a` of order `m` whose estimates
+are uniform in the position, the left quantization `Op(a)` as a bounded operator
+`H^{s,p}(ℝⁿ; V) → H^{s - m,p}(ℝⁿ; W)`. Let `1 < p < ∞`. If `a` has compact spatial support and
+`V` and `W` are finite-dimensional, or if `V` and `W` are complex Hilbert spaces, it extends
+`Op(a)` from Schwartz functions: on a Schwartz function `u` it is the Schwartz function `Op(a) u`
+(`HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM` and
+`quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM` in the namespace `TauCeti.Symbol`),
+and by density of the Schwartz functions it is the unique continuous linear map with this property
+(`BesselPotentialSpace.continuousLinearMap_ext`). Otherwise its value is unspecified. Its
+counterpart on `H^s = H^{s,2}` for Hilbert fibres and compact spatial support is
+`TauCeti.Symbol.quantizeSobolev`. -/
+def quantizeUniformBesselPotentialSpace {m : ℝ} (a : Symbol n V W m) (ha : a.IsUniform) (s : ℝ)
+    (p : ℝ≥0∞) [Fact (1 ≤ p)] :
     H^{s, p}(CoordinateSpace n, V) →L[ℂ] H^{s - m, p}(CoordinateSpace n, W) :=
   ((toBesselPotentialSpaceCLM (E := CoordinateSpace n) (F := W) (s - m) p).comp
-    (quantizeUniformCLM a ha.isUniform)).toLinearMap.extendOfNorm
+    (quantizeUniformCLM a ha)).toLinearMap.extendOfNorm
       (toBesselPotentialSpaceCLM (E := CoordinateSpace n) (F := V) s p).toLinearMap
 
 section Operator
 
 variable {m m' : ℝ} {a : Symbol n V W m} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
+omit [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] in
+/-- **The extension property from the `H^{s,p}` estimate.** Let `p < ∞`. If
+`‖Op(a) u‖_{H^{s - m,p}} ≤ C ‖u‖_{H^{s,p}}` for every Schwartz function `u`, then on a Schwartz
+function `u` the operator `Op(a) : H^{s,p} → H^{s - m,p}` is the Schwartz function `Op(a) u`. -/
+theorem quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM_of_norm_le
+    (ha : a.IsUniform) {s : ℝ} (hp_top : p ≠ (∞ : ℝ≥0∞)) {C : ℝ}
+    (hC : ∀ u : 𝓢(CoordinateSpace n, V),
+      ‖toBesselPotentialSpaceCLM (s - m) p (quantizeUniformCLM a ha u)‖ ≤
+        C * ‖toBesselPotentialSpaceCLM s p u‖)
+    (u : 𝓢(CoordinateSpace n, V)) :
+    a.quantizeUniformBesselPotentialSpace ha s p (toBesselPotentialSpaceCLM s p u) =
+      toBesselPotentialSpaceCLM (s - m) p (quantizeUniformCLM a ha u) :=
+  LinearMap.extendOfNorm_eq (denseRange_toBesselPotentialSpaceCLM s hp_top) ⟨C, hC⟩ u
+
 /-- **Mapping of pseudodifferential operators with compact spatial support on `H^{s,p}`.** Let
 `1 < p < ∞`. On a Schwartz function `u`, the operator `Op(a) : H^{s,p} → H^{s - m,p}` is the
 Schwartz function `Op(a) u`. -/
 @[simp]
-theorem quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM (ha : a.HasCompactSpatialSupport)
-    (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) (u : 𝓢(CoordinateSpace n, V)) :
-    a.quantizeBesselPotentialSpace ha s p (toBesselPotentialSpaceCLM s p u) =
+theorem HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM
+    (ha : a.HasCompactSpatialSupport) (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
+    (u : 𝓢(CoordinateSpace n, V)) :
+    a.quantizeUniformBesselPotentialSpace ha.isUniform s p (toBesselPotentialSpaceCLM s p u) =
       toBesselPotentialSpaceCLM (s - m) p (quantizeUniformCLM a ha.isUniform u) := by
   obtain ⟨C, hC⟩ := ha.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le s hp hp_top
-  rw [quantizeBesselPotentialSpace]
-  set f := ((toBesselPotentialSpaceCLM (E := CoordinateSpace n) (F := W) (s - m) p).comp
-    (quantizeUniformCLM a ha.isUniform)).toLinearMap
-  set e := (toBesselPotentialSpaceCLM (E := CoordinateSpace n) (F := V) s p).toLinearMap
-  simpa [f, e] using LinearMap.extendOfNorm_eq (f := f) (e := e)
-    (denseRange_toBesselPotentialSpaceCLM s hp_top) ⟨C, fun u ↦ by simpa [f, e] using hC u⟩ u
+  exact quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM_of_norm_le ha.isUniform
+    hp_top hC u
 
 /-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` is additive in the symbol. -/
-theorem quantizeBesselPotentialSpace_add {b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
-    (hb : b.HasCompactSpatialSupport) (hab : (a + b).HasCompactSpatialSupport) (s : ℝ)
-    (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
-    (a + b).quantizeBesselPotentialSpace hab s p =
-      a.quantizeBesselPotentialSpace ha s p + b.quantizeBesselPotentialSpace hb s p := by
+theorem HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_add {b : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) (hb : b.HasCompactSpatialSupport)
+    (hab : (a + b).HasCompactSpatialSupport) (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    (a + b).quantizeUniformBesselPotentialSpace hab.isUniform s p =
+      a.quantizeUniformBesselPotentialSpace ha.isUniform s p +
+        b.quantizeUniformBesselPotentialSpace hb.isUniform s p := by
   refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
-  simp [hp, hp_top, quantizeUniformCLM_add ha.isUniform hb.isUniform]
+  simp [hp, hp_top, ha, hb, hab, quantizeUniformCLM_add ha.isUniform hb.isUniform]
 
 /-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` is homogeneous in the symbol. -/
-theorem quantizeBesselPotentialSpace_smul (ha : a.HasCompactSpatialSupport) (c : ℂ)
-    (hca : (c • a).HasCompactSpatialSupport) (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
-    (c • a).quantizeBesselPotentialSpace hca s p = c • a.quantizeBesselPotentialSpace ha s p := by
+theorem HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_smul
+    (ha : a.HasCompactSpatialSupport) (c : ℂ) (hca : (c • a).HasCompactSpatialSupport) (s : ℝ)
+    (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    (c • a).quantizeUniformBesselPotentialSpace hca.isUniform s p =
+      c • a.quantizeUniformBesselPotentialSpace ha.isUniform s p := by
   refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
-  simp [hp, hp_top, quantizeUniformCLM_smul ha.isUniform]
+  simp [hp, hp_top, ha, hca, quantizeUniformCLM_smul ha.isUniform]
 
 /-- The zero symbol quantizes to the zero operator `H^{s,p} → H^{s - m,p}`. -/
 @[simp]
-theorem quantizeBesselPotentialSpace_zero (h : (0 : Symbol n V W m).HasCompactSpatialSupport)
-    (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
-    (0 : Symbol n V W m).quantizeBesselPotentialSpace h s p = 0 := by
+theorem HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_zero
+    (h : (0 : Symbol n V W m).HasCompactSpatialSupport) (s : ℝ) (hp : 1 < p)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    (0 : Symbol n V W m).quantizeUniformBesselPotentialSpace h.isUniform s p = 0 := by
   refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
-  simp [hp, hp_top]
+  simp [hp, hp_top, h]
 
 /-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` takes the negated symbol to the negated
 operator. -/
-theorem quantizeBesselPotentialSpace_neg (ha : a.HasCompactSpatialSupport)
-    (hna : (-a).HasCompactSpatialSupport) (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
-    (-a).quantizeBesselPotentialSpace hna s p = -a.quantizeBesselPotentialSpace ha s p := by
+theorem HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_neg
+    (ha : a.HasCompactSpatialSupport) (hna : (-a).HasCompactSpatialSupport) (s : ℝ) (hp : 1 < p)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    (-a).quantizeUniformBesselPotentialSpace hna.isUniform s p =
+      -a.quantizeUniformBesselPotentialSpace ha.isUniform s p := by
   have hq : quantizeUniformCLM (-a) hna.isUniform = -quantizeUniformCLM a ha.isUniform := by
     rw [quantizeUniformCLM_congr hna.isUniform (ha.isUniform.smul (-1)) (by simp),
       quantizeUniformCLM_smul, neg_one_smul]
   refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
-  simp [hp, hp_top, hq]
+  simp [hp, hp_top, ha, hna, hq]
 
 /-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` takes differences of symbols to differences of
 operators. -/
-theorem quantizeBesselPotentialSpace_sub {b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
-    (hb : b.HasCompactSpatialSupport) (hab : (a - b).HasCompactSpatialSupport) (s : ℝ)
-    (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
-    (a - b).quantizeBesselPotentialSpace hab s p =
-      a.quantizeBesselPotentialSpace ha s p - b.quantizeBesselPotentialSpace hb s p := by
-  rw [eq_sub_iff_add_eq, ← quantizeBesselPotentialSpace_add hab hb (by rwa [sub_add_cancel]) s hp
-    hp_top]
+theorem HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_sub {b : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) (hb : b.HasCompactSpatialSupport)
+    (hab : (a - b).HasCompactSpatialSupport) (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    (a - b).quantizeUniformBesselPotentialSpace hab.isUniform s p =
+      a.quantizeUniformBesselPotentialSpace ha.isUniform s p -
+        b.quantizeUniformBesselPotentialSpace hb.isUniform s p := by
+  rw [eq_sub_iff_add_eq, ← quantizeUniformBesselPotentialSpace_add hab hb (by rwa [sub_add_cancel])
+    s hp hp_top]
   simp_rw [sub_add_cancel]
 
 /-- **The operator norm is controlled by a continuous seminorm of the symbol.** Let `1 < p < ∞`.
@@ -621,13 +649,13 @@ For a compact set `K` and a real `s` there is a continuous seminorm `q` on the s
 `m` such that every symbol `a` vanishing at positions outside `K` satisfies
 `‖Op(a)‖_{H^{s,p} → H^{s - m,p}} ≤ q(a)`. Frequency derivatives of `a` up to order `n + 1` enter
 `q`, through Mihlin's condition. -/
-theorem exists_norm_quantizeBesselPotentialSpace_le_seminorm
+theorem exists_norm_quantizeUniformBesselPotentialSpace_le_seminorm
     (K : TopologicalSpace.Compacts (CoordinateSpace n)) (s : ℝ) (hp : 1 < p)
     (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     ∃ q : Seminorm ℂ (Symbol n V W m), Continuous q ∧
       ∀ (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport),
         (∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) →
-          ‖a.quantizeBesselPotentialSpace ha s p‖ ≤ q a := by
+          ‖a.quantizeUniformBesselPotentialSpace ha.isUniform s p‖ ≤ q a := by
   obtain ⟨L, hL⟩ := exists_eLpNorm_quantizeSchwartzValue_sharp_le_mul (V := V) (W := W) (n := n)
     (t := m + -s) hp hp_top
   choose q hq hqa using fun j : ℕ ↦ exists_norm_iteratedFDeriv_fourier_slice_le_seminorm
@@ -662,7 +690,7 @@ theorem exists_norm_quantizeBesselPotentialSpace_le_seminorm
   have hu := ha.norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le s (C := L * B.toNNReal)
     fun w ↦ (hL _ (ha.comp_right _) B hB0 hslice w).trans_eq (by
       rw [ENNReal.coe_mul, ENNReal.ofNNReal_toNNReal])
-  rw [hqB, quantizeBesselPotentialSpace]
+  rw [hqB, quantizeUniformBesselPotentialSpace]
   refine LinearMap.opNorm_extendOfNorm_le (denseRange_toBesselPotentialSpaceCLM s hp_top)
     (mul_nonneg L.property hB0) fun u ↦ ?_
   simpa [NNReal.coe_mul, Real.coe_toNNReal _ hB0] using hu u
@@ -670,72 +698,75 @@ theorem exists_norm_quantizeBesselPotentialSpace_le_seminorm
 /-- **Continuity in the symbol.** Let `1 < p < ∞`. If `t ↦ a t` is a continuous family of symbols
 of order `m` that all vanish at positions outside a fixed compact set `K`, then `t ↦ Op(a t)` is
 continuous into the bounded operators `H^{s,p} → H^{s - m,p}` with the operator norm. -/
-theorem continuous_quantizeBesselPotentialSpace {X : Type*} [TopologicalSpace X]
+theorem continuous_quantizeUniformBesselPotentialSpace {X : Type*} [TopologicalSpace X]
     {a : X → Symbol n V W m} (hcont : Continuous a)
     {K : TopologicalSpace.Compacts (CoordinateSpace n)}
     (haK : ∀ t, ∀ x ∉ K, ∀ ξ, (a t).coefficient (x, ξ) = 0) (s : ℝ) (hp : 1 < p)
     (hp_top : p ≠ (∞ : ℝ≥0∞)) :
-    Continuous fun t ↦ (a t).quantizeBesselPotentialSpace
-      (hasCompactSpatialSupport_iff.2 ⟨K, K.isCompact, haK t⟩) s p := by
-  obtain ⟨q, hq, hbound⟩ := exists_norm_quantizeBesselPotentialSpace_le_seminorm (V := V)
+    Continuous fun t ↦ (a t).quantizeUniformBesselPotentialSpace
+      (hasCompactSpatialSupport_iff.2 ⟨K, K.isCompact, haK t⟩).isUniform s p := by
+  obtain ⟨q, hq, hbound⟩ := exists_norm_quantizeUniformBesselPotentialSpace_le_seminorm (V := V)
     (W := W) (m := m) K s hp hp_top
   refine continuous_iff_continuousAt.2 fun t₀ ↦ ?_
   have hK (t : X) : (a t).HasCompactSpatialSupport :=
     hasCompactSpatialSupport_iff.2 ⟨K, K.isCompact, haK t⟩
   rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
   refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun t ↦ ?_) (g := fun t ↦ q (a t - a t₀)) ?_
-  · rw [← quantizeBesselPotentialSpace_sub (hK t) (hK t₀) ((hK t).sub (hK t₀)) s hp hp_top]
-    exact hbound _ _ fun x hx ξ ↦ by simp [haK t x hx ξ, haK t₀ x hx ξ]
+  · rw [← (hK t).quantizeUniformBesselPotentialSpace_sub (hK t₀) ((hK t).sub (hK t₀)) s hp hp_top]
+    exact hbound _ ((hK t).sub (hK t₀)) fun x hx ξ ↦ by simp [haK t x hx ξ, haK t₀ x hx ξ]
   · simpa [Function.comp_def] using
       (hq.comp (hcont.sub (continuous_const (y := a t₀)))).tendsto t₀
 
 /-- **Changing the order of the symbol.** Let `1 < p < ∞`. Viewing a symbol of order `m` as a
 symbol of order `m' ≥ m` gives the operator `H^{s,p} → H^{s - m,p}` followed by the inclusion
 `H^{s - m,p} ⊆ H^{s - m',p}`. -/
-theorem quantizeBesselPotentialSpace_inclusion (h : m ≤ m') (ha : a.HasCompactSpatialSupport)
-    (ha' : (inclusion h a).HasCompactSpatialSupport) (s : ℝ) (hp : 1 < p)
+theorem HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_inclusion
+    (ha : a.HasCompactSpatialSupport) (h : m ≤ m')
+    (ha' : (Symbol.inclusion h a).HasCompactSpatialSupport) (s : ℝ) (hp : 1 < p)
     (hp_top : p ≠ (∞ : ℝ≥0∞)) :
-    (inclusion h a).quantizeBesselPotentialSpace ha' s p =
-      BesselPotentialSpace.inclusion (by linarith) ∘L a.quantizeBesselPotentialSpace ha s p := by
+    (Symbol.inclusion h a).quantizeUniformBesselPotentialSpace ha'.isUniform s p =
+      BesselPotentialSpace.inclusion (by linarith) ∘L
+        a.quantizeUniformBesselPotentialSpace ha.isUniform s p := by
   refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
-  simp [hp, hp_top, BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
+  simp [hp, hp_top, ha, ha', BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
     quantizeUniformCLM_congr ha'.isUniform ha.isUniform (coefficient_inclusion h a)]
 
 /-- **Changing the Sobolev order.** Let `1 < p < ∞`. The operators
 `Op(a) : H^{s,p} → H^{s - m,p}` for the different orders `s` are compatible with the inclusions
 `H^{s,p} ⊆ H^{r,p}`. -/
-theorem quantizeBesselPotentialSpace_comp_inclusion (ha : a.HasCompactSpatialSupport) {r s : ℝ}
-    (h : r ≤ s) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
-    a.quantizeBesselPotentialSpace ha r p ∘L BesselPotentialSpace.inclusion h =
-      BesselPotentialSpace.inclusion (by linarith) ∘L a.quantizeBesselPotentialSpace ha s p := by
+theorem HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_comp_inclusion
+    (ha : a.HasCompactSpatialSupport) {r s : ℝ} (h : r ≤ s) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    a.quantizeUniformBesselPotentialSpace ha.isUniform r p ∘L BesselPotentialSpace.inclusion h =
+      BesselPotentialSpace.inclusion (by linarith) ∘L
+        a.quantizeUniformBesselPotentialSpace ha.isUniform s p := by
   refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
-  simp [hp, hp_top, BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM]
+  simp [hp, hp_top, ha, BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM]
 
 /-- **Compatibility of the extensions.** The operator `Op(a) : H^{s,p} → H^{s - m,p}` only depends
 on the coefficient of `a` and on the tempered distribution of its argument: symbols `a` and `b` of
 orders `m` and `m'` with the same coefficient give the same tempered distribution on
 `u ∈ H^{s,p}` and `v ∈ H^{t,p}` whenever `u` and `v` have the same tempered distribution. -/
-theorem toDistr_quantizeBesselPotentialSpace_congr {b : Symbol n V W m'}
-    (hab : a.coefficient = b.coefficient) (ha : a.HasCompactSpatialSupport)
-    (hb : b.HasCompactSpatialSupport) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) {s t : ℝ}
+theorem HasCompactSpatialSupport.toDistr_quantizeUniformBesselPotentialSpace_congr
+    {b : Symbol n V W m'} (ha : a.HasCompactSpatialSupport) (hb : b.HasCompactSpatialSupport)
+    (hab : a.coefficient = b.coefficient) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) {s t : ℝ}
     {u : H^{s, p}(CoordinateSpace n, V)} {v : H^{t, p}(CoordinateSpace n, V)}
     (huv : u.toDistr = v.toDistr) :
-    (a.quantizeBesselPotentialSpace ha s p u).toDistr =
-      (b.quantizeBesselPotentialSpace hb t p v).toDistr :=
+    (a.quantizeUniformBesselPotentialSpace ha.isUniform s p u).toDistr =
+      (b.quantizeUniformBesselPotentialSpace hb.isUniform t p v).toDistr :=
   SchwartzMap.toDistr_apply_congr_of_comp_eq hp_top (A := quantizeUniformCLM a ha.isUniform)
-    (ContinuousLinearMap.ext fun u ↦ by simp [hp, hp_top])
+    (ContinuousLinearMap.ext fun u ↦ by simp [hp, hp_top, ha])
     (ContinuousLinearMap.ext fun u ↦ by
-      simp [hp, hp_top, quantizeUniformCLM_congr ha.isUniform hb.isUniform hab]) huv
+      simp [hp, hp_top, hb, quantizeUniformCLM_congr ha.isUniform hb.isUniform hab]) huv
 
 /-- **Multiplication operators.** For a Schwartz function `φ` such that the symbol `φ(x) id` of
 order `0` has compact spatial support, for instance a compactly supported `φ`
 (`TauCeti.Symbol.hasCompactSpatialSupport_ofSpatial_smul_id`), this symbol quantizes to
 multiplication by `φ` on `H^{s,p}`. -/
-theorem toDistr_quantizeBesselPotentialSpace_ofSpatial_smul_id (φ : 𝓢(CoordinateSpace n, ℂ))
+theorem toDistr_quantizeUniformBesselPotentialSpace_ofSpatial_smul_id (φ : 𝓢(CoordinateSpace n, ℂ))
     (h : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
       ((φ.smooth ⊤).smul contDiff_const)).HasCompactSpatialSupport)
     (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) (u : H^{s, p}(CoordinateSpace n, V)) :
-    ((ofSpatial _ _).quantizeBesselPotentialSpace h s p u).toDistr =
+    ((ofSpatial _ _).quantizeUniformBesselPotentialSpace h.isUniform s p u).toDistr =
       TemperedDistribution.smulLeftCLM V (φ : CoordinateSpace n → ℂ) u.toDistr := by
   have hq : quantizeUniformCLM _ h.isUniform = SchwartzMap.smulLeftCLM V (φ : _ → ℂ) := by
     ext v x
@@ -743,12 +774,12 @@ theorem toDistr_quantizeBesselPotentialSpace_ofSpatial_smul_id (φ : 𝓢(Coordi
       SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth, _root_.smul_apply,
       ContinuousLinearMap.id_apply]
   have key : BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L
-        (ofSpatial _ _).quantizeBesselPotentialSpace h s p =
+        (ofSpatial _ _).quantizeUniformBesselPotentialSpace h.isUniform s p =
       TemperedDistribution.smulLeftCLM V (φ : CoordinateSpace n → ℂ) ∘L
         BesselPotentialSpace.toDistrCLM _ _ _ _ := by
     refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun v ↦ ?_
     simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply,
-      quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM h s hp hp_top, hq,
+      h.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM s hp hp_top, hq,
       SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
     exact (TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq v).symm
   simpa using congrArg (fun T ↦ T u) key
@@ -756,13 +787,13 @@ theorem toDistr_quantizeBesselPotentialSpace_ofSpatial_smul_id (φ : 𝓢(Coordi
 /-- **Composition of quantizations on `H^{s,p}`.** For symbols `a` and `b` with compact spatial
 support, the operator `Op(a # b) : H^{s,p} → H^{s - (m' + m),p}` is the composition of
 `Op(b) : H^{s,p} → H^{s - m,p}` and `Op(a) : H^{s - m,p} → H^{s - m - m',p}`. -/
-theorem toDistr_quantizeBesselPotentialSpace_sharp {U : Type*} [NormedAddCommGroup U]
+theorem toDistr_quantizeUniformBesselPotentialSpace_sharp {U : Type*} [NormedAddCommGroup U]
     [NormedSpace ℂ U] [FiniteDimensional ℂ U] [CompleteSpace U] {a : Symbol n W U m'}
     {b : Symbol n V W m} (ha : a.HasCompactSpatialSupport) (hb : b.HasCompactSpatialSupport)
     (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) (u : H^{s, p}(CoordinateSpace n, V)) :
-    ((a.sharp b hb).quantizeBesselPotentialSpace (ha.sharp hb) s p u).toDistr =
-      (a.quantizeBesselPotentialSpace ha (s - m) p
-        (b.quantizeBesselPotentialSpace hb s p u)).toDistr := by
+    ((a.sharp b hb).quantizeUniformBesselPotentialSpace (ha.sharp hb).isUniform s p u).toDistr =
+      (a.quantizeUniformBesselPotentialSpace ha.isUniform (s - m) p
+        (b.quantizeUniformBesselPotentialSpace hb.isUniform s p u)).toDistr := by
   -- On a Schwartz function `v`, `Op(a # b) v = Op(a) (Op(b) v)`, and `Op(b) v` is Schwartz.
   have hq (v : 𝓢(CoordinateSpace n, V)) :
       quantizeUniformCLM (a.sharp b hb) (ha.sharp hb).isUniform v =
@@ -774,11 +805,12 @@ theorem toDistr_quantizeBesselPotentialSpace_sharp {U : Type*} [NormedAddCommGro
     ext y
     simp
   have key : BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L
-        (a.sharp b hb).quantizeBesselPotentialSpace (ha.sharp hb) s p =
-      BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L a.quantizeBesselPotentialSpace ha (s - m) p ∘L
-        b.quantizeBesselPotentialSpace hb s p := by
+        (a.sharp b hb).quantizeUniformBesselPotentialSpace (ha.sharp hb).isUniform s p =
+      BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L
+        a.quantizeUniformBesselPotentialSpace ha.isUniform (s - m) p ∘L
+        b.quantizeUniformBesselPotentialSpace hb.isUniform s p := by
     refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun v ↦ ?_
-    simp [hp, hp_top, hq]
+    simp [hp, hp_top, ha, hb, ha.sharp hb, hq]
   simpa using congrArg (fun T ↦ T u) key
 
 end Operator
