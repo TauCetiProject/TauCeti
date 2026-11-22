@@ -18,6 +18,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Support
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # The Poincaré inequality on a slab
@@ -63,6 +64,8 @@ the bound `‖Du x (eᵢ)‖ ≤ ‖Du x‖`; the endpoint uses the same bound p
 * `TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd`: the `L²` form on the
   plane `ℝ × ℝ`, `∫ ‖u‖² ≤ (2 r)² ∫ ‖∂t u‖²`, for a compactly supported `C¹` map vanishing where
   `r ≤ |t|`.
+* `TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_I_sq_of_abs_im`: the same inequality read
+  on `ℂ`, `∫ ‖η‖² ≤ (2 r)² ∫ ‖∂_i η‖²`, for a map vanishing where `r ≤ |Im z|`.
 
 The passage from a bound between the `∫⁻ ‖·‖ₑ ^ p` integrals to one between the `Lᵖ` seminorms is
 generic measure theory and lives in `TauCeti.MeasureTheory.Function.Lp.LIntegralRpow`.
@@ -439,6 +442,29 @@ theorem integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd {u : ℝ × �
       (hc.fderiv_apply (𝕜 := ℝ) (0, 1))
   rw [Measure.volume_eq_prod, integral_prod _ hi, integral_prod _ hdi, ← integral_const_mul]
   exact integral_mono hi.integral_prod_left (hdi.integral_prod_left.const_mul _) hline
+
+/-- **The Poincaré inequality on a horizontal strip of `ℂ`.** A compactly supported `C¹` map of
+`ℂ` vanishing where `r ≤ |Im z|` satisfies `∫ ‖η‖² ≤ (2 r)² ∫ ‖∂_i η‖²`; this is
+`TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd` read on `ℂ`. -/
+theorem integral_norm_sq_le_mul_integral_norm_fderiv_I_sq_of_abs_im {η : ℂ → V} {r : ℝ}
+    (hη : ContDiff ℝ 1 η) (hc : HasCompactSupport η) (hr : ∀ z : ℂ, r ≤ |z.im| → η z = 0) :
+    ∫ z, ‖η z‖ ^ 2 ≤ (2 * r) ^ 2 * ∫ z, ‖fderiv ℝ η z Complex.I‖ ^ 2 := by
+  have hpoinc := integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd
+    (hη.comp Complex.equivRealProdCLM.symm.contDiff)
+    (hc.comp_homeomorph Complex.equivRealProdCLM.symm.toHomeomorph) (r := r) fun p hp ↦
+      hr _ (by rwa [Complex.equivRealProdCLM_symm_apply_im])
+  have hdη (p : ℝ × ℝ) : fderiv ℝ (η ∘ Complex.equivRealProdCLM.symm) p (0, 1) =
+      fderiv ℝ η (Complex.equivRealProdCLM.symm p) Complex.I := by
+    rw [Complex.equivRealProdCLM.symm.comp_right_fderiv, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe]
+    congr 1
+  simp only [hdη, Function.comp_apply] at hpoinc
+  rw [← Complex.volume_preserving_equiv_real_prod.integral_comp'
+      fun p ↦ ‖η (Complex.equivRealProdCLM.symm p)‖ ^ 2,
+    ← Complex.volume_preserving_equiv_real_prod.integral_comp'
+      fun p ↦ ‖fderiv ℝ η (Complex.equivRealProdCLM.symm p) Complex.I‖ ^ 2] at hpoinc
+  simpa only [Complex.coe_measurableEquivRealProd_eq_equivRealProdCLM,
+    ContinuousLinearEquiv.symm_apply_apply] using hpoinc
 
 end Strip
 

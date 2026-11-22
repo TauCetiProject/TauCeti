@@ -33,14 +33,16 @@ Dirichlet energy: if `χ` is `C¹`, compactly supported and vanishes on the disc
 `∫ ‖χ w‖² / |w|⁴ ≤ (4 / R)² ∫ (‖∂s χ‖² + ‖∂t χ‖²)`
 
 (`TauCeti.integral_inv_sq_mul_norm_sq_le`). This is the Poincaré inequality on a small disc at
-the point at infinity. In the coordinate `z = w⁻¹` centred at infinity, the map `η = χ ∘ (·⁻¹)` is
-supported in the disc `|z| ≤ 1 / R`. The weight `|w|⁻⁴` is the area distortion `‖(w⁻¹)'‖²` of the
-inversion, so the change of variables formula on `ℂ`
-(`TauCeti.integral_inv_sq_norm_sq_smul_eq`) turns the left side into `∫ ‖η‖²`, and the energy of
-`∂_i η` is bounded by the Dirichlet energy of `χ`
+the point at infinity. Its form on `ℂ`, for a map `f` vanishing on the disc `‖w‖ < R`, is
+`∫ ‖f z⁻¹‖² ≤ (4 / R)² ∫ (‖∂₁ f‖² + ‖∂_i f‖²)` (`TauCeti.integral_norm_sq_comp_inv_le`).
+
+In the coordinate `z = w⁻¹` centred at infinity, the map `η = χ ∘ (·⁻¹)` is supported in the
+disc `|z| ≤ 1 / R`. The weight `|w|⁻⁴` is the area distortion `‖(w⁻¹)'‖²` of the inversion, so
+the change of variables formula on `ℂ` (`TauCeti.integral_inv_sq_norm_sq_smul_eq`) turns the left
+side into `∫ ‖η‖²`, and the energy of `∂_i η` is bounded by the Dirichlet energy of `χ`
 (`TauCeti.integral_norm_fderiv_comp_inv_apply_sq_le`).
 The Poincaré inequality on a strip of width `4 / R` containing that disc
-(`TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd`) then gives the bound.
+(`TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_I_sq_of_abs_im`) then gives the bound.
 -/
 
 public section
@@ -53,32 +55,9 @@ open _root_.Complex (equivRealProdCLM volume_preserving_equiv_real_prod I)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- **The Poincaré inequality on a horizontal strip of `ℂ`.** A compactly supported `C¹` map of
-`ℂ` vanishing where `r ≤ |Im z|` satisfies `∫ ‖η‖² ≤ (2 r)² ∫ ‖∂_i η‖²`; this is
-`TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd` read on `ℂ`. -/
-private theorem integral_norm_sq_le_mul_integral_norm_fderiv_I_sq {η : ℂ → V} {r : ℝ}
-    (hη : ContDiff ℝ 1 η) (hc : HasCompactSupport η) (hr : ∀ z : ℂ, r ≤ |z.im| → η z = 0) :
-    ∫ z, ‖η z‖ ^ 2 ≤ (2 * r) ^ 2 * ∫ z, ‖fderiv ℝ η z I‖ ^ 2 := by
-  have hpoinc := integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd
-    (hη.comp equivRealProdCLM.symm.contDiff)
-    (hc.comp_homeomorph equivRealProdCLM.symm.toHomeomorph) (r := r) fun p hp ↦
-      hr _ (by rwa [Complex.equivRealProdCLM_symm_apply_im])
-  have hdη (p : ℝ × ℝ) : fderiv ℝ (η ∘ equivRealProdCLM.symm) p (0, 1) =
-      fderiv ℝ η (equivRealProdCLM.symm p) I := by
-    rw [equivRealProdCLM.symm.comp_right_fderiv, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe, ← stdComplexLineImag_eq,
-      equivRealProdCLM_symm_stdComplexLineImag]
-  simp only [hdη, Function.comp_apply] at hpoinc
-  rw [← volume_preserving_equiv_real_prod.integral_comp'
-      fun p ↦ ‖η (equivRealProdCLM.symm p)‖ ^ 2,
-    ← volume_preserving_equiv_real_prod.integral_comp'
-      fun p ↦ ‖fderiv ℝ η (equivRealProdCLM.symm p) I‖ ^ 2] at hpoinc
-  simpa only [Complex.coe_measurableEquivRealProd_eq_equivRealProdCLM,
-    ContinuousLinearEquiv.symm_apply_apply] using hpoinc
-
 /-- **The Poincaré inequality at infinity on `ℂ`.** A compactly supported `C¹` map `f` of `ℂ`
 vanishing on the disc `‖w‖ < R` has `∫ ‖f z⁻¹‖² ≤ (4 / R)² ∫ (‖∂₁ f‖² + ‖∂_i f‖²)`. -/
-private theorem integral_norm_sq_comp_inv_le {f : ℂ → V} {R : ℝ} (hR : 0 < R)
+theorem integral_norm_sq_comp_inv_le {f : ℂ → V} {R : ℝ} (hR : 0 < R)
     (hf : ContDiff ℝ 1 f) (hfc : HasCompactSupport f) (hfR : ∀ w : ℂ, ‖w‖ < R → f w = 0) :
     ∫ z, ‖f z⁻¹‖ ^ 2 ≤ (4 / R) ^ 2 * ∫ w, (‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2) := by
   -- In the coordinate `z = w⁻¹` the map vanishes off the disc `|z| ≤ R⁻¹`.
@@ -91,8 +70,8 @@ private theorem integral_norm_sq_comp_inv_le {f : ℂ → V} {R : ℝ} (hR : 0 <
     have h := hfc.contDiff_update_comp_inv hf
     rwa [Function.update_eq_self_iff.2 (by simp [hfR 0 (by simpa using hR)])] at h
   -- The Poincaré inequality on the strip `|Im z| < 2 R⁻¹` containing that disc.
-  have hpoinc := integral_norm_sq_le_mul_integral_norm_fderiv_I_sq hη hηc (r := 2 * R⁻¹) fun z hz ↦
-      hηR z (by linarith [Complex.abs_im_le_norm z, inv_pos.2 hR])
+  have hpoinc := integral_norm_sq_le_mul_integral_norm_fderiv_I_sq_of_abs_im hη hηc
+    (r := 2 * R⁻¹) fun z hz ↦ hηR z (by linarith [Complex.abs_im_le_norm z, inv_pos.2 hR])
   calc _ ≤ (2 * (2 * R⁻¹)) ^ 2 * ∫ z, ‖fderiv ℝ (fun z ↦ f z⁻¹) z I‖ ^ 2 := hpoinc
     _ ≤ (2 * (2 * R⁻¹)) ^ 2 * ∫ w, (‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2) :=
         mul_le_mul_of_nonneg_left
