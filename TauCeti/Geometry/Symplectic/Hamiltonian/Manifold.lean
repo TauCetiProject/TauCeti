@@ -169,7 +169,7 @@ Hamiltonian vector fields and Poisson brackets restrict to open submanifolds, fo
 * `TauCeti.SymplecticForm.hamiltonianVectorField_constSmooth`: comparison with the vector-space
   construction.
 * `TauCeti.SmoothTwoForm.poissonBracket`: the Poisson bracket `{f, g} = σ(X_f, X_g)`, with
-  `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_mvfderiv`: `{f, g} = df(X_g)`, and
+  `TauCeti.SmoothTwoForm.poissonBracket_eq_mvfderiv`: `{f, g} = df(X_g)`, and
   `TauCeti.SmoothTwoForm.contMDiff_poissonBracket_of_isInvertible`: on a Banach manifold with
   invertible flat maps, the Poisson bracket of `C^(n+1)` functions is `C^n`, and
   `TauCeti.SmoothTwoForm.contMDiff_poissonBracket_uncurry_of_isInvertible`: the Poisson bracket
@@ -828,9 +828,8 @@ theorem IsNondegenerate.isMIntegralCurve_or_exists_of_isMIntegralCurve_add_comp
 
 /-! ### The Poisson bracket -/
 
-/-- The **Poisson bracket** `{f, g}(x) = σ(X_f x, X_g x)` of two functions. For a nondegenerate
-form on a finite-dimensional manifold it is `{f, g} = df(X_g)`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_mvfderiv`). -/
+/-- The **Poisson bracket** `{f, g}(x) = σ(X_f x, X_g x)` of two functions. It is
+`{f, g} = df(X_g)` (`TauCeti.SmoothTwoForm.poissonBracket_eq_mvfderiv`). -/
 def poissonBracket (σ : SmoothTwoForm I M) (f g : M → ℝ) (x : M) : ℝ :=
   SmoothBundleForm.eval₂ σ x (σ.hamiltonianVectorField f x) (σ.hamiltonianVectorField g x)
 
@@ -974,6 +973,12 @@ theorem poissonBracket_eq_neg_mvfderiv (σ : SmoothTwoForm I M) (f g : M → ℝ
       ContinuousLinearMap.inverse_of_not_isInvertible hx, zero_apply, map_zero, neg_zero]
     rw [← flat_apply, map_zero]
 
+/-- The Poisson bracket `{f, g}` is the derivative of `f` along the Hamiltonian vector field of
+`g`. -/
+theorem poissonBracket_eq_mvfderiv (σ : SmoothTwoForm I M) (f g : M → ℝ) (x : M) :
+    σ.poissonBracket f g x = mvfderiv I f x (σ.hamiltonianVectorField g x) := by
+  rw [← neg_poissonBracket, poissonBracket_eq_neg_mvfderiv, neg_neg]
+
 section IsInvertible
 
 variable [CompleteSpace E] (hσ : ∀ x, (σ.flat x).IsInvertible)
@@ -984,10 +989,8 @@ invertible, the Poisson bracket of two `C^(n+1)` functions is `C^n`, for `n ≤ 
 theorem contMDiff_poissonBracket_of_isInvertible {n : WithTop ℕ∞} (hn : n ≤ ∞) {f g : M → ℝ}
     (hf : ContMDiff I 𝓘(ℝ) (n + 1) f) (hg : ContMDiff I 𝓘(ℝ) (n + 1) g) :
     ContMDiff I 𝓘(ℝ) n (σ.poissonBracket f g) := by
-  -- `{f, g} = -{g, f} = df(X_g)`, the derivative of `f` along a `C^n` vector field.
-  have hfg : σ.poissonBracket f g = fun x ↦ mvfderiv I f x (σ.hamiltonianVectorField g x) :=
-    funext fun x ↦ by rw [← neg_poissonBracket, poissonBracket_eq_neg_mvfderiv, neg_neg]
-  rw [hfg]
+  -- `{f, g} = df(X_g)`, the derivative of `f` along a `C^n` vector field.
+  rw [funext (σ.poissonBracket_eq_mvfderiv f g)]
   exact (hf.contMDiff_mvfderiv_apply le_rfl).comp
     (contMDiff_hamiltonianVectorField_of_isInvertible hσ hn hg)
 
@@ -1002,12 +1005,11 @@ theorem contMDiff_poissonBracket_uncurry_of_isInvertible {E' H' N : Type*} [Norm
     (hg : ContMDiff (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry g)) :
     ContMDiff (J.prod I) 𝓘(ℝ) n (fun q : N × M ↦ σ.poissonBracket (f q.1) (g q.1) q.2) := by
   -- Pair the jointly `C^n` differential of `f` with the jointly `C^n` field `X_g`, in the
-  -- trivial line bundle, and read off the fibre component: `{f, g} = -{g, f} = df(X_g)`.
+  -- trivial line bundle, and read off the fibre component: `{f, g} = df(X_g)`.
   have hc : ContMDiff (J.prod I) 𝓘(ℝ) n _ := fun q ↦
     (hf.contMDiff_totalSpaceMk_mvfderiv_uncurry q).clm_bundle_apply_scalar
       (contMDiff_hamiltonianVectorField_uncurry_of_isInvertible hσ hn hg q)
-  exact hc.congr fun q ↦ by
-    rw [← neg_poissonBracket, poissonBracket_eq_neg_mvfderiv, neg_neg]
+  exact hc.congr fun _ ↦ σ.poissonBracket_eq_mvfderiv _ _ _
 
 end IsInvertible
 
@@ -1015,12 +1017,6 @@ namespace IsNondegenerate
 
 variable [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
 include h
-
-/-- The Poisson bracket `{f, g}` is the derivative of `f` along the Hamiltonian vector field of
-`g`. -/
-theorem poissonBracket_eq_mvfderiv (f g : M → ℝ) (x : M) :
-    σ.poissonBracket f g x = mvfderiv I f x (σ.hamiltonianVectorField g x) :=
-  h.eval₂_hamiltonianVectorField f x _
 
 /-- **Regularity of the Poisson bracket.** For a nondegenerate two-form on a finite-dimensional
 manifold, the Poisson bracket of two `C^(n+1)` functions is `C^n`, for `n ≤ ∞`. -/
@@ -1148,7 +1144,7 @@ theorem poissonBracket_comp_of_mem_range {g k : M₂ → ℝ}
     (hg : MDifferentiableAt I₂ 𝓘(ℝ) g (φ x)) (hk : MDifferentiableAt I₂ 𝓘(ℝ) k (φ x))
     (hkx : σ₂.hamiltonianVectorField k (φ x) ∈ (mfderiv I I₂ φ x).range) :
     σ.poissonBracket (g ∘ φ) (k ∘ φ) x = σ₂.poissonBracket g k (φ x) := by
-  rw [hσ.poissonBracket_eq_mvfderiv, hσ₂.poissonBracket_eq_mvfderiv,
+  rw [σ.poissonBracket_eq_mvfderiv, σ₂.poissonBracket_eq_mvfderiv,
     mvfderiv_comp_apply x hg ((hφ x).mdifferentiableAt (by simp)),
     hσ.mfderiv_hamiltonianVectorField_comp_of_mem_range hσ₂ hφ hφσ hk hkx]
 

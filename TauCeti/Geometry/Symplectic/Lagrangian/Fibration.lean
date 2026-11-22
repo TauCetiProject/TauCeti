@@ -153,7 +153,7 @@ theorem mfderiv_hamiltonianVectorField_comp_eq_zero [FiniteDimensional ℝ E] {g
 theorem poissonBracket_comp_eq_zero [FiniteDimensional ℝ E] {g k : B → ℝ} {x : M}
     (hg : MDifferentiableAt J 𝓘(ℝ) g (π x)) (hk : MDifferentiableAt J 𝓘(ℝ) k (π x)) :
     σ.poissonBracket (g ∘ π) (k ∘ π) x = 0 := by
-  rw [hσ.poissonBracket_eq_mvfderiv, mvfderiv_comp_apply x hg (h.mdifferentiableAt x),
+  rw [σ.poissonBracket_eq_mvfderiv, mvfderiv_comp_apply x hg (h.mdifferentiableAt x),
     h.mfderiv_hamiltonianVectorField_comp_eq_zero hk, map_zero]
 
 /-- The components of a family `κ ∘ π` of functions pulled back from the base Poisson-commute at

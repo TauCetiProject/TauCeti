@@ -22,10 +22,10 @@ import TauCeti.Geometry.Manifold.RegularValue.Factorization
 Let `σ` be a nondegenerate two-form on a manifold `M`, with the conventions `ι_{X_f} σ = df` and
 `{f, g} = σ(X_f, X_g) = df(X_g)`. A function `g` is a **first integral** of a Hamiltonian `f`
 when `{g, f} = 0` (`TauCeti.SmoothTwoForm.IsFirstIntegral`), that is when `g` is stationary along
-the Hamiltonian vector field `X_f`. When `σ` is nondegenerate and `M` is finite-dimensional, a
-first integral which is differentiable at every point of an integral curve of `X_f` is constant
-along that curve (`TauCeti.SmoothTwoForm.IsFirstIntegral.apply_eq_of_isMIntegralCurve`). Being a
-first integral is a symmetric relation, by antisymmetry of the Poisson bracket.
+the Hamiltonian vector field `X_f`. A first integral which is differentiable at every point of an
+integral curve of `X_f` is constant along that curve
+(`TauCeti.SmoothTwoForm.IsFirstIntegral.apply_eq_of_isMIntegralCurve`). Being a first integral is
+a symmetric relation, by antisymmetry of the Poisson bracket.
 
 A **completely integrable system** on a `2n`-dimensional manifold is a smooth map
 `F : M → (ι → ℝ)` with `n` components `F_i`, pairwise in involution, `{F_i, F_j} = 0`, whose
@@ -84,9 +84,8 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 /-! ### First integrals -/
 
 /-- A function `g` is a **first integral** of the Hamiltonian `f` when the Poisson bracket
-`{g, f}` vanishes everywhere. For a nondegenerate form on a finite-dimensional manifold this says
-that `g` is stationary along the Hamiltonian vector field of `f`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.isFirstIntegral_iff_mvfderiv`), so that `g` is constant
+`{g, f}` vanishes everywhere. This says that `g` is stationary along the Hamiltonian vector field
+of `f` (`TauCeti.SmoothTwoForm.isFirstIntegral_iff_mvfderiv`), so that `g` is constant
 along every integral curve of the Hamiltonian vector field of `f` on which `g` is differentiable
 (`TauCeti.SmoothTwoForm.IsFirstIntegral.apply_eq_of_isMIntegralCurveOn`). -/
 def IsFirstIntegral (σ : SmoothTwoForm I M) (f g : M → ℝ) : Prop :=
@@ -131,15 +130,10 @@ theorem IsFirstIntegral.const_smul (hg : σ.IsFirstIntegral f g) (c : ℝ) :
     σ.IsFirstIntegral f (c • g) := fun x ↦ by
   rw [poissonBracket_const_smul_left, hg x, smul_zero]
 
-section Nondegenerate
-
-variable [FiniteDimensional ℝ E] (hσ : σ.IsNondegenerate)
-include hσ
-
 /-- A first integral of `f` is a function stationary along the Hamiltonian vector field of `f`. -/
-theorem IsNondegenerate.isFirstIntegral_iff_mvfderiv :
+theorem isFirstIntegral_iff_mvfderiv :
     σ.IsFirstIntegral f g ↔ ∀ x, mvfderiv I g x (σ.hamiltonianVectorField f x) = 0 := by
-  simp only [isFirstIntegral_iff, hσ.poissonBracket_eq_mvfderiv]
+  simp only [isFirstIntegral_iff, σ.poissonBracket_eq_mvfderiv]
 
 /-- **Conservation of first integrals.** A first integral `g` of `f`, differentiable along an
 integral curve of the Hamiltonian vector field of `f` on an interval of times (or any
@@ -150,7 +144,7 @@ theorem IsFirstIntegral.apply_eq_of_isMIntegralCurveOn (hg : σ.IsFirstIntegral 
     (hgγ : ∀ t ∈ s, MDifferentiableAt I 𝓘(ℝ) g (γ t)) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     g (γ t) = g (γ t₀) :=
   hγ.apply_eq_of_mvfderiv_apply_eq_zero hs' hgγ
-    (fun u _ ↦ hσ.isFirstIntegral_iff_mvfderiv.1 hg (γ u)) ht₀ ht
+    (fun u _ ↦ isFirstIntegral_iff_mvfderiv.1 hg (γ u)) ht₀ ht
 
 /-- **Conservation of first integrals** along a global integral curve: a first integral of `f`,
 differentiable along an integral curve of the Hamiltonian vector field of `f`, is constant along
@@ -159,10 +153,8 @@ theorem IsFirstIntegral.apply_eq_of_isMIntegralCurve (hg : σ.IsFirstIntegral f 
     (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField f))
     (hgγ : ∀ t, MDifferentiableAt I 𝓘(ℝ) g (γ t)) (s t : ℝ) :
     g (γ t) = g (γ s) :=
-  hg.apply_eq_of_isMIntegralCurveOn hσ isPreconnected_univ (hγ.isMIntegralCurveOn _)
+  hg.apply_eq_of_isMIntegralCurveOn isPreconnected_univ (hγ.isMIntegralCurveOn _)
     (fun t _ ↦ hgγ t) (Set.mem_univ s) (Set.mem_univ t)
-
-end Nondegenerate
 
 /-! ### Completely integrable systems -/
 
