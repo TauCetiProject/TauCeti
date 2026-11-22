@@ -7,7 +7,9 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Data.RiemannZeta
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completion
+import TauCeti.Data.Finsupp.Single
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
+import TauCeti.NumberTheory.LFunctions.Data.PolarDivisor
 
 /-!
 # The completed L-function card of the Dedekind zeta function
@@ -113,7 +115,7 @@ theorem dedekindZetaData_dual : (dedekindZetaData K).dual = dedekindZetaData K :
   · simp
   · simp
   · simp
-  · rw [AnalyticLFunctionData.dual_polarOrder_apply]
+  · rw [AnalyticLFunctionData.dual_polarOrder_apply, dedekindZetaData_polarOrder]
     exact single_zero_add_single_one_conj _
 
 /-- The Dedekind zeta coefficients satisfy the average absolute growth bound `O(n ^ (1 + ε))`. -/
@@ -144,11 +146,13 @@ theorem dedekindZetaData_hasMeromorphicContinuation :
     (dedekindZetaData K).HasMeromorphicContinuation where
   meromorphic := meromorphic_completedDedekindZeta K
   meromorphicOrderAt_eq p hp := by
-    rcases (single_zero_add_single_one_ne_zero_iff p).mp hp with rfl | rfl
+    rw [dedekindZetaData_polarOrder] at hp ⊢
+    rcases (Finsupp.single_add_single_ne_zero_iff one_ne_zero one_ne_zero p).mp hp with rfl | rfl
     · simp [meromorphicOrderAt_completedDedekindZeta_zero]
     · simp [meromorphicOrderAt_completedDedekindZeta_one]
   analyticAt p hp := by
-    obtain ⟨h0, h1⟩ := (single_zero_add_single_one_eq_zero_iff p).mp hp
+    rw [dedekindZetaData_polarOrder] at hp
+    obtain ⟨h0, h1⟩ := (Finsupp.single_add_single_eq_zero_iff one_ne_zero one_ne_zero p).mp hp
     exact analyticAt_completedDedekindZeta h0 h1
 
 /-- The functional equation `Λ_K(1 - s) = Λ_K(s)` of the completed Dedekind zeta function, with
@@ -156,7 +160,9 @@ root number `1`. -/
 theorem dedekindZetaData_hasFunctionalEquation :
     (dedekindZetaData K).HasFunctionalEquation where
   norm_rootNumber := by simp
-  polarOrder_one_sub_conj s := single_zero_add_single_one_one_sub_conj s
+  polarOrder_one_sub_conj s := by
+    rw [dedekindZetaData_polarOrder]
+    exact single_zero_add_single_one_one_sub_conj s
   completed_eq s _ _ := by
     simp [completedDedekindZeta_one_sub]
 
@@ -169,8 +175,10 @@ theorem ofSeries_dedekindZetaData :
       dedekindZetaData K := by
   refine AnalyticLFunctionData.ofSeries_eq
     (dedekindZetaData_hasDirichletAgreement K) (dedekindZetaData_hasFunctionalEquation K)
-    (meromorphicNFOn_completedDedekindZeta K)
-    ((single_zero_add_single_one_eq_zero_iff 2).mpr ⟨by norm_num, by norm_num⟩) ?_
+    (meromorphicNFOn_completedDedekindZeta K) ?_ ?_
+  · rw [dedekindZetaData_polarOrder]
+    exact (Finsupp.single_add_single_eq_zero_iff one_ne_zero one_ne_zero 2).mpr
+      ⟨by norm_num, by norm_num⟩
   rw [dedekindZetaData_completed, completedDedekindZeta_eq (by norm_num)]
   have hdiscr : ((|discr K| : ℤ) : ℂ) ^ ((2 : ℂ) / 2) ≠ 0 := by
     rw [div_self two_ne_zero, Complex.cpow_one]

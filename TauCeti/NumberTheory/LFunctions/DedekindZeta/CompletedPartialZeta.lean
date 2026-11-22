@@ -14,7 +14,6 @@ public import TauCeti.RingTheory.DedekindDomain.Different.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Meromorphic.Conj
 import TauCeti.Analysis.Meromorphic.NormalForm
-import TauCeti.Analysis.Meromorphic.Order
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.LFunctions.Theta.GammaIntegral
