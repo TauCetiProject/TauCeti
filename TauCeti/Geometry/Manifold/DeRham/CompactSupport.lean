@@ -314,6 +314,17 @@ theorem exactCompactlySupportedForms_le_exactForms (k : ℕ) :
       rw [exactCompactlySupportedForms_succ, exactForms_succ]
       exact LinearMap.map_le_range
 
+/-- On a compact manifold every form is compactly supported, so the compactly supported exact
+forms are exactly the exact forms. -/
+@[simp]
+theorem exactCompactlySupportedForms_eq_exactForms [CompactSpace M] (k : ℕ) :
+    exactCompactlySupportedForms I M k = exactForms I M k := by
+  cases k with
+  | zero => rw [exactCompactlySupportedForms_zero, exactForms_zero]
+  | succ k =>
+      rw [exactCompactlySupportedForms_succ, exactForms_succ, compactlySupportedForms_eq_top,
+        Submodule.map_top]
+
 /-- A compactly supported exact form is compactly supported and closed. -/
 theorem exactCompactlySupportedForms_le_compactlySupportedClosedForms (k : ℕ) :
     exactCompactlySupportedForms I M k ≤ compactlySupportedClosedForms I M k := by

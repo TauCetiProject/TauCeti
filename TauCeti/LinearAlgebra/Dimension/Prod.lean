@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.LinearAlgebra.Dual.Defs
+import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # The dimension of a product of free modules
@@ -19,6 +21,10 @@ A free module of positive dimension is finite, so the dimensions of factors of d
 `m + 1` and `n + 1` add without a separate finiteness hypothesis
 (`Module.finrank_prod_eq_succ`). The sum is written `d + 1` together with a proof of
 `(m + 1) + (n + 1) = d + 1`, the form used for products of local orientations.
+
+For a finite-dimensional vector space `V` over a field `K`, the space `V × V^* × K`, the linear
+model of the one-jet space of `V`, has dimension `2 * finrank K V + 1`
+(`Module.finrank_prod_dual_prod_self`).
 -/
 
 public section
@@ -45,5 +51,12 @@ theorem finrank_prod_eq_succ (hM : finrank R M = m + 1) (hM' : finrank R M' = n 
   have := finite_of_finrank_eq_succ hM
   have := finite_of_finrank_eq_succ hM'
   rw [Module.finrank_prod, hM, hM', hd]
+
+/-- The dimension of `V × V^* × K` is `2 * finrank K V + 1` for a finite-dimensional vector space
+`V` over a field `K`. -/
+theorem finrank_prod_dual_prod_self (K V : Type*) [Field K] [AddCommGroup V] [Module K V]
+    [Module.Finite K V] : finrank K (V × Dual K V × K) = 2 * finrank K V + 1 := by
+  rw [Module.finrank_prod, Module.finrank_prod, Subspace.dual_finrank_eq, finrank_self]
+  omega
 
 end Module
