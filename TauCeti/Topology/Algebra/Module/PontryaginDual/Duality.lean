@@ -84,17 +84,17 @@ private def liftExactRange {f : M₁ →L[R] M₂} {g : M₂ →L[R] M₃}
     (hex : Function.Exact f.toLinearMap g.toLinearMap)
     (φ : ModulePontryaginDual R E M₂) (hφ : map (E := E) f φ = 0) :
     LinearMap.range g.toLinearMap →ₗ[R] E :=
-  (LinearMap.ker g.toLinearMap).liftQ φ.toContinuousLinearMap.toLinearMap (by
-    rw [LinearMap.exact_iff.mp hex]; rintro _ ⟨x, rfl⟩
-    simpa [LinearMap.mem_ker, map_apply] using DFunLike.congr_fun hφ x) ∘ₗ
-    (LinearMap.quotKerEquivRange g.toLinearMap).symm.toLinearMap
+  g.toLinearMap.rangeRestrict.liftOfSurjective g.toLinearMap.surjective_rangeRestrict
+    ⟨φ.toContinuousLinearMap.toLinearMap, by
+      rw [LinearMap.ker_rangeRestrict, LinearMap.exact_iff.mp hex]
+      rintro _ ⟨x, rfl⟩
+      simpa [LinearMap.mem_ker, map_apply] using DFunLike.congr_fun hφ x⟩
 
 private theorem liftExactRange_apply {f : M₁ →L[R] M₂} {g : M₂ →L[R] M₃}
     (hex : Function.Exact f.toLinearMap g.toLinearMap)
     (φ : ModulePontryaginDual R E M₂) (hφ : map (E := E) f φ = 0) (x : M₂) :
-    liftExactRange hex φ hφ ⟨g.toLinearMap x, x, rfl⟩ = φ x := by
-  dsimp only [liftExactRange, LinearMap.comp_apply, LinearEquiv.coe_coe]
-  rw [g.toLinearMap.quotKerEquivRange_symm_apply_image x ⟨x, rfl⟩]; rfl
+    liftExactRange hex φ hφ ⟨g.toLinearMap x, x, rfl⟩ = φ x :=
+  g.toLinearMap.rangeRestrict.equivOfSurjective_apply g.toLinearMap.surjective_rangeRestrict _
 
 private theorem exact_map_of_lift {f : M₁ →L[R] M₂} {g : M₂ →L[R] M₃}
     (hex : Function.Exact f.toLinearMap g.toLinearMap)
@@ -436,22 +436,20 @@ def evalEquivOfDiscrete : M ≃L[R] ModulePontryaginDual R E (ModulePontryaginDu
       exact hsub fun m hm ↦ (show φ m = 0 by
         simpa [map_apply] using DFunLike.congr_fun hφ ⟨m, Submodule.subset_span hm⟩) ▸
         (hV m hm).right
-    let eQ := LinearMap.quotKerEquivOfSurjective (map (E := E) M₀.subtypeL).toLinearMap
-      (map_surjective_of_injective_of_discrete (Submodule.subtype_injective M₀))
+    let Φ₀ : ModulePontryaginDual R E M₀ →ₗ[R] E :=
+      (map (E := E) M₀.subtypeL).toLinearMap.liftOfSurjective
+        (map_surjective_of_injective_of_discrete (Submodule.subtype_injective M₀))
+        ⟨Φ.toContinuousLinearMap.toLinearMap, hker⟩
     obtain ⟨x₀, hx₀⟩ := (bijective_applyₗ_of_forall_isMaximal hE IsFiniteLength.of_finite).2
-      ((LinearMap.ker _).liftQ Φ.toContinuousLinearMap.toLinearMap hker ∘ₗ eQ.symm.toLinearMap ∘ₗ
-        (equivLinearMap R E M₀).symm.toLinearMap)
+      (Φ₀ ∘ₗ (equivLinearMap R E M₀).symm.toLinearMap)
     refine ⟨x₀.val, ext fun φ ↦ ?_⟩
     have hx := LinearMap.congr_fun hx₀ (equivLinearMap R E M₀ (map (E := E) M₀.subtypeL φ))
-    have hq : eQ.symm (map (E := E) M₀.subtypeL φ) = Submodule.Quotient.mk φ := by
-      rw [← ContinuousLinearMap.coe_coe (map (E := E) M₀.subtypeL),
-        ← LinearMap.quotKerEquivOfSurjective_apply_mk (map (E := E) M₀.subtypeL).toLinearMap
-          (map_surjective_of_injective_of_discrete (Submodule.subtype_injective M₀)) φ]
-      exact eQ.symm_apply_apply (Submodule.Quotient.mk φ)
     simp only [LinearMap.applyₗ_apply_apply, equivLinearMap_apply, map_apply,
       Submodule.subtypeL_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
       LinearEquiv.symm_apply_apply] at hx
-    rw [eval_apply, hx, hq]; rfl
+    rw [eval_apply, hx]
+    exact LinearMap.equivOfSurjective_apply
+      (map_surjective_of_injective_of_discrete (Submodule.subtype_injective M₀)) hker (m := φ)
   exact ⟨LinearEquiv.ofBijective (eval R E M) ⟨hinj, hsurj⟩,
     continuous_eval_of_discrete, continuous_of_discreteTopology⟩
 @[simp] theorem evalEquivOfDiscrete_apply (x : M) (φ : ModulePontryaginDual R E M) :

@@ -420,12 +420,6 @@ theorem isIntegralClosure_integerRing : IsIntegralClosure 𝒪[M] 𝒪[K] M wher
 
 end IntegralClosure
 
-/-- The scalar tower `𝒪[K] → 𝒪[M] → M` for a compatible valuative extension. -/
-instance instIsScalarTowerIntegerRing {K M : Type*} [CommRing K] [ValuativeRel K]
-    [CommRing M] [ValuativeRel M] [Algebra K M] [ValuativeExtension K M] :
-    IsScalarTower 𝒪[K] 𝒪[M] M :=
-  .of_algebraMap_eq' rfl
-
 section IntegerRingEquiv
 
 variable {K M} [ValuativeRel M] [ValuativeExtension K M]

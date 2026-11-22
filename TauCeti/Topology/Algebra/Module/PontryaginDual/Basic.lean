@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.ContinuousMap.Algebra
-import Mathlib.Topology.CompactOpen
+import TauCeti.Topology.CompactOpen
 
 /-!
 # The compact-open topological dual of a module
@@ -186,11 +186,8 @@ instance : IsTopologicalAddGroup (ModulePontryaginDual R E M) where
 
 /-- When `M` is compact and `E` is discrete, `ModulePontryaginDual R E M` is discrete. -/
 instance instDiscreteTopology [CompactSpace M] [DiscreteTopology E] :
-    DiscreteTopology (ModulePontryaginDual R E M) := by
-  refine discreteTopology_of_isOpen_singleton_zero ?_
-  convert (ContinuousMap.isOpen_setOfPred_mapsTo (X := M) (Y := E) isCompact_univ
-    (isOpen_discrete {(0 : E)})).preimage continuous_toContinuousMap using 1
-  ext φ; simp [Set.MapsTo, DFunLike.ext_iff]
+    DiscreteTopology (ModulePontryaginDual R E M) :=
+  .of_continuous_injective continuous_toContinuousMap toContinuousMap_injective
 
 end AddCommGroup
 

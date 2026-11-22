@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 public import TauCeti.Topology.Algebra.Module.PontryaginDual.GroupAction
 public import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
 import Mathlib.Topology.Algebra.OpenSubgroup
+import TauCeti.Algebra.Module.Torsion.Snake
 import TauCeti.RingTheory.Length
 import TauCeti.Topology.Algebra.Module.Submodule
 import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
@@ -75,60 +76,86 @@ theorem continuousSMul_iff_isTorsion {M : Type*} [AddCommGroup M] [Module 𝒪[L
       rw [show r - r₀ = a * c from hc, mul_comm, mul_smul, show a • m = 0 from ham, smul_zero]
     exact (sub_eq_zero.mp (by rw [← sub_smul, hdiff])).symm
 
+omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
+private theorem injective_algebraMap_integerRing :
+    Function.Injective (Algebra.linearMap 𝒪[L] L) :=
+  FaithfulSMul.algebraMap_injective 𝒪[L] L
+
+omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
+private theorem exact_algebraMap_mkQ_one :
+    Function.Exact (Algebra.linearMap 𝒪[L] L) (1 : Submodule 𝒪[L] L).mkQ := by
+  rw [LinearMap.exact_iff, Submodule.ker_mkQ]
+  ext x
+  simp [Submodule.mem_one]
+
+omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
+private theorem bijective_smul_pow_uniformizer {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ) (n : ℕ) :
+    Function.Bijective fun x : L ↦ (ϖ ^ n : 𝒪[L]) • x := by
+  have hpowL : (ϖ : L) ^ n ≠ 0 := pow_ne_zero n fun h ↦ hϖ.ne_zero (Subtype.ext h)
+  simpa [Algebra.smul_def, Algebra.algebraMap_ofSubsemiring_apply, SubmonoidClass.coe_pow] using
+    mulLeft_bijective₀ ((ϖ : L) ^ n) hpowL
+
+section
+open scoped Pointwise
+
 variable {L} in
 /-- Given a uniformizer `ϖ` of `𝒪[L]`, the `𝓂[L]^n`-torsion submodule of `L ⧸ 𝒪[L]` is
 `𝒪[L]`-linearly isomorphic to `𝒪[L] ⧸ 𝓂[L]^n`, via `[a] ↦ [a / ϖ^n]`. -/
 def quotientMaximalIdealPowEquivTorsionBySet {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ) (n : ℕ) :
     (𝒪[L] ⧸ (𝓂[L] ^ n : Ideal 𝒪[L])) ≃ₗ[𝒪[L]]
       Submodule.torsionBySet 𝒪[L] (L ⧸ (1 : Submodule 𝒪[L] L))
-        ((𝓂[L] ^ n : Ideal 𝒪[L]) : Set 𝒪[L]) := by
-  have hpowL : (ϖ : L) ^ n ≠ 0 := pow_ne_zero n fun h ↦ hϖ.ne_zero (Subtype.ext h)
+        ((𝓂[L] ^ n : Ideal 𝒪[L]) : Set 𝒪[L]) :=
   have hmn : (𝓂[L] ^ n : Ideal 𝒪[L]) = Ideal.span {ϖ ^ n} := by
     rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]
-  let f : 𝒪[L] →ₗ[𝒪[L]] (L ⧸ (1 : Submodule 𝒪[L] L)) :=
-    { toFun := fun a ↦ Submodule.Quotient.mk ((a : L) / (ϖ : L) ^ n)
-      map_add' := fun _ _ ↦ by simp only [Subring.coe_add, add_div, Submodule.Quotient.mk_add]
-      map_smul' := fun _ _ ↦ by
-        simp only [RingHom.id_apply, smul_eq_mul, Subring.coe_mul, mul_div_assoc]
-        rw [← Submodule.Quotient.mk_smul, Algebra.smul_def]; rfl }
-  have hker : LinearMap.ker f = 𝓂[L] ^ n := by
-    rw [hmn]; ext a; rw [LinearMap.mem_ker, Ideal.mem_span_singleton]
-    dsimp only [f, LinearMap.coe_mk, AddHom.coe_mk]
-    rw [Submodule.Quotient.mk_eq_zero, Submodule.mem_one]
-    exact ⟨fun ⟨b, hb⟩ ↦ ⟨b, Subtype.ext <| by
-        simpa [mul_comm] using (div_eq_iff hpowL).mp (show (b : L) = _ from hb).symm⟩,
-      fun ⟨b, hb⟩ ↦ ⟨b, by
-        simp only [Algebra.algebraMap_ofSubsemiring_apply]
-        have hbL : (a : L) = (ϖ : L) ^ n * (b : L) := by exact_mod_cast hb
-        rw [hbL, mul_div_cancel_left₀ _ hpowL]⟩⟩
-  have hrange : LinearMap.range f = Submodule.torsionBySet 𝒪[L] (L ⧸ (1 : Submodule 𝒪[L] L))
-      ((𝓂[L] ^ n : Ideal 𝒪[L]) : Set 𝒪[L]) := by
-    ext q; obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-    rw [LinearMap.mem_range, Submodule.mem_torsionBySet_iff]
-    refine ⟨?_, fun h ↦ ?_⟩
-    · rintro ⟨a, ha⟩ ⟨r, hr⟩
-      obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton.mp (hmn ▸ hr)
-      rw [← ha]; dsimp only [f, LinearMap.coe_mk, AddHom.coe_mk]
-      rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, Submodule.mem_one]
-      exact ⟨c * a, by
-        simp only [Algebra.smul_def, Algebra.algebraMap_ofSubsemiring_apply, Subring.coe_mul,
-          SubmonoidClass.coe_pow]
-        field_simp [hpowL]⟩
-    · have h0 := h ⟨ϖ ^ n, hmn ▸ Ideal.mem_span_singleton_self _⟩
-      rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, Submodule.mem_one] at h0
-      obtain ⟨a, ha⟩ := h0
-      refine ⟨a, congrArg Submodule.Quotient.mk ?_⟩
-      simp only [Algebra.smul_def, Algebra.algebraMap_ofSubsemiring_apply,
-        SubmonoidClass.coe_pow] at ha
-      rw [ha, mul_div_cancel_left₀ _ hpowL]
-  exact (Submodule.quotEquivOfEq _ _ hker.symm).trans
-    (f.quotKerEquivRange.trans (LinearEquiv.ofEq _ _ hrange))
+  have hq : (𝓂[L] ^ n : Ideal 𝒪[L]) = (ϖ ^ n) • (⊤ : Submodule 𝒪[L] 𝒪[L]) := by
+    rw [hmn]
+    simp [← Submodule.ideal_span_singleton_smul]
+  have ht : Submodule.torsionBy 𝒪[L] (L ⧸ (1 : Submodule 𝒪[L] L)) (ϖ ^ n) =
+      Submodule.torsionBySet 𝒪[L] (L ⧸ (1 : Submodule 𝒪[L] L))
+        ((𝓂[L] ^ n : Ideal 𝒪[L]) : Set 𝒪[L]) := by
+    rw [hmn, Submodule.torsionBySet_ideal_span_singleton_eq]
+  (Submodule.quotEquivOfEq _ _ hq).trans
+    ((torsionByδEquiv (ϖ ^ n) (exact_algebraMap_mkQ_one L)
+      (injective_algebraMap_integerRing L)
+      (Submodule.mkQ_surjective _) (bijective_smul_pow_uniformizer L hϖ n)).symm.trans
+      (LinearEquiv.ofEq _ _ ht))
+
+end
+
 variable {L} in
 @[simp] theorem quotientMaximalIdealPowEquivTorsionBySet_mk {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ)
     (n : ℕ) (a : 𝒪[L]) :
     (quotientMaximalIdealPowEquivTorsionBySet hϖ n
         (Ideal.Quotient.mk (𝓂[L] ^ n : Ideal 𝒪[L]) a) : L ⧸ (1 : Submodule 𝒪[L] L)) =
-      Submodule.Quotient.mk ((a : L) / (ϖ : L) ^ n) := (rfl)
+      Submodule.Quotient.mk ((a : L) / (ϖ : L) ^ n) := by
+  have hpowL : (ϖ : L) ^ n ≠ 0 := pow_ne_zero n fun h ↦ hϖ.ne_zero (Subtype.ext h)
+  have hmem : Submodule.Quotient.mk (p := (1 : Submodule 𝒪[L] L)) ((a : L) / (ϖ : L) ^ n) ∈
+      Submodule.torsionBy 𝒪[L] (L ⧸ (1 : Submodule 𝒪[L] L)) (ϖ ^ n) := by
+    rw [Submodule.mem_torsionBy_iff, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero,
+      Submodule.mem_one]
+    refine ⟨a, ?_⟩
+    simp only [Algebra.smul_def, Algebra.algebraMap_ofSubsemiring_apply, SubmonoidClass.coe_pow]
+    rw [mul_div_cancel₀ _ hpowL]
+  let x : Submodule.torsionBy 𝒪[L] (L ⧸ (1 : Submodule 𝒪[L] L)) (ϖ ^ n) :=
+    ⟨Submodule.Quotient.mk ((a : L) / (ϖ : L) ^ n), hmem⟩
+  have hx : torsionByδEquiv (ϖ ^ n) (exact_algebraMap_mkQ_one L)
+      (injective_algebraMap_integerRing L)
+      (Submodule.mkQ_surjective _) (bijective_smul_pow_uniformizer L hϖ n) x =
+      Submodule.Quotient.mk a := by
+    rw [torsionByδEquiv_apply]
+    refine torsionByδ_eq (exact_algebraMap_mkQ_one L) (injective_algebraMap_integerRing L)
+      (Submodule.mkQ_surjective _) x rfl ?_
+    simp only [Algebra.linearMap_apply, Algebra.algebraMap_ofSubsemiring_apply, Algebra.smul_def,
+      SubmonoidClass.coe_pow]
+    rw [mul_div_cancel₀ _ hpowL]
+  have hsymm := (torsionByδEquiv (ϖ ^ n) (exact_algebraMap_mkQ_one L)
+    (injective_algebraMap_integerRing L)
+    (Submodule.mkQ_surjective _) (bijective_smul_pow_uniformizer L hϖ n)).symm_apply_eq.mpr
+    hx.symm
+  rw [← Ideal.Quotient.mk_eq_mk]
+  simp only [quotientMaximalIdealPowEquivTorsionBySet, LinearEquiv.trans_apply,
+    Submodule.quotEquivOfEq_mk, LinearEquiv.coe_ofEq_apply, hsymm]
+  rfl
 
 /-- **Cogenerator condition for `L ⧸ 𝒪[L]`**: `Hom_𝒪[L](𝒪[L] ⧸ 𝔪, L ⧸ 𝒪[L])` has length `1` for
 every maximal ideal `𝔪` of `𝒪[L]`. -/

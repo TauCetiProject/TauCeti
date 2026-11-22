@@ -182,9 +182,8 @@ theorem isFiniteLength_of_tower (R : Type*) [Ring R] [SMul R A] [Module R M]
     ⟨isNoetherian_of_tower R inferInstance, isArtinian_of_tower R inferInstance⟩
 
 /-- Every finite module over any ring has finite length. -/
-theorem _root_.IsFiniteLength.of_finite [Finite M] : IsFiniteLength A M := by
-  have : Finite (Submodule A M) := Finite.of_injective SetLike.coe SetLike.coe_injective
-  exact isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩
+theorem _root_.IsFiniteLength.of_finite [Finite M] : IsFiniteLength A M :=
+  isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨isNoetherian_of_finite A M, isArtinian_of_finite⟩
 
 /-- An injective linear map between modules of the same finite length is surjective: its
 cokernel has length zero. -/
