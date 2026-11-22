@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.FlatLimit
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
-import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Calculus.DifferentialForm.Curl
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
@@ -192,16 +192,6 @@ end FrameValues
 section Deformation
 
 variable [Fact (finrank ℝ V = 4)]
-
-/-- The two-vector `F' = -db'` of a one-form `b'` differentiable at `y`, paired with a bivector
-`u ∧ v`: the derivative of `b'(u)` along `v` minus that of `b'(v)` along `u`. -/
-theorem inner_alternatingFormEquiv_symm_neg_extDeriv {b' : V → V [⋀^Fin 1]→L[ℝ] ℝ} {y : V}
-    (hb' : DifferentiableAt ℝ b' y) (u v : V) :
-    ⟪(alternatingFormEquiv V 2).symm (-extDeriv b' y), ιMulti ℝ 2 ![u, v]⟫ =
-      fderiv ℝ (fun y' ↦ b' y' (fun _ ↦ u)) y v - fderiv ℝ (fun y' ↦ b' y' (fun _ ↦ v)) y u := by
-  rw [inner_alternatingFormEquiv_symm_ιMulti, ContinuousAlternatingMap.neg_apply,
-    extDeriv_apply_pair_of_differentiableAt hb']
-  ring
 
 variable (e) in
 /-- The **gauge-fixing row** of the linearized flat limiting equations at a spinor `ψ`, applied to
