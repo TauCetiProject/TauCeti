@@ -19,16 +19,15 @@ The adjoint of the unitary `selfAdjoint.expUnitary h` is `expUnitary (-h)`
 (`selfAdjoint.star_expUnitary`).
 For a star projection `p`, `expUnitary (t • p)` has value `1 + (exp (t * I) - 1) • p` (and
 `1 - 2 • p` at `t = π`), and every self-adjoint unitary `u` equals `expUnitary (π • r)` for the
-star projection `r = 2⁻¹ • (1 - u)` and is joined to `1` by `Unitary.expUnitaryPathToOne`.
+star projection `r = 2⁻¹ • (1 - u)` (`Unitary.expUnitary_pi_smul_half_one_sub`).
 
 ## Main declarations
 
 * `selfAdjoint.star_expUnitary`: the adjoint of `expUnitary`.
 * `IsStarProjection.coe_expUnitary_smul`, `IsStarProjection.coe_expUnitary_pi_smul`: formulas for
   `expUnitary (t • p)` and `expUnitary (π • p)`.
-* `Unitary.isStarProjection_half_one_sub`, `Unitary.expUnitary_pi_smul_half_one_sub`,
-  `Unitary.expUnitaryPathToOne`: a self-adjoint unitary `u` yields `r = 2⁻¹ • (1 - u)` with
-  `expUnitary (π • r) = u` and a continuous unitary path from `1` to `u`.
+* `Unitary.isStarProjection_half_one_sub`, `Unitary.expUnitary_pi_smul_half_one_sub`: a
+  self-adjoint unitary `u` yields `r = 2⁻¹ • (1 - u)` with `expUnitary (π • r) = u`.
 
 ## References
 
@@ -82,19 +81,4 @@ theorem Unitary.expUnitary_pi_smul_half_one_sub (u : unitary A) (hu : IsSelfAdjo
     selfAdjoint.expUnitary (Real.pi • ⟨(2⁻¹ : ℝ) • (1 - (u : A)),
       (isStarProjection_half_one_sub u hu).isSelfAdjoint⟩) = u := by
   ext; rw [(isStarProjection_half_one_sub u hu).coe_expUnitary_pi_smul, smul_smul]; norm_num
-/-- Continuous path `t ↦ expUnitary ((t * π) • 2⁻¹ • (1 - u))` from `1` to a self-adjoint
-unitary `u`. -/
-def Unitary.expUnitaryPathToOne (u : unitary A) (hu : IsSelfAdjoint (u : A)) :
-    Path (1 : unitary A) u where
-  toFun t := selfAdjoint.expUnitary (((t : ℝ) * Real.pi) • ⟨(2⁻¹ : ℝ) • (1 - (u : A)),
-    (Unitary.isStarProjection_half_one_sub u hu).isSelfAdjoint⟩)
-  continuous_toFun := by fun_prop
-  source' := by simp
-  target' := by simpa using Unitary.expUnitary_pi_smul_half_one_sub u hu
-/-- Evaluation of `Unitary.expUnitaryPathToOne` at `t : unitInterval`. -/
-@[simp low]
-theorem Unitary.expUnitaryPathToOne_apply (u : unitary A) (hu : IsSelfAdjoint (u : A))
-    (t : unitInterval) : Unitary.expUnitaryPathToOne u hu t =
-      selfAdjoint.expUnitary (((t : ℝ) * Real.pi) • ⟨(2⁻¹ : ℝ) • (1 - (u : A)),
-        (Unitary.isStarProjection_half_one_sub u hu).isSelfAdjoint⟩) := (rfl)
 end Star

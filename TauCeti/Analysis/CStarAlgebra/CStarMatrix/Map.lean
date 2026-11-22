@@ -12,18 +12,23 @@ public import Mathlib.Data.Matrix.PEquiv
 /-!
 # Entrywise maps, reindexing, permutation matrices, and corner embeddings for `CStarMatrix`
 
-Entrywise functoriality (`map_zero`, `map_one`, `map_algebraMap`, `map_add`, `map_neg`, `map_sub`,
-`map_smul`, `map_mul`, `map_conjTranspose`, `map_star`), bundled `⋆`-homomorphism lifts
-(`mapₙₐ`, `mapₐ`), rectangular and square reindexing equivalences (`reindexₗ`, `reindexₐ`),
-permutation matrices (`permMatrix`), and diagonal corner embeddings (`singleNonUnitalStarAlgHom`).
+Within the `CStarMatrix` module split, choose `Map` for change of coefficients and index types,
+`Norm` to connect rectangular operator-norm estimates with entrywise continuity, and `Block` for
+block-matrix direct sums and amplification used in stabilization.
+
+This file provides entrywise functoriality (`map_zero`, `map_one`, `map_algebraMap`, `map_add`,
+`map_neg`, `map_sub`, `map_smul`, `map_mul`, `map_conjTranspose`, `map_star`), bundled
+`⋆`-homomorphism lifts (`mapₙₐ`, `mapₐ`), rectangular and square reindexing equivalences
+(`reindexₗ`, `reindexₐ`), permutation matrices (`permMatrix`), and diagonal corner embeddings
+(`singleNonUnitalStarAlgHom`).
 
 ## Main declarations
 
-* `CStarMatrix.mapₐ`, `CStarMatrix.mapₙₐ_eq_map`, `CStarMatrix.ofMatrix_symm_reindexₗ`,
-  `CStarMatrix.ofMatrix_symm_reindexₐ`, `CStarMatrix.reindexₗ_mul`,
-  `CStarMatrix.reindexₗ_self_eq_reindexₐ`, `CStarMatrix.isStarProjection_reindexₐ_iff`,
-  `CStarMatrix.permMatrix`, `CStarMatrix.permMatrix_conj_eq_reindexₐ`,
-  `CStarMatrix.singleNonUnitalStarAlgHom`.
+* `CStarMatrix.ofMatrix_symm_map`, `CStarMatrix.mapₐ`, `CStarMatrix.mapₙₐ_eq_map`,
+  `CStarMatrix.ofMatrix_symm_reindexₗ`, `CStarMatrix.ofMatrix_symm_reindexₐ`,
+  `CStarMatrix.reindexₗ_mul`, `CStarMatrix.reindexₗ_self_eq_reindexₐ`,
+  `CStarMatrix.isStarProjection_reindexₐ_iff`, `CStarMatrix.permMatrix`,
+  `CStarMatrix.permMatrix_conj_eq_reindexₐ`, `CStarMatrix.singleNonUnitalStarAlgHom`.
 
 ## References
 
@@ -38,16 +43,20 @@ namespace CStarMatrix
 
 section MapAndReindex
 variable {k l m n o p R A B C F : Type*}
+@[simp] theorem ofMatrix_symm_map (M : CStarMatrix m n A) (f : A → B) :
+    ofMatrix.symm (M.map f) = (ofMatrix.symm M).map f := (rfl)
 @[simp] theorem map_zero [Zero A] [Zero B] {f : A → B} (hf : f 0 = 0) :
     (0 : CStarMatrix m n A).map f = 0 := by ext; simp [hf]
 @[simp] protected theorem map_one [DecidableEq n] [Zero A] [One A] [Zero B] [One B]
     {f : A → B} (h₀ : f 0 = 0) (h₁ : f 1 = 1) : (1 : CStarMatrix n n A).map f = 1 :=
-  ofMatrix.symm.injective (Matrix.map_one f h₀ h₁)
+  ofMatrix.symm.injective <| by
+    simp only [ofMatrix_symm_map, ofMatrix_symm_one, Matrix.map_one f h₀ h₁]
 @[simp] theorem map_algebraMap [Fintype n] [DecidableEq n] [CommSemiring R] [Semiring A]
     [Semiring B] [Algebra R A] [Algebra R B] (r : R) {f : A → B} (hf : f 0 = 0)
     (hf₂ : f (algebraMap R A r) = algebraMap R B r) :
-    (algebraMap R (CStarMatrix n n A) r).map f = algebraMap R (CStarMatrix n n B) r :=
-  ofMatrix.symm.injective (Matrix.map_algebraMap r f hf hf₂)
+    (algebraMap R (CStarMatrix n n A) r).map f = algebraMap R (CStarMatrix n n B) r := by
+  ext i j
+  by_cases h : i = j <;> simp [map_apply, algebraMap_apply, h, hf, hf₂]
 theorem map_add [AddZeroClass A] [AddZeroClass B] [FunLike F A B] [AddMonoidHomClass F A B]
     (φ : F) (M N : CStarMatrix m n A) : (M + N).map φ = M.map φ + N.map φ := by ext; simp
 section
@@ -108,8 +117,11 @@ variable [Semiring R] [AddCommMonoid A] [Module R A]
 /-- `reindexₗ` is multiplicative across matching intermediate equivalences. -/
 @[simp] theorem reindexₗ_mul [Fintype m] [Fintype o] [Mul A] (eₗ : l ≃ k) (eₘ : m ≃ o) (eₙ : n ≃ p)
     (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    reindexₗ R A eₗ eₘ M * reindexₗ R A eₘ eₙ N = reindexₗ R A eₗ eₙ (M * N) := by
-  ext i j; simp only [mul_apply, reindexₗ_apply]; exact Fintype.sum_equiv eₘ.symm _ _ fun _ => rfl
+    reindexₗ R A eₗ eₘ M * reindexₗ R A eₘ eₙ N = reindexₗ R A eₗ eₙ (M * N) :=
+  ofMatrix.symm.injective <| by
+    rw [ofMatrix_symm_mul, ofMatrix_symm_reindexₗ, ofMatrix_symm_reindexₗ,
+      ofMatrix_symm_reindexₗ, Matrix.reindex_apply, Matrix.reindex_apply, Matrix.reindex_apply,
+      Matrix.submatrix_mul_equiv _ _ _ eₘ.symm, ofMatrix_symm_mul]
 @[simp] theorem reindexₗ_refl :
     reindexₗ R A (.refl m) (.refl n) = LinearEquiv.refl R (CStarMatrix m n A) := by ext; rfl
 @[simp] theorem reindexₗ_symm (eₘ : m ≃ l) (eₙ : n ≃ o) :
@@ -145,7 +157,9 @@ def permMatrix (A : Type*) [DecidableEq n] [Zero A] [One A] (e : m ≃ n) : CSta
   simp [permMatrix, PEquiv.toMatrix_apply, Equiv.toPEquiv_apply, eq_comm]
 @[simp] theorem permMatrix_refl [DecidableEq n] [Zero A] [One A] :
     permMatrix A (Equiv.refl n) = 1 :=
-  ofMatrix.symm.injective (by simp)
+  ofMatrix.symm.injective <| by
+    simp only [ofMatrix_symm_permMatrix, Equiv.toPEquiv_refl, PEquiv.toMatrix_refl,
+      ofMatrix_symm_one]
 @[simp] theorem conjTranspose_permMatrix [DecidableEq m] [DecidableEq n] [NonAssocSemiring A]
     [StarRing A] (e : m ≃ n) : (permMatrix A e).conjTranspose = permMatrix A e.symm := by
   ext i j; simp [Equiv.eq_symm_apply, eq_comm, apply_ite star]
@@ -198,7 +212,8 @@ def singleNonUnitalStarAlgHom (R : Type*) [Semiring R] [Module R A] (i : n) :
   map_smul' _ _ := by simp [smul_of, Matrix.smul_single]
   map_zero' := by rw [Matrix.single_zero, of_zero]
   map_add' _ _ := by rw [of_add_of, Matrix.single_add]
-  map_mul' _ _ := ofMatrix.symm.injective (by simp)
+  map_mul' _ _ := ofMatrix.symm.injective <| by
+    simp only [ofMatrix_symm_mul, Equiv.symm_apply_apply, Matrix.single_mul_single_same]
   map_star' _ := by rw [star_of, Matrix.conjTranspose_single]
 @[simp low] theorem singleNonUnitalStarAlgHom_apply (i : n) (a : A) :
     singleNonUnitalStarAlgHom R i a = ofMatrix (Matrix.single i i a) := (rfl)

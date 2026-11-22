@@ -184,19 +184,4 @@ theorem zero_murrayVonNeumannEquiv_iff :
 
 end Algebraic
 
-/-- Unitary conjugacy implies Murray–von Neumann equivalence. -/
-theorem murrayVonNeumannEquiv_unitary_conj [Semiring B] [StarRing B] [DecidableEq m]
-    {p : CStarMatrix m m B} (hp : IsStarProjection p) (u : unitary (CStarMatrix m m B)) :
-    MurrayVonNeumannEquiv p ((u : CStarMatrix m m B) * p * star (u : CStarMatrix m m B)) := by
-  have hq : IsStarProjection ((u : CStarMatrix m m B) * p * star (u : CStarMatrix m m B)) :=
-    ⟨by simp only [IsIdempotentElem, mul_assoc,
-        ← mul_assoc (star (u : CStarMatrix m m B)), Unitary.coe_star_mul_self,
-        one_mul, ← mul_assoc p, hp.isIdempotentElem.eq], hp.isSelfAdjoint.conjugate u⟩
-  refine ⟨hp, hq, (u : CStarMatrix m m B) * p, ?_, ?_⟩
-  · rw [← star_eq_conjTranspose, star_mul, hp.isSelfAdjoint.star_eq]
-    simp only [mul_assoc, ← mul_assoc (star (u : CStarMatrix m m B)),
-      Unitary.coe_star_mul_self, one_mul, hp.isIdempotentElem.eq]
-  · rw [← star_eq_conjTranspose, star_mul, hp.isSelfAdjoint.star_eq]
-    simp only [mul_assoc, ← mul_assoc p, hp.isIdempotentElem.eq]
-
 end CStarMatrix

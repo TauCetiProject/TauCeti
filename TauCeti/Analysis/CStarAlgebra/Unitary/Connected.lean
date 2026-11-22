@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 public import Mathlib.Topology.Algebra.Star.Unitary
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RealImaginaryPart
 import Mathlib.Tactic.NormNum
+import TauCeti.Analysis.CStarAlgebra.Exponential
 
 /-!
 # Unitary paths from spectral cuts
@@ -52,25 +53,15 @@ theorem Unitary.joined_one_of_nonneg_realPart
     norm_num at hnonneg
   exact Unitary.joined 1 u ((Unitary.norm_sub_one_lt_two_iff u.property).mpr hgap)
 
-/-- A self-adjoint unitary lies in the path component of the identity over the complex field. -/
+/-- A self-adjoint unitary in a complete normed complex star-algebra lies in the path component
+of the identity. -/
 theorem Unitary.joined_one_of_isSelfAdjoint
-    {A : Type*} [CStarAlgebra A]
-    (u : unitary A) (hu : IsSelfAdjoint (u : A)) : Joined (1 : unitary A) u := by
-  let : PartialOrder A := CStarAlgebra.spectralOrder _
-  let : StarOrderedRing A := CStarAlgebra.spectralOrderedRing _
-  -- Multiplication by i moves the spectrum {1,-1} away from the logarithm's cut.
-  let w : unitary A := ⟨Complex.I • (1 : A), by
-    constructor <;> simp [star_smul, smul_smul]⟩
-  have hw : Joined (1 : unitary A) w := by
-    apply Unitary.joined_one_of_nonneg_realPart
-    dsimp only [w, Subtype.coe_mk]
-    rw [realPart_apply_coe]
-    simp [star_smul]
-  have hwu : Joined (1 : unitary A) (w * u) := by
-    apply Unitary.joined_one_of_nonneg_realPart
-    simp only [Submonoid.coe_mul]
-    dsimp only [w, Subtype.coe_mk]
-    rw [realPart_apply_coe]
-    simp [star_smul, hu.star_eq]
-  simpa using hw.inv.mul hwu
+    {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [StarRing A] [ContinuousStar A]
+    [CompleteSpace A] [StarModule ℂ A]
+    (u : unitary A) (hu : IsSelfAdjoint (u : A)) : Joined (1 : unitary A) u :=
+  ⟨{ toFun := fun t => selfAdjoint.expUnitary (((t : ℝ) * Real.pi) • ⟨(2⁻¹ : ℝ) • (1 - (u : A)),
+      (Unitary.isStarProjection_half_one_sub u hu).isSelfAdjoint⟩)
+     continuous_toFun := by fun_prop
+     source' := by simp
+     target' := by simpa using Unitary.expUnitary_pi_smul_half_one_sub u hu }⟩
 

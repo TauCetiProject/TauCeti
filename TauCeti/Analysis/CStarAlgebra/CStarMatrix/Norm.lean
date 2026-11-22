@@ -12,9 +12,13 @@ import TauCeti.Analysis.CStarAlgebra.Module.AdjointPair
 /-!
 # Operator-norm laws and continuity for rectangular `CStarMatrix`
 
-Operator-norm identities for rectangular C⋆-matrices via Hilbert C⋆-module adjoint pairs
-(`‖M * N‖ ≤ ‖M‖ * ‖N‖`, `‖Mᴴ‖ = ‖M‖`, `‖M * Mᴴ‖ = ‖Mᴴ * M‖ = ‖M‖ ^ 2`, `norm_reindexₐ`,
-`norm_reindexₗ`, `norm_single`) and entrywise continuity (`continuous_ofMatrix`,
+Within the `CStarMatrix` module split, choose `Norm` to connect rectangular operator-norm
+estimates with entrywise continuity, `Map` for change of coefficients and index types, and
+`Block` for block-matrix direct sums and amplification used in stabilization.
+
+This file establishes operator-norm identities for rectangular C⋆-matrices via Hilbert C⋆-module
+adjoint pairs (`‖M * N‖ ≤ ‖M‖ * ‖N‖`, `‖Mᴴ‖ = ‖M‖`, `‖M * Mᴴ‖ = ‖Mᴴ * M‖ = ‖M‖ ^ 2`,
+`norm_reindexₐ`, `norm_reindexₗ`, `norm_single`) and entrywise continuity (`continuous_ofMatrix`,
 `continuous_ofMatrix_symm`, `continuous_iff`).
 
 ## Main declarations
@@ -87,7 +91,10 @@ norm. -/
   (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp <| by
     have hmul : (ofMatrix (Matrix.single i j a)).conjTranspose * ofMatrix (Matrix.single i j a) =
         singleNonUnitalStarAlgHom ℂ j (star a * a) :=
-      ofMatrix.symm.injective (by simp [Matrix.conjTranspose_single])
+      ofMatrix.symm.injective <| by
+        simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply,
+          Matrix.conjTranspose_single, Matrix.single_mul_single_same,
+          singleNonUnitalStarAlgHom_apply]
     rw [← norm_conjTranspose_mul_self, hmul, NonUnitalStarAlgHom.norm_map
       (singleNonUnitalStarAlgHom ℂ (A := A) j) (singleNonUnitalStarAlgHom_injective j) _,
       CStarRing.norm_star_mul_self, sq]

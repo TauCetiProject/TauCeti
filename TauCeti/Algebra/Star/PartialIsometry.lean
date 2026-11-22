@@ -210,7 +210,8 @@ theorem TauCeti.IsPartialIsometry.mul_of_star_mul_self_eq_one_of_isStarProjectio
     (hu : star u * u = 1) (hp : IsStarProjection p) : TauCeti.IsPartialIsometry (u * p) :=
   mul_of_star_mul_self_mul_eq_of_isStarProjection (by rw [hu, one_mul]) hp
 /-- Left-multiplying a star projection `p` by a unitary `u` gives a partial isometry. -/
-theorem TauCeti.IsPartialIsometry.unitary_mul_of_isStarProjection (u : unitary R)
+theorem Unitary.isPartialIsometry_mul_of_isStarProjection (u : unitary R)
     (hp : IsStarProjection p) : TauCeti.IsPartialIsometry ((u : R) * p) :=
-  mul_of_star_mul_self_eq_one_of_isStarProjection (Unitary.coe_star_mul_self u) hp
+  TauCeti.IsPartialIsometry.mul_of_star_mul_self_eq_one_of_isStarProjection
+    (Unitary.coe_star_mul_self u) hp
 end

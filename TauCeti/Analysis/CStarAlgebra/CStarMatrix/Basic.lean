@@ -365,26 +365,33 @@ protected theorem smul_mul_smul [Fintype m] [Monoid R] [AddCommMonoid A] [Mul A]
   rw [CStarMatrix.smul_mul, CStarMatrix.mul_smul, smul_smul]
 @[simp] protected theorem one_mul [Fintype m] [DecidableEq m] [NonAssocSemiring A]
     (M : CStarMatrix m n A) : (1 : CStarMatrix m m A) * M = M :=
-  ofMatrix.symm.injective (Matrix.one_mul (ofMatrix.symm M))
+  ofMatrix.symm.injective (by simp only [ofMatrix_symm_mul, ofMatrix_symm_one, Matrix.one_mul])
 @[simp] protected theorem mul_one [Fintype n] [DecidableEq n] [NonAssocSemiring A]
     (M : CStarMatrix m n A) : M * (1 : CStarMatrix n n A) = M :=
-  ofMatrix.symm.injective (Matrix.mul_one (ofMatrix.symm M))
+  ofMatrix.symm.injective (by simp only [ofMatrix_symm_mul, ofMatrix_symm_one, Matrix.mul_one])
 section
 variable [Fintype m] [NonUnitalNonAssocRing A]
 protected theorem mul_sub (L : CStarMatrix l m A) (M N : CStarMatrix m n A) :
-    L * (M - N) = L * M - L * N := ofMatrix.symm.injective (Matrix.mul_sub _ _ _)
+    L * (M - N) = L * M - L * N :=
+  ofMatrix.symm.injective (by simp only [ofMatrix_symm_mul, ofMatrix_symm_sub, Matrix.mul_sub])
 protected theorem sub_mul (L M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    (L - M) * N = L * N - M * N := ofMatrix.symm.injective (Matrix.sub_mul _ _ _)
+    (L - M) * N = L * N - M * N :=
+  ofMatrix.symm.injective (by simp only [ofMatrix_symm_mul, ofMatrix_symm_sub, Matrix.sub_mul])
 @[simp] protected theorem neg_mul (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    (-M) * N = -(M * N) := ofMatrix.symm.injective (Matrix.neg_mul _ _)
+    (-M) * N = -(M * N) :=
+  ofMatrix.symm.injective (by simp only [ofMatrix_symm_mul, ofMatrix_symm_neg, Matrix.neg_mul])
 @[simp] protected theorem mul_neg (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    M * (-N) = -(M * N) := ofMatrix.symm.injective (Matrix.mul_neg _ _)
+    M * (-N) = -(M * N) :=
+  ofMatrix.symm.injective (by simp only [ofMatrix_symm_mul, ofMatrix_symm_neg, Matrix.mul_neg])
 end
 theorem conjTranspose_injective [InvolutiveStar A] :
     Function.Injective (conjTranspose : CStarMatrix m n A → CStarMatrix n m A) :=
   Function.LeftInverse.injective conjTranspose_conjTranspose
 @[simp] theorem conjTranspose_inj [InvolutiveStar A] {M N : CStarMatrix m n A} :
     M.conjTranspose = N.conjTranspose ↔ M = N := conjTranspose_injective.eq_iff
+@[simp] theorem conjTranspose_eq_zero [AddMonoid A] [StarAddMonoid A] {M : CStarMatrix m n A} :
+    M.conjTranspose = 0 ↔ M = 0 := by
+  rw [← conjTranspose_zero, conjTranspose_inj]
 @[simp] theorem conjTranspose_add [AddMonoid A] [StarAddMonoid A] (M N : CStarMatrix m n A) :
     (M + N).conjTranspose = M.conjTranspose + N.conjTranspose := by ext; simp
 @[simp] theorem conjTranspose_sub [AddGroup A] [StarAddMonoid A] (M N : CStarMatrix m n A) :
@@ -394,7 +401,12 @@ theorem conjTranspose_injective [InvolutiveStar A] :
 @[simp] theorem conjTranspose_smul [Star R] [Star A] [SMul R A] [StarModule R A] (r : R)
     (M : CStarMatrix m n A) : (r • M).conjTranspose = star r • M.conjTranspose := by ext; simp
 @[simp] theorem conjTranspose_one [DecidableEq n] [NonAssocSemiring A] [StarRing A] :
-    (1 : CStarMatrix n n A).conjTranspose = 1 := ofMatrix.symm.injective Matrix.conjTranspose_one
+    (1 : CStarMatrix n n A).conjTranspose = 1 :=
+  ofMatrix.symm.injective (by
+    simp only [ofMatrix_symm_conjTranspose, ofMatrix_symm_one, Matrix.conjTranspose_one])
+@[simp] theorem conjTranspose_eq_one [DecidableEq n] [NonAssocSemiring A] [StarRing A]
+    {M : CStarMatrix n n A} : M.conjTranspose = 1 ↔ M = 1 := by
+  conv_lhs => rw [← conjTranspose_one, conjTranspose_inj]
 section
 variable [NonUnitalSemiring A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
 /-- Over a star-ordered ring with proper star, `M.conjTranspose * M = 0` iff `M = 0`. -/
