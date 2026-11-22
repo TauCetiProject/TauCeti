@@ -64,19 +64,23 @@ private theorem eq_zero_of_radialRetraction_sub_eq {r : ℝ} (hr : 0 < r) {x w :
   · rwa [radialRetraction_of_norm_le hle, sub_eq_self] at h
   -- Otherwise `x = c • (x - w)` with `0 < c < 1`, so `x` lies on the sphere and
   -- `c • w = (c - 1) • x` points strictly inward.
+  have hx : ‖x‖ = r := by rw [← h, norm_radialRetraction hr.le, min_eq_right hlt.le]
   rw [radialRetraction_of_le_norm hlt.le] at h
   have hpos : 0 < ‖x - w‖ := hr.trans hlt
-  set c := r / ‖x - w‖ with hc
+  set c := r / ‖x - w‖
   have hc0 : 0 < c := div_pos hr hpos
   have hc1 : c < 1 := (div_lt_one hpos).2 hlt
-  have hx : ‖x‖ = r := by
-    rw [← h, norm_smul, Real.norm_eq_abs, abs_of_pos hc0, hc, div_mul_cancel₀ _ hpos.ne']
   have hcw : c • w = (c - 1) • x :=
     calc c • w = c • x - c • (x - w) := by rw [smul_sub]; abel
       _ = (c - 1) • x := by rw [h, sub_smul, one_smul]
   have hinner : c * ⟪w, x⟫ = (c - 1) * r ^ 2 := by
-    rw [← real_inner_smul_left, hcw, real_inner_smul_left, real_inner_self_eq_norm_sq, hx]
+    simpa [real_inner_smul_left, real_inner_self_eq_norm_sq, hx] using congrArg (⟪·, x⟫) hcw
   nlinarith [mul_nonneg hc0.le (hw hx), mul_neg_of_neg_of_pos (sub_neg.2 hc1) (pow_pos hr 2)]
+
+/-- If `‖a‖ ≤ ‖x‖`, then `x - a` points weakly outward at `x`. -/
+private theorem inner_sub_self_nonneg_of_norm_le {x a : E} (h : ‖a‖ ≤ ‖x‖) : 0 ≤ ⟪x - a, x⟫ := by
+  rw [inner_sub_left, real_inner_self_eq_norm_sq]
+  nlinarith [real_inner_le_norm a x, norm_nonneg a]
 
 /-- **Poincaré–Miranda theorem for a product of two balls**: let `Φ` be continuous on the product
 `closedBall 0 r ×ˢ closedBall 0 s` of closed balls of positive radii in finite-dimensional real
@@ -136,20 +140,16 @@ theorem productBallImages_intersect [FiniteDimensional ℝ E] [FiniteDimensional
       0 ≤ ⟪((f (ρE x)).1 : E) - (g (ρF y)).1, x⟫ := by
     intro x hx y _
     have hx1 := mem_sphere_zero_iff_norm.1 hx
-    have hg1 := real_inner_le_norm ((g (ρF y)).1 : E) x
-    have hgn : ‖((g (ρF y)).1 : E)‖ ≤ 1 := mem_closedBall_zero_iff.1 (g (ρF y)).1.property
-    simp only [hρE_sphere hx, hf ⟨x, sphere_subset_closedBall hx⟩ hx1, inner_sub_left,
-      real_inner_self_eq_norm_sq, hx1]
-    nlinarith
+    simp only [hρE_sphere hx, hf ⟨x, sphere_subset_closedBall hx⟩ hx1]
+    exact inner_sub_self_nonneg_of_norm_le
+      ((mem_closedBall_zero_iff.1 (g (ρF y)).1.property).trans hx1.ge)
   have h₂ : ∀ x ∈ closedBall (0 : E) 1, ∀ y ∈ sphere (0 : F) 1,
       0 ≤ ⟪((g (ρF y)).2 : F) - (f (ρE x)).2, y⟫ := by
     intro x _ y hy
     have hy1 := mem_sphere_zero_iff_norm.1 hy
-    have hf1 := real_inner_le_norm ((f (ρE x)).2 : F) y
-    have hfn : ‖((f (ρE x)).2 : F)‖ ≤ 1 := mem_closedBall_zero_iff.1 (f (ρE x)).2.property
-    simp only [hρF_sphere hy, hg ⟨y, sphere_subset_closedBall hy⟩ hy1, inner_sub_left,
-      real_inner_self_eq_norm_sq, hy1]
-    nlinarith
+    simp only [hρF_sphere hy, hg ⟨y, sphere_subset_closedBall hy⟩ hy1]
+    exact inner_sub_self_nonneg_of_norm_le
+      ((mem_closedBall_zero_iff.1 (f (ρE x)).2.property).trans hy1.ge)
   obtain ⟨⟨x, y⟩, -, h0⟩ := exists_mem_closedBall_prod_eq_zero_of_inner_nonneg one_pos one_pos
     (Φ := fun z ↦ (((f (ρE z.1)).1 : E) - (g (ρF z.2)).1, ((g (ρF z.2)).2 : F) - (f (ρE z.1)).2))
     (by fun_prop) h₁ h₂
