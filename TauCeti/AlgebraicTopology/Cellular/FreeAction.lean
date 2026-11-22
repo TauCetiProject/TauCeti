@@ -280,44 +280,47 @@ variable {E : Type w} [TopologicalSpace E] [T2Space E] (C : Set E) [CWComplex C]
   (hcell : ∀ (g : G) (n : ℕ) (i : cell C n), ∃ j : cell C n, g • openCell n i = openCell n j)
   (R : Type w) [Ring R]
 
+/-- **Each element of a group acting on open cells rescales cellular basis vectors by a unit.** -/
+def cellActionUnit (g : G) {n : ℕ} (i : cell C n) : Rˣ :=
+  letI := cellMulAction hcell n
+  (cellActionChainRepresentation C hcell R n).unitOfApplyBasisEqSmul (cellularChainBasis C R n)
+    (cellActionChainRepresentation_cellularChainBasis C hcell R g i)
+    (by simpa only [inv_smul_smul] using
+      cellActionChainRepresentation_cellularChainBasis C hcell R g⁻¹ (g • i))
+
+/-- The underlying ring element of `TauCeti.cellActionUnit` is `TauCeti.cellActionScale`. -/
+@[simp]
+theorem val_cellActionUnit (g : G) {n : ℕ} (i : cell C n) :
+    (cellActionUnit C hcell R g i : R) = cellActionScale C hcell R g i := by
+  let := cellMulAction hcell n
+  exact Representation.val_unitOfApplyBasisEqSmul _ _ _ _
+
 /-- Right inverse relation for `TauCeti.cellActionScale` under a group action. -/
 theorem cellActionScale_mul_inv (g : G) {n : ℕ} (i : cell C n) :
     letI := cellMulAction hcell n
     cellActionScale C hcell R g i * cellActionScale C hcell R g⁻¹ (g • i) = 1 := by
   let := cellMulAction hcell n
-  have h := cellActionScale_mul C hcell R g⁻¹ g i
-  rwa [inv_mul_cancel, cellActionScale_one, eq_comm] at h
+  have h := (cellActionUnit C hcell R g i).mul_inv
+  rwa [val_cellActionUnit, cellActionUnit, Representation.val_inv_unitOfApplyBasisEqSmul] at h
 
 /-- Left inverse relation for `TauCeti.cellActionScale` under a group action. -/
 theorem cellActionScale_inv_mul (g : G) {n : ℕ} (i : cell C n) :
     letI := cellMulAction hcell n
     cellActionScale C hcell R g⁻¹ (g • i) * cellActionScale C hcell R g i = 1 := by
   let := cellMulAction hcell n
-  have h := cellActionScale_mul C hcell R g g⁻¹ (g • i)
-  rwa [mul_inv_cancel, cellActionScale_one, inv_smul_smul, eq_comm] at h
-
-/-- **Each element of a group acting on open cells rescales cellular basis vectors by a unit.** -/
-def cellActionUnit (g : G) {n : ℕ} (i : cell C n) : Rˣ :=
-  letI := cellMulAction hcell n
-  ⟨cellActionScale C hcell R g i, cellActionScale C hcell R g⁻¹ (g • i),
-    cellActionScale_mul_inv C hcell R g i, cellActionScale_inv_mul C hcell R g i⟩
-
-/-- The underlying ring element of `TauCeti.cellActionUnit` is `TauCeti.cellActionScale`. -/
-@[simp]
-theorem val_cellActionUnit (g : G) {n : ℕ} (i : cell C n) :
-    (cellActionUnit C hcell R g i : R) = cellActionScale C hcell R g i :=
-  (rfl)
+  have h := (cellActionUnit C hcell R g i).inv_mul
+  rwa [val_cellActionUnit, cellActionUnit, Representation.val_inv_unitOfApplyBasisEqSmul] at h
 
 /-- The local scalar `TauCeti.cellActionScale` is a unit in `R`. -/
 theorem isUnit_cellActionScale (g : G) {n : ℕ} (i : cell C n) :
     IsUnit (cellActionScale C hcell R g i) :=
-  (cellActionUnit C hcell R g i).isUnit
+  val_cellActionUnit C hcell R g i ▸ (cellActionUnit C hcell R g i).isUnit
 
 /-- The identity element acts with unit `1` on every cell. -/
 @[simp]
 theorem cellActionUnit_one {n : ℕ} (i : cell C n) :
     cellActionUnit C hcell R (1 : G) i = 1 :=
-  Units.ext (cellActionScale_one C hcell R i)
+  Units.ext ((val_cellActionUnit C hcell R 1 i).trans (cellActionScale_one C hcell R i))
 
 /-- The units `TauCeti.cellActionUnit` satisfy the cocycle identity
 `u (g * h) i = u h i * u g (h • i)`. -/
@@ -325,26 +328,31 @@ theorem cellActionUnit_mul (g h : G) {n : ℕ} (i : cell C n) :
     letI := cellMulAction hcell n
     cellActionUnit C hcell R (g * h) i =
       cellActionUnit C hcell R h i * cellActionUnit C hcell R g (h • i) :=
-  Units.ext (cellActionScale_mul C hcell R g h i)
+  let := cellMulAction hcell n
+  Units.ext (by
+    simpa only [val_cellActionUnit, Units.val_mul] using cellActionScale_mul C hcell R g h i)
 
 /-- The inverse of the unit of `g` at `i` is the unit of `g⁻¹` at `g • i`. -/
 theorem cellActionUnit_inv (g : G) {n : ℕ} (i : cell C n) :
     letI := cellMulAction hcell n
-    (cellActionUnit C hcell R g i)⁻¹ = cellActionUnit C hcell R g⁻¹ (g • i) :=
-  Units.ext rfl
+    (cellActionUnit C hcell R g i)⁻¹ = cellActionUnit C hcell R g⁻¹ (g • i) := by
+  let := cellMulAction hcell n
+  apply Units.ext
+  rw [val_cellActionUnit, cellActionUnit, Representation.val_inv_unitOfApplyBasisEqSmul]
 
 /-- When translation by `g` carries the characteristic map of `i` strictly onto that of an `n`-cell
 `j`, the unit `TauCeti.cellActionUnit` is `1`. -/
 theorem cellActionUnit_eq_one_of_smul_map {n : ℕ} {g : G} {i j : cell C n}
     (hmap : ∀ x ∈ Metric.closedBall (0 : Fin n → ℝ) 1, g • map n i x = map n j x) :
     cellActionUnit C hcell R g i = 1 :=
-  Units.ext (cellActionScale_eq_one_of_smul_map C hcell R hmap)
+  Units.ext ((val_cellActionUnit C hcell R g i).trans
+    (cellActionScale_eq_one_of_smul_map C hcell R hmap))
 
 /-- Every element acts with unit `1` on the cellular basis vector of a `0`-cell. -/
 @[simp]
 theorem cellActionUnit_zero (g : G) (i : cell C 0) :
     cellActionUnit C hcell R g i = 1 :=
-  Units.ext (cellActionScale_zero C hcell R g i)
+  Units.ext ((val_cellActionUnit C hcell R g i).trans (cellActionScale_zero C hcell R g i))
 
 end GroupAction
 
