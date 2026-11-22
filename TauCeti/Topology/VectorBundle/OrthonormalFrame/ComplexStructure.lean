@@ -521,6 +521,21 @@ private theorem continuousOn_adaptedCorrection_localStructure :
     ((continuousOn_localStructure e cF β hJ).mono fun _ hy ↦ hy.1)
     fun y hy ↦ ⟨localStructure_localStructure e cF β hJ₂ y, hy.2⟩
 
+include hJ in
+/-- The inverse of `unitaryTrivialization` is continuous over the good set. -/
+private theorem continuousOn_unitaryTrivializationInv (p₀ : unitaryFrames F J J₀) :
+    ContinuousOn (unitaryTrivializationInv J J₀ e cF β c p₀) (goodSet J e cF β c ×ˢ univ) := by
+  refine Topology.IsInducing.subtypeVal.continuousOn_iff.2 (ContinuousOn.congr
+    (f := fun q : B × Subgroup.centralizer {J₀} ↦
+      (e.orthonormalFrameBundle cF β).toOpenPartialHomeomorph.symm
+        (q.1, adaptedCorrection β c (localStructure J e cF β q.1) * q.2)) ?_
+    fun q hq ↦ coe_unitaryTrivializationInv hJ₂ hJ₀ hβ₁ hβ₃ p₀ hq.1)
+  refine (e.orthonormalFrameBundle cF β).toOpenPartialHomeomorph.continuousOn_symm.comp
+    (continuousOn_fst.prodMk ?_) fun _ hq ↦
+      (e.orthonormalFrameBundle cF β).mem_target.2 (mem_baseSet_orthonormalFrameBundle hq.1.1)
+  exact ((continuousOn_adaptedCorrection_localStructure hJ₂ hJ).comp continuousOn_fst
+    mapsTo_fst_prod).mul (continuous_subtypeVal.comp continuous_snd).continuousOn
+
 variable (e cF β c) in
 /-- The trivialization of the unitary frames over the good set, with fibre the centralizer of
 `J₀`: a frame `p` over `y` goes to `(y, Φ_y⁻¹ * (T p).2)`, where `T` is the Gram–Schmidt
@@ -568,17 +583,7 @@ private def unitaryTrivialization (p₀ : unitaryFrames F J J₀) :
         ((e.orthonormalFrameBundle cF β).continuousOn_toFun.comp continuous_subtypeVal.continuousOn
           fun _ hp ↦ (e.orthonormalFrameBundle cF β).mem_source.2
             (mem_baseSet_orthonormalFrameBundle hp.1)))
-  continuousOn_invFun := by
-    refine Topology.IsInducing.subtypeVal.continuousOn_iff.2 (ContinuousOn.congr
-      (f := fun q : B × Subgroup.centralizer {J₀} ↦
-        (e.orthonormalFrameBundle cF β).toOpenPartialHomeomorph.symm
-          (q.1, adaptedCorrection β c (localStructure J e cF β q.1) * q.2)) ?_
-      fun q hq ↦ coe_unitaryTrivializationInv hJ₂ hJ₀ hβ₁ hβ₃ p₀ hq.1)
-    refine (e.orthonormalFrameBundle cF β).toOpenPartialHomeomorph.continuousOn_symm.comp
-      (continuousOn_fst.prodMk ?_) fun _ hq ↦
-        (e.orthonormalFrameBundle cF β).mem_target.2 (mem_baseSet_orthonormalFrameBundle hq.1.1)
-    exact ((continuousOn_adaptedCorrection_localStructure hJ₂ hJ).comp continuousOn_fst
-      mapsTo_fst_prod).mul (continuous_subtypeVal.comp continuous_snd).continuousOn
+  continuousOn_invFun := continuousOn_unitaryTrivializationInv hJ₂ hJ₀ hβ₁ hβ₃ hJ p₀
   baseSet := goodSet J e cF β c
   open_baseSet := isOpen_goodSet e cF β c hJ
   source_eq := rfl
