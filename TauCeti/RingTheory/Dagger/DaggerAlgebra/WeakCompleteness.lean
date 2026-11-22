@@ -66,6 +66,9 @@ Adjoining the elements one at a time and substituting variables
   the variables; `TauCeti.Dagger.washnitzerAlgebra.algHom_ext` is the case of a dagger algebra.
 * `TauCeti.Dagger.washnitzerAlgebra.supSeminorm_apply_X_le_one`: homomorphisms into a dagger
   algebra send the variables into the unit ball of `|·|sup`.
+* `TauCeti.Dagger.washnitzerAlgebra.exists_monic_eval₂_eq_zero_of_supSeminorm_le_one`: for a
+  presentation `π : W_n ↠ C`, an element of supremum seminorm at most `1` is a root of a monic
+  polynomial over `W_n` whose coefficients have Gauss norm at most `1`.
 * `TauCeti.Dagger.washnitzerAlgebra.lift_X`: the lift sends `Xᵢ` to `xᵢ`, and
   `TauCeti.Dagger.washnitzerAlgebra.lift_unique` says it is the only such homomorphism.
 
@@ -303,7 +306,7 @@ private theorem exists_monic_eval_mem_of_toTate {σ : Type*} [Finite σ] {I : Id
 /-- **Small integral equations.** Let `π : W_n ↠ C` be a presentation. An element `f ∈ C` with
 `|f|sup ≤ 1` is a root of a monic polynomial over `W_n`, acting on `C` through `π`, whose
 coefficients have Gauss norm at most `1`. -/
-private theorem exists_monic_eval₂_eq_zero {n : ℕ} {π : W (Fin n) →ₐ[K] C}
+theorem exists_monic_eval₂_eq_zero_of_supSeminorm_le_one {n : ℕ} {π : W (Fin n) →ₐ[K] C}
     (hπ : Function.Surjective π) {f : C} (hf : supSeminorm K f ≤ 1) :
     ∃ Q : (W (Fin n))[X], Q.Monic ∧ Q.eval₂ (π : W (Fin n) →+* C) f = 0 ∧
       ∀ i, ‖Q.coeff i‖ ≤ 1 := by
@@ -352,7 +355,8 @@ private theorem exists_algHom_forall_mem {n : ℕ} {π : W (Fin n) →ₐ[K] C}
   | empty => exact ⟨Fin n, inferInstance, AlgHom.id K _, π, fun _ ↦ le_rfl, rfl, by simp⟩
   | insert c s _ ih =>
     obtain ⟨τ, _, ι, φ, hι, hφι, hmem⟩ := ih fun c' h ↦ hs c' (Finset.mem_insert_of_mem h)
-    obtain ⟨Q, hQ, hQf, hQc⟩ := exists_monic_eval₂_eq_zero hπ (hs c (Finset.mem_insert_self c s))
+    obtain ⟨Q, hQ, hQf, hQc⟩ :=
+      exists_monic_eval₂_eq_zero_of_supSeminorm_le_one hπ (hs c (Finset.mem_insert_self c s))
     -- The equation of `c` over `W_n` is also an equation over `W_τ`, through `ι`.
     obtain ⟨ψ, hψ, hψc⟩ := exists_algHom_comp_optionC_eq φ (f := c)
       (Q := Q.map (ι : W (Fin n) →+* W τ)) (hQ.map _)
