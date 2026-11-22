@@ -84,13 +84,13 @@ private noncomputable def factorisationLift (hf : IsogenyOfDegree f.hom n) :=
 `comp_factorisationDual`. It is a homomorphism from `B` to `A`. -/
 noncomputable def factorisationDual (hf : IsogenyOfDegree f.hom n) :
     B ⟶ A :=
-  InducedCategory.homMk (factorisationLift f hf).1
+  InducedCategory.homMk (factorisationLift f hf).val
 
 /-- Composing `f : A ⟶ B` with its factorisation dual `B ⟶ A` is `[n]` on `A`. -/
 @[reassoc (attr := simp)]
 theorem comp_factorisationDual (hf : IsogenyOfDegree f.hom n) :
     f ≫ factorisationDual f hf = (n : End A).asHom :=
-  InducedCategory.hom_ext (factorisationLift f hf).2
+  InducedCategory.hom_ext (factorisationLift f hf).property
 
 /-- A homomorphism `B ⟶ A` whose composite with `f` is `[n]` equals the factorisation dual. -/
 theorem eq_factorisationDual (hf : IsogenyOfDegree f.hom n)

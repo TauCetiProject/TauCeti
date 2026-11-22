@@ -16,10 +16,9 @@ public import Mathlib.CategoryTheory.Simple
 # The vertex simple as a path algebra module
 
 The equivalence between quiver representations and left modules over the path algebra carries
-the vertex simple `Sᵢ` to a module and transports its length-one projective resolution.  Thus
-the path algebra module `Sᵢ` has projective dimension at most one, without an acyclicity
-assumption.  This is the short exact sequence used to calculate its `Ext` groups and Euler
-pairings against other modules.
+the vertex simple `Sᵢ` to a module and transports its length-one projective resolution, without
+an acyclicity assumption.  This is the short exact sequence used to calculate its `Ext` groups
+and Euler pairings against other modules.
 
 The resolution is the standard first-arrow sequence
 `0 ⟶ ⨁_{e : i ⟶ j} Pⱼ ⟶ Pᵢ ⟶ Sᵢ ⟶ 0`; see Assem--Simson--Skowroński,
@@ -29,6 +28,8 @@ Over an acyclic quiver the vertex simples are the only simple modules:
 `TauCeti.exists_iso_vertexSimpleModule_of_simple` transports the classification of simple
 representations along the same equivalence. Together with the resolution it reduces statements
 about all simple path algebra modules, such as Euler-admissibility, to the vertex simples.
+Without acyclicity, `TauCeti.nonempty_iso_vertexSimpleModule_of_generator` recognizes any module
+spanned over `k` by a nonzero vertex-`i` vector killed by every loop at `i` as isomorphic to `Sᵢ`.
 -/
 
 public section
@@ -69,6 +70,61 @@ theorem exists_iso_vertexSimpleModule_of_simple (hQ : Quiver.IsAcyclic Q)
   have := simple_obj (quiverRepFunctor k Q) M
   obtain ⟨i, ⟨e⟩⟩ := exists_iso_simpleRep_of_simple hQ ((quiverRepFunctor k Q).obj M)
   exact ⟨i, ⟨(quiverRepFunctor k Q).preimageIso (e ≪≫ (vertexSimpleModuleIso k Q i).symm)⟩⟩
+
+variable {k Q} in
+/-- **A path-algebra module spanned over `k` by a nonzero vertex-`i` vector killed by every loop at
+`i` is isomorphic to the vertex simple `Sᵢ`.** No acyclicity hypothesis on `Q` is required. -/
+theorem nonempty_iso_vertexSimpleModule_of_generator {M : ModuleCat (pathAlgebra k Q)} {i : Q}
+    (x : M) (hx0 : x ≠ 0) (hxi : (PathAlgebra.vertexIdempotent k i : pathAlgebra k Q) • x = x)
+    (hspan : ∀ y : M, ∃ c : k, c • x = y)
+    (hloop : ∀ a : i ⟶ i, (PathAlgebra.ofArrow a : pathAlgebra k Q) • x = 0) :
+    Nonempty (M ≅ vertexSimpleModule k Q i) := by
+  have hiso : Nonempty ((quiverRepFunctor k Q).obj M ≅ simpleRep k Q i) := by
+    rw [quiverRepFunctor_obj]
+    let x₀ : vertexComponent k M i := ⟨x, mem_vertexComponent_iff_smul_eq_self.mpr hxi⟩
+    have hsub (a : Q) (ha : a ≠ i) : Subsingleton (vertexComponent k M a) :=
+      subsingleton_of_forall_eq 0 fun ⟨y, hy⟩ ↦ Subtype.ext <| by
+        rw [ZeroMemClass.coe_zero]
+        obtain ⟨c, rfl⟩ := hspan y
+        exact (coe_vertexProjection_apply_of_mem hy).symm.trans
+          (coe_vertexProjection_apply_eq_zero_of_ne ha (Submodule.smul_mem _ c x₀.property))
+    have hpath {a : Q} (p : Quiver.Path i a) (hp : p.length ≠ 0) :
+        pathMap k M p x₀ = 0 := by
+      cases p with
+      | nil => exact absurd rfl hp
+      | @cons j _ q b =>
+        rw [pathMap_cons, LinearMap.comp_apply]
+        rcases eq_or_ne i a with rfl | hia
+        · rcases eq_or_ne i j with rfl | hij
+          · obtain ⟨c, hc⟩ := hspan (pathMap k M q x₀ : M)
+            apply Subtype.ext
+            rw [coe_pathMap_apply, ← PathAlgebra.ofArrow_eq_ofPath, ← hc, smul_comm, hloop b,
+              smul_zero, ZeroMemClass.coe_zero]
+          · have := hsub j hij.symm
+            rw [Subsingleton.elim (pathMap k M q x₀) 0, map_zero]
+        · have := hsub a hia.symm
+          exact Subsingleton.elim _ _
+    have hx : ∀ {a : Q} (p : Quiver.Path i a), p.length ≠ 0 →
+        (quiverRepOfModule k Q M).map p x₀ = 0 := fun p hp ↦
+      (ConcreteCategory.congr_hom (quiverRepOfModule_map k Q M p) x₀).trans
+        ((ModuleCat.ofHom_apply (pathMap k M p) x₀).trans (hpath p hp))
+    have hx₀_ne : x₀ ≠ 0 := fun h ↦ hx0 <| by
+      simpa [x₀, ZeroMemClass.coe_zero] using congrArg Subtype.val h
+    have hspan₀ : Submodule.span k ({x₀} : Set (vertexComponent k M i)) = ⊤ := by
+      rw [eq_top_iff]
+      rintro y -
+      obtain ⟨c, hc⟩ := hspan (y : M)
+      have hyx : c • x₀ = y := Subtype.ext (by rw [SetLike.val_smul]; exact hc)
+      exact hyx ▸ Submodule.smul_mem _ c (Submodule.mem_span_singleton_self x₀)
+    have hzero (a : Q) (ha : a ≠ i) : IsZero ((quiverRepOfModule k Q M).obj a) := by
+      rw [quiverRepOfModule_obj, ModuleCat.isZero_iff_subsingleton]
+      exact hsub a ha
+    -- `(quiverRepOfModule k Q M).obj ((Paths.of Q).obj i)` unfolds via `@[expose]` on
+    -- `quiverRepOfModule` to `ModuleCat.of k (vertexComponent k M i)`.
+    have := isIso_simpleRepHom (M := quiverRepOfModule k Q M) x₀ hx hx₀_ne hspan₀ hzero
+    exact ⟨(asIso (simpleRepHom (M := quiverRepOfModule k Q M) x₀ hx)).symm⟩
+  obtain ⟨e⟩ := hiso
+  exact ⟨(quiverRepFunctor k Q).preimageIso (e ≪≫ (vertexSimpleModuleIso k Q i).symm)⟩
 
 variable {Q}
 
@@ -196,16 +252,5 @@ instance projective_vertexSimpleModuleResolution_X₂ (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     Projective (vertexSimpleModuleResolution k i).X₂ := by
   exact Projective.of_iso (vertexSimpleModuleResolutionX₂Iso k i).symm inferInstance
-
-/-- A vertex simple of a path algebra has projective dimension less than two. This holds for
-finite quivers with finitely many arrows leaving the given vertex, including quivers with cycles. -/
-theorem hasProjectiveDimensionLT_two_vertexSimpleModule (i : Q)
-    [Finite ((j : Q) × (i ⟶ j))] :
-    HasProjectiveDimensionLT (vertexSimpleModule k Q i) 2 := by
-  have h := (shortExact_vertexSimpleModuleResolution k i).hasProjectiveDimensionLT_X₃
-    (n := 1) (hasProjectiveDimensionLT_of_ge _ 1 1 (by omega))
-    (hasProjectiveDimensionLT_of_ge _ 1 2 (by omega))
-  let _ := h
-  exact hasProjectiveDimensionLT_of_iso (vertexSimpleModuleResolutionX₃Iso k i) 2
 
 end TauCeti

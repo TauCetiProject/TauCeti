@@ -44,7 +44,7 @@ variable {R M₁ M₂ N : Type*} [CommSemiring R] [TopologicalSpace R]
 theorem continuous_orthogonalGroupCongr (e : Q₁.IsometryEquiv Q₂) :
     Continuous e.orthogonalGroupCongr := by
   apply continuous_induced_rng.mpr
-  refine ((LinearEquiv.continuous_autCongr e.toLinearEquiv).comp continuous_subtype_val).congr
+  refine ((LinearEquiv.continuous_autCongr e.toLinearEquiv).comp continuous_subtypeVal).congr
     fun g ↦ ?_
   ext m
   simp
@@ -63,7 +63,7 @@ variable {R M₁ M₂ N : Type*} [CommRing R] [TopologicalSpace R]
 theorem continuous_specialOrthogonalGroupCongr (e : Q₁.IsometryEquiv Q₂) :
     Continuous e.specialOrthogonalGroupCongr := by
   apply continuous_induced_rng.mpr
-  refine ((LinearEquiv.continuous_autCongr e.toLinearEquiv).comp continuous_subtype_val).congr
+  refine ((LinearEquiv.continuous_autCongr e.toLinearEquiv).comp continuous_subtypeVal).congr
     fun g ↦ ?_
   ext m
   simp

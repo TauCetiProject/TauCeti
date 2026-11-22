@@ -412,10 +412,10 @@ theorem ae_timeMarginal_mem_closedBall {η : Measure C(I, X)} (hη : ∀ᵐ γ �
   filter_upwards [hη, (Measure.ae_timeMarginal_iff measurableSet_closedBall).1 h₀,
     (Measure.ae_timeMarginal_iff measurableSet_closedBall).1 h₁] with γ hγ hγ₀ hγ₁
   have hγt := mem_geodesicPaths_iff.1 hγ t 1
-  rw [Icc.coe_one, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 t.2.2)] at hγt
+  rw [Icc.coe_one, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 t.property.2)] at hγt
   have hd : dist (γ 0) (γ 1) ≤ r₀ + r₁ := by
     linarith [dist_triangle (γ 0) x (γ 1), dist_comm x (γ 1)]
-  nlinarith [dist_triangle (γ t) (γ 1) x, mul_le_mul_of_nonneg_left hd (sub_nonneg.2 t.2.2)]
+  nlinarith [dist_triangle (γ t) (γ 1) x, mul_le_mul_of_nonneg_left hd (sub_nonneg.2 t.property.2)]
 
 end Carrier
 

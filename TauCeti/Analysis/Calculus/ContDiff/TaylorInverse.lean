@@ -28,63 +28,12 @@ public section
 
 open Filter Topology
 
-namespace OrderedFinpartition
-
-/-- The sizes of the parts of an ordered partition add up to the size of the ground set. -/
-@[simp]
-theorem sum_partSize {n : ℕ} (c : OrderedFinpartition n) : ∑ i, c.partSize i = n := by
-  simpa using c.sum_sigma_eq_sum (fun _ ↦ (1 : ℕ))
-
-/-- A partition has as many parts as elements exactly when it is the singleton partition. -/
-@[simp]
-theorem length_eq_iff {n : ℕ} (c : OrderedFinpartition n) :
-    c.length = n ↔ c = atomic n := by
-  constructor
-  · intro h
-    have hs (i : Fin c.length) : c.partSize i = 1 := by
-      have he : (∑ _ : Fin c.length, (1 : ℕ)) = ∑ j, c.partSize j := by
-        simp [h]
-      exact ((Finset.sum_eq_sum_iff_of_le (fun j _ ↦ c.partSize_pos j)).mp he i
-        (Finset.mem_univ i)).symm
-    rcases c with ⟨l, s, hp, e, hm, ho, hd, hc⟩
-    dsimp at h hs
-    subst l
-    obtain rfl : s = fun _ ↦ 1 := funext hs
-    have he : (fun i ↦ e i 0) = id := ho.eq_id
-    refine OrderedFinpartition.ext (y := atomic n) rfl (heq_of_eq rfl) ?_
-    apply heq_of_eq
-    funext i j
-    have hj : j = 0 := Subsingleton.elim _ _
-    simpa only [hj, id_eq, atomic_emb] using congrFun he i
-  · rintro rfl
-    rfl
-
-/-- A partition other than the singleton partition has strictly fewer parts than elements. -/
-theorem length_lt_of_ne_atomic {n : ℕ} (c : OrderedFinpartition n) (hc : c ≠ atomic n) :
-    c.length < n :=
-  lt_of_le_of_ne c.length_le (fun h ↦ hc (c.length_eq_iff.mp h))
-
-end OrderedFinpartition
-
 namespace FormalMultilinearSeries
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-
-/-- The singleton partition term of Taylor composition precomposes each variable with the
-linear coefficient of the inner series. -/
-@[simp]
-theorem compAlongOrderedFinpartition_atomic (q : FormalMultilinearSeries 𝕜 F G)
-    (p : FormalMultilinearSeries 𝕜 E F) (m : ℕ) :
-    q.compAlongOrderedFinpartition p (OrderedFinpartition.atomic m) =
-      (q m).compContinuousLinearMap (fun _ ↦ continuousMultilinearCurryFin1 𝕜 E F (p 1)) := by
-  ext v
-  simp only [compAlongOrderedFinpartition_apply, OrderedFinpartition.applyOrderedFinpartition_apply,
-    OrderedFinpartition.atomic_emb, ContinuousMultilinearMap.compContinuousLinearMap_apply,
-    continuousMultilinearCurryFin1_apply]
-  rfl
 
 /-- Recover the highest outer Taylor coefficient from the composite and the lower outer
 coefficients, using a right inverse of the inner linear coefficient. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.NumberTheory.IntegralLattice.LocalDensity.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.NumberTheory.IntegralLattice.LocalDensity.FromBlocks
 import TauCeti.NumberTheory.Padics.RingHoms
 
@@ -97,7 +98,7 @@ private theorem localDensity_diagonal_unit_mul_pow_of_le (hp : p ≠ 2) (K : ℕ
     have hk0 (i : ι) : k i = 0 := Nat.le_zero.mp (hk i)
     rw [range_zero, sum_empty, pow_zero, one_mul, prod_range_one]
     exact (localDensity_diagonal_congr (Equiv.subtypeUnivEquiv hk0) fun i => by
-      simp [hk0 i.1]).symm
+      simp [hk0 i.val]).symm
   | succ K ih =>
     -- split off the unimodular constituent `{i | k i = 0}` and write the rest as `p • B`
     set S := {i // ¬k i = 0}
@@ -147,7 +148,7 @@ theorem localDensity_diagonal_unit_mul_pow (hp : p ≠ 2) {ι : Type*} [Fintype 
   · obtain ⟨i, -, rfl⟩ := mem_image.mp hj
     exact mem_range.mpr (Nat.lt_succ_of_le (le_sup (mem_univ i)))
   · have : IsEmpty {i // k i = j} :=
-      ⟨fun i => hj (mem_image.mpr ⟨i.1, mem_univ _, i.2⟩)⟩
+      ⟨fun i => hj (mem_image.mpr ⟨i.val, mem_univ _, i.property⟩)⟩
     exact localDensity_of_isEmpty _
 
 end Matrix

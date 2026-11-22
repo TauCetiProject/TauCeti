@@ -239,8 +239,8 @@ end Transport
 /-- Two equal places have the same valuation ring; the isomorphism between the two carriers is
 the identity on representatives. -/
 private def integersEquivOfEq {P Q : Place k F} (h : P = Q) : P.integers ≃+* Q.integers where
-  toFun x := ⟨(x : F), by rw [← h]; exact x.2⟩
-  invFun x := ⟨(x : F), by rw [h]; exact x.2⟩
+  toFun x := ⟨(x : F), by rw [← h]; exact x.property⟩
+  invFun x := ⟨(x : F), by rw [h]; exact x.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_mul' _ _ := rfl

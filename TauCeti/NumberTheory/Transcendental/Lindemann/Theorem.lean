@@ -52,7 +52,6 @@ algebraic numbers are linearly independent over the field `integralClosure ℚ �
 numbers. -/
 theorem linearIndependent_exp {ι : Type*} (u : ι → integralClosure ℚ ℂ) (u_inj : u.Injective) :
     LinearIndependent (integralClosure ℚ ℂ) fun i ↦ exp (u i) := by
-  classical
   refine linearIndependent_iff'.2 fun s g hg i hi ↦ ?_
   -- The exponents `u j` and the coefficients `g j`, `j ∈ s`, lie in a finite Galois subfield `K`
   -- of `ℂ`.
@@ -62,12 +61,12 @@ theorem linearIndependent_exp {ι : Type*} (u : ι → integralClosure ℚ ℂ) 
       simp only [T, Finset.coe_union, Finset.coe_image, Set.mem_union, Set.mem_image,
         Finset.mem_coe] at ht
       rcases ht with ⟨j, -, rfl⟩ | ⟨j, -, rfl⟩
-      exacts [(u j).2.isAlgebraic, (g j).2.isAlgebraic]
+      exacts [(u j).property.isAlgebraic, (g j).property.isAlgebraic]
   have : NumberField K := { }
   have hu (j : s) : (u j : ℂ) ∈ K :=
-    hTK (Finset.mem_coe.2 (Finset.mem_union_left _ (Finset.mem_image_of_mem _ j.2)))
+    hTK (Finset.mem_coe.2 (Finset.mem_union_left _ (Finset.mem_image_of_mem _ j.property)))
   have hg' (j : s) : (g j : ℂ) ∈ K :=
-    hTK (Finset.mem_coe.2 (Finset.mem_union_right _ (Finset.mem_image_of_mem _ j.2)))
+    hTK (Finset.mem_coe.2 (Finset.mem_union_right _ (Finset.mem_image_of_mem _ j.property)))
   -- Over `K`, the exponentials `exp (u j)`, `j ∈ s`, are linearly independent.
   have hind : LinearIndependent K fun j : s ↦ exp (u j) := by
     have := LindemannWeierstrass.linearIndependent_exp_algebraMap.comp
@@ -85,7 +84,6 @@ algebraically independent over the field `integralClosure ℚ ℂ` of algebraic 
 theorem algebraicIndependent_exp {ι : Type*} (u : ι → integralClosure ℚ ℂ)
     (hu : LinearIndependent ℕ u) :
     AlgebraicIndependent (integralClosure ℚ ℂ) fun i ↦ exp (u i) := by
-  classical
   refine algebraicIndependent_iff.2 fun p hp ↦ ?_
   -- The monomial `∏ exp (u i) ^ m i` is the exponential of `∑ m i • u i`, and distinct exponents
   -- `m` give distinct values of this sum.
@@ -93,7 +91,7 @@ theorem algebraicIndependent_exp {ι : Type*} (u : ι → integralClosure ℚ �
     (fun m ↦ p.coeff m) (by
       rw [MvPolynomial.aeval_def, MvPolynomial.eval₂_eq] at hp
       refine Eq.trans (Finset.sum_congr rfl fun m _ ↦ ?_) hp
-      simp [Finsupp.linearCombination_apply, Finsupp.sum, exp_sum, exp_nat_mul,
+      simp [Finsupp.linearCombination_apply, Finsupp.sum, exp_sum, exp_natCast_mul,
         Subalgebra.smul_def])
   by_contra hp0
   obtain ⟨m, hm⟩ := MvPolynomial.ne_zero_iff.1 hp0

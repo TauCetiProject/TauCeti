@@ -109,7 +109,7 @@ private def coverLift {M : GradedModuleCat.{max w uA} 𝒜} (m : J → M)
   classical
   refine ofHom (DirectSum.toModule A J M fun j =>
     (LinearMap.toSpanSingleton A M (m j)).comp (Ideal.span {e j}).subtype)
-    (TauCeti.LinearMap.isHomogeneous_def.mpr fun p y hy => ?_)
+    (LinearMap.isHomogeneous_def.mpr fun p y hy => ?_)
   refine InternalGrading.toModule_mem_of_mem_directSumPiece _ M.grading.piece _
     (fun j z hz => ?_) (by simpa only [InternalGrading.directSum_piece] using hy)
   simpa using SetLike.GradedSMul.smul_mem
@@ -247,7 +247,7 @@ private theorem coverLift_surjective {M : GradedModuleCat.{max w uA} 𝒜}
     Function.Surjective (coverLift he₀ d m hm).hom := by
   rw [← LinearMap.range_eq_top]
   refine InternalGrading.eq_top_of_piece_le_sup_positive_smul_top 𝒜 _
-    (TauCeti.LinearMap.IsHomogeneous.isHomogeneous_range (coverLift he₀ d m hm).isHomogeneous)
+    (LinearMap.IsHomogeneous.isHomogeneous_range (coverLift he₀ d m hm).isHomogeneous)
     b hb fun p => (hgen p).trans (sup_le_sup_right ?_ _)
   intro x hx
   refine (Submodule.span_le (p := (LinearMap.range (coverLift he₀ d m hm).hom).restrictScalars
@@ -269,7 +269,7 @@ private def pieceSubmodule (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :
   smul_mem' c x hx := by
     have hx : x ∈ M.grading.piece p := hx
     rw [Subalgebra.smul_def]
-    simpa using SetLike.GradedSMul.smul_mem (A := 𝒜) c.2 hx
+    simpa using SetLike.GradedSMul.smul_mem (A := 𝒜) c.property hx
 
 private theorem mem_pieceSubmodule {M : GradedModuleCat.{v} 𝒜} {p : ℤ} {x : M} :
     x ∈ pieceSubmodule M p ↔ x ∈ M.grading.piece p :=
@@ -281,7 +281,7 @@ private def positiveSubmodule (M : GradedModuleCat.{v} 𝒜) :
   __ := (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)
   smul_mem' c x hx := by
     rw [Subalgebra.smul_def]
-    exact InternalGrading.smul_mem_positive_smul_top c.2 hx
+    exact InternalGrading.smul_mem_positive_smul_top c.property hx
 
 private theorem mem_positiveSubmodule {M : GradedModuleCat.{v} 𝒜} {x : M} :
     x ∈ positiveSubmodule M ↔ x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) :=
@@ -295,15 +295,15 @@ private abbrev PieceQuotient (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :=
 private def pieceQuotientMap (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :
     M →ₗ[SetLike.GradeZero.subalgebra 𝒜] PieceQuotient M p :=
   Submodule.mkQ _ ∘ₗ
-    { toFun x := ⟨decompose M.grading.piece x p, (decompose M.grading.piece x p).2⟩
+    { toFun x := ⟨decompose M.grading.piece x p, (decompose M.grading.piece x p).property⟩
       map_add' x y := by ext; simp
       map_smul' c x := by
         ext
         -- Multiplication by a degree-zero scalar is homogeneous of degree zero.
-        have hf : TauCeti.LinearMap.IsHomogeneous (Algebra.lsmul k k M (c : A))
+        have hf : LinearMap.IsHomogeneous (Algebra.lsmul k k M (c : A))
             M.grading.piece M.grading.piece 0 :=
-          TauCeti.LinearMap.isHomogeneous_def.mpr fun q z hz => by
-            simpa [add_comm] using SetLike.GradedSMul.smul_mem (A := 𝒜) c.2 hz
+          LinearMap.isHomogeneous_def.mpr fun q z hz => by
+            simpa [add_comm] using SetLike.GradedSMul.smul_mem (A := 𝒜) c.property hz
         have h := hf.map_decompose p x
         rw [add_zero] at h
         simpa [Subalgebra.smul_def] using h.symm }
@@ -347,11 +347,11 @@ private theorem exists_generators (M : GradedModuleCat.{v} 𝒜) :
     (SetLike.GradeZero.subalgebra 𝒜) (PieceQuotient M p)
   have hne (p : ℤ) (S : s p) :
       (S : Submodule (SetLike.GradeZero.subalgebra 𝒜) (PieceQuotient M p)) ≠ ⊥ :=
-    (isSimpleModule_iff_isAtom.mp ((hs p).2.2 S S.2)).1
+    (isSimpleModule_iff_isAtom.mp ((hs p).2.2 S S.property)).1
   choose q hqS hq0 using fun p (S : s p) => Submodule.exists_mem_ne_zero_of_ne_bot (hne p S)
   -- Each simple summand is spanned by its chosen nonzero element.
   have hspanq (p : ℤ) (S : s p) : Submodule.span (SetLike.GradeZero.subalgebra 𝒜) {q p S} = S :=
-    ((isSimpleModule_iff_isAtom.mp ((hs p).2.2 S S.2)).le_iff.mp
+    ((isSimpleModule_iff_isAtom.mp ((hs p).2.2 S S.property)).le_iff.mp
       ((Submodule.span_singleton_le_iff_mem _ _).mpr (hqS p S))).resolve_left
       (Submodule.span_singleton_eq_bot.not.mpr (hq0 p S))
   choose f hf hfq hfann using fun p (S : s p) =>
@@ -360,13 +360,13 @@ private theorem exists_generators (M : GradedModuleCat.{v} 𝒜) :
   choose y hy using fun p (S : s p) => Submodule.Quotient.mk_surjective _ (q p S)
   let m : (Σ p, s p) → M := fun j => ((f j.1 j.2 • y j.1 j.2 : pieceSubmodule M j.1) : M)
   have hmq (p : ℤ) (S : s p) : pieceQuotientMap M p (m ⟨p, S⟩) = q p S := by
-    rw [pieceQuotientMap_of_mem (f p S • y p S).2]
+    rw [pieceQuotientMap_of_mem (f p S • y p S).property]
     simp only [Subtype.coe_eta, Submodule.Quotient.mk_smul, hy, hfq]
   have hmq_ne {p p' : ℤ} (S : s p') (h : p' ≠ p) : pieceQuotientMap M p (m ⟨p', S⟩) = 0 :=
-    pieceQuotientMap_of_mem_ne (f p' S • y p' S).2 h
+    pieceQuotientMap_of_mem_ne (f p' S • y p' S).property h
   refine ⟨Σ p, s p, fun j => (f j.1 j.2 : A), fun j => j.1, m,
-    fun j => (hf j.1 j.2).map (SetLike.GradeZero.subalgebra 𝒜).val, fun j => (f j.1 j.2).2,
-    fun j => (f j.1 j.2 • y j.1 j.2).2, fun j => ?_, fun ⟨p, S⟩ h => hq0 p S ?_, ?_, ?_⟩
+    fun j => (hf j.1 j.2).map (SetLike.GradeZero.subalgebra 𝒜).val, fun j => (f j.1 j.2).property,
+    fun j => (f j.1 j.2 • y j.1 j.2).property, fun j => ?_, fun ⟨p, S⟩ h => hq0 p S ?_, ?_, ?_⟩
   · simp only [m, ← Subalgebra.smul_def, ← Submodule.coe_smul, smul_smul, (hf j.1 j.2).eq]
   · rw [← hmq, h, map_zero]
   · -- Independence: project to the degree-`p` piece of `M / A₊ M`, where the summands are
@@ -383,10 +383,10 @@ private theorem exists_generators (M : GradedModuleCat.{v} 𝒜) :
       · subst hp
         have hS' : F ⟨p', S'⟩ = S' := by simp only [F, hmq, hspanq]
         rw [hS']
-        refine ((hs p').1 S'.2).mono_right (iSup₂_le fun ⟨p'', S''⟩ hne' => ?_)
+        refine ((hs p').1 S'.property).mono_right (iSup₂_le fun ⟨p'', S''⟩ hne' => ?_)
         by_cases hp'' : p'' = p'
         · subst hp''
-          refine le_sSup_of_le ⟨S''.2, fun h => hne' ?_⟩ ?_
+          refine le_sSup_of_le ⟨S''.property, fun h => hne' ?_⟩ ?_
           · exact Sigma.ext rfl (heq_of_eq (Subtype.ext h))
           · simp only [F, hmq, hspanq, le_refl]
         · simp [F, hmq_ne S'' hp'']
