@@ -45,8 +45,8 @@ almost-everywhere representative of a half-space.
 * `TauCeti.ae_eq_setOf_inner_lt_of_forall_inner_nonpos`: the almost-everywhere classification.
 * `MeasureTheory.Measure.addHaar_setOf_inner_lt_inter_closedBall`,
   `MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_closedBall`: the exact half-ball measures.
-* `MeasureTheory.Measure.addHaar_closedBall_div_two_le_addHaar_setOf_lt_inner_inter`: density at
-  least one half in the closed balls centred in the closed half-space.
+* `MeasureTheory.Measure.addHaar_closedBall_div_two_le_addHaar_setOf_lt_inner_inter_closedBall`:
+  density at least one half in the closed balls centred in the closed half-space.
 * `TauCeti.hasDensityAt_setOf_inner_lt`: density one half on the boundary hyperplane.
 * `TauCeti.essentialBoundary_setOf_inner_lt`: the essential boundary is the hyperplane.
 
@@ -211,7 +211,8 @@ theorem _root_.MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_closedBall
 /-- The upper half-space `{y | c < ⟪y, ν⟫}` contains at least half of every closed ball centred
 in its closure `{c ≤ ⟪·, ν⟫}`, for any additive Haar measure: it contains the upper half-space
 whose boundary hyperplane passes through the centre. -/
-theorem _root_.MeasureTheory.Measure.addHaar_closedBall_div_two_le_addHaar_setOf_lt_inner_inter
+theorem
+  _root_.MeasureTheory.Measure.addHaar_closedBall_div_two_le_addHaar_setOf_lt_inner_inter_closedBall
     (μ : Measure E) [μ.IsAddHaarMeasure] {ν x : E} {c r : ℝ} (hν : ν ≠ 0) (hx : c ≤ ⟪x, ν⟫) :
     μ (closedBall x r) / 2 ≤ μ ({y | c < ⟪y, ν⟫} ∩ closedBall x r) := by
   rw [← μ.addHaar_setOf_lt_inner_inter_closedBall hν (x := x) (r := r) rfl]

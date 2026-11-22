@@ -101,8 +101,11 @@ All declarations are in the `TauCeti.MeasureTheory` namespace.
 * `norm_setAverage_closedBall_restrict_sub_setAverage_closedBall_le`,
   `norm_setAverage_closedBall_sub_setAverage_closedBall_le`: mean oscillation decaying like `r^α`
   at `x` keeps the averages over concentric balls within `O(r^α)` of each other.
-* `setAverage_closedBall_restrict_norm_sub_le`: by Jensen's inequality, square mean oscillation
-  of order `r^{n+2κ}` gives mean oscillation of order `r^κ`, on a set with density bounded below.
+* `setAverage_closedBall_restrict_norm_sub_le_sqrt_of_setIntegral_le`: by Jensen's inequality, a
+  bound on the square mean oscillation bounds the mean oscillation, on a set with density bounded
+  below.
+* `setAverage_closedBall_restrict_norm_sub_le`: square mean oscillation of order `r^{n+2κ}` gives
+  mean oscillation of order `r^κ`, on a set with density bounded below.
 * `exists_setIntegral_ball_inter_norm_sq_le_mul_div_pow`: square mean oscillation decaying like
   `r^{n+2κ}` at `x` keeps the averages bounded, so that `∫_{B(x, r) ∩ Ω} ‖f‖²` decays like `rⁿ`,
   on a set with density bounded below in the balls around `x`.
@@ -624,6 +627,34 @@ section NormedSpace
 
 variable [NormedAddCommGroup F] [NormedSpace ℝ F] {g : E → F}
 
+/-- **Mean oscillation from a bound on the square mean oscillation.** Let `c > 0`, let `Ω` have
+density at least `c` in `closedBall z t`, and let `∫_{B(z, t) ∩ Ω} ‖g - g_t‖² ≤ X`, where `g_t` is
+the average of `g` over `ball z t ∩ Ω`. Then the mean oscillation of `g` on `closedBall z t` for
+`μ.restrict Ω` is at most `√(X / (c μ(B(z, t))))`. -/
+theorem setAverage_closedBall_restrict_norm_sub_le_sqrt_of_setIntegral_le {t X : ℝ} (hc : 0 < c)
+    (ht : 0 < t) (hd : (c : ℝ≥0∞) * μ (closedBall z t) ≤ μ (closedBall z t ∩ Ω))
+    (hg : MemLp g 2 (μ.restrict (ball z t ∩ Ω)))
+    (hX : ∫ x in ball z t ∩ Ω, ‖g x - ⨍ y in ball z t ∩ Ω, g y ∂μ‖ ^ 2 ∂μ ≤ X) :
+    ⨍ y in closedBall z t, ‖g y - ⨍ w in closedBall z t, g w ∂μ.restrict Ω‖ ∂μ.restrict Ω ≤
+      √(X / (c * μ.real (ball z t))) := by
+  rw [μ.restrict_restrict_closedBall_eq_restrict_ball_inter]
+  set S := ball z t ∩ Ω
+  have hS : μ S ≠ ⊤ := measure_ball_inter_ne_top
+  have hdS : (c : ℝ) * μ.real (ball z t) ≤ μ.real S :=
+    μ.mul_measureReal_ball_le_measureReal_ball_inter hd
+  have hcB : 0 < (c : ℝ) * μ.real (ball z t) := mul_pos hc (measureReal_ball_pos μ z ht)
+  -- Jensen's inequality.
+  have hJ := sq_setAverage_norm_le_setAverage_norm_sq
+    (hg.integrableOn_norm_sub_sq_of_subset subset_rfl hS (⨍ y in S, g y ∂μ))
+  have hav : ⨍ x in S, ‖g x - ⨍ y in S, g y ∂μ‖ ^ 2 ∂μ =
+      (∫ x in S, ‖g x - ⨍ y in S, g y ∂μ‖ ^ 2 ∂μ) / μ.real S := by
+    rw [setAverage_eq, smul_eq_mul, inv_mul_eq_div]
+  rw [hav] at hJ
+  have hX0 : 0 ≤ X := (integral_nonneg fun _ => by positivity).trans hX
+  refine Real.le_sqrt_of_sq_le (hJ.trans ?_)
+  exact (div_le_div_of_nonneg_right hX (hcB.le.trans hdS)).trans
+    (div_le_div_of_nonneg_left hX0 hcB hdS)
+
 /-- **Mean oscillation from square mean oscillation.** Let `c > 0`, let `Ω` have density at least
 `c` in `closedBall z t`, and let `∫_{B(z, t) ∩ Ω} ‖g - g_t‖² ≤ C V ((t / R)ⁿ (t / R)^{2κ})`, where
 `g_t` is the average of `g` over `ball z t ∩ Ω`. Then the mean oscillation of `g` on
@@ -636,23 +667,7 @@ theorem setAverage_closedBall_restrict_norm_sub_le {κ C V R t : ℝ} (hc : 0 < 
       C * V * ((t / R) ^ finrank ℝ E * (t / R) ^ (2 * κ))) :
     ⨍ y in closedBall z t, ‖g y - ⨍ w in closedBall z t, g w ∂μ.restrict Ω‖ ∂μ.restrict Ω ≤
       √(C * (V / μ.real (ball z R)) / c) * R ^ (-κ) * t ^ κ := by
-  rw [μ.restrict_restrict_closedBall_eq_restrict_ball_inter]
-  set S := ball z t ∩ Ω
-  have hS : μ S ≠ ⊤ := measure_ball_inter_ne_top
   have hB := measureReal_ball_pos μ z hR
-  have hBt := measureReal_ball_pos μ z ht
-  have hdS : (c : ℝ) * μ.real (ball z t) ≤ μ.real S :=
-    μ.mul_measureReal_ball_le_measureReal_ball_inter hd
-  have hS0 : 0 < μ.real S := (mul_pos hc hBt).trans_le hdS
-  -- Jensen's inequality.
-  have hJ := sq_setAverage_norm_le_setAverage_norm_sq
-    (hg.integrableOn_norm_sub_sq_of_subset subset_rfl hS (⨍ y in S, g y ∂μ))
-  have hav : ⨍ x in S, ‖g x - ⨍ y in S, g y ∂μ‖ ^ 2 ∂μ =
-      (μ.real S)⁻¹ * ∫ x in S, ‖g x - ⨍ y in S, g y ∂μ‖ ^ 2 ∂μ := by
-    rw [setAverage_eq, smul_eq_mul]
-  rw [hav] at hJ
-  have hX0 : 0 ≤ C * V * ((t / R) ^ finrank ℝ E * (t / R) ^ (2 * κ)) :=
-    (integral_nonneg fun _ => by positivity).trans hψ
   have h2κ : (t / R) ^ (2 * κ) = ((t / R) ^ κ) ^ 2 := by
     rw [mul_comm, Real.rpow_mul (by positivity), Real.rpow_two]
   have hrhs : √(C * (V / μ.real (ball z R)) / c) * R ^ (-κ) * t ^ κ =
@@ -665,10 +680,7 @@ theorem setAverage_closedBall_restrict_norm_sub_le {κ C V R t : ℝ} (hc : 0 < 
       (div_eq_iff hB.ne').1 (μ.addHaar_real_ball_div_addHaar_real_ball z z hR ht), h2κ, heq,
       Real.sqrt_mul' _ (by positivity), Real.sqrt_sq (by positivity)]
   rw [hrhs]
-  refine Real.le_sqrt_of_sq_le (hJ.trans ?_)
-  rw [inv_mul_eq_div]
-  exact (div_le_div_of_nonneg_right hψ hS0.le).trans
-    (div_le_div_of_nonneg_left hX0 (mul_pos hc hBt) hdS)
+  exact setAverage_closedBall_restrict_norm_sub_le_sqrt_of_setIntegral_le hc ht hd hg hψ
 
 /-- If `Ω` has density at least `c` in `closedBall z s`, `s ≤ R`, and `∫_{B(z, R) ∩ Ω} ‖g‖² ≤ V`,
 then the average `g_s` of `g` over `ball z s ∩ Ω` satisfies `c (s / R)ⁿ μ(B(z, R)) ‖g_s‖² ≤ V`. -/
@@ -704,27 +716,11 @@ theorem setAverage_closedBall_restrict_norm_sub_le_sqrt {D : Set E} {x : E} {t :
     (hgp : IntegrableOn (fun y => ‖g y - p‖ ^ 2) D μ) :
     ⨍ y in closedBall x t, ‖g y - ⨍ w in closedBall x t, g w ∂μ.restrict Ω‖ ∂μ.restrict Ω ≤
       √((∫ y in D, ‖g y - p‖ ^ 2 ∂μ) / (c * μ.real (ball x t))) := by
-  rw [μ.restrict_restrict_closedBall_eq_restrict_ball_inter]
-  set S := ball x t ∩ Ω
-  have hS : μ S ≠ ⊤ := measure_ball_inter_ne_top
-  have hdS : (c : ℝ) * μ.real (ball x t) ≤ μ.real S :=
-    μ.mul_measureReal_ball_le_measureReal_ball_inter hd
-  have hcB : 0 < (c : ℝ) * μ.real (ball x t) := mul_pos hc (measureReal_ball_pos μ x ht)
-  -- Jensen's inequality, then the comparison of the mean oscillation with the distance to `p`.
-  have hJ := sq_setAverage_norm_le_setAverage_norm_sq
-    (hg.integrableOn_norm_sub_sq_of_subset subset_rfl hS (⨍ y in S, g y ∂μ))
-  have hav : ⨍ y in S, ‖g y - ⨍ w in S, g w ∂μ‖ ^ 2 ∂μ =
-      (∫ y in S, ‖g y - ⨍ w in S, g w ∂μ‖ ^ 2 ∂μ) / μ.real S := by
-    rw [setAverage_eq, smul_eq_mul, inv_mul_eq_div]
-  rw [hav] at hJ
-  have hosc := setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq hS
-    (hg.integrableOn_of_subset one_le_two subset_rfl hS) (hgp.mono_set hD)
-  have hmono : ∫ y in S, ‖g y - p‖ ^ 2 ∂μ ≤ ∫ y in D, ‖g y - p‖ ^ 2 ∂μ :=
-    setIntegral_mono_set hgp (ae_of_all _ fun _ => by positivity) hD.eventuallySubset
-  have hX : 0 ≤ ∫ y in D, ‖g y - p‖ ^ 2 ∂μ := integral_nonneg fun _ => by positivity
-  refine Real.le_sqrt_of_sq_le (hJ.trans ?_)
-  exact (div_le_div_of_nonneg_right (hosc.trans hmono) (hcB.le.trans hdS)).trans
-    (div_le_div_of_nonneg_left hX hcB hdS)
+  refine setAverage_closedBall_restrict_norm_sub_le_sqrt_of_setIntegral_le hc ht hd hg ?_
+  exact (setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq measure_ball_inter_ne_top
+    (hg.integrableOn_of_subset one_le_two subset_rfl measure_ball_inter_ne_top)
+      (hgp.mono_set hD)).trans
+    (setIntegral_mono_set hgp (ae_of_all _ fun _ => by positivity) hD.eventuallySubset)
 
 /-- **Bounded averages from Campanato decay.** Let `κ > 0`, `θ ∈ (0, 1]` and `c > 0`. Let `Ω` have
 density at least `c` in the closed balls `closedBall z t`, `0 < t ≤ θ R`, let `g` be square

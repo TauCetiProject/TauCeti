@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Boundary.VariableCoefficientDecay
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Scaled
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.Sobolev.W1p.Multiplication
 import TauCeti.MeasureTheory.Function.Campanato
@@ -112,45 +113,7 @@ private theorem half_mul_volume_closedBall_le (hν : ν ≠ 0) (hH : ∀ y, y �
     (((2 : ℝ≥0)⁻¹ : ℝ≥0) : ℝ≥0∞) * volume (closedBall x t) ≤ volume (closedBall x t ∩ H) := by
   rw [ENNReal.coe_inv two_ne_zero, ENNReal.coe_ofNat, ← ENNReal.div_eq_inv_mul,
     show H = {y | c₀ < ⟪y, ν⟫_ℝ} from Set.ext hH, inter_comm]
-  exact volume.addHaar_closedBall_div_two_le_addHaar_setOf_lt_inner_inter hν hx
-
-/-- The foot `z = x - ((⟪x, ν⟫ - c₀) / ‖ν‖²) ν` of the perpendicular from a point `x` of the closed
-half-space `{c₀ ≤ ⟪·, ν⟫}` lies on the hyperplane `⟪·, ν⟫ = c₀`, at the distance
-`d = (⟪x, ν⟫ - c₀) / ‖ν‖` from `x`; the ball `B(x, d)` lies in the open half-space, and `d` is at
-most the distance from `x` to any point of the hyperplane. -/
-private theorem foot_spec (hν : ν ≠ 0) (hH : ∀ y, y ∈ H ↔ c₀ < ⟪y, ν⟫_ℝ) (hx : c₀ ≤ ⟪x, ν⟫_ℝ) :
-    ⟪x - ((⟪x, ν⟫_ℝ - c₀) / ‖ν‖ ^ 2) • ν, ν⟫_ℝ = c₀ ∧
-      dist x (x - ((⟪x, ν⟫_ℝ - c₀) / ‖ν‖ ^ 2) • ν) = (⟪x, ν⟫_ℝ - c₀) / ‖ν‖ ∧
-      ball x ((⟪x, ν⟫_ℝ - c₀) / ‖ν‖) ⊆ H ∧
-      ∀ w : EuclideanSpace ℝ (Fin (n + 1)), ⟪w, ν⟫_ℝ = c₀ →
-        (⟪x, ν⟫_ℝ - c₀) / ‖ν‖ ≤ dist x w := by
-  have hν' : 0 < ‖ν‖ := norm_pos_iff.2 hν
-  refine ⟨?_, ?_, fun y hy => ?_, fun w hw => ?_⟩
-  · rw [inner_sub_left, real_inner_smul_left, real_inner_self_eq_norm_sq]
-    field_simp
-    ring
-  · rw [dist_eq_norm, sub_sub_cancel, norm_smul, Real.norm_eq_abs,
-      abs_of_nonneg (div_nonneg (sub_nonneg.2 hx) (by positivity))]
-    field_simp
-  · rw [mem_ball, dist_eq_norm] at hy
-    have h1 : ⟪x - y, ν⟫_ℝ ≤ ‖x - y‖ * ‖ν‖ := real_inner_le_norm _ _
-    rw [inner_sub_left, norm_sub_rev] at h1
-    have h2 : ‖y - x‖ * ‖ν‖ < ⟪x, ν⟫_ℝ - c₀ := by
-      rwa [lt_div_iff₀ hν'] at hy
-    exact (hH y).2 (by linarith)
-  · have h1 : ⟪x - w, ν⟫_ℝ ≤ ‖x - w‖ * ‖ν‖ := real_inner_le_norm _ _
-    rw [inner_sub_left, hw] at h1
-    rw [div_le_iff₀ hν', dist_eq_norm]
-    exact h1
-
-
-/-- The multiple `(⟪v, ν⟫ / ‖ν‖²) ν` of `ν` closest to `v` has norm at most `‖v‖`. -/
-private theorem norm_inner_div_smul_le (hν : ν ≠ 0) (v : EuclideanSpace ℝ (Fin (n + 1))) :
-    ‖(⟪v, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ≤ ‖v‖ := by
-  have hν' : 0 < ‖ν‖ := norm_pos_iff.2 hν
-  rw [norm_smul, Real.norm_eq_abs, abs_div, abs_of_pos (by positivity : 0 < ‖ν‖ ^ 2),
-    div_mul_eq_mul_div, div_le_iff₀ (by positivity), sq, ← mul_assoc]
-  exact mul_le_mul_of_nonneg_right (abs_real_inner_le_norm _ _) hν'.le
+  exact volume.addHaar_closedBall_div_two_le_addHaar_setOf_lt_inner_inter_closedBall hν hx
 
 /-- A ball of radius `s > 0` centred in the closure of a half-space `H` meets `H` in a set of
 measure at least `|B(0, s)| / 2 = s^{n+1} ω / 2`. -/
@@ -227,35 +190,12 @@ private theorem exists_gradient_ae_eq_sub_and_energyFormH1
       ∀ φ : 𝓓(B, ℝ), energyFormH1 a 0 0 v (W1p.ofTestFunctionₗ volume B 2 φ) =
         (∫ x in B, ⟪G x - coefficientField a p x,
           ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) + ∫ x in B, f x * φ x := by
-  have : IsFiniteMeasure (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
-    isFiniteMeasure_restrict.2 (ne_top_of_le_ne_top measure_ball_lt_top.ne (measure_mono hBR))
-  -- The linear function `ψ = ⟪p, ·⟫` and its Sobolev class `ℓ` on `B`.
-  set ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ := fun y => ⟪p, y⟫_ℝ
-  have hψ : ContDiff ℝ ∞ ψ := contDiff_const.inner ℝ contDiff_id
-  set Mψ : ℝ := ‖p‖ * (‖z₀‖ + |R|) + ‖p‖
-  have hMψ : 0 ≤ Mψ := by positivity
-  have hψM : ∀ y ∈ B, |ψ y| ≤ Mψ := fun y hy => by
-    have hy' : ‖y‖ ≤ ‖z₀‖ + |R| := by
-      have := mem_ball.1 (hBR hy)
-      rw [dist_eq_norm] at this
-      linarith [norm_le_insert' y z₀, le_abs_self R]
-    calc |ψ y| ≤ ‖p‖ * ‖y‖ := abs_real_inner_le_norm p y
-      _ ≤ ‖p‖ * (‖z₀‖ + |R|) := by gcongr
-      _ ≤ Mψ := le_add_of_nonneg_right (norm_nonneg _)
-  have hgradψ : ∀ y, ∇ ψ y = p := fun y => gradient_inner_const_left p y
-  have hgradM : ∀ y ∈ B, ‖∇ ψ y‖ ≤ Mψ := fun y _ => by
-    rw [hgradψ]
-    exact le_add_of_nonneg_left (by positivity)
-  set ℓ : W1p volume B 2 := W1p.contDiffSMul ψ hψ hMψ hψM hgradM (W1p.const 1)
-  have hℓ : (W1p.gradient ℓ : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
-      =ᵐ[volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))] fun _ => p := by
-    filter_upwards [W1p.gradient_contDiffSMul_ae hψ hMψ hψM hgradM (W1p.const 1 : W1p volume B 2),
-      Lp.coeFn_const (2 : ℝ≥0∞) (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1)))))
-        (1 : ℝ),
-      Lp.coeFn_zero (EuclideanSpace ℝ (Fin (n + 1))) 2
-        (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1)))))] with y hy h1 h0
-    rw [hy, W1p.gradient_const, W1p.value_const, h0, h1, hgradψ]
-    simp
+  -- The Sobolev class `ℓ` on `B` of the linear function `⟪p, ·⟫`, whose gradient is `p`.
+  obtain ⟨ℓ, -, hℓ⟩ := W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact (mu := volume)
+    (p := 2) (Omega := B) (u := fun y => ⟪p, y⟫_ℝ) isOpen_univ
+    (contDiff_const.inner ℝ contDiff_id).contDiffOn (isBounded_ball.subset hBR).isCompact_closure
+    subset_closure (subset_univ _)
+  rw [show ∇ (fun y => ⟪p, y⟫_ℝ) = fun _ => p from funext (gradient_inner_const_left p)] at hℓ
   refine ⟨W1p.restrictL hB u - ℓ, ?_, fun φ => ?_⟩
   · rw [← W1p.gradientL_apply, map_sub, W1p.gradientL_apply, W1p.gradientL_apply]
     filter_upwards [Lp.coeFn_sub (W1p.gradient (W1p.restrictL hB u)) (W1p.gradient ℓ),
@@ -481,10 +421,10 @@ private theorem exists_boundary_decay {α : ℝ≥0} {γ : ℝ} (hγ : 0 < γ) (
           gcongr
       _ ≤ V := by rw [hVdef]; linarith
   have hΦ : ∫ x in ball z (R / 2) ∩ H, ‖W1p.gradient u x‖ ^ 2 ≤ V :=
-    (setIntegral_mono_set (((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset
-      (inter_subset_left.trans hU) measure_ball_inter_ne_top
-        (0 : EuclideanSpace ℝ (Fin (n + 1)))).congr
-        (ae_of_all _ fun _ => by simp only [sub_zero]))
+    (setIntegral_mono_set (by
+        simpa only [sub_zero] using (Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset
+          (inter_subset_left.trans hU) measure_ball_inter_ne_top
+          (0 : EuclideanSpace ℝ (Fin (n + 1))))
       (ae_of_all _ fun _ => by positivity)
       (inter_subset_inter_left _ hsub).eventuallySubset).trans (by
         rw [hVdef]; exact le_add_of_nonneg_right (by positivity))
@@ -878,8 +818,9 @@ private theorem norm_setAverage_closedBall_restrict_le_sqrt
   have h1 := measureReal_mul_sq_norm_setAverage_le measure_ball_inter_ne_top
     (hg.mono_measure (Measure.restrict_mono hS le_rfl))
   have h2 : ∫ y in ball x ρ ∩ H, ‖g y‖ ^ 2 ≤ Φ :=
-    (setIntegral_mono_set ((hg.integrableOn_norm_sub_sq_of_subset subset_rfl hSfin
-      (0 : EuclideanSpace ℝ (Fin (n + 1)))).congr (ae_of_all _ fun _ => by simp only [sub_zero]))
+    (setIntegral_mono_set (by
+        simpa only [sub_zero] using hg.integrableOn_norm_sub_sq_of_subset subset_rfl hSfin
+          (0 : EuclideanSpace ℝ (Fin (n + 1))))
       (ae_of_all _ fun _ => by positivity) hS.eventuallySubset).trans hΦ
   have h3 := half_mul_le_measureReal_ball_inter hν hH hx hρ
   have hw : 0 < volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
@@ -964,11 +905,15 @@ private theorem exists_setIntegral_norm_gradient_sub_sq_le {α : ℝ≥0} {γ : 
   have hV0 : 0 ≤ V := by positivity
   have htR : 0 ≤ (t / R) ^ e := Real.rpow_nonneg (div_nonneg ht.le hR.le) e
   -- The foot `z` of the perpendicular from `x`, at the distance `d`.
-  obtain ⟨hzc, hxz, hballH, hdle⟩ := foot_spec hν hH hxc
   set z := x - ((⟪x, ν⟫_ℝ - c₀) / ‖ν‖ ^ 2) • ν
   set d := (⟪x, ν⟫_ℝ - c₀) / ‖ν‖
+  have hzc : ⟪z, ν⟫_ℝ = c₀ := real_inner_sub_div_norm_sq_smul_self_eq hν x c₀
+  have hxz : dist x z = d := by
+    rw [dist_eq_norm, sub_sub_cancel, norm_div_norm_sq_smul_self, abs_of_nonneg (sub_nonneg.2 hxc)]
+  have hballH : ball x d ⊆ H := fun y hy => (hH y).2 <| ball_subset_setOf_lt_inner hν
+    (by rw [div_mul_cancel₀ _ (norm_ne_zero_iff.2 hν), add_sub_cancel]) hy
   have hxz₀ : dist x z₀ < R / 4 := mem_ball.1 hx
-  have hdx : d ≤ dist x z₀ := hdle z₀ hz₀
+  have hdx : d ≤ dist x z₀ := div_norm_le_dist_of_inner_eq hz₀
   have hzR : z ∈ ball z₀ (R / 2) := by
     rw [mem_ball]
     linarith [dist_triangle z x z₀, dist_comm x z]
@@ -1003,7 +948,8 @@ private theorem exists_setIntegral_norm_gradient_sub_sq_le {α : ℝ≥0} {γ : 
     obtain ⟨c, hc⟩ := exists_setIntegral_ball_sub_sq_le_of_near hd hR hw₁ ht.le hc₁
       Ka.coe_nonneg hM hC hVc hsub measure_ball_inter_ne_top
       ((Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono
-        (inter_subset_left.trans (hS.trans hU)) le_rfl)) hSd (norm_inner_div_smul_le hν _) hB2 hM2
+        (inter_subset_left.trans (hS.trans hU)) le_rfl)) hSd
+      (norm_inner_div_norm_sq_smul_self_le _ _) hB2 hM2
       fun W hW hΦ => hIx x _ d W hxd hd (by linarith) hW hΦ t ht htd
     exact ⟨ball x t, c, inter_subset_left, htx,
       hc.trans (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (by linarith) hV0) htR)⟩
@@ -1020,9 +966,8 @@ private theorem exists_setIntegral_norm_gradient_sub_sq_le {α : ℝ≥0} {γ : 
       simp only [sub_zero]
       refine (setIntegral_mono_set ?_ (ae_of_all _ fun _ => by positivity)
         hxr.eventuallySubset).trans (le_add_of_nonneg_right (by positivity))
-      exact ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset
-        (inter_subset_left.trans hU) measure_ball_inter_ne_top 0).congr
-          (ae_of_all _ fun _ => by simp only [sub_zero])
+      simpa only [sub_zero] using (Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset
+        (inter_subset_left.trans hU) measure_ball_inter_ne_top 0
     obtain ⟨c, hc⟩ := hIx x 0 (θ * R / 4) V hxr hr hrR hdata hΦ t ht
       (htκ.trans_eq (by ring))
     have hc' : ∫ y in ball x t, ‖W1p.gradient u y - c‖ ^ 2 ≤ K₃ * V * (t / R) ^ e := by
