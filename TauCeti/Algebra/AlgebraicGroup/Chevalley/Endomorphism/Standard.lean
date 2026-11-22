@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Injective
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.FieldEndomorphism
+import TauCeti.Algebra.Group.End
 
 /-!
 # Standard and based endomorphisms of a Chevalley datum
@@ -100,25 +101,19 @@ theorem IsBased.comp (hF : D.IsBased F) (hF' : D.IsBased F') : D.IsBased (F.comp
     obtain ⟨β, hβpos, hβ⟩ := hF'.2 α hα; obtain ⟨γ, hγpos, hγ⟩ := hF.2 β hβpos
     exact ⟨γ, hγpos, by rw [← Subgroup.map_map, hβ, hγ]⟩⟩
 
-private theorem monoidEnd_one_eq_id : (1 : Monoid.End (D.points A)) = MonoidHom.id (D.points A) :=
-  Monoid.End.ext (D.points A) fun x => congrFun (Monoid.End.coe_one (D.points A)) x
-
-private theorem monoidEnd_mul_eq_comp (F F' : Monoid.End (D.points A)) : F * F' = F.comp F' :=
-  Monoid.End.ext (D.points A) fun x => congrFun (Monoid.End.coe_mul (D.points A) F F') x
-
 /-- Powers of a standard endomorphism in `Monoid.End` are standard. -/
 theorem IsStandard.pow {F : Monoid.End (D.points A)} (hF : D.IsStandard F) (n : ℕ) :
     D.IsStandard (HPow.hPow (α := Monoid.End (D.points A)) F n) := by
   induction n with
-  | zero => rw [pow_zero, monoidEnd_one_eq_id]; exact D.isStandard_id
-  | succ n ih => rw [pow_succ', monoidEnd_mul_eq_comp]; exact hF.comp ih
+  | zero => rw [pow_zero, Monoid.End.one_eq_id]; exact D.isStandard_id
+  | succ n ih => rw [pow_succ', Monoid.End.mul_eq_comp]; exact hF.comp ih
 
 /-- Powers of a based endomorphism in `Monoid.End` are based. -/
 theorem IsBased.pow {F : Monoid.End (D.points A)} (hF : D.IsBased F) (n : ℕ) :
     D.IsBased (HPow.hPow (α := Monoid.End (D.points A)) F n) := by
   induction n with
-  | zero => rw [pow_zero, monoidEnd_one_eq_id]; exact D.isBased_id
-  | succ n ih => rw [pow_succ', monoidEnd_mul_eq_comp]; exact hF.comp ih
+  | zero => rw [pow_zero, Monoid.End.one_eq_id]; exact D.isBased_id
+  | succ n ih => rw [pow_succ', Monoid.End.mul_eq_comp]; exact hF.comp ih
 
 /-- A standard endomorphism carries the actual torus into itself. -/
 theorem IsStandard.map_range_torusPoints_le (hF : D.IsStandard F) :
@@ -367,11 +362,19 @@ theorem IsBased.rootPerm_mem_posRoots (hF : D.IsBased F) {α : Fin t.numRoots}
     hF.isStandard.rootPerm.injective.injOn).image_eq
 
 /-- For a based endomorphism, `rootPerm α` is positive iff `α` is positive. -/
+-- Note: `@[simp]` is on `isPos_rootPerm_iff` because `TauCeti.mem_posRoots` simplifies
+-- `∈ posRoots ...` to `(t.rationalBase ht).IsPos`.
 theorem IsBased.rootPerm_mem_posRoots_iff (hF : D.IsBased F) {α : Fin t.numRoots} :
     hF.isStandard.rootPerm α ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) ↔
       α ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) :=
   ⟨fun h => let ⟨_, hβ, hβα⟩ := hF.image_rootPerm_posRoots.symm ▸ h
     hF.isStandard.rootPerm.injective hβα ▸ hβ, hF.rootPerm_mem_posRoots⟩
+
+/-- For a based endomorphism, `(t.rationalBase ht).IsPos (rootPerm α)` iff `α` is positive. -/
+@[simp] theorem IsBased.isPos_rootPerm_iff (hF : D.IsBased F) {α : Fin t.numRoots} :
+    (t.rationalBase ht).IsPos (hF.isStandard.rootPerm α) ↔ (t.rationalBase ht).IsPos α := by
+  simp only [← mem_posRoots]
+  exact hF.rootPerm_mem_posRoots_iff
 
 /-- The root permutation of the identity endomorphism is `1`. -/
 @[simp] theorem IsStandard.rootPerm_id : (D.isStandard_id (A := K)).rootPerm = 1 :=
@@ -389,9 +392,9 @@ theorem IsBased.rootPerm_mem_posRoots_iff (hF : D.IsBased F) {α : Fin t.numRoot
     (n : ℕ) : (hF.pow n).rootPerm = hF.rootPerm ^ n := by
   induction n with
   | zero => exact Equiv.ext fun _ => (hF.pow 0).rootPerm_eq_of_map_range (by
-      rw [pow_zero, monoidEnd_one_eq_id, Subgroup.map_id, pow_zero, Equiv.Perm.one_apply])
+      rw [pow_zero, Monoid.End.one_eq_id, Subgroup.map_id, pow_zero, Equiv.Perm.one_apply])
   | succ n ih => exact (Equiv.ext fun α => (hF.pow (n + 1)).rootPerm_eq_of_map_range (by
-      rw [pow_succ', monoidEnd_mul_eq_comp]
+      rw [pow_succ', Monoid.End.mul_eq_comp]
       exact (hF.comp (hF.pow n)).map_range_rootSubgroupPoints α)).trans
                   ((IsStandard.rootPerm_comp hF (hF.pow n)).trans (by rw [ih, pow_succ']))
 

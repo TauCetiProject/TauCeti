@@ -102,9 +102,17 @@ theorem IsBased.indexEquiv_symm_mem_posRoots {b : P.Base} {f : RootPairingIsogen
   rw [← hf.image_posRoots] at hj; rcases hj with ⟨i, hi, rfl⟩; simpa using hi
 
 /-- A based endo-isogeny maps a root index into `posRoots P b` iff the root index is positive. -/
+-- Note: `@[simp]` is on `isPos_indexEquiv_iff` because `TauCeti.mem_posRoots` simplifies
+-- `∈ posRoots P b` to `b.IsPos`.
 theorem IsBased.indexEquiv_mem_posRoots_iff {b : P.Base} {f : RootPairingIsogeny P P}
     (hf : f.IsBased b) {i : ι} : f.indexEquiv i ∈ posRoots P b ↔ i ∈ posRoots P b :=
   ⟨fun h => by simpa using hf.indexEquiv_symm_mem_posRoots h, hf.indexEquiv_mem_posRoots⟩
+
+/-- A based endo-isogeny preserves `b.IsPos` on root indices. -/
+@[simp] theorem IsBased.isPos_indexEquiv_iff {b : P.Base} {f : RootPairingIsogeny P P}
+    (hf : f.IsBased b) {i : ι} : b.IsPos (f.indexEquiv i) ↔ b.IsPos i := by
+  simp only [← mem_posRoots]
+  exact hf.indexEquiv_mem_posRoots_iff
 
 /-- An automorphism `ofEquiv g` is based iff `g.indexEquiv` maps `posRoots P b` into itself. -/
 theorem isBased_ofEquiv_iff_mapsTo (b : P.Base) (g : P.Aut) :

@@ -36,6 +36,8 @@ for that shape once, so that each Chevalley carrier only supplies its two iterat
 ## Main results
 
 * `MulAut.toPerm_apply`: the permutation underlying an automorphism applies as the automorphism.
+* `Monoid.End.one_eq_id`, `Monoid.End.mul_eq_comp`: identification of the monoid unit and
+  multiplication on `Monoid.End M` with `MonoidHom.id` and `MonoidHom.comp`.
 * `TauCeti.Monoid.End.pow_eq_of_add_eq_comp`: `f k ^ m = f (k * m)` in `Monoid.End M`.
 -/
 
@@ -72,6 +74,21 @@ theorem subtypePerm_apply_coe (ρ : Γ →* Perm α) (p : α → Prop) (h : ∀ 
   (rfl)
 
 end MonoidHom
+
+namespace Monoid.End
+
+variable {M : Type*} [MulOne M]
+
+/-- The identity element of `Monoid.End M` is `MonoidHom.id M`. -/
+@[to_additive one_eq_id /-- The identity element of `AddMonoid.End M` is `AddMonoidHom.id M`. -/]
+theorem one_eq_id : (1 : Monoid.End M) = MonoidHom.id M := rfl
+
+/-- Multiplication in `Monoid.End M` is composition `MonoidHom.comp`. -/
+@[to_additive mul_eq_comp
+  /-- Multiplication in `AddMonoid.End M` is composition `AddMonoidHom.comp`. -/]
+theorem mul_eq_comp (f g : Monoid.End M) : f * g = f.comp g := rfl
+
+end Monoid.End
 
 namespace TauCeti
 

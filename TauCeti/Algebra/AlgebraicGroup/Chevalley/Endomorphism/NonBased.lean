@@ -57,6 +57,47 @@ variable (i : Fin t.rank) (A : Type v) [CommRing A]
     hb (hBased.map_borelSubgroup_le
       ⟨b.val, b.property, by rw [MonoidHom.coe_ofClass, MulAut.conj_apply]⟩)
 
+section Field
+variable {D} {K : Type v} [Field K] [Infinite K]
+
+/-- The character map of simple Weyl conjugation is `D.simpleReflectionCharacterMap i`. -/
+@[simp] theorem IsStandard.characterMap_conj_weylElement :
+    (D.isStandard_conj_weylElement i K).characterMap = D.simpleReflectionCharacterMap i :=
+  (D.isStandard_conj_weylElement i K).characterMap_eq_of_isCharacterMap
+    (D.isCharacterMap_conj_weylElement i K)
+
+/-- The root permutation of simple Weyl conjugation is the simple reflection `s_i`. -/
+@[simp] theorem IsStandard.rootPerm_conj_weylElement :
+    (D.isStandard_conj_weylElement i K).rootPerm =
+      (t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) :=
+  Equiv.ext fun γ => (D.isStandard_conj_weylElement i K).rootPerm_eq_of_map_range
+    (D.map_range_rootSubgroupPoints_conj_weylElement i K γ)
+
+private theorem IsStandard.conj_weylElement_invariants [RootableBy Kˣ ℕ] (γ : Fin t.numRoots) :
+    Units.map (Int.castRingHom K).toMonoidHom
+        (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ) =
+      (D.isStandard_conj_weylElement i K).rootUnit γ ∧
+      RingHom.id K = (D.isStandard_conj_weylElement i K).fieldEnd γ :=
+  ((D.isStandard_conj_weylElement i K).eq_of_map_rootSubgroupPoints
+    (β := (t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ)
+    (c := Units.map (Int.castRingHom K).toMonoidHom
+      (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ))
+    (g := RingHom.id K) fun u => by simp [D.weylElement_conj_rootSubgroupPoints]).2
+
+/-- The scaling unit of simple Weyl conjugation on the `γ`-root subgroup is the Weyl sign. -/
+@[simp] theorem IsStandard.rootUnit_conj_weylElement [RootableBy Kˣ ℕ] (γ : Fin t.numRoots) :
+    (D.isStandard_conj_weylElement i K).rootUnit γ =
+      Units.map (Int.castRingHom K).toMonoidHom
+        (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ) :=
+  (IsStandard.conj_weylElement_invariants i γ).1.symm
+
+/-- The field endomorphism of simple Weyl conjugation is `RingHom.id K`. -/
+@[simp] theorem IsStandard.fieldEnd_conj_weylElement [RootableBy Kˣ ℕ] (γ : Fin t.numRoots) :
+    (D.isStandard_conj_weylElement i K).fieldEnd γ = RingHom.id K :=
+  (IsStandard.conj_weylElement_invariants i γ).2.symm
+
+end Field
+
 end WeylConj
 
 /-! ## Weyl-twisted Frobenius endomorphisms -/
@@ -137,6 +178,49 @@ theorem isCharacterMap_weylFrobenius_of_rank_eq_one (hr : t.rank = 1) :
 @[simp] theorem isStandard_weylFrobenius [PerfectRing A p] :
     D.IsStandard (D.weylFrobenius i p k A) :=
   (D.isStandard_conj_weylElement i A).comp (D.isStandard_frobenius p k)
+
+section Field
+variable {D} {K : Type v} [Field K] [Infinite K] [ExpChar K p] [PerfectRing K p]
+
+/-- The character map of `D.weylFrobenius i p k K` is
+`(p ^ k : ℕ) • D.simpleReflectionCharacterMap i`. -/
+@[simp] theorem IsStandard.characterMap_weylFrobenius :
+    (D.isStandard_weylFrobenius i p k K).characterMap =
+      (p ^ k : ℕ) • D.simpleReflectionCharacterMap i :=
+  (D.isStandard_weylFrobenius i p k K).characterMap_eq_of_isCharacterMap
+    (D.isCharacterMap_weylFrobenius i p k K)
+
+/-- The root permutation of `D.weylFrobenius i p k K` is the simple reflection `s_i`. -/
+@[simp] theorem IsStandard.rootPerm_weylFrobenius :
+    (D.isStandard_weylFrobenius i p k K).rootPerm =
+      (t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) :=
+  Equiv.ext fun γ => (D.isStandard_weylFrobenius i p k K).rootPerm_eq_of_map_range
+    (D.map_range_rootSubgroupPoints_weylFrobenius i p k K γ)
+
+private theorem IsStandard.weylFrobenius_invariants [RootableBy Kˣ ℕ] (γ : Fin t.numRoots) :
+    Units.map (Int.castRingHom K).toMonoidHom
+        (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ) =
+      (D.isStandard_weylFrobenius i p k K).rootUnit γ ∧
+      iterateFrobenius K p k = (D.isStandard_weylFrobenius i p k K).fieldEnd γ :=
+  ((D.isStandard_weylFrobenius i p k K).eq_of_map_rootSubgroupPoints
+    (β := (t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ)
+    (c := Units.map (Int.castRingHom K).toMonoidHom
+      (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ))
+    (g := iterateFrobenius K p k) fun u => by simp [iterateFrobenius_def]).2
+
+/-- The scaling unit of `D.weylFrobenius i p k K` on the `γ`-root subgroup is the Weyl sign. -/
+@[simp] theorem IsStandard.rootUnit_weylFrobenius [RootableBy Kˣ ℕ] (γ : Fin t.numRoots) :
+    (D.isStandard_weylFrobenius i p k K).rootUnit γ =
+      Units.map (Int.castRingHom K).toMonoidHom
+        (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ) :=
+  (IsStandard.weylFrobenius_invariants i p k γ).1.symm
+
+/-- The field endomorphism of `D.weylFrobenius i p k K` is `iterateFrobenius K p k`. -/
+@[simp] theorem IsStandard.fieldEnd_weylFrobenius [RootableBy Kˣ ℕ] (γ : Fin t.numRoots) :
+    (D.isStandard_weylFrobenius i p k K).fieldEnd γ = iterateFrobenius K p k :=
+  (IsStandard.weylFrobenius_invariants i p k γ).2.symm
+
+end Field
 
 /-- **Over any nontrivial ring, `D.weylFrobenius` does not preserve `D.borelSubgroup A`.** -/
 theorem not_map_borelSubgroup_weylFrobenius_le [Nontrivial A] :
