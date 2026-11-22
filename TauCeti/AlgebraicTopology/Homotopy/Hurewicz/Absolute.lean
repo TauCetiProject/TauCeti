@@ -48,6 +48,8 @@ hence everywhere.
   `HomotopyGroup.bijective_hurewicz_ulift`, and `HomotopyGroup.hurewiczUliftAddEquiv`: **the
   Hurewicz theorem**, `πₙ₊₂(X, x) ≅ Hₙ₊₂(X; ℤ)` for an `(n + 1)`-connected space in `Type 0` and
   in an arbitrary universe `u`.
+* `HomotopyGroup.isIso_hurewiczModuleCatHom`: the same theorem for the Hurewicz morphism
+  `HomotopyGroup.hurewiczModuleCatHom` of `ModuleCat ℤ`.
 * `HomotopyGroup.bijective_hurewiczIntHom_of_simplyConnectedSpace`: its degree-two case,
   `π₂(X, x) ≅ H₂(X; ℤ)` for a simply connected space.
 * `HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom`,
@@ -195,6 +197,17 @@ theorem hurewiczAddEquiv_apply_eq_hurewiczIntHom
     (a : Additive (HomotopyGroup (Fin (n + 2)) X x)) :
     hurewiczAddEquiv hX a = hurewiczIntHom X x (n + 1) a :=
   AddEquiv.ofBijective_apply _ _ _
+
+/-- **The Hurewicz theorem in `ModuleCat ℤ`.** If `πₖ(X, x)` is trivial for every `k < n + 2`, then
+the Hurewicz morphism `HomotopyGroup.hurewiczModuleCatHom`, `πₙ₊₂(X, x) ⟶ Hₙ₊₂(X; ℤ)`, is an
+isomorphism. -/
+theorem isIso_hurewiczModuleCatHom (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x)) :
+    IsIso (hurewiczModuleCatHom X x n) :=
+  (ConcreteCategory.isIso_iff_bijective _).2 <| by
+    convert (hurewiczAddEquiv hX).bijective using 1
+    funext a
+    exact (hurewiczModuleCatHom_apply X x n a).trans
+      (hurewiczAddEquiv_apply_eq_hurewiczIntHom hX a).symm
 
 /-- **The Hurewicz theorem in degree two for a simply connected space**: the integral Hurewicz
 homomorphism `π₂(X, x) → H₂(X; ℤ)` is bijective at every base point. -/
