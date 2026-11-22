@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.Harmonic.Defs
 public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.Algebra.Polynomial.Eval.Degree
+import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.AbsMax
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.Normed.Group.FunctionSeries
@@ -153,13 +154,8 @@ theorem fejerPolyCoeff_of_gt_of_le {m n : ℕ} (h₁ : m < n) (h₂ : n ≤ 2 * 
     exfalso
     exact hm (mem_Icc.mpr ⟨by omega, by omega⟩)
 
-theorem fejerPolyCoeff_of_gt {m n : ℕ} (h : 2 * m < n) : fejerPolyCoeff m n = 0 := by
-  rw [fejerPolyCoeff_eq_sum]
-  refine sum_eq_zero fun j hj ↦ ?_
-  have hjm : j ≤ m := (mem_Icc.mp hj).2
-  have h1 : m - j ≠ n := by omega
-  have h2 : m + j ≠ n := by omega
-  simp [h1, h2]
+theorem fejerPolyCoeff_of_gt {m n : ℕ} (h : 2 * m < n) : fejerPolyCoeff m n = 0 :=
+  Polynomial.coeff_eq_zero_of_natDegree_lt ((natDegree_fejerRealPoly_le m).trans_lt h)
 
 theorem fejerPolyCoeff_def (m n : ℕ) :
     fejerPolyCoeff m n =
@@ -245,10 +241,9 @@ theorem fejerPoly_exp_mul_I (m : ℕ) (θ : ℝ) :
   ring
 
 theorem differentiable_fejerPoly (m : ℕ) : Differentiable ℂ (fejerPoly m) := by
-  have h : fejerPoly m = fun w ↦ ∑ j ∈ Icc 1 m, (w ^ (m - j) - w ^ (m + j)) / (j : ℂ) :=
-    funext (fejerPoly_def m)
-  rw [h]
-  fun_prop
+  have h : fejerPoly m = fun w ↦ ((fejerRealPoly m).map Complex.ofRealHom).eval w :=
+    funext fun w ↦ by simp only [fejerPoly, Polynomial.eval₂_eq_eval_map]
+  exact h ▸ ((fejerRealPoly m).map Complex.ofRealHom).differentiable
 
 theorem continuous_fejerPoly (m : ℕ) : Continuous (fejerPoly m) :=
   (differentiable_fejerPoly m).continuous
