@@ -53,6 +53,9 @@ constraint in `s` is active.
   a little from a point in any direction that does not decrease the active ones.
 * `TauCeti.mem_extremePoints_polyhedron_iff`: the vertices are the points of the polyhedron at
   which the active functionals have no common nonzero zero.
+* `TauCeti.injOn_activeSet_extremePoints_polyhedron`,
+  `TauCeti.finite_extremePoints_polyhedron`: a vertex is determined by its active constraints, so
+  there are finitely many vertices.
 
 ## References
 
@@ -185,5 +188,19 @@ theorem mem_extremePoints_polyhedron_iff [Finite ι] :
     refine (sub_eq_zero.1 (hker _ fun j hj ↦ ?_))
     rw [map_sub, mem_activeSet.1 (mem_activeSet_of_mem_openSegment hx₁ hx₂ hseg hj).1,
       mem_activeSet.1 hj, sub_self]
+
+/-- **A vertex is determined by its active constraints.** Two vertices of a polyhedron cut out by
+finitely many half-spaces at which the same constraints are active are equal. -/
+theorem injOn_activeSet_extremePoints_polyhedron [Finite ι] :
+    InjOn (activeSet f c) (extremePoints 𝕜 (polyhedron f c)) := by
+  intro x hx y _ hxy
+  refine sub_eq_zero.1 ((mem_extremePoints_polyhedron_iff.1 hx).2 (x - y) fun j hj ↦ ?_)
+  have hj' := hxy ▸ hj
+  rw [mem_activeSet] at hj hj'
+  rw [map_sub, hj, hj', sub_self]
+
+/-- A polyhedron cut out by finitely many half-spaces has finitely many vertices. -/
+theorem finite_extremePoints_polyhedron [Finite ι] : (extremePoints 𝕜 (polyhedron f c)).Finite :=
+  Set.Finite.of_finite_image (Set.toFinite _) injOn_activeSet_extremePoints_polyhedron
 
 end TauCeti

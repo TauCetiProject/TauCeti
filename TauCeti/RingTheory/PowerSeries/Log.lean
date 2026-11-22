@@ -29,8 +29,11 @@ two series converge, for instance on the deep ideals of a `p`-adic field.
 
 Finally, the file shows that `logOf` and substitution into `exp` are inverse bijections between
 power series with constant coefficient one and power series without constant term, and that
-`logOf` turns products into sums. A logarithm of the form `∑ sₙ Xⁿ / n` is recognized from the
-logarithmic derivative `∑ sₙ₊₁ Xⁿ`. This computes the logarithms of `1 - c X` and of
+`logOf` turns products into sums. It commutes with changes of coefficients, so it respects
+congruences of coefficients modulo an ideal; for a ring of power series in a second variable `q`,
+this says that the `qᵐ`-coefficients of `log f` only depend on those of `f` up to `qᵐ`.
+A logarithm of the form `∑ sₙ Xⁿ / n` is recognized from the logarithmic derivative
+`∑ sₙ₊₁ Xⁿ`. This computes the logarithms of `1 - c X` and of
 `1 - a X + q X²`, the latter through the sequence `t` with `t₀ = 2`, `t₁ = a` and
 `tₙ₊₂ = a tₙ₊₁ - q tₙ`, without factoring the quadratic. Exponentiating gives rationality of
 `exp (∑ (1 + qⁿ - tₙ) Xⁿ / n)`: this is the shape of the zeta function of an elliptic curve over a
@@ -57,6 +60,10 @@ finite field with `q` elements whose point counts are `1 + qⁿ - tₙ`.
 * `PowerSeries.logOf_mul`: `log (f g) = log f + log g`.
 * `PowerSeries.logOf_rescale`, `PowerSeries.logOf_expand`: `log` commutes with rescaling and
   exponent expansion.
+* `PowerSeries.map_logOf`: the formal logarithm commutes with ring homomorphisms between
+  `ℚ`-algebras.
+* `PowerSeries.coeff_logOf_sub_mem`: if two series with constant coefficient one are congruent
+  modulo an ideal, coefficient by coefficient, so are their logarithms.
 * `PowerSeries.logOf_eq_mk_iff`: `log f = ∑ sₙ Xⁿ / n` exactly when `(∑ sₙ₊₁ Xⁿ) f = f'`.
 * `PowerSeries.logOf_one_sub_C_mul_X` and `PowerSeries.logOf_one_sub_C_mul_X_add_C_mul_X_sq`: the
   logarithms of `1 - c X` and of `1 - a X + q X²`.
@@ -252,6 +259,28 @@ theorem logOf_expand (p : ℕ) (hp : p ≠ 0) {f : A⟦X⟧} (hf : constantCoeff
   have hsub : HasSubst (f - 1) := HasSubst.sub_one hf
   rw [logOf_eq, logOf_eq, ← (by rw [map_sub, map_one] : expand p hp (f - 1) = expand p hp f - 1)]
   exact (PowerSeries.expand_subst p hp hsub (log A)).symm
+
+/-- The formal logarithm commutes with ring homomorphisms between `ℚ`-algebras, on power series
+with constant coefficient one. -/
+theorem map_logOf {B : Type*} [CommRing B] [Algebra ℚ B] (φ : A →+* B) {f : A⟦X⟧}
+    (hf : constantCoeff f = 1) : map φ (logOf f) = logOf (map φ f) := by
+  have hsub : HasSubst (f - 1) := HasSubst.of_constantCoeff_zero' (by simp [hf])
+  have h : map φ ((log A).subst (f - 1)) = (map φ (log A)).subst (map φ (f - 1)) :=
+    map_subst hsub _
+  rw [logOf_eq, logOf_eq, h, map_log, map_sub, map_one]
+
+/-- **The formal logarithm respects congruences of coefficients.** If the coefficients of two
+power series with constant coefficient one are congruent modulo an ideal `I`, then so are the
+coefficients of their logarithms. -/
+theorem coeff_logOf_sub_mem {I : Ideal A} {f g : A⟦X⟧} (hf : constantCoeff f = 1)
+    (hg : constantCoeff g = 1) (h : ∀ n, coeff n f - coeff n g ∈ I) (n : ℕ) :
+    coeff n (logOf f) - coeff n (logOf g) ∈ I := by
+  have hfg : map (Ideal.Quotient.mk I) f = map (Ideal.Quotient.mk I) g := by
+    ext n
+    simpa [Ideal.Quotient.eq] using h n
+  have := congrArg (coeff n) (by rw [map_logOf _ hf, map_logOf _ hg, hfg] :
+    map (Ideal.Quotient.mk I) (logOf f) = map (Ideal.Quotient.mk I) (logOf g))
+  simpa [Ideal.Quotient.eq] using this
 
 /-! ## Logarithms of linear and quadratic polynomials -/
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Approximation
+public import TauCeti.Analysis.Normed.Operator.SNumbers.Hilbert
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Compact
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
 import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Factorization
@@ -25,6 +26,10 @@ axioms collapses to the approximation numbers, and in finite dimension to the si
   `A : ℓ₂^{n+1} →L[𝕜] H₁` and `B : H₂ →L[𝕜] ℓ₂^{n+1}` with `B ∘L T ∘L A = c • id`. Applying the
   two-sided ideal axiom, homogeneity and Euclidean normalization gives `c ≤ s T n` for every
   `0 ≤ c < aₙ(T)`, hence `s T n = aₙ(T)` with no completeness hypothesis on either space.
+* **Hilbert numbers are the smallest s-numbers.** Since every compression of `T` by contractions
+  acts between copies of `ℓ₂`, where `s` is the approximation numbers, the Hilbert numbers lie
+  below every s-number sequence on arbitrary normed spaces. With `le_singularValue` this gives the
+  sandwich `hₙ ≤ sₙ ≤ aₙ`.
 * **Singular values and compactness.** Combining uniqueness with the Eckart–Young theorem
   identifies `s T n` with Mathlib's `LinearMap.singularValues` in finite dimension, and combining
   it with the approximation-number compactness criterion shows that on inner product spaces with a
@@ -34,6 +39,8 @@ axioms collapses to the approximation numbers, and in finite dimension to the si
 
 * `TauCeti.SNumbers.IsSNumberSequence.eq_singularValue`: every s-number sequence agrees with the
   approximation numbers on bounded operators between inner product spaces.
+* `TauCeti.SNumbers.IsSNumberSequence.hilbertNumber_le`: the Hilbert numbers are the smallest
+  s-numbers, `hₙ(T) ≤ s T n`.
 * `TauCeti.SNumbers.IsSNumberSequence.eq_singularValues`: in finite dimension, every s-number
   sequence agrees with `LinearMap.singularValues`.
 * `TauCeti.SNumbers.IsSNumberSequence.tendsto_nhds_zero_of_isCompactOperator`,
@@ -80,15 +87,21 @@ theorem eq_singularValue {H₁ H₂ : Type u}
   rcases le_or_gt c 0 with hc0 | hc_pos
   · exact hc0.trans (NNReal.coe_nonneg _)
   obtain ⟨A, B, hA, hB, hfac⟩ := T.exists_comp_comp_eq_smul_id n hc_pos.le hc
-  have hA' : ‖A‖₊ ≤ 1 := by exact_mod_cast hA
-  have hB' : ‖B‖₊ ≤ 1 := by exact_mod_cast hB
-  have hle : s (B ∘L T ∘L A) n ≤ s T n :=
-    (hs.comp_le B T A n).trans <| by
-      calc ‖B‖₊ * s T n * ‖A‖₊ ≤ 1 * s T n * 1 := by gcongr
-        _ = s T n := by simp
+  have hle := hs.comp_comp_le_of_norm_le_one hB hA T n
   rw [hfac, hs.smul, hs.normalize, mul_one, ← NNReal.coe_le_coe, coe_nnNorm, RCLike.norm_ofReal,
     abs_of_pos hc_pos] at hle
   exact hle
+
+/-- **Hilbert numbers are the smallest s-numbers.** Every s-number sequence dominates the
+Hilbert numbers. Together with `TauCeti.SNumbers.IsSNumberSequence.le_singularValue` this is the
+sandwich `hₙ(T) ≤ s T n ≤ aₙ(T)`. -/
+theorem hilbertNumber_le {X Y : Type u}
+    [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+    (T : X →L[𝕜] Y) (n : ℕ) : T.hilbertNumber n ≤ s T n := by
+  refine ContinuousLinearMap.hilbertNumber_le_iff.mpr fun A B hA hB ↦ ?_
+  -- Each compression acts between copies of `ℓ₂`, where `s` is the approximation numbers.
+  rw [← hs.eq_singularValue]
+  exact hs.comp_comp_le_of_norm_le_one hB hA T n
 
 /-- **Finite-dimensional singular values.** Between finite-dimensional inner product spaces over
 `ℝ` or `ℂ`, every s-number sequence equals Mathlib's `LinearMap.singularValues` at every index. -/

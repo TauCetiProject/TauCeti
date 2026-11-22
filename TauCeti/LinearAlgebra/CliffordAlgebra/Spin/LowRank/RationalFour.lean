@@ -63,12 +63,8 @@ theorem rationalNonsplitQuaternaryForm_apply (v : Fin 4 → ℚ) :
 @[simp]
 theorem rationalNonsplitQuaternaryForm_discr' :
     QuadraticForm.discr' rationalNonsplitQuaternaryForm = 2 := by
-  rw [rationalNonsplitQuaternaryForm]
-  calc
-    QuadraticForm.discr' (QuadraticMap.weightedSumSquares ℚ ![1, 1, 1, 2]) =
-        ∏ i, (![1, 1, 1, 2] : Fin 4 → ℚ) i :=
-      QuadraticForm.discr'_weightedSumSquares _
-    _ = 2 := by norm_num [Fin.prod_univ_succ]
+  rw [rationalNonsplitQuaternaryForm, QuadraticForm.discr'_weightedSumSquares]
+  norm_num [Fin.prod_univ_succ]
 
 /-- The rational form `x² + y² + z² + 2w²` is nondegenerate. -/
 @[simp]

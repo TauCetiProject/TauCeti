@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Topology.MetricSpace.ProperSpace
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
@@ -40,9 +42,13 @@ agrees with such a homogeneous map outside a ball has bounded derivatives of eve
 
 ## Main results
 
+* `TauCeti.iteratedFDeriv_two_self_eq_smul_of_eventuallyEq`: second-order local Euler homogeneity
+  identity `iteratedFDeriv 𝕜 2 f x ![x, x] = w'' • f x` when `f (t • x) = w t • f x` near `t = 1`.
 * `TauCeti.iteratedFDeriv_smul_snd_of_smul_snd_eq`: homogeneity of the derivatives.
 * `TauCeti.norm_iteratedFDeriv_smul_of_homogeneous`: operator-norm scaling for a homogeneous
   map on an arbitrary normed source, without a parameter or properness assumption.
+* `TauCeti.iteratedFDeriv_at_zero_eq_zero_of_homogeneous`: the derivatives of a homogeneous map at
+  the origin vanish in every order other than its degree.
 * `TauCeti.exists_norm_iteratedFDeriv_le_of_smul_snd_eq`: for `x` in a compact set and `ξ ≠ 0`,
   the derivative of order `k` in directions `v` is bounded by
   `C ‖ξ‖ ^ m ∏ ‖((v i).1, ‖ξ‖⁻¹ • (v i).2)‖`, that is by `C ‖ξ‖ ^ m` once the `ξ`-components of
@@ -68,6 +74,36 @@ open scoped NNReal Topology
 open Metric
 
 namespace TauCeti
+
+/-- **Second-order local Euler homogeneity identity.** If `f` is differentiable at `t • x` for `t`
+near `1`, `fderiv 𝕜 f` is differentiable at `x`, and `f (t • x) = w t • f x` near `t = 1` where `w`
+has derivative `w'` near `1` and `w'` has derivative `w''` at `1`, then
+`iteratedFDeriv 𝕜 2 f x ![x, x] = w'' • f x`. -/
+theorem iteratedFDeriv_two_self_eq_smul_of_eventuallyEq
+    {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {f : E → F} {x : E} {w w' : 𝕜 → 𝕜} {w'' : 𝕜}
+    (hf : ∀ᶠ t in 𝓝 (1 : 𝕜), DifferentiableAt 𝕜 f (t • x))
+    (hf' : DifferentiableAt 𝕜 (fderiv 𝕜 f) x)
+    (hw : ∀ᶠ t in 𝓝 (1 : 𝕜), HasDerivAt w (w' t) t)
+    (hw' : HasDerivAt w' w'' 1)
+    (hhom : (fun t : 𝕜 ↦ f (t • x)) =ᶠ[𝓝 (1 : 𝕜)] fun t ↦ w t • f x) :
+    iteratedFDeriv 𝕜 2 f x ![x, x] = w'' • f x := by
+  have h1 : (fun t : 𝕜 ↦ fderiv 𝕜 f (t • x) x) =ᶠ[𝓝 (1 : 𝕜)] fun t ↦ w' t • f x := by
+    filter_upwards [hhom.eventuallyEq_nhds, hf, hw] with t ht hft hwt
+    have hL : HasDerivAt (fun s : 𝕜 ↦ f (s • x)) (fderiv 𝕜 f (t • x) x) t := by
+      simpa [Function.comp_def] using
+        hft.hasFDerivAt.comp_hasDerivAt t ((hasDerivAt_id' t).smul_const x)
+    exact (hL.congr_of_eventuallyEq ht.symm).unique (hwt.smul_const (f x))
+  have h2 : HasDerivAt (fun t : 𝕜 ↦ fderiv 𝕜 f (t • x) x) (fderiv 𝕜 (fderiv 𝕜 f) x x x) 1 := by
+    have heval : HasFDerivAt (fun y : E ↦ fderiv 𝕜 f y x)
+        ((ContinuousLinearMap.apply 𝕜 F x).comp (fderiv 𝕜 (fderiv 𝕜 f) x)) x :=
+      (ContinuousLinearMap.apply 𝕜 F x).hasFDerivAt.comp x hf'.hasFDerivAt
+    simpa [Function.comp_def, ContinuousLinearMap.comp_apply] using
+      heval.comp_hasDerivAt_of_eq (1 : 𝕜) ((hasDerivAt_id' (1 : 𝕜)).smul_const x)
+        (one_smul 𝕜 x).symm
+  rw [iteratedFDeriv_two_apply]
+  exact (h2.congr_of_eventuallyEq h1.symm).unique (hw'.smul_const (f x))
 
 variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] {f : E × F → G} {m : ℝ}
@@ -98,6 +134,23 @@ theorem norm_iteratedFDeriv_smul_of_homogeneous {f : E → G} {p : ℝ} {j : ℕ
   rw [Real.rpow_sub ht, Real.rpow_natCast]
   field_simp
   nlinarith [hn]
+
+/-- A positively homogeneous map of degree `p` has vanishing `j`-th derivative at the origin
+whenever `j ≠ p`, since by `norm_iteratedFDeriv_smul_of_homogeneous` that derivative is homogeneous
+of the nonzero degree `p - j`. No smoothness is needed. -/
+theorem iteratedFDeriv_at_zero_eq_zero_of_homogeneous {f : E → G} {p : ℝ} {j : ℕ}
+    (hhom : ∀ t : ℝ, 0 < t → ∀ x, f (t • x) = t ^ p • f x) (hj : (j : ℝ) ≠ p) :
+    iteratedFDeriv ℝ j f 0 = 0 := by
+  have h := norm_iteratedFDeriv_smul_of_homogeneous (j := j) hhom two_pos (x := (0 : E))
+  rw [smul_zero] at h
+  have h1 : (2 : ℝ) ^ (p - j) ≠ 1 := by
+    rcases lt_or_gt_of_ne (sub_ne_zero.mpr hj.symm) with hlt | hgt
+    · exact (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two hlt).ne
+    · exact (Real.one_lt_rpow one_lt_two hgt).ne'
+  have h0 : ((2 : ℝ) ^ (p - j) - 1) * ‖iteratedFDeriv ℝ j f 0‖ = 0 := by
+    rw [sub_mul, one_mul]
+    linarith
+  exact norm_eq_zero.mp ((mul_eq_zero.mp h0).resolve_left (sub_ne_zero.mpr h1))
 
 /-- The derivatives of a map `f (x, ξ)` that is positively homogeneous of degree `m` in `ξ` are
 homogeneous: rescaling `ξ` by `t > 0`, together with the `ξ`-components of the directions,
