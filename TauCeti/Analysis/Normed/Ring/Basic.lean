@@ -21,7 +21,9 @@ open interval `(a, b)` with `0 ≤ a` and `a * ‖u⁻¹‖ < b`.
 
 Among the former are the estimates `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`
 (`TauCeti.norm_mul_sub_le_left`) and `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`
-(`TauCeti.norm_mul_sub_le_right`), which compare a product with `c` through the product with `b`.
+(`TauCeti.norm_mul_sub_le_right`), which compare a product with `c` through the product with `b`,
+and `‖a * c - b * d‖ₑ ≤ ‖a - b‖ₑ + ‖c - d‖ₑ` for `‖b‖ ≤ 1` and `‖c‖ ≤ 1`
+(`TauCeti.enorm_mul_sub_mul_le`), which bounds the change of a product of two factors.
 -/
 
 public section
@@ -51,6 +53,19 @@ theorem norm_mul_sub_le_right {R : Type*} [NonUnitalSeminormedRing R] (e a b c :
     ‖a * e - c‖ ≤ ‖a - b‖ * ‖e‖ + ‖b * e - c‖ := by
   rw [← sub_add_sub_cancel (a * e) (b * e) c, ← sub_mul]
   exact (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
+
+/-- Replacing the factors `b` and `d` of `b * d` by `a` and `c` changes the product by at most the
+sum of the two changes, `‖a * c - b * d‖ₑ ≤ ‖a - b‖ₑ + ‖c - d‖ₑ`, when `‖b‖ ≤ 1` and `‖c‖ ≤ 1`.
+This is the normed counterpart of `TauCeti.abs_mul_sub_mul_le`. -/
+theorem enorm_mul_sub_mul_le {R : Type*} [NonUnitalSeminormedRing R] {a b c d : R}
+    (hb : ‖b‖ ≤ 1) (hc : ‖c‖ ≤ 1) : ‖a * c - b * d‖ₑ ≤ ‖a - b‖ₑ + ‖c - d‖ₑ := by
+  have h : ‖a * c - b * d‖ ≤ ‖a - b‖ + ‖c - d‖ := by
+    rw [← sub_add_sub_cancel (a * c) (b * c) (b * d), ← sub_mul, ← mul_sub]
+    exact norm_add_le_of_le ((norm_mul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) hc))
+      ((norm_mul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) hb))
+  rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_add (norm_nonneg _)
+    (norm_nonneg _)]
+  exact ENNReal.ofReal_le_ofReal h
 
 /-- Consecutive powers stay in the open unit ball when the first factor is strictly inside
 and the second factor is in the closed unit ball. -/
