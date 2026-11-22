@@ -133,7 +133,7 @@ private theorem exists_dominating_polynomial {μ : Measure ℝ} [IsProbabilityMe
     (hae : ∀ᵐ x ∂μ, |x| ≤ R) (hp : ∀ x ∈ Icc (-M) M, |p.eval x - f x| < δ) :
     ∃ q : ℝ[X], (∀ x, |f x - p.eval x| ≤ q.eval x) ∧ ∫ x, q.eval x ∂μ ≤ 3 * δ := by
   have hM : 0 < M := hR.trans_lt hRM
-  have hμ := integrable_pow_of_ae_abs_le hae
+  have hμ := integrable_pow_of_ae_norm_le (hae.mono fun x hx => (Real.norm_eq_abs x).trans_le hx)
   set C := ‖f‖
   have hfC (x : ℝ) : |f x| ≤ C := by simpa [Real.norm_eq_abs] using f.norm_coe_le_norm x
   set t := δ / ((C + δ) ^ 2 + 1)
@@ -185,7 +185,7 @@ theorem tendsto_of_tendsto_integral_pow {μs : ι → ProbabilityMeasure ℝ}
   have hae : ∀ᵐ x ∂(μ : Measure ℝ), |x| ≤ R := by
     filter_upwards [ae_iff.mpr hμK] with x hx
     exact (hR₀ x hx).trans (le_max_left _ _)
-  have hμ := integrable_pow_of_ae_abs_le hae
+  have hμ := integrable_pow_of_ae_norm_le (hae.mono fun x hx => (Real.norm_eq_abs x).trans_le hx)
   have hpoly := tendsto_integral_eval_of_tendsto_integral_pow hμs hμ h
   have hpolyμs (p : ℝ[X]) : ∀ᶠ i in l, Integrable (fun x => p.eval x) (μs i : Measure ℝ) := by
     filter_upwards [eventually_forall_le_natDegree_integrable hμs p] with i hi
@@ -199,7 +199,7 @@ theorem tendsto_of_tendsto_integral_pow {μs : ι → ProbabilityMeasure ℝ}
   have hδ : 0 < δ := by positivity
   obtain ⟨p, hp⟩ := exists_polynomial_near_of_continuousOn (-M) M f f.continuous.continuousOn δ hδ
   obtain ⟨q, hfpq, hqμ⟩ := exists_dominating_polynomial hR (lt_add_one R) hδ hae hp
-  have hfpμ := abs_integral_eval_sub_le (lt_add_one R).le hae hp
+  have hfpμ := abs_integral_eval_sub_le (lt_add_one R).le hae fun x hx => (hp x hx).le
   -- Eventually `∫ q dμᵢ < 4δ` and `|∫ p dμᵢ - ∫ p dμ| < δ`. Since `|f - p| ≤ q`, the triangle
   -- inequality bounds `|∫ f dμᵢ - ∫ f dμ|` by
   -- `|∫ f dμᵢ - ∫ p dμᵢ| + |∫ p dμᵢ - ∫ p dμ| + |∫ p dμ - ∫ f dμ| < 4δ + δ + δ = ε`.
