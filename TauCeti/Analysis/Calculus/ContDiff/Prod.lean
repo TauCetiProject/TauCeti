@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 
@@ -14,19 +15,24 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 If a map `H` on a product is smooth near every point of `s ×ˢ I`, then each of its slices
 `H (·, t)` with `t ∈ I` is smooth on `s` (`TauCeti.contDiffOn_comp_prodMk_left`). For instance,
-the time slices of a homotopy smooth near `s × [0, 1]` are smooth on `s`.
+the time slices of a homotopy smooth near `s × [0, 1]` are smooth on `s`. Likewise, a field
+`J z x` that is smooth near the graph of a map `u` smooth on `s` gives a map `z ↦ J z (u z)`
+smooth on `s` (`TauCeti.contDiffOn_comp_graph`).
 
 For a family `F : P × E → X` smooth at `(p, x)`, the spatial differential
 `(q, y) ↦ fderiv (F (q, ·)) y` is smooth jointly (`ContDiffAt.fderiv_slice`), smoothness persists
 along a graph over the parameter (`ContDiffAt.eventually_contDiffAt_graph`), and the vertical part
 of the derivative of a `C¹` map is continuous along a continuous graph
-(`ContDiffAt.continuousAt_fderiv_comp_inr`).
+(`ContDiffAt.continuousAt_fderiv_comp_inr`). Along two continuous graphs meeting at `p`, the
+values of a family `C¹` there differ near `p` by at most a multiple of the distance between the
+graphs (`ContDiffAt.exists_eventually_norm_sub_le`).
 The partial derivative in the second variable, applied to a fixed vector, is then `C^m` jointly
 whenever `m + 1 ≤ n` (`ContDiffAt.fderiv_snd_apply`).
 
 For a scalar factor, `ContDiffAt.contDiffAt_deriv_snd` and
 `ContDiffAt.contDiffAt_deriv_fst` give joint `C^m` regularity of the corresponding partial
-derivative of a `C^n` map, for `m + 1 ≤ n`.
+derivative of a `C^n` map, for `m + 1 ≤ n`, and `ContDiffAt.contDiffAt_iterate_deriv_fst` gives
+joint `C^m` regularity of the `k`-th partial derivative in the first variable, for `m + k ≤ n`.
 
 If a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` is `Cⁿ` at `(a, b)`, then each summand is `Cⁿ` at
 its point (`ContDiffAt.of_comp_fst_add_comp_snd_left` and
@@ -52,6 +58,13 @@ smooth on `s`. -/
 theorem contDiffOn_comp_prodMk_left (hH : ∀ p ∈ s ×ˢ I, ContDiffAt 𝕜 n H p) {t : G}
     (ht : t ∈ I) : ContDiffOn 𝕜 n (fun x ↦ H (x, t)) s :=
   fun x hx ↦ ((hH (x, t) ⟨hx, ht⟩).comp x (contDiff_prodMk_left t).contDiffAt).contDiffWithinAt
+
+/-- **Composition with a graph**: a field `J z x` that is `Cⁿ` near the graph of a map `u` which is
+`Cⁿ` on `s` gives a map `z ↦ J z (u z)` that is `Cⁿ` on `s`. -/
+theorem contDiffOn_comp_graph {J : E → G → F} {u : E → G}
+    (hJ : ∀ z ∈ s, ContDiffAt 𝕜 n (fun p : E × G ↦ J p.1 p.2) (z, u z))
+    (hu : ContDiffOn 𝕜 n u s) : ContDiffOn 𝕜 n (fun z ↦ J z (u z)) s :=
+  fun z hz ↦ (hJ z hz).comp₂_contDiffWithinAt contDiffWithinAt_id (hu z hz)
 
 end TauCeti
 
@@ -89,6 +102,18 @@ theorem contDiffAt_deriv_fst {m n : WithTop ℕ∞} {g : 𝕜 × E → X} {z : �
   have hswap : ContDiffAt 𝕜 n (fun w : E × 𝕜 ↦ g (w.2, w.1)) (z.2, z.1) :=
     hg.comp (z.2, z.1) (contDiffAt_snd.prodMk contDiffAt_fst)
   exact (hswap.contDiffAt_deriv_snd hmn).comp z (contDiffAt_snd.prodMk contDiffAt_fst)
+
+/-- For a `C^n` map on a product with a scalar first factor, the `k`-th partial derivative in the
+first variable is jointly `C^m` for `m + k ≤ n`. -/
+theorem contDiffAt_iterate_deriv_fst {m n : WithTop ℕ∞} {g : 𝕜 × E → X} {z : 𝕜 × E}
+    (hg : ContDiffAt 𝕜 n g z) {k : ℕ} (hmn : m + k ≤ n) :
+    ContDiffAt 𝕜 m (fun w : 𝕜 × E ↦ deriv^[k] (fun r ↦ g (r, w.2)) w.1) z := by
+  induction k generalizing n g with
+  | zero => simpa using hg.of_le (by simpa using hmn)
+  | succ k ih =>
+    refine ih (hg.contDiffAt_deriv_fst (m := m + k) ?_) le_rfl
+    rw [add_assoc]
+    exact_mod_cast hmn
 
 /-- A function that is `C^n` at `(p, ψ p)` is `C^n` at `(q, ψ q)` for `q` near `p`, when `ψ` is
 continuous at `p`. -/
@@ -129,6 +154,32 @@ theorem of_comp_fst_add_comp_snd_right {n : WithTop ℕ∞} {F : Type*} [NormedA
   have hψ : ContDiffAt 𝕜 n (fun y ↦ φ a + ψ y) b := by
     simpa [Function.comp_def] using h.comp (f := fun y : F ↦ (a, y)) b (by fun_prop)
   simpa using hψ.sub (contDiffAt_const (c := φ a))
+
+end ContDiffAt
+
+namespace ContDiffAt
+
+open scoped NNReal
+
+variable {𝕂 : Type*} [RCLike 𝕂]
+  {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕂 P]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕂 E]
+  {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕂 X] {p : P}
+
+/-- **A `C¹` family is Lipschitz between two graphs meeting at a point.** If `f` is `C¹` at
+`(p, ψ p)` and two maps `ψ` and `φ`, continuous at `p`, agree at `p`, then near `p` the values of
+`f` along the two graphs differ by at most a fixed multiple of `‖ψ q - φ q‖`. -/
+theorem exists_eventually_norm_sub_le {f : P × E → X} {ψ φ : P → E}
+    (hf : ContDiffAt 𝕂 1 f (p, ψ p)) (hψ : ContinuousAt ψ p) (hφ : ContinuousAt φ p)
+    (h : ψ p = φ p) :
+    ∃ K : ℝ≥0, ∀ᶠ q in nhds p, ‖f (q, ψ q) - f (q, φ q)‖ ≤ K * ‖ψ q - φ q‖ := by
+  obtain ⟨K, t, ht, hK⟩ := hf.exists_lipschitzOnWith
+  have hψ' : ∀ᶠ q in nhds p, (q, ψ q) ∈ t := (continuousAt_id.prodMk hψ).preimage_mem_nhds ht
+  have hφ' : ∀ᶠ q in nhds p, (q, φ q) ∈ t :=
+    (continuousAt_id.prodMk hφ).preimage_mem_nhds (by simpa [h] using ht)
+  refine ⟨K, ?_⟩
+  filter_upwards [hψ', hφ'] with q h₁ h₂
+  simpa [dist_eq_norm, Prod.dist_eq] using hK.dist_le_mul _ h₁ _ h₂
 
 end ContDiffAt
 

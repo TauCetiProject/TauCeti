@@ -514,7 +514,7 @@ theorem exists_affine_coordinate_comparison_not_monotone :
     exact (hpow.comp_hasFDerivAt (g (a i)) (hasFDerivAt_apply (𝕜 := ℝ) (0 : Fin 2) (g (a i)))).add
       (hasFDerivAt_apply (𝕜 := ℝ) (1 : Fin 2) (g (a i)))
   have hnotmono : ¬ Monotone Dh0 := fun hm => by
-    have h0 := (monotone_iff_forall_map_single_nonneg Dh0).1 hm 0
+    have h0 := (monotone_iff_map_single_nonneg Dh0).1 hm 0
     norm_num [Dh0] at h0
   have hnotSub : ¬ Prod.fst '' sharedOA Set.univ Set.univ g h a (fun _ => Dg0) (fun _ => Dh0) 2 ⊆
       directOA Set.univ g h a (fun _ => Dg0) (fun _ => Dh0) 2 := fun hsub => by
@@ -539,7 +539,7 @@ theorem exists_affine_coordinate_comparison_not_monotone :
       ((even_two.convexOn_pow (𝕜 := ℝ)).comp_linearMap p0).add (p1.convexOn convex_univ)
   have hD : ∀ _ : Fin 1, ∀ v : Fin 2 → ℝ,
       0 ≤ v → (∀ j ∈ ({0} : Set (Fin 2)), v j = 0) → 0 ≤ Dh0 v :=
-    fun _ => (forall_map_nonneg_of_eq_zero_iff Dh0 {0}).2 fun j hj => by
+    fun _ => (forall_map_nonneg_iff_map_single_nonneg {0} Dh0).2 fun j hj => by
       rw [Fin.eq_one_of_ne_zero j (by simpa only [mem_singleton_iff] using hj)]
       norm_num [Dh0]
   have hcmp := affine_coordinate_comparison (J := ({0} : Set (Fin 2))) 2 (mapsTo_univ g Set.univ)

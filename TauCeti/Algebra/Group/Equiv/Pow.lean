@@ -17,6 +17,8 @@ injective on one side exactly when it is injective on the other.
 
 * `MulEquiv.injective_pow_iff` and its additive form `AddEquiv.injective_nsmul_iff`: taking `n`-th
   powers is injective on one side of an equivalence exactly when it is injective on the other.
+* `MulEquiv.isMulTorsionFree_iff` and its additive form `AddEquiv.isAddTorsionFree_iff`: one side
+  of an equivalence is torsion-free exactly when the other is.
 -/
 
 public section
@@ -33,6 +35,15 @@ theorem injective_pow_iff {M N : Type*} [Monoid M] [Monoid N] (e : M ≃* N) (n 
     ext y
     simp
   rw [h, EquivLike.comp_injective, EquivLike.injective_comp]
+
+/-- For a multiplicative equivalence `M ≃* N`, the monoid `M` is torsion-free exactly when `N`
+is. -/
+@[to_additive /-- For an additive equivalence `M ≃+ N`, the monoid `M` is torsion-free exactly
+when `N` is. -/]
+theorem isMulTorsionFree_iff {M N : Type*} [Monoid M] [Monoid N] (e : M ≃* N) :
+    IsMulTorsionFree M ↔ IsMulTorsionFree N :=
+  ⟨fun _ ↦ e.symm.injective.isMulTorsionFree e.symm.toMonoidHom,
+    fun _ ↦ e.injective.isMulTorsionFree e.toMonoidHom⟩
 
 end MulEquiv
 

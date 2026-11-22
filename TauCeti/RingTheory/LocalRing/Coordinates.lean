@@ -278,7 +278,7 @@ theorem exists_coordinates [Algebra.FormallyEtale K (ResidueField Q)]
   have hlift (i : ι) : ∃ x ∈ maximalIdeal Q, (1 : ResidueField Q) ⊗ₜ D K Q x = bκ i := by
     obtain ⟨c, hc⟩ := hbij.2 (bκ i)
     obtain ⟨m, rfl⟩ := Ideal.toCotangent_surjective _ c
-    exact ⟨m, hker ▸ m.2, by rwa [kerCotangentToTensor_toCotangent] at hc⟩
+    exact ⟨m, hker ▸ m.property, by rwa [kerCotangentToTensor_toCotangent] at hc⟩
   choose x hx𝔪 hxb using hlift
   have hδ (k i : ι) : residue Q (b.repr (D K Q (x k)) i) = if k = i then 1 else 0 := by
     rw [← hrepr, hxb, bκ.repr_self, Finsupp.single_apply]

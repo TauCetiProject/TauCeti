@@ -23,6 +23,17 @@ acyclic, exactly the path hanging from the base vertex is removed
 there is no cyclically reduced closed path, as for the graph of the trivial subgroup, the base
 vertex alone is kept.
 
+In terms of degrees, as Kapovich and Myasnikov define it: the base vertex of a core is deleted
+exactly when it has degree one (`StallingsGraph.base_mem_typeVertices_iff`), and nothing is
+deleted otherwise, that is when every vertex has degree at least two or the core is a single
+vertex (`StallingsGraph.nonempty_unbasedIso_typeGraph_self_of_degree_ne_one`); the latter happens
+for a folded core exactly when it accepts the trivial subgroup
+(`StallingsGraph.IsFolded.subgroup_eq_bot_iff_isAcyclic`). When the base vertex has degree one,
+the vertices deleted are those of the path from it to the first vertex of degree at least three,
+other than that vertex (`StallingsGraph.notMem_typeVertices_iff_of_three_le_degree`). Every vertex
+of the type graph has degree at least two (`StallingsGraph.two_le_degree_typeGraph`), unless the
+graph is acyclic and the type graph is a single vertex (`StallingsGraph.degree_typeGraph_eq_zero`).
+
 The type graph has no distinguished vertex. Since labelled graphs carry a base vertex,
 `StallingsGraph.typeGraph` takes the vertex to be used as a parameter, and type graphs are
 compared by isomorphisms that need not preserve it.
@@ -33,6 +44,10 @@ compared by isomorphisms that need not preserve it.
   graph at each of its vertices;
 * `StallingsGraph.typeGraph_isCore`: the type graph of a preconnected graph is a core at each of
   its vertices;
+* `StallingsGraph.notMem_typeVertices_iff_of_three_le_degree`: the type graph of a core whose
+  base vertex has degree one omits exactly the path to the first vertex of degree at least three;
+* `StallingsGraph.nonempty_unbasedIso_typeGraph_self_of_degree_ne_one`: otherwise the core is its
+  own type graph;
 * `StallingsGraph.UnbasedIso.nonempty_unbasedIso_typeGraph`: isomorphic labelled graphs have
   isomorphic type graphs, whatever their base vertices;
 * `StallingsGraph.nonempty_unbasedIso_typeGraph_iff`: two folded preconnected labelled graphs
@@ -77,7 +92,7 @@ theorem typeVertices_nonempty : S.typeVertices.Nonempty := by
   by_cases h : S.graph.IsAcyclic
   · exact ⟨S.base, Or.inr ⟨h, rfl⟩⟩
   · rw [S.typeVertices_eq_cyclicVertices h]
-    exact Set.nonempty_iff_ne_empty.mpr (mt S.graph.cyclicVertices_eq_empty_iff.mp h)
+    exact Set.ne_empty_iff_nonempty.mp (mt S.graph.cyclicVertices_eq_empty_iff.mp h)
 
 theorem src_mem_typeVertices {e : S.graph.E} (he : e ∈ S.graph.cyclicDarts) :
     S.graph.src e ∈ S.typeVertices :=
@@ -114,8 +129,8 @@ of the ambient graph. -/
 @[expose] def typeGraph (u : S.typeVertices) : StallingsGraph α where
   graph := S.typeSubgraph
   base := u
-  label := fun e => S.label e.1
-  label_rev := fun e => S.label_rev e.1
+  label := fun e => S.label e.val
+  label_rev := fun e => S.label_rev e.val
 
 @[simp] theorem typeGraph_graph (u : S.typeVertices) : (S.typeGraph u).graph = S.typeSubgraph :=
   (rfl)
@@ -123,7 +138,7 @@ of the ambient graph. -/
 @[simp] theorem typeGraph_base (u : S.typeVertices) : (S.typeGraph u).base = u := (rfl)
 
 @[simp] theorem typeGraph_label (u : S.typeVertices) (e : (S.typeGraph u).graph.E) :
-    (S.typeGraph u).label e = S.label e.1 := (rfl)
+    (S.typeGraph u).label e = S.label e.val := (rfl)
 
 instance (u : S.typeVertices) [Finite S.typeVertices] : Finite (S.typeGraph u).graph.V :=
   inferInstanceAs (Finite S.typeSubgraph.V)
@@ -136,7 +151,7 @@ instance (u : S.typeVertices) [Finite S.graph.cyclicDarts] : Finite (S.typeGraph
     (S.typeGraph u).withBase v = S.typeGraph v := (rfl)
 
 /-- Inclusion of the type graph into the ambient graph, based at the same vertex. -/
-def typeInclusion (u : S.typeVertices) : (S.typeGraph u).Hom (S.withBase u.1) where
+def typeInclusion (u : S.typeVertices) : (S.typeGraph u).Hom (S.withBase u.val) where
   graphHom := (S.graph.subgraphInclusion _ _ _ _ : S.typeSubgraph.Hom S.graph)
   map_base := rfl
   map_label := fun _ => rfl
@@ -148,7 +163,7 @@ def typeInclusion (u : S.typeVertices) : (S.typeGraph u).Hom (S.withBase u.1) wh
 /-- The type graph of a folded graph is folded. -/
 theorem IsFolded.typeGraph (hS : S.IsFolded) (u : S.typeVertices) : (S.typeGraph u).IsFolded :=
   (S.typeGraph u).isFolded_def.mpr fun e f hs hl =>
-    Subtype.ext ((S.isFolded_def.mp hS) e.1 f.1 (congrArg Subtype.val hs) hl)
+    Subtype.ext ((S.isFolded_def.mp hS) e.val f.val (congrArg Subtype.val hs) hl)
 
 /-- The type graph of a preconnected graph is a core at each of its vertices. -/
 theorem typeGraph_isCore (hS : S.graph.Preconnected) (u : S.typeVertices) :
@@ -159,17 +174,17 @@ theorem typeGraph_isCore (hS : S.graph.Preconnected) (u : S.typeVertices) :
     obtain ⟨u, hu⟩ := u
     obtain rfl : u = S.base := by simpa [hV] using hu
     refine (SerreGraph.isCore_iff _ _).mpr
-      ⟨fun ⟨a, ha⟩ => ?_, fun e => absurd e.2 (by simp [h.cyclicDarts_eq_empty])⟩
+      ⟨fun ⟨a, ha⟩ => ?_, fun e => absurd e.property (by simp [h.cyclicDarts_eq_empty])⟩
     obtain rfl : a = S.base := by simpa [hV] using ha
     exact ⟨.nil⟩
   · -- The type graph is the based core at `u`, up to rewriting its vertex and dart sets.
-    have hu : u.1 ∈ S.graph.cyclicVertices := S.typeVertices_eq_cyclicVertices h ▸ u.2
-    have key : ∀ (A : Set S.graph.V) (D : Set S.graph.E) hsrc hrev (hu : u.1 ∈ A),
-        S.graph.coreVertices u.1 = A → S.graph.coreDarts u.1 = D →
-          (S.graph.subgraph A D hsrc hrev).IsCore ⟨u.1, hu⟩ := by
+    have hu : u.val ∈ S.graph.cyclicVertices := S.typeVertices_eq_cyclicVertices h ▸ u.property
+    have key : ∀ (A : Set S.graph.V) (D : Set S.graph.E) hsrc hrev (hu : u.val ∈ A),
+        S.graph.coreVertices u.val = A → S.graph.coreDarts u.val = D →
+          (S.graph.subgraph A D hsrc hrev).IsCore ⟨u.val, hu⟩ := by
       rintro _ _ _ _ _ rfl rfl
-      exact S.graph.core_isCore u.1
-    exact (key _ _ _ _ u.2 ((hS.coreVertices_eq_cyclicVertices hu).trans
+      exact S.graph.core_isCore u.val
+    exact (key _ _ _ _ u.property ((hS.coreVertices_eq_cyclicVertices hu).trans
       (S.typeVertices_eq_cyclicVertices h).symm) (hS.coreDarts_eq_cyclicDarts hu) :
         S.typeSubgraph.IsCore u)
 
@@ -180,15 +195,16 @@ theorem typeGraph_connected (hS : S.graph.Preconnected) (u : S.typeVertices) :
 
 /-- The type graph accepts, at each of its vertices, the same subgroup as the ambient graph. -/
 @[simp] theorem typeGraph_subgroup (u a : S.typeVertices) :
-    (S.typeGraph u).subgroup a = S.subgroup a.1 := by
+    (S.typeGraph u).subgroup a = S.subgroup a.val := by
   refine le_antisymm ?_ fun g hg => ?_
-  · exact ((S.typeInclusion u).subgroup_le_subgroup_mapV a).trans (S.subgroup_withBase u.1 a.1).le
+  · exact ((S.typeInclusion u).subgroup_le_subgroup_mapV a).trans
+      (S.subgroup_withBase u.val a.val).le
   · obtain ⟨p, hp, rfl⟩ := S.mem_subgroup_iff_exists_reduced_path.mp hg
     obtain ⟨q, hq⟩ : ∃ q : S.typeSubgraph.Path a a, _ := S.graph.exists_subgraph_path _ _ _ _ p
-      (fun e he => S.mem_cyclicDarts_of_mem_typeVertices a.2 hp he) a.2 a.2
+      (fun e he => S.mem_cyclicDarts_of_mem_typeVertices a.property hp he) a.property a.property
     -- The graph morphism underlying `typeInclusion` is this subgraph inclusion.
     exact (S.typeGraph u).mem_subgroup_iff.mpr ⟨q, ((S.typeInclusion u).read_mapPath q).symm.trans
-      ((S.read_withBase u.1 _).trans (congrArg S.read hq))⟩
+      ((S.read_withBase u.val _).trans (congrArg S.read hq))⟩
 
 /-- A based core whose base vertex belongs to the type graph is its own type graph. This holds
 when the base lies on a cyclically reduced closed path, in particular when two distinct darts
@@ -204,6 +220,60 @@ theorem nonempty_unbasedIso_typeGraph_self (hS : S.graph.IsCore S.base)
      map_rev := fun _ => rfl
      map_label := fun _ => rfl }⟩
 
+/-! ### The type graph in terms of degrees -/
+
+/-- The type graph of an acyclic graph, the base vertex alone, has its vertex of degree zero. -/
+theorem degree_typeGraph_eq_zero (h : S.graph.IsAcyclic) (u : S.typeVertices)
+    (a : (S.typeGraph u).graph.V) : (S.typeGraph u).graph.degree a = 0 :=
+  SerreGraph.degree_eq_zero_iff.mpr fun e => absurd e.property (by simp [h.cyclicDarts_eq_empty])
+
+/-- Every vertex of the type graph of a graph that is not acyclic has degree at least two: two
+distinct darts on cyclically reduced closed paths leave it. -/
+theorem two_le_degree_typeGraph (h : ¬ S.graph.IsAcyclic) (u : S.typeVertices)
+    (a : (S.typeGraph u).graph.V) : 2 ≤ (S.typeGraph u).graph.degree a := by
+  obtain ⟨a, ha⟩ := a
+  obtain ⟨x, y, hxC, hyC, hx, hy, hxy⟩ :=
+    S.graph.exists_cyclicDarts_ne ((S.typeVertices_eq_cyclicVertices h).subset ha)
+  -- The darts of the type graph are the darts on cyclically reduced closed paths, with their
+  -- origins in the original graph.
+  exact SerreGraph.two_le_degree_iff.mpr
+    ⟨⟨x, hxC⟩, ⟨y, hyC⟩, Subtype.ext hx, Subtype.ext hy, mt (congrArg Subtype.val) hxy⟩
+
+/-- The base vertex of a based core is deleted in its type graph exactly when it has degree
+one. -/
+theorem base_mem_typeVertices_iff (hS : S.graph.IsCore S.base) :
+    S.base ∈ S.typeVertices ↔ S.graph.degree S.base ≠ 1 := by
+  rw [mem_typeVertices_iff, ← hS.two_le_degree_iff_mem_cyclicVertices,
+    ← hS.degree_eq_zero_iff_isAcyclic, and_iff_left rfl]
+  cases S.graph.degree S.base using ENat.recTopCoe with
+  | top => simp
+  | coe n =>
+    simp only [Nat.ofNat_le_cast, Nat.cast_eq_zero, ne_eq, Nat.cast_eq_one]
+    omega
+
+/-- A based core whose base vertex does not have degree one is its own type graph: either every
+vertex has degree at least two, or the core is the base vertex alone. -/
+theorem nonempty_unbasedIso_typeGraph_self_of_degree_ne_one (hS : S.graph.IsCore S.base)
+    (h : S.graph.degree S.base ≠ 1) (u : S.typeVertices) :
+    Nonempty (UnbasedIso (S.typeGraph u) S) :=
+  S.nonempty_unbasedIso_typeGraph_self hS ((S.base_mem_typeVertices_iff hS).mpr h) u
+
+/-- **The type graph deletes the hanging path.** Let the base vertex of a based core have degree
+at most one, and let `q` be a path from it to the first vertex of degree at least three: every
+vertex that `q` leaves, other than the base vertex, has degree at most two. The vertices outside
+the type graph are exactly the vertices of `q` other than its end. The darts outside the type
+graph are the darts of `q` and their reverses
+(`SerreGraph.IsCore.notMem_cyclicDarts_iff_of_three_le_degree`); this is
+`SerreGraph.IsCore.notMem_cyclicVertices_iff_of_three_le_degree` for the underlying graph. -/
+theorem notMem_typeVertices_iff_of_three_le_degree (hS : S.graph.IsCore S.base)
+    (hv : S.graph.degree S.base ≤ 1) {w : S.graph.V} {q : S.graph.Path S.base w}
+    (hq : ∀ e ∈ SerreGraph.Path.darts S.graph q, S.graph.src e ≠ S.base →
+      S.graph.degree (S.graph.src e) ≤ 2) (hw : 3 ≤ S.graph.degree w) (a : S.graph.V) :
+    a ∉ S.typeVertices ↔ ∃ e ∈ SerreGraph.Path.darts S.graph q, S.graph.src e = a := by
+  rw [S.typeVertices_eq_cyclicVertices fun h => Set.Nonempty.ne_empty
+    ⟨w, hS.mem_cyclicVertices_of_three_le_degree hw⟩ (S.graph.cyclicVertices_eq_empty_iff.mpr h)]
+  exact hS.notMem_cyclicVertices_iff_of_three_le_degree hv hq hw a
+
 /-! ### Invariance under isomorphisms -/
 
 section Invariance
@@ -212,11 +282,12 @@ variable {S} {T : StallingsGraph α}
 
 private theorem UnbasedIso.dartEquiv_mem_cyclicDarts (f : UnbasedIso S T) {e : S.graph.E}
     (he : e ∈ S.graph.cyclicDarts) : f.dartEquiv e ∈ T.graph.cyclicDarts := by
-  simpa using f.toGraphHom.map_mem_cyclicDarts _ f.toGraphHom_mapE_injective he
+  simpa using f.toGraphHom.map_mem_cyclicDarts _ (fun _ _ _ h => f.toGraphHom_mapE_injective h) he
 
 private theorem UnbasedIso.vertexEquiv_mem_cyclicVertices (f : UnbasedIso S T) {a : S.graph.V}
     (ha : a ∈ S.graph.cyclicVertices) : f.vertexEquiv a ∈ T.graph.cyclicVertices := by
-  simpa using f.toGraphHom.map_mem_cyclicVertices _ f.toGraphHom_mapE_injective ha
+  simpa using
+    f.toGraphHom.map_mem_cyclicVertices _ (fun _ _ _ h => f.toGraphHom_mapE_injective h) ha
 
 /-- An isomorphism of labelled graphs preserves the darts on cyclically reduced closed paths. -/
 @[simp] theorem UnbasedIso.dartEquiv_mem_cyclicDarts_iff (f : UnbasedIso S T) (e : S.graph.E) :
@@ -260,9 +331,9 @@ theorem UnbasedIso.nonempty_unbasedIso_typeGraph (f : UnbasedIso S T) (u : S.typ
         rw [S.typeVertices_eq_cyclicVertices h, T.typeVertices_eq_cyclicVertices h']
         exact (f.vertexEquiv_mem_cyclicVertices_iff a).symm
       dartEquiv := f.dartEquiv.subtypeEquiv fun e => (f.dartEquiv_mem_cyclicDarts_iff e).symm
-      map_src := fun e => Subtype.ext (f.map_src e.1)
-      map_rev := fun e => Subtype.ext (f.map_rev e.1)
-      map_label := fun e => f.map_label e.1 }⟩
+      map_src := fun e => Subtype.ext (f.map_src e.val)
+      map_rev := fun e => Subtype.ext (f.map_rev e.val)
+      map_label := fun e => f.map_label e.val }⟩
 
 end Invariance
 
@@ -276,7 +347,7 @@ theorem typeVertices_subset_coreVertices (hS : S.graph.Preconnected) :
 /-- A vertex of the based core of a preconnected graph belongs to the type graph of the core
 exactly when it belongs to the type graph of the ambient graph. -/
 theorem mem_typeVertices_core_iff (hS : S.graph.Preconnected) (a : S.core.graph.V) :
-    a ∈ S.core.typeVertices ↔ a.1 ∈ S.typeVertices := by
+    a ∈ S.core.typeVertices ↔ a.val ∈ S.typeVertices := by
   rw [mem_typeVertices_iff, mem_typeVertices_iff]
   exact or_congr (S.graph.mem_cyclicVertices_core_iff S.base a)
     (and_congr (hS.isAcyclic_core_iff S.base) Subtype.ext_iff)
@@ -286,26 +357,26 @@ theorem nonempty_unbasedIso_typeGraph_core (hS : S.graph.Preconnected) (u : S.co
     (u' : S.typeVertices) :
     Nonempty (UnbasedIso (S.core.typeGraph u) (S.typeGraph u')) := by
   let g : (S.core.typeGraph u).Hom
-      (S.typeGraph ⟨u.1.1, (S.mem_typeVertices_core_iff hS u.1).mp u.2⟩) := {
+      (S.typeGraph ⟨u.val.val, (S.mem_typeVertices_core_iff hS u.val).mp u.property⟩) := {
     graphHom := {
-      mapV := fun a => ⟨a.1.1, (S.mem_typeVertices_core_iff hS a.1).mp a.2⟩
-      mapE := fun e => ⟨e.1.1, (S.graph.mem_cyclicDarts_core_iff S.base e.1).mp e.2⟩
+      mapV := fun a => ⟨a.val.val, (S.mem_typeVertices_core_iff hS a.val).mp a.property⟩
+      mapE := fun e => ⟨e.val.val, (S.graph.mem_cyclicDarts_core_iff S.base e.val).mp e.property⟩
       map_src := fun _ => rfl
       map_rev := fun _ => rfl }
     map_base := rfl
     map_label := fun _ => rfl }
   have hV : Function.Bijective g.graphHom.mapV :=
     ⟨fun a b h => by
-      have h' : (g.graphHom.mapV a).1 = (g.graphHom.mapV b).1 := congrArg Subtype.val h
+      have h' : (g.graphHom.mapV a).val = (g.graphHom.mapV b).val := congrArg Subtype.val h
       exact Subtype.ext (Subtype.ext h'), fun a =>
-      ⟨⟨⟨a.1, S.typeVertices_subset_coreVertices hS a.2⟩,
-        (S.mem_typeVertices_core_iff hS _).mpr a.2⟩, rfl⟩⟩
+      ⟨⟨⟨a.val, S.typeVertices_subset_coreVertices hS a.property⟩,
+        (S.mem_typeVertices_core_iff hS _).mpr a.property⟩, rfl⟩⟩
   have hE : Function.Bijective g.graphHom.mapE :=
     ⟨fun a b h => by
-      have h' : (g.graphHom.mapE a).1 = (g.graphHom.mapE b).1 := congrArg Subtype.val h
+      have h' : (g.graphHom.mapE a).val = (g.graphHom.mapE b).val := congrArg Subtype.val h
       exact Subtype.ext (Subtype.ext h'), fun e =>
-      ⟨⟨⟨e.1, hS.cyclicDarts_subset_coreDarts S.base e.2⟩,
-        (S.graph.mem_cyclicDarts_core_iff S.base _).mpr e.2⟩, rfl⟩⟩
+      ⟨⟨⟨e.val, hS.cyclicDarts_subset_coreDarts S.base e.property⟩,
+        (S.graph.mem_cyclicDarts_core_iff S.base _).mpr e.property⟩, rfl⟩⟩
   exact ⟨(g.toIso hV hE).toUnbasedIso.withBase u u'⟩
 
 variable {S} {T : StallingsGraph α}
@@ -317,9 +388,9 @@ theorem UnbasedIso.exists_subgroup_eq_map_conj {u : S.typeVertices} {u' : T.type
     (hT : T.graph.Preconnected) :
     ∃ g : FreeGroup α,
       T.subgroup T.base = (S.subgroup S.base).map (MulAut.conj g).toMonoidHom := by
-  obtain ⟨p⟩ := S.graph.preconnected_iff.mp hS S.base u.1
-  obtain ⟨q⟩ := T.graph.preconnected_iff.mp hT (f.vertexEquiv u).1 T.base
-  have h : S.subgroup u.1 = T.subgroup (f.vertexEquiv u).1 :=
+  obtain ⟨p⟩ := S.graph.preconnected_iff.mp hS S.base u.val
+  obtain ⟨q⟩ := T.graph.preconnected_iff.mp hT (f.vertexEquiv u).val T.base
+  have h : S.subgroup u.val = T.subgroup (f.vertexEquiv u).val :=
     (S.typeGraph_subgroup u u).symm.trans
       ((f.subgroup_eq u).trans (T.typeGraph_subgroup u' (f.vertexEquiv u)))
   refine ⟨(T.read q)⁻¹ * (S.read p)⁻¹, ?_⟩

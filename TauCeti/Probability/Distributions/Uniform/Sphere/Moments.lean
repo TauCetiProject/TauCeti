@@ -57,14 +57,14 @@ theorem covarianceBilin_map_coe_uniformSphereMeasure :
     let g : sphere (0 : E) 1 → sphere (0 : E) 1 :=
       Subtype.map f (fun x hx ↦ by simpa using hx)
     have hg : Measurable g := f.continuous.measurable.subtype_map _
-    rw [Measure.map_map (by fun_prop) measurable_subtype_coe]
+    rw [Measure.map_map (by fun_prop) measurable_subtypeVal]
     calc
       _ = ((uniformSphereMeasure E).map g).map ((↑) : sphere (0 : E) 1 → E) := by
-        rw [Measure.map_map measurable_subtype_coe hg]
+        rw [Measure.map_map measurable_subtypeVal hg]
         rfl
       _ = _ := by rw [f.map_uniformSphereMeasure]
   rw [covarianceBilin_eq_smul_innerSL hinv,
-    integral_map measurable_subtype_coe.aemeasurable (by fun_prop)]
+    integral_map measurable_subtypeVal.aemeasurable (by fun_prop)]
   simp
 
 /-- The covariance of two linear observables of a uniform unit vector is their inner product
