@@ -104,7 +104,7 @@ theorem IsPrimitiveRoot.isSeparable_of_finrank_dvd {K L Ω : Type*} [Field K] [F
     [Algebra K L] [Algebra K Ω] {n : ℕ} [NeZero n] {ζ : Ω} (hζ : IsPrimitiveRoot ζ n)
     (hn : finrank K L ∣ n) : Algebra.IsSeparable K L := by
   have := hζ.neZero'
-  refine TauCeti.Algebra.isSeparable_of_finrank_ne_zero fun h ↦ NeZero.ne (n : Ω) ?_
+  refine TauCeti.Algebra.isSeparable_of_cast_finrank_ne_zero fun h ↦ NeZero.ne (n : Ω) ?_
   obtain ⟨k, rfl⟩ := hn
   rw [Nat.cast_mul, ← map_natCast (algebraMap K Ω), h, map_zero, zero_mul]
 

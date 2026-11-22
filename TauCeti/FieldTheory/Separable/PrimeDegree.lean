@@ -26,7 +26,7 @@ elements in the base field. Consequently, if `L` is separable over some simple s
 
 ## Main results
 
-* `TauCeti.Algebra.isSeparable_of_finrank_ne_zero`
+* `TauCeti.Algebra.isSeparable_of_cast_finrank_ne_zero`
 * `TauCeti.Algebra.isSeparable_of_finrank_eq_two`
 * `TauCeti.Algebra.isPurelyInseparable_iff_not_isSeparable`
 * `TauCeti.Algebra.pow_finrank_mem_range_algebraMap_of_not_isSeparable`
@@ -69,7 +69,8 @@ degree divides the degree and is a power of the exponential characteristic.
 The hypothesis is the nonvanishing of the degree in the base field rather than a `CharP`
 assumption, so that it transfers along any field extension by injectivity of the structure map.
 It also forces the degree to be nonzero, so the extension is finite. -/
-theorem isSeparable_of_finrank_ne_zero (h : (finrank K L : K) ≠ 0) : Algebra.IsSeparable K L := by
+theorem isSeparable_of_cast_finrank_ne_zero (h : (finrank K L : K) ≠ 0) :
+    Algebra.IsSeparable K L := by
   have : FiniteDimensional K L :=
     Module.finite_of_finrank_pos (Nat.pos_of_ne_zero fun h0 ↦ h (by rw [h0, Nat.cast_zero]))
   obtain ⟨q, hq⟩ := ExpChar.exists K
@@ -88,7 +89,7 @@ theorem isSeparable_of_finrank_ne_zero (h : (finrank K L : K) ≠ 0) : Algebra.I
 /-- **A field extension of degree two with `2 ≠ 0` in the base field is separable.** -/
 theorem isSeparable_of_finrank_eq_two (h2 : (2 : K) ≠ 0) (h : finrank K L = 2) :
     Algebra.IsSeparable K L :=
-  isSeparable_of_finrank_ne_zero (by rwa [h, Nat.cast_ofNat])
+  isSeparable_of_cast_finrank_ne_zero (by rwa [h, Nat.cast_ofNat])
 
 /-- **A field extension of prime degree `p` that is not separable contains the `p`-th power of each
 of its elements in the base field**: it is purely inseparable of exponent one. -/
@@ -125,7 +126,7 @@ theorem eq_of_finrank_eq_of_not_isSeparable {K L : Type*} [Field K] [Field L] [A
     exact ⟨h₁ ▸ hc₁ ▸ c₁.property, h₂ ▸ hc₂ ▸ c₂.property⟩
   -- `L` has characteristic `p`, as an inseparable extension of degree `p` of `E₁`.
   have hpL : (p : L) = 0 := by
-    have := not_not.mp (mt Algebra.isSeparable_of_finrank_ne_zero hs₁)
+    have := not_not.mp (mt Algebra.isSeparable_of_cast_finrank_ne_zero hs₁)
     simpa [h₁] using congrArg (algebraMap E₁ L) this
   -- `L = M(t)`: it is separable over `M(t) ⊇ K(t)`, and purely inseparable over it.
   set E : IntermediateField M L := IntermediateField.adjoin M {t}
