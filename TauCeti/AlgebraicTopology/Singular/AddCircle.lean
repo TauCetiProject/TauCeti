@@ -76,6 +76,15 @@ def circuitSimplex : (TopCat.toSSet.obj (TopCat.of (AddCircle p))) _⦋1⦌ :=
 theorem circuitSimplex_def :
     circuitSimplex p = TopCat.simplex₁ (zsmulLoop p 0 1).toContinuousMap := (rfl)
 
+/-- The circuit simplex sends the point of the standard `1`-simplex at parameter `t` of the unit
+interval to `[p t]`. -/
+theorem toSSetObjEquiv_circuitSimplex_apply (t : Convexity.StdSimplex ℝ (Fin 2)) :
+    (TopCat.of (AddCircle p)).toSSetObjEquiv _ (circuitSimplex p) t =
+      ((p * (Convexity.StdSimplex.homeomorphI t : ℝ) : ℝ) : AddCircle p) := by
+  rw [circuitSimplex_def, TopCat.toSSetObjEquiv_simplex₁, ContinuousMap.comp_apply,
+    Path.coe_toContinuousMap, zsmulLoop_zero_apply_eq_coe, Int.cast_one, one_mul,
+    ContinuousMap.coe_ofClass]
+
 /-- The chain of the circuit simplex is a cycle: the circuit is a loop. -/
 theorem singularChains_d_circuitSimplex :
     ((singularChains ℤ).obj (TopCat.of (AddCircle p))).d 1 0

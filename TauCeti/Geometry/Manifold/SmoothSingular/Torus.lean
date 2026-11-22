@@ -96,9 +96,7 @@ private theorem toSSetObjEquiv_σ_one_circuitSimplex (y : fullSimplex 2) :
     (TopCat.of (AddCircle p)).toSSetObjEquiv _
         ((TopCat.toSSet.obj _).σ 1 (AddCircle.circuitSimplex p)) (fullSimplexEquivStdSimplex 2 y) =
       ((p * (y.val 0 + y.val 1) : ℝ) : AddCircle p) := by
-  rw [TopCat.toSSetObjEquiv_σ_apply, AddCircle.circuitSimplex_def, TopCat.toSSetObjEquiv_simplex₁,
-    ContinuousMap.comp_apply, Path.coe_toContinuousMap, AddCircle.zsmulLoop_zero_apply_eq_coe,
-    Int.cast_one, one_mul]
+  rw [TopCat.toSSetObjEquiv_σ_apply, AddCircle.toSSetObjEquiv_circuitSimplex_apply]
   -- The vertex map of `s₁` is `Fin.predAbove 1` on `Fin (1 + 1 + 1)`, the `Fin 3` of the lemma.
   exact congrArg (fun t : ℝ ↦ ((p * t : ℝ) : AddCircle p))
     (homeomorphI_map_predAbove_one_fullSimplexEquivStdSimplex_coe y)
@@ -108,9 +106,7 @@ private theorem toSSetObjEquiv_σ_zero_circuitSimplex (y : fullSimplex 2) :
     (TopCat.of (AddCircle p)).toSSetObjEquiv _
         ((TopCat.toSSet.obj _).σ 0 (AddCircle.circuitSimplex p)) (fullSimplexEquivStdSimplex 2 y) =
       ((p * y.val 1 : ℝ) : AddCircle p) := by
-  rw [TopCat.toSSetObjEquiv_σ_apply, AddCircle.circuitSimplex_def, TopCat.toSSetObjEquiv_simplex₁,
-    ContinuousMap.comp_apply, Path.coe_toContinuousMap, AddCircle.zsmulLoop_zero_apply_eq_coe,
-    Int.cast_one, one_mul]
+  rw [TopCat.toSSetObjEquiv_σ_apply, AddCircle.toSSetObjEquiv_circuitSimplex_apply]
   -- As above, for `Fin.predAbove 0`.
   exact congrArg (fun t : ℝ ↦ ((p * t : ℝ) : AddCircle p))
     (homeomorphI_map_predAbove_zero_fullSimplexEquivStdSimplex_coe y)
