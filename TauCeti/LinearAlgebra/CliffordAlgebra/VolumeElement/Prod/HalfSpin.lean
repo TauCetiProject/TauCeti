@@ -44,8 +44,6 @@ open Module Module.End TensorProduct
 
 namespace CliffordAlgebra
 
-attribute [local instance] instFactFinrankWithLpProd
-
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
   {n m : ℕ} [Fact (finrank ℝ V = n)] [Fact (finrank ℝ W = m)]

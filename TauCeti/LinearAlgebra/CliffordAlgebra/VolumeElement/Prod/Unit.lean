@@ -44,9 +44,6 @@ open Module TensorProduct
 
 namespace CliffordAlgebra
 
-attribute [local instance] instFactFinrankWithLpProd instFactFinrankOfUnique
-  instFactFinrankWithLpProdUnique
-
 section NegOrientation
 
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]

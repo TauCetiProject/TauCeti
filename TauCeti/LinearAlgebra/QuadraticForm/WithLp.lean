@@ -230,35 +230,31 @@ variable {p : ℝ≥0∞} {R A M₁ M₂ M₃ : Type*} [CommRing R] [Invertible 
   {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} {Q₃ : QuadraticForm R M₃}
   {Q : QuadraticForm R (WithLp p (M₁ × M₂))}
 
+private theorem isometryEquiv_baseChange_ext {R A M N : Type*} [CommRing R] [Invertible (2 : R)]
+    [CommRing A] [Algebra R A] [AddCommGroup M] [Module R M] [AddCommGroup N]
+    [Module R N] [Module A N] [IsScalarTower R A N]
+    {Q : QuadraticForm R M} {Q' : QuadraticForm A N}
+    {f g : (Q.baseChange A).IsometryEquiv Q'}
+    (h : ∀ (a : A) (m : M), f (a ⊗ₜ m) = g (a ⊗ₜ m)) : f = g :=
+  DFunLike.ext _ _ fun x ↦ LinearMap.congr_fun
+    (show f.toLinearEquiv.toLinearMap = g.toLinearEquiv.toLinearMap from
+      TensorProduct.AlgebraTensorModule.ext h) x
+
 /-- Deleting a trivial left factor commutes with base change of `WithLp` products. -/
 theorem baseChangeProd_trans_uniqueProd [Unique M₁]
     (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) :
     ((withLpProd hQ).baseChangeProd A).trans
         (uniqueProd (Q₁.baseChange A) (Q₂.baseChange A)) =
-      (withLpUniqueProd hQ).baseChange A := by
-  apply DFunLike.ext
-  intro x
-  have hlin :
-      (((withLpProd hQ).baseChangeProd A).trans
-          (uniqueProd (Q₁.baseChange A) (Q₂.baseChange A))).toLinearEquiv.toLinearMap =
-        ((withLpUniqueProd hQ).baseChange A).toLinearEquiv.toLinearMap :=
-    TensorProduct.AlgebraTensorModule.ext fun a m ↦ by simp
-  exact LinearMap.congr_fun hlin x
+      (withLpUniqueProd hQ).baseChange A :=
+  isometryEquiv_baseChange_ext fun a m ↦ by simp
 
 /-- Deleting a trivial right factor commutes with base change of `WithLp` products. -/
 theorem baseChangeProd_trans_prodUnique [Unique M₂]
     (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) :
     ((withLpProd hQ).baseChangeProd A).trans
         (prodUnique (Q₁.baseChange A) (Q₂.baseChange A)) =
-      (withLpProdUnique hQ).baseChange A := by
-  apply DFunLike.ext
-  intro x
-  have hlin :
-      (((withLpProd hQ).baseChangeProd A).trans
-          (prodUnique (Q₁.baseChange A) (Q₂.baseChange A))).toLinearEquiv.toLinearMap =
-        ((withLpProdUnique hQ).baseChange A).toLinearEquiv.toLinearMap :=
-    TensorProduct.AlgebraTensorModule.ext fun a m ↦ by simp
-  exact LinearMap.congr_fun hlin x
+      (withLpProdUnique hQ).baseChange A :=
+  isometryEquiv_baseChange_ext fun a m ↦ by simp
 
 /-- Swapping factors commutes with base change of `WithLp` products. -/
 theorem baseChange_withLpProdComm_trans_baseChangeProd
@@ -266,16 +262,8 @@ theorem baseChange_withLpProdComm_trans_baseChangeProd
     (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
     (hQ' : ∀ y, Q' y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2) :
     ((withLpProdComm hQ hQ').baseChange A).trans ((withLpProd hQ').baseChangeProd A) =
-      ((withLpProd hQ).baseChangeProd A).trans (prodComm (Q₁.baseChange A) (Q₂.baseChange A)) := by
-  apply DFunLike.ext
-  intro x
-  have hlin :
-      (((withLpProdComm hQ hQ').baseChange A).trans
-          ((withLpProd hQ').baseChangeProd A)).toLinearEquiv.toLinearMap =
-        (((withLpProd hQ).baseChangeProd A).trans
-          (prodComm (Q₁.baseChange A) (Q₂.baseChange A))).toLinearEquiv.toLinearMap :=
-    TensorProduct.AlgebraTensorModule.ext fun a m ↦ by simp
-  exact LinearMap.congr_fun hlin x
+      ((withLpProd hQ).baseChangeProd A).trans (prodComm (Q₁.baseChange A) (Q₂.baseChange A)) :=
+  isometryEquiv_baseChange_ext fun a m ↦ by simp
 
 /-- Reassociating iterated `WithLp` products commutes with base change. -/
 theorem baseChangeProd_trans_prodAssoc
@@ -291,20 +279,8 @@ theorem baseChangeProd_trans_prodAssoc
         (prodAssoc (Q₁.baseChange A) (Q₂.baseChange A) (Q₃.baseChange A)) =
       ((withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃).baseChange A).trans
         (((withLpProd hQ₁_₂₃).baseChangeProd A).trans
-          ((refl (Q₁.baseChange A)).prod ((withLpProd hQ₂₃).baseChangeProd A))) := by
-  apply DFunLike.ext
-  intro x
-  have hlin :
-      (((((withLpProd hQ₁₂_₃).baseChangeProd A).trans
-          (((withLpProd hQ₁₂).baseChangeProd A).prod (refl (Q₃.baseChange A)))).trans
-          (prodAssoc (Q₁.baseChange A) (Q₂.baseChange A)
-            (Q₃.baseChange A))).toLinearEquiv).toLinearMap =
-        ((((withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃).baseChange A).trans
-          (((withLpProd hQ₁_₂₃).baseChangeProd A).trans
-            ((refl (Q₁.baseChange A)).prod
-              ((withLpProd hQ₂₃).baseChangeProd A)))).toLinearEquiv).toLinearMap :=
-    TensorProduct.AlgebraTensorModule.ext fun a m ↦ by simp
-  exact LinearMap.congr_fun hlin x
+          ((refl (Q₁.baseChange A)).prod ((withLpProd hQ₂₃).baseChangeProd A))) :=
+  isometryEquiv_baseChange_ext fun a m ↦ by simp
 
 end BaseChange
 
@@ -329,6 +305,15 @@ theorem toLinearEquiv_withLpProdComm_eq_linearIsometryEquiv
       LinearIsometryEquiv.withLpProdComm_apply, WithLp.toLp.injEq]
     ext <;> simp
 
+/-- `QuadraticMap.IsometryEquiv.withLpProdComm` preserves the norm. -/
+theorem norm_withLpProdComm_apply
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (hQ' : ∀ y, Q' y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2)
+    (x : WithLp p (M₁ × M₂)) : ‖withLpProdComm hQ hQ' x‖ = ‖x‖ := by
+  rw [← coe_toLinearEquiv, toLinearEquiv_withLpProdComm_eq_linearIsometryEquiv,
+    LinearIsometryEquiv.coe_toLinearEquiv,
+    (LinearIsometryEquiv.withLpProdComm p R M₁ M₂).norm_map]
+
 /-- The underlying linear equivalence of `QuadraticMap.IsometryEquiv.withLpUniqueProd` is that of
 `LinearIsometryEquiv.withLpUniqueProd`. -/
 theorem toLinearEquiv_withLpUniqueProd_eq_linearIsometryEquiv [Unique M₁]
@@ -337,6 +322,14 @@ theorem toLinearEquiv_withLpUniqueProd_eq_linearIsometryEquiv [Unique M₁]
       (LinearIsometryEquiv.withLpUniqueProd p R M₁ M₂).toLinearEquiv :=
   LinearEquiv.ext fun x ↦ by simp
 
+/-- `QuadraticMap.IsometryEquiv.withLpUniqueProd` preserves the norm. -/
+theorem norm_withLpUniqueProd_apply [Unique M₁]
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (x : WithLp p (M₁ × M₂)) : ‖withLpUniqueProd hQ x‖ = ‖x‖ := by
+  rw [← coe_toLinearEquiv, toLinearEquiv_withLpUniqueProd_eq_linearIsometryEquiv,
+    LinearIsometryEquiv.coe_toLinearEquiv,
+    (LinearIsometryEquiv.withLpUniqueProd p R M₁ M₂).norm_map]
+
 /-- The underlying linear equivalence of `QuadraticMap.IsometryEquiv.withLpProdUnique` is that of
 `LinearIsometryEquiv.withLpProdUnique`. -/
 theorem toLinearEquiv_withLpProdUnique_eq_linearIsometryEquiv [Unique M₂]
@@ -344,6 +337,14 @@ theorem toLinearEquiv_withLpProdUnique_eq_linearIsometryEquiv [Unique M₂]
     (withLpProdUnique hQ).toLinearEquiv =
       (LinearIsometryEquiv.withLpProdUnique p R M₁ M₂).toLinearEquiv :=
   LinearEquiv.ext fun x ↦ by simp
+
+/-- `QuadraticMap.IsometryEquiv.withLpProdUnique` preserves the norm. -/
+theorem norm_withLpProdUnique_apply [Unique M₂]
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (x : WithLp p (M₁ × M₂)) : ‖withLpProdUnique hQ x‖ = ‖x‖ := by
+  rw [← coe_toLinearEquiv, toLinearEquiv_withLpProdUnique_eq_linearIsometryEquiv,
+    LinearIsometryEquiv.coe_toLinearEquiv,
+    (LinearIsometryEquiv.withLpProdUnique p R M₁ M₂).norm_map]
 
 /-- The underlying linear equivalence of `QuadraticMap.IsometryEquiv.withLpProdAssoc` is that of
 `LinearIsometryEquiv.withLpProdAssoc`. -/
@@ -358,6 +359,21 @@ theorem toLinearEquiv_withLpProdAssoc_eq_linearIsometryEquiv
     (withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃).toLinearEquiv =
       (LinearIsometryEquiv.withLpProdAssoc p R M₁ M₂ M₃).toLinearEquiv :=
   LinearEquiv.ext fun x ↦ by simp
+
+/-- `QuadraticMap.IsometryEquiv.withLpProdAssoc` preserves the norm. -/
+theorem norm_withLpProdAssoc_apply
+    {Q₁₂ : QuadraticMap R (WithLp p (M₁ × M₂)) P} {Q₂₃ : QuadraticMap R (WithLp p (M₂ × M₃)) P}
+    {Q₁₂_₃ : QuadraticMap R (WithLp p (WithLp p (M₁ × M₂) × M₃)) P}
+    {Q₁_₂₃ : QuadraticMap R (WithLp p (M₁ × WithLp p (M₂ × M₃))) P}
+    (hQ₁₂ : ∀ x, Q₁₂ x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (hQ₂₃ : ∀ x, Q₂₃ x = Q₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
+    (hQ₁₂_₃ : ∀ x, Q₁₂_₃ x = Q₁₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
+    (hQ₁_₂₃ : ∀ x, Q₁_₂₃ x = Q₁ (WithLp.ofLp x).1 + Q₂₃ (WithLp.ofLp x).2)
+    (x : WithLp p (WithLp p (M₁ × M₂) × M₃)) :
+    ‖withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃ x‖ = ‖x‖ := by
+  rw [← coe_toLinearEquiv, toLinearEquiv_withLpProdAssoc_eq_linearIsometryEquiv,
+    LinearIsometryEquiv.coe_toLinearEquiv,
+    (LinearIsometryEquiv.withLpProdAssoc p R M₁ M₂ M₃).norm_map]
 
 end LinearIsometryEquiv
 

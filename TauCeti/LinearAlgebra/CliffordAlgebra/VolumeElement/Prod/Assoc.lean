@@ -38,8 +38,6 @@ open Module TensorProduct
 
 namespace CliffordAlgebra
 
-attribute [local instance] instFactFinrankWithLpProd
-
 variable {U V W : Type*}
   [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -61,6 +59,17 @@ variable {U V W : Type*}
   (ρ₁ : CliffordAlgebra (Q₁.baseChange ℂ) →ₐ[ℂ] Module.End ℂ E)
   (ρ₂ : CliffordAlgebra (Q₂.baseChange ℂ) →ₐ[ℂ] Module.End ℂ F)
   (ρ₃ : CliffordAlgebra (Q₃.baseChange ℂ) →ₐ[ℂ] Module.End ℂ G)
+
+private theorem hom_ext_one_tmul {M : Type*} [AddCommGroup M] [Module ℝ M] {Q : QuadraticForm ℝ M}
+    {S : Type*} [AddCommGroup S] [Module ℂ S]
+    {f g : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S}
+    (h : ∀ x : M, f (ι (Q.baseChange ℂ) (1 ⊗ₜ x)) = g (ι (Q.baseChange ℂ) (1 ⊗ₜ x))) :
+    f = g := by
+  refine CliffordAlgebra.hom_ext <| TensorProduct.AlgebraTensorModule.ext fun z x ↦ ?_
+  have hzx : (z ⊗ₜ[ℝ] x : ℂ ⊗[ℝ] M) = z • (1 ⊗ₜ[ℝ] x) := by
+    simp [TensorProduct.smul_tmul']
+  rw [hzx, LinearMap.map_smul, LinearMap.map_smul, LinearMap.comp_apply, LinearMap.comp_apply,
+    AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, h x]
 
 private theorem complexProdTensor_assoc_lhs
     (ho₁₂ : (Orientation.prod o₁ o₂ Fact.out Fact.out).map (Fin (k + n))
@@ -85,13 +94,11 @@ private theorem complexProdTensor_assoc_lhs
             ((QuadraticMap.IsometryEquiv.withLpProd hQ₁₂_₃).baseChangeProd ℂ)).toAlgHom) := by
   have hvol := complexProdTensor_complexVolume_of_map_prod hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂ o₂ o₁₂ hn ho₁₂
   rw [complexProdTensor_eq_comp]
-  refine CliffordAlgebra.hom_ext <| TensorProduct.AlgebraTensorModule.ext fun z x ↦ ?_
-  have hzx : (z ⊗ₜ[ℝ] x : ℂ ⊗[ℝ] WithLp 2 (WithLp 2 (U × V) × W)) = z • (1 ⊗ₜ[ℝ] x) := by
-    simp [TensorProduct.smul_tmul']
-  rw [hzx, LinearMap.map_smul, LinearMap.map_smul, LinearMap.comp_apply, LinearMap.comp_apply,
-    AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply]
-  congr 1
-  simp [QuadraticMap.IsometryEquiv.toIsometry_apply, AlgHom.cliffordProdTensor_ι, hvol]
+  refine hom_ext_one_tmul fun x ↦ ?_
+  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, equivOfIsometry_apply, map_apply_ι,
+    QuadraticMap.IsometryEquiv.toIsometry_apply, QuadraticMap.IsometryEquiv.baseChangeProd_tmul,
+    QuadraticMap.IsometryEquiv.withLpProd_apply, QuadraticMap.IsometryEquiv.prod_apply,
+    QuadraticMap.IsometryEquiv.refl_apply, AlgHom.cliffordProdTensor_ι, hvol]
   simp [complexProdTensor_eq_comp, QuadraticMap.IsometryEquiv.toIsometry_apply,
     AlgHom.cliffordProdTensor_ι]
 
@@ -108,12 +115,7 @@ private theorem complexProdTensor_assoc_rhs :
           (equivOfIsometry
             ((QuadraticMap.IsometryEquiv.withLpProd hQ₁_₂₃).baseChangeProd ℂ)).toAlgHom) := by
   rw [complexProdTensor_eq_comp]
-  refine CliffordAlgebra.hom_ext <| TensorProduct.AlgebraTensorModule.ext fun z x ↦ ?_
-  have hzx : (z ⊗ₜ[ℝ] x : ℂ ⊗[ℝ] WithLp 2 (U × WithLp 2 (V × W))) = z • (1 ⊗ₜ[ℝ] x) := by
-    simp [TensorProduct.smul_tmul']
-  rw [hzx, LinearMap.map_smul, LinearMap.map_smul, LinearMap.comp_apply, LinearMap.comp_apply,
-    AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply]
-  congr 1
+  refine hom_ext_one_tmul fun x ↦ ?_
   simp [QuadraticMap.IsometryEquiv.toIsometry_apply, AlgHom.cliffordProdTensor_ι,
     complexProdTensor_eq_comp]
 

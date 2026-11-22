@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
+public import TauCeti.LinearAlgebra.Dimension.FactFinrank
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.WithLp
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Prod
@@ -153,19 +154,18 @@ theorem complexProdTensor_complexVolume_eq_smul_map {m : ℕ}
     complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂
         (@complexVolume (WithLp 2 (V × W)) _ _
           (Module.Finite.of_basis ((b₁.prod b₂).reindex finSumFinEquiv).toBasis) (n + m)
-          ⟨by have : FiniteDimensional ℝ W := Module.Finite.of_basis b₂.toBasis
-              rw [(WithLp.linearEquiv 2 ℝ (V × W)).finrank_eq, Module.finrank_prod,
-                Fact.out (p := finrank ℝ V = n), Module.finrank_eq_card_basis b₂.toBasis,
-                Fintype.card_fin]⟩ Q o) =
+          (by have := Module.Finite.of_basis b₂.toBasis
+              have : Fact (finrank ℝ W = m) :=
+                ⟨by rw [Module.finrank_eq_card_basis b₂.toBasis, Fintype.card_fin]⟩
+              exact TauCeti.instFactFinrankWithLpProd) Q o) =
       Complex.I ^ ((n + m + 1) / 2) • TensorProduct.map
         (ρ₁ (((List.finRange n).map b₁).map fun v ↦ ι (Q₁.baseChange ℂ) (1 ⊗ₜ v)).prod *
           ρ₁ (complexVolume Q₁ o₁) ^ m)
         (ρ₂ (((List.finRange m).map b₂).map fun w ↦ ι (Q₂.baseChange ℂ) (1 ⊗ₜ w)).prod) := by
   have : FiniteDimensional ℝ W := Module.Finite.of_basis b₂.toBasis
+  have : Fact (finrank ℝ W = m) :=
+    ⟨by rw [Module.finrank_eq_card_basis b₂.toBasis, Fintype.card_fin]⟩
   have hQb₁ := b₁.isOrthoᵢ_associated hQ₁
-  let : Fact (finrank ℝ (WithLp 2 (V × W)) = n + m) :=
-    ⟨by rw [(WithLp.linearEquiv 2 ℝ (V × W)).finrank_eq, Module.finrank_prod,
-      Fact.out (p := finrank ℝ V = n), Module.finrank_eq_card_basis b₂.toBasis, Fintype.card_fin]⟩
   have hl : (List.finRange (n + m)).map ((b₁.prod b₂).reindex finSumFinEquiv) =
       ((List.finRange n).map fun i ↦ WithLp.toLp 2 (b₁ i, 0)) ++
         (List.finRange m).map fun j ↦ WithLp.toLp 2 (0, b₂ j) := by

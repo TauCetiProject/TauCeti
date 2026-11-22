@@ -87,31 +87,6 @@ theorem complexProdTensor_equivOfIsometry_symm_toProd_tmul_apply_of_apply_eq_neg
 
 end ProdEquiv
 
-/-- Locally derives the product rank witness `finrank ℝ (WithLp 2 (V × W)) = n + m` from the
-factor rank witnesses. -/
-local instance instFactFinrankWithLpProd {V W : Type*}
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
-    {n m : ℕ} [Fact (finrank ℝ V = n)] [Fact (finrank ℝ W = m)] :
-    Fact (finrank ℝ (WithLp 2 (V × W)) = n + m) :=
-  ⟨by rw [(WithLp.linearEquiv 2 ℝ (V × W)).finrank_eq, Module.finrank_prod,
-    Fact.out (p := finrank ℝ V = n), Fact.out (p := finrank ℝ W = m)]⟩
-
-/-- Locally derives `finrank ℝ V = 0` from `[Unique V]`. -/
-local instance instFactFinrankOfUnique {V : Type*}
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Unique V] :
-    Fact (finrank ℝ V = 0) :=
-  ⟨Module.finrank_zero_of_subsingleton⟩
-
-/-- Locally derives `finrank ℝ (WithLp 2 (V × W)) = n` when `W` is `Unique`. -/
-local instance instFactFinrankWithLpProdUnique {V W : Type*}
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [Unique W]
-    {n : ℕ} [Fact (finrank ℝ V = n)] :
-    Fact (finrank ℝ (WithLp 2 (V × W)) = n) :=
-  ⟨by rw [(WithLp.linearEquiv 2 ℝ (V × W)).finrank_eq, Module.finrank_prod,
-    Fact.out (p := finrank ℝ V = n), Module.finrank_zero_of_subsingleton, add_zero]⟩
-
 section Volume
 
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -224,47 +199,7 @@ theorem complexProdTensor_complexVolume_of_odd_of_map_prod (o₂ : Orientation �
 
 end Volume
 
-section Conjugacy
-
-/-- Evaluating a conjugated algebra-homomorphism intertwining equation
-`(T.conjAlgEquiv ℂ).toAlgHom.comp ρ = ρ'.comp (equivOfIsometry f).toAlgHom` at
-`complexVolume Q o` when `equivOfIsometry f (complexVolume Q o) = complexVolume Q' o'`. -/
-theorem conj_complexVolume_of_conjAlgEquiv_comp
-    {V V' : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-    [NormedAddCommGroup V'] [InnerProductSpace ℝ V'] [FiniteDimensional ℝ V']
-    {n n' : ℕ} [Fact (finrank ℝ V = n)] [Fact (finrank ℝ V' = n')]
-    {Q : QuadraticForm ℝ V} {Q' : QuadraticForm ℝ V'}
-    {E E' : Type*} [AddCommGroup E] [Module ℂ E] [AddCommGroup E'] [Module ℂ E']
-    {ρ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ E}
-    {ρ' : CliffordAlgebra (Q'.baseChange ℂ) →ₐ[ℂ] Module.End ℂ E'}
-    {T : E ≃ₗ[ℂ] E'} {f : (Q.baseChange ℂ).IsometryEquiv (Q'.baseChange ℂ)}
-    (hconj : (T.conjAlgEquiv ℂ).toAlgHom.comp ρ =
-      ρ'.comp (equivOfIsometry f).toAlgHom)
-    {o : Orientation ℝ V (Fin n)} {o' : Orientation ℝ V' (Fin n')}
-    (hvol : equivOfIsometry f (complexVolume Q o) = complexVolume Q' o') :
-    T.conj (ρ (complexVolume Q o)) = ρ' (complexVolume Q' o') := by
-  have hx := AlgHom.congr_fun hconj (complexVolume Q o)
-  rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearEquiv.conjAlgEquiv_apply,
-    AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, hvol] at hx
-  exact hx
-
-/-- Transporting `complexVolume Q o` along the complexification of a norm-preserving quadratic
-isometry `e : Q.IsometryEquiv Q'` that maps `o` to `o'` (up to `finCongr h.symm`) gives
-`complexVolume Q' o'`. -/
-theorem equivOfIsometry_baseChange_complexVolume_of_map_orientation
-    {V V' : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-    [NormedAddCommGroup V'] [InnerProductSpace ℝ V'] [FiniteDimensional ℝ V']
-    {n n' : ℕ} [Fact (finrank ℝ V = n)] [Fact (finrank ℝ V' = n')]
-    {Q : QuadraticForm ℝ V} {Q' : QuadraticForm ℝ V'}
-    (e : Q.IsometryEquiv Q') (he : ∀ v, ‖e v‖ = ‖v‖)
-    {o : Orientation ℝ V (Fin n)} {o' : Orientation ℝ V' (Fin n')} (h : n = n')
-    (horient : Orientation.map (Fin n) e.toLinearEquiv o =
-      Orientation.reindex ℝ V' (finCongr h.symm) o') :
-    equivOfIsometry (e.baseChange ℂ) (complexVolume Q o) = complexVolume Q' o' := by
-  rw [equivOfIsometry_apply, QuadraticMap.IsometryEquiv.baseChange_toIsometry,
-    map_complexVolume_eq_complexVolume_reindex o e he h, horient,
-    Orientation.reindex_finCongr_reindex_finCongr]
-  simp [finCongr_refl, Orientation.reindex_refl]
+section Transport
 
 /-- Transporting `complexVolume` along `QuadraticMap.IsometryEquiv.withLpProdComm` carries the
 ordered product orientation on `V ⊕ W` to that on `W ⊕ V`, scaled by `(-1) ^ (n * m)`. -/
@@ -287,16 +222,11 @@ theorem equivOfIsometry_withLpProdComm_complexVolume
       ((WithLp.linearEquiv 2 ℝ (V × W)).trans (LinearEquiv.prodComm ℝ V W)).trans
         (WithLp.linearEquiv 2 ℝ (W × V)).symm :=
     LinearEquiv.ext fun x ↦ by simp [LinearEquiv.coe_withLpCongr, Prod.swap]
-  have hnorm : ∀ x : WithLp 2 (V × W),
-      ‖QuadraticMap.IsometryEquiv.withLpProdComm hQ hQ' x‖ = ‖x‖ := fun x ↦ by
-    rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
-      QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProdComm_eq_linearIsometryEquiv,
-      LinearIsometryEquiv.coe_toLinearEquiv,
-      (LinearIsometryEquiv.withLpProdComm 2 ℝ V W).norm_map]
   rcases Nat.even_or_odd (n * m) with hnm | hnm
   · rw [hnm.neg_one_pow, one_smul]
     refine equivOfIsometry_baseChange_complexVolume_of_map_orientation
-      (QuadraticMap.IsometryEquiv.withLpProdComm hQ hQ') hnorm (add_comm n m) ?_
+      (QuadraticMap.IsometryEquiv.withLpProdComm hQ hQ')
+      (QuadraticMap.IsometryEquiv.norm_withLpProdComm_apply hQ hQ') (add_comm n m) ?_
     simp only [QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProdComm, hcongr,
       Orientation.map_trans]
     rw [← Orientation.map_symm (Fin (n + m)) (WithLp.linearEquiv 2 ℝ (V × W)),
@@ -304,7 +234,8 @@ theorem equivOfIsometry_withLpProdComm_complexVolume
       Orientation.map_reindex]
   · rw [hnm.neg_one_pow, neg_one_smul, ← complexVolume_neg_orientation]
     refine equivOfIsometry_baseChange_complexVolume_of_map_orientation
-      (QuadraticMap.IsometryEquiv.withLpProdComm hQ hQ') hnorm (add_comm n m) ?_
+      (QuadraticMap.IsometryEquiv.withLpProdComm hQ hQ')
+      (QuadraticMap.IsometryEquiv.norm_withLpProdComm_apply hQ hQ') (add_comm n m) ?_
     simp only [QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProdComm, hcongr,
       Orientation.map_trans]
     rw [← Orientation.map_symm (Fin (n + m)) (WithLp.linearEquiv 2 ℝ (V × W)),
@@ -344,15 +275,10 @@ theorem equivOfIsometry_withLpProdAssoc_complexVolume
     rw [Module.finrank_prod, Fact.out (p := finrank ℝ U = k), Fact.out (p := finrank ℝ V = n)]
   have hVW : finrank ℝ (V × W) = n + m := by
     rw [Module.finrank_prod, Fact.out (p := finrank ℝ V = n), Fact.out (p := finrank ℝ W = m)]
-  have hnorm : ∀ x : WithLp 2 (WithLp 2 (U × V) × W),
-      ‖QuadraticMap.IsometryEquiv.withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃ x‖ = ‖x‖ := fun x ↦ by
-    rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
-      QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProdAssoc_eq_linearIsometryEquiv,
-      LinearIsometryEquiv.coe_toLinearEquiv,
-      (LinearIsometryEquiv.withLpProdAssoc 2 ℝ U V W).norm_map]
   refine equivOfIsometry_baseChange_complexVolume_of_map_orientation
     (QuadraticMap.IsometryEquiv.withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃)
-    hnorm (add_assoc k n m) ?_
+    (QuadraticMap.IsometryEquiv.norm_withLpProdAssoc_apply hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃)
+    (add_assoc k n m) ?_
   have hstep1 : Orientation.map (Fin (k + n + m))
       ((WithLp.linearEquiv 2 ℝ (U × V)).prodCongr (LinearEquiv.refl ℝ W))
       (Orientation.prod ((Orientation.prod o₁ o₂ Fact.out Fact.out).map (Fin (k + n))
@@ -386,14 +312,9 @@ theorem equivOfIsometry_withLpUniqueProd_complexVolume
             Module.finrank_zero_of_subsingleton Fact.out).map (Fin (0 + m))
             (WithLp.linearEquiv 2 ℝ (V × W)).symm)) =
       complexVolume Q₂ o₂ := by
-  have hnorm : ∀ x : WithLp 2 (V × W),
-      ‖QuadraticMap.IsometryEquiv.withLpUniqueProd hQ x‖ = ‖x‖ := fun x ↦ by
-    rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
-      QuadraticMap.IsometryEquiv.toLinearEquiv_withLpUniqueProd_eq_linearIsometryEquiv,
-      LinearIsometryEquiv.coe_toLinearEquiv,
-      (LinearIsometryEquiv.withLpUniqueProd 2 ℝ V W).norm_map]
   refine equivOfIsometry_baseChange_complexVolume_of_map_orientation
-    (QuadraticMap.IsometryEquiv.withLpUniqueProd hQ) hnorm (zero_add m) ?_
+    (QuadraticMap.IsometryEquiv.withLpUniqueProd hQ)
+    (QuadraticMap.IsometryEquiv.norm_withLpUniqueProd_apply hQ) (zero_add m) ?_
   rw [QuadraticMap.IsometryEquiv.toLinearEquiv_withLpUniqueProd, Orientation.map_trans,
     ← Orientation.map_symm (Fin (0 + m)) (WithLp.linearEquiv 2 ℝ (V × W)),
     Equiv.apply_symm_apply, Orientation.map_uniqueProd_prod_positiveOrientation]
@@ -413,19 +334,14 @@ theorem equivOfIsometry_withLpProdUnique_complexVolume
             Fact.out Module.finrank_zero_of_subsingleton).map (Fin n)
             (WithLp.linearEquiv 2 ℝ (V × W)).symm)) =
       complexVolume Q₁ o₁ := by
-  have hnorm : ∀ x : WithLp 2 (V × W),
-      ‖QuadraticMap.IsometryEquiv.withLpProdUnique hQ x‖ = ‖x‖ := fun x ↦ by
-    rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
-      QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProdUnique_eq_linearIsometryEquiv,
-      LinearIsometryEquiv.coe_toLinearEquiv,
-      (LinearIsometryEquiv.withLpProdUnique 2 ℝ V W).norm_map]
   refine equivOfIsometry_baseChange_complexVolume_of_map_orientation
-    (QuadraticMap.IsometryEquiv.withLpProdUnique hQ) hnorm rfl ?_
+    (QuadraticMap.IsometryEquiv.withLpProdUnique hQ)
+    (QuadraticMap.IsometryEquiv.norm_withLpProdUnique_apply hQ) rfl ?_
   rw [QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProdUnique, Orientation.map_trans,
     ← Orientation.map_symm (Fin n) (WithLp.linearEquiv 2 ℝ (V × W)), Equiv.apply_symm_apply,
     Orientation.map_prodUnique_prod_positiveOrientation]
   simp [finCongr_refl, Orientation.reindex_refl]
 
-end Conjugacy
+end Transport
 
 end CliffordAlgebra

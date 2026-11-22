@@ -294,6 +294,22 @@ theorem equivOfIsometry_toAlgHom_comp {M₃ : Type*} [AddCommGroup M₃] [Module
       (equivOfIsometry (e₁₂.trans e₂₃)).toAlgHom :=
   congrArg AlgEquiv.toAlgHom (equivOfIsometry_trans e₁₂ e₂₃)
 
+/-- Evaluating a conjugated algebra-homomorphism intertwining equation
+`(T.conjAlgEquiv R).toAlgHom.comp ρ = ρ'.comp (equivOfIsometry f).toAlgHom` at an arbitrary
+element `x : CliffordAlgebra Q₁`. -/
+theorem conj_apply_of_conjAlgEquiv_comp {E E' : Type*} [AddCommGroup E] [Module R E]
+    [AddCommGroup E'] [Module R E']
+    {ρ : CliffordAlgebra Q₁ →ₐ[R] Module.End R E}
+    {ρ' : CliffordAlgebra Q₂ →ₐ[R] Module.End R E'}
+    {T : E ≃ₗ[R] E'} {f : Q₁.IsometryEquiv Q₂}
+    (hconj : (T.conjAlgEquiv R).toAlgHom.comp ρ = ρ'.comp (equivOfIsometry f).toAlgHom)
+    (x : CliffordAlgebra Q₁) :
+    T.conj (ρ x) = ρ' (equivOfIsometry f x) := by
+  have hx := AlgHom.congr_fun hconj x
+  rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearEquiv.conjAlgEquiv_apply,
+    AlgHom.comp_apply, AlgEquiv.coe_toAlgHom] at hx
+  exact hx
+
 /-- The Clifford-algebra equivalence induced by a quadratic isometry equivalence, restricted to
 the even subalgebras. -/
 noncomputable def evenEquivOfIsometry (e : Q₁.IsometryEquiv Q₂) :
