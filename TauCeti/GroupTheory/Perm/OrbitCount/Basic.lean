@@ -33,8 +33,8 @@ permutations of the same type.
   permutation over every point of the first multiplies the number of orbits by the size of the
   first factor.
 * `Equiv.Perm.orbitCount_eq_card_parts_partition`: on a finite type, the orbit count is the number
-  of parts in Mathlib's full, fixed-point-aware permutation partition, through the decomposition
-  `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints` of `TauCeti.GroupTheory.Perm.Partition`.
+  of parts in Mathlib's full, fixed-point-aware permutation partition, through
+  `Equiv.Perm.card_fullCycleType` of `TauCeti.GroupTheory.Perm.Partition`.
 * `TauCeti.orbitCount_eq_one_of_forall_sameCycle`: a transitive permutation of a nonempty type has
   orbit count one.
 * `TauCeti.exists_not_sameCycle_apply_of_isPretransitive_closure`: if `σ` has more than one
@@ -234,12 +234,7 @@ variable [Fintype α] [DecidableEq α]
 identifies `orbitCount`, defined from `SameCycle`, with Mathlib's fixed-point-aware cycle data. -/
 theorem _root_.Equiv.Perm.orbitCount_eq_card_parts_partition (σ : Equiv.Perm α) :
     orbitCount σ = σ.partition.parts.card := by
-  classical
-  rw [orbitCount, Nat.card_eq_fintype_card,
-    Fintype.card_congr σ.orbitQuotientEquivCycleFactorsSumFixedPoints, Fintype.card_sum,
-    Fintype.card_coe]
-  rw [Equiv.Perm.card_subtype_apply_eq, Equiv.Perm.card_parts_partition, Equiv.Perm.cycleType_def]
-  simp
+  rw [orbitCount_def, ← Equiv.Perm.card_fullCycleType, Equiv.Perm.fullCycleType_def]
 
 /-- The sign of a finite permutation is the parity of the number of points minus the number of
 orbits. Fixed points contribute once to both numbers and hence do not affect the sign. -/
