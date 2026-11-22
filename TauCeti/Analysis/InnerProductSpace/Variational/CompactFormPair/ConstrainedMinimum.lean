@@ -11,11 +11,14 @@ public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair.Bas
 public import TauCeti.Analysis.InnerProductSpace.Variational.Rayleigh
 public import TauCeti.Analysis.Variational.BoundedSublevels
 import Mathlib.Analysis.InnerProductSpace.Convex
+import Mathlib.LinearAlgebra.SesquilinearForm.Basic
+import Mathlib.Topology.Semicontinuity.Basic
 import TauCeti.Analysis.Convex.Uniform.Basic
 import TauCeti.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Normed.Module.WeakSpace.EberleinSmulian
 import TauCeti.Analysis.Normed.Operator.DunfordPettis.Basic
+import TauCeti.Order.Filter.Extr
 
 /-!
 # Constrained Rayleigh minima and restricted Euler–Lagrange equations
@@ -148,7 +151,8 @@ theorem neg_le_energy_of_mem_unitConstraint (P : CompactFormPair 𝕜 E H) {W : 
 /-- The energy is bounded below on every constrained sphere `P.unitConstraint W`. -/
 theorem bddBelow_energy_image_unitConstraint (P : CompactFormPair 𝕜 E H) (W : Submodule 𝕜 H) :
     BddBelow (P.energy '' P.unitConstraint W) := by
-  obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound_energy
+  obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound
+  simp_rw [← P.energy_def] at hbound
   refine ⟨-ω, ?_⟩
   rintro _ ⟨u, hu, rfl⟩
   exact P.neg_le_energy_of_mem_unitConstraint hc.le hbound hu
@@ -157,7 +161,7 @@ theorem bddBelow_energy_image_unitConstraint (P : CompactFormPair 𝕜 E H) (W :
 theorem hasBoundedSublevelsOn_energy_unitConstraint (P : CompactFormPair 𝕜 E H)
     (W : Submodule 𝕜 H) :
     HasBoundedSublevelsOn P.energy (P.unitConstraint W) := by
-  obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound_energy
+  obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound
   rw [hasBoundedSublevelsOn_iff]
   intro b
   refine isBounded_iff_forall_norm_le.mpr ⟨Real.sqrt ((b + ω) / c), ?_⟩
@@ -165,7 +169,7 @@ theorem hasBoundedSublevelsOn_energy_unitConstraint (P : CompactFormPair 𝕜 E 
   have hsq : ‖u‖ ^ 2 ≤ (b + ω) / c := by
     rw [le_div_iff₀ hc]
     have h1 := hbound u
-    rw [huW.2] at h1
+    rw [← P.energy_def, huW.2] at h1
     nlinarith
   exact Real.le_sqrt_of_sq_le hsq
 
@@ -196,12 +200,11 @@ variable {𝕜 E H : Type*} [RCLike 𝕜]
 theorem inv_norm_smul_mem_unitConstraint (P : CompactFormPair 𝕜 E H) {W : Submodule 𝕜 H}
     {u : E} (huW : P.inclusion u ∈ W) (hu : P.inclusion u ≠ 0) :
     ((‖P.inclusion u‖⁻¹ : ℝ) : 𝕜) • u ∈ P.unitConstraint W := by
-  have hpos : 0 < ‖P.inclusion u‖ := norm_pos_iff.mpr hu
   refine ⟨?_, ?_⟩
   · rw [map_smul]
     exact W.smul_mem _ huW
-  · rw [map_smul, norm_smul, RCLike.norm_ofReal, abs_of_pos (inv_pos.mpr hpos),
-      inv_mul_cancel₀ hpos.ne']
+  · rw [map_smul, RCLike.ofReal_inv]
+    exact norm_smul_inv_norm (𝕜 := 𝕜) hu
 
 /-- The constrained sphere `P.unitConstraint W` is nonempty if and only if some form-domain vector
 has a nonzero image in `W`. -/
@@ -219,7 +222,7 @@ theorem isMinOn_unitConstraint_iff_forall_mul_norm_sq_le (P : CompactFormPair �
       ∀ v : E, P.inclusion v ∈ W → P.energy u * ‖P.inclusion v‖ ^ 2 ≤ P.energy v := by
   refine ⟨fun hmin v hvW => ?_, fun hle v hv => ?_⟩
   · by_cases hv0 : P.inclusion v = 0
-    · have hvz : v = 0 := P.inclusion_eq_zero_iff.mp hv0
+    · have hvz : v = 0 := (P.inclusion.toLinearMap.map_eq_zero_iff P.injective).mp hv0
       simp [hvz]
     · have hpos : 0 < ‖P.inclusion v‖ := norm_pos_iff.mpr hv0
       have hnorm : ((‖P.inclusion v‖⁻¹ : ℝ) : 𝕜) • v ∈ P.unitConstraint W :=
@@ -249,7 +252,7 @@ theorem isMinOn_unitConstraint_iff_isLeast_rayleighQuotient (P : CompactFormPair
     rw [le_div_iff₀ (sq_pos_of_pos (norm_pos_iff.mpr hvne))]
     exact hle v hvW
   · by_cases hvne : P.inclusion v = 0
-    · have hvz : v = 0 := P.inclusion_eq_zero_iff.mp hvne
+    · have hvz : v = 0 := (P.inclusion.toLinearMap.map_eq_zero_iff P.injective).mp hvne
       simp [hvz]
     · have hpos : (0 : ℝ) < ‖P.inclusion v‖ ^ 2 := sq_pos_of_pos (norm_pos_iff.mpr hvne)
       exact (le_div_iff₀ hpos).mp (hlb ⟨v, hvW, hvne, rfl⟩)
@@ -295,28 +298,41 @@ private theorem tendsto_energy_sub_lower (P : CompactFormPair 𝕜 E H)
     simpa using hjsub.norm.pow 2
   simpa using (hform.const_mul 2).sub (hj.const_mul ω)
 
+private theorem energy_add_coercive_le (P : CompactFormPair 𝕜 E H) {c ω : ℝ}
+    (hbound : ∀ w : E, c * ‖w‖ ^ 2 ≤ RCLike.re (P.form w w) + ω * ‖P.inclusion w‖ ^ 2)
+    (v x : E) :
+    P.energy x + c * ‖v - x‖ ^ 2 +
+        (2 * RCLike.re (P.form x (v - x)) - ω * ‖P.inclusion (v - x)‖ ^ 2) ≤
+      P.energy v := by
+  have h1 := hbound (v - x)
+  have h2 := P.energy_sub_energy v x
+  rw [← P.energy_def] at h1
+  linarith
+
+private theorem energy_le_of_tendsto_toWeakSpace_of_le_tendsto (P : CompactFormPair 𝕜 E H)
+    {u : ℕ → E} {x : E} {f : ℕ → ℝ} {r : ℝ}
+    (hlim : Tendsto (fun n => toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x)))
+    (hf : Tendsto f atTop (𝓝 r)) (hle : ∀ n, P.energy (u n) ≤ f n) :
+    P.energy x ≤ r := by
+  obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound
+  have hlhs :
+      Tendsto (fun n => P.energy x +
+        (2 * RCLike.re (P.form x (u n - x)) - ω * ‖P.inclusion (u n - x)‖ ^ 2))
+        atTop (𝓝 (P.energy x)) := by
+    simpa using tendsto_const_nhds.add (P.tendsto_energy_sub_lower ω hlim)
+  refine le_of_tendsto_of_tendsto hlhs hf (Eventually.of_forall fun n => ?_)
+  have h1 := P.energy_add_coercive_le hbound (u n) x
+  have hnonneg : 0 ≤ c * ‖u n - x‖ ^ 2 := mul_nonneg hc.le (sq_nonneg _)
+  linarith [hle n]
+
 /-- The energy of a compact form pair is sequentially weakly lower semicontinuous: along any
 weakly convergent sequence `u n ⇀ x` with `P.energy (u n) → r`, we have `P.energy x ≤ r`. -/
 theorem energy_le_of_tendsto_toWeakSpace (P : CompactFormPair 𝕜 E H)
     {u : ℕ → E} {x : E} {r : ℝ}
     (hlim : Tendsto (fun n => toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x)))
     (hr : Tendsto (fun n => P.energy (u n)) atTop (𝓝 r)) :
-    P.energy x ≤ r := by
-  obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound_energy
-  have hle : ∀ n,
-      P.energy x + (2 * RCLike.re (P.form x (u n - x)) - ω * ‖P.inclusion (u n - x)‖ ^ 2) ≤
-        P.energy (u n) := by
-    intro n
-    have h1 := hbound (u n - x)
-    have h2 := P.energy_sub_energy (u n) x
-    have hnonneg : 0 ≤ c * ‖u n - x‖ ^ 2 := mul_nonneg hc.le (sq_nonneg _)
-    linarith
-  have hlhs :
-      Tendsto (fun n => P.energy x +
-        (2 * RCLike.re (P.form x (u n - x)) - ω * ‖P.inclusion (u n - x)‖ ^ 2))
-        atTop (𝓝 (P.energy x)) := by
-    simpa using tendsto_const_nhds.add (P.tendsto_energy_sub_lower ω hlim)
-  exact le_of_tendsto_of_tendsto hlhs hr (Eventually.of_forall hle)
+    P.energy x ≤ r :=
+  P.energy_le_of_tendsto_toWeakSpace_of_le_tendsto hlim hr fun _ => le_rfl
 
 /-- Sequential weak closedness of energy sublevels: if `u n ⇀ x` weakly and `P.energy (u n) ≤ b`
 for all `n`, then `P.energy x ≤ b`. -/
@@ -324,21 +340,8 @@ theorem energy_le_of_tendsto_toWeakSpace_of_le (P : CompactFormPair 𝕜 E H)
     {u : ℕ → E} {x : E} {b : ℝ}
     (hlim : Tendsto (fun n => toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x)))
     (hb : ∀ n, P.energy (u n) ≤ b) :
-    P.energy x ≤ b := by
-  obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound_energy
-  have hle : ∀ n,
-      P.energy x + (2 * RCLike.re (P.form x (u n - x)) - ω * ‖P.inclusion (u n - x)‖ ^ 2) ≤ b := by
-    intro n
-    have h1 := hbound (u n - x)
-    have h2 := P.energy_sub_energy (u n) x
-    have hnonneg : 0 ≤ c * ‖u n - x‖ ^ 2 := mul_nonneg hc.le (sq_nonneg _)
-    linarith [hb n]
-  have hlhs :
-      Tendsto (fun n => P.energy x +
-        (2 * RCLike.re (P.form x (u n - x)) - ω * ‖P.inclusion (u n - x)‖ ^ 2))
-        atTop (𝓝 (P.energy x)) := by
-    simpa using tendsto_const_nhds.add (P.tendsto_energy_sub_lower ω hlim)
-  exact le_of_tendsto hlhs (Eventually.of_forall hle)
+    P.energy x ≤ b :=
+  P.energy_le_of_tendsto_toWeakSpace_of_le_tendsto hlim tendsto_const_nhds hb
 
 end WeakSequential
 
@@ -406,35 +409,28 @@ theorem isCompact_minimizers_unitConstraint_of_surjective (P : CompactFormPair �
     IsCompact {u ∈ P.unitConstraint W | IsMinOn P.energy (P.unitConstraint W) u} := by
   rw [isCompact_iff_isSeqCompact]
   intro u hu
-  have hsub : ∀ n, u n ∈ {v ∈ P.unitConstraint W | P.energy v ≤ P.energy (u 0)} :=
-    fun n => ⟨(hu n).1, (hu n).2 (hu 0).1⟩
-  have hcomp :
-      IsCompact (closure (toWeakSpace 𝕜 E ''
-        {v ∈ P.unitConstraint W | P.energy v ≤ P.energy (u 0)})) :=
-    TauCeti.isCompact_closure_toWeakSpace_of_isBounded hE
-      ((P.hasBoundedSublevelsOn_energy_unitConstraint W).isBounded_sublevel (P.energy (u 0)))
-  obtain ⟨x, φ, hφ, hlim⟩ :=
-    TauCeti.tendsto_subseq_toWeakSpace_of_isCompact_closure hcomp hsub
-  have hxW : x ∈ P.unitConstraint W :=
-    P.mem_unitConstraint_of_tendsto_toWeakSpace hW (fun n => (hu (φ n)).1) hlim
-  have hxmin : IsMinOn P.energy (P.unitConstraint W) x := by
-    have hle : P.energy x ≤ P.energy (u 0) :=
-      P.energy_le_of_tendsto_toWeakSpace_of_le hlim fun n => (hsub (φ n)).2
-    intro v hv
-    exact hle.trans ((hu 0).2 hv)
-  refine ⟨x, ⟨hxW, hxmin⟩, φ, hφ, ?_⟩
-  obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound_energy
+  have hsub_eq :
+      {v ∈ P.unitConstraint W | IsMinOn P.energy (P.unitConstraint W) v} =
+        {v ∈ P.unitConstraint W | P.energy v ≤ P.energy (u 0)} :=
+    (hu 0).2.minimizers_eq_sublevel (hu 0).1
+  have hcomp := P.isCompact_toWeakSpace_sublevel_unitConstraint hE W hW (P.energy (u 0))
+  obtain ⟨_, ⟨x, hxsub, rfl⟩, φ, hφ, hlim⟩ :=
+    TauCeti.isSeqCompact_toWeakSpace_of_isCompact hcomp fun n =>
+      mem_image_of_mem (toWeakSpace 𝕜 E) (hsub_eq ▸ hu n)
+  have hxmin : x ∈ {v ∈ P.unitConstraint W | IsMinOn P.energy (P.unitConstraint W) v} :=
+    hsub_eq ▸ hxsub
+  refine ⟨x, hxmin, φ, hφ, ?_⟩
+  obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound
   have heq_energy : ∀ n, P.energy (u (φ n)) = P.energy x :=
-    fun n => le_antisymm ((hu (φ n)).2 hxW) (hxmin (hu (φ n)).1)
+    fun n => le_antisymm ((hu (φ n)).2 hxmin.1) (hxmin.2 (hu (φ n)).1)
   have hsq_le : ∀ n,
       ‖u (φ n) - x‖ ^ 2 ≤
         -(2 * RCLike.re (P.form x (u (φ n) - x)) - ω * ‖P.inclusion (u (φ n) - x)‖ ^ 2) / c := by
     intro n
     rw [le_div_iff₀ hc]
-    have h1 := hbound (u (φ n) - x)
-    have h2 := P.energy_sub_energy (u (φ n)) x
-    rw [heq_energy n, sub_self] at h2
-    nlinarith
+    have h1 := P.energy_add_coercive_le hbound (u (φ n)) x
+    rw [heq_energy n] at h1
+    linarith
   have hrhs :
       Tendsto (fun n =>
         -(2 * RCLike.re (P.form x (u (φ n) - x)) - ω * ‖P.inclusion (u (φ n) - x)‖ ^ 2) / c)
@@ -465,39 +461,29 @@ theorem exists_minimum_on_unitConstraint_of_surjective (P : CompactFormPair 𝕜
     (W : Submodule 𝕜 H) (hW : IsClosed (W : Set H))
     (hne : ∃ u : E, P.inclusion u ∈ W ∧ P.inclusion u ≠ 0) :
     ∃ u ∈ P.unitConstraint W, IsMinOn P.energy (P.unitConstraint W) u := by
-  have hS : (P.unitConstraint W).Nonempty := (P.unitConstraint_nonempty_iff W).mpr hne
-  have hbdd : BddBelow (P.energy '' P.unitConstraint W) :=
-    P.bddBelow_energy_image_unitConstraint W
-  set m : ℝ := sInf (P.energy '' P.unitConstraint W)
-  have hex : ∀ n : ℕ, ∃ v ∈ P.unitConstraint W, P.energy v < m + 1 / ((n : ℝ) + 1) := by
-    intro n
-    have hlt : m < m + 1 / ((n : ℝ) + 1) := lt_add_of_pos_right m (by positivity)
-    obtain ⟨_, ⟨v, hv, rfl⟩, hvm⟩ := exists_lt_of_csInf_lt (hS.image P.energy) hlt
-    exact ⟨v, hv, hvm⟩
-  choose u huW hult using hex
-  have hsub : ∀ n : ℕ, u n ∈ {v ∈ P.unitConstraint W | P.energy v ≤ m + 1} := by
-    intro n
-    refine ⟨huW n, (hult n).le.trans ?_⟩
-    have hle1 : (1 : ℝ) / ((n : ℝ) + 1) ≤ 1 :=
-      div_le_one_of_le₀ (by linarith [Nat.cast_nonneg (α := ℝ) n]) (by positivity)
-    linarith
-  have hcomp :
-      IsCompact (closure (toWeakSpace 𝕜 E '' {v ∈ P.unitConstraint W | P.energy v ≤ m + 1})) :=
-    TauCeti.isCompact_closure_toWeakSpace_of_isBounded hE
-      ((P.hasBoundedSublevelsOn_energy_unitConstraint W).isBounded_sublevel (m + 1))
-  obtain ⟨x, φ, hφ, hlim⟩ :=
-    TauCeti.tendsto_subseq_toWeakSpace_of_isCompact_closure hcomp hsub
-  have hxW : x ∈ P.unitConstraint W :=
-    P.mem_unitConstraint_of_tendsto_toWeakSpace hW (fun n => huW (φ n)) hlim
-  have hEtend : Tendsto (fun n => P.energy (u (φ n)) - m) atTop (𝓝 0) := by
-    refine squeeze_zero' (Eventually.of_forall fun n => ?_) (Eventually.of_forall fun n => ?_)
-      (tendsto_one_div_add_atTop_nhds_zero_nat.comp hφ.tendsto_atTop)
-    · exact sub_nonneg.mpr (csInf_le hbdd (mem_image_of_mem P.energy (huW (φ n))))
-    · exact sub_le_iff_le_add'.mpr (hult (φ n)).le
-  have hEtend' : Tendsto (fun n => P.energy (u (φ n))) atTop (𝓝 m) := by
-    simpa only [sub_add_cancel, zero_add] using hEtend.add_const m
-  have hxle : P.energy x ≤ m := P.energy_le_of_tendsto_toWeakSpace hlim hEtend'
-  refine ⟨x, hxW, fun v hv => hxle.trans (csInf_le hbdd (mem_image_of_mem P.energy hv))⟩
+  obtain ⟨u₀, hu₀⟩ := (P.unitConstraint_nonempty_iff W).mpr hne
+  let S₀ : Set E := {v ∈ P.unitConstraint W | P.energy v ≤ P.energy u₀}
+  have hS₀_ne : (toWeakSpace 𝕜 E '' S₀).Nonempty :=
+    ⟨toWeakSpace 𝕜 E u₀, mem_image_of_mem _ ⟨hu₀, le_rfl⟩⟩
+  have hcomp : IsCompact (toWeakSpace 𝕜 E '' S₀) :=
+    P.isCompact_toWeakSpace_sublevel_unitConstraint hE W hW (P.energy u₀)
+  have hlsc :
+      LowerSemicontinuousOn (fun w : WeakSpace 𝕜 E => P.energy ((toWeakSpace 𝕜 E).symm w))
+        (toWeakSpace 𝕜 E '' S₀) := by
+    rw [lowerSemicontinuousOn_iff_preimage_Iic]
+    intro b
+    refine ⟨toWeakSpace 𝕜 E '' {v ∈ P.unitConstraint W | P.energy v ≤ min (P.energy u₀) b},
+      (P.isCompact_toWeakSpace_sublevel_unitConstraint hE W hW (min (P.energy u₀) b)).isClosed, ?_⟩
+    ext w
+    refine ⟨fun ⟨hw, hvb⟩ => ⟨hw, ?_⟩, fun ⟨hw, hwC⟩ => ⟨hw, ?_⟩⟩
+    · obtain ⟨v, ⟨hvW, hvu₀⟩, rfl⟩ := hw
+      exact ⟨v, ⟨hvW, le_min hvu₀ (by simpa using hvb)⟩, rfl⟩
+    · obtain ⟨v', ⟨_, hv'min⟩, rfl⟩ := hwC
+      simpa using (le_min_iff.mp hv'min).2
+  obtain ⟨w, hw, hmin⟩ := LowerSemicontinuousOn.exists_isMinOn hS₀_ne hcomp hlsc
+  obtain ⟨u, ⟨huW, hu_le⟩, rfl⟩ := hw
+  refine ⟨u, huW, (TauCeti.isMinOn_sublevel_iff hu_le).mp fun v hv => ?_⟩
+  simpa using hmin (mem_image_of_mem (toWeakSpace 𝕜 E) hv)
 
 end WeakCompactness
 
@@ -595,64 +581,67 @@ theorem equation_of_constrained_minimum (P : CompactFormPair 𝕜 E H)
       P.form u v = (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜 := by
   have hquad : ∀ v : E, P.inclusion v ∈ W → P.energy u * ‖P.inclusion v‖ ^ 2 ≤ P.energy v :=
     P.isMinOn_unitConstraint_iff_forall_mul_norm_sq_le.mp hmin
-  -- Step 1: for any direction `w` with `j w ∈ W` and `⟪j u, j w⟫ = 0`, `Re (a u w) = 0`.
-  have hre_orth : ∀ w : E, P.inclusion w ∈ W → ⟪P.inclusion u, P.inclusion w⟫_𝕜 = 0 →
-      RCLike.re (P.form u w) = 0 := by
-    intro w hwW hw_orth
-    set a : ℝ := RCLike.re (P.form u w)
-    set b : ℝ := P.energy w - P.energy u * ‖P.inclusion w‖ ^ 2
-    have hpoly : ∀ t : ℝ, 0 ≤ 2 * t * a + t ^ 2 * b := by
-      intro t
-      have hzW : P.inclusion (u + (t : 𝕜) • w) ∈ W := by
-        rw [map_add, map_smul]
-        exact W.add_mem hu.1 (W.smul_mem _ hwW)
-      have hnorm_sq : ‖P.inclusion (u + (t : 𝕜) • w)‖ ^ 2 = 1 + t ^ 2 * ‖P.inclusion w‖ ^ 2 := by
-        rw [map_add, map_smul, norm_add_sq (𝕜 := 𝕜), inner_smul_right, hw_orth, mul_zero, map_zero,
-          mul_zero, add_zero, hu.2, one_pow, norm_smul, RCLike.norm_ofReal, mul_pow, sq_abs]
-      have hq := hquad (u + (t : 𝕜) • w) hzW
-      rw [hnorm_sq, P.energy_add_real_smul u w t] at hq
-      linarith
-    have hdisc := discrim_le_zero (a := b) (b := 2 * a) (c := 0) fun t => by
-      linarith [hpoly t]
-    simp only [discrim, mul_zero, sub_zero] at hdisc
-    nlinarith
-  -- Step 2: testing both `w` and `I • w` upgrades `Re (a u w) = 0` to `a u w = 0`.
-  have horth : ∀ w : E, P.inclusion w ∈ W → ⟪P.inclusion u, P.inclusion w⟫_𝕜 = 0 →
-      P.form u w = 0 := by
-    intro w hwW hw_orth
-    have hre : RCLike.re (P.form u w) = 0 := hre_orth w hwW hw_orth
-    have him : RCLike.im (P.form u w) = 0 := by
-      have hIwW : P.inclusion ((RCLike.I : 𝕜) • w) ∈ W := by
-        rw [map_smul]
-        exact W.smul_mem _ hwW
-      have hIw_orth : ⟪P.inclusion u, P.inclusion ((RCLike.I : 𝕜) • w)⟫_𝕜 = 0 := by
-        rw [map_smul, inner_smul_right, hw_orth, mul_zero]
-      have h := hre_orth ((RCLike.I : 𝕜) • w) hIwW hIw_orth
-      rw [map_smul, smul_eq_mul, RCLike.I_mul_re] at h
-      linarith
-    apply RCLike.ext
-    · simpa using hre
-    · simpa using him
-  -- Step 3: decompose any `v` with `j v ∈ W` into its `j u`-component and orthogonal complement.
+  let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+  let _ : IsScalarTower ℝ 𝕜 E := RestrictScalars.isScalarTower ℝ 𝕜 E
+  let V₀ : Submodule ℝ E := (W.comap P.inclusion.toLinearMap).restrictScalars ℝ
+  let B : LinearMap.BilinForm ℝ V₀ :=
+    LinearMap.mk₂ ℝ
+      (fun x y : V₀ =>
+        RCLike.re (P.form x.1 y.1) - P.energy u * RCLike.re ⟪P.inclusion x.1, P.inclusion y.1⟫_𝕜)
+      (fun x₁ x₂ y => by
+        simp only [Submodule.coe_add, map_add, add_apply, inner_add_left]
+        ring)
+      (fun r x y => by
+        rw [SetLike.val_smul, RCLike.real_smul_eq_coe_smul (K := 𝕜)]
+        simp only [map_smulₛₗ, smul_apply, RingHom.id_apply, RCLike.conj_ofReal, smul_eq_mul,
+          RCLike.re_ofReal_mul, inner_smul_left]
+        ring)
+      (fun x y₁ y₂ => by
+        simp only [Submodule.coe_add, map_add, inner_add_right]
+        ring)
+      (fun r x y => by
+        rw [SetLike.val_smul, RCLike.real_smul_eq_coe_smul (K := 𝕜)]
+        simp only [map_smul, smul_eq_mul, RCLike.re_ofReal_mul, inner_smul_right]
+        ring)
+  have hs : ∀ x : V₀, 0 ≤ B x x := by
+    intro x
+    dsimp only [B, LinearMap.mk₂_apply]
+    rw [← P.energy_def, inner_self_eq_norm_sq_to_K, ← RCLike.ofReal_pow, RCLike.ofReal_re]
+    linarith [hquad x.1 x.2]
+  have hB : LinearMap.IsSymm B := ⟨fun x y => by
+    dsimp only [B, LinearMap.mk₂_apply]
+    rw [P.re_form_symm x.1 y.1, ← inner_conj_symm, RCLike.conj_re]
+    rfl⟩
+  have hBu : B ⟨u, hu.1⟩ ⟨u, hu.1⟩ = 0 := by
+    dsimp only [B, LinearMap.mk₂_apply]
+    rw [← P.energy_def, inner_self_eq_norm_sq_to_K, hu.2]
+    simp
+  have hker : ⟨u, hu.1⟩ ∈ LinearMap.ker B := (B.apply_apply_same_eq_zero_iff hs hB).mp hBu
+  have hzero_re : ∀ w : E, P.inclusion w ∈ W →
+      RCLike.re (P.form u w - (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion w⟫_𝕜) = 0 := by
+    intro w hwW
+    have h := LinearMap.congr_fun (LinearMap.mem_ker.mp hker) ⟨w, hwW⟩
+    dsimp only [B, LinearMap.mk₂_apply] at h
+    simpa only [LinearMap.zero_apply, map_sub, RCLike.re_ofReal_mul] using h
   intro v hvW
-  set c : 𝕜 := ⟪P.inclusion u, P.inclusion v⟫_𝕜
-  have hwW : P.inclusion (v - c • u) ∈ W := by
-    rw [map_sub, map_smul]
-    exact W.sub_mem hvW (W.smul_mem c hu.1)
-  have hw_orth : ⟪P.inclusion u, P.inclusion (v - c • u)⟫_𝕜 = 0 := by
-    rw [map_sub, map_smul, inner_sub_right, inner_smul_right, inner_self_eq_norm_sq_to_K, hu.2]
-    simp [c]
-  have hzero := horth (v - c • u) hwW hw_orth
-  rw [map_sub, map_smul, smul_eq_mul, P.form_self_eq_ofReal_energy u, sub_eq_zero] at hzero
-  rw [hzero, mul_comm]
-
-/-- Specialization of `equation_of_constrained_minimum` to the full unit sphere
-`P.unitConstraint ⊤`: a minimizer satisfies the unconstrained weak eigen-equation for all `v`. -/
-theorem equation_of_minimum_on_unitConstraint_top (P : CompactFormPair 𝕜 E H)
-    {u : E} (hu : u ∈ P.unitConstraint ⊤)
-    (hmin : IsMinOn P.energy (P.unitConstraint ⊤) u) (v : E) :
-    P.form u v = (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜 :=
-  P.equation_of_constrained_minimum ⊤ u hu hmin v Submodule.mem_top
+  have hre : RCLike.re (P.form u v - (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜) = 0 :=
+    hzero_re v hvW
+  have him : RCLike.im (P.form u v - (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜) = 0 := by
+    have hIw : P.inclusion ((RCLike.I : 𝕜) • v) ∈ W := by
+      rw [map_smul]
+      exact W.smul_mem _ hvW
+    have h := hzero_re ((RCLike.I : 𝕜) • v) hIw
+    have hmul :
+        P.form u ((RCLike.I : 𝕜) • v) -
+            (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion ((RCLike.I : 𝕜) • v)⟫_𝕜 =
+          (RCLike.I : 𝕜) * (P.form u v - (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜) := by
+      rw [map_smul, map_smul, smul_eq_mul, inner_smul_right]
+      ring
+    rw [hmul, RCLike.I_mul_re] at h
+    linarith
+  have hdiff : P.form u v - (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜 = 0 :=
+    RCLike.ext (by simpa using hre) (by simpa using him)
+  exact sub_eq_zero.mp hdiff
 
 end EulerLagrange
 

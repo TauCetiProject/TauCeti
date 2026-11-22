@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Analysis.Normed.Operator.Bilinear
 import Mathlib.Analysis.RCLike.Lemmas
+import TauCeti.Analysis.Normed.Operator.Compact.Pi
 
 /-!
 # Compact form pairs
@@ -106,11 +107,6 @@ theorem re_form_symm (P : CompactFormPair 𝕜 E H) (u v : E) :
     RCLike.re (P.form u v) = RCLike.re (P.form v u) := by
   rw [P.hermitian u v, RCLike.star_def, RCLike.conj_re]
 
-/-- The shifted lower bound restated in terms of `P.energy`. -/
-theorem exists_shifted_lower_bound_energy (P : CompactFormPair 𝕜 E H) :
-    ∃ c ω : ℝ, 0 < c ∧ ∀ u : E, c * ‖u‖ ^ 2 ≤ P.energy u + ω * ‖P.inclusion u‖ ^ 2 :=
-  P.exists_shifted_lower_bound
-
 /-- Increasing the shift preserves a shifted lower bound with the same coercivity constant. -/
 theorem shifted_lower_bound_mono (P : CompactFormPair 𝕜 E H) {c ω ω' : ℝ} (hω : ω ≤ ω')
     (hbound : ∀ u : E, c * ‖u‖ ^ 2 ≤ P.energy u + ω * ‖P.inclusion u‖ ^ 2) (u : E) :
@@ -166,20 +162,12 @@ theorem abs_energy_le (P : CompactFormPair 𝕜 E H) (u : E) :
     |P.energy u| ≤ ‖P.form‖ * ‖u‖ ^ 2 := by
   calc |P.energy u| = |RCLike.re (P.form u u)| := rfl
     _ ≤ ‖P.form u u‖ := RCLike.abs_re_le_norm _
-    _ ≤ ‖P.form u‖ * ‖u‖ := (P.form u).le_opNorm u
-    _ ≤ (‖P.form‖ * ‖u‖) * ‖u‖ :=
-        mul_le_mul_of_nonneg_right (P.form.le_opNorm u) (norm_nonneg u)
-    _ = ‖P.form‖ * ‖u‖ ^ 2 := by ring
+    _ ≤ ‖P.form‖ * ‖u‖ * ‖u‖ := P.form.le_opNorm₂ u u
+    _ = ‖P.form‖ * ‖u‖ ^ 2 := by rw [mul_assoc, ← sq]
 
 /-- The quadratic energy is norm-continuous on `E`. -/
 theorem continuous_energy (P : CompactFormPair 𝕜 E H) : Continuous P.energy :=
   RCLike.continuous_re.comp (P.form.continuous.clm_apply continuous_id)
-
-/-- In any compact form pair, `P.inclusion u = 0` holds if and only if `u = 0`. -/
-@[simp]
-theorem inclusion_eq_zero_iff (P : CompactFormPair 𝕜 E H) {u : E} :
-    P.inclusion u = 0 ↔ u = 0 :=
-  ⟨fun h => P.injective (by simpa using h), fun h => by simp [h]⟩
 
 end Energy
 
@@ -244,7 +232,7 @@ theorem shift_shift (P : CompactFormPair 𝕜 E H) (α β : ℝ) :
 /-- Every compact form pair becomes strictly coercive after a sufficiently large real shift. -/
 theorem exists_shift_coercive (P : CompactFormPair 𝕜 E H) :
     ∃ ω₀ : ℝ, ∀ α : ℝ, ω₀ ≤ α → ∃ c : ℝ, 0 < c ∧ ∀ u : E, c * ‖u‖ ^ 2 ≤ (P.shift α).energy u := by
-  obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound_energy
+  obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound
   refine ⟨ω, fun α hα => ⟨c, hc, fun u => ?_⟩⟩
   rw [shift_energy]
   exact P.shifted_lower_bound_mono hα hbound u
@@ -388,17 +376,10 @@ def restrict (P : CompactFormPair 𝕜 E H) (V₁ : Submodule 𝕜 E) :
     apply P.injective
     exact congrArg Subtype.val huv
   dense := by
-    rw [DenseRange, dense_iff_closure_eq]
-    ext ⟨y, hy⟩
-    simp only [Set.mem_univ, iff_true]
-    rw [mem_closure_iff]
-    intro U hU hyU
-    rw [isOpen_induced_iff] at hU
-    obtain ⟨W, hW, rfl⟩ := hU
-    have hy' : y ∈ closure (V₁.map P.inclusion.toLinearMap : Set H) := hy
-    obtain ⟨z, hzW, ⟨x, hxV₁, rfl⟩⟩ := mem_closure_iff.mp hy' W hW hyU
-    refine ⟨⟨P.inclusion x, Submodule.le_topologicalClosure _ ⟨x, hxV₁, rfl⟩⟩, hzW,
-      ⟨⟨x, hxV₁⟩, rfl⟩⟩
+    rw [DenseRange, Subtype.dense_iff, ← Set.range_comp]
+    refine subset_trans (le_of_eq (Submodule.topologicalClosure_coe _)) (closure_mono ?_)
+    rintro _ ⟨x, hx, rfl⟩
+    exact ⟨⟨x, hx⟩, rfl⟩
   compact :=
     (P.compact.comp_clm V₁.subtypeL).codRestrict
       (V := (V₁.map P.inclusion.toLinearMap).topologicalClosure)
@@ -463,24 +444,12 @@ def pi (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) :
         (PiLp.continuousLinearEquiv 2 𝕜 E).surjective.denseRange
         (Continuous.piMap fun i => (P i).inclusion.continuous))
       (PiLp.continuousLinearEquiv 2 𝕜 H).symm.continuous
-  compact := by
-    classical
-    let projCLM (i : ι) : PiLp 2 E →L[𝕜] E i :=
-      (ContinuousLinearMap.proj (R := 𝕜) i).comp
-        (PiLp.continuousLinearEquiv 2 𝕜 E).toContinuousLinearMap
-    let singleCLM (i : ι) : H i →L[𝕜] PiLp 2 H :=
-      (PiLp.continuousLinearEquiv 2 𝕜 H).symm.toContinuousLinearMap.comp
-        (ContinuousLinearMap.single 𝕜 H i)
-    have hsum :
-        ((PiLp.continuousLinearEquiv 2 𝕜 H).symm.toContinuousLinearMap.comp
-          (ContinuousLinearMap.pi fun i => (P i).inclusion.comp (projCLM i))) =
-        ∑ i : ι, (singleCLM i).comp ((P i).inclusion.comp (projCLM i)) := by
-      ext u j
-      simp [singleCLM, projCLM]
-    rw [hsum]
-    refine Finset.sum_induction _ (fun f : PiLp 2 E →L[𝕜] PiLp 2 H => IsCompactOperator f)
-      (fun _ _ hf hg => hf.add hg) isCompactOperator_zero fun i _ => ?_
-    exact ((P i).compact.comp_clm (projCLM i)).clm_comp (singleCLM i)
+  compact :=
+    (IsCompactOperator.pi fun i =>
+      (P i).compact.comp_clm
+        ((ContinuousLinearMap.proj (R := 𝕜) i).comp
+          (PiLp.continuousLinearEquiv 2 𝕜 E).toContinuousLinearMap)).clm_comp
+      (PiLp.continuousLinearEquiv 2 𝕜 H).symm.toContinuousLinearMap
   form := ∑ i : ι,
     (P i).form.bilinearComp
       ((ContinuousLinearMap.proj (R := 𝕜) i).comp
@@ -544,35 +513,29 @@ def restrictScalars (P : CompactFormPair 𝕜 E H) : CompactFormPair ℝ E H whe
   dense := P.dense
   compact := P.compact
   form :=
-    LinearMap.mkContinuous
-      { toFun := fun u => RCLike.reCLM.comp ((P.form u).restrictScalars ℝ)
-        map_add' := fun u₁ u₂ => by
-          ext v
-          simp
-        map_smul' := fun r u => by
-          ext v
-          simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
-            RCLike.reCLM_apply, smul_apply, RCLike.conj_to_real, smul_eq_mul]
-          rw [RCLike.real_smul_eq_coe_smul (K := 𝕜), map_smulₛₗ, smul_apply, RCLike.conj_ofReal,
-            smul_eq_mul, RCLike.re_ofReal_mul] }
-      ‖P.form‖
-      fun u => ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v => by
-        simp only [LinearMap.coe_mk, AddHom.coe_mk, ContinuousLinearMap.comp_apply,
-          ContinuousLinearMap.coe_restrictScalars', RCLike.reCLM_apply]
-        calc ‖RCLike.re (P.form u v)‖ = |RCLike.re (P.form u v)| := Real.norm_eq_abs _
-          _ ≤ ‖P.form u v‖ := RCLike.abs_re_le_norm _
-          _ ≤ ‖P.form u‖ * ‖v‖ := (P.form u).le_opNorm v
-          _ ≤ ‖P.form‖ * ‖u‖ * ‖v‖ :=
-              mul_le_mul_of_nonneg_right (P.form.le_opNorm u) (norm_nonneg v)
+    { toFun := fun u => RCLike.reCLM.comp ((P.form u).restrictScalars ℝ)
+      map_add' := fun u₁ u₂ => by
+        ext v
+        simp
+      map_smul' := fun r u => by
+        ext v
+        simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+          RCLike.reCLM_apply, smul_apply, RCLike.conj_to_real, smul_eq_mul]
+        rw [RCLike.real_smul_eq_coe_smul (K := 𝕜), map_smulₛₗ, smul_apply, RCLike.conj_ofReal,
+          smul_eq_mul, RCLike.re_ofReal_mul]
+      cont :=
+        Continuous.const_clm_comp
+          (Continuous.comp (ContinuousLinearMap.continuous_restrictScalars ℝ) P.form.continuous)
+          RCLike.reCLM }
   hermitian u v := by
-    simp only [LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk,
+    simp only [ContinuousLinearMap.coe_mk', LinearMap.coe_mk, AddHom.coe_mk,
       ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
       RCLike.reCLM_apply, star_trivial]
     exact P.re_form_symm u v
   exists_shifted_lower_bound := by
     obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound
     refine ⟨c, ω, hc, fun u => ?_⟩
-    simpa only [LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk,
+    simpa only [ContinuousLinearMap.coe_mk', LinearMap.coe_mk, AddHom.coe_mk,
       ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
       RCLike.reCLM_apply, RCLike.re_to_real] using hbound u
 
@@ -615,9 +578,8 @@ def ofFiniteDimensional (a : H →L⋆[𝕜] H →L[𝕜] 𝕜) (ha : ∀ u v : 
     have hre : -RCLike.re (a u u) ≤ ‖a‖ * ‖u‖ ^ 2 := by
       calc -RCLike.re (a u u) ≤ |RCLike.re (a u u)| := neg_le_abs _
         _ ≤ ‖a u u‖ := RCLike.abs_re_le_norm _
-        _ ≤ ‖a u‖ * ‖u‖ := (a u).le_opNorm u
-        _ ≤ (‖a‖ * ‖u‖) * ‖u‖ := mul_le_mul_of_nonneg_right (a.le_opNorm u) (norm_nonneg u)
-        _ = ‖a‖ * ‖u‖ ^ 2 := by ring
+        _ ≤ ‖a‖ * ‖u‖ * ‖u‖ := a.le_opNorm₂ u u
+        _ = ‖a‖ * ‖u‖ ^ 2 := by rw [mul_assoc, ← sq]
     simp only [ContinuousLinearMap.id_apply]
     linarith
 
