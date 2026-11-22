@@ -141,6 +141,23 @@ noncomputable def decreasingFiltrationSpectralSequenceFirstPageXIso (p q : ℤ) 
       (cokernelFiltrationFunctorMapIso _ _ _ ≪≫
         Subobject.cokernelOfLEIsoOfEq (by simp) (by simp) _ _)
 
+/-- `CochainComplex.decreasingFiltrationSpectralSequenceFirstPageXIso` is the identification
+`CochainComplex.decreasingFiltrationSpectralSequencePageXIso` with page `2` of the spectral sequence
+of the increasing filtration `t ↦ F^{-t}`, followed by the identification of that first page with
+the cohomology of its graded pieces. -/
+lemma decreasingFiltrationSpectralSequenceFirstPageXIso_hom (p q : ℤ) :
+    (decreasingFiltrationSpectralSequenceFirstPageXIso F hF p q).hom =
+      (decreasingFiltrationSpectralSequencePageXIso F hF 1 2 le_rfl rfl p q _ _ rfl rfl).hom ≫
+        (spectralSequenceFirstPageXIsoCokernel _ (2 * p + q + 1, -p - 1) (-(p + 1)) (-p)
+          (by dsimp; lia) (by dsimp; lia) (p + q) (by dsimp; lia)).hom ≫
+        HomologicalComplex.homologyMap
+          (cokernelFiltrationFunctorMapIso _ (hF.comp fun _ _ h ↦ neg_le_neg h)
+              (homOfLE (show ((-(p + 1) : ℤ) : EInt) ≤ ((-p : ℤ) : EInt) from
+                WithBotTop.coe_le_coe.mpr (by lia))) ≪≫
+            Subobject.cokernelOfLEIsoOfEq (A' := F (p + 1)) (B' := F p) (by simp) (by simp) _
+              (hF (by lia))).hom (p + q) :=
+  (rfl)
+
 /-- **The first differential of the spectral sequence of a decreasing filtration.** Under the
 identifications `CochainComplex.decreasingFiltrationSpectralSequenceFirstPageXIso` of the first page
 with the cohomology of the graded pieces, the differential `d₁ : E₁^{p,q} ⟶ E₁^{p+1,q}` is the
@@ -311,19 +328,21 @@ theorem decreasingFiltrationSpectralSequenceFirstPageXIso_hom_naturality (f : K 
   simp only [HomologicalComplex.homologyMap_comp] at h₃
   -- The first pages are reindexed first pages of the increasing filtrations `t ↦ F^{-t}` and
   -- `t ↦ G^{-t}`: compose the naturality of the reindexing (`e`), of those first pages (`h₂`) and
-  -- of the graded pieces (`h₃`). The first-page identifications unfold to these composites, so
-  -- the steps are composed as terms.
-  have e := SpectralSequence.reindexMap_hom_f_comp_reindexPageXIso_hom 1
-    decreasingFiltrationBidegreeEquiv decreasingFiltrationBidegreeEquiv_rel_iff (by lia)
-    (Abelian.SpectralObject.spectralSequenceMap Abelian.SpectralObject.coreE₂Cohomological
-      (spectralObjectMap α)) 1 2 le_rfl rfl (p, q) _ rfl
+  -- of the graded pieces (`h₃`).
+  have e : ((decreasingFiltrationSpectralSequenceMap hF hG f hf).hom 1 le_rfl).f (p, q) ≫
+      (decreasingFiltrationSpectralSequencePageXIso G hG 1 2 le_rfl rfl p q _ _ rfl rfl).hom =
+        (decreasingFiltrationSpectralSequencePageXIso F hF 1 2 le_rfl rfl p q _ _ rfl rfl).hom ≫
+          ((Abelian.SpectralObject.spectralSequenceMap
+            Abelian.SpectralObject.coreE₂Cohomological (spectralObjectMap α)).hom 2 (by lia)).f
+            (2 * p + q + 1, -p - 1) :=
+    SpectralSequence.reindexMap_hom_f_comp_reindexPageXIso_hom 1
+      decreasingFiltrationBidegreeEquiv decreasingFiltrationBidegreeEquiv_rel_iff (by lia) _ 1 2
+      le_rfl rfl (p, q) _ rfl
   have h₂ := spectralSequenceFirstPageXIsoCokernel_hom_naturality α (2 * p + q + 1, -p - 1)
     (-(p + 1)) (-p) (by dsimp; lia) (by dsimp; lia) (p + q) (by dsimp; lia)
-  exact (Category.assoc (obj := C) _ _ _).symm.trans <| (eq_whisker e _).trans <|
-    (Category.assoc (obj := C) _ _ _).trans <| (whisker_eq _ <|
-      (Category.assoc (obj := C) _ _ _).symm.trans <| (eq_whisker h₂ _).trans <|
-        (Category.assoc (obj := C) _ _ _).trans <| (whisker_eq _ h₃).trans
-          (Category.assoc (obj := C) _ _ _).symm).trans (Category.assoc (obj := C) _ _ _).symm
+  rw [decreasingFiltrationSpectralSequenceFirstPageXIso_hom,
+    decreasingFiltrationSpectralSequenceFirstPageXIso_hom, reassoc_of% e, reassoc_of% h₂, h₃]
+  simp only [Category.assoc]
 
 end DecreasingMap
 

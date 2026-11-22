@@ -341,6 +341,22 @@ def filteredSpaceCohomologySpectralSequenceFirstPageXIso (p q a b : ℤ) (ha : a
   firstPageXIsoExtend R k M hX p q a b ha hb ≪≫
     extendHomologyIso _ ComplexShape.embeddingUpNat hn.symm
 
+/-- `TauCeti.filteredSpaceCohomologySpectralSequenceFirstPageXIso` is the identification of the
+first page of a decreasing filtration with the cohomology of its graded pieces, followed by the
+identification of the graded piece `F^p / F^{p+1}` with the reindexed relative cochains of
+`(X b, X a)` and by `HomologicalComplex.extendHomologyIso`. -/
+lemma filteredSpaceCohomologySpectralSequenceFirstPageXIso_hom (p q a b : ℤ) (ha : a = p - 1)
+    (hb : b = p) (n : ℕ) (hn : p + q = n) :
+    (filteredSpaceCohomologySpectralSequenceFirstPageXIso R k M hX p q a b ha hb n hn).hom =
+      (CochainComplex.decreasingFiltrationSpectralSequenceFirstPageXIso _
+          (antitone_singularCochainFiltration_sub_one R k M hX) p q).hom ≫
+        HomologicalComplex.homologyMap
+          (Subobject.cokernelOfLEIsoOfEq (by rw [hb, add_sub_cancel_right]) (by rw [ha]) _
+              (singularCochainFiltration_anti R k M (hX (by lia : a ≤ b))) ≪≫
+            singularCochainFiltrationCokernelIso R k M (hX (by lia : a ≤ b))).hom (p + q) ≫
+        (extendHomologyIso _ ComplexShape.embeddingUpNat hn.symm).hom :=
+  (rfl)
+
 /-- The first page of the cohomology spectral sequence of a filtered space vanishes in negative
 total degree `p + q`, since singular cochains are concentrated in nonnegative degrees. -/
 lemma isZero_filteredSpaceCohomologySpectralSequence_page_one_X (p q : ℤ) (h : p + q < 0) :
@@ -847,7 +863,6 @@ private lemma decreasingFiltrationGradedMap_comp_cokernelIso_hom (p : ℤ) :
     (hF := antitone_singularCochainFiltration_sub_one R k M hX')
     (hG := antitone_singularCochainFiltration_sub_one R k M hX) _
     (fun p ↦ factors_singularCochainFiltration R k M g hg (p - 1)) p
-  have h₁ := factorThru_comp_singularCochainFiltrationIso_hom R k M g hg (p - 1)
   have hl := π_cokernelOfLEIsoOfEq_trans_singularCochainFiltrationCokernelIso_hom R k M hX p
   have hr := π_cokernelOfLEIsoOfEq_trans_singularCochainFiltrationCokernelIso_hom R k M hX' p
   -- The two maps of pairs `(X p, X (p - 1)) ⟶ (Y', X' (p - 1))` agree, so their cochain maps do.
@@ -858,16 +873,11 @@ private lemma decreasingFiltrationGradedMap_comp_cokernelIso_hom (p : ℤ) :
           (innerToTotal_comp_ofSubsetMap g hg hX hX' (by lia : p - 1 ≤ p))).trans <|
         TopPair.singularCochainComplexMap_comp _ _)).trans <| extendMap_comp _ _ _
   -- After the quotient map from `F^p`, both sides restrict the stage `F^p` of `Y'` to the pair
-  -- `(X p, X (p - 1))`. The objects agree only up to unfolding, so the equations are composed as
-  -- terms.
+  -- `(X p, X (p - 1))`.
   refine (cancel_epi (cokernel.π _)).1 ?_
-  let A := CochainComplex (ModuleCat.{v} k) ℤ
-  exact (Category.assoc (obj := A) _ _ _).symm.trans <| (eq_whisker π₁ _).trans <|
-    (Category.assoc (obj := A) _ _ _).trans <| (whisker_eq _ hl).trans <|
-    (Category.assoc (obj := A) _ _ _).symm.trans <| (eq_whisker h₁ _).trans <|
-    (Category.assoc (obj := A) _ _ _).trans <| (whisker_eq _ h₂).trans <|
-    (Category.assoc (obj := A) _ _ _).symm.trans <|
-    (eq_whisker hr.symm _).trans (Category.assoc (obj := A) _ _ _)
+  rw [reassoc_of% π₁, hl, reassoc_of% hr]
+  exact (factorThru_comp_singularCochainFiltrationIso_hom_assoc R k M g hg (p - 1) _).trans
+    (_ ≫= h₂)
 
 include hX hX' g hg in
 /-- **The morphism of cohomology spectral sequences of a map of filtered spaces on the first
@@ -894,14 +904,10 @@ theorem filteredSpaceCohomologySpectralSequenceFirstPageXIso_hom_naturality (p q
   have e₃ := extendHomologyIso_hom_naturality (TopPair.singularCochainComplexMap (R := R) (k := k)
     (M := M) (filteredSpaceStepMap hX hX' g hg (by lia : p - 1 ≤ p))) ComplexShape.embeddingUpNat
     (j := n) (j' := p + q) hn.symm
-  -- The first-page identifications unfold to composites of the identifications of the decreasing
-  -- filtration, of its graded pieces and of the extended cochains; compose `e₁`, `e₂` and `e₃`.
-  exact (Category.assoc (obj := ModuleCat.{v} k) _ _ _).symm.trans <| (eq_whisker e₁ _).trans <|
-    (Category.assoc (obj := ModuleCat.{v} k) _ _ _).trans <| (whisker_eq _ <|
-      (Category.assoc (obj := ModuleCat.{v} k) _ _ _).symm.trans <| (eq_whisker e₂ _).trans <|
-        (Category.assoc (obj := ModuleCat.{v} k) _ _ _).trans <| (whisker_eq _ e₃).trans
-          (Category.assoc (obj := ModuleCat.{v} k) _ _ _).symm).trans
-    (Category.assoc (obj := ModuleCat.{v} k) _ _ _).symm
+  rw [filteredSpaceCohomologySpectralSequenceMap,
+    filteredSpaceCohomologySpectralSequenceFirstPageXIso_hom,
+    filteredSpaceCohomologySpectralSequenceFirstPageXIso_hom, reassoc_of% e₁, reassoc_of% e₂, e₃]
+  simp only [Category.assoc]
 
 include hX hX' g hg in
 /-- **The comparison theorem for cohomology spectral sequences of maps of filtered spaces.** If a

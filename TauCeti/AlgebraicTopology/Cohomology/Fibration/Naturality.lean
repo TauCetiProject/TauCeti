@@ -183,16 +183,9 @@ theorem serreCohomologySpectralSequenceFirstPageXIsoPi_hom_naturality (hf : f �
     (s - 1 + 1) (by lia) (by lia) (q + n)
   have e₃ := preimageSkeletonPairSingularCohomologyIsoPi_hom_naturality (C := C) hp R k M hp' hf n q
     (fun j ↦ f.preimageMap hf {map n j 0}) (fun j x ↦ f.coe_preimageMap_apply hf _ x)
-  -- The identification of the first page is the composite of these three, through objects that
-  -- agree only up to unfolding, so the equations are composed as terms.
   rw [serreCohomologySpectralSequenceFirstPageXIsoPi_hom,
-    serreCohomologySpectralSequenceFirstPageXIsoPi_hom]
-  exact (Category.assoc (obj := ModuleCat k) _ _ _).symm.trans <| (eq_whisker e₁ _).trans <|
-    (Category.assoc (obj := ModuleCat k) _ _ _).trans <| (whisker_eq _ <|
-      (Category.assoc (obj := ModuleCat k) _ _ _).symm.trans <| (eq_whisker e₂ _).trans <|
-        (Category.assoc (obj := ModuleCat k) _ _ _).trans <| (whisker_eq _ e₃).trans
-          (Category.assoc (obj := ModuleCat k) _ _ _).symm).trans
-    (Category.assoc (obj := ModuleCat k) _ _ _).symm
+    serreCohomologySpectralSequenceFirstPageXIsoPi_hom, reassoc_of% e₁, reassoc_of% e₂, e₃]
+  simp only [Category.assoc]
 
 include hp hp' in
 variable (C) in
