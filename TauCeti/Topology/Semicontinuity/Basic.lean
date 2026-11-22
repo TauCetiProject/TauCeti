@@ -24,11 +24,9 @@ because the bound on the partial sums passes to their limit through the closed s
 In the same way, a bound `g (u i) ≤ c + ε i` along a family `u`, with errors `ε i` tending to `0`,
 passes to every cluster point of `u` (`MapClusterPt.le_of_eventually_le_add`).
 
-Finally, a function lower semicontinuous on a nonempty compact sublevel `{x ∈ s | f x ≤ b}`—or
-whose transport along an equivalence `e : X ≃ Y` is lower semicontinuous on a compact image
-sublevel `e '' {x ∈ s | f x ≤ b}`—attains its minimum on `s`
-(`LowerSemicontinuousOn.exists_isMinOn_of_isCompact_sublevel`,
-`Equiv.exists_isMinOn_of_isCompact_sublevel`).
+Finally, if an equivalence `e : X ≃ Y` identifies a nonempty sublevel `{x ∈ s | f x ≤ b}` with
+a compact set `e '' {x ∈ s | f x ≤ b}` on which `f ∘ e.symm` is lower semicontinuous, then `f`
+attains its minimum on `s` (`Equiv.exists_isMinOn_of_isCompact_sublevel`).
 -/
 
 public section
@@ -101,15 +99,5 @@ theorem Equiv.exists_isMinOn_of_isCompact_sublevel
       (hf.exists_isMinOn (hne.image e) hcompact)
   refine ⟨x, hx.1, (isMinOn_sublevel_iff hx.2).1 ?_⟩
   simpa only [Function.comp_def, e.symm_apply_apply] using hmin
-
-/-- A function lower semicontinuous on a nonempty compact sublevel `{x ∈ s | f x ≤ b}` attains
-its minimum on `s`. -/
-theorem LowerSemicontinuousOn.exists_isMinOn_of_isCompact_sublevel
-    {X β : Type*} [TopologicalSpace X] [LinearOrder β] {f : X → β} {s : Set X} {b : β}
-    (hf : LowerSemicontinuousOn f {x ∈ s | f x ≤ b})
-    (hne : {x ∈ s | f x ≤ b}.Nonempty) (hcompact : IsCompact {x ∈ s | f x ≤ b}) :
-    ∃ x ∈ s, IsMinOn f s x :=
-  (Equiv.refl X).exists_isMinOn_of_isCompact_sublevel hne (by simpa using hcompact)
-    (by simpa using hf)
 
 end CompactSublevel

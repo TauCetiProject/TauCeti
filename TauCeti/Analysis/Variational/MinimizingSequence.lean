@@ -248,6 +248,13 @@ section SequentialBoundedSublevels
 variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
   {β : Type*} [LinearOrder β] {E : V → β} {S : Set V}
 
+private theorem isSeqClosed_toWeakSpace_sublevel
+    (hS : IsSeqClosed (toWeakSpace 𝕜 V '' S))
+    (hE : SeqLowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w))
+      (toWeakSpace 𝕜 V '' S))
+    (b : β) : IsSeqClosed (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) :=
+  (toWeakSpace 𝕜 V).toEquiv.image_inter_preimage S E (Iic b) ▸ hE.isSeqClosed_sublevel hS b
+
 /-- On a sequentially weakly closed set in a reflexive normed space, every norm-bounded sublevel
 of a sequentially weakly lower semicontinuous energy is weakly compact. -/
 theorem isCompact_toWeakSpace_sublevel_of_isSeqClosed
@@ -256,40 +263,9 @@ theorem isCompact_toWeakSpace_sublevel_of_isSeqClosed
     (hE : SeqLowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w))
       (toWeakSpace 𝕜 V '' S))
     (b : β) (hb : IsBounded {u ∈ S | E u ≤ b}) :
-    IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
-  have heq : toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} =
-      {w ∈ toWeakSpace 𝕜 V '' S | E ((toWeakSpace 𝕜 V).symm w) ≤ b} :=
-    (toWeakSpace 𝕜 V).toEquiv.image_inter_preimage S E (Iic b)
-  exact isCompact_toWeakSpace_of_isBounded_of_isSeqClosed hV hb
-    (heq ▸ hE.isSeqClosed_sublevel hS b)
-
-/-- A single nonempty norm-bounded sublevel suffices for the sequential direct method on a
-sequentially weakly closed admissible set, without assuming a lower bound on the energy or a
-topology on the linearly ordered codomain. -/
-theorem exists_isMinOn_of_isSeqClosed_of_isBounded_sublevel
-    (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
-    (hS : IsSeqClosed (toWeakSpace 𝕜 V '' S))
-    (hE : SeqLowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w))
-      (toWeakSpace 𝕜 V '' S))
-    {b : β} (hne : {u ∈ S | E u ≤ b}.Nonempty)
-    (hb : IsBounded {u ∈ S | E u ≤ b}) : ∃ u ∈ S, IsMinOn E S u := by
-  have hcompact := isCompact_toWeakSpace_sublevel_of_isSeqClosed hV hS hE b hb
-  exact (toWeakSpace 𝕜 V).toEquiv.exists_isMinOn_of_isCompact_sublevel hne hcompact
-    ((lowerSemicontinuousOn_weakSpace_iff_seqLowerSemicontinuousOn hcompact).2
-      (hE.mono (image_mono fun _ hx ↦ hx.1)))
-
-/-- **The sequential direct method under bounded sublevels.** A sequentially weakly lower
-semicontinuous energy with norm-bounded sublevels on a nonempty sequentially weakly closed set in
-a reflexive normed space attains its minimum. -/
-theorem exists_isMinOn_of_isSeqClosed
-    (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
-    (hne : S.Nonempty) (hS : IsSeqClosed (toWeakSpace 𝕜 V '' S))
-    (hE : SeqLowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w))
-      (toWeakSpace 𝕜 V '' S))
-    (hb : HasBoundedSublevelsOn E S) : ∃ u ∈ S, IsMinOn E S u := by
-  obtain ⟨v, hv⟩ := hne
-  exact exists_isMinOn_of_isSeqClosed_of_isBounded_sublevel hV hS hE
-    ⟨v, hv, le_rfl⟩ (hb.isBounded_sublevel (E v))
+    IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) :=
+  isCompact_toWeakSpace_of_isBounded_of_isSeqClosed hV hb
+    (isSeqClosed_toWeakSpace_sublevel hS hE b)
 
 /-- Sublevel-localized sequential direct method without a lower bound: if a single nonempty
 bounded sublevel `{u ∈ S | E u ≤ b}` is sequentially weakly closed and `E` is sequentially
@@ -305,6 +281,32 @@ theorem exists_isMinOn_of_isSeqClosed_sublevel
   have hcompact := isCompact_toWeakSpace_of_isBounded_of_isSeqClosed hV hb hclosed
   exact (toWeakSpace 𝕜 V).toEquiv.exists_isMinOn_of_isCompact_sublevel hne hcompact
     ((lowerSemicontinuousOn_weakSpace_iff_seqLowerSemicontinuousOn hcompact).2 hE)
+
+/-- A single nonempty norm-bounded sublevel suffices for the sequential direct method on a
+sequentially weakly closed admissible set, without assuming a lower bound on the energy or a
+topology on the linearly ordered codomain. -/
+theorem exists_isMinOn_of_isSeqClosed_of_isBounded_sublevel
+    (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
+    (hS : IsSeqClosed (toWeakSpace 𝕜 V '' S))
+    (hE : SeqLowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w))
+      (toWeakSpace 𝕜 V '' S))
+    {b : β} (hne : {u ∈ S | E u ≤ b}.Nonempty)
+    (hb : IsBounded {u ∈ S | E u ≤ b}) : ∃ u ∈ S, IsMinOn E S u :=
+  exists_isMinOn_of_isSeqClosed_sublevel hV hne hb
+    (isSeqClosed_toWeakSpace_sublevel hS hE b) (hE.mono (image_mono fun _ hx ↦ hx.1))
+
+/-- **The sequential direct method under bounded sublevels.** A sequentially weakly lower
+semicontinuous energy with norm-bounded sublevels on a nonempty sequentially weakly closed set in
+a reflexive normed space attains its minimum. -/
+theorem exists_isMinOn_of_isSeqClosed
+    (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
+    (hne : S.Nonempty) (hS : IsSeqClosed (toWeakSpace 𝕜 V '' S))
+    (hE : SeqLowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w))
+      (toWeakSpace 𝕜 V '' S))
+    (hb : HasBoundedSublevelsOn E S) : ∃ u ∈ S, IsMinOn E S u := by
+  obtain ⟨v, hv⟩ := hne
+  exact exists_isMinOn_of_isSeqClosed_of_isBounded_sublevel hV hS hE
+    ⟨v, hv, le_rfl⟩ (hb.isBounded_sublevel (E v))
 
 /-- If the full set of minimizers of a sequentially weakly lower semicontinuous energy on a
 sequentially weakly closed set in a reflexive normed space is norm bounded, then it is weakly
