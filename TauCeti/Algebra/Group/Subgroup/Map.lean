@@ -64,6 +64,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   induced on quotients.
 * `QuotientGroup.map_mk'_eq_top`, `QuotientAddGroup.map_mk'_eq_top`: the image of `K` in `G ⧸ N`
   is everything exactly when `N ⊔ K = ⊤`.
+* `QuotientGroup.surjective_mk'_comp_iff`, `QuotientAddGroup.surjective_mk'_comp_iff`:
+  `QuotientGroup.mk' N ∘ f` is surjective exactly when `f.range ⊔ N = ⊤`.
 * `MonoidHom.subgroupCongr_injective`: transport along equalities of the domain and codomain
   preserves injectivity.
 * `Subgroup.subtype_comp_subgroupOfEquivOfLe`, `TauCeti.Subgroup.subtype_comp_congrOfMapEq`: the
@@ -429,6 +431,15 @@ theorem _root_.QuotientGroup.map_mk'_eq_top {N : Subgroup G} [N.Normal] {K : Sub
   · rw [sup_comm, ← QuotientGroup.ker_mk' N, ← Subgroup.comap_map_eq, h, Subgroup.comap_top]
   · rw [← bot_sup_eq (K.map _), ← QuotientGroup.map_mk'_self N, ← Subgroup.map_sup, h,
       Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective N)]
+
+/-- The composite `QuotientGroup.mk' N ∘ f` is surjective exactly when the range of `f` and `N`
+generate the codomain. -/
+@[to_additive /-- The composite `QuotientAddGroup.mk' N ∘ f` is surjective exactly when the range
+of `f` and `N` generate the codomain. -/]
+theorem _root_.QuotientGroup.surjective_mk'_comp_iff {A : Type*} [Group A] {N : Subgroup G}
+    [N.Normal] (f : A →* G) :
+    Function.Surjective ((QuotientGroup.mk' N).comp f) ↔ f.range ⊔ N = ⊤ := by
+  rw [← MonoidHom.range_eq_top, MonoidHom.range_comp, QuotientGroup.map_mk'_eq_top, sup_comm]
 
 /-! ## Transporting a coset space along an isomorphism -/
 
