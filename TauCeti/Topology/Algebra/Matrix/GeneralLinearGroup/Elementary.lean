@@ -142,8 +142,10 @@ private theorem homotopic_one_of_continuous_family {X 𝕜 G : Type*} [Topologic
 
 section GeneralLinear
 
-variable {X A 𝕜 n : Type*} [TopologicalSpace X] [Ring A] [Ring 𝕜] [TopologicalSpace 𝕜]
-  [IsTopologicalRing 𝕜] [Fintype n] [DecidableEq n]
+section Evaluation
+
+variable {X A 𝕜 n : Type*} [TopologicalSpace X] [Semiring A] [Semiring 𝕜] [TopologicalSpace 𝕜]
+  [IsTopologicalSemiring 𝕜] [Fintype n] [DecidableEq n]
 
 private def evalPointwiseRingHom (f : A →+* C(X, 𝕜)) (x : X) : A →+* 𝕜 :=
   ((Pi.evalRingHom (fun _ : X ↦ 𝕜) x).comp ContinuousMap.coeFnRingHom).comp f
@@ -165,8 +167,8 @@ private theorem coe_inv_unitsMap_evalPointwiseRingHom (f : A →+* C(X, 𝕜)) (
     (↑(Units.map ((evalPointwiseRingHom f x).mapMatrix (m := n)).toMonoidHom g)⁻¹ :
         Matrix n n 𝕜) i j =
       f ((↑g⁻¹ : Matrix n n A) i j) x := by
-  simp only [Units.coe_map_inv, toMonoidHom_eq_coe, MonoidHom.coe_ofClass, mapMatrix_apply,
-    Matrix.map_apply, evalPointwiseRingHom_apply]
+  rw [← map_inv]
+  exact coe_unitsMap_evalPointwiseRingHom f g⁻¹ x i j
 
 /-- The group homomorphism `GL n A →* C(X, GL n 𝕜)` induced by a ring homomorphism
 `f : A →+* C(X, 𝕜)`, applying `f · x` entrywise at each point `x : X`. -/
@@ -206,6 +208,13 @@ theorem coe_mapGLContinuousMap_apply (f : A →+* C(X, 𝕜)) (g : GL n A) (x : 
     ((f.mapGLContinuousMap g x : GL n 𝕜) : Matrix n n 𝕜) i j = f ((g : Matrix n n A) i j) x :=
   coe_unitsMap_evalPointwiseRingHom f g x i j
 
+end Evaluation
+
+section Nullhomotopy
+
+variable {X A 𝕜 n : Type*} [TopologicalSpace X] [Ring A] [Ring 𝕜] [TopologicalSpace 𝕜]
+  [IsTopologicalRing 𝕜] [Fintype n] [DecidableEq n]
+
 /-- Evaluating `f.mapGLContinuousMap` on a transvection evaluates its parameter along `f`. -/
 @[simp]
 theorem mapGLContinuousMap_transvectionUnit (f : A →+* C(X, 𝕜)) {i j : n} (hij : i ≠ j)
@@ -240,6 +249,8 @@ theorem homotopicRel_one_mapGLContinuousMap_of_mem_elementarySubgroup
     ContinuousMap.HomotopicRel (1 : C(X, GL n 𝕜)) (f.mapGLContinuousMap g) {x₀} :=
   (f.homotopic_one_mapGLContinuousMap_of_mem_elementarySubgroup h hg).homotopicRel_singleton
     (by simp [hx₀])
+
+end Nullhomotopy
 
 end GeneralLinear
 

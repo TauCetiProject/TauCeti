@@ -58,6 +58,7 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
   stabilized matrix.
 * `TauCeti.toGL_stabilizeSL`, `TauCeti.coe_stabilizeSL_apply`: compatibility of `SL` stabilization
   with `toGL` and matrix entries.
+* `TauCeti.stabilizeGL_mul_transpose`: stabilization preserves orthogonality.
 * `TauCeti.StableGeneralLinearGroup.mem_elementarySubgroup_iff`: an element of `GL_∞(A)` is
   stably elementary exactly when it is represented by an elementary matrix of some size.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup_normal`: `E_∞(A)` is normal.
@@ -182,13 +183,18 @@ rows and columns and with the identity matrix elsewhere. -/
 def stabilizeSL {R : Type*} [CommRing R] {m n : ℕ} (h : m ≤ n) :
     SpecialLinearGroup (Fin m) R →* SpecialLinearGroup (Fin n) R where
   toFun g :=
-    ⟨(stabilizeGL R h (SpecialLinearGroup.toGL g) : Matrix (Fin n) (Fin n) R), by
-      have hdet := congrArg Units.val
-        (det_stabilizeGL (R := R) h (SpecialLinearGroup.toGL g))
-      rw [GeneralLinearGroup.val_det_apply, GeneralLinearGroup.val_det_apply] at hdet
-      exact hdet.trans g.property⟩
+    SpecialLinearGroup.mk (stabilizeGL R h (SpecialLinearGroup.toGL g) : Matrix (Fin n) (Fin n) R)
+      (by
+        have hdet := congrArg Units.val
+          (det_stabilizeGL (R := R) h (SpecialLinearGroup.toGL g))
+        rw [GeneralLinearGroup.val_det_apply, GeneralLinearGroup.val_det_apply] at hdet
+        exact hdet.trans g.property)
   map_one' := Subtype.ext (by simp)
-  map_mul' g₁ g₂ := Subtype.ext (by simp; rfl)
+  map_mul' g₁ g₂ := Subtype.ext <| by
+    have hmul := congrArg Units.val
+      (map_mul ((stabilizeGL R h).comp SpecialLinearGroup.toGL) g₁ g₂)
+    simpa only [MonoidHom.comp_apply, SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_mk,
+      Units.val_mul] using hmul
 
 /-- Viewing `stabilizeSL h g` in `GL (Fin n) R` agrees with stabilizing `g.toGL`. -/
 @[simp]
@@ -213,6 +219,26 @@ theorem coe_stabilizeSL_apply {R : Type*} [CommRing R] {m n : ℕ} (h : m ≤ n)
       if hij : (i : ℕ) < m ∧ (j : ℕ) < m then g ⟨i, hij.1⟩ ⟨j, hij.2⟩
       else (1 : Matrix (Fin n) (Fin n) R) i j :=
   coe_stabilizeGL_apply h (SpecialLinearGroup.toGL g) i j
+
+private theorem coe_stabilizeGL_transpose_eq_inv {m n : ℕ} (h : m ≤ n)
+    {u : GL (Fin m) A} (hu : (u : Matrix (Fin m) (Fin m) A)ᵀ = ↑u⁻¹) :
+    (stabilizeGL A h u : Matrix (Fin n) (Fin n) A)ᵀ = ↑(stabilizeGL A h u)⁻¹ := by
+  rw [← map_inv (stabilizeGL A h) u]
+  ext i j
+  rw [Matrix.transpose_apply, coe_stabilizeGL_apply, coe_stabilizeGL_apply]
+  by_cases hij : (i : ℕ) < m ∧ (j : ℕ) < m
+  · simp only [hij.1, hij.2, and_self, ↓reduceDIte, ← hu, Matrix.transpose_apply]
+  · have hij' : ¬((j : ℕ) < m ∧ (i : ℕ) < m) := fun ⟨hj, hi⟩ ↦ hij ⟨hi, hj⟩
+    simp only [hij, hij', ↓reduceDIte, Matrix.one_apply, eq_comm]
+
+/-- Stabilization preserves orthogonality: if `u * uᵀ = 1`, then
+`(stabilizeGL A h u) * (stabilizeGL A h u)ᵀ = 1`. -/
+theorem stabilizeGL_mul_transpose {m n : ℕ} (h : m ≤ n) {u : GL (Fin m) A}
+    (hu : (u : Matrix (Fin m) (Fin m) A) * (u : Matrix (Fin m) (Fin m) A)ᵀ = 1) :
+    (stabilizeGL A h u : Matrix (Fin n) (Fin n) A) *
+      (stabilizeGL A h u : Matrix (Fin n) (Fin n) A)ᵀ = 1 := by
+  rw [coe_stabilizeGL_transpose_eq_inv h (Units.eq_inv_of_mul_eq_one_left hu),
+    ← Units.val_mul, mul_inv_cancel, Units.val_one]
 
 /-- Stabilization maps the elementary subgroup into the elementary subgroup. -/
 theorem map_stabilizeGL_elementarySubgroup_le {m n : ℕ} (h : m ≤ n) :
