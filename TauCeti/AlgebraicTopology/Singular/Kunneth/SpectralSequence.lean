@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.SpectralSequence
 public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Flat
 
 /-!
 # The Künneth spectral sequence for singular homology
@@ -36,8 +35,9 @@ spectral sequence
   `C(X; R) ⊗ C(Y; R)` is a quasi-isomorphism
   (`HomologicalComplex.quasiIso_kunnethBicomplexAugmentation`). The shuffle map
   `C(X; R) ⊗ C(Y; R) ⟶ C(X × Y; R ⊗ R)` is the inverse of the Eilenberg–Zilber homotopy
-  equivalence (`TopCat.eilenbergZilberHomotopyEquiv`), and the unitor `R ⊗ R ≅ R` identifies the
-  coefficients (`TopCat.singularKunnethTotalHomologyIso`).
+  equivalence (`TopCat.eilenbergZilberHomotopyEquiv`), hence a quasi-isomorphism
+  (`TopCat.quasiIso_shuffle`), and the unitor `R ⊗ R ≅ R` identifies the coefficients
+  (`TopCat.singularKunnethTotalHomologyIso`).
 * **Convergence.** Write `S` for `TopCat.singularKunnethSpectralObject X Y R`. The abutment
   `Hₙ(X × Y; R)` carries the increasing filtration whose `p`th piece `F_p Hₙ(X × Y; R)` is
   `S.abutmentFiltration p (-n)`: the image of the homology of the part of the total complex coming
@@ -48,7 +48,19 @@ spectral sequence
   (`HomologicalComplex₂.isZero_rowFiltration_abutmentFiltration`) and is everything for `n < p`
   (`TopCat.isIso_singularKunnethFiltrationι`). The object at column `p` and degree `q`
   stabilizes from the page `r` with `p + 2 ≤ r` and `q + 2 < r` on, to the graded piece
-  `F_{p+1} H_{p+q} / F_p H_{p+q}` (`TopCat.singularKunnethSpectralSequencePageXIsoGraded`).
+  `F_{p+1} H_{p+q} / F_p H_{p+q}`: with `B := TopCat.singularKunnethBicomplex X Y R`, the
+  composite
+
+  ```
+  B.flip.rowFiltrationSpectralSequencePageXIsoEInfty r hr (-(q : ℤ) - 2 * p, p)
+      (-((p + q : ℕ) : ℤ)) hn h₀ h₃ ≪≫ S.EInftyIsoCokernel p (-((p + q : ℕ) : ℤ))
+  ```
+
+  where `hr`, `hn`, `h₀` and `h₃` are the arithmetic hypotheses `2 ≤ r`,
+  `-(p + q) = (-q - 2p) + p`, `p + 2 ≤ r` and `2 < (-q - 2p) + 2p + r`, identifies the page-`r`
+  object at `(-q - 2p, p)` with
+  `cokernel (S.abutmentFiltrationMap p (-(p + q)))`, its `hom` being the composite of the two
+  `hom`s (`Iso.trans_hom`, `HomologicalComplex₂.rowFiltrationSpectralSequencePageXIsoEInfty_hom`).
 
 Naturality in `X` and `Y`, the edge maps and the collapse corollaries are not treated here.
 
@@ -94,7 +106,7 @@ the commutative ring `R`: the algebraic Künneth spectral sequence
 `HomologicalComplex.kunnethSpectralSequence` of the singular chain complexes `C(X; R)` and
 `C(Y; R)`. Its second page is `⨁_{i + j = q} Torₚ(Hᵢ(X; R), Hⱼ(Y; R))`
 (`TopCat.singularKunnethSpectralSequenceSecondPageXIso`) and it converges to `H_{p+q}(X × Y; R)`
-(`TopCat.singularKunnethAbutmentIso`, `TopCat.singularKunnethSpectralSequencePageXIsoGraded`). -/
+(`TopCat.singularKunnethAbutmentIso`). -/
 abbrev singularKunnethSpectralSequence :=
   kunnethSpectralSequence ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{u} R)))
     ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{u} R)))
@@ -119,28 +131,33 @@ def singularKunnethTotalHomologyIso (n : ℕ) :
       ((singularHomologyFunctor _ n).obj (𝟙_ (ModuleCat.{u} R))).obj (X ⊗ Y) :=
   -- the unit `𝟙_ (ModuleCat R)` is `R`, so the singular chain modules are flat
   have : Module.Flat R (𝟙_ (ModuleCat.{u} R)) := inferInstanceAs (Module.Flat R R)
-  have := quasiIso_kunnethBicomplexAugmentation ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat R)))
-    ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat R)))
+  have := quasiIso_kunnethBicomplexAugmentation
+    ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{u} R)))
+    ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{u} R)))
   -- the homology of `C(X × Y; R)` is by definition `Hₙ(X × Y; R)`; the ascription keeps the
   -- composite well typed up to reducible unfolding, so that `Iso.trans_hom` applies to it
-  (isoOfQuasiIsoAt (kunnethBicomplexAugmentation _ _) n ≪≫
-    (eilenbergZilberHomotopyEquiv X Y _ _).symm.toHomologyIso n ≪≫
-    homologyMapIso (((SSet.chainComplexFunctor _).mapIso (λ_ (𝟙_ (ModuleCat.{u} R)))).app
-      (toSSet.obj (X ⊗ Y))) n : _ ≅ ((toSSet.obj (X ⊗ Y)).chainComplex (𝟙_ _)).homology n)
+  (isoOfQuasiIsoAt (kunnethBicomplexAugmentation
+      ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{u} R)))
+      ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{u} R)))) n ≪≫
+    isoOfQuasiIsoAt (shuffle X Y (𝟙_ (ModuleCat.{u} R)) (𝟙_ _)) n ≪≫
+    asIso (homologyMap (((SSet.chainComplexFunctor _).map (λ_ (𝟙_ (ModuleCat.{u} R))).hom).app
+      (toSSet.obj (X ⊗ Y))) n) :
+      _ ≅ (((SSet.chainComplexFunctor _).obj (𝟙_ _)).obj (toSSet.obj (X ⊗ Y))).homology n)
 
 /-- The isomorphism `TopCat.singularKunnethTotalHomologyIso` is induced by the augmentation of the
 total complex, followed by the shuffle map and the unitor. -/
 lemma singularKunnethTotalHomologyIso_hom (n : ℕ) :
     (singularKunnethTotalHomologyIso X Y R n).hom =
-      homologyMap (kunnethBicomplexAugmentation _ _) n ≫ homologyMap (shuffle X Y _ _) n ≫
+      homologyMap (kunnethBicomplexAugmentation
+          ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{u} R)))
+          ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{u} R)))) n ≫
+        homologyMap (shuffle X Y (𝟙_ (ModuleCat.{u} R)) (𝟙_ _)) n ≫
         homologyMap (((SSet.chainComplexFunctor _).map (λ_ (𝟙_ (ModuleCat.{u} R))).hom).app
           (toSSet.obj (X ⊗ Y))) n := by
-  simp only [singularKunnethTotalHomologyIso, Iso.trans_hom, isoOfQuasiIsoAt_hom,
-    HomotopyEquiv.toHomologyIso, HomotopyEquiv.symm_hom, eilenbergZilberHomotopyEquiv_inv,
-    homologyMapIso_hom, Iso.app_hom, Functor.mapIso_hom]
-  -- the two sides differ only in the instance paths through which the tensor unit of
-  -- `ModuleCat R` is found
-  rfl
+  simp only [singularKunnethTotalHomologyIso, Iso.trans_hom, isoOfQuasiIsoAt_hom, asIso_hom]
+  -- the two sides agree syntactically except for the proofs of the `Prop`-valued instance
+  -- arguments (`HasHomology`, `HasCoproducts`), which simp does not identify
+  with_reducible rfl
 
 /-- The spectral object of the filtration of the total complex of the flipped Künneth bicomplex of
 `C(X; R)` and `C(Y; R)` by its rows, whose spectral sequence is
@@ -209,30 +226,5 @@ lemma isIso_singularKunnethFiltrationι (p : ℤ) (n : ℕ) (h : n < p) :
     (by omega)
   rw [singularKunnethFiltrationι_eq]
   infer_instance
-
-/-- **Convergence of the singular Künneth spectral sequence.** On every page `r` with `p + 2 ≤ r`
-and `q + 2 < r`, the object at column `p`, degree `q` is the graded piece
-`F_{p+1} H_{p+q}(X × Y; R) / F_p H_{p+q}(X × Y; R)` of the filtration of `H_{p+q}(X × Y; R)`. In
-particular the object at a fixed position stabilizes after finitely many pages. -/
-def singularKunnethSpectralSequencePageXIsoGraded (r : ℤ) (p q : ℕ) (h₀ : (p : ℤ) + 2 ≤ r)
-    (h₃ : (q : ℤ) + 2 < r) :
-    ((singularKunnethSpectralSequence X Y R).page r).X (-(q : ℤ) - 2 * p, p) ≅
-      cokernel ((singularKunnethSpectralObject X Y R).abutmentFiltrationMap p
-        (-((p + q : ℕ) : ℤ))) :=
-  (singularKunnethBicomplex X Y R).flip.rowFiltrationSpectralSequencePageXIsoEInfty r (by omega)
-      _ _ (by push_cast; ring) h₀ (by dsimp; omega) ≪≫
-    (singularKunnethSpectralObject X Y R).EInftyIsoCokernel _ _
-
-/-- The isomorphism `TopCat.singularKunnethSpectralSequencePageXIsoGraded` is the identification
-`HomologicalComplex₂.rowFiltrationSpectralSequencePageXIsoEInfty` of the page object with the
-limit object `E^{-(p+q)}(⊥ ≤ p ≤ p + 1 ≤ ⊤)`, followed by its identification
-`CategoryTheory.Abelian.SpectralObject.EInftyIsoCokernel` with the graded piece. -/
-lemma singularKunnethSpectralSequencePageXIsoGraded_hom (r : ℤ) (p q : ℕ)
-    (h₀ : (p : ℤ) + 2 ≤ r) (h₃ : (q : ℤ) + 2 < r) :
-    (singularKunnethSpectralSequencePageXIsoGraded X Y R r p q h₀ h₃).hom =
-      ((singularKunnethBicomplex X Y R).flip.rowFiltrationSpectralSequencePageXIsoEInfty r
-          (by omega) _ (-((p + q : ℕ) : ℤ)) (by push_cast; ring) h₀ (by dsimp; omega)).hom ≫
-        ((singularKunnethSpectralObject X Y R).EInftyIsoCokernel _ _).hom := by
-  rw [singularKunnethSpectralSequencePageXIsoGraded, Iso.trans_hom]
 
 end TopCat

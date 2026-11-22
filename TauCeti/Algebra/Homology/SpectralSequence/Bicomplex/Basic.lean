@@ -598,9 +598,10 @@ lemma isZero_rowFiltrationSpectralSequence_page_two_X_of_neg (p q : ℤ) (hq : q
   rw [CochainComplex.filtrationEInt_coe, K.rowFiltration_eq_bot _ (by omega)]
   exact IsZero.of_iso (isZero_zero _) Subobject.botCoeIsoZero
 
-/-- **The spectral sequence of the row filtration lives in the first quadrant.** On every page
-`r ≥ 2`, the object at `(p, q)` vanishes in the negative rows `q < 0` and when `0 < p + 2q`, that
-is, in negative total degree `k = -(p + 2q)` of the row `q`. -/
+/-- **The spectral sequence of the row filtration lives in the first quadrant.** The object at
+`(p, q)` comes from the row `q` in the row-internal homological degree `k = -(p + 2q)`, that is,
+in the total homological degree `q + k = -(p + q)`. On every page `r ≥ 2` it vanishes outside the
+first quadrant of the coordinates `(q, k)`: when `q < 0` or `k < 0`, that is, `0 < p + 2q`. -/
 lemma isZero_rowFiltrationSpectralSequence_page_X (r : ℤ) (hr : 2 ≤ r) (p q : ℤ)
     (h : q < 0 ∨ 0 < p + 2 * q) : IsZero ((K.rowFiltrationSpectralSequence.page r).X (p, q)) := by
   refine K.rowFiltrationSpectralSequence.isZero_page_X_of_le le_rfl ?_ r hr
@@ -617,6 +618,16 @@ def rowFiltrationAbutmentIso (n : ℕ) :
   CochainComplex.filtrationAbutmentIso _ _ _ ≪≫
     (K.total (down ℕ)).extendHomologyIso embeddingDownNat (by simp)
 
+/-- The identification `HomologicalComplex₂.rowFiltrationAbutmentIso` is the identification
+`CochainComplex.filtrationAbutmentIso` of the abutment with the cohomology in degree `-n` of the
+total complex extended to `ℤ`, followed by the reindexing `extendHomologyIso` of that cohomology
+with the homology of the total complex in degree `n`. -/
+lemma rowFiltrationAbutmentIso_hom (n : ℕ) :
+    (K.rowFiltrationAbutmentIso n).hom =
+      (CochainComplex.filtrationAbutmentIso _ K.monotone_rowFiltration (-n)).hom ≫
+        ((K.total (down ℕ)).extendHomologyIso embeddingDownNat (by simp)).hom := by
+  simp only [rowFiltrationAbutmentIso, Iso.trans_hom]
+
 /-- The abutment of the column-filtration spectral sequence is the homology of the original total
 complex. The comparison incorporates the Koszul sign of the total-complex flip. -/
 def columnFiltrationAbutmentIso (n : ℕ) :
@@ -624,6 +635,16 @@ def columnFiltrationAbutmentIso (n : ℕ) :
       K.flip.monotone_rowFiltration)).abutment (-n) ≅ (K.total (down ℕ)).homology n :=
   K.flip.rowFiltrationAbutmentIso n ≪≫
     HomologicalComplex.homologyMapIso (K.totalFlipIso (down ℕ)) n
+
+/-- The identification `HomologicalComplex₂.columnFiltrationAbutmentIso` is the identification
+`HomologicalComplex₂.rowFiltrationAbutmentIso` for the flipped bicomplex, followed by the map
+induced on homology by the signed isomorphism `HomologicalComplex₂.totalFlipIso` between the total
+complexes of `K.flip` and `K`. -/
+lemma columnFiltrationAbutmentIso_hom (n : ℕ) :
+    (K.columnFiltrationAbutmentIso n).hom =
+      (K.flip.rowFiltrationAbutmentIso n).hom ≫
+        HomologicalComplex.homologyMap (K.totalFlipIso (down ℕ)).hom n := by
+  simp only [columnFiltrationAbutmentIso, Iso.trans_hom, HomologicalComplex.homologyMapIso_hom]
 
 /-! ### Convergence -/
 

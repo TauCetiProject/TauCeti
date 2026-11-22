@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
+public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
 
 /-!
@@ -20,9 +21,9 @@ This file records how the coproduct inclusion associated to a simplex behaves un
 simplicial operators and under a morphism of coefficient objects, and how the degreewise
 components of the chain maps induced by maps of simplicial sets compose with each other and with
 changes of coefficients. It also records that simplicial chain modules with semisimple
-coefficients are semisimple, and those with projective coefficients are projective, both as
-modules and, for coefficients in any preadditive category with coproducts, as objects of that
-category.
+coefficients are semisimple, those with flat coefficients are flat, and those with projective
+coefficients are projective, both as modules and, for coefficients in any preadditive category
+with coproducts, as objects of that category.
 
 For a module `V` over a ring `k`, the simplicial `n`-chains
 `(X.chainComplex (ModuleCat.of k V)).X n` are the finitely supported functions from the
@@ -128,6 +129,14 @@ instance projective_chainComplex_X {k : Type*} [Ring k] (X : SSet.{w})
   classical
   -- `Cₙ(X; M)` is by definition the coproduct of copies of `M` indexed by the `n`-simplices.
   exact .of_equiv' (ModuleCat.coprodIsoDirectSum fun _ : X _⦋n⦌ ↦ M).toLinearEquiv.symm
+
+/-- The simplicial chain modules `Cₙ(X; M) = ⨁ M` with flat coefficients `M` are flat. -/
+instance flat_chainComplex_X {R : Type*} [CommRing R] (X : SSet.{w})
+    (M : ModuleCat.{max w v} R) [Module.Flat R M] (n : ℕ) :
+    Module.Flat R ((X.chainComplex M).X n) := by
+  classical
+  -- `Cₙ(X; M)` is by definition the coproduct of copies of `M` indexed by the `n`-simplices.
+  exact .of_linearEquiv (ModuleCat.coprodIsoDirectSum fun _ : X _⦋n⦌ ↦ M).toLinearEquiv
 
 /-- The simplicial chains `Cₙ(X; R) = ∐ R` with coefficients in a projective object `R` of a
 preadditive category with coproducts are projective. -/
