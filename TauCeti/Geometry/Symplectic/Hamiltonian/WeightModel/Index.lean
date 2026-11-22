@@ -217,21 +217,13 @@ theorem ker_criticalHessian_eq_comap_ker_weightGenerator (hcrit : x ∈ critical
       (LinearMap.ker (weightGenerator fun k ↦ α k ξ).toLinearMap).comap
         (mvfderiv I' chart x :
           TangentSpace I' x →ₗ[ℝ] EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) := by
-  have hg : ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) 𝓘(ℝ) 2
-      (fun z ↦ c + weightMomentMap α z ξ) (chart x) :=
-    contMDiff_const_add_weightMomentMap_apply.contMDiffAt.of_le (by simp)
-  have hchart := chart.isLocalDiffeomorphAt _ _ _ hx
-  rw [criticalHessian_congr_of_eventuallyEq (eventuallyEq_comp_weightMomentMap hf hx),
-    (hchart.isRegularPoint (by simp)).ker_criticalHessian_comp hg
-      (hchart.contMDiffAt.of_le (by simp)) (mem_criticalPoints_chart hf hx hcrit),
-    ← radical_toQuadraticMap_toBilinForm_criticalHessian hg]
-  ext u
-  rw [Submodule.mem_comap, Submodule.mem_comap, ContinuousLinearMap.coe_coe,
-    ContinuousLinearMap.coe_coe, mvfderiv_apply_eq_mfderiv_apply,
-    ← radical_hessianQuadraticForm_weightMomentMap_apply α ξ (chart x),
-    toQuadraticMap_toBilinForm_criticalHessian_modelSpace, hessianQuadraticForm_const_add]
-  -- The two sides differ only in reading the model space as the tangent space at `chart x`.
-  rfl
+  rw [← radical_toQuadraticMap_toBilinForm_criticalHessian
+      ((contMDiffAt_of_weightMomentMap hf hx).of_le (by simp)),
+    toQuadraticMap_toBilinForm_criticalHessian_eq_comp_of_weightMomentMap hf hx hcrit,
+    ← radical_hessianQuadraticForm_weightMomentMap_apply α ξ (chart x)]
+  exact ((QuadraticMap.isometryEquivOfCompLinearEquiv _
+    (LinearEquiv.ofBijective _ (chart.bijective_mvfderiv (by simp) hx))).map_radical).symm.trans
+    (Submodule.map_equiv_eq_comap_symm _ _)
 
 /-- **The nullity in a weight chart.** If `f` is a constant plus the weight-model component `μ^ξ`,
 read in the chart, then at every critical point of `f` in the chart the null space of its critical
@@ -265,6 +257,37 @@ end Chart
 /-! ### Morse–Bott data at a fixed point -/
 
 namespace SmoothTwoForm.IsMomentMap
+
+section Linearize
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Monoid G] [MulAction G M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- **Linearizing an equivariant chart at a fixed point.** If a chart intertwines the action of
+`g` near a fixed point `p` of `g` with a continuous linear map `R` of the model space, then the
+differential of the chart at `p` intertwines the differential of `g` at `p` with `R`. -/
+private theorem mfderiv_chart_smul_of_eventuallyEq [ContMDiffSMul I I' ∞ G M]
+    {chart : PartialDiffeomorph I' 𝓘(ℝ, F) M F ∞} {R : F →L[ℝ] F} {g : G} {p : M}
+    (hp : g • p = p) (hpchart : p ∈ chart.source)
+    (hequiv : ∀ y ∈ chart.source, chart (g • y) = R (chart y)) (v : TangentSpace I' p) :
+    mfderiv I' 𝓘(ℝ, F) chart p (mfderiv I' I' (fun y : M ↦ g • y) p v) =
+      R (mfderiv I' 𝓘(ℝ, F) chart p v) := by
+  have hchart := chart.mdifferentiableAt (by simp) hpchart
+  have h := congr($(Filter.EventuallyEq.mfderiv_eq (I := I') (I' := 𝓘(ℝ, F))
+    (eventually_of_mem (chart.open_source.mem_nhds hpchart) hequiv :
+      (chart ∘ fun y : M ↦ g • y) =ᶠ[𝓝 p] R ∘ chart)) v)
+  rwa [mfderiv_comp_apply_of_eq p hchart
+      ((ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') (n := ∞) g).mdifferentiableAt
+        (by simp)) hp,
+    ContinuousLinearMap.comp_apply, mfderiv_comp_apply _ R.mdifferentiableAt hchart,
+    R.mfderiv_eq] at h
+
+end Linearize
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless]
@@ -319,21 +342,9 @@ theorem exists_weights_manifoldMorseIndex
     rfl
   refine ⟨n, χ, α, L, hα, fun v w ↦ by simpa only [hLv] using hform p hpchart v w, fun g v ↦ ?_,
     fun ξ ↦ ?_⟩
-  · -- Differentiate `chart (g • y) = R (chart y)` at the fixed point `p`, for the rotation `R`.
-    set R := weightRotation fun k ↦ Complex.arg (χ k g)
-    have hchart := chart.mdifferentiableAt (by simp) hpchart
-    have heq : (chart ∘ fun y : M ↦ g • y) =ᶠ[𝓝 p] R ∘ chart :=
-      eventually_of_mem (chart.open_source.mem_nhds hpchart) fun y hy ↦ (hequiv g y hy).2
-    have h := congr($(Filter.EventuallyEq.mfderiv_eq (I := I')
-      (I' := 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n))) heq) v)
-    rw [mfderiv_comp_apply_of_eq p hchart
-      ((ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') (n := ∞) g).mdifferentiableAt
-        (by simp)) (hp g),
-      ContinuousLinearMap.comp_apply, mfderiv_comp_apply _ R.mdifferentiableAt hchart,
-      R.mfderiv_eq] at h
-    rw [hLv v, mvfderiv_apply_eq_mfderiv_apply]
-    refine (hLv _).trans ((mvfderiv_apply_eq_mfderiv_apply _ _ _).trans ?_)
-    exact h
+  · rw [hLv v, mvfderiv_apply_eq_mfderiv_apply, ← mfderiv_chart_smul_of_eventuallyEq (I := I)
+      (hp g) hpchart (fun y hy ↦ (hequiv g y hy).2) v]
+    exact (hLv _).trans (mvfderiv_apply_eq_mfderiv_apply _ _ _)
   · have hf : ∀ y ∈ chart.source, μ y ξ = μ p ξ + weightMomentMap α (chart y) ξ :=
       fun y hy ↦ hμchart y hy ξ
     have hcrit : p ∈ criticalPoints I' fun y ↦ μ y ξ := by

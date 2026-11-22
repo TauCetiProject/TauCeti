@@ -399,6 +399,7 @@ theorem hasFDerivAt_weightMomentMap_apply (α : ι → StrongDual ℝ 𝔱) (ξ 
   ext v <;> simp [PiLp.inner_apply, mul_comm, mul_assoc]
 
 /-- The moment map of the weight model is smooth. -/
+@[fun_prop]
 theorem contDiff_weightMomentMap (α : ι → StrongDual ℝ 𝔱) : ContDiff ℝ ∞ (weightMomentMap α) := by
   have hq (i : ι) : ContDiff ℝ ∞ fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ x.1 i :=
     (contDiff_piLp_apply (p := 2)).comp contDiff_fst
@@ -410,6 +411,7 @@ theorem contDiff_weightMomentMap (α : ι → StrongDual ℝ 𝔱) : ContDiff �
     (contDiff_const.mul (((hq i).pow 2).add ((hp i).pow 2))).smul contDiff_const
 
 /-- The component `μ^ξ = ⟨μ, ξ⟩` of the moment map of the weight model is smooth. -/
+@[fun_prop]
 theorem contDiff_weightMomentMap_apply (α : ι → StrongDual ℝ 𝔱) (ξ : 𝔱) :
     ContDiff ℝ ∞ fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ weightMomentMap α x ξ :=
   (ContinuousLinearMap.apply ℝ ℝ ξ).contDiff.comp (contDiff_weightMomentMap α)
