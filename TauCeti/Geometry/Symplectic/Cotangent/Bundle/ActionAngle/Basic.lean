@@ -333,15 +333,10 @@ theorem mpullback_actionAngleCover_zero_comp_symplecticForm (ha : ContMDiff J �
   -- The angle components of the derivative of `b ↦ (0, a(b))` vanish.
   have h0 (u : TangentSpace J b) :
       (mfderiv J 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) (fun b ↦ ((0 : ι → ℝ), a b)) b u).1 = 0 := by
-    have h1 := (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)).mvfderiv_comp_apply
-      ((hg b).mdifferentiableAt (by simp)) u
-    -- The first component of `b ↦ (0, a(b))` is the constant `0`: `Prod.fst (0, a b)` reduces
-    -- to `0` by definition.
-    have hfst : ⇑(ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)) ∘ (fun b ↦ ((0 : ι → ℝ), a b)) =
-        fun _ ↦ 0 := funext fun _ ↦ rfl
-    rw [hfst, mvfderiv_apply_eq_mfderiv_apply, mfderiv_const] at h1
-    rw [← mvfderiv_apply_eq_mfderiv_apply]
-    exact h1.symm
+    have h1 := congrArg Prod.fst (MDifferentiableAt.mvfderiv_prodMk_apply
+      (f := fun _ ↦ (0 : ι → ℝ)) mdifferentiableAt_const ((ha b).mdifferentiableAt (by simp)) u)
+    rw [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply, mfderiv_const] at h1
+    exact h1
   rw [SmoothForm.eval₂_mpullback, SmoothForm.eval₂_mpullback,
     eval₂_symplecticForm_mfderiv_actionAngleCover, h0, h0]
   simp

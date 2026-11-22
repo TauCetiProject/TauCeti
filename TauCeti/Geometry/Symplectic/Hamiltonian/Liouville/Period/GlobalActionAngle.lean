@@ -125,6 +125,13 @@ private theorem exists_apply_eq_actionAngleCover (b : B) :
   refine ⟨x, θ, ?_⟩
   rw [← hθ, ← x.property, ← hΦa, ← hθ, torusActions_actionAngleCover]
 
+/-- The covector `v ↦ c ⬝ᵥ v` on `ℝ^ι`, as a continuous linear map. -/
+private def dotProductCLM (c : ι → ℝ) : (ι → ℝ) →L[ℝ] ℝ :=
+  LinearMap.toContinuousLinearMap (dotProductEquiv ℝ ι c)
+
+private theorem dotProductCLM_apply (c v : ι → ℝ) : dotProductCLM c v = c ⬝ᵥ v := by
+  simp [dotProductCLM, dotProductEquiv]
+
 /-! ### The fibre action in action–angle coordinates -/
 
 include hΦ hΦσ hΦa in
@@ -138,8 +145,8 @@ theorem apply_fiberAction_of_actionAngle (b : B) (c : ι → ℝ) {α : F →L[�
     Φ (h.fiberAction hσc b α x) = actionAngleCover p (θ + c, a b) := by
   have ha := h.contMDiff_of_actionAngle p hΦ hΦa
   -- The function `g = c ⬝ᵥ a` on the base has differential `α` at `b`.
-  set L : (ι → ℝ) →L[ℝ] ℝ := LinearMap.toContinuousLinearMap (dotProductEquiv ℝ ι c)
-  have hL (v : ι → ℝ) : L v = c ⬝ᵥ v := by simp [L, dotProductEquiv]
+  set L : (ι → ℝ) →L[ℝ] ℝ := dotProductCLM c
+  have hL (v : ι → ℝ) : L v = c ⬝ᵥ v := dotProductCLM_apply c v
   have hg : ContMDiff J 𝓘(ℝ) 2 (L ∘ a) := (L.contMDiff.comp ha).of_le (by simp)
   have hgα : mvfderiv J (L ∘ a) b = α := ContinuousLinearMap.ext fun v ↦ by
     rw [L.mvfderiv_comp_apply ((ha b).mdifferentiableAt (by simp)), hL,
@@ -184,11 +191,10 @@ theorem exists_apply_eq_actionAngleCover_of_actionAngle (b : B) (θ : ι → ℝ
     hΦ.contMDiff
   obtain ⟨x, θ₀, hθ₀⟩ := h.exists_apply_eq_actionAngleCover p hΦa b
   -- The covector `v ↦ (θ - θ₀) ⬝ᵥ da_b(v)` moves `x` to the point with angles `θ`.
-  set α : F →L[ℝ] ℝ := (LinearMap.toContinuousLinearMap (dotProductEquiv ℝ ι (θ - θ₀))).comp
-    (mfderiv J 𝓘(ℝ, ι → ℝ) a b)
+  set α : F →L[ℝ] ℝ := (dotProductCLM (θ - θ₀)).comp (mfderiv J 𝓘(ℝ, ι → ℝ) a b)
   refine ⟨h.fiberAction hσc b α x, (h.fiberAction hσc b α x).property, ?_⟩
-  rw [h.apply_fiberAction_of_actionAngle p hσc hΦ hΦσ hΦa b (θ - θ₀) (fun v ↦ rfl) x θ₀ hθ₀,
-    add_sub_cancel]
+  rw [h.apply_fiberAction_of_actionAngle p hσc hΦ hΦσ hΦa b (θ - θ₀)
+    (fun v ↦ dotProductCLM_apply _ _) x θ₀ hθ₀, add_sub_cancel]
 
 /-! ### The differential of the actions -/
 
@@ -320,17 +326,10 @@ theorem exists_lagrangian_section_of_actionAngle (hΦi : Injective Φ) :
   refine ⟨s, hsm, fun b ↦ ?_, ?_⟩
   · obtain ⟨y, hy, hyg⟩ := hfib b
     rw [hΦi ((hΦs b).trans hyg.symm), hy]
-  · rw [← hΦσ, SmoothForm.mpullback_mpullback]
-    have hcomp : Φ ∘ s = actionAngleCover p ∘ g := funext hΦs
-    have key : SmoothForm.mpullback (Φ ∘ s) (hΦ.contMDiff.comp hsm)
-        (CotangentBundle.symplecticForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-          (ι → AddCircle p)) =
-        SmoothForm.mpullback (actionAngleCover p ∘ g)
-          ((contMDiff_actionAngleCover p).comp (contMDiff_const.prodMk_space ha))
-          (CotangentBundle.symplecticForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-            (ι → AddCircle p)) :=
-      Subtype.ext (by rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, hcomp])
-    rw [key]
+  · -- `Φ ∘ s = κ(0, a(·))`, so `s^* σ` is the pullback of `ω` along the zero angles.
+    rw [← hΦσ, SmoothForm.mpullback_mpullback_of_comp_eq hsm hΦ.contMDiff
+      (contMDiff_const.prodMk_space ha) (contMDiff_actionAngleCover p) (funext hΦs),
+      SmoothForm.mpullback_mpullback]
     exact mpullback_actionAngleCover_zero_comp_symplecticForm p ha
 
 end TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianTorusFibration
