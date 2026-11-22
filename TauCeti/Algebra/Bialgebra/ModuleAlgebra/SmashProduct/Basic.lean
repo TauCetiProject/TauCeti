@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Bialgebra.Equiv
-public import Mathlib.RingTheory.Ideal.Maps
-public import Mathlib.RingTheory.TensorProduct.Finite
 public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.Compatibility
 
 /-!
@@ -48,11 +46,12 @@ and the module-algebra axioms express the covariance relation between these two 
 * `TauCeti.LeftModuleAlgebra.SmashProduct.algHom_ext`: `R`-algebra homomorphisms out of `A # H`
   are determined by their restrictions along `includeA` and `includeH`.
 * `TauCeti.LeftModuleAlgebra.includeA_injective`: `a ↦ a # 1` is unconditionally injective.
-* `TauCeti.LeftModuleAlgebra.ker_includeH_eq_top` and
-  `TauCeti.LeftModuleAlgebra.includeH_injective_of_apply_one_eq_one`: `h ↦ 1 # h` has kernel `⊤`
-  when `A` is subsingleton, and is injective whenever `1 : A` admits an `R`-linear retraction to
-  `1 : R` (see `TauCeti.LeftModuleAlgebra.includeH_injective` in
-  `TauCeti.Algebra.Bialgebra.ModuleAlgebra.SmashProduct.Field` for the field case).
+* `TauCeti.LeftModuleAlgebra.includeH_injective_of_apply_one_eq_one`: `h ↦ 1 # h` is injective
+  whenever `1 : A` admits an `R`-linear retraction to `1 : R` (see
+  `TauCeti.LeftModuleAlgebra.includeH_injective` in
+  `TauCeti.Algebra.Bialgebra.ModuleAlgebra.SmashProduct.Field` for the field case, and
+  `TauCeti.LeftModuleAlgebra.ker_includeH_eq_top` in
+  `TauCeti.Algebra.Bialgebra.ModuleAlgebra.SmashProduct.Ideal` for the subsingleton case).
 
 ## References
 
@@ -119,10 +118,6 @@ def tensorEquiv : μ.SmashProduct ≃ₗ[R] A ⊗[R] H where
   right_inv _ := rfl
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-
-instance SmashProduct.instModuleFinite [Module.Finite R A] [Module.Finite R H] :
-    Module.Finite R μ.SmashProduct :=
-  Module.Finite.of_surjective μ.tensorEquiv.symm.toLinearMap μ.tensorEquiv.symm.surjective
 
 instance SmashProduct.instSubsingleton [Subsingleton A] : Subsingleton μ.SmashProduct :=
   μ.tensorEquiv.injective.subsingleton
@@ -506,12 +501,6 @@ theorem retractA_comp_includeA : μ.retractA.comp μ.includeA.toLinearMap = Line
 /-- The canonical map `includeA : A →ₐ[R] A # H` (`a ↦ a # 1`) is unconditionally injective. -/
 theorem includeA_injective : Function.Injective μ.includeA :=
   Function.LeftInverse.injective μ.retractA_includeA
-
-/-- When `A` is subsingleton, `includeH : H →ₐ[R] A # H` has kernel `⊤`. -/
-@[simp]
-theorem ker_includeH_eq_top [Subsingleton A] :
-    RingHom.ker (μ.includeH : H →+* μ.SmashProduct) = ⊤ :=
-  (Ideal.eq_top_iff_one _).2 (RingHom.mem_ker.2 (Subsingleton.elim _ _))
 
 /-- The `R`-linear map `A # H →ₗ[R] H` induced by a linear functional `φ : A →ₗ[R] R`,
 sending `a # h` to `φ a • h`. -/
