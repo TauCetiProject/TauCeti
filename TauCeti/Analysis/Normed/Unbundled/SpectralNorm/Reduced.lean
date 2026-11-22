@@ -192,6 +192,16 @@ theorem reducedSpectralAlgNorm_eq_iSup_spectralNorm (x : E) :
         spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal x) :=
   spectralValue_minpoly_eq_iSup_spectralNorm x
 
+/-- At every maximal ideal `m` of a finite reduced `K`-algebra `E`, the residue-field spectral
+norm of `x mod m` is at most `reducedSpectralAlgNorm K E x`. -/
+theorem spectralNorm_quotient_le_reducedSpectralAlgNorm (x : E) (m : MaximalSpectrum E) :
+    letI := Ideal.Quotient.field m.asIdeal
+    spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal x) ≤
+      reducedSpectralAlgNorm K E x := by
+  have : IsArtinianRing E := isArtinian_of_tower K inferInstance
+  rw [reducedSpectralAlgNorm_eq_iSup_spectralNorm]
+  exact spectralNorm_quotient_le_iSup x m
+
 /-- `reducedSpectralAlgNorm K E` is nonarchimedean. -/
 theorem isNonarchimedean_reducedSpectralAlgNorm :
     IsNonarchimedean (reducedSpectralAlgNorm K E) := by

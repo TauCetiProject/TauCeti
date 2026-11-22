@@ -245,7 +245,9 @@ theorem isUniform_of_isWeaklyStable [IsReduced A]
     (hBA : Continuous (algebraMap B A)) :
     Huber.IsUniform A := by
   obtain ⟨C, _, hC⟩ := exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable K hBF hF hBA
-  exact Huber.IsUniform.of_norm_le_mul_smoothingFun K ⟨C, fun a ↦ (hC a).2⟩
+  refine Huber.IsUniform.of_norm_le_mul_gelfandRadius K ⟨C, fun a ↦ ?_⟩
+  rw [← smoothingFun_normRingSeminorm_eq_gelfandRadius]
+  exact (hC a).2
 
 end Extension
 

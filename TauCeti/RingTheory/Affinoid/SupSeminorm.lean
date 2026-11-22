@@ -63,7 +63,11 @@ Jacobson rings.
   nilpotent.
 * `TauCeti.IsAffinoidAlgebra.isReduced_iff_supSeminorm_eq_zero`: `|·|sup` separates points
   exactly when `A` is reduced.
-* `TauCeti.IsAffinoidAlgebra.supSeminorm_map_le`: algebra homomorphisms contract `|·|sup`.
+* `TauCeti.IsAffinoidAlgebra.supSeminorm_map_le` and `AlgHom.supSeminorm_map_le_of_bddAbove`:
+  algebra homomorphisms contract `|·|sup`.
+* `TauCeti.IsAffinoidAlgebra.pointNorm_le_supSeminorm_map` and
+  `AlgHom.pointNorm_le_supSeminorm_map_of_bddAbove`: surjective pointwise lower bound by `|·|sup`
+  on the target.
 * `AlgHom.supSeminorm_map_of_isIntegral`: integral injective algebra homomorphisms preserve
   `|·|sup`.
 * `TauCeti.supSeminorm_mk_nilradical`: `|·|sup` is unchanged by reduction.
@@ -71,9 +75,10 @@ Jacobson rings.
   supremum seminorms of the residues of `f` modulo the minimal primes of `A`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_le_iSup_coeff_rpow_of_eval_eq_zero`: the bound of
   `|f|sup` by the coefficients of a monic polynomial vanishing at `f`.
-* `AlgHom.pointNorm_apply_le_gelfandRadius`, `AlgHom.supSeminorm_apply_le_gelfandRadius`, and
-  `AlgHom.supSeminorm_apply_le_norm`: spectral contraction from arbitrary Banach `K`-algebras into
-  commutative `K`-algebras.
+* `AlgHom.pointNorm_apply_le_gelfandRadius`, `AlgHom.bddAbove_range_pointNorm`,
+  `AlgHom.supSeminorm_apply_le_gelfandRadius`, and `AlgHom.supSeminorm_apply_le_norm`: spectral
+  contraction and point-norm boundedness from arbitrary Banach `K`-algebras into commutative
+  `K`-algebras.
 
 ## References
 
@@ -318,6 +323,13 @@ theorem _root_.AlgHom.supSeminorm_apply_le_norm [IsUltrametricDist K] [CompleteS
     supSeminorm K (φ b) ≤ ‖b‖ :=
   (φ.supSeminorm_apply_le_gelfandRadius b).trans (gelfandRadius_le_norm b)
 
+/-- Over a complete ultrametric normed field `K`, the point norms of the image of any element under
+a `K`-algebra homomorphism from a Banach `K`-algebra are bounded above by its Gelfand radius. -/
+theorem _root_.AlgHom.bddAbove_range_pointNorm [IsUltrametricDist K] [CompleteSpace K]
+    [NormedRing B] [NormedAlgebra K B] [CompleteSpace B] (φ : B →ₐ[K] A) (b : B) :
+    BddAbove (Set.range fun x : MaximalSpectrum A ↦ pointNorm K x (φ b)) :=
+  ⟨gelfandRadius b, Set.forall_mem_range.mpr fun x ↦ φ.pointNorm_apply_le_gelfandRadius x b⟩
+
 /-- The supremum seminorm is bounded by every complete algebra norm. -/
 theorem supSeminorm_le_norm [IsUltrametricDist K] [CompleteSpace K]
     {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [CompleteSpace A] (f : A) :
@@ -442,6 +454,34 @@ theorem supSeminorm_mk_nilradical (f : A) :
   supSeminorm_map_of_ker_le_nilradical (φ := Ideal.Quotient.mkₐ K (nilradical A))
     (Ideal.Quotient.mkₐ_surjective K _) (Ideal.Quotient.mkₐ_ker K _).le f
 
+/-- An algebra homomorphism contracting maximal ideals to maximal ideals does not increase the
+supremum seminorm at any element whose source point norms are bounded. -/
+theorem _root_.AlgHom.supSeminorm_map_le_of_bddAbove {B : Type*} [CommRing B] [Algebra K B]
+    (φ : A →ₐ[K] B) (hmax : ∀ x : MaximalSpectrum B, (x.asIdeal.comap φ).IsMaximal)
+    {a : A} (hb : BddAbove (Set.range fun y : MaximalSpectrum A ↦ pointNorm K y a)) :
+    supSeminorm K (φ a) ≤ supSeminorm K a :=
+  supSeminorm_le (supSeminorm_nonneg a) fun x ↦ by
+    rw [← pointNorm_comap φ x (hmax x) a]
+    exact pointNorm_le_supSeminorm_of_bddAbove hb _
+
+/-- At a classical point `x` of `A` containing the kernel of a surjective algebra map `φ : A → B`
+onto an algebra whose point norms at `φ a` are bounded, `|a(x)| ≤ |φ a|sup`. -/
+theorem _root_.AlgHom.pointNorm_le_supSeminorm_map_of_bddAbove {B : Type*} [CommRing B]
+    [Algebra K B] (φ : A →ₐ[K] B) (hφ : Function.Surjective φ)
+    {x : MaximalSpectrum A} (hx : RingHom.ker φ ≤ x.asIdeal) {a : A}
+    (hb : BddAbove (Set.range fun y : MaximalSpectrum B ↦ pointNorm K y (φ a))) :
+    pointNorm K x a ≤ supSeminorm K (φ a) := by
+  have hmap : (x.asIdeal.map φ).comap φ = x.asIdeal := by
+    rw [Ideal.comap_map_of_surjective' φ hφ, sup_eq_left.mpr hx]
+  have hy : (x.asIdeal.map φ).IsMaximal := by
+    refine (Ideal.map_eq_top_or_isMaximal_of_surjective φ hφ x.isMaximal).resolve_left
+      fun h ↦ x.isMaximal.ne_top ?_
+    rw [← hmap, h, Ideal.comap_top]
+  have hx' : x = ⟨(x.asIdeal.map φ).comap φ, by simpa only [hmap] using x.isMaximal⟩ :=
+    MaximalSpectrum.ext hmap.symm
+  rw [hx', pointNorm_comap φ ⟨_, hy⟩]
+  exact pointNorm_le_supSeminorm_of_bddAbove hb _
+
 namespace IsAffinoidAlgebra
 
 variable [IsUltrametricDist K] [CompleteSpace K]
@@ -560,9 +600,8 @@ theorem isReduced_iff_supSeminorm_eq_zero (hA : IsAffinoidAlgebra K A) :
 theorem supSeminorm_map_le {B : Type*} [CommRing B] [Algebra K B] (hA : IsAffinoidAlgebra K A)
     (hB : IsAffinoidAlgebra K B) (φ : A →ₐ[K] B) (a : A) :
     supSeminorm K (φ a) ≤ supSeminorm K a :=
-  supSeminorm_le (supSeminorm_nonneg a) fun x ↦ by
-    rw [← hB.pointNorm_maximalSpectrumComap φ x a]
-    exact hA.pointNorm_le_supSeminorm _ a
+  φ.supSeminorm_map_le_of_bddAbove (fun x ↦ hB.comap_isMaximal φ x.asIdeal)
+    (hA.bddAbove_range_pointNorm a)
 
 /-- At a classical point `x` of `A` containing the kernel of a surjective algebra map
 `φ : A → B` onto an affinoid algebra, `|a(x)| ≤ |φ a|sup`: the point `x` comes from a classical
@@ -570,18 +609,8 @@ point of `B`. -/
 theorem pointNorm_le_supSeminorm_map {B : Type*} [CommRing B] [Algebra K B]
     (hB : IsAffinoidAlgebra K B) {φ : A →ₐ[K] B} (hφ : Function.Surjective φ)
     {x : MaximalSpectrum A} (hx : RingHom.ker φ ≤ x.asIdeal) (a : A) :
-    pointNorm K x a ≤ supSeminorm K (φ a) := by
-  have hmap : (x.asIdeal.map φ).comap φ = x.asIdeal := by
-    rw [Ideal.comap_map_of_surjective' φ hφ, sup_eq_left.mpr hx]
-  have hy : (x.asIdeal.map φ).IsMaximal := by
-    refine (Ideal.map_eq_top_or_isMaximal_of_surjective φ hφ x.isMaximal).resolve_left
-      fun h ↦ x.isMaximal.ne_top ?_
-    rw [← hmap, h, Ideal.comap_top]
-  have hxy : hB.maximalSpectrumComap φ ⟨_, hy⟩ = x := by
-    ext1
-    rw [maximalSpectrumComap_asIdeal, hmap]
-  rw [← hxy, hB.pointNorm_maximalSpectrumComap]
-  exact hB.pointNorm_le_supSeminorm _ _
+    pointNorm K x a ≤ supSeminorm K (φ a) :=
+  φ.pointNorm_le_supSeminorm_map_of_bddAbove hφ hx (hB.bddAbove_range_pointNorm (φ a))
 
 /-- **The supremum seminorm is computed on minimal-prime quotients.** On an affinoid algebra,
 `|f|sup` is the supremum, over the finitely many minimal primes `𝔭` of `A`, of the supremum
