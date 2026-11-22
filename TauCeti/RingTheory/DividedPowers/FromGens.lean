@@ -7,8 +7,8 @@ module
 
 public import Mathlib.RingTheory.DividedPowers.Basic
 import Mathlib.Algebra.MvPolynomial.Basic
-import Mathlib.Algebra.TrivSqZeroExt.Basic
-import Mathlib.Data.ZMod.Basic
+public import Mathlib.Algebra.TrivSqZeroExt.Basic
+public import Mathlib.Data.ZMod.Basic
 import Mathlib.RingTheory.DividedPowers.RatAlgebra
 import TauCeti.Data.Nat.Choose.Vandermonde
 
@@ -92,6 +92,9 @@ structure AdditiveDividedPowers where
   /-- Scalar homogeneity of degree `n` on `I`. -/
   dpow_mul : ∀ {n} {a x : A}, x ∈ I → dpow n (a * x) = a ^ n * dpow n x
 
+attribute [simp] AdditiveDividedPowers.dpow_null AdditiveDividedPowers.dpow_zero
+  AdditiveDividedPowers.dpow_one
+
 /-- Coercion from an additive divided power structure to its underlying family of maps. -/
 instance : CoeFun (AdditiveDividedPowers I) fun _ ↦ ℕ → A → A := ⟨fun hI ↦ hI.dpow⟩
 
@@ -157,6 +160,7 @@ theorem dpow_mul_right {n : ℕ} {a x : A} (hx : x ∈ I) :
   rw [mul_comm, hI.dpow_mul hx, mul_comm]
 
 /-- Positive-degree additive divided powers vanish at `0`. -/
+@[simp]
 theorem dpow_eval_zero {n : ℕ} (hn : n ≠ 0) : hI.dpow n 0 = 0 := by
   rw [← MulZeroClass.mul_zero (0 : A), hI.dpow_mul I.zero_mem, zero_pow hn, zero_mul, zero_mul]
 
@@ -595,8 +599,11 @@ dual numbers `𝔽₂[ε]/(ε²)` with `I = (ε)`, the family `δ₀ = 1`, `δ�
 `n = 2` and `n ≥ 4` satisfies all additive divided power axioms, yet fails `mul_dpow` at
 `m = 1, n = 2` because `δ₁(ε) * δ₂(ε) = 0 ≠ ε = 3 * δ₃(ε)`. -/
 theorem exists_not_dividedPowers :
-    ∃ (A : Type) (_ : CommRing A) (I : Ideal A) (hI : AdditiveDividedPowers I),
-      ∀ h : DividedPowers I, h.dpow ≠ hI.dpow := by
+    ∃ hI : AdditiveDividedPowers (Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)}),
+      hI.dpow 1 (TrivSqZeroExt.inr 1) * hI.dpow 2 (TrivSqZeroExt.inr 1) ≠
+        (((1 + 2).choose 1 : ℕ) : TrivSqZeroExt (ZMod 2) (ZMod 2)) *
+          hI.dpow (1 + 2) (TrivSqZeroExt.inr 1) ∧
+      ∀ h : DividedPowers (Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)}), h.dpow ≠ hI.dpow := by
   classical
   let I : Ideal (TrivSqZeroExt (ZMod 2) (ZMod 2)) := Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)}
   have hmem_iff : ∀ x : TrivSqZeroExt (ZMod 2) (ZMod 2), x ∈ I ↔ x.fst = 0 := by
@@ -666,23 +673,23 @@ theorem exists_not_dividedPowers :
         · simp [hx0]
         · simp [hx0, pow_succ, hcube]
   }
-  refine ⟨TrivSqZeroExt (ZMod 2) (ZMod 2), inferInstance, I, hI, fun h hh ↦ ?_⟩
   have hε : TrivSqZeroExt.inr (1 : ZMod 2) ∈ I := Ideal.subset_span rfl
-  have hmul := h.mul_dpow (m := 1) (n := 2) hε
-  rw [hh] at hmul
-  have hlhs : hI.dpow 1 (TrivSqZeroExt.inr (1 : ZMod 2)) *
-      hI.dpow 2 (TrivSqZeroExt.inr (1 : ZMod 2)) = 0 := by
+  have hlhs : hI.dpow 1 (TrivSqZeroExt.inr 1) * hI.dpow 2 (TrivSqZeroExt.inr 1) = 0 := by
     simp [hI, f, hε]
   have hrhs : (((1 + 2).choose 1 : ℕ) : TrivSqZeroExt (ZMod 2) (ZMod 2)) *
-      hI.dpow (1 + 2) (TrivSqZeroExt.inr (1 : ZMod 2)) =
-      TrivSqZeroExt.inr (1 : ZMod 2) := by
+      hI.dpow (1 + 2) (TrivSqZeroExt.inr 1) = TrivSqZeroExt.inr 1 := by
     simp only [hI, f, hε, ↓reduceIte]
     have h3 : (((1 + 2).choose 1 : ℕ) : TrivSqZeroExt (ZMod 2) (ZMod 2)) = 1 := by
       ext <;> decide
     rw [h3, one_mul]
-  rw [hlhs, hrhs] at hmul
-  have h01 : (0 : ZMod 2) = 1 := congrArg TrivSqZeroExt.snd hmul
-  exact zero_ne_one h01
+  have hne : hI.dpow 1 (TrivSqZeroExt.inr 1) * hI.dpow 2 (TrivSqZeroExt.inr 1) ≠
+      (((1 + 2).choose 1 : ℕ) : TrivSqZeroExt (ZMod 2) (ZMod 2)) *
+        hI.dpow (1 + 2) (TrivSqZeroExt.inr 1) := by
+    rw [hlhs, hrhs]
+    exact fun h01 ↦ zero_ne_one (congrArg TrivSqZeroExt.snd h01)
+  refine ⟨hI, hne, fun h hh ↦ hne ?_⟩
+  have hmul := h.mul_dpow (m := 1) (n := 2) hε
+  rwa [hh] at hmul
 
 end AdditiveDividedPowers
 
