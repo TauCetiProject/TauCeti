@@ -78,6 +78,10 @@ equivalent to a nonarchimedean absolute value.
   equivalent to a nonarchimedean absolute value.
 * `NumberField.IsTotallyReal.instIsEmptyIsComplex`: a totally real field has no complex infinite
   places.
+* `NumberField.IsTotallyComplex.instIsEmptyIsReal`: a totally complex field has no real infinite
+  places.
+* `NumberField.InfinitePlace.subsingleton_of_finrank_eq_two`: a totally complex field of degree
+  `2` has a unique infinite place.
 -/
 
 public section
@@ -93,6 +97,11 @@ variable {K : Type*} [Field K]
 instance IsTotallyReal.instIsEmptyIsComplex [IsTotallyReal K] :
     IsEmpty {w : InfinitePlace K // w.IsComplex} :=
   ⟨fun w ↦ not_isReal_iff_isComplex.mpr w.property (IsTotallyReal.isReal w.val)⟩
+
+/-- A totally complex field has no real infinite places. -/
+instance IsTotallyComplex.instIsEmptyIsReal [IsTotallyComplex K] :
+    IsEmpty {w : InfinitePlace K // w.IsReal} :=
+  ⟨fun w ↦ not_isReal_iff_isComplex.mpr (IsTotallyComplex.isComplex w.val) w.property⟩
 
 /-- **An extension of a totally real field unramified at infinity is totally real.** If every
 infinite place of `K` is unramified over a totally real field `k`, then every infinite place of
@@ -202,6 +211,13 @@ theorem InfinitePlace.nrComplexPlaces_eq_one_of_finrank_eq_two [IsTotallyComplex
     (hK : Module.finrank ℚ K = 2) : InfinitePlace.nrComplexPlaces K = 1 := by
   have := NumberField.IsTotallyComplex.finrank (K := K)
   omega
+
+/-- **A totally complex field of degree `2` has a unique infinite place.** -/
+theorem InfinitePlace.subsingleton_of_finrank_eq_two [IsTotallyComplex K]
+    (hK : Module.finrank ℚ K = 2) : Subsingleton (InfinitePlace K) := by
+  apply Fintype.card_le_one_iff_subsingleton.mp
+  rw [card_eq_nrRealPlaces_add_nrComplexPlaces, NumberField.IsTotallyComplex.nrRealPlaces_eq_zero,
+    nrComplexPlaces_eq_one_of_finrank_eq_two hK, zero_add]
 
 /-- **A number field is not both totally complex and totally real.** It has at least one infinite
 place, which cannot be both complex and real. -/

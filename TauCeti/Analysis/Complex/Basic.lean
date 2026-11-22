@@ -359,26 +359,4 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
     rw [h0, abs_neg] at h
     exact h.false
 
-/-- Dividing `z⁻¹` by its norm inverts `z / ‖z‖`. -/
-theorem inv_div_norm_inv (z : ℂ) : z⁻¹ / (‖z⁻¹‖ : ℂ) = (z / (‖z‖ : ℂ))⁻¹ := by
-  rw [norm_inv, ofReal_inv, inv_div_inv, inv_div]
-
-/-- Squaring `z / ‖z‖` gives `z / conj z`, since `z * conj z = ‖z‖ ^ 2`. -/
-theorem div_norm_sq (z : ℂ) : (z / (‖z‖ : ℂ)) ^ 2 = z / conj z := by
-  by_cases hz : z = 0
-  · simp [hz]
-  have hmul : z * conj z = (‖z‖ : ℂ) ^ (2 : ℕ) := by
-    rw [mul_conj, normSq_eq_norm_sq, ofReal_pow]
-  rw [div_pow, ← hmul, sq, mul_div_mul_left z (conj z) hz]
-
-/-- Any even integer power `(z / ‖z‖) ^ (2 * k)` equals `(z / conj z) ^ k`. -/
-theorem div_norm_zpow_two_mul (z : ℂ) (k : ℤ) :
-    (z / (‖z‖ : ℂ)) ^ (2 * k) = (z / conj z) ^ k := by
-  rw [show (2 * k : ℤ) = (2 : ℕ) * k by simp, zpow_mul, zpow_natCast, div_norm_sq]
-
-/-- For any integer `k`, `(z⁻¹ / ‖z⁻¹‖) ^ (-(2 * k)) = (z / conj z) ^ k`. -/
-theorem inv_div_norm_inv_zpow_neg_two_mul (z : ℂ) (k : ℤ) :
-    (z⁻¹ / (‖z⁻¹‖ : ℂ)) ^ (-(2 * k)) = (z / conj z) ^ k := by
-  rw [inv_div_norm_inv, inv_zpow, ← zpow_neg, neg_neg, div_norm_zpow_two_mul]
-
 end Complex

@@ -45,8 +45,6 @@ coordinates of `ℤ[i]` in the basis `1, i` are described for every quadratic cy
   exactly when `a² + b² = 1`;
 * `TauCeti.finrank_eq_two_of_isCyclotomicExtension_four`: `[K : ℚ] = 2`;
 * `TauCeti.isPrincipalIdealRing_ringOfIntegers_four`: `ℤ[i]` is a principal ideal domain;
-* `TauCeti.isEmpty_realInfinitePlace_four`, `TauCeti.subsingleton_infinitePlace_four`: `ℚ(i)` has
-  no real places and a unique infinite place;
 * `TauCeti.units_pow_four_eq_one_four`, `TauCeti.apply_unit_pow_four_eq_one_of_four`: every unit
   of `ℤ[i]` is a fourth root of unity, as is its image under any monoid homomorphism out of `K`;
 * `TauCeti.exists_gal_apply_eq_pow_three_of_four`: complex conjugation of `ℤ[i]` cubes every
@@ -180,28 +178,6 @@ theorem finrank_eq_two_of_isCyclotomicExtension_four
     Module.finrank ℚ K = 2 := by
   rw [IsCyclotomicExtension.Rat.finrank 4 K]
   decide
-
-/-- A fourth cyclotomic field has no real infinite places. -/
-theorem isEmpty_realInfinitePlace_four (K : Type*) [Field K] [CharZero K]
-    [IsCyclotomicExtension {4} ℚ K] : IsEmpty {w : InfinitePlace K // w.IsReal} := by
-  have := IsCyclotomicExtension.numberField {4} ℚ K
-  have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
-  exact ⟨fun w ↦ InfinitePlace.not_isReal_iff_isComplex.mpr
-    ((GaussianRationals.isTotallyComplex hζ.minpoly_toInteger_eq_X_sq_add_one).isComplex w.val)
-    w.property⟩
-
-/-- A fourth cyclotomic field has a unique infinite place, since `[K : ℚ] = 2` and `r₁ = 0`. -/
-theorem subsingleton_infinitePlace_four (K : Type*) [Field K] [CharZero K]
-    [IsCyclotomicExtension {4} ℚ K] : Subsingleton (InfinitePlace K) := by
-  have := IsCyclotomicExtension.numberField {4} ℚ K
-  have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
-  have hmin := hζ.minpoly_toInteger_eq_X_sq_add_one
-  have hgen : Algebra.adjoin ℚ {(hζ.toInteger : K)} = ⊤ :=
-    IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ
-  apply Fintype.card_le_one_iff_subsingleton.mp
-  rw [InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces,
-    GaussianRationals.nrRealPlaces_eq_zero hmin,
-    GaussianRationals.nrComplexPlaces_eq_one hmin hgen]
 
 /-- Every unit of `𝓞 K = ℤ[i]` is a fourth root of unity (`±1` or `±i`). -/
 theorem units_pow_four_eq_one_four {K : Type*} [Field K] [CharZero K]

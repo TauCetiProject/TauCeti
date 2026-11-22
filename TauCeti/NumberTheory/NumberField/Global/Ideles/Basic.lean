@@ -206,6 +206,13 @@ theorem IsDedekindDomain.HeightOneSpectrum.coe_ideleFiniteCoord
     (v.ideleFiniteCoord x : v.adicCompletion K) = (x : AdeleRing R K).2 v :=
   (rfl)
 
+/-- Replacing the infinite coordinates of an idele by `1` preserves its finite coordinates. -/
+theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele_toFiniteIdele
+    (v : HeightOneSpectrum R) (x : IdeleGroup R K) :
+    v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele R K (IdeleGroup.toFiniteIdele R K x)) =
+      v.ideleFiniteCoord x :=
+  Units.ext (rfl)
+
 @[simp]
 theorem NumberField.InfinitePlace.coe_ideleInfiniteCoord
     (w : InfinitePlace K) (x : IdeleGroup R K) :

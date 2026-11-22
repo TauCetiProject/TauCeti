@@ -20,9 +20,14 @@ public import Mathlib.Analysis.RCLike.Basic
   jointly continuous `K`-scalar multiplication.
 * `RCLike.re_mem_Ioo_of_mem_ball`: for `z ∈ Metric.ball z₀ δ`,
   `re z ∈ Set.Ioo (re z₀ - δ) (re z₀ + δ)`.
+* `RCLike.inv_div_norm_inv`, `RCLike.div_norm_sq`, `RCLike.div_norm_zpow_two_mul`,
+  `RCLike.inv_div_norm_inv_zpow_neg_two_mul`: unit-circle normalization identities relating
+  `z / ‖z‖` and `z / conj z`.
 -/
 
 public section
+
+open scoped ComplexConjugate
 
 namespace RCLike
 
@@ -60,5 +65,26 @@ theorem re_mem_Ioo_of_mem_ball {z z₀ : K} {δ : ℝ} (hz : z ∈ Metric.ball z
     re z ∈ Set.Ioo (re z₀ - δ) (re z₀ + δ) := by
   simpa only [Real.ball_eq_Ioo, NNReal.coe_one, one_mul] using
     lipschitzWith_re.mapsTo_ball one_ne_zero z₀ δ hz
+
+/-- Dividing `z⁻¹` by its norm inverts `z / ‖z‖`. -/
+theorem inv_div_norm_inv (z : K) : z⁻¹ / (‖z⁻¹‖ : K) = (z / (‖z‖ : K))⁻¹ := by
+  rw [norm_inv, ofReal_inv, inv_div_inv, inv_div]
+
+/-- Squaring `z / ‖z‖` gives `z / conj z`, since `z * conj z = ‖z‖ ^ 2`. -/
+theorem div_norm_sq (z : K) : (z / (‖z‖ : K)) ^ 2 = z / conj z := by
+  by_cases hz : z = 0
+  · simp [hz]
+  have hmul : z * conj z = (‖z‖ : K) ^ (2 : ℕ) := mul_conj z
+  rw [div_pow, ← hmul, sq, mul_div_mul_left z (conj z) hz]
+
+/-- Any even integer power `(z / ‖z‖) ^ (2 * k)` equals `(z / conj z) ^ k`. -/
+theorem div_norm_zpow_two_mul (z : K) (k : ℤ) :
+    (z / (‖z‖ : K)) ^ (2 * k) = (z / conj z) ^ k := by
+  rw [zpow_mul, zpow_two, ← sq, div_norm_sq]
+
+/-- For any integer `k`, `(z⁻¹ / ‖z⁻¹‖) ^ (-(2 * k)) = (z / conj z) ^ k`. -/
+theorem inv_div_norm_inv_zpow_neg_two_mul (z : K) (k : ℤ) :
+    (z⁻¹ / (‖z⁻¹‖ : K)) ^ (-(2 * k)) = (z / conj z) ^ k := by
+  rw [inv_div_norm_inv, inv_zpow, ← zpow_neg, neg_neg, div_norm_zpow_two_mul]
 
 end RCLike

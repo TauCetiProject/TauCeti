@@ -7,10 +7,13 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Inverse
-import TauCeti.Analysis.Complex.Basic
+import TauCeti.Analysis.RCLike.Basic
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
+import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.ClassQuotient
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
+import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Descent
 
 /-!
@@ -50,6 +53,8 @@ developed in `TauCeti.NumberTheory.LFunctions.Grossencharacter.Angular.NormTwist
 
 * `TauCeti.LFunctions.exists_angularGrossencharacter`: existence of the presentation with exponent
   `-2 * k` at an embedding `τ` and principal-ideal values `(τ α / conj (τ α)) ^ (2 * k)`.
+* `TauCeti.LFunctions.toHeckeCharacter_angularGrossencharacter_ideleCongruenceToClassHom`: explicit
+  evaluation of the presented Hecke character on everywhere-unramified congruence representatives.
 * `TauCeti.LFunctions.unitaryWeight_angularGrossencharacter_span_singleton`: explicit value on
   nonzero principal ideals `(α)`.
 * `TauCeti.LFunctions.angularGrossencharacter_infinityType`: vanishing complex modulus exponent,
@@ -91,24 +96,21 @@ private def angularPlace : {w : InfinitePlace F // w.IsComplex} :=
 
 private theorem infinitePlace_eq_angularPlace (w : InfinitePlace F) :
     w = (angularPlace F).val :=
-  @Subsingleton.elim _ (TauCeti.subsingleton_infinitePlace_four F) _ _
+  letI : IsTotallyComplex F := IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)
+  letI : Subsingleton (InfinitePlace F) :=
+    InfinitePlace.subsingleton_of_finrank_eq_two
+      (TauCeti.finrank_eq_two_of_isCyclotomicExtension_four (K := F))
+  Subsingleton.elim _ _
 
 private theorem complexPlace_eq_angularPlace (w : {w : InfinitePlace F // w.IsComplex}) :
     w = angularPlace F :=
   Subtype.ext (infinitePlace_eq_angularPlace F w.val)
 
-/-- Over `F`, every idele class lies in the ray subgroup of the trivial modulus, since `𝓞 F` has
-class number `1`. -/
-private theorem raySubgroup_one_eq_top_four : raySubgroup (Modulus.one F) = ⊤ := by
+private theorem raySubgroup_one_eq_top : raySubgroup (Modulus.one F) = ⊤ := by
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ F
-  have : Subsingleton (ClassGroup (𝓞 F)) :=
-    Fintype.card_le_one_iff_subsingleton.mp
-      (GaussianRationals.classNumber_eq_one hζ.minpoly_toInteger_eq_X_sq_add_one
-        (IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ)).le
-  have : Subsingleton (RayClassGroup (Modulus.one F)) :=
-    (oneEquivClassGroup (K := F)).toEquiv.subsingleton
-  rw [← ker_rayClassQuotient, eq_top_iff]
-  exact fun _ _ ↦ MonoidHom.mem_ker.mpr (Subsingleton.elim _ _)
+  exact (raySubgroup_one_eq_top_iff F).mpr
+    (GaussianRationals.classNumber_eq_one hζ.minpoly_toInteger_eq_X_sq_add_one
+      (IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ))
 
 end CyclotomicFourHelpers
 
@@ -194,10 +196,8 @@ private def angularIdealWeight (k : ℤ) : MultiplicativeIdealWeight F :=
   { toMonoidWithZeroHom :=
       { toFun I := angularGenVal F k (Submodule.IsPrincipal.generator I)
         map_zero' := by
-          have h0 : Submodule.IsPrincipal.generator (0 : Ideal (𝓞 F)) = 0 :=
-            Ideal.span_singleton_eq_bot.mp
-              ((Ideal.span_singleton_generator _).trans Ideal.zero_eq_bot)
-          rw [h0, angularGenVal_zero]
+          rw [(Submodule.IsPrincipal.eq_bot_iff_generator_eq_zero _).mp Ideal.zero_eq_bot,
+            angularGenVal_zero]
         map_one' := by
           have h1 : Ideal.span {Submodule.IsPrincipal.generator (1 : Ideal (𝓞 F))} =
               Ideal.span {1} := by
@@ -214,11 +214,8 @@ private def angularIdealWeight (k : ℤ) : MultiplicativeIdealWeight F :=
             (Ideal.span_singleton_eq_span_singleton.mp hIJ), angularGenVal_mul] }
     finite_setOf_apply_eq_zero := by
       refine Set.Finite.subset Set.finite_empty fun v hv ↦ ?_
-      have hgen0 : Submodule.IsPrincipal.generator v.asIdeal ≠ 0 := by
-        intro h0
-        apply v.ne_bot
-        rw [← Ideal.span_singleton_generator v.asIdeal, h0, Ideal.span_singleton_eq_bot]
-      exact absurd hv (angularGenVal_ne_zero F k hgen0) }
+      exact absurd hv (angularGenVal_ne_zero F k
+        (mt (Submodule.IsPrincipal.eq_bot_iff_generator_eq_zero _).mpr v.ne_bot)) }
 
 private theorem angularIdealWeight_apply (k : ℤ) (I : Ideal (𝓞 F)) :
     letI : IsPrincipalIdealRing (𝓞 F) := isPrincipalIdealRing_ringOfIntegers_four F
@@ -236,16 +233,16 @@ private theorem angularIdealWeight_ne_zero (k : ℤ) {I : Ideal (𝓞 F)} (hI : 
     angularIdealWeight F k I ≠ 0 := by
   have : IsPrincipalIdealRing (𝓞 F) := isPrincipalIdealRing_ringOfIntegers_four F
   rw [← Ideal.span_singleton_generator I, angularIdealWeight_span_singleton]
-  refine angularGenVal_ne_zero F k fun h0 ↦ hI ?_
-  rw [← Ideal.span_singleton_generator I, h0, Ideal.span_singleton_eq_bot]
+  exact angularGenVal_ne_zero F k
+    (mt (Submodule.IsPrincipal.eq_bot_iff_generator_eq_zero I).mpr hI)
 
 /-- The bundled `UnitaryIdealWeight F` of Hecke's `k`-th angular character. -/
 private def angularUnitaryWeight (k : ℤ) : UnitaryIdealWeight F :=
   ⟨angularIdealWeight F k, fun 𝔭 _ ↦ by
     have : IsPrincipalIdealRing (𝓞 F) := isPrincipalIdealRing_ringOfIntegers_four F
     rw [← Ideal.span_singleton_generator 𝔭.asIdeal, angularIdealWeight_span_singleton]
-    refine norm_angularGenVal_of_ne_zero F k fun h0 ↦ 𝔭.ne_bot ?_
-    rw [← Ideal.span_singleton_generator 𝔭.asIdeal, h0, Ideal.span_singleton_eq_bot]⟩
+    exact norm_angularGenVal_of_ne_zero F k
+      (mt (Submodule.IsPrincipal.eq_bot_iff_generator_eq_zero 𝔭.asIdeal).mpr 𝔭.ne_bot)⟩
 
 private theorem val_angularUnitaryWeight (k : ℤ) :
     (angularUnitaryWeight F k).val = angularIdealWeight F k :=
@@ -358,20 +355,37 @@ private theorem ideleCongruenceToClassHom_ker_le (k : ℤ) :
 private def angularHeckeCharacter (k : ℤ) : HeckeCharacter F :=
   ContinuousMonoidHom.liftOfIsQuotientMap (ideleCongruenceToClassHom (Modulus.one F))
     ((isQuotientMap_ideleCongruenceToClassHom_iff (Modulus.one F)).mpr
-      (raySubgroup_one_eq_top_four F))
+      (raySubgroup_one_eq_top F))
     ((angularIdeleArchChar F k).comp
       (TauCeti.ContinuousMonoidHom.subgroupSubtype (ideleCongruenceSubgroup (Modulus.one F))))
     (ideleCongruenceToClassHom_ker_le F k)
+
+private theorem angularHeckeCharacter_ideleCongruenceToClassHom (k : ℤ)
+    (y : ideleCongruenceSubgroup (Modulus.one F)) :
+    angularHeckeCharacter F k (ideleCongruenceToClassHom (Modulus.one F) y) =
+      angularIdeleArchChar F k y := by
+  rw [angularHeckeCharacter, ContinuousMonoidHom.liftOfIsQuotientMap_comp_apply,
+    ContinuousMonoidHom.coe_comp, Function.comp_apply,
+    TauCeti.ContinuousMonoidHom.subgroupSubtype_apply]
+
+private theorem coe_angularHeckeCharacter_ideleCongruenceToClassHom (k : ℤ)
+    (y : ideleCongruenceSubgroup (Modulus.one F)) :
+    ((angularHeckeCharacter F k (ideleCongruenceToClassHom (Modulus.one F) y) : ℂˣ) : ℂ) =
+      (continuousMulEquivComplexOfIsComplex (angularPlace F).property
+          ((angularPlace F).val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F) :
+            (angularPlace F).val.Completion) /
+        (‖continuousMulEquivComplexOfIsComplex (angularPlace F).property
+          ((angularPlace F).val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F) :
+            (angularPlace F).val.Completion)‖ : ℂ)) ^ (-(4 * k)) := by
+  rw [angularHeckeCharacter_ideleCongruenceToClassHom, coe_angularIdeleArchChar_apply]
 
 /-- Every value of `angularHeckeCharacter F k` has norm `1`, so its idelic shift vanishes. -/
 private theorem shift_angularHeckeCharacter (k : ℤ) :
     (angularHeckeCharacter F k).shift = 0 := by
   refine (HeckeCharacter.shift_eq_zero_iff _).mpr fun c ↦ ?_
   obtain ⟨y, rfl⟩ :=
-    (ideleCongruenceToClassHom_surjective_iff (Modulus.one F)).mpr (raySubgroup_one_eq_top_four F) c
-  rw [angularHeckeCharacter, ContinuousMonoidHom.liftOfIsQuotientMap_comp_apply,
-    ContinuousMonoidHom.coe_comp, Function.comp_apply,
-    TauCeti.ContinuousMonoidHom.subgroupSubtype_apply, coe_angularIdeleArchChar_apply]
+    (ideleCongruenceToClassHom_surjective_iff (Modulus.one F)).mpr (raySubgroup_one_eq_top F) c
+  rw [coe_angularHeckeCharacter_ideleCongruenceToClassHom]
   set z : ℂ := continuousMulEquivComplexOfIsComplex (angularPlace F).property
     ((angularPlace F).val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F) :
       (angularPlace F).val.Completion)
@@ -398,9 +412,7 @@ private theorem complexComponent_angularHeckeCharacter (k : ℤ)
     mem_ideleCongruenceSubgroup_one_iff.mpr fun v ↦ by simp
   rw [HeckeCharacter.complexComponent_apply, HeckeCharacter.infiniteComponent_apply,
     IdeleClassGroup.ofCompletion_apply, ← ideleCongruenceToClassHom_apply (Modulus.one F) ⟨_, hmem⟩,
-    angularHeckeCharacter, ContinuousMonoidHom.liftOfIsQuotientMap_comp_apply,
-    ContinuousMonoidHom.coe_comp, Function.comp_apply,
-    TauCeti.ContinuousMonoidHom.subgroupSubtype_apply, complexUnitsCharacter_zero_left]
+    angularHeckeCharacter_ideleCongruenceToClassHom, complexUnitsCharacter_zero_left]
   simp only [angularIdeleArchChar, ContinuousMonoidHom.coe_comp, Function.comp_apply,
     ContinuousMonoidHom.coe_mk, ContinuousMonoidHom.coe_coe,
     InfinitePlace.ideleInfiniteCoord_ofCompletion_self]
@@ -412,7 +424,9 @@ private theorem infinityType_angularHeckeCharacter (k : ℤ) :
     (angularHeckeCharacter F k).infinityType =
       AlgebraicInfinityType.toContinuous (angularAlgebraicInfinityType F k) := by
   refine HeckeCharacter.infinityType_eq_iff.mpr ⟨fun w ↦ ?_, fun w ↦ ?_⟩
-  · exact (TauCeti.isEmpty_realInfinitePlace_four F).elim w
+  · have : IsTotallyComplex F :=
+      IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)
+    exact IsEmpty.elim inferInstance w
   · obtain rfl : w = angularPlace F := complexPlace_eq_angularPlace F w
     rw [complexComponent_angularHeckeCharacter,
       AlgebraicInfinityType.toContinuous_complexExponent,
@@ -421,13 +435,6 @@ private theorem infinityType_angularHeckeCharacter (k : ℤ) :
     have hsum : ((-(2 * k) : ℤ) : ℂ) + ((2 * k : ℤ) : ℂ) = 0 := by push_cast; ring
     have hdiff : -(2 * k) - 2 * k = -(4 * k) := by ring
     rw [hsum, hdiff]
-
-private theorem exists_span_singleton_eq_asIdeal_four (v : HeightOneSpectrum (𝓞 F)) :
-    ∃ π : 𝓞 F, π ≠ 0 ∧ Ideal.span {π} = v.asIdeal := by
-  have : IsPrincipalIdealRing (𝓞 F) := isPrincipalIdealRing_ringOfIntegers_four F
-  refine ⟨Submodule.IsPrincipal.generator v.asIdeal, ?_, Ideal.span_singleton_generator v.asIdeal⟩
-  exact v.ne_zero_of_span_singleton_eq_pow
-    (by rw [pow_one, Ideal.span_singleton_generator v.asIdeal])
 
 /-- Evaluating `angularHeckeCharacter F k` at a uniformizer `u` of `v` gives the principal-ideal
 weight at `v.asIdeal`: multiplying `ofAdicCompletion v u` by `(unitEmbedding π)⁻¹` for a generator
@@ -438,7 +445,8 @@ private theorem finiteComponent_angularHeckeCharacter_of_valued_eq_exp_neg_one (
     (hu : Valued.v (u : v.adicCompletion F) = WithZero.exp (-1)) :
     ((angularHeckeCharacter F k).finiteComponent v u : ℂ) =
       angularIdealWeight F k v.asIdeal := by
-  obtain ⟨π, hπ0, hspan⟩ := exists_span_singleton_eq_asIdeal_four F v
+  have : IsPrincipalIdealRing (𝓞 F) := isPrincipalIdealRing_ringOfIntegers_four F
+  obtain ⟨π, hπ0, hspan⟩ := v.exists_span_singleton_eq_asIdeal
   have hspan1 : Ideal.span {π} = v.asIdeal ^ 1 := by rw [pow_one, hspan]
   have hπF : (algebraMap (𝓞 F) F π) ≠ 0 :=
     (map_ne_zero_iff (algebraMap (𝓞 F) F) (IsFractionRing.injective (𝓞 F) F)).mpr hπ0
@@ -461,11 +469,9 @@ private theorem finiteComponent_angularHeckeCharacter_of_valued_eq_exp_neg_one (
       IdeleClassGroup.ofAdicCompletion (𝓞 F) F v u := by
     rw [ideleCongruenceToClassHom_apply, IdeleClassGroup.ofAdicCompletion_apply, QuotientGroup.eq]
     exact ⟨x, by simp [y, mul_assoc]⟩
-  rw [HeckeCharacter.finiteComponent_apply, ← hy_class, angularHeckeCharacter,
-    ContinuousMonoidHom.liftOfIsQuotientMap_comp_apply, ContinuousMonoidHom.coe_comp,
-    Function.comp_apply, TauCeti.ContinuousMonoidHom.subgroupSubtype_apply,
-    coe_angularIdeleArchChar_apply, ← hspan, angularIdealWeight_span_singleton,
-    angularGenVal_of_ne_zero F k hπ0]
+  rw [HeckeCharacter.finiteComponent_apply, ← hy_class,
+    coe_angularHeckeCharacter_ideleCongruenceToClassHom, ← hspan,
+    angularIdealWeight_span_singleton, angularGenVal_of_ne_zero F k hπ0]
   have hinf : continuousMulEquivComplexOfIsComplex (angularPlace F).property
       ((angularPlace F).val.ideleInfiniteCoord y : (angularPlace F).val.Completion) =
       ((angularPlace F).val.embedding (π : F))⁻¹ := by
@@ -473,8 +479,9 @@ private theorem finiteComponent_angularHeckeCharacter_of_valued_eq_exp_neg_one (
       InfinitePlace.ideleInfiniteCoord_unitEmbedding,
       NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe,
       continuousMulEquivComplexOfIsComplex_apply]
-  rw [hinf, show -(4 * k) = -(2 * (2 * k)) by ring]
-  exact Complex.inv_div_norm_inv_zpow_neg_two_mul _ (2 * k)
+  have hexp : -(4 * k) = -(2 * (2 * k)) := by ring
+  rw [hinf, hexp]
+  exact RCLike.inv_div_norm_inv_zpow_neg_two_mul _ (2 * k)
 
 end HeckeConstruction
 
@@ -493,24 +500,24 @@ def angularGrossencharacter (F : Type*) [Field F] [NumberField F]
   unitaryWeight := angularUnitaryWeight F k
   infinityType := angularAlgebraicInfinityType F k
   eq_one_of_mem y hy hw := by
-    rw [← ideleCongruenceToClassHom_apply (Modulus.one F) ⟨y, hy⟩, angularHeckeCharacter,
-      ContinuousMonoidHom.liftOfIsQuotientMap_comp_apply, ContinuousMonoidHom.coe_comp,
-      Function.comp_apply, TauCeti.ContinuousMonoidHom.subgroupSubtype_apply, Subtype.coe_mk,
-      Units.ext_iff, coe_angularIdeleArchChar_apply, hw (angularPlace F).val, Units.val_one,
+    rw [← ideleCongruenceToClassHom_apply (Modulus.one F) ⟨y, hy⟩, Units.ext_iff,
+      coe_angularHeckeCharacter_ideleCongruenceToClassHom, hw (angularPlace F).val, Units.val_one,
       map_one]
     simp
   agreesOnIdentityComponent := by
     rw [infinityType_angularHeckeCharacter]
     exact (ContinuousInfinityType.agreesOnIdentityComponent_iff _ _).mpr ⟨rfl, rfl, rfl⟩
-  realParity_eq w _ := (TauCeti.isEmpty_realInfinitePlace_four F).elim w
+  realParity_eq w _ := by
+    have : IsTotallyComplex F :=
+      IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)
+    exact IsEmpty.elim inferInstance w
   unitaryWeight_eq_zero I hI := by
     by_cases hbot : I = ⊥
     · simp [hbot]
     · exact absurd (Modulus.isCoprimeTo_iff.mpr ⟨hbot, fun v hv ↦ by simp at hv⟩) hI
   unitaryWeight_apply v _ u hu := by
-    rw [unitaryPart_angularHeckeCharacter,
+    rw [val_angularUnitaryWeight, unitaryPart_angularHeckeCharacter,
       finiteComponent_angularHeckeCharacter_of_valued_eq_exp_neg_one F k v u hu]
-    rfl
 
 private theorem toHeckeCharacter_angularGrossencharacter_def (F : Type*) [Field F]
     [NumberField F] [IsCyclotomicExtension {4} ℚ F] (k : ℤ) :
@@ -527,6 +534,24 @@ end AngularGrossencharacter
 /-! ### Specification, projections, and group laws in `k` -/
 
 section SpecificationAndGroupLaws
+
+/-- **Evaluation of `angularGrossencharacter F k` on congruence representatives**: on the class of
+an everywhere-unramified idele `y ∈ ideleCongruenceSubgroup (Modulus.one F)`, the presented Hecke
+character evaluates at the complex place `w` to `(z / ‖z‖) ^ (-(4 * k))`, where `z` is the
+complex coordinate of `y` at `w` under `continuousMulEquivComplexOfIsComplex w.property`. -/
+theorem toHeckeCharacter_angularGrossencharacter_ideleCongruenceToClassHom {F : Type*} [Field F]
+    [NumberField F] [IsCyclotomicExtension {4} ℚ F] (k : ℤ)
+    (w : {w : InfinitePlace F // w.IsComplex})
+    (y : ideleCongruenceSubgroup (Modulus.one F)) :
+    (((angularGrossencharacter F k).toHeckeCharacter
+      (ideleCongruenceToClassHom (Modulus.one F) y) : ℂˣ) : ℂ) =
+      (continuousMulEquivComplexOfIsComplex w.property
+          (w.val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F) : w.val.Completion) /
+        (‖continuousMulEquivComplexOfIsComplex w.property
+          (w.val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F) : w.val.Completion)‖ : ℂ)) ^
+        (-(4 * k)) := by
+  obtain rfl : w = angularPlace F := complexPlace_eq_angularPlace F w
+  exact coe_angularHeckeCharacter_ideleCongruenceToClassHom F k y
 
 /-- At the chosen embedding `w.val.embedding` of the complex place `w` of `F`, the algebraic
 infinity type of `angularGrossencharacter F k` has exponent `-(2 * k)`. -/
@@ -578,9 +603,8 @@ bad primes. -/
 theorem badPrimes_unitaryWeight_angularGrossencharacter (F : Type*) [Field F] [NumberField F]
     [IsCyclotomicExtension {4} ℚ F] (k : ℤ) :
     (angularGrossencharacter F k).unitaryWeight.val.badPrimes = ∅ := by
-  ext v
-  simp only [MultiplicativeIdealWeight.mem_badPrimes, Set.mem_empty_iff_false, iff_false]
-  exact angularIdealWeight_ne_zero F k v.ne_bot
+  rw [(angularGrossencharacter F k).badPrimes_unitaryWeight]
+  simp
 
 /-- `angularGrossencharacter F k` has idelic shift `0` (it is unitary). -/
 @[simp]
@@ -609,9 +633,9 @@ the unit ideal `⊤`. -/
 @[simp]
 theorem finiteConductor_toHeckeCharacter_angularGrossencharacter (F : Type*) [Field F]
     [NumberField F] [IsCyclotomicExtension {4} ℚ F] (k : ℤ) :
-    (angularGrossencharacter F k).toHeckeCharacter.finiteConductor = ⊤ := by
-  have hdvd := (angularGrossencharacter F k).finiteConductor_dvd_finitePart
-  rwa [Modulus.one_finitePart, Ideal.dvd_iff_le, top_le_iff] at hdvd
+    (angularGrossencharacter F k).toHeckeCharacter.finiteConductor = ⊤ :=
+  (angularGrossencharacter F k).finiteConductor_eq_top_of_finitePart_eq_top
+    Modulus.one_finitePart
 
 /-- At the complex place `w` of `F`, the archimedean component of `angularGrossencharacter F k` is
 `complexUnitsCharacter 0 (-(4 * k))`. -/
@@ -625,14 +649,20 @@ theorem complexComponent_toHeckeCharacter_angularGrossencharacter {F : Type*} [F
 
 /-- At the complex place `w` of `F`, the continuous infinity type of `angularGrossencharacter F k`
 has complex modulus exponent `0`. -/
+@[simp high]
 theorem complexExponent_angularGrossencharacter {F : Type*} [Field F] [NumberField F]
     [IsCyclotomicExtension {4} ℚ F] (k : ℤ) (w : {w : InfinitePlace F // w.IsComplex}) :
     (AlgebraicInfinityType.toContinuous
       (angularGrossencharacter F k).infinityType).complexExponent w = 0 := by
-  simp
+  rw [AlgebraicInfinityType.toContinuous_complexExponent,
+    infinityType_angularGrossencharacter_embedding,
+    infinityType_angularGrossencharacter_conjugate]
+  push_cast
+  ring
 
 /-- At the complex place `w` of `F`, the continuous infinity type of `angularGrossencharacter F k`
 has angular frequency `-(4 * k)` (with respect to `w.val.embedding`). -/
+@[simp high]
 theorem complexAngularFrequency_angularGrossencharacter {F : Type*} [Field F] [NumberField F]
     [IsCyclotomicExtension {4} ℚ F] (k : ℤ) (w : {w : InfinitePlace F // w.IsComplex}) :
     (AlgebraicInfinityType.toContinuous
@@ -664,9 +694,7 @@ character at `Modulus.one F`. -/
 theorem angularGrossencharacter_zero (F : Type*) [Field F] [NumberField F]
     [IsCyclotomicExtension {4} ℚ F] :
     angularGrossencharacter F 0 = Grossencharacter.ofRayClassCharacter 1 := by
-  apply Grossencharacter.ext_of_infinityType_eq
-    (IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)).isComplex
-    (raySubgroup_one_eq_top_four F)
+  apply Grossencharacter.ext_of_infinityType_eq (raySubgroup_one_eq_top F)
   ext σ
   rcases embedding_eq_or_eq_conjugate_four F σ with rfl | rfl
   · simp [infinityType_angularGrossencharacter_embedding 0 (angularPlace F)]
@@ -682,9 +710,10 @@ theorem toHeckeCharacter_angularGrossencharacter_zero (F : Type*) [Field F] [Num
 theorem unitaryWeight_angularGrossencharacter_zero (F : Type*) [Field F] [NumberField F]
     [IsCyclotomicExtension {4} ℚ F] :
     (angularGrossencharacter F 0).unitaryWeight = 1 := by
+  have : IsPrincipalIdealRing (𝓞 F) := isPrincipalIdealRing_ringOfIntegers_four F
   apply Subtype.ext
   refine MultiplicativeIdealWeight.ext_heightOneSpectrum fun v ↦ ?_
-  obtain ⟨π, hπ0, hspan⟩ := exists_span_singleton_eq_asIdeal_four F v
+  obtain ⟨π, hπ0, hspan⟩ := v.exists_span_singleton_eq_asIdeal
   rw [← hspan, unitaryWeight_angularGrossencharacter_span_singleton 0 (angularPlace F) hπ0,
     hspan, UnitaryIdealWeight.val_one, MultiplicativeIdealWeight.one_apply]
   simp [v.ne_bot]
@@ -693,9 +722,7 @@ theorem unitaryWeight_angularGrossencharacter_zero (F : Type*) [Field F] [Number
 theorem angularGrossencharacter_neg (F : Type*) [Field F] [NumberField F]
     [IsCyclotomicExtension {4} ℚ F] (k : ℤ) :
     angularGrossencharacter F (-k) = (angularGrossencharacter F k).inverse := by
-  apply Grossencharacter.ext_of_infinityType_eq
-    (IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)).isComplex
-    (raySubgroup_one_eq_top_four F)
+  apply Grossencharacter.ext_of_infinityType_eq (raySubgroup_one_eq_top F)
   ext σ
   rcases embedding_eq_or_eq_conjugate_four F σ with rfl | rfl
   · simp [infinityType_angularGrossencharacter_embedding _ (angularPlace F)]
@@ -722,12 +749,10 @@ theorem toHeckeCharacter_angularGrossencharacter_add (F : Type*) [Field F] [Numb
         (angularGrossencharacter F k).toHeckeCharacter := by
   refine ContinuousMonoidHom.ext fun c ↦ Units.ext ?_
   obtain ⟨y, rfl⟩ :=
-    (ideleCongruenceToClassHom_surjective_iff (Modulus.one F)).mpr (raySubgroup_one_eq_top_four F) c
+    (ideleCongruenceToClassHom_surjective_iff (Modulus.one F)).mpr (raySubgroup_one_eq_top F) c
   simp only [ContinuousMonoidHom.mul_apply, Units.val_mul,
-    toHeckeCharacter_angularGrossencharacter_def, angularHeckeCharacter,
-    ContinuousMonoidHom.liftOfIsQuotientMap_comp_apply, ContinuousMonoidHom.coe_comp,
-    Function.comp_apply, TauCeti.ContinuousMonoidHom.subgroupSubtype_apply,
-    coe_angularIdeleArchChar_apply]
+    toHeckeCharacter_angularGrossencharacter_def,
+    coe_angularHeckeCharacter_ideleCongruenceToClassHom]
   set z : ℂ := continuousMulEquivComplexOfIsComplex (angularPlace F).property
     ((angularPlace F).val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F) :
       (angularPlace F).val.Completion)
@@ -744,9 +769,10 @@ theorem unitaryWeight_angularGrossencharacter_add (F : Type*) [Field F] [NumberF
     (angularGrossencharacter F (j + k)).unitaryWeight =
       (angularGrossencharacter F j).unitaryWeight *
         (angularGrossencharacter F k).unitaryWeight := by
+  have : IsPrincipalIdealRing (𝓞 F) := isPrincipalIdealRing_ringOfIntegers_four F
   apply Subtype.ext
   refine MultiplicativeIdealWeight.ext_heightOneSpectrum fun v ↦ ?_
-  obtain ⟨π, hπ0, hspan⟩ := exists_span_singleton_eq_asIdeal_four F v
+  obtain ⟨π, hπ0, hspan⟩ := v.exists_span_singleton_eq_asIdeal
   rw [UnitaryIdealWeight.val_mul, MultiplicativeIdealWeight.mul_apply, ← hspan,
     unitaryWeight_angularGrossencharacter_span_singleton (j + k) (angularPlace F) hπ0,
     unitaryWeight_angularGrossencharacter_span_singleton j (angularPlace F) hπ0,
@@ -803,16 +829,7 @@ theorem isFiniteOrder_toHeckeCharacter_angularGrossencharacter_iff {F : Type*} [
     [NumberField F] [IsCyclotomicExtension {4} ℚ F] {k : ℤ} :
     (angularGrossencharacter F k).toHeckeCharacter.IsFiniteOrder ↔ k = 0 := by
   refine ⟨fun hfin ↦ ?_, ?_⟩
-  · obtain ⟨ε, hε⟩ := HeckeCharacter.exists_finiteOrderInfinityType hfin
-    have h0 : ContinuousInfinityType.AgreesOnIdentityComponent
-        (angularGrossencharacter F k).toHeckeCharacter.infinityType
-        (AlgebraicInfinityType.toContinuous 0) := by
-      rw [hε, map_zero,
-        ContinuousInfinityType.agreesOnIdentityComponent_iff_exists_finiteOrderInfinityType]
-      exact ⟨ε, (zero_add _).symm⟩
-    have hn : (angularGrossencharacter F k).infinityType = 0 :=
-      AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff.mp
-        ((angularGrossencharacter F k).agreesOnIdentityComponent.symm.trans h0)
+  · have hn := (angularGrossencharacter F k).infinityType_eq_zero_of_isFiniteOrder hfin
     have hk0 := congrFun hn (angularPlace F).val.embedding
     rw [infinityType_angularGrossencharacter_embedding k (angularPlace F), Pi.zero_apply] at hk0
     omega

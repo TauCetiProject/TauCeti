@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharZero.Infinite
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Basic
 import TauCeti.NumberTheory.NumberField.Quadratic.Norm
@@ -30,6 +31,8 @@ given by explicit generators.
 * `TauCeti.NumberField.GaussianRationals.span_two_add_ne_span_two_sub`: `(2 + θ) ≠ (2 − θ)`.
 * `TauCeti.NumberField.GaussianRationals.absNorm_eq_five_iff`: the ideals of absolute norm `5`
   are exactly `(2 + θ)` and `(2 − θ)`.
+* `TauCeti.NumberField.GaussianRationals.im_three_add_four_I_div_five_zpow_ne_zero`: no nonzero
+  integer power of `(3 + 4i) / 5` is real.
 
 ## References
 
@@ -43,6 +46,8 @@ open Polynomial NumberField Ideal
 open scoped NumberField
 
 namespace TauCeti.NumberField.GaussianRationals
+
+section
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 
@@ -121,5 +126,50 @@ theorem absNorm_eq_five_iff (hmin : minpoly ℤ θ = X ^ 2 + 1)
   · rintro (rfl | rfl)
     · exact absNorm_span_two_add hmin hgen
     · exact absNorm_span_two_sub hmin hgen
+
+end
+
+/-- **No nonzero integer power of `(3 + 4i) / 5` is real**: every nonzero integer power has
+nonzero imaginary part, since every positive power of `3 + 4i` has Gaussian integer coordinates
+congruent to `(3, 4)` modulo `5`. -/
+theorem im_three_add_four_I_div_five_zpow_ne_zero {m : ℤ} (hm : m ≠ 0) :
+    ((((3 : ℂ) + 4 * Complex.I) / 5) ^ m).im ≠ 0 := by
+  have hcongr : ∀ {n : ℕ}, n ≠ 0 → ∃ a b : ℤ,
+      ((3 : ℂ) + 4 * Complex.I) ^ n = (a : ℂ) + (b : ℂ) * Complex.I ∧ a % 5 = 3 ∧ b % 5 = 4 := by
+    intro n hn
+    induction n with
+    | zero => exact absurd rfl hn
+    | succ k ih =>
+      rcases eq_or_ne k 0 with rfl | hk
+      · exact ⟨3, 4, by simp, by decide, by decide⟩
+      · obtain ⟨a, b, hpow, ha, hb⟩ := ih hk
+        refine ⟨3 * a - 4 * b, 4 * a + 3 * b, ?_, by omega, by omega⟩
+        rw [pow_succ, hpow]
+        push_cast
+        linear_combination (4 * (b : ℂ)) * Complex.I_sq
+  have hnat {n : ℕ} (hn : n ≠ 0) : ((((3 : ℂ) + 4 * Complex.I) / 5) ^ n).im ≠ 0 := by
+    obtain ⟨a, b, hpow, -, hb⟩ := hcongr hn
+    have hb_ne : b ≠ 0 := by omega
+    have hb0 : (b : ℝ) ≠ 0 := Int.cast_ne_zero.mpr hb_ne
+    have h5 : (5 : ℝ) ^ n ≠ 0 := pow_ne_zero n (by norm_num)
+    have hrew : (((3 : ℂ) + 4 * Complex.I) / 5) ^ n =
+        ((a : ℝ) / (5 : ℝ) ^ n : ℝ) + (((b : ℝ) / (5 : ℝ) ^ n : ℝ) : ℂ) * Complex.I := by
+      rw [div_pow, hpow]
+      push_cast
+      ring
+    have him : ((((3 : ℂ) + 4 * Complex.I) / 5) ^ n).im = (b : ℝ) / (5 : ℝ) ^ n := by
+      rw [hrew, Complex.add_im, Complex.ofReal_im, Complex.mul_I_im, Complex.ofReal_re, zero_add]
+    rw [him]
+    exact div_ne_zero hb0 h5
+  rcases Int.eq_nat_or_neg m with ⟨n, rfl | rfl⟩
+  · have hn : n ≠ 0 := by omega
+    simpa only [zpow_natCast] using hnat hn
+  · have hn : n ≠ 0 := by omega
+    rw [zpow_neg, zpow_natCast, Complex.inv_im]
+    intro him
+    rcases div_eq_zero_iff.mp him with hneg | hnsq
+    · exact hnat hn (neg_eq_zero.mp hneg)
+    · have hz0 : (((3 : ℂ) + 4 * Complex.I) / 5) ^ n = 0 := Complex.normSq_eq_zero.mp hnsq
+      exact hnat hn (by simp [hz0])
 
 end TauCeti.NumberField.GaussianRationals
