@@ -190,8 +190,9 @@ theorem AnalyticMapGerm.comp_assoc {E''' : Type*} [NormedAddCommGroup E'''] [Nor
   obtain ⟨h, hh, hhz, rfl⟩ := H.exists_mk; obtain ⟨g, hg, hgy, rfl⟩ := G.exists_mk
   obtain ⟨f, hf, hfx, rfl⟩ := F.exists_mk; rfl
 
+-- Pre-order so pullback composition splits before `AnalyticMapGerm.comp_mk` merges `mk` germs.
 /-- Stalk pullback is contravariantly functorial under composition of analytic map germs. -/
-@[simp]
+@[simp↓]
 theorem stalkPullbackGerm_comp {x : X} {y : Y} {z : Z}
     (G : AnalyticMapGerm J K y z) (F : AnalyticMapGerm I J x y) :
     stalkPullbackGerm (G.comp F) = (stalkPullbackGerm F).comp (stalkPullbackGerm G) := by
@@ -403,8 +404,9 @@ variable {x : X} {y : Y}
   [IsHausdorff (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x))
     ((holomorphicStructureSheaf I X).presheaf.stalk x)]
 
+-- Pre-order so the forward equivalence routes through `stalkPullbackGerm` before `comp_mk` fires.
 /-- In the forward direction, `analyticMapGermEquivStalkAlgHom` is `stalkPullbackGerm`. -/
-@[simp]
+@[simp↓]
 theorem analyticMapGermEquivStalkAlgHom_apply (F : AnalyticMapGerm I J x y) :
     analyticMapGermEquivStalkAlgHom x y F = stalkPullbackGerm F := (rfl)
 

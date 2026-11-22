@@ -725,7 +725,9 @@ abbrev LocallyRingedSpaceCLinearHom
 
 namespace LocallyRingedSpaceCLinearHom
 
+-- Exposed so `.val.base` reduces definitionally in the dependent types of `stalkAlgHom` lemmas.
 /-- The identity `ℂ`-linear morphism on `locallyRingedSpace I X`. -/
+@[expose]
 def id (I : ModelWithCorners ℂ E H) (X : Type) [TopologicalSpace X] [ChartedSpace H X] :
     LocallyRingedSpaceCLinearHom I X I X :=
   ⟨𝟙 (locallyRingedSpace I X), id_c_app_algebraMap I X⟩
@@ -736,8 +738,10 @@ def id (I : ModelWithCorners ℂ E H) (X : Type) [TopologicalSpace X] [ChartedSp
 theorem val_id (I : ModelWithCorners ℂ E H) (X : Type) [TopologicalSpace X] [ChartedSpace H X] :
     (LocallyRingedSpaceCLinearHom.id I X).val = 𝟙 (locallyRingedSpace I X) := (rfl)
 
+-- Exposed so `.val.base` reduces definitionally in the dependent types of `stalkAlgHom` lemmas.
 /-- Composition of `ℂ`-linear morphisms `locallyRingedSpace I X ⟶ locallyRingedSpace J Y` and
 `locallyRingedSpace J Y ⟶ locallyRingedSpace K Z`. -/
+@[expose]
 def comp {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E''] {H'' : Type*}
     [TopologicalSpace H''] {K : ModelWithCorners ℂ E'' H''} {Z : Type} [TopologicalSpace Z]
     [ChartedSpace H'' Z]
@@ -777,6 +781,100 @@ theorem comp_assoc {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E''] 
     (φ : LocallyRingedSpaceCLinearHom I X J Y) :
     (χ.comp ψ).comp φ = χ.comp (ψ.comp φ) :=
   Subtype.ext (Category.assoc φ.val ψ.val χ.val).symm
+
+-- Exposed so `.val.base` reduces definitionally in the dependent types of `stalkAlgHom` lemmas.
+/-- Bundle a complex analytic map `f : X → Y` as a `ℂ`-linear morphism of holomorphic locally
+ringed spaces. No manifold, boundaryless, or finite-dimensionality hypotheses are required. -/
+@[expose]
+def ofContMDiff (f : X → Y) (hf : ContMDiff I J ω f) : LocallyRingedSpaceCLinearHom I X J Y :=
+  ⟨locallyRingedSpaceMap f hf, locallyRingedSpaceMap_c_app_algebraMap f hf⟩
+
+/-- The underlying locally ringed-space morphism of `ofContMDiff f hf` is
+`locallyRingedSpaceMap f hf`. -/
+@[simp]
+theorem val_ofContMDiff (f : X → Y) (hf : ContMDiff I J ω f) :
+    (ofContMDiff f hf).val = locallyRingedSpaceMap f hf := (rfl)
+
+variable (I X) in
+/-- `LocallyRingedSpaceCLinearHom.ofContMDiff` sends `id` to `LocallyRingedSpaceCLinearHom.id`. -/
+@[simp]
+theorem ofContMDiff_id :
+    ofContMDiff (I := I) (J := I) (_root_.id : X → X) contMDiff_id =
+      LocallyRingedSpaceCLinearHom.id I X :=
+  Subtype.ext (locallyRingedSpaceMap_id I X)
+
+/-- `LocallyRingedSpaceCLinearHom.ofContMDiff` is covariantly functorial under composition. -/
+theorem ofContMDiff_comp {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E'']
+    {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℂ E'' H''}
+    {Z : Type} [TopologicalSpace Z] [ChartedSpace H'' Z]
+    {f : X → Y} (hf : ContMDiff I J ω f) {g : Y → Z} (hg : ContMDiff J K ω g) :
+    ofContMDiff (g ∘ f) (hg.comp hf) = (ofContMDiff g hg).comp (ofContMDiff f hf) :=
+  Subtype.ext (locallyRingedSpaceMap_comp hf hg)
+
+/-- `LocallyRingedSpaceCLinearHom.ofContMDiff` sends a composite bundled analytic map `g.comp f`
+to the composite `ℂ`-linear morphism, independently of the analyticity proof term. -/
+@[simp]
+theorem ofContMDiff_contMDiffMap_comp {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E'']
+    {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℂ E'' H''}
+    {Z : Type} [TopologicalSpace Z] [ChartedSpace H'' Z]
+    (g : C^ω⟮J, Y; K, Z⟯) (f : C^ω⟮I, X; J, Y⟯) (hgf : ContMDiff I K ω (g.comp f)) :
+    ofContMDiff (g.comp f) hgf =
+      (ofContMDiff g g.contMDiff).comp (ofContMDiff f f.contMDiff) :=
+  ofContMDiff_comp f.contMDiff g.contMDiff
+
+/-- The `ℂ`-algebra homomorphism induced on holomorphic stalks at `x : X` by a `ℂ`-linear morphism
+`φ : LocallyRingedSpaceCLinearHom I X J Y`. -/
+def stalkAlgHom (φ : LocallyRingedSpaceCLinearHom I X J Y) (x : X) :
+    (holomorphicStructureSheaf J Y).presheaf.stalk (φ.val.base x) →ₐ[ℂ]
+      (holomorphicStructureSheaf I X).presheaf.stalk x :=
+  stalkAlgHomOfCAppTopAlgebraMap φ.val.toHom (φ.property ⊤) x
+
+/-- Coercing `φ.stalkAlgHom x` to a ring homomorphism recovers `(φ.val.stalkMap x).hom`. -/
+@[simp]
+theorem toRingHom_stalkAlgHom (φ : LocallyRingedSpaceCLinearHom I X J Y) (x : X) :
+    (φ.stalkAlgHom x :
+      (holomorphicStructureSheaf J Y).presheaf.stalk (φ.val.base x) →+*
+        (holomorphicStructureSheaf I X).presheaf.stalk x) = (φ.val.stalkMap x).hom := (rfl)
+
+/-- `φ.stalkAlgHom x` acts on germs by `(φ.val.stalkMap x).hom`. -/
+@[simp]
+theorem stalkAlgHom_apply (φ : LocallyRingedSpaceCLinearHom I X J Y) (x : X)
+    (s : (holomorphicStructureSheaf J Y).presheaf.stalk (φ.val.base x)) :
+    φ.stalkAlgHom x s = (φ.val.stalkMap x).hom s := (rfl)
+
+/-- The `ℂ`-algebra stalk map of `LocallyRingedSpaceCLinearHom.id I X` is `AlgHom.id`. -/
+@[simp]
+theorem stalkAlgHom_id (x : X) :
+    (LocallyRingedSpaceCLinearHom.id I X).stalkAlgHom x =
+      AlgHom.id ℂ ((holomorphicStructureSheaf I X).presheaf.stalk x) :=
+  AlgHom.ext fun s ↦ (stalkAlgHom_apply _ x s).trans <|
+    (congrArg (fun k ↦ CommRingCat.Hom.hom k s)
+      (LocallyRingedSpace.stalkMap_id (locallyRingedSpace I X) x)).trans
+      (CommRingCat.id_apply _ s)
+
+/-- The `ℂ`-algebra stalk map of a composite `ψ.comp φ` is the contravariant composite of the
+`ℂ`-algebra stalk maps of `ψ` and `φ`. -/
+@[simp]
+theorem stalkAlgHom_comp {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E'']
+    {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℂ E'' H''}
+    {Z : Type} [TopologicalSpace Z] [ChartedSpace H'' Z]
+    (ψ : LocallyRingedSpaceCLinearHom J Y K Z) (φ : LocallyRingedSpaceCLinearHom I X J Y)
+    (x : X) :
+    (ψ.comp φ).stalkAlgHom x =
+      (φ.stalkAlgHom x).comp (ψ.stalkAlgHom (φ.val.base x)) :=
+  AlgHom.ext fun s ↦ (stalkAlgHom_apply _ x s).trans <|
+    (congrArg (fun k ↦ CommRingCat.Hom.hom k s)
+      (LocallyRingedSpace.stalkMap_comp (f := φ.val) (g := ψ.val) x)).trans
+      (CommRingCat.comp_apply _ _ s)
+
+/-- The `ℂ`-algebra stalk map of `ofContMDiff f hf` at `x` is `stalkPullbackAlgHom`. -/
+@[simp]
+theorem stalkAlgHom_ofContMDiff (f : X → Y) (hf : ContMDiff I J ω f) (x : X) :
+    (ofContMDiff f hf).stalkAlgHom x =
+      stalkPullbackAlgHom (Eventually.of_forall fun _ ↦ hf.contMDiffAt) :=
+  stalkAlgHomOfCAppTopAlgebraMap_eq_stalkPullbackAlgHom (locallyRingedSpaceMap f hf).toHom
+    (locallyRingedSpaceMap_c_app_algebraMap f hf ⊤) x
+    (Eventually.of_forall fun _ ↦ hf.contMDiffAt)
 
 end LocallyRingedSpaceCLinearHom
 
@@ -875,8 +973,7 @@ For any complex charted space `(X, I)` and any finite-dimensional boundaryless c
 `locallyRingedSpaceMap` to `ℂ`-linear morphisms `LocallyRingedSpaceCLinearHom I X J Y`. -/
 def holomorphicMapLocalRingedEquivalence :
     C^ω⟮I, X; J, Y⟯ ≃ LocallyRingedSpaceCLinearHom I X J Y where
-  toFun f := ⟨locallyRingedSpaceMap f f.contMDiff,
-    locallyRingedSpaceMap_c_app_algebraMap f f.contMDiff⟩
+  toFun f := LocallyRingedSpaceCLinearHom.ofContMDiff f f.contMDiff
   invFun φ := ⟨φ.val.base, contMDiff_base_of_c_app_top_algebraMap φ.val.toHom (φ.property ⊤)⟩
   left_inv _ := ContMDiffMap.ext fun _ ↦ rfl
   right_inv φ := Subtype.ext <|
@@ -884,7 +981,13 @@ def holomorphicMapLocalRingedEquivalence :
       (contMDiff_base_of_c_app_top_algebraMap φ.val.toHom (φ.property ⊤))
 
 /-- In the forward direction, `holomorphicMapLocalRingedEquivalence` sends `f` to
-`locallyRingedSpaceMap f f.contMDiff`. -/
+`LocallyRingedSpaceCLinearHom.ofContMDiff f f.contMDiff`. -/
+theorem holomorphicMapLocalRingedEquivalence_apply (f : C^ω⟮I, X; J, Y⟯) :
+    holomorphicMapLocalRingedEquivalence I X J Y f =
+      LocallyRingedSpaceCLinearHom.ofContMDiff f f.contMDiff := (rfl)
+
+/-- In the forward direction, the underlying locally ringed-space morphism of
+`holomorphicMapLocalRingedEquivalence` is `locallyRingedSpaceMap f f.contMDiff`. -/
 @[simp]
 theorem holomorphicMapLocalRingedEquivalence_apply_val (f : C^ω⟮I, X; J, Y⟯) :
     (holomorphicMapLocalRingedEquivalence I X J Y f).val =
@@ -948,7 +1051,17 @@ theorem holomorphicMapLocalRingedEquivalence_symm_comp
   ContMDiffMap.ext fun _ ↦ rfl
 
 /-- Restricting a holomorphic map `f : C^ω⟮I, X; J, Y⟯` to an open subset `U : Opens X` corresponds
-under `holomorphicMapLocalRingedEquivalence` to precomposing with the open immersion
+under `holomorphicMapLocalRingedEquivalence` to precomposing in `LocallyRingedSpaceCLinearHom`
+with `LocallyRingedSpaceCLinearHom.ofContMDiff Subtype.val contMDiff_subtypeVal`. -/
+theorem holomorphicMapLocalRingedEquivalence_restrict (f : C^ω⟮I, X; J, Y⟯) (U : Opens X) :
+    holomorphicMapLocalRingedEquivalence I U J Y
+        (f.comp (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^ω⟮I, U; I, X⟯)) =
+      (holomorphicMapLocalRingedEquivalence I X J Y f).comp
+        (LocallyRingedSpaceCLinearHom.ofContMDiff Subtype.val contMDiff_subtypeVal) :=
+  Subtype.ext (locallyRingedSpaceMap_comp contMDiff_subtypeVal f.contMDiff)
+
+/-- Restricting a holomorphic map `f : C^ω⟮I, X; J, Y⟯` to an open subset `U : Opens X` corresponds
+on underlying locally ringed-space morphisms to precomposing with the open immersion
 `(restrictLocallyRingedSpaceIso I X U).inv ≫ (locallyRingedSpace I X).ofRestrict _`. -/
 theorem holomorphicMapLocalRingedEquivalence_restrict_val (f : C^ω⟮I, X; J, Y⟯) (U : Opens X) :
     (holomorphicMapLocalRingedEquivalence I U J Y
@@ -957,8 +1070,8 @@ theorem holomorphicMapLocalRingedEquivalence_restrict_val (f : C^ω⟮I, X; J, Y
         (locallyRingedSpace I X).ofRestrict (Opens.isOpenEmbedding (X := TopCat.of X) U) ≫
         (holomorphicMapLocalRingedEquivalence I X J Y f).val := by
   rw [restrictLocallyRingedSpaceIso_inv_comp_ofRestrict_assoc,
-    holomorphicMapLocalRingedEquivalence_apply_val, holomorphicMapLocalRingedEquivalence_apply_val,
-    ← locallyRingedSpaceMap_comp contMDiff_subtypeVal f.contMDiff]; rfl
+    holomorphicMapLocalRingedEquivalence_restrict]
+  rfl
 
 end SymmAndComp
 
