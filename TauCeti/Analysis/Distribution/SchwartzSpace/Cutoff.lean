@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Flat
 import TauCeti.Analysis.Calculus.ContDiff.Scaling
 
 /-!
@@ -44,6 +45,11 @@ derivatives are bounded independently of `R`, so its `(k, n)` seminorm is `O(R�
   `𝓢(E, F)`.
 * `SchwartzMap.hasCompactSupport_smulLeftCLM_comp_inv_smul`: the truncations are compactly
   supported.
+* `SchwartzMap.tendsto_seminorm_smulLeftCLM_of_iteratedFDeriv_eq_zero`: if the derivatives of `f`
+  of order at most `N` vanish at `x`, the seminorms of order at most `N` of the products
+  `φ (t • (· - x)) • f` with shrinking cutoffs tend to zero as `t → ∞`. This is the estimate
+  showing that a tempered distribution supported at `x` only sees finitely many derivatives
+  at `x`.
 * `SchwartzMap.tendsto_smulLeftCLM_contDiffBump`: the truncations `φ (R⁻¹ ·) • f` by a
   `ContDiffBump` converge to `f` as `R → ∞`, for complex-valued multipliers.
 * `ContDiffBump.lowPassSchwartz`: the low-pass symbol `φ (R⁻¹ ·)` of a `ContDiffBump`, as a
@@ -198,6 +204,102 @@ theorem tendsto_smulLeftCLM_comp_inv_smul_atTop (hχ : ContDiff ℝ ∞ χ)
   rw [div_lt_iff₀ (mul_pos hr hR0)]
   rw [div_lt_iff₀ (mul_pos hr hε)] at hKR
   linarith [mul_comm R (r * ε), mul_left_comm ε r R]
+
+section Flat
+
+/-- The pointwise estimate behind `tendsto_seminorm_smulLeftCLM_of_iteratedFDeriv_eq_zero`, at a
+point `y` where the cutoff `φ (t • (· - x))` may be nonzero, so that `‖y - x‖ ≤ R / t`. -/
+private lemma pow_mul_norm_iteratedFDeriv_smul_le_of_mem_tsupport {φ : E → ℝ}
+    (hφ : ContDiff ℝ ∞ φ) {R A M t : ℝ} (hR : tsupport φ ⊆ closedBall 0 R) (hR1 : 1 ≤ R)
+    (ht : R ≤ t) (hA0 : 0 ≤ A) (hM : 0 ≤ M) {n N : ℕ} (hn : n ≤ N)
+    (hA : ∀ i ≤ n, ∀ y, ‖iteratedFDeriv ℝ i φ y‖ ≤ A) {f : 𝓢(E, F)} {x : E}
+    (htay : ∀ p ≤ N, ∀ y, ‖iteratedFDeriv ℝ p f y‖ ≤ M * ‖y - x‖ ^ (N - p + 1)) (k : ℕ) {y : E}
+    (hy : t • (y - x) ∈ tsupport φ) :
+    ‖y‖ ^ k * ‖iteratedFDeriv ℝ n (fun y ↦ φ (t • (y - x)) • f y) y‖ ≤
+      (‖x‖ + R) ^ k * (∑ i ∈ Finset.range (n + 1), n.choose i * (A * (M * R ^ (i + 1)))) / t := by
+  have ht0 : 0 < t := lt_of_lt_of_le one_pos (hR1.trans ht)
+  have hχ : ContDiff ℝ ∞ (fun y ↦ φ (t • (y - x))) := by fun_prop
+  have hδ : R / t ≤ 1 := (div_le_one ht0).2 ht
+  have hyx : ‖y - x‖ ≤ R / t := by
+    rw [le_div_iff₀ ht0, mul_comm, ← Real.norm_of_nonneg ht0.le, ← norm_smul]
+    exact mem_closedBall_zero_iff.1 (hR hy)
+  have hy' : ‖y‖ ≤ ‖x‖ + R := by
+    calc ‖y‖ ≤ ‖x‖ + ‖y - x‖ := by simpa using norm_add_le x (y - x)
+      _ ≤ ‖x‖ + R := by gcongr; exact hyx.trans (hδ.trans hR1)
+  -- By the Leibniz rule, the `i`-th derivative of the cutoff is at most `tⁱ A`, and the
+  -- derivative of `f` of order `n - i` is at most `M (R / t) ^ (N - (n - i) + 1)`.
+  calc ‖y‖ ^ k * ‖iteratedFDeriv ℝ n (fun y ↦ φ (t • (y - x)) • f y) y‖
+      ≤ (‖x‖ + R) ^ k * ∑ i ∈ Finset.range (n + 1),
+          n.choose i * ‖iteratedFDeriv ℝ i (fun y ↦ φ (t • (y - x))) y‖ *
+            ‖iteratedFDeriv ℝ (n - i) f y‖ := by
+        gcongr
+        exact norm_iteratedFDeriv_smul_le hχ (f.smooth ⊤) y (mod_cast le_top)
+    _ ≤ (‖x‖ + R) ^ k * ∑ i ∈ Finset.range (n + 1),
+          n.choose i * (t ^ i * A) * (M * (R / t) ^ (i + 1)) := by
+        gcongr with i hi
+        · rw [iteratedFDeriv_comp_sub (f := fun w ↦ φ (t • w)),
+            iteratedFDeriv_comp_const_smul t (hφ.of_le (mod_cast le_top)), norm_smul, norm_pow,
+            Real.norm_of_nonneg ht0.le]
+          gcongr
+          exact hA i (by grind) _
+        · refine (htay _ (by grind) y).trans ?_
+          gcongr
+          calc ‖y - x‖ ^ (N - (n - i) + 1) ≤ (R / t) ^ (N - (n - i) + 1) := by gcongr
+            _ ≤ (R / t) ^ (i + 1) := pow_le_pow_of_le_one (by positivity) hδ (by grind)
+    _ = (‖x‖ + R) ^ k * (∑ i ∈ Finset.range (n + 1), n.choose i * (A * (M * R ^ (i + 1)))) / t := by
+        rw [mul_div_assoc, Finset.sum_div]
+        congr 1
+        refine Finset.sum_congr rfl fun i _ ↦ ?_
+        have := ht0.ne'
+        rw [div_pow, pow_succ t i]
+        field_simp
+
+/-- **Shrinking cutoffs at a flat point.** Let `φ` be smooth and compactly supported, and let the
+derivatives of a Schwartz function `f` of order at most `N` vanish at `x`. Then the Schwartz
+seminorms of order `n ≤ N` of the products `φ (t • (· - x)) • f` tend to zero as `t → ∞`. -/
+theorem tendsto_seminorm_smulLeftCLM_of_iteratedFDeriv_eq_zero {φ : E → ℝ} (hφ : ContDiff ℝ ∞ φ)
+    (hφc : HasCompactSupport φ) (f : 𝓢(E, F)) {x : E} {N : ℕ}
+    (hf : ∀ i ≤ N, iteratedFDeriv ℝ i f x = 0) (k : ℕ) {n : ℕ} (hn : n ≤ N) :
+    Tendsto (fun t : ℝ ↦ (smulLeftCLM F (fun y ↦ φ (t • (y - x))) f).seminorm ℝ k n) atTop
+      (𝓝 0) := by
+  obtain ⟨R, hR⟩ := hφc.isCompact.isBounded.subset_closedBall 0
+  set R' := max R 1
+  have hR'1 : 1 ≤ R' := le_max_right _ _
+  have hR' : tsupport φ ⊆ closedBall 0 R' := hR.trans (closedBall_subset_closedBall le_sup_left)
+  obtain ⟨A, hA0, hA⟩ := hφc.exists_bound_iteratedFDeriv hφ n
+  set M := SchwartzMap.seminorm ℝ 0 (N + 1) f
+  -- Taylor bound at the flat point `x`.
+  have htay : ∀ p ≤ N, ∀ y, ‖iteratedFDeriv ℝ p f y‖ ≤ M * ‖y - x‖ ^ (N - p + 1) := by
+    intro p hp y
+    have := TauCeti.norm_iteratedFDeriv_sub_le_of_iteratedFDeriv_eq_zero (s := univ) (x := x)
+      (fun z _ ↦ (f.smooth ⊤).contDiffAt.of_le (mod_cast le_top)) convex_univ (mem_univ x)
+      (fun z _ ↦ by simpa using norm_iteratedFDeriv_le_seminorm ℝ f (N + 1) z)
+      (fun i _ hi ↦ hf i hi) (N - p) (Nat.sub_le N p) y (mem_univ y)
+    rwa [Nat.sub_sub_self hp, hf p hp, sub_zero] at this
+  set K := (‖x‖ + R') ^ k * ∑ i ∈ Finset.range (n + 1), n.choose i * (A * (M * R' ^ (i + 1)))
+  refine squeeze_zero' (g := fun t : ℝ ↦ K / t) (.of_forall fun _ ↦ apply_nonneg _ _) ?_
+    (tendsto_const_nhds.div_atTop tendsto_id)
+  filter_upwards [eventually_ge_atTop R'] with t ht
+  have ht0 : 0 < t := lt_of_lt_of_le one_pos (hR'1.trans ht)
+  have hχ : ContDiff ℝ ∞ (fun y ↦ φ (t • (y - x))) := by fun_prop
+  have hχc : HasCompactSupport (fun y ↦ φ (t • (y - x))) :=
+    hφc.comp_homeomorph ((Homeomorph.subRight x).trans (Homeomorph.smulOfNeZero t ht0.ne'))
+  refine seminorm_le_bound ℝ k n _ (by positivity) fun y ↦ ?_
+  rw [smulLeftCLM_apply (hχc.hasTemperateGrowth hχ)]
+  by_cases hy : t • (y - x) ∈ tsupport φ
+  · exact pow_mul_norm_iteratedFDeriv_smul_le_of_mem_tsupport hφ hR' hR'1 ht hA0
+      (apply_nonneg _ _) hn hA htay k hy
+  · -- Away from the support of the cutoff the product vanishes near `y`.
+    have hzero : (fun y ↦ φ (t • (y - x)) • f y) =ᶠ[𝓝 y] 0 := by
+      have hopen : IsOpen {z : E | t • (z - x) ∉ tsupport φ} :=
+        (isClosed_tsupport φ).isOpen_compl.preimage (by fun_prop)
+      filter_upwards [hopen.mem_nhds hy] with z hz
+      simp [image_eq_zero_of_notMem_tsupport hz]
+    calc ‖y‖ ^ k * ‖iteratedFDeriv ℝ n (fun y ↦ φ (t • (y - x)) • f y) y‖ = 0 := by
+          simp [(hzero.iteratedFDeriv ℝ n).eq_of_nhds]
+      _ ≤ K / t := by positivity
+
+end Flat
 
 section Truncation
 
