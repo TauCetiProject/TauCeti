@@ -340,10 +340,9 @@ theorem continuous_weightMomentMap (α : ι → StrongDual ℝ 𝔱) : Continuou
 /-- The moment map of the weight model is smooth. -/
 @[fun_prop]
 theorem contDiff_weightMomentMap (α : ι → StrongDual ℝ 𝔱) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (weightMomentMap α) :=
-  ContDiff.sum fun _ _ ↦ (contDiff_const.mul
-    ((((contDiff_piLp_apply (p := 2)).comp contDiff_fst).pow 2).add
-      (((contDiff_piLp_apply (p := 2)).comp contDiff_snd).pow 2))).fun_smul contDiff_const
+    ContDiff ℝ n (weightMomentMap α) := by
+  unfold weightMomentMap
+  fun_prop
 
 /-- The moment map of the weight model is the linear map `a ↦ Σ_i a_i (-α_i)` composed with the
 half squared radii `(q_i² + p_i²) / 2`. -/

@@ -114,15 +114,13 @@ theorem contDiffAt_vertexLift {n : WithTop ℕ∞}
   refine ContDiffAt.prodMk (contDiffAt_piLp' 2 fun j ↦ ?_) (contDiffAt_piLp' 2 fun j ↦ ?_)
   · by_cases hj : j ∈ activeSet (facetPairing i u) c v
     · simp only [vertexLift_fst_of_mem hv hi _ hj]
-      exact ((contDiff_piLp_apply (p := 2)).comp contDiff_fst).contDiffAt
+      fun_prop
     · simp only [vertexLift_fst_of_notMem hv hi _ hj]
-      refine ContDiffAt.sqrt (contDiffAt_const.mul
-        (((contDiff_const.add (contDiff_weightMomentMap _)).clm_apply
-          contDiff_const).contDiffAt.sub contDiffAt_const)) ?_
+      refine ContDiffAt.sqrt (by fun_prop) ?_
       linarith [hw' j hj]
   · by_cases hj : j ∈ activeSet (facetPairing i u) c v
     · simp only [vertexLift_snd_of_mem hv hi _ hj]
-      exact ((contDiff_piLp_apply (p := 2)).comp contDiff_snd).contDiffAt
+      fun_prop
     · simp only [vertexLift_snd_of_notMem hv hi _ hj]
       exact contDiffAt_const
 
