@@ -22,6 +22,9 @@ agree as functions, so the `A`-linearity of the first applies to the second.
 For a subring `B` of a commutative ring `R` and an `R`-module `M`, an element of `B` can be moved
 across the tensor sign of `R ⊗[B] M`.
 
+Finally, base change of submodules and of linear maps along an `R`-algebra `A` interacts well with
+elements of `R` that become units in `A`, and with left inverses.
+
 ## Main results
 
 * `AlgHom.rTensor_toLinearMap_apply_smul`: the scalar-extension comparison induced by an algebra
@@ -34,11 +37,11 @@ across the tensor sign of `R ⊗[B] M`.
   comparison `(A ⊗[R] M) ⊗[A] (A ⊗[R] N) ≃ A ⊗[R] (M ⊗[R] N)` is natural in `M` and `N`, with
   its pure-tensor form
   `TensorProduct.AlgebraTensorModule.distribBaseChange_symm_baseChange_tmul_baseChange`.
-
 * `TensorProduct.tmul_eq_one_tmul_smul_of_mem`: in `R ⊗[B] M`, for a subring `B` of `R` and
   `r ∈ B`, `r ⊗ m = 1 ⊗ r • m`.
 * `Submodule.one_tmul_mem_baseChange_of_smul_mem`: if `a • x ∈ N` and `a` becomes a unit in `A`,
   then `1 ⊗ₜ x` lies in the base change of `N` to `A`.
+* `LinearMap.baseChange_leftInverse`: base change preserves left inverses.
 * `LinearMap.liftBaseChangeSemilinear`, `AddMonoidHom.liftBaseChangeSemilinear`,
   `LinearMap.ext_one_tmul`, `LinearMap.eq_liftBaseChangeSemilinear_iff`,
   `AddMonoidHom.eq_liftBaseChangeSemilinear_iff`, `LinearMap.apply_liftBaseChangeSemilinear`,
@@ -61,7 +64,7 @@ theorem AlgHom.rTensor_toLinearMap_apply_smul {R A B M : Type*} [CommSemiring R]
     LinearMap.rTensor M f.toLinearMap (a • z) =
       f a • LinearMap.rTensor M f.toLinearMap z := by
   induction z using TensorProduct.inductionOn with
-  | tmul x m => simp [TensorProduct.smul_tmul', smul_eq_mul, map_mul]
+  | tmul x m => simp [smul_tmul']
   | add x y hx hy => simp [smul_add, hx, hy]
 
 /-- The `A`-linear base change of the structure map `A → B` is, as a function, the base change
@@ -122,13 +125,13 @@ theorem TensorProduct.tmul_eq_one_tmul_smul_of_mem {R M : Type*} [CommRing R] [A
 /-- If `a • x` lies in a submodule `N` and `a` becomes a unit in the algebra `A`, then `1 ⊗ₜ x`
 lies in the base change of `N` to `A`. -/
 theorem Submodule.one_tmul_mem_baseChange_of_smul_mem {R A M : Type*} [CommSemiring R]
-    [CommSemiring A] [Algebra R A] [AddCommMonoid M] [Module R M] (N : Submodule R M) {a : R}
+    [Semiring A] [Algebra R A] [AddCommMonoid M] [Module R M] (N : Submodule R M) {a : R}
     (ha : IsUnit (algebraMap R A a)) {x : M} (hx : a • x ∈ N) :
     (1 : A) ⊗ₜ x ∈ N.baseChange A := by
-  obtain ⟨u, hu⟩ := ha
-  have h := (N.baseChange A).smul_mem (↑u⁻¹ : A) (tmul_mem_baseChange_of_mem 1 hx)
-  rwa [← smul_tmul, ← Algebra.algebraMap_eq_smul_one, ← hu, smul_tmul', smul_eq_mul,
-    Units.inv_mul] at h
+  -- `a` acts on `A ⊗[R] M` through the unit `algebraMap R A a`, and `a • (1 ⊗ₜ x) = 1 ⊗ₜ (a • x)`.
+  rw [← (N.baseChange A).smul_mem_iff' ha.unit, Units.smul_def, IsUnit.unit_spec, algebraMap_smul,
+    ← tmul_smul]
+  exact tmul_mem_baseChange_of_mem 1 hx
 
 /-- Base change preserves left inverses: if `f ∘ₗ g = id`, then `f.baseChange A` is a left
 inverse of `g.baseChange A`. -/
