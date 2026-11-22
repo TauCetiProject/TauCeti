@@ -22,6 +22,7 @@ import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
+import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import TauCeti.MeasureTheory.OuterMeasure.AE
 
 /-!
@@ -40,6 +41,8 @@ bounds.
   functions of finite cost `‖f₀‖_{p₀} + t ‖f₁‖_{p₁}`, `t > 0`, lies in `L^{p₀} × L^{p₁}`.
 * `TauCeti.exists_eLpNorm_le_mul_enorm_of_ae_eq`: on a finite measure space, a bounded linear map
   into `L^{p⋆}` representing `v` gives `‖v u‖_q ≤ C ‖u‖` for every `q ≤ p⋆`.
+* `MeasureTheory.MemLp.monotoneOn_setIntegral_ball_inter_norm_sq`: for `g ∈ L²(U)`, the `L²` mass
+  of `g` on `ball z t ∩ H` is nondecreasing in the radius while the ball stays inside `U`.
 * `MeasureTheory.L1.norm_eq_integral_of_nonneg`: the norm of a nonnegative real `L¹` function is
   its integral.
 * `MeasureTheory.Lp.integral_norm_rpow_eq_norm_rpow`: for `0 < p < ∞`, the integral of the `p`-th
@@ -111,6 +114,9 @@ bounds.
   bound has bounded range.
 * `MeasureTheory.MemLp.norm_toLp_le_measureReal_rpow_mul`: on a set `s` of finite measure, a
   function bounded by `M` has `Lᵖ(s)` norm at most `μ(s)^{1/p} M`, `1 ≤ p < ∞`.
+* `MeasureTheory.memLp_and_eLpNorm_le_of_norm_le_add`: a function vanishing off a measurable set
+  `s` and dominated there by `c₁ ‖g₁‖ + c₂ ‖g₂‖` with `g₁, g₂ ∈ Lʳ(s)` lies in `Lʳ`, with the
+  matching norm bound.
 * `MeasureTheory.Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion`: classes in `Lᵖ` on finitely many
   sets with a common representative glue to a class on any set they cover, with norm at most the
   sum of their norms.
@@ -674,6 +680,17 @@ theorem MemLp.integrableOn_norm_sub_sq_of_subset
     simpa [Measure.restrict_restrict_of_subset hst] using hg.restrict s
   exact (hgs.sub (memLp_const c)).integrable_norm_pow two_ne_zero
 
+/-- For a function `g` in `L²(U)` and `ball z R ⊆ U`, the `L²` mass `∫_{B(z, t) ∩ H} ‖g‖²` is
+nondecreasing in the radius `t ≤ R`, for any set `H`. -/
+theorem MemLp.monotoneOn_setIntegral_ball_inter_norm_sq [PseudoMetricSpace X] {U H : Set X}
+    {z : X} {R : ℝ} (hg : MemLp g 2 (μ.restrict U)) (hball : Metric.ball z R ⊆ U) :
+    MonotoneOn (fun t => ∫ x in Metric.ball z t ∩ H, ‖g x‖ ^ 2 ∂μ) (Set.Iic R) :=
+  fun _ _ t ht hst => setIntegral_mono_set
+    ((hg.mono_measure (Measure.restrict_mono (Set.inter_subset_left.trans
+      ((Metric.ball_subset_ball ht).trans hball)) le_rfl)).integrable_norm_pow two_ne_zero)
+    (ae_of_all _ fun _ => by positivity)
+    (Set.inter_subset_inter_left _ (Metric.ball_subset_ball hst)).eventuallySubset
+
 /-- **Hölder's inequality for the `L²` mass on a subset.** For `2 ≤ q` and a function `g` in
 `L^q(t)`, the integral of `‖g‖²` over a subset `s ⊆ t` of finite measure is at most
 `‖g‖²_{L^q(t)} μ(s)^{1 - 2/q}`. -/
@@ -746,6 +763,35 @@ theorem Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion {ι : Type*} [Fintype ι] {
   rw [← ENNReal.toReal_sum fun i _ => (hg i).eLpNorm_ne_top]
   exact ENNReal.toReal_mono (ENNReal.sum_ne_top.2 fun i _ => (hg i).eLpNorm_ne_top)
     (eLpNorm_restrict_le_sum_of_subset_iUnion g Fact.out hs)
+
+/-- An `Lʳ` bound for a function vanishing off a measurable set `s`: if `‖f‖ ≤ c₁ ‖g₁‖ + c₂ ‖g₂‖`
+on `s` with `c₁, c₂ ≥ 0` and `g₁, g₂ ∈ Lʳ(s)`, then `f ∈ Lʳ` with
+`‖f‖_r ≤ c₁ ‖g₁‖_{r,s} + c₂ ‖g₂‖_{r,s}`. -/
+theorem memLp_and_eLpNorm_le_of_norm_le_add {G₁ G₂ : Type*} [NormedAddCommGroup G₁]
+    [NormedAddCommGroup G₂] (hs : MeasurableSet s) {r : ℝ≥0∞} (hr : 1 ≤ r) {f : X → F}
+    {g₁ : X → G₁} {g₂ : X → G₂} {c₁ c₂ : ℝ} (hc₁ : 0 ≤ c₁) (hc₂ : 0 ≤ c₂)
+    (hf : AEStronglyMeasurable f (μ.restrict s)) (hf0 : ∀ x ∉ s, f x = 0)
+    (hg₁ : MemLp g₁ r (μ.restrict s)) (hg₂ : MemLp g₂ r (μ.restrict s))
+    (hfg : ∀ x ∈ s, ‖f x‖ ≤ c₁ * ‖g₁ x‖ + c₂ * ‖g₂ x‖) :
+    MemLp f r μ ∧ eLpNorm f r μ ≤
+      ENNReal.ofReal c₁ * eLpNorm g₁ r (μ.restrict s) +
+        ENNReal.ofReal c₂ * eLpNorm g₂ r (μ.restrict s) := by
+  have hsupp : Function.support f ⊆ s := fun x hx => by_contra fun h => hx (hf0 x h)
+  have hg : MemLp (fun x => c₁ * ‖g₁ x‖ + c₂ * ‖g₂ x‖) r (μ.restrict s) :=
+    (hg₁.norm.const_mul c₁).add (hg₂.norm.const_mul c₂)
+  have hle : ∀ᵐ x ∂μ.restrict s, ‖f x‖ ≤ ‖c₁ * ‖g₁ x‖ + c₂ * ‖g₂ x‖‖ :=
+    ae_restrict_of_forall_mem hs fun x hx => (hfg x hx).trans (Real.le_norm_self _)
+  have hfs : MemLp f r (μ.restrict s) := hg.of_le hf hle
+  refine ⟨by simpa only [Set.indicator_eq_self.2 hsupp] using
+    (memLp_indicator_iff_restrict hs.nullMeasurableSet).2 hfs, ?_⟩
+  have hfm : AEStronglyMeasurable f μ := by
+    simpa only [Set.indicator_eq_self.2 hsupp] using
+      (aestronglyMeasurable_indicator_iff hs).2 hf
+  rw [← eLpNorm_restrict_eq_of_support_subset hfm hsupp]
+  exact TauCeti.eLpNorm_le_mul_add_mul_of_ae_norm_le hr hf hg₁.aestronglyMeasurable
+    hg₂.aestronglyMeasurable (A := c₁.toNNReal) (B := c₂.toNNReal)
+    (ae_restrict_of_forall_mem hs fun x hx => by
+      simpa only [Real.coe_toNNReal _ hc₁, Real.coe_toNNReal _ hc₂] using hfg x hx)
 
 end Restrict
 

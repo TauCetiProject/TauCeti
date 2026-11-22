@@ -783,7 +783,7 @@ theorem integral_quantizationKernel_comp_adjoint {a : E × E → V →L[ℂ] W}
     simpa only [sub_zero] using integrable_quantizationKernel_integrand ha 0
   have hGc : Continuous G := by
     have : Continuous fun ζ : E ↦ adjoint (b (z, (2 * π) • ζ)) :=
-      (adjoint (𝕜 := ℂ) (E := V) (F := U)).continuous.comp (hbc.comp (continuous_const_smul _))
+      (hbc.comp (continuous_const_smul _)).clm_adjoint
     exact (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const).neg).smul this
   have hG : Integrable G := by
     refine (hb.comp_smul two_pi_pos.ne').norm.mono' hGc.aestronglyMeasurable
