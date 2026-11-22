@@ -8,19 +8,23 @@ module
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 /-!
-# Precomposition for the topology of bounded convergence
+# Precomposition by a continuous linear map
 
 Mathlib bundles precomposition by a fixed continuous linear map as a continuous linear map
 `ContinuousLinearMap.precomp`, which needs `ContinuousConstSMul` on the target. This file records
 that the underlying map is continuous for the topology of bounded convergence without that
-assumption, identifies `ContinuousLinearEquiv.arrowCongr` along the identity on the target with
-precomposition, and records naturality of canonical evaluation `ContinuousLinearMap.applyₗ` and
-evaluation-compatible maps under double precomposition (`precomp G (precomp G u)`).
+assumption, that the bundled maps satisfy the identity and composition laws of a contravariant
+functor (with target `G = 𝕜` these are the functoriality laws of the continuous dual), identifies
+`ContinuousLinearEquiv.arrowCongr` along the identity on the target with precomposition, and
+records naturality of canonical evaluation `ContinuousLinearMap.applyₗ` and evaluation-compatible
+maps under double precomposition (`precomp G (precomp G u)`).
 
 ## Main results
 
 * `ContinuousLinearMap.continuous_precomp`: for `L : E →L[𝕜] F`, the map `f ↦ f ∘ L` on
   `F →L[𝕜] G` is continuous.
+* `ContinuousLinearMap.precomp_id`, `ContinuousLinearMap.precomp_comp`: precomposition by the
+  identity is the identity, and precomposition reverses composition.
 * `ContinuousLinearMap.applyₗ_comp_precomp`, `ContinuousLinearMap.precomp_precomp_comp_applyₗ`,
   `ContinuousLinearMap.coeLM_comp_applyₗ`: naturality of canonical evaluation with respect to the
   double strong transpose and identification with `coeLM`.
@@ -61,6 +65,28 @@ theorem continuous_precomp (L : E →L[𝕜] F) :
       { S | Bornology.IsVonNBounded 𝕜 S } := fun _ hS ↦ hS.image L
   exact (UniformOnFun.precomp_uniformContinuous hmaps).continuous.comp
     isUniformEmbedding_toUniformOnFun.isEmbedding.continuous
+
+section Functoriality
+
+variable [ContinuousConstSMul 𝕜 G]
+
+/-- Precomposition by the identity map is the identity map. -/
+@[simp]
+theorem precomp_id :
+    precomp G (ContinuousLinearMap.id 𝕜 E) = ContinuousLinearMap.id 𝕜 (E →L[𝕜] G) := by
+  ext f x
+  simp
+
+/-- Precomposition reverses composition. -/
+@[simp]
+theorem precomp_comp {H : Type*} [AddCommGroup H] [TopologicalSpace H] [Module 𝕜 H]
+    (T : E →L[𝕜] F) (S : F →L[𝕜] H) :
+    precomp G (S.comp T) =
+      (precomp G T : (F →L[𝕜] G) →L[𝕜] E →L[𝕜] G).comp (precomp G S) := by
+  ext f x
+  simp
+
+end Functoriality
 
 section ApplyLinear
 

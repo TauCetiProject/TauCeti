@@ -11,6 +11,7 @@ import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.MFDeriv.Translation
 
 /-!
 # Time-dependent flows on manifolds
@@ -31,6 +32,16 @@ solve the equation and are the unique solutions through `x` at time `s`, and the
 composition law holds wherever its terms are defined. A time-dependent field vanishing outside a
 compact subset of `M` at all times has a complete suspension, and then every time map is a `C^n`
 diffeomorphism of `M`, with inverse the time map in the opposite direction.
+
+A solution can fail to exist up to a finite time `b` only by leaving every compact subset of `M`
+before `b`. This is the **escape criterion**, proved by applying the autonomous escape criteria
+`mem_maximalIntegralCurveInterval_of_isCompact_of_mapsTo_Ico` and `_Ioc` to the suspension and to
+the compact set `[s, b] × K`: the maximal integral curve of the suspension runs at unit speed in
+the clock coordinate. On a noncompact manifold a solution of an equation as simple as `y' = y²`
+on `ℝ` reaches infinity in finite time, and compact containment of the solution is the hypothesis
+under which its existence through a given time interval, for instance `[0, 1]` in Moser's
+argument, can be asserted. A field vanishing outside a fixed compact set keeps every solution in a
+compact set, so its suspension is complete.
 
 Compactly supported time-dependent fields are the input to the isotopy extension theorem: the
 velocity of a moving compact submanifold, extended to a compactly supported field on the ambient
@@ -54,6 +65,10 @@ the initial position of the submanifold to the later ones.
 
 * `TauCeti.flowOf_timeDependentSuspensionField`: the flow of the suspension advances the clock at
   unit speed and moves the point along the time-dependent flow.
+* `TauCeti.mem_timeDependentFlowDomain_of_mem_maximalIntegralCurveInterval` and
+  `TauCeti.maximalIntegralCurve_timeDependentSuspensionField`: at every time `τ` of its interval,
+  the maximal integral curve of the suspension through `(s, x)` is at `(s + τ, φ_{s, s + τ}(x))`,
+  where the time-dependent flow is defined.
 * `TauCeti.isOpen_timeDependentFlowDomain` and `TauCeti.contMDiffOn_timeDependentFlowOf`: the
   domain is open and the flow is jointly `C^n` on it.
 * `TauCeti.mfderiv_timeDependentFlowOf_trans_of_mem`: the chain rule for the two-time
@@ -63,15 +78,29 @@ the initial position of the submanifold to the later ones.
 * `TauCeti.hasMFDerivAt_timeDependentFlowOf`: the curves of the flow solve `γ' u = X u (γ u)`.
 * `TauCeti.timeDependentFlowOf_eq_of_hasMFDerivAt`: every solution on an open interval is a curve
   of the flow.
+* `TauCeti.contMDiffOn_of_contMDiff_of_hasMFDerivAt_timeDependent` and
+  `TauCeti.contMDiff_of_contMDiff_of_forall_hasMFDerivAt_timeDependent`: solutions of the
+  equation for a `C^n` field are `C^n`.
 * `TauCeti.mem_timeDependentFlowDomain_of_forall_mem_uIcc_eq_zero` and
   `TauCeti.timeDependentFlowOf_eq_self_of_forall_mem_uIcc_eq_zero`: a point where the field vanishes
   between two times stays in the domain and is fixed by the time map between them.
 * `TauCeti.timeDependentFlowOf_trans_of_mem` and `TauCeti.timeDependentFlowOf_trans`: the two-time
   composition law, where it is defined, and everywhere for a complete suspension.
+* `TauCeti.timeDependentFlowOf_comp_add_right` and
+  `TauCeti.mem_timeDependentFlowDomain_comp_add_right_iff`: the flow of the shifted field
+  `t ↦ X (t + θ)` from `s` to `t` is the flow of `X` from `s + θ` to `t + θ`.
 * `TauCeti.timeDependentFlowOf_const_smul`: the time-dependent flow of a constant multiple `c • v`
   of a complete autonomous field `v` is a time map of the flow of `v`.
 * `TauCeti.timeDependentFlowOf_symm_of_mem`: flowing back from time `t` to time `s` undoes the flow
   from `s` to `t`.
+* `TauCeti.mem_timeDependentFlowDomain_of_isCompact_of_mapsTo_Ico`,
+  `TauCeti.mem_timeDependentFlowDomain_of_isCompact_of_mapsTo_Ioc` and
+  `TauCeti.mem_timeDependentFlowDomain_of_isCompact_of_mapsTo`: the escape criterion, a solution
+  confined to a compact set at every time between `s` and `t` at which it is defined is defined at
+  time `t`.
+* `TauCeti.exists_gt_Icc_subset_setOf_mem_timeDependentFlowDomain` and
+  `TauCeti.exists_lt_Icc_subset_setOf_mem_timeDependentFlowDomain`: such a solution extends across
+  the endpoint.
 * `TauCeti.isCompleteVectorField_timeDependentSuspensionField`: a time-dependent field vanishing
   outside a fixed compact set has a complete suspension.
 * `TauCeti.hasMFDerivAt_timeDependentFlowOf_comp`: a map moved by the flow at a varying time,
@@ -79,8 +108,8 @@ the initial position of the submanifold to the later ones.
 
 ## References
 
-* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013), Theorem 9.48
-  (the fundamental theorem on time-dependent flows).
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013), Lemma 9.19
+  (the escape lemma) and Theorem 9.48 (the fundamental theorem on time-dependent flows).
 * M. W. Hirsch, *Differential Topology*, Springer GTM 33 (1976), Chapter 8, §1 (isotopy extension
   by compactly supported time-dependent vector fields).
 
@@ -177,6 +206,12 @@ theorem mem_timeDependentFlowDomain :
 theorem timeDependentFlowOf_def :
     timeDependentFlowOf X s t x = (flowOf (timeDependentSuspensionField X) (t - s) (s, x)).2 :=
   (rfl)
+
+/-- Outside the domain of the time-dependent flow, the flow takes the junk value `x`. -/
+theorem timeDependentFlowOf_of_notMem (h : ((s, t), x) ∉ timeDependentFlowDomain X) :
+    timeDependentFlowOf X s t x = x := by
+  rw [mem_timeDependentFlowDomain, mem_flowDomain] at h
+  rw [timeDependentFlowOf_def, flowOf_apply, maximalIntegralCurve_eq_of_not_mem h]
 
 /-! ### Solutions of the time-dependent equation -/
 
@@ -276,6 +311,24 @@ theorem flowOf_timeDependentSuspensionField (h : ((s, t), x) ∈ timeDependentFl
     flowOf (timeDependentSuspensionField X) (t - s) (s, x) = (t, timeDependentFlowOf X s t x) :=
   Prod.ext (by rw [fst_flowOf_timeDependentSuspensionField h]; ring) (rfl)
 
+/-- At every time `τ` of the maximal interval of the suspension through `(s, x)`, the flow from
+`(s, x)` is defined at time `s + τ`. -/
+theorem mem_timeDependentFlowDomain_of_mem_maximalIntegralCurveInterval {τ : ℝ}
+    (hτ : τ ∈ maximalIntegralCurveInterval (timeDependentSuspensionField X) (s, x)) :
+    ((s, s + τ), x) ∈ timeDependentFlowDomain X := by
+  rw [mem_timeDependentFlowDomain, add_sub_cancel_left]
+  exact mem_flowDomain.2 hτ
+
+/-- At every time `τ` of its maximal interval, the maximal integral curve of the suspension through
+`(s, x)` is at `(s + τ, φ_{s, s + τ}(x))`. -/
+theorem maximalIntegralCurve_timeDependentSuspensionField {τ : ℝ}
+    (hτ : τ ∈ maximalIntegralCurveInterval (timeDependentSuspensionField X) (s, x)) :
+    maximalIntegralCurve (timeDependentSuspensionField X) (s, x) τ =
+      (s + τ, timeDependentFlowOf X s (s + τ) x) := by
+  have hpt := flowOf_timeDependentSuspensionField
+    (mem_timeDependentFlowDomain_of_mem_maximalIntegralCurveInterval hτ)
+  rwa [add_sub_cancel_left, flowOf_apply] at hpt
+
 /-- The time-dependent flow from time `s` to time `s` is the identity. -/
 @[simp]
 theorem timeDependentFlowOf_self (X : ℝ → (x : M) → TangentSpace I x) (s : ℝ) (x : M) :
@@ -365,6 +418,59 @@ theorem timeDependentFlowOf_trans_of_mem {r : ℝ} (hrs : ((r, s), x) ∈ timeDe
   refine ⟨hmem, ?_⟩
   rw [timeDependentFlowOf_def (s := r) (t := t), ← heq, hpt, timeDependentFlowOf_def]
 
+omit [T2Space M] [BoundarylessManifold I M] in
+/-- Shifting time by `θ` preserves the joint `C¹` regularity of a time-dependent field: the field
+`(t, x) ↦ X (t + θ) x` is jointly `C¹` when `X` is. -/
+theorem contMDiff_comp_add_right_timeDependentField (θ : ℝ) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X (p.1 + θ) p.2⟩ : TangentBundle I M)) :=
+  hX.comp (((contDiff_id.add contDiff_const).contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
+
+/-- **Shifting time.** If the flow of `X` from time `s + θ` to time `t + θ` is defined at `x`, then
+the flow of the shifted field `u ↦ X (u + θ)` from `s` to `t` is defined at `x`, with the same
+value: a curve solves the shifted equation exactly when its shift by `θ` solves the original
+one. -/
+theorem timeDependentFlowOf_comp_add_right_of_mem (θ : ℝ)
+    (h : ((s + θ, t + θ), x) ∈ timeDependentFlowDomain X) :
+    ((s, t), x) ∈ timeDependentFlowDomain (fun u ↦ X (u + θ)) ∧
+      timeDependentFlowOf (fun u ↦ X (u + θ)) s t x = timeDependentFlowOf X (s + θ) (t + θ) x := by
+  obtain ⟨a, b, hs, ht, hab⟩ := exists_Ioo_of_mem_timeDependentFlowDomain h
+  -- The trajectory of `X` from `s + θ`, read at time `r + θ`, solves the shifted equation.
+  have hγ (u : ℝ) (hu : u ∈ Ioo (a - θ) (b - θ)) :
+      HasMFDerivAt 𝓘(ℝ, ℝ) I (fun r ↦ timeDependentFlowOf X (s + θ) (r + θ) x) u
+        ((1 : ℝ →L[ℝ] ℝ).smulRight (X (u + θ) (timeDependentFlowOf X (s + θ) (u + θ) x))) := by
+    exact (hasMFDerivAt_timeDependentFlowOf hX
+      (hab (u + θ) ⟨by linarith [hu.1], by linarith [hu.2]⟩)).comp_add_right
+  have hs' : s ∈ Ioo (a - θ) (b - θ) := ⟨by linarith [hs.1], by linarith [hs.2]⟩
+  have ht' : t ∈ Ioo (a - θ) (b - θ) := ⟨by linarith [ht.1], by linarith [ht.2]⟩
+  have hmem := mem_timeDependentFlowDomain_of_hasMFDerivAt (X := fun u ↦ X (u + θ)) hγ hs' ht'
+  have heq := timeDependentFlowOf_eq_of_hasMFDerivAt
+    (contMDiff_comp_add_right_timeDependentField hX θ) (X := fun u ↦ X (u + θ)) hγ hs' ht'
+  simp only [timeDependentFlowOf_self] at hmem heq
+  exact ⟨hmem, heq⟩
+
+/-- **Shifting time**, for the domain: the flow of the shifted field `u ↦ X (u + θ)` from `s` to
+`t` is defined at `x` exactly when the flow of `X` from `s + θ` to `t + θ` is. -/
+theorem mem_timeDependentFlowDomain_comp_add_right_iff (θ : ℝ) :
+    ((s, t), x) ∈ timeDependentFlowDomain (fun u ↦ X (u + θ)) ↔
+      ((s + θ, t + θ), x) ∈ timeDependentFlowDomain X := by
+  refine ⟨fun h ↦ ?_, fun h ↦ (timeDependentFlowOf_comp_add_right_of_mem hX θ h).1⟩
+  -- Shifting the shifted field back by `-θ` recovers `X`.
+  have h' := (timeDependentFlowOf_comp_add_right_of_mem
+    (contMDiff_comp_add_right_timeDependentField hX θ) (-θ)
+    (s := s + θ) (t := t + θ) (by simpa only [add_neg_cancel_right] using h)).1
+  simpa only [neg_add_cancel_right] using h'
+
+/-- **Shifting time.** The flow of the shifted field `u ↦ X (u + θ)` from time `s` to time `t` is
+the flow of `X` from `s + θ` to `t + θ`. Both sides take the junk value `x` outside the domains of
+the flows, which correspond by `TauCeti.mem_timeDependentFlowDomain_comp_add_right_iff`. -/
+theorem timeDependentFlowOf_comp_add_right (θ s t : ℝ) (x : M) :
+    timeDependentFlowOf (fun u ↦ X (u + θ)) s t x = timeDependentFlowOf X (s + θ) (t + θ) x := by
+  by_cases h : ((s + θ, t + θ), x) ∈ timeDependentFlowDomain X
+  · exact (timeDependentFlowOf_comp_add_right_of_mem hX θ h).2
+  · rw [timeDependentFlowOf_of_notMem h, timeDependentFlowOf_of_notMem
+      (mt (mem_timeDependentFlowDomain_comp_add_right_iff hX θ).1 h)]
+
 /-- On a complete normed model space, the domain of the time-dependent flow of a `C¹` field
 is open. -/
 theorem isOpen_timeDependentFlowDomain [CompleteSpace E] :
@@ -437,6 +543,40 @@ theorem contMDiffAt_uncurry_timeDependentFlowOf [FiniteDimensional ℝ E] [T2Spa
   exact ContMDiffAt.comp (g := fun p : (ℝ × ℝ) × M ↦ timeDependentFlowOf X p.1.1 p.1.2 p.2)
     (t, x) hflow hg
 
+/-- **Solutions of a `C^n` time-dependent equation are `C^n`.** On a complete normed model space, a
+curve `γ` with `γ' u = X u (γ u)` on an open interval is `C^n` there when the time-dependent field
+`X` is jointly `C^n`, `1 ≤ n`: on the interval it is the curve of the time-dependent flow through
+any of its points. -/
+theorem contMDiffOn_of_contMDiff_of_hasMFDerivAt_timeDependent [CompleteSpace E] [T2Space M]
+    [BoundarylessManifold I M] [IsManifold I 1 M] {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {γ : ℝ → M} {a b : ℝ}
+    (hγ : ∀ u ∈ Ioo a b, HasMFDerivAt 𝓘(ℝ, ℝ) I γ u ((1 : ℝ →L[ℝ] ℝ).smulRight (X u (γ u)))) :
+    ContMDiffOn 𝓘(ℝ, ℝ) I n γ (Ioo a b) := by
+  have hX₁ := hX.of_le (m := 1) (by exact_mod_cast hn)
+  intro t ht
+  have hflow : ContMDiffOn 𝓘(ℝ, ℝ) I n (fun u ↦ timeDependentFlowOf X t u (γ t)) (Ioo a b) :=
+    (contMDiffOn_timeDependentFlowOf hn hX).comp
+      ((contMDiff_const.prodMk contMDiff_id).prodMk contMDiff_const).contMDiffOn
+      fun u hu ↦ mem_timeDependentFlowDomain_of_hasMFDerivAt hγ ht hu
+  exact (hflow.congr fun u hu ↦ (timeDependentFlowOf_eq_of_hasMFDerivAt hX₁ hγ ht hu).symm) t ht
+
+/-- **Global solutions of a `C^n` time-dependent equation are `C^n`.** On a complete normed model
+space, a curve `γ` with `γ' u = X u (γ u)` at all times is `C^n` when the time-dependent field `X`
+is jointly `C^n`, `1 ≤ n`. This applies in particular to the periodic solutions of `X`
+(`TauCeti.periodicSolutions`). -/
+theorem contMDiff_of_contMDiff_of_forall_hasMFDerivAt_timeDependent [CompleteSpace E] [T2Space M]
+    [BoundarylessManifold I M] [IsManifold I 1 M] {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {γ : ℝ → M}
+    (hγ : ∀ u, HasMFDerivAt 𝓘(ℝ, ℝ) I γ u ((1 : ℝ →L[ℝ] ℝ).smulRight (X u (γ u)))) :
+    ContMDiff 𝓘(ℝ, ℝ) I n γ := fun t ↦
+  (contMDiffOn_of_contMDiff_of_hasMFDerivAt_timeDependent hn hX (a := t - 1) (b := t + 1)
+    fun u _ ↦ hγ u).contMDiffAt
+    (Ioo_mem_nhds (by linarith) (by linarith))
+
 /-- In finite dimensions, for a jointly `C¹` time-dependent field, a compact set `T` of times and
 an open set `U ⊆ ℝ × M`, the points `x` whose trajectory from time `s` is defined at every time
 `u ∈ T` and passes through `U` at that time, `(u, φ_{s,u} x) ∈ U`, form an open set. -/
@@ -488,43 +628,101 @@ theorem timeDependentFlowOf_mem_insert {K : Set M} (hXK : ∀ u, ∀ y ∉ K, X 
   rw [timeDependentFlowOf_eq_self_of_forall_eq_zero hX hfix, timeDependentFlowOf_self] at hback
   exact hy.1 hback
 
+/-- **The escape criterion, forwards in time.** If the solution of the time-dependent equation
+through `x` at time `s` lies in a fixed compact set `K` at every time of `[s, b)` at which it is
+defined, then it is defined at time `b`. -/
+theorem mem_timeDependentFlowDomain_of_isCompact_of_mapsTo_Ico {K : Set M} (hK : IsCompact K)
+    {b : ℝ} (hsb : s ≤ b)
+    (hmaps : MapsTo (fun u ↦ timeDependentFlowOf X s u x)
+      ({u | ((s, u), x) ∈ timeDependentFlowDomain X} ∩ Ico s b) K) :
+    ((s, b), x) ∈ timeDependentFlowDomain X := by
+  -- Apply the autonomous escape criterion to the suspension, confined to `[s, b] × K`.
+  rw [mem_timeDependentFlowDomain, mem_flowDomain]
+  refine mem_maximalIntegralCurveInterval_of_isCompact_of_mapsTo_Ico
+    (contMDiff_timeDependentSuspensionField hX) ((isCompact_Icc (a := s) (b := b)).prod hK)
+    (sub_nonneg.2 hsb) fun τ hτ ↦ ?_
+  rw [maximalIntegralCurve_timeDependentSuspensionField hτ.1]
+  exact ⟨⟨by linarith [hτ.2.1], by linarith [hτ.2.2]⟩,
+    hmaps ⟨mem_timeDependentFlowDomain_of_mem_maximalIntegralCurveInterval hτ.1,
+      by linarith [hτ.2.1], by linarith [hτ.2.2]⟩⟩
+
+/-- **The escape criterion, backwards in time.** If the solution of the time-dependent equation
+through `x` at time `s` lies in a fixed compact set `K` at every time of `(a, s]` at which it is
+defined, then it is defined at time `a`. -/
+theorem mem_timeDependentFlowDomain_of_isCompact_of_mapsTo_Ioc {K : Set M} (hK : IsCompact K)
+    {a : ℝ} (has : a ≤ s)
+    (hmaps : MapsTo (fun u ↦ timeDependentFlowOf X s u x)
+      ({u | ((s, u), x) ∈ timeDependentFlowDomain X} ∩ Ioc a s) K) :
+    ((s, a), x) ∈ timeDependentFlowDomain X := by
+  -- Apply the autonomous escape criterion to the suspension, confined to `[a, s] × K`.
+  rw [mem_timeDependentFlowDomain, mem_flowDomain]
+  refine mem_maximalIntegralCurveInterval_of_isCompact_of_mapsTo_Ioc
+    (contMDiff_timeDependentSuspensionField hX) ((isCompact_Icc (a := a) (b := s)).prod hK)
+    (sub_nonpos.2 has) fun τ hτ ↦ ?_
+  rw [maximalIntegralCurve_timeDependentSuspensionField hτ.1]
+  exact ⟨⟨by linarith [hτ.2.1], by linarith [hτ.2.2]⟩,
+    hmaps ⟨mem_timeDependentFlowDomain_of_mem_maximalIntegralCurveInterval hτ.1,
+      by linarith [hτ.2.1], by linarith [hτ.2.2]⟩⟩
+
+/-- **Existence through a time interval by compact containment.** If the solution of the
+time-dependent equation through `x` at time `s` lies in a fixed compact set at every time between
+`s` and `t` at which it is defined, then it is defined at time `t`, and so at every time between
+`s` and `t`. -/
+theorem mem_timeDependentFlowDomain_of_isCompact_of_mapsTo {K : Set M} (hK : IsCompact K)
+    (hmaps : MapsTo (fun u ↦ timeDependentFlowOf X s u x)
+      ({u | ((s, u), x) ∈ timeDependentFlowDomain X} ∩ uIcc s t) K) :
+    ((s, t), x) ∈ timeDependentFlowDomain X := by
+  rcases le_total s t with hst | hts
+  · exact mem_timeDependentFlowDomain_of_isCompact_of_mapsTo_Ico hX hK hst
+      (hmaps.mono_left (inter_subset_inter_right _ (Ico_subset_Icc_self.trans Icc_subset_uIcc)))
+  · exact mem_timeDependentFlowDomain_of_isCompact_of_mapsTo_Ioc hX hK hts
+      (hmaps.mono_left (inter_subset_inter_right _ (Ioc_subset_Icc_self.trans Icc_subset_uIcc')))
+
+/-- **Extension across the right endpoint.** A solution of the time-dependent equation through `x`
+at time `s` which lies in a fixed compact set at every time of `[s, b)` at which it is defined
+extends beyond `b`: it is defined on `[s, c]` for some `c > b`. -/
+theorem exists_gt_Icc_subset_setOf_mem_timeDependentFlowDomain {K : Set M} (hK : IsCompact K)
+    {b : ℝ} (hmaps : MapsTo (fun u ↦ timeDependentFlowOf X s u x)
+      ({u | ((s, u), x) ∈ timeDependentFlowDomain X} ∩ Ico s b) K) :
+    ∃ c, b < c ∧ Icc s c ⊆ {u | ((s, u), x) ∈ timeDependentFlowDomain X} := by
+  rcases lt_or_ge b s with hbs | hsb
+  · -- Before the initial time there is nothing to extend: `[s, s]` already works.
+    exact ⟨s, hbs, by simpa using mem_timeDependentFlowDomain_self hX s x⟩
+  have hb := mem_timeDependentFlowDomain_of_isCompact_of_mapsTo_Ico hX hK hsb hmaps
+  obtain ⟨a, c, -, hbc, hsub⟩ := exists_Ioo_of_mem_timeDependentFlowDomain hb
+  obtain ⟨d, hbd, hdc⟩ := exists_between hbc.2
+  exact ⟨d, hbd, (ordConnected_setOf_mem_timeDependentFlowDomain s x).out
+    (mem_timeDependentFlowDomain_self_of_mem hb) (hsub d ⟨hbc.1.trans hbd, hdc⟩)⟩
+
+/-- **Extension across the left endpoint.** A solution of the time-dependent equation through `x`
+at time `s` which lies in a fixed compact set at every time of `(a, s]` at which it is defined
+extends beyond `a`: it is defined on `[c, s]` for some `c < a`. -/
+theorem exists_lt_Icc_subset_setOf_mem_timeDependentFlowDomain {K : Set M} (hK : IsCompact K)
+    {a : ℝ} (hmaps : MapsTo (fun u ↦ timeDependentFlowOf X s u x)
+      ({u | ((s, u), x) ∈ timeDependentFlowDomain X} ∩ Ioc a s) K) :
+    ∃ c, c < a ∧ Icc c s ⊆ {u | ((s, u), x) ∈ timeDependentFlowDomain X} := by
+  rcases lt_or_ge s a with hsa | has
+  · -- After the initial time there is nothing to extend: `[s, s]` already works.
+    exact ⟨s, hsa, by simpa using mem_timeDependentFlowDomain_self hX s x⟩
+  have ha := mem_timeDependentFlowDomain_of_isCompact_of_mapsTo_Ioc hX hK has hmaps
+  obtain ⟨c, b, -, hac, hsub⟩ := exists_Ioo_of_mem_timeDependentFlowDomain ha
+  obtain ⟨d, hcd, hda⟩ := exists_between hac.1
+  exact ⟨d, hda, (ordConnected_setOf_mem_timeDependentFlowDomain s x).out
+    (hsub d ⟨hcd, hda.trans hac.2⟩) (mem_timeDependentFlowDomain_self_of_mem ha)⟩
+
 /-- **A time-dependent field vanishing outside a fixed compact set has a complete suspension.**
 The field may depend arbitrarily on time, and its suspension need not have compact support
 in the time direction. -/
 theorem isCompleteVectorField_timeDependentSuspensionField {K : Set M} (hK : IsCompact K)
     (hXK : ∀ u, ∀ y ∉ K, X u y = 0) :
     IsCompleteVectorField (timeDependentSuspensionField X) := by
-  have hW := contMDiff_timeDependentSuspensionField hX
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
   rintro ⟨s, x⟩
-  set W := timeDependentSuspensionField X
-  have h0 : (0 : ℝ) ∈ maximalIntegralCurveInterval W (s, x) :=
-    zero_mem_maximalIntegralCurveInterval hW.contMDiffAt
-  -- On a bounded time interval `[a, b]`, the maximal integral curve stays in a compact set.
-  have hmem {a b τ : ℝ} (hτ : τ ∈ maximalIntegralCurveInterval W (s, x)) (hτab : τ ∈ Icc a b) :
-      maximalIntegralCurve W (s, x) τ ∈ Icc (s + a) (s + b) ×ˢ insert x K := by
-    have hD : ((s, s + τ), x) ∈ timeDependentFlowDomain X := by
-      rw [mem_timeDependentFlowDomain, add_sub_cancel_left]
-      exact mem_flowDomain.2 hτ
-    have hpt := flowOf_timeDependentSuspensionField hD
-    rw [add_sub_cancel_left, flowOf_apply] at hpt
-    rw [hpt]
-    exact ⟨⟨by linarith [hτab.1], by linarith [hτab.2]⟩, timeDependentFlowOf_mem_insert hX hXK hD⟩
-  have hC (a b : ℝ) : IsCompact (Icc (s + a) (s + b) ×ˢ insert x K) :=
-    isCompact_Icc.prod (hK.insert x)
-  refine maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow ?_ ?_
-  · intro hbdd
-    have hlub := isLUB_csSup ⟨0, h0⟩ hbdd
-    obtain ⟨a, ha, hb0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB hlub
-    obtain ⟨τ, hτ, hτC⟩ := (Filter.Eventually.and (Ioo_mem_nhdsLT hb0)
-      (eventually_notMem_nhdsLT_maximalIntegralCurve hW hlub (hC a (sSup _)))).exists
-    exact hτC (hmem (hsub ⟨by linarith [hτ.1], hτ.2⟩) ⟨by linarith [hτ.1], hτ.2.le⟩)
-  · intro hbdd
-    have hglb := isGLB_csInf ⟨0, h0⟩ hbdd
-    obtain ⟨b, hb, ha0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB hglb
-    obtain ⟨τ, hτ, hτC⟩ := (Filter.Eventually.and (Ioo_mem_nhdsGT ha0)
-      (eventually_notMem_nhdsGT_maximalIntegralCurve hW hglb (hC (sInf _) b))).exists
-    exact hτC (hmem (hsub ⟨hτ.1, by linarith [hτ.2]⟩) ⟨hτ.1.le, by linarith [hτ.2]⟩)
+  refine eq_univ_of_forall fun τ ↦ ?_
+  -- Every solution stays in the compact set `insert x K`, so the escape criterion applies.
+  have h := mem_timeDependentFlowDomain_of_isCompact_of_mapsTo hX (s := s) (t := s + τ)
+    (hK.insert x) fun _ hu ↦ timeDependentFlowOf_mem_insert hX hXK hu.1
+  rwa [mem_timeDependentFlowDomain, add_sub_cancel_left, mem_flowDomain] at h
 
 omit [CompleteSpace E] in
 /-- **Flowing back undoes the flow.** If the flow from time `s` to time `t` is defined at `x`, then

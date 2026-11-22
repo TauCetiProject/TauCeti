@@ -27,7 +27,7 @@ two-sided inverse `CategoryTheory.Iso.shiftInv` in the opposite degree.
 A single periodicity isomorphism `φ : shiftFunctor C n ⋙ G ≅ G` for an integral shift therefore
 has well-defined integral powers `φ.periodicityZPow i : shiftFunctor C (n * i) ⋙ G ≅ G`, and
 these satisfy the cocycle law `φ.periodicityZPow_add_hom_app`. They are the coherence data
-needed to descend `G` to the orbit category `D/[n]` (Keller's universal property), where a
+needed to descend `G` to the orbit category `C/[n]` (Keller's universal property), where a
 morphism `X ⟶ Y⟦n * i⟧` is sent to `G.map f` followed by the `i`-th power of `φ` at `Y`.
 
 ## Main definitions
@@ -68,9 +68,8 @@ variable [AddMonoid A] [HasShift C A]
 `c = a + b`. Its component at `X` is `G (X⟦c⟧) ≅ G (X⟦a⟧⟦b⟧) ≅ G (X⟦a⟧) ≅ G X`. -/
 def shiftComp {a b c : A} (α : shiftFunctor C a ⋙ G ≅ G) (β : shiftFunctor C b ⋙ G ≅ G)
     (h : a + b = c) : shiftFunctor C c ⋙ G ≅ G :=
-  CategoryTheory.Functor.isoWhiskerRight (shiftFunctorAdd' C a b c h) G ≪≫
-    CategoryTheory.Functor.associator _ _ _ ≪≫
-    CategoryTheory.Functor.isoWhiskerLeft (shiftFunctor C a) β ≪≫ α
+  isoWhiskerRight (shiftFunctorAdd' C a b c h) G ≪≫ Functor.associator _ _ _ ≪≫
+    isoWhiskerLeft (shiftFunctor C a) β ≪≫ α
 
 @[simp]
 theorem shiftComp_hom_app {a b c : A} (α : shiftFunctor C a ⋙ G ≅ G)
@@ -88,28 +87,25 @@ theorem shiftComp_assoc {a b c ab bc abc : A} (α : shiftFunctor C a ⋙ G ≅ G
   ext X
   have hγ := γ.hom.naturality ((shiftFunctorAdd' C a b ab hab).hom.app X)
   have hs := G.congr_map (shiftFunctorAdd'_assoc_hom_app a b c ab bc abc hab hbc habc X)
-  simp only [CategoryTheory.Functor.comp_map] at hγ
-  simp only [CategoryTheory.Functor.map_comp] at hs
+  simp only [Functor.comp_map, Functor.map_comp] at hγ hs
   simp only [shiftComp_hom_app, Category.assoc, ← reassoc_of% hγ, reassoc_of% hs]
 
 /-- The shift-invariance isomorphism in a degree `a = 0` coming from `shiftFunctorZero'` is a
 left unit for `shiftComp`. -/
 theorem shiftComp_zero_left {a b : A} (ha : a = 0) (β : shiftFunctor C b ⋙ G ≅ G) :
-    (CategoryTheory.Functor.isoWhiskerRight (shiftFunctorZero' C a ha) G ≪≫
-      G.leftUnitor).shiftComp β
+    (isoWhiskerRight (shiftFunctorZero' C a ha) G ≪≫ G.leftUnitor).shiftComp β
       (by rw [ha, zero_add]) = β := by
   subst ha
   ext X
   have hβ := β.hom.naturality ((shiftFunctorZero C A).inv.app X)
-  simp only [CategoryTheory.Functor.comp_map, CategoryTheory.Functor.id_obj] at hβ
+  simp only [Functor.comp_map, Functor.id_obj] at hβ
   simp [shiftFunctorZero'_eq_shiftFunctorZero, shiftFunctorAdd'_zero_add_hom_app,
     reassoc_of% hβ]
 
 /-- The shift-invariance isomorphism in a degree `b = 0` coming from `shiftFunctorZero'` is a
 right unit for `shiftComp`. -/
 theorem shiftComp_zero_right {a b : A} (α : shiftFunctor C a ⋙ G ≅ G) (hb : b = 0) :
-    α.shiftComp (CategoryTheory.Functor.isoWhiskerRight (shiftFunctorZero' C b hb) G ≪≫
-      G.leftUnitor)
+    α.shiftComp (isoWhiskerRight (shiftFunctorZero' C b hb) G ≪≫ G.leftUnitor)
       (by rw [hb, add_zero]) = α := by
   subst hb
   ext X
@@ -119,9 +115,8 @@ theorem shiftComp_zero_right {a b : A} (α : shiftFunctor C a ⋙ G ≅ G) (hb :
 `b + a = 0`. Its component at `X` is `G (X⟦b⟧) ≅ G (X⟦b⟧⟦a⟧) ≅ G X`. -/
 def shiftInv {a : A} (α : shiftFunctor C a ⋙ G ≅ G) (b : A) (h : b + a = 0) :
     shiftFunctor C b ⋙ G ≅ G :=
-  CategoryTheory.Functor.isoWhiskerLeft (shiftFunctor C b) α.symm ≪≫
-    (CategoryTheory.Functor.associator _ _ _).symm ≪≫
-    CategoryTheory.Functor.isoWhiskerRight (shiftFunctorCompIsoId C b a h) G ≪≫ G.leftUnitor
+  isoWhiskerLeft (shiftFunctor C b) α.symm ≪≫ (Functor.associator _ _ _).symm ≪≫
+    isoWhiskerRight (shiftFunctorCompIsoId C b a h) G ≪≫ G.leftUnitor
 
 @[simp]
 theorem shiftInv_hom_app {a : A} (α : shiftFunctor C a ⋙ G ≅ G) (b : A) (h : b + a = 0)
@@ -153,10 +148,9 @@ theorem shiftComp_shiftInv {a b c : A} (α : shiftFunctor C a ⋙ G ≅ G) (h : 
   subst hc
   ext X
   have hα := α.hom.naturality ((shiftFunctorCompIsoId C a b h).hom.app X)
-  simp only [CategoryTheory.Functor.comp_map, CategoryTheory.Functor.comp_obj,
-    CategoryTheory.Functor.id_obj] at hα
+  simp only [Functor.comp_map, Functor.comp_obj, Functor.id_obj] at hα
   rw [shiftComp_hom_app, shiftInv_hom_app, ← shift_shiftFunctorCompIsoId_hom_app a b h X,
-    Category.assoc, hα, Iso.inv_hom_id_app_assoc, ← CategoryTheory.Functor.map_comp]
+    Category.assoc, hα, Iso.inv_hom_id_app_assoc, ← Functor.map_comp]
   simp [shiftFunctorZero'_eq_shiftFunctorZero, shiftFunctorCompIsoId]
 
 /-- Composition with a shift-invariance isomorphism is cancellable. -/
@@ -175,50 +169,44 @@ end AddGroup
 
 section Periodicity
 
-variable [HasShift C ℤ] {n : ℤ}
+variable [HasShift C ℤ] {n : ℤ} (φ : shiftFunctor C n ⋙ G ≅ G)
 
 /-- The nonnegative powers of a periodicity isomorphism. -/
-private def periodicityNatPow (φ : shiftFunctor C n ⋙ G ≅ G) :
-    (k : ℕ) → shiftFunctor C (n * k) ⋙ G ≅ G
-  | 0 =>
-      CategoryTheory.Functor.isoWhiskerRight (shiftFunctorZero' C (n * (0 : ℕ)) (by simp)) G ≪≫
-        G.leftUnitor
-  | k + 1 => φ.shiftComp (periodicityNatPow φ k) (by push_cast; ring)
+private def periodicityNatPow : (k : ℕ) → shiftFunctor C (n * k) ⋙ G ≅ G
+  | 0 => isoWhiskerRight (shiftFunctorZero' C (n * (0 : ℕ)) (by simp)) G ≪≫ G.leftUnitor
+  | k + 1 => φ.shiftComp (periodicityNatPow k) (by push_cast; ring)
 
 /-- The negative powers of a periodicity isomorphism. -/
-private def periodicityNegPow (φ : shiftFunctor C n ⋙ G ≅ G) :
-    (k : ℕ) → shiftFunctor C (n * Int.negSucc k) ⋙ G ≅ G
+private def periodicityNegPow : (k : ℕ) → shiftFunctor C (n * Int.negSucc k) ⋙ G ≅ G
   | 0 => φ.shiftInv _ (by rw [Int.negSucc_eq]; ring)
-  | k + 1 => (φ.shiftInv (-n) (neg_add_cancel n)).shiftComp (periodicityNegPow φ k)
+  | k + 1 => (φ.shiftInv (-n) (neg_add_cancel n)).shiftComp (periodicityNegPow k)
       (by rw [Int.negSucc_eq, Int.negSucc_eq]; push_cast; ring)
 
 /-- The integral powers `φ^i : shiftFunctor C (n * i) ⋙ G ≅ G` of a periodicity isomorphism
 `φ : shiftFunctor C n ⋙ G ≅ G`, for the composition `shiftComp`. They are characterised by
 `periodicityZPow_zero` and `periodicityZPow_succ`, and satisfy the cocycle law
 `periodicityZPow_add`. -/
-def periodicityZPow (φ : shiftFunctor C n ⋙ G ≅ G) : (i : ℤ) → shiftFunctor C (n * i) ⋙ G ≅ G
+def periodicityZPow : (i : ℤ) → shiftFunctor C (n * i) ⋙ G ≅ G
   | Int.ofNat k => periodicityNatPow φ k
   | Int.negSucc k => periodicityNegPow φ k
 
 /-- The zeroth power of a periodicity isomorphism is the unit coming from `shiftFunctorZero'`. -/
-theorem periodicityZPow_zero (φ : shiftFunctor C n ⋙ G ≅ G) :
-    φ.periodicityZPow 0 =
-      isoWhiskerRight (shiftFunctorZero' C (n * 0) (mul_zero n)) G ≪≫ G.leftUnitor := by
+theorem periodicityZPow_zero : φ.periodicityZPow 0 =
+    isoWhiskerRight (shiftFunctorZero' C (n * 0) (mul_zero n)) G ≪≫ G.leftUnitor := by
   rfl
 
 /-- The zeroth power of a periodicity isomorphism, on components. -/
-theorem periodicityZPow_zero_hom_app (φ : shiftFunctor C n ⋙ G ≅ G) (X : C) :
+theorem periodicityZPow_zero_hom_app (X : C) :
     (φ.periodicityZPow 0).hom.app X =
       G.map ((shiftFunctorZero' C (n * 0) (mul_zero n)).hom.app X) := by
   simp [periodicityZPow_zero]
 
 /-- The power `φ^(i + 1)` is `φ` composed with `φ^i`. -/
-theorem periodicityZPow_succ (φ : shiftFunctor C n ⋙ G ≅ G) (i j : ℤ) (h : i + 1 = j) :
+theorem periodicityZPow_succ (i j : ℤ) (h : i + 1 = j) :
     φ.periodicityZPow j = φ.shiftComp (φ.periodicityZPow i) (by rw [← h]; ring) := by
   match i with
   | Int.ofNat k =>
-    rw [Int.ofNat_eq_natCast] at h
-    obtain rfl : j = Int.ofNat (k + 1) := by rw [Int.ofNat_eq_natCast]; omega
+    obtain rfl : j = Int.ofNat (k + 1) := by simp only [Int.ofNat_eq_natCast] at h ⊢; omega
     rfl
   | Int.negSucc 0 =>
     obtain rfl : j = 0 := by omega
@@ -232,7 +220,7 @@ theorem periodicityZPow_succ (φ : shiftFunctor C n ⋙ G ≅ G) (i j : ℤ) (h 
     ring
 
 /-- The cocycle law: `φ^(i + j)` is `φ^i` composed with `φ^j`. -/
-theorem periodicityZPow_add (φ : shiftFunctor C n ⋙ G ≅ G) (i j k : ℤ) (h : i + j = k) :
+theorem periodicityZPow_add (i j k : ℤ) (h : i + j = k) :
     φ.periodicityZPow k =
       (φ.periodicityZPow i).shiftComp (φ.periodicityZPow j) (by rw [← h]; ring) := by
   induction i using Int.induction_on generalizing k with
@@ -250,8 +238,7 @@ theorem periodicityZPow_add (φ : shiftFunctor C n ⋙ G ≅ G) (i j k : ℤ) (h
     subst h; ring
 
 /-- The cocycle law of the powers of a periodicity isomorphism, on components. -/
-theorem periodicityZPow_add_hom_app (φ : shiftFunctor C n ⋙ G ≅ G) (i j k : ℤ)
-    (h : i + j = k) (X : C) :
+theorem periodicityZPow_add_hom_app (i j k : ℤ) (h : i + j = k) (X : C) :
     (φ.periodicityZPow k).hom.app X =
       G.map ((shiftFunctorAdd' C (n * i) (n * j) (n * k) (by rw [← h]; ring)).hom.app X) ≫
         (φ.periodicityZPow j).hom.app (X⟦n * i⟧) ≫ (φ.periodicityZPow i).hom.app X := by
@@ -259,24 +246,21 @@ theorem periodicityZPow_add_hom_app (φ : shiftFunctor C n ⋙ G ≅ G) (i j k :
 
 /-- The first power of a periodicity isomorphism is the isomorphism itself. -/
 @[simp]
-theorem periodicityZPow_one_hom_app (φ : shiftFunctor C n ⋙ G ≅ G) (X : C) :
+theorem periodicityZPow_one_hom_app (X : C) :
     (φ.periodicityZPow 1).hom.app X = G.map (eqToHom (by rw [mul_one])) ≫ φ.hom.app X := by
   have key (z m : ℤ) (hz : z = 0) (h : n + z = m) :
       (shiftFunctorAdd' C n z m h).hom.app X ≫ (shiftFunctorZero' C z hz).hom.app (X⟦n⟧) =
-        eqToHom (by rw [← h, hz, add_zero, CategoryTheory.Functor.id_obj]) := by
+        eqToHom (by rw [← h, hz, add_zero, Functor.id_obj]) := by
     subst hz h
     simp [shiftFunctorZero'_eq_shiftFunctorZero, shiftFunctorAdd'_eq_shiftFunctorAdd,
       shiftFunctorAdd_add_zero_hom_app]
   rw [periodicityZPow_succ φ 0 1 rfl, shiftComp_hom_app, periodicityZPow_zero]
-  simp [← CategoryTheory.Functor.map_comp_assoc, key]
+  simp [← Functor.map_comp_assoc, key]
 
 /-- The powers of a periodicity isomorphism are the only family of shift-invariance
 isomorphisms that starts with the unit and is built by composing with `φ`. -/
-theorem periodicityZPow_unique (φ : shiftFunctor C n ⋙ G ≅ G)
-    (ψ : (i : ℤ) → shiftFunctor C (n * i) ⋙ G ≅ G)
-    (h₀ : ψ 0 =
-      CategoryTheory.Functor.isoWhiskerRight (shiftFunctorZero' C (n * 0) (mul_zero n)) G ≪≫
-        G.leftUnitor)
+theorem periodicityZPow_unique (ψ : (i : ℤ) → shiftFunctor C (n * i) ⋙ G ≅ G)
+    (h₀ : ψ 0 = isoWhiskerRight (shiftFunctorZero' C (n * 0) (mul_zero n)) G ≪≫ G.leftUnitor)
     (hsucc : ∀ i j (h : i + 1 = j), ψ j = φ.shiftComp (ψ i) (by rw [← h]; ring)) :
     ψ = φ.periodicityZPow := by
   funext i

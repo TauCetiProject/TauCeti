@@ -145,7 +145,7 @@ theorem IsNondegenerate.isSymplectic_invariants_tangentRepresentation (hσ : σ.
     (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x) :
     (hσ.symplecticFormAt x).IsSymplectic
       (tangentRepresentation hd).toRepresentation.invariants := by
-  have : ContMDiffConstSMul I ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := IG)⟩
+  have : ContMDiffConstSMul I ∞ G M := ContMDiffSMul.contMDiffConstSMul IG
   -- The stabilizer is closed in the compact group `G`, hence compact.
   have hcont : Continuous fun g : G ↦ g • x :=
     (ContMDiffSMul.contMDiff_smul (I := IG) (I' := I) (n := ∞) (G := G) (M := M)).continuous.comp
