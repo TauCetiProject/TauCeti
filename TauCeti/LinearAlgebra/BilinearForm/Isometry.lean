@@ -14,6 +14,7 @@ public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.Algebra.Module.Equiv.AutCongr
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
+public import TauCeti.LinearAlgebra.SesquilinearForm.IsometryGroup
 import Mathlib.LinearAlgebra.Charpoly.BaseChange
 import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
@@ -220,6 +221,13 @@ vectors. -/
 theorem mem_isometryGroup_iff {e : M ≃ₗ[R] M} :
     e ∈ isometryGroup B ↔ ∀ x y, B (e x) (e y) = B x y :=
   mem_isometryGroup.trans isIsometry_iff
+
+/-- The isometry group of a bilinear form is its isometry group `LinearMap.isometryGroup` as a
+sesquilinear form. -/
+theorem isometryGroup_eq_linearMap_isometryGroup (B : BilinForm R M) :
+    isometryGroup B = LinearMap.isometryGroup B := by
+  ext e
+  simp
 
 /-- Membership in `Aut(M, B)` is exactly Mathlib's notion of a self-isometry of `B`: the subgroup
 `LinearMap.BilinForm.isometryGroup B` and the type `LinearMap.BilinForm.IsometryEquiv B B` carry the
