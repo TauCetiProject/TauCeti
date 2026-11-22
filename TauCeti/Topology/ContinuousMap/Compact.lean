@@ -12,21 +12,25 @@ public import Mathlib.Topology.ContinuousMap.Ordered
 /-!
 # Uniform positivity of continuous functions
 
-The continuous functions into a linearly ordered semiring `𝕜` that are bounded below by a positive
-constant form a convex set. On a compact domain this set is open for the compact-open topology
-(the uniform topology when `𝕜 = ℝ`), since on a nonempty compact domain a pointwise positive
-continuous function attains a positive minimum; openness needs only a linear order on `𝕜` whose
-intervals `Set.Iic a` are closed.
+Let `𝕜` be a linearly ordered semiring (`IsOrderedRing 𝕜`) with a topology in which addition and
+multiplication by a constant are continuous, so that `C(X, 𝕜)` is a `𝕜`-module. The continuous
+functions into `𝕜` that are bounded below by a positive constant (the uniformly positive functions)
+form a convex set. On a compact domain this set is open for the compact-open topology (the uniform
+topology when `𝕜 = ℝ`). Openness needs only a linear order with a zero on `𝕜` whose lower rays
+`Set.Iic a` are closed: the pointwise positive functions form an open set, and on a nonempty
+compact domain each of them attains a positive minimum.
 These facts apply, for example, to separating positive continuous functions in the proof of
 Pietsch domination.
 
-A linear functional on `C(X, 𝕜)` is bounded above on the uniformly positive functions only if it
-is nonpositive on them, since they form a cone. It is then nonpositive on every nonnegative
-function: adding a positive constant to a large multiple of a nonnegative function makes it
-uniformly positive. Here `𝕜` is a linearly ordered semifield in which `a ≤ b` gives `b = a + c` for
-some `c` (`ExistsAddOfLE 𝕜`), such as `ℝ≥0` or any linearly ordered field. This gives the sign
-of the functional produced by separating the uniformly positive functions from a cone: it is
-nonpositive on the nonnegative functions, so its negation is a positive functional.
+Now let `𝕜` be a linearly ordered semifield in which `a ≤ b` gives `b = a + c` for some `c`
+(`ExistsAddOfLE 𝕜`), such as `ℝ≥0` or any linearly ordered field, again with continuous addition
+and continuous multiplication by a constant. A linear functional `L` on `C(X, 𝕜)` that is bounded
+above on the uniformly positive functions is nonpositive on them, since they form a cone. It is
+then nonpositive on every nonnegative function `h`: if `0 < L h`, then a suitable nonnegative
+multiple of `h` plus the constant function `1` is uniformly positive and has positive value under
+`L`. In the real-valued proof of Pietsch domination this gives the sign of the functional produced
+by separating the uniformly positive functions from a cone: it is nonpositive on the nonnegative
+functions, so its negation is a positive functional.
 
 A continuous map from a compact space into a metric space (or normed additive group) stays at a
 uniform positive distance from every point outside its range.
@@ -34,15 +38,16 @@ uniform positive distance from every point outside its range.
 ## Main results
 
 * `ContinuousMap.convex_uniformlyPositive`: the uniformly positive functions form a convex set.
-* `ContinuousMap.isOpen_uniformlyPositive`: on a compact space, and when every `Set.Iic a` is
-  closed in `𝕜`, they form an open set for the compact-open topology.
+* `ContinuousMap.isOpen_uniformlyPositive`: for a linear order `𝕜` with a zero whose lower rays
+  `Set.Iic a` are closed, the uniformly positive functions on a compact space form an open set for
+  the compact-open topology.
 * `ContinuousMap.exists_pos_le_dist_of_notMem_range`: a continuous map from a compact space into a
   metric space has `dist (f x) y` bounded below by a positive constant when `y ∉ Set.range f`.
 * `ContinuousMap.exists_pos_le_norm_sub_of_notMem_range`: the normed-group form `δ ≤ ‖f x - y‖`.
-* `ContinuousMap.norm_evalCLM_le_one`, `ContinuousMap.norm_evalCLM`: operator norm of point
-  evaluation on `C(K, E)` for compact `K`.
-* `LinearMap.apply_nonpos_of_forall_uniformlyPositive_lt`: a functional bounded above on the
-  uniformly positive functions is nonpositive on the nonnegative functions.
+* `ContinuousMap.norm_evalCLM_le_one`, `ContinuousMap.norm_evalCLM`: point evaluation on `C(K, E)`
+  for compact `K` has operator norm at most `1`, and exactly `1` when `E` has nontrivial topology.
+* `LinearMap.apply_nonpos_of_forall_uniformlyPositive_lt`: a linear functional on `C(X, 𝕜)` that is
+  bounded above on the uniformly positive functions is nonpositive on the nonnegative functions.
 -/
 
 public section
@@ -53,8 +58,9 @@ variable {X : Type*} [TopologicalSpace X]
 
 namespace ContinuousMap
 
-/-- The continuous functions into a linearly ordered semiring that are uniformly bounded below by
-a positive constant form a convex set. -/
+/-- Let `𝕜` be a linearly ordered semiring (`IsOrderedRing 𝕜`) with a topology in which addition
+and multiplication by a constant are continuous. The continuous functions into `𝕜` that are
+uniformly bounded below by a positive constant form a convex set. -/
 theorem convex_uniformlyPositive {𝕜 : Type*} [Semiring 𝕜] [LinearOrder 𝕜] [IsOrderedRing 𝕜]
     [TopologicalSpace 𝕜] [ContinuousAdd 𝕜] [ContinuousConstSMul 𝕜 𝕜] :
     Convex 𝕜 {h : C(X, 𝕜) | ∃ δ > 0, ∀ x, δ ≤ h x} := by
@@ -130,7 +136,8 @@ namespace LinearMap
 /-- A linear functional on `C(X, 𝕜)` that is bounded above on the functions bounded below by a
 positive constant is nonpositive on the nonnegative functions. Here `𝕜` is a linearly ordered
 semifield in which `a ≤ b` gives `b = a + c` for some `c` (`ExistsAddOfLE 𝕜`), such as `ℝ≥0` or any
-linearly ordered field. -/
+linearly ordered field, with a topology in which addition and multiplication by a constant are
+continuous. -/
 theorem apply_nonpos_of_forall_uniformlyPositive_lt {𝕜 : Type*} [Semifield 𝕜] [LinearOrder 𝕜]
     [IsStrictOrderedRing 𝕜] [ExistsAddOfLE 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
     [ContinuousConstSMul 𝕜 𝕜] (L : C(X, 𝕜) →ₗ[𝕜] 𝕜) {u : 𝕜}
