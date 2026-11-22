@@ -31,7 +31,7 @@ and the flow of `u + a • W` still runs along the axis, with time-`t` map of de
 **The effect on the return maps.** On a manifold, let `w` agree with `v` off a closed set avoided
 by the orbit of `p` from time `σ` to the period `T₀`, and let the time-`σ` map of `w` at `p` be that
 of `v` composed with a map acting as `c` modulo the flow line `ℝ ∙ v p`. Since the orbit returns to
-`p` through the region where the fields agree, `p` is a closed orbit of `w` of the same period and
+`p` through the region where the fields agree, `p` returns to itself at time `T₀` under `w`, and
 the linearized return maps of `w` are `c` times those of `v`
 (`TauCeti.returnDerivative_eq_smul_of_eqOn_compl`, from
 `TauCeti.returnDerivative_eq_smul_of_mfderiv_flowOf_eq` and

@@ -22,10 +22,11 @@ near `p` so that, for all but countably many values of the perturbation paramete
 orbit and all its covers become nondegenerate. It is the flow-box perturbation step of the
 Kupka–Smale theorem for closed orbits on a manifold.
 
-**The chart.** Since the orbit is not a rest point, `v p ≠ 0`. For a smooth field the flow-box
-theorem (`TauCeti.exists_chart_mfderiv_eq_const`) gives a chart `e` of the smooth maximal atlas,
-centred at `p`, in which `v` is a constant field `u ≠ 0`. In this chart the orbit starts along the
-axis `ℝ • u`.
+**The chart.** Since the orbit is not a rest point, `v p ≠ 0`
+(`TauCeti.apply_ne_zero_of_forall_flowOf_ne`). For a smooth field the flow-box theorem, translated
+to centre the chart at `p` (`TauCeti.exists_chart_mfderiv_eq_const_of_ne_zero`), gives a chart `e`
+of the smooth maximal atlas sending `p` to `0`, in which `v` is a constant field `u ≠ 0`. In this
+chart the orbit starts along the axis `ℝ • u`.
 
 **The perturbation.** In the chart, the flow-box dilation field `W_E` of
 `TauCeti.exists_contDiff_flowOf_const_add_smul_axis` is supported near a short segment of the
@@ -106,13 +107,6 @@ private theorem exists_forall_smul_mem_ball {u : E} {r : ℝ} (hr : 0 < r) (hT�
         · linarith
     _ = r / 2 := by field_simp
     _ < r := by linarith
-
-omit [FiniteDimensional ℝ E] in
-/-- A closed orbit of positive least period is not a rest point. -/
-private theorem apply_ne_zero_of_forall_flowOf_ne
-    (hv : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle 𝓘(ℝ, E) M)))
-    (hT₀ : 0 < T₀) (hmin : ∀ t ∈ Ioo 0 T₀, flowOf v t p ≠ p) : v p ≠ 0 := fun h0 ↦
-  hmin (T₀ / 2) ⟨by positivity, by linarith⟩ (flowOf_eq_self_of_eq_zero hv h0 _)
 
 /-- If the linearized return maps of `v + a • W` are `exp a` times that of `v`, then only countably
 many `a` give a positive power of the linearized return map of `v + a • W` the eigenvalue `1`. -/
@@ -213,14 +207,14 @@ private theorem exists_flowBox_dilation_field
   have hR : IsCompact R :=
     isCompact_Icc.image_of_continuousOn ((isMIntegralCurveOn_flowOf hv p).continuousOn.mono
       fun t ht ↦ uIcc_subset_setOf_mem_flowDomain hP (Icc_subset_uIcc ⟨hσ.le.trans ht.1, ht.2⟩))
+  have hseg (s : ℝ) (hs : s ∈ Icc (σ / 3) (2 * σ / 3)) : s ∈ Icc 0 σ :=
+    ⟨by linarith [hs.1], by linarith [hs.2]⟩
   have hRu : ∀ s ∈ Icc (σ / 3) (2 * σ / 3), e.symm (s • u) ∉ R := by
     rintro s hs ⟨t, ht, hst⟩
     refine flowOf_ne_flowOf_of_lt (s := s) (t := t) hv hP hp hmin (by linarith [hs.1])
       (by linarith [hs.2, ht.1]) ht.2 ?_
-    rw [haxis s ⟨by linarith [hs.1], by linarith [hs.2]⟩]
+    rw [haxis s (hseg s hs)]
     exact hst.symm
-  have hseg (s : ℝ) (hs : s ∈ Icc (σ / 3) (2 * σ / 3)) : s ∈ Icc 0 σ :=
-    ⟨by linarith [hs.1], by linarith [hs.2]⟩
   obtain ⟨ℓ, WE, -, hWE, hWEc, hWEΩ, hWEaxis, hWEa⟩ :=
     exists_contDiff_flowOf_const_add_smul_axis hu (by positivity : (0 : ℝ) ≤ σ / 3)
       (by linarith : σ / 3 < 2 * σ / 3)
@@ -245,8 +239,8 @@ private theorem exists_flowBox_dilation_field
 /-- **The return maps, read in a chart.** Let `e` be a chart sending `p` to `0`, let `u` be the
 chart image of `v p`, and let the time-`σ` maps of `w` and `v` at `p` have derivatives `L` and the
 identity, conjugated by the chart, where `L` acts as `c` modulo `ℝ ∙ u`. If `w` agrees with `v` off
-a closed set avoided by the orbit of `p` from time `σ` to the period `T₀`, then `p` is a closed
-orbit of `w` of the same period, with `c` times the linearized return maps of `v`. -/
+a closed set avoided by the orbit of `p` from time `σ` to the period `T₀`, then `p` returns to
+itself at time `T₀` under `w`, with `c` times the linearized return maps of `v`. -/
 private theorem returnDerivative_eq_smul_of_mfderiv_flowOf_eq_comp
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M) (hpe : p ∈ e.source) (hep : e p = 0)
     (hv : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle 𝓘(ℝ, E) M)))
@@ -368,10 +362,13 @@ theorem exists_contMDiff_returnDerivative_add_smul_eq_exp_smul_of_chart
     · exact hW0 _ (hKR t ⟨h.le, ht.2⟩)
   refine ⟨W, hW, ⟨_, hK, fun _ ⟨z, hz, hzy⟩ ↦ hzy ▸ hr'N z (hWEr hz), hW0⟩, horbit,
     fun a ↦ ?_⟩
+  have hvW (b : ℝ) : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent 1
+      (fun y ↦ (⟨y, (v + b • W) y⟩ : TangentBundle 𝓘(ℝ, E) M)) :=
+    hv.add_section (hW.const_smul_section.of_le (by simp))
   -- For every `b`, near the segment `v + b • W` is the pullback of `u + b • W_E`, whose time-`σ`
   -- map at `0` is the transverse dilation `L b` by `exp b`.
   have key (b : ℝ) := mfderiv_flowOf_eq_comp_of_chart he1 (w := v + b • W)
-    (V := fun z ↦ u + b • WE z) (hv.add_section (hW.const_smul_section.of_le (by simp)))
+    (V := fun z ↦ u + b • WE z) (hvW b)
     (contMDiff_vectorSpace_iff_contDiff.2 (contDiff_const.add ((hWE.of_le (by simp)).const_smul b)))
     isOpen_ball hr't (fun z hz ↦ by
       rw [Pi.add_apply, Pi.smul_apply, ← hvu z (hr'r hz), ← hWrel z (hr't hz)]
@@ -390,8 +387,7 @@ theorem exists_contMDiff_returnDerivative_add_smul_eq_exp_smul_of_chart
   have hu' : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e.symm 0 u = v p := by
     rw [hvu 0 (mem_ball_self hr), hsymm0]
   exact returnDerivative_eq_smul_of_mfderiv_flowOf_eq_comp he1 hpe hep hv hP hp hσ.le hσT.le
-    (hv.add_section (hW.const_smul_section.of_le (by simp)))
-    (by rw [Pi.add_apply, Pi.smul_apply, hWp, smul_zero, add_zero]) hdom
+    (hvW a) (by rw [Pi.add_apply, Pi.smul_apply, hWp, smul_zero, add_zero]) hdom
     (hval.trans hval₀.symm) hu' (hLa a) hder hder₀ hK.isClosed
     (fun x hx ↦ by rw [Pi.add_apply, Pi.smul_apply, hW0 x hx, smul_zero, add_zero]) hKR
 
@@ -476,12 +472,15 @@ theorem exists_contDiff_returnDerivative_add_smul_eq_exp_smul {v : E → E} {u :
   obtain ⟨W, hW, ⟨K, hK, hKN, hW0⟩, horb, hWa⟩ :=
     exists_contMDiff_returnDerivative_add_smul_eq_exp_smul_of_chart (M := E)
       (e := OpenPartialHomeomorph.refl E) hv hT₀ hP hp hmin
-      (StructureGroupoid.id_mem_maximalAtlas _) (mem_univ _) rfl (u := u) hr (subset_univ _)
+      (StructureGroupoid.id_mem_maximalAtlas _)
+      (by rw [OpenPartialHomeomorph.refl_source]; exact mem_univ _)
+      (by rw [OpenPartialHomeomorph.refl_apply, id_eq]) (u := u) hr
+      (by rw [OpenPartialHomeomorph.refl_target]; exact subset_univ _)
       (fun z hz ↦ by
         -- The identity chart has the identity as derivative.
-        have h : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (OpenPartialHomeomorph.refl E).symm z =
-            ContinuousLinearMap.id ℝ E := mfderiv_id
-        exact (congrArg (fun L : E →L[ℝ] E ↦ L u) h).trans (hrv z hz).symm) hN
+        rw [OpenPartialHomeomorph.refl_symm, OpenPartialHomeomorph.refl_apply, mfderiv_id, id_eq]
+        exact (ContinuousLinearMap.id_apply (R₁ := ℝ) (M₁ := TangentSpace 𝓘(ℝ, E) z) u).trans
+          (hrv z hz).symm) hN
   have hts : tsupport W ⊆ K :=
     closure_minimal (fun x hx ↦ by_contra fun h ↦ hx (hW0 x h)) hK.isClosed
   exact ⟨W, contMDiff_vectorSpace_iff_contDiff.1 hW,
