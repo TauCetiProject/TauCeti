@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import TauCeti.Algebra.Module.Lattice
+public import TauCeti.LinearAlgebra.Dual.Basis
 
 /-!
 # Lattices in the linear dual
@@ -18,8 +19,12 @@ bilinear form on the ambient module. For the span of a finite basis it is the sp
 of the dual basis; in particular the dual of a free full lattice is a full lattice.
 
 Precomposition carries integral duals contravariantly along lattice-preserving
-linear maps. This is the linear-algebra input to contragredient actions on
+linear maps, and the integral dual of a homothetic image `c • N` is `c⁻¹` times the
+integral dual of `N`. This is the linear-algebra input to contragredient actions on
 admissible integral lattices.
+
+Evaluation identifies a free full lattice with its double integral dual: the double dual
+of `N` is the image of `N` in the double dual space.
 
 Evaluation restricts to an `R`-valued pairing between the integral dual and the
 submodule. When `R` embeds in `K`, this pairing is perfect for a free full lattice:
@@ -27,6 +32,8 @@ its integral dual is its `R`-linear dual.
 -/
 
 public section
+
+open scoped Pointwise
 
 namespace Submodule
 
@@ -68,6 +75,21 @@ theorem dualMap_mem_dualLattice (M : Submodule R V) (N : Submodule R W)
     f.dualMap φ ∈ M.dualLattice K := by
   exact (mem_dualLattice M _).mpr fun x hx => (mem_dualLattice N φ).mp hφ _ (hf x hx)
 
+/-- The integral dual of a homothetic submodule `c • N` is `c⁻¹` times the integral dual
+of `N`. -/
+@[simp]
+theorem dualLattice_smul [IsScalarTower R K V] (c : Kˣ) (N : Submodule R V) :
+    (c • N).dualLattice K = c⁻¹ • N.dualLattice K := by
+  ext φ
+  simp only [Units.smul_def, mem_dualLattice, mem_smul_pointwise_iff_exists]
+  constructor
+  · intro h
+    refine ⟨(c : K) • φ, fun x hx ↦ ?_, ?_⟩
+    · simpa using h ((c : K) • x) ⟨x, hx, rfl⟩
+    · simp [smul_smul]
+  · rintro ⟨ψ, hψ, rfl⟩ _ ⟨x, hx, rfl⟩
+    simpa [smul_smul] using hψ x hx
+
 end Submodule
 
 namespace Module.Basis
@@ -107,6 +129,18 @@ theorem dualLattice_span (b : Basis ι K V) :
     | add x y _ _ hx hy => simpa using (1 : Submodule R K).add_mem hx hy
     | smul r x _ hx => simpa using (1 : Submodule R K).smul_mem r hx
 
+omit [DecidableEq ι] in
+/-- The double integral dual of a basis lattice is its image under evaluation in the double
+dual. -/
+theorem dualLattice_dualLattice_span (b : Basis ι K V) :
+    ((Submodule.span R (Set.range b)).dualLattice K).dualLattice K =
+      (Submodule.span R (Set.range b)).map ((Module.Dual.eval K V).restrictScalars R) := by
+  classical
+  rw [b.dualLattice_span, b.dualBasis.dualLattice_span, Submodule.map_span, ← Set.range_comp]
+  congr 2
+  ext i
+  simp
+
 end Module.Basis
 
 namespace Submodule
@@ -124,6 +158,16 @@ instance isFullLattice_dualLattice (N : Submodule R V) [N.IsFullLattice K] [Modu
   let b := Module.Free.chooseBasis R N
   rw [← b.span_range_extendOfIsFullLattice (K := K), (b.extendOfIsFullLattice K).dualLattice_span]
   exact (b.extendOfIsFullLattice K).dualBasis.isFullLattice_span_range
+
+omit [IsFractionRing R K] in
+/-- **Biduality for lattices.** Evaluation carries a free full lattice onto its double integral
+dual. -/
+theorem dualLattice_dualLattice (N : Submodule R V) [N.IsFullLattice K] [Module.Free R N] :
+    (N.dualLattice K).dualLattice K = N.map ((Module.Dual.eval K V).restrictScalars R) := by
+  have := IsLattice.finite K N
+  let b := Module.Free.chooseBasis R N
+  rw [← b.span_range_extendOfIsFullLattice (K := K)]
+  exact (b.extendOfIsFullLattice K).dualLattice_dualLattice_span
 
 end IsFractionRing
 

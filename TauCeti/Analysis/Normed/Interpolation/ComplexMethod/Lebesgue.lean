@@ -9,9 +9,11 @@ public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Basic
 public import TauCeti.Analysis.Normed.Interpolation.Lebesgue
 import Mathlib.Analysis.Normed.Operator.Extend
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
+import TauCeti.MeasureTheory.Function.SimpleFunc.Lp
 
 /-!
 # Complex interpolation of Lebesgue spaces: `Lᵖ ⊆ [L^{p₀}, L^{p₁}]_θ`
@@ -32,6 +34,9 @@ The coefficients `E` are an arbitrary complex Banach space.
   (`TauCeti.CompatibleCouple.norm_lpToLebesgueComplexMethod_le`). It lies over the embedding
   `Lᵖ → L¹ + L^∞` (`TauCeti.CompatibleCouple.sumSpaceEmbed_toSum_lpToLebesgueComplexMethod`),
   and over `TauCeti.CompatibleCouple.lpToLebesgueSum` when `p₀ ≤ p ≤ p₁`.
+* `TauCeti.CompatibleCouple.exists_sumSpaceEmbed_toSum_eq_ofLp_and_norm_le`: the inclusion with
+  its norm bound as an existence statement, which also covers `p = p₀ = p₁ = ∞`, and its
+  `0 < θ < 1` form `..._of_mem_Ioo`, valid for every `p`.
 
 ## The argument
 
@@ -210,28 +215,14 @@ private def fiber (f : SimpleFunc α E) (c : E) : SimpleFunc α E :=
 
 variable [NormedSpace ℂ E]
 
-/-- The analytic family through a simple function is a finite combination of its fibres. -/
-private theorem sum_coeff_smul_fiber_apply {θ s : ℝ} (f : SimpleFunc α E) (z : ℂ) (x : α) :
-    ∑ c ∈ f.range, coeff θ s c z • fiber f c x = famSMul θ s z (f x) := by
-  rw [← SimpleFunc.map_apply (famSMul θ s z) f x, SimpleFunc.map_apply_eq_sum_restrict_const]
-  refine Finset.sum_congr rfl fun c _ => ?_
-  simp only [fiber, SimpleFunc.restrict_apply _ (f.measurableSet_fiber c), SimpleFunc.coe_const,
-    famSMul]
-  by_cases hx : x ∈ f ⁻¹' {c} <;> simp [hx]
-
 /-- An element of `L^q` given as a combination of fibres of `f` agrees almost everywhere with the
 analytic family through `f`. -/
 private theorem coeFn_sum_coeff_smul_toLp {θ s : ℝ} (f : SimpleFunc α E) {q : ℝ≥0∞}
     (h : ∀ c, MemLp (fiber f c) q μ) (z : ℂ) :
     ⇑(∑ c ∈ f.range, coeff θ s c z • (h c).toLp (fiber f c)) =ᵐ[μ]
-      fun x => famSMul θ s z (f x) := by
-  have hc : ∀ c ∈ f.range, ⇑(coeff θ s c z • (h c).toLp (fiber f c)) =ᵐ[μ]
-      fun x => coeff θ s c z • fiber f c x := fun c _ =>
-    (Lp.coeFn_smul _ _).trans ((h c).coeFn_toLp.mono fun x hx => by simp [hx])
-  filter_upwards [Lp.coeFn_finsetSum f.range fun c => coeff θ s c z • (h c).toLp (fiber f c),
-    (Filter.eventually_all_finset f.range).2 hc] with x hsum hall
-  rw [hsum, Finset.sum_apply, ← sum_coeff_smul_fiber_apply]
-  exact Finset.sum_congr rfl hall
+      fun x => famSMul θ s z (f x) :=
+  Lp.coeFn_sum_smul_restrict_const f (fun c => coeff θ s c z) (fun c => (h c).toLp (fiber f c))
+    fun c => (h c).coeFn_toLp
 
 end SimpleFunc
 
@@ -351,8 +342,8 @@ private theorem exists_sumSpaceEmbed_toSum_eq_and_norm_le (hθ : θ ∈ Icc (0 :
           mul_le_mul_of_nonneg_left hone (by positivity)
       _ = N := by
           have hexp : (1 + (0 - θ) * s) * (1 - θ) + (1 + (1 - θ) * s) * θ = 1 := by ring
-          rw [mul_one, ← Real.rpow_mul hN, ← Real.rpow_mul hN,
-            ← Real.rpow_add' hN (by rw [hexp]; exact one_ne_zero), hexp, Real.rpow_one]
+          rw [mul_one, Real.rpow_rpow_mul_rpow_rpow_of_add_eq hN one_ne_zero hexp,
+            Real.rpow_one]
       _ = ‖g‖ := by rw [Lp.norm_def, eLpNorm_congr_ae hfg]
 
 attribute [local instance] Lp.simpleFunc.module
@@ -471,6 +462,38 @@ theorem toSum_lpToLebesgueComplexMethod (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) 
     ComplexMethodSpace.toSum (lpToLebesgueComplexMethod hθ hp hp_top f) =
       lpToLebesgueSum h₀ h₁ f :=
   sumSpace_ext _ (by simp)
+
+/-- **`Lᵖ` lies in the complex interpolation space of the Lebesgue couple.** Let `0 ≤ θ ≤ 1` and
+`1 / p = (1 - θ) / p₀ + θ / p₁`, with `p < ∞` unless `p₀ = p₁ = ∞`. Every `f ∈ Lᵖ(μ; E)` is an
+element of `[L^{p₀}, L^{p₁}]_θ`, of norm at most `‖f‖_p`: there is `u ∈ [L^{p₀}, L^{p₁}]_θ` whose
+image in `L¹ + L^∞` is `f` and with `‖u‖_θ ≤ ‖f‖_p`. For `p < ∞` this is
+`lpToLebesgueComplexMethod`; when `p₀ = p₁ = ∞`, `f` lies in the intersection. -/
+theorem exists_sumSpaceEmbed_toSum_eq_ofLp_and_norm_le (hθ : θ ∈ Icc 0 1)
+    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹)
+    (hp_top : p = ∞ → p₀ = ∞ ∧ p₁ = ∞) (f : Lp E p μ) :
+    ∃ u : (lebesgue ℂ E μ p₀ p₁).ComplexMethodSpace θ,
+      (lebesgue ℂ E μ p₀ p₁).sumSpaceEmbed (ComplexMethodSpace.toSum u) = L1AddLinfty.ofLp f ∧
+        ‖u‖ ≤ ‖f‖ := by
+  by_cases hp_top' : p = ∞
+  · obtain ⟨rfl, rfl⟩ := hp_top hp_top'
+    subst hp_top'
+    refine ⟨ComplexMethodSpace.ofInter θ ⟨(f, f), mem_lebesgue_inter_iff.2 .rfl⟩, ?_,
+      (ComplexMethodSpace.norm_ofInter_le hθ _).trans (by simp)⟩
+    simp [ComplexMethodSpace.toSum_ofInter hθ]
+  exact ⟨lpToLebesgueComplexMethod hθ hp hp_top' f,
+    sumSpaceEmbed_toSum_lpToLebesgueComplexMethod hθ hp hp_top' f,
+    norm_lpToLebesgueComplexMethod_le hθ hp hp_top' f⟩
+
+/-- **`Lᵖ` lies in the complex interpolation space of the Lebesgue couple**, for `0 < θ < 1`:
+`exists_sumSpaceEmbed_toSum_eq_ofLp_and_norm_le`, since for `0 < θ < 1` the only infinite `p`
+is `p₀ = p₁ = ∞`. -/
+theorem exists_sumSpaceEmbed_toSum_eq_ofLp_and_norm_le_of_mem_Ioo (hθ : θ ∈ Ioo 0 1)
+    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) (f : Lp E p μ) :
+    ∃ u : (lebesgue ℂ E μ p₀ p₁).ComplexMethodSpace θ,
+      (lebesgue ℂ E μ p₀ p₁).sumSpaceEmbed (ComplexMethodSpace.toSum u) = L1AddLinfty.ofLp f ∧
+        ‖u‖ ≤ ‖f‖ :=
+  exists_sumSpaceEmbed_toSum_eq_ofLp_and_norm_le (Ioo_subset_Icc_self hθ) hp
+    (eq_top_iff_of_inv_eq hθ hp).1 f
 
 end Inclusion
 

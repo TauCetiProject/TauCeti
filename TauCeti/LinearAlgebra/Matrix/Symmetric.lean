@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Even
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Ring.Int.Parity
@@ -21,8 +23,9 @@ import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
 /-!
 # Quadratic forms, idempotents, and the number of symmetric matrices
 
-For a symmetric matrix `A` over a commutative ring, the quadratic form `x ↦ xᵀ A x` satisfies
-the polarization identities `(x ± y)ᵀ A (x ± y) = xᵀ A x + yᵀ A y ± 2 xᵀ A y`.
+For a symmetric matrix `A` over a commutative ring, every congruent matrix `P A Pᵀ` is symmetric,
+and the quadratic form `x ↦ xᵀ A x` satisfies the polarization identities
+`(x ± y)ᵀ A (x ± y) = xᵀ A x + yᵀ A y ± 2 xᵀ A y`.
 
 For a symmetric integer matrix `A` and an integer vector `m`, the quadratic form
 `mᵀ A m = ∑ᵢⱼ mᵢ mⱼ aᵢⱼ` agrees modulo two with `∑ᵢ mᵢ aᵢᵢ`: its off-diagonal part is even
@@ -55,8 +58,11 @@ same way by their entries on and above the diagonal, in every characteristic.
 
 ## Main results
 
+* `Matrix.IsSymm.mul_mul_transpose`: a congruence `P A Pᵀ` of a symmetric matrix is symmetric.
 * `Matrix.IsSymm.add_dotProduct_mulVec_add` and `Matrix.IsSymm.sub_dotProduct_mulVec_sub`: the
   polarization identities for a symmetric matrix.
+* `Matrix.IsSymm.dotProduct_eq_zero_of_mem_eigenspace`: distinct eigenspaces of a symmetric matrix
+  are orthogonal.
 * `Matrix.IsSymm.even_sum_mul_diag_iff_even_dotProduct_mulVec`: if `A` is a symmetric integer
   matrix then `∑ᵢ mᵢ aᵢᵢ` is even if and only if `mᵀ A m` is.
 * `Matrix.IsSymm.even_sum_mul_diag_of_dotProduct_mulVec_eq_zero`: if `A` is a symmetric integer
@@ -86,6 +92,11 @@ namespace Matrix
 
 open Finset
 
+/-- A congruence `P A Pᵀ` of a symmetric matrix `A` is symmetric. -/
+theorem IsSymm.mul_mul_transpose {m n R : Type*} [Fintype n] [NonUnitalCommSemiring R]
+    {A : Matrix n n R} (hA : A.IsSymm) (P : Matrix m n R) : (P * A * Pᵀ).IsSymm := by
+  rw [IsSymm, transpose_mul, transpose_mul, transpose_transpose, hA.eq, Matrix.mul_assoc]
+
 /-- Expanding the quadratic form of a symmetric matrix at a sum. -/
 theorem IsSymm.add_dotProduct_mulVec_add {ι R : Type*} [Fintype ι] [CommSemiring R]
     {A : Matrix ι ι R} (hA : A.IsSymm) (x y : ι → R) :
@@ -101,6 +112,18 @@ theorem IsSymm.sub_dotProduct_mulVec_sub {ι R : Type*} [Fintype ι] [CommRing R
   rw [sub_eq_add_neg, hA.add_dotProduct_mulVec_add, mulVec_neg, neg_dotProduct, dotProduct_neg,
     dotProduct_neg, neg_neg]
   ring
+
+/-- **Distinct eigenspaces of a symmetric matrix are orthogonal** for the dot product, over a ring
+without zero divisors: `ν (u ⬝ᵥ v) = u ⬝ᵥ A v = v ⬝ᵥ A u = μ (u ⬝ᵥ v)`. -/
+theorem IsSymm.dotProduct_eq_zero_of_mem_eigenspace {ι R : Type*} [Fintype ι] [DecidableEq ι]
+    [CommRing R] [NoZeroDivisors R] {A : Matrix ι ι R} (hA : A.IsSymm) {μ ν : R} (h : μ ≠ ν)
+    {u v : ι → R} (hu : u ∈ Module.End.eigenspace A.toLin' μ)
+    (hv : v ∈ Module.End.eigenspace A.toLin' ν) : u ⬝ᵥ v = 0 := by
+  rw [Module.End.mem_eigenspace_iff, toLin'_apply] at hu hv
+  have key := hA.dotProduct_mulVec_comm (x := u) (y := v)
+  rw [hu, hv, dotProduct_smul, dotProduct_smul, dotProduct_comm v, smul_eq_mul, smul_eq_mul,
+    ← sub_eq_zero, ← sub_mul] at key
+  exact (mul_eq_zero.1 key).resolve_left (sub_ne_zero.2 h.symm)
 
 /-- If `A` is a symmetric integer matrix and `m` is an integer vector, then `∑ᵢ mᵢ aᵢᵢ` has the
 same parity as the quadratic form `mᵀ A m`. The individual terms `mᵢ aᵢᵢ` need not be even. -/

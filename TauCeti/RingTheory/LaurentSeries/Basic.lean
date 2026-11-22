@@ -29,6 +29,9 @@ nonzero Laurent series `f ∈ K⸨X⸩` has valuation `exp (-ord f)`, since its 
 unit of `K⟦X⟧`. Consequently a field embedding `K → L`, applied to every coefficient, preserves
 valuations.
 
+It also packages the variable `X` as a unit of `R⸨X⸩` over any semiring `R`, whose integer
+powers are the monomials `Xⁿ`.
+
 This file also records the compatibility of Laurent-series differentiation with power-series
 differentiation.
 
@@ -51,6 +54,10 @@ derivative `f' / f` is the order of `f`.
   structure acts coefficientwise.
 * `TauCeti.LaurentSeries.mem_range_ofPowerSeries_iff`: the Laurent series coming from power series
   are those with no negative exponents.
+* `TauCeti.LaurentSeries.ringHom_ext` and `TauCeti.LaurentSeries.algHom_ext`: homomorphisms out of
+  `R⸨X⸩` are determined by their values on power series.
+* `TauCeti.LaurentSeries.unitX` and `TauCeti.LaurentSeries.val_unitX_zpow`: the variable `X` is a
+  unit of `R⸨X⸩`, whose integer powers are the monomials `Xⁿ`.
 * `TauCeti.laurentSeries_algebraMap_mul_eq_smul`: the algebra action agrees with the
   coefficientwise scalar action, and `TauCeti.laurentSeries_isScalarTower_algebra` transfers
   scalar towers from the coefficientwise action to the algebra action.
@@ -176,6 +183,44 @@ theorem mem_range_ofPowerSeries_iff {f : R⸨X⸩} :
   split_ifs with hn
   · exact (hf n hn).symm
   · rw [PowerSeries.coeff_mk, Int.natCast_natAbs, abs_of_nonneg (not_lt.mp hn)]
+
+/-- Ring homomorphisms out of `R⸨X⸩` that agree on power series are equal, since `R⸨X⸩` is the
+localization of `R⟦X⟧` at the powers of `X`. -/
+theorem ringHom_ext {R A : Type*} [CommRing R] [Semiring A] {f g : R⸨X⸩ →+* A}
+    (h : ∀ p : R⟦X⟧, f p = g p) : f = g :=
+  IsLocalization.ringHom_ext (Submonoid.powers (PowerSeries.X : R⟦X⟧)) (RingHom.ext h)
+
+/-- `R`-algebra homomorphisms out of `R⸨X⸩` that agree on power series are equal. -/
+theorem algHom_ext {R A : Type*} [CommRing R] [Semiring A] [Algebra R A]
+    {f g : R⸨X⸩ →ₐ[R] A} (h : ∀ p : R⟦X⟧, f p = g p) : f = g :=
+  AlgHom.toRingHom_injective <| ringHom_ext h
+
+section UnitX
+
+variable {R : Type*} [Semiring R]
+
+/-- The variable `X` as a unit of `R⸨X⸩`, with inverse `X⁻¹`. -/
+noncomputable def unitX : R⸨X⸩ˣ :=
+  ⟨HahnSeries.single 1 1, HahnSeries.single (-1) 1, by simp [HahnSeries.single_mul_single],
+    by simp [HahnSeries.single_mul_single]⟩
+
+@[simp]
+theorem val_unitX : ((unitX : R⸨X⸩ˣ) : R⸨X⸩) = HahnSeries.single 1 1 :=
+  (rfl)
+
+@[simp]
+theorem val_inv_unitX : ((unitX⁻¹ : R⸨X⸩ˣ) : R⸨X⸩) = HahnSeries.single (-1) 1 :=
+  (rfl)
+
+/-- The integer powers of the unit `X` are the monomials `Xⁿ`. -/
+@[simp]
+theorem val_unitX_zpow (n : ℤ) :
+    ((unitX ^ n : R⸨X⸩ˣ) : R⸨X⸩) = HahnSeries.single n 1 := by
+  rcases n.eq_nat_or_neg with ⟨m, rfl | rfl⟩
+  · simp [unitX, HahnSeries.single_pow]
+  · simp [unitX, HahnSeries.single_pow, ← inv_pow]
+
+end UnitX
 
 section Valuation
 
