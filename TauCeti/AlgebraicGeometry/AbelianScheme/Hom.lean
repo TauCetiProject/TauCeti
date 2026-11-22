@@ -8,16 +8,17 @@ module
 public import TauCeti.AlgebraicGeometry.AbelianScheme.Basic
 
 /-!
-# Scheme-level projections, isomorphisms, and zero object of abelian schemes
+# Scheme-level projections, isomorphisms, Hom groups, and zero object of abelian schemes
 
 This file extends `TauCeti.AlgebraicGeometry.AbelianScheme.Basic` with:
 
-* `AbelianScheme.toSchemeFunctor` and `AbelianScheme.toSchemeHom`: the forgetful functor to
-  `Scheme` and the underlying scheme morphism of a homomorphism;
-* `AbelianScheme.isoMk`, `AbelianScheme.isoToOver`, and `AbelianScheme.isoToScheme`: constructing
-  isomorphisms of abelian schemes from monoid-homomorphism isomorphisms in `Over S` via
-  `Grp.mkIso'` and `fullyFaithfulInducedFunctor.preimageIso`, and forgetting them to `Over S` or
-  `Scheme`;
+* `AbelianScheme.toSchemeFunctor` (faithful) and `AbelianScheme.toSchemeHom`: the forgetful functor
+  to `Scheme` and the underlying scheme morphism of a homomorphism;
+* `AbelianScheme.isoMk`: constructing isomorphisms of abelian schemes from monoid-homomorphism
+  isomorphisms in `Over S` via `Grp.mkIso'` and `fullyFaithfulInducedFunctor.preimageIso`;
+* `AbelianScheme.instCommGroup`, `AbelianScheme.homMulEquiv`, and `AbelianScheme.toOverHom_one`,
+  `toOverHom_mul`, `toOverHom_inv`, `toOverHom_div`: when the target has a commutative group law
+  (`[IsCommMonObj B.toOver]`), `A ⟶ B` is a commutative group under the pointwise operations;
 * `AbelianScheme.isTerminalIdentity`, `AbelianScheme.isInitialIdentity`, and
   `AbelianScheme.isZeroIdentity`: `AbelianScheme.identity S` is a zero object of
   `AbelianScheme S`.
@@ -45,6 +46,10 @@ noncomputable section
 /-- The forgetful functor from abelian schemes over `S` to their underlying schemes. -/
 def toSchemeFunctor : AbelianScheme S ⥤ Scheme :=
   toOverFunctor ⋙ Over.forget S
+
+/-- Forgetting a homomorphism of abelian schemes to its underlying scheme morphism is faithful. -/
+instance : (toSchemeFunctor (S := S)).Faithful :=
+  inferInstanceAs (Functor.Faithful (toOverFunctor (S := S) ⋙ Over.forget S))
 
 /-- The object map of `toSchemeFunctor` returns the underlying scheme. -/
 @[simp]
@@ -108,56 +113,61 @@ lemma toOverHom_isoMk_inv {A B : AbelianScheme S} (e : A.toOver ≅ B.toOver) [I
     toOverHom (isoMk e).inv = e.inv :=
   (rfl)
 
-/-- The isomorphism of schemes over `S` underlying an isomorphism of abelian schemes. -/
-def isoToOver {A B : AbelianScheme S} (e : A ≅ B) : A.toOver ≅ B.toOver :=
-  toOverFunctor.mapIso e
+/-! ### Pointwise commutative group structure on homomorphisms -/
 
-/-- The isomorphism of schemes underlying an isomorphism of abelian schemes. -/
-def isoToScheme {A B : AbelianScheme S} (e : A ≅ B) : A.toScheme ≅ B.toScheme :=
-  (Over.forget S).mapIso (isoToOver e)
+/-- When the target is commutative, homomorphisms of abelian schemes over `S` form a commutative
+group under the pointwise group law, transported from morphisms of group objects in `Over S`. -/
+scoped instance instCommGroup (A B : AbelianScheme S) [IsCommMonObj B.toOver] :
+    CommGroup (A ⟶ B) :=
+  (InducedCategory.homEquiv (F := fun X : AbelianScheme S ↦ Grp.mk X.toOver)).commGroup
+
+/-- Identifying a homomorphism of abelian schemes into a commutative target with its underlying
+homomorphism of group objects is a group isomorphism. -/
+def homMulEquiv (A B : AbelianScheme S) [IsCommMonObj B.toOver] :
+    (A ⟶ B) ≃* (Grp.mk A.toOver ⟶ Grp.mk B.toOver) where
+  __ := InducedCategory.homEquiv (F := fun X : AbelianScheme S ↦ Grp.mk X.toOver)
+  map_mul' := fun _ _ ↦
+    (InducedCategory.homEquiv (F := fun X : AbelianScheme S ↦ Grp.mk X.toOver)).apply_symm_apply _
 
 @[simp]
-lemma isoToOver_hom {A B : AbelianScheme S} (e : A ≅ B) :
-    (isoToOver e).hom = toOverHom e.hom :=
+lemma homMulEquiv_apply {A B : AbelianScheme S} [IsCommMonObj B.toOver] (f : A ⟶ B) :
+    homMulEquiv A B f = f.hom :=
   (rfl)
 
 @[simp]
-lemma isoToOver_inv {A B : AbelianScheme S} (e : A ≅ B) :
-    (isoToOver e).inv = toOverHom e.inv :=
-  (rfl)
+lemma toOverHom_one {A B : AbelianScheme S} [IsCommMonObj B.toOver] :
+    toOverHom (1 : A ⟶ B) = 1 := by
+  change (homMulEquiv A B 1).hom.hom = 1
+  rw [map_one]
+  simp only [Grp.Hom.hom_one, Mon.Hom.hom_one]
 
 @[simp]
-lemma isoToScheme_hom {A B : AbelianScheme S} (e : A ≅ B) :
-    (isoToScheme e).hom = toSchemeHom e.hom := by simp [isoToScheme]
+lemma toOverHom_mul {A B : AbelianScheme S} [IsCommMonObj B.toOver] (f g : A ⟶ B) :
+    toOverHom (f * g) = toOverHom f * toOverHom g := by
+  change (homMulEquiv A B (f * g)).hom.hom =
+    (homMulEquiv A B f).hom.hom * (homMulEquiv A B g).hom.hom
+  rw [map_mul]
+  simp only [Grp.Hom.hom_mul, Mon.Hom.hom_mul]
 
 @[simp]
-lemma isoToScheme_inv {A B : AbelianScheme S} (e : A ≅ B) :
-    (isoToScheme e).inv = toSchemeHom e.inv := by simp [isoToScheme]
+lemma toOverHom_inv {A B : AbelianScheme S} [IsCommMonObj B.toOver] (f : A ⟶ B) :
+    toOverHom f⁻¹ = (toOverHom f)⁻¹ := by
+  change (homMulEquiv A B f⁻¹).hom.hom = (homMulEquiv A B f).hom.hom⁻¹
+  rw [map_inv]
+  simp only [Grp.Hom.hom_hom_inv]
 
 @[simp]
-lemma isoToOver_refl (A : AbelianScheme S) : isoToOver (Iso.refl A) = Iso.refl A.toOver :=
-  toOverFunctor.mapIso_refl A
+lemma toOverHom_div {A B : AbelianScheme S} [IsCommMonObj B.toOver] (f g : A ⟶ B) :
+    toOverHom (f / g) = toOverHom f / toOverHom g := by
+  change (homMulEquiv A B (f / g)).hom.hom =
+    (homMulEquiv A B f).hom.hom / (homMulEquiv A B g).hom.hom
+  rw [map_div]
+  simp only [Grp.Hom.hom_hom_div]
 
 @[simp]
-lemma isoToOver_symm {A B : AbelianScheme S} (e : A ≅ B) :
-    isoToOver e.symm = (isoToOver e).symm := Iso.ext (by simp)
-
-@[simp]
-lemma isoToOver_trans {A B C : AbelianScheme S} (e : A ≅ B) (f : B ≅ C) :
-    isoToOver (e.trans f) = (isoToOver e).trans (isoToOver f) :=
-  toOverFunctor.mapIso_trans e f
-
-@[simp]
-lemma isoToScheme_refl (A : AbelianScheme S) :
-    isoToScheme (Iso.refl A) = Iso.refl A.toScheme := Iso.ext (by simp)
-
-@[simp]
-lemma isoToScheme_symm {A B : AbelianScheme S} (e : A ≅ B) :
-    isoToScheme e.symm = (isoToScheme e).symm := Iso.ext (by simp)
-
-@[simp]
-lemma isoToScheme_trans {A B C : AbelianScheme S} (e : A ≅ B) (f : B ≅ C) :
-    isoToScheme (e.trans f) = (isoToScheme e).trans (isoToScheme f) := Iso.ext (by simp)
+lemma toSchemeHom_one {A B : AbelianScheme S} [IsCommMonObj B.toOver] :
+    toSchemeHom (1 : A ⟶ B) = A.toOver.hom ≫ B.zeroSection := by
+  rw [toSchemeHom, toOverHom_one, CategoryTheory.Hom.one_def, Over.comp_left, Over.toUnit_left]
 
 /-! ### The identity abelian scheme as a zero object -/
 

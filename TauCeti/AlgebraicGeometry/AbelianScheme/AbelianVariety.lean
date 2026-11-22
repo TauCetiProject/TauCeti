@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AbelianScheme.Basic
+public import TauCeti.AlgebraicGeometry.AbelianScheme.BaseChange
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Hom.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyIntegral
 
@@ -79,6 +79,26 @@ is geometrically integral because it is smooth with geometrically connected fibr
 @[simp]
 lemma toAbelianVariety_toOver (A : AbelianScheme (Spec (.of K))) :
     A.toAbelianVariety.toOver = A.toOver :=
+  (rfl)
+
+@[simp]
+lemma ofAbelianVariety_toScheme (A : AbelianVariety K) :
+    (ofAbelianVariety A).toScheme = A.toScheme :=
+  (rfl)
+
+@[simp]
+lemma toAbelianVariety_toScheme (A : AbelianScheme (Spec (.of K))) :
+    A.toAbelianVariety.toScheme = A.toScheme :=
+  (rfl)
+
+@[simp]
+lemma ofAbelianVariety_zeroSection (A : AbelianVariety K) :
+    (ofAbelianVariety A).zeroSection = A.zeroSection :=
+  (rfl)
+
+@[simp]
+lemma toAbelianVariety_zeroSection (A : AbelianScheme (Spec (.of K))) :
+    A.toAbelianVariety.zeroSection = A.zeroSection :=
   (rfl)
 
 @[simp]
@@ -224,6 +244,18 @@ lemma fieldEquivalence_functor : fieldEquivalence.functor = toAbelianVarietyFunc
 @[simp]
 lemma fieldEquivalence_inverse : fieldEquivalence.inverse = ofAbelianVarietyFunctor (K := K) :=
   (rfl)
+
+/-- `toAbelianVarietyFunctor` is an equivalence of categories. -/
+instance isEquivalence_toAbelianVarietyFunctor :
+    (toAbelianVarietyFunctor (K := K)).IsEquivalence :=
+  fieldEquivalence_functor (K := K) ▸
+    (inferInstance : (fieldEquivalence (K := K)).functor.IsEquivalence)
+
+/-- `ofAbelianVarietyFunctor` is an equivalence of categories. -/
+instance isEquivalence_ofAbelianVarietyFunctor :
+    (ofAbelianVarietyFunctor (K := K)).IsEquivalence :=
+  fieldEquivalence_inverse (K := K) ▸
+    (inferInstance : (fieldEquivalence (K := K)).inverse.IsEquivalence)
 
 end
 

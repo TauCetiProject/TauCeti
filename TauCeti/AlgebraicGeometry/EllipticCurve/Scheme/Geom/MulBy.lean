@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.GroupLaw
+public import TauCeti.CategoryTheory.Monoidal.Cartesian.Grp
 import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
 
 /-!
@@ -16,10 +17,11 @@ Let `E` be an elliptic curve over a scheme `S`, with its group law: the object `
 `Over S`, for the structure morphism `π : E ⟶ S`, is a commutative group object
 (`EllipticCurveGeom.grpObj`). For an integer `n`, multiplication by `n` is the endomorphism
 `[n] : E ⟶ E` over `S` that sends a point `x` of `E`, with values in any `T` over `S`, to `n • x`,
-written `x ^ n` for the multiplicative group law on points. It is defined as the `n`-th power of the
-identity of `E` in the commutative group of points of `E` with values in `E` itself, and it is a
-homomorphism of group schemes over `S`, so that `Grp.ofHom (E.mulBy n)` is the corresponding
-morphism of `Grp (Over S)`, to which the kernel constructions for group schemes apply.
+written `x ^ n` for the multiplicative group law on points. It is defined as
+`CategoryTheory.GrpObj.zpowMap (Over.mk E.structureMap) n`, the `n`-th power of the identity of
+`E` in the commutative group of points of `E` with values in `E` itself, and it is a homomorphism
+of group schemes over `S`, so that `Grp.ofHom (E.mulBy n)` is the corresponding morphism of
+`Grp (Over S)`, to which the kernel constructions for group schemes apply.
 
 On underlying schemes, `[0]` is the composite of the structure morphism and the zero section,
 `[-1]` is the negation morphism and `[m + n]` is the sum of `[m]` and `[n]` under the addition
@@ -83,63 +85,60 @@ variable {S : Scheme.{u}} (E : EllipticCurveGeom S)
 an endomorphism of `E` in `Over S`. It is the `n`-th power of the identity of `E` for the group law
 on points of `E`, and it sends every point `x` of `E` to `x ^ n` (`comp_mulBy`). -/
 noncomputable def mulBy (n : ℤ) : Over.mk E.structureMap ⟶ Over.mk E.structureMap :=
-  𝟙 _ ^ n
+  GrpObj.zpowMap (Over.mk E.structureMap) n
 
 /-- Multiplication by `n` is the `n`-th power of the identity for the group law on points. -/
 theorem mulBy_eq_zpow (n : ℤ) : E.mulBy n = 𝟙 _ ^ n :=
-  (rfl)
+  GrpObj.zpowMap_eq_zpow (Over.mk E.structureMap) n
 
 /-- Multiplication by `n` sends a point `x` of `E`, with values in any `Z` over `S`, to
 `x ^ n`. -/
 @[reassoc (attr := simp)]
 theorem comp_mulBy {Z : Over S} (x : Z ⟶ Over.mk E.structureMap) (n : ℤ) :
-    x ≫ E.mulBy n = x ^ n := by
-  rw [mulBy_eq_zpow, GrpObj.comp_zpow, Category.comp_id]
+    x ≫ E.mulBy n = x ^ n :=
+  GrpObj.comp_zpowMap x n
 
 /-- **Multiplication by `n` is a homomorphism of group schemes.** -/
-instance isMonHom_mulBy (n : ℤ) : IsMonHom (E.mulBy n) := by
-  -- `𝟙 _ ^ n` is the underlying morphism of the `n`-th power of the identity of `E` in the
-  -- category `Grp (Over S)` of group schemes over `S`
-  have h := (𝟙 (Grp.mk (Over.mk E.structureMap)) ^ n).hom.isMonHom_hom
-  rwa [Grp.Hom.hom_hom_zpow, Grp.id_hom_hom] at h
+instance isMonHom_mulBy (n : ℤ) : IsMonHom (E.mulBy n) :=
+  GrpObj.isMonHom_zpowMap (Over.mk E.structureMap) n
 
 /-- `[0]` is the zero point of the group of points of `E` with values in `E`. -/
 @[simp]
-theorem mulBy_zero : E.mulBy 0 = 1 := by
-  simp [mulBy_eq_zpow]
+theorem mulBy_zero : E.mulBy 0 = 1 :=
+  GrpObj.zpowMap_zero (Over.mk E.structureMap)
 
 /-- `[1]` is the identity. -/
 @[simp]
-theorem mulBy_one : E.mulBy 1 = 𝟙 _ := by
-  simp [mulBy_eq_zpow]
+theorem mulBy_one : E.mulBy 1 = 𝟙 _ :=
+  GrpObj.zpowMap_one (Over.mk E.structureMap)
 
 /-- `[m + n]` is the product of `[m]` and `[n]` for the group law on points. -/
 @[simp]
-theorem mulBy_add (m n : ℤ) : E.mulBy (m + n) = E.mulBy m * E.mulBy n := by
-  simp [mulBy_eq_zpow, zpow_add]
+theorem mulBy_add (m n : ℤ) : E.mulBy (m + n) = E.mulBy m * E.mulBy n :=
+  GrpObj.zpowMap_add (Over.mk E.structureMap) m n
 
 /-- `[-n]` is the inverse of `[n]` for the group law on points. -/
 @[simp]
-theorem mulBy_neg (n : ℤ) : E.mulBy (-n) = (E.mulBy n)⁻¹ := by
-  simp [mulBy_eq_zpow]
+theorem mulBy_neg (n : ℤ) : E.mulBy (-n) = (E.mulBy n)⁻¹ :=
+  GrpObj.zpowMap_neg (Over.mk E.structureMap) n
 
 /-- `[m - n]` is the quotient of `[m]` by `[n]` for the group law on points. -/
 @[simp]
-theorem mulBy_sub (m n : ℤ) : E.mulBy (m - n) = E.mulBy m / E.mulBy n := by
-  simp [sub_eq_add_neg, div_eq_mul_inv]
+theorem mulBy_sub (m n : ℤ) : E.mulBy (m - n) = E.mulBy m / E.mulBy n :=
+  GrpObj.zpowMap_sub (Over.mk E.structureMap) m n
 
 /-- `[m * n]` is `[n]` followed by `[m]`. -/
 @[simp]
-theorem mulBy_mul (m n : ℤ) : E.mulBy (m * n) = E.mulBy n ≫ E.mulBy m := by
-  rw [comp_mulBy, mulBy_eq_zpow, mulBy_eq_zpow, zpow_mul']
+theorem mulBy_mul (m n : ℤ) : E.mulBy (m * n) = E.mulBy n ≫ E.mulBy m :=
+  GrpObj.zpowMap_mul (Over.mk E.structureMap) m n
 
 /-- **Homomorphisms commute with multiplication by `n`.** A homomorphism of group schemes
 `f : E ⟶ E'` between elliptic curves over `S` satisfies `[n] ≫ f = f ≫ [n]`. -/
 @[reassoc]
 theorem mulBy_comp {E' : EllipticCurveGeom S} (n : ℤ)
     (f : Over.mk E.structureMap ⟶ Over.mk E'.structureMap) [IsMonHom f] :
-    E.mulBy n ≫ f = f ≫ E'.mulBy n := by
-  rw [mulBy_eq_zpow, GrpObj.zpow_comp, comp_mulBy, Category.id_comp]
+    E.mulBy n ≫ f = f ≫ E'.mulBy n :=
+  GrpObj.zpowMap_comp n f
 
 /-! ### Multiplication by an integer on the underlying scheme -/
 

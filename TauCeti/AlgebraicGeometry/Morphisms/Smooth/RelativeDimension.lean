@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Etale
+public import Mathlib.AlgebraicGeometry.Morphisms.FlatMono
+public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
 public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
 public import TauCeti.RingTheory.Smooth.KrullDimension
+public import TauCeti.Topology.KrullDimension.Irreducible
 
 /-!
 # The relative dimension of smooth morphisms
@@ -22,7 +26,9 @@ hypothesis on a smooth curve into the relative-dimension hypothesis under which 
 relative differentials `Ω_{X/k}` is invertible
 (`TauCeti.AlgebraicGeometry.InvertibleSheaf.relativeDifferentials`). Over an arbitrary base,
 a morphism smooth of relative dimension `n` has fibres of dimension at most `n`; the bound
-also includes empty fibres.
+also includes empty fibres. When a smooth morphism has irreducible fibres, its fibre dimension is a
+finite, locally constant function on the base; a constant fibre dimension `n` upgrades smoothness
+to `SmoothOfRelativeDimension n`, and in fibre dimension zero any section is an isomorphism.
 
 Around every point a smooth morphism has affine charts whose rings are standard smooth over `k`
 of some relative dimension. By `TauCeti.height_eq_of_isStandardSmoothOfRelativeDimension` that
@@ -44,7 +50,15 @@ subsets of a Jacobson scheme, so they contain closed points.
 * `TauCeti.AlgebraicGeometry.smoothOfRelativeDimension_one_of_isFunctionField`: a smooth curve is
   smooth of relative dimension one;
 * `TauCeti.AlgebraicGeometry.relativeDimensionLE_of_smoothOfRelativeDimension`: over any base,
-  a morphism smooth of relative dimension `n` has fibres of dimension at most `n`.
+  a morphism smooth of relative dimension `n` has fibres of dimension at most `n`;
+* `TauCeti.AlgebraicGeometry.exists_smoothOfRelativeDimension_open_of_smooth`,
+  `TauCeti.AlgebraicGeometry.exists_topologicalKrullDim_fiber_eq_nat`,
+  `TauCeti.AlgebraicGeometry.isLocallyConstant_topologicalKrullDim_fiber`, and
+  `TauCeti.AlgebraicGeometry.smoothOfRelativeDimension_of_forall_topologicalKrullDim_fiber_eq`:
+  for a smooth morphism with irreducible fibres, the fibre dimension is finite and locally
+  constant on the base, and constant fibre dimension `n` gives `SmoothOfRelativeDimension n`;
+* `TauCeti.AlgebraicGeometry.isIso_of_comp_eq_id_of_topologicalKrullDim_fiber_eq_zero`: a section
+  of a smooth morphism with zero-dimensional irreducible fibres is an isomorphism.
 
 ## References
 
@@ -58,6 +72,14 @@ open CategoryTheory Limits AlgebraicGeometry Order RingHom
 namespace TauCeti.AlgebraicGeometry
 
 universe u
+
+/-- A standard smooth ring homomorphism is standard smooth of some relative dimension. -/
+private lemma exists_isStandardSmoothOfRelativeDimension_of_isStandardSmooth
+    {R S : Type u} [CommRing R] [CommRing S] {g : R →+* S} (hg : g.IsStandardSmooth) :
+    ∃ m : ℕ, g.IsStandardSmoothOfRelativeDimension m := by
+  let := g.toAlgebra
+  obtain ⟨ι, σ, _, _, ⟨P⟩⟩ := hg
+  exact ⟨P.dimension, _, _, _, ‹_›, P, rfl⟩
 
 section Field
 
@@ -103,14 +125,11 @@ theorem smoothOfRelativeDimension_iff_ringKrullDim_stalk_eq (n : ℕ) :
     -- The only nonempty open of `Spec k` is `⊤`.
     obtain rfl : U = ⊤ := eq_top_iff.mpr fun z _ ↦ Subsingleton.elim (f x) z ▸ e hxV
     -- The chart is standard smooth of some relative dimension `m`.
-    let := (f.appLE ⊤ V e).hom.toAlgebra
-    obtain ⟨ι, σ, _, _, ⟨P⟩⟩ := hst
-    have hm : (f.appLE ⊤ V e).hom.IsStandardSmoothOfRelativeDimension P.dimension :=
-      ⟨_, _, _, ‹_›, P, rfl⟩
+    obtain ⟨m, hm⟩ := exists_isStandardSmoothOfRelativeDimension_of_isStandardSmooth hst
     -- Comparing with a closed point of `X` in the chart shows `m = n`.
     have : JacobsonSpace X := LocallyOfFiniteType.jacobsonSpace f
     obtain ⟨y, hyV, hy⟩ := nonempty_inter_closedPoints ⟨x, hxV⟩ V.isOpen.isLocallyClosed
-    have hmn : P.dimension = n := by
+    have hmn : m = n := by
       exact_mod_cast (ringKrullDim_stalk_eq_of_isStandardSmoothOfRelativeDimension f hV hm hyV
         hy).symm.trans (hdim y hy)
     exact ⟨⊤, hU, V, hV, hxV, e, hmn ▸ hm⟩
@@ -174,5 +193,130 @@ instance relativeDimensionLE_of_smoothOfRelativeDimension {X Y : Scheme.{u}}
     · exact (@topologicalKrullDim_eq_of_smoothOfRelativeDimension
         (Y.residueField y) inferInstance F (pullback.snd f (Y.fromSpecResidueField y))
         h n hSmooth).le
+
+section IrreducibleFibers
+
+variable {X Y : Scheme.{u}} (f : X ⟶ Y)
+
+/-- On an affine open `V` mapping into an affine open `U` such that the induced ring map is
+standard smooth of relative dimension `m`, `V.ι ≫ f` is smooth of relative dimension `m`. -/
+private lemma smoothOfRelativeDimension_open_of_isStandardSmoothOfRelativeDimension
+    {U : Y.Opens} (hU : IsAffineOpen U) {V : X.Opens} (hV : IsAffineOpen V)
+    (e : V ≤ f ⁻¹ᵁ U) {m : ℕ}
+    (hm : (f.appLE U V e).hom.IsStandardSmoothOfRelativeDimension m) :
+    SmoothOfRelativeDimension m (V.ι ≫ f) := by
+  have : SmoothOfRelativeDimension m (Spec.map (f.appLE U V e)) := by
+    rw [HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension m)]
+    exact RingHom.locally_of RingHom.isStandardSmoothOfRelativeDimension_respectsIso _ hm
+  have hcomp : SmoothOfRelativeDimension m (Spec.map (f.appLE U V e) ≫ hU.fromSpec) :=
+    inferInstanceAs (SmoothOfRelativeDimension (m + 0) _)
+  rw [IsAffineOpen.SpecMap_appLE_fromSpec f hU hV] at hcomp
+  have hVι : V.ι ≫ f = hV.isoSpec.hom ≫ hV.fromSpec ≫ f := by
+    rw [← Category.assoc, IsAffineOpen.isoSpec_hom_fromSpec]
+  rw [hVι, ← Nat.zero_add m]
+  exact inferInstance
+
+/-- Around any point of the source of a smooth morphism, there is an open neighbourhood on which
+the morphism is smooth of some relative dimension `m`. -/
+theorem exists_smoothOfRelativeDimension_open_of_smooth [Smooth f] (x : X) :
+    ∃ (V : X.Opens) (m : ℕ), x ∈ V ∧ SmoothOfRelativeDimension m (V.ι ≫ f) := by
+  obtain ⟨U, hU, V, hV, hxV, e, hst⟩ := Smooth.exists_isStandardSmooth f x
+  obtain ⟨m, hm⟩ := exists_isStandardSmoothOfRelativeDimension_of_isStandardSmooth hst
+  exact ⟨V, m, hxV,
+    smoothOfRelativeDimension_open_of_isStandardSmoothOfRelativeDimension f hU hV e hm⟩
+
+/-- If an open subset `V` of `X` meets an irreducible fibre `f.fiber y` and `f` is smooth of
+relative dimension `m` on `V`, then `f.fiber y` has Krull dimension `m`. -/
+private lemma topologicalKrullDim_fiber_eq_of_smoothOfRelativeDimension_open [Smooth f]
+    {V : X.Opens} {m : ℕ} [SmoothOfRelativeDimension m (V.ι ≫ f)] {y : Y}
+    [IrreducibleSpace (f.fiber y)] {x : X} (hxV : x ∈ V) (hfx : f x = y) :
+    topologicalKrullDim (f.fiber y) = m := by
+  have hmem : (⟨x, hxV⟩ : V) ∈ (V.ι ≫ f) ⁻¹' {y} := by
+    -- Unfold membership in the preimage of `{y}` along `V.ι ≫ f` on the open subscheme `V`.
+    change f (V.ι ⟨x, hxV⟩) = y
+    simpa using hfx
+  have hne : Nonempty ((V.ι ≫ f).fiber y) := ⟨((V.ι ≫ f).fiberHomeo y).symm ⟨⟨x, hxV⟩, hmem⟩⟩
+  have hsm : SmoothOfRelativeDimension m ((V.ι ≫ f).fiberToSpecResidueField y) :=
+    inferInstanceAs
+      (SmoothOfRelativeDimension m (pullback.snd (V.ι ≫ f) (Y.fromSpecResidueField y)))
+  have hdimV : topologicalKrullDim ((V.ι ≫ f).fiber y) = m :=
+    topologicalKrullDim_eq_of_smoothOfRelativeDimension (k := Y.residueField y)
+      ((V.ι ≫ f).fiberToSpecResidueField y)
+  have hloc : LocallyOfFiniteType (f.fiberToSpecResidueField y) :=
+    inferInstanceAs (LocallyOfFiniteType (pullback.snd f (Y.fromSpecResidueField y)))
+  have hemb : Topology.IsOpenEmbedding
+      (((f.fiberHomeo y).symm ∘ (f ⁻¹' {y}).restrictPreimage V.ι) ∘ ((V.ι ≫ f).fiberHomeo y)) :=
+    (isOpenEmbedding_fiber V.ι f y).comp ((V.ι ≫ f).fiberHomeo y).isOpenEmbedding
+  have hEq := topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType
+    (K := Y.residueField y) (f.fiberToSpecResidueField y) hemb
+  exact hEq.symm.trans hdimV
+
+/-- Every irreducible fibre of a smooth morphism has finite natural-number Krull dimension. -/
+theorem exists_topologicalKrullDim_fiber_eq_nat [Smooth f] (y : Y)
+    [IrreducibleSpace (f.fiber y)] :
+    ∃ m : ℕ, topologicalKrullDim (f.fiber y) = m := by
+  obtain ⟨z⟩ : Nonempty (f.fiber y) := inferInstance
+  let x : f ⁻¹' {y} := f.fiberHomeo y z
+  obtain ⟨V, m, hxV, _⟩ := exists_smoothOfRelativeDimension_open_of_smooth f x.val
+  exact ⟨m, topologicalKrullDim_fiber_eq_of_smoothOfRelativeDimension_open f (m := m) hxV
+    x.property⟩
+
+/-- The fibre dimension of a smooth morphism with irreducible fibres is a locally constant
+function on the base. -/
+theorem isLocallyConstant_topologicalKrullDim_fiber [Smooth f]
+    [∀ y : Y, IrreducibleSpace (f.fiber y)] :
+    IsLocallyConstant fun y : Y ↦ topologicalKrullDim (f.fiber y) := by
+  rw [IsLocallyConstant.iff_eventually_eq]
+  intro y
+  obtain ⟨z⟩ : Nonempty (f.fiber y) := inferInstance
+  let x : f ⁻¹' {y} := f.fiberHomeo y z
+  obtain ⟨V, m, hxV, _⟩ := exists_smoothOfRelativeDimension_open_of_smooth f x.val
+  have hyW : y ∈ f '' (V : Set X) := ⟨x.val, hxV, x.property⟩
+  have hW : IsOpen (f '' (V : Set X)) := f.isOpenMap _ V.isOpen
+  refine Filter.eventually_of_mem (hW.mem_nhds hyW) fun t ⟨w, hwV, hwt⟩ ↦ ?_
+  rw [topologicalKrullDim_fiber_eq_of_smoothOfRelativeDimension_open f (m := m) hwV hwt,
+    topologicalKrullDim_fiber_eq_of_smoothOfRelativeDimension_open f (m := m) hxV x.property]
+
+/-- A smooth morphism with irreducible fibres all of Krull dimension `n` is smooth of relative
+dimension `n`. -/
+theorem smoothOfRelativeDimension_of_forall_topologicalKrullDim_fiber_eq [Smooth f]
+    [∀ y : Y, IrreducibleSpace (f.fiber y)] {n : ℕ}
+    (h : ∀ y : Y, topologicalKrullDim (f.fiber y) = n) :
+    SmoothOfRelativeDimension n f where
+  exists_isStandardSmoothOfRelativeDimension x := by
+    obtain ⟨U, hU, V, hV, hxV, e, hst⟩ := Smooth.exists_isStandardSmooth f x
+    obtain ⟨m, hm⟩ := exists_isStandardSmoothOfRelativeDimension_of_isStandardSmooth hst
+    have : SmoothOfRelativeDimension m (V.ι ≫ f) :=
+      smoothOfRelativeDimension_open_of_isStandardSmoothOfRelativeDimension f hU hV e hm
+    have hmn : m = n := by
+      exact_mod_cast (topologicalKrullDim_fiber_eq_of_smoothOfRelativeDimension_open f (m := m) hxV
+        rfl).symm.trans (h (f x))
+    exact ⟨U, hU, V, hV, hxV, e, hmn ▸ hm⟩
+
+/-- A section of a smooth morphism whose fibres are irreducible of Krull dimension zero is an
+isomorphism. -/
+theorem isIso_of_comp_eq_id_of_topologicalKrullDim_fiber_eq_zero [Smooth f]
+    [∀ y : Y, IrreducibleSpace (f.fiber y)] {e : Y ⟶ X} (he : e ≫ f = 𝟙 Y)
+    (h0 : ∀ y : Y, topologicalKrullDim (f.fiber y) = 0) : IsIso e := by
+  have : SmoothOfRelativeDimension 0 f :=
+    smoothOfRelativeDimension_of_forall_topologicalKrullDim_fiber_eq f h0
+  have : Etale f := (Etale.iff_smoothOfRelativeDimension_zero f).mpr inferInstance
+  have : Etale (e ≫ f) := he ▸ inferInstance
+  have : Etale e := Etale.of_comp e f
+  have : Mono e := (SplitMono.mk f he).mono
+  have : IsOpenImmersion e := IsOpenImmersion.of_flat_of_mono e
+  refine isIso_of_isOpenImmersion_of_opensRange_eq_top e (TopologicalSpace.Opens.ext ?_)
+  ext x
+  simp only [Scheme.Hom.coe_opensRange, TopologicalSpace.Opens.coe_top, Set.mem_univ, iff_true,
+    Set.mem_range]
+  have hsub : Subsingleton (f.fiber (f x)) :=
+    (topologicalKrullDim_eq_zero_iff_subsingleton (X := f.fiber (f x))).mp (h0 (f x))
+  have hpre : Subsingleton (f ⁻¹' {f x}) := (f.fiberHomeo (f x)).symm.injective.subsingleton
+  refine ⟨f x, ?_⟩
+  have hfe : f (e (f x)) = f x := by
+    simpa [Scheme.Hom.comp_apply] using congrArg (fun g : Y ⟶ Y ↦ g (f x)) he
+  exact congrArg Subtype.val (@Subsingleton.elim _ hpre ⟨e (f x), hfe⟩ ⟨x, rfl⟩)
+
+end IrreducibleFibers
 
 end TauCeti.AlgebraicGeometry

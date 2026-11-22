@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Limits.Constructions.Over.Basic
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.GrpLimits
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
+public import TauCeti.CategoryTheory.Comma.Over.Pullback
 
 /-!
 # Points of the base change of a group scheme
@@ -30,7 +31,12 @@ of group schemes preserves finite limits.
   `TauCeti.GroupScheme.baseChangePointMulEquiv_symm_apply_left`: the forward map is
   postcomposition with the first pullback projection and the inverse is the pullback lift with
   second component `T.hom`.
-* `TauCeti.GroupScheme.baseChangePointMulEquiv_naturality_left`: naturality in test schemes.
+* `TauCeti.GroupScheme.baseChangePointMulEquiv_naturality_left` and
+  `TauCeti.GroupScheme.baseChangePointMulEquiv_naturality_right`: naturality in test schemes and
+  group-scheme homomorphisms;
+* `TauCeti.GroupScheme.baseChangePointMulEquiv_id` and
+  `TauCeti.GroupScheme.baseChangePointMulEquiv_comp`: compatibility with identity and composite
+  base change;
 * `TauCeti.GroupScheme.pullback_mapGrp_mul_left_fst` (and its `one`/`inv` analogues): the group
   law of a base change projects to the group law of the original group scheme.
 * `TauCeti.GroupScheme.pullbackMapGrp_preservesFiniteLimits`: base change of group schemes
@@ -58,17 +64,6 @@ open AlgebraicGeometry
 universe u
 
 variable {X Y : Scheme.{u}}
-
-/-- The underlying map of the inverse pullback-adjunction equivalence is postcomposition with the
-first pullback projection. -/
-private theorem mapPullbackAdj_homEquiv_symm_left
-    (s : Y ⟶ X) (G : Grp (Over X)) (T : Over Y)
-    (p : T ⟶ ((Over.pullback s).mapGrp.obj G).X) :
-    Over.Hom.left (((Over.mapPullbackAdj s).homEquiv T G.X).symm p) =
-      Over.Hom.left p ≫ Limits.pullback.fst G.X.hom s := by
-  -- `mapPullbackAdj` has no projection lemma for its hom-equivalence; this is exactly the
-  -- computation rule in its public definition.
-  rfl
 
 /-- After the pullback functor's lax-monoidal map and the pulled-back multiplication, the first
 projection agrees with multiplication after projecting the pair. -/
@@ -140,9 +135,8 @@ noncomputable def baseChangePointMulEquiv
           qLeft ≫ Limits.pullback.snd G.X.hom s :=
       p.w.trans q.w.symm
     ext
-    rw [mapPullbackAdj_homEquiv_symm_left]
-    simp only [Hom.mul_def, Over.comp_left, Over.lift_left,
-      mapPullbackAdj_homEquiv_symm_left]
+    refine (Over.mapPullbackAdj_homEquiv_symm_left s G.X T (p * q)).trans ?_
+    simp only [Hom.mul_def, Over.comp_left, Over.lift_left]
     rw [Functor.mapGrp_obj_X] at p q
     erw [congrArg Over.Hom.left (Functor.obj.μ_def (F := Over.pullback s) G.X), Over.comp_left]
     exact (pullback_laxMonoidal_map_mul_fst s G T pLeft qLeft hpq).trans
@@ -170,8 +164,8 @@ postcomposition with the first pullback projection. -/
 theorem baseChangePointMulEquiv_apply_left
     (s : Y ⟶ X) (G : Grp (Over X)) (T : Over Y)
     (p : T ⟶ ((Over.pullback s).mapGrp.obj G).X) :
-    (baseChangePointMulEquiv s G T p).left = p.left ≫ Limits.pullback.fst G.X.hom s := by
-  rw [baseChangePointMulEquiv_apply, mapPullbackAdj_homEquiv_symm_left]
+    (baseChangePointMulEquiv s G T p).left = p.left ≫ Limits.pullback.fst G.X.hom s :=
+  Over.mapPullbackAdj_homEquiv_symm_left s G.X T p
 
 /-- The underlying scheme morphism of the inverse point-group equivalence is the pullback lift
 with second component the structure morphism of the test scheme. -/
@@ -180,8 +174,7 @@ theorem baseChangePointMulEquiv_symm_apply_left
     (p : (Over.map s).obj T ⟶ G.X) :
     ((baseChangePointMulEquiv s G T).symm p).left =
       Limits.pullback.lift p.left T.hom (by simp) := by
-  rw [baseChangePointMulEquiv_symm_apply, Over.mapPullbackAdj, Adjunction.mkOfHomEquiv_homEquiv]
-  rfl
+  rw [baseChangePointMulEquiv_symm_apply, Over.mapPullbackAdj_homEquiv_left]
 
 /-- The identity point of a base change projects to the identity point of the original group
 scheme. -/
@@ -225,6 +218,35 @@ theorem baseChangePointMulEquiv_naturality_left
       (Over.map s).map f ≫ baseChangePointMulEquiv s G T p := by
   simp only [baseChangePointMulEquiv_apply]
   exact (Over.mapPullbackAdj s).homEquiv_naturality_left_symm f p
+
+/-- Postcomposition with a group-scheme homomorphism commutes with the point-group
+equivalence. -/
+theorem baseChangePointMulEquiv_naturality_right
+    (s : Y ⟶ X) {G H : Grp (Over X)} (φ : G ⟶ H) (T : Over Y)
+    (p : T ⟶ ((Over.pullback s).mapGrp.obj G).X) :
+    baseChangePointMulEquiv s H T (p ≫ ((Over.pullback s).mapGrp.map φ).hom.hom) =
+      baseChangePointMulEquiv s G T p ≫ φ.hom.hom := by
+  simp only [baseChangePointMulEquiv_apply]
+  exact (Over.mapPullbackAdj s).homEquiv_naturality_right_symm p φ.hom.hom
+
+/-- For base change along the identity morphism, the point-group equivalence agrees with
+transport along `Over.pullbackId` and `Over.mapId`. -/
+theorem baseChangePointMulEquiv_id (G : Grp (Over X)) (T : Over X)
+    (p : T ⟶ ((Over.pullback (𝟙 X)).mapGrp.obj G).X) :
+    (Over.mapId X).inv.app T ≫ baseChangePointMulEquiv (𝟙 X) G T p =
+      p ≫ (Over.pullbackId (X := X)).hom.app G.X :=
+  Over.mapPullbackAdj_id_homEquiv_symm G.X T p
+
+/-- For iterated base change along `s₁ ≫ s₂`, the point-group equivalence agrees with the
+composite of the two step equivalences, up to `Over.pullbackComp` and `Over.mapComp`. -/
+theorem baseChangePointMulEquiv_comp {Z : Scheme.{u}} (s₁ : Z ⟶ Y) (s₂ : Y ⟶ X)
+    (G : Grp (Over X)) (T : Over Z)
+    (p : T ⟶ ((Over.pullback (s₁ ≫ s₂)).mapGrp.obj G).X) :
+    baseChangePointMulEquiv s₂ G ((Over.map s₁).obj T)
+        (baseChangePointMulEquiv s₁ ((Over.pullback s₂).mapGrp.obj G) T
+          (p ≫ (Over.pullbackComp s₁ s₂).hom.app G.X)) =
+      (Over.mapComp s₁ s₂).inv.app T ≫ baseChangePointMulEquiv (s₁ ≫ s₂) G T p :=
+  Over.mapPullbackAdj_comp_homEquiv_symm s₁ s₂ G.X T p
 
 /-- Pullback of group schemes along an arbitrary base morphism preserves finite limits. In
 particular, it preserves kernels. -/

@@ -8,11 +8,10 @@ module
 public import Mathlib.AlgebraicGeometry.Geometrically.Connected
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
-public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
-public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 public import TauCeti.AlgebraicGeometry.Geometrically.Integral
 public import TauCeti.AlgebraicGeometry.Geometrically.Irreducible
 public import TauCeti.AlgebraicGeometry.Morphisms.OverTensorUnit
+public import TauCeti.CategoryTheory.Monoidal.Cartesian.Grp
 
 /-!
 # Abelian schemes
@@ -30,17 +29,13 @@ the zero section is `zeroSection`, a section of the structure morphism.
 The file also provides:
 
 * `AbelianScheme.mulBy`: the multiplication-by-`n` endomorphism `[n]` of the underlying group
-  scheme over `S`.
+  scheme over `S`, defined via `CategoryTheory.GrpObj.zpowMap`.
 * `AbelianScheme.ofGroupScheme`: constructor packaging a proper, smooth, geometrically connected
   group scheme over `S` as an abelian scheme.
-* `AbelianScheme.baseChange`: for `f : T ⟶ S`, the pullback of `A` along `f`, with the group law
-  transported by the monoidal pullback functor. Its group object is
-  `(Over.pullback f).mapGrp.obj (Grp.mk A.toOver)` (`grpMk_baseChange_toOver`), so the point-group
-  identification `TauCeti.GroupScheme.baseChangePointMulEquiv` applies to it directly.
 * `AbelianScheme.identity`: the base `S ⟶ S` with its trivial group law, the abelian scheme of
   relative dimension zero.
 * the category of abelian schemes over `S`, whose morphisms are morphisms of `Over S` preserving
-  the group law (`IsMonHom`), and the base-change functor `AbelianScheme.baseChangeFunctor`.
+  the group law (`IsMonHom`).
 
 A smooth morphism with geometrically connected fibres is geometrically integral
 (`TauCeti.AlgebraicGeometry.Smooth.geometricallyIntegral`). That instance lives in
@@ -87,7 +82,7 @@ structure AbelianScheme (S : Scheme.{u}) where
 
 namespace AbelianScheme
 
-variable {S T : Scheme.{u}}
+variable {S : Scheme.{u}}
 
 attribute [instance] AbelianScheme.grpObj AbelianScheme.isProper AbelianScheme.smooth
   AbelianScheme.geometricallyConnected
@@ -116,41 +111,68 @@ lemma zeroSection_comp_toOver_hom (A : AbelianScheme S) :
     A.zeroSection ≫ A.toOver.hom = 𝟙 S := by
   simpa only [Over.tensorUnit_hom] using η[A.toOver].w
 
-/-- Multiplication by `n` on an abelian scheme, `[n] = 𝟙 ^ n` in the group of endomorphisms of the
+/-- Multiplication by `n` on an abelian scheme, `[n] = GrpObj.zpowMap A.toOver n` on the
 underlying group object in `Over S`. -/
 noncomputable def mulBy (A : AbelianScheme S) (n : ℤ) : A.toOver ⟶ A.toOver :=
-  𝟙 A.toOver ^ n
+  GrpObj.zpowMap A.toOver n
+
+/-- `A.mulBy n` is `GrpObj.zpowMap A.toOver n`. -/
+lemma mulBy_eq_zpowMap (A : AbelianScheme S) (n : ℤ) :
+    A.mulBy n = GrpObj.zpowMap A.toOver n := by
+  unfold mulBy
+  rfl
+
+/-- Multiplication by `n` is the `n`-th power of the identity morphism in `End A.toOver`. -/
+lemma mulBy_eq_zpow (A : AbelianScheme S) (n : ℤ) :
+    A.mulBy n = 𝟙 A.toOver ^ n :=
+  GrpObj.zpowMap_eq_zpow A.toOver n
 
 /-- Multiplication by `0` is the constant morphism through the zero section. -/
 @[simp]
 lemma mulBy_zero (A : AbelianScheme S) : A.mulBy 0 = 1 :=
-  zpow_zero (𝟙 A.toOver)
+  GrpObj.zpowMap_zero A.toOver
 
 /-- Multiplication by `1` is the identity morphism. -/
 @[simp]
 lemma mulBy_one (A : AbelianScheme S) : A.mulBy 1 = 𝟙 A.toOver :=
-  zpow_one (𝟙 A.toOver)
+  GrpObj.zpowMap_one A.toOver
 
 /-- Multiplication by `-1` is the inversion morphism of the group law. -/
 @[simp]
-lemma mulBy_neg_one (A : AbelianScheme S) : A.mulBy (-1) = ι[A.toOver] := by
-  rw [mulBy, zpow_neg_one, Hom.inv_def, Category.id_comp]
+lemma mulBy_neg_one (A : AbelianScheme S) : A.mulBy (-1) = ι[A.toOver] :=
+  GrpObj.zpowMap_neg_one A.toOver
 
 /-- Multiplication by a sum is the pointwise product of the multiplication maps. -/
 lemma mulBy_add (A : AbelianScheme S) (m n : ℤ) :
     A.mulBy (m + n) = A.mulBy m * A.mulBy n :=
-  zpow_add (𝟙 A.toOver) m n
+  GrpObj.zpowMap_add A.toOver m n
 
 /-- Multiplication by `-n` is the pointwise inverse of multiplication by `n`. -/
 lemma mulBy_neg (A : AbelianScheme S) (n : ℤ) :
     A.mulBy (-n) = (A.mulBy n)⁻¹ :=
-  zpow_neg (𝟙 A.toOver) n
+  GrpObj.zpowMap_neg A.toOver n
+
+/-- Multiplication by a difference is the pointwise quotient of the multiplication maps. -/
+lemma mulBy_sub (A : AbelianScheme S) (m n : ℤ) :
+    A.mulBy (m - n) = A.mulBy m / A.mulBy n :=
+  GrpObj.zpowMap_sub A.toOver m n
+
+/-- Multiplication by a product of integers is the composition of the multiplication maps. -/
+lemma mulBy_mul (A : AbelianScheme S) (m n : ℤ) :
+    A.mulBy (m * n) = A.mulBy n ≫ A.mulBy m :=
+  GrpObj.zpowMap_mul A.toOver m n
+
+/-- Every homomorphism of group objects commutes with multiplication by `n`. -/
+@[reassoc]
+lemma mulBy_comp (A : AbelianScheme S) {H : Over S} [GrpObj H] (n : ℤ) (f : A.toOver ⟶ H)
+    [IsMonHom f] : A.mulBy n ≫ f = f ≫ GrpObj.zpowMap H n :=
+  GrpObj.zpowMap_comp n f
 
 /-- Postcomposing a `T`-point with `[n]` raises that point to the `n`-th power. -/
 @[simp]
 lemma comp_mulBy (A : AbelianScheme S) {T : Over S} (x : T ⟶ A.toOver) (n : ℤ) :
-    x ≫ A.mulBy n = x ^ n := by
-  rw [mulBy, GrpObj.comp_zpow, Category.comp_id]
+    x ≫ A.mulBy n = x ^ n :=
+  GrpObj.comp_zpowMap x n
 
 /-- Construct an abelian scheme from a group object in `Over S` whose structure morphism is proper
 and smooth with geometrically connected fibres. -/
@@ -189,53 +211,6 @@ lemma ofGroupScheme_inv (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
     ι[(ofGroupScheme G).toOver] ≫ eqToHom (ofGroupScheme_toOver G) =
       eqToHom (ofGroupScheme_toOver G) ≫ ι[G] :=
   (Category.comp_id ι[G]).trans (Category.id_comp ι[G]).symm
-
-/-! ### Base change -/
-
-/-- The base change of an abelian scheme along a morphism `f : T ⟶ S`, obtained by pulling back
-the group scheme along `f`.
-
-Properness, smoothness and geometric connectedness are stable under base change, and the monoidal
-pullback functor carries the group-object structure (`Functor.grpObjObj`). -/
-@[expose] noncomputable def baseChange (A : AbelianScheme S) (f : T ⟶ S) : AbelianScheme T where
-  toOver := (Over.pullback f).obj A.toOver
-  grpObj := Functor.grpObjObj
-  isProper := inferInstanceAs (IsProper (pullback.snd A.toOver.hom f))
-  smooth := inferInstanceAs (Smooth (pullback.snd A.toOver.hom f))
-  geometricallyConnected := inferInstanceAs (GeometricallyConnected (pullback.snd A.toOver.hom f))
-
-@[simp]
-lemma baseChange_toOver (A : AbelianScheme S) (f : T ⟶ S) :
-    (A.baseChange f).toOver = (Over.pullback f).obj A.toOver :=
-  (rfl)
-
-/-- The underlying scheme of a base change is the fibre product of `A` with `T` over `S`. -/
-lemma baseChange_toScheme (A : AbelianScheme S) (f : T ⟶ S) :
-    (A.baseChange f).toScheme = pullback A.toOver.hom f :=
-  (rfl)
-
-/-- The group object underlying a base change is the image of the group object of `A` under the
-pullback functor on group objects. In particular the points of the base change are identified
-with points of `A` by `TauCeti.GroupScheme.baseChangePointMulEquiv`. -/
-lemma grpMk_baseChange_toOver (A : AbelianScheme S) (f : T ⟶ S) :
-    Grp.mk (A.baseChange f).toOver = (Over.pullback f).mapGrp.obj (Grp.mk A.toOver) :=
-  (rfl)
-
-/-- The zero section of a base change is the pullback of the zero section of `A`: the point of
-`pullback A.toOver.hom f` given by `f ≫ A.zeroSection` and `𝟙 T`. -/
-lemma zeroSection_baseChange (A : AbelianScheme S) (f : T ⟶ S) :
-    (A.baseChange f).zeroSection = pullback.lift (f ≫ A.zeroSection) (𝟙 T) (by
-      rw [Category.assoc, zeroSection_comp_toOver_hom, Category.comp_id, Category.id_comp]) := by
-  refine pullback.hom_ext ?_ ((A.baseChange f).zeroSection_comp_toOver_hom.trans
-    (pullback.lift_snd _ _ _).symm)
-  -- The unit of the transported group law is `ε (Over.pullback f) ≫ (Over.pullback f).map η`.
-  have hη : η[(A.baseChange f).toOver] =
-      Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map η[A.toOver] :=
-    Functor.obj.η_def _
-  rw [zeroSection, hη, Over.comp_left, Over.ε_pullback_left, Category.assoc, IsIso.inv_comp_eq,
-    pullback.lift_fst]
-  simp only [Over.pullback_map_left, pullback.lift_fst, Over.tensorUnit_hom]
-  rw [← pullback.condition_assoc, Category.id_comp]
 
 /-! ### The identity abelian scheme -/
 
@@ -364,6 +339,12 @@ lemma inv_hom {A B : AbelianScheme S} (f : A ⟶ B) :
     ι[A.toOver] ≫ toOverHom f = toOverHom f ≫ ι[B.toOver] :=
   GrpObj.inv_hom _
 
+/-- A homomorphism of abelian schemes commutes with multiplication by `n`. -/
+@[reassoc]
+lemma mulBy_comp_toOverHom {A B : AbelianScheme S} (f : A ⟶ B) (n : ℤ) :
+    A.mulBy n ≫ toOverHom f = toOverHom f ≫ B.mulBy n := by
+  rw [mulBy_eq_zpowMap, mulBy_eq_zpowMap, GrpObj.zpowMap_comp]
+
 /-- A homomorphism of abelian schemes carries the zero section of its source to the zero section
 of its target. -/
 @[reassoc]
@@ -419,25 +400,6 @@ as its morphism over `S`. -/
 lemma toOverHom_homEquivIsMonHom_symm_apply {A B : AbelianScheme S}
     (g : {f : A.toOver ⟶ B.toOver // IsMonHom f}) :
     toOverHom ((homEquivIsMonHom A B).symm g) = g.val :=
-  (rfl)
-
-/-- The base-change functor along `f : T ⟶ S`, sending an abelian scheme `A` to `A.baseChange f`
-and a homomorphism to its pullback. -/
-@[expose] def baseChangeFunctor (f : T ⟶ S) : AbelianScheme S ⥤ AbelianScheme T where
-  obj A := A.baseChange f
-  map g := InducedCategory.homMk ((Over.pullback f).mapGrp.map g.hom)
-  map_id A := InducedCategory.hom_ext ((Over.pullback f).mapGrp.map_id (Grp.mk A.toOver))
-  map_comp g h := InducedCategory.hom_ext ((Over.pullback f).mapGrp.map_comp g.hom h.hom)
-
-@[simp]
-lemma baseChangeFunctor_obj (f : T ⟶ S) (A : AbelianScheme S) :
-    (baseChangeFunctor f).obj A = A.baseChange f :=
-  (rfl)
-
-/-- The base change of a homomorphism is its image under the pullback functor of `Over S`. -/
-@[simp]
-lemma toOverHom_baseChangeFunctor_map (f : T ⟶ S) {A B : AbelianScheme S} (g : A ⟶ B) :
-    toOverHom ((baseChangeFunctor f).map g) = (Over.pullback f).map (toOverHom g) :=
   (rfl)
 
 end

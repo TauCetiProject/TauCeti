@@ -22,6 +22,9 @@ equalities `f ≫ 𝟙 Y = f` and `f ≫ g ≫ h = (f ≫ g) ≫ h`:
   change along `f` of `pullbackId`;
 * `CategoryTheory.Over.pullbackComp_comp_inv_app_comp_eqToHom`: the two identifications of base
   change along `f ≫ g ≫ h` with the composite of the three base changes agree;
+* `CategoryTheory.Over.mapPullbackAdj_homEquiv_symm_left` and
+  `CategoryTheory.Over.mapPullbackAdj_homEquiv_left`: underlying morphisms of the forward and
+  inverse pullback-adjunction equivalences;
 * `CategoryTheory.Over.mapPullbackAdj_id_homEquiv_symm` and
   `CategoryTheory.Over.mapPullbackAdj_comp_homEquiv_symm`: compatibility of the inverse pullback
   adjunction equivalence with `pullbackId`/`mapId` and `pullbackComp`/`mapComp`;
@@ -85,17 +88,45 @@ theorem pullbackComp_comp_inv_app_comp_eqToHom {W X Y Z : C} (f : W ⟶ X) (g : 
   · simp [pullbackComp, eqToHom_comp_pullback_fst A.hom (Category.assoc f g h).symm]
   · simp [pullbackComp, eqToHom_comp_pullback_snd A.hom (Category.assoc f g h).symm]
 
+/-- The underlying morphism of the inverse pullback-adjunction equivalence is postcomposition with
+the first pullback projection. -/
+@[simp]
+theorem mapPullbackAdj_homEquiv_symm_left {X Y : C} (s : Y ⟶ X) [HasPullbacksAlong s]
+    (G : Over X) (T : Over Y) (p : T ⟶ (pullback s).obj G) :
+    (((mapPullbackAdj s).homEquiv T G).symm p).left = p.left ≫ pullback.fst G.hom s := by
+  rw [Adjunction.homEquiv_counit]
+  simp
+
+/-- The underlying morphism of the forward pullback-adjunction equivalence is the pullback lift
+with second component the structure morphism of `T`. -/
+@[simp]
+theorem mapPullbackAdj_homEquiv_left {X Y : C} (s : Y ⟶ X) [HasPullbacksAlong s]
+    (G : Over X) (T : Over Y) (p : (map s).obj T ⟶ G) :
+    ((mapPullbackAdj s).homEquiv T G p).left = pullback.lift p.left T.hom (by simp) := by
+  apply pullback.hom_ext
+  · rw [← mapPullbackAdj_homEquiv_symm_left s G T ((mapPullbackAdj s).homEquiv T G p),
+      Equiv.symm_apply_apply, pullback.lift_fst]
+  · rw [pullback.lift_snd]
+    exact Over.w ((mapPullbackAdj s).homEquiv T G p)
+
+/-- Mate identity for inverse hom equivalences: transporting a morphism along the conjugate of `α`
+agrees with precomposing by `α` on the left-adjoint side. -/
+private lemma conjugateEquiv_homEquiv_symm {C' D' : Type*} [Category C'] [Category D']
+    {L₁ L₂ : C' ⥤ D'} {R₁ R₂ : D' ⥤ C'} (adj₁ : L₁ ⊣ R₁) (adj₂ : L₂ ⊣ R₂) (α : L₂ ⟶ L₁)
+    {c : C'} {d : D'} (p : c ⟶ R₁.obj d) :
+    (adj₂.homEquiv c d).symm (p ≫ (conjugateEquiv adj₁ adj₂ α).app d) =
+      α.app c ≫ (adj₁.homEquiv c d).symm p := by
+  rw [Adjunction.homEquiv_counit, Functor.map_comp, Category.assoc,
+    conjugateEquiv_counit adj₁ adj₂ α d, α.naturality_assoc p, ← Adjunction.homEquiv_counit]
+
 /-- The adjunction equivalence for `Over.pullback (𝟙 X)` agrees with `Over.pullbackId`. -/
 theorem mapPullbackAdj_id_homEquiv_symm {X : C} (G T : Over X)
     (p : T ⟶ (pullback (𝟙 X)).obj G) :
     (mapId X).inv.app T ≫ ((mapPullbackAdj (𝟙 X)).homEquiv T G).symm p =
       p ≫ (pullbackId (X := X)).hom.app G := by
-  rw [Adjunction.homEquiv_counit, ← (mapId X).inv.naturality_assoc p]
-  have h := conjugateEquiv_counit (mapPullbackAdj (𝟙 X)) (Adjunction.id (C := Over X))
-    (mapId X).inv G
-  simp only [Functor.id_map, Adjunction.id_counit, NatTrans.id_app, Functor.comp_obj,
-    Functor.id_obj, Category.comp_id] at h
-  exact congrArg (p ≫ ·) h.symm
+  have h := conjugateEquiv_homEquiv_symm (mapPullbackAdj (𝟙 X)) Adjunction.id (mapId X).inv p
+  rw [Adjunction.homEquiv_counit] at h
+  simpa [pullbackId, Adjunction.id] using h.symm
 
 /-- The adjunction equivalence for `Over.pullback (s₁ ≫ s₂)` agrees with `Over.pullbackComp`. -/
 theorem mapPullbackAdj_comp_homEquiv_symm {X Y Z : C} (s₁ : Z ⟶ Y) (s₂ : Y ⟶ X)
@@ -105,19 +136,10 @@ theorem mapPullbackAdj_comp_homEquiv_symm {X Y Z : C} (s₁ : Z ⟶ Y) (s₂ : Y
         (((mapPullbackAdj s₁).homEquiv T ((pullback s₂).obj G)).symm
           (p ≫ (pullbackComp s₁ s₂).hom.app G)) =
       (mapComp s₁ s₂).inv.app T ≫ ((mapPullbackAdj (s₁ ≫ s₂)).homEquiv T G).symm p := by
-  rw [Adjunction.homEquiv_counit, Adjunction.homEquiv_counit, Adjunction.homEquiv_counit,
-    Functor.map_comp, Functor.map_comp, Functor.map_comp, Category.assoc]
-  have h := conjugateEquiv_counit (mapPullbackAdj (s₁ ≫ s₂))
-    ((mapPullbackAdj s₁).comp (mapPullbackAdj s₂)) (mapComp s₁ s₂).inv G
-  simp only [Functor.comp_obj, Functor.id_obj, Functor.comp_map, Adjunction.comp_counit,
-    NatTrans.comp_app, Functor.whiskerLeft_app, Functor.whiskerRight_app,
-    Functor.associator_hom_app, Functor.associator_inv_app, Functor.rightUnitor_hom_app,
-    Category.id_comp, Functor.map_id] at h
-  rw [← (mapComp s₁ s₂).inv.naturality_assoc p]
-  simp only [Functor.comp_map] at h ⊢
-  rw [← h]
-  simp only [Category.assoc]
-  rfl
+  have h := conjugateEquiv_homEquiv_symm (mapPullbackAdj (s₁ ≫ s₂))
+    ((mapPullbackAdj s₁).comp (mapPullbackAdj s₂)) (mapComp s₁ s₂).inv p
+  simpa only [pullbackComp, conjugateIsoEquiv_apply_hom, Iso.symm_hom,
+    Adjunction.comp_homEquiv, Equiv.symm_trans_apply] using h
 
 /-- For an isomorphism `e : X ≅ Y`, the unit and counit built from `pullbackId` and `pullbackComp`
 for `pullback e.hom` and `pullback e.inv` satisfy the triangle identity on every object `A` of

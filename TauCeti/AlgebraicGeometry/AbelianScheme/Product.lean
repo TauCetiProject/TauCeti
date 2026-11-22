@@ -173,14 +173,33 @@ lemma lift_comp_fst_snd {A B C : AbelianScheme S} (f : C ⟶ prod A B) :
     lift (f ≫ fst A B) (f ≫ snd A B) = f :=
   hom_ext (by simp) (by simp)
 
+private abbrev grpBinaryFan (A B : AbelianScheme S) :
+    BinaryFan (Grp.mk A.toOver) (Grp.mk B.toOver) :=
+  BinaryFan.mk (fst A B).hom (snd A B).hom
+
+private def grpBinaryFanIsLimit (A B : AbelianScheme S) :
+    IsLimit (grpBinaryFan A B) :=
+  haveI : IsMonHom (eqToIso (prod_toOver A B)).hom := isMonHom_eqToHom_prod_toOver A B
+  IsLimit.ofIsoLimit
+    (CartesianMonoidalCategory.tensorProductIsBinaryProduct (Grp.mk A.toOver) (Grp.mk B.toOver))
+    (BinaryFan.ext (Grp.mkIso' (eqToIso (prod_toOver A B))).symm
+      (by ext1; exact (Category.comp_id _).trans (toOverHom_fst A B).symm)
+      (by ext1; exact (Category.comp_id _).trans (toOverHom_snd A B).symm))
+
 /-- The binary fan exhibiting `A.prod B` as the categorical product of `A` and `B`. -/
-@[expose] def binaryFan (A B : AbelianScheme S) : BinaryFan A B :=
+def binaryFan (A B : AbelianScheme S) : BinaryFan A B :=
   BinaryFan.mk (fst A B) (snd A B)
+
+/-- `prod.binaryFan A B` has apex `A.prod B` and projections `prod.fst A B` and `prod.snd A B`. -/
+lemma binaryFan_def (A B : AbelianScheme S) :
+    binaryFan A B = BinaryFan.mk (fst A B) (snd A B) := by
+  unfold binaryFan
+  rfl
 
 /-- `prod.binaryFan A B` is a limit cone in `AbelianScheme S`. -/
 def binaryFanIsLimit (A B : AbelianScheme S) : IsLimit (binaryFan A B) :=
-  BinaryFan.IsLimit.mk _ (fun f g ↦ lift f g) (fun f g ↦ lift_fst f g) (fun f g ↦ lift_snd f g)
-    fun f g _ hfst hsnd ↦ hom_ext (hfst.trans (lift_fst f g).symm) (hsnd.trans (lift_snd f g).symm)
+  isLimitOfReflectsOfMapIsLimit (inducedFunctor fun X : AbelianScheme S ↦ Grp.mk X.toOver)
+    (fst A B) (snd A B) (grpBinaryFanIsLimit A B)
 
 end prod
 
@@ -210,26 +229,13 @@ def identityProdIso (A : AbelianScheme S) : (identity S).prod A ≅ A :=
       (prod.binaryFan (identity S) A)).mp ⟨prod.binaryFanIsLimit (identity S) A⟩
   asIso (prod.snd (identity S) A)
 
-private abbrev grpBinaryFan (A B : AbelianScheme S) :
-    BinaryFan (Grp.mk A.toOver) (Grp.mk B.toOver) :=
-  BinaryFan.mk (prod.fst A B).hom (prod.snd A B).hom
-
-private def grpBinaryFanIsLimit (A B : AbelianScheme S) :
-    IsLimit (grpBinaryFan A B) :=
-  haveI : IsMonHom (eqToIso (prod_toOver A B)).hom := isMonHom_eqToHom_prod_toOver A B
-  IsLimit.ofIsoLimit
-    (CartesianMonoidalCategory.tensorProductIsBinaryProduct (Grp.mk A.toOver) (Grp.mk B.toOver))
-    (BinaryFan.ext (Grp.mkIso' (eqToIso (prod_toOver A B))).symm
-      (by ext1; exact (Category.comp_id _).trans (prod.toOverHom_fst A B).symm)
-      (by ext1; exact (Category.comp_id _).trans (prod.toOverHom_snd A B).symm))
-
 /-- Base change preserves products of abelian schemes, respecting the group laws and projections. -/
 def baseChangeProdIso (A B : AbelianScheme S) (f : T ⟶ S) :
     (A.prod B).baseChange f ≅ (A.baseChange f).prod (B.baseChange f) :=
   (fullyFaithfulInducedFunctor fun X : AbelianScheme T ↦ Grp.mk X.toOver).preimageIso
     ((mapIsLimitOfPreservesOfIsLimit (Over.pullback f).mapGrp _ _
-        (grpBinaryFanIsLimit A B)).conePointUniqueUpToIso
-      (grpBinaryFanIsLimit (A.baseChange f) (B.baseChange f)))
+        (prod.grpBinaryFanIsLimit A B)).conePointUniqueUpToIso
+      (prod.grpBinaryFanIsLimit (A.baseChange f) (B.baseChange f)))
 
 @[simp]
 lemma baseChangeProdIso_hom_fst (A B : AbelianScheme S) (f : T ⟶ S) :
@@ -237,8 +243,8 @@ lemma baseChangeProdIso_hom_fst (A B : AbelianScheme S) (f : T ⟶ S) :
       (baseChangeFunctor f).map (prod.fst A B) := by
   apply InducedCategory.hom_ext
   exact (mapIsLimitOfPreservesOfIsLimit (Over.pullback f).mapGrp _ _
-    (grpBinaryFanIsLimit A B)).conePointUniqueUpToIso_hom_comp
-    (grpBinaryFanIsLimit (A.baseChange f) (B.baseChange f)) ⟨WalkingPair.left⟩
+    (prod.grpBinaryFanIsLimit A B)).conePointUniqueUpToIso_hom_comp
+    (prod.grpBinaryFanIsLimit (A.baseChange f) (B.baseChange f)) ⟨WalkingPair.left⟩
 
 @[simp]
 lemma baseChangeProdIso_hom_snd (A B : AbelianScheme S) (f : T ⟶ S) :
@@ -246,8 +252,8 @@ lemma baseChangeProdIso_hom_snd (A B : AbelianScheme S) (f : T ⟶ S) :
       (baseChangeFunctor f).map (prod.snd A B) := by
   apply InducedCategory.hom_ext
   exact (mapIsLimitOfPreservesOfIsLimit (Over.pullback f).mapGrp _ _
-    (grpBinaryFanIsLimit A B)).conePointUniqueUpToIso_hom_comp
-    (grpBinaryFanIsLimit (A.baseChange f) (B.baseChange f)) ⟨WalkingPair.right⟩
+    (prod.grpBinaryFanIsLimit A B)).conePointUniqueUpToIso_hom_comp
+    (prod.grpBinaryFanIsLimit (A.baseChange f) (B.baseChange f)) ⟨WalkingPair.right⟩
 
 end
 
