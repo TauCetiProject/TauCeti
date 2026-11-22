@@ -277,13 +277,12 @@ theorem thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero [Fintype (Discrimin
   · exfalso
     have hd_inf : DiscreteTopology ↥(L ⊓ dual L) :=
       (isIntegral_iff_le_dual.mpr (inf_le_right.trans (dual_anti inf_le_left))).discreteTopology
-    have hinf : (L ⊓ dual L).toAddSubgroup = L.toAddSubgroup ⊓ (dual L).toAddSubgroup := by
-      ext; rfl
-    have hrel : (L ⊓ dual L).toAddSubgroup.relIndex (dual L).toAddSubgroup ≠ 0 := by
-      rw [hinf, AddSubgroup.inf_relIndex_right, ← card_discriminantGroup]
-      exact Nat.card_pos.ne'
-    have : AddSubgroup.IsFiniteRelIndex (L ⊓ dual L).toAddSubgroup (dual L).toAddSubgroup :=
-      ⟨hrel⟩
+    have : (L ⊓ dual L).toAddSubgroup.IsFiniteRelIndex (dual L).toAddSubgroup := by
+      rw [AddSubgroup.isFiniteRelIndex_iff_finiteIndex,
+        show (L ⊓ dual L).toAddSubgroup = L.toAddSubgroup ⊓ (dual L).toAddSubgroup from rfl,
+        AddSubgroup.inf_addSubgroupOf_right]
+      exact @AddSubgroup.finiteIndex_of_finite_quotient _ _ _
+        (inferInstance : Finite (DiscriminantGroup L))
     have : DiscreteTopology (dual L) :=
       (AddSubgroup.discreteTopology_iff_of_isFiniteRelIndex
         (toAddSubgroup_mono (inf_le_right : L ⊓ dual L ≤ dual L))).mp hd_inf
