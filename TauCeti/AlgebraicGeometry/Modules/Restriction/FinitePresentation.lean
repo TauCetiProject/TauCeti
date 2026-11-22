@@ -56,21 +56,21 @@ theorem isFinitePresentation_of_isFinitePresentation_restrict {X : Scheme.{u}} {
     (M : X.Modules) (U : ι → X.Opens) (hU : ⨆ i, U i = ⊤)
     (h : ∀ i, (M.restrict (U i).ι).IsFinitePresentation) : M.IsFinitePresentation := by
   -- Descend along the affine opens contained in some member of the cover.
-  let W := {W : X.affineOpens // ∃ i, W.1 ≤ U i}
-  have (W : W) : (M.over W.1.1).IsFinitePresentation := by
-    obtain ⟨i, hi⟩ := W.2
+  let W := {W : X.affineOpens // ∃ i, W.val ≤ U i}
+  have (W : W) : (M.over W.val.val).IsFinitePresentation := by
+    obtain ⟨i, hi⟩ := W.property
     have := h i
-    have : IsAffine W.1.1.toScheme := W.1.2
+    have : IsAffine W.val.val.toScheme := W.val.property
     have : ((M.restrict (U i).ι).restrict (X.homOfLE hi)).IsFinitePresentation :=
       inferInstance
-    have : (M.restrict W.1.1.ι).IsFinitePresentation :=
-      (SheafOfModules.isFinitePresentation W.1.1.toScheme.ringCatSheaf).prop_of_iso
+    have : (M.restrict W.val.val.ι).IsFinitePresentation :=
+      (SheafOfModules.isFinitePresentation W.val.val.toScheme.ringCatSheaf).prop_of_iso
         (((Scheme.Modules.restrictFunctorComp (X.homOfLE hi) (U i).ι).app M).symm ≪≫
           (Scheme.Modules.restrictFunctorCongr (X.homOfLE_ι hi)).app M) this
-    obtain ⟨P, _⟩ := (M.restrict W.1.1.ι).exists_isFinite_presentation_of_isAffine
-    obtain ⟨Q, _⟩ := M.exists_isFinite_presentation_over_of_restrict W.1.1 P
+    obtain ⟨P, _⟩ := (M.restrict W.val.val.ι).exists_isFinite_presentation_of_isAffine
+    obtain ⟨Q, _⟩ := M.exists_isFinite_presentation_over_of_restrict W.val.val P
     exact Q.isFinitePresentation
-  refine SheafOfModules.IsFinitePresentation.of_coversTop M (fun W : W ↦ W.1.1) ?_
+  refine SheafOfModules.IsFinitePresentation.of_coversTop M (fun W : W ↦ W.val.val) ?_
   rw [Opens.coversTop_iff]
   refine top_le_iff.mp fun x _ ↦ ?_
   obtain ⟨i, hi⟩ := TopologicalSpace.Opens.mem_iSup.mp (hU.symm ▸ trivial : x ∈ ⨆ i, U i)
@@ -104,17 +104,17 @@ module is finitely presented. There is no Noetherian hypothesis. -/
 instance isFinitePresentation_cokernel {X : Scheme.{u}} {M N : X.Modules} (f : M ⟶ N)
     [M.IsQuasicoherent] [M.IsFiniteType] [N.IsFinitePresentation] :
     (cokernel f).IsFinitePresentation := by
-  refine isFinitePresentation_of_isFinitePresentation_restrict _ (fun U : X.affineOpens ↦ U.1)
+  refine isFinitePresentation_of_isFinitePresentation_restrict _ (fun U : X.affineOpens ↦ U.val)
     (iSup_affineOpens_eq_top X) fun U ↦ ?_
-  have hU := U.2
+  have hU := U.property
   have : IsOpenImmersion hU.fromSpec := hU.isOpenImmersion_fromSpec
   -- Over the spectrum `Spec Γ(X, U)`, restriction preserves the cokernel.
   let R := restrictFunctor hU.fromSpec
   have : (R.obj M).IsQuasicoherent := isQuasicoherent_restrictFunctor _ _
   have : ((cokernel f).restrict hU.fromSpec).IsFinitePresentation :=
-    (SheafOfModules.isFinitePresentation (Spec Γ(X, U.1)).ringCatSheaf).prop_of_iso
+    (SheafOfModules.isFinitePresentation (Spec Γ(X, U.val)).ringCatSheaf).prop_of_iso
       (PreservesCokernel.iso R f).symm inferInstance
-  exact (SheafOfModules.isFinitePresentation U.1.toScheme.ringCatSheaf).prop_of_iso
+  exact (SheafOfModules.isFinitePresentation U.val.toScheme.ringCatSheaf).prop_of_iso
     (((restrictFunctorComp hU.isoSpec.hom hU.fromSpec).app _).symm ≪≫
       (restrictFunctorCongr hU.isoSpec_hom_fromSpec).app _)
     (isFinitePresentation_restrict hU.isoSpec.hom ((cokernel f).restrict hU.fromSpec))
