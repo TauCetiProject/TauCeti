@@ -154,7 +154,7 @@ variable {C} {a b : ℕ} in
 /-- Complexity boundedness weakens as the bound grows. -/
 theorem ComplexityBounded.mono (h : C.ComplexityBounded a) (hab : a ≤ b) :
     C.ComplexityBounded b :=
-  h.trans hab
+  complexityBounded_iff.2 ((complexityBounded_iff.1 h).trans hab)
 
 /-! ### The underlying hypergraph complex -/
 

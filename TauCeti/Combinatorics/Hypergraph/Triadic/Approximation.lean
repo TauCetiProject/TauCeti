@@ -47,7 +47,7 @@ decompose the injective triples, such that
 ## Main results
 
 * `TauCeti.regularityBound3_def`: unfolding equation for `regularityBound3`.
-* `TauCeti.le_regularityBound3`, `TauCeti.four_le_regularityBound3`,
+* `TauCeti.le_regularityBound3`, `TauCeti.six_le_regularityBound3`,
   `TauCeti.regularityBound3_pos`: unconditional floor and positivity bounds for `regularityBound3`.
 * `TauCeti.Colored3Graph.exists_strong_regular_approximation3`: every colored three-uniform
   hypergraph on at least `regularityBound3 (Fintype.card κ) ε F R t₀` vertices admits a strong
@@ -141,15 +141,17 @@ private noncomputable def triadicRefinementCap (q₃ : ℕ) (ε : ℝ) (F : ℕ 
   (range (B + 1)).sup fun t ↦ (range (B + 1)).sup fun m ↦ (range (Bcomp + 1)).sup fun k ↦
     topRegularRefinementBound t 1 (triadicFineTol q₃ F R k) (triadicFineMass ε F R k) m
 
+private noncomputable def triadicHostThreshold (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ)
+    (B Dmax k : ℕ) : ℕ :=
+  ⌈2 * ((B : ℝ) ^ 3 * (Dmax : ℝ) ^ 3) * 221 * ((q₃ : ℝ) + 10) /
+    (triadicFineBeta q₃ ε F R k ^ 2 * triadicFineMass ε F R k)⌉₊
+
 private noncomputable def triadicHostCap (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) :
     ℕ :=
   let B := triadicCoarseBound q₃ ε F R t₀
   let Bcomp := triadicCompCap q₃ ε F R t₀
   let Dmax := triadicRefinementCap q₃ ε F R t₀
-  let Pmax : ℝ := B ^ 3 * Dmax ^ 3
-  (range (Bcomp + 1)).sup fun k ↦
-    ⌈2 * Pmax * 221 * ((q₃ : ℝ) + 10) /
-      (triadicFineBeta q₃ ε F R k ^ 2 * triadicFineMass ε F R k)⌉₊
+  (range (Bcomp + 1)).sup fun k ↦ triadicHostThreshold q₃ ε F R B Dmax k
 
 /-- Host-size and complexity bound for strong regular approximation of colored three-uniform
 hypergraphs with `q₃` top colors, edit and exceptional-mass tolerance `ε`, regularity schedule `F`,
@@ -179,11 +181,6 @@ theorem regularityBound3_def (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ 
         ⌈2 * Pmax * 221 * ((q₃ : ℝ) + 10) / (β k ^ 2 * μ k)⌉₊
       max (max (max t₀ 6) (max B Bcomp)) Nhost :=
   (rfl)
-
-private theorem six_le_regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) :
-    6 ≤ regularityBound3 q₃ ε F R t₀ := by
-  unfold regularityBound3
-  omega
 
 private theorem max_one_le_regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) :
     max t₀ 1 ≤ regularityBound3 q₃ ε F R t₀ := by
@@ -216,11 +213,10 @@ private theorem topRegularRefinementBound_le_triadicRefinementCap {q₃ : ℕ} {
   refine le_trans ?_ (Finset.le_sup (mem_range.2 (Nat.lt_succ_of_le hk)))
   rfl
 
-private theorem ceil_le_triadicHostCap {q₃ : ℕ} {ε : ℝ} {F : ℕ → ℝ} {R : ℕ → ℕ} {t₀ k : ℕ}
-    (hk : k ≤ triadicCompCap q₃ ε F R t₀) :
-    ⌈2 * ((triadicCoarseBound q₃ ε F R t₀ : ℝ) ^ 3 *
-        (triadicRefinementCap q₃ ε F R t₀ : ℝ) ^ 3) * 221 * ((q₃ : ℝ) + 10) /
-      (triadicFineBeta q₃ ε F R k ^ 2 * triadicFineMass ε F R k)⌉₊ ≤
+private theorem triadicHostThreshold_le_triadicHostCap {q₃ : ℕ} {ε : ℝ} {F : ℕ → ℝ}
+    {R : ℕ → ℕ} {t₀ k : ℕ} (hk : k ≤ triadicCompCap q₃ ε F R t₀) :
+    triadicHostThreshold q₃ ε F R (triadicCoarseBound q₃ ε F R t₀)
+        (triadicRefinementCap q₃ ε F R t₀) k ≤
       triadicHostCap q₃ ε F R t₀ := by
   unfold triadicHostCap
   refine le_trans ?_ (Finset.le_sup (mem_range.2 (Nat.lt_succ_of_le hk)))
@@ -232,15 +228,16 @@ theorem le_regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ �
   unfold regularityBound3
   omega
 
-/-- `regularityBound3` is always at least `4`. -/
-theorem four_le_regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) :
-    4 ≤ regularityBound3 q₃ ε F R t₀ :=
-  (by decide : 4 ≤ 6).trans (six_le_regularityBound3 q₃ ε F R t₀)
+/-- `regularityBound3` is always at least `6`. -/
+theorem six_le_regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) :
+    6 ≤ regularityBound3 q₃ ε F R t₀ := by
+  unfold regularityBound3
+  omega
 
 /-- `regularityBound3` is always positive. -/
 theorem regularityBound3_pos (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) :
     0 < regularityBound3 q₃ ε F R t₀ :=
-  lt_of_lt_of_le (by decide) (four_le_regularityBound3 q₃ ε F R t₀)
+  lt_of_lt_of_le (by decide) (six_le_regularityBound3 q₃ ε F R t₀)
 
 namespace Colored3Graph
 
@@ -313,8 +310,7 @@ private theorem le_triadicFineBeta_sq_mul_triadicRecoloringCutoff (q₃ : ℕ) {
 private theorem mul_triadicRecoloringCutoff_div_descFactorial_le (q₃ : ℕ) {ε : ℝ} (hε : 0 < ε)
     {F : ℕ → ℝ} (hF : ∀ n, 0 < F n) (R : ℕ → ℕ) (K nV B Dmax P : ℕ) (hnV6 : 6 ≤ nV)
     (hP : P ≤ B ^ 3 * Dmax ^ 3)
-    (hhost : ⌈2 * ((B : ℝ) ^ 3 * (Dmax : ℝ) ^ 3) * 221 * ((q₃ : ℝ) + 10) /
-      (triadicFineBeta q₃ ε F R K ^ 2 * triadicFineMass ε F R K)⌉₊ ≤ nV) :
+    (hhost : triadicHostThreshold q₃ ε F R B Dmax K ≤ nV) :
     (P : ℝ) * triadicRecoloringCutoff q₃ ε F R K nV / nV.descFactorial 3 ≤
       triadicFineMass ε F R K := by
   have hμ := triadicFineMass_pos hε hF R K
@@ -323,7 +319,7 @@ private theorem mul_triadicRecoloringCutoff_div_descFactorial_le (q₃ : ℕ) {�
   set μ := triadicFineMass ε F R K
   have hhost_real :
       2 * ((B : ℝ) ^ 3 * (Dmax : ℝ) ^ 3) * 221 * ((q₃ : ℝ) + 10) / (β ^ 2 * μ) ≤ nV :=
-    (Nat.le_ceil _).trans (by exact_mod_cast hhost)
+    (Nat.le_ceil _).trans (by dsimp only [triadicHostThreshold] at hhost; exact_mod_cast hhost)
   have hDpoly : (P : ℝ) ≤ (B : ℝ) ^ 3 * (Dmax : ℝ) ^ 3 := by exact_mod_cast hP
   have hV_sq : (7 : ℝ) ≤ (nV : ℝ) ^ 2 := by
     have : (6 : ℝ) ≤ nV := by exact_mod_cast hnV6
@@ -358,8 +354,7 @@ private theorem mul_triadicRecoloringCutoff_div_descFactorial_le (q₃ : ℕ) {�
 
 private theorem triadicFine_mass_le (q₃ : ℕ) {ε : ℝ} (hε : 0 < ε) {F : ℕ → ℝ} (hF : ∀ n, 0 < F n)
     (R : ℕ → ℕ) (K nV B Dmax P : ℕ) (hnV6 : 6 ≤ nV) (hP : P ≤ B ^ 3 * Dmax ^ 3)
-    (hhost : ⌈2 * ((B : ℝ) ^ 3 * (Dmax : ℝ) ^ 3) * 221 * ((q₃ : ℝ) + 10) /
-      (triadicFineBeta q₃ ε F R K ^ 2 * triadicFineMass ε F R K)⌉₊ ≤ nV) :
+    (hhost : triadicHostThreshold q₃ ε F R B Dmax K ≤ nV) :
     (triadicFineMass ε F R K +
         P * triadicRecoloringCutoff q₃ ε F R K nV / nV.descFactorial 3) /
       triadicFineTheta F R K ≤ ε := by
@@ -425,15 +420,16 @@ theorem exists_strong_regular_approximation3 (H : Colored3Graph κ V) {ε : ℝ}
     (htop₁.mono le_rfl (triadicFine_mass_le q₃ hε hF R K (Fintype.card V)
       (triadicCoarseBound q₃ ε F R t₀) (triadicRefinementCap q₃ ε F R t₀)
       (Fintype.card (Polyad3 D.skeleton)) ((six_le_regularityBound3 q₃ ε F R t₀).trans hV)
-      hDpoly ((ceil_le_triadicHostCap hCcomp).trans
+      hDpoly ((triadicHostThreshold_le_triadicHostCap hCcomp).trans
         ((triadicHostCap_le_regularityBound3 q₃ ε F R t₀).trans hV))) le_rfl).of_rank_one_div_pow
       (hF K)
   exact ⟨H', C,
     C.vertexCellsControlled_iff.2 ⟨hCeq, (le_max_left t₀ 1).trans (hP₀_card ▸ card_mono hCP₀)⟩,
-    happrox.mono (triadicFine_edit_le q₃ hε F R K),
-    C.isPolyadDecomposition_of_polyads_eq_univ hCpol, hCreg, htop',
-    C.complexityBounded_iff.2
-      (hCcomp.trans (triadicCompCap_le_regularityBound3 q₃ ε F R t₀))⟩
+    isStrongRegularApproximation3_iff.2
+      ⟨happrox.mono (triadicFine_edit_le q₃ hε F R K),
+        C.isPolyadDecomposition_of_polyads_eq_univ hCpol, hCreg, htop',
+        C.complexityBounded_iff.2
+          (hCcomp.trans (triadicCompCap_le_regularityBound3 q₃ ε F R t₀))⟩⟩
 
 end Colored3Graph
 
