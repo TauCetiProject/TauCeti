@@ -10,6 +10,7 @@ public import TauCeti.Topology.CategoryTheory.CoarseSpace.Restrict
 public import TauCeti.Topology.CategoryTheory.Latching
 import Mathlib.Topology.GDelta.MetrizableSpace
 import Mathlib.Topology.Metrizable.Urysohn
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # Thin classifying spaces of topological categories and groupoids
@@ -440,9 +441,6 @@ theorem preimage_coarseMap_eq_range_thinClassifyingSpaceMap_ι :
   geometricRealization.preimage_augment_eq_range_map (ε := topologicalNerve.coarseAugmentation hs)
     (fun n ↦ P.range_topologicalNerveMap_ι hs (op ⦋n⦌))
 
-private theorem setCongr_val {α : Type*} [TopologicalSpace α] {s t : Set α} (h : s = t)
-    (x : s) : (Homeomorph.setCongr h x).val = x.val := (rfl)
-
 /-- When the ambient groupoid `C` has continuous source `hs` and the inclusion of a saturated
 full subgroupoid `P` induces an embedding `hι` on thin classifying spaces (for instance when
 the subgroupoid's object set `{x | P x}` is open via `isOpenEmbedding_thinClassifyingSpaceMap_ι`
@@ -462,7 +460,7 @@ def thinClassifyingSpaceRestrictionHomeomorph
     (z : thinClassifyingSpace P.FullSubcategory) :
     (P.thinClassifyingSpaceRestrictionHomeomorph hs hι z).val =
       thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι z := by
-  rw [thinClassifyingSpaceRestrictionHomeomorph, Homeomorph.trans_apply, setCongr_val,
+  rw [thinClassifyingSpaceRestrictionHomeomorph, Homeomorph.trans_apply, Homeomorph.setCongr_apply,
     hι.toHomeomorph_apply_coe]
 
 @[simp↓] theorem thinClassifyingSpaceMap_ι_thinClassifyingSpaceRestrictionHomeomorph_symm_apply

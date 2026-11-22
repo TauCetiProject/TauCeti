@@ -419,12 +419,13 @@ if and only if `{1}` is closed in `G`. -/
 theorem isClosed_range_unit_iff [Monoid G] :
     IsClosed (Set.range fun x : SingleObj G ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total (SingleObj G))) ↔
       IsClosed ({(1 : G)} : Set G) := by
-  have hpre : (arrowHomeomorph G) ⁻¹' ({(1 : G)} : Set G) =
-      Set.range fun x : SingleObj G ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total (SingleObj G)) := by
-    ext ⟨⟨⟩, ⟨⟩, g⟩
-    simp only [Set.mem_preimage, arrowHomeomorph_apply, Set.mem_singleton_iff, Set.mem_range]
-    exact ⟨fun hg ↦ ⟨SingleObj.star G, by subst hg; rfl⟩, by rintro ⟨⟨⟩, h⟩; cases h; rfl⟩
-  rw [← hpre, (arrowHomeomorph G).isClosed_preimage]
+  have himg : arrowHomeomorph G ''
+      (Set.range fun x : SingleObj G ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total (SingleObj G))) =
+      ({(1 : G)} : Set G) := by
+    rw [← Set.range_comp]
+    exact Set.range_eq_singleton fun x ↦ by
+      simp only [Function.comp_apply, arrowHomeomorph_apply, SingleObj.id_as_one]
+  rw [← (arrowHomeomorph G).isClosed_image, himg]
 
 end OneObjectGroupoid
 
