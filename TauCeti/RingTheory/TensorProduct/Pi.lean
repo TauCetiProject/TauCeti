@@ -19,9 +19,11 @@ structures on `A₁` and `A₂` restrict to their given `R`-algebra structures
 `TensorProduct.prodLeft`. It also evaluates the inverse of Mathlib's
 `Algebra.TensorProduct.piScalarRight : A ⊗[R] (ι → R) ≃ₐ[S] (ι → A)` on `Pi.single i x`, so that
 `simp` computes the matrix entries of a base change of an algebra map between function algebras.
-Finally, for a section `s` of one factor `B k` of a finite product, base-changing the composite of
-`s` with the projection onto `B k` agrees with applying Mathlib's `Algebra.TensorProduct.piRight`
-decomposition, projecting to coordinate `k`, and then applying the base change of `s`
+Finally, let `s : B k →ₐ[A] A` be an `A`-algebra map from one factor `B k` of a finite product
+`∀ k, B k` of `A`-algebras back to the base `A`; it splits the structure map `A → B k`, so it is a
+section of `Spec (B k) → Spec A`. Base-changing the composite of `s` with the projection onto `B k`
+agrees with applying Mathlib's `Algebra.TensorProduct.piRight` decomposition, projecting to
+coordinate `k`, and then applying the base change of `s`
 (`AlgHom.sectionBaseChange_comp_evalAlgHom`).
 
 ## Main declarations
@@ -29,8 +31,9 @@ decomposition, projecting to coordinate `k`, and then applying the base change o
 * `TauCeti.Algebra.TensorProduct.prodLeft`: the algebra equivalence above.
 * `TauCeti.Algebra.TensorProduct.piScalarRight_symm_single`: the inverse of Mathlib's
   `Algebra.TensorProduct.piScalarRight` on `Pi.single i x`.
-* `AlgHom.sectionBaseChange_comp_evalAlgHom`: base change of a section through a coordinate
-  projection.
+* `AlgHom.sectionBaseChange_comp_evalAlgHom`: the base change of an `A`-algebra map
+  `s : B k →ₐ[A] A`, composed with the projection onto `B k`, through Mathlib's
+  `Algebra.TensorProduct.piRight`.
 -/
 
 public section
@@ -92,8 +95,10 @@ end TauCeti.Algebra.TensorProduct
 
 namespace AlgHom
 
-/-- Base change of a section factoring through one coordinate of a product agrees with the
-base-changed section on that coordinate of the base-changed product. -/
+/-- For an `A`-algebra map `s : B k →ₐ[A] A` from one factor of a finite product back to the
+base `A` (a section of `Spec (B k) → Spec A`), the base change to `T` of `s` composed with the
+projection `Pi.evalAlgHom A B k` is Mathlib's `Algebra.TensorProduct.piRight`, followed by the
+projection to coordinate `k` and the base change of `s`. -/
 @[simp]
 theorem sectionBaseChange_comp_evalAlgHom {A : Type*} [CommSemiring A]
     {κ : Type*} [Fintype κ] [DecidableEq κ] {B : κ → Type*}
