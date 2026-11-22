@@ -46,7 +46,11 @@ are invariant under `Γ_I` (`TauCeti.ImplicitAtlas.act_mem_range_footprintMap`),
 domains of the cocycle condition match
 (`TauCeti.ImplicitAtlas.mem_kuranishiZeroSet_iff_footprintMap_mem`), the footprints are open and
 cover `X` (`TauCeti.ImplicitAtlas.isOpen_footprint`, `TauCeti.ImplicitAtlas.iUnion_footprint`),
-and the regular locus is empty where the expected dimension `d + m_I` is negative
+they satisfy the *footprint conditions* `V_I ∩ V_K ⊆ V_J` for `I ⊆ J ⊆ K` and
+`V_I ∩ V_J ⊆ V_(I ∪ J)` (`TauCeti.ImplicitAtlas.footprint_inter_footprint_subset_footprint`,
+`TauCeti.ImplicitAtlas.footprint_inter_footprint_subset_footprint_union`), which make the cover
+`{V_I}` suitable for gluing local data indexed by pairs `I ⊆ J`, and the regular locus is empty
+where the expected dimension `d + m_I` is negative
 (`TauCeti.ImplicitAtlas.regLocus_eq_empty_of_neg`), so that a nonempty space carries no atlas
 whose expected dimensions are all negative (`TauCeti.ImplicitAtlas.isEmpty_of_forall_neg`).
 Examples are in `TauCeti.Topology.ImplicitAtlas.Examples`.
@@ -109,6 +113,12 @@ theorem mem_kuranishiZeroSet_self {T : Finset A → Type*} {E : A → Type*} [�
     (s : ∀ (J : Finset A) (α : J), T J → E α) {I : Finset A} (x : T I) :
     x ∈ kuranishiZeroSet s I I :=
   mem_kuranishiZeroSet.2 fun α hα ↦ (hα α.property).elim
+
+/-- The zero set `Z_IJ` grows with `I`: fewer Kuranishi maps are required to vanish. -/
+theorem kuranishiZeroSet_mono {T : Finset A → Type*} {E : A → Type*} [∀ α, Zero (E α)]
+    (s : ∀ (J : Finset A) (α : J), T J → E α) {I I' : Finset A} (h : I ⊆ I') (J : Finset A) :
+    kuranishiZeroSet s I J ⊆ kuranishiZeroSet s I' J :=
+  fun _ hx ↦ mem_kuranishiZeroSet.2 fun α hα ↦ mem_kuranishiZeroSet.1 hx α fun hαI ↦ hα (h hαI)
 
 /-- An **implicit atlas** of virtual dimension `d` on `X` (Pardon, Definition 3.1.1), with finite
 isotropy groups `Γ α`, obstruction representations `ρ α` on `E α`, thickenings `T I` and actions
@@ -287,6 +297,63 @@ theorem iUnion_footprint : ⋃ I, 𝒜.footprint I = univ :=
   eq_univ_of_forall fun y ↦ mem_iUnion.2 <|
     let ⟨I, x, hx, hxy⟩ := 𝒜.exists_footprintMap_eq y
     ⟨I, 𝒜.mem_footprint.2 ⟨x, hx, hxy⟩⟩
+
+/-! ### Footprint conditions -/
+
+/-- The images of the footprint maps shrink as the larger index set grows: `U_IK ⊆ U_IJ` for
+`I ⊆ J ⊆ K`, since `ψ_IK = ψ_IJ ∘ ψ_JK`. -/
+theorem range_footprintMap_subset {I J K : Finset A} (hIJ : I ⊆ J) (hJK : J ⊆ K) :
+    range (𝒜.footprintMap (hIJ.trans hJK)) ⊆ range (𝒜.footprintMap hIJ) := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨_, 𝒜.footprintMap_footprintMap_mk hIJ hJK
+    ⟨x.val, kuranishiZeroSet_mono _ hIJ K x.property⟩ x.property⟩
+
+/-- The regular footprint `V_I` lies in the image `U_∅I` of the footprint map `ψ_∅I`. -/
+theorem footprint_subset_image_range (I : Finset A) :
+    𝒜.footprint I ⊆ 𝒜.baseHomeomorph '' range (𝒜.footprintMap (Finset.empty_subset I)) :=
+  image_mono (image_subset_range _ _)
+
+/-- A point of the zero set `Z_∅I` lies over the regular footprint `V_I` exactly when it is
+regular: the fibres of `ψ_∅I` are `Γ_I`-orbits, and the regular locus is invariant. -/
+theorem baseHomeomorph_footprintMap_mem_footprint_iff {I : Finset A}
+    (x : kuranishiZeroSet 𝒜.kuranishi ∅ I) :
+    𝒜.baseHomeomorph (𝒜.footprintMap (Finset.empty_subset I) x) ∈ 𝒜.footprint I ↔
+      x.val ∈ 𝒜.regLocus I := by
+  refine ⟨fun h ↦ ?_, fun h ↦ 𝒜.mem_footprint.2 ⟨x, h, rfl⟩⟩
+  obtain ⟨y, hy, hyx⟩ := 𝒜.mem_footprint.1 h
+  exact 𝒜.mem_regLocus_of_footprintMap_eq _ (𝒜.baseHomeomorph.injective hyx) hy
+
+/-- For `I ⊆ K`, the regular footprint `V_I` meets the image `U_∅K` of `ψ_∅K` only inside `V_K`.
+A zero `x ∈ Z_∅K` over `V_I` has a regular image `ψ_IK(x) ∈ X_I^reg`, so it is regular itself
+by the axiom `ψ_IK⁻¹(X_I^reg) ⊆ X_K^reg`. -/
+theorem footprint_inter_image_range_subset {I K : Finset A} (hIK : I ⊆ K) :
+    𝒜.footprint I ∩ 𝒜.baseHomeomorph '' range (𝒜.footprintMap (Finset.empty_subset K)) ⊆
+      𝒜.footprint K := by
+  rintro _ ⟨hI, _, ⟨x, rfl⟩, rfl⟩
+  refine (𝒜.baseHomeomorph_footprintMap_mem_footprint_iff x).2 ?_
+  have hx : x.val ∈ kuranishiZeroSet 𝒜.kuranishi I K :=
+    kuranishiZeroSet_mono _ (Finset.empty_subset I) K x.property
+  rw [← 𝒜.footprintMap_footprintMap_mk (Finset.empty_subset I) hIK ⟨x.val, hx⟩ x.property,
+    baseHomeomorph_footprintMap_mem_footprint_iff] at hI
+  exact 𝒜.mem_regLocus_of_footprintMap_mem hIK ⟨x.val, hx⟩ hI
+
+/-- **The first footprint condition** (Pardon, proof of Proposition 4.3.3): `V_I ∩ V_K ⊆ V_J`
+for `I ⊆ J ⊆ K`. The inclusion can be strict: for the atlas `s(x) = xᵐ` on a point, with
+`I = ∅` and `J = K = {α}`, the left side is `V_∅ = ∅` while `V_{α}` is the point. -/
+theorem footprint_inter_footprint_subset_footprint {I J K : Finset A} (hIJ : I ⊆ J)
+    (hJK : J ⊆ K) : 𝒜.footprint I ∩ 𝒜.footprint K ⊆ 𝒜.footprint J :=
+  fun _ ⟨hI, hK⟩ ↦ 𝒜.footprint_inter_image_range_subset hIJ ⟨hI, image_mono
+    (𝒜.range_footprintMap_subset (Finset.empty_subset J) hJK) (𝒜.footprint_subset_image_range K hK)⟩
+
+/-- **The second footprint condition** (Pardon, proof of Proposition 4.3.3):
+`V_I ∩ V_J ⊆ V_(I ∪ J)`. -/
+theorem footprint_inter_footprint_subset_footprint_union (I J : Finset A) :
+    𝒜.footprint I ∩ 𝒜.footprint J ⊆ 𝒜.footprint (I ∪ J) := by
+  rintro _ ⟨hI, hJ⟩
+  refine 𝒜.footprint_inter_image_range_subset Finset.subset_union_left ⟨hI, ?_⟩
+  rw [← 𝒜.range_footprintMap_inter (Finset.empty_subset I) (Finset.empty_subset J),
+    image_inter 𝒜.baseHomeomorph.injective]
+  exact ⟨𝒜.footprint_subset_image_range I hI, 𝒜.footprint_subset_image_range J hJ⟩
 
 /-- The expected dimension `d + m_I` is nonnegative wherever the regular locus `X_I^reg` is
 nonempty: there it is the dimension of a topological manifold. -/
