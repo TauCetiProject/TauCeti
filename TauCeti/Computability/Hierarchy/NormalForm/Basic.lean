@@ -219,6 +219,10 @@ theorem arity_falseCode (p : QuantifierPrefix) (k : ℕ) :
 theorem matrix_falseCode (p : QuantifierPrefix) (k : ℕ) :
     (falseCode p k).matrix = Code.zero := (rfl)
 
+/-- Constructing `falseCode` is primitive recursive in the quantifier prefix and arity. -/
+theorem primrec₂_falseCode : Primrec₂ falseCode :=
+  (primrec_mk.comp (Primrec.fst.pair (Primrec.snd.pair (Primrec.const Code.zero)))).to₂
+
 /-- The matrix of `falseCode` never holds. -/
 @[simp]
 theorem matrixHolds_falseCode (Z : Set ℕ) (p : QuantifierPrefix) (k : ℕ) (l : List ℕ) :
@@ -226,6 +230,7 @@ theorem matrixHolds_falseCode (Z : Set ℕ) (p : QuantifierPrefix) (k : ℕ) (l 
   simp [MatrixHolds]
 
 /-- `falseCode` is valid relative to every oracle. -/
+@[simp]
 theorem isValid_falseCode (Z : Set ℕ) (p : QuantifierPrefix) (k : ℕ) :
     (falseCode p k).IsValid Z := fun _ _ => ⟨false, by simp [falseCode]⟩
 
@@ -465,35 +470,6 @@ theorem isClass_iff_exists_normalFormCode_unary {Z : Set ℕ} {p : QuantifierPre
 
 /-! ### Exact Π⁰₂-completeness and undecidability of `NormalFormCode.IsValid` -/
 
--- Halting with a Boolean output (`0` or `1`) on a coded input is Σ⁰₁ relative to `Z`.
-private theorem isSigma_one_eval_bool {Z : Set ℕ} :
-    IsSigma Z 1 (fun p : NormalFormCode × ℕ =>
-      ∃ b : Bool, encode b ∈ Code.eval Z.oracle p.1.matrix p.2) := by
-  obtain ⟨guard, hguard⟩ := Code.exists_boolGuardCode
-  have harg : Primrec fun p : NormalFormCode × ℕ =>
-      Nat.pair (encode (Code.comp guard p.1.matrix)) p.2 :=
-    Primrec₂.natPair.comp
-      (Primrec.encode.comp (Code.primrec₂_comp.comp (Primrec.const guard)
-        (NormalFormCode.primrec_matrix.comp Primrec.fst)))
-      Primrec.snd
-  have hdom := (isSigma_one_dom_eval (Z := Z) Code.universal).preimage harg.computableIn
-  refine hdom.of_eq fun p => ?_
-  have hZ : Z.oracle = ((Z.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) := funext fun n => by simp
-  rw [hZ, Code.eval_universal, ← hZ, ofNat_encode, Code.eval_comp]
-  have hbind : ∀ y : ℕ,
-      y ∈ (Code.eval Z.oracle p.1.matrix p.2 >>= Code.eval Z.oracle guard) ↔
-        ∃ m ∈ Code.eval Z.oracle p.1.matrix p.2, m < 2 ∧ y = 0 := fun y => by
-    refine Part.mem_bind_iff.trans ?_
-    simp [hguard]
-  simp only [Part.dom_iff_mem, hbind]
-  constructor
-  · rintro ⟨_, m, hm, hlt, _⟩
-    match m, hlt with
-    | 0, _ => exact ⟨false, hm⟩
-    | 1, _ => exact ⟨true, hm⟩
-  · rintro ⟨b, hb⟩
-    exact ⟨0, encode b, hb, by cases b <;> decide, rfl⟩
-
 /-- Validity of normal-form codes is Π⁰₂ relative to the oracle. -/
 theorem isPi_two_isValid {Z : Set ℕ} : IsPi Z 2 (NormalFormCode.IsValid Z) := by
   have hlen : IsSigma Z 1 (fun p : NormalFormCode × ℕ =>
@@ -507,7 +483,11 @@ theorem isPi_two_isValid {Z : Set ℕ} : IsPi Z 2 (NormalFormCode.IsValid Z) := 
           (NormalFormCode.primrec_arity.comp Primrec.fst))).not
     obtain ⟨_, hdec⟩ := hpred
     exact (isSigma_zero_iff.2 ⟨_, hdec.computableIn, fun _ => by simp⟩).one_of_zero
-  refine isPi_succ_iff.2 ⟨_, hlen.or isSigma_one_eval_bool, fun nf => ?_⟩
+  have heval : IsSigma Z 1 (fun p : NormalFormCode × ℕ =>
+      ∃ b : Bool, encode b ∈ Code.eval Z.oracle p.1.matrix p.2) :=
+    isSigma_one_eval_bool.preimage
+      ((NormalFormCode.primrec_matrix.comp Primrec.fst).pair Primrec.snd).computableIn
+  refine isPi_succ_iff.2 ⟨_, hlen.or heval, fun nf => ?_⟩
   constructor
   · intro h n
     by_cases hl : (ofNat (List ℕ) n).length = nf.quantifiers.depth + nf.arity

@@ -55,12 +55,22 @@ example (Z : Set ℕ) {nf₁ nf₂ : NormalFormCode}
     (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z)
     (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity)
     (xs : List ℕ) (hxs : xs.length = nf₁.arity) :
-    ((nf₁.and nf₂).neg.IsValid Z) ∧
-    ((nf₁.and nf₂).neg.EvalList Z xs ↔ ¬(nf₁.EvalList Z xs ∧ nf₂.EvalList Z xs)) ∧
-    ((nf₁.or nf₂).EvalList Z xs ↔ nf₁.EvalList Z xs ∨ nf₂.EvalList Z xs) := by
-  have hand := h₁.and h₂ hq ha
-  refine ⟨hand.neg, ?_, evalList_or h₁ h₂ hq ha hxs⟩
-  rw [evalList_neg hand (by simpa using hxs), evalList_and h₁ h₂ hq ha hxs]
+    ∃ nfAnd nfOr,
+      nf₁.and nf₂ = some nfAnd ∧ nf₁.or nf₂ = some nfOr ∧
+      nfAnd.neg.IsValid Z ∧
+      (nfAnd.neg.EvalList Z xs ↔ ¬(nf₁.EvalList Z xs ∧ nf₂.EvalList Z xs)) ∧
+      (nfOr.EvalList Z xs ↔ nf₁.EvalList Z xs ∨ nf₂.EvalList Z xs) := by
+  obtain ⟨nfAnd, hand⟩ := (exists_and_iff nf₁ nf₂).2 ⟨hq, ha⟩
+  obtain ⟨nfOr, hor⟩ := (exists_or_iff nf₁ nf₂).2 ⟨hq, ha⟩
+  have hvalid := h₁.and h₂ hand
+  refine ⟨nfAnd, nfOr, hand, hor, hvalid.neg, ?_, evalList_or h₁ h₂ hor hxs⟩
+  rw [evalList_neg hvalid (by simpa [arity_and hand] using hxs), evalList_and h₁ h₂ hand hxs]
+
+-- Mismatched prefixes or arities cause `and` and `or` to return `none`.
+example {nf₁ nf₂ : NormalFormCode}
+    (h : nf₁.quantifiers ≠ nf₂.quantifiers ∨ nf₁.arity ≠ nf₂.arity) :
+    nf₁.and nf₂ = none ∧ nf₁.or nf₂ = none := by
+  simp [h]
 
 -- Double negation of `falseCode` is valid and remains identically false on tuples.
 example (Z : Set ℕ) (p : QuantifierPrefix) (k : ℕ)
@@ -72,8 +82,11 @@ example (Z : Set ℕ) (p : QuantifierPrefix) (k : ℕ)
   simp
 
 -- Composite Boolean code transformations remain primitive recursive on encoded codes.
-example : Primrec fun p : NormalFormCode × NormalFormCode => encode ((p.1.and p.2).neg) :=
-  Primrec.encode.comp (primrec_neg.comp (primrec₂_and.comp Primrec.fst Primrec.snd))
+example : Primrec fun p : NormalFormCode × NormalFormCode =>
+    encode ((p.1.and p.2).map neg) :=
+  Primrec.encode.comp
+    ((Primrec.option_map (primrec₂_and.comp Primrec.fst Primrec.snd)
+      (primrec_neg.comp Primrec.snd)))
 
 -- Soundness: any valid normal-form code defines a predicate in its displayed pointclass.
 example (Z : Set ℕ) {nf : NormalFormCode} (h : nf.IsValid Z) :
@@ -96,20 +109,20 @@ example (Z : Set ℕ) :
     not_isSigma_two_isValid, not_computablePred_isValid⟩
 
 -- Matrix-level characterizations and `QuantifierPrefix.eval_and_unpair_iff` / `eval_or_unpair_iff`.
-example (Z : Set ℕ) {nf₁ nf₂ : NormalFormCode}
+example (Z : Set ℕ) {nf₁ nf₂ nfAnd nfOr : NormalFormCode}
     (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z)
-    (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity)
+    (hand : nf₁.and nf₂ = some nfAnd) (hor : nf₁.or nf₂ = some nfOr)
     {l : List ℕ} (hl : l.length = nf₁.quantifiers.depth + nf₁.arity)
     (p : QuantifierPrefix) (R₁ R₂ : List ℕ → Prop) (xs₁ xs₂ xs : List ℕ) :
     (falseCode p nf₁.arity).matrix = Code.zero ∧
     nf₁.neg.matrix = Code.boolNot nf₁.matrix ∧
     (nf₁.neg.MatrixHolds Z l ↔ ¬nf₁.MatrixHolds Z l) ∧
-    ((nf₁.and nf₂).MatrixHolds Z l ↔
+    (nfAnd.MatrixHolds Z l ↔
       nf₁.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
         l.drop nf₁.quantifiers.depth) ∧
       nf₂.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
         l.drop nf₁.quantifiers.depth)) ∧
-    ((nf₁.or nf₂).MatrixHolds Z l ↔
+    (nfOr.MatrixHolds Z l ↔
       nf₁.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
         l.drop nf₁.quantifiers.depth) ∨
       nf₂.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
@@ -123,6 +136,6 @@ example (Z : Set ℕ) {nf₁ nf₂ : NormalFormCode}
         R₂ ((m.take p.depth).map (fun y => y.unpair.2) ++ xs₂)) xs ↔
       p.Eval R₁ xs₁ ∨ p.Eval R₂ xs₂) :=
   ⟨matrix_falseCode p nf₁.arity, matrix_neg nf₁, h₁.matrixHolds_neg hl,
-    matrixHolds_and h₁ h₂ hq ha hl, matrixHolds_or h₁ h₂ hq ha hl,
+    matrixHolds_and h₁ h₂ hand hl, matrixHolds_or h₁ h₂ hor hl,
     QuantifierPrefix.eval_and_unpair_iff p R₁ R₂ xs₁ xs₂ xs,
     QuantifierPrefix.eval_or_unpair_iff p R₁ R₂ xs₁ xs₂ xs⟩

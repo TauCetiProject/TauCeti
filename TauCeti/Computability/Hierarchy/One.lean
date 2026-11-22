@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Computability.Hierarchy.Basic
 public import TauCeti.Computability.Jump.Basic
+import TauCeti.Computability.SingleOracle.Combinators
 import TauCeti.Computability.SingleOracle.Relative
+import TauCeti.Computability.SingleOracle.Universal
 
 /-!
 # The first existential level of the arithmetical hierarchy
@@ -28,7 +30,7 @@ No program index is extracted computably from a semantic pointclass-membership p
 
 public section
 
-open Encodable TauCeti.Oracle.Single
+open Encodable Denumerable TauCeti.Oracle.Single
 
 namespace TauCeti.ArithmeticalHierarchy
 
@@ -81,6 +83,35 @@ theorem isSigma_one_dom_eval (c : Code) :
     Option.isSome_iff_exists]
   exact ⟨fun ⟨_, k, d, hd, _⟩ => ⟨k, d, hd⟩,
     fun ⟨k, d, hd⟩ => ⟨d.output, k, d, hd, rfl⟩⟩
+
+/-- Halting of an oracle program with a Boolean output (`0` or `1`) is Σ⁰₁ uniformly in the
+program and input. -/
+theorem isSigma_one_eval_bool :
+    IsSigma Z 1 (fun p : Code × ℕ =>
+      ∃ b : Bool, encode b ∈ Code.eval Z.oracle p.1 p.2) := by
+  obtain ⟨guard, hguard⟩ := Code.exists_boolGuardCode
+  have harg : Primrec fun p : Code × ℕ =>
+      Nat.pair (encode (Code.comp guard p.1)) p.2 :=
+    Primrec₂.natPair.comp
+      (Primrec.encode.comp (Code.primrec₂_comp.comp (Primrec.const guard) Primrec.fst))
+      Primrec.snd
+  have hdom := (isSigma_one_dom_eval (Z := Z) Code.universal).preimage harg.computableIn
+  refine hdom.of_eq fun p => ?_
+  have hZ : Z.oracle = ((Z.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) := funext fun n => by simp
+  rw [hZ, Code.eval_universal, ← hZ, ofNat_encode, Code.eval_comp]
+  have hbind : ∀ y : ℕ,
+      y ∈ (Code.eval Z.oracle p.1 p.2 >>= Code.eval Z.oracle guard) ↔
+        ∃ m ∈ Code.eval Z.oracle p.1 p.2, m < 2 ∧ y = 0 := fun y => by
+    refine Part.mem_bind_iff.trans ?_
+    simp [hguard]
+  simp only [Part.dom_iff_mem, hbind]
+  constructor
+  · rintro ⟨_, m, hm, hlt, _⟩
+    match m, hlt with
+    | 0, _ => exact ⟨false, hm⟩
+    | 1, _ => exact ⟨true, hm⟩
+  · rintro ⟨b, hb⟩
+    exact ⟨0, encode b, hb, by cases b <;> decide, rfl⟩
 
 /-- **The first relativized Post equivalence.** Σ⁰₁ predicates relative to `Z` are exactly the
 domains of partial functions recursive in `Z`. -/

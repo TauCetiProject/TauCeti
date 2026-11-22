@@ -16,13 +16,15 @@ arithmetical normal forms (`NormalFormCode`):
 
 * `NormalFormCode.neg`: complementation, dualizing the quantifier prefix and negating the matrix.
 * `NormalFormCode.and` and `NormalFormCode.or`: finite conjunction and disjunction at a common
-  quantifier prefix and arity, unpairing all bound variables simultaneously.
+  quantifier prefix and arity, unpairing all bound variables simultaneously and returning `none`
+  when the operands' quantifier prefixes or arities differ.
 
 Every transformation is proved primitive recursive on `NormalFormCode` without depending on the
-oracle. For valid operands — and, in the case of `and` and `or`, when the operands have matching
-quantifier prefixes and arities — each transformation preserves semantic validity
-(`NormalFormCode.IsValid Z`) and satisfies its exact semantic equation relative to every oracle `Z`
-(on tuples of the declared arity and on variable lists of that length).
+oracle. For valid operands — and, in the case of `and` and `or`, when the operation succeeds
+(`= some nf`, meaning the operands have matching quantifier prefixes and arities) — each
+transformation preserves semantic validity (`NormalFormCode.IsValid Z`) and satisfies its exact
+semantic equation relative to every oracle `Z` (on tuples of the declared arity and on variable
+lists of that length).
 
 ## References
 
@@ -134,79 +136,175 @@ private def unpairFstCode (d : ℕ) : Code :=
 private def unpairSndCode (d : ℕ) : Code :=
   Code.paramCode unpairSndBase d
 
-/-- Unchecked effective conjunction of two normal-form codes.
+/-- Effective conjunction of two normal-form codes at a common quantifier prefix and arity,
+unpairing the first `nf₁.quantifiers.depth` bound variables and returning `none` when the
+quantifier prefixes or arities differ. -/
+def and (nf₁ nf₂ : NormalFormCode) : Option NormalFormCode :=
+  if nf₁.quantifiers = nf₂.quantifiers ∧ nf₁.arity = nf₂.arity then
+    some ⟨nf₁.quantifiers, nf₁.arity,
+      Code.boolAnd
+        (Code.comp nf₁.matrix (unpairFstCode nf₁.quantifiers.depth))
+        (Code.comp nf₂.matrix (unpairSndCode nf₁.quantifiers.depth))⟩
+  else
+    none
 
-Retains the first operand's quantifier prefix `nf₁.quantifiers` and arity `nf₁.arity`, and
-combines the matrices while unpairing the first `nf₁.quantifiers.depth` bound variables.
-When `nf₁.quantifiers ≠ nf₂.quantifiers` or `nf₁.arity ≠ nf₂.arity`, the result may still
-satisfy `IsValid Z` (for instance, when `depth + arity` agrees), so validity alone does not
-guarantee Boolean conjunction semantics on a mismatch; see `evalList_and` and `holds_and` for
-the matching-shape hypotheses. -/
-def and (nf₁ nf₂ : NormalFormCode) : NormalFormCode :=
-  ⟨nf₁.quantifiers, nf₁.arity,
-    Code.boolAnd
-      (Code.comp nf₁.matrix (unpairFstCode nf₁.quantifiers.depth))
-      (Code.comp nf₂.matrix (unpairSndCode nf₁.quantifiers.depth))⟩
+/-- Effective disjunction of two normal-form codes at a common quantifier prefix and arity,
+unpairing the first `nf₁.quantifiers.depth` bound variables and returning `none` when the
+quantifier prefixes or arities differ. -/
+def or (nf₁ nf₂ : NormalFormCode) : Option NormalFormCode :=
+  if nf₁.quantifiers = nf₂.quantifiers ∧ nf₁.arity = nf₂.arity then
+    some ⟨nf₁.quantifiers, nf₁.arity,
+      Code.boolOr
+        (Code.comp nf₁.matrix (unpairFstCode nf₁.quantifiers.depth))
+        (Code.comp nf₂.matrix (unpairSndCode nf₁.quantifiers.depth))⟩
+  else
+    none
 
-/-- Unchecked effective disjunction of two normal-form codes.
-
-Retains the first operand's quantifier prefix `nf₁.quantifiers` and arity `nf₁.arity`, and
-combines the matrices while unpairing the first `nf₁.quantifiers.depth` bound variables.
-When `nf₁.quantifiers ≠ nf₂.quantifiers` or `nf₁.arity ≠ nf₂.arity`, the result may still
-satisfy `IsValid Z` (for instance, when `depth + arity` agrees), so validity alone does not
-guarantee Boolean disjunction semantics on a mismatch; see `evalList_or` and `holds_or` for
-the matching-shape hypotheses. -/
-def or (nf₁ nf₂ : NormalFormCode) : NormalFormCode :=
-  ⟨nf₁.quantifiers, nf₁.arity,
-    Code.boolOr
-      (Code.comp nf₁.matrix (unpairFstCode nf₁.quantifiers.depth))
-      (Code.comp nf₂.matrix (unpairSndCode nf₁.quantifiers.depth))⟩
-
-/-- Conjunction retains the first operand's quantifier prefix. -/
+/-- Conjunction returns `none` if and only if the quantifier prefixes or arities differ. -/
 @[simp]
-theorem quantifiers_and (nf₁ nf₂ : NormalFormCode) :
-    (nf₁.and nf₂).quantifiers = nf₁.quantifiers := (rfl)
+theorem and_eq_none_iff (nf₁ nf₂ : NormalFormCode) :
+    nf₁.and nf₂ = none ↔ nf₁.quantifiers ≠ nf₂.quantifiers ∨ nf₁.arity ≠ nf₂.arity := by
+  by_cases hq : nf₁.quantifiers = nf₂.quantifiers <;> by_cases ha : nf₁.arity = nf₂.arity <;>
+    simp [and, hq, ha]
 
-/-- Conjunction retains the first operand's arity. -/
+/-- Conjunction succeeds if and only if the quantifier prefixes and arities agree. -/
 @[simp]
-theorem arity_and (nf₁ nf₂ : NormalFormCode) : (nf₁.and nf₂).arity = nf₁.arity := (rfl)
+theorem isSome_and_iff (nf₁ nf₂ : NormalFormCode) :
+    (nf₁.and nf₂).isSome ↔ nf₁.quantifiers = nf₂.quantifiers ∧ nf₁.arity = nf₂.arity := by
+  by_cases h : nf₁.quantifiers = nf₂.quantifiers ∧ nf₁.arity = nf₂.arity <;> simp [and, h]
 
-/-- Disjunction retains the first operand's quantifier prefix. -/
-@[simp]
-theorem quantifiers_or (nf₁ nf₂ : NormalFormCode) :
-    (nf₁.or nf₂).quantifiers = nf₁.quantifiers := (rfl)
+/-- Conjunction produces a normal-form code if and only if the quantifier prefixes and arities
+agree. -/
+theorem exists_and_iff (nf₁ nf₂ : NormalFormCode) :
+    (∃ nf, nf₁.and nf₂ = some nf) ↔ nf₁.quantifiers = nf₂.quantifiers ∧ nf₁.arity = nf₂.arity := by
+  simpa [Option.isSome_iff_exists] using isSome_and_iff nf₁ nf₂
 
-/-- Disjunction retains the first operand's arity. -/
+/-- Disjunction returns `none` if and only if the quantifier prefixes or arities differ. -/
 @[simp]
-theorem arity_or (nf₁ nf₂ : NormalFormCode) : (nf₁.or nf₂).arity = nf₁.arity := (rfl)
+theorem or_eq_none_iff (nf₁ nf₂ : NormalFormCode) :
+    nf₁.or nf₂ = none ↔ nf₁.quantifiers ≠ nf₂.quantifiers ∨ nf₁.arity ≠ nf₂.arity := by
+  by_cases hq : nf₁.quantifiers = nf₂.quantifiers <;> by_cases ha : nf₁.arity = nf₂.arity <;>
+    simp [or, hq, ha]
+
+/-- Disjunction succeeds if and only if the quantifier prefixes and arities agree. -/
+@[simp]
+theorem isSome_or_iff (nf₁ nf₂ : NormalFormCode) :
+    (nf₁.or nf₂).isSome ↔ nf₁.quantifiers = nf₂.quantifiers ∧ nf₁.arity = nf₂.arity := by
+  by_cases h : nf₁.quantifiers = nf₂.quantifiers ∧ nf₁.arity = nf₂.arity <;> simp [or, h]
+
+/-- Disjunction produces a normal-form code if and only if the quantifier prefixes and arities
+agree. -/
+theorem exists_or_iff (nf₁ nf₂ : NormalFormCode) :
+    (∃ nf, nf₁.or nf₂ = some nf) ↔ nf₁.quantifiers = nf₂.quantifiers ∧ nf₁.arity = nf₂.arity := by
+  simpa [Option.isSome_iff_exists] using isSome_or_iff nf₁ nf₂
+
+/-- A successful conjunction witnesses that the operands have equal quantifier prefixes. -/
+theorem quantifiers_eq_of_and_eq_some {nf₁ nf₂ nf : NormalFormCode}
+    (h : nf₁.and nf₂ = some nf) : nf₁.quantifiers = nf₂.quantifiers :=
+  ((exists_and_iff nf₁ nf₂).1 ⟨nf, h⟩).1
+
+/-- A successful conjunction witnesses that the operands have equal arities. -/
+theorem arity_eq_of_and_eq_some {nf₁ nf₂ nf : NormalFormCode}
+    (h : nf₁.and nf₂ = some nf) : nf₁.arity = nf₂.arity :=
+  ((exists_and_iff nf₁ nf₂).1 ⟨nf, h⟩).2
+
+/-- A successful conjunction retains the operands' quantifier prefix. -/
+theorem quantifiers_and {nf₁ nf₂ nf : NormalFormCode} (h : nf₁.and nf₂ = some nf) :
+    nf.quantifiers = nf₁.quantifiers := by
+  unfold and at h
+  split_ifs at h
+  cases h
+  rfl
+
+/-- A successful conjunction retains the operands' arity. -/
+theorem arity_and {nf₁ nf₂ nf : NormalFormCode} (h : nf₁.and nf₂ = some nf) :
+    nf.arity = nf₁.arity := by
+  unfold and at h
+  split_ifs at h
+  cases h
+  rfl
+
+/-- A successful disjunction witnesses that the operands have equal quantifier prefixes. -/
+theorem quantifiers_eq_of_or_eq_some {nf₁ nf₂ nf : NormalFormCode}
+    (h : nf₁.or nf₂ = some nf) : nf₁.quantifiers = nf₂.quantifiers :=
+  ((exists_or_iff nf₁ nf₂).1 ⟨nf, h⟩).1
+
+/-- A successful disjunction witnesses that the operands have equal arities. -/
+theorem arity_eq_of_or_eq_some {nf₁ nf₂ nf : NormalFormCode}
+    (h : nf₁.or nf₂ = some nf) : nf₁.arity = nf₂.arity :=
+  ((exists_or_iff nf₁ nf₂).1 ⟨nf, h⟩).2
+
+/-- A successful disjunction retains the operands' quantifier prefix. -/
+theorem quantifiers_or {nf₁ nf₂ nf : NormalFormCode} (h : nf₁.or nf₂ = some nf) :
+    nf.quantifiers = nf₁.quantifiers := by
+  unfold or at h
+  split_ifs at h
+  cases h
+  rfl
+
+/-- A successful disjunction retains the operands' arity. -/
+theorem arity_or {nf₁ nf₂ nf : NormalFormCode} (h : nf₁.or nf₂ = some nf) :
+    nf.arity = nf₁.arity := by
+  unfold or at h
+  split_ifs at h
+  cases h
+  rfl
 
 /-- Conjunction is primitive recursive on normal-form codes. -/
-theorem primrec₂_and : Primrec₂ and :=
-  (primrec_mk.comp
-    ((primrec_quantifiers.comp Primrec.fst).pair
-      ((primrec_arity.comp Primrec.fst).pair
-        (Code.primrec₂_boolAnd.comp
-          (Code.primrec₂_comp.comp (primrec_matrix.comp Primrec.fst)
-            ((Code.primrec_paramCode unpairFstBase).comp
-              (QuantifierPrefix.primrec_depth.comp (primrec_quantifiers.comp Primrec.fst))))
-          (Code.primrec₂_comp.comp (primrec_matrix.comp Primrec.snd)
-            ((Code.primrec_paramCode unpairSndBase).comp
-              (QuantifierPrefix.primrec_depth.comp
-                (primrec_quantifiers.comp Primrec.fst)))))))).to₂
+theorem primrec₂_and : Primrec₂ and := by
+  have hcond : PrimrecPred fun p : NormalFormCode × NormalFormCode =>
+      p.1.quantifiers = p.2.quantifiers ∧ p.1.arity = p.2.arity :=
+    (Primrec.eq.comp (primrec_quantifiers.comp Primrec.fst)
+      (primrec_quantifiers.comp Primrec.snd)).and
+      (Primrec.eq.comp (primrec_arity.comp Primrec.fst)
+        (primrec_arity.comp Primrec.snd))
+  have hval : Primrec fun p : NormalFormCode × NormalFormCode =>
+      (some ⟨p.1.quantifiers, p.1.arity,
+        Code.boolAnd
+          (Code.comp p.1.matrix (unpairFstCode p.1.quantifiers.depth))
+          (Code.comp p.2.matrix (unpairSndCode p.1.quantifiers.depth))⟩ :
+        Option NormalFormCode) :=
+    Primrec.option_some.comp
+      (primrec_mk.comp
+        ((primrec_quantifiers.comp Primrec.fst).pair
+          ((primrec_arity.comp Primrec.fst).pair
+            (Code.primrec₂_boolAnd.comp
+              (Code.primrec₂_comp.comp (primrec_matrix.comp Primrec.fst)
+                ((Code.primrec_paramCode unpairFstBase).comp
+                  (QuantifierPrefix.primrec_depth.comp (primrec_quantifiers.comp Primrec.fst))))
+              (Code.primrec₂_comp.comp (primrec_matrix.comp Primrec.snd)
+                ((Code.primrec_paramCode unpairSndBase).comp
+                  (QuantifierPrefix.primrec_depth.comp
+                    (primrec_quantifiers.comp Primrec.fst))))))))
+  exact (Primrec.ite hcond hval (Primrec.const none)).to₂
 
 /-- Disjunction is primitive recursive on normal-form codes. -/
-theorem primrec₂_or : Primrec₂ or :=
-  (primrec_mk.comp
-    ((primrec_quantifiers.comp Primrec.fst).pair
-      ((primrec_arity.comp Primrec.fst).pair
-        (Code.primrec₂_boolOr.comp
-          (Code.primrec₂_comp.comp (primrec_matrix.comp Primrec.fst)
-            ((Code.primrec_paramCode unpairFstBase).comp
-              (QuantifierPrefix.primrec_depth.comp (primrec_quantifiers.comp Primrec.fst))))
-          (Code.primrec₂_comp.comp (primrec_matrix.comp Primrec.snd)
-            ((Code.primrec_paramCode unpairSndBase).comp
-              (QuantifierPrefix.primrec_depth.comp
-                (primrec_quantifiers.comp Primrec.fst)))))))).to₂
+theorem primrec₂_or : Primrec₂ or := by
+  have hcond : PrimrecPred fun p : NormalFormCode × NormalFormCode =>
+      p.1.quantifiers = p.2.quantifiers ∧ p.1.arity = p.2.arity :=
+    (Primrec.eq.comp (primrec_quantifiers.comp Primrec.fst)
+      (primrec_quantifiers.comp Primrec.snd)).and
+      (Primrec.eq.comp (primrec_arity.comp Primrec.fst)
+        (primrec_arity.comp Primrec.snd))
+  have hval : Primrec fun p : NormalFormCode × NormalFormCode =>
+      (some ⟨p.1.quantifiers, p.1.arity,
+        Code.boolOr
+          (Code.comp p.1.matrix (unpairFstCode p.1.quantifiers.depth))
+          (Code.comp p.2.matrix (unpairSndCode p.1.quantifiers.depth))⟩ :
+        Option NormalFormCode) :=
+    Primrec.option_some.comp
+      (primrec_mk.comp
+        ((primrec_quantifiers.comp Primrec.fst).pair
+          ((primrec_arity.comp Primrec.fst).pair
+            (Code.primrec₂_boolOr.comp
+              (Code.primrec₂_comp.comp (primrec_matrix.comp Primrec.fst)
+                ((Code.primrec_paramCode unpairFstBase).comp
+                  (QuantifierPrefix.primrec_depth.comp (primrec_quantifiers.comp Primrec.fst))))
+              (Code.primrec₂_comp.comp (primrec_matrix.comp Primrec.snd)
+                ((Code.primrec_paramCode unpairSndBase).comp
+                  (QuantifierPrefix.primrec_depth.comp
+                    (primrec_quantifiers.comp Primrec.fst))))))))
+  exact (Primrec.ite hcond hval (Primrec.const none)).to₂
 
 -- Shared evaluation of the two unpaired matrix sub-programs on a list of the expected length.
 private theorem eval_unpair_components {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
@@ -232,126 +330,122 @@ private theorem eval_unpair_components {Z : Set ℕ} {nf₁ nf₂ : NormalFormCo
   · rw [unpairSndCode, Code.eval_comp_paramCode, encode_nat, eval_unpairSndBase, PFun.some_bind]
     exact hb₂
 
-/-- Conjunction preserves validity when both operands share prefix and arity. -/
-theorem IsValid.and {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
-    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z)
-    (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity) :
-    (nf₁.and nf₂).IsValid Z := by
+/-- Conjunction preserves validity when it succeeds. -/
+theorem IsValid.and {Z : Set ℕ} {nf₁ nf₂ nf : NormalFormCode}
+    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z) (h : nf₁.and nf₂ = some nf) :
+    nf.IsValid Z := by
+  unfold NormalFormCode.and at h
+  split_ifs at h with hshape
+  cases h
   refine isValid_iff.2 fun l hl => ?_
-  obtain ⟨b₁, b₂, _, _, hm₁, hm₂⟩ := eval_unpair_components h₁ h₂ hq ha hl
+  obtain ⟨b₁, b₂, _, _, hm₁, hm₂⟩ := eval_unpair_components h₁ h₂ hshape.1 hshape.2 hl
   refine ⟨b₁ && b₂, ?_⟩
-  rw [NormalFormCode.and, Code.eval_boolAnd Z.oracle _ _ (encode l) b₁ b₂ hm₁ hm₂]
+  rw [isValid_mk] at *
+  rw [Code.eval_boolAnd Z.oracle _ _ (encode l) b₁ b₂ hm₁ hm₂]
   exact Part.mem_some _
 
-/-- Disjunction preserves validity when both operands share prefix and arity. -/
-theorem IsValid.or {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
-    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z)
-    (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity) :
-    (nf₁.or nf₂).IsValid Z := by
+/-- Disjunction preserves validity when it succeeds. -/
+theorem IsValid.or {Z : Set ℕ} {nf₁ nf₂ nf : NormalFormCode}
+    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z) (h : nf₁.or nf₂ = some nf) :
+    nf.IsValid Z := by
+  unfold NormalFormCode.or at h
+  split_ifs at h with hshape
+  cases h
   refine isValid_iff.2 fun l hl => ?_
-  obtain ⟨b₁, b₂, _, _, hm₁, hm₂⟩ := eval_unpair_components h₁ h₂ hq ha hl
+  obtain ⟨b₁, b₂, _, _, hm₁, hm₂⟩ := eval_unpair_components h₁ h₂ hshape.1 hshape.2 hl
   refine ⟨b₁ || b₂, ?_⟩
-  rw [NormalFormCode.or, Code.eval_boolOr Z.oracle _ _ (encode l) b₁ b₂ hm₁ hm₂]
+  rw [Code.eval_boolOr Z.oracle _ _ (encode l) b₁ b₂ hm₁ hm₂]
   exact Part.mem_some _
 
--- Shared matrix equivalence for conjunction and disjunction on paired bound variables.
-private theorem matrixHolds_and_or {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
-    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z)
-    (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity)
+/-- Matrix semantics for a successful conjunction on variable lists of the expected length: the
+bound prefix of length `nf₁.quantifiers.depth` is unpaired coordinatewise while the free variables
+are kept. -/
+theorem matrixHolds_and {Z : Set ℕ} {nf₁ nf₂ nf : NormalFormCode}
+    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z) (h : nf₁.and nf₂ = some nf)
     {l : List ℕ} (hl : l.length = nf₁.quantifiers.depth + nf₁.arity) :
-    ((nf₁.and nf₂).MatrixHolds Z l ↔
+    nf.MatrixHolds Z l ↔
       nf₁.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
         l.drop nf₁.quantifiers.depth) ∧
       nf₂.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
-        l.drop nf₁.quantifiers.depth)) ∧
-    ((nf₁.or nf₂).MatrixHolds Z l ↔
-      nf₁.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
-        l.drop nf₁.quantifiers.depth) ∨
-      nf₂.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
-        l.drop nf₁.quantifiers.depth)) := by
-  obtain ⟨b₁, b₂, hb₁, hb₂, hm₁, hm₂⟩ := eval_unpair_components h₁ h₂ hq ha hl
+        l.drop nf₁.quantifiers.depth) := by
+  unfold and at h
+  split_ifs at h with hshape
+  cases h
+  obtain ⟨b₁, b₂, hb₁, hb₂, hm₁, hm₂⟩ := eval_unpair_components h₁ h₂ hshape.1 hshape.2 hl
   dsimp only [unpairFst, unpairSnd] at hb₁ hb₂
   have hand := Code.eval_boolAnd Z.oracle _ _ (encode l) b₁ b₂ hm₁ hm₂
-  have hor := Code.eval_boolOr Z.oracle _ _ (encode l) b₁ b₂ hm₁ hm₂
-  simp only [matrixHolds_iff, and, or, hand, hor, Part.eq_some_iff.2 hb₁, Part.eq_some_iff.2 hb₂,
+  simp only [matrixHolds_iff, hand, Part.eq_some_iff.2 hb₁, Part.eq_some_iff.2 hb₂,
     Part.mem_some_iff]
   cases b₁ <;> cases b₂ <;> simp
 
-/-- Matrix semantics for conjunction on variable lists of the expected length: the bound prefix of
-length `nf₁.quantifiers.depth` is unpaired coordinatewise while the free variables are kept. -/
-theorem matrixHolds_and {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
-    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z)
-    (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity)
+/-- Matrix semantics for a successful disjunction on variable lists of the expected length: the
+bound prefix of length `nf₁.quantifiers.depth` is unpaired coordinatewise while the free variables
+are kept. -/
+theorem matrixHolds_or {Z : Set ℕ} {nf₁ nf₂ nf : NormalFormCode}
+    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z) (h : nf₁.or nf₂ = some nf)
     {l : List ℕ} (hl : l.length = nf₁.quantifiers.depth + nf₁.arity) :
-    (nf₁.and nf₂).MatrixHolds Z l ↔
-      nf₁.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
-        l.drop nf₁.quantifiers.depth) ∧
-      nf₂.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
-        l.drop nf₁.quantifiers.depth) :=
-  (matrixHolds_and_or h₁ h₂ hq ha hl).1
-
-/-- Matrix semantics for disjunction on variable lists of the expected length: the bound prefix of
-length `nf₁.quantifiers.depth` is unpaired coordinatewise while the free variables are kept. -/
-theorem matrixHolds_or {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
-    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z)
-    (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity)
-    {l : List ℕ} (hl : l.length = nf₁.quantifiers.depth + nf₁.arity) :
-    (nf₁.or nf₂).MatrixHolds Z l ↔
+    nf.MatrixHolds Z l ↔
       nf₁.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
         l.drop nf₁.quantifiers.depth) ∨
       nf₂.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
-        l.drop nf₁.quantifiers.depth) :=
-  (matrixHolds_and_or h₁ h₂ hq ha hl).2
+        l.drop nf₁.quantifiers.depth) := by
+  unfold or at h
+  split_ifs at h with hshape
+  cases h
+  obtain ⟨b₁, b₂, hb₁, hb₂, hm₁, hm₂⟩ := eval_unpair_components h₁ h₂ hshape.1 hshape.2 hl
+  dsimp only [unpairFst, unpairSnd] at hb₁ hb₂
+  have hor := Code.eval_boolOr Z.oracle _ _ (encode l) b₁ b₂ hm₁ hm₂
+  simp only [matrixHolds_iff, hor, Part.eq_some_iff.2 hb₁, Part.eq_some_iff.2 hb₂,
+    Part.mem_some_iff]
+  cases b₁ <;> cases b₂ <;> simp
 
-/-- Semantic equation for conjunction on lists of the expected arity. -/
-theorem evalList_and {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
-    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z)
-    (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity)
+/-- Semantic equation for a successful conjunction on lists of the expected arity. -/
+theorem evalList_and {Z : Set ℕ} {nf₁ nf₂ nf : NormalFormCode}
+    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z) (h : nf₁.and nf₂ = some nf)
     {xs : List ℕ} (hxs : xs.length = nf₁.arity) :
-    (nf₁.and nf₂).EvalList Z xs ↔ nf₁.EvalList Z xs ∧ nf₂.EvalList Z xs := by
-  rw [evalList_iff, evalList_iff, evalList_iff, quantifiers_and, ← hq]
+    nf.EvalList Z xs ↔ nf₁.EvalList Z xs ∧ nf₂.EvalList Z xs := by
+  have hq := quantifiers_eq_of_and_eq_some h
+  rw [evalList_iff, evalList_iff, evalList_iff, quantifiers_and h, ← hq]
   refine (QuantifierPrefix.eval_congr_append fun bs hbs => ?_).trans
     (QuantifierPrefix.eval_and_unpair_iff nf₁.quantifiers (nf₁.MatrixHolds Z)
       (nf₂.MatrixHolds Z) xs xs xs)
   simpa [List.take_left' hbs, List.drop_left' hbs] using
-    matrixHolds_and h₁ h₂ hq ha (l := bs ++ xs) (by simp [hbs, hxs])
+    matrixHolds_and h₁ h₂ h (l := bs ++ xs) (by simp [hbs, hxs])
 
-/-- Semantic equation for disjunction on lists of the expected arity. -/
-theorem evalList_or {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
-    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z)
-    (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity)
+/-- Semantic equation for a successful disjunction on lists of the expected arity. -/
+theorem evalList_or {Z : Set ℕ} {nf₁ nf₂ nf : NormalFormCode}
+    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z) (h : nf₁.or nf₂ = some nf)
     {xs : List ℕ} (hxs : xs.length = nf₁.arity) :
-    (nf₁.or nf₂).EvalList Z xs ↔ nf₁.EvalList Z xs ∨ nf₂.EvalList Z xs := by
-  rw [evalList_iff, evalList_iff, evalList_iff, quantifiers_or, ← hq]
+    nf.EvalList Z xs ↔ nf₁.EvalList Z xs ∨ nf₂.EvalList Z xs := by
+  have hq := quantifiers_eq_of_or_eq_some h
+  rw [evalList_iff, evalList_iff, evalList_iff, quantifiers_or h, ← hq]
   refine (QuantifierPrefix.eval_congr_append fun bs hbs => ?_).trans
     (QuantifierPrefix.eval_or_unpair_iff nf₁.quantifiers (nf₁.MatrixHolds Z)
       (nf₂.MatrixHolds Z) xs xs xs)
   simpa [List.take_left' hbs, List.drop_left' hbs] using
-    matrixHolds_or h₁ h₂ hq ha (l := bs ++ xs) (by simp [hbs, hxs])
+    matrixHolds_or h₁ h₂ h (l := bs ++ xs) (by simp [hbs, hxs])
 
-/-- Semantic equation for conjunction on tuples. -/
-theorem holds_and {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
-    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z)
-    (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity)
-    (x : Fin (nf₁.and nf₂).arity → ℕ) :
-    (nf₁.and nf₂).Holds Z x ↔
-      nf₁.Holds Z (x ∘ Fin.cast (arity_and nf₁ nf₂).symm) ∧
-      nf₂.Holds Z (x ∘ Fin.cast ((arity_and nf₁ nf₂).trans ha).symm) := by
-  simp only [holds_iff, Function.comp_def, ← List.ofFn_congr (arity_and nf₁ nf₂) x,
-    ← List.ofFn_congr ((arity_and nf₁ nf₂).trans ha) x]
-  exact evalList_and h₁ h₂ hq ha (by simp)
+/-- Semantic equation for a successful conjunction on tuples. -/
+theorem holds_and {Z : Set ℕ} {nf₁ nf₂ nf : NormalFormCode}
+    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z) (h : nf₁.and nf₂ = some nf)
+    (x : Fin nf.arity → ℕ) :
+    nf.Holds Z x ↔
+      nf₁.Holds Z (x ∘ Fin.cast (arity_and h).symm) ∧
+      nf₂.Holds Z (x ∘ Fin.cast ((arity_and h).trans (arity_eq_of_and_eq_some h)).symm) := by
+  simp only [holds_iff, Function.comp_def, ← List.ofFn_congr (arity_and h) x,
+    ← List.ofFn_congr ((arity_and h).trans (arity_eq_of_and_eq_some h)) x]
+  exact evalList_and h₁ h₂ h (by simp [arity_and h])
 
-/-- Semantic equation for disjunction on tuples. -/
-theorem holds_or {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
-    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z)
-    (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity)
-    (x : Fin (nf₁.or nf₂).arity → ℕ) :
-    (nf₁.or nf₂).Holds Z x ↔
-      nf₁.Holds Z (x ∘ Fin.cast (arity_or nf₁ nf₂).symm) ∨
-      nf₂.Holds Z (x ∘ Fin.cast ((arity_or nf₁ nf₂).trans ha).symm) := by
-  simp only [holds_iff, Function.comp_def, ← List.ofFn_congr (arity_or nf₁ nf₂) x,
-    ← List.ofFn_congr ((arity_or nf₁ nf₂).trans ha) x]
-  exact evalList_or h₁ h₂ hq ha (by simp)
+/-- Semantic equation for a successful disjunction on tuples. -/
+theorem holds_or {Z : Set ℕ} {nf₁ nf₂ nf : NormalFormCode}
+    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z) (h : nf₁.or nf₂ = some nf)
+    (x : Fin nf.arity → ℕ) :
+    nf.Holds Z x ↔
+      nf₁.Holds Z (x ∘ Fin.cast (arity_or h).symm) ∨
+      nf₂.Holds Z (x ∘ Fin.cast ((arity_or h).trans (arity_eq_of_or_eq_some h)).symm) := by
+  simp only [holds_iff, Function.comp_def, ← List.ofFn_congr (arity_or h) x,
+    ← List.ofFn_congr ((arity_or h).trans (arity_eq_of_or_eq_some h)) x]
+  exact evalList_or h₁ h₂ h (by simp [arity_or h])
 
 end NormalFormCode
 
