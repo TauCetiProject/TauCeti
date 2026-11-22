@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Bilinear
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Differentiation
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Inclusion
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.LowOrder
-public import TauCeti.Analysis.PDE.Parabolic.Holder.InitialData
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Operator
 import Mathlib.Analysis.Normed.Operator.Prod
 
 /-!
@@ -32,11 +32,12 @@ operators of the Schauder theory of parabolic equations at every order of differ
 statement that the initial-data operator is an isomorphism for uniformly elliptic coefficients of
 order `k` is the order-`k` form of the Cauchy problem.
 
-At order `k = 0` these are the operators `TauCeti.ParabolicC2HolderSpace.parabolicOperatorL` and
-`TauCeti.ParabolicC2HolderSpace.initialDataL` on `C_b^{2+α,1+α/2}`, under the identifications
-`TauCeti.ParabolicCkHolderSpace.equivHolderSpace` and
+At order `k = 0` the parabolic operator is the operator
+`TauCeti.ParabolicC2HolderSpace.parabolicOperatorL` on `C_b^{2+α,1+α/2}`, under the
+identifications `TauCeti.ParabolicCkHolderSpace.equivHolderSpace` and
 `TauCeti.ParabolicCkHolderSpace.equivParabolicC2HolderSpace`
-(`TauCeti.ParabolicCkHolderSpace.equivHolderSpace_parabolicOperatorL`).
+(`TauCeti.ParabolicCkHolderSpace.equivHolderSpace_parabolicOperatorL`); the initial-data operator
+is the order-`k` form of `TauCeti.ParabolicC2HolderSpace.initialDataL`.
 
 ## Main declarations
 
@@ -46,8 +47,10 @@ At order `k = 0` these are the operators `TauCeti.ParabolicC2HolderSpace.parabol
   (`TauCeti.ParabolicCkHolderSpace.parabolicOperatorL_apply`) and in terms of the derivatives of
   its time slices (`TauCeti.ParabolicCkHolderSpace.parabolicOperatorL_slabMk`).
 * `TauCeti.ParabolicCkHolderSpace.initialDataL`: the operator `u ↦ (P u, u(·, a))`.
-* `TauCeti.ParabolicCkHolderSpace.norm_parabolicOperatorL_le` and
-  `TauCeti.ParabolicCkHolderSpace.norm_parabolicOperatorL_sub_le`: the operator bound and the
+* `TauCeti.ParabolicCkHolderSpace.norm_parabolicOperatorL_le`,
+  `TauCeti.ParabolicCkHolderSpace.norm_parabolicOperatorL_sub_le`,
+  `TauCeti.ParabolicCkHolderSpace.norm_initialDataL_le` and
+  `TauCeti.ParabolicCkHolderSpace.norm_initialDataL_sub_le`: the operator bounds and the
   Lipschitz dependence on the coefficients.
 * `TauCeti.ParabolicCkHolderSpace.equivHolderSpace_parabolicOperatorL`: agreement with the
   operator on `C_b^{2+α,1+α/2}` at order zero.
@@ -136,16 +139,6 @@ private theorem norm_id_compParabolicCkHolder₂_apply_le {G : Type*} [NormedAdd
       ≤ 21 * (k + 1) ^ 2 * 2 ^ k * 1 * ‖D‖ * ‖v‖ := by gcongr
     _ = _ := by ring
 
-/-- The inclusion of order `n + 1` into order `n` has norm at most `8 (n + 1)²`. -/
-private theorem norm_inclusionL_le_mul_sq {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (n : ℕ) : ‖inclusionL (k := n) (α := α) (E := E) (F := G) (hab := hab) hα‖ ≤
-      8 * (n + 1) ^ 2 := by
-  refine (norm_inclusionL_le hα).trans ?_
-  have := card_parabolicDerivPairs_le n
-  rw [mul_comm]
-  gcongr
-  exact_mod_cast this
-
 /-- The bound on the spatial operator. -/
 private theorem norm_spatialOperator_le (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
     ‖spatialOperator hα A B C u‖ ≤ 21 * (k + 1) ^ 2 * 2 ^ k *
@@ -161,14 +154,14 @@ private theorem norm_spatialOperator_le (u : ParabolicCkHolderSpace (k + 2) α E
     (norm_spatialFDerivL_le _).trans (norm_spatialFDerivL_le u)
   have h₁ : ‖inclusionL hα (spatialFDerivL (k + 1) α E F hab u)‖ ≤ 8 * (k + 1) ^ 2 * ‖u‖ :=
     ((inclusionL hα).le_opNorm _).trans
-      (mul_le_mul (norm_inclusionL_le_mul_sq hα k) (norm_spatialFDerivL_le u) (norm_nonneg _)
+      (mul_le_mul (norm_inclusionL_le_mul_sq hα) (norm_spatialFDerivL_le u) (norm_nonneg _)
         (by positivity))
   have h₀ : ‖inclusionL hα (inclusionL hα u)‖ ≤
       8 * (k + 1) ^ 2 * (8 * ((k + 1 : ℕ) + 1) ^ 2 * ‖u‖) := by
     refine ((inclusionL hα).le_opNorm _).trans
-      (mul_le_mul (norm_inclusionL_le_mul_sq hα k) (((inclusionL hα).le_opNorm _).trans ?_)
+      (mul_le_mul (norm_inclusionL_le_mul_sq hα) (((inclusionL hα).le_opNorm _).trans ?_)
         (norm_nonneg _) (by positivity))
-    exact mul_le_mul_of_nonneg_right (norm_inclusionL_le_mul_sq hα (k + 1)) (norm_nonneg _)
+    exact mul_le_mul_of_nonneg_right (norm_inclusionL_le_mul_sq (k := k + 1) hα) (norm_nonneg _)
   have hL : ‖spatialOperator hα A B C u‖ ≤
       ‖(ContinuousLinearMap.id ℝ _).compParabolicCkHolder₂ hα A
           (spatialFDerivL k α E (E →L[ℝ] F) hab (spatialFDerivL (k + 1) α E F hab u))‖ +
@@ -286,6 +279,12 @@ theorem initialDataL_def :
     initialDataL hα A B C =
       (parabolicOperatorL hα A B C).prod (spatialTraceL ⟨a, left_mem_Icc.2 hab.le⟩) := (rfl)
 
+/-- The data of a function consist of its forcing and its initial spatial trace. -/
+theorem initialDataL_apply (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
+    initialDataL hα A B C u =
+      (parabolicOperatorL hα A B C u, u.spatialTrace ⟨a, left_mem_Icc.2 hab.le⟩) := by
+  simp [initialDataL_def]
+
 /-- The first data component is the parabolic operator. -/
 @[simp]
 theorem initialDataL_fst (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
@@ -296,6 +295,14 @@ theorem initialDataL_fst (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
 theorem initialDataL_snd (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
     (initialDataL hα A B C u).2 = u.spatialTrace ⟨a, left_mem_Icc.2 hab.le⟩ := by
   simp [initialDataL_def]
+
+/-- The data operator has the same coefficient bound as its parabolic component. -/
+theorem norm_initialDataL_le :
+    ‖initialDataL hα A B C‖ ≤ 1 + 21 * (k + 1) ^ 2 * 2 ^ k *
+      (‖A‖ + 8 * (k + 1) ^ 2 * ‖B‖ + 64 * (k + 1) ^ 2 * (k + 2) ^ 2 * ‖C‖) := by
+  rw [initialDataL_def, ContinuousLinearMap.opNorm_prod, Prod.norm_def]
+  exact max_le (norm_parabolicOperatorL_le hα A B C)
+    ((norm_spatialTraceL_le_one _).trans (le_add_of_nonneg_right (by positivity)))
 
 end Spatial
 
@@ -334,15 +341,28 @@ theorem norm_parabolicOperatorL_sub_le :
   rw [parabolicOperatorL_sub_parabolicOperatorL, norm_sub_rev A, norm_sub_rev B, norm_sub_rev C]
   exact norm_spatialOperatorL_le hα _ _ _
 
+/-- Initial traces cancel in the difference of two data operators. -/
+theorem initialDataL_sub_initialDataL :
+    initialDataL hα A B C - initialDataL hα A' B' C' =
+      (parabolicOperatorL hα A B C - parabolicOperatorL hα A' B' C').prod 0 := by
+  ext u <;> simp
+
 /-- Initial traces cancel in a difference of initial-data operators, so the perturbation norm is
 that of the parabolic operators. -/
 theorem norm_initialDataL_sub :
     ‖initialDataL hα A B C - initialDataL hα A' B' C'‖ =
       ‖parabolicOperatorL hα A B C - parabolicOperatorL hα A' B' C'‖ := by
-  have h : initialDataL hα A B C - initialDataL hα A' B' C' =
-      (parabolicOperatorL hα A B C - parabolicOperatorL hα A' B' C').prod 0 := by
-    ext u <;> simp
-  rw [h, ContinuousLinearMap.opNorm_prod, Prod.norm_def, norm_zero, max_eq_left (norm_nonneg _)]
+  rw [initialDataL_sub_initialDataL, ContinuousLinearMap.opNorm_prod, Prod.norm_def, norm_zero,
+    max_eq_left (norm_nonneg _)]
+
+/-- A coefficient perturbation has the same explicit bound for the full initial-data operator as
+for its parabolic component. -/
+theorem norm_initialDataL_sub_le :
+    ‖initialDataL hα A B C - initialDataL hα A' B' C'‖ ≤
+      21 * (k + 1) ^ 2 * 2 ^ k *
+        (‖A - A'‖ + 8 * (k + 1) ^ 2 * ‖B - B'‖ + 64 * (k + 1) ^ 2 * (k + 2) ^ 2 * ‖C - C'‖) := by
+  rw [norm_initialDataL_sub]
+  exact norm_parabolicOperatorL_sub_le hα
 
 end Coefficients
 
@@ -360,19 +380,25 @@ theorem equivHolderSpace_parabolicOperatorL (hα : α ≤ 1)
       ParabolicC2HolderSpace.parabolicOperatorL hα (equivHolderSpace A) (equivHolderSpace B)
         (equivHolderSpace C) (equivParabolicC2HolderSpace u) := by
   refine HolderSpace.ext fun p ↦ ?_
-  rw [← slabMk_space_slabTime p]
-  set x := (p : ParabolicSpaceTime E).space
-  set t := slabTime p
+  obtain ⟨x, t, rfl⟩ : ∃ x t, p = slabMk x t := ⟨_, _, (slabMk_space_slabTime p).symm⟩
   have hslice : (fun y ↦ equivParabolicC2HolderSpace u (slabMk y t)) = fun y ↦ u (slabMk y t) :=
     funext fun y ↦ equivParabolicC2HolderSpace_apply u _
-  have htime : ParabolicC2HolderSpace.timeExtension hab.le (equivParabolicC2HolderSpace u) x =
-      ParabolicC2HolderSpace.timeExtension hab.le u x := by
+  -- The time derivative, the gradient and the Hessian of the order-two map at `(x, t)` are the
+  -- derivatives of the time slices of `u`, which `parabolicOperatorL_slabMk` uses.
+  have htime : ParabolicC2HolderSpace.timeDerivL (equivParabolicC2HolderSpace u) (slabMk x t) =
+      derivWithin (ParabolicC2HolderSpace.timeExtension hab.le u x) (Icc a b) t := by
+    rw [← ParabolicC2HolderSpace.derivWithin_eq]
     simp only [ParabolicC2HolderSpace.timeExtension_def, equivParabolicC2HolderSpace_apply]
-  rw [equivHolderSpace_apply, parabolicOperatorL_slabMk,
-    ParabolicC2HolderSpace.parabolicOperatorL_apply, equivHolderSpace_apply,
-    equivHolderSpace_apply, equivHolderSpace_apply, equivParabolicC2HolderSpace_apply,
-    ← ParabolicC2HolderSpace.derivWithin_eq, htime, ← ParabolicC2HolderSpace.fderiv_fderiv_eq,
-    hslice, ← ParabolicC2HolderSpace.fderiv_eq, hslice]
+  have hgrad : ParabolicC2HolderSpace.spatialFDerivL (equivParabolicC2HolderSpace u) (slabMk x t) =
+      fderiv ℝ (fun y ↦ u (slabMk y t)) x := by
+    rw [← ParabolicC2HolderSpace.fderiv_eq, hslice]
+  have hhess :
+      ParabolicC2HolderSpace.spatialSecondFDerivL (equivParabolicC2HolderSpace u) (slabMk x t) =
+        fderiv ℝ (fderiv ℝ fun y ↦ u (slabMk y t)) x := by
+    rw [← ParabolicC2HolderSpace.fderiv_fderiv_eq, hslice]
+  simp only [equivHolderSpace_apply, parabolicOperatorL_slabMk,
+    ParabolicC2HolderSpace.parabolicOperatorL_apply, htime, hgrad, hhess,
+    equivParabolicC2HolderSpace_apply]
 
 end ParabolicCkHolderSpace
 

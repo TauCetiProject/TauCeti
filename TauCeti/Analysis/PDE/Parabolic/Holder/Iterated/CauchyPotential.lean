@@ -396,6 +396,9 @@ theorem timeDerivL_heatCauchyPotentialL_eq_laplacian (g : CkHolderSpace (k + 2) 
       heatCauchyPotential g (p : ParabolicSpaceTime E).time := by
     funext y
     simp
+  -- The field `D_t^1 D_x^0` is the potential of the `0`-th curried field of `Δ^[1] g`; read through
+  -- the curry equivalence it is the potential of `Δ g` (`hcomp`), because the potential commutes
+  -- with continuous linear equivalences (`hL`). That is the Laplacian of the potential of `g`.
   rw [timeDerivL_apply, mixedDerivL_heatCauchyPotentialL g (by omega), hslice,
     laplacian_heatCauchyPotential (g.contDiff.of_le (by norm_cast; omega))
       g.norm_fderiv_le_iteratedFDeriv_one g.norm_fderiv_fderiv_le_iteratedFDeriv_two, ← hcomp, hL]

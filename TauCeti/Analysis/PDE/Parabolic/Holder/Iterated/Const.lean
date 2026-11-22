@@ -13,8 +13,8 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Basic
 A constant map `(x, t) ↦ c` on a slab `E × [a, b]` lies in the bounded parabolic Hölder space
 `C_{par,b}^{k+α}` of every order `k` (`TauCeti.ParabolicCkHolderSpace.const`): its field
 `D_t^0 D_x^0` is `c` and all its other mixed derivatives vanish. Its norm is at most `2 ‖c‖`
-(`TauCeti.ParabolicCkHolderSpace.norm_const_le`), since the norm counts the supremum of the value
-once as a bounded field and once more in a Hölder norm.
+(`TauCeti.ParabolicCkHolderSpace.norm_const_le`): for `k ≤ 1` the norm counts the supremum of the
+value once as a bounded field and once more in a Hölder norm, and for `k ≥ 2` it is `‖c‖`.
 
 Constant maps are the coefficients of constant-coefficient operators. For instance the heat
 operator `∂ₜ - Δ` is the parabolic operator whose second-order coefficient is the constant trace
@@ -134,9 +134,10 @@ theorem mixedDerivL_const_succ (c : F) (r m : ℕ) :
   · rw [const, mixedDerivL_mk _ _ _ _ h, constField_succ_right]
   · rw [mixedDerivL_of_lt (by omega), _root_.zero_apply]
 
-/-- A constant map has norm at most twice the norm of its value. The factor `2` comes from the
-norm, which counts the supremum of the value once as a bounded field and once more in a Hölder
-norm (of the field itself for `k = 0`, of its time slices for `k = 1`). -/
+/-- A constant map has norm at most twice the norm of its value, uniformly in `k`. The factor `2`
+is needed only for `k ≤ 1`, where the norm counts the supremum of the value once as a bounded field
+and once more in a Hölder norm (of the field itself for `k = 0`, of its time slices for `k = 1`).
+For `k ≥ 2` the value enters only as a bounded field, and the norm is `‖c‖`. -/
 theorem norm_const_le (c : F) : ‖(const c : ParabolicCkHolderSpace k α E F hab)‖ ≤ 2 * ‖c‖ := by
   have hfield (p : ℕ × ℕ) (hp : p ∈ parabolicDerivPairs k) :
       mixedDerivL p.1 p.2 (const c : ParabolicCkHolderSpace k α E F hab) =

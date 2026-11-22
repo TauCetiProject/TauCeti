@@ -20,11 +20,11 @@ isomorphism
 `C_{par,b}^{(k+2)+α}(ℝⁿ × [0, T]) ≃ C_{par,b}^{k+α}(ℝⁿ × [0, T]) × C_b^{k+2,α}(ℝⁿ)`
 
 (`TauCeti.ParabolicCkHolderSpace.heatInitialDataCLE`), whose inverse is the Duhamel potential of
-the forcing plus the Cauchy potential of the initial datum. At `k = 0` this is the isomorphism
-`TauCeti.heatInitialDataCLE` on `C_b^{2+α,1+α/2}`. It is the starting point of the method of
-continuity for parabolic equations with coefficients in `C_{par,b}^{k+α}`, whose initial-data
-operators `TauCeti.ParabolicCkHolderSpace.initialDataL` contain the heat data operator as the one
-with coefficients `(const tr, 0, 0)`.
+the forcing plus the Cauchy potential of the initial datum. It is the order-`k` form of the
+isomorphism `TauCeti.heatInitialDataCLE` on `C_b^{2+α,1+α/2}`, and the starting point of the
+method of continuity for parabolic equations with coefficients in `C_{par,b}^{k+α}`, whose
+initial-data operators `TauCeti.ParabolicCkHolderSpace.initialDataL` contain the heat data
+operator as the one with coefficients `(const tr, 0, 0)`.
 
 Existence holds on every finite-dimensional real inner product space with Banach-valued data:
 the potentials solve the heat equation at every order
@@ -42,8 +42,10 @@ are one-sided at the endpoints of the slab.
   and Cauchy potentials.
 * `TauCeti.ParabolicCkHolderSpace.heatInitialDataL_heatSolutionL`: existence.
 * `TauCeti.ParabolicCkHolderSpace.heatInitialDataL_injective`: uniqueness.
-* `TauCeti.ParabolicCkHolderSpace.heatInitialDataCLE` and
-  `TauCeti.ParabolicCkHolderSpace.isInvertible_heatInitialDataL`: the isomorphism.
+* `TauCeti.ParabolicCkHolderSpace.heatInitialDataCLE`,
+  `TauCeti.ParabolicCkHolderSpace.isInvertible_heatInitialDataL` and
+  `TauCeti.ParabolicCkHolderSpace.inverse_heatInitialDataL`: the isomorphism, whose inverse is the
+  solution operator.
 
 ## References
 
@@ -151,8 +153,14 @@ theorem heatInitialDataL_heatSolutionL (hα₀ : 0 < α) (hα₁ : α < 1)
   rw [heatSolutionL_apply, map_add]
   apply Prod.ext
   · simp [hD, hC]
-  · ext x
-    simp [heatCauchyPotential_zero]
+  · simp [spatialTrace_heatCauchyPotentialL_left hT]
+
+/-- Composing the heat solution with its data operator recovers the data. -/
+@[simp]
+theorem heatInitialDataL_comp_heatSolutionL (hα₀ : 0 < α) (hα₁ : α < 1) :
+    (heatInitialDataL k (E := E) (F := F) hα₁.le hT).comp (heatSolutionL k hα₀ hα₁ hT) =
+      ContinuousLinearMap.id ℝ _ :=
+  ContinuousLinearMap.ext (heatInitialDataL_heatSolutionL hα₀ hα₁)
 
 end Solution
 
@@ -162,57 +170,42 @@ section Euclidean
 
 variable {k : ℕ} {α T : ℝ≥0} {hT : (0 : ℝ) < T} {ι : Type*} [Fintype ι]
 
-/-- The inclusion of order `k + 2` into order two, as a map; it keeps the underlying function. -/
-private def toOrderTwo {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ℝ} {hab : a < b} (hα : α ≤ 1) :
-    (k : ℕ) → ParabolicCkHolderSpace (k + 2) α E F hab → ParabolicCkHolderSpace 2 α E F hab
-  | 0 => id
-  | k + 1 => fun u ↦ toOrderTwo hα k (inclusionL hα u)
-
-private theorem toOrderTwo_apply {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ℝ} {hab : a < b} (hα : α ≤ 1) :
-    ∀ (k : ℕ) (u : ParabolicCkHolderSpace (k + 2) α E F hab) (p : slab (E := E) a b),
-      toOrderTwo hα k u p = u p
-  | 0, _, _ => rfl
-  | k + 1, u, p => by
-    rw [toOrderTwo, toOrderTwo_apply hα k, inclusionL_apply]
+/-- The order-two map with the same values as a map of order `k + 2`. -/
+private theorem equivParabolicC2HolderSpace_inclusionOfLEL_apply {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (hα : α ≤ 1) (u : ParabolicCkHolderSpace (k + 2) α E F hT) (q : slab (E := E) 0 T) :
+    equivParabolicC2HolderSpace (inclusionOfLEL hα (Nat.le_add_left 2 k) u) q = u q := by
+  rw [equivParabolicC2HolderSpace_apply, inclusionOfLEL_apply]
 
 /-- The heat equation's forcing of the order-two map with the same values as `u` is the forcing
 of `u`. -/
-private theorem heatInitialDataL_toOrderTwo_fst {E F : Type*} [NormedAddCommGroup E]
+private theorem heatInitialDataL_inclusionOfLEL_fst {E F : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
     (hα : α ≤ 1) (u : ParabolicCkHolderSpace (k + 2) α E F hT) (p : slab (E := E) 0 T) :
-    (TauCeti.heatInitialDataL hα hT (equivParabolicC2HolderSpace (toOrderTwo hα k u))).1 p =
+    (TauCeti.heatInitialDataL hα hT
+        (equivParabolicC2HolderSpace (inclusionOfLEL hα (Nat.le_add_left 2 k) u))).1 p =
       (heatInitialDataL k hα hT u).1 p := by
-  have hval (q : slab (E := E) 0 T) : equivParabolicC2HolderSpace (toOrderTwo hα k u) q = u q := by
-    rw [equivParabolicC2HolderSpace_apply, toOrderTwo_apply]
   obtain ⟨x, t, rfl⟩ : ∃ x t, p = slabMk x t := ⟨_, _, (slabMk_space_slabTime p).symm⟩
   rw [TauCeti.heatInitialDataL_fst_apply, heatInitialDataL_fst_apply,
     ← ParabolicC2HolderSpace.derivWithin_eq, timeDerivL_slabMk]
-  simp only [ParabolicC2HolderSpace.timeExtension_def, hval]
+  simp only [ParabolicC2HolderSpace.timeExtension_def,
+    equivParabolicC2HolderSpace_inclusionOfLEL_apply]
 
 /-- **Uniqueness for the heat equation** in the bounded Hölder class of order `k + 2`: a solution is
 determined by its forcing and its initial trace. -/
 theorem heatInitialDataL_injective (hα : α ≤ 1) :
     Function.Injective (heatInitialDataL k (E := EuclideanSpace ℝ ι) (F := ℝ) hα hT) := by
   intro u v huv
-  have hval (w : ParabolicCkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ hT)
-      (q : slab (E := EuclideanSpace ℝ ι) 0 T) :
-      equivParabolicC2HolderSpace (toOrderTwo hα k w) q = w q := by
-    rw [equivParabolicC2HolderSpace_apply, toOrderTwo_apply]
-  have h2 : equivParabolicC2HolderSpace (toOrderTwo hα k u) =
-      equivParabolicC2HolderSpace (toOrderTwo hα k v) := by
+  rw [Prod.ext_iff] at huv
+  have h2 : equivParabolicC2HolderSpace (inclusionOfLEL hα (Nat.le_add_left 2 k) u) =
+      equivParabolicC2HolderSpace (inclusionOfLEL hα (Nat.le_add_left 2 k) v) := by
     refine TauCeti.heatInitialDataL_injective hα (Prod.ext (HolderSpace.ext fun p ↦ ?_) ?_)
-    · rw [heatInitialDataL_toOrderTwo_fst, heatInitialDataL_toOrderTwo_fst, huv]
+    · rw [heatInitialDataL_inclusionOfLEL_fst, heatInitialDataL_inclusionOfLEL_fst, huv.1]
     · refine CkHolderSpace.ext fun x ↦ ?_
-      have h := congrArg (fun d ↦ d.2 x) huv
-      simp only [heatInitialDataL_snd, spatialTrace_apply] at h
-      rw [TauCeti.heatInitialDataL_snd, TauCeti.heatInitialDataL_snd,
-        ParabolicC2HolderSpace.spatialTrace_apply, ParabolicC2HolderSpace.spatialTrace_apply,
-        hval, hval]
-      exact h
+      simpa [ParabolicC2HolderSpace.spatialTrace_apply] using congrArg (· x) huv.2
   refine ParabolicCkHolderSpace.ext fun p ↦ ?_
-  rw [← hval u p, h2, hval]
+  rw [← equivParabolicC2HolderSpace_inclusionOfLEL_apply hα u p, h2,
+    equivParabolicC2HolderSpace_inclusionOfLEL_apply]
 
 /-- **The heat equation's initial-data isomorphism** of order `k`: for `0 < α < 1`,
 `u ↦ (∂ₜu - Δu, u(·, 0))` is an isomorphism from `C_{par,b}^{(k+2)+α}` onto
@@ -257,6 +250,21 @@ theorem heatSolutionL_heatInitialDataL (hα₀ : 0 < α) (hα₁ : α < 1)
     (u : ParabolicCkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ hT) :
     heatSolutionL k hα₀ hα₁ hT (heatInitialDataL k hα₁.le hT u) = u :=
   heatInitialDataL_injective hα₁.le (heatInitialDataL_heatSolutionL hα₀ hα₁ _)
+
+/-- Composing the heat data operator with its solution operator recovers the function. -/
+@[simp]
+theorem heatSolutionL_comp_heatInitialDataL (hα₀ : 0 < α) (hα₁ : α < 1) :
+    (heatSolutionL k (E := EuclideanSpace ℝ ι) (F := ℝ) hα₀ hα₁ hT).comp
+      (heatInitialDataL k hα₁.le hT) = ContinuousLinearMap.id ℝ _ :=
+  ContinuousLinearMap.ext (heatSolutionL_heatInitialDataL hα₀ hα₁)
+
+/-- The inverse of the heat data operator is the heat solution operator. -/
+@[simp]
+theorem inverse_heatInitialDataL (hα₀ : 0 < α) (hα₁ : α < 1) :
+    (heatInitialDataL k (E := EuclideanSpace ℝ ι) (F := ℝ) hα₁.le hT).inverse =
+      heatSolutionL k hα₀ hα₁ hT :=
+  ContinuousLinearMap.inverse_eq (heatInitialDataL_comp_heatSolutionL hα₀ hα₁)
+    (heatSolutionL_comp_heatInitialDataL hα₀ hα₁)
 
 end Euclidean
 

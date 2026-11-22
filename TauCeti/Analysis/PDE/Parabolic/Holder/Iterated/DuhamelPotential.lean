@@ -53,7 +53,8 @@ supremum of `f`.
 * `TauCeti.ParabolicCkHolderSpace.heatDuhamelPotentialL`: the Duhamel potential as a continuous
   linear map `C_{par,b}^{k+α}(E × [0, T]) → C_{par,b}^{k+2+α}(E × [0, T])`.
 * `TauCeti.ParabolicCkHolderSpace.heatDuhamelPotentialL_apply`: its values.
-* `TauCeti.ParabolicCkHolderSpace.heatDuhamelPotentialL_apply_slabMk_zero`: its zero initial value.
+* `TauCeti.ParabolicCkHolderSpace.heatDuhamelPotentialL_apply_slabMk_zero` and
+  `TauCeti.ParabolicCkHolderSpace.spatialTrace_heatDuhamelPotentialL_zero`: its zero initial value.
 * `TauCeti.ParabolicCkHolderSpace.mixedDerivL_heatDuhamelPotentialL`: its fields.
 * `TauCeti.ParabolicCkHolderSpace.timeDerivL_heatDuhamelPotentialL_eq_laplacian_add`: the heat
   equation `∂ₜw = Δw + f`.
@@ -683,6 +684,13 @@ theorem heatDuhamelPotentialL_apply (f : ParabolicCkHolderSpace k α E F hT)
 a simp lemma because `simp` proves it from `heatDuhamelPotentialL_apply`. -/
 theorem heatDuhamelPotentialL_apply_slabMk_zero (f : ParabolicCkHolderSpace k α E F hT) (x : E) :
     heatDuhamelPotentialL hα₀ hα₁ hT f (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩) = 0 := by
+  simp
+
+/-- **Zero initial trace.** The time slice of the Duhamel potential at `t = 0` vanishes. -/
+@[simp]
+theorem spatialTrace_heatDuhamelPotentialL_zero (f : ParabolicCkHolderSpace k α E F hT) :
+    (heatDuhamelPotentialL hα₀ hα₁ hT f).spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩ = 0 := by
+  ext x
   simp
 
 /-- **The fields of the Duhamel potential.** For `2 r + m ≤ k + 2`, the field `∂ₜ^r D_x^m w` of
