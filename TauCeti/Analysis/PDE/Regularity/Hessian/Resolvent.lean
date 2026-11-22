@@ -222,8 +222,8 @@ theorem oneSubLaplacianL_surjective (hp : 1 < p) (hp_top : p ≠ ⊤) :
   ring
 
 /-- **`1 - Δ` as an isomorphism `W^{2,p}(E) ≃ Lᵖ(E)`** for `1 < p < ∞`: `w ↦ w - tr D²w`, where
-`D²w` is the weak Hessian. Its inverse is bounded by the open mapping theorem, and it is
-convolution with the heat resolvent kernel (`TauCeti.Wkp.value_oneSubLaplacianEquiv_symm_ae`). -/
+`D²w` is the weak Hessian. Its inverse is convolution with the heat resolvent kernel
+(`TauCeti.Wkp.value_oneSubLaplacianEquiv_symm_ae`). -/
 def oneSubLaplacianEquiv (hp : 1 < p) (hp_top : p ≠ ⊤) :
     Wkp (volume : Measure E) ⊤ p 2 ≃L[ℝ] Lp ℝ p ((volume : Measure E).restrict (⊤ : Opens E)) :=
   ContinuousLinearEquiv.ofBijective oneSubLaplacianL
@@ -234,7 +234,19 @@ def oneSubLaplacianEquiv (hp : 1 < p) (hp_top : p ≠ ⊤) :
 theorem oneSubLaplacianEquiv_apply (hp : 1 < p) (hp_top : p ≠ ⊤)
     (w : Wkp (volume : Measure E) ⊤ p 2) :
     oneSubLaplacianEquiv hp hp_top w = oneSubLaplacianL w :=
-  (rfl)
+  congr_fun (ContinuousLinearEquiv.coeFn_ofBijective _ _ _) w
+
+/-- `TauCeti.Wkp.oneSubLaplacianL` undoes the inverse of `TauCeti.Wkp.oneSubLaplacianEquiv`. -/
+theorem oneSubLaplacianL_oneSubLaplacianEquiv_symm (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (f : Lp ℝ p ((volume : Measure E).restrict (⊤ : Opens E))) :
+    oneSubLaplacianL ((oneSubLaplacianEquiv hp hp_top).symm f) = f :=
+  ContinuousLinearEquiv.ofBijective_apply_symm_apply _ _ _ f
+
+/-- The inverse of `TauCeti.Wkp.oneSubLaplacianEquiv` undoes `TauCeti.Wkp.oneSubLaplacianL`. -/
+theorem oneSubLaplacianEquiv_symm_oneSubLaplacianL (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (w : Wkp (volume : Measure E) ⊤ p 2) :
+    (oneSubLaplacianEquiv hp hp_top).symm (oneSubLaplacianL w) = w :=
+  ContinuousLinearEquiv.ofBijective_symm_apply_apply _ _ _ w
 
 /-- **The inverse of `1 - Δ` is convolution with the heat resolvent kernel**: for `1 < p < ∞`
 and `f ∈ Lᵖ(E)`, the value of `(1 - Δ)⁻¹ f ∈ W^{2,p}(E)` is `G₁ ⋆ f` almost everywhere. -/
@@ -244,7 +256,7 @@ theorem value_oneSubLaplacianEquiv_symm_ae (hp : 1 < p) (hp_top : p ≠ ⊤)
       heatResolventKernel 1 ⋆ (f : E → ℝ) := by
   have h := heatResolventKernel_convolution_oneSubLaplacianL_ae_eq hp_top
     ((oneSubLaplacianEquiv hp hp_top).symm f)
-  rw [← oneSubLaplacianEquiv_apply hp hp_top, ContinuousLinearEquiv.apply_symm_apply] at h
+  rw [oneSubLaplacianL_oneSubLaplacianEquiv_symm] at h
   exact h.symm
 
 /-- **The `W^{2,p}` estimate for `u - Δu = f`**: for `1 < p < ∞` there is a constant `K`,
@@ -275,8 +287,8 @@ theorem exists_wkp_value_ae_eq_heatResolventKernel_convolution (hp : 1 < p) (hp_
   have hfae : (hf'.toLp f : E → ℝ) =ᵐ[volume] f := by
     rw [← Measure.ae_restrict_coe_opens_top]
     exact hf'.coeFn_toLp
-  have hw : Wkp.oneSubLaplacianL w = hf'.toLp f := by
-    rw [← Wkp.oneSubLaplacianEquiv_apply hp hp_top, ContinuousLinearEquiv.apply_symm_apply]
+  have hw : Wkp.oneSubLaplacianL w = hf'.toLp f :=
+    Wkp.oneSubLaplacianL_oneSubLaplacianEquiv_symm hp hp_top _
   refine ⟨w, ?_, ?_⟩
   · rw [← convolution_congr (ContinuousLinearMap.lsmul ℝ ℝ) (EventuallyEq.refl _ _) hfae]
     exact Wkp.value_oneSubLaplacianEquiv_symm_ae hp hp_top _

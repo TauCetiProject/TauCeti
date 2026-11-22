@@ -8,13 +8,14 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Resolvent
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
-import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.Topology.MetricSpace.Contracting
 import TauCeti.Analysis.InnerProductSpace.Positive.Definite
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
 import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.MeasureTheory.Function.Lp.Dilation
+import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
@@ -37,11 +38,11 @@ when `‖a - A‖ ≤ δ λ`, with the same `δ`
 (`TauCeti.exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_le`). This is the
 form used to localize: freezing a continuous coefficient at a point gives the interior regularity
 theorem of
-`TauCeti.Analysis.PDE.Regularity.Hessian.ContinuousCoefficientRegularity`.
+`TauCeti.Analysis.PDE.Regularity.Hessian.ContinuousCoefficient.Regularity`.
 
 ## The argument
 
-Write `b = a - 1`. The equation says `u - Δu = (u - f) - tr (b D²u)`. So `u` is a fixed point of
+Write `b = a - 1`. The equation says `u - Δu = (u - f) + tr (b D²u)`. So `u` is a fixed point of
 
 `Φ(z) = (1 - Δ)⁻¹ (u - f + tr (b D²z))`,
 
@@ -55,8 +56,8 @@ Hessians, and on every `Lˢ` the operator `(1 - Δ)⁻¹` is convolution with th
 to the fixed point `v` of `Φ` in `W^{2,r}`, so in measure to both values, which therefore agree.
 
 For a general `A`, write `(A + A†) / 2 = e e†` with `‖e⁻¹‖ ≤ λ^{-1/2}`
-(`ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric`). Since the weak
-Hessian is self-adjoint, only the symmetric part of `a` enters the equation, and `u ∘ e` solves
+(`ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_two_inv_smul_add`). Since the
+weak Hessian is self-adjoint, only the symmetric part of `a` enters the equation, and `u ∘ e` solves
 `tr (b D²(u ∘ e)) = f ∘ e` with `b = e⁻¹ ((a + a†) / 2)(e ·) e⁻†`, which lies within `δ` of the
 identity. Composition with `e` and `e⁻¹` preserves `W^{2,s}(E)` and `Lˢ(E)`.
 
@@ -79,15 +80,15 @@ open scoped ENNReal NNReal InnerProductSpace
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E]
 
-/-- The whole-space form of `TauCeti.Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq`, with almost
-everywhere taken for the volume. -/
+/-- The whole-space form of `TauCeti.Wkp.iteratedGradient_ae_eq_of_value_ae_eq` for the weak
+Hessian, with almost everywhere taken for the volume. -/
 private theorem iteratedGradient_ae_eq_of_value_ae_eq {p r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ r)]
     {z₁ : Wkp (volume : Measure E) ⊤ p 2} {z₂ : Wkp (volume : Measure E) ⊤ r 2}
     (h : (Wkp.value 2 z₁ : E → ℝ) =ᵐ[volume] Wkp.value 2 z₂) :
     (Wkp.iteratedGradient 1 z₁ : E → IteratedGradient E 1) =ᵐ[volume]
       Wkp.iteratedGradient 1 z₂ := by
   rw [← Measure.ae_restrict_coe_opens_top (volume : Measure E)] at h ⊢
-  exact Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq h
+  exact Wkp.iteratedGradient_ae_eq_of_value_ae_eq 1 h
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The trace of `B ∘ T - B ∘ T'` is bounded by `‖tr‖ c ‖T - T'‖` when `‖B‖ ≤ c`. -/
@@ -282,7 +283,7 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_id_
     ring
   have hu : Function.IsFixedPt (iterationMap hp hp_top hb hδ gp) u := by
     rw [Function.IsFixedPt, iterationMap, hgp, sub_add_cancel,
-      ← Wkp.oneSubLaplacianEquiv_apply hp hp_top, ContinuousLinearEquiv.symm_apply_apply]
+      Wkp.oneSubLaplacianEquiv_symm_oneSubLaplacianL]
   obtain ⟨v, hv⟩ := exists_value_ae_eq_of_contractingWith
     (contractingWith_iterationMap hp hp_top hb hδ gp hKp0 hKp
       (mul_mul_inv_le_inv_two hKp0 hKr0 hn (by linarith)))
@@ -292,26 +293,6 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_id_
   exact ⟨v, hv, iteratedGradient_ae_eq_of_value_ae_eq hv⟩
 
 /-! ### A general frozen coefficient -/
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- For `A` with `λ ‖ξ‖² ≤ ⟪A ξ, ξ⟫` and `0 < λ`, there is a linear automorphism `e` with
-`e e† = (A + A†) / 2` and `‖e⁻¹ x‖ ≤ ‖x‖ / √λ`. -/
-private theorem exists_continuousLinearEquiv_comp_adjoint_eq_symmPart {A : E →L[ℝ] E} {lam : ℝ}
-    (hlam : 0 < lam) (hA : ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A ξ, ξ⟫_ℝ) :
-    ∃ e : E ≃L[ℝ] E, (e : E →L[ℝ] E) ∘L (e : E →L[ℝ] E).adjoint = (2⁻¹ : ℝ) • (A + A.adjoint) ∧
-      ∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖ := by
-  have hS : (((2⁻¹ : ℝ) • (A + A.adjoint) : E →L[ℝ] E) : E →ₗ[ℝ] E).IsSymmetric := fun x y => by
-    simp [inner_add_left, inner_add_right, inner_smul_left, inner_smul_right,
-      ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.adjoint_inner_right]
-    ring
-  have hSA (ξ : E) : ⟪((2⁻¹ : ℝ) • (A + A.adjoint)) ξ, ξ⟫_ℝ = ⟪A ξ, ξ⟫_ℝ := by
-    simp [inner_add_left, inner_smul_left, ContinuousLinearMap.adjoint_inner_left,
-      real_inner_comm (A ξ) ξ]
-    ring
-  obtain ⟨e, hee, -, he⟩ :=
-    ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric _ hS hlam
-      (fun ξ => by rw [RCLike.re_to_real, hSA]; exact hA ξ) (ν := 0)
-  exact ⟨e, hee, he⟩
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- After the change of variables `e` with `e e† = (A + A†) / 2` and `‖e⁻¹‖ ≤ λ^{-1/2}`, the
@@ -354,24 +335,6 @@ private theorem norm_conj_symmPart_sub_id_le {lam : ℝ} (hlam : 0 < lam) {A : E
     _ = lam⁻¹ * ‖B‖ := by
         rw [mul_comm ‖B‖, ← mul_assoc, ← mul_inv, Real.mul_self_sqrt hlam.le]
 
-/-- A linear automorphism of `E` is quasi-measure-preserving for the volume. -/
-private theorem quasiMeasurePreserving_continuousLinearEquiv (e : E ≃L[ℝ] E) :
-    QuasiMeasurePreserving e (volume : Measure E) volume :=
-  Measure.ContinuousLinearMap.quasiMeasurePreserving volume (e : E →L[ℝ] E)
-    (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero
-
-/-- Composition with a linear automorphism preserves `Lˢ(E)`. -/
-private theorem memLp_comp_continuousLinearEquiv {s : ℝ≥0∞} {g : E → ℝ}
-    (hg : MemLp g s volume) (e : E ≃L[ℝ] E) : MemLp (fun y ↦ g (e y)) s volume := by
-  have hmap : Measure.map e (volume : Measure E) =
-      ENNReal.ofReal |(LinearMap.det ((e : E →L[ℝ] E) : E →ₗ[ℝ] E))⁻¹| • volume :=
-    Measure.map_linearMap_addHaar_eq_smul_addHaar volume
-      (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero
-  have h : MemLp g s (Measure.map e (volume : Measure E)) := by
-    rw [hmap]
-    exact hg.smul_measure ENNReal.ofReal_ne_top
-  exact h.comp_of_map e.continuous.aemeasurable
-
 /-- The coefficient field `b(y) = e⁻¹ ((a + a†) / 2)(e y) e⁻†` of the equation for `u ∘ e`. -/
 private theorem aestronglyMeasurable_conj_symmPart {a : E → E →L[ℝ] E}
     (ha : AEStronglyMeasurable a volume) (e : E ≃L[ℝ] E) :
@@ -383,7 +346,7 @@ private theorem aestronglyMeasurable_conj_symmPart {a : E → E →L[ℝ] E}
       (((continuous_id.add ContinuousLinearMap.adjoint.continuous).const_smul (2⁻¹ : ℝ)).clm_comp
         continuous_const)
   exact hΦ.comp_aestronglyMeasurable
-    (ha.comp_quasiMeasurePreserving (quasiMeasurePreserving_continuousLinearEquiv e))
+    (ha.comp_quasiMeasurePreserving (e.quasiMeasurePreserving volume))
 
 /-- Transporting back along `e`: if `v' ∈ W^{2,r}(E)` has value `u ∘ e`, then some `v ∈ W^{2,r}(E)`
 has value `u`. -/
@@ -396,7 +359,7 @@ private theorem exists_value_ae_eq_of_value_ae_eq_comp {r : ℝ≥0∞} [Fact (1
       (by simp) v'
   rw [Measure.ae_restrict_coe_opens_top] at hv
   refine ⟨v, ?_⟩
-  filter_upwards [hv, (quasiMeasurePreserving_continuousLinearEquiv e.symm).ae hv'] with y h₁ h₂
+  filter_upwards [hv, (e.symm.quasiMeasurePreserving volume).ae hv'] with y h₁ h₂
   rw [h₁, h₂, ContinuousLinearEquiv.apply_symm_apply]
 
 /-- **Integrability gain for strong solutions with coefficients close to a frozen elliptic
@@ -407,11 +370,7 @@ on `E`, `p` and `r`, with the following property. Let `A` be an operator on `E` 
 everywhere, where `u, f ∈ Lʳ(E)`. Then `u ∈ W^{2,r}(E)`: its value is the value of an element `v`
 of `W^{2,r}(E)`, and the weak Hessians of `u` and `v` agree almost everywhere.
 
-Neither `A` nor `a` need be symmetric. The proof reduces to
-`TauCeti.exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_id_le` by a linear
-change of variables `e` with `e e† = (A + A†) / 2`: since the weak Hessian is self-adjoint, only
-the symmetric part of `a` enters, and `u ∘ e` solves an equation whose coefficient
-`e⁻¹ ((a + a†) / 2)(e ·) e⁻†` lies within `δ` of the identity. -/
+Neither `A` nor `a` need be symmetric. -/
 theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_le
     {p r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ r)] (hp : 1 < p) (hp_top : p ≠ ⊤) (hr : 1 < r)
     (hr_top : r ≠ ⊤) :
@@ -430,8 +389,9 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_le
     exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_id_le (E := E) hp
       hp_top hr hr_top
   refine ⟨δ, hδ, fun A lam hlam hA a ha haA u f hf hur htr ↦ ?_⟩
-  obtain ⟨e, hee, he⟩ := exists_continuousLinearEquiv_comp_adjoint_eq_symmPart hlam hA
-  have hqe := quasiMeasurePreserving_continuousLinearEquiv e
+  obtain ⟨e, hee, -, he⟩ := A.exists_continuousLinearEquiv_comp_adjoint_eq_two_inv_smul_add hlam
+    (fun ξ ↦ by rw [RCLike.re_to_real]; exact hA ξ) (ν := 0)
+  have hqe := e.quasiMeasurePreserving volume
   have hMN : (e : E →L[ℝ] E) ∘L (e.symm : E →L[ℝ] E) = ContinuousLinearMap.id ℝ E := by
     ext x; simp
   -- `w = u ∘ e ∈ W^{2,p}(E)` has weak Hessian `e† D²u(e ·) e`.
@@ -447,8 +407,8 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_le
       refine (norm_conj_symmPart_sub_id_le hlam e hee he (a (e y))).trans ?_
       calc lam⁻¹ * ‖a (e y) - A‖ ≤ lam⁻¹ * (δ * lam) := by gcongr
         _ = δ := by field_simp)
-    w _ (memLp_comp_continuousLinearEquiv hf e)
-    ((memLp_comp_continuousLinearEquiv hur e).ae_eq hwv.symm)
+    w _ (hf.comp_continuousLinearEquiv e)
+    ((hur.comp_continuousLinearEquiv e).ae_eq hwv.symm)
     (by
       filter_upwards [hwD, hadj, hqe.ae htr] with y h₁ h₂ h₃
       rw [h₁, ← traceCLM_apply, ContinuousLinearMap.traceCLM_comp_adjoint_comp_comp_of_comp_eq_id

@@ -38,6 +38,9 @@ equivalences for rescaling lower volume bounds
 (`MeasureTheory.Measure.le_mul_addHaar_preimage_add_smul_iff`,
 `MeasureTheory.Measure.le_mul_addHaar_preimage_add_smul_inter_ball_iff`).
 
+A continuous linear automorphism is quasi-measure-preserving for every additive Haar measure
+(`ContinuousLinearEquiv.quasiMeasurePreserving`).
+
 `MeasureTheory.Measure.addHaar_preimage_comp_sub_right_ball` gives the corresponding
 translation-and-scaling formula for preimages of balls under linear maps.
 
@@ -220,6 +223,19 @@ theorem addHaar_preimage_add_smul_inter_closedBall (x : F) {r : ℝ} (hr : r ≠
   rw [← hball, ← preimage_inter, addHaar_preimage_add_smul μ x hr]
 
 end Affine
+
+section LinearEquiv
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F]
+
+/-- A continuous linear automorphism is quasi-measure-preserving for an additive Haar measure. -/
+theorem _root_.ContinuousLinearEquiv.quasiMeasurePreserving (μ : Measure F) [μ.IsAddHaarMeasure]
+    (e : F ≃L[ℝ] F) : QuasiMeasurePreserving e μ μ :=
+  ContinuousLinearMap.quasiMeasurePreserving μ (e : F →L[ℝ] F)
+    (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero
+
+end LinearEquiv
 
 section Diameter
 

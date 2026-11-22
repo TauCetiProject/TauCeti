@@ -96,14 +96,6 @@ private theorem exists_closedBall_subset_and_norm_sub_le {a : E → E →L[ℝ] 
   · rw [← dist_eq_norm]
     exact (hθa ((hlt x hx).trans_le (min_le_right _ _))).le
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [Fact (1 ≤ q)] in
-/-- Multiplying by a continuous function bounded by `1` preserves `L^q`. -/
-private theorem memLp_mul_of_abs_le_one {μ : Measure E} {zeta g : E → ℝ} (hzeta : Continuous zeta)
-    (hzeta1 : ∀ x, |zeta x| ≤ 1) (hg : MemLp g q μ) : MemLp (fun x ↦ zeta x * g x) q μ :=
-  hg.of_le (hzeta.aestronglyMeasurable.mul hg.aestronglyMeasurable) (ae_of_all _ fun x ↦ by
-    rw [norm_mul, Real.norm_eq_abs]
-    exact mul_le_of_le_one_left (norm_nonneg _) (hzeta1 x))
-
 /-- **The cutoff of `u`, extended by zero.** For a smooth `ζ` with compact support in a measurable
 `K ⊆ Ω`, some `w ∈ W^{2,p}(E)` has value `1_K ζ u` and weak Hessian `1_K (ζ D²u + T)`, where `T` is
 the Leibniz remainder; the remainder is measurable on `Ω`. -/
@@ -176,7 +168,8 @@ private theorem memLp_indicator_mul_add_traceCLM {K : Set E} (hK : IsCompact K)
   obtain ⟨M₂, hM₂⟩ := hK.exists_bound_of_continuousOn
     ((hzeta.gradient_right (m := 1) (by simp)).continuous_fderiv (by simp)).continuousOn
   rw [memLp_indicator_iff_restrict hKm.nullMeasurableSet]
-  refine (memLp_mul_of_abs_le_one hzeta.continuous hzeta1 (hf.mono_measure hres)).add ?_
+  refine ((memLp_top_of_bound hzeta.continuous.aestronglyMeasurable 1 (ae_of_all _ fun x ↦
+    (Real.norm_eq_abs _).trans_le (hzeta1 x))).fun_mul (hf.mono_measure hres)).add ?_
   have hmaj := (((hgq.mono_measure hres).norm.const_mul (2 * M₁)).add
     ((huq.mono_measure hres).norm.const_mul M₂)).const_mul (‖traceCLM ℝ E‖ * Λ)
   refine hmaj.of_le ((traceCLM ℝ E).continuous.comp_aestronglyMeasurable
@@ -237,7 +230,7 @@ private theorem exists_restrict_value_ae_eq {B : Opens E} (hB : B ≤ Omega)
         Wkp.iteratedGradient 1 u := by
   have hv := (Wkp.value_restrictL_ae le_top 2 v₀).trans h
   refine ⟨Wkp.restrictL le_top 2 v₀, hv, ?_⟩
-  exact (Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq
+  exact (Wkp.iteratedGradient_ae_eq_of_value_ae_eq 1
     (hv.trans (Wkp.value_restrictL_ae hB 2 u).symm)).trans
       (Wkp.iteratedGradient_restrictL_ae hB 1 u)
 
@@ -300,8 +293,9 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_continuousOn
       (ha.mono hKΩ) (Λ := ‖a x₀‖ + δ * lam) (fun x hx ↦
         (norm_le_norm_add_norm_sub' (a x) (a x₀)).trans (by linarith [hosc x hx])) u hf huq hgq hR)
     (((memLp_indicator_iff_restrict hKm.nullMeasurableSet).2
-      (memLp_mul_of_abs_le_one hzeta.continuous hzeta1
-        (huq.mono_measure (Measure.restrict_mono hKΩ le_rfl)))).ae_eq hwv.symm)
+      ((memLp_top_of_bound hzeta.continuous.aestronglyMeasurable 1 (ae_of_all _ fun x ↦
+        (Real.norm_eq_abs _).trans_le (hzeta1 x))).fun_mul
+          (huq.mono_measure (Measure.restrict_mono hKΩ le_rfl)))).ae_eq hwv.symm)
     (ae_trace_comp_eq_indicator hKΩ (a x₀) htr hwD)
   -- On `B(x₀, ρ)`, where `ζ = 1`, the value of `w` is that of `u`.
   refine ⟨ρ, hρ, hBK.trans hKΩ, exists_restrict_value_ae_eq (B := ⟨ball x₀ ρ, isOpen_ball⟩)

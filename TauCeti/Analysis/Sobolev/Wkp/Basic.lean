@@ -905,24 +905,23 @@ theorem hasWeakFDerivOn_iteratedGradient_toOrderL {j k : ℕ} (h : j + 2 ≤ k)
   rw [← lowerOrder_toOrderL h u]
   exact hasWeakFDerivOn_iteratedGradient j (toOrderL h u)
 
-/-- **Weak Hessians are determined by values, across exponents.** If `z₁ ∈ W^{2,p}(Ω)` and
-`z₂ ∈ W^{2,r}(Ω)` have almost everywhere equal values on `Ω`, then their weak Hessians agree
-almost everywhere on `Ω`: weak derivatives are unique. -/
-theorem iteratedGradient_one_ae_eq_of_value_ae_eq {r : ENNReal} [Fact (1 ≤ r)]
-    {z₁ : Wkp mu Omega p 2} {z₂ : Wkp mu Omega r 2}
-    (h : (value 2 z₁ : E → ℝ) =ᵐ[mu.restrict Omega] value 2 z₂) :
-    (iteratedGradient 1 z₁ : E → IteratedGradient E 1) =ᵐ[mu.restrict Omega]
-      iteratedGradient 1 z₂ := by
-  have hv : (value 1 (lowerOrder 1 z₁) : E → ℝ) =ᵐ[mu.restrict Omega]
-      value 1 (lowerOrder 1 z₂) := by
-    simpa only [value_succ] using h
-  have hg : (iteratedGradient 0 (lowerOrder 1 z₁) : E → IteratedGradient E 0)
-      =ᵐ[mu.restrict Omega] iteratedGradient 0 (lowerOrder 1 z₂) := by
-    filter_upwards [((hasWeakFDerivOn_value _).congr_ae hv).ae_eq
-      (hasWeakFDerivOn_value _)] with x hx
-    exact innerSL_inj.mp hx
-  exact ((hasWeakFDerivOn_iteratedGradient 0 z₁).congr_ae hg).ae_eq
-    (hasWeakFDerivOn_iteratedGradient 0 z₂)
+/-- **Highest weak derivatives are determined by values, across exponents.** If
+`z₁ ∈ W^{k+1,p}(Ω)` and `z₂ ∈ W^{k+1,r}(Ω)` have almost everywhere equal values on `Ω`, then their
+highest weak derivatives `iteratedGradient k` agree almost everywhere on `Ω`: weak derivatives are
+unique. For `k = 1` this says that the weak Hessians agree. -/
+theorem iteratedGradient_ae_eq_of_value_ae_eq {r : ENNReal} [Fact (1 ≤ r)] (k : ℕ)
+    {z₁ : Wkp mu Omega p (k + 1)} {z₂ : Wkp mu Omega r (k + 1)}
+    (h : (value (k + 1) z₁ : E → ℝ) =ᵐ[mu.restrict Omega] value (k + 1) z₂) :
+    (iteratedGradient k z₁ : E → IteratedGradient E k) =ᵐ[mu.restrict Omega]
+      iteratedGradient k z₂ := by
+  induction k with
+  | zero =>
+      filter_upwards [((hasWeakFDerivOn_value _).congr_ae h).ae_eq
+        (hasWeakFDerivOn_value _)] with x hx
+      exact innerSL_inj.mp hx
+  | succ k ih =>
+      exact ((hasWeakFDerivOn_iteratedGradient k z₁).congr_ae
+        (ih (by simpa only [value_succ] using h))).ae_eq (hasWeakFDerivOn_iteratedGradient k z₂)
 
 end Wkp
 
