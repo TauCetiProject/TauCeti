@@ -280,9 +280,13 @@ theorem discriminantQuadraticIsometry_refl (L : IntegralLattice V) [L.IsNondegen
     (Isometry.refl L).discriminantQuadraticIsometry hL =
       QuadraticMap.IsometryEquiv.refl (L.discriminantQuadraticModule hL).quadratic := by
   refine DFunLike.ext _ _ fun x ↦ ?_
+  have hrefl :
+      QuadraticMap.IsometryEquiv.refl (L.discriminantQuadraticModule hL).quadratic x = x := by
+    rw [← FiniteQuadraticModule.Isometry.ofEq_rfl, FiniteQuadraticModule.Isometry.ofEq_apply,
+      cast_eq]
   refine (discriminantQuadraticIsometry_apply (Isometry.refl L) hL x).trans ?_
   rw [discriminantGroupEquiv_refl]
-  rfl
+  exact (LinearEquiv.refl_apply (R := ℤ) (M := L.DiscriminantGroup) x).trans hrefl.symm
 
 /-- Passing to the inverse lattice isometry passes to the inverse discriminant quadratic
 isometry. -/
