@@ -27,9 +27,12 @@ depend on the boundary conditions are proved once for every space of sections wi
 integrable jets in `TauCeti.Analysis.Sobolev.Strip.Operator`
 (`TauCeti.StripSobolev.norm_jetLp_le_of_setIntegral_le`,
 `TauCeti.StripSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le`,
-`TauCeti.StripSobolev.isFredholm_and_index_eq_of_isPreconnected`); this file supplies the
-semi-Fredholm estimate for sections with boundary values in `F₀` and `F₁` and Rellich's theorem
-on the strip.
+`TauCeti.StripSobolev.isFredholm_and_index_eq_of_isPreconnected`). This file states the
+semi-Fredholm estimate for sections with boundary values in `F₀` and `F₁` as the hypothesis
+`TauCeti.StripSobolev.HasSemiFredholmEstimate`, which it does not prove for any particular
+operator, and combines it with Rellich's theorem on the strip
+(`TauCeti.StripSobolev.isCompactOperator_restrictValue_comp_subtypeL`, from
+`TauCeti.Analysis.Sobolev.Strip.Rellich`).
 
 * **Peetre's argument.** Suppose that `D` satisfies the semi-Fredholm estimate
   (`TauCeti.StripSobolev.HasSemiFredholmEstimate`)
