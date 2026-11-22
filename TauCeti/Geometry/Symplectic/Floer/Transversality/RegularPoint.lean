@@ -8,7 +8,12 @@ module
 public import TauCeti.Analysis.Calculus.ContDiff.LocalInjectivity
 public import TauCeti.Geometry.Symplectic.Floer.Translation.Kernel
 public import TauCeti.Topology.Instances.Real.SliceInjective
+import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
+import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Normed.Module.HahnBanach
+import TauCeti.Dynamics.Flow.Translation
+import TauCeti.Topology.Baire.Lemmas
 
 /-!
 # Regular points of Floer trajectories
@@ -30,8 +35,8 @@ statement detecting cokernel elements of the linearized operator by variations o
 time-independent `J` at injective points `z₀` of `u` (where `u z` near `u z₀` forces `z` near
 `z₀`) with `∂ₜu - X_{K_t}(u) ≠ 0`.
 
-This file proves two parts of the theorem of Floer, Hofer and Salamon that the regular points of
-a nonstationary trajectory form an open dense set.
+This file proves the theorem of Floer, Hofer and Salamon that the regular points of a
+nonstationary trajectory form an open dense set.
 
 * **Openness.** If `u` is `C¹` and converges uniformly to continuous loops `xm` and `xp`, the
   regular points form an open set (`TauCeti.Floer.isOpen_regularPoints`). The topological core
@@ -48,8 +53,24 @@ a nonstationary trajectory form an open dense set.
   the points where `∂ₛu ≠ 0`, `u ≠ xm` and `u ≠ xp` form a dense set for every nonstationary
   Floer trajectory
   (`TauCeti.Floer.dense_setOf_fderiv_apply_ne_zero_and_ne_and_ne_of_floerOperator_eq_zero`).
-
-The density of the points satisfying the third condition is not proved here.
+* **Density.** For a nonstationary `C²` Floer trajectory `u` with the cylindrical datum
+  `K = H_t dt` and an `s`-independent `J_t`, converging uniformly to `xm` and `xp`, the regular
+  points are dense (`TauCeti.Floer.dense_regularPoints`). Suppose that a nonempty open set `W` of
+  points with `∂ₛu ≠ 0`, `u ≠ xm` and `u ≠ xp` contains no regular point, so that every point
+  `z ∈ W` has a partner `s ≠ z.1` with `u(s, z.2) = u z`. The zeros of `∂ₛu` are isolated, hence
+  countably many, and the Baire category theorem
+  (`IsOpen.exists_inter_interior_nonempty_of_subset_iUnion`) gives a nonempty open `U ⊆ W`, a
+  compact set `D` on which `∂ₛu ≠ 0` and `(s, t) ↦ (u(s, t), t)` is injective, and `ε > 0` such
+  that every `z ∈ U` has a unique partner `φ z` with `(φ z, z.2) ∈ D` and `|φ z - z.1| ≥ ε`. By
+  compactness and uniqueness `φ` is continuous, and by the inverse function theorem applied to
+  `(s, t) ↦ (ℓ(u(s, t)), t)`, for a linear form `ℓ` with `ℓ(∂ₛu) ≠ 0` at the partner, `φ` is
+  differentiable. Differentiating `u(φ(s, t), t) = u(s, t)` and comparing the Floer equations at
+  the two points, which share `J_t` and `X_{H_t}`, gives
+  `(∂ₛφ - 1) ∂ₛu + ∂ₜφ J_t ∂ₛu = 0` at the partner. Since `∂ₛu` and `J_t ∂ₛu` are linearly
+  independent, `φ(s, t) = s + c` on a ball, with `|c| ≥ ε`. So `u` agrees with its translate by
+  `(c, 0)` on an open set, hence everywhere by unique continuation
+  (`TauCeti.SymplecticForm.periodic_of_floerOperator_eq_zero_of_eqOn`). Iterating the period moves
+  a point of `W` to an end, where `u` is the asymptotic orbit, a contradiction.
 
 ## References
 
@@ -196,5 +217,360 @@ theorem dense_setOf_fderiv_apply_ne_zero_and_ne_and_ne_of_floerOperator_eq_zero
       mem_codiscreteWithin_iff_forall_mem_nhdsNE.1 hcod z (mem_univ z)
   exact mem_closure_iff_frequently.2
     ((Filter.Eventually.frequently hz).filter_mono nhdsWithin_le_nhds)
+
+/-! ### Density of the regular points -/
+
+section Dense
+
+variable [FiniteDimensional ℝ V] {ω : SymplecticForm V} {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ}
+
+omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- The set of pairs `(z, s)` such that `(s, z.2)` lies in `D`, at distance at least `ε` from `z`
+on its slice, with the same value `u(s, z.2) = u z`, is closed. -/
+private theorem isClosed_setOf_slicePartner (hu : Continuous u) {D : Set (ℝ × ℝ)}
+    (hD : IsClosed D) (ε : ℝ) :
+    IsClosed {q : (ℝ × ℝ) × ℝ | (q.2, q.1.2) ∈ D ∧ ε ≤ |q.2 - q.1.1| ∧ u (q.2, q.1.2) = u q.1} := by
+  have hc : Continuous fun q : (ℝ × ℝ) × ℝ ↦ (q.2, q.1.2) := by fun_prop
+  exact (hD.preimage hc).inter ((isClosed_le continuous_const
+    (by fun_prop : Continuous fun q : (ℝ × ℝ) × ℝ ↦ |q.2 - q.1.1|)).inter
+    (isClosed_eq (hu.comp hc) (hu.comp continuous_fst)))
+
+omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- For a compact set `D`, the points `z` with a partner `s` on their slice, `(s, z.2) ∈ D`, at
+distance at least `ε` from `z` and with `u(s, z.2) = u z`, form a closed set. -/
+private theorem isClosed_setOf_exists_slicePartner (hu : Continuous u) {D : Set (ℝ × ℝ)}
+    (hD : IsCompact D) (ε : ℝ) :
+    IsClosed {z : ℝ × ℝ | ∃ s, (s, z.2) ∈ D ∧ ε ≤ |s - z.1| ∧ u (s, z.2) = u z} := by
+  refine isOpen_compl_iff.1 (isOpen_iff_mem_nhds.2 fun z hz ↦ ?_)
+  have h := (hD.image continuous_fst).eventually_forall_of_forall_eventually (x₀ := z)
+    (P := fun z' s ↦ ¬((s, z'.2) ∈ D ∧ ε ≤ |s - z'.1| ∧ u (s, z'.2) = u z')) fun s _ ↦
+      (isClosed_setOf_slicePartner hu hD.isClosed ε).isOpen_compl.mem_nhds fun hq ↦ hz ⟨s, hq⟩
+  filter_upwards [h] with z' hz' ⟨s, hs⟩
+  exact hz' s ⟨_, hs.1, rfl⟩ hs
+
+omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- **Continuity of a unique slice partner.** Let `D` be compact with `(s, t) ↦ (u(s, t), t)`
+injective on `D`, and let `φ` pick for every `z` of an open set `U` a partner on its slice,
+`(φ z, z.2) ∈ D`, at distance at least `ε` from `z`, with `u(φ z, z.2) = u z`. Then `φ` is
+continuous on `U`. -/
+private theorem continuousAt_of_forall_slicePartner (hu : Continuous u) {D U : Set (ℝ × ℝ)}
+    {ε : ℝ} {φ : ℝ × ℝ → ℝ} (hD : IsCompact D) (hinj : InjOn (fun w ↦ (u w, w.2)) D)
+    (hU : IsOpen U) (hφ : ∀ z ∈ U, (φ z, z.2) ∈ D ∧ ε ≤ |φ z - z.1| ∧ u (φ z, z.2) = u z)
+    {z₀ : ℝ × ℝ} (hz₀ : z₀ ∈ U) : ContinuousAt φ z₀ := by
+  have hmem : ∀ᶠ z in 𝓝 z₀, φ z ∈ Prod.fst '' D :=
+    eventually_of_mem (hU.mem_nhds hz₀) fun z hz ↦ ⟨(φ z, z.2), (hφ z hz).1, rfl⟩
+  refine (hD.image continuous_fst).tendsto_nhds_of_unique_mapClusterPt hmem fun s _ hs ↦ ?_
+  -- A cluster value of `φ` at `z₀` is a partner of `z₀`, since the partner condition is closed.
+  have hs₀ : (s, z₀.2) ∈ D ∧ ε ≤ |s - z₀.1| ∧ u (s, z₀.2) = u z₀ := by
+    by_contra hns
+    obtain ⟨A, hA, B, hB, hAB⟩ := mem_nhds_prod_iff.1
+      ((isClosed_setOf_slicePartner hu hD.isClosed ε).isOpen_compl.mem_nhds
+        (show (z₀, s) ∈ _ from hns))
+    obtain ⟨z, hzB, hzA, hzU⟩ := ((mapClusterPt_iff_frequently.1 hs B hB).and_eventually
+      (inter_mem hA (hU.mem_nhds hz₀))).exists
+    exact hAB (show (z, φ z) ∈ A ×ˢ B from ⟨hzA, hzB⟩) (hφ z hzU)
+  -- The partner in `D` is unique.
+  exact congrArg Prod.fst (hinj hs₀.1 (hφ z₀ hz₀).1
+    (Prod.ext (hs₀.2.2.trans (hφ z₀ hz₀).2.2.symm) rfl))
+
+omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- **A horizontal period moves every point to an end.** If `u` converges uniformly to `xm` and
+`xp` as `s → -∞` and `s → +∞` and has a period `(c, 0)` with `c ≠ 0`, then at every point
+`u(s, t)` is `xm(t)` or `xp(t)`. -/
+private theorem eq_or_eq_of_periodic (hm : TendstoUniformly (fun s t ↦ u (s, t)) xm atBot)
+    (hp : TendstoUniformly (fun s t ↦ u (s, t)) xp atTop) {c : ℝ} (hc : c ≠ 0)
+    (hper : Periodic u (c, 0)) (z : ℝ × ℝ) : u z = xm z.2 ∨ u z = xp z.2 := by
+  have hslice : Periodic (fun s ↦ u (s, z.2)) c := fun s ↦ by
+    simpa [Prod.mk_add_mk] using hper (s, z.2)
+  rcases hc.lt_or_gt with hc | hc
+  · refine .inl (hslice.eq_of_tendsto_of_tendsto_add_nsmul (hm.tendsto_at z.2) ?_)
+    simp only [nsmul_eq_mul]
+    exact tendsto_atBot_add_const_left _ _
+      (Tendsto.atTop_mul_const_of_neg hc tendsto_natCast_atTop_atTop)
+  · refine .inr (hslice.eq_of_tendsto_of_tendsto_add_nsmul (hp.tendsto_at z.2) ?_)
+    simp only [nsmul_eq_mul]
+    exact tendsto_atTop_add_const_left _ _
+      (Tendsto.atTop_mul_const hc tendsto_natCast_atTop_atTop)
+
+/-- **The derivative of a slice partner.** Let `u` solve the Floer equation
+`∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` for cylindrical data at `z₀` and at `w₀ = (φ z₀, z₀.2)`, and
+let `u(φ(s, t), t) = u(s, t)` near `z₀`. If `φ` is differentiable at `z₀`, `u` is differentiable at
+`w₀`, `J_t(u z₀)² = -1` and `∂ₛu(w₀) ≠ 0`, then the derivative of `φ` at `z₀` is
+`(σ, τ) ↦ σ`. -/
+private theorem fderiv_eq_fst_of_eventually_comp_eq {φ : ℝ × ℝ → ℝ} {z₀ : ℝ × ℝ}
+    (hφ : DifferentiableAt ℝ φ z₀) (hu₁ : DifferentiableAt ℝ u (φ z₀, z₀.2))
+    (heq : ∀ᶠ z in 𝓝 z₀, u (φ z, z.2) = u z)
+    (hJJ : J z₀.2 (u z₀) ∘L J z₀.2 (u z₀) = -ContinuousLinearMap.id ℝ V)
+    (hF₀ : ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u z₀ = 0)
+    (hF₁ : ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u (φ z₀, z₀.2) = 0)
+    (ha : fderiv ℝ u (φ z₀, z₀.2) stdComplexLineReal ≠ 0) :
+    fderiv ℝ φ z₀ = ContinuousLinearMap.fst ℝ ℝ ℝ := by
+  -- The two Floer equations share `J` and `X_H`, since `u` takes the same value at the same time.
+  have hu : u (φ z₀, z₀.2) = u z₀ := heq.self_of_nhds
+  rw [SymplecticForm.floerOperator_def] at hF₀ hF₁
+  simp only [hu] at hF₁
+  set L := fderiv ℝ φ z₀
+  set A := fderiv ℝ u (φ z₀, z₀.2)
+  -- Differentiating `u(φ(s, t), t) = u(s, t)` expresses `du(z₀)` through `A` and `L`.
+  have hD : fderiv ℝ u z₀ = A.comp (L.prod (ContinuousLinearMap.snd ℝ ℝ ℝ)) :=
+    ((hu₁.hasFDerivAt.comp z₀
+      (hφ.hasFDerivAt.prodMk (hasFDerivAt_snd (p := z₀)))).congr_of_eventuallyEq
+      (heq.mono fun _ h ↦ h.symm)).fderiv
+  have h₁ : fderiv ℝ u z₀ stdComplexLineReal =
+      L stdComplexLineReal • A stdComplexLineReal := by
+    rw [hD, ← map_smul]
+    simp [stdComplexLineReal_eq]
+  have h₂ : fderiv ℝ u z₀ stdComplexLineImag =
+      L stdComplexLineImag • A stdComplexLineReal + A stdComplexLineImag := by
+    rw [hD, ← map_smul, ← map_add]
+    simp [stdComplexLineReal_eq, stdComplexLineImag_eq]
+  set j := J z₀.2 (u z₀)
+  have hlin : (L stdComplexLineReal - 1) • A stdComplexLineReal +
+      L stdComplexLineImag • j (A stdComplexLineReal) = 0 := by
+    have h := congrArg₂ HSub.hSub hF₀ hF₁
+    rw [sub_zero] at h
+    rw [← h, h₁, h₂]
+    simp only [map_sub, map_add, map_smul, sub_smul, one_smul]
+    abel
+  -- A nonzero vector and its image under `j` are linearly independent.
+  let jc : AlmostComplexStructure V :=
+    ⟨j.toLinearMap, by ext v; simpa using congrArg (fun T ↦ T v) hJJ⟩
+  obtain ⟨hα, hβ⟩ := LinearIndependent.pair_iff.1 (jc.linearIndependent_pair ha) _ _ hlin
+  refine ContinuousLinearMap.prod_ext (ContinuousLinearMap.ext_ring ?_)
+    (ContinuousLinearMap.ext_ring ?_)
+  · simpa [stdComplexLineReal_eq, sub_eq_zero] using hα
+  · simpa [stdComplexLineImag_eq] using hβ
+
+omit [FiniteDimensional ℝ V] in
+/-- **A slice partner is differentiable.** Let `u` be `C¹` at `w₀ = (φ z₀, z₀.2)` with
+`∂ₛu(w₀) ≠ 0`, differentiable at `z₀`, and let `u(φ(s, t), t) = u(s, t)` near `z₀`. If `φ` is
+continuous at `z₀`, then it is differentiable at `z₀`. -/
+private theorem differentiableAt_of_eventually_comp_eq {φ : ℝ × ℝ → ℝ} {z₀ : ℝ × ℝ}
+    (hφ : ContinuousAt φ z₀) (hu₀ : DifferentiableAt ℝ u z₀)
+    (hu₁ : ContDiffAt ℝ 1 u (φ z₀, z₀.2))
+    (ha : fderiv ℝ u (φ z₀, z₀.2) stdComplexLineReal ≠ 0)
+    (heq : ∀ᶠ z in 𝓝 z₀, u (φ z, z.2) = u z) : DifferentiableAt ℝ φ z₀ := by
+  set w₀ : ℝ × ℝ := (φ z₀, z₀.2)
+  obtain ⟨ℓ, hℓ⟩ := SeparatingDual.exists_ne_zero (R := ℝ) ha
+  -- The map `G w = (ℓ(u w), w.2)` has an invertible derivative at `w₀`.
+  set G : ℝ × ℝ → ℝ × ℝ := fun w ↦ (ℓ (u w), w.2)
+  set G' : ℝ × ℝ →L[ℝ] ℝ × ℝ := (ℓ.comp (fderiv ℝ u w₀)).prod (ContinuousLinearMap.snd ℝ ℝ ℝ)
+  have hG : HasStrictFDerivAt G G' w₀ :=
+    (ℓ.hasStrictFDerivAt.comp w₀ (hu₁.hasStrictFDerivAt_fderiv one_ne_zero)).prodMk
+      hasStrictFDerivAt_snd
+  have hinj : Injective G' := by
+    rw [injective_iff_map_eq_zero]
+    intro v hv
+    obtain ⟨h₁, h₂⟩ := Prod.mk.inj hv
+    have hv' : v = v.1 • stdComplexLineReal := by
+      ext <;> simp_all [G', stdComplexLineReal_eq]
+    rw [hv'] at h₁ ⊢
+    simp only [map_smul, smul_eq_mul, mul_eq_zero] at h₁
+    simp [h₁.resolve_right hℓ]
+  set E := (LinearEquiv.ofInjectiveEndo (G' : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) hinj).toContinuousLinearEquiv
+  have hE : HasStrictFDerivAt G (E : ℝ × ℝ →L[ℝ] ℝ × ℝ) w₀ := by
+    convert hG using 1
+    exact ContinuousLinearMap.ext fun v ↦ by simp [E]
+  -- Near `z₀`, the partner `(φ z, z.2)` is the local inverse of `G` at `(ℓ(u z), z.2)`.
+  have hψ : Tendsto (fun z : ℝ × ℝ ↦ (φ z, z.2)) (𝓝 z₀) (𝓝 w₀) := hφ.prodMk continuousAt_snd
+  have hloc : φ =ᶠ[𝓝 z₀] fun z ↦ (hE.localInverse G E w₀ (ℓ (u z), z.2)).1 := by
+    filter_upwards [hψ.eventually hE.eventually_left_inverse, heq] with z h₁ h₂
+    simp only [G, h₂] at h₁
+    rw [h₁]
+  have hd : DifferentiableAt ℝ (hE.localInverse G E w₀) (ℓ (u z₀), z₀.2) := by
+    have h := hE.to_localInverse.differentiableAt
+    rwa [show G w₀ = (ℓ (u z₀), z₀.2) by simp [G, w₀, heq.self_of_nhds]] at h
+  exact ((hd.comp z₀ ((ℓ.differentiableAt.comp z₀ hu₀).prodMk differentiableAt_snd)).fst
+    ).congr_of_eventuallyEq hloc
+
+omit [FiniteDimensional ℝ V] in
+/-- Around a point `w` where `∂ₛu ≠ 0`, every topological basis of `ℝ × ℝ` has a member `b ∋ w`
+with compact closure on which `∂ₛu ≠ 0` and `(s, t) ↦ (u(s, t), t)` is injective. -/
+private theorem exists_mem_basis_isCompact_closure (hu : ContDiff ℝ 1 u)
+    {B : Set (Set (ℝ × ℝ))} (hB : TopologicalSpace.IsTopologicalBasis B) {w : ℝ × ℝ}
+    (hw : fderiv ℝ u w stdComplexLineReal ≠ 0) :
+    ∃ b ∈ B, w ∈ b ∧ IsCompact (closure b) ∧
+      (∀ w' ∈ closure b, fderiv ℝ u w' stdComplexLineReal ≠ 0) ∧
+      InjOn (fun w' ↦ (u w', w'.2)) (closure b) := by
+  obtain ⟨N, hN, hinjN⟩ := exists_mem_nhds_injOn_of_fderiv_apply_ne_zero hu.contDiffAt hw
+  have hN' : {w' | fderiv ℝ u w' stdComplexLineReal ≠ 0} ∈ 𝓝 w :=
+    ((hu.continuous_fderiv one_ne_zero).clm_apply continuous_const).continuousAt.eventually_ne hw
+  obtain ⟨δ, hδ, hδN⟩ := Metric.mem_nhds_iff.1 (inter_mem hN hN')
+  obtain ⟨b, hbB, hwb, hbδ⟩ :=
+    hB.exists_subset_of_mem_open (mem_ball_self (half_pos hδ)) isOpen_ball
+  have hcl : closure b ⊆ ball w δ := (closure_mono hbδ).trans
+    (closure_ball_subset_closedBall.trans (closedBall_subset_ball (half_lt_self hδ)))
+  exact ⟨b, hbB, hwb, (isCompact_closedBall w δ).of_isClosed_subset isClosed_closure
+    (hcl.trans ball_subset_closedBall), fun w' hw' ↦ (hδN (hcl hw')).2,
+    hinjN.mono fun w' hw' ↦ (hδN (hcl hw')).1⟩
+
+omit [FiniteDimensional ℝ V] in
+/-- **Localizing the slice partners.** Let `u` be `C¹` with countably many zeros of `∂ₛu`. If every
+point `z` of a nonempty open set `W` has a partner `s ≠ z.1` on its slice, `u(s, z.2) = u z`, then
+there are a nonempty open set `U`, a compact set `D` on which `∂ₛu ≠ 0` and
+`(s, t) ↦ (u(s, t), t)` is injective, and `ε > 0` such that every point of `U` has a partner in `D`
+at distance at least `ε` on its slice. -/
+private theorem exists_isCompact_forall_exists_slicePartner (hu : ContDiff ℝ 1 u)
+    (hcrit : {w : ℝ × ℝ | fderiv ℝ u w stdComplexLineReal = 0}.Countable) {W : Set (ℝ × ℝ)}
+    (hW : IsOpen W) (hne : W.Nonempty) (hpart : ∀ z ∈ W, ∃ s ≠ z.1, u (s, z.2) = u z) :
+    ∃ U D : Set (ℝ × ℝ), ∃ ε : ℝ, IsOpen U ∧ U.Nonempty ∧ IsCompact D ∧
+      (∀ w ∈ D, fderiv ℝ u w stdComplexLineReal ≠ 0) ∧ InjOn (fun w ↦ (u w, w.2)) D ∧ 0 < ε ∧
+      ∀ z ∈ U, ∃ s, (s, z.2) ∈ D ∧ ε ≤ |s - z.1| ∧ u (s, z.2) = u z := by
+  classical
+  obtain ⟨B, hBc, -, hB⟩ := TopologicalSpace.exists_countable_basis (ℝ × ℝ)
+  have := hBc.to_subtype
+  have := hcrit.to_subtype
+  set Good : Set (ℝ × ℝ) → Prop := fun D ↦ IsCompact D ∧
+    (∀ w ∈ D, fderiv ℝ u w stdComplexLineReal ≠ 0) ∧ InjOn (fun w ↦ (u w, w.2)) D
+  set S : Set (ℝ × ℝ) → ℝ → Set (ℝ × ℝ) := fun D ε ↦
+    {z | ∃ s, (s, z.2) ∈ D ∧ ε ≤ |s - z.1| ∧ u (s, z.2) = u z}
+  -- The closed cover: partners in a good closed basic set, or partners at zeros of `∂ₛu`.
+  set F : (B × ℕ) ⊕ {w : ℝ × ℝ // fderiv ℝ u w stdComplexLineReal = 0} → Set (ℝ × ℝ) :=
+    fun i ↦ i.elim (fun p ↦ if Good (closure p.1.val) then
+      S (closure p.1.val) ((p.2 + 1 : ℝ)⁻¹) else ∅) fun c ↦ {z | z.2 = c.val.2 ∧ u z = u c.val}
+  have hF : ∀ i, IsClosed (F i) := by
+    rintro (⟨b, m⟩ | c)
+    · by_cases hg : Good (closure b.val)
+      · simpa [F, S, hg] using isClosed_setOf_exists_slicePartner hu.continuous hg.1 _
+      · simp [F, hg]
+    · exact (isClosed_eq continuous_snd continuous_const).inter
+        (isClosed_eq hu.continuous continuous_const)
+  have hcov : W ⊆ ⋃ i, F i := by
+    intro z hz
+    obtain ⟨s, hs, hus⟩ := hpart z hz
+    by_cases hc : fderiv ℝ u (s, z.2) stdComplexLineReal = 0
+    · exact mem_iUnion.2 ⟨.inr ⟨(s, z.2), hc⟩, rfl, hus.symm⟩
+    obtain ⟨b, hbB, hsb, hgood⟩ := exists_mem_basis_isCompact_closure hu hB hc
+    replace hgood : Good (closure b) := hgood
+    obtain ⟨m, hm⟩ := exists_nat_one_div_lt (abs_pos.2 (sub_ne_zero.2 hs))
+    refine mem_iUnion.2 ⟨.inl (⟨b, hbB⟩, m), ?_⟩
+    simp only [F, Sum.elim_inl, hgood, ↓reduceIte]
+    exact ⟨s, subset_closure hsb, by simpa [one_div] using hm.le, hus⟩
+  obtain ⟨i, z₀, -, hz₀⟩ := hW.exists_inter_interior_nonempty_of_subset_iUnion hne hF hcov
+  rcases i with ⟨b, m⟩ | c
+  · by_cases hg : Good (closure b.val)
+    · refine ⟨interior (F (.inl (b, m))), closure b.val, ((m : ℝ) + 1)⁻¹, isOpen_interior,
+        ⟨z₀, hz₀⟩, hg.1, hg.2.1, hg.2.2, by positivity, fun z hz ↦ ?_⟩
+      simpa [F, S, hg] using interior_subset hz
+    · simp [F, hg] at hz₀
+  · -- A set of points on one horizontal line has empty interior.
+    have h : interior {z : ℝ × ℝ | z.2 = c.val.2 ∧ u z = u c.val} ⊆ ∅ :=
+      (interior_mono (s := {z : ℝ × ℝ | z.2 = c.val.2 ∧ u z = u c.val})
+        (t := (univ : Set ℝ) ×ˢ {c.val.2}) fun z hz ↦
+          ⟨mem_univ z.1, mem_singleton_iff.2 hz.1⟩).trans
+        (by rw [interior_prod_eq, interior_singleton, prod_empty])
+    exact (h hz₀).elim
+
+/-- **Uniform slice partners give a period.** Let `u` be a `C¹` solution of the Floer equation
+`∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0`, for a `C¹` family `J_t` with `J_t(u)² = -1` along `u` and a
+`C²` Hamiltonian `H`. Suppose that on a nonempty open set `U` every point has a partner in a compact
+set `D`, at distance at least `ε > 0` on its slice, where `∂ₛu ≠ 0` on `D` and
+`(s, t) ↦ (u(s, t), t)` is injective on `D`. Then `u` has a period `(c, 0)` with `c ≠ 0`. -/
+private theorem exists_ne_zero_periodic_of_forall_exists_slicePartner
+    (hJ : ContDiff ℝ 1 (fun p : ℝ × V ↦ J p.1 p.2))
+    (hJJ : ∀ z, J z.2 (u z) ∘L J z.2 (u z) = -ContinuousLinearMap.id ℝ V)
+    (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiff ℝ 1 u)
+    (hF : ∀ z, ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u z = 0)
+    {U D : Set (ℝ × ℝ)} {ε : ℝ} (hU : IsOpen U) (hUne : U.Nonempty) (hD : IsCompact D)
+    (hDs : ∀ w ∈ D, fderiv ℝ u w stdComplexLineReal ≠ 0) (hinj : InjOn (fun w ↦ (u w, w.2)) D)
+    (hε : 0 < ε) (hpart : ∀ z ∈ U, ∃ s, (s, z.2) ∈ D ∧ ε ≤ |s - z.1| ∧ u (s, z.2) = u z) :
+    ∃ c ≠ 0, Periodic u (c, 0) := by
+  classical
+  set φ : ℝ × ℝ → ℝ := fun z ↦
+    Classical.epsilon fun s ↦ (s, z.2) ∈ D ∧ ε ≤ |s - z.1| ∧ u (s, z.2) = u z
+  have hφ (z : ℝ × ℝ) (hz : z ∈ U) :
+      (φ z, z.2) ∈ D ∧ ε ≤ |φ z - z.1| ∧ u (φ z, z.2) = u z :=
+    Classical.epsilon_spec (hpart z hz)
+  have heq (z₀ : ℝ × ℝ) (hz₀ : z₀ ∈ U) : ∀ᶠ z in 𝓝 z₀, u (φ z, z.2) = u z :=
+    eventually_of_mem (hU.mem_nhds hz₀) fun z hz ↦ (hφ z hz).2.2
+  have hdiff (z : ℝ × ℝ) (hz : z ∈ U) : DifferentiableAt ℝ φ z :=
+    differentiableAt_of_eventually_comp_eq
+      (continuousAt_of_forall_slicePartner hu.continuous hD hinj hU hφ hz)
+      (hu.differentiable one_ne_zero z)
+      hu.contDiffAt (hDs _ (hφ z hz).1) (heq z hz)
+  have hfd (z : ℝ × ℝ) (hz : z ∈ U) : fderiv ℝ φ z = ContinuousLinearMap.fst ℝ ℝ ℝ :=
+    fderiv_eq_fst_of_eventually_comp_eq (hdiff z hz) (hu.differentiable one_ne_zero _) (heq z hz)
+      (hJJ z) (hF z) (hF _) (hDs _ (hφ z hz).1)
+  -- On a ball in `U`, the partner is a fixed translate, `φ z = z.1 + c`.
+  obtain ⟨z₀, hz₀⟩ := hUne
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 hU z₀ hz₀
+  obtain ⟨c, hc⟩ := isOpen_ball.exists_eq_add_of_fderiv_eq (convex_ball z₀ r).isPreconnected
+    (fun z hz ↦ (hdiff z (hball hz)).differentiableWithinAt) differentiableOn_fst
+    fun z hz ↦ by rw [hfd z (hball hz), fderiv_fst]
+  refine ⟨c, ?_, SymplecticForm.periodic_of_floerOperator_eq_zero_of_eqOn hJ hJJ hH hu hF
+    isOpen_ball ⟨z₀, mem_ball_self hr⟩ fun z hz ↦ ?_⟩
+  · have h := (hφ z₀ hz₀).2.1
+    rw [hc (mem_ball_self hr), add_sub_cancel_left] at h
+    exact abs_pos.1 (hε.trans_le h)
+  · have h := (hφ z (hball hz)).2.2
+    rw [hc hz] at h
+    simp only at h ⊢
+    rw [show z + (c, 0) = (z.1 + c, z.2) from Prod.ext rfl (add_zero z.2), h]
+
+/-- **The regular points of a nonstationary Floer trajectory are dense** (Floer, Hofer and
+Salamon). Let `u` be a `C²` solution on `ℝ × ℝ` of the Floer equation
+`∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0`, for a `C¹` family `J_t` with `J_t(u)² = -1` along `u` and a
+`C²` Hamiltonian `H`, converging uniformly in `t` to continuous loops `xm` and `xp` as `s → -∞`
+and `s → +∞`. If `u` is not stationary, its regular points form a dense subset of `ℝ × ℝ`. -/
+theorem dense_regularPoints (hJ : ContDiff ℝ 1 (fun p : ℝ × V ↦ J p.1 p.2))
+    (hJJ : ∀ z, J z.2 (u z) ∘L J z.2 (u z) = -ContinuousLinearMap.id ℝ V)
+    (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiff ℝ 2 u)
+    (hF : ∀ z, ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u z = 0)
+    (hne : ∃ z, fderiv ℝ u z stdComplexLineReal ≠ 0) (hxm : Continuous xm) (hxp : Continuous xp)
+    (hm : TendstoUniformly (fun s t ↦ u (s, t)) xm atBot)
+    (hp : TendstoUniformly (fun s t ↦ u (s, t)) xp atTop) :
+    Dense (regularPoints u xm xp) := by
+  have hJ' : ContDiff ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1.2 p.2) :=
+    hJ.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
+  have hKt : ContDiff ℝ 2 (uncurry fun (p : ℝ × ℝ) ↦ H p.2) :=
+    hH.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
+  have hs (z : ℝ × ℝ) : ∀ᶠ c : ℝ in 𝓝 0, (z + c • stdComplexLineReal).2 = z.2 :=
+    Eventually.of_forall fun c ↦ by simp [stdComplexLineReal_eq]
+  have hsJ (z : ℝ × ℝ) : ∀ᶠ c : ℝ in 𝓝 0,
+      (fun p : ℝ × ℝ ↦ J p.2) (z + c • stdComplexLineReal) = J z.2 :=
+    (hs z).mono fun c h ↦ by simp only [h]
+  have hsH (z : ℝ × ℝ) : ∀ᶠ c : ℝ in 𝓝 0,
+      (fun p : ℝ × ℝ ↦ H p.2) (z + c • stdComplexLineReal) = H z.2 :=
+    (hs z).mono fun c h ↦ by simp only [h]
+  -- The points with `∂ₛu ≠ 0` away from the asymptotic orbits form a dense open set `G`.
+  set G := {z : ℝ × ℝ | fderiv ℝ u z stdComplexLineReal ≠ 0 ∧ u z ≠ xm z.2 ∧ u z ≠ xp z.2}
+  have hGd : Dense G := dense_setOf_fderiv_apply_ne_zero_and_ne_and_ne_of_floerOperator_eq_zero
+    hsJ (fun _ ↦ Eventually.of_forall fun _ ↦ rfl) hsH (fun _ ↦ hJ'.contDiffAt) hJJ
+    (fun _ ↦ contDiff_const.contDiffAt) (fun _ ↦ hKt.contDiffAt) hu hF hne hxm hxp
+  have hGo : IsOpen G :=
+    (isOpen_ne_fun ((hu.continuous_fderiv (by norm_num)).clm_apply continuous_const)
+      continuous_const).inter ((isOpen_ne_fun hu.continuous (hxm.comp continuous_snd)).inter
+        (isOpen_ne_fun hu.continuous (hxp.comp continuous_snd)))
+  -- The zeros of `∂ₛu` are isolated, hence countable.
+  have hcod :=
+    SymplecticForm.setOf_fderiv_apply_ne_zero_mem_codiscreteWithin_of_floerOperator_eq_zero
+    isOpen_univ isPreconnected_univ (fun z _ ↦ hsJ z) (fun _ _ ↦ Eventually.of_forall fun _ ↦ rfl)
+    (fun z _ ↦ hsH z) (fun _ _ ↦ hJ'.contDiffAt) (fun z _ ↦ hJJ z)
+    (fun _ _ ↦ contDiff_const.contDiffAt) (fun _ _ ↦ hKt.contDiffAt) hu.contDiffOn
+    (fun z _ ↦ hF z) (by simpa using hne)
+  have hcrit : {w : ℝ × ℝ | fderiv ℝ u w stdComplexLineReal = 0}.Countable := by
+    refine (countable_iUnion fun n : ℕ ↦ ((isCompact_closedBall (0 : ℝ × ℝ) n
+      ).finite_sdiff_of_mem_codiscreteWithin (codiscreteWithin_mono (subset_univ _) hcod)
+      ).countable).mono fun w hw ↦ ?_
+    obtain ⟨n, hn⟩ := exists_nat_ge (dist w 0)
+    exact mem_iUnion.2 ⟨n, mem_closedBall.2 hn, fun h ↦ h hw⟩
+  refine dense_iff_inter_open.2 fun U hU hUne ↦ ?_
+  by_contra hreg
+  obtain ⟨z₀, hz₀U, hz₀G⟩ := dense_iff_inter_open.1 hGd U hU hUne
+  -- Without regular points in `U`, every point of `U ∩ G` has a partner on its slice.
+  have hpart : ∀ z ∈ U ∩ G, ∃ s ≠ z.1, u (s, z.2) = u z := by
+    rintro z ⟨hzU, hzG⟩
+    by_contra h
+    push Not at h
+    exact hreg ⟨z, hzU, hzG.1, hzG.2.1, hzG.2.2, fun s hs ↦ by_contra fun hsz ↦ h s hsz hs⟩
+  obtain ⟨U₀, D, ε, hU₀, hU₀ne, hD, hDs, hinj, hε, hpart₀⟩ :=
+    exists_isCompact_forall_exists_slicePartner (hu.of_le (by norm_num)) hcrit (hU.inter hGo)
+      ⟨z₀, hz₀U, hz₀G⟩ hpart
+  obtain ⟨c, hc, hper⟩ := exists_ne_zero_periodic_of_forall_exists_slicePartner hJ hJJ hH
+    (hu.of_le (by norm_num)) hF hU₀ hU₀ne hD hDs hinj hε hpart₀
+  -- A period `(c, 0)` with `c ≠ 0` moves `z₀` to an end, where `u` is an asymptotic orbit.
+  exact (eq_or_eq_of_periodic hm hp hc hper z₀).elim hz₀G.2.1 hz₀G.2.2
+
+end Dense
 
 end TauCeti.Floer
