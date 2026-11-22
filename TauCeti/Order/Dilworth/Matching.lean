@@ -335,6 +335,18 @@ private theorem exists_crossing_edge_of_isOrderMatching {α : Type*} {r : α →
   have hlt : (B.erase a).card < B.card := Finset.card_erase_lt_of_mem haB
   omega
 
+/-- Inserting `(x, z)` into an `r`-order matching `E` on `t` when `x, z ∈ t`, `r x z`, and no edge
+of `E` uses `x` as a left endpoint or `z` as a right endpoint produces an `r`-order matching on `t`
+with one additional edge. -/
+private theorem isOrderMatching_insert_of_unused {α : Type*} {r : α → α → Prop} [DecidableEq α]
+    {t : Finset α} {E : Finset (α × α)} {x z : α}
+    (hE : t.IsOrderMatching r E) (hx : x ∈ t) (hz : z ∈ t) (hr : r x z)
+    (hleft : ∀ e ∈ E, e.1 ≠ x) (hright : ∀ e ∈ E, e.2 ≠ z) :
+    t.IsOrderMatching r (insert (x, z) E) ∧ (insert (x, z) E).card = E.card + 1 :=
+  ⟨Finset.isOrderMatching_insert_iff.mpr
+      ⟨hE, hx, hz, hr, fun e he h ↦ (hleft e he h).elim, fun e he h ↦ (hright e he h).elim⟩,
+    Finset.card_insert_of_notMem fun h ↦ hleft (x, z) h rfl⟩
+
 /-- Replacing an edge `(u, v) ∈ E` by `(u, y)` and `(y, v)` for a fresh vertex `y ∉ t` with
 `r u y` and `r y v` yields an `r`-order matching on `insert y t` with one additional edge and the
 same unmatched endpoints `a` and `b`. -/
@@ -347,32 +359,25 @@ private theorem isOrderMatching_split_edge {α : Type*} {r : α → α → Prop}
       (∀ e ∈ E', e.2 ≠ a) ∧ (∀ e ∈ E', e.1 ≠ b) := by
   have hu : u ∈ t := hE.fst_mem huv
   have hv : v ∈ t := hE.snd_mem huv
-  have hE1 : (insert y t).IsOrderMatching r (insert (y, v) (E.erase (u, v))) := by
-    rw [Finset.isOrderMatching_insert_iff]
-    refine ⟨(hE.subset (Finset.erase_subset _ _)).mono (Finset.subset_insert _ _),
-      Finset.mem_insert_self _ _, Finset.mem_insert_of_mem hv, hyv, fun e he he1 ↦ ?_,
-      fun e he he2 ↦ ?_⟩
-    · exact absurd (he1 ▸ hE.fst_mem (Finset.mem_erase.mp he).2) hyt
-    · exact absurd (hE.injOn_snd (Finset.mem_erase.mp he).2 huv he2) (Finset.mem_erase.mp he).1
-  have hE2 : (insert y t).IsOrderMatching r (insert (u, y) (insert (y, v) (E.erase (u, v)))) := by
-    rw [Finset.isOrderMatching_insert_iff]
-    refine ⟨hE1, Finset.mem_insert_of_mem hu, Finset.mem_insert_self _ _, huy, fun e he he1 ↦ ?_,
-      fun e he he2 ↦ ?_⟩
-    · rcases Finset.mem_insert.mp he with rfl | he'
-      · exact absurd (by dsimp at he1; exact he1.symm ▸ hu) hyt
-      · exact absurd (hE.injOn_fst (Finset.mem_erase.mp he').2 huv he1) (Finset.mem_erase.mp he').1
-    · rcases Finset.mem_insert.mp he with rfl | he'
-      · exact absurd (by dsimp at he2; exact he2 ▸ hv) hyt
-      · exact absurd (he2 ▸ hE.snd_mem (Finset.mem_erase.mp he').2) hyt
-  have h1not : (y, v) ∉ E.erase (u, v) := fun h ↦ hyt (hE.fst_mem (Finset.mem_erase.mp h).2)
-  have h2not : (u, y) ∉ insert (y, v) (E.erase (u, v)) := fun h ↦ by
-    rcases Finset.mem_insert.mp h with heq | h'
-    · exact hyt ((Prod.mk.inj heq).1 ▸ hu)
-    · exact hyt (hE.snd_mem (Finset.mem_erase.mp h').2)
+  obtain ⟨hE1, hcard1⟩ := isOrderMatching_insert_of_unused
+    ((hE.subset (Finset.erase_subset _ _)).mono (Finset.subset_insert _ _))
+    (Finset.mem_insert_self _ _) (Finset.mem_insert_of_mem hv) hyv
+    (fun e he he1 ↦ hyt (he1 ▸ hE.fst_mem (Finset.mem_erase.mp he).2))
+    (fun e he he2 ↦ (Finset.mem_erase.mp he).1
+      (hE.injOn_snd (Finset.mem_erase.mp he).2 huv he2))
+  obtain ⟨hE2, hcard2⟩ := isOrderMatching_insert_of_unused hE1
+    (Finset.mem_insert_of_mem hu) (Finset.mem_insert_self _ _) huy
+    (fun e he he1 ↦ by
+      rcases Finset.mem_insert.mp he with rfl | he'
+      · dsimp at he1; exact hyt (he1.symm ▸ hu)
+      · exact (Finset.mem_erase.mp he').1 (hE.injOn_fst (Finset.mem_erase.mp he').2 huv he1))
+    (fun e he he2 ↦ by
+      rcases Finset.mem_insert.mp he with rfl | he'
+      · dsimp at he2; exact hyt (he2 ▸ hv)
+      · exact hyt (he2 ▸ hE.snd_mem (Finset.mem_erase.mp he').2))
   refine ⟨hE2, ?_, fun e he ↦ ?_, fun e he ↦ ?_⟩
-  · rw [Finset.card_insert_of_notMem h2not, Finset.card_insert_of_notMem h1not,
-      Finset.card_erase_of_mem huv]
-    have : 1 ≤ E.card := Finset.card_pos.mpr ⟨(u, v), huv⟩
+  · have : 1 ≤ E.card := Finset.card_pos.mpr ⟨(u, v), huv⟩
+    rw [hcard2, hcard1, Finset.card_erase_of_mem huv]
     omega
   · rcases Finset.mem_insert.mp he with rfl | he'
     · exact fun h ↦ by dsimp at h; exact hyt (h.symm ▸ hat)
@@ -393,11 +398,10 @@ private theorem isOrderMatching_prepend_edge {α : Type*} {r : α → α → Pro
     (ha_in : ∀ e ∈ E, e.2 ≠ a) (hb_out : ∀ e ∈ E, e.1 ≠ b) :
     (insert y t).IsOrderMatching r (insert (y, a) E) ∧ (insert (y, a) E).card = E.card + 1 ∧
       (∀ e ∈ insert (y, a) E, e.2 ≠ y) ∧ (∀ e ∈ insert (y, a) E, e.1 ≠ b) := by
-  have hnot : (y, a) ∉ E := fun h ↦ hyt (hE.fst_mem h)
-  refine ⟨Finset.isOrderMatching_insert_iff.mpr ⟨hE.mono (Finset.subset_insert _ _),
-      Finset.mem_insert_self _ _, Finset.mem_insert_of_mem hat, hya,
-      fun _ he h ↦ (hyt (h ▸ hE.fst_mem he)).elim, fun e he h ↦ (ha_in e he h).elim⟩,
-    Finset.card_insert_of_notMem hnot, fun e he h ↦ ?_, fun e he h ↦ ?_⟩
+  obtain ⟨hE', hcard'⟩ := isOrderMatching_insert_of_unused
+    (hE.mono (Finset.subset_insert _ _)) (Finset.mem_insert_self _ _)
+    (Finset.mem_insert_of_mem hat) hya (fun _ he h ↦ hyt (h ▸ hE.fst_mem he)) ha_in
+  refine ⟨hE', hcard', fun e he h ↦ ?_, fun e he h ↦ ?_⟩
   · rcases Finset.mem_insert.mp he with rfl | he'
     · dsimp at h; exact hyt (h ▸ hat)
     · exact hyt (h ▸ hE.snd_mem he')
@@ -413,11 +417,10 @@ private theorem isOrderMatching_append_edge {α : Type*} {r : α → α → Prop
     (ha_in : ∀ e ∈ E, e.2 ≠ a) (hb_out : ∀ e ∈ E, e.1 ≠ b) :
     (insert y t).IsOrderMatching r (insert (b, y) E) ∧ (insert (b, y) E).card = E.card + 1 ∧
       (∀ e ∈ insert (b, y) E, e.2 ≠ a) ∧ (∀ e ∈ insert (b, y) E, e.1 ≠ y) := by
-  have hnot : (b, y) ∉ E := fun h ↦ hyt (hE.snd_mem h)
-  refine ⟨Finset.isOrderMatching_insert_iff.mpr ⟨hE.mono (Finset.subset_insert _ _),
-      Finset.mem_insert_of_mem hbt, Finset.mem_insert_self _ _, hby,
-      fun e he h ↦ (hb_out e he h).elim, fun _ he h ↦ (hyt (h ▸ hE.snd_mem he)).elim⟩,
-    Finset.card_insert_of_notMem hnot, fun e he h ↦ ?_, fun e he h ↦ ?_⟩
+  obtain ⟨hE', hcard'⟩ := isOrderMatching_insert_of_unused
+    (hE.mono (Finset.subset_insert _ _)) (Finset.mem_insert_of_mem hbt)
+    (Finset.mem_insert_self _ _) hby hb_out (fun _ he h ↦ hyt (h ▸ hE.snd_mem he))
+  refine ⟨hE', hcard', fun e he h ↦ ?_, fun e he h ↦ ?_⟩
   · rcases Finset.mem_insert.mp he with rfl | he'
     · dsimp at h; exact hyt (h.symm ▸ hat)
     · exact ha_in e he' h
@@ -484,17 +487,29 @@ theorem exists_isOrderMatching_of_chainPartition {α : Type*} {r : α → α →
     fun c hc ↦ by
       simpa only [edgeOf, hc, ↓reduceDIte] using
         ((hC c hc).2.exists_isOrderMatching_card_add_one (hC c hc).1).choose_spec
-  have hsame_part : ∀ {c₁ c₂}, c₁ ∈ C → c₂ ∈ C → ∀ {e₁ e₂ : α × α},
-      e₁ ∈ edgeOf c₁ → e₂ ∈ edgeOf c₂ → (e₁.1 = e₂.1 ∨ e₁.2 = e₂.2) → c₁ = c₂ := by
-    intro c₁ c₂ hc₁ hc₂ e₁ e₂ h₁ h₂ hshare
+  have hsame (p : α × α → α) (hp_mem : ∀ c ∈ C, ∀ e ∈ edgeOf c, p e ∈ c)
+      {c₁ c₂} (hc₁ : c₁ ∈ C) (hc₂ : c₂ ∈ C) {e₁ e₂ : α × α}
+      (h₁ : e₁ ∈ edgeOf c₁) (h₂ : e₂ ∈ edgeOf c₂) (heq : p e₁ = p e₂) : c₁ = c₂ := by
     by_contra hne
-    have hdisj' := Finset.disjoint_left.mp (hdisj hc₁ hc₂ hne)
-    rcases hshare with heq | heq
-    · exact hdisj' ((hedge c₁ hc₁).1.fst_mem h₁) (heq ▸ (hedge c₂ hc₂).1.fst_mem h₂)
-    · exact hdisj' ((hedge c₁ hc₁).1.snd_mem h₁) (heq ▸ (hedge c₂ hc₂).1.snd_mem h₂)
+    exact Finset.disjoint_left.mp (hdisj hc₁ hc₂ hne)
+      (hp_mem c₁ hc₁ e₁ h₁) (heq ▸ hp_mem c₂ hc₂ e₂ h₂)
   have hdisjE : (C : Set (Finset α)).PairwiseDisjoint edgeOf := fun c₁ hc₁ c₂ hc₂ hne ↦
-    Finset.disjoint_left.mpr fun _ he₁ he₂ ↦ hne (hsame_part hc₁ hc₂ he₁ he₂ (Or.inl rfl))
-  refine ⟨C.biUnion edgeOf, ⟨?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+    Finset.disjoint_left.mpr fun _ he₁ he₂ ↦
+      hne (hsame Prod.fst (fun c hc _ he ↦ (hedge c hc).1.fst_mem he) hc₁ hc₂ he₁ he₂ rfl)
+  have hinjOn (p : α × α → α) (hp_mem : ∀ c ∈ C, ∀ e ∈ edgeOf c, p e ∈ c)
+      (hp_inj : ∀ c ∈ C, ((edgeOf c : Finset (α × α)) : Set (α × α)).InjOn p) :
+      ((C.biUnion edgeOf : Finset (α × α)) : Set (α × α)).InjOn p := by
+    intro _ he₁ _ he₂ heq
+    obtain ⟨c₁, hc₁, h₁⟩ := mem_biUnion.mp (mem_coe.mp he₁)
+    obtain ⟨c₂, hc₂, h₂⟩ := mem_biUnion.mp (mem_coe.mp he₂)
+    obtain rfl := hsame p hp_mem hc₁ hc₂ h₁ h₂ heq
+    exact hp_inj c₁ hc₁ h₁ h₂ heq
+  refine ⟨C.biUnion edgeOf, ⟨?_, ?_, ?_,
+    hinjOn Prod.fst (fun c hc _ he ↦ (hedge c hc).1.fst_mem he)
+      fun c hc ↦ (hedge c hc).1.injOn_fst,
+    hinjOn Prod.snd (fun c hc _ he ↦ (hedge c hc).1.snd_mem he)
+      fun c hc ↦ (hedge c hc).1.injOn_snd⟩,
+    ?_⟩
   · intro _ he
     obtain ⟨c, hc, hec⟩ := mem_biUnion.mp he
     exact (hcov ▸ subset_biUnion_of_mem id hc) ((hedge c hc).1.fst_mem hec)
@@ -504,16 +519,6 @@ theorem exists_isOrderMatching_of_chainPartition {α : Type*} {r : α → α →
   · intro _ he
     obtain ⟨c, hc, hec⟩ := mem_biUnion.mp he
     exact (hedge c hc).1.rel hec
-  · intro _ he₁ _ he₂ heq
-    obtain ⟨c₁, hc₁, h₁⟩ := mem_biUnion.mp (mem_coe.mp he₁)
-    obtain ⟨c₂, hc₂, h₂⟩ := mem_biUnion.mp (mem_coe.mp he₂)
-    obtain rfl := hsame_part hc₁ hc₂ h₁ h₂ (Or.inl heq)
-    exact (hedge c₁ hc₁).1.injOn_fst h₁ h₂ heq
-  · intro _ he₁ _ he₂ heq
-    obtain ⟨c₁, hc₁, h₁⟩ := mem_biUnion.mp (mem_coe.mp he₁)
-    obtain ⟨c₂, hc₂, h₂⟩ := mem_biUnion.mp (mem_coe.mp he₂)
-    obtain rfl := hsame_part hc₁ hc₂ h₁ h₂ (Or.inr heq)
-    exact (hedge c₁ hc₁).1.injOn_snd h₁ h₂ heq
   · have hdisjId : (C : Set (Finset α)).PairwiseDisjoint id := hdisj
     rw [card_biUnion hdisjE, ← hcov, card_biUnion hdisjId]
     calc

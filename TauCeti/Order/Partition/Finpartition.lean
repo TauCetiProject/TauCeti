@@ -942,8 +942,8 @@ theorem mem_part_comap {x y : α} (hx : x ∈ s) :
 of their preimages `{x ∈ s | f x ∈ C}`. -/
 theorem prod_parts_comap {M : Type*} [CommMonoid M] (P : Finpartition (s.image f))
     (g : Finset α → M) :
-    ∏ X ∈ (P.comap f).parts, g X = ∏ C ∈ P.parts, g {x ∈ s | f x ∈ C} :=
-  prod_image fun _ hC _ hD hCD => P.filter_mem_injOn_parts hC hD hCD
+    ∏ X ∈ (P.comap f).parts, g X = ∏ C ∈ P.parts, g {x ∈ s | f x ∈ C} := by
+  rw [parts_comap, prod_image fun _ hC _ hD hCD => P.filter_mem_injOn_parts hC hD hCD]
 
 /-- Pulling back a finite partition `P` of `univ` along an equivalence `g`, after identifying
 `univ` with its image under `g`, moves each part of `P` along `g.symm`. -/
