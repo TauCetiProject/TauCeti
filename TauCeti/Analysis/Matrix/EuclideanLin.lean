@@ -42,7 +42,7 @@ and a unitary matrix acts as a linear isometry equivalence of Euclidean space; e
 isometry equivalence arises in this way.
 The rows of a unitary matrix form an orthonormal basis, so the values of the quadratic form of a
 matrix `A` on an orthonormal basis are the diagonal entries of a unitary conjugate of `A`; for a
-diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
+diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² conj(wᵢ)`.
 
 ## Main results
 
@@ -51,9 +51,9 @@ diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
 * `Matrix.inner_toEuclideanLin_piLpExtendByZero` — the quadratic form of `A` at a vector extended
   by zero is the quadratic form of the principal submatrix at the original vector;
 
-* `Matrix.inner_toEuclideanLin_diagonal_apply_self` — the quadratic form of `diag(w)`, for real
-  weights `w`, is the real number `∑ᵢ |xᵢ|² wᵢ` (its real part:
-  `Matrix.re_inner_toEuclideanLin_diagonal_apply_self`);
+* `TauCeti.inner_toEuclideanLin_diagonal_apply_self` — the quadratic form of `diag(w)` is
+  `x ↦ ∑ᵢ |xᵢ|² conj(wᵢ)`; for real weights its real part is `∑ᵢ |xᵢ|² wᵢ`
+  (`Matrix.re_inner_toEuclideanLin_diagonal_apply_self`);
 * `Matrix.dotProduct_mulVec_eq_inner_toEuclideanLin` — over the reals, the coordinate quadratic
   form `xᵀ A x` is `⟪x, A x⟫`;
 * `Matrix.exists_mem_unitaryGroup_mul_mul_star_apply_self_eq_inner` — the values of the quadratic
@@ -146,22 +146,21 @@ theorem inner_toEuclideanLin_piLpExtendByZero (A : Matrix κ κ 𝕜) (f : ι �
     LinearIsometry.sum_mul_piLpExtendByZero, hmul]
   simp [mulVec, dotProduct]
 
-/-- The quadratic form of the diagonal operator `diag(w)` of real weights on Euclidean space is
-`x ↦ ∑ᵢ |xᵢ|² wᵢ`, a real number. -/
-theorem inner_toEuclideanLin_diagonal_apply_self (w : ι → ℝ) (x : EuclideanSpace 𝕜 ι) :
-    ⟪toEuclideanLin (diagonal fun i ↦ (w i : 𝕜)) x, x⟫_𝕜 = ((∑ i, ‖x i‖ ^ 2 * w i : ℝ) : 𝕜) := by
-  simp only [toLpLin_apply, PiLp.inner_apply, mulVec_diagonal, RCLike.inner_apply', map_mul,
-    RCLike.conj_ofReal, RCLike.ofReal_sum]
+/-- The quadratic form of the diagonal operator `diag(w)` on Euclidean space is
+`x ↦ ∑ᵢ |xᵢ|² conj(wᵢ)`. -/
+theorem _root_.TauCeti.inner_toEuclideanLin_diagonal_apply_self (w : ι → 𝕜)
+    (x : EuclideanSpace 𝕜 ι) :
+    ⟪toEuclideanLin (diagonal w) x, x⟫_𝕜 = ∑ i, (‖x i‖ : 𝕜) ^ 2 * starRingEnd 𝕜 (w i) := by
+  simp only [toLpLin_apply, PiLp.inner_apply, mulVec_diagonal, RCLike.inner_apply', map_mul]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [mul_assoc, RCLike.conj_mul]
-  push_cast
-  ring
+  rw [mul_assoc, RCLike.conj_mul, mul_comm]
 
 /-- The real part of the quadratic form of the diagonal operator `diag(w)` of real weights is
 `x ↦ ∑ᵢ |xᵢ|² wᵢ`. -/
 theorem re_inner_toEuclideanLin_diagonal_apply_self (w : ι → ℝ) (x : EuclideanSpace 𝕜 ι) :
     RCLike.re ⟪toEuclideanLin (diagonal fun i ↦ (w i : 𝕜)) x, x⟫_𝕜 = ∑ i, ‖x i‖ ^ 2 * w i := by
-  rw [inner_toEuclideanLin_diagonal_apply_self, RCLike.ofReal_re]
+  simp only [TauCeti.inner_toEuclideanLin_diagonal_apply_self, RCLike.conj_ofReal,
+    ← RCLike.ofReal_pow, ← RCLike.ofReal_mul, ← RCLike.ofReal_sum, RCLike.ofReal_re]
 
 /-- Over the reals, the coordinate quadratic form `xᵀ A x` is the inner product `⟪x, A x⟫` on
 Euclidean space. -/
@@ -261,13 +260,14 @@ theorem inner_toEuclideanCLM_mul_mul_conjTranspose (A B : Matrix ι ι 𝕜)
   rw [map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp, ← adjoint_toEuclideanCLM,
     ContinuousLinearMap.adjoint_inner_left]
 
-/-- The operator of a normal matrix on `EuclideanSpace 𝕜 ι` is normal: on square matrices,
-`toEuclideanLin` is the inverse of the star algebra equivalence
-`LinearMap.toMatrixOrthonormal` of the standard orthonormal basis. -/
+/-- The operator `toEuclideanLin A` of a normal matrix `A` on `EuclideanSpace 𝕜 ι` is normal.
+The underlying linear equivalence of the inverse of the star algebra equivalence
+`LinearMap.toMatrixOrthonormal` of the standard orthonormal basis is `toEuclideanLin`, and star
+algebra equivalences preserve normality. -/
 instance isStarNormal_toEuclideanLin (A : Matrix ι ι 𝕜) [IsStarNormal A] :
     IsStarNormal (toEuclideanLin A) := by
-  rw [toEuclideanLin_eq_toLin_orthonormal, ← LinearMap.toMatrix_symm]
-  -- `LinearMap.toMatrixOrthonormal` is `LinearMap.toMatrix` bundled as a star algebra equivalence
+  rw [toEuclideanLin_eq_toLin_orthonormal, ← LinearMap.toMatrix_symm, ← LinearEquiv.invFun_eq_symm,
+    ← LinearMap.toMatrixOrthonormal_symm_apply]
   exact IsStarNormal.map (LinearMap.toMatrixOrthonormal (EuclideanSpace.basisFun ι 𝕜)).symm A
 
 /-- A unitary matrix acts on `EuclideanSpace 𝕜 ι` as a linear isometry equivalence, and this is a
