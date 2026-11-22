@@ -54,7 +54,9 @@ theorem mem_compatibleAlgebraFamilies {x : ∀ b, I.right b} :
       ∀ a, (x (J.fst a), x (J.snd a)) ∈ ((I.fst a).hom.prod (I.snd a).hom).range := by
   simp [compatibleAlgebraFamilies]
 
-private theorem mem_sectionsSubalgebra_multispan {x : ∀ j, I.multispan.obj j} :
+/-- Matching algebra sections of a multispan are characterized by their two incident equations. -/
+@[simp high]
+theorem mem_sectionsSubalgebra_multispan {x : ∀ j, I.multispan.obj j} :
     x ∈ AlgCat.sectionsSubalgebra I.multispan ↔
       (∀ a, (I.fst a).hom (x (.left a)) = x (.right (J.fst a))) ∧
       (∀ a, (I.snd a).hom (x (.left a)) = x (.right (J.snd a))) := by
@@ -96,16 +98,23 @@ private def asSemimoduleIndex : MultispanIndex J (SemimoduleCat.{t} R) where
   fst a := SemimoduleCat.ofHom (I.fst a).hom.toLinearMap
   snd a := SemimoduleCat.ofHom (I.snd a).hom.toLinearMap
 
+private theorem asSemimoduleIndex_fst_apply (a : J.L) (x : I.left a) :
+    (I.asSemimoduleIndex.fst a).hom x = (I.fst a).hom x := by
+  -- Normalize the private bundled carrier once, then use the algebra hom's application law.
+  change (I.fst a).hom.toLinearMap x = (I.fst a).hom x
+  exact (I.fst a).hom.toLinearMap_apply x
+
+private theorem asSemimoduleIndex_snd_apply (a : J.L) (x : I.left a) :
+    (I.asSemimoduleIndex.snd a).hom x = (I.snd a).hom x := by
+  change (I.snd a).hom.toLinearMap x = (I.snd a).hom x
+  exact (I.snd a).hom.toLinearMap_apply x
+
 private theorem asSemimoduleIndex_span_apply (a : J.L) (x : I.left a) :
     ((I.asSemimoduleIndex.fst a).hom.prod (I.asSemimoduleIndex.snd a).hom) x =
-      ((I.fst a).hom.prod (I.snd a).hom) x := by
-  -- The private index changes the bundled objects and their inferred module instances.
-  -- Rewriting applications cannot align those instances until this carrier is normalized.
-  change ((I.fst a).hom.toLinearMap.prod (I.snd a).hom.toLinearMap) x =
-    ((I.fst a).hom.prod (I.snd a).hom) x
-  simp only [LinearMap.prod_apply, Function.prod_apply, AlgHom.prod_apply]
-  exact Prod.ext ((I.fst a).hom.toLinearMap_apply x) ((I.snd a).hom.toLinearMap_apply x)
-
+      ((I.fst a).hom.prod (I.snd a).hom) x :=
+  (LinearMap.prod_apply _ _ x).trans ((Function.prod_apply _ _ x).trans
+    ((Prod.ext (I.asSemimoduleIndex_fst_apply a x) (I.asSemimoduleIndex_snd_apply a x)).trans
+      (AlgHom.prod_apply (I.fst a).hom (I.snd a).hom x).symm))
 
 private def toLinearSection (s : AlgCat.sectionsSubalgebra I.multispan) :
     SemimoduleCat.sectionsSubmodule I.asSemimoduleIndex.multispan :=
@@ -116,18 +125,15 @@ private def toLinearSection (s : AlgCat.sectionsSubalgebra I.multispan) :
       have hs := I.mem_sectionsSubalgebra_multispan.mp s.property
       constructor
       · intro a
-        -- Normalize only the local index wrapper before using the public application equations.
-        change (I.fst a).hom.toLinearMap
-          ((AlgCat.sectionsLinearEquiv I.multispan s).val (.left a)) =
-            (AlgCat.sectionsLinearEquiv I.multispan s).val (.right (J.fst a))
-        simp only [AlgCat.sectionsLinearEquiv_apply]
-        exact ((I.fst a).hom.toLinearMap_apply (s.val (.left a))).trans (hs.1 a)
+        exact (I.asSemimoduleIndex_fst_apply a _).trans
+          ((congrArg (I.fst a).hom (AlgCat.sectionsLinearEquiv_apply I.multispan s (.left a))).trans
+            ((hs.1 a).trans
+              (AlgCat.sectionsLinearEquiv_apply I.multispan s (.right (J.fst a))).symm))
       · intro a
-        change (I.snd a).hom.toLinearMap
-          ((AlgCat.sectionsLinearEquiv I.multispan s).val (.left a)) =
-            (AlgCat.sectionsLinearEquiv I.multispan s).val (.right (J.snd a))
-        simp only [AlgCat.sectionsLinearEquiv_apply]
-        exact ((I.snd a).hom.toLinearMap_apply (s.val (.left a))).trans (hs.2 a)⟩
+        exact (I.asSemimoduleIndex_snd_apply a _).trans
+          ((congrArg (I.snd a).hom (AlgCat.sectionsLinearEquiv_apply I.multispan s (.left a))).trans
+            ((hs.2 a).trans
+              (AlgCat.sectionsLinearEquiv_apply I.multispan s (.right (J.snd a))).symm))⟩
 
 
 private theorem toLinearSection_apply_left
@@ -149,14 +155,9 @@ private def toAlgebraSection (s : SemimoduleCat.sectionsSubmodule I.asSemimodule
       obtain ⟨hf, hg⟩ := I.asSemimoduleIndex.mem_sectionsSubmodule_multispan.mp s.property
       constructor
       · intro a
-        have h := hf a
-        -- The linear index has the same carrier; this exposes its bundled module instance.
-        change (I.fst a).hom.toLinearMap (s.val (.left a)) = s.val (.right (J.fst a)) at h
-        exact ((I.fst a).hom.toLinearMap_apply (s.val (.left a))).symm.trans h
+        exact (I.asSemimoduleIndex_fst_apply a (s.val (.left a))).symm.trans (hf a)
       · intro a
-        have h := hg a
-        change (I.snd a).hom.toLinearMap (s.val (.left a)) = s.val (.right (J.snd a)) at h
-        exact ((I.snd a).hom.toLinearMap_apply (s.val (.left a))).symm.trans h⟩
+        exact (I.asSemimoduleIndex_snd_apply a (s.val (.left a))).symm.trans (hg a)⟩
 
 
 private theorem toAlgebraSection_apply_right
@@ -301,7 +302,9 @@ theorem compatibleAlgebraFamiliesMap_apply (α : I.multispan ⟶ I'.multispan)
 theorem compatibleAlgebraFamiliesMap_id :
     compatibleAlgebraFamiliesMap (𝟙 I.multispan) = AlgHom.id R _ := by
   ext x b
-  rfl
+  simp only [compatibleAlgebraFamiliesMap_apply, NatTrans.id_app,
+    AlgCat.hom_id, AlgHom.id_apply]
+  exact AlgHom.id_apply (R := R) (x.val b)
 
 /-- Compatible-family transport respects composition of coefficient maps. -/
 @[simp]
@@ -310,7 +313,9 @@ theorem compatibleAlgebraFamiliesMap_comp (α : I.multispan ⟶ I'.multispan)
     compatibleAlgebraFamiliesMap (α ≫ β) =
       (compatibleAlgebraFamiliesMap β).comp (compatibleAlgebraFamiliesMap α) := by
   ext x b
-  rfl
+  simp only [AlgHom.comp_apply, compatibleAlgebraFamiliesMap_apply,
+    NatTrans.comp_app, AlgCat.hom_comp]
+  exact AlgHom.comp_apply (β.app (.right b)).hom (α.app (.right b)).hom (x.val b)
 
 /-- Restriction commutes with coefficient transport as an equality of algebra homomorphisms.
 No injectivity hypothesis is required. -/
