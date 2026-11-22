@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
-public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence
+public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence.Basic
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero

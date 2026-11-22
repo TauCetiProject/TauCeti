@@ -5,634 +5,473 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Hive.Shift
+public import TauCeti.Combinatorics.Hive.GelfandTsetlin
 public import TauCeti.Combinatorics.Young.LittlewoodRichardson.Basic
-import Mathlib.Tactic.Abel
 import Mathlib.Tactic.FinCases
-import Mathlib.Tactic.Linarith
-import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
-# The bijection between fixed-boundary integer hives and Littlewood–Richardson tableaux
+# Hives and Littlewood–Richardson tableaux
 
-Fixed-boundary normalized integer hives with clockwise boundary
-`productBoundary lam μ γ = (λ, μ, γ*)` are in explicit bijection with Littlewood–Richardson
-tableaux. Using the product chart from `TauCeti.Combinatorics.Hive.Lattice` and
-`TauCeti.Combinatorics.Hive.Basic` and the determinant-shift equivalences from
-`TauCeti.Combinatorics.Hive.Shift`, this file constructs that equivalence at the level of objects,
-first for polynomial dominant weights (`TauCeti.Hive.fixedIntegerHiveEquivLRTableau`) and then, by
-affine determinant shifts, for arbitrary signed dominant weights of `GL n`
-(`TauCeti.Hive.fixedIntegerHiveEquivLRTableauOfShift`,
-`TauCeti.Hive.fixedIntegerHiveDetShiftEquivLRTableau`, and
-`TauCeti.Hive.hiveCount_productBoundary`).
+For Young diagrams `λ, μ, γ` with at most `n` rows, the normalized integer hives of size `n` with
+clockwise product boundary `(λ, μ, γ*)` correspond bijectively to the Littlewood–Richardson
+tableaux of shape `γ / λ` and content `μ` (`TauCeti.Hive.fixedIntegerHiveEquivLRTableau`). So
+the hive count of `(λ, μ, γ*)` is the Littlewood–Richardson coefficient `c^γ_{λ μ}`
+(`TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau`).
 
-For polynomial dominant weights `λ, μ, γ`, a Littlewood–Richardson tableau `T` of skew shape
-`γ / λ` and content `μ` maps to the integer hive with chart values
-`lrChart lam T i j = ∑_{r < j} λ_r + ∑_{l < i} ∑_{r < j} rowCount_T(r, l)`. Conversely, from a
-fixed-boundary integer hive `h` one extracts the row-letter multiplicities `hiveRowCount h r l` as
-the off-diagonal mixed second forward difference for `l < r < n` and the diagonal step
-`h(l + 1, l + 1) - h(l, l + 1)` for `l = r < n`. Elementary-cell concavity gives nonnegativity off
-the diagonal, vertical-strip concavity propagates nonnegativity from the `μ`-boundary onto the
-diagonal, horizontal-strip concavity gives column strictness of the reconstructed skew tableau, and
-vertical-strip concavity gives the Yamanouchi lattice-word condition.
+The bijection factors through the hive's Gelfand–Tsetlin pattern of
+`TauCeti.Hive.fixedIntegerHiveEquivGTPattern`. A Littlewood–Richardson tableau `T` determines
+the pattern `T.toGTPattern n` whose entry `(k, j)` is the number of letters `k` in the first `j`
+rows of `T`. Under this dictionary, with `a r k` the number of letters `k` in row `r`:
+
+* the first rhombus family (`P k j ≤ P k (j + 1)`) is the nonnegativity of `a r k`;
+* the second rhombus family (`P (k + 1) (j + 1) ≤ P k j`) is the ballot condition, in the row-count
+  form `TauCeti.SkewSemistandardYoungTableau.isLatticeWord_readingWord_iff`;
+* the remaining family `TauCeti.Hive.IsGTCompletable` is column strictness, in the row-count form
+  `TauCeti.SkewSemistandardYoungTableau.rowLen_add_sum_range_rowCount_succ_le`;
+* the top row of the pattern is the content `μ`, and its weight is `γ - λ` because the entries of
+  row `r` of a Littlewood–Richardson tableau are at most `r` (`TauCeti.LRTableau.entry_le`).
+
+Conversely a pattern is turned into row counts by the differences `P k (r + 1) - P k r`, and a
+skew tableau is recovered from its row counts by sorting each row
+(`TauCeti.SkewSemistandardYoungTableau.ofRowCount`). In the product chart the hive value at
+`(i, j)` is `λ₀ + ⋯ + λⱼ₋₁` plus the number of letters below `i` in the first `j` rows
+(`TauCeti.Hive.fixedIntegerHiveEquivLRTableau_symm_apply_ofChart`), and the number of letters
+`k` in row `r` is the corresponding mixed difference of the hive
+(`TauCeti.Hive.natCast_rowCount_fixedIntegerHiveEquivLRTableau`).
 
 ## Main definitions
 
-* `TauCeti.Hive.lrChart`: chart values associated to a Littlewood–Richardson tableau.
-* `TauCeti.Hive.hiveOfLRTableau`: fixed-boundary integer hive constructed from an `LRTableau`.
-* `TauCeti.Hive.hiveRowCountInt`, `TauCeti.Hive.hiveRowCount`: row-letter multiplicities extracted
-  from an integer hive.
-* `TauCeti.Hive.lrTableauOfHive`: `LRTableau` reconstructed from a fixed-boundary integer hive.
-* `TauCeti.Hive.fixedIntegerHiveEquivLRTableau`: explicit equivalence
-  `FixedIntegerHive (productBoundary lam μ γ) ≃ LRTableau lam.shape γ.shape μ.shape` for polynomial
-  dominant weights.
-* `TauCeti.Hive.fixedIntegerHiveEquivLRTableauOfShift`,
-  `TauCeti.Hive.fixedIntegerHiveDetShiftEquivLRTableau`: determinant-shifted equivalences for
-  general signed dominant weights.
+* `TauCeti.LRTableau.toGTPattern`: the Gelfand–Tsetlin pattern of row-count partial sums of a
+  Littlewood–Richardson tableau.
+* `TauCeti.Hive.lrTableauEquivGTPattern`: Littlewood–Richardson tableaux of shape `γ / λ` and
+  content `μ` correspond to hive-completable patterns with top row `μ` and weight `γ - λ`.
+* `TauCeti.Hive.fixedIntegerHiveEquivLRTableau`,
+  `TauCeti.Hive.fixedIntegerHiveEquivLRTableauOfShift`,
+  `TauCeti.Hive.fixedIntegerHiveDetShiftEquivLRTableau`: the hive–tableau bijection for
+  Young diagrams, polynomial-shifted dominant weights, and canonical determinant shifts.
 
 ## Main results
 
-* `TauCeti.Hive.lrChart_zero_left`, `TauCeti.Hive.lrChart_zero_right`,
-  `TauCeti.Hive.lrChart_right`, `TauCeti.Hive.lrChart_diag`, `TauCeti.Hive.lrChart_step_left`,
-  `TauCeti.Hive.lrChart_step_right`: boundary evaluations and unit-step differences of `lrChart`.
-* `TauCeti.Hive.natCast_hiveRowCount`, `TauCeti.Hive.natCast_hiveRowCount_of_productBoundary`:
-  casting `hiveRowCount` to `ℤ` recovers `hiveRowCountInt` when `μ` is polynomial.
-* `TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau`,
+* `TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau`: the hive count of `(λ, μ, γ*)`
+  is the Littlewood–Richardson coefficient `c^γ_{λ μ}`.
+* `TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau_shape`,
+  `TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau_shift`,
   `TauCeti.Hive.hiveCount_productBoundary_of_isPolynomial`,
-  `TauCeti.Hive.hiveCount_productBoundary_eq_ite_shift`,
-  `TauCeti.Hive.hiveCount_productBoundary`: Littlewood–Richardson tableau count formulas for
-  polynomial and arbitrary signed dominant weights, together with shift independence.
+  `TauCeti.Hive.hiveCount_productBoundary`: the same for polynomial dominant weights of `GL n`, for
+  determinant-shifted weights, and unconditionally for arbitrary signed dominant weights.
 * `TauCeti.Hive.hiveCount_productBoundary_zero_left`,
-  `TauCeti.Hive.hiveCount_productBoundary_zero_right`: unit-weight hive counts.
-* `TauCeti.Hive.hiveCount_two_std_dual_triv`, `TauCeti.Hive.hiveCount_three_checks`:
-  signed rank-`2` and rank-`3` checks.
+  `TauCeti.Hive.hiveCount_productBoundary_zero_right`,
+  `TauCeti.Hive.hiveCount_two_std_dual_triv`, `TauCeti.Hive.hiveCount_three_checks`: unit-weight
+  fibre counts and concrete signed rank-`2` and rank-`3` hive counts.
 
 ## References
 
 * A. Knutson and T. Tao, *The honeycomb model of $\mathrm{GL}_n(\mathbb{C})$ tensor products I:
   proof of the saturation conjecture*, J. Amer. Math. Soc. **12** (1999), 1055–1090, Appendix 2.
-* A. S. Buch, *The saturation conjecture (after A. Knutson and T. Tao)*, with an appendix by
-  W. Fulton, Enseign. Math. (2) **46** (2000), 43–60, §1 and Appendix A.
-* W. Fulton, *Young Tableaux*, Cambridge University Press (1997), §5.2.
+* A. S. Buch, *The saturation conjecture (after A. Knutson and T. Tao)*, Enseign. Math. **46**
+  (2000), 43–60, Theorem 3.18.
 -/
 
 public section
 
-open scoped BigOperators
+open Finset
 
-namespace TauCeti.Hive
+namespace TauCeti
 
-section Bijection
+/-! ### The Gelfand–Tsetlin pattern of a Littlewood–Richardson tableau -/
 
-variable {n : ℕ}
+namespace LRTableau
 
-/-! ### Forward map: from a Littlewood–Richardson tableau to an integer hive -/
+variable {lam γ μ : YoungDiagram}
 
-/-- Chart values of the integer hive associated to a Littlewood–Richardson tableau `T`:
-`lrChart lam T i j = ∑_{r < j} λ_r + ∑_{l < i} ∑_{r < j} rowCount_T(r, l)`. -/
-def lrChart (lam : DominantWeight n) {γ μ : YoungDiagram}
-    (T : LRTableau lam.shape γ μ) (i j : ℕ) : ℤ :=
-  (∑ r : Fin n with r.val < j, lam.val r) +
-    ∑ l ∈ Finset.range i, ∑ r ∈ Finset.range j, (T.val.rowCount r l : ℤ)
+/-- The **Gelfand–Tsetlin pattern of a Littlewood–Richardson tableau** `T`: its entry `(k, j)`
+is the number of letters `k` in the first `j ≤ n` rows of `T`. The ballot condition is the
+interlacing inequality `P (k + 1) (j + 1) ≤ P k j`, and since row `r` of `T` holds only letters
+`k ≤ r`, the entries with `j ≤ k` vanish. -/
+def toGTPattern (n : ℕ) (T : LRTableau lam γ μ) : GTPattern n where
+  entry k j := if j ≤ n then ∑ r ∈ range j, (T.val.rowCount r k : ℤ) else 0
+  zeros' {k j} h := by
+    split_ifs with hj
+    · refine sum_eq_zero fun r hr => ?_
+      rw [T.rowCount_eq_zero_of_lt (by grind), Nat.cast_zero]
+    · rfl
+  interlacing' {k j} _ hj := by
+    have hlat := (T.val.isLatticeWord_readingWord_iff.mp T.property.2) k j
+    rw [ite_eq_left hj.le, ite_eq_left (Nat.succ_le_of_lt hj), ite_eq_left (Nat.succ_le_of_lt hj)]
+    exact ⟨sum_le_sum_of_subset_of_nonneg (range_subset_range.mpr (Nat.le_succ j))
+      fun _ _ _ => Nat.cast_nonneg _, by exact_mod_cast hlat⟩
 
-/-- Along `i = 0`, `lrChart lam T 0 j` is the partial sum of the first `j` entries of `lam`. -/
-@[simp] theorem lrChart_zero_left (lam : DominantWeight n) {γ μ : YoungDiagram}
-    (T : LRTableau lam.shape γ μ) (j : ℕ) :
-    lrChart lam T 0 j = ∑ r : Fin n with r.val < j, lam.val r := by
-  simp [lrChart]
+theorem toGTPattern_apply (n : ℕ) (T : LRTableau lam γ μ) (k j : ℕ) :
+    T.toGTPattern n k j = if j ≤ n then ∑ r ∈ range j, (T.val.rowCount r k : ℤ) else 0 :=
+  (rfl)
 
-/-- Along `j = 0`, `lrChart lam T i 0` vanishes. -/
-@[simp] theorem lrChart_zero_right (lam : DominantWeight n) {γ μ : YoungDiagram}
-    (T : LRTableau lam.shape γ μ) (i : ℕ) :
-    lrChart lam T i 0 = 0 := by
-  simp [lrChart]
+@[simp]
+theorem toGTPattern_apply_of_le {n : ℕ} (T : LRTableau lam γ μ) (k : ℕ) {j : ℕ} (hj : j ≤ n) :
+    T.toGTPattern n k j = ∑ r ∈ range j, (T.val.rowCount r k : ℤ) := by
+  rw [toGTPattern_apply, ite_eq_left hj]
 
-/-- Along the right chart edge `j = n`, `lrChart lam T i n` adds the first `i` entries of `μ` to
-the total weight of `lam`. -/
-@[simp] theorem lrChart_right {lam μ γ : DominantWeight n} (hμ : μ.IsPolynomial)
-    (T : LRTableau lam.shape γ.shape μ.shape) (i : ℕ) (hi : i ≤ n) :
-    lrChart lam T i n = (∑ r : Fin n, lam.val r) + ∑ l : Fin n with l.val < i, μ.val l := by
-  rw [lrChart, show ({r : Fin n | r.val < n} : Finset (Fin n)) = Finset.univ by ext r; simp]
-  congr 1
-  rw [sum_filter_lt_eq_sum_range hi μ.val (fun l => (μ.shape.rowLen l : ℤ))
-    (fun l hl => (μ.natCast_rowLen_shape hμ ⟨l, hl.trans_le hi⟩).symm)]
-  refine Finset.sum_congr rfl fun l _ => ?_
-  rw [← Nat.cast_sum, T.val.sum_range_rowCount_eq_content l γ.colLen_zero_shape_le,
-    congrFun T.property.left l]
+/-- Consecutive rows of `T.toGTPattern n` differ by the row counts of `T`. -/
+theorem toGTPattern_succ_sub {n : ℕ} (T : LRTableau lam γ μ) (k : ℕ) {r : ℕ} (hr : r < n) :
+    T.toGTPattern n k (r + 1) - T.toGTPattern n k r = T.val.rowCount r k := by
+  rw [toGTPattern_apply_of_le _ _ hr, toGTPattern_apply_of_le _ _ hr.le, sum_range_succ,
+    add_sub_cancel_left]
 
-/-- Along the chart diagonal `i = j ≤ n`, `lrChart lam T j j` is the partial sum of the first `j`
-entries of `γ`. -/
-@[simp] theorem lrChart_diag {lam γ : DominantWeight n} {μ : YoungDiagram}
-    (hlam : lam.IsPolynomial) (hγ : γ.IsPolynomial)
-    (T : LRTableau lam.shape γ.shape μ) (j : ℕ) (hj : j ≤ n) :
-    lrChart lam T j j = ∑ r : Fin n with r.val < j, γ.val r := by
-  rw [lrChart,
-    sum_filter_lt_eq_sum_range hj lam.val (fun r => (lam.shape.rowLen r : ℤ))
-      (fun r hr => (lam.natCast_rowLen_shape hlam ⟨r, hr.trans_le hj⟩).symm),
-    sum_filter_lt_eq_sum_range hj γ.val (fun r => (γ.shape.rowLen r : ℤ))
-      (fun r hr => (γ.natCast_rowLen_shape hγ ⟨r, hr.trans_le hj⟩).symm),
-    Finset.sum_comm, ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun r hr => ?_
-  have hrj : r < j := Finset.mem_range.mp hr
-  have hrow : ∑ l ∈ Finset.range j, T.val.rowCount r l =
-      γ.shape.rowLen r - lam.shape.rowLen r :=
-    T.val.sum_range_rowCount_of_forall_lt fun c _ _ => (T.entry_le r c).trans_lt hrj
-  have hle : lam.shape.rowLen r ≤ γ.shape.rowLen r := YoungDiagram.rowLen_le_of_le T.val.le r
-  rw [← Nat.cast_sum, hrow]
+/-- The top row of `T.toGTPattern n` is the content `μ` of `T`. -/
+theorem topRow_toGTPattern {n : ℕ} (hγ : γ.colLen 0 ≤ n) (T : LRTableau lam γ μ) :
+    (T.toGTPattern n).topRow = (weightOfShape n μ).val := by
+  ext k
+  rw [GTPattern.topRow_apply, toGTPattern_apply_of_le _ _ le_rfl, weightOfShape_apply,
+    ← Nat.cast_sum, T.val.sum_range_rowCount_eq_content _ hγ, T.property.1]
+
+/-- The rows of `T.toGTPattern n` sum to the sizes of the first rows of the skew shape. -/
+theorem rowSum_toGTPattern {n : ℕ} (T : LRTableau lam γ μ) {j : ℕ} (hj : j ≤ n) :
+    (T.toGTPattern n).rowSum j = ∑ r ∈ range j, ((γ.rowLen r : ℤ) - lam.rowLen r) := by
+  rw [GTPattern.rowSum_def, sum_congr rfl fun k _ => T.toGTPattern_apply_of_le k hj, sum_comm]
+  refine sum_congr rfl fun r hr => ?_
+  rw [← Nat.cast_sum, T.sum_range_rowCount_of_lt (mem_range.mp hr),
+    Nat.cast_sub (YoungDiagram.rowLen_le_of_le T.val.le r)]
+
+/-- The weight of `T.toGTPattern n` is `γ - λ`. -/
+@[simp]
+theorem rowWeight_toGTPattern {n : ℕ} (T : LRTableau lam γ μ) :
+    (T.toGTPattern n).rowWeight = (weightOfShape n γ).val - (weightOfShape n lam).val := by
+  ext r
+  rw [GTPattern.rowWeight_eq_rowSum_sub, T.rowSum_toGTPattern r.isLt,
+    T.rowSum_toGTPattern r.isLt.le, sum_range_succ, add_sub_cancel_left, Pi.sub_apply,
+    weightOfShape_apply, weightOfShape_apply]
+
+/-- Column strictness of `T` is the remaining rhombus family of the hive chart completion. -/
+@[simp]
+theorem isGTCompletable_toGTPattern {n : ℕ} (T : LRTableau lam γ μ) :
+    Hive.IsGTCompletable (weightOfShape n lam) (T.toGTPattern n) := by
+  rw [Hive.isGTCompletable_iff_sum_sub_le]
+  intro i j _ hj
+  have hcol := T.val.rowLen_add_sum_range_rowCount_succ_le j i
+  simp only [T.toGTPattern_succ_sub _ (by omega : j + 1 < n),
+    T.toGTPattern_succ_sub _ (by omega : j < n), weightOfShape_apply]
+  push_cast [← Nat.cast_sum]
   omega
 
-/-- Advancing `i` by `1` in `lrChart lam T i j` adds the letter-`i` multiplicities across rows
-`r < j`. -/
-theorem lrChart_step_left (lam : DominantWeight n) {γ μ : YoungDiagram}
-    (T : LRTableau lam.shape γ μ) (i j : ℕ) :
-    lrChart lam T (i + 1) j - lrChart lam T i j =
-      ∑ r ∈ Finset.range j, (T.val.rowCount r i : ℤ) := by
-  simp [lrChart, Finset.sum_range_succ]
+end LRTableau
 
-/-- Advancing `j` by `1` (for `j < n`) in `lrChart lam T i j` adds `lam_j` together with the
-row-`j` letter multiplicities for letters `l < i`. -/
-theorem lrChart_step_right (lam : DominantWeight n) {γ μ : YoungDiagram}
-    (T : LRTableau lam.shape γ μ) (i j : ℕ) (hj : j < n) :
-    lrChart lam T i (j + 1) - lrChart lam T i j =
-      lam.val ⟨j, hj⟩ + ∑ l ∈ Finset.range i, (T.val.rowCount j l : ℤ) := by
-  simp only [lrChart, sum_filter_lt_succ hj lam.val, Finset.sum_range_succ, Finset.sum_add_distrib]
-  abel
+namespace Hive
 
-private theorem isRhombusConcave_lrChart {lam μ γ : DominantWeight n} (hlam : lam.IsPolynomial)
-    (T : LRTableau lam.shape γ.shape μ.shape) :
-    IsRhombusConcave (fun p : Vertex n => lrChart lam T p.z (n - p.x)) := by
-  rw [isRhombusConcave_iff_ofChart]
-  have hval (i j : ℕ) (hij : i ≤ j) (hjn : j ≤ n) :
-      (let p := Vertex.ofChart n i j hij hjn; lrChart lam T p.z (n - p.x)) = lrChart lam T i j := by
-    simp only [Vertex.ofChart_z, Vertex.ofChart_x, Nat.sub_sub_self hjn]
-  refine ⟨fun i j hij hjn => ?_, fun i j hij hjn => ?_, fun i j hij hjn => ?_⟩
-  · simp only [hval]
-    have h0 := lrChart_step_left lam T i j
-    have h1 := lrChart_step_left lam T i (j + 1)
-    rw [Finset.sum_range_succ] at h1
-    linarith [Int.natCast_nonneg (T.val.rowCount j i)]
-  · simp only [hval]
-    have h0 := lrChart_step_left lam T i j
-    have h1 := lrChart_step_left lam T (i + 1) (j + 1)
-    have hlat : (∑ r ∈ Finset.range (j + 1), (T.val.rowCount r (i + 1) : ℤ)) ≤
-        ∑ r ∈ Finset.range j, (T.val.rowCount r i : ℤ) := by
-      exact_mod_cast (T.val.isLatticeWord_readingWord_iff.mp T.property.right) i j
-    linarith
-  · simp only [hval]
-    have h0 := lrChart_step_right lam T i j (by omega)
-    have h1 := lrChart_step_right lam T (i + 1) (j + 1) (by omega)
-    have hcol : (lam.shape.rowLen (j + 1) : ℤ) +
-        (∑ l ∈ Finset.range (i + 1), (T.val.rowCount (j + 1) l : ℤ)) ≤
-        (lam.shape.rowLen j : ℤ) + ∑ l ∈ Finset.range i, (T.val.rowCount j l : ℤ) := by
-      exact_mod_cast T.val.rowLen_add_sum_range_rowCount_succ_le j i
-    rw [lam.natCast_rowLen_shape hlam ⟨j + 1, by omega⟩,
-      lam.natCast_rowLen_shape hlam ⟨j, by omega⟩] at hcol
-    linarith
+/-! ### Row counts from a Gelfand–Tsetlin pattern -/
 
-private def hiveOfLRTableauAux {lam μ γ : DominantWeight n} (hlam : lam.IsPolynomial)
-    (T : LRTableau lam.shape γ.shape μ.shape) : IntegerHive n where
-  value p := lrChart lam T p.z (n - p.x)
-  value_cornerA' := by simp
-  le_of_isRhombus' hr := (isRhombusConcave_def _).mp (isRhombusConcave_lrChart hlam T) hr
+section RowCount
 
-@[simp] private theorem hiveOfLRTableauAux_apply {lam μ γ : DominantWeight n}
-    (hlam : lam.IsPolynomial) (T : LRTableau lam.shape γ.shape μ.shape) (p : Vertex n) :
-    hiveOfLRTableauAux hlam T p = lrChart lam T p.z (n - p.x) :=
-  rfl
+variable {n : ℕ} {lam γ μ : YoungDiagram}
 
-/-- Normalized integer hive constructed from a Littlewood–Richardson tableau `T` for polynomial
-dominant weights `lam, μ, γ`. -/
-def hiveOfLRTableau {lam μ γ : DominantWeight n} (hlam : lam.IsPolynomial)
-    (hμ : μ.IsPolynomial) (hγ : γ.IsPolynomial)
-    (T : LRTableau lam.shape γ.shape μ.shape) : FixedIntegerHive (productBoundary lam μ γ) :=
-  ⟨hiveOfLRTableauAux hlam T, by
-    ext s k
-    have hk := k.isLt
-    rcases (by fin_cases s <;> decide : s = 0 ∨ s = 1 ∨ s = 2) with rfl | rfl | rfl
-    · simp only [boundary_apply, hiveOfLRTableauAux_apply, Vertex.edgePoint_zero_z,
-        Vertex.edgePoint_zero_x, Fin.val_succ, Fin.val_castSucc,
-        Nat.sub_sub_self (by omega : k.val + 1 ≤ n), Nat.sub_sub_self (by omega : k.val ≤ n),
-        lrChart_zero_left, productBoundary_zero]
-      rw [sum_filter_lt_succ hk lam.val]
-      abel
-    · simp only [boundary_apply, hiveOfLRTableauAux_apply, Vertex.edgePoint_one_z,
-        Vertex.edgePoint_one_x, Nat.sub_zero, Fin.val_succ, Fin.val_castSucc,
-        productBoundary_one]
-      rw [lrChart_right hμ T (k.val + 1) (by omega), lrChart_right hμ T k.val (by omega),
-        sum_filter_lt_succ hk μ.val]
-      abel
-    · simp only [boundary_apply, hiveOfLRTableauAux_apply, Vertex.edgePoint_two_z,
-        Vertex.edgePoint_two_x, Fin.val_succ, Fin.val_castSucc,
-        productBoundary_two, DominantWeight.dual_apply]
-      rw [lrChart_diag hlam hγ T (n - (k.val + 1)) (by omega),
-        lrChart_diag hlam hγ T (n - k.val) (by omega)]
-      have hnk : n - k.val = n - (k.val + 1) + 1 := by omega
-      have hrev : (⟨n - (k.val + 1), by omega⟩ : Fin n) = k.rev := by ext; simp [Fin.val_rev]
-      rw [hnk, sum_filter_lt_succ (by omega) γ.val, hrev]
-      abel⟩
+/-- The number of letters `k` in row `r` read off a pattern `P`: the difference
+`P k (r + 1) - P k r`, truncated at `0`. For the patterns of interest it is nonnegative in rows
+`r < n` and zero in rows `r ≥ n`. -/
+private def gtRowCount (P : GTPattern n) (r k : ℕ) : ℕ := (P k (r + 1) - P k r).toNat
 
-/-- Evaluating `hiveOfLRTableau` at `Vertex.ofChart n i j` recovers `lrChart lam T i j`. -/
-@[simp] theorem hiveOfLRTableau_apply_ofChart {lam μ γ : DominantWeight n}
-    (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial) (hγ : γ.IsPolynomial)
-    (T : LRTableau lam.shape γ.shape μ.shape) (i j : ℕ) (hij : i ≤ j) (hjn : j ≤ n) :
-    (hiveOfLRTableau hlam hμ hγ T).val (Vertex.ofChart n i j hij hjn) = lrChart lam T i j := by
-  simp [hiveOfLRTableau, Nat.sub_sub_self hjn]
+private theorem natCast_gtRowCount {P : GTPattern n} (hP : ∀ i : Fin n, 0 ≤ P.topRow i)
+    {r : ℕ} (hr : r < n) (k : ℕ) : (gtRowCount P r k : ℤ) = P k (r + 1) - P k r := by
+  refine Int.toNat_of_nonneg (sub_nonneg.mpr ?_)
+  rcases lt_trichotomy k r with hkr | rfl | hkr
+  · exact P.entry_le_entry_succ_row hkr hr
+  · rw [P.entry_eq_zero_of_le le_rfl]; exact P.entry_nonneg hP _ _
+  · rw [P.entry_eq_zero_of_le hkr.le, P.entry_eq_zero_of_le hkr]
 
-/-! ### Inverse map: extracting row-letter multiplicities from an integer hive -/
+private theorem gtRowCount_eq_zero_of_le {P : GTPattern n} (hP : ∀ i : Fin n, 0 ≤ P.topRow i)
+    {r : ℕ} (hr : n ≤ r) (k : ℕ) : gtRowCount P r k = 0 := by
+  rw [gtRowCount, P.entry_eq_zero_of_lt (Nat.lt_succ_of_le hr), zero_sub, Int.toNat_eq_zero,
+    neg_nonpos]
+  exact P.entry_nonneg hP _ _
 
-/-- Integer row-letter multiplicity extracted from a hive `h`: off-diagonal mixed second difference
-for `l < r < n`, diagonal step `h(l + 1, l + 1) - h(l, l + 1)` for `l = r < n`, and `0` elsewhere.
--/
-def hiveRowCountInt (h : IntegerHive n) (r l : ℕ) : ℤ :=
-  if hlr : l < r ∧ r < n then
-    h (Vertex.ofChart n (l + 1) (r + 1) (by omega) (by omega)) -
-      h (Vertex.ofChart n l (r + 1) (by omega) (by omega)) -
-      h (Vertex.ofChart n (l + 1) r hlr.left hlr.right.le) +
-      h (Vertex.ofChart n l r hlr.left.le hlr.right.le)
-  else if heq : l = r ∧ r < n then
-    h (Vertex.ofChart n (l + 1) (l + 1) le_rfl (by omega)) -
-      h (Vertex.ofChart n l (l + 1) (by omega) (by omega))
-  else 0
+private theorem gtRowCount_eq_zero_of_lt (P : GTPattern n) {r k : ℕ} (hrk : r < k) :
+    gtRowCount P r k = 0 := by
+  rw [gtRowCount, P.entry_eq_zero_of_le hrk, P.entry_eq_zero_of_le hrk.le, sub_zero,
+    Int.toNat_zero]
 
-/-- Natural-number row-letter multiplicity extracted from an integer hive. -/
-def hiveRowCount (h : IntegerHive n) (r l : ℕ) : ℕ :=
-  (hiveRowCountInt h r l).toNat
+/-- The row counts of `P` telescope along a column: the letters `k` in the first `x` rows. -/
+private theorem sum_range_natCast_gtRowCount {P : GTPattern n}
+    (hP : ∀ i : Fin n, 0 ≤ P.topRow i) {x : ℕ} (hx : x ≤ n) (k : ℕ) :
+    ∑ r ∈ range x, (gtRowCount P r k : ℤ) = P k x := by
+  rw [sum_congr rfl fun r hr => natCast_gtRowCount hP ((mem_range.mp hr).trans_le hx) k,
+    sum_range_sub (fun r => P k r), P.entry_eq_zero_of_le (Nat.zero_le k), sub_zero]
 
-/-- Off the diagonal (`l < r < n`), `hiveRowCountInt h r l` is the mixed second difference of `h`
-across cell `(l, r)`. -/
-theorem hiveRowCountInt_of_lt (h : IntegerHive n) {r l : ℕ} (hlr : l < r) (hrn : r < n) :
-    hiveRowCountInt h r l =
-      h (Vertex.ofChart n (l + 1) (r + 1) (by omega) (by omega)) -
-        h (Vertex.ofChart n l (r + 1) (by omega) (by omega)) -
-        h (Vertex.ofChart n (l + 1) r hlr hrn.le) +
-        h (Vertex.ofChart n l r hlr.le hrn.le) := by
-  unfold hiveRowCountInt; split_ifs <;> first | rfl | omega
+/-- The row counts of a pattern with weight `γ - λ` fill row `r` of the skew shape `γ / λ`. -/
+private theorem sum_range_natCast_gtRowCount_of_lt {P : GTPattern n}
+    (hP : ∀ i : Fin n, 0 ≤ P.topRow i)
+    (hW : P.rowWeight = (weightOfShape n γ).val - (weightOfShape n lam).val)
+    {r x : ℕ} (hr : r < n) (hrx : r < x) :
+    ∑ k ∈ range x, (gtRowCount P r k : ℤ) = γ.rowLen r - lam.rowLen r := by
+  have hw := congrFun hW ⟨r, hr⟩
+  rw [GTPattern.rowWeight_eq_rowSum_sub, Pi.sub_apply, weightOfShape_apply,
+    weightOfShape_apply] at hw
+  rw [sum_congr rfl fun k _ => natCast_gtRowCount hP hr k, sum_sub_distrib,
+    P.sum_range_entry_eq_rowSum hrx, P.sum_range_entry_eq_rowSum hrx.le]
+  exact hw
 
-/-- On the diagonal (`l < n`), `hiveRowCountInt h l l` is `h(l + 1, l + 1) - h(l, l + 1)`. -/
-theorem hiveRowCountInt_diag (h : IntegerHive n) {l : ℕ} (hln : l < n) :
-    hiveRowCountInt h l l =
-      h (Vertex.ofChart n (l + 1) (l + 1) le_rfl (by omega)) -
-        h (Vertex.ofChart n l (l + 1) (by omega) (by omega)) := by
-  unfold hiveRowCountInt; split_ifs <;> first | rfl | omega
+end RowCount
 
-/-- Above the diagonal (`r < l`), `hiveRowCountInt h r l` vanishes. -/
-@[simp] theorem hiveRowCountInt_eq_zero_of_lt (h : IntegerHive n) {r l : ℕ} (hrl : r < l) :
-    hiveRowCountInt h r l = 0 := by
-  unfold hiveRowCountInt; split_ifs <;> omega
+/-! ### Littlewood–Richardson tableaux from Gelfand–Tsetlin patterns -/
 
-/-- Beyond row `n` (`n ≤ r`), `hiveRowCountInt h r l` vanishes. -/
-@[simp] theorem hiveRowCountInt_eq_zero_of_le (h : IntegerHive n) {r : ℕ} (hr : n ≤ r) (l : ℕ) :
-    hiveRowCountInt h r l = 0 := by
-  unfold hiveRowCountInt; split_ifs <;> omega
+section OfGTPattern
 
-/-- Above the diagonal (`r < l`), `hiveRowCount h r l` vanishes. -/
-@[simp] theorem hiveRowCount_eq_zero_of_lt (h : IntegerHive n) {r l : ℕ} (hrl : r < l) :
-    hiveRowCount h r l = 0 := by
-  simp [hiveRowCount, hiveRowCountInt_eq_zero_of_lt h hrl]
+variable {n : ℕ} {lam γ μ : YoungDiagram}
 
-/-- Beyond row `n` (`n ≤ r`), `hiveRowCount h r l` vanishes. -/
-@[simp] theorem hiveRowCount_eq_zero_of_le (h : IntegerHive n) {r : ℕ} (hr : n ≤ r) (l : ℕ) :
-    hiveRowCount h r l = 0 := by
-  simp [hiveRowCount, hiveRowCountInt_eq_zero_of_le h hr l]
+/-- The hypotheses on a pattern `P` under which its row counts are those of a
+Littlewood–Richardson tableau of shape `γ / λ` and content `μ`. -/
+private structure IsLRPattern (n : ℕ) (lam γ μ : YoungDiagram) (P : GTPattern n) : Prop where
+  hlam : lam.colLen 0 ≤ n
+  hγ : γ.colLen 0 ≤ n
+  hμ : μ.colLen 0 ≤ n
+  top : P.topRow = (weightOfShape n μ).val
+  weight : P.rowWeight =
+    (weightOfShape n γ).val - (weightOfShape n lam).val
+  completable : IsGTCompletable (weightOfShape n lam) P
 
-private theorem hiveRowCountInt_eq_zero_of_le_right (h : IntegerHive n) (r : ℕ) {l : ℕ}
-    (hl : n ≤ l) : hiveRowCountInt h r l = 0 := by
+namespace IsLRPattern
+
+variable {P : GTPattern n}
+
+private theorem topRow_nonneg (h : IsLRPattern n lam γ μ P) (i : Fin n) : 0 ≤ P.topRow i := by
+  rw [h.top, weightOfShape_apply]; exact Nat.cast_nonneg _
+
+/-- The row counts of `P` fill the rows of `γ / λ`, so `λ ≤ γ`. -/
+private theorem sum_range_gtRowCount (h : IsLRPattern n lam γ μ P) (r : ℕ) :
+    ∑ k ∈ range n, gtRowCount P r k = γ.rowLen r - lam.rowLen r := by
   rcases lt_or_ge r n with hr | hr
-  · exact hiveRowCountInt_eq_zero_of_lt h (hr.trans_le hl)
-  · exact hiveRowCountInt_eq_zero_of_le h hr l
+  · have hs := sum_range_natCast_gtRowCount_of_lt h.topRow_nonneg h.weight hr hr
+    push_cast [← Nat.cast_sum] at hs
+    omega
+  · rw [sum_eq_zero fun k _ => gtRowCount_eq_zero_of_le h.topRow_nonneg hr k,
+      YoungDiagram.rowLen_eq_zero_of_colLen_le (h.hγ.trans hr), Nat.zero_sub]
 
-private theorem hiveRowCount_eq_zero_of_le_right (h : IntegerHive n) (r : ℕ) {l : ℕ}
-    (hl : n ≤ l) : hiveRowCount h r l = 0 := by
-  simp [hiveRowCount, hiveRowCountInt_eq_zero_of_le_right h r hl]
-
-/-- Summing `hiveRowCountInt h r l` over rows `r < j` (with `l < j ≤ n`) telescopes to the
-vertical chart difference `h(l + 1, j) - h(l, j)`. -/
-theorem sum_range_hiveRowCountInt_left (h : IntegerHive n) {l j : ℕ} (hlj : l < j)
-    (hjn : j ≤ n) :
-    ∑ r ∈ Finset.range j, hiveRowCountInt h r l =
-      h (Vertex.ofChart n (l + 1) j hlj hjn) - h (Vertex.ofChart n l j hlj.le hjn) := by
-  induction j with
-  | zero => omega
-  | succ m ih =>
-    rw [Finset.sum_range_succ]
-    rcases eq_or_lt_of_le (Nat.lt_succ_iff.mp hlj) with rfl | hlm
-    · rw [Finset.sum_eq_zero fun r hr =>
-        hiveRowCountInt_eq_zero_of_lt h (Finset.mem_range.mp hr),
-        zero_add, hiveRowCountInt_diag h hjn]
-    · rw [ih hlm (by omega), hiveRowCountInt_of_lt h hlm hjn]
-      abel
-
-/-- Double-sum reconstruction of `h(i, j) - h(0, j)` from `hiveRowCountInt`. -/
-theorem sum_hiveRowCountInt_eq_sub (h : IntegerHive n) {i j : ℕ} (hij : i ≤ j) (hjn : j ≤ n) :
-    (∑ l ∈ Finset.range i, ∑ r ∈ Finset.range j, hiveRowCountInt h r l) =
-      h (Vertex.ofChart n i j hij hjn) - h (Vertex.ofChart n 0 j (Nat.zero_le j) hjn) := by
-  induction i with
-  | zero => simp
-  | succ m ih =>
-    rw [Finset.sum_range_succ, ih (by omega),
-      sum_range_hiveRowCountInt_left h (by omega) hjn]
-    abel
-
-/-- Partial row sum of `hiveRowCountInt` for `x ≤ r` and `r < n`. -/
-private theorem sum_range_hiveRowCountInt_right_le (h : IntegerHive n) {r x : ℕ}
-    (hxr : x ≤ r) (hrn : r < n) :
-    ∑ l ∈ Finset.range x, hiveRowCountInt h r l =
-      (h (Vertex.ofChart n x (r + 1) (by omega) hrn) - h (Vertex.ofChart n x r hxr hrn.le)) -
-        (h (Vertex.ofChart n 0 (r + 1) (Nat.zero_le _) hrn) -
-          h (Vertex.ofChart n 0 r (Nat.zero_le _) hrn.le)) := by
-  induction x with
-  | zero => simp
-  | succ m ih =>
-    rw [Finset.sum_range_succ, ih (by omega), hiveRowCountInt_of_lt h (by omega) hrn]
-    abel
-
-/-- Full row sum of `hiveRowCountInt` for `r < n` and `r + 1 ≤ x`. -/
-private theorem sum_range_hiveRowCountInt_right_ge (h : IntegerHive n) {r x : ℕ}
-    (hrx : r + 1 ≤ x) (hrn : r < n) :
-    ∑ l ∈ Finset.range x, hiveRowCountInt h r l =
-      (h (Vertex.ofChart n (r + 1) (r + 1) le_rfl hrn) - h (Vertex.ofChart n r r le_rfl hrn.le)) -
-        (h (Vertex.ofChart n 0 (r + 1) (Nat.zero_le _) hrn) -
-          h (Vertex.ofChart n 0 r (Nat.zero_le _) hrn.le)) := by
-  induction x with
-  | zero => omega
-  | succ m ih =>
-    rw [Finset.sum_range_succ]
-    rcases eq_or_lt_of_le (Nat.lt_succ_iff.mp hrx) with rfl | hrm
-    · rw [sum_range_hiveRowCountInt_right_le h le_rfl hrn, hiveRowCountInt_diag h hrn]
-      abel
-    · rw [ih hrm, hiveRowCountInt_eq_zero_of_lt h hrm, add_zero]
-
-private theorem diag_step_ge_of_productBoundary {lam μ γ : DominantWeight n}
-    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) :
-    ∀ d l (hd : l + 1 + d = n),
-      μ.val ⟨n - 1, by omega⟩ ≤
-        h (Vertex.ofChart n (l + 1) (l + 1) le_rfl (by omega)) -
-          h (Vertex.ofChart n l (l + 1) (by omega) (by omega))
-  | 0, l, hd => by
-    have hln : l + 1 = n := by omega
-    have he1 := apply_ofChart_right_of_productBoundary hb (by omega : l + 1 ≤ n)
-    have he0 := apply_ofChart_right_of_productBoundary hb (by omega : l ≤ n)
-    have hch1 : Vertex.ofChart n (l + 1) (l + 1) le_rfl (by omega) =
-        Vertex.ofChart n (l + 1) n (by omega) le_rfl := Vertex.ofChart_eq_iff.mpr ⟨rfl, hln⟩
-    have hch0 : Vertex.ofChart n l (l + 1) (by omega) (by omega) =
-        Vertex.ofChart n l n (by omega) le_rfl := Vertex.ofChart_eq_iff.mpr ⟨rfl, hln⟩
-    rw [congrArg h hch1, congrArg h hch0, he1, he0, TauCeti.prefixSum_succ (by omega) μ.val]
-    have heql : (⟨n - 1, by omega⟩ : Fin n) = ⟨l, by omega⟩ := Fin.ext (by simp; omega)
-    rw [heql]
-    linarith
-  | d + 1, l, hd => by
-    have hv := h.le_of_isRhombus
-      (isRhombus_ofChart_diag_z (n := n) (i := l) (j := l + 1) (by omega) (by omega))
-    have hnext := diag_step_ge_of_productBoundary hb d (l + 1) (by omega)
-    linarith
-
-/-- Every `hiveRowCountInt h r l` is nonnegative when `h` has boundary `(λ, μ, γ*)` with
-polynomial `μ`. -/
-theorem hiveRowCountInt_nonneg {lam μ γ : DominantWeight n} {h : IntegerHive n}
-    (hb : h.boundary = productBoundary lam μ γ) (hμ : μ.IsPolynomial) (r l : ℕ) :
-    0 ≤ hiveRowCountInt h r l := by
-  unfold hiveRowCountInt
-  split_ifs with hlr heq
-  · have hcell := h.le_of_isRhombus (isRhombus_ofChart_diag_y hlr.left hlr.right)
-    linarith
-  · obtain ⟨rfl, hln⟩ := heq
-    exact ((DominantWeight.isPolynomial_def μ).mp hμ ⟨n - 1, by omega⟩).trans
-      (diag_step_ge_of_productBoundary hb (n - 1 - l) l (by omega))
-  · exact le_rfl
-
-/-- For an integer hive `h` with boundary `productBoundary lam μ γ` and polynomial `μ`, casting
-`hiveRowCount h r l` to `ℤ` recovers `hiveRowCountInt h r l`. -/
-theorem natCast_hiveRowCount_of_productBoundary {lam μ γ : DominantWeight n} {h : IntegerHive n}
-    (hb : h.boundary = productBoundary lam μ γ) (hμ : μ.IsPolynomial) (r l : ℕ) :
-    (hiveRowCount h r l : ℤ) = hiveRowCountInt h r l :=
-  Int.toNat_of_nonneg (hiveRowCountInt_nonneg hb hμ r l)
-
-/-- For a fixed-boundary integer hive `h : FixedIntegerHive (productBoundary lam μ γ)` with
-polynomial `μ`, casting `hiveRowCount h.val r l` to `ℤ` recovers `hiveRowCountInt h.val r l`. -/
-@[simp] theorem natCast_hiveRowCount {lam μ γ : DominantWeight n}
-    (h : FixedIntegerHive (productBoundary lam μ γ)) (hμ : μ.IsPolynomial) (r l : ℕ) :
-    (hiveRowCount h.val r l : ℤ) = hiveRowCountInt h.val r l :=
-  natCast_hiveRowCount_of_productBoundary h.property hμ r l
-
-private theorem shape_le_of_productBoundary {lam μ γ : DominantWeight n} {h : IntegerHive n}
-    (hb : h.boundary = productBoundary lam μ γ) (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial) :
-    lam.shape ≤ γ.shape := by
-  have hγ := isPolynomial_of_productBoundary hb hlam hμ
+private theorem le (h : IsLRPattern n lam γ μ P) : lam ≤ γ := by
   refine YoungDiagram.le_of_forall_rowLen_le fun r => ?_
-  by_cases hr : r < n
-  · have hsum := sum_range_hiveRowCountInt_right_ge h le_rfl hr
-    have hd1 := apply_ofChart_self_of_productBoundary hb hr
-    have hd0 := apply_ofChart_self_of_productBoundary hb hr.le
-    have hl1 := apply_ofChart_zero_left_of_productBoundary hb hr
-    have hl0 := apply_ofChart_zero_left_of_productBoundary hb hr.le
-    rw [hd1, hd0, hl1, hl0, TauCeti.prefixSum_succ hr γ.val,
-      TauCeti.prefixSum_succ hr lam.val] at hsum
-    have hnn : 0 ≤ ∑ l ∈ Finset.range (r + 1), hiveRowCountInt h r l :=
-      Finset.sum_nonneg fun l _ => hiveRowCountInt_nonneg hb hμ r l
-    have hle : lam.val ⟨r, hr⟩ ≤ γ.val ⟨r, hr⟩ := by linarith
-    rw [← lam.natCast_rowLen_shape hlam ⟨r, hr⟩, ← γ.natCast_rowLen_shape hγ ⟨r, hr⟩] at hle
-    exact Int.ofNat_le.mp hle
-  · simp [lam.rowLen_shape_eq_zero_of_le (not_lt.mp hr)]
+  rcases lt_or_ge r n with hr | hr
+  · have hs := sum_range_natCast_gtRowCount_of_lt h.topRow_nonneg h.weight hr hr
+    have : (0 : ℤ) ≤ ∑ k ∈ range n, (gtRowCount P r k : ℤ) := sum_nonneg fun _ _ => by positivity
+    omega
+  · rw [YoungDiagram.rowLen_eq_zero_of_colLen_le (h.hlam.trans hr)]; exact Nat.zero_le _
 
-private theorem sum_hiveRowCount_eq_rowLen_sub {lam μ γ : DominantWeight n} {h : IntegerHive n}
-    (hb : h.boundary = productBoundary lam μ γ) (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial)
-    (r : ℕ) :
-    ∑ l ∈ Finset.range n, hiveRowCount h r l = γ.shape.rowLen r - lam.shape.rowLen r := by
-  have hγ := isPolynomial_of_productBoundary hb hlam hμ
-  by_cases hr : r < n
-  · have hle : lam.shape.rowLen r ≤ γ.shape.rowLen r :=
-      YoungDiagram.rowLen_le_of_le (shape_le_of_productBoundary hb hlam hμ) r
-    refine Int.ofNat_inj.mp ?_
-    rw [Nat.cast_sum, Nat.cast_sub hle,
-      Finset.sum_congr rfl fun l _ => natCast_hiveRowCount_of_productBoundary hb hμ r l,
-      sum_range_hiveRowCountInt_right_ge h hr hr,
-      apply_ofChart_self_of_productBoundary hb hr, apply_ofChart_self_of_productBoundary hb hr.le,
-      apply_ofChart_zero_left_of_productBoundary hb hr,
-      apply_ofChart_zero_left_of_productBoundary hb hr.le,
-      γ.natCast_rowLen_shape hγ ⟨r, hr⟩, lam.natCast_rowLen_shape hlam ⟨r, hr⟩,
-      TauCeti.prefixSum_succ hr γ.val, TauCeti.prefixSum_succ hr lam.val]
-    abel
-  · rw [γ.rowLen_shape_eq_zero_of_le (not_lt.mp hr), lam.rowLen_shape_eq_zero_of_le (not_lt.mp hr)]
-    simp [hiveRowCount_eq_zero_of_le h (not_lt.mp hr)]
-
-private theorem col_strict_hiveRowCount {lam μ γ : DominantWeight n} {h : IntegerHive n}
-    (hb : h.boundary = productBoundary lam μ γ) (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial)
-    (r x : ℕ) :
-    lam.shape.rowLen (r + 1) + ∑ l ∈ Finset.range (x + 1), hiveRowCount h (r + 1) l ≤
-      lam.shape.rowLen r + ∑ l ∈ Finset.range x, hiveRowCount h r l := by
-  by_cases hr1 : r + 2 ≤ n
-  · refine Int.ofNat_le.mp ?_
-    push_cast
-    simp only [natCast_hiveRowCount_of_productBoundary hb hμ]
-    rw [lam.natCast_rowLen_shape hlam ⟨r + 1, by omega⟩,
-      lam.natCast_rowLen_shape hlam ⟨r, by omega⟩]
-    rcases le_or_gt x r with hxr | hrx
-    · have hs0 := sum_range_hiveRowCountInt_right_le h hxr (by omega)
-      have hs1 := sum_range_hiveRowCountInt_right_le h (Nat.add_le_add_right hxr 1) (by omega)
-      rw [apply_ofChart_zero_left_of_productBoundary hb (by omega : r + 1 ≤ n),
-        apply_ofChart_zero_left_of_productBoundary hb (by omega : r ≤ n),
-        TauCeti.prefixSum_succ (by omega) lam.val] at hs0
-      rw [apply_ofChart_zero_left_of_productBoundary hb hr1,
-        apply_ofChart_zero_left_of_productBoundary hb (by omega : r + 1 ≤ n),
-        TauCeti.prefixSum_succ (by omega) lam.val] at hs1
-      have hrh := h.le_of_isRhombus (isRhombus_ofChart_diag_x hxr hr1)
-      linarith
-    · have hs0 := sum_range_hiveRowCountInt_right_ge h hrx (by omega)
-      have hs1 := sum_range_hiveRowCountInt_right_ge h (by omega : r + 2 ≤ x + 1) (by omega)
-      rw [apply_ofChart_self_of_productBoundary hb (by omega : r + 1 ≤ n),
-        apply_ofChart_self_of_productBoundary hb (by omega : r ≤ n),
-        apply_ofChart_zero_left_of_productBoundary hb (by omega : r + 1 ≤ n),
-        apply_ofChart_zero_left_of_productBoundary hb (by omega : r ≤ n),
-        TauCeti.prefixSum_succ (by omega) γ.val,
-        TauCeti.prefixSum_succ (by omega) lam.val] at hs0
-      rw [apply_ofChart_self_of_productBoundary hb hr1,
-        apply_ofChart_self_of_productBoundary hb (by omega : r + 1 ≤ n),
-        apply_ofChart_zero_left_of_productBoundary hb hr1,
-        apply_ofChart_zero_left_of_productBoundary hb (by omega : r + 1 ≤ n),
-        TauCeti.prefixSum_succ (by omega) γ.val,
-        TauCeti.prefixSum_succ (by omega) lam.val] at hs1
-      have hanti : γ.val ⟨r + 1, by omega⟩ ≤ γ.val ⟨r, by omega⟩ :=
-        γ.antitone (Fin.mk_le_mk.mpr (Nat.le_succ r))
-      linarith
-  · have hrn : n ≤ r + 1 := by omega
-    rw [lam.rowLen_shape_eq_zero_of_le hrn,
-      Finset.sum_eq_zero fun l _ => hiveRowCount_eq_zero_of_le h hrn l]
+/-- Column strictness of the filling with the row counts of `P`: this is `IsGTCompletable` in
+rows `i + 1 < n` and letters `x ≤ i`; for larger letters both rows are full, and rows `i + 1 ≥ n`
+are empty. -/
+private theorem col (h : IsLRPattern n lam γ μ P) (i x : ℕ) :
+    lam.rowLen (i + 1) + ∑ l ∈ range (x + 1), gtRowCount P (i + 1) l ≤
+      lam.rowLen i + ∑ l ∈ range x, gtRowCount P i l := by
+  have hanti := lam.rowLen_anti i (i + 1) (Nat.le_succ i)
+  rcases le_or_gt n (i + 1) with hi | hi
+  · rw [sum_eq_zero fun l _ => gtRowCount_eq_zero_of_le h.topRow_nonneg hi l]
+    omega
+  rcases le_or_gt x i with hxi | hxi
+  · have hc := (isGTCompletable_iff_sum_sub_le _ P).mp h.completable x i hxi hi
+    rw [weightOfShape_apply, weightOfShape_apply] at hc
+    rw [← sum_congr rfl fun l _ => natCast_gtRowCount h.topRow_nonneg hi l,
+      ← sum_congr rfl fun l _ => natCast_gtRowCount h.topRow_nonneg (Nat.lt_of_succ_lt hi) l] at hc
+    push_cast [← Nat.cast_sum] at hc
+    omega
+  · have h₁ := sum_range_natCast_gtRowCount_of_lt h.topRow_nonneg h.weight hi
+      (by omega : i + 1 < x + 1)
+    have h₂ := sum_range_natCast_gtRowCount_of_lt h.topRow_nonneg h.weight
+      (Nat.lt_of_succ_lt hi) hxi
+    have hγ := γ.rowLen_anti i (i + 1) (Nat.le_succ i)
+    push_cast [← Nat.cast_sum] at h₁ h₂
     omega
 
-private theorem lattice_hiveRowCount {lam μ γ : DominantWeight n} {h : IntegerHive n}
-    (hb : h.boundary = productBoundary lam μ γ) (hμ : μ.IsPolynomial) (k x : ℕ) :
-    ∑ r ∈ Finset.range (x + 1), hiveRowCount h r (k + 1) ≤
-      ∑ r ∈ Finset.range x, hiveRowCount h r k := by
-  rcases le_or_gt x k with hxk | hkx
-  · rw [Finset.sum_eq_zero fun r hr =>
-      hiveRowCount_eq_zero_of_lt h (by have := Finset.mem_range.mp hr; omega)]
-    exact Nat.zero_le _
-  · refine Int.ofNat_le.mp ?_
-    push_cast
-    simp only [natCast_hiveRowCount_of_productBoundary hb hμ]
-    rcases lt_or_ge x n with hxn | hnx
-    · rw [sum_range_hiveRowCountInt_left h (Nat.add_lt_add_right hkx 1) hxn,
-        sum_range_hiveRowCountInt_left h hkx hxn.le]
-      have hv := h.le_of_isRhombus (isRhombus_ofChart_diag_z hkx hxn)
-      linarith
-    · by_cases hk1 : k + 1 < n
-      · have htrunc (m y : ℕ) (hny : n ≤ y) :
-            ∑ r ∈ Finset.range y, hiveRowCountInt h r m =
-              ∑ r ∈ Finset.range n, hiveRowCountInt h r m :=
-          (Finset.sum_subset (Finset.range_mono hny) fun r _ hnr =>
-            hiveRowCountInt_eq_zero_of_le h (not_lt.mp (mt Finset.mem_range.mpr hnr)) m).symm
-        rw [htrunc (k + 1) (x + 1) (Nat.le_succ_of_le hnx), htrunc k x hnx,
-          sum_range_hiveRowCountInt_left h hk1 le_rfl,
-          sum_range_hiveRowCountInt_left h (by omega : k < n) le_rfl,
-          apply_ofChart_right_of_productBoundary hb hk1,
-          apply_ofChart_right_of_productBoundary hb hk1.le,
-          apply_ofChart_right_of_productBoundary hb (by omega : k ≤ n),
-          TauCeti.prefixSum_succ hk1 μ.val, TauCeti.prefixSum_succ (by omega) μ.val]
-        have hanti : μ.val ⟨k + 1, hk1⟩ ≤ μ.val ⟨k, by omega⟩ :=
-          μ.antitone (Fin.mk_le_mk.mpr (Nat.le_succ k))
-        linarith
-      · rw [Finset.sum_eq_zero fun r _ => hiveRowCountInt_eq_zero_of_le_right h r (by omega)]
-        exact Finset.sum_nonneg fun r _ => hiveRowCountInt_nonneg hb hμ r k
+/-- The skew tableau of shape `γ / λ` whose rows hold the row counts of `P`. -/
+private def tableau (h : IsLRPattern n lam γ μ P) : SkewSemistandardYoungTableau lam γ :=
+  .ofRowCount h.le n (gtRowCount P) h.sum_range_gtRowCount h.col
 
-/-- Littlewood–Richardson tableau reconstructed from a fixed-boundary integer hive for polynomial
-dominant weights `lam, μ`. -/
-def lrTableauOfHive {lam μ γ : DominantWeight n} (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial)
-    (h : FixedIntegerHive (productBoundary lam μ γ)) :
-    LRTableau lam.shape γ.shape μ.shape := by
-  have hle := shape_le_of_productBoundary h.property hlam hμ
-  have hsum := sum_hiveRowCount_eq_rowLen_sub h.property hlam hμ
-  have hcol := col_strict_hiveRowCount h.property hlam hμ
-  have hzero : ∀ r l, n ≤ l → hiveRowCount h.val r l = 0 :=
-    fun r _ hl => hiveRowCount_eq_zero_of_le_right h.val r hl
-  let S := SkewSemistandardYoungTableau.ofRowCount hle n (hiveRowCount h.val) hsum hcol
-  refine ⟨S, funext fun k => ?_, S.isLatticeWord_readingWord_iff.mpr fun k x => ?_⟩
-  · rw [← S.sum_range_rowCount_eq_content k γ.colLen_zero_shape_le]
-    simp only [S, SkewSemistandardYoungTableau.rowCount_ofRowCount hle hsum hcol hzero]
-    by_cases hk : k < n
-    · refine Int.ofNat_inj.mp ?_
-      rw [Nat.cast_sum, Finset.sum_congr rfl fun r _ => natCast_hiveRowCount h hμ r k,
-        sum_range_hiveRowCountInt_left h.val hk le_rfl,
-        apply_ofChart_right_of_productBoundary h.property hk,
-        apply_ofChart_right_of_productBoundary h.property hk.le,
-        μ.natCast_rowLen_shape hμ ⟨k, hk⟩, TauCeti.prefixSum_succ hk μ.val]
-      abel
-    · rw [μ.rowLen_shape_eq_zero_of_le (not_lt.mp hk)]
-      exact Finset.sum_eq_zero fun r _ => hzero r k (not_lt.mp hk)
-  · simp only [S, SkewSemistandardYoungTableau.rowCount_ofRowCount hle hsum hcol hzero]
-    exact lattice_hiveRowCount h.property hμ k x
+private theorem rowCount_tableau (h : IsLRPattern n lam γ μ P) (r k : ℕ) :
+    h.tableau.rowCount r k = gtRowCount P r k := by
+  refine SkewSemistandardYoungTableau.rowCount_ofRowCount _ _ _ (fun i l hl => ?_) r k
+  rcases le_or_gt n i with hi | hi
+  · exact gtRowCount_eq_zero_of_le h.topRow_nonneg hi l
+  · exact gtRowCount_eq_zero_of_lt P (hi.trans_le hl)
 
-/-- The row-letter multiplicity of `lrTableauOfHive` at `(r, l)` is `hiveRowCount h.val r l`. -/
-@[simp] theorem rowCount_lrTableauOfHive {lam μ γ : DominantWeight n}
-    (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial)
-    (h : FixedIntegerHive (productBoundary lam μ γ)) (r l : ℕ) :
-    (lrTableauOfHive hlam hμ h).val.rowCount r l = hiveRowCount h.val r l :=
-  SkewSemistandardYoungTableau.rowCount_ofRowCount _ _ _
-    (fun i _ hk => hiveRowCount_eq_zero_of_le_right h.val i hk) r l
+/-- The letters `k` in the first `x ≤ n` rows of `h.tableau` number `P k x`. -/
+private theorem sum_range_natCast_rowCount_tableau (h : IsLRPattern n lam γ μ P) {x : ℕ}
+    (hx : x ≤ n) (k : ℕ) : ∑ r ∈ range x, (h.tableau.rowCount r k : ℤ) = P k x := by
+  simp only [rowCount_tableau, sum_range_natCast_gtRowCount h.topRow_nonneg hx]
 
-/-- **Explicit equivalence between fixed-boundary integer hives and Littlewood–Richardson tableaux**
-for polynomial dominant weights `lam, μ, γ` of `GL n`.
+private theorem content_tableau (h : IsLRPattern n lam γ μ P) :
+    ⇑h.tableau.content = μ.rowLen := by
+  ext k
+  have hs := h.sum_range_natCast_rowCount_tableau le_rfl k
+  rw [← Nat.cast_sum, h.tableau.sum_range_rowCount_eq_content _ h.hγ] at hs
+  rcases lt_or_ge k n with hk | hk
+  · have ht := congrFun h.top ⟨k, hk⟩
+    rw [GTPattern.topRow_apply, weightOfShape_apply] at ht
+    exact_mod_cast hs.trans ht
+  · rw [P.entry_eq_zero_of_le hk, Nat.cast_eq_zero] at hs
+    rw [hs, YoungDiagram.rowLen_eq_zero_of_colLen_le (h.hμ.trans hk)]
 
-The hypothesis `hγ : γ.IsPolynomial` is necessary because `DominantWeight.shape` truncates negative
-entries to `0`: at `n = 2`, `λ = (1, 0)`, `μ = (0, 0)`, `γ = (1, -1)` has no hive while
-`LRTableau (1) (1) ⊥` has one element. -/
-def fixedIntegerHiveEquivLRTableau {lam μ γ : DominantWeight n}
-    (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial) (hγ : γ.IsPolynomial) :
-    FixedIntegerHive (productBoundary lam μ γ) ≃ LRTableau lam.shape γ.shape μ.shape where
-  toFun := lrTableauOfHive hlam hμ
-  invFun := hiveOfLRTableau hlam hμ hγ
-  left_inv h := Subtype.ext <| ext fun p => by
-    have hp := p.sum_eq
-    rw [← Vertex.ofChart_z_sub_x p, hiveOfLRTableau_apply_ofChart]
-    simp only [lrChart, rowCount_lrTableauOfHive, natCast_hiveRowCount h hμ]
-    rw [sum_hiveRowCountInt_eq_sub h.val (by omega) (Nat.sub_le n p.x),
-      apply_ofChart_zero_left_of_productBoundary h.property (Nat.sub_le n p.x),
-      TauCeti.prefixSum_def]
-    abel
-  right_inv T := Subtype.ext <| SkewSemistandardYoungTableau.eq_of_rowCount_eq fun r l => by
-    rw [rowCount_lrTableauOfHive]
-    refine Int.ofNat_inj.mp ?_
-    rw [natCast_hiveRowCount (hiveOfLRTableau hlam hμ hγ T) hμ]
-    have hzero_lt : ∀ i k, i < k → T.val.rowCount i k = 0 := fun i k hik => by
-      rw [SkewSemistandardYoungTableau.rowCount_def, Finset.card_eq_zero,
-        Finset.filter_eq_empty_iff]
-      intro c _ hc; have := T.entry_le i c; omega
-    unfold hiveRowCountInt
-    split_ifs with hlr heq
-    · simp only [hiveOfLRTableau_apply_ofChart, lrChart, Finset.sum_range_succ]
-      abel
-    · obtain ⟨rfl, hln⟩ := heq
-      simp only [hiveOfLRTableau_apply_ofChart, lrChart, Finset.sum_range_succ]
-      have hsum0 : ∑ i ∈ Finset.range l, (T.val.rowCount i l : ℤ) = 0 :=
-        Finset.sum_eq_zero fun i hi => by rw [hzero_lt i l (Finset.mem_range.mp hi), Nat.cast_zero]
-      rw [hsum0]
-      abel
-    · rcases lt_or_ge r l with hrl | hlr'
-      · rw [hzero_lt r l hrl, Nat.cast_zero]
-      · have hrn : n ≤ r := by omega
-        rw [T.val.rowCount_eq_zero_of_colLen_le (γ.colLen_zero_shape_le.trans hrn) l, Nat.cast_zero]
+/-- The ballot condition on `h.tableau` is the second interlacing inequality of `P`. -/
+private theorem isLatticeWord_tableau (h : IsLRPattern n lam γ μ P) :
+    h.tableau.readingWord.IsLatticeWord := by
+  refine h.tableau.isLatticeWord_readingWord_iff.mpr fun k x => ?_
+  suffices hz : ∑ r ∈ range (x + 1), (h.tableau.rowCount r (k + 1) : ℤ) ≤
+      ∑ r ∈ range x, (h.tableau.rowCount r k : ℤ) by exact_mod_cast hz
+  rcases lt_or_ge x n with hx | hx
+  · rw [h.sum_range_natCast_rowCount_tableau hx, h.sum_range_natCast_rowCount_tableau hx.le]
+    exact P.entry_succ_succ_le_entry hx
+  · -- Past row `n` the rows are empty, and the inequality is between top-row entries.
+    have hz : ∀ y, n ≤ y → ∀ l, ∑ r ∈ range y, (h.tableau.rowCount r l : ℤ) = P l n := by
+      intro y hy l
+      rw [← h.sum_range_natCast_rowCount_tableau le_rfl l, eq_comm]
+      refine sum_subset (range_subset_range.mpr hy) fun r _ hr' => ?_
+      rw [rowCount_tableau, gtRowCount_eq_zero_of_le h.topRow_nonneg
+        (not_lt.mp (mem_range.not.mp hr')), Nat.cast_zero]
+    rw [hz _ (hx.trans (Nat.le_succ x)), hz _ hx]
+    rcases lt_or_ge (k + 1) n with hk | hk
+    · exact P.entry_succ_le_entry hk
+    · rw [P.entry_eq_zero_of_le hk]; exact P.entry_nonneg h.topRow_nonneg _ _
 
-/-- Forward action of `fixedIntegerHiveEquivLRTableau` on row-letter multiplicities. -/
-@[simp] theorem rowCount_fixedIntegerHiveEquivLRTableau {lam μ γ : DominantWeight n}
-    (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial) (hγ : γ.IsPolynomial)
-    (h : FixedIntegerHive (productBoundary lam μ γ)) (r l : ℕ) :
-    (fixedIntegerHiveEquivLRTableau hlam hμ hγ h).val.rowCount r l = hiveRowCount h.val r l :=
-  rowCount_lrTableauOfHive hlam hμ h r l
+/-- The Littlewood–Richardson tableau whose row counts are read off `P`. -/
+private def lrTableau (h : IsLRPattern n lam γ μ P) : LRTableau lam γ μ :=
+  ⟨h.tableau, h.content_tableau, h.isLatticeWord_tableau⟩
 
-/-- Inverse action of `fixedIntegerHiveEquivLRTableau` in `Vertex.ofChart` coordinates. -/
-@[simp] theorem fixedIntegerHiveEquivLRTableau_symm_apply_ofChart {lam μ γ : DominantWeight n}
-    (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial) (hγ : γ.IsPolynomial)
-    (T : LRTableau lam.shape γ.shape μ.shape) (i j : ℕ) (hij : i ≤ j) (hjn : j ≤ n) :
-    ((fixedIntegerHiveEquivLRTableau hlam hμ hγ).symm T).val (Vertex.ofChart n i j hij hjn) =
-      lrChart lam T i j :=
-  hiveOfLRTableau_apply_ofChart hlam hμ hγ T i j hij hjn
+end IsLRPattern
 
-/-- For polynomial dominant weights `lam, μ, γ`, `hiveCount (productBoundary lam μ γ)` equals the
-Littlewood–Richardson coefficient `Nat.card (LRTableau lam.shape γ.shape μ.shape)`. -/
-theorem hiveCount_productBoundary_eq_natCard_lrTableau {lam μ γ : DominantWeight n}
+end OfGTPattern
+
+/-! ### The equivalences -/
+
+section Equiv
+
+variable {n : ℕ} {lam γ μ : YoungDiagram}
+
+/-- **Littlewood–Richardson tableaux as hive-completable patterns**: for Young diagrams `λ, μ, γ`
+with at most `n` rows, the Littlewood–Richardson tableaux of shape `γ / λ` and content `μ`
+correspond to the Gelfand–Tsetlin patterns with top row `μ`, weight `γ - λ` and
+`IsGTCompletable λ`, by counting the letters `k` in the first `j` rows. -/
+def lrTableauEquivGTPattern (hlam : lam.colLen 0 ≤ n) (hγ : γ.colLen 0 ≤ n)
+    (hμ : μ.colLen 0 ≤ n) :
+    LRTableau lam γ μ ≃
+      {P : GTPattern n // P.topRow = (weightOfShape n μ).val ∧
+        P.rowWeight =
+          (weightOfShape n γ).val - (weightOfShape n lam).val ∧
+        IsGTCompletable (weightOfShape n lam) P} where
+  toFun T := ⟨T.toGTPattern n, T.topRow_toGTPattern hγ, T.rowWeight_toGTPattern,
+    T.isGTCompletable_toGTPattern⟩
+  invFun P := IsLRPattern.lrTableau ⟨hlam, hγ, hμ, P.property.1, P.property.2.1, P.property.2.2⟩
+  left_inv T := by
+    refine Subtype.ext (SkewSemistandardYoungTableau.eq_of_rowCount_eq fun r k => ?_)
+    refine (IsLRPattern.rowCount_tableau ⟨hlam, hγ, hμ, T.topRow_toGTPattern hγ,
+      T.rowWeight_toGTPattern, T.isGTCompletable_toGTPattern⟩ r k).trans ?_
+    rcases lt_or_ge r n with hr | hr
+    · rw [gtRowCount, T.toGTPattern_succ_sub k hr, Int.toNat_natCast]
+    · rw [gtRowCount_eq_zero_of_le (fun i => (T.topRow_toGTPattern hγ).symm ▸ Nat.cast_nonneg _)
+        hr, T.val.rowCount_eq_zero_of_colLen_le (hγ.trans hr)]
+  right_inv P := by
+    refine Subtype.ext (GTPattern.ext fun k j => ?_)
+    rcases le_or_gt j n with hj | hj
+    · exact (LRTableau.toGTPattern_apply_of_le _ k hj).trans
+        (IsLRPattern.sum_range_natCast_rowCount_tableau ⟨hlam, hγ, hμ, P.property.1, P.property.2.1,
+            P.property.2.2⟩
+          hj k)
+    · rw [LRTableau.toGTPattern_apply, ite_eq_right hj.not_ge, P.val.entry_eq_zero_of_lt hj]
+
+@[simp]
+theorem lrTableauEquivGTPattern_apply_coe (hlam : lam.colLen 0 ≤ n) (hγ : γ.colLen 0 ≤ n)
+    (hμ : μ.colLen 0 ≤ n) (T : LRTableau lam γ μ) :
+    (lrTableauEquivGTPattern hlam hγ hμ T).val = T.toGTPattern n :=
+  (rfl)
+
+/-- The tableau of a pattern `P` has `P k (r + 1) - P k r` letters `k` in each row `r < n`. -/
+theorem natCast_rowCount_lrTableauEquivGTPattern_symm (hlam : lam.colLen 0 ≤ n)
+    (hγ : γ.colLen 0 ≤ n) (hμ : μ.colLen 0 ≤ n)
+    (P : {P : GTPattern n // P.topRow = (weightOfShape n μ).val ∧
+        P.rowWeight =
+          (weightOfShape n γ).val - (weightOfShape n lam).val ∧
+        IsGTCompletable (weightOfShape n lam) P})
+    {r : ℕ} (hr : r < n) (k : ℕ) :
+    (((lrTableauEquivGTPattern hlam hγ hμ).symm P).val.rowCount r k : ℤ) =
+      P.val k (r + 1) - P.val k r := by
+  have h : IsLRPattern n lam γ μ P.val := ⟨hlam, hγ, hμ, P.property.1, P.property.2.1,
+      P.property.2.2⟩
+  exact (congrArg Nat.cast (h.rowCount_tableau r k)).trans (natCast_gtRowCount h.topRow_nonneg hr k)
+
+/-- **The hive–Littlewood–Richardson bijection**: for Young diagrams `λ, μ, γ` with at most `n`
+rows, the normalized integer hives with clockwise boundary `(λ, μ, γ*)` correspond to the
+Littlewood–Richardson tableaux of shape `γ / λ` and content `μ`. The hive value at `(i, j)` of the
+product chart is `λ₀ + ⋯ + λⱼ₋₁` plus the number of letters below `i` in the first `j` rows of the
+tableau. -/
+def fixedIntegerHiveEquivLRTableau (hlam : lam.colLen 0 ≤ n) (hγ : γ.colLen 0 ≤ n)
+    (hμ : μ.colLen 0 ≤ n) :
+    FixedIntegerHive (productBoundary (weightOfShape n lam)
+      (weightOfShape n μ) (weightOfShape n γ)) ≃
+      LRTableau lam γ μ :=
+  (fixedIntegerHiveEquivGTPattern _ _ _).trans (lrTableauEquivGTPattern hlam hγ hμ).symm
+
+/-- The hive of a Littlewood–Richardson tableau `T` takes the value `λ₀ + ⋯ + λⱼ₋₁` plus the
+number of letters below `i` in the first `j` rows of `T` at the point `(i, j)` of the product
+chart. -/
+@[simp]
+theorem fixedIntegerHiveEquivLRTableau_symm_apply_ofChart (hlam : lam.colLen 0 ≤ n)
+    (hγ : γ.colLen 0 ≤ n) (hμ : μ.colLen 0 ≤ n) (T : LRTableau lam γ μ) {i j : ℕ}
+    (hij : i ≤ j) (hj : j ≤ n) :
+    ((fixedIntegerHiveEquivLRTableau hlam hγ hμ).symm T).val (Vertex.ofChart n i j hij hj) =
+      prefixSum j (weightOfShape n lam).val +
+        ∑ k ∈ range i, ∑ r ∈ range j, (T.val.rowCount r k : ℤ) := by
+  simp only [fixedIntegerHiveEquivLRTableau, Equiv.symm_trans_apply, Equiv.symm_symm,
+    fixedIntegerHiveEquivGTPattern_symm_apply_coe, lrTableauEquivGTPattern_apply_coe,
+    ofGTPattern_ofChart, gtCompletion_def, LRTableau.toGTPattern_apply_of_le _ _ hj]
+
+/-- The tableau of a hive `h` has `P k (r + 1) - P k r` letters `k` in each row `r < n`, where
+`P = h.toGTPattern` is the difference pattern `P k j = h(k + 1, j) - h(k, j)` (`k < j`) of the
+product chart. For `k < r` this is the mixed difference
+`h(k + 1, r + 1) - h(k, r + 1) - h(k + 1, r) + h(k, r)`, and for `k = r` it is
+`h(r + 1, r + 1) - h(r, r + 1)`. -/
+theorem natCast_rowCount_fixedIntegerHiveEquivLRTableau (hlam : lam.colLen 0 ≤ n)
+    (hγ : γ.colLen 0 ≤ n) (hμ : μ.colLen 0 ≤ n)
+    (h : FixedIntegerHive (productBoundary (weightOfShape n lam)
+      (weightOfShape n μ) (weightOfShape n γ)))
+    {r : ℕ} (hr : r < n) (k : ℕ) :
+    ((fixedIntegerHiveEquivLRTableau hlam hγ hμ h).val.rowCount r k : ℤ) =
+      h.val.toGTPattern k (r + 1) - h.val.toGTPattern k r := by
+  rw [fixedIntegerHiveEquivLRTableau, Equiv.trans_apply,
+    natCast_rowCount_lrTableauEquivGTPattern_symm hlam hγ hμ _ hr k,
+    fixedIntegerHiveEquivGTPattern_apply_coe]
+
+/-- **Hive counts are Littlewood–Richardson coefficients**: for Young diagrams `λ, μ, γ` with at
+most `n` rows, the number of integer hives with boundary `(λ, μ, γ*)` is `c^γ_{λ μ}`. -/
+theorem hiveCount_productBoundary_eq_natCard_lrTableau (hlam : lam.colLen 0 ≤ n)
+    (hγ : γ.colLen 0 ≤ n) (hμ : μ.colLen 0 ≤ n) :
+    hiveCount (productBoundary (weightOfShape n lam)
+      (weightOfShape n μ) (weightOfShape n γ)) =
+      Nat.card (LRTableau lam γ μ) := by
+  rw [← natCard_fixedIntegerHive]
+  exact Nat.card_congr (fixedIntegerHiveEquivLRTableau hlam hγ hμ)
+
+/-- **Hive counts of polynomial weights are Littlewood–Richardson coefficients**: for polynomial
+dominant weights `λ, μ, γ` of `GL n`, the number of integer hives with boundary `(λ, μ, γ*)` is
+the Littlewood–Richardson coefficient of their Young diagrams. -/
+theorem hiveCount_productBoundary_eq_natCard_lrTableau_shape {lam μ γ : DominantWeight n}
     (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial) (hγ : γ.IsPolynomial) :
     hiveCount (productBoundary lam μ γ) = Nat.card (LRTableau lam.shape γ.shape μ.shape) := by
-  rw [← natCard_fixedIntegerHive]
-  exact Nat.card_congr (fixedIntegerHiveEquivLRTableau hlam hμ hγ)
+  conv_lhs => rw [← weightOfShape_shape hlam, ← weightOfShape_shape hμ,
+    ← weightOfShape_shape hγ]
+  exact hiveCount_productBoundary_eq_natCard_lrTableau (DominantWeight.colLen_zero_shape_le lam)
+    (DominantWeight.colLen_zero_shape_le γ) (DominantWeight.colLen_zero_shape_le μ)
+
+/-- **Hive counts of signed weights are Littlewood–Richardson coefficients**: if determinant
+shifts by `a` of `λ`, by `b` of `μ` and by `a + b` of `γ` make all three dominant weights of
+`GL n` polynomial, the number of integer hives with boundary `(λ, μ, γ*)` is the
+Littlewood–Richardson coefficient of the Young diagrams of the shifted weights. In particular this
+coefficient does not depend on the choice of such shifts. -/
+theorem hiveCount_productBoundary_eq_natCard_lrTableau_shift {lam μ γ : DominantWeight n}
+    {a b : ℤ} (hlam : (lam.shift a).IsPolynomial) (hμ : (μ.shift b).IsPolynomial)
+    (hγ : (γ.shift (a + b)).IsPolynomial) :
+    hiveCount (productBoundary lam μ γ) =
+      Nat.card (LRTableau (lam.shift a).shape (γ.shift (a + b)).shape (μ.shift b).shape) := by
+  rw [← hiveCount_productBoundary_shift lam μ γ a b]
+  exact hiveCount_productBoundary_eq_natCard_lrTableau_shape hlam hμ hγ
+
+end Equiv
+
+/-! ### Signed dominant weights, unit-weight fibres, and concrete checks -/
+
+section Signed
+
+variable {n : ℕ}
 
 open scoped Classical in
 /-- For polynomial input weights `lam, μ` and any dominant weight `γ`, `hiveCount` equals the
@@ -642,10 +481,8 @@ theorem hiveCount_productBoundary_of_isPolynomial {lam μ : DominantWeight n}
     hiveCount (productBoundary lam μ γ) =
       if γ.IsPolynomial then Nat.card (LRTableau lam.shape γ.shape μ.shape) else 0 := by
   split_ifs with hγ
-  · exact hiveCount_productBoundary_eq_natCard_lrTableau hlam hμ hγ
-  · exact hiveCount_eq_zero_iff.mpr ⟨fun ⟨h, hb⟩ => hγ (isPolynomial_of_productBoundary hb hlam hμ)⟩
-
-/-! ### Signed dominant weights and determinant-shift independence -/
+  · exact hiveCount_productBoundary_eq_natCard_lrTableau_shape hlam hμ hγ
+  · exact hiveCount_eq_zero_iff.mpr ⟨fun ⟨_, hb⟩ => hγ (isPolynomial_of_productBoundary hb hlam hμ)⟩
 
 /-- Object equivalence between `FixedIntegerHive (productBoundary lam μ γ)` and
 Littlewood–Richardson tableaux for arbitrary signed dominant weights shifted into the polynomial
@@ -655,7 +492,11 @@ def fixedIntegerHiveEquivLRTableauOfShift {lam μ γ : DominantWeight n} {a b : 
     (hgc : (γ.shift (a + b)).IsPolynomial) :
     FixedIntegerHive (productBoundary lam μ γ) ≃
       LRTableau (lam.shift a).shape (γ.shift (a + b)).shape (μ.shift b).shape :=
-  (fixedIntegerHiveShiftEquiv lam μ γ a b).trans (fixedIntegerHiveEquivLRTableau hla hmb hgc)
+  (fixedIntegerHiveShiftEquiv lam μ γ a b).trans <| by
+    have h := fixedIntegerHiveEquivLRTableau (DominantWeight.colLen_zero_shape_le (lam.shift a))
+      (DominantWeight.colLen_zero_shape_le (γ.shift (a + b)))
+      (DominantWeight.colLen_zero_shape_le (μ.shift b))
+    rwa [weightOfShape_shape hla, weightOfShape_shape hmb, weightOfShape_shape hgc] at h
 
 /-- Canonical determinant-shifted equivalence between `FixedIntegerHive (productBoundary lam μ γ)`
 and Littlewood–Richardson tableaux of shapes `lam.detShiftShape` and `μ.detShiftShape`, whenever
@@ -690,6 +531,7 @@ theorem hiveCount_productBoundary_eq_ite_shift {lam μ : DominantWeight n} (γ :
   rw [← hiveCount_productBoundary_shift lam μ γ a b,
     hiveCount_productBoundary_of_isPolynomial hla hmb]
 
+open scoped Classical in
 /-- **Littlewood–Richardson formula for `hiveCount` on arbitrary signed dominant weights** via the
 canonical determinant-twist decomposition. -/
 theorem hiveCount_productBoundary (lam μ γ : DominantWeight n) :
@@ -701,16 +543,15 @@ theorem hiveCount_productBoundary (lam μ γ : DominantWeight n) :
   split_ifs with hdet
   · rw [← natCard_fixedIntegerHive]
     exact Nat.card_congr (fixedIntegerHiveDetShiftEquivLRTableau hdet)
-  · exact hiveCount_eq_zero_iff.mpr ⟨fun ⟨h, hb⟩ => hdet (detShift_le_of_productBoundary hb)⟩
-
-/-! ### Unit-weight fibres and concrete checks -/
+  · exact hiveCount_eq_zero_iff.mpr ⟨fun ⟨_, hb⟩ => hdet (detShift_le_of_productBoundary hb)⟩
 
 open scoped Classical in
 /-- With trivial first input weight `0`, `productBoundary 0 μ γ` has one integer hive when `γ = μ`
 and none otherwise. -/
 theorem hiveCount_productBoundary_zero_left (μ γ : DominantWeight n) :
     hiveCount (productBoundary 0 μ γ) = if γ = μ then 1 else 0 := by
-  rw [← hiveCount_productBoundary_shift_right 0 μ γ (-μ.detShift),
+  rw [← hiveCount_productBoundary_shift 0 μ γ 0 (-μ.detShift), zero_add,
+    DominantWeight.shift_zero,
     hiveCount_productBoundary_of_isPolynomial DominantWeight.isPolynomial_zero
       μ.isPolynomial_shift_neg_detShift,
     DominantWeight.shape_zero, natCard_lrTableau_bot_left]
@@ -753,9 +594,9 @@ theorem hiveCount_two_std_dual_triv :
         simp [productBoundary_zero, productBoundary_one, productBoundary_two, lam, μ, γ]
     rw [← hiveCount_productBoundary_shift lam μ γ 0 1, hsh]
     exact hiveCount_two_std_std_det
-  · refine hiveCount_eq_zero_of_sum_ne_zero ?_
-    simp [Fin.sum_univ_three, Fin.sum_univ_two,
-      productBoundary_zero, productBoundary_one, productBoundary_two]
+  · refine hiveCount_eq_zero_iff.mpr ⟨fun ⟨_, hb⟩ => ?_⟩
+    have hsum := sum_eq_of_productBoundary hb
+    simp [Fin.sum_univ_two] at hsum
 
 private theorem isRhombusConcave_of_chartThree (c : ℕ → ℕ → ℤ)
     (hH : c 0 0 + c 1 2 ≤ c 0 1 + c 1 1 ∧ c 0 1 + c 1 3 ≤ c 0 2 + c 1 2 ∧
@@ -878,6 +719,8 @@ theorem hiveCount_three_checks :
       omega
     rw [← card_fixedIntegerHive, ← Finset.card_univ, huniv, Finset.card_pair hne]
 
-end Bijection
+end Signed
 
-end TauCeti.Hive
+end Hive
+
+end TauCeti
