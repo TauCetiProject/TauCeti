@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.Idempotents
 
 import Mathlib.Algebra.Order.Ring.Idempotent
 import Mathlib.Order.Disjointed
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # Orthogonal refinement of a finite family of idempotents
@@ -49,10 +48,8 @@ theorem exists_orthogonalIdempotents_sum_eq_one_sub_prod {ι : Type*} [Fintype �
   obtain ⟨g, hge, hsup, hdisj⟩ :=
     Fintype.exists_disjointed_le fun i ↦ (⟨e i, he i⟩ : {a : R // IsIdempotentElem a})
   have hinf (s : Finset ι) (h : ι → {a : R // IsIdempotentElem a}) :
-      ((s.inf h : {a : R // IsIdempotentElem a}) : R) = ∏ i ∈ s, (h i : R) := by
-    induction s using Finset.cons_induction with
-    | empty => rfl
-    | cons i s _ ih => rw [Finset.inf_cons, Finset.prod_cons, ← ih]; rfl
+      ((s.inf h : {a : R // IsIdempotentElem a}) : R) = ∏ i ∈ s, (h i : R) :=
+    (Finset.fold_hom (m := Subtype.val) fun _ _ ↦ rfl).symm
   have hg : OrthogonalIdempotents fun i ↦ (g i : R) :=
     ⟨fun i ↦ (g i).property, fun i j hij ↦ congrArg Subtype.val (hdisj hij).eq_bot⟩
   refine ⟨fun i ↦ g i, hg, hge, ?_⟩
@@ -112,16 +109,19 @@ theorem notMem_iff_of_one_sub_prod_ite_mem {ι : Type*} [Fintype ι] {e : ι →
     (σ : ι → Bool) {p : Ideal R} (hp : p ≠ ⊤)
     (hF : 1 - ∏ y, (if σ y then e y else 1 - e y) ∈ p) {x : ι} (hx : e x * e x - e x ∈ p) :
     e x ∉ p ↔ σ x := by
-  classical
   set F := ∏ y, (if σ y then e y else 1 - e y)
   cases hσx : σ x
-  · -- `F = (1 - e x) * G`, so `e x = e x * (1 - F) - (e x * e x - e x) * G ∈ p`.
-    set G := ∏ y ∈ Finset.univ.erase x, (if σ y then e y else 1 - e y)
-    have hG : F = (1 - e x) * G := by
-      simp only [F, G, ← Finset.mul_prod_erase _ _ (Finset.mem_univ x), hσx, Bool.false_eq_true,
-        ↓reduceIte]
-    have h : e x = e x * (1 - F) - (e x * e x - e x) * G := by linear_combination e x * hG
-    simpa [← h] using p.sub_mem (p.mul_mem_left (e x) hF) (p.mul_mem_right G hx)
+  · -- In `R ⧸ p`, `e x` is idempotent, `F = 1`, and `1 - e x` absorbs `F`, so `e x = 0`.
+    have hidem : IsIdempotentElem (Ideal.Quotient.mk p (e x)) := by
+      rw [IsIdempotentElem, ← map_mul]
+      exact Ideal.Quotient.eq.mpr hx
+    have hF' : ∏ y, (if σ y then Ideal.Quotient.mk p (e y) else 1 - Ideal.Quotient.mk p (e y)) =
+        1 := by
+      have h := Ideal.Quotient.eq_zero_iff_mem.mpr hF
+      rw [map_sub, map_one, sub_eq_zero, map_prod] at h
+      simpa only [apply_ite (Ideal.Quotient.mk p), map_sub, map_one] using h.symm
+    have h := ite_mul_prod_ite (e := fun i ↦ Ideal.Quotient.mk p (e i)) σ hidem
+    simpa [hσx, hF', Ideal.Quotient.eq_zero_iff_mem] using h
   · -- If `e x ∈ p`, then so is the product `F`, and with `1 - F ∈ p` this gives `1 ∈ p`.
     refine iff_of_true (fun h ↦ hp ((Ideal.eq_top_iff_one _).mpr ?_)) rfl
     rw [← sub_add_cancel 1 F]

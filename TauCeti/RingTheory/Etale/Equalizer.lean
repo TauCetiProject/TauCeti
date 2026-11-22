@@ -47,9 +47,9 @@ The proof reduces to split algebras in three steps.
 
 * Over a split base, an algebra map `φ : (ι → T) →ₐ[T] (κ → T)` has idempotent matrix entries
   `φ (Pi.single i 1) j`. Over the component of each of their choice products
-  (`TauCeti.completeOrthogonalIdempotents_prod_ite`), every entry is `0` or `1`, so `φ` is induced
-  by a map `κ → ι`, and the equalizer of two such maps is the algebra of functions on a quotient
-  of `ι`.
+  (`TauCeti.completeOrthogonalIdempotents_prod_ite`), every entry is `0` or `1`. If the component
+  is nonzero, `φ` is induced by a map `κ → ι`, and the equalizer of two such maps is the algebra of
+  functions on a quotient of `ι`. Over a zero component, the equalizer is the zero algebra.
 * If `A` and `B` have constant ranks, they both split after a faithfully flat finite étale base
   change (`Algebra.IsFiniteSplit.exists_tensorProduct_of_etale`). Flat base change commutes with
   equalizers (`AlgHom.tensorEqualizerEquiv`), and finite étaleness descends along faithfully flat
@@ -112,8 +112,9 @@ section Split
 variable {T : Type*} [CommRing T]
 
 /-- The equalizer of two algebra maps between split algebras whose matrix entries are all `0` or
-`1` is finite étale: the maps are induced by maps `u v : κ → ι`, and the equalizer is the algebra
-of functions on the quotient of `ι` by the relation identifying `u j` with `v j`. -/
+`1` is finite étale. If `T` is nontrivial, the maps are induced by maps `u v : κ → ι`, and the
+equalizer is the algebra of functions on the quotient of `ι` by the relation identifying `u j`
+with `v j`. If `T` is the zero ring, so is the equalizer. -/
 private theorem etale_and_finite_equalizer_of_entries {ι κ : Type*} [_root_.Finite ι]
     [DecidableEq ι] (φ ψ : (ι → T) →ₐ[T] (κ → T))
     (hφ : ∀ i j, φ (Pi.single i 1) j = 0 ∨ φ (Pi.single i 1) j = 1)
