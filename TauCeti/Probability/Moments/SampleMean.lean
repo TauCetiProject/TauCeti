@@ -8,7 +8,7 @@ module
 public import Mathlib.Probability.Independence.Integration
 public import TauCeti.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.Convex.FiniteMean
-import TauCeti.Probability.Moments.Variance
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # Second moments of sample means
@@ -86,7 +86,8 @@ theorem integral_norm_sum_le_of_pairwise_indepFun [IsProbabilityMeasure μ]
     (hmean : ∀ i ∈ s, μ[X i] = 0) (hindep : Set.Pairwise ↑s fun i j ↦ X i ⟂ᵢ[μ] X j)
     {v : ℝ} (hv : ∀ i ∈ s, ∫ ω, ‖X i ω‖ ^ 2 ∂μ ≤ v) :
     (∫ ω, ‖∑ i ∈ s, X i ω‖ ∂μ) ≤ Real.sqrt (s.card * v) := by
-  refine (le_of_abs_le (abs_integral_le_sqrt_integral_sq (memLp_finsetSum s hX).norm)).trans ?_
+  refine (le_of_abs_le
+    (abs_integral_le_sqrt_integral_sq (memLp_finsetSum s hX).norm.integrable_sq)).trans ?_
   rw [integral_norm_sum_sq_of_pairwise_indepFun hX hmean hindep]
   exact Real.sqrt_le_sqrt ((sum_le_sum hv).trans_eq (by simp [nsmul_eq_mul]))
 

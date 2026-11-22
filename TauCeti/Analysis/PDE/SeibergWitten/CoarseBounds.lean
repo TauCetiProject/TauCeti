@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # Coarse bounds near the zeros of a large-parameter Seiberg–Witten solution

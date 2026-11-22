@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.SmallGraphs
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # Extremal inequalities for graphons

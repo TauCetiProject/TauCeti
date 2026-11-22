@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.MeasureTheory.Function.L2Space
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # The Cauchy–Schwarz inequality for interval integrals

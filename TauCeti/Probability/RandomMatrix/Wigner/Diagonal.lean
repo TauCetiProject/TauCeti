@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.RandomMatrix.Wigner
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 import TauCeti.Analysis.Matrix.SpectralMeasure.ResolventStability
-import TauCeti.Probability.Moments.Variance
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 import TauCeti.Probability.RandomMatrix.Diagonal
 
 /-!
@@ -103,7 +103,7 @@ theorem integral_norm_resolventTransform_wignerMatrix_sub_wignerMatrix_zero_le
       (ξ := ξ) (η := η) ω hz)).trans ?_
   rw [integral_const_mul]
   refine mul_le_mul_of_nonneg_left
-    ((le_of_abs_le (abs_integral_le_sqrt_integral_sq he)).trans_eq ?_) (sq_nonneg _)
+    ((le_of_abs_le (abs_integral_le_sqrt_integral_sq he.integrable_sq)).trans_eq ?_) (sq_nonneg _)
   simp_rw [Real.sq_sqrt (hS _)]
   unfold S
   rw [integral_const_mul, integral_finsetSum _ (fun i _ ↦ hi i)]

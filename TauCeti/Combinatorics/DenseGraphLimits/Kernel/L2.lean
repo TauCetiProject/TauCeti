@@ -6,7 +6,7 @@ Authors: Claude, Codex
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Kernel.Integral
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # The `L²` pairing of symmetric kernels

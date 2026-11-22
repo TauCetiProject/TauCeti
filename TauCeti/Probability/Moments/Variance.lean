@@ -32,24 +32,17 @@ This identity is what turns the strong-convexity remainder of an interaction ene
 transport plan, an integral over pairs of transported pairs, into the variance of the
 displacement.
 
-The file also records the elementary bound of the mean of a real function by the square root of
-its second moment (the nonnegativity of its variance), together with two consequences of nonzero
-variance `Var[X; μ] ≠ 0`: strict positivity of the expectation of an `ℝ≥0`-valued random variable
-on a finite measure space, and nondegeneracy `μ {ω | X ω = 0} < 1` of a real-valued random
-variable on a probability space, as well as Chebyshev convergence in probability from vanishing
-variances and Borel--Cantelli almost-sure convergence to the mean from summable variances.
+The file also records two consequences of nonzero variance `Var[X; μ] ≠ 0`: strict positivity of
+the expectation of an `ℝ≥0`-valued random variable on a finite measure space, and nondegeneracy
+`μ {ω | X ω = 0} < 1` of a real-valued random variable on a probability space, as well as
+Chebyshev convergence in probability from vanishing variances and Borel--Cantelli almost-sure
+convergence to the mean from summable variances.
 
 ## Main statements
 
 * `MeasureTheory.MemLp.integrable_norm_sub_sq_prod`: for `f ∈ L²(μ)` and a finite measure `μ`,
   the function `(x, y) ↦ ‖f x - f y‖²` is integrable for `μ ⊗ μ`.
 * `TauCeti.integral_norm_sub_sq_prod`: the identity above.
-* `MeasureTheory.abs_integral_le_sqrt_integral_sq`: on a probability space, the absolute value
-  of the mean of a real square-integrable function is at most the square root of its second
-  moment, which is the nonnegativity of its variance.
-* `MeasureTheory.MemLp.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul`: on a probability
-  space, the `k`-th absolute moment of a function in `L^(2k)` is at most the square root of its
-  `2k`-th absolute moment.
 * `MeasureTheory.MeasurePreserving.evariance_fun_comp`: the variance is invariant under
   composition with a measure-preserving measurable embedding.
 * `ProbabilityTheory.tendsto_variance_of_tendsto_eLpNorm_sub`: variance is continuous under
@@ -124,32 +117,6 @@ theorem integrable_norm_sub_sq_prod [IsFiniteMeasure μ] {f : α → E} (hf : Me
 end MeasureTheory.MemLp
 
 namespace MeasureTheory
-
-/-- On a probability space, the absolute value of the mean of a square-integrable function is at
-most the square root of its second moment. -/
-theorem abs_integral_le_sqrt_integral_sq {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-    [IsProbabilityMeasure μ] {g : Ω → ℝ} (hg : MemLp g 2 μ) :
-    |∫ x, g x ∂μ| ≤ √(∫ x, g x ^ 2 ∂μ) := by
-  apply Real.abs_le_sqrt
-  have h := ProbabilityTheory.variance_nonneg g μ
-  rw [ProbabilityTheory.variance_eq_sub hg] at h
-  simpa only [Pi.pow_apply, sub_nonneg] using h
-
-/-- On a probability space, the `k`-th absolute moment of a function in `L^(2k)` is at most the
-square root of its `2k`-th absolute moment. -/
-theorem MemLp.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul
-    {Ω E : Type*} [MeasurableSpace Ω] [NormedAddCommGroup E] {μ : Measure Ω}
-    [IsProbabilityMeasure μ] {f : Ω → E} {k : ℕ} (hf : MemLp f (2 * k : ℕ) μ) :
-    ∫ x, ‖f x‖ ^ k ∂μ ≤ √(∫ x, ‖f x‖ ^ (2 * k) ∂μ) := by
-  rcases eq_or_ne k 0 with rfl | hk
-  · simp
-  have hk0 : (k : ENNReal) ≠ 0 := Nat.cast_ne_zero.mpr hk
-  have hmem : MemLp (fun x ↦ ‖f x‖ ^ k) 2 μ := by
-    have h := hf.norm_rpow_div (k : ℕ)
-    rw [Nat.cast_mul, Nat.cast_ofNat,
-      ENNReal.mul_div_cancel_right hk0 (ENNReal.natCast_ne_top _)] at h
-    simpa only [ENNReal.toReal_natCast, Real.rpow_natCast] using h
-  simpa only [← pow_mul, mul_comm k 2] using le_of_abs_le (abs_integral_le_sqrt_integral_sq hmem)
 
 section Centering
 

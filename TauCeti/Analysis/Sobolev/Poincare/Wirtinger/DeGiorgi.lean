@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 public import TauCeti.Analysis.Sobolev.W1p.LevelSet
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # De Giorgi's isoperimetric inequality

@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.Probability.Moments.WeightedTruncation
 import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Matrix.DotProduct
 
@@ -177,7 +178,7 @@ theorem memLp_two_and_integral_norm_sum_mul_star_mul_le_of_distinct_unordered_pa
   refine ⟨hsum, ?_⟩
   calc
     _ ≤ Real.sqrt (∫ ω, ‖∑ p ∈ s, A p.1 p.2 * (star (X p.1 ω) * X p.2 ω)‖ ^ 2 ∂P) :=
-      le_of_abs_le (abs_integral_le_sqrt_integral_sq hsum.norm)
+      le_of_abs_le (abs_integral_le_sqrt_integral_sq hsum.norm.integrable_sq)
     _ ≤ Real.sqrt (v ^ 2 * ∑ p ∈ s, ‖A p.1 p.2‖ ^ 2) := by
       rw [hmoment, mul_sum]
       apply Real.sqrt_le_sqrt

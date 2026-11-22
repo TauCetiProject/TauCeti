@@ -9,8 +9,6 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Algebra.Polynomial.Roots
 import TauCeti.Analysis.SpecialFunctions.Sqrt
-import Mathlib.Analysis.Convex.Integral
-import Mathlib.Analysis.Convex.Mul
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -111,9 +109,6 @@ for set and probability integrals.
   `‖g + h‖² ≤ 2 ‖g‖² + 2 ‖h‖²` over a set.
 * `setIntegral_norm_sub_sq_le_add_of_le` transfers a square-mean decay estimate from `K` on a
   pair of sets `s ⊆ S` to any `f` close to `K` in square mean on `S`.
-* `sq_setIntegral_le_measureReal_mul_setIntegral_sq` is Cauchy--Schwarz for a real-valued set
-  integral, in squared form; on a probability space, with `S` the whole space, it is the
-  second-moment lower bound `(∫ f)² ≤ ∫ f²`.
 * `measureReal_inter_lt_le_setIntegral_max_sub_sq_div` is Chebyshev's inequality for truncations:
   the level set `{l < g}` in `s` has measure at most `∫_s ((g - k)⁺)² / (l - k)²`.
 * `ae_le_of_setIntegral_max_sub_sq_eq_zero` gives `g ≤ k` almost everywhere on `s` when the
@@ -544,28 +539,6 @@ theorem setIntegral_norm_sub_sq_le_add_of_le {X F : Type*} [MeasurableSpace X] {
   have h4 := mul_le_mul_of_nonneg_left h2 (mul_nonneg hD hq0)
   have h5 := mul_le_mul_of_nonneg_left (mul_le_of_le_one_left hE0 hq1) hD
   linarith
-
-/-- Cauchy--Schwarz for a real-valued set integral over a set of finite measure, in squared form. -/
-theorem sq_setIntegral_le_measureReal_mul_setIntegral_sq {Ω : Type*} [MeasurableSpace Ω]
-    {μ : Measure Ω} (f : Ω → ℝ) (S : Set Ω) (hS_top : μ S ≠ ⊤)
-    (hf_sq : IntegrableOn (fun x => f x ^ 2) S μ) :
-    (∫ x in S, f x ∂μ) ^ 2 ≤ μ.real S * ∫ x in S, f x ^ 2 ∂μ := by
-  by_cases hf : IntegrableOn f S μ
-  swap
-  · rw [integral_undef hf]
-    simpa using mul_nonneg measureReal_nonneg (integral_nonneg fun x => sq_nonneg (f x))
-  by_cases hS : μ S = 0
-  · rw [Measure.restrict_eq_zero.mpr hS]
-    simp
-  · have hS_pos : 0 < μ.real S := ENNReal.toReal_pos hS hS_top
-    have hconv : ConvexOn ℝ Set.univ (fun x : ℝ => x ^ 2) :=
-      Even.convexOn_pow (by norm_num : Even 2)
-    have hjensen := hconv.map_set_average_le (continuous_pow 2).continuousOn isClosed_univ
-      hS hS_top (ae_of_all _ fun _ => Set.mem_univ _) hf hf_sq
-    simp only [setAverage_eq, smul_eq_mul, mul_pow] at hjensen
-    have hkey := mul_le_mul_of_nonneg_left hjensen (sq_nonneg (μ.real S))
-    field_simp at hkey
-    exact hkey
 
 /-- A weight `ψ` with `|ψ| ≤ 1` almost everywhere on `s` whose square equals one almost everywhere
 on a subset `t ⊆ s` bounds the integral over `t` of a function nonnegative almost everywhere on `s`

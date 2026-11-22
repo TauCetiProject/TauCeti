@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Measure.Portmanteau
-import TauCeti.Probability.Moments.Variance
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # Weak limits from vanishing second moments
@@ -23,7 +23,7 @@ countably generated filter. Concentration at a point holds along any filter: pro
 converge weakly to a Dirac mass if their mean squared distance from that point tends to zero. It
 is checked directly on bounded continuous test functions `g`, using
 `|g y - g x| ≤ ε / 2 + C * dist y x`. Both arguments bound a first moment by the square root of
-the second, which is the nonnegativity of the variance.
+the second, which is the Cauchy--Schwarz inequality against the constant `1`.
 -/
 
 public section
@@ -63,8 +63,8 @@ theorem tendsto_of_lipschitz_approx_of_integral_sq_tendsto_zero {E ι : Type*}
           (hle.mono fun y hy ↦ by rwa [Real.norm_eq_abs])
       _ ≤ K * √(∫ y, d i y ^ 2 ∂(μ i : Measure E)) := by
         rw [integral_const_mul]
-        exact mul_le_mul_of_nonneg_left (le_of_abs_le (abs_integral_le_sqrt_integral_sq (hmem i)))
-          K.coe_nonneg
+        exact mul_le_mul_of_nonneg_left
+          (le_of_abs_le (abs_integral_le_sqrt_integral_sq (hmem i).integrable_sq)) K.coe_nonneg
   have hzero : Tendsto (fun i ↦ K * √(∫ y, d i y ^ 2 ∂(μ i : Measure E))) L (𝓝 0) := by
     simpa using hlim.sqrt.const_mul (K : ℝ)
   exact tendsto_iff_dist_tendsto_zero.2 (squeeze_zero (fun _ ↦ dist_nonneg) hdist hzero)
@@ -111,7 +111,7 @@ theorem tendsto_dirac_of_integral_dist_sq_tendsto_zero {E ι : Type*}
         simp
     _ ≤ ε / 2 + C * √(∫ y, dist y x ^ 2 ∂(μ i : Measure E)) := by
         linarith [mul_le_mul_of_nonneg_left
-          (le_of_abs_le (abs_integral_le_sqrt_integral_sq (hmem i))) hC]
+          (le_of_abs_le (abs_integral_le_sqrt_integral_sq (hmem i).integrable_sq)) hC]
     _ < ε := by linarith
 
 /-- Mean squared distance from a point tending to zero along a filter implies weak convergence to
