@@ -63,8 +63,6 @@ compactness of `D → H` enters.
   for a limit that is invertible only after subtracting a multiple of `ι`.
 * `TauCeti.WeakDerivStep.inner_neg_apply_eq_inner`: the negative of an `ι`-symmetric operator is
   `ι`-symmetric.
-* `TauCeti.WeakDerivStep.inner_apply_eq_inner_of_tendsto`: a limit of `ι`-symmetric operators is
-  `ι`-symmetric.
 
 ## References
 
@@ -266,19 +264,6 @@ theorem inner_neg_apply_eq_inner {B : D →L[ℝ] H}
     (hB : ∀ x y : D, ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ) (x y : D) :
     ⟪(-B) x, ι y⟫_ℝ = ⟪ι x, (-B) y⟫_ℝ := by
   simp only [neg_apply, inner_neg_left, inner_neg_right, hB]
-
-omit [CompleteSpace D] [CompleteSpace H] in
-/-- **A limit of `ι`-symmetric operators is `ι`-symmetric.** If `A s → B` along `l` and `A s` is
-`ι`-symmetric (`⟪A s x, ι y⟫ = ⟪ι x, A s y⟫`) for `s` frequently along `l`, then `B` is
-`ι`-symmetric. -/
-theorem inner_apply_eq_inner_of_tendsto {α : Type*} {l : Filter α} {A : α → D →L[ℝ] H}
-    {B : D →L[ℝ] H} (hSymm : ∃ᶠ s in l, ∀ x y : D, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ)
-    (hA : Tendsto A l (𝓝 B)) (x y : D) :
-    ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ := by
-  have hx := ((ContinuousLinearMap.apply ℝ H x).continuous.tendsto B).comp hA
-  have hy := ((ContinuousLinearMap.apply ℝ H y).continuous.tendsto B).comp hA
-  exact tendsto_nhds_unique_of_frequently_eq (hx.inner tendsto_const_nhds)
-    (tendsto_const_nhds.inner hy) (hSymm.mono fun s hs ↦ hs x y)
 
 end Symmetric
 

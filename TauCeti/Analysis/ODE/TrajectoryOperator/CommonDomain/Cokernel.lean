@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.SemiFredholm
 public import TauCeti.Analysis.Fredholm.ClosedRange
 import TauCeti.Analysis.InnerProductSpace.Lions
+import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -326,8 +327,10 @@ private theorem inner_apply_eq_inner_of_tendsto_atBot_atTop
     (∀ x y : D, ⟪Bbot x, ι y⟫_ℝ = ⟪ι x, Bbot y⟫_ℝ) ∧
       ∀ x y : D, ⟪Btop x, ι y⟫_ℝ = ⟪ι x, Btop y⟫_ℝ := by
   -- A property of almost every `s` holds on every half-line, which has positive measure.
-  refine ⟨inner_apply_eq_inner_of_tendsto (frequently_atBot.2 fun a ↦ ?_) hbot,
-    inner_apply_eq_inner_of_tendsto (frequently_atTop.2 fun a ↦ ?_) htop⟩
+  refine ⟨ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot
+      (frequently_atBot.2 fun a ↦ ?_),
+    ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop
+      (frequently_atTop.2 fun a ↦ ?_)⟩
   · have : (ae (volume.restrict (Iic a))).NeBot := ae_restrict_neBot.2 (by simp)
     exact ((ae_restrict_mem measurableSet_Iic).and (ae_restrict_of_ae hSymm)).exists
   · have : (ae (volume.restrict (Ici a))).NeBot := ae_restrict_neBot.2 (by simp)
