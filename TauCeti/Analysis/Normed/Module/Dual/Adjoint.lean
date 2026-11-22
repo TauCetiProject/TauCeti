@@ -193,8 +193,8 @@ theorem mem_closure_image_closedBall_iff [SeminormedAddCommGroup F] [NormedSpace
     rw [← habs.bipolar_eq_closure hne]
     intro g hg
     rw [StrongDual.mem_polar_iff] at hg
-    have hgT := StrongDual.re_apply_add_mul_norm_le (f := g.comp T) (x := 0) hr fun x hx ↦
-      (RCLike.re_le_norm _).trans (hg (T x) ⟨x, hx, rfl⟩)
+    have hgT := (StrongDual.re_apply_add_mul_norm_le_iff (f := g.comp T) (x := 0) hr).2
+      fun x hx ↦ (RCLike.re_le_norm _).trans (hg (T x) ⟨x, hx, rfl⟩)
     rw [map_zero, map_zero, zero_add] at hgT
     exact (h g).trans hgT
 
