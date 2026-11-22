@@ -42,6 +42,7 @@ by the equivalence.
 * `LinearEquiv.toPermHom_smul_coe`: the permutation of the module underlying a linear
   automorphism moves the set underlying a submodule to the set underlying its image.
 * `LinearEquiv.smulOfUnit_apply`: `LinearEquiv.smulOfUnit u` acts as multiplication by `u`.
+* `LinearEquiv.arrowCongr_eq_comp`: `e₁.arrowCongr e₂ f` as the composite `e₂ ∘ₗ f ∘ₗ e₁.symm`.
 * `LinearEquiv.funCongrLeft_toAddMonoidHom`: forgetting linearity in coordinate transport
   gives additive coordinate transport.
 -/
@@ -204,5 +205,13 @@ variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 @[simp]
 theorem smulOfUnit_apply (u : Rˣ) (x : M) : (smulOfUnit u : M ≃ₗ[R] M) x = (u : R) • x :=
   (rfl)
+
+/-- Expresses `LinearEquiv.arrowCongr e₁ e₂ f` as the composite `e₂ ∘ₗ f ∘ₗ e₁.symm`. -/
+theorem arrowCongr_eq_comp {R A B A' B' : Type*} [CommSemiring R]
+    [AddCommMonoid A] [Module R A] [AddCommMonoid B] [Module R B]
+    [AddCommMonoid A'] [Module R A'] [AddCommMonoid B'] [Module R B']
+    (e₁ : A ≃ₗ[R] A') (e₂ : B ≃ₗ[R] B') (f : A →ₗ[R] B) :
+    e₁.arrowCongr e₂ f = e₂.toLinearMap ∘ₗ f ∘ₗ e₁.symm.toLinearMap :=
+  LinearMap.ext fun _ ↦ (rfl)
 
 end LinearEquiv

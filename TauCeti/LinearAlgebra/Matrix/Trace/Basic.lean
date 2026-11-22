@@ -15,8 +15,9 @@ import Mathlib.Tactic.Ring
 Fix a matrix `S`. This file expands the quadratic map `M ↦ trace (M * S * M * S)` at a sum, so
 that polarization recovers the symmetric bilinear map `(M, N) ↦ trace (M * S * N * S)` from it.
 It also computes the trace of `2 P - 1`, which vanishes for a trace-one `2 × 2` matrix `P` such as
-the orthogonal projector onto a line of `ℂ²`, and records that reindexing rows and columns along
-one equivalence preserves the trace.
+the orthogonal projector onto a line of `ℂ²`, records that reindexing rows and columns along
+one equivalence preserves the trace, and relates double sums of `2 × 2` minor terms to products
+of traces and traces of products.
 
 ## Main results
 
@@ -25,6 +26,9 @@ one equivalence preserves the trace.
 * `Matrix.trace_two_mul_sub_one`: `trace (2 P - 1) = 2 trace P - n` for an `n × n` matrix `P`.
 * `Matrix.trace_reindex_self`: reindexing rows and columns along one equivalence preserves the
   trace.
+* `Matrix.sum_diag_mul_diag`, `Matrix.sum_offDiag_mul_eq_trace_mul`, and
+  `Matrix.sum_symmMinor_eq_two_mul_trace_sub`: double-sum identities for diagonal products,
+  off-diagonal products, and symmetrized `2 × 2` minors.
 -/
 
 public section
@@ -53,5 +57,26 @@ trace. -/
 theorem trace_reindex_self {R : Type*} [AddCommMonoid R] (e : m ≃ n) (A : Matrix m m R) :
     (reindex e e A).trace = A.trace := by
   simpa [trace] using e.symm.sum_comp (fun i ↦ A i i)
+
+/-- The double sum of products of diagonal entries of two square matrices is the product of their
+traces. -/
+theorem sum_diag_mul_diag (A : Matrix m m R) (C : Matrix n n R) :
+    ∑ i, ∑ j, A i i * C j j = A.trace * C.trace := by
+  simp_rw [← Finset.mul_sum, ← Finset.sum_mul, Matrix.trace, Matrix.diag]
+
+/-- The double sum of cross entries `A j i * C i j` is the trace of `A * C`. -/
+theorem sum_offDiag_mul_eq_trace_mul (A : Matrix m n R) (C : Matrix n m R) :
+    ∑ i, ∑ j, A j i * C i j = (A * C).trace := by
+  simp_rw [Matrix.trace, Matrix.diag, Matrix.mul_apply]
+  exact Finset.sum_comm
+
+/-- The double sum of symmetrized `2 × 2` minor terms equals
+`2 * (A.trace * C.trace - (A * C).trace)`. -/
+theorem sum_symmMinor_eq_two_mul_trace_sub {R : Type*} [CommRing R] (A C : Matrix m m R) :
+    ∑ i, ∑ j, (A i i * C j j - A j i * C i j + C i i * A j j - C j i * A i j) =
+      2 * (A.trace * C.trace - (A * C).trace) := by
+  simp only [Finset.sum_sub_distrib, Finset.sum_add_distrib, sum_diag_mul_diag,
+    sum_offDiag_mul_eq_trace_mul, trace_mul_comm C A]
+  ring
 
 end Matrix

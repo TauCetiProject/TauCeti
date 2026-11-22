@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
+public import TauCeti.LinearAlgebra.BilinearForm.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Trace
 
 /-!
@@ -18,21 +19,26 @@ On a finite-dimensional real inner product space `E`, `TauCeti.bilinFormToEnd` i
 equivalence `BilinForm ℝ E ≃ₗ[ℝ] Module.End ℝ E` identifying each bilinear form `B` with the
 endomorphism `B♯` satisfying `⟪B♯ u, v⟫ = B u v`, inverse to metric lowering
 `A ↦ (innerₗ E).comp A`. It carries `innerₗ E` to `LinearMap.id`, converts `B.IsSymm` to
-`(B♯).IsSymmetric`, identifies `LinearMap.trace` with `TauCeti.bilinFormTrace`, pulls back
-`B.compl₁₂ f g` via `LinearMap.adjoint g`, and is equivariant under linear isometric equivalences.
+`(B♯).IsSymmetric`, restricts to a linear equivalence `TauCeti.symmBilinEquivSelfAdjoint`
+between `LinearMap.BilinForm.symmSubmodule ℝ E` and `selfAdjoint.submodule ℝ (Module.End ℝ E)`,
+identifies `LinearMap.trace` with `TauCeti.bilinFormTrace`, pulls back `B.compl₁₂ f g` via
+`LinearMap.adjoint g`, and is equivariant under linear isometric equivalences.
 
 ## Main definitions
 
 * `TauCeti.bilinFormToEnd`: the Riesz index-raising equivalence
   `BilinForm ℝ E ≃ₗ[ℝ] Module.End ℝ E`.
+* `TauCeti.symmBilinEquivSelfAdjoint`: restriction of `bilinFormToEnd` to
+  `LinearMap.BilinForm.symmSubmodule ℝ E ≃ₗ[ℝ] selfAdjoint.submodule ℝ (Module.End ℝ E)`.
 
 ## Main results
 
 * `LinearMap.BilinForm.inner_bilinFormToEnd_left`, `LinearMap.bilinFormToEnd_symm_apply`,
   `LinearMap.BilinForm.innerₗ_comp_bilinFormToEnd`, `LinearMap.bilinFormToEnd_innerₗ_comp`, and
   `TauCeti.bilinFormToEnd_innerₗ`: pairing and inverse laws.
-* `TauCeti.isSymmetric_bilinFormToEnd_iff`, `LinearMap.BilinForm.trace_bilinFormToEnd`,
-  `LinearMap.BilinForm.bilinFormToEnd_compl₁₂`,
+* `TauCeti.isSymmetric_bilinFormToEnd_iff`, `TauCeti.mem_selfAdjoint_submodule_iff_isSymmetric`,
+  `TauCeti.coe_symmBilinEquivSelfAdjoint`, `TauCeti.coe_symmBilinEquivSelfAdjoint_symm`,
+  `LinearMap.BilinForm.trace_bilinFormToEnd`, `LinearMap.BilinForm.bilinFormToEnd_compl₁₂`,
   `LinearIsometryEquiv.comp_bilinFormToEnd_compl₁₂`, and
   `LinearIsometryEquiv.comp_bilinFormToEnd_of_eq`: symmetry, trace, pullback, and equivariance.
 -/
@@ -117,6 +123,38 @@ namespace TauCeti
     rw [← B.inner_bilinFormToEnd_left, h, real_inner_comm, B.inner_bilinFormToEnd_left]⟩,
    fun h u v ↦ by
     rw [B.inner_bilinFormToEnd_left, real_inner_comm, B.inner_bilinFormToEnd_left, h.eq]⟩
+
+/-- An endomorphism of a finite-dimensional real inner product space belongs to
+`selfAdjoint.submodule ℝ (Module.End ℝ E)` if and only if it is symmetric. -/
+theorem mem_selfAdjoint_submodule_iff_isSymmetric {T : Module.End ℝ E} :
+    T ∈ selfAdjoint.submodule ℝ (Module.End ℝ E) ↔ T.IsSymmetric :=
+  (LinearMap.isSymmetric_iff_isSelfAdjoint T).symm
+
+/-- Metric index raising restricts to a linear equivalence between symmetric bilinear forms and
+self-adjoint endomorphisms. -/
+def symmBilinEquivSelfAdjoint :
+    BilinForm.symmSubmodule ℝ E ≃ₗ[ℝ] selfAdjoint.submodule ℝ (Module.End ℝ E) :=
+  bilinFormToEnd.ofSubmodules (BilinForm.symmSubmodule ℝ E)
+    (selfAdjoint.submodule ℝ (Module.End ℝ E)) <| by
+    ext T
+    simp only [Submodule.mem_map, LinearEquiv.coe_coe, BilinForm.mem_symmSubmodule,
+      mem_selfAdjoint_submodule_iff_isSymmetric]
+    refine ⟨?_, fun hT ↦ ⟨bilinFormToEnd.symm T, ?_, LinearEquiv.apply_symm_apply _ T⟩⟩
+    · rintro ⟨B, hB, rfl⟩
+      exact isSymmetric_bilinFormToEnd_iff.mpr hB
+    · rw [← isSymmetric_bilinFormToEnd_iff, LinearEquiv.apply_symm_apply]
+      exact hT
+
+/-- Coercion of `symmBilinEquivSelfAdjoint` is `bilinFormToEnd`. -/
+@[simp] theorem coe_symmBilinEquivSelfAdjoint (B : BilinForm.symmSubmodule ℝ E) :
+    (symmBilinEquivSelfAdjoint B : Module.End ℝ E) = bilinFormToEnd B.val :=
+  (rfl)
+
+/-- Coercion of `symmBilinEquivSelfAdjoint.symm` is `bilinFormToEnd.symm`. -/
+@[simp] theorem coe_symmBilinEquivSelfAdjoint_symm
+    (T : selfAdjoint.submodule ℝ (Module.End ℝ E)) :
+    (symmBilinEquivSelfAdjoint.symm T : BilinForm ℝ E) = bilinFormToEnd.symm T.val :=
+  (rfl)
 
 end TauCeti
 

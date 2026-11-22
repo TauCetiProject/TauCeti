@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Isotropic
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Sectional
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Riemann
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.FourTensor.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.IsManifold.Basic
@@ -15,19 +15,16 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoo
 import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 
 /-!
-# The pointwise `(0, 4)` curvature tensor as a continuous four-tensor
+# Continuity and algebraic curvature symmetries of `curvatureFourTensor`
 
-Pairing the `(1, 3)` curvature tensor with the fibre inner product via `r ![u, v, z, w] =
-⟪R(u, v)w, z⟫` defines `CovariantDerivative.curvatureFourTensor cov x`. Its contractions match
-`ricciTensor` and `scalarCurvature`, diagonal pairings recover `sectionalCurvature`, and for a
-metric-compatible torsion-free connection it lies in `algebraicCurvatureSubmodule`. Local `C^0`
-Gram–Schmidt frames give continuity of `‖curvatureFourTensor ·‖`, `sectionalMin`, `sectionalMax`,
-and `pic2Min`.
+For a metric-compatible torsion-free connection, `CovariantDerivative.curvatureFourTensor cov x`
+lies in `algebraicCurvatureSubmodule`. Local `C^0` Gram–Schmidt frames give continuity of
+`‖curvatureFourTensor ·‖`, `sectionalMin`, `sectionalMax`, and `pic2Min`, and diagonal pairings
+recover `sectionalCurvature`.
 
 ## Main definitions & statements
 
-* `curvatureFourTensor`, `IsMetricCompatible.algebraicCurvature`, `ricci_curvatureFourTensor`,
-  `scalar_curvatureFourTensor`, `sectionalCurvature_eq_curvatureFourTensor_div`,
+* `IsMetricCompatible.algebraicCurvature`, `sectionalCurvature_eq_curvatureFourTensor_div`,
   `IsMetricCompatible.isAlgebraicCurvature_curvatureFourTensor`,
   `continuous_norm_curvatureFourTensor`, `continuous_sectionalMin_curvatureFourTensor`,
   `continuous_sectionalMax_curvatureFourTensor`, `continuous_pic2Min_curvatureFourTensor`.
@@ -54,39 +51,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   (cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x))
   [ContMDiffCovariantDerivative cov ∞]
-
-/-- The pointwise `(0, 4)` curvature tensor `r ![u, v, z, w] = ⟪R(u, v)w, z⟫`. -/
-def curvatureFourTensor (x : M) : FourTensor (TangentSpace I x) :=
-  ofLinearMap₄ <| LinearMap.mk₂ ℝ (fun u v ↦ (cov.riemannCurvatureTensor x u v).flip)
-    (fun _ _ _ ↦ by ext; simp) (fun _ _ _ ↦ by ext; simp)
-    (fun _ _ _ ↦ by ext; simp) (fun _ _ _ ↦ by ext; simp)
-
-/-- `curvatureFourTensor` agrees with `riemannCurvatureTensor` with the last two slots swapped. -/
-theorem curvatureFourTensor_eq_riemannCurvatureTensor (x : M) (u v z w : TangentSpace I x) :
-    cov.curvatureFourTensor x ![u, v, z, w] = cov.riemannCurvatureTensor x u v w z := by
-  simp [curvatureFourTensor]
-
-/-- Evaluation of `curvatureFourTensor` on `![u, v, z, w]`. -/
-@[simp]
-theorem curvatureFourTensor_apply (x : M) (u v z w : TangentSpace I x) :
-    cov.curvatureFourTensor x ![u, v, z, w] = inner ℝ (cov.curvatureTensor x u v w) z := by
-  rw [cov.curvatureFourTensor_eq_riemannCurvatureTensor, cov.riemannCurvatureTensor_apply]
-
-/-- The algebraic Ricci contraction of `curvatureFourTensor` is `ricciTensor`. -/
-@[simp]
-theorem ricci_curvatureFourTensor (x : M) :
-    ricci (cov.curvatureFourTensor x) = cov.ricciTensor x := by
-  ext u v; let b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [ricci_apply_orthonormalBasis b, cov.ricciTensor_eq_sum_riemannCurvatureTensor x b]
-  simp [cov.curvatureFourTensor_eq_riemannCurvatureTensor]
-
-/-- The algebraic scalar contraction of `curvatureFourTensor` is `scalarCurvature`. -/
-@[simp]
-theorem scalar_curvatureFourTensor (x : M) :
-    scalar (cov.curvatureFourTensor x) = cov.scalarCurvature x := by
-  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [scalar_apply_orthonormalBasis b, cov.scalarCurvature_eq_sum_riemannCurvatureTensor x b]
-  simp [cov.curvatureFourTensor_eq_riemannCurvatureTensor]
 
 section Continuity
 

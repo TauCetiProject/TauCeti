@@ -103,7 +103,7 @@ theorem val_ofLtPair (p : {p : I × I // p.1 < p.2}) :
 
 /-- A symmetric double sum of a function vanishing on the diagonal is twice its sum over
 two-element subsets via their increasing enumerations. -/
-theorem sum_two_of_symm_of_diag_eq_zero {G : Type*} [Fintype I] [AddCommMonoid G]
+theorem sum_sum_eq_two_nsmul_sum_of_symm_of_diag_eq_zero {G : Type*} [Fintype I] [AddCommMonoid G]
     (F : I → I → G) (hsymm : ∀ i j, F i j = F j i) (hdiag : ∀ i, F i i = 0) :
     (∑ i, ∑ j, F i j) = 2 • ∑ s : powersetCard I 2,
       F (ofFinEmbEquiv.symm s 0) (ofFinEmbEquiv.symm s 1) := by

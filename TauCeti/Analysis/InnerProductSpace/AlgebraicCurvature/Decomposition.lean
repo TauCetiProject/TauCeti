@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.ExteriorSquare
+public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Schouten
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
 import TauCeti.LinearAlgebra.Multilinear.CurvatureDimThree
@@ -35,9 +36,8 @@ orthogonal to both in every dimension.
 ## Main definitions
 
 * `TauCeti.FourTensor.tracelessRicci`, `TauCeti.FourTensor.ricciEndomorphism`,
-  `TauCeti.FourTensor.tracelessRicciEndomorphism`, `TauCeti.FourTensor.schouten`,
-  `TauCeti.FourTensor.scalarPart`, `TauCeti.FourTensor.tracelessRicciPart`, and
-  `TauCeti.FourTensor.weyl`.
+  `TauCeti.FourTensor.tracelessRicciEndomorphism`, `TauCeti.FourTensor.scalarPart`,
+  `TauCeti.FourTensor.tracelessRicciPart`, and `TauCeti.FourTensor.weyl`.
 
 ## Main results
 
@@ -214,50 +214,6 @@ theorem IsAlgebraicCurvature.isSymmetric_tracelessRicciEndomorphism {r : FourTen
 @[simp] theorem trace_tracelessRicciEndomorphism (r : FourTensor V) :
     LinearMap.trace ℝ V (tracelessRicciEndomorphism r) = 0 :=
   (tracelessRicci r).trace_bilinFormToEnd.trans (bilinFormTrace_tracelessRicci r)
-
-/-- The algebraic Schouten bilinear form
-`P(r) = (dim V - 2)⁻¹ • (Ric(r) - (Scal(r) / (2 (dim V - 1))) g)`.
-Because Lean totalizes `(0 : ℝ)⁻¹ = 0`, `schouten r = 0` when `dim V = 2`; when `dim V = 1`, the
-scalar correction vanishes so `schouten r = -ricci r` (which is `0` for pair-antisymmetric
-four-tensors). -/
-def schouten : FourTensor V →ₗ[ℝ] BilinForm ℝ V :=
-  ((Module.finrank ℝ V : ℝ) - 2)⁻¹ •
-    (ricci + (-(2 * ((Module.finrank ℝ V : ℝ) - 1))⁻¹ • scalar).smulRight (innerₗ V))
-
-/-- Evaluation of the algebraic Schouten form. -/
-theorem schouten_apply (r : FourTensor V) :
-    schouten r = ((Module.finrank ℝ V : ℝ) - 2)⁻¹ •
-      (ricci r - (scalar r / (2 * ((Module.finrank ℝ V : ℝ) - 1))) • innerₗ V) := by
-  ext u v
-  simp only [schouten, LinearMap.smul_apply, LinearMap.add_apply, LinearMap.sub_apply,
-    LinearMap.smulRight_apply, innerₗ_apply_apply, smul_eq_mul, div_eq_inv_mul]
-  ring
-
-/-- Pointwise evaluation of the algebraic Schouten form. -/
-theorem schouten_apply_apply (r : FourTensor V) (u v : V) :
-    schouten r u v = ((Module.finrank ℝ V : ℝ) - 2)⁻¹ *
-      (ricci r u v - scalar r / (2 * ((Module.finrank ℝ V : ℝ) - 1)) * ⟪u, v⟫) := by
-  simp [schouten_apply]
-
-/-- In dimension `2`, `schouten r = 0` because Lean totalizes `(0 : ℝ)⁻¹ = 0`. -/
-@[simp] theorem schouten_eq_zero_of_finrank_eq_two (hdim : Module.finrank ℝ V = 2)
-    (r : FourTensor V) : schouten r = 0 := by
-  simp [schouten, hdim]
-
-/-- `schouten r` is symmetric whenever `ricci r` is symmetric. -/
-theorem isSymm_schouten_of_isSymm_ricci {r : FourTensor V} (h : (ricci r).IsSymm) :
-    (schouten r).IsSymm := ⟨fun u v ↦ by
-  rw [schouten_apply_apply, schouten_apply_apply, h.eq u v, real_inner_comm u v]⟩
-
-/-- Away from dimension `2`, `schouten r` is symmetric if and only if `ricci r` is symmetric. -/
-theorem isSymm_schouten_iff (hdim : Module.finrank ℝ V ≠ 2) {r : FourTensor V} :
-    (schouten r).IsSymm ↔ (ricci r).IsSymm := by
-  refine ⟨fun h ↦ ⟨fun u v ↦ ?_⟩, isSymm_schouten_of_isSymm_ricci⟩
-  have h2 : ((Module.finrank ℝ V : ℝ) - 2) ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hdim)
-  have heq := congrArg (((Module.finrank ℝ V : ℝ) - 2) * ·) (h.eq u v)
-  simp only [schouten_apply_apply, ← mul_assoc, mul_inv_cancel₀ h2, one_mul,
-    real_inner_comm u v] at heq
-  linarith
 
 /-- The Schouten form of a bivector-symmetric four-tensor is symmetric. -/
 theorem IsBivectorSymmetric.isSymm_schouten {r : FourTensor V} (hr : IsBivectorSymmetric r) :
@@ -717,13 +673,6 @@ theorem tracelessRicci_compContinuousLinearMap (e : W ≃ₗᵢ[ℝ] V) (r : Fou
   simp only [tracelessRicci_apply, LinearMap.sub_apply, LinearMap.smul_apply, innerₗ_apply_apply,
     smul_eq_mul, ricci_compContinuousLinearMap_linearIsometryEquiv, e.toLinearEquiv.finrank_eq,
     scalar_compContinuousLinearMap_linearIsometryEquiv, e.inner_map_map]
-
-/-- `schouten` is equivariant under linear isometric equivalences. -/
-theorem schouten_compContinuousLinearMap (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V) (u v : W) :
-    schouten (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) u v =
-      schouten r (e u) (e v) := by
-  simp only [schouten_apply_apply, ricci_compContinuousLinearMap_linearIsometryEquiv,
-    scalar_compContinuousLinearMap_linearIsometryEquiv, e.toLinearEquiv.finrank_eq, e.inner_map_map]
 
 /-- `ricciEndomorphism` is equivariant under linear isometric equivalences. -/
 theorem comp_ricciEndomorphism_compContinuousLinearMap (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V) :

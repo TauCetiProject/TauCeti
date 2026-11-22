@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
-import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Decomposition
+import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Schouten
 import TauCeti.Geometry.Manifold.IsManifold.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.FourTensor
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.FourTensor.Basic
 
 /-!
 # The Schouten tensor of a smooth connection
@@ -86,25 +86,11 @@ theorem bilinFormTrace_schoutenTensor (x : M)
     (hn : Module.finrank ℝ (TangentSpace I x) ≠ 2) :
     TauCeti.bilinFormTrace (cov.schoutenTensor x) =
       cov.scalarCurvature x / (2 * ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 1)) := by
-  -- `map_sub` is applied as a term so Lean unifies the subtraction instances on `TangentSpace I x`.
-  have hsub := map_sub TauCeti.bilinFormTrace (TauCeti.FourTensor.ricci (cov.curvatureFourTensor x))
-    ((TauCeti.FourTensor.scalar (cov.curvatureFourTensor x) /
-      (2 * ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 1))) • innerₗ (TangentSpace I x))
-  rw [schoutenTensor, TauCeti.FourTensor.schouten_apply, map_smul, hsub, map_smul,
-    TauCeti.bilinFormTrace_inner, cov.ricci_curvatureFourTensor, cov.scalar_curvatureFourTensor,
-    ← scalarCurvature_apply, smul_eq_mul, smul_eq_mul]
-  have hn2 : (Module.finrank ℝ (TangentSpace I x) : ℝ) - 2 ≠ 0 :=
-    sub_ne_zero.mpr (by exact_mod_cast hn)
-  by_cases hn1 : Module.finrank ℝ (TangentSpace I x) = 1
-  · -- In dimension one the curvature, hence the scalar curvature, vanishes.
-    have hs : cov.scalarCurvature x = 0 :=
-      cov.scalarCurvature_eq_zero_of_curvatureTensor_eq_zero x
-        (cov.curvatureTensor_eq_zero_of_finrank_le_one x hn1.le)
-    simp [hs]
-  · have hn1' : (Module.finrank ℝ (TangentSpace I x) : ℝ) - 1 ≠ 0 :=
-      sub_ne_zero.mpr (by exact_mod_cast hn1)
-    field_simp
-    ring
+  rw [schoutenTensor, ← cov.scalar_curvatureFourTensor x]
+  exact TauCeti.FourTensor.bilinFormTrace_schouten hn fun hn1 ↦ by
+    rw [cov.scalar_curvatureFourTensor]
+    exact cov.scalarCurvature_eq_zero_of_curvatureTensor_eq_zero x
+      (cov.curvatureTensor_eq_zero_of_finrank_le_one x hn1.le)
 
 /-- Away from dimension `2`, Ricci curvature decomposes as `Ric = (n - 2) P + (tr_g P) g` in
 terms of the Schouten tensor `P`. -/
@@ -113,14 +99,11 @@ theorem ricciTensor_eq_smul_schoutenTensor_add (x : M)
     cov.ricciTensor x =
       ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 2) • cov.schoutenTensor x +
         TauCeti.bilinFormTrace (cov.schoutenTensor x) • innerₗ (TangentSpace I x) := by
-  have hn2 : (Module.finrank ℝ (TangentSpace I x) : ℝ) - 2 ≠ 0 :=
-    sub_ne_zero.mpr (by exact_mod_cast hn)
-  ext u v
-  rw [cov.bilinFormTrace_schoutenTensor x hn, LinearMap.add_apply, LinearMap.add_apply,
-    LinearMap.smul_apply, LinearMap.smul_apply, LinearMap.smul_apply, LinearMap.smul_apply,
-    schoutenTensor_apply, innerₗ_apply_apply, smul_eq_mul, smul_eq_mul]
-  field_simp
-  ring
+  rw [← cov.ricci_curvatureFourTensor x, schoutenTensor]
+  exact TauCeti.FourTensor.ricci_eq_smul_schouten_add hn fun hn1 ↦ by
+    rw [cov.scalar_curvatureFourTensor]
+    exact cov.scalarCurvature_eq_zero_of_curvatureTensor_eq_zero x
+      (cov.curvatureTensor_eq_zero_of_finrank_le_one x hn1.le)
 
 /-- The Schouten tensor of a metric-compatible torsion-free connection is a symmetric bilinear
 form. -/
@@ -128,10 +111,13 @@ theorem IsMetricCompatible.schoutenTensor_isSymm
     [IsContMDiffRiemannianBundle I 2 E (TangentSpace I : M → Type _)]
     (hcov : CovariantDerivative.IsMetricCompatible
       (V := fun y : M ↦ TangentSpace I y) cov) (ht : cov.torsion = 0) (x : M) :
-    (cov.schoutenTensor x).IsSymm :=
-  ⟨fun u v ↦ by
-    rw [RingHom.id_apply, schoutenTensor_apply, schoutenTensor_apply,
-      IsMetricCompatible.ricciTensor_comm (cov := cov) hcov ht x u v, real_inner_comm u v]⟩
+    (cov.schoutenTensor x).IsSymm := by
+  rw [schoutenTensor]
+  exact LinearMap.BilinForm.isSymm_iff.mp <|
+    TauCeti.FourTensor.isSymm_schouten_of_isSymm_ricci <|
+      LinearMap.BilinForm.isSymm_iff.mpr <| by
+        rw [cov.ricci_curvatureFourTensor x]
+        exact hcov.ricciTensor_isSymm cov ht x
 
 /-- A point with zero curvature tensor has zero Schouten tensor. -/
 theorem schoutenTensor_eq_zero_of_curvatureTensor_eq_zero (x : M) (h : curvature x = 0) :
@@ -147,15 +133,13 @@ theorem schoutenTensor_eq_of_curvatureTensor_eq_smul_inner_sub (x : M) (k : ℝ)
     (h : ∀ w u v, curvature x w u v =
       k • (inner ℝ u v • w - inner ℝ w v • u)) :
     cov.schoutenTensor x = (k / 2) • innerₗ (TangentSpace I x) := by
-  have hn' : (3 : ℝ) ≤ Module.finrank ℝ (TangentSpace I x) := by exact_mod_cast hn
-  have hn2 : (Module.finrank ℝ (TangentSpace I x) : ℝ) - 2 ≠ 0 := by linarith
-  have hn1 : (Module.finrank ℝ (TangentSpace I x) : ℝ) - 1 ≠ 0 := by linarith
-  ext u v
-  rw [schoutenTensor_apply, cov.ricciTensor_eq_of_curvatureTensor_eq_smul_inner_sub x k h,
-    cov.scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub x k h]
-  simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul]
-  field_simp
-  ring
+  have hcurv : cov.curvatureFourTensor x =
+      k • TauCeti.FourTensor.constantCurvature (TangentSpace I x) :=
+    TauCeti.FourTensor.ext_vec fun u v z w ↦ by
+      rw [cov.curvatureFourTensor_apply, smul_apply, smul_eq_mul]
+      exact TauCeti.FourTensor.inner_eq_mul_constantCurvature h u v z w
+  rw [schoutenTensor, hcurv, map_smul, TauCeti.FourTensor.schouten_constantCurvature hn,
+    smul_smul, mul_one_div]
 
 /-- For a smooth metric, the Schouten tensor of a smooth connection pairs two vector fields
 differentiable at `x` to a function differentiable at `x`. -/
