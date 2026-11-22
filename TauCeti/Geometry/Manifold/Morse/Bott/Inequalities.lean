@@ -37,7 +37,9 @@ number of critical points of index `j`, and these are the Morse inequalities ove
 
 Over `𝔽₂` no orientation of the negative normal bundles is needed. Over another field the
 contribution of a piece is its homology twisted by the orientation local system of its negative
-normal bundle; it agrees with the untwisted one when that bundle is orientable.
+normal bundle; it agrees with the untwisted one when that bundle is orientable. Those inequalities,
+over fields in which `2` is invertible, are in
+`TauCeti.Geometry.Manifold.Morse.Bott.TwistedInequalities`.
 
 The proof follows Bott. Cut the values of `f` at regular values `s 0 < ⋯ < s (N + 1)` so that each
 band `f⁻¹[s j, s (j + 1)]` contains at most one critical value. The Morse–Bott inequalities are then
@@ -71,6 +73,9 @@ models and the coefficient field here live in `Type`.
   index `r`, `dim Hₙ(D_ε, S_ε; 𝔽₂) = b_{n - r}(S; 𝔽₂)` if `r ≤ n`, and `0` otherwise.
 * `TauCeti.IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum`: the dimension of the
   homology of a band with a single critical value.
+* `TauCeti.IsMorseBottFamily.exists_cut_sum_finrank_sublevelPair_eq_sum`: a cut of the values of
+  `f` whose bands, summed, count the contribution of every piece once, for any coefficient field and
+  any contributions of the pieces that compute the homology of the bands.
 * `TauCeti.IsMorseBottFamily.bettiNumber_le_sum`,
   `TauCeti.IsMorseBottFamily.sum_range_neg_one_pow_mul_bettiNumber_le_sum`,
   `TauCeti.IsMorseBottFamily.sum_range_neg_one_pow_mul_bettiNumber_eq_sum` and
@@ -283,7 +288,75 @@ namespace IsMorseBottFamily
 
 variable [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι]
   [∀ j, (J j).Boundaryless] (h : IsMorseBottFamily i f) {r : ι → ℕ}
-  (hr : ∀ j s, manifoldMorseIndex I f (i j s) = r j) (K : Type) [Field K] [Subsingleton Kˣ]
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M]
+  [∀ j, FiniteDimensional ℝ (E' j)] [T2Space M] [SecondCountableTopology M]
+  [∀ j, (J j).Boundaryless] in
+include h in
+open scoped Classical in
+/-- **A cut of the values of a Morse–Bott function.** Let the family `i j : S j → M` exhibit `f`
+as a Morse–Bott function on a compact boundaryless manifold, and let `K` be a field. Suppose that
+the piece `S j` contributes `d j (n - r j)` to the dimension of the relative homology in degree `n`
+of a band with a single critical value, for the pieces on that level with `r j ≤ n`. Then the
+values of `f` can be cut at values `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)`, regular from `s 1` on, with
+`s 0 < f ≤ s (N + 1)`, such that summing the dimensions of the relative homologies of the bands
+`[s j, s (j + 1)]` counts the contribution of every piece once:
+`∑ⱼ dim Hₙ({f ≤ s (j + 1)}, {f ≤ s j}; K) = ∑ d p (n - r p)` over the pieces with `r p ≤ n`. -/
+theorem exists_cut_sum_finrank_sublevelPair_eq_sum (K : Type) [Field K] (d : ι → ℕ → ℕ)
+    (hband : ∀ {a b c : ℝ} (hac : a < c) (hcb : c < b),
+      (∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c) → ∀ n,
+        finrank K ((sublevelPair f (hac.trans hcb).le).singularHomology (ModuleCat.of K K) n :
+            ModuleCat K) =
+          ∑ j with (∀ s, f (i j s) = c) ∧ r j ≤ n, d j (n - r j)) :
+    ∃ (s : ℕ → ℝ) (hs : Monotone s) (N : ℕ), (∀ x, s 0 < f x) ∧ (∀ x, f x ≤ s (N + 1)) ∧
+      (∀ j ≤ N, IsRegularValue I 𝓘(ℝ) f (s (j + 1))) ∧
+      ∀ n, ∑ j ∈ Finset.range (N + 1),
+          finrank K ((sublevelPair f (hs j.le_succ)).singularHomology (ModuleCat.of K K) n :
+            ModuleCat K) =
+        ∑ p with r p ≤ n, d p (n - r p) := by
+  classical
+  have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
+  obtain ⟨a, ha, ⟨q₀, hq₀⟩, ⟨q₁, hq₁⟩⟩ := exists_isCriticalBandCut_of_finite_image_criticalPoints
+    h.contMDiff.continuous (h.finite_image_criticalPoints hn)
+  -- Reindex the cut by `ℕ`, starting at `q₀`.
+  let s (j : ℕ) : ℝ := a (q₀ + j)
+  have hs : Monotone s := fun j k hjk ↦ ha.monotone (by simpa using hjk)
+  have hcut (j : ℕ) : ∃ c ∈ Ioo (s j) (s (j + 1)),
+      ∀ x ∈ criticalPoints I f, f x ∈ Icc (s j) (s (j + 1)) → f x = c := by
+    simpa [s, ← add_assoc] using (ha.isCriticalBand (q₀ + j)).exists_mem_Ioo_forall_eq
+  choose c hc hcrit using hcut
+  set N := (max q₁ (q₀ + 1) - q₀ - 1).toNat
+  have hs₀ (x : M) : s 0 < f x := by simpa [s] using hq₀ x
+  have hsN (x : M) : f x ≤ s (N + 1) := (hq₁ x).trans (ha.monotone (by simp only [N]; omega))
+  refine ⟨s, hs, N, hs₀, hsN, fun j _ ↦ ?_, fun n ↦ ?_⟩
+  · -- A cut value is not a critical value, since the critical value of its band is inside it.
+    refine isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨x, hx, hxs⟩ ↦ ?_
+    have := hcrit j x hx ⟨hxs ▸ hs j.le_succ, hxs.le⟩
+    linarith [(hc j).2]
+  rw [Finset.sum_congr rfl fun j _ ↦ hband (hc j).1 (hc j).2 (hcrit j) n]
+  simp_rw [Finset.sum_filter]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun p _ ↦ ?_
+  -- The piece `p` lies on the critical level of exactly one band, `j₀`.
+  obtain ⟨t₀⟩ := h.nonempty p
+  have hv := (h.isNondegenerateCriticalSubmanifold p).mem_criticalPoints t₀
+  have hfp (t : S p) : f (i p t) = f (i p t₀) := h.subsingleton_image_range hn p
+    (mem_image_of_mem f (mem_range_self t)) (mem_image_of_mem f (mem_range_self t₀))
+  obtain ⟨j₀, hj₀, hlt, hle⟩ := mem_iUnion₂.1
+    (Ioc_subset_biUnion_Ioc (N + 1) s ⟨hs₀ (i p t₀), hsN (i p t₀)⟩)
+  have hcj₀ : f (i p t₀) = c j₀ := hcrit j₀ _ hv ⟨hlt.le, hle⟩
+  have hlevel (j : ℕ) : (∀ t, f (i p t) = c j) ↔ j = j₀ := by
+    refine ⟨fun hj ↦ ?_, fun hj t ↦ hj ▸ (hfp t).trans hcj₀⟩
+    have hcj := (hj t₀).symm.trans hcj₀
+    rcases Nat.lt_trichotomy j j₀ with hlt' | rfl | hlt'
+    · linarith [hs (Nat.succ_le_of_lt hlt'), (hc j).2, (hc j₀).1]
+    · rfl
+    · linarith [hs (Nat.succ_le_of_lt hlt'), (hc j).1, (hc j₀).2]
+  rw [Finset.sum_eq_single_of_mem j₀ hj₀
+    fun j _ hj ↦ ite_eq_right fun hpj ↦ hj ((hlevel j).1 hpj.1)]
+  simp [(hlevel j₀).2 rfl]
+
+variable (hr : ∀ j s, manifoldMorseIndex I f (i j s) = r j) (K : Type) [Field K] [Subsingleton Kˣ]
 
 include h hr
 
@@ -350,68 +423,14 @@ theorem finrank_singularHomology_sublevelPair_eq_sum {a b c : ℝ} (hac : a < c)
   exact (Finset.sum_subtype _ (fun j ↦ by simp)
     fun j ↦ if r j ≤ n then bettiNumber K (S j) (n - r j) else 0).symm
 
-/-- **A cut of the values of a Morse–Bott function.** On a compact manifold the values of a
-Morse–Bott function can be cut at values `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)`, regular from `s 1` on, with
-`s 0 < f ≤ s (N + 1)`, such that each band `[s j, s (j + 1)]` has at most one critical value, lying
-strictly inside it. Summing over the bands the dimensions of their mod `2` homology then counts
-the shifted Betti numbers of every piece once. -/
-private theorem exists_cut_sum_finrank_sublevelPair :
-    ∃ (s : ℕ → ℝ) (hs : Monotone s) (N : ℕ), (∀ x, s 0 < f x) ∧ (∀ x, f x ≤ s (N + 1)) ∧
-      (∀ j ≤ N, IsRegularValue I 𝓘(ℝ) f (s (j + 1))) ∧
-      ∀ n, ∑ j ∈ Finset.range (N + 1),
-          finrank K ((sublevelPair f (hs j.le_succ)).singularHomology (ModuleCat.of K K) n :
-            ModuleCat K) =
-        ∑ p with r p ≤ n, bettiNumber K (S p) (n - r p) := by
-  classical
-  have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
-  obtain ⟨a, ha, ⟨q₀, hq₀⟩, ⟨q₁, hq₁⟩⟩ := exists_isCriticalBandCut_of_finite_image_criticalPoints
-    h.contMDiff.continuous (h.finite_image_criticalPoints hn)
-  -- Reindex the cut by `ℕ`, starting at `q₀`.
-  let s (j : ℕ) : ℝ := a (q₀ + j)
-  have hs : Monotone s := fun j k hjk ↦ ha.monotone (by simpa using hjk)
-  have hband (j : ℕ) : ∃ c ∈ Ioo (s j) (s (j + 1)),
-      ∀ x ∈ criticalPoints I f, f x ∈ Icc (s j) (s (j + 1)) → f x = c := by
-    simpa [s, ← add_assoc] using (ha.isCriticalBand (q₀ + j)).exists_mem_Ioo_forall_eq
-  choose c hc hcrit using hband
-  set N := (max q₁ (q₀ + 1) - q₀ - 1).toNat
-  have hs₀ (x : M) : s 0 < f x := by simpa [s] using hq₀ x
-  have hsN (x : M) : f x ≤ s (N + 1) := (hq₁ x).trans (ha.monotone (by simp only [N]; omega))
-  refine ⟨s, hs, N, hs₀, hsN, fun j _ ↦ ?_, fun n ↦ ?_⟩
-  · -- A cut value is not a critical value, since the critical value of its band is inside it.
-    refine isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨x, hx, hxs⟩ ↦ ?_
-    have := hcrit j x hx ⟨hxs ▸ hs j.le_succ, hxs.le⟩
-    linarith [(hc j).2]
-  rw [Finset.sum_congr rfl fun j _ ↦
-    h.finrank_singularHomology_sublevelPair_eq_sum hr K (hc j).1 (hc j).2 (hcrit j) n]
-  simp_rw [Finset.sum_filter]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun p _ ↦ ?_
-  -- The piece `p` lies on the critical level of exactly one band, `j₀`.
-  obtain ⟨t₀⟩ := h.nonempty p
-  have hv := (h.isNondegenerateCriticalSubmanifold p).mem_criticalPoints t₀
-  have hfp (t : S p) : f (i p t) = f (i p t₀) := h.subsingleton_image_range hn p
-    (mem_image_of_mem f (mem_range_self t)) (mem_image_of_mem f (mem_range_self t₀))
-  obtain ⟨j₀, hj₀, hlt, hle⟩ := mem_iUnion₂.1
-    (Ioc_subset_biUnion_Ioc (N + 1) s ⟨hs₀ (i p t₀), hsN (i p t₀)⟩)
-  have hcj₀ : f (i p t₀) = c j₀ := hcrit j₀ _ hv ⟨hlt.le, hle⟩
-  have hlevel (j : ℕ) : (∀ t, f (i p t) = c j) ↔ j = j₀ := by
-    refine ⟨fun hj ↦ ?_, fun hj t ↦ hj ▸ (hfp t).trans hcj₀⟩
-    have hcj := (hj t₀).symm.trans hcj₀
-    rcases Nat.lt_trichotomy j j₀ with hlt' | rfl | hlt'
-    · linarith [hs (Nat.succ_le_of_lt hlt'), (hc j).2, (hc j₀).1]
-    · rfl
-    · linarith [hs (Nat.succ_le_of_lt hlt'), (hc j).1, (hc j₀).2]
-  rw [Finset.sum_eq_single_of_mem j₀ hj₀
-    fun j _ hj ↦ ite_eq_right fun hpj ↦ hj ((hlevel j).1 hpj.1)]
-  simp [(hlevel j₀).2 rfl]
-
 /-- **The weak Morse–Bott inequalities over `𝔽₂`.** Let the family `i j : S j → M` exhibit `f` as
 a Morse–Bott function on a compact boundaryless manifold, the piece `S j` having index `r j`, and
 let `K` be a field whose only unit is `1`, such as `ZMod 2`. Then
 `bₙ(M; K) ≤ ∑ b_{n - r j}(S j; K)`, the sum running over the pieces of index at most `n`. -/
 theorem bettiNumber_le_sum (n : ℕ) :
     bettiNumber K M n ≤ ∑ p with r p ≤ n, bettiNumber K (S p) (n - r p) := by
-  obtain ⟨s, hs, N, hs₀, hsN, hreg, hsum⟩ := h.exists_cut_sum_finrank_sublevelPair hr K
+  obtain ⟨s, hs, N, hs₀, hsN, hreg, hsum⟩ := h.exists_cut_sum_finrank_sublevelPair_eq_sum K
+    (fun j ↦ bettiNumber K (S j)) (h.finrank_singularHomology_sublevelPair_eq_sum hr K)
   rw [bettiNumber_def, ← hsum]
   exact finrank_singularHomology_le_sum_sublevelPair_of_contMDiff (ModuleCat.of K K) h.contMDiff
     hs hs₀ hsN hreg n
@@ -425,7 +444,8 @@ theorem sum_range_neg_one_pow_mul_bettiNumber_le_sum (n : ℕ) :
     ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - k) * bettiNumber K M k ≤
       ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - k) *
         ((∑ p with r p ≤ k, bettiNumber K (S p) (k - r p) : ℕ) : ℤ) := by
-  obtain ⟨s, hs, N, hs₀, hsN, hreg, hsum⟩ := h.exists_cut_sum_finrank_sublevelPair hr K
+  obtain ⟨s, hs, N, hs₀, hsN, hreg, hsum⟩ := h.exists_cut_sum_finrank_sublevelPair_eq_sum K
+    (fun j ↦ bettiNumber K (S j)) (h.finrank_singularHomology_sublevelPair_eq_sum hr K)
   simpa only [← bettiNumber_def, hsum] using
     sum_range_neg_one_pow_mul_finrank_singularHomology_le_sum_sublevelPair_of_contMDiff
       (ModuleCat.of K K) h.contMDiff hs hs₀ hsN hreg n
@@ -437,7 +457,8 @@ theorem sum_range_neg_one_pow_mul_bettiNumber_eq_sum {n : ℕ} (hdimn : finrank 
     ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ k * bettiNumber K M k =
       ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ k *
         ((∑ p with r p ≤ k, bettiNumber K (S p) (k - r p) : ℕ) : ℤ) := by
-  obtain ⟨s, hs, N, hs₀, hsN, hreg, hsum⟩ := h.exists_cut_sum_finrank_sublevelPair hr K
+  obtain ⟨s, hs, N, hs₀, hsN, hreg, hsum⟩ := h.exists_cut_sum_finrank_sublevelPair_eq_sum K
+    (fun j ↦ bettiNumber K (S j)) (h.finrank_singularHomology_sublevelPair_eq_sum hr K)
   simpa only [← bettiNumber_def, hsum] using
     sum_range_neg_one_pow_mul_finrank_singularHomology_eq_sum_sublevelPair_of_contMDiff
       (ModuleCat.of K K) h.contMDiff hs hs₀ hsN hreg hdimn
@@ -451,7 +472,8 @@ theorem exists_sum_range_monomial_sum_eq_add_mul {n : ℕ} (hdimn : finrank ℝ 
     ∃ Q : ℕ[X], ∑ k ∈ Finset.range (n + 1),
         monomial k (∑ p with r p ≤ k, bettiNumber K (S p) (k - r p)) =
       ∑ k ∈ Finset.range (n + 1), monomial k (bettiNumber K M k) + (1 + Polynomial.X) * Q := by
-  obtain ⟨s, hs, N, hs₀, hsN, hreg, hsum⟩ := h.exists_cut_sum_finrank_sublevelPair hr K
+  obtain ⟨s, hs, N, hs₀, hsN, hreg, hsum⟩ := h.exists_cut_sum_finrank_sublevelPair_eq_sum K
+    (fun j ↦ bettiNumber K (S j)) (h.finrank_singularHomology_sublevelPair_eq_sum hr K)
   obtain ⟨Q, hQ, -⟩ := exists_sum_range_monomial_sum_sublevelPair_eq_add_mul_of_contMDiff
     (ModuleCat.of K K) h.contMDiff hs hs₀ hsN hreg hdimn
   simp only [← bettiNumber_def, hsum] at hQ

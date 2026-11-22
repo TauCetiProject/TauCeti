@@ -269,6 +269,34 @@ theorem signHomologyToCover_thomPairSingularHomologyEquivTwistedHomology
     ((congrArg Subtype.val (LinearEquiv.apply_symm_apply _ _)).trans
       (coe_homologyThomMapDeckEquiv_apply hι ω hg h _))
 
+variable (F E K) in
+include h in
+/-- **The Thom isomorphism with coefficients in the orientation local system, unnormalized.** Let
+`E → B` be a real vector bundle of rank `r`, `o(E)` its orientation local system, and `K` a field in
+which `2` is invertible. Then `Hₘ(E, E₀; K) ≃ Hₚ(B; o(E) ⊗ K)` for `m = r + p`, with no orientation
+of `E` and over any base. This forgets the normalization of
+`thomPairSingularHomologyEquivTwistedHomology` by an orientation of the model fibre and a generator
+of `Hʳ(F, F ∖ {0}; K)`, both of which always exist. -/
+theorem nonempty_singularHomology_thomPair_linearEquiv_twistedHomology :
+    Nonempty (((thomPair F E).singularHomology (ModuleCat.of K K) m : ModuleCat.{w} K) ≃ₗ[K]
+      LocalCoefficientSystem.twistedHomology (signLocalSystem F E K hι) p) := by
+  obtain ⟨u, hu⟩ := exists_span_singularCohomology_complSingleton_eq_top (k := K)
+    (OpenPartialHomeomorph.refl F) (Set.mem_univ 0)
+  classical
+  exact ⟨thomPairSingularHomologyEquivTwistedHomology hι
+    ((Module.finBasisOfFinrankEq ℝ F hι.symm).reindex (Fintype.equivFin ι).symm).orientation hu h⟩
+
+variable (F E K) in
+include h in
+/-- **The dimension of the homology of the Thom pair is a twisted Betti number of the base.** For a
+real vector bundle `E → B` of rank `r`, orientable or not, and a field `K` in which `2` is
+invertible, `dim Hₘ(E, E₀; K) = dim Hₚ(B; o(E) ⊗ K)` whenever `r + p = m`, where `o(E)` is the
+orientation local system of `E`. -/
+theorem finrank_singularHomology_thomPair_eq_finrank_twistedHomology :
+    finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) m : ModuleCat.{w} K) =
+      finrank K (LocalCoefficientSystem.twistedHomology (signLocalSystem F E K hι) p) :=
+  (nonempty_singularHomology_thomPair_linearEquiv_twistedHomology F E hι K h).some.finrank_eq
+
 end Field
 
 end TauCeti.VectorBundleOrientationCover

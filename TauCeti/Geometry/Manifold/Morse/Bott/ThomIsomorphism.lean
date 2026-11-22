@@ -234,14 +234,9 @@ theorem nonempty_singularHomology_sublevelPair_iso_twistedHomology_signLocalSyst
         (VectorBundleOrientationCover.signLocalSystem F V K hι) p) := by
   obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_iso_thomPair hfs hW hs ht hs₀ ht₀ hf hdir φ
     hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS (ModuleCat.of K K) (finrank ℝ F + p)
-  -- A generator of `Hʳ(F, F ∖ {0}; K) ≅ K` and an orientation of the model fibre normalize the
-  -- twisted Thom isomorphism.
-  obtain ⟨u, hu⟩ := exists_span_singularCohomology_complSingleton_eq_top (k := K)
-    (OpenPartialHomeomorph.refl F) (mem_univ 0)
-  classical
-  let o : Orientation ℝ F ι :=
-    ((Module.finBasisOfFinrankEq ℝ F hι.symm).reindex (Fintype.equivFin ι).symm).orientation
-  exact ⟨e ≪≫ (VectorBundleOrientationCover.thomPairSingularHomologyEquivTwistedHomology
-    (E := V) hι o hu rfl).toModuleIso⟩
+  obtain ⟨e'⟩ :=
+    VectorBundleOrientationCover.nonempty_singularHomology_thomPair_linearEquiv_twistedHomology F V
+      hι K rfl
+  exact ⟨e ≪≫ e'.toModuleIso⟩
 
 end TauCeti
