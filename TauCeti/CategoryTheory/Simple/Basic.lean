@@ -21,7 +21,7 @@ biproduct of simple objects receives a nonzero morphism from one of the summands
 
 * `TauCeti.exists_mono_ne_zero_not_isIso_of_not_simple`: a nonzero object which is not simple is
   the target of a nonzero monomorphism which is not an isomorphism.
-* `TauCeti.biproduct_ι_comp_inv_ne_zero`: the inclusion of a simple summand is nonzero.
+* `TauCeti.biproduct_ι_comp_inv_ne_zero`: the inclusion of a nonzero summand is nonzero.
 * `TauCeti.exists_simple_hom_ne_zero_of_iso_biproduct`: a nonzero object that decomposes into
   simple objects receives a nonzero morphism from a simple object.
 -/
@@ -42,11 +42,11 @@ theorem exists_mono_ne_zero_not_isIso_of_not_simple {X : C} (hX : ¬IsZero X) (h
   -- A zero isomorphism into `X` is a zero epimorphism, which forces `X` to be a zero object.
   exact hs ⟨fun f _ => ⟨fun _ hf => hX (.of_epi_eq_zero f hf), h _ f inferInstance⟩⟩
 
-/-- The inclusion of a simple summand into an object decomposed as a biproduct is nonzero. -/
+/-- The inclusion of a nonzero summand into an object decomposed as a biproduct is nonzero. -/
 theorem biproduct_ι_comp_inv_ne_zero {ι : Type*} {a : ι → C} [HasBiproduct a] {Y : C}
-    (e : Y ≅ ⨁ a) (i : ι) [Simple (a i)] :
-    biproduct.ι a i ≫ e.inv ≠ 0 := fun h ↦
-  CategoryTheory.id_ne_zero (a i) (by simpa using h =≫ (e.hom ≫ biproduct.π a i))
+    (e : Y ≅ ⨁ a) (i : ι) (h : ¬IsZero (a i)) :
+    biproduct.ι a i ≫ e.inv ≠ 0 := fun h' ↦
+  h (.of_mono_eq_zero _ h')
 
 /-- A nonzero object isomorphic to a biproduct of simple objects receives a nonzero morphism from
 a simple object: the inclusion of a summand. -/
@@ -57,6 +57,6 @@ theorem exists_simple_hom_ne_zero_of_iso_biproduct {Y : C} (hY : ¬IsZero Y) {ι
   obtain ⟨i⟩ : Nonempty ι := by
     by_contra! h
     exact hY ((isZero_biproduct_of_isEmpty a).of_iso e)
-  exact ⟨a i, ha i, _, biproduct_ι_comp_inv_ne_zero e i⟩
+  exact ⟨a i, ha i, _, biproduct_ι_comp_inv_ne_zero e i (Simple.not_isZero _)⟩
 
 end TauCeti

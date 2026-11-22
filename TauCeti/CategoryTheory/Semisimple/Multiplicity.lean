@@ -231,7 +231,8 @@ theorem simpleMultiplicities_apply_classOf_ne_zero_iff (X S : C) [Simple S] :
   · rintro ⟨i, ⟨a⟩⟩
     refine ⟨a.hom ≫ biproduct.ι A i ≫ e.inv, ?_⟩
     intro h
-    exact biproduct_ι_comp_inv_ne_zero e i ((cancel_epi a.hom).1 (by simpa using h))
+    exact biproduct_ι_comp_inv_ne_zero e i (Simple.not_isZero _)
+      ((cancel_epi a.hom).1 (by simpa using h))
   · rintro ⟨f, hf⟩
     obtain ⟨i, hi⟩ : ∃ i, f ≫ e.hom ≫ biproduct.π A i ≠ 0 := by
       by_contra! h
