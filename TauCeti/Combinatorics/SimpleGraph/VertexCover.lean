@@ -70,7 +70,7 @@ theorem IsMinimumVertexCover.isVertexCover (hc : G.IsMinimumVertexCover c) : G.I
 /-- A minimum vertex cover has `Set.encard` at most that of any vertex cover. -/
 theorem IsMinimumVertexCover.encard_le (hc : G.IsMinimumVertexCover c) (hc' : G.IsVertexCover c') :
     c.encard ≤ c'.encard :=
-  hc.2 hc'
+  (isMinimumVertexCover_def.mp hc).2 hc'
 
 /-- A finite minimum vertex cover is a minimal vertex cover. -/
 theorem IsMinimumVertexCover.minimal (hc : G.IsMinimumVertexCover c) (hfin : c.Finite) :
@@ -80,6 +80,7 @@ theorem IsMinimumVertexCover.minimal (hc : G.IsMinimumVertexCover c) (hfin : c.F
 /-- A vertex cover is minimum if and only if its `Set.encard` equals the vertex cover number. -/
 theorem isMinimumVertexCover_iff_encard_eq :
     G.IsMinimumVertexCover c ↔ G.IsVertexCover c ∧ c.encard = G.vertexCoverNum := by
+  rw [isMinimumVertexCover_def]
   refine and_congr_right fun hc ↦ ⟨fun h ↦ ?_, fun h c' hc' ↦ ?_⟩
   · obtain ⟨s, hs_eq, hs⟩ := G.vertexCoverNum_exists
     exact le_antisymm (hs_eq ▸ h hs) hc.vertexCoverNum_le
@@ -101,7 +102,7 @@ theorem IsMinimumVertexCover.encard_eq_of_isMinimumVertexCover (hc : G.IsMinimum
 covers. -/
 theorem IsMinimumVertexCover.isLeast_encard (hc : G.IsMinimumVertexCover c) :
     IsLeast {n : ℕ∞ | ∃ s : Set V, G.IsVertexCover s ∧ s.encard = n} c.encard :=
-  ⟨⟨c, hc.1, rfl⟩, fun _ ⟨_, hs, hsn⟩ ↦ hsn ▸ hc.2 hs⟩
+  ⟨⟨c, hc.isVertexCover, rfl⟩, fun _ ⟨_, hs, hsn⟩ ↦ hsn ▸ hc.encard_le hs⟩
 
 /-- Every simple graph admits a minimum vertex cover. -/
 theorem exists_isMinimumVertexCover (G : SimpleGraph V) :

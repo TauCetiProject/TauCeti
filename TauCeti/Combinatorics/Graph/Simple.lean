@@ -51,6 +51,8 @@ predicates, simplicity, and edge-set finiteness, along with canonical isomorphis
   `Graph.Iso (Graph.ofSimpleGraph S.coe) S.toGraph`.
 * `SimpleGraph.subgraphOfSimpleGraphOrderIso`: the order isomorphism
   `G.Subgraph ≃o Set.Iic (Graph.ofSimpleGraph G)`.
+* `SimpleGraph.toOfSimpleGraphVertex` and `SimpleGraph.toOfSimpleGraphFinset`: transport of
+  vertices and finite vertex sets of `G` into `Graph.ofSimpleGraph G`.
 -/
 
 public section
@@ -626,5 +628,56 @@ def subgraphOfSimpleGraphOrderIso (G : SimpleGraph V) :
 @[simp] theorem subgraphOfSimpleGraphOrderIso_symm_apply (G : SimpleGraph V)
     (K : Set.Iic (Graph.ofSimpleGraph G)) :
     G.subgraphOfSimpleGraphOrderIso.symm K = K.val.toSimpleGraphSubgraph K.property := (rfl)
+
+section OfSimpleGraphFinset
+
+variable (G : SimpleGraph V)
+
+/-- Include a vertex of a simple graph in the full vertex set of `Graph.ofSimpleGraph G`. -/
+def toOfSimpleGraphVertex (x : V) : (Graph.ofSimpleGraph G).vertexSet :=
+  ⟨x, by rw [Graph.vertexSet_ofSimpleGraph]; exact Set.mem_univ x⟩
+
+@[simp]
+theorem toOfSimpleGraphVertex_val (x : V) : (G.toOfSimpleGraphVertex x).val = x :=
+  (rfl)
+
+/-- Include a finite vertex set in the full vertex set of `Graph.ofSimpleGraph G`. -/
+def toOfSimpleGraphFinset (S : Finset V) :
+    Finset (Graph.ofSimpleGraph G).vertexSet :=
+  S.map ⟨G.toOfSimpleGraphVertex,
+    fun _ _ h ↦ congrArg Subtype.val h⟩
+
+@[simp]
+theorem mem_toOfSimpleGraphFinset {S : Finset V} {x : V} :
+    G.toOfSimpleGraphVertex x ∈ G.toOfSimpleGraphFinset S ↔ x ∈ S := by
+  rw [toOfSimpleGraphFinset]
+  exact Finset.mem_map' _
+
+@[simp]
+theorem image_val_toOfSimpleGraphFinset (S : Finset V) :
+    Subtype.val '' (G.toOfSimpleGraphFinset S : Set (Graph.ofSimpleGraph G).vertexSet) =
+      (S : Set V) := by
+  rw [toOfSimpleGraphFinset, Finset.coe_map, Set.image_image]
+  trans id '' (S : Set V)
+  · apply Set.image_congr
+    intro x _
+    exact G.toOfSimpleGraphVertex_val x
+  · exact Set.image_id _
+
+@[simp]
+theorem toOfSimpleGraphFinset_map_val
+    (S : Finset (Graph.ofSimpleGraph G).vertexSet) :
+    G.toOfSimpleGraphFinset (S.map ⟨Subtype.val, Subtype.val_injective⟩) = S := by
+  rw [toOfSimpleGraphFinset, Finset.map_map]
+  have h :
+      (⟨Subtype.val, Subtype.val_injective⟩ :
+          (Graph.ofSimpleGraph G).vertexSet ↪ V).trans
+        ⟨G.toOfSimpleGraphVertex, fun _ _ h ↦ congrArg Subtype.val h⟩ =
+          Function.Embedding.refl _ := by
+    ext x
+    rfl
+  rw [h, Finset.map_refl]
+
+end OfSimpleGraphFinset
 
 end SimpleGraph

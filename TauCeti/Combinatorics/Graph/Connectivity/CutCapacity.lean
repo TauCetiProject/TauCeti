@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut
+public import TauCeti.Combinatorics.Graph.Simple
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.PairCutCapacity
 public import Mathlib.Data.Set.Card
 
@@ -251,51 +252,6 @@ theorem ofSimpleGraphCapacity_nonneg [Zero K] [LE K] {c : Sym2 V → K}
   intro e
   rw [Pi.zero_apply, ofSimpleGraphCapacity_apply]
   exact hc e.val (by simpa using e.property)
-
-/-- Include a vertex of a simple graph in the full vertex set of `Graph.ofSimpleGraph G`. -/
-def toOfSimpleGraphVertex (x : V) : (Graph.ofSimpleGraph G).vertexSet :=
-  ⟨x, by rw [Graph.vertexSet_ofSimpleGraph]; exact Set.mem_univ x⟩
-
-@[simp]
-theorem toOfSimpleGraphVertex_val (x : V) : (G.toOfSimpleGraphVertex x).val = x :=
-  (rfl)
-
-/-- Include a finite vertex set in the full vertex set of `Graph.ofSimpleGraph G`. -/
-def toOfSimpleGraphFinset (S : Finset V) :
-    Finset (Graph.ofSimpleGraph G).vertexSet :=
-  S.map ⟨G.toOfSimpleGraphVertex,
-    fun _ _ h ↦ congrArg Subtype.val h⟩
-
-@[simp]
-theorem mem_toOfSimpleGraphFinset {S : Finset V} {x : V} :
-    G.toOfSimpleGraphVertex x ∈ G.toOfSimpleGraphFinset S ↔ x ∈ S := by
-  rw [toOfSimpleGraphFinset]
-  exact Finset.mem_map' _
-
-@[simp]
-theorem image_val_toOfSimpleGraphFinset (S : Finset V) :
-    Subtype.val '' (G.toOfSimpleGraphFinset S : Set (Graph.ofSimpleGraph G).vertexSet) =
-      (S : Set V) := by
-  rw [toOfSimpleGraphFinset, Finset.coe_map, Set.image_image]
-  trans id '' (S : Set V)
-  · apply Set.image_congr
-    intro x _
-    exact G.toOfSimpleGraphVertex_val x
-  · exact Set.image_id _
-
-@[simp]
-theorem toOfSimpleGraphFinset_map_val
-    (S : Finset (Graph.ofSimpleGraph G).vertexSet) :
-    G.toOfSimpleGraphFinset (S.map ⟨Subtype.val, Subtype.val_injective⟩) = S := by
-  rw [toOfSimpleGraphFinset, Finset.map_map]
-  have h :
-      (⟨Subtype.val, Subtype.val_injective⟩ :
-          (Graph.ofSimpleGraph G).vertexSet ↪ V).trans
-        ⟨G.toOfSimpleGraphVertex, fun _ _ h ↦ congrArg Subtype.val h⟩ =
-          Function.Embedding.refl _ := by
-    ext x
-    rfl
-  rw [h, Finset.map_refl]
 
 /-- The multigraph cut capacity of `Graph.ofSimpleGraph G` agrees with pair cut capacity when
 capacities vanish away from the edges of `G`. -/

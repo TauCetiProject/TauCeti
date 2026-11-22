@@ -10,6 +10,7 @@ public import TauCeti.Combinatorics.Graph.Incidence.Basic
 public import TauCeti.Combinatorics.Graph.Isomorphism
 public import TauCeti.Combinatorics.Graph.VertexCover.Basic
 
+import TauCeti.Combinatorics.Graph.Simple
 import TauCeti.Combinatorics.SimpleGraph.Bipartite
 
 /-!
@@ -438,17 +439,12 @@ theorem IsBipartiteWith.exists_isBipartition_ofSimpleGraph [Finite α] {H : Simp
         Subtype.val '' (L : Set V(Graph.ofSimpleGraph H)) = s ∧
         Subtype.val '' (R : Set V(Graph.ofSimpleGraph H)) = sᶜ := by
   classical
-  let _ : Fintype V(Graph.ofSimpleGraph H) := Fintype.ofFinite _
-  have hbij : Function.Bijective (Subtype.val : V(Graph.ofSimpleGraph H) → α) :=
-    (Equiv.subtypeUnivEquiv fun x ↦ by
-      rw [Graph.vertexSet_ofSimpleGraph]; exact Set.mem_univ x).bijective
-  let L : Finset V(Graph.ofSimpleGraph H) :=
-    (Set.toFinite (Subtype.val ⁻¹' s : Set V(Graph.ofSimpleGraph H))).toFinset
-  let R : Finset V(Graph.ofSimpleGraph H) := Lᶜ
+  let L : Finset V(Graph.ofSimpleGraph H) := H.toOfSimpleGraphFinset s.toFinite.toFinset
+  let R : Finset V(Graph.ofSimpleGraph H) := H.toOfSimpleGraphFinset (sᶜ).toFinite.toFinset
   have hL : Subtype.val '' (L : Set V(Graph.ofSimpleGraph H)) = s := by
-    rw [Set.Finite.coe_toFinset, Set.image_preimage_eq s hbij.surjective]
+    rw [image_val_toOfSimpleGraphFinset, Set.Finite.coe_toFinset]
   have hR : Subtype.val '' (R : Set V(Graph.ofSimpleGraph H)) = sᶜ := by
-    rw [Finset.coe_compl, Set.image_compl_eq hbij, hL]
+    rw [image_val_toOfSimpleGraphFinset, Set.Finite.coe_toFinset]
   refine ⟨L, R, (isBipartition_ofSimpleGraph_iff H L R).2 ⟨hL ▸ hR ▸ h.compl_right, ?_⟩, hL, hR⟩
   rw [hL, hR, Set.union_compl_self]
 
