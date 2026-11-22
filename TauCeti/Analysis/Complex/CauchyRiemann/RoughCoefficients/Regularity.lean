@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.OrderZero
+public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Interior
 public import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
@@ -31,8 +31,8 @@ space. Consider the real linear Cauchy–Riemann operator
 with Sobolev coefficients `J ∈ W^{max 1 k, p}_loc(Ω; V →L[ℝ] V)` satisfying `J² = -1` almost
 everywhere on `Ω` and `S ∈ W^{k,p}_loc(Ω; V →L[ℝ] V)` for `2 < p ≤ ∞`.
 
-Building on the order-zero regularity theorem `TauCeti.IsWeakCRSolution.memWkpLoc_one_of_memLpLoc`
-of `TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.OrderZero` and the weak differentiated
+Building on the order-zero regularity theorem `TauCeti.IsWeakCRSolution.memWkpLoc_one_of_le`
+of `TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Interior` and the weak differentiated
 system `TauCeti.isWeakCRSolution_differentiated` of
 `TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Differentiated`, this file proves
 higher-order interior regularity (McDuff–Salamon, Proposition B.4.9):
@@ -135,8 +135,8 @@ private theorem memWkpLoc_succ_of_memWkpLoc_step {p r : ℝ≥0} {q : ℝ≥0∞
     ⟨hDJ, (hJm1.of_le h1le).memLpLoc,
       memWkpLoc_zero_iff.1 ((hJm1.of_le h1le).memWkpLoc_of_hasWeakFDerivOn hDJ), hS.memLpLoc⟩
   have hξ_2 : MemWkpLoc 2 Ω 1 ξ :=
-    hsol.memWkpLoc_one_of_memLpLoc (by exact_mod_cast hp) (by norm_num) ENNReal.ofNat_ne_top
-      (by exact_mod_cast hp.le) hpq hc hJsq hη_2
+    hsol.memWkpLoc_one_of_le hc (by exact_mod_cast hp) hJsq hpq (by norm_num) ENNReal.ofNat_ne_top
+      (by exact_mod_cast hp.le) hη_2
   have heq : ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + J z (Dξ z I) + S z (ξ z) = η z :=
     (hc.isWeakCRSolution_iff_ae hp2.le ENNReal.coe_ne_top ENNReal.ofNat_ne_top hDξ hξ_2.memLpLoc
       (memWkpLoc_zero_iff.1 (hξ_2.memWkpLoc_of_hasWeakFDerivOn hDξ))
@@ -201,8 +201,8 @@ theorem IsWeakCRSolution.memWkpLoc_succ_of_memWkpLoc
     have hc : IsSobolevCRCoefficients p₀ Ω J DJ S :=
       ⟨hDJ, hJ.memLpLoc, memWkpLoc_zero_iff.1 (hJ.memWkpLoc_of_hasWeakFDerivOn hDJ),
         memWkpLoc_zero_iff.1 hS⟩
-    exact hsol.memWkpLoc_one_of_memLpLoc (by exact_mod_cast hp₀) (by exact_mod_cast hr₀)
-      ENNReal.coe_ne_top (by exact_mod_cast hrp₀') hp₀q hc hJsq (memWkpLoc_zero_iff.1 hη)
+    exact hsol.memWkpLoc_one_of_le hc (by exact_mod_cast hp₀) hJsq hp₀q (by exact_mod_cast hr₀)
+      ENNReal.coe_ne_top (by exact_mod_cast hrp₀') (memWkpLoc_zero_iff.1 hη)
   | succ m ih =>
     have hJm1 : MemWkpLoc p₀ Ω (m + 1) J := by simpa using hJ
     have hmax : max 1 m ≤ m + 1 := max_le (Nat.succ_le_succ (Nat.zero_le m)) (Nat.le_succ m)

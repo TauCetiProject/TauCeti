@@ -16,10 +16,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.Local.Examples
 import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
-import TauCeti.Analysis.Sobolev.Local.Multiplication
-import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.Mollification.Interior
-import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.Topology.MetricSpace.Thickening
 
@@ -33,8 +30,7 @@ space. For coefficients `J ∈ W^{1,p}_loc(Ω; End V)` with `J² = -1` and `S �
 `∂_s ξ + J ∂_t ξ + S ξ = η`
 
 in the sense of `TauCeti.IsWeakCRSolution`. This file proves the order-zero step of interior
-regularity (McDuff–Salamon, Lemma B.4.6), the full order-zero bootstrap across the critical
-exponent (the `k = 0` case of Proposition B.4.9), and the sharpness of `J² = -1`:
+regularity (McDuff–Salamon, Lemma B.4.6) and the sharpness of `J² = -1`:
 
 * **Single-step Sobolev gain** (`TauCeti.IsWeakCRSolution.memWkpLoc_one`, Lemma B.4.6): if
   `η ∈ Lʳ_loc` with `1 < r < ∞` and `1/p + 1/q ≤ 1/r`, then `ξ ∈ W^{1,r}_loc(Ω)`. No derivative of
@@ -61,16 +57,13 @@ exponent (the `k = 0` case of Proposition B.4.9), and the sharpness of `J² = -1
   field: the mollifications are smooth test functions, their derivatives are the mollifications of
   the weak derivative, and every pairing in the weak equation converges, by the strong `Lˢ`
   convergence of mollifications (`ContinuousLinearMap.tendsto_integral_bilin_normed_convolution`).
-* **Bootstrap across the critical exponent** (`TauCeti.IsWeakCRSolution.memWkpLoc_one_of_memLpLoc`
-  and `TauCeti.IsWeakCRSolution.memWkpLoc_one_self`, Proposition B.4.9 at `k = 0`): when
-  `2 < p ≤ ∞`, `p⁻¹ + q⁻¹ < 1`, and `η ∈ Lʳ_loc` with `1 < r < ∞` and `r ≤ p`, truncating `p` to
-  a finite exponent `p₀ > 2` and iterating the single-step gain with the two-dimensional Sobolev
-  embedding decreases `q⁻¹` by `(2⁻¹ - p₀⁻¹) / 2 > 0` at each step until the product exponent
-  exceeds `2`, where Morrey's embedding puts `ξ` in `L^∞_loc` and one final step reaches
-  `W^{1,r}_loc(Ω)`.
 * **Sharpness of `J² = -1`** (`TauCeti.exists_isWeakCRSolution_zero_not_memWkpLoc_one`): on any
   nonempty open set `Ω`, with `J = 0` and `S = 0`, there exists a weak solution `ξ ∈ L^∞_loc(Ω)`
   of `∂_s ξ = 0` that fails to lie in `W^{1,q}_loc(Ω)` for every `q : ℝ≥0∞`.
+
+The full order-zero bootstrap across the critical exponent (`k = 0` of Proposition B.4.9) is in
+`TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Interior`
+(`TauCeti.IsWeakCRSolution.memWkpLoc_one_of_le`).
 
 ## Main results
 
@@ -80,17 +73,13 @@ exponent (the `k = 0` case of Proposition B.4.9), and the sharpness of `J² = -1
   `J` is locally bounded.
 * `TauCeti.IsWeakCRSolution.memWkpLoc_one`: single-step order-zero interior regularity
   (`ξ ∈ W^{1,r}_loc` when `p⁻¹ + q⁻¹ ≤ r⁻¹`).
-* `TauCeti.IsWeakCRSolution.memWkpLoc_one_of_memLpLoc` and
-  `TauCeti.IsWeakCRSolution.memWkpLoc_one_self`: full order-zero gain `ξ ∈ W^{1,r}_loc`
-  (respectively `ξ ∈ W^{1,q}_loc`) for `2 < p ≤ ∞`, `p⁻¹ + q⁻¹ < 1`, `1 < r < ∞`, `r ≤ p`, and
-  `η ∈ Lʳ_loc`.
 * `TauCeti.exists_isWeakCRSolution_zero_not_memWkpLoc_one`: without `J² = -1`, weak solutions in
   `L^∞_loc(Ω)` for smooth coefficients need not lie in `W^{1,q}_loc(Ω)` for any `q : ℝ≥0∞`.
 
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
-  Appendix B.4, Lemma B.4.6 and Proposition B.4.9.
+  Appendix B.4, Lemma B.4.6.
 -/
 
 public section
@@ -484,150 +473,6 @@ theorem IsWeakCRSolution.memWkpLoc_one [FiniteDimensional ℝ V]
   rw [← integral_add (hI1.const_inner (𝕜 := ℝ) v) (hI2.const_inner (𝕜 := ℝ) v),
     integral_congr_ae (hJJ.mono fun z hz => inner_crTestField_eq φ v z hz), integral_neg,
     integral_sub (hPΩ.integrable_of_forall_notMem_eq_zero hP0) hψη, hPeq, sub_self, neg_zero]
-
-/-! ### Order-zero bootstrap across the critical exponent -/
-
-section Bootstrap
-
-noncomputable section
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  {Ω : Opens ℂ} {J S : ℂ → V →L[ℝ] V} {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {ξ η : ℂ → V}
-
-/-- Endpoint `q = ⊤` of `IsWeakCRSolution.memWkpLoc_one_of_memLpLoc`: a locally bounded weak
-solution reaches `W^{1,r}_loc(Ω)` in a single step whenever `1 < r ≤ p`. -/
-private theorem memWkpLoc_one_of_isWeakCRSolution_top {p r : ℝ≥0} (hp : 2 < p) (hr : 1 < r)
-    (hrp : r ≤ p) (hc : IsSobolevCRCoefficients p Ω J DJ S)
-    (hJsq : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1) (hη : MemLpLoc r Ω η)
-    (hsol : IsWeakCRSolution ⊤ Ω J DJ S ξ η) :
-    MemWkpLoc r Ω 1 ξ :=
-  hsol.memWkpLoc_one hc (by exact_mod_cast hp) hJsq (by exact_mod_cast hr) ENNReal.coe_ne_top
-    (by simpa using ENNReal.inv_le_inv.2 (ENNReal.coe_le_coe.2 hrp)) hη
-
-/-- Subcritical Sobolev-embedding step: when `m = (p⁻¹ + q₀⁻¹)⁻¹` satisfies `1 < m ≤ 2` and
-`2 < p`, `MemWkpLoc m Ω 1 ξ` embeds into `MemLpLoc s Ω ξ` with
-`s⁻¹ = q₀⁻¹ - (2⁻¹ - p⁻¹) / 2`. -/
-private theorem memLpLoc_step_of_memWkpLoc_le_two {p q₀ m : ℝ≥0} (hp : 2 < p) (hm1 : 1 < m)
-    (hm2 : ¬ 2 < m) (hm_inv : (m : ℝ)⁻¹ = (p : ℝ)⁻¹ + (q₀ : ℝ)⁻¹)
-    (hξm : MemWkpLoc m Ω 1 ξ) :
-    ∃ s : ℝ≥0, 0 < s ∧ (s : ℝ)⁻¹ = (q₀ : ℝ)⁻¹ - (2⁻¹ - (p : ℝ)⁻¹) / 2 ∧ MemLpLoc s Ω ξ := by
-  have hp_inv_lt : (p : ℝ)⁻¹ < 2⁻¹ :=
-    (inv_lt_inv₀ (by exact_mod_cast zero_lt_two.trans hp) two_pos).2 (by exact_mod_cast hp)
-  have hm_inv_ge : 2⁻¹ ≤ (p : ℝ)⁻¹ + (q₀ : ℝ)⁻¹ :=
-    hm_inv ▸ (inv_le_inv₀ two_pos (zero_lt_one.trans (by exact_mod_cast hm1))).2
-      (by exact_mod_cast not_lt.1 hm2)
-  have hsinv_pos : 0 < (q₀ : ℝ)⁻¹ - (2⁻¹ - (p : ℝ)⁻¹) / 2 := by linarith
-  let s : ℝ≥0 := ⟨((q₀ : ℝ)⁻¹ - (2⁻¹ - (p : ℝ)⁻¹) / 2)⁻¹, by positivity⟩
-  have hs_pos : 0 < s := by exact_mod_cast inv_pos.2 hsinv_pos
-  have hs_inv : (s : ℝ)⁻¹ = (q₀ : ℝ)⁻¹ - (2⁻¹ - (p : ℝ)⁻¹) / 2 := inv_inv _
-  have hms : m ≤ s := NNReal.coe_le_coe.1 <|
-    (inv_le_inv₀ (by exact_mod_cast hs_pos) (zero_lt_one.trans (by exact_mod_cast hm1))).1
-      (by rw [hm_inv, hs_inv]; linarith [inv_nonneg.2 p.coe_nonneg])
-  exact ⟨s, hs_pos, hs_inv,
-    hξm.memLpLoc_of_inv_sub_inv_le hm1.le hms (by rw [hm_inv, hs_inv]; linarith)⟩
-
-/-- Inductive exponent-climbing loop for `IsWeakCRSolution.memWkpLoc_one_of_memLpLoc`: each step
-decreases `(q₀ : ℝ)⁻¹` by `(2⁻¹ - (p : ℝ)⁻¹) / 2 > 0` until either `(p : ℝ)⁻¹ + q₀⁻¹ ≤ r⁻¹` or the
-intermediate Sobolev exponent exceeds `2`. -/
-private theorem memWkpLoc_one_bootstrap_aux {p r : ℝ≥0} (hp : 2 < p) (hr : 1 < r) (hrp : r ≤ p)
-    (hc : IsSobolevCRCoefficients p Ω J DJ S)
-    (hJsq : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1) (hη : MemLpLoc r Ω η) :
-    ∀ (N : ℕ) {q₀ : ℝ≥0}, 0 < q₀ → (p : ℝ)⁻¹ + (q₀ : ℝ)⁻¹ < 1 →
-      (q₀ : ℝ)⁻¹ ≤ (N : ℝ) * ((2⁻¹ - (p : ℝ)⁻¹) / 2) →
-      IsWeakCRSolution q₀ Ω J DJ S ξ η → MemWkpLoc r Ω 1 ξ
-  | 0, q₀, hq0, _, hN, _ => by
-      have : 0 < (q₀ : ℝ)⁻¹ := inv_pos.2 (by exact_mod_cast hq0)
-      simp only [Nat.cast_zero, zero_mul] at hN; linarith
-  | N + 1, q₀, hq0, hpq, hN, hsol => by
-      -- Branch 1: `p⁻¹ + q₀⁻¹ ≤ r⁻¹`, so a single gain step already reaches `W^{1,r}_loc`.
-      by_cases hle : (p : ℝ)⁻¹ + (q₀ : ℝ)⁻¹ ≤ (r : ℝ)⁻¹
-      · have hle' : (p : ℝ≥0∞)⁻¹ + (q₀ : ℝ≥0∞)⁻¹ ≤ (r : ℝ≥0∞)⁻¹ := by
-          rw [← ENNReal.coe_inv (zero_lt_two.trans hp).ne', ← ENNReal.coe_inv hq0.ne',
-            ← ENNReal.coe_inv (zero_lt_one.trans hr).ne', ← ENNReal.coe_add]
-          exact_mod_cast hle
-        exact hsol.memWkpLoc_one hc (by exact_mod_cast hp) hJsq (by exact_mod_cast hr)
-          ENNReal.coe_ne_top hle' hη
-      · -- Otherwise gain one derivative at the intermediate Hölder exponent `m = (p⁻¹ + q₀⁻¹)⁻¹`.
-        rw [not_le] at hle
-        set m : ℝ≥0 := (p⁻¹ + q₀⁻¹)⁻¹
-        have hm_inv : (m : ℝ)⁻¹ = (p : ℝ)⁻¹ + (q₀ : ℝ)⁻¹ := by
-          simp [m, NNReal.coe_inv, NNReal.coe_add]
-        have hm1 : 1 < m := NNReal.coe_lt_coe.1 <| by
-          rw [← inv_inv (m : ℝ), hm_inv]; exact (one_lt_inv₀ (by positivity)).2 hpq
-        have hmr : m ≤ r := NNReal.coe_le_coe.1 <|
-          (inv_le_inv₀ (zero_lt_one.trans (by exact_mod_cast hr))
-            (zero_lt_one.trans (by exact_mod_cast hm1))).1 (by rw [hm_inv]; linarith)
-        have hpqm : (p : ℝ≥0∞)⁻¹ + (q₀ : ℝ≥0∞)⁻¹ ≤ (m : ℝ≥0∞)⁻¹ := by
-          rw [← ENNReal.coe_inv (zero_lt_two.trans hp).ne', ← ENNReal.coe_inv hq0.ne',
-            ← ENNReal.coe_inv (zero_lt_one.trans hm1).ne', ← ENNReal.coe_add]
-          exact le_of_eq (by simp [m])
-        have hξm : MemWkpLoc m Ω 1 ξ :=
-          hsol.memWkpLoc_one hc (by exact_mod_cast hp) hJsq (by exact_mod_cast hm1)
-            ENNReal.coe_ne_top hpqm (hη.mono_exponent (by exact_mod_cast hmr))
-        by_cases hm2 : 2 < m
-        · -- Branch 2: `2 < m`, so Morrey's embedding puts `ξ` in `L^∞_loc` and one step finishes.
-          have : Fact (1 ≤ (m : ℝ≥0∞)) := ⟨by exact_mod_cast hm1.le⟩
-          have : ENNReal.HolderTriple (m : ℝ≥0∞) (⊤ : ℝ≥0∞) m := ⟨by simp⟩
-          exact memWkpLoc_one_of_isWeakCRSolution_top hp hr hrp hc hJsq hη
-            (hsol.of_memLpLoc (hξm.memLpLoc_of_holderTriple hm2 le_rfl))
-        · -- Branch 3: `m ≤ 2`, so Sobolev embedding decreases `q₀⁻¹` by `(2⁻¹ - p⁻¹) / 2`.
-          obtain ⟨s, hs_pos, hs_inv, hξs⟩ :=
-            memLpLoc_step_of_memWkpLoc_le_two hp hm1 hm2 hm_inv hξm
-          have hp_inv_lt : (p : ℝ)⁻¹ < 2⁻¹ :=
-            (inv_lt_inv₀ (by exact_mod_cast zero_lt_two.trans hp) two_pos).2 (by exact_mod_cast hp)
-          refine memWkpLoc_one_bootstrap_aux hp hr hrp hc hJsq hη N hs_pos
-            (by rw [hs_inv]; linarith) (by rw [hs_inv]; push_cast at hN; linarith)
-            (hsol.of_memLpLoc hξs)
-
-/-- **Order-zero interior regularity with general right-hand side** (McDuff–Salamon, Proposition
-B.4.9 at `k = 0`). Let `2 < p ≤ ∞`, `1 < r < ∞`, `r ≤ p`, and `p⁻¹ + q⁻¹ < 1` (allowing `p = ∞`
-and `q = ∞`). If `J ∈ W^{1,p}_loc(Ω)` with `J² = -1` almost everywhere on `Ω`, `S ∈ Lᵖ_loc(Ω)`,
-and `η ∈ Lʳ_loc(Ω)`, then every weak solution `ξ ∈ L^q_loc(Ω)` of `∂_s ξ + J ∂_t ξ + S ξ = η` lies
-in `W^{1,r}_loc(Ω)`. -/
-theorem IsWeakCRSolution.memWkpLoc_one_of_memLpLoc {p q r : ℝ≥0∞} (hp : 2 < p)
-    (hr : 1 < r) (hr_top : r ≠ ⊤) (hrp : r ≤ p) (hpq : p⁻¹ + q⁻¹ < 1)
-    (hc : IsSobolevCRCoefficients p Ω J DJ S)
-    (hJsq : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1) (hη : MemLpLoc r Ω η)
-    (hsol : IsWeakCRSolution q Ω J DJ S ξ η) :
-    MemWkpLoc r Ω 1 ξ := by
-  obtain ⟨p₀, hp₀, hrp₀, hp₀p, hp₀q⟩ :=
-    ENNReal.exists_nnreal_lt_and_le_and_inv_add_inv_lt_one (a := 2) (by exact_mod_cast hp)
-      hr_top hrp hpq
-  lift r to ℝ≥0 using hr_top
-  have hr' : 1 < r := by exact_mod_cast hr
-  have hrp₀' : r ≤ p₀ := ENNReal.coe_le_coe.1 hrp₀
-  have hc₀ := hc.mono_exponent hp₀p
-  rcases eq_or_ne q ⊤ with rfl | hqt
-  · exact memWkpLoc_one_of_isWeakCRSolution_top hp₀ hr' hrp₀' hc₀ hJsq hη hsol
-  have hq0 : q ≠ 0 := by rintro rfl; simp at hp₀q
-  lift q to ℝ≥0 using hqt
-  have hq_pos : 0 < q := pos_iff_ne_zero.2 (by exact_mod_cast hq0)
-  have hp₀q' : (p₀ : ℝ)⁻¹ + (q : ℝ)⁻¹ < 1 := by
-    rw [← ENNReal.coe_inv (zero_lt_two.trans hp₀).ne', ← ENNReal.coe_inv hq_pos.ne',
-      ← ENNReal.coe_add] at hp₀q
-    exact_mod_cast hp₀q
-  have hp₀_inv_lt : (p₀ : ℝ)⁻¹ < 2⁻¹ :=
-    (inv_lt_inv₀ (by exact_mod_cast zero_lt_two.trans hp₀) two_pos).2 (by exact_mod_cast hp₀)
-  exact memWkpLoc_one_bootstrap_aux hp₀ hr' hrp₀' hc₀ hJsq hη
-    ⌈(q : ℝ)⁻¹ / ((2⁻¹ - (p₀ : ℝ)⁻¹) / 2)⌉₊ hq_pos hp₀q'
-    ((div_le_iff₀ (by linarith)).1 (Nat.le_ceil _)) hsol
-
-/-- **Order-zero interior regularity** (McDuff–Salamon, Proposition B.4.9, `k = 0`), specialized to
-`r = q`. Let `2 < p ≤ ∞`, `q < ∞`, `q ≤ p`, and `p⁻¹ + q⁻¹ < 1` (which in particular forces
-`1 < q`). If `J ∈ W^{1,p}_loc(Ω)` with `J² = -1` almost everywhere on `Ω`, `S ∈ Lᵖ_loc(Ω)`, and
-`η ∈ L^q_loc(Ω)`, then every weak solution `ξ ∈ L^q_loc(Ω)` of `∂_s ξ + J ∂_t ξ + S ξ = η` lies in
-`W^{1,q}_loc(Ω)`. -/
-theorem IsWeakCRSolution.memWkpLoc_one_self {p q : ℝ≥0∞} (hp : 2 < p) (hq_top : q ≠ ⊤)
-    (hqp : q ≤ p) (hpq : p⁻¹ + q⁻¹ < 1) (hc : IsSobolevCRCoefficients p Ω J DJ S)
-    (hJsq : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1) (hη : MemLpLoc q Ω η)
-    (hsol : IsWeakCRSolution q Ω J DJ S ξ η) :
-    MemWkpLoc q Ω 1 ξ :=
-  hsol.memWkpLoc_one_of_memLpLoc hp (ENNReal.inv_lt_one.1 (le_add_self.trans_lt hpq)) hq_top hqp
-    hpq hc hJsq hη
-
-end
-
-end Bootstrap
 
 /-! ### Sharpness of `J² = -1` -/
 

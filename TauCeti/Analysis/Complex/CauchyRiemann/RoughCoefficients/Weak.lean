@@ -60,9 +60,9 @@ for the statements here.
 * `TauCeti.IsSobolevCRCoefficients.memLpLoc_deriv_apply`: the directional weak derivatives
   `DJ · e` of the coefficient are locally `Lᵖ`.
 * Linearity in `(ξ, η)` (`TauCeti.IsWeakCRSolution.add`, `.const_smul`, `.neg`, `.sub`),
-  restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`), changing or lowering the exponent
-  (`TauCeti.IsWeakCRSolution.of_memLpLoc`, `TauCeti.IsWeakCRSolution.mono_exponent`) and invariance
-  under changes of `J`, `DJ`, `S`, `ξ` and `η` on null subsets of `Ω`
+  restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`), changing the exponent
+  (`TauCeti.IsWeakCRSolution.mono_exponent`, `TauCeti.IsWeakCRSolution.of_memLpLoc`) and
+  invariance under changes of `J`, `DJ`, `S`, `ξ` and `η` on null subsets of `Ω`
   (`TauCeti.isWeakCRSolution_congr_ae`).
 
 The proofs test against vector-valued test functions through the inner-product form of the weak
@@ -170,17 +170,16 @@ theorem mono (h : IsWeakCRSolution q Ω J DJ S ξ η) (hΩ : Ω' ≤ Ω) :
   ⟨h.memLpLoc.mono_set hΩ, h.locallyIntegrableOn.mono_set hΩ, fun φ =>
     h.2.2 ⟨φ, φ.contDiff, φ.hasCompactSupport, φ.tsupport_subset.trans hΩ⟩⟩
 
-/-- Replacing the local `L^q` bound on `ξ` by a local `Lʳ` bound upgrades or changes the solution
-exponent of `TauCeti.IsWeakCRSolution`, since the test-function identity itself does not depend on
-the exponent. -/
-theorem of_memLpLoc (h : IsWeakCRSolution q Ω J DJ S ξ η) (hξ : MemLpLoc r Ω ξ) :
-    IsWeakCRSolution r Ω J DJ S ξ η :=
-  ⟨hξ, h.locallyIntegrableOn, h.2.2⟩
-
 /-- A weak solution for the exponent `q` is a weak solution for every smaller exponent. -/
 theorem mono_exponent (h : IsWeakCRSolution q Ω J DJ S ξ η) (hrq : r ≤ q) :
     IsWeakCRSolution r Ω J DJ S ξ η :=
-  h.of_memLpLoc (h.memLpLoc.mono_exponent hrq)
+  ⟨h.memLpLoc.mono_exponent hrq, h.locallyIntegrableOn, h.2.2⟩
+
+/-- A weak solution for the exponent `q` that is locally `Lʳ` is a weak solution for the
+exponent `r`: only the integrability of `ξ` depends on the exponent. -/
+theorem of_memLpLoc (h : IsWeakCRSolution q Ω J DJ S ξ η) (hr : MemLpLoc r Ω ξ) :
+    IsWeakCRSolution r Ω J DJ S ξ η :=
+  ⟨hr, h.2⟩
 
 /-- The weak equation is homogeneous in `(ξ, η)`. -/
 theorem const_smul (h : IsWeakCRSolution q Ω J DJ S ξ η) (c : ℝ) :
