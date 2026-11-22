@@ -13,6 +13,7 @@ import TauCeti.Data.Set.PowersetCard
 import TauCeti.Analysis.ExteriorPower.WedgeForms
 import TauCeti.NumberTheory.NumberField.Global.Approximation.Evertse
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
+import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Rank
 
 /-!
 # Wedge domains of an approximation domain
@@ -408,15 +409,8 @@ theorem rpow_approxWeight_wedgeExponent_le {S₀ : Finset (FinitePlace K)}
           ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) (k - 1) /
             (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k) ^ finrank ℚ K := by
   set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
-  let _ := discreteTopology_mixedImage_approxModule hLfin c Q
-  let _ := isZLattice_mixedImage_approxModule hLfin c hQ₀.ne'
-  have hB : 0 ∈ interior (approxBody L c Q) :=
-    mem_interior_iff_mem_nhds.2 (approxBody_mem_nhds_zero L c hQ₀)
-  let B : ConvexBody (ι → mixedSpace K) :=
-    ⟨approxBody L c Q, convex_approxBody L c Q, isCompact_approxBody hLinf c Q,
-      ⟨0, interior_subset hB⟩⟩
   have hμ (l : ℕ) (hl : l < Fintype.card ι) : 0 < μ l :=
-    Submodule.successiveMinimum_pos (B := B) hB hl
+    successiveMinimum_approx_pos hLinf hLfin c hQ₀ hl
   set A := (2 : ℝ) ^ (finrank ℚ K * Fintype.card ι) *
     (∏ v ∈ S₀, (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ Fintype.card ι) / approxConst S₀ L
   set e := (Fintype.card ι - 1).choose (p - 1)
