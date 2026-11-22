@@ -126,7 +126,8 @@ theorem maximal_isMulCommutative_zpowers {u : G} (hu : ¬IsProperPower u) :
 not a proper power. -/
 theorem isTISubgroup_zpowers_iff {u : G} (hu : u ≠ 1) :
     TauCeti.IsTISubgroup (zpowers u) ↔ ¬IsProperPower u := by
-  refine ⟨fun h => not_isProperPower_of_zpowers_eq_centralizer hu ?_, isTISubgroup_zpowers⟩
+  refine ⟨fun h => not_isProperPower_of_zpowers_eq_centralizer (x := u) hu ?_,
+    isTISubgroup_zpowers⟩
   exact le_antisymm (zpowers_le_centralizer_singleton u)
     (h.centralizer_singleton_le (mem_zpowers u) hu)
 
@@ -134,7 +135,7 @@ theorem isTISubgroup_zpowers_iff {u : G} (hu : u ≠ 1) :
 `u` is not a proper power. -/
 theorem maximal_isMulCommutative_zpowers_iff {u : G} (hu : u ≠ 1) :
     Maximal (fun K : Subgroup G => IsMulCommutative K) (zpowers u) ↔ ¬IsProperPower u := by
-  refine ⟨fun h => not_isProperPower_of_zpowers_eq_centralizer hu ?_,
+  refine ⟨fun h => not_isProperPower_of_zpowers_eq_centralizer (x := u) hu ?_,
     maximal_isMulCommutative_zpowers⟩
   have hle := zpowers_le_centralizer_singleton u
   exact le_antisymm hle (h.2 (isMulCommutative_centralizer hu) hle)

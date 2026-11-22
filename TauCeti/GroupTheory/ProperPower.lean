@@ -159,16 +159,16 @@ theorem exists_maximalRoot_of_bddAbove {x : G}
   exact (hmax y _ ((pow_mul y m _).trans hr)).not_gt
     (lt_mul_of_one_lt_left (Nat.pos_of_ne_zero hk) (by omega))
 
-/-- A generator of the centralizer of a nontrivial element in a torsion-free group is not a
-proper power. -/
-theorem not_isProperPower_of_zpowers_eq_centralizer [IsMulTorsionFree G] {x r : G} (hx : x ≠ 1)
+/-- In a torsion-free group, a nontrivial element generating the centralizer of some element is
+not a proper power. -/
+theorem not_isProperPower_of_zpowers_eq_centralizer [IsMulTorsionFree G] {x r : G} (hr1 : r ≠ 1)
     (hr : Subgroup.zpowers r = Subgroup.centralizer {x}) : ¬IsProperPower r := by
   rintro ⟨s, n, hn, rfl⟩
   obtain ⟨m, rfl⟩ := Subgroup.mem_zpowers_iff.1
     (hr ▸ Subgroup.mem_centralizer_singleton_iff.2 rfl : x ∈ _)
   have hs : s ∈ Subgroup.zpowers (s ^ n) :=
     hr ▸ Subgroup.mem_centralizer_singleton_iff.2 ((Commute.self_pow s n).zpow_right m).eq
-  have hs1 : s ≠ 1 := fun hs1 => hx (by simp [hs1])
+  have hs1 : s ≠ 1 := fun hs1 => hr1 (by simp [hs1])
   have hn1 : n = 1 := by
     simpa only [orderOf_eq_zero (not_isOfFinOrder_of_isMulTorsionFree hs1),
       Nat.gcd_zero_right] using mem_zpowers_pow_iff.mp hs

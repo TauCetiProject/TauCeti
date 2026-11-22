@@ -138,7 +138,8 @@ theorem exists_maximalRoot {x : G} (hx : x ≠ 1) :
     obtain ⟨k, rfl | rfl⟩ := Int.eq_nat_or_neg m
     · exact ⟨t, k, rfl, by omega, by simpa using hm⟩
     · exact ⟨t⁻¹, k, zpowers_inv, by omega, by simpa [inv_pow] using hm⟩
-  have hr := not_isProperPower_of_zpowers_eq_centralizer hx (hrt.trans ht)
+  have hr := not_isProperPower_of_zpowers_eq_centralizer
+    (fun h => hx (by rw [← hrk, h, one_pow])) (hrt.trans ht)
   refine ⟨(r, k), ⟨hk, hrk, hr⟩, ?_⟩
   rintro ⟨s, l⟩ ⟨_, hsl, hs⟩
   exact Prod.ext_iff.2 <|
