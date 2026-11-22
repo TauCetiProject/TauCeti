@@ -27,6 +27,8 @@ analytic. The pointwise criteria are `TauCeti.analyticWithinAt_update_iff` and
 `TauCeti.analyticAt_update_iff`, and the setwise criteria are `TauCeti.analyticOn_update_iff` and
 `TauCeti.analyticOnNhd_update_iff`. The component replacement rules are
 `AnalyticWithinAt.update`, `AnalyticAt.update`, `AnalyticOn.update`, and `AnalyticOnNhd.update`.
+The restriction of a function to a fixed coordinate value is analytic at the original point if
+the function is analytic at the updated point (`AnalyticAt.comp_update`).
 
 Finite sums of functions admitting power series on a common ball admit the summed power series on
 that ball (`Finset.hasFPowerSeriesOnBall_sum`, `Finset.hasFPowerSeriesWithinOnBall_sum`), and
@@ -134,24 +136,16 @@ components are analytic on `s`. -/
 theorem TauCeti.analyticOn_update_iff {s : Set E} :
     AnalyticOn 𝕜 (fun z ↦ Function.update (f z) i (g z)) s ↔
       AnalyticOn 𝕜 g s ∧ ∀ j ≠ i, AnalyticOn 𝕜 (fun z ↦ f z j) s := by
-  constructor
-  · intro h
-    exact ⟨fun z hz ↦ (analyticWithinAt_update_iff.1 (h z hz)).1,
-      fun j hj z hz ↦ (analyticWithinAt_update_iff.1 (h z hz)).2 j hj⟩
-  · rintro ⟨hg, hf⟩ z hz
-    exact analyticWithinAt_update_iff.2 ⟨hg z hz, fun j hj ↦ hf j hj z hz⟩
+  simp only [AnalyticOn, analyticWithinAt_update_iff, forall₂_and]
+  exact and_congr_right fun _ ↦ forall₂_comm
 
 /-- An updated family is analytic near `s` exactly when the replacement and all retained
 components are analytic near `s`. -/
 theorem TauCeti.analyticOnNhd_update_iff {s : Set E} :
     AnalyticOnNhd 𝕜 (fun z ↦ Function.update (f z) i (g z)) s ↔
       AnalyticOnNhd 𝕜 g s ∧ ∀ j ≠ i, AnalyticOnNhd 𝕜 (fun z ↦ f z j) s := by
-  constructor
-  · intro h
-    exact ⟨fun z hz ↦ (analyticAt_update_iff.1 (h z hz)).1,
-      fun j hj z hz ↦ (analyticAt_update_iff.1 (h z hz)).2 j hj⟩
-  · rintro ⟨hg, hf⟩ z hz
-    exact analyticAt_update_iff.2 ⟨hg z hz, fun j hj ↦ hf j hj z hz⟩
+  simp only [AnalyticOnNhd, analyticAt_update_iff, forall₂_and]
+  exact and_congr_right fun _ ↦ forall₂_comm
 
 /-- Updating one component of a finite family analytic on `s` by a function analytic on `s`
 preserves analyticity on `s`. -/
@@ -167,6 +161,13 @@ protected theorem AnalyticOnNhd.update {s : Set E} (hf : AnalyticOnNhd 𝕜 f s)
     (hg : AnalyticOnNhd 𝕜 g s) :
     AnalyticOnNhd 𝕜 (fun z ↦ Function.update (f z) i (g z)) s :=
   fun z hz ↦ (hf z hz).update (hg z hz)
+
+/-- Fixing coordinate `i` at `a` gives an analytic restriction at `y` if the original
+function is analytic at the updated point. -/
+theorem AnalyticAt.comp_update {u : (∀ j, G j) → E} {y : ∀ j, G j} {a : G i}
+    (hu : AnalyticAt 𝕜 u (Function.update y i a)) :
+    AnalyticAt 𝕜 (fun z ↦ u (Function.update z i a)) y :=
+  hu.fun_comp_of_eq (analyticAt_id.update analyticAt_const) rfl
 
 end Update
 

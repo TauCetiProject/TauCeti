@@ -22,6 +22,8 @@ open polydisc of radius `r`, with `f (x + y) = y i ^ m • g y` there. The radiu
 * `AnalyticAt.exists_eventuallyEq_coord_sub_pow_smul`: for a function analytic at `x` with
   complete target, local coordinate division when Taylor coefficients vanish below the
   specified degree in that coordinate.
+* `AnalyticAt.exists_eventuallyEq_coord_sub_smul`: local division for a function whose
+  restriction to the coordinate hyperplane through `x` vanishes near `x`.
 * `AnalyticAt.exists_sub_update_eventuallyEq_coord_sub_smul`: for a function analytic at `x` with
   complete target, local division after subtracting the restriction to the coordinate hyperplane
   through the centre.
@@ -100,6 +102,22 @@ theorem AnalyticAt.exists_eventuallyEq_coord_sub_pow_smul [CompleteSpace F]
     simpa only [add_sub_cancel, Pi.sub_apply] using hfg (z - x)
       (by simpa only [Metric.eball_coe, Metric.mem_ball, dist_eq_norm, sub_zero] using hz)
 
+/-- For a complete target, an analytic function whose restriction to the coordinate hyperplane
+through `x` vanishes near `x` has an analytic quotient by the coordinate difference. -/
+theorem AnalyticAt.exists_eventuallyEq_coord_sub_smul [CompleteSpace F] [DecidableEq ι]
+    {f : (ι → 𝕜) → F} {x : ι → 𝕜} (hf : AnalyticAt 𝕜 f x) (i : ι)
+    (hzero : (fun z ↦ f (Function.update z i (x i))) =ᶠ[𝓝 x] 0) :
+    ∃ g : (ι → 𝕜) → F, AnalyticAt 𝕜 g x ∧
+      f =ᶠ[𝓝 x] fun z ↦ (z i - x i) • g z := by
+  have hfupdate : AnalyticAt 𝕜 f (Function.update x i (x i)) := by
+    simpa only [Function.update_eq_self] using hf
+  obtain ⟨g, hg, hfg⟩ := hf.exists_eventuallyEq_coord_sub_pow_smul i 1 (fun α hα ↦ by
+    have hcoeff := hfupdate.comp_update.eventuallyEq_zero_iff_forall_mvTaylorCoeff_eq_zero.1
+      hzero α
+    simpa only [hfupdate.mvTaylorCoeff_comp_update, Nat.lt_one_iff.1 hα, ite_true,
+      Function.update_eq_self] using hcoeff)
+  exact ⟨g, hg, by simpa only [pow_one] using hfg⟩
+
 /-- For a complete target and a function analytic at `x`, subtracting the restriction to the
 coordinate hyperplane through `x` gives a function divisible near `x` by the corresponding
 coordinate difference, with analytic quotient. -/
@@ -108,13 +126,8 @@ theorem AnalyticAt.exists_sub_update_eventuallyEq_coord_sub_smul [CompleteSpace 
     ∃ g : (ι → 𝕜) → F, AnalyticAt 𝕜 g x ∧
       (fun z ↦ f z - f (Function.update z i (x i))) =ᶠ[𝓝 x]
         fun z ↦ (z i - x i) • g z := by
-  have hupdate : AnalyticAt 𝕜 (fun z : ι → 𝕜 ↦ Function.update z i (x i)) x :=
-    analyticAt_id.update analyticAt_const
-  have hrestrict := hf.fun_comp_of_eq hupdate (Function.update_eq_self i x)
   have hfupdate : AnalyticAt 𝕜 f (Function.update x i (x i)) := by
     simpa only [Function.update_eq_self] using hf
-  obtain ⟨g, hg, hfg⟩ := (hf.fun_sub hrestrict).exists_eventuallyEq_coord_sub_pow_smul i 1
-    (fun α hα ↦ by
-      rw [hf.mvTaylorCoeff_fun_sub hrestrict, hfupdate.mvTaylorCoeff_comp_update]
-      simp only [Nat.lt_one_iff.1 hα, ite_true, Function.update_eq_self, sub_self])
-  exact ⟨g, hg, hfg.mono fun z hz ↦ by simpa only [pow_one] using hz⟩
+  apply (hf.fun_sub hfupdate.comp_update).exists_eventuallyEq_coord_sub_smul i
+  simp only [Function.update_idem, sub_self]
+  rfl
