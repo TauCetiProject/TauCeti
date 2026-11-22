@@ -20,13 +20,16 @@ point of its preimage. The neighbourhood may depend on the base point; no metric
 The sheets over `x` are the images of a connected open neighbourhood under sections through
 points of the fibre. Local injectivity makes these images open. Separatedness and local
 injectivity make sections that agree at one point agree throughout a connected set, so distinct
-points of the fibre give disjoint sheets and these sheets exhaust the preimage.
+points of the fibre give disjoint sheets and these sheets exhaust the preimage. Mathlib's
+`IsOpen.trivializationDiscrete` assembles these sheets into a trivialization over the interior
+of the neighbourhood.
 
 The uniform-size criterion on a uniform space is a special case. Its sections, over the balls
-of one fixed entourage `U`, have open images, which supply local injectivity, and the ball of a
-symmetric entourage `V` with `V ○ V ⊆ U` fits inside the section domain of every point lying
-over it. On a pseudometric space this is the uniform-radius criterion with the half-radius ball,
-which applies to gluing constructions such as Poincaré's polygon theorem.
+of one fixed entourage `U`, have images that are neighbourhoods of the points they pass through,
+which supply local injectivity, and the ball of a symmetric entourage `V` with `V ○ V ⊆ U` fits
+inside the section domain of every point lying over it. On a pseudometric space this is the
+uniform-radius criterion with the half-radius ball, which applies to gluing constructions such
+as Poincaré's polygon theorem.
 
 ## Main results
 
@@ -36,7 +39,7 @@ which applies to gluing constructions such as Poincaré's polygon theorem.
 * `IsCoveringMap.of_isLocallyInjective_of_forall_exists_section`: the neighbourhood criterion
   for a continuous separated, locally injective map to a locally connected space.
 * `IsCoveringMap.of_forall_exists_section`: the uniform-size criterion for a continuous
-  separated map to a locally connected uniform space, with open section images.
+  separated map to a locally connected uniform space, whose section images are neighbourhoods.
 
 ## References
 
@@ -61,9 +64,10 @@ theorem _root_.IsEvenlyCovered.of_leftInvOn_sections (hp : Continuous p)
     (hse : ∀ e, p e ∈ V → s e (p e) = e) : IsEvenlyCovered p x (p ⁻¹' {x}) := by
   have hxV : x ∈ V := mem_of_mem_nhds hVx
   have hxI : x ∈ interior V := mem_interior_iff_mem_nhds.2 hVx
-  have hfib (e : E) (he : e ∈ p ⁻¹' {x}) : p e ∈ V := (mem_singleton_iff.1 he) ▸ hxV
+  have hfibx (e : E) : e ∈ p ⁻¹' {x} ↔ p e = x := mem_preimage.trans mem_singleton_iff
+  have hfib (e : E) (he : e ∈ p ⁻¹' {x}) : p e ∈ V := ((hfibx e).1 he) ▸ hxV
   have hsx (e : E) (he : e ∈ p ⁻¹' {x}) : s e x = e := by
-    rw [← mem_singleton_iff.1 he, hse e (hfib e he)]
+    rw [← (hfibx e).1 he, hse e (hfib e he)]
   -- the sections through the fibre over `x`, restricted to `interior V`
   have hsc' (e : p ⁻¹' {x}) : ContinuousOn (s e) (interior V) :=
     (hsc e (hfib e e.property)).mono interior_subset
@@ -74,7 +78,7 @@ theorem _root_.IsEvenlyCovered.of_leftInvOn_sections (hp : Continuous p)
     hsep.eqOn_of_leftInvOn hinj hVc (hsc e he) (hsc e' he')
       (hps e he) (hps e' he') hy hee'
   have hmem (e' : E) (he' : p e' ∈ V) : ∃ e ∈ p ⁻¹' {x}, s e (p e') = e' := by
-    have hfx : s e' x ∈ p ⁻¹' {x} := hps e' he' hxV
+    have hfx : s e' x ∈ p ⁻¹' {x} := (hfibx _).2 (hps e' he' hxV)
     refine ⟨s e' x, hfx, ?_⟩
     rw [hrigid _ e' (hfib _ hfx) he' hxV (hsx _ hfx) he', hse e' he']
   obtain hF | hF := (p ⁻¹' {x}).eq_empty_or_nonempty
@@ -88,16 +92,14 @@ theorem _root_.IsEvenlyCovered.of_leftInvOn_sections (hp : Continuous p)
   refine .of_trivialization (t := isOpen_interior.trivializationDiscrete
     (fun e : p ⁻¹' {x} ↦ s e '' interior V) (interior V)
     (fun e W hWV ↦ ⟨fun hW ↦ ?_, fun hW ↦ ?_⟩) (fun e ↦ (hps' e).rightInvOn_image.injOn)
-    (fun e y hy ↦ ⟨s e y, mem_image_of_mem _ hy, hps' e hy⟩) ?_ ?_) hxI
+    (fun e ↦ (hps' e).surjOn (mapsTo_image _ _)) ?_ ?_) hxI
   · -- an open subset of `interior V` has open preimage in each sheet
     exact (hp.isOpen_preimage W hW).inter
       (hinj.isOpen_image_of_leftInvOn hp isOpen_interior (hsc' e) (hps' e))
   · -- conversely, an open trace on a sheet comes from an open subset of `interior V`
-    convert (hsc' e).isOpen_inter_preimage isOpen_interior hW using 1
-    ext y
-    refine ⟨fun hy ↦ ⟨hWV hy, ?_, mem_image_of_mem _ (hWV hy)⟩, fun ⟨hyV, hyW, _⟩ ↦ ?_⟩
-    · rwa [mem_preimage, hps' e (hWV hy)]
-    · rwa [mem_preimage, hps' e hyV] at hyW
+    rw [← (hps' e).image_inter', inter_eq_left.2 hWV] at hW
+    rw [← (hps' e).injOn.preimage_image_inter hWV, inter_comm]
+    exact (hsc' e).isOpen_inter_preimage isOpen_interior hW
   · -- distinct points of the fibre have disjoint sheets
     refine fun e e' hee' ↦ disjoint_left.2 ?_
     rintro _ ⟨y, hy, rfl⟩ ⟨z, hz, hzy⟩
@@ -133,25 +135,29 @@ theorem _root_.IsCoveringMap.of_isLocallyInjective_of_forall_exists_section
 
 /-- **A map with local sections of uniform size is a covering map.** Let `p : E → X` be a
 continuous separated map to a locally connected uniform space, and let `U` be an entourage of
-`X`. If every point `e` is the value at `p e` of a section of `p` over the `U`-ball about `p e`
-which is continuous on that ball and maps it to an open set, then `p` is a covering map. For a
-pseudometric space, `U` may be the entourage `{q | dist q.1 q.2 < ε}` for some `ε > 0`, whose
-balls are the open `ε`-balls (`Metric.ball_eq_ball'`). -/
+`X`. If every point `e` has a section of `p` over the `U`-ball about `p e` which is continuous
+on that ball and maps it onto a neighbourhood of `e`, then `p` is a covering map. Such a section
+passes through `e`. For a pseudometric space, `U` may be the entourage `{q | dist q.1 q.2 < ε}`
+for some `ε > 0`, whose balls are the open `ε`-balls (`Metric.ball_eq_ball'`). -/
 theorem _root_.IsCoveringMap.of_forall_exists_section {X : Type*} [UniformSpace X]
     [LocallyConnectedSpace X] {p : E → X} (hp : Continuous p) (hsep : IsSeparatedMap p)
     {U : SetRel X X} (hU : U ∈ 𝓤 X)
-    (h : ∀ e, ∃ s : X → E, ContinuousOn s (U.ball (p e)) ∧ IsOpen (s '' U.ball (p e)) ∧
-      LeftInvOn p s (U.ball (p e)) ∧ s (p e) = e) : IsCoveringMap p := by
-  choose s hsc hso hps hse using h
-  have hinj : IsLocallyInjective p := fun e ↦
-    ⟨s e '' U.ball (p e), hso e, ⟨p e, refl_mem_uniformity hU, hse e⟩,
-      (hps e).rightInvOn_image.injOn⟩
+    (h : ∀ e, ∃ s : X → E, ContinuousOn s (U.ball (p e)) ∧ s '' U.ball (p e) ∈ 𝓝 e ∧
+      LeftInvOn p s (U.ball (p e))) : IsCoveringMap p := by
+  choose s hsc hsn hps using h
+  -- `e` lies in the image of its section, so the section passes through `e`
+  have hse (e : E) : s e (p e) = e := by
+    obtain ⟨y, hy, hye⟩ := mem_of_mem_nhds (hsn e)
+    have hpy : p e = y := by rw [← hye]; exact hps e hy
+    rw [hpy, hye]
+  have hinj : IsLocallyInjective p := isLocallyInjective_iff_nhds.2 fun e ↦
+    ⟨s e '' U.ball (p e), hsn e, (hps e).rightInvOn_image.injOn⟩
   obtain ⟨V, hV, hVs, hVU⟩ := comp_symm_mem_uniformity_sets hU
   refine .of_isLocallyInjective_of_forall_exists_section hp hinj hsep
     fun x ↦ ⟨SetRel.ball V x, SetRel.ball_mem_nhds x hV, fun e he ↦ ?_⟩
   -- the `V`-ball about `x` lies in the `U`-ball about each point `p e` of it
   have hball : SetRel.ball V x ⊆ U.ball (p e) :=
-    SetRel.ball_subset_ball_of_comp_subset (SetRel.symm V he) hVU
+    SetRel.ball_subset_ball_of_comp_subset (SetRel.symm V (SetRel.mem_ball.1 he)) hVU
   exact ⟨s e, (hsc e).mono hball, (hps e).mono hball, hse e⟩
 
 end TauCeti
