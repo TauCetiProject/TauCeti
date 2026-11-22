@@ -104,10 +104,7 @@ theorem formalGroup_addInvX (W : WeierstrassCurve R) :
   apply ((formalGroup W).eq_addInvX_iff_subst_right_eq_zero W.hasSubst_formalInverse).mpr
   rw [formalGroup_toPowerSeries,
     MvPowerSeries.subst_rename_unitSumUnitEquivFinTwo (formalAdd W)
-      PowerSeries.HasSubst.X' W.hasSubst_formalInverse,
-    show pairSubstitution (PowerSeries.X : PowerSeries R) W.formalInverse =
-      Sum.elim X (fun _ => W.formalInverse) from
-      funext fun j => by rcases j with ⟨⟩ | ⟨⟩ <;> rfl]
+      PowerSeries.HasSubst.X' W.hasSubst_formalInverse]
   exact W.subst_invPair_formalAdd
 
 /-- The doubling series is the geometric inverse of the tangent's third intersection parameter.
@@ -122,10 +119,7 @@ theorem nsmulSeries_two_formalGroup (W : WeierstrassCurve R) :
     formalGroup_toPowerSeries,
     subst_rename_unitSumUnitEquivFinTwo (formalAdd W)
       PowerSeries.HasSubst.X' PowerSeries.HasSubst.X',
-    show pairSubstitution (PowerSeries.X : PowerSeries R) PowerSeries.X =
-      fun _ : Unit ⊕ Unit => (PowerSeries.X : PowerSeries R) from
-      funext fun s => by rcases s with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> rfl,
-    formalAdd_def, ← PowerSeries.subst_def,
+    pairSubstitution_self, formalAdd_def, ← PowerSeries.subst_def,
     subst_powerSeriesSubst hX
       (PowerSeries.HasSubst.of_constantCoeff_zero W.constantCoeff_formalThirdRoot)]
 

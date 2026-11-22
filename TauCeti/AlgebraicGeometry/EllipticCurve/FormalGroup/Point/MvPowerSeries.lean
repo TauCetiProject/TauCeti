@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Gener
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.AdditionLaw.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
-import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Parameter
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.FormalPoint
 import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
 import TauCeti.RingTheory.MvPowerSeries.Rename

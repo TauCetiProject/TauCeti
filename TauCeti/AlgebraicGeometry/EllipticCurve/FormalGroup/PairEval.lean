@@ -413,13 +413,13 @@ theorem formalAddEval_formalInverseEval {t : O} (ht : PowerSeries.HasEval t) :
   have hid : (algebraMap O O) = RingHom.id O := rfl
   -- Evaluating the substituted pair at `t` is evaluating at the pair `(t, ι(t))`.
   have hfam : (fun s : Unit ⊕ Unit ↦ MvPowerSeries.eval₂ (RingHom.id O) (fun _ : Unit ↦ t)
-        (Sum.elim MvPowerSeries.X (fun _ ↦ formalInverse W) s)) =
+        (MvPowerSeries.pairSubstitution (PowerSeries.X : PowerSeries O) (formalInverse W) s)) =
       Sum.elim (fun _ ↦ t) fun _ ↦ W.formalInverseEval t := by
     funext s
-    rcases s with _ | _ <;> simp [W.formalInverseEval_def, PowerSeries.eval₂]
+    rcases s with _ | _ <;> simp [W.formalInverseEval_def, PowerSeries.eval₂, PowerSeries.X]
   have hpair : MvPowerSeries.HasEval
       (fun s : Unit ⊕ Unit ↦ MvPowerSeries.aeval (PowerSeries.hasEval ht)
-        (Sum.elim MvPowerSeries.X (fun _ ↦ formalInverse W) s)) := by
+        (MvPowerSeries.pairSubstitution (PowerSeries.X : PowerSeries O) (formalInverse W) s)) := by
     simp only [MvPowerSeries.coe_aeval, hid, hfam]
     exact hasEval_pair ht (W.hasEval_formalInverseEval ht)
   have h := MvPowerSeries.aeval_subst W.hasSubst_invPair

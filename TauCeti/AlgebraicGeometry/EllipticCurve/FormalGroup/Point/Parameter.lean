@@ -7,17 +7,15 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.WExpansion
-import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
-import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # Parametrized affine points from formal-group parameters
 
-Over a field `KK` equipped with an `MvPowerSeries σ O`-algebra structure (typically a fraction
-field of the series ring), a nonzero parameter `q : MvPowerSeries σ O` with vanishing constant
-coefficient determines a nonsingular affine point `WeierstrassCurve.thetaPoint` of the base-changed
-curve `WeierstrassCurve.fracCurve W σ KK`, with coordinates `(q / w(q), -1 / w(q))` in the
-`(z, w)`-chart of `WeierstrassCurve.formalW`.
+Over a field `KK` equipped with a faithful `MvPowerSeries σ O`-algebra structure (for instance a
+fraction field of the series ring), a nonzero parameter `q : MvPowerSeries σ O` with vanishing
+constant coefficient determines a nonsingular affine point `WeierstrassCurve.thetaPoint` of the
+base-changed curve `WeierstrassCurve.fracCurve W σ KK`, with coordinates `(q / w(q), -1 / w(q))`
+in the `(z, w)`-chart of `WeierstrassCurve.formalW`.
 
 ## Main definitions
 
@@ -29,10 +27,11 @@ curve `WeierstrassCurve.fracCurve W σ KK`, with coordinates `(q / w(q), -1 / w(
 
 * `WeierstrassCurve.fracCurve_eq_baseChange`: identifies `fracCurve W σ KK` with `W⁄KK` whenever
   `O → MvPowerSeries σ O → KK` is a scalar tower.
-* `WeierstrassCurve.fracCurve_Δ_ne_zero`: nonzero discriminant passes to `fracCurve W σ KK` over
-  a fraction field of the series ring.
-* `WeierstrassCurve.algebraMap_subst_formalW_ne_zero`: `w(q)` remains nonzero in `KK` whenever
-  `MvPowerSeries σ O` acts faithfully on `KK`.
+* `WeierstrassCurve.fracCurve_a₁`, `WeierstrassCurve.fracCurve_a₂`,
+  `WeierstrassCurve.fracCurve_a₃`, `WeierstrassCurve.fracCurve_a₄`,
+  `WeierstrassCurve.fracCurve_a₆`: the Weierstrass coefficients of `fracCurve W σ KK`.
+* `WeierstrassCurve.fracCurve_Δ_ne_zero`: nonzero discriminant passes to `fracCurve W σ KK`
+  whenever `MvPowerSeries σ O` acts faithfully on `KK`.
 * `WeierstrassCurve.thetaPoint_nonsingular`, `WeierstrassCurve.thetaPoint_eq_some`,
   `WeierstrassCurve.xCoord_thetaPoint`, `WeierstrassCurve.yCoord_thetaPoint`, and
   `WeierstrassCurve.thetaPoint_inj`: nonsingularity, affine coordinates, and injectivity of `θ`.
@@ -47,7 +46,7 @@ Adapted from Michael Stoll's `EllipticCurves` project
 (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0) at commit
 `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`,
 `EllipticCurves/WeierstrassFormalGroup/GroupLaw.lean` (`Domain` section), declarations
-`subst_wSeries_ne_zero`, `fracCurve`, `thetaPoint`, and `thetaPoint_inj`.
+`fracCurve`, `thetaPoint`, and `thetaPoint_inj`.
 -/
 
 public section
@@ -83,39 +82,53 @@ theorem fracCurve_eq_baseChange (W : WeierstrassCurve O) {σ : Type*} {KK : Type
   rw [fracCurve_def, WeierstrassCurve.baseChange,
     ← IsScalarTower.algebraMap_eq O (MvPowerSeries σ O) KK]
 
+/-- The `a₁`-coefficient of `fracCurve W σ KK`. -/
+@[simp]
+theorem fracCurve_a₁ (W : WeierstrassCurve O) (σ : Type*) (KK : Type*)
+    [CommRing KK] [Algebra (MvPowerSeries σ O) KK] :
+    (fracCurve W σ KK).a₁ = algebraMap (MvPowerSeries σ O) KK (C W.a₁) := by
+  rw [fracCurve_def, map_a₁, RingHom.comp_apply, c_eq_algebraMap]
+
+/-- The `a₂`-coefficient of `fracCurve W σ KK`. -/
+@[simp]
+theorem fracCurve_a₂ (W : WeierstrassCurve O) (σ : Type*) (KK : Type*)
+    [CommRing KK] [Algebra (MvPowerSeries σ O) KK] :
+    (fracCurve W σ KK).a₂ = algebraMap (MvPowerSeries σ O) KK (C W.a₂) := by
+  rw [fracCurve_def, map_a₂, RingHom.comp_apply, c_eq_algebraMap]
+
+/-- The `a₃`-coefficient of `fracCurve W σ KK`. -/
+@[simp]
+theorem fracCurve_a₃ (W : WeierstrassCurve O) (σ : Type*) (KK : Type*)
+    [CommRing KK] [Algebra (MvPowerSeries σ O) KK] :
+    (fracCurve W σ KK).a₃ = algebraMap (MvPowerSeries σ O) KK (C W.a₃) := by
+  rw [fracCurve_def, map_a₃, RingHom.comp_apply, c_eq_algebraMap]
+
+/-- The `a₄`-coefficient of `fracCurve W σ KK`. -/
+@[simp]
+theorem fracCurve_a₄ (W : WeierstrassCurve O) (σ : Type*) (KK : Type*)
+    [CommRing KK] [Algebra (MvPowerSeries σ O) KK] :
+    (fracCurve W σ KK).a₄ = algebraMap (MvPowerSeries σ O) KK (C W.a₄) := by
+  rw [fracCurve_def, map_a₄, RingHom.comp_apply, c_eq_algebraMap]
+
+/-- The `a₆`-coefficient of `fracCurve W σ KK`. -/
+@[simp]
+theorem fracCurve_a₆ (W : WeierstrassCurve O) (σ : Type*) (KK : Type*)
+    [CommRing KK] [Algebra (MvPowerSeries σ O) KK] :
+    (fracCurve W σ KK).a₆ = algebraMap (MvPowerSeries σ O) KK (C W.a₆) := by
+  rw [fracCurve_def, map_a₆, RingHom.comp_apply, c_eq_algebraMap]
+
 variable (W : WeierstrassCurve O) {σ : Type*}
 
-variable [IsDomain O] in
-/-- Over a domain the `w`-expansion at a nonzero parameter with vanishing constant coefficient is
-itself nonzero. -/
-private theorem subst_formalW_ne_zero {q : MvPowerSeries σ O} (hq : constantCoeff q = 0)
-    (hq0 : q ≠ 0) : PowerSeries.subst q (formalW W) ≠ 0 :=
-  (PowerSeries.subst_eq_zero_iff hq hq0).not.mpr (formalW_ne_zero W)
-
 variable {KK : Type*} [Field KK] [Algebra (MvPowerSeries σ O) KK]
+  [FaithfulSMul (MvPowerSeries σ O) KK]
 
-variable [FaithfulSMul (MvPowerSeries σ O) KK] in
-/-- The `w`-expansion at a nonzero parameter stays nonzero after being pushed into `KK`: a
-faithful algebra map is injective, so it cannot introduce a zero.
-
-Every parametrized point of this file needs its `w`-coordinate invertible in `KK`, so this is the
-form `subst_formalW_ne_zero` is actually used in. -/
-theorem algebraMap_subst_formalW_ne_zero {q : MvPowerSeries σ O}
-    (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
-    algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) ≠ 0 := fun h ↦ by
-  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
-  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
-  exact W.subst_formalW_ne_zero hq hq0
-    (FaithfulSMul.algebraMap_injective (MvPowerSeries σ O) KK (by rw [h, map_zero]))
-
-variable [IsFractionRing (MvPowerSeries σ O) KK]
-
-/-- A curve with nonzero discriminant stays nonsingular over a fraction field of its series ring:
-`Δ` is carried there by the injective maps `C` and `algebraMap (MvPowerSeries σ O) KK`. -/
+/-- A curve with nonzero discriminant stays nonsingular over a field on which its series ring
+acts faithfully: `Δ` is carried there by the injective maps `C` and
+`algebraMap (MvPowerSeries σ O) KK`. -/
 theorem fracCurve_Δ_ne_zero (hΔ : W.Δ ≠ 0) : (fracCurve W σ KK).Δ ≠ 0 := by
   rw [fracCurve_def, map_Δ, RingHom.comp_apply,
-    map_ne_zero_iff _ (IsFractionRing.injective (MvPowerSeries σ O) KK), ← c_eq_algebraMap,
-    map_ne_zero_iff _ C_injective]
+    map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective (MvPowerSeries σ O) KK),
+    ← c_eq_algebraMap, map_ne_zero_iff _ C_injective]
   exact hΔ
 
 /-- The affine coordinates `(q / w(q), -1 / w(q))` of the parametrized point `θ(q)` define a
@@ -188,7 +201,7 @@ theorem thetaPoint_inj (hΔ : (fracCurve W σ KK).Δ ≠ 0)
   refine ⟨fun h ↦ ?_, by rintro rfl; rfl⟩
   classical
   set ρ := algebraMap (MvPowerSeries σ O) KK with hρ
-  have hinj : Function.Injective ρ := IsFractionRing.injective (MvPowerSeries σ O) KK
+  have hinj : Function.Injective ρ := FaithfulSMul.algebraMap_injective (MvPowerSeries σ O) KK
   simp only [thetaPoint, Affine.Point.some.injEq] at h
   simp only [← hρ] at h
   have hw₁0 : ρ (PowerSeries.subst q₁ (formalW W)) ≠ 0 :=

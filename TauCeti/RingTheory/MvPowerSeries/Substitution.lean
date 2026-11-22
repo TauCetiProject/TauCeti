@@ -50,6 +50,8 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
 * `MvPowerSeries.pairSubstitution` : the substitution family `Unit ⊕ Unit → MvPowerSeries σ O`
   sending the left variable to `q₁` and the right one to `q₂`; substituting a pair of series into
   a two-variable one is `subst (pairSubstitution q₁ q₂) f`.
+* `MvPowerSeries.pairSubstitution_self` : substituting the same series into both variables of a
+  `Unit ⊕ Unit`-indexed series gives the constant family `fun _ ↦ q`.
 * `MvPowerSeries.hasSubst_pair` and `MvPowerSeries.hasSubst_pair_of_hasSubst` : a pair of series
   with vanishing (or nilpotent) constant coefficient is a legitimate substitution family for the
   two variables indexed by `Unit ⊕ Unit`.
@@ -228,6 +230,13 @@ theorem hasSubst_pair_of_hasSubst (hq₁ : PowerSeries.HasSubst q₁)
     HasSubst (pairSubstitution q₁ q₂) :=
   hasSubst_of_constantCoeff_nilpotent fun i ↦ by
     rcases i with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simpa [pairSubstitution]
+
+omit [CommRing O] in
+/-- Substituting the same series into both variables of a `Unit ⊕ Unit`-indexed series is the
+constant substitution family `fun _ ↦ q`. -/
+theorem pairSubstitution_self (q : MvPowerSeries σ O) :
+    pairSubstitution q q = fun _ ↦ q :=
+  funext fun s ↦ by rcases s with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> rfl
 
 end HasSubstPair
 

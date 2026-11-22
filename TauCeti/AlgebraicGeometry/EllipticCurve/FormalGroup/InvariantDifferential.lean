@@ -311,8 +311,8 @@ theorem inv_smul_derivation_div_subst_formalW_of_neg_two_add_ne_zero
   have heq : algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)) =
       wEquationRHS W (algebraMap (MvPowerSeries σ R) KK q)
         (algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W))) := by
-    simpa [wEquationRHS_def, ← IsScalarTower.algebraMap_apply R (MvPowerSeries σ R) KK] using
-      W.algebraMap_subst_formalW_wEquation (T := KK) (PowerSeries.HasSubst.of_constantCoeff_zero hq)
+    rw [← algebraMap_wEquationRHS,
+      ← subst_formalW_wEquation _ (PowerSeries.HasSubst.of_constantCoeff_zero hq)]
   exact W.inv_evalEval_polynomialY_smul_derivation_div D heq hG0 hu
 
 /-- **The invariant differential at a point with a series parameter.** Over a ring `R` in which

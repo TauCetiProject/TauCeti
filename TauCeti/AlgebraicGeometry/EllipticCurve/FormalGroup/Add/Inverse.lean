@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Series
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
+public import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.PairSubst
 
 /-!
@@ -40,13 +41,13 @@ universal curve, and `map_specialize` then carries the conclusion to every `W` �
 `DivisionPolynomial/Omega.lean` also runs. The nondegeneracy `ι ≠ z` is not a further hypothesis:
 it follows from `2 ≠ 0` by comparing linear coefficients.
 
-The pair `(z, ι(z))` enters as the substituted family `Sum.elim X (fun _ ↦ formalInverse W)`,
-written inline throughout, as `Add/Unit.lean` writes its own two families inline: naming it would
-add a definition whose unfolding lemma every proof would carry. `FormalGroup/PairEval.lean` writes
-the same family inline for the same reason when it transports `subst_invPair_formalAdd` through
-evaluation, but takes `hasSubst_invPair` from here rather than rebuilding it — that witness is
-exported for exactly this transport, because `MvPowerSeries.aeval_subst` needs a `HasSubst` for
-the very family the two public `subst_invPair_*` results are stated about.
+The pair `(z, ι(z))` enters as the substituted family
+`pairSubstitution (PowerSeries.X : PowerSeries O) (formalInverse W)`, matching
+`FormalGroup/Add/PairSubst.lean` and `FormalGroup/Basic.lean`. `FormalGroup/PairEval.lean` writes
+the same family when it transports `subst_invPair_formalAdd` through evaluation, and takes
+`hasSubst_invPair` from here rather than rebuilding it — that witness is exported for exactly this
+transport, because `MvPowerSeries.aeval_subst` needs a `HasSubst` for the very family the two
+public `subst_invPair_*` results are stated about.
 
 ## References
 
@@ -68,7 +69,7 @@ applies to the rest of that development.
 series with vanishing constant coefficient; this module specializes them to the pair `(z, ι(z))`,
 which is the case the formal inverse law needs.
 
-The source's `subst_wSeries_ne_zero` is `subst_formalW_ne_zero` in `FormalGroup/Add/Assoc.lean`;
+The source's `subst_wSeries_ne_zero` is `subst_formalW_ne_zero` in `FormalGroup/WExpansion.lean`;
 its `interceptSeries_ne_zero` and `X_pair_intercept_ne_zero` have no counterpart in this
 repository.
 -/
@@ -86,50 +87,38 @@ variable {O : Type*} [CommRing O] (W : WeierstrassCurve O)
 /-- Substituting `z` for the first parameter and `ι(z)` for the second is a legitimate
 substitution: both series have vanishing constant coefficient. -/
 theorem hasSubst_invPair :
-    HasSubst (Sum.elim X (fun _ ↦ formalInverse W) : Unit ⊕ Unit → MvPowerSeries Unit O) :=
-  hasSubst_pair (constantCoeff_X ()) (constantCoeff_formalInverse W)
+    HasSubst (pairSubstitution (PowerSeries.X : PowerSeries O) (formalInverse W)) :=
+  hasSubst_pair PowerSeries.constantCoeff_X (constantCoeff_formalInverse W)
 
 /-! ### The chord through a point and its formal inverse -/
-
-/-- The pair `(z, ι(z))` written in the shape `FormalGroup/Add/PairSubst.lean` states its
-identities in. `Sum.elim X` and `Sum.elim (fun _ ↦ X ())` are the same family — `Unit` has one
-element — but only the second is syntactically an instance of the general `(q₁, q₂)` pattern, so
-rewriting with this is what lets the specializations below be `exact` applications. -/
-private theorem invPair_eq :
-    (Sum.elim X (fun _ ↦ formalInverse W) : Unit ⊕ Unit → MvPowerSeries Unit O) =
-      pairSubstitution (X () : MvPowerSeries Unit O) (formalInverse W) :=
-  funext fun j ↦ by rcases j with j | j <;> rfl
 
 /-- The third root at the pair `(z, ι(z))` vanishes at the origin, so it may itself be
 substituted into a one-variable series. -/
 private theorem constantCoeff_subst_invPair_formalThirdRoot :
-    constantCoeff (subst (Sum.elim X (fun _ ↦ formalInverse W) :
-      Unit ⊕ Unit → MvPowerSeries Unit O) (formalThirdRoot W)) = 0 := by
-  rw [invPair_eq]
-  exact constantCoeff_subst_pair_formalThirdRoot W (constantCoeff_X ())
+    constantCoeff (subst (pairSubstitution (PowerSeries.X : PowerSeries O) (formalInverse W))
+      (formalThirdRoot W)) = 0 :=
+  constantCoeff_subst_pair_formalThirdRoot W PowerSeries.constantCoeff_X
     (constantCoeff_formalInverse W)
 
 /-- **The chord through a point and its formal inverse passes through the origin**, in the form
 that holds over any base: the intercept at the pair `(z, ι(z))`, multiplied by `ι(z) - z`,
 vanishes. Over a domain the second factor is nonzero, and the intercept itself vanishes. -/
 private theorem subst_invPair_formalIntercept_mul :
-    subst (Sum.elim X (fun _ ↦ formalInverse W) : Unit ⊕ Unit → MvPowerSeries Unit O)
+    subst (pairSubstitution (PowerSeries.X : PowerSeries O) (formalInverse W))
         (formalIntercept W) * (formalInverse W - X ()) = 0 := by
-  -- the two readings of the intercept, taken from `PairSubst` at `(z, ι(z))` and turned back
-  -- into this module's spelling of the pair
-  have hi₁ := subst_pair_formalIntercept_eq_inl W (constantCoeff_X ())
+  -- the two readings of the intercept, taken from `PairSubst` at `(z, ι(z))`
+  have hi₁ := subst_pair_formalIntercept_eq_inl W (PowerSeries.constantCoeff_X (R := O))
     (constantCoeff_formalInverse W)
-  have hi₂ := subst_pair_formalIntercept_eq_inr W (constantCoeff_X ())
+  have hi₂ := subst_pair_formalIntercept_eq_inr W (PowerSeries.constantCoeff_X (R := O))
     (constantCoeff_formalInverse W)
-  rw [← invPair_eq,
-    show PowerSeries.subst (X () : MvPowerSeries Unit O) (formalW W) = formalW W from
-      PowerSeries.X_subst (formalW W)] at hi₁
-  rw [← invPair_eq, subst_formalInverse_formalW W] at hi₂
+  rw [PowerSeries.X_subst (formalW W)] at hi₁
+  rw [subst_formalInverse_formalW W] at hi₂
   -- `PowerSeries.X` is `MvPowerSeries.X ()`: defeq, but not syntactically equal, so this is
   -- `formalInverse_def` restated in the spelling `linear_combination` will normalize against.
-  have hd : formalInverse W = -(X () * PowerSeries.invOfUnit (formalInverseDenom W) 1) :=
+  have hd : formalInverse W = -(PowerSeries.X * PowerSeries.invOfUnit (formalInverseDenom W) 1) :=
     formalInverse_def W
-  linear_combination formalInverse W * hi₁ - X () * hi₂ + formalW W * hd
+  rw [show (X () : MvPowerSeries Unit O) = PowerSeries.X from rfl]
+  linear_combination formalInverse W * hi₁ - PowerSeries.X * hi₂ + formalW W * hd
 
 /-! ### The formal inverse is not the identity -/
 
@@ -155,7 +144,7 @@ variable [IsDomain O]
 /-- Over a domain, if `ι ≠ z`, the intercept of the chord through a point and its formal inverse
 vanishes: the chord is the vertical line through the two points. -/
 private theorem subst_invPair_formalIntercept (hne : formalInverse W ≠ X ()) :
-    subst (Sum.elim X (fun _ ↦ formalInverse W) : Unit ⊕ Unit → MvPowerSeries Unit O)
+    subst (pairSubstitution (PowerSeries.X : PowerSeries O) (formalInverse W))
       (formalIntercept W) = 0 :=
   (mul_eq_zero.mp (subst_invPair_formalIntercept_mul W)).resolve_right (sub_ne_zero.mpr hne)
 
@@ -207,21 +196,18 @@ private theorem invPair_vieta_cofactor_absurd (h2 : (2 : O) ≠ 0)
 /-- The third-root vanishing over a domain in which `2 ≠ 0`, the case the chord argument proves
 directly. `subst_invPair_formalThirdRoot` descends it to an arbitrary commutative ring. -/
 private theorem subst_invPair_formalThirdRoot_of_isDomain (h2 : (2 : O) ≠ 0) :
-    subst (Sum.elim X (fun _ ↦ formalInverse W) : Unit ⊕ Unit → MvPowerSeries Unit O)
+    subst (pairSubstitution (PowerSeries.X : PowerSeries O) (formalInverse W))
       (formalThirdRoot W) = 0 := by
   have hNp := subst_invPair_formalIntercept W (formalInverse_ne_X W h2)
   -- the on-line identity, the third-root relation and the slope identity, taken from `PairSubst`
-  -- at `(z, ι(z))` and turned back into this module's spelling of the pair
-  have hOL := subst_pair_formalThirdRoot_formalW W (constantCoeff_X ())
+  -- at `(z, ι(z))`
+  have hOL := subst_pair_formalThirdRoot_formalW W (PowerSeries.constantCoeff_X (R := O))
     (constantCoeff_formalInverse W)
-  have hrel := subst_pair_formalThirdRoot_relation W (constantCoeff_X ())
+  have hrel := subst_pair_formalThirdRoot_relation W (PowerSeries.constantCoeff_X (R := O))
     (constantCoeff_formalInverse W)
-  have hslope := subst_pair_formalSlope_mul W (constantCoeff_X ())
+  have hslope := subst_pair_formalSlope_mul W (PowerSeries.constantCoeff_X (R := O))
     (constantCoeff_formalInverse W)
-  rw [← invPair_eq] at hOL hrel
-  rw [← invPair_eq, subst_formalInverse_formalW W,
-    show PowerSeries.subst (X () : MvPowerSeries Unit O) (formalW W) = formalW W from
-      PowerSeries.X_subst (formalW W)] at hslope
+  rw [subst_formalInverse_formalW W, PowerSeries.X_subst (formalW W)] at hslope
   have hTc := constantCoeff_subst_invPair_formalThirdRoot W
   have hfix := subst_formalW_wEquation W (PowerSeries.HasSubst.of_constantCoeff_zero hTc)
   rw [hNp, add_zero] at hOL
@@ -231,13 +217,16 @@ private theorem subst_invPair_formalThirdRoot_of_isDomain (h2 : (2 : O) ≠ 0) :
   have hC : ∀ a : O, algebraMap O (MvPowerSeries Unit O) a = C a := fun _ ↦ rfl
   rw [wEquationRHS_def] at hfix
   simp only [hC] at hfix
-  set Lp := subst (Sum.elim X (fun _ ↦ formalInverse W) :
-    Unit ⊕ Unit → MvPowerSeries Unit O) (formalSlope W)
-  set Tp := subst (Sum.elim X (fun _ ↦ formalInverse W) :
-    Unit ⊕ Unit → MvPowerSeries Unit O) (formalThirdRoot W)
+  set Lp := subst (pairSubstitution (PowerSeries.X : PowerSeries O) (formalInverse W))
+    (formalSlope W)
+  set Tp := subst (pairSubstitution (PowerSeries.X : PowerSeries O) (formalInverse W))
+    (formalThirdRoot W)
   -- `PowerSeries.subst a` is `MvPowerSeries.subst (fun _ ↦ a)`: defeq, but the two spellings are
   -- distinct atoms to `linear_combination`, so put both hypotheses in the same one.
   rw [show subst (fun _ : Unit ↦ Tp) (formalW W) = PowerSeries.subst Tp (formalW W) from rfl] at hOL
+  change (1 + C W.a₂ * Lp + C W.a₄ * Lp ^ 2 + C W.a₆ * Lp ^ 3) *
+      (Tp + X () + formalInverse W) = _ at hrel
+  change Lp * (formalInverse W - X ()) = _ at hslope
   set wT := PowerSeries.subst Tp (formalW W)
   have hTP : Tp * (Lp - Tp ^ 2 - C W.a₁ * Lp * Tp - C W.a₂ * Lp * Tp ^ 2 -
       C W.a₃ * Lp ^ 2 * Tp - C W.a₄ * Lp ^ 2 * Tp ^ 2 - C W.a₆ * Lp ^ 3 * Tp ^ 2) = 0 := by
@@ -258,18 +247,17 @@ The chord argument needs a domain in which `2 ≠ 0`; the identity itself needs 
 obtained here by descent from the universal curve, whose base `ℤ[A₁, ⋯, A₆]` supplies both. -/
 @[simp]
 theorem subst_invPair_formalThirdRoot :
-    subst (Sum.elim X (fun _ ↦ formalInverse W) : Unit ⊕ Unit → MvPowerSeries Unit O)
+    subst (pairSubstitution (PowerSeries.X : PowerSeries O) (formalInverse W))
       (formalThirdRoot W) = 0 := by
   conv_lhs => rw [← W.map_specialize]
   rw [map_formalThirdRoot, map_formalInverse]
-  have hfam : (Sum.elim X (fun _ ↦ PowerSeries.map W.specialize (formalInverse Universal.curve)) :
-        Unit ⊕ Unit → MvPowerSeries Unit O) =
+  have hfam : pairSubstitution (PowerSeries.X : PowerSeries O)
+        (PowerSeries.map W.specialize (formalInverse Universal.curve)) =
       fun i ↦ MvPowerSeries.map W.specialize
-        (Sum.elim X (fun _ ↦ formalInverse Universal.curve) i) := by
+        (pairSubstitution (PowerSeries.X : PowerSeries (MvPolynomial Coeff ℤ))
+          (formalInverse Universal.curve) i) := by
     funext i
-    -- `PowerSeries.map` is by definition `MvPowerSeries.map` at the one-element index type;
-    -- unfolding it is what reconciles the two spellings in the `inr` branch.
-    cases i <;> simp [PowerSeries.map]
+    cases i <;> simp [PowerSeries.map, PowerSeries.X]
   rw [hfam, ← MvPowerSeries.map_subst (hasSubst_invPair Universal.curve),
     subst_invPair_formalThirdRoot_of_isDomain Universal.curve two_ne_zero, map_zero]
 
@@ -279,12 +267,12 @@ The sum of a point and its formal inverse is the origin, so `formalInverse` is t
 of `formalAdd`; with `rename_swap_formalAdd` it is a two-sided one. -/
 @[simp]
 theorem subst_invPair_formalAdd :
-    subst (Sum.elim X (fun _ ↦ formalInverse W) : Unit ⊕ Unit → MvPowerSeries Unit O)
+    subst (pairSubstitution (PowerSeries.X : PowerSeries O) (formalInverse W))
       (formalAdd W) = 0 := by
   rw [formalAdd_def, subst_comp_subst_apply (hasSubst_formalThirdRoot W) (hasSubst_invPair W)]
   -- The outer substitution is at the constant family `0`, by the third-root vanishing above.
-  have hT : (fun _ : Unit ↦ subst (Sum.elim X (fun _ ↦ formalInverse W) :
-        Unit ⊕ Unit → MvPowerSeries Unit O) (formalThirdRoot W)) =
+  have hT : (fun _ : Unit ↦ subst (pairSubstitution (PowerSeries.X : PowerSeries O)
+        (formalInverse W)) (formalThirdRoot W)) =
       fun _ : Unit ↦ (0 : MvPowerSeries Unit O) :=
     funext fun _ ↦ subst_invPair_formalThirdRoot W
   rw [hT]

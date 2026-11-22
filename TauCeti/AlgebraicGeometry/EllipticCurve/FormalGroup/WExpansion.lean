@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Basic
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.SelfConvolution
 import Mathlib.RingTheory.MvPowerSeries.Inverse
+import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
+import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # The `w`-expansion of a Weierstrass curve
@@ -66,6 +68,8 @@ equation at the substituted parameter rather than at `z`.
   equation gives the equation at `q`, so `w(q)` solves it there and across any commutative
   algebra. When moreover `constantCoeff q = 0`, `eq_subst_formalW_of_wEquation` combines this with
   `eq_of_wEquation` to identify `w(q)` as the only such solution.
+* `WeierstrassCurve.algebraMap_subst_formalW_ne_zero`: `w(q)` stays nonzero in a domain `KK` on
+  which `MvPowerSeries σ R` acts faithfully whenever `constantCoeff q = 0` and `q ≠ 0`.
 * `WeierstrassCurve.formalWCoeff_recurrence`: the coefficientwise recurrence — each coefficient
   of `w(z)` above the leading one, from the strictly earlier ones. This is the form to compute
   with; the strong recursion behind `formalWCoeff` is an implementation detail.
@@ -628,6 +632,26 @@ theorem eq_subst_formalW_of_wEquation {q v : PowerSeries R}
   have ha : PowerSeries.HasSubst q := PowerSeries.HasSubst.of_constantCoeff_zero' hq
   refine eq_of_wEquation W hq hv ?_ h (subst_formalW_wEquation W ha)
   exact PowerSeries.constantCoeff_subst_eq_zero hq (formalW W) (constantCoeff_formalW W)
+
+variable [IsDomain R] in
+/-- Over a domain the `w`-expansion at a nonzero parameter with vanishing constant coefficient is
+itself nonzero. -/
+private theorem subst_formalW_ne_zero {σ : Type*} {q : MvPowerSeries σ R}
+    (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0) :
+    PowerSeries.subst q (formalW W) ≠ 0 :=
+  (PowerSeries.subst_eq_zero_iff hq hq0).not.mpr (formalW_ne_zero W)
+
+/-- The `w`-expansion at a nonzero parameter stays nonzero after being pushed into a domain `KK` on
+which `MvPowerSeries σ R` acts faithfully: a faithful algebra map is injective, so it cannot
+introduce a zero. -/
+theorem algebraMap_subst_formalW_ne_zero {σ KK : Type*} [CommRing KK] [IsDomain KK]
+    [Algebra (MvPowerSeries σ R) KK] [FaithfulSMul (MvPowerSeries σ R) KK]
+    {q : MvPowerSeries σ R} (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0) :
+    algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)) ≠ 0 := fun h ↦ by
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ R) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := R)
+  exact W.subst_formalW_ne_zero hq hq0
+    (FaithfulSMul.algebraMap_injective (MvPowerSeries σ R) KK (by rw [h, map_zero]))
 
 /-! ### Base change
 

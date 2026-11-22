@@ -128,26 +128,6 @@ private theorem subst_formalInverseDenom_eq {q : MvPowerSeries σ O}
   simp only [map_sub, map_one, map_mul, PowerSeries.substAlgHom_X,
     PowerSeries.coe_substAlgHom, PowerSeries.subst_C]
 
-private theorem fracCurve_a₁ :
-    (fracCurve W σ KK).a₁ = algebraMap (MvPowerSeries σ O) KK (C W.a₁) := by
-  rw [fracCurve_def, map_a₁, RingHom.comp_apply, c_eq_algebraMap]
-
-private theorem fracCurve_a₂ :
-    (fracCurve W σ KK).a₂ = algebraMap (MvPowerSeries σ O) KK (C W.a₂) := by
-  rw [fracCurve_def, map_a₂, RingHom.comp_apply, c_eq_algebraMap]
-
-private theorem fracCurve_a₃ :
-    (fracCurve W σ KK).a₃ = algebraMap (MvPowerSeries σ O) KK (C W.a₃) := by
-  rw [fracCurve_def, map_a₃, RingHom.comp_apply, c_eq_algebraMap]
-
-private theorem fracCurve_a₄ :
-    (fracCurve W σ KK).a₄ = algebraMap (MvPowerSeries σ O) KK (C W.a₄) := by
-  rw [fracCurve_def, map_a₄, RingHom.comp_apply, c_eq_algebraMap]
-
-private theorem fracCurve_a₆ :
-    (fracCurve W σ KK).a₆ = algebraMap (MvPowerSeries σ O) KK (C W.a₆) := by
-  rw [fracCurve_def, map_a₆, RingHom.comp_apply, c_eq_algebraMap]
-
 /-- The denominator of the formal inverse read at a parameter, pushed into `KK`. -/
 private theorem algebraMap_subst_formalInverseDenom_eq {q : MvPowerSeries σ O}
     (hq : PowerSeries.HasSubst q) :
