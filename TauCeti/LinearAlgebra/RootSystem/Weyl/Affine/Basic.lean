@@ -442,7 +442,7 @@ theorem affinePointStabilizer_zero :
   have hcl : Subgroup.closure (range fun i ↦ (P.coreflection i).toAffineEquiv) =
       (Subgroup.closure (range P.coreflection)).map (toAffineEquivHom (R := R) (N := N)) := by
     rw [MonoidHom.map_closure, ← range_comp]
-    rfl
+    simp only [comp_def, toAffineEquivHom_apply]
   rw [hcl]
   ext f
   simp only [mem_affinePointStabilizer, Subgroup.mem_map]

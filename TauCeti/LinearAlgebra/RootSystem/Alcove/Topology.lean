@@ -259,6 +259,12 @@ variable {ι M N : Type*} [AddCommGroup M] [Module ℝ M] [AddCommGroup N] [Modu
   [TopologicalSpace N] [IsTopologicalAddGroup N] [ContinuousSMul ℝ N] [T2Space N]
   [FiniteDimensional ℝ N]
 
+/-- Over `ℝ`, on a finite-dimensional Hausdorff topological vector space, every root functional is
+continuous. -/
+@[fun_prop]
+theorem continuous_root' (P : RootPairing ι ℝ M N) (i : ι) : Continuous (P.root' i) :=
+  (P.root' i).continuous_of_finiteDimensional
+
 section Base
 
 variable {P : RootPairing ι ℝ M N} [Finite ι] [Nonempty ι] (b : P.Base)
@@ -268,41 +274,37 @@ is continuous. -/
 @[fun_prop]
 theorem Base.continuous_affineSimpleRoot (k : Option b.support) :
     Continuous (b.affineSimpleRoot k) :=
-  b.continuous_affineSimpleRoot_of_continuous
-    (fun i ↦ (P.root' i).continuous_of_finiteDimensional) k
+  b.continuous_affineSimpleRoot_of_continuous P.continuous_root' k
 
 /-- Over `ℝ`, on a finite-dimensional Hausdorff topological vector space, the open fundamental
 alcove is open. -/
 theorem isOpen_fundamentalAlcove : IsOpen (fundamentalAlcove P b) :=
-  isOpen_fundamentalAlcove_of_continuous b fun i ↦ (P.root' i).continuous_of_finiteDimensional
+  isOpen_fundamentalAlcove_of_continuous b P.continuous_root'
 
 /-- Over `ℝ`, on a finite-dimensional Hausdorff topological vector space, the closed fundamental
 alcove is closed. -/
 theorem isClosed_closedFundamentalAlcove : IsClosed (closedFundamentalAlcove P b) :=
-  isClosed_closedFundamentalAlcove_of_continuous b
-    fun i ↦ (P.root' i).continuous_of_finiteDimensional
+  isClosed_closedFundamentalAlcove_of_continuous b P.continuous_root'
 
 /-- Over `ℝ`, on a finite-dimensional Hausdorff topological vector space, every closed face of the
 fundamental alcove is closed. -/
 theorem Base.isClosed_closedAlcoveFace (J : Set (Option b.support)) :
     IsClosed (b.closedAlcoveFace J) :=
-  b.isClosed_closedAlcoveFace_of_continuous
-    (fun i ↦ (P.root' i).continuous_of_finiteDimensional) J
+  b.isClosed_closedAlcoveFace_of_continuous P.continuous_root' J
 
 /-- **Over `ℝ`, the closed fundamental alcove is the topological closure of the open fundamental
 alcove.** -/
 @[simp]
 theorem closure_fundamentalAlcove :
     closure (fundamentalAlcove P b) = closedFundamentalAlcove P b :=
-  closure_fundamentalAlcove_of_continuous b fun i ↦ (P.root' i).continuous_of_finiteDimensional
+  closure_fundamentalAlcove_of_continuous b P.continuous_root'
 
 /-- **Over `ℝ`, the open fundamental alcove is the topological interior of the closed fundamental
 alcove.** -/
 @[simp]
 theorem interior_closedFundamentalAlcove :
     interior (closedFundamentalAlcove P b) = fundamentalAlcove P b :=
-  interior_closedFundamentalAlcove_of_continuous b
-    fun i ↦ (P.root' i).continuous_of_finiteDimensional
+  interior_closedFundamentalAlcove_of_continuous b P.continuous_root'
 
 end Base
 
@@ -310,20 +312,17 @@ end Base
 root hyperplanes `{x | αⱼ(x) = k}` (`(j, k) : ι × ℤ`) is locally finite.** -/
 theorem locallyFinite_setOf_root'_eq_intCast [Finite ι] (P : RootPairing ι ℝ M N) :
     LocallyFinite fun p : ι × ℤ ↦ {x : N | P.root' p.1 x = p.2} :=
-  P.locallyFinite_setOf_root'_eq_intCast_of_continuous
-    fun i ↦ (P.root' i).continuous_of_finiteDimensional
+  P.locallyFinite_setOf_root'_eq_intCast_of_continuous P.continuous_root'
 
 /-- Over `ℝ`, the union of all affine root hyperplanes is closed. -/
 theorem isClosed_iUnion_setOf_root'_eq_intCast [Finite ι] (P : RootPairing ι ℝ M N) :
     IsClosed (⋃ p : ι × ℤ, {x : N | P.root' p.1 x = p.2}) :=
-  P.isClosed_iUnion_setOf_root'_eq_intCast_of_continuous
-    fun i ↦ (P.root' i).continuous_of_finiteDimensional
+  P.isClosed_iUnion_setOf_root'_eq_intCast_of_continuous P.continuous_root'
 
 /-- Over `ℝ`, the set of points lying on no affine root hyperplane is open. -/
 theorem isOpen_setOf_forall_root'_ne_intCast [Finite ι] (P : RootPairing ι ℝ M N) :
     IsOpen {x : N | ∀ (j : ι) (k : ℤ), P.root' j x ≠ k} :=
-  P.isOpen_setOf_forall_root'_ne_intCast_of_continuous
-    fun i ↦ (P.root' i).continuous_of_finiteDimensional
+  P.isOpen_setOf_forall_root'_ne_intCast_of_continuous P.continuous_root'
 
 end Real
 
