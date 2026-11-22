@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import Mathlib.Algebra.CharP.Algebra
+import Mathlib.Algebra.CharP.Reduced
 
 /-!
 # Invertible integers and the residue characteristic of a local ring
@@ -16,7 +17,9 @@ A natural number is invertible in a commutative local ring exactly when the char
 residue field does not divide it, since an element of a local ring is a unit exactly when its
 residue is nonzero. A local ring of prime characteristic has a residue field of the same
 characteristic, since the residue characteristic divides it and is not `1`. This applies in
-particular to a local domain of positive characteristic.
+particular to a local domain of positive characteristic. When the residue field has exponential
+characteristic `p`, elements with equal `p^k`-th powers have equal residues modulo the maximal
+ideal because iterated Frobenius on the residue field is injective.
 
 ## Main results
 
@@ -24,6 +27,8 @@ particular to a local domain of positive characteristic.
   the residue characteristic of `R` does not divide `n`.
 * `IsLocalRing.ringChar_residueField_of_prime_ringChar`: a local ring of prime characteristic
   has a residue field of the same characteristic.
+* `IsLocalRing.residue_eq_of_pow_eq`: in a local ring of residue exponential characteristic `p`,
+  elements with equal `p^k`-th powers have equal residues.
 -/
 
 public section
@@ -44,5 +49,14 @@ theorem ringChar_residueField_of_prime_ringChar {R : Type*} [CommRing R]
     ringChar (IsLocalRing.ResidueField R) = ringChar R :=
   ((Nat.dvd_prime h).1 (CharP.dvd_of_ringHom (IsLocalRing.residue R) _ _)).resolve_left
     CharP.ringChar_ne_one
+
+/-- In a local ring whose residue field has exponential characteristic `p`, elements with equal
+`p ^ k`-th powers have equal residues modulo the maximal ideal. -/
+theorem residue_eq_of_pow_eq {R : Type*} [CommRing R] [IsLocalRing R]
+    (p : ℕ) [ExpChar (IsLocalRing.ResidueField R) p] {k : ℕ} {x y : R}
+    (h : x ^ p ^ k = y ^ p ^ k) :
+    IsLocalRing.residue R x = IsLocalRing.residue R y := by
+  refine iterateFrobenius_inj (IsLocalRing.ResidueField R) p k ?_
+  simpa only [iterateFrobenius_def, ← map_pow] using congrArg (IsLocalRing.residue R) h
 
 end IsLocalRing

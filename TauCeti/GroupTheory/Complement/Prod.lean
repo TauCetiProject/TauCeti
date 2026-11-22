@@ -210,6 +210,11 @@ variable {O G : Type*} [CommMonoid O] [Group G] {P H : Subgroup G} [P.Normal] [H
 noncomputable def extendChar (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) : G →* Oˣ :=
   (φ.coprod χ).comp hPH.prodMulEquiv.symm.toMonoidHom
 
+/-- `extendChar hPH φ χ` evaluates at `g : G` via the coordinates of `hPH.prodMulEquiv.symm g`. -/
+theorem extendChar_apply (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) (g : G) :
+    hPH.extendChar φ χ g = φ (hPH.prodMulEquiv.symm g).1 * χ (hPH.prodMulEquiv.symm g).2 := by
+  simp [extendChar]
+
 /-- `extendChar hPH φ χ` sends `(p : G) * (h : G)` to `φ p * χ h`. -/
 theorem extendChar_mul (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) (p : P) (h : H) :
     hPH.extendChar φ χ ((p : G) * (h : G)) = φ p * χ h := by

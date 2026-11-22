@@ -33,8 +33,11 @@ No invertibility of `#I` in `O` is needed:
 
 ## Main definitions and results
 
-* `Set.charGroupRing.span_norm_le_ker_proj`: `(N_I) ≤ ker α_Ψ` for any commutative group `G`,
-  finite subgroup `I`, and domain `O`.
+* `Set.charGroupRing.proj_subgroupCharSum_one_eq_zero_of_forall` and
+  `Set.charGroupRing.span_norm_le_ker_proj_of_forall`: `(N_I) ≤ ker α_Ψ` whenever every
+  character in `Ψ` is nontrivial on `I`.
+* `Set.charGroupRing.span_norm_le_ker_proj`: `(N_I) ≤ ker α_Ψ` for `Ψ = {ψ | ¬ I ≤ ψ.ker}`, for
+  any commutative group `G`, finite subgroup `I`, and domain `O`.
 * `Set.charGroupRing.ker_proj_eq_span_norm`: for finite `G` and `O` with enough roots of unity,
   `ker α_Ψ = (N_I)` (Dasgupta–Kakde, Lemma 2.2).
 * `Set.charGroupRing.quotientSpanNormAlgEquiv`: the induced `O`-algebra isomorphism
@@ -55,21 +58,37 @@ section Domain
 
 variable {O G : Type*} [CommRing O] [IsDomain O] [CommGroup G]
 
+/-- Evaluating `α_Ψ` at the subgroup norm `N_I = ∑_{σ ∈ I} σ` gives `0` whenever every character
+in `Ψ` is nontrivial on `I`. -/
+theorem proj_subgroupCharSum_one_eq_zero_of_forall {Ψ : Set (G →* Oˣ)} (I : Subgroup G)
+    [Fintype I] (hΨ : ∀ ψ ∈ Ψ, ¬ I ≤ ψ.ker) :
+    proj Ψ (TauCeti.subgroupCharSum (1 : G →* O) I) = 0 := by
+  rw [proj_eq_zero_iff]
+  intro ψ hψ
+  exact ψ.charEval_subgroupCharSum_one_eq_zero I (hΨ ψ hψ)
+
+/-- The subgroup norm `N_I = ∑_{σ ∈ I} σ` vanishes in `R_Ψ` whenever every character in `Ψ` is
+nontrivial on `I`: `(N_I) ≤ ker α_Ψ`. Neither finiteness of `G` nor roots of unity in `O` are
+required. -/
+theorem span_norm_le_ker_proj_of_forall {Ψ : Set (G →* Oˣ)} (I : Subgroup G) [Fintype I]
+    (hΨ : ∀ ψ ∈ Ψ, ¬ I ≤ ψ.ker) :
+    Ideal.span {TauCeti.subgroupCharSum (1 : G →* O) I} ≤ RingHom.ker (proj Ψ) := by
+  rw [Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
+  exact proj_subgroupCharSum_one_eq_zero_of_forall I hΨ
+
 /-- The subgroup norm `N_I = ∑_{σ ∈ I} σ` vanishes in the character group ring of the characters
 nontrivial on `I`: `(N_I) ≤ ker α_Ψ` for `Ψ = {ψ | ¬ I ≤ ψ.ker}`. Neither finiteness of `G` nor
 roots of unity in `O` are required for this inclusion. -/
 theorem span_norm_le_ker_proj (I : Subgroup G) [Fintype I] :
     Ideal.span {TauCeti.subgroupCharSum (1 : G →* O) I} ≤
-      RingHom.ker (proj {ψ : G →* Oˣ | ¬ I ≤ ψ.ker}) := by
-  rw [Ideal.span_singleton_le_iff_mem, RingHom.mem_ker, proj_eq_zero_iff]
-  intro ψ hψ
-  exact ψ.charEval_subgroupCharSum_one_eq_zero I hψ
+      RingHom.ker (proj {ψ : G →* Oˣ | ¬ I ≤ ψ.ker}) :=
+  span_norm_le_ker_proj_of_forall I fun _ hψ ↦ hψ
 
 /-- Evaluating `α_Ψ` at `N_I` gives `0` when `Ψ = {ψ | ¬ I ≤ ψ.ker}`. -/
 @[simp]
 theorem proj_subgroupCharSum_one_eq_zero (I : Subgroup G) [Fintype I] :
     proj {ψ : G →* Oˣ | ¬ I ≤ ψ.ker} (TauCeti.subgroupCharSum (1 : G →* O) I) = 0 :=
-  RingHom.mem_ker.mp <| (span_norm_le_ker_proj I) (Ideal.subset_span rfl)
+  proj_subgroupCharSum_one_eq_zero_of_forall I fun _ hψ ↦ hψ
 
 variable [Finite G] [HasEnoughRootsOfUnity O (Monoid.exponent G)]
 

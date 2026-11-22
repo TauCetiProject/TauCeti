@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
-public import TauCeti.Algebra.MonoidAlgebra.CharGroupRing.Basic
+public import TauCeti.Algebra.MonoidAlgebra.CharEval.Basic
 public import TauCeti.RepresentationTheory.GroupAlgebra.CharIdempotent
 
 /-!

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Span
 public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.Noetherian.Basic
 
@@ -23,6 +24,8 @@ ring structure when `A` is a nonunital ring. The corner inherits the compatible 
 and module structure of `A`. Over a commutative semiring `R`, this makes it an `R`-algebra,
 with `algebraMap R eAe r = r • e`. When `A` is unital, this is the structure under which `eAe`
 can be compared with `A` as `R`-algebras, for instance through Mathlib's `MoritaEquivalence`.
+When `A` is a commutative `R`-algebra, compression `x ↦ e * x * e` is a surjective `R`-algebra
+homomorphism `IsIdempotentElem.compressAlgHom`, whose kernel over a commutative ring is `(1 - e)`.
 
 ## Main definitions
 
@@ -30,6 +33,8 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
 * `IsIdempotentElem.compress`: the compression `x ↦ e * x * e` of `A` onto the corner ring `eAe`.
 * `IsIdempotentElem.Corner.instAlgebra`: the corner `eAe` of an idempotent of a nonunital
   `R`-algebra is a unital `R`-algebra.
+* `IsIdempotentElem.compressAlgHom`: for a commutative `R`-algebra `A`, compression `x ↦ e * x * e`
+  as a surjective `R`-algebra homomorphism `A →ₐ[R] eAe`.
 * `IsIdempotentElem.cornerFunctional`: the compression `x ↦ φ x / φ e` of a linear functional `φ`
   to the corner `eAe`, normalised at its unit `e`.
 * `IsIdempotentElem.cornerLinearEquivCornerSubmodule`: the corner ring `eAe`, as an `R`-module,
@@ -49,6 +54,8 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
   `Af` without idempotency assumptions.
 * `IsIdempotentElem.mul_corner_val` and `IsIdempotentElem.corner_val_mul`: an element of the
   corner ring `eAe` is fixed by `e` on both sides.
+* `IsIdempotentElem.compressAlgHom_surjective` and `IsIdempotentElem.ker_compressAlgHom`:
+  compression `A →ₐ[R] eAe` is surjective, and over a commutative ring its kernel is `(1 - e)`.
 * `IsIdempotentElem.val_list_prod_map_compress`: a product of compressions in `eAe` is
   `e (x₁ e) ⋯ (xₙ e)` in `A`.
 * `Pi.isIdempotentElem_iff`: an element of a product is idempotent exactly when each component
@@ -272,6 +279,60 @@ theorem val_list_prod_map_compress (l : List A) :
   | cons x l ih => simp [ih, mul_assoc, he.mul_self_mul]
 
 end Semiring
+
+section CommSemiring
+
+variable (R : Type v) [CommSemiring R] {A : Type u} [CommSemiring A] [Algebra R A]
+  {e : A} (he : IsIdempotentElem e)
+
+/-- Compression `x ↦ e * x * e` from a commutative `R`-algebra `A` onto the idempotent corner
+`eAe` as an `R`-algebra homomorphism. -/
+def compressAlgHom : A →ₐ[R] he.Corner where
+  toFun := he.compress
+  map_one' := Subtype.ext <| by simp [he.eq]
+  map_mul' x y := Subtype.ext <| by
+    simp only [Corner.val_mul, val_compress]
+    calc
+      e * (x * y) * e = (e * e) * (x * y) * (e * e) := by rw [he.eq]
+      _ = (e * x * e) * (e * y * e) := by ac_rfl
+  map_zero' := he.compress_zero
+  map_add' := he.compress_add
+  commutes' r := Subtype.ext <| by
+    simp only [Corner.val_algebraMap, val_compress, Algebra.smul_def]
+    rw [mul_assoc, mul_comm (algebraMap R A r) e, ← mul_assoc, he.eq, mul_comm e]
+
+/-- `compressAlgHom` acts by `IsIdempotentElem.compress`. -/
+@[simp]
+theorem compressAlgHom_apply (x : A) : he.compressAlgHom R x = he.compress x :=
+  (rfl)
+
+/-- Compression `A →ₐ[R] eAe` onto a commutative idempotent corner is surjective. -/
+theorem compressAlgHom_surjective : Function.Surjective (he.compressAlgHom R) :=
+  fun b ↦ ⟨b.val, he.compress_val b⟩
+
+end CommSemiring
+
+section CommRing
+
+variable (R : Type v) [CommSemiring R] {A : Type u} [CommRing A] [Algebra R A]
+  {e : A} (he : IsIdempotentElem e)
+
+/-- The kernel of compression `A →ₐ[R] eAe` onto a commutative idempotent corner is the
+principal ideal `(1 - e)`. -/
+theorem ker_compressAlgHom :
+    RingHom.ker (he.compressAlgHom R) = Ideal.span {1 - e} := by
+  have hker : RingHom.ker (he.compressAlgHom R) =
+      LinearMap.ker (LinearMap.toSpanSingleton A A e) := by
+    ext x
+    rw [RingHom.mem_ker, LinearMap.mem_ker, LinearMap.toSpanSingleton_apply, smul_eq_mul,
+      compressAlgHom_apply]
+    exact ⟨fun hx ↦ by
+        have h := congrArg Subtype.val hx
+        simpa [mul_comm e x, mul_assoc, he.eq] using h,
+      fun hx ↦ Subtype.ext <| by simpa [mul_comm e x, mul_assoc, he.eq] using hx⟩
+  exact hker.trans he.ker_toSpanSingleton_eq_span
+
+end CommRing
 
 section Functional
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
@@ -55,7 +56,9 @@ algebraic closure, only a domain, because the characters here are one-dimensiona
 
 * `TauCeti.single_mul_charIdempotent`, `TauCeti.charIdempotent_mul_single`: a group element `h`
   acts on `e_χ` by the scalar `χ(h)` from either side.
-* `TauCeti.isIdempotentElem_charIdempotent`: `e_χ` is idempotent.
+* `TauCeti.isIdempotentElem_charIdempotent` and
+  `TauCeti.isIdempotentElem_mapDomainAlgHom_charIdempotent`: `e_χ` is idempotent, and so is its
+  pushforward into `O[G]` along a subgroup inclusion `H ≤ G`.
 * `TauCeti.charIdempotent_mul_charIdempotent_of_ne`: over a domain, `e_χ e_ψ = 0` for `χ ≠ ψ`.
 * `TauCeti.charIdempotent_mul`: `e_χ e_ψ = δ_{χψ} e_χ`.
 * `TauCeti.sum_charIdempotent`: for a finite commutative group with enough roots of unity, the
@@ -157,6 +160,14 @@ theorem isIdempotentElem_charIdempotent (χ : H →* Oˣ) :
   rw [IsIdempotentElem, charIdempotent, smul_mul_smul_comm, subgroupCharSum_mul_self]
   simp only [Subgroup.card_top, ← Nat.cast_smul_eq_nsmul O, smul_smul, mul_assoc,
     Ring.inverse_mul_cancel _ hH, mul_one]
+
+omit [Group H] [Fintype H] in
+/-- The embedded character idempotent `e_χ ∈ O[G]` of `χ : H →* Oˣ` is idempotent. -/
+theorem isIdempotentElem_mapDomainAlgHom_charIdempotent {G : Type*} [Group G]
+    (H : Subgroup G) [Fintype H] (χ : H →* Oˣ) :
+    IsIdempotentElem
+      (MonoidAlgebra.mapDomainAlgHom O O H.subtype (charIdempotent χ)) :=
+  (isIdempotentElem_charIdempotent χ).map _
 
 /-- **Character idempotents of distinct characters are orthogonal** over a domain:
 `e_χ e_ψ = 0` for `χ ≠ ψ`. Unlike idempotence, this needs no assumption on the order of `H`. -/

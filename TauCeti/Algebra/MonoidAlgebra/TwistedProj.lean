@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.MonoidAlgebra.CharGroupRing.Idempotent
+public import Mathlib.Algebra.MonoidAlgebra.MapDomain
+public import TauCeti.Algebra.MonoidAlgebra.CharEval.Basic
 public import TauCeti.GroupTheory.Complement.Prod
 
 /-!
@@ -17,12 +18,6 @@ Given a character `χ : H →* Oˣ`, sending `(p : G) * (h : G) ↦ χ(h) • p`
 `O`-algebra homomorphism `MonoidAlgebra.componentProj hPH χ : O[G] →ₐ[O] O[P]` splitting the
 inclusion `O[P] →ₐ[O] O[G]`, and acting on `O[H]` via character evaluation `χ.charEval`.
 
-When `O` is a commutative ring, `H` is finite, and `#H` is a unit in `O`, multiplying any element
-`x ∈ O[G]` by the embedded character idempotent `e_χ` agrees with multiplying its projection
-`componentProj hPH χ x` by `e_χ`
-(`MonoidAlgebra.charIdempotent_mul_eq_mul_mapDomain_componentProj`), and the kernel of
-`componentProj hPH χ` is the principal ideal `(1 - e_χ)` (`MonoidAlgebra.ker_componentProj`).
-
 ## Main definitions
 
 * `MonoidAlgebra.componentProj`: the `χ`-twisted projection `O[G] →ₐ[O] O[P]` sending
@@ -30,16 +25,12 @@ When `O` is a commutative ring, `H` is finite, and `#H` is a unit in `O`, multip
 
 ## Main results
 
-* `MonoidAlgebra.componentProj_single_mul`, `MonoidAlgebra.componentProj_mapDomain_left`,
-  `MonoidAlgebra.componentProj_mapDomain_right`, and `MonoidAlgebra.componentProj_surjective`:
-  evaluation on basis elements, splitting on `O[P]`, evaluation on `O[H]`, and surjectivity.
+* `MonoidAlgebra.componentProj_single`, `MonoidAlgebra.componentProj_single_mul`,
+  `MonoidAlgebra.componentProj_mapDomain_left`, `MonoidAlgebra.componentProj_mapDomain_right`,
+  and `MonoidAlgebra.componentProj_surjective`: evaluation on basis elements, splitting on `O[P]`,
+  evaluation on `O[H]`, and surjectivity.
 * `MonoidAlgebra.charEval_componentProj`: evaluating `componentProj hPH χ x` at `φ : P →* Oˣ`
   agrees with evaluating `x` at `hPH.extendChar φ χ`.
-* `MonoidAlgebra.componentProj_mapDomainAlgHom_charIdempotent`: values on embedded character
-  idempotents.
-* `MonoidAlgebra.charIdempotent_mul_eq_mul_mapDomain_componentProj` and
-  `MonoidAlgebra.ker_componentProj`: idempotent factorisation and kernel `(1 - e_χ)` when `#H` is
-  invertible in `O`.
 
 ## References
 
@@ -62,6 +53,12 @@ noncomputable def componentProj (hPH : P.IsComplement' H) (χ : H →* Oˣ) :
   let f : P × H →* MonoidAlgebra O P :=
     singleHom.comp ((((Units.coeHom O).comp χ).comp (MonoidHom.snd P H)).prod (MonoidHom.fst P H))
   lift O (MonoidAlgebra O P) G (f.comp hPH.prodMulEquiv.symm.toMonoidHom)
+
+/-- `componentProj` evaluates at `single g a` via the coordinates of `hPH.prodMulEquiv.symm g`. -/
+theorem componentProj_single (hPH : P.IsComplement' H) (χ : H →* Oˣ) (g : G) (a : O) :
+    componentProj hPH χ (single g a) =
+      single (hPH.prodMulEquiv.symm g).1 (a * (χ (hPH.prodMulEquiv.symm g).2 : O)) := by
+  simp [componentProj, smul_single]
 
 /-- `componentProj` sends `single (p * h) a` to `single p (a * χ(h))` for `p ∈ P` and `h ∈ H`. -/
 @[simp]
@@ -145,87 +142,5 @@ theorem charEval_componentProj (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ :
     simp [mul_assoc, mul_comm (χ h : O)]
 
 end CommSemiring
-
-section CommRing
-
-variable {O G : Type*} [CommRing O] [CommGroup G] {P H : Subgroup G}
-
-/-- When `#H` is a unit in `O`, `componentProj hPH χ` sends the embedded character idempotent
-`e_χ` to `1`. No domain hypothesis on `O` is required. -/
-theorem componentProj_mapDomainAlgHom_charIdempotent_self [Fintype H] (hPH : P.IsComplement' H)
-    (hH : IsUnit (Nat.card H : O)) (χ : H →* Oˣ) :
-    componentProj hPH χ (mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ)) = 1 := by
-  rw [componentProj_mapDomainAlgHom_right, χ.charEval_charIdempotent_self hH, map_one]
-
-/-- Over a domain, `componentProj hPH χ` kills the embedded character idempotent `e_ω` of any
-distinct character `ω ≠ χ`. No unit hypothesis on `#H` is required. -/
-theorem componentProj_mapDomainAlgHom_charIdempotent_of_ne [IsDomain O] [Fintype H]
-    (hPH : P.IsComplement' H) {χ ω : H →* Oˣ} (h : ω ≠ χ) :
-    componentProj hPH χ (mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent ω)) = 0 := by
-  rw [componentProj_mapDomainAlgHom_right, MonoidHom.charEval_charIdempotent_of_ne h, map_zero]
-
-/-- Over a domain in which `#H` is a unit, `componentProj hPH χ` sends the embedded character
-idempotent `e_ω` to `1` if `ω = χ` and to `0` otherwise. -/
-theorem componentProj_mapDomainAlgHom_charIdempotent [IsDomain O] [Fintype H]
-    [DecidableEq (H →* Oˣ)] (hPH : P.IsComplement' H) (hH : IsUnit (Nat.card H : O))
-    (χ ω : H →* Oˣ) :
-    componentProj hPH χ (mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent ω)) =
-      if ω = χ then 1 else 0 := by
-  split_ifs with h
-  · subst h
-    exact componentProj_mapDomainAlgHom_charIdempotent_self hPH hH ω
-  · exact componentProj_mapDomainAlgHom_charIdempotent_of_ne hPH h
-
-/-- Multiplying any `x ∈ O[G]` by the embedded character idempotent `e_χ` agrees with multiplying
-the `P`-component lift `componentProj hPH χ x` by `e_χ`. -/
-theorem charIdempotent_mul_eq_mul_mapDomain_componentProj [Fintype H] (hPH : P.IsComplement' H)
-    (χ : H →* Oˣ) (x : MonoidAlgebra O G) :
-    mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ) * x =
-      mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ) *
-        mapDomainAlgHom O O P.subtype (componentProj hPH χ x) := by
-  let e := mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ)
-  have he_mul (h : H) : e * single (h : G) (1 : O) = (χ h : O) • e := by
-    simpa only [e, map_mul, map_smul, mapDomainAlgHom_apply, mapDomain_single,
-      Subgroup.coe_subtype] using
-      congrArg (mapDomainAlgHom O O H.subtype) (TauCeti.charIdempotent_mul_single χ h)
-  have hbase (p : P) (h : H) :
-      e * single ((p : G) * (h : G)) (1 : O) =
-        e * mapDomainAlgHom O O P.subtype
-          (componentProj hPH χ (single ((p : G) * (h : G)) (1 : O))) := by
-    have hsingle : single ((p : G) * (h : G)) (1 : O) =
-        single (h : G) (1 : O) * single (p : G) (1 : O) := by
-      simp [single_mul_single, mul_comm (h : G)]
-    have hsmul : (χ h : O) • single (p : G) (1 : O) = single (p : G) (1 * (χ h : O)) := by
-      simp [smul_single]
-    nth_rw 1 [hsingle]
-    rw [← mul_assoc, he_mul h, smul_mul_assoc, componentProj_single_mul,
-      mapDomainAlgHom_apply, mapDomain_single, Subgroup.coe_subtype, ← hsmul, mul_smul_comm]
-  induction x using induction_linear with
-  | zero => simp
-  | add x y hx hy => rw [mul_add, map_add, map_add, mul_add, hx, hy]
-  | single g a =>
-    obtain ⟨⟨p, h⟩, rfl⟩ := hPH.prodMulEquiv.surjective g
-    have ha : single ((p : G) * (h : G)) a = a • single ((p : G) * (h : G)) (1 : O) := by
-      simp [smul_single]
-    rw [Subgroup.IsComplement'.prodMulEquiv_apply, ha, mul_smul_comm, map_smul, map_smul,
-      mul_smul_comm, hbase p h]
-
-/-- Over any commutative ring `O` in which `#H` is a unit, the kernel of
-`componentProj hPH χ : O[G] →ₐ[O] O[P]` is the principal ideal `(1 - e_χ)` generated by the
-complementary idempotent of `χ`. -/
-theorem ker_componentProj [Fintype H] (hPH : P.IsComplement' H)
-    (hH : IsUnit (Nat.card H : O)) (χ : H →* Oˣ) :
-    RingHom.ker (componentProj hPH χ) =
-      Ideal.span {(1 - mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ))} := by
-  let e := mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ)
-  refine le_antisymm (fun x hx ↦ ?_) (Ideal.span_le.mpr (Set.singleton_subset_iff.mpr ?_))
-  · rw [RingHom.mem_ker] at hx
-    have hex : e * x = 0 := by
-      rw [charIdempotent_mul_eq_mul_mapDomain_componentProj hPH χ x, hx, map_zero, mul_zero]
-    exact Ideal.mem_span_singleton.mpr ⟨x, by rw [sub_mul, one_mul, hex, sub_zero]⟩
-  · rw [SetLike.mem_coe, RingHom.mem_ker, map_sub, map_one,
-      componentProj_mapDomainAlgHom_charIdempotent_self hPH hH χ, sub_self]
-
-end CommRing
 
 end MonoidAlgebra
