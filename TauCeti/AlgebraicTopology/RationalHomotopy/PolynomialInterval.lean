@@ -31,6 +31,8 @@ Here `Λ(t, dt)` is realised as the differential graded algebra of the derivatio
   augmentation of `Λ(t, dt)`; `eval 0` and `eval 1` are the two ends of the interval.
 * `TauCeti.PolynomialInterval.pullback`: the pullback of polynomial forms along a polynomial map
   `s`, the differential graded algebra endomorphism `t ↦ s`, `dt ↦ s' dt`.
+* `TauCeti.PolynomialInterval.integral`: the integral `∫ₐᵇ` of polynomial forms from `a` to `b`,
+  a linear map `Λ(t, dt) → K` vanishing in degree `0`.
 
 ## Main results
 
@@ -45,6 +47,8 @@ Here `Λ(t, dt)` is realised as the differential graded algebra of the derivatio
   `TauCeti.PolynomialInterval.pullback_comp_pullback`: pullback is compatible with evaluation and
   with composition; for `s = 1 - t` it is the reflection of the interval, an involution
   exchanging its two ends.
+* `TauCeti.PolynomialInterval.integral_trivSqZeroExtDifferential`: Stokes' theorem
+  `∫ₐᵇ d x = x (b) - x (a)` in characteristic zero.
 
 ## References
 
@@ -226,6 +230,58 @@ theorem pullback_comp_pullback (s s' : K[X]) :
 @[simp]
 theorem pullback_X : pullback (X : K[X]) = DGAlgHom.id (isDGAlgebra K) := by
   ext x <;> simp
+
+/-- The integral `∫ₐᵇ` of polynomial forms over the interval from `a` to `b`: the form `p + q dt`
+integrates to `∫ₐᵇ q(t) dt`, the function part `p` having degree `0`. The integral of the monomial
+`tⁿ dt` is `(bⁿ⁺¹ - aⁿ⁺¹) / (n + 1)`; for `a = 0` and `b = 1` this is the integration `∫₀¹` over
+the `1`-simplex. -/
+noncomputable def integral (a b : K) : PolynomialInterval K →ₗ[K] K where
+  toFun x := lsum (fun n ↦ ((b ^ (n + 1) - a ^ (n + 1)) / (n + 1)) • LinearMap.id) x.snd
+  map_add' x y := by rw [snd_add, map_add]
+  map_smul' c x := by rw [snd_smul, map_smul, RingHom.id_apply]
+
+theorem integral_apply (a b : K) (x : PolynomialInterval K) :
+    integral a b x = x.snd.sum fun n c ↦ (b ^ (n + 1) - a ^ (n + 1)) / (n + 1) * c := by
+  simp [integral]
+
+/-- The integral of a function, a form of degree `0`, vanishes. -/
+@[simp]
+theorem integral_inl (a b : K) (p : K[X]) : integral a b (inl p) = 0 := by
+  simp [integral_apply]
+
+/-- The integral of `c tⁿ dt` from `a` to `b` is `c (bⁿ⁺¹ - aⁿ⁺¹) / (n + 1)`. -/
+@[simp]
+theorem integral_inr_monomial (a b : K) (n : ℕ) (c : K) :
+    integral a b (inr (monomial n c)) = (b ^ (n + 1) - a ^ (n + 1)) / (n + 1) * c := by
+  simp [integral_apply]
+
+/-- The integral of `dt` from `a` to `b` is `b - a`. -/
+@[simp]
+theorem integral_dt (a b : K) : integral a b dt = b - a := by
+  rw [dt, ← monomial_zero_one, integral_inr_monomial]
+  simp
+
+/-- **The fundamental theorem of calculus** for polynomials: in characteristic zero the integral
+of `p' dt` from `a` to `b` is `p (b) - p (a)`. -/
+theorem integral_inr_derivative [CharZero K] (a b : K) (p : K[X]) :
+    integral a b (inr (derivative p)) = p.eval b - p.eval a := by
+  induction p using Polynomial.induction_on' with
+  | add p q hp hq => simp only [inr_add, map_add, hp, hq, eval_add]; ring
+  | monomial n c =>
+    cases n with
+    | zero => simp
+    | succ n =>
+      rw [derivative_monomial, Nat.add_sub_cancel, integral_inr_monomial, eval_monomial,
+        eval_monomial]
+      field_simp
+      push_cast
+      ring
+
+/-- **Stokes' theorem for the interval**: in characteristic zero the integral of an exact form
+`d x` from `a` to `b` is the difference `x (b) - x (a)` of the values of `x` at the two ends. -/
+theorem integral_trivSqZeroExtDifferential [CharZero K] (a b : K) (x : PolynomialInterval K) :
+    integral a b ((derivative' (R := K)).trivSqZeroExtDifferential x) = eval b x - eval a x := by
+  simp [integral_inr_derivative]
 
 end PolynomialInterval
 

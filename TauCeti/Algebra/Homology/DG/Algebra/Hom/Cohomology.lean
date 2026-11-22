@@ -37,6 +37,9 @@ cohomology of the comparison between differential graded algebras and `A∞` alg
   cohomology preserves identities and composition.
 * `TauCeti.DGAlgHom.bijective_cohomologyMap_iff_forall_cycles`: the quasi-isomorphism condition
   expressed directly on cycles and boundaries.
+* `TauCeti.DGAlgHom.cohomologyMap_eq_iff` and `TauCeti.DGAlgHom.cohomologyMap_eq_of_homotopy`: two
+  morphisms agree on cohomology when they differ by boundaries on cycles, in particular when they
+  are chain homotopic.
 
 ## References
 
@@ -165,6 +168,23 @@ theorem bijective_cohomologyMap_iff_forall_cycles (f : DGAlgHom hA hB) :
     ← sub_eq_zero (b := Ideal.Quotient.mk _ _), ← map_sub, hA.quotientMk_eq_zero_iff,
     hB.quotientMk_eq_zero_iff, hA.mem_boundaries, hB.mem_boundaries, Subalgebra.coe_sub,
     f.cyclesMap_apply_coe, Subtype.forall, Subtype.exists, exists_prop]
+
+/-- Two DG algebra morphisms induce the same map on cohomology exactly when their difference sends
+every cycle to a boundary. -/
+theorem cohomologyMap_eq_iff (f g : DGAlgHom hA hB) :
+    f.cohomologyMap = g.cohomologyMap ↔ ∀ z ∈ hA.cycles, f z - g z ∈ LinearMap.range dB := by
+  simp only [GradedAlgHom.ext_iff, Ideal.Quotient.mk_surjective.forall, f.cohomologyMap_mk,
+    g.cohomologyMap_mk, ← sub_eq_zero (b := Ideal.Quotient.mk _ (g.cyclesMap _)), ← map_sub,
+    hB.quotientMk_eq_zero_iff, hB.mem_boundaries, Subalgebra.coe_sub, cyclesMap_apply_coe,
+    Subtype.forall]
+
+/-- **Homotopy invariance.** Chain homotopic DG algebra morphisms induce the same map on
+cohomology: if `f - g = d s + s d` for a linear map `s : A → B`, then `f` and `g` agree on
+cohomology. -/
+theorem cohomologyMap_eq_of_homotopy (f g : DGAlgHom hA hB) (s : A →ₗ[R] B)
+    (hs : ∀ a, f a - g a = dB (s a) + s (dA a)) : f.cohomologyMap = g.cohomologyMap :=
+  (cohomologyMap_eq_iff f g).mpr fun z hz ↦ ⟨s z, by rw [hs, hA.mem_cycles.mp hz, map_zero,
+    add_zero]⟩
 
 end DGAlgHom
 
