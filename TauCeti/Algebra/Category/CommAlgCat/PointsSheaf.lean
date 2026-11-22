@@ -7,8 +7,12 @@ module
 
 public import TauCeti.Algebra.Category.CommAlgCat.Fppf
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Mod
+import Mathlib.CategoryTheory.Monoidal.Closed.FunctorToTypes
+import Mathlib.CategoryTheory.Sites.CartesianClosed
+import Mathlib.CategoryTheory.Sites.PreservesLimits
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Lifting
 import TauCeti.CategoryTheory.Monoidal.Mod.Basic
+import TauCeti.CategoryTheory.Sites.Continuous
 
 /-!
 # Equivariance descent and fppf local surjectivity for points sheaves
@@ -76,24 +80,26 @@ theorem epi_whiskerLeft_of_isLocallySurjective (W : Over (Spec (CommRingCat.of R
     {Z X : Over (Spec (CommRingCat.of R))} (p : Z ⟶ X)
     [Presheaf.IsLocallySurjective (fppfTopology R) ((pointsSheafFunctor R).map p).hom] :
     Epi (W ◁ p) := by
-  refine ⟨fun {Y} f g h ↦ hom_ext_pointsSheaf fun A q ↦ ?_⟩
-  let x' : (pointsSheaf X).obj.obj (op (op A)) := ULift.up (q ≫ snd W X)
-  have hcov := Presheaf.imageSieve_mem (fppfTopology R) ((pointsSheafFunctor R).map p).hom x'
-  have heq : (ULift.up (q ≫ f) : (pointsSheaf Y).obj.obj (op (op A))) =
-      ULift.up (q ≫ g) := by
-    refine (((isSheaf_iff_isSheaf_of_type _ _).mp (pointsSheaf Y).property).isSeparated _ hcov).ext
-      fun B φ hφ ↦ ?_
-    obtain ⟨⟨z⟩, hz⟩ := hφ
-    rw [pointsSheafFunctor_map_hom_app, pointsSheaf_obj_map, Quiver.Hom.unop_op] at hz
-    have hz' : z ≫ p = (algSpec (CommRingCat.of R)).map φ ≫ (q ≫ snd W X) :=
-      congrArg ULift.down hz
-    have hlift : lift ((algSpec (CommRingCat.of R)).map φ ≫ (q ≫ fst W X)) z ≫ (W ◁ p) =
-        (algSpec (CommRingCat.of R)).map φ ≫ q := by
-      apply CartesianMonoidalCategory.hom_ext <;> simp [Category.assoc, hz']
-    rw [pointsSheaf_obj_map, pointsSheaf_obj_map, Quiver.Hom.unop_op]
-    apply congrArg ULift.up
-    rw [← Category.assoc, ← Category.assoc, ← hlift, Category.assoc, Category.assoc, h]
-  exact congrArg ULift.down heq
+  have : Sheaf.IsLocallySurjective ((pointsSheafFunctor R).map p) :=
+    (Sheaf.isLocallySurjective_sheafToPresheaf_map_iff
+      ((pointsSheafFunctor R).map p)).2 ‹_›
+  have : Epi ((pointsSheafFunctor R).map p) := Sheaf.epi_of_isLocallySurjective _
+  let : MonoidalClosed ((CommAlgCat.{u} R)ᵒᵖᵒᵖ ⥤ Type (u + 1)) :=
+    FunctorToTypes.monoidalClosed.{0}
+  have : Epi (pointsSheaf W ◁ (pointsSheafFunctor R).map p) :=
+    (tensorLeft (pointsSheaf W)).map_epi ((pointsSheafFunctor R).map p)
+  have : ∀ Y : Over (Spec (CommRingCat.of R)),
+      Limits.PreservesLimit (Limits.pair W Y) (pointsSheafFunctor R) := fun _ ↦
+    Limits.comp_preservesLimit (GrothendieckTopology.uliftYoneda.{u + 1} _) _
+  have heq : (pointsSheafFunctor R).map (W ◁ p) =
+      (prodComparisonIso (pointsSheafFunctor R) W Z).hom ≫
+        (pointsSheaf W ◁ (pointsSheafFunctor R).map p) ≫
+        (prodComparisonIso (pointsSheafFunctor R) W X).inv := by
+    rw [← Category.assoc, Iso.eq_comp_inv, prodComparisonIso_hom, prodComparisonIso_hom,
+      prodComparison_natural_whiskerLeft]
+    rfl
+  have : Epi ((pointsSheafFunctor R).map (W ◁ p)) := by rw [heq]; infer_instance
+  exact (pointsSheafFunctor R).epi_of_epi_map this
 
 /-- Equivariance of a scheme morphism over `Spec R` is detected on all affine-valued points. -/
 theorem isModHom_iff_pointsSheaf {G X Y : Over (Spec (CommRingCat.of R))}

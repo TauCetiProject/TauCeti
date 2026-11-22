@@ -25,6 +25,7 @@ the same universe, which is reflected in the declaration in this file.
 
 ## Main declarations
 
+* `TauCeti.CommHopfAlgCat.hopfSpec_map_left`: the underlying scheme morphism of `hopfSpec.map f.op`.
 * `TauCeti.CommHopfAlgCat.isClosedImmersion_hopfSpec_map_iff`: the coordinate criterion for a
   morphism of Hopf spectra to be a closed immersion.
 * `TauCeti.CommHopfAlgCat.isClosedImmersion_hopfSpec_map_comp_eqToHom_iff`: the same criterion
@@ -47,7 +48,9 @@ namespace CommHopfAlgCat
 
 open AlgebraicGeometry
 
-private lemma hopfSpec_map_left {S : CommRingCat.{u}}
+/-- The scheme morphism underlying the contravariant `hopfSpec` image of `f` is `Spec.map` of its
+underlying ring homomorphism. -/
+lemma hopfSpec_map_left {S : CommRingCat.{u}}
     {A B : _root_.CommHopfAlgCat.{u} S} (f : A ⟶ B) :
     ((AlgebraicGeometry.hopfSpec S).map f.op).hom.hom.left =
       Spec.map (CommRingCat.ofHom f.hom.toAlgHom.toRingHom) :=

@@ -42,8 +42,7 @@ variable {k : Type u} [Field k] [IsAlgClosed k]
   (H : _root_.CommHopfAlgCat.{u} k) [Algebra.FiniteType k H]
   {X : Over (Spec (.of k))}
   [ModObj ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) X]
-  [LocallyOfFiniteType X.hom] [CompactSpace X.left]
-  (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
+  [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
 
 local instance :
     LocallyOfFiniteType ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).hom :=
@@ -61,7 +60,7 @@ local instance [_root_.IsReduced H] :
 reduced finite-type affine group `Spec H` acting on a finite-type scheme over an algebraically
 closed field, the orbit scheme `orbitOver (Spec H) x` is isomorphic over `Spec k` to a projective
 orbit scheme representing `G / Stab_G(x)`, intertwining `toProjectiveOrbit` and `toOrbit`. -/
-theorem exists_projectiveOrbit_iso_orbitOver [_root_.IsReduced H] :
+theorem exists_projectiveOrbit_iso_orbitOver [_root_.IsReduced H] [CompactSpace X.left] :
     ∃ (M : Type u) (_ : AddCommGroup M) (_ : Module k M) (_ : Comodule k H M)
       (_ : Module.Finite k M) (m : M) (hm : Module.IsUnimodular k m)
       (e : Over.mk (Comodule.projectiveOrbitToSpec (H := H) m hm) ≅
@@ -89,6 +88,8 @@ theorem exists_projectiveOrbit_iso_of_orbit_eq_univ [_root_.IsReduced H] [IsRedu
       (e : Over.mk (Comodule.projectiveOrbitToSpec (H := H) m hm) ≅ X),
       Comodule.toProjectiveOrbit (H := H) m hm ≫ e.hom.left =
         (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left := by
+  have : CompactSpace X.left := Function.Surjective.compactSpace (orbitMap _ x).left.continuous
+    ((surjective_iff _).mp ((surjective_orbitMap_iff_orbit_eq_univ _ x).mpr h))
   obtain ⟨M, _, _, _, _, m, hm, e, he⟩ := exists_projectiveOrbit_iso_orbitOver H x
   refine ⟨M, inferInstance, inferInstance, inferInstance, inferInstance, m, hm,
     e ≪≫ orbitInclusionIso _ x h, ?_⟩

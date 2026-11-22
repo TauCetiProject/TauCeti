@@ -25,17 +25,15 @@ of points (for example, faithfully flat and locally of finite presentation), thi
 morphism is an isomorphism of fppf sheaves
 (`isIso_fppfHomogeneousQuotientToPointsSheaf_of_isLocallySurjective`).
 
-When `R = k` is a field and `Spec H` is geometrically reduced and of finite type over `k`, and `X`
-is of finite type over `k`:
+* When `R = k` is a field and `Spec H` is geometrically reduced and of finite type over `k`, and `X`
+  is of finite type over `k`:
 
 * The descended orbit projection `G / Stab_G(x) ⟶ CommAlgCat.pointsSheaf (orbitOver G x)` is an
   isomorphism of fppf sheaves, for every orbit (without assuming `X` reduced, separated, or
   homogeneous).
 * If moreover `X` is reduced (or smooth) and `orbit G x = Set.univ` (equivalently, when `k` is
   algebraically closed, `G(k)` acts transitively on `X(k)`), then the descended orbit morphism
-  `G / Stab_G(x) ⟶ CommAlgCat.pointsSheaf X` is an isomorphism of fppf sheaves, and the orbit
-  morphism `G ⟶ X` is smooth if and only if the coordinate Hopf algebra of the stabilizer is
-  smooth over `k`.
+  `G / Stab_G(x) ⟶ CommAlgCat.pointsSheaf X` is an isomorphism of fppf sheaves.
 * Because `CommAlgCat.pointsSheafFunctor` is fully faithful, any scheme `Q` over `Spec k`
   representing `G / Stab_G(x)` is canonically isomorphic over `Spec k` to `orbitOver G x` (and to
   `X` when `X` is reduced and homogeneous), intertwining the quotient projection with the orbit
@@ -128,8 +126,7 @@ variable {k : Type u} [Field k]
   (H : _root_.CommHopfAlgCat.{u} k) [Algebra.FiniteType k H]
   {X : Over (Spec (.of k))}
   [ModObj ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) X]
-  [LocallyOfFiniteType X.hom] [CompactSpace X.left]
-  (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
+  [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
 
 local instance :
     LocallyOfFiniteType ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).hom :=
@@ -142,6 +139,10 @@ local instance :
 local instance :
     IsAffine ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).left :=
   isAffine_Spec _
+
+section CompactTarget
+
+variable [CompactSpace X.left]
 
 private theorem mapMulEquiv_comp_orbitProjection_eq_iff
     (A : CommAlgCat.{u} k) (g g' : HopfAlgebra.points (R := k) (H := H) A) :
@@ -213,6 +214,54 @@ theorem fppfHomogeneousQuotientIsoOrbitPoints_hom_comp_orbitInclusion
     ← _root_.CommHopfAlgCat.specPointsHomEquiv_comp, orbitProjection_inclusion,
     fppfHomogeneousQuotientProjection_comp_toPointsSheaf]
 
+/-- **Scheme-level comparison for any orbit.** Every scheme `Q` over `Spec k` representing
+`G / Stab_G(x)` is canonically isomorphic over `Spec k` to the orbit scheme `orbitOver G x`. -/
+def representedQuotientIsoOrbitOver
+    [GeometricallyReduced ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).hom]
+    {Q : Over (Spec (.of k))}
+    (e : _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ≅
+      TauCeti.CommAlgCat.pointsSheaf Q) :
+    Q ≅ orbitOver ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x :=
+  _root_.CommHopfAlgCat.representedQuotientIso H (stabilizerHopfIdeal H x) e
+    (fppfHomogeneousQuotientIsoOrbitPoints H x)
+
+/-- The scheme isomorphism `representedQuotientIsoOrbitOver` intertwines the quotient map
+`Spec H ⟶ Q` with the orbit projection `Spec H ⟶ orbitOver (Spec H) x`. -/
+@[reassoc (attr := simp)]
+theorem representedQuotientProjection_comp_representedQuotientIsoOrbitOver_hom
+    [GeometricallyReduced ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).hom]
+    {Q : Over (Spec (.of k))}
+    (e : _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ≅
+      TauCeti.CommAlgCat.pointsSheaf Q) :
+    _root_.CommHopfAlgCat.representedQuotientProjection H (stabilizerHopfIdeal H x) e ≫
+        (representedQuotientIsoOrbitOver H x e).hom =
+      orbitProjection ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x := by
+  rw [representedQuotientIsoOrbitOver, _root_.CommHopfAlgCat.representedQuotientIso_hom,
+    _root_.CommHopfAlgCat.representedQuotientProjection_comp_fppfHomogeneousQuotientSchemeMap,
+    representedQuotientProjection_fppfHomogeneousQuotientIsoOrbitPoints]
+
+/-- When a representing quotient scheme `Q` carries a `G`-action making the quotient map
+equivariant, the isomorphism `Q ≅ orbitOver G x` is `G`-equivariant. -/
+theorem isModHom_representedQuotientIsoOrbitOver_hom
+    [GeometricallyReduced ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).hom]
+    {Q : Over (Spec (.of k))}
+    [ModObj ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) Q]
+    (e : _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ≅
+      TauCeti.CommAlgCat.pointsSheaf Q)
+    (hq : μ[(Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))] ≫
+        _root_.CommHopfAlgCat.representedQuotientProjection H (stabilizerHopfIdeal H x) e =
+      ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) ◁
+          _root_.CommHopfAlgCat.representedQuotientProjection H (stabilizerHopfIdeal H x) e ≫
+        γ[(Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k)),Q]) :
+    IsModHom ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k)))
+      (representedQuotientIsoOrbitOver H x e).hom :=
+  _root_.CommHopfAlgCat.isModHom_representedQuotientIso_hom H (stabilizerHopfIdeal H x) e
+    (fppfHomogeneousQuotientIsoOrbitPoints H x) hq (by
+      rw [representedQuotientProjection_fppfHomogeneousQuotientIsoOrbitPoints]
+      exact mul_orbitProjection _ x)
+
+end CompactTarget
+
 /-- **Homogeneous orbit comparison.** When `X` is reduced and `orbit G x = Set.univ`, the
 descended orbit map `G / Stab_G(x) ⟶ CommAlgCat.pointsSheaf X` is an isomorphism of fppf
 sheaves. -/
@@ -221,20 +270,14 @@ theorem isIso_fppfHomogeneousQuotientToPointsSheaf
     [IsReduced X.left]
     (h : orbit ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x = Set.univ) :
     IsIso (fppfHomogeneousQuotientToPointsSheaf H x) := by
-  have : Flat (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left :=
-    flat_orbitMap_of_orbit_eq_univ _ x h
-  have : Surjective
-      (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left :=
-    (surjective_orbitMap_iff_orbit_eq_univ _ x).mpr h
-  have : IsLocallyNoetherian X.left := LocallyOfFiniteType.isLocallyNoetherian X.hom
-  have : LocallyOfFinitePresentation
-      (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left :=
-    locallyOfFinitePresentation_orbitMap _ x
-  have : Sheaf.IsLocallySurjective
-      ((TauCeti.CommAlgCat.pointsSheafFunctor k).map
-        (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x)) :=
-    TauCeti.CommAlgCat.isLocallySurjective_pointsSheafFunctor_map _
-  exact isIso_fppfHomogeneousQuotientToPointsSheaf_of_isLocallySurjective H x
+  have : CompactSpace X.left := Function.Surjective.compactSpace (orbitMap _ x).left.continuous
+    ((surjective_iff _).mp ((surjective_orbitMap_iff_orbit_eq_univ _ x).mpr h))
+  have hid : fppfHomogeneousQuotientToPointsSheaf H x =
+      (fppfHomogeneousQuotientIsoOrbitPoints H x).hom ≫
+        (TauCeti.CommAlgCat.pointsSheafFunctor k).map (orbitInclusionIso _ x h).hom := by
+    rw [orbitInclusionIso_hom, fppfHomogeneousQuotientIsoOrbitPoints_hom_comp_orbitInclusion]
+  rw [hid]
+  infer_instance
 
 /-- **Homogeneous orbit comparison from rational-point transitivity.** Over an algebraically closed
 field, when `X` is reduced and `G(k)` acts transitively on `X(k)`, the descended orbit map
@@ -285,70 +328,20 @@ theorem fppfHomogeneousQuotientIsoPointsSheaf_hom
       fppfHomogeneousQuotientToPointsSheaf H x :=
   (rfl)
 
-/-- For a geometrically reduced finite-type affine group acting transitively on a reduced
-finite-type scheme `X` over a field, the orbit morphism `Spec H ⟶ X` is smooth if and only if the
-coordinate Hopf algebra `H ⧸ stabilizerHopfIdeal H x` of the stabilizer is smooth over `k`. -/
-theorem smooth_orbitMap_iff_smoothCommHopfAlgProperty_stabilizerHopfIdeal
+/-- Under `fppfHomogeneousQuotientIsoPointsSheaf`, `representedQuotientProjection` is the orbit
+morphism `orbitMap`. -/
+@[simp]
+theorem representedQuotientProjection_fppfHomogeneousQuotientIsoPointsSheaf
     [GeometricallyReduced ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).hom]
     [IsReduced X.left]
     (h : orbit ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x = Set.univ) :
-    Smooth (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left ↔
-      smoothCommHopfAlgProperty k
-        (_root_.CommHopfAlgCat.quotient H (stabilizerHopfIdeal H x)) :=
-  (smooth_orbitMap_iff_of_orbit_eq_univ _ x h).trans
-    (smoothCommHopfAlgProperty_stabilizerHopfIdeal_iff H x).symm
-
-/-- **Scheme-level comparison for any orbit.** Every scheme `Q` over `Spec k` representing
-`G / Stab_G(x)` is canonically isomorphic over `Spec k` to the orbit scheme `orbitOver G x`. -/
-def representedQuotientIsoOrbitOver
-    [GeometricallyReduced ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).hom]
-    {Q : Over (Spec (.of k))}
-    (e : _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ≅
-      TauCeti.CommAlgCat.pointsSheaf Q) :
-    Q ≅ orbitOver ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x :=
-  _root_.CommHopfAlgCat.representedQuotientIso H (stabilizerHopfIdeal H x) e
-    (fppfHomogeneousQuotientIsoOrbitPoints H x)
-
-/-- The scheme isomorphism `representedQuotientIsoOrbitOver` intertwines the quotient map
-`Spec H ⟶ Q` with the orbit projection `Spec H ⟶ orbitOver (Spec H) x`. -/
-@[reassoc (attr := simp)]
-theorem representedQuotientProjection_comp_representedQuotientIsoOrbitOver_hom
-    [GeometricallyReduced ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).hom]
-    {Q : Over (Spec (.of k))}
-    (e : _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ≅
-      TauCeti.CommAlgCat.pointsSheaf Q) :
-    _root_.CommHopfAlgCat.representedQuotientProjection H (stabilizerHopfIdeal H x) e ≫
-        (representedQuotientIsoOrbitOver H x e).hom =
-      orbitProjection ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x := by
-  rw [representedQuotientIsoOrbitOver, _root_.CommHopfAlgCat.representedQuotientIso_hom,
-    _root_.CommHopfAlgCat.representedQuotientProjection_comp_fppfHomogeneousQuotientSchemeMap,
-    representedQuotientProjection_fppfHomogeneousQuotientIsoOrbitPoints]
-
-/-- When a representing quotient scheme `Q` carries a `G`-action making the quotient map
-equivariant, the isomorphism `Q ≅ orbitOver G x` is `G`-equivariant. -/
-theorem isModHom_representedQuotientIsoOrbitOver_hom
-    [GeometricallyReduced ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).hom]
-    {Q : Over (Spec (.of k))}
-    [ModObj ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) Q]
-    (e : _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ≅
-      TauCeti.CommAlgCat.pointsSheaf Q)
-    (hq : μ[(Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))] ≫
-        _root_.CommHopfAlgCat.representedQuotientProjection H (stabilizerHopfIdeal H x) e =
-      ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) ◁
-          _root_.CommHopfAlgCat.representedQuotientProjection H (stabilizerHopfIdeal H x) e ≫
-        γ[(Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k)),Q]) :
-    IsModHom ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k)))
-      (representedQuotientIsoOrbitOver H x e).hom := by
-  have : Presheaf.IsLocallySurjective (TauCeti.CommAlgCat.fppfTopology k)
-      ((TauCeti.CommAlgCat.pointsSheafFunctor k).map
-        (_root_.CommHopfAlgCat.representedQuotientProjection H (stabilizerHopfIdeal H x) e)).hom :=
-    _root_.CommHopfAlgCat.isLocallySurjective_pointsSheafFunctor_map_representedQuotientProjection
-      H (stabilizerHopfIdeal H x) e
-  refine TauCeti.CommAlgCat.isModHom_of_isLocallySurjective_mul_comp
-    (_root_.CommHopfAlgCat.representedQuotientProjection H (stabilizerHopfIdeal H x) e) hq
-    (representedQuotientIsoOrbitOver H x e).hom ?_
-  rw [representedQuotientProjection_comp_representedQuotientIsoOrbitOver_hom]
-  exact mul_orbitProjection _ x
+    _root_.CommHopfAlgCat.representedQuotientProjection H (stabilizerHopfIdeal H x)
+        (fppfHomogeneousQuotientIsoPointsSheaf H x h) =
+      orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x :=
+  (_root_.CommHopfAlgCat.specPointsHomEquiv H X).injective <| by
+    rw [_root_.CommHopfAlgCat.specPointsHomEquiv_representedQuotientProjection,
+      fppfHomogeneousQuotientIsoPointsSheaf_hom,
+      fppfHomogeneousQuotientProjection_comp_toPointsSheaf]
 
 /-- **Scheme-level homogeneous orbit comparison.** Every scheme `Q` over `Spec k` representing
 `G / Stab_G(x)` is canonically isomorphic over `Spec k` to a reduced homogeneous scheme `X`. -/
@@ -360,8 +353,8 @@ def representedQuotientIsoOfOrbitEqUniv
     (e : _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ≅
       TauCeti.CommAlgCat.pointsSheaf Q) :
     Q ≅ X :=
-  representedQuotientIsoOrbitOver H x e ≪≫
-    orbitInclusionIso ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x h
+  _root_.CommHopfAlgCat.representedQuotientIso H (stabilizerHopfIdeal H x) e
+    (fppfHomogeneousQuotientIsoPointsSheaf H x h)
 
 /-- The scheme isomorphism `representedQuotientIsoOfOrbitEqUniv` intertwines the quotient map
 `Spec H ⟶ Q` with the orbit morphism `Spec H ⟶ X`. -/
@@ -376,9 +369,9 @@ theorem representedQuotientProjection_comp_representedQuotientIsoOfOrbitEqUniv_h
     _root_.CommHopfAlgCat.representedQuotientProjection H (stabilizerHopfIdeal H x) e ≫
         (representedQuotientIsoOfOrbitEqUniv H x h e).hom =
       orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x := by
-  rw [representedQuotientIsoOfOrbitEqUniv, Iso.trans_hom, ← Category.assoc,
-    representedQuotientProjection_comp_representedQuotientIsoOrbitOver_hom, orbitInclusionIso_hom,
-    orbitProjection_inclusion]
+  rw [representedQuotientIsoOfOrbitEqUniv, _root_.CommHopfAlgCat.representedQuotientIso_hom,
+    _root_.CommHopfAlgCat.representedQuotientProjection_comp_fppfHomogeneousQuotientSchemeMap,
+    representedQuotientProjection_fppfHomogeneousQuotientIsoPointsSheaf]
 
 /-- When a representing quotient scheme `Q` carries a `G`-action making the quotient map
 equivariant, the isomorphism `Q ≅ X` onto a reduced homogeneous scheme `X` is `G`-equivariant. -/
@@ -396,12 +389,11 @@ theorem isModHom_representedQuotientIsoOfOrbitEqUniv_hom
           _root_.CommHopfAlgCat.representedQuotientProjection H (stabilizerHopfIdeal H x) e ≫
         γ[(Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k)),Q]) :
     IsModHom ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k)))
-      (representedQuotientIsoOfOrbitEqUniv H x h e).hom := by
-  have : IsModHom ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k)))
-      (representedQuotientIsoOrbitOver H x e).hom :=
-    isModHom_representedQuotientIsoOrbitOver_hom H x e hq
-  rw [representedQuotientIsoOfOrbitEqUniv, Iso.trans_hom]
-  infer_instance
+      (representedQuotientIsoOfOrbitEqUniv H x h e).hom :=
+  _root_.CommHopfAlgCat.isModHom_representedQuotientIso_hom H (stabilizerHopfIdeal H x) e
+    (fppfHomogeneousQuotientIsoPointsSheaf H x h) hq (by
+      rw [representedQuotientProjection_fppfHomogeneousQuotientIsoPointsSheaf]
+      exact mul_orbitMap _ x)
 
 end OrbitComparison
 

@@ -7,13 +7,13 @@ module
 
 public import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
-public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Basic
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 import TauCeti.AlgebraicGeometry.Morphisms.UniversallyOpen
 import TauCeti.AlgebraicGeometry.Pullback.Over
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
+import TauCeti.AlgebraicGeometry.RationalPoint.Image
 import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 import TauCeti.Topology.Algebra.MulAction.Orbit
 import TauCeti.Topology.Maps.OpenQuotient
@@ -29,7 +29,11 @@ When `G` is of finite type and `X` is quasi-compact and locally Noetherian, the 
 is constructible, by Chevalley's theorem. Over an arbitrary field `k`, when `G` and `X` are
 locally of finite type with quasi-compact underlying spaces and `x` is a `k`-rational point of
 `X`, the geometric orbit `orbit G x` is locally closed (`isLocallyClosed_orbit`): it is open in
-its closure, and its boundary is closed and of strictly smaller dimension.
+its closure, and its boundary is closed and of strictly smaller dimension. When `X` is locally of
+finite type over `k`, the orbit of `x` covers all of `X` (including nonclosed points) if and only
+if it contains every closed point of `X` (`orbit_eq_univ_iff_closedPoints_subset`); over an
+algebraically closed field, this holds if and only if every rational point of `X` is a translate
+`g • x` (`orbit_eq_univ_iff_forall_exists_smul`, `surjective_orbitMap_iff_forall_exists_smul`).
 
 No algebraic closedness of `k`, smoothness, reducedness, affineness, separatedness or
 connectedness hypothesis is needed, and `X` need not be irreducible. The orbit is the full
@@ -197,9 +201,71 @@ private theorem isLocallyClosed_orbit_of_isAlgClosed [GrpObj G] [ModObj G X]
   simpa only [translationMulAction_smul] using
     exists_translation_eq_of_mem_orbit_inter_closedPoints G x hp hq
 
+/-- Over an algebraically closed field, the geometric orbit of `x` covers all of `X` (including
+nonclosed points) if and only if every rational point of `X` is a translate of `x` by a rational
+point of `G`. -/
+theorem orbit_eq_univ_iff_forall_exists_smul [MonObj G] [ModObj G X] [LocallyOfFiniteType G.hom]
+    [CompactSpace G.left] [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
+    orbit G x = Set.univ ↔
+      ∀ y : 𝟙_ (Over (Spec (.of k))) ⟶ X,
+        ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, g • x = y := by
+  have : IsNoetherian G.left := { __ := LocallyOfFiniteType.isLocallyNoetherian G.hom }
+  have : LocallyOfFiniteType ((orbitMap G x).left ≫ X.hom) := by
+    rw [Over.w]; infer_instance
+  rw [← surjective_orbitMap_iff_orbit_eq_univ, surjective_iff,
+    (orbitMap G x).left.surjective_iff_forall_rationalPoint X.hom]
+  refine ⟨fun h y ↦ ?_, fun h p hp ↦ ?_⟩
+  · obtain ⟨q, hq⟩ := h y.left (by simp)
+    let g : 𝟙_ (Over (Spec (.of k))) ⟶ G := Over.homMk q (by
+      rw [← Over.w (orbitMap G x), ← Category.assoc, hq]
+      exact Over.w y)
+    refine ⟨g, Over.OverMorphism.ext ?_⟩
+    have hcomp : g.left ≫ (orbitMap G x).left = (g • x).left :=
+      congrArg Over.Hom.left (comp_orbitMap G g x)
+    exact hcomp.symm.trans hq
+  · obtain ⟨g, hg⟩ := h (Over.homMk (U := 𝟙_ _) p hp)
+    refine ⟨g.left, ?_⟩
+    have hcomp : g.left ≫ (orbitMap G x).left = (g • x).left :=
+      congrArg Over.Hom.left (comp_orbitMap G g x)
+    exact hcomp.trans (congrArg Over.Hom.left hg)
+
+/-- Over an algebraically closed field, the orbit morphism is surjective on all scheme points if
+and only if every rational point of `X` is a translate of `x` by a rational point of `G`. -/
+theorem surjective_orbitMap_iff_forall_exists_smul [MonObj G] [ModObj G X]
+    [LocallyOfFiniteType G.hom] [CompactSpace G.left] [LocallyOfFiniteType X.hom]
+    (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
+    Surjective (orbitMap G x).left ↔
+      ∀ y : 𝟙_ (Over (Spec (.of k))) ⟶ X,
+        ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, g • x = y :=
+  (surjective_orbitMap_iff_orbit_eq_univ G x).trans (orbit_eq_univ_iff_forall_exists_smul G x)
+
 end AlgClosed
 
 section Field
+
+/-- Over a field, the geometric orbit of a rational point covers a locally finite-type scheme `X`
+if and only if it contains every closed point of `X`. -/
+theorem orbit_eq_univ_iff_closedPoints_subset {k : Type u} [Field k] (G : Over (Spec (.of k)))
+    {X : Over (Spec (.of k))} [MonObj G] [ModObj G X] [LocallyOfFiniteType G.hom]
+    [CompactSpace G.left] [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
+    orbit G x = Set.univ ↔ closedPoints X.left ⊆ orbit G x := by
+  refine ⟨fun h ↦ h ▸ Set.subset_univ _, fun h ↦ Set.eq_univ_iff_forall.mpr fun p ↦ ?_⟩
+  by_contra hp
+  have : IsLocallyNoetherian X.left := LocallyOfFiniteType.isLocallyNoetherian X.hom
+  have : JacobsonSpace X.left := LocallyOfFiniteType.jacobsonSpace X.hom
+  have : IsNoetherian G.left := { __ := LocallyOfFiniteType.isLocallyNoetherian G.hom }
+  have : LocallyOfFinitePresentation (orbitMap G x).left :=
+    locallyOfFinitePresentation_orbitMap G x
+  have hloc : IsLocallyConstructible (orbit G x) := by
+    simpa [orbit_def] using (orbitMap G x).left.isLocallyConstructible_image
+      IsLocallyConstructible.univ
+  obtain ⟨V, hV, hpV, -⟩ :=
+    exists_isAffineOpen_mem_and_subset (TopologicalSpace.Opens.mem_top p)
+  have hdiff : IsConstructible ((V : Set X.left) \ (orbit G x ∩ V)) :=
+    (hV.isCompact.isConstructible V.isOpen).sdiff
+      (hloc.inter_of_isOpen_isCompact V.isOpen hV.isCompact)
+  obtain ⟨q, ⟨hqV, hqO⟩, hqc⟩ := hdiff.nonempty_inter_closedPoints ⟨p, hpV, fun hmem ↦ hp hmem.1⟩
+  exact hqO ⟨h hqc, hqV⟩
 
 variable {k : Type u} [Field k] (G : Over (Spec (.of k))) {X : Over (Spec (.of k))}
   [GrpObj G] [ModObj G X] [LocallyOfFiniteType G.hom] [CompactSpace G.left]
