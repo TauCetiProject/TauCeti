@@ -18,25 +18,29 @@ Let `W` and `V` be vector bundles over `M`, with connections `∇ᵂ` and `∇`,
 `c : W → End V` be a *Clifford multiplication*, a family of linear maps
 `c x : W x → End (V x)`. In the geometric setting `W` is the tangent (or cotangent) bundle of a
 Riemannian manifold with its Levi-Civita connection and `V` is a bundle of Clifford modules, but
-no Clifford relation is needed here. The connection `∇` is **Clifford compatible**
-(`CovariantDerivative.IsCliffordCompatible`) if it satisfies the Leibniz rule
+no Clifford relation is needed here. The connection `∇` is **Clifford compatible at `x`**
+(`CovariantDerivative.IsCliffordCompatibleAt`) if it satisfies the Leibniz rule
 
 `∇_v (c(Y) s) = c(∇ᵂ_v Y) s + c(Y) ∇_v s`
 
-for all sections `Y` of `W` and `s` of `V` differentiable at the base point of `v`. This file
-proves the basic structure theory of this condition.
+for all tangent vectors `v` at `x` and all sections `Y` of `W` and `s` of `V` differentiable at
+`x`, and **Clifford compatible** (`CovariantDerivative.IsCliffordCompatible`) if it is compatible
+at every point. This file proves the basic structure theory of this condition.
 
 * **Parallel multiplication.** Where `c` is differentiable, compatibility at a point is the
   vanishing there of the covariant derivative `∇c` of `c` as a section of `Hom(W, End V)`, for
   the connection induced by `∇ᵂ` and `∇`
-  (`CovariantDerivative.hom_hom_eq_zero_iff`). So for differentiable `c`, `∇` is compatible
-  exactly when `c` is parallel (`CovariantDerivative.isCliffordCompatible_iff`).
-* **Affine description.** If `∇` is compatible, then `∇ + A`, for a one-form `A` with values in
-  `End V`, is compatible exactly when every `A(v)` commutes with every `c(w)`
-  (`CovariantDerivative.IsCliffordCompatible.isCliffordCompatible_addOneForm_iff`). Conversely the
-  difference tensor of two compatible connections commutes with `c`
-  (`CovariantDerivative.IsCliffordCompatible.difference_apply_comm`). Thus the compatible
-  connections form an affine space over the one-forms with values in the commutant of `c`.
+  (`CovariantDerivative.isCliffordCompatibleAt_iff_hom_hom_eq_zero`). So for differentiable `c`,
+  `∇` is compatible exactly when `c` is parallel
+  (`CovariantDerivative.isCliffordCompatible_iff_hom_hom_eq_zero`).
+* **Affine description.** If `∇` is compatible at `x`, then `∇ + A`, for a one-form `A` with
+  values in `End V`, is compatible at `x` exactly when every `A(v)` at `x` commutes with every
+  `c(w)` (`CovariantDerivative.IsCliffordCompatibleAt.isCliffordCompatibleAt_addOneForm_iff`, with
+  the global form `CovariantDerivative.IsCliffordCompatible.isCliffordCompatible_addOneForm_iff`).
+  Conversely, where `c` is differentiable, the difference tensor of two compatible connections
+  commutes with `c` (`CovariantDerivative.IsCliffordCompatibleAt.difference_apply_comm`). Thus for
+  differentiable `c` the compatible connections form an affine space over the one-forms with
+  values in the commutant of `c`.
 * **Curvature compatibility.** For smooth data the curvature of a compatible connection
   satisfies `R(u, v) (c(w) e) = c(Rᵂ(u, v) w) e + c(w) R(u, v) e`, that is
   `[R(u, v), c(w)] = c(Rᵂ(u, v) w)`
@@ -91,15 +95,37 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   (cov : CovariantDerivative I F V) (covW : CovariantDerivative I G W)
   (c : Π x : M, W x →L[𝕜] V x →L[𝕜] V x)
 
-/-- A connection `∇` on `V` is **Clifford compatible** with a multiplication `c : W → End V` and
-a connection `∇ᵂ` on `W` if it satisfies the Leibniz rule
-`∇_v (c(Y) s) = c(∇ᵂ_v Y) s + c(Y) ∇_v s` for all sections `Y` and `s` differentiable at the base
-point of `v`. For differentiable `c` this says that `c` is parallel as a section of
-`Hom(W, End V)` (`CovariantDerivative.isCliffordCompatible_iff`). -/
-def IsCliffordCompatible : Prop :=
-  ∀ ⦃x : M⦄ ⦃Y : Π y : M, W y⦄ ⦃s : Π y : M, V y⦄, MDiffAt (T% Y) x → MDiffAt (T% s) x →
+/-- A connection `∇` on `V` is **Clifford compatible at `x`** with a multiplication
+`c : W → End V` and a connection `∇ᵂ` on `W` if it satisfies the Leibniz rule
+`∇_v (c(Y) s) = c(∇ᵂ_v Y) s + c(Y) ∇_v s` for all tangent vectors `v` at `x` and all sections `Y`
+and `s` differentiable at `x`. Where `c` is differentiable this says that the covariant
+derivative of `c` as a section of `Hom(W, End V)` vanishes at `x`
+(`CovariantDerivative.isCliffordCompatibleAt_iff_hom_hom_eq_zero`). -/
+def IsCliffordCompatibleAt (x : M) : Prop :=
+  ∀ ⦃Y : Π y : M, W y⦄ ⦃s : Π y : M, V y⦄, MDiffAt (T% Y) x → MDiffAt (T% s) x →
     ∀ v : TangentSpace I x,
       cov (fun y ↦ c y (Y y) (s y)) x v = c x (covW Y x v) (s x) + c x (Y x) (cov s x v)
+
+/-- A connection `∇` on `V` is **Clifford compatible** with a multiplication `c : W → End V` and
+a connection `∇ᵂ` on `W` if it is Clifford compatible at every point, that is if it satisfies the
+Leibniz rule `∇_v (c(Y) s) = c(∇ᵂ_v Y) s + c(Y) ∇_v s` for all sections `Y` and `s`
+differentiable at the base point of `v`. For differentiable `c` this says that `c` is parallel as
+a section of `Hom(W, End V)` (`CovariantDerivative.isCliffordCompatible_iff_hom_hom_eq_zero`). -/
+def IsCliffordCompatible : Prop :=
+  ∀ x : M, cov.IsCliffordCompatibleAt covW c x
+
+/-- Clifford compatibility at a point, in its defining form. -/
+theorem isCliffordCompatibleAt_iff {x : M} :
+    cov.IsCliffordCompatibleAt covW c x ↔
+      ∀ ⦃Y : Π y : M, W y⦄ ⦃s : Π y : M, V y⦄, MDiffAt (T% Y) x → MDiffAt (T% s) x →
+        ∀ v : TangentSpace I x,
+          cov (fun y ↦ c y (Y y) (s y)) x v = c x (covW Y x v) (s x) + c x (Y x) (cov s x v) :=
+  Iff.rfl
+
+/-- Clifford compatibility is Clifford compatibility at every point. -/
+theorem isCliffordCompatible_iff :
+    cov.IsCliffordCompatible covW c ↔ ∀ x : M, cov.IsCliffordCompatibleAt covW c x :=
+  Iff.rfl
 
 /-- **Scalar multiplication is Clifford compatible.** Every connection `∇` on `V` is Clifford
 compatible with the multiplication `c(a) = a • id` of `V` by the trivial line and the canonical
@@ -117,16 +143,35 @@ theorem isCliffordCompatible_trivial_smulRight :
 
 variable {cov covW c}
 
-/-- **Changing a compatible connection by a one-form.** If `∇` is Clifford compatible, then
-`∇ + A`, for a one-form `A` with values in `End V`, is Clifford compatible exactly when every
-`A(v)` commutes with every Clifford multiplication `c(w)`. -/
-theorem IsCliffordCompatible.isCliffordCompatible_addOneForm_iff
-    (h : cov.IsCliffordCompatible covW c)
+/-- The Leibniz rule satisfied by a connection Clifford compatible at `x`. -/
+theorem IsCliffordCompatibleAt.leibniz {x : M} (h : cov.IsCliffordCompatibleAt covW c x)
+    {Y : Π y : M, W y} {s : Π y : M, V y} (hY : MDiffAt (T% Y) x) (hs : MDiffAt (T% s) x)
+    (v : TangentSpace I x) :
+    cov (fun y ↦ c y (Y y) (s y)) x v = c x (covW Y x v) (s x) + c x (Y x) (cov s x v) :=
+  h hY hs v
+
+/-- A Clifford compatible connection is Clifford compatible at every point. -/
+theorem IsCliffordCompatible.isCliffordCompatibleAt (h : cov.IsCliffordCompatible covW c)
+    (x : M) : cov.IsCliffordCompatibleAt covW c x :=
+  h x
+
+/-- The Leibniz rule satisfied by a Clifford compatible connection. -/
+theorem IsCliffordCompatible.leibniz (h : cov.IsCliffordCompatible covW c) {x : M}
+    {Y : Π y : M, W y} {s : Π y : M, V y} (hY : MDiffAt (T% Y) x) (hs : MDiffAt (T% s) x)
+    (v : TangentSpace I x) :
+    cov (fun y ↦ c y (Y y) (s y)) x v = c x (covW Y x v) (s x) + c x (Y x) (cov s x v) :=
+  h x hY hs v
+
+/-- **Changing a connection compatible at a point by a one-form.** If `∇` is Clifford compatible
+at `x`, then `∇ + A`, for a one-form `A` with values in `End V`, is Clifford compatible at `x`
+exactly when every `A(v)` at `x` commutes with every Clifford multiplication `c(w)`. -/
+theorem IsCliffordCompatibleAt.isCliffordCompatibleAt_addOneForm_iff {x : M}
+    (h : cov.IsCliffordCompatibleAt covW c x)
     (A : Π x : M, V x →L[𝕜] TangentSpace I x →L[𝕜] V x) :
-    (cov.addOneForm A).IsCliffordCompatible covW c ↔
-      ∀ (x : M) (v : TangentSpace I x) (w : W x) (e : V x), A x (c x w e) v = c x w (A x e v) := by
+    (cov.addOneForm A).IsCliffordCompatibleAt covW c x ↔
+      ∀ (v : TangentSpace I x) (w : W x) (e : V x), A x (c x w e) v = c x w (A x e v) := by
   constructor
-  · intro h' x v w e
+  · intro h' v w e
     have hY := mdifferentiableAt_extend I G w
     have hs := mdifferentiableAt_extend I F e
     have h₁ := h' hY hs v
@@ -135,19 +180,29 @@ theorem IsCliffordCompatible.isCliffordCompatible_addOneForm_iff
     simp only [extend_apply_self] at h₁
     rw [← sub_eq_zero, ← sub_eq_zero.mpr h₁]
     abel
-  · intro hA x Y s hY hs v
+  · intro hA Y s hY hs v
     simp only [addOneForm_apply, add_apply, map_add, h hY hs v,
-      hA x v (Y x) (s x)]
+      hA v (Y x) (s x)]
     abel
+
+/-- **Changing a compatible connection by a one-form.** If `∇` is Clifford compatible, then
+`∇ + A`, for a one-form `A` with values in `End V`, is Clifford compatible exactly when every
+`A(v)` commutes with every Clifford multiplication `c(w)`. -/
+theorem IsCliffordCompatible.isCliffordCompatible_addOneForm_iff
+    (h : cov.IsCliffordCompatible covW c)
+    (A : Π x : M, V x →L[𝕜] TangentSpace I x →L[𝕜] V x) :
+    (cov.addOneForm A).IsCliffordCompatible covW c ↔
+      ∀ (x : M) (v : TangentSpace I x) (w : W x) (e : V x), A x (c x w e) v = c x w (A x e v) :=
+  forall_congr' fun x ↦ (h x).isCliffordCompatibleAt_addOneForm_iff A
 
 variable [CompleteSpace 𝕜] [VectorBundle 𝕜 F V] [VectorBundle 𝕜 G W] [FiniteDimensional 𝕜 F]
   [ContMDiffVectorBundle 1 F V I]
 
 /-- **Two compatible connections differ by a one-form commuting with the multiplication.** If
-`∇` and `∇'` are both Clifford compatible and `c` is differentiable at `x`, then their difference
-tensor at `x` commutes with every Clifford multiplication `c(w)`. -/
-theorem IsCliffordCompatible.difference_apply_comm {cov' : CovariantDerivative I F V}
-    (h : cov.IsCliffordCompatible covW c) (h' : cov'.IsCliffordCompatible covW c) {x : M}
+`∇` and `∇'` are both Clifford compatible at `x` and `c` is differentiable at `x`, then their
+difference tensor at `x` commutes with every Clifford multiplication `c(w)`. -/
+theorem IsCliffordCompatibleAt.difference_apply_comm {cov' : CovariantDerivative I F V} {x : M}
+    (h : cov.IsCliffordCompatibleAt covW c x) (h' : cov'.IsCliffordCompatibleAt covW c x)
     (hc : MDiffAt (fun y ↦ TotalSpace.mk' (G →L[𝕜] F →L[𝕜] F)
       (E := fun z ↦ W z →L[𝕜] V z →L[𝕜] V z) y (c y)) x)
     (v : TangentSpace I x) (w : W x) (e : V x) :
@@ -169,20 +224,11 @@ variable (cov covW c) in
 differentiable, the covariant derivative of `c` as a section of `Hom(W, End V)` vanishes at `x`
 exactly when the Leibniz rule `∇_v (c(Y) s) = c(∇ᵂ_v Y) s + c(Y) ∇_v s` holds at `x` for all
 sections `Y` and `s` differentiable at `x`. -/
-theorem hom_hom_eq_zero_iff {x : M}
+theorem isCliffordCompatibleAt_iff_hom_hom_eq_zero {x : M}
     (hc : MDiffAt (fun y ↦ TotalSpace.mk' (G →L[𝕜] F →L[𝕜] F)
       (E := fun z ↦ W z →L[𝕜] V z →L[𝕜] V z) y (c y)) x) :
-    covW.hom (cov.hom cov) c x = 0 ↔
-      ∀ ⦃Y : Π y : M, W y⦄ ⦃s : Π y : M, V y⦄, MDiffAt (T% Y) x → MDiffAt (T% s) x →
-        ∀ v : TangentSpace I x,
-          cov (fun y ↦ c y (Y y) (s y)) x v = c x (covW Y x v) (s x) + c x (Y x) (cov s x v) := by
+    cov.IsCliffordCompatibleAt covW c x ↔ covW.hom (cov.hom cov) c x = 0 := by
   constructor
-  · intro h Y s hY hs v
-    have hcY := hom_hom_apply covW cov cov hc hY hs v
-    rw [h] at hcY
-    simp only [zero_apply] at hcY
-    rw [eq_comm, sub_sub, sub_eq_zero] at hcY
-    exact hcY
   · intro h
     ext v w e
     have hcY := hom_hom_apply covW cov cov hc (mdifferentiableAt_extend I G w)
@@ -191,15 +237,21 @@ theorem hom_hom_eq_zero_iff {x : M}
     rw [hcY, h (mdifferentiableAt_extend I G w) (mdifferentiableAt_extend I F e),
       extend_apply_self, extend_apply_self]
     simp
+  · intro h Y s hY hs v
+    have hcY := hom_hom_apply covW cov cov hc hY hs v
+    rw [h] at hcY
+    simp only [zero_apply] at hcY
+    rw [eq_comm, sub_sub, sub_eq_zero] at hcY
+    exact hcY
 
 /-- **Clifford compatibility is parallelism of the multiplication.** For a multiplication `c`
 differentiable as a section of `Hom(W, End V)`, the connection `∇` is Clifford compatible exactly
 when `c` is parallel for the connection induced by `∇ᵂ` and `∇`. -/
-theorem isCliffordCompatible_iff
+theorem isCliffordCompatible_iff_hom_hom_eq_zero
     (hc : ∀ x, MDiffAt (fun y ↦ TotalSpace.mk' (G →L[𝕜] F →L[𝕜] F)
       (E := fun z ↦ W z →L[𝕜] V z →L[𝕜] V z) y (c y)) x) :
     cov.IsCliffordCompatible covW c ↔ ∀ x, covW.hom (cov.hom cov) c x = 0 :=
-  forall_congr' fun x ↦ (hom_hom_eq_zero_iff cov covW c (hc x)).symm
+  forall_congr' fun x ↦ isCliffordCompatibleAt_iff_hom_hom_eq_zero cov covW c (hc x)
 
 end General
 
@@ -234,7 +286,8 @@ theorem IsCliffordCompatible.curvatureTensor_leibniz (h : cov.IsCliffordCompatib
     (x : M) (u v : TangentSpace I x) (w : W x) (e : V x) :
     cov.curvatureTensor x u v (c x w e) =
       c x (covW.curvatureTensor x u v w) e + c x w (cov.curvatureTensor x u v e) := by
-  have hpar := (isCliffordCompatible_iff fun y ↦ (hc y).mdifferentiableAt (by simp)).1 h
+  have hpar :=
+    (isCliffordCompatible_iff_hom_hom_eq_zero fun y ↦ (hc y).mdifferentiableAt (by simp)).1 h
   have h₀ := (covW.hom (cov.hom cov)).curvatureTensor_apply_eq_zero_of_cov_eq_zero
     isOpen_univ (Set.mem_univ x) hc.contMDiffOn (fun y _ ↦ hpar y) u v
   have h₁ := congr($h₀ w e)
