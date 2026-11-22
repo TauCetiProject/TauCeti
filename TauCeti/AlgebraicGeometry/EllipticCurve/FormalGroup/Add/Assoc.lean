@@ -44,18 +44,13 @@ Adapted from Michael Stoll's `EllipticCurves` project
 (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0) at commit
 `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`,
 `EllipticCurves/WeierstrassFormalGroup/GroupLaw.lean`, sections `Domain` and `Assembly`,
-declarations `rho_weierstrass`, `thetaPoint_add`, `thetaPoint_neg`, and
-`pair_intercept_ne_zero_of_ne`, together with the single-parameter helpers `single_u_mul`,
-`single_iota_eq`, `single_u_eq` and `single_wIota` from
-`EllipticCurves/WeierstrassFormalGroup/ThirdPoint.lean`.
+declarations `rho_weierstrass`, `thetaPoint_add`, and `pair_intercept_ne_zero_of_ne`.
 
 Two of those are proved differently here, because this repository already has the content in a
 more usable form. `pair_intercept_ne_zero_of_ne` collapses the cross combination with the single
 rewrite `subst_pair_formalIntercept_mul_sub` where the source combines its two intercept readings
 by hand; and Stoll's `hA` step inside `thetaPoint_add` argues through the constant coefficient,
-whereas `subst_pair_thirdRootDenom_mul` already exhibits an explicit inverse. The four
-single-parameter helpers are likewise transports of the `FormalGroup/Inverse.lean` identities
-along `PowerSeries.subst q`, not re-derivations of them.
+whereas `subst_pair_thirdRootDenom_mul` already exhibits an explicit inverse.
 
 The source's `wSeries` and `vSeries` are `formalW` and `formalU` here, continuing the renaming
 this repository applies to that development.
@@ -99,56 +94,7 @@ variable {O : Type*} [CommRing O]
 variable (W : WeierstrassCurve O) {σ : Type*} {KK : Type*} [Field KK]
   [Algebra (MvPowerSeries σ O) KK]
 
-/-! ### The formal inverse at a parameter -/
-
-/-- The denominator of the formal inverse, read at a parameter, still multiplies its `invOfUnit`
-to `1`: substituting is a ring map, so it carries `mul_invOfUnit_formalInverseDenom` along. -/
-private theorem subst_formalInverseDenom_mul {q : MvPowerSeries σ O}
-    (hq : PowerSeries.HasSubst q) :
-    PowerSeries.subst q (formalInverseDenom W) *
-        PowerSeries.subst q (PowerSeries.invOfUnit (formalInverseDenom W) 1) = 1 := by
-  have h := congrArg (PowerSeries.substAlgHom hq) (mul_invOfUnit_formalInverseDenom W)
-  simp only [map_mul, map_one] at h
-  simpa only [PowerSeries.coe_substAlgHom hq] using h
-
-/-- The formal inverse read at a parameter: `ι(q) = -(q * u(q)⁻¹)`. -/
-private theorem subst_formalInverse_eq {q : MvPowerSeries σ O} (hq : PowerSeries.HasSubst q) :
-    PowerSeries.subst q (formalInverse W) =
-      -(q * PowerSeries.subst q (PowerSeries.invOfUnit (formalInverseDenom W) 1)) := by
-  rw [formalInverse_def, ← PowerSeries.coe_substAlgHom hq]
-  simp only [map_neg, map_mul]
-  rw [PowerSeries.coe_substAlgHom hq, PowerSeries.subst_X hq]
-
-/-- The denominator of the formal inverse read at a parameter, written out. -/
-private theorem subst_formalInverseDenom_eq {q : MvPowerSeries σ O}
-    (hq : PowerSeries.HasSubst q) :
-    PowerSeries.subst q (formalInverseDenom W) =
-      1 - C W.a₁ * q - C W.a₃ * PowerSeries.subst q (formalW W) := by
-  rw [formalInverseDenom_def, ← PowerSeries.coe_substAlgHom hq]
-  simp only [map_sub, map_one, map_mul, PowerSeries.substAlgHom_X,
-    PowerSeries.coe_substAlgHom, PowerSeries.subst_C]
-
-/-- The denominator of the formal inverse read at a parameter, pushed into `KK`. -/
-private theorem algebraMap_subst_formalInverseDenom_eq {q : MvPowerSeries σ O}
-    (hq : PowerSeries.HasSubst q) :
-    algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalInverseDenom W)) =
-      1 - (fracCurve W σ KK).a₁ * algebraMap (MvPowerSeries σ O) KK q -
-        (fracCurve W σ KK).a₃ *
-          algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) := by
-  rw [W.subst_formalInverseDenom_eq hq, map_sub, map_sub, map_one, map_mul, map_mul,
-    fracCurve_a₁, fracCurve_a₃]
-
-/-- The `w`-expansion at the inverted parameter: `w(ι(q)) = -(w(q) * u(q)⁻¹)`.
-
-This is the one-variable `subst_formalInverse_formalW` carried through the substitution `q`. -/
-private theorem subst_formalW_subst_formalInverse {q : MvPowerSeries σ O}
-    (hq : PowerSeries.HasSubst q) :
-    PowerSeries.subst (PowerSeries.subst q (formalInverse W)) (formalW W) =
-      -(PowerSeries.subst q (formalW W) *
-        PowerSeries.subst q (PowerSeries.invOfUnit (formalInverseDenom W) 1)) := by
-  rw [← PowerSeries.subst_comp_subst_apply (hasSubst_formalInverse W) hq,
-    subst_formalInverse_formalW, ← PowerSeries.coe_substAlgHom hq]
-  simp only [map_neg, map_mul]
+/-! ### Reading a pair through a further substitution -/
 
 /-- Base change commutes with reading the addition series at a pair of variables: the variables
 are fixed by `MvPowerSeries.map`, so only `map_formalAdd` is doing any work. -/
@@ -162,8 +108,6 @@ private theorem map_subst_pair_X_formalAdd {σ' S : Type*} [CommRing S] (φ : O 
   congr 1
   funext i
   rcases i with u | u <;> simp
-
-/-! ### Reading a pair through a further substitution -/
 
 /-- The addition series at a pair, read through a further substitution `g` that sends the first
 parameter to `X` and the second to `0`: the right unit law makes the result `X`. -/
@@ -207,18 +151,6 @@ theorem subst_pair_formalAdd_ne_zero [Nontrivial O] {σ' : Type*}
     subst (pairSubstitution a b) (formalAdd W) ≠ 0 :=
   ne_of_subst_eq_X_of_subst_eq_zero (subst_subst_pair_formalAdd_eq_X W hg ha hb hga hgb)
     (by rw [← coe_substAlgHom hg, map_zero])
-
-/-- The formal inverse at a parameter, read through a further substitution `g` that kills that
-parameter: the result vanishes, since the inverse has no constant term. -/
-private theorem subst_subst_formalInverse_eq_zero {σ' : Type*}
-    {g : σ' → MvPowerSeries Unit O} (hg : HasSubst g) {a : MvPowerSeries σ' O}
-    (ha : constantCoeff a = 0) (hga : subst g a = 0) :
-    subst g (subst (fun _ : Unit ↦ a) (formalInverse W)) = 0 := by
-  -- `funext` again, on the one-variable family this time.
-  rw [subst_comp_subst_apply (hasSubst_of_constantCoeff_zero fun _ ↦ ha) hg,
-    show (fun _ : Unit ↦ subst g a) = (0 : Unit → MvPowerSeries Unit O) from
-      funext fun _ ↦ hga]
-  exact subst_zero_of_constantCoeff_zero (constantCoeff_formalInverse W)
 
 /-! ### Chord addition of parametrized points -/
 
@@ -341,8 +273,9 @@ private theorem some_eq_thetaPoint_formalAdd (hΔ : (fracCurve W σ KK).Δ ≠ 0
     exact congrArg ρ (subst_pair_formalInverseDenom_mul W h₁ h₂)
   have hsp0 := right_ne_zero_of_mul_eq_one hu
   have hueq : ρ (PowerSeries.subst Tp (formalInverseDenom W)) =
-      1 - (fracCurve W σ KK).a₁ * ρ Tp - (fracCurve W σ KK).a₃ * ρ wT :=
-    W.algebraMap_subst_formalInverseDenom_eq (PowerSeries.HasSubst.of_constantCoeff_zero hTc)
+      1 - (fracCurve W σ KK).a₁ * ρ Tp - (fracCurve W σ KK).a₃ * ρ wT := by
+    simpa [← fracCurve_def] using W.algebraMap_subst_formalInverseDenom_eq (T := KK)
+      (PowerSeries.HasSubst.of_constantCoeff_zero hTc)
   have hFeq : ρ (subst (pairSubstitution q₁ q₂) (formalAdd W)) = -(ρ Tp * ρ sp) := by
     have h := congrArg ρ (subst_pair_formalAdd_eq W h₁ h₂)
     simp only [map_neg, map_mul] at h
@@ -380,43 +313,6 @@ private theorem thetaPoint_add (hΔ : (fracCurve W σ KK).Δ ≠ 0)
   obtain ⟨h₃, hadd⟩ := thetaPoint_add_eq_some W hΔ h₁ h₂ hq₁0 hq₂0 hN hx rfl
   exact hadd.trans (some_eq_thetaPoint_formalAdd W hΔ h₁ h₂ hN hF hF0 rfl h₃)
 
-/-- **The parametrized point of the inverted parameter is the negative**: `θ(ι(q)) = -θ(q)`.
-
-The formal inverse was built to be the parameter of the reflected point, so this identifies that
-construction with the group inverse of `fracCurve W`. Both coordinates come out of the two
-readings of the inverse, `ι(q) = -(q * u(q)⁻¹)` and `w(ι(q)) = -(w(q) * u(q)⁻¹)`. -/
-private theorem thetaPoint_neg (hΔ : (fracCurve W σ KK).Δ ≠ 0)
-    {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) (hq0 : q ≠ 0)
-    (hi : constantCoeff (PowerSeries.subst q (formalInverse W)) = 0)
-    (hi0 : PowerSeries.subst q (formalInverse W) ≠ 0) :
-    W.thetaPoint hΔ hi hi0 = -W.thetaPoint hΔ hq hq0 := by
-  classical
-  set ρ := algebraMap (MvPowerSeries σ O) KK with hρ
-  have hs : PowerSeries.HasSubst q := PowerSeries.HasSubst.of_constantCoeff_zero hq
-  -- the readings of the formal inverse at `q`, pushed into `KK`
-  have hu := congrArg ρ (W.subst_formalInverseDenom_mul hs)
-  have hIeq := congrArg ρ (W.subst_formalInverse_eq hs)
-  have hwIeq := congrArg ρ (W.subst_formalW_subst_formalInverse hs)
-  simp only [map_neg, map_mul, map_one] at hu hIeq hwIeq
-  have hsp0 := right_ne_zero_of_mul_eq_one hu
-  have hueq : ρ (PowerSeries.subst q (formalInverseDenom W)) =
-      1 - (fracCurve W σ KK).a₁ * ρ q -
-        (fracCurve W σ KK).a₃ * ρ (PowerSeries.subst q (formalW W)) :=
-    W.algebraMap_subst_formalInverseDenom_eq hs
-  have hw0 : ρ (PowerSeries.subst q (formalW W)) ≠ 0 :=
-    W.algebraMap_subst_formalW_ne_zero hq hq0
-  rw [W.thetaPoint_eq_some hΔ hi hi0 (W.thetaPoint_nonsingular hΔ hi hi0),
-    W.thetaPoint_eq_some hΔ hq hq0 (W.thetaPoint_nonsingular hΔ hq hq0)]
-  simp only [Affine.Point.neg_some, Affine.Point.some.injEq]
-  simp only [← hρ]
-  constructor
-  · rw [hIeq, hwIeq]
-    field_simp
-  · rw [hwIeq, Affine.negY]
-    field_simp
-    linear_combination
-      ρ (PowerSeries.subst q (PowerSeries.invOfUnit (formalInverseDenom W) 1)) * hueq - hu
-
 /-- The intercept at a pair is nonzero as soon as the two parameters are distinct and not
 mutually inverse.
 
@@ -434,7 +330,6 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
   classical
   intro h0
   set ρ := algebraMap (MvPowerSeries σ O) KK
-  have hs₂ : PowerSeries.HasSubst q₂ := PowerSeries.HasSubst.of_constantCoeff_zero h₂
   -- a vanishing intercept collapses the cross combination, so the `x`-coordinates agree
   have hqw : q₁ * PowerSeries.subst q₂ (formalW W) -
       q₂ * PowerSeries.subst q₁ (formalW W) = 0 := by
@@ -454,16 +349,13 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
     simp only [Affine.Point.xRep_some, Matrix.vecCons_inj, and_true]
     exact hx
   have hcase := Affine.Point.eq_or_eq_neg_of_xRep_eq_xRep hxr
-  -- the data carried by the inverted parameter
-  have hs0 := right_ne_zero_of_mul_eq_one (W.subst_formalInverseDenom_mul hs₂)
   have hi : constantCoeff (PowerSeries.subst q₂ (formalInverse W)) = 0 :=
     PowerSeries.constantCoeff_subst_eq_zero h₂ (formalInverse W) (constantCoeff_formalInverse W)
-  have hi0 : PowerSeries.subst q₂ (formalInverse W) ≠ 0 := by
-    rw [W.subst_formalInverse_eq hs₂]
-    exact neg_ne_zero.mpr (mul_ne_zero hq₂0 hs0)
+  have hi0 : PowerSeries.subst q₂ (formalInverse W) ≠ 0 :=
+    W.subst_formalInverse_ne_zero h₂ hq₂0
   rcases hcase with hc | hc
   · exact hne₁ ((W.thetaPoint_inj hΔ h₁ h₂ hq₁0 hq₂0).mp hc)
-  · rw [← W.thetaPoint_neg hΔ h₂ hq₂0 hi hi0] at hc
+  · rw [← W.thetaPoint_neg hΔ h₂ hq₂0] at hc
     exact hne₂ ((W.thetaPoint_inj hΔ h₁ hi hq₁0 hi0).mp hc)
 
 variable [DecidableEq KK] in

@@ -52,6 +52,8 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   a two-variable one is `subst (pairSubstitution q₁ q₂) f`.
 * `MvPowerSeries.pairSubstitution_self` : substituting the same series into both variables of a
   `Unit ⊕ Unit`-indexed series gives the constant family `fun _ ↦ q`.
+* `MvPowerSeries.comp_pairSubstitution` : postcomposing a `pairSubstitution` family acts
+  componentwise on the two entries.
 * `MvPowerSeries.hasSubst_pair` and `MvPowerSeries.hasSubst_pair_of_hasSubst` : a pair of series
   with vanishing (or nilpotent) constant coefficient is a legitimate substitution family for the
   two variables indexed by `Unit ⊕ Unit`.
@@ -236,6 +238,14 @@ omit [CommRing O] in
 constant substitution family `fun _ ↦ q`. -/
 theorem pairSubstitution_self (q : MvPowerSeries σ O) :
     pairSubstitution q q = fun _ ↦ q :=
+  funext fun s ↦ by rcases s with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> rfl
+
+omit [CommRing O] in
+/-- Postcomposing a `pairSubstitution` family with a function `f` acts componentwise on the two
+entries of the pair. -/
+theorem comp_pairSubstitution {α : Type*} (f : MvPowerSeries σ O → α)
+    (q₁ q₂ : MvPowerSeries σ O) :
+    (fun s ↦ f (pairSubstitution q₁ q₂ s)) = Sum.elim (fun _ ↦ f q₁) (fun _ ↦ f q₂) :=
   funext fun s ↦ by rcases s with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> rfl
 
 end HasSubstPair

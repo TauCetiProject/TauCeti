@@ -415,8 +415,8 @@ theorem formalAddEval_formalInverseEval {t : O} (ht : PowerSeries.HasEval t) :
   have hfam : (fun s : Unit ⊕ Unit ↦ MvPowerSeries.eval₂ (RingHom.id O) (fun _ : Unit ↦ t)
         (MvPowerSeries.pairSubstitution (PowerSeries.X : PowerSeries O) (formalInverse W) s)) =
       Sum.elim (fun _ ↦ t) fun _ ↦ W.formalInverseEval t := by
-    funext s
-    rcases s with _ | _ <;> simp [W.formalInverseEval_def, PowerSeries.eval₂, PowerSeries.X_apply]
+    rw [MvPowerSeries.comp_pairSubstitution, W.formalInverseEval_def, PowerSeries.eval₂]
+    exact congrArg (Sum.elim · _) (funext fun _ ↦ PowerSeries.eval₂_X _ _)
   have hpair : MvPowerSeries.HasEval
       (fun s : Unit ⊕ Unit ↦ MvPowerSeries.aeval (PowerSeries.hasEval ht)
         (MvPowerSeries.pairSubstitution (PowerSeries.X : PowerSeries O) (formalInverse W) s)) := by

@@ -250,8 +250,11 @@ theorem subst_invPair_formalThirdRoot :
       fun i ↦ MvPowerSeries.map W.specialize
         (pairSubstitution (PowerSeries.X : PowerSeries (MvPolynomial Coeff ℤ))
           (formalInverse Universal.curve) i) := by
-    funext i
-    cases i <;> simp [PowerSeries.map, PowerSeries.X_apply]
+    have hmap : MvPowerSeries.map W.specialize
+        (PowerSeries.X : PowerSeries (MvPolynomial Coeff ℤ)) = PowerSeries.X :=
+      PowerSeries.map_X W.specialize
+    rw [MvPowerSeries.comp_pairSubstitution, hmap]
+    rfl
   rw [hfam, ← MvPowerSeries.map_subst (hasSubst_invPair Universal.curve),
     subst_invPair_formalThirdRoot_of_isDomain Universal.curve two_ne_zero, map_zero]
 

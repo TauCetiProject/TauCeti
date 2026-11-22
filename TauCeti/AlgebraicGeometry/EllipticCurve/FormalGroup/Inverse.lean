@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.WExpansion
 public import TauCeti.RingTheory.MvPowerSeries.Inverse
+import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # The formal inverse of a Weierstrass curve
@@ -32,9 +33,15 @@ what makes `formalInverse` a power series at all.
   `WeierstrassCurve.subst_formalInverse_formalInverseDenom`: the two substitution identities the
   involution is assembled from, giving the `w`-coordinate and the denominator at the negative
   point.
+* `WeierstrassCurve.subst_formalInverse_eq`, `WeierstrassCurve.subst_formalInverseDenom_eq`,
+  `WeierstrassCurve.algebraMap_subst_formalInverseDenom_eq`, and
+  `WeierstrassCurve.subst_formalW_subst_formalInverse`: parameter-level forms of the formal
+  inverse, its denominator, and `w(ι(q))`.
 * `WeierstrassCurve.isUnit_formalInverseDenom`: the denominator is a unit.
-* `WeierstrassCurve.constantCoeff_formalInverse`: `ι(0) = 0`, so `ι` may itself be substituted
-  into a power series — `WeierstrassCurve.hasSubst_formalInverse`.
+* `WeierstrassCurve.constantCoeff_formalInverse` and `WeierstrassCurve.subst_formalInverse_ne_zero`:
+  `ι(0) = 0`, so `ι` may itself be substituted into a power series
+  (`WeierstrassCurve.hasSubst_formalInverse`), and `ι(q) ≠ 0` over a domain when `q ≠ 0` and
+  `constantCoeff q = 0`.
 
 ## Implementation notes
 
@@ -61,6 +68,12 @@ name is already taken, in `FormalGroup/WExpansion.lean`, by the unit part `w(z) 
 is a different series (it is the source's `vSeries`). The source proves the substitution
 identities through its own private `wStep` recursion; this file uses the `w`-equation API of
 `FormalGroup/WExpansion.lean` instead, so the source's `wStepAt` lemmas are not ported.
+
+The single-parameter helpers `subst_formalInverseDenom_mul`, `subst_formalInverse_eq`,
+`subst_formalInverseDenom_eq`, and `subst_formalW_subst_formalInverse` are likewise adapted
+from `single_u_mul`, `single_iota_eq`, `single_u_eq`, and `single_wIota` in
+`EllipticCurves/WeierstrassFormalGroup/ThirdPoint.lean` (at the same commit), proved as
+transports of the one-variable identities above along `PowerSeries.subst q`.
 -/
 
 public section
@@ -212,5 +225,95 @@ theorem map_formalInverse :
     map_formalInverseDenom W φ]
 
 end BaseChange
+
+/-! ### The formal inverse at a parameter -/
+
+/-- Over a nontrivial commutative ring, the formal inverse `ι(z) = -z + ⋯` is nonzero. -/
+@[simp]
+theorem formalInverse_ne_zero [Nontrivial R] : formalInverse W ≠ 0 := by
+  intro h
+  have h1 := congrArg (PowerSeries.coeff 1) h
+  rw [formalInverse_def, map_neg, PowerSeries.coeff_succ_X_mul,
+    PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.constantCoeff_invOfUnit,
+    map_zero] at h1
+  simp only [inv_one, Units.val_one] at h1
+  exact one_ne_zero (neg_eq_zero.mp h1)
+
+/-- Over a domain of multivariate series, the formal inverse at a nonzero parameter with vanishing
+constant coefficient is itself nonzero. -/
+theorem subst_formalInverse_ne_zero {σ : Type*} [IsDomain (MvPowerSeries σ R)]
+    {q : MvPowerSeries σ R} (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0) :
+    PowerSeries.subst q (formalInverse W) ≠ 0 := by
+  have : Nontrivial R := RingHom.domain_nontrivial (MvPowerSeries.C : R →+* MvPowerSeries σ R)
+  have : NoZeroDivisors R :=
+    (MvPowerSeries.C_injective (σ := σ)).noZeroDivisors MvPowerSeries.C (map_zero _) (map_mul _)
+  exact (PowerSeries.subst_eq_zero_iff hq hq0).not.mpr (formalInverse_ne_zero W)
+
+/-- The denominator of the formal inverse, read at a parameter, still multiplies its `invOfUnit`
+to `1`: substituting is a ring map, so it carries `mul_invOfUnit_formalInverseDenom` along. -/
+theorem subst_formalInverseDenom_mul {σ : Type*} {q : MvPowerSeries σ R}
+    (hq : PowerSeries.HasSubst q) :
+    PowerSeries.subst q (formalInverseDenom W) *
+        PowerSeries.subst q (PowerSeries.invOfUnit (formalInverseDenom W) 1) = 1 := by
+  have h := congrArg (PowerSeries.substAlgHom hq) (mul_invOfUnit_formalInverseDenom W)
+  simp only [map_mul, map_one] at h
+  simpa only [PowerSeries.coe_substAlgHom hq] using h
+
+/-- The formal inverse read at a parameter: `ι(q) = -(q * u(q)⁻¹)`. -/
+theorem subst_formalInverse_eq {σ : Type*} {q : MvPowerSeries σ R}
+    (hq : PowerSeries.HasSubst q) :
+    PowerSeries.subst q (formalInverse W) =
+      -(q * PowerSeries.subst q (PowerSeries.invOfUnit (formalInverseDenom W) 1)) := by
+  rw [formalInverse_def, ← PowerSeries.coe_substAlgHom hq]
+  simp only [map_neg, map_mul]
+  rw [PowerSeries.coe_substAlgHom hq, PowerSeries.subst_X hq]
+
+/-- The denominator of the formal inverse read at a parameter, written out. -/
+theorem subst_formalInverseDenom_eq {σ : Type*} {q : MvPowerSeries σ R}
+    (hq : PowerSeries.HasSubst q) :
+    PowerSeries.subst q (formalInverseDenom W) =
+      1 - MvPowerSeries.C W.a₁ * q - MvPowerSeries.C W.a₃ * PowerSeries.subst q (formalW W) := by
+  rw [formalInverseDenom_def, ← PowerSeries.coe_substAlgHom hq]
+  simp only [map_sub, map_one, map_mul, PowerSeries.substAlgHom_X,
+    PowerSeries.coe_substAlgHom, PowerSeries.subst_C]
+
+/-- The denominator of the formal inverse read at a parameter, pushed into any commutative
+`MvPowerSeries σ R`-algebra `T`, where `W` is base-changed along the composite map
+`R → MvPowerSeries σ R → T`. -/
+theorem algebraMap_subst_formalInverseDenom_eq {σ T : Type*} [CommRing T]
+    [Algebra (MvPowerSeries σ R) T] {q : MvPowerSeries σ R} (hq : PowerSeries.HasSubst q) :
+    algebraMap (MvPowerSeries σ R) T (PowerSeries.subst q (formalInverseDenom W)) =
+      1 - (W.map ((algebraMap (MvPowerSeries σ R) T).comp
+            (algebraMap R (MvPowerSeries σ R)))).a₁ * algebraMap (MvPowerSeries σ R) T q -
+        (W.map ((algebraMap (MvPowerSeries σ R) T).comp
+            (algebraMap R (MvPowerSeries σ R)))).a₃ *
+          algebraMap (MvPowerSeries σ R) T (PowerSeries.subst q (formalW W)) := by
+  rw [W.subst_formalInverseDenom_eq hq, map_sub, map_sub, map_one, map_mul, map_mul,
+    WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₃, RingHom.comp_apply, RingHom.comp_apply,
+    MvPowerSeries.c_eq_algebraMap]
+
+/-- The `w`-expansion at the inverted parameter: `w(ι(q)) = -(w(q) * u(q)⁻¹)`.
+
+This is the one-variable `subst_formalInverse_formalW` carried through the substitution `q`. -/
+theorem subst_formalW_subst_formalInverse {σ : Type*} {q : MvPowerSeries σ R}
+    (hq : PowerSeries.HasSubst q) :
+    PowerSeries.subst (PowerSeries.subst q (formalInverse W)) (formalW W) =
+      -(PowerSeries.subst q (formalW W) *
+        PowerSeries.subst q (PowerSeries.invOfUnit (formalInverseDenom W) 1)) := by
+  rw [← PowerSeries.subst_comp_subst_apply (hasSubst_formalInverse W) hq,
+    subst_formalInverse_formalW, ← PowerSeries.coe_substAlgHom hq]
+  simp only [map_neg, map_mul]
+
+/-- The formal inverse at a parameter, read through a further substitution `g` that kills that
+parameter: the result vanishes, since the inverse has no constant term. -/
+theorem subst_subst_formalInverse_eq_zero {σ' : Type*}
+    {g : σ' → MvPowerSeries Unit R} (hg : MvPowerSeries.HasSubst g) {a : MvPowerSeries σ' R}
+    (ha : MvPowerSeries.constantCoeff a = 0) (hga : MvPowerSeries.subst g a = 0) :
+    MvPowerSeries.subst g (MvPowerSeries.subst (fun _ : Unit ↦ a) (formalInverse W)) = 0 := by
+  rw [MvPowerSeries.subst_comp_subst_apply
+      (MvPowerSeries.hasSubst_of_constantCoeff_zero fun _ ↦ ha) hg,
+    show (fun _ : Unit ↦ MvPowerSeries.subst g a) = (0 : Unit → MvPowerSeries Unit R) from
+      funext fun _ ↦ hga]
+  exact MvPowerSeries.subst_zero_of_constantCoeff_zero (constantCoeff_formalInverse W)
 
 end WeierstrassCurve

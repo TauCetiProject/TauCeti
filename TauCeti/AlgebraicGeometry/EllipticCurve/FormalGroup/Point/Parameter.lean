@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.WExpansion
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Inverse
 
 /-!
 # Parametrized affine points from formal-group parameters
@@ -29,12 +29,14 @@ in the `(z, w)`-chart of `WeierstrassCurve.formalW`.
   `O → MvPowerSeries σ O → KK` is a scalar tower.
 * `WeierstrassCurve.fracCurve_a₁`, `WeierstrassCurve.fracCurve_a₂`,
   `WeierstrassCurve.fracCurve_a₃`, `WeierstrassCurve.fracCurve_a₄`,
-  `WeierstrassCurve.fracCurve_a₆`: the Weierstrass coefficients of `fracCurve W σ KK`.
+  `WeierstrassCurve.fracCurve_a₆`, and `WeierstrassCurve.fracCurve_Δ`: the Weierstrass coefficients
+  and discriminant of `fracCurve W σ KK`.
 * `WeierstrassCurve.fracCurve_Δ_ne_zero`: nonzero discriminant passes to `fracCurve W σ KK`
   whenever `MvPowerSeries σ O` acts faithfully on `KK`.
 * `WeierstrassCurve.thetaPoint_nonsingular`, `WeierstrassCurve.thetaPoint_eq_some`,
-  `WeierstrassCurve.xCoord_thetaPoint`, `WeierstrassCurve.yCoord_thetaPoint`, and
-  `WeierstrassCurve.thetaPoint_inj`: nonsingularity, affine coordinates, and injectivity of `θ`.
+  `WeierstrassCurve.xCoord_thetaPoint`, `WeierstrassCurve.yCoord_thetaPoint`,
+  `WeierstrassCurve.thetaPoint_inj`, and `WeierstrassCurve.thetaPoint_neg`: nonsingularity,
+  affine coordinates, injectivity, and negation of `θ`.
 
 ## References
 
@@ -46,7 +48,7 @@ Adapted from Michael Stoll's `EllipticCurves` project
 (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0) at commit
 `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`,
 `EllipticCurves/WeierstrassFormalGroup/GroupLaw.lean` (`Domain` section), declarations
-`fracCurve`, `thetaPoint`, and `thetaPoint_inj`.
+`fracCurve`, `thetaPoint`, `thetaPoint_inj`, and `thetaPoint_neg`.
 -/
 
 public section
@@ -117,6 +119,13 @@ theorem fracCurve_a₆ (W : WeierstrassCurve O) (σ : Type*) (KK : Type*)
     (fracCurve W σ KK).a₆ = algebraMap (MvPowerSeries σ O) KK (C W.a₆) := by
   rw [fracCurve_def, map_a₆, RingHom.comp_apply, c_eq_algebraMap]
 
+/-- The discriminant of `fracCurve W σ KK`. -/
+@[simp]
+theorem fracCurve_Δ (W : WeierstrassCurve O) (σ : Type*) (KK : Type*)
+    [CommRing KK] [Algebra (MvPowerSeries σ O) KK] :
+    (fracCurve W σ KK).Δ = algebraMap (MvPowerSeries σ O) KK (C W.Δ) := by
+  rw [fracCurve_def, map_Δ, RingHom.comp_apply, c_eq_algebraMap]
+
 variable (W : WeierstrassCurve O) {σ : Type*}
 
 variable {KK : Type*} [Field KK] [Algebra (MvPowerSeries σ O) KK]
@@ -126,9 +135,9 @@ variable {KK : Type*} [Field KK] [Algebra (MvPowerSeries σ O) KK]
 acts faithfully: `Δ` is carried there by the injective maps `C` and
 `algebraMap (MvPowerSeries σ O) KK`. -/
 theorem fracCurve_Δ_ne_zero (hΔ : W.Δ ≠ 0) : (fracCurve W σ KK).Δ ≠ 0 := by
-  rw [fracCurve_def, map_Δ, RingHom.comp_apply,
+  rw [fracCurve_Δ,
     map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective (MvPowerSeries σ O) KK),
-    ← c_eq_algebraMap, map_ne_zero_iff _ C_injective]
+    map_ne_zero_iff _ C_injective]
   exact hΔ
 
 /-- The affine coordinates `(q / w(q), -1 / w(q))` of the parametrized point `θ(q)` define a
@@ -216,6 +225,52 @@ theorem thetaPoint_inj (hΔ : (fracCurve W σ KK).Δ ≠ 0)
   have h1 := h.1
   rw [div_eq_div_iff hw₁0 hw₂0, hw] at h1
   exact mul_right_cancel₀ hw₂0 h1
+
+/-- **The parametrized point of the inverted parameter is the negative**: `θ(ι(q)) = -θ(q)`.
+
+The formal inverse was built to be the parameter of the reflected point, so this identifies that
+construction with the group inverse of `fracCurve W`. Both coordinates come out of the two
+readings of the inverse, `ι(q) = -(q * u(q)⁻¹)` and `w(ι(q)) = -(w(q) * u(q)⁻¹)`. -/
+theorem thetaPoint_neg (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+    {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
+    W.thetaPoint hΔ
+        (PowerSeries.constantCoeff_subst_eq_zero hq (formalInverse W)
+          (constantCoeff_formalInverse W))
+        (by
+          have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+          exact W.subst_formalInverse_ne_zero hq hq0) =
+      -W.thetaPoint hΔ hq hq0 := by
+  classical
+  set ρ := algebraMap (MvPowerSeries σ O) KK with hρ
+  have hs : PowerSeries.HasSubst q := PowerSeries.HasSubst.of_constantCoeff_zero hq
+  -- the readings of the formal inverse at `q`, pushed into `KK`
+  have hu := congrArg ρ (W.subst_formalInverseDenom_mul hs)
+  have hIeq := congrArg ρ (W.subst_formalInverse_eq hs)
+  have hwIeq := congrArg ρ (W.subst_formalW_subst_formalInverse hs)
+  simp only [map_neg, map_mul, map_one] at hu hIeq hwIeq
+  have hsp0 := right_ne_zero_of_mul_eq_one hu
+  have hueq : ρ (PowerSeries.subst q (formalInverseDenom W)) =
+      1 - (fracCurve W σ KK).a₁ * ρ q -
+        (fracCurve W σ KK).a₃ * ρ (PowerSeries.subst q (formalW W)) := by
+    simpa [← fracCurve_def] using W.algebraMap_subst_formalInverseDenom_eq (T := KK) hs
+  have hw0 : ρ (PowerSeries.subst q (formalW W)) ≠ 0 :=
+    W.algebraMap_subst_formalW_ne_zero hq hq0
+  have hi : constantCoeff (PowerSeries.subst q (formalInverse W)) = 0 :=
+    PowerSeries.constantCoeff_subst_eq_zero hq (formalInverse W) (constantCoeff_formalInverse W)
+  have hi0 : PowerSeries.subst q (formalInverse W) ≠ 0 := by
+    have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+    exact W.subst_formalInverse_ne_zero hq hq0
+  rw [W.thetaPoint_eq_some hΔ hi hi0 (W.thetaPoint_nonsingular hΔ hi hi0),
+    W.thetaPoint_eq_some hΔ hq hq0 (W.thetaPoint_nonsingular hΔ hq hq0)]
+  simp only [Affine.Point.neg_some, Affine.Point.some.injEq]
+  simp only [← hρ]
+  constructor
+  · rw [hIeq, hwIeq]
+    field_simp
+  · rw [hwIeq, Affine.negY]
+    field_simp
+    linear_combination
+      ρ (PowerSeries.subst q (PowerSeries.invOfUnit (formalInverseDenom W) 1)) * hueq - hu
 
 end WeierstrassCurve
 

@@ -58,8 +58,9 @@ equation at the substituted parameter rather than at `z`.
   this one asks for `[CommRing S]` on the *coefficient algebra*, but nothing of the parameter,
   whose constant coefficient the equation forces to be nilpotent. The curve's base ring `R` is a
   `CommSemiring` for both.
-* `WeierstrassCurve.algebraMap_wEquationRHS`: the equation's right-hand side commutes with an
-  algebra map, so a solution over a ring is a solution over any algebra over it.
+* `WeierstrassCurve.algebraMap_wEquationRHS` and `RingHom.map_wEquationRHS`: the equation's
+  right-hand side commutes with algebra maps and compatible ring homomorphisms, so a solution over
+  a ring transports along scalar extensions and base change.
 * `WeierstrassCurve.wEquation_of_equation` and `WeierstrassCurve.nonsingular_of_wEquation`: the
   `w`-equation is the Weierstrass equation in the coordinates `z = -x / y`, `w = -1 / y`, and
   conversely a nonzero solution yields a nonsingular affine point.
@@ -607,6 +608,19 @@ theorem subst_formalW_wEquation {τ S : Type*} [CommRing S] [Algebra R S] {a : M
   conv_lhs => rw [formalW_wEquation W]
   rw [subst_wEquationRHS W ha, PowerSeries.subst_X ha]
 
+/-- A ring homomorphism compatible with a base-ring homomorphism `φ : R →+* S` carries the
+right-hand side of the `w`-equation of `W` to that of `W.map φ` at the images of its parameter
+and unknown. -/
+theorem _root_.RingHom.map_wEquationRHS {S A B : Type*} [CommRing S] [CommSemiring A]
+    [CommSemiring B] [Algebra R A] [Algebra S B] (f : A →+* B) {φ : R →+* S}
+    (hf : f.comp (algebraMap R A) = (algebraMap S B).comp φ) (W : WeierstrassCurve R)
+    (q v : A) :
+    f (wEquationRHS W q v) = wEquationRHS (W.map φ) (f q) (f v) := by
+  have h : ∀ r : R, f (algebraMap R A r) = algebraMap S B (φ r) := RingHom.congr_fun hf
+  simp only [wEquationRHS_def, map_add, map_mul, map_pow, h,
+    WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₂, WeierstrassCurve.map_a₃,
+    WeierstrassCurve.map_a₄, WeierstrassCurve.map_a₆]
+
 /-- Pushing the substituted `w`-expansion into any commutative `MvPowerSeries τ S`-algebra `T`
 gives a solution of the `w`-equation of `W` base-changed to `T`. -/
 theorem algebraMap_subst_formalW_wEquation {τ S T : Type*} [CommRing S] [Algebra R S]
@@ -618,7 +632,7 @@ theorem algebraMap_subst_formalW_wEquation {τ S T : Type*} [CommRing S] [Algebr
         (algebraMap (MvPowerSeries τ S) T a)
         (algebraMap (MvPowerSeries τ S) T (PowerSeries.subst a (formalW W))) := by
   conv_lhs => rw [subst_formalW_wEquation W ha]
-  simp [wEquationRHS_def]
+  exact (algebraMap (MvPowerSeries τ S) T).map_wEquationRHS rfl W _ _
 
 /-- **The substituted `w`-expansion is the unique solution at the substituted parameter.** For a
 parameter `q` with vanishing constant coefficient, any series with vanishing constant coefficient
@@ -671,10 +685,8 @@ and the unknown with it. -/
 @[simp]
 theorem map_wEquationRHS (q v : PowerSeries R) :
     wEquationRHS (W.map φ) (PowerSeries.map φ q) (PowerSeries.map φ v) =
-      PowerSeries.map φ (wEquationRHS W q v) := by
-  simp only [wEquationRHS_powerSeries, map_add, map_mul, map_pow, PowerSeries.map_C,
-    WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₂, WeierstrassCurve.map_a₃,
-    WeierstrassCurve.map_a₄, WeierstrassCurve.map_a₆]
+      PowerSeries.map φ (wEquationRHS W q v) :=
+  ((PowerSeries.map φ).map_wEquationRHS (by ext; simp) W q v).symm
 
 /-- **The `w`-expansion commutes with base change.** Both sides have vanishing constant
 coefficient and solve the `w`-equation of `W.map φ`, and that solution is unique. -/
