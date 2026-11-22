@@ -89,7 +89,7 @@ theorem singularHomologyMap_symm_one [PathConnectedSpace (MooreLoopSpace X x)]
         ((singularChains ℤ).map (TopCat.ofHom ⟨symm, continuous_symm⟩)) 1 c = -c := by
   -- every class is minus a Hurewicz class, by degree-one Hurewicz
   obtain ⟨a, rfl⟩ := (HurewiczOne.hurewiczHomologyAddEquiv
-    (X := TopCat.of (MooreLoopSpace X x)) 1).surjective c
+    (X := TopCat.of (MooreLoopSpace X x)) 1 (.refl ℤ)).surjective c
   -- the abelianization map is the quotient map
   obtain ⟨g, hg⟩ : ∃ g, Group.Abelianization.of g = a.toMul := QuotientGroup.mk_surjective _
   obtain ⟨b, hb⟩ :=
