@@ -35,6 +35,7 @@ base point.
   `TauCeti.dslope_const_mul`, `TauCeti.dslope_add`, `TauCeti.dslope_sum`: linearity of divided
   differences.
 * `TauCeti.dslope_mul`: the product rule for divided differences.
+* `TauCeti.dslope_neg`: the divided difference of `-f` is the negative of that of `f`.
 * `Filter.EventuallyEq.dslope`: divided differences at `a` of functions with the same germ at `a`
   have the same germ at `a`.
 -/
@@ -98,6 +99,16 @@ theorem dslope_mul {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A
       ← smul_add]
     congr 1
     noncomm_ring
+
+/-- The divided difference of `-f` is the negative of the divided difference of `f`. -/
+@[simp]
+theorem dslope_neg {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] (f : 𝕜 → E) (a : 𝕜) : dslope (-f) a = -dslope f a := by
+  ext b
+  rcases eq_or_ne b a with rfl | hb
+  · rw [Pi.neg_apply, dslope_same, dslope_same, deriv.neg]
+  · rw [Pi.neg_apply, dslope_of_ne _ hb, dslope_of_ne _ hb, slope_neg_fun, Pi.neg_apply,
+      Pi.neg_apply]
 
 /-- Divided differences at `a` of functions with the same germ at `a` have the same germ at `a`. -/
 theorem _root_.Filter.EventuallyEq.dslope {𝕜 E : Type*} [NontriviallyNormedField 𝕜]

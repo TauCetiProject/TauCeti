@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.PositiveCone
+public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.ComplexLineCone
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!

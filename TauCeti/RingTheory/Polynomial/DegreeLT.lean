@@ -38,6 +38,8 @@ evaluating polynomials of degree `< n`.
 * `Polynomial.mem_degreeLT_natDegree_iff`: membership in `R[X]_(g.natDegree)` is `degree < degree`.
 * `Polynomial.evalLinearMap`, `Polynomial.evalDegreeLT`, `Polynomial.mem_evalDegreeLT`: the
   `R`-submodule of functions `R → R` represented by polynomials of degree `< n`.
+* `Polynomial.mem_degreeLT_succ_iff_natDegree_le`: membership in `R[X]_(n + 1)` is
+  `natDegree ≤ n`.
 * `Polynomial.modByMonic_mem_degreeLT`, `Polynomial.divByMonic_mem_degreeLT`: where `%ₘ` and `/ₘ`
   land.
 * `Polynomial.Monic.modByMonic_mul_add`, `Polynomial.Monic.divByMonic_mul_add`: division with
@@ -50,9 +52,10 @@ evaluating polynomials of degree `< n`.
   existence and uniqueness of degree-bounded solutions of `g * b + h * a = c`.
 
 Stated over an arbitrary commutative ring, with the trivial ring dispatched by `nontriviality`
-rather than excluded by hypothesis; `mem_degreeLT_natDegree_iff`, `evalLinearMap`, and
-`evalDegreeLT` need only a semiring, `finrank_degreeLT` a semiring with the strong rank condition,
-and `Monic.sub_mem_degreeLT` and `divByMonic_mem_degreeLT` only a ring.
+rather than excluded by hypothesis; `mem_degreeLT_natDegree_iff`,
+`mem_degreeLT_succ_iff_natDegree_le`, `evalLinearMap`, and `evalDegreeLT` need only a semiring,
+`finrank_degreeLT` a semiring with the strong rank condition, and `Monic.sub_mem_degreeLT` and
+`divByMonic_mem_degreeLT` only a ring.
 
 ## Provenance
 
@@ -95,6 +98,11 @@ theorem mem_evalDegreeLT {n : ℕ} {f : R → R} :
     f ∈ evalDegreeLT R n ↔ ∃ Q : R[X], Q.degree < n ∧ ∀ w, f w = Q.eval w := by
   simp only [evalDegreeLT, Submodule.mem_map, mem_degreeLT, funext_iff, evalLinearMap_apply]
   refine exists_congr fun Q ↦ and_congr_right fun _ ↦ forall_congr' fun _ ↦ eq_comm
+
+/-- Membership in `R[X]_(n + 1)` is the bound `natDegree ≤ n`. -/
+theorem mem_degreeLT_succ_iff_natDegree_le {n : ℕ} {p : R[X]} :
+    p ∈ degreeLT R (n + 1) ↔ p.natDegree ≤ n := by
+  rw [degreeLT_succ_eq_degreeLE, mem_degreeLE, natDegree_le_iff_degree_le]
 
 /-- A change of coefficients preserves the degree bound. -/
 theorem map_mem_degreeLT {S : Type*} [Semiring S] (φ : R →+* S) {n : ℕ} {f : R[X]}
