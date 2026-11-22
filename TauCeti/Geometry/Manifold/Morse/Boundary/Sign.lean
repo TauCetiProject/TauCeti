@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Basic
 public import TauCeti.Geometry.Manifold.Morse.Stable.ChartChange
+public import TauCeti.LinearAlgebra.Orientation.LinearMapSign
 public import TauCeti.LinearAlgebra.Orientation.Prod
 import TauCeti.Analysis.Normed.Module.Orientation
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -220,21 +221,29 @@ theorem trajectoryComparison_apply (y : M) (v : {i // φp.weight i < 0} → ℝ)
         hX.stableNormal φq y (hX.unstableFrame φp y v)) :=
   (rfl)
 
-open scoped Classical in
 /-- The **sign of the trajectory** through `y` from `p` to `q`, for orientations `op` and `oq` of
-the unstable manifolds at `p` and `q`: `1` when the comparison map is an isomorphism carrying `op`
-to the standard orientation of `ℝ` followed by `oq`, `-1` when it is an isomorphism reversing these
-orientations, and `0` when it is not an isomorphism. The last case does not happen on trajectories
+the unstable manifolds at `p` and `q`: the sign `Orientation.linearMapSign` of the comparison map,
+that is, `1` when it is an isomorphism carrying `op` to the standard orientation of `ℝ` followed by
+`oq`, `-1` when it is an isomorphism reversing these orientations, and `0` when it is not an
+isomorphism. The last case does not happen on trajectories
 from `p` to `q` when `X` is linear in `φp` and `φq` and satisfies the Morse–Smale condition
 (`TauCeti.IsAdaptedPseudoGradient.bijective_trajectoryComparison`). -/
 noncomputable def trajectorySign
     (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)))
     (oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q)))
     (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) (y : M) : ℤ :=
-  if h : Bijective (hX.trajectoryComparison φp φq y) then
-    if Orientation.map _ (LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y).toLinearMap h)
-        op = φq.trajectoryTargetOrientation oq hpq then 1 else -1
-  else 0
+  op.linearMapSign (φq.trajectoryTargetOrientation oq hpq)
+    (hX.trajectoryComparison φp φq y).toLinearMap
+
+/-- The sign of a trajectory is the sign of the comparison map. -/
+theorem trajectorySign_def
+    (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)))
+    (oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q)))
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) (y : M) :
+    hX.trajectorySign φp φq op oq hpq y =
+      op.linearMapSign (φq.trajectoryTargetOrientation oq hpq)
+        (hX.trajectoryComparison φp φq y).toLinearMap :=
+  (rfl)
 
 /-- The number of trajectories from `p` to `q` counted with their signs, read on the middle
 level `(f p + f q) / 2`. -/
@@ -266,21 +275,20 @@ theorem trajectorySign_of_bijective {y : M} (h : Bijective (hX.trajectoryCompari
     hX.trajectorySign φp φq op oq hpq y =
       if Orientation.map _
           (LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y).toLinearMap h) op =
-        φq.trajectoryTargetOrientation oq hpq then 1 else -1 := by
-  simp only [trajectorySign, h, ↓reduceDIte]
+        φq.trajectoryTargetOrientation oq hpq then 1 else -1 :=
+  Orientation.linearMapSign_of_bijective h
 
 /-- Where the comparison map is not an isomorphism, the sign is `0`. -/
 theorem trajectorySign_of_not_bijective {y : M}
     (h : ¬Bijective (hX.trajectoryComparison φp φq y)) :
-    hX.trajectorySign φp φq op oq hpq y = 0 := by
-  simp only [trajectorySign, h, ↓reduceDIte]
+    hX.trajectorySign φp φq op oq hpq y = 0 :=
+  Orientation.linearMapSign_of_not_bijective h
 
 /-- **The sign of a trajectory is `±1`** wherever the comparison map is an isomorphism. -/
 theorem trajectorySign_eq_one_or_eq_neg_one_of_bijective {y : M}
     (h : Bijective (hX.trajectoryComparison φp φq y)) :
-    hX.trajectorySign φp φq op oq hpq y = 1 ∨ hX.trajectorySign φp φq op oq hpq y = -1 := by
-  rw [trajectorySign_of_bijective h]
-  split_ifs <;> simp
+    hX.trajectorySign φp φq op oq hpq y = 1 ∨ hX.trajectorySign φp φq op oq hpq y = -1 :=
+  Orientation.linearMapSign_eq_one_or_eq_neg_one_of_bijective h
 
 /-- **The sign as a unit.** Where the comparison map is an isomorphism, it carries `op` to the
 target orientation scaled by a unit sign `u`, and the sign of the trajectory is `u`. -/
@@ -307,38 +315,25 @@ theorem trajectorySign_eq_of_map_eq {y : M}
     (hL : ∀ v, L v = hX.trajectoryComparison φp φq y v) {u : ℤˣ}
     (hu : Orientation.map _ L op =
       Units.map (Int.castRingHom ℝ).toMonoidHom u • φq.trajectoryTargetOrientation oq hpq) :
-    hX.trajectorySign φp φq op oq hpq y = u := by
-  have h : Bijective (hX.trajectoryComparison φp φq y) := by
-    rw [← funext hL]
-    exact L.bijective
-  obtain ⟨v, hv, hmap⟩ := exists_trajectorySign_eq_and_map_eq (op := op) (oq := oq) (hpq := hpq) h
-  rw [show LinearEquiv.ofBijective _ h = L from LinearEquiv.ext fun v ↦ (hL v).symm] at hmap
-  rw [hv, Orientation.intCast_units_smul_injective _ (hmap.symm.trans hu)]
+    hX.trajectorySign φp φq op oq hpq y = u :=
+  Orientation.linearMapSign_eq_of_map_eq L hL hu
 
 /-- **Reversing the orientation at the source reverses the sign.** -/
 @[simp]
 theorem trajectorySign_neg_left (y : M) :
-    hX.trajectorySign φp φq (-op) oq hpq y = -hX.trajectorySign φp φq op oq hpq y := by
-  by_cases h : Bijective (hX.trajectoryComparison φp φq y)
-  · rw [trajectorySign_of_bijective h, trajectorySign_of_bijective h, Orientation.map_neg]
-    generalize Orientation.map _ (LinearEquiv.ofBijective _ h) op = o
-    rcases φq.eq_or_eq_neg_trajectoryTargetOrientation (oq := oq) (hpq := hpq) o with rfl | rfl
-    · simp [(Module.Ray.ne_neg_self _).symm]
-    · simp [(Module.Ray.ne_neg_self _).symm, Module.Ray.neg_neg]
-  · rw [trajectorySign_of_not_bijective h, trajectorySign_of_not_bijective h, neg_zero]
+    hX.trajectorySign φp φq (-op) oq hpq y = -hX.trajectorySign φp φq op oq hpq y :=
+  Orientation.linearMapSign_neg_left (by
+    rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φq.finrank_negativeWeight_fun]
+    omega)
 
 /-- **Reversing the orientation at the target reverses the sign.** -/
 @[simp]
 theorem trajectorySign_neg_right (y : M) :
     hX.trajectorySign φp φq op (-oq) hpq y = -hX.trajectorySign φp φq op oq hpq y := by
-  by_cases h : Bijective (hX.trajectoryComparison φp φq y)
-  · rw [trajectorySign_of_bijective h, trajectorySign_of_bijective h,
-      MorseChart.trajectoryTargetOrientation_neg]
-    generalize Orientation.map _ (LinearEquiv.ofBijective _ h) op = o
-    rcases φq.eq_or_eq_neg_trajectoryTargetOrientation (oq := oq) (hpq := hpq) o with rfl | rfl
-    · simp [Module.Ray.ne_neg_self]
-    · simp [(Module.Ray.ne_neg_self _).symm]
-  · rw [trajectorySign_of_not_bijective h, trajectorySign_of_not_bijective h, neg_zero]
+  rw [trajectorySign_def, trajectorySign_def, MorseChart.trajectoryTargetOrientation_neg]
+  exact Orientation.linearMapSign_neg_right (by
+    rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φq.finrank_negativeWeight_fun]
+    omega)
 
 /-- **Measuring signs against a basis at the target.** The sign of a trajectory for the
 orientation of a basis `b` of the coordinates of negative weight at the target is its sign for
@@ -677,34 +672,9 @@ theorem trajectorySign_map_negativeChange (hf : IsMorse 𝓘(ℝ, E) f)
     hX.trajectorySign φp' φq' (Orientation.map _ (φp.negativeChange φp') op)
         (Orientation.map _ (φq.negativeChange φq') oq) hpq y =
       hX.trajectorySign φp φq op oq hpq y := by
-  set P := (LinearEquiv.refl ℝ ℝ).prodCongr (φq.negativeChange φq')
-  -- The comparison map in the new charts is `P ∘ C ∘ ep⁻¹`, for `C` the one in the old charts and
-  -- `ep` the change of negative coordinates at `p`.
-  have hC (v : {i // φp.weight i < 0} → ℝ) :
-      hX.trajectoryComparison φp' φq' y (φp.negativeChange φp' v) =
-        P (hX.trajectoryComparison φp φq y v) :=
-    trajectoryComparison_negativeChange hφp hφp' hφq hφq' hf hy v
-  have hC' : ⇑(hX.trajectoryComparison φp φq y) =
-      P.symm ∘ hX.trajectoryComparison φp' φq' y ∘ φp.negativeChange φp' :=
-    funext fun v ↦ by simp [hC]
-  have hC'' : ⇑(hX.trajectoryComparison φp' φq' y) =
-      P ∘ hX.trajectoryComparison φp φq y ∘ (φp.negativeChange φp').symm := funext fun w ↦ by
-    simpa using hC ((φp.negativeChange φp').symm w)
-  by_cases h : Bijective (hX.trajectoryComparison φp φq y)
-  · have h' : Bijective (hX.trajectoryComparison φp' φq' y) := by
-      rw [hC'']
-      exact P.bijective.comp (h.comp (φp.negativeChange φp').symm.bijective)
-    have hmap : (φp.negativeChange φp').trans
-        (LinearEquiv.ofBijective (hX.trajectoryComparison φp' φq' y).toLinearMap h') =
-        (LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y).toLinearMap h).trans P :=
-      LinearEquiv.ext hC
-    rw [trajectorySign_of_bijective h, trajectorySign_of_bijective h',
-      MorseChart.trajectoryTargetOrientation_map, ← Orientation.map_trans, hmap,
-      Orientation.map_trans, (Orientation.map _ P).injective.eq_iff]
-  · have h' : ¬Bijective (hX.trajectoryComparison φp' φq' y) := fun h' ↦ h (by
-      rw [hC']
-      exact P.symm.bijective.comp (h'.comp (φp.negativeChange φp').bijective))
-    rw [trajectorySign_of_not_bijective h, trajectorySign_of_not_bijective h']
+  rw [trajectorySign_def, trajectorySign_def, MorseChart.trajectoryTargetOrientation_map]
+  exact Orientation.linearMapSign_map_map _ _
+    (trajectoryComparison_negativeChange hφp hφp' hφq hφq' hf hy)
 
 /-- **The signed count does not depend on the Morse charts**: it is unchanged when the Morse
 charts are changed and the orientations of their coordinates of negative weight are transported

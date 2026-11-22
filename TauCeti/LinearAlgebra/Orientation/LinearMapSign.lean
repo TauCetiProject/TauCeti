@@ -12,8 +12,8 @@ public import TauCeti.LinearAlgebra.Orientation.Basic
 
 For orientations `o` of `V` and `o'` of `W` with the same index type, the sign
 `Orientation.linearMapSign o o' L` of a linear map `L : V → W` is `1` when `L` is an isomorphism
-carrying `o` to `o'`, `-1` when it is an isomorphism carrying `o` to `-o'`, and `0` when it is not
-an isomorphism.
+carrying `o` to `o'`, `-1` when it is an isomorphism not carrying `o` to `o'` (that is, carrying
+`o` to `-o'` when `Fintype.card ι = finrank R W`), and `0` when it is not an isomorphism.
 
 ## Main results
 
