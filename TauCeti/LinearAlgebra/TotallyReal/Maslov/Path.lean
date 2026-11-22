@@ -29,7 +29,9 @@ The relative index has the formal properties of the Robbin--Salamon Maslov index
 * it is natural: moving both paths by the same continuous path of complex-linear automorphisms
   does not change it (`TauCeti.TotallyRealPath.relativeMaslovIndex_map`), and neither does
   transporting both to another space along a complex-linear isomorphism
-  (`TauCeti.TotallyRealPath.relativeMaslovIndex_mapEquiv`);
+  (`TauCeti.TotallyRealPath.relativeMaslovIndex_mapEquiv`); both are cases of its invariance
+  under pointwise complex-linear isomorphisms
+  (`TauCeti.TotallyRealPath.relativeMaslovIndex_eq_of_map_linearEquiv`);
 * it is invariant under homotopies of the pair, given by continuous two-parameter frames, during
   which the two paths keep common endpoints
   (`TauCeti.TotallyRealPath.relativeMaslovIndex_eq_of_homotopy`);
@@ -430,6 +432,22 @@ theorem relativeMaslovIndex_symm (Λ Γ : TotallyRealPath E)
     (symm_apply Γ t).symm).trans
     (IsMaximalTotallyReal.maslovPhase_congr _ _ _ (symm_apply Λ t).symm)
 
+/-- **Invariance of the relative Maslov index under pointwise isomorphisms:** if `Λ'` and `Γ'`
+are the images of `Λ` and `Γ` under the same complex-linear isomorphism `B t : E ≃ₗ[ℂ] F` at each
+time `t`, then `μ(Λ', Γ') = μ(Λ, Γ)`. -/
+theorem relativeMaslovIndex_eq_of_map_linearEquiv {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℂ F] (Λ Γ : TotallyRealPath E) (Λ' Γ' : TotallyRealPath F)
+    (B : I → E ≃ₗ[ℂ] F) (hΛ : ∀ t, Λ' t = (Λ t).map ((B t : E →ₗ[ℂ] F).restrictScalars ℝ))
+    (hΓ : ∀ t, Γ' t = (Γ t).map ((B t : E →ₗ[ℂ] F).restrictScalars ℝ))
+    (h₀ : Λ 0 = Γ 0) (h₁ : Λ 1 = Γ 1) (h₀' : Λ' 0 = Γ' 0) (h₁' : Λ' 1 = Γ' 1) :
+    relativeMaslovIndex Λ' Γ' h₀' h₁' = relativeMaslovIndex Λ Γ h₀ h₁ := by
+  refine (relativeMaslovIndex_eq_degree _ _ _ _ (Λ.relativeMaslovPhasePath Γ h₀ h₁)
+    fun t => ?_).trans (relativeMaslovIndex_def Λ Γ h₀ h₁).symm
+  rw [relativeMaslovPhasePath_apply, ← (Γ.isMaximalTotallyReal t).maslovPhase_map_map
+    (Λ.isMaximalTotallyReal t) (B t)]
+  exact (IsMaximalTotallyReal.maslovPhase_congr_left _ (Γ'.isMaximalTotallyReal t) _
+    (hΓ t).symm).trans (IsMaximalTotallyReal.maslovPhase_congr _ _ _ (hΛ t).symm)
+
 /-- **Naturality of the relative Maslov index:** moving both paths by the same continuous path
 `B` of complex-linear automorphisms does not change their relative index,
 `μ(B Λ, B Γ) = μ(Λ, Γ)`. -/
@@ -437,14 +455,9 @@ theorem relativeMaslovIndex_symm (Λ Γ : TotallyRealPath E)
 theorem relativeMaslovIndex_map (Λ Γ : TotallyRealPath E) (B : I → E ≃L[ℂ] E)
     (hB : Continuous fun t => (B t : E →L[ℂ] E)) (h₀ : Λ 0 = Γ 0) (h₁ : Λ 1 = Γ 1) :
     relativeMaslovIndex (Λ.map B hB) (Γ.map B hB) (by simp [h₀]) (by simp [h₁]) =
-      relativeMaslovIndex Λ Γ h₀ h₁ := by
-  refine (relativeMaslovIndex_eq_degree _ _ _ _ (Λ.relativeMaslovPhasePath Γ h₀ h₁)
-    fun t => ?_).trans (relativeMaslovIndex_def Λ Γ h₀ h₁).symm
-  rw [relativeMaslovPhasePath_apply, ← (Γ.isMaximalTotallyReal t).maslovPhase_map_map
-    (Λ.isMaximalTotallyReal t) (B t).toLinearEquiv]
-  exact (IsMaximalTotallyReal.maslovPhase_congr_left _ ((Γ.map B hB).isMaximalTotallyReal t) _
-    (map_apply Γ B hB t).symm).trans
-    (IsMaximalTotallyReal.maslovPhase_congr _ _ _ (map_apply Λ B hB t).symm)
+      relativeMaslovIndex Λ Γ h₀ h₁ :=
+  relativeMaslovIndex_eq_of_map_linearEquiv Λ Γ _ _ (fun t => (B t).toLinearEquiv)
+    (map_apply Λ B hB) (map_apply Γ B hB) h₀ h₁ _ _
 
 /-- **Transport of the relative Maslov index:** carrying both paths to another space along the
 same complex-linear isomorphism does not change their relative index, `μ(e Λ, e Γ) = μ(Λ, Γ)`. -/
@@ -452,14 +465,9 @@ same complex-linear isomorphism does not change their relative index, `μ(e Λ, 
 theorem relativeMaslovIndex_mapEquiv {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
     (Λ Γ : TotallyRealPath E) (e : E ≃L[ℂ] F) (h₀ : Λ 0 = Γ 0) (h₁ : Λ 1 = Γ 1) :
     relativeMaslovIndex (Λ.mapEquiv e) (Γ.mapEquiv e) (by simp [h₀]) (by simp [h₁]) =
-      relativeMaslovIndex Λ Γ h₀ h₁ := by
-  refine (relativeMaslovIndex_eq_degree _ _ _ _ (Λ.relativeMaslovPhasePath Γ h₀ h₁)
-    fun t => ?_).trans (relativeMaslovIndex_def Λ Γ h₀ h₁).symm
-  rw [relativeMaslovPhasePath_apply, ← (Γ.isMaximalTotallyReal t).maslovPhase_map_map
-    (Λ.isMaximalTotallyReal t) e.toLinearEquiv]
-  exact (IsMaximalTotallyReal.maslovPhase_congr_left _ ((Γ.mapEquiv e).isMaximalTotallyReal t) _
-    (mapEquiv_apply Γ e t).symm).trans
-    (IsMaximalTotallyReal.maslovPhase_congr _ _ _ (mapEquiv_apply Λ e t).symm)
+      relativeMaslovIndex Λ Γ h₀ h₁ :=
+  relativeMaslovIndex_eq_of_map_linearEquiv Λ Γ _ _ (fun _ => e.toLinearEquiv)
+    (mapEquiv_apply Λ e) (mapEquiv_apply Γ e) h₀ h₁ _ _
 
 /-- **Homotopy invariance of the relative Maslov index.** Let `A (s, t)` and `B (s, t)` be
 continuous two-parameter families of complex-linear automorphisms and `L₀` a maximal totally real

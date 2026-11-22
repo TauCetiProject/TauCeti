@@ -378,7 +378,7 @@ theorem relativeMaslovIndex_sum (Λ Γ : TotallyRealPath (EuclideanSpace ℂ n))
 /-- **Direct-sum axiom.** The Maslov index relative to `ℝ^{n ⊕ m}` of the direct sum of paths
 between chart subspaces is the sum of their Maslov indices relative to `ℝⁿ` and `ℝᵐ`; the endpoints
 of the direct sum are the chart subspaces of the block-diagonal matrices
-(`Matrix.lagrangianChart_fromBlocks_zero`). -/
+(`Matrix.lagrangianChart_fromBlocks_diagonal`). -/
 theorem transverseMaslovIndex_sum (Λ : TotallyRealPath (EuclideanSpace ℂ n))
     (Λ' : TotallyRealPath (EuclideanSpace ℂ m)) {S₀ S₁ : Matrix n n ℝ} {T₀ T₁ : Matrix m m ℝ}
     (hS₀ : S₀.IsSymm) (hS₁ : S₁.IsSymm) (hT₀ : T₀.IsSymm) (hT₁ : T₁.IsSymm)
@@ -386,8 +386,8 @@ theorem transverseMaslovIndex_sum (Λ : TotallyRealPath (EuclideanSpace ℂ n))
     (h₀' : Λ' 0 = T₀.lagrangianChart) (h₁' : Λ' 1 = T₁.lagrangianChart) :
     (Λ.sum Λ').transverseMaslovIndex (S₀ := fromBlocks S₀ 0 0 T₀) (S₁ := fromBlocks S₁ 0 0 T₁)
       (hS₀.fromBlocks (by simp) hT₀) (hS₁.fromBlocks (by simp) hT₁)
-      (by rw [sum_apply, h₀, h₀', lagrangianChart_fromBlocks_zero])
-      (by rw [sum_apply, h₁, h₁', lagrangianChart_fromBlocks_zero]) =
+      (by rw [sum_apply, h₀, h₀', lagrangianChart_fromBlocks_diagonal])
+      (by rw [sum_apply, h₁, h₁', lagrangianChart_fromBlocks_diagonal]) =
       Λ.transverseMaslovIndex hS₀ hS₁ h₀ h₁ + Λ'.transverseMaslovIndex hT₀ hT₁ h₀' h₁' := by
   -- The chart path of the segment of block-diagonal matrices is the direct sum of the chart paths
   -- of the segments of the blocks.
@@ -397,7 +397,7 @@ theorem transverseMaslovIndex_sum (Λ : TotallyRealPath (EuclideanSpace ℂ n))
         (ofLagrangianChart (Path.segment T₀ T₁) (isSymm_segment hT₀ hT₁)) := by
     ext1 t
     rw [sum_apply, ofLagrangianChart_apply, ofLagrangianChart_apply, ofLagrangianChart_apply,
-      ← lagrangianChart_fromBlocks_zero]
+      ← lagrangianChart_fromBlocks_diagonal]
     congr 1
     simp only [Path.segment_apply, AffineMap.lineMap_apply_module, fromBlocks_smul,
       fromBlocks_add, smul_zero, add_zero]

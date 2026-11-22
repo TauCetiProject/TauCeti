@@ -66,7 +66,7 @@ Lagrangian subspace transverse to `ℝⁿ` arises in this way, as the graph of a
 * `Matrix.lagrangianChart_mul_mul_inv`: an invertible real matrix `P` maps the chart subspace of
   `S` onto that of `P S P⁻¹`; for orthogonal `O` this is the chart of `O S Oᵀ`
   (`Matrix.lagrangianChart_mul_mul_transpose`).
-* `Matrix.lagrangianChart_fromBlocks_zero`: the chart subspace of a block-diagonal matrix is the
+* `Matrix.lagrangianChart_fromBlocks_diagonal`: the chart subspace of a block-diagonal matrix is the
   direct sum of the chart subspaces of its blocks.
 
 ## References
@@ -637,7 +637,7 @@ variable {m : Type*} [Fintype m] [DecidableEq m]
 /-- **The chart of a block-diagonal matrix is the direct sum of the charts.** Under the splitting
 `ℂ^{n ⊕ m} ≃ ℂⁿ × ℂᵐ`, the subspace `{S y + i y}` of the block-diagonal matrix with blocks `S`
 and `T` is the product of the subspaces of `S` and of `T`. -/
-theorem lagrangianChart_fromBlocks_zero (S : Matrix n n ℝ) (T : Matrix m m ℝ) :
+theorem lagrangianChart_fromBlocks_diagonal (S : Matrix n n ℝ) (T : Matrix m m ℝ) :
     (fromBlocks S 0 0 T).lagrangianChart =
       (S.lagrangianChart.prod T.lagrangianChart).map
         (((EuclideanSpace.sumEquivProd (𝕜 := ℂ) (ι := n) (κ := m)).symm.toLinearEquiv :
