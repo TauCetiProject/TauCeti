@@ -15,7 +15,6 @@ import Mathlib.Analysis.Normed.Operator.Mul
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
-import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.MeasureTheory.Measure.Haar.Prod
 
