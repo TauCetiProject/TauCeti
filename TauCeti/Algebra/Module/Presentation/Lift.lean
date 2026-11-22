@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 public import TauCeti.Algebra.Module.Presentation.Quadratic
 public import TauCeti.RingTheory.FittingIdeal.Continuity
 
+import Mathlib.Algebra.Category.ModuleCat.Biproducts
 import Mathlib.LinearAlgebra.TensorProduct.Prod
 import Mathlib.LinearAlgebra.TensorProduct.Tower
 import Mathlib.RingTheory.Nakayama
@@ -244,44 +245,20 @@ private theorem exists_linearEquiv_fin_ker_of_comp_eq_id {r s : ℕ}
     (u : (Fin s → A) →ₗ[A] (Fin r → A)) (w : (Fin r → A) →ₗ[A] (Fin s → A))
     (huw : u ∘ₗ w = LinearMap.id) :
     r ≤ s ∧ Nonempty ((Fin (s - r) → A) ≃ₗ[A] LinearMap.ker u) := by
-  have huw_apply : ∀ x, u (w x) = x := LinearMap.congr_fun huw
-  let e : ((Fin r → A) × LinearMap.ker u) ≃ₗ[A] (Fin s → A) :=
-    { toFun := fun p ↦ w p.1 + p.2.1
-      map_add' := fun p q ↦ by simp [add_add_add_comm]
-      map_smul' := fun c p ↦ by simp [smul_add]
-      invFun := fun z ↦
-        (u z, ⟨z - w (u z), by rw [LinearMap.mem_ker, map_sub, huw_apply, sub_self]⟩)
-      left_inv := fun ⟨x, ⟨y, hy⟩⟩ ↦ by ext <;> simp [huw_apply, LinearMap.mem_ker.mp hy]
-      right_inv := fun z ↦ by simp }
+  let e : (LinearMap.ker u × (Fin r → A)) ≃ₗ[A] (Fin s → A) :=
+    lequivProdOfRightSplitExact Subtype.val_injective (Submodule.range_subtype _) huw
   have : Module.Finite A (LinearMap.ker u) :=
-    Module.Finite.of_surjective (LinearMap.snd A (Fin r → A) (LinearMap.ker u) ∘ₗ
-      e.symm.toLinearMap) (Prod.snd_surjective.comp e.symm.surjective)
-  let κ := ResidueField A
-  let eκ : ((κ ⊗[A] (Fin r → A)) × (κ ⊗[A] LinearMap.ker u)) ≃ₗ[κ] (κ ⊗[A] (Fin s → A)) :=
-    (TensorProduct.prodRight A κ κ (Fin r → A) (LinearMap.ker u)).symm.trans (e.baseChange A κ _ _)
-  have hdim : r + finrank κ (κ ⊗[A] LinearMap.ker u) = s := by
-    simpa [finrank_prod, Module.finrank_baseChange, finrank_fin_fun] using eκ.finrank_eq
-  have hrs : r ≤ s := by omega
-  let b := (Module.finBasis κ (κ ⊗[A] LinearMap.ker u)).reindex
-    (finCongr (show finrank κ (κ ⊗[A] LinearMap.ker u) = s - r by omega))
-  choose v hv using fun i ↦
-    TensorProduct.mk_surjective A (LinearMap.ker u) κ residue_surjective (b i)
-  let q : (Fin (s - r) → A) →ₗ[A] LinearMap.ker u := Fintype.linearCombination A v
-  have hq_surj : Function.Surjective q := by
-    rw [← LinearMap.range_eq_top, Fintype.range_linearCombination]
-    exact IsLocalRing.span_eq_top_of_tmul_eq_basis v b hv
-  let fprod : (Fin s → A) ≃ₗ[A] (Fin r → A) × (Fin (s - r) → A) :=
-    (LinearEquiv.funCongrLeft A A (finSumFinEquiv.trans (finCongr (Nat.add_sub_cancel' hrs)))).trans
-      (LinearEquiv.sumArrowLequivProdArrow _ _ A A)
-  let Φ : (Fin s → A) →ₗ[A] (Fin s → A) :=
-    e.toLinearMap ∘ₗ (LinearMap.id.prodMap q) ∘ₗ fprod.toLinearMap
-  have hΦ_inj : Function.Injective Φ :=
-    OrzechProperty.injective_of_surjective_endomorphism Φ <|
-      e.surjective.comp ((Function.surjective_id.prodMap hq_surj).comp fprod.surjective)
-  have hq_inj : Function.Injective q := fun x y hxy ↦ by
-    have h : fprod.symm (0, x) = fprod.symm (0, y) := hΦ_inj (by simp [Φ, hxy])
-    simpa using congrArg (Prod.snd ∘ fprod) h
-  exact ⟨hrs, ⟨LinearEquiv.ofBijective q ⟨hq_inj, hq_surj⟩⟩⟩
+    Module.Finite.of_surjective
+      (LinearMap.fst A (LinearMap.ker u) (Fin r → A) ∘ₗ e.symm.toLinearMap)
+      (Prod.fst_surjective.comp e.symm.surjective)
+  have : Module.Projective A (LinearMap.ker u) :=
+    Module.Projective.of_split (e.toLinearMap ∘ₗ LinearMap.inl A (LinearMap.ker u) (Fin r → A))
+      (LinearMap.fst A (LinearMap.ker u) (Fin r → A) ∘ₗ e.symm.toLinearMap)
+      (LinearMap.ext fun x ↦ by simp)
+  have : Module.Free A (LinearMap.ker u) := Module.free_of_projective_of_isLocalRing
+  have hdim : finrank A (LinearMap.ker u) + r = s := by
+    simpa [Module.finrank_prod, finrank_fin_fun] using e.finrank_eq
+  exact ⟨by omega, ⟨(Module.finBasisOfFinrankEq A (LinearMap.ker u) (by omega)).equivFun.symm⟩⟩
 
 /-- **Minimal-cover relation bound over a local ring.** Let `A` be a local ring and let
 `π : Aʳ ↠ N` be a minimal free cover (`ker π ≤ 𝔪_A Aʳ`). If `N` admits any square presentation
@@ -418,8 +395,7 @@ theorem exists_minimalSquarePresentation_of_cofinal_quotientSMulTop {ι : Type*}
     simp only [LinearMap.mem_ker, funext_iff, Pi.zero_apply]
     constructor
     · intro hx
-      rw [show x = ∑ j : Fin r, x j • Pi.single j (1 : R) by
-        ext l; simp [Finset.sum_apply, Pi.single_apply]]
+      rw [pi_eq_sum_univ' x]
       exact Submodule.sum_mem _ fun j _ ↦
         Submodule.smul_mem_smul (Ideal.Quotient.eq_zero_iff_mem.mp (hx j)) Submodule.mem_top
     · intro hx j
@@ -432,8 +408,7 @@ theorem exists_minimalSquarePresentation_of_cofinal_quotientSMulTop {ι : Type*}
     Fintype.linearCombination A fun j ↦ Submodule.Quotient.mk (π (Pi.single j 1))
   have hπ'_red (x : Fin r → R) : π' (red x) = Submodule.Quotient.mk (π x) := by
     conv_rhs =>
-      rw [show x = ∑ j : Fin r, x j • Pi.single j (1 : R) by
-        ext l; simp [Finset.sum_apply, Pi.single_apply], map_sum]
+      rw [pi_eq_sum_univ' x, map_sum]
       change (I i • (⊤ : Submodule R M)).mkQ (∑ j : Fin r, π (x j • Pi.single j 1))
       rw [map_sum]
     simp only [π', Fintype.linearCombination_apply, red, LinearMap.coe_mk, AddHom.coe_mk,
@@ -456,13 +431,9 @@ theorem exists_minimalSquarePresentation_of_cofinal_quotientSMulTop {ι : Type*}
     obtain ⟨z, hzK, rfl⟩ := hker_lift y hy
     refine Submodule.smul_induction_on (hmin hzK) (fun c hc x _ ↦ ?_) (fun _ _ h₁ h₂ ↦ by
       rw [map_add]; exact add_mem h₁ h₂)
-    have hcm : mkI c ∈ maximalIdeal A := fun hu ↦ by
-      obtain ⟨b, hb⟩ := Ideal.Quotient.mk_surjective (↑hu.unit⁻¹ : A)
-      have h1 : 1 - c * b ∈ I i := by
-        rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_one, map_mul]
-        change 1 - mkI c * Ideal.Quotient.mk (I i) b = 0
-        rw [hb, hu.mul_val_inv, sub_self]
-      simpa using (maximalIdeal R).add_mem (hi_le_m h1) ((maximalIdeal R).mul_mem_right b hc)
+    have hcm : mkI c ∈ maximalIdeal A :=
+      IsLocalRing.map_maximalIdeal_of_surjective mkI Ideal.Quotient.mk_surjective ▸
+        Ideal.mem_map_of_mem mkI hc
     rw [show red (c • x) = mkI c • red x by ext j; simp [red, mkI, A, Algebra.smul_def]]
     exact Submodule.smul_mem_smul hcm Submodule.mem_top
   obtain ⟨B', hB'⟩ := exists_squareMatrix_of_minimalCover_of_isQuadraticallyPresented
@@ -481,8 +452,7 @@ theorem exists_minimalSquarePresentation_of_cofinal_quotientSMulTop {ι : Type*}
     have hredw : red w = red x := by
       rw [← hc']
       conv_rhs =>
-        rw [show c' = ∑ j : Fin r, c' j • Pi.single j (1 : A) by
-          ext l; simp [Finset.sum_apply, Pi.single_apply], map_sum]
+        rw [pi_eq_sum_univ' c', map_sum]
       simp only [w, map_sum, map_smul, Matrix.toLin'_apply, hzred]
       refine Finset.sum_congr rfl fun j _ ↦ ?_
       ext l; simp [A, ← hc j, Algebra.smul_def, Ideal.Quotient.algebraMap_eq]
@@ -636,10 +606,10 @@ theorem IsQuadraticallyPresented.of_completeOrthogonalIdempotents {ι : Type*} [
       ((R ⧸ Ideal.span {1 - e i}) ⊗[R] M)) :
     IsQuadraticallyPresented R M := by
   classical
-  let m : ℕ := max 1 (Finset.univ.sup fun i ↦ (hcomp i).nonempty.some.size)
-  let Q (i : ι) := (hcomp i).nonempty.some.pad (m := m)
-    ((Finset.le_sup (f := fun i ↦ (hcomp i).nonempty.some.size) (Finset.mem_univ i)).trans
-      (le_max_right 1 _))
+  let P (i : ι) := (hcomp i).nonempty.some
+  let m : ℕ := max 1 (Finset.univ.sup fun i ↦ (P i).size)
+  let Q (i : ι) := (P i).pad (m := m)
+    ((Finset.le_sup (f := fun i ↦ (P i).size) (Finset.mem_univ i)).trans (le_max_right 1 _))
   obtain ⟨_, _, Φ, g, hg_surj, hrange_eq, _⟩ :=
     exists_projectiveSquarePresentation_of_completeOrthogonalIdempotents (M := M) he (fun _ ↦ m)
       (fun i ↦ (Q i).rel) (fun i ↦ (Q i).gen) (fun i ↦ (Q i).gen_surjective)
@@ -666,20 +636,12 @@ theorem IsQuadraticallyPresented.of_pi {ι : Type*} [Finite ι] {S : ι → Type
     IsQuadraticallyPresented (∀ i, S i) N := by
   classical
   let := Fintype.ofFinite ι
-  let e : ι → ∀ j, S j := fun i ↦ Pi.single i 1
   refine IsQuadraticallyPresented.of_completeOrthogonalIdempotents
     (CompleteOrthogonalIdempotents.single S) fun i ↦ ?_
   let : Algebra (∀ j, S j) (S i) := (Pi.evalRingHom S i).toAlgebra
-  let Rᵢ := (∀ j, S j) ⧸ Ideal.span {1 - e i}
-  have hker : RingHom.ker (Pi.evalRingHom S i) = Ideal.span {1 - e i} := by
-    ext x
-    simp only [RingHom.mem_ker, Pi.evalRingHom_apply, Ideal.mem_span_singleton]
-    refine ⟨fun hx ↦ ⟨x, funext fun k ↦ ?_⟩, fun ⟨y, hy⟩ ↦ by rw [hy]; simp [e]⟩
-    rcases eq_or_ne k i with rfl | hki
-    · simp [e, hx]
-    · simp [e, hki]
+  let Rᵢ := (∀ j, S j) ⧸ Ideal.span {1 - Pi.single i (1 : S i)}
   let eqRing : Rᵢ ≃+* S i :=
-    (Ideal.quotEquivOfEq hker.symm).trans
+    (Ideal.quotEquivOfEq (RingHom.ker_evalRingHom S i).symm).trans
       (RingHom.quotientKerEquivOfSurjective (Function.surjective_eval i))
   let : Algebra (S i) Rᵢ := eqRing.symm.toRingHom.toAlgebra
   have : IsScalarTower (∀ j, S j) (S i) Rᵢ :=

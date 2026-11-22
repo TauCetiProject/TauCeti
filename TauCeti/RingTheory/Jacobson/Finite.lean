@@ -87,10 +87,9 @@ theorem exists_jacobson_pow_le_map_maximalIdeal (R O : Type*) [CommRing R] [IsLo
   have : Module.Finite (R ⧸ IsLocalRing.maximalIdeal R) (O ⧸ I) := .of_restrictScalars_finite R _ _
   have : IsArtinianRing (O ⧸ I) := .of_finite (R ⧸ IsLocalRing.maximalIdeal R) (O ⧸ I)
   obtain ⟨k, hk⟩ := IsArtinianRing.isNilpotent_jacobson (O ⧸ I)
+  have : RingHomSurjective q := ⟨Ideal.Quotient.mk_surjective⟩
   have hmap : (_root_.Ring.jacobson O).map q ≤ _root_.Ring.jacobson (O ⧸ I) :=
-    Ideal.map_le_iff_le_comap.mpr fun x hx ↦ mem_jacobson_iff_isUnit_one_add_mul_left.mpr fun y ↦ by
-      obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective y
-      simpa [q] using (mem_jacobson_iff_isUnit_one_add_mul_left.mp hx z).map q
+    Ideal.map_le_iff_le_comap.mpr (_root_.Ring.le_comap_jacobson (f := q))
   have hpow : (_root_.Ring.jacobson O ^ k).map q = ⊥ := by
     rw [Ideal.map_pow, eq_bot_iff]
     exact (pow_le_pow_left' hmap k).trans (by rw [hk, Ideal.zero_eq_bot])

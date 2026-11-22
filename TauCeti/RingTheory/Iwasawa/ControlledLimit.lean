@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.PowerSeries.Inverse
 public import TauCeti.Algebra.Module.Presentation.Lift
 public import TauCeti.RingTheory.FittingIdeal.Continuity
 
+import Mathlib.Algebra.CharP.Quotient
 import Mathlib.Algebra.DualNumber
 import Mathlib.Algebra.MonoidAlgebra.Basic
 import Mathlib.Data.Nat.Multiplicity
@@ -146,11 +147,8 @@ theorem span_C_pow_le_jointIdeal (a n : ℕ) :
   rw [jointIdeal_eq_sup]
   exact le_sup_left
 
-theorem towerIdeal_antitone : Antitone (towerIdeal p O) := by
-  refine antitone_nat_of_succ_le fun n ↦ ?_
-  rw [towerIdeal, towerIdeal, Ideal.span_singleton_le_iff_mem, Ideal.mem_span_singleton]
-  conv_rhs => rw [pow_succ p n, pow_mul, ← geom_sum_mul]
-  exact ⟨∑ i ∈ Finset.range p, ((1 + X : O⟦X⟧) ^ p ^ n) ^ i, mul_comm _ _⟩
+theorem towerIdeal_antitone : Antitone (towerIdeal p O) := fun _ _ hmn ↦
+  Ideal.span_singleton_le_span_singleton.mpr (dvd_pow_sub_one_of_dvd (pow_dvd_pow p hmn))
 
 theorem jointIdeal_antitone {a a' n n' : ℕ} (ha : a ≤ a') (hn : n ≤ n') :
     jointIdeal p O a' n' ≤ jointIdeal p O a n := by
@@ -207,25 +205,19 @@ theorem jointIdeal_le_maximalIdeal_pow [IsLocalRing O] (hp : (p : O) ∈ maximal
 /-- For a prime `p`, the binomial expansion gives `(1 + X) ^ pⁿ - 1 - X ^ pⁿ ∈ (C p)`. -/
 theorem one_add_X_pow_sub_one_sub_X_pow_mem_span_C (hp : p.Prime) (n : ℕ) :
     (1 + X : O⟦X⟧) ^ p ^ n - 1 - X ^ p ^ n ∈ Ideal.span {C (p : O)} := by
-  have hsplit : (1 + X : O⟦X⟧) ^ p ^ n - 1 - X ^ p ^ n =
-      ∑ k ∈ Finset.range (p ^ n - 1), X ^ (k + 1) * ((p ^ n).choose (k + 1) : O⟦X⟧) := by
-    have hsum : (1 + X : O⟦X⟧) ^ p ^ n =
-        (1 + ∑ k ∈ Finset.range (p ^ n - 1), X ^ (k + 1) * ((p ^ n).choose (k + 1) : O⟦X⟧)) +
-          X ^ p ^ n := by
-      rw [add_comm, add_pow, Finset.sum_range_succ, Nat.choose_self]
-      have hbody : ∑ k ∈ Finset.range (p ^ n), X ^ k * 1 ^ (p ^ n - k) * ((p ^ n).choose k : O⟦X⟧) =
-          1 + ∑ k ∈ Finset.range (p ^ n - 1), X ^ (k + 1) * ((p ^ n).choose (k + 1) : O⟦X⟧) := by
-        conv_lhs => arg 1; rw [← Nat.sub_add_cancel (pow_pos hp.pos n)]
-        rw [Finset.sum_range_succ', add_comm]
-        simp
-      simpa using hbody
-    linear_combination hsum
-  rw [hsplit]
-  refine Ideal.sum_mem _ fun k hk ↦ ?_
-  obtain ⟨m, hm⟩ := hp.dvd_choose_pow (n := n) (Nat.succ_ne_zero k)
-    (by have := Finset.mem_range.mp hk; omega)
-  rw [hm, Nat.cast_mul, ← map_natCast C p, ← mul_assoc, mul_comm (X ^ (k + 1)), mul_assoc]
-  exact Ideal.mul_mem_right _ _ (Ideal.subset_span rfl)
+  by_cases hpu : IsUnit (p : O)
+  · rw [Ideal.span_singleton_eq_top.mpr (hpu.map C)]
+    exact Submodule.mem_top
+  · have : Fact p.Prime := ⟨hp⟩
+    let I : Ideal O := Ideal.span {(p : O)}
+    have : CharP (O ⧸ I) p := CharP.quotient O p hpu
+    let q : O →+* O ⧸ I := Ideal.Quotient.mk I
+    have hker : RingHom.ker (PowerSeries.map q) = Ideal.span {C (p : O)} := by
+      rw [PowerSeries.ker_map_of_fg q (by rw [Ideal.mk_ker]; exact Submodule.fg_span_singleton _),
+        Ideal.mk_ker, Ideal.map_span, Set.image_singleton]
+    rw [← hker, RingHom.mem_ker]
+    simp only [map_sub, map_pow, map_add, map_one, PowerSeries.map_X,
+      PowerSeries.one_add_X_pow_sub_one_eq_X_pow, sub_self]
 
 /-- For a prime `p`, the monomial `X ^ (a * pⁿ)` lies in `J_{a,n} = (p^a, (1 + X) ^ pⁿ - 1)`. -/
 theorem X_pow_mul_mem_jointIdeal (hp : p.Prime) (a n : ℕ) :
@@ -557,8 +549,7 @@ private theorem finrank_residueField_tensorProduct_eq_of_minimalCover {A N : Typ
     intro y _
     refine TensorProduct.inductionOn y (fun c n ↦ ?_) fun _ _ hx hy ↦ add_mem hx hy
     obtain ⟨x, rfl⟩ := hπ n
-    have hx : x = ∑ j : Fin r, x j • Pi.single j (1 : A) := by
-      ext l; simp [Finset.sum_apply, Pi.single_apply]
+    have hx : x = ∑ j : Fin r, x j • Pi.single j (1 : A) := pi_eq_sum_univ' x
     have hcm : c ⊗ₜ[A] π x = ∑ j : Fin r, (c * residue A (x j)) • b j := by
       conv_lhs => rw [hx, map_sum]
       simp only [map_smul, TensorProduct.tmul_sum, b]
@@ -572,8 +563,7 @@ private theorem finrank_residueField_tensorProduct_eq_of_minimalCover {A N : Typ
     intro c hc j
     choose x hx using fun i ↦ IsLocalRing.residue_surjective (c i)
     have htmul : (1 : κ) ⊗ₜ[A] π x = 0 := by
-      have hx' : x = ∑ i : Fin r, x i • Pi.single i (1 : A) := by
-        ext l; simp [Finset.sum_apply, Pi.single_apply]
+      have hx' : x = ∑ i : Fin r, x i • Pi.single i (1 : A) := pi_eq_sum_univ' x
       conv_lhs => rw [hx', map_sum]
       simp only [map_smul, TensorProduct.tmul_sum]
       rw [← hc]
@@ -648,55 +638,33 @@ private theorem controlledSquarePresentation_local_factor {M : Type*} [AddCommGr
       rw [eqR.apply_symm_apply]
       dsimp only [eqR, RingEquiv.trans_apply]
       rw [Ideal.quotEquivOfEq_mk, PowerSeries.quotientSpanCRingEquiv_mk]
-  let eMod := AlgebraTensorModule.cancelBaseChange O⟦X⟧ Oᵢ⟦X⟧ Rᵢ Rᵢ M
-  let unbase : Rᵢ ⊗[Oᵢ⟦X⟧] (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M) →ₗ[Oᵢ⟦X⟧] (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M) :=
-    TensorProduct.lift <|
-      LinearMap.mk₂ Oᵢ⟦X⟧ (fun c y ↦ eqR c • y)
-        (fun _ _ _ ↦ by simp [add_smul])
-        (fun a c y ↦ by
-          simp [Algebra.smul_def, mul_smul, RingHom.algebraMap_toAlgebra])
-        (fun _ _ _ ↦ smul_add _ _ _)
-        (fun _ _ _ ↦ smul_comm _ _ _)
-  have hunbase_tmul (y : Oᵢ⟦X⟧ ⊗[O⟦X⟧] M) : unbase (1 ⊗ₜ[Oᵢ⟦X⟧] y) = y := by
-    simp [unbase]
-  have htmul_unbase (w : Rᵢ ⊗[Oᵢ⟦X⟧] (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M)) : 1 ⊗ₜ[Oᵢ⟦X⟧] unbase w = w := by
-    refine TensorProduct.inductionOn w (fun c y ↦ ?_) fun x y hx hy ↦ by
-      rw [map_add, TensorProduct.tmul_add, hx, hy]
-    dsimp only [unbase]
-    rw [TensorProduct.lift.tmul, LinearMap.mk₂_apply, ← TensorProduct.smul_tmul,
-      Algebra.smul_def, mul_one, RingHom.algebraMap_toAlgebra]
-    exact congrArg (· ⊗ₜ[Oᵢ⟦X⟧] y) (eqR.symm_apply_apply c)
+  let : Module Rᵢ (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M) := Module.compHom (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M) eqR.toRingHom
+  have : IsScalarTower Oᵢ⟦X⟧ Rᵢ (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M) := ⟨fun a c y ↦ by
+    change (eqR (eqR.symm a * c)) • y = a • (eqR c • y)
+    rw [map_mul, eqR.apply_symm_apply, mul_smul]⟩
+  have : CompatibleSMul Oᵢ⟦X⟧ Rᵢ Rᵢ (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M) :=
+    CompatibleSMul.of_algebraMap_surjective Rᵢ (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M) eqR.symm.surjective
+  let eunbase : (Rᵢ ⊗[O⟦X⟧] M) ≃ₗ[Rᵢ] (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M) :=
+    (AlgebraTensorModule.cancelBaseChange O⟦X⟧ Oᵢ⟦X⟧ Rᵢ Rᵢ M).symm.trans
+      (TensorProduct.lidOfCompatibleSMul Oᵢ⟦X⟧ Rᵢ (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M))
   let A : Matrix (Fin r) (Fin r) Rᵢ := Bᵢ.map eqR.symm
   let π : (Fin r → Rᵢ) →ₗ[Rᵢ] (Rᵢ ⊗[O⟦X⟧] M) :=
-    { toFun := fun v ↦ eMod (1 ⊗ₜ[Oᵢ⟦X⟧] πᵢ (fun j ↦ eqR (v j)))
+    { toFun := fun v ↦ eunbase.symm (πᵢ (eqR ∘ v))
       map_add' := fun u v ↦ by
-        have hadd : (fun j ↦ eqR ((u + v) j)) = (fun j ↦ eqR (u j)) + (fun j ↦ eqR (v j)) :=
-          funext fun j ↦ map_add eqR (u j) (v j)
-        rw [hadd, map_add, TensorProduct.tmul_add, map_add]
+        have hadd : eqR ∘ (u + v) = eqR ∘ u + eqR ∘ v := funext fun j ↦ map_add eqR (u j) (v j)
+        rw [hadd, map_add, map_add]
       map_smul' := fun c v ↦ by
-        have hsmul : (fun j ↦ eqR ((c • v) j)) = eqR c • (fun j ↦ eqR (v j)) :=
-          funext fun j ↦ map_mul eqR c (v j)
-        rw [hsmul, map_smul, ← TensorProduct.smul_tmul,
-          show eqR c • (1 : Rᵢ) = c by
-            rw [Algebra.smul_def, mul_one, RingHom.algebraMap_toAlgebra]
-            exact eqR.symm_apply_apply c,
-          TensorProduct.tmul_eq_smul_one_tmul]
-        exact eMod.map_smul c (1 ⊗ₜ[Oᵢ⟦X⟧] πᵢ (fun j ↦ eqR (v j))) }
+        have hsmul : eqR ∘ (c • v) = eqR c • (eqR ∘ v) := funext fun j ↦ map_mul eqR c (v j)
+        rw [hsmul, map_smul]
+        exact eunbase.symm.map_smul c (πᵢ (eqR ∘ v)) }
   have hπ : Function.Surjective π := fun z ↦ by
-    obtain ⟨w, hw⟩ := hπᵢ (unbase (eMod.symm z))
-    refine ⟨fun j ↦ eqR.symm (w j), ?_⟩
-    change eMod (1 ⊗ₜ[Oᵢ⟦X⟧] πᵢ (fun j ↦ eqR (eqR.symm (w j)))) = z
-    simp_rw [eqR.apply_symm_apply]
-    rw [hw, htmul_unbase, eMod.apply_symm_apply]
-  have hker_iff (v : Fin r → Rᵢ) :
-      v ∈ LinearMap.ker π ↔ (fun j ↦ eqR (v j)) ∈ LinearMap.ker πᵢ := by
-    simp only [LinearMap.mem_ker, π, LinearMap.coe_mk, AddHom.coe_mk]
-    constructor
-    · intro hv
-      have h0 := congrArg unbase (eMod.injective (hv.trans eMod.map_zero.symm))
-      simpa only [hunbase_tmul, map_zero] using h0
-    · intro hv
-      rw [hv, TensorProduct.tmul_zero, map_zero]
+    obtain ⟨w, hw⟩ := hπᵢ (eunbase z)
+    refine ⟨eqR.symm ∘ w, ?_⟩
+    change eunbase.symm (πᵢ (eqR ∘ (eqR.symm ∘ w))) = z
+    rw [show eqR ∘ (eqR.symm ∘ w) = w from funext fun j ↦ eqR.apply_symm_apply (w j),
+      hw, eunbase.symm_apply_apply]
+  have hker_iff (v : Fin r → Rᵢ) : v ∈ LinearMap.ker π ↔ (eqR ∘ v) ∈ LinearMap.ker πᵢ := by
+    simp [π]
   let : IsLocalRing Rᵢ := isLocalRing_quotient_span_one_sub_C hloc
   have hmin : LinearMap.ker π ≤ maximalIdeal Rᵢ • (⊤ : Submodule Rᵢ (Fin r → Rᵢ)) := by
     intro v hv
@@ -710,25 +678,23 @@ private theorem controlledSquarePresentation_local_factor {M : Type*} [AddCommGr
       have hj : eqR (v j) ∈ maximalIdeal Oᵢ⟦X⟧ := hmem_coord _ hv' j
       rw [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff] at hj ⊢
       exact fun hu ↦ hj (eqR.toRingHom.isUnit_map hu)
-    rw [show v = ∑ j : Fin r, v j • Pi.single j (1 : Rᵢ) by
-      ext l; simp [Finset.sum_apply, Pi.single_apply]]
+    rw [pi_eq_sum_univ' v]
     exact Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem_smul (hcoord j) Submodule.mem_top
   have hrange : LinearMap.range (Matrix.toLin' A) = LinearMap.ker π := by
     ext v
     rw [hker_iff, ← hrangeᵢ, LinearMap.mem_range, LinearMap.mem_range]
-    have hmulVec (w : Fin r → Rᵢ) :
-        (fun j ↦ eqR (Matrix.toLin' A w j)) = Matrix.toLin' Bᵢ (fun j ↦ eqR (w j)) := by
+    have hmulVec (w : Fin r → Rᵢ) : eqR ∘ Matrix.toLin' A w = Matrix.toLin' Bᵢ (eqR ∘ w) := by
       funext j
-      simp only [A, Matrix.toLin'_apply, Matrix.mulVec, dotProduct, map_sum]
-      exact Finset.sum_congr rfl fun k _ ↦ by
-        simp [map_mul, eqR.apply_symm_apply]
+      simpa [A, Matrix.map_map, Function.comp_def, eqR.apply_symm_apply] using
+        RingHom.map_mulVec eqR.toRingHom A w j
     constructor
     · rintro ⟨w, rfl⟩
-      exact ⟨fun j ↦ eqR (w j), (hmulVec w).symm⟩
+      exact ⟨eqR ∘ w, (hmulVec w).symm⟩
     · rintro ⟨w, hw⟩
-      refine ⟨fun j ↦ eqR.symm (w j), funext fun j ↦ eqR.injective ?_⟩
-      have h1 := congrFun (hmulVec (fun k ↦ eqR.symm (w k))) j
-      simpa only [eqR.apply_symm_apply, hw] using h1
+      refine ⟨eqR.symm ∘ w, funext fun j ↦ eqR.injective ?_⟩
+      have h1 := congrFun (hmulVec (eqR.symm ∘ w)) j
+      have hid : eqR ∘ (eqR.symm ∘ w) = w := funext fun k ↦ eqR.apply_symm_apply (w k)
+      simpa only [Function.comp_apply, hid, hw] using h1
   exact ⟨r, (finrank_residueField_tensorProduct_eq_of_minimalCover π hπ hmin).symm,
     A, π, hπ, hmin, hrange⟩
 

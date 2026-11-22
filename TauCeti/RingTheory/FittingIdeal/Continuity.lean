@@ -65,14 +65,6 @@ theorem map_quotientMk_le_map_quotientMk_iff {I L K : Ideal R} :
   rw [Ideal.map_le_iff_le_comap, Ideal.comap_map_of_surjective _ Ideal.Quotient.mk_surjective,
     ← RingHom.ker_eq_comap_bot, Ideal.mk_ker]
 
-/-- Two ideals have equal images in `R ⧸ K` if and only if `I ⊔ K = L ⊔ K`. -/
-theorem map_quotientMk_eq_map_quotientMk_iff {I L K : Ideal R} :
-    I.map (Ideal.Quotient.mk K) = L.map (Ideal.Quotient.mk K) ↔ I ⊔ K = L ⊔ K :=
-  ⟨fun h ↦ le_antisymm (sup_le (map_quotientMk_le_map_quotientMk_iff.mp h.le) le_sup_right)
-      (sup_le (map_quotientMk_le_map_quotientMk_iff.mp h.ge) le_sup_right),
-   fun h ↦ le_antisymm (map_quotientMk_le_map_quotientMk_iff.mpr (le_sup_left.trans h.le))
-      (map_quotientMk_le_map_quotientMk_iff.mpr (le_sup_left.trans h.ge))⟩
-
 /-- **Closed-ideal inclusion detection.** In a Noetherian ring `R`, let `J ≤ Ring.jacobson R` and
 let `{Kᵢ}` be a family of ideals cofinal in the powers of `J`. If `I` maps into the image of `L`
 in every quotient `R ⧸ Kᵢ`, then `I ≤ L`. -/
@@ -102,60 +94,16 @@ theorem eq_iff_forall_map_quotientMk_one_sub_eq {ι : Type*} [Fintype ι] {e : �
     (he : CompleteOrthogonalIdempotents e) {I L : Ideal R} :
     I = L ↔ ∀ i, I.map (Ideal.Quotient.mk (Ideal.span {1 - e i})) =
       L.map (Ideal.Quotient.mk (Ideal.span {1 - e i})) := by
-  classical
   refine ⟨fun h _ ↦ congrArg _ h, fun h ↦ ?_⟩
   let φ : R ≃+* ∀ i, R ⧸ Ideal.span {1 - e i} :=
     (AlgEquiv.ofBijective (AlgHom.pi fun _ ↦ Ideal.Quotient.mkₐ R _) he.bijective_pi).toRingEquiv
-  have hle : ∀ {A B : Ideal R},
-      (∀ i, A.map (Ideal.Quotient.mk (Ideal.span {1 - e i})) ≤
-        B.map (Ideal.Quotient.mk (Ideal.span {1 - e i}))) → A ≤ B := by
-    intro A B hAB x hx
-    choose y hyB hyx using fun i ↦
-      (Ideal.mem_map_iff_of_surjective _ Ideal.Quotient.mk_surjective).mp
-        (hAB i (Ideal.mem_map_of_mem _ hx))
-    have hφ : φ (∑ i, e i * y i) = φ x := by
-      ext j
-      change Ideal.Quotient.mk _ (∑ i, e i * y i) = Ideal.Quotient.mk _ x
-      rw [map_sum, Finset.sum_eq_single j]
-      · have h1 : Ideal.Quotient.mk (Ideal.span {1 - e j}) (e j) = 1 :=
-          sub_eq_zero.mp <| by
-            rw [← map_one (Ideal.Quotient.mk _), ← map_sub, Ideal.Quotient.eq_zero_iff_mem,
-              ← neg_mem_iff, neg_sub]
-            exact Ideal.subset_span rfl
-        rw [map_mul, h1, one_mul, hyx j]
-      · intro i _ hij
-        have h0 : Ideal.Quotient.mk (Ideal.span {1 - e j}) (e i) = 0 :=
-          Ideal.Quotient.eq_zero_iff_mem.mpr <| Ideal.mem_span_singleton.mpr
-            ⟨e i, by rw [sub_mul, one_mul, mul_comm (e j), he.ortho hij, sub_zero]⟩
-        rw [map_mul, h0, zero_mul]
-      · simp
-    rw [← φ.injective hφ]
-    exact B.sum_mem fun i _ ↦ B.mul_mem_left (e i) (hyB i)
-  exact le_antisymm (hle fun i ↦ (h i).le) (hle fun i ↦ (h i).ge)
-
-/-- Ideals of a finite product of rings are equal if and only if they have equal projections onto
-every factor. -/
-theorem eq_iff_forall_map_evalRingHom_eq {ι : Type*} [Finite ι] {S : ι → Type*}
-    [∀ i, CommRing (S i)] {I L : Ideal (∀ i, S i)} :
-    I = L ↔ ∀ i, I.map (Pi.evalRingHom S i) = L.map (Pi.evalRingHom S i) := by
-  classical
-  let := Fintype.ofFinite ι
-  refine ⟨fun h _ ↦ congrArg _ h, fun h ↦ ?_⟩
-  have hle : ∀ {A B : Ideal (∀ i, S i)},
-      (∀ i, A.map (Pi.evalRingHom S i) ≤ B.map (Pi.evalRingHom S i)) → A ≤ B := by
-    intro A B hAB x hx
-    choose y hyB hyx using fun i ↦
-      (Ideal.mem_map_iff_of_surjective _ (Function.surjective_eval i)).mp
-        (hAB i (Ideal.mem_map_of_mem _ hx))
-    have hx_eq : x = ∑ i, Pi.single i (1 : S i) * y i := by
-      ext j
-      rw [Finset.sum_apply, Finset.sum_eq_single j]
-      · simpa using (hyx j).symm
-      · intro b _ hbj; simp [Pi.single_eq_of_ne (Ne.symm hbj)]
-      · simp
-    rw [hx_eq]
-    exact B.sum_mem fun i _ ↦ B.mul_mem_left _ (hyB i)
-  exact le_antisymm (hle fun i ↦ (h i).le) (hle fun i ↦ (h i).ge)
+  refine φ.idealComapOrderIso.symm.injective (Ideal.piOrderIso.injective (funext fun i ↦ ?_))
+  change (I.map φ.toRingHom).map (Pi.evalRingHom _ i) =
+    (L.map φ.toRingHom).map (Pi.evalRingHom _ i)
+  have hcomp : (Pi.evalRingHom _ i).comp φ.toRingHom = Ideal.Quotient.mk (Ideal.span {1 - e i}) :=
+    RingHom.ext fun _ ↦ rfl
+  rw [Ideal.map_map, Ideal.map_map, hcomp]
+  exact h i
 
 end Ideal
 
@@ -244,7 +192,8 @@ theorem fittingIdeal_eq_of_pi {ι : Type*} [Finite ι] {S : ι → Type*} [∀ i
     (h : ∀ i, letI : Algebra (∀ j, S j) (S i) := (Pi.evalRingHom S i).toAlgebra
       fittingIdeal (S i) (S i ⊗[∀ j, S j] N) k = L.map (Pi.evalRingHom S i)) :
     fittingIdeal (∀ i, S i) N k = L := by
-  refine Ideal.eq_iff_forall_map_evalRingHom_eq.mpr fun i ↦ ?_
+  refine Ideal.piOrderIso.injective (funext fun i ↦ ?_)
+  change (fittingIdeal (∀ j, S j) N k).map (Pi.evalRingHom S i) = L.map (Pi.evalRingHom S i)
   let : Algebra (∀ j, S j) (S i) := (Pi.evalRingHom S i).toAlgebra
   simpa only [fittingIdeal_baseChange, RingHom.algebraMap_toAlgebra] using h i
 
