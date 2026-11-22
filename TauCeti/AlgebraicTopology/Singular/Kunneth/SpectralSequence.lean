@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.SpectralSequence
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
-public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber
+public import TauCeti.AlgebraicTopology.Singular.ModuleChains.CrossProduct
 
 /-!
 # The Künneth spectral sequence for singular homology
@@ -34,11 +34,11 @@ spectral sequence
   Künneth bicomplex. The singular chain modules are free, hence flat
   (`SSet.flat_chainComplex_X`), so the augmentation of this total complex to
   `C(X; R) ⊗ C(Y; R)` is a quasi-isomorphism
-  (`HomologicalComplex.quasiIso_kunnethBicomplexAugmentation`). The shuffle map
-  `C(X; R) ⊗ C(Y; R) ⟶ C(X × Y; R ⊗ R)` is the inverse of the Eilenberg–Zilber homotopy
-  equivalence (`TopCat.eilenbergZilberHomotopyEquiv`), hence a quasi-isomorphism
-  (`TopCat.quasiIso_shuffle`), and the unitor `R ⊗ R ≅ R` identifies the coefficients
-  (`TopCat.singularKunnethTotalHomologyIso`).
+  (`HomologicalComplex.quasiIso_kunnethBicomplexAugmentation`). The simplicial cross product
+  `C(X; R) ⊗ C(Y; R) ⟶ C(X × Y; R)` (`TauCeti.singularCrossProduct`), the shuffle map followed
+  by the coefficient unitor `R ⊗ R ≅ R`, is a quasi-isomorphism by the Eilenberg–Zilber theorem
+  (`TauCeti.quasiIso_singularCrossProduct`). Together they give
+  `TopCat.singularKunnethTotalHomologyIso`.
 * **Convergence.** Write `S` for `TopCat.singularKunnethSpectralObject X Y R`. The abutment
   `Hₙ(X × Y; R)` carries the increasing filtration whose `p`th piece `F_p Hₙ(X × Y; R)` is
   `S.abutmentFiltration p (-n)`: the image of the homology of the part of the total complex coming
@@ -125,8 +125,8 @@ abbrev singularKunnethSpectralSequenceSecondPageXIso (p q : ℕ) :
 
 /-- **The total homology of the singular Künneth bicomplex** is `Hₙ(X × Y; R)`. The isomorphism is
 induced on degree-`n` homology by, in this order, the augmentation of the total complex to
-`C(X; R) ⊗ C(Y; R)`, the shuffle map `C(X; R) ⊗ C(Y; R) ⟶ C(X × Y; R ⊗ R)` and the coefficient
-unitor `R ⊗ R ≅ R` (`TopCat.singularKunnethTotalHomologyIso_hom`). -/
+`C(X; R) ⊗ C(Y; R)` and the simplicial cross product `C(X; R) ⊗ C(Y; R) ⟶ C(X × Y; R)`
+(`TopCat.singularKunnethTotalHomologyIso_hom`). -/
 def singularKunnethTotalHomologyIso (n : ℕ) :
     ((singularKunnethBicomplex X Y R).total (ComplexShape.down ℕ)).homology n ≅
       ((singularHomologyFunctor _ n).obj (𝟙_ (ModuleCat.{u} R))).obj (X ⊗ Y) :=
@@ -140,25 +140,20 @@ def singularKunnethTotalHomologyIso (n : ℕ) :
   (isoOfQuasiIsoAt (kunnethBicomplexAugmentation
       ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{u} R)))
       ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{u} R)))) n ≪≫
-    isoOfQuasiIsoAt (shuffle X Y (𝟙_ (ModuleCat.{u} R)) (𝟙_ _)) n ≪≫
-    asIso (homologyMap (((SSet.chainComplexFunctor _).map (λ_ (𝟙_ (ModuleCat.{u} R))).hom).app
-      (toSSet.obj (X ⊗ Y))) n) :
-      _ ≅ (((SSet.chainComplexFunctor _).obj (𝟙_ _)).obj (toSSet.obj (X ⊗ Y))).homology n)
+    isoOfQuasiIsoAt (TauCeti.singularCrossProduct R X Y) n :
+      _ ≅ ((TauCeti.singularChains R).obj (X ⊗ Y)).homology n)
 
 /-- The isomorphism `TopCat.singularKunnethTotalHomologyIso` is induced by the augmentation of the
-total complex, followed by the shuffle map and the unitor. -/
+total complex, followed by the simplicial cross product. -/
 lemma singularKunnethTotalHomologyIso_hom (n : ℕ) :
     (singularKunnethTotalHomologyIso X Y R n).hom =
       homologyMap (kunnethBicomplexAugmentation
           ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{u} R)))
           ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{u} R)))) n ≫
-        homologyMap (shuffle X Y (𝟙_ (ModuleCat.{u} R)) (𝟙_ _)) n ≫
-        homologyMap (((SSet.chainComplexFunctor _).map (λ_ (𝟙_ (ModuleCat.{u} R))).hom).app
-          (toSSet.obj (X ⊗ Y))) n := by
-  simp only [singularKunnethTotalHomologyIso, Iso.trans_hom, isoOfQuasiIsoAt_hom, asIso_hom]
-  -- the two sides agree syntactically except for the proofs of the `Prop`-valued instance
-  -- arguments (`HasHomology`, `HasCoproducts`), which simp does not identify
-  with_reducible rfl
+        homologyMap (TauCeti.singularCrossProduct R X Y) n :=
+  -- `Iso.trans_hom` and `isoOfQuasiIsoAt_hom`, which hold by `rfl`; `rw` cannot use them, since
+  -- the composite is well typed only after unfolding `singularChainComplexFunctor`
+  (rfl)
 
 /-- The spectral object of the filtration of the total complex of the flipped Künneth bicomplex of
 `C(X; R)` and `C(Y; R)` by its rows, whose spectral sequence is
