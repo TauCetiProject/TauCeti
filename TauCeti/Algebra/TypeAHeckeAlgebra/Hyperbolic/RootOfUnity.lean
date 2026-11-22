@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam.RootOfUnity
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.Wenzl
+import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 
@@ -21,11 +22,12 @@ if and only if `η = (1 - tanh α * tanh θ) / 2` (`TauCeti.hyperbolicProjParam`
 complementary projection convention assigns `η_W = 1 - η = (1 + tanh α * tanh θ) / 2`
 (`TauCeti.hyperbolicWenzlProjParam`).
 
-This file evaluates the hyperbolic parameters and Markov trace characterizations at the
-root-of-unity exceptional points `θ = π * I / l` and `α = (k / l + 1 / 2) * π * I` (`l ≥ 3`,
-`0 < k < l`, `Q = exp (-2 * π * I / l)`):
+This file specializes the exceptional-line hyperbolic dictionary
+(`TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.Wenzl`) to the root-of-unity exceptional points
+`θ = π * I / l` and `α = (k / l + 1 / 2) * π * I = k * θ + π * I / 2` (`l ≥ 3`, `0 < k < l`,
+`Q = exp (-2 * π * I / l)`):
 
-* `tanh α = -I * cot (k * π / l)` and `tanh θ = I * tan (π / l)` give the native parameter
+* Specializing `hyperbolicProjParam_mul_add_pi_mul_I_div_two` gives the native parameter
   `a_(-k)(Q)` and Wenzl parameter `a_k(Q)`.
 * Replacing `k` by `l - k` exchanges the two projection conventions, `k = m` at `l = 2 * m` gives
   `1 / 2`, and `k ∈ {1, l - 1}` (all of `l = 3`) gives scalar endpoints `{0, 1}` whereas
@@ -72,54 +74,29 @@ theorem wenzlParam_neg_two_hyperbolicHeckeParam_rootOfUnity_sq (l : ℕ) :
     ← ofReal_natCast, ← ofReal_div, ← ofReal_cos]
   norm_cast
 
-private theorem pi_mul_I_div_natCast_eq (l : ℕ) :
-    (π : ℂ) * I / l = ↑(π / (l : ℝ)) * I := by
-  rw [ofReal_div, ofReal_natCast, mul_div_right_comm]
-
 private theorem rootOfUnity_alpha_eq (l k : ℕ) :
-    ((k : ℂ) / l + 1 / 2) * π * I = ↑((k : ℝ) * π / l + π / 2) * I := by
+    ((k : ℂ) / l + 1 / 2) * π * I = (k : ℤ) * (π * I / l) + π * I / 2 := by
   push_cast
   ring
 
-private theorem cosh_pi_mul_I_div_natCast_ne_zero {l : ℕ} (hl : 3 ≤ l) :
-    cosh (π * I / l) ≠ 0 := by
-  rw [pi_mul_I_div_natCast_eq, cosh_mul_I, ← ofReal_cos]
-  exact_mod_cast (cos_pi_div_natCast_pos (by omega)).ne'
-
-private theorem cosh_rootOfUnity_alpha_ne_zero {l k : ℕ} (hk₀ : 0 < k) (hkl : k < l) :
-    cosh (((k : ℂ) / l + 1 / 2) * π * I) ≠ 0 := by
-  rw [rootOfUnity_alpha_eq, cosh_mul_I, ← ofReal_cos, Real.cos_add_pi_div_two]
-  exact_mod_cast neg_ne_zero.2 (sin_natCast_mul_pi_div_natCast_pos hk₀ hkl).ne'
+private theorem neg_two_mul_pi_mul_I_div (l : ℕ) :
+    -2 * (π * I / (l : ℂ)) = -(2 * π * I / l) := by
+  ring
 
 /-- **Native projection parameter at the root-of-unity exceptional points.** For `l ≥ 3` and
-`0 < k < l`, at `θ = π * I / l` and `α = (k / l + 1 / 2) * π * I`, direct evaluation via
-`tanh α = -I * cot (k * π / l)` and `tanh θ = I * tan (π / l)` identifies the native parameter
+`0 < k < l`, at `θ = π * I / l` and `α = (k / l + 1 / 2) * π * I = k * θ + π * I / 2`,
+specializing `hyperbolicProjParam_mul_add_pi_mul_I_div_two` identifies the native parameter
 `hyperbolicProjParam α θ` with `a_(-k)(exp (-2 * π * I / l))`. -/
 theorem hyperbolicProjParam_rootOfUnity {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (hkl : k < l) :
     hyperbolicProjParam (((k : ℂ) / l + 1 / 2) * π * I) (π * I / l) =
       wenzlParam (-(k : ℤ)) (exp (-(2 * π * I / l))) := by
-  have hcos : Real.cos (π / l) ≠ 0 := (cos_pi_div_natCast_pos (by omega)).ne'
-  have hsin : Real.sin (k * π / l) ≠ 0 := (sin_natCast_mul_pi_div_natCast_pos hk₀ hkl).ne'
-  -- Direct evaluations `tanh θ = I * tan (π / l)` and `tanh α = -I * cot (k * π / l)`.
-  have hθ_tanh : tanh (π * I / l) = I * ↑(Real.tan (π / l)) := by
-    rw [pi_mul_I_div_natCast_eq, tanh_mul_I, ← ofReal_tan, mul_comm]
-  have hα_tanh : tanh (((k : ℂ) / l + 1 / 2) * π * I) = -I * ↑(Real.cot (k * π / l)) := by
-    rw [rootOfUnity_alpha_eq, tanh_mul_I, ← ofReal_tan, Real.tan_eq_sin_div_cos,
-      Real.sin_add_pi_div_two, Real.cos_add_pi_div_two, div_neg, ← Real.cot_eq_cos_div_sin,
-      ofReal_neg]
-    ring
-  have hprod : (-I * ↑(Real.cot (k * π / l))) * (I * ↑(Real.tan (π / l))) =
-      ↑(Real.cot (k * π / l) * Real.tan (π / l)) := by
-    rw [ofReal_mul]
-    linear_combination -↑(Real.cot (k * π / l)) * ↑(Real.tan (π / l)) * I_sq
-  rw [hyperbolicProjParam_def, hα_tanh, hθ_tanh, hprod,
-    wenzlParam_neg_exp_neg_two_pi_mul_I_div hl hk₀ hkl]
-  have hreal : (1 - Real.cot (k * π / l) * Real.tan (π / l)) / 2 =
-      Real.sin ((k - 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l)) := by
-    have hsub : ((k : ℝ) - 1) * π / l = k * π / l - π / l := by ring
-    rw [Real.cot_eq_cos_div_sin, Real.tan_eq_sin_div_cos, hsub, Real.sin_sub]
-    field_simp [hcos, hsin]
-  exact_mod_cast hreal
+  have hθ : cosh (π * I / l) ≠ 0 := by
+    rw [← ofReal_natCast]
+    exact cosh_pi_mul_I_div_ne_zero (by exact_mod_cast (by omega : 2 < l))
+  have hk : sinh ((k : ℤ) * (π * I / l)) ≠ 0 := by
+    simpa using sinh_ofReal_mul_pi_mul_I_div_ne_zero (Nat.cast_pos.2 hk₀) (Nat.cast_lt.2 hkl)
+  rw [rootOfUnity_alpha_eq, hyperbolicProjParam_mul_add_pi_mul_I_div_two hθ hk,
+    neg_two_mul_pi_mul_I_div]
 
 /-- **Wenzl projection parameter at the root-of-unity exceptional points.** For `l ≥ 3` and
 `0 < k < l`, at `θ = π * I / l` and `α = (k / l + 1 / 2) * π * I`, Wenzl's parameter
@@ -237,9 +214,13 @@ theorem IsMarkovTrace.map_hyperbolicGen_rootOfUnity_eq_iff {l k : ℕ} (hl : 3 �
     τ (hyperbolicGen (((k : ℂ) / l + 1 / 2) * π * I) (π * I / l) n) =
         τ ↑(hyperbolicGen (((k : ℂ) / l + 1 / 2) * π * I) (π * I / l) n)⁻¹ ↔
       η = wenzlParam (-(k : ℤ)) (exp (-(2 * π * I / l))) := by
-  rw [hτ.map_hyperbolicGen_eq_map_inv_iff hz (cosh_rootOfUnity_alpha_ne_zero hk₀ hkl)
-      (cosh_pi_mul_I_div_natCast_ne_zero hl) n,
-    hyperbolicProjParam_rootOfUnity hl hk₀ hkl]
+  have hθ : cosh (π * I / l) ≠ 0 := by
+    rw [← ofReal_natCast]
+    exact cosh_pi_mul_I_div_ne_zero (by exact_mod_cast (by omega : 2 < l))
+  have hk : sinh ((k : ℤ) * (π * I / l)) ≠ 0 := by
+    simpa using sinh_ofReal_mul_pi_mul_I_div_ne_zero (Nat.cast_pos.2 hk₀) (Nat.cast_lt.2 hkl)
+  rw [rootOfUnity_alpha_eq, hτ.map_hyperbolicGen_line_eq_iff hz hθ hk n,
+    neg_two_mul_pi_mul_I_div]
 
 /-- **Markov trace characterization at the root-of-unity exceptional points (Wenzl convention).**
 For `l ≥ 3` and `0 < k < l`, a Markov trace with Wenzl projection parameter `η_W` has equal
@@ -253,9 +234,11 @@ theorem IsMarkovTrace.map_hyperbolicGen_rootOfUnity_eq_iff_wenzl {l k : ℕ} (hl
     τ (hyperbolicGen (((k : ℂ) / l + 1 / 2) * π * I) (π * I / l) n) =
         τ ↑(hyperbolicGen (((k : ℂ) / l + 1 / 2) * π * I) (π * I / l) n)⁻¹ ↔
       ηW = wenzlParam (k : ℤ) (exp (-(2 * π * I / l))) := by
-  rw [hτ.map_hyperbolicGen_eq_map_inv_iff_wenzl hz (cosh_rootOfUnity_alpha_ne_zero hk₀ hkl)
-      (cosh_pi_mul_I_div_natCast_ne_zero hl) n,
-    hyperbolicWenzlProjParam_rootOfUnity hl hk₀ hkl]
+  rw [hτ.map_hyperbolicGen_rootOfUnity_eq_iff hl hk₀ hkl (η := 1 - ηW)
+      (by rw [sub_sub_cancel, hz]) n,
+    ← hyperbolicProjParam_rootOfUnity hl hk₀ hkl, ← hyperbolicWenzlProjParam_rootOfUnity hl hk₀ hkl,
+    hyperbolicWenzlProjParam_eq_one_sub]
+  constructor <;> intro h <;> linear_combination -h
 
 end InfiniteTypeAHeckeAlgebra
 

@@ -115,8 +115,8 @@ variable (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1)
 
 /-- `wenzlHeckeEquiv` is `heckeEquiv` followed by `complementEquiv`. -/
 theorem wenzlHeckeEquiv_apply (w : BalancedProjectionAlgebra R τ) :
-    wenzlHeckeEquiv q hτ w = complementEquiv q (heckeEquiv q hτ w) :=
-  (rfl)
+    wenzlHeckeEquiv q hτ w = complementEquiv q (heckeEquiv q hτ w) := by
+  rw [wenzlHeckeEquiv, AlgEquiv.trans_apply]
 
 /-- The inverse of `wenzlHeckeEquiv` is `complementEquiv` followed by `(heckeEquiv q hτ).symm`. -/
 theorem wenzlHeckeEquiv_symm_apply (x : InfiniteTypeAHeckeAlgebra R q) :

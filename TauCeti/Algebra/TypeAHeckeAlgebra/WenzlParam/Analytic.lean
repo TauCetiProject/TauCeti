@@ -95,8 +95,10 @@ theorem wenzlParam_real_exp_neg (d : ℤ) (x : ℝ) :
 `a_k(Q) = sin ((k + 1) θ) / (2 * cos θ * sin (k θ))`, whenever `cos θ ≠ 0` and `sin (k θ) ≠ 0`. -/
 theorem wenzlParam_exp_mul_I (k : ℤ) {θ : ℂ} (hθ : cos θ ≠ 0) (hk : sin (k * θ) ≠ 0) :
     wenzlParam k (exp (2 * θ * I)) = sin ((k + 1) * θ) / (2 * cos θ * sin (k * θ)) := by
-  have e₁ (x : ℂ) : exp (-x * I) * exp (x * I) = 1 := by rw [← exp_add]; simp
-  have e₂ (x : ℂ) : exp (x * I) * exp (x * I) = exp (2 * x * I) := by rw [← exp_add]; ring_nf
+  have e₁ (x : ℂ) : exp (-x * I) * exp (x * I) = 1 := by
+    rw [neg_mul, exp_neg, inv_mul_cancel₀ (exp_ne_zero _)]
+  have e₂ (x : ℂ) : exp (x * I) ^ 2 = exp (2 * x * I) := by
+    rw [← exp_natCast_mul, Nat.cast_ofNat, mul_assoc]
   -- `1 - exp (2 x i) = -i * (2 * sin x) * exp (x i)` and `1 + exp (2 x i) = 2 * cos x * exp (x i)`.
   have one_sub_exp (x : ℂ) : 1 - exp (2 * x * I) = -I * (2 * sin x) * exp (x * I) := by
     rw [two_sin]
@@ -166,10 +168,9 @@ theorem wenzlParam_real_exp_neg_two_mul {k : ℤ} (hk : k ≠ 0) {θ : ℝ} (hθ
 `a_(-2)(exp (2 * θ)) = (4 * cosh θ ^ 2)⁻¹`. -/
 theorem wenzlParam_neg_two_exp_two_mul (θ : ℂ) :
     wenzlParam (-2) (exp (2 * θ)) = (4 * cosh θ ^ 2)⁻¹ := by
-  have e₂ : exp θ * exp θ = exp (2 * θ) := by rw [← exp_add]; ring_nf
   have hsq : (1 + exp (2 * θ)) ^ 2 = exp (2 * θ) * (4 * cosh θ ^ 2) := by
-    rw [one_add_exp_two_mul]
-    linear_combination 4 * cosh θ ^ 2 * e₂
+    rw [one_add_exp_two_mul, mul_pow, ← exp_natCast_mul, Nat.cast_ofNat]
+    ring
   rw [wenzlParam_neg_two, hsq, div_mul_eq_div_div, div_self (exp_ne_zero _), one_div]
 
 /-- **The Jones parameter on the unit circle.** At `Q = exp (2 θ i)`,

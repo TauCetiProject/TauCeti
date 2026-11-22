@@ -13,6 +13,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
@@ -60,9 +61,12 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
 * `Complex.one_add_exp_two_mul`, `Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two`,
   `Complex.sinh_add_pi_mul_I_div_two`, `Complex.cosh_add_pi_mul_I_div_two`,
   `Complex.cosh_add_pi_mul_I_div_two_ne_zero`, `Complex.tanh_add_pi_mul_I_div_two`,
-  `Complex.cosh_ofReal_ne_zero` and `Complex.sinh_ofReal_ne_zero` — complex exponential-hyperbolic
-  factorization, `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2`,
-  quarter-period shifts by `π * I / 2`, and nonvanishing on the real axis.
+  `Complex.cosh_ofReal_ne_zero`, `Complex.sinh_ofReal_ne_zero`,
+  `Complex.cosh_ofReal_mul_I_ne_zero`, `Complex.sinh_ofReal_mul_I_ne_zero`,
+  `Complex.cosh_pi_mul_I_div_ne_zero`, and `Complex.sinh_ofReal_mul_pi_mul_I_div_ne_zero` —
+  complex exponential-hyperbolic factorization,
+  `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2`, quarter-period shifts by
+  `π * I / 2`, and nonvanishing on the real and imaginary axes.
 * `Complex.norm_cosh_le` — `‖cosh z‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2` for complex `z`.
 * `Complex.norm_cosh_mul_le` — `‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2` for complex
   `z` and `w`.
@@ -405,7 +409,8 @@ open scoped Real
 
 /-- `1 + exp (2 * z) = 2 * cosh z * exp z`. -/
 theorem one_add_exp_two_mul (z : ℂ) : 1 + exp (2 * z) = 2 * cosh z * exp z := by
-  rw [two_cosh, add_mul, ← exp_add, ← exp_add, neg_add_cancel, exp_zero, ← two_mul, add_comm]
+  rw [two_cosh, add_mul, ← sq, ← exp_natCast_mul, Nat.cast_ofNat, exp_neg,
+    inv_mul_cancel₀ (exp_ne_zero z), add_comm]
 
 /-- `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` for complex `α`, `θ`
 with `cosh α ≠ 0` and `cosh θ ≠ 0`: both sides are
@@ -450,6 +455,28 @@ nonzero. -/
 theorem sinh_ofReal_ne_zero {x : ℝ} : sinh (x : ℂ) ≠ 0 ↔ x ≠ 0 := by
   rw [← ofReal_sinh, ne_eq, ofReal_eq_zero, ← ne_eq, Real.sinh_ne_zero]
 
+/-- On the imaginary axis, `cosh (x * I)` is nonzero if and only if `Real.cos x ≠ 0`. -/
+theorem cosh_ofReal_mul_I_ne_zero {x : ℝ} : cosh ((x : ℂ) * I) ≠ 0 ↔ Real.cos x ≠ 0 := by
+  rw [cosh_mul_I, ← ofReal_cos, ne_eq, ofReal_eq_zero]
+
+/-- On the imaginary axis, `sinh (x * I)` is nonzero if and only if `Real.sin x ≠ 0`. -/
+theorem sinh_ofReal_mul_I_ne_zero {x : ℝ} : sinh ((x : ℂ) * I) ≠ 0 ↔ Real.sin x ≠ 0 := by
+  rw [sinh_mul_I, ← ofReal_sin, mul_ne_zero_iff, and_iff_left I_ne_zero, ne_eq, ofReal_eq_zero]
+
+/-- For a real denominator `2 < x`, `cosh (π * I / x)` is nonzero. -/
+theorem cosh_pi_mul_I_div_ne_zero {x : ℝ} (hx : 2 < x) : cosh (π * I / x) ≠ 0 := by
+  rw [mul_div_right_comm, ← ofReal_div, cosh_ofReal_mul_I_ne_zero]
+  exact (TauCeti.cos_pi_div_pos hx).ne'
+
+/-- For real `0 < x < l`, `sinh (x * (π * I / l))` is nonzero. -/
+theorem sinh_ofReal_mul_pi_mul_I_div_ne_zero {x l : ℝ} (h0 : 0 < x) (hx : x < l) :
+    sinh ((x : ℂ) * (π * I / l)) ≠ 0 := by
+  have h : (x : ℂ) * (π * I / l) = ↑(x * π / l) * I := by
+    rw [ofReal_div, ofReal_mul]
+    ring
+  rw [h, sinh_ofReal_mul_I_ne_zero]
+  exact (TauCeti.sin_mul_pi_div_pos h0 hx).ne'
+
 /-- The complex hyperbolic cosine is bounded by the mean of the norms of the two exponentials:
 `‖cosh z‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2`. -/
 theorem norm_cosh_le (z : ℂ) : ‖cosh z‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2 := by
@@ -481,9 +508,9 @@ theorem one_sub_tanh_div_two (x : ℝ) :
     (1 - tanh x) / 2 = exp (-2 * x) / (1 + exp (-2 * x)) := by
   have h1 : 1 + exp (-2 * x) = 2 * cosh x * exp (-x) := by
     simpa [mul_neg] using one_add_exp_two_mul (-x)
-  have e₂ : exp (-x) * exp (-x) = exp (-2 * x) := by rw [← exp_add]; ring_nf
   rw [one_sub_tanh, h1, div_div, mul_comm (cosh x) 2,
-    ← mul_div_mul_right _ _ (exp_pos (-x)).ne', e₂]
+    ← mul_div_mul_right _ _ (exp_pos (-x)).ne', ← sq, ← exp_natCast_mul, Nat.cast_ofNat, mul_neg,
+    ← neg_mul]
 
 /-- `(1 + tanh x) / 2 = 1 / (1 + exp (-2 * x))`, the logistic sigmoid at `2 * x`. -/
 theorem one_add_tanh_div_two (x : ℝ) :
