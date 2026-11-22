@@ -34,8 +34,11 @@ assumed about the common limit `M`, nor about the principal parts, beyond the ma
 Written in a trivialization along a broken Floer trajectory, the linearized Floer operators
 `∂s + J ∂t + S` along its two cylinders, the first ending and the second starting at the same
 nondegenerate orbit, are operators of this form. When they are onto, as for regular trajectories,
-the uniformly bounded right inverse of the operator along the pre-glued cylinder is the linear
-input of the Newton iteration that glues broken Floer trajectories.
+the theorem gives uniformly bounded right inverses for the operators of the glued coefficient field.
+The linearization along the pre-glued cylinder differs from these by an error that is small in
+`L^∞` for long necks; absorbing it (for instance with
+`ContinuousLinearMap.surjective_of_norm_sub_lt_inv_rightInverse`) gives the uniformly bounded right
+inverses that are the linear input of the Newton iteration gluing broken Floer trajectories.
 
 * **Translation.** Translation in `s` commutes with first-order operators, the coefficient field
   being translated too (`TauCeti.CylinderSobolev.translateLp_jetOperator`), so a right inverse of
@@ -81,51 +84,6 @@ open StripSobolev
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup W] [NormedSpace ℝ W]
-
-/-! ### Translation -/
-
-/-- **Translation commutes with first-order operators.** Translating `D_M f` by `a` in the `s`
-direction gives the operator of the translated coefficient field `M (· + a, ·)` applied to the
-translate of `f`. -/
-theorem translateLp_jetOperator {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
-    (a : ℝ) (f : Lp (V × V × V) 2 stripMeasure) :
-    translateLp a (jetOperator stripMeasure M f) =
-      jetOperator stripMeasure (fun z ↦ M (z + (a, 0))) (translateLp a f) := by
-  have hMa : MemLp (fun z ↦ M (z + (a, 0))) ∞ stripMeasure :=
-    hM.comp_measurePreserving (measurePreserving_add_strip a)
-  refine Lp.ext ?_
-  filter_upwards [coeFn_translateLp a (jetOperator stripMeasure M f),
-    coeFn_jetOperator hMa (translateLp a f), coeFn_translateLp a f,
-    (measurePreserving_add_strip a).quasiMeasurePreserving.ae_eq_comp (coeFn_jetOperator hM f)]
-    with z h₁ h₂ h₃ h₄
-  simp only [Function.comp_apply] at h₄
-  rw [h₁, h₂, h₃, h₄]
-
-/-- **Right inverses translate.** If the operator of the coefficient field `M` has a bounded
-linear right inverse `Q` on `W^{1,2}`, then so does the operator of the translated coefficient
-field `M (· + a, ·)`, with norm at most `‖Q‖`: it is `Q` conjugated by the translation by `a`. -/
-theorem exists_rightInverse_jetOperator_comp_add {M : ℝ × ℝ → V × V × V →L[ℝ] W}
-    (hM : MemLp M ∞ stripMeasure) {Q : Lp W 2 stripMeasure →L[ℝ] H1 V}
-    (hQ : ((jetOperator stripMeasure M).comp (H1 V).subtypeL).comp Q =
-      ContinuousLinearMap.id ℝ _) (a : ℝ) :
-    ∃ Q' : Lp W 2 stripMeasure →L[ℝ] H1 V,
-      ((jetOperator stripMeasure (fun z ↦ M (z + (a, 0)))).comp (H1 V).subtypeL).comp Q' =
-        ContinuousLinearMap.id ℝ _ ∧ ‖Q'‖ ≤ ‖Q‖ := by
-  refine ⟨(translate (testSection V) a).toContinuousLinearEquiv.toContinuousLinearMap.comp
-    (Q.comp (translateLp (E := W) (p := 2) (-a)).toContinuousLinearEquiv.toContinuousLinearMap),
-    ?_, ?_⟩
-  · refine ContinuousLinearMap.ext fun η ↦ ?_
-    have h := congrArg (fun T ↦ T (translateLp (-a) η)) hQ
-    simp only [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
-      ContinuousLinearMap.id_apply] at h
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      LinearIsometryEquiv.coe_toContinuousLinearEquiv, Submodule.subtypeL_apply, coe_translate,
-      ContinuousLinearMap.id_apply, ← translateLp_jetOperator hM, h, translateLp_translateLp,
-      add_neg_cancel, translateLp_zero]
-  · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg Q) fun η ↦ ?_
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      LinearIsometryEquiv.coe_toContinuousLinearEquiv, LinearIsometryEquiv.norm_map]
-    simpa only [LinearIsometryEquiv.norm_map] using Q.le_opNorm (translateLp (-a) η)
 
 /-! ### The error of one spliced piece -/
 
@@ -212,7 +170,7 @@ private theorem norm_jetOperator_cutoffL_apply_sub_le {G N : ℝ × ℝ → V ×
 /-! ### The glued coefficient field -/
 
 /-- On `s < 0` the glued coefficient field is `M₁` translated by `R`. -/
-private theorem uncurry_gluedCoeff_of_neg (M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W) (R : ℝ)
+theorem uncurry_gluedCoeff_of_neg (M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W) (R : ℝ)
     {z : ℝ × ℝ} (hz : z.1 < 0) :
     Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R) z =
       M₁ (z + (R, 0)) := by
@@ -221,7 +179,7 @@ private theorem uncurry_gluedCoeff_of_neg (M₁ M₂ : ℝ × ℝ → V × V × 
   simp
 
 /-- On `s ≥ 0` the glued coefficient field is `M₂` translated by `-R`. -/
-private theorem uncurry_gluedCoeff_of_nonneg (M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W) (R : ℝ)
+theorem uncurry_gluedCoeff_of_nonneg (M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W) (R : ℝ)
     {z : ℝ × ℝ} (hz : 0 ≤ z.1) :
     Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R) z =
       M₂ (z + (-R, 0)) := by
@@ -230,7 +188,7 @@ private theorem uncurry_gluedCoeff_of_nonneg (M₁ M₂ : ℝ × ℝ → V × V 
   simp
 
 /-- The glued coefficient field is essentially bounded, by the sum of the bounds of the pieces. -/
-private theorem memLp_uncurry_gluedCoeff {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
+theorem memLp_uncurry_gluedCoeff {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
     (hM₁ : MemLp M₁ ∞ stripMeasure) (hM₂ : MemLp M₂ ∞ stripMeasure) (R : ℝ) :
     MemLp (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R)) ∞
         stripMeasure ∧

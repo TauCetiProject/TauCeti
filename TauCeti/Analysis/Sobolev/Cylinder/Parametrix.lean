@@ -130,6 +130,7 @@ def cutoffL {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {B : ℝ} (hβB : ∀ s
     jetOperator_cutoffCoeff_mem_H1 hβ hβB hβ'B x.property
 
 /-- As an `L²` jet, `cutoffL` is the operator of the coefficient field `cutoffCoeff V β`. -/
+@[simp]
 theorem coe_cutoffL {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {B : ℝ} (hβB : ∀ s, |β s| ≤ B)
     (hβ'B : ∀ s, |deriv β s| ≤ B) (x : H1 V) :
     (cutoffL hβ hβB hβ'B x : Lp (V × V × V) 2 stripMeasure) =

@@ -79,7 +79,10 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   `TauCeti.Geometry.Symplectic.Floer.SemiFredholm`. The operator depends Lipschitz-continuously
   on its coefficient field in `L^∞` (`TauCeti.CylinderSobolev.norm_jetOperator_sub_le`), hence
   continuously along families of coefficient fields continuous in `L^∞`
-  (`TauCeti.CylinderSobolev.continuousOn_jetOperator`).
+  (`TauCeti.CylinderSobolev.continuousOn_jetOperator`). Translation in `s` commutes with it, the
+  coefficient field being translated too (`TauCeti.CylinderSobolev.translateLp_jetOperator`), so
+  its right inverses on `W^{1,2}` translate with the same norm
+  (`TauCeti.CylinderSobolev.exists_rightInverse_jetOperator_comp_add`).
 * **An estimate from below.** If `D` moreover bounds every test section in `L²` over the whole
   strip, `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²`, the compact error term disappears: the extension satisfies
   `‖x‖ ≤ K ‖D x‖` on `H1`
@@ -699,6 +702,51 @@ theorem ker_jetOperator_comp_subtypeL_eq_bot {M : ℝ × ℝ → V × V × V →
     ((jetOperator stripMeasure M).comp (H1 V).subtypeL).ker = ⊥ := by
   obtain ⟨K, hK⟩ := exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL hM hest hL2
   exact LinearMap.ker_eq_bot.2 ((ContinuousLinearMap.antilipschitz_of_bound _ hK).injective)
+
+/-! #### Translation in the `s` direction -/
+
+/-- **Translation commutes with first-order operators.** Translating `D_M f` by `a` in the `s`
+direction gives the operator of the translated coefficient field `M (· + a, ·)` applied to the
+translate of `f`. -/
+theorem translateLp_jetOperator {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
+    (a : ℝ) (f : Lp (V × V × V) 2 stripMeasure) :
+    translateLp a (jetOperator stripMeasure M f) =
+      jetOperator stripMeasure (fun z ↦ M (z + (a, 0))) (translateLp a f) := by
+  have hMa : MemLp (fun z ↦ M (z + (a, 0))) ∞ stripMeasure :=
+    hM.comp_measurePreserving (measurePreserving_add_strip a)
+  refine Lp.ext ?_
+  filter_upwards [coeFn_translateLp a (jetOperator stripMeasure M f),
+    coeFn_jetOperator hMa (translateLp a f), coeFn_translateLp a f,
+    (measurePreserving_add_strip a).quasiMeasurePreserving.ae_eq_comp (coeFn_jetOperator hM f)]
+    with z h₁ h₂ h₃ h₄
+  simp only [Function.comp_apply] at h₄
+  rw [h₁, h₂, h₃, h₄]
+
+/-- **Right inverses translate.** If the operator of the coefficient field `M` has a bounded
+linear right inverse `Q` on `W^{1,2}`, then so does the operator of the translated coefficient
+field `M (· + a, ·)`, with norm at most `‖Q‖`: it is `Q` conjugated by the translation by `a`. -/
+theorem exists_rightInverse_jetOperator_comp_add {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ stripMeasure) {Q : Lp W 2 stripMeasure →L[ℝ] H1 V}
+    (hQ : ((jetOperator stripMeasure M).comp (H1 V).subtypeL).comp Q =
+      ContinuousLinearMap.id ℝ _) (a : ℝ) :
+    ∃ Q' : Lp W 2 stripMeasure →L[ℝ] H1 V,
+      ((jetOperator stripMeasure (fun z ↦ M (z + (a, 0)))).comp (H1 V).subtypeL).comp Q' =
+        ContinuousLinearMap.id ℝ _ ∧ ‖Q'‖ ≤ ‖Q‖ := by
+  refine ⟨(translate (testSection V) a).toContinuousLinearEquiv.toContinuousLinearMap.comp
+    (Q.comp (translateLp (E := W) (p := 2) (-a)).toContinuousLinearEquiv.toContinuousLinearMap),
+    ?_, ?_⟩
+  · refine ContinuousLinearMap.ext fun η ↦ ?_
+    have h := congrArg (fun T ↦ T (translateLp (-a) η)) hQ
+    simp only [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
+      ContinuousLinearMap.id_apply] at h
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_toContinuousLinearEquiv, Submodule.subtypeL_apply, coe_translate,
+      ContinuousLinearMap.id_apply, ← translateLp_jetOperator hM, h, translateLp_translateLp,
+      add_neg_cancel, translateLp_zero]
+  · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg Q) fun η ↦ ?_
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_toContinuousLinearEquiv, LinearIsometryEquiv.norm_map]
+    simpa only [LinearIsometryEquiv.norm_map] using Q.le_opNorm (translateLp (-a) η)
 
 end Operator
 

@@ -105,6 +105,9 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
 * `TauCeti.contDiff_positiveCutoff`: the cutoff of a function that is `C¹` on `(0, ∞)` is `C¹`.
 * `TauCeti.exists_nnnorm_deriv_positiveCutoff_le`: its derivative is bounded when `g'` is bounded
   on `[m, ∞)`.
+* `TauCeti.neckCutoff`: the cutoff `s ↦ ψ (1 + a s)`, equal to `1` where `0 ≤ a s` and to `0` where
+  `1 + a s ≤ 0`, with derivative at most `|a|` times a bound for `ψ'`. These cutoffs splice
+  right inverses along a neck of length `2 R`, with slope `O(1 / R)`.
 * `TauCeti.exists_contDiff_antitone_cutoff`: a smooth nonincreasing step from a value `v ≥ 0` on
   `(-∞, a]` down to `0` on `[b, ∞)`, positive on `(-∞, b)` when `v > 0`.
 * `TauCeti.exists_contDiff_plateau`: a smooth function with values in `[0, 1]`, vanishing outside
@@ -685,6 +688,58 @@ theorem exists_nnnorm_deriv_positiveCutoff_le {m : ℝ} (hm : 0 < m) {g : ℝ �
   · exact (hC t ⟨ht, htm⟩).trans (le_max_left _ _)
   · rw [deriv_positiveCutoff hm g (by linarith), Real.norm_eq_abs]
     exact (hK t htm.le).trans (le_max_right _ _)
+
+/-- **The neck cutoff** `s ↦ ψ (1 + a s)`, for the smooth transition `ψ = Real.smoothTransition`.
+It equals `1` where `0 ≤ a s` (`TauCeti.neckCutoff_eq_one`) and `0` where `1 + a s ≤ 0`
+(`TauCeti.neckCutoff_eq_zero`), and its derivative is at most `|a|` times a bound for `ψ'`
+(`TauCeti.abs_deriv_neckCutoff_le`). For `a = -(2 / R)` it is `1` on `(-∞, 0]` and `0` on
+`[R / 2, ∞)`; for `a = 2 / R` it is `1` on `[0, ∞)` and `0` on `(-∞, -R / 2]`. These are the
+cutoffs that splice right inverses along a neck of length `2 R`, with slope `O(1 / R)`. -/
+def neckCutoff (a s : ℝ) : ℝ :=
+  Real.smoothTransition (1 + a * s)
+
+/-- The defining formula of the neck cutoff. -/
+theorem neckCutoff_def (a s : ℝ) : neckCutoff a s = Real.smoothTransition (1 + a * s) :=
+  (rfl)
+
+/-- The neck cutoff is smooth. -/
+theorem contDiff_neckCutoff (a : ℝ) {n : ℕ∞} : ContDiff ℝ n (neckCutoff a) := by
+  unfold neckCutoff
+  exact Real.smoothTransition.contDiff.comp (by fun_prop)
+
+/-- The neck cutoff is nonnegative. -/
+theorem neckCutoff_nonneg (a s : ℝ) : 0 ≤ neckCutoff a s :=
+  Real.smoothTransition.nonneg _
+
+/-- The neck cutoff is at most `1`. -/
+theorem neckCutoff_le_one (a s : ℝ) : neckCutoff a s ≤ 1 :=
+  Real.smoothTransition.le_one _
+
+/-- The neck cutoff takes values in `[-1, 1]`. -/
+theorem abs_neckCutoff_le_one (a s : ℝ) : |neckCutoff a s| ≤ 1 :=
+  Real.smoothTransition.abs_le_one _
+
+/-- The derivative of the neck cutoff, by the chain rule. -/
+theorem hasDerivAt_neckCutoff (a s : ℝ) :
+    HasDerivAt (neckCutoff a) (deriv Real.smoothTransition (1 + a * s) * a) s := by
+  unfold neckCutoff
+  simpa using (((hasDerivAt_id s).const_mul a).const_add 1).smoothTransition
+
+/-- The derivative of the neck cutoff is at most `|a| L`, for a bound `L` on the derivative of the
+smooth transition. -/
+theorem abs_deriv_neckCutoff_le {L : ℝ}
+    (hL : ∀ t, ‖deriv Real.smoothTransition t‖ ≤ L) (a s : ℝ) :
+    |deriv (neckCutoff a) s| ≤ |a| * L := by
+  rw [(hasDerivAt_neckCutoff a s).deriv, abs_mul, mul_comm]
+  exact mul_le_mul_of_nonneg_left (hL _) (abs_nonneg a)
+
+/-- The neck cutoff is `1` where `0 ≤ a s`. -/
+theorem neckCutoff_eq_one {a s : ℝ} (h : 0 ≤ a * s) : neckCutoff a s = 1 :=
+  Real.smoothTransition.one_of_one_le (by linarith)
+
+/-- The neck cutoff is `0` where `1 + a s ≤ 0`. -/
+theorem neckCutoff_eq_zero {a s : ℝ} (h : 1 + a * s ≤ 0) : neckCutoff a s = 0 :=
+  Real.smoothTransition.zero_of_nonpos h
 
 /-- A smooth nonincreasing step down from a value `v ≥ 0` to `0`: for `a < b` there is a smooth
 antitone function `μ ≥ 0` equal to `v` on `(-∞, a]` and to `0` on `[b, ∞)`. When `v > 0` it is
