@@ -42,7 +42,7 @@ linearization declarations take triviality of the action as an explicit hypothes
 `TauCeti.FactorSet.range_inl_le_center_iff` turns that hypothesis into centrality. The *type*
 `TauCeti.FactorSet G kˣ` already depends on an ambient `MulDistribMulAction G kˣ`, so leaving that
 action free lets a factor set for any action be fed to the statements, and only the results that
-genuinely need centrality pay for it. A projective representation itself carries no action, so
+genuinely need a trivial action pay for it. A projective representation itself carries no action, so
 the closing existence statement supplies the trivial one, `TauCeti.trivialMulDistribMulAction`, and
 asks for nothing of its caller.
 
@@ -83,11 +83,11 @@ This lets finite lifting extensions use roots of unity as their kernel coefficie
   representation have the same invariant submodules, which is why irreducibility transfers between
   them.
 * `TauCeti.IsProjectiveRep.exists_factorSet_linearization`: **every projective representation of
-  `G` lifts to a linear representation of a central extension of `G` by `kˣ`**, and is recovered by
-  restricting that lift along the canonical section. The statement provides some factor set for the
-  trivial action and a lift from its extension. The proof chooses the factor set the projective
-  representation carries, bundled by `TauCeti.IsFactorSet.toFactorSet`, but the statement does not
-  record that choice.
+  `G` lifts to a linear representation of a central extension of `G` by `kˣ`**: for some factor set
+  `β` of the trivial action, a homomorphism from its extension sends each element of the central
+  copy of `kˣ` to multiplication by that scalar and restricts to the projective representation
+  along the canonical section. Since `β` is existentially quantified, the statement does not
+  identify it with the factor set the projective representation carries.
 
 ## References
 
@@ -397,9 +397,8 @@ variable {ρ : G → V ≃ₗ[k] V}
 The statement provides a factor set `β` for the trivial action `TauCeti.trivialMulDistribMulAction`
 of `G` on `kˣ` and a homomorphism `π` from its extension: the copy of `kˣ` in that extension is
 central and acts through `π` by its own scalars, and restricting `π` along the canonical section
-returns the projective representation. The proof takes `β` to be the factor set the projective
-representation carries, bundled by `TauCeti.IsFactorSet.toFactorSet`, but the statement does not
-record that `β` is this factor set. -/
+returns the projective representation. Since `β` is existentially quantified, the statement does
+not identify it with the factor set `α` that `ρ` carries. -/
 theorem IsProjectiveRep.exists_factorSet_linearization {α : G → G → kˣ}
     (hρ : IsProjectiveRep ρ α) :
     ∃ β : FactorSet G kˣ, ∃ π : β.Extension →* (V ≃ₗ[k] V),

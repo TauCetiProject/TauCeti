@@ -31,9 +31,11 @@ Two facts identify `α` as *the* factor set of the extension it builds. The set-
 `g ↦ ⟨1, g⟩` fails to be a homomorphism by exactly `α` (`TauCeti.FactorSet.canonicalSection_mul`),
 and conjugating the copy of `M` inside the extension is the given action of `G` on `M`
 (`TauCeti.FactorSet.mul_inl`). By the latter the copy of `M` is central exactly when `G` acts
-trivially (`TauCeti.FactorSet.range_inl_le_center_iff`). For `M = kˣ` this central case is the one
-in which a projective representation of `G` with factor set `α` lifts to a linear representation of
-`E_α`, from which it is recovered by composing with the canonical section.
+trivially (`TauCeti.FactorSet.range_inl_le_center_iff`). For `M = kˣ` with the trivial action,
+this central extension carries the linearization `TauCeti.IsProjectiveRep.linearization` of a
+projective representation `ρ` of `G` with factor set `α`: the homomorphism
+`E_α →* (V ≃ₗ[k] V)`, `⟨a, g⟩ ↦ a • ρ g`, which sends each element `inl a` of the central copy of
+`kˣ` to multiplication by the scalar `a` and restricts to `ρ` along the canonical section.
 
 A factor set is a multiplicative `2`-cocycle by definition, so no conversion is needed to reach
 group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂` reads `α` as a
@@ -406,10 +408,11 @@ theorem inducesAction_groupExtension :
 
 /-- **The extension is central exactly when `G` acts trivially on `M`.** This is
 `GroupExtension.InducesAction.range_inl_le_center_iff` for the twisted product, which
-induces the given action by `TauCeti.FactorSet.inducesAction_groupExtension`. The trivial
-action with `M = kˣ` is the case in which a projective representation of `G` with factor set `α`
-lifts to a linear representation of the extension, from which it is recovered by composing with
-`TauCeti.FactorSet.canonicalSection`. -/
+induces the given action by `TauCeti.FactorSet.inducesAction_groupExtension`. For `M = kˣ` with
+the trivial action this is the central extension on which `TauCeti.IsProjectiveRep.linearization`
+is defined: for a projective representation `ρ` with factor set `α`, that homomorphism
+`⟨a, g⟩ ↦ a • ρ g` sends each `inl a` to multiplication by the scalar `a` and restricts to `ρ`
+along `TauCeti.FactorSet.canonicalSection`. -/
 theorem range_inl_le_center_iff :
     (inl α).range ≤ Subgroup.center α.Extension ↔ ∀ (g : G) (a : M), g • a = a := by
   simpa only [groupExtension_inl] using

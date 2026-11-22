@@ -348,7 +348,8 @@ section InducesAction
 
 variable {M : Type*} [Group M] {S : GroupExtension M E G}
 
-/-- **A central extension acts trivially on its kernel.** -/
+/-- **A central extension acts trivially on its kernel**: conjugation by any element of `E` is the
+identity automorphism of `M`. -/
 theorem conjAct_eq_one_of_le_center (h : S.inl.range ≤ Subgroup.center E) (e : E) :
     S.conjAct e = 1 := by
   ext m
@@ -365,14 +366,15 @@ the ambient action is trivial. -/
 def InducesAction [MulDistribMulAction G M] : Prop :=
   ∀ (e : E) (m : M), S.conjAct e m = S.rightHom e • m
 
-/-- The pointwise characterization of the action induced by an extension. -/
+/-- Unfolds `GroupExtension.InducesAction S`: conjugation by each `e : E` acts on the kernel as the
+image `S.rightHom e` does. -/
 @[simp]
 theorem inducesAction_iff [MulDistribMulAction G M] :
     InducesAction S ↔ ∀ (e : E) (m : M), S.conjAct e m = S.rightHom e • m :=
   Iff.rfl
 
-/-- Relabelling the quotient transports the induced action on the kernel along the same
-equivalence. -/
+/-- Relabelling the quotient along `e : G ≃* H` preserves `GroupExtension.InducesAction`, provided
+the action of `H` on `M`, pulled back along `e`, is the action of `G`. -/
 theorem InducesAction.relabelQuotient [MulDistribMulAction G M]
     (hact : InducesAction S) {H : Type*} [Group H] [MulDistribMulAction H M]
     (e : G ≃* H) (hsmul : ∀ (g : G) (m : M), e g • m = g • m) :
@@ -408,8 +410,9 @@ theorem inducesAction_iff_smul_eq_self [MulDistribMulAction G M]
     rw [conjAct_eq_one_of_le_center h e, MulAut.one_apply, htriv]
 
 /-- **An extension inducing the ambient action is central exactly when that action is trivial.**
-The forward implication is `GroupExtension.inducesAction_iff_smul_eq_self`; conversely,
-conjugation by any element of `E` moves the kernel by the trivial action, so it fixes the kernel. -/
+Where `GroupExtension.inducesAction_iff_smul_eq_self` assumes centrality and characterizes
+`GroupExtension.InducesAction`, this assumes `GroupExtension.InducesAction` and characterizes
+centrality. -/
 theorem InducesAction.range_inl_le_center_iff [MulDistribMulAction G M] (hact : InducesAction S) :
     S.inl.range ≤ Subgroup.center E ↔ ∀ (g : G) (m : M), g • m = m := by
   refine ⟨fun h => (inducesAction_iff_smul_eq_self h).1 hact, fun h => ?_⟩
@@ -417,7 +420,8 @@ theorem InducesAction.range_inl_le_center_iff [MulDistribMulAction G M] (hact : 
   refine Subgroup.mem_center_iff.2 fun e => ?_
   rw [← mul_inv_eq_iff_eq_mul, ← GroupExtension.inl_conjAct_comm, hact e m, h]
 
-/-- The image of the kernel is conjugated by a section according to the ambient action. -/
+/-- When `S` induces the ambient action, conjugating `S.inl m` by the value of a section `σ` at `g`
+gives `S.inl (g • m)`. -/
 theorem Section.inl_smul [MulDistribMulAction G M] (σ : S.Section) (hact : InducesAction S)
     (g : G) (m : M) : S.inl (g • m) = σ g * S.inl m * (σ g)⁻¹ := by
   have h := hact (σ g) m

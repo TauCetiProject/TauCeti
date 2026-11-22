@@ -54,7 +54,8 @@ bookkeeping (`TauCeti.GroupExtension.factorSetFun`, `TauCeti.GroupExtension.norm
 ## Main results
 
 * `TauCeti.GroupExtension.inducesAction_iff_conjActOfSection_eq`: `InducesAction` holds exactly
-  when the descended conjugation action is the ambient one.
+  when the descended conjugation action is the ambient one, with
+  `GroupExtension.InducesAction.conjActOfSection_eq_toMulAut` its forward implication.
 * `TauCeti.GroupExtension.factorSet_monoidHomComp`: the factor set of a section transported along a
   homomorphism of extensions over `G` restricting to `f` on the kernels is the pushforward along
   `f` of the factor set of the section.
@@ -126,6 +127,12 @@ theorem conjActOfSection_eq (σ σ' : S.Section) :
   ext g m
   exact DFunLike.congr_fun (conjAct_eq_of_rightHom_eq (S := S) (e := σ g) (e' := σ' g) (by simp)) m
 
+/-- **An extension inducing the ambient action presents it through every section.** Given
+`hact : S.InducesAction`, the conjugation action `TauCeti.GroupExtension.conjActOfSection σ`
+presented by any section `σ` equals the ambient action `MulDistribMulAction.toMulAut G M`, as
+homomorphisms `G →* MulAut M`. This is the forward implication of
+`TauCeti.GroupExtension.inducesAction_iff_conjActOfSection_eq`, stated on the hypothesis so that it
+can be applied as `hact.conjActOfSection_eq_toMulAut σ`. -/
 theorem _root_.GroupExtension.InducesAction.conjActOfSection_eq_toMulAut [MulDistribMulAction G M]
     (hact : S.InducesAction) (σ : S.Section) :
     conjActOfSection σ = MulDistribMulAction.toMulAut G M := by
