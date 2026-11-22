@@ -217,6 +217,17 @@ def cyclicDistanceCutSampleBrokenGeodesicHomotopy {n k : ℕ} {δ : Fin (n + 1) 
     simp only [slideTimes_one, coe_cyclicDistanceCutSampleBrokenGeodesic_apply,
       MoorePath.sample_apply, MooreFreeLoopSpace.length_toMoorePath]
 
+/-- At `p = (s, q)`, the `j`-th vertex of the slide is the broken geodesic through `q` evaluated at
+the `j`-th time of the slide at `s`. It is private since the times of the slide are. -/
+private theorem coe_cyclicDistanceCutSampleBrokenGeodesicHomotopy_apply {n k : ℕ}
+    {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + k + 1) → ℝ} (hδ : ∀ i, δ i < r)
+    (hδδ' : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j)
+    (hm : ∀ j, ∑ i, δ i ≤ ((n + k + 1 : ℕ) : ℝ) * δ' j)
+    (p : unitInterval × cyclicDistanceCut (X := M) δ) (j : Fin (n + k + 1)) :
+    (cyclicDistanceCutSampleBrokenGeodesicHomotopy hr hδ hδδ' hm p : Fin (n + k + 1) → M) j =
+      (cyclicDistanceCutBrokenGeodesic hr hδ p.2).toMoorePath (slideTimes hr hδ p.1 p.2 j) :=
+  (rfl)
+
 /-- **The slide keeps the first vertex.** For the vertex `0` both families of times are `0`, so at
 every time of the slide the first vertex is the base point `q₀` of the broken geodesic through `q`.
 So the slide restricts to the tuples with a prescribed first vertex. -/
@@ -230,12 +241,9 @@ theorem coe_cyclicDistanceCutSampleBrokenGeodesicHomotopy_apply_zero {n k : ℕ}
       p.2.val 0 := by
   have h0 : slideTimes hr hδ p.1 p.2 (0 : Fin (n + k + 1)) = 0 := by
     simp [slideTimes]
-  have happ : (cyclicDistanceCutSampleBrokenGeodesicHomotopy hr hδ hδδ' hm p :
-      Fin (n + k + 1) → M) 0 =
-      (cyclicDistanceCutBrokenGeodesic hr hδ p.2).toMoorePath (slideTimes hr hδ p.1 p.2 0) :=
-    (rfl)
-  rw [happ, h0, ← MoorePath.source_def, MooreFreeLoopSpace.source_toMoorePath,
-    cyclicDistanceCutBrokenGeodesic_apply, basepoint_brokenGeodesicLoop]
+  rw [coe_cyclicDistanceCutSampleBrokenGeodesicHomotopy_apply, h0, ← MoorePath.source_def,
+    MooreFreeLoopSpace.source_toMoorePath, cyclicDistanceCutBrokenGeodesic_apply,
+    basepoint_brokenGeodesicLoop]
 
 /-- **`ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ ≃ evₙ₊ₖ₊₁ ∘ geoⁿ`.** For cut-offs `δ i < r` with `δ (j - k) ≤ δ' j` and
 `∑ i, δ i ≤ (n + k + 1) * δ' j` for every `j`, repeating the first vertex `k` more times and
