@@ -99,6 +99,16 @@ public section
 
 namespace DirichletCharacter
 
+/-- At an even level, a Dirichlet character vanishes on even residue classes. -/
+theorem apply_eq_zero_of_even {R : Type*} [CommMonoidWithZero R] {N : ℕ}
+    (χ : DirichletCharacter R N) (hN : _root_.Even N) {a : ZMod N} (ha : _root_.Even a) :
+    χ a = 0 := by
+  let f := ZMod.castHom (even_iff_two_dvd.mp hN) (ZMod 2)
+  have hf : f a = 0 := by
+    obtain ⟨b, rfl⟩ := ha
+    rw [map_add, ← two_mul, show (2 : ZMod 2) = 0 by decide, zero_mul]
+  exact χ.map_nonunit fun hu ↦ not_isUnit_zero (hf ▸ hu.map f)
+
 /-- A nonprincipal Dirichlet character sums to zero over a full period. -/
 theorem sum_range_eq_zero_of_ne_one {R : Type*} [CommRing R] [IsDomain R] {N : ℕ}
     (χ : DirichletCharacter R N) (hχ : χ ≠ 1) :

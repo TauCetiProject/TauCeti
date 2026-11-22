@@ -37,8 +37,9 @@ open TauCeti
 
 variable {R : Type*} [CommRing R]
 
-/-- The imprimitive quadratic twist on odd coefficients, at level `8 * d`.
-No square factors of `d` are removed. -/
+/-- The twist of `ψ` by the Jacobi symbol `(d / ·)`, at level `8 * d`: it takes odd `n`
+to `(d / n) * ψ(n)` and even `n` to zero. It is the product of the lifts of `ψ` and the
+Kronecker character of discriminant `4 * d`, with no square factors removed. -/
 noncomputable def oddQuadraticTwist (ψ : DirichletCharacter R 8) (d : ℕ) [NeZero d] :
     DirichletCharacter R (8 * d) :=
   changeLevel (by simpa only [Int.natAbs_natCast] using
@@ -46,17 +47,13 @@ noncomputable def oddQuadraticTwist (ψ : DirichletCharacter R 8) (d : ℕ) [NeZ
     (Or.inl (by simp [Int.modEq_zero_iff_dvd])) (by simp [NeZero.ne d])) *
       changeLevel (dvd_mul_right 8 d) ψ
 
-/-- The twist vanishes on even inputs. -/
-@[simp] theorem oddQuadraticTwist_natCast_of_even (ψ : DirichletCharacter R 8)
-    (d : ℕ) [NeZero d] {n : ℕ} (hn : _root_.Even n) :
-    oddQuadraticTwist ψ d n = 0 := by
-  apply MulChar.map_nonunit
-  rw [ZMod.isUnit_iff_coprime]
-  intro h
-  have ho := Nat.coprime_two_right.mp (h.of_dvd_right (by omega : 2 ∣ 8 * d))
-  exact (Nat.not_even_iff_odd.mpr ho) hn
+/-- The twist vanishes on even residue classes. -/
+@[simp] theorem oddQuadraticTwist_apply_eq_zero_of_even (ψ : DirichletCharacter R 8)
+    (d : ℕ) [NeZero d] {a : ZMod (8 * d)} (ha : _root_.Even a) :
+    oddQuadraticTwist ψ d a = 0 :=
+  (oddQuadraticTwist ψ d).apply_eq_zero_of_even ((by decide : _root_.Even (8 : ℕ)).mul_right d) ha
 
-/-- The coefficient formula, including the zeros on even inputs and on nonunits of `d`. -/
+/-- The coefficient formula, including the zeros on even inputs and on inputs not coprime to `d`. -/
 theorem oddQuadraticTwist_natCast (ψ : DirichletCharacter R 8)
     (d : ℕ) [NeZero d] (n : ℕ) :
     oddQuadraticTwist ψ d n = (jacobiSym (d : ℤ) n : R) * ψ n := by
@@ -65,11 +62,7 @@ theorem oddQuadraticTwist_natCast (ψ : DirichletCharacter R 8)
     · rw [oddQuadraticTwist, MulChar.mul_apply, changeLevel_natCast_of_coprime _ _ hcop,
         changeLevel_natCast_of_coprime _ _ hcop, kroneckerChar_natCast,
         kroneckerSym_eq_jacobiSym _ hn]
-      have h4 : jacobiSym (4 : ℤ) n = 1 := by
-        have h2 : (2 : ℤ).gcd n = 1 :=
-          (Int.gcd_natCast_natCast 2 n).trans (Nat.coprime_two_left.mpr hn).gcd_eq_one
-        simpa using jacobiSym.sq_one' h2
-      simp [Nat.cast_mul, jacobiSym.mul_left, h4]
+      simp [Nat.cast_mul, jacobiSym.mul_left, jacobiSym.at_four hn]
     have hnd : ¬ d.Coprime n := by
       intro h
       apply hcop
@@ -80,27 +73,61 @@ theorem oddQuadraticTwist_natCast (ψ : DirichletCharacter R 8)
       jacobiSym.eq_zero_iff_not_coprime.mpr (by
         simpa [Int.gcd_natCast_natCast, Nat.coprime_iff_gcd_eq_one] using hnd),
       Int.cast_zero, zero_mul]
-  · have hψ : ψ n = 0 := MulChar.map_nonunit _ (by
-      rw [ZMod.isUnit_iff_coprime]
-      exact fun h ↦ hn (Nat.coprime_two_right.mp
-        (h.of_dvd_right (by decide : 2 ∣ 8))))
-    simp [oddQuadraticTwist_natCast_of_even ψ d (Nat.not_odd_iff_even.mp hn), hψ]
+  · have he := Nat.not_odd_iff_even.mp hn
+    rw [oddQuadraticTwist_apply_eq_zero_of_even ψ d he.natCast,
+      ψ.apply_eq_zero_of_even (by decide) he.natCast, mul_zero]
 
-/-- Over a ring without zero divisors, the quadratic twist takes only the values `0`, `1`,
-and `-1`. In particular this applies to every complex character of level eight. -/
-theorem oddQuadraticTwist_isQuadratic [NoZeroDivisors R] (ψ : DirichletCharacter R 8)
-    (d : ℕ) [NeZero d] : (oddQuadraticTwist ψ d).IsQuadratic := by
-  rcases subsingleton_or_nontrivial R with h | h
-  · intro a
-    exact Or.inl (Subsingleton.elim _ _)
-  have hψ : ψ.IsQuadratic := by
-    apply MulChar.isQuadratic_iff_sq_eq_one.mpr
-    ext u
-    rw [MulChar.pow_apply_coe, ← map_pow]
-    have hu : (u : ZMod 8) ^ 2 = 1 := by revert u; decide
-    rw [hu, map_one, MulChar.one_apply_coe]
-  unfold oddQuadraticTwist
+/-- The twist and the original character have the same value at `-1`. -/
+@[simp] theorem oddQuadraticTwist_neg_one (ψ : DirichletCharacter R 8) (d : ℕ) [NeZero d] :
+    oddQuadraticTwist ψ d (-1) = ψ (-1) := by
+  have hd : 0 < (↑(4 * d) : ℤ) := by exact_mod_cast Nat.mul_pos (by decide) (NeZero.pos d)
+  simp only [oddQuadraticTwist, MulChar.mul_apply, changeLevel_apply_neg_one,
+    kroneckerChar_neg_one, Int.sign_eq_one_of_pos hd, Int.cast_one, one_mul]
+
+/-- Twisting preserves and reflects even parity. -/
+@[simp] theorem even_oddQuadraticTwist_iff (ψ : DirichletCharacter R 8) (d : ℕ) [NeZero d] :
+    (oddQuadraticTwist ψ d).Even ↔ ψ.Even := by
+  rw [Even, Even, oddQuadraticTwist_neg_one]
+
+/-- Twisting preserves and reflects odd parity. -/
+@[simp] theorem odd_oddQuadraticTwist_iff (ψ : DirichletCharacter R 8) (d : ℕ) [NeZero d] :
+    (oddQuadraticTwist ψ d).Odd ↔ ψ.Odd := by
+  rw [Odd, Odd, oddQuadraticTwist_neg_one]
+
+/-- On integer inputs the Jacobi-symbol factor uses the absolute value of the denominator. -/
+theorem oddQuadraticTwist_intCast (ψ : DirichletCharacter R 8) (d : ℕ) [NeZero d] (a : ℤ) :
+    oddQuadraticTwist ψ d a = (jacobiSym (d : ℤ) a.natAbs : R) * ψ a := by
+  cases a with
+  | ofNat n =>
+    simpa only [Int.ofNat_eq_natCast, Int.natAbs_natCast, Int.cast_natCast] using
+      oddQuadraticTwist_natCast ψ d n
+  | negSucc n =>
+    have hneg {N : ℕ} (χ : DirichletCharacter R N) (x : ZMod N) :
+        χ (-x) = χ (-1) * χ x := by rw [← map_mul, neg_one_mul]
+    rw [Int.natAbs_negSucc, Int.cast_negSucc, Int.cast_negSucc,
+      hneg (oddQuadraticTwist ψ d) ↑(n + 1), hneg ψ ↑(n + 1),
+      oddQuadraticTwist_neg_one, oddQuadraticTwist_natCast]
+    ac_rfl
+
+/-- Applying a ring homomorphism to the coefficients commutes with twisting. -/
+@[simp] theorem ringHomComp_oddQuadraticTwist {S : Type*} [CommRing S]
+    (ψ : DirichletCharacter R 8) (d : ℕ) [NeZero d] (f : R →+* S) :
+    (oddQuadraticTwist ψ d).ringHomComp f = oddQuadraticTwist (ψ.ringHomComp f) d := by
+  apply MulChar.ext'
+  intro a
+  rw [← ZMod.natCast_zmod_val a, MulChar.ringHomComp_apply, oddQuadraticTwist_natCast,
+    oddQuadraticTwist_natCast, MulChar.ringHomComp_apply, map_mul, map_intCast]
+
+/-- Twisting a quadratic character yields a quadratic character. -/
+theorem _root_.MulChar.IsQuadratic.oddQuadraticTwist {ψ : DirichletCharacter R 8}
+    (hψ : ψ.IsQuadratic) (d : ℕ) [NeZero d] : (oddQuadraticTwist ψ d).IsQuadratic := by
+  unfold DirichletCharacter.oddQuadraticTwist
   exact (kroneckerChar_isQuadratic _ _).changeLevel _ |>.mul (hψ.changeLevel _)
+
+/-- Over a ring without zero divisors, the twist of any level-eight character is quadratic. -/
+theorem isQuadratic_oddQuadraticTwist [NoZeroDivisors R] (ψ : DirichletCharacter R 8)
+    (d : ℕ) [NeZero d] : (oddQuadraticTwist ψ d).IsQuadratic :=
+  ψ.isQuadratic_of_level_eight.oddQuadraticTwist d
 
 /-- Twisting by `1` leaves the level-eight character unchanged. -/
 @[simp] theorem oddQuadraticTwist_one (ψ : DirichletCharacter R 8) :
@@ -110,24 +137,49 @@ theorem oddQuadraticTwist_isQuadratic [NoZeroDivisors R] (ψ : DirichletCharacte
   rw [← ZMod.natCast_zmod_val a, oddQuadraticTwist_natCast]
   simp [jacobiSym.one_left]
 
-/-- A square factor deletes the coefficients at its prime divisors rather than changing
-the other coefficients. The index and the square factor need not be odd. -/
+/-- Multiplying the twist index by a square raises its level without changing its primitive
+character. -/
+theorem oddQuadraticTwist_mul_sq (ψ : DirichletCharacter R 8) (d k : ℕ) [NeZero d] [NeZero k] :
+    oddQuadraticTwist ψ (d * k ^ 2) =
+      changeLevel (mul_dvd_mul_left 8 (dvd_mul_right d (k ^ 2))) (oddQuadraticTwist ψ d) := by
+  refine MulChar.ext fun u ↦ ?_
+  let n := (u : ZMod (8 * (d * k ^ 2))).val
+  have hval : (n : ZMod (8 * (d * k ^ 2))) = u := ZMod.natCast_zmod_val _
+  have hn : n.Coprime (8 * (d * k ^ 2)) := (ZMod.isUnit_iff_coprime _ _).mp (hval ▸ u.isUnit)
+  have hdiv : k ∣ 8 * (d * k ^ 2) :=
+    dvd_mul_of_dvd_right (dvd_mul_of_dvd_right (dvd_pow_self k two_ne_zero) d) 8
+  have hk := (hn.of_dvd_right hdiv).symm
+  have hg : (k : ℤ).gcd n = 1 := (Int.gcd_natCast_natCast _ _).trans hk.gcd_eq_one
+  rw [← hval, changeLevel_natCast_of_coprime _ _ hn, oddQuadraticTwist_natCast,
+    oddQuadraticTwist_natCast]
+  simp [Nat.cast_mul, Nat.cast_pow, jacobiSym.mul_left, jacobiSym.sq_one' hg]
+
+/-- At a square index the twist is just the original character raised to the new level. -/
+theorem oddQuadraticTwist_sq (ψ : DirichletCharacter R 8) (k : ℕ) [NeZero k] :
+    oddQuadraticTwist ψ (k ^ 2) = changeLevel (dvd_mul_right 8 (k ^ 2)) ψ := by
+  have h (m : ℕ) [NeZero m] (hm : 1 * k ^ 2 = m) :
+      oddQuadraticTwist ψ m = changeLevel (dvd_mul_right 8 m) ψ := by
+    subst m
+    simpa only [oddQuadraticTwist_one] using oddQuadraticTwist_mul_sq ψ 1 k
+  exact h _ (one_mul _)
+
+/-- Multiplying the twist index by `k ^ 2` zeros the coefficients at inputs not coprime to `k`
+and leaves the other coefficients unchanged. -/
 theorem oddQuadraticTwist_mul_sq_natCast (ψ : DirichletCharacter R 8)
     (d k : ℕ) [NeZero d] [NeZero k] (n : ℕ) :
     oddQuadraticTwist ψ (d * k ^ 2) n =
       if k.Coprime n then oddQuadraticTwist ψ d n else 0 := by
-  rw [oddQuadraticTwist_natCast, oddQuadraticTwist_natCast]
-  rcases eq_zero_or_neZero n with rfl | hn
-  · have hψ : ψ (0 : ZMod 8) = 0 := MulChar.map_nonunit ψ (by decide)
-    simp [hψ]
-  rw [Nat.cast_mul, Nat.cast_pow, jacobiSym.mul_left, jacobiSym.pow_left]
+  rw [oddQuadraticTwist_mul_sq]
+  have hcop : n.Coprime (8 * (d * k ^ 2)) ↔ n.Coprime (8 * d) ∧ k.Coprime n := by
+    rw [← mul_assoc, Nat.coprime_mul_iff_right, Nat.coprime_pow_right_iff (by decide : 0 < 2)]
+    exact and_congr_right fun _ ↦ Nat.coprime_comm
   by_cases hk : k.Coprime n
-  · have hkn : (k : ℤ).gcd n = 1 :=
-      (Int.gcd_natCast_natCast k n).trans hk.gcd_eq_one
-    simp [hk, jacobiSym.sq_one hkn]
-  · have hkn : (k : ℤ).gcd n ≠ 1 := by
-      simpa only [Int.gcd_natCast_natCast, ← Nat.coprime_iff_gcd_eq_one] using hk
-    simp [hk, jacobiSym.eq_zero_iff_not_coprime.mpr hkn]
+  · rw [ite_eq_left hk]
+    by_cases hd : n.Coprime (8 * d)
+    · exact changeLevel_natCast_of_coprime _ _ (hcop.mpr ⟨hd, hk⟩)
+    · rw [MulChar.map_nonunit _ (by simpa [ZMod.isUnit_iff_coprime, hcop, hk] using hd),
+        MulChar.map_nonunit _ (by simpa [ZMod.isUnit_iff_coprime] using hd)]
+  · rw [ite_eq_right hk, MulChar.map_nonunit _ (by simp [ZMod.isUnit_iff_coprime, hcop, hk])]
 
 /-- The continued L-function of the imprimitive twist is the odd Jacobi series
 on its half-plane of absolute convergence. -/
@@ -152,7 +204,7 @@ example : oddQuadraticTwist (1 : DirichletCharacter ℂ 8) 1 3 = 1 := by
   simp [MulChar.one_apply (by decide : IsUnit (3 : ZMod 8))]
 
 example : oddQuadraticTwist (1 : DirichletCharacter ℂ 8) 9 2 = 0 := by
-  exact oddQuadraticTwist_natCast_of_even _ _ (by decide)
+  exact oddQuadraticTwist_apply_eq_zero_of_even _ _ ⟨1, by decide⟩
 
 example : oddQuadraticTwist (ZMod.χ₈.ringHomComp (Int.castRingHom ℂ)) 1 3 = -1 := by
   rw [oddQuadraticTwist_one]

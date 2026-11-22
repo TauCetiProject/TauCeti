@@ -67,6 +67,16 @@ theorem MulChar.IsQuadratic.changeLevel {R : Type*} [CommRing R]
 
 namespace DirichletCharacter
 
+/-- Every character modulo eight over a commutative ring without zero divisors is quadratic. -/
+theorem isQuadratic_of_level_eight {R : Type*} [CommRing R] [NoZeroDivisors R]
+    (χ : DirichletCharacter R 8) : χ.IsQuadratic := by
+  rcases subsingleton_or_nontrivial R with h | h
+  · exact fun _ ↦ Or.inl (Subsingleton.elim _ _)
+  apply MulChar.isQuadratic_iff_sq_eq_one.mpr
+  ext u
+  rw [MulChar.pow_apply_coe, ← map_pow, (by decide : ∀ u : (ZMod 8)ˣ, (u : ZMod 8) ^ 2 = 1) u,
+    map_one, MulChar.one_apply_coe]
+
 /-- Lifting to a nonzero multiple of the level preserves and reflects being quadratic. -/
 @[simp]
 theorem isQuadratic_changeLevel_iff {R : Type*} [CommRing R]
