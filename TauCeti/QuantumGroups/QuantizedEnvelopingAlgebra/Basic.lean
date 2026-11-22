@@ -9,6 +9,7 @@ public import Mathlib.Algebra.FreeAlgebra
 public import Mathlib.Algebra.RingQuot
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Datum.Hom
 public import TauCeti.QuantumGroups.QuantumInteger.Factorial
+public import TauCeti.RingTheory.GradedAlgebra.DirectSum
 
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
@@ -101,8 +102,9 @@ theorem serreSum_smul {A : Type*} [Semiring A] [Algebra K A]
   rw [mul_comm (c j), ← mul_assoc (c i ^ _), ← pow_add, Nat.sub_add_cancel hrm]
   ring
 
-/-- In any `Γ`-graded `K`-algebra, if `x i` has degree `cx` and `x j` has degree `cy`, then
-`serreSum D q x i j` is homogeneous of degree `D.serreLength i j • cx + cy`. -/
+/-- For any family of submodules `𝒜 : Γ → S` forming a `SetLike.GradedMonoid` over a
+commutative additive monoid `Γ` (without requiring an internal direct-sum decomposition), if
+`x i ∈ 𝒜 cx` and `x j ∈ 𝒜 cy`, then `serreSum D q x i j ∈ 𝒜 (D.serreLength i j • cx + cy)`. -/
 theorem serreSum_mem_graded {A Γ S : Type*} [Semiring A] [Algebra K A] [AddCommMonoid Γ]
     [SetLike S A] [AddSubmonoidClass S A] [SMulMemClass S K A] {𝒜 : Γ → S}
     [SetLike.GradedMonoid 𝒜] (D : CartanDatum ι X Y) (q : K) {x : ι → A} {i j : ι} {cx cy : Γ}
@@ -116,6 +118,22 @@ theorem serreSum_mem_graded {A Γ S : Type*} [Semiring A] [Algebra K A] [AddComm
   exact hdeg ▸ SetLike.mul_mem_graded
     (SetLike.mul_mem_graded (quantumDividedPower_mem_graded _ hxi r) hxj)
     (quantumDividedPower_mem_graded _ hxi (D.serreLength i j - r))
+
+/-- For any family of submodules `𝒜 : Γ → Submodule K A` forming a `SetLike.GradedMonoid` over a
+commutative additive monoid `Γ`, the quantum Serre combination of direct-sum injections
+`DirectSum.of (fun c' => 𝒜 c') (c l) (x l)` lies in degree `D.serreLength i j • c i + c j`. -/
+@[simp]
+theorem serreSum_of {A Γ : Type*} [Semiring A] [Algebra K A] [AddCommMonoid Γ] [DecidableEq Γ]
+    {𝒜 : Γ → Submodule K A} [SetLike.GradedMonoid 𝒜]
+    (D : CartanDatum ι X Y) (q : K) (i j : ι) {c : ι → Γ} (x : ∀ l, 𝒜 (c l)) :
+    serreSum D q (fun l => DirectSum.of (fun c' => 𝒜 c') (c l) (x l)) i j =
+      DirectSum.of (fun c' => 𝒜 c') (D.serreLength i j • c i + c j)
+        ⟨serreSum D q (fun l => (x l : A)) i j,
+          serreSum_mem_graded D q (x i).property (x j).property⟩ :=
+  DirectSum.eq_of_mem_summand_of_coeAlgHom_eq 𝒜
+    (serreSum_mem_graded (𝒜 := DirectSum.summand K fun c' => 𝒜 c') D q
+      (DirectSum.of_mem_summand (R := K) _ _) (DirectSum.of_mem_summand (R := K) _ _))
+    (by simp only [map_serreSum, DirectSum.coeAlgHom_of])
 
 private theorem serreSum_add_left_term {A : Type*} [Ring A] [Algebra K A]
     (D : CartanDatum ι X Y) (q : K) {x y : ι → A} {i j : ι} (hij : i ≠ j)

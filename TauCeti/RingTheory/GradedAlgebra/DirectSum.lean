@@ -53,4 +53,21 @@ instance instGradedMonoidSummand : SetLike.GradedMonoid (summand R M) where
 /-- **The direct sum of a graded algebra is internally graded by its summands.** -/
 noncomputable instance instGradedAlgebraSummand : GradedAlgebra (summand R M) where
 
+section CoeAlgHom
+
+variable {ι R A : Type*} [DecidableEq ι] [CommSemiring R] [Semiring A] [Algebra R A]
+  [AddMonoid ι]
+
+/-- An element `z` in the `c`-th summand of `⨁ i, 𝒜 i` whose image under `DirectSum.coeAlgHom 𝒜`
+equals `(x : A)` is `DirectSum.of (fun i => 𝒜 i) c x`. -/
+theorem eq_of_mem_summand_of_coeAlgHom_eq (𝒜 : ι → Submodule R A) [SetLike.GradedMonoid 𝒜]
+    {c : ι} {z : ⨁ i, 𝒜 i} (hz : z ∈ summand R (fun i => ↥(𝒜 i)) c) {x : 𝒜 c}
+    (hx : coeAlgHom 𝒜 z = (x : A)) :
+    z = of (fun i => 𝒜 i) c x := by
+  obtain ⟨y, rfl⟩ := mem_summand.mp hz
+  congr 1
+  exact Subtype.ext (by simpa only [coeAlgHom_of] using hx)
+
+end CoeAlgHom
+
 end DirectSum

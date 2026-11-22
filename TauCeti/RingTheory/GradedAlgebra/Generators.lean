@@ -25,8 +25,9 @@ If a family of homogeneous elements generates a graded algebra, each graded piec
 the words in that family whose total degree is exactly the degree of the piece. No basis,
 commutativity of the algebra, or positivity of the grading is required.
 
-This reduces questions about a graded piece to words of a prescribed total degree, so that bounds
-on the degrees of the generators control the lengths of those words.
+This reduces questions about a graded piece to words of a prescribed total degree; in
+particular, when an additive numerical degree on `Γ` is bounded below by a positive constant on
+the generators, fixed total degree bounds word length.
 
 ## Main definitions and results
 
@@ -117,12 +118,7 @@ theorem iSup_wordSpan (e : S → A) (deg : S → Γ) :
       exact Algebra.subset_adjoin ⟨s, rfl⟩
   · have hclosure : (Submonoid.closure (Set.range e) : Set A) =
         Set.range (fun l : List S => (l.map e).prod) := by
-      rw [← FreeMonoid.mrange_lift, MonoidHom.coe_mrange]
-      have hlift : (FreeMonoid.lift e : FreeMonoid S → A) =
-          (fun l : List S => (l.map e).prod) ∘ FreeMonoid.toList :=
-        funext (FreeMonoid.lift_apply e)
-      rw [hlift]
-      exact FreeMonoid.toListEquiv.surjective.range_comp _
+      rw [Submonoid.closure_eq_image_prod, ← Set.range_list_map, ← Set.range_comp']
     rw [Algebra.adjoin_eq_span, hclosure, Submodule.span_le]
     rintro _ ⟨l, rfl⟩
     exact Submodule.mem_iSup_of_mem (l.map deg).sum (prod_mem_wordSpan e deg l)
@@ -168,15 +164,11 @@ theorem algHom_apply_of_mem_wordSpan {F : Type*} [DecidableEq Γ]
     (f : F) (hcoe : ∀ x, DirectSum.coeAlgHom (wordSpan R e deg) (f x) = x)
     (hf : ∀ s, f (e s) ∈ DirectSum.summand R (fun n => ↥(wordSpan R e deg n)) (deg s))
     {c : Γ} {x : A} (hx : x ∈ wordSpan R e deg c) :
-    f x = DirectSum.of (fun n => ↥(wordSpan R e deg n)) c ⟨x, hx⟩ := by
-  obtain ⟨y, hy⟩ := DirectSum.mem_summand.mp <|
-    map_mem_wordSpan (ℬ := DirectSum.summand R fun n => ↥(wordSpan R e deg n))
-      f (AddMonoidHom.id Γ) hf hx
-  rw [← hy]
-  congr 1
-  apply Subtype.ext
-  simpa only [DirectSum.coeAlgHom_of, hcoe] using
-    congrArg (DirectSum.coeAlgHom (wordSpan R e deg)) hy
+    f x = DirectSum.of (fun n => ↥(wordSpan R e deg n)) c ⟨x, hx⟩ :=
+  DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (wordSpan R e deg)
+    (map_mem_wordSpan (ℬ := DirectSum.summand R fun n => ↥(wordSpan R e deg n))
+      f (AddMonoidHom.id Γ) hf hx)
+    (hcoe x)
 
 end WordSpan
 

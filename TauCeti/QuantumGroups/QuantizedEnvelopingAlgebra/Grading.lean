@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.QuantumGroups.QuantizedEnvelopingAlgebra.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Generators
 
+import Mathlib.Algebra.Ring.Action.ConjAct
 import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.DirectSum.Supported
 
@@ -217,6 +218,13 @@ private theorem k_mul_generator_mul_k_neg (y : Y) (g : Generator ι Y) :
   | f i => simp [k_mul_f_mul_k_neg]
   | k z => simp [add_right_comm y z (-y)]
 
+private theorem kUnitsHom_conjAct_apply (y : Y) (z : QuantizedEnvelopingAlgebra D q) :
+    MulSemiringAction.toAlgEquiv K (QuantizedEnvelopingAlgebra D q)
+        (ConjAct.toConjAct (kUnitsHom D q (.ofAdd y))) z =
+      k D q y * z * k D q (-y) := by
+  simp only [MulSemiringAction.toAlgEquiv_apply, ConjAct.units_smul_def,
+    ConjAct.ofConjAct_toConjAct, val_kUnitsHom, val_inv_kUnitsHom]
+
 private theorem k_mul_word_mul_k_neg (y : Y) (l : List (Generator ι Y)) :
     k D q y * (l.map (generator D q)).prod * k D q (-y) =
       q ^ D.pairing (Finsupp.linearCombination ℤ D.root (l.map generatorDegree).sum) y •
@@ -233,27 +241,31 @@ private theorem k_mul_word_mul_k_neg (y : Y) (l : List (Generator ι Y)) :
         rw [← mul_assoc (k D (0 : K) y), k_mul_k, add_comm y z, ← k_mul_k,
           mul_assoc (k D (0 : K) z), mul_assoc (k D (0 : K) z), ih, mul_smul_comm]
     · simp only [List.map_cons, List.prod_cons, List.sum_cons, map_add, LinearMap.add_apply]
-      have h : k D q y * (generator D q g * (l.map (generator D q)).prod) * k D q (-y) =
-          (k D q y * generator D q g * k D q (-y)) *
-            (k D q y * (l.map (generator D q)).prod * k D q (-y)) := by
-        simp only [mul_assoc, ← mul_assoc (k D q (-y)), k_neg_mul_k, one_mul]
-      rw [h, k_mul_generator_mul_k_neg, ih, smul_mul_smul_comm, ← zpow_add₀ hq]
+      rw [← kUnitsHom_conjAct_apply, map_mul, kUnitsHom_conjAct_apply, kUnitsHom_conjAct_apply,
+        k_mul_generator_mul_k_neg, ih, smul_mul_smul_comm, ← zpow_add₀ hq]
 
 /-- Conjugating `x ∈ gradedPiece D q c` by `K_y` multiplies it by `q^⟨∑ cᵢ αᵢ, y⟩`. -/
 theorem k_mul_mul_k_neg_of_mem_gradedPiece {c : ι →₀ ℤ} (y : Y)
     {x : QuantizedEnvelopingAlgebra D q} (hx : x ∈ gradedPiece D q c) :
     k D q y * x * k D q (-y) =
       q ^ D.pairing (Finsupp.linearCombination ℤ D.root c) y • x := by
+  rw [← kUnitsHom_conjAct_apply]
   induction hx using gradedPiece_induction with
-  | word l hl => simpa only [hl] using k_mul_word_mul_k_neg y l
-  | zero => simp
-  | add _ _ _ _ ha hb => rw [mul_add, add_mul, ha, hb, smul_add]
-  | smul _ _ _ ha => rw [mul_smul_comm, smul_mul_assoc, ha, smul_comm]
+  | word l hl => simpa only [kUnitsHom_conjAct_apply, hl] using k_mul_word_mul_k_neg y l
+  | zero => rw [map_zero, smul_zero]
+  | add _ _ _ _ ha hb => rw [map_add, ha, hb, smul_add]
+  | smul _ _ _ ha => rw [map_smul, ha, smul_comm]
+
+/-- Moving `K_y` from left to right past `x ∈ gradedPiece D q c` multiplies by `q^⟨∑ cᵢ αᵢ, y⟩`
+(the weight pairing). -/
 theorem k_mul_of_mem_gradedPiece {c : ι →₀ ℤ} (y : Y)
     {x : QuantizedEnvelopingAlgebra D q} (hx : x ∈ gradedPiece D q c) :
     k D q y * x = q ^ D.pairing (Finsupp.linearCombination ℤ D.root c) y • (x * k D q y) := by
   rw [← mul_one (k D q y * x), ← k_neg_mul_k D q y, ← mul_assoc,
     k_mul_mul_k_neg_of_mem_gradedPiece y hx, smul_mul_assoc]
+
+/-- Moving `K_y` from right to left past `x ∈ gradedPiece D q c` multiplies by
+`q^(-⟨∑ cᵢ αᵢ, y⟩)` (the negated weight pairing). -/
 theorem mul_k_of_mem_gradedPiece {c : ι →₀ ℤ} (y : Y)
     {x : QuantizedEnvelopingAlgebra D q} (hx : x ∈ gradedPiece D q c) :
     x * k D q y =
@@ -269,23 +281,6 @@ section GradedAlgebra
 
 variable {ι X Y K : Type*} [DecidableEq ι] [AddCommGroup X] [AddCommGroup Y] [Field K]
   {D : CartanDatum ι X Y} {q : K}
-
-private theorem serreSum_of (D : CartanDatum ι X Y) (q : K) (i j : ι)
-    {c : ι → (ι →₀ ℤ)} (x : ∀ l, gradedPiece D q (c l)) :
-    serreSum D q (fun l => of (fun c' => gradedPiece D q c') (c l) (x l)) i j =
-      of (fun c' => gradedPiece D q c') (D.serreLength i j • c i + c j)
-        ⟨serreSum D q (fun l => (x l).val) i j,
-          serreSum_mem_graded D q (x i).property (x j).property⟩ := by
-  obtain ⟨y, hy⟩ := DirectSum.mem_summand.mp <|
-    serreSum_mem_graded (𝒜 := DirectSum.summand K fun c' => gradedPiece D q c')
-      (x := fun l => of (fun c' => gradedPiece D q c') (c l) (x l)) (i := i) (j := j) D q
-      (DirectSum.of_mem_summand (R := K) (M := fun c' => ↥(gradedPiece D q c')) (c i) (x i))
-      (DirectSum.of_mem_summand (R := K) (M := fun c' => ↥(gradedPiece D q c')) (c j) (x j))
-  rw [← hy]
-  congr 1
-  apply Subtype.ext
-  have hcoe := congrArg (DirectSum.coeAlgHom (gradedPiece D q)) hy
-  simpa only [map_serreSum, DirectSum.coeAlgHom_of] using hcoe
 
 private noncomputable def decomposeAlgHom (D : CartanDatum ι X Y) (q : K) :
     QuantizedEnvelopingAlgebra D q →ₐ[K] ⨁ c, gradedPiece D q c :=
@@ -451,6 +446,21 @@ theorem mapGradedAlgHom_apply {X' Y' : Type*} [AddCommGroup X'] [AddCommGroup Y'
     mapGradedAlgHom φ q x = map φ q x :=
   (rfl)
 
+/-- The graded algebra homomorphism induced by the identity Cartan-datum morphism is the
+identity. -/
+@[simp]
+theorem mapGradedAlgHom_id (D : CartanDatum ι X Y) (q : K) :
+    mapGradedAlgHom (CartanDatum.Hom.id D) q = GradedAlgHom.id K (gradedPiece D q) :=
+  GradedAlgHom.coe_toAlgHom_injective (map_id D q)
+
+/-- Functoriality of `mapGradedAlgHom` under composition of Cartan-datum morphisms. -/
+theorem mapGradedAlgHom_comp {X' Y' X'' Y'' : Type*}
+    [AddCommGroup X'] [AddCommGroup Y'] [AddCommGroup X''] [AddCommGroup Y'']
+    {D' : CartanDatum ι X' Y'} {D'' : CartanDatum ι X'' Y''}
+    (ψ : CartanDatum.Hom D' D'') (φ : CartanDatum.Hom D D') (q : K) :
+    mapGradedAlgHom (ψ.comp φ) q = (mapGradedAlgHom ψ q).comp (mapGradedAlgHom φ q) :=
+  GradedAlgHom.coe_toAlgHom_injective (map_comp ψ φ q)
+
 /-- `map φ q` commutes with homogeneous projections onto `gradedPiece`. -/
 @[simp]
 theorem coe_decompose_map {X' Y' : Type*} [AddCommGroup X'] [AddCommGroup Y']
@@ -480,6 +490,19 @@ theorem rescaleGradedAlgHom_apply (D : CartanDatum ι X Y) (q : K) (s : ι → K
     (x : QuantizedEnvelopingAlgebra D q) :
     rescaleGradedAlgHom D q s x = rescale D q s x :=
   (rfl)
+
+/-- Rescaling by the constant-`1` family is the identity graded algebra endomorphism. -/
+@[simp]
+theorem rescaleGradedAlgHom_one (D : CartanDatum ι X Y) (q : K) :
+    rescaleGradedAlgHom D q 1 = GradedAlgHom.id K (gradedPiece D q) :=
+  GradedAlgHom.coe_toAlgHom_injective (by ext <;> simp)
+
+/-- Rescaling by the pointwise product `s * t` equals the composite of the two graded algebra
+endomorphisms. -/
+theorem rescaleGradedAlgHom_mul (D : CartanDatum ι X Y) (q : K) (s t : ι → Kˣ) :
+    rescaleGradedAlgHom D q (s * t) =
+      (rescaleGradedAlgHom D q s).comp (rescaleGradedAlgHom D q t) :=
+  GradedAlgHom.coe_toAlgHom_injective (by ext <;> simp [smul_smul, mul_comm])
 
 /-- `rescale D q s` commutes with homogeneous projections onto `gradedPiece D q`. -/
 @[simp]
