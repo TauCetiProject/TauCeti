@@ -118,18 +118,12 @@ theorem exists_inner_eq_and_dist_eq {E : Type*} [NormedAddCommGroup E] [InnerPro
 theorem ball_add_smul_subset_setOf_lt_inner {E : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] {ν x : E} {c ρ : ℝ} (hν : ν ≠ 0) (hx : c ≤ ⟪x, ν⟫_ℝ) :
     Metric.ball (x + (ρ / ‖ν‖) • ν) ρ ⊆ {z | c < ⟪z, ν⟫_ℝ} := by
-  intro z hz
-  have hν0 : 0 < ‖ν‖ := norm_pos_iff.2 hν
-  set w := z - (x + (ρ / ‖ν‖) • ν)
-  have hw : ‖w‖ * ‖ν‖ < ρ * ‖ν‖ :=
-    mul_lt_mul_of_pos_right (by rw [← dist_eq_norm]; exact hz) hν0
+  refine ball_subset_setOf_lt_inner hν ?_
   have hc : ⟪(ρ / ‖ν‖) • ν, ν⟫_ℝ = ρ * ‖ν‖ := by
     rw [real_inner_smul_left, real_inner_self_eq_norm_sq]
-    field_simp
-  have hz' : ⟪z, ν⟫_ℝ = ⟪x, ν⟫_ℝ + ⟪(ρ / ‖ν‖) • ν, ν⟫_ℝ + ⟪w, ν⟫_ℝ := by
-    simp only [w, inner_sub_left, inner_add_left]
-    ring
-  exact Set.mem_ofPred.2 (by linarith [neg_le_of_abs_le (abs_real_inner_le_norm w ν)])
+    field_simp [norm_ne_zero_iff.2 hν]
+  rw [inner_add_left, hc]
+  linarith
 
 /-- The projection `z - (⟪z, ν⟫ / ‖ν‖²) ν` onto the hyperplane orthogonal to `ν` is orthogonal
 to `ν`. It is the explicit form of `z - (ℝ ∙ ν).starProjection z`, by
