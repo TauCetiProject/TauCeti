@@ -477,9 +477,8 @@ variable {n : ℕ}
 def fixedIntegerHiveShapeEquivLRTableau {lam μ γ : DominantWeight n}
     (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial) (hγ : γ.IsPolynomial) :
     FixedIntegerHive (productBoundary lam μ γ) ≃ LRTableau lam.shape γ.shape μ.shape :=
-  (Equiv.subtypeEquiv (Equiv.refl _) fun _ => by
-    rw [weightOfShape_shape hlam, weightOfShape_shape hμ, weightOfShape_shape hγ]
-    exact Iff.rfl).trans
+  (Equiv.subtypeEquivRight fun _ => by
+    rw [weightOfShape_shape hlam, weightOfShape_shape hμ, weightOfShape_shape hγ]).trans
     (fixedIntegerHiveEquivLRTableau (DominantWeight.colLen_zero_shape_le lam)
       (DominantWeight.colLen_zero_shape_le γ) (DominantWeight.colLen_zero_shape_le μ))
 

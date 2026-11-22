@@ -758,29 +758,6 @@ theorem hiveCount_two_std_std_three_neg_one :
   have hlast := last_le_of_productBoundary hb
   simp at hlast
 
-/-- **Signed rank-`2` check**: `λ = (1, 0)`, `μ = (0, -1)`, `γ = (0, 0)` has `hiveCount = 1`
-(`V ⊗ V*` contains the trivial representation once), whereas truncating the negative entry of `μ`
-to `0` gives `((1, 0), (0, 0), (0, 0))` with `hiveCount = 0`. -/
-theorem hiveCount_two_signed_std_dual_triv :
-    hiveCount
-      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![0, 0], by decide⟩) = 1 ∧
-    hiveCount
-      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, 0], by decide⟩ ⟨![0, 0], by decide⟩) = 0 := by
-  refine ⟨?_, hiveCount_eq_zero_of_sum_ne_zero ?_⟩
-  · have hb : (detTwo + affine 2 0 (-1)).boundary =
-        productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![0, 0], by decide⟩ := by
-      ext s i
-      rw [boundary_add, Pi.add_apply, boundary_detTwo, boundary_affine]
-      fin_cases s <;> fin_cases i <;> simp [Fin.rev]
-    have hpos : 0 < hiveCount
-        (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![0, 0], by decide⟩) :=
-      hiveCount_pos_iff.mpr ⟨⟨detTwo + affine 2 0 (-1), hb⟩⟩
-    have hle := hiveCount_le_one_two
-      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![0, 0], by decide⟩)
-    omega
-  · rw [Ne, sum_productBoundary_eq_zero_iff]
-    simp [Fin.sum_univ_two]
-
 private theorem eq_of_apply_interior_three {B : Fin 3 → Fin 3 → ℤ}
     {h₁ h₂ : FixedIntegerHive B}
     (hv : h₁.val ⟨1, 1, 1, rfl⟩ = h₂.val ⟨1, 1, 1, rfl⟩) : h₁ = h₂ := by

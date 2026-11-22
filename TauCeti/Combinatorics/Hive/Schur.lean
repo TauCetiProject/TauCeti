@@ -163,14 +163,9 @@ private theorem finsum_hiveCount_one_eq_smul :
       hiveCount (productBoundary lam lam γ₁) • diagramSchurPoly 2 ℤ γ₁.shape := by
   intro lam γ₁
   refine finsum_eq_single _ γ₁ fun γ hne => ?_
-  by_contra h0
-  have hcnt : hiveCount (productBoundary lam lam γ) ≠ 0 :=
-    Function.support_smul_subset_left (fun γ => hiveCount (productBoundary lam lam γ))
-      (fun γ => diagramSchurPoly 2 ℤ γ.shape) h0
-  obtain ⟨h⟩ := hiveCount_pos_iff.mp (Nat.pos_of_ne_zero hcnt)
-  have hsum := sum_eq_of_productBoundary h.property
-  simp only [Fin.sum_univ_one, lam, Matrix.cons_val_zero] at hsum
-  exact hne (by ext i; fin_cases i; dsimp [γ₁]; omega)
+  have hsum : lam.val 0 + lam.val 0 ≠ γ.val 0 := fun h =>
+    hne (by ext i; fin_cases i; simpa [lam, γ₁] using h.symm)
+  simp [hiveCount_one_productBoundary, hsum]
 
 private theorem natCard_lrTableau_std_one_det_two :
     let lam : DominantWeight 1 := ⟨![1], by decide⟩

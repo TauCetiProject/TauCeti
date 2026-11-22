@@ -1036,6 +1036,16 @@ theorem hiveCount_two_sym_sym_two_two :
       (productBoundary ⟨![2, 0], by decide⟩ ⟨![2, 0], by decide⟩ ⟨![2, 2], by decide⟩) = 1 := by
   rw [hiveCount_two_productBoundary]; decide
 
+/-- **Signed rank-`2` check**: `λ = (1, 0)`, `μ = (0, -1)`, `γ = (0, 0)` has `hiveCount = 1`
+(`V ⊗ V*` contains the trivial representation once), whereas truncating the negative entry of `μ`
+to `0` gives `((1, 0), (0, 0), (0, 0))` with `hiveCount = 0`. -/
+theorem hiveCount_two_signed_std_dual_triv :
+    hiveCount
+      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![0, 0], by decide⟩) = 1 ∧
+    hiveCount
+      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, 0], by decide⟩ ⟨![0, 0], by decide⟩) = 0 := by
+  refine ⟨?_, ?_⟩ <;> rw [hiveCount_two_productBoundary] <;> decide
+
 /-- Rank-`3` exclusion: although the weight-`0` Gelfand–Tsetlin fibre over `μ = (1, 0, -1)` has two
 patterns (`GTPattern.card_three_adjoint_rowWeight_zero`), neither satisfies
 `IsGTCompletable 0 P`, so `hiveCount (productBoundary 0 ⟨![1, 0, -1], _⟩ 0) = 0`. -/
