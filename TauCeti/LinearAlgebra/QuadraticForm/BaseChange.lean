@@ -891,6 +891,39 @@ theorem baseChange_isRepresentedBy_of_zero_prod [Invertible (2 : K)]
   exact QuadraticMap.isRepresentedBy_of_isRepresentedBy_zero_prod
     (Nondegenerate.baseChange hQ₁).radical_eq_bot hstep
 
+/-- If `⟨-a⟩ ⊥ Q` becomes isotropic after scalar extension to a field `L` and `Q` is regular on a
+finite-dimensional space, then `Q.baseChange L` represents `algebraMap K L a`. -/
+theorem represents_baseChange_of_not_anisotropic_smul_sq_prod [Invertible (2 : K)]
+    [FiniteDimensional K V] {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) {a : K}
+    (h : ¬(QuadraticForm.baseChange L
+      (((-a) • (QuadraticMap.sq : QuadraticForm K K)).prod Q)).Anisotropic) :
+    QuadraticMap.Represents (Q.baseChange L) (algebraMap K L a) := by
+  by_cases ha : a = 0
+  · subst ha
+    simp
+  let L₁ : QuadraticForm K K := (-a) • QuadraticMap.sq
+  let eL : (L₁.baseChange L).IsometryEquiv
+      ((-algebraMap K L a) • (QuadraticMap.sq : QuadraticForm L L)) :=
+    { toLinearEquiv := TensorProduct.AlgebraTensorModule.rid K L L
+      map_app' := fun y => by
+        set t := TensorProduct.AlgebraTensorModule.rid K L L y
+        have hy : y = t ⊗ₜ (1 : K) :=
+          (TensorProduct.AlgebraTensorModule.rid K L L).injective (by simp [t])
+        rw [hy, baseChange_tmul]
+        simp [L₁, t, Algebra.smul_def] }
+  let e : (QuadraticForm.baseChange L (L₁.prod Q)).IsometryEquiv
+      ((Q.baseChange L).prod ((-algebraMap K L a) • QuadraticMap.sq)) :=
+    (baseChangeProd (A := L) L₁ Q).trans <|
+      (QuadraticMap.IsometryEquiv.prodComm _ _).trans <|
+        (QuadraticMap.IsometryEquiv.refl _).prod eL
+  have hiso : ¬((Q.baseChange L).prod ((-algebraMap K L a) • QuadraticMap.sq)).Anisotropic := by
+    rwa [← QuadraticMap.Equivalent.anisotropic_iff ⟨e⟩]
+  have hau : algebraMap K L a ≠ 0 := by simpa using ha
+  have hunit : (Units.mk0 (algebraMap K L a) hau : L) = algebraMap K L a := rfl
+  simpa only [QuadraticMap.mem_unitValueSet, hunit] using
+    (QuadraticMap.mem_unitValueSet_iff_not_anisotropic_prod (Q.baseChange L)
+      (Nondegenerate.baseChange hQ) (Units.mk0 (algebraMap K L a) hau)).mpr hiso
+
 end QuadraticForm
 
 end Field

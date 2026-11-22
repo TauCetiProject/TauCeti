@@ -30,6 +30,9 @@ isotropic subspace.
   subspace of a regular space lies in one whose dimension is the Witt index.
 * `QuadraticForm.maximal_isTotallyIsotropic_iff`: a totally isotropic subspace of a regular space
   is maximal exactly when its dimension is the Witt index.
+* `TauCeti.zero_isRepresentedBy_of_hyperbolicPlane_prod` and
+  `TauCeti.zero_baseChange_isRepresentedBy_of_hyperbolicPlane_prod`: cancelling a hyperbolic plane
+  from a totally isotropic embedding (before and after scalar extension).
 
 ## Implementation notes
 
@@ -244,3 +247,136 @@ theorem maximal_isTotallyIsotropic_iff (Q : QuadraticForm K V) (hQ : Q.Nondegene
   rw [Submodule.eq_of_le_of_finrank_le hle (hfin ▸ hU.finrank_le_wittIndex hQ)]
 
 end QuadraticForm
+
+namespace TauCeti
+
+open _root_.QuadraticMap Module
+
+universe u
+
+section HyperbolicCancellation
+
+variable {K : Type u} [Field K] [Invertible (2 : K)]
+
+/-- Cancelling a hyperbolic plane from an embedding of a zero form into `H ⊥ Q` reduces the
+dimension of the represented zero space by at least one. No nondegeneracy or finiteness hypothesis
+is needed on `Q`. -/
+theorem zero_isRepresentedBy_of_hyperbolicPlane_prod
+    {U' U M : Type*} [AddCommGroup U'] [Module K U'] [FiniteDimensional K U']
+    [AddCommGroup U] [Module K U] [FiniteDimensional K U]
+    [AddCommGroup M] [Module K M]
+    {Q : QuadraticForm K M}
+    (h : (0 : QuadraticForm K U).IsRepresentedBy ((hyperbolicPlane K).prod Q))
+    (hk : finrank K U' + 1 ≤ finrank K U) :
+    (0 : QuadraticForm K U').IsRepresentedBy Q := by
+  obtain ⟨f, hf, hfQ⟩ := (isRepresentedBy_iff _ _).mp h
+  let f₁ : U →ₗ[K] Fin 2 → K := (LinearMap.fst K (Fin 2 → K) M).comp f
+  let f₂ : U →ₗ[K] M := (LinearMap.snd K (Fin 2 → K) M).comp f
+  let phiPos : U →ₗ[K] K :=
+    (LinearMap.proj (R := K) (φ := fun _ : Fin 2 ↦ K) 0 + LinearMap.proj 1).comp f₁
+  let phiNeg : U →ₗ[K] K :=
+    (LinearMap.proj (R := K) (φ := fun _ : Fin 2 ↦ K) 0 - LinearMap.proj 1).comp f₁
+  have hQ_eq (u : U) : phiPos u * phiNeg u + Q (f₂ u) = 0 := by
+    have h0 := hfQ u
+    simp only [QuadraticMap.prod_apply, zero_apply, hyperbolicPlane_apply] at h0
+    dsimp only [phiPos, phiNeg, f₁, f₂, LinearMap.comp_apply, LinearMap.add_apply,
+      LinearMap.sub_apply, LinearMap.proj_apply, LinearMap.fst_apply, LinearMap.snd_apply]
+    rw [← h0]
+    ring
+  have hker_disj :
+      LinearMap.ker phiPos ⊓ LinearMap.ker f₂ = ⊥ ∨
+        LinearMap.ker phiNeg ⊓ LinearMap.ker f₂ = ⊥ := by
+    by_contra hnot
+    push Not at hnot
+    obtain ⟨u, ⟨huPos, hu2⟩, hu0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hnot.1
+    obtain ⟨v, ⟨hvNeg, hv2⟩, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hnot.2
+    simp only [SetLike.mem_coe, LinearMap.mem_ker] at huPos hu2 hvNeg hv2
+    have huPos' : f₁ u 0 + f₁ u 1 = 0 := huPos
+    have hvNeg' : f₁ v 0 - f₁ v 1 = 0 := hvNeg
+    have hf₁u : f₁ u 0 ≠ 0 := by
+      intro h0
+      have h1 : f₁ u 1 = 0 := by linear_combination huPos' - h0
+      have hfu : f u = 0 := Prod.ext (funext fun i ↦ by fin_cases i <;> assumption) hu2
+      exact hu0 (hf (hfu.trans (map_zero f).symm))
+    have hf₁v : f₁ v 0 ≠ 0 := by
+      intro h0
+      have h1 : f₁ v 1 = 0 := by linear_combination -hvNeg' + h0
+      have hfv : f v = 0 := Prod.ext (funext fun i ↦ by fin_cases i <;> assumption) hv2
+      exact hv0 (hf (hfv.trans (map_zero f).symm))
+    have h2 : (2 : K) ≠ 0 := (isUnit_of_invertible (2 : K)).ne_zero
+    have hmul : phiPos (u + v) * phiNeg (u + v) = 0 := by
+      have h0 := hQ_eq (u + v)
+      have hf₂uv : f₂ (u + v) = 0 := by rw [map_add, hu2, hv2, add_zero]
+      rwa [hf₂uv, Q.map_zero, add_zero] at h0
+    have hadd : phiPos (u + v) = 2 * f₁ v 0 := by
+      rw [map_add, huPos, zero_add]
+      change f₁ v 0 + f₁ v 1 = 2 * f₁ v 0
+      linear_combination -hvNeg'
+    have hsub : phiNeg (u + v) = 2 * f₁ u 0 := by
+      rw [map_add, hvNeg, add_zero]
+      change f₁ u 0 - f₁ u 1 = 2 * f₁ u 0
+      linear_combination -huPos'
+    rw [hadd, hsub] at hmul
+    exact mul_ne_zero (mul_ne_zero h2 hf₁v) (mul_ne_zero h2 hf₁u) hmul
+  have of_ker :
+      ∀ φ : U →ₗ[K] K, LinearMap.ker φ ⊓ LinearMap.ker f₂ = ⊥ →
+        (∀ u ∈ LinearMap.ker φ, Q (f₂ u) = 0) →
+        (0 : QuadraticForm K U').IsRepresentedBy Q := by
+    intro φ hdisj hvanish
+    have hker_dim : finrank K U' ≤ finrank K (LinearMap.ker φ) := by
+      have hsum := LinearMap.finrank_range_add_finrank_ker φ
+      have hrange : finrank K (LinearMap.range φ) ≤ 1 := by
+        simpa using Submodule.finrank_le (LinearMap.range φ)
+      omega
+    have hker_Q : (0 : QuadraticForm K (LinearMap.ker φ)).IsRepresentedBy Q :=
+      (isRepresentedBy_iff _ _).mpr
+        ⟨f₂.comp (LinearMap.ker φ).subtype,
+          fun x y hxy ↦ by
+            apply Subtype.ext
+            rw [← sub_eq_zero]
+            have hmem : (x : U) - y ∈ LinearMap.ker φ ⊓ LinearMap.ker f₂ :=
+              ⟨Submodule.sub_mem _ x.2 y.2, by
+                simp only [SetLike.mem_coe, LinearMap.mem_ker, map_sub, sub_eq_zero]
+                exact hxy⟩
+            rwa [hdisj, Submodule.mem_bot] at hmem,
+          fun x ↦ hvanish x.1 x.2⟩
+    exact (zero_isRepresentedBy_zero_of_finrank_le hker_dim).trans hker_Q
+  rcases hker_disj with h | h
+  · exact of_ker phiPos h fun u hu ↦ by
+      have h0 := hQ_eq u
+      rw [LinearMap.mem_ker.mp hu, zero_mul, zero_add] at h0
+      exact h0
+  · exact of_ker phiNeg h fun u hu ↦ by
+      have h0 := hQ_eq u
+      rw [LinearMap.mem_ker.mp hu, mul_zero, zero_add] at h0
+      exact h0
+
+/-- After scalar extension to a field `A`, cancelling a hyperbolic plane from an embedding of a
+zero form into `H ⊥ Q` reduces the dimension of the represented zero space by at least one. Neither
+nondegeneracy nor finiteness is needed on `Q`. -/
+theorem zero_baseChange_isRepresentedBy_of_hyperbolicPlane_prod
+    {A : Type*} [Field A] [Algebra K A]
+    {U' U M : Type*} [AddCommGroup U'] [Module K U'] [FiniteDimensional K U']
+    [AddCommGroup U] [Module K U] [FiniteDimensional K U]
+    [AddCommGroup M] [Module K M]
+    {Q : QuadraticForm K M}
+    (h : ((0 : QuadraticForm K U).baseChange A).IsRepresentedBy
+      (QuadraticForm.baseChange A ((hyperbolicPlane K).prod Q)))
+    (hk : finrank K U' + 1 ≤ finrank K U) :
+    ((0 : QuadraticForm K U').baseChange A).IsRepresentedBy (Q.baseChange A) := by
+  let _ : Invertible (2 : A) :=
+    (Invertible.map (algebraMap K A) 2).copy 2 (map_ofNat _ _).symm
+  have hH : (QuadraticForm.baseChange A ((hyperbolicPlane K).prod Q)).Equivalent
+      ((hyperbolicPlane A).prod (Q.baseChange A)) :=
+    Equivalent.trans ⟨QuadraticForm.baseChangeProd (A := A) (hyperbolicPlane K) Q⟩
+      (baseChange_hyperbolicPlane_equivalent.prod (.refl _))
+  have h' : ((0 : QuadraticForm K U).baseChange A).IsRepresentedBy
+      ((hyperbolicPlane A).prod (Q.baseChange A)) :=
+    h.trans hH.isRepresentedBy
+  simp only [QuadraticForm.baseChange_zero] at h' ⊢
+  exact zero_isRepresentedBy_of_hyperbolicPlane_prod h'
+    (by simpa [Module.finrank_baseChange] using hk)
+
+end HyperbolicCancellation
+
+end TauCeti

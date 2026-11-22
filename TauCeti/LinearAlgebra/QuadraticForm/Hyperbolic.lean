@@ -179,6 +179,15 @@ noncomputable def baseChangeHyperbolicPlane {R : Type u} {A : Type v} [CommRing 
   { toLinearEquiv := e.toLinearEquiv
     map_app' := fun x ↦ by rw [h1, ← h2]; exact e.map_app x }
 
+/-- The underlying linear map of `TauCeti.baseChangeHyperbolicPlane` is the canonical distribution
+of tensor product over `Fin 2`. -/
+@[simp]
+theorem baseChangeHyperbolicPlane_apply {R : Type u} {A : Type v} [CommRing R] [CommRing A]
+    [Algebra R A] [Invertible (2 : R)] [Invertible (2 : A)] (x : TensorProduct R A (Fin 2 → R)) :
+    baseChangeHyperbolicPlane (R := R) (A := A) x =
+      TensorProduct.piScalarRightHom R A A (Fin 2) x :=
+  QuadraticForm.baseChangeWeightedSumSquares_apply (A := A) ![(1 : R), -1] x
+
 /-- Extending scalars carries the hyperbolic plane to an isometric copy of the hyperbolic plane
 over the target ring. -/
 theorem baseChange_hyperbolicPlane_equivalent {R : Type u} {A : Type v} [CommRing R] [CommRing A]

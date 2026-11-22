@@ -7,6 +7,9 @@ module
 
 public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
 import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.LowRank
+import TauCeti.NumberTheory.ClassFieldTheory.Global.HasseNorm.Quadratic
+import TauCeti.NumberTheory.HilbertSymbol.NormSubgroup
+import TauCeti.NumberTheory.QuadraticForm.Global.ArchimedeanSymbol
 import TauCeti.NumberTheory.QuadraticForm.Global.Discriminant
 import TauCeti.NumberTheory.QuadraticForm.Global.Squares
 
@@ -32,6 +35,10 @@ dimension `≤ 2` is isotropic if and only if it is locally isotropic
 at infinitely many finite places (in sharp contrast to
 `QuadraticForm.finite_setOfPred_anisotropic_atFinitePlace` in dimension `≥ 3`).
 
+In addition, combining the quadratic Hasse norm theorem
+(`TauCeti.ClassFieldTheory.exists_sq_sub_mul_sq_iff_forall_completion`) with the global square
+theorem establishes Hasse–Minkowski for scalar representation by the binary norm form `⟨1, -d⟩`.
+
 ## Main results
 
 * `QuadraticForm.not_anisotropic_of_not_anisotropic_atFinitePlace_of_notMem_of_finrank_le_two`:
@@ -41,12 +48,14 @@ at infinitely many finite places (in sharp contrast to
 * `QuadraticForm.infinite_setOfPred_anisotropic_atFinitePlace_iff_of_finrank_le_two`: a quadratic
   form of dimension `≤ 2` is anisotropic over `K` iff it is anisotropic at infinitely many finite
   places.
+* `QuadraticForm.represents_weightedSumSquares_one_neg_iff_locallyRepresentsScalar`: Hasse–Minkowski
+  for scalar representation by `⟨1, -d⟩`.
 
 ## References
 
 * O. T. O'Meara, *Introduction to Quadratic Forms*, Springer (1963), 66:1.
-* J. S. Milne, *Class Field Theory*, v4.03, Chapter VIII, Theorem 3.5(b) and Proposition 3.7(b),
-  pp. 236–237.
+* J. S. Milne, *Class Field Theory*, v4.03, Chapter VIII, Theorem 3.1, Theorem 3.5(b), and
+  Proposition 3.7(b), pp. 235–237.
 -/
 
 public section
@@ -110,5 +119,72 @@ theorem infinite_setOfPred_anisotropic_atFinitePlace_iff_of_finrank_le_two
   · classical
     exact not_anisotropic_of_not_anisotropic_atFinitePlace_of_notMem_of_finrank_le_two Q hV
       hfin.toFinset (fun v hv hani_v ↦ hv (hfin.mem_toFinset.mpr hani_v)) hani
+
+/-- **Hasse–Minkowski for binary norm forms `⟨1, -d⟩`.** Over a number field `K`, the binary
+diagonal form `⟨1, -d⟩` represents a scalar `a` if and only if it represents `a` at every finite
+and every real place. -/
+theorem represents_weightedSumSquares_one_neg_iff_locallyRepresentsScalar (d a : K) :
+    Represents (weightedSumSquares K ![(1 : K), -d]) a ↔
+      LocallyRepresentsScalar (weightedSumSquares K ![(1 : K), -d]) a := by
+  refine ⟨LocallyRepresentsScalar.of_represents, fun hloc ↦ ?_⟩
+  by_cases ha : a = 0
+  · subst ha
+    exact represents_zero _
+  by_cases hd0 : d = 0
+  · subst hd0
+    have hsq : IsSquare a := by
+      refine (isSquare_iff_forall_isSquare_algebraMap_adicCompletion a).mpr fun v ↦ ?_
+      obtain ⟨u, hu⟩ := (represents_iff _ _).mp <|
+        (atFinitePlaceWeightedSumSquares v ![(1 : K), -0]).represents_iff _ |>.mp
+          (((locallyRepresentsScalar_iff _ _).mp hloc).1 v)
+      refine ⟨u 0, ?_⟩
+      simpa [weightedSumSquares_apply, Fin.sum_univ_two, pow_two] using hu.symm
+    obtain ⟨r, hr⟩ := hsq
+    exact (represents_iff _ _).mpr
+      ⟨![r, 0], by simp [weightedSumSquares_apply, Fin.sum_univ_two, ← hr]⟩
+  let a' : Kˣ := Units.mk0 a ha
+  let d' : Kˣ := Units.mk0 d hd0
+  suffices h : hilbertSymbol d' a' = 1 by
+    simpa [a', d', mem_unitValueSet] using
+      (mem_unitValueSet_binary_one_neg_iff_hilbertSymbol_eq_one d' a').mpr h
+  by_cases hd : IsSquare d
+  · exact hilbertSymbol_eq_one_of_isSquare_left
+      (Units.isSquare_coe_iff.mp (by simpa [d'] using hd)) a'
+  · rw [hilbertSymbol_eq_one_iff]
+    dsimp [d']
+    rw [ClassFieldTheory.exists_sq_sub_mul_sq_iff_forall_completion hd a']
+    refine ⟨fun v ↦ ?_, fun w ↦ ?_⟩
+    · have hv := (atFinitePlaceWeightedSumSquares v ![(1 : K), -d]).represents_iff _ |>.mp
+        (((locallyRepresentsScalar_iff _ _).mp hloc).1 v)
+      have hv' : v.unitAtFinitePlace a' ∈ unitValueSet
+          (weightedSumSquares (v.adicCompletion K)
+            ![1, -(v.unitAtFinitePlace d' : v.adicCompletion K)]) := by
+        simpa [a', d', mem_unitValueSet, show (fun i : Fin 2 ↦
+            algebraMap K (v.adicCompletion K) (![(1 : K), -d] i)) =
+            ![1, -(v.unitAtFinitePlace d' : v.adicCompletion K)] by
+          ext i; fin_cases i <;> simp [d']] using hv
+      simpa [a', d'] using (hilbertSymbol_eq_one_iff
+        (v.unitAtFinitePlace d') (v.unitAtFinitePlace a')).mp
+        ((mem_unitValueSet_binary_one_neg_iff_hilbertSymbol_eq_one
+          (v.unitAtFinitePlace d') (v.unitAtFinitePlace a')).mp hv')
+    · rcases w.isReal_or_isComplex with hw | hw
+      · have hw' := (atRealPlaceWeightedSumSquares ⟨w, hw⟩ ![(1 : K), -d]).represents_iff _
+          |>.mp (((locallyRepresentsScalar_iff _ _).mp hloc).2 ⟨w, hw⟩)
+        have hw'' : unitAtRealPlace ⟨w, hw⟩ a' ∈ unitValueSet
+            (weightedSumSquares ℝ ![1, -(unitAtRealPlace ⟨w, hw⟩ d' : ℝ)]) := by
+          simpa [a', d', mem_unitValueSet, show (fun i : Fin 2 ↦
+              InfinitePlace.embedding_of_isReal hw (![(1 : K), -d] i)) =
+              ![1, -(unitAtRealPlace ⟨w, hw⟩ d' : ℝ)] by
+            ext i; fin_cases i <;> simp [d']] using hw'
+        have hsym := (mem_unitValueSet_binary_one_neg_iff_hilbertSymbol_eq_one
+          (unitAtRealPlace ⟨w, hw⟩ d') (unitAtRealPlace ⟨w, hw⟩ a')).mp hw''
+        rw [← hilbertSymbol_completion_eq_unitAtRealPlace ⟨w, hw⟩ d' a',
+          hilbertSymbol_eq_one_iff] at hsym
+        simpa [a', d'] using hsym
+      · have hsym := hilbertSymbol_completion_eq_one_of_isComplex hw
+          (Units.map (algebraMap K w.Completion).toMonoidHom d')
+          (Units.map (algebraMap K w.Completion).toMonoidHom a')
+        rw [hilbertSymbol_eq_one_iff] at hsym
+        simpa [a', d'] using hsym
 
 end QuadraticForm
