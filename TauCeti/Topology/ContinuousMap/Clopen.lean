@@ -197,9 +197,9 @@ theorem norm_zeroExtendClopen (s : Clopens X) (f : C(s, E)) :
 
 end Norm
 
-section Ring
+section Semiring
 
-variable {R : Type*} [Ring R] [TopologicalSpace R] [IsTopologicalRing R]
+variable {R : Type*} [Semiring R] [TopologicalSpace R] [IsTopologicalSemiring R]
 
 /-- Extending a restricted function by zero is multiplication by the clopen characteristic
 function. -/
@@ -212,7 +212,7 @@ theorem zeroExtendClopen_restrict (s : Clopens X) (f : C(X, R)) :
   · simpa [hx, LocallyConstant.coe_charFn] using restrict_apply_mk f (s : Set X) x hx
   · simp [hx, LocallyConstant.coe_charFn]
 
-end Ring
+end Semiring
 
 -- The extension of the constant `7` on `{0} ⊆ Fin 2` takes value `7` at `0`.
 example :

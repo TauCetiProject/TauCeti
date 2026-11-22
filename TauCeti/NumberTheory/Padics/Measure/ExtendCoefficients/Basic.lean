@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import TauCeti.NumberTheory.Padics.Measure.CoefficientRestriction
 public import TauCeti.NumberTheory.Padics.Measure.FiniteProjection
-import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 import TauCeti.Analysis.Normed.Operator.Extend
 import TauCeti.Topology.DiscreteQuotient
 
