@@ -129,7 +129,7 @@ theorem isCutoff_of_beth_ord_eq {κ : Cardinal.{u}} (hκ : ℶ_ κ.ord = κ) (hc
   have hreg : (succ (max c ℵ₀)).IsRegular := isRegular_succ (le_max_right c ℵ₀)
   have hν : succ (max c ℵ₀) < κ :=
     hstrong.isSuccLimit.succ_lt (max_lt hc (hcof.trans_le (cof_ord_le κ)))
-  refine ⟨ℶ_ (succ (max c ℵ₀)).ord, ?_, hreg.isStrongLimit_beth_ord, ?_⟩
+  refine ⟨ℶ_ (succ (max c ℵ₀)).ord, ?_, isStrongLimit_beth_ord hreg.aleph0_le, ?_⟩
   · conv_rhs => rw [← hκ]
     exact beth_strictMono (ord_strictMono hν)
   · rw [hreg.cof_ord_beth_ord]

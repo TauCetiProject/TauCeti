@@ -22,8 +22,7 @@ cofinality, which is what size-bounding arguments with cutoff cardinals need.
 * `Cardinal.isNormal_ord_beth`: `o ↦ (ℶ_ o).ord` is a normal function.
 * `Cardinal.cof_ord_beth`: at a limit ordinal `o`, `(ℶ_ o).ord.cof = o.cof`.
 * `Cardinal.IsRegular.cof_ord_beth_ord`: for a regular cardinal `c`, `(ℶ_ c.ord).ord.cof = c`.
-* `Cardinal.IsRegular.isStrongLimit_beth_ord`: for a regular cardinal `c`, `ℶ_ c.ord` is a strong
-  limit.
+* `Cardinal.isStrongLimit_beth_ord`: for an infinite cardinal `c`, `ℶ_ c.ord` is a strong limit.
 -/
 
 public section
@@ -48,10 +47,9 @@ theorem IsRegular.cof_ord_beth_ord {c : Cardinal.{u}} (hc : c.IsRegular) :
     (ℶ_ c.ord).ord.cof = c := by
   rw [cof_ord_beth (isSuccLimit_ord hc.aleph0_le), hc.cof_ord]
 
-/-- For a regular cardinal `c`, the beth number indexed by the initial ordinal of `c` is a strong
+/-- For an infinite cardinal `c`, the beth number indexed by the initial ordinal of `c` is a strong
 limit cardinal. -/
-theorem IsRegular.isStrongLimit_beth_ord {c : Cardinal.{u}} (hc : c.IsRegular) :
-    IsStrongLimit (ℶ_ c.ord) :=
-  isStrongLimit_beth.2 (isSuccLimit_ord hc.aleph0_le).isSuccPrelimit
+theorem isStrongLimit_beth_ord {c : Cardinal.{u}} (hc : ℵ₀ ≤ c) : IsStrongLimit (ℶ_ c.ord) :=
+  isStrongLimit_beth.2 (isSuccLimit_ord hc).isSuccPrelimit
 
 end Cardinal
