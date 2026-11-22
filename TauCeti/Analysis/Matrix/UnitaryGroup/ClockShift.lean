@@ -15,6 +15,7 @@ import Mathlib.LinearAlgebra.Determinant
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.Matrix.Normal
 import TauCeti.Analysis.RCLike.Basic
 import TauCeti.LinearAlgebra.UnitaryGroup
@@ -53,11 +54,10 @@ conjugation by powers of `C₀` and `S₀` shows that every solution `A, B ∈ S
 * `Matrix.clockUnitary_pow_conj_shiftUnitary`, `Matrix.shiftUnitary_inv_pow_conj_clockUnitary`,
   and `Matrix.clockUnitary_shiftUnitary_phase_conj`: phase-shifting conjugation formulas for
   powers of `C₀` and `S₀`.
-* `Matrix.exists_unitary_conj_diagonal_to_clock_shift` and
-  `Matrix.exists_unitary_conj_to_clock_shift`: finite Stone–von Neumann uniqueness of unitary
+* `Matrix.exists_unitary_conj_to_clock_shift`: finite Stone–von Neumann uniqueness of unitary
   Weyl pairs up to simultaneous unitary conjugation and unit-circle rescaling.
 * `Matrix.exists_clock_shift_specialUnitaryGroup`,
-  `Matrix.exists_pow_mul_eq_of_unitary_conj_specialUnitaryGroup`, and
+  `Matrix.exists_pow_mul_eq_of_unitary_conj_specialUnitaryGroup` (determinant comparison), and
   `Matrix.exists_specialUnitaryGroup_conj_to_clock_shift`: existence and uniqueness up to
   simultaneous `SU(r)`-conjugation of special unitary solutions to `⁅A, B⁆ = ζ • 1`.
 
@@ -219,12 +219,15 @@ private theorem eigenvectorOrbit_mem_unitary {r : ℕ} [NeZero r] {ζ : ℂ} (h�
         simp only [vNat, pow_succ', mulVec_mulVec]
       rw [hstep, mulVec_mulVec, hrel, smul_mulVec, ← mulVec_mulVec, ih, mulVec_smul, smul_smul,
         ← mul_assoc, pow_succ']
+  have hunitary_dot {M : Matrix (Fin r) (Fin r) ℂ} (hM : M ∈ unitaryGroup (Fin r) ℂ)
+      (x y : Fin r → ℂ) :
+      dotProduct (star (M *ᵥ x)) (M *ᵥ y) = dotProduct (star x) y := by
+    have hinner := (mem_unitaryGroup_iff_inner_toEuclideanCLM.mp hM)
+      (WithLp.toLp 2 x) (WithLp.toLp 2 y)
+    simpa [toEuclideanCLM_apply, PiLp.inner_apply, dotProduct, mul_comm] using hinner
   have hv_orth {m₁ m₂ : ℕ} (hne : ζ ^ m₁ ≠ ζ ^ m₂) :
       dotProduct (star (vNat m₁)) (vNat m₂) = 0 := by
-    have hdot : dotProduct (star ((A₁ : Matrix (Fin r) (Fin r) ℂ) *ᵥ vNat m₁))
-        ((A₁ : Matrix (Fin r) (Fin r) ℂ) *ᵥ vNat m₂) = dotProduct (star (vNat m₁)) (vNat m₂) := by
-      rw [star_mulVec, dotProduct_mulVec, vecMul_vecMul, ← star_eq_conjTranspose,
-        mem_unitaryGroup_iff'.mp A₁.property, vecMul_one]
+    have hdot := hunitary_dot A₁.property (vNat m₁) (vNat m₂)
     rw [hv_eig m₁, hv_eig m₂, star_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul,
       smul_eq_mul, ← mul_assoc] at hdot
     have hcoeff : star (ζ ^ m₁ * d 0) * (ζ ^ m₂ * d 0) ≠ 1 := fun h1 => hne <| by
@@ -234,10 +237,8 @@ private theorem eigenvectorOrbit_mem_unitary {r : ℕ} [NeZero r] {ζ : ℂ} (h�
       linear_combination -ζ ^ m₁ * h1 + ζ ^ m₂ * (star (d 0) * d 0) * hz + ζ ^ m₂ * hd
     exact (mul_eq_zero.mp (by linear_combination hdot)).resolve_left (sub_ne_zero.mpr hcoeff)
   have hv_norm (m : ℕ) : dotProduct (star (vNat m)) (vNat m) = 1 := by
-    dsimp only [vNat]
-    rw [star_mulVec, dotProduct_mulVec, vecMul_vecMul, ← star_eq_conjTranspose,
-      mem_unitaryGroup_iff'.mp (Submonoid.pow_mem _ B₁.property m), vecMul_one]
-    simp [dotProduct, Pi.single_apply]
+    simpa [vNat, dotProduct, Pi.single_apply] using
+      hunitary_dot (Submonoid.pow_mem _ B₁.property m) (Pi.single 0 1) (Pi.single 0 1)
   have hVu : Vmat ∈ unitaryGroup (Fin r) ℂ := by
     rw [mem_unitaryGroup_iff']
     ext k l
@@ -301,14 +302,17 @@ private theorem shift_intertwine_of_orbit {r : ℕ} [NeZero r]
     (hv_step : ∀ m, (B₁ : Matrix (Fin r) (Fin r) ℂ) *ᵥ vNat m = vNat (m + 1))
     (hv_r : vNat r = (β : ℂ) • vNat 0)
     (W : unitaryGroup (Fin r) ℂ)
-    (hW_entry : ∀ i (k : Fin r),
-      (W : Matrix (Fin r) (Fin r) ℂ) i k = vNat k.val i * ((b⁻¹ : Circle) : ℂ) ^ k.val)
     (hW_col : ∀ k : Fin r,
       (W : Matrix (Fin r) (Fin r) ℂ).col k = (((b⁻¹ : Circle) : ℂ) ^ k.val) • vNat k.val) :
     (B₁ : Matrix (Fin r) (Fin r) ℂ) * (W : Matrix (Fin r) (Fin r) ℂ) =
       (W : Matrix (Fin r) (Fin r) ℂ) * ((b : ℂ) • (shiftUnitary r : Matrix (Fin r) (Fin r) ℂ)) := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne r)
   ext i k
+  have hW_entry (j k : Fin (m + 1)) :
+      (W : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ) j k =
+        (((b⁻¹ : Circle) : ℂ) ^ k.val) * vNat k.val j := by
+    rw [← Matrix.col_apply (W : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ) k j,
+      hW_col k, Pi.smul_apply, smul_eq_mul]
   have hL : ((B₁ : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ) *
       (W : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ)) i k =
       ((B₁ : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ) *ᵥ
@@ -319,7 +323,8 @@ private theorem shift_intertwine_of_orbit {r : ℕ} [NeZero r]
       (b : ℂ) * (W : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ) i (k + 1) := by
     rw [Matrix.mul_smul, Matrix.smul_apply, smul_eq_mul]
     congr 1
-    simp [Matrix.mul_apply, shiftUnitary_apply]
+    rw [shiftUnitary, coe_permutationUnitary, Equiv.Perm.permMatrix, PEquiv.mul_toMatrix_toPEquiv]
+    simp [Equiv.addRight_symm]
   rw [hL, hW_col k, mulVec_smul, hv_step k.val, hR, hW_entry]
   simp only [Pi.smul_apply, smul_eq_mul, Fin.val_add_one, Circle.coe_inv]
   have hb0 : (b : ℂ) ≠ 0 := Circle.coe_ne_zero b
@@ -328,7 +333,7 @@ private theorem shift_intertwine_of_orbit {r : ℕ} [NeZero r]
     have hv_r_i : vNat (m + 1) i = (β : ℂ) * vNat 0 i := congrFun hv_r i
     have hpow : (b : ℂ)⁻¹ ^ m * (b : ℂ) ^ m = 1 := by
       rw [← mul_pow, inv_mul_cancel₀ hb0, one_pow]
-    simp only [Fin.val_last, hv_r_i, pow_zero, mul_one, ← hbpow, pow_succ]
+    simp only [Fin.val_last, hv_r_i, pow_zero, ← hbpow, pow_succ]
     linear_combination (b : ℂ) * vNat 0 i * hpow
   · rw [pow_succ']
     linear_combination -((b : ℂ)⁻¹ ^ k.val * vNat (k.val + 1) i) * mul_inv_cancel₀ hb0
@@ -336,7 +341,7 @@ private theorem shift_intertwine_of_orbit {r : ℕ} [NeZero r]
 /-- Given unitary matrices `A₁ = diagonal d` and `B₁` with `A₁ * B₁ = ζ • (B₁ * A₁)`, there is a
 unitary matrix `W` simultaneously conjugating `(A₁, B₁)` to `(α • C₀, b • S₀)` for unit-modulus
 scalars `α, b : Circle`. -/
-theorem exists_unitary_conj_diagonal_to_clock_shift {r : ℕ} [NeZero r] {ζ : ℂ}
+private theorem exists_unitary_conj_diagonal_to_clock_shift {r : ℕ} [NeZero r] {ζ : ℂ}
     (hζ : IsPrimitiveRoot ζ r) {d : Fin r → ℂ} {A₁ B₁ : unitaryGroup (Fin r) ℂ}
     (hA₁ : (A₁ : Matrix (Fin r) (Fin r) ℂ) = diagonal d)
     (hrel : (A₁ : Matrix (Fin r) (Fin r) ℂ) * (B₁ : Matrix (Fin r) (Fin r) ℂ) =
@@ -379,7 +384,7 @@ theorem exists_unitary_conj_diagonal_to_clock_shift {r : ℕ} [NeZero r] {ζ : �
       Matrix.smul_apply, hW_entry, α]
     ring
   have hBW := shift_intertwine_of_orbit B₁ b β hbpow vNat
-    (fun m => by simp only [vNat, pow_succ', mulVec_mulVec]) hv_r W hW_entry hW_col
+    (fun m => by simp only [vNat, pow_succ', mulVec_mulVec]) hv_r W hW_col
   refine ⟨W, α, b, ?_, ?_⟩
   · rw [Matrix.mul_assoc, hAW, ← Matrix.mul_assoc, mem_unitaryGroup_iff'.mp W.property,
       Matrix.one_mul]
@@ -408,11 +413,11 @@ theorem exists_unitary_conj_to_clock_shift {r : ℕ} [NeZero r] {ζ : ℂ}
       ζ • ((B₁ : Matrix (Fin r) (Fin r) ℂ) * (A₁ : Matrix (Fin r) (Fin r) ℂ)) := by
     let φ := Unitary.conjStarAlgAut ℂ (Matrix (Fin r) (Fin r) ℂ) U₁⁻¹
     have hφ (X : unitaryGroup (Fin r) ℂ) :
-        ((U₁⁻¹ * X * U₁ : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) = φ X := by
-      simp only [φ, Submonoid.coe_mul, Unitary.conjStarAlgAut_apply, UnitaryGroup.inv_val,
-        star_star]
-    rw [show A₁ = U₁⁻¹ * A * U₁ from rfl, show B₁ = U₁⁻¹ * B * U₁ from rfl,
-      hφ A, hφ B, ← map_mul, hrel, map_smul, map_mul]
+        ((U₁⁻¹ : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) *
+          (X : Matrix (Fin r) (Fin r) ℂ) * (U₁ : Matrix (Fin r) (Fin r) ℂ) = φ X := by
+      simp only [φ, Unitary.conjStarAlgAut_apply, UnitaryGroup.inv_val, star_star]
+    simp only [A₁, B₁, Submonoid.coe_mul]
+    rw [hφ A, hφ B, ← map_mul, hrel, map_smul, map_mul]
   have hA₁ : (A₁ : Matrix (Fin r) (Fin r) ℂ) = diagonal d := by
     simpa only [A₁, Submonoid.coe_mul, UnitaryGroup.inv_val, U₁] using hd
   obtain ⟨W, α, b, hWA, hWB⟩ := exists_unitary_conj_diagonal_to_clock_shift hζ hA₁ hrel₁
@@ -439,9 +444,9 @@ theorem exists_clock_shift_specialUnitaryGroup {r : ℕ} [NeZero r] {ζ : ℂ}
   congr 1
   ring
 
-/-- Determinant comparison: if `X, X₀ ∈ SU(r)` are unitarily conjugate to `s • M` and `c • M`
-respectively (for `M ∈ U(r)` and `s ≠ 0`), then `c / s` is a power of the primitive `r`-th root
-`ζ`. -/
+/-- Determinant comparison: if `X ∈ SU(r)` is unitarily conjugate to `s • M` and `X₀ ∈ SU(r)`
+equals `c • M` (for `M ∈ U(r)` and `s ≠ 0`), then `c / s` is a power of the primitive `r`-th
+root `ζ`. -/
 theorem exists_pow_mul_eq_of_unitary_conj_specialUnitaryGroup {r : ℕ} [NeZero r] {ζ : ℂ}
     (hζ : IsPrimitiveRoot ζ r) {U M : unitaryGroup (Fin r) ℂ}
     {X X₀ : specialUnitaryGroup (Fin r) ℂ} {s c : ℂ} (hs : s ≠ 0)

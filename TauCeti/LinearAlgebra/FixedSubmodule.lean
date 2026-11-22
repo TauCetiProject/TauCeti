@@ -36,6 +36,9 @@ endomorphism. Over a commutative ring the fixed submodule is the eigenspace for 
 * `LinearMap.fixedSubmodule_restrict`: the fixed submodule of the restriction of `f` to an
   invariant submodule `p` is the part of the fixed submodule of `f` that lies in `p`.
 
+* `LinearEquiv.restrictSubmodule`: restriction of an automorphism in `MulAction.stabilizer`
+  of a submodule to an automorphism of that submodule.
+
 * `Module.End.eigenspace_one_eq_fixedSubmodule`: the `1`-eigenspace of an endomorphism is its
   fixed submodule.
 -/
@@ -178,6 +181,39 @@ theorem fixedSubmoduleCongr_symm_apply (e : U ≃ₗ[R] W)
     (h : e.toLinearMap ∘ₗ f = g ∘ₗ e.toLinearMap) (y : g.fixedSubmodule) :
     ((e.fixedSubmoduleCongr h).symm y : U) = e.symm y := by
   simp [fixedSubmoduleCongr]
+
+section Stabilizer
+
+open scoped Pointwise
+
+variable {M : Type*} [AddCommMonoid M] [Module R M]
+
+/-- Restrict an automorphism in `MulAction.stabilizer (M ≃ₗ[R] M) W` to an automorphism of `W`,
+as a group homomorphism. -/
+def restrictSubmodule (W : Submodule R M) :
+    MulAction.stabilizer (M ≃ₗ[R] M) W →* (W ≃ₗ[R] W) where
+  toFun u := u.val.ofSubmodules W W u.property
+  map_one' := LinearEquiv.ext fun _ => rfl
+  map_mul' _ _ := LinearEquiv.ext fun _ => rfl
+
+/-- The restricted automorphism acts by the original automorphism on ambient vectors. -/
+@[simp]
+theorem restrictSubmodule_apply (W : Submodule R M)
+    (u : MulAction.stabilizer (M ≃ₗ[R] M) W) (x : W) :
+    (restrictSubmodule W u x : M) = (u : M ≃ₗ[R] M) x := by
+  rfl
+
+/-- The underlying linear map of `restrictSubmodule W u` is `LinearMap.restrict`. -/
+theorem toLinearMap_restrictSubmodule (W : Submodule R M)
+    (u : MulAction.stabilizer (M ≃ₗ[R] M) W) :
+    (restrictSubmodule W u : W →ₗ[R] W) =
+      (u : M ≃ₗ[R] M).toLinearMap.restrict
+        (fun x hx => by
+          have hu : Submodule.map (u : M ≃ₗ[R] M).toLinearMap W = W := u.property
+          exact hu.le (Submodule.mem_map_of_mem hx)) := by
+  rfl
+
+end Stabilizer
 
 end LinearEquiv
 

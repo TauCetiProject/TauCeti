@@ -42,6 +42,8 @@ rotations of the round sphere.
 * `Matrix.specialUnitaryGroup.toGL_toSL`: in `GL(n)`, it agrees with the unitary units.
 * `Matrix.specialUnitaryGroup.toPSL`: the homomorphism `SU(n) → PSL(n)`, whose range is `PSU(n)`.
 * `Matrix.specialUnitaryGroup.ker_toPSL`: its kernel is the preimage of the center of `SL(n)`.
+* `Matrix.specialUnitaryGroup.scalarCenter` and `Matrix.specialUnitaryGroup.coe_scalarCenter`:
+  over `ℝ` or `ℂ`, construct a central element of `SU(n)` from a `card n`-th root of unity.
 * `Matrix.specialUnitaryGroup.mk_mem_range_toPSL_iff`: over `ℝ` or `ℂ`, the class of a matrix of
   `SL(n)` lies in `PSU(n)` exactly when the matrix is unitary.
 * `Matrix.specialUnitaryGroup.mem_ker_toPSL_iff`: over a ring without zero divisors, such as
@@ -118,11 +120,8 @@ theorem ker_toPSL :
 /-- The kernel of `SU(n) → PSL(n)` is always contained in the center of `SU(n)`. -/
 theorem ker_toPSL_le_center :
     (toPSL : specialUnitaryGroup n α →* _).ker ≤ Subgroup.center (specialUnitaryGroup n α) := by
-  intro A hA
-  rw [ker_toPSL, Subgroup.mem_comap] at hA
-  rw [Subgroup.mem_center_iff]
-  intro B
-  exact toSL_injective <| by simpa only [map_mul] using Subgroup.mem_center_iff.mp hA (toSL B)
+  rw [ker_toPSL]
+  exact Subgroup.comap_center_le_center toSL_injective
 
 /-- Over a ring without zero divisors, such as `ℝ` or `ℂ`, the kernel of `SU(2) → PSL(2)` is
 `{1, -1}`, so that `PSU(2) = SU(2) ⧸ {±1}`. -/
@@ -144,23 +143,39 @@ section RCLike
 
 variable {𝕜 : Type*} [RCLike 𝕜]
 
+/-- Construct a central special unitary matrix over `ℝ` or `ℂ` from a `card n`-th root of
+unity `c`. -/
+def scalarCenter {c : 𝕜} (hc : c ^ Fintype.card n = 1) :
+    Subgroup.center (specialUnitaryGroup n 𝕜) :=
+  ⟨⟨scalar n c, mem_specialUnitaryGroup_iff.mpr ⟨by
+      rcases isEmpty_or_nonempty n with hn | hn
+      · exact mem_unitaryGroup_iff'.mpr (Subsingleton.elim _ _)
+      · have hnorm : ‖c‖ = 1 := by
+          rw [← pow_eq_one_iff_of_nonneg (norm_nonneg c) (Fintype.card_ne_zero (α := n)),
+            ← norm_pow, hc, norm_one]
+        rw [scalar_apply, diagonal_mem_unitary, Pi.mem_unitary_iff]
+        exact fun _ => Unitary.mem_iff_star_mul_self.mpr <| by
+          rw [RCLike.star_def, RCLike.conj_mul, hnorm]
+          simp,
+      by simpa [scalar_apply, det_diagonal] using hc⟩⟩,
+    Subgroup.mem_center_iff.mpr fun B => Subtype.ext <| by
+      simpa [Submonoid.coe_mul, scalar_apply] using
+        (scalar_commute c (Commute.all c) (B : Matrix n n 𝕜)).symm.eq⟩
+
+/-- Coercing `scalarCenter hc` to a matrix yields the scalar matrix `scalar n c`. -/
+@[simp]
+theorem coe_scalarCenter {c : 𝕜} (hc : c ^ Fintype.card n = 1) :
+    ((scalarCenter hc : specialUnitaryGroup n 𝕜) : Matrix n n 𝕜) = scalar n c :=
+  (rfl)
+
 /-- Over `ℝ` or `ℂ` every central element of `SL(n, 𝕜)` is unitary: it is a scalar matrix whose
 scalar is a root of unity, hence of norm one. -/
 theorem center_le_range_toSL :
     Subgroup.center (SpecialLinearGroup n 𝕜) ≤ (toSL : specialUnitaryGroup n 𝕜 →* _).range := by
   intro A hA
-  rw [mem_range_toSL_iff]
   obtain ⟨r, hr, hrA⟩ := SpecialLinearGroup.mem_center_iff.mp hA
-  rw [← hrA]
-  rcases isEmpty_or_nonempty n with hn | hn
-  · exact mem_unitaryGroup_iff'.mpr (Subsingleton.elim _ _)
-  have hnorm : ‖r‖ = 1 := by
-    rw [← pow_eq_one_iff_of_nonneg (norm_nonneg r) (Fintype.card_ne_zero (α := n)), ← norm_pow,
-      hr, norm_one]
-  rw [scalar_apply, diagonal_mem_unitary, Pi.mem_unitary_iff]
-  exact fun _ => Unitary.mem_iff_star_mul_self.mpr <| by
-    rw [RCLike.star_def, RCLike.conj_mul, hnorm]
-    simp
+  exact ⟨(scalarCenter hr : specialUnitaryGroup n 𝕜),
+    Subtype.ext (by rw [coe_toSL, coe_scalarCenter, hrA])⟩
 
 /-- **The projective special unitary group.** Over `ℝ` or `ℂ`, the class in `PSL(n, 𝕜)` of a
 matrix of `SL(n, 𝕜)` lies in the range `PSU(n)` of `SU(n)` exactly when the matrix is unitary. -/

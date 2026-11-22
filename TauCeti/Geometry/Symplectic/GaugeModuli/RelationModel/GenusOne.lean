@@ -25,7 +25,7 @@ solution (`Matrix.exists_clock_shift_specialUnitaryGroup`), and every solution i
 simultaneously `SU(r)`-conjugate to this clock–shift pair
 (`Matrix.exists_specialUnitaryGroup_conj_to_clock_shift`). Consequently, the genus-one
 representation model `relationModuli r ζ 1` is a single point
-(`TauCeti.GaugeModuli.relationModuli_genus_one`), hence simply connected, and the effective
+(`TauCeti.GaugeModuli.relationModuli_genus_one`), hence simply connected, and the induced
 `PSU(r)` action identifies `PSU(r)` homeomorphically with `relationSet r ζ 1`
 (`TauCeti.GaugeModuli.psuOrbitHomeomorphGenusOne`).
 
@@ -147,7 +147,7 @@ private theorem bijective_psu_smul_genus_one {r : ℕ} {ζ : ℂ} (hζ : IsPrimi
   exact ⟨fun _ _ => IsCancelSMul.right_cancel _ _ x₀, MulAction.surjective_smul _ x₀⟩
 
 /-- **Genus-one orbit homeomorphism.** For a primitive `r`-th root of unity `ζ` and any basepoint
-`x₀ : relationSet r ζ 1`, the effective `PSU(r)` action induces a homeomorphism
+`x₀ : relationSet r ζ 1`, the induced `PSU(r)` action induces a homeomorphism
 `PSU(r) ≃ₜ relationSet r ζ 1`. -/
 noncomputable def psuOrbitHomeomorphGenusOne {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r)
     (x₀ : relationSet r ζ 1) :
@@ -215,15 +215,8 @@ theorem exists_ne_one_centerTwist_fix_genus_one {r : ℕ} (hr : 2 ≤ r) {ζ : �
     ∃ (ε : Fin 1 → Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) ×
         Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ))
       (q : relationModuli r ζ 1), ε ≠ 1 ∧ ε • q = q := by
-  have hζu : ζ ∈ unitary ℂ :=
-    RCLike.mem_unitary_iff_norm_eq_one.mpr (hζ.norm'_eq_one (by omega))
-  let zSU : Matrix.specialUnitaryGroup (Fin r) ℂ :=
-    ⟨Matrix.scalar (Fin r) ζ, mem_specialUnitaryGroup_iff.mpr ⟨by
-      rw [Matrix.scalar_apply, Matrix.diagonal_mem_unitary, Pi.mem_unitary_iff]
-      exact fun _ => hζu, by
-      simpa [Matrix.scalar_apply, Matrix.det_diagonal] using hζ.pow_eq_one⟩⟩
   let z : Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) :=
-    ⟨zSU, Matrix.specialUnitaryGroup.mem_center_iff.mpr ⟨ζ, by simpa using hζ.pow_eq_one, rfl⟩⟩
+    Matrix.specialUnitaryGroup.scalarCenter (n := Fin r) (by simpa using hζ.pow_eq_one)
   let ε : Fin 1 → Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) ×
       Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) := fun _ => (z, 1)
   obtain ⟨q⟩ := nonempty_relationModuli_of_pos r ζ hζ 1 le_rfl
@@ -232,8 +225,10 @@ theorem exists_ne_one_centerTwist_fix_genus_one {r : ℕ} (hr : 2 ≤ r) {ζ : �
   have h0 : z = 1 := congrArg Prod.fst (congrFun h 0)
   have hval := congr_fun₂ (congrArg
     (fun c : Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) =>
-      (c.val : Matrix (Fin r) (Fin r) ℂ)) h0) ⟨0, by omega⟩ ⟨0, by omega⟩
-  have hζ1 : ζ = 1 := by simpa [z, zSU, Matrix.scalar_apply] using hval
+      ((c : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ)) h0)
+    ⟨0, by omega⟩ ⟨0, by omega⟩
+  have hζ1 : ζ = 1 := by
+    simpa [z, Matrix.specialUnitaryGroup.coe_scalarCenter, Matrix.scalar_apply] using hval
   exact hζ.ne_one (by omega) hζ1
 
 end GenusOneTheorems
@@ -262,6 +257,14 @@ theorem rankTwoPair_mem_relationSet :
       _ = TauCeti.SU2.binaryDihedralRotation 2 ^ 2 := by rw [hconj, sq]
   rw [hcomm, TauCeti.SU2.coe_binaryDihedralRotation_pow_self, neg_one_smul]
 
+/-- The order-4 generator `binaryDihedralRotation 2` does not have square `1`. -/
+private theorem binaryDihedralRotation_two_sq_ne_one :
+    (TauCeti.SU2.binaryDihedralRotation 2 ^ 2 : TauCeti.SU2) ≠ 1 := by
+  intro hsq
+  have hmat := congr_fun₂ (congrArg Subtype.val hsq) 0 0
+  rw [TauCeti.SU2.coe_binaryDihedralRotation_pow_self] at hmat
+  exact absurd hmat (by norm_num)
+
 /-- At the non-coprime parameter `r = 2`, `ζ = 1`, the simultaneous `SU(2)`-conjugation action on
 `relationSet 2 1 g` admits non-central stabilizers (for example
 `TauCeti.SU2.binaryDihedralRotation 2` fixes the trivial tuple `1`). -/
@@ -273,11 +276,8 @@ theorem exists_notMem_center_conjAct_smul_eq_self (g : ℕ) :
     Subtype.ext (smul_one _)⟩
   rw [TauCeti.SU2.mem_center_iff]
   intro hmem
-  have hsq : ((TauCeti.SU2.binaryDihedralRotation 2 ^ 2 : TauCeti.SU2) :
-      Matrix (Fin 2) (Fin 2) ℂ) = 1 := by
-    rcases hmem with h | h <;> simp [sq, Submonoid.coe_mul, h]
-  rw [TauCeti.SU2.coe_binaryDihedralRotation_pow_self] at hsq
-  exact absurd (congr_fun₂ hsq 0 0) (by norm_num)
+  refine binaryDihedralRotation_two_sq_ne_one ?_
+  rcases hmem with h | h <;> exact Subtype.ext (by simp [sq, Submonoid.coe_mul, h])
 
 /-- At the non-coprime parameter `r = 2`, `ζ = 1`, `g = 1`, the moduli space `relationModuli 2 1 1`
 is not a subsingleton (distinguishing the classes of `(1, 1)` and
@@ -295,11 +295,8 @@ theorem not_subsingleton_relationModuli_two_one_one : ¬ Subsingleton (relationM
       TauCeti.SU2.binaryDihedralRotation 2 :=
     congrArg Prod.fst (congrFun hu 0)
   rw [smul_one] at h0
-  have hsq : ((TauCeti.SU2.binaryDihedralRotation 2 ^ 2 : TauCeti.SU2) :
-      Matrix (Fin 2) (Fin 2) ℂ) = 1 := by
-    rw [← h0, one_pow, OneMemClass.coe_one]
-  rw [TauCeti.SU2.coe_binaryDihedralRotation_pow_self] at hsq
-  exact absurd (congr_fun₂ hsq 0 0) (by norm_num)
+  refine binaryDihedralRotation_two_sq_ne_one ?_
+  rw [← h0, one_pow]
 
 end RankTwoChecks
 
