@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.RingTheory.PowerSeries.ProdOneSubXPow
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import Mathlib.RingTheory.GradedAlgebra.AlgHom
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 
 /-!
 # Hilbert series of graded polynomial algebras

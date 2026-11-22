@@ -206,10 +206,8 @@ private theorem mem_positive_smul_top_of_coverLift_eq_zero {M : GradedModuleCat.
   obtain ⟨c, hc⟩ := exists_sub_linearCombination_mem hneg he he₀ d x
   set π := (coverLift he₀ d m hm).hom.restrictScalars (SetLike.GradeZero.subalgebra 𝒜)
   have hmap : π (x - Finsupp.linearCombination _ (coverGen he₀ d) c) ∈
-      (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) := by
-    refine Submodule.smul_induction_on hc (fun a ha y _ => ?_) (fun y z hy hz => ?_)
-    · simpa [π] using Submodule.smul_mem_smul ha (Submodule.mem_top (R := k) (x := π y))
-    · simpa only [map_add] using add_mem hy hz
+      (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) :=
+    map_mem_positive_smul_top (coverLift he₀ d m hm) hc
   have hlc : π (Finsupp.linearCombination _ (coverGen he₀ d) c) =
       Finsupp.linearCombination _ m c := by
     rw [Finsupp.apply_linearCombination]

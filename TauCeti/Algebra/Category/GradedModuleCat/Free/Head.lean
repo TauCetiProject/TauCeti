@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.Free
+public import TauCeti.Algebra.Category.GradedModuleCat.Free.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.PieceQuotient
 public import TauCeti.RingTheory.GradedAlgebra.Connected
 import Mathlib.LinearAlgebra.InvariantBasisNumber
@@ -172,30 +172,22 @@ def freePieceQuotientEquiv (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))
     {I : Type uI} (s : I → ℤ) (q : ℤ) [Finite {j : I // s j = q}] :
     PieceQuotient (free 𝒜 s) q ≃ₗ[k] ({j : I // s j = q} → k) :=
-  let f : PieceQuotient (free 𝒜 s) q →ₗ[k] ({j : I // s j = q} → k) :=
-    { toFun := QuotientAddGroup.lift
-        ((positiveSubmodule (free 𝒜 s)).comap (pieceSubmodule (free 𝒜 s) q).subtype).toAddSubgroup
-        ((freeHeadCoord hneg hzero s q).toAddMonoidHom.comp
-          { toFun := fun x ↦ ⟨x.val, x.property⟩
-            map_zero' := rfl
-            map_add' := fun _ _ ↦ rfl })
-        (fun x hx ↦ (freeHeadCoord_eq_zero_iff hneg hzero s q ⟨x.val, x.property⟩).mpr hx)
-      map_add' := map_add _
-      map_smul' := fun c x ↦ by
-        induction x using Submodule.Quotient.induction_on with
-        | _ y =>
-          have hsmul : c • Submodule.Quotient.mk y =
-              (Submodule.Quotient.mk (c • y) : PieceQuotient (free 𝒜 s) q) := rfl
-          rw [hsmul]
-          exact map_smul (freeHeadCoord hneg hzero s q) c ⟨y.val, y.property⟩ }
-  LinearEquiv.ofBijective f
-    ⟨LinearMap.ker_eq_bot.mp <| (Submodule.eq_bot_iff _).mpr fun x hx ↦ by
-      rcases Submodule.Quotient.mk_surjective _ x with ⟨y, rfl⟩
-      rw [Submodule.Quotient.mk_eq_zero, Submodule.mem_comap]
-      exact (freeHeadCoord_eq_zero_iff hneg hzero s q ⟨y.val, y.property⟩).mp hx,
-    fun c ↦ by
-      obtain ⟨y, hy⟩ := freeHeadCoord_surjective hneg hzero s q c
-      exact ⟨Submodule.Quotient.mk ⟨y.val, y.property⟩, hy⟩⟩
+  let P := (positiveSubmodule (free 𝒜 s)).comap (pieceSubmodule (free 𝒜 s) q).subtype
+  let ePiece : pieceSubmodule (free 𝒜 s) q ≃ₗ[k] (free 𝒜 s).grading.piece q :=
+    { toFun := fun x ↦ ⟨x.val, x.property⟩
+      invFun := fun x ↦ ⟨x.val, x.property⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ rfl }
+  let f : pieceSubmodule (free 𝒜 s) q →ₗ[k] ({j : I // s j = q} → k) :=
+    (freeHeadCoord hneg hzero s q).comp ePiece.toLinearMap
+  have hker : P.restrictScalars k = LinearMap.ker f :=
+    Submodule.ext fun x ↦ (freeHeadCoord_eq_zero_iff hneg hzero s q ⟨x.val, x.property⟩).symm
+  have hsurj : Function.Surjective f :=
+    (freeHeadCoord_surjective hneg hzero s q).comp ePiece.surjective
+  (Submodule.Quotient.restrictScalarsEquiv k P).symm.trans
+    ((Submodule.quotEquivOfEq _ _ hker).trans (f.quotKerEquivOfSurjective hsurj))
 
 /-- Applying `freePieceQuotientEquiv` to the class of `x` evaluates `freeHeadCoord`. -/
 @[simp]

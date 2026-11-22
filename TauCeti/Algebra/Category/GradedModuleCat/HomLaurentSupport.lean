@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.Free
+public import TauCeti.Algebra.Category.GradedModuleCat.Free.Basic
 public import TauCeti.Algebra.Homology.EulerCharacteristic.GradedDimension
 public import TauCeti.Algebra.Module.GradedModule.HomogeneousPart
 

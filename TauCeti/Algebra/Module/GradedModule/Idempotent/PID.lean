@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.GradedModule.Idempotent.Basic
-import Mathlib.LinearAlgebra.Projection
+public import Mathlib.LinearAlgebra.Basis.Defs
+public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import Mathlib.RingTheory.Ideal.Span
 import TauCeti.Algebra.Category.GradedModuleCat.Retract.PID
+import TauCeti.Algebra.Module.GradedModule.Idempotent.Basic
 
 /-!
 # Homogeneous splittings and bases of degree-zero idempotents over a PID
@@ -17,8 +19,9 @@ principal ideal domain `k`, and view the finite function module `I → A` (`[Fin
 shifted free graded `A`-module with `j`th summand in shift `s j : ℤ`.
 
 By translating a degree-zero idempotent `p : (I → A) →ₗ[A] (I → A)` into a graded retract of
-`GradedModuleCat.free 𝒜 s` and applying `TauCeti.GradedModuleCat.exists_iso_free_of_retract`, this
-file proves:
+`GradedModuleCat.free 𝒜 s` via `TauCeti.retractRangeOfPiIdempotent` and applying
+`TauCeti.GradedModuleCat.exists_iso_free_of_retract` and
+`TauCeti.GradedModuleCat.exists_homogeneous_basis_of_retract`, this file proves:
 
 * `TauCeti.exists_homogeneous_splitting_of_idempotent_of_connected`: `p` splits homogeneously
   through some `Fin n → A` with shifts `d : Fin n → ℤ` via maps `ι` and `π` satisfying
@@ -41,32 +44,8 @@ namespace TauCeti
 
 universe uk uA uI
 
-section ConnectedPID
-
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
-
-/-- A degree-zero idempotent `p` on `I → A` exhibits `rangeObjOfPiEnd s p hhom` as a graded retract
-of `GradedModuleCat.free 𝒜 s`. -/
-private noncomputable def retractRangeOfPiIdempotent {I : Type uI} [Fintype I] (s : I → ℤ)
-    (p : (I → A) →ₗ[A] (I → A)) (hp : p.comp p = p)
-    (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j)) :
-    Retract (rangeObjOfPiEnd s p hhom) (GradedModuleCat.free 𝒜 s) :=
-  let eF := DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)
-  let p' := freeEndOfPiEnd s p hhom
-  have hp' : IsIdempotentElem p'.hom :=
-    IsIdempotentElem.map (show IsIdempotentElem (p : Module.End A (I → A)) from hp)
-      eF.symm.conjRingEquiv
-  { i := GradedModuleCat.ofHom (LinearMap.range p'.hom).subtype
-      (LinearMap.isHomogeneous_def.mpr fun q x hx ↦ by
-        rw [add_zero]
-        exact (InternalGrading.mem_submodule_piece _ _ _).mp hx)
-    r := GradedModuleCat.ofHom p'.hom.rangeRestrict
-      (LinearMap.isHomogeneous_def.mpr fun q x hx ↦ by
-        rw [add_zero]
-        exact (InternalGrading.mem_submodule_piece _ _ _).mpr (GradedModuleCat.map_mem p' hx))
-    retract := GradedModuleCat.hom_ext <| LinearMap.ext fun z ↦
-      Subtype.ext ((LinearMap.IsIdempotentElem.mem_range_iff hp').mp z.property) }
 
 /-- **Homogeneous splitting of a degree-zero idempotent on a finite shifted free module `I → A`.**
 Over a connected nonnegatively graded algebra `A` over a PID `k`, any degree-zero idempotent
@@ -144,28 +123,19 @@ theorem exists_homogeneous_basis_range_idempotent_of_connected
       (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j)) :
     ∃ (n : ℕ) (b : Module.Basis (Fin n) A (LinearMap.range p)) (d : Fin n → ℤ),
       ∀ i j, (b i).val j ∈ 𝒜 (d i - s j) := by
-  classical
-  obtain ⟨n, d, ι, π, hπι, hιπ, hι_hom, -⟩ :=
-    exists_homogeneous_splitting_of_idempotent_of_connected hneg hzero s p hp hhom
-  have hrange : LinearMap.range ι = LinearMap.range p := by
-    rw [← hιπ, LinearMap.range_comp_of_range_eq_top _
-      (LinearMap.range_eq_top.mpr (Function.LeftInverse.surjective (f := π) (g := ι)
-        (LinearMap.congr_fun hπι)))]
-  let equivRange : (Fin n → A) ≃ₗ[A] LinearMap.range p :=
-    (LinearEquiv.ofLeftInverse (LinearMap.congr_fun hπι)).trans (LinearEquiv.ofEq _ _ hrange)
-  let b : Module.Basis (Fin n) A (LinearMap.range p) :=
-    (Pi.basisFun A (Fin n)).map equivRange
-  refine ⟨n, b, d, fun i j ↦ ?_⟩
-  have hb_eq : (b i).val = ι (Pi.single i 1) := by
-    simp only [b, equivRange, Module.Basis.map_apply, Pi.basisFun_apply]
-    rfl
-  rw [hb_eq]
-  refine hι_hom (d i) (Pi.single i 1) (fun t ↦ ?_) j
-  by_cases hti : t = i
-  · subst hti
-    simpa using SetLike.GradedOne.one_mem (A := 𝒜)
-  · simp [Pi.single_eq_of_ne hti]
-
-end ConnectedPID
+  cases nonempty_fintype I
+  obtain ⟨n, b, d, hb⟩ :=
+    GradedModuleCat.exists_homogeneous_basis_of_retract hneg hzero
+      (retractRangeOfPiIdempotent s p hp hhom)
+  let equivRange := rangeEquivRangeObj s p hhom
+  refine ⟨n, b.map equivRange.symm, d, fun i ↦ ?_⟩
+  have hval : (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm
+      (b.map equivRange.symm i).val = (b i).val := by
+    change (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm
+      (equivRange.symm (b i)).val = (b i).val
+    rw [← coe_rangeEquivRangeObj_apply s p hhom (equivRange.symm (b i)),
+      equivRange.apply_symm_apply]
+  exact (GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 s (d i) _).mp
+    (hval ▸ (InternalGrading.mem_submodule_piece _ _ _).mp (hb i))
 
 end TauCeti

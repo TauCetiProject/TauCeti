@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import Mathlib.CategoryTheory.Adjunction.Basic
-public import TauCeti.Algebra.Category.GradedModuleCat.Free
+public import TauCeti.Algebra.Category.GradedModuleCat.Free.Basic
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Projective
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Homotopy
 import TauCeti.Algebra.Module.GradedModule.Prod

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.DualNumber
 public import TauCeti.Algebra.Category.GradedModuleCat.Concentrated
-public import TauCeti.Algebra.Category.GradedModuleCat.Free
+public import TauCeti.Algebra.Category.GradedModuleCat.Free.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.Head
 public import TauCeti.Algebra.Category.GradedModuleCat.MinimalResolution
 public import TauCeti.Algebra.DualNumber.Basic

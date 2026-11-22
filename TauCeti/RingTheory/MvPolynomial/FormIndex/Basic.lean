@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import TauCeti.Data.Finsupp.ENNReal
 public import TauCeti.RingTheory.MvPolynomial.MultiHomogeneous
-public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 
 /-!
 # The index of a polynomial along linear forms

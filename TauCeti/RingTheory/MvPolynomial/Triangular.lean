@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.AlgebraicIndependent.Defs
 public import TauCeti.RingTheory.MvPolynomial.Ideal
 public import TauCeti.RingTheory.MvPolynomial.RegularSequence
-public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 import Mathlib.RingTheory.AlgebraicIndependent.Basic
 
 /-!

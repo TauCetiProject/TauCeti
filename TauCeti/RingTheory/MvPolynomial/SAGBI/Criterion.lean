@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Subduction
 public import TauCeti.RingTheory.MvPolynomial.ToricIdeal.Basic
-public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 
 /-!
 # The SAGBI criterion for monic families
