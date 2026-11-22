@@ -78,8 +78,9 @@ derivative in `x` of the `r`-th iterated derivative within `[a, b]` in `t`
 * `TauCeti.ParabolicCkHolderSpace.norm_eq`,
   `TauCeti.ParabolicCkHolderSpace.timeEHolderNorm_mixedDerivL_le` and
   `TauCeti.ParabolicCkHolderSpace.norm_timeSliceL_le_norm_mixedDerivL_add_timeEHolderNorm`: the
-  norm as a sum of field norms and the two-sided comparison of the time-slice norms with the
-  temporal `(1 + α) / 2`-seminorms.
+  norm as a sum of field norms, over the `TauCeti.parabolicDerivPairs k`, at most `(k + 1)²` pairs
+  (`TauCeti.card_parabolicDerivPairs_le`), and the two-sided comparison of the time-slice norms
+  with the temporal `(1 + α) / 2`-seminorms.
 
 ## References
 
@@ -591,7 +592,8 @@ private theorem iteratedDerivWithin_toFun (f : ParabolicCkHolderSpace k α E F h
       hd'.derivWithin (uniqueDiffOn_Icc hab s hs)]
     simp only [ParabolicC2HolderSpace.timeExtension_def, projIcc_of_mem hab.le hs]
 
-/-- The recorded spatial derivatives of `D_t^r u` form a Taylor series up to order `k - 2 r`. -/
+/-- The recorded spatial derivatives of `D_t^r u` form a Taylor series up to order `k - 2 r`: the
+fields `D_t^r D_x^m u` on a time slice are the spatial derivatives of `D_t^r u`. -/
 theorem hasFTaylorSeriesUpTo_mixedDerivL (f : ParabolicCkHolderSpace k α E F hab) (r : ℕ)
     (t : Icc a b) :
     HasFTaylorSeriesUpTo ((k - 2 * r : ℕ) : WithTop ℕ∞)
@@ -605,7 +607,7 @@ theorem hasFTaylorSeriesUpTo_mixedDerivL (f : ParabolicCkHolderSpace k α E F ha
     (continuous_id.prodMk continuous_const))
 
 /-- The spatial derivatives of `D_t^r u` are the fields `D_t^r D_x^m u`. -/
-private theorem iteratedFDeriv_mixedDerivL_zero (f : ParabolicCkHolderSpace k α E F hab)
+theorem iteratedFDeriv_mixedDerivL_zero (f : ParabolicCkHolderSpace k α E F hab)
     {r m : ℕ} (h : 2 * r + m ≤ k) (x : E) (t : Icc a b) :
     iteratedFDeriv ℝ m (fun y ↦ (mixedDerivL r 0 f (slabMk y t)).curry0) x =
       mixedDerivL r m f (slabMk x t) :=
@@ -729,6 +731,15 @@ theorem coe_add (f g : ParabolicCkHolderSpace k α E F hab) : ⇑(f + g) = f + g
 theorem coe_smul (c : ℝ) (f : ParabolicCkHolderSpace k α E F hab) : ⇑(c • f) = c • ⇑f := by
   ext p
   simp [← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply, -mixedDerivL_zero_zero_apply]
+
+@[simp]
+theorem coe_neg (f : ParabolicCkHolderSpace k α E F hab) : ⇑(-f) = -⇑f := by
+  ext p
+  simp [← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply, -mixedDerivL_zero_zero_apply]
+
+@[simp]
+theorem coe_sub (f g : ParabolicCkHolderSpace k α E F hab) : ⇑(f - g) = f - g := by
+  rw [sub_eq_add_neg, coe_add, coe_neg, sub_eq_add_neg]
 
 /-- Forgetting the derivatives is a continuous linear map into bounded continuous maps on the
 slab, obtained by reading the order-zero field as an `F`-valued map. -/

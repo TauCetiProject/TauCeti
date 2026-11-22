@@ -11,12 +11,17 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.MetricSpace.Contracting
+import TauCeti.Algebra.Ring.CayleyChart
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Complex.Pompeiu.Basic
 import TauCeti.Analysis.Complex.Pompeiu.Holder.Operator
-import TauCeti.Analysis.Complex.Wirtinger.Basic
+import TauCeti.Analysis.Complex.Pompeiu.Rotation
+public import TauCeti.Analysis.Complex.Wirtinger.Basic
 import TauCeti.Analysis.Holder.Bilinear
 import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -28,8 +33,10 @@ centred at a point where it is standard. This file solves the nonlinear Cauchy�
 
 `∂ₛu + J(u) ∂ₜu = 0`
 
-for maps `u` from a disc in `ℂ = {s + i t}` to `F`. The theorems are stated for this equation and
-an arbitrary field `J`. When every `J(x)` is an almost complex structure, `J(x)² = -1`, a solution
+for maps `u` from a disc in `ℂ = {s + i t}` to `F`. The two non-equivariant theorems are stated
+for this equation and an arbitrary field `J`; the equivariant family theorem also needs
+`J(x)² = -1` near `0`, and the Beltrami theorem is stated for the equation `\bar∂u = Q(u) ∂u`
+below. When every `J(x)` is an almost complex structure, `J(x)² = -1`, a solution
 is `J`-holomorphic for the standard structure of `ℂ` in the sense of `TauCeti.IsJHolomorphicAt`
 (`TauCeti.isJHolomorphicAt_iff_fderiv_one_add_apply_fderiv_I_eq_zero`).
 Through the centre `0` there is a solution in every complex direction: for every `ξ ∈ F` there is
@@ -37,24 +44,49 @@ a `C¹` solution near `0` with `u(0) = 0` and `∂ₛu(0) = ξ`
 (`TauCeti.exists_fderiv_one_add_apply_fderiv_I_eq_zero_of_contDiffAt`).
 
 The proof is a contraction for the Cauchy transform `T h(w) = π⁻¹ ∫ (w - z)⁻¹ h(z) dz`
-(`TauCeti.cauchyTransform`), which satisfies `\bar∂ T h = h`. Write `J(x) = i + K(x)` with
-`K(0) = 0`. The equation becomes
-`2 \bar∂u = -K(u) ∂ₜu`, and its solutions with the prescribed centre and first jet are sought as
+(`TauCeti.cauchyTransform`), which satisfies `\bar∂ T h = h`. The equation is written as
+`\bar∂u = K(u) ℓ(Du)` for a coefficient `K : F → (F →L[ℝ] F)` with `K(0) = 0` and a real-linear
+`ℓ` of norm at most `1` applied to the derivative `Du`. Its solutions with the prescribed centre
+and first jet are sought as
 
 `u(w) = w ξ + T h(w) - T h(0) - w · ∂ₛ(T h)(0)`,
 
 whose centre and first jet do not depend on the source `h`, because the subtracted terms are
-holomorphic. The source solves the fixed-point equation `h = χ · (-K(u) ∂ₜu / 2)` with the radial
+holomorphic. The source solves the fixed-point equation `h = χ · K(u) ℓ(Du)` with the radial
 cutoff `χ(z) = min 1 (max 0 (2 - 2|z|))`, equal to `1` on `|z| ≤ 1/2` and vanishing off the unit
 disc. On the Banach space of `1/2`-Hölder sources supported in the unit disc the right side is a
-contraction near `0` as soon as the first derivative of `K` and the Lipschitz constant of that
-derivative are small on a fixed ball
-(`TauCeti.exists_pos_forall_exists_fderiv_one_add_apply_fderiv_I_eq_zero`): the Cauchy transform
-gains a derivative in Hölder norm (`TauCeti.cauchyDerivativeCLM`), so `∂ₜu` is Hölder, and the
-Lipschitz bounds on `K` and its derivative make `h ↦ K(u)` Lipschitz in the Hölder norm. On
-`|w| < 1/2`, where `χ = 1`, the fixed point solves the equation. A `C²` structure has these
-smallness properties after rescaling `x ↦ J(λ x)` with small `λ`, which gives the local theorem for
-every `ξ`.
+contraction with constant `1/2` on a fixed ball of sources as soon as the first derivative of `K`
+and the Lipschitz constant of that derivative are small on a fixed ball of `F`: the Cauchy
+transform gains a derivative in Hölder norm (`TauCeti.cauchyDerivativeCLM`), so `Du` is Hölder,
+and the Lipschitz bounds on `K` and its derivative make `h ↦ K(u)` Lipschitz in the Hölder norm.
+So the source is unique in that ball. On `|w| < 1/2`, where `χ = 1`, the fixed point solves the
+equation.
+
+Two forms of the equation are used.
+
+* With `J(x) = i + K(x)`, the equation `∂ₛu + J(u) ∂ₜu = 0` reads `\bar∂u = K(u) (-∂ₜu / 2)`
+  (`TauCeti.exists_pos_forall_exists_fderiv_one_add_apply_fderiv_I_eq_zero`).
+* The **Beltrami form** `\bar∂u = Q(u) ∂u`, with `∂u = (∂ₛu - i ∂ₜu) / 2`
+  (`TauCeti.exists_pos_forall_exists_conjWirtingerDeriv_eq_apply_wirtingerDeriv_and_apply_smul_eq`).
+  For `J(x)² = -1` with `i + J(x)` invertible it is equivalent to `∂ₛu + J(u) ∂ₜu = 0` when
+  `Q = (J + i)⁻¹ (i - J)` is the Beltrami coefficient of `J`, minus its Cayley coordinate
+  `TauCeti.cayleyCoord i J` relative to `i`, which is conjugate linear
+  (`TauCeti.cayleyCoord_mul_eq_neg_mul`). Both forms have the same solutions, and these are
+  preserved by rotations `w ↦ c w` of the domain with `|c| = 1`. What the Beltrami form adds is
+  that, for conjugate-linear `Q`, its right side `Q(u) ∂u` is compatible with the source rotation
+  `h ↦ c⁻¹ h(c ·)`, unlike `K(u) (-∂ₜu / 2)`, so the fixed-point map commutes with it.
+  The cutoff `χ` and the Cauchy transform (`TauCeti.cauchyTransform_comp_mul_left`) are rotation
+  invariant too, so `z ↦ c⁻¹ h(c z)` is the source of the disc with first jet `c ξ`, and by
+  uniqueness of the source the discs satisfy `u_{c ξ}(w) = u_ξ(c w)`.
+
+A `C²` structure has the smallness properties after rescaling `x ↦ J(λ x)` with small `λ`, which
+gives the local theorem for every `ξ`
+(`TauCeti.exists_fderiv_one_add_apply_fderiv_I_eq_zero_of_contDiffAt`) and, through the Beltrami
+form, a rotation-equivariant family of discs through `0` in every direction with a common radius
+(`TauCeti.exists_pos_exists_forall_fderiv_one_add_apply_fderiv_I_eq_zero_and_apply_smul_eq`).
+This equivariance is the `U(1)` normal-frame equivariance of the normal disc families used to
+foliate a neighbourhood of a pseudoholomorphic curve in the large-parameter analysis of the
+Seiberg–Witten equations.
 
 The contraction adapts the small-coefficient Beltrami fixed point
 `TauCeti.exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv`
@@ -71,8 +103,14 @@ for `h ↦ K(u)` is the second-difference estimate
   derivative and its Lipschitz constant are small on the ball of radius `4`, a solution on
   `|w| < 1/2` with `u(0) = 0`, `∂ₛu(0) = ξ` for each `‖ξ‖ ≤ 1`, which is `C¹` on `|w| < 2` and has
   values of norm at most `2` on the unit disc.
+* `TauCeti.exists_pos_forall_exists_conjWirtingerDeriv_eq_apply_wirtingerDeriv_and_apply_smul_eq`:
+  the same for the Beltrami equation `\bar∂u = Q(u) ∂u` with a small conjugate-linear
+  coefficient, as a family `u_ξ` with `u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1`.
 * `TauCeti.exists_fderiv_one_add_apply_fderiv_I_eq_zero_of_contDiffAt`: for a structure of class
   `C²` near `0`, a solution near `0` with `u(0) = 0` and `∂ₛu(0) = ξ`, for every `ξ`.
+* `TauCeti.exists_pos_exists_forall_fderiv_one_add_apply_fderiv_I_eq_zero_and_apply_smul_eq`: for
+  an almost complex structure of class `C²` near `0`, a family of such discs `u_ξ`, `‖ξ‖ ≤ 1`, on a
+  common disc, with `u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1`.
 
 ## References
 
@@ -82,6 +120,8 @@ for `h ↦ K(u)` is the second-difference estimate
   *Holomorphic curves in symplectic geometry*, Progr. Math. 117, Birkhäuser, 1994, 165–189.
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
   AMS Colloquium Publications 52, 2012, Appendix E.
+* C. H. Taubes, *SW ⇒ Gr: from the Seiberg–Witten equations to pseudo-holomorphic curves*,
+  J. Amer. Math. Soc. 9 (1996), 845–918.
 -/
 
 public section
@@ -89,7 +129,7 @@ public section
 noncomputable section
 
 open Complex Metric Set Function
-open scoped NNReal BoundedContinuousFunction
+open scoped NNReal BoundedContinuousFunction Topology
 
 namespace TauCeti
 
@@ -105,6 +145,11 @@ private theorem discCutoff_eq_one {z : ℂ} (hz : ‖z‖ ≤ 2⁻¹) : discCuto
 
 private theorem discCutoff_eq_zero {z : ℂ} (hz : 1 ≤ ‖z‖) : discCutoff z = 0 := by
   rw [discCutoff, projIcc_of_le_left _ (by linarith)]
+
+/-- The cutoff is invariant under rotations `z ↦ c z`, `|c| = 1`. -/
+private theorem discCutoff_mul_left {c : ℂ} (hc : ‖c‖ = 1) (z : ℂ) :
+    discCutoff (c * z) = discCutoff z := by
+  simp [discCutoff, hc]
 
 private theorem norm_discCutoff_le (z : ℂ) : ‖discCutoff z‖ ≤ 1 := by
   have h := (projIcc (0 : ℝ) 1 zero_le_one (2 - 2 * ‖z‖)).property
@@ -171,6 +216,18 @@ private theorem hasFDerivAt_discMap (ξ : F) {h : ℂ → F} {z : ℂ}
         (ContinuousLinearMap.id ℝ ℂ).smulRight (fderiv ℝ (cauchyTransform h) 0 1)) z :=
   ((((hasFDerivAt_id z).smul_const ξ).add hT.hasFDerivAt).sub_const _).sub
     ((hasFDerivAt_id z).smul_const _)
+
+/-- The terms of the disc other than `T h` are complex linear in `w`, so the disc has the
+conjugate Wirtinger derivative of `T h`. -/
+private theorem conjWirtingerDeriv_discMap (ξ : F) {h : ℂ → F} {z : ℂ}
+    (hT : DifferentiableAt ℝ (cauchyTransform h) z) :
+    conjWirtingerDeriv (discMap ξ h) z 1 = conjWirtingerDeriv (cauchyTransform h) z 1 := by
+  rw [conjWirtingerDeriv_apply, conjWirtingerDeriv_apply, (hasFDerivAt_discMap ξ hT).fderiv]
+  congr 1
+  simp only [add_apply, sub_apply, ContinuousLinearMap.smulRight_apply,
+    ContinuousLinearMap.id_apply, one_smul, smul_eq_mul, mul_one, smul_add, smul_sub, smul_smul,
+    I_mul_I, neg_one_smul]
+  abel
 
 private theorem norm_id_smulRight_le (a : F) :
     ‖(ContinuousLinearMap.id ℝ ℂ).smulRight a‖ ≤ ‖a‖ :=
@@ -253,12 +310,7 @@ private theorem norm_fderiv_discMap_sub_le (ξ : F) (f g : Source F) {z : ℂ}
   have h3 : ‖(ContinuousLinearMap.id ℝ ℂ).smulRight (derivOp F f centre 1) -
       (ContinuousLinearMap.id ℝ ℂ).smulRight (derivOp F g centre 1)‖ ≤
         ‖derivOp F f centre 1 - derivOp F g centre 1‖ := by
-    have hsub : (ContinuousLinearMap.id ℝ ℂ).smulRight (derivOp F f centre 1) -
-        (ContinuousLinearMap.id ℝ ℂ).smulRight (derivOp F g centre 1) =
-          (ContinuousLinearMap.id ℝ ℂ).smulRight (derivOp F f centre 1 - derivOp F g centre 1) := by
-      ext v
-      simp [smul_sub]
-    rw [hsub]
+    rw [← ContinuousLinearMap.coe_smulRightₗ (T := ℝ), ← map_sub]
     exact norm_id_smulRight_le _
   simp only [map_sub, HolderSpace.sub_apply, sub_apply] at h1 h2
   calc _ = ‖(derivOp F f ⟨z, hz⟩ - derivOp F g ⟨z, hz⟩) -
@@ -330,19 +382,19 @@ private theorem norm_le_of_lipschitz {E : Type*} [NormedAddCommGroup E] [NormedS
   push_cast [Real.coe_toNNReal _ hL0, Real.coe_toNNReal _ hM0]
   linarith
 
-variable (ξ : F) (J : F → F →L[ℝ] F)
+variable (ℓ : (ℂ →L[ℝ] F) →L[ℝ] F) (K : F → F →L[ℝ] F) (ξ : F)
 
-/-- The coefficient `z ↦ J(u(z)) - J(0)` along the disc `u` of a source, on the unit disc. -/
+/-- The coefficient `z ↦ K(u(z))` along the disc `u` of a source, on the unit disc. -/
 private def kFun (f : Source F) (z : closedBall (0 : ℂ) 1) : F →L[ℝ] F :=
-  J (discMap ξ ⇑f.val z) - J 0
+  K (discMap ξ ⇑f.val z)
 
 open Classical in
 /-- The coefficient `kFun` as a `1/2`-Hölder field when it is one, and `0` otherwise. -/
 private def kField (f : Source F) :
     HolderSpace (2⁻¹ : ℝ≥0) (closedBall (0 : ℂ) 1) (F →L[ℝ] F) :=
-  if h : ∃ p : ℝ≥0 × ℝ, HolderWith p.1 (2⁻¹ : ℝ≥0) (kFun ξ J f) ∧ ∀ z, ‖kFun ξ J f z‖ ≤ p.2 then
+  if h : ∃ p : ℝ≥0 × ℝ, HolderWith p.1 (2⁻¹ : ℝ≥0) (kFun K ξ f) ∧ ∀ z, ‖kFun K ξ f z‖ ≤ p.2 then
     HolderSpace.ofBoundedContinuousFunction
-      (BoundedContinuousFunction.ofNormedAddCommGroup (kFun ξ J f)
+      (BoundedContinuousFunction.ofNormedAddCommGroup (kFun K ξ f)
         ((Classical.choose_spec h).1.continuous hα₀) _ (Classical.choose_spec h).2)
       (by
         rw [BoundedContinuousFunction.coe_ofNormedAddCommGroup]
@@ -351,68 +403,72 @@ private def kField (f : Source F) :
 
 omit [FiniteDimensional ℂ F] in
 private theorem kField_apply {f : Source F} {C : ℝ≥0} {M : ℝ}
-    (hH : HolderWith C (2⁻¹ : ℝ≥0) (kFun ξ J f)) (hM : ∀ z, ‖kFun ξ J f z‖ ≤ M)
-    (z : closedBall (0 : ℂ) 1) : kField ξ J f z = kFun ξ J f z := by
+    (hH : HolderWith C (2⁻¹ : ℝ≥0) (kFun K ξ f)) (hM : ∀ z, ‖kFun K ξ f z‖ ≤ M)
+    (z : closedBall (0 : ℂ) 1) : kField K ξ f z = kFun K ξ f z := by
   rw [kField, dite_eq_left_of_eq_true (eq_true ⟨(C, M), hH, hM⟩),
     HolderSpace.ofBoundedContinuousFunction_apply,
     BoundedContinuousFunction.coe_ofNormedAddCommGroup]
 
-/-- The field `z ↦ ∂ₜu(z)` of the disc `u` of a source, on the unit disc. -/
+/-- The field `z ↦ ℓ(Du(z))` of the disc `u` of a source, on the unit disc. -/
 private def wField (f : Source F) : HolderSpace (2⁻¹ : ℝ≥0) (closedBall (0 : ℂ) 1) F :=
-  HolderSpace.const (I • ξ) +
-    (ContinuousLinearMap.id ℝ (ℂ →L[ℝ] F)).compHolder₂ (derivOp F f) (HolderSpace.const I) -
-    HolderSpace.const (I • derivOp F f centre 1)
+  HolderSpace.const (ℓ ((ContinuousLinearMap.id ℝ ℂ).smulRight ξ)) +
+    HolderSpace.compLeftL ℓ (derivOp F f) -
+    HolderSpace.const (ℓ ((ContinuousLinearMap.id ℝ ℂ).smulRight (derivOp F f centre 1)))
 
 private theorem wField_apply (f : Source F) (z : closedBall (0 : ℂ) 1) :
-    wField ξ f z = fderiv ℝ (discMap ξ ⇑f.val) z I := by
+    wField ℓ ξ f z = ℓ (fderiv ℝ (discMap ξ ⇑f.val) z) := by
   rw [fderiv_discMap ξ f z.property]
-  simp [wField, ContinuousLinearMap.compHolder₂_apply, HolderSpace.const_apply]
+  simp [wField, HolderSpace.compLeftL_apply, HolderSpace.const_apply]
 
-private theorem norm_const_I_le :
-    ‖(HolderSpace.const I : HolderSpace (2⁻¹ : ℝ≥0) (closedBall (0 : ℂ) 1) ℂ)‖ ≤ 1 :=
-  (HolderSpace.norm_const_le _).trans_eq norm_I
-
-/-- The part `z ↦ D(T f)(z) i - i ∂ₛ(T f)(0)` of `∂ₜu` that depends on the source is bounded by
-`2 ‖D‖ ‖f‖`. -/
-private theorem norm_compHolder₂_sub_const_le (f : Source F) :
-    ‖(ContinuousLinearMap.id ℝ (ℂ →L[ℝ] F)).compHolder₂ (derivOp F f) (HolderSpace.const I) -
-      HolderSpace.const (I • derivOp F f centre 1)‖ ≤ 2 * ‖derivOp F‖ * ‖f‖ := by
-  have h2 : ‖(ContinuousLinearMap.id ℝ (ℂ →L[ℝ] F)).compHolder₂ (derivOp F f)
-      (HolderSpace.const I)‖ ≤ ‖derivOp F‖ * ‖f‖ :=
-    (ContinuousLinearMap.norm_id_compHolder₂_apply_le _ _).trans <| by
-      simpa using mul_le_mul ((derivOp F).le_opNorm f) norm_const_I_le (norm_nonneg _)
-        (by positivity)
-  have h3 : ‖(HolderSpace.const (I • derivOp F f centre 1) :
-      HolderSpace (2⁻¹ : ℝ≥0) (closedBall (0 : ℂ) 1) F)‖ ≤ ‖derivOp F‖ * ‖f‖ :=
-    (HolderSpace.norm_const_le _).trans (by
-      rw [norm_smul, norm_I, one_mul]; exact norm_derivOp_apply_one_le f centre)
+variable {ℓ} in
+/-- The part `z ↦ ℓ(D(T f)(z)) - ℓ(∂ₛ(T f)(0))` of `ℓ(Du)` that depends on the source is bounded
+by `2 ‖D‖ ‖f‖` when `‖ℓ‖ ≤ 1`. -/
+private theorem norm_compLeftL_sub_const_le (hℓ : ‖ℓ‖ ≤ 1) (f : Source F) :
+    ‖HolderSpace.compLeftL ℓ (derivOp F f) -
+      HolderSpace.const (ℓ ((ContinuousLinearMap.id ℝ ℂ).smulRight (derivOp F f centre 1)))‖ ≤
+        2 * ‖derivOp F‖ * ‖f‖ := by
+  have h1 : ‖HolderSpace.compLeftL ℓ (derivOp F f)‖ ≤ ‖derivOp F‖ * ‖f‖ :=
+    ((HolderSpace.compLeftL ℓ).le_opNorm _).trans <| by
+      calc _ ≤ 1 * (‖derivOp F‖ * ‖f‖) :=
+            mul_le_mul ((HolderSpace.norm_compLeftL_le ℓ).trans hℓ)
+              ((derivOp F).le_opNorm f) (norm_nonneg _) zero_le_one
+        _ = _ := one_mul _
+  have h2 : ‖(HolderSpace.const (ℓ ((ContinuousLinearMap.id ℝ ℂ).smulRight
+      (derivOp F f centre 1))) : HolderSpace (2⁻¹ : ℝ≥0) (closedBall (0 : ℂ) 1) F)‖ ≤
+        ‖derivOp F‖ * ‖f‖ :=
+    (HolderSpace.norm_const_le _).trans <| (ℓ.le_opNorm _).trans <|
+      (mul_le_of_le_one_left (norm_nonneg _) hℓ).trans <|
+        (norm_id_smulRight_le _).trans (norm_derivOp_apply_one_le f centre)
   exact (norm_sub_le _ _).trans (by linarith)
 
-private theorem norm_wField_le (f : Source F) :
-    ‖wField ξ f‖ ≤ ‖ξ‖ + 2 * ‖derivOp F‖ * ‖f‖ := by
-  have h1 : ‖(HolderSpace.const (I • ξ) :
+variable {ℓ} in
+private theorem norm_wField_le (hℓ : ‖ℓ‖ ≤ 1) (f : Source F) :
+    ‖wField ℓ ξ f‖ ≤ ‖ξ‖ + 2 * ‖derivOp F‖ * ‖f‖ := by
+  have h1 : ‖(HolderSpace.const (ℓ ((ContinuousLinearMap.id ℝ ℂ).smulRight ξ)) :
       HolderSpace (2⁻¹ : ℝ≥0) (closedBall (0 : ℂ) 1) F)‖ ≤ ‖ξ‖ :=
-    (HolderSpace.norm_const_le _).trans_eq (by rw [norm_smul, norm_I, one_mul])
+    (HolderSpace.norm_const_le _).trans <| (ℓ.le_opNorm _).trans <|
+      (mul_le_of_le_one_left (norm_nonneg _) hℓ).trans (norm_id_smulRight_le ξ)
   rw [wField, add_sub_assoc]
-  exact (norm_add_le _ _).trans (add_le_add h1 (norm_compHolder₂_sub_const_le f))
+  exact (norm_add_le _ _).trans (add_le_add h1 (norm_compLeftL_sub_const_le hℓ f))
 
-private theorem norm_wField_sub_le (f g : Source F) :
-    ‖wField ξ f - wField ξ g‖ ≤ 2 * ‖derivOp F‖ * ‖f - g‖ := by
-  have heq : wField ξ f - wField ξ g =
-      (ContinuousLinearMap.id ℝ (ℂ →L[ℝ] F)).compHolder₂ (derivOp F (f - g))
-        (HolderSpace.const I) - HolderSpace.const (I • derivOp F (f - g) centre 1) :=
+variable {ℓ} in
+private theorem norm_wField_sub_le (hℓ : ‖ℓ‖ ≤ 1) (f g : Source F) :
+    ‖wField ℓ ξ f - wField ℓ ξ g‖ ≤ 2 * ‖derivOp F‖ * ‖f - g‖ := by
+  have heq : wField ℓ ξ f - wField ℓ ξ g =
+      HolderSpace.compLeftL ℓ (derivOp F (f - g)) -
+        HolderSpace.const (ℓ ((ContinuousLinearMap.id ℝ ℂ).smulRight
+          (derivOp F (f - g) centre 1))) :=
     HolderSpace.ext fun z ↦ by
       simp only [wField, map_sub, HolderSpace.sub_apply, HolderSpace.add_apply,
-        ContinuousLinearMap.compHolder₂_apply, HolderSpace.const_apply, sub_apply, smul_sub,
-        ContinuousLinearMap.id_apply]
+        HolderSpace.compLeftL_apply, HolderSpace.const_apply, sub_apply,
+        ← ContinuousLinearMap.coe_smulRightₗ (T := ℝ)]
       abel
   rw [heq]
-  exact norm_compHolder₂_sub_const_le (f - g)
+  exact norm_compLeftL_sub_const_le hℓ (f - g)
 
-/-- The right side `z ↦ -K(u(z)) ∂ₜu(z) / 2` of the equation `\bar∂u = -K(u) ∂ₜu / 2`, where
-`K = J - J(0)`. -/
+/-- The right side `z ↦ K(u(z)) ℓ(Du(z))` of the equation `\bar∂u = K(u) ℓ(Du)`. -/
 private def gField (f : Source F) : HolderSpace (2⁻¹ : ℝ≥0) (closedBall (0 : ℂ) 1) F :=
-  (-(2 : ℝ)⁻¹) • (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).compHolder₂ (kField ξ J f) (wField ξ f)
+  (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).compHolder₂ (kField K ξ f) (wField ℓ ξ f)
 
 variable (F) in
 /-- The bilinear map `(v, t) ↦ t v`. -/
@@ -424,12 +480,12 @@ private theorem norm_smulPair_le : ‖smulPair F‖ ≤ 1 := by
   rw [smulPair, ContinuousLinearMap.opNorm_flip]
   exact ContinuousLinearMap.opNorm_lsmul_le
 
-/-- The fixed-point map `f ↦ χ · (-K(u) ∂ₜu / 2)` on sources, with the radial cutoff `χ`. -/
+/-- The fixed-point map `f ↦ χ · K(u) ℓ(Du)` on sources, with the radial cutoff `χ`. -/
 private def fixedPointMap (f : Source F) : Source F :=
-  (smulPair F).compHolder₂ExtendByZero (cutoffHolder hα₁.le) (gField ξ J f)
+  (smulPair F).compHolder₂ExtendByZero (cutoffHolder hα₁.le) (gField ℓ K ξ f)
 
 private theorem fixedPointMap_apply (f : Source F) {z : ℂ} (hz : z ∈ closedBall (0 : ℂ) 1) :
-    (fixedPointMap ξ J f).val z = discCutoff z • gField ξ J f ⟨z, hz⟩ := by
+    (fixedPointMap ℓ K ξ f).val z = discCutoff z • gField ℓ K ξ f ⟨z, hz⟩ := by
   rw [fixedPointMap, ContinuousLinearMap.compHolder₂ExtendByZero_apply_of_mem _ _ _ hz,
     cutoffHolder_apply, smulPair, ContinuousLinearMap.flip_apply,
     ContinuousLinearMap.lsmul_apply]
@@ -444,20 +500,20 @@ private theorem norm_cutoffMul_le :
     (mul_le_of_le_one_left (norm_nonneg _) norm_smulPair_le)
 
 private theorem norm_fixedPointMap_sub_le (f g : Source F) :
-    ‖fixedPointMap ξ J f - fixedPointMap ξ J g‖ ≤
-      ‖cutoffHolder (α := 2⁻¹) hα₁.le‖ * ‖gField ξ J f - gField ξ J g‖ := by
+    ‖fixedPointMap ℓ K ξ f - fixedPointMap ℓ K ξ g‖ ≤
+      ‖cutoffHolder (α := 2⁻¹) hα₁.le‖ * ‖gField ℓ K ξ f - gField ℓ K ξ g‖ := by
   rw [fixedPointMap, fixedPointMap, ← map_sub]
   exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr; exact norm_cutoffMul_le)
 
 private theorem norm_fixedPointMap_le (f : Source F) :
-    ‖fixedPointMap ξ J f‖ ≤ ‖cutoffHolder (α := 2⁻¹) hα₁.le‖ * ‖gField ξ J f‖ :=
+    ‖fixedPointMap ℓ K ξ f‖ ≤ ‖cutoffHolder (α := 2⁻¹) hα₁.le‖ * ‖gField ℓ K ξ f‖ :=
   (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr; exact norm_cutoffMul_le)
 
 /-! ### Estimates on the ball of small sources -/
 
 section Estimates
 
-variable {ξ J} {η : ℝ}
+variable {ℓ K ξ} {η : ℝ}
 
 /-- A small source gives a disc of norm at most `2` on the unit disc. -/
 private theorem norm_discMap_le (hξ : ‖ξ‖ ≤ 1) {f : Source F} (hf : 2 * ‖derivOp F‖ * ‖f‖ ≤ 1)
@@ -481,60 +537,59 @@ private theorem add_mem_closedBall_four {x y : F} (hx : ‖x‖ ≤ 2) (hy : ‖
 
 omit [FiniteDimensional ℂ F] in
 private theorem nonneg_of_norm_fderiv_le
-    (h1 : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ J x‖ ≤ η) : 0 ≤ η :=
-  (norm_nonneg (fderiv ℝ J 0)).trans (h1 0 (mem_closedBall_self (by norm_num)))
+    (h1 : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ K x‖ ≤ η) : 0 ≤ η :=
+  (norm_nonneg (fderiv ℝ K 0)).trans (h1 0 (mem_closedBall_self (by norm_num)))
 
 /-- For a small source the coefficient `K(u)` is bounded by `2 η` and `2 η`-Lipschitz on the
 unit disc. -/
-private theorem kFun_bounds (hξ : ‖ξ‖ ≤ 1)
-    (hd : ∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ J x)
-    (h1 : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ J x‖ ≤ η) {f : Source F}
+private theorem kFun_bounds (hξ : ‖ξ‖ ≤ 1) (hK0 : K 0 = 0)
+    (hd : ∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ K x)
+    (h1 : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ K x‖ ≤ η) {f : Source F}
     (hf : 2 * ‖derivOp F‖ * ‖f‖ ≤ 1) :
-    (∀ z, ‖kFun ξ J f z‖ ≤ 2 * η) ∧
-      ∀ z w, ‖kFun ξ J f z - kFun ξ J f w‖ ≤ 2 * η * ‖(z : ℂ) - w‖ := by
+    (∀ z, ‖kFun K ξ f z‖ ≤ 2 * η) ∧
+      ∀ z w, ‖kFun K ξ f z - kFun K ξ f w‖ ≤ 2 * η * ‖(z : ℂ) - w‖ := by
   have hη : 0 ≤ η := nonneg_of_norm_fderiv_le h1
   have hu : ∀ z : closedBall (0 : ℂ) 1, discMap ξ ⇑f.val z ∈ closedBall (0 : F) 4 := fun z ↦
     mem_closedBall_four (norm_discMap_le hξ hf z.property)
   refine ⟨fun z ↦ ?_, fun z w ↦ ?_⟩
   · have h := norm_sub_le_of_norm_fderiv_le hd h1 (hu z) (mem_closedBall_self (by norm_num))
-    rw [sub_zero] at h
+    rw [sub_zero, hK0, sub_zero] at h
     exact h.trans (by nlinarith [norm_discMap_le hξ hf z.property])
-  · rw [kFun, kFun, sub_sub_sub_cancel_right]
-    refine (norm_sub_le_of_norm_fderiv_le hd h1 (hu z) (hu w)).trans ?_
+  · refine (norm_sub_le_of_norm_fderiv_le hd h1 (hu z) (hu w)).trans ?_
     have h := norm_discMap_sub_le ξ f z.property w.property
     have hL : ‖ξ‖ + 2 * ‖derivOp F‖ * ‖f‖ ≤ 2 := by linarith
     calc _ ≤ η * ((‖ξ‖ + 2 * ‖derivOp F‖ * ‖f‖) * ‖(z : ℂ) - w‖) := by gcongr
       _ ≤ η * (2 * ‖(z : ℂ) - w‖) := by gcongr
       _ = _ := by ring
 
-private theorem kField_eq (hξ : ‖ξ‖ ≤ 1)
-    (hd : ∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ J x)
-    (h1 : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ J x‖ ≤ η) {f : Source F}
+private theorem kField_eq (hξ : ‖ξ‖ ≤ 1) (hK0 : K 0 = 0)
+    (hd : ∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ K x)
+    (h1 : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ K x‖ ≤ η) {f : Source F}
     (hf : 2 * ‖derivOp F‖ * ‖f‖ ≤ 1) (z : closedBall (0 : ℂ) 1) :
-    kField ξ J f z = kFun ξ J f z :=
-  kField_apply ξ J (holderWith_of_norm_le (kFun_bounds hξ hd h1 hf).1
-    (kFun_bounds hξ hd h1 hf).2) (kFun_bounds hξ hd h1 hf).1 z
+    kField K ξ f z = kFun K ξ f z :=
+  kField_apply K ξ (holderWith_of_norm_le (kFun_bounds hξ hK0 hd h1 hf).1
+    (kFun_bounds hξ hK0 hd h1 hf).2) (kFun_bounds hξ hK0 hd h1 hf).1 z
 
-private theorem norm_kField_le (hξ : ‖ξ‖ ≤ 1)
-    (hd : ∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ J x)
-    (h1 : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ J x‖ ≤ η) {f : Source F}
-    (hf : 2 * ‖derivOp F‖ * ‖f‖ ≤ 1) : ‖kField ξ J f‖ ≤ 8 * η := by
+private theorem norm_kField_le (hξ : ‖ξ‖ ≤ 1) (hK0 : K 0 = 0)
+    (hd : ∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ K x)
+    (h1 : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ K x‖ ≤ η) {f : Source F}
+    (hf : 2 * ‖derivOp F‖ * ‖f‖ ≤ 1) : ‖kField K ξ f‖ ≤ 8 * η := by
   have hη : 0 ≤ η := nonneg_of_norm_fderiv_le h1
-  obtain ⟨hM, hL⟩ := kFun_bounds hξ hd h1 hf
+  obtain ⟨hM, hL⟩ := kFun_bounds hξ hK0 hd h1 hf
   refine (norm_le_of_lipschitz _ (L := 2 * η) (M := 2 * η) (by positivity) (by positivity)
     (fun z ↦ ?_) (fun z w ↦ ?_)).trans (le_of_eq (by ring))
-  · rw [kField_eq hξ hd h1 hf]; exact hM z
-  · rw [kField_eq hξ hd h1 hf, kField_eq hξ hd h1 hf]; exact hL z w
+  · rw [kField_eq hξ hK0 hd h1 hf]; exact hM z
+  · rw [kField_eq hξ hK0 hd h1 hf, kField_eq hξ hK0 hd h1 hf]; exact hL z w
 
 /-- For two small sources the coefficients differ by at most `12 η ‖D‖ ‖f - g‖` in Hölder
 norm. -/
-private theorem norm_kField_sub_le (hξ : ‖ξ‖ ≤ 1)
-    (hd : ∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ J x)
-    (h1 : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ J x‖ ≤ η)
+private theorem norm_kField_sub_le (hξ : ‖ξ‖ ≤ 1) (hK0 : K 0 = 0)
+    (hd : ∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ K x)
+    (h1 : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ K x‖ ≤ η)
     (h2 : ∀ x ∈ closedBall (0 : F) 4, ∀ y ∈ closedBall (0 : F) 4,
-      ‖fderiv ℝ J x - fderiv ℝ J y‖ ≤ η * ‖x - y‖) {f g : Source F}
+      ‖fderiv ℝ K x - fderiv ℝ K y‖ ≤ η * ‖x - y‖) {f g : Source F}
     (hf : 2 * ‖derivOp F‖ * ‖f‖ ≤ 1) (hg : 2 * ‖derivOp F‖ * ‖g‖ ≤ 1) :
-    ‖kField ξ J f - kField ξ J g‖ ≤ 12 * η * ‖derivOp F‖ * ‖f - g‖ := by
+    ‖kField K ξ f - kField K ξ g‖ ≤ 12 * η * ‖derivOp F‖ * ‖f - g‖ := by
   have hη : 0 ≤ η := nonneg_of_norm_fderiv_le h1
   have hDd : 2 * ‖derivOp F‖ * ‖f - g‖ ≤ 2 := by
     have := mul_le_mul_of_nonneg_left (norm_sub_le f g) (norm_nonneg (derivOp F))
@@ -548,10 +603,9 @@ private theorem norm_kField_sub_le (hξ : ‖ξ‖ ≤ 1)
     have hz := z.property
     rw [mem_closedBall, dist_zero_right] at hz
     exact h.trans (mul_le_of_le_one_right (by positivity) hz)
-  have hval : ∀ z, (kField ξ J f - kField ξ J g) z =
-      J (discMap ξ ⇑f.val z) - J (discMap ξ ⇑g.val z) := fun z ↦ by
-    rw [HolderSpace.sub_apply, kField_eq hξ hd h1 hf, kField_eq hξ hd h1 hg, kFun, kFun,
-      sub_sub_sub_cancel_right]
+  have hval : ∀ z, (kField K ξ f - kField K ξ g) z =
+      K (discMap ξ ⇑f.val z) - K (discMap ξ ⇑g.val z) := fun z ↦ by
+    rw [HolderSpace.sub_apply, kField_eq hξ hK0 hd h1 hf, kField_eq hξ hK0 hd h1 hg, kFun, kFun]
   refine (norm_le_of_lipschitz _ (L := 6 * η * ‖derivOp F‖ * ‖f - g‖)
     (M := 2 * η * ‖derivOp F‖ * ‖f - g‖) (by positivity)
     (by positivity) (fun z ↦ ?_) (fun z w ↦ ?_)).trans (le_of_eq (by ring))
@@ -561,7 +615,7 @@ private theorem norm_kField_sub_le (hξ : ‖ξ‖ ≤ 1)
       (mem_closedBall_four (norm_discMap_le hξ hg z.property))).trans ?_
     nlinarith [hdiff z]
   · rw [hval, hval]
-    -- The second difference of `J` at `a = u_g`, `b = u_f - u_g`.
+    -- The second difference of `K` at `a = u_g`, `b = u_f - u_g`.
     have hgz := norm_discMap_le hξ hg z.property
     have hgw := norm_discMap_le hξ hg w.property
     have h := (convex_closedBall (0 : F) 4).norm_image_sub_sub_sub_le_of_norm_fderiv_le hd h1 h2
@@ -584,115 +638,255 @@ private theorem norm_kField_sub_le (hξ : ‖ξ‖ ≤ 1)
           gcongr
       _ = 6 * η * ‖derivOp F‖ * ‖f - g‖ * ‖(z : ℂ) - w‖ := by ring
 
-private theorem norm_gField_le (hξ : ‖ξ‖ ≤ 1)
-    (hd : ∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ J x)
-    (h1 : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ J x‖ ≤ η) {f : Source F}
-    (hf : 2 * ‖derivOp F‖ * ‖f‖ ≤ 1) : ‖gField ξ J f‖ ≤ 8 * η := by
+private theorem norm_gField_le (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1) (hK0 : K 0 = 0)
+    (hd : ∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ K x)
+    (h1 : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ K x‖ ≤ η) {f : Source F}
+    (hf : 2 * ‖derivOp F‖ * ‖f‖ ≤ 1) : ‖gField ℓ K ξ f‖ ≤ 16 * η := by
   have hη : 0 ≤ η := nonneg_of_norm_fderiv_le h1
-  rw [gField, norm_smul, norm_neg, norm_inv, Real.norm_two]
-  have hk := norm_kField_le hξ hd h1 hf
-  have hw : ‖wField ξ f‖ ≤ 2 := (norm_wField_le ξ f).trans (by linarith)
-  calc 2⁻¹ * ‖_‖ ≤ 2⁻¹ * (‖kField ξ J f‖ * ‖wField ξ f‖) := by
-        gcongr; exact ContinuousLinearMap.norm_id_compHolder₂_apply_le _ _
-    _ ≤ 2⁻¹ * (8 * η * 2) := by gcongr
-    _ = 8 * η := by ring
+  have hk := norm_kField_le hξ hK0 hd h1 hf
+  have hw : ‖wField ℓ ξ f‖ ≤ 2 := (norm_wField_le ξ hℓ f).trans (by linarith)
+  calc ‖gField ℓ K ξ f‖ ≤ ‖kField K ξ f‖ * ‖wField ℓ ξ f‖ :=
+        ContinuousLinearMap.norm_id_compHolder₂_apply_le _ _
+    _ ≤ 8 * η * 2 := by gcongr
+    _ = 16 * η := by ring
 
-private theorem norm_gField_sub_le (hξ : ‖ξ‖ ≤ 1)
-    (hd : ∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ J x)
-    (h1 : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ J x‖ ≤ η)
+private theorem norm_gField_sub_le (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1) (hK0 : K 0 = 0)
+    (hd : ∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ K x)
+    (h1 : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ K x‖ ≤ η)
     (h2 : ∀ x ∈ closedBall (0 : F) 4, ∀ y ∈ closedBall (0 : F) 4,
-      ‖fderiv ℝ J x - fderiv ℝ J y‖ ≤ η * ‖x - y‖) {f g : Source F}
+      ‖fderiv ℝ K x - fderiv ℝ K y‖ ≤ η * ‖x - y‖) {f g : Source F}
     (hf : 2 * ‖derivOp F‖ * ‖f‖ ≤ 1) (hg : 2 * ‖derivOp F‖ * ‖g‖ ≤ 1) :
-    ‖gField ξ J f - gField ξ J g‖ ≤ 20 * η * ‖derivOp F‖ * ‖f - g‖ := by
+    ‖gField ℓ K ξ f - gField ℓ K ξ g‖ ≤ 40 * η * ‖derivOp F‖ * ‖f - g‖ := by
   have hη : 0 ≤ η := nonneg_of_norm_fderiv_le h1
   set C := (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).compHolder₂
     (X := closedBall (0 : ℂ) 1) (α := 2⁻¹) (F := F)
-  have heq : gField ξ J f - gField ξ J g = (-(2 : ℝ)⁻¹) •
-      (C (kField ξ J f) (wField ξ f - wField ξ g) +
-        C (kField ξ J f - kField ξ J g) (wField ξ g)) := by
-    rw [gField, gField, ← smul_sub, map_sub, map_sub, sub_apply]
-    congr 1
+  have heq : gField ℓ K ξ f - gField ℓ K ξ g =
+      C (kField K ξ f) (wField ℓ ξ f - wField ℓ ξ g) +
+        C (kField K ξ f - kField K ξ g) (wField ℓ ξ g) := by
+    rw [gField, gField, map_sub, map_sub, sub_apply]
     abel
-  have hk := norm_kField_le hξ hd h1 hf
-  have hkd := norm_kField_sub_le hξ hd h1 h2 hf hg
-  have hwd := norm_wField_sub_le ξ f g
-  have hw : ‖wField ξ g‖ ≤ 2 := (norm_wField_le ξ g).trans (by linarith)
-  rw [heq, norm_smul, norm_neg, norm_inv, Real.norm_two]
-  calc 2⁻¹ * ‖_‖ ≤ 2⁻¹ * (‖kField ξ J f‖ * ‖wField ξ f - wField ξ g‖ +
-        ‖kField ξ J f - kField ξ J g‖ * ‖wField ξ g‖) := by
-        gcongr
-        exact (norm_add_le _ _).trans (add_le_add
+  have hk := norm_kField_le hξ hK0 hd h1 hf
+  have hkd := norm_kField_sub_le hξ hK0 hd h1 h2 hf hg
+  have hwd := norm_wField_sub_le ξ hℓ f g
+  have hw : ‖wField ℓ ξ g‖ ≤ 2 := (norm_wField_le ξ hℓ g).trans (by linarith)
+  rw [heq]
+  calc ‖_‖ ≤ ‖kField K ξ f‖ * ‖wField ℓ ξ f - wField ℓ ξ g‖ +
+        ‖kField K ξ f - kField K ξ g‖ * ‖wField ℓ ξ g‖ :=
+        (norm_add_le _ _).trans (add_le_add
           (ContinuousLinearMap.norm_id_compHolder₂_apply_le _ _)
           (ContinuousLinearMap.norm_id_compHolder₂_apply_le _ _))
-    _ ≤ 2⁻¹ * (8 * η * (2 * ‖derivOp F‖ * ‖f - g‖) +
-        12 * η * ‖derivOp F‖ * ‖f - g‖ * 2) := by gcongr
-    _ = 20 * η * ‖derivOp F‖ * ‖f - g‖ := by ring
+    _ ≤ 8 * η * (2 * ‖derivOp F‖ * ‖f - g‖) +
+        12 * η * ‖derivOp F‖ * ‖f - g‖ * 2 := by gcongr
+    _ = 40 * η * ‖derivOp F‖ * ‖f - g‖ := by ring
 
 end Estimates
 
-/-! ### The fixed point and the disc -/
+/-! ### The contraction and its unique fixed point -/
 
-/-- A fixed point of `fixedPointMap` in the ball of small sources. -/
-private theorem exists_fixedPointMap_eq (hξ : ‖ξ‖ ≤ 1)
-    (hd : ∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ J x)
-    (h1 : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ J x‖ ≤
-      (320 * (‖cutoffHolder (α := 2⁻¹) hα₁.le‖ + 1) * (‖derivOp F‖ + 1))⁻¹)
-    (h2 : ∀ x ∈ closedBall (0 : F) 4, ∀ y ∈ closedBall (0 : F) 4,
-      ‖fderiv ℝ J x - fderiv ℝ J y‖ ≤
-        (320 * (‖cutoffHolder (α := 2⁻¹) hα₁.le‖ + 1) * (‖derivOp F‖ + 1))⁻¹ * ‖x - y‖) :
-    ∃ f : Source F, 2 * ‖derivOp F‖ * ‖f‖ ≤ 1 ∧ fixedPointMap ξ J f = f := by
+variable (F) in
+/-- The smallness of the coefficient under which the fixed-point map contracts. -/
+private def smallness : ℝ :=
+  (640 * (‖cutoffHolder (α := 2⁻¹) hα₁.le‖ + 1) * (‖derivOp F‖ + 1))⁻¹
+
+variable (F) in
+/-- The radius of the ball of sources on which the fixed-point map contracts. -/
+private def radius : ℝ := (4 * (‖derivOp F‖ + 1))⁻¹
+
+private theorem smallness_pos : 0 < smallness F := by
+  unfold smallness
+  positivity
+
+private theorem radius_pos : 0 < radius F := by
+  unfold radius
+  positivity
+
+variable (F) in
+/-- A coefficient `K` vanishing at `0` whose derivative is bounded by `smallness F` and is
+`smallness F`-Lipschitz on the ball of radius `4`. -/
+private def SmallCoeff (K : F → F →L[ℝ] F) : Prop :=
+  K 0 = 0 ∧ (∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ K x) ∧
+    (∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ K x‖ ≤ smallness F) ∧
+    ∀ x ∈ closedBall (0 : F) 4, ∀ y ∈ closedBall (0 : F) 4,
+      ‖fderiv ℝ K x - fderiv ℝ K y‖ ≤ smallness F * ‖x - y‖
+
+private theorem small_of_mem_closedBall {f : Source F}
+    (hf : f ∈ closedBall (0 : Source F) (radius F)) : 2 * ‖derivOp F‖ * ‖f‖ ≤ 1 := by
+  have hD : 0 ≤ ‖derivOp F‖ := (derivOp F).opNorm_nonneg
+  rw [mem_closedBall, dist_zero_right] at hf
+  calc 2 * ‖derivOp F‖ * ‖f‖ ≤ 2 * ‖derivOp F‖ * radius F := by gcongr
+    _ ≤ 1 := by
+      rw [show 2 * ‖derivOp F‖ * radius F = ‖derivOp F‖ / (2 * (‖derivOp F‖ + 1)) by
+          rw [radius]; field_simp; ring,
+        div_le_one (by positivity)]
+      linarith
+
+section Contraction
+
+variable {ℓ K ξ}
+
+/-- On the unit disc, the fixed-point map of a small source is `χ · K(u) ℓ(Du)`. -/
+private theorem fixedPointMap_apply_of_small (hξ : ‖ξ‖ ≤ 1) (hK : SmallCoeff F K) {f : Source F}
+    (hf : 2 * ‖derivOp F‖ * ‖f‖ ≤ 1) {z : ℂ} (hz : z ∈ closedBall (0 : ℂ) 1) :
+    (fixedPointMap ℓ K ξ f).val z =
+      discCutoff z • K (discMap ξ ⇑f.val z) (ℓ (fderiv ℝ (discMap ξ ⇑f.val) z)) := by
+  rw [fixedPointMap_apply ℓ K ξ f hz, gField, ContinuousLinearMap.compHolder₂_apply,
+    ContinuousLinearMap.id_apply, kField_eq hξ hK.1 hK.2.1 hK.2.2.1 hf, wField_apply, kFun]
+
+/-- The fixed-point map sends the ball of radius `radius F` into itself, since
+`‖χ‖ · 16 η ≤ radius F`. -/
+private theorem mapsTo_fixedPointMap (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1) (hK : SmallCoeff F K) :
+    MapsTo (fixedPointMap ℓ K ξ) (closedBall 0 (radius F)) (closedBall 0 (radius F)) := by
+  obtain ⟨hK0, hd, h1, -⟩ := hK
   set X := ‖cutoffHolder (α := 2⁻¹) hα₁.le‖
   set D := ‖derivOp F‖
-  set η := (320 * (X + 1) * (D + 1))⁻¹ with hη
-  set ρ := (4 * (D + 1))⁻¹ with hρdef
   have hX : 0 ≤ X := norm_nonneg _
   have hD : 0 ≤ D := (derivOp F).opNorm_nonneg
-  have hρ : 0 ≤ ρ := by positivity
-  have hsmall : ∀ f : Source F, f ∈ closedBall (0 : Source F) ρ → 2 * D * ‖f‖ ≤ 1 := by
-    intro f hf
-    rw [mem_closedBall, dist_zero_right] at hf
-    calc 2 * D * ‖f‖ ≤ 2 * D * ρ := by gcongr
-      _ ≤ 1 := by
-        rw [show 2 * D * ρ = D / (2 * (D + 1)) by rw [hρdef]; field_simp; ring,
-          div_le_one (by positivity)]
-        linarith
-  -- The map sends the ball of radius `ρ` into itself, since `‖χ‖ · 8 η ≤ ρ`.
-  have hmaps : MapsTo (fixedPointMap ξ J) (closedBall 0 ρ) (closedBall 0 ρ) := by
-    intro f hf
-    rw [mem_closedBall, dist_zero_right]
-    calc ‖fixedPointMap ξ J f‖ ≤ X * ‖gField ξ J f‖ := norm_fixedPointMap_le ξ J f
-      _ ≤ X * (8 * η) := by gcongr; exact norm_gField_le hξ hd h1 (hsmall f hf)
-      _ ≤ ρ := by
-        rw [show X * (8 * η) = X / (40 * (X + 1) * (D + 1)) by rw [hη]; field_simp; ring,
-          div_le_iff₀ (by positivity),
-          show ρ * (40 * (X + 1) * (D + 1)) = 10 * (X + 1) by rw [hρdef]; field_simp; ring]
-        linarith
-  -- On that ball it is a contraction with constant `1 / 2`, since `‖χ‖ · 20 η ‖D‖ ≤ 1 / 2`.
+  intro f hf
+  rw [mem_closedBall, dist_zero_right]
+  calc ‖fixedPointMap ℓ K ξ f‖ ≤ X * ‖gField ℓ K ξ f‖ := norm_fixedPointMap_le ℓ K ξ f
+    _ ≤ X * (16 * smallness F) := by
+      gcongr; exact norm_gField_le hℓ hξ hK0 hd h1 (small_of_mem_closedBall hf)
+    _ ≤ radius F := by
+      rw [show X * (16 * smallness F) = X / (40 * (X + 1) * (D + 1)) by
+          rw [smallness]; field_simp; ring,
+        div_le_iff₀ (by positivity),
+        show radius F * (40 * (X + 1) * (D + 1)) = 10 * (X + 1) by rw [radius]; field_simp; ring]
+      linarith
+
+/-- On the ball of radius `radius F` the fixed-point map is a contraction with constant `1 / 2`,
+since `‖χ‖ · 40 η ‖D‖ ≤ 1 / 2`. -/
+private theorem norm_fixedPointMap_sub_le_half (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1)
+    (hK : SmallCoeff F K) {f g : Source F} (hf : f ∈ closedBall 0 (radius F))
+    (hg : g ∈ closedBall 0 (radius F)) :
+    ‖fixedPointMap ℓ K ξ f - fixedPointMap ℓ K ξ g‖ ≤ 2⁻¹ * ‖f - g‖ := by
+  obtain ⟨hK0, hd, h1, h2⟩ := hK
+  set X := ‖cutoffHolder (α := 2⁻¹) hα₁.le‖
+  set D := ‖derivOp F‖
+  have hX : 0 ≤ X := norm_nonneg _
+  have hD : 0 ≤ D := (derivOp F).opNorm_nonneg
+  calc ‖fixedPointMap ℓ K ξ f - fixedPointMap ℓ K ξ g‖
+      ≤ X * ‖gField ℓ K ξ f - gField ℓ K ξ g‖ := norm_fixedPointMap_sub_le ℓ K ξ f g
+    _ ≤ X * (40 * smallness F * D * ‖f - g‖) := by
+      gcongr
+      exact norm_gField_sub_le hℓ hξ hK0 hd h1 h2 (small_of_mem_closedBall hf)
+        (small_of_mem_closedBall hg)
+    _ ≤ 2⁻¹ * ‖f - g‖ := by
+      rw [show X * (40 * smallness F * D * ‖f - g‖) =
+        (X * D / (16 * (X + 1) * (D + 1))) * ‖f - g‖ by rw [smallness]; field_simp; ring]
+      gcongr
+      rw [div_le_iff₀ (by positivity)]
+      nlinarith [mul_nonneg hX hD]
+
+/-- The fixed-point map has a fixed point in the ball of radius `radius F`. -/
+private theorem exists_fixedPointMap_eq (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1) (hK : SmallCoeff F K) :
+    ∃ f ∈ closedBall (0 : Source F) (radius F), fixedPointMap ℓ K ξ f = f := by
+  have hmaps := mapsTo_fixedPointMap hℓ hξ hK
   have hcontr : ContractingWith 2⁻¹ (hmaps.restrict _ _ _) := by
     refine ⟨by norm_num, LipschitzWith.of_dist_le_mul fun f g ↦ ?_⟩
     rw [Subtype.dist_eq (hmaps.restrict _ _ _ f) (hmaps.restrict _ _ _ g), Subtype.dist_eq f g,
       MapsTo.val_restrict_apply, MapsTo.val_restrict_apply, dist_eq_norm, dist_eq_norm]
-    calc ‖fixedPointMap ξ J f - fixedPointMap ξ J g‖
-        ≤ X * ‖gField ξ J f - gField ξ J g‖ := norm_fixedPointMap_sub_le ξ J f g
-      _ ≤ X * (20 * η * D * ‖(f : Source F) - g‖) := by
-        gcongr; exact norm_gField_sub_le hξ hd h1 h2 (hsmall f f.property) (hsmall g g.property)
-      _ ≤ (2⁻¹ : ℝ≥0) * ‖(f : Source F) - g‖ := by
-        rw [show X * (20 * η * D * ‖(f : Source F) - g‖) =
-          (X * D / (16 * (X + 1) * (D + 1))) * ‖(f : Source F) - g‖ by
-            rw [hη]; field_simp; ring]
-        gcongr
-        rw [div_le_iff₀ (by positivity)]
-        push_cast
-        nlinarith [mul_nonneg hX hD]
+    exact (norm_fixedPointMap_sub_le_half hℓ hξ hK f.property g.property).trans_eq
+      (by push_cast; rfl)
   have := FiniteDimensional.completeSpace ℂ F
   obtain ⟨f, hf, hfix, -⟩ := ContractingWith.exists_fixedPoint' isClosed_closedBall.isComplete
-    hmaps hcontr (mem_closedBall_self hρ) (edist_ne_top _ _)
-  exact ⟨f, hsmall f hf, hfix⟩
+    hmaps hcontr (mem_closedBall_self radius_pos.le) (edist_ne_top _ _)
+  exact ⟨f, hf, hfix⟩
+
+/-- **Uniqueness of the source.** The fixed-point map has at most one fixed point in the ball of
+radius `radius F`. -/
+private theorem eq_of_fixedPointMap_eq (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1) (hK : SmallCoeff F K)
+    {f g : Source F} (hf : f ∈ closedBall 0 (radius F)) (hg : g ∈ closedBall 0 (radius F))
+    (hff : fixedPointMap ℓ K ξ f = f) (hgg : fixedPointMap ℓ K ξ g = g) : f = g := by
+  have h := norm_fixedPointMap_sub_le_half hℓ hξ hK hf hg
+  rw [hff, hgg] at h
+  exact sub_eq_zero.mp (norm_eq_zero.mp (by linarith [norm_nonneg (f - g)]))
+
+end Contraction
+
+open Classical in
+/-- The source of the disc: the fixed point of `fixedPointMap` in the ball of radius
+`radius F`, unique when the coefficient is small, and `0` if there is none. -/
+private def discSource : Source F :=
+  if h : ∃ f ∈ closedBall (0 : Source F) (radius F), fixedPointMap ℓ K ξ f = f then h.choose
+  else 0
+
+section Source
+
+variable {ℓ K ξ}
+
+private theorem discSource_spec (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1) (hK : SmallCoeff F K) :
+    discSource ℓ K ξ ∈ closedBall (0 : Source F) (radius F) ∧
+      fixedPointMap ℓ K ξ (discSource ℓ K ξ) = discSource ℓ K ξ := by
+  unfold discSource
+  split_ifs with h
+  · exact h.choose_spec
+  · exact absurd (exists_fixedPointMap_eq hℓ hξ hK) h
+
+private theorem discSource_eq (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1) (hK : SmallCoeff F K)
+    {f : Source F} (hf : f ∈ closedBall 0 (radius F)) (hff : fixedPointMap ℓ K ξ f = f) :
+    discSource ℓ K ξ = f :=
+  eq_of_fixedPointMap_eq hℓ hξ hK (discSource_spec hℓ hξ hK).1 hf (discSource_spec hℓ hξ hK).2
+    hff
+
+/-- The disc of the fixed source: it is `C¹` on the disc of radius `2`, has centre `0`, first jet
+`ξ` and values of norm at most `2` on the unit disc, and on the disc of radius `1/2` it solves
+`\bar∂u = K(u) ℓ(Du)`, where `\bar∂u = \bar∂ (T f)` because the other terms of `u` are
+holomorphic. -/
+private theorem discSource_props (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1) (hK : SmallCoeff F K) :
+    ContDiffOn ℝ 1 (discMap ξ ⇑(discSource ℓ K ξ).val) (ball 0 2) ∧
+      discMap ξ ⇑(discSource ℓ K ξ).val 0 = 0 ∧
+      fderiv ℝ (discMap ξ ⇑(discSource ℓ K ξ).val) 0 1 = ξ ∧
+      (∀ z ∈ closedBall (0 : ℂ) 1, ‖discMap ξ ⇑(discSource ℓ K ξ).val z‖ ≤ 2) ∧
+      ∀ z ∈ ball (0 : ℂ) 2⁻¹, conjWirtingerDeriv (cauchyTransform ⇑(discSource ℓ K ξ).val) z 1 =
+        K (discMap ξ ⇑(discSource ℓ K ξ).val z)
+          (ℓ (fderiv ℝ (discMap ξ ⇑(discSource ℓ K ξ).val) z)) := by
+  obtain ⟨hmem, hfix⟩ := discSource_spec hℓ hξ hK
+  set f := discSource ℓ K ξ
+  have hf := small_of_mem_closedBall hmem
+  have hTC := (contDiff_cauchyTransform_of_mem_supportedHolderSubmodule hα₀ hα₁ zero_le_one
+    f.property).contDiffOn (s := ball 0 2)
+  refine ⟨?_, discMap_zero ξ _, ?_, fun z hz ↦ norm_discMap_le hξ hf hz, fun z hz ↦ ?_⟩
+  · exact (((contDiffOn_id.smul contDiffOn_const).add hTC).sub contDiffOn_const).sub
+      (contDiffOn_id.smul contDiffOn_const)
+  · rw [← coe_centre, fderiv_discMap ξ f centre.property]
+    simp
+  · have hz1 : z ∈ closedBall (0 : ℂ) 1 := closedBall_subset_closedBall (by norm_num)
+      (ball_subset_closedBall hz)
+    have hzn : ‖z‖ ≤ 2⁻¹ := by
+      rw [mem_ball, dist_zero_right] at hz
+      exact hz.le
+    -- At the fixed point, `\bar∂ T f = f = χ · K(u) ℓ(Du)`, and `χ(z) = 1`.
+    rw [conjWirtingerDeriv_cauchyTransform_of_mem_supportedHolderSubmodule hα₀ hα₁ zero_le_one
+        f.property]
+    conv_lhs => rw [← hfix]
+    rw [fixedPointMap_apply_of_small hξ hK hf hz1, discCutoff_eq_one hzn, one_smul]
+
+/-- The fixed source vanishes at the centre, since `K(u(0)) = K(0) = 0`. -/
+private theorem discSource_apply_zero (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1) (hK : SmallCoeff F K) :
+    (discSource ℓ K ξ).val 0 = 0 := by
+  obtain ⟨hmem, hfix⟩ := discSource_spec hℓ hξ hK
+  rw [← hfix, fixedPointMap_apply_of_small hξ hK (small_of_mem_closedBall hmem)
+    (mem_closedBall_self zero_le_one)]
+  simp [discMap_zero, hK.1]
+
+end Source
+
+/-! ### Discs solving `∂ₛu + J(u) ∂ₜu = 0` -/
 
 omit [FiniteDimensional ℂ F] in
-/-- The equation at a point: if `\bar∂ T h(z) = -K(u(z)) ∂ₜu(z) / 2` with `K = J - J(0)` and
-`J(0) = i`, then the disc `u` of the source `h` solves `∂ₛu + J(u) ∂ₜu = 0` at `z`. -/
-private theorem fderiv_discMap_add_eq_zero {ξ : F} {h : ℂ → F} {z : ℂ}
+/-- The operator `L ↦ -L(i) / 2`, minus half the derivative `∂ₜ`, has norm at most `1`. -/
+private theorem norm_neg_half_smul_apply_I_le :
+    ‖(-(2 : ℝ)⁻¹) • ContinuousLinearMap.apply ℝ F I‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun L ↦ by
+    rw [smul_apply, ContinuousLinearMap.apply_apply, norm_smul, one_mul]
+    have h := L.le_opNorm I
+    rw [norm_I, mul_one] at h
+    exact (mul_le_of_le_one_left (norm_nonneg _) (by norm_num)).trans h
+
+omit [FiniteDimensional ℂ F] in
+/-- The equation at a point: if `\bar∂ T h(z) = -(J(u(z)) - J(0)) ∂ₜu(z) / 2` and `J(0) = i`,
+then the disc `u` of the source `h` solves `∂ₛu + J(u) ∂ₜu = 0` at `z`. -/
+private theorem fderiv_discMap_add_eq_zero (J : F → F →L[ℝ] F) {ξ : F} {h : ℂ → F} {z : ℂ}
     (hJ0 : ∀ v, J 0 v = I • v) (hT : DifferentiableAt ℝ (cauchyTransform h) z)
     (hbar : conjWirtingerDeriv (cauchyTransform h) z 1 =
       (-(2 : ℝ)⁻¹) • (J (discMap ξ h z) - J 0) (fderiv ℝ (discMap ξ h) z I)) :
@@ -719,8 +913,6 @@ private theorem fderiv_discMap_add_eq_zero {ξ : F} {h : ℂ → F} {z : ℂ}
   simp only [w, smul_add, smul_sub, hII]
   abel
 
-/-! ### Solutions of the nonlinear Cauchy–Riemann equation -/
-
 /-- **Discs solving `∂ₛu + J(u) ∂ₜu = 0` for a nearly constant structure.** There is `η > 0`,
 depending only on `F`, with the following property. Let `J : F → (F →L[ℝ] F)` satisfy
 `J(0) v = i v`, and on the closed ball of radius `4` let `J` be differentiable with `‖DJ‖ ≤ η` and
@@ -736,36 +928,183 @@ theorem exists_pos_forall_exists_fderiv_one_add_apply_fderiv_I_eq_zero :
       ∃ u : ℂ → F, ContDiffOn ℝ 1 u (ball 0 2) ∧ u 0 = 0 ∧ fderiv ℝ u 0 1 = ξ ∧
         (∀ z ∈ closedBall (0 : ℂ) 1, ‖u z‖ ≤ 2) ∧
         ∀ z ∈ ball (0 : ℂ) 2⁻¹, fderiv ℝ u z 1 + J (u z) (fderiv ℝ u z I) = 0 := by
-  refine ⟨(320 * (‖cutoffHolder (α := 2⁻¹) hα₁.le‖ + 1) * (‖derivOp F‖ + 1))⁻¹, by positivity,
-    fun J ξ hξ hJ0 hd h1 h2 ↦ ?_⟩
-  obtain ⟨f, hf, hfix⟩ := exists_fixedPointMap_eq ξ J hξ hd h1 h2
-  have hTC := (contDiff_cauchyTransform_of_mem_supportedHolderSubmodule hα₀ hα₁ zero_le_one
-    f.property).contDiffOn (s := ball 0 2)
-  refine ⟨discMap ξ ⇑f.val, ?_, discMap_zero ξ _, ?_, fun z hz ↦ norm_discMap_le hξ hf hz,
-    fun z hz ↦ ?_⟩
-  · exact (((contDiffOn_id.smul contDiffOn_const).add hTC).sub contDiffOn_const).sub
-      (contDiffOn_id.smul contDiffOn_const)
-  · rw [← coe_centre, fderiv_discMap ξ f centre.property]
-    simp
-  · have hz1 : z ∈ closedBall (0 : ℂ) 1 := closedBall_subset_closedBall (by norm_num)
-      (ball_subset_closedBall hz)
-    have hzn : ‖z‖ ≤ 2⁻¹ := by
-      rw [mem_ball, dist_zero_right] at hz
-      exact hz.le
-    refine fderiv_discMap_add_eq_zero J hJ0 (differentiableAt_cauchyTransform f z) ?_
-    -- At the fixed point, `\bar∂ T f = f = χ · (-K(u) ∂ₜu / 2)`, and `χ(z) = 1`.
-    rw [conjWirtingerDeriv_cauchyTransform_of_mem_supportedHolderSubmodule hα₀ hα₁ zero_le_one
-        f.property]
-    conv_lhs => rw [← hfix]
-    rw [fixedPointMap_apply ξ J f hz1, discCutoff_eq_one hzn, one_smul,
-      gField, HolderSpace.smul_apply, ContinuousLinearMap.compHolder₂_apply,
-      ContinuousLinearMap.id_apply, kField_eq hξ hd h1 hf, wField_apply, kFun]
+  refine ⟨smallness F, smallness_pos, fun J ξ hξ hJ0 hd h1 h2 ↦ ?_⟩
+  -- The equation reads `\bar∂u = K(u) ℓ(Du)` with `K = J - J(0)` and `ℓ(L) = -L(i) / 2`.
+  have hfd : ∀ x ∈ closedBall (0 : F) 4, fderiv ℝ (fun x ↦ J x - J 0) x = fderiv ℝ J x :=
+    fun x _ ↦ fderiv_sub_const _
+  have hK : SmallCoeff F fun x ↦ J x - J 0 :=
+    ⟨sub_self _, fun x hx ↦ (hd x hx).sub_const _, fun x hx ↦ (hfd x hx).symm ▸ h1 x hx,
+      fun x hx y hy ↦ (hfd x hx).symm ▸ (hfd y hy).symm ▸ h2 x hx y hy⟩
+  obtain ⟨hC, h0, h1', hb, heq⟩ := discSource_props norm_neg_half_smul_apply_I_le hξ hK
+  refine ⟨_, hC, h0, h1', hb, fun z hz ↦ fderiv_discMap_add_eq_zero J hJ0
+    (differentiableAt_cauchyTransform _ z) ?_⟩
+  rw [heq z hz, smul_apply, ContinuousLinearMap.apply_apply, map_smul]
+
+/-! ### Discs solving the Beltrami equation `\bar∂u = Q(u) ∂u` -/
+
+variable (F) in
+/-- The Wirtinger derivative `∂ = (∂ₛ - i ∂ₜ) / 2` at `1`, as an operator on real-linear maps
+`ℂ → F`. -/
+private def wirtingerAtOne : (ℂ →L[ℝ] F) →L[ℝ] F :=
+  (2⁻¹ : ℝ) • (ContinuousLinearMap.apply ℝ F (1 : ℂ) - I • ContinuousLinearMap.apply ℝ F I)
+
+omit [FiniteDimensional ℂ F] in
+private theorem wirtingerAtOne_apply (L : ℂ →L[ℝ] F) :
+    wirtingerAtOne F L = L.complexLinearPart 1 := by
+  simp [wirtingerAtOne]
+
+omit [FiniteDimensional ℂ F] in
+private theorem norm_wirtingerAtOne_le : ‖wirtingerAtOne F‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun L ↦ by
+    rw [one_mul, wirtingerAtOne_apply, ContinuousLinearMap.complexLinearPart_apply, norm_smul,
+      Real.norm_of_nonneg (by norm_num), smul_eq_mul, mul_one]
+    have h := norm_sub_le (L 1) (I • L I)
+    rw [norm_smul, norm_I, one_mul] at h
+    have h1 := L.le_opNorm 1
+    have hI := L.le_opNorm I
+    rw [norm_one, mul_one] at h1
+    rw [norm_I, mul_one] at hI
+    linarith
+
+/-- On the unit circle `|c| = 1`, rotate a source: `z ↦ c⁻¹ h(c z)`. -/
+private def rotSource {c : ℂ} (hc : ‖c‖ = 1) (f : Source F) : Source F :=
+  ⟨HolderSpace.compLeftL (ContinuousLinearMap.lsmul ℝ ℂ c⁻¹)
+      (HolderSpace.compLipschitzL (fun z : ℂ ↦ c * z)
+        (LipschitzWith.of_dist_le_mul fun z w ↦ by
+          rw [dist_eq_norm, dist_eq_norm, ← mul_sub, norm_mul, hc, NNReal.coe_one])
+        f.val),
+    mem_supportedHolderSubmodule_iff.mpr fun z hz ↦ by
+      have hcz : c * z ∉ closedBall (0 : ℂ) 1 := by
+        simpa [mem_closedBall, norm_mul, hc] using hz
+      simp [HolderSpace.compLeftL_apply, mem_supportedHolderSubmodule_iff.mp f.property _ hcz]⟩
+
+omit [FiniteDimensional ℂ F] in
+private theorem rotSource_apply {c : ℂ} (hc : ‖c‖ = 1) (f : Source F) (z : ℂ) :
+    (rotSource hc f).val z = c⁻¹ • f.val (c * z) := by
+  simp [rotSource, HolderSpace.compLeftL_apply]
+
+omit [FiniteDimensional ℂ F] in
+private theorem norm_rotSource_le {c : ℂ} (hc : ‖c‖ = 1) (f : Source F) :
+    ‖rotSource hc f‖ ≤ ‖f‖ := by
+  rw [← Submodule.norm_coe, ← Submodule.norm_coe f]
+  refine ((HolderSpace.compLeftL _).le_opNorm _).trans ?_
+  refine (mul_le_mul ((HolderSpace.norm_compLeftL_le _).trans
+    (ContinuousLinearMap.opNorm_lsmul_apply_le _)) (HolderSpace.norm_compLipschitzL_apply_le _ _)
+    (norm_nonneg _) (norm_nonneg _)).trans ?_
+  rw [norm_inv, hc, inv_one, one_mul]
+
+omit [FiniteDimensional ℂ F] in
+private theorem cauchyTransform_rotSource {c : ℂ} (hc : ‖c‖ = 1) (f : Source F) (w : ℂ) :
+    cauchyTransform ⇑(rotSource hc f).val w = cauchyTransform ⇑f.val (c * w) := by
+  have hc0 : c ≠ 0 := by
+    rintro rfl
+    simp at hc
+  have h : (⇑(rotSource hc f).val : ℂ → F) = c⁻¹ • fun z ↦ f.val (c * z) :=
+    funext fun z ↦ rotSource_apply hc f z
+  rw [h, cauchyTransform_smul, Pi.smul_apply, cauchyTransform_comp_mul_left hc, smul_smul,
+    inv_mul_cancel₀ hc0, one_smul]
+
+/-- Rotating the source of a disc whose source vanishes at the centre rotates the disc:
+`u_{c ξ}(w) = u_ξ(c w)` for the rotated source. -/
+private theorem discMap_rotSource {c : ℂ} (hc : ‖c‖ = 1) (ξ : F) {f : Source F}
+    (hf0 : f.val 0 = 0) (w : ℂ) :
+    discMap (c • ξ) ⇑(rotSource hc f).val w = discMap ξ ⇑f.val (c * w) := by
+  have hT : cauchyTransform ⇑(rotSource hc f).val = fun w ↦ cauchyTransform ⇑f.val (c * w) :=
+    funext (cauchyTransform_rotSource hc f)
+  -- `\bar∂ (T f)(0) = f(0) = 0`, so `D(T f)(0)` is complex linear.
+  have hlin :
+      fderiv ℝ (cauchyTransform ⇑f.val) 0 c = c • fderiv ℝ (cauchyTransform ⇑f.val) 0 1 := by
+    have h := conjWirtingerDeriv_cauchyTransform_of_mem_supportedHolderSubmodule hα₀ hα₁
+      zero_le_one f.property 0
+    rw [hf0] at h
+    rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv,
+      fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv]
+    simp only [h, smul_zero, add_zero, one_smul]
+  have hd := fderiv_comp_smul_apply (𝕜 := ℝ) (cauchyTransform ⇑f.val) c 0 1
+  simp only [smul_eq_mul] at hd
+  rw [discMap, discMap, hT, hd]
+  simp only [mul_zero, mul_one, hlin, smul_smul, mul_comm w c]
+
+variable {Q : F → F →L[ℝ] F}
+
+/-- **Rotation equivariance of the source.** For a conjugate-linear coefficient `Q`, rotating the
+source of the disc with first jet `ξ` gives the source of the disc with first jet `c ξ`. -/
+private theorem discSource_smul (hξ : ‖ξ‖ ≤ 1) (hQ : SmallCoeff F Q)
+    (hQI : ∀ x ∈ closedBall (0 : F) 4, ∀ v, Q x (I • v) = -(I • Q x v)) {c : ℂ} (hc : ‖c‖ = 1) :
+    discSource (wirtingerAtOne F) Q (c • ξ) = rotSource hc (discSource (wirtingerAtOne F) Q ξ) := by
+  have hcξ : ‖c • ξ‖ ≤ 1 := by rwa [norm_smul, hc, one_mul]
+  obtain ⟨hmem, hfix⟩ := discSource_spec norm_wirtingerAtOne_le hξ hQ
+  set f := discSource (wirtingerAtOne F) Q ξ
+  set g := rotSource hc f
+  have hgmem : g ∈ closedBall (0 : Source F) (radius F) := by
+    rw [mem_closedBall, dist_zero_right] at hmem ⊢
+    exact (norm_rotSource_le hc f).trans hmem
+  have hf := small_of_mem_closedBall hmem
+  have hg := small_of_mem_closedBall hgmem
+  have hrot : ∀ w, discMap (c • ξ) ⇑g.val w = discMap ξ ⇑f.val (c * w) :=
+    discMap_rotSource hc ξ (discSource_apply_zero norm_wirtingerAtOne_le hξ hQ)
+  refine discSource_eq norm_wirtingerAtOne_le hcξ hQ hgmem
+    (Subtype.ext (HolderSpace.ext fun z ↦ ?_))
+  by_cases hz : z ∈ closedBall (0 : ℂ) 1
+  · have hcz : c * z ∈ closedBall (0 : ℂ) 1 := by
+      simpa [mem_closedBall, norm_mul, hc] using hz
+    rw [fixedPointMap_apply_of_small hcξ hQ hg hz, rotSource_apply, ← hfix,
+      fixedPointMap_apply_of_small hξ hQ hf hcz]
+    have hconj := (Q (discMap ξ (⇑f.val) (c * z)) : F →ₗ[ℝ] F).map_smul_eq_conj_smul_of_map_I_smul
+      (hQI _ (mem_closedBall_four (norm_discMap_le hξ hf hcz)))
+    simp only [ContinuousLinearMap.coe_coe] at hconj
+    -- The rotated disc is the disc precomposed with `w ↦ c w`, so its `∂` is multiplied by `c`.
+    rw [hrot, show discMap (c • ξ) ⇑g.val = fun w ↦ discMap ξ ⇑f.val (c * w) from funext hrot,
+      wirtingerAtOne_apply, wirtingerAtOne_apply, ← wirtingerDeriv_eq_complexLinearPart,
+      ← wirtingerDeriv_eq_complexLinearPart,
+      wirtingerDeriv_comp_mul_left,
+      ← discCutoff_mul_left hc z, hconj,
+      ← Complex.inv_eq_conj hc, smul_comm]
+  · rw [mem_supportedHolderSubmodule_iff.mp (fixedPointMap _ _ _ g).property z hz,
+      mem_supportedHolderSubmodule_iff.mp g.property z hz]
+
+/-- **Rotation-equivariant discs solving `\bar∂u = Q(u) ∂u` for a small coefficient.** There is
+`η > 0`, depending only on `F`, with the following property. Let `Q : F → (F →L[ℝ] F)` vanish at
+`0` and, on the closed ball of radius `4`, be differentiable with `‖DQ‖ ≤ η` and `η`-Lipschitz
+derivative. Then there is a family of maps `u_ξ : ℂ → F`, for `‖ξ‖ ≤ 1`, each `C¹` on the disc of
+radius `2` with `u_ξ(0) = 0`, `∂ₛu_ξ(0) = ξ` and values of norm at most `2` on the unit disc,
+solving the Beltrami equation `\bar∂u_ξ = Q(u_ξ) ∂u_ξ` on the disc of radius `1/2`. If moreover
+`Q` takes conjugate-linear values on that ball, `Q(x)(i v) = -i Q(x) v`, as the Beltrami
+coefficient of a complex structure near `i` does, then the family is equivariant under rotations:
+`u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1`. -/
+theorem exists_pos_forall_exists_conjWirtingerDeriv_eq_apply_wirtingerDeriv_and_apply_smul_eq :
+    ∃ η > 0, ∀ Q : F → F →L[ℝ] F, Q 0 = 0 →
+      (∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ Q x) →
+      (∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ Q x‖ ≤ η) →
+      (∀ x ∈ closedBall (0 : F) 4, ∀ y ∈ closedBall (0 : F) 4,
+        ‖fderiv ℝ Q x - fderiv ℝ Q y‖ ≤ η * ‖x - y‖) →
+      ∃ u : F → ℂ → F, (∀ ξ : F, ‖ξ‖ ≤ 1 →
+        ContDiffOn ℝ 1 (u ξ) (ball 0 2) ∧ u ξ 0 = 0 ∧ fderiv ℝ (u ξ) 0 1 = ξ ∧
+        (∀ z ∈ closedBall (0 : ℂ) 1, ‖u ξ z‖ ≤ 2) ∧
+        ∀ z ∈ ball (0 : ℂ) 2⁻¹,
+          conjWirtingerDeriv (u ξ) z 1 = Q (u ξ z) (wirtingerDeriv (u ξ) z 1)) ∧
+        ((∀ x ∈ closedBall (0 : F) 4, ∀ v, Q x (I • v) = -(I • Q x v)) →
+          ∀ ξ : F, ‖ξ‖ ≤ 1 → ∀ c : ℂ, ‖c‖ = 1 → ∀ w, u (c • ξ) w = u ξ (c * w)) := by
+  refine ⟨smallness F, smallness_pos, fun Q hQ0 hd h1 h2 ↦ ?_⟩
+  have hQ : SmallCoeff F Q := ⟨hQ0, hd, h1, h2⟩
+  refine ⟨fun ξ ↦ discMap ξ ⇑(discSource (wirtingerAtOne F) Q ξ).val, fun ξ hξ ↦ ?_,
+    fun hQI ξ hξ c hc w ↦ ?_⟩
+  · obtain ⟨hC, h0, h1', hb, heq⟩ := discSource_props norm_wirtingerAtOne_le hξ hQ
+    refine ⟨hC, h0, h1', hb, fun z hz ↦ ?_⟩
+    beta_reduce
+    rw [conjWirtingerDeriv_discMap ξ (differentiableAt_cauchyTransform _ z), heq z hz,
+      wirtingerAtOne_apply, wirtingerDeriv_eq_complexLinearPart]
+  · beta_reduce
+    rw [discSource_smul ξ hξ hQ hQI hc]
+    exact discMap_rotSource hc ξ (discSource_apply_zero norm_wirtingerAtOne_le hξ hQ) w
+
+/-! ### Rescaling -/
 
 omit [FiniteDimensional ℂ F] in
 /-- Rescaling the argument of a structure by `t` multiplies its derivative by `t` and the
 Lipschitz constant of the derivative by `t²`: bounds `A` and `L` on the ball of radius `r ≥ 4 t`
 give bounds `t A` and `t² L` for `x ↦ J (t x)` on the ball of radius `4`. -/
-private theorem rescale_bounds {r A L t : ℝ} (ht : 0 < t) (htr : 4 * t ≤ r)
+private theorem rescale_bounds (J : F → F →L[ℝ] F) {r A L t : ℝ} (ht : 0 < t) (htr : 4 * t ≤ r)
     (hd : ∀ x ∈ closedBall (0 : F) r, DifferentiableAt ℝ J x)
     (hA : ∀ x ∈ closedBall (0 : F) r, ‖fderiv ℝ J x‖ ≤ A)
     (hL : ∀ x ∈ closedBall (0 : F) r, ∀ y ∈ closedBall (0 : F) r,
@@ -811,14 +1150,17 @@ private theorem fderiv_rescale_apply {v : ℂ → F} {z : ℂ} (t κ : ℝ)
   simp [smul_smul]
 
 omit [FiniteDimensional ℂ F] in
-/-- A disc `v` for the rescaled structure `x ↦ J (t x)` with `∂ₛv(0) = μ ξ` gives the disc
-`u(z) = t v(z / (t μ))` for `J` with `∂ₛu(0) = ξ`, on the disc of radius `t μ / 2`. -/
-private theorem exists_fderiv_one_add_apply_fderiv_I_eq_zero_of_rescale {ξ : F} {t μ : ℝ}
-    (ht : 0 < t) (hμ : 0 < μ) {v : ℂ → F} (hvC : ContDiffOn ℝ 1 v (ball 0 2)) (hv0 : v 0 = 0)
-    (hv1 : fderiv ℝ v 0 1 = μ • ξ)
-    (hveq : ∀ z ∈ ball (0 : ℂ) 2⁻¹, fderiv ℝ v z 1 + J (t • v z) (fderiv ℝ v z I) = 0) :
-    ∃ ε > 0, ∃ u : ℂ → F, ContDiffOn ℝ 1 u (ball 0 ε) ∧ u 0 = 0 ∧ fderiv ℝ u 0 1 = ξ ∧
-      ∀ z ∈ ball (0 : ℂ) ε, fderiv ℝ u z 1 + J (u z) (fderiv ℝ u z I) = 0 := by
+/-- A disc `v`, `C¹` on the disc of radius `2` with `v(0) = 0` and `∂ₛv(0) = μ ξ`, rescales to
+the disc `u(z) = t v(z / (t μ))`, `C¹` on the disc of radius `t μ / 2` with `u(0) = 0` and
+`∂ₛu(0) = ξ`; there `Du(z) = μ⁻¹ Dv(z / (t μ))`. -/
+private theorem rescale_props {ξ : F} {t μ : ℝ} (ht : 0 < t) (hμ : 0 < μ) {v : ℂ → F}
+    (hvC : ContDiffOn ℝ 1 v (ball 0 2)) (hv0 : v 0 = 0) (hv1 : fderiv ℝ v 0 1 = μ • ξ) :
+    ContDiffOn ℝ 1 (fun z ↦ t • v ((t * μ)⁻¹ • z)) (ball 0 (t * μ / 2)) ∧
+      (fun z ↦ t • v ((t * μ)⁻¹ • z)) 0 = 0 ∧
+      fderiv ℝ (fun z ↦ t • v ((t * μ)⁻¹ • z)) 0 1 = ξ ∧
+      ∀ z ∈ ball (0 : ℂ) (t * μ / 2), (t * μ)⁻¹ • z ∈ ball (0 : ℂ) 2⁻¹ ∧
+        ∀ w, fderiv ℝ (fun z ↦ t • v ((t * μ)⁻¹ • z)) z w =
+          (t * (t * μ)⁻¹) • fderiv ℝ v ((t * μ)⁻¹ • z) w := by
   set κ := t * μ
   have hκ : 0 < κ := mul_pos ht hμ
   have hmaps : ∀ z ∈ ball (0 : ℂ) (κ / 2), κ⁻¹ • z ∈ ball (0 : ℂ) 2⁻¹ := fun z hz ↦ by
@@ -828,13 +1170,58 @@ private theorem exists_fderiv_one_add_apply_fderiv_I_eq_zero_of_rescale {ξ : F}
   have hvd : ∀ z ∈ ball (0 : ℂ) (κ / 2), DifferentiableAt ℝ v (κ⁻¹ • z) := fun z hz ↦
     (hvC.contDiffAt (isOpen_ball.mem_nhds
       (ball_subset_ball (by norm_num) (hmaps z hz)))).differentiableAt one_ne_zero
-  refine ⟨κ / 2, by positivity, fun z ↦ t • v (κ⁻¹ • z), ?_, by simp [hv0], ?_, fun z hz ↦ ?_⟩
+  refine ⟨?_, by simp [hv0], ?_, fun z hz ↦ ⟨hmaps z hz, fderiv_rescale_apply t κ (hvd z hz)⟩⟩
   · exact (hvC.comp (contDiffOn_id.const_smul κ⁻¹) fun z hz ↦
       ball_subset_ball (by norm_num) (hmaps z hz)).const_smul t
   · rw [fderiv_rescale_apply t κ (by simpa using hvd 0 (by simpa using hκ)), smul_zero, hv1,
       smul_smul, mul_right_comm, mul_inv_cancel₀ hκ.ne', one_smul]
-  · rw [fderiv_rescale_apply t κ (hvd z hz), fderiv_rescale_apply t κ (hvd z hz), map_smul,
-      ← smul_add, hveq _ (hmaps z hz), smul_zero]
+
+
+
+omit [FiniteDimensional ℂ F] in
+/-- Rescaling the argument of a map `J` whose derivative is `K`-Lipschitz on the ball of radius
+`r` makes its derivative and the Lipschitz constant of its derivative as small as required on
+the ball of radius `4`. -/
+private theorem exists_rescale {J : F → F →L[ℝ] F} {η r : ℝ} {K : ℝ≥0} (hη : 0 < η) (hr : 0 < r)
+    (hd : ∀ x ∈ closedBall (0 : F) r, DifferentiableAt ℝ J x)
+    (hL : ∀ x ∈ closedBall (0 : F) r, ∀ y ∈ closedBall (0 : F) r,
+      ‖fderiv ℝ J x - fderiv ℝ J y‖ ≤ K * ‖x - y‖) :
+    ∃ t > 0, 4 * t ≤ r ∧
+      (∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ (fun x ↦ J (t • x)) x) ∧
+      (∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ (fun x ↦ J (t • x)) x‖ ≤ η) ∧
+      ∀ x ∈ closedBall (0 : F) 4, ∀ y ∈ closedBall (0 : F) 4,
+        ‖fderiv ℝ (fun x ↦ J (t • x)) x - fderiv ℝ (fun x ↦ J (t • x)) y‖ ≤ η * ‖x - y‖ := by
+  -- On the ball of radius `r`, `DJ` is bounded by `A = ‖DJ(0)‖ + K r`.
+  have hA : ∀ x ∈ closedBall (0 : F) r, ‖fderiv ℝ J x‖ ≤ ‖fderiv ℝ J 0‖ + K * r := fun x hx ↦ by
+    have h := hL x hx 0 (mem_closedBall_self hr.le)
+    rw [sub_zero] at h
+    rw [mem_closedBall, dist_zero_right] at hx
+    calc ‖fderiv ℝ J x‖ ≤ ‖fderiv ℝ J 0‖ + ‖fderiv ℝ J x - fderiv ℝ J 0‖ :=
+          norm_le_insert' (fderiv ℝ J x) (fderiv ℝ J 0)
+      _ ≤ _ := by gcongr; exact h.trans (by gcongr)
+  -- Rescale by `t ≤ min (r / 4) 1` small enough for the bounds `η`.
+  set A := ‖fderiv ℝ J 0‖ + K * r
+  have hA0 : 0 ≤ A := by positivity
+  set t := min (min (r / 4) 1) (η / (A + K + 1))
+  have ht : 0 < t := lt_min (lt_min (by positivity) one_pos) (by positivity)
+  have ht1 : t ≤ 1 := (min_le_left _ _).trans (min_le_right _ _)
+  have htr : 4 * t ≤ r := by
+    have : t ≤ r / 4 := (min_le_left _ _).trans (min_le_left (r / 4) 1)
+    linarith
+  have htη : t * A + t * K + t ≤ η := by
+    have h : t * (A + K + 1) ≤ η := by
+      rw [← le_div_iff₀ (by positivity)]
+      exact min_le_right _ _
+    linarith [mul_add t (A + K) 1, mul_add t A K]
+  obtain ⟨hdt, hAt, hLt⟩ := rescale_bounds J ht htr hd hA hL
+  have htK : 0 ≤ t * K := mul_nonneg ht.le K.coe_nonneg
+  have hAη : t * A ≤ η := by linarith
+  have hLη : t ^ 2 * K ≤ η := by
+    have h := mul_le_mul_of_nonneg_right ht1 htK
+    rw [one_mul, ← mul_assoc, ← pow_two] at h
+    linarith [mul_nonneg ht.le hA0]
+  exact ⟨t, ht, htr, hdt, fun x hx ↦ (hAt x hx).trans hAη,
+    fun x hx y hy ↦ (hLt x hx y hy).trans (mul_le_mul_of_nonneg_right hLη (norm_nonneg _))⟩
 
 /-- **Discs solving `∂ₛu + J(u) ∂ₜu = 0` with a prescribed first jet.** Let
 `J : F → (F →L[ℝ] F)` be of class `C²` near `0` with `J(0) v = i v`. For every `ξ ∈ F` there is a
@@ -846,50 +1233,182 @@ theorem exists_fderiv_one_add_apply_fderiv_I_eq_zero_of_contDiffAt {J : F → F 
       ∀ z ∈ ball (0 : ℂ) ε, fderiv ℝ u z 1 + J (u z) (fderiv ℝ u z I) = 0 := by
   obtain ⟨η, hη, hdisc⟩ := exists_pos_forall_exists_fderiv_one_add_apply_fderiv_I_eq_zero (F := F)
   -- Near `0`, `J` is differentiable and `DJ` is Lipschitz, hence bounded.
-  obtain ⟨K, t₀, ht₀, hK⟩ := (hJ.fderiv_right (m := 1) (by norm_num)).exists_lipschitzOnWith
-  obtain ⟨r, hr, hrJ⟩ := Metric.nhds_basis_closedBall.eventually_iff.mp
-    ((hJ.eventually (by simp)).and ht₀)
-  have hd : ∀ x ∈ closedBall (0 : F) r, DifferentiableAt ℝ J x := fun x hx ↦
-    (hrJ hx).1.differentiableAt (by norm_num)
-  have hL : ∀ x ∈ closedBall (0 : F) r, ∀ y ∈ closedBall (0 : F) r,
-      ‖fderiv ℝ J x - fderiv ℝ J y‖ ≤ K * ‖x - y‖ := fun x hx y hy ↦ by
-    simpa [dist_eq_norm] using hK.dist_le_mul x (hrJ hx).2 y (hrJ hy).2
-  have hA : ∀ x ∈ closedBall (0 : F) r, ‖fderiv ℝ J x‖ ≤ ‖fderiv ℝ J 0‖ + K * r := fun x hx ↦ by
-    have h := hL x hx 0 (mem_closedBall_self hr.le)
-    rw [sub_zero] at h
-    rw [mem_closedBall, dist_zero_right] at hx
-    calc ‖fderiv ℝ J x‖ ≤ ‖fderiv ℝ J 0‖ + ‖fderiv ℝ J x - fderiv ℝ J 0‖ :=
-          norm_le_insert' (fderiv ℝ J x) (fderiv ℝ J 0)
-      _ ≤ _ := by gcongr; exact h.trans (by gcongr)
-  -- Rescale `J` by `t ≤ min (r / 4) 1` small enough for the nearly constant case.
-  set A := ‖fderiv ℝ J 0‖ + K * r
-  have hA0 : 0 ≤ A := by positivity
-  set t := min (min (r / 4) 1) (η / (A + K + 1))
-  have ht : 0 < t := lt_min (lt_min (by positivity) one_pos) (by positivity)
-  have ht1 : t ≤ 1 := (min_le_left _ _).trans (min_le_right _ _)
-  have htη : t * A + t * K + t ≤ η := by
-    have h : t * (A + K + 1) ≤ η := by
-      rw [← le_div_iff₀ (by positivity)]
-      exact min_le_right _ _
-    linarith [mul_add t (A + K) 1, mul_add t A K]
-  obtain ⟨hdt, hAt, hLt⟩ := rescale_bounds J ht (by
-    have : t ≤ r / 4 := (min_le_left _ _).trans (min_le_left (r / 4) 1)
-    linarith) hd hA hL
-  have htK : 0 ≤ t * K := mul_nonneg ht.le K.coe_nonneg
-  have hAη : t * A ≤ η := by linarith
-  have hLη : t ^ 2 * K ≤ η := by
-    have h := mul_le_mul_of_nonneg_right ht1 htK
-    rw [one_mul, ← mul_assoc, ← pow_two] at h
-    linarith [mul_nonneg ht.le hA0]
+  obtain ⟨r, hr, K, hd, hL⟩ := hJ.exists_closedBall_differentiableAt_lipschitz_fderiv
+  obtain ⟨t, ht, -, hdt, hAt, hLt⟩ := exists_rescale hη hr hd hL
   set μ := (‖ξ‖ + 1)⁻¹
   have hμ : 0 < μ := by positivity
   obtain ⟨v, hvC, hv0, hv1, -, hveq⟩ := hdisc (fun x ↦ J (t • x)) (μ • ξ)
     (by
       rw [norm_smul, Real.norm_of_nonneg hμ.le, inv_mul_le_one₀ (by positivity)]
       linarith)
-    (by simpa using hJ0) hdt
-    (fun x hx ↦ (hAt x hx).trans hAη)
-    (fun x hx y hy ↦ (hLt x hx y hy).trans (mul_le_mul_of_nonneg_right hLη (norm_nonneg _)))
-  exact exists_fderiv_one_add_apply_fderiv_I_eq_zero_of_rescale J ht hμ hvC hv0 hv1 hveq
+    (by simpa using hJ0) hdt hAt hLt
+  obtain ⟨huC, hu0, hu1, hu⟩ := rescale_props ht hμ hvC hv0 hv1
+  refine ⟨t * μ / 2, by positivity, _, huC, hu0, hu1, fun z hz ↦ ?_⟩
+  obtain ⟨hz', hDu⟩ := hu z hz
+  rw [hDu, hDu, map_smul, ← smul_add, hveq _ hz', smul_zero]
+
+/-! ### Rotation-equivariant families of `J`-holomorphic discs -/
+
+/-! #### The Beltrami coefficient of a structure near `i`
+
+The Beltrami coefficient of a real endomorphism `A` of `F` is `-cayleyCoord i A`, minus its
+Cayley coordinate (`TauCeti.cayleyCoord`) relative to the standard structure `i`, in the normed
+ring `F →L[ℝ] F`, where it depends smoothly on `A`. For `A² = -1` it is `(A + i)⁻¹ (i - A)`
+(`TauCeti.add_mul_cayleyCoord`) and conjugate linear (`TauCeti.cayleyCoord_mul_eq_neg_mul`). -/
+
+omit [FiniteDimensional ℂ F] in
+private theorem lsmul_I_mul_self :
+    (ContinuousLinearMap.lsmul ℝ ℂ I : F →L[ℝ] F) * ContinuousLinearMap.lsmul ℝ ℂ I = -1 := by
+  ext v
+  simp [smul_smul]
+
+omit [FiniteDimensional ℂ F] in
+private theorem mul_self_eq_neg_one {A : F →L[ℝ] F} (hAA : ∀ v, A (A v) = -v) : A * A = -1 := by
+  ext v
+  simp [hAA]
+
+omit [FiniteDimensional ℂ F] in
+/-- `(A + i) Q v = (i - A) v` for the Beltrami coefficient `Q` of `A`, when `A² = -1` and `i + A`
+is invertible. -/
+private theorem add_apply_neg_cayleyCoord {A : F →L[ℝ] F} (hAA : ∀ v, A (A v) = -v)
+    (hA : IsUnit (ContinuousLinearMap.lsmul ℝ ℂ I + A)) (v : F) :
+    A ((-cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) A) v) +
+        I • (-cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) A) v = I • v - A v := by
+  have h := congrArg (fun T : F →L[ℝ] F ↦ T v) (add_mul_cayleyCoord
+    ((mul_self_eq_neg_one hAA).trans lsmul_I_mul_self.symm) hA)
+  simp only [add_mul, mul_apply_eq_comp, add_apply, sub_apply,
+    ContinuousLinearMap.lsmul_apply] at h
+  simp only [neg_apply, map_neg, smul_neg]
+  rw [← neg_add, h, neg_sub]
+
+omit [FiniteDimensional ℂ F] in
+/-- **The Beltrami form of the Cauchy–Riemann equation.** If `A² = -1`, `i + A` is invertible and
+the real-linear map `L : ℂ → F` satisfies `\bar∂L = Q ∂L` for the Beltrami coefficient `Q` of
+`A`, then `L 1 + A (L i) = 0`. -/
+private theorem apply_one_add_apply_apply_I_eq_zero {A : F →L[ℝ] F} (hAA : ∀ v, A (A v) = -v)
+    (hA : IsUnit (ContinuousLinearMap.lsmul ℝ ℂ I + A)) {L : ℂ →L[ℝ] F}
+    (hL : L.complexAntilinearPart 1 =
+      (-cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) A) (L.complexLinearPart 1)) :
+    L 1 + A (L I) = 0 := by
+  have hII : ∀ w : F, I • I • w = -w := fun w ↦ by rw [smul_smul, I_mul_I, neg_one_smul]
+  rw [ContinuousLinearMap.complexAntilinearPart_apply, ContinuousLinearMap.complexLinearPart_apply,
+    smul_eq_mul, mul_one, map_smul] at hL
+  have hL' : L 1 + I • L I = (-cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) A) (L 1 - I • L I) :=
+    smul_right_injective F (by norm_num : (2⁻¹ : ℝ) ≠ 0) hL
+  -- The equation `(A + i) \bar∂L = (i - A) ∂L` reduces to `A (L 1) = L i`.
+  have h := add_apply_neg_cayleyCoord hAA hA (L 1 - I • L I)
+  rw [← hL'] at h
+  simp only [map_add, map_sub, smul_add, smul_sub, hII] at h
+  have hq : A (L 1) = L I := by
+    linear_combination (norm := module) (2⁻¹ : ℝ) • h
+  rw [← hq, hAA, add_neg_cancel]
+
+omit [FiniteDimensional ℂ F] in
+/-- The Beltrami form of the Cauchy–Riemann equation for a real multiple `L = s M` of a map `M`
+solving it. -/
+private theorem apply_one_add_apply_apply_I_eq_zero_of_eq_smul {A : F →L[ℝ] F}
+    (hAA : ∀ v, A (A v) = -v) (hA : IsUnit (ContinuousLinearMap.lsmul ℝ ℂ I + A))
+    {L M : ℂ →L[ℝ] F} {s : ℝ} (hLM : L = s • M)
+    (hM : M.complexAntilinearPart 1 =
+      (-cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) A) (M.complexLinearPart 1)) :
+    L 1 + A (L I) = 0 := by
+  refine apply_one_add_apply_apply_I_eq_zero hAA hA ?_
+  rw [hLM, ContinuousLinearMap.complexAntilinearPart_smul,
+    ContinuousLinearMap.complexLinearPart_smul, smul_apply, smul_apply, hM, map_smul]
+
+/-- For a structure `J` of class `C²` near `0` with `J(0) = i` and `J² = -1` near `0`, the Beltrami
+coefficient `Q = -cayleyCoord i J` vanishes at `0`, and on a small ball it is differentiable with
+Lipschitz derivative, `J² = -1` and `i + J` is invertible. -/
+private theorem exists_neg_cayleyCoord_local {J : F → F →L[ℝ] F} (hJ : ContDiffAt ℝ 2 J 0)
+    (hJ0 : ∀ v, J 0 v = I • v) (hJJ : ∀ᶠ x in 𝓝 0, ∀ v, J x (J x v) = -v) :
+    ∃ r > 0, ∃ K : ℝ≥0, -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J 0) = 0 ∧
+      (∀ x ∈ closedBall (0 : F) r,
+        DifferentiableAt ℝ (fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J x)) x) ∧
+      (∀ x ∈ closedBall (0 : F) r, ∀ y ∈ closedBall (0 : F) r,
+        ‖fderiv ℝ (fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J x)) x -
+          fderiv ℝ (fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J x)) y‖ ≤
+            K * ‖x - y‖) ∧
+      ∀ x ∈ closedBall (0 : F) r,
+        (∀ v, J x (J x v) = -v) ∧ IsUnit (ContinuousLinearMap.lsmul ℝ ℂ I + J x) := by
+  have := FiniteDimensional.completeSpace ℂ F
+  have hI0 : J 0 = ContinuousLinearMap.lsmul ℝ ℂ I := by
+    ext v
+    simp [hJ0]
+  -- `Q` is `C²` near `0`, since `i + J(0) = 2 i` is invertible.
+  have hU : IsUnit (ContinuousLinearMap.lsmul ℝ ℂ I + J 0) := by
+    have h2 := (IsUnit.mk0 (2 : ℝ) two_ne_zero).map (algebraMap ℝ (F →L[ℝ] F))
+    rw [map_ofNat] at h2
+    rw [hI0, ← two_mul]
+    exact isUnit_two_mul_of_mul_self_eq_neg_one h2 lsmul_I_mul_self
+  have hAC : ContDiffAt ℝ 2 (fun x ↦ ContinuousLinearMap.lsmul ℝ ℂ I + J x) 0 :=
+    contDiffAt_const.add hJ
+  have hinv : ContDiffAt ℝ 2 Ring.inverse (ContinuousLinearMap.lsmul ℝ ℂ I + J 0) :=
+    hU.unit_spec ▸ contDiffAt_ringInverse ℝ hU.unit
+  have hQC : ContDiffAt ℝ 2 (fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J x)) 0 := by
+    simp only [cayleyCoord_def]
+    exact ((contDiffAt_const.sub hJ).mul (hinv.comp 0 hAC)).neg
+  have hunit : ∀ᶠ x in 𝓝 0, IsUnit (ContinuousLinearMap.lsmul ℝ ℂ I + J x) :=
+    hAC.continuousAt.eventually (Units.isOpen.mem_nhds hU)
+  obtain ⟨r₁, hr₁, K, hd, hL⟩ := hQC.exists_closedBall_differentiableAt_lipschitz_fderiv
+  obtain ⟨r₂, hr₂, hr₂J⟩ := Metric.nhds_basis_closedBall.eventually_iff.mp (hJJ.and hunit)
+  have h₁ : closedBall (0 : F) (min r₁ r₂) ⊆ closedBall 0 r₁ :=
+    closedBall_subset_closedBall (min_le_left _ _)
+  have h₂ : closedBall (0 : F) (min r₁ r₂) ⊆ closedBall 0 r₂ :=
+    closedBall_subset_closedBall (min_le_right _ _)
+  exact ⟨min r₁ r₂, lt_min hr₁ hr₂, K, by rw [hI0, cayleyCoord_self, neg_zero],
+    fun x hx ↦ hd x (h₁ hx), fun x hx y hy ↦ hL x (h₁ hx) y (h₁ hy), fun x hx ↦ hr₂J (h₂ hx)⟩
+
+/-- **A rotation-equivariant family of `J`-holomorphic discs with prescribed first jets.** Let
+`J : F → (F →L[ℝ] F)` be of class `C²` near `0`, with `J(0) v = i v` and `J(x)² = -1` near `0`, as
+for an almost complex structure in coordinates centred at a point where it is standard. Then
+there are `ε > 0` and maps `u_ξ : ℂ → F`, for `‖ξ‖ ≤ 1`, each `C¹` on the disc of radius `ε` with
+`u_ξ(0) = 0` and `∂ₛu_ξ(0) = ξ`, solving `∂ₛu_ξ + J(u_ξ) ∂ₜu_ξ = 0` there, such that rotating the
+first jet rotates the parameter: `u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1`. So the discs through `0`
+with first jets `ξ` and `c ξ` have the same image, parametrized differently by the rotation
+`w ↦ c w`. -/
+theorem exists_pos_exists_forall_fderiv_one_add_apply_fderiv_I_eq_zero_and_apply_smul_eq
+    {J : F → F →L[ℝ] F} (hJ : ContDiffAt ℝ 2 J 0) (hJ0 : ∀ v, J 0 v = I • v)
+    (hJJ : ∀ᶠ x in 𝓝 0, ∀ v, J x (J x v) = -v) :
+    ∃ ε > 0, ∃ u : F → ℂ → F, (∀ ξ : F, ‖ξ‖ ≤ 1 →
+      ContDiffOn ℝ 1 (u ξ) (ball 0 ε) ∧ u ξ 0 = 0 ∧ fderiv ℝ (u ξ) 0 1 = ξ ∧
+        ∀ z ∈ ball (0 : ℂ) ε, fderiv ℝ (u ξ) z 1 + J (u ξ z) (fderiv ℝ (u ξ) z I) = 0) ∧
+      ∀ ξ : F, ‖ξ‖ ≤ 1 → ∀ c : ℂ, ‖c‖ = 1 → ∀ w, u (c • ξ) w = u ξ (c * w) := by
+  obtain ⟨η, hη, hdisc⟩ :=
+    exists_pos_forall_exists_conjWirtingerDeriv_eq_apply_wirtingerDeriv_and_apply_smul_eq (F := F)
+  obtain ⟨r, hr, K, hQ0, hd, hL, hrJ⟩ := exists_neg_cayleyCoord_local hJ hJ0 hJJ
+  set Q : F → F →L[ℝ] F := fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J x)
+  obtain ⟨t, ht, htr, hdt, hAt, hLt⟩ := exists_rescale hη hr hd hL
+  have hmem : ∀ x : F, ‖x‖ ≤ 4 → t • x ∈ closedBall (0 : F) r := fun x hx ↦ by
+    rw [mem_closedBall, dist_zero_right, norm_smul, Real.norm_of_nonneg ht.le]
+    nlinarith
+  obtain ⟨v, hv, hveq⟩ := hdisc (fun x ↦ Q (t • x)) (by rw [smul_zero]; exact hQ0) hdt hAt hLt
+  replace hveq := hveq fun x hx w ↦ by
+    -- The Cayley coordinate of a square root of `-1` anticommutes with `i`.
+    have h := congrArg (fun T : F →L[ℝ] F ↦ T w) (cayleyCoord_mul_eq_neg_mul lsmul_I_mul_self
+      (mul_self_eq_neg_one (hrJ _ (hmem x (by simpa using hx))).1))
+    simp only [mul_apply_eq_comp, neg_apply, ContinuousLinearMap.lsmul_apply] at h
+    simp only [Q, neg_apply, h, smul_neg]
+  have hμ : (0 : ℝ) < 2⁻¹ := by norm_num
+  have hμξ : ∀ ξ : F, ‖ξ‖ ≤ 1 → ‖(2⁻¹ : ℝ) • ξ‖ ≤ 1 := fun ξ hξ ↦ by
+    rw [norm_smul, Real.norm_of_nonneg hμ.le]
+    linarith
+  refine ⟨t * 2⁻¹ / 2, by positivity, fun ξ z ↦ t • v ((2⁻¹ : ℝ) • ξ) ((t * 2⁻¹)⁻¹ • z),
+    fun ξ hξ ↦ ?_, fun ξ hξ c hc w ↦ ?_⟩
+  · obtain ⟨hvC, hv0, hv1, hvb, hvbel⟩ := hv _ (hμξ ξ hξ)
+    obtain ⟨huC, hu0, hu1, hu⟩ := rescale_props ht hμ hvC hv0 hv1
+    refine ⟨huC, hu0, hu1, fun z hz ↦ ?_⟩
+    obtain ⟨hz', hDu⟩ := hu z hz
+    set y := (t * 2⁻¹)⁻¹ • z
+    have hvy : ‖v ((2⁻¹ : ℝ) • ξ) y‖ ≤ 4 :=
+      (hvb y (ball_subset_closedBall.trans (closedBall_subset_closedBall (by norm_num)) hz')).trans
+        (by norm_num)
+    have hy' := hrJ _ (hmem _ hvy)
+    -- The derivative of the rescaled disc is a real multiple of that of `v`.
+    refine apply_one_add_apply_apply_I_eq_zero_of_eq_smul hy'.1 hy'.2
+      (ContinuousLinearMap.ext hDu) ?_
+    rw [← conjWirtingerDeriv_eq_complexAntilinearPart, ← wirtingerDeriv_eq_complexLinearPart]
+    exact hvbel y hz'
+  · simp only
+    rw [smul_comm (2⁻¹ : ℝ) c ξ, hveq _ (hμξ ξ hξ) c hc, mul_smul_comm]
 
 end TauCeti

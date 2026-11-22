@@ -48,6 +48,8 @@ perturbation lemma for complete filtered contractions, where the series need not
   separated.
 * `TauCeti.IsCompleteFiltration.pi`: a product of complete separated filtrations, filtered
   coordinatewise, is complete and separated.
+* `TauCeti.IsCompleteFiltration.comap`: the preimage of a complete filtration under an injection
+  whose range contains `F 0` is complete.
 * `TauCeti.isCompleteFiltration_pi`: the filtration of a product `∀ i, E i` by vanishing of the
   coordinates of weight below `n` is complete and separated.
 
@@ -189,6 +191,25 @@ theorem surjOn {N : Type*} [AddCommGroup N] [Module R N] {G : ℕ → Submodule 
   exact sub_mem (x n).property (hf n ⟨_, hL n, rfl⟩)
 
 end IsCompleteFiltration
+
+/-- **Pulling back a complete filtration along an injection.** If `ι : M →ₗ[R] N` is injective,
+`F` is a complete separated filtration of `N`, and `F 0` lies in the range of `ι`, then the
+preimages `ι⁻¹(F n)` form a complete separated filtration of `M`: a submodule of `N` containing
+`F 0` inherits the completeness of `F`. -/
+theorem IsCompleteFiltration.comap {N : Type*} [AddCommGroup N] [Module R N]
+    {F : ℕ → Submodule R N} (hF : IsCompleteFiltration F) (ι : M →ₗ[R] N)
+    (hι : Function.Injective ι) (h₀ : F 0 ≤ LinearMap.range ι) :
+    IsCompleteFiltration fun n ↦ (F n).comap ι where
+  antitone _ _ h := Submodule.comap_mono (hF.antitone h)
+  eq_zero_of_forall_mem x hx := hι (by rw [map_zero]; exact hF.eq_zero_of_forall_mem _ hx)
+  exists_limit x hx := by
+    obtain ⟨L, hL⟩ := hF.exists_limit (fun n ↦ ι (x n)) fun n ↦ by
+      simpa only [map_sub] using Submodule.mem_comap.1 (hx n)
+    -- The limit lies in the range of `ι`, since it differs from `ι (x 0)` by an element of `F 0`.
+    obtain ⟨u, hu⟩ := h₀ (hL 0)
+    refine ⟨u + x 0, fun n ↦ Submodule.mem_comap.2 ?_⟩
+    rw [map_sub, map_add, hu, sub_add_cancel]
+    exact hL n
 
 end TauCeti
 
