@@ -371,12 +371,9 @@ vanishes. -/
 theorem IsMorse.filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_ne_add_one (r : ℤ)
     (hr : 2 ≤ r) (pq pq' : ℤ × ℤ) :
     ((filteredSpaceSpectralSequence (Y := TopCat.of M) R
-      ((sublevel_mono f).comp ha.monotone)).page r).d pq pq' = 0 := by
-  by_cases hrel : (ComplexShape.up' ((r, 1 - r) : ℤ × ℤ)).Rel pq pq'
-  · exact SpectralSequence.page_d_eq_zero_of_le _ le_rfl
-      (isZero_or_isZero_page_two_X R hf ha hind
-        (Abelian.SpectralObject.coreE₂Cohomological.hc r pq pq' hrel hr)) r hr
-  · exact HomologicalComplex.shape _ _ _ hrel
+      ((sublevel_mono f).comp ha.monotone)).page r).d pq pq' = 0 :=
+  filteredSpaceSpectralSequence_page_d_eq_zero_of_isZero_or_isZero R _
+    (fun _ _ ↦ isZero_or_isZero_page_two_X R hf ha hind) r hr pq pq'
 
 /-- **The graded homology in the lacunary case.** Let `f` be a Morse function and `a : ℤ → ℝ` a
 critical-band cut of `f`, starting below and ending above all values of `f`: monotone, with every
@@ -394,29 +391,12 @@ theorem IsMorse.nonempty_cokernel_abutmentFiltrationMap_iso_sigma_of_forall_ne_a
         ((sublevel_mono f).comp ha.monotone)).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) ≅
       ∐ fun _ : {x : ↥(criticalPoints I f ∩ f ⁻¹' Ioc (a pq.2) (a (pq.2 + 1))) //
         manifoldMorseIndex I f x = n} ↦ R) := by
-  set E :=
-    filteredSpaceSpectralSequence (Y := TopCat.of M) R ((sublevel_mono f).comp ha.monotone)
-  -- On a late enough page the object at `pq` is the graded piece of the homology of `M`.
-  have hX₀ : ((fun b ↦ {x | f x ≤ b}) ∘ a) q₀ = ∅ :=
-    eq_empty_of_forall_notMem fun x hx ↦ (hq₀ x).not_ge hx
-  have hX₁ : ((fun b ↦ {x | f x ≤ b}) ∘ a) q₁ = univ := eq_univ_of_forall hq₁
-  set r := max 2 (max (pq.2 - q₀ + 2) (q₁ - pq.2 + 1))
-  have hr : 2 ≤ r := le_max_left _ _
-  have eE := filteredSpaceSpectralSequencePageXIsoGradedOfFinite (Y := TopCat.of M) R
-    ((sublevel_mono f).comp ha.monotone) hX₀ hX₁ r hr pq (by lia) (by lia)
   obtain ⟨e₂⟩ := hf.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma R ha.monotone
     (ha.isCriticalBand _) pq rfl n hn
-  by_cases hpq : IsZero ((E.page 2).X pq)
-  · -- The object at `pq` vanishes on every page, and so does the coproduct.
-    exact ⟨(eE.isZero_iff.1 (E.isZero_page_X_of_le le_rfl hpq r hr)).iso
-      (e₂.isZero_iff.1 hpq)⟩
-  -- Otherwise every object joined to `pq` by a differential vanishes, so `pq` survives.
-  let e := E.pageXIsoOfLEOfIsZero le_rfl (pq := pq) (fun s hs pq' hpq' ↦ by
-    rcases hpq' with hpq' | hpq'
-    · exact (isZero_or_isZero_page_two_X R hf ha hind
-        (Abelian.SpectralObject.coreE₂Cohomological.hc s pq pq' hpq' hs)).resolve_left hpq
-    · exact (isZero_or_isZero_page_two_X R hf ha hind
-        (Abelian.SpectralObject.coreE₂Cohomological.hc s pq' pq hpq' hs)).resolve_right hpq) r hr
-  exact ⟨eE.symm ≪≫ e ≪≫ e₂⟩
+  obtain ⟨e⟩ := nonempty_cokernel_abutmentFiltrationMap_iso_page_two_X_of_isZero_or_isZero R
+    ((sublevel_mono f).comp ha.monotone)
+    (eq_empty_of_forall_notMem fun x hx ↦ (hq₀ x).not_ge hx) (eq_univ_of_forall hq₁)
+    (fun _ _ ↦ isZero_or_isZero_page_two_X R hf ha hind) pq
+  exact ⟨e ≪≫ e₂⟩
 
 end TauCeti

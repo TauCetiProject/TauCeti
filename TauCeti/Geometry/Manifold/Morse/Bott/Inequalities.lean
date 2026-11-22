@@ -78,8 +78,8 @@ models and the coefficient field here live in `Type`.
   `TauCeti.IsMorseBottFamily.sum_range_neg_one_pow_mul_bettiNumber_eq_sum` and
   `TauCeti.IsMorseBottFamily.exists_sum_range_monomial_sum_eq_add_mul`: the weak and strong
   Morse–Bott inequalities, Euler's equality and the Morse–Bott polynomial identity over `𝔽₂`.
-* `TauCeti.IsMorseBottFamily.bettiNumber_eq_sum`: the lacunary principle over `𝔽₂`, `bₙ = cₙ` when
-  no two consecutive `cₙ` are both nonzero.
+* `TauCeti.IsMorseBottFamily.bettiNumber_eq_sum_of_forall_eq_zero_or_eq_zero`: the lacunary
+  principle over `𝔽₂`, `bₙ = cₙ` when no two consecutive `cₙ` are both nonzero.
 
 ## References
 
@@ -466,7 +466,7 @@ theorem exists_sum_range_monomial_sum_eq_add_mul {n : ℕ} (hdimn : finrank ℝ 
 `cₖ = ∑ b_{k - r j}(S j; K)` over the pieces of index at most `k`. If of any two consecutive counts
 `cₖ` and `cₖ₊₁` one vanishes, then `bₙ(M; K) = cₙ` for every `n`: the Morse–Bott function is
 perfect over `K`. -/
-theorem bettiNumber_eq_sum
+theorem bettiNumber_eq_sum_of_forall_eq_zero_or_eq_zero
     (hlac : ∀ k, ∑ p with r p ≤ k, bettiNumber K (S p) (k - r p) = 0 ∨
       ∑ p with r p ≤ k + 1, bettiNumber K (S p) (k + 1 - r p) = 0) (n : ℕ) :
     bettiNumber K M n = ∑ p with r p ≤ n, bettiNumber K (S p) (n - r p) :=

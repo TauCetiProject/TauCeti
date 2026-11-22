@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
 public import TauCeti.Geometry.Manifold.Morse.Bott.Homology
 public import TauCeti.Geometry.Manifold.Morse.Bott.Inequalities
-import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 
 /-!
 # The first page of the critical-band spectral sequence of a Morse–Bott function
@@ -55,17 +54,21 @@ disc bundle contributes the homology of its Thom pair, which over `𝔽₂` is t
 by its rank. So the first page records the Morse–Bott counts `cₙ = ∑ⱼ b_{n - r j}(S j; 𝔽₂)` band by
 band. If of any two consecutive counts `cₙ` and `cₙ₊₁` one vanishes, every differential on every
 page of the spectral sequence of a critical-band cut vanishes
-(`TauCeti.IsMorseBottFamily.filteredSpaceSpectralSequence_page_d_eq_zero`), since a differential
-raises the total degree by one. The first page then survives unchanged to the homology of `M`:
-the graded piece `F_{q+1} Hₙ(M) / F_q Hₙ(M)` of the filtration of `Hₙ(M; 𝔽₂)` by the images of the
-homology of the sublevels has the dimension of the contribution of the pieces in the `q`th band
-(`TauCeti.IsMorseBottFamily.finrank_cokernel_abutmentFiltrationMap`). This refines the lacunary
-principle `TauCeti.IsMorseBottFamily.bettiNumber_eq_sum`, which records only the total dimensions
-`bₙ(M; 𝔽₂) = cₙ`. For a Morse function every piece is a point and these are the corresponding
-statements `TauCeti.IsMorse.finrank_filteredSpaceSpectralSequence_page_two_X`,
+(`IsMorseBottFamily.filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_eq_zero_or_eq_zero`),
+since a differential raises the total degree by one. The first page then survives unchanged to the
+homology of `M`: the graded piece `F_{q+1} Hₙ(M) / F_q Hₙ(M)` of the filtration of `Hₙ(M; 𝔽₂)` by
+the images of the homology of the sublevels has the dimension of the contribution of the pieces in
+the `q`th band
+(`TauCeti.IsMorseBottFamily.finrank_cokernel_abutmentFiltrationMap_of_forall_eq_zero_or_eq_zero`).
+This refines the lacunary principle
+`TauCeti.IsMorseBottFamily.bettiNumber_eq_sum_of_forall_eq_zero_or_eq_zero`, which records only the
+total dimensions `bₙ(M; 𝔽₂) = cₙ`. For a Morse function every piece is a point and these are the
+corresponding statements `TauCeti.IsMorse.finrank_filteredSpaceSpectralSequence_page_two_X`,
 `TauCeti.IsMorse.filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_ne_add_one` and
 `TauCeti.IsMorse.nonempty_cokernel_abutmentFiltrationMap_iso_sigma_of_forall_ne_add_one` over
-`𝔽₂`.
+`𝔽₂`. The degeneration and the graded pieces are deduced, in both cases, from the statements for
+any filtered space (`TauCeti.filteredSpaceSpectralSequence_page_d_eq_zero_of_isZero_or_isZero` and
+`TauCeti.nonempty_cokernel_abutmentFiltrationMap_iso_page_two_X_of_isZero_or_isZero`).
 
 ## Main results
 
@@ -84,10 +87,10 @@ In the namespace `TauCeti.IsMorseBottFamily`:
   of the critical submanifolds on the level `c` attached.
 * `finrank_filteredSpaceSpectralSequence_page_two_X`: over `𝔽₂`, the dimension of the first page
   at a critical band is the sum of the shifted Betti numbers of the pieces in the band.
-* `filteredSpaceSpectralSequence_page_d_eq_zero`: degeneration when no two consecutive Morse–Bott
-  counts over `𝔽₂` are both nonzero.
-* `finrank_cokernel_abutmentFiltrationMap`: in that case, the dimensions of the graded pieces of
-  the homology of `M`.
+* `filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_eq_zero_or_eq_zero`: degeneration when
+  no two consecutive Morse–Bott counts over `𝔽₂` are both nonzero.
+* `finrank_cokernel_abutmentFiltrationMap_of_forall_eq_zero_or_eq_zero`: in that case, the
+  dimensions of the graded pieces of the homology of `M`.
 
 ## References
 
@@ -365,15 +368,12 @@ Morse–Bott function on a compact boundaryless manifold, the piece `S j` having
 cut of `f`. Write `cₙ = ∑ b_{n - r j}(S j; K)` over the pieces of index at most `n`. If of any two
 consecutive counts `cₙ` and `cₙ₊₁` one vanishes, every differential on every page of the spectral
 sequence of the filtration `q ↦ {f ≤ a q}` with coefficients in `K` vanishes. -/
-theorem filteredSpaceSpectralSequence_page_d_eq_zero (ha : IsCriticalBandCut I f a) (r' : ℤ)
-    (hr' : 2 ≤ r') (pq pq' : ℤ × ℤ) :
+theorem filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_eq_zero_or_eq_zero
+    (ha : IsCriticalBandCut I f a) (r' : ℤ) (hr' : 2 ≤ r') (pq pq' : ℤ × ℤ) :
     ((filteredSpaceSpectralSequence (Y := TopCat.of M) (ModuleCat.of K K)
-      ((sublevel_mono f).comp ha.monotone)).page r').d pq pq' = 0 := by
-  by_cases hrel : (ComplexShape.up' ((r', 1 - r') : ℤ × ℤ)).Rel pq pq'
-  · exact SpectralSequence.page_d_eq_zero_of_le _ le_rfl
-      (h.isZero_or_isZero_page_two_X hr K hlac ha
-        (Abelian.SpectralObject.coreE₂Cohomological.hc r' pq pq' hrel hr')) r' hr'
-  · exact HomologicalComplex.shape _ _ _ hrel
+      ((sublevel_mono f).comp ha.monotone)).page r').d pq pq' = 0 :=
+  filteredSpaceSpectralSequence_page_d_eq_zero_of_isZero_or_isZero _ _
+    (fun _ _ ↦ h.isZero_or_isZero_page_two_X hr K hlac ha) r' hr' pq pq'
 
 open scoped Classical in
 /-- **The graded homology of a lacunary Morse–Bott function over `𝔽₂`.** Let the family
@@ -386,40 +386,21 @@ two consecutive counts `cₙ = ∑ b_{n - r j}(S j; K)` one vanishes, the graded
 `(a q, a (q + 1)]` of index at most `n`. The graded piece is written as the cokernel of the
 inclusion `F_q Hₙ ⟶ F_{q+1} Hₙ` of the filtration of the abutment of the spectral sequence, which
 is `Hₙ(M)` in total degree `p + q = -n` (`TauCeti.chainFiltrationAbutmentIso`). -/
-theorem finrank_cokernel_abutmentFiltrationMap (ha : IsCriticalBandCut I f a) {q₀ q₁ : ℤ}
-    (hq₀ : ∀ x, a q₀ < f x) (hq₁ : ∀ x, f x ≤ a q₁) (pq : ℤ × ℤ) (n : ℕ)
-    (hn : pq.1 + pq.2 = -n) :
+theorem finrank_cokernel_abutmentFiltrationMap_of_forall_eq_zero_or_eq_zero
+    (ha : IsCriticalBandCut I f a) {q₀ q₁ : ℤ} (hq₀ : ∀ x, a q₀ < f x) (hq₁ : ∀ x, f x ≤ a q₁)
+    (pq : ℤ × ℤ) (n : ℕ) (hn : pq.1 + pq.2 = -n) :
     finrank K (cokernel ((filteredSpaceSpectralObject (Y := TopCat.of M) (ModuleCat.of K K)
         ((sublevel_mono f).comp ha.monotone)).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :
         ModuleCat K) =
       ∑ j with (∀ s, f (i j s) ∈ Ioc (a pq.2) (a (pq.2 + 1))) ∧ r j ≤ n,
         bettiNumber K (S j) (n - r j) := by
-  set E := filteredSpaceSpectralSequence (Y := TopCat.of M) (ModuleCat.of K K)
-    ((sublevel_mono f).comp ha.monotone)
   rw [← h.finrank_filteredSpaceSpectralSequence_page_two_X hr K ha.monotone
     (ha.isCriticalBand _) pq rfl n hn]
-  -- On a late enough page the object at `pq` is the graded piece of the homology of `M`.
-  have hX₀ : ((fun b ↦ {x | f x ≤ b}) ∘ a) q₀ = ∅ :=
-    eq_empty_of_forall_notMem fun x hx ↦ (hq₀ x).not_ge hx
-  have hX₁ : ((fun b ↦ {x | f x ≤ b}) ∘ a) q₁ = univ := eq_univ_of_forall hq₁
-  set r' := max 2 (max (pq.2 - q₀ + 2) (q₁ - pq.2 + 1))
-  have hr' : 2 ≤ r' := le_max_left _ _
-  let eE := filteredSpaceSpectralSequencePageXIsoGradedOfFinite (Y := TopCat.of M)
-    (ModuleCat.of K K) ((sublevel_mono f).comp ha.monotone) hX₀ hX₁ r' hr' pq (by lia) (by lia)
-  by_cases hpq : IsZero ((E.page 2).X pq)
-  · -- The object at `pq` vanishes on every page, and so does the graded piece.
-    have h₁ := ModuleCat.isZero_iff_subsingleton.1 hpq
-    have h₂ := ModuleCat.isZero_iff_subsingleton.1
-      (eE.isZero_iff.1 (E.isZero_page_X_of_le le_rfl hpq r' hr'))
-    rw [Module.finrank_zero_of_subsingleton, Module.finrank_zero_of_subsingleton]
-  -- Otherwise every object joined to `pq` by a differential vanishes, so `pq` survives.
-  let e := E.pageXIsoOfLEOfIsZero le_rfl (pq := pq) (fun s hs pq' hpq' ↦ by
-    rcases hpq' with hpq' | hpq'
-    · exact (h.isZero_or_isZero_page_two_X hr K hlac ha
-        (Abelian.SpectralObject.coreE₂Cohomological.hc s pq pq' hpq' hs)).resolve_left hpq
-    · exact (h.isZero_or_isZero_page_two_X hr K hlac ha
-        (Abelian.SpectralObject.coreE₂Cohomological.hc s pq' pq hpq' hs)).resolve_right hpq) r' hr'
-  exact (eE.symm ≪≫ e).toLinearEquiv.finrank_eq
+  obtain ⟨e⟩ := nonempty_cokernel_abutmentFiltrationMap_iso_page_two_X_of_isZero_or_isZero
+    (Y := TopCat.of M) (ModuleCat.of K K) ((sublevel_mono f).comp ha.monotone)
+    (eq_empty_of_forall_notMem fun x hx ↦ (hq₀ x).not_ge hx) (eq_univ_of_forall hq₁)
+    (fun _ _ ↦ h.isZero_or_isZero_page_two_X hr K hlac ha) pq
+  exact e.toLinearEquiv.finrank_eq
 
 end IsMorseBottFamily
 

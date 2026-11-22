@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.ChainFunctor
 public import TauCeti.AlgebraicTopology.Singular.Triple
 import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
+import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 
 /-!
 # The spectral sequence of a filtered space
@@ -54,9 +55,14 @@ singular chains.
   (`TauCeti.toFilteredSpaceTopColumnEInfty`) vanishes exactly on the image of `Hₙ(X q)`
   (`TauCeti.toFilteredSpaceTopColumnEInfty_eq_zero_iff`).
   When `X a = ∅` and `X b = Y`, the filtration is finite and the spectral sequence converges
-  strongly (`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfFinite`). Filtrations that
-  absorb every compact subset without reaching `Y`, such as the skeletal filtration over an
-  infinite-dimensional CW complex, are treated in
+  strongly (`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfFinite`). If moreover of any
+  two positions of the first page whose total degrees differ by one at least one carries the zero
+  object, every differential from the first page on vanishes
+  (`TauCeti.filteredSpaceSpectralSequence_page_d_eq_zero_of_isZero_or_isZero`) and the first page
+  is the graded homology
+  (`TauCeti.nonempty_cokernel_abutmentFiltrationMap_iso_page_two_X_of_isZero_or_isZero`).
+  Filtrations that absorb every compact subset without reaching `Y`, such as the skeletal
+  filtration over an infinite-dimensional CW complex, are treated in
   `TauCeti.AlgebraicTopology.Singular.FilteredSpace.Exhaustive`; the vanishing of the graded
   pieces `Hₙ(X b, X a)` they need there is transported to the quotients `F_b / F_a` by
   `TauCeti.isZero_homology_cokernel_singularChainFiltration`.
@@ -280,6 +286,51 @@ def filteredSpaceSpectralSequencePageXIsoGradedOfFinite {a b : ℤ} (ha : X a = 
       cokernel ((filteredSpaceSpectralObject R hX).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :=
   CochainComplex.filtrationSpectralSequencePageXIsoGradedOfFinite _ _
     (singularChainFiltration_eq_bot R ha) (chainFiltration_eq_top _ hb) r hr pq hra hrb
+
+/-- **Degeneration of the spectral sequence of a filtered space.** If of any two positions of the
+first page whose total degrees differ by one at least one carries the zero object, every
+differential on every page `r ≥ 2` vanishes, since a differential raises the total degree by
+one. -/
+lemma filteredSpaceSpectralSequence_page_d_eq_zero_of_isZero_or_isZero
+    (h : ∀ pq pq' : ℤ × ℤ, pq.1 + pq.2 + 1 = pq'.1 + pq'.2 →
+      IsZero (((filteredSpaceSpectralSequence R hX).page 2).X pq) ∨
+        IsZero (((filteredSpaceSpectralSequence R hX).page 2).X pq'))
+    (r : ℤ) (hr : 2 ≤ r) (pq pq' : ℤ × ℤ) :
+    ((filteredSpaceSpectralSequence R hX).page r).d pq pq' = 0 := by
+  by_cases hrel : (ComplexShape.up' ((r, 1 - r) : ℤ × ℤ)).Rel pq pq'
+  · exact SpectralSequence.page_d_eq_zero_of_le _ le_rfl
+      (h pq pq' (Abelian.SpectralObject.coreE₂Cohomological.hc r pq pq' hrel hr)) r hr
+  · exact HomologicalComplex.shape _ _ _ hrel
+
+/-- **The graded homology of a degenerate finite filtration of a space.** Let `X a = ∅` and
+`X b = Y`. If of any two positions of the first page whose total degrees differ by one at least
+one carries the zero object, the graded piece `F_{q+1} H / F_q H` of the filtration of the
+abutment in degree `p + q`, which is `H_{-(p+q)}(Y)` by `TauCeti.chainFiltrationAbutmentIso`, is
+isomorphic to the object at `(p, q)` on the first page. -/
+lemma nonempty_cokernel_abutmentFiltrationMap_iso_page_two_X_of_isZero_or_isZero {a b : ℤ}
+    (ha : X a = ∅) (hb : X b = Set.univ)
+    (h : ∀ pq pq' : ℤ × ℤ, pq.1 + pq.2 + 1 = pq'.1 + pq'.2 →
+      IsZero (((filteredSpaceSpectralSequence R hX).page 2).X pq) ∨
+        IsZero (((filteredSpaceSpectralSequence R hX).page 2).X pq'))
+    (pq : ℤ × ℤ) :
+    Nonempty (cokernel ((filteredSpaceSpectralObject R hX).abutmentFiltrationMap pq.2
+      (pq.1 + pq.2)) ≅ ((filteredSpaceSpectralSequence R hX).page 2).X pq) := by
+  set E := filteredSpaceSpectralSequence R hX
+  -- On a late enough page the object at `pq` is the graded piece.
+  set r := max 2 (max (pq.2 - a + 2) (b - pq.2 + 1))
+  have hr : 2 ≤ r := le_max_left _ _
+  let eE := filteredSpaceSpectralSequencePageXIsoGradedOfFinite R hX ha hb r hr pq (by lia)
+    (by lia)
+  by_cases hpq : IsZero ((E.page 2).X pq)
+  · -- The object at `pq` vanishes on every page, and so does the graded piece.
+    exact ⟨(eE.isZero_iff.1 (E.isZero_page_X_of_le le_rfl hpq r hr)).iso hpq⟩
+  -- Otherwise every object joined to `pq` by a differential vanishes, so `pq` survives.
+  refine ⟨eE.symm ≪≫ E.pageXIsoOfLEOfIsZero le_rfl (pq := pq) (fun s hs pq' hpq' ↦ ?_) r hr⟩
+  rcases hpq' with hpq' | hpq'
+  · exact (h pq pq' (Abelian.SpectralObject.coreE₂Cohomological.hc s pq pq' hpq' hs)).resolve_left
+      hpq
+  · exact (h pq' pq (Abelian.SpectralObject.coreE₂Cohomological.hc s pq' pq hpq' hs)).resolve_right
+      hpq
 
 section ImageFiltration
 
