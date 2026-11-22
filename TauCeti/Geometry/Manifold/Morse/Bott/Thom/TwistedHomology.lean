@@ -70,6 +70,40 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
+/-- **The Thom pairs of finitely many bundles, with orientation-twisted coefficients.** For
+finitely many vector bundles `V j` of ranks `r j` over bases `S j` and a field `K` in which `2` is
+invertible, the coproduct of the homologies `Hₙ(V j, (V j)₀; K)` of the Thom pairs is the coproduct,
+over the bundles of rank `r j ≤ n`, of the homologies `H_{n - r j}(S j; o(V j) ⊗ K)` with
+coefficients in the orientation local systems. -/
+private theorem nonempty_sigma_singularHomology_thomPair_iso_sigma_twistedHomology
+    {ι : Type*} [Finite ι] {S : ι → Type} [∀ j, TopologicalSpace (S j)] {r : ι → ℕ}
+    {V : ∀ j, S j → Type} [∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) (V j))]
+    [∀ j s, AddCommMonoid (V j s)] [∀ j s, Module ℝ (V j s)] [∀ j s, TopologicalSpace (V j s)]
+    [∀ j, FiberBundle (Fin (r j) → ℝ) (V j)] [∀ j, VectorBundle ℝ (Fin (r j) → ℝ) (V j)]
+    (K : Type) [Field K] [Invertible (2 : K)] (n : ℕ) :
+    Nonempty ((∐ fun j ↦ (thomPair (Fin (r j) → ℝ) (V j)).singularHomology (ModuleCat.of K K) n) ≅
+      ∐ fun j : {j // r j ≤ n} ↦ twistedHomology (signLocalSystem (Fin (r j) → ℝ) (V j) K
+        ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) (n - r j)) := by
+  let W (j : ι) : ModuleCat K :=
+    (thomPair (Fin (r j) → ℝ) (V j)).singularHomology (ModuleCat.of K K) n
+  -- Below the rank the homology of a Thom pair vanishes, so only the bundles of rank `r j ≤ n`
+  -- contribute.
+  have hW (j : ι) (hj : ¬r j ≤ n) : IsZero (W j) :=
+    isZero_singularHomology_thomPair _ (by rw [finrank_fin_fun]; omega)
+  -- From rank `r j` on, the twisted Thom isomorphism, normalized by an orientation of the model
+  -- fibre and a generator of `H^{r j}(ℝ^{r j}, ℝ^{r j} ∖ {0}; K)`, shifts the twisted homology of
+  -- the base up by the rank.
+  have T (j : {j // r j ≤ n}) : W j ≅ twistedHomology (signLocalSystem (Fin (r j) → ℝ) (V j) K
+      ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) (n - r j) :=
+    (thomPairSingularHomologyEquivTwistedHomology
+      ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm) (Pi.basisFun ℝ (Fin (r j))).orientation
+      (exists_span_singularCohomology_complSingleton_eq_top (k := K)
+        (OpenPartialHomeomorph.refl (Fin (r j) → ℝ)) (mem_univ 0)).choose_spec
+      (by rw [finrank_fin_fun]; omega)).toModuleIso
+  exact ⟨(biproduct.isoCoproduct W).symm ≪≫
+    (biproductSubtypeIsoOfIsZero W (fun j ↦ r j ≤ n) hW).symm ≪≫ biproduct.mapIso T ≪≫
+    biproduct.isoCoproduct _⟩
+
 variable {E M : Type} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] {ι : Type*} {E' H' P : ι → Type*}
@@ -147,25 +181,7 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_twisted
   -- The band has the homology of the direct sum of the Thom pairs of the submanifolds.
   obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_iso_sigma_thomPair hn h hfs hc hd hac hcb
     hcompact hcrit hdim g hr (ModuleCat.of K K) n
-  let W (j : ι) : ModuleCat K :=
-    (thomPair (Fin (r j) → ℝ) (V j)).singularHomology (ModuleCat.of K K) n
-  -- Below the rank the homology of a Thom pair vanishes, so only the pieces of index `r j ≤ n`
-  -- contribute.
-  have hW (j : ι) (hj : ¬r j ≤ n) : IsZero (W j) :=
-    isZero_singularHomology_thomPair _ (by rw [finrank_fin_fun]; omega)
-  -- From rank `r j` on, the twisted Thom isomorphism, normalized by an orientation of the model
-  -- fibre and a generator of `H^{r j}(ℝ^{r j}, ℝ^{r j} ∖ {0}; K)`, shifts the twisted homology of
-  -- the base up by the rank.
-  have T (j : {j // r j ≤ n}) : W j ≅ twistedHomology (signLocalSystem (Fin (r j) → ℝ) (V j) K
-      ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) (n - r j) :=
-    (thomPairSingularHomologyEquivTwistedHomology
-      ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm) (Pi.basisFun ℝ (Fin (r j))).orientation
-      (exists_span_singularCohomology_complSingleton_eq_top (k := K)
-        (OpenPartialHomeomorph.refl (Fin (r j) → ℝ)) (mem_univ 0)).choose_spec
-      (by rw [finrank_fin_fun]; omega)).toModuleIso
-  exact ⟨e ≪≫ (biproduct.isoCoproduct W).symm ≪≫
-    (biproductSubtypeIsoOfIsZero W (fun j ↦ r j ≤ n) hW).symm ≪≫ biproduct.mapIso T ≪≫
-    biproduct.isoCoproduct _⟩
+  exact ⟨e ≪≫ (nonempty_sigma_singularHomology_thomPair_iso_sigma_twistedHomology K n).some⟩
 
 /-- **The relative homology across a critical level of a Morse–Bott function, with
 orientation-twisted coefficients.** Let the family `i j : S j → M` exhibit `f` as a Morse–Bott
@@ -223,17 +239,6 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_twist
           (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
             (g j).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm))
           (n - r j)) := by
-  have := h.finite
-  have (j : ι) : Nonempty (S j) := h.nonempty j
-  have (j : ι) : CompactSpace (S j) :=
-    (Topology.IsClosedEmbedding.mk (i j).isEmbedding (h.isClosed_range j)).compactSpace
-  obtain ⟨e⟩ := SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_twistedHomology
-    (ι := {j // ∀ s, f (i j s) = c}) (S := fun j ↦ S j) (P := fun j ↦ P j) (J := fun j ↦ J j)
-    (i := fun j ↦ i j) hn (fun j ↦ h.isNondegenerateCriticalSubmanifold j) h.contMDiff
-    (fun j ↦ j.property) (fun j k hjk ↦ h.pairwise_disjoint_range fun he ↦ hjk (Subtype.ext he))
-    hac hcb (isClosed_Icc.preimage h.contMDiff.continuous).isCompact
-    (fun x ⟨hx, hfx⟩ ↦ h.mem_iUnion_range_of_apply_eq hn hx (hcrit _ hx hfx))
-    (fun j ↦ hdim j) (fun j ↦ g j) (fun j ↦ hV j) K n
   let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
   let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
@@ -245,9 +250,19 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_twist
       ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
   let _ : ∀ j, FiberBundle (Fin (r j) → ℝ) (V j) := fun j ↦ (hV j).fiberBundle
   have (j : ι) : VectorBundle ℝ (Fin (r j) → ℝ) (V j) := (hV j).vectorBundle
+  -- The frames have size the dimension of the negative normal spaces, which is the index.
+  have hr (j : ι) (s : S j) : manifoldMorseIndex I f (i j s) = r j := by
+    rw [← (h.isNondegenerateCriticalSubmanifold j).finrank_negativeNormalSpace hn
+      (g j).toRiemannianMetric, (hV j).finrank_eq, Fintype.card_fin]
+  have := h.finite
+  -- The band has the homology of the direct sum of the Thom pairs of the pieces on the level `c`.
+  obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair hn hac hcb hcrit hdim g
+    hr (ModuleCat.of K K) n
   -- Reindex the pieces of index at most `n` among those on the level `c`.
-  exact ⟨e ≪≫ Sigma.reindex (Equiv.subtypeSubtypeEquivSubtypeInter _ fun j ↦ r j ≤ n)
-    fun j ↦ twistedHomology (signLocalSystem (Fin (r j) → ℝ) (V j) K
-      ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) (n - r j)⟩
+  exact ⟨e ≪≫ (nonempty_sigma_singularHomology_thomPair_iso_sigma_twistedHomology
+    (V := fun j : {j // ∀ s, f (i j s) = c} ↦ V j) K n).some ≪≫
+    Sigma.reindex (Equiv.subtypeSubtypeEquivSubtypeInter _ fun j ↦ r j ≤ n)
+      fun j ↦ twistedHomology (signLocalSystem (Fin (r j) → ℝ) (V j) K
+        ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) (n - r j)⟩
 
 end TauCeti
