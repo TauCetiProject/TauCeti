@@ -413,6 +413,7 @@ theorem signLocalSystemIsoOfTwoEqZero_hom_app_apply (x : FundamentalGroupoid X)
 
 /-- The inverse of the trivialization of the sign local system in characteristic two sends `r` to
 the constant function with value `r` on the fibre over `x`. -/
+@[simp]
 theorem signLocalSystemIsoOfTwoEqZero_inv_app_apply (x : FundamentalGroupoid X) (r : R)
     (e : p ⁻¹' {x.as}) :
     (hp.signLocalSystemObjEquiv σ hσ x
