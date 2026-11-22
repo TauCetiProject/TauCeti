@@ -105,11 +105,12 @@ theorem eval_dehomogenize (i : Fin (n + 1)) (p : MvPolynomial (Fin (n + 1)) R)
 /-- Dehomogenization does not increase the total degree. -/
 theorem totalDegree_dehomogenize_le (i : Fin (n + 1)) (p : MvPolynomial (Fin (n + 1)) R) :
     (dehomogenize i p).totalDegree ≤ p.totalDegree := by
+  rw [dehomogenize]
   refine (totalDegree_aeval_le (fun j ↦ ?_) p).trans_eq (mul_one _)
   refine Fin.succAboveCases i ?_ (fun l ↦ ?_) j
   · simp
   · rw [Fin.insertNth_apply_succAbove]
-    exact (totalDegree_monomial_le _ _).trans_eq (by simp)
+    exact totalDegree_X_le l
 
 /-- For a homogeneous `p` of degree `d` and an exponent `s` of total degree `d`, the coefficient
 of `p` at `s` is the coefficient of the affine equation at the restriction of `s` to the retained

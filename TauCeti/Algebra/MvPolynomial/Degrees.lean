@@ -10,6 +10,9 @@ public import Mathlib.Algebra.MvPolynomial.Degrees
 /-!
 # Degree bounds for multivariate polynomials
 
+A variable `Xᵢ` has total degree at most `1` over every commutative semiring. Mathlib's
+`MvPolynomial.totalDegree_X` computes it exactly but needs a nontrivial semiring.
+
 A ring homomorphism `f : R →+* S` applied to the coefficients of a multivariate polynomial `P`
 can only remove monomials, so it does not raise any partial degree. This is the partial-degree
 form of Mathlib's `MvPolynomial.degrees_map_le`.
@@ -24,6 +27,7 @@ after a change of generators of a finitely generated algebra.
 
 ## Main results
 
+* `MvPolynomial.totalDegree_X_le`: `(X i).totalDegree ≤ 1`, over any commutative semiring.
 * `MvPolynomial.degreeOf_map_le`: `degreeOf i (P.map f) ≤ degreeOf i P`.
 * `MvPolynomial.exists_totalDegree_le_one_aeval_eq_of_mem_span`: every
   `t ∈ Submodule.span R (Set.range x)` is `aeval x P` for some `P` with `P.totalDegree ≤ 1`.
@@ -34,6 +38,13 @@ after a change of generators of a finitely generated algebra.
 public section
 
 namespace MvPolynomial
+
+/-- A variable has total degree at most `1`. Unlike Mathlib's `MvPolynomial.totalDegree_X`, this
+needs no nontriviality assumption on `R`. -/
+theorem totalDegree_X_le {σ R : Type*} [CommSemiring R] (i : σ) :
+    (X i : MvPolynomial σ R).totalDegree ≤ 1 := by
+  rw [X]
+  exact (totalDegree_monomial_le _ _).trans_eq (by simp)
 
 /-- Mapping the coefficients of `P` does not raise its degree in `Xᵢ`. -/
 theorem degreeOf_map_le {σ R S : Type*} [CommSemiring R] [CommSemiring S] (f : R →+* S)
@@ -49,9 +60,7 @@ theorem exists_totalDegree_le_one_aeval_eq_of_mem_span {σ R S : Type*} [CommSem
   induction ht using Submodule.span_induction with
   | mem _ h =>
     obtain ⟨i, rfl⟩ := h
-    exact ⟨X i,
-      by simpa [← X_pow_eq_monomial] using totalDegree_monomial_le (Finsupp.single i 1) (1 : R),
-      aeval_X x i⟩
+    exact ⟨X i, totalDegree_X_le i, aeval_X x i⟩
   | zero => exact ⟨0, by simp, map_zero _⟩
   | add _ _ _ _ hp hq =>
     obtain ⟨P, hPd, rfl⟩ := hp

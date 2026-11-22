@@ -171,8 +171,7 @@ theorem totalDegree_taylor_le (a : σ → R) (p : MvPolynomial σ R) :
     (taylor a p).totalDegree ≤ p.totalDegree := by
   rw [taylor_apply]
   refine (totalDegree_aeval_le (fun i ↦ ?_) p).trans_eq (mul_one _)
-  refine (totalDegree_add _ _).trans (max_le ?_ (by simp))
-  exact (totalDegree_monomial_le _ _).trans_eq (by simp)
+  exact (totalDegree_add _ _).trans (max_le (totalDegree_X_le i) (by simp))
 
 /-- Partial differentiation commutes with the Taylor shift. -/
 @[simp]
