@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.NumberTheory.PrimeCounting
 import Mathlib.Analysis.SpecialFunctions.Log.Summable
-import TauCeti.NumberTheory.Mertens
+import TauCeti.NumberTheory.Mertens.Basic
 import TauCeti.Order.Filter.AtTopBot
 
 /-!
