@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.Topo
 public import TauCeti.Geometry.Manifold.VectorBundle.Density
 public import TauCeti.Analysis.Distribution.TestFunction.DualEquiv
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
@@ -22,6 +23,12 @@ locally convex topology of their fixed-compact support stages
 `trivializationAt F V x`. Every covering family of smooth frames gives the same topology
 (`TauCeti.BundleTest.instTopologicalSpace_eq_compactlySupportedTopology`), so this choice is
 only a normalization. The topology is Hausdorff.
+
+A smooth bundle map whose expression in the preferred frames at each point is a constant model map
+transports bundle tests continuously
+(`TauCeti.BundleTest.continuous_map_of_inCoordinates_eq_const`): in frame coordinates it acts by a
+fixed continuous linear map, so it is continuous on each fixed-compact support stage. Canonical
+identifications of bundles, such as double-dual evaluation, have this form.
 
 A continuous linear functional `T : BundleTest I F V →L_c[ℝ] ℝ` is a distribution paired with
 `V`-valued tests; the space of these functionals carries the topology of uniform convergence on
@@ -54,6 +61,8 @@ charts whose source does not contain `x`
 
 * `TauCeti.BundleTest I F V`: the compactly supported smooth sections of `V`, with their test
   topology.
+* `TauCeti.BundleTest.continuous_map_of_inCoordinates_eq_const`: transport of bundle tests along a
+  bundle map that is constant in frames is continuous.
 * `Bundle.Trivialization.chartTestCLM`: extension of native test functions on a chart target to
   bundle tests, as a continuous linear map.
 * `Bundle.Trivialization.chartDistributionCLM`: the local representative of a functional on bundle
@@ -61,6 +70,7 @@ charts whose source does not contain `x`
 * `TauCeti.BundleTest.ext_chartDistributionCLM`: functionals on bundle tests are determined by
   their local representatives.
 * `TauCeti.BundleTest.delta`: the point mass at a point with a covector on the fibre.
+* `TauCeti.DualDensityTest I M F V`: the bundle tests with values in `V →L[ℝ] |Λ|`.
 * `TauCeti.BundleDistribution I M F V`: the distributional sections of `V`, the continuous linear
   functionals on the tests with values in `V →L[ℝ] |Λ|`.
 
@@ -287,6 +297,81 @@ end BundleTest
 
 end TauCeti
 
+/-! ### Transport along bundle maps -/
+
+namespace TauCeti.BundleTest
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [LocallyCompactSpace E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M]
+  {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+  {V₁ : M → Type*} [∀ x, AddCommGroup (V₁ x)] [∀ x, Module ℝ (V₁ x)]
+  [∀ x, TopologicalSpace (V₁ x)] [TopologicalSpace (TotalSpace F₁ V₁)]
+  [FiberBundle F₁ V₁] [VectorBundle ℝ F₁ V₁] [ContMDiffVectorBundle ∞ F₁ V₁ I]
+  {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+  {V₂ : M → Type*} [∀ x, AddCommGroup (V₂ x)] [∀ x, Module ℝ (V₂ x)]
+  [∀ x, TopologicalSpace (V₂ x)] [TopologicalSpace (TotalSpace F₂ V₂)]
+  [FiberBundle F₂ V₂] [VectorBundle ℝ F₂ V₂] [ContMDiffVectorBundle ∞ F₂ V₂ I]
+
+/-- A smooth bundle map whose expression in the preferred frames at each point is a constant model
+map transports bundle tests continuously: in frame coordinates on the common frame domains it
+is a fixed continuous linear map, so it is continuous on every fixed-compact support stage. -/
+theorem continuous_map_of_inCoordinates_eq_const (ϕ : ∀ x, V₁ x →L[ℝ] V₂ x)
+    (hϕ : ContMDiff (I.prod 𝓘(ℝ, F₁)) (I.prod 𝓘(ℝ, F₂)) ∞
+      (fun p : TotalSpace F₁ V₁ ↦ (⟨p.proj, ϕ p.proj p.snd⟩ : TotalSpace F₂ V₂)))
+    {c : M → F₁ →L[ℝ] F₂}
+    (hc : ∀ a x, x ∈ (trivializationAt F₁ V₁ a).baseSet →
+      x ∈ (trivializationAt F₂ V₂ a).baseSet →
+      ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ a x a x (ϕ x) = c a) :
+    Continuous fun s : BundleTest I F₁ V₁ ↦ ofCompactlySupported I F₂ V₂
+      (mapCompactlySupported (fun x ↦ (ϕ x : V₁ x →ₗ[ℝ] V₂ x)) hϕ
+        ((ofCompactlySupported I F₁ V₁).symm s)) := by
+  -- Work in the frames of both bundles at each point, over the intersection of their domains.
+  let e₁ : M → Trivialization F₁ (π F₁ V₁) := fun a ↦ trivializationAt F₁ V₁ a
+  let e₂ : M → Trivialization F₂ (π F₂ V₂) := fun a ↦ trivializationAt F₂ V₂ a
+  let U : M → Opens M := fun a ↦
+    ⟨(e₁ a).baseSet ∩ (e₂ a).baseSet, (e₁ a).open_baseSet.inter (e₂ a).open_baseSet⟩
+  have hU₁ : ∀ a, (U a : Set M) ⊆ (e₁ a).baseSet := fun _ _ h ↦ h.1
+  have hU₂ : ∀ a, (U a : Set M) ⊆ (e₂ a).baseSet := fun _ _ h ↦ h.2
+  have hcov : ∀ x : M, ∃ a, x ∈ U a :=
+    fun x ↦ ⟨x, mem_baseSet_trivializationAt F₁ V₁ x, mem_baseSet_trivializationAt F₂ V₂ x⟩
+  let ϕ' : ∀ x, V₁ x →ₗ[ℝ] V₂ x := fun x ↦ ϕ x
+  -- In frame coordinates the map is the constant model map `c a`.
+  have hΦ : letI := frameTopology (I := I) (n := ∞) e₁ U hU₁
+      letI := frameTopology (I := I) (n := ∞) e₂ U hU₂
+      Continuous (mapLinearMap ϕ' hϕ) := by
+    refine continuous_frameTopology_of_frameCoordinates_eq_clm_apply e₁ U hU₁ e₂ hU₂ c ?_
+    intro a s x
+    have hx₁ := hU₁ a x.property
+    have hx₂ := hU₂ a x.property
+    rw [Trivialization.frameCoordinates_apply, Trivialization.frameCoordinates_apply,
+      ← hc a x hx₁ hx₂,
+      ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.comp_apply, ← (e₁ a).continuousLinearMapAt_apply_of_mem ℝ hx₁,
+      (e₁ a).symmL_continuousLinearMapAt hx₁, (e₂ a).continuousLinearMapAt_apply_of_mem ℝ hx₂,
+      mapLinearMap_apply]
+    -- `ϕ'` is `ϕ` with its fibre maps read as linear maps.
+    rfl
+  let := frameTopology (I := I) (n := ∞) e₁ U hU₁
+  let := frameTopology (I := I) (n := ∞) e₂ U hU₂
+  let := compactlySupportedTopology (I := I) (n := ∞) e₂ U hU₂
+  let := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := ∞) e₂ U hU₂
+  let := continuousSMul_compactlySupportedTopology (I := I) (n := ∞) e₂ U hU₂
+  let := locallyConvexSpace_compactlySupportedTopology (I := I) (n := ∞) e₂ U hU₂
+  rw [instTopologicalSpace_eq_compactlySupportedTopology e₁ U hU₁ hcov,
+    instTopologicalSpace_eq_compactlySupportedTopology e₂ U hU₂ hcov]
+  refine (continuous_compactlySupportedTopology_iff e₁ U hU₁
+    (mapCompactlySupported ϕ' hϕ)).2 fun K ↦ ?_
+  -- On a fixed-compact stage the map stays in the same stage of the target.
+  have hK : Continuous fun s : supportedIn I F₁ ∞ V₁ K ↦
+      (⟨mapLinearMap ϕ' hϕ s, mapLinearMap_mem_supportedIn ϕ' hϕ s.property⟩ :
+        supportedIn I F₂ ∞ V₂ K) :=
+    (hΦ.comp continuous_subtypeVal).subtype_mk _
+  exact ((ContMDiffSection.continuous_ofSupportedIn e₂ U hU₂ K).comp hK).congr fun s ↦
+    Subtype.ext (by simp)
+
+end TauCeti.BundleTest
+
 /-! ### Local representatives in charts -/
 
 namespace Bundle.Trivialization
@@ -433,12 +518,18 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
 
+/-- The bundle tests with values in the **`V`-dual densities**, the bundle of continuous linear
+maps from `V` to the density line `TauCeti.DensityBundle I M`. These are the tests on which the
+distributional sections of `V` act. -/
+abbrev DualDensityTest :=
+  BundleTest I (F →L[ℝ] ℝ) (fun x ↦ V x →L[ℝ] DensityBundle I M x)
+
 /-- The **distributional sections** of a smooth vector bundle `V`: the continuous linear
 functionals on the bundle tests with values in the `V`-dual densities, the bundle of continuous
 linear maps from `V` to the density line `TauCeti.DensityBundle I M`. The density factor is what
 lets a section `u` of `V` act on such a test `s` without a choice of measure on `M`, through the
 integral of the density `x ↦ s x (u x)`. -/
 abbrev BundleDistribution :=
-  BundleTest I (F →L[ℝ] ℝ) (fun x ↦ V x →L[ℝ] DensityBundle I M x) →L_c[ℝ] ℝ
+  DualDensityTest I M F V →L_c[ℝ] ℝ
 
 end TauCeti
