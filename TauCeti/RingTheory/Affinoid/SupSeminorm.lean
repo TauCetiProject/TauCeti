@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 public import TauCeti.Analysis.Normed.Unbundled.RootBound
 public import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 
+import Mathlib.RingTheory.Ideal.GoingUp
 import TauCeti.Analysis.Normed.Algebra.AutomaticContinuity.Algebraic
 
 /-!
@@ -63,8 +64,8 @@ Jacobson rings.
 * `TauCeti.IsAffinoidAlgebra.isReduced_iff_supSeminorm_eq_zero`: `|·|sup` separates points
   exactly when `A` is reduced.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_map_le`: algebra homomorphisms contract `|·|sup`.
-* `TauCeti.IsAffinoidAlgebra.supSeminorm_map_of_isIntegral`: integral injective algebra
-  homomorphisms preserve `|·|sup`.
+* `AlgHom.supSeminorm_map_of_isIntegral`: integral injective algebra homomorphisms preserve
+  `|·|sup`.
 * `TauCeti.supSeminorm_mk_nilradical`: `|·|sup` is unchanged by reduction.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_iSup_minimalPrimes`: `|f|sup` is the supremum of the
   supremum seminorms of the residues of `f` modulo the minimal primes of `A`.
@@ -413,6 +414,27 @@ theorem _root_.AlgEquiv.supSeminorm_eq {B : Type*} [CommRing B] [Algebra K B] (e
   supSeminorm_map_of_ker_le_nilradical (φ := e.toAlgHom) e.surjective
     ((RingHom.injective_iff_ker_eq_bot _).mp e.injective ▸ bot_le) a
 
+/-- An integral injective `K`-algebra homomorphism between commutative `K`-algebras preserves
+supremum seminorms, since every classical point of the source lifts to the target. -/
+theorem _root_.AlgHom.supSeminorm_map_of_isIntegral {B : Type*} [CommRing B] [Algebra K B]
+    (φ : A →ₐ[K] B) (hφ : φ.toRingHom.IsIntegral) (hφi : Function.Injective φ) (a : A) :
+    supSeminorm K (φ a) = supSeminorm K a := by
+  have hmax (y : MaximalSpectrum B) : (y.asIdeal.comap φ).IsMaximal :=
+    Ideal.isMaximal_comap_of_isIntegral_of_isMaximal φ.toRingHom hφ y.asIdeal
+  let g : MaximalSpectrum B → MaximalSpectrum A := fun y ↦ ⟨y.asIdeal.comap φ, hmax y⟩
+  have hg : Function.Surjective g := fun x ↦ by
+    algebraize [φ.toRingHom]
+    let _ : Algebra.IsIntegral A B := ⟨hφ⟩
+    obtain ⟨m, hm, hmcomap⟩ :=
+      Ideal.exists_ideal_over_maximal_of_isIntegral (R := A) (S := B) x.asIdeal (by
+        have hinj : Function.Injective (algebraMap A B) := hφi
+        rw [(RingHom.injective_iff_ker_eq_bot _).mp hinj]
+        exact bot_le)
+    exact ⟨⟨m, hm⟩, MaximalSpectrum.ext hmcomap⟩
+  simp only [supSeminorm]
+  rw [← hg.iSup_comp]
+  exact iSup_congr fun y ↦ (pointNorm_comap φ y (hmax y) a).symm
+
 /-- **The supremum seminorm is unchanged by reduction**: `|f|sup` is the same in `A` and in its
 reduction `A ⧸ nilradical A`. -/
 theorem supSeminorm_mk_nilradical (f : A) :
@@ -541,15 +563,6 @@ theorem supSeminorm_map_le {B : Type*} [CommRing B] [Algebra K B] (hA : IsAffino
   supSeminorm_le (supSeminorm_nonneg a) fun x ↦ by
     rw [← hB.pointNorm_maximalSpectrumComap φ x a]
     exact hA.pointNorm_le_supSeminorm _ a
-
-/-- An integral injective algebra homomorphism into an affinoid algebra preserves supremum
-seminorms, since every classical point of the source lifts to the target. -/
-theorem supSeminorm_map_of_isIntegral {B : Type*} [CommRing B] [Algebra K B]
-    (hB : IsAffinoidAlgebra K B) (φ : A →ₐ[K] B) (hφ : φ.toRingHom.IsIntegral)
-    (hφi : Function.Injective φ) (a : A) :
-    supSeminorm K (φ a) = supSeminorm K a := by
-  simp only [supSeminorm, ← hB.pointNorm_maximalSpectrumComap φ]
-  exact (hB.maximalSpectrumComap_surjective φ hφ hφi).iSup_comp (pointNorm K · a)
 
 /-- At a classical point `x` of `A` containing the kernel of a surjective algebra map
 `φ : A → B` onto an affinoid algebra, `|a(x)| ≤ |φ a|sup`: the point `x` comes from a classical

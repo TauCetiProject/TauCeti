@@ -37,7 +37,8 @@ irreducible of spectral value `1` yet has a root in `ℚ_5` of `5`-adic norm `1 
   contraction into an arbitrary field extension `L / K`.
 * `AlgHom.norm_apply_le_gelfandRadius_of_isAlgebraic`,
   `AlgHom.norm_apply_le_norm_of_isAlgebraic`, and `AlgHom.continuous_of_isAlgebraic`:
-  contractivity and automatic continuity into algebraic normed field extensions `M / K`.
+  pointwise contractivity at algebraic elements and automatic continuity into algebraic normed
+  field extensions `M / K`.
 
 ## References
 
@@ -151,10 +152,10 @@ theorem spectralNorm_apply_le_norm (φ : B →ₐ[K] L) (b : B) :
   (φ.spectralNorm_apply_le_gelfandRadius b).trans (gelfandRadius_le_norm b)
 
 /-- Over a complete ultrametric normed field `K`, any `K`-algebra homomorphism from a Banach
-`K`-algebra `B` into an algebraic normed field extension `M / K` satisfies
-`‖φ b‖ ≤ gelfandRadius b`. -/
+`K`-algebra `B` into a normed field extension `M / K` satisfies `‖φ b‖ ≤ gelfandRadius b` at
+every element `b : B` whose image `φ b` is algebraic over `K`. -/
 theorem norm_apply_le_gelfandRadius_of_isAlgebraic {M : Type*} [NormedField M] [NormedAlgebra K M]
-    [Algebra.IsAlgebraic K M] (φ : B →ₐ[K] M) (b : B) :
+    (φ : B →ₐ[K] M) (b : B) (hb : IsAlgebraic K (φ b)) :
     ‖φ b‖ ≤ gelfandRadius b := by
   have : IsUltrametricDist M :=
     IsUltrametricDist.isUltrametricDist_of_forall_norm_natCast_le_one fun n ↦ by
@@ -162,16 +163,16 @@ theorem norm_apply_le_gelfandRadius_of_isAlgebraic {M : Type*} [NormedField M] [
       simpa using IsUltrametricDist.norm_nsmul_le (1 : K) n
   have hle : ‖φ b‖ ≤ spectralNorm K M (φ b) := by
     rw [← NormedAlgebra.toMulAlgebraNorm_apply K M (φ b), ← MulAlgebraNorm.coe_AlgebraNorm]
-    exact norm_le_spectralNorm (MulRingNorm.isPowMul _) IsUltrametricDist.isNonarchimedean_norm
-      (Algebra.IsAlgebraic.isAlgebraic (φ b))
+    exact norm_le_spectralNorm (MulRingNorm.isPowMul _) IsUltrametricDist.isNonarchimedean_norm hb
   exact hle.trans (φ.spectralNorm_apply_le_gelfandRadius b)
 
 /-- Over a complete ultrametric normed field `K`, any `K`-algebra homomorphism from a Banach
-`K`-algebra `B` into an algebraic normed field extension `M / K` is contractive. -/
+`K`-algebra `B` into a normed field extension `M / K` is contractive at every element `b : B`
+whose image `φ b` is algebraic over `K`. -/
 theorem norm_apply_le_norm_of_isAlgebraic {M : Type*} [NormedField M] [NormedAlgebra K M]
-    [Algebra.IsAlgebraic K M] (φ : B →ₐ[K] M) (b : B) :
+    (φ : B →ₐ[K] M) (b : B) (hb : IsAlgebraic K (φ b)) :
     ‖φ b‖ ≤ ‖b‖ :=
-  (φ.norm_apply_le_gelfandRadius_of_isAlgebraic b).trans (gelfandRadius_le_norm b)
+  (φ.norm_apply_le_gelfandRadius_of_isAlgebraic b hb).trans (gelfandRadius_le_norm b)
 
 /-- **Automatic continuity into algebraic normed field extensions.** Over a complete ultrametric
 normed field `K`, every `K`-algebra homomorphism from a Banach `K`-algebra `B` into an algebraic
@@ -179,7 +180,8 @@ normed field extension `M / K` is automatically continuous. -/
 theorem continuous_of_isAlgebraic {M : Type*} [NormedField M] [NormedAlgebra K M]
     [Algebra.IsAlgebraic K M] (φ : B →ₐ[K] M) :
     Continuous φ :=
-  φ.toLinearMap.mkContinuous 1 (fun b ↦ by simpa using φ.norm_apply_le_norm_of_isAlgebraic b)
-    |>.continuous
+  (φ.toLinearMap.mkContinuous 1 fun b ↦ by
+    simpa using
+      φ.norm_apply_le_norm_of_isAlgebraic b (Algebra.IsAlgebraic.isAlgebraic _)).continuous
 
 end AlgHom

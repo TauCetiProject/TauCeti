@@ -399,6 +399,12 @@ noncomputable instance : SeminormedCommRing hA.SupNormModel where
 /-- The norm on `hA.SupNormModel` is `supSeminorm K` of the underlying element. -/
 @[simp] theorem norm_def (x : hA.SupNormModel) : ‖x‖ = supSeminorm K x.ofSupNorm := (rfl)
 
+/-- The distance on `hA.SupNormModel` is `supSeminorm K` of the difference of underlying
+elements. -/
+@[simp] theorem dist_def (x y : hA.SupNormModel) :
+    dist x y = supSeminorm K (x.ofSupNorm - y.ofSupNorm) := by
+  rw [dist_eq_norm, norm_def, ofSupNorm_sub]
+
 /-- `toSupNorm` sends `a : A` to an element of norm `supSeminorm K a`. -/
 theorem norm_toSupNorm (a : A) : ‖(toSupNorm a : hA.SupNormModel)‖ = supSeminorm K a := (rfl)
 
@@ -423,7 +429,7 @@ theorem isPowMul_norm : IsPowMul (norm : hA.SupNormModel → ℝ) := fun x _n hn
 noncomputable instance [IsReduced A] : NormedCommRing hA.SupNormModel :=
   { (inferInstance : SeminormedCommRing hA.SupNormModel) with
     eq_of_dist_eq_zero := fun {x y} hxy ↦ by
-      rw [dist_eq_norm, norm_def, ofSupNorm_sub] at hxy
+      rw [dist_def] at hxy
       exact ext (sub_eq_zero.mp (hA.isReduced_iff_supSeminorm_eq_zero.mp ‹_› _ hxy)) }
 
 end
@@ -436,8 +442,8 @@ variable {A : Type*} [NormedCommRing A] [NormedAlgebra K A] {hA : IsAffinoidAlge
 theorem lipschitzWith_toSupNorm [CompleteSpace A] :
     LipschitzWith 1 (toSupNorm : A → hA.SupNormModel) :=
   LipschitzWith.of_dist_le_mul fun x y ↦ by
-    simpa only [NNReal.coe_one, one_mul, dist_eq_norm_neg_add, norm_def, ofSupNorm_add,
-      ofSupNorm_neg, ofSupNorm_toSupNorm] using supSeminorm_le_norm (-x + y)
+    rw [NNReal.coe_one, one_mul, dist_def, ofSupNorm_toSupNorm, dist_eq_norm]
+    exact supSeminorm_le_norm (x - y)
 
 /-- `ofSupNorm : hA.SupNormModel → A` is Lipschitz for any complete ultrametric algebra norm on a
 reduced affinoid algebra `A`. -/
@@ -445,8 +451,8 @@ theorem exists_pos_lipschitzWith_ofSupNorm [IsUltrametricDist A] [CompleteSpace 
     ∃ C : NNReal, 0 < C ∧ LipschitzWith C (ofSupNorm : hA.SupNormModel → A) := by
   obtain ⟨C, hC, hbound⟩ := hA.exists_norm_le_mul_supSeminorm
   refine ⟨Real.toNNReal C, Real.toNNReal_pos.mpr hC, LipschitzWith.of_dist_le_mul fun x y ↦ ?_⟩
-  simpa only [Real.coe_toNNReal C hC.le, dist_eq_norm_neg_add, norm_def, ofSupNorm_add,
-    ofSupNorm_neg] using hbound (-x.ofSupNorm + y.ofSupNorm)
+  rw [Real.coe_toNNReal C hC.le, dist_eq_norm, dist_def]
+  exact hbound (x.ofSupNorm - y.ofSupNorm)
 
 end NormComparison
 
@@ -536,13 +542,14 @@ variable {B A : Type*} [NormedRing B] [NormedAlgebra K B] [CompleteSpace B]
 
 /-- Quantitative bound for `K`-algebra homomorphisms from an arbitrary Banach `K`-algebra `B` into a
 completely normed reduced affinoid `K`-algebra `A` over a complete nontrivially normed ultrametric
-field `K`: there exists `C > 0` such that `‖φ b‖ ≤ C * gelfandRadius b ≤ C * ‖b‖` for every
-`b : B`. -/
+field `K`: there exists `C > 0` (independent of `φ`) such that
+`‖φ b‖ ≤ C * gelfandRadius b ≤ C * ‖b‖` for every `φ : B →ₐ[K] A` and `b : B`. -/
 theorem exists_pos_norm_apply_le_mul_gelfandRadius_of_isReduced
-    (hA : IsAffinoidAlgebra K A) (φ : B →ₐ[K] A) :
-    ∃ C : ℝ, 0 < C ∧ ∀ b : B, ‖φ b‖ ≤ C * gelfandRadius b ∧ ‖φ b‖ ≤ C * ‖b‖ := by
+    (hA : IsAffinoidAlgebra K A) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (φ : B →ₐ[K] A) (b : B),
+      ‖φ b‖ ≤ C * gelfandRadius b ∧ ‖φ b‖ ≤ C * ‖b‖ := by
   obtain ⟨C, hC, hbound⟩ := hA.exists_norm_le_mul_supSeminorm
-  refine ⟨C, hC, fun b ↦ ?_⟩
+  refine ⟨C, hC, fun φ b ↦ ?_⟩
   have h1 : ‖φ b‖ ≤ C * gelfandRadius b :=
     (hbound (φ b)).trans (mul_le_mul_of_nonneg_left (φ.supSeminorm_apply_le_gelfandRadius b)
       hC.le)
@@ -555,8 +562,8 @@ Noetherian, or unital-norm-normalized) into a completely normed reduced affinoid
 continuous. -/
 theorem continuous_algHom_of_isReduced (hA : IsAffinoidAlgebra K A) (φ : B →ₐ[K] A) :
     Continuous φ := by
-  obtain ⟨C, _, hC⟩ := hA.exists_pos_norm_apply_le_mul_gelfandRadius_of_isReduced φ
-  exact (φ.toLinearMap.mkContinuous C fun b ↦ (hC b).2).continuous
+  obtain ⟨C, _, hC⟩ := hA.exists_pos_norm_apply_le_mul_gelfandRadius_of_isReduced (B := B)
+  exact (φ.toLinearMap.mkContinuous C fun b ↦ (hC φ b).2).continuous
 
 end AutomaticContinuityFromBanach
 

@@ -184,7 +184,7 @@ theorem supSeminorm_eq_iSup_coeff_rpow_of_dvd (hB : IsAffinoidAlgebra K B)
   -- A nonzero element of `A` is not divisible by `p`, so `A` embeds into `B`.
   have := hp.faithfulSMul_of_dvd hpos hdvd
   have hcoeff (a : A) : supSeminorm K (algebraMap A B a) = supSeminorm K a :=
-    hB.supSeminorm_map_of_isIntegral (IsScalarTower.toAlgHom K A B)
+    (IsScalarTower.toAlgHom K A B).supSeminorm_map_of_isIntegral
       (fun b ↦ Algebra.IsIntegral.isIntegral (R := A) b) (FaithfulSMul.algebraMap_injective A B) a
   refine le_antisymm ?_ (Real.iSup_le (fun i ↦ ?_) (supSeminorm_nonneg f))
   · have h := hB.supSeminorm_le_iSup_coeff_rpow_of_eval_eq_zero (hp.map (algebraMap A B))

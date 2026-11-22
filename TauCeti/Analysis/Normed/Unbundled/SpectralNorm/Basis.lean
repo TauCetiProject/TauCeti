@@ -35,28 +35,6 @@ dual-functional comparisons for `Module.Basis.norm` live in
 
 public section
 
-namespace Module.Basis
-
-variable {K L ι : Type*} [NormedField K] [IsUltrametricDist K]
-  [Field L] [Algebra K L] [Fintype ι] [Nonempty ι]
-
-/-- The spectral norm is bounded above by a basis coordinate norm, without any completeness
-or weak-stability hypothesis. -/
-theorem spectralNorm_le_sum_mul_norm (b : Basis ι K L) (x : L) :
-    spectralNorm K L x ≤ (∑ i, spectralNorm K L (b i)) * b.norm x := by
-  have : FiniteDimensional K L := b.finiteDimensional_of_finite
-  simpa only [spectralAlgNorm_def] using b.apply_le_sum_mul_norm (spectralAlgNorm K L) x
-
-omit [IsUltrametricDist K] in
-/-- Every functional on a finite extension is spectrally bounded if and only if the
-coordinate norm of one (hence any) basis is bounded by the spectral norm. -/
-theorem forall_exists_bound_spectralNorm_iff (b : Basis ι K L) :
-    (∀ φ : Module.Dual K L, ∃ C : ℝ, ∀ x, ‖φ x‖ ≤ C * spectralNorm K L x) ↔
-      ∃ C : ℝ, 0 < C ∧ ∀ x, b.norm x ≤ C * spectralNorm K L x :=
-  b.forall_exists_bound_iff spectralNorm_nonneg
-
-end Module.Basis
-
 namespace TauCeti.IsWeaklyStable
 
 universe u

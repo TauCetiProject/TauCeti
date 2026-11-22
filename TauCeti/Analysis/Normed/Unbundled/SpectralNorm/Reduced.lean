@@ -285,20 +285,6 @@ theorem AlgEquiv.reducedSpectralAlgNorm_map (e : E ≃ₐ[K] E') (x : E) :
 
 end Morphisms
 
-namespace Module.Basis
-
-variable {K E ι : Type*} [NormedField K] [IsUltrametricDist K]
-  [CommRing E] [IsReduced E] [Algebra K E] [Module.Finite K E] [Fintype ι] [Nonempty ι]
-
-/-- On a finite reduced `K`-algebra, `TauCeti.reducedSpectralAlgNorm K E` is bounded above by the
-coordinate norm of any finite `K`-basis. -/
-theorem reducedSpectralAlgNorm_le_sum_mul_norm (b : Basis ι K E) (x : E) :
-    TauCeti.reducedSpectralAlgNorm K E x ≤
-      (∑ i, TauCeti.reducedSpectralAlgNorm K E (b i)) * b.norm x :=
-  b.apply_le_sum_mul_norm (TauCeti.reducedSpectralAlgNorm K E) x
-
-end Module.Basis
-
 namespace TauCeti.IsWeaklyStable
 
 universe u v
