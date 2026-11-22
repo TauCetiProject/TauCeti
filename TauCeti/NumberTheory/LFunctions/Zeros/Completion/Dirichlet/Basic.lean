@@ -117,13 +117,20 @@ theorem analyticOrderAt_dirichletData_entireCompletion (hne : χ ≠ 1) (s : ℂ
   rw [analyticOrderAt_mul hc hL,
     hc.analyticOrderAt_eq_zero.mpr hc0, zero_add]
 
-/-- The entire completion and ordinary L-function have equal analytic orders
-on the positive half-plane. -/
-theorem analyticOrderAt_dirichletData_entireCompletion_eq_LFunction (hne : χ ≠ 1)
+/-- The entire completion and ordinary L-function have equal analytic orders on the positive
+half-plane, including at conductor `1` (where at the pole `s = 1`, `zetaEntireCompletion 1 ≠ 0`
+and `riemannZeta` is not analytic, so both analytic orders vanish). -/
+theorem analyticOrderAt_dirichletData_entireCompletion_eq_LFunction
     {s : ℂ} (hs : 0 < s.re) :
     analyticOrderAt (dirichletData χ hχ).entireCompletion s = analyticOrderAt χ.LFunction s := by
-  rw [analyticOrderAt_dirichletData_entireCompletion χ hχ hne,
-    χ.analyticOrderAt_completedLFunction hs (.inr hne)]
+  rcases eq_or_ne χ 1 with rfl | hne
+  · have hN : N = 1 := hχ.eq_one_iff.mp rfl
+    subst hN
+    rw [dirichletData_modOne, riemannZetaData_entireCompletion,
+      DirichletCharacter.LFunction_modOne_eq]
+    exact analyticOrderAt_zetaEntireCompletion_eq_riemannZeta hs
+  · rw [analyticOrderAt_dirichletData_entireCompletion χ hχ hne,
+      χ.analyticOrderAt_completedLFunction hs (.inr hne)]
 
 /-- The conductor factor changes no natural zero multiplicities of the completed Dirichlet
 function. -/
@@ -133,12 +140,12 @@ theorem analyticOrderNatAt_dirichletData_entireCompletion (hne : χ ≠ 1) (s : 
   congrArg ENat.toNat (analyticOrderAt_dirichletData_entireCompletion χ hχ hne s)
 
 /-- The entire completion and ordinary L-function have equal natural zero multiplicities on the
-positive half-plane. -/
-theorem analyticOrderNatAt_dirichletData_entireCompletion_eq_LFunction (hne : χ ≠ 1)
+positive half-plane, including at conductor `1`. -/
+theorem analyticOrderNatAt_dirichletData_entireCompletion_eq_LFunction
     {s : ℂ} (hs : 0 < s.re) :
     analyticOrderNatAt (dirichletData χ hχ).entireCompletion s =
       analyticOrderNatAt χ.LFunction s :=
-  congrArg ENat.toNat (analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hs)
+  congrArg ENat.toNat (analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hs)
 
 /-- The entire completion and ordinary L-function have the same zeros
 on the positive half-plane. -/
@@ -146,7 +153,7 @@ theorem dirichletData_entireCompletion_eq_zero_iff (hne : χ ≠ 1) {s : ℂ} (h
     (dirichletData χ hχ).entireCompletion s = 0 ↔ χ.LFunction s = 0 := by
   have ha := (dirichletData_hasMeromorphicContinuation χ hχ).analyticAt_entireCompletion s
   rw [← ha.analyticOrderAt_ne_zero,
-    analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hs,
+    analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hs,
     ((DirichletCharacter.differentiable_LFunction hne).analyticAt s).analyticOrderAt_ne_zero]
 
 /-- Every primitive Dirichlet entire completion is nonzero at the origin,

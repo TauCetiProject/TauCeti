@@ -23,6 +23,8 @@ that pole and meromorphic on the whole complex plane.
 * `DirichletCharacter.analyticAt_LFunction`: `χ.LFunction` is analytic at `s` whenever `s ≠ 1` or
   `χ ≠ 1`.
 * `DirichletCharacter.meromorphic_LFunction`: `χ.LFunction` is meromorphic on `ℂ`.
+* `DirichletCharacter.LFunction_eq_of_changeLevel_eq`: equal levels with compatible `changeLevel`
+  give equal continued `L`-functions.
 
 ## References
 
@@ -65,5 +67,15 @@ theorem meromorphic_LFunction : Meromorphic χ.LFunction := by
       field_simp [sub_ne_zero.mpr hs]
     · exact (χ.analyticAt_LFunction (.inr hχ)).meromorphicAt
   · exact (χ.analyticAt_LFunction (.inl hz)).meromorphicAt
+
+/-- Equal levels with compatible `changeLevel` give equal continued `L`-functions. -/
+theorem LFunction_eq_of_changeLevel_eq {M : ℕ} [NeZero M]
+    {ψ : DirichletCharacter ℂ M} {χ : DirichletCharacter ℂ N}
+    (hMN : M = N) (h : changeLevel (dvd_of_eq hMN) ψ = χ) :
+    ψ.LFunction = χ.LFunction := by
+  subst hMN
+  rw [changeLevel_self] at h
+  subst h
+  rfl
 
 end DirichletCharacter

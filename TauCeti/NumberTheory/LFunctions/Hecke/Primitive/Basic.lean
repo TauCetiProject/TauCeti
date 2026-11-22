@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Conductor
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight.Basic
 
 /-!
 # Primitive ray class characters and imprimitive Euler factors
@@ -236,6 +236,13 @@ through the ideal weight of `χ`, which is total and vanishes at the primes divi
 def eulerCorrection (χ : RayClassCharacter 𝔪) (𝔫 : Modulus K) (s : ℂ) : ℂ :=
   ∏ 𝔭 ∈ 𝔫.support \ 𝔪.support,
     (1 - χ.toMultiplicativeIdealWeight 𝔭.asIdeal * (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-s))
+
+open Classical in
+/-- The defining equation of `RayClassCharacter.eulerCorrection`. -/
+theorem eulerCorrection_def (χ : RayClassCharacter 𝔪) (𝔫 : Modulus K) (s : ℂ) :
+    χ.eulerCorrection 𝔫 s = ∏ 𝔭 ∈ 𝔫.support \ 𝔪.support,
+      (1 - χ.toMultiplicativeIdealWeight 𝔭.asIdeal * (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-s)) :=
+  (rfl)
 
 /-- Since the ideal weight of `χ` vanishes at the primes dividing `𝔪₀`, the Euler correction may
 be taken over all primes dividing `𝔫₀`. -/

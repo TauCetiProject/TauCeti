@@ -169,21 +169,25 @@ theorem divisor_dirichletData_entireCompletion_eq_LFunction {s : ℂ} (hs : 0 < 
     (h1 : s ≠ 1 ∨ χ ≠ 1) :
     MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ s =
       MeromorphicOn.divisor χ.LFunction Set.univ s := by
-  rcases eq_or_ne χ 1 with hχ1 | hne
-  · have hs1 : s ≠ 1 := h1.resolve_right (not_not.mpr hχ1)
-    have hN : N = 1 := hχ.eq_one_iff.mp hχ1
-    subst hN
-    rw [dirichletData_modOne, riemannZetaData_entireCompletion,
-      DirichletCharacter.LFunction_modOne_eq]
-    exact divisor_zetaEntireCompletion_eq_riemannZeta hs hs1
-  · have ha := dirichletData_hasMeromorphicContinuation χ hχ
-    have hL : AnalyticOnNhd ℂ χ.LFunction Set.univ :=
-      fun z _ ↦ (DirichletCharacter.differentiable_LFunction hne).analyticAt z
-    rw [ha.meromorphicOn_entireCompletion.divisor_eq_analyticOrderNatAt
-        (ha.analyticAt_entireCompletion s) (Set.mem_univ s),
-      hL.meromorphicOn.divisor_eq_analyticOrderNatAt (hL s (Set.mem_univ s)) (Set.mem_univ s)]
-    simp only [analyticOrderNatAt,
-      analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hs]
+  have ha := dirichletData_hasMeromorphicContinuation χ hχ
+  rw [ha.meromorphicOn_entireCompletion.divisor_eq_analyticOrderNatAt
+      (ha.analyticAt_entireCompletion s) (Set.mem_univ s),
+    χ.meromorphic_LFunction.meromorphicOn.divisor_eq_analyticOrderNatAt
+      (χ.analyticAt_LFunction h1) (Set.mem_univ s)]
+  simp only [analyticOrderNatAt,
+    analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hs]
+
+/-- On the positive half-plane, the natural divisor multiplicity of the entire completion equals
+the analytic vanishing order `analyticOrderNatAt χ.LFunction s` (including for `χ = 1` at `s = 1`,
+where both vanish). -/
+theorem toNat_divisor_dirichletData_entireCompletion_eq_analyticOrderNatAt
+    {s : ℂ} (hs : 0 < s.re) :
+    (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ s).toNat =
+      analyticOrderNatAt χ.LFunction s := by
+  have hm := dirichletData_hasMeromorphicContinuation χ hχ
+  rw [MeromorphicOn.divisor_eq_analyticOrderNatAt hm.meromorphicOn_entireCompletion
+    (hm.analyticAt_entireCompletion s) (Set.mem_univ s), Int.toNat_natCast,
+    analyticOrderNatAt_dirichletData_entireCompletion_eq_LFunction χ hχ hs]
 
 /-- On any region in the positive half-plane, a primitive Dirichlet entire completion and its
 ordinary L-function have the same zero count (including for the principal character at `N = 1`,
@@ -192,14 +196,20 @@ theorem zeroCount_dirichletData_entireCompletion_eq_LFunction {R : Set ℂ}
     (hR : ∀ s ∈ R, 0 < s.re) :
     zeroCount (dirichletData χ hχ).entireCompletion Set.univ R =
       zeroCount χ.LFunction Set.univ R := by
-  rcases eq_or_ne χ 1 with hχ1 | hne
-  · have hN : N = 1 := hχ.eq_one_iff.mp hχ1
+  refine zeroCount_congr_divisor fun s hs ↦ ?_
+  by_cases h1 : s ≠ 1 ∨ χ ≠ 1
+  · rw [divisor_dirichletData_entireCompletion_eq_LFunction χ hχ (hR s hs) h1]
+  · push Not at h1
+    rcases h1 with ⟨rfl, rfl⟩
+    have hN : N = 1 := hχ.eq_one_iff.mp rfl
     subst hN
-    rw [dirichletData_modOne, riemannZetaData_entireCompletion,
-      DirichletCharacter.LFunction_modOne_eq]
-    exact zeroCount_zetaEntireCompletion_eq_riemannZeta hR
-  · exact zeroCount_congr_divisor fun s hs ↦ by
-      rw [divisor_dirichletData_entireCompletion_eq_LFunction χ hχ (hR s hs) (.inr hne)]
+    rw [toNat_divisor_dirichletData_entireCompletion_eq_analyticOrderNatAt 1 hχ (hR 1 hs),
+      DirichletCharacter.LFunction_modOne_eq, divisor_riemannZeta_one,
+      analyticOrderNatAt, analyticOrderAt_of_not_analyticAt fun ha ↦ ?_]
+    · simp
+    · have hm : ((0 : ℤ) : WithTop ℤ) ≤ (-1 : ℤ) :=
+        meromorphicOrderAt_riemannZeta_one ▸ ha.meromorphicOrderAt_nonneg
+      exact absurd (WithTop.coe_le_coe.mp hm) (by omega)
 
 /-- On any region `R`, the zero count of a primitive Dirichlet entire completion is the zero count
 of its ordinary L-function on the intersection of `R` with the open critical strip: every zero of
@@ -210,17 +220,5 @@ theorem zeroCount_dirichletData_entireCompletion_eq_LFunction_inter (R : Set ℂ
   rw [← zeroCount_inter_eq_self (S := {s | s.re ∈ Set.Ioo 0 1})
     fun s _ hs ↦ re_mem_Ioo_of_divisor_dirichletData_entireCompletion_pos χ hχ hs]
   exact zeroCount_dirichletData_entireCompletion_eq_LFunction χ hχ fun _ hs ↦ hs.2.1
-
-/-- On the positive half-plane, the natural divisor multiplicity of the entire completion equals
-the analytic vanishing order `analyticOrderNatAt χ.LFunction s`. -/
-theorem toNat_divisor_dirichletData_entireCompletion_eq_analyticOrderNatAt (hne : χ ≠ 1)
-    {s : ℂ} (hs : 0 < s.re) :
-    (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ s).toNat =
-      analyticOrderNatAt χ.LFunction s := by
-  have hm := dirichletData_hasMeromorphicContinuation χ hχ
-  rw [MeromorphicOn.divisor_eq_analyticOrderNatAt hm.meromorphicOn_entireCompletion
-    (hm.analyticAt_entireCompletion s) (Set.mem_univ s), Int.toNat_natCast,
-    analyticOrderNatAt, analyticOrderNatAt,
-    analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hs]
 
 end TauCeti.LFunctions

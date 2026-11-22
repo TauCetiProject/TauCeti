@@ -388,7 +388,7 @@ theorem sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunc
       ∑ ρ ∈ S, ((MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat :
         ℝ) * (1 / ((σ : ℂ) - ρ)).re := by
     refine Finset.sum_congr rfl fun ρ hρ ↦ ?_
-    rw [toNat_divisor_dirichletData_entireCompletion_eq_analyticOrderNatAt χ hχ hne (hS ρ hρ)]
+    rw [toNat_divisor_dirichletData_entireCompletion_eq_analyticOrderNatAt χ hχ (hS ρ hρ)]
   have hdecomp : (logDeriv (dirichletData χ hχ).entireCompletion σ).re =
       Real.log N / 2 + (logDeriv χ.gammaFactor σ).re + (logDeriv χ.LFunction σ).re := by
     exact χ.re_logDeriv_dirichletData_entireCompletion hχ hne hσ0 hLσ
@@ -427,7 +427,7 @@ theorem one_div_sub_le_re_logDeriv_LFunction_add {N : ℕ} [NeZero N] (χ : Diri
   have hm_pos : 1 ≤ analyticOrderNatAt χ.LFunction β := by
     have haL := (DirichletCharacter.differentiable_LFunction hne).analyticAt (β : ℂ)
     have hne_top : analyticOrderAt χ.LFunction β ≠ ⊤ := by
-      rw [← analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hβre]
+      rw [← analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hβre]
       exact analyticOrderAt_dirichletData_entireCompletion_ne_top χ hχ β
     rw [Nat.one_le_iff_ne_zero, ← Nat.cast_ne_zero (R := ℕ∞),
       Nat.cast_analyticOrderNatAt hne_top]
@@ -528,7 +528,7 @@ theorem sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_add_gammaFactor
       ∑ ρ ∈ S,
         (analyticOrderNatAt (dirichletData χ hχ).entireCompletion ρ : ℝ) * (1 / (s - ρ)).re := by
     refine Finset.sum_congr rfl fun ρ hρ ↦ ?_
-    rw [analyticOrderNatAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne (hS ρ hρ)]
+    rw [analyticOrderNatAt_dirichletData_entireCompletion_eq_LFunction χ hχ (hS ρ hρ)]
   have hlog := χ.re_logDeriv_dirichletData_entireCompletion hχ hne hspos hL
   have hle := sum_analyticOrderNatAt_dirichletData_entireCompletion_mul_re_one_div_sub_le χ hχ
     hs S

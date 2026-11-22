@@ -53,11 +53,16 @@ character, and its infinite part is empty exactly when the Dirichlet character i
   `TauCeti.GlobalNumberFields.factorsThrough_and_even_ratDirichletEquiv_iff`: a Dirichlet
   character is even exactly when its ray class character is induced from the modulus without the
   real place.
+* `TauCeti.GlobalNumberFields.RayClassCharacter.mem_range_toDirichletCharacter_iff`: at level
+  `Ideal.absNorm 𝔪.finitePart`, a Dirichlet character is in the image of `toDirichletCharacter`
+  iff `𝔪` contains the real place or the character is even.
 * `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_finitePart_eq_span`,
-  `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_infinitePart_eq_empty_iff_even`, and
-  `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_toDirichletCharacter`: the conductor of
-  a ray class character of `ℚ` is the conductor of its Dirichlet character, with the real place
-  included exactly for an odd character.
+  `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_infinitePart_eq_empty_iff_even`,
+  `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_toDirichletCharacter`,
+  `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_eq_ratFiniteModulus_of_even`, and
+  `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_eq_ratModulus_of_not_even`: the
+  conductor of a ray class character of `ℚ` is the conductor of its Dirichlet character, with the
+  real place included exactly for an odd character.
 * `TauCeti.GlobalNumberFields.RayClassCharacter.isPrimitive_iff_of_infinitePart_eq_empty` and
   `TauCeti.GlobalNumberFields.RayClassCharacter.isPrimitive_iff_of_infinitePart_ne_empty`:
   primitivity of a ray class character of `ℚ` in terms of primitivity and parity of its Dirichlet
@@ -274,41 +279,6 @@ theorem conductor_infinitePart_eq_empty_iff_even :
   rw [← key, Modulus.dvd_iff, ratFiniteModulus_finitePart, ← conductor_finitePart_eq_span,
     ratFiniteModulus_infinitePart, Finset.subset_empty, and_iff_right dvd_rfl]
 
-/-- When the Dirichlet character of `η` is even, the conductor of `η` is the finite modulus `(f)`
-without the real place. -/
-theorem conductor_eq_ratFiniteModulus_of_even (h : (ratDirichletEquiv n hn η).Even) :
-    η.conductor = ratFiniteModulus (ratDirichletEquiv n hn η).conductor
-      (by have : NeZero n := ⟨hn⟩; exact conductor_ne_zero _) :=
-  Modulus.ext (η.conductor_finitePart_eq_span.trans (ratFiniteModulus_finitePart _ _).symm)
-    ((η.conductor_infinitePart_eq_empty_iff_even.mpr h).trans
-      (ratFiniteModulus_infinitePart _ _).symm)
-
-/-- When the Dirichlet character of `η` is odd, the conductor of `η` is the modulus `(f)·∞`
-including the real place. -/
-theorem conductor_eq_ratModulus_of_not_even (h : ¬ (ratDirichletEquiv n hn η).Even) :
-    η.conductor = ratModulus (ratDirichletEquiv n hn η).conductor
-      (by have : NeZero n := ⟨hn⟩; exact conductor_ne_zero _) := by
-  have hne : η.conductor.infinitePart ≠ ∅ := η.conductor_infinitePart_eq_empty_iff_even.not.mpr h
-  refine Modulus.ext (η.conductor_finitePart_eq_span.trans (ratModulus_finitePart _ _).symm) ?_
-  simpa only [ratModulus_infinitePart] using
-    (congrArg Modulus.infinitePart (eq_ratModulus_of_infinitePart_ne_empty hne)).trans
-      (ratModulus_infinitePart _ _)
-
-/-- **A ray class character of `(n)·∞` is primitive exactly when its Dirichlet character is
-primitive and odd.** Even characters factor through `(n)` without the real place. -/
-theorem isPrimitive_ratModulus_iff :
-    η.IsPrimitive ↔ (ratDirichletEquiv n hn η).IsPrimitive ∧ ¬ (ratDirichletEquiv n hn η).Even := by
-  rw [isPrimitive_iff_conductor_eq, Modulus.ext_iff, isPrimitive_def,
-    ← absNorm_conductor_finitePart, ratModulus_finitePart, ratModulus_infinitePart,
-    ← conductor_infinitePart_eq_empty_iff_even]
-  refine and_congr ?_ ?_
-  · refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-    · rw [h, ← ratModulus_finitePart n hn, absNorm_ratModulus_finitePart]
-    · rw [← Rat.RingOfIntegers.ideal_span_absNorm_eq_self η.conductor.finitePart, h]
-  · refine ⟨fun h h0 ↦ (Finset.singleton_nonempty _).ne_empty (h0 ▸ h).symm, fun hne ↦ ?_⟩
-    simpa only [ratModulus_infinitePart] using
-      congrArg Modulus.infinitePart (eq_ratModulus_of_infinitePart_ne_empty hne)
-
 /-! ### Arbitrary moduli of `ℚ` -/
 
 section ArbitraryModulus
@@ -415,6 +385,61 @@ theorem even_toDirichletCharacter_of_infinitePart_eq_empty (h : 𝔪.infinitePar
     (ψ : RayClassCharacter 𝔪) : ψ.toDirichletCharacter.Even := by
   rw [← conductor_infinitePart_eq_empty_iff_even_toDirichletCharacter, ← Finset.subset_empty, ← h]
   exact (Modulus.dvd_iff.mp ψ.conductor_dvd).2
+
+/-- When the Dirichlet character of `ψ : RayClassCharacter 𝔪` is even, the conductor of `ψ` is
+the finite modulus `(ψ.toDirichletCharacter.conductor)` without the real place. -/
+theorem conductor_eq_ratFiniteModulus_of_even (ψ : RayClassCharacter 𝔪)
+    (h : ψ.toDirichletCharacter.Even) :
+    ψ.conductor = ratFiniteModulus ψ.toDirichletCharacter.conductor (conductor_ne_zero _) :=
+  Modulus.ext
+    (by rw [ratFiniteModulus_finitePart, conductor_toDirichletCharacter,
+      Rat.RingOfIntegers.ideal_span_absNorm_eq_self])
+    ((ψ.conductor_infinitePart_eq_empty_iff_even_toDirichletCharacter.mpr h).trans
+      (ratFiniteModulus_infinitePart _ _).symm)
+
+/-- When the Dirichlet character of `ψ : RayClassCharacter 𝔪` is odd, the conductor of `ψ` is the
+modulus `(ψ.toDirichletCharacter.conductor)·∞` including the real place. -/
+theorem conductor_eq_ratModulus_of_not_even (ψ : RayClassCharacter 𝔪)
+    (h : ¬ ψ.toDirichletCharacter.Even) :
+    ψ.conductor = ratModulus ψ.toDirichletCharacter.conductor (conductor_ne_zero _) := by
+  have hne : ψ.conductor.infinitePart ≠ ∅ :=
+    ψ.conductor_infinitePart_eq_empty_iff_even_toDirichletCharacter.not.mpr h
+  refine Modulus.ext
+    (by rw [ratModulus_finitePart, conductor_toDirichletCharacter,
+      Rat.RingOfIntegers.ideal_span_absNorm_eq_self]) ?_
+  simpa only [ratModulus_infinitePart] using
+    (congrArg Modulus.infinitePart (eq_ratModulus_of_infinitePart_ne_empty hne)).trans
+      (ratModulus_infinitePart _ _)
+
+/-- **The image of `toDirichletCharacter`**: at level `Ideal.absNorm 𝔪.finitePart`, a Dirichlet
+character lies in the range of `toDirichletCharacter` exactly when `𝔪` contains the real place or
+the Dirichlet character is even. -/
+theorem mem_range_toDirichletCharacter_iff
+    (χ : DirichletCharacter ℂ (Ideal.absNorm 𝔪.finitePart)) :
+    χ ∈ (toDirichletCharacter (𝔪 := 𝔪)).range ↔ 𝔪.infinitePart ≠ ∅ ∨ χ.Even := by
+  constructor
+  · rintro ⟨ψ, rfl⟩
+    by_cases h0 : 𝔪.infinitePart = ∅
+    · exact Or.inr (even_toDirichletCharacter_of_infinitePart_eq_empty h0 ψ)
+    · exact Or.inl h0
+  · intro h
+    by_cases h0 : 𝔪.infinitePart = ∅
+    · have heven : χ.Even := h.resolve_left (not_not.mpr h0)
+      have hfin : ratFiniteModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _) ∣
+          ratModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _) :=
+        ratFiniteModulus_dvd_ratModulus
+      have hmod : ratFiniteModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _) ∣ 𝔪 := by
+        conv_rhs => rw [eq_ratFiniteModulus_of_infinitePart_eq_empty h0]
+      have hχ : (ratDirichletEquiv _ (NeZero.ne _)
+          ((ratDirichletEquiv _ (NeZero.ne _)).symm χ)).Even := by
+        simpa only [MulEquiv.apply_symm_apply] using heven
+      obtain ⟨ψ₀, hψ₀⟩ := (even_ratDirichletEquiv_iff_exists_induced hfin _).mp hχ
+      refine ⟨ψ₀.induced hmod, ?_⟩
+      rw [toDirichletCharacter_def, induced_trans, hψ₀, MulEquiv.apply_symm_apply]
+    · have hmod : ratModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _) ∣ 𝔪 := by
+        conv_rhs => rw [eq_ratModulus_of_infinitePart_ne_empty h0]
+      refine ⟨((ratDirichletEquiv _ (NeZero.ne _)).symm χ).induced hmod, ?_⟩
+      rw [toDirichletCharacter_def, induced_trans, induced_refl, MulEquiv.apply_symm_apply]
 
 /-- **At a modulus of `ℚ` without the real place, a ray class character is primitive exactly when
 its Dirichlet character is primitive.** -/

@@ -5,7 +5,7 @@ Authors: OpenAI Codex
 -/
 module
 
-public import TauCeti.NumberTheory.LFunctions.Hecke.Primitive
+public import TauCeti.NumberTheory.LFunctions.Hecke.Primitive.Basic
 public import TauCeti.NumberTheory.NumberField.Ideal.LogNorm
 public import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
 

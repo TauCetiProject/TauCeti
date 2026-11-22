@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Cancellation
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Sum
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight.Basic
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.PartialSums
 
 /-!

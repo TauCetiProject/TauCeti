@@ -171,14 +171,6 @@ theorem re_mem_Ioo_of_zetaEntireCompletion_eq_zero {ρ : ℂ}
       fun _ ↦ zetaEntireCompletion_ne_zero_of_one_le_re)
     (by simpa only [riemannZetaData_entireCompletion] using hρ)
 
-/-- Reflection `s ↦ 1 - s` preserves the divisor of `zetaEntireCompletion`. -/
-theorem divisor_zetaEntireCompletion_one_sub (s : ℂ) :
-    MeromorphicOn.divisor zetaEntireCompletion Set.univ (1 - s) =
-      MeromorphicOn.divisor zetaEntireCompletion Set.univ s := by
-  simpa only [riemannZetaData_entireCompletion, riemannZetaData_dual] using
-    riemannZetaData_hasFunctionalEquation.divisor_entireCompletion_one_sub
-      riemannZetaData_hasMeromorphicContinuation s
-
 /-- Every point of positive divisor of `zetaEntireCompletion` lies in the open critical strip. -/
 theorem re_mem_Ioo_of_divisor_zetaEntireCompletion_pos {ρ : ℂ}
     (hρ : 0 < MeromorphicOn.divisor zetaEntireCompletion Set.univ ρ) :

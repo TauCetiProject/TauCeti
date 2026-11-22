@@ -7,8 +7,8 @@ module
 
 public import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.PartialZeta
-public import TauCeti.NumberTheory.LFunctions.Hecke.Primitive
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight
+public import TauCeti.NumberTheory.LFunctions.Hecke.Primitive.Basic
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight.Basic
 import Mathlib.NumberTheory.LSeries.Linearity
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 

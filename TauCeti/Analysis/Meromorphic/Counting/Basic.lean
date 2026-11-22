@@ -241,14 +241,16 @@ theorem zeroCount_interior (hfr : ∀ z ∈ frontier R, MeromorphicOn.divisor f 
     hpos.ne' (hfr z ⟨subset_closure hz, hint⟩)
 
 /-- Equal divisor values on `R` give equal signed divisor counts on `R`. -/
-theorem divisorCount_congr_divisor {g : 𝕜 → E} {V : Set 𝕜}
+theorem divisorCount_congr_divisor {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {g : 𝕜 → F} {V : Set 𝕜}
     (h : ∀ z ∈ R, MeromorphicOn.divisor f U z = MeromorphicOn.divisor g V z) :
     divisorCount f U R = divisorCount g V R := by
   rw [divisorCount_def, divisorCount_def]
   exact finsum_mem_congr rfl h
 
 /-- Equal positive divisor multiplicities on `R` give equal zero counts on `R`. -/
-theorem zeroCount_congr_divisor {g : 𝕜 → E} {V : Set 𝕜}
+theorem zeroCount_congr_divisor {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {g : 𝕜 → F} {V : Set 𝕜}
     (h : ∀ z ∈ R, (MeromorphicOn.divisor f U z).toNat = (MeromorphicOn.divisor g V z).toNat) :
     zeroCount f U R = zeroCount g V R := by
   rw [zeroCount_def, zeroCount_def]
