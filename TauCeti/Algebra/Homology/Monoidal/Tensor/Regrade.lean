@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Homology.ComplexShape.Signs
 public import TauCeti.Algebra.Homology.Embedding.Regrade
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Symmetry
+import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
@@ -49,6 +50,22 @@ which is graded commutative up to `(-1)^n ε` for the cochain degrees
 conversion of the input-exchange sign of the pair-of-pants product between the raw grading of
 Floer complexes and the cohomological grading in which graded commutativity reads `(-1)^(a b)`.
 
+The comparison is also compatible with the unitors. Write `𝟙[m]` for the monoidal unit of `C`
+placed in chain degree `m`; its regrading by `m` is the unit of cochain complexes
+(`ChainComplex.regradeSingleIso`). For `m ≠ 0` the left unitor `𝟙 ⊗ L_q ≅ L_q` is not a chain map
+`𝟙[m] ⊗ L → L` of degree `-m`, since the differential of `𝟙[m] ⊗ L` is `(-1)^m` times that of `L`.
+Twisted by `(-1)^(m q)` it is a morphism `ChainComplex.regradeSingleLeftUnitor` between the
+regradings, and the comparison composed with it is the left unitor of cochain complexes, with no
+further sign (`ChainComplex.regradeTensorHom_leftUnitality`). The right unitor
+`L_p ⊗ 𝟙 ≅ L_p` is a chain map as it stands (`ChainComplex.regradeSingleRightUnitor`), and the
+comparison composed with it is `(-1)^(n₁ m)` times the right unitor of cochain complexes
+(`ChainComplex.regradeTensorHom_rightUnitality`). For `m = 0` both are the regradings of the
+unitors of chain complexes (`ChainComplex.regradeSingleLeftUnitor_zero`,
+`ChainComplex.regradeSingleRightUnitor_zero`), and the two statements are the unitality axioms of a
+lax monoidal functor. For a Floer complex `C^k = CF_(n-k)`, whose unit lies in chain degree `n`,
+this is the passage between unit identities of the raw product and the unit laws of the regraded
+product in cochain degree `0`; on the right it introduces the sign `(-1)^n`.
+
 ## Main definitions
 
 * `ChainComplex.regradeTensorSummand`: the component of the comparison on one summand.
@@ -57,6 +74,9 @@ Floer complexes and the cohomological grading in which graded commutativity read
 * `ChainComplex.regradeTensorIso`: the comparison morphism as an isomorphism between the tensor
   product of the regradings of `K` by `n₁` and `L` by `n₂` and the regrading of `K ⊗ L` by
   `n₁ + n₂`.
+* `ChainComplex.regradeSingleLeftUnitor`, `ChainComplex.regradeSingleRightUnitor`: the left and
+  right unitors of the monoidal unit placed in chain degree `n₁`, respectively `n₂`, as morphisms
+  between regradings, the left one with the sign `(-1)^(n₁ q)` on `𝟙 ⊗ L_q`.
 
 ## Main results
 
@@ -75,6 +95,11 @@ Floer complexes and the cohomological grading in which graded commutativity read
 * `ChainComplex.tensorBraiding_hom_comp_regradeTensorHom_comp_restrictionMap`: a product which is
   graded commutative up to `ε` for the raw degrees regrades to one which is graded commutative up
   to `(-1)^n ε` for the cochain degrees.
+* `ChainComplex.regradeTensorHom_leftUnitality`, `ChainComplex.regradeTensorHom_rightUnitality`:
+  the comparison is compatible with the left unitors, and with the right unitors up to the sign
+  `(-1)^(n₁ n₂)`.
+* `ChainComplex.regradeSingleLeftUnitor_zero`, `ChainComplex.regradeSingleRightUnitor_zero`: for the
+  unit in chain degree `0` these unitors are the regradings of the unitors of chain complexes.
 
 The tensor product of the regradings exists whenever `K ⊗ L` does, since their summands agree;
 this is an instance. The tensor signs on `ComplexShape.down ℤ` that define `K ⊗ L` are
@@ -562,5 +587,317 @@ theorem regradeTensorHom_associativity :
   exact regradeTensorSummand_associativity n₁ n₂ n₃ K L M a b c k h
 
 end Associator
+
+end ChainComplex
+
+/-! ### Compatibility with the unitors -/
+
+namespace ChainComplex
+
+open HomologicalComplex ComplexShape
+
+section Unitor
+
+variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C] [MonoidalPreadditive C]
+  [HasZeroObject C] [∀ X₁ X₂ : GradedObject ℤ C, GradedObject.HasTensor X₁ X₂]
+  (n₁ n₂ : ℤ) (K L : ChainComplex C ℤ)
+
+/-- The summand components of `ChainComplex.regradeSingleLeftUnitor` in cochain degree `k`: on
+`𝟙_p ⊗ L_q` with `p = n₁`, the left unitor of `L_q` with the sign `(-1)^(n₁ q)`, and zero on the
+other summands, which are zero. -/
+private noncomputable def regradeSingleLeftUnitorSummand (k p q : ℤ)
+    (h : p + q = n₁ + n₂ - k) :
+    ((single C (down ℤ) n₁).obj (𝟙_ C)).X p ⊗ L.X q ⟶ L.X (n₂ - k) :=
+  if hp : p = n₁ then
+    (n₁ * q).negOnePow • ((singleObjXIsoOfEq (down ℤ) n₁ (𝟙_ C) p hp).hom ▷ L.X q ≫
+      (λ_ (L.X q)).hom ≫ (L.XIsoOfEq (show q = n₂ - k by omega)).hom)
+  else 0
+
+/-- The summand components of `ChainComplex.regradeSingleLeftUnitor` intertwine the differential
+of `𝟙[n₁] ⊗ L`, whose Koszul sign on the second factor is `(-1)^n₁`, with the differential of `L`:
+the twist `(-1)^(n₁ q)` absorbs it. -/
+private lemma regradeSingleLeftUnitorSummand_comp_d (k p q : ℤ) (h : p + q = n₁ + n₂ - k) :
+    regradeSingleLeftUnitorSummand n₁ n₂ L k p q h ≫ L.d (n₂ - k) (n₂ - (k + 1)) =
+      ιTensorObj ((single C (down ℤ) n₁).obj (𝟙_ C)) L p q (n₁ + n₂ - k) h ≫
+        (HomologicalComplex.tensorObj ((single C (down ℤ) n₁).obj (𝟙_ C)) L).d (n₁ + n₂ - k)
+          (n₁ + n₂ - (k + 1)) ≫
+        mapBifunctorDesc (fun p' q' h' ↦
+          regradeSingleLeftUnitorSummand n₁ n₂ L (k + 1) p' q' h') := by
+  rw [mapBifunctor.d_eq, Preadditive.add_comp, Preadditive.comp_add, mapBifunctor.ι_D₁_assoc,
+    mapBifunctor.ι_D₂_assoc, single_tensor_d₁, zero_comp, zero_add,
+    mapBifunctor.d₂_eq _ _ _ _ p (down_mk q (q - 1) (by omega)) (n₁ + n₂ - (k + 1))
+      (by dsimp; omega)]
+  simp only [ε₂_def, ε_down_ℤ, curriedTensor_obj_map, Linear.units_smul_comp, Category.assoc,
+    ι_mapBifunctorDesc]
+  by_cases hp : p = n₁
+  · subst hp
+    simp only [regradeSingleLeftUnitorSummand, ↓reduceDIte, Linear.units_smul_comp,
+      Linear.comp_units_smul, Category.assoc, smul_smul]
+    rw [whisker_exchange_assoc, leftUnitor_naturality_assoc, d_comp_XIsoOfEq_hom,
+      XIsoOfEq_hom_comp_d, ← Int.negOnePow_add]
+    congr 2
+    ring
+  · simp [regradeSingleLeftUnitorSummand, hp]
+
+/-- **The left unitor of the unit placed in chain degree `n₁`**, as a morphism from the regrading
+of `𝟙[n₁] ⊗ L` by `n₁ + n₂` to the regrading of `L` by `n₂`. Here `𝟙[n₁]` is the monoidal unit of
+`C` placed in chain degree `n₁`. On the summand `𝟙[n₁]_(n₁) ⊗ L_q` it is the left unitor of `L_q`
+twisted by the sign `(-1)^(n₁ q)` (`ChainComplex.ι_regradeSingleLeftUnitor_f`). The differential
+of `𝟙[n₁] ⊗ L` is `(-1)^n₁` times that of `L` on these summands, and the sign makes the left
+unitor commute with the differentials. For `n₁ = 0` it is the regrading of the left unitor of
+chain complexes (`ChainComplex.regradeSingleLeftUnitor_zero`). -/
+noncomputable def regradeSingleLeftUnitor :
+    (HomologicalComplex.tensorObj ((single C (down ℤ) n₁).obj (𝟙_ C)) L).restriction
+        (embeddingUpIntDownIntSub (n₁ + n₂)) ⟶ L.restriction (embeddingUpIntDownIntSub n₂) where
+  -- The degree `n₁ + n₂ - k` is given explicitly so that the summand inclusions are indexed by
+  -- `p + q = n₁ + n₂ - k` rather than by the unreduced degree of the restriction.
+  f k := mapBifunctorDesc (j := n₁ + n₂ - k)
+    (fun p q h ↦ regradeSingleLeftUnitorSummand n₁ n₂ L k p q h)
+  comm' k k' hk := by
+    replace hk : k + 1 = k' := hk
+    subst hk
+    apply mapBifunctor.hom_ext
+    intro p q h
+    -- The summands and differentials of the regraded complexes are those of `𝟙[n₁] ⊗ L` and `L`
+    -- by definition of `HomologicalComplex.restriction`.
+    exact (ι_mapBifunctorDesc_assoc _ p q h _).trans
+      (regradeSingleLeftUnitorSummand_comp_d n₁ n₂ L k p q h)
+
+private lemma regradeSingleLeftUnitor_f (k : ℤ) :
+    (regradeSingleLeftUnitor n₁ n₂ L).f k =
+      mapBifunctorDesc (j := n₁ + n₂ - k)
+        (fun p q h ↦ regradeSingleLeftUnitorSummand n₁ n₂ L k p q h) :=
+  rfl
+
+/-- On the summand `𝟙[n₁]_p ⊗ L_q` with `p = n₁`, `ChainComplex.regradeSingleLeftUnitor` is the left
+unitor of `L_q` with the sign `(-1)^(n₁ q)`, after identifying `𝟙[n₁]_p` with `𝟙_ C`. -/
+@[reassoc]
+lemma ι_regradeSingleLeftUnitor_f (p q k : ℤ) (h : p + q = n₁ + n₂ - k) (hp : p = n₁) :
+    ιTensorObj ((single C (down ℤ) n₁).obj (𝟙_ C)) L p q (n₁ + n₂ - k) h ≫
+        (regradeSingleLeftUnitor n₁ n₂ L).f k =
+      (n₁ * q).negOnePow • ((singleObjXIsoOfEq (down ℤ) n₁ (𝟙_ C) p hp).hom ▷ L.X q ≫
+        (λ_ (L.X q)).hom ≫ (L.XIsoOfEq (show q = n₂ - k by omega)).hom) := by
+  -- The source of `(regradeSingleLeftUnitor n₁ n₂ L).f k` is `(𝟙[n₁] ⊗ L).X (n₁ + n₂ - k)` by
+  -- definition of `HomologicalComplex.restriction`.
+  refine (ι_mapBifunctorDesc _ p q h).trans ?_
+  subst hp
+  simp only [regradeSingleLeftUnitorSummand, ↓reduceDIte]
+  -- The two identifications `L_q = L_(n₂ - k)` are stated through the defeq degrees
+  -- `n₂ - k` and `(embeddingUpIntDownIntSub n₂).f k`.
+  rfl
+
+/-- On the summand `𝟙 ⊗ L_q` of the tensor product of the regradings, the composite in
+`ChainComplex.regradeTensorHom_leftUnitality` is the left unitor of `L_q`: the sign `(-1)^(n₁ q)` of
+the comparison cancels that of `ChainComplex.regradeSingleLeftUnitor`. -/
+private lemma regradeSingleLeftUnitor_leftUnitality_summand (k : ℤ) :
+    (λ_ (L.X (n₂ - k))).inv ≫ (singleObjXSelf (up ℤ) 0 (𝟙_ C)).inv ▷ L.X (n₂ - k) ≫
+        ((singleObjXSelf (up ℤ) 0 (𝟙_ C)).hom ≫
+          (singleObjXIsoOfEq (down ℤ) n₁ (𝟙_ C) (n₁ - 0) (by omega)).inv) ▷ L.X (n₂ - k) ≫
+        ((n₁ * (n₂ - k)).negOnePow • ιTensorObj ((single C (down ℤ) n₁).obj (𝟙_ C)) L (n₁ - 0)
+          (n₂ - k) (n₁ + n₂ - k) (by omega)) ≫ mapBifunctorDesc (j := n₁ + n₂ - k)
+            (fun p q h ↦ regradeSingleLeftUnitorSummand n₁ n₂ L k p q h) =
+      𝟙 _ := by
+  rw [Linear.units_smul_comp, ι_mapBifunctorDesc]
+  simp only [regradeSingleLeftUnitorSummand, sub_zero, ↓reduceDIte, smul_smul, Int.units_mul_self,
+    one_smul, XIsoOfEq_rfl, Iso.refl_hom, Category.comp_id, ← comp_whiskerRight_assoc,
+    Category.assoc, Iso.inv_hom_id, id_whiskerRight, Category.id_comp]
+
+/-- The summand components of `ChainComplex.regradeSingleRightUnitor` in cochain degree `k`: on
+`K_p ⊗ 𝟙_q` with `q = n₂`, the right unitor of `K_p`, and zero on the other summands, which are
+zero. -/
+private noncomputable def regradeSingleRightUnitorSummand (k p q : ℤ)
+    (h : p + q = n₁ + n₂ - k) :
+    K.X p ⊗ ((single C (down ℤ) n₂).obj (𝟙_ C)).X q ⟶ K.X (n₁ - k) :=
+  if hq : q = n₂ then
+    K.X p ◁ (singleObjXIsoOfEq (down ℤ) n₂ (𝟙_ C) q hq).hom ≫ (ρ_ (K.X p)).hom ≫
+      (K.XIsoOfEq (show p = n₁ - k by omega)).hom
+  else 0
+
+/-- The summand components of `ChainComplex.regradeSingleRightUnitor` intertwine the differential
+of `K ⊗ 𝟙[n₂]`, which is that of `K` on these summands, with the differential of `K`. -/
+private lemma regradeSingleRightUnitorSummand_comp_d (k p q : ℤ) (h : p + q = n₁ + n₂ - k) :
+    regradeSingleRightUnitorSummand n₁ n₂ K k p q h ≫ K.d (n₁ - k) (n₁ - (k + 1)) =
+      ιTensorObj K ((single C (down ℤ) n₂).obj (𝟙_ C)) p q (n₁ + n₂ - k) h ≫
+        (HomologicalComplex.tensorObj K ((single C (down ℤ) n₂).obj (𝟙_ C))).d (n₁ + n₂ - k)
+          (n₁ + n₂ - (k + 1)) ≫
+        mapBifunctorDesc (fun p' q' h' ↦
+          regradeSingleRightUnitorSummand n₁ n₂ K (k + 1) p' q' h') := by
+  rw [mapBifunctor.d_eq, Preadditive.add_comp, Preadditive.comp_add, mapBifunctor.ι_D₁_assoc,
+    mapBifunctor.ι_D₂_assoc, tensor_single_d₂, zero_comp, add_zero,
+    mapBifunctor.d₁_eq _ _ _ _ (down_mk p (p - 1) (by omega)) q (n₁ + n₂ - (k + 1))
+      (by dsimp; omega)]
+  simp only [ε₁_def, one_smul, curriedTensor_map_app, Category.assoc, ι_mapBifunctorDesc]
+  by_cases hq : q = n₂
+  · subst hq
+    simp only [regradeSingleRightUnitorSummand, ↓reduceDIte]
+    rw [← whisker_exchange_assoc, rightUnitor_naturality_assoc, d_comp_XIsoOfEq_hom,
+      Category.assoc, Category.assoc, XIsoOfEq_hom_comp_d]
+  · simp [regradeSingleRightUnitorSummand, hq]
+
+/-- **The right unitor of the unit placed in chain degree `n₂`**, as a morphism from the regrading
+of `K ⊗ 𝟙[n₂]` by `n₁ + n₂` to the regrading of `K` by `n₁`. Here `𝟙[n₂]` is the monoidal unit of
+`C` placed in chain degree `n₂`. On the summand `K_p ⊗ 𝟙[n₂]_(n₂)` it is the right unitor of `K_p`
+(`ChainComplex.ι_regradeSingleRightUnitor_f`), with no sign: the differential of `K ⊗ 𝟙[n₂]` is
+that of `K` on these summands. For `n₂ = 0` it is the regrading of the right unitor of chain
+complexes (`ChainComplex.regradeSingleRightUnitor_zero`). -/
+noncomputable def regradeSingleRightUnitor :
+    (HomologicalComplex.tensorObj K ((single C (down ℤ) n₂).obj (𝟙_ C))).restriction
+        (embeddingUpIntDownIntSub (n₁ + n₂)) ⟶ K.restriction (embeddingUpIntDownIntSub n₁) where
+  -- The degree `n₁ + n₂ - k` is given explicitly so that the summand inclusions are indexed by
+  -- `p + q = n₁ + n₂ - k` rather than by the unreduced degree of the restriction.
+  f k := mapBifunctorDesc (j := n₁ + n₂ - k)
+    (fun p q h ↦ regradeSingleRightUnitorSummand n₁ n₂ K k p q h)
+  comm' k k' hk := by
+    replace hk : k + 1 = k' := hk
+    subst hk
+    apply mapBifunctor.hom_ext
+    intro p q h
+    -- The summands and differentials of the regraded complexes are those of `K ⊗ 𝟙[n₂]` and `K`
+    -- by definition of `HomologicalComplex.restriction`.
+    exact (ι_mapBifunctorDesc_assoc _ p q h _).trans
+      (regradeSingleRightUnitorSummand_comp_d n₁ n₂ K k p q h)
+
+private lemma regradeSingleRightUnitor_f (k : ℤ) :
+    (regradeSingleRightUnitor n₁ n₂ K).f k =
+      mapBifunctorDesc (j := n₁ + n₂ - k)
+        (fun p q h ↦ regradeSingleRightUnitorSummand n₁ n₂ K k p q h) :=
+  rfl
+
+/-- On the summand `K_p ⊗ 𝟙[n₂]_q` with `q = n₂`, `ChainComplex.regradeSingleRightUnitor` is the
+right unitor of `K_p`, after identifying `𝟙[n₂]_q` with `𝟙_ C`. -/
+@[reassoc]
+lemma ι_regradeSingleRightUnitor_f (p q k : ℤ) (h : p + q = n₁ + n₂ - k) (hq : q = n₂) :
+    ιTensorObj K ((single C (down ℤ) n₂).obj (𝟙_ C)) p q (n₁ + n₂ - k) h ≫
+        (regradeSingleRightUnitor n₁ n₂ K).f k =
+      K.X p ◁ (singleObjXIsoOfEq (down ℤ) n₂ (𝟙_ C) q hq).hom ≫ (ρ_ (K.X p)).hom ≫
+        (K.XIsoOfEq (show p = n₁ - k by omega)).hom := by
+  -- The source of `(regradeSingleRightUnitor n₁ n₂ K).f k` is `(K ⊗ 𝟙[n₂]).X (n₁ + n₂ - k)` by
+  -- definition of `HomologicalComplex.restriction`.
+  refine (ι_mapBifunctorDesc _ p q h).trans ?_
+  subst hq
+  simp only [regradeSingleRightUnitorSummand, ↓reduceDIte]
+  -- The two identifications `K_p = K_(n₁ - k)` are stated through the defeq degrees
+  -- `n₁ - k` and `(embeddingUpIntDownIntSub n₁).f k`.
+  rfl
+
+/-- On the summand `K_q ⊗ 𝟙` of the tensor product of the regradings, the composite in
+`ChainComplex.regradeTensorHom_rightUnitality` is the right unitor of `K_q`, up to the sign
+`(-1)^(n₁ n₂)` of the comparison. -/
+private lemma regradeSingleRightUnitor_rightUnitality_summand (k : ℤ) :
+    (ρ_ (K.X (n₁ - k))).inv ≫ K.X (n₁ - k) ◁ (singleObjXSelf (up ℤ) 0 (𝟙_ C)).inv ≫
+        K.X (n₁ - k) ◁ ((singleObjXSelf (up ℤ) 0 (𝟙_ C)).hom ≫
+          (singleObjXIsoOfEq (down ℤ) n₂ (𝟙_ C) (n₂ - 0) (by omega)).inv) ≫
+        ((n₁ * (n₂ - 0)).negOnePow • ιTensorObj K ((single C (down ℤ) n₂).obj (𝟙_ C)) (n₁ - k)
+          (n₂ - 0) (n₁ + n₂ - k) (by omega)) ≫ mapBifunctorDesc (j := n₁ + n₂ - k)
+            (fun p q h ↦ regradeSingleRightUnitorSummand n₁ n₂ K k p q h) =
+      (n₁ * n₂).negOnePow • 𝟙 _ := by
+  rw [Linear.units_smul_comp, ι_mapBifunctorDesc]
+  simp only [regradeSingleRightUnitorSummand, sub_zero, ↓reduceDIte, Linear.comp_units_smul,
+    XIsoOfEq_rfl, Iso.refl_hom, Category.comp_id, ← whiskerLeft_comp_assoc, Category.assoc,
+    Iso.inv_hom_id, whiskerLeft_id, Category.id_comp]
+
+variable [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
+  [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
+  [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
+
+/-- For the unit placed in chain degree `0`, the monoidal unit of chain complexes,
+`ChainComplex.regradeSingleLeftUnitor` is the regrading of the left unitor of chain complexes. -/
+theorem regradeSingleLeftUnitor_zero :
+    regradeSingleLeftUnitor 0 n₂ L =
+      restrictionMap (λ_ L).hom (embeddingUpIntDownIntSub (0 + n₂)) ≫
+        (regradeIsoOfEq (zero_add n₂) L).hom := by
+  ext k
+  refine mapBifunctor.hom_ext (fun p q h ↦ ?_)
+  replace h : p + q = 0 + n₂ - k := h
+  rw [comp_f, restrictionMap_f, regradeIsoOfEq_hom_f]
+  by_cases hp : p = 0
+  · -- The summands of the regraded complexes are those of `𝟙 ⊗ L` and `L` by definition of
+    -- `HomologicalComplex.restriction`.
+    refine (ι_regradeSingleLeftUnitor_f 0 n₂ L p q k h hp).trans ?_
+    refine Eq.trans ?_ (ι_leftUnitor_hom_f_assoc L p q (0 + n₂ - k) h hp _).symm
+    rw [zero_mul, Int.negOnePow_zero, one_smul]
+    congr 2
+    exact (XIsoOfEq_hom_comp_XIsoOfEq_hom L _ _).symm
+  · -- The source `𝟙[0]_p ⊗ L_q` is zero for `p ≠ 0`.
+    exact ((tensorRight (L.X q)).map_isZero (isZero_single_obj_X _ _ _ _ hp)).eq_of_src _ _
+
+/-- For the unit placed in chain degree `0`, the monoidal unit of chain complexes,
+`ChainComplex.regradeSingleRightUnitor` is the regrading of the right unitor of chain complexes. -/
+theorem regradeSingleRightUnitor_zero :
+    regradeSingleRightUnitor n₁ 0 K =
+      restrictionMap (ρ_ K).hom (embeddingUpIntDownIntSub (n₁ + 0)) ≫
+        (regradeIsoOfEq (add_zero n₁) K).hom := by
+  ext k
+  refine mapBifunctor.hom_ext (fun p q h ↦ ?_)
+  replace h : p + q = n₁ + 0 - k := h
+  rw [comp_f, restrictionMap_f, regradeIsoOfEq_hom_f]
+  by_cases hq : q = 0
+  · -- The summands of the regraded complexes are those of `K ⊗ 𝟙` and `K` by definition of
+    -- `HomologicalComplex.restriction`.
+    refine (ι_regradeSingleRightUnitor_f n₁ 0 K p q k h hq).trans ?_
+    refine Eq.trans ?_ (ι_rightUnitor_hom_f_assoc K p q (n₁ + 0 - k) h hq _).symm
+    congr 2
+    exact (XIsoOfEq_hom_comp_XIsoOfEq_hom K _ _).symm
+  · -- The source `K_p ⊗ 𝟙[0]_q` is zero for `q ≠ 0`.
+    exact ((tensorLeft (K.X p)).map_isZero (isZero_single_obj_X _ _ _ _ hq)).eq_of_src _ _
+
+/-- **The regrading of tensor products is compatible with the left unitors.** Let `𝟙[n₁]` be the
+monoidal unit of `C` placed in chain degree `n₁`, whose regrading by `n₁` is the monoidal unit of
+cochain complexes (`ChainComplex.regradeSingleIso`). Then comparing the tensor product of the
+regradings of `𝟙[n₁]` by `n₁` and of `L` by `n₂` with the regrading of `𝟙[n₁] ⊗ L` by `n₁ + n₂`,
+and applying `ChainComplex.regradeSingleLeftUnitor`, is the left unitor of cochain complexes.
+
+On the summand `𝟙 ⊗ L_q` the comparison carries the sign `(-1)^(n₁ q)`, which is exactly the sign
+of `ChainComplex.regradeSingleLeftUnitor`, so no further sign appears. For `n₁ = 0` this is the
+left unitality axiom of a lax monoidal functor (`CategoryTheory.Functor.LaxMonoidal.left_unitality`)
+for the regrading, using `ChainComplex.regradeSingleLeftUnitor_zero`. For a Floer complex
+`C^k = CF_(n-k)`, whose unit lies in chain degree `n`, the relevant case is `n₁ = n₂ = n`. -/
+theorem regradeTensorHom_leftUnitality :
+    (λ_ (L.restriction (embeddingUpIntDownIntSub n₂))).hom =
+      (regradeSingleIso n₁ (𝟙_ C)).inv ▷ L.restriction (embeddingUpIntDownIntSub n₂) ≫
+        regradeTensorHom n₁ n₂ ((single C (down ℤ) n₁).obj (𝟙_ C)) L ≫
+          regradeSingleLeftUnitor n₁ n₂ L := by
+  rw [← cancel_epi (λ_ (L.restriction (embeddingUpIntDownIntSub n₂))).inv, Iso.inv_hom_id]
+  ext k
+  rw [comp_f, comp_f, comp_f, leftUnitor_inv_f, Category.assoc, Category.assoc,
+    ι_whiskerRight_assoc, ι_regradeTensorHom_f_assoc, regradeTensorSummand_def,
+    regradeSingleIso_inv_f_zero, id_f, regradeSingleLeftUnitor_f]
+  -- The summands of the regraded complexes are those of `𝟙[n₁]`, `L` and `𝟙[n₁] ⊗ L` by
+  -- definition of `HomologicalComplex.restriction`, so the identity between plain summands closes
+  -- the goal.
+  exact (regradeSingleLeftUnitor_leftUnitality_summand n₁ n₂ L k).symm
+
+/-- **The regrading of tensor products is compatible with the right unitors, up to the sign
+`(-1)^(n₁ n₂)`.** Let `𝟙[n₂]` be the monoidal unit of `C` placed in chain degree `n₂`, whose
+regrading by `n₂` is the monoidal unit of cochain complexes (`ChainComplex.regradeSingleIso`).
+Then comparing the tensor product of the regradings of `K` by `n₁` and of `𝟙[n₂]` by `n₂` with the
+regrading of `K ⊗ 𝟙[n₂]` by `n₁ + n₂`, and applying `ChainComplex.regradeSingleRightUnitor`, is
+`(-1)^(n₁ n₂)` times the right unitor of cochain complexes.
+
+The sign is that of the comparison on the summands `K_p ⊗ 𝟙`, where the second factor sits in chain
+degree `n₂`. For `n₁ = 0` or `n₂ = 0` there is no sign, and for `n₂ = 0` this is the right
+unitality axiom of a lax monoidal functor (`CategoryTheory.Functor.LaxMonoidal.right_unitality`)
+for the regrading, using `ChainComplex.regradeSingleRightUnitor_zero`. For a Floer complex
+`C^k = CF_(n-k)`, whose unit lies in chain degree `n`, the relevant case is `n₁ = n₂ = n`, with
+the sign `(-1)^n`. -/
+theorem regradeTensorHom_rightUnitality :
+    (ρ_ (K.restriction (embeddingUpIntDownIntSub n₁))).hom =
+      (n₁ * n₂).negOnePow • (K.restriction (embeddingUpIntDownIntSub n₁) ◁
+        (regradeSingleIso n₂ (𝟙_ C)).inv ≫
+        regradeTensorHom n₁ n₂ K ((single C (down ℤ) n₂).obj (𝟙_ C)) ≫
+          regradeSingleRightUnitor n₁ n₂ K) := by
+  rw [← cancel_epi (ρ_ (K.restriction (embeddingUpIntDownIntSub n₁))).inv, Iso.inv_hom_id,
+    Linear.comp_units_smul, ← smul_left_cancel_iff (n₁ * n₂).negOnePow, smul_smul,
+    Int.units_mul_self, one_smul]
+  ext k
+  rw [units_smul_f_apply, id_f, comp_f, comp_f, comp_f, rightUnitor_inv_f, Category.assoc,
+    Category.assoc, ι_whiskerLeft_assoc, ι_regradeTensorHom_f_assoc, regradeTensorSummand_def,
+    regradeSingleIso_inv_f_zero, regradeSingleRightUnitor_f]
+  -- The summands of the regraded complexes are those of `K`, `𝟙[n₂]` and `K ⊗ 𝟙[n₂]` by
+  -- definition of `HomologicalComplex.restriction`, so the identity between plain summands closes
+  -- the goal.
+  exact (regradeSingleRightUnitor_rightUnitality_summand n₁ n₂ K k).symm
+
+end Unitor
 
 end ChainComplex

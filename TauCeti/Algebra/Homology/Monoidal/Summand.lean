@@ -46,6 +46,8 @@ totalizations of morphisms, on which these formulas rest, is in
   on a homogeneous summand.
 * `HomologicalComplex.leftUnitor_inv_f` and `HomologicalComplex.rightUnitor_inv_f`: the degreewise
   components of the inverse unitors, through the degree-`0` summand of `𝟙_ _`.
+* `HomologicalComplex.ι_leftUnitor_hom_f` and `HomologicalComplex.ι_rightUnitor_hom_f`: the unitors
+  on the degree-`0` summand of `𝟙_ _`.
 * `HomologicalComplex.mapBifunctor₁₂.ι_eq_whiskerRight` and
   `HomologicalComplex.mapBifunctor₂₃.ι_eq_whiskerLeft`: the inclusions of the summand
   `X.X p ⊗ Y.X q ⊗ Z.X r` into `(X ⊗ Y) ⊗ Z` and `X ⊗ (Y ⊗ Z)` via whiskered `ιTensorObj`.
@@ -166,6 +168,38 @@ lemma rightUnitor_inv_f (X : HomologicalComplex C c) (j : I) :
   -- `𝟙_ (HomologicalComplex C c)`.
   refine Eq.trans ?_ (rightUnitor'_inv X j)
   simp [MonoidalCategoryStruct.rightUnitor, rightUnitor]
+
+/-- The left unitor of homological complexes on the summand `(𝟙_ _).X p ⊗ X.X q` of `𝟙_ _ ⊗ X`
+with `p = 0`: the identification `(𝟙_ _).X p ≅ 𝟙_ C` whiskered on the right by `X.X q`, then the
+left unitor of `X.X q`, then the identification `X.X q = X.X j`. -/
+@[reassoc]
+lemma ι_leftUnitor_hom_f (X : HomologicalComplex C c) (p q j : I) (h : p + q = j) (hp : p = 0) :
+    ιTensorObj (𝟙_ (HomologicalComplex C c)) X p q j h ≫ (λ_ X).hom.f j =
+      (singleObjXIsoOfEq c 0 (𝟙_ C) p hp).hom ▷ X.X q ≫ (λ_ (X.X q)).hom ≫
+        (X.XIsoOfEq (by rw [← h, hp, zero_add])).hom := by
+  subst hp
+  obtain rfl : q = j := by rw [← h, zero_add]
+  have hι : ιTensorObj (𝟙_ (HomologicalComplex C c)) X 0 q q h =
+      ((singleObjXSelf c 0 (𝟙_ C)).hom ▷ X.X q ≫ (λ_ (X.X q)).hom) ≫ (λ_ X).inv.f q := by
+    simp [leftUnitor_inv_f]
+  rw [hι, Category.assoc, ← comp_f, Iso.inv_hom_id, id_f, Category.comp_id]
+  simp [singleObjXSelf]
+
+/-- The right unitor of homological complexes on the summand `X.X p ⊗ (𝟙_ _).X q` of `X ⊗ 𝟙_ _`
+with `q = 0`: the identification `(𝟙_ _).X q ≅ 𝟙_ C` whiskered on the left by `X.X p`, then the
+right unitor of `X.X p`, then the identification `X.X p = X.X j`. -/
+@[reassoc]
+lemma ι_rightUnitor_hom_f (X : HomologicalComplex C c) (p q j : I) (h : p + q = j) (hq : q = 0) :
+    ιTensorObj X (𝟙_ (HomologicalComplex C c)) p q j h ≫ (ρ_ X).hom.f j =
+      X.X p ◁ (singleObjXIsoOfEq c 0 (𝟙_ C) q hq).hom ≫ (ρ_ (X.X p)).hom ≫
+        (X.XIsoOfEq (by rw [← h, hq, add_zero])).hom := by
+  subst hq
+  obtain rfl : p = j := by rw [← h, add_zero]
+  have hι : ιTensorObj X (𝟙_ (HomologicalComplex C c)) p 0 p h =
+      (X.X p ◁ (singleObjXSelf c 0 (𝟙_ C)).hom ≫ (ρ_ (X.X p)).hom) ≫ (ρ_ X).inv.f p := by
+    simp [rightUnitor_inv_f]
+  rw [hι, Category.assoc, ← comp_f, Iso.inv_hom_id, id_f, Category.comp_id]
+  simp [singleObjXSelf]
 
 /-- The inclusion `HomologicalComplex.mapBifunctor₁₂.ι` of the summand `X.X p ⊗ Y.X q ⊗ Z.X r`
 into `(X ⊗ Y) ⊗ Z`, written with the monoidal whiskering and `HomologicalComplex.ιTensorObj`.

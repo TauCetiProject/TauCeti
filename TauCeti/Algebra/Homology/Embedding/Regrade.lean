@@ -42,6 +42,8 @@ of the regraded complex is the homology of `K` in degree `n - k`.
   `ChainComplex C ℤ ≌ CochainComplex C ℤ` given by `C^k = K_(n-k)` and `d_C = d_K`.
 * `ChainComplex.regradeIsoOfEq`: the regradings by two equal integers `n = n'` are isomorphic,
   through the identifications `K_(n-k) = K_(n'-k)`.
+* `ChainComplex.regradeSingleIso`: an object placed in chain degree `n` regrades by `n` to the
+  same object placed in cochain degree `0`.
 * `ChainComplex.regradeHomologyIso`: the homology of the regraded complex in degree `k` is the
   homology of `K` in degree `n - k`, naturally in `K` (`regradeHomologyIso_hom_naturality`), and
   compatibly with the cycles and opcycles of both complexes.
@@ -272,6 +274,47 @@ theorem regradeHomologyIso_hom_naturality {K L : ChainComplex C ℤ} (φ : K ⟶
   simp
 
 end HasZeroMorphisms
+
+section Single
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasZeroObject C]
+
+/-- An object `X` placed in chain degree `n` regrades by `n` to `X` placed in cochain degree `0`:
+both complexes have `X` in cochain degree `0`, zero objects elsewhere and zero differentials. -/
+noncomputable def regradeSingleIso (n : ℤ) (X : C) :
+    ((single C (down ℤ) n).obj X).restriction (embeddingUpIntDownIntSub n) ≅
+      (single C (up ℤ) 0).obj X :=
+  Hom.isoOfComponents
+    (fun k ↦ if hk : k = 0 then
+        singleObjXIsoOfEq (down ℤ) n X (n - k) (by omega) ≪≫
+          (singleObjXIsoOfEq (up ℤ) 0 X k hk).symm
+      else (isZero_single_obj_X (down ℤ) n X (n - k) (by omega)).iso
+        (isZero_single_obj_X (up ℤ) 0 X k hk))
+    (fun _ _ _ ↦ by simp)
+
+/-- In cochain degree `0`, `ChainComplex.regradeSingleIso` is the identification of both terms
+with `X`. -/
+@[simp]
+theorem regradeSingleIso_hom_f_zero (n : ℤ) (X : C) :
+    (regradeSingleIso n X).hom.f 0 =
+      (singleObjXIsoOfEq (down ℤ) n X (n - 0) (by omega)).hom ≫
+        (singleObjXSelf (up ℤ) 0 X).inv := by
+  dsimp only [regradeSingleIso, Hom.isoOfComponents_hom_f, ↓reduceDIte]
+  -- `Iso.trans` and `Iso.symm` compute their `hom` by definition.
+  rfl
+
+/-- In cochain degree `0`, the inverse of `ChainComplex.regradeSingleIso` is the identification of
+both terms with `X`. -/
+@[simp]
+theorem regradeSingleIso_inv_f_zero (n : ℤ) (X : C) :
+    (regradeSingleIso n X).inv.f 0 =
+      (singleObjXSelf (up ℤ) 0 X).hom ≫
+        (singleObjXIsoOfEq (down ℤ) n X (n - 0) (by omega)).inv := by
+  dsimp only [regradeSingleIso, Hom.isoOfComponents_inv_f, ↓reduceDIte]
+  -- `Iso.trans` and `Iso.symm` compute their `inv` by definition.
+  rfl
+
+end Single
 
 section Preadditive
 
