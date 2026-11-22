@@ -63,7 +63,9 @@ theorem LocallyOfFinitePresentation.of_comp {f : X ⟶ Y} {g : Y ⟶ Z}
     LocallyOfFinitePresentation f := (locallyOfFinitePresentation_iff f).mpr fun x ↦ by
   obtain ⟨CZ, CX₀, _, χ, hχ, hχ_fp, c₀₀, hc₀₀, hsq_fg⟩ := hfg.exists_openImmersion_chart x
   have ha₀ : CZ.hom.base ((CZ.pairComap CX₀ χ).base c₀₀) = g.hom.base (f.hom.base x) := by
-    simpa [hc₀₀] using congrArg (fun m ↦ m.base c₀₀) hsq_fg
+    have h := CZ.pairComap_comp_hom_base CX₀ χ hsq_fg c₀₀
+    rwa [ObjectProperty.FullSubcategory.comp_hom, PreAdicSpace.comp_base, TopCat.coe_comp,
+      Function.comp_apply, hc₀₀] at h
   obtain ⟨TA, sA, hTA, -, CY, ψ, hψ, b₀, hb₀, hsq_g⟩ :=
     hg.exists_openImmersion_over_rationalLocalization CZ (f.hom.base x) ha₀
   let ψ₀ := ψ.comp (CZ.rationalLocalizationHom TA sA hTA)

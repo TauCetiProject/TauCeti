@@ -81,16 +81,14 @@ def LocallyOfFinitePresentationAt (f : X ⟶ Y) (x : X.obj) : Prop :=
     (φ : Pair.Hom S T) (_ : φ.IsTopologicallyFiniteType)
     (_ : DiscreteTopology A → φ.toRingHom.FinitePresentation)
     (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
-      (presentationLimitPresheaf P' T.plus))
-    (eU : X.obj.restrict U.isOpenEmbedding ≅
+      (presentationLimitPresheaf P' T.plus)) (eU : X.obj.restrict U.isOpenEmbedding ≅
       presentationLimitPreAdicSpace P' T.plus T.isRingOfIntegralElements.isPowerBounded_of_mem hP')
     (eV : Y.obj.restrict V.isOpenEmbedding ≅
       presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hP),
     X.obj.ofRestrict _ ≫ f.hom =
       eU.hom ≫ presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
         φ.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
-        T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫
-        eV.inv ≫ Y.obj.ofRestrict _
+        T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫ eV.inv ≫ Y.obj.ofRestrict _
 
 /-- **Morphisms locally of finite presentation** (Huber 1996, (1.1.1) and Definition 1.2.1(v)):
 a morphism `f : X ⟶ Y` of adic spaces is *locally of finite presentation* when
@@ -176,14 +174,13 @@ with `IsHuberStandard CY.Ring`, `φ.IsTopologicallyFiniteType`, and
 theorem locallyOfFinitePresentationAt_of_openImmersion_sq {f : X ⟶ Y} {x : X.obj}
     (CY : CompleteAffinoidOpen Y.obj) (CX : CompleteAffinoidOpen X.obj) [IsHuberStandard CY.Ring]
     (φ : Pair.Hom CY.pair CX.pair) (hφ : φ.IsTopologicallyFiniteType)
-    (hfp : DiscreteTopology CY.Ring → φ.toRingHom.FinitePresentation)
-    {b₀ : CX.space} (hb₀ : CX.hom.base b₀ = x)
-    (hsq : CY.pairComap CX φ ≫ CY.hom = CX.hom ≫ f.hom) :
+    (hfp : DiscreteTopology CY.Ring → φ.toRingHom.FinitePresentation) {b₀ : CX.space}
+    (hb₀ : CX.hom.base b₀ = x) (hsq : CY.pairComap CX φ ≫ CY.hom = CX.hom ≫ f.hom) :
     LocallyOfFinitePresentationAt f x := by
   let U : Opens X.obj := ⟨Set.range CX.hom.base, CX.hom.isOpenEmbedding.isOpen_range⟩
   let V : Opens Y.obj := ⟨Set.range CY.hom.base, CY.hom.isOpenEmbedding.isOpen_range⟩
   have hUV : U ≤ (Opens.map f.hom.base).obj V := fun _ ⟨b, hb⟩ ↦
-    hb ▸ ⟨(CY.pairComap CX φ).base b, congrArg (fun m ↦ m.base b) hsq⟩
+    hb ▸ ⟨(CY.pairComap CX φ).base b, CY.pairComap_comp_hom_base CX φ hsq b⟩
   let eU := IsOpenImmersion.isoOfRangeEq (X.obj.ofRestrict U.isOpenEmbedding) CX.hom
     (Opens.set_range_inclusion' U)
   let eV := IsOpenImmersion.isoOfRangeEq (Y.obj.ofRestrict V.isOpenEmbedding) CY.hom
@@ -236,8 +233,15 @@ theorem LocallyOfFinitePresentation.of_isOpenImmersion (f : X ⟶ Y)
   have hrange : Set.range (X.obj.ofRestrict U.isOpenEmbedding ≫ f.hom).base =
       Set.range (Y.obj.ofRestrict V.isOpenEmbedding).base := by
     ext y; refine ⟨?_, ?_⟩
-    · rintro ⟨⟨x', hx'⟩, rfl⟩; exact ⟨⟨f.hom.base x', hx'⟩, rfl⟩
-    · rintro ⟨⟨y', hy'⟩, rfl⟩; obtain ⟨x', rfl⟩ := hVO hy'; exact ⟨⟨x', hy'⟩, rfl⟩
+    · rintro ⟨u, rfl⟩
+      rw [PreAdicSpace.comp_base, TopCat.coe_comp, Function.comp_apply,
+        PreAdicSpace.ofRestrict_base]
+      exact ⟨⟨f.hom.base u.val, u.property⟩, by rw [PreAdicSpace.ofRestrict_base]; rfl⟩
+    · rintro ⟨v, rfl⟩; let v' : ↥V := v; obtain ⟨x', hx'⟩ := hVO v'.property
+      let u' : X.obj.restrict U.isOpenEmbedding := ⟨x', Opens.mem_map.mpr (hx'.symm ▸ v'.property)⟩
+      refine ⟨u', ?_⟩
+      rw [PreAdicSpace.comp_base, TopCat.coe_comp, Function.comp_apply,
+        PreAdicSpace.ofRestrict_base, PreAdicSpace.ofRestrict_base]; exact hx'
   let eUV := IsOpenImmersion.isoOfRangeEq
     (X.obj.ofRestrict U.isOpenEmbedding ≫ f.hom) (Y.obj.ofRestrict V.isOpenEmbedding) hrange
   have heUV := IsOpenImmersion.isoOfRangeEq_hom_comp
@@ -335,8 +339,7 @@ containing `a₀` such that `IsHuberStandard CY₁.Ring` and a complete affinoid
 covering `x` over `CY₁` via a finite-presentation Huber-pair morphism `β`. -/
 theorem LocallyOfFinitePresentation.exists_openImmersion_over_rationalLocalization {f : X ⟶ Y}
     (hf : LocallyOfFinitePresentation f) (CY : CompleteAffinoidOpen Y.obj) (x : X.obj)
-    {a₀ : CY.space} (ha₀ : CY.hom.base a₀ = f.hom.base x) :
-    ∃ (TA : Finset CY.Ring) (sA : CY.Ring)
+    {a₀ : CY.space} (ha₀ : CY.hom.base a₀ = f.hom.base x) : ∃ (TA : Finset CY.Ring) (sA : CY.Ring)
       (hTA : IsOpen (Ideal.span (TA : Set CY.Ring) : Set CY.Ring)),
       a₀ ∈ spaBasicOpen CY.pair.plus TA sA ∧
       let CY₁ := CY.rationalLocalization TA sA hTA; IsHuberStandard CY₁.Ring ∧
@@ -346,10 +349,10 @@ theorem LocallyOfFinitePresentation.exists_openImmersion_over_rationalLocalizati
         CX.hom.base c₀ = x ∧ CY₁.pairComap CX β ≫ CY₁.hom = CX.hom ≫ f.hom := by
   obtain ⟨CY', CX₀, _, φ', hφ', hfp', c₀₀, hc₀₀, hsq'⟩ := hf.exists_openImmersion_chart x
   have had₀ : CY'.hom.base ((CY'.pairComap CX₀ φ').base c₀₀) = CY.hom.base a₀ := by
-    simpa [hc₀₀, ha₀] using congrArg (fun m ↦ m.base c₀₀) hsq'
+    rw [CY'.pairComap_comp_hom_base CX₀ φ' hsq' c₀₀, hc₀₀, ha₀]
   obtain ⟨TA', sA', hTA', -, a'₁, α₀, ha'₁, hsq_α₀⟩ :=
     exists_ofRationalLocalization_lift CY'.pairOfDefinition CY'.le_plus CY'.isSheaf CY'.hom CY
-      (𝟙 Y.obj) (by simpa only [Category.comp_id] using had₀)
+      (𝟙 Y.obj) (by rw [Category.comp_id]; exact had₀)
   let CY'₁ := CY'.rationalLocalization TA' sA' hTA'
   have had₁ : (CY.hom ≫ 𝟙 Y.obj).base a₀ = CY'₁.hom.base a'₁ := by
     rw [Category.comp_id]; exact had₀.symm.trans ha'₁.symm
@@ -357,10 +360,9 @@ theorem LocallyOfFinitePresentation.exists_openImmersion_over_rationalLocalizati
     exists_ofRationalLocalization_lift CY.pairOfDefinition CY.le_plus CY.isSheaf CY.hom CY'₁
       (𝟙 Y.obj) had₁
   let CY₁ := CY.rationalLocalization TA sA hTA
-  have hα₁α₀ : α₁.comp α₀ = CY.rationalLocalizationHom TA sA hTA :=
-    CY.pairComap_injective CY₁ <| by
-      rw [CY.pairComap_comp CY'₁ CY₁, ← cancel_mono CY.hom, Category.assoc, hsq_α₀,
-        Category.comp_id, hsq_α₁, Category.comp_id, ofRationalLocalization_hom]
+  have hα₁α₀ : α₁.comp α₀ = CY.rationalLocalizationHom TA sA hTA := CY.pairComap_injective CY₁ <| by
+    rw [CY.pairComap_comp CY'₁ CY₁, ← cancel_mono CY.hom, Category.assoc, hsq_α₀,
+      Category.comp_id, hsq_α₁, Category.comp_id, ofRationalLocalization_hom]
   have hα₁_tft : α₁.IsTopologicallyFiniteType :=
     .of_comp (hα₁α₀ ▸ CY.isTopologicallyFiniteType_rationalLocalizationHom TA sA hTA)
   let ψ₀ := α₁.comp (CY'.rationalLocalizationHom TA' sA' hTA')
@@ -383,8 +385,7 @@ presentation. -/
 theorem LocallyOfFinitePresentation.comp {f : X ⟶ Y} {g : Y ⟶ Z}
     (hf : LocallyOfFinitePresentation f) (hg : LocallyOfFinitePresentation g) :
     LocallyOfFinitePresentation (f ≫ g) := fun x ↦ by
-  obtain ⟨CZ, CY, _, ψ, hψ, hψ_fp, b₀, hb₀, hsq_g⟩ :=
-    hg.exists_openImmersion_chart (f.hom.base x)
+  obtain ⟨CZ, CY, _, ψ, hψ, hψ_fp, b₀, hb₀, hsq_g⟩ := hg.exists_openImmersion_chart (f.hom.base x)
   obtain ⟨TB, sB, hTB, -, -, CX, β, hβ, hβ_fp, c₀, hc₀, hsq_f⟩ :=
     hf.exists_openImmersion_over_rationalLocalization CY x hb₀
   let ψ₁ := (CY.rationalLocalizationHom TB sB hTB).comp ψ

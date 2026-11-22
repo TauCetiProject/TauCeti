@@ -110,6 +110,18 @@ theorem presentationLimitPreAdicSpacePairComap_base_apply
       T.isRingOfIntegralElements.isPowerBounded_of_mem hS hT hsheaf x).trans
       (Pair.Hom.spaComap_val φ x).symm
 
+/-- The continuous map underlying `presentationLimitPreAdicSpacePairComap` is `spaComapTopHom`. -/
+theorem presentationLimitPreAdicSpacePairComap_base (P : PairOfDefinition A)
+    (P' : PairOfDefinition B) {S : Pair A} {T : Pair B} (hS : P.ringOfDefinition ≤ S.plus)
+    (hT : P'.ringOfDefinition ≤ T.plus)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
+      (presentationLimitPresheaf P' T.plus)) (φ : Pair.Hom S T) :
+    (presentationLimitPreAdicSpacePairComap P P' hS hT hsheaf φ).base =
+      spaComapTopHom φ.toRingHom φ.continuous_toRingHom φ.map_mem_plus :=
+  TopCat.hom_ext <| ContinuousMap.ext fun x ↦
+    (presentationLimitPreAdicSpacePairComap_base_apply P P' hS hT hsheaf φ x).trans
+      (congr_fun (Pair.Hom.spaComap_def φ) x)
+
 /-- The identity morphism of a Huber pair induces the identity morphism of `Spa(A, A⁺)`. -/
 @[simp]
 theorem presentationLimitPreAdicSpacePairComap_id

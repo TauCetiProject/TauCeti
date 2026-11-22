@@ -98,8 +98,7 @@ variable {X Y Z : AdicSpace.{u}}
 /-- Unfolding lemma for `TauCeti.AdicSpace.LocallyOfFiniteType` in terms of
 `TauCeti.PreAdicSpace.LocallyOfFiniteType`. -/
 theorem locallyOfFiniteType_iff (f : X ⟶ Y) :
-    LocallyOfFiniteType f ↔ PreAdicSpace.LocallyOfFiniteType f.hom :=
-  Iff.rfl
+    LocallyOfFiniteType f ↔ PreAdicSpace.LocallyOfFiniteType f.hom := Iff.rfl
 
 /-- Unfolding lemma for `TauCeti.AdicSpace.LocallyOfFiniteType` in terms of
 `TauCeti.PreAdicSpace.chartLocally`. -/
@@ -128,8 +127,7 @@ theorem LocallyOfFiniteType.isAdic {f : X ⟶ Y} (hf : LocallyOfFiniteType f) : 
 
 /-- **Identities on adic spaces are locally of finite type.** -/
 instance LocallyOfFiniteType.containsIdentities :
-    LocallyOfFiniteType.{u}.ContainsIdentities where
-  id_mem X := locallyOfFiniteType_id X.property
+    LocallyOfFiniteType.{u}.ContainsIdentities where id_mem X := locallyOfFiniteType_id X.property
 
 /-- **Being locally of finite type is invariant under isomorphisms** of the source and of the
 target. -/
@@ -199,8 +197,7 @@ whose image `f(x)` is hit by `a₀ ∈ CY.space`, there is a rational localisati
 covering `x` over `CY₁` via a Huber-pair morphism `β` topologically of finite type. -/
 theorem LocallyOfFiniteType.exists_openImmersion_over_rationalLocalization {f : X ⟶ Y}
     (hf : LocallyOfFiniteType f) (CY : CompleteAffinoidOpen Y.obj) (x : X.obj)
-    {a₀ : CY.space} (ha₀ : CY.hom.base a₀ = f.hom.base x) :
-    ∃ (TA : Finset CY.Ring) (sA : CY.Ring)
+    {a₀ : CY.space} (ha₀ : CY.hom.base a₀ = f.hom.base x) : ∃ (TA : Finset CY.Ring) (sA : CY.Ring)
       (hTA : IsOpen (Ideal.span (TA : Set CY.Ring) : Set CY.Ring)),
       a₀ ∈ spaBasicOpen CY.pair.plus TA sA ∧
       let CY₁ := CY.rationalLocalization TA sA hTA
@@ -209,7 +206,7 @@ theorem LocallyOfFiniteType.exists_openImmersion_over_rationalLocalization {f : 
         CX.hom.base c₀ = x ∧ CY₁.pairComap CX β ≫ CY₁.hom = CX.hom ≫ f.hom := by
   obtain ⟨CY', CX₀, φ', hφ', c₀₀, hc₀₀, hsq'⟩ := hf.exists_complete_openImmersion_chart x
   have had : (CY.hom ≫ 𝟙 Y.obj).base a₀ = CY'.hom.base ((CY'.pairComap CX₀ φ').base c₀₀) := by
-    simpa [hc₀₀, ha₀] using (congrArg (fun m ↦ m.base c₀₀) hsq').symm
+    rw [Category.comp_id, ha₀, ← hc₀₀, ← CY'.pairComap_comp_hom_base CX₀ φ' hsq' c₀₀]
   obtain ⟨TA, sA, hTA, ha₀R, a₁, α₁, ha₁, hsq_α⟩ :=
     exists_ofRationalLocalization_lift CY.pairOfDefinition CY.le_plus CY.isSheaf CY.hom
       CY' (𝟙 Y.obj) had
@@ -221,14 +218,12 @@ theorem LocallyOfFiniteType.exists_openImmersion_over_rationalLocalization {f : 
     c₁, hc₁, hsq⟩
 
 /-- **Composition of morphisms locally of finite type** (Wedhorn, Proposition 8.50(1)): if
-`f : X ⟶ Y` and `g : Y ⟶ Z` are locally of finite type, then `f ≫ g` is locally of finite
-type. -/
+`f : X ⟶ Y` and `g : Y ⟶ Z` are locally of finite type, then `f ≫ g` is locally of finite type.
+-/
 theorem LocallyOfFiniteType.comp {f : X ⟶ Y} {g : Y ⟶ Z}
-    (hf : LocallyOfFiniteType f) (hg : LocallyOfFiniteType g) :
-    LocallyOfFiniteType (f ≫ g) := by
+    (hf : LocallyOfFiniteType f) (hg : LocallyOfFiniteType g) : LocallyOfFiniteType (f ≫ g) := by
   refine locallyOfFiniteType_of_forall_openImmersion_sq fun x ↦ ?_
-  obtain ⟨CZ, CY, ψ, hψ, b₀, hb₀, hsq_g⟩ :=
-    hg.exists_complete_openImmersion_chart (f.hom.base x)
+  obtain ⟨CZ, CY, ψ, hψ, b₀, hb₀, hsq_g⟩ := hg.exists_complete_openImmersion_chart (f.hom.base x)
   obtain ⟨TB, sB, hTB, -, CX, β, hβ, c₀, hc₀, hsq_f⟩ :=
     hf.exists_openImmersion_over_rationalLocalization CY x hb₀
   exact ⟨CZ, CX, β.comp ((CY.rationalLocalizationHom TB sB hTB).comp ψ),
@@ -238,8 +233,7 @@ theorem LocallyOfFiniteType.comp {f : X ⟶ Y} {g : Y ⟶ Z}
 
 /-- `LocallyOfFiniteType` is stable under composition. -/
 instance LocallyOfFiniteType.isStableUnderComposition :
-    LocallyOfFiniteType.{u}.IsStableUnderComposition where
-  comp_mem _ _ hf hg := hf.comp hg
+    LocallyOfFiniteType.{u}.IsStableUnderComposition where comp_mem _ _ hf hg := hf.comp hg
 
 /-- `LocallyOfFiniteType` is multiplicative (contains identities and is stable under
 composition). -/
@@ -253,11 +247,13 @@ theorem LocallyOfFiniteType.of_comp {f : X ⟶ Y} {g : Y ⟶ Z}
   classical
   refine locallyOfFiniteType_of_forall_openImmersion_sq fun x ↦ ?_
   obtain ⟨CZ, CX, χ, hχ, c₀, hc₀, hsq_fg⟩ := hfg.exists_complete_openImmersion_chart x
-  let OY : Opens Y.obj :=
-    ⟨g.hom.base ⁻¹' Set.range CZ.hom.base,
-      CZ.hom.isOpenEmbedding.isOpen_range.preimage g.hom.base.hom.continuous_toFun⟩
-  have hfxO : f.hom.base x ∈ OY :=
-    ⟨(CZ.pairComap CX χ).base c₀, by simpa [hc₀] using congrArg (fun m ↦ m.base c₀) hsq_fg⟩
+  let OY : Opens Y.obj := ⟨g.hom.base ⁻¹' Set.range CZ.hom.base,
+    CZ.hom.isOpenEmbedding.isOpen_range.preimage g.hom.base.hom.continuous_toFun⟩
+  have hfxO : f.hom.base x ∈ OY := by
+    refine ⟨(CZ.pairComap CX χ).base c₀, ?_⟩
+    have h := CZ.pairComap_comp_hom_base CX χ hsq_fg c₀
+    rwa [ObjectProperty.FullSubcategory.comp_hom, PreAdicSpace.comp_base, TopCat.coe_comp,
+      Function.comp_apply, hc₀] at h
   obtain ⟨W, hW, hfxW, hWO⟩ :=
     Opens.isBasis_iff_nbhd.mp (isBasis_affinoidOpens Y.property.isLocallyAffinoid) hfxO
   obtain ⟨B, _, _, _, _, _, _, _, T, P', hP', hsheafB, ⟨eW⟩⟩ :=
@@ -266,7 +262,10 @@ theorem LocallyOfFiniteType.of_comp {f : X ⟶ Y} {g : Y ⟶ Z}
   have hb₀ : CY.hom.base (eW.hom.base ⟨f.hom.base x, hfxW⟩) = f.hom.base x :=
     ofRestrictIso_hom_base T P' hP' hsheafB eW hfxW
   have hrangeY : Set.range (CY.hom ≫ g.hom).base ⊆ Set.range CZ.hom.base := by
-    rintro _ ⟨b, rfl⟩; exact hWO (eW.inv.base b).property
+    rintro _ ⟨b, rfl⟩
+    rw [PreAdicSpace.comp_base, TopCat.coe_comp, Function.comp_apply,
+      ofRestrictIso_hom_base_apply T P' hP' hsheafB eW b]
+    exact hWO (eW.inv.base b).property
   let p := PreAdicSpace.IsOpenImmersion.lift CZ.hom (CY.hom ≫ g.hom) hrangeY
   let ψ := presentationLimitHomPairHom CZ.pairOfDefinition CY.pairOfDefinition CZ.pair CY.pair
     CZ.le_plus CY.le_plus p
@@ -307,8 +306,7 @@ theorem locallyOfFiniteType_comapOfPresentation {A : Type u} [CommRing A] [Topol
       (presentationLimitPresheaf P S.plus))
     (T : Pair B) (P' : PairOfDefinition B) (hT : P'.ringOfDefinition ≤ T.plus)
     (hsheafT : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
-      (presentationLimitPresheaf P' T.plus))
-    (φ : Pair.Hom S T) (hφ : φ.IsTopologicallyFiniteType) :
+      (presentationLimitPresheaf P' T.plus)) (φ : Pair.Hom S T) (hφ : φ.IsTopologicallyFiniteType) :
     LocallyOfFiniteType (comapOfPresentation S P hS hsheafS T P' hT hsheafT φ) := by
   refine locallyOfFiniteType_of_forall_openImmersion_sq fun x ↦ ?_
   obtain ⟨b₀, hb₀⟩ : x ∈ Set.range (ofCompletion P' hT hsheafT).hom.base :=
@@ -327,8 +325,7 @@ theorem locallyOfFiniteType_comapOfPair_iff_comapOfPresentation {A B : Type u} [
     (hS : IsSheafyForEveryPresentation S.plus) (hT : IsSheafyForEveryPresentation T.plus)
     (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus) (P' : PairOfDefinition B)
     (hP' : P'.ringOfDefinition ≤ T.plus) (φ : Pair.Hom S T) :
-    LocallyOfFiniteType (comapOfPair hS hT φ) ↔
-      LocallyOfFiniteType
+    LocallyOfFiniteType (comapOfPair hS hT φ) ↔ LocallyOfFiniteType
         (comapOfPresentation S P hP (hS.isSheaf P hP) T P' hP' (hT.isSheaf P' hP') φ) := by
   rw [← MorphismProperty.cancel_right_of_respectsIso (@LocallyOfFiniteType.{u}) _
       (ofPairIsoOfPresentation S hS P hP).hom,
@@ -387,10 +384,9 @@ theorem locallyOfFiniteType_comapOfPair_discrete_iff {A B : Type u} [CommRing A]
     (hT : IsSheafyForEveryPresentation (Pair.discrete B).plus)
     (φ : Pair.Hom (Pair.discrete A) (Pair.discrete B)) :
     LocallyOfFiniteType (comapOfPair hS hT φ) ↔ φ.toRingHom.FiniteType :=
-  ⟨fun hf ↦ hf.finiteType_of_discreteTopology, fun hφ ↦
-    locallyOfFiniteType_comapOfPair hS hT φ
-      ((Pair.Hom.isTopologicallyFiniteType_iff_finiteType_of_plus_eq_top
-        Pair.discrete_plus Pair.discrete_plus).mpr hφ)⟩
+  ⟨fun hf ↦ hf.finiteType_of_discreteTopology, fun hφ ↦ locallyOfFiniteType_comapOfPair hS hT φ
+    ((Pair.Hom.isTopologicallyFiniteType_iff_finiteType_of_plus_eq_top
+      Pair.discrete_plus Pair.discrete_plus).mpr hφ)⟩
 
 end Affinoid
 
