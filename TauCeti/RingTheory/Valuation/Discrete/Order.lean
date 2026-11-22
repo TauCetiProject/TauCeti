@@ -105,11 +105,6 @@ theorem ord_eq_iff_valuation_eq_exp_neg (v : _root_.Valuation F ℤᵐ⁰) {f : 
     (hf : v f ≠ 0) {n : ℤ} : ord v f = n ↔ v f = WithZero.exp (-n) := by
   rw [valuation_eq_exp_neg_ord v hf, WithZero.exp_inj, neg_inj]
 
-/-- `exp (-1)` lies below `1`. -/
-private theorem mk0_exp_neg_one_lt_one :
-    Units.mk0 (WithZero.exp (-1) : ℤᵐ⁰) WithZero.exp_ne_zero < 1 :=
-  Units.val_lt_val.mp <| by simp
-
 /-- `exp (-1)` generates the units of `ℤᵐ⁰`: its inverse corresponds to `1` under
 `WithZero.unitsWithZeroEquiv`. -/
 private theorem zpowers_mk0_exp_neg_one :
@@ -144,7 +139,7 @@ theorem isUniformizer_iff_ord_eq_one_of_valueGroup_eq_top (v : _root_.Valuation 
     v.IsUniformizer t ↔ ord v t = 1 := by
   rw [isUniformizer_iff_ord_eq_neg_log_generator,
     ← IsRankOneDiscrete.valueGroup_genLTOne_eq_generator,
-    ← LinearOrderedCommGroup.Subgroup.genLTOne_unique _ mk0_exp_neg_one_lt_one
+    ← LinearOrderedCommGroup.Subgroup.genLTOne_unique _ (Units.val_lt_val.mp <| by simp)
       (zpowers_mk0_exp_neg_one.trans hv.symm),
     Units.val_mk0, WithZero.log_exp, neg_neg]
 
