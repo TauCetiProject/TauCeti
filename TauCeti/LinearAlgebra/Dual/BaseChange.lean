@@ -28,6 +28,8 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
   with respect to a base-changed linear map.
 * `TauCeti.Module.Dual.baseChangeEvaluation_comp_baseChange_dualMap`: naturality of
   `baseChangeEvaluation` with respect to dual maps.
+* `Module.Dual.baseChange_apply_one_tmul`, `Module.Dual.baseChange_apply_one`: the value of a
+  base-changed functional at `1 ⊗ m`, and at the unit of a base-changed algebra.
 * `TauCeti.Module.Dual.baseChangeEvaluationEquiv`: scalar extension commutes with the dual of a
   finite projective module.
 * `TauCeti.Module.Dual.baseChangeEvaluationEquiv_toLinearMap`: the underlying linear map of
@@ -102,6 +104,18 @@ theorem baseChangeEvaluation_comp_baseChange_dualMap
       (f.baseChange A).dualMap.comp (baseChangeEvaluation (R := R) (M := N) (A := A)) := by
   ext a ψ
   simp
+
+/-- The base change of a functional `φ` takes `1 ⊗ m` to the image of `φ m` in `A`. -/
+theorem _root_.Module.Dual.baseChange_apply_one_tmul (φ : Module.Dual R M) (m : M) :
+    φ.baseChange A (1 ⊗ₜ[R] m) = algebraMap R A (φ m) := by
+  rw [Module.Dual.baseChange_apply_tmul, Algebra.algebraMap_eq_smul_one]
+
+/-- The base change of a functional `φ` on an `R`-algebra `S` takes the unit of `A ⊗[R] S` to
+the image of `φ 1` in `A`. -/
+@[simp]
+theorem _root_.Module.Dual.baseChange_apply_one {S : Type*} [Semiring S] [Algebra R S]
+    (φ : Module.Dual R S) : φ.baseChange A 1 = algebraMap R A (φ 1) := by
+  rw [Algebra.TensorProduct.one_def, Module.Dual.baseChange_apply_one_tmul]
 
 section FiniteProjective
 

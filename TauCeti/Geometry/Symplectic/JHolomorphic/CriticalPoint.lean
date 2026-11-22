@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.VariableStructure
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Geometry.Symplectic.JHolomorphic.UniqueContinuation
 import TauCeti.Analysis.RCLike.OperatorNorm
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.MeanValue
@@ -40,7 +41,12 @@ points):
   (`TauCeti.exists_isTheta_pow_fderiv_of_cauchyRiemann`).
 
 The theorems with the suffix `_comp` state the two main results for `A = J ∘ u`, assuming `J` of
-class `C¹` near the image of `u` and `J² = -1` along it.
+class `C¹` near the image of `u` and `J² = -1` along it. Combined with the finiteness of the fibres
+of `u` on compact sets (`TauCeti.finite_inter_preimage_singleton_of_cauchyRiemann`), they give the
+last assertion of McDuff–Salamon, Lemma 2.4.1: for compact subsets `K` and `K'` of `Ω`, only
+finitely many points of `K` lie over the values of `u` at its critical points in `K'`, so a
+nonconstant curve on a compact domain has finite `u⁻¹(u(Crit u))`
+(`TauCeti.finite_inter_preimage_image_inter_setOf_fderiv_eq_zero_of_cauchyRiemann_comp`).
 
 The argument applies the similarity principle to the differentiated equation. Since
 `∂ₜu = A ∂ₛu`, the differential of `u` vanishes exactly where `ξ = ∂ₛu` does
@@ -73,6 +79,9 @@ gives `W^{2,p}` solutions, which are not treated here.
   connected domain has finitely many critical points in each compact subset.
 * `TauCeti.exists_isTheta_pow_fderiv_of_cauchyRiemann`: the differential vanishes to a finite
   positive order at each critical point of a nonconstant solution.
+* `TauCeti.finite_inter_preimage_image_inter_setOf_fderiv_eq_zero_of_cauchyRiemann_comp`: for
+  compact `K, K' ⊆ Ω`, a nonconstant J-holomorphic curve has finitely many points of `K` over the
+  values of `u` at its critical points in `K'`.
 
 ## References
 
@@ -282,6 +291,40 @@ theorem finite_inter_setOf_fderiv_eq_zero_of_cauchyRiemann_comp {J : E → E →
   finite_inter_setOf_fderiv_eq_zero_of_cauchyRiemann (A := fun z ↦ J (u z)) hΩ hΩc
     (fun z hz ↦ (hJ z hz).comp_contDiffWithinAt z ((hu z hz).of_le (by norm_num))) hJJ hu hCR hne
     hK hKΩ
+
+/-! ### Fibres through critical points -/
+
+/-- **Finitely many points over the critical values of a J-holomorphic curve.** Let `u` be of
+class `C²` on a connected open set `Ω` and solve the Cauchy–Riemann equation `∂ₜu = J(u) ∂ₛu`
+there, for a field `J` of endomorphisms of a finite-dimensional real normed space which is `C¹`
+near the image of `u` and satisfies `J(u)² = -1` along it. If `u` is not constant on `Ω`, then for
+compact subsets `K` and `K'` of `Ω`, only finitely many points of `K` are mapped by `u` to the
+image of a critical point of `u` lying in `K'`. For `K = K'` this is the finiteness of
+`u⁻¹(u(Crit u))` on a compact domain. -/
+theorem finite_inter_preimage_image_inter_setOf_fderiv_eq_zero_of_cauchyRiemann_comp
+    {J : E → E →L[ℝ] E} (hΩ : IsOpen Ω) (hΩc : IsPreconnected Ω)
+    (hJ : ∀ z ∈ Ω, ContDiffAt ℝ 1 J (u z))
+    (hJJ : ∀ z ∈ Ω, J (u z) ∘L J (u z) = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 2 u Ω)
+    (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
+    (hne : ∃ z ∈ Ω, ∃ w ∈ Ω, u z ≠ u w) {K K' : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω)
+    (hK' : IsCompact K') (hK'Ω : K' ⊆ Ω) :
+    (K ∩ u ⁻¹' (u '' (K' ∩ {z | fderiv ℝ u z = 0}))).Finite := by
+  -- over each value `u c`, `c ∈ Ω`, there are finitely many points of `K`
+  have hfib : ∀ c ∈ Ω, (K ∩ u ⁻¹' {u c}).Finite := by
+    intro c hc
+    -- one of the two distinct values of `u` differs from `u c`
+    have hnec : ∃ z ∈ Ω, u z ≠ u c := by
+      obtain ⟨z, hz, w, hw, hzw⟩ := hne
+      by_cases hz' : u z = u c
+      · exact ⟨w, hw, fun hw' ↦ hzw (hz'.trans hw'.symm)⟩
+      · exact ⟨z, hz, hz'⟩
+    exact finite_inter_preimage_singleton_of_cauchyRiemann (hJ c hc).exists_lipschitzOnWith
+      (hJJ c hc) hΩ hΩc (hu.of_le (by norm_num)) hCR hnec hK hKΩ
+  -- and there are finitely many critical points in `K'`
+  refine ((finite_inter_setOf_fderiv_eq_zero_of_cauchyRiemann_comp hΩ hΩc hJ hJJ hu hCR hne hK'
+    hK'Ω).biUnion fun c hc ↦ hfib c (hK'Ω hc.1)).subset ?_
+  rintro z ⟨hzK, c, hc, hcz⟩
+  exact mem_biUnion hc ⟨hzK, hcz.symm⟩
 
 end FiniteDimensional
 

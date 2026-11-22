@@ -54,7 +54,9 @@ The normalized identifications are natural: a commuting square `Ψ`, `e₂` betw
 operators `D₁.coprod D₂` and `D₁'.coprod D₂'`, which is `e₁` on `E × 0` and induces `eΛ` on the
 stabilizing spaces, intertwines them with the transport `LinearMap.detLineCongr` of determinant
 lines along the square formed by `e₁` and `e₂`
-(`ContinuousLinearMap.detLineStabilizationEquiv_congr`).
+(`ContinuousLinearMap.detLineStabilizationEquiv_congr`). More generally they are natural with
+respect to isomorphisms of the exact sequences of stabilization which need not come from the
+operators themselves (`ContinuousLinearMap.detLineStabilizationEquiv_congrKerCoker`).
 
 For a Fredholm operator `T` between Hilbert spaces the kernel of the adjoint `T†` is the
 orthogonal complement of the range of `T`, and the cokernel of `T†` is a copy of the kernel of
@@ -83,6 +85,8 @@ the other operator's cokernel through its class
   the identity and cocycle laws for changes of stabilizer.
 * `ContinuousLinearMap.detLineStabilizationEquiv_congr`: the normalized identifications are
   natural with respect to commuting squares of stabilized operators.
+* `ContinuousLinearMap.detLineStabilizationEquiv_congrKerCoker`: the normalized identifications are
+  natural with respect to isomorphisms of the exact sequences of stabilization.
 * `ContinuousLinearMap.detLineAdjointEquivDual`: the determinant line of the adjoint of a Fredholm
   operator between Hilbert spaces is the dual of its determinant line, with value
   `ContinuousLinearMap.detLineAdjointEquivDual_ιMulti_tmul_ιMulti_tmul`.
@@ -356,8 +360,59 @@ theorem surjective_coprod_of_coprod_comp_eq
   simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, coe_coe] at this
   rw [this, hx, LinearEquiv.apply_symm_apply]
 
+/-- In a commuting square of stabilized operators with parameter component `eΛ`, the isomorphism
+of cokernels induced by `e₂` sends the class of `D₂ l` to that of `D₂' (eΛ l)`: the two differ by
+`D₁' (Ψ (0, l)).1`. -/
+theorem quotientEquiv_mkQ_of_coprod_comp_eq
+    (hΨ : (D₁'.coprod D₂' : E' × Λ' →ₗ[𝕜] F') ∘ₗ Ψ.toLinearMap =
+      e₂.toLinearMap ∘ₗ (D₁.coprod D₂ : E × Λ →ₗ[𝕜] F))
+    (hΨ₂ : ∀ y, (Ψ y).2 = eΛ y.2)
+    (hr : (D₁ : E →ₗ[𝕜] F).range.map (e₂ : F →ₗ[𝕜] F') = (D₁' : E' →ₗ[𝕜] F').range) (l : Λ) :
+    Submodule.Quotient.equiv _ _ e₂ hr ((D₁ : E →ₗ[𝕜] F).range.mkQ (D₂ l)) =
+      (D₁' : E' →ₗ[𝕜] F').range.mkQ (D₂' (eΛ l)) := by
+  have hl := LinearMap.congr_fun hΨ (0, l)
+  simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, coe_coe,
+    coprod_apply, map_zero, zero_add, hΨ₂] at hl
+  rw [Submodule.Quotient.equiv_apply, Submodule.mkQ_apply, Submodule.mkQ_apply,
+    Submodule.mapQ_apply, LinearEquiv.coe_coe, ← hl, Submodule.Quotient.eq]
+  exact ⟨(Ψ (0, l)).1, by simp⟩
+
 variable [FiniteDimensional 𝕜 D₁.ker] [FiniteDimensional 𝕜 Λ] [FiniteDimensional 𝕜 D₁'.ker]
   [FiniteDimensional 𝕜 Λ']
+
+/-- **Naturality of the normalized stabilization isomorphism along exact sequences.** Let `eK`,
+`eS`, `eΛ` and `eC` be isomorphisms of the kernels, of the stabilized kernels, of the stabilizing
+spaces and of the cokernels of `D₁` and `D₁'`, commuting with the maps of the exact sequences
+`0 → ker D₁ → ker (D₁.coprod D₂) → Λ → F ⧸ range D₁ → 0`. Then the normalized stabilization
+isomorphisms intertwine the isomorphism induced by `eS` and `eΛ` with the isomorphism
+`LinearMap.detLineCongrKerCoker eK eC` of determinant lines. Unlike
+`ContinuousLinearMap.detLineStabilizationEquiv_congr`, the isomorphisms need not come from a
+commuting square of the operators themselves: `D₁` may act between infinite-dimensional spaces
+and `D₁'` be an endomorphism of a finite-dimensional space with the same kernel and cokernel. -/
+theorem detLineStabilizationEquiv_congrKerCoker (eK : D₁.ker ≃ₗ[𝕜] D₁'.ker)
+    (eS : (D₁.coprod D₂).ker ≃ₗ[𝕜] (D₁'.coprod D₂').ker)
+    (eC : (F ⧸ D₁.range) ≃ₗ[𝕜] (F' ⧸ D₁'.range))
+    (hK : ∀ u, eS (kerCoprodHom D₁ D₂ u) = kerCoprodHom D₁' D₂' (eK u))
+    (hS : ∀ y, parameterProj D₁' D₂' (eS y) = eΛ (parameterProj D₁ D₂ y))
+    (hC : ∀ l, parameterToCoker D₁' D₂' (eΛ l) = eC (parameterToCoker D₁ D₂ l))
+    (h : Function.Surjective (D₁.coprod D₂)) (h' : Function.Surjective (D₁'.coprod D₂'))
+    (t : TauCeti.detLine 𝕜 (D₁.coprod D₂).ker ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 Λ)) :
+    detLineStabilizationEquiv D₁' D₂' h'
+        (TensorProduct.congr eS.detLineCongr eΛ.detLineCongr.symm.dualMap t) =
+      LinearMap.detLineCongrKerCoker eK eC (detLineStabilizationEquiv D₁ D₂ h t) := by
+  have hsign : (-1 : 𝕜) ^ (finrank 𝕜 (F' ⧸ D₁'.range) * finrank 𝕜 Λ') =
+      (-1) ^ (finrank 𝕜 (F ⧸ D₁.range) * finrank 𝕜 Λ) := by
+    rw [eC.finrank_eq, eΛ.finrank_eq]
+  rw [detLineStabilizationEquiv_apply, detLineStabilizationEquiv_apply, map_smul, hsign]
+  congr 1
+  rw [detLineCoprodEquiv_def, detLineCoprodEquiv_def, LinearMap.detLineCongrKerCoker_def]
+  exact TauCeti.detLineFourTermEquiv_congr (kerCoprodHom_injective D₁ D₂)
+    (exact_kerCoprodHom_parameterProj D₁ D₂) (exact_parameterProj_parameterToCoker D₁ D₂)
+    ((parameterToCoker_surjective_iff_coprod_surjective D₁ D₂).2 h)
+    (kerCoprodHom_injective D₁' D₂') (exact_kerCoprodHom_parameterProj D₁' D₂')
+    (exact_parameterProj_parameterToCoker D₁' D₂')
+    ((parameterToCoker_surjective_iff_coprod_surjective D₁' D₂').2 h') eK eS eΛ eC
+    (LinearMap.ext fun u ↦ (hK u).symm) (LinearMap.ext hS) (LinearMap.ext hC) t
 
 /-- **Naturality of the normalized stabilization isomorphism.** Let `Ψ : E × Λ ≃ E' × Λ'` and
 `e₂ : F ≃ F'` form a commuting square of the stabilized operators `D₁.coprod D₂` and
@@ -377,43 +432,12 @@ theorem detLineStabilizationEquiv_congr
             hΨ)).detLineCongr eΛ.detLineCongr.symm.dualMap t) =
       (D₁ : E →ₗ[𝕜] F).detLineCongr e₁ e₂ (comp_eq_of_coprod_comp_eq hΨ hΨ₁)
         (detLineStabilizationEquiv D₁ D₂ h t) := by
-  have hD := comp_eq_of_coprod_comp_eq hΨ hΨ₁
-  set eD := Submodule.Quotient.equiv _ _ e₂ ((D₁ : E →ₗ[𝕜] F).map_range_eq_range_of_comp_eq
-    e₁.surjective hD)
-  have hcoker : finrank 𝕜 (F' ⧸ D₁'.range) = finrank 𝕜 (F ⧸ D₁.range) := eD.finrank_eq.symm
-  have hsign : (-1 : 𝕜) ^ (finrank 𝕜 (F' ⧸ D₁'.range) * finrank 𝕜 Λ') =
-      (-1) ^ (finrank 𝕜 (F ⧸ D₁.range) * finrank 𝕜 Λ) := by
-    rw [hcoker, eΛ.finrank_eq]
-  rw [detLineStabilizationEquiv_apply, detLineStabilizationEquiv_apply, map_smul, hsign]
-  congr 1
-  rw [detLineCoprodEquiv_def, detLineCoprodEquiv_def]
-  have h' := surjective_coprod_of_coprod_comp_eq hΨ h
-  refine (TauCeti.detLineFourTermEquiv_congr (kerCoprodHom_injective D₁ D₂)
-    (exact_kerCoprodHom_parameterProj D₁ D₂) (exact_parameterProj_parameterToCoker D₁ D₂)
-    ((parameterToCoker_surjective_iff_coprod_surjective D₁ D₂).2 h)
-    (kerCoprodHom_injective D₁' D₂') (exact_kerCoprodHom_parameterProj D₁' D₂')
-    (exact_parameterProj_parameterToCoker D₁' D₂')
-    ((parameterToCoker_surjective_iff_coprod_surjective D₁' D₂').2 h')
-    (e₁.ofSubmodules _ _ ((D₁ : E →ₗ[𝕜] F).map_ker_eq_ker_of_comp_eq e₁.surjective
-      e₂.injective hD)) _ eΛ eD ?_ ?_ ?_ t).trans ?_
-  · exact LinearMap.ext fun x ↦ Subtype.ext (by simp [hΨ₁])
-  · exact LinearMap.ext fun y ↦ by simp [hΨ₂]
-  · refine LinearMap.ext fun l ↦ ?_
-    have hl := LinearMap.congr_fun hΨ (0, l)
-    have h2 := hΨ₂ (0, l)
-    simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, coe_coe,
-      coprod_apply, map_zero, zero_add] at hl h2
-    simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-      parameterToCoker_apply, eD, Submodule.Quotient.equiv_apply, Submodule.mkQ_apply,
-      Submodule.mapQ_apply, Submodule.Quotient.eq, ← h2, ← hl]
-    exact ⟨-(Ψ (0, l)).1, by simp⟩
-  · -- `LinearMap.detLineCongr` is the tensor product of the transports of kernel and cokernel.
-    refine congrFun (congrArg DFunLike.coe (LinearEquiv.toLinearMap_injective
-      (TensorProduct.ext' fun x φ ↦ ?_))) _
-    rw [LinearEquiv.coe_coe, LinearEquiv.coe_coe, TensorProduct.congr_tmul,
-      LinearMap.detLineCongr_tmul]
-    -- The cokernel factor of `LinearMap.detLineCongr` precomposes with the inverse transport `eD`.
-    exact congrArg _ (LinearMap.ext fun y ↦ LinearEquiv.dualMap_apply _ φ y)
+  rw [LinearMap.detLineCongr_eq_detLineCongrKerCoker]
+  refine detLineStabilizationEquiv_congrKerCoker _ _ _ (fun x ↦ Subtype.ext (by simp [hΨ₁]))
+    (fun y ↦ by simp [hΨ₂])
+    (fun l ↦ by
+      rw [parameterToCoker_apply, parameterToCoker_apply]
+      exact (quotientEquiv_mkQ_of_coprod_comp_eq hΨ hΨ₂ _ l).symm) h _ t
 
 end Congr
 
