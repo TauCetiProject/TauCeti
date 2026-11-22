@@ -78,7 +78,7 @@ The root plane of `so(3)` and its height Hessian are worked out in
   element commuting with it, then `⁅x, y⁆ ∈ t`; an invariant form pairs `H ∈ t` with `⁅x, y⁆` to
   `α(H) B(y, y)` (`LinearMap.BilinForm.lieInvariant.apply_lie_eq_mul_of_lie_eq_smul`).
 * `LinearMap.BilinForm.lieInvariant.iIsOrtho_of_lie_eq_smul`,
-  `LinearMap.BilinForm.lieInvariant.pos_apply_lie_of_lie_eq_smul`: for `α ≠ 0`, the triple
+  `LinearMap.BilinForm.lieInvariant.apply_lie_pos_of_lie_eq_smul`: for `α ≠ 0`, the triple
   `x, y, ⁅x, y⁆` is orthogonal for a symmetric invariant form, and `α(⁅x, y⁆) > 0` when the form is
   positive definite and `x ≠ 0`.
 * `TauCeti.IsRootPlane.mem_lieAnnihilator_iff`: a root plane meets the stabilizer of `B p` only
@@ -354,7 +354,7 @@ variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [LieAlgebra R L]
 `α(⁅x, y⁆) > 0` for a positive definite invariant form, since
 `B(⁅x, y⁆, ⁅x, y⁆) = α(⁅x, y⁆) B(y, y)`. This is the positivity that normalizes the coroot of
 `α`. -/
-theorem pos_apply_lie_of_lie_eq_smul (hB : B.lieInvariant L) (hBp : B.toQuadraticMap.PosDef)
+theorem apply_lie_pos_of_lie_eq_smul (hB : B.lieInvariant L) (hBp : B.toQuadraticMap.PosDef)
     (hα : α ≠ 0) (hx0 : x ≠ 0) (hx : ∀ H : t, ⁅(H : L), x⁆ = α H • y)
     (hy : ∀ H : t, ⁅(H : L), y⁆ = -(α H • x)) (hxy : ⁅x, y⁆ ∈ t) :
     0 < α ⟨⁅x, y⁆, hxy⟩ := by

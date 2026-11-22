@@ -34,7 +34,7 @@ the Lie algebra of `SO(3)` and of `SU(2)`:
 * `B(H, Z) = α(H) B(y, y)` for `H ∈ t`
   (`LinearMap.BilinForm.lieInvariant.apply_lie_eq_mul_of_lie_eq_smul`), so `Z ≠ 0` and
   `μ = α(Z) = B(Z, Z) / B(y, y) > 0`
-  (`LinearMap.BilinForm.lieInvariant.pos_apply_lie_of_lie_eq_smul`);
+  (`LinearMap.BilinForm.lieInvariant.apply_lie_pos_of_lie_eq_smul`);
 * hence `⁅Z, x⁆ = μ y` and `⁅Z, y⁆ = -μ x`, and `x / √μ, y / √μ, Z / μ` satisfy the cyclic
   relations of the basis `ê₀, ê₁, ê₂` of `so(3)`. They are `B`-orthogonal
   (`LinearMap.BilinForm.lieInvariant.iIsOrtho_of_lie_eq_smul`) and nonzero, so the resulting
@@ -100,7 +100,7 @@ theorem exists_injective_lieHom_soThree_of_lie_eq_smul (B : LinearMap.BilinForm 
         f (soThreeEquiv ℝ (Pi.single 1 1)) = c • y) ∧
       ∃ h : f (soThreeEquiv ℝ (Pi.single 2 1)) ∈ t, α ⟨_, h⟩ = 1 := by
   have hZt : ⁅x, y⁆ ∈ t := lie_mem_of_lie_eq_smul ht hx hy
-  have hμpos := hB.pos_apply_lie_of_lie_eq_smul hBp hα hx0 hx hy hZt
+  have hμpos := hB.apply_lie_pos_of_lie_eq_smul hBp hα hx0 hx hy hZt
   have hZ0 : ⁅x, y⁆ ≠ 0 := fun h ↦ hμpos.ne' <| by
     rw [show (⟨⁅x, y⁆, hZt⟩ : t) = 0 from Subtype.ext h, map_zero]
   have hy0 : y ≠ 0 := fun h ↦ hZ0 <| by rw [h, lie_zero]

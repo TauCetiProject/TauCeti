@@ -91,6 +91,7 @@ theorem soThreeLieHom_soThreeEquiv_single (i : Fin 3) :
     one_smul]
 
 /-- **Lie algebra homomorphisms out of `so(3)` are determined by the images of `ê₀, ê₁, ê₂`.** -/
+@[ext]
 theorem lieHom_ext_soThree {f g : so (Fin 3) R →ₗ⁅R⁆ L}
     (h : ∀ i, f (soThreeEquiv R (Pi.single i 1)) = g (soThreeEquiv R (Pi.single i 1))) :
     f = g :=
