@@ -39,10 +39,15 @@ coefficients. Over a field of characteristic two they hold for every Morse–Bot
 of each piece being given as its Morse index. Over every field `K`, for instance `ℚ`, they hold when
 the negative normal bundles of the pieces relative to given smooth fibre metrics are oriented (the
 `_of_orientation` versions), as for a Morse–Bott function whose negative normal bundles carry
-complex structures. In characteristic two, when no two consecutive `cⱼ` are both nonzero the
-inequalities force `bⱼ = cⱼ`, the lacunary principle: the function is perfect over `K`. For a Morse
-function every piece is a point of index the Morse index, so `cⱼ` is the number of critical points
-of index `j`, and these are the Morse inequalities.
+complex structures, and when the pieces are simply connected, over which every vector bundle is
+orientable (the `_of_simplyConnectedSpace` versions). In characteristic two, when no two
+consecutive `cⱼ` are both nonzero the inequalities force `bⱼ = cⱼ`, the lacunary principle: the
+function is perfect over `K`. For a Morse function every piece is a point of index the Morse index,
+so `cⱼ` is the number of critical points of index `j`
+(`TauCeti.IsMorseBottFamily.morseBottCount_eq_criticalCount`). A point is simply connected, so the
+`_of_simplyConnectedSpace` versions apply to the family of critical points of a Morse function
+(`TauCeti.IsMorse.exists_isMorseBottFamily`) over every field, where they are the Morse
+inequalities.
 
 Without a Thom class the untwisted statement can fail: over a field of characteristic other than
 `2`, the contribution of a piece whose negative normal bundle is not orientable is its homology
@@ -112,6 +117,12 @@ In the namespace `TauCeti.IsMorseBottFamily`:
   `exists_sum_range_monomial_sum_eq_add_mul_of_orientation`: the same over every field, when the
   negative normal bundles are oriented
   (`SmoothEmbedding.IsNondegenerateCriticalSubmanifold.NegativeNormalBundleOrientation`).
+* `finrank_singularHomology_sublevelPair_eq_sum_of_simplyConnectedSpace`,
+  `bettiNumber_le_sum_of_simplyConnectedSpace`,
+  `sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_simplyConnectedSpace`,
+  `sum_range_neg_one_pow_mul_bettiNumber_eq_sum_of_simplyConnectedSpace` and
+  `exists_sum_range_monomial_sum_eq_add_mul_of_simplyConnectedSpace`: the same over every field,
+  when the pieces are simply connected, for instance points.
 
 ## References
 
@@ -817,6 +828,112 @@ theorem exists_sum_range_monomial_sum_eq_add_mul_of_orientation {n : ℕ}
     (h.exists_isThomClass_of_orientation hn K hdim g hr o) hdimn
 
 end Orientation
+
+/-! #### Simply connected critical submanifolds -/
+
+section SimplyConnected
+
+variable [∀ j, SimplyConnectedSpace (S j)] (hr : ∀ j s, manifoldMorseIndex I f (i j s) = r j)
+
+include h hr
+
+omit [SecondCountableTopology M] [Fintype ι] [∀ j, (J j).Boundaryless] in
+/-- The negative normal bundle of a simply connected piece of a Morse–Bott family, of rank its
+index, has a Thom class with coefficients in every field relative to some smooth fibre metric. -/
+private theorem exists_isThomClass_of_simplyConnectedSpace (j : ι) :
+    letI := (i j).normalSpaceFiberBundle hn (finrank_euclideanSpace_fin (𝕜 := ℝ)
+      (n := finrank ℝ E - finrank ℝ (E' j)))
+    letI := (i j).normalSpaceVectorBundle hn (finrank_euclideanSpace_fin (𝕜 := ℝ)
+      (n := finrank ℝ E - finrank ℝ (E' j)))
+    ∃ (g : ContMDiffRiemannianMetric (J j) ∞
+        (EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ (E' j)))) fun s ↦ (i j).NormalSpace s hn)
+      (hV : HasLocalSubbundleFrames (EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ (E' j))))
+        (Fin (r j))
+        ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn g.toRiemannianMetric)),
+      letI := subbundleTopology (EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ (E' j))))
+        (F' := Fin (r j) → ℝ)
+        ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn g.toRiemannianMetric)
+      letI := hV.fiberBundle
+      ∃ u, IsThomClass (R := ModuleCat.of K K) (k := K) (M := ModuleCat.of K K) (Fin (r j) → ℝ)
+        (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+          g.toRiemannianMetric s) u := by
+  have : CompactSpace (S j) := h.compactSpace_of_range_subset isCompact_univ (subset_univ _)
+  have hN := h.isNondegenerateCriticalSubmanifold j
+  have hdim := finrank_euclideanSpace_fin (𝕜 := ℝ) (n := finrank ℝ E - finrank ℝ (E' j))
+  let := (i j).normalSpaceFiberBundle hn hdim
+  let := (i j).normalSpaceVectorBundle hn hdim
+  obtain ⟨g⟩ := (i j).nonempty_contMDiffRiemannianMetric_normalSpace hn hdim
+  exact ⟨g, _, (hN.hasNegativeNormalThomClass_iff hn h.contMDiff hdim g (hr j) K).1
+    (hN.hasNegativeNormalThomClass_of_simplyConnectedSpace hn h.contMDiff hdim g (hr j) K)⟩
+
+open scoped Classical in
+/-- **The homology of a critical band of a Morse–Bott function with simply connected critical
+submanifolds.** Let the family `i j : S j → M` exhibit `f` as a Morse–Bott function on a compact
+boundaryless manifold, the piece `S j` being simply connected of index `r j`, and let `K` be any
+field, such as `ℚ`. Let `a < c < b` be such that `c` is the only critical value of `f` in `[a, b]`.
+Then `dim Hₙ({f ≤ b}, {f ≤ a}; K) = ∑ b_{n - r j}(S j; K)`, the sum running over the pieces on the
+level `f = c` of index at most `n`. -/
+theorem finrank_singularHomology_sublevelPair_eq_sum_of_simplyConnectedSpace {a b c : ℝ}
+    (hac : a < c) (hcb : c < b) (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
+    (n : ℕ) :
+    finrank K ((sublevelPair f (hac.trans hcb).le).singularHomology (ModuleCat.of K K) n :
+        ModuleCat K) =
+      ∑ j with (∀ s, f (i j s) = c) ∧ r j ≤ n, bettiNumber K (S j) (n - r j) :=
+  h.finrank_singularHomology_sublevelPair_eq_sum_of_isThomClass (by simp) K
+    (fun _ ↦ finrank_euclideanSpace_fin) (h.exists_isThomClass_of_simplyConnectedSpace _ K hr)
+    hac hcb hcrit n
+
+/-- **The weak Morse–Bott inequalities with simply connected critical submanifolds.** Let the
+family `i j : S j → M` exhibit `f` as a Morse–Bott function on a compact boundaryless manifold, the
+piece `S j` being simply connected of index `r j`. Then for every field `K`, such as `ℚ`,
+`bₙ(M; K) ≤ ∑ b_{n - r j}(S j; K)`, the sum running over the pieces of index at most `n`. -/
+theorem bettiNumber_le_sum_of_simplyConnectedSpace (n : ℕ) :
+    bettiNumber K M n ≤ ∑ p with r p ≤ n, bettiNumber K (S p) (n - r p) :=
+  h.bettiNumber_le_sum_of_isThomClass (by simp) K (fun _ ↦ finrank_euclideanSpace_fin)
+    (h.exists_isThomClass_of_simplyConnectedSpace _ K hr) n
+
+/-- **The strong Morse–Bott inequalities with simply connected critical submanifolds.** Let the
+family `i j : S j → M` exhibit `f` as a Morse–Bott function on a compact boundaryless manifold, the
+piece `S j` being simply connected of index `r j`, and let `K` be any field, such as `ℚ`. Write
+`bₖ = bₖ(M; K)` and `cₖ = ∑ b_{k - r j}(S j; K)` over the pieces of index at most `k`, the
+coefficient of `tᵏ` in the Morse–Bott polynomial `∑ⱼ t^{r j} P_{S j}(t)`. Then
+`bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀`. -/
+theorem sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_simplyConnectedSpace (n : ℕ) :
+    ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - k) * bettiNumber K M k ≤
+      ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - k) *
+        ((∑ p with r p ≤ k, bettiNumber K (S p) (k - r p) : ℕ) : ℤ) :=
+  h.sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_isThomClass (by simp) K
+    (fun _ ↦ finrank_euclideanSpace_fin) (h.exists_isThomClass_of_simplyConnectedSpace _ K hr) n
+
+/-- **Euler's equality for a Morse–Bott function with simply connected critical submanifolds.**
+Under the hypotheses of
+`TauCeti.IsMorseBottFamily.sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_simplyConnectedSpace`,
+for every `n` at least the dimension of `M`, `∑ₖ₌₀ⁿ (-1)ᵏ bₖ = ∑ₖ₌₀ⁿ (-1)ᵏ cₖ`. -/
+theorem sum_range_neg_one_pow_mul_bettiNumber_eq_sum_of_simplyConnectedSpace {n : ℕ}
+    (hdimn : finrank ℝ E ≤ n) :
+    ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ k * bettiNumber K M k =
+      ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ k *
+        ((∑ p with r p ≤ k, bettiNumber K (S p) (k - r p) : ℕ) : ℤ) :=
+  h.sum_range_neg_one_pow_mul_bettiNumber_eq_sum_of_isThomClass (by simp) K
+    (fun _ ↦ finrank_euclideanSpace_fin) (h.exists_isThomClass_of_simplyConnectedSpace _ K hr)
+    hdimn
+
+/-- **The Morse–Bott polynomial identity with simply connected critical submanifolds.** Under the
+hypotheses of
+`TauCeti.IsMorseBottFamily.sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_simplyConnectedSpace`,
+for every `n` at least the dimension of `M`, `∑ₖ₌₀ⁿ cₖ tᵏ = ∑ₖ₌₀ⁿ bₖ tᵏ + (1 + t) Q(t)` for a
+polynomial `Q` with natural number coefficients: over every field, the Morse–Bott polynomial
+`∑ⱼ t^{r j} P_{S j}(t)` exceeds the Poincaré polynomial of `M` by `(1 + t) Q(t)`. -/
+theorem exists_sum_range_monomial_sum_eq_add_mul_of_simplyConnectedSpace {n : ℕ}
+    (hdimn : finrank ℝ E ≤ n) :
+    ∃ Q : ℕ[X], ∑ k ∈ Finset.range (n + 1),
+        monomial k (∑ p with r p ≤ k, bettiNumber K (S p) (k - r p)) =
+      ∑ k ∈ Finset.range (n + 1), monomial k (bettiNumber K M k) + (1 + Polynomial.X) * Q :=
+  h.exists_sum_range_monomial_sum_eq_add_mul_of_isThomClass (by simp) K
+    (fun _ ↦ finrank_euclideanSpace_fin) (h.exists_isThomClass_of_simplyConnectedSpace _ K hr)
+    hdimn
+
+end SimplyConnected
 
 end IsMorseBottFamily
 
