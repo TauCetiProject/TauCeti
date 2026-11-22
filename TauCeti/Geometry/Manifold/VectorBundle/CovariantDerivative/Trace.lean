@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 
 /-!
 # Covariant differentiation commutes with the metric trace
@@ -34,6 +34,10 @@ The proof works in the chart-local frame `Fᵢ` and its metric-dual frame
 
 * `CovariantDerivative.IsMetricCompatible.mvfderiv_bilinFormTrace`: the derivative of the metric
   trace of a field of bilinear forms is the trace of its covariant derivative.
+* `CovariantDerivative.sum_apply_chartDualFrame_eq_sum`: the metric trace of a vector-valued
+  bilinear map, computed in the chart-local frame and its metric-dual frame.
+* `CovariantDerivative.sum_apply_chartDualFrame_cancel`: for a metric connection, the derivatives of
+  the chart-local frame and of its metric-dual frame cancel in such a trace.
 
 ## References
 
@@ -66,6 +70,27 @@ private theorem bilinFormTrace_eq_sum_chartDualFrame (α : M) {y : M}
   rw [bilinFormTrace_eq_sum_chartInvGramMatrix α hy]
   simp only [chartDualFrame_apply, map_sum, map_smul, smul_eq_mul]
 
+/-- On the chart domain, the sum `∑ᵢ B(Fᵢ, Dᵢ)` over the chart-local frame `Fᵢ` at `α` and its
+metric-dual frame `Dᵢ` is the metric trace `∑ₖ B(eₖ, eₖ)` of `B` in any orthonormal basis `eₖ`. The
+bilinear map `B` takes values in any real topological vector space, such as a fibre of a vector
+bundle. -/
+theorem sum_apply_chartDualFrame_eq_sum (α : M) {y : M} (hy : y ∈ (chartAt H α).source)
+    {W : Type*} [AddCommGroup W] [Module ℝ W] [TopologicalSpace W] [IsTopologicalAddGroup W]
+    [ContinuousSMul ℝ W] (B : TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] W)
+    {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℝ (TangentSpace I y)) :
+    ∑ i, B (chartLocalFrame (I := I) α i y) (chartDualFrame (I := I) α i y) =
+      ∑ k, B (e k) (e k) := by
+  set F := chartLocalFrame (I := I) α
+  set D := chartDualFrame (I := I) α
+  calc ∑ i, B (F i y) (D i y) = ∑ i, B (∑ k, inner ℝ (e k) (F i y) • e k) (D i y) := by
+        simp only [e.sum_repr']
+    _ = ∑ k, B (e k) (∑ i, inner ℝ (F i y) (e k) • D i y) := by
+        simp only [map_sum, map_smul, FunLike.coe_sum, FunLike.coe_smul,
+          Finset.sum_apply, Pi.smul_apply, real_inner_comm (e _)]
+        exact Finset.sum_comm
+    _ = ∑ k, B (e k) (e k) := by
+        simp only [F, D, (sum_inner_chartDualFrame_smul α hy _).2]
+
 end DualFrame
 
 variable [IsManifold I 2 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
@@ -74,10 +99,13 @@ variable [IsManifold I 2 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 variable {cov : CovariantDerivative I E (TangentSpace I : M → Type _)}
 
 /-- For a metric connection, the terms of `∑ᵢ b(Fᵢ, Dᵢ)` involving `∇Fᵢ` and `∇Dᵢ` cancel at `x`,
-where `Fᵢ` is the chart-local frame at `x` and `Dᵢ` its metric-dual frame. -/
-private theorem sum_apply_chartDualFrame_cancel
+where `Fᵢ` is the chart-local frame at `x` and `Dᵢ` its metric-dual frame:
+`∑ᵢ b(Fᵢ, ∇_v Dᵢ) = -∑ᵢ b(∇_v Fᵢ, Dᵢ)`. The bilinear map `b` takes values in any real topological
+vector space, such as `ℝ` or a fibre of a vector bundle. -/
+theorem sum_apply_chartDualFrame_cancel {W : Type*} [AddCommGroup W] [Module ℝ W]
+    [TopologicalSpace W] [IsTopologicalAddGroup W] [ContinuousSMul ℝ W]
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
-    (x : M) (b : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (v : TangentSpace I x)
+    (x : M) (b : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] W) (v : TangentSpace I x)
     (hU : (trivializationAt E (TangentSpace I) x).baseSet ∈ 𝓝 x)
     (hF : ∀ i, MDiffAt (T% (chartLocalFrame (I := I) x i)) x)
     (hD : ∀ i, MDiffAt (T% (chartDualFrame (I := I) x i)) x) :
@@ -99,16 +127,16 @@ private theorem sum_apply_chartDualFrame_cancel
     rw [real_inner_comm]
     linarith
   have hexp (i : Fin (Module.finrank ℝ E)) : b (F i x) (cov (D i) x v) =
-      -∑ j, inner ℝ (D i x) (cov (F j) x v) * b (F i x) (D j x) := by
+      -∑ j, inner ℝ (D i x) (cov (F j) x v) • b (F i x) (D j x) := by
     conv_lhs => rw [← (sum_inner_chartDualFrame_smul x hxc (cov (D i) x v)).2]
-    simp only [← hFdef, ← hDdef, map_sum, map_smul, smul_eq_mul, hdual, neg_mul,
-      Finset.sum_neg_distrib]
+    simp only [← hFdef, ← hDdef, hdual, neg_smul, Finset.sum_neg_distrib, map_neg, map_sum,
+      map_smul]
   simp only [hexp, Finset.sum_neg_distrib, neg_inj]
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   conv_rhs => rw [← (sum_inner_chartDualFrame_smul x hxc (cov (F j) x v)).1]
-  simp only [← hFdef, ← hDdef, map_sum, map_smul, FunLike.coe_sum, FunLike.coe_smul,
-    Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
+  simp only [← hFdef, ← hDdef, map_sum, map_smul, FunLike.coe_sum,
+    FunLike.coe_smul, Finset.sum_apply, Pi.smul_apply]
 
 /-- **Covariant differentiation commutes with the metric trace.** For a connection compatible
 with the metric and a field of bilinear forms `b` pairing sections differentiable at `x` to
