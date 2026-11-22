@@ -329,17 +329,16 @@ variable {E N G : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimens
 include hE hG in
 /-- **The local index under a change of coordinates of the source.** If `φ : E → E` is strictly
 differentiable at `x` with derivative `φ'` of nonzero determinant, then the local index of
-`F ∘ φ` at `x` is that of `F` at `φ x` times `sign (det φ')`. When `φ x` is not isolated in its
-fibre under `F`, neither is `x` under `F ∘ φ`, since `φ` is a local homeomorphism at `x`, and both
-sides vanish. -/
+`F ∘ φ` at `x` is that of `F` at `φ x` times `sign (det φ')`. -/
 theorem localIndex_comp_eq_mul_sign_det {F : C(E, N)} {φ : C(E, E)} {φ' : E →L[ℝ] E} {x : E}
     (hφ : HasStrictFDerivAt φ φ' x) (hdet : φ'.det ≠ 0) :
     o.localIndex o' (F.comp φ) x = o.localIndex o' F (φ x) * SignType.sign φ'.det := by
   by_cases hiso : ∀ᶠ y in 𝓝[≠] φ x, F y ≠ F (φ x)
   · rw [o.localIndex_comp o o' hG hiso, o.localIndex_eq_sign_det hE hφ.hasFDerivAt hdet]
   have hfr : ∃ᶠ y in 𝓝[≠] φ x, F y = F (φ x) := by simpa using not_eventually.1 hiso
-  -- Near `x`, `φ` is a homeomorphism onto a neighbourhood of `φ x`, so it maps the punctured
-  -- neighbourhoods of `x` onto those of `φ x`.
+  -- When `φ x` is not isolated in its fibre under `F`, neither is `x` under `F ∘ φ`, and both sides
+  -- vanish: near `x`, `φ` is a homeomorphism onto a neighbourhood of `φ x`, so it maps the
+  -- punctured neighbourhoods of `x` onto those of `φ x`.
   have hφe : HasStrictFDerivAt φ
       ((φ'.toContinuousLinearEquivOfDetNeZero hdet : E ≃L[ℝ] E) : E →L[ℝ] E) x := by
     rwa [φ'.coe_toContinuousLinearEquivOfDetNeZero hdet]

@@ -436,17 +436,16 @@ disc whose first coordinate is strictly complex differentiable at `z₀` with no
 which runs near `z₀` in the graph `{(z, f z)}` of a function `f` holomorphic at `(u₁ z₀).1`. Then
 the local intersection number of `u₁` with a holomorphic disc `u₂` at `u₁ z₀ = u₂ w₀`, the local
 index at `(z₀, w₀)` of `F (z, w) = u₁ z - u₂ w`, is the order of vanishing at `w₀` of
-`w ↦ (u₂ w).2 - f (u₂ w).1`.
-
-Reparametrizing `u₁` by the inverse of its first coordinate turns it into the graph of `f`, so this
-is `localIndex_eq_analyticOrderNatAt_of_apply_eq_graph_sub` read through
-`localIndex_eq_of_apply_eq_comp_sub_comp`. -/
+`w ↦ (u₂ w).2 - f (u₂ w).1`. -/
 theorem localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_snd_eq
     {F : C(ℂ × ℂ, ℂ × ℂ)} {u₁ u₂ : ℂ → ℂ × ℂ} (hF : ∀ p, F p = u₁ p.1 - u₂ p.2) {z₀ w₀ a : ℂ}
     (h₁ : HasStrictDerivAt (fun z ↦ (u₁ z).1) a z₀) (ha : a ≠ 0)
     (hf : AnalyticAt ℂ f (u₁ z₀).1) (hgraph : ∀ᶠ z in 𝓝 z₀, (u₁ z).2 = f (u₁ z).1)
     (h₂ : AnalyticAt ℂ u₂ w₀) (h : u₁ z₀ = u₂ w₀) :
     o.localIndex o F (z₀, w₀) = analyticOrderNatAt (fun w ↦ (u₂ w).2 - f (u₂ w).1) w₀ := by
+  -- Reparametrizing `u₁` by the inverse of its first coordinate turns it into the graph of `f`, so
+  -- this is `localIndex_eq_analyticOrderNatAt_of_apply_eq_graph_sub` read through
+  -- `localIndex_eq_of_apply_eq_comp_sub_comp`.
   set c := (u₁ z₀).1
   obtain ⟨hu₁, hu₂⟩ := continuous_and_continuous_of_continuous_sub (F.continuous.congr hF)
   have hg : Continuous fun z ↦ (u₁ z).1 := continuous_fst.comp hu₁
@@ -494,10 +493,7 @@ coordinate.** Let `u₁` be a disc whose second coordinate is strictly complex d
 holomorphic at `(u₁ z₀).2`. Then the local intersection number of `u₁` with a holomorphic disc
 `u₂` at `u₁ z₀ = u₂ w₀` is the order of vanishing at `w₀` of `w ↦ (u₂ w).1 - f (u₂ w).2`.
 
-This follows from `localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_snd_eq` after
-exchanging the two coordinates of `ℂ²`, a unitary change of coordinates of the target, which does
-not change local intersection numbers (`localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt`). If
-the holomorphic disc `u₁` is immersed, it has a coordinate of nonzero derivative, so by the
+If the holomorphic disc `u₁` is immersed, it has a coordinate of nonzero derivative, so by the
 holomorphic inverse function theorem it runs in a holomorphic graph over the first or the second
 coordinate, and one of the two statements applies. -/
 theorem localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_fst_eq
@@ -506,6 +502,8 @@ theorem localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_fst_eq
     (hf : AnalyticAt ℂ f (u₁ z₀).2) (hgraph : ∀ᶠ z in 𝓝 z₀, (u₁ z).1 = f (u₁ z).2)
     (h₂ : AnalyticAt ℂ u₂ w₀) (h : u₁ z₀ = u₂ w₀) :
     o.localIndex o F (z₀, w₀) = analyticOrderNatAt (fun w ↦ (u₂ w).1 - f (u₂ w).2) w₀ := by
+  -- Exchanging the two coordinates of `ℂ²` is a unitary change of coordinates of the target, which
+  -- does not change local intersection numbers, and reduces this to the graph over the first one.
   set S : ℂ × ℂ →L[ℂ] ℂ × ℂ := (ContinuousLinearEquiv.prodComm ℂ ℂ ℂ : ℂ × ℂ →L[ℂ] ℂ × ℂ)
   set F' : C(ℂ × ℂ, ℂ × ℂ) := ContinuousMap.prodSwap.comp F
   have hF' (p : ℂ × ℂ) : F' p = S (u₁ p.1) - S (u₂ p.2) := by
