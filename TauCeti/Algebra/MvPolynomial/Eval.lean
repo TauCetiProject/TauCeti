@@ -31,6 +31,8 @@ Over an ordered field, evaluating a polynomial at a coordinatewise rational map
 be cleared to a single polynomial `A` up to multiplication by a polynomial `B` that is strictly
 positive on the domain (`MvPolynomial.exists_pos_eval_eq_mul_eval_div`).
 
+Evaluation at a family `x` is surjective exactly when `x` generates the algebra.
+
 ## Main results
 
 * `MvPolynomial.pow_mul_eval_mem`: `c ^ T p(x)` lies in a subsemiring containing `c`, the
@@ -39,6 +41,8 @@ positive on the domain (`MvPolynomial.exists_pos_eval_eq_mul_eval_div`).
   whose coordinates everywhere (or on the variables of `p`) are congruent modulo an ideal `I` are
   congruent modulo `I`.
 * `MvPolynomial.dvd_eval_sub_eval`: values at points congruent modulo `d` are congruent modulo `d`.
+* `MvPolynomial.aeval_surjective_iff_adjoin_range_eq_top`: `aeval x` is surjective exactly when
+  the `x i` generate the algebra.
 * `MvPolynomial.eq_C_of_map_eq_C`: an injective coefficient map reflects constant polynomials.
 * `MvPolynomial.exists_pos_eval_eq_mul_eval_div`: clears nonzero polynomial denominators in the
   value of a polynomial at a coordinatewise rational map by a strictly positive polynomial factor.
@@ -95,6 +99,12 @@ theorem dvd_eval_sub_eval {R : Type*} [CommRing R] (p : MvPolynomial σ R) {d : 
     (h : ∀ i, d ∣ x i - t i) : d ∣ eval x p - eval t p := by
   rw [← Ideal.mem_span_singleton]
   exact eval_sub_eval_mem p fun i ↦ Ideal.mem_span_singleton.mpr (h i)
+
+/-- Evaluation at a family `x` is surjective exactly when the `x i` generate the algebra. -/
+theorem aeval_surjective_iff_adjoin_range_eq_top {R A : Type*} [CommSemiring R] [CommSemiring A]
+    [Algebra R A] {x : σ → A} :
+    Function.Surjective (aeval (R := R) x) ↔ Algebra.adjoin R (Set.range x) = ⊤ := by
+  rw [← AlgHom.range_eq_top, Algebra.adjoin_range_eq_range_aeval]
 
 private theorem exists_pos_eval_eq_mul_eval_div_of_forall {α β K : Type*} [Field K] [LinearOrder K]
     [IsStrictOrderedRing K] {u : Set (β → K)} {N D : α → MvPolynomial β K}
