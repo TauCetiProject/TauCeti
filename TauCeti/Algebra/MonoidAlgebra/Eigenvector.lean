@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.OrderOfElement
 
 import Mathlib.Algebra.MonoidAlgebra.Opposite
 import Mathlib.Algebra.MonoidAlgebra.Support
+import Mathlib.Dynamics.PeriodicPts.Lemmas
 import TauCeti.Algebra.MonoidAlgebra.Basic
 
 /-!
@@ -22,14 +23,16 @@ by `g ^ n` then acts on `x` as right multiplication by the scalar `c ^ n`. When 
 order, `g ^ orderOf g = 1`, so the scalar `c ^ orderOf g` fixes `x`, and when nonzero elements of
 `R` are left cancellable the eigenvalue is a root of unity of order dividing `orderOf g`. The
 equality `c ^ orderOf g = 1` also holds when `g` has infinite order, but is then vacuous because
-`orderOf g = 0`. A natural-number eigenvalue `a` of an element of finite order is `1` as soon as
-the additive monoid of `R` is cancellative and torsion-free: `x` is then fixed by multiplication by
-`a ^ orderOf g`, and no cancellation hypothesis on the multiplication of `R` is needed. At the
-other extreme, when `G` is a left-cancellative monoid, an element of infinite order has no nonzero
-eigenvector of eigenvalue `1`: each element of the support of such an eigenvector would be a right
-translate by every power of `g` of a distinct element of the support, so the support would be
-infinite. Over a ring, it follows that for such `G` and `g` right multiplication by `g - 1` is
-injective, and that `g - 1` is not a zero divisor of `R[G]` when `G` is cancellative.
+`orderOf g = 0`. A natural-number eigenvalue `a` of a right-regular element `g` (for instance one
+of finite order) is `1` as soon as the additive monoid of `R` is cancellative and torsion-free:
+right multiplication by `g` then permutes the finite support of `x`, so some positive power
+`g ^ m` fixes `x`, which is therefore fixed by multiplication by `a ^ m`; no cancellation
+hypothesis on the multiplication of `R` is needed. At the other extreme, when `G` is a
+left-cancellative monoid, an element of infinite order has no nonzero eigenvector of eigenvalue
+`1`: each element of the support of such an eigenvector would be a right translate by every power
+of `g` of a distinct element of the support, so the support would be infinite. Over a ring, it
+follows that for such `G` and `g` right multiplication by `g - 1` is injective, and that `g - 1`
+is not a zero divisor of `R[G]` when `G` is cancellative.
 
 ## Main statements
 
@@ -39,7 +42,7 @@ injective, and that `g - 1` is not a zero divisor of `R[G]` when `G` is cancella
 * `TauCeti.pow_orderOf_eq_one_of_mul_single_eq_mul_single`: if nonzero elements of `R` are left
   cancellable, the eigenvalue `c` satisfies `c ^ orderOf g = 1`.
 * `TauCeti.nat_eq_one_of_mul_single_eq_mul_single`: over a semiring whose additive monoid is
-  cancellative and torsion-free, a natural-number eigenvalue of an element of finite order is `1`.
+  cancellative and torsion-free, a natural-number eigenvalue of a right-regular element is `1`.
 * `TauCeti.eq_zero_of_mul_single_eq_self_of_not_isOfFinOrder`: in a left-cancellative monoid, if
   `g` has infinite order, then `x * g = x` forces `x = 0`; its additive form is
   `TauCeti.eq_zero_of_mul_single_eq_self_of_not_isOfFinAddOrder`.
@@ -86,18 +89,37 @@ theorem pow_orderOf_eq_one_of_mul_single_eq_mul_single [IsLeftCancelMulZero R]
   exact (left_eq_mul₀ (Finsupp.mem_support_iff.mp hi)).mp hfix.symm
 
 /-- If the additive monoid of `R` is cancellative and torsion-free and a nonzero element `x` of
-`R[G]` satisfies `x g = x a` for an element `g` of finite order and a natural number `a`, then
-`a = 1`. -/
+`R[G]` satisfies `x g = x a` for a right-regular element `g` (for instance an element of finite
+order, or any element of a group) and a natural number `a`, then `a = 1`. -/
 theorem nat_eq_one_of_mul_single_eq_mul_single [IsCancelAdd R] [IsAddTorsionFree R]
-    {x : MonoidAlgebra R G} (hx : x ≠ 0) {g : G} (hg : IsOfFinOrder g) {a : ℕ}
+    {x : MonoidAlgebra R G} (hx : x ≠ 0) {g : G} (hg : IsRightRegular g) {a : ℕ}
     (h : x * single g (1 : R) = x * single 1 (a : R)) : a = 1 := by
-  have ha : a ^ orderOf g • x = x := by
-    rw [nsmul_eq_mul', natCast_def, Nat.cast_pow]
-    exact mul_single_one_pow_orderOf_eq_self_of_mul_single_eq_mul_single h
+  classical
+  -- The coefficient of `x` at `y` is `a` times its coefficient at `y * g`, so right
+  -- multiplication by `g` maps the finite support of `x` injectively into itself.
+  have hmaps : Set.MapsTo (· * g) (x.coeff.support : Set G) x.coeff.support := fun y hy ↦ by
+    have hy' := congrArg (fun z ↦ z.coeff (y * g)) h
+    simp only [coeff_mul_single_eq_coeff_mul y fun _ _ ↦ hg.eq_iff, coeff_mul_single_one,
+      mul_one] at hy'
+    rw [Finset.mem_coe, Finsupp.mem_support_iff] at hy ⊢
+    exact fun h0 ↦ hy (by rw [hy', h0, zero_mul])
+  -- It therefore permutes the support, and a positive power `g ^ m` fixes every point of it.
+  have hperm := Function.injective_iff_iterate_factorial_card_eq_id.mp
+    (hmaps.restrict_inj.mpr hg.injOn)
+  obtain ⟨m, hm0, hm⟩ : ∃ m ≠ 0, ∀ y ∈ x.coeff.support, y * g ^ m = y := by
+    refine ⟨(Fintype.card (x.coeff.support : Set G)).factorial, Nat.factorial_ne_zero _,
+      fun y hy ↦ ?_⟩
+    simpa only [hmaps.coe_iterate_restrict, mul_right_iterate, id_eq] using
+      congrArg Subtype.val (congrFun hperm ⟨y, hy⟩)
+  have hfix : x * single (g ^ m) (1 : R) = x := by
+    ext z
+    exact (coeff_mul_single_eq_coeff_mul z fun y hy ↦ by rw [hm y hy]).trans (mul_one _)
+  have ha : a ^ m • x = 1 • x := by
+    rw [one_nsmul, nsmul_eq_mul', natCast_def, Nat.cast_pow,
+      ← mul_single_pow_eq_mul_single_one_pow h, hfix]
   -- Over a semiring, `R[G]` has no global `AddCancelMonoid` instance: build it from `IsCancelAdd`.
   let _ : AddCancelMonoid (MonoidAlgebra R G) := { }
-  have := IsAddTorsionFree.nsmul_left_injective hx (ha.trans (one_nsmul x).symm)
-  exact (Nat.pow_eq_one.mp this).resolve_right hg.orderOf_pos.ne'
+  exact (Nat.pow_eq_one.mp (IsAddTorsionFree.nsmul_left_injective hx ha)).resolve_right hm0
 
 section LeftCancelMonoid
 
