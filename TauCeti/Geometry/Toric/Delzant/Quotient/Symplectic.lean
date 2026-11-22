@@ -41,9 +41,10 @@ Both are identified with the orbit directions `𝔫 · x` of the kernel torus
   (`TauCeti.Toric.ker_fderiv_delzantMomentMap_comp`). So the null directions of `i^* ω` at `x`
   are the vectors carried by the inclusion into `(𝔫 · x)^ω^ω = 𝔫 · x`
   (`TauCeti.Toric.IsDelzant.ker_bilinFormAt_mpullback_coe_delzantLevel`).
-* **Basicness.** The kernel torus acts by rotations, which preserve `ω`, so it preserves `i^* ω`
-  (`TauCeti.Toric.IsDelzant.mpullback_smul_mpullback_coe_delzantLevel`); its orbits are the fibres
-  of the projection, and the vertical vectors are null for `i^* ω`
+* **Basicness.** The torus `(ℝ / 2πℤ)^ι` acts by rotations, which preserve `ω`, so it preserves
+  `i^* ω` (`TauCeti.Toric.IsDelzant.mpullback_vadd_mpullback_coe_delzantLevel`), and so does the
+  kernel torus (`TauCeti.Toric.IsDelzant.mpullback_smul_mpullback_coe_delzantLevel`); its orbits
+  are the fibres of the projection, and the vertical vectors are null for `i^* ω`
   (`TauCeti.Toric.IsDelzant.isBasic_mpullback_coe_delzantLevel`).
 
 ## Main definitions
@@ -179,9 +180,37 @@ theorem ker_bilinFormAt_mpullback_coe_delzantLevel (x : delzantLevel i u c) :
         (hΔ.range_mfderiv_coe_delzantLevel_eq_orthogonal hi x)).trans
         (SymplecticForm.orthogonal_orthogonal stdSymplecticForm (kernelTorusOrbitTangent i u x))))
 
-/-- **The restricted form is invariant under the kernel torus.** Each element of the kernel torus
-acts on `ℂ^ι` by a rotation, which preserves the standard symplectic form `ω`, so it preserves the
-restriction `i^* ω` of `ω` to the level. -/
+/-- **The torus preserves the restricted form.** Each element `θ` of the torus acts on `ℂ^ι` by a
+rotation, which preserves the standard symplectic form `ω`, so it preserves the restriction
+`i^* ω` of `ω` to the level. -/
+theorem mpullback_vadd_mpullback_coe_delzantLevel (θ : ι → AddCircle (2 * π)) :
+    letI := hΔ.delzantLevelChartedSpace hi
+    haveI := hΔ.isManifold_delzantLevel hi ∞
+    haveI := hΔ.contMDiffVAdd_delzantLevel hi
+    SmoothForm.mpullback (fun z : delzantLevel i u c ↦ θ +ᵥ z)
+        (ContMDiffVAdd.contMDiff_const_vadd (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) θ)
+        (SmoothForm.mpullback ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
+          (hΔ.contMDiff_coe_delzantLevel hi) stdSymplecticForm.constSmooth) =
+      SmoothForm.mpullback ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
+        (hΔ.contMDiff_coe_delzantLevel hi) stdSymplecticForm.constSmooth := by
+  let _ := hΔ.delzantLevelChartedSpace hi
+  have := hΔ.isManifold_delzantLevel hi ∞
+  have := hΔ.contMDiffVAdd_delzantLevel hi
+  set R := torusRotation θ
+  have hRs : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
+      𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ∞ R := R.contMDiff
+  have hR : SmoothForm.mpullback R hRs stdSymplecticForm.constSmooth =
+      stdSymplecticForm.constSmooth := by
+    refine SmoothBundleForm.ext_eval₂ fun p v w ↦ ?_
+    rw [SmoothForm.eval₂_mpullback, SymplecticForm.eval₂_constSmooth_mfderiv_eq,
+      SymplecticForm.fromTangentSpace_constSmooth_apply, mvfderiv_eq_fderiv, R.fderiv]
+    exact stdSymplecticForm_torusRotation _ v w
+  -- The inclusion intertwines the action on the level with the rotation `R` of `ℂ^ι`.
+  rw [SmoothForm.mpullback_mpullback_of_comp_eq _ _ (hΔ.contMDiff_coe_delzantLevel hi) hRs
+    (funext fun z ↦ coe_vadd_delzantLevel θ z), hR]
+
+/-- **The restricted form is invariant under the kernel torus**, which acts on the level through
+its angles. -/
 theorem mpullback_smul_mpullback_coe_delzantLevel (k : kernelTorus i u) :
     letI := hΔ.delzantLevelChartedSpace hi
     letI := (kernelTorusData i u hi).chartedSpace
@@ -192,37 +221,10 @@ theorem mpullback_smul_mpullback_coe_delzantLevel (k : kernelTorus i u) :
         (SmoothForm.mpullback ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
           (hΔ.contMDiff_coe_delzantLevel hi) stdSymplecticForm.constSmooth) =
       SmoothForm.mpullback ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
-        (hΔ.contMDiff_coe_delzantLevel hi) stdSymplecticForm.constSmooth := by
-  let _ := hΔ.delzantLevelChartedSpace hi
-  let _ := (kernelTorusData i u hi).chartedSpace
-  have := hΔ.isManifold_delzantLevel hi ∞
-  have := hΔ.contMDiffSMul_kernelTorus hi
-  set R := torusRotation (k : Multiplicative (ι → AddCircle (2 * π))).toAdd
-  have hRs : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
-      𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ∞ R := R.contMDiff
-  have hR : SmoothForm.mpullback R hRs stdSymplecticForm.constSmooth =
-      stdSymplecticForm.constSmooth := by
-    refine SmoothBundleForm.ext_eval₂ fun p v w ↦ ?_
-    rw [SmoothForm.eval₂_mpullback, SymplecticForm.eval₂_constSmooth_mfderiv_eq,
-      SymplecticForm.fromTangentSpace_constSmooth_apply, mvfderiv_eq_fderiv, R.fderiv]
-    exact stdSymplecticForm_torusRotation _ v w
-  calc _ = SmoothForm.mpullback
-        (((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ∘
-          fun z : delzantLevel i u c ↦ k • z)
-        ((hΔ.contMDiff_coe_delzantLevel hi).comp
-          (ContMDiffSMul.contMDiff_const_smul (I := 𝓘(ℝ, kernelTorusLieAlgebra i u)) k))
-        stdSymplecticForm.constSmooth :=
-        SmoothForm.mpullback_mpullback _ _ _ _ _
-    _ = SmoothForm.mpullback
-        (R ∘ ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι))
-        (hRs.comp (hΔ.contMDiff_coe_delzantLevel hi)) stdSymplecticForm.constSmooth :=
-        Subtype.ext (by
-          simp only [SmoothForm.coe_mpullback, Function.comp_def, coe_kernelTorus_smul, R])
-    _ = SmoothForm.mpullback ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
-        (hΔ.contMDiff_coe_delzantLevel hi)
-        (SmoothForm.mpullback R hRs stdSymplecticForm.constSmooth) :=
-        (SmoothForm.mpullback_mpullback _ _ _ hRs _).symm
-    _ = _ := by rw [hR]
+        (hΔ.contMDiff_coe_delzantLevel hi) stdSymplecticForm.constSmooth :=
+  -- `k • z` is `(k : Multiplicative (ι → AddCircle (2 * π))).toAdd +ᵥ z` by definition of the
+  -- actions of a subgroup and of a multiplicative type tag.
+  hΔ.mpullback_vadd_mpullback_coe_delzantLevel hi (k : Multiplicative (ι → AddCircle (2 * π))).toAdd
 
 /-- **The restricted form is basic** for the projection onto the Delzant quotient: it is invariant
 under the kernel torus, whose orbits are the fibres of the projection, and the vertical tangent
