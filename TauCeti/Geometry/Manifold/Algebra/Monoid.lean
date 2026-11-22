@@ -17,12 +17,16 @@ ring to its group of units, and propagates the regularity of multiplicative and 
 a group at any one point to the whole group.
 
 The projections `ContMDiffMonoidMorphism.fst` and `ContMDiffMonoidMorphism.snd` have coercion
-formulas `ContMDiffMonoidMorphism.coe_fst` and `ContMDiffMonoidMorphism.coe_snd`. The corresponding
-additive declarations are `ContMDiffAddMonoidMorphism.fst`, `ContMDiffAddMonoidMorphism.snd`,
-`ContMDiffAddMonoidMorphism.coe_fst`, and `ContMDiffAddMonoidMorphism.coe_snd`.
-`ContMDiffMonoidMorphism.toHomUnits` lifts a `C^n` morphism from a group `G` into a complete normed
-ring `A` (over any nontrivially normed field `𝕜` and regularity `n : ℕ∞ω`) to a `C^n` morphism into
-`Aˣ`, with coercion formula `ContMDiffMonoidMorphism.coe_toHomUnits`.
+formulas `ContMDiffMonoidMorphism.coe_fst` and `ContMDiffMonoidMorphism.coe_snd`, and underlying
+monoid homomorphisms `MonoidHom.fst` and `MonoidHom.snd`
+(`ContMDiffMonoidMorphism.toMonoidHom_fst`, `ContMDiffMonoidMorphism.toMonoidHom_snd`). The
+corresponding additive declarations are `ContMDiffAddMonoidMorphism.fst`,
+`ContMDiffAddMonoidMorphism.snd`, `ContMDiffAddMonoidMorphism.coe_fst`,
+`ContMDiffAddMonoidMorphism.coe_snd`, `ContMDiffAddMonoidMorphism.toAddMonoidHom_fst`, and
+`ContMDiffAddMonoidMorphism.toAddMonoidHom_snd`. `ContMDiffMonoidMorphism.toHomUnits` lifts a
+`C^n` morphism from a group `G` into a complete normed ring `A` (over any nontrivially normed field
+`𝕜` and regularity `n : ℕ∞ω`) to a `C^n` morphism into `Aˣ`, with coercion formula
+`ContMDiffMonoidMorphism.coe_toHomUnits`.
 -/
 
 public section
@@ -59,6 +63,11 @@ def fst : ContMDiffMonoidMorphism (I.prod I') I n (G × G') G where
 theorem coe_fst : ⇑(fst (I := I) (I' := I') (n := n) (G := G) (G' := G')) = Prod.fst := by
   rfl
 
+@[to_additive (attr := simp)]
+theorem toMonoidHom_fst :
+    (fst (I := I) (I' := I') (n := n) (G := G) (G' := G')).toMonoidHom = MonoidHom.fst G G' := by
+  rfl
+
 /-- The second projection as a smooth monoid morphism. -/
 @[to_additive /-- The second projection as a smooth additive monoid morphism. -/]
 def snd : ContMDiffMonoidMorphism (I.prod I') I' n (G × G') G' where
@@ -67,6 +76,11 @@ def snd : ContMDiffMonoidMorphism (I.prod I') I' n (G × G') G' where
 
 @[to_additive (attr := simp)]
 theorem coe_snd : ⇑(snd (I := I) (I' := I') (n := n) (G := G) (G' := G')) = Prod.snd := by
+  rfl
+
+@[to_additive (attr := simp)]
+theorem toMonoidHom_snd :
+    (snd (I := I) (I' := I') (n := n) (G := G) (G' := G')).toMonoidHom = MonoidHom.snd G G' := by
   rfl
 
 /-- Composition of smooth monoid morphisms. -/

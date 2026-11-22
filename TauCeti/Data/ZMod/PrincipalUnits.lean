@@ -135,7 +135,7 @@ theorem natCard_nthRoots_prime_pow_eq_natCard_nthRoots {p n k : ℕ} [Fact p.Pri
   have hdvd : p ∣ p ^ (k + 1) := dvd_pow_self p hk
   set π := castHom hdvd (ZMod p)
   have hunit (x : ZMod (p ^ (k + 1))) (hx : π x ^ n = a) : IsUnit x := by
-    refine (isUnit_prime_pow_iff_castHom_ne_zero p (k + 1) k.succ_pos x).mpr fun h0 ↦ ha ?_
+    refine (isUnit_prime_pow_iff_castHom_ne_zero p (k + 1) k.succ_ne_zero x).mpr fun h0 ↦ ha ?_
     rw [← hx, h0, zero_pow]
     rintro rfl
     exact (Fact.out : p.Prime).one_lt.ne' (Nat.coprime_zero_left p |>.mp hn)
@@ -168,10 +168,10 @@ theorem natCard_nthRoots_prime_pow_eq_natCard_nthRoots {p n k : ℕ} [Fact p.Pri
     obtain ⟨x, hx, hxx₀⟩ := TauCeti.HenselianLocalRing.exists_pow_eq_of_residue_pow_eq
       (u := (a : ZMod (p ^ (k + 1)))) ((isUnit_iff_coprime n _).mpr (hn.pow_right _))
       (hunit x₀ hπx₀)
-      (by rw [← map_pow, residue_eq_residue_iff_castHom_eq p (k + 1) k.succ_pos,
+      (by rw [← map_pow, residue_eq_residue_iff_castHom_eq p (k + 1),
         map_pow, hπx₀, map_intCast])
     exact ⟨x, by simpa using hx, by
-      rw [(residue_eq_residue_iff_castHom_eq p (k + 1) k.succ_pos x x₀).mp hxx₀,
+      rw [(residue_eq_residue_iff_castHom_eq p (k + 1) x x₀).mp hxx₀,
         map_natCast, natCast_zmod_val]⟩
 
 /-! Modulo `9`, the units `4` and `7` are `2 ^ 2` and `4 ^ 2`. The hypothesis that `p` is odd is
