@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.EssentialImage
-public import TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
+public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat
+public import TauCeti.Topology.CWComplex.Classical.CWType
+import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
 import TauCeti.AlgebraicTopology.ClassifyingSpace.PointedMaps
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Uniqueness
 import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
@@ -60,9 +62,6 @@ contractible, hence isomorphic to `classifyingSpace PUnit`, yet `{0}` is not `G_
 
 ## Main results
 
-* `TauCeti.quotient_map_eq_quotient_map_comp_cellularClassifyingSpace`: a pointed map from the
-  cellular model realizing a homomorphism is pointed homotopic to the comparison of the two models
-  followed by the strictly functorial map.
 * `TauCeti.IsAspherical.mem_essImage_classifyingSpaceHomotopyFunctor`,
   `TauCeti.isAspherical_of_mem_essImage_classifyingSpaceHomotopyFunctor`,
   `TauCeti.cwType_of_mem_essImage_classifyingSpaceHomotopyFunctor`: characterization of the
@@ -170,43 +169,6 @@ theorem classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso_inv_app_ho
 group recovers the homomorphism inducing a map. -/
 instance : classifyingSpaceHomotopyFunctor.{u}.Faithful :=
   .of_comp_iso classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso
-
-section Cellular
-
-variable {S : Type u} (R : Set (FreeGroup S))
-
-/-- **The map induced by a homomorphism is determined up to pointed homotopy.** Let
-`e : PresentedGroup R ≃* G` be a presentation and `φ : G ⟶ H`. Every pointed map from the cellular
-classifying space of `R` to `classifyingSpace H` that induces `φ` under the identifications of both
-fundamental groups is pointed homotopic to the comparison map of
-`cellularHomotopyEquivClassifyingSpace R e` followed by `classifyingSpaceMap φ`. In the pointed
-homotopy category the right-hand side is the comparison map followed by
-`classifyingSpaceHomotopyFunctor.map φ`. -/
-theorem quotient_map_eq_quotient_map_comp_cellularClassifyingSpace {G H : GrpCat.{u}}
-    (e : PresentedGroup R ≃* G) (φ : G ⟶ H)
-    (f : cellularClassifyingSpaceBased R ⟶ classifyingSpaceFunctor.obj H)
-    (hf : ∀ a, classifyingSpaceFundamentalGroupMulEquiv H
-        ((BasedTopologicalSpace.fundamentalGroupFunctor.map f).hom a) =
-      φ.hom (e (cellularClassifyingSpaceFundamentalGroupMulEquiv R a))) :
-    PointedHomotopyCat.quotient.map f =
-      PointedHomotopyCat.quotient.map
-        (cellularHomotopyEquivClassifyingSpaceBasedHom R e ≫ classifyingSpaceFunctor.map φ) := by
-  refine (fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace R
-    (fun y n ↦ subsingleton_homotopyGroup_classifyingSpace H n y)).1 ?_
-  simp only [PointedHomotopyCat.fundamentalGroupFunctor_map_quotient_map]
-  dsimp only [classifyingSpaceFunctor]
-  rw [Functor.map_comp]
-  refine GrpCat.hom_ext <| MonoidHom.ext fun a ↦
-    (classifyingSpaceFundamentalGroupMulEquiv H).injective ?_
-  simp only [GrpCat.hom_comp, BasedTopologicalSpace.fundamentalGroupFunctor_map_hom,
-    cellularHomotopyEquivClassifyingSpaceBasedHom_toContinuousMap] at hf ⊢
-  -- Both sides are `φ ∘ e` under the identifications: the comparison induces `e`, and the strict
-  -- map induces `φ`.
-  exact (hf a).trans <| (congrArg φ.hom
-    (classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_cellularHomotopyEquivClassifyingSpace R e
-      a).symm).trans (φ.hom.classifyingSpaceFundamentalGroupMulEquiv_mapOfEq _).symm
-
-end Cellular
 
 section FunctorClassification
 

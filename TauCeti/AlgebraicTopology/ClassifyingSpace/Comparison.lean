@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Cellular
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
-public import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.HomotopyEquiv
 import TauCeti.Topology.Homotopy.Extension.HomotopyEquivRel
 
@@ -59,6 +59,9 @@ hypotheses of covering-space theory exactly as the existence theorem for Milnor'
   models is determined by `e` up to homotopy relative to the base point.
 * `TauCeti.exists_basedInverse_cellularHomotopyEquivClassifyingSpace`: the comparison of the two
   models admits a pointed homotopy inverse inducing `e⁻¹` with no base-point change.
+* `TauCeti.quotient_map_eq_quotient_map_comp_cellularClassifyingSpace`: a pointed map from the
+  cellular model realizing a homomorphism is pointed homotopic to the comparison of the two models
+  followed by the strictly functorial map.
 * `TauCeti.instSemilocallySimplyConnectedSpaceCellularClassifyingSpace`: the cellular classifying
   space is semilocally simply connected.
 * `TauCeti.exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace`: every group `G` has a
@@ -266,6 +269,40 @@ instance instSemilocallySimplyConnectedSpaceCellularClassifyingSpace :
   (cellularHomotopyEquivClassifyingSpace R (MulEquiv.refl _)).semilocallySimplyConnectedSpace
 
 end ClassifyingSpace
+
+open CategoryTheory in
+/-- **The map induced by a homomorphism is determined up to pointed homotopy.** Let
+`e : PresentedGroup R ≃* G` be a presentation and `φ : G ⟶ H`. Every pointed map from the cellular
+classifying space of `R` to `classifyingSpace H` that induces `φ` under the identifications of both
+fundamental groups is pointed homotopic to the comparison map of
+`cellularHomotopyEquivClassifyingSpace R e` followed by the based map underlying
+`φ.hom.classifyingSpaceMap`. -/
+theorem quotient_map_eq_quotient_map_comp_cellularClassifyingSpace {G H : GrpCat.{u}}
+    (e : PresentedGroup R ≃* G) (φ : G ⟶ H)
+    (f : cellularClassifyingSpaceBased R ⟶
+      (⟨classifyingSpace H, classifyingSpaceBasepoint H⟩ : BasedTopologicalSpace.{u}))
+    (hf : ∀ a, classifyingSpaceFundamentalGroupMulEquiv H
+        ((BasedTopologicalSpace.fundamentalGroupFunctor.map f).hom a) =
+      φ.hom (e (cellularClassifyingSpaceFundamentalGroupMulEquiv R a))) :
+    PointedHomotopyCat.quotient.map f =
+      PointedHomotopyCat.quotient.map
+        (cellularHomotopyEquivClassifyingSpaceBasedHom R e ≫
+          (⟨φ.hom.classifyingSpaceMap, φ.hom.classifyingSpaceMap_basepoint⟩ :
+            (⟨classifyingSpace G, classifyingSpaceBasepoint G⟩ : BasedTopologicalSpace.{u}) ⟶
+              ⟨classifyingSpace H, classifyingSpaceBasepoint H⟩)) := by
+  refine (fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace R
+    (fun y n ↦ subsingleton_homotopyGroup_classifyingSpace H n y)).1 ?_
+  simp only [PointedHomotopyCat.fundamentalGroupFunctor_map_quotient_map]
+  rw [Functor.map_comp]
+  refine GrpCat.hom_ext <| MonoidHom.ext fun a ↦
+    (classifyingSpaceFundamentalGroupMulEquiv H).injective ?_
+  simp only [GrpCat.hom_comp, BasedTopologicalSpace.fundamentalGroupFunctor_map_hom,
+    cellularHomotopyEquivClassifyingSpaceBasedHom_toContinuousMap] at hf ⊢
+  -- Both sides are `φ ∘ e` under the identifications: the comparison induces `e`, and the strict
+  -- map induces `φ`.
+  exact (hf a).trans <| (congrArg φ.hom
+    (classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_cellularHomotopyEquivClassifyingSpace R e
+      a).symm).trans (φ.hom.classifyingSpaceFundamentalGroupMulEquiv_mapOfEq _).symm
 
 /-- **Every group has a cellular classifying space**, satisfying the standing hypotheses of
 covering-space theory: for every group `G` there is a set `R` of relators on the generators `G`

@@ -10,12 +10,10 @@ public import TauCeti.AlgebraicTopology.EilenbergMacLane.Homotopic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 public import TauCeti.AlgebraicTopology.Homotopy.KillHomotopyGroups
 public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat
-public import TauCeti.Topology.Category.BasedTopologicalSpace
 public import TauCeti.Topology.CWComplex.Abstract.TwoCellAttachment
 public import TauCeti.Topology.CWComplex.Classical.DeltaGenerated
 
 import Mathlib.GroupTheory.Presentation
-import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
 import TauCeti.AlgebraicTopology.Homotopy.Whitehead
 import TauCeti.Topology.Homotopy.Extension.CWComplex
 
