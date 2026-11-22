@@ -46,9 +46,10 @@ Neither `R → R₁` nor `R → R₂` is assumed to be flat.
   sheaf for the cover of `Spec R` by `D(f)` and `D(g)`.
 * `TauCeti.ExactSquare.surjective_patchingDifference`: the patching sequence of any module is
   exact on the right.
-* `TauCeti.ExactSquare.injective_patchingDiagonal`,
-  `TauCeti.ExactSquare.exact_patchingDiagonal_patchingDifference`: tensoring an exact square
-  with a flat module `M` gives the short exact sequence
+* `TauCeti.ExactSquare.exact_patchingDiagonal_patchingDifference`: the patching sequence of any
+  module is exact in the middle, again by right exactness of tensor products.
+* `TauCeti.ExactSquare.injective_patchingDiagonal`: for a flat module `M` the diagonal is also
+  injective, so tensoring an exact square with `M` gives the short exact sequence
   `0 → M → (R₁ ⊗[R] M) × (R₂ ⊗[R] M) → L ⊗[R] M → 0`.
 
 ## References
@@ -294,15 +295,18 @@ theorem injective_patchingDiagonal [Module.Flat R M] :
   exact (TensorProduct.prodLeft R R R₁ R₂ M).injective.comp <|
     hc.comp (TensorProduct.lid R M).symm.injective
 
-/-- Tensoring an exact square with a flat module gives a sequence exact in the middle: a pair
-of elements of the two scalar extensions comes from `M` if and only if the two pieces agree in
-the scalar extension to the overlap. -/
-theorem exact_patchingDiagonal_patchingDifference [Module.Flat R M] :
+/-- The patching sequence of every module is exact in the middle, by right exactness of tensor
+products: a pair of elements of the two scalar extensions comes from `M` if and only if the two
+pieces agree in the scalar extension to the overlap. Flatness is only needed for injectivity on
+the left (`ExactSquare.injective_patchingDiagonal`). -/
+theorem exact_patchingDiagonal_patchingDifference :
     Function.Exact (patchingDiagonal R R₁ R₂ M) (patchingDifference R R₁ R₂ L M) := by
   have he : Function.Exact (squareDiagonal (R := R) (R₁ := R₁) (R₂ := R₂))
       (squareDifference (R := R) (R₁ := R₁) (R₂ := R₂) (L := L)) := h.exact
+  have hs : Function.Surjective (squareDifference (R := R) (R₁ := R₁) (R₂ := R₂) (L := L)) :=
+    h.surjective
   exact (Function.Exact.iff_of_ladder_linearEquiv patchingDiagonal_comp_lid
-    patchingDifference_comp_prodLeft).mpr (Module.Flat.rTensor_exact M he)
+    patchingDifference_comp_prodLeft).mpr (rTensor_exact M he hs)
 
 end ExactSquare
 
