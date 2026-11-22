@@ -7,15 +7,13 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
-public import TauCeti.Algebra.Category.FGModuleCat.EssentiallySmall
 
 /-!
 # Finitely generated projective modules
 
 This file defines the object property `TauCeti.finiteProjectiveModules R` of finitely generated
-projective `R`-modules in `ModuleCat R`, together with its essential smallness, basic closure
-properties (retracts, zero, binary products), and the regular module
-`TauCeti.finiteProjectiveModulesRegular R`.
+projective `R`-modules in `ModuleCat R`, together with its basic closure properties (retracts,
+zero, binary products), and the regular module `TauCeti.finiteProjectiveModulesRegular R`.
 
 ## Main definitions
 
@@ -30,8 +28,7 @@ properties (retracts, zero, binary products), and the regular module
 * `TauCeti.finiteProjectiveModules_le_finiteModules` and
   `TauCeti.finiteProjectiveModules_le_categoryTheory_isProjective`: comparison with `ModuleCat.isFG`
   and `CategoryTheory.isProjective`.
-* Essential smallness and closure of `TauCeti.finiteProjectiveModules R` under retracts, zero, and
-  binary products.
+* Closure of `TauCeti.finiteProjectiveModules R` under retracts, zero, and binary products.
 -/
 
 public section
@@ -71,9 +68,6 @@ variable (R)
 theorem finiteProjectiveModules_le_finiteModules :
     finiteProjectiveModules R ≤ ModuleCat.isFG R := fun _ h =>
   (ModuleCat.isFG_iff _).mpr (finiteProjectiveModules_iff.mp h).1
-
-instance : ObjectProperty.EssentiallySmall.{u} (finiteProjectiveModules R) :=
-  ObjectProperty.EssentiallySmall.of_le (finiteProjectiveModules_le_finiteModules R)
 
 /-- A finitely generated projective module is a projective object of `ModuleCat R`. -/
 theorem finiteProjectiveModules_le_categoryTheory_isProjective :

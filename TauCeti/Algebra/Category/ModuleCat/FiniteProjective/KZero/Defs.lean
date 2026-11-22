@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Basic
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.EssentiallySmall
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
 
 /-!

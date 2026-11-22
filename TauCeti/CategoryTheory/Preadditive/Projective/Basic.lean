@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
+public import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
-# Projective objects: isomorphism closure and coproducts
+# Projective objects: isomorphism closure, retracts, and biproducts
 
 The object property `CategoryTheory.isProjective C` of being projective is closed under
-isomorphisms, so it can serve as the resolving property of finite resolutions, which are
-transported along isomorphisms.
+isomorphisms and stable under retracts in any category, contains a zero object when one exists,
+and is closed under binary and finite products in any category with zero morphisms and binary or
+finite biproducts.
 
 The point of any colimit cofan of a family of projective objects is projective. Mathlib's
 instance for the chosen coproduct `∐ X` requires the index type to live in the universe of the
@@ -38,6 +39,34 @@ variable {C : Type*} [Category* C]
 /-- Being projective is invariant under isomorphism. -/
 instance isClosedUnderIsomorphisms_isProjective : (isProjective C).IsClosedUnderIsomorphisms :=
   ⟨fun e h => @Projective.of_iso _ _ _ _ e h⟩
+
+/-- Projective objects are stable under retracts. -/
+instance isStableUnderRetracts_isProjective : (isProjective C).IsStableUnderRetracts where
+  of_retract h _ := h.projective
+
+open scoped ZeroObject in
+/-- `isProjective C` contains zero whenever `C` has a zero object. -/
+instance containsZero_isProjective [HasZeroObject C] : (isProjective C).ContainsZero where
+  exists_zero := ⟨0, isZero_zero C, inferInstance⟩
+
+/-- In a category with zero morphisms and binary biproducts, projective objects are closed under
+binary products. -/
+instance isClosedUnderBinaryProducts_isProjective [HasZeroMorphisms C] [HasBinaryBiproducts C] :
+    (isProjective C).IsClosedUnderBinaryProducts :=
+  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun _ _ _ _ ↦ inferInstance
+
+section FiniteBiproducts
+
+attribute [local instance] hasBinaryBiproducts_of_finite_biproducts
+  hasFiniteProducts_of_hasFiniteBiproducts
+
+/-- In a category with zero morphisms and finite biproducts, projective objects are closed under
+finite products. -/
+instance isClosedUnderFiniteProducts_isProjective [HasZeroMorphisms C] [HasFiniteBiproducts C] :
+    (isProjective C).IsClosedUnderFiniteProducts :=
+  .mk'
+
+end FiniteBiproducts
 
 namespace Projective
 
