@@ -56,7 +56,7 @@ likewise separated by at least `(card ι)⁻¹`.
 * `LinearMap.sum_apply_eq_of_mapsTo_range_weights`: a linear map carrying the standard simplex
   into a standard simplex preserves coordinate sums.
 * `TauCeti.stdSimplexBoundary`, `TauCeti.isCompact_stdSimplexBoundary`: the relative boundary of
-  the standard simplex, the points with some vanishing coordinate, and its compactness over `ℝ`.
+  the standard simplex, the points with some vanishing coordinate, and its compactness.
 * `TauCeti.mem_convexHull_pi_single_iff`: membership in the face of the standard simplex spanned
   by a set of vertices, in coordinates.
 * `TauCeti.norm_sub_le_one_of_mem_convexHull_pi_single`: points of faces of the standard
@@ -124,11 +124,11 @@ theorem apply_lt_one_of_mem_range_weights {R : Type*} [Semiring R] [PartialOrder
   obtain ⟨s, rfl⟩ := hx
   -- The total weight is the sum over any finite set containing the support, here one that also
   -- contains `i` and `j`.
+  have hsupp : s.weights.support ⊆ s.weights.support ∪ {i, j} := subset_union_left
+  have hij' : ({i, j} : Finset ι) ⊆ s.weights.support ∪ {i, j} := subset_union_right
   have htotal := s.total
-  rw [s.weights.sum_of_support_subset (subset_union_left (s₂ := {i, j})) _ fun _ _ => rfl]
-    at htotal
-  have hle := sum_le_sum_of_subset_of_nonneg
-    (subset_union_right (s₁ := s.weights.support) (s₂ := {i, j})) fun k _ _ => s.weights_nonneg k
+  rw [s.weights.sum_of_support_subset hsupp _ fun _ _ => rfl] at htotal
+  have hle := sum_le_sum_of_subset_of_nonneg hij' fun k _ _ => s.weights_nonneg k
   rw [sum_pair hij.symm, htotal] at hle
   exact (lt_add_of_pos_right _ hxj).trans_le hle
 
@@ -192,12 +192,15 @@ theorem mem_stdSimplexBoundary_or_forall_pos [Semiring R] [PartialOrder R] {x : 
 
 variable [Finite ι]
 
-/-- The relative boundary of the real standard simplex is compact. -/
-theorem isCompact_stdSimplexBoundary : IsCompact (stdSimplexBoundary ℝ ι) := by
-  have hZ : IsClosed {y : ι → ℝ | ∃ i, y i = 0} := by
+/-- The relative boundary of the standard simplex over a topological ordered ring with compact
+closed intervals, such as `ℝ`, is compact. -/
+theorem isCompact_stdSimplexBoundary [Ring R] [PartialOrder R] [IsStrictOrderedRing R]
+    [TopologicalSpace R] [IsTopologicalRing R] [CompactIccSpace R] [OrderClosedTopology R] :
+    IsCompact (stdSimplexBoundary R ι) := by
+  have hZ : IsClosed {y : ι → R | ∃ i, y i = 0} := by
     simpa only [ofPred_exists] using
       isClosed_iUnion_of_finite fun i => isClosed_eq (continuous_apply i) continuous_const
-  exact (isCompact_range (StdSimplex.isEmbedding_toFun_comp_weights ℝ ι).continuous).inter_right
+  exact (isCompact_range (StdSimplex.isEmbedding_toFun_comp_weights R ι).continuous).inter_right
     hZ
 
 end Boundary
