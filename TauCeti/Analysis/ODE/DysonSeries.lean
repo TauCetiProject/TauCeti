@@ -438,16 +438,11 @@ theorem isUnit_dysonSeriesLeft (hp : Continuous p) (t : ℝ) : IsUnit (dysonSeri
 series. -/
 theorem commute_dysonSeriesLeft {a : B} (hp : Continuous p) (ha : ∀ s, Commute a (p s))
     (t : ℝ) : Commute a (dysonSeriesLeft p t) := by
-  -- Both `a Ψ` and `Ψ a` solve `X' = p X` with initial value `a`.
-  let L : ℝ → B →L[ℝ] B := fun s => ContinuousLinearMap.mul ℝ B (p s)
-  have hL : Continuous L := (ContinuousLinearMap.mul ℝ B).continuous.comp hp
-  have h : (fun s => a * dysonSeriesLeft p s) = fun s => dysonSeriesLeft p s * a := by
-    refine hL.eq_of_hasDerivAt_clm_apply (fun s => ?_) (fun s => ?_) (t₀ := 0) (by simp)
-    · exact ((hasDerivAt_dysonSeriesLeft hp s).const_mul a).congr_deriv (by
-        simp only [L, ContinuousLinearMap.mul_apply', ← mul_assoc, (ha s).eq])
-    · exact ((hasDerivAt_dysonSeriesLeft hp s).mul_const a).congr_deriv (by
-        simp only [L, ContinuousLinearMap.mul_apply', mul_assoc])
-  exact congrFun h t
+  -- `a Ψ` solves `X' = p X` with initial value `a`, so it is `Ψ a`.
+  have h := eq_dysonSeriesLeft_mul hp (f := fun s => a * dysonSeriesLeft p s) (fun s =>
+    ((hasDerivAt_dysonSeriesLeft hp s).const_mul a).congr_deriv (by
+      rw [← mul_assoc, (ha s).eq, mul_assoc])) t
+  rwa [dysonSeriesLeft_zero, mul_one] at h
 
 /-- An element commuting with every value of a continuous path `p` commutes with the Dyson series
 of `-p`, the inverse of the left Dyson series of `p`. -/

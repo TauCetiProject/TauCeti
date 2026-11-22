@@ -46,11 +46,6 @@ same results apply to the antiperiodic operators: in the periodic gauge they are
 of `TauCeti.CircleSobolev.antiperiodicGaugeLoop`, a loop of complex-linear maps when `S` is one
 (`TauCeti.CircleSobolev.antiperiodicGaugeLoop_apply_I_smul`), with return map `-P`.
 
-## Main definitions
-
-* `TauCeti.CircleSobolev.complexLoopOperator`: `L_S` as a complex-linear operator, for a loop of
-  complex-linear maps.
-
 ## Main results
 
 * `TauCeti.CircleSobolev.isComplexPositiveDetLine_detLineLoopOperatorEquiv_symm`: for a loop of
@@ -91,47 +86,7 @@ for the propagator. -/
 local instance instCompleteSpaceComplexOrientation : CompleteSpace E :=
   FiniteDimensional.completeSpace ℂ E
 
-/-! ### Complex linearity -/
-
-/-- Multiplication by a loop of complex-linear maps commutes with multiplication by `I`. -/
-theorem mulLoop_I_smul (hs : 1 / 2 < s) (hS : ∀ t v, S t (I • v) = I • S t v)
-    (a : CircleSobolev s E) : mulLoop T hs S (I • a) = I • mulLoop T hs S a := by
-  rw [mulLoop_apply, mulLoop_apply, map_smul (toContinuousMap T hs), ← map_smul (ofContinuousMap T)]
-  refine congrArg (ofContinuousMap T) (ContinuousMap.ext fun t ↦ ?_)
-  simp [hS]
-
-/-- The loop operator of a loop of complex-linear maps commutes with multiplication by `I`. -/
-theorem loopOperator_I_smul (hS : ∀ t v, S t (I • v) = I • S t v) (a : CircleSobolev 1 E) :
-    loopOperator T S (I • a) = I • loopOperator T S a := by
-  rw [loopOperator_apply, loopOperator_apply, map_smul, mulLoop_I_smul T _ hS, smul_sub]
-
-/-- **The loop operator of a loop of complex-linear maps is complex linear.** This is
-`ζ ↦ ζ' - S ζ` as a complex-linear operator `H¹(E) → H⁰(E)`. It is given by its fields, rather
-than by `ContinuousLinearMap.complexOfMapISmul`, so that its underlying real operator is
-`TauCeti.CircleSobolev.loopOperator T S` by definition, and complex orientations of its
-determinant line are elements of the determinant line of `L_S`. -/
-@[expose]
-def complexLoopOperator (hS : ∀ t v, S t (I • v) = I • S t v) :
-    CircleSobolev 1 E →L[ℂ] CircleSobolev 0 E where
-  toFun := loopOperator T S
-  map_add' := map_add _
-  map_smul' c v := by
-    have := ((loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).complexOfMapISmul
-      (loopOperator_I_smul T hS)).map_smul c v
-    rwa [LinearMap.coe_complexOfMapISmul] at this
-  cont := (loopOperator T S).continuous
-
-@[simp]
-theorem complexLoopOperator_apply (hS : ∀ t v, S t (I • v) = I • S t v) (a : CircleSobolev 1 E) :
-    complexLoopOperator T hS a = loopOperator T S a :=
-  (rfl)
-
-/-- The real operator underlying `TauCeti.CircleSobolev.complexLoopOperator` is the loop
-operator. -/
-@[simp]
-theorem restrictScalars_complexLoopOperator (hS : ∀ t v, S t (I • v) = I • S t v) :
-    (complexLoopOperator T hS).restrictScalars ℝ = loopOperator T S :=
-  (rfl)
+/-! ### Complex linearity of the propagator -/
 
 omit hT in
 /-- The propagator of a loop of complex-linear maps is complex linear. -/
@@ -211,11 +166,8 @@ theorem isComplexPositiveDetLine_detLineLoopOperatorEquiv_symm
   let A : E →ₗ[ℂ] E :=
     { toFun v := (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) v
       map_add' x y := map_add _ x y
-      map_smul' c v := by
-        have := ((1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)).complexOfMapISmul
-          (one_sub_apply_I_smul T hS)).map_smul c v
-        rw [LinearMap.coe_complexOfMapISmul] at this
-        exact this }
+      map_smul' := (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)).map_smul_of_map_I_smul
+        (one_sub_apply_I_smul T hS) }
   rw [detLineLoopOperatorEquiv_def, LinearMap.detLineCongrKerCoker_symm]
   exact (LinearMap.isComplexPositiveDetLine_detLineEndGenerator A).detLineCongrKerCoker _ _
     (kerLoopOperatorEquiv_symm_I_smul T hS) (quotientRangeLoopOperatorEquiv_symm_I_smul T hS)
