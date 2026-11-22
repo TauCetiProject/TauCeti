@@ -44,7 +44,7 @@ variable {X : Type u} [TopologicalSpace X]
 namespace TauCeti
 
 /-- A Noetherian space has finitely many connected components. -/
-theorem finite_connectedComponents_of_noetherianSpace [TopologicalSpace.NoetherianSpace X] :
+instance finite_connectedComponents_of_noetherianSpace [TopologicalSpace.NoetherianSpace X] :
     Finite (ConnectedComponents X) :=
   finite_connectedComponents_of_finite_irreducibleComponents
     TopologicalSpace.NoetherianSpace.finite_irreducibleComponents

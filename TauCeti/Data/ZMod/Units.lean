@@ -30,9 +30,13 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   `TauCeti.EisensteinSeries.nonempty_gammaSet_iff_coprime_val`.
 * `IsCoprime.exists_int_lifts` — a *pair* of coprime residues mod `d` lifts to a coprime pair
   of integers. Ported from the AINTLIB `LeanModularForms` project
-  (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck); its consumer is the
+  (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck); its consumers are the
   strong approximation theorem `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective` in
-  `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Basic.lean`.
+  `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Basic.lean`,
+  `TauCeti.gamma1CuspLabel_surjective` in
+  `TauCeti/NumberTheory/ModularForms/CongruenceSubgroups/Cusp/Gamma1.lean`, and
+  `TauCeti.EisensteinSeries.nonempty_gammaSet_intCast_iff` in
+  `TauCeti/NumberTheory/ModularForms/EisensteinSeries/GammaSet.lean`.
 * `ZMod.comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left` — a lowered unit homomorphism
   stays lowered after restricting to a multiple of its modulus.
 * `ZMod.exists_unitOfCoprime_eq` — every unit of `ZMod d` is `ZMod.unitOfCoprime` of a natural
@@ -85,6 +89,9 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
 * `ZMod.unitOfIsCoprime_div_eq_iff` — two quotients `a / b` and `a' / b'` of integer
   units modulo `n` agree exactly when `n ∣ a b' - a' b`. Its consumer is the cusp label of
   `Γ₀(N)` in `TauCeti/NumberTheory/ModularForms/CongruenceSubgroups/Cusp/Count.lean`.
+* `ZMod.mul_val_inv_modEq_one` — for `m` coprime to `n`, `(m⁻¹ : ZMod n).val` is an inverse of
+  `m` modulo `n`, as a `Nat.ModEq`. Its consumer is the distribution relation for `1 - ζ` in
+  `TauCeti/NumberTheory/Cyclotomic/DistributionRelation.lean`.
 -/
 
 public section
@@ -115,6 +122,13 @@ theorem ZMod.natAbs_cast (x : ZMod d) : (ZMod.cast x : ℤ).natAbs = x.val := by
     -- `Int.natAbs`
     rfl
   · rw [ZMod.cast_eq_val, Int.natAbs_natCast]
+
+/-- For `m` coprime to `n`, `(m⁻¹ : ZMod n).val` is an inverse of `m` modulo `n`: the
+`Nat.ModEq` form of Mathlib's `ZMod.mul_val_inv`. -/
+theorem ZMod.mul_val_inv_modEq_one {m n : ℕ} (h : m.Coprime n) :
+    m * ((m : ZMod n)⁻¹).val ≡ 1 [MOD n] := by
+  rw [← ZMod.natCast_eq_natCast_iff, Nat.cast_mul, Nat.cast_one]
+  exact ZMod.mul_val_inv h
 
 private lemma isCoprime_emod {a₁ c₁ : ℤ}
     (hac : IsCoprime (a₁ : ZMod d) (c₁ : ZMod d)) :

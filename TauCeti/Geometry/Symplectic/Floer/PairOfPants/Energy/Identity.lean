@@ -497,7 +497,7 @@ private theorem abs_det_mul_wedge_endChart (ω : SymplecticForm V)
   rw [abs_det_mul_fderiv_truncation_wedge_endChart hT hζ, hα]
   -- Where `β'(±s - T) ≠ 0`, the end coordinate satisfies `±s ≥ T ≥ T₀`, so `K = H_q dt` there.
   by_cases hs : T₀ ≤ q.endSign * ζ.1
-  · rw [perturbationPullback_endChart_stdComplexLineImag_of_le hKH hH hs]
+  · rw [perturbationPullback_endChart_stdComplexLineImag_of_le (hKH q) (hH q) hs]
   · rw [smoothTransition.deriv_of_nonpos (by linarith)]
     ring
 
@@ -1146,7 +1146,7 @@ private theorem abs_det_mul_boundaryForm_endChart
   rw [← hα]
   -- Where `β'(±s - T) ≠ 0`, the end coordinate satisfies `±s ≥ T ≥ T₀`, so `K = H_q dt` there.
   by_cases hs : T₀ ≤ q.endSign * ζ.1
-  · rw [perturbationPullback_endChart_stdComplexLineImag_of_le hKH hH hs]
+  · rw [perturbationPullback_endChart_stdComplexLineImag_of_le (hKH q) (hH q) hs]
   · rw [smoothTransition.deriv_of_nonpos (by linarith)]
     ring
 

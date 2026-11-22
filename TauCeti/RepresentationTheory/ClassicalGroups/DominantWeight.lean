@@ -8,7 +8,6 @@ module
 public import Mathlib.Data.Fin.Tuple.Sort
 public import TauCeti.Algebra.Order.BigOperators.Dominance
 public import TauCeti.Combinatorics.Young.OfRowLens
-import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
 # Dominant weights for the general linear group
@@ -178,29 +177,17 @@ theorem dominates_iff_forall_fin {μ ν : DominantWeight n} :
     μ.Dominates ν ↔ (∑ i, ν.val i) = (∑ i, μ.val i) ∧ ∀ k : Fin (n + 1),
       (∑ i : Fin n with i.val < k.val, ν.val i) ≤ ∑ i : Fin n with i.val < k.val, μ.val i := by
   rw [dominates_def, TauCeti.dominates_def, eq_comm]
-  have hpre (f : Fin n → ℤ) {k : ℕ} (hk : k ≤ n) :
-      (∑ i : Fin n with i.val < k, f i) = ∑ j : Fin k, f (Fin.castLE hk j) := by
-    rw [show ({i : Fin n | i.val < k} : Finset (Fin n)) = Finset.univ.map (Fin.castLEEmb hk) by
-      ext i; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_map,
-        Fin.castLEEmb_apply]
-      exact ⟨fun hi => ⟨⟨i.val, hi⟩, Fin.ext rfl⟩, fun ⟨j, hj⟩ => hj ▸ j.isLt⟩, Finset.sum_map]
-    rfl
   refine Iff.and Iff.rfl ⟨fun h k => ?_, fun h k hk => ?_⟩
-  · simpa only [hpre _ (Nat.lt_succ_iff.mp k.isLt)] using h k.val (Nat.lt_succ_iff.mp k.isLt)
-  · simpa only [hpre _ hk] using h ⟨k, Nat.lt_succ_of_le hk⟩
+  · simpa only [← prefixSum_eq_sum_castLE (Nat.lt_succ_iff.mp k.isLt), prefixSum_def] using
+      h k.val (Nat.lt_succ_iff.mp k.isLt)
+  · simpa only [← prefixSum_eq_sum_castLE hk, prefixSum_def] using h ⟨k, Nat.lt_succ_of_le hk⟩
 
 /-- Partial-sum characterization of `Dominates` over all filtered prefixes
 `{i : Fin n | i.val < k}`. -/
 theorem dominates_iff {μ ν : DominantWeight n} :
     μ.Dominates ν ↔ (∑ i, ν.val i) = (∑ i, μ.val i) ∧
       ∀ k : ℕ, (∑ i : Fin n with i.val < k, ν.val i) ≤ ∑ i : Fin n with i.val < k, μ.val i := by
-  rw [dominates_iff_forall_fin]
-  refine and_congr_right fun hsum => ⟨fun h k => ?_, fun h k => h k.val⟩
-  rcases le_or_gt k n with hk | hk
-  · exact h ⟨k, Nat.lt_succ_of_le hk⟩
-  · have hall : ({i : Fin n | i.val < k} : Finset (Fin n)) = Finset.univ := by
-      ext i; simp [i.isLt.trans hk]
-    rw [hall, hsum]
+  simp only [dominates_def, TauCeti.dominates_iff_forall_prefixSum_le, prefixSum_def, eq_comm]
 
 instance (μ ν : DominantWeight n) : Decidable (μ.Dominates ν) :=
   decidable_of_iff _ dominates_iff_forall_fin.symm
@@ -303,21 +290,6 @@ theorem colLen_zero_shape_le (l : DominantWeight n) : l.shape.colLen 0 ≤ n :=
 theorem natCast_rowLen_shape {l : DominantWeight n} (hl : l.IsPolynomial) (i : Fin n) :
     (l.shape.rowLen i : ℤ) = l.val i := by
   rw [rowLen_shape, Int.toNat_of_nonneg (hl i)]
-
-/-- On a polynomial weight, prefix sums of entries match `Finset.range` sums of row lengths of
-`l.shape`. -/
-theorem sum_filter_lt_eq_sum_range_rowLen {l : DominantWeight n} (hl : l.IsPolynomial) (j : ℕ) :
-    (∑ r : Fin n with r.val < j, l.val r) = ∑ r ∈ Finset.range j, (l.shape.rowLen r : ℤ) := by
-  have h1 : (∑ r : Fin n with r.val < j, l.val r) =
-      ∑ r ∈ Finset.range (min j n), (l.shape.rowLen r : ℤ) := by
-    rw [← prefixSum_eq_sum_range j fun r => (l.shape.rowLen r : ℤ), prefixSum_def]
-    exact Finset.sum_congr rfl fun r _ => (natCast_rowLen_shape hl r).symm
-  have h2 : ∑ r ∈ Finset.Ico (min j n) j, (l.shape.rowLen r : ℤ) = 0 :=
-    Finset.sum_eq_zero fun r hr => by
-      have hmin : min j n ≤ r := (Finset.mem_Ico.mp hr).1
-      have hrj : r < j := (Finset.mem_Ico.mp hr).2
-      rw [rowLen_shape_eq_zero_of_le l (by omega), Nat.cast_zero]
-  rw [h1, ← Finset.sum_range_add_sum_Ico _ (min_le_left j n), h2, add_zero]
 
 /-- The Young diagram of a polynomial weight has `∑ λᵢ` cells. -/
 theorem natCast_card_shape {l : DominantWeight n} (hl : l.IsPolynomial) :

@@ -16,10 +16,10 @@ import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basis
 Taking cardinalities across the bijections of `TauCeti.Combinatorics.Hive.LittlewoodRichardson`
 identifies integer hive counts `hiveCount (productBoundary λ μ γ)` with Littlewood–Richardson
 coefficients `c^γ_{λ μ} = Nat.card (LRTableau λ γ μ)` for polynomial weights
-(`TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau`), for Young diagrams of at most `n`
-rows (`TauCeti.Hive.hiveCount_weightOfShape_eq_natCard_lrTableau`, giving rank independence in
-`TauCeti.Hive.hiveCount_weightOfShape_eq_of_colLen_le`), and for arbitrary signed dominant weights
-via determinant shifts (`TauCeti.Hive.hiveCount_productBoundary_eq_ite_detShift`).
+(`TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau_shape`), for Young diagrams of at
+most `n` rows (`TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau`, giving rank
+independence in `TauCeti.Hive.hiveCount_weightOfShape_eq_of_colLen_le`), and for arbitrary signed
+dominant weights via determinant shifts (`TauCeti.Hive.hiveCount_productBoundary_eq_ite_detShift`).
 
 Combining this cardinality bridge with Stembridge's Schur-polynomial Littlewood–Richardson rule
 (`TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`) yields the **hive model
@@ -43,10 +43,7 @@ weights `λ, μ, γ : DominantWeight n` (`TauCeti.Hive.hiveCount_comm`).
 
 ## Main results
 
-* `TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau`: for polynomial weights `λ, μ, γ`,
-  `hiveCount (productBoundary λ μ γ) = Nat.card (LRTableau λ.shape γ.shape μ.shape)`.
-* `TauCeti.Hive.hiveCount_weightOfShape_eq_natCard_lrTableau` and
-  `TauCeti.Hive.hiveCount_weightOfShape_eq_of_colLen_le`: Young-diagram form and rank stability.
+* `TauCeti.Hive.hiveCount_weightOfShape_eq_of_colLen_le`: rank stability of hive counts.
 * `TauCeti.Hive.hiveCount_productBoundary_eq_ite_detShift`: universal formula for arbitrary signed
   dominant weights `λ, μ, γ : DominantWeight n`.
 * `TauCeti.Hive.hiveCount_comm`: symmetry `hiveCount (productBoundary λ μ γ) =
@@ -72,26 +69,7 @@ namespace TauCeti.Hive
 
 open YoungDiagram (ofPartition)
 
-/-! ### Cardinality bridges between integer hives and Littlewood–Richardson tableaux -/
-
-/-- For polynomial dominant weights `λ, μ, γ : DominantWeight n`, the number of normalized integer
-hives with clockwise boundary `(λ, μ, γ*)` equals the Littlewood–Richardson coefficient
-`c^{γ.shape}_{λ.shape, μ.shape}`. -/
-theorem hiveCount_productBoundary_eq_natCard_lrTableau {n : ℕ} {lam μ γ : DominantWeight n}
-    (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial) (hγ : γ.IsPolynomial) :
-    hiveCount (productBoundary lam μ γ) =
-      Nat.card (LRTableau lam.shape γ.shape μ.shape) := by
-  rw [← natCard_fixedIntegerHive]
-  exact Nat.card_congr (fixedIntegerHiveEquivLRTableau hlam hμ hγ)
-
-/-- For Young diagrams `λ, μ, ν` with at most `n` rows, the hive count on `weightOfShape n` equals
-`Nat.card (LRTableau λ ν μ)`. -/
-theorem hiveCount_weightOfShape_eq_natCard_lrTableau {n : ℕ} {lam μ ν : YoungDiagram}
-    (hlam : lam.colLen 0 ≤ n) (hμ : μ.colLen 0 ≤ n) (hν : ν.colLen 0 ≤ n) :
-    hiveCount (productBoundary (weightOfShape n lam) (weightOfShape n μ) (weightOfShape n ν)) =
-      Nat.card (LRTableau lam ν μ) := by
-  rw [← natCard_fixedIntegerHive]
-  exact Nat.card_congr (fixedIntegerHiveWeightOfShapeEquivLRTableau hlam hμ hν)
+/-! ### Rank stability, universal signed formula, and input-swap symmetry -/
 
 /-- **Rank stability of hive counts**: for Young diagrams `λ, μ, ν` fitting in both `n` and `m`
 rows, their `GL_n` and `GL_m` hive counts coincide. -/
@@ -100,8 +78,8 @@ theorem hiveCount_weightOfShape_eq_of_colLen_le {n m : ℕ} {lam μ ν : YoungDi
     (hlam_m : lam.colLen 0 ≤ m) (hμ_m : μ.colLen 0 ≤ m) (hν_m : ν.colLen 0 ≤ m) :
     hiveCount (productBoundary (weightOfShape n lam) (weightOfShape n μ) (weightOfShape n ν)) =
       hiveCount (productBoundary (weightOfShape m lam) (weightOfShape m μ) (weightOfShape m ν)) :=
-  (hiveCount_weightOfShape_eq_natCard_lrTableau hlam_n hμ_n hν_n).trans
-    (hiveCount_weightOfShape_eq_natCard_lrTableau hlam_m hμ_m hν_m).symm
+  (hiveCount_productBoundary_eq_natCard_lrTableau hlam_n hν_n hμ_n).trans
+    (hiveCount_productBoundary_eq_natCard_lrTableau hlam_m hν_m hμ_m).symm
 
 /-- **Universal signed hive-count formula**: for arbitrary signed dominant weights
 `λ, μ, γ : DominantWeight n`, `hiveCount (productBoundary λ μ γ)` equals the Littlewood–Richardson
@@ -174,7 +152,7 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n : ℕ} {R :
   have hterm : emb ν = weightOfShape n (ofPartition ν.val) := rfl
   simp only [f, hterm, shape_weightOfShape ν.property]
   congr 1
-  rw [hiveCount_productBoundary_eq_natCard_lrTableau hlam hμ
+  rw [hiveCount_productBoundary_eq_natCard_lrTableau_shape hlam hμ
     (isPolynomial_weightOfShape n (ofPartition ν.val)), shape_weightOfShape ν.property]
 
 private theorem finsum_hiveCount_one_eq_smul :
@@ -210,8 +188,8 @@ private theorem natCard_lrTableau_std_one_det_two :
     fin_cases i
     · simpa [lam] using DominantWeight.natCast_rowLen_shape hlam 0
     · simp [lam]
-  rw [← hiveCount_weightOfShape_eq_natCard_lrTableau hlam_col hlam_col
-      (DominantWeight.colLen_zero_shape_le γ₂),
+  rw [← hiveCount_productBoundary_eq_natCard_lrTableau hlam_col
+      (DominantWeight.colLen_zero_shape_le γ₂) hlam_col,
     hw_lam, weightOfShape_shape hγ₂]
   exact hiveCount_two_std_std_det
 

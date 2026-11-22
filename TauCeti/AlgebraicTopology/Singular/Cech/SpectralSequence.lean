@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.SpectralSequence.Bicomplex
+public import TauCeti.Algebra.Homology.SpectralSequence.Bicomplex.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
 public import TauCeti.AlgebraicTopology.Singular.Cech.OrderedQuasiIso
 
