@@ -40,6 +40,8 @@ the narrow class group finite (see `NarrowClassGroup.Finite`).
   including that nonzero squares are totally positive.
 * `NumberField.isTotallyPositive_ratCast`: a positive rational number is totally positive, with
   `NumberField.isTotallyPositive_intCast` its integer special case.
+* `NumberField.not_isTotallyPositive_iff_exists_lt_zero`: a nonzero element is not totally
+  positive exactly when it is negative at some real place.
 * `NumberField.totallyPositiveUnits`: the subgroup of totally positive units of `Kˣ` (the
   kernel of the unit signature map), with `sq_mem_totallyPositiveUnits`. For a totally complex field
   it is everything (`totallyPositiveUnits_eq_top`), since total positivity is then vacuous
@@ -121,6 +123,15 @@ theorem isTotallyPositive_intCast {n : ℤ} (hn : 0 < n) :
     IsTotallyPositive ((n : ℤ) : K) := by
   rw [← Rat.cast_intCast (α := K) n]
   exact isTotallyPositive_ratCast (by exact_mod_cast hn)
+
+/-- A nonzero element fails to be totally positive exactly when it is negative at some real
+place. The hypothesis `x ≠ 0` is needed: `0` is not totally positive, yet no real embedding
+sends it to a negative number. -/
+theorem not_isTotallyPositive_iff_exists_lt_zero {x : K} (hx : x ≠ 0) :
+    ¬IsTotallyPositive x ↔
+      ∃ (w : InfinitePlace K) (hw : w.IsReal), embedding_of_isReal hw x < 0 := by
+  simp only [isTotallyPositive_iff, not_forall, not_lt]
+  exact exists_congr fun w ↦ exists_congr fun hw ↦ ((map_ne_zero _).mpr hx).le_iff_lt
 
 /-- The subgroup of **totally positive units** of `Kˣ`: the intersection, over the real infinite
 places `w`, of the preimages of the positive units of `ℝ` under the real embedding `w`. It is the

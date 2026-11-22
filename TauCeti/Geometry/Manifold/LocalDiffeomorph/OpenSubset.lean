@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 
 /-!
 # Partial diffeomorphisms and open subsets
@@ -33,7 +34,9 @@ manifold is diffeomorphic to it through its inclusion, and a diffeomorphism mapp
 onto another restricts to a diffeomorphism between them. A partial diffeomorphism out of an open
 subset can be carried, near any point of its source, to the ambient manifold. A partial
 diffeomorphism between nonempty open subsets is itself a partial diffeomorphism between the ambient
-manifolds, with the same source and target read in them.
+manifolds, with the same source and target read in them. Correcting a partial diffeomorphism by a
+diffeomorphism of its source gives, on any open subset of the source, a diffeomorphism onto an open
+subset of the target manifold.
 
 ## Main declarations
 
@@ -59,6 +62,9 @@ manifolds, with the same source and target read in them.
   partial diffeomorphism between the ambient manifolds.
 * `IsLocalDiffeomorphAt.exists_partialDiffeomorph_eqOn`: a local diffeomorphism at `x` agrees with
   a partial diffeomorphism whose source contains `x` and lies in a prescribed open set.
+* `PartialDiffeomorph.exists_diffeomorph_opens_comp_eq`: a partial diffeomorphism corrected by a
+  diffeomorphism of its source is, on an open subset of the source, a diffeomorphism onto an open
+  subset.
 -/
 
 public section
@@ -511,4 +517,56 @@ theorem exists_partialDiffeomorph_eqOn (hf : IsLocalDiffeomorphAt I J n f x) {s 
     rw [PartialDiffeomorph.coe_restrOpen]
     exact hfΦ hy.1
 
+/-- Being a local diffeomorphism at a point depends only on the germ of the map there. -/
+theorem congr_of_eventuallyEq {g : M → N} (hf : IsLocalDiffeomorphAt I J n f x)
+    (h : g =ᶠ[nhds x] f) : IsLocalDiffeomorphAt I J n g x := by
+  obtain ⟨s, hfg, hs, hxs⟩ := eventually_nhds_iff.mp h
+  obtain ⟨Φ, hxΦ, hΦs, hfΦ⟩ := hf.exists_partialDiffeomorph_eqOn hs hxs
+  exact ⟨Φ, hxΦ, fun y hy ↦ (hfg y (hΦs hy)).trans (hfΦ hy)⟩
+
 end IsLocalDiffeomorphAt
+
+namespace PartialDiffeomorph
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H : Type*} [TopologicalSpace H] {G : Type*} [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G} {n : WithTop ℕ∞}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+
+open TopologicalSpace in
+/-- **Correcting a partial diffeomorphism by a diffeomorphism of its source.** Let `Ψ` be a `C^n`
+partial diffeomorphism from `M` to `N` and `Θ` a `C^n` diffeomorphism of the source of `Ψ`. On any
+open subset `U₀` of the source, `Ψ ∘ Θ` is a `C^n` diffeomorphism onto an open subset of `N`. -/
+theorem exists_diffeomorph_opens_comp_eq (Ψ : PartialDiffeomorph I J M N n)
+    (Θ : (⟨Ψ.source, Ψ.open_source⟩ : Opens M) ≃ₘ^n⟮I, I⟯ (⟨Ψ.source, Ψ.open_source⟩ : Opens M))
+    {U₀ : Opens M} (hU₀ : U₀ ≤ (⟨Ψ.source, Ψ.open_source⟩ : Opens M)) :
+    ∃ (U₁ : Opens N) (φ : U₀ ≃ₘ^n⟮I, J⟯ U₁),
+      Subtype.val ∘ ⇑φ = (Ψ ∘ Subtype.val) ∘ Θ ∘ Opens.inclusion hU₀ := by
+  let ι := Opens.inclusion hU₀
+  let Φ : U₀ → N := (Ψ ∘ Subtype.val) ∘ Θ ∘ ι
+  have hinj : Function.Injective Φ := fun z z' h ↦ by
+    have h' := Ψ.toPartialEquiv.injOn (Θ (ι z)).property (Θ (ι z')).property h
+    have hv := congrArg Subtype.val (Θ.injective (Subtype.ext h') : ι z = ι z')
+    exact Subtype.ext hv
+  -- Near each point, `ι` is the inclusion of `U₀` followed by the inverse of that of the source.
+  have hι : IsLocalDiffeomorph I I n ι := fun z ↦ by
+    let e := (subtypeVal I n U₀ ⟨z⟩).trans (subtypeVal I n _ ⟨ι z⟩).symm
+    have he : ⇑e = ι := funext fun y ↦ subtypeVal_symm_apply (I := I) (n := n) _ _ (hU₀ y.property)
+    have hz : z ∈ e.source := by
+      simp only [e, trans_source, symm_toPartialEquiv, PartialEquiv.symm_source,
+        subtypeVal_source, subtypeVal_target, coe_subtypeVal, mem_inter_iff, mem_univ,
+        mem_preimage, SetLike.mem_coe, true_and]
+      exact hU₀ z.property
+    exact he ▸ e.isLocalDiffeomorphAt I I n hz
+  -- `Φ` is a composite of local diffeomorphisms.
+  have hloc : IsLocalDiffeomorph I J n Φ := fun z ↦
+    (hι z).comp (hg := (Θ.isLocalDiffeomorph _).comp
+      (hg := (TauCeti.isLocalDiffeomorph_subtype_val _).comp
+        (hg := Ψ.isLocalDiffeomorphAt I J n (Θ (ι z)).property)))
+  exact ⟨hloc.image, hloc.diffeomorphOfInjective hinj,
+    funext (IsLocalDiffeomorph.coe_diffeomorphOfInjective_apply hloc hinj)⟩
+
+end PartialDiffeomorph

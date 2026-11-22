@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupportTopology
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.Topology
 public import TauCeti.Geometry.Manifold.VectorBundle.Density
 public import TauCeti.Analysis.Distribution.TestFunction.DualEquiv
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
@@ -38,7 +39,9 @@ functionals this is the dual of the model fibre. A real test function `φ` on th
 and a vector `v : F` are paired as `T (φ • v)`, where `φ • v` is extended to a bundle test through
 the chart and the frame (`Bundle.Trivialization.chartTestCLM`). This is the local representative
 through which regularity of distributions on manifolds, for instance local Sobolev regularity, is
-defined chart by chart from the Euclidean theory.
+defined chart by chart from the Euclidean theory. Since bundle tests are finite sums of such
+extended tests (`ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`), a functional is
+determined by its local representatives (`TauCeti.BundleTest.ext_chartDistributionCLM`).
 
 The point mass `δ_x ℓ : s ↦ ℓ (s x)` at `x : M`, for a covector `ℓ` on the fibre `V x` or more
 generally a continuous linear map `ℓ : V x →L[ℝ] W` (`TauCeti.BundleTest.delta`), vanishes only
@@ -55,6 +58,8 @@ charts whose source does not contain `x`
   bundle tests, as a continuous linear map.
 * `Bundle.Trivialization.chartDistributionCLM`: the local representative of a functional on bundle
   tests, a distribution on the chart target with values in `F →L[ℝ] W`.
+* `TauCeti.BundleTest.ext_chartDistributionCLM`: functionals on bundle tests are determined by
+  their local representatives.
 * `TauCeti.BundleTest.delta`: the point mass at a point with a covector on the fibre.
 * `TauCeti.BundleDistribution I M F V`: the distributional sections of `V`, the continuous linear
   functionals on the tests with values in `V →L[ℝ] |Λ|`.
@@ -245,6 +250,22 @@ theorem delta_apply (x : M) (ℓ : V x →L[ℝ] W) (s : BundleTest I F V) :
     delta x ℓ s = ℓ (s x) :=
   (rfl)
 
+@[simp]
+theorem delta_zero [IsTopologicalAddGroup W] (x : M) :
+    delta (I := I) (F := F) (V := V) x (0 : V x →L[ℝ] W) = 0 := by
+  ext s
+  simp
+
+theorem delta_add [IsTopologicalAddGroup W] (x : M) (ℓ ℓ' : V x →L[ℝ] W) :
+    delta (I := I) (F := F) x (ℓ + ℓ') = delta x ℓ + delta x ℓ' := by
+  ext s
+  simp
+
+theorem delta_smul [ContinuousConstSMul ℝ W] (x : M) (a : ℝ) (ℓ : V x →L[ℝ] W) :
+    delta (I := I) (F := F) x (a • ℓ) = a • delta x ℓ := by
+  ext s
+  simp
+
 /-- Every vector of a fibre is the value of a bundle test. -/
 theorem exists_apply_eq [FiniteDimensional ℝ E] [T2Space M] (x : M) (v : V x) :
     ∃ s : BundleTest I F V, s x = v := by
@@ -351,6 +372,54 @@ theorem chartDistributionCLM_delta_of_notMem {x : M} (hx : x ∉ c.source) (ℓ 
   simp [t.chartTestCLM_apply_of_notMem c hc hct _ hx]
 
 end Bundle.Trivialization
+
+/-! ### Functionals are determined by their local representatives -/
+
+namespace TauCeti.BundleTest
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
+  {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
+
+/-- **Functionals on bundle tests are determined by their local representatives.** On a
+boundaryless Hausdorff `σ`-compact manifold with finite-dimensional model, two functionals agree
+once their local representatives agree in every smooth chart lying over the base set of a
+trivialization of the bundle atlas: bundle tests are finite sums of chart extensions of native
+test functions (`ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`). -/
+theorem ext_chartDistributionCLM {T T' : BundleTest I F V →L_c[ℝ] W}
+    (h : ∀ (t : Trivialization F (π F V)) [MemTrivializationAtlas t]
+      (c : OpenPartialHomeomorph M E) (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source)
+      (hct : c.source ⊆ t.baseSet),
+      t.chartDistributionCLM c hc hct T = t.chartDistributionCLM c hc hct T') :
+    T = T' := by
+  -- The chart extensions span the bundle tests.
+  have hspan := congrArg (Submodule.map (ofCompactlySupported I F V).toLinearMap)
+    (span_iUnion_range_chartTestSection_eq_top (I := I) (F := F) (V := V) (n := ⊤))
+  rw [Submodule.map_span, Submodule.map_top, LinearEquiv.range] at hspan
+  refine ContinuousLinearMap.coe_injective (LinearMap.ext_on hspan ?_)
+  rintro _ ⟨_, ⟨_, ⟨p, rfl⟩, φ, rfl⟩, rfl⟩
+  let := p.memTrivializationAtlas
+  have hp := TestFunction.dualEquivDistribution.injective
+    (h p.trivialization p.chart p.contMDiffOn_chart p.source_subset)
+  rw [ChartTestData.chartTestSection_def]
+  -- Evaluation of the precomposition through the `→L_c` type synonym is evaluation of `T` and
+  -- `T'` at the extended test.
+  exact DFunLike.congr_fun hp φ
+
+/-- Functionals on bundle tests agree exactly when all their local representatives agree. -/
+theorem ext_chartDistributionCLM_iff {T T' : BundleTest I F V →L_c[ℝ] W} :
+    T = T' ↔ ∀ (t : Trivialization F (π F V)) [MemTrivializationAtlas t]
+      (c : OpenPartialHomeomorph M E) (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source)
+      (hct : c.source ⊆ t.baseSet),
+      t.chartDistributionCLM c hc hct T = t.chartDistributionCLM c hc hct T' :=
+  ⟨fun h _ _ _ _ _ ↦ h ▸ rfl, ext_chartDistributionCLM⟩
+
+end TauCeti.BundleTest
 
 /-! ### Distributional sections -/
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Equiv.Defs
 public import Mathlib.Algebra.Group.Pi.Basic
 public import Mathlib.Algebra.Group.Prod
+public import TauCeti.Algebra.Group.Equiv.Pi
 public import TauCeti.Data.Finset.Pi
 
 /-!
@@ -20,15 +21,21 @@ For disjoint `s` and `t`, gluing a family on `s` and a family on `t` is a multip
 equivalence `MulEquiv.piFinsetUnion π h : (∀ i : s, π i) × (∀ i : t, π i) ≃* ∀ i : s ∪ t, π i`.
 Under it the restrictions to `s` and to `t` are the two projections of the product. Gluing is
 associative: this is the statement on underlying functions, `Equiv.restrict₂_piFinsetUnion_assoc`.
+For an embedding `f : ι' ↪ ι`, a family indexed by `s` with values in `π (f i)` is a family indexed
+by `s.map f`, by the multiplicative equivalence
+`MulEquiv.piFinsetMap π f s : (∀ i : s, π (f i)) ≃* ∀ j : s.map f, π j`, which commutes with
+restriction.
 
-These are the projections `Γ_J → Γ_I` and the disjoint-union identifications
-`Γ_(I ⊔ J) ≅ Γ_I × Γ_J` of the groups `Γ_I = ∏_(α ∈ I) Γ_α` attached to the finite sets `I` of
-charts of an implicit atlas, in the sense of Pardon.
+These are the projections `Γ_J → Γ_I`, the disjoint-union identifications
+`Γ_(I ⊔ J) ≅ Γ_I × Γ_J` and the injective-reindexing identifications `Γ_I ≅ Γ_(f I)` of the groups
+`Γ_I = ∏_(α ∈ I) Γ_α` attached to the finite sets `I` of charts of an implicit atlas, in the sense
+of Pardon.
 
 ## Main definitions
 
 * `Finset.restrict₂MonoidHom`: restriction to a smaller finite set, as a monoid homomorphism.
 * `MulEquiv.piFinsetUnion`: `Equiv.piFinsetUnion` as a multiplicative equivalence.
+* `MulEquiv.piFinsetMap`: relabelling along an embedding, as a multiplicative equivalence.
 
 ## Main results
 
@@ -37,6 +44,7 @@ charts of an implicit atlas, in the sense of Pardon.
 * `MulEquiv.restrict₂MonoidHom_comp_piFinsetUnion_left` and
   `MulEquiv.restrict₂MonoidHom_comp_piFinsetUnion_right`: the restrictions to the two pieces are
   the projections of the product.
+* `MulEquiv.restrict₂_piFinsetMap`: relabelling along an embedding commutes with restriction.
 
 ## References
 
@@ -144,5 +152,51 @@ theorem restrict₂MonoidHom_comp_piFinsetUnion_right (h : Disjoint s t) :
         (piFinsetUnion π h : ((∀ i : s, π i) × ∀ i : t, π i) →* ∀ i : (s ∪ t : Finset ι), π i) =
       MonoidHom.snd _ _ :=
   MonoidHom.ext fun x ↦ Equiv.restrict₂_piFinsetUnion_right π h x
+
+end MulEquiv
+
+namespace MulEquiv
+
+open Finset
+
+section Map
+
+variable {ι ι' : Type*} (π : ι → Type*) (f : ι' ↪ ι) (s t : Finset ι')
+
+/-- Relabelling a family indexed by `s` along an embedding `f`, as a family indexed by `s.map f`.
+Its inverse reads the coordinate at `i` in position `f i`. -/
+@[to_additive /-- Relabelling a family indexed by `s` along an embedding `f`, as a family indexed by
+`s.map f`. Its inverse reads the coordinate at `i` in position `f i`. -/]
+noncomputable def piFinsetMap [∀ i, Mul (π i)] : (∀ i : s, π (f i)) ≃* ∀ j : s.map f, π j :=
+  piCongrLeft (fun j : s.map f ↦ π j) (s.equivMap f)
+
+/-- The inverse of `MulEquiv.piFinsetMap` reads the coordinate at `i` in position `f i`. -/
+@[to_additive (attr := simp) /-- The inverse of `AddEquiv.piFinsetMap` reads the coordinate at `i`
+in position `f i`. -/]
+theorem piFinsetMap_symm_apply [∀ i, Mul (π i)] (g : ∀ j : s.map f, π j) (i : s) :
+    (piFinsetMap π f s).symm g i = g ⟨f i, mem_map_of_mem f i.property⟩ :=
+  piCongrLeft_symm_apply (fun j : s.map f ↦ π j) (s.equivMap f) g i
+
+/-- `MulEquiv.piFinsetMap` puts the coordinate at `i` in position `f i`. -/
+@[to_additive (attr := simp) /-- `AddEquiv.piFinsetMap` puts the coordinate at `i` in position
+`f i`. -/]
+theorem piFinsetMap_apply_mk [∀ i, Mul (π i)] (g : ∀ i : s, π (f i)) (i : s) :
+    piFinsetMap π f s g ⟨f i, mem_map_of_mem f i.property⟩ = g i := by
+  rw [← piFinsetMap_symm_apply π f s (piFinsetMap π f s g), symm_apply_apply]
+
+variable {s t}
+
+/-- Relabelling along an embedding commutes with restriction to a smaller finite set. -/
+@[to_additive (attr := simp) /-- Relabelling along an embedding commutes with restriction to a
+smaller finite set. -/]
+theorem restrict₂_piFinsetMap [∀ i, Mul (π i)] (h : s ⊆ t) (g : ∀ i : t, π (f i)) :
+    restrict₂ (map_subset_map.2 h) (piFinsetMap π f t g) =
+      piFinsetMap π f s (restrict₂ (π := fun i ↦ π (f i)) h g) := by
+  ext ⟨j, hj⟩
+  obtain ⟨i, hi, rfl⟩ := mem_map.1 hj
+  exact (piFinsetMap_apply_mk π f t g ⟨i, h hi⟩).trans
+    (piFinsetMap_apply_mk π f s (restrict₂ (π := fun i ↦ π (f i)) h g) ⟨i, hi⟩).symm
+
+end Map
 
 end MulEquiv
