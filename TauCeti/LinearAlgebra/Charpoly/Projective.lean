@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
+public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 public import Mathlib.RingTheory.Polynomial.Subring
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
@@ -14,11 +15,13 @@ public import TauCeti.LinearAlgebra.Determinant.Projective
 public import TauCeti.LinearAlgebra.End.Aeval
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 public import TauCeti.LinearAlgebra.Trace.Projective
+import Mathlib.LinearAlgebra.Matrix.Dual
 import Mathlib.RingTheory.LocalProperties.Basic
 import Mathlib.RingTheory.Localization.BaseChange
 -- `baseChangeTowerAlgEquiv` and its comparison with `rTensor` are used only in the proof of
 -- `AlgHom.projectiveCharpolyRev_lmul_rTensor`.
 import TauCeti.Algebra.TensorProduct.BaseChange
+import TauCeti.Algebra.Polynomial.QDerivative
 
 /-!
 # The reversed characteristic polynomial on a finite projective module
@@ -43,6 +46,12 @@ If `π : R ^ n → M` and `σ : M → R ^ n` split `M` off a free module, then
   its coefficient in degree one is minus the trace `LinearMap.projectiveTrace` of `f`
   (`LinearMap.coeff_projectiveCharpolyRev_one`);
 * it commutes with base change (`LinearMap.projectiveCharpolyRev_baseChange`);
+* it is `1` for the zero endomorphism (`LinearMap.projectiveCharpolyRev_zero`) and is unchanged
+  by passing to the transpose `f.dualMap` (`LinearMap.projectiveCharpolyRev_dualMap`);
+* scaling `f` by `c` rescales the variable, `det (1 - X (c f)) = det (1 - c X f)`
+  (`LinearMap.projectiveCharpolyRev_smul`), so the coefficient in degree `i` is multiplied by
+  `c ^ i` (`LinearMap.coeff_projectiveCharpolyRev_smul`), and the polynomials for `c f` and `f`
+  agree modulo `c - 1` (`LinearMap.C_sub_one_dvd_projectiveCharpolyRev_smul_sub`);
 * its degree is at most any bound for the ranks of `M` at the points of `Spec R`
   (`LinearMap.natDegree_projectiveCharpolyRev_le`); on a free module its coefficient in degree
   `finrank R M` is `(-1) ^ finrank R M * det f`, so the degree is the rank exactly when
@@ -56,7 +65,17 @@ If `π : R ^ n → M` and `σ : M → R ^ n` split `M` off a free module, then
   `LinearMap.monic_reflect_projectiveCharpolyRev`); when the rank of `M` on `Spec R` is bounded by
   `d`, the reflection at `d` itself kills `f`
   (`LinearMap.aeval_reflect_projectiveCharpolyRev_eq_zero_of_rankAtStalk_le`,
-  `LinearMap.aeval_reverse_projectiveCharpolyRev_eq_zero_of_rankAtStalk_le`).
+  `LinearMap.aeval_reverse_projectiveCharpolyRev_eq_zero_of_rankAtStalk_le`);
+* **Cayley–Hamilton for the inverse**: if `g f = 1`, then `g` is a root of
+  `projectiveCharpolyRev f` itself, with no reflection
+  (`LinearMap.aeval_projectiveCharpolyRev_eq_zero_of_mul_eq_one`).
+
+The scaling, transpose and inverse statements are the linear algebra of Euler factors. For a
+Frobenius `φ` acting on a lattice `T` and the cyclotomic character value `N`, the Euler polynomial
+`det (1 - φ⁻¹ X | T^*)` on the Tate dual `T^* = Hom(T, O(1))` is
+`projectiveCharpolyRev (N⁻¹ • φ)`, since `φ⁻¹` acts on `T^*` as `N⁻¹` times the transpose of `φ`.
+It therefore differs from `det (1 - φ X | T)` by the substitution `X ↦ N⁻¹ X` and agrees with it
+modulo `N - 1`, and `N φ⁻¹` is a root of it on `T`.
 
 The last statement turns a norm into an integral equation: an element of a finite projective
 `R`-algebra is a root of a monic polynomial whose coefficients are those of the reversed
@@ -77,6 +96,8 @@ then `f` is integral over that equalizer
 ## References
 
 * O. Goldman, *Determinants in projective modules*, Nagoya Math. J. **18** (1961), 27–36.
+* K. Rubin, *Euler Systems*, Annals of Mathematics Studies **147**, Princeton University Press
+  (2000), Chapter IV, Lemma 1.2.
 * The Stacks Project, Tag 03BK.
 -/
 
@@ -190,6 +211,83 @@ theorem projectiveCharpolyRev_baseChange (A : Type*) [CommRing A] [Algebra R A]
       (Algebra.TensorProduct.basis A (Pi.basisFun R (Fin n))) _ _ hA,
     projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)) π σ h,
     ← Matrix.charpolyRev_map, ← toMatrix_baseChange, baseChange_comp, baseChange_comp]
+
+/-- The reversed characteristic polynomial of the zero endomorphism is `1`. -/
+@[simp]
+theorem projectiveCharpolyRev_zero : projectiveCharpolyRev (0 : Module.End R M) = 1 := by
+  obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
+  rw [projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)) π σ h, zero_comp,
+    comp_zero, map_zero, Matrix.charpolyRev_zero]
+
+/-- Scaling `f` by `c` rescales the variable: `det (1 - X (c f))` is `det (1 - X f)` evaluated at
+`c X`. -/
+theorem projectiveCharpolyRev_smul (c : R) (f : Module.End R M) :
+    projectiveCharpolyRev (c • f) = (projectiveCharpolyRev f).comp (C c * X) := by
+  obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
+  rw [projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)) π σ h,
+    projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)) π σ h, smul_comp,
+    comp_smul, map_smul, Matrix.charpolyRev_smul]
+
+/-- Scaling `f` by `c` multiplies the coefficient of `det (1 - X f)` in degree `i` by `c ^ i`. -/
+theorem coeff_projectiveCharpolyRev_smul (c : R) (f : Module.End R M) (i : ℕ) :
+    (projectiveCharpolyRev (c • f)).coeff i = c ^ i * (projectiveCharpolyRev f).coeff i := by
+  rw [projectiveCharpolyRev_smul, comp_C_mul_X_coeff, mul_comm]
+
+/-- The reversed characteristic polynomials of `c f` and `f` agree modulo `c - 1`; the quotient
+is `X` times the `q`-derivative at `q = c` (`Polynomial.C_sub_one_mul_X_mul_qDerivative`). -/
+theorem C_sub_one_dvd_projectiveCharpolyRev_smul_sub (c : R) (f : Module.End R M) :
+    C (c - 1) ∣ projectiveCharpolyRev (c • f) - projectiveCharpolyRev f := by
+  rw [projectiveCharpolyRev_smul, ← C_sub_one_mul_X_mul_qDerivative, mul_assoc]
+  exact dvd_mul_right _ _
+
+/-- The transpose `f.dualMap` of `f` has the same reversed characteristic polynomial as `f`. -/
+@[simp]
+theorem projectiveCharpolyRev_dualMap (f : Module.End R M) :
+    projectiveCharpolyRev f.dualMap = projectiveCharpolyRev f := by
+  obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
+  -- the transposes of the splitting `(π, σ)` of `M` split `Dual R M` off `Dual R (Fin n → R)`
+  have h' : σ.dualMap ∘ₗ π.dualMap = id := by rw [dualMap_comp_dualMap, h, dualMap_id]
+  rw [projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)).dualBasis σ.dualMap
+      π.dualMap h', projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)) π σ h,
+    dualMap_comp_dualMap, dualMap_comp_dualMap, ← comp_assoc, dualMap_def, toMatrix_transpose,
+    Matrix.charpolyRev_transpose]
+
+/-- The free case of `aeval_projectiveCharpolyRev_eq_zero_of_mul_eq_one`, by the matrix
+statement in a basis. -/
+private theorem aeval_projectiveCharpolyRev_eq_zero_of_mul_eq_one_of_free [Module.Free R M]
+    {f g : Module.End R M} (h : g * f = 1) : aeval g (projectiveCharpolyRev f) = 0 := by
+  let b := Module.Free.chooseBasis R M
+  have hT (φ : Module.End R M) : toMatrixAlgEquiv b φ = toMatrix b b φ :=
+    Matrix.ext fun i j ↦ by rw [toMatrixAlgEquiv_apply, toMatrix_apply]
+  have hmap : toMatrixAlgEquiv b (aeval g (projectiveCharpolyRev f)) =
+      aeval (toMatrixAlgEquiv b g) (projectiveCharpolyRev f) :=
+    (aeval_algHom_apply (toMatrixAlgEquiv b).toAlgHom g _).symm
+  apply (toMatrixAlgEquiv b).injective
+  rw [map_zero, hmap, hT, projectiveCharpolyRev_eq_charpolyRev b]
+  exact Matrix.aeval_charpolyRev_eq_zero_of_mul_eq_one (by rw [← toMatrix_mul, h, toMatrix_one])
+
+open scoped TensorProduct in
+/-- **Cayley–Hamilton for the inverse.** If `g f = 1`, then `g` is a root of the reversed
+characteristic polynomial `det (1 - X f)` of `f`. -/
+theorem aeval_projectiveCharpolyRev_eq_zero_of_mul_eq_one {f g : Module.End R M} (h : g * f = 1) :
+    aeval g (projectiveCharpolyRev f) = 0 := by
+  ext x
+  refine Module.eq_zero_of_localization_maximal (fun P _ ↦ Localization.AtPrime P ⊗[R] M)
+    (fun P _ ↦ TensorProduct.mk R (Localization.AtPrime P) M 1) _ fun P hP ↦ ?_
+  -- after localizing at a maximal ideal the module is free, where the free case applies
+  let A := Localization.AtPrime P
+  have : Module.Free A (A ⊗[R] M) := free_of_flat_of_isLocalRing
+  have hA : g.baseChange A * f.baseChange A = 1 := by
+    rw [Module.End.mul_eq_comp, ← baseChange_comp, ← Module.End.mul_eq_comp, h,
+      Module.End.one_eq_id, baseChange_id, Module.End.one_eq_id]
+  have hmap : (aeval g (projectiveCharpolyRev f)).baseChange A =
+      aeval (g.baseChange A) (projectiveCharpolyRev f) :=
+    (aeval_algHom_apply (Module.End.baseChangeHom R A M) g _).symm
+  have hbase : (aeval g (projectiveCharpolyRev f)).baseChange A = 0 := by
+    rw [hmap, aeval_eq_aeval_map (IsScalarTower.algebraMap_eq R A (Module.End A (A ⊗[R] M))).symm,
+      ← projectiveCharpolyRev_baseChange]
+    exact aeval_projectiveCharpolyRev_eq_zero_of_mul_eq_one_of_free hA
+  rw [TensorProduct.mk_apply, ← LinearMap.baseChange_tmul, hbase, LinearMap.zero_apply]
 
 open scoped TensorProduct in
 /-- The degree of the reversed characteristic polynomial is at most any bound for the ranks of
