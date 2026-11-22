@@ -383,7 +383,7 @@ private theorem exists_unstableFrame_eq_smul (hMS : hX.IsMorseSmale) (hf : IsMor
   have hXne : X y ≠ 0 := hX.ne_zero_of_mfderiv_ne_zero
     (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hne hy)
   have hline := hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex
-    hf hy htr
+    hX hf hy htr
   have hline1 : Module.finrank ℝ (Submodule.span ℝ
       (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet p ∩ hX.flow.stableSet q) y)) = 1 := by omega
   -- `u = Fp v` is tangent to `W^u(p)` and to `W^s(q)`, hence to their intersection, the line
@@ -396,7 +396,7 @@ private theorem exists_unstableFrame_eq_smul (hMS : hX.IsMorseSmale) (hf : IsMor
     (hX.stableNormal_eq_zero_iff hφq hy.2 u).1 (hu ▸ hv)
   have hu₃ : u ∈ Submodule.span ℝ
       (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet p ∩ hX.flow.stableSet q) y) := by
-    rw [hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr]
+    rw [hX.span_mtangentConeAt_unstableSet_inter_stableSet hX hf hy htr]
     exact ⟨hu₁, hu₂⟩
   have hline' : Submodule.span ℝ {w} = Submodule.span ℝ
       (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet p ∩ hX.flow.stableSet q) y) :=

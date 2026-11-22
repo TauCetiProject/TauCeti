@@ -33,6 +33,8 @@ conjugation action.
 
 * `TauCeti.isConj_inv_iff`: conjugacy is inherited by inverses in both directions.
 * `ConjClasses.inv_mk`: the inverse of the class of `g` is the class of `g⁻¹`.
+* `ConjClasses.conj_mem_carrier` and `ConjClasses.conj_inv_mem_carrier`: a conjugacy class is
+  closed under conjugation.
 * `TauCeti.IsRealClass`: a class containing an element conjugate to its own inverse, with
   `TauCeti.isRealClass_iff_inv_eq` identifying it with being fixed by inversion.
 * `ConjClasses.ncard_carrier_inv` and `ConjClasses.card_carrier_inv`: a conjugacy
@@ -152,6 +154,17 @@ class. -/
 theorem mem_carrier_inv_iff {C : ConjClasses G} {x : G} :
     x ∈ (C⁻¹).carrier ↔ x⁻¹ ∈ C.carrier := by
   rw [mem_carrier_iff_mk_eq, mem_carrier_iff_mk_eq, ← inv_mk, inv_eq_iff_eq_inv]
+
+/-- A conjugacy class is closed under conjugation. -/
+theorem conj_mem_carrier {C : ConjClasses G} {x : G} (hx : x ∈ C.carrier) (h : G) :
+    h * x * h⁻¹ ∈ C.carrier := by
+  rw [mem_carrier_iff_mk_eq] at hx ⊢
+  exact (mk_eq_mk_iff_isConj.2 (isConj_iff.2 ⟨h, rfl⟩)).symm.trans hx
+
+/-- A conjugacy class is closed under conjugation by an inverse. -/
+theorem conj_inv_mem_carrier {C : ConjClasses G} {x : G} (hx : x ∈ C.carrier) (h : G) :
+    h⁻¹ * x * h ∈ C.carrier := by
+  simpa using conj_mem_carrier hx h⁻¹
 
 /-- **A conjugacy class and its inverse have the same size**, inversion of the group restricting to
 a bijection between them.

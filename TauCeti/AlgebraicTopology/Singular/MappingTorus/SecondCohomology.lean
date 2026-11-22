@@ -38,7 +38,8 @@ This is the class `v` in which the line labels of the symplectic suspension `S¹
 written, in `TauCeti.Geometry.Symplectic.Manifold.Suspension.Chamber`, together with the class of
 `ds ∧ dt`. The fibre class is built from singular chains with coefficients in `ULift ℤ`; the
 homology of the mapping torus with coefficients in `ℤ` enters through the coefficient
-isomorphism `TauCeti.uliftIntHomologyIso`.
+isomorphism `TauCeti.uliftIntHomologyIso`, and the cohomology with chains in `ℤ` through the change
+of chain coefficients `TopCat.singularCohomologyChainCoefficientMap` along `TauCeti.uliftIntIso`.
 
 ## Main results
 
@@ -46,6 +47,10 @@ isomorphism `TauCeti.uliftIntHomologyIso`.
   `w ∈ H²(Y_φ; ℤ)` differs from `⟨w, i_*[F]⟩ • v` by an element of finite order.
 * `TauCeti.MappingTorus.isOfFinAddOrder_iff_evalFundamentalClass_eq_zero`: a class of
   `H²(Y_φ; ℤ)` has finite order exactly when it pairs to zero with the fibre class.
+* `TauCeti.MappingTorus.isOfFinAddOrder_sub_evalFundamentalClass_chainCoefficientMap_smul`,
+  `TauCeti.MappingTorus.eq_zero_of_isOfFinAddOrder_smul_of_evalFundamentalClass_eq_one`: the same
+  statements for the second cohomology with chains in `ℤ`, read through the change of chain
+  coefficients `TopCat.singularCohomologyChainCoefficientMap` along `TauCeti.uliftIntIso`.
 
 ## References
 
@@ -59,7 +64,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory AlgebraicTopology HomologicalComplex Module
+open CategoryTheory AlgebraicTopology HomologicalComplex Module MonoidalCategory
 
 namespace TauCeti.MappingTorus
 
@@ -168,5 +173,59 @@ theorem isOfFinAddOrder_iff_evalFundamentalClass_eq_zero
   · obtain ⟨v, hv⟩ := surjective_evalFundamentalClass_incl hφ
       (injective_id_sub_homologyMap_monodromyChainMap_ulift φ hdet) (ModuleCat.of ℤ ℤ) 1
     simpa [hw] using isOfFinAddOrder_sub_evalFundamentalClass_smul φ o hn hφ hdet hv w
+
+/-! ### The second cohomology with integral chains -/
+
+/-- **The second cohomology of a surface mapping torus modulo torsion**, for singular chains with
+coefficients in `ℤ`. Let `φ` be an orientation-preserving homeomorphism of a closed connected
+oriented surface `F` with `det (1 - φ_*) ≠ 0` on `H₁(F; ℤ)`, and let `v ∈ H²(Y_φ; ℤ)` pair to one
+with the fibre class `i_*[F]`, read through the chains with coefficients in `ULift ℤ` on which the
+fibre class is built. Then every class `b ∈ H²(Y_φ; ℤ)` differs from `⟨b, i_*[F]⟩ • v` by an
+element of finite order. -/
+theorem isOfFinAddOrder_sub_evalFundamentalClass_chainCoefficientMap_smul
+    (hφ : o.mapFundamentalClass hn ⟨φ, φ.continuous⟩ = o.fundamentalClass hn)
+    (hdet : (LinearMap.id -
+      (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0)
+    {v : (TopCat.of (MappingTorus φ)).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
+      (ModuleCat.of ℤ ℤ) 2}
+    (hv : o.evalFundamentalClass hn (ModuleCat.of ℤ ℤ) (incl φ)
+      ((TopCat.of (MappingTorus φ)).singularCohomologyChainCoefficientMap ℤ (ModuleCat.of ℤ ℤ)
+        uliftIntIso.hom 2 v) = 1)
+    (b : (TopCat.of (MappingTorus φ)).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
+      (ModuleCat.of ℤ ℤ) 2) :
+    IsOfFinAddOrder (b - o.evalFundamentalClass hn (ModuleCat.of ℤ ℤ) (incl φ)
+      ((TopCat.of (MappingTorus φ)).singularCohomologyChainCoefficientMap ℤ (ModuleCat.of ℤ ℤ)
+        uliftIntIso.hom 2 b) • v) := by
+  -- Change the chain coefficients to `ULift ℤ`, an isomorphism, where the statement is known.
+  let e := ((TopCat.of (MappingTorus φ)).singularCohomologyChainCoefficientMap ℤ
+    (ModuleCat.of ℤ ℤ) uliftIntIso.hom 2).hom.toAddMonoidHom
+  have he : Function.Injective e := (ModuleCat.mono_iff_injective _).1 (by
+    rw [← TopCat.singularCohomologyChainCoefficientIso_hom]
+    infer_instance)
+  rw [← he.isOfFinAddOrder_iff, map_sub, map_zsmul]
+  -- `e` is the change of chain coefficients as an additive map, so `e b` and `e v` are the classes
+  -- `T b` and `T v` of the statement and of `hv`, with `T` that change of coefficients.
+  exact isOfFinAddOrder_sub_evalFundamentalClass_smul φ o hn hφ hdet hv (e b)
+
+/-- **A class pairing to one with the fibre class has infinite order**: under the hypotheses of
+`TauCeti.MappingTorus.isOfFinAddOrder_sub_evalFundamentalClass_chainCoefficientMap_smul`, no
+nonzero multiple of `v` has finite order. -/
+theorem eq_zero_of_isOfFinAddOrder_smul_of_evalFundamentalClass_eq_one
+    (hφ : o.mapFundamentalClass hn ⟨φ, φ.continuous⟩ = o.fundamentalClass hn)
+    (hdet : (LinearMap.id -
+      (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0)
+    {v : (TopCat.of (MappingTorus φ)).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
+      (ModuleCat.of ℤ ℤ) 2}
+    (hv : o.evalFundamentalClass hn (ModuleCat.of ℤ ℤ) (incl φ)
+      ((TopCat.of (MappingTorus φ)).singularCohomologyChainCoefficientMap ℤ (ModuleCat.of ℤ ℤ)
+        uliftIntIso.hom 2 v) = 1) {m : ℤ} (hm : IsOfFinAddOrder (m • v)) : m = 0 := by
+  let T := ConcreteCategory.hom ((TopCat.of (MappingTorus φ)).singularCohomologyChainCoefficientMap
+    ℤ (ModuleCat.of ℤ ℤ) uliftIntIso.hom 2)
+  have hT : IsOfFinAddOrder (T (m • v)) := (AddMonoidHom.ofClass T).isOfFinAddOrder hm
+  rw [map_zsmul] at hT
+  have h := (isOfFinAddOrder_iff_evalFundamentalClass_eq_zero φ o hn hφ hdet _).1 hT
+  have h' : o.evalFundamentalClass hn (ModuleCat.of ℤ ℤ) (incl φ) (m • T v) = m := by
+    rw [map_zsmul, hv, smul_eq_mul, mul_one]
+  exact h'.symm.trans h
 
 end TauCeti.MappingTorus
