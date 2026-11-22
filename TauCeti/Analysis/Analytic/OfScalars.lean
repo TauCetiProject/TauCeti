@@ -19,11 +19,13 @@ block. It also evaluates the change-of-origin series of a scalar series on const
 uses this to express the iterated derivatives of a scalar power series over a complete nontrivially
 normed field, at any point of its ball of convergence, as the termwise differentiated series; at
 zero they recover the coefficients. Termwise differentiation of a scalar series represents the
-derivative on the same ball, and gives the Euler operator `y * f' y` as `∑ n * c n * y ^ n`. It
+derivative on the same ball, and gives the Euler operator `y * f' y` as `∑ n * c n * y ^ n`, an
+absolutely convergent series, and `y ^ 2 * f'' y` as `∑ n * (n - 1) * c n * y ^ n`. It
 also computes the scalar series of `z ↦ f (z ^ m)` on a ball of radius at most `1` from that of
-`f`, in any normed algebra with `‖1‖ = 1`. Over a densely normed field, a scalar series whose sum
-has no zero in a disk about the origin converges on that disk, because the sum is `0` wherever the
-series diverges.
+`f`, in any normed algebra with `‖1‖ = 1`. Over a densely normed field, a scalar series that
+converges at every nonzero point of a disk about the origin has radius at least that of the disk;
+in particular a scalar series whose sum has no zero in such a disk converges on it, because the
+sum is `0` wherever the series diverges.
 
 In any normed `𝕜`-algebra `A` with summable geometric series (not necessarily commutative), the
 higher geometric series `∑ₙ C(n + k, k) xⁿ` has convergence radius at least `1`
@@ -188,6 +190,41 @@ theorem _root_.HasFPowerSeriesOnBall.hasSum_mul_deriv_ofScalars {𝕂 : Type*}
   refine (hasSum_nat_add_iff' 1).mp ?_
   simpa [ofScalars_apply_eq, pow_succ, mul_comm, mul_left_comm, mul_assoc] using h
 
+/-- **The second Euler operator on a scalar power series.** If `f` is the sum of the scalar power
+series `∑ c n * z ^ n` on the ball of radius `r` about `0`, then for `y` in that ball,
+`y ^ 2 * f'' y = ∑ n * (n - 1) * c n * y ^ n`. -/
+theorem _root_.HasFPowerSeriesOnBall.hasSum_sq_mul_deriv_deriv_ofScalars {𝕂 : Type*}
+    [NontriviallyNormedField 𝕂] [CompleteSpace 𝕂] {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r) {y : 𝕂} (hy : ‖y‖ₑ < r) :
+    HasSum (fun n : ℕ ↦ n * (n - 1) * c n * y ^ n) (y ^ 2 * deriv (deriv f) y) := by
+  have h := (hf.deriv_ofScalars.deriv_ofScalars.hasSum (mem_eball_zero_iff.mpr hy)).mul_left
+    (y ^ 2)
+  -- the terms of index `0` and `1` vanish, and the others are those of `h` shifted by two
+  refine (hasSum_nat_add_iff' 2).mp ?_
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, Nat.cast_zero, Nat.cast_one, zero_mul,
+    sub_self, mul_zero, zero_add, sub_zero]
+  convert h using 1
+  · ext n
+    simp only [ofScalars_apply_eq, smul_eq_mul]
+    push_cast
+    ring
+  · simp
+
+/-- If `f` is the sum of the scalar power series `∑ c n * z ^ n` on the ball of radius `r`
+about `0`, then the series `∑ n * c n * y ^ n` of the Euler operator converges absolutely at every
+`y` in that ball. -/
+theorem _root_.HasFPowerSeriesOnBall.summable_norm_natCast_mul_ofScalars {𝕂 : Type*}
+    [NontriviallyNormedField 𝕂] [CompleteSpace 𝕂] {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r) {y : 𝕂} (hy : ‖y‖ₑ < r) :
+    Summable fun n : ℕ ↦ ‖(n : 𝕂) * c n * y ^ n‖ := by
+  have h := ((ofScalars 𝕂 fun n : ℕ ↦ (n + 1) * c (n + 1)).summable_norm_apply
+    (mem_eball_zero_iff.mpr (hy.trans_le hf.deriv_ofScalars.r_le))).mul_left ‖y‖
+  -- the term of index `0` vanishes, and the others are `‖y‖` times those of the derivative series
+  refine (summable_nat_add_iff 1).mp (h.congr fun n ↦ ?_)
+  simp only [ofScalars_apply_eq, smul_eq_mul, norm_mul, norm_pow]
+  push_cast
+  ring
+
 /-- **Substituting `z ^ m` into a scalar power series.** Let `A` be a normed algebra over `𝕂`
 with `‖1‖ = 1`, for instance `𝕂` itself. If `f` is the sum of the scalar power series
 `∑ c k • z ^ k` on the ball of radius `r ≤ 1` about `0` in `A`, then for `0 < m` the function
@@ -229,22 +266,32 @@ theorem _root_.HasFPowerSeriesOnBall.comp_pow_ofScalars {𝕂 A : Type*} [Nontri
       · exact zero_smul _ _
     · simp [Nat.mul_div_cancel_left _ hm, ← pow_mul]
 
+/-- **Convergence on a punctured disk bounds the radius.** Over a densely normed field, a scalar
+series that converges at every nonzero point of a disk about the origin has radius of convergence
+at least the radius of that disk. -/
+theorem le_radius_ofScalars_of_summable {𝕜 : Type*} [DenselyNormedField 𝕜] (a : ℕ → 𝕜)
+    {r : ℝ≥0∞} (h : ∀ z : 𝕜, z ≠ 0 → ‖z‖ₑ < r → Summable fun n : ℕ ↦ a n * z ^ n) :
+    r ≤ (ofScalars 𝕜 a).radius := by
+  refine ENNReal.le_of_forall_nnreal_lt fun t ht ↦ ?_
+  obtain ⟨u, htu, hur⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp ht
+  obtain ⟨z, htz, hzu⟩ := NormedField.exists_lt_nnNorm_lt 𝕜 (ENNReal.coe_lt_coe.mp htu)
+  have hz0 : z ≠ 0 := by
+    rintro rfl
+    simp at htz
+  have hsum := h z hz0 ((eNorm_lt_coe.mpr hzu).trans hur)
+  refine (ENNReal.coe_le_coe.mpr htz.le).trans (le_radius_of_tendsto _ (l := 0) ?_)
+  simpa [ofScalars_norm] using hsum.tendsto_atTop_zero.norm
+
 /-- **Zero-freeness of the analytic sum forces the disk into the disk of convergence.** Over a
 densely normed field, if the sum of a scalar series, which is `0` where the series does not
 converge, has no zero in a disk about the origin, then that disk lies in the disk of convergence. -/
 theorem le_radius_ofScalars_of_ofScalarsSum_ne_zero {𝕜 : Type*} [DenselyNormedField 𝕜]
     (a : ℕ → 𝕜) {r : ℝ≥0∞} (hne : ∀ z : 𝕜, ‖z‖ₑ < r → ofScalarsSum (E := 𝕜) a z ≠ 0) :
     r ≤ (ofScalars 𝕜 a).radius := by
-  refine ENNReal.le_of_forall_nnreal_lt fun t ht ↦ ?_
-  obtain ⟨u, htu, hur⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp ht
-  obtain ⟨z, htz, hzu⟩ := NormedField.exists_lt_nnNorm_lt 𝕜 (ENNReal.coe_lt_coe.mp htu)
-  have hz : ‖z‖ₑ < r := (eNorm_lt_coe.mpr hzu).trans hur
-  have hsum : Summable fun n : ℕ ↦ a n * z ^ n := by
-    by_contra h
-    refine hne z hz ?_
-    simpa only [ofScalarsSum_eq_tsum, smul_eq_mul] using tsum_eq_zero_of_not_summable h
-  refine (ENNReal.coe_le_coe.mpr htz.le).trans (le_radius_of_tendsto _ (l := 0) ?_)
-  simpa [ofScalars_norm] using hsum.tendsto_atTop_zero.norm
+  refine le_radius_ofScalars_of_summable a fun z _ hz ↦ ?_
+  by_contra h
+  refine hne z hz ?_
+  simpa only [ofScalarsSum_eq_tsum, smul_eq_mul] using tsum_eq_zero_of_not_summable h
 
 end FormalMultilinearSeries
 
