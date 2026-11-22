@@ -9,7 +9,10 @@ public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
 public import TauCeti.RingTheory.Polynomial.Factors
 import Mathlib.GroupTheory.GroupAction.Transitive
+import Mathlib.GroupTheory.Perm.Fin
+import TauCeti.GroupTheory.Perm.Partition
 import TauCeti.GroupTheory.Perm.PermCongr
+import TauCeti.GroupTheory.Perm.Recognition
 
 /-!
 # Galois orbits on the roots of a polynomial
@@ -54,6 +57,9 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
   `E`, if the automorphism group `Gal(E/F)` is transitive on the roots, then so is `p.Gal`.
 * `TauCeti.isPretransitive_algEquiv_rootSet_iff_gal`: in a normal splitting extension `E`, the
   automorphism group `Gal(E/F)` is transitive on the roots exactly when `p.Gal` is.
+* `TauCeti.exists_gal_apply_rootSet_numbering_eq_finRotate`: in a normal splitting extension,
+  the roots of a separable irreducible polynomial of prime degree `n` can be numbered so that some
+  automorphism acts on them as the rotation `finRotate n`.
 * `TauCeti.irreducible_map_iff_isPretransitive_fixingSubgroup`: in a normal splitting extension
   `E`, a separable `p` stays irreducible over an intermediate field `K` exactly when the
   automorphisms fixing `K` act transitively on the roots.
@@ -285,6 +291,31 @@ theorem isPretransitive_algEquiv_rootSet_iff_gal [Normal F E] :
   obtain ⟨g, rfl⟩ := h.exists_smul_eq x y
   obtain ⟨σ, rfl⟩ := Gal.restrict_surjective p E g
   exact ⟨σ, Subtype.ext <| by simp⟩
+
+/-- **A Galois automorphism rotating the roots of a prime-degree polynomial.** Let `E` be a normal
+extension of `F` in which a separable irreducible polynomial `p` of prime degree `n` splits. Then
+the roots of `p` in `E` can be numbered by `Fin n` so that some automorphism of `E` over `F` acts on
+them as the rotation `finRotate n`, that is `a ↦ a + 1`: the transitive Galois image contains a
+full cycle by Cauchy's theorem, and a full cycle is conjugate to the rotation. -/
+theorem exists_gal_apply_rootSet_numbering_eq_finRotate [Normal F E] (hsep : p.Separable)
+    (hirr : Irreducible p) {n : ℕ} (hdeg : p.natDegree = n) (hn : n.Prime) :
+    ∃ (e : p.rootSet E ≃ Fin n) (g : E ≃ₐ[F] E), ∀ i, g (e.symm i) = e.symm (finRotate n i) := by
+  classical
+  have hcard : Fintype.card (p.rootSet E) = n := hdeg ▸ card_rootSet_eq_natDegree hsep Fact.out
+  -- A transitive group of prime degree contains a full cycle `c`, which lifts to `Gal(E/F)`.
+  obtain ⟨c, hc, hcyc, hsupp⟩ := exists_isCycle_mem_of_isPretransitive_of_prime_card
+    (isPretransitive_range_galActionHom E hirr) (hcard ▸ hn)
+  obtain ⟨σ, rfl⟩ := MonoidHom.mem_range.mp hc
+  obtain ⟨g, rfl⟩ := Gal.restrict_surjective p E σ
+  -- Read through any numbering, `c` has cycle type `{n}`, so it is conjugate to the rotation.
+  obtain ⟨e₀⟩ : Nonempty (p.rootSet E ≃ Fin n) := ⟨Fintype.equivFinOfCardEq hcard⟩
+  obtain ⟨τ, hτ⟩ := isConj_iff.mp <| (Equiv.Perm.isConj_iff_cycleType_eq
+      (σ := e₀.permCongr (Gal.galActionHom p E (Gal.restrict p E g))) (τ := finRotate n)).mpr <| by
+    rw [Equiv.Perm.cycleType_permCongr, hcyc.cycleType, hsupp, Finset.card_univ, hcard,
+      cycleType_finRotate_of_le hn.two_le]
+  refine ⟨e₀.trans τ, g, fun i => ?_⟩
+  rw [← hτ]
+  simp [Equiv.permCongr_apply, Equiv.Perm.inv_def, Gal.galActionHom_restrict]
 
 /-- **Irreducibility over an intermediate field.** Let `E` be a normal extension of `F` in which a
 separable polynomial `p` of positive degree splits, and let `K` be an intermediate field. Then `p`

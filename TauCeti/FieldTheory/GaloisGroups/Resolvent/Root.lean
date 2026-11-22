@@ -125,13 +125,9 @@ private theorem apply_eval₂_rootEnum (e : f.rootSet E ≃ Fin n) (ϕ : E ≃�
     (Ψ : MvPolynomial (Fin n) ℤ) :
     ϕ (MvPolynomial.eval₂ (Int.castRingHom E) (rootEnum e) Ψ)
       = MvPolynomial.eval₂ (Int.castRingHom E) (rootEnum e) (MvPolynomial.rename
-          ⇑(e.permCongrHom (Gal.galActionHom f E (Gal.restrict f E ϕ))) Ψ) := by
-  have h := MvPolynomial.hom_eval₂ Ψ (Int.castRingHom E) (ϕ : E →+* E) (rootEnum e)
-  have hcast : (ϕ : E →+* E).comp (Int.castRingHom E) = Int.castRingHom E :=
-    RingHom.ext_int _ _
-  rw [hcast] at h
-  rw [MvPolynomial.eval₂_rename, rootEnum_comp_permCongrHom, Function.comp_def]
-  exact h
+          ⇑(e.permCongrHom (Gal.galActionHom f E (Gal.restrict f E ϕ))) Ψ) :=
+  MvPolynomial.apply_eval₂_intCastRingHom_of_comp_eq (ϕ : E →+* E)
+    (rootEnum_comp_permCongrHom e ϕ).symm Ψ
 
 -- An element of the transported Galois image comes from an automorphism of `E` over `F`.
 private theorem exists_eq_of_mem_image [Normal F E] (e : f.rootSet E ≃ Fin n)

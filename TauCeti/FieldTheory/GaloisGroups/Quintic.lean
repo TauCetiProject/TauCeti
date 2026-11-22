@@ -9,7 +9,6 @@ public import TauCeti.FieldTheory.GaloisGroups.Label
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Quintic.Basic
 
 import TauCeti.FieldTheory.GaloisGroups.Resolvent.Quintic.Solvable
-import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Cyclic
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Order
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Solvable
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Order
@@ -53,9 +52,8 @@ converse of each row.
 ## Main results
 
 * `TauCeti.existsUnique_hasGaloisLabel_five`: an irreducible separable quintic carries exactly one
-  label, `TauCeti.exists_rootSet_equiv_fin_five_apply_symm_eq_finRotate`: its Galois group
-  contains a five-cycle, and `TauCeti.hasGaloisLabel_five_iff_natCard_gal`: the order of its
-  Galois group recognizes that label.
+  label, and `TauCeti.hasGaloisLabel_five_iff_natCard_gal`: the order of its Galois group
+  recognizes that label.
 * `TauCeti.hasGaloisLabel_five_four_of_surjective_galActionHom`: a quintic whose Galois group
   acts on its roots by every permutation has the label `5T5`.
 * `TauCeti.HasGaloisLabel.isSolvable_iff_five`: the Galois group of a quintic is solvable
@@ -97,31 +95,6 @@ theorem existsUnique_hasGaloisLabel_five (hsep : f.Separable) (hirr : Irreducibl
     (hdeg : f.natDegree = 5) : ∃! j : TransitiveGroupIndex 5, HasGaloisLabel f j :=
   existsUnique_hasGaloisLabel hsep hirr hdeg (fun G _ => exists_transitiveGroupLabel_five G)
     fun h h' => h.eq_of_five h'
-
-/-- **The Galois group of an irreducible separable quintic contains a five-cycle.** The roots of
-such a quintic in its splitting field can be numbered so that some element of the Galois group
-acts on them as the rotation `a ↦ a + 1`. -/
-theorem exists_rootSet_equiv_fin_five_apply_symm_eq_finRotate (hsep : f.Separable)
-    (hirr : Irreducible f) (hdeg : f.natDegree = 5) :
-    ∃ (e : f.rootSet f.SplittingField ≃ Fin 5) (g : f.SplittingField ≃ₐ[F] f.SplittingField),
-      ∀ i, g (e.symm i) = e.symm (finRotate 5 i) := by
-  have : Fact ((f.map (algebraMap F f.SplittingField)).Splits) := ⟨SplittingField.splits f⟩
-  obtain ⟨j, hj, -⟩ := existsUnique_hasGaloisLabel_five hsep hirr hdeg
-  obtain ⟨e⟩ := nonempty_rootSet_equiv_fin hsep (SplittingField.splits f)
-  obtain ⟨τ, hτ⟩ :=
-    (transitiveGroupLabel_iff _ _).1 (hj.transitiveGroupLabel (e.trans (finCongr hdeg)))
-  -- Read through the numbering `e` and conjugated by `τ`, the Galois image is the reference
-  -- subgroup of the label, which contains the rotation.
-  have hmem := finRotate_mem_referenceSubgroup_five j
-  rw [← hτ] at hmem
-  obtain ⟨_, ⟨_, ⟨g, rfl⟩, rfl⟩, hg⟩ := hmem
-  obtain ⟨g, rfl⟩ := Gal.restrict_surjective f f.SplittingField g
-  refine ⟨(e.trans (finCongr hdeg)).trans τ, g, fun i => ?_⟩
-  have := congrArg (fun σ : Equiv.Perm (Fin 5) => σ i) hg
-  simp only [MulEquiv.coe_toMonoidHom, MulAut.conj_apply, Equiv.permCongrHom_coe] at this
-  rw [← Gal.galActionHom_restrict]
-  refine congrArg Subtype.val ((Equiv.eq_symm_apply _).2 ?_)
-  simpa [Equiv.Perm.mul_apply, Equiv.permCongr_apply, Equiv.Perm.inv_def] using this
 
 /-- **The order of the Galois group recognizes the label of a quintic.** An irreducible separable
 quintic has the label `5Tj` exactly when its Galois group has the order of the reference subgroup
