@@ -33,8 +33,9 @@ a `⋆`-homomorphism `hι.lift ξ hξ : C →⋆ₙₐ[ℂ] D`.
   `const`, `of_nonUnitalStarSubalgebra`, and `of_starSubalgebra`, and extensionality principles
   `hom_ext` and `hom_ext_of_approx`.
 * `TauCeti.IsSeqColimitCocone.lift`: universal lift `C →⋆ₙₐ[ℂ] D` of any compatible cocone `ξ`,
-  characterized by `lift_apply`, `lift_comp`, and `lift_unique`, and the canonical comparison
-  `⋆`-isomorphism `IsSeqColimitCocone.equiv` between two colimit realizations.
+  characterized by `lift_apply`, `lift_comp`, `lift_unique`, `lift_self`, and `comp_lift`, and
+  the canonical comparison `⋆`-isomorphism `IsSeqColimitCocone.equiv` between two colimit
+  realizations.
 * `TauCeti.CStarInductiveLimit.isSeqColimitCocone_of`: `CStarInductiveLimit.of` for the system
   `seqTransHom α` forms a sequential colimit cocone.
 * `TauCeti.CStarInductiveLimit.isSeqColimitCocone_ofStarAlgHom`: `CStarInductiveLimit.of` for the
@@ -334,6 +335,20 @@ theorem lift_unique {D : Type*} [NonUnitalCStarAlgebra D] (hι : IsSeqColimitCoc
     {Φ : C →⋆ₙₐ[ℂ] D} (hΦ : ∀ n a, Φ (ι n a) = ξ n a) :
     Φ = hι.lift ξ hξ :=
   hι.hom_ext fun n a ↦ (hΦ n a).trans (hι.lift_apply ξ hξ n a).symm
+
+/-- Lifting a sequential colimit cocone's own cocone maps yields the identity. -/
+@[simp]
+theorem lift_self (hι : IsSeqColimitCocone α ι) :
+    hι.lift ι hι.comp_eq = .id ℂ C :=
+  (hι.lift_unique hι.comp_eq fun _ _ ↦ rfl).symm
+
+/-- Postcomposing `hι.lift ξ hξ` with `Ψ` equals the lift of the postcomposed cocone. -/
+theorem comp_lift {D E : Type*} [NonUnitalCStarAlgebra D] [NonUnitalCStarAlgebra E]
+    (hι : IsSeqColimitCocone α ι) (ξ : ∀ n, A n →⋆ₙₐ[ℂ] D)
+    (hξ : ∀ n, (ξ (n + 1)).comp (α n) = ξ n) (Ψ : D →⋆ₙₐ[ℂ] E) :
+    Ψ.comp (hι.lift ξ hξ) = hι.lift (fun n ↦ Ψ.comp (ξ n)) (fun n ↦ by
+      rw [NonUnitalStarAlgHom.comp_assoc, hξ n]) :=
+  hι.lift_unique _ fun n a ↦ by simp
 
 /-- Canonical `⋆`-isomorphism between two sequential colimit realizations of the same system. -/
 noncomputable def equiv {D : Type*} [NonUnitalCStarAlgebra D] {ι₂ : ∀ n, A n →⋆ₙₐ[ℂ] D}

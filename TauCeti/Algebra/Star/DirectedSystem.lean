@@ -26,9 +26,10 @@ step (`seqTransHom_mem`).
   `A m →⋆ₐ[R] A n` for `m ≤ n`.
 * `TauCeti.directedSystem_seqTransStarAlgHom`: `DirectedSystem` instance on `A` given by
   `seqTransStarAlgHom α`.
-* `TauCeti.comp_seqTransHom_of_comp_eq`: propagation of step-compatible cocones along
-  `seqTransHom`.
-* `TauCeti.seqTransHom_mem`: propagation of step-invariant subsets `F n ⊆ A n` along `seqTransHom`.
+* `TauCeti.comp_seqTransHom_of_comp_eq` and `TauCeti.comp_seqTransStarAlgHom_of_comp_eq`:
+  propagation of step-compatible cocones along `seqTransHom` and `seqTransStarAlgHom`.
+* `TauCeti.seqTransHom_mem` and `TauCeti.seqTransStarAlgHom_mem`: propagation of step-invariant
+  subsets `F n ⊆ A n` along `seqTransHom` and `seqTransStarAlgHom`.
 -/
 
 public section
@@ -147,6 +148,15 @@ theorem seqTransHom_mem {α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)} {F : ∀ n, 
     rw [seqTransHom_succ α hmk]
     exact hF k _ ih
 
+/-- Transition maps of a constant sequential system with identity step maps are the identity. -/
+@[simp]
+theorem seqTransHom_id {B : Type*} [NonUnitalNonAssocSemiring B] [DistribMulAction R B] [Star B]
+    {m n : ℕ} (h : m ≤ n) :
+    seqTransHom (A := fun _ ↦ B) (fun _ ↦ .id R B) h = .id R B := by
+  induction n, h using Nat.le_induction with
+  | base => exact seqTransHom_self _ _
+  | succ k hmk ih => rw [seqTransHom_succ _ hmk, ih, NonUnitalStarAlgHom.id_comp]
+
 end NonUnital
 
 section Unital
@@ -249,6 +259,40 @@ instance directedSystem_seqTransStarAlgHom (α : ∀ n, A n →⋆ₐ[R] A (n + 
     DirectedSystem (F := A) (fun _ _ h ↦ ⇑(seqTransStarAlgHom α h)) where
   map_self _ a := by simp
   map_map _ _ _ hij hjk a := seqTransStarAlgHom_comp_apply α hij hjk a
+
+/-- If a family of unital `⋆`-homomorphisms `ξ n : A n →⋆ₐ[R] B` is compatible with each step
+map `α n`, then it is compatible with all composite transition maps `seqTransStarAlgHom α h`. -/
+theorem comp_seqTransStarAlgHom_of_comp_eq {B : Type*} [Semiring B] [Algebra R B] [Star B]
+    {α : ∀ n, A n →⋆ₐ[R] A (n + 1)} {ξ : ∀ n, A n →⋆ₐ[R] B}
+    (hξ : ∀ n, (ξ (n + 1)).comp (α n) = ξ n) {m n : ℕ} (h : m ≤ n) :
+    (ξ n).comp (seqTransStarAlgHom α h) = ξ m := by
+  have hξ' (k : ℕ) :
+      ((ξ (k + 1)).toNonUnitalStarAlgHom).comp ((α k).toNonUnitalStarAlgHom) =
+        (ξ k).toNonUnitalStarAlgHom := by
+    ext x
+    exact DFunLike.congr_fun (hξ k) x
+  ext a
+  simpa only [StarAlgHom.comp_apply, ← StarAlgHom.coe_toNonUnitalStarAlgHom,
+    toNonUnitalStarAlgHom_seqTransStarAlgHom] using
+    comp_seqTransHom_apply_of_comp_eq (R := R) (B := B)
+      (α := fun k ↦ (α k).toNonUnitalStarAlgHom) (ξ := fun k ↦ (ξ k).toNonUnitalStarAlgHom) hξ' h a
+
+/-- Elementwise form of `comp_seqTransStarAlgHom_of_comp_eq`: a step-compatible family of unital
+`⋆`-homomorphisms is invariant along composite transition maps `seqTransStarAlgHom α h`. -/
+theorem comp_seqTransStarAlgHom_apply_of_comp_eq {B : Type*} [Semiring B] [Algebra R B] [Star B]
+    {α : ∀ n, A n →⋆ₐ[R] A (n + 1)} {ξ : ∀ n, A n →⋆ₐ[R] B}
+    (hξ : ∀ n, (ξ (n + 1)).comp (α n) = ξ n) {m n : ℕ} (h : m ≤ n) (a : A m) :
+    ξ n (seqTransStarAlgHom α h a) = ξ m a :=
+  DFunLike.congr_fun (comp_seqTransStarAlgHom_of_comp_eq hξ h) a
+
+/-- If a family of subsets `F n ⊆ A n` is preserved by each unital step map `α n`, then it is
+preserved by all composite transition maps `seqTransStarAlgHom α h`. -/
+theorem seqTransStarAlgHom_mem {α : ∀ n, A n →⋆ₐ[R] A (n + 1)} {F : ∀ n, Set (A n)}
+    (hF : ∀ n, ∀ a ∈ F n, α n a ∈ F (n + 1)) {m n : ℕ} (h : m ≤ n) {a : A m} (ha : a ∈ F m) :
+    seqTransStarAlgHom α h a ∈ F n := by
+  simpa only [← StarAlgHom.coe_toNonUnitalStarAlgHom,
+    toNonUnitalStarAlgHom_seqTransStarAlgHom] using
+    seqTransHom_mem (R := R) (α := fun k ↦ (α k).toNonUnitalStarAlgHom) hF h ha
 
 end Unital
 
