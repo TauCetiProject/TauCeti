@@ -57,14 +57,18 @@ def toFundamentalGroupoid (C : Type u) [Category.{v} C] :
     (SSet.FundamentalGroupoid.homMk_id _)
   map_comp f g := ((nonempty_compStruct_iff f g (f ≫ g)).2 rfl).some.homMk_comp.symm
 
+/-- Object equality underlying `toFundamentalGroupoidNatIso F`. -/
+lemma toFundamentalGroupoidNatIso_obj {D : Type u} [Category.{v} D] (F : C ⥤ D) (X : C) :
+    (F ⋙ toFundamentalGroupoid D).obj X =
+      (toFundamentalGroupoid C ⋙ SSet.mapFundamentalGroupoid (nerveMap F)).obj X :=
+  congrArg (SSet.FundamentalGroupoid.mk (X := nerve D)) (nerveMap_app_mk₀ F X).symm
+
 /-- Naturality isomorphism comparing `nerve.toFundamentalGroupoid` along `F : C ⥤ D` with
 `SSet.mapFundamentalGroupoid (nerveMap F)`. -/
 def toFundamentalGroupoidNatIso {D : Type u} [Category.{v} D] (F : C ⥤ D) :
     F ⋙ toFundamentalGroupoid D ≅
       toFundamentalGroupoid C ⋙ SSet.mapFundamentalGroupoid (nerveMap F) :=
-  NatIso.ofComponents
-    (fun X ↦ eqToIso (congrArg (SSet.FundamentalGroupoid.mk (X := nerve D))
-      (nerveMap_app_mk₀ F X).symm))
+  NatIso.ofComponents (fun X ↦ eqToIso (toFundamentalGroupoidNatIso_obj F X))
     fun f ↦
       (SSet.FundamentalGroupoid.homMk_comp_eqToHom (edgeMk (F.map f)) ((edgeMk f).map (nerveMap F))
         (nerveMap_app_mk₁ F f).symm).trans
@@ -73,18 +77,14 @@ def toFundamentalGroupoidNatIso {D : Type u} [Category.{v} D] (F : C ⥤ D) :
 
 @[simp] lemma toFundamentalGroupoidNatIso_hom_app {D : Type u} [Category.{v} D] (F : C ⥤ D)
     (X : C) :
-    (toFundamentalGroupoidNatIso F).hom.app X =
-      eqToHom (by
-        dsimp only [Functor.comp_obj, toFundamentalGroupoid_obj, SSet.mapFundamentalGroupoid_obj_mk]
-        exact congrArg (SSet.FundamentalGroupoid.mk (X := nerve D))
-          (nerveMap_app_mk₀ F X).symm) := (rfl)
+    (toFundamentalGroupoidNatIso F).hom.app X = eqToHom (toFundamentalGroupoidNatIso_obj F X) :=
+  (rfl)
 
 @[simp] lemma toFundamentalGroupoidNatIso_inv_app {D : Type u} [Category.{v} D] (F : C ⥤ D)
     (X : C) :
     (toFundamentalGroupoidNatIso F).inv.app X =
-      eqToHom (by
-        dsimp only [Functor.comp_obj, toFundamentalGroupoid_obj, SSet.mapFundamentalGroupoid_obj_mk]
-        exact congrArg (SSet.FundamentalGroupoid.mk (X := nerve D)) (nerveMap_app_mk₀ F X)) := (rfl)
+      eqToHom (toFundamentalGroupoidNatIso_obj F X).symm :=
+  (rfl)
 
 private lemma asSmallIso_inv_app_ulift_nerveEquiv_symm (C : Type u) [Category.{v} C] (X : C) :
     (asSmallIso.{w} C).inv.app (op ⦋0⦌)
@@ -93,15 +93,21 @@ private lemma asSmallIso_inv_app_ulift_nerveEquiv_symm (C : Type u) [Category.{v
   rw [← objEquiv_symm_eq (nerveEquiv.symm X), asSmallIso_inv_app, Equiv.symm_apply_apply,
     Equiv.apply_symm_apply, Functor.mapComposableArrows_obj_nerveEquiv_symm, objEquiv_symm_eq]
 
+/-- Object equality underlying `toFundamentalGroupoidAsSmallIso C`. -/
+lemma toFundamentalGroupoidAsSmallIso_obj (C : Type u) [Category.{v} C] (X : C) :
+    ((AsSmall.up : C ⥤ AsSmall.{w} C) ⋙ toFundamentalGroupoid (AsSmall.{w} C)).obj X =
+      (toFundamentalGroupoid C ⋙ SSet.uliftFundamentalGroupoid.{w} (nerve C) ⋙
+        SSet.mapFundamentalGroupoid (asSmallIso.{w} C).inv).obj X :=
+  congrArg (SSet.FundamentalGroupoid.mk (X := nerve (AsSmall.{w} C)))
+    (asSmallIso_inv_app_ulift_nerveEquiv_symm.{w} C X).symm
+
 /-- Compatibility isomorphism comparing `nerve.toFundamentalGroupoid` along `AsSmall.up` with
 `SSet.uliftFundamentalGroupoid` and `SSet.mapFundamentalGroupoid (asSmallIso C).inv`. -/
 def toFundamentalGroupoidAsSmallIso (C : Type u) [Category.{v} C] :
     (AsSmall.up : C ⥤ AsSmall.{w} C) ⋙ toFundamentalGroupoid (AsSmall.{w} C) ≅
       toFundamentalGroupoid C ⋙ SSet.uliftFundamentalGroupoid.{w} (nerve C) ⋙
         SSet.mapFundamentalGroupoid (asSmallIso.{w} C).inv :=
-  NatIso.ofComponents
-    (fun X ↦ eqToIso (congrArg (SSet.FundamentalGroupoid.mk (X := nerve (AsSmall.{w} C)))
-      (asSmallIso_inv_app_ulift_nerveEquiv_symm.{w} C X).symm))
+  NatIso.ofComponents (fun X ↦ eqToIso (toFundamentalGroupoidAsSmallIso_obj.{w} C X))
     fun f ↦ by
       have hedge : (edgeMk ((AsSmall.up : C ⥤ AsSmall.{w} C).map f)).edge =
           ((edgeMk f).ulift.{w}.map (asSmallIso.{w} C).inv).edge := by
@@ -124,20 +130,10 @@ def toFundamentalGroupoidAsSmallIso (C : Type u) [Category.{v} C] :
 
 @[simp] lemma toFundamentalGroupoidAsSmallIso_hom_app (C : Type u) [Category.{v} C] (X : C) :
     (toFundamentalGroupoidAsSmallIso.{w} C).hom.app X =
-      eqToHom (by
-        dsimp only [Functor.comp_obj, toFundamentalGroupoid_obj]
-        rw [← objEquiv_symm_eq (nerveEquiv.symm X), SSet.uliftFundamentalGroupoid_obj_mk,
-          SSet.mapFundamentalGroupoid_obj_mk, asSmallIso_inv_app, Equiv.symm_apply_apply,
-          Equiv.apply_symm_apply, Functor.mapComposableArrows_obj_nerveEquiv_symm,
-          objEquiv_symm_eq]) := (rfl)
+      eqToHom (toFundamentalGroupoidAsSmallIso_obj.{w} C X) := (rfl)
 
 @[simp] lemma toFundamentalGroupoidAsSmallIso_inv_app (C : Type u) [Category.{v} C] (X : C) :
     (toFundamentalGroupoidAsSmallIso.{w} C).inv.app X =
-      eqToHom (by
-        dsimp only [Functor.comp_obj, toFundamentalGroupoid_obj]
-        rw [← objEquiv_symm_eq (nerveEquiv.symm X), SSet.uliftFundamentalGroupoid_obj_mk,
-          SSet.mapFundamentalGroupoid_obj_mk, asSmallIso_inv_app, Equiv.symm_apply_apply,
-          Equiv.apply_symm_apply, Functor.mapComposableArrows_obj_nerveEquiv_symm,
-          objEquiv_symm_eq]) := (rfl)
+      eqToHom (toFundamentalGroupoidAsSmallIso_obj.{w} C X).symm := (rfl)
 
 end CategoryTheory.nerve

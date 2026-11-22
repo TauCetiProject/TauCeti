@@ -196,6 +196,41 @@ theorem uliftFunctorHomEquiv_symm_apply {n : SimplexCategory} (f : stdSimplex.{u
       yonedaEquiv.symm (X.uliftFunctorObjEquiv.{v} (Opposite.op n) (yonedaEquiv f)) :=
   (rfl)
 
+/-- Universe-lifting natural isomorphism
+`stdSimplex.{u} ⋙ uliftFunctor.{v, u} ≅ stdSimplex.{max u v}`. -/
+def stdSimplexUliftIso :
+    stdSimplex.{u} ⋙ uliftFunctor.{v, u} ≅ stdSimplex.{max u v} :=
+  NatIso.ofComponents
+    (fun _ ↦ NatIso.ofComponents fun _ ↦
+      Equiv.toIso (Equiv.ulift.trans (Equiv.ulift.trans Equiv.ulift.symm)))
+    fun _ ↦ rfl
+
+/-- On simplices, `SSet.stdSimplexUliftIso.hom` lowers one `ULift` layer between universe lifts of
+standard simplices. -/
+@[simp]
+lemma stdSimplexUliftIso_hom_app_app_apply (m : SimplexCategory) (k : SimplexCategoryᵒᵖ)
+    (x : ((stdSimplex.{u} ⋙ uliftFunctor.{v, u}).obj m).obj k) :
+    dsimp% ((stdSimplexUliftIso.{u, v}.hom.app m).app k) x = ULift.up x.down.down :=
+  (rfl)
+
+/-- On simplices, `SSet.stdSimplexUliftIso.inv` inserts one `ULift` layer between universe lifts of
+standard simplices. -/
+@[simp]
+lemma stdSimplexUliftIso_inv_app_app_apply (m : SimplexCategory) (k : SimplexCategoryᵒᵖ)
+    (x : (stdSimplex.{max u v}.obj m).obj k) :
+    dsimp% ((stdSimplexUliftIso.{u, v}.inv.app m).app k) x = ULift.up (ULift.up x.down) :=
+  (rfl)
+
+/-- The inverse component `stdSimplexUliftIso.inv.app m` corresponds under `uliftFunctorHomEquiv`
+to the identity on `stdSimplex.{u}.obj m`. -/
+lemma stdSimplexUliftIso_inv_app (m : SimplexCategory) :
+    stdSimplexUliftIso.{u, v}.inv.app m =
+      (uliftFunctorHomEquiv.{u, v} (stdSimplex.{u}.obj m) m).symm (𝟙 _) := by
+  refine (Equiv.eq_symm_apply _).2 ?_
+  apply yonedaEquiv.injective
+  rw [yonedaEquiv_uliftFunctorHomEquiv]
+  rfl -- Both sides equal `stdSimplex.objEquiv.symm (𝟙 m)` after unwrapping `ULift.down`.
+
 /-- Lowering a constant map gives the constant map at the lowered vertex. -/
 @[simp]
 theorem uliftFunctorHomEquiv_const {n : ℕ} (x : (uliftFunctor.{v}.obj X) _⦋0⦌) :

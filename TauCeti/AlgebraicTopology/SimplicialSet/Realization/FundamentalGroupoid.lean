@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.AlgebraicTopology.SimplicialSet.FundamentalGroupoid.ULift
 public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Basic
+import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 
 /-!
 # Edge paths and fundamental groupoid functor for geometric realization
@@ -141,19 +142,6 @@ lemma toTopFundamentalGroupoid_map_homMk (X : SSet.{u}) {x y : X _⦋0⦌} (e : 
       _root_.FundamentalGroupoid.fromPath (.mk e.toTopPath) :=
   FundamentalGroupoid.desc_map_homMk _ _ (fun h ↦ Quotient.sound h.homotopic_toTopPath) e
 
-private lemma fromPath_naturality_eqToHom {A : TopCat.{u}} {B : TopCat.{v}}
-    {φ : C(A, B)} {a₁ a₂ : A} {b₁ b₂ : B} (h₁ : φ a₁ = b₁) (h₂ : φ a₂ = b₂)
-    (p : _root_.Path a₁ a₂) (q : _root_.Path b₁ b₂)
-    (hpq : q = (p.map φ.continuous).cast h₁.symm h₂.symm) :
-    _root_.FundamentalGroupoid.fromPath (.mk q) ≫ eqToHom (_root_.FundamentalGroupoid.ext h₂.symm) =
-      eqToHom (_root_.FundamentalGroupoid.ext h₁.symm) ≫
-        (_root_.FundamentalGroupoid.map φ).map (_root_.FundamentalGroupoid.fromPath (.mk p)) := by
-  rw [hpq, Path.Homotopic.Quotient.mk_cast]
-  exact (comp_eqToHom_iff _ _ _).2 <|
-    ((Category.assoc _ _ _).trans
-      (_root_.FundamentalGroupoid.conj_eqToHom
-        (p := .mk (p.map φ.continuous)) h₁.symm h₂.symm)).symm
-
 private lemma mapFundamentalGroupoid_toTop_obj {X Y : SSet.{u}} (f : X ⟶ Y) (x : X _⦋0⦌) :
     (mapFundamentalGroupoid f ⋙ toTopFundamentalGroupoid Y).obj (.mk x) =
       (toTopFundamentalGroupoid X ⋙ _root_.FundamentalGroupoid.map (toTop.map f).hom).obj (.mk x) :=
@@ -169,7 +157,7 @@ noncomputable def mapFundamentalGroupoidToTopIso {X Y : SSet.{u}} (f : X ⟶ Y) 
       dsimp only [Functor.comp_obj, Functor.comp_map]
       rw [mapFundamentalGroupoid_map_homMk, toTopFundamentalGroupoid_map_homMk,
         toTopFundamentalGroupoid_map_homMk]
-      exact fromPath_naturality_eqToHom (φ := (toTop.map f).hom)
+      exact _root_.FundamentalGroupoid.fromPath_naturality_eqToHom (φ := (toTop.map f).hom)
         (toTop_map_toTopPoint f _) (toTop_map_toTopPoint f _)
         e.toTopPath (e.map f).toTopPath (e.toTopPath_map f)
 
@@ -201,7 +189,8 @@ noncomputable def uliftFundamentalGroupoidToTopIso (X : SSet.{u}) :
       dsimp only [Functor.comp_obj, Functor.comp_map]
       rw [uliftFundamentalGroupoid_map_homMk, toTopFundamentalGroupoid_map_homMk,
         toTopFundamentalGroupoid_map_homMk]
-      exact fromPath_naturality_eqToHom (φ := (toTopUliftHomeomorph.{v, u} X : C(_, _)))
+      exact _root_.FundamentalGroupoid.fromPath_naturality_eqToHom
+        (φ := (toTopUliftHomeomorph.{v, u} X : C(_, _)))
         (toTopUliftHomeomorph_toTopPoint.{v, u} _) (toTopUliftHomeomorph_toTopPoint.{v, u} _)
         e.toTopPath e.ulift.{v}.toTopPath (e.toTopPath_ulift.{v})
 

@@ -12,6 +12,7 @@ public import Mathlib.CategoryTheory.Limits.Shapes.SingleObj
 public import Mathlib.Data.Finset.Sort
 public import Mathlib.Data.Finsupp.Order
 public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
+public import Mathlib.Topology.Category.TopCat.ULift
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 public import TauCeti.Geometry.Convex.ConvexSpace.LocallyPathConnectedSpaceStdSimplex
@@ -338,6 +339,38 @@ lemma toTop_map_mkOfLe_toTop_map_δ_zero (k : ℕ) :
   rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, toTop_map_toTopInitialVertex_down,
     toTop_map_toTopInitialVertex_down]
   rfl
+
+section ULift
+
+universe v
+
+/-- Universe-lifting natural isomorphism
+`SimplexCategory.toTop.{max u v} ≅ SimplexCategory.toTop.{u} ⋙ TopCat.uliftFunctor.{v, u}`. -/
+noncomputable def toTopUliftIso :
+    toTop.{max u v} ≅ toTop.{u} ⋙ TopCat.uliftFunctor.{v, u} :=
+  NatIso.ofComponents
+    (fun m ↦ TopCat.isoOfHomeo
+      ((toTop₀.obj m).uliftFunctorObjHomeo.{max u v}.symm.trans
+        ((toTop₀.obj m).uliftFunctorObjHomeo.{u}.trans
+          (toTop.{u}.obj m).uliftFunctorObjHomeo.{v})))
+    fun _ ↦ by ext ⟨w⟩; rfl
+
+/-- The forward component of `SimplexCategory.toTopUliftIso` swaps the `ULift` layers via
+`(toTop.{u}.obj m).uliftFunctorObjHomeo`. -/
+@[simp] lemma toTopUliftIso_hom_app_apply (m : SimplexCategory) (t : toTop.{max u v}.obj m) :
+    dsimp% toTopUliftIso.{u, v}.hom.app m t =
+      (toTop.{u}.obj m).uliftFunctorObjHomeo.{v} (ULift.up t.down) :=
+  (rfl)
+
+/-- The inverse component of `SimplexCategory.toTopUliftIso` removes the outer `ULift` layer via
+`(toTop.{u}.obj m).uliftFunctorObjHomeo.symm`. -/
+@[simp] lemma toTopUliftIso_inv_app_apply (m : SimplexCategory)
+    (t : TopCat.uliftFunctor.{v, u}.obj (toTop.{u}.obj m)) :
+    dsimp% toTopUliftIso.{u, v}.inv.app m t =
+      ULift.up ((toTop.{u}.obj m).uliftFunctorObjHomeo.{v}.symm t).down :=
+  (rfl)
+
+end ULift
 
 end SimplexCategory
 
