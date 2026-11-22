@@ -237,7 +237,6 @@ theorem map_tschirnhausAlgEquiv_freeMonic {R : Type*} [CommRing R] {m : ℕ}
 
 /-- `TauCeti.tschirnhausAlgEquiv` maps `X k` to the `k`-th coefficient of the shifted generic
 depressed polynomial `((genericDepressed R m).map C).comp (X + C X)`. -/
-@[simp]
 theorem tschirnhausAlgEquiv_X {R : Type*} [CommRing R] {m : ℕ} (hmu : IsUnit (m : R))
     (k : Fin m) :
     tschirnhausAlgEquiv hmu (MvPolynomial.X k) =
@@ -250,7 +249,7 @@ theorem tschirnhausAlgEquiv_X {R : Type*} [CommRing R] {m : ℕ} (hmu : IsUnit (
 
 /-- `TauCeti.tschirnhausAlgEquiv` maps the subleading coefficient variable `X ⟨m - 1, hm⟩` to
 `m * Polynomial.X`. -/
-@[simp high]
+@[simp]
 theorem tschirnhausAlgEquiv_X_sub_one {R : Type*} [CommRing R] {m : ℕ} (hmu : IsUnit (m : R))
     (hm : m - 1 < m) :
     tschirnhausAlgEquiv hmu (MvPolynomial.X ⟨m - 1, hm⟩) =
@@ -284,7 +283,6 @@ theorem map_tschirnhausAlgEquiv_symm_comp_C_genericDepressed {R : Type*} [CommRi
 /-- The inverse of `TauCeti.tschirnhausAlgEquiv` maps `Polynomial.C (MvPolynomial.X i)` to the
 `(m - 2 - i)`-nd coefficient of `Polynomial.freeMonic R m` centered at
 `Polynomial.X - C ((tschirnhausAlgEquiv hmu).symm X)`. -/
-@[simp]
 theorem tschirnhausAlgEquiv_symm_C_X {R : Type*} [CommRing R] {m : ℕ} (hmu : IsUnit (m : R))
     (i : Fin (m - 1)) :
     (tschirnhausAlgEquiv hmu).symm (Polynomial.C (MvPolynomial.X i)) =

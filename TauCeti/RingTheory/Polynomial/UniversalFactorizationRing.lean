@@ -63,6 +63,7 @@ theorem coeff_freePoly (k : ℕ) :
       ite_eq_right fun h : k = ↑i ↦ hk (h ▸ Nat.le_of_lt_succ i.isLt)
 
 /-- Over a nontrivial ring, `Polynomial.freePoly R n` has `natDegree` equal to `n`. -/
+@[simp]
 theorem natDegree_freePoly [Nontrivial R] : (freePoly R n).natDegree = n := by
   refine le_antisymm ?_ ?_
   · refine natDegree_le_iff_coeff_eq_zero.mpr fun k hk ↦ ?_
@@ -72,6 +73,7 @@ theorem natDegree_freePoly [Nontrivial R] : (freePoly R n).natDegree = n := by
     exact MvPolynomial.X_ne_zero _
 
 /-- Over a nontrivial ring, `Polynomial.freePoly R n` has degree `n`. -/
+@[simp]
 theorem degree_freePoly [Nontrivial R] : (freePoly R n).degree = n := by
   rw [degree_eq_natDegree (fun h ↦ by
     have hc := congrArg (fun p : (MvPolynomial (Fin (n + 1)) R)[X] ↦ p.coeff n) h
