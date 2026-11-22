@@ -25,7 +25,10 @@ For subsets `C ⊆ A` of `X`, with `L` restricted to `A`, the relative twisted c
 of subsets induces a map of relative twisted chains
 (`TauCeti.LocalCoefficientSystem.subsetPairTwistedChainComplexMap`), characterized by
 `TauCeti.LocalCoefficientSystem.twistedChainComplexπ_comp_subsetPairTwistedChainComplexMap` and
-functorial in the inclusion.
+functorial in the inclusion, and so is the induced map of relative twisted homology
+(`TauCeti.LocalCoefficientSystem.subsetPairTwistedHomologyMap`). Pairs of subsets with the same sets
+therefore have isomorphic relative twisted homology
+(`TauCeti.LocalCoefficientSystem.subsetPairTwistedHomologyIso`).
 
 ## References
 
@@ -278,6 +281,47 @@ lemma subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap (hA
     subsetPairTwistedChainComplexπ_comp_subsetPairTwistedChainComplexMap,
     subsetPairTwistedChainComplexπ_comp_subsetPairTwistedChainComplexMap, ← Category.assoc,
     smallTwistedChainComplexInclusion_comp]
+
+/-- The map of relative twisted homology `Hₙ(A₁, C₁; L) ⟶ Hₙ(A₂, C₂; L)` induced by an inclusion of
+pairs of subsets of `X`. -/
+abbrev subsetPairTwistedHomologyMap (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂) (n : ℕ) :
+    (TopPair.ofInclusion hC₁).twistedHomology
+        ((pullback (X := TopCat.of ↥A₁) (ContinuousMap.subtypeVal A₁)).obj L) n ⟶
+      (TopPair.ofInclusion hC₂).twistedHomology
+        ((pullback (X := TopCat.of ↥A₂) (ContinuousMap.subtypeVal A₂)).obj L) n :=
+  HomologicalComplex.homologyMap (subsetPairTwistedChainComplexMap L hC₁ hC₂ hA hC) n
+
+/-- The map of relative twisted homology induced by the identity inclusion of a pair of subsets is
+the identity. -/
+@[simp]
+lemma subsetPairTwistedHomologyMap_self (n : ℕ) :
+    subsetPairTwistedHomologyMap L hC₁ hC₁ subset_rfl subset_rfl n = 𝟙 _ := by
+  rw [subsetPairTwistedHomologyMap, subsetPairTwistedChainComplexMap_self,
+    HomologicalComplex.homologyMap_id]
+
+/-- The maps of relative twisted homology induced by inclusions of pairs of subsets compose. -/
+@[reassoc (attr := simp)]
+lemma subsetPairTwistedHomologyMap_comp_subsetPairTwistedHomologyMap (hA : A₁ ⊆ A₂)
+    (hC : C₁ ⊆ C₂) (hA' : A₂ ⊆ A₃) (hC' : C₂ ⊆ C₃) (n : ℕ) :
+    subsetPairTwistedHomologyMap L hC₁ hC₂ hA hC n ≫
+        subsetPairTwistedHomologyMap L hC₂ hC₃ hA' hC' n =
+      subsetPairTwistedHomologyMap L hC₁ hC₃ (hA.trans hA') (hC.trans hC') n := by
+  rw [← HomologicalComplex.homologyMap_comp,
+    subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap]
+
+/-- Two pairs of subsets of `X` with the same sets have isomorphic relative twisted homology,
+through the maps induced by the inclusions both ways. -/
+@[expose, simps]
+def subsetPairTwistedHomologyIso (hA : A₁ ⊆ A₂) (hA' : A₂ ⊆ A₁) (hC : C₁ ⊆ C₂) (hC' : C₂ ⊆ C₁)
+    (n : ℕ) :
+    (TopPair.ofInclusion hC₁).twistedHomology
+        ((pullback (X := TopCat.of ↥A₁) (ContinuousMap.subtypeVal A₁)).obj L) n ≅
+      (TopPair.ofInclusion hC₂).twistedHomology
+        ((pullback (X := TopCat.of ↥A₂) (ContinuousMap.subtypeVal A₂)).obj L) n where
+  hom := subsetPairTwistedHomologyMap L hC₁ hC₂ hA hC n
+  inv := subsetPairTwistedHomologyMap L hC₂ hC₁ hA' hC' n
+  hom_inv_id := by simp
+  inv_hom_id := by simp
 
 end SubsetPair
 
