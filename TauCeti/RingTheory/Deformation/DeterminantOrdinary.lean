@@ -55,9 +55,11 @@ adapted to the flag lifts to one of `V`.
 
 ## Main results
 
-* `TauCeti.Deformation.isDetOrdinary_conj_iff`, `TauCeti.Deformation.isDetOrdinary_map_iff` and
-  their counterparts for `HasOrderedTriangularization`: invariance under conjugation and change
-  of coefficients.
+* `TauCeti.Deformation.isDetOrdinary_conj_iff` and
+  `TauCeti.Deformation.hasOrderedTriangularization_conj_iff`: invariance under conjugation.
+* `TauCeti.Deformation.IsDetOrdinary.map` and `TauCeti.Deformation.HasOrderedTriangularization.map`:
+  preservation under change of coefficients; `TauCeti.Deformation.isDetOrdinary_map_iff`: the
+  equations also descend along an injective ring homomorphism.
 * `TauCeti.Deformation.isDetOrdinary_of_isUpperTriangular`: a representation by upper-triangular
   matrices with diagonal `χ₀ g, …, χ_{n-1} g` satisfies the determinant-ordinary equations.
 * `TauCeti.Deformation.HasOrderedTriangularization.isDetOrdinary`: an ordered triangularization
@@ -151,9 +153,24 @@ theorem hasOrderedTriangularization_conj_iff {ρ : G →* GL (Fin n) A} {χ : Fi
   ⟨fun h ↦ by convert h.conj B⁻¹; exact MonoidHom.ext fun g ↦ by simp [mul_assoc],
     fun h ↦ h.conj B⟩
 
+/-- A ring homomorphism `φ` sending each `c i • 1` to `d i • 1` sends the ordered product
+`(M₀ - c₀ • 1) * ⋯ * (M_{m-1} - c_{m-1} • 1)` to
+`(φ M₀ - d₀ • 1) * ⋯ * (φ M_{m-1} - d_{m-1} • 1)`. -/
+private theorem map_list_prod_ofFn_sub_smul_one {R S B C Φ : Type*} [Ring R] [Ring S] [SMul B R]
+    [SMul C S] [FunLike Φ R S] [RingHomClass Φ R S] (φ : Φ) {m : ℕ} (M : Fin m → R)
+    {c : Fin m → B} {d : Fin m → C} (hφ : ∀ i, φ (c i • 1) = d i • 1) :
+    φ (List.ofFn fun i ↦ M i - c i • 1).prod = (List.ofFn fun i ↦ φ (M i) - d i • 1).prod := by
+  simp only [map_list_prod, List.map_ofFn, Function.comp_def, map_sub, hφ]
+
 section Map
 
 variable {A' : Type*} [CommRing A']
+
+/-- `f.mapMatrix` sends the scalar matrix `a • 1` to `f a • 1`. -/
+private theorem mapMatrix_smul_one (f : A →+* A') (a : A) :
+    f.mapMatrix (a • (1 : Matrix (Fin n) (Fin n) A)) = f a • 1 := by
+  rw [f.mapMatrix_apply, Matrix.map_smul' _ _ _ (map_mul f),
+    Matrix.map_one _ (map_zero f) (map_one f)]
 
 /-- The determinant-ordinary equations are preserved by a change of coefficients along
 `f : A →+* A'`. -/
@@ -164,8 +181,9 @@ theorem IsDetOrdinary.map {ρ : G →* GL (Fin n) A} {χ : Fin n → G →* Aˣ}
   refine ⟨fun g ↦ ?_, fun g ↦ ?_⟩
   · simp [charpoly_map, h.charpoly_eq g, Polynomial.map_prod]
   · have := congrArg f.mapMatrix (h.list_prod_eq_zero g)
-    rw [map_list_prod, List.map_ofFn, map_zero] at this
-    simpa [Function.comp_def, Matrix.map_sub, smul_one_eq_diagonal] using this
+    rw [map_list_prod_ofFn_sub_smul_one f.mapMatrix _ fun i ↦ mapMatrix_smul_one f _,
+      map_zero] at this
+    simpa using this
 
 /-- Along an injective `f : A →+* A'`, the determinant-ordinary equations hold over `A` exactly
 when they hold after the change of coefficients. -/
@@ -176,9 +194,11 @@ theorem isDetOrdinary_map_iff {ρ : G →* GL (Fin n) A} {χ : Fin n → G →* 
   refine ⟨fun h ↦ ⟨fun g ↦ Polynomial.map_injective f hf ?_, fun g ↦ Matrix.map_injective hf ?_⟩,
     fun h ↦ h.map f⟩
   · simpa [← charpoly_map, Polynomial.map_prod] using h.charpoly_eq g
-  · change f.mapMatrix _ = f.mapMatrix 0
-    rw [map_list_prod, List.map_ofFn, map_zero]
-    simpa [Function.comp_def, Matrix.map_sub, smul_one_eq_diagonal] using h.list_prod_eq_zero g
+  · -- `Matrix.map_injective` leaves `fun M ↦ M.map f` unapplied; rewrite it as `f.mapMatrix`
+    beta_reduce
+    rw [← f.mapMatrix_apply, ← f.mapMatrix_apply, map_zero,
+      map_list_prod_ofFn_sub_smul_one f.mapMatrix _ fun i ↦ mapMatrix_smul_one f _]
+    simpa using h.list_prod_eq_zero g
 
 /-- Ordered triangularizations are preserved by a change of coefficients along `f : A →+* A'`. -/
 theorem HasOrderedTriangularization.map {ρ : G →* GL (Fin n) A} {χ : Fin n → G →* Aˣ}
@@ -278,13 +298,12 @@ private theorem exists_basis_of_quotient [FiniteDimensional F V] {m : ℕ}
     (Submodule.eq_of_le_of_finrank_eq ((Submodule.span_singleton_le_iff_mem _ _).mpr u.property)
       (by rw [finrank_span_singleton hu0, hU1])).symm
   have hb0 : b 0 = u := by
-    rw [← TauCeti.extensionBasis_castAdd U bU b' 0, Basis.reindex_apply]
-    congr 1
+    have h0 : (finCongr (add_comm 1 m)).symm 0 = Fin.castAdd m 0 := Fin.ext (by simp)
+    rw [← TauCeti.extensionBasis_castAdd U bU b' 0, Basis.reindex_apply, h0]
   have hbs (i : Fin m) : U.mkQ (b i.succ) = b' i := by
-    rw [← TauCeti.extensionBasis_natAdd_mkQ U bU b' i, Basis.reindex_apply, Submodule.mkQ_apply]
-    congr 3
-    ext
-    simp [add_comm]
+    have hi : (finCongr (add_comm 1 m)).symm i.succ = Fin.natAdd 1 i := Fin.ext (by simp [add_comm])
+    rw [← TauCeti.extensionBasis_natAdd_mkQ U bU b' i, Basis.reindex_apply, Submodule.mkQ_apply,
+      hi]
   refine ⟨b, fun g j ↦ ?_⟩
   induction j using Fin.cases with
   | zero =>
@@ -354,14 +373,15 @@ private theorem hasOrderedTriangularization_of_basis {ρ : G →* GL (Fin n) F}
     HasOrderedTriangularization ρ χ := by
   -- the change of basis from the standard basis `e` to `b`
   let e := Pi.basisFun F (Fin n)
-  let B : GL (Fin n) F := @unitOfInvertible _ _ _ (e.invertibleToMatrix b)
+  let := e.invertibleToMatrix b
+  let B : GL (Fin n) F := unitOfInvertible (e.toMatrix b)
   refine ⟨B, fun g ↦ ?_⟩
   have hconj : ((B⁻¹ * ρ g * B : GL (Fin n) F) : Matrix (Fin n) (Fin n) F) =
       LinearMap.toMatrix b b (Matrix.toLin' (ρ g : Matrix (Fin n) (Fin n) F)) := by
     rw [← basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix b e b e,
       LinearMap.toMatrix_eq_toMatrix', LinearMap.toMatrix'_toLin', Units.val_mul, Units.val_mul,
-      val_inv_unitOfInvertible]
-    rfl
+      val_inv_unitOfInvertible, val_unitOfInvertible,
+      invOf_eq_right_inv (e.toMatrix_mul_toMatrix_flip b)]
   rw [hconj]
   exact ⟨b.toMatrix_isUpperTriangular_of_sub_smul_mem_flag (hb g),
     b.toMatrix_apply_self_of_sub_smul_mem_flag (hb g)⟩
@@ -384,8 +404,8 @@ theorem IsDetOrdinary.hasOrderedTriangularization {ρ : G →* GL (Fin n) F}
   have hprod (g : Fin n → G) : orderedProd ρV χV g = 0 := by
     have := congrArg (Matrix.toLinAlgEquiv' : Matrix (Fin n) (Fin n) F ≃ₐ[F] _)
       (h.list_prod_eq_zero g)
-    rw [map_list_prod, List.map_ofFn, map_zero] at this
-    simpa [orderedProd, hρV, hlin, χV, Function.comp_def, Module.End.one_eq_id] using this
+    rw [map_list_prod_ofFn_sub_smul_one _ _ fun i ↦ by rw [map_smul, map_one], map_zero] at this
+    simpa [orderedProd, hρV, hlin, χV] using this
   obtain ⟨c, hcsum, hctr, hcb⟩ := exists_trace_eq_of_orderedProd_eq_zero n (Fin n → F) ρV χV hprod
   -- linear independence of the distinct characters forces `c i = 1` in `F`
   have hχV : Function.Injective χV := fun i j hij ↦ hχ <| MonoidHom.ext fun g ↦
@@ -401,14 +421,10 @@ theorem IsDetOrdinary.hasOrderedTriangularization {ρ : G →* GL (Fin n) F}
     rw [← htr]
     simp [χV]
   -- so every `c i` is positive, and the `c i` sum to `n`
-  have hc1 : ∀ i, c i = 1 := by
-    intro i₀
-    by_contra hi₀
-    have hpos : ∀ i, 1 ≤ c i := fun i ↦ Nat.one_le_iff_ne_zero.mpr fun h0 ↦ by
-      simpa [h0] using hcF i
-    have := Finset.sum_lt_sum (s := Finset.univ) (fun i _ ↦ hpos i)
-      ⟨i₀, Finset.mem_univ _, lt_of_le_of_ne (hpos i₀) (Ne.symm hi₀)⟩
-    simp [hcsum] at this
+  have hpos (i : Fin n) : 1 ≤ c i := Nat.one_le_iff_ne_zero.mpr fun h0 ↦ by
+    simpa [h0] using hcF i
+  have hc1 (i : Fin n) : c i = 1 :=
+    ((Finset.sum_eq_sum_iff_of_le fun i _ ↦ hpos i).mp (by simp [hcsum]) i (Finset.mem_univ _)).symm
   obtain ⟨b, hb⟩ := hcb hc1
   exact hasOrderedTriangularization_of_basis b fun g j ↦ by simpa [hρV, χV] using hb g j
 

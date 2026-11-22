@@ -15,9 +15,9 @@ If `N₀, …, N_{n-1}` are upper-triangular `n × n` matrices and the `t`-th fa
 this is the nilpotence of a strictly upper-triangular matrix; in general it is the matrix form of
 the fact that `N_t` maps the `t + 1`-st space of the standard flag into the `t`-th one.
 
-For a matrix `M` triangularized with diagonal `d₀, …, d_{n-1}`, taking `N_t = M_t - d_t` shows that
-the products `(M₀ - d₀) ⋯ (M_{n-1} - d_{n-1})` vanish for any family of upper-triangular matrices
-`M_t`, the ordered-product equations of a simultaneously triangularized representation.
+For upper-triangular matrices `M₀, …, M_{n-1}` with diagonal entries `d_t = M_t t t`, taking
+`N_t = M_t - d_t • 1` shows that `(M₀ - d₀) ⋯ (M_{n-1} - d_{n-1}) = 0`: these are the
+ordered-product equations of a simultaneously triangularized representation.
 
 ## Main results
 

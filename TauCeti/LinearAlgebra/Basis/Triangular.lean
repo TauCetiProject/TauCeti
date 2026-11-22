@@ -67,22 +67,28 @@ section Det
 variable {ι R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι]
   [LinearOrder ι]
 
+omit [Fintype ι] in
+/-- The coordinates of a family `v` that is triangular with respect to a basis `b`, at the indices
+`j ≥ i`, are those of `c i • b i`. -/
+private theorem repr_apply_of_sub_smul_mem_span (b : Basis ι R M) {v : ι → M} {c : ι → R} {i : ι}
+    (hv : v i - c i • b i ∈ span R (b '' Set.Iio i)) {j : ι} (hij : i ≤ j) :
+    b.repr (v i) j = c i * Finsupp.single i 1 j := by
+  have h0 : b.repr (v i - c i • b i) j = 0 := by
+    by_contra h
+    exact not_lt.2 hij (b.mem_span_image.1 hv (Finsupp.mem_support_iff.2 h))
+  rwa [map_sub, map_smul, Finsupp.sub_apply, Finsupp.smul_apply, repr_self, smul_eq_mul,
+    sub_eq_zero] at h0
+
 /-- The determinant of a family `v` that is triangular with respect to a basis `b`, in the sense
 that each `v i - c i • b i` is a combination of the `b j` with `j < i`, is the product of the
 diagonal coefficients `c i`. -/
 theorem det_eq_prod_of_sub_smul_mem_span (b : Basis ι R M) {v : ι → M} {c : ι → R}
     (hv : ∀ i, v i - c i • b i ∈ span R (b '' Set.Iio i)) : b.det v = ∏ i, c i := by
-  -- The coordinates of `v i` at the indices `j ≥ i` are those of `c i • b i`.
-  have hrepr (i j : ι) (hij : i ≤ j) : b.repr (v i) j = c i * Finsupp.single i 1 j := by
-    have h0 : b.repr (v i - c i • b i) j = 0 := by
-      by_contra h
-      exact not_lt.2 hij (b.mem_span_image.1 (hv i) (Finsupp.mem_support_iff.2 h))
-    rwa [map_sub, map_smul, Finsupp.sub_apply, Finsupp.smul_apply, repr_self, smul_eq_mul,
-      sub_eq_zero] at h0
   rw [det_apply, Matrix.det_of_isUpperTriangular]
-  · simp [toMatrix_apply, hrepr _ _ le_rfl]
+  · simp [toMatrix_apply, b.repr_apply_of_sub_smul_mem_span (hv _) le_rfl]
   · intro i j (hji : j < i)
-    rw [toMatrix_apply, hrepr _ _ hji.le, Finsupp.single_eq_of_ne hji.ne', mul_zero]
+    rw [toMatrix_apply, b.repr_apply_of_sub_smul_mem_span (hv _) hji.le,
+      Finsupp.single_eq_of_ne hji.ne', mul_zero]
 
 /-- Over an ordered ring, a family `v` that is triangular with respect to a basis `b` with positive
 diagonal coefficients `c i`, in the sense of `Module.Basis.det_eq_prod_of_sub_smul_mem_span`, has
@@ -130,10 +136,11 @@ the flag of `b`, with diagonal coefficients `c`, is that of `j ↦ c j • b j`.
 private theorem toMatrix_apply_of_sub_smul_mem_flag
     (h : ∀ j, f (b j) - c j • b j ∈ b.flag j.castSucc) {i j : Fin n} (hji : j ≤ i) :
     LinearMap.toMatrix b b f i j = c j * Finsupp.single j 1 i := by
-  have hi := b.mem_flag_iff_repr_eq_zero.mp (h j) i (Fin.castSucc_le_castSucc_iff.mpr hji)
-  simp only [map_sub, map_smul, repr_self, Finsupp.sub_apply, Finsupp.smul_apply, smul_eq_mul,
-    sub_eq_zero] at hi
-  rw [LinearMap.toMatrix_apply, hi]
+  -- `b.flag j.castSucc` is the span of the `b k` with `k < j`
+  have hspan : b.flag j.castSucc = span R (b '' Set.Iio j) := by
+    simp only [flag, Fin.castSucc_lt_castSucc_iff, Set.Iio_def]
+  rw [LinearMap.toMatrix_apply]
+  exact b.repr_apply_of_sub_smul_mem_span (v := f ∘ b) (hspan ▸ h j) hji
 
 /-- The matrix of an endomorphism `f` in a basis `b` is upper triangular when each `f (b j)` is a
 multiple of `b j` modulo the span `b.flag j.castSucc` of the earlier basis vectors. -/
