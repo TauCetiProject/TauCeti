@@ -213,7 +213,8 @@ form used by `convexOn_iff_convex_epigraph`, consists of the pairs `(x, t)` for 
 theorem epigraph_comp_eq (hg : MapsTo g D E) (hm : MonotoneOn h E) :
     {p : X × β | p.1 ∈ D ∧ h (g p.1) ≤ p.2} = {p | ∃ y, (p.1, y) ∈ liftedSet D E g h p.2} := by
   ext p
-  exact mem_originalSet_iff_exists_mem_liftedSet hg hm p.1
+  exact mem_originalSet_iff.symm.trans
+    (mem_originalSet_iff_exists_mem_liftedSet (b := p.2) hg hm p.1)
 
 end Projection
 
