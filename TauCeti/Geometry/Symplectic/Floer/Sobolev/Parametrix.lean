@@ -103,12 +103,8 @@ private theorem tendstoUniformlyOn_comp_fderiv_hamiltonianVectorField (ω : Symp
       (ContDiff.fderiv (f := fun (p : ℝ × V) y ↦ ω.hamiltonianVectorField (H p.1) y)
         ((ω.contDiff_hamiltonianVectorField_uncurry (n := 1) (K := H) hH).comp
           (contDiff_fst.fst.prodMk contDiff_snd)) (contDiff_snd (n := 0)) (by simp)).continuous
-  -- Far out, the values of `u` lie in a compact neighbourhood of the values of `x` on `[0, 1]`.
-  have hxs := isCompact_Icc.image_of_continuousOn (s := Icc (0 : ℝ) 1) hx.continuousOn
-  obtain ⟨K, hK, hxK⟩ := exists_compact_superset hxs
-  exact isCompact_Icc.tendstoUniformlyOn_comp_prodMk hK hP.continuousOn
-    (hu.eventually_mapsTo (mapsTo_image x _) hxs (subset_interior_iff_mem_nhdsSet.1 hxK))
-    (fun t ht ↦ interior_subset (hxK (mem_image_of_mem x ht))) hu
+  exact (isCompact_Icc.image (continuous_id.prodMk hx)).comp_tendstoUniformlyOn
+    (fun _ _ ↦ hP.continuousAt) hu.graph
 
 /-- **The coefficient field is asymptotic to the model at an end.** For a constant complex
 structure `J₀`, if the data are eventually those `(0, H_t)` of a Floer trajectory along `l` and the
