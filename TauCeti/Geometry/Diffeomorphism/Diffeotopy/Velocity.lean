@@ -46,6 +46,7 @@ velocity field: the time derivative of `φ_t⁻¹ x` is carried by `dφ_t` to `-
 * `TauCeti.Diffeotopy.velocity_refl`: the constant diffeotopy has zero velocity.
 * `TauCeti.Diffeotopy.mfderiv_timeSlice_mfderiv_cylinderMap_symm`: the velocity of the inverse
   diffeotopy, `dφ_t (∂ₜ (φ_t⁻¹ x)) = -X_t x`.
+* `TauCeti.Diffeotopy.velocity_trans`: the product velocity identity `X_(ψ φ) = X_ψ + (ψ_t)_* X_φ`.
 
 ## References
 
@@ -151,6 +152,44 @@ theorem mfderiv_timeSlice_mfderiv_cylinderMap_symm (hn : 1 ≤ n) (t : I) (x : M
     ((congrArg _ hsplit.symm).trans hd)
   have hinl := Φ.mfderiv_cylinderMap_inl hn (Φ.symm.cylinderMap (x, t), t) V
   exact eq_neg_of_add_eq_zero_left ((congrArg (· + _) hinl).symm.trans hsum)
+
+/-- **The product velocity identity.** The velocity field of the pointwise composite
+`t ↦ ψ_t ∘ φ_t` of two diffeotopies (`TauCeti.Diffeotopy.trans`) is `X_ψ + (ψ_t)_* X_φ`: at the
+point `ψ_t z`, it is the sum of `X_ψ (ψ_t z)` and of the image under `dψ_t` of `X_φ z`. -/
+theorem velocity_trans (hn : 1 ≤ n) (Ψ : Diffeotopy J n M) (t : I) (z : M) :
+    (Φ.trans Ψ).velocity t (Ψ.timeSlice t z) =
+      Ψ.velocity t (Ψ.timeSlice t z) + mfderiv J J (Ψ.timeSlice t) z (Φ.velocity t z) := by
+  have hn₀ : n ≠ 0 := (zero_lt_one.trans_le (by exact_mod_cast hn)).ne'
+  obtain ⟨y, rfl⟩ : ∃ y, Φ (t, y) = z := ⟨Φ.symm (t, z), Φ.apply_mk_symm_apply t z⟩
+  set V : E := mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap (y, t)
+    ((0 : E), (1 : TangentSpace (𝓡∂ 1) t))
+  have hV : Φ.velocity t (Φ (t, y)) = V := Φ.velocity_apply t y
+  -- The motion of `ψ_t ∘ φ_t` is the motion of `ψ` after `(x, t) ↦ (φ_t x, t)`, which sends `∂ₜ`
+  -- to `(V, ∂ₜ)` with `V = ∂ₜ φ_t y`.
+  have hc := mfderiv_comp_apply (I' := J.prod (𝓡∂ 1)) (y, t)
+    (Ψ.contMDiff_cylinderMap.mdifferentiableAt hn₀)
+    (Φ.contMDiff_cylinderMap_prodMk_snd.mdifferentiableAt hn₀)
+    ((0 : E), (1 : TangentSpace (𝓡∂ 1) t))
+  rw [← cylinderMap_trans] at hc
+  have hc' := hc.trans (congrArg (mfderiv (J.prod (𝓡∂ 1)) J Ψ.cylinderMap (Φ.cylinderMap (y, t), t))
+    (Φ.mfderiv_cylinderMap_prodMk_snd hn (y, t) ((0 : E), (1 : TangentSpace (𝓡∂ 1) t))))
+  -- Split `(V, ∂ₜ)` into the time vector and the spatial vector `V`, on which `dψ` is `dψ_t`.
+  have hsplit : ((V, (1 : TangentSpace (𝓡∂ 1) t)) :
+      TangentSpace (J.prod (𝓡∂ 1)) (Φ.cylinderMap (y, t), t)) =
+      ((0 : E), (1 : TangentSpace (𝓡∂ 1) t)) + (V, (0 : TangentSpace (𝓡∂ 1) t)) :=
+    Prod.ext (zero_add V).symm (add_zero _).symm
+  have hΨ := (congrArg (mfderiv (J.prod (𝓡∂ 1)) J Ψ.cylinderMap (Φ.cylinderMap (y, t), t))
+    hsplit).trans (map_add _ _ _)
+  have hinl := Ψ.mfderiv_cylinderMap_inl hn (Φ.cylinderMap (y, t), t) V
+  have hvel := Ψ.velocity_apply t (Φ.cylinderMap (y, t))
+  rw [Φ.cylinderMap_apply (y, t)] at hc' hΨ hinl hvel
+  have hl := (Φ.trans Ψ).velocity_apply t y
+  rw [trans_apply] at hl
+  rw [timeSlice_apply, hV]
+  -- The steps match up to the projections `(y, t).2 = t` and `(0, ∂ₜ).2 = ∂ₜ` of pairs, which
+  -- `mfderiv_comp_apply` and `mfderiv_cylinderMap_prodMk_snd` leave unreduced.
+  exact hl.trans (hc'.trans (hΨ.trans
+    (congrArg₂ (· + ·) hvel.symm hinl)))
 
 end Diffeotopy
 

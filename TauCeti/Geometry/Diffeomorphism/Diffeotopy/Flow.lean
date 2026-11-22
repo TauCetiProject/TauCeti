@@ -20,8 +20,9 @@ flow `ψ_(A t)` at time `A t` (`TauCeti.globalFlowDiffeotopyAlong`,
 `TauCeti.Diffeotopy.timeSlice_globalFlowDiffeotopyAlong`), with inverse `ψ_(-A t)`. Read on the
 cylinder, the motion `(x, t) ↦ ψ_(A t) x` has time derivative `A'(t) v` and spatial derivative
 `dψ_(A t)` (`TauCeti.Diffeotopy.mfderiv_cylinderMap_globalFlowDiffeotopyAlong_time`,
-`TauCeti.Diffeotopy.mfderiv_cylinderMap_globalFlowDiffeotopyAlong_space`). The constant-speed
-case `A t = a t` runs the field for an arbitrary real duration `a`
+`TauCeti.Diffeotopy.mfderiv_cylinderMap_globalFlowDiffeotopyAlong_space`), so its velocity
+field at time `t` is `A'(t) v` (`TauCeti.Diffeotopy.velocity_globalFlowDiffeotopyAlong`). The
+constant-speed case `A t = a t` runs the field for an arbitrary real duration `a`
 (`TauCeti.globalFlowDiffeotopy`, `TauCeti.Diffeotopy.timeSlice_globalFlowDiffeotopy`), whose
 velocity field is the time-independent field `a v`
 (`TauCeti.Diffeotopy.velocity_globalFlowDiffeotopy`).
@@ -170,6 +171,15 @@ theorem mfderiv_cylinderMap_globalFlowDiffeotopyAlong_space (p : M × unitInterv
     (by exact_mod_cast hn) p w).trans
     (by rw [timeSlice_globalFlowDiffeotopyAlong])
 
+/-- **The velocity field of the motion along a time function.** Running a complete vector field
+`v` along a time function `A` has the velocity field `A'(t) v` at time `t`. -/
+theorem velocity_globalFlowDiffeotopyAlong (t : unitInterval) (x : M) :
+    (globalFlowDiffeotopyAlong hn hv hcomplete A hA hA₀).velocity t x = deriv A t • v x := by
+  set Φ := globalFlowDiffeotopyAlong hn hv hcomplete A hA hA₀
+  obtain ⟨y, rfl⟩ : ∃ y, Φ (t, y) = x := ⟨Φ.symm (t, x), Φ.apply_mk_symm_apply t x⟩
+  rw [velocity_apply, mfderiv_cylinderMap_globalFlowDiffeotopyAlong_time,
+    globalFlowDiffeotopyAlong_apply, flowOf_apply]
+
 end Diffeotopy
 
 end Along
@@ -265,10 +275,9 @@ theorem velocity_globalFlowDiffeotopy (hn : 1 ≤ n)
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (hcomplete : IsCompleteVectorField v) (a : ℝ) (t : unitInterval) (x : M) :
     (globalFlowDiffeotopy hn hv hcomplete a).velocity t x = a • v x := by
-  set Φ := globalFlowDiffeotopy hn hv hcomplete a
-  obtain ⟨y, rfl⟩ : ∃ y, Φ (t, y) = x := ⟨Φ.symm (t, x), Φ.apply_mk_symm_apply t x⟩
-  rw [velocity_apply, mfderiv_cylinderMap_globalFlowDiffeotopy_time, globalFlowDiffeotopy_apply,
-    flowOf_apply]
+  rw [globalFlowDiffeotopy_eq_globalFlowDiffeotopyAlong, velocity_globalFlowDiffeotopyAlong]
+  congr 1
+  simp
 
 end Diffeotopy
 

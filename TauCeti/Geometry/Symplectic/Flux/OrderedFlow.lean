@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.OrderedFlow
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Stabilizer
 public import TauCeti.Geometry.Symplectic.Flux.Flow
 public import TauCeti.Geometry.Symplectic.Flux.Trans
+public import TauCeti.Geometry.Symplectic.Flux.Velocity
 
 /-!
 # The flux of ordered symplectic flows
@@ -31,9 +32,22 @@ flux `A i 1 [ι_(Y i) σ]` (`TauCeti.Diffeotopy.flux_globalFlowDiffeotopyAlong`)
 time function in between, and the flux is additive on pointwise composites
 (`TauCeti.Diffeotopy.flux_trans`).
 
+The instantaneous contraction classes of an ordered symplectic flow are those of its generators,
+weighted by the derivatives of the time functions: at every time `t` the velocity field `X_t` of
+`ψ` differs from `∑ i, A i'(t) Y i` by the Hamiltonian vector field of a smooth function, so
+`[ι_(X_t) σ] = ∑ i, A i'(t) [ι_(Y i) σ]`
+(`TauCeti.Diffeotopy.exists_isHamiltonianVectorField_velocity_orderedGlobalFlowDiffeotopy_sub`).
+By induction on the number of fields, the velocity field of `ψ^(Y 0)_(A 0 t) ∘ ψ'_t` is
+`A 0'(t) Y 0 + (ψ^(Y 0)_(A 0 t))_* X'_t`, and pushing a symplectic vector field forward by a
+symplectomorphism isotopic to the identity changes it by a Hamiltonian vector field
+(`TauCeti.Diffeotopy.exists_eval₂_mfderiv_final_eq_add`).
+
 These are the flows that correct a symplectic isotopy `φ_t` whose instantaneous contraction
-classes are `[ι_(X_t) σ] = ∑ i, a i t [ι_(Y i) σ]`: with `A i t = ∫₀ᵗ a i`, the isotopy
-`ψ_t⁻¹ ∘ φ_t` then has exact contractions. If the flux of `φ` vanishes and the classes
+classes are `[ι_(X_t) σ] = ∑ i, a i t [ι_(Y i) σ]`: with `A i t = ∫₀ᵗ a i`, the velocity field of
+the corrected isotopy `ψ_t⁻¹ ∘ φ_t` is at every time the Hamiltonian vector field of a smooth
+function
+(`Diffeotopy.exists_isHamiltonianVectorField_velocity_trans_symm_orderedGlobalFlowDiffeotopy`).
+If the flux of `φ` vanishes and the classes
 `[ι_(Y i) σ]` are linearly independent, every total time `A i 1` vanishes. Then `ψ` is a loop,
 and it contracts to the constant diffeotopy relative to both time ends through maps preserving
 `σ`, by scaling all the time functions by `1 - s`
@@ -49,6 +63,10 @@ and it contracts to the constant diffeotopy relative to both time ends through m
 * `TauCeti.Diffeotopy.exists_homotopy_orderedGlobalFlowDiffeotopy_mem_diffeomorphStabilizer`: an
   ordered symplectic flow with vanishing total times contracts relative to both time ends through
   maps preserving `σ`.
+* `TauCeti.Diffeotopy.exists_isHamiltonianVectorField_velocity_orderedGlobalFlowDiffeotopy_sub`:
+  the instantaneous contraction classes of an ordered symplectic flow.
+* `Diffeotopy.exists_isHamiltonianVectorField_velocity_trans_symm_orderedGlobalFlowDiffeotopy`:
+  the corrected isotopy `ψ_t⁻¹ ∘ φ_t` is generated at every time by a Hamiltonian vector field.
 
 ## References
 
@@ -166,6 +184,88 @@ theorem exists_homotopy_orderedGlobalFlowDiffeotopy_mem_diffeomorphStabilizer
   refine ⟨G, hG, hG₀, hG₁, h₀, h₁', fun t s ↦ ?_⟩
   rw [hslice t s]
   exact exists_mem_diffeomorphStabilizer_coe_eq_orderedFlowOf hσ hY hc _
+
+/-- **The velocity field of an ordered symplectic flow.** For a closed two-form `σ`, complete
+smooth symplectic vector fields `Y i` and smooth time functions `A i` with `A i 0 = 0`, the
+velocity field `X_t` of the ordered flow `ψ_t = ψ^(Y 0)_(A 0 t) ∘ ⋯ ∘ ψ^(Y (k-1))_(A (k-1) t)`
+differs at each time `t` from `∑ i, A i'(t) Y i` by the Hamiltonian vector field of a smooth
+function. In cohomology, `[ι_(X_t) σ] = ∑ i, A i'(t) [ι_(Y i) σ]`. -/
+theorem exists_isHamiltonianVectorField_velocity_orderedGlobalFlowDiffeotopy_sub
+    {σ : SmoothTwoForm I M} (hσ : σ.IsClosed) {Y : Fin k → Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯}
+    (hY : ∀ i, Y i ∈ σ.symplecticVectorFields) (hc : ∀ i, IsCompleteVectorField (Y i))
+    (A : Fin k → ℝ → ℝ) (hA : ∀ i, ContDiff ℝ ∞ (A i)) (hA₀ : ∀ i, A i 0 = 0) (t : unitInterval) :
+    ∃ f : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ f ∧ σ.IsHamiltonianVectorField f fun x ↦
+      (orderedGlobalFlowDiffeotopy le_top (fun i ↦ Y i) (fun i ↦ (Y i).contMDiff) hc A hA
+        hA₀).velocity t x - ∑ i, deriv (A i) t • Y i x := by
+  induction k with
+  | zero =>
+    simp_rw [orderedGlobalFlowDiffeotopy_of_fin_zero, velocity_refl, Fin.sum_univ_zero,
+      Pi.zero_apply, sub_zero]
+    exact ⟨fun _ ↦ 0, contMDiff_const, SmoothTwoForm.isHamiltonianVectorField_const 0⟩
+  | succ k ih =>
+    -- The ordered flow of the last `k` fields satisfies the claim for the times `A i.succ`.
+    obtain ⟨f, hf, hfX⟩ := ih (Y := fun i ↦ Y i.succ) (fun i ↦ hY i.succ) (fun i ↦ hc i.succ)
+      (fun i ↦ A i.succ) (fun i ↦ hA i.succ) (fun i ↦ hA₀ i.succ)
+    set F := globalFlowDiffeotopyAlong le_top (Y 0).contMDiff (hc 0) (A 0) (hA 0) (hA₀ 0)
+    have hF := timeSlice_globalFlowDiffeotopyAlong_mem_diffeomorphStabilizer hσ (hY 0) (hc 0)
+      (A 0) (hA 0) (hA₀ 0) t
+    -- The remaining fields, weighted by the derivatives of their time functions.
+    set Z : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯ := ∑ i : Fin k, deriv (A i.succ) t • Y i.succ
+    have hZ : Z ∈ σ.symplecticVectorFields :=
+      Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (hY i.succ)
+    have hZx : ∀ x, Z x = ∑ i : Fin k, deriv (A i.succ) t • Y i.succ x := fun x ↦ by
+      simp only [Z, ← ContMDiffSection.coeAddHom_apply, map_sum, Finset.sum_apply]
+      simp only [ContMDiffSection.coeAddHom_apply, ContMDiffSection.coe_smul, Pi.smul_apply]
+    -- The time-`t` map `ψ^(Y 0)_(A 0 t)` is the final map of the flow of `Y 0` for that duration,
+    -- so it changes `Z` by a Hamiltonian vector field.
+    have hGF : (globalFlowDiffeotopy le_top (Y 0).contMDiff (hc 0) (A 0 t)).final =
+        F.timeSlice t := Diffeomorph.ext fun x ↦ by
+      rw [final_apply, globalFlowDiffeotopy_apply, timeSlice_apply, globalFlowDiffeotopyAlong_apply]
+      simp
+    obtain ⟨g, hg, hgZ⟩ :=
+      (globalFlowDiffeotopy le_top (Y 0).contMDiff (hc 0) (A 0 t)).exists_eval₂_mfderiv_final_eq_add
+        (hGF ▸ hF) hZ
+    rw [hGF] at hgZ
+    have key := isHamiltonianVectorField_velocity_trans_sub_sub _ F hF
+      (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp)) (by simpa only [hZx] using hfX)
+      hgZ
+    refine ⟨fun x ↦ f ((F.timeSlice t).symm x) + g x,
+      (hf.comp (F.timeSlice t).symm.contMDiff).add hg, ?_⟩
+    rw [orderedGlobalFlowDiffeotopy_succ]
+    convert key using 2 with x
+    rw [velocity_globalFlowDiffeotopyAlong, Fin.sum_univ_succ, hZx]
+    abel
+
+/-- **Correcting an isotopy by an ordered symplectic flow.** Let `σ` be a closed two-form, `Y i`
+complete smooth symplectic vector fields and `A i` smooth time functions with `A i 0 = 0`, with
+ordered flow `ψ_t = ψ^(Y 0)_(A 0 t) ∘ ⋯ ∘ ψ^(Y (k-1))_(A (k-1) t)`. If the velocity field of a
+diffeotopy `φ_t` at time `t` differs from `∑ i, A i'(t) Y i` by the Hamiltonian vector field of a
+smooth function, that is `[ι_(X_t) σ] = ∑ i, A i'(t) [ι_(Y i) σ]`, then the velocity field of the
+corrected diffeotopy `ψ_t⁻¹ ∘ φ_t` at time `t` is the Hamiltonian vector field of a smooth
+function. -/
+theorem exists_isHamiltonianVectorField_velocity_trans_symm_orderedGlobalFlowDiffeotopy
+    {σ : SmoothTwoForm I M} (hσ : σ.IsClosed) {Y : Fin k → Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯}
+    (hY : ∀ i, Y i ∈ σ.symplecticVectorFields) (hc : ∀ i, IsCompleteVectorField (Y i))
+    (A : Fin k → ℝ → ℝ) (hA : ∀ i, ContDiff ℝ ∞ (A i)) (hA₀ : ∀ i, A i 0 = 0)
+    (Φ : Diffeotopy I ∞ M) (t : unitInterval) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hΦ : σ.IsHamiltonianVectorField f fun x ↦ Φ.velocity t x - ∑ i, deriv (A i) t • Y i x) :
+    ∃ g : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ g ∧ σ.IsHamiltonianVectorField g
+      ((Φ.trans (orderedGlobalFlowDiffeotopy le_top (fun i ↦ Y i) (fun i ↦ (Y i).contMDiff) hc A
+        hA hA₀).symm).velocity t) := by
+  set Ψ := orderedGlobalFlowDiffeotopy le_top (fun i ↦ Y i) (fun i ↦ (Y i).contMDiff) hc A hA hA₀
+  obtain ⟨h, hh, hΨ⟩ := exists_isHamiltonianVectorField_velocity_orderedGlobalFlowDiffeotopy_sub
+    hσ hY hc A hA hA₀ t
+  -- The two velocity fields differ by the Hamiltonian vector field of `f - h`.
+  have hdiff := hΦ.sub hΨ (hf.mdifferentiable (by simp)) (hh.mdifferentiable (by simp))
+  have hfield : ((fun x ↦ Φ.velocity t x - ∑ i, deriv (A i) t • Y i x) -
+      fun x ↦ Ψ.velocity t x - ∑ i, deriv (A i) t • Y i x) =
+      fun x ↦ Φ.velocity t x - Ψ.velocity t x :=
+    funext fun x ↦ sub_sub_sub_cancel_right _ _ _
+  rw [hfield] at hdiff
+  exact ⟨(f - h) ∘ Ψ.timeSlice t, (hf.sub hh).comp (Ψ.timeSlice t).contMDiff,
+    isHamiltonianVectorField_velocity_trans_symm Φ Ψ
+      (timeSlice_orderedGlobalFlowDiffeotopy_mem_diffeomorphStabilizer hσ hY hc A hA hA₀ t)
+      ((hf.sub hh).mdifferentiable (by simp)) hdiff⟩
 
 end Diffeotopy
 

@@ -53,6 +53,8 @@ through the product diffeotopy `TauCeti.Diffeotopy.prodCongr`.
   stabilizer preserves the subgroup.
 * `TauCeti.SmoothForm.normal_isotopyStabilizer_subgroupOf`: the subgroup is normal in the
   stabilizer of `σ` (an instance).
+* `TauCeti.SmoothForm.eval₂_mfderiv_of_mem_diffeomorphStabilizer`: a diffeomorphism preserving a
+  two-form preserves its values on pushed-forward tangent vectors.
 * `TauCeti.SmoothForm.mem_diffeomorphStabilizer_mpullback_of_semiconj`: naturality of
   stabilizers under intertwining maps.
 * `TauCeti.SmoothForm.prodCongr_mem_diffeomorphStabilizer`,
@@ -171,6 +173,14 @@ instance normal_isotopyStabilizer_subgroupOf :
     ((isotopyStabilizer σ).subgroupOf (diffeomorphStabilizer σ)).Normal :=
   (Subgroup.normal_subgroupOf_iff isotopyStabilizer_le_diffeomorphStabilizer).2
     fun _ _ hφ hf ↦ mul_mul_inv_mem_isotopyStabilizer hf hφ
+
+/-- A diffeomorphism preserving a two-form `τ` preserves its values on pushed-forward tangent
+vectors: `τ(dφ a, dφ b) = τ(a, b)`. -/
+theorem eval₂_mfderiv_of_mem_diffeomorphStabilizer {τ : SmoothForm J M F 2}
+    {φ : M ≃ₘ⟮J, J⟯ M} (hφ : φ ∈ diffeomorphStabilizer τ) (x : M) (a b : TangentSpace J x) :
+    SmoothBundleForm.eval₂ τ (φ x) (mfderiv J J φ x a) (mfderiv J J φ x b) =
+      SmoothBundleForm.eval₂ τ x a b := by
+  rw [← eval₂_mpullback φ φ.contMDiff, mem_diffeomorphStabilizer.1 hφ]
 
 /-! ### Naturality and products -/
 
