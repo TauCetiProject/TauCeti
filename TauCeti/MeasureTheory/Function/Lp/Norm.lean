@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Measure.OpenPos
+public import Mathlib.Topology.Sets.Opens
 public import TauCeti.MeasureTheory.Function.Lp.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
@@ -23,6 +24,7 @@ import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
+import TauCeti.MeasureTheory.Measure.Restrict
 import TauCeti.MeasureTheory.OuterMeasure.AE
 
 /-!
@@ -73,6 +75,10 @@ bounds.
   everywhere class.
 * `MeasureTheory.Lp.norm_eq_lpNorm_of_ae_eq`: the norm of an element of `Lᵖ(ν)` is the `Lᵖ` norm of
   any representative.
+* `MeasureTheory.Lp.memLp_of_restrict_coe_opens_top` and
+  `MeasureTheory.Lp.norm_eq_lpNorm_of_restrict_coe_opens_top`: an element of `Lᵖ` over the whole
+  space, written as the top open set, is an `Lᵖ` function for the measure itself, with the same
+  norm.
 * `MeasureTheory.lpNorm_le_norm_of_ae_eq_of_le`: for `ν ≤ ν'`, the `Lᵖ(ν)` norm of a
   representative of an element of `Lᵖ(ν')` is at most its norm.
 * `MeasureTheory.Lp.ae_norm_le_norm_top` and `MeasureTheory.Lp.norm_top_le_of_ae_bound`: an `L∞`
@@ -320,6 +326,23 @@ theorem Lp.norm_eq_lpNorm_of_ae_eq {alpha F : Type*} [MeasurableSpace alpha]
     [NormedAddCommGroup F] {ν : Measure alpha} {p : ℝ≥0∞} {f : Lp F p ν} {g : alpha → F}
     (h : f =ᵐ[ν] g) : ‖f‖ = lpNorm g p ν := by
   rw [← lpNorm_congr_ae h, Lp.norm_def, toReal_eLpNorm]
+
+/-- An element of `Lᵖ` over the whole space, written as the top open set, is an `Lᵖ` function for
+the measure itself. -/
+theorem Lp.memLp_of_restrict_coe_opens_top {alpha F : Type*} [MeasurableSpace alpha]
+    [TopologicalSpace alpha] [NormedAddCommGroup F] {ν : Measure alpha} {p : ℝ≥0∞}
+    (f : Lp F p (ν.restrict ((⊤ : TopologicalSpace.Opens alpha) : Set alpha))) :
+    MemLp f p ν :=
+  (congrArg (fun μ => MemLp f p μ) (Measure.restrict_coe_opens_top ν)).mp (Lp.memLp f)
+
+/-- The norm of an element of `Lᵖ` over the whole space, written as the top open set, is its `Lᵖ`
+norm for the measure itself. -/
+theorem Lp.norm_eq_lpNorm_of_restrict_coe_opens_top {alpha F : Type*} [MeasurableSpace alpha]
+    [TopologicalSpace alpha] [NormedAddCommGroup F] {ν : Measure alpha} {p : ℝ≥0∞}
+    (f : Lp F p (ν.restrict ((⊤ : TopologicalSpace.Opens alpha) : Set alpha))) :
+    ‖f‖ = lpNorm f p ν :=
+  (Lp.norm_eq_lpNorm_of_ae_eq EventuallyEq.rfl).trans
+    (congrArg (lpNorm f p) (Measure.restrict_coe_opens_top ν))
 
 /-- The `Lᵖ(ν)` norm of a function agreeing `ν`-almost everywhere with an element of `Lᵖ(ν')`, for
 `ν ≤ ν'`, is at most the norm of that element. -/
