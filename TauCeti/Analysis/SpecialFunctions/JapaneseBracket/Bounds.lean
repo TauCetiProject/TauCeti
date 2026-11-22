@@ -29,7 +29,8 @@ bounds on `F` and on `t ^ (2N) F` combine to a bound on `F` with the weight `(1 
 
 ## Main results
 
-* `Real.rpow_le_two_rpow_mul_one_add_sq_rpow` and `Real.one_add_sq_rpow_le_two_rpow_mul_rpow`:
+* `Real.abs_rpow_le_two_rpow_mul_one_add_sq_rpow` and
+  `Real.one_add_sq_rpow_le_two_rpow_mul_abs_rpow`:
   `|t| ^ r ≤ 2 ^ (|r| / 2) (1 + t ^ 2) ^ (r / 2)` and
   `(1 + t ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) |t| ^ r` for `1 ≤ |t|`.
 * `Real.one_le_one_add_sq_rpow_abs_mul_one_add_sq_rpow`:
@@ -49,7 +50,7 @@ namespace Real
 
 /-- For `|t| ≥ 1` and an exponent `r` of either sign,
 `|t| ^ r ≤ 2 ^ (|r| / 2) (1 + t²) ^ (r / 2)`. -/
-theorem rpow_le_two_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : 1 ≤ |t|) (r : ℝ) :
+theorem abs_rpow_le_two_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : 1 ≤ |t|) (r : ℝ) :
     |t| ^ r ≤ 2 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
   have ht2 : 1 ≤ t ^ 2 := one_le_sq_iff_one_le_abs t |>.2 ht
   have hs : 0 < 1 + t ^ 2 := by positivity
@@ -66,12 +67,12 @@ theorem rpow_le_two_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : 1 ≤ |t|) (r : ℝ
 
 /-- For `|t| ≥ 1` and an exponent `r` of either sign,
 `(1 + t²) ^ (r / 2) ≤ 2 ^ (|r| / 2) |t| ^ r`. -/
-theorem one_add_sq_rpow_le_two_rpow_mul_rpow {t : ℝ} (ht : 1 ≤ |t|) (r : ℝ) :
+theorem one_add_sq_rpow_le_two_rpow_mul_abs_rpow {t : ℝ} (ht : 1 ≤ |t|) (r : ℝ) :
     (1 + t ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) * |t| ^ r := by
   have ht0 : 0 < |t| := by linarith
   have hs : 0 < (1 + t ^ 2) ^ (r / 2) := by positivity
   -- Multiply the bound at `-r` by `(1 + t ^ 2) ^ (r / 2) |t| ^ r`.
-  have h := rpow_le_two_rpow_mul_one_add_sq_rpow ht (-r)
+  have h := abs_rpow_le_two_rpow_mul_one_add_sq_rpow ht (-r)
   rw [abs_neg, neg_div, rpow_neg ht0.le, rpow_neg (by positivity)] at h
   calc (1 + t ^ 2) ^ (r / 2) = (1 + t ^ 2) ^ (r / 2) * (|t| ^ r)⁻¹ * |t| ^ r :=
         (inv_mul_cancel_right₀ (rpow_pos_of_pos ht0 r).ne' _).symm

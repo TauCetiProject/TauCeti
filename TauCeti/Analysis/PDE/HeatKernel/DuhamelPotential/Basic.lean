@@ -702,13 +702,24 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
     simpa only [mul_assoc, ← hh_def, show 2 * t' - t = t' - h by rw [hh_def]; ring] using
       norm_integral_le_of_ae_norm_le_mul_sub_rpow (A := K * H)
         hh hbig hα₂' (hK hfM hH htt' |>.mono fun s hs hsI => hs hsI x)
-  have hb := norm_intervalIntegral_sub_le_of_sub_le (c := C₁ * H) (β := (α : ℝ) / 2)
-    (mul_nonneg hC₁₀ H.coe_nonneg) (by linarith) hs₀ htt'.le (hint ht le_rfl)
-    (hint (by linarith) htt'.le) hfar
-    (by simpa only [show t - (2 * t' - t) = 2 * (t - t') by ring] using
-      hnear hs₀ (by linarith) le_rfl)
-    (by simpa only [show t' - (2 * t' - t) = t - t' by ring] using
-      hnear hs₀ (by linarith) htt'.le)
+  have hmem {τ : ℝ} (hτ : 2 * t' - t ≤ τ) : 2 * t' - t ∈ [[0, τ]] := by
+    rw [uIcc_of_le (hs₀.trans hτ)]
+    exact ⟨hs₀, hτ⟩
+  have hg₁ := hint ht le_rfl
+  have hg₂ := hint (by linarith) htt'.le
+  have hb := norm_intervalIntegral_sub_le_of_sub_le
+    (hg₁.mono_set (uIcc_subset_uIcc_left (hmem (by linarith))))
+    (hg₁.mono_set (uIcc_subset_uIcc_right (hmem (by linarith))))
+    (hg₂.mono_set (uIcc_subset_uIcc_left (hmem (by linarith))))
+    (hg₂.mono_set (uIcc_subset_uIcc_right (hmem (by linarith)))) hfar
+    (hnear hs₀ (by linarith) le_rfl) (hnear hs₀ (by linarith) htt'.le)
+  rw [show t - (2 * t' - t) = 2 * h by rw [hh_def]; ring,
+    show t' - (2 * t' - t) = h by rw [hh_def]; ring] at hb
+  -- `(2 h) ^ (α / 2) ≤ 2 h ^ (α / 2)` since `α / 2 ≤ 1`, so the tails are at most `3 C₁ H h^(α/2)`.
+  have h₃ : C₁ * H * (2 * h) ^ ((α : ℝ) / 2) ≤ 2 * (C₁ * H * h ^ ((α : ℝ) / 2)) := by
+    rw [Real.mul_rpow zero_le_two hh.le, mul_left_comm (C₁ * H)]
+    exact mul_le_mul_of_nonneg_right (Real.rpow_le_self_of_one_le one_le_two (by linarith))
+      (mul_nonneg (mul_nonneg hC₁₀ H.coe_nonneg) (Real.rpow_nonneg hh.le _))
   linarith
 
 /-- **The temporal Hölder estimate for the Hessian of the Duhamel potential.** For `0 < α < 2`

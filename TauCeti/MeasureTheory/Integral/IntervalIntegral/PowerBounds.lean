@@ -29,6 +29,10 @@ interval integrable; without any measurability assumption, the norm of its integ
 is at most `K * ((b - a) ^ (u + 1) / (u + 1))`. Both use `TauCeti.intervalIntegrable_sub_const_rpow`
 and `TauCeti.integral_sub_const_rpow`. The `_left` forms treat the singularity at `b`, with bound
 `K * (b - s) ^ u`, using `TauCeti.intervalIntegrable_sub_rpow` and `TauCeti.integral_sub_rpow`.
+
+`TauCeti.norm_intervalIntegral_sub_le_of_sub_le` compares two interval integrals with a common
+lower endpoint by splitting both at a common point. The norm of their difference is at most a
+bound for the integral of the difference up to the split point plus bounds for the two tails.
 -/
 
 public section
@@ -228,41 +232,21 @@ theorem norm_integral_le_of_ae_norm_le_rpow {F : Type*} [NormedAddCommGroup F]
         ((δ ^ 2) ^ (-((1 - α) / 2)) * δ) := by field_simp
     _ = (2 / α * A + 2 / (1 - α) * B) * δ ^ α := by rw [hpow]; ring
 
-open scoped Interval in
-/-- **Difference of two integrals over nearby intervals.** Let `s₀ = 2 t' - t`, so that
-`t - s₀ = 2 (t - t')`, and suppose `0 ≤ s₀ ≤ t' ≤ t`. If `‖∫₀^{s₀} (g₁ - g₂)‖ ≤ D`,
-`‖∫_{s₀}^t g₁‖ ≤ c (2 (t - t')) ^ β` and `‖∫_{s₀}^{t'} g₂‖ ≤ c (t - t') ^ β` for `β ≤ 1`,
-then `‖∫₀^t g₁ - ∫₀^{t'} g₂‖ ≤ D + 3 c (t - t') ^ β`. -/
+/-- **Difference of two integrals over nearby intervals.** Split `∫ₐ^t g₁` and `∫ₐ^{t'} g₂` at a
+common point `s₀`, given that `g₁` is interval integrable on `[a, s₀]` and `[s₀, t]` and `g₂` on
+`[a, s₀]` and `[s₀, t']`. If `‖∫ₐ^{s₀} (g₁ - g₂)‖ ≤ D`, `‖∫_{s₀}^t g₁‖ ≤ B₁` and
+`‖∫_{s₀}^{t'} g₂‖ ≤ B₂`, then `‖∫ₐ^t g₁ - ∫ₐ^{t'} g₂‖ ≤ D + B₁ + B₂`. -/
 theorem norm_intervalIntegral_sub_le_of_sub_le {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] {g₁ g₂ : ℝ → V} {c β t t' D : ℝ} (hc : 0 ≤ c) (hβ₁ : β ≤ 1)
-    (hs₀ : 0 ≤ 2 * t' - t) (htt' : t' ≤ t) (hg₁ : IntervalIntegrable g₁ volume 0 t)
-    (hg₂ : IntervalIntegrable g₂ volume 0 t')
-    (hfar : ‖∫ s in 0..2 * t' - t, (g₁ s - g₂ s)‖ ≤ D)
-    (h₁ : ‖∫ s in (2 * t' - t)..t, g₁ s‖ ≤ c * (2 * (t - t')) ^ β)
-    (h₂ : ‖∫ s in (2 * t' - t)..t', g₂ s‖ ≤ c * (t - t') ^ β) :
-    ‖(∫ s in 0..t, g₁ s) - ∫ s in 0..t', g₂ s‖ ≤ D + 3 * c * (t - t') ^ β := by
-  have hmem {τ : ℝ} (hτ : 2 * t' - t ≤ τ) : 2 * t' - t ∈ [[0, τ]] := by
-    rw [uIcc_of_le (hs₀.trans hτ)]
-    exact ⟨hs₀, hτ⟩
-  have hsplit {τ : ℝ} {g : ℝ → V} (hg : IntervalIntegrable g volume 0 τ) (hτ : 2 * t' - t ≤ τ) :
-      ∫ s in 0..τ, g s = (∫ s in 0..2 * t' - t, g s) + ∫ s in (2 * t' - t)..τ, g s :=
-    (intervalIntegral.integral_add_adjacent_intervals
-      (hg.mono_set (uIcc_subset_uIcc left_mem_uIcc (hmem hτ)))
-      (hg.mono_set (uIcc_subset_uIcc (hmem hτ) right_mem_uIcc))).symm
-  have hg₁' := hg₁.mono_set (uIcc_subset_uIcc left_mem_uIcc (hmem (by linarith)))
-  have hg₂' := hg₂.mono_set (uIcc_subset_uIcc left_mem_uIcc (hmem (by linarith)))
-  rw [hsplit hg₁ (by linarith), hsplit hg₂ (by linarith),
+    [NormedSpace ℝ V] {g₁ g₂ : ℝ → V} {a s₀ t t' D B₁ B₂ : ℝ}
+    (hg₁ : IntervalIntegrable g₁ volume a s₀) (hg₁' : IntervalIntegrable g₁ volume s₀ t)
+    (hg₂ : IntervalIntegrable g₂ volume a s₀) (hg₂' : IntervalIntegrable g₂ volume s₀ t')
+    (hD : ‖∫ s in a..s₀, (g₁ s - g₂ s)‖ ≤ D) (h₁ : ‖∫ s in s₀..t, g₁ s‖ ≤ B₁)
+    (h₂ : ‖∫ s in s₀..t', g₂ s‖ ≤ B₂) :
+    ‖(∫ s in a..t, g₁ s) - ∫ s in a..t', g₂ s‖ ≤ D + B₁ + B₂ := by
+  rw [← intervalIntegral.integral_add_adjacent_intervals hg₁ hg₁',
+    ← intervalIntegral.integral_add_adjacent_intervals hg₂ hg₂',
     show ∀ a b c d : V, a + b - (c + d) = (a - c) + b - d from fun a b c d => by abel,
-    ← intervalIntegral.integral_sub hg₁' hg₂']
-  have h₃ : (2 * (t - t')) ^ β ≤ 2 * (t - t') ^ β := by
-    rw [Real.mul_rpow zero_le_two (sub_nonneg.mpr htt')]
-    exact mul_le_mul_of_nonneg_right (rpow_le_self_of_one_le one_le_two hβ₁)
-      (rpow_nonneg (sub_nonneg.mpr htt') _)
-  calc ‖(∫ s in 0..2 * t' - t, (g₁ s - g₂ s)) + (∫ s in (2 * t' - t)..t, g₁ s) -
-        ∫ s in (2 * t' - t)..t', g₂ s‖
-      ≤ ‖∫ s in 0..2 * t' - t, (g₁ s - g₂ s)‖ + ‖∫ s in (2 * t' - t)..t, g₁ s‖ +
-          ‖∫ s in (2 * t' - t)..t', g₂ s‖ := norm_sub_le_of_le (norm_add_le _ _) le_rfl
-    _ ≤ D + c * (2 * (t - t') ^ β) + c * (t - t') ^ β := by gcongr; exact h₁.trans (by gcongr)
-    _ = D + 3 * c * (t - t') ^ β := by ring
+    ← intervalIntegral.integral_sub hg₁ hg₂]
+  exact (norm_sub_le_of_le (norm_add_le _ _) le_rfl).trans (add_le_add (add_le_add hD h₁) h₂)
 
 end TauCeti

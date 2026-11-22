@@ -100,7 +100,7 @@ private theorem exists_bound_smul_coefficient (χ : FrequencyCutoff (CoordinateS
     calc _ ≤ C * ‖ξ‖ ^ r := hCK x hx ξ hξ0
       _ ≤ C * (2 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2)) :=
           mul_le_mul_of_nonneg_left (by
-            simpa only [abs_norm] using Real.rpow_le_two_rpow_mul_one_add_sq_rpow (t := ‖ξ‖)
+            simpa only [abs_norm] using Real.abs_rpow_le_two_rpow_mul_one_add_sq_rpow (t := ‖ξ‖)
               (by rw [abs_norm]; linarith) r) hC
       _ ≤ _ := by rw [add_mul, ← mul_assoc]; exact le_add_of_nonneg_right (by positivity)
 
@@ -172,7 +172,7 @@ theorem eq_zero_of_coefficient_toSymbol_eq {m' : ℝ} (hm : m' < m) (b : Symbol 
       have htξ' : |t * ‖ξ‖| = t * ‖ξ‖ := abs_of_nonneg (by positivity)
       rw [← Real.mul_rpow ht0.le hn.le]
       simpa only [htξ'] using
-        Real.one_add_sq_rpow_le_two_rpow_mul_rpow (t := t * ‖ξ‖) (by rw [htξ']; linarith) m'
+        Real.one_add_sq_rpow_le_two_rpow_mul_abs_rpow (t := t * ‖ξ‖) (by rw [htξ']; linarith) m'
     rw [Real.rpow_sub ht0, ← mul_div_assoc, le_div_iff₀' (by positivity)]
     calc t ^ m * ‖a.coefficient (x, ξ)‖ ≤ C * (1 + (t * ‖ξ‖) ^ 2) ^ (m' / 2) := h
       _ ≤ C * (2 ^ (|m'| / 2) * (t ^ m' * ‖ξ‖ ^ m')) := mul_le_mul_of_nonneg_left hw hC

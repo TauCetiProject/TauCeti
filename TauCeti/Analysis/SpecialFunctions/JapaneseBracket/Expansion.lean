@@ -227,7 +227,7 @@ private theorem exists_abs_bracketRemainder_le [ProperSpace E] (hc : c ≠ 0)
         rw [hGeq, Real.mul_rpow (sq_nonneg c) (sq_nonneg _), Real.rpow_mul (norm_nonneg ξ),
           Real.rpow_two]
     _ ≤ |A| * ((c ^ 2) ^ (r - K) * (2 ^ (|2 * (r - K)| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r - K))) := by
-        have h := Real.rpow_le_two_rpow_mul_one_add_sq_rpow (t := ‖ξ‖) (by rwa [abs_norm])
+        have h := Real.abs_rpow_le_two_rpow_mul_one_add_sq_rpow (t := ‖ξ‖) (by rwa [abs_norm])
           (2 * (r - K))
         rw [abs_norm, mul_div_cancel_left₀ _ two_ne_zero] at h
         exact mul_le_mul (le_abs_self A) (by gcongr) (by positivity) (abs_nonneg A)

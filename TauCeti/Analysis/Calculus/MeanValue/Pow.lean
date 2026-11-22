@@ -43,7 +43,7 @@ it still requires `0 ≤ β ≤ 1` and `0 ≤ K`.
 
 ## Main results
 
-* `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt`:
+* `TauCeti.norm_sub_le_mul_abs_sub_mul_max_rpow_of_hasDerivWithinAt`:
   `‖u b - u a‖ ≤ D |b - a| max (a ^ (β - 1)) (b ^ (β - 1))` for `0 < a` and `0 < b` when
   `u` has derivative `f' r` within `[[a, b]]` with `‖f' r‖ ≤ D r ^ (β - 1)` at every
   `r ∈ [[a, b]]`.
@@ -65,7 +65,7 @@ open Real Set
 `[[a, b]]` of norm at most `D r^(β - 1)` at every `r ∈ [[a, b]]`, then
 `‖u b - u a‖ ≤ D |b - a| max (a^(β - 1)) (b^(β - 1))`. The exponent `β` is arbitrary: the power
 `r^(β - 1)` is monotone in `r > 0`, so its largest value on `[[a, b]]` is at an endpoint. -/
-theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt {F : Type*} [NormedAddCommGroup F]
+theorem norm_sub_le_mul_abs_sub_mul_max_rpow_of_hasDerivWithinAt {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] {u f' : ℝ → F} {β D a b : ℝ} (ha : 0 < a) (hb : 0 < b)
     (hderiv : ∀ r ∈ uIcc a b, HasDerivWithinAt u (f' r) (uIcc a b) r)
     (hbound : ∀ r ∈ uIcc a b, ‖f' r‖ ≤ D * r ^ (β - 1)) :
@@ -100,10 +100,8 @@ theorem dist_le_mul_abs_sub_mul_rpow_of_neg_right {X : Type*} [PseudoMetricSpace
     positivity
   have key : b ^ β ≤ |b - a| * (-a) ^ (β - 1) :=
     calc b ^ β ≤ (b - a) ^ β := rpow_le_rpow hb.le (by linarith) hβ₀
-      _ ≤ (-a) ^ (β - 1) * (b - a) ^ (1 : ℝ) := by
-          simpa only [← rpow_neg_eq_inv_rpow, neg_neg, neg_sub_neg, neg_sub] using
-            rpow_le_rpow_sub_mul_rpow (inv_pos.2 (by linarith : 0 < b - a))
-              (inv_anti₀ hd (by linarith)) (neg_le_neg (by linarith : β ≤ 1))
+      _ ≤ (-a) ^ (β - 1) * (b - a) ^ (1 : ℝ) :=
+          rpow_le_rpow_sub_mul_rpow (by linarith) (rpow_le_rpow_of_nonpos hd (by linarith) hβ₁)
       _ = |b - a| * (-a) ^ (β - 1) := by
           rw [rpow_one, abs_of_pos (by linarith), mul_comm]
   exact (hpos hb).trans (by gcongr)

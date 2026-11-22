@@ -521,7 +521,7 @@ private theorem norm_heatCauchyPotential_sub_le_of_half_le {D β : ℝ} (hβ₀ 
       ((rpow_le_rpow_of_nonpos (half_pos ha) hb (by linarith)).trans h2)
   calc ‖heatCauchyPotential g b x - heatCauchyPotential g a x‖
       ≤ D * (|b - a| * max (a ^ (β - 1)) (b ^ (β - 1))) :=
-        norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt
+        norm_sub_le_mul_abs_sub_mul_max_rpow_of_hasDerivWithinAt
           (u := fun r ↦ heatCauchyPotential g r x) ha hb0
           (fun r hr ↦
             (hasDerivAt_heatCauchyPotential_of_ae_norm_le hM (hpos hr) x).hasDerivWithinAt)

@@ -217,7 +217,7 @@ private theorem exists_norm_iteratedFDeriv_removed_le (hε : ε ≠ 0) (hR : 1 �
     refine (hA (k - i) (Nat.sub_le k i) ξ (norm_pos_iff.1 (one_pos.trans_le h1))).trans ?_
     rw [div_eq_mul_inv, mul_assoc]
     gcongr
-    have h := Real.rpow_le_two_rpow_mul_one_add_sq_rpow (t := ‖ξ‖) (by rwa [abs_norm])
+    have h := Real.abs_rpow_le_two_rpow_mul_one_add_sq_rpow (t := ‖ξ‖) (by rwa [abs_norm])
       (-((k - i : ℕ) : ℝ))
     rwa [abs_norm, abs_neg, Nat.abs_cast, Real.rpow_neg (norm_nonneg _), Real.rpow_natCast] at h
   have hw : (1 + ‖ξ‖ ^ 2) ^ (-(i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ (-((k - i : ℕ) : ℝ) / 2) =
