@@ -55,7 +55,7 @@ public section
 noncomputable section
 
 open NumberField NumberField.InfinitePlace Module
-open scoped NumberField.LiesOver
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.ClassFieldTheory
 
@@ -71,11 +71,11 @@ the infinite ideles `L_∞ˣ` have Herbrand quotient `∏_v [L_w : K_v]` as a re
 theorem herbrandQuotient_infiniteIdelesRep
     (w : ∀ v : InfinitePlace K, {w : InfinitePlace L // w.LiesOver v}) :
     TateCohomology.herbrandQuotient (infiniteIdelesRep K L) =
-      ∏ v, (finrank v.Completion (w v).1.Completion : ℚ) := by
+      ∏ v, (finrank v.Completion (w v).val.Completion : ℚ) := by
   rw [TateCohomology.herbrandQuotient_eq_of_iso (infiniteIdelesPiIso K L),
     TateCohomology.herbrandQuotient_pi (fun v ↦ infiniteSemilocalUnitsRep L v) Finset.univ
       (by simp) (by simp)]
-  exact Finset.prod_congr rfl fun v _ ↦ herbrandQuotient_infiniteSemilocalUnitsRep v (w v).1
+  exact Finset.prod_congr rfl fun v _ ↦ herbrandQuotient_infiniteSemilocalUnitsRep v (w v).val
 
 /-- **The infinite ideles and the archimedean place lattice** have the same Herbrand quotient: for
 a cyclic extension `L/K` of number fields, `h(L_∞ˣ)` is the Herbrand quotient of the permutation

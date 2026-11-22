@@ -53,6 +53,9 @@ right unitors `R ⟶ R ⊗ 𝟙` and `M ⊗ 𝟙 ⟶ M` has augmentation `ε (x 
 `α ∈ Hⁿ(X, A; R, M)` and a relative class `x ∈ Hₙ(X, A; R)` of a topological pair `(X, A)`
 (`TopPair.singularCap_comp_singularHomology₀ε`).  On chains,
 the back `0`-face of each singular `n`-simplex is a vertex, whose augmentation is the identity.
+Since capping with the image `δσ` of a class `σ ∈ Hⁿ(A)` under the connecting morphism is capping
+the boundary with `σ`, the Kronecker pairing is compatible with the connecting morphisms of a pair,
+`⟨δσ, o⟩ = ⟨σ, ∂o⟩` (`TopPair.singularKronecker_singularCohomologyδ`).
 
 For a class `α ∈ Hᵖ(X; R, M)` with values in an arbitrary object `M`, the cap product along a
 pairing `μ : M ⊗ S ⟶ L` lands in `H_q(X; L)`, and the class to evaluate on it is a class
@@ -67,7 +70,8 @@ this pairs `α ∈ Hᵖ(X; M)` with `β ∈ H^q(X; k)`, the general coefficient 
 a pair `(X, A)` the same identities hold for the relative cap product of a relative class
 `α ∈ Hᵖ(X, A; R, M)` with a relative class `x ∈ Hₙ(X, A; T)`, with the relative cup product
 `α ⌣ β ∈ Hⁿ(X, A; T, N')` along the relative Alexander–Whitney diagonal
-(`TopPair.singularCap_comp_singularKronecker_of_homologyMap_eq` and
+(`TopPair.singularCap_comp_singularKronecker`, for `α` with values in the tensor unit,
+`TopPair.singularCap_comp_singularKronecker_of_homologyMap_eq` and
 `TopPair.singularCap_comp_singularKronecker_of_isIso`).
 
 ## References
@@ -392,5 +396,44 @@ theorem singularCap_comp_singularKronecker_of_isIso (P : TopPair.{w}) (k : Type*
         (TauCeti.ChainComplex.cup k (P.alexanderWhitneyDiagonal u) ν p q n h α β) := by
   rw [singularCap_def, singularKronecker_def, TopCat.singularKronecker_def]
   exact TauCeti.ChainComplex.cap_comp_kronecker_of_isIso _ _ ν p q n h α β
+
+/-- **The Kronecker pairing of a relative singular cap product**, `⟨β, x ⌢ α⟩ = ⟨α ⌣ β, x⟩`: the
+relative form of `TopCat.singularCap_comp_singularKronecker`. For a pair `(X, A)`, a relative class
+`α ∈ Hᵖ(X, A; R, 𝟙)` with values in the tensor unit, capped along `u` and the left unitor, and an
+absolute class `β ∈ H^q(X; S, N)`, evaluating `β` on `x ⌢ α` is evaluating on `x` the relative cup
+product `α ⌣ β ∈ Hⁿ(X, A; T, N)` along the relative Alexander–Whitney diagonal
+`P.alexanderWhitneyDiagonal u` and the left unitor of `N`. -/
+theorem singularCap_comp_singularKronecker (P : TopPair.{w}) (k : Type*) [CommRing k]
+    [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (p q n : ℕ) (h : p + q = n)
+    (α : P.singularCohomology R k (𝟙_ C) p) (β : P.fst.singularCohomology S k N q) :
+    P.singularCap k u (λ_ S).hom p q n h α ≫ P.fst.singularKronecker k q β =
+      P.singularKronecker k n
+        (TauCeti.ChainComplex.cup k (P.alexanderWhitneyDiagonal u) (λ_ N).hom p q n h α β) := by
+  obtain ⟨φ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p α
+  obtain ⟨ψ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ q β
+  rw [singularCap_def, singularKronecker_def, TopCat.singularKronecker_def]
+  refine TauCeti.ChainComplex.cap_comp_kronecker _ _ _ p q n h φ ψ ψ ?_
+  rw [SSet.chainComplexPairing_leftUnitor_hom_f]
+  exact (leftUnitor_naturality _).symm
+
+/-- **The Kronecker pairing and the connecting morphisms**, `⟨δσ, o⟩ = ⟨σ, ∂o⟩`: evaluating the
+image of a class `σ ∈ Hⁿ(A)` under the connecting morphism `Hⁿ(A) ⟶ Hⁿ⁺¹(X, A)` on relative
+classes of `Hₙ₊₁(X, A)` is evaluating `σ` on their boundaries. -/
+theorem singularKronecker_singularCohomologyδ (P : TopPair.{w}) (k : Type*) [Ring k] [Linear k C]
+    [MonoidalLinear k C] (n : ℕ) (σ : P.snd.singularCohomology R k M n) :
+    P.singularKronecker k (n + 1) (P.singularCohomologyδ R k M n (n + 1) rfl σ) =
+      P.singularHomologyδ R (n + 1) n ≫ P.snd.singularKronecker k n σ :=
+  -- Both sides are augmentations of cap products into degree zero, and capping with `δσ` is
+  -- capping the boundary with `σ`, followed by the inclusion of `A`, which keeps augmentations.
+  -- The homology of the subspace of `toSSetPair.obj P` is that of `P.snd` only up to unfolding, so
+  -- the composites are reassociated by `Category.assoc` as terms rather than rewritten.
+  (singularCap_comp_singularHomology₀ε P k (n + 1) rfl _).symm.trans <|
+    (congrArg (· ≫ P.fst.singularHomology₀ε M)
+      (singularCap_singularCohomologyδ P k (ρ_ R).inv (ρ_ M).hom n 0 n rfl σ)).trans <|
+    (Category.assoc _ _ _).trans <| congrArg (P.singularHomologyδ R (n + 1) n ≫ ·) <|
+      (Category.assoc _ _ _).trans <|
+        (congrArg (P.snd.singularCap k (ρ_ R).inv (ρ_ M).hom n 0 n rfl σ ≫ ·)
+          (SSet.homologyMap_homology₀ε M (TopCat.toSSet.map P.map))).trans
+        (TopCat.singularCap_comp_singularHomology₀ε P.snd k n rfl σ)
 
 end TopPair

@@ -52,6 +52,8 @@ Every object `X` of `C` is a twisted object with zero twist, and `X ↦ (X, 0)` 
   with the twisted differential.
 * `TauCeti.DGTwistedObject.dgHomEquiv`: degree-`n` morphisms of twisted objects are degree-`n`
   morphisms of the underlying objects.
+* `TauCeti.DGTwistedObject.dgHomComplexIsoOfTwistEqZero`: between twisted objects with zero
+  twist, the Hom complex is that of the underlying objects.
 * `TauCeti.DGTwistedObject.embedding`: the DG functor `X ↦ (X, 0)`.
 * `CategoryTheory.EnrichedFunctor.mapDGTwistedObject`: the DG functor `(X, δ) ↦ (F X, F δ)`
   induced by a DG functor `F`.
@@ -235,6 +237,25 @@ theorem dgHomEquiv_dgComp {X Y Z : DGTwistedObject R C} {p q n : ℤ} (f : DGHom
 @[simp↓]
 theorem dgHomEquiv_dgId (X : DGTwistedObject R C) : dgHomEquiv R X X 0 (dgId R X) = dgId R X.obj :=
   (homComplexData R).dgId_toDGCategory X
+
+/-- The Hom complex between twisted objects with zero twist is the Hom complex between their
+underlying objects, degreewise through `TauCeti.DGTwistedObject.dgHomEquiv`: the twisted
+differential is the differential of `C`. -/
+noncomputable def dgHomComplexIsoOfTwistEqZero {X Y : DGTwistedObject R C} (hX : X.twist = 0)
+    (hY : Y.twist = 0) : dgHomComplex R X Y ≅ dgHomComplex R X.obj Y.obj :=
+  HomologicalComplex.Hom.isoOfComponents (fun n ↦ (dgHomEquiv R X Y n).toModuleIso) (by
+    rintro n _ rfl
+    ext f
+    have h := dgHomEquiv_dgDifferential R n f
+    rw [hX, hY, dgComp_zero, zero_dgComp, smul_zero, add_zero, sub_zero] at h
+    exact h.symm)
+
+/-- The isomorphism `TauCeti.DGTwistedObject.dgHomComplexIsoOfTwistEqZero` is
+`TauCeti.DGTwistedObject.dgHomEquiv` in each degree. -/
+theorem dgHomComplexIsoOfTwistEqZero_hom_f_apply {X Y : DGTwistedObject R C} (hX : X.twist = 0)
+    (hY : Y.twist = 0) (n : ℤ) (f : DGHom R n X Y) :
+    ((dgHomComplexIsoOfTwistEqZero R hX hY).hom.f n).hom f = dgHomEquiv R X Y n f :=
+  (rfl)
 
 /-! ### The embedding `X ↦ (X, 0)` -/
 

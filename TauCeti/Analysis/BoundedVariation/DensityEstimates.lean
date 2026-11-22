@@ -155,7 +155,7 @@ private theorem ofReal_abs_inner_setIntegral_polarDensity_le_mul_liminf
       (𝓝 ⟪v, ∫ y in ((↑) : Ω → E) ⁻¹' closedBall x r, σ y ∂ν⟫) := by
     rw [← integral_inner (hint r hΩ) v]
     simpa only [smul_eq_mul] using tendsto_integral_smul_of_cutoff (g := fun y => ⟪v, σ y⟫)
-      measurable_subtype_coe hδ
+      measurable_subtypeVal hδ
       ((hint (r + δ) (by rwa [add_comm])).const_inner v)
       (fun h hh => (hψs h hh).continuous.measurable)
       (fun h hh y => abs_le.2 ⟨(neg_nonpos.2 zero_le_one).trans (hψ01 h hh (mem_range_self y)).1,
@@ -300,16 +300,10 @@ theorem eventually_perimeter_ball_le [μ.IsAddHaarMeasure] (hx : x ∈ reducedBo
     {t : ℝ≥0} (ht : 1 < t) :
     ∀ᶠ r in 𝓝[>] 0, perimeter μ ⟨ball x r, isOpen_ball⟩ s ≤
       t * ENNReal.ofReal (finrank ℝ E * r ^ (finrank ℝ E - 1) * μ.real (ball 0 1)) := by
-  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
-  obtain ⟨ε, hε, hεΩ⟩ :=
-    nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
-  filter_upwards [eventually_variationMeasure_closedBall_le hx ht, Ioc_mem_nhdsGT hε]
-    with r hr hrε
-  have hball : ball x r ⊆ closedBall x r := ball_subset_closedBall
-  rw [perimeter_def, ← variationMeasure_preimage_coe hu hfin
-    (U := ⟨ball x r, isOpen_ball⟩)
-    fun y hy => hεΩ (closedBall_subset_closedBall hrε.2 (hball hy))]
-  exact (measure_mono (preimage_mono hball)).trans hr
+  filter_upwards [eventually_variationMeasure_closedBall_le hx ht,
+    eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary hx]
+    with r hr hP
+  exact hP.trans hr
 
 /-- **The perimeter measure is bounded by Hausdorff measure on the reduced boundary.** Let `μ` be
 an additive Haar measure on a space of dimension `n`. Every set `A` of points of the reduced
@@ -345,7 +339,7 @@ theorem variationMeasure_preimage_le_mul_hausdorffMeasure [μ.IsAddHaarMeasure] 
       (ENNReal.div_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top ENNReal.ofReal_ne_top) h2)
       (A := ((↑) : Ω → E) ⁻¹' A) fun y hy => ?_
     · rw [ENNReal.mul_div_cancel h2 h2top, ← Isometry.hausdorffMeasure_image
-        (isometry_subtype_coe (s := (Ω : Set E))) (Or.inl (by positivity))] at hle
+        (isometry_subtypeVal (s := (Ω : Set E))) (Or.inl (by positivity))] at hle
       exact hle.trans (by rw [mul_assoc]; gcongr; exact image_preimage_subset _ _)
     filter_upwards [eventually_variationMeasure_closedBall_le (hA hy) ht, self_mem_nhdsWithin]
       with r hr (hr0 : 0 < r)
@@ -370,7 +364,7 @@ theorem map_variationMeasure_absolutelyContinuous_euclideanHausdorffMeasure
     [μ.IsAddHaarMeasure] :
     (variationMeasure μ Ω (s.indicator 1)).map ((↑) : Ω → E) ≪ μHE[finrank ℝ E - 1] := by
   refine Measure.AbsolutelyContinuous.mk fun N hN hN0 => ?_
-  rw [Measure.map_apply measurable_subtype_coe hN]
+  rw [Measure.map_apply measurable_subtypeVal hN]
   -- Off the reduced boundary `|Dχ_s|` vanishes; on it, use the Hausdorff measure bound.
   have hsub : ((↑) : Ω → E) ⁻¹' N ⊆ ((↑) : Ω → E) ⁻¹' (N ∩ reducedBoundary μ Ω s) ∪
       {y | ↑y ∉ reducedBoundary μ Ω s} := fun y hy =>

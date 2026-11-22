@@ -92,20 +92,20 @@ theorem continuous_sum :
     Continuous (sum : GLSymplectic n R × GLSymplectic m R → GLSymplectic (n ⊕ m) R) := by
   have h₁ : Continuous fun p : GLSymplectic n R × GLSymplectic m R ↦
       ((p.1 : GL (n ⊕ n) R) : Matrix (n ⊕ n) (n ⊕ n) R) :=
-    Units.continuous_val.comp (continuous_subtype_val.comp continuous_fst)
+    Units.continuous_val.comp (continuous_subtypeVal.comp continuous_fst)
   have h₂ : Continuous fun p : GLSymplectic n R × GLSymplectic m R ↦
       ((p.2 : GL (m ⊕ m) R) : Matrix (m ⊕ m) (m ⊕ m) R) :=
-    Units.continuous_val.comp (continuous_subtype_val.comp continuous_snd)
+    Units.continuous_val.comp (continuous_subtypeVal.comp continuous_snd)
   have hval : Continuous fun p : GLSymplectic n R × GLSymplectic m R ↦
       ((sum p : GL ((n ⊕ m) ⊕ (n ⊕ m)) R) : Matrix ((n ⊕ m) ⊕ (n ⊕ m)) _ R) :=
     (h₁.matrix_symplecticSum h₂).congr fun p ↦ (coe_sum p.1 p.2).symm
   refine continuous_induced_rng.2 (Units.continuous_iff.2 ⟨hval, ?_⟩)
   have h₃ : Continuous fun p : GLSymplectic n R × GLSymplectic m R ↦
       (((p.1 : GL (n ⊕ n) R)⁻¹ : GL (n ⊕ n) R) : Matrix (n ⊕ n) (n ⊕ n) R) :=
-    Units.continuous_coe_inv.comp (continuous_subtype_val.comp continuous_fst)
+    Units.continuous_coe_inv.comp (continuous_subtypeVal.comp continuous_fst)
   have h₄ : Continuous fun p : GLSymplectic n R × GLSymplectic m R ↦
       (((p.2 : GL (m ⊕ m) R)⁻¹ : GL (m ⊕ m) R) : Matrix (m ⊕ m) (m ⊕ m) R) :=
-    Units.continuous_coe_inv.comp (continuous_subtype_val.comp continuous_snd)
+    Units.continuous_coe_inv.comp (continuous_subtypeVal.comp continuous_snd)
   refine (h₃.matrix_symplecticSum h₄).congr fun p ↦ ?_
   have := coe_sum p.1⁻¹ p.2⁻¹
   simpa only [Function.comp_apply, ← Prod.inv_mk (p.1) (p.2), map_inv, Subgroup.coe_inv,
@@ -122,11 +122,11 @@ variable [TopologicalSpace R] [IsTopologicalRing R]
 /-- The standard embedding into matrix units is continuous for the subspace topology. -/
 theorem continuous_ofSymplecticGroup : Continuous (ofSymplecticGroup l R) := by
   refine Units.continuous_iff.2 ⟨?_, ?_⟩
-  · exact continuous_subtype_val.congr fun A ↦
+  · exact continuous_subtypeVal.congr fun A ↦
       (coe_ofSymplecticGroup l R A).symm
   · have h : Continuous (fun A : Matrix.symplecticGroup l R ↦
         (-J l R) * (A : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ * J l R) :=
-      (continuous_const.matrix_mul continuous_subtype_val.matrix_transpose).matrix_mul
+      (continuous_const.matrix_mul continuous_subtypeVal.matrix_transpose).matrix_mul
         continuous_const
     refine h.congr fun A ↦ ?_
     have hinv := coe_ofSymplecticGroup l R A⁻¹
@@ -142,7 +142,7 @@ def symplecticGroupContinuousMulEquiv : Matrix.symplecticGroup l R ≃ₜ* GLSym
       (coe_mulEquivSymplecticGroup_symm_apply l R A).symm
   continuous_invFun := by
     apply continuous_induced_rng.2
-    exact (Units.continuous_val.comp continuous_subtype_val).congr fun A ↦
+    exact (Units.continuous_val.comp continuous_subtypeVal).congr fun A ↦
       (coe_mulEquivSymplecticGroup l R A).symm
 
 /-- The equivalence sends a symplectic matrix to its canonical unit. -/
