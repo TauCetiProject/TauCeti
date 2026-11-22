@@ -1172,6 +1172,18 @@ theorem isComplexLinearMap_perturbedFDeriv_iff_fderiv_comp_equivRealProdCLM_I_su
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one,
     equivRealProdCLM_I]
 
+/-- The Floer equation `(du - X_K)^{0,1} = 0` at `z` is the coordinate equation
+`∂ₜu - X(z, u)(0, 1) = J(z, u)(∂ₛu - X(z, u)(1, 0))` for the Hamiltonian one-form `X = X_K`. -/
+theorem isComplexLinearMap_perturbedFDeriv_iff_fderiv_stdComplexLineImag_sub
+    (ω : SymplecticForm V) {u : ℝ × ℝ → V} {z : ℝ × ℝ} :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V) ↔
+      fderiv ℝ u z stdComplexLineImag - ω.hamiltonianOneForm Ks Kt z (u z) stdComplexLineImag =
+        J z (u z) (fderiv ℝ u z stdComplexLineReal -
+          ω.hamiltonianOneForm Ks Kt z (u z) stdComplexLineReal) := by
+  rw [isComplexLinearMap_stdComplexLine_iff]
+  simp only [perturbedFDeriv_eq_sub, sub_apply, ContinuousLinearMap.coe_coe]
+
 /-- **The energy density bounds the derivative uniformly over a compact parameter window.** Let
 `J_p(z, x)` be continuous and tamed by `ω`, and `X_{K_{s,p}}(z, x)` continuous, for `(p, z, x)` in
 `C × D × K` with compact `C ⊆ P`, `D ⊆ ℝ × ℝ` and `K ⊆ V`. There are constants `A, B ≥ 0` such
