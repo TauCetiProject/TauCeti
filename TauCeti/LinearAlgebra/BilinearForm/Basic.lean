@@ -161,8 +161,8 @@ theorem forall_dvd_iff_of_smul_eq {R M : Type*} [CommSemiring R] [AddCommMonoid 
   simp only [LinearMap.smul_apply, smul_eq_mul, mul_comm r a, ha.dvd_cancel_left]
 
 /-- Rescaling by a scalar `a` that acts injectively on `R`, such as a regular element of `R`,
-neither creates nor destroys symmetry of a bilinear form. The reverse implication is Mathlib's
-`LinearMap.BilinForm.IsSymm.smul`, which needs no hypothesis on `a`. -/
+neither creates nor destroys symmetry of a bilinear form. -/
+@[simp]
 theorem isSymm_smul_iff {α R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
     [Monoid α] [DistribMulAction α R] [SMulCommClass R α R] {a : α} (ha : IsSMulRegular R a)
     {C : LinearMap.BilinForm R M} : (a • C).IsSymm ↔ C.IsSymm :=
