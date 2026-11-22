@@ -87,16 +87,10 @@ lemma spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom {X X' : De
     Iso.symm_hom, Category.assoc]
   rw [Abelian.SpectralObject.spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom_assoc
     (X := (TStructure.t.spectralObject X).mapHomologicalFunctor H)
-    (Y := (TStructure.t.spectralObject X').mapHomologicalFunctor H)]
-  -- The component of the morphism of spectral objects induced by `f` on `H^{p+q}(q ≤ q + 1)` is,
-  -- by definition of `mapHomologicalFunctorFunctor` and `spectralObjectFunctor`, the value of
-  -- `H.shift (p + q)` on the map induced on `τ_{≥q} τ_{<q+1}`.
-  have hφ : (((SpectralObject.mapHomologicalFunctorFunctor H EInt).map
-      (TStructure.t.spectralObjectFunctor.map f)).hom (p + q)).app
-        (ComposableArrows.mk₁ (homOfLE (show ((q : ℤ) : EInt) ≤ ((q + 1 : ℤ) : EInt) by simp))) =
-      (H.shift (p + q)).map ((TStructure.t.truncGE q).map ((TStructure.t.truncLT (q + 1)).map f)) :=
-    rfl
-  rw [hφ, ← H.shiftIso_hom_naturality]
+    (Y := (TStructure.t.spectralObject X').mapHomologicalFunctor H),
+    TStructure.t.mapHomologicalFunctorFunctor_map_spectralObjectFunctor_map_hom_app_mk₁]
+  dsimp only [Triangulated.TStructure.eTruncGE_obj_coe, Triangulated.TStructure.eTruncLT_obj_coe]
+  rw [← H.shiftIso_hom_naturality]
   simp only [← Functor.map_comp_assoc, truncGETruncLTIsoSingleFunctor_hom_naturality_assoc]
   simp
 

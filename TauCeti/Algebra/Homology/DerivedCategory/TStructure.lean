@@ -131,12 +131,11 @@ lemma hom_ext_of_isGE_of_isLE {B : C} {f g : Y ⟶ (singleFunctor C q).obj B}
   rw [← cancel_epi (isoSingleFunctorHomology Y q).inv]
   obtain ⟨f', hf'⟩ := (singleFunctor C q).map_surjective ((isoSingleFunctorHomology Y q).inv ≫ f)
   obtain ⟨g', hg'⟩ := (singleFunctor C q).map_surjective ((isoSingleFunctorHomology Y q).inv ≫ g)
-  rw [← hf', ← hg']
-  congr 1
-  have hf := NatIso.naturality_1 (singleFunctorCompHomologyFunctorIso C q) f'
-  have hg := NatIso.naturality_1 (singleFunctorCompHomologyFunctorIso C q) g'
-  dsimp at hf hg
-  rw [← hf, ← hg, hf', hg', Functor.map_comp, Functor.map_comp, h]
+  -- The functor `B ↦ Hᵠ(B[-q])` is faithful, being isomorphic to the identity.
+  have := Functor.Faithful.of_iso (singleFunctorCompHomologyFunctorIso C q).symm
+  have hfg : f' = g' := (singleFunctor C q ⋙ homologyFunctor C q).map_injective
+    (by rw [Functor.comp_map, Functor.comp_map, hf', hg', Functor.map_comp, Functor.map_comp, h])
+  rw [← hf', ← hg', hfg]
 
 /-- A morphism `Hᵠ(Y) ⟶ B` placed in degree `q`, precomposed with `isoSingleFunctorHomology`,
 induces the given morphism on `Hᵠ`. -/
@@ -227,12 +226,8 @@ lemma truncGETruncLTIsoSingleFunctor_hom_naturality {X X' : DerivedCategory C} (
     (t.truncGE q).map ((t.truncLT (q + 1)).map f) ≫ (truncGETruncLTIsoSingleFunctor X' q).hom =
       (truncGETruncLTIsoSingleFunctor X q).hom ≫
         (singleFunctor C q).map ((homologyFunctor C q).map f) := by
-  apply hom_ext_of_isGE_of_isLE
-  rw [← cancel_mono ((singleFunctorCompHomologyFunctorIso C q).hom.app _), Functor.map_comp,
-    Category.assoc, homologyFunctor_map_truncGETruncLTIsoSingleFunctor_hom,
-    homologyTruncGETruncLTIso_hom_naturality, Functor.map_comp, Category.assoc]
-  have := (singleFunctorCompHomologyFunctorIso C q).hom.naturality ((homologyFunctor C q).map f)
-  dsimp at this
-  rw [this, homologyFunctor_map_truncGETruncLTIsoSingleFunctor_hom_assoc]
+  simp only [truncGETruncLTIsoSingleFunctor, Iso.trans_hom, Functor.mapIso_hom,
+    Category.assoc, isoSingleFunctorHomology_hom_naturality_assoc, ← Functor.map_comp,
+    homologyTruncGETruncLTIso_hom_naturality]
 
 end DerivedCategory
