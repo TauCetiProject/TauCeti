@@ -51,11 +51,10 @@ particular for every elementary stabilization of each of the eight corner types.
 
 ## Implementation notes
 
-The count is compared through `TauCeti.orbitCount`, using
-`TauCeti.GridDiagram.componentCount_eq_orbitCount`. Cutting the new column back out of its cycle,
-by the transposition of `p` and `ι s`, gives a permutation that fixes `p` and is carried from `σ`
-by `ι`. Adjoining a fixed point adds one orbit (`TauCeti.orbitCount_add_one_eq_of_semiconj`) and
-splicing it into another orbit removes one (`TauCeti.orbitCount_mul_swap_add_one`).
+Cutting the new column back out of its cycle, by the transposition of `p` with the embedded
+predecessor of `s`, gives a permutation that fixes `p` and is carried from `σ` by `ι`
+(`TauCeti.GridDiagram.semiconj_componentPerm_stabilizeX_mul_swap`). The component equivalence is
+then `Equiv.Perm.orbitQuotientEquivSplice`, and the component count is compared through it.
 
 ## References
 
@@ -93,34 +92,6 @@ theorem componentPerm_stabilizeX_succAbove (c : Fin n) :
   split_ifs with h
   · rw [GridState.splitPoint_apply_newColumn, ← h, X_componentPerm_apply]
   · simp only [GridState.splitPoint_apply_succAbove, h, ↓reduceIte, X_componentPerm_apply]
-
-/-- An `X`-stabilization does not change the number of link components: the new column is spliced
-into the component through the split marking. -/
-@[simp]
-theorem componentCount_stabilizeX :
-    (G.stabilizeX newColumn newRow splitColumn).componentCount = G.componentCount := by
-  set a := newColumn.succAbove splitColumn with ha
-  -- Cutting the new column out of its cycle leaves a permutation fixing it.
-  set τ := swap newColumn a * (G.stabilizeX newColumn newRow splitColumn).componentPerm with hτ
-  have hτp : τ newColumn = newColumn := by
-    rw [hτ, Perm.mul_apply, componentPerm_stabilizeX_newColumn, ← ha, swap_apply_right]
-  -- Away from the new column, that permutation is the old component permutation.
-  have hsemiconj : Function.Semiconj newColumn.succAbove G.componentPerm τ := by
-    intro c
-    rw [hτ, Perm.mul_apply, componentPerm_stabilizeX_succAbove]
-    split_ifs with h
-    · rw [swap_apply_left, ha, h]
-    · exact (swap_apply_of_ne_of_ne (newColumn.succAbove_ne _)
-        fun h' ↦ h (Fin.succAbove_right_injective h')).symm
-  have hadjoin := orbitCount_add_one_eq_of_semiconj Fin.succAbove_right_injective
-    newColumn.succAbove_ne (fun _ hy ↦ Fin.exists_succAbove_eq hy) hsemiconj
-  have hsplice := orbitCount_mul_swap_add_one (a := a) hτp (newColumn.succAbove_ne splitColumn)
-  have hperm :
-      (G.stabilizeX newColumn newRow splitColumn).componentPerm = swap newColumn a * τ := by
-    rw [hτ, ← mul_assoc, swap_mul_self, one_mul]
-  rw [componentCount_eq_orbitCount, componentCount_eq_orbitCount, hperm, orbitCount_mul_comm,
-    swap_comm]
-  omega
 
 /-- In an `X`-stabilization, the new column lies on the component of the embedded split column. -/
 theorem sameCycle_componentPerm_stabilizeX_newColumn :
@@ -186,6 +157,14 @@ theorem componentsStabilizeXEquiv_symm_componentOfColumn_newColumn :
       G.componentOfColumn splitColumn := by
   rw [Equiv.symm_apply_eq, componentsStabilizeXEquiv_componentOfColumn, componentOfColumn_eq_iff]
   exact G.sameCycle_componentPerm_stabilizeX_newColumn newColumn newRow splitColumn
+
+/-- An `X`-stabilization does not change the number of link components: the new column is spliced
+into the component through the split marking. -/
+@[simp]
+theorem componentCount_stabilizeX :
+    (G.stabilizeX newColumn newRow splitColumn).componentCount = G.componentCount := by
+  rw [← natCard_components, ← natCard_components]
+  exact (Nat.card_congr (G.componentsStabilizeXEquiv newColumn newRow splitColumn)).symm
 
 /-- An `O`-stabilization does not change the number of link components. -/
 @[simp]
