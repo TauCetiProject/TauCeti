@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 public import Mathlib.Topology.Instances.NNReal.Lemmas
+import TauCeti.Geometry.Convex.ConvexSpace.Defs
+import TauCeti.Geometry.Convex.ConvexSpace.Topology
 
 /-!
 # The finite simplex of nonnegative real weights
@@ -65,16 +67,14 @@ noncomputable instance instTopologicalSpaceNNReal (ι : Type*) [Finite ι] :
     TopologicalSpace (StdSimplex ℝ≥0 ι) :=
   .induced (fun (p : StdSimplex ℝ≥0 ι) i ↦ Finsupp.equivFunOnFinite p.weights i) inferInstance
 
-/-- The finite nonnegative-real simplex is a closed subspace of its space of weight vectors. -/
+/-- The finite nonnegative-real simplex is a closed subspace of its space of weight vectors: the
+`ℝ≥0` counterpart of Mathlib's `Convexity.StdSimplex.isClosedEmbedding_toFun_comp_weights`, which
+assumes a coefficient ring. -/
 theorem isClosedEmbedding_toFun_comp_weights_nnreal :
     IsClosedEmbedding (fun p : StdSimplex ℝ≥0 ι ↦ (p.weights : ι → ℝ≥0)) where
   eq_induced := by simp only [instTopologicalSpaceNNReal, Finsupp.equivFunOnFinite_apply]
-  injective _ _ h := StdSimplex.ext (Finsupp.ext (congrFun h))
-  isClosed_range := by
-    have := Fintype.ofFinite ι
-    rw [range_toFun_comp_weights]
-    refine IsClosed.inter (isClosed_iInter fun _ ↦ isClosed_le ?_ ?_) (isClosed_eq ?_ ?_)
-    all_goals fun_prop
+  injective := toFun_comp_weights_injective
+  isClosed_range := isClosed_range_toFun_comp_weights
 
 /-- Continuity into the finite nonnegative-real simplex is continuity of the weight vector. -/
 theorem continuous_iff_toFun_comp_weights_nnreal {X : Type*} [TopologicalSpace X]
