@@ -92,8 +92,7 @@ theorem eventually_flowOf_eq_of_eqOn (ht : (t, x) ∈ flowDomain v)
   -- `uIcc 0 t × {x}`; a product neighbourhood of the segment inside it contains a product of an
   -- open interval around `uIcc 0 t` and a neighbourhood of `x`.
   set O : Set (ℝ × M) := flowDomain v ∩ (fun y : ℝ × M ↦ flowOf v y.1 y.2) ⁻¹' U
-  have hO : IsOpen O := (contMDiffOn_flowOf le_rfl hv).continuousOn.isOpen_inter_preimage
-    (isOpen_flowDomain hv) hU
+  have hO : IsOpen O := isOpen_setOf_mem_flowDomain_and_flowOf_mem hv hU
   have hseg : uIcc 0 t ⊆ maximalIntegralCurveInterval v x :=
     ordConnected_maximalIntegralCurveInterval.uIcc_subset
       (mem_flowDomain.mp (mem_flowDomain_zero hv x)) (mem_flowDomain.mp ht)

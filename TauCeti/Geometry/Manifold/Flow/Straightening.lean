@@ -207,9 +207,11 @@ theorem exists_partialDiffeomorph_mfderiv_eq_const [I.Boundaryless] {m : ℕ∞}
     rw [← OpenPartialHomeomorph.coe_toPartialDiffeomorphOfMemMaximalAtlas e he]
     exact Φ₀.mdifferentiableAt (by simpa using (zero_lt_one.trans_le hm).ne')
       (by simpa [Φ₀] using hy)
-  have hsub : DifferentiableAt ℝ (fun z : E ↦ z - Φ₀ x) (I (e y)) := by fun_prop
-  rw [hcomp, mfderiv_comp y hsub.mdifferentiableAt hd,
-    mfderiv_eq_fderiv, fderiv_sub_const, fderiv_fun_id, ContinuousLinearMap.comp_apply, heu y hy]
-  rfl
+  -- The translation has derivative the identity, so it does not change the image of `v y`.
+  have hsub : HasMFDerivAt 𝓘(ℝ, E) 𝓘(ℝ, E) (fun z : E ↦ z - Φ₀ x) (I (e y))
+      (ContinuousLinearMap.id ℝ E) :=
+    ((hasFDerivAt_id _).sub_const _).hasMFDerivAt
+  rw [hcomp, (hsub.comp y hd.hasMFDerivAt).mfderiv]
+  exact heu y hy
 
 end TauCeti

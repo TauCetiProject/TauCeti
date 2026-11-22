@@ -15,6 +15,7 @@ import TauCeti.Geometry.Manifold.Flow.NormedSpace
 import TauCeti.Geometry.Manifold.Flow.PartialDiffeomorph
 import TauCeti.Geometry.Manifold.Flow.Straightening
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.Geometry.Manifold.VectorField.Chart.PartialDiffeomorph
 
 /-!
 # Making every cover of a closed orbit nondegenerate by a flow-box dilation
@@ -372,6 +373,7 @@ theorem exists_contDiff_returnDerivative_add_smul_eq_exp_smul
   refine returnDerivative_eq_smul_of_eqOn_compl hv hP hp hσ.le hσT.le hw hw0 (hw_axis σ hσσ).1
     ((hw_axis σ hσσ).2.trans (hv_axis σ hσσ).2.symm)
     (fun ξ ↦ Submodule.mem_span_singleton.2 ⟨(1 - Real.exp a) * ℓ ξ, by rw [hv0]; exact hD ξ⟩)
+    -- The tangent spaces of `E` are definitionally `E`, so the two derivatives agree by `rfl`.
     (fun ξ ↦ by rw [hw_deriv.hasMFDerivAt.mfderiv, hv_deriv'.hasMFDerivAt.mfderiv]; rfl)
     (isClosed_tsupport W) (fun z hz ↦ by simp [image_eq_zero_of_notMem_tsupport hz])
     fun t ht hW ↦ hχR t ht (htsW hW)
@@ -455,6 +457,8 @@ private theorem flowOf_eq_symm_smul_of_axis [IsManifold I 1 M] [BoundarylessMani
   · have hσσ : σ ∈ Icc 0 σ := ⟨hσ, le_rfl⟩
     rw [(φ.hasMFDerivAt_flowOf hn hw hF hrel hpφ (hφp ▸ (haxis σ hσσ).1) (htgt hσσ)
       (hφp ▸ hL.hasMFDerivAt)).mfderiv, hφp, (haxis σ hσσ).2]
+    -- The rewrites only changed the base points of tangent spaces, which are all definitionally
+    -- `E`, so the two sides agree by `rfl`.
     rfl
 
 /-- **The cut-off field transplanted to the manifold.** Let `φ` be a smooth partial diffeomorphism
@@ -495,6 +499,7 @@ private theorem exists_contMDiff_cutoff_transplant [IsManifold I ∞ M]
     refine (φ.isInvertible_mfderiv (by simp) hy).injective ?_
     rw [hWφ _ hy, map_zero, PartialDiffeomorph.symm_toPartialEquiv, φ.right_inv hs]
     simp only [W₀, hZaxis, smul_zero]
+    -- The zero of `E` is the zero of the tangent space, which is definitionally `E`.
     rfl
   · rintro _ ⟨z, hz, rfl⟩
     exact (hrN (htsW₀ hz).1).2
@@ -601,6 +606,7 @@ theorem exists_contMDiff_returnDerivative_add_smul_eq_exp_smul {v : (x : M) → 
     (hv.add_section hW.const_smul_section).of_le (by simp)
   obtain ⟨hw_axis, hw_deriv⟩ := flowOf_eq_symm_smul_of_axis hn φ hpφ hφp hw hF (fun y hy ↦ by
     rw [Pi.add_apply, Pi.smul_apply, map_add, map_smul, hφv y hy, hWφ y hy]
+    -- The tangent spaces of `E` are definitionally `E`, so the sums agree by `rfl`.
     rfl) hσ.le (fun t ht ↦ (hrO (hball t ht)).1) hF_axis hF_deriv
   -- The differential of `φ` at `p`, with values in `E`.
   let A : TangentSpace I p →L[ℝ] E := mfderiv I 𝓘(ℝ, E) φ p
