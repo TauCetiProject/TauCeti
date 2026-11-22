@@ -80,11 +80,13 @@ theorem bipartiteMatrix_apply_self (i : I) : A.bipartiteMatrix c i i = 0 := by
   simp [bipartiteMatrix_apply]
 
 /-- Off the diagonal, a signed Cartan entry only depends on its row's colour. -/
+@[simp]
 theorem bipartiteMatrix_apply_of_ne {i j : I} (hij : i ≠ j) :
     A.bipartiteMatrix c i j = if c i then -A.cartan i j else A.cartan i j := by
   simp [bipartiteMatrix_apply, hij]
 
 /-- No entry joins two vertices in one colour class. -/
+@[simp]
 theorem bipartiteMatrix_apply_eq_zero_of_color_eq {i j : I} (hc : c i = c j) :
     A.bipartiteMatrix c i j = 0 := by
   by_cases hij : i = j
