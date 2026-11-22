@@ -38,13 +38,15 @@ retarded region `s < t`:
 where `δ = 1 / p₁ + 1 / p - 1`. For a dispersive equation with admissible pairs `(q, r)` and
 `(q₁, r₁)` the time exponents are `p = q'` and `p₁ = q₁'`, and the condition reads `q₁' < q`. It
 fails only when both pairs are at the endpoint `q = q₁ = 2`, which needs the Keel–Tao argument
-instead.
+instead (`TauCeti.exists_enorm_integral_setIntegral_Iio_inner_adjoint_le_of_endpoint`).
 
 The mixed norm of a function `F : ℝ → L²(X, μ)` is written
 `eLpNorm (fun s ↦ eLpNorm (F s) a μ) p volume`, as in `TauCeti.Analysis.PDE.Strichartz.TTStar`.
 
 ## Main declarations
 
+* `TauCeti.integral_setIntegral_Iio_eq_setIntegral`: the retarded iterated integral as an integral
+  over the region `s < t`.
 * `TauCeti.enorm_setIntegral_adjoint_le`: a dual estimate restricted to a set of times.
 * `TauCeti.enorm_integral_setIntegral_Iio_inner_adjoint_le`: the retarded estimate from the two
   dual estimates.
@@ -86,6 +88,21 @@ theorem one_lt_inv_add_inv_of_holderConjugate {p q p₁ q₁ : ℝ≥0} (hpq : p
     linarith
   simp only [← ENNReal.coe_inv hpq.ne_zero, ← ENNReal.coe_inv hpq₁.ne_zero]
   exact_mod_cast hlt
+
+omit [CompleteSpace H] [NormedSpace ℝ H] in
+/-- The iterated integral `∫ ∫_{s < t} f(s, t) ds dt` of a function integrable on the plane is its
+integral over the region `{(s, t) | s < t}`. -/
+theorem integral_setIntegral_Iio_eq_setIntegral {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] {f : ℝ × ℝ → V} (hf : Integrable f) :
+    ∫ t, ∫ s in Set.Iio t, f (s, t) = ∫ z in {z : ℝ × ℝ | z.1 < z.2}, f z := by
+  have hmeas : MeasurableSet {z : ℝ × ℝ | z.1 < z.2} :=
+    measurableSet_lt measurable_fst measurable_snd
+  rw [Measure.volume_eq_prod] at hf ⊢
+  rw [← integral_indicator hmeas, integral_prod_symm _ (hf.indicator hmeas)]
+  refine integral_congr_ae (.of_forall fun t ↦ ?_)
+  dsimp only
+  rw [← integral_indicator measurableSet_Iio]
+  exact integral_congr_ae (.of_forall fun s ↦ by simp [Set.indicator_apply])
 
 /-- A dual estimate applies to the restriction of `F` to a set of times `I`, and bounds
 `∫_I U(s)* F(s) ds` by the mixed norm of `1_I F`. -/
@@ -143,17 +160,8 @@ theorem enorm_integral_setIntegral_Iio_inner_adjoint_le {p₁ p a₁ a : ℝ≥0
   have hβ : Integrable (fun z : ℝ × ℝ ↦ ⟪u z.1, w z.2⟫_𝕜) (volume.prod volume) :=
     (hUF.norm.mul_prod hUG.norm).mono' (hUF.1.comp_fst.inner hUG.1.comp_snd)
       (.of_forall fun _ ↦ norm_inner_le_norm _ _)
-  have hmeas : MeasurableSet {z : ℝ × ℝ | z.1 < z.2} :=
-    measurableSet_lt measurable_fst measurable_snd
-  have hregion : ∫ t, ∫ s in Set.Iio t, ⟪u s, w t⟫_𝕜 =
-      ∫ z in {z : ℝ × ℝ | z.1 < z.2}, ⟪u z.1, w z.2⟫_𝕜 := by
-    rw [← integral_indicator hmeas, Measure.volume_eq_prod,
-      integral_prod_symm _ (hβ.indicator hmeas)]
-    refine integral_congr_ae (.of_forall fun t ↦ ?_)
-    dsimp only
-    rw [← integral_indicator measurableSet_Iio]
-    exact integral_congr_ae (.of_forall fun s ↦ by simp [Set.indicator_apply])
-  rw [hregion]
+  rw [integral_setIntegral_Iio_eq_setIntegral (f := fun z ↦ ⟪u z.1, w z.2⟫_𝕜)
+    (by rw [Measure.volume_eq_prod]; exact hβ)]
   -- On every rectangle of times the pairing factors as `⟪∫_I u, ∫_J w⟫`, and the dual estimates
   -- bound the two factors; the Christ–Kiselev lemma passes the bound to `s < t`.
   refine (eNorm_setIntegral_fst_lt_snd_le hp hpp

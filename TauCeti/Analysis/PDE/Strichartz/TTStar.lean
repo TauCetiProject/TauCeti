@@ -62,6 +62,8 @@ dual side.
 * `TauCeti.enorm_integral_setIntegral_Iio_le_lintegral_lintegral_enorm`: the truncation to
   `s < t` of a pairing integral is bounded by the full integral of its absolute value, which
   reduces retarded estimates to the bilinear one.
+* `TauCeti.enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le`: `TT*` for a time integral, a
+  bound on `∫∫ ⟪u(s), u(t)⟫ ds dt` bounds `‖∫ u‖`.
 * `TauCeti.exists_enorm_integral_adjoint_le`: the dual homogeneous estimate
   `‖∫ U(s)* F(s) ds‖ ≤ C A ^ (1 / 2) ‖F‖_{L^{q'} L^{r'}}`.
 * `TauCeti.exists_enorm_integral_inner_apply_le`: the homogeneous estimate in weak form,
@@ -252,6 +254,33 @@ theorem exists_enorm_integral_adjoint_le {p q : ℝ≥0} (hq : 2 < q) (hpq : p.H
     rw [ENNReal.mul_rpow_of_nonneg _ _ zero_le_two, ENNReal.mul_rpow_of_nonneg _ _ zero_le_two,
       ← ENNReal.rpow_mul, inv_mul_cancel₀ two_ne_zero, ENNReal.rpow_one, ENNReal.rpow_two,
       ENNReal.rpow_two, ← ENNReal.coe_pow, NNReal.sq_sqrt, sq]
+    ring
+  rwa [← ENNReal.rpow_le_rpow_iff (z := 2) two_pos, hrhs]
+
+omit [CompleteSpace E] in
+/-- **`TT*` for a time integral.** For an integrable `u : ℝ → H`, `‖∫ u‖²` is the integral of the
+pairings `⟪u(s), u(t)⟫` over the plane, so a bound `|∫∫ ⟪u(s), u(t)⟫ ds dt| ≤ C a²` gives
+`‖∫ u‖ ≤ √C a`. -/
+theorem enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le {u : ℝ → H} (hu : Integrable u)
+    {C : ℝ≥0} {a : ℝ≥0∞}
+    (h : ‖∫ z, ⟪u z.1, u z.2⟫_𝕜 ∂(volume.prod volume)‖ₑ ≤ C * a * a) :
+    ‖∫ t, u t‖ₑ ≤ NNReal.sqrt C * a := by
+  have hφ : Integrable (fun z : ℝ × ℝ ↦ ⟪u z.1, u z.2⟫_𝕜) (volume.prod volume) :=
+    hu.op_fst_snd (op := fun u v ↦ ⟪u, v⟫_𝕜) continuous_inner
+      ⟨1, fun u v ↦ by simpa using norm_inner_le_norm u v⟩ hu
+  have hsq : ‖∫ t, u t‖ₑ ^ (2 : ℝ) ≤ C * a * a := by
+    calc ‖∫ t, u t‖ₑ ^ (2 : ℝ) = ‖⟪∫ s, u s, ∫ t, u t⟫_𝕜‖ₑ := by
+          rw [inner_self_eq_norm_sq_to_K, eNorm_pow, ← ENNReal.rpow_natCast]
+          simp
+      _ = ‖∫ z, ⟪u z.1, u z.2⟫_𝕜 ∂(volume.prod volume)‖ₑ := by
+          rw [integral_prod _ hφ]
+          simp_rw [integral_inner hu]
+          rw [← inner_conj_symm, ← integral_inner hu, ← integral_conj]
+          simp_rw [inner_conj_symm]
+      _ ≤ C * a * a := h
+  have hrhs : ((NNReal.sqrt C : ℝ≥0∞) * a) ^ (2 : ℝ) = C * a * a := by
+    rw [ENNReal.mul_rpow_of_nonneg _ _ zero_le_two, ENNReal.rpow_two, ENNReal.rpow_two,
+      ← ENNReal.coe_pow, NNReal.sq_sqrt, sq]
     ring
   rwa [← ENNReal.rpow_le_rpow_iff (z := 2) two_pos, hrhs]
 
