@@ -86,13 +86,15 @@ for a Floer trajectory these are
 need only be continuous, and their nondegeneracy as Hamiltonian orbits is replaced by that of the
 shifted fields.
 
-The Fredholm property and the index of `D_u` depend only on the asymptotic orbits, and in a unitary
-trivialization, for the `s`-independent Floer data `(i, 0, H_t)` of a Hamiltonian `H` with a
-nondegenerate one-periodic orbit `x`, `D_u` is Fredholm of index zero along maps `u` from `x` to
-itself; both are proved by deformation in `TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm`
+The Fredholm property and the index of `D_u` depend only on the asymptotic orbits and on the end
+data of the Floer data, and in a unitary trivialization, for Floer data with the data `(i, 0, H_t)`
+of a Hamiltonian `H` with a nondegenerate one-periodic orbit `x` at both ends, `D_u` is Fredholm of
+index zero along maps `u` from `x` to itself; both are proved by deformation in
+`TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm`
 (`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical`,
+`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical_data`,
 `TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt`,
-`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt`).
+`SymplecticForm.index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt_of_cylindrical`).
 
 The semi-Fredholm estimate for the formal adjoint `D_u^*` on `C²` covector fields is
 `TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_add`
