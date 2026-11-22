@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
-public import Mathlib.Analysis.CStarAlgebra.Multiplier
 public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Analysis.Calculus.Deriv.Star
+public import TauCeti.Algebra.Star.Basic
 public import TauCeti.Analysis.CStarAlgebra.Hom
 public import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
 

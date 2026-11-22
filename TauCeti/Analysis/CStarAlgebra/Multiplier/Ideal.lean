@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Annihilator
 public import TauCeti.Analysis.CStarAlgebra.Multiplier.Basic
+public import TauCeti.Analysis.Normed.Algebra.Multiplier.Ideal
 
 /-!
 # Canonical multiplier homomorphisms for closed two-sided ideals
