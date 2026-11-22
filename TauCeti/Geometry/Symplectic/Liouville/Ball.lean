@@ -27,8 +27,9 @@ every point into `B`, so `E` is the completion of `B`
 
 The point `x` with `‖x‖ > r` is reached from the boundary point `(r / ‖x‖) • x` by flowing for the
 time `2 log (‖x‖ / r)`, so the radial coordinate of the cylindrical end is
-`r(x) = ‖x‖² / r²` there, and `1` on `B`
-(`TauCeti.liouvilleRadialCoordinate_closedBall`). For the unit ball it is `‖x‖²`.
+`ρ(x) = ‖x‖² / r²` there, and `1` on `B`
+(`TauCeti.liouvilleRadialCoordinate_closedBall`). For the unit ball it is `‖x‖²` outside the
+ball.
 In particular the quadratic Hamiltonian `a ‖x‖²` is linear at infinity, with slope `a r²`
 (`TauCeti.isLinearAtInfinity_mul_norm_sq`). These are the Hamiltonians whose direct
 limit over the slope defines the symplectic homology of the ball.
@@ -77,8 +78,9 @@ private theorem flowOf_neg_two_inv_smul_mem_closedBall_iff (hr : 0 < r) (x : E) 
   rcases (norm_nonneg x).eq_or_lt with hx | hx
   · rw [← hx, zero_div, Real.log_zero, mul_zero, mul_zero]
     exact iff_of_true hr.le ht
-  · rw [← le_div_iff₀' (Real.exp_pos _), div_eq_mul_inv, ← Real.exp_neg, mul_comm r,
-      ← div_le_iff₀ hr, ← Real.log_le_iff_le_exp (div_pos hx hr)]
+  · -- Take logarithms: the condition becomes `-t / 2 + log ‖x‖ ≤ log r`.
+    rw [← Real.log_le_log_iff (by positivity) hr, Real.log_mul (Real.exp_pos _).ne' hx.ne',
+      Real.log_exp, Real.log_div hx.ne' hr.ne']
     constructor <;> intro h <;> linarith
 
 /-- The backward flow of the field `x / 2` carries every point into the closed ball of radius
@@ -106,7 +108,7 @@ theorem liouvilleRadialCoordinate_closedBall (hr : 0 < r) (x : E) :
   rcases (norm_nonneg x).eq_or_lt with hx | hx
   · rw [← hx, zero_div, Real.log_zero, mul_zero, Real.exp_zero]
     simp
-  · rw [mul_comm, Real.exp_mul, Real.exp_log (div_pos hx hr), Real.rpow_two, div_pow]
+  · rw [← Nat.cast_two, ← Real.log_pow, Real.exp_log (by positivity), div_pow]
 
 /-- **Quadratic Hamiltonians are linear at infinity.** Over the closed ball of radius `r > 0` in a
 finite-dimensional real normed space, with the field `x / 2`, the Hamiltonian `a ‖x‖²` is linear at
