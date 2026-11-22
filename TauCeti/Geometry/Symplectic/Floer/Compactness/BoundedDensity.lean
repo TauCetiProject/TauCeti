@@ -15,6 +15,7 @@ import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.Separation.InvFunOn
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Floer solutions in a manifold with bounded energy density
@@ -287,7 +288,7 @@ theorem IsNondegenerate.exists_strictMono_tendstoLocallyUniformly_comp (hω : ω
   have : Nonempty M := ⟨p₀⟩
   obtain ⟨v, hv, hvK, hev, hpt⟩ := hK.exists_tendsto_of_tendsto_comp (Ω := univ) hec he_inj hxK
     g.continuous.continuousOn fun z _ ↦
-      ((tendstoLocallyUniformlyOn_univ.2 hg).tendsto_at (mem_univ z)).congr'
+      (hg.tendsto_at z).congr'
         ((hxu z).mono fun n hn ↦ by simp only [comp_apply, hn])
   refine ⟨φ, hφ, v, continuousOn_univ.1 hv, fun z ↦ hvK (mem_univ z), ?_,
     fun z ↦ (hpt z (mem_univ z)).congr' (hxu z).symm⟩

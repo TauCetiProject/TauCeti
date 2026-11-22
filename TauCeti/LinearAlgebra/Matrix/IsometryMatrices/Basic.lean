@@ -137,7 +137,7 @@ theorem add_transpose_mul_mul_add_of_sq_eq_bot {I : Ideal R} (hI : I ^ 2 = ⊥)
     (X + D)ᵀ * A * (X + D) = A + Xᵀ * A * D + (Xᵀ * A * D)ᵀ := by
   classical
   have hDD : Dᵀ * (A * D) = 0 :=
-    mul_eq_zero_of_sq_eq_bot hI (fun i j => hD j i) ((I.matrix n).mul_mem_left A hD)
+    mul_eq_zero_of_mul_eq_bot (sq I ▸ hI) (fun i j => hD j i) ((I.matrix n).mul_mem_left A hD)
   calc (X + D)ᵀ * A * (X + D)
       = Xᵀ * A * X + Xᵀ * A * D + Dᵀ * A * X + Dᵀ * (A * D) := by
         rw [transpose_add]; noncomm_ring
@@ -312,9 +312,10 @@ theorem exists_map_eq_of_mem_isometryMatrices_map (hf : Function.Surjective f)
   have hEE : c • E + c • E = E := by
     rw [← add_smul, ← two_mul, mul_comm, hc, one_smul]
   have hZt : ∀ i j, Zᵀ i j ∈ RingHom.ker f := fun i j => hZ j i
-  have h₁ : Zᵀ * (A * Z) = 0 := by rw [hAZ]; exact mul_eq_zero_of_sq_eq_bot hker hZt hcE
-  have h₂ : E * Z = 0 := mul_eq_zero_of_sq_eq_bot hker hE hZ
-  have h₃ : Zᵀ * E = 0 := mul_eq_zero_of_sq_eq_bot hker hZt hE
+  rw [sq] at hker
+  have h₁ : Zᵀ * (A * Z) = 0 := by rw [hAZ]; exact mul_eq_zero_of_mul_eq_bot hker hZt hcE
+  have h₂ : E * Z = 0 := mul_eq_zero_of_mul_eq_bot hker hE hZ
+  have h₃ : Zᵀ * E = 0 := mul_eq_zero_of_mul_eq_bot hker hZt hE
   refine ⟨M * (1 + Z), ?_, ?_⟩
   · rw [mem_isometryMatrices]
     have hME : Mᵀ * A * M = A - E := by rw [hE_def, sub_sub_cancel]

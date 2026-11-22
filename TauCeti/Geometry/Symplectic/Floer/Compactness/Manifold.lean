@@ -12,6 +12,7 @@ import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
@@ -60,6 +61,10 @@ chart.
   uniformly off a finite set `Z` of bubbling points, with derivatives bounded on compact subsets
   of the complement and Floer energy at least a fixed `δ > 0` concentrating at each point of `Z`.
   The solutions themselves converge pointwise off `Z` in `M`.
+* **The energy over a window** (in the namespace `TauCeti.SmoothTwoForm`,
+  `integrableOn_and_setIntegral_floerEnergyDensity_le`): a bound on the energy over an open set
+  `S` bounds the Bochner integral of a nonnegative energy density over every measurable `Ω ⊆ S`,
+  which is the form of an energy bound the compactness theorems take.
 
 The coordinate compactness theorem for a finite-dimensional normed target (in the namespace
 `TauCeti.Floer`,
@@ -158,8 +163,9 @@ variable {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ} {u : ℝ ×
 of the chart at `α`, the coordinate expression of `ω` on a vector `a` and its image under the
 structure `J(z, ·)` read in the chart is `ω(a', J(z, x) a')`, at the point
 `x = (extChartAt I α).symm y` and for the tangent vector `a'` at `x` with tangent coordinate `a`. -/
-theorem inChartAt_apply_almostComplexInChartAt (ω : SmoothTwoForm I M) {y : E}
-    (hy : y ∈ (extChartAt I α).target) (z : ℝ × ℝ) (a : E) :
+theorem inChartAt_apply_almostComplexInChartAt {P : Type*}
+    {J : P → (x : M) → AlmostComplexStructure (TangentSpace I x)} (ω : SmoothTwoForm I M) {y : E}
+    (hy : y ∈ (extChartAt I α).target) (z : P) (a : E) :
     RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α y
         ![a, Floer.almostComplexInChartAt I α J (z, y) a] =
       SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
@@ -268,76 +274,16 @@ theorem IsNondegenerate.floerEnergyDensity_nonneg_of_tames_inChartAt (hω : ω.I
   rw [(extChartAt I α).left_inv hus] at hJ
   exact floerEnergyDensity_nonneg hω hJ h
 
-/-- **The energy form is comparable to the chart norm, uniformly on a compact parameter window.**
-Let `J(p, z, x)` be tamed by `ω` and, read in the chart at `α`, continuous on `C × D × K`, for
-compact `C ⊆ P`, `D ⊆ ℝ × ℝ` and a compact set `K` of chart coordinates. There are constants `c > 0`
-and `C₀` such that at every point `x` with chart coordinate `y ∈ K`, and for every `p ∈ C`, `z ∈ D`,
-the energy form `ω_x(a, J(p, z, x) a)` of the tangent vector `a` with tangent coordinate `ξ` in the
-chart at `α` satisfies `c ‖ξ‖² ≤ ω_x(a, J(p, z, x) a) ≤ C₀ ‖ξ‖²`. -/
-theorem IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq_prod
-    {P : Type*} [TopologicalSpace P] (hω : ω.IsNondegenerate) (α : M)
-    {J : P → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
-    {C : Set P} {D : Set (ℝ × ℝ)} {K : Set E} (hC : IsCompact C) (hD : IsCompact D)
-    (hK : IsCompact K) (hKα : K ⊆ (extChartAt I α).target)
-    (hJ : ContinuousOn (fun q : P × ((ℝ × ℝ) × E) ↦ Floer.almostComplexInChartAt I α (J q.1) q.2)
-      (C ×ˢ (D ×ˢ K)))
-    (hJt : ∀ p ∈ C, ∀ z ∈ D, ∀ y ∈ K, (hω.symplecticFormAt ((extChartAt I α).symm y)).Tames
-      (J p z ((extChartAt I α).symm y))) :
-    ∃ c > 0, ∃ C₀, ∀ p ∈ C, ∀ z ∈ D, ∀ y ∈ K, ∀ ξ : E,
-      c * ‖ξ‖ ^ 2 ≤ SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
-          ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) ξ)
-          (J p z ((extChartAt I α).symm y)
-            ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) ξ)) ∧
-        SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
-          ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) ξ)
-          (J p z ((extChartAt I α).symm y)
-            ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) ξ)) ≤
-          C₀ * ‖ξ‖ ^ 2 := by
-  set e := extChartAt I α
-  set T := trivializationAt E (TangentSpace I) α with hT
-  have hCDK : IsCompact (C ×ˢ (D ×ˢ K)) := hC.prod (hD.prod hK)
-  have hbase {y : E} (hy : y ∈ e.target) : e.symm y ∈ T.baseSet := by
-    simpa only [hT, TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using
-      e.map_target hy
-  -- In the chart, `ω(·, J ·)` is the bilinear form `b`, continuous and positive on `C × D × K`.
-  set b : P × ((ℝ × ℝ) × E) → E →L[ℝ] E →L[ℝ] ℝ := fun q ↦
-    ((compL ℝ E E ℝ).flip (Floer.almostComplexInChartAt I α (J q.1) q.2)).comp
-      (ContinuousAlternatingMap.flatL ℝ E ℝ (RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α q.2.2))
-    with hb_def
-  have hb_apply (q : P × ((ℝ × ℝ) × E)) (a : E) :
-      b q a a = RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α q.2.2
-        ![a, Floer.almostComplexInChartAt I α (J q.1) q.2 a] := by
-    simp only [hb_def, comp_apply, flip_apply, compL_apply,
-      ContinuousAlternatingMap.flatL_apply_apply]
-  have hb : ∀ q ∈ C ×ˢ (D ×ˢ K), ∀ a, b q a a = SmoothBundleForm.eval₂ ω (e.symm q.2.2)
-      (T.symmL ℝ (e.symm q.2.2) a) (J q.1 q.2.1 (e.symm q.2.2) (T.symmL ℝ (e.symm q.2.2) a)) := by
-    rintro ⟨p, z, y⟩ hq a
-    rw [hb_apply]
-    exact ω.inChartAt_apply_almostComplexInChartAt (hKα hq.2.2) z a
-  have hbc : ContinuousOn b (C ×ˢ (D ×ˢ K)) :=
-    ((compL ℝ E E ℝ).flip.continuous.comp_continuousOn hJ).clm_comp
-      ((ContinuousAlternatingMap.flatL ℝ E ℝ).continuous.comp_continuousOn
-        ((ω.isSmoothForm.continuousOn_inChartAt α).comp
-          (continuous_snd.comp continuous_snd).continuousOn fun q hq ↦ hKα hq.2.2))
-  obtain ⟨c, hc, hcb⟩ := hCDK.exists_pos_forall_mul_norm_sq_le hbc fun q hq a ha ↦ by
-    rw [hb q hq]
-    have hy : q.2.2 ∈ e.target := hKα hq.2.2
-    have hSa : T.symmL ℝ (e.symm q.2.2) a ≠ 0 := fun h0 ↦ ha <| by
-      rw [← Trivialization.continuousLinearMapAt_symmL (R := ℝ) _ (hbase hy) a, h0, map_zero]
-    simpa only [IsNondegenerate.symplecticFormAt_apply] using
-      hJt q.1 hq.1 q.2.1 hq.2.1 q.2.2 hq.2.2 _ hSa
-  obtain ⟨C₀, hC₀⟩ := hCDK.exists_forall_le_mul_norm_sq hbc
-  exact ⟨c, hc, C₀, fun p hp z hz y hy ξ ↦ ⟨(hb (p, (z, y)) ⟨hp, hz, hy⟩ ξ) ▸
-    hcb _ ⟨hp, hz, hy⟩ ξ, (hb (p, (z, y)) ⟨hp, hz, hy⟩ ξ) ▸ hC₀ _ ⟨hp, hz, hy⟩ ξ⟩⟩
-
 /-- **The energy form is comparable to the chart norm, uniformly on a compact window.** Let the
-structures `J(z, x)` be tamed by `ω` and, read in the chart at `α`, continuous on `D × K`, for
-compact `D ⊆ ℝ × ℝ` and a compact set `K` of chart coordinates. There are constants `c > 0` and `C`
-such that at every point `x` with chart coordinate `y ∈ K`, and for every `z ∈ D`, the energy form
-`ω_x(a, J(z, x) a)` of the tangent vector `a` with tangent coordinate `ξ` in the chart at `α`
-satisfies `c ‖ξ‖² ≤ ω_x(a, J(z, x) a) ≤ C ‖ξ‖²`. -/
-theorem IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq
-    (hω : ω.IsNondegenerate) (α : M) {D : Set (ℝ × ℝ)} {K : Set E} (hD : IsCompact D)
+structures `J(z, x)` be tamed by `ω` and, read in the chart at `α`, continuous on `D × K`, for a
+compact set `D` of parameters, such as a compact window of the domain `ℝ × ℝ` or a compact family
+of almost complex structures, and a compact set `K` of chart coordinates. There are constants
+`c > 0` and `C` such that at every point `x` with chart coordinate `y ∈ K`, and for every `z ∈ D`,
+the energy form `ω_x(a, J(z, x) a)` of the tangent vector `a` with tangent coordinate `ξ` in the
+chart at `α` satisfies `c ‖ξ‖² ≤ ω_x(a, J(z, x) a) ≤ C ‖ξ‖²`. -/
+theorem IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq {P : Type*}
+    [TopologicalSpace P] {J : P → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    (hω : ω.IsNondegenerate) (α : M) {D : Set P} {K : Set E} (hD : IsCompact D)
     (hK : IsCompact K) (hKα : K ⊆ (extChartAt I α).target)
     (hJ : ContinuousOn (Floer.almostComplexInChartAt I α J) (D ×ˢ K))
     (hJt : ∀ z ∈ D, ∀ y ∈ K, (hω.symplecticFormAt ((extChartAt I α).symm y)).Tames
@@ -352,10 +298,27 @@ theorem IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq
           (J z ((extChartAt I α).symm y)
             ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) ξ)) ≤
           C * ‖ξ‖ ^ 2 := by
-  obtain ⟨c, hc, C₀, hcb⟩ := hω.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq_prod α
-    (P := Unit) (J := fun _ ↦ J) isCompact_singleton hD hK hKα
-    (hJ.comp continuousOn_snd mapsTo_snd_prod) fun _ _ ↦ hJt
-  exact ⟨c, hc, C₀, fun z hz y hy ξ ↦ hcb () (mem_singleton ()) z hz y hy ξ⟩
+  set e := extChartAt I α
+  set T := trivializationAt E (TangentSpace I) α
+  have hDK : IsCompact (D ×ˢ K) := hD.prod hK
+  have hbase {y : E} (hy : y ∈ e.target) : e.symm y ∈ T.baseSet :=
+    TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hy
+  -- In the chart, `ω(·, J ·)` is the bilinear form `b`, continuous and positive on `D × K`.
+  set b := ω.associatedBilinFormInChartAt α J
+  have hb : ∀ p ∈ D ×ˢ K, ∀ a, b p a a = SmoothBundleForm.eval₂ ω (e.symm p.2)
+      (T.symmL ℝ (e.symm p.2) a) (J p.1 (e.symm p.2) (T.symmL ℝ (e.symm p.2) a)) :=
+    fun p hp a ↦ ω.associatedBilinFormInChartAt_apply J p.1 (hKα hp.2) a a
+  have hbc : ContinuousOn b (D ×ˢ K) :=
+    continuousOn_associatedBilinFormInChartAt (fun p hp ↦ hKα hp.2) hJ
+  obtain ⟨c, hc, hcb⟩ := hDK.exists_pos_forall_mul_norm_sq_le hbc fun p hp a ha ↦ by
+    rw [hb p hp]
+    have hy : p.2 ∈ e.target := hKα hp.2
+    have hSa : T.symmL ℝ (e.symm p.2) a ≠ 0 := fun h0 ↦ ha <| by
+      rw [← Trivialization.continuousLinearMapAt_symmL (R := ℝ) _ (hbase hy) a, h0, map_zero]
+    simpa only [IsNondegenerate.symplecticFormAt_apply] using hJt p.1 hp.1 p.2 hp.2 _ hSa
+  obtain ⟨C, hC⟩ := hDK.exists_forall_le_mul_norm_sq hbc
+  exact ⟨c, hc, C, fun z hz y hy ξ ↦ ⟨(hb (z, y) ⟨hz, hy⟩ ξ) ▸ hcb _ ⟨hz, hy⟩ ξ,
+    (hb (z, y) ⟨hz, hy⟩ ξ) ▸ hC _ ⟨hz, hy⟩ ξ⟩⟩
 
 /-- **Two-sided parametric energy–derivative comparison in a chart.** On a compact parameter window
 `C × D × K` in the chart at `α`, with `J` tamed by `ω` and `J`, `X_{K_s}`, `X_{K_t}` continuous in
@@ -386,8 +349,18 @@ theorem IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_sq_le_and_floe
           C₀ * ‖fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal‖ ^ 2 + D₀ := by
   set e := extChartAt I α
   have hCDK : IsCompact (C ×ˢ (D ×ˢ K)) := hC.prod (hD.prod hK)
-  obtain ⟨c, hc, Mb, hcb⟩ :=
-    hω.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq_prod α hC hD hK hKα hJ hJt
+  have hJ_eq : Floer.almostComplexInChartAt I α (fun q : P × (ℝ × ℝ) ↦ J q.1 q.2) =
+      fun q : (P × (ℝ × ℝ)) × E ↦ Floer.almostComplexInChartAt I α (J q.1.1) (q.1.2, q.2) := by
+    ext ⟨⟨p, z⟩, y⟩ v
+    rw [Floer.almostComplexInChartAt_apply, Floer.almostComplexInChartAt_apply]
+  have hJ' : ContinuousOn (Floer.almostComplexInChartAt I α (fun q : P × (ℝ × ℝ) ↦ J q.1 q.2))
+      ((C ×ˢ D) ×ˢ K) := by
+    rw [hJ_eq]
+    exact hJ.comp ((continuous_fst.comp continuous_fst).prodMk
+      ((continuous_snd.comp continuous_fst).prodMk continuous_snd)).continuousOn
+      fun ⟨⟨p, z⟩, y⟩ ⟨⟨hp, hz⟩, hy⟩ ↦ ⟨hp, hz, hy⟩
+  obtain ⟨c, hc, Mb, hcb⟩ := hω.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq α
+    (hC.prod hD) hK hKα hJ' fun ⟨p, z⟩ ⟨hp, hz⟩ y hy ↦ hJt p hp z hz y hy
   obtain ⟨MJ, hMJ⟩ := hCDK.exists_bound_of_continuousOn hJ
   obtain ⟨Ms, hMs⟩ := hCDK.exists_bound_of_continuousOn hXs
   obtain ⟨Mt, hMt⟩ := hCDK.exists_bound_of_continuousOn hXt
@@ -409,9 +382,9 @@ theorem IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_sq_le_and_floe
     rw [← ω.inChartAt_apply_almostComplexInChartAt (hKα huK) z a,
       ← ω.floerEnergyDensity_eq_inChartAt hu hus hfl]
   have hca : c * ‖a‖ ^ 2 ≤ ω.floerEnergyDensity (Ks p) (Kt p) u z :=
-    he_eq ▸ (hcb p hp z hz (e (u z)) huK a).1
+    he_eq ▸ (hcb (p, z) ⟨hp, hz⟩ (e (u z)) huK a).1
   have hba : ω.floerEnergyDensity (Ks p) (Kt p) u z ≤ M_b * ‖a‖ ^ 2 :=
-    (he_eq ▸ (hcb p hp z hz (e (u z)) huK a).2).trans
+    (he_eq ▸ (hcb (p, z) ⟨hp, hz⟩ (e (u z)) huK a).2).trans
       (mul_le_mul_of_nonneg_right (le_max_left _ _) (sq_nonneg _))
   have hXsB : ‖Xs‖ ≤ M_s := (hMs _ hq).trans (le_max_left _ _)
   have hXtB : ‖Xt‖ ≤ M_t := (hMt _ hq).trans (le_max_left _ _)
@@ -647,15 +620,10 @@ theorem integrableOn_and_setIntegral_floerEnergyDensity_le (ω : SmoothTwoForm I
     (hf0 : ∀ z ∈ Ω, 0 ≤ ω.floerEnergyDensity Ks Kt u z) {E : ℝ} (hE0 : 0 ≤ E)
     (hE : ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) ≤ ENNReal.ofReal E) :
     IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω ∧
-      ∫ z in Ω, ω.floerEnergyDensity Ks Kt u z ≤ E := by
-  have hf0' := ae_restrict_of_forall_mem (μ := volume) hΩ hf0
-  have hlin := (lintegral_mono_set hΩS).trans hE
-  have hint : IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω :=
-    ⟨((ω.continuousOn_floerEnergyDensity hS hu hXs hXt).mono hΩS).aestronglyMeasurable hΩ,
-      (hasFiniteIntegral_iff_ofReal hf0').2 (hlin.trans_lt ENNReal.ofReal_lt_top)⟩
-  refine ⟨hint, ?_⟩
-  rw [integral_eq_lintegral_of_nonneg_ae hf0' hint.aestronglyMeasurable]
-  exact ENNReal.toReal_le_of_le_ofReal hE0 hlin
+      ∫ z in Ω, ω.floerEnergyDensity Ks Kt u z ≤ E :=
+  integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le
+    (((ω.continuousOn_floerEnergyDensity hS hu hXs hXt).mono hΩS).aestronglyMeasurable hΩ)
+    (ae_restrict_of_forall_mem hΩ hf0) hΩS hE0 hE
 
 end SmoothTwoForm
 

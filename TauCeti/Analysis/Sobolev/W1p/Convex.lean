@@ -151,8 +151,7 @@ theorem W1p.lipschitzOnWith_preciseRepresentative_of_convex (u : W1p μ Ω ∞)
     apply mem_cthickening_of_dist_le _ z δ _ hz
     rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
     rw [(ρ n).tsupport_normed_eq, mem_closedBall, dist_zero_right] at hw
-    simp only [ρ, ContDiffBump.rOut_shrinking] at hw
-    exact hw.trans (div_le_self hδ.le (by simp))
+    exact hw.trans (ContDiffBump.rOut_shrinking_le hδ n)
   have hlim (z : E) (hz : z ∈ Ω) :
       Tendsto (fun n ↦ ((ρ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] f) z)
         atTop (𝓝 (preciseRepresentative μ (W1p.value u) z)) := by

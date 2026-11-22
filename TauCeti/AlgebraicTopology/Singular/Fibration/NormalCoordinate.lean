@@ -131,7 +131,9 @@ variable {R : Type*} [Ring R] (M : ModuleCat.{u} R) (hW : IsOpen W) (hZc : IsClo
   (hZW : Z ⊆ W)
 
 include hW hZc hZW in
-private lemma isIso_singularHomologyMap_excisionMap_preimage (m : ℕ) :
+/-- Excision onto the open set `p⁻¹(W)`, which contains the closed set `p⁻¹(Z)`, is an isomorphism
+on the homology of `(E, E ∖ p⁻¹(Z))`. -/
+lemma isIso_singularHomologyMap_excisionMap_preimage (m : ℕ) :
     IsIso (TopPair.singularHomologyMap
       (TopPair.excisionMap (X := E) (p ⁻¹' W) (p ⁻¹' Z)ᶜ) M m) :=
   TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset M

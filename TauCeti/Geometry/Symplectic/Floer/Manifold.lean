@@ -137,12 +137,11 @@ form they recover the vector-space definitions.
 * `SmoothTwoForm.hamiltonianCurvature_eq_deriv_mul_of_eventuallyEq`: a datum which is the
   continuation datum `β(s) H(t) dt` near a point has curvature `β'(s) H(t)` there.
 * `SmoothTwoForm.hamiltonianCurvature_comp_add_right`,
-  `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`,
   `SmoothTwoForm.perturbedMFDeriv_comp_add_right`,
   `SmoothTwoForm.floerEnergyDensity_comp_add_right`,
   `SmoothTwoForm.floerEnergyDensity_cylindrical_comp_add_right`: translations of the domain
-  translate the curvature, the perturbed derivative and the energy density, and preserve the
-  curvature allowance along a map.
+  translate the curvature, the perturbed derivative and the energy density; the integrated
+  statements are in `TauCeti.Geometry.Symplectic.Floer.Manifold.Translation`.
 
 ## References
 
@@ -916,17 +915,6 @@ theorem lintegral_enorm_hamiltonianCurvature_image (ω : SmoothTwoForm I M)
       ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw)
         (hKt' w hw)
 
-/-- Translations of the domain preserve the integrated curvature along a map. -/
-theorem lintegral_enorm_hamiltonianCurvature_comp_add_right (ω : SmoothTwoForm I M)
-    (Ks Kt : ℝ × ℝ → M → ℝ) (u : ℝ × ℝ → M) (v : ℝ × ℝ) :
-    ∫⁻ z, ‖ω.hamiltonianCurvature (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) z (u (z + v))‖ₑ =
-      ∫⁻ z, ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ := by
-  have hv : MeasurePreserving (· + v) volume volume :=
-    (measurePreserving_add_right volume v.1).prod (measurePreserving_add_right volume v.2)
-  simp only [hamiltonianCurvature_comp_add_right]
-  exact hv.lintegral_comp_emb (measurableEmbedding_addRight v)
-    (fun z ↦ ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ)
-
 /-- **The energy identity on a rectangle, for a manifold target.** Let `u` and the perturbation
 data `K = K_s ds + K_t dt` be `C¹` over an open neighbourhood `U` of a rectangle
 `[a₁, b₁] × [a₂, b₂]`, for a nondegenerate two-form on a finite-dimensional manifold. If the
@@ -1384,6 +1372,12 @@ theorem fromTangentSpace_perturbedMFDeriv_constSmooth_apply (ω : SymplecticForm
     perturbedFDeriv_apply, hd']
   rw [NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_apply,
     hamiltonianVectorField_constSmooth, hamiltonianVectorField_constSmooth]
+
+/-- For a constant form, `perturbedMFDeriv` is `perturbedFDeriv` (`fromTangentSpace` is `id`). -/
+theorem toLinearMap_perturbedMFDeriv_constSmooth (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u : ℝ × ℝ → V) (z : ℝ × ℝ) : (ω.constSmooth.perturbedMFDeriv Ks Kt u z).toLinearMap =
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V) :=
+  LinearMap.ext (ω.fromTangentSpace_perturbedMFDeriv_constSmooth_apply Ks Kt u z)
 
 /-- The intrinsic energy density for a constant form agrees with the vector-space density. -/
 @[simp]

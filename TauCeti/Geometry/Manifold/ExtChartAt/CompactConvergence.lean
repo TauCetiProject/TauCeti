@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
-public import TauCeti.Topology.ContinuousMap.CompactConvergence
+public import TauCeti.Topology.ContinuousMap.CompactConvergence.Group
 
 /-!
 # Compact convergence into manifold charts

@@ -35,6 +35,8 @@ normed complex `F`.
 ## Main declarations
 
 * `SchwartzMap.toBesselPotentialSpaceCLM`: the inclusion `𝓢(E, F) →L[ℂ] H^{s,p}(E, F)`.
+* `SchwartzMap.toBesselPotentialSpaceCLM_injective`: this inclusion is injective, so a nonzero
+  Schwartz function has positive `H^{s,p}` norm (`SchwartzMap.norm_toBesselPotentialSpaceCLM_pos`).
 * `SchwartzMap.denseRange_toBesselPotentialSpaceCLM`: its range is dense for `p < ∞`.
 * `SchwartzMap.toLp_toBesselPotentialSpaceCLM_zero`,
   `BesselPotentialSpace.toDistr_toLpₗᵢ_zero_symm_apply`: the identification `H^{0,p} = Lᵖ`.
@@ -66,8 +68,8 @@ normed complex `F`.
   derivatives, `‖u‖²_{H^{s+1}} = ‖u‖²_{H^s} + (2π)⁻² ∑ᵢ ‖∂_{bᵢ} u‖²_{H^s}`; in particular
   (`SchwartzMap.norm_toBesselPotentialSpaceCLM_one_sq`)
   `‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
-* `SchwartzMap.norm_toBesselPotentialSpaceCLM_compSubConstCLM`: translation preserves the `H^s`
-  norm of a Schwartz function.
+* `SchwartzMap.norm_toBesselPotentialSpaceCLM_compSubConstCLM`: translation preserves the
+  `H^{s,p}` norm of a Schwartz function.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_cutoffExponential_one_le`: the `H^s` norm of the
   wave packet `y ↦ exp(i ⟪y, ξ⟫) φ(y) v` is at most `2 ^ (|s| / 2) ⟨ξ / 2π⟩ ^ s ‖φ‖_{H^{|s|}} ‖v‖`,
   and
@@ -138,6 +140,15 @@ theorem toDistr_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
     ← besselPotential_toTemperedDistributionCLM_eq, besselPotential_besselPotential_apply,
     add_neg_cancel, besselPotential_zero, ContinuousLinearMap.id_apply]
 
+/-- The inclusion of Schwartz functions into `H^{s,p}` is injective. -/
+theorem toBesselPotentialSpaceCLM_injective (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
+    Function.Injective (toBesselPotentialSpaceCLM (E := E) (F := F) s p) := by
+  intro u v h
+  have hd := congrArg BesselPotentialSpace.toDistr h
+  simp only [toDistr_toBesselPotentialSpaceCLM,
+    ← Lp.toTemperedDistribution_toLp_eq (p := p)] at hd
+  exact injective_toLp p volume (LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot hd)
+
 /-- In `H^{0,p} = Lᵖ` the `Lᵖ` part of a Schwartz function `u` is `u` itself. -/
 theorem toLp_toBesselPotentialSpaceCLM_zero (u : 𝓢(E, F)) :
     (toBesselPotentialSpaceCLM 0 p u).toLp = u.toLp p := by
@@ -173,6 +184,11 @@ theorem denseRange_toBesselPotentialSpaceCLM (s : ℝ) (hp : p ≠ ∞) :
   exact (BesselPotentialSpace.toLpₗᵢ E F s p).symm.surjective.denseRange.comp
     ((denseRange_toLpCLM (F := F) hp).comp hsurj.denseRange (toLpCLM ℝ F p volume).continuous)
     (BesselPotentialSpace.toLpₗᵢ E F s p).symm.continuous
+
+/-- A nonzero Schwartz function has positive `H^{s,p}` norm. -/
+theorem norm_toBesselPotentialSpaceCLM_pos (s : ℝ) {u : 𝓢(E, F)} (hu : u ≠ 0) :
+    0 < ‖toBesselPotentialSpaceCLM s p u‖ :=
+  norm_pos_iff.2 fun h0 ↦ hu (toBesselPotentialSpaceCLM_injective s p (h0.trans (map_zero _).symm))
 
 omit [CompleteSpace F] in
 /-- The weighted Fourier transform `⟨ξ⟩ ^ s 𝓕 u` of a Schwartz function is a Schwartz function,
@@ -301,18 +317,24 @@ theorem inv_two_pi_sq_mul_integral_norm_lineDerivOp_sq_le {F : Type*} [NormedAdd
   have h0 : 0 ≤ ∫ x, ‖u x‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
   nlinarith [mul_le_mul_of_nonneg_left hi (by positivity : (0 : ℝ) ≤ (2 * π)⁻¹ ^ 2)]
 
-/-- **Translation is an isometry of `H^s`** on Schwartz functions with Hilbert-space values. -/
+/-- **Translation is an isometry of `H^{s,p}`** on Schwartz functions: the Bessel potential `J^s`
+commutes with translations, and translations preserve `Lᵖ` norms. -/
 @[simp]
-theorem norm_toBesselPotentialSpaceCLM_compSubConstCLM {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℂ F] [CompleteSpace F] (s : ℝ) (u : 𝓢(E, F)) (a : E) :
-    ‖toBesselPotentialSpaceCLM s 2 (u.compSubConstCLM ℂ a)‖ =
-      ‖toBesselPotentialSpaceCLM s 2 u‖ := by
-  rw [norm_toBesselPotentialSpaceCLM, norm_toBesselPotentialSpaceCLM]
-  congr 1
-  refine eLpNorm_congr_norm_ae
-    (memLp_one_add_norm_sq_rpow_smul_fourier s _ 2).aestronglyMeasurable
-    (memLp_one_add_norm_sq_rpow_smul_fourier s u 2).aestronglyMeasurable (.of_forall fun ξ ↦ ?_)
-  simp [fourier_compSubConstCLM_apply, norm_smul]
+theorem norm_toBesselPotentialSpaceCLM_compSubConstCLM (s : ℝ) (u : 𝓢(E, F)) (a : E) :
+    ‖toBesselPotentialSpaceCLM s p (u.compSubConstCLM ℂ a)‖ =
+      ‖toBesselPotentialSpaceCLM s p u‖ := by
+  have hg : (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth :=
+    Complex.hasTemperateGrowth_ofReal.comp (Function.hasTemperateGrowth_one_add_norm_sq_rpow E _)
+  set v := fourierMultiplierCLM F (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u
+  have hv : fourierMultiplierCLM F (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ))
+      (u.compSubConstCLM ℂ a) = v.compSubConstCLM ℂ a :=
+    fourierMultiplierCLM_compSubConstCLM hg u a
+  rw [← BesselPotentialSpace.norm_toLp_eq, ← BesselPotentialSpace.norm_toLp_eq,
+    toLp_toBesselPotentialSpaceCLM, toLp_toBesselPotentialSpaceCLM, hv, norm_toLp, norm_toLp]
+  have hfun : (v.compSubConstCLM ℂ a : E → F) = v ∘ fun x ↦ x - a :=
+    funext fun x ↦ compSubConstCLM_apply v a x
+  rw [hfun, eLpNorm_comp_measurePreserving v.continuous.aestronglyMeasurable
+    (measurePreserving_sub_right volume a)]
 
 open scoped Real in
 /-- **The `H^s` norm of a wave packet.** Modulating a Schwartz function by the character
