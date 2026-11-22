@@ -319,7 +319,9 @@ theorem tendsto_cdf_renewalCountNat_sub_div
           ((renewalCountNat T t ω : ℝ) - (t : ℝ) / μ) / (σ * √((t : ℝ) / μ ^ 3))) x)
       atTop (𝓝 (cdf (gaussianReal 0 1) x)) := by
   intro μ σ
-  have hμ : 0 < μ := integral_coe_pos_of_variance_ne_zero (hid 0).aemeasurable_fst hvar
+  have hμ : 0 < μ := integral_pos_of_variance_ne_zero
+    (hid 0).aemeasurable_fst.coe_nnreal_real.aestronglyMeasurable
+    (.of_forall fun ω ↦ (T 0 ω).coe_nonneg) hvar
   have hσ : 0 < σ := Real.sqrt_pos.2 ((variance_nonneg _ _).lt_of_ne' hvar)
   have : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
   have : NullSingletonClass ((gaussianReal 0 1).map (id : ℝ → ℝ)) := by rwa [Measure.map_id]
@@ -348,8 +350,8 @@ theorem tendsto_cdf_renewalCountNat_sub_div
       rw [Measure.map_id] at h
       exact h.comp hm_top) ?_
   have hzero : P {ω | T 0 ω = 0} < 1 := by
-    simpa only [Function.comp_apply, NNReal.coe_eq_zero] using
-      measure_setOf_eq_zero_lt_one_of_variance_ne_zero hvar
+    simpa only [Function.comp_apply, NNReal.coe_eq_zero, measure_univ] using
+      measure_setOf_eq_zero_lt_measure_univ_of_variance_ne_zero hvar
   have hnonexp := ae_tendsto_arrival_atTop hindep hid hzero
   filter_upwards [eventually_gt_atTop (0 : ℝ≥0), hu_top.eventually_ge_atTop 0] with t ht hu0
   filter_upwards [hnonexp] with ω hω
