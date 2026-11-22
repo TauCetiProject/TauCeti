@@ -19,7 +19,8 @@ are pairwise distinct, giving the infinite-denominator step in the rank-two fini
 obstruction. No Laurent-numerator or cluster-variable realization is asserted here.
 
 The closed form uses Mathlib's `Polynomial.Chebyshev.S` and `S_add_one`. Positivity and
-growth use Tau Ceti's `natCast_add_one_le_S_eval` and `S_eval_add_one_le`.
+growth use `one_le_S_eval` and `nonneg_S_eval_sub_one` for the coordinate signs, and
+`S_eval_add_S_sub_one_eval_strictMono` for growth of the even first coordinates.
 
 ## Reference
 
@@ -67,6 +68,7 @@ def rankTwoDenominatorPair (b c : ℤ) (n : ℕ) : (ℤ × ℤ) × (ℤ × ℤ) 
   Function.iterate_zero_apply _ _
 
 /-- Two consecutive tropical mutations advance one pair. -/
+@[grind =]
 theorem rankTwoDenominatorPair_succ (b c : ℤ) (n : ℕ) :
     rankTwoDenominatorPair b c (n + 1) =
       rankTwoDenominatorStep b c (rankTwoDenominatorPair b c n) :=
@@ -78,10 +80,9 @@ theorem eq_rankTwoDenominatorPair (b c : ℤ) (f : ℕ → (ℤ × ℤ) × (ℤ 
     (hzero : f 0 = ((-1, 0), (0, -1)))
     (hstep : ∀ n, f (n + 1) = rankTwoDenominatorStep b c (f n)) :
     f = rankTwoDenominatorPair b c := by
+  have h : Function.Semiconj f Nat.succ (rankTwoDenominatorStep b c) := hstep
   funext n
-  induction n with
-  | zero => simpa using hzero
-  | succ n ih => rw [hstep, rankTwoDenominatorPair_succ, ih]
+  simpa [Nat.succ_iterate, hzero, rankTwoDenominatorPair] using h.iterate_right n 0
 
 /-- The first forward pair has already passed the two negative initial vectors. -/
 @[simp] theorem rankTwoDenominatorPair_one (b c : ℤ) :
@@ -89,6 +90,11 @@ theorem eq_rankTwoDenominatorPair (b c : ℤ) (f : ℕ → (ℤ × ℤ) × (ℤ 
   rw [rankTwoDenominatorPair_succ, rankTwoDenominatorPair_zero]
   simp only [rankTwoDenominatorStep_eq, rankTwoDenominatorUpdate_eq]
   norm_num
+
+/-- On a nonnegative current vector the tropical update is linear. -/
+theorem rankTwoDenominatorUpdate_of_nonneg (k : ℤ) (u v : ℤ × ℤ) (hv : 0 ≤ v) :
+    rankTwoDenominatorUpdate k u v = k • v - u := by
+  simp [rankTwoDenominatorUpdate, posPart_def, sup_eq_left.mpr hv]
 
 private theorem rankTwo_pair_step {b c s p q : ℤ} (hb : 0 ≤ b) (hc : 0 ≤ c)
     (hs : 0 ≤ s) (hp : 0 ≤ p) (hq : 0 ≤ q) (h : q = (b * c - 2) * s - p)
@@ -98,9 +104,9 @@ private theorem rankTwo_pair_step {b c s p q : ℤ} (hb : 0 ≤ b) (hc : 0 ≤ c
   let v := rankTwoDenominatorUpdate c (s + p, c * p) (b * s, s + p)
   have hv : v = (q + s, c * s) := by
     dsimp only [v]
-    rw [rankTwoDenominatorUpdate_eq]
-    apply Prod.ext <;> dsimp only
-    all_goals simp only [max_eq_left (mul_nonneg hb hs), max_eq_left (add_nonneg hs hp)]
+    rw [rankTwoDenominatorUpdate_of_nonneg _ _ _
+      ⟨mul_nonneg hb hs, add_nonneg hs hp⟩]
+    apply Prod.ext <;> simp
     · linear_combination -h
     · ring
   calc
@@ -110,15 +116,15 @@ private theorem rankTwo_pair_step {b c s p q : ℤ} (hb : 0 ≤ b) (hc : 0 ≤ c
     _ = ((q + s, c * s), (b * q, q + s)) := by
       rw [hv]
       congr 1
-      rw [rankTwoDenominatorUpdate_eq]
-      apply Prod.ext <;> dsimp only
-      all_goals simp only [max_eq_left (add_nonneg hq hs), max_eq_left (mul_nonneg hc hs)]
+      rw [rankTwoDenominatorUpdate_of_nonneg _ _ _
+        ⟨add_nonneg hq hs, mul_nonneg hc hs⟩]
+      apply Prod.ext <;> simp
       · ring
       · linear_combination -h
 
 /-- For `0 ≤ b` and `4 ≤ b * c`, the forward even and odd denominator vectors have the
 following Chebyshev closed form. -/
-theorem rankTwoDenominatorPair_chebyshev {b c : ℤ} (hb : 0 ≤ b) (hbc : 4 ≤ b * c) (n : ℕ) :
+theorem rankTwoDenominatorPair_succ_eq_chebyshev {b c : ℤ} (hb : 0 ≤ b) (hbc : 4 ≤ b * c) (n : ℕ) :
     let t := b * c - 2
     let s := (S ℤ (n : ℤ)).eval t
     let p := (S ℤ ((n : ℤ) - 1)).eval t
@@ -153,7 +159,7 @@ private theorem rankTwo_forward_signs {b c : ℤ}
     lt_of_lt_of_le zero_lt_one (one_le_S_eval ht n)
   have hp := nonneg_S_eval_sub_one ht n
   have hsum := add_pos_of_pos_of_nonneg hs hp
-  rw [rankTwoDenominatorPair_chebyshev hb hbc n]
+  rw [rankTwoDenominatorPair_succ_eq_chebyshev hb hbc n]
   exact ⟨⟨hsum, mul_nonneg hc.le hp⟩, ⟨mul_pos hb' hs, hsum⟩⟩
 
 /-- For `0 ≤ b` and `4 ≤ b * c`, each even forward vector has positive first coordinate and
@@ -166,7 +172,7 @@ theorem rankTwoDenominatorPair_forward_even_fst_pos_and_snd_nonneg {b c : ℤ}
 
 /-- For `0 ≤ b` and `4 ≤ b * c`, each odd forward vector is strictly positive in both
 coordinates. -/
-theorem rankTwoDenominatorPair_forward_odd_pos {b c : ℤ}
+theorem rankTwoDenominatorPair_forward_odd_fst_pos_and_snd_pos {b c : ℤ}
     (hb : 0 ≤ b) (hbc : 4 ≤ b * c) (n : ℕ) :
     let p := rankTwoDenominatorPair b c (n + 1)
     0 < p.2.1 ∧ 0 < p.2.2 :=
@@ -181,14 +187,14 @@ theorem rankTwoDenominatorPair_even_fst_strictMono {b c : ℤ} (hb : 0 ≤ b) (h
   cases n with
   | zero => simp
   | succ n =>
-    have h := TauCeti.Chebyshev.S_eval_add_S_sub_one_eval_strictMono
+    have h := Polynomial.Chebyshev.S_eval_add_S_sub_one_eval_strictMono
       (R := ℤ) (t := b * c - 2) (by omega)
-    simpa only [rankTwoDenominatorPair_chebyshev hb hbc] using h (Nat.lt_succ_self n)
+    simpa only [rankTwoDenominatorPair_succ_eq_chebyshev hb hbc] using h (Nat.lt_succ_self n)
 
 /-- Under the growth hypotheses, all even denominator vectors are pairwise distinct. -/
 theorem rankTwoDenominatorPair_even_injective {b c : ℤ} (hb : 0 ≤ b) (hbc : 4 ≤ b * c) :
-    Function.Injective fun n : ℕ ↦ (rankTwoDenominatorPair b c n).1 := by
-  intro m n h
-  exact (rankTwoDenominatorPair_even_fst_strictMono hb hbc).injective (congrArg Prod.fst h)
+    Function.Injective fun n : ℕ ↦ (rankTwoDenominatorPair b c n).1 :=
+  Function.Injective.of_comp (f := Prod.fst)
+    (rankTwoDenominatorPair_even_fst_strictMono hb hbc).injective
 
 end TauCeti.Cluster

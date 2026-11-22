@@ -31,6 +31,8 @@ image of an integer, which transports the growth bound from `ℤ` to any ring.
   and `0 ≤ Sₙ₋₁(t)` for `t ≥ 2` and `n ≥ 0`.
 * `Polynomial.Chebyshev.monotone_S_eval`, `Polynomial.Chebyshev.strictMono_S_eval`: `n ↦ Sₙ(t)` is
   monotone, and strictly monotone in a nontrivial ring, for `t ≥ 2`.
+* `Polynomial.Chebyshev.S_eval_add_S_sub_one_eval_strictMono`: the sum of adjacent values
+  `Sₙ(t) + Sₙ₋₁(t)` grows strictly for `t ≥ 2` in a nontrivial ordered commutative ring.
 * `Polynomial.Chebyshev.S_three_eval_one`: `S₃(1) = -1`.
 * `Polynomial.Chebyshev.S_eval_intCast`: `Sₙ` over `R` at the image of an integer `c` is the image
   of `Sₙ` over `ℤ` at `c`.
@@ -117,17 +119,9 @@ theorem nonneg_S_eval_sub_one (ht : 2 ≤ t) : ∀ n : ℕ, 0 ≤ (S R ((n : ℤ
   | n + 1 => by
     simpa [Nat.cast_add, add_sub_cancel_right] using le_trans zero_le_one (one_le_S_eval ht n)
 
-end Polynomial.Chebyshev
-
-namespace TauCeti.Chebyshev
-
-open Polynomial.Chebyshev
-
-variable {R : Type*} [CommRing R] [PartialOrder R] [IsOrderedRing R] [Nontrivial R] {t : R}
-
 /-- At `t ≥ 2` in a nontrivial ordered commutative ring, the sum of the rescaled Chebyshev
 values at indices `n` and `(n : ℤ) - 1` is strictly increasing in the natural index `n`. -/
-theorem S_eval_add_S_sub_one_eval_strictMono (ht : 2 ≤ t) :
+theorem S_eval_add_S_sub_one_eval_strictMono [Nontrivial R] (ht : 2 ≤ t) :
     StrictMono fun n : ℕ ↦ (S R (n : ℤ)).eval t + (S R ((n : ℤ) - 1)).eval t := by
   apply strictMono_nat_of_lt_succ
   intro n
@@ -140,4 +134,4 @@ theorem S_eval_add_S_sub_one_eval_strictMono (ht : 2 ≤ t) :
         monotone_S_eval ht (Nat.le_succ n)
   exact add_lt_add_of_lt_of_le hlt hprev
 
-end TauCeti.Chebyshev
+end Polynomial.Chebyshev
