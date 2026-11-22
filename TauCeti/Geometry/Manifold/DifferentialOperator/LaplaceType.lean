@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol
+public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
+public import TauCeti.Geometry.Manifold.DifferentialOperator.Restrict
+public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
@@ -56,6 +58,8 @@ is `h ↦ h Δf + 2 ⟪grad f, grad h⟫` and that its double commutators are mu
   transport along diffeomorphisms which are Riemannian isometries.
 * `TauCeti.IsLocalRiemannianIsometry.smoothLaplaceBeltrami_comp`: a smooth local Riemannian
   isometry `φ` intertwines the Laplace–Beltrami operators, `Δ (u ∘ φ) = (Δ u) ∘ φ`.
+* `TauCeti.IsLaplaceType.restrictDifferentialOperators`: the restriction of an operator of Laplace
+  type to an open subset, with the inherited metric, is of Laplace type with the same constant.
 
 ## References
 
@@ -67,7 +71,7 @@ is `h ↦ h Δf + 2 ⟪grad f, grad h⟫` and that its double commutators are mu
 
 public section
 
-open Bundle TauCeti.Manifold
+open Bundle TauCeti.Manifold TopologicalSpace
 open scoped ContDiff Manifold
 
 noncomputable section
@@ -170,6 +174,26 @@ theorem IsLaplaceType.conjDifferentialOperators (hD : IsLaplaceType D c) (φ : N
     ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
 
 end Isometry
+
+/-- **Restriction to open subsets.** For the Riemannian metric that an open subset `U` inherits
+from `M`, the restriction to `U` of an operator of Laplace type with constant `c` is of Laplace
+type with constant `c`. -/
+theorem IsLaplaceType.restrictDifferentialOperators (hD : IsLaplaceType D c) (U : Opens M) :
+    IsLaplaceType (U.restrictDifferentialOperators 2 D) c := by
+  refine ⟨hD.pos, fun x hx ξ ↦ ?_⟩
+  have hx' : I.IsInteriorPoint (x : M) := I.isInteriorPoint_iff_isInteriorPoint_val.mp hx
+  -- Write `ξ` as `η ∘ ι` for the identification `ι : T_x U ≃ T_x M` of the tangent spaces, which
+  -- is a linear isometric equivalence for the inherited metric, so `η` has the norm of `ξ`.
+  have hξ : ξ = (ξ.comp ((tangentSpaceOpenLinearIsometryEquiv (I := I) U x).symm :
+      TangentSpace I (x : M) →L[ℝ] TangentSpace I x)).comp
+      (tangentSpaceOpenEquiv (I := I) x).toContinuousLinearMap := by
+    ext v
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_coe, ← coe_tangentSpaceOpenLinearIsometryEquiv,
+      LinearIsometryEquiv.symm_apply_apply]
+  conv_lhs => rw [hξ]
+  rw [smoothPrincipalSymbol_restrictDifferentialOperators hx', hD.smoothPrincipalSymbol_eq hx',
+    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
 
 end IsLaplaceType
 

@@ -121,7 +121,8 @@ theorem drinfeldIso_inv_eq :
       monoidal
     -- Braiding `Xᘁᘁ` past the coevaluation of `X` and back under `Xᘁ` moves it to the right of
     -- the coevaluation.
-    _ = _ := by rw [h₁, whiskerLeft_comp_braiding_whiskerRight_assoc]; monoidal
+    _ = _ := by
+      rw [h₁, whiskerLeft_comp_braiding_whiskerRight_assoc, braiding_tensorUnit_right]; monoidal
 
 /-- Coevaluation into the double dual is obtained by applying the Drinfeld isomorphism
 after the braided swapped coevaluation. -/

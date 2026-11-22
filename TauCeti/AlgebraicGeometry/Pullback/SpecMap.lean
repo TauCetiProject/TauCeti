@@ -194,3 +194,90 @@ end TensorProductChart
 end AlgebraicGeometry
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+universe u
+
+/-- A pullback of schemes with affine coordinates is the spectrum of the tensor product,
+compatibly with both projections. -/
+theorem exists_pullback_isoSpec_tensorProduct
+    {H Q M : Scheme.{u}} (q : Q ⟶ H) (s : M ⟶ H)
+    (R A B : CommRingCat.{u}) [Algebra R A] [Algebra R B]
+    (e0 : H ≅ Spec R) (eB : Q ≅ Spec B) (eA : M ≅ Spec A)
+    (hB : q ≫ e0.hom = eB.hom ≫ Spec.map (CommRingCat.ofHom (algebraMap R B)))
+    (hA : s ≫ e0.hom = eA.hom ≫ Spec.map (CommRingCat.ofHom (algebraMap R A))) :
+    ∃ i : pullback q s ≅ Spec (.of (A ⊗[R] B)),
+      i.inv ≫ pullback.fst q s = Spec.map (CommRingCat.ofHom
+        (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B).toRingHom) ≫ eB.inv ∧
+      i.inv ≫ pullback.snd q s = Spec.map (CommRingCat.ofHom
+        (Algebra.TensorProduct.includeLeftRingHom : A →+* A ⊗[R] B)) ≫ eA.inv := by
+  let b := Spec.map (CommRingCat.ofHom (algebraMap R B))
+  let a := Spec.map (CommRingCat.ofHom (algebraMap R A))
+  let j : pullback q s ≅ pullback b a :=
+    asIso (pullback.map q s b a eB.hom eA.hom e0.hom hB hA)
+  let i := j ≪≫ pullbackSymmetry b a ≪≫ pullbackSpecIso R A B
+  refine ⟨i, ?_, ?_⟩
+  · apply (cancel_epi i.hom).mp
+    simp [i, j, a, b]
+  · apply (cancel_epi i.hom).mp
+    simp [i, j, a, b]
+
+/-- In affine coordinates, base change of a morphism is the spectrum of its tensor product map. -/
+theorem nonempty_pullbackMap_arrowIso_specMap_tensorProduct
+    {H P Q M : Scheme.{u}} (g : P ⟶ Q) (q : Q ⟶ H) (s : M ⟶ H)
+    (R A B C : CommRingCat.{u}) [Algebra R A] [Algebra R B] [Algebra R C]
+    (φ : B →ₐ[R] C) (e0 : H ≅ Spec R) (eB : Q ≅ Spec B)
+    (eC : P ≅ Spec C) (eA : M ≅ Spec A)
+    (hB : q ≫ e0.hom = eB.hom ≫
+      Spec.map (CommRingCat.ofHom (algebraMap R B)))
+    (hC : g ≫ eB.hom = eC.hom ≫ Spec.map (CommRingCat.ofHom φ.toRingHom))
+    (hA : s ≫ e0.hom = eA.hom ≫
+      Spec.map (CommRingCat.ofHom (algebraMap R A))) :
+    Nonempty (Arrow.mk (pullback.map (g ≫ q) s q s g (𝟙 _) (𝟙 _)
+      (by simp) (by simp)) ≅ Arrow.mk (Spec.map (CommRingCat.ofHom
+        (Algebra.TensorProduct.map (AlgHom.id R A) φ).toRingHom))) := by
+  have hc : (g ≫ q) ≫ e0.hom =
+      eC.hom ≫ Spec.map (CommRingCat.ofHom (algebraMap R C)) := by
+    rw [Category.assoc, hB, ← Category.assoc, hC, Category.assoc]
+    rw [← Spec.map_comp]
+    congr 1
+    exact congrArg (fun k : R →+* C ↦ Spec.map (CommRingCat.ofHom k)) φ.comp_algebraMap
+  obtain ⟨iB, hb₁, hb₂⟩ := exists_pullback_isoSpec_tensorProduct q s R A B e0 eB eA hB hA
+  obtain ⟨iC, hc₁, hc₂⟩ := exists_pullback_isoSpec_tensorProduct (g ≫ q) s R A C e0 eC eA hc hA
+  let ψ := Algebra.TensorProduct.map (AlgHom.id R A) φ
+  let sψ := Spec.map (CommRingCat.ofHom ψ.toRingHom)
+  have hRight : sψ ≫ Spec.map (CommRingCat.ofHom
+      (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B).toRingHom) =
+      Spec.map (CommRingCat.ofHom
+        (Algebra.TensorProduct.includeRight : C →ₐ[R] A ⊗[R] C).toRingHom) ≫
+        Spec.map (CommRingCat.ofHom φ.toRingHom) := by
+    dsimp [sψ]
+    rw [← Spec.map_comp, ← Spec.map_comp]
+    congr 1
+  have hLeft : sψ ≫ Spec.map (CommRingCat.ofHom
+      (Algebra.TensorProduct.includeLeftRingHom : A →+* A ⊗[R] B)) =
+      Spec.map (CommRingCat.ofHom
+        (Algebra.TensorProduct.includeLeftRingHom : A →+* A ⊗[R] C)) := by
+    dsimp [sψ]
+    rw [← Spec.map_comp]
+    congr 1
+    ext x
+    simp [ψ]
+  have hh : sψ ≫ iB.inv = iC.inv ≫
+      pullback.map (g ≫ q) s q s g (𝟙 _) (𝟙 _) (by simp) (by simp) := by
+    apply pullback.hom_ext
+    · simp only [Category.assoc, pullback.lift_fst]
+      rw [hb₁, reassoc_of% hRight, reassoc_of% hc₁]
+      rw [← cancel_mono eB.hom]
+      simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+      rw [hC, Iso.inv_hom_id_assoc]
+    · simp only [Category.assoc, pullback.lift_snd, Category.comp_id]
+      rw [hb₂, ← Category.assoc, hLeft, hc₂]
+  refine ⟨Arrow.isoMk' _ sψ iC iB ?_⟩
+  rw [← cancel_epi iC.inv, ← cancel_mono iB.inv]
+  simpa only [Category.assoc, Iso.inv_hom_id_assoc, Iso.hom_inv_id,
+    Category.comp_id] using hh
+
+
+end AlgebraicGeometry.Scheme.Hom
