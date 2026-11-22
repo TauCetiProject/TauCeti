@@ -434,6 +434,34 @@ theorem bot_sup_dpow (hI : DividedPowers I)
     ((dividedPowersBot A).sup hI h).dpow n z = hI.dpow n z := by
   rw [sup_dpow_comm, sup_dpow_bot]
 
+/-- Gluing a divided power structure with itself via `supAdditive` recovers the original
+operations on all of `A`. -/
+@[simp]
+theorem supAdditive_dpow_self (hI : DividedPowers I)
+    (h : ∀ n, ∀ w ∈ I ⊓ I, hI.dpow n w = hI.dpow n w) (n : ℕ) (z : A) :
+    (hI.supAdditive hI h).dpow n z = hI.dpow n z := by
+  rw [← hI.sup_toAdditiveDividedPowers hI h, toAdditiveDividedPowers_dpow, hI.sup_dpow_self h n z]
+
+/-- Gluing `hI` with `dividedPowersBot A` via `supAdditive` recovers the original operations of `hI`
+on all of `A`. -/
+@[simp]
+theorem supAdditive_dpow_bot (hI : DividedPowers I)
+    (h : ∀ n, ∀ w ∈ I ⊓ (⊥ : Ideal A), hI.dpow n w = (dividedPowersBot A).dpow n w)
+    (n : ℕ) (z : A) :
+    (hI.supAdditive (dividedPowersBot A) h).dpow n z = hI.dpow n z := by
+  rw [← hI.sup_toAdditiveDividedPowers (dividedPowersBot A) h, toAdditiveDividedPowers_dpow,
+    hI.sup_dpow_bot h n z]
+
+/-- Gluing `dividedPowersBot A` with `hI` via `supAdditive` recovers the original operations of `hI`
+on all of `A`. -/
+@[simp]
+theorem bot_supAdditive_dpow (hI : DividedPowers I)
+    (h : ∀ n, ∀ w ∈ (⊥ : Ideal A) ⊓ I, (dividedPowersBot A).dpow n w = hI.dpow n w)
+    (n : ℕ) (z : A) :
+    ((dividedPowersBot A).supAdditive hI h).dpow n z = hI.dpow n z := by
+  rw [← (dividedPowersBot A).sup_toAdditiveDividedPowers hI h, toAdditiveDividedPowers_dpow,
+    bot_sup_dpow hI h n z]
+
 /-- The identity ring homomorphism is a divided power morphism from `(I, hI)` to
 `(I ⊔ J, hI.sup hJ h)`. -/
 @[simp high]
