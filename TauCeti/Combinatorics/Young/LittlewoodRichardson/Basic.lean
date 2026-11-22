@@ -213,17 +213,6 @@ theorem congr_trans {inner' outer' μ' inner'' outer'' μ'' : YoungDiagram}
       congr (hinner.trans hinner') (houter.trans houter') (hμ.trans hμ') := by
   subst hinner; subst houter; subst hμ; subst hinner'; subst houter'; subst hμ'; rfl
 
-/-- Applying two transports of Littlewood–Richardson tableaux successively composes the
-equalities. -/
-@[simp]
-theorem congr_congr {inner' outer' μ' inner'' outer'' μ'' : YoungDiagram}
-    (hinner : inner = inner') (houter : outer = outer') (hμ : μ = μ')
-    (hinner' : inner' = inner'') (houter' : outer' = outer'') (hμ' : μ' = μ'')
-    (T : LRTableau inner outer μ) :
-    congr hinner' houter' hμ' (congr hinner houter hμ T) =
-      congr (hinner.trans hinner') (houter.trans houter') (hμ.trans hμ') T := by
-  subst hinner; subst houter; subst hμ; subst hinner'; subst houter'; subst hμ'; rfl
-
 /-- Transporting a Littlewood–Richardson tableau along shape and content equalities preserves its
 reading word. -/
 @[simp]

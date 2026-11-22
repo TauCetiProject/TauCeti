@@ -120,8 +120,8 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n : ℕ} {R :
   classical
   let ι := {ν : (lam.shape.card + μ.shape.card).Partition // (ofPartition ν).colLen 0 ≤ n}
   let embDiag : ι ↪ {μ : YoungDiagram // μ.colLen 0 ≤ n} :=
-    ⟨fun ν => ⟨ofPartition ν.val, ν.property⟩,
-      fun _ _ h => Subtype.ext (YoungDiagram.ofPartition_injective (congrArg Subtype.val h))⟩
+    (⟨ofPartition, YoungDiagram.ofPartition_injective⟩ : _ ↪ YoungDiagram).subtypeMap
+      (fun _ h => h)
   let emb : ι ↪ DominantWeight n :=
     embDiag.trans ((shapeEquivPolynomialWeight n).toEmbedding.trans (Function.Embedding.subtype _))
   let f (γ : DominantWeight n) : MvPolynomial (Fin n) R :=
