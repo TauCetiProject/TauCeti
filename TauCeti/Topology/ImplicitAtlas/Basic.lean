@@ -45,8 +45,10 @@ zero sets are invariant (`TauCeti.ImplicitAtlas.act_mem_kuranishiZeroSet`), the 
 are invariant under `Γ_I` (`TauCeti.ImplicitAtlas.act_mem_range_footprintMap`), the zero-set
 domains of the cocycle condition match
 (`TauCeti.ImplicitAtlas.mem_kuranishiZeroSet_iff_footprintMap_mem`), the footprints are open and
-cover `X` (`TauCeti.ImplicitAtlas.isOpen_footprint`, `TauCeti.ImplicitAtlas.iUnion_footprint`),
-and the regular locus is empty where the expected dimension `d + m_I` is negative
+cover `X` (`TauCeti.ImplicitAtlas.isOpen_footprint`, `TauCeti.ImplicitAtlas.iUnion_footprint`)
+and are empty where the regular locus is
+(`TauCeti.ImplicitAtlas.footprint_eq_empty_of_regLocus_eq_empty`), the regular locus is empty
+where the expected dimension `d + m_I` is negative
 (`TauCeti.ImplicitAtlas.regLocus_eq_empty_of_neg`), so that a nonempty space carries no atlas
 whose expected dimensions are all negative (`TauCeti.ImplicitAtlas.isEmpty_of_forall_neg`).
 A point of `Z_IJ` fixed by a nontrivial element of `Γ_(J \ I)` does not lie over `X_I^reg`
@@ -266,6 +268,11 @@ theorem mem_footprint {I : Finset A} {y : X} :
     y ∈ 𝒜.footprint I ↔ ∃ x : kuranishiZeroSet 𝒜.kuranishi ∅ I,
       x.val ∈ 𝒜.regLocus I ∧ 𝒜.baseHomeomorph (𝒜.footprintMap (Finset.empty_subset I) x) = y := by
   simp [footprint]
+
+/-- The regular footprint `V_I` is empty when the regular locus `X_I^reg` is. -/
+theorem footprint_eq_empty_of_regLocus_eq_empty {I : Finset A} (h : 𝒜.regLocus I = ∅) :
+    𝒜.footprint I = ∅ := by
+  simp [footprint, h]
 
 /-- The regular footprints are open. The set `X_I^reg ∩ Z_∅I` is open in `Z_∅I` and is a union
 of fibres of `ψ_∅I`, so its image is open in `U_∅I` by the quotient axiom, and `U_∅I` is open in

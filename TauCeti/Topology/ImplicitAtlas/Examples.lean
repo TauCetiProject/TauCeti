@@ -223,6 +223,13 @@ theorem kuranishi_zeroAtlas (hd : d + Module.finrank ℝ E = 0) (I : Finset Unit
     (x : Unit) : (zeroAtlas Γ ρ hd).kuranishi I α x = 0 :=
   (rfl)
 
+/-- The footprint `V_∅` of `TauCeti.ImplicitAtlas.zeroAtlas` is empty, since the regular locus
+of `X_∅` is. -/
+@[simp]
+theorem footprint_zeroAtlas_empty (hd : d + Module.finrank ℝ E = 0) :
+    (zeroAtlas Γ ρ hd).footprint ∅ = ∅ :=
+  footprint_eq_empty_of_regLocus_eq_empty _ (regLocus_zeroAtlas_empty hd)
+
 /-- The footprint `V_α` of `TauCeti.ImplicitAtlas.zeroAtlas` is the whole point. -/
 @[simp]
 theorem footprint_zeroAtlas_singleton (hd : d + Module.finrank ℝ E = 0) :
@@ -396,9 +403,7 @@ theorem regLocus_powAtlas_empty (hm : m ≠ 0) : (powAtlas hm).regLocus ∅ = �
 `X_∅` is. So the footprints of the subsets of the empty set of indices do not cover the point. -/
 @[simp]
 theorem footprint_powAtlas_empty (hm : m ≠ 0) : (powAtlas hm).footprint ∅ = ∅ :=
-  eq_empty_of_forall_notMem fun _ hy ↦ by
-    obtain ⟨x, hx, -⟩ := (powAtlas hm).mem_footprint.1 hy
-    simp at hx
+  footprint_eq_empty_of_regLocus_eq_empty _ (regLocus_powAtlas_empty hm)
 
 /-- The footprint `V_α` of `TauCeti.ImplicitAtlas.powAtlas` is the whole point. -/
 @[simp]
@@ -579,6 +584,13 @@ theorem coe_footprintMap_reflectionAtlas (hm : Even m) (hm₀ : m ≠ 0) {I J : 
     (x : kuranishiZeroSet (E := fun _ : Unit ↦ ℝ) (reflectionAtlas hm hm₀).kuranishi I J) :
     ((reflectionAtlas hm hm₀).footprintMap h x : ℝ) = ((x : PowThickening J) : ℝ) :=
   (rfl)
+
+/-- The footprint `V_∅` of `TauCeti.ImplicitAtlas.reflectionAtlas` is empty, since the regular
+locus of `X_∅` is. -/
+@[simp]
+theorem footprint_reflectionAtlas_empty (hm : Even m) (hm₀ : m ≠ 0) :
+    (reflectionAtlas hm hm₀).footprint ∅ = ∅ :=
+  footprint_eq_empty_of_regLocus_eq_empty _ (regLocus_reflectionAtlas_empty hm hm₀)
 
 /-- The footprint `V_α` of `TauCeti.ImplicitAtlas.reflectionAtlas` is the whole point. -/
 @[simp]
