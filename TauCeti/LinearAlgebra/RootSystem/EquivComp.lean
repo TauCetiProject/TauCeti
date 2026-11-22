@@ -68,23 +68,17 @@ public section
 
 namespace RootPairing
 
-section Hom
-
-variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
-  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
-
 /-- A morphism of root pairings is determined by its weight map. This generalizes
 `RootPairing.Hom.weightHom_injective` from endomorphisms to arbitrary morphisms. -/
-theorem Hom.ext_weightMap {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂}
-    {f g : P.Hom Q} (h : f.weightMap = g.weightMap) : f = g := by
+theorem Hom.ext_weightMap {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
+    {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂} {f g : P.Hom Q}
+    (h : f.weightMap = g.weightMap) : f = g := by
   ext x
   · exact congr($h x)
   · exact P.flip.toPerfPair.injective <| by
       rw [← f.weight_coweight_transpose_apply, ← g.weight_coweight_transpose_apply, h]
   · exact Q.root.injective <| by rw [← f.root_weightMap_apply, ← g.root_weightMap_apply, h]
-
-end Hom
 
 namespace Equiv
 

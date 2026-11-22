@@ -65,17 +65,7 @@ variable {ι R S M₀ N₀ M N : Type*} [CommRing R] [CommRing S] [Algebra R S] 
   [AddCommGroup M₀] [Module R M₀] [AddCommGroup N₀] [Module R N₀]
   [AddCommGroup M] [Module S M] [Module R M] [IsScalarTower R S M]
   [AddCommGroup N] [Module S N] [Module R N] [IsScalarTower R S N]
-
-private theorem mem_closure_or_neg_mem_of_injective {s : Set ι} {v₀ : ι → M₀} {v : ι → M}
-    {i : ι} (hv : v i ∈ AddSubmonoid.closure (v '' s) ∨ -v i ∈ AddSubmonoid.closure (v '' s))
-    (f : M₀ →+ M) (hf : Injective f) (hcomp : ∀ j, f (v₀ j) = v j) :
-    v₀ i ∈ AddSubmonoid.closure (v₀ '' s) ∨
-      -v₀ i ∈ AddSubmonoid.closure (v₀ '' s) := by
-  have himg : v '' s = f '' (v₀ '' s) := by
-    rw [← image_comp]; exact congrArg (· '' s) (funext hcomp).symm
-  rwa [himg, ← hcomp i, ← map_neg, f.mem_closure_image_iff hf, f.mem_closure_image_iff hf] at hv
-
-variable {P₀ : RootPairing ι R M₀ N₀} {P : RootPairing ι S M N} (b : P.Base)
+  {P₀ : RootPairing ι R M₀ N₀} {P : RootPairing ι S M N} (b : P.Base)
   (fM : M₀ →ₗ[R] M) (fN : N₀ →ₗ[R] N) (hfM : Injective fM) (hfN : Injective fN)
   (hroot : ∀ i, fM (P₀.root i) = P.root i) (hcoroot : ∀ i, fN (P₀.coroot i) = P.coroot i)
 
@@ -84,15 +74,17 @@ variable {P₀ : RootPairing ι R M₀ N₀} {P : RootPairing ι S M N} (b : P.B
 noncomputable def Base.comapOfInjective : P₀.Base where
   support := b.support
   linearIndepOn_root :=
-    (((funext hroot : fM ∘ P₀.root = P.root).symm ▸
-      b.linearIndepOn_root).restrict_scalars' R).of_comp fM
+    (((funext hroot : fM ∘ P₀.root = P.root).symm ▸ b.linearIndepOn_root).restrict_scalars'
+      R).of_comp fM
   linearIndepOn_coroot :=
-    (((funext hcoroot : fN ∘ P₀.coroot = P.coroot).symm ▸
-      b.linearIndepOn_coroot).restrict_scalars' R).of_comp fN
-  root_mem_or_neg_mem i :=
-    mem_closure_or_neg_mem_of_injective (b.root_mem_or_neg_mem i) fM.toAddMonoidHom hfM hroot
-  coroot_mem_or_neg_mem i :=
-    mem_closure_or_neg_mem_of_injective (b.coroot_mem_or_neg_mem i) fN.toAddMonoidHom hfN hcoroot
+    (((funext hcoroot : fN ∘ P₀.coroot = P.coroot).symm ▸ b.linearIndepOn_coroot).restrict_scalars'
+      R).of_comp fN
+  root_mem_or_neg_mem i := (fM.toAddMonoidHom.mem_closure_image_or_neg_mem_iff hfM).mp <| by
+    simpa only [← image_comp, Function.comp_def, LinearMap.toAddMonoidHom_coe, hroot] using
+      b.root_mem_or_neg_mem i
+  coroot_mem_or_neg_mem i := (fN.toAddMonoidHom.mem_closure_image_or_neg_mem_iff hfN).mp <| by
+    simpa only [← image_comp, Function.comp_def, LinearMap.toAddMonoidHom_coe, hcoroot] using
+      b.coroot_mem_or_neg_mem i
 
 /-- `Base.comapOfInjective` leaves `support` unchanged. -/
 @[simp] theorem Base.support_comapOfInjective :
@@ -124,25 +116,12 @@ section BaseBaseChange
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N}
 
-private theorem mem_closure_or_neg_mem_map {M₀ M₁ : Type*} [AddCommGroup M₀]
-    [AddCommGroup M₁] {s : Set ι} {v₀ : ι → M₀} {v : ι → M₁} {i : ι}
-    (hv : v₀ i ∈ AddSubmonoid.closure (v₀ '' s) ∨
-      -v₀ i ∈ AddSubmonoid.closure (v₀ '' s))
-    (f : M₀ →+ M₁) (hcomp : ∀ j, f (v₀ j) = v j) :
-    v i ∈ AddSubmonoid.closure (v '' s) ∨ -v i ∈ AddSubmonoid.closure (v '' s) := by
-  have himg : v '' s = f '' (v₀ '' s) := by
-    rw [← image_comp]; exact congrArg (· '' s) (funext hcomp).symm
-  rw [himg, ← hcomp i, ← map_neg]
-  exact hv.imp f.map_mem_closure_image f.map_mem_closure_image
-
-namespace Base
-
 variable (b : P.Base) (S : Type*) [CommRing S] [Algebra R S] [FaithfulSMul R S] [Flat R S]
   [Free R N] [Module.Finite R N]
 
 /-- **Extension of scalars of a base**: the base of `P.baseChange S` with the same simple root
 indices `b.support`. -/
-noncomputable def baseChange : (P.baseChange S).Base where
+noncomputable def Base.baseChange : (P.baseChange S).Base where
   support := b.support
   linearIndepOn_root := by
     simpa only [LinearIndepOn, Function.comp_def, P.baseChange_root S] using
@@ -150,35 +129,34 @@ noncomputable def baseChange : (P.baseChange S).Base where
   linearIndepOn_coroot := by
     simpa only [LinearIndepOn, Function.comp_def, P.baseChange_coroot S] using
       Module.Flat.linearIndependent_one_tmul (S := S) b.linearIndepOn_coroot
-  root_mem_or_neg_mem i :=
-    mem_closure_or_neg_mem_map (b.root_mem_or_neg_mem i) (TensorProduct.mk R S M 1).toAddMonoidHom
-      fun j ↦ (P.baseChange_root S j).symm
-  coroot_mem_or_neg_mem i :=
-    mem_closure_or_neg_mem_map (b.coroot_mem_or_neg_mem i) (TensorProduct.mk R S N 1).toAddMonoidHom
-      fun j ↦ (P.baseChange_coroot S j).symm
+  root_mem_or_neg_mem i := by
+    simpa only [← image_comp, Function.comp_def, LinearMap.toAddMonoidHom_coe,
+      TensorProduct.mk_apply, P.baseChange_root S] using
+      (TensorProduct.mk R S M 1).toAddMonoidHom.map_mem_closure_image_or_neg_mem
+        (b.root_mem_or_neg_mem i)
+  coroot_mem_or_neg_mem i := by
+    simpa only [← image_comp, Function.comp_def, LinearMap.toAddMonoidHom_coe,
+      TensorProduct.mk_apply, P.baseChange_coroot S] using
+      (TensorProduct.mk R S N 1).toAddMonoidHom.map_mem_closure_image_or_neg_mem
+        (b.coroot_mem_or_neg_mem i)
 
 /-- Scalar extension of a base leaves `support` unchanged. -/
-@[simp] theorem support_baseChange : (b.baseChange S).support = b.support := (rfl)
+@[simp] theorem Base.support_baseChange : (b.baseChange S).support = b.support := (rfl)
 
 /-- Scalar extension preserves every entry of the `T`-valued Cartan matrix of a base. -/
-@[simp] theorem cartanMatrixIn_baseChange_apply (T : Type*) [CommRing T] [Algebra T R]
+@[simp] theorem Base.cartanMatrixIn_baseChange_apply (T : Type*) [CommRing T] [Algebra T R]
     [Algebra T S] [IsScalarTower T R S] [FaithfulSMul T S] [P.IsValuedIn T]
     (i j : (b.baseChange S).support) :
     (b.baseChange S).cartanMatrixIn T i j =
       b.cartanMatrixIn T ⟨i, (b.support_baseChange S).le i.property⟩
-        ⟨j, (b.support_baseChange S).le j.property⟩ := by
-  simp [cartanMatrixIn_def]
+        ⟨j, (b.support_baseChange S).le j.property⟩ := by simp [Base.cartanMatrixIn_def]
 
 /-- Scalar extension preserves every entry of the integral Cartan matrix of a crystallographic
 root pairing. -/
-theorem cartanMatrix_baseChange_apply [CharZero S] [P.IsCrystallographic]
+theorem Base.cartanMatrix_baseChange_apply [CharZero S] [P.IsCrystallographic]
     (i j : (b.baseChange S).support) :
-    (b.baseChange S).cartanMatrix i j =
-      b.cartanMatrix ⟨i, (b.support_baseChange S).le i.property⟩
-        ⟨j, (b.support_baseChange S).le j.property⟩ :=
-  b.cartanMatrixIn_baseChange_apply S ℤ i j
-
-end Base
+    (b.baseChange S).cartanMatrix i j = b.cartanMatrix ⟨i, (b.support_baseChange S).le i.property⟩
+      ⟨j, (b.support_baseChange S).le j.property⟩ := b.cartanMatrixIn_baseChange_apply S ℤ i j
 
 end BaseBaseChange
 

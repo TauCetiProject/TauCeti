@@ -331,8 +331,7 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 automorphisms.** -/
 theorem Base.ker_indexHom_le_basedAut {P : RootPairing ι R M N} (b : P.Base) :
     (Equiv.indexHom P).ker ≤ b.basedAut := fun g hg ↦ by
-  rw [MonoidHom.mem_ker, Equiv.indexHom_apply] at hg
-  simp [Base.mem_basedAut_iff, hg]
+  rw [MonoidHom.mem_ker, Equiv.indexHom_apply] at hg; simp [Base.mem_basedAut_iff, hg]
 
 /-- Every compatible central automorphism `Equiv.ofFixRootCoroot` belongs to `b.basedAut`. -/
 theorem Equiv.ofFixRootCoroot_mem_basedAut (P : RootPairing ι R M N) (b : P.Base)
@@ -359,14 +358,12 @@ theorem infinite_basedAut_empty_fin_two :
     Infinite (RootPairing.Base.ofIsEmpty (RootPairing.empty ℤ (Fin 2 → ℤ))).basedAut := by
   -- The unipotent shears `(x₀, x₁) ↦ (x₀ + n x₁, x₁)` form an infinite family of automorphisms.
   let P₀ := RootPairing.empty ℤ (Fin 2 → ℤ)
-  let shear (n : ℤ) : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) :=
-    LinearEquiv.transvection (f := LinearMap.proj (1 : Fin 2)) (v := Pi.single (0 : Fin 2) n)
-      (by simp)
-  refine Infinite.of_injective
-    (fun n : ℤ ↦ (⟨P₀.autMulEquivOfIsEmpty.symm (shear n), by simp⟩ :
-      (RootPairing.Base.ofIsEmpty P₀).basedAut)) fun m n hmn ↦ ?_
-  have h0 := congrArg (fun e : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) ↦ e (Pi.single 1 1) 0) <|
-    P₀.autMulEquivOfIsEmpty.symm.injective (congrArg Subtype.val hmn)
-  simpa [shear, LinearEquiv.transvection.apply, LinearMap.transvection.apply] using h0
+  let shear (n : ℤ) : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) := LinearEquiv.transvection
+    (f := LinearMap.proj (1 : Fin 2)) (v := Pi.single (0 : Fin 2) n) (by simp)
+  refine Infinite.of_injective (fun n : ℤ ↦ (⟨P₀.autMulEquivOfIsEmpty.symm (shear n), by simp⟩ :
+    (RootPairing.Base.ofIsEmpty P₀).basedAut)) fun m n hmn ↦ ?_
+  simpa [shear, LinearEquiv.transvection.apply, LinearMap.transvection.apply] using
+    congrArg (fun e : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) ↦ e (Pi.single 1 1) 0) <|
+      P₀.autMulEquivOfIsEmpty.symm.injective (congrArg Subtype.val hmn)
 
 end TauCeti

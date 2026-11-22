@@ -68,14 +68,10 @@ theorem Fintype.linearIndepOn_iff {R M ι : Type*} [Ring R] [AddCommGroup M] [Mo
     ext j
     simp
 
-namespace LinearIndepOn
-
 /-- A family linearly independent on `s` over `K` remains linearly independent on `s` over a
 subring `R` acting faithfully on `K`. -/
-theorem restrict_scalars' (R : Type*) {ι K M : Type*} [Semiring R] [Semiring K]
+theorem LinearIndepOn.restrict_scalars' (R : Type*) {ι K M : Type*} [Semiring R] [Semiring K]
     [AddCommMonoid M] [SMulWithZero R K] [Module R M] [Module K M]
     [IsScalarTower R K M] [FaithfulSMul R K] [IsScalarTower R K K]
     {v : ι → M} {s : Set ι} (hv : LinearIndepOn K v s) : LinearIndepOn R v s :=
   hv.linearIndependent.restrict_scalars' R
-
-end LinearIndepOn

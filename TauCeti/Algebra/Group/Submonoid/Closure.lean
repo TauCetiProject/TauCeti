@@ -36,8 +36,10 @@ additive closures inside a submonoid are compared with additive closures in the 
   lies in the additive closure of the family, or its negative does.
 * `AddSubmonoid.forall_pos_iff_of_closure_eq`: an additive map is strictly positive on the nonzero
   elements of a generated submonoid exactly when it is on the nonzero generators.
-* `AddMonoidHom.map_mem_closure_image` and `AddMonoidHom.mem_closure_image_iff`: transporting
-  and reflecting membership in `AddSubmonoid.closure` along an (injective) additive homomorphism.
+* `AddMonoidHom.map_mem_closure_image`, `AddMonoidHom.mem_closure_image_iff`,
+  `AddMonoidHom.map_mem_closure_image_or_neg_mem`, and
+  `AddMonoidHom.mem_closure_image_or_neg_mem_iff`: transporting and reflecting membership
+  (including up to sign) in `AddSubmonoid.closure` along an (injective) additive homomorphism.
 * `AddSubmonoid.mem_closure_image_preimage_val_iff`: membership in the additive closure of a family
   indexed by a subset and valued in a submonoid, read in the ambient monoid.
 
@@ -148,15 +150,30 @@ namespace AddMonoidHom
 `AddSubmonoid.closure (f '' s)`. -/
 theorem map_mem_closure_image {M₀ M : Type*} [AddZeroClass M₀] [AddZeroClass M]
     (f : M₀ →+ M) {s : Set M₀} {x : M₀} (hx : x ∈ AddSubmonoid.closure s) :
-    f x ∈ AddSubmonoid.closure (f '' s) := by
-  rw [← AddMonoidHom.map_mclosure f]
-  exact AddSubmonoid.mem_map_of_mem f hx
+    f x ∈ AddSubmonoid.closure (f '' s) :=
+  AddMonoidHom.map_mclosure f s ▸ AddSubmonoid.mem_map_of_mem f hx
 
 /-- An injective additive homomorphism preserves and reflects membership in
 `AddSubmonoid.closure`. -/
 theorem mem_closure_image_iff {M₀ M : Type*} [AddZeroClass M₀] [AddZeroClass M]
     (f : M₀ →+ M) (hf : Function.Injective f) {s : Set M₀} {x : M₀} :
-    f x ∈ AddSubmonoid.closure (f '' s) ↔ x ∈ AddSubmonoid.closure s := by
-  rw [← AddMonoidHom.map_mclosure f, AddSubmonoid.mem_map_iff_mem hf]
+    f x ∈ AddSubmonoid.closure (f '' s) ↔ x ∈ AddSubmonoid.closure s :=
+  AddMonoidHom.map_mclosure f s ▸ AddSubmonoid.mem_map_iff_mem hf
+
+/-- An additive homomorphism carries `x ∈ AddSubmonoid.closure s ∨ -x ∈ AddSubmonoid.closure s`
+into `AddSubmonoid.closure (f '' s)`. -/
+theorem map_mem_closure_image_or_neg_mem {M₀ M : Type*} [AddGroup M₀] [SubtractionMonoid M]
+    (f : M₀ →+ M) {s : Set M₀} {x : M₀}
+    (hx : x ∈ AddSubmonoid.closure s ∨ -x ∈ AddSubmonoid.closure s) :
+    f x ∈ AddSubmonoid.closure (f '' s) ∨ -f x ∈ AddSubmonoid.closure (f '' s) :=
+  map_neg f x ▸ hx.imp f.map_mem_closure_image f.map_mem_closure_image
+
+/-- An injective additive homomorphism preserves and reflects membership up to sign in
+`AddSubmonoid.closure`. -/
+theorem mem_closure_image_or_neg_mem_iff {M₀ M : Type*} [AddGroup M₀] [SubtractionMonoid M]
+    (f : M₀ →+ M) (hf : Function.Injective f) {s : Set M₀} {x : M₀} :
+    (f x ∈ AddSubmonoid.closure (f '' s) ∨ -f x ∈ AddSubmonoid.closure (f '' s)) ↔
+      (x ∈ AddSubmonoid.closure s ∨ -x ∈ AddSubmonoid.closure s) := by
+  rw [← map_neg, f.mem_closure_image_iff hf, f.mem_closure_image_iff hf]
 
 end AddMonoidHom

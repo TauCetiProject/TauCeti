@@ -93,12 +93,10 @@ instance instIsValuedInOfIsEmpty (S : Type*) [CommRing S] [Algebra S R] : P.IsVa
 /-- Every root-free pairing is vacuously balanced (`rootSpan R = ⊥` and `corootSpan R = ⊥`). -/
 instance instIsBalancedOfIsEmpty : P.IsBalanced where
   isPerfectCompl :=
-    { isCompl_left := by
-        simpa [rootSpan, corootSpan, Set.range_eq_empty,
-          LinearMap.range_eq_top.mpr P.toPerfPair.symm.surjective] using isCompl_bot_top
-      isCompl_right := by
-        simpa [rootSpan, corootSpan, Set.range_eq_empty,
-          LinearMap.range_eq_top.mpr P.flip.toPerfPair.symm.surjective] using isCompl_bot_top }
+    { isCompl_left := by simpa [rootSpan, corootSpan, Set.range_eq_empty,
+        LinearMap.range_eq_top.mpr P.toPerfPair.symm.surjective] using isCompl_bot_top
+      isCompl_right := by simpa [rootSpan, corootSpan, Set.range_eq_empty,
+        LinearMap.range_eq_top.mpr P.flip.toPerfPair.symm.surjective] using isCompl_bot_top }
 
 end IsEmpty
 

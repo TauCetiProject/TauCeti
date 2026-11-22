@@ -330,10 +330,8 @@ noncomputable def forwardCoweightHom (P : RootPairing ι R M N) : P.Aut →* (N 
   (weightHom P.flip).comp (autFlip P).toMonoidHom
 
 /-- `RootPairing.Equiv.forwardCoweightHom` sends an automorphism `g` to `g.coweightEquiv.symm`. -/
-@[simp]
-theorem forwardCoweightHom_apply {P : RootPairing ι R M N} (g : P.Aut) :
-    forwardCoweightHom P g = g.coweightEquiv.symm :=
-  weightEquiv_autFlip g
+@[simp] theorem forwardCoweightHom_apply {P : RootPairing ι R M N} (g : P.Aut) :
+    forwardCoweightHom P g = g.coweightEquiv.symm := weightEquiv_autFlip g
 
 /-- An automorphism of a root pairing is determined by its forward action on coweights. -/
 theorem forwardCoweightHom_injective (P : RootPairing ι R M N) :
@@ -343,9 +341,8 @@ theorem forwardCoweightHom_injective (P : RootPairing ι R M N) :
 /-- The forward coweight action of a root reflection is the corresponding coreflection. -/
 theorem forwardCoweightHom_reflection (P : RootPairing ι R M N) (i : ι) :
     forwardCoweightHom P (reflection P i) = P.coreflection i := by
-  ext y
-  rw [forwardCoweightHom_apply, LinearEquiv.symm_apply_eq, reflection_coweightEquiv,
-    coreflection_same]
+  ext y; rw [forwardCoweightHom_apply, LinearEquiv.symm_apply_eq,
+    reflection_coweightEquiv, coreflection_same]
 
 end Equiv
 

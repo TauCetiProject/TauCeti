@@ -63,41 +63,36 @@ namespace RootPairing
 section BaseBaseChange
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  {P : RootPairing ι R M N}
-
-namespace Base
-
-variable (b : P.Base) (S : Type*) [CommRing S] [Algebra R S] [FaithfulSMul R S] [Flat R S]
-  [Free R N] [Module.Finite R N]
+  {P : RootPairing ι R M N} (b : P.Base) (S : Type*) [CommRing S] [Algebra R S] [FaithfulSMul R S]
+  [Flat R S] [Free R N] [Module.Finite R N]
 
 /-- Transporting `b.baseChange S` by `P.autBaseChangeHom S g` is `(b.map g).baseChange S`. -/
-@[simp] theorem map_autBaseChangeHom (g : P.Aut) :
+@[simp] theorem Base.map_autBaseChangeHom (g : P.Aut) :
     (b.baseChange S).map (P.autBaseChangeHom S g) = (b.map g).baseChange S := by
   classical exact Base.ext_iff.mpr (by simp [Base.support_map_eq])
 
 /-- Scalar extension preserves and reflects membership in `basedAut`. -/
-theorem autBaseChangeHom_mem_basedAut_iff {g : P.Aut} :
+theorem Base.autBaseChangeHom_mem_basedAut_iff {g : P.Aut} :
     P.autBaseChangeHom S g ∈ (b.baseChange S).basedAut ↔ g ∈ b.basedAut := by
   simp [Base.mem_basedAut_iff]
 
-end Base
+end BaseBaseChange
 
 /-- **An automorphism of a finite reduced crystallographic root pairing is based if and only if
 its scalar extension to an ordered field `K` (such as `ℚ` or `ℝ`) preserves the open dominant
 chamber of `b.baseChange K`** (which by `RootPairing.preimage_rootSpanProj_openDominantChamber`
 is the open cylinder chamber over `(P.baseChange K).restrictScalars' K`). -/
-theorem Base.mem_basedAut_iff_smul_openDominantChamber_baseChange [Finite ι] [P.IsCrystallographic]
-    [P.IsReduced] [Free R N] [Module.Finite R N] (b : P.Base) (K : Type*)
-    [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-    [Algebra R K] [FaithfulSMul R K] [Flat R K] {g : P.Aut} :
+theorem Base.mem_basedAut_iff_smul_openDominantChamber_baseChange {ι R M N : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] {P : RootPairing ι R M N}
+    [Finite ι] [P.IsCrystallographic] [P.IsReduced] [Free R N] [Module.Finite R N] (b : P.Base)
+    (K : Type*) [Field K] [LinearOrder K] [IsStrictOrderedRing K] [Algebra R K]
+    [FaithfulSMul R K] [Flat R K] {g : P.Aut} :
     g ∈ b.basedAut ↔
       P.autBaseChangeHom K g • openDominantChamber (P.baseChange K) (b.baseChange K) =
-        openDominantChamber (P.baseChange K) (b.baseChange K) := by
-  have _ : (P.baseChange K).flip.IsReduced := (P.baseChange K).flip_isReduced
-  rw [← b.autBaseChangeHom_mem_basedAut_iff K]
-  exact (b.baseChange K).mem_basedAut_iff_smul_openDominantChamber
-
-end BaseBaseChange
+        openDominantChamber (P.baseChange K) (b.baseChange K) :=
+  let _ := (P.baseChange K).flip_isReduced
+  (b.autBaseChangeHom_mem_basedAut_iff K).symm.trans
+    (b.baseChange K).mem_basedAut_iff_smul_openDominantChamber
 
 /-! ### Lattice restriction of bases and based automorphisms -/
 
@@ -137,8 +132,7 @@ theorem restrictAutHom_mem_basedAut_iff (b : P.Base) {g : P.latticeAut X₀ Y₀
     (i j : (hXY.restrictBase b).support) :
     (hXY.restrictBase b).cartanMatrixIn T i j =
       b.cartanMatrixIn T ⟨i, (hXY.support_restrictBase b).le i.property⟩
-        ⟨j, (hXY.support_restrictBase b).le j.property⟩ := by
-  simp [Base.cartanMatrixIn_def]
+        ⟨j, (hXY.support_restrictBase b).le j.property⟩ := by simp [Base.cartanMatrixIn_def]
 
 /-- Lattice restriction preserves every entry of the integral Cartan matrix of a crystallographic
 root pairing. -/
@@ -186,6 +180,12 @@ noncomputable def basedAutMulEquiv (b : P.Base) :
     ((hXY.basedAutMulEquiv hX hY b).symm g : hXY.restrict.Aut) =
       hXY.restrictAutHom ⟨g.val, g.property.right⟩ := (rfl)
 
+/-- Extending `hXY.restrictBase b` to `S` and transporting along `hXY.baseChangeEquiv hX hY`
+recovers `b`. -/
+@[simp] theorem map_baseChange_restrictBase [Flat R S] (b : P.Base) :
+    ((hXY.restrictBase b).baseChange S).map (hXY.baseChangeEquiv hX hY) = b := by
+  classical exact Base.ext_iff.mpr (by simp [Base.support_map_eq])
+
 end BaseChangeLattices
 
 end IsDualLatticePair
@@ -206,16 +206,14 @@ end LatticeBase
 section LatticeSemidirect
 
 variable {ι R S M N : Type*} [CommRing R] [CommRing S]
-  [AddCommGroup M] [Module S M] [Module R M]
-  [AddCommGroup N] [Module S N] [Module R N]
+  [AddCommGroup M] [Module S M] [Module R M] [AddCommGroup N] [Module S N] [Module R N]
   {P : RootPairing ι S M N}
 
 namespace Base
 
 /-- Conjugation action of `↥(b.basedAut ⊓ P.latticeAut X₀ Y₀)` on `P.weylGroup`, obtained by
 restricting `b.conjWeylGroup`. -/
-noncomputable def conjWeylGroupLatticeAut (b : P.Base)
-    (X₀ : Submodule R M) (Y₀ : Submodule R N) :
+noncomputable def conjWeylGroupLatticeAut (b : P.Base) (X₀ : Submodule R M) (Y₀ : Submodule R N) :
     ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀) →* MulAut P.weylGroup :=
   b.conjWeylGroup.comp (Subgroup.inclusion inf_le_left)
 
@@ -244,9 +242,9 @@ theorem semidirectProductMulEquiv_symm_left_mem_latticeAut (g : P.Aut) :
 `P.weylGroup ≤ P.latticeAut X₀ Y₀`. -/
 theorem semidirectProductMulEquiv_symm_right_mem_latticeAut {g : P.Aut}
     (hg : g ∈ P.latticeAut X₀ Y₀) :
-    ((b.semidirectProductMulEquiv.symm g).right : P.Aut) ∈ P.latticeAut X₀ Y₀ := by
-  rw [b.coe_semidirectProductMulEquiv_symm_right]
-  exact mul_mem (inv_mem (b.semidirectProductMulEquiv_symm_left_mem_latticeAut hW g)) hg
+    ((b.semidirectProductMulEquiv.symm g).right : P.Aut) ∈ P.latticeAut X₀ Y₀ :=
+  (b.coe_semidirectProductMulEquiv_symm_right g).symm ▸
+    mul_mem (inv_mem (b.semidirectProductMulEquiv_symm_left_mem_latticeAut hW g)) hg
 
 /-- **The Weyl group complements the based automorphisms inside `P.latticeAut X₀ Y₀`** whenever
 `P.weylGroup ≤ P.latticeAut X₀ Y₀` (in particular for every dual lattice pair via
@@ -254,11 +252,9 @@ theorem semidirectProductMulEquiv_symm_right_mem_latticeAut {g : P.Aut}
 theorem isComplement'_weylGroup_basedAut_subgroupOf :
     (P.weylGroup.subgroupOf (P.latticeAut X₀ Y₀)).IsComplement'
       (b.basedAut.subgroupOf (P.latticeAut X₀ Y₀)) := by
-  refine Subgroup.isComplement'_of_disjoint_and_mul_eq_univ
-    (Subgroup.disjoint_def.mpr fun hw hb ↦ Subtype.ext <|
-      Subgroup.disjoint_def.mp b.isComplement'_weylGroup_basedAut.disjoint hw hb) ?_
-  refine Set.eq_univ_of_forall fun g ↦ ?_
-  let s := b.semidirectProductMulEquiv.symm (g : P.Aut)
+  refine Subgroup.isComplement'_of_disjoint_and_mul_eq_univ (Subgroup.disjoint_def.mpr fun hw hb ↦
+    Subtype.ext <| Subgroup.disjoint_def.mp b.isComplement'_weylGroup_basedAut.disjoint hw hb) ?_
+  refine Set.eq_univ_of_forall fun g ↦ let s := b.semidirectProductMulEquiv.symm (g : P.Aut); ?_
   exact Set.mem_mul.mpr ⟨⟨s.left, b.semidirectProductMulEquiv_symm_left_mem_latticeAut hW g⟩,
     s.left.property, ⟨s.right, b.semidirectProductMulEquiv_symm_right_mem_latticeAut hW g.property⟩,
     s.right.property, Subtype.ext (b.semidirectProductMulEquiv_symm_left_mul_right (g : P.Aut))⟩
@@ -271,10 +267,8 @@ reduced crystallographic pairing over a characteristic-zero domain and any submo
 noncomputable def latticeAutSemidirectProductMulEquiv :
     P.weylGroup ⋊[b.conjWeylGroupLatticeAut X₀ Y₀]
       ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀) ≃* P.latticeAut X₀ Y₀ where
-  toFun x := ⟨(x.left : P.Aut) * x.right,
-    mul_mem (hW x.left.property) x.right.property.right⟩
-  invFun g :=
-    let s := b.semidirectProductMulEquiv.symm (g : P.Aut)
+  toFun x := ⟨(x.left : P.Aut) * x.right, mul_mem (hW x.left.property) x.right.property.right⟩
+  invFun g := let s := b.semidirectProductMulEquiv.symm (g : P.Aut)
     ⟨s.left, ⟨s.right, s.right.property,
       b.semidirectProductMulEquiv_symm_right_mem_latticeAut hW g.property⟩⟩
   left_inv x := by
@@ -282,7 +276,7 @@ noncomputable def latticeAutSemidirectProductMulEquiv :
     exact SemidirectProduct.ext (congrArg (fun z ↦ z.left) h)
       (Subtype.ext <| congrArg (fun z ↦ (z.right : P.Aut)) h)
   right_inv g := Subtype.ext (b.semidirectProductMulEquiv_symm_left_mul_right (g : P.Aut))
-  map_mul' x y := Subtype.ext <| by
+  map_mul' _ _ := Subtype.ext <| by
     simp only [SemidirectProduct.mul_left, SemidirectProduct.mul_right, Subgroup.coe_mul,
       coe_conjWeylGroupLatticeAut_apply, mul_assoc, inv_mul_cancel_left]
 
@@ -308,18 +302,14 @@ belongs to `P.latticeAut X₀ Y₀`.** -/
 theorem exists_basedAut_inf_latticeAut_forall_indexEquiv_eq_iff [P.IsRootSystem] (b : P.Base)
     (X₀ : Submodule R M) (Y₀ : Submodule R N) (σ : Equiv.Perm b.support)
     (hσ : ∀ i j, b.cartanMatrix (σ i) (σ j) = b.cartanMatrix i j) :
-    (∃ g : ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀),
-        ∀ i : b.support, (g : P.Aut).indexEquiv i = σ i) ↔
+    (∃ g : ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀), ∀ i : b.support, (g : P.Aut).indexEquiv i = σ i) ↔
       b.equivOfCartanMatrixEq b σ hσ ∈ P.latticeAut X₀ Y₀ := by
   obtain ⟨δ₀, hδ₀, huniq⟩ := b.existsUnique_basedAut_of_cartanMatrix σ hσ
-  have hmem : b.equivOfCartanMatrixEq b σ hσ ∈ b.basedAut :=
-    mem_basedAut_iff_map_eq.mpr (TauCeti.map_equivOfCartanMatrixEq b b σ hσ)
-  have heq : (δ₀ : P.Aut) = b.equivOfCartanMatrixEq b σ hσ :=
-    congrArg Subtype.val
-      (huniq ⟨_, hmem⟩ (TauCeti.equivOfCartanMatrixEq_indexEquiv_apply b b σ hσ)).symm
+  have heq : (δ₀ : P.Aut) = b.equivOfCartanMatrixEq b σ hσ := congrArg Subtype.val
+    (huniq ⟨_, mem_basedAut_iff_map_eq.mpr (TauCeti.map_equivOfCartanMatrixEq b b σ hσ)⟩
+      (TauCeti.equivOfCartanMatrixEq_indexEquiv_apply b b σ hσ)).symm
   exact ⟨fun ⟨g, hg⟩ ↦ heq ▸ congrArg Subtype.val (huniq ⟨g.val, g.property.left⟩ hg) ▸
-      g.property.right,
-    fun hlat ↦ ⟨⟨δ₀, δ₀.property, heq ▸ hlat⟩, hδ₀⟩⟩
+      g.property.right, fun hlat ↦ ⟨⟨δ₀, δ₀.property, heq ▸ hlat⟩, hδ₀⟩⟩
 
 /-- When `b.equivOfCartanMatrixEq b σ hσ` preserves `(X₀, Y₀)`, there is a unique based
 lattice-preserving automorphism inducing `σ` on the simple roots. -/
@@ -329,8 +319,7 @@ theorem existsUnique_basedAut_inf_latticeAut_of_cartanMatrix [P.IsRootSystem] (b
     (hlat : b.equivOfCartanMatrixEq b σ hσ ∈ P.latticeAut X₀ Y₀) :
     ∃! g : ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀),
       ∀ i : b.support, (g : P.Aut).indexEquiv i = σ i := by
-  obtain ⟨g, hg⟩ :=
-    (b.exists_basedAut_inf_latticeAut_forall_indexEquiv_eq_iff X₀ Y₀ σ hσ).mpr hlat
+  obtain ⟨g, hg⟩ := (b.exists_basedAut_inf_latticeAut_forall_indexEquiv_eq_iff X₀ Y₀ σ hσ).mpr hlat
   obtain ⟨_, -, huniq⟩ := b.existsUnique_basedAut_of_cartanMatrix σ hσ
   exact ⟨g, hg, fun g' hg' ↦ Subtype.ext <| congrArg (fun x : b.basedAut ↦ (x : P.Aut)) <|
     (huniq ⟨g'.val, g'.property.left⟩ hg').trans (huniq ⟨g.val, g.property.left⟩ hg).symm⟩

@@ -43,8 +43,8 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 theorem mem_ker_indexHom_iff {g : P.Aut} :
     g ∈ (Equiv.indexHom P).ker ↔ ∀ i, g • P.root i = P.root i := by
   rw [MonoidHom.mem_ker, Equiv.indexHom_apply, _root_.Equiv.ext_iff]
-  refine forall_congr' fun i ↦ ?_
-  rw [Equiv.Perm.one_apply, ← P.root.injective.eq_iff, Equiv.root_indexEquiv_eq_smul]
+  exact forall_congr' fun i ↦ by
+    rw [Equiv.Perm.one_apply, ← P.root.injective.eq_iff, Equiv.root_indexEquiv_eq_smul]
 
 /-- An automorphism in `(Equiv.indexHom P).ker` preserves every coroot functional. -/
 theorem coroot'_smul_of_mem_ker_indexHom {g : P.Aut} (hg : g ∈ (Equiv.indexHom P).ker)
@@ -102,8 +102,7 @@ theorem Equiv.toLinearMap_ofFixRootCoroot_coweightEquiv (x : M) (y : N) :
 
 /-- Every `Equiv.ofFixRootCoroot` lies in `(Equiv.indexHom P).ker`. -/
 theorem Equiv.ofFixRootCoroot_mem_ker_indexHom :
-    Equiv.ofFixRootCoroot P e hroot hcoroot ∈ (Equiv.indexHom P).ker :=
-  MonoidHom.mem_ker.mpr (Equiv.ofFixRootCoroot_indexEquiv P e hroot hcoroot)
+    Equiv.ofFixRootCoroot P e hroot hcoroot ∈ (Equiv.indexHom P).ker := MonoidHom.mem_ker.mpr rfl
 
 end OfFixRootCoroot
 
@@ -111,13 +110,11 @@ end OfFixRootCoroot
 fixing every root and preserving every coroot functional. -/
 theorem map_weightHom_ker_indexHom :
     (((Equiv.indexHom P).ker.map (Equiv.weightHom P)) : Set (M ≃ₗ[R] M)) =
-      {e : M ≃ₗ[R] M |
-        (∀ i, e (P.root i) = P.root i) ∧ ∀ i x, P.coroot' i (e x) = P.coroot' i x} := by
-  ext e
-  simp only [Subgroup.coe_map, Set.mem_image, SetLike.mem_coe, Set.mem_ofPred_eq]
-  exact ⟨by rintro ⟨g, hg, rfl⟩; exact ⟨P.mem_ker_indexHom_iff.mp hg,
-      P.coroot'_smul_of_mem_ker_indexHom hg⟩,
-    fun ⟨hr, hc⟩ ↦ ⟨Equiv.ofFixRootCoroot P e hr hc,
+      {e : M ≃ₗ[R] M | (∀ i, e (P.root i) = P.root i) ∧ ∀ i x, P.coroot' i (e x) = P.coroot' i x} :=
+  Set.ext fun e ↦ by
+    simp only [Subgroup.coe_map, Set.mem_image, SetLike.mem_coe, Set.mem_ofPred_eq]
+    exact ⟨fun ⟨g, hg, he⟩ ↦ he ▸ ⟨P.mem_ker_indexHom_iff.mp hg,
+        P.coroot'_smul_of_mem_ker_indexHom hg⟩, fun ⟨hr, hc⟩ ↦ ⟨_,
       Equiv.ofFixRootCoroot_mem_ker_indexHom P e hr hc,
       Equiv.ofFixRootCoroot_weightEquiv P e hr hc⟩⟩
 
