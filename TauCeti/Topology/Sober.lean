@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Sober
 public import TauCeti.Logic.Equiv.Set
+import TauCeti.Topology.Irreducible
 
 /-!
 # Generic points and generizations
@@ -88,10 +89,8 @@ theorem TauCeti.dense_iff_genericPoints_subset_of_finite_irreducibleComponents
   let U := (⋃₀ (irreducibleComponents X \ {C.val}))ᶜ
   have hU : closure U = C.val :=
     closure_sUnion_irreducibleComponents_sdiff_singleton hfin C.val C.property
-  have hU_open : IsOpen U := by
-    dsimp only [U]
-    rw [sUnion_eq_biUnion, isOpen_compl_iff]
-    exact hfin.sdiff.isClosed_biUnion fun W hW ↦ isClosed_of_mem_irreducibleComponents W hW.1
+  have hU_open : IsOpen U :=
+    hfin.sdiff.isOpen_compl_sUnion_irreducibleComponents sdiff_subset
   have hU_nonempty : U.Nonempty := closure_nonempty_iff.mp (hU ▸ C.property.1.nonempty)
   obtain ⟨y, hys, hyU⟩ := hd.exists_mem_open hU_open hU_nonempty
   exact hs ((genericPoints.isGenericPoint ⟨x, hx⟩).specializes (hU ▸ subset_closure hyU)) hys

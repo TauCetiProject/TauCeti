@@ -319,10 +319,8 @@ private lemma isOpen_irreducibleComponents_of_pairwise_disjoint {α : Type*} [To
       refine ⟨c', ⟨hc'S, ?_⟩, hxc'⟩
       intro heq
       exact hc (heq ▸ hxc')
-  rw [hEq]
-  rw [isOpen_compl_iff]
-  exact Set.Finite.isClosed_biUnion hFinite.sdiff
-    (fun t ht => isClosed_of_mem_irreducibleComponents t ht.1)
+  rw [hEq, ← sUnion_eq_biUnion]
+  exact hFinite.sdiff.isOpen_compl_sUnion_irreducibleComponents sdiff_subset
 
 /-- In an affine locally noetherian scheme whose stalks have unique minimal
 primes, every irreducible component is open. -/
