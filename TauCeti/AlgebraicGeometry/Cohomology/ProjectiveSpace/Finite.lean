@@ -95,7 +95,7 @@ namespace AlgebraicGeometry.Scheme.Modules
 (Hartshorne, Theorem III.5.2(a)). Let `R` be a Noetherian ring and `X` a scheme projective over
 `R`. Then for every quasi-coherent sheaf `F` of finite type on `X`, `Hᵠ(X, F)` is a finitely
 generated `R`-module for every `q`. -/
-theorem finite_cohomology_of_isProjectiveOver (R : Type u) [CommRing R] [IsNoetherianRing R]
+instance finite_cohomology_of_isProjectiveOver (R : Type u) [CommRing R] [IsNoetherianRing R]
     {X : Scheme.{u}} [X.Over (Spec (.of R))] [X.IsProjectiveOver R]
     (F : X.Modules) [F.IsQuasicoherent] [F.IsFiniteType] (q : ℕ) :
     Module.Finite R (Cohomology F q) := by

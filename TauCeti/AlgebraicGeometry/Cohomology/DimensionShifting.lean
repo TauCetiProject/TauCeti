@@ -58,7 +58,7 @@ variable (R : Type u) [CommRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))]
 /-- The cohomology of `𝒪^{⊕I} ⊗ L`, for a finite type `I`, is finitely generated over the base
 ring in every degree in which the cohomology of `L` is: `𝒪^{⊕I} ⊗ L` is the direct sum of `I`
 copies of `L`. -/
-theorem finite_cohomology_free_tensor (I : Type u) [Finite I] (L : X.Modules) (q : ℕ)
+instance finite_cohomology_free_tensor (I : Type u) [Finite I] (L : X.Modules) (q : ℕ)
     [Module.Finite R (Cohomology L q)] :
     Module.Finite R (Cohomology ((SheafOfModules.free I : X.Modules) ⊗ L) q) := by
   have : Fintype I := .ofFinite I
