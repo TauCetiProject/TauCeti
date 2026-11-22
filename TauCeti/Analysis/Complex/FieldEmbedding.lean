@@ -55,6 +55,7 @@ variable {k : Type*} {E : Type u} [Field k] [Countable k] [Algebra k ℂ]
 
 /-- `ℂ` has transcendence degree `𝔠` over every countable field `k`, for every `k`-algebra
 structure on `ℂ`. -/
+@[simp]
 theorem trdeg_eq_continuum : trdeg k ℂ = 𝔠 := by
   rw [IsAlgClosed.trdeg_eq_cardinalMk (by rw [mk_complex]; exact aleph0_lt_continuum),
     mk_complex]

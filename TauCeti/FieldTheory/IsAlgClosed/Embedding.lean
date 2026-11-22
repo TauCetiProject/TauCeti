@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.IsAlgClosed.Automorphism
-public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
-public import Mathlib.RingTheory.AlgebraicIndependent.Transcendental
 
 /-!
 # Embeddings into an algebraically closed field of large transcendence degree
@@ -40,8 +38,6 @@ countable field into `ℂ` to a field of cardinality at most the continuum.
 * `TauCeti.IsAlgClosed.nonempty_algHom_of_lift_trdeg_le`,
   `TauCeti.IsAlgClosed.nonempty_algEquiv_of_lift_trdeg_eq`: homomorphisms and isomorphisms from
   transcendence degrees.
-* `Transcendental.exists_isTranscendenceBasis_mem`: a transcendental element lies in a
-  transcendence basis.
 * `Transcendental.exists_algHom_apply_eq`, `Transcendental.exists_algEquiv_apply_eq`: the same,
   sending a transcendental element to a prescribed transcendental element.
 * `TauCeti.IsAlgClosed.trdeg_eq_cardinalMk`: the transcendence degree of an uncountable
@@ -106,14 +102,6 @@ theorem exists_algEquiv_apply_eq {E : Type*} [Field E] [Algebra R E] [IsAlgClose
 
 end IsTranscendenceBasis
 
-/-- An element transcendental over `R` lies in some transcendence basis over `R`. -/
-theorem Transcendental.exists_isTranscendenceBasis_mem {R A : Type*} [CommRing R] [CommRing A]
-    [Algebra R A] {x : A} (hx : Transcendental R x) :
-    ∃ s : Set A, x ∈ s ∧ IsTranscendenceBasis R ((↑) : s → A) := by
-  obtain ⟨s, hxs, hs⟩ := exists_isTranscendenceBasis_superset (s := {x})
-    ((algebraicIndependent_singleton_iff ⟨x, Set.mem_singleton x⟩).2 hx)
-  exact ⟨s, hxs (Set.mem_singleton x), hs⟩
-
 variable {k : Type*} {Ω : Type v} [Field k] [Field Ω] [Algebra k Ω] [IsAlgClosed Ω]
 
 namespace TauCeti.IsAlgClosed
@@ -125,8 +113,7 @@ theorem nonempty_algHom_of_lift_trdeg_le {E : Type u} [CommRing E] [IsDomain E] 
     Nonempty (E →ₐ[k] Ω) := by
   obtain ⟨s, hs⟩ := exists_isTranscendenceBasis k E
   obtain ⟨t, ht⟩ := exists_isTranscendenceBasis k Ω
-  rw [← hs.cardinalMk_eq_trdeg, ← ht.cardinalMk_eq_trdeg] at h
-  obtain ⟨f⟩ := lift_mk_le'.1 h
+  obtain ⟨f⟩ := hs.nonempty_embedding_of_lift_trdeg_le ht h
   obtain ⟨φ, -⟩ := hs.exists_algHom_apply_eq (ht.1.comp f f.injective)
   exact ⟨φ⟩
 
@@ -137,8 +124,7 @@ theorem nonempty_algEquiv_of_lift_trdeg_eq {E : Type u} [Field E] [Algebra k E] 
     Nonempty (E ≃ₐ[k] Ω) := by
   obtain ⟨s, hs⟩ := exists_isTranscendenceBasis k E
   obtain ⟨t, ht⟩ := exists_isTranscendenceBasis k Ω
-  rw [← hs.cardinalMk_eq_trdeg, ← ht.cardinalMk_eq_trdeg] at h
-  obtain ⟨e⟩ := lift_mk_eq'.1 h
+  obtain ⟨e⟩ := hs.nonempty_equiv_of_lift_trdeg_eq ht h
   obtain ⟨φ, -⟩ := hs.exists_algEquiv_apply_eq ht e
   exact ⟨φ⟩
 
@@ -147,8 +133,8 @@ field `k` is the cardinality of `Ω`. -/
 theorem trdeg_eq_cardinalMk [Countable k] (hΩ : ℵ₀ < #Ω) : trdeg k Ω = #Ω := by
   obtain ⟨t, ht⟩ := exists_isTranscendenceBasis k Ω
   rw [← ht.cardinalMk_eq_trdeg]
-  simpa using (_root_.IsAlgClosed.cardinal_eq_cardinal_transcendence_basis_of_aleph0_lt _ ht
-    (mk_le_aleph0 (α := k)) hΩ).symm
+  exact (lift_inj.1 (_root_.IsAlgClosed.cardinal_eq_cardinal_transcendence_basis_of_aleph0_lt _ ht
+    (mk_le_aleph0 (α := k)) hΩ)).symm
 
 end TauCeti.IsAlgClosed
 
@@ -163,12 +149,11 @@ theorem exists_algHom_apply_eq {E : Type u} [CommRing E] [IsDomain E] [Algebra k
   classical
   obtain ⟨s, hαs, hs⟩ := hα.exists_isTranscendenceBasis_mem
   obtain ⟨t, hzt, ht⟩ := hz.exists_isTranscendenceBasis_mem
-  rw [← hs.cardinalMk_eq_trdeg, ← ht.cardinalMk_eq_trdeg] at h
-  obtain ⟨f⟩ := lift_mk_le'.1 h
-  -- Compose with a transposition of `t` so that the embedding of bases sends `α` to `z`.
-  let g : s ↪ t := f.trans (Equiv.swap (f ⟨α, hαs⟩) ⟨z, hzt⟩).toEmbedding
+  obtain ⟨f⟩ := hs.nonempty_embedding_of_lift_trdeg_le ht h
+  -- Redefine the embedding of bases at `α` so that it sends `α` to `z`.
+  let g : s ↪ t := f.setValue ⟨α, hαs⟩ ⟨z, hzt⟩
   obtain ⟨φ, hφ⟩ := hs.exists_algHom_apply_eq (ht.1.comp g g.injective)
-  exact ⟨φ, by simpa [g] using hφ ⟨α, hαs⟩⟩
+  exact ⟨φ, (hφ ⟨α, hαs⟩).trans (congrArg Subtype.val (f.setValue_eq _ _))⟩
 
 /-- If the algebraically closed extensions `E` and `Ω` of `k` have the same transcendence degree
 over `k`, then for elements `α ∈ E` and `z ∈ Ω` transcendental over `k`, some isomorphism
@@ -180,11 +165,9 @@ theorem exists_algEquiv_apply_eq {E : Type u} [Field E] [Algebra k E] [IsAlgClos
   classical
   obtain ⟨s, hαs, hs⟩ := hα.exists_isTranscendenceBasis_mem
   obtain ⟨t, hzt, ht⟩ := hz.exists_isTranscendenceBasis_mem
-  rw [← hs.cardinalMk_eq_trdeg, ← ht.cardinalMk_eq_trdeg] at h
-  obtain ⟨e⟩ := lift_mk_eq'.1 h
-  -- Compose with a transposition of `t` so that the bijection of bases sends `α` to `z`.
-  let e' : s ≃ t := e.trans (Equiv.swap (e ⟨α, hαs⟩) ⟨z, hzt⟩)
-  obtain ⟨φ, hφ⟩ := hs.exists_algEquiv_apply_eq ht e'
-  exact ⟨φ, by simpa [e'] using hφ ⟨α, hαs⟩⟩
+  obtain ⟨e⟩ := hs.nonempty_equiv_of_lift_trdeg_eq ht h
+  -- Redefine the bijection of bases at `α` so that it sends `α` to `z`.
+  obtain ⟨φ, hφ⟩ := hs.exists_algEquiv_apply_eq ht (e.setValue ⟨α, hαs⟩ ⟨z, hzt⟩)
+  exact ⟨φ, (hφ ⟨α, hαs⟩).trans (congrArg Subtype.val (e.setValue_eq _ _))⟩
 
 end Transcendental

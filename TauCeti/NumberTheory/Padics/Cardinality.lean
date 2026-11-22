@@ -52,6 +52,7 @@ namespace TauCeti.Padic
 variable (p : ℕ) [Fact p.Prime]
 
 /-- The field `ℚ_[p]` of `p`-adic numbers has the cardinality of the continuum. -/
+@[simp]
 theorem cardinalMk_eq_continuum : #ℚ_[p] = 𝔠 := by
   refine le_antisymm ?_ (continuum_le_cardinal_of_nontriviallyNormedField ℚ_[p])
   calc #ℚ_[p] = #(closure (Set.range ((↑) : ℚ → ℚ_[p]))) := by
