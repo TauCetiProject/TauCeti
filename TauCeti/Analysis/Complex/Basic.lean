@@ -30,7 +30,8 @@ pseudo-hyperbolic expression. For `w` on the unit circle it has the norm of `z -
 (`Complex.norm_one_sub_conj_mul`), and for `z` in the closed unit disc it lies in the closed right
 half-plane (`Complex.re_one_sub_conj_mul_nonneg`; strictly inside it for `z` in the open disc,
 `Complex.re_one_sub_conj_mul_pos`), by the bound `re (conj u * e) ≤ ‖u‖ ‖e‖`
-(`Complex.re_conj_mul_le`).
+(`Complex.re_conj_mul_le`). A real point is at least half as far from `w` as from `z` when `w` is
+within `|Im z| / 2` of `z` (`Complex.norm_ofReal_sub_le_two_mul_norm_ofReal_sub`).
 
 As a continuous real-linear equivalence, conjugation is its own inverse (`Complex.conjCLE_symm`,
 the counterpart of Mathlib's `Complex.conjLIE_symm`).
@@ -428,6 +429,14 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
     rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
     rw [h0, abs_neg] at h
     exact h.false
+
+/-- A real point is at least half as far from `w` as from `z` when `w` is within `|Im z| / 2` of
+`z`: then `‖x - z‖ ≤ 2 ‖x - w‖` for every real `x`. -/
+theorem norm_ofReal_sub_le_two_mul_norm_ofReal_sub {z w : ℂ} (hw : ‖w - z‖ ≤ |z.im| / 2)
+    (x : ℝ) : ‖(x : ℂ) - z‖ ≤ 2 * ‖(x : ℂ) - w‖ := by
+  have him : |z.im| ≤ ‖(x : ℂ) - z‖ := by simpa using abs_im_le_norm ((x : ℂ) - z)
+  have := norm_sub_le_norm_sub_add_norm_sub (x : ℂ) w z
+  linarith
 
 end Complex
 

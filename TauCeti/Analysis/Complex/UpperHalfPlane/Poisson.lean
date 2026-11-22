@@ -15,6 +15,7 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Basic.Complex.OfRealSub
 
 /-!
@@ -459,15 +460,6 @@ theorem re_upperHalfPlaneSchwarzIntegral {ν : Measure ℝ} (hν : IsPoissonFini
     rw [integral_undef hK, mul_zero, zero_re]
     simp [upperHalfPlanePoissonKernel_eq, hz]
 
-/-- Near a pole `z₀ ∈ ℂ₊`, `|x - w| ≥ |x - z₀| / 2` for `|w - z₀| < Im z₀ / 2`. -/
-private theorem norm_sub_le_two_mul {z₀ w : ℂ} (hw : w ∈ ball z₀ (z₀.im / 2)) (x : ℝ) :
-    ‖(x : ℂ) - z₀‖ ≤ 2 * ‖(x : ℂ) - w‖ := by
-  have hw' : ‖w - z₀‖ < z₀.im / 2 := by rwa [mem_ball, dist_eq] at hw
-  have him : z₀.im ≤ ‖(x : ℂ) - z₀‖ :=
-    (le_abs_self _).trans (by simpa using abs_im_le_norm ((x : ℂ) - z₀))
-  have := norm_sub_le_norm_sub_add_norm_sub (x : ℂ) w z₀
-  linarith
-
 /-- **The Schwarz integral is holomorphic** on the upper half-plane. For a measure that is not
 Poisson-finite it vanishes there. -/
 theorem differentiableOn_upperHalfPlaneSchwarzIntegral (ν : Measure ℝ) :
@@ -480,6 +472,12 @@ theorem differentiableOn_upperHalfPlaneSchwarzIntegral (ν : Measure ℝ) :
   intro z₀ hz₀
   have hz₀' : 0 < z₀.im := hz₀
   have hball : ball z₀ (z₀.im / 2) ∈ 𝓝 z₀ := ball_mem_nhds _ (by positivity)
+  -- Near the pole `z₀`, `‖x - z₀‖ ≤ 2 ‖x - w‖` for every real `x`.
+  have norm_sub_le_two_mul {w : ℂ} (hw : w ∈ ball z₀ (z₀.im / 2)) (x : ℝ) :
+      ‖(x : ℂ) - z₀‖ ≤ 2 * ‖(x : ℂ) - w‖ := by
+    refine norm_ofReal_sub_le_two_mul_norm_ofReal_sub ?_ x
+    rw [abs_of_pos hz₀']
+    exact (mem_ball_iff_norm.1 hw).le
   have hne : ∀ w ∈ ball z₀ (z₀.im / 2), ∀ x : ℝ, (x : ℂ) - w ≠ 0 := fun w hw x h ↦ by
     have := norm_sub_le_two_mul hw x
     rw [h, norm_zero, mul_zero] at this
