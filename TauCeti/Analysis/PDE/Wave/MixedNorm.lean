@@ -794,8 +794,9 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le (hq : 2 < q
   · exact ⟨0, fun _ _ _ _ ↦ by simp [eLpNorm_exponent_zero, Lp.aestronglyMeasurable]⟩
   rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hE | hE
   · -- In dimension `0` the blocks vanish.
+    have : Subsingleton E := Module.finrank_zero_iff.1 hE
     exact ⟨0, fun j m hm f ↦ (eLpNorm_eLpNorm_eq_zero fun t ↦ by
-      rw [φ.fourierMultiplierCLM_littlewoodPaley_eq_zero_of_finrank_eq_zero hm hE, zero_apply,
+      rw [ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero hm, zero_apply,
         map_zero]).trans_le zero_le⟩
   obtain ⟨-, -, hr2⟩ := two_le_finrank_of_waveAdmissible hq hr0 hqr hE
   -- Test against `L^{r'}` with `r'` the Hölder conjugate of `r`.
@@ -994,8 +995,9 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
   rcases eq_or_ne r 0 with rfl | hr0
   · exact ⟨0, fun _ _ _ _ _ ↦ by simp [eLpNorm_exponent_zero, Lp.aestronglyMeasurable]⟩
   rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hE | hE
-  · refine ⟨0, fun j m hm F _ ↦ (eLpNorm_eLpNorm_eq_zero fun t ↦ ?_).trans_le zero_le⟩
-    simp_rw [φ.fourierMultiplierCLM_littlewoodPaley_eq_zero_of_finrank_eq_zero hm hE, zero_apply,
+  · have : Subsingleton E := Module.finrank_zero_iff.1 hE
+    refine ⟨0, fun j m hm F _ ↦ (eLpNorm_eLpNorm_eq_zero fun t ↦ ?_).trans_le zero_le⟩
+    simp_rw [ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero hm, zero_apply,
       map_zero, integral_zero]
   obtain ⟨hn, -, hr2⟩ := two_le_finrank_of_waveAdmissible hq hr0 hqr hE
   -- In dimension `n ≥ 2` admissibility of `(q₁, r₁)` forces `r₁ ≥ 2`, also for `q₁ = ∞`.
