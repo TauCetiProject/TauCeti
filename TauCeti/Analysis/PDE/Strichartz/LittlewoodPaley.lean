@@ -258,9 +258,10 @@ theorem exists_eLpNorm_eLpNorm_le_mul_tsum_sq_rpow (σ : ℝ) {q r : ℝ≥0∞}
         exact φ.eLpNorm_eLpNorm_apply_fourierMultiplierCLM_le (one_le_two.trans hq)
           (one_le_two.trans hr) hL hm hT hC j f
     _ = _ := by
+        have hsqrt (x : ℝ≥0∞) : (x ^ 2) ^ (2⁻¹ : ℝ) = x := by
+          exact_mod_cast ENNReal.pow_rpow_inv_natCast two_ne_zero x
         simp_rw [mul_pow (_ * _ : ℝ≥0∞), ENNReal.tsum_mul_left]
-        rw [ENNReal.mul_rpow_of_nonneg _ _ (by norm_num), ← Nat.cast_ofNat (R := ℝ),
-          ENNReal.pow_rpow_inv_natCast two_ne_zero, ENNReal.coe_mul]
+        rw [ENNReal.mul_rpow_of_nonneg _ _ (by norm_num), hsqrt, ENNReal.coe_mul]
         ring
 
 end ContDiffBump

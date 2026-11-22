@@ -265,22 +265,10 @@ theorem exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum (
             ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
               Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹ - 1)) *
                 ‖Lp.fourierMultiplierCLM ℂ (m j) g‖ₑ) := by
-  rcases eq_or_ne r 0 with rfl | hr0
-  · exact ⟨0, fun _ _ _ _ ↦ by simp_rw [eLpNorm_exponent_zero (Lp.aestronglyMeasurable _)]; simp⟩
-  obtain ⟨-, -, hr2⟩ := two_le_finrank_of_waveAdmissible hq hr0 hqr Module.finrank_pos
   obtain ⟨C₁, h₁⟩ := φ.exists_eLpNorm_eLpNorm_waveCosPropagator_le_tsum hq hqr
   obtain ⟨C₂, h₂⟩ := φ.exists_eLpNorm_eLpNorm_waveSinPropagator_le_tsum hq hqr
-  refine ⟨C₁ + C₂, fun m hm f g ↦ ?_⟩
-  calc _ ≤ eLpNorm (fun t ↦ eLpNorm (waveCosPropagator ℂ t f) r volume) q volume +
-          eLpNorm (fun t ↦ eLpNorm (waveSinPropagator ℂ t g) r volume) q volume :=
-        eLpNorm_eLpNorm_add_le (continuous_waveCosPropagator_apply f).aestronglyMeasurable
-          (continuous_waveSinPropagator_apply g).aestronglyMeasurable
-          (by exact_mod_cast one_le_two.trans hq.le) (one_le_two.trans hr2)
-    _ ≤ _ := by
-        grw [h₁ m hm f, h₂ m hm g, ENNReal.coe_add, add_mul, mul_add, mul_add]
-        gcongr
-        · exact le_self_add
-        · exact le_add_self
+  exact ⟨C₁ + C₂, fun m hm f g ↦
+    eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le hq hqr (h₁ m hm f) (h₂ m hm g)⟩
 
 /-- **The Strichartz estimate for strong solutions of the free wave equation.** Under the
 hypotheses of `ContDiffBump.exists_eLpNorm_eLpNorm_waveCosPropagator_le_tsum`, there is `C` such
