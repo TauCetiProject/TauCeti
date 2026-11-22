@@ -59,6 +59,8 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
   and `TauCeti.SectionChartData.lowerOrdersL` that of order `k + d` into order `k`.
 * `TauCeti.SectionChartData.chartValuesL`: the chart data of a Sobolev section, forgetting all its
   weak derivatives; it is injective (`TauCeti.SectionChartData.chartValuesL_injective`).
+* `TauCeti.SectionChartData.componentsL`: the chart-`i` components of a Sobolev section, as
+  `W^{k,p}` functions on the image of chart `i`.
 * `TauCeti.SectionChartData.constMapL`: a fibrewise map of sections read in every chart as a
   constant linear map `L` of the model fibre, applied to the Sobolev sections by the matrix of `L`
   (`TauCeti.SectionChartData.chartValueL_constMapL_ae`), which lifts the fibre map on the readings
@@ -621,6 +623,19 @@ def chartValuesL : C.sobolevSections μ p k →L[ℝ] ∀ i, Lp F p (μ.restrict
 @[simp]
 theorem chartValuesL_apply (w : C.sobolevSections μ p k) (i : Fin C.n) :
     C.chartValuesL μ p k w i = C.chartValueL μ p k i w :=
+  (rfl)
+
+/-- The chart-`i` components of the Sobolev sections: the `W^{k,p}` functions `w i j` on the image
+of chart `i`, one for each vector `j` of the basis `Module.finBasis ℝ F`. -/
+def componentsL (i : Fin C.n) :
+    C.sobolevSections μ p k →L[ℝ] (Fin (finrank ℝ F) → Wkp μ (C.image i) p k) :=
+  (ContinuousLinearMap.proj (R := ℝ)
+    (φ := fun i : Fin C.n ↦ ∀ _ : Fin (finrank ℝ F), Wkp μ (C.image i) p k) i).comp
+    (C.sobolevSections μ p k).subtypeL
+
+@[simp]
+theorem componentsL_apply (i : Fin C.n) (w : C.sobolevSections μ p k) :
+    C.componentsL μ p k i w = (w : C.SobolevData μ p k) i :=
   (rfl)
 
 /-- An element of the Sobolev sections is determined by its chart data. -/
