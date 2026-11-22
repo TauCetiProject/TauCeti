@@ -29,6 +29,8 @@ the cocompact decay of `t ↦ exp (c - δ * t ^ 2)`, and modulus and vertical-sh
   `exp (-b u² - c u)` when `0 < b`.
 * `TauCeti.norm_exp_ofReal_mul_sub_sq`, `TauCeti.exp_mul_sq_add_mul`: modulus and
   square-completion for complex Gaussians.
+* `TauCeti.norm_exp_ofReal_mul_sq_add_ofReal_mul_le`: the bound `exp (δ + |ω|)` for
+  `exp (δ z² + ω z)` on the closed strip `0 ≤ re z ≤ 1`.
 * `TauCeti.exp_neg_mul_intCast_sq_le`, `TauCeti.norm_exp_ofReal_mul_add_mul_I_sq_le`,
   `TauCeti.norm_exp_ofReal_mul_add_intCast_mul_I_sq_le`,
   `TauCeti.norm_exp_ofReal_mul_sq_mul_add_mul_I_sq_le`: vertical-shift Gaussian decay bounds.
@@ -129,6 +131,22 @@ theorem exp_mul_sq_add_mul {δ : ℂ} (hδ : δ ≠ 0) (ω z : ℂ) :
     Complex.exp (δ * z ^ 2 + ω * z) =
       Complex.exp (-(ω ^ 2 / (4 * δ))) * Complex.exp (δ * (z + ω / (2 * δ)) ^ 2) := by
   rw [← Complex.exp_add]; congr 1; field_simp; ring
+
+/-- On the closed strip `0 ≤ re z ≤ 1`, the factor `exp (δ z² + ω z)` of the elementary admissible
+functions of the complex method has modulus at most `exp (δ + |ω|)` for `0 ≤ δ`. -/
+theorem norm_exp_ofReal_mul_sq_add_ofReal_mul_le {δ : ℝ} (hδ : 0 ≤ δ) (ω : ℝ) {z : ℂ}
+    (hz : z.re ∈ Set.Icc 0 1) : ‖Complex.exp (δ * z ^ 2 + ω * z)‖ ≤ Real.exp (δ + |ω|) := by
+  rw [Complex.norm_exp, Real.exp_le_exp]
+  simp only [sq, Complex.add_re, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
+    sub_zero]
+  have hω : ω * z.re ≤ |ω| := by
+    calc ω * z.re ≤ |ω * z.re| := le_abs_self _
+      _ = |ω| * z.re := by rw [abs_mul, abs_of_nonneg hz.1]
+      _ ≤ |ω| := mul_le_of_le_one_right (abs_nonneg ω) hz.2
+  have h1 : z.re * z.re ≤ 1 := by nlinarith [hz.1, hz.2]
+  have h2 : δ * (z.re * z.re - z.im * z.im) ≤ δ := by
+    nlinarith [mul_nonneg hδ (mul_self_nonneg z.im)]
+  linarith
 
 /-- Quadratic Gaussian decay on `ℤ` dominates geometric decay (`0 ≤ a`). -/
 theorem exp_neg_mul_intCast_sq_le {a : ℝ} (ha : 0 ≤ a) (k : ℤ) :

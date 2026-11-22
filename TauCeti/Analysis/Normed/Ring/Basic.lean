@@ -21,6 +21,9 @@ bounds for powers of units — including the shell lemma `Units.exists_lt_norm_z
 the norms of integer powers of a unit `u` with `‖u‖ < 1` in a nontrivial normed ring visit every
 open interval `(a, b)` with `0 ≤ a` and `a * ‖u⁻¹‖ < b`.
 
+The affine estimate `TauCeti.sub_mul_mem_closedBall_of_norm_le` bounds the distance of
+`w₀ - w₁ * u` from `w₀` using a bound on the norm of `u`.
+
 Among the former are the estimates `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`
 (`TauCeti.norm_mul_sub_le_left`) and `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`
 (`TauCeti.norm_mul_sub_le_right`), which compare a product with `c` through the product with `b`,
@@ -31,6 +34,13 @@ and `‖a * c - b * d‖ₑ ≤ ‖a - b‖ₑ + ‖c - d‖ₑ` for `‖b‖ �
 public section
 
 namespace TauCeti
+
+/-- If `‖u‖ ≤ ρ`, then `w₀ - w₁ * u` lies in the closed ball of radius `‖w₁‖ * ρ` about `w₀`. -/
+theorem sub_mul_mem_closedBall_of_norm_le {R : Type*} [NonUnitalSeminormedRing R]
+    (w₀ w₁ : R) {u : R} {ρ : ℝ} (hu : ‖u‖ ≤ ρ) :
+    w₀ - w₁ * u ∈ Metric.closedBall w₀ (‖w₁‖ * ρ) := by
+  rw [mem_closedBall_iff_norm, sub_sub_cancel_left, norm_neg]
+  exact norm_mul_le_of_le le_rfl hu
 
 /-- A product of two elements in the open unit ball again belongs to the open unit ball. -/
 theorem norm_mul_lt_one {K : Type*} [NonUnitalSeminormedRing K] (u v : K) (hu : ‖u‖ < 1)

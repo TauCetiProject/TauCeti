@@ -727,15 +727,6 @@ theorem wellOrder_type_boundedness
 
 end Sentenceω
 
-/-- The `L`-structure on an ordered type interpreting `lt` as `<`, every other relation symbol as
-empty and every function symbol as the constant `m`. -/
-@[instance_reducible]
-private def ltStructure (lt : L.Relations 2) {M : Type w} [LT M] (m : M) : L.Structure M where
-  funMap _ _ := m
-  RelMap {n} R xs := match n, R, xs with
-    | 2, R, xs => R = lt ∧ xs 0 < xs 1
-    | _, _, _ => False
-
 /-- **Undefinability of well-ordering.** Among countable nonempty structures in `Type w`, no
 `L_{ω₁ω}` sentence holds in a structure if and only if `lt` is a well-order. A fortiori no
 sentence has as its models exactly the structures in `Type w` in which `lt` is a well-order, which
@@ -749,8 +740,8 @@ theorem wellOrdering_undefinable (lt : L.Relations 2) :
   -- `α + 1` is a nonempty well-order of length at least `α`
   let M := (α + 1).ToType
   have hne : Nonempty M := nonempty_toType_iff.2 (by simp)
-  let := ltStructure lt (Classical.arbitrary M)
-  have hrel (x y : M) : RelMap lt ![x, y] ↔ x < y := and_iff_right rfl
+  let := relStructure lt (· < ·) (Classical.arbitrary M)
+  have hrel (x y : M) : RelMap lt ![x, y] ↔ x < y := relMap_relStructure_self lt _ _ x y
   have hwo : IsWellOrder M fun x y : M => RelMap lt ![x, y] := by
     simpa only [hrel] using (inferInstance : IsWellOrder M (· < ·))
   have hc : Countable M := TauCeti.countable_toType_add_one_of_lt_omega_one hα

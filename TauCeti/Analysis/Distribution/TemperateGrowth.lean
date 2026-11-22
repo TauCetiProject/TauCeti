@@ -30,7 +30,8 @@ are smooth functions which outside a ball agree with a homogeneous function of d
 and diffeomorphisms whose derivatives of positive order are bounded.
 So does a smooth function satisfying symbol estimates
 `‖D^k f(x)‖ ≤ C_k (1 + ‖x‖ ^ 2) ^ ((m - k) / 2)` of some real order `m`, and the rescaled
-Bessel potential `x ↦ (1 + ‖c • x‖ ^ 2) ^ r`. On a real inner product space, so does the
+Bessel potential `x ↦ (1 + ‖c • x‖ ^ 2) ^ r`, together with its multiples
+`x ↦ (a ‖x‖ ^ 2 + c) ^ r` for `0 ≤ a` and `0 < c`. On a real inner product space, so does the
 logarithm `x ↦ log (1 + ‖x‖ ^ 2)` of the squared Japanese bracket, which enters the complex powers
 of the Japanese bracket. So does the exponential `y ↦ exp(i ⟪y, ξ⟫)` of an angular frequency
 `ξ`, which therefore defines a tempered distribution.
@@ -72,6 +73,8 @@ need not be bounded. A measure of temperate growth is finite on compact sets.
   give temperate growth.
 * `Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow`: the rescaled Bessel potential has
   temperate growth.
+* `TauCeti.hasTemperateGrowth_mul_norm_sq_add_rpow`: so does `x ↦ (a ‖x‖ ^ 2 + c) ^ r` for
+  `0 ≤ a` and `0 < c`.
 * `Function.hasTemperateGrowth_log_one_add_norm_sq`: `x ↦ log (1 + ‖x‖ ^ 2)` has temperate growth.
 * `Function.hasTemperateGrowth_norm_sub_pow`: `y ↦ ‖x - y‖ ^ (2N)` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv`: `Df` has temperate growth.
@@ -81,6 +84,8 @@ need not be bounded. A measure of temperate growth is finite on compact sets.
 * `Function.HasTemperateGrowth.basis_repr_fderiv_apply`: so do the coordinates of `Df(x) v` in a
   basis.
 * `Function.HasTemperateGrowth.prod`: finite products of functions of temperate growth.
+* `ContinuousLinearEquiv.hasTemperateGrowth_comp_iff`: precomposing with a continuous linear
+  equivalence preserves and reflects temperate growth.
 * `ContinuousLinearMap.hasTemperateGrowth_det`, `Function.HasTemperateGrowth.det_fderiv`: the
   determinant and the Jacobian determinant have temperate growth.
 * `Function.HasTemperateGrowth.abs`: `|f|` has temperate growth if `f` has no zeros.
@@ -272,6 +277,14 @@ theorem abs {f : E → ℝ} (hf : f.HasTemperateGrowth) (h0 : ∀ x, f x ≠ 0) 
 
 end Function.HasTemperateGrowth
 
+/-- Precomposing with a continuous linear equivalence preserves and reflects temperate growth. -/
+theorem ContinuousLinearEquiv.hasTemperateGrowth_comp_iff {D V W : Type*} [NormedAddCommGroup D]
+    [NormedSpace ℝ D] [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
+    [NormedSpace ℝ W] (e : D ≃L[ℝ] V) {g : V → W} :
+    (g ∘ e).HasTemperateGrowth ↔ g.HasTemperateGrowth :=
+  ⟨fun h ↦ by simpa [Function.comp_def] using h.comp e.symm.hasTemperateGrowth,
+    fun h ↦ h.comp e.hasTemperateGrowth⟩
+
 /-- On a finite-dimensional space the determinant has temperate growth, being a polynomial in the
 matrix entries. -/
 theorem ContinuousLinearMap.hasTemperateGrowth_det {E : Type*} [NormedAddCommGroup E]
@@ -347,6 +360,22 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
 theorem hasTemperateGrowth_one_add_norm_smul_sq_rpow (c r : ℝ) :
     (fun x : H ↦ (1 + ‖c • x‖ ^ 2) ^ r).HasTemperateGrowth :=
   (hasTemperateGrowth_one_add_norm_sq_rpow H r).comp (by fun_prop)
+
+/-- For `0 ≤ a` and `0 < c`, the function `x ↦ (a ‖x‖ ^ 2 + c) ^ r` has temperate growth: it is
+`c ^ r (1 + ‖√(a / c) • x‖ ^ 2) ^ r`, a multiple of a rescaled Bessel potential. -/
+theorem _root_.TauCeti.hasTemperateGrowth_mul_norm_sq_add_rpow {a c : ℝ} (ha : 0 ≤ a) (hc : 0 < c)
+    (r : ℝ) :
+    (fun x : H ↦ (a * ‖x‖ ^ 2 + c) ^ r).HasTemperateGrowth := by
+  have h : (fun x : H ↦ (a * ‖x‖ ^ 2 + c) ^ r) =
+      fun x ↦ c ^ r * (1 + ‖√(a / c) • x‖ ^ 2) ^ r := by
+    ext x
+    rw [norm_smul, Real.norm_of_nonneg (Real.sqrt_nonneg _), mul_pow,
+      Real.sq_sqrt (div_nonneg ha hc.le), ← Real.mul_rpow hc.le (by positivity)]
+    congr 1
+    field_simp
+    ring
+  rw [h]
+  fun_prop
 
 /-- On a real inner product space `H`, the logarithm `x ↦ log (1 + ‖x‖ ^ 2)` of the squared
 Japanese bracket has temperate growth. -/
