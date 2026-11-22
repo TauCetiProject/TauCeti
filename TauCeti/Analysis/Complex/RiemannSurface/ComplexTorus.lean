@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Diffeomorphism.FixingSubgroup.Basic
 public import TauCeti.Geometry.Manifold.Algebra.Quotient
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.SpecialFunctions.Complex.Log
+import Mathlib.Tactic.LinearCombination
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Convex.Contractible
@@ -42,6 +44,10 @@ biholomorphisms fixing any nonempty set of points form a finite group, while the
 the full automorphism group infinite (`Diffeomorph.finite_fixingSubgroup_iff_nonempty`). For a
 genus-one component of a marked nodal curve, this is the statement that the component is stable,
 `2 g - 2 + n > 0`, exactly when its automorphisms fixing its special points form a finite group.
+
+A submodule containing the horizontal exponential period `2π` also gives a continuous
+logarithmic quotient coordinate `z ↦ [-i log z]` off zero. This remains continuous across the
+principal branch cut and requires neither discreteness nor a full lattice.
 
 ## Main results
 
@@ -202,3 +208,42 @@ theorem finite_fixingSubgroup_iff_nonempty [IsZLattice ℝ L]
     exact Finite.of_equiv _ (relativeDiffCongr e s).symm.toEquiv
 
 end Diffeomorph
+
+noncomputable section
+
+open Complex Filter Topology
+open scoped Real
+
+/-- A submodule containing the horizontal exponential period identifies logarithmic lifts with
+the same exponential. No discreteness assumption is required for this algebraic statement. -/
+theorem Submodule.orbitRelQuotient_mk_eq_of_exp_I_mul_eq (L : Submodule ℤ ℂ)
+    (hL : (2 * π : ℂ) ∈ L) {z w : ℂ} (h : exp (I * z) = exp (I * w)) :
+    _root_.Quotient.mk (AddAction.orbitRel L ℂ) z = _root_.Quotient.mk _ w := by
+  apply L.orbitRelQuotient_mk_eq_mk_iff.mpr
+  obtain ⟨m, hm⟩ := exp_eq_exp_iff_exists_int.mp h
+  have hd : z - w = (m : ℂ) * (2 * π) := by
+    apply mul_left_cancel₀ I_ne_zero
+    linear_combination hm
+  rw [hd, ← zsmul_eq_mul]
+  exact L.smul_mem m hL
+
+/-- The logarithm multiplied by `-i`, read modulo a horizontal period `2π`, is continuous off
+zero, including across the principal logarithm's branch cut. -/
+theorem Submodule.continuousOn_orbitRelQuotient_mk_neg_I_mul_log
+    (L : Submodule ℤ ℂ) (hL : (2 * π : ℂ) ∈ L) :
+    ContinuousOn (fun z : ℂ ↦ _root_.Quotient.mk (AddAction.orbitRel L ℂ) (-I * log z)) {0}ᶜ := by
+  intro z hz
+  have hz0 : z ≠ 0 := by simpa using hz
+  have hslit : z / z ∈ slitPlane := by simp [hz0]
+  have hc : ContinuousAt (fun w : ℂ ↦ -I * log (w / z) + -I * log z) z :=
+    (continuousAt_const.mul ((continuousAt_clog hslit).comp (f := fun w : ℂ ↦ w / z)
+      (continuousAt_id.div_const z))).add continuousAt_const
+  have heq : (fun w : ℂ ↦ _root_.Quotient.mk (AddAction.orbitRel L ℂ) (-I * log w)) =ᶠ[𝓝 z]
+      fun w ↦ _root_.Quotient.mk _ (-I * log (w / z) + -I * log z) := by
+    filter_upwards [isOpen_compl_singleton.mem_nhds hz] with w hw
+    have hw0 : w ≠ 0 := by simpa using hw
+    apply L.orbitRelQuotient_mk_eq_of_exp_I_mul_eq hL
+    simp only [mul_add, ← mul_assoc, mul_neg, I_mul_I, neg_neg, one_mul, exp_add]
+    rw [exp_log hw0, exp_log (div_ne_zero hw0 hz0), exp_log hz0, div_mul_cancel₀ _ hz0]
+  have hcont := (continuous_quotient_mk'.continuousAt.comp hc).congr_of_eventuallyEq heq
+  exact hcont.continuousWithinAt

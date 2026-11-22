@@ -47,6 +47,8 @@ The quotient `I/I²` is Mathlib's `Ideal.Cotangent`. The square-class group is
 * `TauCeti.wittClass_mem_fundamentalIdeal_sq_iff`: a form has Witt class in `I(K)²` exactly when
   it has even rank and trivial signed discriminant.
 * `TauCeti.oneFoldPfisterClass_eq_zero_iff`: `⟨⟨a⟩⟩ = 0` in `W(K)` exactly when `a` is a square.
+* `TauCeti.oneFoldPfisterClass_eq_oneFoldPfisterClass_iff`: `⟨⟨a⟩⟩ = ⟨⟨b⟩⟩` exactly when `a` and
+  `b` have the same square class.
 * `TauCeti.signedDiscrHom_surjective` and `TauCeti.signedDiscrHom_eq_zero_iff`: `d±` maps `I(K)`
   onto the square-class group with kernel `I(K)²`.
 
@@ -220,6 +222,20 @@ theorem oneFoldPfisterClass_eq_zero_iff {a : Kˣ} : oneFoldPfisterClass a = 0 �
         rwa [neg_mul_neg, mul_one]
     rw [oneFoldPfisterClass_eq, ← map_one (wittClass (K := K)), ← map_add, hhyp,
       wittClass_hyperbolicClass]
+
+/-- **`⟨⟨a⟩⟩` depends exactly on the square class of `a`**: `⟨⟨a⟩⟩ = ⟨⟨b⟩⟩` in the Witt ring if
+and only if `a` and `b` have the same square class. -/
+@[simp]
+theorem oneFoldPfisterClass_eq_oneFoldPfisterClass_iff {a b : Kˣ} :
+    oneFoldPfisterClass a = oneFoldPfisterClass b ↔ squareClass a = squareClass b := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · rw [← WittRing.signedDiscr_oneFoldPfisterClass, h, WittRing.signedDiscr_oneFoldPfisterClass]
+  · have hs : IsSquare (a⁻¹ * b) := by
+      rw [squareClass_eq_iff_isSquare_mul] at h
+      obtain ⟨r, hr⟩ := h
+      exact ⟨a⁻¹ * r, by rw [mul_mul_mul_comm, ← hr]; group⟩
+    rw [← mul_inv_cancel_left a b, oneFoldPfisterClass_mul, oneFoldPfisterClass_eq_zero_iff.mpr hs,
+      mul_zero, add_zero, sub_zero]
 
 /-- Every element of `I(K)` is congruent modulo `I(K)²` to a one-fold Pfister class `⟨⟨a⟩⟩`, with
 `a` in the square class of its signed discriminant. -/

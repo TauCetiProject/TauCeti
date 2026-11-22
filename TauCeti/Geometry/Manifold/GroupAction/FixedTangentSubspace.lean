@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.GroupTheory.GroupAction.Hom
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 
 /-!
 # The fixed tangent subspace of a group action
@@ -30,7 +31,15 @@ fixed set. No metric, topology on `K` or smoothness of the action is needed for 
 definitions; for a group of isometries the sets `M^K_d` are embedded submanifolds
 (`TauCeti.exists_isSmoothEmbedding_fixedPointsOfFinrank`).
 
-These objects are natural under equivariant diffeomorphisms. If a diffeomorphism `ψ : M → N`
+These objects are natural under equivariant maps. If `f ∘ g = h ∘ f` and `g` fixes `p`, then
+differentiating at `p` shows that `df_p` intertwines `dg_p` and `dh_(f p)`
+(`TauCeti.mfderiv_comp_mfderiv_of_comp_eq`). For an equivariant `f : M → N`, that is
+`f (k • x) = k • f x`, this applies with `g` and `h` the actions of an element `k` fixing `p`.
+So `df_p` sends `V_p` into `V_(f p)` as soon as every element fixing `f p` also fixes `p`
+(`TauCeti.map_mfderiv_fixedTangentSubspace_le`), and when moreover `df_p` is injective, `V_p` is
+exactly the preimage of `V_(f p)` (`TauCeti.comap_mfderiv_fixedTangentSubspace`).
+
+Diffeomorphisms need equivariance only near `p`. If a diffeomorphism `ψ : M → N`
 commutes with the action of every `k ∈ K` near `p`, the chain rule gives
 `d(k •)_(ψ p) ∘ dψ_p = dψ_(k • p) ∘ d(k •)_p`, and `ψ` preserves the stabilizer of `p`; so the
 differential `dψ_p` carries `V_p` onto `V_(ψ p)`
@@ -56,6 +65,11 @@ zero.
   vectors of the tangent representation.
 * `TauCeti.iUnion_fixedPointsOfFinrank`, `TauCeti.pairwise_disjoint_fixedPointsOfFinrank`: the
   sets `M^K_d` partition the fixed set.
+* `TauCeti.mfderiv_comp_mfderiv_of_comp_eq`: semiconjugate maps intertwine the differentials at a
+  fixed point of the inner map.
+* `TauCeti.map_mfderiv_fixedTangentSubspace_le`, `TauCeti.comap_mfderiv_fixedTangentSubspace`: an
+  equivariant map sends the fixed tangent subspace at `p` into that at `f p`, and pulls the latter
+  back to the former when its differential is injective and it preserves the stabilizer of `p`.
 * `Diffeomorph.mfderiv_smul_mfderiv_of_mem_stabilizer`: the differential at `p` of a
   diffeomorphism that is equivariant near `p` intertwines the actions of the stabilizer of `p` on
   the tangent spaces at `p` and at `ψ p`; no smoothness of the actions is needed.
@@ -156,6 +170,71 @@ theorem pairwise_disjoint_fixedPointsOfFinrank :
   fun _ _ hde ↦ disjoint_left.2 fun _ hp hq ↦ hde (hp.2.symm.trans hq.2)
 
 end FixedTangentSubspace
+
+section Map
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {K : Type*} [Group K]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [MulAction K M]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [MulAction K N]
+  {f : M → N} {p : M}
+
+/-- **Semiconjugate maps intertwine the differentials.** If `f ∘ g = h ∘ f` and `g` fixes `p`,
+then `df_p ∘ dg_p = dh_(f p) ∘ df_p`. Where `f` is not differentiable both sides vanish. For an
+equivariant map, `g` and `h` are the actions of an element fixing `p`. -/
+theorem mfderiv_comp_mfderiv_of_comp_eq {g : M → M} {h : N → N} (hfg : f ∘ g = h ∘ f)
+    (hp : g p = p) (hg : MDifferentiableAt I I g p) (hh : MDifferentiableAt I' I' h (f p)) :
+    (mfderiv I I' f p).comp (mfderiv I I g p) =
+      (mfderiv I' I' h (f p)).comp (mfderiv I I' f p) := by
+  by_cases hfp : MDifferentiableAt I I' f p
+  swap
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hfp]
+    exact (ContinuousLinearMap.zero_comp _).trans (ContinuousLinearMap.comp_zero _).symm
+  rw [← mfderiv_comp_of_apply_eq_self hfp hg hp, hfg, mfderiv_comp p hh hfp]
+
+/-- **Equivariant maps preserve fixed tangent vectors.** If `f` is equivariant, and every element
+fixing `f p` also fixes `p` (for instance when `p` lies in the fixed set, or when `f` is
+injective), then `df_p` sends the fixed tangent subspace at `p` into the fixed
+tangent subspace at `f p`. -/
+theorem map_mfderiv_fixedTangentSubspace_le (hf : ∀ (k : K) (x : M), f (k • x) = k • f x)
+    (hstab : stabilizer K (f p) ≤ stabilizer K p)
+    (hdM : ∀ k ∈ stabilizer K (f p), MDifferentiableAt I I (k • ·) p)
+    (hdN : ∀ k ∈ stabilizer K (f p), MDifferentiableAt I' I' (k • ·) (f p)) :
+    (fixedTangentSubspace I K p).map (mfderiv I I' f p).toLinearMap ≤
+      fixedTangentSubspace I' K (f p) := by
+  intro w hw
+  obtain ⟨v, hv, rfl⟩ := Submodule.mem_map.1 hw
+  rw [mem_fixedTangentSubspace] at hv ⊢
+  intro k hk
+  have h := congrArg (· v)
+    (mfderiv_comp_mfderiv_of_comp_eq (funext (hf k)) (hstab hk) (hdM k hk) (hdN k hk))
+  exact h.symm.trans (congrArg (mfderiv I I' f p) (hv k (hstab hk)))
+
+/-- **Fixed tangent vectors are detected by an equivariant map with injective differential.** If
+`f` is equivariant with injective differential at `p`, and every element fixing `f p` also fixes
+`p` (for instance when `f` is injective), then a tangent vector at `p` is fixed by the stabilizer of
+`p` exactly when its image under `df_p` is fixed by the stabilizer of `f p`. -/
+theorem comap_mfderiv_fixedTangentSubspace (hf : ∀ (k : K) (x : M), f (k • x) = k • f x)
+    (hstab : stabilizer K (f p) ≤ stabilizer K p) (hdf : Function.Injective (mfderiv I I' f p))
+    (hdM : ∀ k ∈ stabilizer K p, MDifferentiableAt I I (k • ·) p)
+    (hdN : ∀ k ∈ stabilizer K p, MDifferentiableAt I' I' (k • ·) (f p)) :
+    (fixedTangentSubspace I' K (f p)).comap (mfderiv I I' f p).toLinearMap =
+      fixedTangentSubspace I K p := by
+  -- Every element fixing `p` fixes `f p` by equivariance, so the two stabilizers agree.
+  replace hstab : stabilizer K (f p) = stabilizer K p :=
+    hstab.antisymm fun k hk ↦ by rw [mem_stabilizer_iff, ← hf, mem_stabilizer_iff.1 hk]
+  refine le_antisymm (fun v hv ↦ ?_) (Submodule.map_le_iff_le_comap.1 <|
+    map_mfderiv_fixedTangentSubspace_le hf hstab.le (hstab ▸ hdM) (hstab ▸ hdN))
+  rw [Submodule.mem_comap, mem_fixedTangentSubspace] at hv
+  rw [mem_fixedTangentSubspace]
+  intro k hk
+  have h := congrArg (· v)
+    (mfderiv_comp_mfderiv_of_comp_eq (funext (hf k)) hk (hdM k hk) (hdN k hk))
+  exact hdf (h.trans (hv k (hstab ▸ hk)))
+
+end Map
 
 end TauCeti
 

@@ -69,12 +69,12 @@ theorem isMaximalCohenMacaulay_quotient_span_singleton_iff_ringKrullDim_le_depth
   have : Small.{v} (S ⧸ Ideal.span {w}) := small_of_surjective Ideal.Quotient.mk_surjective
   rw [isMaximalCohenMacaulay_iff_ringKrullDim_le_depth,
     ← ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim hw mem_maximalIdeal_of_quotient,
-    depth_restrictScalars_quotient]
+    ModuleCat.depth_restrictScalars_of_surjective _ Ideal.Quotient.mk_surjective]
   refine ⟨fun h ↦ by gcongr, fun h ↦ ?_⟩
   obtain ⟨d, hd⟩ := exists_supportDim_eq_natCast
     (R := S ⧸ Ideal.span {w}) (M := S ⧸ Ideal.span {w})
   rw [← supportDim_self_eq_ringKrullDim, hd] at h ⊢
-  induction hdep : depth (ModuleCat.of (S ⧸ Ideal.span {w}) M) using ENat.recTopCoe with
+  induction hdep : depth M using ENat.recTopCoe with
   | top => exact le_top
   | coe k =>
     rw [hdep] at h
@@ -89,7 +89,7 @@ theorem IsMaximalCohenMacaulay.depth_restrictScalars_add_one_eq_ringKrullDim
     (depth ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) :
       WithBot ℕ∞) + 1 = ringKrullDim S := by
   have : Small.{v} (S ⧸ Ideal.span {w}) := small_of_surjective Ideal.Quotient.mk_surjective
-  rw [depth_restrictScalars_quotient, hM.depth_eq]
+  rw [ModuleCat.depth_restrictScalars_of_surjective _ Ideal.Quotient.mk_surjective, hM.depth_eq]
   exact ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim hw mem_maximalIdeal_of_quotient
 
 private theorem IsMaximalCohenMacaulay.exists_depth_restrictScalars_eq_natCast
@@ -101,8 +101,8 @@ private theorem IsMaximalCohenMacaulay.exists_depth_restrictScalars_eq_natCast
   have : Small.{v} (S ⧸ Ideal.span {w}) := small_of_surjective Ideal.Quotient.mk_surjective
   obtain ⟨k, hk⟩ := exists_supportDim_eq_natCast
     (R := S ⧸ Ideal.span {w}) (M := S ⧸ Ideal.span {w})
-  exact ⟨k, by rw [depth_restrictScalars_quotient, hM.depth_eq,
-    ← supportDim_self_eq_ringKrullDim, hk]⟩
+  exact ⟨k, by rw [ModuleCat.depth_restrictScalars_of_surjective _ Ideal.Quotient.mk_surjective,
+    hM.depth_eq, ← supportDim_self_eq_ringKrullDim, hk]⟩
 
 /-- **Auslander–Buchsbaum bound for maximal Cohen–Macaulay hypersurface modules.** If a finite
 maximal Cohen–Macaulay `S ⧸ (w)`-module `M` has finite projective dimension over `S`, then
