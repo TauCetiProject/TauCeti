@@ -55,6 +55,9 @@ which are close to `f x` and `f y` by continuity.
 * `LocallyIntegrableOn.exists_ae_eq_exp_smul_Ioo_of_integral_deriv_add_mul_smul_eq_zero`, in the
   namespace `MeasureTheory`: distributional solutions of `f' = c f` on an interval are
   `e^{c x} • v`.
+* `LocallyIntegrableOn.exists_ae_eq_exp_smul_Ioi_of_integral_deriv_add_mul_smul_eq_zero`, in the
+  namespace `MeasureTheory`: distributional solutions of `f' = c f` on a half-line `(a, ∞)` are
+  `e^{c x} • v`.
 * `MeasureTheory.LocallyIntegrable.exists_ae_eq_exp_smul_of_integral_deriv_add_mul_smul_eq_zero`:
   distributional solutions of `A' = λ A` on the line are `e^{λ x} • v`.
 * `MeasureTheory.LocallyIntegrable.ae_eq_zero_of_integral_deriv_add_mul_smul_eq_zero`: a locally
@@ -212,6 +215,39 @@ theorem exists_ae_eq_exp_smul_Ioo_of_integral_deriv_add_mul_smul_eq_zero
   filter_upwards [hv] with x hx
   rw [← hx, smul_smul, ← Real.exp_add]
   simp
+
+/-- **Weak solutions of `f' = c f` on a half-line.** A function locally integrable on `(a, ∞)`
+with `∫ x, (deriv φ x + c φ x) • f x = 0` for every compactly supported test function `φ` on
+`(a, ∞)`, that is, a distributional solution of `f' = c f`, is almost everywhere equal to
+`x ↦ e^{c x} • v` on `(a, ∞)` for some vector `v`. The vectors given on the intervals
+`(a, a + N + 1)` by the interval version agree, by comparison on `(a, a + 1)`. -/
+theorem exists_ae_eq_exp_smul_Ioi_of_integral_deriv_add_mul_smul_eq_zero
+    {a : ℝ} {f : ℝ → F} (hf : LocallyIntegrableOn f (Ioi a)) (c : ℝ)
+    (h : ∀ φ : ℝ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ → tsupport φ ⊆ Ioi a →
+      ∫ x, (deriv φ x + c * φ x) • f x = 0) :
+    ∃ v : F, f =ᵐ[volume.restrict (Ioi a)] fun x ↦ Real.exp (c * x) • v := by
+  choose v hv using fun N : ℕ ↦
+    (hf.mono_set (Ioo_subset_Ioi_self : Ioo a (a + N + 1) ⊆ Ioi a)
+      ).exists_ae_eq_exp_smul_Ioo_of_integral_deriv_add_mul_smul_eq_zero c fun φ hφ hφs ↦
+        h φ hφ (isCompact_Icc.of_isClosed_subset (isClosed_tsupport φ)
+          (hφs.trans Ioo_subset_Icc_self)) (hφs.trans Ioo_subset_Ioi_self)
+  have hv0 (N : ℕ) :
+      f =ᵐ[volume.restrict (Ioo a (a + N + 1))] fun x ↦ Real.exp (c * x) • v 0 := by
+    have h₁ := ae_restrict_of_ae_restrict_of_subset
+      (Ioo_subset_Ioo_right (by linarith [N.cast_nonneg (α := ℝ)]) : Ioo a (a + 1) ⊆ _) (hv N)
+    have h₂ := ae_restrict_of_ae_restrict_of_subset
+      (show Ioo a (a + 1) ⊆ Ioo a (a + ((0 : ℕ) : ℝ) + 1) by simp) (hv 0)
+    have : (ae (volume.restrict (Ioo a (a + 1)))).NeBot :=
+      ae_restrict_neBot.2 (by simp [Real.volume_Ioo])
+    obtain ⟨x, hx₁, hx₂⟩ := (h₁.and h₂).exists
+    rw [← smul_right_injective F (Real.exp_pos _).ne' (hx₁.symm.trans hx₂)]
+    exact hv N
+  refine ⟨v 0, (ae_restrict_iff' measurableSet_Ioi).2 ?_⟩
+  have hall : ∀ᵐ x, ∀ N : ℕ, x ∈ Ioo a (a + N + 1) → f x = Real.exp (c * x) • v 0 :=
+    ae_all_iff.2 fun N ↦ (ae_restrict_iff' measurableSet_Ioo).1 (hv0 N)
+  filter_upwards [hall] with x hx hxa
+  obtain ⟨N, hN⟩ := exists_nat_gt (x - a)
+  exact hx N ⟨hxa, by linarith⟩
 
 end MeasureTheory.LocallyIntegrableOn
 

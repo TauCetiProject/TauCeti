@@ -37,7 +37,9 @@ evaluation on integrable forms (`Distribution.extendL1`).
 
 * `TestFunction.toLp`: the class in `Lᵖ(μ)` of the restriction of a test function to `Ω`.
 * `TestFunction.ambientToLp`: the class in `Lᵖ(ν)` of a test function, for a measure `ν` on the
-  ambient space.
+  ambient space, and `TestFunction.ambientToLpₗ`, the same map as a `𝕜`-linear map.
+* `TestFunction.ambientToLp_restrict_injective`: a test function on `Ω` is determined by its class
+  in `Lᵖ(μ|_Ω)` when `μ` charges every nonempty open set.
 * `TestFunction.indicatorToLp`: the class in `Lᵖ(μ)` of `1_A φ`, for a measurable set `A ⊆ Ω`.
   It is zero for `A = ∅`, is `toLp` for `A = Ω` and is additive on disjoint sets
   (`TestFunction.indicatorToLp_empty`, `_univ`, `_union`).
@@ -279,6 +281,36 @@ theorem ambientToLp_apply (φ : 𝓓^{n}(Ω, F)) :
 theorem coeFn_ambientToLp (φ : 𝓓^{n}(Ω, F)) : ambientToLp p ν φ =ᵐ[ν] φ := by
   rw [ambientToLp_apply]
   exact MemLp.coeFn_toLp _
+
+variable (p ν) in
+/-- `TestFunction.ambientToLp` as a `𝕜`-linear map, for a normed field `𝕜` acting on `F`
+compatibly with the real scalars. -/
+def ambientToLpₗ (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] :
+    𝓓^{n}(Ω, F) →ₗ[𝕜] Lp F p ν where
+  toFun := ambientToLp p ν
+  map_add' := map_add _
+  map_smul' c φ := by
+    rw [ambientToLp_apply, ambientToLp_apply, RingHom.id_apply, ← MemLp.toLp_const_smul]
+    exact MemLp.toLp_congr _ _ (.of_eq (by ext; simp))
+
+@[simp]
+theorem coe_ambientToLpₗ (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] :
+    ⇑(ambientToLpₗ p ν 𝕜 : 𝓓^{n}(Ω, F) →ₗ[𝕜] Lp F p ν) = ambientToLp p ν :=
+  (rfl)
+
+/-- **A test function is determined by its class in `Lᵖ(μ|_Ω)`**, for a measure `μ` charging
+every nonempty open set: a continuous function vanishing almost everywhere on the open set `Ω`
+vanishes on `Ω`, and a test function on `Ω` vanishes off `Ω`. -/
+theorem ambientToLp_restrict_injective {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
+    [μ.IsOpenPosMeasure] :
+    Function.Injective (ambientToLp p (μ.restrict Ω) : 𝓓^{n}(Ω, F) → Lp F p (μ.restrict Ω)) := by
+  refine (injective_iff_map_eq_zero _).2 fun φ hφ ↦ TestFunction.ext fun x ↦ ?_
+  have hae : (φ : E → F) =ᵐ[μ.restrict Ω] 0 :=
+    (coeFn_ambientToLp φ).symm.trans (Lp.eq_zero_iff_ae_eq_zero.mp hφ)
+  by_cases hx : x ∈ (Ω : Set E)
+  · simpa using
+      Measure.eqOn_open_of_ae_eq hae Ω.isOpen φ.continuous.continuousOn continuousOn_const hx
+  · simpa using image_eq_zero_of_notMem_tsupport fun h ↦ hx (φ.tsupport_subset h)
 
 /-- The squared `L²(ν)` norm of the class of a test function is the integral of its squared
 pointwise norm. -/
