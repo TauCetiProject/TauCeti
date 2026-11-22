@@ -26,6 +26,16 @@ determinant of a coordinatewise endomorphism of a finite dependent product, whic
 finite-product norm calculations, and rank–nullity for a surjection onto a finite dependent
 product.
 
+A nonzero linear map on a finite product `ι → R` is nonzero at some coordinate vector. Setting one
+coordinate of its argument to `t` adds `t` times its value at that coordinate vector to its value
+with the coordinate zeroed. Hence, over a semiring with left-cancellative addition, replacing one
+coordinate by a linear functional is injective if the coefficient of the functional at that
+coordinate is right-regular. These coordinate arguments are adapted from
+[KLS](https://github.com/human-ai-mathematics/kls-lean), commit
+`65810c73f9dd7945fc646ab484cb19d673f5291d`,
+`formalization/FunctionalInequalities/Analysis/`, files `PiCoordinates.lean` and
+`Sard/CoordinateChange.lean`.
+
 Finally, distinct sums and differences of standard coordinate vectors can be separated at a
 coordinate where their difference is regular. In two of these separations the critical case is
 one family being the negative of the other, so that their difference is `2` times a vector of
@@ -73,6 +83,12 @@ weights.
 * `LinearMap.sum_finrank_add_finrank_ker_of_surjective`: rank–nullity for a surjection from a
   finite-dimensional space onto a finite dependent product, whose factors are then finite
   (`LinearMap.finite_of_surjective_pi`).
+* `LinearMap.exists_apply_single_ne_zero`: a nonzero linear map on a finite product `ι → R` is
+  nonzero at some coordinate vector.
+* `LinearMap.apply_update_eq_add_smul`: setting the coordinate `i` of `x` to `t` adds `t` times
+  the value at `Pi.single i 1` to the value at `x` with that coordinate zeroed.
+* `LinearMap.pi_update_injective`: over a semiring with left-cancellative addition, replacing one
+  coordinate by a linear functional is injective if its coefficient there is right-regular.
 * `TauCeti.exists_isRegular_single_sub_single_sub`: an ordered difference of standard coordinate
   vectors on two different coordinates and any other ordered difference differ regularly at some
   coordinate.
@@ -398,6 +414,44 @@ public theorem sum_finrank_add_finrank_ker_of_surjective {K M ι : Type*} [Divis
   have := finite_of_surjective_pi Φ hΦ
   rw [← Module.finrank_pi_fintype, ← finrank_top K, ← range_eq_top.2 hΦ]
   exact finrank_range_add_finrank_ker Φ
+
+section Coordinates
+
+variable {ι R M : Type*} [DecidableEq ι] [Semiring R] [AddCommMonoid M] [Module R M]
+
+/-- A nonzero linear map on a finite product `ι → R` is nonzero on some coordinate vector. -/
+public theorem exists_apply_single_ne_zero [Finite ι] (f : (ι → R) →ₗ[R] M) (hf : f ≠ 0) :
+    ∃ i : ι, f (Pi.single i 1) ≠ 0 := by
+  by_contra! h
+  exact hf <| (Pi.basisFun R ι).ext fun i ↦ by simpa using h i
+
+/-- The value of a linear map on `ι → R` after setting the coordinate `i` of `x` to `t` is its
+value with that coordinate set to zero, plus `t` times its value at the coordinate vector
+`Pi.single i 1`. -/
+public theorem apply_update_eq_add_smul (f : (ι → R) →ₗ[R] M) (x : ι → R) (i : ι) (t : R) :
+    f (Function.update x i t) = f (Function.update x i 0) + t • f (Pi.single i 1) := by
+  have h := Function.update_add x 0 i 0 t
+  rw [add_zero, zero_add, ← Pi.single] at h
+  rw [h, map_add, ← map_smul, ← Pi.single_smul', smul_eq_mul, mul_one]
+
+/-- Over a semiring with left-cancellative addition, replacing the coordinate `i` by a linear
+functional `f` is injective when the coefficient `f (Pi.single i 1)` is right-regular. -/
+public theorem pi_update_injective [IsLeftCancelAdd R] (f : (ι → R) →ₗ[R] R) (i : ι)
+    (hf : IsRightRegular (f (Pi.single i 1))) :
+    Function.Injective (pi fun m : ι ↦ if m = i then f else proj m) := by
+  intro v w h
+  have hoff (m : ι) (hm : m ≠ i) : v m = w m := by simpa [pi_apply, hm] using congrFun h m
+  have hrest : Function.update v i 0 = Function.update w i 0 :=
+    Function.update_eq_iff.2 ⟨by simp, fun m hm ↦ by simp [hm, hoff m hm]⟩
+  -- Split off the coordinate `i` on both sides of `f v = f w` and cancel the common summand.
+  have hfvw : f v = f w := by simpa [pi_apply] using congrFun h i
+  rw [← Function.update_eq_self i v, ← Function.update_eq_self i w,
+    apply_update_eq_add_smul f v, apply_update_eq_add_smul f w, hrest, smul_eq_mul,
+    smul_eq_mul] at hfvw
+  exact (Function.update_eq_self i v).symm.trans <|
+    Function.update_eq_iff.2 ⟨hf (add_left_cancel hfvw), hoff⟩
+
+end Coordinates
 
 end LinearMap
 

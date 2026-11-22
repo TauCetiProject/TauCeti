@@ -11,7 +11,8 @@ import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.FinInsertNth
 import TauCeti.Analysis.Calculus.ContDiff.Pi
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
-import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.LinearAlgebra.Pi
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 
 /-!
 # Graph charts used by the Morse vanishing lemma
@@ -54,7 +55,8 @@ theorem exists_graph {k : ℕ} (hk : 1 ≤ k) {w : (Fin (n + 1) → ℝ) → ℝ
       ∀ᶠ x in 𝓝 x₀, w x = 0 →
         x = Fin.insertNth (α := fun _ => ℝ) i (θ (Fin.removeNth i x)) (Fin.removeNth i x) := by
   classical
-  obtain ⟨i, hi⟩ := (fderiv ℝ w x₀).exists_apply_single_ne_zero hd
+  obtain ⟨i, hi⟩ := (fderiv ℝ w x₀).toLinearMap.exists_apply_single_ne_zero
+    ((ContinuousLinearMap.coe_injective.ne_iff' ContinuousLinearMap.toLinearMap_zero).2 hd)
   have hkne : ((k : ℕ) : WithTop ℕ∞) ≠ 0 := by
     simp only [ne_eq, Nat.cast_eq_zero]
     omega

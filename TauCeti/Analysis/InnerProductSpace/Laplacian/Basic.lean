@@ -15,7 +15,7 @@ public import TauCeti.Analysis.Matrix.EuclideanLin
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.Normed.Operator.Bilinear
 
 /-!
 # Calculus and geometric invariance of the Laplacian

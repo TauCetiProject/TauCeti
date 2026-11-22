@@ -19,7 +19,7 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Topology.Order.Compact
 import Mathlib.Topology.Order.IntermediateValue
-import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.Normed.Operator.Prod
 
 /-!
 # Mean value estimates
@@ -654,10 +654,12 @@ theorem Differentiable.abs_sub_le_of_basis_bound {P : Type*}
     have hvnorm : ‖fderiv ℝ φ (a + t • (b - a)) (b - a)‖ ≤ C * ‖b - a‖ :=
       (ContinuousLinearMap.le_opNorm _ _).trans
         (mul_le_mul_of_nonneg_right (hbound _ hball) (norm_nonneg _))
-    have hcoord_bound := (fderiv ℝ f (φ (a + t • (b - a)))).norm_apply_le_card_mul_norm
-      (fderiv ℝ φ (a + t • (b - a)) (b - a)) fun j ↦ (Real.norm_eq_abs _).trans_le (hcoord t ht j)
+    have hcoord_bound := LinearMap.norm_apply_le_card_mul_norm_mul
+      (fderiv ℝ f (φ (a + t • (b - a)))).toLinearMap (fderiv ℝ φ (a + t • (b - a)) (b - a))
+      fun j ↦ (Real.norm_eq_abs _).trans_le (hcoord t ht j)
     have hscalar : |g' t| ≤ n * ‖fderiv ℝ φ (a + t • (b - a)) (b - a)‖ * D := by
-      simpa only [g', Fintype.card_fin, Real.norm_eq_abs] using hcoord_bound
+      simpa only [g', Fintype.card_fin, Real.norm_eq_abs, ContinuousLinearMap.coe_coe]
+        using hcoord_bound
     exact hscalar.trans
       (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hvnorm (Nat.cast_nonneg n)) hD)
   have hmain := norm_image_sub_le_of_norm_deriv_le_segment'

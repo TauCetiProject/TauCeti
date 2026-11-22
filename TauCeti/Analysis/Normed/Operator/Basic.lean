@@ -11,9 +11,6 @@ public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.NNNorm
-import Mathlib.LinearAlgebra.Pi
-import Mathlib.LinearAlgebra.StdBasis
-import Mathlib.LinearAlgebra.Transvection.Basic
 
 /-!
 # Basic facts about bounded operators
@@ -26,9 +23,10 @@ seminormed spaces. Every right scalar-multiplication map `toSpanSingleton R e` u
 scalar action of a seminormed ring (`ContinuousLinearMap.exists_norm_toSpanSingleton_apply_le`)
 admits a uniform linear norm bound.
 
-This file also records a shared uniform-bound lemma for continuous linear maps between seminormed
-spaces. It lets an evaluation `T i (g i)` pass to the limit when the operators `T i` are eventually
-uniformly bounded, their values at the limiting argument converge, and the arguments `g i` converge.
+This file also records a shared uniform-bound lemma for continuous semilinear maps between
+seminormed spaces, with respect to an isometric scalar homomorphism. It lets an evaluation
+`T i (g i)` pass to the limit when the operators `T i` are eventually uniformly bounded, their
+values at the limiting argument converge, and the arguments `g i` converge.
 In particular, it supplies the common continuity step for
 `StronglyContinuousSemigroup.tendsto_realOperator_apply` and
 `StronglyContinuousGroup.tendsto_apply`. It holds more generally for additive maps with a
@@ -76,12 +74,9 @@ function near that point only up to constant factors (`TauCeti.isTheta_clm_apply
 and a family continuous and invertible on a compact set does so uniformly there
 (`TauCeti.exists_norm_clm_apply_le_and_norm_le_of_isUnit`).
 
-The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous sesquilinear map along vectors of norm
-at most one, such as an orthonormal family, is bounded by `#s * ‖A‖`
-(`ContinuousLinearMap.norm_sum_apply_apply_le`). For a sequence `A` of continuous semilinear maps
-and a sequence `v` of vectors, the weighted norm of the finite Cauchy product
-`∑ k ∈ Finset.range (n + 1), A (n - k) (v k)` is bounded termwise by the Cauchy product of the
-weighted norms `‖A m‖ * r ^ m` and `‖v k‖ * r ^ k` for `0 ≤ r`
+For a sequence `A` of continuous semilinear maps and a sequence `v` of vectors, the weighted norm
+of the finite Cauchy product `∑ k ∈ Finset.range (n + 1), A (n - k) (v k)` is bounded termwise by
+the Cauchy product of the weighted norms `‖A m‖ * r ^ m` and `‖v k‖ * r ^ k` for `0 ≤ r`
 (`TauCeti.norm_sum_range_clm_apply_mul_pow_le`).
 
 Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `δ`-net of the unit sphere
@@ -95,17 +90,14 @@ normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squ
 
 Two first-order estimates for semilinear maps: an estimate `‖w - L (t v)‖ ≤ c ‖t v‖` with
 `t ≠ 0` and `‖t‖ ≤ ‖σ t‖` rescales to `‖(σ t)⁻¹ w - L v‖ ≤ c ‖v‖`
-(`ContinuousLinearMap.norm_inv_smul_sub_le`),
-and if `B` sends `y` to `v` and `u` is close to `y`, then any `B'` close to `B` sends `u` close
-to `v` (`ContinuousLinearMap.norm_sub_apply_le_of_apply_eq`).
+(`LinearMap.norm_inv_smul_sub_le`, which needs no continuity),
+and if `B` sends `y` to `v`, with `‖B‖ ≤ K`, and `u` is within `ε' ‖v‖` of `y`, where `0 ≤ ε'` and
+`K ε' ≤ 1 / 2`, then any `B'` close to `B` sends `u` close to `v`
+(`ContinuousLinearMap.norm_sub_apply_le_of_apply_eq`).
 
 If `a₀ ‖w‖² ≤ g w` and `‖S‖ ≤ m`, then `‖p‖² + ‖q‖² + ‖v‖²` is bounded by
 `(2 + 2 m²) / a₀ (g p + g (q - S v) + g v)`, comparing an energy density with a perturbed middle
 term to the squared norms (`TauCeti.norm_sq_add_norm_sq_add_norm_sq_le`).
-
-A continuous semilinear map of two variables satisfies a Young-type bound
-`‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for every `c > 0`
-(`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
 
 For a continuous linear map `c` valued in a normed algebra `𝕜'` over the scalars and a vector `f`
 of a normed `𝕜'`-space, the rank-one map `c.smulRight f : x ↦ c x • f` has norm at most `‖c‖ ‖f‖`
@@ -119,18 +111,6 @@ radius (`ContinuousLinearMap.image_ball_eq_ball`). On a function supported in `c
 scalar multiplication by the values of a continuous semilinear map `L` costs at most `t * ‖L‖`
 (`ContinuousLinearMap.norm_apply_smul_le_of_support_subset_closedBall`).
 
-On a finite product `ι → R`, a nonzero continuous linear map is nonzero at some coordinate vector
-(`ContinuousLinearMap.exists_apply_single_ne_zero`), and bounds at the coordinate vectors bound
-every value (`ContinuousLinearMap.norm_apply_le_card_mul_norm`). Replacing one coordinate by a
-functional is injective over a semiring with cancellative addition if its coefficient there is
-right-regular (`ContinuousLinearMap.pi_update_injective`), and a continuous linear equivalence over
-a ring if that coefficient is a unit `c` and right multiplication by `-c⁻¹` is continuous
-(`ContinuousLinearMap.exists_pi_update_equiv`).
-The coordinate arguments are adapted from
-[KLS](https://github.com/human-ai-mathematics/kls-lean), commit
-`65810c73f9dd7945fc646ab484cb19d673f5291d`,
-`formalization/FunctionalInequalities/Analysis/`, files `PiCoordinates.lean` and
-`Sard/CoordinateChange.lean`; the coordinate bound comes from `Sard/Disk.lean`.
 The identity operator `1` has operator norm at most one on every seminormed space
 (`ContinuousLinearMap.norm_one_le`).
 Bounded linear endomorphisms of a seminormed space act continuously on it
@@ -258,12 +238,6 @@ variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [Nontrivially
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
   {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ] {ι : Type*} {l : Filter ι} {T : ι → E →SL[σ] F}
 
-/-- The identity operator `1 : X →L[𝕜] X` has norm at most one, also on the trivial space, where
-Mathlib's `norm_one` does not apply. -/
-theorem norm_one_le : ‖(1 : X →L[𝕜] X)‖ ≤ 1 := by
-  rw [one_def]
-  exact norm_id_le
-
 /-- If `T i` is eventually uniformly bounded, `T i z` tends to `w`, and `g i` tends to `z`, then
 the moving evaluations `T i (g i)` tend to `w`. -/
 theorem tendsto_apply_of_eventually_norm_le {C : ℝ} {g : ι → E} {z : E} {w : F}
@@ -284,6 +258,12 @@ end SemilinearFamily
 variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
 variable [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
 variable [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+
+/-- The identity operator `1 : X →L[𝕜] X` has norm at most one, also on the trivial space, where
+Mathlib's `norm_one` does not apply. -/
+theorem norm_one_le : ‖(1 : X →L[𝕜] X)‖ ≤ 1 := by
+  rw [one_def]
+  exact norm_id_le
 
 /-- The a priori estimate attached to a left inverse modulo an error term: since
 `x = S (T x) - (S ∘ T - 1) x`, the norm of `x` is controlled by `‖T x‖` and the error
@@ -496,39 +476,6 @@ theorem exists_add_apply_eq_of_norm_lt_one [CompleteSpace E] (v : E) {A : E →L
 
 end Inverse
 
-section Semilinear₂
-
-variable {𝕜 𝕜₂ 𝕜₃ E F G : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
-  [NontriviallyNormedField 𝕜₃] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F] [SeminormedAddCommGroup G] [NormedSpace 𝕜₃ G]
-  {σ₁₃ : 𝕜 →+* 𝕜₃} [RingHomIsometric σ₁₃]
-
-/-- The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous sesquilinear map along vectors of
-norm at most one is bounded by `#s * ‖A‖`. Along an orthonormal basis this bounds the diagonal
-sum by the dimension times `‖A‖`. -/
-theorem norm_sum_apply_apply_le {τ : 𝕜 →+* 𝕜₃} [RingHomIsometric τ] {ι : Type*} (s : Finset ι)
-    (A : E →SL[σ₁₃] E →SL[τ] G) {v : ι → E} (hv : ∀ i ∈ s, ‖v i‖ ≤ 1) :
-    ‖∑ i ∈ s, A (v i) (v i)‖ ≤ s.card * ‖A‖ := by
-  refine (norm_sum_le _ _).trans <|
-    (Finset.sum_le_card_nsmul _ _ _ fun i hi ↦ ?_).trans_eq (nsmul_eq_mul _ _)
-  calc ‖A (v i) (v i)‖ ≤ ‖A‖ * ‖v i‖ * ‖v i‖ := A.le_opNorm₂ _ _
-    _ ≤ ‖A‖ * 1 * 1 := by gcongr <;> exact hv i hi
-    _ = ‖A‖ := by ring
-
-/-- A Young-type bound for a continuous semilinear map of two variables: for every `c > 0`,
-`‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)`. -/
-theorem norm_apply_apply_le_mul_add_sq {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₂₃]
-    (B : E →SL[σ₁₃] F →SL[σ₂₃] G) {c : ℝ} (hc : 0 < c) (u : E) (v : F) :
-    ‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2) := by
-  refine (B.le_opNorm₂ _ _).trans ?_
-  rw [mul_assoc]
-  gcongr
-  have h := two_mul_le_add_mul_sq (a := ‖u‖) (b := ‖v‖) (inv_pos.2 hc)
-  rw [inv_inv] at h
-  linarith
-
-end Semilinear₂
-
 section SmulRight
 
 variable {𝕜 𝕜' E F : Type*} [NontriviallyNormedField 𝕜] [NormedField 𝕜'] [NormedAlgebra 𝕜 𝕜']
@@ -644,113 +591,6 @@ theorem opNorm_le_sqrt_of_forall_sq_norm_le {𝕜₂ Z : Type*} [NontriviallyNor
     calc ‖T x‖ = Real.sqrt (‖T x‖ ^ 2) := (Real.sqrt_sq (norm_nonneg _)).symm
       _ ≤ Real.sqrt (c * ‖x‖ ^ 2) := Real.sqrt_le_sqrt (h x)
       _ = Real.sqrt c * ‖x‖ := by rw [Real.sqrt_mul' _ (sq_nonneg _), Real.sqrt_sq (norm_nonneg _)]
-
-section Coordinates
-
-variable {ι R : Type*} [DecidableEq ι]
-
-/-- A nonzero continuous linear map on a finite product `ι → R` is nonzero on some coordinate
-vector. -/
-theorem exists_apply_single_ne_zero [Finite ι] [Semiring R] [TopologicalSpace R] {M : Type*}
-    [AddCommMonoid M] [TopologicalSpace M] [Module R M] (α : (ι → R) →L[R] M) (hα : α ≠ 0) :
-    ∃ i : ι, α (Pi.single i 1) ≠ 0 := by
-  by_contra! h
-  exact hα <| coe_injective <| (Pi.basisFun R ι).ext fun i ↦ by simpa using h i
-
-/-- A bound `M` on the values of a continuous linear map at the coordinate vectors of a finite
-product `ι → R` bounds its value at every vector `v` by `#ι * ‖v‖ * M`, for the sup norm. -/
-theorem norm_apply_le_card_mul_norm [Fintype ι] [SeminormedRing R] {F : Type*}
-    [SeminormedAddCommGroup F] [Module R F] [IsBoundedSMul R F] (L : (ι → R) →L[R] F)
-    (v : ι → R) {M : ℝ} (h : ∀ j, ‖L (Pi.single j 1)‖ ≤ M) :
-    ‖L v‖ ≤ Fintype.card ι * ‖v‖ * M := by
-  -- Expand `v` in the coordinate basis.
-  have hv : L v = ∑ j, v j • L (Pi.single j 1) := by
-    conv_lhs => rw [← (Pi.basisFun R ι).sum_repr v]
-    simp
-  calc ‖L v‖ ≤ ∑ j, ‖v j‖ * ‖L (Pi.single j 1)‖ :=
-        hv ▸ norm_sum_le_of_le _ fun j _ ↦ norm_smul_le _ _
-    _ ≤ ∑ _j : ι, ‖v‖ * M := Finset.sum_le_sum fun j _ ↦
-        mul_le_mul (norm_le_pi_norm v j) (h j) (norm_nonneg _) (norm_nonneg _)
-    _ = Fintype.card ι * ‖v‖ * M := by simp [mul_assoc]
-
-/-- Updating the coordinate `i` of `x` to `t` changes the value of a linear functional by `t`
-times its coefficient at `i`. -/
-private theorem apply_update_eq_add_mul [Semiring R] [TopologicalSpace R] (α : (ι → R) →L[R] R)
-    (x : ι → R) (i : ι) (t : R) :
-    α (Function.update x i t) = α (Function.update x i 0) + t * α (Pi.single i 1) := by
-  rw [← smul_eq_mul, ← map_smul, ← map_add]
-  congr 1
-  ext m
-  rcases eq_or_ne m i with rfl | hm
-  · simp
-  · simp [hm]
-
-/-- Replacing one coordinate by a linear functional is injective when its coefficient at
-that coordinate is right-regular. -/
-theorem pi_update_injective [Semiring R] [IsLeftCancelAdd R] [TopologicalSpace R]
-    (α : (ι → R) →L[R] R) (i : ι) (hα : IsRightRegular (α (Pi.single i 1))) :
-    Function.Injective (pi fun m : ι ↦ if m = i then α else proj m) := by
-  intro v w h
-  have hoff (m : ι) (hm : m ≠ i) : v m = w m := by simpa [pi_apply, hm] using congrFun h m
-  -- Split off the coordinate `i`: the remaining parts of `v` and `w` agree.
-  have hsplit (x : ι → R) : α x = α (Function.update x i 0) + x i * α (Pi.single i 1) := by
-    rw [← apply_update_eq_add_mul, Function.update_eq_self]
-  have hrest : Function.update v i 0 = Function.update w i 0 := by
-    ext m
-    rcases eq_or_ne m i with rfl | hm
-    · simp
-    · simp [hm, hoff m hm]
-  have hi : v i = w i := hα <| add_left_cancel (a := α (Function.update v i 0)) <| by
-    rw [← hsplit, hrest, ← hsplit]
-    simpa [pi_apply] using congrFun h i
-  ext m
-  rcases eq_or_ne m i with rfl | hm
-  · exact hi
-  · exact hoff m hm
-
-/-- Replacing one coordinate by a functional whose coefficient `c` at that coordinate is a unit
-is a continuous linear equivalence, provided right multiplication by `-c⁻¹` is continuous on `R`.
-No other continuity on `R` is needed. -/
-theorem exists_pi_update_equiv [Ring R] [TopologicalSpace R]
-    (α : (ι → R) →L[R] R) (i : ι) (hα : IsUnit (α (Pi.single i 1)))
-    (hcont : Continuous fun x : R ↦ x * -↑hα.unit⁻¹) :
-    ∃ e : (ι → R) ≃L[R] (ι → R),
-      (e : (ι → R) →L[R] (ι → R)) = pi fun m : ι ↦ if m = i then α else proj m := by
-  set f : (ι → R) →L[R] (ι → R) := pi fun m : ι ↦ if m = i then α else proj m
-  -- The update is the dilatransvection `v ↦ v + (α v - v i) • Pi.single i 1`, whose
-  -- dilation factor `1 + (α - proj i) (Pi.single i 1)` is the coefficient of `α`.
-  have h : IsUnit (1 + ((α : (ι → R) →ₗ[R] R) - LinearMap.proj i : Module.Dual R (ι → R))
-      (Pi.single i 1)) := by
-    simpa using hα
-  set e := LinearEquiv.dilatransvection h
-  have he (v : ι → R) : e v = f v := by
-    ext m
-    rcases eq_or_ne m i with rfl | hm
-    · simp [e, f, LinearEquiv.dilatransvection.apply, pi_apply]
-    · simp [e, f, LinearEquiv.dilatransvection.apply, pi_apply, hm]
-  -- With `d` the inverse of the coefficient, the inverse map sets the coordinate `i` of `u` to
-  -- `(u i - α (update u i 0)) * d`. Written with `α` and right multiplication by `-d` only, it is
-  -- visibly continuous.
-  set d : R := ↑hα.unit⁻¹
-  have hd : d * α (Pi.single i 1) = 1 := hα.val_inv_mul
-  have hinv : Continuous fun u : ι → R ↦
-      Function.update u i (α (Function.update u i (u i * -d)) * -d) :=
-    continuous_id.update i <| hcont.comp <| α.continuous.comp <|
-      continuous_id.update i <| hcont.comp (continuous_apply i)
-  refine ⟨⟨e, f.continuous.congr fun v ↦ (he v).symm, hinv.congr fun u ↦ ?_⟩, ?_⟩
-  · refine (e.symm_apply_eq.2 ?_).symm
-    rw [he]
-    ext m
-    rcases eq_or_ne m i with rfl | hm
-    · simp only [f, pi_apply, ↓reduceIte]
-      rw [apply_update_eq_add_mul α u m (_ * -d), apply_update_eq_add_mul α u m (u m * -d)]
-      simp only [mul_assoc, neg_mul, mul_neg, hd, mul_one]
-      abel
-    · simp [f, pi_apply, hm]
-  · ext v : 1
-    exact he v
-
-end Coordinates
 
 end ContinuousLinearMap
 
@@ -874,7 +714,7 @@ end
 
 end TauCeti
 
-namespace ContinuousLinearMap
+namespace LinearMap
 
 section Rescale
 
@@ -883,9 +723,10 @@ variable {𝕜 𝕜₂ E F : Type*} [NormedDivisionRing 𝕜] [NormedDivisionRin
   [NormSMulClass 𝕜 E] [NormSMulClass 𝕜₂ F]
 
 /-- A first-order estimate at `t • v` rescales to one at `v`: if `w` is within `c ‖t • v‖` of
-`L (t • v)` with `t ≠ 0` and `‖t‖ ≤ ‖σ t‖`, then `(σ t)⁻¹ • w` is within `c ‖v‖` of `L v`. -/
+`L (t • v)` for a semilinear map `L`, with `t ≠ 0` and `‖t‖ ≤ ‖σ t‖`, then `(σ t)⁻¹ • w` is
+within `c ‖v‖` of `L v`. -/
 theorem norm_inv_smul_sub_le {t : 𝕜} (ht : t ≠ 0) (hσt : ‖t‖ ≤ ‖σ t‖) {w : F} {v : E}
-    {L : E →SL[σ] F} {c : ℝ} (h : ‖w - L (t • v)‖ ≤ c * ‖t • v‖) :
+    {L : E →ₛₗ[σ] F} {c : ℝ} (h : ‖w - L (t • v)‖ ≤ c * ‖t • v‖) :
     ‖(σ t)⁻¹ • w - L v‖ ≤ c * ‖v‖ := by
   have hσ : σ t ≠ 0 := (map_ne_zero σ).2 ht
   have : (σ t)⁻¹ • w - L v = (σ t)⁻¹ • (w - L (t • v)) := by
@@ -900,6 +741,10 @@ theorem norm_inv_smul_sub_le {t : 𝕜} (ht : t ≠ 0) (hσt : ‖t‖ ≤ ‖σ
     _ = c * ‖v‖ := one_mul _
 
 end Rescale
+
+end LinearMap
+
+namespace ContinuousLinearMap
 
 variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
 
@@ -930,7 +775,7 @@ variable {𝕜₁ 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜₁] [Nontri
   [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [NormedSpace 𝕜₁ E] [NormedSpace 𝕜₂ F]
   {σ : 𝕜₂ →+* 𝕜₁} [RingHomIsometric σ]
 
-/-- Let `B` send `y` to `v`, with `‖B‖ ≤ K`, let `u` be within `ε' ‖v‖` of `y` with
+/-- Let `B` send `y` to `v`, with `‖B‖ ≤ K`, let `u` be within `ε' ‖v‖` of `y`, where `0 ≤ ε'` and
 `K ε' ≤ 1 / 2`, and let `B'` be within `η` of `B`. Then `v` is within `(2 K² ε' + η) ‖u‖` of
 `B' u`. Typically `B` inverts an operator `T` on `v` and `y = T v`. -/
 theorem norm_sub_apply_le_of_apply_eq {B B' : F →SL[σ] E} {y u : F} {v : E}
