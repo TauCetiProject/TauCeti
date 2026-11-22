@@ -28,6 +28,10 @@ distances. The topology is the ordinary product topology on `E × ℝ`.
 * `TauCeti.ParabolicSpaceTime E`: space-time `E × ℝ` with the parabolic distance.
 * `TauCeti.ParabolicSpaceTime.ofCoords`, `space`, `time`: the coordinates of a point.
 * `TauCeti.ParabolicSpaceTime.dist_eq`: the parabolic distance formula.
+* `TauCeti.ParabolicSpaceTime.ball_ofCoords_subset_preimage_ball_inter_preimage_Ioo` and
+  `TauCeti.ParabolicSpaceTime.preimage_ball_inter_preimage_Ioo_subset_ball`: the parabolic ball of
+  radius `r` about `(x, t)` lies in the cylinder `B(x, r) × (t - r², t + r²)` and contains the
+  cylinder `B(x, r / 2) × (t - r² / 4, t + r² / 4)`.
 * `TauCeti.ParabolicSpaceTime.coordsHomeomorph`: the homeomorphism with ordinary `E × ℝ`.
 * `TauCeti.ParabolicSpaceTime.timeReverse`: the time reversal `(x, t) ↦ (x, T - t)`, an isometry.
 * `TauCeti.ParabolicSpaceTime.slab`: the closed time slab `E × [a, b]`.
@@ -306,6 +310,36 @@ distance. -/
 theorem dist_ofCoords_ofCoords_same_space (x : E) (t s : ℝ) :
     dist (ofCoords x t) (ofCoords x s) = √|t - s| := by
   simp [dist_ofCoords]
+
+/-- **A parabolic ball lies in a cylinder.** The parabolic ball of radius `r` about `(x, t)` lies
+in the cylinder `B(x, r) × (t - r², t + r²)`. -/
+theorem ball_ofCoords_subset_preimage_ball_inter_preimage_Ioo (x : E) (t r : ℝ) :
+    ball (ofCoords x t) r ⊆ space ⁻¹' ball x r ∩ time ⁻¹' Ioo (t - r ^ 2) (t + r ^ 2) := by
+  intro p hp
+  rw [mem_ball] at hp
+  have hsqrt : √|p.time - t| < r := by
+    simpa only [time_ofCoords] using (sqrt_abs_time_sub_le_dist p _).trans_lt hp
+  have habs := (Real.sqrt_lt' ((Real.sqrt_nonneg _).trans_lt hsqrt)).1 hsqrt
+  refine ⟨mem_ball.2 (by simpa only [space_ofCoords] using (dist_space_le p _).trans_lt hp), ?_⟩
+  rw [mem_preimage, mem_Ioo]
+  constructor <;> linarith [abs_lt.1 habs]
+
+/-- **A cylinder lies in a parabolic ball.** The parabolic ball of radius `r` about `(x, t)`
+contains the cylinder `B(x, r / 2) × (t - r² / 4, t + r² / 4)`. With
+`ball_ofCoords_subset_preimage_ball_inter_preimage_Ioo`, the
+parabolic balls are comparable to, but not equal to, these cylinders. -/
+theorem preimage_ball_inter_preimage_Ioo_subset_ball (x : E) (t r : ℝ) :
+    space ⁻¹' ball x (r / 2) ∩ time ⁻¹' Ioo (t - r ^ 2 / 4) (t + r ^ 2 / 4) ⊆
+      ball (ofCoords x t) r := by
+  rintro p ⟨hx, ht⟩
+  rw [mem_preimage, mem_ball] at hx
+  rw [mem_preimage, mem_Ioo] at ht
+  have hr : 0 < r / 2 := dist_nonneg.trans_lt hx
+  have hsq : (r / 2) ^ 2 = r ^ 2 / 4 := by ring
+  have hsqrt : √|p.time - t| < r / 2 :=
+    (Real.sqrt_lt' hr).2 (hsq ▸ abs_lt.2 ⟨by linarith, by linarith⟩)
+  rw [mem_ball, dist_eq, space_ofCoords, time_ofCoords]
+  linarith
 
 end PseudoMetricSpace
 

@@ -52,12 +52,12 @@ maps valued in an arbitrary module.
   anisotropy of the diagonal.
 * `LinearMap.BilinForm.inf_eq_bot_of_forall_apply_self_eq_zero`: a subspace on which the diagonal
   has no nonzero zeros meets every subspace of isotropic vectors trivially.
+* `IsSMulRegular.isSymm_smul_iff`: rescaling by a scalar acting injectively on `R`
+  preserves and reflects symmetry.
 * `LinearMap.BilinForm.exists_smul_eq_of_forall_dvd`: a form all of whose values are divisible
   by a regular element `a` is `a` times a form.
 * `LinearMap.BilinForm.IsRefl.compl₁₂`: pullback preserves reflexivity.
 * `LinearMap.BilinForm.IsSymm.compl₁₂`: pullback preserves symmetry.
-* `LinearMap.BilinForm.IsSymm.of_smul`: cancel a non-zero-divisor from a symmetric scalar
-  multiple of a bilinear form.
 * `LinearMap.BilinForm.IsSymm.apply_add_self`: polarization of a symmetric bilinear form.
 * `LinearMap.BilinForm.IsAlt.exists_sub_flip_eq`: on a free module every alternating form is
   `B - B.flip` for some form `B`, in every characteristic.
@@ -160,6 +160,16 @@ theorem forall_dvd_iff_of_smul_eq {R M : Type*} [CommSemiring R] [AddCommMonoid 
   subst B
   simp only [LinearMap.smul_apply, smul_eq_mul, mul_comm r a, ha.dvd_cancel_left]
 
+/-- Rescaling by a scalar `a` that acts injectively on `R`, such as a regular element of `R`,
+neither creates nor destroys symmetry of a bilinear form. -/
+@[simp]
+theorem _root_.IsSMulRegular.isSymm_smul_iff {α R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] [Monoid α] [DistribMulAction α R] [SMulCommClass R α R] {a : α}
+    (ha : IsSMulRegular R a)
+    {C : LinearMap.BilinForm R M} : (a • C).IsSymm ↔ C.IsSymm :=
+  ⟨fun hC ↦ ⟨fun x y ↦ ha (by simpa only [LinearMap.smul_apply] using hC.eq x y)⟩,
+    IsSymm.smul a⟩
+
 /-- If `a` is a regular element dividing every value of `B`, then `B` is `a` times a bilinear
 form. -/
 theorem exists_smul_eq_of_forall_dvd {R M : Type*} [CommSemiring R] [AddCommMonoid M]
@@ -204,12 +214,6 @@ theorem compl₁₂ {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R
     (hB : LinearMap.BilinForm.IsSymm B) (f : N →ₗ[R] M) :
     LinearMap.BilinForm.IsSymm (B.compl₁₂ f f) :=
   ⟨fun x y ↦ hB.eq (f x) (f y)⟩
-
-/-- A form `C` is symmetric when `a • C` is, for a non-zero-divisor `a`. -/
-theorem of_smul {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-    {a : R} (ha : a ∈ nonZeroDivisors R) {C : LinearMap.BilinForm R M}
-    (hC : (a • C).IsSymm) : C.IsSymm :=
-  ⟨fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp (by simpa using hC.eq x y)⟩
 
 /-- Polarization of a symmetric bilinear form over a commutative semiring. -/
 theorem apply_add_self {R M : Type*} [CommSemiring R] [AddCommMonoid M]

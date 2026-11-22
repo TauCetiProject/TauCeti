@@ -84,6 +84,8 @@ as well.
   the space (`HomotopyGroup.hurewiczIntHom_map`,
   `HomotopyGroup.singularHomologyMap_comp_hurewiczIntLinearMap`,
   `HomotopyGroup.hurewiczUliftIntHom_map`).
+* `HomotopyGroup.hurewiczModuleCatHom`: the integral Hurewicz homomorphism in degree `n + 2` as a
+  morphism of `ModuleCat ℤ`, natural in the space (`HomotopyGroup.hurewiczModuleCatHom_naturality`).
 
 ## References
 
@@ -756,6 +758,44 @@ theorem singularHomologyMap_comp_hurewiczIntLinearMap {X Y : Type} [TopologicalS
       (hurewiczIntLinearMap Y y n).comp
         (HomotopyGroup.mapHom (N := Fin (n + 2)) f hf).toAdditive.toIntLinearMap :=
   LinearMap.ext fun a ↦ (hurewiczIntHom_map f hf a.toMul).symm
+
+/-- **The integral Hurewicz homomorphism as a morphism of `ModuleCat ℤ`**,
+`πₙ₊₂(X, x) → Hₙ₊₂(X; ℤ)`, for the `ℤ`-module structure of the homology object. In this form one
+can say that the Hurewicz map is an isomorphism modulo a Serre class of `ℤ`-modules. -/
+def hurewiczModuleCatHom (X : Type) [TopologicalSpace X] (x : X) (n : ℕ) :
+    ModuleCat.of ℤ (Additive (HomotopyGroup (Fin (n + 2)) X x)) ⟶
+      ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).obj
+        (TopCat.of X) :=
+  -- `AddMonoidHom.toIntLinearMap` would use the `ℤ`-module structure of the underlying additive
+  -- group of the homology object rather than that of the object of `ModuleCat ℤ`.
+  ModuleCat.ofHom
+    { hurewiczIntHom X x (n + 1) with
+      map_smul' := map_intCast_smul (hurewiczIntHom X x (n + 1)) ℤ ℤ }
+
+@[simp]
+lemma hurewiczModuleCatHom_apply (X : Type) [TopologicalSpace X] (x : X) (n : ℕ)
+    (a : Additive (HomotopyGroup (Fin (n + 2)) X x)) :
+    (hurewiczModuleCatHom X x n).hom a = hurewiczIntHom X x (n + 1) a :=
+  (rfl)
+
+/-- **Naturality of the Hurewicz morphism**: for a based map `f : (X, x) → (Y, y)`, the square
+formed by `f_* : πₙ₊₂(X, x) → πₙ₊₂(Y, y)`, `f_* : Hₙ₊₂(X; ℤ) → Hₙ₊₂(Y; ℤ)` and the two Hurewicz
+morphisms commutes. -/
+@[reassoc]
+theorem hurewiczModuleCatHom_naturality {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y]
+    {x : X} {y : Y} (f : C(X, Y)) (hf : f x = y) (n : ℕ) :
+    ModuleCat.ofHom (mapHom (N := Fin (n + 2)) f hf).toAdditive.toIntLinearMap ≫
+        hurewiczModuleCatHom Y y n =
+      hurewiczModuleCatHom X x n ≫
+        ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).map
+          (TopCat.ofHom f) := by
+  ext a
+  simp only [ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, LinearMap.coe_comp,
+    AddMonoidHom.coe_toIntLinearMap, MonoidHom.coe_toAdditive, Function.comp_apply, mapHom_apply]
+  -- This is `hurewiczIntHom_map` up to `Additive.ofMul a.toMul = a` and `n + 1 + 1 = n + 2`,
+  -- both definitional; `rw [ofMul_toMul]` cannot see the first through the carrier of
+  -- `ModuleCat.of`.
+  exact hurewiczIntHom_map f hf a.toMul
 
 /-- **The integral Hurewicz homomorphism in an arbitrary universe** `w`,
 `πₙ₊₁(X, x) → Hₙ₊₁(X; ULift.{w} ℤ)`, `[p] ↦ p_*[Iⁿ⁺¹]`: the Hurewicz homomorphism

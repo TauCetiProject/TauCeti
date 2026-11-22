@@ -66,6 +66,8 @@ of the torsion submodules. A linear map into a torsion-free module vanishes on t
   `LinearMap.lsmul R M a`.
 * `Submodule.forall_pow_smul_mem_iff_forall_smul_mem`: saturation of a submodule with respect to a
   scalar is equivalent to saturation with respect to all powers of that scalar.
+* `Submodule.Quotient.mk_mem_torsionBy_iff`: the class of `x` in `M ⧸ P` is `a`-torsion if and
+  only if `a • x ∈ P`.
 * `Submodule.torsionBy_quotient_eq_bot_iff_forall_smul_mem`: the quotient `M ⧸ P` has no
   `a`-torsion if and only if `P` is `a`-saturated in `M`.
 * `Submodule.exists_smul_mem_of_forall_exists_smul_mem`: finitely many elements with nonzero
@@ -371,6 +373,13 @@ theorem forall_pow_smul_mem_iff_forall_smul_mem {S R M : Type*} [Monoid S] [Semi
     rw [pow_succ, mul_smul] at hx
     exact h x (ih (a • x) hx)
 
+/-- The class of `x` in `M ⧸ P` is `a`-torsion if and only if `a • x ∈ P`. -/
+theorem Quotient.mk_mem_torsionBy_iff {S R M : Type*} [CommSemiring S] [Ring R]
+    [AddCommGroup M] [Module R M] [SMul S R] [Module S M] [IsScalarTower S R M]
+    {P : Submodule R M} {a : S} {x : M} :
+    (Quotient.mk x : M ⧸ P) ∈ torsionBy S (M ⧸ P) a ↔ a • x ∈ P := by
+  rw [mem_torsionBy_iff, ← Quotient.mk_smul, Quotient.mk_eq_zero]
+
 /-- The quotient `M ⧸ P` has no `a`-torsion if and only if `P` is `a`-saturated in `M`. -/
 theorem torsionBy_quotient_eq_bot_iff_forall_smul_mem {S R M : Type*} [CommSemiring S] [Ring R]
     [AddCommGroup M] [Module R M] [SMul S R] [Module S M] [IsScalarTower S R M]
@@ -378,13 +387,9 @@ theorem torsionBy_quotient_eq_bot_iff_forall_smul_mem {S R M : Type*} [CommSemir
     torsionBy S (M ⧸ P) a = ⊥ ↔ ∀ x : M, a • x ∈ P → x ∈ P := by
   rw [eq_bot_iff]
   refine ⟨fun h x hx ↦ ?_, fun h q hq ↦ ?_⟩
-  · have hmk : Quotient.mk (p := P) x ∈ torsionBy S (M ⧸ P) a := by
-      rw [mem_torsionBy_iff, ← Quotient.mk_smul, Quotient.mk_eq_zero]
-      exact hx
-    exact (Quotient.mk_eq_zero P).mp (h hmk)
+  · exact (Quotient.mk_eq_zero P).mp (h (Quotient.mk_mem_torsionBy_iff.2 hx))
   · obtain ⟨x, rfl⟩ := Quotient.mk_surjective P q
-    rw [mem_torsionBy_iff, ← Quotient.mk_smul, Quotient.mk_eq_zero] at hq
-    exact (mem_bot _).mpr ((Quotient.mk_eq_zero P).mpr (h x hq))
+    exact (mem_bot _).mpr ((Quotient.mk_eq_zero P).mpr (h x (Quotient.mk_mem_torsionBy_iff.1 hq)))
 
 section
 

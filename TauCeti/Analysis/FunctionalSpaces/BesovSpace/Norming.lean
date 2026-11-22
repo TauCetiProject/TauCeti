@@ -26,10 +26,10 @@ bump function and on `s`, not on the exponents
 Proposition 2.76). In particular every continuous linear functional `Λ` on `B^s_{p,q}` is, on the
 Schwartz functions, the pairing with an element of `B^{-s}_{p',q'}` of norm at most `C ‖Λ‖`
 (`TauCeti.BesovSpace.exists_toDistr_apply_eq_and_norm_le`). Mathematically, this is the converse
-half of the duality `(B^s_{p,q})^* = B^{-s}_{p',q'}` for `1 < p < ∞` and `q < ∞`. The other
-ingredients, the bound of the pairing between `B^{-s}_{p',q'}` and `B^s_{p,q}` and the density of
-the Schwartz functions in `B^s_{p,q}`, are not proved here, so this file does not construct the
-identification itself. The case `p = 1` is not covered.
+half of the duality `(B^s_{p,q})^* = B^{-s}_{p',q'}` for `1 < p < ∞` and `q < ∞`. With the
+bound of the pairing between `B^{-s}_{p',q'}` and `B^s_{p,q}` and the density of the Schwartz
+functions in `B^s_{p,q}`, it gives the identification itself, `TauCeti.BesovSpace.strongDualEquiv`
+in `TauCeti.Analysis.FunctionalSpaces.BesovSpace.StrongDual`. The case `p = 1` is not covered.
 
 ## The argument
 
