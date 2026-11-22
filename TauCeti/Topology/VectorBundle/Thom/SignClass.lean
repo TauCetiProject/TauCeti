@@ -95,7 +95,7 @@ variable [Ring R] {k : Type*} [Ring k] [Linear k (ModuleCat.{w} R)]
 /-- **Classes of the Thom pair in the rank degree are determined on fibre classes.** Over a compact
 base, two classes of `Hʳ(E, E₀; π^*o(E), M)` with the same value on the fibre class over every
 point are equal: evaluation on homology is injective in the rank degree, and the fibre classes
-generate `Hᵣ(E, E₀; π^*o(E)) ≅ H₀(B; R)`. -/
+determine morphisms out of `Hᵣ(E, E₀; π^*o(E))` (`TauCeti.thomPairTwistedHomology_hom_ext`). -/
 theorem twistedCohomology_thomPair_ext {M : ModuleCat.{w} R}
     {u v : (thomPair F E).twistedCohomology (thomPairSignLocalSystem F E R hι) k M (finrank ℝ F)}
     (h : ∀ b : B,
@@ -103,17 +103,9 @@ theorem twistedCohomology_thomPair_ext {M : ModuleCat.{w} R}
           (thomPairSignFiberClass F E R hι ω b) =
         ((thomPair F E).twistedKronecker (thomPairSignLocalSystem F E R hι) k (finrank ℝ F) v).hom
           (thomPairSignFiberClass F E R hι ω b)) :
-    u = v := by
-  apply (twistedKronecker_bijective_thomPair F E (thomPairSignLocalSystem F E R hι) k M).injective
-  rw [← cancel_epi (thomPairTwistedHomologyFinrankIso F E R hι ω).inv]
-  refine singularHomology₀_hom_ext _ fun b ↦ ModuleCat.hom_ext <| LinearMap.ext_ring ?_
-  -- On the class of the point `b`, both sides evaluate on the fibre class over `b`.
-  have hb : (thomPairTwistedHomologyFinrankIso F E R hι ω).inv
-      (singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of B) b 1) =
-        thomPairSignFiberClass F E R hι ω b := by
-    rw [← thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass (E := E) (R := R) hι ω b,
-      Iso.hom_inv_id_apply]
-  simpa only [ModuleCat.hom_comp, LinearMap.comp_apply, hb] using h b
+    u = v :=
+  (twistedKronecker_bijective_thomPair F E (thomPairSignLocalSystem F E R hι) k M).injective
+    (thomPairTwistedHomology_hom_ext hι ω h)
 
 end Ext
 

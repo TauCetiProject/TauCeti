@@ -79,6 +79,8 @@ finite union of trivializing open sets
 * `TauCeti.thomPairTwistedHomologyFinrankIso`: `Hᵣ(E, E₀; π^*o(E)) ≅ H₀(B; R)` over a compact base.
 * `TauCeti.thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass`: it sends the fibre class
   over `b` to the class of `b`.
+* `TauCeti.thomPairTwistedHomology_hom_ext`: over a compact base, morphisms out of
+  `Hᵣ(E, E₀; π^*o(E))` are determined by their values on the fibre classes.
 
 ## References
 
@@ -825,6 +827,23 @@ theorem thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass [CompactSpa
     singularHomology₀Section_naturality]
   simp only [TopCat.isoOfHomeo_hom, TopCat.hom_ofHom, ContinuousMap.coe_ofClass,
     Homeomorph.Set.univ_apply]
+
+/-- **Morphisms out of `Hᵣ(E, E₀; π^*o(E))` are determined by the fibre classes.** Over a compact
+base, two morphisms to a module `M` that agree on the fibre class over every point are equal. -/
+theorem thomPairTwistedHomology_hom_ext [CompactSpace B] {M : ModuleCat.{w} R}
+    {f g : (thomPair F E).twistedHomology (thomPairSignLocalSystem F E R hι) (finrank ℝ F) ⟶ M}
+    (h : ∀ b, f.hom (thomPairSignFiberClass F E R hι ω b) =
+      g.hom (thomPairSignFiberClass F E R hι ω b)) :
+    f = g := by
+  rw [← cancel_epi (thomPairTwistedHomologyFinrankIso F E R hι ω).inv]
+  refine singularHomology₀_hom_ext _ fun b ↦ ModuleCat.hom_ext <| LinearMap.ext_ring ?_
+  -- On the class of the point `b`, both sides evaluate on the fibre class over `b`.
+  have hb : (thomPairTwistedHomologyFinrankIso F E R hι ω).inv
+      (singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of B) b 1) =
+        thomPairSignFiberClass F E R hι ω b := by
+    rw [← thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass (E := E) (R := R) hι ω b,
+      Iso.hom_inv_id_apply]
+  simpa only [ModuleCat.hom_comp, LinearMap.comp_apply, hb] using h b
 
 end FiberClass
 
