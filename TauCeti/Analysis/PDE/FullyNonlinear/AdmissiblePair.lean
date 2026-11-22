@@ -13,8 +13,11 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Analysis.Calculus.EulerHomogeneous
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 import TauCeti.Analysis.Convex.Strong
 import TauCeti.Analysis.MeanInequalities
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
 # Admissible cones and admissible pairs
@@ -41,7 +44,7 @@ This file proves the basic theory: an admissible pair is positive on `Γ_n`, by 
 `∑_j μ_j ∂_j f(μ) = f(μ)`; admissible pairs and their structural constants restrict to smaller
 admissible cones; and positive combinations `a f₁ + b f₂` on `Γ₁ ∩ Γ₂` are admissible pairs, with
 structural constant `(a c₁ + b c₂)ⁿ` when `f₁` and `f₂` have constants `c₁ⁿ` and `c₂ⁿ`, by the
-superadditivity of the geometric mean (`Real.prod_rpow_add_prod_rpow_le_prod_add_rpow`). The
+superadditivity of the geometric mean (`Real.prod_rpow_inv_card_add_le`). The
 structural constant of a concave pair can be read off from a lower bound on `Γ_n`: if
 `f(μ) ≥ n c (∏_i μ_i)^{1/n}` there, the pair has structural constant `cⁿ`
 (`TauCeti.IsAdmissiblePair.hasStructuralConstant_pow_of_concaveOn`). The proof evaluates the
@@ -56,9 +59,9 @@ tangent inequality `f(ν) ≤ ∑_j ν_j ∂_j f(μ)` of a concave homogeneous f
 
 ## Main results
 
-* `TauCeti.IsAdmissibleCone.inter`, `TauCeti.isAdmissibleCone_setOf_sum_pos`,
-  `TauCeti.isAdmissibleCone_setOf_forall_pos`: intersections of admissible cones, `Γ_1` and `Γ_n`
-  are admissible.
+* `TauCeti.IsAdmissibleCone.inter`, `TauCeti.IsAdmissibleCone.iInter`,
+  `TauCeti.isAdmissibleCone_setOf_sum_pos`, `TauCeti.isAdmissibleCone_setOf_forall_pos`: finite
+  intersections of admissible cones, `Γ_1` and `Γ_n` are admissible.
 * `TauCeti.IsAdmissiblePair.sum_mul_fderiv_single`: Euler's identity.
 * `TauCeti.IsAdmissiblePair.pos_of_forall_pos`: an admissible pair is positive on `Γ_n`.
 * `TauCeti.IsAdmissiblePair.const_smul`, `TauCeti.IsAdmissiblePair.add`, and the corresponding
@@ -74,8 +77,9 @@ tangent inequality `f(ν) ≤ ∑_j ν_j ∂_j f(μ)` of a concave homogeneous f
 
 * B. Guo, D. H. Phong and F. Tong, *On L∞ estimates for complex Monge–Ampère equations*,
   Ann. of Math. 198 (2023), §1 and Lemma 4.
-* B. Guo and D. H. Phong, *On the lower bound of the Green's function and applications*,
-  (2024), conditions (1)–(3) and (1.2).
+* B. Guo and D. H. Phong, *On L∞ estimates for fully nonlinear partial differential equations*,
+  Ann. of Math. 200 (2024), arXiv:2204.12549, (1.2) for the structural condition and the remark
+  on positive combinations.
 * G. Székelyhidi, *Fully non-linear elliptic equations on compact Hermitian manifolds*,
   J. Differential Geom. 109 (2018), §2.
 -/
@@ -128,6 +132,15 @@ theorem inter (hΓ : IsAdmissibleCone Γ) (hΓ' : IsAdmissibleCone Γ') :
   mem_of_forall_pos hμ := ⟨hΓ.mem_of_forall_pos hμ, hΓ'.mem_of_forall_pos hμ⟩
   sum_pos hμ := hΓ.sum_pos hμ.1
 
+/-- The intersection of a finite nonempty family of admissible cones is an admissible cone. -/
+theorem iInter {κ : Type*} [Finite κ] [Nonempty κ] {Γ : κ → Set (ι → ℝ)}
+    (hΓ : ∀ k, IsAdmissibleCone (Γ k)) : IsAdmissibleCone (⋂ k, Γ k) where
+  isOpen := isOpen_iInter_of_finite fun k ↦ (hΓ k).isOpen
+  comp_perm_mem σ _ hμ := Set.mem_iInter.2 fun k ↦ (hΓ k).comp_perm_mem σ (Set.mem_iInter.1 hμ k)
+  smul_mem ht _ hμ := Set.mem_iInter.2 fun k ↦ (hΓ k).smul_mem ht (Set.mem_iInter.1 hμ k)
+  mem_of_forall_pos hμ := Set.mem_iInter.2 fun k ↦ (hΓ k).mem_of_forall_pos hμ
+  sum_pos hμ := (hΓ (Classical.arbitrary κ)).sum_pos (Set.mem_iInter.1 hμ _)
+
 end IsAdmissibleCone
 
 /-- The half-space `Γ_1 = {μ | 0 < ∑ i, μ i}` is an admissible cone, the largest one. -/
@@ -170,16 +183,6 @@ is at least `γ` on `Γ`. -/
 structure HasStructuralConstant (Γ : Set (ι → ℝ)) (f : (ι → ℝ) → ℝ) (γ : ℝ) : Prop where
   le_prod_fderiv_single {μ : ι → ℝ} : μ ∈ Γ → γ ≤ ∏ j, fderiv ℝ f μ (Pi.single j 1)
 
-/-- `LinearMap.pi_apply_eq_sum_univ` for a continuous linear functional, with the standard basis
-written as `Pi.single j 1`. -/
-private theorem apply_eq_sum_mul_single (L : (ι → ℝ) →L[ℝ] ℝ) (ν : ι → ℝ) :
-    L ν = ∑ j, ν j * L (Pi.single j 1) := by
-  have hsingle (j : ι) : (fun k ↦ if j = k then (1 : ℝ) else 0) = Pi.single j 1 := by
-    ext k
-    simp [Pi.single_apply, eq_comm]
-  simpa only [hsingle, smul_eq_mul, ContinuousLinearMap.coe_coe] using
-    L.toLinearMap.pi_apply_eq_sum_univ ν
-
 namespace IsAdmissiblePair
 
 variable {Γ Γ' Γ₁ Γ₂ : Set (ι → ℝ)} {f f₁ f₂ : (ι → ℝ) → ℝ} {μ : ι → ℝ}
@@ -195,14 +198,15 @@ theorem eventually_apply_smul (h : IsAdmissiblePair Γ f) (hμ : μ ∈ Γ) :
   filter_upwards [lt_mem_nhds one_pos] with t ht using h.apply_smul ht hμ
 
 /-- **Euler's identity** for an admissible pair: `Df(μ) μ = f(μ)` on `Γ`. -/
-theorem fderiv_apply_self (h : IsAdmissiblePair Γ f) (hμ : μ ∈ Γ) : fderiv ℝ f μ μ = f μ := by
-  simpa using (h.differentiableAt hμ).hasFDerivAt.apply_self_eq_smul_of_eventuallyEq
-    (hasDerivAt_id (1 : ℝ)) (h.eventually_apply_smul hμ)
+theorem fderiv_apply_self (h : IsAdmissiblePair Γ f) (hμ : μ ∈ Γ) : fderiv ℝ f μ μ = f μ :=
+  (h.differentiableAt hμ).hasFDerivAt.apply_self_eq_of_eventually_homogeneous
+    (h.eventually_apply_smul hμ)
 
 /-- **Euler's identity** for an admissible pair: `∑_j μ_j ∂_j f(μ) = f(μ)` on `Γ`. -/
 theorem sum_mul_fderiv_single (h : IsAdmissiblePair Γ f) (hμ : μ ∈ Γ) :
     ∑ j, μ j * fderiv ℝ f μ (Pi.single j 1) = f μ := by
-  rw [← apply_eq_sum_mul_single, h.fderiv_apply_self hμ]
+  simp only [← smul_eq_mul, ← ContinuousLinearMap.apply_eq_sum_smul_single,
+    h.fderiv_apply_self hμ]
 
 /-- An admissible pair is positive on the positive orthant `Γ_n`. -/
 theorem pos_of_forall_pos (h : IsAdmissiblePair Γ f) (hμ : ∀ i, 0 < μ i) : 0 < f μ := by
@@ -275,8 +279,9 @@ theorem hasStructuralConstant_pow_of_concaveOn (h : IsAdmissiblePair Γ f)
     have := hf.le_apply_of_hasFDerivAt_of_homogeneous hμ
       (h.isAdmissibleCone.mem_of_forall_pos hν) (h.differentiableAt hμ).hasFDerivAt
       (h.eventually_apply_smul hμ)
-    rwa [apply_eq_sum_mul_single, sum_congr rfl fun j _ ↦ inv_mul_cancel₀ (ha j).ne',
-      sum_const, card_univ, nsmul_eq_mul, mul_one] at this
+    rwa [ContinuousLinearMap.apply_eq_sum_smul_single, sum_congr rfl fun j _ ↦
+      (smul_eq_mul _ _).trans (inv_mul_cancel₀ (ha j).ne'), sum_const, card_univ, nsmul_eq_mul,
+      mul_one] at this
   -- With `G = (∏_j a_j)^{1/n}`, the lower bound at `ν` reads `n c / G ≤ f ν`.
   set G := (∏ j, a j) ^ (n : ℝ)⁻¹
   have hG : 0 < G := Real.rpow_pos_of_pos hP _
@@ -300,6 +305,11 @@ theorem mono (h : HasStructuralConstant Γ f γ) (hsub : Γ' ⊆ Γ) :
     HasStructuralConstant Γ' f γ :=
   ⟨fun hμ ↦ h.le_prod_fderiv_single (hsub hμ)⟩
 
+/-- Any constant below a structural constant is a structural constant. -/
+theorem of_le {γ' : ℝ} (h : HasStructuralConstant Γ f γ) (hγ : γ' ≤ γ) :
+    HasStructuralConstant Γ f γ' :=
+  ⟨fun hμ ↦ hγ.trans (h.le_prod_fderiv_single hμ)⟩
+
 /-- If `f` has structural constant `γ`, then `c • f` has structural constant `cⁿ γ` for `c ≥ 0`,
 where `n = card ι`. -/
 theorem const_smul (h : HasStructuralConstant Γ f γ) {c : ℝ} (hc : 0 ≤ c) :
@@ -320,25 +330,19 @@ theorem add (hs₁ : HasStructuralConstant Γ₁ f₁ (c₁ ^ Fintype.card ι))
   have := h₁.isAdmissibleCone.nonempty
   set n := Fintype.card ι
   have hn' : n ≠ 0 := Fintype.card_ne_zero
-  have hn : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn'
   set a : ι → ℝ := fun j ↦ fderiv ℝ f₁ μ (Pi.single j 1)
   set b : ι → ℝ := fun j ↦ fderiv ℝ f₂ μ (Pi.single j 1)
   have ha (j : ι) : 0 ≤ a j := (h₁.fderiv_single_pos hμ.1 j).le
   have hb (j : ι) : 0 ≤ b j := (h₂.fderiv_single_pos hμ.2 j).le
   -- The `n`-th root of a structural constant `cⁿ ≤ ∏_j a_j` is a lower bound for the geometric
   -- mean of the `a_j`.
-  have hroot {c : ℝ} {a : ι → ℝ} (hc : 0 ≤ c) (ha : ∀ j, 0 ≤ a j) (hle : c ^ n ≤ ∏ j, a j) :
-      c ≤ ∏ j, a j ^ (n : ℝ)⁻¹ := by
-    rw [Real.finsetProd_rpow _ _ fun j _ ↦ ha j, ← Real.pow_rpow_inv_natCast hc hn']
+  have hroot {c : ℝ} {a : ι → ℝ} (hc : 0 ≤ c) (hle : c ^ n ≤ ∏ j, a j) :
+      c ≤ (∏ j, a j) ^ (n : ℝ)⁻¹ := by
+    rw [← Real.pow_rpow_inv_natCast hc hn']
     exact Real.rpow_le_rpow (pow_nonneg hc n) hle (inv_nonneg.2 (Nat.cast_nonneg n))
-  have hsuper := Real.prod_rpow_add_prod_rpow_le_prod_add_rpow univ (w := fun _ ↦ (n : ℝ)⁻¹)
-    (fun _ _ ↦ inv_nonneg.2 (Nat.cast_nonneg n))
-    (by rw [sum_const, card_univ, nsmul_eq_mul, mul_inv_cancel₀ hn]) (fun j _ ↦ ha j)
-    (fun j _ ↦ hb j)
-  have hsum : c₁ + c₂ ≤ (∏ j, (a j + b j)) ^ (n : ℝ)⁻¹ := by
-    rw [← Real.finsetProd_rpow _ _ fun j _ ↦ add_nonneg (ha j) (hb j)]
-    exact (add_le_add (hroot hc₁ ha (hs₁.le_prod_fderiv_single hμ.1))
-      (hroot hc₂ hb (hs₂.le_prod_fderiv_single hμ.2))).trans hsuper
+  have hsum : c₁ + c₂ ≤ (∏ j, (a j + b j)) ^ (n : ℝ)⁻¹ :=
+    (add_le_add (hroot hc₁ (hs₁.le_prod_fderiv_single hμ.1))
+      (hroot hc₂ (hs₂.le_prod_fderiv_single hμ.2))).trans (Real.prod_rpow_inv_card_add_le ha hb)
   simp only [h₁.fderiv_add_apply h₂ hμ]
   calc (c₁ + c₂) ^ n ≤ ((∏ j, (a j + b j)) ^ (n : ℝ)⁻¹) ^ n :=
         pow_le_pow_left₀ (add_nonneg hc₁ hc₂) hsum n
@@ -349,12 +353,6 @@ end HasStructuralConstant
 
 /-! ### The Laplace pair -/
 
-/-- The partial derivatives of `σ_1` are all `1`. -/
-private theorem fderiv_sum_apply_single (μ : ι → ℝ) (j : ι) :
-    fderiv ℝ (fun ν : ι → ℝ ↦ ∑ i, ν i) μ (Pi.single j 1) = 1 := by
-  rw [(HasFDerivAt.fun_sum fun i _ ↦ hasFDerivAt_apply i μ).fderiv]
-  simp [Pi.single_apply]
-
 /-- **The Laplace pair** `(σ_1, Γ_1)` is an admissible pair. -/
 theorem isAdmissiblePair_sum [Nonempty ι] :
     IsAdmissiblePair {μ : ι → ℝ | 0 < ∑ i, μ i} fun μ ↦ ∑ i, μ i where
@@ -362,12 +360,12 @@ theorem isAdmissiblePair_sum [Nonempty ι] :
   contDiffOn := (by fun_prop : ContDiff ℝ 1 fun μ : ι → ℝ ↦ ∑ i, μ i).contDiffOn
   apply_comp_perm σ μ _ := Equiv.sum_comp σ μ
   apply_smul _ _ _ := by simp [← mul_sum]
-  fderiv_single_pos _ j := by rw [fderiv_sum_apply_single]; exact one_pos
+  fderiv_single_pos _ j := by simp
 
 /-- The partial derivatives of `σ_1` are all `1`, so its structural constant is `1`. -/
 theorem hasStructuralConstant_sum (Γ : Set (ι → ℝ)) :
     HasStructuralConstant Γ (fun μ ↦ ∑ i, μ i) 1 :=
-  ⟨fun _ ↦ by simp [fderiv_sum_apply_single]⟩
+  ⟨fun _ ↦ by simp⟩
 
 /-! ### The Monge–Ampère pair -/
 
@@ -383,11 +381,8 @@ theorem isAdmissiblePair_prod_rpow [Nonempty ι] :
   fderiv_single_pos {μ} hμ j := by
     have hP : 0 < ∏ i, μ i := prod_pos fun i _ ↦ hμ i
     rw [((hasFDerivAt_finsetProd (u := univ) (x := μ)).rpow_const (Or.inl hP.ne')).fderiv]
-    simp only [FunLike.coe_smul, FunLike.coe_sum, Pi.smul_apply,
-      Finset.sum_apply, ContinuousLinearMap.proj_apply, Pi.single_apply, smul_eq_mul, mul_ite,
-      mul_one, mul_zero, sum_ite_eq', mem_univ, ite_true]
-    exact mul_pos (mul_pos (inv_pos.2 (Nat.cast_pos.2 Fintype.card_pos))
-      (Real.rpow_pos_of_pos hP _)) (prod_pos fun i _ ↦ hμ i)
+    simpa [Pi.single_apply] using mul_pos (mul_pos (inv_pos.2 (Nat.cast_pos.2 Fintype.card_pos))
+      (Real.rpow_pos_of_pos hP _)) (prod_pos fun i (_ : i ∈ univ.erase j) ↦ hμ i)
 
 /-- The Monge–Ampère pair satisfies the structural condition with constant `n⁻ⁿ`, where
 `n = card ι`. -/
@@ -398,10 +393,11 @@ theorem hasStructuralConstant_prod_rpow :
   rcases isEmpty_or_nonempty ι with hι | hι
   · exact ⟨fun _ ↦ by simp⟩
   have hn : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
+  have hconv : Convex ℝ {μ : ι → ℝ | ∀ i, 0 < μ i} := by
+    simpa [Set.pi] using convex_pi (s := Set.univ) fun i _ ↦ convex_Ioi (0 : ℝ)
   refine isAdmissiblePair_prod_rpow.hasStructuralConstant_pow_of_concaveOn
-    (Real.concaveOn_prod_rpow.subset (fun μ hμ i ↦ (hμ i).le)
-      fun μ hμ ν hν a b ha hb hab i ↦ ?_) (inv_nonneg.2 (Nat.cast_nonneg _)) fun μ _ ↦ ?_
-  · simpa using convex_Ioi (0 : ℝ) (hμ i) (hν i) ha hb hab
-  · rw [mul_inv_cancel₀ hn, one_mul]
+    (Real.concaveOn_prod_rpow.subset (fun μ hμ i ↦ (hμ i).le) hconv)
+    (inv_nonneg.2 (Nat.cast_nonneg _)) fun μ _ ↦ ?_
+  rw [mul_inv_cancel₀ hn, one_mul]
 
 end TauCeti

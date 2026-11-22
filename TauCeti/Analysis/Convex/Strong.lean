@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Convex.Strong
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Convex.Deriv
+import TauCeti.Analysis.Calculus.EulerHomogeneous
 import TauCeti.Analysis.Calculus.Taylor.Integral
 import TauCeti.Analysis.Calculus.SecondDerivative
 
@@ -137,10 +138,7 @@ theorem ConcaveOn.le_apply_of_hasFDerivAt_of_homogeneous (hf : ConcaveOn ℝ s f
     (hy : y ∈ s) (hd : HasFDerivAt f f' x) (hhom : ∀ᶠ t in 𝓝 (1 : ℝ), f (t • x) = t * f x) :
     f y ≤ f' y := by
   have hsupp := hf.le_add_of_hasFDerivWithinAt hx hy hd.hasFDerivWithinAt
-  -- Euler's identity `f' x = f x` along the ray through `x`.
-  have heuler : f' x = f x := by
-    simpa using hd.apply_self_eq_smul_of_eventuallyEq (hasDerivAt_id (1 : ℝ)) hhom
-  rw [map_sub] at hsupp
+  rw [map_sub, hd.apply_self_eq_of_eventually_homogeneous hhom] at hsupp
   linarith
 
 /-- Uniform concavity depends only on the values of the function on its domain. -/

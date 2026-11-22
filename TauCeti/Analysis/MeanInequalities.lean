@@ -57,6 +57,7 @@ of a higher-order Sobolev space.
 ## Main statements
 
 * `Real.prod_rpow_add_prod_rpow_le_prod_add_rpow`: the weighted geometric mean is superadditive.
+* `Real.prod_rpow_inv_card_add_le`: the same at equal weights `1 / n`.
 * `Real.concaveOn_prod_rpow`: the geometric mean is concave on the nonnegative orthant.
 * `Real.sq_add_sq_le_rpow_mul_rpow`: two interpolation bounds combine into one for the Euclidean
   norms of the pairs.
@@ -133,27 +134,31 @@ theorem prod_mul_rpow_inv_card {ι : Type*} [Fintype ι] [Nonempty ι] {t : ℝ}
     mul_rpow (pow_nonneg ht _) (Finset.prod_nonneg fun i _ ↦ hμ i),
     pow_rpow_inv_natCast ht Fintype.card_ne_zero]
 
+/-- **Superadditivity of the geometric mean.** For nonnegative families `a` and `b` indexed by a
+nonempty finite type, `(∏ i, a i) ^ (1 / n) + (∏ i, b i) ^ (1 / n) ≤ (∏ i, (a i + b i)) ^ (1 / n)`,
+where `n = card ι`. This is `Real.prod_rpow_add_prod_rpow_le_prod_add_rpow` at equal weights. -/
+theorem prod_rpow_inv_card_add_le {ι : Type*} [Fintype ι] [Nonempty ι] {a b : ι → ℝ}
+    (ha : ∀ i, 0 ≤ a i) (hb : ∀ i, 0 ≤ b i) :
+    (∏ i, a i) ^ (Fintype.card ι : ℝ)⁻¹ + (∏ i, b i) ^ (Fintype.card ι : ℝ)⁻¹ ≤
+      (∏ i, (a i + b i)) ^ (Fintype.card ι : ℝ)⁻¹ := by
+  rw [← finsetProd_rpow _ _ fun i _ ↦ ha i, ← finsetProd_rpow _ _ fun i _ ↦ hb i,
+    ← finsetProd_rpow _ _ fun i _ ↦ add_nonneg (ha i) (hb i)]
+  exact prod_rpow_add_prod_rpow_le_prod_add_rpow Finset.univ
+    (fun _ _ ↦ inv_nonneg.2 (Nat.cast_nonneg _))
+    (by simp [Finset.card_univ, Fintype.card_ne_zero]) (fun i _ ↦ ha i) fun i _ ↦ hb i
+
 /-- **Concavity of the geometric mean.** The geometric mean `μ ↦ (∏ i, μ i) ^ (1 / n)`,
 `n = card ι`, is concave on the nonnegative orthant. -/
 theorem concaveOn_prod_rpow {ι : Type*} [Fintype ι] :
     ConcaveOn ℝ {μ : ι → ℝ | ∀ i, 0 ≤ μ i}
       fun μ ↦ (∏ i, μ i) ^ (Fintype.card ι : ℝ)⁻¹ := by
-  have hconv : Convex ℝ {μ : ι → ℝ | ∀ i, 0 ≤ μ i} := fun μ hμ ν hν a b ha hb hab i ↦ by
-    simpa using convex_Ici (0 : ℝ) (hμ i) (hν i) ha hb hab
   rcases isEmpty_or_nonempty ι with hι | hι
-  · simpa using concaveOn_const (1 : ℝ) hconv
-  refine ⟨hconv, fun μ hμ ν hν a b ha hb _ ↦ ?_⟩
-  have hn : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
-  -- Superadditivity at equal weights `1 / n`, applied to `a • μ` and `b • ν`.
-  have hsuper := prod_rpow_add_prod_rpow_le_prod_add_rpow Finset.univ
-    (w := fun _ ↦ (Fintype.card ι : ℝ)⁻¹) (a := fun i ↦ a * μ i) (b := fun i ↦ b * ν i)
-    (fun _ _ ↦ inv_nonneg.2 (Nat.cast_nonneg _))
-    (by rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_inv_cancel₀ hn])
-    (fun i _ ↦ mul_nonneg ha (hμ i)) (fun i _ ↦ mul_nonneg hb (hν i))
-  simp only [finsetProd_rpow _ _ (fun i _ ↦ mul_nonneg ha (hμ i)),
-    finsetProd_rpow _ _ (fun i _ ↦ mul_nonneg hb (hν i)),
-    finsetProd_rpow _ _ (fun i _ ↦ add_nonneg (mul_nonneg ha (hμ i)) (mul_nonneg hb (hν i))),
-    prod_mul_rpow_inv_card ha hμ, prod_mul_rpow_inv_card hb hν] at hsuper
+  · simpa using concaveOn_const (1 : ℝ) (convex_Ici (0 : ι → ℝ))
+  refine ⟨convex_Ici (0 : ι → ℝ), fun μ hμ ν hν a b ha hb _ ↦ ?_⟩
+  -- Superadditivity applied to `a • μ` and `b • ν`.
+  have hsuper := prod_rpow_inv_card_add_le (fun i ↦ mul_nonneg ha (hμ i))
+    (fun i ↦ mul_nonneg hb (hν i))
+  rw [prod_mul_rpow_inv_card ha hμ, prod_mul_rpow_inv_card hb hν] at hsuper
   simpa using hsuper
 
 /-- Two interpolation bounds `a ≤ a₀ ^ (1 - θ) a₁ ^ θ` and `b ≤ b₀ ^ (1 - θ) b₁ ^ θ` combine into

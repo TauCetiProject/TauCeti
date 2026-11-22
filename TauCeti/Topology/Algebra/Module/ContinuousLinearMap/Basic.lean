@@ -21,7 +21,7 @@ Precomposing with a continuous linear equivalence does not change whether a cont
 vanishes.
 
 A continuous linear map out of `κ → R`, with `κ` finite, is determined by its values on the
-coordinate vectors `Pi.single k 1`.
+coordinate vectors `Pi.single k 1`, and expands as `f x = ∑ k, x k • f (Pi.single k 1)`.
 
 A semilinear family `μ : M₁ →ₛₗ[σ₁₃] M₂ →SL[σ₂₃] M₃` of continuous semilinear maps becomes a
 family of semilinear maps after composing with the coercion `ContinuousLinearMap.coeLMₛₗ`, and
@@ -37,6 +37,8 @@ then Mathlib's algebraic flip `LinearMap.flip` applies to it.
   exactly when it is nonzero.
 * `ContinuousLinearMap.pi_ext_single_one`: a continuous linear map out of `κ → R`, `κ` finite, is
   determined by its values on the coordinate vectors.
+* `ContinuousLinearMap.apply_eq_sum_smul_single`: the expansion
+  `f x = ∑ k, x k • f (Pi.single k 1)` of such a map in the coordinate vectors.
 * `LinearMap.flip_coeLMₛₗ_comp_apply`: evaluation of the algebraic flip of such a family `μ`,
   `((ContinuousLinearMap.coeLMₛₗ σ₂₃).comp μ).flip y x = μ x y`.
 -/
@@ -83,6 +85,14 @@ theorem pi_ext_single_one {R M κ : Type*} [Semiring R] [TopologicalSpace R] [To
     [AddCommMonoid M] [Module R M] [Finite κ] [DecidableEq κ] {f g : (κ → R) →L[R] M}
     (h : ∀ k, f (Pi.single k 1) = g (Pi.single k 1)) : f = g :=
   coe_injective <| LinearMap.pi_ext' fun k ↦ LinearMap.ext_ring <| h k
+
+/-- A continuous linear map out of `κ → R`, with `κ` finite, expanded in the coordinate vectors:
+`f x = ∑ k, x k • f (Pi.single k 1)`. -/
+theorem apply_eq_sum_smul_single {R M κ : Type*} [Semiring R] [TopologicalSpace R]
+    [TopologicalSpace M] [AddCommMonoid M] [Module R M] [Fintype κ] [DecidableEq κ]
+    (f : (κ → R) →L[R] M) (x : κ → R) : f x = ∑ k, x k • f (Pi.single k 1) := by
+  conv_lhs => rw [pi_eq_sum_univ' x]
+  simp [map_sum]
 
 end ContinuousLinearMap
 

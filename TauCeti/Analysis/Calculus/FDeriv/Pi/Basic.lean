@@ -33,6 +33,7 @@ the `i`-th variable the separated product with the `i`-th factor replaced by its
 * `TauCeti.fderiv_sum_comp_eval_eventuallyEq`: the same formula for the derivative near a point at
   which the summands are continuously differentiable.
 * `TauCeti.fderiv_sum_comp_eval_eq_zero_iff`: the critical points of a separated sum.
+* `TauCeti.fderiv_sum_apply_single`: the partial derivatives of the coordinate sum are all `1`.
 * `TauCeti.hasFDerivAt_prod_comp_eval`, `TauCeti.fderiv_prod_comp_eval_apply_single`: the derivative
   of a separated product `z ↦ ∏ i, φ i (z i)`, whose partial derivative in the `i`-th variable
   replaces the `i`-th factor by its derivative.
@@ -111,6 +112,13 @@ theorem fderiv_sum_comp_eval_eventuallyEq (hφ : ∀ i, ContDiffAt 𝕜 1 (φ i)
       (((hφ i).eventually (by simp)).mono fun t ht ↦ ht.differentiableAt (by simp))
   filter_upwards [eventually_all.2 hdiff] with z hz
   exact fderiv_sum_comp_eval hz
+
+/-- Every partial derivative of the coordinate sum `z ↦ ∑ i, z i` is `1`. -/
+@[simp]
+theorem fderiv_sum_apply_single [DecidableEq ι] (j : ι) :
+    fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∑ i, z i) y (Pi.single j 1) = 1 := by
+  rw [(HasFDerivAt.fun_sum fun i _ ↦ hasFDerivAt_apply i y).fderiv]
+  simp [Pi.single_apply]
 
 end SumCompEval
 
