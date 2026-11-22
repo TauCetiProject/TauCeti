@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.Algebra.Module.FiniteFreeResolution.Basic
+import TauCeti.LinearAlgebra.Exact
 
 /-!
 # Flat base change of finite free resolutions
@@ -61,8 +62,7 @@ theorem HasFiniteFreeResolutionLE.baseChange_of_flat {n : ℕ}
     have hsurj : Function.Surjective (f.baseChange A) := by
       rw [baseChange_eq_lTensor]
       exact lTensor_surjective A hf
-    exact succ_of_surjective hsurj ((ih hK).of_equiv
-      ((LinearEquiv.ofInjective _ hinj).trans (.ofEq _ _ hexact.linearMap_ker_eq.symm)))
+    exact succ_of_surjective hsurj ((ih hK).of_equiv (hexact.linearEquivOfInjective hinj))
 
 /-- **Flat base change.** If `A` is a flat `R`-algebra and `M` has a finite free resolution over
 `R`, then `A ⊗[R] M` has one over `A`. -/

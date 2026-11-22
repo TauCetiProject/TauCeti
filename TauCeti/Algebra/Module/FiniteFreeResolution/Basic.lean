@@ -216,32 +216,21 @@ theorem prod (h : HasFiniteFreeResolutionLE R n M) (h' : HasFiniteFreeResolution
 `0` to `1`: a stably free module that is not free is a summand of a free module. -/
 theorem of_prod {F : Type u} [AddCommGroup F] [Module R F] [Module.Finite R F] [Module.Free R F]
     (h : HasFiniteFreeResolutionLE R n (M × F)) : HasFiniteFreeResolutionLE R (max n 1) M := by
+  -- `inr : F → M × F` identifies `F` with the kernel of the projection onto `M`.
+  have hF : HasFiniteFreeResolutionLE R 0 (ker (fst R M F)) :=
+    hasFiniteFreeResolutionLE_zero.of_equiv
+      (Function.Exact.inr_fst.linearEquivOfInjective inr_injective)
   cases n with
   | zero =>
     obtain ⟨_, _⟩ := hasFiniteFreeResolutionLE_zero_iff.mp h
-    -- The projection `M × F → M` has kernel `F`.
-    exact succ_of_surjective (f := fst R M F) fst_surjective
-      (hasFiniteFreeResolutionLE_zero.of_equiv
-        ((LinearEquiv.ofInjective (inr R M F) inr_injective).trans
-          (.ofEq _ _ (ker_fst (R := R) (M := M) (M₂ := F)).symm)))
+    exact succ_of_surjective fst_surjective hF
   | succ n =>
     obtain ⟨k, φ, hφ, hK⟩ := hasFiniteFreeResolutionLE_succ_iff.mp h
-    -- The kernels of `φ` and `fst ∘ φ` differ by `F`.
-    have hp (z : ker (fst R M F ∘ₗ φ)) : φ z = (0, (φ z).2) :=
-      Prod.ext (mem_ker.mp z.2) rfl
+    -- `0 → ker φ → ker (fst ∘ φ) → ker fst → 0` is exact and `ker fst ≃ F`.
+    obtain ⟨hi, hip, hp⟩ := TauCeti.exact_ker_comp hφ (fst R M F)
     rw [max_eq_left (by omega)]
-    refine hasFiniteFreeResolutionLE_succ_iff.mpr ⟨k, fst R M F ∘ₗ φ,
-      (fst_surjective (R := R) (M := M) (M₂ := F)).comp hφ,
-      extension (f := Submodule.inclusion (ker_le_ker_comp φ (fst R M F)))
-        (g := snd R M F ∘ₗ φ ∘ₗ (ker (fst R M F ∘ₗ φ)).subtype) (Submodule.inclusion_injective _)
-        (fun y ↦ ?_) (fun z ↦ ⟨fun hz ↦ ?_, ?_⟩) hK
-        (hasFiniteFreeResolutionLE_zero.mono n.zero_le)⟩
-    · obtain ⟨x, hx⟩ := hφ (0, y)
-      exact ⟨⟨x, by simp [hx]⟩, by simp [hx]⟩
-    · have hz' : φ z = 0 := (hp z).trans (Prod.ext rfl hz)
-      exact ⟨⟨z, hz'⟩, rfl⟩
-    · rintro ⟨x, rfl⟩
-      simp [mem_ker.mp x.2]
+    exact hasFiniteFreeResolutionLE_succ_iff.mpr ⟨k, fst R M F ∘ₗ φ,
+      (fst_surjective (R := R)).comp hφ, extension hi hp hip hK (hF.mono n.zero_le)⟩
 
 /-- **Schanuel's lemma for finite free resolutions.** If `M` has a finite free resolution of length
 at most `n + 1`, then the kernel of every surjection onto `M` from a finite free module has one of
@@ -251,40 +240,20 @@ theorem ker_of_surjective {P : Type u} [AddCommGroup P] [Module R P] [Module.Fin
     (h : HasFiniteFreeResolutionLE R (n + 1) M) :
     HasFiniteFreeResolutionLE R (max n 1) (ker f) := by
   obtain ⟨k, f', hf', hK⟩ := hasFiniteFreeResolutionLE_succ_iff.mp h
-  -- The fibre product `X = P ×_M Rᵏ` is an extension of `P` by `ker f'` and of `Rᵏ` by `ker f`.
-  let X := ker (f ∘ₗ fst R P (Fin k → R) - f' ∘ₗ snd R P (Fin k → R))
-  have hX (z : X) : f z.1.1 = f' z.1.2 := by
-    have hz := mem_ker.mp z.2
-    rw [LinearMap.sub_apply, sub_eq_zero] at hz
-    exact hz
-  have hXres : HasFiniteFreeResolutionLE R n X := by
-    refine extension (f := ((inr R P _ ∘ₗ (ker f').subtype).codRestrict X fun y ↦ by
-        simp [X, mem_ker.mp y.2]))
-      (g := fst R P _ ∘ₗ X.subtype) (fun x y hxy ↦ Subtype.ext congr(($hxy).1.2)) (fun x ↦ ?_)
-      (fun z ↦ ⟨fun hz ↦ ?_, ?_⟩) hK (hasFiniteFreeResolutionLE_zero.mono n.zero_le)
-    · obtain ⟨y, hy⟩ := hf' (f x)
-      exact ⟨⟨(x, y), by simp [X, hy]⟩, rfl⟩
-    · have hz : z.1.1 = 0 := by simpa using hz
-      have hz2 : f' z.1.2 = 0 := by rw [← hX, hz, map_zero]
-      exact ⟨⟨z.1.2, hz2⟩, Subtype.ext (Prod.ext hz.symm rfl)⟩
-    · rintro ⟨y, rfl⟩
-      rfl
-  -- Splitting off `Rᵏ`, which is free, leaves `ker f`.
-  obtain ⟨s, hs⟩ := Module.projective_lifting_property (snd R P (Fin k → R) ∘ₗ X.subtype)
-    LinearMap.id fun y ↦ by
-      obtain ⟨x, hx⟩ := hf (f' y)
-      exact ⟨⟨(x, y), by simp [X, hx]⟩, rfl⟩
-  let ι : ker f →ₗ[R] X :=
-    (inl R P _ ∘ₗ (ker f).subtype).codRestrict X fun x ↦ by simp [X, mem_ker.mp x.2]
-  have hι : Function.Exact ι (snd R P (Fin k → R) ∘ₗ X.subtype) := fun z ↦ by
-    refine ⟨fun hz ↦ ?_, ?_⟩
-    · have hz : z.1.2 = 0 := by simpa using hz
-      have hz1 : f z.1.1 = 0 := by rw [hX, hz, map_zero]
-      exact ⟨⟨z.1.1, hz1⟩, Subtype.ext (Prod.ext rfl hz.symm)⟩
-    · rintro ⟨x, rfl⟩
-      rfl
-  exact of_prod (hXres.of_equiv (hι.splitSurjectiveEquiv
-    (fun x y hxy ↦ Subtype.ext congr(($hxy).1.1)) ⟨s, hs⟩).1)
+  -- Schanuel's lemma: an automorphism `e` of `P × Rᵏ` with `f ∘ fst = f' ∘ snd ∘ e`.
+  obtain ⟨e, he⟩ := TauCeti.exists_linearEquiv_comp_fst_eq_comp_snd_comp (a := f) (b := f')
+    (by rw [range_eq_top.mpr hf, range_eq_top.mpr hf'])
+  -- It carries `ker (f ∘ fst) ≃ ker f × Rᵏ` onto `ker (f' ∘ snd) ≃ P × ker f'`.
+  have hker : (ker (f ∘ₗ fst R P (Fin k → R))).map e.toLinearMap =
+      ker (f' ∘ₗ snd R P (Fin k → R)) := by
+    rw [he, ← comp_assoc, ker_comp, Submodule.map_comap_eq_of_surjective e.surjective]
+  have h₁ : HasFiniteFreeResolutionLE R n (ker (f' ∘ₗ snd R P (Fin k → R))) :=
+    (prod (hasFiniteFreeResolutionLE_zero.mono n.zero_le) hK).of_equiv
+      ((exact_subtype_ker_map f').id_prodMap_comp_snd.linearEquivOfInjective
+        (Function.Injective.prodMap Function.injective_id (ker f').injective_subtype))
+  exact of_prod (F := Fin k → R) (h₁.of_equiv ((e.ofSubmodules _ _ hker).symm.trans
+    ((exact_subtype_ker_map f).prodMap_id_comp_fst.linearEquivOfInjective
+      (Function.Injective.prodMap (ker f).injective_subtype Function.injective_id)).symm))
 
 /-- **Cokernels.** In a short exact sequence `0 → M₁ → M → M₂ → 0`, if `M₁` has a finite free
 resolution of length at most `n` and `M` one of length at most `n + 1`, then `M₂` has one of length
