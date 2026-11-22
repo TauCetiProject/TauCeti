@@ -82,32 +82,32 @@ variable {ι : Type*} [DecidableEq ι] {W : ι → Type*}
 /-- The family on `T` that agrees with `f` on `S` and with the reference vectors elsewhere. -/
 def extendFamily (w : ∀ i, W i) {S : Finset ι} (T : Finset ι) (f : ∀ i : S, W i) :
     ∀ i : T, W i :=
-  fun i ↦ if h : i.1 ∈ S then f ⟨i.1, h⟩ else w i.1
+  fun i ↦ if h : i.val ∈ S then f ⟨i.val, h⟩ else w i.val
 
 /-- On `S`, the extended family is the original family. -/
 theorem extendFamily_apply_of_mem (w : ∀ i, W i) {S : Finset ι} (T : Finset ι)
-    (f : ∀ i : S, W i) (i : T) (h : i.1 ∈ S) : extendFamily w T f i = f ⟨i.1, h⟩ :=
+    (f : ∀ i : S, W i) (i : T) (h : i.val ∈ S) : extendFamily w T f i = f ⟨i.val, h⟩ :=
   by simp [extendFamily, h]
 
 /-- Off `S`, the extended family is the reference family. -/
 theorem extendFamily_apply_of_notMem (w : ∀ i, W i) {S : Finset ι} (T : Finset ι)
-    (f : ∀ i : S, W i) (i : T) (h : i.1 ∉ S) : extendFamily w T f i = w i.1 :=
+    (f : ∀ i : S, W i) (i : T) (h : i.val ∉ S) : extendFamily w T f i = w i.val :=
   by simp [extendFamily, h]
 
 /-- Extending a family to its own index set does nothing. -/
 theorem extendFamily_self (w : ∀ i, W i) (S : Finset ι) (f : ∀ i : S, W i) :
     extendFamily w S f = f :=
-  funext fun i ↦ extendFamily_apply_of_mem w S f i i.2
+  funext fun i ↦ extendFamily_apply_of_mem w S f i i.property
 
 /-- Extending by references in two steps is extending in one step. -/
 theorem extendFamily_extendFamily (w : ∀ i, W i) {S T : Finset ι} (U : Finset ι) (h : S ⊆ T)
     (f : ∀ i : S, W i) : extendFamily w U (extendFamily w T f) = extendFamily w U f := by
   funext i
-  by_cases hS : i.1 ∈ S
+  by_cases hS : i.val ∈ S
   · rw [extendFamily_apply_of_mem w U _ i (h hS), extendFamily_apply_of_mem w T f _ hS,
       extendFamily_apply_of_mem w U f i hS]
   · rw [extendFamily_apply_of_notMem w U f i hS]
-    by_cases hT : i.1 ∈ T
+    by_cases hT : i.val ∈ T
     · rw [extendFamily_apply_of_mem w U _ i hT, extendFamily_apply_of_notMem w T f _ hS]
     · rw [extendFamily_apply_of_notMem w U _ i hT]
 
@@ -115,16 +115,16 @@ theorem extendFamily_extendFamily (w : ∀ i, W i) {S T : Finset ι} (U : Finset
 theorem extendFamily_update (w : ∀ i, W i) {S T : Finset ι} [DecidableEq S] [DecidableEq T]
     (h : S ⊆ T) (f : ∀ i : S, W i) (j : S) (x : W j) :
     extendFamily w T (Function.update f j x) =
-      Function.update (extendFamily w T f) ⟨j.1, h j.2⟩ x := by
+      Function.update (extendFamily w T f) ⟨j.val, h j.property⟩ x := by
   funext i
-  by_cases hij : i.1 = j.1
+  by_cases hij : i.val = j.val
   · obtain ⟨i, hi⟩ := i
     obtain ⟨j, hj⟩ := j
     subst hij
     simp [extendFamily, hj]
-  · have hne : i ≠ ⟨j.1, h j.2⟩ := fun h' ↦ hij (congrArg Subtype.val h')
+  · have hne : i ≠ ⟨j.val, h j.property⟩ := fun h' ↦ hij (congrArg Subtype.val h')
     rw [Function.update_of_ne hne]
-    by_cases hS : i.1 ∈ S
+    by_cases hS : i.val ∈ S
     · rw [extendFamily_apply_of_mem w T _ i hS, extendFamily_apply_of_mem w T f i hS,
         Function.update_of_ne fun h' ↦ hij (congrArg Subtype.val h')]
     · rw [extendFamily_apply_of_notMem w T _ i hS, extendFamily_apply_of_notMem w T f i hS]
@@ -135,7 +135,7 @@ theorem extendFamily_comp {W' : ι → Type*} (w : ∀ i, W i) (w' : ∀ i, W' i
     (g : ∀ i : S, W i) :
     extendFamily w' T (fun i : S ↦ f i (g i)) = fun i : T ↦ f i (extendFamily w T g i) := by
   funext i
-  by_cases hi : i.1 ∈ S
+  by_cases hi : i.val ∈ S
   · rw [extendFamily_apply_of_mem w' T _ i hi, extendFamily_apply_of_mem w T g i hi]
   · rw [extendFamily_apply_of_notMem w' T _ i hi, extendFamily_apply_of_notMem w T g i hi, hf]
 
@@ -200,17 +200,18 @@ variable {S T : Finset ι} (h : S ⊆ T)
 /-- Changing an entry of the family at a place of `S` changes the contraction only in its tensor
 factor. -/
 private theorem contract_update_of_mem [DecidableEq T] (φ : ∀ i, Module.Dual R (W i))
-    (g : ∀ i : T, W i) (j : T) (hj : j.1 ∈ S) (z : W j) :
-    (∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S), φ i (Function.update g j z i)) •
-        PiTensorProduct.tprod R (fun i : S ↦ Function.update g j z ⟨i.1, h i.2⟩) =
-      (∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S), φ i (g i)) •
-        PiTensorProduct.tprod R (Function.update (fun i : S ↦ g ⟨i.1, h i.2⟩) ⟨j.1, hj⟩ z) := by
-  have hres : (fun i : S ↦ Function.update g j z ⟨i.1, h i.2⟩) =
-      Function.update (fun i : S ↦ g ⟨i.1, h i.2⟩) ⟨j.1, hj⟩ z :=
-    Function.update_comp_eq_of_injective' g (f := fun i : S ↦ (⟨i.1, h i.2⟩ : T))
-      (fun _ _ hab ↦ Subtype.ext (by simpa using hab)) ⟨j.1, hj⟩ z
-  have hprod : ∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S), φ i (Function.update g j z i) =
-      ∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S), φ i (g i) := by
+    (g : ∀ i : T, W i) (j : T) (hj : j.val ∈ S) (z : W j) :
+    (∏ i ∈ Finset.univ.filter (fun i : T ↦ i.val ∉ S), φ i (Function.update g j z i)) •
+        PiTensorProduct.tprod R (fun i : S ↦ Function.update g j z ⟨i.val, h i.property⟩) =
+      (∏ i ∈ Finset.univ.filter (fun i : T ↦ i.val ∉ S), φ i (g i)) •
+        PiTensorProduct.tprod R
+          (Function.update (fun i : S ↦ g ⟨i.val, h i.property⟩) ⟨j.val, hj⟩ z) := by
+  have hres : (fun i : S ↦ Function.update g j z ⟨i.val, h i.property⟩) =
+      Function.update (fun i : S ↦ g ⟨i.val, h i.property⟩) ⟨j.val, hj⟩ z :=
+    Function.update_comp_eq_of_injective' g (f := fun i : S ↦ (⟨i.val, h i.property⟩ : T))
+      (fun _ _ hab ↦ Subtype.ext (by simpa using hab)) ⟨j.val, hj⟩ z
+  have hprod : ∏ i ∈ Finset.univ.filter (fun i : T ↦ i.val ∉ S), φ i (Function.update g j z i) =
+      ∏ i ∈ Finset.univ.filter (fun i : T ↦ i.val ∉ S), φ i (g i) := by
     rw [Finset.prod_congr rfl fun i _ ↦ Function.apply_update (fun i : T ↦ ⇑(φ i)) g j z i]
     exact Finset.prod_update_of_notMem (by simp [hj]) _ _
   rw [hres, hprod]
@@ -218,15 +219,16 @@ private theorem contract_update_of_mem [DecidableEq T] (φ : ∀ i, Module.Dual 
 /-- Changing an entry of the family at a place of `T \ S` changes the contraction only in its
 scalar factor. -/
 private theorem contract_update_of_notMem [DecidableEq T] (φ : ∀ i, Module.Dual R (W i))
-    (g : ∀ i : T, W i) (j : T) (hj : j.1 ∉ S) (z : W j) :
-    (∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S), φ i (Function.update g j z i)) •
-        PiTensorProduct.tprod R (fun i : S ↦ Function.update g j z ⟨i.1, h i.2⟩) =
-      φ j z • (∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S) \ {j}, φ i (g i)) •
-        PiTensorProduct.tprod R (fun i : S ↦ g ⟨i.1, h i.2⟩) := by
-  have hres : (fun i : S ↦ Function.update g j z ⟨i.1, h i.2⟩) = fun i : S ↦ g ⟨i.1, h i.2⟩ :=
-    Function.update_comp_eq_of_forall_ne' g z fun i hi ↦ hj (hi ▸ i.2)
-  have hprod : ∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S), φ i (Function.update g j z i) =
-      φ j z * ∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S) \ {j}, φ i (g i) := by
+    (g : ∀ i : T, W i) (j : T) (hj : j.val ∉ S) (z : W j) :
+    (∏ i ∈ Finset.univ.filter (fun i : T ↦ i.val ∉ S), φ i (Function.update g j z i)) •
+        PiTensorProduct.tprod R (fun i : S ↦ Function.update g j z ⟨i.val, h i.property⟩) =
+      φ j z • (∏ i ∈ Finset.univ.filter (fun i : T ↦ i.val ∉ S) \ {j}, φ i (g i)) •
+        PiTensorProduct.tprod R (fun i : S ↦ g ⟨i.val, h i.property⟩) := by
+  have hres : (fun i : S ↦ Function.update g j z ⟨i.val, h i.property⟩) =
+      fun i : S ↦ g ⟨i.val, h i.property⟩ :=
+    Function.update_comp_eq_of_forall_ne' g z fun i hi ↦ hj (hi ▸ i.property)
+  have hprod : ∏ i ∈ Finset.univ.filter (fun i : T ↦ i.val ∉ S), φ i (Function.update g j z i) =
+      φ j z * ∏ i ∈ Finset.univ.filter (fun i : T ↦ i.val ∉ S) \ {j}, φ i (g i) := by
     rw [Finset.prod_congr rfl fun i _ ↦ Function.apply_update (fun i : T ↦ ⇑(φ i)) g j z i]
     exact Finset.prod_update_of_mem (by simp [hj]) _ _
   rw [hres, hprod, mul_smul]
@@ -235,14 +237,14 @@ variable (R) in
 /-- Contracting the places of `T \ S` against linear forms, as a multilinear map. -/
 def contractMultilinear (φ : ∀ i, Module.Dual R (W i)) :
     (Π i : T, W i) →ₘₗ[R] ⨂[R] i : S, W i where
-  toFun g := (∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S), φ i (g i)) •
-    PiTensorProduct.tprod R (fun i : S ↦ g ⟨i.1, h i.2⟩)
+  toFun g := (∏ i ∈ Finset.univ.filter (fun i : T ↦ i.val ∉ S), φ i (g i)) •
+    PiTensorProduct.tprod R (fun i : S ↦ g ⟨i.val, h i.property⟩)
   map_update_add' g j x y := by
-    by_cases hj : j.1 ∈ S
+    by_cases hj : j.val ∈ S
     · simp only [contract_update_of_mem h φ g j hj, MultilinearMap.map_update_add, smul_add]
     · simp only [contract_update_of_notMem h φ g j hj, map_add, add_smul]
   map_update_smul' g j c x := by
-    by_cases hj : j.1 ∈ S
+    by_cases hj : j.val ∈ S
     · simp only [contract_update_of_mem h φ g j hj, MultilinearMap.map_update_smul]
       rw [smul_comm]
     · simp only [contract_update_of_notMem h φ g j hj, map_smul, smul_eq_mul, mul_smul,
@@ -250,8 +252,8 @@ def contractMultilinear (φ : ∀ i, Module.Dual R (W i)) :
 
 /-- The contraction on a family of vectors. -/
 theorem contractMultilinear_apply (φ : ∀ i, Module.Dual R (W i)) (g : ∀ i : T, W i) :
-    contractMultilinear R h φ g = (∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S), φ i (g i)) •
-      PiTensorProduct.tprod R (fun i : S ↦ g ⟨i.1, h i.2⟩) :=
+    contractMultilinear R h φ g = (∏ i ∈ Finset.univ.filter (fun i : T ↦ i.val ∉ S), φ i (g i)) •
+      PiTensorProduct.tprod R (fun i : S ↦ g ⟨i.val, h i.property⟩) :=
   (rfl)
 
 end contract
@@ -270,10 +272,10 @@ theorem stageMap_injective (w : ∀ i, W i) {S T : Finset ι} (h : S ⊆ T)
     rw [contractMultilinear_apply, Finset.prod_eq_one, one_smul]
     · congr 2
       funext i
-      exact extendFamily_apply_of_mem w T f ⟨i.1, h i.2⟩ i.2
+      exact extendFamily_apply_of_mem w T f ⟨i.val, h i.property⟩ i.property
     · intro i hi
       have hiS := (Finset.mem_filter.mp hi).2
-      rw [extendFamily_apply_of_notMem w T f i hiS, hφ i i.2 hiS]
+      rw [extendFamily_apply_of_notMem w T f i hiS, hφ i i.property hiS]
   | add x y hx hy => rw [map_add, map_add, hx, hy]
 
 end RestrictedTensor
@@ -387,7 +389,7 @@ theorem tprod_eq_ofFinite (f : ∀ i, W i) (hf : {i | f i ≠ w i}.Finite) (S : 
     rw [stageMap_tprod]
     congr 1
     funext i
-    by_cases hi : i.1 ∈ U
+    by_cases hi : i.val ∈ U
     · exact extendFamily_apply_of_mem w S _ i hi
     · rw [extendFamily_apply_of_notMem w S _ i hi, hU i hi]
   rw [tprod, ← key hf.toFinset hsub fun i hi ↦ ?_, ofFinite_stageMap]
