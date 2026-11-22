@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.GroupTheory.OrderOfElement
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
@@ -51,6 +52,11 @@ and vanishing on boundaries.
   homology maps of the singular simplicial sets.
 * `ContinuousMap.singularHomologyMap_iterate`: the iterates of a self-map act on singular homology
   by the powers of its action.
+* `Homeomorph.singularHomologyMap_symm_apply_apply`,
+  `Homeomorph.singularHomologyMap_apply_symm_apply`: the maps induced by a homeomorphism and by its
+  inverse are mutually inverse.
+* `Homeomorph.isOfFinAddOrder_singularHomologyMap_iff`: a homeomorphism preserves and reflects
+  finite order of singular homology classes.
 -/
 
 public section
@@ -348,3 +354,41 @@ theorem singularHomologyMap_iterate {Y : Type u} [TopologicalSpace Y] (f : C(Y, 
     rw [h, singularHomologyMap_comp', ih, pow_succ, Module.End.mul_eq_comp]
 
 end ContinuousMap
+
+namespace Homeomorph
+
+open TauCeti
+
+variable {k : Type u} [Ring k] {n : ℕ} {Y Z : Type u} [TopologicalSpace Y] [TopologicalSpace Z]
+
+/-- The map induced on singular homology by the inverse of a homeomorphism `e` undoes the map
+induced by `e`. -/
+@[simp]
+theorem singularHomologyMap_symm_apply_apply (e : Y ≃ₜ Z)
+    (x : ((singularChains k).obj (TopCat.of Y)).homology n) :
+    ContinuousMap.singularHomologyMap k n (e.symm : C(Z, Y))
+      (ContinuousMap.singularHomologyMap k n (e : C(Y, Z)) x) = x := by
+  rw [← ContinuousMap.singularHomologyMap_comp, symm_comp_toContinuousMap,
+    ContinuousMap.singularHomologyMap_id]
+
+/-- The map induced on singular homology by a homeomorphism `e` undoes the map induced by its
+inverse. -/
+@[simp]
+theorem singularHomologyMap_apply_symm_apply (e : Y ≃ₜ Z)
+    (z : ((singularChains k).obj (TopCat.of Z)).homology n) :
+    ContinuousMap.singularHomologyMap k n (e : C(Y, Z))
+      (ContinuousMap.singularHomologyMap k n (e.symm : C(Z, Y)) z) = z := by
+  rw [← ContinuousMap.singularHomologyMap_comp, toContinuousMap_comp_symm,
+    ContinuousMap.singularHomologyMap_id]
+
+/-- A class of singular homology has finite order exactly when its image under a homeomorphism
+does. -/
+theorem isOfFinAddOrder_singularHomologyMap_iff (e : Y ≃ₜ Z)
+    {x : ((singularChains k).obj (TopCat.of Y)).homology n} :
+    IsOfFinAddOrder (ContinuousMap.singularHomologyMap k n (e : C(Y, Z)) x) ↔
+      IsOfFinAddOrder x :=
+  Function.Injective.isOfFinAddOrder_iff
+    (f := (ContinuousMap.singularHomologyMap k n (e : C(Y, Z))).toAddMonoidHom)
+    (Function.LeftInverse.injective e.singularHomologyMap_symm_apply_apply)
+
+end Homeomorph

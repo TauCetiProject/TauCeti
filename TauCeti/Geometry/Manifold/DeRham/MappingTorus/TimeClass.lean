@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Singular.MappingTorus.BaseCircle
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.FirstCohomology
 public import TauCeti.Geometry.Manifold.DeRham.MappingTorus
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
-import TauCeti.AlgebraicTopology.Singular.HomeomorphAction
 
 /-!
 # The integral class of the time form of a mapping torus
@@ -54,12 +53,12 @@ class `θ = [ds]` of the circle (`AddCircle.angularClass`) along the projection 
 (`TauCeti.SmoothMappingTorus.singularCohomologyMap_proj_angularClass`). When `b₁(Y_φ) = 1` it
 generates `H¹(Y_φ; ℤ) ≅ ℤ`: every class is a unique integer multiple of `[dt]`
 (`TauCeti.SmoothMappingTorus.exists_eq_zsmul_timeClass`,
-`TauCeti.SmoothMappingTorus.zsmul_timeClass_eq_zero_iff`). So for the symplectic suspension
-`(ℝ / ℤ)_s × Y_φ` of a surface diffeomorphism with `b₁(Y_φ) = 1`, the generator of `H¹(Y_φ; ℤ)`
-in the generators `pr₂^* v` and `θ ⌣ pr₂^* a` of `H²((ℝ / ℤ) × Y_φ; ℤ)` modulo torsion
-(`TauCeti.AlgebraicTopology.Singular.MappingTorus.CircleProduct`, read through
-`TauCeti.SmoothMappingTorus.homeomorphMappingTorus`) can be taken to be `a = [dt]`, the integral
-class of the time form, where `θ = [ds]` is the angular class (`AddCircle.angularClass`).
+`TauCeti.SmoothMappingTorus.zsmul_timeClass_eq_zero_iff`). So for a surface diffeomorphism with
+`b₁(Y_φ) = 1`, the class `a` in the generator `θ_p ⌣ pr₂^* a` of `H²((ℝ / pℤ)_s × Y_φ; ℤ)` modulo
+torsion can be taken to be `[dt]`, the integral class of the time form. Here `θ_p = [ds]` is the
+angular class of `ℝ / pℤ` (`AddCircle.angularClass p`), and the basis `pr₂^* v`, `θ_p ⌣ pr₂^* a` is
+the one of `TauCeti.AlgebraicTopology.Singular.MappingTorus.CircleProduct`, read through
+`TauCeti.SmoothMappingTorus.homeomorphMappingTorus`.
 
 ## Main results
 
