@@ -71,10 +71,12 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   involutive conjugation to one with an arbitrary conjugate-linear map intertwines the two exactly
   when it carries the real points of the first into those of the second; the reverse direction is
   where the spanning above is used.
-* `TauCeti.finrank_realPoints`: the real points of a conjugation have the `ℝ`-dimension that `V`
-  has over `ℂ`.
+* `TauCeti.finrank_realPoints`: the real points of a conjugation have `Module.finrank` over `ℝ`
+  equal to `Module.finrank ℂ V`.  If `V` is infinite-dimensional, both sides are `0`, so this says
+  nothing about the cardinal `Module.rank`.
 * `TauCeti.finrank_selfAdjoint_submodule`: in particular, the self-adjoint elements of a complex
-  star module have the `ℝ`-dimension that the module has over `ℂ`.
+  star module have `Module.finrank` over `ℝ` equal to the module's `Module.finrank` over `ℂ`, with
+  both sides `0` in infinite dimension.
 * `TauCeti.exists_one_tmul_add_I_tmul`: every element of `ℂ ⊗[ℝ] W` is `1 ⊗ₜ w₁ + I ⊗ₜ w₂`; this
   is what makes the lift injective.
 * `LinearMap.liftBaseChange_complex_injective_of_conj`: more generally, an injective real-linear
@@ -364,16 +366,18 @@ theorem realPointsEquiv_symm_apply (hK : Function.Involutive K) (v : V) :
   rw [LinearEquiv.symm_apply_eq, map_add, realPointsEquiv_tmul, realPointsEquiv_tmul, one_smul]
   exact (conjRealPart_add_I_smul_conjImaginaryPart v).symm
 
-/-- **The real points of a conjugation halve the dimension**: their `ℝ`-dimension is the
-`ℂ`-dimension of `V`, because `V` is their complexification and base change does not change the
-dimension.  No finiteness is assumed: in the infinite-dimensional case both sides are the junk
-value `0`. -/
+/-- **The real points of a conjugation halve the dimension**: their `Module.finrank` over `ℝ` is
+the `Module.finrank` of `V` over `ℂ`, because `V` is their complexification and base change does
+not change `Module.finrank`.  No finiteness is assumed: in the infinite-dimensional case both sides
+are the junk value `0`. -/
 theorem finrank_realPoints (hK : Function.Involutive K) :
     finrank ℝ (realPoints K) = finrank ℂ V := by
   rw [← (realPointsEquiv hK).finrank_eq, Module.finrank_baseChange]
 
-/-- The self-adjoint elements of a complex star module have the `ℝ`-dimension that the module has
-over `ℂ`: they are the real points of the conjugation `star`. -/
+/-- The self-adjoint elements of a complex star module have `Module.finrank` over `ℝ` equal to the
+module's `Module.finrank` over `ℂ`: they are the real points of the conjugation `star`.  This is a
+statement about `Module.finrank` only: in the infinite-dimensional case both sides are the junk
+value `0`. -/
 theorem finrank_selfAdjoint_submodule {A : Type*} [AddCommGroup A] [Module ℂ A] [StarAddMonoid A]
     [StarModule ℂ A] : finrank ℝ (selfAdjoint.submodule ℝ A) = finrank ℂ A := by
   let K : A →ₛₗ[starRingEnd ℂ] A := (starLinearEquiv ℂ (A := A)).toLinearMap
