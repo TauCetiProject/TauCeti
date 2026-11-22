@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Restriction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Brauer
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Kummer.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Kummer.Comparison
