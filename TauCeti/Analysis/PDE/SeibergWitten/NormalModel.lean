@@ -620,6 +620,16 @@ private theorem differentiableAt_familySectionValue {Φ : ℂ × ℂ → Euclide
     ((ofRealCLM.differentiableAt.comp p (differentiableAt_euclidean.1 hΦ 3)).mul_const I)).const_mul
       2 :)
 
+/-- The spinor of the normal model of a family is differentiable where the family is. -/
+theorem differentiableAt_familyNormalModelSpinor (u₀ : positiveHalfSpinors o ρ)
+    (hΞ : DifferentiableAt ℝ Ξ (baseCoord e y, normalCoord e y))
+    (hΗ : DifferentiableAt ℝ Η (baseCoord e y, normalCoord e y)) :
+    DifferentiableAt ℝ (fun y' ↦ (familyNormalModelSpinor e u₀ Ξ Η y' : W)) y := by
+  simp only [coe_familyNormalModelSpinor]
+  exact (((differentiableAt_familySectionValue hΞ).smul_const (u₀ : W)).fun_add
+    ((differentiableAt_familySectionValue hΗ).smul_const (pairedSpinor e u₀ : W))).comp y
+      ((baseCoord e).prod (normalCoord e)).differentiableAt
+
 /-- The derivative of the spinor of the normal model of a family along a vector `v`: the
 derivatives of the sections `α_Ξ` and `α_Η` along the base, in the direction `w(v)`, plus those
 along the normal plane, in the direction `z(v)`, on `u₀` and on `β₀`. -/
@@ -724,6 +734,40 @@ theorem normalBaseCoupling_zero : normalBaseCoupling 0 = 0 := by
 theorem pairedBaseCoupling_zero : pairedBaseCoupling 0 = 0 := by
   ext i
   fin_cases i <;> simp
+
+/-- The base coupling of the normal rows is additive in the base derivative. -/
+theorem normalBaseCoupling_add (D D' : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
+    normalBaseCoupling (D + D') = normalBaseCoupling D + normalBaseCoupling D' := by
+  ext i
+  fin_cases i <;> simp <;> ring
+
+/-- The base coupling of the paired rows is additive in the base derivative. -/
+theorem pairedBaseCoupling_add (D D' : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
+    pairedBaseCoupling (D + D') = pairedBaseCoupling D + pairedBaseCoupling D' := by
+  ext i
+  fin_cases i <;> simp <;> ring
+
+/-- The base coupling of the normal rows is homogeneous in the base derivative. -/
+theorem normalBaseCoupling_smul (c : ℝ) (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
+    normalBaseCoupling (c • D) = c • normalBaseCoupling D := by
+  ext i
+  fin_cases i <;> simp <;> ring
+
+/-- The base coupling of the paired rows is homogeneous in the base derivative. -/
+theorem pairedBaseCoupling_smul (c : ℝ) (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
+    pairedBaseCoupling (c • D) = c • pairedBaseCoupling D := by
+  ext i
+  fin_cases i <;> simp <;> ring
+
+/-- The base coupling of the normal rows commutes with negating the base derivative. -/
+theorem normalBaseCoupling_neg (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
+    normalBaseCoupling (-D) = -normalBaseCoupling D := by
+  rw [← neg_one_smul ℝ D, normalBaseCoupling_smul, neg_one_smul]
+
+/-- The base coupling of the paired rows commutes with negating the base derivative. -/
+theorem pairedBaseCoupling_neg (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
+    pairedBaseCoupling (-D) = -pairedBaseCoupling D := by
+  rw [← neg_one_smul ℝ D, pairedBaseCoupling_smul, neg_one_smul]
 
 end Coupling
 
