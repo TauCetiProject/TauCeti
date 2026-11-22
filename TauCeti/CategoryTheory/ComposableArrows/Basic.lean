@@ -176,6 +176,13 @@ theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj_precomp {D : Type*
   -- By definition of `precomp`, both first arrows are `Φ.map f`.
   rfl
 
+/-- Applying a functor to a single-morphism string sends `mk₁ f` to `mk₁ (Φ.map f)`. -/
+@[simp]
+theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj_mk₁
+    {D : Type*} [Category D] (Φ : C ⥤ D) {X Y : C} (f : X ⟶ Y) :
+    (Φ.mapComposableArrows 1).obj (mk₁ f) = mk₁ (Φ.map f) :=
+  ext₁ rfl rfl (by simp)
+
 section Postcomp
 
 open Category

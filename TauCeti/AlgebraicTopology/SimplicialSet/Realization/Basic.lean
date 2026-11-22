@@ -8,12 +8,11 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import Mathlib.Topology.Category.TopCat.ULift
-public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.AlgebraicTopology.SimplicialSet.Op
-public import TauCeti.AlgebraicTopology.SimplicialSet.PrismRealization
-public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.PiZero
-public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
+public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
+
+import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 
 /-!
 # Basic properties and natural isomorphisms of geometric realization
@@ -25,8 +24,8 @@ Continuous maps out of `|X|` are constructed via `SSet.descToTop` and compared v
 `SSet.toTop_hom_ext`.
 
 To support classifying spaces of categories and their fundamental groupoids, this file establishes:
-* emptiness, nonemptiness, subsingleton, path-connectedness, and contractibility criteria for `|X|`,
-  together with constant-map realization (`toTop_map_const`);
+* emptiness, nonemptiness, and subsingleton criteria for `|X|`, together with constant-map
+  realization (`toTop_map_const`, `toTop_map_const_hom`);
 * separation of `0`- and `1`-simplices via piecewise-linear test functions (`toTopPoint_injective`,
   `toTopObjMk_one_injective`);
 * edge paths `Edge.toTopPath` and path homotopies from `2`-simplices
@@ -48,35 +47,9 @@ universe v u
 namespace SSet
 variable {X Y : SSet.{u}}
 
-/-! ### Vertices, emptiness, connectedness, and constant maps -/
+/-! ### Emptiness, subsingleton, and constant maps -/
 
-lemma toTop_map_yonedaEquiv_symm_toTopHomeo_symm {n : ℕ} (x : X _⦋n⦌)
-    (w : StdSimplex ℝ (Fin (n + 1))) :
-    toTop.map (yonedaEquiv.symm x) ((⦋n⦌.toTopHomeo).symm w) = toTopObjMk x w := by
-  rw [toTopObjMk_def]
-  exact (ConcreteCategory.congr_hom (sSetTopAdj_unit_app_app_down X (op ⦋n⦌) x) (ULift.up w)).symm
-lemma toTopObjMk_eq_toTopPoint (x : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) :
-    toTopObjMk x w = toTopPoint x := by
-  rw [← toTop_map_yonedaEquiv_symm_toTopHomeo_symm,
-    Subsingleton.elim ((⦋0⦌.toTopHomeo).symm w) (toTopPoint (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌))),
-    toTop_map_toTopPoint, yonedaEquiv_symm_app_objEquiv_symm, op_id,
-    CategoryTheory.Functor.map_id, types_id_apply]
-lemma toTopObjMk_single {n : ℕ} (x : X _⦋n⦌) (i : Fin (n + 1)) :
-    toTopObjMk x (StdSimplex.single i) = toTopPoint (X.map (⦋0⦌.const ⦋n⦌ i).op x) := by
-  rw [← toTopObjMk_eq_toTopPoint _ (StdSimplex.single 0), toTopObjMk_map, StdSimplex.map_single]
-  rfl
-/-- Every point of `|X|` lies in the image of `SSet.toTopObjMk` for some simplex of `X`. -/
-lemma exists_toTopObjMk (z : |X|) :
-    ∃ (n : ℕ) (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))), toTopObjMk x w = z := by
-  obtain ⟨⟨m, _, f⟩, y, hy⟩ := Types.jointly_surjective_of_isColimit
-    (isColimitOfPreserves (toTop ⋙ forget TopCat) (denseAtUliftYoneda X)) z
-  dsimp at y hy; rw [Category.id_comp] at hy
-  induction m using SimplexCategory.rec with | _ n =>
-  let f' : Δ[n] ⟶ X := f; let y' : |Δ[n]| := y
-  refine ⟨n, yonedaEquiv f', ⦋n⦌.toTopHomeo y', ?_⟩
-  rwa [← toTop_map_yonedaEquiv_symm_toTopHomeo_symm, Equiv.symm_apply_apply,
-    Homeomorph.symm_apply_apply]
-@[simp] lemma toTop_map_const_apply (y : Y _⦋0⦌) (z : |X|) :
+lemma toTop_map_const_apply (y : Y _⦋0⦌) (z : |X|) :
     toTop.map (SSet.const y) z = toTopPoint y := by
   obtain ⟨n, x, w, rfl⟩ := exists_toTopObjMk z
   rw [toTop_map_toTopObjMk, const_app, TypeCat.ofHom_apply, toTopObjMk_map,
@@ -84,11 +57,14 @@ lemma exists_toTopObjMk (z : |X|) :
 lemma toTop_map_const (y : Y _⦋0⦌) :
     toTop.map (SSet.const y : X ⟶ Y) = TopCat.const (toTopPoint y) :=
   TopCat.ext (toTop_map_const_apply y)
+@[simp] lemma toTop_map_const_hom (y : Y _⦋0⦌) :
+    (toTop.map (SSet.const y : X ⟶ Y)).hom = ContinuousMap.const |X| (toTopPoint y) :=
+  ContinuousMap.ext (toTop_map_const_apply y)
 
 /-- The geometric realization `|X|` is empty if and only if `X` has no `0`-simplices. -/
 @[simp] theorem isEmpty_toTop_iff (X : SSet.{u}) : IsEmpty |X| ↔ IsEmpty (X _⦋0⦌) :=
   ⟨fun h ↦ ⟨fun x ↦ h.false (toTopPoint x)⟩, fun h ↦ ⟨fun z ↦
-    let ⟨x, _⟩ := π₀.mk_surjective (X.π₀EquivZerothHomotopy.symm (.mk z)); h.false x⟩⟩
+    let ⟨_, x, _, _⟩ := exists_toTopObjMk z; h.false (X.map (⦋0⦌.const _ 0).op x)⟩⟩
 instance [IsEmpty (X _⦋0⦌)] : IsEmpty |X| := (isEmpty_toTop_iff X).2 inferInstance
 /-- The geometric realization `|X|` is nonempty if and only if `X` is nonempty. -/
 @[simp] theorem nonempty_toTop_iff (X : SSet.{u}) : Nonempty |X| ↔ X.Nonempty := by
@@ -102,38 +78,6 @@ instance [∀ n, Subsingleton (X.obj n)] : Subsingleton |X| where
       (congrArg (toTopObjMk · w) (Subsingleton.elim x (X.map (⦋n⦌.const ⦋0⦌ 0).op _))).trans
         ((toTopObjMk_map _ _ w).trans (toTopObjMk_eq_toTopPoint _ _))
     rw [h x₁ w₁, h x₂ w₂]; exact congrArg toTopPoint (Subsingleton.elim _ _)
-lemma exists_joined_toTopPoint (z : |X|) : ∃ x : X _⦋0⦌, Joined z (toTopPoint x) := by
-  obtain ⟨x, hx⟩ := π₀.mk_surjective (X.π₀EquivZerothHomotopy.symm (.mk z))
-  have hm := congrArg X.π₀EquivZerothHomotopy hx
-  rw [π₀EquivZerothHomotopy_mk, Equiv.apply_symm_apply] at hm
-  exact ⟨x, Quotient.exact hm.symm⟩
-/-- The geometric realization `|X|` is path-connected if and only if `X` is connected. -/
-@[simp] theorem pathConnectedSpace_toTop_iff (X : SSet.{u}) :
-    PathConnectedSpace |X| ↔ X.IsConnected := by
-  rw [pathConnectedSpace_iff_zerothHomotopy, and_comm, ← unique_iff_subsingleton_and_nonempty,
-    SSet.isConnected_iff_nonempty_unique]
-  exact ⟨fun ⟨_⟩ ↦ ⟨X.π₀EquivZerothHomotopy.unique⟩,
-    fun ⟨_⟩ ↦ ⟨X.π₀EquivZerothHomotopy.symm.unique⟩⟩
-instance [X.IsConnected] : PathConnectedSpace |X| :=
-  (pathConnectedSpace_toTop_iff X).2 inferInstance
-
-private lemma toTop_map_const_hom (x : X _⦋0⦌) :
-    (toTop.map (SSet.const x : X ⟶ X)).hom = ContinuousMap.const |X| (toTopPoint x) :=
-  ContinuousMap.ext (toTop_map_const_apply x)
-private lemma contractibleSpace_toTop_of_topHomotopy (x : X _⦋0⦌)
-    (H : ContinuousMap.Homotopy (toTop.map (𝟙 X)).hom
-      (toTop.map (SSet.const x : X ⟶ X)).hom) : ContractibleSpace |X| := by
-  rw [contractible_iff_id_nullhomotopic]
-  rw [toTop_map_const_hom, CategoryTheory.Functor.map_id, TopCat.hom_id] at H
-  exact ⟨toTopPoint x, ⟨H⟩⟩
-/-- If `SSet.const x` is simplicially homotopic to `𝟙 X`, then `|X|` is contractible. -/
-lemma contractibleSpace_toTop_of_homotopy {x : X _⦋0⦌}
-    (H : SSet.Homotopy (SSet.const x) (𝟙 X)) : ContractibleSpace |X| :=
-  contractibleSpace_toTop_of_topHomotopy x H.toTop.symm
-/-- If `𝟙 X` is simplicially homotopic to `SSet.const x`, then `|X|` is contractible. -/
-lemma contractibleSpace_toTop_of_homotopy_id_const {x : X _⦋0⦌}
-    (H : SSet.Homotopy (𝟙 X) (SSet.const x)) : ContractibleSpace |X| :=
-  contractibleSpace_toTop_of_topHomotopy x H.toTop
 
 /-! ### Separation of vertices and `1`-simplices -/
 

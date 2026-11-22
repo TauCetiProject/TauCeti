@@ -5,24 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Preorder
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
-public import TauCeti.AlgebraicTopology.SimplicialSet.WeaklyContractible
 
 /-!
-# Simplicial homotopies and weak contractibility of nerves
+# Simplicial homotopies of nerves
 
 A natural transformation `η : F₀ ⟶ F₁` between functors `C ⥤ D` induces a simplicial map
 `nerve C ⊗ Δ[1] ⟶ nerve D` whose endpoints are `nerveMap F₀` and `nerveMap F₁`
 (`CategoryTheory.NatTrans.nerveHomotopy`), with vertical edge track `η.app c` and left/right
 whiskering compatibilities (backed by the universe-polymorphic simplex action
 `CategoryTheory.NatTrans.mapNerveCylinderObj`). In particular, an initial or terminal object of `C`
-gives a contracting homotopy on `nerve C`, making `nerve C` weakly contractible
-(`CategoryTheory.Limits.isWeaklyContractible_nerve_of_hasInitial`,
-`CategoryTheory.Limits.isWeaklyContractible_nerve_of_hasTerminal`); importing
-`Mathlib.CategoryTheory.Limits.Preorder` gives this automatically for bounded preorders. These
-simplicial homotopies realize via `TauCeti.AlgebraicTopology.SimplicialSet.PrismRealization` to
+gives a contracting homotopy on `nerve C` (`CategoryTheory.Limits.IsInitial.nerveHomotopy`,
+`CategoryTheory.Limits.IsTerminal.nerveHomotopy`); weak contractibility of `nerve C` from these
+homotopies is in `TauCeti.AlgebraicTopology.SimplicialSet.Nerve.WeaklyContractible`. These
+simplicial homotopies realize via `TauCeti.AlgebraicTopology.SimplicialSet.Realization.Prism` to
 topological homotopies and contractibility of classifying spaces in
 `TauCeti.AlgebraicTopology.SimplicialSet.Nerve.ClassifyingSpace`.
 
@@ -56,37 +53,36 @@ lemma mapNerveCylinderObj_def {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) {n : Si
     (Functor.whiskerLeft K η).mapNerveCylinderObj σ β =
       η.mapNerveCylinderObj ((K.mapComposableArrows n.unop.len).obj σ) β := by
   rcases n with ⟨m⟩; induction m using SimplexCategory.rec with | _ m =>
-  have hobj (k : Fin 2) (b : B) : ((ComposableArrows.mk₁ (Functor.whiskerLeft K η)).obj k).obj b =
-      ((ComposableArrows.mk₁ η).obj k).obj (K.obj b) := by fin_cases k <;> rfl
-  have hmap {k₀ k₁ : Fin 2} (u : k₀ ⟶ k₁) {b₀ b₁ : B} (f : b₀ ⟶ b₁) :
-      ((ComposableArrows.mk₁ (Functor.whiskerLeft K η)).obj k₀).map f ≫
-          ((ComposableArrows.mk₁ (Functor.whiskerLeft K η)).map u).app b₁ =
-        eqToHom (hobj k₀ b₀) ≫ (((ComposableArrows.mk₁ η).obj k₀).map (K.map f) ≫
-          ((ComposableArrows.mk₁ η).map u).app (K.obj b₁)) ≫ eqToHom (hobj k₁ b₁).symm := by
-    fin_cases k₀ <;> fin_cases k₁ <;> first
-      | exact absurd (Fin.le_iff_val_le_val.1 (leOfHom u)) (Nat.not_succ_le_zero _)
-      | (simp only [eqToHom_refl, Category.id_comp, Category.comp_id]; rfl)
-  let φ := (SimplexCategory.toCat.map β).toFunctor
-  exact CategoryTheory.Functor.ext (fun i ↦ hobj (φ.obj i) (σ.obj i))
-    fun _ _ g ↦ hmap (φ.map g) (σ.map g)
+  rw [mapNerveCylinderObj_def, mapNerveCylinderObj_def,
+    show Functor.whiskerLeft K η = ((Functor.whiskeringLeft B C D).obj K).map η from rfl,
+    ← Functor.mapComposableArrows_obj_mk₁ ((Functor.whiskeringLeft B C D).obj K) η]
+  have hnat : (nerve (B ⥤ D)).map β.op
+        ((((Functor.whiskeringLeft B C D).obj K).mapComposableArrows 1).obj
+          (ComposableArrows.mk₁ η)) =
+      (((Functor.whiskeringLeft B C D).obj K).mapComposableArrows m).obj
+        ((nerve (C ⥤ D)).map β.op (ComposableArrows.mk₁ η)) :=
+    Functor.assoc _ (ComposableArrows.mk₁ η) ((Functor.whiskeringLeft B C D).obj K)
+  rw [hnat]
+  exact Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦
+    ((Category.id_comp _).trans (Category.comp_id _)).symm
 @[simp] lemma whiskerRight_mapNerveCylinderObj {F₀ F₁ : B ⥤ C} (η : F₀ ⟶ F₁) (G : C ⥤ D)
     {n : SimplexCategoryᵒᵖ} (σ : ComposableArrows B n.unop.len) (β : n.unop ⟶ ⦋1⦌) :
     (Functor.whiskerRight η G).mapNerveCylinderObj σ β =
       (G.mapComposableArrows n.unop.len).obj (η.mapNerveCylinderObj σ β) := by
   rcases n with ⟨m⟩; induction m using SimplexCategory.rec with | _ m =>
-  have hobj (k : Fin 2) (b : B) : ((ComposableArrows.mk₁ (Functor.whiskerRight η G)).obj k).obj b =
-      G.obj (((ComposableArrows.mk₁ η).obj k).obj b) := by fin_cases k <;> rfl
-  have hmap {k₀ k₁ : Fin 2} (u : k₀ ⟶ k₁) {b₀ b₁ : B} (f : b₀ ⟶ b₁) :
-      ((ComposableArrows.mk₁ (Functor.whiskerRight η G)).obj k₀).map f ≫
-          ((ComposableArrows.mk₁ (Functor.whiskerRight η G)).map u).app b₁ =
-        eqToHom (hobj k₀ b₀) ≫ G.map (((ComposableArrows.mk₁ η).obj k₀).map f ≫
-          ((ComposableArrows.mk₁ η).map u).app b₁) ≫ eqToHom (hobj k₁ b₁).symm := by
-    fin_cases k₀ <;> fin_cases k₁ <;> first
-      | exact absurd (Fin.le_iff_val_le_val.1 (leOfHom u)) (Nat.not_succ_le_zero _)
-      | simp [ComposableArrows.mk₁, ComposableArrows.Mk₁.obj, ComposableArrows.Mk₁.map]
-  let φ := (SimplexCategory.toCat.map β).toFunctor
-  exact CategoryTheory.Functor.ext (fun i ↦ hobj (φ.obj i) (σ.obj i))
-    fun _ _ g ↦ hmap (φ.map g) (σ.map g)
+  rw [mapNerveCylinderObj_def, mapNerveCylinderObj_def,
+    show Functor.whiskerRight η G = ((Functor.whiskeringRight B C D).obj G).map η from rfl,
+    ← Functor.mapComposableArrows_obj_mk₁ ((Functor.whiskeringRight B C D).obj G) η]
+  have hnat : (nerve (B ⥤ D)).map β.op
+        ((((Functor.whiskeringRight B C D).obj G).mapComposableArrows 1).obj
+          (ComposableArrows.mk₁ η)) =
+      (((Functor.whiskeringRight B C D).obj G).mapComposableArrows m).obj
+        ((nerve (B ⥤ C)).map β.op (ComposableArrows.mk₁ η)) :=
+    Functor.assoc _ (ComposableArrows.mk₁ η) ((Functor.whiskeringRight B C D).obj G)
+  rw [hnat]
+  refine Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦ ?_
+  change G.map _ ≫ G.map _ = 𝟙 _ ≫ G.map (_ ≫ _) ≫ 𝟙 _
+  simp; rfl
 end
 
 section
@@ -152,11 +148,5 @@ noncomputable def IsTerminal.nerveHomotopy {x : C} (hx : IsTerminal x) :
   simpa only [nerveMap_id, nerveMap_const] using
     ({ app := fun c ↦ hx.from c, naturality := fun _ _ _ ↦ hx.hom_ext _ _ } :
       𝟭 C ⟶ (Functor.const C).obj x).nerveHomotopy
-instance isWeaklyContractible_nerve_of_hasInitial (C : Type u) [Category.{v} C] [HasInitial C] :
-    SSet.IsWeaklyContractible (nerve C) :=
-  SSet.IsWeaklyContractible.of_homotopy initialIsInitial.nerveHomotopy
-instance isWeaklyContractible_nerve_of_hasTerminal (C : Type u) [Category.{v} C] [HasTerminal C] :
-    SSet.IsWeaklyContractible (nerve C) :=
-  SSet.IsWeaklyContractible.of_homotopy_id_const terminalIsTerminal.nerveHomotopy
 end Limits
 end CategoryTheory

@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 public import TauCeti.Geometry.Convex.ConvexSpace.PathConnectedSpaceStdSimplex
 
+import Mathlib.CategoryTheory.Functor.KanExtension.DenseAtYoneda
+
 /-!
 # Naturality of singular simplices
 
@@ -31,14 +33,15 @@ A morphism `Δ[m] ⟶ Sing X` is determined by its underlying continuous map
 (`TauCeti.TopCat.toSSetObjEquiv_yonedaEquiv_δ_comp_apply`), and the constant morphism at a point
 is the constant map (`TauCeti.TopCat.toSSetObjEquiv_yonedaEquiv_const_apply`).
 
-Dually, the unit of the adjunction `sSetTopAdj` gives every `n`-simplex `x` of a simplicial set `X`
-a continuous map from the standard simplex to the realization `|X|`; its value at the barycentric
-coordinates `w` is the point `SSet.toTopObjMk x w`. These points are natural in `X` and in the
-simplex; continuous maps out of `|X|` are determined by their values on them
-(`SSet.toTop_hom_ext`) and constructed from compatible families on standard simplices via
-`SSet.descToTop`. In particular, the singular simplices of the unit interval given by the
-simplices `⦋n⦌ ⟶ ⦋1⦌` of `Δ[1]` through `SSet.stdSimplex.toSSetObjI` are affine in barycentric
-coordinates (`SSet.stdSimplex.coe_homeomorph_toSSetObjEquiv_toSSetObjI_app`).
+Dually, the unit of the adjunction `sSetTopAdj` gives every vertex `x` of `X` a point
+`SSet.toTopPoint x` in `|X|`, and every `n`-simplex `x` a continuous map from the standard simplex
+to `|X|`; its value at the barycentric coordinates `w` is `SSet.toTopObjMk x w` (jointly surjective
+via `SSet.exists_toTopObjMk`). These points are natural in `X` and in the simplex; continuous maps
+out of `|X|` are determined by their values on them (`SSet.toTop_hom_ext`) and constructed from
+compatible families on standard simplices via `SSet.descToTop`. In particular, the singular
+simplices of the unit interval given by the simplices `⦋n⦌ ⟶ ⦋1⦌` of `Δ[1]` through
+`SSet.stdSimplex.toSSetObjI` are affine in barycentric coordinates
+(`SSet.stdSimplex.coe_homeomorph_toSSetObjEquiv_toSSetObjI_app`).
 -/
 
 public section
@@ -265,6 +268,25 @@ namespace SSet
 
 variable {X Y : SSet.{u}}
 
+/-- The point of the geometric realization `|X|` given by a vertex `x` of `X`: the singular vertex
+`(sSetTopAdj.unit.app X).app _ x` of `|X|`. -/
+noncomputable def toTopPoint {X : SSet.{u}} (x : X _⦋0⦌) : |X| :=
+  TopCat.toSSetObj₀Equiv ((sSetTopAdj.unit.app X).app _ x)
+
+/-- The point `toTopPoint x` is the singular vertex of `|X|` given by `x` under the unit of the
+adjunction. -/
+lemma toTopPoint_def {X : SSet.{u}} (x : X _⦋0⦌) :
+    toTopPoint x = TopCat.toSSetObj₀Equiv ((sSetTopAdj.unit.app X).app _ x) :=
+  (rfl)
+
+/-- The realization of a map sends the point of a vertex to the point of its image. -/
+@[simp]
+lemma toTop_map_toTopPoint {X Y : SSet.{u}} (f : X ⟶ Y) (x : X _⦋0⦌) :
+    toTop.map f (toTopPoint x) = toTopPoint (f.app _ x) := by
+  have h := ConcreteCategory.congr_hom (NatTrans.congr_app (sSetTopAdj.unit.naturality f) _) x
+  dsimp at h
+  rw [toTopPoint, toTopPoint, h, TauCeti.TopCat.toSSetObj₀Equiv_toSSet_map_app]
+
 /-- The point of the geometric realization `|X|` with barycentric coordinates `w` in the
 realization of the `n`-simplex `x` of `X`: the value at `w` of the singular simplex
 `(sSetTopAdj.unit.app X).app _ x` of `|X|`. -/
@@ -299,6 +321,41 @@ lemma toTopObjMk_map {m n : ℕ} (θ : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌) (w 
   have h := ConcreteCategory.congr_hom ((sSetTopAdj.unit.app X).naturality θ.op) x
   dsimp at h
   rw [toTopObjMk, toTopObjMk, h, TopCat.toSSetObjEquiv_naturality_apply]
+
+/-- The realization of a Yoneda-corresponding map `Δ[n] ⟶ X` takes the coordinates `w` in
+`StdSimplex ℝ (Fin (n + 1))` to `toTopObjMk x w`. -/
+lemma toTop_map_yonedaEquiv_symm_toTopHomeo_symm {n : ℕ} (x : X _⦋n⦌)
+    (w : StdSimplex ℝ (Fin (n + 1))) :
+    toTop.map (yonedaEquiv.symm x) ((⦋n⦌.toTopHomeo).symm w) = toTopObjMk x w := by
+  rw [toTopObjMk_def]
+  exact (ConcreteCategory.congr_hom (sSetTopAdj_unit_app_app_down X (Opposite.op ⦋n⦌) x)
+    (ULift.up w)).symm
+
+/-- Every point on a `0`-simplex `x` coincides with the vertex point `toTopPoint x`. -/
+lemma toTopObjMk_eq_toTopPoint (x : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) :
+    toTopObjMk x w = toTopPoint x := by
+  rw [← toTop_map_yonedaEquiv_symm_toTopHomeo_symm,
+    Subsingleton.elim ((⦋0⦌.toTopHomeo).symm w) (toTopPoint (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌))),
+    toTop_map_toTopPoint, yonedaEquiv_symm_app_objEquiv_symm]
+  simp
+
+/-- A vertex of an `n`-simplex `x` in `|X|` is the point of the corresponding `0`-simplex of `X`. -/
+lemma toTopObjMk_single {n : ℕ} (x : X _⦋n⦌) (i : Fin (n + 1)) :
+    toTopObjMk x (StdSimplex.single i) = toTopPoint (X.map (⦋0⦌.const ⦋n⦌ i).op x) := by
+  rw [← toTopObjMk_eq_toTopPoint _ (StdSimplex.single 0), toTopObjMk_map, StdSimplex.map_single]
+  rfl
+
+/-- Every point of `|X|` lies in the image of `SSet.toTopObjMk` for some simplex of `X`. -/
+lemma exists_toTopObjMk (z : |X|) :
+    ∃ (n : ℕ) (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))), toTopObjMk x w = z := by
+  obtain ⟨⟨m, _, f⟩, y, hy⟩ := Limits.Types.jointly_surjective_of_isColimit
+    (Limits.isColimitOfPreserves (toTop ⋙ forget TopCat) (denseAtUliftYoneda X)) z
+  dsimp at y hy; rw [Category.id_comp] at hy
+  induction m using SimplexCategory.rec with | _ n =>
+  let f' : Δ[n] ⟶ X := f; let y' : |Δ[n]| := y
+  refine ⟨n, yonedaEquiv f', ⦋n⦌.toTopHomeo y', ?_⟩
+  rwa [← toTop_map_yonedaEquiv_symm_toTopHomeo_symm, Equiv.symm_apply_apply,
+    Homeomorph.symm_apply_apply]
 
 /-- The value of a continuous map out of `|X|` at the point of a simplex is the value of the
 corresponding singular simplex. -/

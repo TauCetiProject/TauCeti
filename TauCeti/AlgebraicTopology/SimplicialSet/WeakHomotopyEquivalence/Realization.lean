@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.WeakHomotopyEquivalence
 public import TauCeti.AlgebraicTopology.SimplicialSet.Factorization
 public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex
-public import TauCeti.AlgebraicTopology.SimplicialSet.PrismRealization
+public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Prism
 
 /-!
 # Weak homotopy equivalences realize to homotopy equivalences

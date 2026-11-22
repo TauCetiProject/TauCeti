@@ -146,27 +146,36 @@ lemma evalAt_constMaps (x : K _⦋0⦌) (Z : SSet.{u}) :
   rw [uncurry_pre, constMaps, uncurry_natural_left, uncurry_curry, whiskerLeft_snd, evalAt,
     comp_lift_assoc]; rfl
 
+private noncomputable def homotopyPreOfEq {f g : K ⟶ K} (H : Homotopy f g) (Z : SSet.{u})
+    {φ ψ : (ihom K).obj Z ⟶ (ihom K).obj Z}
+    (hφ : (pre f).app Z = φ) (hψ : (pre g).app Z = ψ) : Homotopy φ ψ :=
+  Homotopy.mk' (H.pre Z).h (by rw [← hφ, (H.pre Z).h₀]) (by rw [← hψ, (H.pre Z).h₁])
+
 /-- A homotopy from a constant map to the identity of `K` contracts the mapping spaces out of `K`
 onto their values at the vertex. -/
 noncomputable def homotopyEvalAtConstMaps {x : K _⦋0⦌} (H : Homotopy (const x) (𝟙 K))
     (Z : SSet.{u}) : Homotopy (evalAt x Z ≫ constMaps K Z) (𝟙 _) :=
-  Homotopy.mk' (H.pre Z).h (by simpa using (H.pre Z).h₀) (by simpa using (H.pre Z).h₁)
+  homotopyPreOfEq H Z (pre_const_app x Z) (by simp)
 
 namespace IsWeaklyContractible
 
+private lemma of_evalAt_homotopy {x : K _⦋0⦌}
+    (h : ∀ Z : SSet.{u}, [KanComplex Z] →
+      Nonempty (Homotopy (evalAt x Z ≫ constMaps K Z) (𝟙 _))) :
+    IsWeaklyContractible K where
+  exists_homotopyInverse Z _ :=
+    ⟨evalAt x Z, ⟨.ofEq (congrArg _ (constMaps_evalAt K x Z))⟩, h Z⟩
+
 /-- A simplicial set with a homotopy from a constant map to its identity is weakly
 contractible. -/
-lemma of_homotopy {x : K _⦋0⦌} (H : Homotopy (const x) (𝟙 K)) : IsWeaklyContractible K where
-  exists_homotopyInverse Z _ :=
-    ⟨evalAt x Z, ⟨.ofEq (congrArg _ (constMaps_evalAt K x Z))⟩, ⟨homotopyEvalAtConstMaps H Z⟩⟩
+lemma of_homotopy {x : K _⦋0⦌} (H : Homotopy (const x) (𝟙 K)) : IsWeaklyContractible K :=
+  of_evalAt_homotopy fun Z ↦ ⟨homotopyEvalAtConstMaps H Z⟩
 
 /-- A simplicial set with a homotopy from `𝟙 K` to `SSet.const x` is weakly contractible. -/
 lemma of_homotopy_id_const {x : K _⦋0⦌} (H : Homotopy (𝟙 K) (const x)) :
-    IsWeaklyContractible K where
-  exists_homotopyInverse Z _ :=
-    ⟨evalAt x Z, ⟨.ofEq (congrArg _ (constMaps_evalAt K x Z))⟩,
-      (Homotopy.mk' (H.pre Z).h
-        (by simpa using (H.pre Z).h₀) (by simpa using (H.pre Z).h₁)).nonempty_symm⟩
+    IsWeaklyContractible K :=
+  of_evalAt_homotopy fun Z ↦
+    (homotopyPreOfEq H Z (by simp) (pre_const_app x Z)).nonempty_symm
 
 instance (n : ℕ) : IsWeaklyContractible Δ[n] :=
   of_homotopy (stdSimplex.contraction n)

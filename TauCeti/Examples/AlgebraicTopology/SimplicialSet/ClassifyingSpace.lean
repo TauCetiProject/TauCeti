@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Algebra.Group.PUnit
+import Mathlib.CategoryTheory.Limits.Preorder
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.Cospan
 import Mathlib.CategoryTheory.SingleObj
 import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.ClassifyingSpace
+import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.WeaklyContractible
 
 /-!
 # Examples of classifying spaces of categories

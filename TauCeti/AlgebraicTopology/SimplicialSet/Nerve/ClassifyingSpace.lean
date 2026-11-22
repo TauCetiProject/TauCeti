@@ -13,8 +13,9 @@ public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Homotopy
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Op
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.PiZero
-public import TauCeti.AlgebraicTopology.SimplicialSet.PrismRealization
 public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Basic
+public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.PiZero
+public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Prism
 
 /-!
 # Classifying spaces of categories
@@ -103,13 +104,18 @@ theorem vertex_injective : Function.Injective (vertex (C := C)) :=
     classifyingSpaceMap F (vertex c) = vertex (F.obj c) :=
   (SSet.toTop_map_toTopPoint (nerveMap F) (nerveEquiv.symm c : (nerve C) _⦋0⦌)).trans
     (congrArg (SSet.toTopPoint (X := nerve D)) (nerveMap_app_mk₀ F c))
-@[simp] lemma classifyingSpaceMap_const_apply (C : Type u) [Category.{v} C] {D : Type u}
+lemma classifyingSpaceMap_const_apply (C : Type u) [Category.{v} C] {D : Type u}
     [Category.{v} D] (d : D) (z : classifyingSpace C) :
     classifyingSpaceMap ((Functor.const C).obj d) z = vertex d := by
   rw [classifyingSpaceMap_def, nerveMap_const, vertex_def]; exact SSet.toTop_map_const_apply _ z
 lemma classifyingSpaceMap_const (C : Type u) [Category.{v} C] {D : Type u} [Category.{v} D]
     (d : D) : classifyingSpaceMap ((Functor.const C).obj d) = TopCat.const (vertex d) := by
   rw [classifyingSpaceMap_def, nerveMap_const, vertex_def]; exact SSet.toTop_map_const _
+@[simp] lemma classifyingSpaceMap_const_hom (C : Type u) [Category.{v} C] {D : Type u}
+    [Category.{v} D] (d : D) :
+    (classifyingSpaceMap ((Functor.const C).obj d)).hom =
+      ContinuousMap.const (classifyingSpace C) (vertex d) := by
+  rw [classifyingSpaceMap_def, nerveMap_const, vertex_def]; exact SSet.toTop_map_const_hom _
 lemma exists_joined_vertex (z : classifyingSpace C) : ∃ c : C, Joined (vertex c) z := by
   obtain ⟨x, hx⟩ := SSet.exists_joined_toTopPoint (X := nerve C) z
   exact ⟨nerveEquiv x, by rw [vertex_def, Equiv.symm_apply_apply nerveEquiv x]; exact hx.symm⟩
@@ -147,6 +153,14 @@ and `f : x ⟶ y` to the path-homotopy class of `edgePath f`. -/
 end VerticesAndEdges
 
 section AsSmall
+private lemma asSmall_up_comp_down (C : Type u) [Category.{v} C] :
+    (AsSmall.up : C ⥤ AsSmall.{w} C) ⋙ AsSmall.down = 𝟭 C :=
+  CategoryTheory.Functor.ext (fun _ ↦ rfl)
+    fun _ _ _ ↦ ((Category.id_comp _).trans (Category.comp_id _)).symm
+private lemma asSmall_down_comp_up (C : Type u) [Category.{v} C] :
+    (AsSmall.down : AsSmall.{w} C ⥤ C) ⋙ AsSmall.up = 𝟭 (AsSmall.{w} C) :=
+  CategoryTheory.Functor.ext (fun _ ↦ rfl)
+    fun _ _ _ ↦ ((Category.id_comp _).trans (Category.comp_id _)).symm
 variable (C : Type u) [Category.{v} C]
 /-- The classifying space of `AsSmall.{w} C` is canonically homeomorphic to `classifyingSpace C`. -/
 noncomputable def asSmallHomeomorph : classifyingSpace (AsSmall.{w} C) ≃ₜ classifyingSpace C :=
@@ -166,9 +180,9 @@ noncomputable def asSmallHomeomorph : classifyingSpace (AsSmall.{w} C) ≃ₜ cl
       SSet.toTopObjMk (X := nerve (AsSmall.{w} C)) ((AsSmall.up.mapComposableArrows n).obj σ) w₀ :=
   (asSmallHomeomorph.{w} C).injective <| by
     rw [Homeomorph.apply_symm_apply, asSmallHomeomorph_toTopObjMk]
-    exact congrArg (SSet.toTopObjMk (X := nerve C) · w₀)
-      (CategoryTheory.Functor.ext (fun _ ↦ rfl)
-        fun _ _ _ ↦ ((Category.id_comp _).trans (Category.comp_id _)).symm)
+    refine congrArg (SSet.toTopObjMk (X := nerve C) · w₀) ?_
+    change (σ ⋙ AsSmall.up) ⋙ AsSmall.down = σ
+    rw [CategoryTheory.Functor.assoc, asSmall_up_comp_down.{w} C, CategoryTheory.Functor.comp_id]
 @[simp] lemma asSmallHomeomorph_vertex (c : AsSmall.{w} C) :
     asSmallHomeomorph.{w} C (vertex c) = vertex (AsSmall.down.obj c) :=
   (congrArg (asSmallHomeomorph.{w} C) (vertex_eq_toTopObjMk c)).trans <|
@@ -196,15 +210,17 @@ noncomputable def toClassifyingSpaceContinuousMap (F : C ⥤ D) :
 @[simp] lemma toClassifyingSpaceContinuousMap_toTopObjMk (F : C ⥤ D) {n : ℕ}
     (σ : ComposableArrows C n) (w : StdSimplex ℝ (Fin (n + 1))) :
     F.toClassifyingSpaceContinuousMap (SSet.toTopObjMk (X := nerve C) σ w) =
-      SSet.toTopObjMk (X := nerve D) ((F.mapComposableArrows n).obj σ) w :=
-  (congrArg (classifyingSpace.asSmallHomeomorph.{max u₁ v₁} D) <|
-    (congrArg (classifyingSpaceMap _)
-      (classifyingSpace.asSmallHomeomorph_symm_toTopObjMk C σ w)).trans
-      (classifyingSpaceMap_toTopObjMk _ _ w)).trans <|
+      SSet.toTopObjMk (X := nerve D) ((F.mapComposableArrows n).obj σ) w := by
+  dsimp only [toClassifyingSpaceContinuousMap, ContinuousMap.comp_apply]
+  exact (congrArg (fun z ↦ (classifyingSpace.asSmallHomeomorph.{max u₁ v₁} D)
+      (classifyingSpaceMap (AsSmall.down ⋙ F ⋙ AsSmall.up) z))
+      (classifyingSpace.asSmallHomeomorph_symm_toTopObjMk C σ w)).trans <|
+    (congrArg (classifyingSpace.asSmallHomeomorph.{max u₁ v₁} D)
+      (classifyingSpaceMap_toTopObjMk (AsSmall.down ⋙ F ⋙ AsSmall.up) _ w)).trans <|
     (classifyingSpace.asSmallHomeomorph_toTopObjMk D _ w).trans <|
-      congrArg (SSet.toTopObjMk (X := nerve D) · w) <|
-        CategoryTheory.Functor.ext (fun _ ↦ rfl)
-          fun _ _ _ ↦ ((Category.id_comp _).trans (Category.comp_id _)).symm
+    congrArg (SSet.toTopObjMk (X := nerve D) · w) <|
+      CategoryTheory.Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦
+        ((Category.id_comp _).trans (Category.comp_id _)).symm
 @[simp] lemma toClassifyingSpaceContinuousMap_vertex (F : C ⥤ D) (c : C) :
     F.toClassifyingSpaceContinuousMap (classifyingSpace.vertex c) =
       classifyingSpace.vertex (F.obj c) := by simp [toClassifyingSpaceContinuousMap]
@@ -213,8 +229,8 @@ noncomputable def toClassifyingSpaceContinuousMap (F : C ⥤ D) :
     F.toClassifyingSpaceContinuousMap (classifyingSpace.edgePath f t) =
       classifyingSpace.edgePath (F.map f) t := by
   rw [classifyingSpace.edgePath_apply, nerve.edgeMk_edge,
-    toClassifyingSpaceContinuousMap_toTopObjMk, classifyingSpace.edgePath_apply, nerve.edgeMk_edge]
-  exact congrArg (SSet.toTopObjMk (X := nerve D) · _) (ComposableArrows.ext₁ rfl rfl (by simp))
+    toClassifyingSpaceContinuousMap_toTopObjMk, Functor.mapComposableArrows_obj_mk₁,
+    classifyingSpace.edgePath_apply, nerve.edgeMk_edge]
 @[simp] lemma toClassifyingSpaceContinuousMap_id (C : Type u₁) [Category.{v₁} C] :
     (𝟭 C).toClassifyingSpaceContinuousMap = ContinuousMap.id (classifyingSpace C) := by
   ext z; obtain ⟨n, (σ : ComposableArrows C n), w, rfl⟩ := SSet.exists_toTopObjMk (X := nerve C) z
@@ -246,13 +262,8 @@ theorem toClassifyingSpaceContinuousMap_injective :
   have hmk : ComposableArrows.mk₁ (F.map f) = ComposableArrows.mk₁ (G.map f) :=
     SSet.toTopObjMk_one_injective (nerve D) <| funext fun w ↦ by
       have hw := DFunLike.congr_fun h (SSet.toTopObjMk (X := nerve C) (ComposableArrows.mk₁ f) w)
-      rw [toClassifyingSpaceContinuousMap_toTopObjMk, toClassifyingSpaceContinuousMap_toTopObjMk]
-        at hw
-      have hF : (F.mapComposableArrows 1).obj (ComposableArrows.mk₁ f) =
-          ComposableArrows.mk₁ (F.map f) := ComposableArrows.ext₁ rfl rfl (by simp)
-      have hG : (G.mapComposableArrows 1).obj (ComposableArrows.mk₁ f) =
-          ComposableArrows.mk₁ (G.map f) := ComposableArrows.ext₁ rfl rfl (by simp)
-      rwa [hF, hG] at hw
+      rwa [toClassifyingSpaceContinuousMap_toTopObjMk, toClassifyingSpaceContinuousMap_toTopObjMk,
+        Functor.mapComposableArrows_obj_mk₁, Functor.mapComposableArrows_obj_mk₁] at hw
   rw [← ComposableArrows.mk₁_eqToHom_comp (h_obj x),
     ← ComposableArrows.mk₁_comp_eqToHom _ (h_obj y).symm, Category.assoc] at hmk
   exact (Arrow.mk_inj _ _).1 (ComposableArrows.arrowEquiv.symm.injective hmk)
@@ -344,10 +355,9 @@ noncomputable def finSuccHomeomorphStdSimplex (n : ℕ) :
   let φ : ⦋d⦌ ⟶ ⦋n⦌ := SSet.stdSimplex.objEquiv ((nerve.finSuccIsoStdSimplex n).hom.app (op ⦋d⦌) σ)
   have hσ : (nerve.finSuccIsoStdSimplex n).hom.app (op ⦋d⦌) σ =
       Δ[n].map φ.op (SSet.stdSimplex.objEquiv.symm (𝟙 ⦋n⦌)) := by ext k : 3; rfl
-  have hid : SSet.yonedaEquiv.symm (SSet.stdSimplex.objEquiv.symm (𝟙 ⦋n⦌) :
-      (Δ[n] : SSet.{0}) _⦋n⦌) = 𝟙 Δ[n] := SSet.yonedaEquiv.injective (by simp)
-  rw [hσ, SSet.toTopObjMk_map, ← SSet.toTop_map_yonedaEquiv_symm_toTopHomeo_symm, hid,
-    CategoryTheory.Functor.map_id, CategoryTheory.id_apply, Homeomorph.apply_symm_apply]
+  rw [hσ, SSet.toTopObjMk_map, ← SSet.toTop_map_yonedaEquiv_symm_toTopHomeo_symm,
+    SSet.yonedaEquiv_symm_stdSimplex_id ⦋n⦌, CategoryTheory.Functor.map_id,
+    CategoryTheory.id_apply, Homeomorph.apply_symm_apply]
   exact congrArg (StdSimplex.map · w) (funext fun i ↦ nerve.finSuccIsoStdSimplex_hom_app_apply σ i)
 @[simp] lemma finSuccHomeomorphStdSimplex_vertex (n : ℕ) (i : Fin (n + 1)) :
     finSuccHomeomorphStdSimplex n (vertex i) = StdSimplex.single i :=
@@ -478,11 +488,12 @@ lemma opIso_hom_naturality {C D : Type u} [Category.{v} C] [Category.{v} D] (F :
   (opHomeomorph C).injective (by simp)
 @[simp] lemma opHomeomorph_edgePath_apply {x y : C} (f : x ⟶ y) (t : unitInterval) :
     opHomeomorph C (edgePath f.op t) = (edgePath f).symm t := by
-  rw [edgePath_apply, opHomeomorph_toTopObjMk, nerve.edgeMk_edge, nerve.opIso_hom_app_mk₁,
-    StdSimplex.map_rev_homeomorphI_symm, _root_.Path.symm_apply, Function.comp_apply]
-  exact (congrArg (SSet.toTopObjMk (X := nerve C) · _)
-    (Equiv.apply_symm_apply (SSet.opObjEquiv (X := nerve C) (n := op ⦋1⦌))
-      (ComposableArrows.mk₁ f))).trans (edgePath_apply f (unitInterval.symm t)).symm
+  rw [edgePath_apply, opHomeomorph_toTopObjMk, nerve.edgeMk_edge, nerve.opIso_hom_app_mk₁]
+  refine (congrArg (SSet.toTopObjMk (X := nerve C) · _)
+    (((nerve C).opObjEquiv (n := op ⦋1⦌)).apply_symm_apply
+      (ComposableArrows.mk₁ f))).trans ?_
+  rw [StdSimplex.map_rev_homeomorphI_symm, ← nerve.edgeMk_edge, ← edgePath_apply]
+  rfl
 lemma opHomeomorph_naturality_apply {C D : Type u} [Category.{v} C] [Category.{v} D]
     (F : C ⥤ D) (z : classifyingSpace Cᵒᵖ) :
     opHomeomorph D (classifyingSpaceMap F.op z) = classifyingSpaceMap F (opHomeomorph C z) :=
@@ -576,22 +587,29 @@ lemma classifyingSpaceHomotopy_apply (t : unitInterval) (z : classifyingSpace C)
 @[simp] lemma classifyingSpaceHomotopy_vertex (t : unitInterval) (c : C) :
     η.classifyingSpaceHomotopy (t, classifyingSpace.vertex c) =
       classifyingSpace.edgePath (η.app c) t :=
-  (congrArg (fun z ↦ η.nerveHomotopy.toTop (t, z)) (classifyingSpace.vertex_eq_toTopObjMk c)).trans
-    <| (η.nerveHomotopy.toTop_toTopObjMk_zero t (nerveEquiv.symm c) (StdSimplex.single 0)).trans <|
-      (congrArg (SSet.toTopObjMk (X := nerve D) · _) (η.nerveHomotopy_h_verticalEdge c)).trans
-        (classifyingSpace.edgePath_apply (η.app c) t).symm
+  (SSet.Homotopy.toTop_toTopPoint η.nerveHomotopy t
+    (nerveEquiv.symm c : (nerve C) _⦋0⦌)).trans <|
+    (congrArg (SSet.toTopObjMk (X := nerve D) · (StdSimplex.homeomorphI.symm t))
+      ((nerveHomotopy_h_verticalEdge η c).trans (nerve.edgeMk_edge (η.app c)).symm)).trans
+      (classifyingSpace.edgePath_apply (η.app c) t).symm
 @[simp] lemma whiskerLeft_classifyingSpaceHomotopy_apply (K : B ⥤ C) (t : unitInterval)
     (z : classifyingSpace B) :
     (Functor.whiskerLeft K η).classifyingSpaceHomotopy (t, z) =
       η.classifyingSpaceHomotopy (t, classifyingSpaceMap K z) := by
-  rw [classifyingSpaceHomotopy_apply, classifyingSpaceHomotopy_apply, SSet.Homotopy.toTop_apply,
-    SSet.Homotopy.toTop_apply, whiskerLeft_nerveHomotopy_h, CategoryTheory.Functor.map_comp,
-    ConcreteCategory.comp_apply, classifyingSpaceMap_def, SSet.toTopCylinder_naturality_apply]
+  rw [classifyingSpaceHomotopy_apply, SSet.Homotopy.toTop_apply_of_h
+    (H₁ := η.nerveHomotopy.precomp (nerveMap K))
+    ((whiskerLeft_nerveHomotopy_h K η).trans (SSet.Homotopy.precomp_h _ _).symm),
+    SSet.Homotopy.toTop_precomp_apply]
+  rfl
 @[simp] lemma whiskerRight_classifyingSpaceHomotopy_apply (G : D ⥤ E) (t : unitInterval)
     (z : classifyingSpace C) :
     (Functor.whiskerRight η G).classifyingSpaceHomotopy (t, z) =
       classifyingSpaceMap G (η.classifyingSpaceHomotopy (t, z)) := by
-  simp [classifyingSpaceHomotopy_apply, SSet.Homotopy.toTop_apply, classifyingSpaceMap_def]
+  rw [classifyingSpaceHomotopy_apply, SSet.Homotopy.toTop_apply_of_h
+    (H₁ := η.nerveHomotopy.postcomp (nerveMap G))
+    ((whiskerRight_nerveHomotopy_h η G).trans (SSet.Homotopy.postcomp_h _ _).symm),
+    SSet.Homotopy.toTop_postcomp_apply]
+  rfl
 private lemma classifyingSpaceHomotopy_toTopObjMk_of_prism {p n : ℕ} (σ : ComposableArrows C p)
     (s : StdSimplex ℝ (Fin (p + 1))) (t : unitInterval) (α : ⦋n⦌ ⟶ ⦋p⦌) (β : ⦋n⦌ ⟶ ⦋1⦌)
     (w : StdSimplex ℝ (Fin (n + 1)))
@@ -601,21 +619,13 @@ private lemma classifyingSpaceHomotopy_toTopObjMk_of_prism {p n : ℕ} (σ : Com
     η.classifyingSpaceHomotopy (t, SSet.toTopObjMk (X := nerve C) σ s) =
       SSet.toTopObjMk (X := nerve D)
         (η.mapNerveCylinderObj (σ.whiskerLeft (SimplexCategory.toCat.map α).toFunctor) β) w := by
-  let σ' : (nerve C) _⦋p⦌ := σ
-  refine (classifyingSpaceHomotopy_apply η t _).trans <|
-    (SSet.Homotopy.toTop_apply η.nerveHomotopy t _).trans <|
-      (congrArg (SSet.toTop.map η.nerveHomotopy.h)
-        ((SSet.toTopCylinder_toTopObjMk σ' s t).trans
-          ((congrArg (SSet.toTop.map (SSet.yonedaEquiv.symm σ' ▷ Δ[1])) hprism).trans
-            (SSet.toTop_map_toTopObjMk (SSet.yonedaEquiv.symm σ' ▷ Δ[1]) _ w)))).trans <|
-        (SSet.toTop_map_toTopObjMk η.nerveHomotopy.h _ w).trans <|
-          congrArg (SSet.toTopObjMk (X := nerve D) · w) <|
-            (congrArg (η.nerveHomotopy.h.app (op ⦋n⦌))
-              ((SSet.whiskerRight_app_apply (SSet.yonedaEquiv.symm σ') Δ[1]
-                (SSet.stdSimplex.objEquiv.symm α, SSet.stdSimplex.objEquiv.symm β)).trans
-                (Prod.ext (SSet.yonedaEquiv_symm_app_objEquiv_symm σ' α) rfl))).trans <|
-              (nerveHomotopy_h_app η (op ⦋n⦌) _).trans
-                (congrArg (η.mapNerveCylinderObj _) (Equiv.apply_symm_apply _ β))
+  rw [classifyingSpaceHomotopy_apply, SSet.Homotopy.toTop_apply,
+    SSet.toTopCylinder_toTopObjMk_of_prism (X := nerve C) σ s t hprism]
+  let p₀ : (nerve C ⊗ Δ[1] : SSet.{max u v}) _⦋n⦌ :=
+    ((nerve C).map α.op σ, SSet.stdSimplex.objEquiv.symm β)
+  exact (SSet.toTop_map_toTopObjMk η.nerveHomotopy.h p₀ w).trans
+    (congrArg (SSet.toTopObjMk (X := nerve D) · w)
+      ((nerveHomotopy_h_app η (op ⦋n⦌) p₀).trans (congrArg _ (Equiv.apply_symm_apply _ _))))
 end SameUniverse
 
 section CrossUniverse
@@ -645,10 +655,9 @@ lemma toClassifyingSpaceHomotopy_apply {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁
       classifyingSpace.edgePath (η.app c) t := by
   rw [toClassifyingSpaceHomotopy_apply, classifyingSpace.asSmallHomeomorph_symm_vertex,
     classifyingSpaceHomotopy_vertex, classifyingSpace.edgePath_apply, nerve.edgeMk_edge,
-    classifyingSpace.asSmallHomeomorph_toTopObjMk, classifyingSpace.edgePath_apply,
-    nerve.edgeMk_edge]
-  exact congrArg (SSet.toTopObjMk (X := nerve D) · _)
-    (ComposableArrows.ext₁ rfl rfl ((Category.id_comp _).trans (Category.comp_id _)).symm)
+    classifyingSpace.asSmallHomeomorph_toTopObjMk, Functor.mapComposableArrows_obj_mk₁,
+    classifyingSpace.edgePath_apply, nerve.edgeMk_edge]
+  rfl
 private lemma toClassifyingSpaceHomotopy_toTopObjMk_of_prism {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁)
     {p n : ℕ} (σ : ComposableArrows C p) (s : StdSimplex ℝ (Fin (p + 1))) (t : unitInterval)
     (α : ⦋n⦌ ⟶ ⦋p⦌) (β : ⦋n⦌ ⟶ ⦋1⦌) (w : StdSimplex ℝ (Fin (n + 1)))
@@ -667,11 +676,11 @@ private lemma toClassifyingSpaceHomotopy_toTopObjMk_of_prism {F₀ F₁ : C ⥤ 
       (((AsSmall.up.mapComposableArrows p).obj σ).whiskerLeft
         (SimplexCategory.toCat.map α).toFunctor) =
       σ.whiskerLeft (SimplexCategory.toCat.map α).toFunctor :=
-    CategoryTheory.Functor.ext (fun _ ↦ rfl)
-      fun _ _ _ ↦ ((Category.id_comp _).trans (Category.comp_id _)).symm
+    CategoryTheory.Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦
+      ((Category.id_comp _).trans (Category.comp_id _)).symm
   rw [hσ]
-  exact CategoryTheory.Functor.ext (fun _ ↦ rfl)
-    fun _ _ _ ↦ ((Category.id_comp _).trans (Category.comp_id _)).symm
+  exact CategoryTheory.Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦
+    ((Category.id_comp _).trans (Category.comp_id _)).symm
 @[simp] lemma whiskerLeft_toClassifyingSpaceHomotopy_apply (K : B ⥤ C) {F₀ F₁ : C ⥤ D}
     (η : F₀ ⟶ F₁) (t : unitInterval) (z : classifyingSpace B) :
     (Functor.whiskerLeft K η).toClassifyingSpaceHomotopy (t, z) =
@@ -731,38 +740,25 @@ end Zigzag
 /-! ### Adjunctions, equivalences, skeletons, small models, and contractibility -/
 
 namespace Adjunction
-section
-variable {C D : Type u} [Category.{v} C] [Category.{v} D] {L : C ⥤ D} {R : D ⥤ C}
-/-- An adjunction `L ⊣ R` in the same universes induces a homotopy equivalence
-`classifyingSpace C ≃ₕ classifyingSpace D`. -/
-noncomputable def classifyingSpaceHomotopyEquiv (adj : L ⊣ R) :
-    ContinuousMap.HomotopyEquiv (classifyingSpace C) (classifyingSpace D) where
-  toFun := (classifyingSpaceMap L).hom; invFun := (classifyingSpaceMap R).hom
-  left_inv := by rw [← TopCat.hom_comp, ← classifyingSpaceMap_comp, ← TopCat.hom_id,
-    ← classifyingSpaceMap_id]; exact ⟨adj.unit.classifyingSpaceHomotopy.symm⟩
-  right_inv := by rw [← TopCat.hom_comp, ← classifyingSpaceMap_comp, ← TopCat.hom_id,
-    ← classifyingSpaceMap_id]; exact ⟨adj.counit.classifyingSpaceHomotopy⟩
-@[simp] lemma classifyingSpaceHomotopyEquiv_toFun (adj : L ⊣ R) :
-    adj.classifyingSpaceHomotopyEquiv.toFun = (classifyingSpaceMap L).hom := (rfl)
-@[simp] lemma classifyingSpaceHomotopyEquiv_invFun (adj : L ⊣ R) :
-    adj.classifyingSpaceHomotopyEquiv.invFun = (classifyingSpaceMap R).hom := (rfl)
-end
-section
 variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D] {L : C ⥤ D} {R : D ⥤ C}
 /-- An adjunction `L ⊣ R` across arbitrary universes induces a homotopy equivalence
 `classifyingSpace C ≃ₕ classifyingSpace D`. -/
-noncomputable def toClassifyingSpaceHomotopyEquiv (adj : L ⊣ R) :
+noncomputable def classifyingSpaceHomotopyEquiv (adj : L ⊣ R) :
     ContinuousMap.HomotopyEquiv (classifyingSpace C) (classifyingSpace D) where
-  toFun := L.toClassifyingSpaceContinuousMap; invFun := R.toClassifyingSpaceContinuousMap
-  left_inv := by rw [← Functor.toClassifyingSpaceContinuousMap_comp,
-    ← Functor.toClassifyingSpaceContinuousMap_id]; exact ⟨adj.unit.toClassifyingSpaceHomotopy.symm⟩
-  right_inv := by rw [← Functor.toClassifyingSpaceContinuousMap_comp,
-    ← Functor.toClassifyingSpaceContinuousMap_id]; exact ⟨adj.counit.toClassifyingSpaceHomotopy⟩
-@[simp] lemma toClassifyingSpaceHomotopyEquiv_toFun (adj : L ⊣ R) :
-    adj.toClassifyingSpaceHomotopyEquiv.toFun = L.toClassifyingSpaceContinuousMap := (rfl)
-@[simp] lemma toClassifyingSpaceHomotopyEquiv_invFun (adj : L ⊣ R) :
-    adj.toClassifyingSpaceHomotopyEquiv.invFun = R.toClassifyingSpaceContinuousMap := (rfl)
-end
+  toFun := L.toClassifyingSpaceContinuousMap
+  invFun := R.toClassifyingSpaceContinuousMap
+  left_inv := by
+    rw [← Functor.toClassifyingSpaceContinuousMap_comp,
+      ← Functor.toClassifyingSpaceContinuousMap_id]
+    exact ⟨adj.unit.toClassifyingSpaceHomotopy.symm⟩
+  right_inv := by
+    rw [← Functor.toClassifyingSpaceContinuousMap_comp,
+      ← Functor.toClassifyingSpaceContinuousMap_id]
+    exact ⟨adj.counit.toClassifyingSpaceHomotopy⟩
+@[simp] lemma classifyingSpaceHomotopyEquiv_toFun (adj : L ⊣ R) :
+    adj.classifyingSpaceHomotopyEquiv.toFun = L.toClassifyingSpaceContinuousMap := (rfl)
+@[simp] lemma classifyingSpaceHomotopyEquiv_invFun (adj : L ⊣ R) :
+    adj.classifyingSpaceHomotopyEquiv.invFun = R.toClassifyingSpaceContinuousMap := (rfl)
 end Adjunction
 
 namespace Equivalence
@@ -771,7 +767,7 @@ variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
 `classifyingSpace C ≃ₕ classifyingSpace D`. -/
 noncomputable def classifyingSpaceHomotopyEquiv (e : C ≌ D) :
     ContinuousMap.HomotopyEquiv (classifyingSpace C) (classifyingSpace D) :=
-  e.toAdjunction.toClassifyingSpaceHomotopyEquiv
+  e.toAdjunction.classifyingSpaceHomotopyEquiv
 @[simp] lemma classifyingSpaceHomotopyEquiv_toFun (e : C ≌ D) :
     e.classifyingSpaceHomotopyEquiv.toFun = e.functor.toClassifyingSpaceContinuousMap := (rfl)
 @[simp] lemma classifyingSpaceHomotopyEquiv_invFun (e : C ≌ D) :

@@ -77,10 +77,11 @@ local macro "functor_ext_rfl" : term =>
     fun _ _ _ ↦ ((Category.id_comp _).trans (Category.comp_id _)).symm)
 section Functoriality
 variable {C D E : Type u} [Category.{v} C] [Category.{v} D] [Category.{v} E]
-@[simp] lemma nerveMap_id (C : Type u) [Category.{v} C] : nerveMap (𝟭 C) = 𝟙 (nerve C) := by
-  ext n σ : 4; exact functor_ext_rfl
+@[simp] lemma nerveMap_id (C : Type u) [Category.{v} C] : nerveMap (𝟭 C) = 𝟙 (nerve C) :=
+  nerveFunctor.map_id (Cat.of C)
 @[simp, reassoc] lemma nerveMap_comp (F : C ⥤ D) (G : D ⥤ E) :
-    nerveMap (F ⋙ G) = nerveMap F ≫ nerveMap G := by ext n σ : 4; exact functor_ext_rfl
+    nerveMap (F ⋙ G) = nerveMap F ≫ nerveMap G :=
+  nerveFunctor.map_comp F.toCatHom G.toCatHom
 @[simp] lemma nerveMap_const (C : Type u) [Category.{v} C] {D : Type u} [Category.{v} D] (d : D) :
     nerveMap ((Functor.const C).obj d) = SSet.const (nerveEquiv.symm d) := by
   ext ⟨n⟩ σ : 4; induction n using SimplexCategory.rec with | _ n => exact functor_ext_rfl
@@ -331,6 +332,10 @@ lemma discreteIso_hom_app_nerveEquiv_symm {ι : Type u} (i : Discrete ι) :
     (discreteIso ι).hom.app (op ⦋0⦌) (nerveEquiv.symm i) = i.as := (rfl)
 @[simp] lemma discreteIso_inv_app_zero {ι : Type u} (i : ι) :
     dsimp% (discreteIso ι).inv.app (op ⦋0⦌) i = nerveEquiv.symm ⟨i⟩ := ComposableArrows.ext₀ rfl
+@[reassoc] lemma discreteIso_hom_naturality {ι κ : Type u} (f : ι → κ) :
+    nerveMap (Discrete.functor (Discrete.mk ∘ f)) ≫ (discreteIso κ).hom =
+      (discreteIso ι).hom ≫ (Functor.const SimplexCategoryᵒᵖ).map (TypeCat.ofHom f) := by
+  ext ⟨m⟩ σ : 4; rfl
 /-- The nerve of a product category `C × D` is isomorphic to `nerve C ⊗ nerve D`. -/
 def prodIso (C D : Type u) [Category.{v} C] [Category.{v} D] :
     nerve (C × D) ≅ (nerve C ⊗ nerve D : SSet.{max u v}) :=
@@ -347,6 +352,20 @@ def prodIso (C D : Type u) [Category.{v} C] [Category.{v} D] :
 @[simp] lemma prodIso_inv_app_apply {C D : Type u} [Category.{v} C] [Category.{v} D]
     {n : SimplexCategoryᵒᵖ} (p : (nerve C ⊗ nerve D : SSet.{max u v}).obj n) :
     dsimp% (prodIso C D).inv.app n p = p.1.prod' p.2 := (rfl)
+@[reassoc (attr := simp)] lemma prodIso_hom_fst {C D : Type u} [Category.{v} C] [Category.{v} D] :
+    (prodIso C D).hom ≫ CartesianMonoidalCategory.fst (nerve C) (nerve D) =
+      nerveMap (CategoryTheory.Prod.fst C D) := by
+  ext ⟨m⟩ σ : 4; exact functor_ext_rfl
+@[reassoc (attr := simp)] lemma prodIso_hom_snd {C D : Type u} [Category.{v} C] [Category.{v} D] :
+    (prodIso C D).hom ≫ CartesianMonoidalCategory.snd (nerve C) (nerve D) =
+      nerveMap (CategoryTheory.Prod.snd C D) := by
+  ext ⟨m⟩ σ : 4; exact functor_ext_rfl
+@[reassoc] lemma prodIso_hom_naturality {C₁ C₂ D₁ D₂ : Type u} [Category.{v} C₁] [Category.{v} C₂]
+    [Category.{v} D₁] [Category.{v} D₂] (F₁ : C₁ ⥤ D₁) (F₂ : C₂ ⥤ D₂) :
+    nerveMap (F₁.prod F₂) ≫ (prodIso D₁ D₂).hom =
+      (prodIso C₁ C₂).hom ≫ (nerveMap F₁ ⊗ₘ nerveMap F₂) := by
+  refine CategoryTheory.NatTrans.ext (funext fun ⟨m⟩ ↦ ?_)
+  ext σ; rfl
 /-- The nerve of `AsSmall.{w} C` is isomorphic to `SSet.uliftFunctor.obj (nerve C)`. -/
 def asSmallIso (C : Type u) [Category.{v} C] :
     nerve (AsSmall.{w} C) ≅ SSet.uliftFunctor.{w, max u v}.obj (nerve C) :=
@@ -367,6 +386,12 @@ def asSmallIso (C : Type u) [Category.{v} C] :
 @[simp] lemma asSmallIso_inv_app_nerveEquiv_symm {C : Type u} [Category.{v} C] (c : C) :
     (asSmallIso.{w} C).inv.app (op ⦋0⦌) (ULift.up (nerveEquiv.symm c)) =
       nerveEquiv.symm (AsSmall.up.obj c) := ComposableArrows.ext₀ rfl
+@[reassoc] lemma asSmallIso_hom_naturality {C D : Type u} [Category.{v} C] [Category.{v} D]
+    (F : C ⥤ D) :
+    nerveMap (AsSmall.down ⋙ F ⋙ AsSmall.up : AsSmall.{w} C ⥤ AsSmall.{w} D) ≫
+        (asSmallIso.{w} D).hom =
+      (asSmallIso.{w} C).hom ≫ SSet.uliftFunctor.{w, max u v}.map (nerveMap F) := by
+  ext ⟨m⟩ σ : 4; exact ULift.ext functor_ext_rfl
 /-- The nerve of `Fin (n + 1)` is isomorphic to the standard `n`-simplex `Δ[n]` in `SSet.{0}`. -/
 def finSuccIsoStdSimplex (n : ℕ) : nerve (Fin (n + 1)) ≅ (Δ[n] : SSet.{0}) :=
   (SSet.stdSimplex.isoOfRepresentableBy (representableBy (Fin (n + 1)) (.refl _))).symm
