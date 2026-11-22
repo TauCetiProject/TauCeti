@@ -15,6 +15,7 @@ public import TauCeti.Topology.Category.TopCat.Normal
 public import TauCeti.Topology.Homotopy.HomotopyGroup.SequentialColimit
 public import TauCeti.Topology.Grassmannian.StiefelFibration.Stability
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
+import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
 import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
 
 /-!
@@ -91,31 +92,23 @@ attribute [local instance] starRingOfComm
 
 section FiniteStages
 
+/-- Entrywise continuity of the upper-left block extension `Matrix.blockSucc (M x)`. -/
+@[continuity, fun_prop]
+theorem _root_.Continuous.matrix_blockSucc {X k : Type*} {n : ℕ} [TopologicalSpace X]
+    [Semiring k] [TopologicalSpace k] {M : X → Matrix (Fin n) (Fin n) k} (hM : Continuous M) :
+    Continuous fun x ↦ Matrix.blockSucc (M x) := by
+  refine continuous_matrix fun i j ↦ ?_
+  induction i using Fin.lastCases <;> induction j using Fin.lastCases
+  · simpa using continuous_const
+  · simpa using continuous_const
+  · simpa using continuous_const
+  · simpa using hM.matrix_elem _ _
+
 /-- The block inclusion `O(n) → O(n + 1)` is continuous. -/
 theorem continuous_orthogonalBlockSucc (n : ℕ) :
-    Continuous (orthogonalBlockSucc ℝ n) := by
-  refine continuous_induced_rng.2 ?_
-  have hcoe : (Subtype.val ∘ orthogonalBlockSucc ℝ n) =
-      fun A : Matrix.orthogonalGroup (Fin n) ℝ ↦
-        Matrix.blockSucc (A : Matrix (Fin n) (Fin n) ℝ) :=
-    funext fun A ↦ coe_orthogonalBlockSucc ℝ n A
-  rw [hcoe]
-  refine continuous_matrix fun i j ↦ ?_
-  induction i using Fin.lastCases with
-  | last =>
-    induction j using Fin.lastCases with
-    | last => simp [continuous_const]
-    | cast j => simp [continuous_const]
-  | cast i =>
-    induction j using Fin.lastCases with
-    | last => simp [continuous_const]
-    | cast j =>
-      have h : (fun A : Matrix.orthogonalGroup (Fin n) ℝ ↦
-          Matrix.blockSucc (A : Matrix (Fin n) (Fin n) ℝ) i.castSucc j.castSucc) =
-          fun A : Matrix.orthogonalGroup (Fin n) ℝ ↦ (A : Matrix (Fin n) (Fin n) ℝ) i j :=
-        funext fun A ↦ Matrix.blockSucc_castSucc_castSucc _ i j
-      rw [h]
-      exact (continuous_apply j).comp ((continuous_apply i).comp continuous_subtypeVal)
+    Continuous (orthogonalBlockSucc ℝ n) :=
+  continuous_induced_rng.2 <|
+    continuous_subtypeVal.matrix_blockSucc.congr fun A ↦ (coe_orthogonalBlockSucc ℝ n A).symm
 
 private theorem isClosedEmbedding_orthogonalBlockSucc (n : ℕ) :
     IsClosedEmbedding (orthogonalBlockSucc ℝ n) :=
@@ -134,30 +127,10 @@ theorem continuousOrthogonalBlockSucc_apply (n : ℕ) (A : Matrix.orthogonalGrou
 
 /-- The block inclusion `SO(n) → SO(n + 1)` is continuous. -/
 theorem continuous_specialOrthogonalBlockSucc (n : ℕ) :
-    Continuous (specialOrthogonalBlockSucc ℝ n) := by
-  refine continuous_induced_rng.2 ?_
-  have hcoe : (Subtype.val ∘ specialOrthogonalBlockSucc ℝ n) =
-      fun A : Matrix.specialOrthogonalGroup (Fin n) ℝ ↦
-        Matrix.blockSucc (A : Matrix (Fin n) (Fin n) ℝ) :=
-    funext fun A ↦ coe_specialOrthogonalBlockSucc ℝ n A
-  rw [hcoe]
-  refine continuous_matrix fun i j ↦ ?_
-  induction i using Fin.lastCases with
-  | last =>
-    induction j using Fin.lastCases with
-    | last => simp [continuous_const]
-    | cast j => simp [continuous_const]
-  | cast i =>
-    induction j using Fin.lastCases with
-    | last => simp [continuous_const]
-    | cast j =>
-      have h : (fun A : Matrix.specialOrthogonalGroup (Fin n) ℝ ↦
-          Matrix.blockSucc (A : Matrix (Fin n) (Fin n) ℝ) i.castSucc j.castSucc) =
-          fun A : Matrix.specialOrthogonalGroup (Fin n) ℝ ↦
-            (A : Matrix (Fin n) (Fin n) ℝ) i j :=
-        funext fun A ↦ Matrix.blockSucc_castSucc_castSucc _ i j
-      rw [h]
-      exact (continuous_apply j).comp ((continuous_apply i).comp continuous_subtypeVal)
+    Continuous (specialOrthogonalBlockSucc ℝ n) :=
+  continuous_induced_rng.2 <|
+    continuous_subtypeVal.matrix_blockSucc.congr
+      fun A ↦ (coe_specialOrthogonalBlockSucc ℝ n A).symm
 
 private theorem isClosedEmbedding_specialOrthogonalBlockSucc (n : ℕ) :
     IsClosedEmbedding (specialOrthogonalBlockSucc ℝ n) :=
@@ -961,43 +934,37 @@ end StableOrthogonalGroup
 
 section Connectivity
 
-/-- Reindexing `Matrix.orthogonalGroup m ℝ` along an equivalence `e : m ≃ n` as a
-topological group isomorphism. -/
-def orthogonalReindexContinuousMulEquiv {m n : Type*} [Fintype m] [Fintype n]
-    [DecidableEq m] [DecidableEq n] (e : m ≃ n) :
-    Matrix.orthogonalGroup m ℝ ≃ₜ* Matrix.orthogonalGroup n ℝ where
-  toFun A :=
-    ⟨Matrix.reindex e e A.val,
-      (Matrix.submatrix_equiv_mem_unitary (A := A.val) (e₁ := e.symm) (e₂ := e.symm)).2
-        A.property⟩
-  invFun B :=
-    ⟨Matrix.reindex e.symm e.symm B.val,
-      (Matrix.submatrix_equiv_mem_unitary (A := B.val) (e₁ := e) (e₂ := e)).2 B.property⟩
-  left_inv A := Subtype.ext (by simp)
-  right_inv B := Subtype.ext (by simp)
-  map_mul' A B := Subtype.ext <| by simp [Matrix.reindex_apply]
-  continuous_toFun := continuous_induced_rng.2 (continuous_subtypeVal.matrix_reindex e e)
-  continuous_invFun := continuous_induced_rng.2 (continuous_subtypeVal.matrix_reindex e.symm e.symm)
-
 /-- Reindexing `Matrix.specialOrthogonalGroup m ℝ` along an equivalence `e : m ≃ n` as a
 topological group isomorphism. -/
 def specialOrthogonalReindexContinuousMulEquiv {m n : Type*} [Fintype m] [Fintype n]
     [DecidableEq m] [DecidableEq n] (e : m ≃ n) :
-    Matrix.specialOrthogonalGroup m ℝ ≃ₜ* Matrix.specialOrthogonalGroup n ℝ where
-  toFun A :=
-    ⟨Matrix.reindex e e A.val,
-      (Matrix.submatrix_equiv_mem_unitary (A := A.val) (e₁ := e.symm) (e₂ := e.symm)).2
-        A.property.1,
-      by simpa using (Matrix.det_reindex_self e A.val).trans A.property.2⟩
-  invFun B :=
-    ⟨Matrix.reindex e.symm e.symm B.val,
-      (Matrix.submatrix_equiv_mem_unitary (A := B.val) (e₁ := e) (e₂ := e)).2 B.property.1,
-      by simpa using (Matrix.det_reindex_self e.symm B.val).trans B.property.2⟩
-  left_inv A := Subtype.ext (by simp)
-  right_inv B := Subtype.ext (by simp)
-  map_mul' A B := Subtype.ext <| by simp [Matrix.reindex_apply]
-  continuous_toFun := continuous_induced_rng.2 (continuous_subtypeVal.matrix_reindex e e)
-  continuous_invFun := continuous_induced_rng.2 (continuous_subtypeVal.matrix_reindex e.symm e.symm)
+    Matrix.specialOrthogonalGroup m ℝ ≃ₜ* Matrix.specialOrthogonalGroup n ℝ :=
+  let u := Matrix.unitaryReindexContinuousMulEquiv ℝ e
+  { toFun A := ⟨(u ⟨A.val, A.property.1⟩ : Matrix n n ℝ),
+      (u ⟨A.val, A.property.1⟩).property,
+      by simp [u, (Matrix.mem_specialOrthogonalGroup_iff.1 A.property).2]⟩
+    invFun B := ⟨(u.symm ⟨B.val, B.property.1⟩ : Matrix m m ℝ),
+      (u.symm ⟨B.val, B.property.1⟩).property,
+      by simp [u, (Matrix.mem_specialOrthogonalGroup_iff.1 B.property).2]⟩
+    left_inv A := Subtype.ext <| by simp [u]
+    right_inv B := Subtype.ext <| by simp [u]
+    map_mul' A B := Subtype.ext <| by
+      simpa using congrArg Subtype.val (map_mul u ⟨A.val, A.property.1⟩ ⟨B.val, B.property.1⟩)
+    continuous_toFun := continuous_induced_rng.2 <|
+      (continuous_subtypeVal.comp (map_continuous u)).comp
+        (continuous_subtypeVal.subtype_mk fun A : Matrix.specialOrthogonalGroup m ℝ ↦
+          A.property.1)
+    continuous_invFun := continuous_induced_rng.2 <|
+      (continuous_subtypeVal.comp (map_continuous u.symm)).comp
+        (continuous_subtypeVal.subtype_mk fun B : Matrix.specialOrthogonalGroup n ℝ ↦
+          B.property.1) }
+
+@[simp]
+theorem coe_specialOrthogonalReindexContinuousMulEquiv_apply {m n : Type*} [Fintype m] [Fintype n]
+    [DecidableEq m] [DecidableEq n] (e : m ≃ n) (A : Matrix.specialOrthogonalGroup m ℝ) :
+    (specialOrthogonalReindexContinuousMulEquiv e A : Matrix n n ℝ) =
+      Matrix.reindex e e A.val := by
+  simp [specialOrthogonalReindexContinuousMulEquiv]
 
 private def specialOrthogonalToSub (n : ℕ) :
     Matrix.specialOrthogonalGroup (Fin n) ℝ ≃ₜ
@@ -1031,6 +998,11 @@ theorem isNConnected_specialOrthogonalBlockSucc (n : ℕ) :
       ⟨Matrix.SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n,
         finiteOrthonormalFrame.continuous_fromBlocksOne n⟩ := by
     ext A i j
+    change (specialOrthogonalReindexContinuousMulEquiv e (specialOrthogonalBlockSucc ℝ n A) :
+        Matrix (Fin (1 + n)) (Fin (1 + n)) ℝ) i j =
+      (Matrix.SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n A :
+        Matrix (Fin (1 + n)) (Fin (1 + n)) ℝ) i j
+    rw [coe_specialOrthogonalReindexContinuousMulEquiv_apply]
     exact congrFun (congrFun (reindex_coe_specialOrthogonalBlockSucc_eq_fromBlocksOne ℝ n A) i) j
   have hwhe : φ.IsWeakHomotopyEquivalence :=
     φHomeo.toHomotopyEquiv.isWeakHomotopyEquivalence
