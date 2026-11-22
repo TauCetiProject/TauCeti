@@ -42,14 +42,12 @@ variable {α δ : Type*} [TopologicalSpace α] [MeasurableSpace α] [BorelSpace 
 theorem measurable_of_countable_not_lowerSemicontinuousAt {f : δ → α}
     (hf : {x | ¬LowerSemicontinuousAt f x}.Countable) : Measurable f := by
   refine measurable_of_Ioi fun y => ?_
-  -- A superlevel point where `f` is lower semicontinuous is an interior point.
-  have hsub : f ⁻¹' Ioi y ⊆
-      interior (f ⁻¹' Ioi y) ∪ (f ⁻¹' Ioi y ∩ {x | ¬LowerSemicontinuousAt f x}) := fun x hx => by
-    by_cases hlsc : LowerSemicontinuousAt f x
-    · exact Or.inl (mem_interior_iff_mem_nhds.2 (hlsc y hx))
-    · exact Or.inr ⟨hx, hlsc⟩
-  rw [subset_antisymm hsub (union_subset interior_subset inter_subset_left)]
-  exact isOpen_interior.measurableSet.union (hf.mono inter_subset_right).measurableSet
+  -- A superlevel point where `f` is lower semicontinuous is an interior point, so the
+  -- superlevel points outside the interior are points where `f` is not lower semicontinuous.
+  have hsub : f ⁻¹' Ioi y \ interior (f ⁻¹' Ioi y) ⊆ {x | ¬LowerSemicontinuousAt f x} :=
+    fun x hx hlsc => hx.2 (mem_interior_iff_mem_nhds.2 (hlsc y hx.1))
+  rw [← union_sdiff_cancel (interior_subset (s := f ⁻¹' Ioi y))]
+  exact isOpen_interior.measurableSet.union (hf.mono hsub).measurableSet
 
 end TauCeti
 
@@ -62,19 +60,12 @@ theorem ext_of_Iic' {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
     (μ ν : Measure α) (hμ : ∀ a, μ (Iic a) ≠ ∞)
     (h : ∀ a, μ (Iic a) = ν (Iic a)) : μ = ν := by
   obtain ⟨s, hs, hd, -, htop⟩ := exists_countable_dense_bot_top α
-  apply ext_of_generateFrom_of_cover_subset
-    (S := range (Iic : α → Set α)) (T := Iic '' s)
-    (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Iic (α := α))) isPiSystem_Iic
-  · rintro _ ⟨a, -, rfl⟩
-    exact mem_range_self _
-  · exact hs.image _
-  · apply sUnion_eq_univ_iff.2
-    intro x
-    obtain ⟨a, ha, hxa⟩ := hd.exists_ge' htop x
-    exact ⟨Iic a, mem_image_of_mem _ ha, hxa⟩
-  · rintro _ ⟨a, -, rfl⟩
-    exact hμ a
-  · rintro _ ⟨a, rfl⟩
-    exact h a
+  refine ext_of_generateFrom_of_cover_subset (T := Iic '' s)
+    (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Iic α)) isPiSystem_Iic
+    (image_subset_range _ _) (hs.image _) (sUnion_eq_univ_iff.2 fun x => ?_)
+    (forall_mem_image.2 fun a _ => hμ a) (forall_mem_range.2 h)
+  -- The intervals `Iic a` with `a` in the countable dense set `s` cover `α`.
+  obtain ⟨a, ha, hxa⟩ := hd.exists_ge' htop x
+  exact ⟨Iic a, mem_image_of_mem _ ha, hxa⟩
 
 end MeasureTheory.Measure
