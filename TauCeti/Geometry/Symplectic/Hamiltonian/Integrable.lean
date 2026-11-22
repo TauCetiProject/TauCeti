@@ -67,13 +67,6 @@ single critical point (`TauCeti.isIntegrableSystem_harmonicOscillator`).
 * `TauCeti.SmoothTwoForm.IsFirstIntegral σ f g`: `g` is a first integral of the Hamiltonian `f`.
 * `TauCeti.SmoothTwoForm.IsIntegrableSystem σ F`: `F` is a completely integrable system.
 
-## Main results
-
-* `TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_comp_of_isMIntegralCurveAt`: along a
-  Hamiltonian trajectory of `f`, a function `g` has derivative `{g, f}`.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.isFirstIntegral_iff_forall_isMIntegralCurveOn`: the first
-  integrals of a `C²` Hamiltonian are the functions constant along its trajectories.
-
 ## References
 
 * V. I. Arnold, *Mathematical Methods of Classical Mechanics*, 2nd ed., Graduate Texts in

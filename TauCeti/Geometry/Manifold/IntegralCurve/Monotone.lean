@@ -277,7 +277,6 @@ theorem forall_mvfderiv_apply_eq_zero_iff_forall_isMIntegralCurveOn [CompleteSpa
   have hconst : f ∘ γ =ᶠ[𝓝 0] fun _ ↦ f (γ 0) :=
     eventually_of_mem (isOpen_Ioo.mem_nhds hmem) fun t ht ↦ h γ _ _ hγε 0 hmem t ht
   rw [← hγ0]
-  exact (Manifold.hasDerivAt_comp_curve (hf (γ 0)) hγ.hasMFDerivAt).unique
-    ((hasDerivAt_const (0 : ℝ) (f (γ 0))).congr_of_eventuallyEq hconst)
+  exact hγ.mfderiv_apply_eq_zero_of_eventuallyEq_const (hf (γ 0)) hconst
 
 end TauCeti
