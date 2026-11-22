@@ -331,6 +331,22 @@ def singularCochainFiltrationGradedIso (p a b : ℤ) (ha : a = p - 1) (hb : b = 
       (singularCochainFiltration_anti R k M (hX (by lia : a ≤ b))) ≪≫
     singularCochainFiltrationCokernelIso R k M (hX (by lia : a ≤ b))
 
+/-- The identification `TauCeti.singularCochainFiltrationGradedIso` of the graded piece
+`F^p / F^{p+1}` of the cochains of a filtered space with the relative cochains of `(X b, X a)` is
+the restriction of the cochains relative to `X (p - 1) = X a`. -/
+@[reassoc (attr := simp)]
+lemma π_singularCochainFiltrationGradedIso_hom (p a b : ℤ) (ha : a = p - 1) (hb : b = p) :
+    cokernel.π _ ≫ (singularCochainFiltrationGradedIso R k M hX p a b ha hb).hom =
+      Subobject.ofLE _ _ (by rw [ha]) ≫ (singularCochainFiltrationIso R k M X a).hom ≫
+        extendMap (TopPair.singularCochainComplexMap
+          (TopTriple.innerToTotal.app (TopTriple.ofSubset (hX (by lia : a ≤ b)))))
+          ComplexShape.embeddingUpNat := by
+  simp only [singularCochainFiltrationGradedIso, Iso.trans_hom,
+    Subobject.π_cokernelOfLEIsoOfEq_hom_assoc, π_singularCochainFiltrationCokernelIso_hom]
+  -- The composite of `TauCeti.π_singularCochainFiltrationCokernelIso_hom` ends in the cochains of
+  -- a pair of the triple, which is the pair `(X b, X a)` of the statement only after unfolding.
+  rfl
+
 /-- The object at `(p, q)` on the first page is the cohomology in degree `p + q` of the reindexed
 relative singular cochains of `(X b, X a)`, for `a = p - 1` and `b = p`. -/
 private def firstPageXIsoExtend (p q a b : ℤ) (ha : a = p - 1) (hb : b = p) :
@@ -338,10 +354,7 @@ private def firstPageXIsoExtend (p q a b : ℤ) (ha : a = p - 1) (hb : b = p) :
       (((TopPair.ofInclusion (hX (by lia : a ≤ b))).singularCochainComplex R k M).extend
         ComplexShape.embeddingUpNat).homology (p + q) :=
   CochainComplex.decreasingFiltrationSpectralSequenceFirstPageXIso _ _ p q ≪≫
-    (homologyFunctor _ _ (p + q)).mapIso
-      (Subobject.cokernelOfLEIsoOfEq (by rw [hb, add_sub_cancel_right]) (by rw [ha]) _
-          (singularCochainFiltration_anti R k M (hX (by lia : a ≤ b))) ≪≫
-        singularCochainFiltrationCokernelIso R k M (hX (by lia : a ≤ b)))
+    (homologyFunctor _ _ (p + q)).mapIso (singularCochainFiltrationGradedIso R k M hX p a b ha hb)
 
 /-- **The first page of the cohomology spectral sequence of a filtered space.** The object at
 `(p, q)` on the first page is the relative singular cohomology `Hⁿ(X p, X (p - 1))`, where
@@ -834,21 +847,6 @@ private lemma factorThru_comp_singularCochainFiltrationIso_hom (q : ℤ) :
     Category.assoc, ← singularCochainFiltrationι_comp_extendMap_singularCochainComplexMap,
     singularCochainFiltrationIso_hom_comp_singularCochainFiltrationι_assoc]
 
-include hX in
-/-- The identification `TauCeti.singularCochainFiltrationGradedIso` of the graded piece
-`F^p / F^{p+1}` of the cochains of a filtered space with the relative cochains of
-`(X p, X (p - 1))` is the restriction of the cochains relative to `X (p - 1)`. -/
-private lemma π_singularCochainFiltrationGradedIso_hom (p : ℤ) :
-    cokernel.π _ ≫ (singularCochainFiltrationGradedIso R k M hX p (p - 1) p rfl rfl).hom =
-      (singularCochainFiltrationIso R k M X (p - 1)).hom ≫
-        extendMap (TopPair.singularCochainComplexMap
-          (TopTriple.innerToTotal.app (TopTriple.ofSubset (hX (by lia : p - 1 ≤ p)))))
-          ComplexShape.embeddingUpNat := by
-  simp only [singularCochainFiltrationGradedIso, Iso.trans_hom,
-    Subobject.π_cokernelOfLEIsoOfEq_hom_assoc,
-    π_singularCochainFiltrationCokernelIso_hom, Subobject.ofLE_refl]
-  exact Category.id_comp _
-
 /-- On the graded pieces `F^p / F^{p+1}`, identified with the relative singular cochains of the
 pairs `(X p, X (p - 1))`, the morphism of filtrations induced by `g` is the cochain map induced by
 the map of pairs `(X p, X (p - 1)) ⟶ (X' p, X' (p - 1))`. -/
@@ -866,8 +864,9 @@ private lemma decreasingFiltrationGradedMap_comp_cokernelIso_hom (p : ℤ) :
     (hF := antitone_singularCochainFiltration_sub_one R k M hX')
     (hG := antitone_singularCochainFiltration_sub_one R k M hX) _
     (fun p ↦ factors_singularCochainFiltration R k M g hg (p - 1)) p
-  have hl := π_singularCochainFiltrationGradedIso_hom R k M hX p
-  have hr := π_singularCochainFiltrationGradedIso_hom R k M hX' p
+  have hl := π_singularCochainFiltrationGradedIso_hom R k M hX p (p - 1) p rfl rfl
+  have hr := π_singularCochainFiltrationGradedIso_hom R k M hX' p (p - 1) p rfl rfl
+  simp only [Subobject.ofLE_refl, Category.id_comp] at hl hr
   -- The two maps of pairs `(X p, X (p - 1)) ⟶ (Y', X' (p - 1))` agree, so their cochain maps do.
   have h₂ := (extendMap_comp _ _ _).symm.trans <|
     (congrArg (extendMap · ComplexShape.embeddingUpNat)

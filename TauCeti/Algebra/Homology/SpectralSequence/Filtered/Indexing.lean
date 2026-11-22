@@ -154,9 +154,7 @@ noncomputable def decreasingFiltrationSpectralSequenceFirstPageXIso (p q : ℤ) 
   decreasingFiltrationSpectralSequencePageXIso F hF 1 2 le_rfl rfl p q _ _ rfl rfl ≪≫
     spectralSequenceFirstPageXIsoCokernel _ (2 * p + q + 1, -p - 1) (-(p + 1)) (-p) (by dsimp; lia)
       (by dsimp; lia) (p + q) (by dsimp; lia) ≪≫
-    (HomologicalComplex.homologyFunctor C _ (p + q)).mapIso
-      (cokernelFiltrationFunctorMapIso _ _ _ ≪≫
-        Subobject.cokernelOfLEIsoOfEq (by simp) (by simp) _ _)
+    (HomologicalComplex.homologyFunctor C _ (p + q)).mapIso (decreasingFiltrationGradedIso F hF p)
 
 /-- `CochainComplex.decreasingFiltrationSpectralSequenceFirstPageXIso` is the identification
 `CochainComplex.decreasingFiltrationSpectralSequencePageXIso` with page `2` of the spectral sequence
