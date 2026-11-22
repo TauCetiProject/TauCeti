@@ -155,8 +155,8 @@ def centerPiAlgEquiv :
   have mem_iff : ∀ x : Π i, S i,
       x ∈ Subalgebra.center R (Π i, S i) ↔ ∀ i, x i ∈ Subalgebra.center R (S i) := fun _ => by
     rw [Subalgebra.center_pi]; simp
-  { toFun := fun x i => ⟨x.1 i, (mem_iff _).mp x.2 i⟩
-    invFun := fun y => ⟨fun i => (y i).1, (mem_iff _).mpr fun i => (y i).2⟩
+  { toFun := fun x i => ⟨x.val i, (mem_iff _).mp x.property i⟩
+    invFun := fun y => ⟨fun i => (y i).val, (mem_iff _).mpr fun i => (y i).property⟩
     left_inv := fun _ => rfl
     right_inv := fun _ => rfl
     map_mul' := fun _ _ => rfl

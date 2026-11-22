@@ -107,7 +107,7 @@ private theorem differentiableWithinAt_sectionCoord_mpullback
     {Y : Π y : N, TangentSpace J y}
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t) (hY : MDiffAt (T% Y) (f (γ t))) :
     DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) γ (fun r ↦ mpullback I J f Y (γ r)) (γ t)) s t := by
+      (sectionCoord ℝ (F := E) γ (fun r ↦ mpullback I J f Y (γ r)) (γ t)) s t := by
   have hX : MDiffAt (T% (mpullback I J f Y)) (γ t) :=
     hY.mpullback_vectorField (hf.contMDiff.contMDiffAt)
       (hf.isInvertible_mfderiv _) (by simp)
@@ -122,9 +122,9 @@ private theorem inner_mfderiv_alongCurveWithin_eq (hf : IsLocalRiemannianIsometr
     {γ : ℝ → M} {V : ∀ r, TangentSpace I (γ r)} {s : Set ℝ} {t : ℝ}
     (hs : UniqueDiffWithinAt ℝ s t)
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
+    (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
     (hfV : DifferentiableWithinAt ℝ
-      (sectionCoord (F := F) (f ∘ γ)
+      (sectionCoord ℝ (F := F) (f ∘ γ)
         (fun r ↦ mfderiv I J f (γ r) (V r)) (f (γ t))) s t)
     {Y : Π y : N, TangentSpace J y} (hY : MDiffAt (T% Y) (f (γ t))) :
     inner ℝ
@@ -140,10 +140,10 @@ private theorem inner_mfderiv_alongCurveWithin_eq (hf : IsLocalRiemannianIsometr
     (hf.mdifferentiableAt (γ t)).comp_mdifferentiableWithinAt t hγ
   let X : ∀ x : M, TangentSpace I x := mpullback I J f Y
   have hXcoord : DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) γ (fun r ↦ X (γ r)) (γ t)) s t :=
+      (sectionCoord ℝ (F := E) γ (fun r ↦ X (γ r)) (γ t)) s t :=
     hf.differentiableWithinAt_sectionCoord_mpullback hγ hY
   have hYcoord : DifferentiableWithinAt ℝ
-      (sectionCoord (F := F) (f ∘ γ) (fun r ↦ Y ((f ∘ γ) r)) (f (γ t))) s t :=
+      (sectionCoord ℝ (F := F) (f ∘ γ) (fun r ↦ Y ((f ∘ γ) r)) (f (γ t))) s t :=
     differentiableWithinAt_sectionCoord (f ∘ γ) (fun r ↦ Y ((f ∘ γ) r))
       (hY.comp_mdifferentiableWithinAt t hfγ)
       (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (f (γ t)))
@@ -196,14 +196,14 @@ theorem mfderiv_alongCurveWithin (hf : IsLocalRiemannianIsometry I J f)
     {γ : ℝ → M} {V : ∀ r, TangentSpace I (γ r)} {s : Set ℝ} {t : ℝ}
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
     (hV : DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) γ V (γ t)) s t) :
+      (sectionCoord ℝ (F := E) γ V (γ t)) s t) :
     mfderiv I J f (γ t)
         (alongCurveWithin (leviCivitaConnection I M) γ V s t) =
       alongCurveWithin (leviCivitaConnection J N) (f ∘ γ)
         (fun r ↦ mfderiv I J f (γ r) (V r)) s t := by
   by_cases hs : UniqueDiffWithinAt ℝ s t
   · have hfV : DifferentiableWithinAt ℝ
-        (sectionCoord (F := F) (f ∘ γ)
+        (sectionCoord ℝ (F := F) (f ∘ γ)
           (fun r ↦ mfderiv I J f (γ r) (V r)) (f (γ t))) s t :=
       hf.contMDiff.contMDiffAt.differentiableWithinAt_sectionCoord_mfderiv (by simp) hγ hV
     refine injective_inner_mdifferentiableAt_section J F (TangentSpace J) (f (γ t)) ?_
@@ -216,7 +216,7 @@ local Riemannian isometry. -/
 theorem mfderiv_alongCurve (hf : IsLocalRiemannianIsometry I J f)
     {γ : ℝ → M} {V : ∀ r, TangentSpace I (γ r)} {t : ℝ}
     (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t)
-    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t) :
+    (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t) :
     mfderiv I J f (γ t) (alongCurve (leviCivitaConnection I M) γ V t) =
       alongCurve (leviCivitaConnection J N) (f ∘ γ)
         (fun r ↦ mfderiv I J f (γ r) (V r)) t := by

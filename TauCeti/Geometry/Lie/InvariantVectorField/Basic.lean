@@ -100,7 +100,7 @@ theorem tangentMap_mul_prod_apply [ContMDiffMul I 1 G] (p q : TangentBundle I G)
     (tangentMap% (fun r : G × G => r.1 * r.2))
       ((equivTangentBundleProd I G I G).symm (p, q)) =
       ⟨p.proj * q.proj,
-        mfderiv% (· * q.proj) p.proj p.2 + mfderiv% (p.proj * ·) q.proj q.2⟩ := by
+        mfderiv% (· * q.proj) p.proj p.snd + mfderiv% (p.proj * ·) q.proj q.snd⟩ := by
   simp only [tangentMap]
   rw [mfderiv_prod_eq_add_apply ((contMDiff_mul I 1).mdifferentiableAt (by simp))]
   simp +instances [equivTangentBundleProd]
@@ -118,7 +118,7 @@ theorem mfderiv_mul_apply_one [ContMDiffMul I 1 G] (v w : GroupLieAlgebra I G) :
       v + w := by
   have hmul_tangent := tangentMap_mul_prod_apply (I := I) (G := G)
     (⟨1, v⟩ : TangentBundle I G) (⟨1, w⟩ : TangentBundle I G)
-  have hmul_apply := congrArg (fun z : TangentBundle I G => z.2) hmul_tangent
+  have hmul_apply := congrArg (fun z : TangentBundle I G => z.snd) hmul_tangent
   -- Project the bundled tangent-map equation to its fiberwise `mfderiv` statement.
   change
     (mfderiv (I.prod I) I (fun p : G × G => p.1 * p.2) ((1, 1) : G × G))

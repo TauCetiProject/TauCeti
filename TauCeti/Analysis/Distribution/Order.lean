@@ -46,7 +46,7 @@ theorem exists_norm_apply_le (T : 𝓓'(Ω, F)) {K : Compacts E} (hK : (K : Set 
   obtain ⟨s, C, -, hC⟩ := Seminorm.bound_of_continuous
     (ContDiffMapSupportedIn.withSeminorms ℝ E ℝ ⊤ K) ((normSeminorm ℝ F).comp T'.toLinearMap)
     (continuous_norm.comp T'.continuous)
-  refine ⟨s.sup id, C, C.2, fun φ hφ M hM hφM => ?_⟩
+  refine ⟨s.sup id, C, C.property, fun φ hφ M hM hφM => ?_⟩
   let ψ : 𝓓_{K}(E, ℝ) := .of_support_subset φ.contDiff ((subset_tsupport _).trans hφ)
   have hψ : ofSupportedInCLM ℝ hK ψ = φ := by
     ext y

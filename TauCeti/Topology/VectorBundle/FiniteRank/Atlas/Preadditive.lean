@@ -58,7 +58,7 @@ theorem continuous_smul {s : ∀ y, A.Fiber (b y)} {c : Y → 𝕜}
   have hb : Continuous b := A.continuous_proj.comp hs
   rw [A.continuous_mk_iff_rankStrata hb] at hs ⊢
   intro n
-  exact (hc.comp continuous_subtype_val).smul_totalSpace (hs n)
+  exact (hc.comp continuous_subtypeVal).smul_totalSpace (hs n)
 
 variable {A} {D : FiniteRankAtlas 𝕜 X}
 

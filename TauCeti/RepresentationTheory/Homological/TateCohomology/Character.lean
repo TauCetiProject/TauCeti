@@ -152,9 +152,7 @@ theorem dimensionShiftUpIso_characterDimensionShift
   let S := ShortComplex.mk (coindBotUnit (ratCircleRep G))
     (dimensionShiftUpπ (ratCircleRep G))
     (coindBotUnit_comp_dimensionShiftUpπ (ratCircleRep G))
-  have hS : S.ShortExact := by
-    simpa only [S, dimensionShiftUpSES_def] using
-      dimensionShiftUpSES_shortExact (ratCircleRep G)
+  have hS : S.ShortExact := dimensionShiftUpSES_shortExact (ratCircleRep G)
   let f : coindBot ℤ G (AddCircle (1 : ℚ)) :=
     (coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).symm fun g ↦
       χ (Additive.ofMul (Group.Abelianization.of g))

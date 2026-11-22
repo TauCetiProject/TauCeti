@@ -69,7 +69,7 @@ variable (R : Type*) [Ring R]
 
 /-- The augmentation vanishes on boundaries: a path contributes its end point minus its starting
 point. -/
-theorem augment_boundary : augment X R ∘ₗ boundary X R 0 = 0 := by
+theorem augment_boundary : augment X R ∘ₗ boundary X R R 0 = 0 := by
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   simp [boundary_single]
 
