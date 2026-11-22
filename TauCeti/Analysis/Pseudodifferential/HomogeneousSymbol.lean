@@ -141,6 +141,40 @@ theorem norm_homogeneous (a : HomogeneousSymbol X E V W m) (x : X) (ξ : E) {t :
     ‖a.coefficient (x, t • ξ)‖ = t ^ m * ‖a.coefficient (x, ξ)‖ := by
   rw [a.homogeneous x ξ t ht, norm_smul, Real.norm_of_nonneg (Real.rpow_nonneg ht.le m)]
 
+/-- A homogeneous symbol of degree `m` bounded at a position `x` by `C ⟨ξ⟩ ^ m'` at all
+frequencies of norm at least `R`, for some `m' < m`, vanishes at `x`: homogeneity transports the
+extra decay at large frequencies to every frequency. -/
+theorem coefficient_eq_zero_of_norm_le {m' : ℝ} (hm : m' < m) (a : HomogeneousSymbol X E V W m)
+    {x : X} {C R : ℝ} (h : ∀ ξ : E, R ≤ ‖ξ‖ → ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+    (ξ : E) : a.coefficient (x, ξ) = 0 := by
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · exact a.zero_covector x
+  rw [← norm_le_zero_iff]
+  have hξ0 : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
+  set D := max C 0 * 2 ^ (|m'| / 2) * ‖ξ‖ ^ m'
+  -- For large `t`, homogeneity at `t • ξ` and the bound there give
+  -- `t ^ m ‖a (x, ξ)‖ ≤ D t ^ m'`.
+  have key : ∀ᶠ t in atTop, ‖a.coefficient (x, ξ)‖ ≤ D * t ^ (m' - m) := by
+    filter_upwards [eventually_ge_atTop (max R 1 / ‖ξ‖), eventually_gt_atTop 0] with t ht ht0
+    have htξ : max R 1 ≤ ‖t • ξ‖ := by
+      rwa [norm_smul, Real.norm_of_nonneg ht0.le, ← div_le_iff₀ hξ0]
+    have h' := (h (t • ξ) (le_of_max_le_left htξ)).trans
+      (mul_le_mul_of_nonneg_right (le_max_left C 0) (by positivity))
+    have hw := one_add_norm_sq_rpow_le_norm_rpow (le_of_max_le_right htξ) m'
+    rw [a.norm_homogeneous x ξ ht0] at h'
+    simp only [norm_smul, Real.norm_of_nonneg ht0.le, Real.mul_rpow ht0.le hξ0.le] at h' hw
+    refine le_of_mul_le_mul_left ?_ (Real.rpow_pos_of_pos ht0 m)
+    calc t ^ m * ‖a.coefficient (x, ξ)‖
+        ≤ max C 0 * (2 ^ (|m'| / 2) * (t ^ m' * ‖ξ‖ ^ m')) :=
+          h'.trans (mul_le_mul_of_nonneg_left hw (le_max_right C 0))
+      _ = t ^ m * (D * t ^ (m' - m)) := by
+          rw [Real.rpow_sub ht0]
+          field_simp
+          ring
+  have hlim : Tendsto (fun t : ℝ => D * t ^ (m' - m)) atTop (𝓝 0) := by
+    simpa [neg_sub] using (tendsto_rpow_neg_atTop (by linarith : 0 < m - m')).const_mul D
+  exact ge_of_tendsto hlim key
+
 section Regularity
 
 variable (a : HomogeneousSymbol X E V W m)
