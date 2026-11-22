@@ -68,8 +68,10 @@ equation at the substituted parameter rather than at `z`.
   equation gives the equation at `q`, so `w(q)` solves it there and across any commutative
   algebra. When moreover `constantCoeff q = 0`, `eq_subst_formalW_of_wEquation` combines this with
   `eq_of_wEquation` to identify `w(q)` as the only such solution.
-* `WeierstrassCurve.algebraMap_subst_formalW_ne_zero`: `w(q)` stays nonzero in a domain `KK` on
-  which `MvPowerSeries σ R` acts faithfully whenever `constantCoeff q = 0` and `q ≠ 0`.
+* `WeierstrassCurve.subst_formalW_ne_zero` and
+  `WeierstrassCurve.algebraMap_subst_formalW_ne_zero`: over a domain `R`, `w(q)` is nonzero
+  whenever `constantCoeff q = 0` and `q ≠ 0`, and stays nonzero in any domain `KK` on which
+  `MvPowerSeries σ R` acts faithfully.
 * `WeierstrassCurve.formalWCoeff_recurrence`: the coefficientwise recurrence — each coefficient
   of `w(z)` above the leading one, from the strictly earlier ones. This is the form to compute
   with; the strong recursion behind `formalWCoeff` is an implementation detail.
@@ -636,7 +638,7 @@ theorem eq_subst_formalW_of_wEquation {q v : PowerSeries R}
 variable [IsDomain R] in
 /-- Over a domain the `w`-expansion at a nonzero parameter with vanishing constant coefficient is
 itself nonzero. -/
-private theorem subst_formalW_ne_zero {σ : Type*} {q : MvPowerSeries σ R}
+theorem subst_formalW_ne_zero {σ : Type*} {q : MvPowerSeries σ R}
     (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0) :
     PowerSeries.subst q (formalW W) ≠ 0 :=
   (PowerSeries.subst_eq_zero_iff hq hq0).not.mpr (formalW_ne_zero W)

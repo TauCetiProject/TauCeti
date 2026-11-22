@@ -181,13 +181,13 @@ theorem xCoord_thetaPoint (hΔ : (fracCurve W σ KK).Δ ≠ 0) {q : MvPowerSerie
         algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) :=
   Affine.Point.xCoord_some _
 
-/-- The `y`-coordinate of the parametrized point `θ(q)` is `-w(q)⁻¹` in `KK`. -/
+/-- The `y`-coordinate of the parametrized point `θ(q)` is `-1 / w(q)` in `KK`. -/
 @[simp]
 theorem yCoord_thetaPoint (hΔ : (fracCurve W σ KK).Δ ≠ 0) {q : MvPowerSeries σ O}
     (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
     (W.thetaPoint hΔ hq hq0).yCoord =
-      -(algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)))⁻¹ := by
-  simp [thetaPoint, neg_div]
+      -1 / algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) :=
+  Affine.Point.yCoord_some _
 
 /-- **The parametrized point determines the parameter**: `θ` is injective.
 

@@ -113,11 +113,9 @@ private theorem subst_invPair_formalIntercept_mul :
     (constantCoeff_formalInverse W)
   rw [PowerSeries.X_subst (formalW W)] at hi₁
   rw [subst_formalInverse_formalW W] at hi₂
-  -- `PowerSeries.X` is `MvPowerSeries.X ()`: defeq, but not syntactically equal, so this is
-  -- `formalInverse_def` restated in the spelling `linear_combination` will normalize against.
   have hd : formalInverse W = -(PowerSeries.X * PowerSeries.invOfUnit (formalInverseDenom W) 1) :=
     formalInverse_def W
-  rw [show (X () : MvPowerSeries Unit O) = PowerSeries.X from rfl]
+  rw [← PowerSeries.X_apply]
   linear_combination formalInverse W * hi₁ - PowerSeries.X * hi₂ + formalW W * hd
 
 /-! ### The formal inverse is not the identity -/
@@ -221,12 +219,8 @@ private theorem subst_invPair_formalThirdRoot_of_isDomain (h2 : (2 : O) ≠ 0) :
     (formalSlope W)
   set Tp := subst (pairSubstitution (PowerSeries.X : PowerSeries O) (formalInverse W))
     (formalThirdRoot W)
-  -- `PowerSeries.subst a` is `MvPowerSeries.subst (fun _ ↦ a)`: defeq, but the two spellings are
-  -- distinct atoms to `linear_combination`, so put both hypotheses in the same one.
-  rw [show subst (fun _ : Unit ↦ Tp) (formalW W) = PowerSeries.subst Tp (formalW W) from rfl] at hOL
-  change (1 + C W.a₂ * Lp + C W.a₄ * Lp ^ 2 + C W.a₆ * Lp ^ 3) *
-      (Tp + X () + formalInverse W) = _ at hrel
-  change Lp * (formalInverse W - X ()) = _ at hslope
+  rw [← PowerSeries.subst_def] at hOL
+  rw [PowerSeries.X_apply] at hrel hslope
   set wT := PowerSeries.subst Tp (formalW W)
   have hTP : Tp * (Lp - Tp ^ 2 - C W.a₁ * Lp * Tp - C W.a₂ * Lp * Tp ^ 2 -
       C W.a₃ * Lp ^ 2 * Tp - C W.a₄ * Lp ^ 2 * Tp ^ 2 - C W.a₆ * Lp ^ 3 * Tp ^ 2) = 0 := by
@@ -257,7 +251,7 @@ theorem subst_invPair_formalThirdRoot :
         (pairSubstitution (PowerSeries.X : PowerSeries (MvPolynomial Coeff ℤ))
           (formalInverse Universal.curve) i) := by
     funext i
-    cases i <;> simp [PowerSeries.map, PowerSeries.X]
+    cases i <;> simp [PowerSeries.map, PowerSeries.X_apply]
   rw [hfam, ← MvPowerSeries.map_subst (hasSubst_invPair Universal.curve),
     subst_invPair_formalThirdRoot_of_isDomain Universal.curve two_ne_zero, map_zero]
 

@@ -400,11 +400,11 @@ private theorem pderiv_mul_subst_formalInvariantDifferentialDenom_universal :
   have hF0 := subst_pair_formalAdd_ne_zero Universal.curve hχ hc₀ hc₁ hχ₀ hχ₁
   -- the three points with parameters `X 0`, `X 1` and `F(X 0, X 1)`, and their sum relation
   have hPx := Universal.curve.xCoord_thetaPoint hΔ hc₀ h₀
-  have hPy := (Universal.curve.yCoord_thetaPoint hΔ hc₀ h₀).trans (by rw [← one_div, ← neg_div])
+  have hPy := Universal.curve.yCoord_thetaPoint hΔ hc₀ h₀
   have hQx := Universal.curve.xCoord_thetaPoint hΔ hc₁ h₁
-  have hQy := (Universal.curve.yCoord_thetaPoint hΔ hc₁ h₁).trans (by rw [← one_div, ← neg_div])
+  have hQy := Universal.curve.yCoord_thetaPoint hΔ hc₁ h₁
   have hSx := Universal.curve.xCoord_thetaPoint hΔ hFc hF0
-  have hSy := (Universal.curve.yCoord_thetaPoint hΔ hFc hF0).trans (by rw [← one_div, ← neg_div])
+  have hSy := Universal.curve.yCoord_thetaPoint hΔ hFc hF0
   have e := thetaPoint_add_of_subst_separates Universal.curve (KK := UnivField) hΔ hχ hc₀ hc₁
     h₀ h₁ hχ₀ hχ₁ hFc hF0
   generalize Universal.curve.thetaPoint hΔ hc₀ h₀ = P at hPx hPy e
