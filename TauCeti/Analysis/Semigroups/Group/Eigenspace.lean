@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import TauCeti.Analysis.Semigroups.Group.PhaseShift
 import Mathlib.LinearAlgebra.FixedSubmodule
 

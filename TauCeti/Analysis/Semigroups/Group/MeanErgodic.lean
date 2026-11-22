@@ -78,8 +78,7 @@ theorem tendsto_average_starProjection [CompleteSpace H] (hU : U.IsUnitary) (v :
       U.toSemigroup_apply, NNReal.coe_natCast]
   have hbirk_eq (N : ℕ) :
       birkhoffAverage ℂ f _root_.id N w₀ = (N : ℝ)⁻¹ • ∫ t in (0 : ℝ)..(N : ℝ), U t v := by
-    rw [birkhoffAverage, birkhoffSum, ← Complex.ofReal_natCast, ← Complex.ofReal_inv,
-      Complex.coe_smul]
+    rw [birkhoffAverage_apply_congr_ring ℂ ℝ, birkhoffAverage, birkhoffSum]
     congr 1
     have hterm (k : ℕ) : f^[k] w₀ = ∫ t in (k : ℝ)..((k + 1 : ℕ) : ℝ), U t v := by
       rw [hf_iter]
@@ -97,60 +96,35 @@ theorem tendsto_average_starProjection [CompleteSpace H] (hU : U.IsUnitary) (v :
       (a := fun k : ℕ ↦ (k : ℝ)) (n := N) fun k _ ↦ hint k (k + 1 : ℕ)
   have hN : Tendsto (fun N : ℕ ↦ (N : ℝ)⁻¹ • ∫ t in (0 : ℝ)..(N : ℝ), U t v) atTop (𝓝 L) := by
     simpa only [hbirk_eq] using hbirk
-  have hfloor : Tendsto (fun T : ℝ ↦ (⌊T⌋₊ : ℝ)⁻¹ • ∫ t in (0 : ℝ)..(⌊T⌋₊ : ℝ), U t v)
-      atTop (𝓝 L) :=
-    hN.comp tendsto_nat_floor_atTop
+  have hfloor : Tendsto (fun T : ℝ ↦ T⁻¹ • ∫ t in (0 : ℝ)..(⌊T⌋₊ : ℝ), U t v) atTop (𝓝 L) := by
+    have hrescaled := (tendsto_nat_floor_div_atTop (R := ℝ)).smul (hN.comp tendsto_nat_floor_atTop)
+    rw [one_smul] at hrescaled
+    refine hrescaled.congr' ?_
+    filter_upwards [eventually_ge_atTop (1 : ℝ)] with T hT
+    have hNpos : (0 : ℝ) < (⌊T⌋₊ : ℝ) := by exact_mod_cast Nat.floor_pos.mpr hT
+    rw [Function.comp_apply, smul_smul, div_eq_mul_inv, mul_right_comm,
+      mul_inv_cancel₀ hNpos.ne', one_mul]
   have htail : Tendsto (fun T : ℝ ↦
-      (T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) -
-        (⌊T⌋₊ : ℝ)⁻¹ • ∫ t in (0 : ℝ)..(⌊T⌋₊ : ℝ), U t v) atTop (𝓝 0) := by
-    have hlim : Tendsto (fun T : ℝ ↦ T⁻¹ * (2 * ‖v‖)) atTop (𝓝 0) := by
-      simpa using tendsto_inv_atTop_zero.mul_const (2 * ‖v‖)
+      (T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) - T⁻¹ • ∫ t in (0 : ℝ)..(⌊T⌋₊ : ℝ), U t v)
+      atTop (𝓝 0) := by
+    have hlim : Tendsto (fun T : ℝ ↦ T⁻¹ * ‖v‖) atTop (𝓝 0) := by
+      simpa using tendsto_inv_atTop_zero.mul_const ‖v‖
     refine squeeze_zero_norm' ?_ hlim
     filter_upwards [eventually_ge_atTop (1 : ℝ)] with T hT
-    set N : ℕ := ⌊T⌋₊
-    have hNpos : (0 : ℝ) < (N : ℝ) := by
-      exact_mod_cast Nat.floor_pos.mpr hT
-    have hNle : (N : ℝ) ≤ T := Nat.floor_le (zero_le_one.trans hT)
-    have hTN : T - (N : ℝ) < 1 := by
-      linarith [Nat.lt_floor_add_one T]
+    have hNle : (⌊T⌋₊ : ℝ) ≤ T := Nat.floor_le (zero_le_one.trans hT)
+    have hTN : T - (⌊T⌋₊ : ℝ) < 1 := by linarith [Nat.lt_floor_add_one T]
     have hsub :
-        (T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) -
-          (N : ℝ)⁻¹ • ∫ t in (0 : ℝ)..(N : ℝ), U t v =
-          (T⁻¹ • (∫ t in (N : ℝ)..T, U t v)) +
-            (T⁻¹ - (N : ℝ)⁻¹) • ∫ t in (0 : ℝ)..(N : ℝ), U t v := by
-      have hadj := (intervalIntegral.integral_add_adjacent_intervals
-        (hint 0 (N : ℝ)) (hint (N : ℝ) T)).symm
-      rw [hadj, smul_add, sub_smul]
-      abel
-    have h1 : ‖T⁻¹ • ∫ t in (N : ℝ)..T, U t v‖ ≤ T⁻¹ * ‖v‖ := by
-      rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.mpr (zero_le_one.trans hT))]
-      have hnorm_int : ‖∫ t in (N : ℝ)..T, U t v‖ ≤ ‖v‖ * |T - (N : ℝ)| :=
-        intervalIntegral.norm_integral_le_of_norm_le_const fun t _ ↦ (hU.norm_map t v).le
-      rw [abs_of_nonneg (sub_nonneg.mpr hNle)] at hnorm_int
-      calc T⁻¹ * ‖∫ t in (N : ℝ)..T, U t v‖
-          ≤ T⁻¹ * (‖v‖ * (T - (N : ℝ))) := by gcongr
-        _ ≤ T⁻¹ * (‖v‖ * 1) := by gcongr
-        _ = T⁻¹ * ‖v‖ := by ring
-    have h2 : ‖(T⁻¹ - (N : ℝ)⁻¹) • ∫ t in (0 : ℝ)..(N : ℝ), U t v‖ ≤ T⁻¹ * ‖v‖ := by
-      rw [norm_smul, Real.norm_eq_abs]
-      have hcoef : |T⁻¹ - (N : ℝ)⁻¹| = (T - (N : ℝ)) / (T * (N : ℝ)) := by
-        have hle : T⁻¹ ≤ (N : ℝ)⁻¹ := inv_anti₀ hNpos hNle
-        rw [abs_of_nonpos (sub_nonpos.mpr hle), neg_sub,
-          inv_sub_inv hNpos.ne' (zero_lt_one.trans_le hT).ne', mul_comm (N : ℝ) T]
-      have hnorm_int : ‖∫ t in (0 : ℝ)..(N : ℝ), U t v‖ ≤ ‖v‖ * (N : ℝ) := by
-        simpa [sub_zero, abs_of_pos hNpos] using
-          intervalIntegral.norm_integral_le_of_norm_le_const (a := (0 : ℝ)) (b := (N : ℝ))
-            (f := fun t : ℝ ↦ U t v) (C := ‖v‖) fun t _ ↦ (hU.norm_map t v).le
-      rw [hcoef]
-      calc (T - (N : ℝ)) / (T * (N : ℝ)) * ‖∫ t in (0 : ℝ)..(N : ℝ), U t v‖
-          ≤ (T - (N : ℝ)) / (T * (N : ℝ)) * (‖v‖ * (N : ℝ)) := by gcongr
-        _ = (T - (N : ℝ)) * T⁻¹ * ‖v‖ := by field_simp [hNpos.ne', (zero_lt_one.trans_le hT).ne']
-        _ ≤ 1 * T⁻¹ * ‖v‖ := by gcongr
-        _ = T⁻¹ * ‖v‖ := by ring
-    rw [hsub]
-    have htri := norm_add_le (T⁻¹ • ∫ t in (N : ℝ)..T, U t v)
-      ((T⁻¹ - (N : ℝ)⁻¹) • ∫ t in (0 : ℝ)..(N : ℝ), U t v)
-    linarith [htri, h1, h2]
+        (T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) - T⁻¹ • ∫ t in (0 : ℝ)..(⌊T⌋₊ : ℝ), U t v =
+          T⁻¹ • ∫ t in (⌊T⌋₊ : ℝ)..T, U t v := by
+      rw [← smul_sub, intervalIntegral.integral_interval_sub_left (hint 0 T) (hint 0 (⌊T⌋₊ : ℝ))]
+    have hnorm_int : ‖∫ t in (⌊T⌋₊ : ℝ)..T, U t v‖ ≤ ‖v‖ * |T - (⌊T⌋₊ : ℝ)| :=
+      intervalIntegral.norm_integral_le_of_norm_le_const fun t _ ↦ (hU.norm_map t v).le
+    rw [abs_of_nonneg (sub_nonneg.mpr hNle)] at hnorm_int
+    rw [hsub, norm_smul, Real.norm_of_nonneg (inv_nonneg.mpr (zero_le_one.trans hT))]
+    calc T⁻¹ * ‖∫ t in (⌊T⌋₊ : ℝ)..T, U t v‖
+        ≤ T⁻¹ * (‖v‖ * (T - (⌊T⌋₊ : ℝ))) := by gcongr
+      _ ≤ T⁻¹ * (‖v‖ * 1) := by gcongr
+      _ = T⁻¹ * ‖v‖ := by ring
   have hA : Tendsto (fun T : ℝ ↦ T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) atTop (𝓝 L) := by
     simpa only [sub_add_cancel, zero_add] using htail.add hfloor
   have hL_mem : L ∈ U.fixedSubmodule hU.isComplexLinear := by

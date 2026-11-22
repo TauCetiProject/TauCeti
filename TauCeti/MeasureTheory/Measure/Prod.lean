@@ -236,12 +236,9 @@ theorem prod_graph {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] [Me
   simp_rw [hsec]
   rw [show (fun x ↦ ν {f x}) = (fun y : β ↦ ν {y}) ∘ f from rfl,
     lintegral_comp hν_meas hf, ← setLIntegral_eq_of_support_subset Set.Subset.rfl,
-    lintegral_countable _ hS, tsum_subtype (Function.support fun y : β ↦ ν {y})
-      fun y ↦ ν {y} * (μ.map f) {y}]
-  congr 1 with y
-  by_cases hy : y ∈ Function.support fun y : β ↦ ν {y}
-  · simp [Set.indicator_of_mem hy, map_apply hf (measurableSet_singleton y), mul_comm]
-  · simp_all [Function.mem_support]
+    lintegral_countable _ hS, tsum_subtype_eq_of_support_subset
+      (Function.support_mul_subset_left (fun y : β ↦ ν {y}) (fun y : β ↦ (μ.map f) {y}))]
+  simp_rw [map_apply hf (measurableSet_singleton _), mul_comm]
 
 /-- The product measure of the diagonal `Set.diagonal α` is `∑' x, μ {x} * ν {x}`. Only the second
 factor must be s-finite. -/
