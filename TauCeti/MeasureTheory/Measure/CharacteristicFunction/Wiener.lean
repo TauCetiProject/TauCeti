@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Integral.Exp.Complex
 import TauCeti.MeasureTheory.Measure.Prod
 
@@ -63,13 +62,11 @@ private theorem average_exp_mul_charFun_eq_integral (σ : Measure ℝ) [IsFinite
     (T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (-(ω * t * Complex.I)) * charFun σ t =
       ∫ ξ, ((T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T,
         Complex.exp ((t : ℂ) * ((ξ - ω : ℝ) : ℂ) * Complex.I)) ∂σ := by
-  have : IsFiniteMeasure (volume.restrict (Set.Ioc (0 : ℝ) T)) := ⟨by simp [Real.volume_Ioc]⟩
   have hint : Integrable
       (fun p : ℝ × ℝ ↦ Complex.exp ((p.1 : ℂ) * ((p.2 - ω : ℝ) : ℂ) * Complex.I))
       ((volume.restrict (Set.Ioc (0 : ℝ) T)).prod σ) := by
     refine (integrable_const (1 : ℝ)).mono' (by fun_prop) (Eventually.of_forall fun p ↦ ?_)
-    rw [Complex.norm_exp]
-    simp
+    rw [← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I]
   calc (T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (-(ω * t * Complex.I)) * charFun σ t
       = (T⁻¹ : ℂ) * ∫ t in Set.Ioc (0 : ℝ) T,
           (∫ ξ, Complex.exp ((t : ℂ) * ((ξ - ω : ℝ) : ℂ) * Complex.I) ∂σ) := by
@@ -100,19 +97,13 @@ theorem tendsto_average_exp_mul_charFun (σ : Measure ℝ) [IsFiniteMeasure σ] 
       atTop (𝓝 (σ.real {ω} : ℂ)) := by
   let K : ℝ → ℝ → ℂ := fun T ξ ↦
     (T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp ((t : ℂ) * ((ξ - ω : ℝ) : ℂ) * Complex.I)
-  have hmeas : ∀ᶠ T : ℝ in atTop, AEStronglyMeasurable (K T) σ := by
-    filter_upwards [eventually_gt_atTop (0 : ℝ)] with T hT
-    have : IsFiniteMeasure (volume.restrict (Set.Ioc (0 : ℝ) T)) := ⟨by simp [Real.volume_Ioc]⟩
-    have hcont : Continuous fun p : ℝ × ℝ ↦
-        Complex.exp ((p.1 : ℂ) * ((p.2 - ω : ℝ) : ℂ) * Complex.I) := by
-      fun_prop
-    have hK : K T = fun ξ : ℝ ↦ (T⁻¹ : ℂ) *
-        ∫ t in Set.Ioc (0 : ℝ) T, Complex.exp ((t : ℂ) * ((ξ - ω : ℝ) : ℂ) * Complex.I) := by
-      funext ξ
-      simp only [K, intervalIntegral.integral_of_le hT.le]
-    rw [hK]
-    exact (stronglyMeasurable_const.mul
-      hcont.stronglyMeasurable.integral_prod_left).aestronglyMeasurable
+  have hmeas : ∀ᶠ T : ℝ in atTop, AEStronglyMeasurable (K T) σ :=
+    Eventually.of_forall fun T ↦
+      (continuous_const.mul
+        ((intervalIntegral.continuous_parametric_primitive_of_continuous (μ := volume)
+          (f := fun ξ t : ℝ ↦ Complex.exp ((t : ℂ) * ((ξ - ω : ℝ) : ℂ) * Complex.I))
+          (a₀ := 0) (by fun_prop)).comp
+          (continuous_id.prodMk continuous_const))).aestronglyMeasurable
   have hbound : ∀ᶠ T : ℝ in atTop, ∀ᵐ ξ ∂σ, ‖K T ξ‖ ≤ 1 :=
     Eventually.of_forall fun T ↦ Eventually.of_forall fun ξ ↦
       TauCeti.norm_inv_mul_integral_cexp_mul_I_le_one (ξ - ω) T

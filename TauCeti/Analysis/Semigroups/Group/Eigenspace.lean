@@ -148,8 +148,7 @@ Hilbert space admits an orthogonal projection. -/
 instance hasOrthogonalProjection_eigenspace [CompleteSpace H] (U : StronglyContinuousGroup H)
     (hU : U.toSemigroup.IsComplexLinear) (ω : ℝ) :
     (U.eigenspace hU ω).HasOrthogonalProjection :=
-  have := (U.isClosed_eigenspace hU ω).completeSpace_coe
-  inferInstance
+  hasOrthogonalProjection_fixedSubmodule (U.phaseShift hU ω) (U.isComplexLinear_phaseShift hU ω)
 
 end Projection
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Semigroups.Group.ComplexLinear
-public import TauCeti.Analysis.Semigroups.Group.Unitary
+public import TauCeti.Analysis.Semigroups.Group.InverseSemigroups
 public import TauCeti.Analysis.Semigroups.PhaseShift
 
 /-!
@@ -20,8 +20,8 @@ frequency `b`, the *phase shift* is the two-sided C₀-group
 Its restriction to `[0, ∞)` agrees with the semigroup phase shift
 `TauCeti.Semigroups.StronglyContinuousSemigroup.phaseShift`, and time reversal negates the shift
 parameter. Because multiplication by `exp (-(b * t) * I)` is unimodular and commutes with every
-complex-linear operator, a phase shift preserves complex linearity, every two-sided growth bound,
-and unitarity on a complex Hilbert space.
+complex-linear operator, a phase shift preserves complex linearity and every two-sided growth
+bound.
 
 ## Main definitions and results
 
@@ -35,8 +35,6 @@ and unitarity on a complex Hilbert space.
   complex linear.
 * `TauCeti.Semigroups.StronglyContinuousGroup.HasGrowthBound.phaseShift`: a phase shift preserves
   two-sided growth bounds.
-* `TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary.phaseShift`: a phase shift of a unitary
-  C₀-group is unitary.
 
 ## References
 
@@ -148,8 +146,7 @@ theorem phaseShift {U : StronglyContinuousGroup X} {ω M : ℝ}
   refine hasGrowthBound_of_bound hb.one_le fun t ↦ ?_
   rw [phaseShift_apply]
   have hnorm : ‖Complex.exp (-(b * t) * Complex.I)‖ = 1 := by
-    rw [Complex.norm_exp]
-    simp
+    rw [← Complex.ofReal_mul, ← Complex.ofReal_neg, Complex.norm_exp_ofReal_mul_I]
   calc ‖Complex.exp (-(b * t) * Complex.I) • U t‖
       ≤ ‖Complex.exp (-(b * t) * Complex.I)‖ * ‖U t‖ :=
         ContinuousLinearMap.opNorm_smul_le _ _
@@ -157,20 +154,6 @@ theorem phaseShift {U : StronglyContinuousGroup X} {ω M : ℝ}
     _ ≤ M * Real.exp (ω * |t|) := hb.bound t
 
 end HasGrowthBound
-
-section Unitary
-
-variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
-
-/-- A phase shift of a unitary C₀-group is again unitary. -/
-theorem IsUnitary.phaseShift {U : StronglyContinuousGroup H} (hU : U.IsUnitary) (b : ℝ) :
-    (U.phaseShift hU.isComplexLinear b).IsUnitary :=
-  isUnitary_of_isComplexLinear_of_opNorm_le_one _
-    (U.isComplexLinear_phaseShift hU.isComplexLinear b)
-    ((U.phaseShift hU.isComplexLinear b).hasGrowthBound_zero_one_iff.mp
-      (hU.hasGrowthBound_zero_one.phaseShift hU.isComplexLinear b))
-
-end Unitary
 
 end TauCeti.Semigroups.StronglyContinuousGroup
 

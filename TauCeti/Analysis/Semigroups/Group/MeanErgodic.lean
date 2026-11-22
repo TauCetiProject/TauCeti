@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.Semigroups.Group.Eigenspace
+public import TauCeti.Analysis.Semigroups.Group.Unitary
 import Mathlib.Analysis.InnerProductSpace.MeanErgodic
 
 /-!
@@ -61,25 +62,21 @@ converge in norm as `T → ∞` to the orthogonal projection of `v` onto the com
 theorem tendsto_average_starProjection [CompleteSpace H] (hU : U.IsUnitary) (v : H) :
     Tendsto (fun T : ℝ ↦ T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) atTop
       (𝓝 ((U.fixedSubmodule hU.isComplexLinear).starProjection v)) := by
-  let f : H →L[ℂ] H :=
-    { toFun := U 1
-      map_add' := (U 1).map_add
-      map_smul' := hU.map_smul 1
-      cont := (U 1).continuous }
+  let f : H →L[ℂ] H := U.toSemigroup.complexLinearOperator hU.isComplexLinear 1
   have hf_norm : ‖f‖ ≤ 1 := ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by
-    simpa [f] using (hU.norm_map 1 x).le
+    rw [U.toSemigroup.complexLinearOperator_apply, U.toSemigroup_apply]
+    simpa only [NNReal.coe_one, one_mul] using
+      ((U 1).le_opNorm x).trans (mul_le_of_le_one_left (norm_nonneg x) (hU.opNorm_le_one 1))
   let w₀ : H := ∫ t in (0 : ℝ)..1, U t v
   obtain ⟨L, hbirk⟩ : ∃ L : H, Tendsto (birkhoffAverage ℂ f _root_.id · w₀) atTop (𝓝 L) :=
     ⟨_, f.tendsto_birkhoffAverage_orthogonalProjection hf_norm w₀⟩
   have hint (a b : ℝ) : IntervalIntegrable (fun t : ℝ ↦ U t v) volume a b :=
     (U.continuous_orbit v).intervalIntegrable a b
   have hf_iter (k : ℕ) (x : H) : f^[k] x = U (k : ℝ) x := by
-    induction k generalizing x with
-    | zero => simp
-    | succ k ih =>
-      rw [Function.iterate_succ_apply', ih, show ((k + 1 : ℕ) : ℝ) = 1 + (k : ℝ) by push_cast; ring,
-        U.map_add_apply]
-      rfl
+    have hcoe : (f : H → H) = U.toSemigroup 1 :=
+      funext (U.toSemigroup.complexLinearOperator_apply hU.isComplexLinear 1)
+    rw [hcoe, ← pow_apply_eq_iterate, ← U.toSemigroup.map_natCast_mul 1 k, mul_one,
+      U.toSemigroup_apply, NNReal.coe_natCast]
   have hbirk_eq (N : ℕ) :
       birkhoffAverage ℂ f _root_.id N w₀ = (N : ℝ)⁻¹ • ∫ t in (0 : ℝ)..(N : ℝ), U t v := by
     rw [birkhoffAverage, birkhoffSum, ← Complex.ofReal_natCast, ← Complex.ofReal_inv,
@@ -228,15 +225,16 @@ theorem tendsto_twistedAverage_starProjection [CompleteSpace H] (hU : U.IsUnitar
         T⁻¹ • ∫ t in (0 : ℝ)..T, Complex.exp (-(ω * t * Complex.I)) • U t v)
       atTop (𝓝 ((U.eigenspace hU.isComplexLinear ω).starProjection v)) := by
   have h := (hU.phaseShift ω).tendsto_average_starProjection v
+  -- `eigenspace` is not `@[expose]` across `module` boundaries, so `rfl` cannot unfold it here;
+  -- transport `starProjection` along `eigenspace_eq_fixedSubmodule_phaseShift`.
   have hproj : ((U.phaseShift hU.isComplexLinear ω).fixedSubmodule
       (hU.phaseShift ω).isComplexLinear).starProjection v =
       (U.eigenspace hU.isComplexLinear ω).starProjection v := by
-    have heq := (U.eigenspace_eq_fixedSubmodule_phaseShift hU.isComplexLinear ω).symm
-    refine (Submodule.eq_starProjection_of_mem_orthogonal ?_ ?_).symm
-    · rw [← heq]
-      exact Submodule.starProjection_apply_mem _ v
-    · rw [← heq]
-      exact Submodule.sub_starProjection_mem_orthogonal v
+    have hcongr : ∀ {K₁ K₂ : Submodule ℂ H} [K₁.HasOrthogonalProjection]
+        [K₂.HasOrthogonalProjection], K₁ = K₂ → K₁.starProjection v = K₂.starProjection v := by
+      rintro K₁ _ _ _ rfl
+      rfl
+    exact hcongr (U.eigenspace_eq_fixedSubmodule_phaseShift hU.isComplexLinear ω).symm
   rw [hproj] at h
   refine h.congr fun T ↦ ?_
   congr 1

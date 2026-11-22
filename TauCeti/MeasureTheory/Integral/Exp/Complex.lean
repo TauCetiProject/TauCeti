@@ -95,8 +95,7 @@ theorem norm_inv_mul_integral_cexp_mul_I_le_one (u T : ℝ) :
   by_cases hT : T = 0
   · simp [hT]
   have hnorm : ∀ t ∈ Set.uIoc (0 : ℝ) T, ‖Complex.exp (t * u * Complex.I)‖ ≤ 1 := fun t _ ↦ by
-    rw [Complex.norm_exp]
-    simp
+    rw [← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I]
   calc ‖(T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖
       = |T|⁻¹ * ‖∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ := by
         rw [norm_mul, norm_inv, Complex.norm_real, Real.norm_eq_abs]
@@ -130,8 +129,7 @@ theorem tendsto_inv_mul_integral_cexp_mul_I (u : ℝ) :
       congr 1
       ring
     have hnorm (x : ℝ) : ‖Complex.exp ((u : ℂ) * Complex.I * x)‖ = 1 := by
-      rw [Complex.norm_exp]
-      simp
+      rw [mul_right_comm, ← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I]
     rw [heq, integral_exp_mul_complex hc, norm_mul, norm_inv, Complex.norm_real,
       Real.norm_of_nonneg hT.le, norm_div, norm_mul, Complex.norm_real, Real.norm_eq_abs,
       Complex.norm_I, mul_one]
