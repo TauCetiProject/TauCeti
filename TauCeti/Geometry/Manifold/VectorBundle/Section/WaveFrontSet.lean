@@ -52,7 +52,8 @@ covector `ξ ∘ D(c⁻¹)(c x)` read in the chart (`TauCeti.BundleTest.IsMicrol
 
 Multiplying `T` by a smooth function `f` multiplies its local representatives by `f` read in the
 chart, so the Euclidean behaviour of the wave front set under smooth multiplication carries over:
-`WF(f T)` lies in `WF(T)` over the support of `f`, and agrees with it where `f ≠ 0`.
+on a manifold without boundary `WF(f T)` lies in `WF(T)` over the support of `f`, and in general
+it agrees with `WF(T)` where `f ≠ 0`.
 
 ## The argument
 
@@ -93,7 +94,7 @@ covectors read in two charts.
 * `TauCeti.BundleTest.waveFrontSet_smulLeftDualCLM_subset`,
   `TauCeti.BundleTest.mem_waveFrontSet_smulLeftDualCLM_iff`: the wave front set of a smooth
   multiple `f T` (`TauCeti.BundleTest.smulLeftDualCLM`) lies in that of `T` over the support of
-  `f`, with equality over the points where `f` does not vanish.
+  `f` on a manifold without boundary, with equality over the points where `f` does not vanish.
 
 ## References
 
