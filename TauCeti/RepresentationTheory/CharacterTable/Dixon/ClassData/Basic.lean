@@ -389,6 +389,16 @@ theorem equivConjClasses_apply (i : Fin d.numClasses) : d.equivConjClasses i = d
 theorem equivConjClasses_symm_apply (C : ConjClasses G) :
     d.equivConjClasses.symm C = d.indexClass C := (rfl)
 
+/-- `TauCeti.ClassData.indexClass` is a left inverse of `TauCeti.ClassData.classOf`. -/
+@[simp]
+theorem indexClass_classOf (i : Fin d.numClasses) : d.indexClass (d.classOf i) = i :=
+  d.equivConjClasses.left_inv i
+
+/-- `TauCeti.ClassData.indexClass` is a right inverse of `TauCeti.ClassData.classOf`. -/
+@[simp]
+theorem classOf_indexClass (C : ConjClasses G) : d.classOf (d.indexClass C) = C :=
+  d.equivConjClasses.right_inv C
+
 omit [DecidableRel (IsConj : G → G → Prop)] in
 /-- **The numbering has the expected length**: `d.reps` lists as many elements as `G` has
 conjugacy classes. The statement assumes neither a finite `G` nor a decidable conjugacy. -/

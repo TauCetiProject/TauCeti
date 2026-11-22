@@ -66,6 +66,12 @@ section TargetDecidable
 
 variable (dH : ClassData H) (dG : ClassData G) [DecidableRel (IsConj : G → G → Prop)]
 
+/-- The defining equation of `TauCeti.ClassData.fusion`, left off `@[simp]` so it does not rewrite
+past `TauCeti.ClassData.fusion_index` or `TauCeti.ClassData.fusion_id`. -/
+theorem fusion_def (φ : H →* G) (i : Fin dH.numClasses) :
+    dH.fusion dG φ i = dG.index (φ (dH.rep i)) :=
+  (rfl)
+
 /-- The representative at the fused index `dH.fusion dG φ i` is conjugate in `G` to
 `φ (dH.rep i)`. -/
 theorem isConj_rep_fusion (φ : H →* G) (i : Fin dH.numClasses) :
