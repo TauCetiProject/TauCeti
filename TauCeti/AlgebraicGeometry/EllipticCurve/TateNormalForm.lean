@@ -541,12 +541,13 @@ namespace UniversalGammaOneFour
 
 open MvPolynomial (X)
 
-/-- The polynomial `B(1 - 16B)` in `ℤ[B]`, inverted to form the base ring of `Y₁(4)`. -/
+/-- The polynomial `B(1 - 16B)` in `ℤ[B]`, inverted to form the base ring of naive `Y₁(4)`
+(agreeing with Drinfeld `Y₁(4)` where `4` is invertible). -/
 noncomputable abbrev discrFactor : MvPolynomial (Fin 1) ℤ :=
   X 0 * (1 - 16 * X 0)
 
-/-- The coordinate ring `ℤ[B, (B(1 - 16B))⁻¹]` of `Y₁(4)`: a localization of the polynomial ring
-in one variable over `ℤ`. -/
+/-- The coordinate ring `ℤ[B, (B(1 - 16B))⁻¹]` of naive `Y₁(4)` over `ℤ`: a localization of the
+polynomial ring in one variable over `ℤ`. -/
 abbrev Ring : Type :=
   Localization.Away discrFactor
 

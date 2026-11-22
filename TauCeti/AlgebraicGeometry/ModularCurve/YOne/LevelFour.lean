@@ -8,35 +8,36 @@ module
 public import TauCeti.AlgebraicGeometry.ModularCurve.YOne.Basic
 
 /-!
-# Explicit presentation and smoothness of `Y₁(4)`
+# Explicit presentation and smoothness of naive `Y₁(4)`
 
 On an elliptic Tate normal form `Y² + AXY + BY = X³ + BX²` over an arbitrary commutative ring,
 `4 • (0, 0) = 0` holds if and only if `A = 1`
 (`WeierstrassCurve.tateNormalForm_projModelMulBy_four_eq_projModelZero_iff`), while `(0, 0)`,
-`2 • (0, 0)` and `3 • (0, 0)` miss the zero section everywhere. Consequently `Y₁(4)` over `ℤ`
-(`UniversalTate.yOne 4`) is isomorphic to `Spec ℤ[B, (B(1 - 16B))⁻¹]`
-(`UniversalTate.yOneFourIso`), and `EllObj.yOne B 4` is smooth of relative dimension `1` over every
-base scheme `B` without any invertibility assumption
-(`EllObj.smoothOfRelativeDimension_one_yOne_four_structureMap`).
+`2 • (0, 0)` and `3 • (0, 0)` miss the zero section everywhere. Consequently the naive `Y₁(4)`
+moduli scheme over `ℤ` (`UniversalTate.yOne 4`, representing the naive `[Γ₁(4)]` problem) is
+isomorphic to `Spec ℤ[B, (B(1 - 16B))⁻¹]` (`UniversalTate.yOneFourIso`), and `EllObj.yOne B 4`
+is smooth of relative dimension `1` over every base scheme `B` without any invertibility
+assumption (`EllObj.smoothOfRelativeDimension_one_yOne_four_structureMap`). Where `4` (i.e. `2`) is
+invertible on `B`, naive `[Γ₁(4)]` agrees with the Drinfeld moduli problem `[Γ₁(4)]`.
 
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.UniversalTate.yOneFourIso`: the isomorphism
-  `UniversalTate.yOne 4 ≅ Spec ℤ[B, (B(1 - 16B))⁻¹]` identifying `Y₁(4)` over `ℤ`.
+  `UniversalTate.yOne 4 ≅ Spec ℤ[B, (B(1 - 16B))⁻¹]` identifying naive `Y₁(4)` over `ℤ`.
 
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.UniversalTate.exactOrderOpens_four` and
   `TauCeti.AlgebraicGeometry.UniversalTate.yOneOpens_four`: the open exact-order locus for
-  `N = 4` is the whole base, so `Y₁(4)` is a closed subscheme of `Spec ℤ[A, B][Δ⁻¹]`
+  `N = 4` is the whole base, so naive `Y₁(4)` is a closed subscheme of `Spec ℤ[A, B][Δ⁻¹]`
   (`UniversalTate.isClosedImmersion_yOneι_four`) and affine (`UniversalTate.isAffine_yOne_four`).
 * `TauCeti.AlgebraicGeometry.UniversalTate.yOneFourIso_hom_SpecMap` and
   `TauCeti.AlgebraicGeometry.UniversalTate.yOneFourIso_inv_yOneι`: `yOneFourIso` identifies
   `yOneι 4` with the spectrum of the specialization map `A = 1`.
 * `TauCeti.AlgebraicGeometry.UniversalTate.smoothOfRelativeDimension_one_terminal_from_yOne_four`:
-  `Y₁(4)` over `ℤ` is smooth of relative dimension `1` over `Spec ℤ`.
+  naive `Y₁(4)` over `ℤ` is smooth of relative dimension `1` over `Spec ℤ`.
 * `TauCeti.AlgebraicGeometry.EllObj.smoothOfRelativeDimension_one_yOne_four_structureMap`:
-  `EllObj.yOne B 4` is smooth of relative dimension `1` over every base scheme `B`.
+  naive `EllObj.yOne B 4` is smooth of relative dimension `1` over every base scheme `B`.
 
 ## References
 
@@ -82,24 +83,25 @@ theorem exactOrderOpens_four : exactOrderOpens.{u} 4 = ⊤ := by
   · exact WeierstrassCurve.UniversalTate.point_projModelMulBy_two_ne_projModelZero t heq'
   · exact WeierstrassCurve.UniversalTate.point_projModelMulBy_three_ne_projModelZero t heq'
 
-/-- The open subset `yOneOpens 4` cutting `Y₁(4)` out of the `4`-torsion locus is the whole
+/-- The open subset `yOneOpens 4` cutting naive `Y₁(4)` out of the `4`-torsion locus is the whole
 `4`-torsion locus. -/
 @[simp]
 theorem yOneOpens_four : yOneOpens.{u} 4 = ⊤ := by
   ext z
   simp
 
-/-- The open immersion `Y₁(4) ⟶ torsionLocus 4` is an isomorphism. -/
+/-- The open immersion from naive `Y₁(4)` into `torsionLocus 4` is an isomorphism. -/
 instance isIso_yOneOpens_four_ι : IsIso (yOneOpens.{u} 4).ι := by
   rw [yOneOpens_four, ← Scheme.topIso_hom]
   infer_instance
 
-/-- Over `ℤ`, the immersion `Y₁(4) ⟶ Spec ℤ[A, B][Δ⁻¹]` is a closed immersion. -/
+/-- Over `ℤ`, the immersion from naive `Y₁(4)` into `Spec ℤ[A, B][Δ⁻¹]` is a closed
+immersion. -/
 instance isClosedImmersion_yOneι_four : IsClosedImmersion (yOneι.{u} 4) := by
   rw [yOneι_def]
   infer_instance
 
-/-- The scheme `Y₁(4)` over `ℤ` is affine. -/
+/-- Naive `Y₁(4)` over `ℤ` is affine. -/
 instance isAffine_yOne_four : IsAffine (yOne.{u} 4) :=
   isAffine_of_isAffineHom (yOneι.{u} 4)
 
@@ -155,7 +157,8 @@ private theorem exists_specToYOneFour :
         UniversalGammaOneFour.toUniversalTateULift_a₁,
       fun _ ↦ by simp⟩
 
-/-- **`Y₁(4)` over `ℤ` is `Spec ℤ[B, (B(1 - 16B))⁻¹]`.** -/
+/-- **Naive `Y₁(4)` over `ℤ` is `Spec ℤ[B, (B(1 - 16B))⁻¹]`** (agreeing with Drinfeld `Y₁(4)`
+where `4` is invertible). -/
 noncomputable def yOneFourIso :
     yOne.{u} 4 ≅ Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)) where
   hom := exists_yOneFourToSpec.choose
@@ -188,7 +191,7 @@ noncomputable def yOneFourIso :
     rw [← hχ, hχid, Spec.map_id]
 
 /-- Under `yOneFourIso.hom`, the specialization map `A = 1` recovers the closed immersion
-`yOneι 4 : Y₁(4) ⟶ Spec ℤ[A, B][Δ⁻¹]`. -/
+`yOneι 4 : yOne 4 ⟶ Spec ℤ[A, B][Δ⁻¹]` of naive `Y₁(4)`. -/
 @[reassoc (attr := simp)]
 theorem yOneFourIso_hom_SpecMap :
     yOneFourIso.{u}.hom ≫
@@ -204,7 +207,7 @@ theorem yOneFourIso_inv_yOneι :
       Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTateULift) :=
   exists_specToYOneFour.choose_spec
 
-/-- `Y₁(4)` over `ℤ` is smooth of relative dimension `1` over `Spec ℤ`. -/
+/-- Naive `Y₁(4)` over `ℤ` is smooth of relative dimension `1` over `Spec ℤ`. -/
 instance smoothOfRelativeDimension_one_terminal_from_yOne_four :
     SmoothOfRelativeDimension 1 (terminal.from (yOne.{u} 4)) := by
   have h : SmoothOfRelativeDimension (0 + 1)
@@ -219,7 +222,8 @@ end UniversalTate
 
 namespace EllObj
 
-/-- **`Y₁(4)` is smooth of relative dimension `1` over every base scheme `B`.** -/
+/-- **Naive `Y₁(4)` is smooth of relative dimension `1` over every base scheme `B`** (and agrees
+with Drinfeld `Y₁(4)` where `4` is invertible). -/
 instance smoothOfRelativeDimension_one_yOne_four_structureMap (B : Scheme.{u}) :
     SmoothOfRelativeDimension 1 (yOne B 4).structureMap := by
   have hfst : SmoothOfRelativeDimension 1 (prod.fst : B ⨯ UniversalTate.yOne.{u} 4 ⟶ B) :=

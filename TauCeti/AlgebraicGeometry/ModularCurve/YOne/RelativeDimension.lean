@@ -82,8 +82,6 @@ private theorem smoothOfRelativeDimension_one_yOne_restrict_basicOpen_two (B : S
   have h4U (x : U.toScheme) : (4 : U.toScheme.residueField x) ≠ 0 := fun h4 ↦
     mul_ne_zero (B.natCast_residueField_basicOpen_ne_zero 2 x)
       (B.natCast_residueField_basicOpen_ne_zero 2 x) (by linear_combination h4)
-  have : Smooth (yOne U.toScheme N).structureMap :=
-    smooth_yOne_structureMap U.toScheme N hNU h4
   exact smoothOfRelativeDimension_restrict_yOne_of_open B U N <|
     ModuliProblem.RelRepData.smoothOfRelativeDimension_of_representableBy
       (ModuliProblem.gammaOneNaiveRepresentableBy h4)
@@ -102,8 +100,6 @@ private theorem smoothOfRelativeDimension_one_yOne_restrict_basicOpen_three (B :
     (Scheme.Hom.natCast_residueField_ne_zero_iff U.ι).mpr (hN _)
   have h3U (x : U.toScheme) : (3 : U.toScheme.residueField x) ≠ 0 :=
     B.natCast_residueField_basicOpen_ne_zero 3 x
-  have : Smooth (yOne U.toScheme N).structureMap :=
-    smooth_yOne_structureMap U.toScheme N hNU h4
   exact smoothOfRelativeDimension_restrict_yOne_of_open B U N <|
     ModuliProblem.RelRepData.smoothOfRelativeDimension_of_representableBy
       (ModuliProblem.gammaOneNaiveRepresentableBy h4)
