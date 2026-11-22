@@ -41,7 +41,7 @@ Conversely, elliptic operators of order `0` detect the covectors at which `v` is
 `(x₀, ξ₀) ∉ WF(v)`, a microlocal cutoff `c` living in a small conic neighbourhood of `(x₀, ξ₀)` on
 which `v` is microlocally smooth is the identity near `(x₀, ξ₀)`, so not characteristic there, and
 `Op(c) v` has empty wave front set
-(`TauCeti.Symbol.exists_notMem_characteristicSet_and_waveFrontSet_quantizeSobolev_eq_empty`).
+(`Symbol.exists_notMem_characteristicSet_and_waveFrontSet_toDistribution_quantizeSobolev_eq_empty`).
 An empty wave front set means that `Op(c) v` is a smooth function
 (`Distribution.singularSupport_eq_empty_iff_waveFrontSet_eq_empty`,
 `Distribution.singularSupport_eq_empty_iff`). With microlocal elliptic regularity this identifies
@@ -300,8 +300,8 @@ section TestOperators
 /-- **Elliptic test operators detect regular covectors.** If `v ∈ H^t` is microlocally smooth at
 `(x₀, ξ₀)`, there is a symbol `c` of order `0` with compact spatial support, not characteristic at
 `(x₀, ξ₀)`, such that `Op(c) v` has empty wave front set. -/
-theorem exists_notMem_characteristicSet_and_waveFrontSet_quantizeSobolev_eq_empty (t : ℝ)
-    (v : H^{t}(CoordinateSpace n, ℂ)) {x₀ ξ₀ : CoordinateSpace n}
+theorem exists_notMem_characteristicSet_and_waveFrontSet_toDistribution_quantizeSobolev_eq_empty
+    (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ)) {x₀ ξ₀ : CoordinateSpace n}
     (hv : (x₀, ξ₀) ∉ (toDistribution ⊤ v.toDistr).waveFrontSet) :
     ∃ (c : Symbol n ℂ ℂ 0) (hc : c.HasCompactSpatialSupport), (x₀, ξ₀) ∉ c.characteristicSet ∧
       (toDistribution ⊤ (c.quantizeSobolev hc t v).toDistr).waveFrontSet = ∅ := by
@@ -349,8 +349,9 @@ theorem notMem_waveFrontSet_toDistribution_iff_exists (t : ℝ) (v : H^{t}(Coord
     (x₀, ξ₀) ∉ (toDistribution ⊤ v.toDistr).waveFrontSet ↔
       ∃ (c : Symbol n ℂ ℂ 0) (hc : c.HasCompactSpatialSupport), (x₀, ξ₀) ∉ c.characteristicSet ∧
         (toDistribution ⊤ (c.quantizeSobolev hc t v).toDistr).waveFrontSet = ∅ := by
-  refine ⟨exists_notMem_characteristicSet_and_waveFrontSet_quantizeSobolev_eq_empty t v,
-    fun ⟨c, hc, hchar, hWF⟩ hp ↦ hchar ?_⟩
+  refine
+    ⟨exists_notMem_characteristicSet_and_waveFrontSet_toDistribution_quantizeSobolev_eq_empty t v,
+      fun ⟨c, hc, hchar, hWF⟩ hp ↦ hchar ?_⟩
   simpa [hWF] using waveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet hc t
     v hp
 
@@ -370,7 +371,8 @@ theorem waveFrontSet_toDistribution_eq_iInter_characteristicSet (t : ℝ)
       waveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet hc t v hp
   · by_contra hp
     obtain ⟨c, hc, hchar, hWF⟩ :=
-      exists_notMem_characteristicSet_and_waveFrontSet_quantizeSobolev_eq_empty t v hp
+      exists_notMem_characteristicSet_and_waveFrontSet_toDistribution_quantizeSobolev_eq_empty t v
+        hp
     exact hchar (h c hc hWF)
 
 end TestOperators
