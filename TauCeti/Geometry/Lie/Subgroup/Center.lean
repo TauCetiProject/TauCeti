@@ -5,9 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RepresentationTheory.Subrepresentation
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Commutative
+public import TauCeti.Topology.Algebra.Group.Connected
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
+import TauCeti.Geometry.Lie.Adjoint.Representation.Stabilizer
+import TauCeti.Geometry.Lie.Exponential.Generation
 import TauCeti.Geometry.Lie.Subgroup.Embedded
+import TauCeti.RepresentationTheory.Continuous.Basic
 import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
@@ -31,6 +37,17 @@ space. For compact connected `G`, finiteness of the centre is equivalent to `�
 Connectedness is needed for the converses: the orthogonal group `O(2)` has centre `{±1}`, while
 its Lie algebra `𝔰𝔬(2)` is abelian.
 
+For a possibly disconnected Lie group the centre is replaced by the centralizer `C_G(G⁰)` of the
+identity component `G⁰`. This centralizer is the **kernel of the adjoint representation**,
+`ker (Ad : G → Aut 𝔤) = C_G(G⁰)`, and its Lie algebra is `𝔷(𝔤)`; both statements reduce to the
+connected ones above when `G⁰ = G`. The adjoint action preserves `𝔷(𝔤)`, and `G⁰` acts trivially on
+it, since `Ad (lieExp X)` fixes every element bracketing to zero with `X` and the exponential image
+generates `G⁰`. So the adjoint action on the centre factors through the component group
+`π₀ G = G ⧸ G⁰`. In `O(2)`, for instance, `C_G(G⁰) = SO(2)`, and the reflections act on the
+one-dimensional Lie algebra `𝔰𝔬(2) = 𝔷(𝔰𝔬(2))` by `-1`. This is the action of the component group
+that makes the bundle `P ×_Ad 𝔷` associated with a principal bundle a flat bundle, possibly with
+nontrivial monodromy.
+
 ## Main results
 
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_center_le`: `Lie(Z(G)) ≤ 𝔷(𝔤)`.
@@ -46,6 +63,19 @@ its Lie algebra `𝔰𝔬(2)` is abelian.
 * `TauCeti.Lie.finite_center_of_center_eq_bot` and `TauCeti.Lie.finite_center_iff`: a compact Lie
   group with `𝔷(𝔤) = 0` has finite centre, and for compact connected `G` this characterizes
   `𝔷(𝔤) = 0`.
+* `TauCeti.Lie.mem_centralizer_connectedComponent_one_iff_forall_Ad_apply_eq_self` and
+  `TauCeti.Lie.ker_continuousAdjointRepresentation`: the kernel of the adjoint representation of
+  any Lie group is the centralizer of its identity component.
+* `TauCeti.Lie.lieSubalgebraOfSubgroup_connectedComponentOfOne` and
+  `TauCeti.Lie.lieSubalgebraOfSubgroup_centralizer_connectedComponent_one`: the identity
+  component has Lie algebra `𝔤`, and its centralizer has Lie algebra `𝔷(𝔤)`.
+* `TauCeti.Lie.Ad_apply_mem_center`, `TauCeti.Lie.Ad_apply_eq_self_of_mem_connectedComponentOfOne`
+  and `TauCeti.Lie.Ad_apply_eq_Ad_apply_of_mk_eq_mk_of_mem_center`: the adjoint action preserves
+  `𝔷(𝔤)`, the identity component acts trivially on it, and so the action on `𝔷(𝔤)` only depends on
+  the connected component.
+* `TauCeti.Lie.centerSubrepresentation` and `TauCeti.Lie.componentGroupCenterRepresentation`: the
+  centre as a subrepresentation of the adjoint representation, and the induced representation of
+  the component group `G ⧸ G⁰` on it.
 
 ## References
 
@@ -81,15 +111,72 @@ theorem Ad_apply_eq_self_of_mem_center {g : G} (hg : g ∈ Subgroup.center G)
   rw [← Subgroup.centralizer_univ, ← Subgroup.coe_top] at hg
   exact Ad_apply_eq_self_of_mem_centralizer hg (by simp)
 
+/-! ### The kernel of the adjoint representation -/
+
+variable [IsTopologicalGroup G] in
+/-- **The Lie algebra of the identity component is the whole Lie algebra**: every one-parameter
+subgroup is a connected curve through `1`. -/
+@[simp]
+theorem lieSubalgebraOfSubgroup_connectedComponentOfOne :
+    lieSubalgebraOfSubgroup (I := I) (Subgroup.connectedComponentOfOne G) = ⊤ :=
+  eq_top_iff.mpr fun X _ => mem_lieSubalgebraOfSubgroup_of_forall fun t =>
+    lieExp_mem_connectedComponent_one (t • X)
+
+/-- **An element acts trivially on the Lie algebra exactly when it centralizes the identity
+component.** This holds for a possibly disconnected Lie group `G`, with `G⁰` its identity component;
+for connected `G` it is `TauCeti.Lie.mem_center_iff_forall_Ad_apply_eq_self`. -/
+theorem mem_centralizer_connectedComponent_one_iff_forall_Ad_apply_eq_self (g : G) :
+    g ∈ Subgroup.centralizer (connectedComponent (1 : G)) ↔
+      ∀ X : LeftInvariantDerivation I G, Ad (I := I) g X = X := by
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  have hconn : IsPreconnected (Subgroup.connectedComponentOfOne G : Set G) := by
+    rw [Subgroup.coe_connectedComponentOfOne]
+    exact isPreconnected_connectedComponent
+  rw [← Subgroup.coe_connectedComponentOfOne, mem_centralizer_iff_forall_Ad_apply_eq_self (I := I)
+    Subgroup.isClosed_connectedComponentOfOne hconn,
+    lieSubalgebraOfSubgroup_connectedComponentOfOne]
+  simp
+
+/-- **The kernel of the adjoint representation is the centralizer of the identity component**,
+`ker (Ad : G → Aut 𝔤) = C_G(G⁰)`. In particular this centralizer is a normal subgroup. -/
+theorem ker_continuousAdjointRepresentation :
+    (continuousAdjointRepresentation (I := I) (G := G)).toMonoidHom.ker =
+      Subgroup.centralizer (connectedComponent (1 : G)) := by
+  ext g
+  rw [MonoidHom.mem_ker,
+    mem_centralizer_connectedComponent_one_iff_forall_Ad_apply_eq_self (I := I),
+    ContRepresentation.toMonoidHom_apply, ContinuousLinearMap.ext_iff]
+  simp
+
+/-- **The Lie algebra of the centralizer of the identity component is the centre of the Lie
+algebra.** The centralizer `C_G(G⁰)` is the kernel of the adjoint representation
+(`TauCeti.Lie.mem_centralizer_connectedComponent_one_iff_forall_Ad_apply_eq_self`); for connected
+`G` it is the centre, and this is `TauCeti.Lie.lieSubalgebraOfSubgroup_center`. -/
+@[simp]
+theorem lieSubalgebraOfSubgroup_centralizer_connectedComponent_one :
+    lieSubalgebraOfSubgroup (I := I)
+        (Subgroup.centralizer (connectedComponent (1 : G))) =
+      (center ℝ (LeftInvariantDerivation I G) : LieSubalgebra ℝ (LeftInvariantDerivation I G)) := by
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  refine le_antisymm (fun X hX => ?_) fun X hX => ?_
+  · rw [← Subgroup.coe_connectedComponentOfOne] at hX
+    rw [LieIdeal.mem_toLieSubalgebra, LieModule.mem_maxTrivSubmodule]
+    intro Y
+    rw [← lie_skew, lie_eq_zero_of_mem_lieSubalgebraOfSubgroup_centralizer
+      (K := Subgroup.connectedComponentOfOne G) hX (by simp), neg_zero]
+  · rw [LieIdeal.mem_toLieSubalgebra, LieModule.mem_maxTrivSubmodule] at hX
+    refine mem_lieSubalgebraOfSubgroup_of_forall fun t => ?_
+    rw [mem_centralizer_connectedComponent_one_iff_forall_Ad_apply_eq_self (I := I)]
+    intro Y
+    refine Ad_lieExp_smul_apply_eq_self_of_lie_eq_zero ?_ t
+    rw [← lie_skew, hX Y, neg_zero]
+
 /-- **The centre of a connected Lie group is the kernel of the adjoint representation**: an element
 is central exactly when its adjoint action fixes every derivation. -/
 theorem mem_center_iff_forall_Ad_apply_eq_self [PreconnectedSpace G] (g : G) :
     g ∈ Subgroup.center G ↔ ∀ X : LeftInvariantDerivation I G, Ad (I := I) g X = X := by
-  refine ⟨fun hg => Ad_apply_eq_self_of_mem_center hg, fun h => ?_⟩
-  rw [← Subgroup.centralizer_univ, ← Subgroup.coe_top,
-    mem_centralizer_iff_forall_Ad_apply_eq_self (I := I)
-    (by simp) (by simpa using isPreconnected_univ)]
-  exact fun X _ => h X
+  rw [← Subgroup.centralizer_univ, ← PreconnectedSpace.connectedComponent_eq_univ (1 : G)]
+  exact mem_centralizer_connectedComponent_one_iff_forall_Ad_apply_eq_self g
 
 /-- **The kernel of a homomorphism with injective differential from a connected Lie group is
 central.** Its elements act trivially on the Lie algebra
@@ -115,26 +202,17 @@ theorem _root_.MonoidHom.ker_le_center_of_injective_groupLieAlgebraMap [Preconne
 needed. -/
 theorem lieSubalgebraOfSubgroup_center_le :
     lieSubalgebraOfSubgroup (I := I) (Subgroup.center G) ≤
-      (center ℝ (LeftInvariantDerivation I G) : LieSubalgebra ℝ (LeftInvariantDerivation I G)) := by
-  intro X hX
-  rw [← Subgroup.centralizer_univ, ← Subgroup.coe_top] at hX
-  rw [LieIdeal.mem_toLieSubalgebra, LieModule.mem_maxTrivSubmodule]
-  intro Y
-  rw [← lie_skew, lie_eq_zero_of_mem_lieSubalgebraOfSubgroup_centralizer hX (by simp),
-    neg_zero]
+      (center ℝ (LeftInvariantDerivation I G) : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :=
+  (lieSubalgebraOfSubgroup_mono (Subgroup.center_le_centralizer _)).trans
+    lieSubalgebraOfSubgroup_centralizer_connectedComponent_one.le
 
 /-- **The Lie algebra of the centre of a connected Lie group is the centre of its Lie algebra.** -/
 @[simp]
 theorem lieSubalgebraOfSubgroup_center [PreconnectedSpace G] :
     lieSubalgebraOfSubgroup (I := I) (Subgroup.center G) =
       (center ℝ (LeftInvariantDerivation I G) : LieSubalgebra ℝ (LeftInvariantDerivation I G)) := by
-  refine le_antisymm lieSubalgebraOfSubgroup_center_le fun X hX => ?_
-  rw [LieIdeal.mem_toLieSubalgebra, LieModule.mem_maxTrivSubmodule] at hX
-  refine mem_lieSubalgebraOfSubgroup_of_forall fun t => ?_
-  rw [mem_center_iff_forall_Ad_apply_eq_self (I := I)]
-  intro Y
-  refine Ad_lieExp_smul_apply_eq_self_of_lie_eq_zero ?_ t
-  rw [← lie_skew, hX Y, neg_zero]
+  rw [← Subgroup.centralizer_univ, ← PreconnectedSpace.connectedComponent_eq_univ (1 : G)]
+  exact lieSubalgebraOfSubgroup_centralizer_connectedComponent_one
 
 /-- **The centre is discrete when the Lie algebra has trivial centre**, in particular when the Lie
 algebra is semisimple (`LieAlgebra.center_eq_bot`). -/
@@ -180,5 +258,104 @@ centre**. -/
 theorem finite_center_iff [CompactSpace G] [PreconnectedSpace G] :
     Finite (Subgroup.center G) ↔ center ℝ (LeftInvariantDerivation I G) = ⊥ := by
   exact ⟨fun _ => discreteTopology_center_iff.mp inferInstance, finite_center_of_center_eq_bot⟩
+
+/-! ### The adjoint action on the centre of the Lie algebra -/
+
+omit [T2Space G] in
+/-- **The adjoint action preserves the centre of the Lie algebra**, since each `Ad g` is a Lie
+algebra automorphism. -/
+theorem Ad_apply_mem_center (g : G) {Y : LeftInvariantDerivation I G}
+    (hY : Y ∈ center ℝ (LeftInvariantDerivation I G)) :
+    Ad (I := I) g Y ∈ center ℝ (LeftInvariantDerivation I G) := by
+  rw [LieModule.mem_maxTrivSubmodule] at hY ⊢
+  intro X
+  rw [← (Ad (I := I) g).apply_symm_apply X, ← LieEquiv.map_lie, hY, map_zero]
+
+variable (I G) in
+/-- The centre `𝔷` of the Lie algebra, as a subrepresentation of the adjoint representation. Its
+action factors through the component group `G ⧸ G⁰`
+(`TauCeti.Lie.componentGroupCenterRepresentation`). -/
+def centerSubrepresentation :
+    Subrepresentation (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation where
+  toSubmodule := (center ℝ (LeftInvariantDerivation I G)).toSubmodule
+  apply_mem_toSubmodule g _ hY := by
+    rw [ContRepresentation.toRepresentation_apply, continuousAdjointRepresentation_apply]
+    exact Ad_apply_mem_center g hY
+
+/-- The underlying subspace of the centre subrepresentation is the centre of the Lie algebra. -/
+@[simp]
+theorem toSubmodule_centerSubrepresentation :
+    (centerSubrepresentation I G).toSubmodule =
+      (center ℝ (LeftInvariantDerivation I G)).toSubmodule :=
+  (rfl)
+
+/-- A derivation lies in the centre subrepresentation exactly when it is central. -/
+@[simp]
+theorem mem_centerSubrepresentation_iff {Y : LeftInvariantDerivation I G} :
+    Y ∈ centerSubrepresentation I G ↔ Y ∈ center ℝ (LeftInvariantDerivation I G) :=
+  Iff.rfl
+
+/-- The centre subrepresentation acts by the adjoint action. -/
+@[simp]
+theorem coe_toRepresentation_centerSubrepresentation_apply (g : G)
+    (Y : (centerSubrepresentation I G).toSubmodule) :
+    ((centerSubrepresentation I G).toRepresentation g Y : LeftInvariantDerivation I G) =
+      Ad (I := I) g Y := by
+  have h := (Subrepresentation.toRepresentation_apply_coe (ρ' := centerSubrepresentation I G)
+    (g := g) (v := Y)).1 rfl
+  rw [ContRepresentation.toRepresentation_apply, continuousAdjointRepresentation_apply] at h
+  exact h.symm
+
+/-! ### Disconnected Lie groups -/
+
+section IdentityComponent
+
+variable [IsTopologicalGroup G]
+
+/-- **The identity component acts trivially on the centre of the Lie algebra.** The exponential
+of any `X` fixes a central `Y`, since `⁅X, Y⁆ = 0`, and the exponential image generates the
+identity component. -/
+theorem Ad_apply_eq_self_of_mem_connectedComponentOfOne {g : G}
+    (hg : g ∈ Subgroup.connectedComponentOfOne G) {Y : LeftInvariantDerivation I G}
+    (hY : Y ∈ center ℝ (LeftInvariantDerivation I G)) : Ad (I := I) g Y = Y := by
+  rw [LieModule.mem_maxTrivSubmodule] at hY
+  rw [← closure_range_lieExp_eq_connectedComponentOfOne (I := I)] at hg
+  exact mem_stabilizer_continuousAdjointRepresentation_iff.mp <|
+    (Subgroup.closure_le _).2 (Set.range_subset_iff.2 fun X =>
+      mem_stabilizer_continuousAdjointRepresentation_iff.mpr
+        (Ad_lieExp_apply_eq_self_of_lie_eq_zero (hY X))) hg
+
+variable (I G) in
+/-- The **representation of the component group** `π₀ G = G ⧸ G⁰` on the centre `𝔷` of the Lie
+algebra. The identity component acts trivially on `𝔷`
+(`TauCeti.Lie.Ad_apply_eq_self_of_mem_connectedComponentOfOne`), so the adjoint representation on
+the centre descends to the quotient. -/
+def componentGroupCenterRepresentation :
+    Representation ℝ (G ⧸ Subgroup.connectedComponentOfOne G)
+      (centerSubrepresentation I G).toSubmodule :=
+  QuotientGroup.lift _ (centerSubrepresentation I G).toRepresentation fun g hg =>
+    MonoidHom.mem_ker.2 <| LinearMap.ext fun Y => Subtype.ext <|
+      (coe_toRepresentation_centerSubrepresentation_apply g Y).trans
+        (Ad_apply_eq_self_of_mem_connectedComponentOfOne hg Y.property)
+
+/-- The representation of the component group on the centre evaluates at the class of `g` as the
+adjoint action of `g` on the centre. -/
+@[simp]
+theorem componentGroupCenterRepresentation_mk (g : G) :
+    componentGroupCenterRepresentation I G (g : G ⧸ Subgroup.connectedComponentOfOne G) =
+      (centerSubrepresentation I G).toRepresentation g :=
+  QuotientGroup.lift_mk _ _ _
+
+/-- **The adjoint action on the centre of the Lie algebra factors through the component group**
+`π₀ G = G ⧸ G⁰`: two elements in the same connected component act in the same way on every
+central element. -/
+theorem Ad_apply_eq_Ad_apply_of_mk_eq_mk_of_mem_center {g g' : G}
+    (h : (g : G ⧸ Subgroup.connectedComponentOfOne G) = g') {Y : LeftInvariantDerivation I G}
+    (hY : Y ∈ center ℝ (LeftInvariantDerivation I G)) : Ad (I := I) g Y = Ad (I := I) g' Y := by
+  rw [QuotientGroup.eq] at h
+  rw [← mul_inv_cancel_left g g', Ad_mul, LieEquiv.trans_apply,
+    Ad_apply_eq_self_of_mem_connectedComponentOfOne h hY]
+
+end IdentityComponent
 
 end TauCeti.Lie

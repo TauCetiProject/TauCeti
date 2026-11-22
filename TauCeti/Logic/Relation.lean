@@ -9,7 +9,7 @@ public import Mathlib.Data.Set.Basic
 public import Mathlib.Logic.Relation
 
 /-!
-# Closures of relations: totality and local agreement
+# Closures of relations: totality, local agreement and monotone functions
 
 Read `r : α → α → Prop` as the edge relation of a directed graph. Saying that
 `Relation.ReflTransGen r` relates every pair of points is the "any two points are joined by a
@@ -21,12 +21,18 @@ The class of a point under the equivalence relation `Relation.EqvGen r` only dep
 of `r` at the points of that class: two relations with the same edges, in either direction, at
 every point of the class generate the same class (`Relation.eqvGen_iff_of_forall_symmGen_iff`).
 
+A function that strictly decreases along every edge of `r` between distinct points strictly
+decreases along every chain of edges between distinct points
+(`Relation.ReflTransGen.lt_of_forall_ne`).
+
 ## Main results
 
 * `Relation.forall_reflTransGen_iff`: totality of `Relation.ReflTransGen r` is exactly the absence
   of a nonempty proper subset with no outgoing edge.
 * `Relation.eqvGen_iff_of_forall_symmGen_iff`: relations agreeing at every point of an
   equivalence class of one of them generate the same class.
+* `Relation.ReflTransGen.lt_of_forall_ne`: a function strictly decreasing along the edges of `r`
+  between distinct points strictly decreases along chains of edges between distinct points.
 -/
 
 public section
@@ -79,5 +85,22 @@ theorem eqvGen_iff_of_forall_symmGen_iff {α : Type*} {r r' : α → α → Prop
   · induction hy with
     | refl => exact .refl
     | tail _ hbc ih => exact ih.tail ((h _ ih _).2 hbc)
+
+/-- **Strict decrease along chains.** A function that strictly decreases along every edge of `r`
+between distinct points strictly decreases along every `r`-chain between distinct points. -/
+theorem ReflTransGen.lt_of_forall_ne {α β : Type*} [Preorder β] {r : α → α → Prop}
+    {g : α → β} (hr : ∀ b c, r b c → b ≠ c → g c < g b) {p q : α}
+    (hpq : ReflTransGen r p q) (hqp : q ≠ p) :
+    g q < g p := by
+  suffices q = p ∨ g q < g p from this.resolve_left hqp
+  clear hqp
+  induction hpq with
+  | refl => exact Or.inl rfl
+  | @tail b c _ hbc ih =>
+    rcases eq_or_ne b c with rfl | hbc'
+    · exact ih
+    rcases ih with rfl | ih
+    · exact Or.inr (hr _ _ hbc hbc')
+    · exact Or.inr ((hr _ _ hbc hbc').trans ih)
 
 end Relation

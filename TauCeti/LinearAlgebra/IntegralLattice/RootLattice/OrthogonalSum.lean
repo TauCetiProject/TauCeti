@@ -301,8 +301,8 @@ theorem discriminantQuadraticIsometry_piCongr_glueWordIsometry (hv : ∀ i, (t i
         (Isometry.pi f)).discriminantQuadraticIsometry (isEven_pi_rootLattice t ht)
         (glueWordIsometry t ht hv w) =
       glueWordIsometry s hs hvs fun k ↦ g k (w (σ k)) :=
-  discriminantQuadraticIsometry_piCongr_discriminantQuadraticIsometryPiOfIsometry
-    (fun i ↦ (t i).glueAlphabetIsometry (hv i) (ht i))
+  discriminantQuadraticIsometry_piCongrLeft_symm_trans_pi_discriminantQuadraticIsometryPiOfIsometry
+    (fun i ↦ (t i).rootLattice (ht i)) (fun i ↦ (t i).glueAlphabetIsometry (hv i) (ht i))
     (fun k ↦ (s k).glueAlphabetIsometry (hvs k) (hs k)) σ f g h w
 
 section SignedPermutation
@@ -366,11 +366,8 @@ theorem piGlueAlphabetCongr_apply (w : ∀ i, (t i).glueAlphabet (ht i)) (k : κ
     piGlueAlphabetCongr t ht σ h w k =
       FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_congr (h k) (ht (σ k)) (hs k))
         (w (σ k)) := by
-  conv_rhs => rw [← (QuadraticMap.IsometryEquiv.piCongrLeft
-    (fun i ↦ ((t i).glueAlphabet (ht i)).quadratic) σ).apply_symm_apply w]
-  rw [QuadraticMap.IsometryEquiv.piCongrLeft_apply_apply]
-  -- `QuadraticMap.IsometryEquiv.pi` acts coordinatewise by definition.
-  rfl
+  rw [piGlueAlphabetCongr, QuadraticMap.IsometryEquiv.trans_apply,
+    QuadraticMap.IsometryEquiv.pi_apply, QuadraticMap.IsometryEquiv.piCongrLeft_symm_apply]
 
 /-- Reindexing glue words along the identity equivalence is the identity. -/
 @[simp]

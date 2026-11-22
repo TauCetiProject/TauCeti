@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.Algebra.AddCircle
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Bilinear
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 
@@ -284,19 +284,21 @@ theorem discriminantQuadraticIsometry_refl (L : IntegralLattice V) [L.IsNondegen
   rw [discriminantGroupEquiv_refl]
   rfl
 
-/-- Passing to the inverse lattice isometry passes to the inverse discriminant-quadratic
+/-- Passing to the inverse lattice isometry passes to the inverse discriminant quadratic
 isometry. -/
 @[simp]
 theorem discriminantQuadraticIsometry_symm (e : Isometry L M)
     [L.IsNondegenerate] [M.IsNondegenerate] (hM : M.IsEven) :
     e.symm.discriminantQuadraticIsometry hM =
       (e.discriminantQuadraticIsometry (e.isEven_iff.mpr hM)).symm := by
-  refine DFunLike.ext _ _ fun x ↦ ?_
-  refine (discriminantQuadraticIsometry_apply e.symm hM x).trans ?_
-  rw [discriminantGroupEquiv_symm]
-  rfl
+  refine DFunLike.ext _ _ fun (x : M.DiscriminantGroup) ↦ ?_
+  refine (e.symm.discriminantQuadraticIsometry_apply hM x).trans ?_
+  rw [Isometry.discriminantGroupEquiv_symm]
+  exact ((e.discriminantQuadraticIsometry (e.isEven_iff.mpr hM)).symm_apply_eq.mpr
+    ((e.discriminantQuadraticIsometry_apply _ (e.discriminantGroupEquiv.symm x)).trans
+      (e.discriminantGroupEquiv.apply_symm_apply x)).symm).symm
 
-/-- The discriminant-quadratic isometry induced by a composite is the composite of the induced
+/-- The discriminant quadratic isometry induced by a composite is the composite of the induced
 isometries. -/
 @[simp]
 theorem discriminantQuadraticIsometry_trans (e : Isometry L M) (f : Isometry M N)
@@ -304,10 +306,13 @@ theorem discriminantQuadraticIsometry_trans (e : Isometry L M) (f : Isometry M N
     (e.trans f).discriminantQuadraticIsometry hL =
       (e.discriminantQuadraticIsometry hL).trans
         (f.discriminantQuadraticIsometry (e.isEven_iff.mp hL)) := by
-  refine DFunLike.ext _ _ fun x ↦ ?_
-  refine (discriminantQuadraticIsometry_apply (e.trans f) hL x).trans ?_
-  rw [discriminantGroupEquiv_trans]
-  rfl
+  refine DFunLike.ext _ _ fun (x : L.DiscriminantGroup) ↦ ?_
+  refine ((e.trans f).discriminantQuadraticIsometry_apply hL x).trans ?_
+  rw [Isometry.discriminantGroupEquiv_trans, LinearEquiv.trans_apply]
+  exact (congrArg f.discriminantGroupEquiv (e.discriminantQuadraticIsometry_apply hL x).symm).trans
+    ((f.discriminantQuadraticIsometry_apply (e.isEven_iff.mp hL) _).symm.trans
+      (FiniteQuadraticModule.Isometry.trans_apply (e.discriminantQuadraticIsometry hL)
+        (f.discriminantQuadraticIsometry (e.isEven_iff.mp hL)) x).symm)
 
 /-- Applying the discriminant-quadratic isometry induced by a composite applies the two induced
 isometries in sequence. -/
