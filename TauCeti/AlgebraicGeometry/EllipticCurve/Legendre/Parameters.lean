@@ -9,10 +9,9 @@ public import Mathlib.Algebra.Field.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Data.Set.Operations
 public import Mathlib.Logic.Equiv.Defs
+import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 import Mathlib.Data.Fintype.Perm
-import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.FinCases
-import Mathlib.Tactic.Ring
 
 /-!
 # The six Legendre parameters of an ordered split cubic
@@ -196,6 +195,20 @@ theorem sub_div_sub_eq_legendreParameters (h : e 0 ≠ e 1) (i : Fin 6) :
   -- the remaining four orders are `a / b = -a / -b`
   all_goals grind
 
+/-- For roots with `e 0 ≠ e 1`, the Legendre parameters of the six orders of the roots are exactly
+the entries of the tuple of Legendre parameters at `λ = (e 2 - e 0) / (e 1 - e 0)`. -/
+theorem range_sub_div_sub_eq_range_legendreParameters (h : e 0 ≠ e 1) :
+    Set.range (fun σ : Equiv.Perm (Fin 3) ↦ (e (σ 2) - e (σ 0)) / (e (σ 1) - e (σ 0))) =
+      Set.range (legendreParameters ((e 2 - e 0) / (e 1 - e 0))) := by
+  rw [← legendreRootOrder_bijective.surjective.range_comp]
+  exact congrArg Set.range (funext (sub_div_sub_eq_legendreParameters h))
+
+end Field
+
+section DivisionRing
+
+variable {K : Type*} [DivisionRing K] {e : Fin 3 → K}
+
 /-- For pairwise distinct roots `e`, the Legendre parameter of every order `σ` of the roots is
 different from `0`. -/
 theorem sub_div_sub_ne_zero (he : Function.Injective e) (σ : Equiv.Perm (Fin 3)) :
@@ -211,13 +224,11 @@ theorem sub_div_sub_ne_one (he : Function.Injective e) (σ : Equiv.Perm (Fin 3))
   have h₂₁ : e (σ 2) ≠ e (σ 1) := (he.comp σ.injective).ne (by decide)
   rwa [Ne, div_eq_one_iff_eq (sub_ne_zero.mpr h₁₀), sub_left_inj]
 
-/-- For roots with `e 0 ≠ e 1`, the Legendre parameters of the six orders of the roots are exactly
-the entries of the tuple of Legendre parameters at `λ = (e 2 - e 0) / (e 1 - e 0)`. -/
-theorem range_sub_div_sub_eq_range_legendreParameters (h : e 0 ≠ e 1) :
-    Set.range (fun σ : Equiv.Perm (Fin 3) ↦ (e (σ 2) - e (σ 0)) / (e (σ 1) - e (σ 0))) =
-      Set.range (legendreParameters ((e 2 - e 0) / (e 1 - e 0))) := by
-  rw [← legendreRootOrder_bijective.surjective.range_comp]
-  exact congrArg Set.range (funext (sub_div_sub_eq_legendreParameters h))
+end DivisionRing
+
+section Ring
+
+variable {R : Type*} [Ring R] {e : Fin 3 → R}
 
 /-- **The scale of each order.** If `e 2 - e 0 = d * l` with `d = e 1 - e 0`, the scale
 `e (σ 1) - e (σ 0)` of the `i`-th order `σ`, the second root after translating by the first, is the
@@ -225,11 +236,11 @@ theorem range_sub_div_sub_eq_range_legendreParameters (h : e 0 ≠ e 1) :
 `l = (e 2 - e 0) / d`, the translated roots of the `i`-th order are therefore `(0, d', d' l')`
 with this scale `d'` and the `i`-th Legendre parameter `l'` at `l`
 (`TauCeti.sub_div_sub_eq_legendreParameters`). -/
-theorem sub_legendreRootOrder {l : K} (hl : e 2 - e 0 = (e 1 - e 0) * l) (i : Fin 6) :
+theorem sub_legendreRootOrder {l : R} (hl : e 2 - e 0 = (e 1 - e 0) * l) (i : Fin 6) :
     e (legendreRootOrder i 1) - e (legendreRootOrder i 0) =
       (e 1 - e 0) * ![1, l, -1, l - 1, 1 - l, -l] i := by
   fin_cases i <;> simp [mul_sub, ← hl]
 
-end Field
+end Ring
 
 end TauCeti
