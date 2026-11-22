@@ -479,6 +479,11 @@ noncomputable def reductionHom (L : IntegralLattice V) (d : ℤ) :
     rw [mul_def, carrierEquiv_trans, LinearEquiv.coe_trans, QuotSMulTop.map_comp,
       Module.End.mul_eq_comp]
 
+/-- A self-isometry acts on `L / d L` as the reduction modulo `d` of its carrier map. -/
+theorem reductionHom_apply (d : ℤ) (g : Isometry L L) :
+    reductionHom L d g = QuotSMulTop.map d (g.carrierEquiv : L →ₗ[ℤ] L) :=
+  (rfl)
+
 @[simp]
 theorem reductionHom_apply_mk (d : ℤ) (g : Isometry L L) (x : L) :
     reductionHom L d g (Submodule.Quotient.mk x) = Submodule.Quotient.mk (g.carrierEquiv x) :=
@@ -490,8 +495,10 @@ noncomputable def congruenceSubgroup (L : IntegralLattice V) (d : ℤ) : Subgrou
   (reductionHom L d).ker
 
 /-- The congruence subgroup of level `d` is the kernel of the action on `L / d L`. -/
-theorem congruenceSubgroup_eq_ker (L : IntegralLattice V) (d : ℤ) :
-    congruenceSubgroup L d = (reductionHom L d).ker := (rfl)
+@[simp]
+theorem ker_reductionHom (L : IntegralLattice V) (d : ℤ) :
+    (reductionHom L d).ker = congruenceSubgroup L d :=
+  (rfl)
 
 /-- An isometry lies in the congruence subgroup of level `d` exactly when it moves every lattice
 vector by `d` times a lattice vector. -/

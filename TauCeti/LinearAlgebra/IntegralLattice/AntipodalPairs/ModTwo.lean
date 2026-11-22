@@ -234,7 +234,7 @@ theorem Isometry.congruenceSubgroup_two_le_ker_antipodalPairsHom {L : IntegralLa
     (hmin : ∀ z : L, z ≠ 0 → n < 2 * L.norm z) :
     Isometry.congruenceSubgroup L 2 ≤ (Isometry.antipodalPairsHom L n).ker := by
   intro g hg
-  rw [Isometry.congruenceSubgroup_eq_ker, MonoidHom.mem_ker] at hg
+  rw [← Isometry.ker_reductionHom, MonoidHom.mem_ker] at hg
   refine MonoidHom.mem_ker.mpr <| Equiv.ext fun p ↦ ?_
   rw [Isometry.antipodalPairsHom_apply, Equiv.Perm.one_apply,
     antipodalPairsEquiv_eq_iff L hmin, hg, one_apply_eq_self]

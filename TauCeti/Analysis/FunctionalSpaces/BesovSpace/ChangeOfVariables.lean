@@ -149,10 +149,11 @@ private theorem hasTemperateGrowth_and_norm_iteratedFDeriv_repr_fderiv_mul_le {�
           2 ^ M * (L * ‖w‖ * G) := by
   have hc : (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ x w) i : ℝ) : ℂ)).HasTemperateGrowth :=
     hΦ.basis_repr_fderiv_apply b.toBasis w i
-  exact ⟨hc.mul hg, (hc.1.of_le (mod_cast le_top)).norm_iteratedFDeriv_mul_le_two_pow
-    (hg.1.of_le (mod_cast le_top)) (fun n hn x ↦
+  exact ⟨hc.mul hg, fun n hn x ↦ (hc.1.of_le (mod_cast le_top)).norm_iteratedFDeriv_mul_le_two_pow
+    (hg.1.of_le (mod_cast le_top)) (fun n hn ↦
       (hΦ.1.norm_iteratedFDeriv_basis_repr_fderiv_apply_le (mod_cast le_top) b w i x).trans
-        (mul_le_mul_of_nonneg_right (hΦL (n + 1) (by omega) (by omega) x) (norm_nonneg w))) hgG⟩
+        (mul_le_mul_of_nonneg_right (hΦL (n + 1) (by omega) (by omega) x) (norm_nonneg w)))
+    (fun n hn ↦ hgG n hn x) n hn⟩
 
 omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 /-- One derivative of `g Φ^* T`, by the Leibniz rule and the chain rule:
@@ -370,9 +371,10 @@ private theorem hasTemperateGrowth_and_norm_iteratedFDeriv_repr_fderiv_comp_mul_
           2 ^ M * (M.factorial * (L * ‖v‖) * max 1 L ^ M * G) := by
   have hd : (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ.symm (Φ x) v) l : ℝ) : ℂ)).HasTemperateGrowth :=
     (hΨ.basis_repr_fderiv_apply b.toBasis v l).comp hΦ
-  exact ⟨hd.mul hg, (hd.1.of_le (mod_cast le_top)).norm_iteratedFDeriv_mul_le_two_pow
-    (hg.1.of_le (mod_cast le_top)) (norm_iteratedFDeriv_repr_fderiv_comp_le b hΦ.1 hΨ.1 hΦL hΨL v l)
-    hgG⟩
+  exact ⟨hd.mul hg, fun n hn x ↦ (hd.1.of_le (mod_cast le_top)).norm_iteratedFDeriv_mul_le_two_pow
+    (hg.1.of_le (mod_cast le_top))
+    (fun n hn ↦ norm_iteratedFDeriv_repr_fderiv_comp_le b hΦ.1 hΨ.1 hΦL hΨL v l n hn x)
+    (fun n hn ↦ hgG n hn x) n hn⟩
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] in
@@ -550,11 +552,15 @@ theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le (φ : Con
     Φ.inv_max_one_pow_le_abs_det_fderiv (hΦ.1.differentiable (by simp))
       (hΨ.1.differentiable (by simp)) fun y ↦ by simpa using hΨL 1 le_rfl (by omega) y
   obtain ⟨hG, hg₀⟩ := nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG
-  obtain ⟨v, hv, hvn⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_ball_of_annulus φ
+  obtain ⟨v, hv, hvn⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_block_le φ
     (fun T ↦ smulLeftCLM F g (compCLM F Φ hΦ hΨ T)) (mul_nonneg hK₀ hG) (mul_nonneg hK₁ hG)
-    (mul_nonneg hK₂ hG) (fun j f ↦ h₀ hΦ hΨ hdet hg hg₀ j f)
-    (fun hkj f hf ↦ h₁ hΦ hΨ hdet hΦL hg hgG hkj f hf)
-    (fun j _ hR f hf ↦ h₂ hΦ hΨ hdet hΦL hΨL hg hgG j hR f hf) j k u f hf
+    (mul_nonneg hK₂ hG) (fun k _ f _ ↦ h₀ hΦ hΨ hdet hg hg₀ k f)
+    (fun hkj u f hf ↦ h₁ hΦ hΨ hdet hΦL hg hgG hkj f
+      (hf ▸ isVanishingOn_fourier_littlewoodPaleyBlock φ _ u))
+    (fun j k u f hf ↦ h₂ hΦ hΨ hdet hΦL hΨL hg hgG j (R := 2 ^ k * φ.rIn) (by positivity) f (by
+      rw [φ.two_mul_rOut_div_rIn_mul, ← hf]
+      simpa only [Set.compl_sdiff, Set.union_comm] using
+        isVanishingOn_fourier_littlewoodPaleyBlock_succ φ k u)) j k u f hf
   exact ⟨v, hv, hvn.trans_eq (by ring)⟩
 
 /-- **Off-diagonal decay of a pullback between Littlewood–Paley blocks.** Let `M` be a natural

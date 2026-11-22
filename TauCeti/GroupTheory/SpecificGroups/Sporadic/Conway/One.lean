@@ -91,7 +91,7 @@ reduction of lattice isometries modulo two. -/
 noncomputable def Co1.reductionHom : Co1 →* Module.End ℤ (QuotSMulTop (2 : ℤ) leechLattice) :=
   QuotientGroup.lift _ (Isometry.reductionHom leechLattice 2)
     ((Isometry.zpowers_neg_le_congruenceSubgroup_two leechLattice).trans_eq
-      (Isometry.congruenceSubgroup_eq_ker leechLattice 2))
+      (Isometry.ker_reductionHom leechLattice 2).symm)
 
 /-- On a quotient representative, the mod-two action is the reduction of the lattice isometry. -/
 @[simp]
@@ -102,8 +102,7 @@ theorem Co1.reductionHom_mk (e : Co0) :
 /-- The action of the first Conway lattice group on `Λ / 2Λ` is faithful. -/
 theorem Co1.reductionHom_injective : Function.Injective Co1.reductionHom :=
   (QuotientGroup.injective_lift_iff _ _ _).mpr <|
-    congruenceSubgroup_two_leechLattice.symm.trans
-      (Isometry.congruenceSubgroup_eq_ker leechLattice 2)
+    congruenceSubgroup_two_leechLattice.symm.trans (Isometry.ker_reductionHom leechLattice 2).symm
 
 /-- The first Conway lattice group acts additively on the mod-two Leech module. -/
 noncomputable instance Co1.instDistribMulActionModTwo :

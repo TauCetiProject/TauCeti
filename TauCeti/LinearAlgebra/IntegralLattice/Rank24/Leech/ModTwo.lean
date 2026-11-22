@@ -118,7 +118,7 @@ theorem congruenceSubgroup_two_leechLattice :
 @[simp]
 theorem reductionHom_two_leechLattice_eq_one_iff {e : Isometry leechLattice leechLattice} :
     Isometry.reductionHom leechLattice 2 e = 1 ↔ e = 1 ∨ e = Isometry.neg leechLattice := by
-  rw [← MonoidHom.mem_ker, ← Isometry.congruenceSubgroup_eq_ker,
+  rw [← MonoidHom.mem_ker, Isometry.ker_reductionHom,
     congruenceSubgroup_two_leechLattice, Isometry.mem_zpowers_neg_iff]
 
 end TauCeti
