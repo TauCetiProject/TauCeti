@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Covering
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.GenusCapDuality
-public import TauCeti.Geometry.Manifold.Morse.CWModel
 public import TauCeti.Topology.Covering.Degree
 public import TauCeti.Topology.Covering.IsFiniteCover
 public import TauCeti.Topology.Covering.Proper
@@ -23,21 +22,20 @@ cover then gives `genus(T) - 1 = degree * (genus(S) - 1)`.
 public noncomputable section
 
 open AlgebraicTopology CategoryTheory Module MonoidalCategory
-open scoped Manifold ContDiff
 
 namespace TauCeti
 
-variable {E F : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+variable {E F : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F]
   {T S : Type} [TopologicalSpace T] [T2Space T] [ChartedSpace E T]
-  [IsManifold 𝓘(ℝ, E) ∞ T] [ConnectedSpace T]
+  [ConnectedSpace T]
   [TopologicalSpace S] [T2Space S] [CompactSpace S] [ConnectedSpace S]
-  [ChartedSpace F S] [IsManifold 𝓘(ℝ, F) ∞ S]
+  [ChartedSpace F S] [FiniteCWType S]
   {q : T → S}
 
-/-- For a connected finite cover of closed oriented surfaces, middle-degree cap injectivity
-on both surfaces implies the usual genus relation. -/
+/-- For a connected finite cover of closed oriented surfaces with base of finite CW type,
+middle-degree cap injectivity on both surfaces implies the usual genus relation. -/
 theorem IsFiniteCover.genus_sub_one_eq_mul_of_injective_cap (hq : IsFiniteCover q)
     (oT : HomologicalOrientation T E 2) (oS : HomologicalOrientation S F 2)
     (hnT : finrank ℝ E = 2) (hnS : finrank ℝ F = 2)
@@ -50,13 +48,11 @@ theorem IsFiniteCover.genus_sub_one_eq_mul_of_injective_cap (hq : IsFiniteCover 
     (hinjS : Function.Injective
       ((TopCat.of S).singularCapLinearMap ℚ (by decide : 1 + 1 = 2) μS)) (y : S) :
     letI := hq.isCoveringMap.compactSpace hq.finite_fiber
-    letI : FiniteCWType T := FiniteCWType.of_isManifold (I := 𝓘(ℝ, E)) T
-    letI : FiniteCWType S := FiniteCWType.of_isManifold (I := 𝓘(ℝ, F)) S
+    letI := hq.isCoveringMap.finiteCWType hq.finite_fiber
     (RiemannSurface.genus T : ℤ) - 1 =
       Nat.card (q ⁻¹' {y}) * ((RiemannSurface.genus S : ℤ) - 1) := by
   let : CompactSpace T := hq.isCoveringMap.compactSpace hq.finite_fiber
-  let : FiniteCWType T := FiniteCWType.of_isManifold (I := 𝓘(ℝ, E)) T
-  let : FiniteCWType S := FiniteCWType.of_isManifold (I := 𝓘(ℝ, F)) S
+  let : FiniteCWType T := hq.isCoveringMap.finiteCWType hq.finite_fiber
   have hχT := oT.eulerChar_eq_two_sub_two_mul_genus_of_injective_cap hnT μT hinjT
   have hχS := oS.eulerChar_eq_two_sub_two_mul_genus_of_injective_cap hnS μS hinjS
   have hχ : eulerChar T = (Nat.card (q ⁻¹' {y}) : ℤ) * eulerChar S :=
