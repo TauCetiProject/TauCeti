@@ -121,8 +121,7 @@ theorem cofreeAdjunction_unit_app_toLinearMap (M : ComoduleCat.{u, v, max v w} R
 /-- The counit of the cofree adjunction evaluates the coalgebra factor by its counit. -/
 @[simp]
 theorem cofreeAdjunction_counit_app_hom (M : ModuleCat.{max v w} R) :
-    ((cofreeAdjunction R C).counit.app M).hom =
-      (TensorProduct.rid R M).toLinearMap ∘ₗ Coalgebra.counit.lTensor M := by
+    ((cofreeAdjunction R C).counit.app M).hom = Comodule.cofreeCounit R C M := by
   -- The counit is the counit component of the identity of the cofree comodule.
   change Comodule.Hom.cofreeEquiv (Comodule.Hom.id R C (M ⊗[R] C)) = _
   simp [Comodule.Hom.cofreeEquiv_apply]

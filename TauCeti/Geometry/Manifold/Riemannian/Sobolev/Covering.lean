@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Riemannian.Covering.Deck
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Isometry
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Covering
+import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
 
 /-!
@@ -29,8 +31,14 @@ Hence the **normalized pullback** `J = |G| ^ (-1/2) q^*` extends to a linear iso
 
 Its value in `L²(M)` is the normalized pullback `IsQuotientCoveringMap.normalizedPullbackLp` of
 the value in `L²(N)`, and it preserves the Dirichlet form: `q_M(J w, J v) = q_N(w, v)` for all
-`w, v ∈ H¹(N)`. Every element of its range is invariant under pullback along the Riemannian
-isometries `Φ` of `M` with `q ∘ Φ = q`, such as the deck transformations of the covering.
+`w, v ∈ H¹(N)`. Its range is exactly the deck-invariant subspace of `H¹(M)`: the elements fixed
+by pullback along every deck transformation `x ↦ g • x`, which is a Riemannian isometry of `M`
+(`IsQuotientCoveringMap.deckIsometry`). One inclusion holds for every Riemannian isometry `Φ` of `M`
+with `q ∘ Φ = q`. Conversely, the average `|G|⁻¹ ∑_g (g ·)^*` over the deck transformations fixes
+every invariant element. It sends a smooth function to the pullback of a smooth function on `N`,
+since smooth invariant functions descend along the local diffeomorphism `q`. So the average maps
+`H¹(M)` into the closure of the range, which is closed because `J` is an isometry out of a complete
+space.
 
 These are the `H¹` and energy-form parts of Bérard's transplantation of eigenfunctions of the
 Laplacian between the quotients of one manifold by almost-conjugate subgroups.
@@ -46,6 +54,8 @@ Laplacian between the quotients of one manifold by almost-conjugate subgroups.
 * `TauCeti.Manifold.SobolevH1.dirichletForm_normalizedPullback`: the energy-form identity.
 * `TauCeti.Manifold.SobolevH1.compRiemannianIsometry_normalizedPullback`: the range consists of
   deck-invariant elements.
+* `TauCeti.Manifold.SobolevH1.mem_range_normalizedPullback_iff`: the range is exactly the
+  deck-invariant subspace.
 
 ## References
 
@@ -77,6 +87,26 @@ private def compSmoothOfIsLocalRiemannianIsometry (hf : IsLocalRiemannianIsometr
   toFun u := u.comp ⟨q, hf.contMDiff⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
+
+/-- The average `|G|⁻¹ ∑_g u ∘ (g • ·)` of a smooth function over the deck transformations is the
+pullback of a smooth function on `N`. -/
+private theorem exists_comp_eq_smul_sum_comp_deckIsometry [CompleteSpace E]
+    [BoundarylessManifold I M] [IsManifold I ∞ M] [IsManifold I' ∞ N]
+    {G : Type*} [Group G] [MulAction G M] [Fintype G] (hq : IsQuotientCoveringMap q G)
+    (hf : IsLocalRiemannianIsometry I I' q) (u : C^∞⟮I, M; ℝ⟯) :
+    ∃ v : C^∞⟮I', N; ℝ⟯, ContMDiffMap.comp v ⟨q, hf.contMDiff⟩ = (Fintype.card G : ℝ)⁻¹ •
+      ∑ g : G, u.comp (hq.deckIsometry hf g).toDiffeomorph.toContMDiffMap := by
+  set a : C^∞⟮I, M; ℝ⟯ :=
+    (Fintype.card G : ℝ)⁻¹ • ∑ g : G, u.comp (hq.deckIsometry hf g).toDiffeomorph.toContMDiffMap
+  have ha (x : M) : a x = (Fintype.card G : ℝ)⁻¹ * ∑ g : G, u (g • x) := by
+    simp [a, ContMDiffMap.coe_sum]
+  have hinv (h : G) (x : M) : a (h • x) = a x := by
+    rw [ha, ha]
+    congr 1
+    exact Fintype.sum_equiv (Equiv.mulRight h) _ _ fun g ↦ by simp [mul_smul]
+  obtain ⟨v, hv, hvq⟩ := hq.exists_contMDiff_comp_eq (hf.isLocalDiffeomorph (n := ∞) (by simp)
+    le_rfl) le_rfl a.contMDiff hinv
+  exact ⟨⟨v, hv⟩, ContMDiffMap.ext fun x ↦ congrFun hvq x⟩
 
 variable [FiniteDimensional ℝ E] [CompactSpace M] [IsManifold I 1 M] [MeasurableSpace M]
   [BorelSpace M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
@@ -193,5 +223,51 @@ theorem compRiemannianIsometry_normalizedPullback (hq : IsQuotientCoveringMap q 
   rw [normalizedPullback_ofSmooth, map_smul, compRiemannianIsometry_ofSmooth]
   congr 2
   exact ContMDiffMap.ext fun x ↦ congrArg u (hΦ x)
+
+/-! ### The range of the normalized pullback -/
+
+section Range
+
+variable [BoundarylessManifold I M] [IsManifold I ∞ M] [IsManifold I' ∞ N]
+
+/-- **The range of the normalized pullback.** An element of `H¹(M)` is the normalized pullback of
+an element of `H¹(N)` exactly when it is invariant under pullback along every deck transformation
+of the finite quotient covering `q : M → N`. So `H¹(N)` is identified isometrically with the
+deck-invariant subspace of `H¹(M)`. -/
+theorem mem_range_normalizedPullback_iff (hq : IsQuotientCoveringMap q G)
+    (hf : IsLocalRiemannianIsometry I I' q) {w : SobolevH1 I M} :
+    w ∈ Set.range (normalizedPullback hq hf) ↔
+      ∀ g : G, compRiemannianIsometry (hq.deckIsometry hf g) w = w := by
+  refine ⟨?_, fun hw ↦ ?_⟩
+  · rintro ⟨w, rfl⟩ g
+    exact compRiemannianIsometry_normalizedPullback hq hf (fun x ↦ by simp [hq.map_smul]) w
+  have := Fintype.ofFinite G
+  -- the average over the deck transformations fixes `w` and maps into the closed range
+  set A : SobolevH1 I M →L[ℝ] SobolevH1 I M := (Fintype.card G : ℝ)⁻¹ •
+    ∑ g : G, ((compRiemannianIsometry (hq.deckIsometry hf g)).toContinuousLinearEquiv :
+      SobolevH1 I M →L[ℝ] SobolevH1 I M)
+  have hA (w : SobolevH1 I M) : A w =
+      (Fintype.card G : ℝ)⁻¹ • ∑ g : G, compRiemannianIsometry (hq.deckIsometry hf g) w := by
+    simp [A]
+  have hAw : A w = w := by
+    rw [hA]
+    simp only [hw, Finset.sum_const, Finset.card_univ, ← Nat.cast_smul_eq_nsmul ℝ, smul_smul]
+    rw [inv_mul_cancel₀ (Nat.cast_ne_zero.2 Fintype.card_ne_zero), one_smul]
+  have hclosed : IsClosed (Set.range (normalizedPullback hq hf)) :=
+    (normalizedPullback hq hf).isometry.isUniformInducing.isComplete_range.isClosed
+  rw [← hAw]
+  refine induction_on (p := fun w ↦ A w ∈ Set.range (normalizedPullback hq hf)) w
+    (hclosed.preimage A.continuous) fun u ↦ ?_
+  obtain ⟨v, hv⟩ := exists_comp_eq_smul_sum_comp_deckIsometry hq hf u
+  have hG : (0 : ℝ) < Nat.card G := Nat.cast_pos.2 Nat.card_pos
+  refine ⟨(Nat.card G : ℝ) ^ (1 / 2 : ℝ) • ofSmooth v, ?_⟩
+  -- the normalizing scalars `|G| ^ (1/2)` and `|G| ^ (-1/2)` cancel
+  have hc : (Nat.card G : ℝ) ^ (1 / 2 : ℝ) * (Nat.card G : ℝ) ^ (-(1 / 2 : ℝ)) = 1 := by
+    rw [← Real.rpow_add hG]
+    simp
+  rw [map_smul, normalizedPullback_ofSmooth, smul_smul, hc, one_smul, hv, hA]
+  simp only [map_smul, map_sum, compRiemannianIsometry_ofSmooth]
+
+end Range
 
 end TauCeti.Manifold.SobolevH1

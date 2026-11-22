@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import Mathlib.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
 /-!
 # Restriction of first-order Sobolev functions
@@ -28,8 +29,11 @@ interior regularity arguments pass from a weak solution on `Ω` to smaller open 
   `W^{1,p}(U)` for `U ⊆ Ω`.
 * `TauCeti.W1p.value_restrictL` and `TauCeti.W1p.gradient_restrictL`: restriction commutes with
   the value and weak-gradient projections; their `_ae` variants identify representatives.
+* `TauCeti.W1p.value_restrictL_add_const_ae`: the value of a restriction shifted by a constant.
 * `TauCeti.W1p.value_restrictL_ofTestFunctionₗ_ae`: a restricted test function has its original
   value almost everywhere on the smaller open set.
+* `TauCeti.W1p.norm_restrictL_eq_of_value_ae_eq_zero_of_isClosed`: restriction preserves the norm
+  of a function vanishing off a closed set `K` with `Ω ∩ K ⊆ U`.
 * `TauCeti.W1p.restrictL_self` and `TauCeti.W1p.restrictL_restrictL`: restriction is functorial.
 * `TauCeti.W1p.norm_gradient_restrictL_le`: restriction does not increase the `Lᵖ` norm of the
   weak gradient.
@@ -200,6 +204,24 @@ theorem W1p.value_restrictL_ae (hU : U ≤ Omega) (u : W1p mu Omega p) :
     (by simpa only [one_smul] using
       Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)) (W1p.value u)
 
+/-- Restricting `u` to `U` and adding the constant `c` gives the value `u + c` almost everywhere
+on `U`. -/
+theorem W1p.value_restrictL_add_const_ae [IsFiniteMeasure (mu.restrict (U : Set E))]
+    (hU : U ≤ Omega) (u : W1p mu Omega p) (c : ℝ) :
+    ∀ᵐ x ∂mu.restrict U, W1p.value (W1p.restrictL hU u + W1p.const c) x = W1p.value u x + c := by
+  filter_upwards [W1p.value_add_const_ae (W1p.restrictL hU u) c, W1p.value_restrictL_ae hU u]
+    with x h1 h2
+  rw [h1, h2]
+
+/-- If `u ≥ 0` almost everywhere on `U`, then restricting `u` to `U` and adding the constant `c`
+gives a function bounded below by `c` almost everywhere on `U`. -/
+theorem W1p.le_value_restrictL_add_const_ae [IsFiniteMeasure (mu.restrict (U : Set E))]
+    (hU : U ≤ Omega) {u : W1p mu Omega p} (hu : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value u x)
+    (c : ℝ) : ∀ᵐ x ∂mu.restrict U, c ≤ W1p.value (W1p.restrictL hU u + W1p.const c) x := by
+  filter_upwards [W1p.value_restrictL_add_const_ae hU u c, hu] with x h1 h2
+  rw [h1]
+  linarith
+
 /-- Restricting a test function from `Omega` to `U` preserves its value almost everywhere on
 `U`. -/
 theorem W1p.value_restrictL_ofTestFunctionₗ_ae (hU : U ≤ Omega) (φ : 𝓓(Omega, ℝ)) :
@@ -250,6 +272,24 @@ theorem W1p.norm_restrictL_le_one (hU : U ≤ Omega) :
     ‖W1p.restrictL (mu := mu) (p := p) hU‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => by
     simpa only [one_mul] using W1p.norm_restrictL_le hU u
+
+/-- Restriction to `U` preserves the norm of a Sobolev function vanishing almost everywhere on `Ω`
+off a closed set `K` with `Ω ∩ K ⊆ U`: its weak gradient vanishes off `K` as well, so the whole
+value-gradient jet is supported in `U`. -/
+theorem W1p.norm_restrictL_eq_of_value_ae_eq_zero_of_isClosed (hU : U ≤ Omega) {K : Set E}
+    (hK : IsClosed K) (hKU : (Omega : Set E) ∩ K ⊆ U) {u : W1p mu Omega p}
+    (hu : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → W1p.value u x = 0) :
+    ‖W1p.restrictL hU u‖ = ‖u‖ := by
+  have hJ : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ (U : Set E) →
+      (u : Sobolev1JetLp mu Omega p) x = 0 := by
+    filter_upwards [hu, W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed hK hu,
+      W1p.value_apply_ae u, W1p.gradient_apply_ae u,
+      ae_restrict_mem Omega.isOpen.measurableSet] with x hv hg hv' hg' hxΩ hxU
+    have hxK : x ∉ K := fun hxK ↦ hxU (hKU ⟨hxΩ, hxK⟩)
+    exact (WithLp.ext_iff _).2 (Prod.ext (hv'.symm.trans (hv hxK)) (hg'.symm.trans (hg hxK)))
+  rw [← Submodule.norm_coe, ← Submodule.norm_coe u, W1p.coe_restrictL]
+  exact Lp.norm_eq_norm_of_ae_eq_restrict (SetLike.coe_subset_coe.2 hU)
+    U.isOpen.measurableSet.nullMeasurableSet (Sobolev1JetLp.coeFn_restrictL hU _) hJ
 
 /-- Restricting a Sobolev function to its original domain does nothing. -/
 @[simp]

@@ -15,6 +15,9 @@ identification transports local properties of module sheaves through affine norm
 Restriction of a pushforward to an open of the base agrees with pushforward of the restriction
 to its preimage. Both comparisons have formulas on sections.
 
+A module pushed forward from an open subscheme has only the zero section over any disjoint
+open. This supplies the vanishing factors for products supported on disjoint open sets.
+
 These comparisons use Mathlib's module pushforward and restriction API.
 -/
 
@@ -22,9 +25,25 @@ public section
 
 open CategoryTheory AlgebraicGeometry
 
-namespace TauCeti.AlgebraicGeometry
-
 universe u
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+/-- A module pushed forward from an open subscheme has only the zero section over a
+disjoint open. -/
+theorem subsingleton_sections_pushforward_of_disjoint {X : Scheme.{u}} {U V : X.Opens}
+    (N : U.toScheme.Modules) (h : Disjoint V U) :
+    Subsingleton Γ((pushforward U.ι).obj N, V) := by
+  have hempty : U.ι ⁻¹ᵁ V = ⊥ := by
+    apply eq_bot_iff.mpr
+    intro x hx
+    exact h.le_bot ⟨hx, x.property⟩
+  rw [pushforward_obj_obj]
+  exact hempty ▸ Module.subsingleton Γ(U.toScheme, ⊥) _
+
+end AlgebraicGeometry.Scheme.Modules
+
+namespace TauCeti.AlgebraicGeometry
 
 noncomputable section
 
