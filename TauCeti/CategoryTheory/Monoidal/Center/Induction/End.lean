@@ -110,12 +110,8 @@ private theorem endπAux_dinatural {Y Y' : C} {ι ι' : Type*} [Fintype ι] [Fin
   let q := SimpleClasses.decompIncl a e
   let p' := SimpleClasses.decompProj b e'
   let q' := SimpleClasses.decompIncl b e'
-  have hY : ∑ i, p i ≫ q i = 𝟙 Y := by
-    dsimp only [p, q, SimpleClasses.decompProj, SimpleClasses.decompIncl]
-    exact SimpleClasses.sum_comp_classOfReprIso_eq_id a e
-  have hY' : ∑ j, p' j ≫ q' j = 𝟙 Y' := by
-    dsimp only [p', q', SimpleClasses.decompProj, SimpleClasses.decompIncl]
-    exact SimpleClasses.sum_comp_classOfReprIso_eq_id b e'
+  have hY : ∑ i, p i ≫ q i = 𝟙 Y := SimpleClasses.sum_comp_classOfReprIso_eq_id a e
+  have hY' : ∑ j, p' j ≫ q' j = 𝟙 Y' := SimpleClasses.sum_comp_classOfReprIso_eq_id b e'
   have hgL (i : ι) : q i ≫ g = ∑ j, (q i ≫ g ≫ p' j) ≫ q' j := by
     simp only [Category.assoc, ← Preadditive.comp_sum, hY', Category.comp_id]
   have hgR (j : ι') : g ≫ p' j = ∑ i, p i ≫ (q i ≫ g ≫ p' j) := by
@@ -190,7 +186,6 @@ theorem inductionEndπ_repr (X : C) (S : SimpleClasses C) :
   symm
   calc biproduct.π (inductionSummand X) S
       = biproduct.π (inductionSummand X) S ≫ (∑ i, p i ≫ q i) ▷ (X ⊗ S.reprᘁ) := by
-          dsimp only [p, q, SimpleClasses.decompProj, SimpleClasses.decompIncl]
           rw [SimpleClasses.sum_comp_classOfReprIso_eq_id a e, id_whiskerRight, Category.comp_id]
     _ = ∑ i, (biproduct.π (inductionSummand X) S ≫ p i ▷ (X ⊗ S.reprᘁ)) ≫
           q i ▷ (X ⊗ S.reprᘁ) := by
@@ -342,9 +337,8 @@ theorem inductionMapLift_comp_map_endπ {D : Type*} [Category* D] [Preadditive D
           rw [inductionMapLift_comp_map_π, ← Category.assoc, ← hw (p i), Category.assoc,
             ← F.map_comp, ← comp_whiskerRight]
     _ = w Y := by
-          rw [← Preadditive.comp_sum, ← F.map_sum, ← sum_whiskerRight]
-          dsimp only [p, q, SimpleClasses.decompProj, SimpleClasses.decompIncl]
-          rw [SimpleClasses.sum_comp_classOfReprIso_eq_id a e, id_whiskerRight, F.map_id,
+          rw [← Preadditive.comp_sum, ← F.map_sum, ← sum_whiskerRight,
+            SimpleClasses.sum_comp_classOfReprIso_eq_id a e, id_whiskerRight, F.map_id,
             Category.comp_id]
 
 /-- Composing `inductionLift w` with `inductionEndπ X Y` recovers `w Y` whenever `w` is

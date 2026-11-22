@@ -198,11 +198,12 @@ theorem endAlgEquivOfSimple_leftDim_eq_sum (X : C) :
         (simpleMultiplicities X S : k) *
           endAlgEquivOfSimple k (𝟙_ C) (End.of (leftDim S.repr)) := by
   let φ : (𝟙_ C ⟶ 𝟙_ C) →+ k :=
-    AddMonoidHom.comp (endAlgEquivOfSimple k (𝟙_ C) : End (𝟙_ C) →+ k)
-      { toFun := End.of, map_zero' := End.of_zero, map_add' := End.of_add }
+    (endAlgEquivOfSimple k (𝟙_ C) : End (𝟙_ C) →+ k).comp
+      (End.addEquiv (X := 𝟙_ C)).symm.toAddMonoidHom
   change φ (leftDim X) = _
   rw [leftDim_eq_sum_simpleMultiplicities, Finsupp.sum_fintype _ _ (by simp), map_sum]
   simp [φ, nsmul_eq_mul]
+  rfl
 
 /-- The right dimension of an object, read in `k`, is the multiplicity-weighted sum of the right
 dimensions of the simple classes. -/
@@ -212,11 +213,12 @@ theorem endAlgEquivOfSimple_rightDim_eq_sum (X : C) :
         (simpleMultiplicities X S : k) *
           endAlgEquivOfSimple k (𝟙_ C) (End.of (rightDim S.repr)) := by
   let φ : (𝟙_ C ⟶ 𝟙_ C) →+ k :=
-    AddMonoidHom.comp (endAlgEquivOfSimple k (𝟙_ C) : End (𝟙_ C) →+ k)
-      { toFun := End.of, map_zero' := End.of_zero, map_add' := End.of_add }
+    (endAlgEquivOfSimple k (𝟙_ C) : End (𝟙_ C) →+ k).comp
+      (End.addEquiv (X := 𝟙_ C)).symm.toAddMonoidHom
   change φ (rightDim X) = _
   rw [rightDim_eq_sum_simpleMultiplicities, Finsupp.sum_fintype _ _ (by simp), map_sum]
   simp [φ, nsmul_eq_mul]
+  rfl
 
 end Multiplicity
 

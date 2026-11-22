@@ -50,9 +50,15 @@ centre `Center C` of a pivotal fusion category `C` over an algebraically closed 
   many simple isomorphism classes;
 * `CategoryTheory.Center.simpleMultiplicities_induction_obj`: Frobenius reciprocity for simple
   multiplicities between `C` and `Center C`;
-* `forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_eq_sum_smul` and
+* `CategoryTheory.Center.averagingScalar`,
+  `CategoryTheory.Center.forgetInductionAdjunction_unit_comp_counit_eq_averagingScalar_smul`, and
   `CategoryTheory.Center.forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit`:
-  the pivot-free averaging identity and its pivotal form `η_Z ≫ ε'_Z = dim(C) • 𝟙 Z`;
+  the pivot-free averaging scalar and averaging identity, and its pivotal form
+  `η_Z ≫ ε'_Z = dim(C) • 𝟙 Z`;
+* `CategoryTheory.Center.isSplitMono_forgetInductionAdjunction_unit_of_averagingScalar_ne_zero`,
+  `CategoryTheory.Center.isFiniteSemisimpleCategory_of_averagingScalar_ne_zero`, and
+  `CategoryTheory.Center.finite_simpleClasses_of_averagingScalar_ne_zero`: pivot-free splitting,
+  semisimplicity, and finiteness of `Center C` whenever `averagingScalar k C ≠ 0`;
 * `CategoryTheory.Center.isFiniteSemisimpleCategory_of_globalDim_ne_zero` and
   `CategoryTheory.Center.finite_simpleClasses_of_globalDim_ne_zero`: `Center C` is a fusion
   category whenever `globalDim C ≠ 0`;
@@ -154,21 +160,35 @@ variable (C : Type u) [Category.{v} C] [Abelian C] [Linear k C] [MonoidalCategor
   [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)]
   [Fintype (SimpleClasses C)]
 
-/-- Underlying morphism form of the pivot-free averaging identity on `Center C`: composing the
-unit of `forgetInductionAdjunction` with the counit of `inductionForgetAdjunction` multiplies
-`𝟙 Z.1` by the sum of the normalized pairing closures
-`η_ S.repr S.reprᘁ ≫`
-`@ExactPairing.evaluation C _ _ S.reprᘁ S.repr (simpleSwapExactPairing S.repr)`. -/
-@[reassoc]
-theorem forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_f_eq_sum_smul
-    (Z : Center C) :
-    ((forgetInductionAdjunction k C).unit.app Z).f ≫
-        ((inductionForgetAdjunction k C).counit.app Z).f =
+/-- The pivot-free averaging scalar in `k`, obtained by reading the sum of the normalized
+pairing closures
+`η_ S.repr S.reprᘁ ≫ @ExactPairing.evaluation C _ _ S.reprᘁ S.repr (simpleSwapExactPairing S.repr)`
+in `k` via `endAlgEquivOfSimple k (𝟙_ C)`. -/
+noncomputable def averagingScalar : k :=
+  endAlgEquivOfSimple k (𝟙_ C)
+    (End.of (∑ S : SimpleClasses C,
+      η_ S.repr S.reprᘁ ≫
+        @ExactPairing.evaluation C _ _ S.reprᘁ S.repr (simpleSwapExactPairing S.repr)))
+
+omit [MonoidalPreadditive C] [MonoidalLinear k C] in
+/-- The defining formula for `averagingScalar k C`. -/
+theorem averagingScalar_def :
+    averagingScalar k C =
       endAlgEquivOfSimple k (𝟙_ C)
         (End.of (∑ S : SimpleClasses C,
           η_ S.repr S.reprᘁ ≫
-            @ExactPairing.evaluation C _ _ S.reprᘁ S.repr (simpleSwapExactPairing S.repr))) •
-        𝟙 Z.1 := by
+            @ExactPairing.evaluation C _ _ S.reprᘁ S.repr (simpleSwapExactPairing S.repr))) := by
+  rfl
+
+/-- Underlying morphism form of the pivot-free averaging identity on `Center C`: composing the
+unit of `forgetInductionAdjunction` with the counit of `inductionForgetAdjunction` multiplies
+`𝟙 Z.1` by `averagingScalar k C`. -/
+@[reassoc]
+theorem forgetInductionAdjunction_unit_comp_counit_f_eq_averagingScalar_smul
+    (Z : Center C) :
+    ((forgetInductionAdjunction k C).unit.app Z).f ≫
+        ((inductionForgetAdjunction k C).counit.app Z).f =
+      averagingScalar k C • 𝟙 Z.1 := by
   have hterm (S : SimpleClasses C) :
       (((forgetInductionAdjunction k C).unit.app Z).f ≫ biproduct.π (inductionSummand Z.1) S) ≫
         (biproduct.ι (inductionSummand Z.1) S ≫
@@ -192,7 +212,6 @@ theorem forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_f_e
   set s : 𝟙_ C ⟶ 𝟙_ C := ∑ S : SimpleClasses C,
     η_ S.repr S.reprᘁ ≫
       @ExactPairing.evaluation C _ _ S.reprᘁ S.repr (simpleSwapExactPairing S.repr)
-  set d := endAlgEquivOfSimple k (𝟙_ C) (End.of s)
   rw [← Category.id_comp v, ← biproduct.total]
   simp only [Preadditive.sum_comp, Preadditive.comp_sum, Category.assoc]
   have hsum :
@@ -207,27 +226,55 @@ theorem forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_f_e
     refine Finset.sum_congr rfl fun S _ ↦ ?_
     rw [← Category.assoc u]
     exact hterm S
-  have hs : s = d • 𝟙 (𝟙_ C) :=
-    (endAlgEquivOfSimple_smul_id (k := k) (End.of s)).symm
+  have hs : s = averagingScalar k C • 𝟙 (𝟙_ C) := by
+    rw [averagingScalar_def]
+    exact (endAlgEquivOfSimple_smul_id (k := k) (End.of s)).symm
   rw [hsum, ← Preadditive.comp_sum, ← Preadditive.sum_comp, ← whiskerLeft_sum]
-  change (ρ_ Z.1).inv ≫ Z.1 ◁ s ≫ (ρ_ Z.1).hom = d • 𝟙 Z.1
+  change (ρ_ Z.1).inv ≫ Z.1 ◁ s ≫ (ρ_ Z.1).hom = averagingScalar k C • 𝟙 Z.1
   rw [hs, MonoidalLinear.whiskerLeft_smul, whiskerLeft_id, Linear.smul_comp, Linear.comp_smul,
     Category.id_comp, Iso.inv_hom_id]
 
 /-- **Pivot-free averaging identity for the Drinfeld centre**: composing the unit of
 `forgetInductionAdjunction` with the counit of `inductionForgetAdjunction` at `Z : Center C`
-acts as scalar multiplication by the sum of the normalized pairing closures. -/
+acts as scalar multiplication by `averagingScalar k C`. -/
 @[reassoc]
-theorem forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_eq_sum_smul
+theorem forgetInductionAdjunction_unit_comp_counit_eq_averagingScalar_smul
     (Z : Center C) :
     (forgetInductionAdjunction k C).unit.app Z ≫
         (inductionForgetAdjunction k C).counit.app Z =
-      endAlgEquivOfSimple k (𝟙_ C)
-        (End.of (∑ S : SimpleClasses C,
-          η_ S.repr S.reprᘁ ≫
-            @ExactPairing.evaluation C _ _ S.reprᘁ S.repr (simpleSwapExactPairing S.repr))) •
-        𝟙 Z :=
-  Hom.ext (forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_f_eq_sum_smul k C Z)
+      averagingScalar k C • 𝟙 Z :=
+  Hom.ext
+    (forgetInductionAdjunction_unit_comp_counit_f_eq_averagingScalar_smul k C Z)
+
+/-- When `averagingScalar k C ≠ 0`, each component of the unit of `forgetInductionAdjunction` is
+a split monomorphism in `Center C`, retracted by
+`(averagingScalar k C)⁻¹ • (inductionForgetAdjunction k C).counit`. -/
+theorem isSplitMono_forgetInductionAdjunction_unit_of_averagingScalar_ne_zero
+    (h : averagingScalar k C ≠ 0) (Z : Center C) :
+    IsSplitMono ((forgetInductionAdjunction k C).unit.app Z) := by
+  refine IsSplitMono.mk'
+    ⟨(averagingScalar k C)⁻¹ • (inductionForgetAdjunction k C).counit.app Z, ?_⟩
+  rw [Linear.comp_smul,
+    forgetInductionAdjunction_unit_comp_counit_eq_averagingScalar_smul,
+    smul_smul, inv_mul_cancel₀ h, one_smul]
+  rfl
+
+/-- **Semisimplicity of the Drinfeld centre (pivot-free criterion)**: if `averagingScalar k C ≠ 0`,
+then `Center C` is a split finite semisimple category. -/
+theorem isFiniteSemisimpleCategory_of_averagingScalar_ne_zero
+    (h : averagingScalar k C ≠ 0) :
+    IsFiniteSemisimpleCategory (Center C) := by
+  have := isSplitMono_forgetInductionAdjunction_unit_of_averagingScalar_ne_zero k C h
+  exact IsFiniteSemisimpleCategory.of_natTrans (forget C) (induction k C)
+    (forgetInductionAdjunction k C).unit
+
+/-- **Finiteness of simple classes in the Drinfeld centre (pivot-free criterion)**: if
+`averagingScalar k C ≠ 0`, then `Center C` has finitely many simple isomorphism classes. -/
+theorem finite_simpleClasses_of_averagingScalar_ne_zero
+    (h : averagingScalar k C ≠ 0) :
+    Finite (SimpleClasses (Center C)) := by
+  have := isFiniteSemisimpleCategory_of_averagingScalar_ne_zero k C h
+  exact finite_simpleClasses_of_isFiniteSemisimpleCategory k C
 
 end Averaging
 
@@ -242,15 +289,11 @@ section FintypeSimple
 
 variable [Fintype (SimpleClasses C)]
 
-/-- Underlying morphism form of the averaging identity on `Center C`: composing the unit of
-`forgetInductionAdjunction` with the counit of `inductionForgetAdjunction` multiplies `𝟙 Z.1` by
-`globalDim C`. -/
-@[reassoc]
-theorem forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_f (Z : Center C) :
-    ((forgetInductionAdjunction k C).unit.app Z).f ≫
-        ((inductionForgetAdjunction k C).counit.app Z).f =
-      endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) • 𝟙 Z.1 := by
-  rw [forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_f_eq_sum_smul]
+/-- In a pivotal category, the pivot-free averaging scalar `averagingScalar k C` agrees with
+`globalDim C` read in `k`. -/
+theorem averagingScalar_eq_endAlgEquivOfSimple_globalDim :
+    averagingScalar k C = endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) := by
+  rw [averagingScalar_def]
   simp_rw [coevaluation_comp_simpleSwapExactPairing_evaluation k]
   rw [← globalDim_eq_sum_leftDim_comp_rightDim]
 
@@ -262,39 +305,49 @@ theorem forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit (Z 
     (forgetInductionAdjunction k C).unit.app Z ≫
         (inductionForgetAdjunction k C).counit.app Z =
       endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) • 𝟙 Z := by
-  rw [forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_eq_sum_smul]
-  simp_rw [coevaluation_comp_simpleSwapExactPairing_evaluation k]
-  rw [← globalDim_eq_sum_leftDim_comp_rightDim]
+  rw [forgetInductionAdjunction_unit_comp_counit_eq_averagingScalar_smul,
+    averagingScalar_eq_endAlgEquivOfSimple_globalDim]
+
+/-- Underlying morphism form of the averaging identity on `Center C`: composing the unit of
+`forgetInductionAdjunction` with the counit of `inductionForgetAdjunction` multiplies `𝟙 Z.1` by
+`globalDim C`. -/
+@[reassoc]
+theorem forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_f (Z : Center C) :
+    ((forgetInductionAdjunction k C).unit.app Z).f ≫
+        ((inductionForgetAdjunction k C).counit.app Z).f =
+      endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) • 𝟙 Z.1 := by
+  rw [forgetInductionAdjunction_unit_comp_counit_f_eq_averagingScalar_smul,
+    averagingScalar_eq_endAlgEquivOfSimple_globalDim]
+
+private theorem averagingScalar_ne_zero_of_globalDim_ne_zero (hdim : globalDim C ≠ 0) :
+    averagingScalar k C ≠ 0 := by
+  rw [averagingScalar_eq_endAlgEquivOfSimple_globalDim]
+  intro h
+  exact hdim (by simpa using (endAlgEquivOfSimple_apply_eq_iff (End.of (globalDim C)) 0).mp h)
 
 /-- When `globalDim C ≠ 0`, each component of the unit of `forgetInductionAdjunction` is a split
 monomorphism in `Center C`, retracted by `(dim C)⁻¹ • (inductionForgetAdjunction k C).counit`. -/
 theorem isSplitMono_forgetInductionAdjunction_unit_of_globalDim_ne_zero
     (hdim : globalDim C ≠ 0) (Z : Center C) :
-    IsSplitMono ((forgetInductionAdjunction k C).unit.app Z) := by
-  set d := endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C))
-  have hd : d ≠ 0 := fun h ↦
-    hdim (by simpa using (endAlgEquivOfSimple_apply_eq_iff (End.of (globalDim C)) 0).mp h)
-  refine IsSplitMono.mk' ⟨d⁻¹ • (inductionForgetAdjunction k C).counit.app Z, ?_⟩
-  rw [Linear.comp_smul, forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit,
-    smul_smul, inv_mul_cancel₀ hd, one_smul]
-  rfl
+    IsSplitMono ((forgetInductionAdjunction k C).unit.app Z) :=
+  isSplitMono_forgetInductionAdjunction_unit_of_averagingScalar_ne_zero k C
+    (averagingScalar_ne_zero_of_globalDim_ne_zero k C hdim) Z
 
 include k in
 /-- **Semisimplicity of the Drinfeld centre (nondegenerate global dimension)**: if
 `globalDim C ≠ 0`, then `Center C` is a split finite semisimple category. -/
 theorem isFiniteSemisimpleCategory_of_globalDim_ne_zero (hdim : globalDim C ≠ 0) :
-    IsFiniteSemisimpleCategory (Center C) := by
-  have := isSplitMono_forgetInductionAdjunction_unit_of_globalDim_ne_zero k C hdim
-  exact IsFiniteSemisimpleCategory.of_natTrans (forget C) (induction k C)
-    (forgetInductionAdjunction k C).unit
+    IsFiniteSemisimpleCategory (Center C) :=
+  isFiniteSemisimpleCategory_of_averagingScalar_ne_zero k C
+    (averagingScalar_ne_zero_of_globalDim_ne_zero k C hdim)
 
 include k in
 /-- **Finiteness of simple classes in the Drinfeld centre (nondegenerate global dimension)**: if
 `globalDim C ≠ 0`, then `Center C` has finitely many simple isomorphism classes. -/
 theorem finite_simpleClasses_of_globalDim_ne_zero (hdim : globalDim C ≠ 0) :
-    Finite (SimpleClasses (Center C)) := by
-  have := isFiniteSemisimpleCategory_of_globalDim_ne_zero k C hdim
-  exact finite_simpleClasses_of_isFiniteSemisimpleCategory k C
+    Finite (SimpleClasses (Center C)) :=
+  finite_simpleClasses_of_averagingScalar_ne_zero k C
+    (averagingScalar_ne_zero_of_globalDim_ne_zero k C hdim)
 
 include k in
 /-- **Müger's ribbon theorem (nondegenerate global dimension)**: if `C` is a spherical fusion

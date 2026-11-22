@@ -148,7 +148,7 @@ def simpleSwapExactPairing (X : C) [Simple X] : ExactPairing Xᘁ X :=
 
 omit [MonoidalPreadditive C] in
 /-- The coevaluation of `simpleSwapExactPairing X` is a section of `ε_ X Xᘁ`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem simpleSwapExactPairing_coevaluation_comp_evaluation (X : C) [Simple X] :
     @ExactPairing.coevaluation C _ _ Xᘁ X (simpleSwapExactPairing X) ≫ ε_ X Xᘁ = 𝟙 (𝟙_ C) := by
   have := isIso_simpleSwapDualHom X
