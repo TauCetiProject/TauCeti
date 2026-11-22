@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
-import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Multiset
 import Mathlib.Analysis.Normed.Field.Lemmas
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.Topology.Algebra.Polynomial.Root.Multiplicity
@@ -20,11 +19,16 @@ coefficient family with locally bounded degree. Nearby degrees may exceed the ce
 roots escaping to infinity do not affect the approximation of finite roots.
 
 Translate to a nonroot of the central polynomial and reflect at a fixed degree bound.
-The reflected leading coefficient stays nonzero. Writing a nearby reflected polynomial as
-its leading coefficient times the product of `X - b` over its roots, its small value at
-the reflected central root forces one of those roots to be close. Reciprocal coordinates
-then recover the finite roots. No local compactness of the field is needed.
-This is useful for polynomial deformations whose limiting leading coefficient vanishes.
+The reflected leading coefficient stays nonzero. A nearby reflected polynomial splits and is
+small at the reflected central root compared with its leading coefficient, so
+`Polynomial.Splits.exists_mem_roots_norm_sub_lt` gives one of its roots close to it.
+Reciprocal coordinates then recover the finite roots. No local compactness of the field is
+needed. This is useful for polynomial deformations whose limiting leading coefficient vanishes.
+
+The pointwise step holds for any split polynomial over a domain with a multiplicative
+seminorm: if `‖p.eval u‖ < ‖p.leadingCoeff‖ * r ^ p.natDegree` and `0 ≤ r`, some root of `p`
+lies within `r` of `u`, since `p.eval u` is the leading coefficient times the product of
+`u - b` over the roots.
 
 ## References
 
@@ -35,6 +39,33 @@ Springer (2006), §5.1 (continuity of polynomial roots).
 public section
 
 open Filter Polynomial Topology
+
+namespace Polynomial.Splits
+
+/-- A split polynomial that is small at `u` compared with its leading coefficient has a root
+near `u`: if `‖p.eval u‖ < ‖p.leadingCoeff‖ * r ^ p.natDegree` and `0 ≤ r`, some root `b` of
+`p` satisfies `‖u - b‖ < r`. The seminorm only needs to be multiplicative. -/
+theorem exists_mem_roots_norm_sub_lt {R : Type*} [SeminormedCommRing R] [IsDomain R]
+    [NormMulClass R] {p : R[X]} (hp : p.Splits) {u : R} {r : ℝ} (hr : 0 ≤ r)
+    (h : ‖p.eval u‖ < ‖p.leadingCoeff‖ * r ^ p.natDegree) :
+    ∃ b ∈ p.roots, ‖u - b‖ < r := by
+  -- A multiplicative seminorm with `‖1‖ ≠ 1` vanishes, which `h` excludes.
+  have h1 : ‖(1 : R)‖ = 1 := by
+    have h11 : ‖(1 : R)‖ * ‖(1 : R)‖ = ‖(1 : R)‖ := by rw [← norm_mul, one_mul]
+    by_contra h1
+    have h0 : ‖(1 : R)‖ = 0 := by
+      by_contra h0
+      exact h1 ((mul_eq_left₀ h0).1 h11)
+    rw [← mul_one p.leadingCoeff, norm_mul, h0, mul_zero, zero_mul] at h
+    exact (norm_nonneg _).not_gt h
+  have : NormOneClass R := ⟨h1⟩
+  by_contra! hb
+  rw [hp.eval_eq_prod_roots, norm_mul, Multiset.norm_prod_map, hp.natDegree_eq_card_roots] at h
+  refine h.not_ge (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
+  calc r ^ Multiset.card p.roots = (p.roots.map fun _ ↦ r).prod := by simp
+    _ ≤ _ := Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ hr) hb
+
+end Polynomial.Splits
 
 namespace TauCeti
 
@@ -78,28 +109,18 @@ theorem eventually_exists_isRoot_norm_sub_lt
     simpa [u, sub_add_cancel] using hε
   obtain ⟨δ, hδ, hδclose⟩ := Metric.eventually_nhds_iff.1 hclose
   -- Near `x₀`, `G x` is small at `u` compared with its leading coefficient.
-  have hδ' : 0 < min δ 1 := lt_min hδ one_pos
-  have hsmall : ∀ᶠ x in 𝓝 x₀, ‖(G x).eval u‖ < ‖(G x).coeff d‖ * min δ 1 ^ d := by
+  have hsmall : ∀ᶠ x in 𝓝 x₀, ‖(G x).eval u‖ < ‖(G x).coeff d‖ * δ ^ d := by
     have hGd : ∀ᶠ x in 𝓝 x₀, (G x).natDegree ≤ d :=
       hGdeg.mono fun x hx ↦ natDegree_le_of_degree_le hx.le
     refine (continuousAt_eval (fun i _ ↦ hGcoeff i) hGd continuousAt_const).norm.eventually_lt
       ((hGcoeff d).norm.mul continuousAt_const) ?_
     rw [hroot.eq_zero, norm_zero, htop]
-    exact mul_pos (norm_pos_iff.2 hτ) (pow_pos hδ' d)
+    exact mul_pos (norm_pos_iff.2 hτ) (pow_pos hδ d)
   filter_upwards [hsmall, hGdeg, hdeg] with x hx hxGdeg hxdeg
   -- So some root of `G x` lies within `δ` of `u`.
-  obtain ⟨b, hb, hub⟩ : ∃ b ∈ (G x).roots, ‖u - b‖ < min δ 1 := by
-    by_contra! h
-    have hnat : (G x).natDegree = d := natDegree_eq_of_degree_eq_some hxGdeg
-    have hprod : min δ 1 ^ d ≤ ((G x).roots.map fun b ↦ ‖u - b‖).prod :=
-      calc min δ 1 ^ d ≤ min δ 1 ^ Multiset.card (G x).roots :=
-            pow_le_pow_of_le_one hδ'.le (min_le_right _ _) (hnat ▸ card_roots' _)
-        _ = ((G x).roots.map fun _ ↦ min δ 1).prod := by simp
-        _ ≤ _ := Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ hδ'.le) h
-    rw [(IsAlgClosed.splits (G x)).eval_eq_prod_roots, norm_mul, Multiset.norm_prod_map,
-      leadingCoeff, hnat] at hx
-    exact hx.not_ge (by gcongr)
-  have hbu := hδclose (by rw [dist_eq_norm, norm_sub_rev]; exact hub.trans_le (min_le_left _ _))
+  obtain ⟨b, hb, hub⟩ := (IsAlgClosed.splits (G x)).exists_mem_roots_norm_sub_lt hδ.le
+    (by rwa [leadingCoeff, natDegree_eq_of_degree_eq_some hxGdeg])
+  have hbu := hδclose (by rwa [dist_eq_norm, norm_sub_rev])
   exact ⟨b⁻¹ + τ, (isRoot_reflect_taylor_iff hxdeg τ hbu.1).1 (isRoot_of_mem_roots hb), hbu.2⟩
 
 end TauCeti

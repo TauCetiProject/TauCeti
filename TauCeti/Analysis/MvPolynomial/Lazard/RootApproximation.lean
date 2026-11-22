@@ -35,7 +35,7 @@ public section
 
 open Filter Finsupp Polynomial Topology
 
-namespace TauCeti
+namespace MvPolynomial
 
 /-- Every root of a Lazard evaluation is approached by ordinary roots along any monomial
 curve whose evaluator separates the removed base exponent. Nullified ordinary fibers
@@ -45,7 +45,7 @@ theorem eventually_exists_isRoot_monomialCurve_norm_sub_lt
     {K : Type*} [NormedField K] [IsAlgClosed K] {n : ℕ}
     (p : MvPolynomial (Fin n) K[X]) (a : Fin n → K)
     {V : Set (Fin n →₀ ℕ)} {c : Fin n → ℕ}
-    (hv : p.lazardExponent (Polynomial.C ∘ a) ∈ V) (hc : IsLazardEvaluator V c)
+    (hv : p.lazardExponent (Polynomial.C ∘ a) ∈ V) (hc : TauCeti.IsLazardEvaluator V c)
     {z : K} (hz : (p.lazardEval (Polynomial.C ∘ a)).IsRoot z)
     {ε : ℝ} (hε : 0 < ε) :
     ∀ᶠ y in 𝓝[≠] (0 : K), ∃ w : K,
@@ -73,7 +73,7 @@ theorem eventually_exists_isRoot_monomialCurve_norm_sub_lt
   have hcoeff (i : ℕ) : ContinuousAt (fun y ↦ (F y).coeff i) 0 := by
     simp only [F, Polynomial.coeff_map, Polynomial.coe_evalRingHom]
     exact Polynomial.continuousAt _
-  have happrox := eventually_exists_isRoot_norm_sub_lt (F := F)
+  have happrox := TauCeti.eventually_exists_isRoot_norm_sub_lt (F := F)
     (d := (Polynomial.Bivariate.swap P).natDegree) (fun i _ ↦ hcoeff i)
     (.of_forall fun y ↦ Polynomial.natDegree_map_le)
     (by rw [hF0]; exact MvPolynomial.lazardEval_ne_zero hp α)
@@ -97,4 +97,4 @@ theorem eventually_exists_isRoot_monomialCurve_norm_sub_lt
   refine ⟨w, ?_, hzw⟩
   simp only [IsRoot.def, hcurve, Polynomial.eval_mul, hw.eq_zero, mul_zero]
 
-end TauCeti
+end MvPolynomial
