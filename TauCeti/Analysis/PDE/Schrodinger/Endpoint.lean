@@ -7,8 +7,11 @@ module
 
 public import TauCeti.Analysis.PDE.Schrodinger.Strichartz
 public import TauCeti.Analysis.PDE.Strichartz.Endpoint
+import TauCeti.Analysis.PDE.Schrodinger.MixedNorm
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
+import TauCeti.MeasureTheory.Integral.Kernel.Pairing
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # The endpoint Strichartz estimate for the Schrödinger equation
@@ -151,8 +154,7 @@ theorem exists_enorm_setIntegral_inner_schrodingerPropagator_sub_le_of_endpoint 
     (by rw [hbinv]; field_simp; linarith) (by rw [hbinv]; norm_num; field_simp; ring) hr'inv
     ((4 * Real.pi) ^ (-((Module.finrank ℝ E : ℝ) / 2))).toNNReal 1 K
   refine ⟨C, fun R hR F G hF hG ↦ ?_⟩
-  simp_rw [schrodingerPropagator_def, inner_phasePropagator_sub_apply,
-    ← schrodingerPropagator_def]
+  simp_rw [inner_schrodingerPropagator_sub_apply, ← adjoint_schrodingerPropagator]
   refine hC (schrodingerPropagator ℂ)
     (fun t ↦ by
       rw [ENNReal.coe_one, ← ofReal_norm]
@@ -180,11 +182,11 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le_of_endpoint {r' : ℝ
   obtain ⟨C, hC⟩ := exists_enorm_setIntegral_inner_schrodingerPropagator_sub_le_of_endpoint
     (r' := r') hn hr
   refine ⟨NNReal.sqrt C, fun F hF ↦ enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le (𝕜 := ℂ)
+    (u := fun s ↦ schrodingerPropagator ℂ (-s) (F s))
     (integrable_phasePropagator_apply _ continuous_neg.aestronglyMeasurable hF) ?_⟩
   have h := hC Set.univ MeasurableSet.univ F F hF hF
-  simp_rw [schrodingerPropagator_def, inner_phasePropagator_sub_apply, adjoint_phasePropagator,
-    Measure.restrict_univ] at h
-  simpa only [schrodingerPropagator_def] using h
+  simp_rw [inner_schrodingerPropagator_sub_apply, Measure.restrict_univ] at h
+  exact h
 
 /-- **The endpoint Strichartz estimate for the Schrödinger equation, in weak form.** In dimension
 `n ≥ 3`, let `r` be the endpoint exponent, `1 + n / r = n / 2`, with Hölder conjugate `r'`. There is
@@ -248,14 +250,10 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
   -- `S(-s) F(s)` with `S(-t) G(t)`.
   have hφ : Integrable (fun z : ℝ × ℝ ↦
       ⟪schrodingerPropagator ℂ (z.2 - z.1) (F z.1), G z.2⟫_ℂ) (volume.prod volume) := by
-    simp_rw [schrodingerPropagator_def, inner_phasePropagator_sub_apply, adjoint_phasePropagator]
-    exact (integrable_phasePropagator_apply _ continuous_neg.aestronglyMeasurable hF).op_fst_snd
-      (op := fun u v ↦ ⟪u, v⟫_ℂ) continuous_inner
-      ⟨1, fun u v ↦ by simpa using norm_inner_le_norm u v⟩
+    simp_rw [inner_schrodingerPropagator_sub_apply]
+    exact (integrable_phasePropagator_apply _ continuous_neg.aestronglyMeasurable hF).inner_fst_snd
       (integrable_phasePropagator_apply _ continuous_neg.aestronglyMeasurable hG)
-  rw [integral_setIntegral_Iio_eq_setIntegral
-    (f := fun z ↦ ⟪schrodingerPropagator ℂ (z.2 - z.1) (F z.1), G z.2⟫_ℂ)
-    (by rw [Measure.volume_eq_prod]; exact hφ), Measure.volume_eq_prod]
+  rw [integral_setIntegral_Iio_eq_setIntegral hφ.integrableOn]
   exact hC _ (measurableSet_lt measurable_fst measurable_snd) F G hF hG
 
 /-- **The retarded endpoint Strichartz estimate for the Schrödinger equation** of Keel and Tao.
@@ -282,16 +280,7 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_schrodingerPropagator_sub_le_of_e
     hF.aestronglyMeasurable
     |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ) (q' := 2) (r' := r')
       ENNReal.ofNat_ne_top hr2 fun G hG _ ↦ ?_)⟩
-  -- Move the pairing with `G t` inside the integral over `s < t`.
-  have hpair (t : ℝ) : ⟪(∫ s in Set.Iio t, schrodingerPropagator ℂ (t - s) (F s) :
-      Lp ℂ 2 (volume : Measure E)), G t⟫_ℂ =
-      ∫ s in Set.Iio t, ⟪schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ := by
-    have hint : Integrable fun s ↦ schrodingerPropagator ℂ (t - s) (F s) :=
-      integrable_phasePropagator_apply _
-        (continuous_const.sub continuous_id).aestronglyMeasurable hF
-    rw [← inner_conj_symm, ← integral_inner hint.integrableOn, ← integral_conj]
-    simp_rw [inner_conj_symm]
-  simp_rw [hpair]
+  simp_rw [inner_setIntegral_Iio_schrodingerPropagator_sub hF]
   exact hC F G hF hG
 
 end TauCeti

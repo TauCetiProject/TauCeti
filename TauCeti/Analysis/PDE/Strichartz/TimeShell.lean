@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Strichartz.TTStar
 import Mathlib.Data.Int.Log
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Integral.Kernel.Pairing
 import TauCeti.MeasureTheory.Integral.SchurTest
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.MeasureTheory.Measure.Prod
@@ -481,8 +482,7 @@ theorem enorm_setIntegral_inner_adjoint_le_of_subset_timeShell {p r : ℝ≥0∞
   set c := ENNReal.ofReal (2 * ρ) ^ (1 / p.toReal - 1 / (2 : ℝ≥0∞).toReal)
   have hφ : Integrable (fun z : ℝ × ℝ ↦ ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜)
       (volume.prod volume) :=
-    hUF.op_fst_snd (op := fun u v ↦ ⟪u, v⟫_𝕜) continuous_inner
-      ⟨1, fun u v ↦ by simpa using norm_inner_le_norm u v⟩ hUG
+    hUF.inner_fst_snd hUG
   -- The energy bound for `U(s)* F(s)`, and the dual estimate for the integral over the section.
   have hpt (s : ℝ) : ‖∫ t, W.indicator
       (fun z ↦ ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜) (s, t)‖ₑ ≤ M * K * c * (a s * g s) := by

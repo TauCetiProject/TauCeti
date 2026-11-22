@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Integral.Kernel.Pairing
 import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
@@ -265,18 +266,12 @@ theorem enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le {u : ℝ → H} (h
     {C : ℝ≥0} {a : ℝ≥0∞}
     (h : ‖∫ z, ⟪u z.1, u z.2⟫_𝕜 ∂(volume.prod volume)‖ₑ ≤ C * a * a) :
     ‖∫ t, u t‖ₑ ≤ NNReal.sqrt C * a := by
-  have hφ : Integrable (fun z : ℝ × ℝ ↦ ⟪u z.1, u z.2⟫_𝕜) (volume.prod volume) :=
-    hu.op_fst_snd (op := fun u v ↦ ⟪u, v⟫_𝕜) continuous_inner
-      ⟨1, fun u v ↦ by simpa using norm_inner_le_norm u v⟩ hu
   have hsq : ‖∫ t, u t‖ₑ ^ (2 : ℝ) ≤ C * a * a := by
     calc ‖∫ t, u t‖ₑ ^ (2 : ℝ) = ‖⟪∫ s, u s, ∫ t, u t⟫_𝕜‖ₑ := by
           rw [inner_self_eq_norm_sq_to_K, eNorm_pow, ← ENNReal.rpow_natCast]
           simp
       _ = ‖∫ z, ⟪u z.1, u z.2⟫_𝕜 ∂(volume.prod volume)‖ₑ := by
-          rw [integral_prod _ hφ]
-          simp_rw [integral_inner hu]
-          rw [← inner_conj_symm, ← integral_inner hu, ← integral_conj]
-          simp_rw [inner_conj_symm]
+          rw [inner_integral_integral_eq_integral_prod hu hu]
       _ ≤ C * a * a := h
   have hrhs : ((NNReal.sqrt C : ℝ≥0∞) * a) ^ (2 : ℝ) = C * a * a := by
     rw [ENNReal.mul_rpow_of_nonneg _ _ zero_le_two, ENNReal.rpow_two, ENNReal.rpow_two,

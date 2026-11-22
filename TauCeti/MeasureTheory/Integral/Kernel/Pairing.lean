@@ -17,13 +17,52 @@ with values in an inner product space. If `k (x - y)` is bounded wherever `g x �
 integral of `k (x - y) ⟪g x, f y⟫` over the product (`TauCeti.integral_inner_integral_smul`).
 No integrability of `k` itself is needed, so this applies to singular kernels paired against
 functions with separated supports.
+
+Without a kernel, the pairing `⟪u x, v y⟫` of two integrable functions is integrable on the
+product (`MeasureTheory.Integrable.inner_fst_snd`), and Fubini's theorem writes the pairing of their
+integrals as its integral, `⟪∫ u, ∫ v⟫ = ∫∫ ⟪u x, v y⟫`
+(`TauCeti.inner_integral_integral_eq_integral_prod`).
 -/
 
 public section
 
+open scoped InnerProductSpace
+
+namespace MeasureTheory
+
+variable {α β 𝕜 V : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSpace β} {μ : Measure α}
+  {ν : Measure β} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+
+/-- The pairing `⟪u x, v y⟫` of two integrable functions is integrable on the product. -/
+theorem Integrable.inner_fst_snd {u : α → V} {v : β → V} (hu : Integrable u μ)
+    (hv : Integrable v ν) : Integrable (fun z : α × β ↦ ⟪u z.1, v z.2⟫_𝕜) (μ.prod ν) :=
+  hu.op_fst_snd (op := fun x y ↦ ⟪x, y⟫_𝕜) continuous_inner
+    ⟨1, fun x y ↦ by simpa using norm_inner_le_norm x y⟩ hv
+
+end MeasureTheory
+
 namespace TauCeti
 
 open MeasureTheory
+
+section Inner
+
+variable {α β 𝕜 V : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSpace β} {μ : Measure α}
+  {ν : Measure β} [SFinite μ] [SFinite ν] [RCLike 𝕜] [NormedAddCommGroup V]
+  [InnerProductSpace 𝕜 V] [NormedSpace ℝ V] [CompleteSpace V]
+
+/-- **Fubini's theorem for a pairing of integrals**: the pairing of the integrals of two
+integrable functions is the integral of their pairings over the product,
+`⟪∫ u, ∫ v⟫ = ∫∫ ⟪u x, v y⟫`. -/
+theorem inner_integral_integral_eq_integral_prod {u : α → V} {v : β → V} (hu : Integrable u μ)
+    (hv : Integrable v ν) :
+    ⟪∫ x, u x ∂μ, ∫ y, v y ∂ν⟫_𝕜 = ∫ z, ⟪u z.1, v z.2⟫_𝕜 ∂(μ.prod ν) := by
+  rw [integral_prod _ (hu.inner_fst_snd hv)]
+  simp_rw [integral_inner hv]
+  rw [← inner_conj_symm, ← integral_inner hu, ← integral_conj]
+  simp_rw [inner_conj_symm]
+
+end Inner
 
 variable {G 𝕜 F : Type*} [MeasurableSpace G] [AddGroup G] [MeasurableSub₂ G]
   {μ ν : Measure G} [SFinite μ] [SFinite ν] [RCLike 𝕜] [NormedAddCommGroup F]

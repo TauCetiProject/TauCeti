@@ -10,6 +10,8 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Integral.ChristKiselev
+import TauCeti.MeasureTheory.Integral.Kernel.Pairing
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Retarded Strichartz estimates from dual estimates
@@ -45,8 +47,6 @@ The mixed norm of a function `F : ℝ → L²(X, μ)` is written
 
 ## Main declarations
 
-* `TauCeti.integral_setIntegral_Iio_eq_setIntegral`: the retarded iterated integral as an integral
-  over the region `s < t`.
 * `TauCeti.enorm_setIntegral_adjoint_le`: a dual estimate restricted to a set of times.
 * `TauCeti.enorm_integral_setIntegral_Iio_inner_adjoint_le`: the retarded estimate from the two
   dual estimates.
@@ -88,21 +88,6 @@ theorem one_lt_inv_add_inv_of_holderConjugate {p q p₁ q₁ : ℝ≥0} (hpq : p
     linarith
   simp only [← ENNReal.coe_inv hpq.ne_zero, ← ENNReal.coe_inv hpq₁.ne_zero]
   exact_mod_cast hlt
-
-omit [CompleteSpace H] [NormedSpace ℝ H] in
-/-- The iterated integral `∫ ∫_{s < t} f(s, t) ds dt` of a function integrable on the plane is its
-integral over the region `{(s, t) | s < t}`. -/
-theorem integral_setIntegral_Iio_eq_setIntegral {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] {f : ℝ × ℝ → V} (hf : Integrable f) :
-    ∫ t, ∫ s in Set.Iio t, f (s, t) = ∫ z in {z : ℝ × ℝ | z.1 < z.2}, f z := by
-  have hmeas : MeasurableSet {z : ℝ × ℝ | z.1 < z.2} :=
-    measurableSet_lt measurable_fst measurable_snd
-  rw [Measure.volume_eq_prod] at hf ⊢
-  rw [← integral_indicator hmeas, integral_prod_symm _ (hf.indicator hmeas)]
-  refine integral_congr_ae (.of_forall fun t ↦ ?_)
-  dsimp only
-  rw [← integral_indicator measurableSet_Iio]
-  exact integral_congr_ae (.of_forall fun s ↦ by simp [Set.indicator_apply])
 
 /-- A dual estimate applies to the restriction of `F` to a set of times `I`, and bounds
 `∫_I U(s)* F(s) ds` by the mixed norm of `1_I F`. -/
@@ -158,22 +143,16 @@ theorem enorm_integral_setIntegral_Iio_inner_adjoint_le {p₁ p a₁ a : ℝ≥0
   -- The pairing is integrable on the plane, so the integral over `s < t` is the integral over
   -- the region `{(s, t) | s < t}`.
   have hβ : Integrable (fun z : ℝ × ℝ ↦ ⟪u z.1, w z.2⟫_𝕜) (volume.prod volume) :=
-    (hUF.norm.mul_prod hUG.norm).mono' (hUF.1.comp_fst.inner hUG.1.comp_snd)
-      (.of_forall fun _ ↦ norm_inner_le_norm _ _)
-  rw [integral_setIntegral_Iio_eq_setIntegral (f := fun z ↦ ⟪u z.1, w z.2⟫_𝕜)
-    (by rw [Measure.volume_eq_prod]; exact hβ)]
+    hUF.inner_fst_snd hUG
+  rw [integral_setIntegral_Iio_eq_setIntegral hβ.integrableOn, ← Measure.volume_eq_prod]
   -- On every rectangle of times the pairing factors as `⟪∫_I u, ∫_J w⟫`, and the dual estimates
   -- bound the two factors; the Christ–Kiselev lemma passes the bound to `s < t`.
   refine (eNorm_setIntegral_fst_lt_snd_le hp hpp
     (by rw [Measure.volume_eq_prod]; exact hβ.integrableOn) _ _ (A := C₁ * C)
     fun I J hI hJ _ ↦ ?_).trans_eq (by ring)
   have hfac : ∫ z in I ×ˢ J, ⟪u z.1, w z.2⟫_𝕜 = ⟪∫ s in I, u s, ∫ t in J, w t⟫_𝕜 := by
-    rw [Measure.volume_eq_prod, setIntegral_prod _ hβ.integrableOn]
-    calc ∫ s in I, ∫ t in J, ⟪u s, w t⟫_𝕜 = ∫ s in I, ⟪u s, ∫ t in J, w t⟫_𝕜 :=
-          integral_congr_ae (.of_forall fun s ↦ integral_inner hUG.integrableOn _)
-      _ = ⟪∫ s in I, u s, ∫ t in J, w t⟫_𝕜 := by
-          rw [← inner_conj_symm, ← integral_inner hUF.integrableOn, ← integral_conj]
-          simp_rw [inner_conj_symm]
+    rw [inner_integral_integral_eq_integral_prod hUF.integrableOn hUG.integrableOn,
+      Measure.prod_restrict, Measure.volume_eq_prod]
   rw [hfac]
   calc _ ≤ ‖∫ s in I, u s‖ₑ * ‖∫ t in J, w t‖ₑ := eNorm_inner_le_eNorm _ _
     _ ≤ C₁ * eLpNorm (I.indicator fun s ↦ eLpNorm (F s) a₁ μ) p₁ *

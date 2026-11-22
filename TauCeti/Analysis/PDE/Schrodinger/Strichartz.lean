@@ -350,7 +350,7 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
     inv_one_sub_two_rpow_neg_ne_top (ENNReal.coe_ne_zero.2 hpq₁.ne_zero) hp hpp
   refine ⟨K.toNNReal * C₁ * C, fun F G hF hG hSF hSG ↦ ?_⟩
   rw [ENNReal.coe_mul, ENNReal.coe_mul, ENNReal.coe_toNNReal hK]
-  simp_rw [schrodingerPropagator_def, inner_phasePropagator_sub_apply, ← schrodingerPropagator_def]
+  simp_rw [inner_schrodingerPropagator_sub_apply, ← adjoint_schrodingerPropagator]
   simp_rw [← adjoint_schrodingerPropagator] at hC₁ hC hSF hSG
   exact enorm_integral_setIntegral_Iio_inner_adjoint_le hp hpp hC₁ hC hF hG hSF hSG
 

@@ -7,11 +7,12 @@ module
 
 public import TauCeti.Analysis.PDE.Strichartz.TimeShell
 public import TauCeti.MeasureTheory.Function.Lp.DyadicLayer
-public import TauCeti.Analysis.PDE.Strichartz.Retarded
 import TauCeti.Analysis.SpecificLimits.DyadicSum
 import TauCeti.MeasureTheory.Function.Lorentz
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Integral.Kernel.Pairing
+import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
@@ -369,22 +370,15 @@ private theorem enorm_setIntegral_timeShell_inter_dyadicLayer_le_energy' {p b : 
         ((U z.2)†) (Lp.dyadicLayer l (G z.2))⟫_𝕜 ∂(volume.prod volume)‖ₑ ≤
       2 ^ (p.toReal⁻¹ + 2⁻¹ + b.toReal⁻¹) * M * K *
         2 ^ (p.toReal⁻¹ * j + b.toReal⁻¹ * k + l / 2) * (levelNorm μ F k * levelNorm μ G l) := by
-  refine (enorm_setIntegral_inner_adjoint_le_of_subset_timeShell' hp2
-    ((measurableSet_timeShell _).inter hR) inter_subset_left hM hK (hF.dyadicLayer k)
-    (hG.dyadicLayer l) (hUF k) (hUG l)).trans ?_
-  have he : (2 : ℝ≥0∞) ^ (((1 : ℝ) + j) * p.toReal⁻¹) * 2 ^ (((k : ℝ) + 1) * b.toReal⁻¹) *
-      2 ^ (((l : ℝ) + 1) * 2⁻¹) =
-        2 ^ (p.toReal⁻¹ + 2⁻¹ + b.toReal⁻¹) * 2 ^ (p.toReal⁻¹ * j + b.toReal⁻¹ * k + l / 2) := by
-    simp only [two_rpow_mul_two_rpow]; congr 1; ring
-  calc _ ≤ M * K * ENNReal.ofReal (2 * (2 : ℝ) ^ j) ^ p.toReal⁻¹ *
-        (2 ^ (((k : ℝ) + 1) * b.toReal⁻¹) * levelNorm μ F k) *
-        (2 ^ (((l : ℝ) + 1) * (2 : ℝ≥0∞).toReal⁻¹) * levelNorm μ G l) := by
-        gcongr
-        exacts [eLpNorm_eLpNorm_dyadicLayer_le hF _ _, eLpNorm_eLpNorm_dyadicLayer_le hG _ _]
-    _ = M * K * (levelNorm μ F k * levelNorm μ G l) * (2 ^ (((1 : ℝ) + j) * p.toReal⁻¹) *
-        2 ^ (((k : ℝ) + 1) * b.toReal⁻¹) * 2 ^ (((l : ℝ) + 1) * 2⁻¹)) := by
-        rw [ofReal_two_mul_two_zpow, ← ENNReal.rpow_mul, ENNReal.toReal_ofNat]; ring
-    _ = _ := by rw [he]; ring
+  -- Exchanging the two atoms conjugates the pairing and reflects the region; the shell is
+  -- invariant under the reflection.
+  rw [setIntegral_inner_eq_conj _ (fun s ↦ ((U s)†) (Lp.dyadicLayer k (F s)))
+    fun t ↦ ((U t)†) (Lp.dyadicLayer l (G t)), RCLike.eNorm_conj, preimage_inter,
+    show Prod.swap ⁻¹' timeShell ((2 : ℝ) ^ j) = timeShell ((2 : ℝ) ^ j) from
+      ext fun _ ↦ swap_mem_timeShell]
+  refine (enorm_setIntegral_timeShell_inter_dyadicLayer_le_energy hp2 hM hK
+    (hR.preimage measurable_swap) hG hF hUG hUF j l k).trans_eq ?_
+  rw [add_right_comm _ ((l : ℝ) / 2), mul_comm (levelNorm μ G l)]
 
 /-- **The pairing of two atoms on part of a dyadic time shell.** On the part of a region `R` in
 the shell `2ʲ ≤ |s - t| < 2ʲ⁺¹`, the pairing of the dyadic layers `Fₖ` and `Gₗ` is at most
@@ -496,21 +490,6 @@ private theorem integrable_adjoint {U : ℝ → H →L[𝕜] Lp E 2 μ} {M : ℝ
   (hF.norm.const_mul M).mono' (hUm _ hF.aestronglyMeasurable)
     (ae_of_all _ fun t ↦ norm_adjoint_le hM t _)
 
-omit [CompleteSpace E] [NormedSpace ℝ H] in
-/-- The dyadic layers of an integrable family are integrable. -/
-private theorem integrable_dyadicLayer {F : ℝ → Lp E 2 μ} (hF : Integrable F) (k : ℤ) :
-    Integrable fun t ↦ Lp.dyadicLayer k (F t) :=
-  hF.norm.mono' (hF.aestronglyMeasurable.dyadicLayer k) (ae_of_all _ fun t ↦
-    Lp.norm_le_norm_of_ae_le ((Lp.enorm_dyadicLayer_le_enorm two_ne_zero k (F t)).mono
-      fun _ hx ↦ eNorm_le_iff_norm_le.1 hx))
-
-/-- A sum over the truncation `-N ≤ k < N` is at most the sum over all of `ℤ`. -/
-private theorem sum_range_sub_le_tsum (f : ℤ → ℝ≥0∞) (N : ℕ) :
-    ∑ i ∈ Finset.range (2 * N), f ((i : ℤ) - N) ≤ ∑' k, f k := by
-  rw [← Finset.sum_image (g := fun i : ℕ ↦ (i : ℤ) - N) (f := f)
-    fun i _ i' _ h ↦ by simpa using h]
-  exact sum_le_tsum _
-
 omit [NormedSpace ℝ H] in
 /-- The pairing of two families over a region `R` of times is at most the sum, over all pairs of
 dyadic layers, of the absolute values of the pairings of the layers over `R`. -/
@@ -528,10 +507,8 @@ private theorem enorm_setIntegral_inner_adjoint_le_tsum_tsum {U : ℝ → H →L
     ∑ i ∈ Finset.range (2 * N), Lp.dyadicLayer ((i : ℤ) - N) (G t)
   have hint (k l : ℤ) : Integrable (fun z : ℝ × ℝ ↦ ⟪((U z.1)†) (Lp.dyadicLayer k (F z.1)),
       ((U z.2)†) (Lp.dyadicLayer l (G z.2))⟫_𝕜) (volume.prod volume) :=
-    (integrable_adjoint hM hUm (integrable_dyadicLayer hF k)).op_fst_snd
-      (op := fun u v ↦ ⟪u, v⟫_𝕜) continuous_inner
-      ⟨1, fun u v ↦ by simpa using norm_inner_le_norm u v⟩
-      (integrable_adjoint hM hUm (integrable_dyadicLayer hG l))
+    (integrable_adjoint hM hUm (hF.dyadicLayer k)).inner_fst_snd
+      (integrable_adjoint hM hUm (hG.dyadicLayer l))
   -- The pairing of the truncations expands into the pairings of the layers.
   have hsum (N : ℕ) :
       ∫ z in R, ⟪((U z.1)†) (FN N z.1), ((U z.2)†) (GN N z.2)⟫_𝕜 ∂(volume.prod volume) =
@@ -647,8 +624,8 @@ theorem exists_enorm_setIntegral_inner_adjoint_le_of_endpoint {σ : ℝ} (hσ : 
     finiteness
   refine ⟨B.toNNReal, fun U hM hD hK hUm R hR F G hF hG ↦ ?_⟩
   rw [ENNReal.coe_toNNReal hB]
-  have hUF (k : ℤ) := integrable_adjoint hM hUm (integrable_dyadicLayer hF k)
-  have hUG (l : ℤ) := integrable_adjoint hM hUm (integrable_dyadicLayer hG l)
+  have hUF (k : ℤ) := integrable_adjoint hM hUm (hF.dyadicLayer k)
+  have hUG (l : ℤ) := integrable_adjoint hM hUm (hG.dyadicLayer l)
   set y : ℤ → ℝ≥0∞ := fun k ↦ 2 ^ ((k : ℝ) * r'.toReal⁻¹) * levelNorm μ F k
   set z : ℤ → ℝ≥0∞ := fun l ↦ 2 ^ ((l : ℝ) * r'.toReal⁻¹) * levelNorm μ G l
   set w : ℤ → ℝ≥0∞ := fun m ↦ 2 ^ (-(δ / 2 * |(m : ℝ)|))
@@ -659,8 +636,7 @@ theorem exists_enorm_setIntegral_inner_adjoint_le_of_endpoint {σ : ℝ} (hσ : 
     _ ≤ ∑' k : ℤ, ∑' l : ℤ, c * (2 ^ (δ / 2) * S) * (w (k - l) * (y k * z l)) :=
         tsum_le_tsum fun k ↦ tsum_le_tsum fun l ↦
           (enorm_setIntegral_le_tsum_timeShell_inter hR
-            ((hUF k).op_fst_snd (op := fun u v ↦ ⟪u, v⟫_𝕜) continuous_inner
-              ⟨1, fun u v ↦ by simpa using norm_inner_le_norm u v⟩ (hUG l)).integrableOn).trans
+            ((hUF k).inner_fst_snd (hUG l)).integrableOn).trans
             ((tsum_enorm_setIntegral_timeShell_inter_dyadicLayer_le hσ hp2 hδ hexp hM hD hK hR
               hF.aestronglyMeasurable hG.aestronglyMeasurable hUF hUG k l).trans_eq
                 (by simp only [w, y, z]; push_cast; ring))
@@ -742,11 +718,8 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_adjoint_le_of_endpoint {σ :
   refine ⟨C, fun U hM hD hK hUm F G hF hG ↦ ?_⟩
   have hφ : Integrable (fun z : ℝ × ℝ ↦ ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜)
       (volume.prod volume) :=
-    (integrable_adjoint hM hUm hF).op_fst_snd (op := fun u v ↦ ⟪u, v⟫_𝕜) continuous_inner
-      ⟨1, fun u v ↦ by simpa using norm_inner_le_norm u v⟩ (integrable_adjoint hM hUm hG)
-  rw [integral_setIntegral_Iio_eq_setIntegral
-    (f := fun z ↦ ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜)
-    (by rw [Measure.volume_eq_prod]; exact hφ), Measure.volume_eq_prod]
+    (integrable_adjoint hM hUm hF).inner_fst_snd (integrable_adjoint hM hUm hG)
+  rw [integral_setIntegral_Iio_eq_setIntegral hφ.integrableOn]
   exact hC U hM hD hK hUm _ (measurableSet_lt measurable_fst measurable_snd) F G hF hG
 
 /-- **The endpoint dual Strichartz estimate from an `L^{4/3}_t` estimate.** The case of
