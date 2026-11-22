@@ -15,7 +15,7 @@ public import TauCeti.Geometry.Manifold.Morse.Boundary.ReversedSign
 Let `f` be a Morse function on a compact boundaryless manifold `M`, oriented by `oM`, and `X` a
 Morse–Smale pseudo-gradient adapted to `f`. Then `-X` is a Morse–Smale pseudo-gradient adapted to
 `-f`, with the same critical points and the trajectories of `X` run backwards. Over `ℤ` the Morse
-complex of `-f` is the dual of that of `f` up to signs, once orientation data for `-f` are chosen
+boundary of `-f` is the dual of that of `f` up to signs, once orientation data for `-f` are chosen
 compatibly with those of `f`. This file makes that choice and computes the signs.
 
 At a critical point `x`, a Morse chart splits the coordinates into those of negative weight, the
@@ -37,9 +37,12 @@ chains of `-f` with the cochains of `f` through the basis of critical points, th
 is the dual map of the boundary of `f` precomposed with the sign change `p ↦ (-1) ^ ind_f p • p`
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.toDual_comp_signedMorseBoundary_dual`). Since a
 critical point of index `k` for `-f` has index `n - k` for `f`, this matches the integral chains
-of `-f` in degree `k` with the integral cochains of `f` in degree `n - k`: it is the chain-level
-form of Poincaré duality for integral Morse homology on an oriented manifold, whose mod-two form
-is `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.toDual_comp_morseBoundary_neg`.
+of `-f` in degree `k` with the integral cochains of `f` in degree `n - k`. This is the integral
+form, on an oriented manifold, of the comparison of boundary maps that underlies the Morse-theoretic
+proof of Poincaré duality; its mod-two form is
+`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.toDual_comp_morseBoundary_neg`. The results here are
+identities of boundary maps only: the integral relation `∂ ∘ ∂ = 0`, needed to speak of an integral
+Morse complex and its homology, is not proved here.
 
 ## Main definitions
 

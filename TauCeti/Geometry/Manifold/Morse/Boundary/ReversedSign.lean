@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Sign
 public import TauCeti.Geometry.Manifold.Morse.Stable.Orientation
 public import TauCeti.LinearAlgebra.Orientation.Exact.Pair
+import TauCeti.LinearAlgebra.Ray
 
 /-!
 # Signs of trajectories of the reversed pseudo-gradient
@@ -316,22 +317,14 @@ theorem neg_trajectorySign_of_unstableFrameOrientation (hMS : hX.IsMorseSmale)
         unstableFrameOrientation hφp hf hp op op' hy.1 then (1 : ℤ) else -1) = (-1) ^ k := by
     rw [← (Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans hP))).injective.eq_iff,
       Orientation.reindex_finCongr_reindex_finCongr, hPy, hSy]
-    rcases Nat.even_or_odd k with hk | hk
-    · simp [hk.neg_one_pow]
-    · simp [hk.neg_one_pow, Module.Ray.neg_units_smul, (Module.Ray.ne_neg_self _).symm]
+    exact Module.Ray.ite_neg_one_pow_smul_eq_self _ k
   have hq' : manifoldMorseIndex 𝓘(ℝ, E) (-f) q = manifoldMorseIndex 𝓘(ℝ, E) (-f) p + 1 :=
     hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq
   rw [neg_trajectorySign hφp hφq hMS hf hp hq hpq hy op op' oq oq', hε]
   congr 1
   -- The exponents add up to `ind_f q` modulo two, since `ind_{-f} q = ind_{-f} p + 1`.
-  have hexp : manifoldMorseIndex 𝓘(ℝ, E) f q * manifoldMorseIndex 𝓘(ℝ, E) (-f) p + k =
-      2 * (manifoldMorseIndex 𝓘(ℝ, E) f q * manifoldMorseIndex 𝓘(ℝ, E) (-f) p) +
-        manifoldMorseIndex 𝓘(ℝ, E) f q := by
-    simp only [k, hq']
-    ring
-  rw [neg_mul, ← pow_add, hexp, pow_add, pow_mul, neg_one_sq, one_pow, one_mul,
-    show manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 from hpq, pow_succ,
-    mul_neg_one]
+  rcases neg_one_pow_eq_or ℤ (manifoldMorseIndex 𝓘(ℝ, E) f q * manifoldMorseIndex 𝓘(ℝ, E) (-f) p)
+    with h | h <;> simp [k, hq', hpq, mul_add, pow_add, h]
 
 /-- **Signed counts for the reversed pseudo-gradient, with one convention at every critical
 point.** With the orientations of `neg_trajectorySign_of_unstableFrameOrientation`, the signed

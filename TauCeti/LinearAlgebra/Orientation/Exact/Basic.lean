@@ -438,24 +438,16 @@ theorem ofExact_comm {f' : C →ₗ[R] B} {g' : B →ₗ[R] A} (hf' : Function.I
     ofExact hf' hfg' hg' p o hn hm =
       (-1 : Rˣ) ^ (m * n) •
         Orientation.reindex R B (finCongr (add_comm m n)) (ofExact hf hfg hg o p hm hn) := by
-  -- The two sequences are read in the same splitting `G (x, z) = f x + f' z` of `B`.
-  have hG : Function.Bijective (f.coprod f') := by
-    refine ⟨fun u v huv ↦ ?_, fun b ↦ ⟨(g' (b - f' (g b)), g b), ?_⟩⟩
-    · simp only [LinearMap.coprod_apply] at huv
-      have h₁ := congrArg g' huv
-      simp only [map_add, hgf, hfg'.apply_apply_eq_zero, add_zero] at h₁
-      have h₂ := congrArg g huv
-      simp only [map_add, hgf', hfg.apply_apply_eq_zero, zero_add] at h₂
-      exact Prod.ext h₁ h₂
-    · obtain ⟨x, hx⟩ := (hfg (b - f' (g b))).1 (by rw [map_sub, hgf', sub_self])
-      simp only [LinearMap.coprod_apply, ← hx, hgf]
-      rw [hx, sub_add_cancel]
-  set G := LinearEquiv.ofBijective (f.coprod f') hG
-  have h₁ := ofExact_eq_map_prod hf hfg hg (LinearEquiv.refl R A) G (fun x ↦ by simp [G])
-    (fun z ↦ by simp [G, hgf', hfg.apply_apply_eq_zero]) o p hm hn
+  -- The two sequences are read in the same splitting `G (x, z) = f x + f' z` of `B`, given by
+  -- `Function.Exact.splitSurjectiveEquiv` with the section `f'` of `g`. Mathlib states no lemma
+  -- for its value, so `hG` unfolds the definition.
+  set G := (hfg.splitSurjectiveEquiv hf ⟨f', LinearMap.ext hgf'⟩).val.symm
+  have hG (x : A) (z : C) : G (x, z) = f x + f' z := rfl
+  have h₁ := ofExact_eq_map_prod hf hfg hg (LinearEquiv.refl R A) G (fun x ↦ by simp [hG])
+    (fun z ↦ by simp [hG, hgf', hfg.apply_apply_eq_zero]) o p hm hn
   have h₂ := ofExact_eq_map_prod hf' hfg' hg' (LinearEquiv.refl R C)
-    ((LinearEquiv.prodComm R C A).trans G) (fun z ↦ by simp [G])
-    (fun z ↦ by simp [G, hgf, hfg'.apply_apply_eq_zero]) p o hn hm
+    ((LinearEquiv.prodComm R C A).trans G) (fun z ↦ by simp [hG])
+    (fun z ↦ by simp [hG, hgf, hfg'.apply_apply_eq_zero]) p o hn hm
   rw [map_refl, Equiv.refl_apply] at h₁ h₂
   rw [h₂, h₁, map_trans, map_prodComm_prod, map_units_smul, ← map_reindex, mul_comm]
 
