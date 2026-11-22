@@ -12,7 +12,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 import Mathlib.Data.Pi.Interval
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import TauCeti.Analysis.PSeries
+import TauCeti.Analysis.PSeries.Shifted
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Topology.Algebra.InfiniteSum.PiProd
 

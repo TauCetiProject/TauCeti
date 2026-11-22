@@ -8,11 +8,10 @@ module
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
-public import Mathlib.Analysis.PSeries
 
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Analysis.Normed.Operator.Banach
-import TauCeti.Analysis.PSeries
+import TauCeti.Analysis.PSeries.Shifted
 
 /-!
 # Fourier-coefficient Sobolev spaces on the circle

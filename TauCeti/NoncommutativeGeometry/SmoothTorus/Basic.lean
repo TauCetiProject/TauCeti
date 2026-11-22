@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PSeries
+public import TauCeti.Analysis.PSeries.Shifted
 public import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Analysis.Complex.Circle

@@ -143,9 +143,7 @@ theorem summable_pi_int_iff_summable_span {d : Type*} [Finite d] {α : Type*} [A
   -- The lattice vector with coordinates `n` is the real vector `fun i ↦ (n i : ℝ)`.
   have hcoe (n : d → ℤ) :
       (((Pi.basisFun ℝ d).restrictScalars ℤ).equivFun.symm n : d → ℝ) = fun i ↦ (n i : ℝ) := by
-    rw [Module.Basis.coe_restrictScalars_equivFun_symm, Pi.basisFun_equivFun,
-      LinearEquiv.refl_symm, LinearEquiv.refl_apply]
-    simp only [eq_intCast]
+    simp [Module.Basis.coe_restrictScalars_equivFun_symm]
   rw [← ((Pi.basisFun ℝ d).restrictScalars ℤ).equivFun.symm.toEquiv.summable_iff]
   simp only [Function.comp_def, LinearEquiv.coe_toEquiv, hcoe]
 
