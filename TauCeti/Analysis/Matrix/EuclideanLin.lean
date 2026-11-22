@@ -144,7 +144,10 @@ theorem inner_toEuclideanLin_piLpExtendByZero (A : Matrix κ κ 𝕜) (f : ι �
     LinearIsometry.sum_mul_piLpExtendByZero]
   rw [funext (LinearIsometry.piLpExtendByZero_apply_ofLp 2 𝕜 𝕜 f x),
     mulVec_extend_zero f.injective]
-  rfl
+  have h := submatrix_mulVec_equiv (A.submatrix id f) x.ofLp f (Equiv.refl ι)
+  simp only [submatrix_submatrix, Function.id_comp, Equiv.coe_refl, Function.comp_id,
+    Equiv.refl_symm] at h
+  simp only [h, Function.comp_apply]
 
 /-- The quadratic form `x ↦ ⟪x, diag(w) x⟫` of the diagonal operator `diag(w)` on Euclidean space
 is `x ↦ ∑ᵢ |xᵢ|² wᵢ`. -/
