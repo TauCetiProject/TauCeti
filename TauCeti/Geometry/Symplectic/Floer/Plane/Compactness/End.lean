@@ -336,6 +336,15 @@ variable [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [FiniteDimensional 
   {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
   {J' : ℝ × ℝ → V → AlmostComplexStructure V}
 
+omit [FiniteDimensional ℝ E] [IsManifold I ⊤ M] in
+/-- A translated end `v(z) = u(φ(z + (R, 0)))` of the positive plane in a manifold is `Cⁿ` when `u`
+is. -/
+private theorem contMDiff_comp_realChart_positive_add {n : WithTop ℕ∞} {u : ℝ × ℝ → M} (R : ℝ)
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n u) :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ) I n (fun z ↦ u (realChart positive.cylindricalEndLift (z + (R, 0)))) :=
+  hu.comp ((contDiff_realChart positive.contDiff_cylindricalEndLift).comp
+    (contDiff_id.add contDiff_const)).contMDiff
+
 /-- **A translated end of the positive plane in a manifold.** Let `u` be a `C³` solution on the
 plane of the Floer equation for the perturbation of the positive plane given by `H`, with energy at
 most `E`, for structures `J` with `J(φ(s, t), x) = J_∞(t, x)` for `s ≥ T₀`. If the translate by
@@ -375,9 +384,7 @@ private theorem contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_
   set e := realChart positive.cylindricalEndLift
   set v : ℝ × ℝ → M := fun z ↦ u (e (z + (R, 0)))
   have hHs₁ : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H) := hHs.of_le (by norm_num)
-  have hvC : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 3 v :=
-    hu.comp ((contDiff_realChart positive.contDiff_cylindricalEndLift).comp
-      (contDiff_id.add contDiff_const)).contMDiff
+  have hvC : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 3 v := contMDiff_comp_realChart_positive_add R hu
   -- Beyond `T₀` the structure is `J_∞(t)` and beyond `2` the datum is `H(t) dt`, so `v` solves the
   -- cylindrical equation.
   have hvfl (z : ℝ × ℝ) (hz : z ∈ Ω) : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
@@ -595,9 +602,7 @@ theorem
     contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add hω
       (p.periodic_endSign_mul hH) hHs' hJ (fun z hz ↦ hJt z (hΩD hz)) hΩ (hΩT k)
       ((hu k).of_le (WithTop.coe_le_coe.2 le_top)) (hfl k) hE0 (hE k) (huC k)
-  exact hconv hΩ hΩD (fun k ↦ ((hu k).comp ((contDiff_realChart
-      positive.contDiff_cylindricalEndLift).comp
-        (contDiff_id.add contDiff_const)).contMDiff).contMDiffOn)
+  exact hconv hΩ hΩD (fun k ↦ (contMDiff_comp_realChart_positive_add (R k) (hu k)).contMDiffOn)
     (fun k ↦ (h k).2.1) huC (fun k ↦ (h k).2.2.1) fun k ↦ (h k).2.2.2
 
 end SmoothTwoForm.IsNondegenerate

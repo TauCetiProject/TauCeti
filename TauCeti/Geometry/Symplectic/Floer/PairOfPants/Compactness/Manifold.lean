@@ -159,6 +159,17 @@ private theorem exists_isOpen_and_contDiffOn_positiveEndHamiltonian_comp_symm
   rintro ⟨z, _⟩ ⟨-, x, hx, rfl⟩
   exact ⟨hCW ⟨mem_univ _, x, hx, rfl⟩, mem_univ _, φ.toPartialEquiv.map_source (hCφ hx)⟩
 
+/-- A translated end `v(z) = u(φ'_q(z + (R, 0)))`, on a window `Ω` whose translate lies in a band
+`(max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end, is `Cⁿ` on `Ω` when `u` is `Cⁿ` on `S`. -/
+private theorem contMDiffOn_comp_positiveEndChart_add {n : WithTop ℕ∞} {q : Puncture}
+    {Ω : Set (ℝ × ℝ)} {u : ℝ × ℝ → M} {R T₀ t₀ : ℝ}
+    (hΩT : ∀ z ∈ Ω, z + (R, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1))
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n u thricePuncturedSphereReal) :
+    ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n (fun z ↦ u (positiveEndChart q (z + (R, 0)))) Ω :=
+  hu.comp ((contDiff_positiveEndChart q n).comp
+    (contDiff_id.add contDiff_const)).contMDiff.contMDiffOn fun z hz ↦
+      positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt (hΩT z hz).1)
+
 end Floer
 
 namespace SmoothTwoForm.IsNondegenerate
@@ -360,8 +371,7 @@ private theorem contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positive
     simpa using ((le_max_left _ _).trans_lt (hΩT z hz).1).le
   have hS (z : ℝ × ℝ) (hz : z ∈ Ω) : positiveEndChart q (z + (R, 0)) ∈ thricePuncturedSphereReal :=
     positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt (hΩT z hz).1)
-  have hvC : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 v Ω := hu.comp
-    ((contDiff_positiveEndChart q 3).comp (contDiff_id.add contDiff_const)).contMDiff.contMDiffOn hS
+  have hvC : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 v Ω := contMDiffOn_comp_positiveEndChart_add hΩT hu
   -- Beyond `T₀` the structure on the end `q` is `J_q(±t)`, so `v` solves the cylindrical equation.
   have hvfl (z : ℝ × ℝ) (hz : z ∈ Ω) : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (Jq (q.endSign * z.2) (v z)) (ω.perturbedMFDeriv (fun _ _ ↦ 0)
@@ -551,11 +561,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset_com
   have hΩT (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) :
       z + (R k, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1) :=
     add_mk_zero_mem_Ioi_prod (hDT (hΩD hz)) (hR k)
-  have hvC (k : ℕ) :
-      ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) (fun z ↦ u k (positiveEndChart q (z + (R k, 0)))) Ω :=
-    (hu k).comp ((contDiff_positiveEndChart q _).comp
-      (contDiff_id.add contDiff_const)).contMDiff.contMDiffOn fun z hz ↦
-        positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt (hΩT k z hz).1)
+  have hvC (k : ℕ) := contMDiffOn_comp_positiveEndChart_add (q := q) (hΩT k) (hu k)
   have h (k : ℕ) :=
     contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positiveEndChart_add hω hKH hH hHq
       hJ hJt hΩ (hΩT k) ((hu k).of_le (WithTop.coe_le_coe.2 le_top)) (hfl k) hE0 (hE k) (huC k)
