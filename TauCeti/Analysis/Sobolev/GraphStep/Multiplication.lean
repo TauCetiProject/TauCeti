@@ -27,12 +27,21 @@ its norm by `√2 C₀ + C₁`, for bounds `C₀` on `|ψ|` and `C₁` on `‖D�
 operators are localized and spliced together, with the derivative of the cutoff measuring the
 error.
 
+The same multiplication acts on the graph over an operator `T : G →L[ℝ] F`, the space of
+`u ∈ Lᵖ(Ω, G)` such that `T ∘ u` has a weak derivative in `Lᵖ`
+(`TauCeti.WeakDerivStep.smulLeftCompLpLCLM`): since `T ∘ (ψ u) = ψ (T ∘ u)`, the weak derivative of
+`T ∘ (ψ u)` is `ψ D(T ∘ u) + Dψ ⊗ (T ∘ u)`. This is the domain `Lᵖ(Ω, D) ∩ W^{1,p}(Ω, H)` of a
+first-order operator `∂ₛ + A(s)` whose coefficients are bounded only from a smaller space `D`.
+
 ## Main declarations
 
 * `TauCeti.WeakDerivStep.smulLeftCLM`: multiplication by `ψ` on `W^{1,p}(Ω, F)`.
 * `TauCeti.WeakDerivStep.prev_smulLeftCLM_ae`, `TauCeti.WeakDerivStep.weakFDeriv_smulLeftCLM_ae`:
   its field is `ψ u` and its weak derivative is `ψ Du + Dψ ⊗ u`.
 * `TauCeti.WeakDerivStep.norm_smulLeftCLM_apply_le`: the bound `‖ψ u‖ ≤ (√2 C₀ + C₁) ‖u‖`.
+* `TauCeti.WeakDerivStep.smulLeftCompLpLCLM`: multiplication by `ψ` on the graph over
+  `T.compLpL`, with `TauCeti.WeakDerivStep.prev_smulLeftCompLpLCLM_ae` and
+  `TauCeti.WeakDerivStep.weakFDeriv_smulLeftCompLpLCLM_ae`.
 
 ## References
 
@@ -231,5 +240,71 @@ theorem norm_smulLeftCLM_apply_le (hψ : ContDiffOn ℝ ∞ ψ Omega)
         · exact norm_prev_add_norm_weakFDeriv_le _ u
         · exact norm_prev_le _ u
     _ = (√2 * C₀ + C₁) * ‖u‖ := by ring
+
+/-! ### Multiplication over an operator base -/
+
+section CompLpL
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+
+/-- **Multiplication by a smooth function on `Lᵖ(Ω, G) ∩ W^{1,p}(Ω, F)`.** For an operator
+`T : G →L[ℝ] F` and `ψ` smooth on `Ω` with `ψ` and `Dψ` bounded on `Ω`, the map `u ↦ ψ u` on the
+weak-derivative graph over `T.compLpL`, whose elements are the `u ∈ Lᵖ(Ω, G)` such that `T ∘ u`
+has a weak derivative in `Lᵖ(Ω, E →L F)`. Since `T ∘ (ψ u) = ψ (T ∘ u)`, its weak derivative is
+`ψ D(T ∘ u) + Dψ ⊗ (T ∘ u)` (`TauCeti.WeakDerivStep.weakFDeriv_smulLeftCompLpLCLM_ae`). For
+`T = id` this is the multiplication `TauCeti.WeakDerivStep.smulLeftCLM` on `W^{1,p}(Ω, F)`. -/
+def smulLeftCompLpLCLM (T : G →L[ℝ] F) (ψ : E → ℝ) (hψ : ContDiffOn ℝ ∞ ψ Omega)
+    (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C) (h₁ : ∃ C, ∀ x ∈ Omega, ‖fderiv ℝ ψ x‖ ≤ C) :
+    WeakDerivStep mu Omega p (T.compLpL p (mu.restrict Omega)) →L[ℝ]
+      WeakDerivStep mu Omega p (T.compLpL p (mu.restrict Omega)) :=
+  ContinuousLinearMap.codRestrict
+    ((WithLp.prodContinuousLinearEquiv 2 ℝ _ _).symm.toContinuousLinearMap.comp
+      (((Lp.multiplicationOperator (E := G) (p := p) (linftyClass hψ h₀)).comp (prevL _)).prod
+        ((Lp.multiplicationOperator (E := E →L[ℝ] F) (p := p) (linftyClass hψ h₀)).comp
+            (weakFDerivL _) +
+          (smulRightLp hψ h₁).comp ((T.compLpL p (mu.restrict Omega)).comp (prevL _)))))
+    _ fun u ↦ (mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn _ _).mpr <| by
+      have h := (hasWeakFDerivOn_base_prev _ u).contDiffOn_smul hψ
+      refine (h.congr_ae ?_).congr_ae_deriv ?_
+      · -- The field of `T ∘ (ψ u)` is `ψ (T ∘ u)`.
+        have hT : ⇑(T.compLpL p _ (Lp.multiplicationOperator (linftyClass hψ h₀) (prev _ u)))
+            =ᵐ[mu.restrict Omega] fun x ↦ ψ x • T.compLpL p _ (prev _ u) x := by
+          filter_upwards [T.coeFn_compLpL (prev _ u),
+            T.coeFn_compLpL (Lp.multiplicationOperator (linftyClass hψ h₀) (prev _ u)),
+            multiplicationOperator_linftyClass_ae G hψ h₀ (prev _ u)] with x hx hx' hψx
+          rw [hx', hψx, hx, map_smul]
+        simpa using hT.symm
+      · simpa using (multiplicationOperator_add_smulRightLp_ae hψ h₀ h₁ (weakFDeriv _ u)
+          (T.compLpL p _ (prev _ u))).symm
+
+/-- The field of `ψ u` over `T.compLpL` is represented almost everywhere by `x ↦ ψ x • u x`. -/
+theorem prev_smulLeftCompLpLCLM_ae (T : G →L[ℝ] F) (hψ : ContDiffOn ℝ ∞ ψ Omega)
+    (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C) (h₁ : ∃ C, ∀ x ∈ Omega, ‖fderiv ℝ ψ x‖ ≤ C)
+    (u : WeakDerivStep mu Omega p (T.compLpL p (mu.restrict Omega))) :
+    ⇑(prev _ (smulLeftCompLpLCLM T ψ hψ h₀ h₁ u)) =ᵐ[mu.restrict Omega]
+      fun x ↦ ψ x • prev _ u x := by
+  have : prev _ (smulLeftCompLpLCLM T ψ hψ h₀ h₁ u) =
+      Lp.multiplicationOperator (linftyClass hψ h₀) (prev _ u) := by
+    simp [prev_coe, smulLeftCompLpLCLM]
+  rw [this]
+  exact multiplicationOperator_linftyClass_ae G hψ h₀ (prev _ u)
+
+/-- **The Leibniz rule over `T.compLpL`.** The weak derivative of `T ∘ (ψ u)` is represented
+almost everywhere by `x ↦ ψ x • D(T ∘ u) x + Dψ x ⊗ T (u x)`. -/
+theorem weakFDeriv_smulLeftCompLpLCLM_ae (T : G →L[ℝ] F) (hψ : ContDiffOn ℝ ∞ ψ Omega)
+    (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C) (h₁ : ∃ C, ∀ x ∈ Omega, ‖fderiv ℝ ψ x‖ ≤ C)
+    (u : WeakDerivStep mu Omega p (T.compLpL p (mu.restrict Omega))) :
+    ⇑(weakFDeriv _ (smulLeftCompLpLCLM T ψ hψ h₀ h₁ u)) =ᵐ[mu.restrict Omega]
+      fun x ↦ ψ x • weakFDeriv _ u x + (fderiv ℝ ψ x).smulRight (T (prev _ u x)) := by
+  have : weakFDeriv _ (smulLeftCompLpLCLM T ψ hψ h₀ h₁ u) =
+      Lp.multiplicationOperator (linftyClass hψ h₀) (weakFDeriv _ u) +
+        smulRightLp hψ h₁ (T.compLpL p _ (prev _ u)) := by
+    simp [weakFDeriv_coe, smulLeftCompLpLCLM]
+  rw [this]
+  filter_upwards [multiplicationOperator_add_smulRightLp_ae hψ h₀ h₁ (weakFDeriv _ u)
+    (T.compLpL p _ (prev _ u)), T.coeFn_compLpL (prev _ u)] with x hx hT
+  rw [hx, hT]
+
+end CompLpL
 
 end TauCeti.WeakDerivStep
