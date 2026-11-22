@@ -105,14 +105,27 @@ theorem fiberMap_monodromy (hp : _root_.IsCoveringMap p)
   rw [hp.map_liftPathQuotient a e]
   exact (Path.Homotopic.Quotient.cast_heq _ _).trans (Path.Homotopic.Quotient.cast_heq _ _).symm
 
+/-- Monodromy along the image of a path class under a continuous map `g` carries the value of a
+continuous lift `s` of `g` at the start of the path to its value at the end. -/
+theorem monodromy_map_lift (hp : _root_.IsCoveringMap p) {Y : TopCat} (g : C(Y, X)) {s : Y → E}
+    (hs : Continuous s) (hps : ∀ y, p (s y) = g y) {y y' : FundamentalGroupoid Y} (γ : y ⟶ y') :
+    hp.monodromy ((FundamentalGroupoid.map g).map γ) ⟨s y.as, hps y.as⟩ =
+      ⟨s y'.as, hps y'.as⟩ := by
+  induction γ using Path.Homotopic.Quotient.ind with | mk γ => ?_
+  refine Subtype.ext ((hp.monodromy_eq_apply_one (Γ := ⟨s ∘ γ, hs.comp γ.continuous⟩)
+    (funext fun t ↦ ?_) ?_).trans ?_)
+  · exact hps (γ t)
+  · simp
+  · simp
+
 /-- Monodromy along a path carries the value of a continuous section of the covering at the start
 of the path to its value at the end: the section lifts the path. -/
 theorem monodromy_section (hp : _root_.IsCoveringMap p) {s : X → E}
     (hs : Continuous s) (hps : ∀ x, s x ∈ p ⁻¹' {x}) {x y : X} (a : Path.Homotopic.Quotient x y) :
     hp.monodromy a ⟨s x, hps x⟩ = ⟨s y, hps y⟩ := by
-  obtain ⟨γ⟩ := a
-  refine Subtype.ext ((hp.monodromy_eq_apply_one (Γ := ⟨s ∘ γ, hs.comp γ.continuous⟩)
-    (funext fun t ↦ hps (γ t)) ?_).trans ?_) <;> simp
+  induction a using Path.Homotopic.Quotient.ind with | mk γ => ?_
+  exact hp.monodromy_map_lift (Y := TopCat.of X) (ContinuousMap.id X) hs hps
+    (y := ⟨x⟩) (y' := ⟨y⟩) ⟦γ⟧
 
 /-- A map of covers that preserves the numberings of two fibres identifies their numbered
 monodromy representations. -/
