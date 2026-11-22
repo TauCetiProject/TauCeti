@@ -18,7 +18,8 @@ The scheme of generic points of a scheme is the disjoint union of the spectra of
 fields at its component-generic points. Its structural map to the original scheme is a
 monomorphism. Maximal domination is equivalent to admitting a unique commuting map between
 the schemes of generic points. For a source with finitely many irreducible components, maximal
-domination is also equivalent to density of the pullback of the target's scheme of generic points.
+domination is also equivalent to density of the pullback of the target's scheme of generic points;
+the implication from maximal domination to density holds without this finiteness assumption.
 
 This follows M. Temkin, *Tame distillation and desingularization by p-alterations* (2017),
 §4.1.1. The construction uses Mathlib's `genericPoints`, scheme coproducts, and canonical
@@ -38,16 +39,6 @@ namespace Scheme
 /-- The disjoint union of the spectra of the residue fields at the component-generic points. -/
 noncomputable abbrev genericPointScheme (X : Scheme.{u}) : Scheme.{u} :=
   ∐ fun x : genericPoints X ↦ Spec (X.residueField x)
-
-/-- The coproduct inclusions are compatible with transport between equal generic points. -/
-@[reassoc (attr := simp)]
-theorem residueFieldCongr_genericPointScheme_ι (X : Scheme.{u}) {x y : genericPoints X}
-    (h : (x : X) = y) :
-    Spec.map (X.residueFieldCongr h).hom ≫
-      Sigma.ι (fun x : genericPoints X ↦ Spec (X.residueField x)) x =
-      Sigma.ι (fun x : genericPoints X ↦ Spec (X.residueField x)) y := by
-  obtain rfl : x = y := Subtype.ext h
-  simp
 
 /-- The canonical morphism from the scheme of generic points to the original scheme. -/
 noncomputable def fromGenericPointScheme (X : Scheme.{u}) : X.genericPointScheme ⟶ X :=
@@ -83,12 +74,13 @@ instance (X : Scheme.{u}) : Mono X.fromGenericPointScheme := by
   have : SurjectiveOnStalks X.fromGenericPointScheme :=
     IsZariskiLocalAtSource.sigmaDesc (P := @SurjectiveOnStalks) fun _ ↦ inferInstance
   apply SurjectiveOnStalks.mono_of_injective
-  intro a b hab
-  obtain ⟨⟨x, a⟩, rfl⟩ := (sigmaMk _).surjective a
-  obtain ⟨⟨y, b⟩, rfl⟩ := (sigmaMk _).surjective b
-  simp only [sigmaMk_mk, fromGenericPointScheme_ι_apply] at hab ⊢
-  obtain rfl : x = y := Subtype.ext hab
-  exact congrArg _ (Subsingleton.elim a b)
+  apply Function.Injective.of_comp_right (g := sigmaMk _) _ (sigmaMk _).surjective
+  have hcomp : ⇑X.fromGenericPointScheme ∘ sigmaMk _ =
+      Subtype.val ∘ (Sigma.fst : (Σ x : genericPoints X, Spec (X.residueField x)) → _) := by
+    funext ⟨x, t⟩
+    simp
+  rw [hcomp]
+  exact Subtype.val_injective.comp Sigma.fst_injective
 
 /-- The scheme of generic points has dense image in the original scheme. -/
 instance (X : Scheme.{u}) : IsDominant X.fromGenericPointScheme := by
@@ -147,14 +139,11 @@ theorem isMaximallyDominating_iff_existsUnique_genericPointSchemeMap (f : X ⟶ 
     intro g hg
     apply (cancel_mono Y.fromGenericPointScheme).mp
     exact hg.trans hf.genericPointSchemeMap_fromGenericPointScheme.symm
-  · rintro ⟨g, hg, _⟩ x hx
-    have hx' : x ∈ range X.fromGenericPointScheme := by
-      rwa [Scheme.range_fromGenericPointScheme]
-    obtain ⟨t, ht⟩ := hx'
-    have hgt : Y.fromGenericPointScheme (g t) = f x := by
-      rw [← Hom.comp_apply, hg, Hom.comp_apply, ht]
-    rw [← Scheme.range_fromGenericPointScheme]
-    exact ⟨g t, hgt⟩
+  · rintro ⟨g, hg, _⟩
+    rw [IsMaximallyDominating, ← Scheme.range_fromGenericPointScheme,
+      ← Scheme.range_fromGenericPointScheme, Set.mapsTo_range_iff]
+    intro t
+    exact ⟨g t, by rw [← Hom.comp_apply, hg, Hom.comp_apply]⟩
 
 /-- A composite of maximally dominating morphisms is maximally dominating. -/
 theorem IsMaximallyDominating.comp {f : X ⟶ Y} {g : Y ⟶ Z}
@@ -163,7 +152,6 @@ theorem IsMaximallyDominating.comp {f : X ⟶ Y} {g : Y ⟶ Z}
   MapsTo.comp (f := ⇑f) (g := ⇑g) hg hf
 
 /-- The identity morphism preserves all component-generic points. -/
-@[simp]
 theorem isMaximallyDominating_id (X : Scheme.{u}) : IsMaximallyDominating (𝟙 X) :=
   mapsTo_id _
 
@@ -190,6 +178,7 @@ theorem IsMaximallyDominating.genericPointSchemeMap_comp {f : X ⟶ Y} {g : Y �
   exact (congrArg Spec.map (residueFieldMap_comp f g x)).trans (Spec.map_comp _ _)
 
 /-- Every open immersion is maximally dominating, including an empty open immersion. -/
+@[simp]
 theorem isMaximallyDominating_of_isOpenImmersion (f : X ⟶ Y) [IsOpenImmersion f] :
     IsMaximallyDominating f :=
   fun x hx ↦ (f.isOpenEmbedding.mem_genericPoints_iff x).mpr hx
@@ -205,6 +194,12 @@ over component-generic points. -/
 theorem range_genericPointScheme_pullback_fst (f : X ⟶ Y) :
     range (pullback.fst f Y.fromGenericPointScheme) = f ⁻¹' genericPoints Y := by
   rw [Scheme.Pullback.range_fst, Scheme.range_fromGenericPointScheme]
+
+/-- Maximal domination makes the projection from the generic fibre dominant. -/
+theorem IsMaximallyDominating.isDominant_genericPointScheme_pullback {f : X ⟶ Y}
+    (hf : f.IsMaximallyDominating) : IsDominant (pullback.fst f Y.fromGenericPointScheme) := by
+  rw [isDominant_iff, DenseRange, range_genericPointScheme_pullback_fst]
+  exact (dense_iff_closure_eq.mpr genericPoints.closure).mono hf
 
 /-- If the source has finitely many irreducible components, maximal domination is equivalent
 to the projection from the generic fibre having dense image. -/
