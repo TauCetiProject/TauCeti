@@ -304,16 +304,4 @@ theorem subst_formalW_subst_formalInverse {σ : Type*} {q : MvPowerSeries σ R}
     subst_formalInverse_formalW, ← PowerSeries.coe_substAlgHom hq]
   simp only [map_neg, map_mul]
 
-/-- The formal inverse at a parameter, read through a further substitution `g` that kills that
-parameter: the result vanishes, since the inverse has no constant term. -/
-theorem subst_subst_formalInverse_eq_zero {σ' : Type*}
-    {g : σ' → MvPowerSeries Unit R} (hg : MvPowerSeries.HasSubst g) {a : MvPowerSeries σ' R}
-    (ha : MvPowerSeries.constantCoeff a = 0) (hga : MvPowerSeries.subst g a = 0) :
-    MvPowerSeries.subst g (MvPowerSeries.subst (fun _ : Unit ↦ a) (formalInverse W)) = 0 := by
-  rw [MvPowerSeries.subst_comp_subst_apply
-      (MvPowerSeries.hasSubst_of_constantCoeff_zero fun _ ↦ ha) hg,
-    show (fun _ : Unit ↦ MvPowerSeries.subst g a) = (0 : Unit → MvPowerSeries Unit R) from
-      funext fun _ ↦ hga]
-  exact MvPowerSeries.subst_zero_of_constantCoeff_zero (constantCoeff_formalInverse W)
-
 end WeierstrassCurve

@@ -226,6 +226,12 @@ noncomputable def nsmulHom [F.IsComm] (n : ℕ) : TauCeti.FormalGroupHom F F whe
 theorem nsmulHom_toPowerSeries [F.IsComm] (n : ℕ) :
     (F.nsmulHom n).toPowerSeries = F.nsmulSeries n := (rfl)
 
+/-- Bundled multiplication by `0` is the zero endomorphism. -/
+@[simp]
+theorem nsmulHom_zero [F.IsComm] : F.nsmulHom 0 = 0 := by
+  ext : 1
+  simp
+
 /-- Multiplication by `n` on the additive formal group law `X + Y` is `[n](T) = n T`. -/
 @[simp]
 theorem nsmulSeries_𝔾ₐ (n : ℕ) :

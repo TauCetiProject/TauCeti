@@ -64,6 +64,8 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   another to `0` separates them.
 * `MvPowerSeries.subst_powerSeriesSubst` : substituting into the composite of a one-variable
   series with a multivariate one is substituting into the inner series.
+* `MvPowerSeries.subst_subst_eq_zero` : a second substitution that kills every entry of the first
+  substitution family kills any series with vanishing constant term.
 * `MvPowerSeries.constantCoeff_subst_of_constantCoeff_zero` : substituting a family of series
   without constant term preserves the constant coefficient.
 * `MvPowerSeries.hasSubst_finTwo` : two substitutable series form a substitution family `![x, y]`
@@ -313,6 +315,19 @@ theorem subst_powerSeriesSubst {O : Type*} [CommRing O] {σ' τ' : Type*}
     (hg : PowerSeries.HasSubst g) (f : PowerSeries O) :
     subst b (PowerSeries.subst g f) = PowerSeries.subst (subst b g) f := by
   rw [PowerSeries.subst_def, PowerSeries.subst_def, subst_comp_subst_apply hg.const hb]
+
+/-- Substituting `b` into `subst a f` gives `0` when `f` has vanishing constant coefficient and
+`b` kills every entry of `a`. -/
+theorem subst_subst_eq_zero {O O' O'' : Type*} [CommRing O] [CommRing O'] [CommRing O'']
+    [Algebra O O'] [Algebra O O''] [Algebra O' O''] [IsScalarTower O O' O'']
+    {σ' τ' υ' : Type*} {a : σ' → MvPowerSeries τ' O'} (ha : HasSubst a)
+    {b : τ' → MvPowerSeries υ' O''} (hb : HasSubst b) (hba : ∀ s, subst b (a s) = 0)
+    {f : MvPowerSeries σ' O} (hf : constantCoeff f = 0) :
+    subst b (subst a f) = 0 := by
+  rw [subst_comp_subst_apply ha hb]
+  have h0 : (fun s ↦ subst b (a s)) = 0 := funext hba
+  rw [h0]
+  exact subst_zero_of_constantCoeff_zero hf
 
 /-- Substituting a family of series without constant term preserves the constant coefficient.
 

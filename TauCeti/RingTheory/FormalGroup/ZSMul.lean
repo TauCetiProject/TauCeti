@@ -163,6 +163,12 @@ noncomputable def zsmulHom [F.IsComm] (n : ℤ) : TauCeti.FormalGroupHom F F whe
 theorem zsmulHom_toPowerSeries [F.IsComm] (n : ℤ) :
     (F.zsmulHom n).toPowerSeries = F.zsmulSeries n := (rfl)
 
+/-- Bundled multiplication by `0` is the zero endomorphism. -/
+@[simp]
+theorem zsmulHom_zero [F.IsComm] : F.zsmulHom 0 = 0 := by
+  ext : 1
+  simp
+
 /-- Bundled integer multiplication extends `nsmulHom` on natural numbers. -/
 @[simp]
 theorem zsmulHom_natCast [F.IsComm] (n : ℕ) : F.zsmulHom n = F.nsmulHom n := by

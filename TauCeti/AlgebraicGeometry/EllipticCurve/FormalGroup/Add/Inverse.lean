@@ -250,11 +250,9 @@ theorem subst_invPair_formalThirdRoot :
       fun i ↦ MvPowerSeries.map W.specialize
         (pairSubstitution (PowerSeries.X : PowerSeries (MvPolynomial Coeff ℤ))
           (formalInverse Universal.curve) i) := by
-    have hmap : MvPowerSeries.map W.specialize
-        (PowerSeries.X : PowerSeries (MvPolynomial Coeff ℤ)) = PowerSeries.X :=
-      PowerSeries.map_X W.specialize
-    rw [MvPowerSeries.comp_pairSubstitution, hmap]
-    rfl
+    have hmap (f : PowerSeries (MvPolynomial Coeff ℤ)) :
+        MvPowerSeries.map W.specialize f = PowerSeries.map W.specialize f := rfl
+    simp only [pairSubstitution, MvPowerSeries.comp_pairSubstitution, hmap, PowerSeries.map_X]
   rw [hfam, ← MvPowerSeries.map_subst (hasSubst_invPair Universal.curve),
     subst_invPair_formalThirdRoot_of_isDomain Universal.curve two_ne_zero, map_zero]
 
@@ -266,13 +264,8 @@ of `formalAdd`; with `rename_swap_formalAdd` it is a two-sided one. -/
 theorem subst_invPair_formalAdd :
     subst (pairSubstitution (PowerSeries.X : PowerSeries O) (formalInverse W))
       (formalAdd W) = 0 := by
-  rw [formalAdd_def, subst_comp_subst_apply (hasSubst_formalThirdRoot W) (hasSubst_invPair W)]
-  -- The outer substitution is at the constant family `0`, by the third-root vanishing above.
-  have hT : (fun _ : Unit ↦ subst (pairSubstitution (PowerSeries.X : PowerSeries O)
-        (formalInverse W)) (formalThirdRoot W)) =
-      fun _ : Unit ↦ (0 : MvPowerSeries Unit O) :=
-    funext fun _ ↦ subst_invPair_formalThirdRoot W
-  rw [hT]
+  rw [formalAdd_def, subst_comp_subst_apply (hasSubst_formalThirdRoot W) (hasSubst_invPair W),
+    ← PowerSeries.subst_def, subst_invPair_formalThirdRoot]
   exact PowerSeries.subst_zero_of_constantCoeff_zero (constantCoeff_formalInverse W)
 
 end WeierstrassCurve

@@ -126,22 +126,6 @@ private theorem subst_subst_pair_formalAdd_eq_X {σ' : Type*}
       funext fun s ↦ by rcases s with _ | _; exacts [hga, hgb]]
   exact subst_unitR_formalAdd W
 
-/-- The addition series at a pair, read through a further substitution `g` that kills both
-parameters: the result vanishes, since the series has no constant term. -/
-private theorem subst_subst_pair_formalAdd_eq_zero {σ' : Type*}
-    {g : σ' → MvPowerSeries Unit O} (hg : HasSubst g) {a b : MvPowerSeries σ' O}
-    (ha : constantCoeff a = 0) (hb : constantCoeff b = 0)
-    (hga : subst g a = 0) (hgb : subst g b = 0) :
-    subst g (subst (pairSubstitution a b)
-      (formalAdd W)) = 0 := by
-  -- As above, the reshape is `funext` rather than defeq: `g` kills both components pointwise,
-  -- and the zero family is what `subst_zero_of_constantCoeff_zero` is stated against.
-  rw [subst_comp_subst_apply (hasSubst_pair ha hb) hg,
-    show (fun s : Unit ⊕ Unit ↦ subst g (Sum.elim (fun _ ↦ a) (fun _ ↦ b) s)) =
-      (0 : Unit ⊕ Unit → MvPowerSeries Unit O) from
-      funext fun s ↦ by rcases s with _ | _; exacts [hga, hgb]]
-  exact subst_zero_of_constantCoeff_zero (constantCoeff_formalAdd W)
-
 /-- The addition series at a pair of parameters is nonzero, as soon as some substitution
 separates the two: it sends the sum to `X` and the zero series to `0`. -/
 theorem subst_pair_formalAdd_ne_zero [Nontrivial O] {σ' : Type*}
@@ -214,8 +198,6 @@ private theorem thetaPoint_add_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     rw [fracCurve_a₂, fracCurve_a₄, fracCurve_a₆] at h
     simpa [map_zero] using h
   have hTp0 : Tp ≠ 0 := subst_pair_formalThirdRoot_ne_zero W h₁ h₂ hN
-  have hw₁0 : ρ w₁ ≠ 0 := W.algebraMap_subst_formalW_ne_zero h₁ hq₁0
-  have hw₂0 : ρ w₂ ≠ 0 := W.algebraMap_subst_formalW_ne_zero h₂ hq₂0
   have hTc : constantCoeff Tp = 0 := constantCoeff_subst_pair_formalThirdRoot W h₁ h₂
   have hwT0 : ρ wT ≠ 0 := W.algebraMap_subst_formalW_ne_zero hTc hTp0
   have hxρ : ρ q₁ * ρ w₂ - ρ q₂ * ρ w₁ ≠ 0 := by
@@ -226,14 +208,12 @@ private theorem thetaPoint_add_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     (PowerSeries.HasSubst.of_constantCoeff_zero h₁)
   have hwq₂ := W.algebraMap_subst_formalW_wEquation (T := KK)
     (PowerSeries.HasSubst.of_constantCoeff_zero h₂)
-  rw [← fracCurve_def W σ KK] at hwq₁ hwq₂
+  rw [← fracCurve_def W σ KK, wEquationRHS_def] at hwq₁ hwq₂
   -- the honest group law of `fracCurve W`, applied to the two points
-  have hns₁ := nonsingular_of_wEquation (fracCurve W σ KK) hwq₁ hw₁0 hΔ
-  have hns₂ := nonsingular_of_wEquation (fracCurve W σ KK) hwq₂ hw₂0 hΔ
-  rw [wEquationRHS_def] at hwq₁ hwq₂
   obtain ⟨h₃, hadd⟩ := chord_point_add (fracCurve W σ KK) hwq₁ hwq₂ hslope hNint hT₃ hwTeq hA
-    hwT0 hxρ hns₁ hns₂
-  rw [W.thetaPoint_eq_some hΔ h₁ hq₁0 hns₁, W.thetaPoint_eq_some hΔ h₂ hq₂0 hns₂]
+    hwT0 hxρ (W.thetaPoint_nonsingular hΔ h₁ hq₁0) (W.thetaPoint_nonsingular hΔ h₂ hq₂0)
+  rw [W.thetaPoint_eq_some hΔ h₁ hq₁0 (W.thetaPoint_nonsingular hΔ h₁ hq₁0),
+    W.thetaPoint_eq_some hΔ h₂ hq₂0 (W.thetaPoint_nonsingular hΔ h₂ hq₂0)]
   exact ⟨h₃, hadd⟩
 
 /-- The point with affine coordinates `(T / w(T), (1 - a₁ T - a₃ w(T)) / w(T))`, for `T` the third
@@ -401,7 +381,10 @@ theorem thetaPoint_add_of_subst_separates (hΔ : (fracCurve W σ KK).Δ ≠ 0)
   have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
   have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
   exact W.thetaPoint_add_of_ne hΔ h₁ h₂ hq₁0 hq₂0 (ne_of_subst_eq_X_of_subst_eq_zero hg₁ hg₂)
-    (ne_of_subst_eq_X_of_subst_eq_zero hg₁ (subst_subst_formalInverse_eq_zero W hg h₂ hg₂)) hF hF0
+    (ne_of_subst_eq_X_of_subst_eq_zero hg₁ <| by
+      rw [PowerSeries.subst_def]
+      exact subst_subst_eq_zero (hasSubst_of_constantCoeff_zero fun _ ↦ h₂) hg
+        (fun _ ↦ hg₂) (constantCoeff_formalInverse W)) hF hF0
 
 /-! ### Associativity -/
 
@@ -428,7 +411,9 @@ private theorem subst_formalAdd_assoc_of_subst_separates (hΔ : (fracCurve W σ 
   have hF₁₂c : constantCoeff F₁₂ = 0 := constantCoeff_subst_pair_formalAdd W hc₁ hc₂
   have hF₂₃c : constantCoeff F₂₃ = 0 := constantCoeff_subst_pair_formalAdd W hc₂ hc₃
   have hgF₁₂ : subst g F₁₂ = PowerSeries.X := subst_subst_pair_formalAdd_eq_X W hg hc₁ hc₂ hg1 hg2
-  have hgF₂₃ : subst g F₂₃ = 0 := subst_subst_pair_formalAdd_eq_zero W hg hc₂ hc₃ hg2 hg3
+  have hgF₂₃ : subst g F₂₃ = 0 :=
+    subst_subst_eq_zero (hasSubst_pair hc₂ hc₃) hg
+      (fun s ↦ by rcases s with _ | _; exacts [hg2, hg3]) (constantCoeff_formalAdd W)
   -- each inner sum is nonzero, via the specialization separating its own two parameters
   have hF₁₂0 : F₁₂ ≠ 0 := subst_pair_formalAdd_ne_zero W hg hc₁ hc₂ hg1 hg2
   have hF₂₃0 : F₂₃ ≠ 0 := subst_pair_formalAdd_ne_zero W hg' hc₂ hc₃ hg'2 hg'3

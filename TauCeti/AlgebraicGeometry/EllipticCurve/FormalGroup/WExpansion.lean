@@ -664,8 +664,9 @@ theorem algebraMap_subst_formalW_ne_zero {σ KK : Type*} [CommRing KK] [IsDomain
     [Algebra (MvPowerSeries σ R) KK] [FaithfulSMul (MvPowerSeries σ R) KK]
     {q : MvPowerSeries σ R} (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0) :
     algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)) ≠ 0 := fun h ↦ by
-  have := IsDomain.of_faithfulSMul (MvPowerSeries σ R) KK
-  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := R)
+  have hdom : IsDomain R :=
+    letI := IsDomain.of_faithfulSMul (MvPowerSeries σ R) KK
+    MvPowerSeries.isDomain_of_isDomain σ
   exact W.subst_formalW_ne_zero hq hq0
     (FaithfulSMul.algebraMap_injective (MvPowerSeries σ R) KK (by rw [h, map_zero]))
 
