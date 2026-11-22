@@ -105,9 +105,7 @@ yields the additive `O(1)` product estimate.
   running over `Nat.primesLE ⌊x⌋₊`.
 * `TauCeti.LFunctions.tendsto_primeIdealZetaSum_univ_sub_log_one_div_sub_one`:
   `∑_𝔭 N𝔭 ^ (-s) = log (1 / (s - 1)) + B_K - γ + o(1)` as `s → 1⁺`.
-* `TauCeti.LFunctions.mertensConstant_eq`,
-  `TauCeti.LFunctions.summable_neg_log_one_sub_sub_inv_absNorm`,
-  `TauCeti.LFunctions.log_one_sub_inv_absNorm_add_inv_absNorm_neg`, and
+* `TauCeti.LFunctions.mertensConstant_eq` and
   `TauCeti.LFunctions.mertensConstant_lt_eulerMascheroniConstant_add_log_dedekindZeta_residue`:
   `B_K = γ + log κ_K + ∑_𝔭 (log (1 - N𝔭⁻¹) + N𝔭⁻¹) < γ + log κ_K`.
 * `TauCeti.LFunctions.isBigO_tsum_sub_primeSummatory_neg_log_one_sub_sub_inv_absNorm`,
@@ -790,22 +788,11 @@ theorem mertensConstant_eq :
 
 /-- The quadratic Euler-product remainder series `∑_𝔭 (-log (1 - N𝔭⁻¹) - N𝔭⁻¹)` is
 summable. -/
-theorem summable_neg_log_one_sub_sub_inv_absNorm :
+private theorem summable_neg_log_one_sub_sub_inv_absNorm :
     Summable fun v : HeightOneSpectrum (𝓞 K) ↦
       -Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) - (Ideal.absNorm v.asIdeal : ℝ)⁻¹ := by
   simpa only [Real.rpow_neg_one] using
     summable_neg_log_one_sub_sub_absNorm_rpow (K := K) (s := 1) (by norm_num)
-
-section
-variable {K}
-
-/-- Each prime-ideal term `log (1 - N𝔭⁻¹) + N𝔭⁻¹` in `mertensConstant_eq` is strictly negative. -/
-theorem log_one_sub_inv_absNorm_add_inv_absNorm_neg (v : HeightOneSpectrum (𝓞 K)) :
-    Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) + (Ideal.absNorm v.asIdeal : ℝ)⁻¹ < 0 := by
-  linarith
-    [Real.neg_log_one_sub_inv_sub_inv_pos (one_lt_two.trans_le (two_le_absNorm_asIdeal_real v))]
-
-end
 
 /-- **Mertens' constant of a number field is strictly smaller than `γ + log κ_K`**, because each
 prime-ideal remainder `-log (1 - N𝔭⁻¹) - N𝔭⁻¹` is strictly positive and `𝓞 K` has at least one
@@ -816,8 +803,10 @@ theorem mertensConstant_lt_eulerMascheroniConstant_add_log_dedekindZeta_residue 
   have hpos : 0 < ∑' v : HeightOneSpectrum (𝓞 K),
       (-Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) :=
     (summable_neg_log_one_sub_sub_inv_absNorm K).tsum_pos
-      (fun v ↦ by linarith [log_one_sub_inv_absNorm_add_inv_absNorm_neg v]) v₀
-      (by linarith [log_one_sub_inv_absNorm_add_inv_absNorm_neg v₀])
+      (fun v ↦ (Real.neg_log_one_sub_inv_sub_inv_pos
+        (one_lt_two.trans_le (two_le_absNorm_asIdeal_real v))).le) v₀
+      (Real.neg_log_one_sub_inv_sub_inv_pos
+        (one_lt_two.trans_le (two_le_absNorm_asIdeal_real v₀)))
   have hneg : ∑' v : HeightOneSpectrum (𝓞 K),
       (Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) + (Ideal.absNorm v.asIdeal : ℝ)⁻¹) =
       -∑' v : HeightOneSpectrum (𝓞 K),
@@ -912,19 +901,6 @@ theorem tendsto_primeSummatory_neg_log_one_sub_inv_absNorm_sub_log_log :
     (Real.eulerMascheroniConstant + Real.log (dedekindZeta_residue K))
   simpa using h
 
-/-- The finite Euler product up to `x` is the exponential of the summatory function of
-`-log (1 - N𝔭⁻¹)`. -/
-private theorem finprod_one_sub_inv_absNorm_eq_exp_primeSummatory (x : ℝ) :
-    (∏ᶠ 𝔭 : HeightOneSpectrum (𝓞 K),
-      if (Ideal.absNorm 𝔭.asIdeal : ℝ) ≤ x then (1 - (Ideal.absNorm 𝔭.asIdeal : ℝ)⁻¹)⁻¹
-      else 1) = Real.exp (primeSummatory K
-        (fun v ↦ -Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹)) x) := by
-  rw [finprod_ite_le_eq_prod_normLE, primeSummatory_apply, Real.exp_sum]
-  refine Finset.prod_congr rfl fun v _ ↦ ?_
-  have h1 : 0 < 1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹ := sub_pos.mpr
-    (inv_lt_one_of_one_lt₀ (one_lt_two.trans_le (two_le_absNorm_asIdeal_real v)))
-  rw [Real.exp_neg, Real.exp_log h1]
-
 /-- **Mertens' product for a number field with additive `O(1)` error.** Exponentiating the
 `O(1 / log x)` logarithmic estimate gives
 `∏_{N𝔭 ≤ x} (1 - N𝔭⁻¹)⁻¹ = e^γ κ_K log x + O(1)`. -/
@@ -965,8 +941,8 @@ theorem isBigO_prod_one_sub_inv_absNorm_sub_mul_log :
         Real.log (Real.log x)) := by
     simp only [E]
     ring
-  rw [finprod_one_sub_inv_absNorm_eq_exp_primeSummatory K x, hsplit, Real.exp_add, Real.exp_add,
-    Real.exp_add, Real.exp_log hκ, Real.exp_log hlog]
+  rw [finprod_one_sub_inv_absNorm_eq_exp_primeSummatory (K := K) x, hsplit, Real.exp_add,
+    Real.exp_add, Real.exp_add, Real.exp_log hκ, Real.exp_log hlog]
   ring
 
 /-- **Mertens' product for a number field** (Rosen; Lebacque, *Generalised Mertens and
@@ -991,7 +967,8 @@ theorem tendsto_prod_one_sub_inv_absNorm_div_log :
   filter_upwards [eventually_gt_atTop 1] with x hx
   have hlog : 0 < Real.log x := Real.log_pos hx
   have hκ := dedekindZeta_residue_pos K
-  rw [Function.comp_apply, finprod_one_sub_inv_absNorm_eq_exp_primeSummatory K x, Real.exp_sub,
-    Real.exp_sub, Real.exp_add, Real.exp_log hlog, Real.exp_log hκ, div_div, mul_comm (Real.log x)]
+  rw [Function.comp_apply, finprod_one_sub_inv_absNorm_eq_exp_primeSummatory (K := K) x,
+    Real.exp_sub, Real.exp_sub, Real.exp_add, Real.exp_log hlog, Real.exp_log hκ, div_div,
+    mul_comm (Real.log x)]
 
 end TauCeti.LFunctions

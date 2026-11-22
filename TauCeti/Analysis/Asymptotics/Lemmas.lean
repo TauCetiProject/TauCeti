@@ -304,10 +304,8 @@ theorem abs_sub_sub_le_of_monotoneOn_Icc {α G : Type*} [Preorder α] [AddCommGr
   have hfb : f x ≤ f b := hf hx hb hx.2
   have hga : g a ≤ g x := hg ha hx hx.1
   have hgb : g x ≤ g b := hg hx hb hx.2
-  rw [abs_le]
-  exact ⟨(neg_le_neg (le_max_left _ _)).trans ((neg_abs_le _).trans
-    (sub_le_sub_right (sub_le_sub hfa hgb) A)),
-    (sub_le_sub_right (sub_le_sub hfb hga) A).trans ((le_abs_self _).trans (le_max_right _ _))⟩
+  exact abs_le_max_abs_abs (sub_le_sub_right (sub_le_sub hfa hgb) A)
+    (sub_le_sub_right (sub_le_sub hfb hga) A)
 
 /-- For `0 ≤ ρ < 1`, the shifted polynomial-times-geometric sequence `(n + k)ᵏ ρⁿ` tends to `0`.
 This is useful for absorbing polynomial growth after shifting an index. -/

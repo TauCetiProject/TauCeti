@@ -605,7 +605,8 @@ theorem isBigO_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log :
         Real.exp Real.eulerMascheroniConstant * Real.log x)
       =O[atTop] fun _ ↦ (1 : ℝ) := by
   refine (LFunctions.isBigO_prod_one_sub_inv_absNorm_sub_mul_log ℚ).congr_left fun x ↦ ?_
-  rw [finprod_heightOneSpectrum_rat_ite_absNorm_le_eq_prod_primesLE (fun n ↦ (1 - (n : ℝ)⁻¹)⁻¹),
+  rw [finprod_ite_le_eq_prod_normLE,
+    prod_primesLE_rat_eq_prod_primesLE (fun n ↦ (1 - (n : ℝ)⁻¹)⁻¹),
     dedekindZeta_residue_rat, mul_one]
 
 /-- **Mertens's third theorem, asymptotic ratio form.** As `x → ∞`,
@@ -689,12 +690,9 @@ theorem exists_abs_prod_primesLE_one_sub_inv_sub_exp_neg_div_log_le :
   have heg_pos : 0 < Real.exp Real.eulerMascheroniConstant := Real.exp_pos _
   have hinv : (∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)) = P⁻¹ := by
     simp [P, prod_inv_distrib]
-  have hid : P⁻¹ - Real.exp (-Real.eulerMascheroniConstant) / Real.log x =
-      (Real.exp Real.eulerMascheroniConstant * Real.log x - P) /
-        (P * (Real.exp Real.eulerMascheroniConstant * Real.log x)) := by
-    rw [Real.exp_neg]
-    field_simp [hP_pos.ne', hlog.ne', heg_pos.ne']
-  rw [hinv, hid, abs_div, abs_of_pos (mul_pos hP_pos (mul_pos heg_pos hlog)), abs_sub_comm]
+  rw [hinv, Real.exp_neg, div_eq_mul_inv, ← mul_inv,
+    inv_sub_inv hP_pos.ne' (mul_pos heg_pos hlog).ne',
+    abs_div, abs_of_pos (mul_pos hP_pos (mul_pos heg_pos hlog)), abs_sub_comm]
   calc |P - Real.exp Real.eulerMascheroniConstant * Real.log x| /
         (P * (Real.exp Real.eulerMascheroniConstant * Real.log x))
       ≤ max C 0 / (c₁ * Real.log x * (Real.exp Real.eulerMascheroniConstant * Real.log x)) := by
@@ -840,22 +838,15 @@ theorem hasSum_vonMangoldt_nonprime_div_mul_log :
     have hrange : ∑ n ∈ range (N + 1), f n = ∑ n ∈ Icc 1 N, f n := by
       rw [range_eq_Ico, sum_eq_sum_Ico_succ_bot (Nat.succ_pos _)]
       simp [f, Ico_add_one_right_eq_Icc]
-    have hprime_sum : ∑ n ∈ Icc 1 N with n.Prime, Λ n / ((n : ℝ) * Real.log n) =
-        ∑ p ∈ Nat.primesLE N, (p : ℝ)⁻¹ := by
-      rw [← Nat.primesLE_eq_filter_Icc_one]
+    have hprime_sum :
+        (∑ n ∈ Icc 1 N, if n.Prime then Λ n / ((n : ℝ) * Real.log n) else 0) =
+          ∑ p ∈ Nat.primesLE N, (p : ℝ)⁻¹ := by
+      rw [← sum_filter, ← Nat.primesLE_eq_filter_Icc_one]
       refine sum_congr rfl fun p hp ↦ ?_
       simpa using vonMangoldt_div_mul_log_prime_pow (Nat.prime_of_mem_primesLE hp) 1
-    rw [hrange, sum_Icc_two_vonMangoldt_div_mul_log,
-      ← sum_filter_add_sum_filter_not (Icc 1 N) Nat.Prime f,
-      ← sum_filter_add_sum_filter_not (Icc 1 N) Nat.Prime
-        (fun n ↦ Λ n / ((n : ℝ) * Real.log n)), hprime_sum]
-    have h1 : ∑ n ∈ Icc 1 N with n.Prime, f n = 0 :=
-      sum_eq_zero fun n hn ↦ ite_eq_left (mem_filter.mp hn).2
-    have h2 : ∑ n ∈ Icc 1 N with ¬n.Prime, f n =
-        ∑ n ∈ Icc 1 N with ¬n.Prime, Λ n / ((n : ℝ) * Real.log n) :=
-      sum_congr rfl fun n hn ↦ ite_eq_right (mem_filter.mp hn).2
-    rw [h1, h2]
-    ring
+    rw [hrange, sum_Icc_two_vonMangoldt_div_mul_log, ← hprime_sum, ← sum_sub_distrib]
+    refine sum_congr rfl fun n _ ↦ ?_
+    by_cases hn : n.Prime <;> simp [f, hn]
   have hlim := (tendsto_sum_Icc_vonMangoldt_div_mul_log_sub_log_log.comp
     tendsto_natCast_atTop_atTop).sub
     (tendsto_sum_primesLE_inv_sub_log_log.comp tendsto_natCast_atTop_atTop)
