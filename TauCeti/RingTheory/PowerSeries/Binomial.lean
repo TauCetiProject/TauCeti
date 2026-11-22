@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.PowerSeries.Log
 
 import Mathlib.RingTheory.PowerSeries.Inverse
 import TauCeti.Algebra.MonoidAlgebra.Basic
+import TauCeti.RingTheory.Binomial
 import TauCeti.RingTheory.PowerSeries.Derivative
 import TauCeti.RingTheory.PowerSeries.Rescale
 import TauCeti.RingTheory.PowerSeries.SubstInv
@@ -52,6 +53,8 @@ together with modulo-`X ^ m` congruence lifting and a differential reversion ide
 * `PowerSeries.derivative_binomialSeries`, `PowerSeries.one_add_X_mul_derivative_binomialSeries`,
   `PowerSeries.subst_binomialSeries_sub_one`, and `PowerSeries.binomialSeries_algebraMap`:
   derivative, logarithmic ODE, composition law, and scalar-tower compatibility of `binomialSeries`.
+* `PowerSeries.one_sub_X_mul_derivative_mk_multichoose`: the differential equation
+  `(1 - X) P' = r P` of the series `P = ∑ₙ (r multichoose n) Xⁿ` of `(1 - X) ^ (-r)`.
 * `PowerSeries.binomialPow_add`, `PowerSeries.binomialPow_binomialPow`,
   `PowerSeries.binomialPow_mul`, `PowerSeries.derivative_binomialPow`,
   `PowerSeries.mul_derivative_binomialPow`: `R`-module laws and chain rules for `binomialPow`.
@@ -233,6 +236,26 @@ theorem subst_binomialSeries_sub_one (r s : R) :
 end CommRing
 
 end BinomialSeries
+
+/-! ## The multiset-coefficient series of `(1 - X) ^ (-r)` -/
+
+section Multichoose
+
+variable {R : Type*} [CommRing R] [BinomialRing R]
+
+/-- **Differential equation of the multiset-coefficient series**: the series
+`∑ₙ (r multichoose n) Xⁿ` of `(1 - X) ^ (-r)` satisfies `(1 - X) * d⁄dX P = r * P`. -/
+theorem one_sub_X_mul_derivative_mk_multichoose (r : R) :
+    (1 - X) * d⁄dX (mk (Ring.multichoose r)) = C r * mk (Ring.multichoose r) := by
+  ext m
+  rw [sub_mul, one_mul, map_sub, coeff_X_mul_derivative, coeff_derivative, coeff_C_mul]
+  simp only [coeff_mk]
+  have h := TauCeti.Ring.add_one_nsmul_multichoose_add_one r m
+  rw [nsmul_eq_mul] at h
+  push_cast at h ⊢
+  linear_combination h
+
+end Multichoose
 
 /-! ## Formal binomial powers of principal units -/
 

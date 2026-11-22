@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Binomial
 public import TauCeti.Analysis.SpecialFunctions.OrdinaryHypergeometric
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.Analysis.Analytic.Binomial
-import TauCeti.RingTheory.Binomial
+import TauCeti.RingTheory.PowerSeries.Binomial
 import TauCeti.RingTheory.PowerSeries.Derivative
 
 /-!
@@ -53,7 +53,8 @@ coefficient of `Xⁿ` by `n`. Both factors satisfy the hypergeometric equation
 product satisfies the fourth-order equation `L₀(θ) Y + X L₁(θ) Y + X² L₂(θ) Y = 0` with
 `L₀(θ) = θ (θ + 2c - 2) (2θ + 2c - 3) (2θ + 2c - 1)`; the proof is an explicit
 `linear_combination` of the two equations and their derivatives. The series of
-`(1 - X)^(a + b - c)` satisfies a first-order equation, so the generating function of the `Aₛ`
+`(1 - X)^(a + b - c)` satisfies a first-order equation
+(`PowerSeries.one_sub_X_mul_derivative_mk_multichoose`), so the generating function of the `Aₛ`
 satisfies a second-order equation, and multiplying its coefficients by `(c)ₛ / (c + 1/2)ₛ` turns
 the recurrence of that equation into the recurrence of the fourth-order one. The two coefficient
 sequences therefore obey the same three-term recurrence, whose leading coefficient `L₀(n)` does
@@ -372,21 +373,12 @@ theorem sum_antidiagonal_ordinaryHypergeometricCoefficient_mul_eq_mul_orrCoeffic
   have hc₂ : ∀ k : ℕ, (k : K) ≠ -(c + 1 / 2) := fun k hk ↦
     hc (2 * k + 2) (by push_cast; linear_combination 2 * hk)
   have hc₃ : ∀ k : ℕ, (k : K) ≠ -(2 * c - 1) := fun k hk ↦ hc k (by linear_combination hk)
-  -- the series `(1 - X)^(a + b - c)` satisfies `(1 - X) P' = (c - a - b) P`
-  have hP : (1 - X) * d⁄dX (mk (Ring.multichoose (c - a - b))) =
-      C (c - a - b) * mk (Ring.multichoose (c - a - b)) := by
-    ext m
-    rw [sub_mul, one_mul, map_sub, coeff_X_mul_derivative, coeff_derivative, coeff_C_mul]
-    simp only [coeff_mk]
-    have h := Ring.add_one_nsmul_multichoose_add_one (c - a - b) m
-    rw [nsmul_eq_mul] at h
-    push_cast at h ⊢
-    linear_combination h
   obtain ⟨hy₁, hy⟩ := coeff_mul_recurrence_of_gaussEquation
     (mk_ordinaryHypergeometricCoefficient_gaussEquation a b (c - 1 / 2) hc₁)
     (mk_ordinaryHypergeometricCoefficient_gaussEquation (c - a) (c - b) (c + 1 / 2) hc₂)
   obtain ⟨hA₁, hA⟩ := coeff_mul_recurrence_of_gaussEquation_of_one_sub
-    (mk_ordinaryHypergeometricCoefficient_gaussEquation (2 * a) (2 * b) (2 * c - 1) hc₃) hP
+    (mk_ordinaryHypergeometricCoefficient_gaussEquation (2 * a) (2 * b) (2 * c - 1) hc₃)
+    (one_sub_X_mul_derivative_mk_multichoose (c - a - b))
   simp only [← mk_orrCoefficient, coeff_mk] at hA₁ hA
   have h := eq_ascPochhammer_div_mul_of_recurrence hc (y := fun m ↦ coeff m
     (mk (ordinaryHypergeometricCoefficient a b (c - 1 / 2)) *
