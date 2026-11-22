@@ -15,6 +15,7 @@ import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 -- `IsPrimitiveRoot.sum_zpow_pow_eq`, the orthogonality of the characters of `ℤ ⧸ n`.
 import TauCeti.RingTheory.RootsOfUnity.Basic
 import TauCeti.RingTheory.MvPolynomial.Initial.Weight
+import TauCeti.Algebra.MvPolynomial.Rename
 
 /-!
 # Scaling the variables of a homogeneous polynomial
@@ -389,17 +390,9 @@ theorem IsHomogeneous.exists_eq_rename_killCompl_add_X_mul {τ : Type*} {f : σ 
   refine ⟨p.divMonomial (Finsupp.single i 1), fun γ hγ ↦ ?_, ?_⟩
   · have hdeg := hp (by rwa [coeff_divMonomial] at hγ)
     simp only [map_add, Finsupp.weight_single, Pi.one_apply, smul_eq_mul, mul_one] at hdeg; omega
-  · have hrem : p.modMonomial (Finsupp.single i 1) = rename f (p.killCompl hf) := by
-      ext γ; by_cases hγ : γ i = 0
-      · rw [coeff_modMonomial_of_not_le _ (by simp [Finsupp.single_le_iff, hγ])]
-        have hsupp : (γ.support : Set τ) ⊆ Set.range f := fun j hj ↦ by_contra fun hnot ↦
-          Finsupp.mem_support_iff.mp hj (((hi j).mp hnot) ▸ hγ)
-        have hmap := γ.mapDomain_comapDomain f hf hsupp
-        conv_rhs => rw [← hmap, coeff_rename_mapDomain _ hf, coeff_killCompl, hmap]
-      · rw [coeff_modMonomial_of_le _ (Finsupp.single_le_iff.mpr (Nat.pos_of_ne_zero hγ))]
-        exact (coeff_rename_eq_zero f _ γ fun u hu ↦
-          False.elim (hγ (hu ▸ Finsupp.mapDomain_of_notMem_range u i ((hi i).mpr rfl)))).symm
-    rw [← hrem, modMonomial_add_divMonomial_single]
+  · have hrange : Set.range f = {i}ᶜ := Set.ext fun j ↦ by simpa using (hi j).not
+    rw [← modMonomial_single_one_eq_rename_killCompl hf hrange p,
+      modMonomial_add_divMonomial_single]
 
 /-- Every homogeneous polynomial `p` of degree `d + 1` in `n + 1` variables decomposes as the lift
 along `Fin.succ` of `p.killCompl (Fin.succ_injective n)` plus `X 0 * q` for a homogeneous `q` of

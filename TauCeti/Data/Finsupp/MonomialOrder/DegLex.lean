@@ -24,20 +24,20 @@ namespace Finsupp
 
 /-- Pushing forward along a strictly monotone map of indices preserves and reflects the strict
 graded lexicographic order `DegLex`. -/
-theorem toDegLex_mapDomain_lt_iff {σ τ : Type*} [LinearOrder σ] [Preorder τ]
-    {f : σ → τ} (hf : StrictMono f) {α β : σ →₀ ℕ} :
+theorem toDegLex_mapDomain_lt_iff {σ τ : Type*} [LinearOrder σ] [Preorder τ] {f : σ → τ}
+    (hf : StrictMono f) {α β : σ →₀ ℕ} :
     toDegLex (α.mapDomain f) < toDegLex (β.mapDomain f) ↔ toDegLex α < toDegLex β := by
   simp only [DegLex.lt_iff, ofDegLex_toDegLex, degree_mapDomain,
     toLex_mapDomain_lt_toLex_mapDomain_iff hf]
 
 /-- Reindexing along an order isomorphism preserves and reflects the strict graded lexicographic
 order `DegLex`. -/
-theorem toDegLex_equivMapDomain_lt_iff {σ τ : Type*} [LinearOrder σ] [Preorder τ]
-    (e : σ ≃o τ) {α β : σ →₀ ℕ} :
+theorem toDegLex_equivMapDomain_lt_iff {σ τ : Type*} [LinearOrder σ] [Preorder τ] (e : σ ≃o τ)
+    {α β : σ →₀ ℕ} :
     toDegLex (equivMapDomain e.toEquiv α) < toDegLex (equivMapDomain e.toEquiv β) ↔
       toDegLex α < toDegLex β := by
-  rw [equivMapDomain_eq_mapDomain, equivMapDomain_eq_mapDomain]
-  exact toDegLex_mapDomain_lt_iff (f := e.toEquiv) e.strictMono
+  simpa only [equivMapDomain_eq_mapDomain] using
+    toDegLex_mapDomain_lt_iff (f := e.toEquiv) e.strictMono
 
 /-- Prepending `0` at coordinate `0` preserves and reflects the strict graded lexicographic order
 `DegLex`. -/

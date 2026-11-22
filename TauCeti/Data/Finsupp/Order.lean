@@ -33,11 +33,9 @@ public section
 namespace Finsupp
 
 /-- Reindexing along an equivalence preserves and reflects the componentwise order. -/
-@[simp]
-theorem equivMapDomain_le_iff {α β M : Type*} [Zero M] [LE M] (e : α ≃ β) {x y : α →₀ M} :
-    equivMapDomain e x ≤ equivMapDomain e y ↔ x ≤ y := by
-  simp only [le_def]
-  exact e.forall_congr_right.symm.trans (forall_congr' fun a ↦ by simp)
+@[simp] theorem equivMapDomain_le_iff {α β M : Type*} [Zero M] [LE M] (e : α ≃ β)
+    {x y : α →₀ M} : equivMapDomain e x ≤ equivMapDomain e y ↔ x ≤ y := by
+  simp only [le_def]; exact e.forall_congr_right.symm.trans (forall_congr' fun a ↦ by simp)
 
 /-- For a natural-valued finitely supported function `f`, `single u 1 ≤ f` holds if and only if
 `u ∈ f.support`. -/
