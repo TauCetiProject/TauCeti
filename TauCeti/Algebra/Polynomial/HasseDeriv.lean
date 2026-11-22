@@ -14,6 +14,7 @@ import Mathlib.Data.Int.Interval
 import Mathlib.Data.Nat.Factorial.NatCast
 import Mathlib.Data.Rat.Floor
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # Univariate Hasse jets: ordinary jets and nonvanishing on finite sets
@@ -47,6 +48,8 @@ of Evertse's integer-grid nonvanishing lemma: for every `B > 0` and every nonzer
   ordinary derivative (or jet at a point) of order `k` vanishes if and only if the Hasse one does;
   `Polynomial.eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt` specialises this
   to `k < p` in characteristic `p`.
+* `Polynomial.eval_eq_sum_range_iterate_derivative_eval`: Taylor's formula
+  `p(x) = ∑_{k < N} p⁽ᵏ⁾(r) / k! (x - r) ^ k` over a field of characteristic zero.
 * `Polynomial.exists_eval_hasseDeriv_ne_zero_of_natDegree_lt`: over an integral domain, if `P ≠ 0`
   and `P.natDegree < #S * (k + 1)`, some Hasse derivative of `P` of order `≤ k` is nonzero on `S`.
 * `Polynomial.exists_int_eval_hasseDeriv_ne_zero`: over a domain of characteristic zero, if `P ≠ 0`,
@@ -100,6 +103,20 @@ theorem eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt {R : T
     ((IsUnit.natCast_factorial_iff_of_charP p).2 hk) f a
 
 end Factorial
+
+/-- **Taylor's formula for polynomials.** Over a field of characteristic zero, a polynomial of
+degree less than `N` is `p(x) = ∑_{k < N} p⁽ᵏ⁾(r) / k! (x - r) ^ k` for all `r` and `x`. -/
+theorem eval_eq_sum_range_iterate_derivative_eval {K : Type*} [Field K] [CharZero K] {p : K[X]}
+    {N : ℕ} (hN : p.natDegree < N) (r x : K) :
+    p.eval x =
+      ∑ k ∈ Finset.range N, (derivative^[k] p).eval r / k.factorial * (x - r) ^ k := by
+  have h := taylor_eval r p (x - r)
+  rw [sub_add_cancel] at h
+  rw [← h, eval_eq_sum_range' (by rwa [natDegree_taylor]) (x - r)]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  have hkf : (k.factorial : K) ≠ 0 := by exact_mod_cast k.factorial_ne_zero
+  rw [taylor_coeff, eval_iterate_derivative_eq_factorial_mul k p r]
+  field_simp
 
 /-- Over an integral domain, if `P ≠ 0` has degree strictly less than `#S * (k + 1)`, then some
 Hasse derivative of `P` of order at most `k` does not vanish at some point of `S`. -/
