@@ -206,6 +206,32 @@ theorem strictMono_annulusClosingDefect
       (fun _ _ h i ↦ Pi.le_def.1 h i)
       fun _ _ h ↦ funext fun i ↦ Subtype.ext (congr_fun h i)) huu')
 
+/-- On the lower face of the cube of positive momenta, the closing defect on the annulus is at most
+the closing defect with all momenta `0`. -/
+private lemma annulusClosingDefect_zero_le
+    (hx : ∀ k < n, ∀ t ∈ Icc (0 : ℝ) 1, Monotone fun x ↦ (F k (x, t)).1)
+    (hP : ∀ k < n, k ∈ P → ∀ x, MonotoneOn (fun t ↦ (F k (x, t)).1) (Icc 0 1))
+    (hN : ∀ k < n, k ∉ P → ∀ x, AntitoneOn (fun t ↦ (F k (x, t)).1) (Icc 0 1))
+    (x : AddCircle (1 : ℝ) × ({i : Fin n // (i : ℕ) ∉ P} → I)) :
+    annulusClosingDefect F n P x 0 ≤ stripClosingDefect F n (AddCircle.equivIco 1 0 x.1) 0 := by
+  refine stripClosingDefect_le_stripClosingDefect hx hP hN (stripInputs_mem_Icc 0 x.2)
+    (fun _ ↦ ⟨le_rfl, zero_le_one⟩) fun i ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · simp [h]
+  · simpa [h] using (x.2 _).property.1
+
+/-- On the upper face of the cube of positive momenta, the closing defect on the annulus is at
+least the closing defect with all momenta `1`. -/
+private lemma le_annulusClosingDefect_one
+    (hx : ∀ k < n, ∀ t ∈ Icc (0 : ℝ) 1, Monotone fun x ↦ (F k (x, t)).1)
+    (hP : ∀ k < n, k ∈ P → ∀ x, MonotoneOn (fun t ↦ (F k (x, t)).1) (Icc 0 1))
+    (hN : ∀ k < n, k ∉ P → ∀ x, AntitoneOn (fun t ↦ (F k (x, t)).1) (Icc 0 1))
+    (x : AddCircle (1 : ℝ) × ({i : Fin n // (i : ℕ) ∉ P} → I)) :
+    stripClosingDefect F n (AddCircle.equivIco 1 0 x.1) 1 ≤ annulusClosingDefect F n P x 1 := by
+  refine stripClosingDefect_le_stripClosingDefect hx hP hN (fun _ ↦ ⟨zero_le_one, le_rfl⟩)
+    (stripInputs_mem_Icc 1 x.2) fun i ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · simp [h]
+  · simpa [h] using (x.2 _).property.2
+
 /-- **The closing defect on the annulus is negative on the lower face.** If every factor is
 increasing in the position, and increasing in the momentum for the positive factors and decreasing
 for the negative ones, and the broken orbit with all momenta `0` ends to the left of its start, then
@@ -219,11 +245,8 @@ theorem annulusClosingDefect_zero_neg
     (hN : ∀ k < n, k ∉ P → ∀ x, AntitoneOn (fun t ↦ (F k (x, t)).1) (Icc 0 1))
     (h₀ : ∀ x, stripClosingDefect F n x 0 < 0)
     (x : AddCircle (1 : ℝ) × ({i : Fin n // (i : ℕ) ∉ P} → I)) :
-    annulusClosingDefect F n P x 0 < 0 := by
-  refine (stripClosingDefect_le_stripClosingDefect hx hP hN (stripInputs_mem_Icc 0 x.2)
-    (fun _ ↦ ⟨le_rfl, zero_le_one⟩) fun i ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩).trans_lt (h₀ _)
-  · simp [h]
-  · simpa [h] using (x.2 _).property.1
+    annulusClosingDefect F n P x 0 < 0 :=
+  (annulusClosingDefect_zero_le hx hP hN x).trans_lt (h₀ _)
 
 /-- **The closing defect on the annulus is positive on the upper face.** If every factor is
 increasing in the position, and increasing in the momentum for the positive factors and decreasing
@@ -237,27 +260,25 @@ theorem annulusClosingDefect_one_pos
     (hN : ∀ k < n, k ∉ P → ∀ x, AntitoneOn (fun t ↦ (F k (x, t)).1) (Icc 0 1))
     (h₁ : ∀ x, 0 < stripClosingDefect F n x 1)
     (x : AddCircle (1 : ℝ) × ({i : Fin n // (i : ℕ) ∉ P} → I)) :
-    0 < annulusClosingDefect F n P x 1 := by
-  refine (h₁ _).trans_le (stripClosingDefect_le_stripClosingDefect hx hP hN
-    (fun _ ↦ ⟨zero_le_one, le_rfl⟩) (stripInputs_mem_Icc 1 x.2) fun i ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩)
-  · simp [h]
-  · simpa [h] using (x.2 _).property.2
+    0 < annulusClosingDefect F n P x 1 :=
+  (h₁ _).trans_le (le_annulusClosingDefect_one hx hP hN x)
 
 /-! ### The diagonal root -/
 
-/-- Both signs of the closing defect on the faces of the cube of positive momenta, under the strict
-monotonicity hypotheses. -/
-private lemma annulusClosingDefect_zero_neg_and_one_pos
+/-- Both weak signs of the closing defect on the faces of the cube of positive momenta, under the
+strict monotonicity hypotheses. -/
+private lemma annulusClosingDefect_zero_nonpos_and_one_nonneg
     (hx : ∀ k < n, ∀ t ∈ Icc (0 : ℝ) 1, StrictMono fun x ↦ (F k (x, t)).1)
     (hP : ∀ k < n, k ∈ P → ∀ x, StrictMonoOn (fun t ↦ (F k (x, t)).1) (Icc 0 1))
     (hN : ∀ k < n, k ∉ P → ∀ x, StrictAntiOn (fun t ↦ (F k (x, t)).1) (Icc 0 1))
-    (h₀ : ∀ x, stripClosingDefect F n x 0 < 0) (h₁ : ∀ x, 0 < stripClosingDefect F n x 1)
+    (h₀ : ∀ x, stripClosingDefect F n x 0 ≤ 0) (h₁ : ∀ x, 0 ≤ stripClosingDefect F n x 1)
     (x : AddCircle (1 : ℝ) × ({i : Fin n // (i : ℕ) ∉ P} → I)) :
-    annulusClosingDefect F n P x 0 < 0 ∧ 0 < annulusClosingDefect F n P x 1 :=
+    annulusClosingDefect F n P x 0 ≤ 0 ∧ 0 ≤ annulusClosingDefect F n P x 1 :=
   have hx' k hk t ht := (hx k hk t ht).monotone
   have hP' k hk hkP x := (hP k hk hkP x).monotoneOn
   have hN' k hk hkP x := (hN k hk hkP x).antitoneOn
-  ⟨annulusClosingDefect_zero_neg hx' hP' hN' h₀ x, annulusClosingDefect_one_pos hx' hP' hN' h₁ x⟩
+  ⟨(annulusClosingDefect_zero_le hx' hP' hN' x).trans (h₀ _),
+    (h₁ _).trans (le_annulusClosingDefect_one hx' hP' hN' x)⟩
 
 /-- **The diagonal root closes the broken orbit, and is the only diagonal point that does.** If
 some factor is positive, a configuration whose positive momenta all equal `t` closes up exactly
@@ -268,7 +289,7 @@ theorem stripClosingDefect_stripInputs_const_eq_zero_iff [Nonempty {i : Fin n //
     (hx : ∀ k < n, ∀ t ∈ Icc (0 : ℝ) 1, StrictMono fun x ↦ (F k (x, t)).1)
     (hP : ∀ k < n, k ∈ P → ∀ x, StrictMonoOn (fun t ↦ (F k (x, t)).1) (Icc 0 1))
     (hN : ∀ k < n, k ∉ P → ∀ x, StrictAntiOn (fun t ↦ (F k (x, t)).1) (Icc 0 1))
-    (h₀ : ∀ x, stripClosingDefect F n x 0 < 0) (h₁ : ∀ x, 0 < stripClosingDefect F n x 1)
+    (h₀ : ∀ x, stripClosingDefect F n x 0 ≤ 0) (h₁ : ∀ x, 0 ≤ stripClosingDefect F n x 1)
     (x : ℝ) (v : {i : Fin n // (i : ℕ) ∉ P} → I) (t : I) :
     stripClosingDefect F n x (stripInputs P (fun _ ↦ t) v) = 0 ↔
       t = cubeDiagonalRootParam (annulusClosingDefect F n P) ((x : AddCircle (1 : ℝ)), v) := by
@@ -277,9 +298,9 @@ theorem stripClosingDefect_stripInputs_const_eq_zero_iff [Nonempty {i : Fin n //
     (strictMono_annulusClosingDefect hx hP hN _) h).symm, ?_⟩
   rintro rfl
   have hsign :=
-    annulusClosingDefect_zero_neg_and_one_pos hx hP hN h₀ h₁ ((x : AddCircle (1 : ℝ)), v)
+    annulusClosingDefect_zero_nonpos_and_one_nonneg hx hP hN h₀ h₁ ((x : AddCircle (1 : ℝ)), v)
   have h := apply_cubeDiagonalRoot_eq_zero
-    (continuous_annulusClosingDefect hc ((x : AddCircle (1 : ℝ)), v)) hsign.1.le hsign.2.le
+    (continuous_annulusClosingDefect hc ((x : AddCircle (1 : ℝ)), v)) hsign.1 hsign.2
   rwa [cubeDiagonalRoot_eq_const] at h
 
 /-- **The diagonal root lies in the open cube.** If the broken orbit with all momenta `0` ends to
@@ -310,13 +331,43 @@ def annulusClosingBlockFiberHomotopyEquiv
     (hx : ∀ k < n, ∀ t ∈ Icc (0 : ℝ) 1, StrictMono fun x ↦ (F k (x, t)).1)
     (hP : ∀ k < n, k ∈ P → ∀ x, StrictMonoOn (fun t ↦ (F k (x, t)).1) (Icc 0 1))
     (hN : ∀ k < n, k ∉ P → ∀ x, StrictAntiOn (fun t ↦ (F k (x, t)).1) (Icc 0 1))
-    (h₀ : ∀ x, stripClosingDefect F n x 0 < 0) (h₁ : ∀ x, 0 < stripClosingDefect F n x 1) :
+    (h₀ : ∀ x, stripClosingDefect F n x 0 ≤ 0) (h₁ : ∀ x, 0 ≤ stripClosingDefect F n x 1) :
     FiberHomotopyEquiv (cubeLevelSetProj (annulusClosingDefect F n P))
       (ContinuousMap.id (AddCircle (1 : ℝ) × ({i : Fin n // (i : ℕ) ∉ P} → I))) :=
   cubeLevelSetFiberHomotopyEquiv (continuous_uncurry_annulusClosingDefect hc hF)
     (strictMono_annulusClosingDefect hx hP hN)
-    (fun x ↦ (annulusClosingDefect_zero_neg_and_one_pos hx hP hN h₀ h₁ x).1.le)
-    (fun x ↦ (annulusClosingDefect_zero_neg_and_one_pos hx hP hN h₀ h₁ x).2.le)
+    (fun x ↦ (annulusClosingDefect_zero_nonpos_and_one_nonneg hx hP hN h₀ h₁ x).1)
+    (fun x ↦ (annulusClosingDefect_zero_nonpos_and_one_nonneg hx hP hN h₀ h₁ x).2)
+
+/-- The forward map of the fibre homotopy equivalence of the closing block is the projection
+`(x, v, u) ↦ (x, v)`. -/
+@[simp]
+theorem annulusClosingBlockFiberHomotopyEquiv_toFun
+    (hc : ∀ k < n, ContinuousOn (fun q ↦ (F k q).1) (univ ×ˢ Icc 0 1))
+    (hF : ∀ k < n, ∀ x, ∀ t ∈ Icc (0 : ℝ) 1, (F k (x + 1, t)).1 = (F k (x, t)).1 + 1)
+    (hx : ∀ k < n, ∀ t ∈ Icc (0 : ℝ) 1, StrictMono fun x ↦ (F k (x, t)).1)
+    (hP : ∀ k < n, k ∈ P → ∀ x, StrictMonoOn (fun t ↦ (F k (x, t)).1) (Icc 0 1))
+    (hN : ∀ k < n, k ∉ P → ∀ x, StrictAntiOn (fun t ↦ (F k (x, t)).1) (Icc 0 1))
+    (h₀ : ∀ x, stripClosingDefect F n x 0 ≤ 0) (h₁ : ∀ x, 0 ≤ stripClosingDefect F n x 1) :
+    (annulusClosingBlockFiberHomotopyEquiv hc hF hx hP hN h₀ h₁).toFun =
+      cubeLevelSetProj (annulusClosingDefect F n P) :=
+  cubeLevelSetFiberHomotopyEquiv_toFun _ _ _ _
+
+/-- The inverse map of the fibre homotopy equivalence of the closing block is the section
+`(x, v) ↦ (x, v, t(x, v) · 1)` through the diagonal roots. -/
+@[simp]
+theorem coe_annulusClosingBlockFiberHomotopyEquiv_invFun_apply
+    (hc : ∀ k < n, ContinuousOn (fun q ↦ (F k q).1) (univ ×ˢ Icc 0 1))
+    (hF : ∀ k < n, ∀ x, ∀ t ∈ Icc (0 : ℝ) 1, (F k (x + 1, t)).1 = (F k (x, t)).1 + 1)
+    (hx : ∀ k < n, ∀ t ∈ Icc (0 : ℝ) 1, StrictMono fun x ↦ (F k (x, t)).1)
+    (hP : ∀ k < n, k ∈ P → ∀ x, StrictMonoOn (fun t ↦ (F k (x, t)).1) (Icc 0 1))
+    (hN : ∀ k < n, k ∉ P → ∀ x, StrictAntiOn (fun t ↦ (F k (x, t)).1) (Icc 0 1))
+    (h₀ : ∀ x, stripClosingDefect F n x 0 ≤ 0) (h₁ : ∀ x, 0 ≤ stripClosingDefect F n x 1)
+    (x : AddCircle (1 : ℝ) × ({i : Fin n // (i : ℕ) ∉ P} → I)) :
+    ((annulusClosingBlockFiberHomotopyEquiv hc hF hx hP hN h₀ h₁).invFun x).val =
+      (x, cubeDiagonalRoot (annulusClosingDefect F n P) x) := by
+  rw [annulusClosingBlockFiberHomotopyEquiv, cubeLevelSetFiberHomotopyEquiv_invFun,
+    coe_cubeLevelSetSection_apply]
 
 /-! ### A chain of two shears -/
 
