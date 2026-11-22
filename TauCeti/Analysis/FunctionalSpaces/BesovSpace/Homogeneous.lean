@@ -82,6 +82,10 @@ low-frequency blocks sum in `L^∞`
 * `TauCeti.HomogeneousBesovSpace.norm_eq_zero_iff` and
   `TauCeti.HomogeneousBesovSpace.inseparable_iff`: the seminorm vanishes exactly on the
   distributions with spectrum at the origin.
+* `TauCeti.two_rpow_mul_norm_sum_Ico_add_le`: the weighted estimate
+  `2^{js} ‖∑_{-L ≤ i < L} g_{j + i}‖ ≤ max C 0 2^{|s| L} ∑_{-L ≤ i < L} 2^{(j + i)s} ‖x_{j + i}‖`
+  over `ℤ` when `‖gⱼ‖ ≤ C ‖xⱼ‖`, by which a block of one bump function is controlled by the
+  nearby blocks of another.
 
 ## References
 
@@ -102,6 +106,31 @@ open scoped ENNReal SchwartzMap
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+
+/-- **Weighted window sums over `ℤ`.** If `‖gⱼ‖ ≤ C ‖xⱼ‖` for every `j : ℤ`, then
+`2^{js} ‖∑_{-L ≤ i < L} g_{j + i}‖ ≤ max C 0 2^{|s| L} ∑_{-L ≤ i < L} 2^{(j + i)s} ‖x_{j + i}‖`.
+This is the `ℤ`-indexed form of `TauCeti.two_rpow_mul_norm_sum_Ico_le`, with the window written as
+the shifts `j + i` of its centre. -/
+theorem TauCeti.two_rpow_mul_norm_sum_Ico_add_le {G H : Type*} [SeminormedAddCommGroup G]
+    [SeminormedAddCommGroup H] (s : ℝ) {C : ℝ} {g : ℤ → G} {x : ℤ → H}
+    (hg : ∀ j, ‖g j‖ ≤ C * ‖x j‖) (j : ℤ) (L : ℕ) :
+    (2 : ℝ) ^ (s * j) * ‖∑ i ∈ Finset.Ico (-(L : ℤ)) L, g (j + i)‖ ≤
+      max C 0 * 2 ^ (|s| * L) *
+        ∑ i ∈ Finset.Ico (-(L : ℤ)) L, 2 ^ (s * (j + i : ℤ)) * ‖x (j + i)‖ := by
+  refine (mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)).trans ?_
+  rw [Finset.mul_sum, Finset.mul_sum]
+  refine Finset.sum_le_sum fun i hi ↦ ?_
+  rw [Finset.mem_Ico] at hi
+  have hji : |(j : ℝ) - ((j + i : ℤ) : ℝ)| ≤ L := by
+    push_cast
+    rw [sub_add_cancel_left, abs_neg]
+    exact abs_le.2 ⟨by exact_mod_cast hi.1, by exact_mod_cast hi.2.le⟩
+  calc 2 ^ (s * j) * ‖g (j + i)‖
+      ≤ 2 ^ (|s| * L) * 2 ^ (s * (j + i : ℤ)) * (max C 0 * ‖x (j + i)‖) := by
+        gcongr
+        · exact Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul one_le_two s hji
+        · exact (hg (j + i)).trans (by gcongr; exact le_max_left C 0)
+    _ = _ := by ring
 
 namespace TemperedDistribution
 
@@ -246,21 +275,7 @@ private theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_le (φ φ' : ContD
     rw [hL j u, hI, ← Finset.sum_Ico_add]
     simp_rw [hf, hg]
     exact (map_sum (Lp.toTemperedDistributionCLM F volume p) _ _).symm
-  · -- Within the window the weights `2^{js}` and `2^{(j + i)s}` differ by at most `2^{|s| L}`.
-    refine (mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)).trans ?_
-    rw [Finset.mul_sum, Finset.mul_sum]
-    refine Finset.sum_le_sum fun i hi ↦ ?_
-    rw [Finset.mem_Ico] at hi
-    have hji : |(j : ℝ) - ((j + i : ℤ) : ℝ)| ≤ L := by
-      push_cast
-      rw [sub_add_cancel_left, abs_neg]
-      exact abs_le.2 ⟨by exact_mod_cast hi.1, by exact_mod_cast hi.2.le⟩
-    calc 2 ^ (s * j) * ‖g j (j + i)‖
-        ≤ 2 ^ (|s| * L) * 2 ^ (s * (j + i : ℤ)) * (max C 0 * ‖f (j + i)‖) := by
-          gcongr
-          · exact Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul one_le_two s hji
-          · exact (hgC j (j + i)).trans (by gcongr; exact le_max_left C 0)
-      _ = _ := by ring
+  · exact TauCeti.two_rpow_mul_norm_sum_Ico_add_le s (hgC j) j L
 
 /-- **Independence of the bump function.** A tempered distribution in the homogeneous Besov
 space `\dot B^s_{p,q}` built from the Littlewood–Paley partition of `φ` lies in the homogeneous
