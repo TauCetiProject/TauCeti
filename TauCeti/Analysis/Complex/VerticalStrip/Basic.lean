@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Complex.Hadamard
 public import Mathlib.Analysis.Complex.HasPrimitives
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.RCLike.TangentCone
-import TauCeti.Analysis.Complex.HasPrimitives
+import TauCeti.Analysis.Complex.HasPrimitives.Basic
 
 /-!
 # Vertical strips
@@ -21,9 +21,9 @@ This file records their membership criteria, behavior under reflection, convexit
 differentiability (`uniqueDiffOn_verticalClosedStrip`), the exponential gauge multiplier
 `scaleFactor` normalizing strip boundary bounds, and holomorphic primitives `Complex.wedgeIntegral`
 for functions satisfying `DiffContOnCl` on a vertical strip (specializing
-`TauCeti.Analysis.Complex.HasPrimitives` to `verticalClosedStrip a b = Icc a b ×ℂ univ`), and the
-Cauchy rectangle contour-shift identity `DiffContOnCl.intervalIntegral_add_mul_I_eq` equating
-vertical line integrals of vertically periodic holomorphic strip functions.
+`TauCeti.Analysis.Complex.HasPrimitives.Basic` to `verticalClosedStrip a b = Icc a b ×ℂ univ`),
+and the Cauchy rectangle contour-shift identity `DiffContOnCl.intervalIntegral_add_mul_I_eq`
+equating vertical line integrals of vertically periodic holomorphic strip functions.
 -/
 
 public section

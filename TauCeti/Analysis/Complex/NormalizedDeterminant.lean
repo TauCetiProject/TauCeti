@@ -26,6 +26,8 @@ loop of determinants.
 * `ContinuousLinearEquiv.det_eq_norm_mul_normalizedDet`: `det A = ‖det A‖ * normalizedDet A`.
 * `ContinuousLinearEquiv.normalizedDet_trans`, `ContinuousLinearEquiv.normalizedDet_refl`,
   `ContinuousLinearEquiv.normalizedDet_symm`: the normalized determinant is multiplicative.
+* `ContinuousLinearEquiv.normalizedDet_trans_symm_mul_trans`: the cocycle law for the transitions
+  between isomorphisms `E ≃ G`.
 * `ContinuousLinearEquiv.normalizedDet_trans_trans_symm`: it is invariant under conjugation by an
   isomorphism `E' ≃ E`.
 * `ContinuousLinearEquiv.normalizedDet_prodCongr`: the normalized determinant of `A × B` is the
@@ -89,6 +91,14 @@ theorem normalizedDet_refl : (ContinuousLinearEquiv.refl ℂ E).normalizedDet = 
 @[simp]
 theorem normalizedDet_symm (A : E ≃L[ℂ] E) : A.symm.normalizedDet = A.normalizedDet⁻¹ :=
   eq_inv_of_mul_eq_one_right (by rw [← normalizedDet_trans, self_trans_symm, normalizedDet_refl])
+
+/-- **Cocycle law.** For isomorphisms `a b : E ≃ G` and `L : G ≃ E`, the normalized determinant
+of `L ∘ a` factors through `b`: it is that of the transition `b⁻¹ ∘ a` times that of `L ∘ b`. -/
+theorem normalizedDet_trans_symm_mul_trans {G : Type*} [AddCommGroup G] [Module ℂ G]
+    [TopologicalSpace G] (a b : E ≃L[ℂ] G) (L : G ≃L[ℂ] E) :
+    (a.trans b.symm).normalizedDet * (b.trans L).normalizedDet = (a.trans L).normalizedDet := by
+  rw [← normalizedDet_trans]
+  exact congrArg _ (ext <| funext fun v ↦ by simp)
 
 /-- The normalized determinant is invariant under conjugation: transporting an automorphism `A` of
 `E` along an isomorphism `L : E' ≃ E` does not change it. -/
