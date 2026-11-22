@@ -289,6 +289,14 @@ theorem eventually_cocompact_cappedPerturbation_eq_zero :
   filter_upwards [(isCompact_truncation (L + 3)).compl_mem_cocompact] with w hw x
   exact cappedPerturbation_eq_zero_of_notMem_truncation hw x
 
+/-- **The datum vanishes beyond a radius depending only on a bound for the neck length.** For
+`L ≤ L₀` the datum vanishes outside the disc of radius `2 exp (2π (L₀ + 3))`, which contains the
+truncation `S_{L + 3}`. -/
+theorem cappedPerturbation_eq_zero_of_lt_norm {L₀ : ℝ} (hL : L ≤ L₀) {w : ℂ}
+    (hw : 2 * Real.exp (2 * π * (L₀ + 3)) < ‖w‖) (x : M) : cappedPerturbation a L H w x = 0 :=
+  cappedPerturbation_eq_zero_of_notMem_truncation
+    (notMem_truncation_of_lt_norm (by linarith : L + 3 ≤ L₀ + 3) hw) x
+
 /-- **The datum on an end.** On the part `±s > 0` of the end `q`, the pullback of the datum along
 the end lift `φ` is `a P_L(±s) H_q(t) dt`: it sends a tangent vector `v` of the cylinder to
 `Im v · a P_L(±s) H_q(t)`. -/
