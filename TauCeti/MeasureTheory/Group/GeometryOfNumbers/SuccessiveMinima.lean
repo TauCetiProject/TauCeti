@@ -40,11 +40,12 @@ Minkowski's second theorem.
   integer rank.
 * `MeasureTheory.exists_lt_setFinrank_smul_inter` and
   `MeasureTheory.exists_lt_setFinrank_smul_inter_zLattice`: for discrete `L` and absorbent `s`, the
-  infimum defining a minimum below the integer rank of `L` (or, for a full lattice, below the
-  dimension of `E`) is over a nonempty set; the ambient space need not be assumed
-  finite-dimensional.
-* `MeasureTheory.successiveMin_mono`: for discrete `L` and absorbent `s`, below the integer rank
-  the minima are nondecreasing.
+  infimum defining `successiveMin L s i` is over a nonempty set when `i < finrank ℤ L` (excluding
+  infinite rank of `L`, not necessarily of `E`) or, for a full lattice, when `i < finrank ℝ E`
+  (excluding infinite dimension of `E`, since `finrank` is `0` for infinite-rank modules).
+* `MeasureTheory.successiveMin_mono`: for discrete `L`, absorbent `s`, `i ≤ j`, and
+  `j < finrank ℤ L` (excluding infinite rank of `L`, not necessarily of `E`), the minima are
+  nondecreasing.
 * `MeasureTheory.successiveMin_le_of_lt_setFinrank` and
   `MeasureTheory.lt_setFinrank_smul_inter_of_successiveMin_lt`: a dilate `r • s` satisfying
   `i < Set.finrank ℝ (r • s ∩ L)` (so `r • s ∩ L` spans a finite-dimensional real subspace of
@@ -128,10 +129,11 @@ theorem successiveMin_of_finrank_int_le [DiscreteTopology L]
     successiveMin L s i = 0 := by
   simp [hi]
 
-/-- Below the integer rank of a discrete `L`, some dilate of an absorbent set `s` contains vectors
-of `L` spanning a real subspace of dimension greater than `i`: the infimum defining
-`successiveMin L s i` is taken over a nonempty set. The ambient space need not be
-finite-dimensional. -/
+/-- For a discrete `L`, an absorbent set `s`, and `i < finrank ℤ L`, some dilate of `s` contains
+vectors of `L` spanning a real subspace of dimension greater than `i`: the infimum defining
+`successiveMin L s i` is taken over a nonempty set. Because `finrank ℤ L` is `0` when `L` has
+infinite rank, the bound `i < finrank ℤ L` excludes infinite rank of `L`, though not necessarily of
+the ambient space `E`. -/
 theorem exists_lt_setFinrank_smul_inter [DiscreteTopology L] (hs : Absorbent ℝ s)
     (hi : i < finrank ℤ L) : ∃ r : ℝ≥0, i < Set.finrank ℝ (r • s ∩ L) := by
   have hi' : i < Set.finrank ℝ (L : Set E) := by rwa [setFinrank_real_eq_finrank_int]
@@ -151,25 +153,30 @@ theorem exists_lt_setFinrank_smul_inter [DiscreteTopology L] (hs : Absorbent ℝ
     _ = Set.finrank ℝ (Set.range f) := by rw [Set.finrank, Set.finrank, hspan]
     _ ≤ Set.finrank ℝ ((⟨r, hr.le⟩ : ℝ≥0) • s ∩ L) := finrank_mono (span_mono hf)
 
-/-- For a full lattice `L` and an absorbent set `s`, the infimum defining `successiveMin L s i`
-is taken over a nonempty set at every index below the dimension of `E`. -/
+/-- For a full lattice `L`, an absorbent set `s`, and `i < finrank ℝ E`, the infimum defining
+`successiveMin L s i` is taken over a nonempty set. Because `finrank ℝ E` is `0` when `E` is
+infinite-dimensional, the bound `i < finrank ℝ E` excludes infinite dimension of the ambient space
+`E`. -/
 theorem exists_lt_setFinrank_smul_inter_zLattice [DiscreteTopology L] [IsZLattice ℝ L]
     (hs : Absorbent ℝ s) (hi : i < finrank ℝ E) : ∃ r : ℝ≥0, i < Set.finrank ℝ (r • s ∩ L) := by
   have := Module.finite_of_finrank_pos ((Nat.zero_le i).trans_lt hi)
   exact exists_lt_setFinrank_smul_inter hs (hi.trans_eq (ZLattice.rank ℝ L).symm)
 
-/-- **Monotonicity in the index.** Below the integer rank of a discrete `L`, the successive minima
-of an absorbent set are nondecreasing. The ambient space need not be finite-dimensional. When
-`span ℝ L` is finite-dimensional, beyond the rank they take the junk value `0`. -/
+/-- **Monotonicity in the index.** For a discrete `L`, an absorbent set `s`, `i ≤ j`, and
+`j < finrank ℤ L`, the successive minima are nondecreasing (`successiveMin L s i ≤
+successiveMin L s j`). Because `finrank ℤ L` is `0` when `L` has infinite rank, the bound
+`j < finrank ℤ L` excludes infinite rank of `L`, though not necessarily of the ambient space `E`.
+When `span ℝ L` is finite-dimensional, beyond the rank they take the junk value `0`. -/
 @[gcongr]
 theorem successiveMin_mono [DiscreteTopology L] {j : ℕ} (hs : Absorbent ℝ s) (hij : i ≤ j)
     (hj : j < finrank ℤ L) : successiveMin L s i ≤ successiveMin L s j :=
   csInf_le_csInf' (exists_lt_setFinrank_smul_inter hs hj) fun _ ↦ hij.trans_lt
 
-/-- Below the integer rank of a discrete `L`, every dilate of an absorbent set `s`, star-convex
-about `0`, by a factor strictly greater than the `i`-th successive minimum contains vectors of `L`
-spanning a real subspace of dimension greater than `i`. The ambient space need not be
-finite-dimensional. -/
+/-- For a discrete `L`, `i < finrank ℤ L`, and an absorbent set `s` star-convex about `0`, every
+dilate of `s` by a factor strictly greater than the `i`-th successive minimum contains vectors of
+`L` spanning a real subspace of dimension greater than `i`. Because `finrank ℤ L` is `0` when `L`
+has infinite rank, the bound `i < finrank ℤ L` excludes infinite rank of `L`, though not
+necessarily of the ambient space `E`. -/
 theorem lt_setFinrank_smul_inter_of_successiveMin_lt [DiscreteTopology L] {r : ℝ≥0}
     (hsc : StarConvex ℝ 0 s) (hs : Absorbent ℝ s) (hi : i < finrank ℤ L)
     (hr : successiveMin L s i < r) : i < Set.finrank ℝ (r • s ∩ L) := by
@@ -187,9 +194,11 @@ theorem lt_setFinrank_smul_inter_of_successiveMin_lt [DiscreteTopology L] {r : �
   obtain ⟨y, hy, hyx⟩ := hsc.smul_mono r'.2 hr'r.le ⟨x, hx, rfl⟩
   exact ⟨y, hy, by simpa [NNReal.smul_def] using hyx⟩
 
-/-- Below the integer rank of a discrete `L`, every dilate of a convex neighbourhood `s` of `0` by
-a factor strictly greater than the `i`-th successive minimum contains `i + 1` linearly independent
-vectors of `L`. The ambient space need not be finite-dimensional. -/
+/-- For a discrete `L`, `i < finrank ℤ L`, and a convex neighbourhood `s` of `0`, every dilate of
+`s` by a factor strictly greater than the `i`-th successive minimum contains `i + 1` linearly
+independent vectors of `L`. Because `finrank ℤ L` is `0` when `L` has infinite rank, the bound
+`i < finrank ℤ L` excludes infinite rank of `L`, though not necessarily of the ambient space
+`E`. -/
 theorem exists_linearIndependent_of_successiveMin_lt [DiscreteTopology L] {r : ℝ≥0}
     (hsc : Convex ℝ s) (hs₀ : s ∈ 𝓝 0) (hi : i < finrank ℤ L) (hr : successiveMin L s i < r) :
     ∃ v : Fin (i + 1) → L, (∀ j, (v j : E) ∈ r • s ∩ L) ∧ LinearIndependent ℤ v := by
