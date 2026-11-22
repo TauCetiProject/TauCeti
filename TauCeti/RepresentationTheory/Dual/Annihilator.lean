@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.RepresentationTheory.Basic
 import TauCeti.LinearAlgebra.Dual.Annihilator
-import TauCeti.RepresentationTheory.Quotient
 
 /-!
 # The dual representation on annihilators of invariant submodules
@@ -28,8 +26,6 @@ coadjoint action on the annihilator used in reduction in stages.
   an element of `W` fixes the annihilator `W⁰` pointwise.
 * `Representation.dualQuotEquivDualAnnihilator_symm_dual_apply`: under `(V ⧸ W)* ≃ W⁰`, the dual
   representation on `W⁰` is the dual of the quotient representation on `V ⧸ W`.
-* `Representation.dual_ofQuotient_comp_mk'`: the dual of `ρ.ofQuotient S`, pulled back along
-  `G → G ⧸ S`, is `ρ.dual`.
 -/
 
 public section
@@ -46,18 +42,6 @@ theorem dualAnnihilator_le_comap_dual [CommSemiring k] [AddCommMonoid V] [Module
     W.dualAnnihilator ≤ W.dualAnnihilator.comap (ρ.dual g) := by
   rw [← Submodule.map_le_iff_le_comap, dual_apply, ← LinearMap.dualMap_def]
   exact (W.dualAnnihilator_map_dualMap_le (ρ g⁻¹)).trans (Submodule.dualAnnihilator_anti hW)
-
-/-- The dual of the representation `ρ.ofQuotient S` descended through a normal subgroup `S`,
-pulled back along `G → G ⧸ S`, is the dual of `ρ`:
-`(ρ.ofQuotient S).dual.comp (QuotientGroup.mk' S) = ρ.dual`. The `simp` lemma
-`Representation.dual_comp` rewrites `((ρ.ofQuotient S).comp (QuotientGroup.mk' S)).dual` to this
-left-hand side, where `Representation.ofQuotient_comp_mk'` no longer applies. -/
-@[simp]
-theorem dual_ofQuotient_comp_mk' [CommSemiring k] [AddCommMonoid V] [Module k V]
-    (ρ : Representation k G V) (S : Subgroup G) [S.Normal] [IsTrivial (ρ.comp S.subtype)] :
-    (ρ.ofQuotient S).dual.comp (QuotientGroup.mk' S) = ρ.dual := by
-  ext g φ v
-  simp [dual_apply, Module.Dual.transpose_apply, ← QuotientGroup.mk_inv, ofQuotient_coe_apply]
 
 variable [CommRing k] [AddCommGroup V] [Module k V] {ρ : Representation k G V}
   {W : Submodule k V} {g : G}

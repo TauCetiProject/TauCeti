@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Subgroup
+public import TauCeti.Geometry.Lie.Subgroup.NormalQuotient
+import TauCeti.Geometry.Manifold.Submersion.Basic
 import TauCeti.RepresentationTheory.Quotient
 
 /-!
@@ -17,11 +19,12 @@ trivially on `𝔤 ⧸ 𝔫` because `Ad_n ξ - ξ ∈ 𝔫` for `n ∈ N`
 (`TauCeti.Geometry.Lie.Adjoint.Representation.Subgroup`). So the adjoint representation descends
 to a representation of the quotient group `G ⧸ N` on `𝔤 ⧸ 𝔫`,
 `Subgroup.quotientAdjointRepresentation N`, by `[g] · [ξ] = [Ad_g ξ]`; its pullback to `G` is the
-quotient representation of `G` on `𝔤 ⧸ 𝔫`. No Lie group structure on `G ⧸ N` is assumed or
-constructed here. When `G ⧸ N` carries a quotient Lie group structure, the differential at the
-identity of the projection `G → G ⧸ N` induces a canonical isomorphism `𝔤 ⧸ 𝔫 ≃ Lie(G ⧸ N)`, and
-under it this representation and its dual on `(𝔤 ⧸ 𝔫)*` correspond to the adjoint and coadjoint
-representations of `G ⧸ N`; that comparison is not proved here.
+quotient representation of `G` on `𝔤 ⧸ 𝔫`. Its definition uses no Lie group structure on
+`G ⧸ N`. For a boundaryless model, `G ⧸ N` is a Lie group (`Subgroup.lieGroup_quotientOfIsClosed`);
+the differential at the identity of the projection `G → G ⧸ N` vanishes exactly on `𝔫` and is
+surjective, so it induces a linear isomorphism `𝔤 ⧸ 𝔫 ≃ Lie(G ⧸ N)`
+(`Subgroup.quotientGroupLieAlgebraEquiv`), and this isomorphism intertwines
+`Subgroup.quotientAdjointRepresentation N` with the adjoint representation of `G ⧸ N`.
 
 The dual action of `G ⧸ N` on `(𝔤 ⧸ 𝔫)*` and its comparison with the coadjoint action of `G` on
 the annihilator `𝔫⁰ ⊆ 𝔤*` are in `TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Quotient`.
@@ -30,6 +33,8 @@ the annihilator `𝔫⁰ ⊆ 𝔤*` are in `TauCeti.Geometry.Lie.Adjoint.Represe
 
 * `Subgroup.quotientAdjointRepresentation`: the representation of `G ⧸ N` on `𝔤 ⧸ 𝔫` induced by
   the adjoint representation.
+* `Subgroup.quotientGroupLieAlgebraEquiv`: the identification of `𝔤 ⧸ 𝔫` with the tangent Lie
+  algebra of the quotient Lie group `G ⧸ N`, induced by the differential of the projection.
 
 ## Main results
 
@@ -38,6 +43,12 @@ the annihilator `𝔫⁰ ⊆ 𝔤*` are in `TauCeti.Geometry.Lie.Adjoint.Represe
 * `TauCeti.Lie.quotientAdjointRepresentation_comp_mk'`: the pullback of
   `Subgroup.quotientAdjointRepresentation N` to `G` is the quotient of the adjoint representation.
 * `TauCeti.Lie.quotientAdjointRepresentation_mk_apply_mk`: `[g] · [ξ] = [Ad_g ξ]`.
+* `TauCeti.Lie.groupLieAlgebraMap_quotientGroupMk'_eq_zero_iff`,
+  `TauCeti.Lie.surjective_groupLieAlgebraMap_quotientGroupMk'`: the differential at the identity of
+  `G → G ⧸ N` has kernel `𝔫` and is surjective.
+* `TauCeti.Lie.quotientGroupLieAlgebraEquiv_quotientAdjointRepresentation_apply`: under
+  `𝔤 ⧸ 𝔫 ≃ Lie(G ⧸ N)`, the quotient adjoint representation is the adjoint representation of
+  `G ⧸ N`.
 
 ## References
 
@@ -49,9 +60,9 @@ public section
 
 noncomputable section
 
-namespace TauCeti.Lie
-
 open scoped ContDiff Manifold
+
+namespace TauCeti.Lie
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -114,5 +125,99 @@ theorem quotientAdjointRepresentation_mk_apply_mk {N : Subgroup G} [N.Normal]
   have h := DFunLike.congr_fun (quotientAdjointRepresentation_comp_mk' (I := I) hN) g
   rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply] at h
   rw [h, Representation.quotient_apply, Submodule.mapQ_apply]
+
+/-! ### Comparison with the Lie algebra of the quotient Lie group -/
+
+section QuotientLieGroup
+
+variable [I.Boundaryless]
+
+/-- **The differential of the projection onto `G ⧸ N` vanishes exactly on `𝔫`.** For a closed
+normal subgroup `N`, with `G ⧸ N` carrying the charts `Subgroup.quotientChartedSpaceOfIsClosed`,
+the kernel of the differential at the identity of `G → G ⧸ N` is the Lie algebra of `N`. -/
+theorem groupLieAlgebraMap_quotientGroupMk'_eq_zero_iff {N : Subgroup G} [N.Normal]
+    (hN : IsClosed (N : Set G)) {ξ : GroupLieAlgebra I G} :
+    letI := Subgroup.quotientChartedSpaceOfIsClosed I hN
+    (QuotientGroup.mk' N).groupLieAlgebraMap I 𝓘(ℝ, Subgroup.QuotientModelSpace I N) ξ = 0 ↔
+      ξ ∈ N.groupLieSubalgebra (I := I) := by
+  let _ := Subgroup.quotientChartedSpaceOfIsClosed I hN
+  have := Subgroup.lieGroup_quotientOfIsClosed (I := I) hN
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let e := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+  let e' := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, Subgroup.QuotientModelSpace I N)) (n := ∞)
+      (by simp) (1 : G ⧸ N))
+  -- Read at the identity, the Lie map of the projection is its differential.
+  have h : e' (lieMap (Subgroup.quotientMkSmoothHom I hN) (e.symm ξ)) =
+      (QuotientGroup.mk' N).groupLieAlgebraMap I 𝓘(ℝ, Subgroup.QuotientModelSpace I N) ξ := by
+    rw [leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap, LieEquiv.apply_symm_apply,
+      Subgroup.coe_quotientMkSmoothHom, MonoidHom.groupLieAlgebraMap_apply, QuotientGroup.coe_mk']
+  rw [← h, map_eq_zero_iff e' e'.injective, Subgroup.lieMap_quotientMkSmoothHom_eq_zero_iff,
+    mem_groupLieSubalgebra_iff, leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply]
+
+/-- **The differential of the projection onto `G ⧸ N` is surjective**, for a closed normal subgroup
+`N` and the charts `Subgroup.quotientChartedSpaceOfIsClosed` on `G ⧸ N`. -/
+theorem surjective_groupLieAlgebraMap_quotientGroupMk' {N : Subgroup G} [N.Normal]
+    (hN : IsClosed (N : Set G)) :
+    letI := Subgroup.quotientChartedSpaceOfIsClosed I hN
+    Function.Surjective
+      ((QuotientGroup.mk' N).groupLieAlgebraMap I 𝓘(ℝ, Subgroup.QuotientModelSpace I N)) := by
+  let _ := Subgroup.quotientChartedSpaceOfIsClosed I hN
+  intro v
+  obtain ⟨ξ, hξ⟩ := (Subgroup.isSubmersion_quotientMk (I := I) hN).surjective_mfderiv (by simp) 1 v
+  refine ⟨ξ, ?_⟩
+  rwa [MonoidHom.groupLieAlgebraMap_apply, QuotientGroup.coe_mk']
+
+/-- **The tangent Lie algebra of `G ⧸ N` is `𝔤 ⧸ 𝔫`**: for a closed normal subgroup `N`, the
+differential at the identity of the projection `G → G ⧸ N` induces a linear isomorphism from
+`𝔤 ⧸ 𝔫` onto the tangent Lie algebra of the quotient Lie group `G ⧸ N`
+(`Subgroup.lieGroup_quotientOfIsClosed`). -/
+def _root_.Subgroup.quotientGroupLieAlgebraEquiv (N : Subgroup G) [N.Normal]
+    (hN : IsClosed (N : Set G)) :
+    letI := Subgroup.quotientChartedSpaceOfIsClosed I hN
+    (GroupLieAlgebra I G ⧸ (N.groupLieSubalgebra (I := I)).toSubmodule) ≃ₗ[ℝ]
+      GroupLieAlgebra 𝓘(ℝ, Subgroup.QuotientModelSpace I N) (G ⧸ N) :=
+  letI := Subgroup.quotientChartedSpaceOfIsClosed I hN
+  (Submodule.quotEquivOfEq _ _ (Submodule.ext fun _ ↦
+      (groupLieAlgebraMap_quotientGroupMk'_eq_zero_iff hN).symm)).trans
+    (LinearMap.quotKerEquivOfSurjective
+      ((QuotientGroup.mk' N).groupLieAlgebraMap I 𝓘(ℝ, Subgroup.QuotientModelSpace I N) :
+        GroupLieAlgebra I G →ₗ[ℝ] GroupLieAlgebra 𝓘(ℝ, Subgroup.QuotientModelSpace I N) (G ⧸ N))
+      (surjective_groupLieAlgebraMap_quotientGroupMk' hN))
+
+/-- The identification `𝔤 ⧸ 𝔫 ≃ Lie(G ⧸ N)` sends the class of `ξ` to the differential at the
+identity of the projection, applied to `ξ`. -/
+@[simp]
+theorem quotientGroupLieAlgebraEquiv_mk {N : Subgroup G} [N.Normal] (hN : IsClosed (N : Set G))
+    (ξ : GroupLieAlgebra I G) :
+    letI := Subgroup.quotientChartedSpaceOfIsClosed I hN
+    N.quotientGroupLieAlgebraEquiv hN (Submodule.Quotient.mk ξ) =
+      (QuotientGroup.mk' N).groupLieAlgebraMap I 𝓘(ℝ, Subgroup.QuotientModelSpace I N) ξ := by
+  let _ := Subgroup.quotientChartedSpaceOfIsClosed I hN
+  rw [Subgroup.quotientGroupLieAlgebraEquiv, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
+    LinearMap.quotKerEquivOfSurjective_apply_mk, ContinuousLinearMap.coe_coe]
+
+/-- **The quotient adjoint representation is the adjoint representation of `G ⧸ N`**: the
+identification `𝔤 ⧸ 𝔫 ≃ Lie(G ⧸ N)` of `Subgroup.quotientGroupLieAlgebraEquiv` intertwines
+`Subgroup.quotientAdjointRepresentation N` with the adjoint representation of the quotient Lie
+group `G ⧸ N`. -/
+theorem quotientGroupLieAlgebraEquiv_quotientAdjointRepresentation_apply {N : Subgroup G}
+    [N.Normal] (hN : IsClosed (N : Set G)) (q : G ⧸ N)
+    (x : GroupLieAlgebra I G ⧸ (N.groupLieSubalgebra (I := I)).toSubmodule) :
+    letI := Subgroup.quotientChartedSpaceOfIsClosed I hN
+    haveI := Subgroup.lieGroup_quotientOfIsClosed (I := I) hN
+    N.quotientGroupLieAlgebraEquiv hN (N.quotientAdjointRepresentation hN q x) =
+      adjointRepresentation ℝ 𝓘(ℝ, Subgroup.QuotientModelSpace I N) (G ⧸ N) q
+        (N.quotientGroupLieAlgebraEquiv hN x) := by
+  let _ := Subgroup.quotientChartedSpaceOfIsClosed I hN
+  have := Subgroup.lieGroup_quotientOfIsClosed (I := I) hN
+  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
+  obtain ⟨ξ, rfl⟩ := Submodule.Quotient.mk_surjective _ x
+  rw [quotientAdjointRepresentation_mk_apply_mk, quotientGroupLieAlgebraEquiv_mk,
+    quotientGroupLieAlgebraEquiv_mk, adjointRepresentation_apply, adjointRepresentation_apply]
+  exact (QuotientGroup.mk' N).groupLieAlgebraMap_adjointContinuousLinearMap g ξ
+
+end QuotientLieGroup
 
 end TauCeti.Lie

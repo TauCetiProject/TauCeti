@@ -71,8 +71,9 @@ def _root_.Subgroup.groupLieSubalgebra (K : Subgroup G) : LieSubalgebra ℝ (Gro
     (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
       (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))).toLieHom
 
-/-! The remaining statements involve `TauCeti.Lie.lieSubalgebraOfSubgroup` or the exponential
-`mulInvariantExp`, which are stated for a Hausdorff `G`. -/
+/-! The comparison and exponential lemmas below, up to the order laws, involve
+`TauCeti.Lie.lieSubalgebraOfSubgroup` or the exponential `mulInvariantExp`, which are stated for a
+Hausdorff `G`. The order laws do not take `[T2Space G]`. -/
 
 variable [T2Space G]
 

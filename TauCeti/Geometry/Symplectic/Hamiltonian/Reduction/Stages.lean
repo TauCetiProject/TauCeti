@@ -36,10 +36,12 @@ and the moment map property there are not proved here.
   map is `N`-invariant
   (`TauCeti.residualMomentMapLift_subgroup_smul_eq_self`); this is the invariance needed for it
   to descend along the projection to the first reduced space. This pulled-back equivariance is
-  what is proved here, and it uses no Lie group structure on `G ⧸ N`. When `G ⧸ N` carries a
-  quotient Lie group structure, the differential at the identity of the projection `G → G ⧸ N`
-  induces a canonical isomorphism `𝔤 ⧸ 𝔫 ≃ Lie(G ⧸ N)`, and under it the dual action corresponds
-  to the coadjoint action of `G ⧸ N`; that comparison is not proved here.
+  what is proved here, and it uses no Lie group structure on `G ⧸ N`. For the quotient Lie group
+  `G ⧸ N`, the differential at the identity of the projection `G → G ⧸ N` induces an isomorphism
+  `𝔤 ⧸ 𝔫 ≃ Lie(G ⧸ N)` (`Subgroup.quotientGroupLieAlgebraEquiv`), which intertwines the
+  representation of `G ⧸ N` on `𝔤 ⧸ 𝔫` whose dual is the action above with the adjoint
+  representation of `G ⧸ N`
+  (`TauCeti.Lie.quotientGroupLieAlgebraEquiv_quotientAdjointRepresentation_apply`).
 * At every point `z` where `i` is manifold differentiable, the components of the map satisfy the
   moment map equation pulled back to `Z`: `d⟨μ_res, [ξ]⟩ = i^* (ι_{ξ_M} σ)` at `z`
   (`TauCeti.SmoothTwoForm.IsMomentMap.mvfderiv_residualMomentMapLift_apply_mk`). This is the
