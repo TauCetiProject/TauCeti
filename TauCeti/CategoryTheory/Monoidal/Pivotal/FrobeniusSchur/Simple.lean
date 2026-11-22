@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Preadditive.Schur
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.FrobeniusSchur.Basic
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Simple
+public import TauCeti.CategoryTheory.Monoidal.Rigid.TensorPow
 
 /-!
 # Second Frobenius–Schur indicators of simple objects
