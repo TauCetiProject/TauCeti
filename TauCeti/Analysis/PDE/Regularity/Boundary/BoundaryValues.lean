@@ -293,15 +293,9 @@ private theorem value_ae_eq_preciseRepresentative_indicator_sub_add
     (hgG : W1p.value g =ᵐ[mu.restrict Omega] G) :
     W1p.value u =ᵐ[mu.restrict Omega] preciseRepresentative mu
       ((Omega : Set (EuclideanSpace ℝ ι)).indicator (W1p.value (u - g))) + G := by
-  have hΩ : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
-  have hli : LocallyIntegrable ((Omega : Set (EuclideanSpace ℝ ι)).indicator
-      (W1p.value (u - g))) mu :=
-    ((memLp_indicator_iff_restrict hΩ.nullMeasurableSet).2
-      (Lp.memLp (W1p.value (u - g)))).locallyIntegrable (by norm_num)
-  filter_upwards [ae_restrict_of_ae (ae_eq_preciseRepresentative hli), W1p.value_sub_ae u g,
-    hgG, ae_restrict_mem hΩ] with x h₁ h₂ h₃ hx
-  rw [indicator_of_mem hx, h₂] at h₁
-  simp only [Pi.add_apply, Pi.sub_apply, ← h₁, ← h₃, sub_add_cancel]
+  filter_upwards [W1p.ae_eq_preciseRepresentative_indicator (u - g), W1p.value_sub_ae u g,
+    hgG] with x h₁ h₂ h₃
+  simp only [Pi.add_apply, ← h₁, h₂, Pi.sub_apply, ← h₃, sub_add_cancel]
 
 /-- **The global Hölder estimate for the Dirichlet problem with Lipschitz boundary values and a
 divergence datum, under an exterior density condition.** Let `n ≥ 1` be the dimension, let `q > 2`
