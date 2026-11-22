@@ -52,6 +52,9 @@ together with modulo-`X ^ m` congruence lifting and a differential reversion ide
 * `PowerSeries.derivative_binomialSeries`, `PowerSeries.one_add_X_mul_derivative_binomialSeries`,
   `PowerSeries.subst_binomialSeries_sub_one`, and `PowerSeries.binomialSeries_algebraMap`:
   derivative, logarithmic ODE, composition law, and scalar-tower compatibility of `binomialSeries`.
+* `PowerSeries.val_inv_invOneSubPow`, `PowerSeries.constantCoeff_invOneSubPow_zpow`, and
+  `PowerSeries.coeff_one_invOneSubPow_zpow`: the inverse of `invOneSubPow R d` is `(1 - X) ^ d`,
+  and the integer power `(1 - X) ^ (-k)` has constant coefficient `1` and coefficient `k` at `X`.
 * `PowerSeries.rescale_neg_one_invOneSubPow_zpow`: under `X ↦ -X`, the integer power
   `(1 - X) ^ (-k)` is the binomial series `binomialSeries R (-k)`, extending Mathlib's
   `PowerSeries.rescale_neg_one_invOneSubPow` from natural to integer exponents.
@@ -241,6 +244,33 @@ section InvOneSubPow
 
 variable {R : Type*} [CommRing R]
 
+/-- The inverse of the unit `(1 - X)⁻¹ ^ d`, as a power series, is `(1 - X) ^ d`. -/
+@[simp]
+theorem val_inv_invOneSubPow (d : ℕ) : (↑(invOneSubPow R d)⁻¹ : R⟦X⟧) = (1 - X) ^ d := by
+  rw [← Units.inv_eq_val_inv, invOneSubPow_inv_eq_one_sub_pow]
+
+/-- The integer powers of `(1 - X)⁻¹` have constant coefficient `1`. -/
+@[simp]
+theorem constantCoeff_invOneSubPow_zpow (k : ℤ) :
+    constantCoeff (↑(invOneSubPow R 1 ^ k) : R⟦X⟧) = 1 := by
+  have h1 : Units.map ((constantCoeff : R⟦X⟧ →+* R) : R⟦X⟧ →* R) (invOneSubPow R 1) = 1 :=
+    Units.ext (by simp [invOneSubPow_val_succ_eq_mk_add_choose])
+  rw [constantCoeff_val_zpow, h1, one_zpow, Units.val_one]
+
+/-- The coefficient of `X` in `(1 - X) ^ (-k)` is `k`. -/
+@[simp]
+theorem coeff_one_invOneSubPow_zpow (k : ℤ) :
+    coeff 1 (↑(invOneSubPow R 1 ^ k) : R⟦X⟧) = k := by
+  induction k using Int.induction_on with
+  | zero => simp
+  | succ k ih =>
+    rw [zpow_add_one, Units.val_mul, coeff_one_mul, ih, constantCoeff_invOneSubPow_zpow]
+    simp [invOneSubPow_val_succ_eq_mk_add_choose]
+  | pred k ih =>
+    rw [zpow_sub_one, Units.val_mul, coeff_one_mul, ih, val_inv_invOneSubPow, pow_one,
+      constantCoeff_invOneSubPow_zpow]
+    simp [sub_eq_add_neg]
+
 /-- Under `X ↦ -X`, the integer power `(1 - X) ^ (-k)` becomes the binomial series
 `(1 + X) ^ (-k)`. -/
 theorem rescale_neg_one_invOneSubPow_zpow (k : ℤ) :
@@ -253,7 +283,7 @@ theorem rescale_neg_one_invOneSubPow_zpow (k : ℤ) :
     rw [zpow_add_one, Units.val_mul, map_mul, ih, h1, neg_add, binomialSeries_add]
   | pred k ih =>
     have h1 : rescale (-1 : R) (↑(invOneSubPow R 1)⁻¹ : R⟦X⟧) = binomialSeries R (1 : ℤ) := by
-      rw [← Units.inv_eq_val_inv, invOneSubPow_inv_eq_one_sub_pow, binomialSeries_one]
+      rw [val_inv_invOneSubPow, binomialSeries_one]
       simp [rescale_X, sub_eq_add_neg]
     rw [zpow_sub_one, Units.val_mul, map_mul, ih, h1, neg_sub, sub_eq_neg_add, binomialSeries_add]
 

@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.WellKnown
 public import TauCeti.RingTheory.PowerSeries.Expand
 public import TauCeti.RingTheory.PowerSeries.PiTopology
+import TauCeti.RingTheory.PowerSeries.Binomial
 import TauCeti.RingTheory.PowerSeries.Derivative
 import TauCeti.RingTheory.PowerSeries.Geometric
 import TauCeti.RingTheory.PowerSeries.Trunc
@@ -78,33 +79,6 @@ namespace PowerSeries
 section CommRing
 
 variable {R : Type*} [CommRing R]
-
-/-- The inverse of the unit `(1 - X)⁻¹ ^ d`, as a power series, is `(1 - X) ^ d`. -/
-@[simp]
-theorem val_inv_invOneSubPow (d : ℕ) : (↑(invOneSubPow R d)⁻¹ : R⟦X⟧) = (1 - X) ^ d := by
-  rw [← Units.inv_eq_val_inv, invOneSubPow_inv_eq_one_sub_pow]
-
-/-- The integer powers of `(1 - X)⁻¹` have constant coefficient `1`. -/
-@[simp]
-theorem constantCoeff_invOneSubPow_zpow (k : ℤ) :
-    constantCoeff (↑(invOneSubPow R 1 ^ k) : R⟦X⟧) = 1 := by
-  have h1 : Units.map ((constantCoeff : R⟦X⟧ →+* R) : R⟦X⟧ →* R) (invOneSubPow R 1) = 1 :=
-    Units.ext (by simp [invOneSubPow_val_succ_eq_mk_add_choose])
-  rw [constantCoeff_val_zpow, h1, one_zpow, Units.val_one]
-
-/-- The coefficient of `X` in `(1 - X) ^ (-k)` is `k`. -/
-@[simp]
-theorem coeff_one_invOneSubPow_zpow (k : ℤ) :
-    coeff 1 (↑(invOneSubPow R 1 ^ k) : R⟦X⟧) = k := by
-  induction k using Int.induction_on with
-  | zero => simp
-  | succ k ih =>
-    rw [zpow_add_one, Units.val_mul, coeff_one_mul, ih, constantCoeff_invOneSubPow_zpow]
-    simp [invOneSubPow_val_succ_eq_mk_add_choose]
-  | pred k ih =>
-    rw [zpow_sub_one, Units.val_mul, coeff_one_mul, ih, val_inv_invOneSubPow, pow_one,
-      constantCoeff_invOneSubPow_zpow]
-    simp [sub_eq_add_neg]
 
 /-- The integral Euler factor `(1 - X ^ r) ^ (-e)` at `e = -1` is `1 - X ^ r`. -/
 theorem expand_val_inv_invOneSubPow (r : ℕ) (hr : r ≠ 0) :
