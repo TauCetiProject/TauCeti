@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.SpectralSequence.BidegreeAssignment
 public import TauCeti.Algebra.Homology.SpectralSequence.Reindex
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Exhaustive
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.FirstPage
@@ -402,3 +403,50 @@ noncomputable def homologicalFiltrationSpectralSequencePageXIsoGradedOfExhaustiv
 end ModuleCat
 
 end CochainComplex
+
+/-! ### Bidegree assignments in the classical indexings -/
+
+namespace TauCeti.BidegreeAssignment
+
+open CochainComplex
+
+/-- The decreasing-filtration bidegree assignment `(a, b) ↦ (-b - 1, a + b)` of the native
+positions, read through `CochainComplex.decreasingFiltrationBidegreeEquiv` and the shift of the
+pages by `1`, is the cohomological assignment `(p, q) ↦ (p, p + q)`: the classical `E_r^{p,q}` of a
+decreasing filtration has filtration degree `p` and total degree `p + q`. -/
+lemma decreasingFiltration_comap_decreasingFiltrationBidegreeEquiv {r₀ r₀' : ℤ}
+    (hd : r₀ ≤ r₀' + 1) :
+    (decreasingFiltration r₀).comap 1 decreasingFiltrationBidegreeEquiv
+        decreasingFiltrationBidegreeEquiv.injective
+        (fun r i j ↦ (decreasingFiltrationBidegreeEquiv_rel_iff r i j).1) hd =
+      cohomological r₀' := by
+  ext pq
+  · simp only [comap_fil, decreasingFiltration_fil, decreasingFiltrationBidegreeEquiv_apply,
+      cohomological_fil]
+    lia
+  · simp only [comap_deg, decreasingFiltration_deg, decreasingFiltrationBidegreeEquiv_apply,
+      cohomological_deg]
+    lia
+  · simp
+
+/-- The decreasing-filtration bidegree assignment `(a, b) ↦ (-b - 1, a + b)` of the native
+positions, read through `CochainComplex.homologicalFiltrationBidegreeEquiv` and the shift of the
+pages by `1`, is the homological assignment `(p, q) ↦ (-p, -p - q)`: the classical `E^r_{p,q}` of
+an increasing filtration has homological filtration degree `p` and homological total degree
+`p + q`. -/
+lemma decreasingFiltration_comap_homologicalFiltrationBidegreeEquiv {r₀ r₀' : ℤ}
+    (hd : r₀ ≤ r₀' + 1) :
+    (decreasingFiltration r₀).comap 1 homologicalFiltrationBidegreeEquiv
+        homologicalFiltrationBidegreeEquiv.injective
+        (fun r i j ↦ (homologicalFiltrationBidegreeEquiv_rel_iff r i j).1) hd =
+      homological r₀' := by
+  ext pq
+  · simp only [comap_fil, decreasingFiltration_fil, homologicalFiltrationBidegreeEquiv_apply,
+      homological_fil]
+    lia
+  · simp only [comap_deg, decreasingFiltration_deg, homologicalFiltrationBidegreeEquiv_apply,
+      homological_deg]
+    lia
+  · simp
+
+end TauCeti.BidegreeAssignment
