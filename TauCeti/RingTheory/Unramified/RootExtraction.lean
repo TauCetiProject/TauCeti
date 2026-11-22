@@ -53,7 +53,7 @@ theorem isUnit_natCast_of_formallyUnramified_adjoinRoot_X_pow_sub_C_away {R S : 
     [IsLocalization.Away f S] (hf : Prime f) (a : S) {n : ℕ} (hfn : ¬f ∣ (n : R))
     [Algebra.FormallyUnramified S (AdjoinRoot (X ^ n - C a))] : IsUnit (n : R) := by
   have hn : n ≠ 0 := by rintro rfl; exact hfn (by simp)
-  apply hf.isUnit_of_isUnit_away_of_not_dvd (S := S) _ hfn
+  apply hf.isUnit_of_isUnit_away_of_not_dvd (S := S) (IsRegular.of_ne_zero hf.ne_zero).left _ hfn
   simpa using TauCeti.isUnit_natCast_of_formallyUnramified_adjoinRoot_X_pow_sub_C a hn
 
 end Prime

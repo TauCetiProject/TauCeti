@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.GroupWithZero.Associated
 public import Mathlib.RingTheory.Localization.Away.Basic
 import TauCeti.Algebra.BigOperators.Associated
+import TauCeti.Algebra.Divisibility.Basic
 
 /-!
 # Units of localizations away from primes and products of primes
@@ -18,14 +19,14 @@ regular and associated to a finite product `∏ i ∈ s, p i` of primes (not nec
 element `x` of `Localization.Away f` is a unit if and only if clearing a power `f ^ n` yields
 `u * ∏ i ∈ s, p i ^ k i` for some unit `u ∈ Rˣ` and exponents `k : ι → ℕ`.
 
-In particular, in a cancellative commutative semiring, an element not divisible by a prime `p` is
-already a unit if it becomes a unit after inverting `p`, allowing invertibility off a prime divisor
-to descend to the original ring.
+In particular, for a regular prime `p`, an element not divisible by `p` is already a unit if it
+becomes a unit after inverting `p`, allowing invertibility off a regular prime divisor to descend
+to the original ring.
 
 ## Main results
 
-* `Prime.isUnit_of_isUnit_away_of_not_dvd`: inverting a prime only turns its multiples into new
-  units.
+* `Prime.isUnit_of_isUnit_away_of_not_dvd`: inverting a regular prime only turns its multiples into
+  new units.
 * `IsLocalization.Away.isUnit_iff_exists_mul_pow_eq_finsetProd`: unit criterion in a localization
   away from a regular element associated to a finite product of primes.
 * `IsLocalization.Away.exists_unit_mul_zpow_of_prime` and
@@ -37,17 +38,19 @@ public section
 
 namespace Prime
 
-variable {R S : Type*} [CommSemiring R] [IsCancelMulZero R] [CommSemiring S] [Algebra R S]
+variable {R S : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
   {p x : R} [IsLocalization.Away p S]
 
-/-- Inverting a prime element can only make its multiples into new units. -/
-theorem isUnit_of_isUnit_away_of_not_dvd (hp : Prime p)
+/-- Inverting a regular prime element can only make its multiples into new units. -/
+theorem isUnit_of_isUnit_away_of_not_dvd (hp : Prime p) (hreg : IsLeftRegular p)
     (hx : IsUnit (algebraMap R S x)) (hpx : ¬p ∣ x) : IsUnit x := by
   obtain ⟨n, hn⟩ := (IsLocalization.Away.algebraMap_isUnit_iff (S := S) p).mp hx
-  obtain ⟨i, _, hi⟩ := (dvd_prime_pow hp n).mp hn
+  obtain ⟨i, -, b, hb, hi⟩ :=
+    (TauCeti.dvd_prime_pow_mul_iff hp hreg n (a := 1)).mp (by simpa using hn)
   by_cases hi0 : i = 0
-  · exact associated_one_iff_isUnit.mp (by simpa [hi0] using hi)
-  · exact (hpx ((dvd_pow_self p hi0).trans hi.dvd')).elim
+  · have hxb : x ∣ b := by simpa [hi0] using hi.dvd
+    exact isUnit_of_dvd_one (hxb.trans hb)
+  · exact (hpx ((dvd_pow_self p hi0).trans ((dvd_mul_right (p ^ i) b).trans hi.dvd'))).elim
 
 end Prime
 
@@ -73,15 +76,8 @@ theorem isUnit_iff_exists_mul_pow_eq_finsetProd (f : R) [IsLocalization.Away f S
     have hm' : a ∣ ∏ i ∈ s, p i ^ m := by
       rw [Finset.prod_pow]
       exact hm.trans hf.pow_pow.dvd
-    have hprod_reg : IsLeftRegular (∏ i ∈ s, p i) := by
-      obtain ⟨v, hv⟩ := hf
-      rw [← hv]
-      exact hreg.mul v.isRegular.left
-    have hregp : ∀ i ∈ s, IsLeftRegular (p i) := fun i hi ↦ by
-      classical
-      have h := hprod_reg
-      rw [← Finset.mul_prod_erase s p hi, mul_comm] at h
-      exact IsLeftRegular.of_mul h
+    have hregp : ∀ i ∈ s, IsLeftRegular (p i) := fun i hi ↦
+      hreg.of_dvd ((Finset.dvd_prod_of_mem p hi).trans hf.symm.dvd)
     obtain ⟨k, -, u, hu⟩ := (TauCeti.dvd_finsetProd_pow_iff_of_prime hp hregp (fun _ ↦ m)).mp hm'
     refine ⟨u⁻¹, k, n, ?_⟩
     have hau : a = (u⁻¹ : Rˣ) * ∏ i ∈ s, p i ^ k i := by
