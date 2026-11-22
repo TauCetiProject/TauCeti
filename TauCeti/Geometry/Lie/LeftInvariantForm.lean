@@ -51,7 +51,7 @@ forms detect nontrivial homotopy classes of maps of spheres.
 
 * `TauCeti.leftInvariantForm_one`, `TauCeti.leftInvariantForm_apply_mulInvariantVectorField`: at
   the identity `j(a)` is `a`, and on left-invariant vector fields it is constant.
-* `TauCeti.leftInvariantForm_ne_zero`: `j(a)` vanishes nowhere unless `a = 0`.
+* `TauCeti.leftInvariantForm_apply_ne_zero`: `j(a)` vanishes nowhere unless `a = 0`.
 * `TauCeti.mpullback_mul_left_leftInvariantForm`, `TauCeti.exists_eq_leftInvariantForm_iff`: the
   left-invariant forms are exactly the forms invariant under all left translations.
 * `TauCeti.mpullback_leftInvariantForm`: the pullback along a homomorphism `φ` is the
@@ -159,6 +159,11 @@ theorem leftInvariantForm_inj {a b : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F}
     leftInvariantForm a = leftInvariantForm b ↔ a = b :=
   leftInvariantForm_injective.eq_iff
 
+@[simp]
+theorem leftInvariantForm_eq_zero_iff {a : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F} :
+    leftInvariantForm a = 0 ↔ a = 0 :=
+  leftInvariantForm_injective.eq_iff' leftInvariantForm_zero
+
 section Translation
 
 variable [ContMDiffMul I 1 G]
@@ -173,7 +178,7 @@ theorem leftInvariantForm_apply_mulInvariantVectorField
   exact congrArg a (funext fun i ↦ mfderiv_inv_mul_mulInvariantVectorField (w i) g)
 
 /-- A left-invariant form vanishes nowhere unless its value at the identity is zero. -/
-theorem leftInvariantForm_ne_zero {a : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F} (ha : a ≠ 0)
+theorem leftInvariantForm_apply_ne_zero {a : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F} (ha : a ≠ 0)
     (g : G) : leftInvariantForm a g ≠ 0 := by
   intro h
   obtain ⟨w, hw⟩ := DFunLike.ne_iff.1 ha
@@ -321,6 +326,11 @@ theorem leftInvariantSmoothForm_inj {a b : GroupLieAlgebra I G [⋀^Fin k]→L[�
     leftInvariantSmoothForm a = leftInvariantSmoothForm b ↔ a = b :=
   leftInvariantSmoothForm_injective.eq_iff
 
+@[simp]
+theorem leftInvariantSmoothForm_eq_zero_iff {a : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F} :
+    leftInvariantSmoothForm a = 0 ↔ a = 0 :=
+  leftInvariantSmoothForm_injective.eq_iff' leftInvariantSmoothForm_zero
+
 /-- **Left invariance** of the smooth left-invariant form of `a`: it is its own pullback along
 every left translation. -/
 @[simp]
@@ -335,7 +345,7 @@ positive dimension, for the orientation it defines. In particular its integral i
 theorem integralTopForm_leftInvariantForm_pos [CompactSpace G] [NeZero k]
     (hk : Module.finrank ℝ E = k) {a : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] ℝ} (ha : a ≠ 0) :
     0 < integralTopForm (Manifold.Orientation.ofTopForm hk (leftInvariantForm a)
-      ((isSmoothForm_leftInvariantForm a).of_le zero_le) (leftInvariantForm_ne_zero ha))
+      ((isSmoothForm_leftInvariantForm a).of_le zero_le) (leftInvariantForm_apply_ne_zero ha))
       (leftInvariantForm a) :=
   integralTopForm_ofTopForm_pos hk _ _
 
