@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Real
-public import TauCeti.Geometry.Manifold.Boundary.Invariance
-public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
+public import TauCeti.Geometry.Manifold.Boundary.OfHomeomorph
 
 /-!
 # The boundary of a manifold with corners is a topological manifold
@@ -30,7 +29,10 @@ So each chart of `M` restricts to the boundary, and followed by the homeomorphis
 a chart of the boundary with values in `ℝ^m`. These charts make the boundary of `M` a charted
 space modelled on `EuclideanSpace ℝ (Fin m)` (`TauCeti.euclideanQuadrantBoundaryChartedSpace`), a
 topological manifold without boundary of one dimension less. Its topology is the subspace topology,
-since it is a structure on the subtype `(𝓡c (m + 1)).boundary M`.
+since it is a structure on the subtype `(𝓡c (m + 1)).boundary M`. It is the instance of the general
+construction `ModelWithCorners.boundaryChartedSpaceOfHomeomorph` for the homeomorphism above, and
+its characteristic lemmas follow those of `TauCeti.halfSpaceBoundaryChartedSpace` in
+`TauCeti/Geometry/Manifold/Boundary/ProductHalfSpace.lean`.
 
 The corners of `M` are invisible in this structure: the boundary of the square `[0, 1]²` is a
 topological circle. This is the structure under which statements about closed manifolds, such as
@@ -98,12 +100,6 @@ private theorem exists_eq_minCoord (z : EuclideanSpace ℝ (Fin (m + 1))) :
 private theorem continuous_minCoord : Continuous (minCoord (m := m)) :=
   Continuous.finset_inf'_apply Finset.univ_nonempty fun i _ ↦ PiLp.continuous_apply 2 _ i
 
-/-- On a point of the quadrant with a vanishing coordinate, the smallest coordinate is `0`. -/
-private theorem minCoord_eq_zero {z : EuclideanSpace ℝ (Fin (m + 1))} (hz : ∀ i, 0 ≤ z i)
-    (h : ∃ i, z i = 0) : minCoord z = 0 := by
-  obtain ⟨i, hi⟩ := h
-  exact le_antisymm (hi ▸ minCoord_le z i) (Finset.le_inf' _ _ fun j _ ↦ hz j)
-
 variable (m) in
 /-- Coordinates on the boundary of the quadrant `[0, ∞)^(m + 1)`: the differences
 `(z₁ - z₀, …, zₘ - z₀)` of the coordinates with the zeroth one. This linear map is constant along
@@ -128,10 +124,8 @@ private noncomputable def boundaryParamAux (y : EuclideanSpace ℝ (Fin m)) :
   WithLp.toLp 2 (Fin.cons 0 fun i ↦ y i)
 
 private theorem continuous_boundaryParamAux : Continuous (boundaryParamAux (m := m)) :=
-  (PiLp.continuous_toLp 2 _).comp <| continuous_pi fun j ↦ by
-    refine Fin.cases ?_ (fun i ↦ ?_) j
-    · exact continuous_const
-    · exact PiLp.continuous_apply 2 _ i
+  (PiLp.continuous_toLp 2 _).comp <|
+    continuous_const.finCons (continuous_pi fun i ↦ PiLp.continuous_apply 2 _ i)
 
 variable (m) in
 /-- The inverse of the boundary coordinates `TauCeti.euclideanQuadrantBoundaryProj`: the point
@@ -222,6 +216,14 @@ end Model
 
 section Manifold
 
+/-- The quadrant model sends a point to the frontier of its range exactly when the point has a
+vanishing coordinate. -/
+private theorem mem_frontier_range_euclideanQuadrant_iff {n : ℕ} (z : EuclideanQuadrant n) :
+    (𝓡c n) z ∈ frontier (range (𝓡c n)) ↔ ∃ i, z.val i = 0 := by
+  rw [frontier_range_modelWithCornersEuclideanQuadrant, modelWithCornersEuclideanQuadrant_apply]
+  simp only [mem_ofPred_eq, eq_comm (a := (0 : ℝ))]
+  exact and_iff_right z.property
+
 /-- **Topological invariance of the boundary.** A point of a charted space modelled on the
 quadrant `[0, ∞)ⁿ` lies on the boundary exactly when any chart around it, in the atlas or not,
 reads it with a vanishing coordinate. -/
@@ -231,70 +233,18 @@ theorem ModelWithCorners.mem_boundary_euclideanQuadrant_iff {n : ℕ} {M : Type*
     x ∈ (𝓡c n).boundary M ↔ ∃ i, (e x).val i = 0 := by
   rw [ModelWithCorners.boundary, mem_ofPred_eq,
     ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional hx,
-    frontier_range_modelWithCornersEuclideanQuadrant, modelWithCornersEuclideanQuadrant_apply]
-  simp only [mem_ofPred_eq, eq_comm (a := (0 : ℝ))]
-  exact and_iff_right (e x).property
+    mem_frontier_range_euclideanQuadrant_iff]
+
+variable (m) in
+/-- The boundary coordinates of the quadrant, on the points that the model sends to the frontier
+of its range. -/
+private noncomputable def euclideanQuadrantFrontierHomeomorph :
+    {z : EuclideanQuadrant (m + 1) // (𝓡c (m + 1)) z ∈ frontier (range (𝓡c (m + 1)))} ≃ₜ
+      EuclideanSpace ℝ (Fin m) :=
+  ((Homeomorph.refl _).subtype mem_frontier_range_euclideanQuadrant_iff).trans
+    (euclideanQuadrantBoundaryHomeomorph m)
 
 variable {m : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanQuadrant (m + 1)) M]
-  {e : OpenPartialHomeomorph M (EuclideanQuadrant (m + 1))}
-
-/-- A point of the boundary of the quadrant in the target of a chart of `M` is the reading of a
-boundary point. -/
-private theorem symm_euclideanQuadrantBoundaryParam_mem_boundary {y : EuclideanSpace ℝ (Fin m)}
-    (hy : euclideanQuadrantBoundaryParam m y ∈ e.target) :
-    e.symm (euclideanQuadrantBoundaryParam m y) ∈ (𝓡c (m + 1)).boundary M := by
-  rw [ModelWithCorners.mem_boundary_euclideanQuadrant_iff (e.map_target hy), e.right_inv hy]
-  exact exists_euclideanQuadrantBoundaryParam_eq_zero y
-
-/-- The boundary coordinates of the chart value of a boundary point recover that chart value. -/
-private theorem euclideanQuadrantBoundaryParam_proj_apply_of_mem_boundary {x : M}
-    (hx : x ∈ e.source) (hxb : x ∈ (𝓡c (m + 1)).boundary M) :
-    euclideanQuadrantBoundaryParam m (euclideanQuadrantBoundaryProj m (e x).val) = e x :=
-  euclideanQuadrantBoundaryParam_euclideanQuadrantBoundaryProj
-    ((ModelWithCorners.mem_boundary_euclideanQuadrant_iff hx).1 hxb)
-
-/-- The boundary chart attached to a chart `e` of `M`: read a boundary point through `e`, then take
-its boundary coordinates in the quadrant. The base point `p` witnesses that the boundary is
-nonempty, which `OpenPartialHomeomorph.subtypeCoord` needs to choose an irrelevant inverse value
-off the target. -/
-private noncomputable def euclideanQuadrantBoundaryChart (p : (𝓡c (m + 1)).boundary M)
-    (e : OpenPartialHomeomorph M (EuclideanQuadrant (m + 1))) :
-    OpenPartialHomeomorph ((𝓡c (m + 1)).boundary M) (EuclideanSpace ℝ (Fin m)) :=
-  e.subtypeCoord _ ⟨p⟩ (euclideanQuadrantBoundaryParam m)
-    (fun z ↦ euclideanQuadrantBoundaryProj m z.val)
-    symm_euclideanQuadrantBoundaryParam_mem_boundary
-    euclideanQuadrantBoundaryParam_proj_apply_of_mem_boundary
-    (fun y _ ↦ euclideanQuadrantBoundaryProj_euclideanQuadrantBoundaryParam y)
-    continuous_euclideanQuadrantBoundaryParam
-    ((euclideanQuadrantBoundaryProj m).continuous.comp continuous_subtypeVal).continuousOn
-
-variable {p : (𝓡c (m + 1)).boundary M}
-
-@[simp]
-private theorem euclideanQuadrantBoundaryChart_source :
-    (euclideanQuadrantBoundaryChart p e).source = Subtype.val ⁻¹' e.source := by
-  unfold euclideanQuadrantBoundaryChart
-  apply OpenPartialHomeomorph.subtypeCoord_source
-
-@[simp]
-private theorem euclideanQuadrantBoundaryChart_target :
-    (euclideanQuadrantBoundaryChart p e).target =
-      {y | euclideanQuadrantBoundaryParam m y ∈ e.target} := by
-  unfold euclideanQuadrantBoundaryChart
-  apply OpenPartialHomeomorph.subtypeCoord_target
-
-@[simp]
-private theorem euclideanQuadrantBoundaryChart_apply (q : (𝓡c (m + 1)).boundary M) :
-    euclideanQuadrantBoundaryChart p e q = euclideanQuadrantBoundaryProj m (e q).val := by
-  unfold euclideanQuadrantBoundaryChart
-  apply OpenPartialHomeomorph.subtypeCoord_apply
-
-private theorem coe_euclideanQuadrantBoundaryChart_symm_apply {y : EuclideanSpace ℝ (Fin m)}
-    (hy : euclideanQuadrantBoundaryParam m y ∈ e.target) :
-    ((euclideanQuadrantBoundaryChart p e).symm y : M) =
-      e.symm (euclideanQuadrantBoundaryParam m y) := by
-  unfold euclideanQuadrantBoundaryChart
-  exact OpenPartialHomeomorph.coe_subtypeCoord_symm_apply _ _ _ _ _ _ _ _ _ _ hy
 
 variable (m M) in
 /-- The charted-space structure on the boundary of a manifold modelled on the quadrant
@@ -302,36 +252,25 @@ variable (m M) in
 followed by the boundary coordinates `TauCeti.euclideanQuadrantBoundaryProj` of the quadrant. The
 implementation is opaque; use the characteristic lemmas below to reason about its charts. -/
 @[irreducible, instance] noncomputable def euclideanQuadrantBoundaryChartedSpace :
-    ChartedSpace (EuclideanSpace ℝ (Fin m)) ((𝓡c (m + 1)).boundary M) where
-  atlas := range fun p ↦ euclideanQuadrantBoundaryChart p (chartAt _ p.val)
-  chartAt p := euclideanQuadrantBoundaryChart p (chartAt _ p.val)
-  mem_chart_source p := by
-    rw [euclideanQuadrantBoundaryChart_source]
-    exact mem_chart_source _ p.val
-  chart_mem_atlas p := mem_range_self p
-
-/-- The preferred boundary chart at `p` is the boundary chart induced by the preferred chart of `M`
-at `p`. -/
-private theorem euclideanQuadrantBoundaryChartedSpace_chartAt (p : (𝓡c (m + 1)).boundary M) :
-    chartAt (EuclideanSpace ℝ (Fin m)) p =
-      euclideanQuadrantBoundaryChart p (chartAt (EuclideanQuadrant (m + 1)) (p : M)) := by
-  unfold euclideanQuadrantBoundaryChartedSpace
-  rfl
+    ChartedSpace (EuclideanSpace ℝ (Fin m)) ((𝓡c (m + 1)).boundary M) :=
+  (𝓡c (m + 1)).boundaryChartedSpaceOfHomeomorph M (euclideanQuadrantFrontierHomeomorph m)
+    (fun z ↦ euclideanQuadrantBoundaryProj m z.val) fun _ ↦ rfl
 
 variable (m M) in
 /-- The atlas of the boundary is the range of its preferred charts. -/
 theorem euclideanQuadrantBoundaryChartedSpace_atlas :
     atlas (EuclideanSpace ℝ (Fin m)) ((𝓡c (m + 1)).boundary M) =
       range fun p : (𝓡c (m + 1)).boundary M ↦ chartAt (EuclideanSpace ℝ (Fin m)) p := by
-  unfold atlas euclideanQuadrantBoundaryChartedSpace chartAt
-  rfl
+  unfold euclideanQuadrantBoundaryChartedSpace
+  exact ModelWithCorners.boundaryChartedSpaceOfHomeomorph_atlas _ _ _ _ _
 
 /-- The source of the preferred boundary chart at `p` is the part of the boundary that the
 preferred chart of `M` at `p` sees. -/
 theorem euclideanQuadrantBoundaryChartedSpace_chartAt_source (p : (𝓡c (m + 1)).boundary M) :
     (chartAt (EuclideanSpace ℝ (Fin m)) p).source =
       Subtype.val ⁻¹' (chartAt (EuclideanQuadrant (m + 1)) (p : M)).source := by
-  rw [euclideanQuadrantBoundaryChartedSpace_chartAt, euclideanQuadrantBoundaryChart_source]
+  unfold euclideanQuadrantBoundaryChartedSpace
+  exact ModelWithCorners.boundaryChartedSpaceOfHomeomorph_chartAt_source p
 
 /-- The target of the preferred boundary chart at `p` is the target of the preferred chart of `M`
 at `p`, pulled back along the boundary parametrization of the quadrant. -/
@@ -339,14 +278,16 @@ theorem euclideanQuadrantBoundaryChartedSpace_chartAt_target (p : (𝓡c (m + 1)
     (chartAt (EuclideanSpace ℝ (Fin m)) p).target =
       {y | euclideanQuadrantBoundaryParam m y ∈
         (chartAt (EuclideanQuadrant (m + 1)) (p : M)).target} := by
-  rw [euclideanQuadrantBoundaryChartedSpace_chartAt, euclideanQuadrantBoundaryChart_target]
+  unfold euclideanQuadrantBoundaryChartedSpace
+  exact ModelWithCorners.boundaryChartedSpaceOfHomeomorph_chartAt_target p
 
 /-- The preferred boundary chart at `p` reads a point through the preferred chart of `M` at `p` and
 takes its boundary coordinates in the quadrant. -/
 theorem euclideanQuadrantBoundaryChartedSpace_chartAt_apply (p q : (𝓡c (m + 1)).boundary M) :
     chartAt (EuclideanSpace ℝ (Fin m)) p q =
       euclideanQuadrantBoundaryProj m (chartAt (EuclideanQuadrant (m + 1)) (p : M) q).val := by
-  rw [euclideanQuadrantBoundaryChartedSpace_chartAt, euclideanQuadrantBoundaryChart_apply]
+  unfold euclideanQuadrantBoundaryChartedSpace
+  exact ModelWithCorners.boundaryChartedSpaceOfHomeomorph_chartAt_apply p q
 
 /-- On its target, the inverse of the preferred boundary chart at `p` is the inverse of the
 preferred chart of `M` at `p`, applied to the boundary parametrization of the quadrant. -/
@@ -356,8 +297,8 @@ theorem coe_euclideanQuadrantBoundaryChartedSpace_chartAt_symm_apply
       (chartAt (EuclideanQuadrant (m + 1)) (p : M)).target) :
     ((chartAt (EuclideanSpace ℝ (Fin m)) p).symm y : M) =
       (chartAt (EuclideanQuadrant (m + 1)) (p : M)).symm (euclideanQuadrantBoundaryParam m y) := by
-  rw [euclideanQuadrantBoundaryChartedSpace_chartAt,
-    coe_euclideanQuadrantBoundaryChart_symm_apply hy]
+  unfold euclideanQuadrantBoundaryChartedSpace
+  exact ModelWithCorners.coe_boundaryChartedSpaceOfHomeomorph_chartAt_symm_apply p hy
 
 end Manifold
 
