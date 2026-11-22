@@ -34,7 +34,8 @@ uniform positive distance from every point outside its range.
 ## Main results
 
 * `ContinuousMap.convex_uniformlyPositive`: the uniformly positive functions form a convex set.
-* `ContinuousMap.isOpen_uniformlyPositive`: on a compact space they form an open set.
+* `ContinuousMap.isOpen_uniformlyPositive`: on a compact space, and when every `Set.Iic a` is
+  closed in `𝕜`, they form an open set for the compact-open topology.
 * `ContinuousMap.exists_pos_le_dist_of_notMem_range`: a continuous map from a compact space into a
   metric space has `dist (f x) y` bounded below by a positive constant when `y ∉ Set.range f`.
 * `ContinuousMap.exists_pos_le_norm_sub_of_notMem_range`: the normed-group form `δ ≤ ‖f x - y‖`.
@@ -66,9 +67,10 @@ theorem convex_uniformlyPositive {𝕜 : Type*} [Semiring 𝕜] [LinearOrder �
     min δ₁ δ₂ = a * min δ₁ δ₂ + b * min δ₁ δ₂ := by rw [← add_mul, hab, one_mul]
     _ ≤ a * h₁ f + b * h₂ f := by gcongr
 
-/-- On a compact space, the continuous functions into a linear order that are uniformly bounded
-below by a positive constant form an open set for the compact-open topology. For real-valued
-functions this is the uniform topology. -/
+/-- Let `𝕜` be a linear order with zero whose topology makes every lower ray `Set.Iic a` closed
+(`ClosedIicTopology 𝕜`). On a compact space, the continuous functions into `𝕜` that are uniformly
+bounded below by a positive constant form an open set for the compact-open topology. For
+real-valued functions this is the uniform topology. -/
 theorem isOpen_uniformlyPositive {𝕜 : Type*} [Zero 𝕜] [LinearOrder 𝕜] [TopologicalSpace 𝕜]
     [ClosedIicTopology 𝕜] [CompactSpace X] :
     IsOpen {h : C(X, 𝕜) | ∃ δ > 0, ∀ x, δ ≤ h x} := by
