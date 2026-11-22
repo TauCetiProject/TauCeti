@@ -55,6 +55,8 @@ transporting the property back to a compact set from an image already known to b
 * `TauCeti.IsJordanCurve.image_homeomorph` and `TauCeti.isJordanCurve_image_homeomorph_iff` — being
   a Jordan curve is invariant under a homeomorphism of the ambient spaces; no separation axiom is
   needed.
+* `TauCeti.isJordanCurve_range` — the range of a continuous injection from a space homeomorphic to
+  `Circle` into a Hausdorff space is a Jordan curve.
 * `TauCeti.continuous_jordanParam`, `TauCeti.jordanParam_injective`,
   `TauCeti.isInducing_jordanParam`, `TauCeti.range_jordanParam`, `TauCeti.jordanParam_apply` and
   `TauCeti.jordanParam_apply_apply` — the parametrization of a Jordan curve by the circle is a
@@ -178,6 +180,14 @@ lemma applied to `e.symm`, which no consumer then has to spell out. -/
 theorem isJordanCurve_image_homeomorph_iff (e : X ≃ₜ Y) :
     IsJordanCurve (e '' C) ↔ IsJordanCurve C :=
   ⟨fun h => e.symm_image_image C ▸ h.image_homeomorph e.symm, fun h => h.image_homeomorph e⟩
+
+/-- **The range of a continuous injection from a space homeomorphic to `Circle` into a Hausdorff
+space is a Jordan curve.** -/
+theorem isJordanCurve_range [T2Space Y] {Z : Type*} [TopologicalSpace Z] (e : Z ≃ₜ Circle)
+    {g : Z → Y} (hg : Continuous g) (hgi : Function.Injective g) :
+    IsJordanCurve (range g) := by
+  have : CompactSpace Z := e.symm.compactSpace
+  exact isJordanCurve_iff.mpr ⟨(hg.isClosedEmbedding hgi).isEmbedding.toHomeomorph.symm.trans e⟩
 
 /-! ## The parametrization by the circle
 

@@ -355,11 +355,12 @@ def squareHomeomorphClosedBall {F : Type*} [NormedAddCommGroup F] [NormedSpace �
 under `TauCeti.cubeHomeomorphClosedBall` and `ContinuousLinearEquiv.unitBallHomeomorph`. -/
 @[simp]
 theorem coe_squareHomeomorphClosedBall_apply {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] [FiniteDimensional ℝ F] (hF : Module.finrank ℝ F = 2)
+    [NormedSpace ℝ F] (hF : Module.finrank ℝ F = 2)
     (p : unitInterval × unitInterval) :
     (squareHomeomorphClosedBall hF p : F) =
-      (ContinuousLinearEquiv.ofFinrankEq (E := Fin 2 → ℝ) (F := F)
-        (by simp [hF])).unitBallHomeomorph
+      (haveI : FiniteDimensional ℝ F := .of_finrank_pos (by omega);
+        ContinuousLinearEquiv.ofFinrankEq (E := Fin 2 → ℝ) (F := F)
+          (by simp [hF])).unitBallHomeomorph
         (cubeHomeomorphClosedBall (Fin 2) (Homeomorph.finTwoArrow.symm p)) :=
   (rfl)
 

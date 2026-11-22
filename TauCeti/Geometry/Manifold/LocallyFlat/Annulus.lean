@@ -17,7 +17,6 @@ import TauCeti.Analysis.Complex.Conformal.Jordan.Annulus
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
-import TauCeti.Data.Set.Prod
 import TauCeti.Topology.MetricSpace.ProperSpace
 
 /-!
@@ -372,10 +371,10 @@ private theorem coboundAnnulus_of_injective_real {f g : sphere (0 : ℝ) 1 → �
       by_cases hxc : x ≤ c
       · exact Or.inl ⟨hax, hxc⟩
       · exact Or.inr ⟨hnot (not_le.mp hxc), hxb⟩
-  · rw [Set.image_univ_prod_singleton, ← image_univ, huniv, image_pair, hh_neg, hh_pos,
-      (Path.segment a c).source, (Path.segment b d).source, hrf]
-  · rw [Set.image_univ_prod_singleton, ← image_univ, huniv, image_pair, hh_neg, hh_pos,
-      (Path.segment a c).target, (Path.segment b d).target, hrg]
+  · rw [Set.prod_singleton, ← Set.image_comp, Set.image_univ, ← image_univ, huniv, image_pair]
+    simp [hh_neg, hh_pos, hrf]
+  · rw [Set.prod_singleton, ← Set.image_comp, Set.image_univ, ← image_univ, huniv, image_pair]
+    simp [hh_neg, hh_pos, hrg]
 
 /-- **The one-dimensional annulus theorem in any one-dimensional real normed space.** Any two
 injective maps `f g : sphere (0 : E) 1 → E` with `range g ⊆ filledHull (range f) \ range f`
@@ -405,27 +404,10 @@ private theorem coboundAnnulus_of_continuous_injective_complex {f g : sphere (0 
     (hfc : Continuous f) (hfi : Injective f) (hgc : Continuous g) (hgi : Injective g)
     (hsub : range g ⊆ filledHull (range f) \ range f) :
     CoboundAnnulus f g := by
-  classical
-  let r : ℂ → sphere (0 : ℂ) 1 := fun z =>
-    if hz : z ∈ sphere (0 : ℂ) 1 then ⟨z, hz⟩ else ⟨1, by simp⟩
-  have hcurve (k : sphere (0 : ℂ) 1 → ℂ) (hkc : Continuous k) (hki : Injective k) :
-      IsJordanCurve (range k) := by
-    have hcont : ContinuousOn (k ∘ r) (sphere 0 1) :=
-      continuousOn_iff_continuous_domRestrict.mpr <| by
-        convert hkc
-        ext u
-        simp [r]
-    have hinj : InjOn (k ∘ r) (sphere 0 1) := fun z₁ hz₁ z₂ hz₂ heq => by
-      have hr := hki heq
-      simp only [r, hz₁, hz₂, ↓reduceDIte, Subtype.mk.injEq] at hr
-      exact hr
-    have himg : (k ∘ r) '' sphere 0 1 = range k := by
-      refine Subset.antisymm ?_ ?_
-      · rintro _ ⟨z, _, rfl⟩; exact ⟨r z, rfl⟩
-      · rintro _ ⟨u, rfl⟩; exact ⟨u, u.property, by simp [r]⟩
-    simpa only [himg] using (isJordanCurve_sphere 0 one_pos).image hcont hinj
-  have hC₁ : IsJordanCurve (range f) := hcurve f hfc hfi
-  have hC₂ : IsJordanCurve (range g) := hcurve g hgc hgi
+  have hC₁ : IsJordanCurve (range f) :=
+    isJordanCurve_range (sphereCircleHomeomorph 0 one_pos) hfc hfi
+  have hC₂ : IsJordanCurve (range g) :=
+    isJordanCurve_range (sphereCircleHomeomorph 0 one_pos) hgc hgi
   obtain ⟨Φ, hΦ0, hΦ1⟩ := hC₁.exists_homeomorph_sphere_prod_unitInterval hC₂ hsub
   refine ⟨Subtype.val ∘ Φ, IsEmbedding.subtypeVal.comp Φ.isEmbedding, ?_, hΦ0, hΦ1⟩
   rw [Φ.surjective.range_comp, Subtype.range_coe]

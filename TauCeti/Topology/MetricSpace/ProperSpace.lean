@@ -219,6 +219,7 @@ theorem isBounded_iff_isCompact_closure [ProperSpace α] {s : Set α} :
   ⟨Bornology.IsBounded.isCompact_closure, fun h => h.isBounded.subset subset_closure⟩
 
 /-- A homeomorphism between proper pseudometric spaces preserves boundedness of sets. -/
+@[simp]
 theorem _root_.Homeomorph.isBounded_image_iff {β : Type*} [PseudoMetricSpace β]
     [ProperSpace α] [ProperSpace β] (e : α ≃ₜ β) {s : Set α} :
     Bornology.IsBounded (e '' s) ↔ Bornology.IsBounded s := by

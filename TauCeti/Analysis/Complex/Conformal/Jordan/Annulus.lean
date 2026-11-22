@@ -17,7 +17,7 @@ import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Crosscut.Decomposition
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Data.Set.InjOnUnion
-import TauCeti.Data.Set.Prod
+import TauCeti.Topology.ContinuousMap.Glue.ClosedEmbeddings
 import TauCeti.Topology.Frontier
 import TauCeti.Topology.Homeomorph.SetCongr
 import TauCeti.Topology.MetricSpace.ProperSpace
@@ -91,23 +91,27 @@ section Normalized
 `U = Da ∪ Db` isolates `F` from `Db'`, leaving `Da` and `Db'` covering `U \ (F \ C)` with
 intersection `J₁ ∪ J₂`. -/
 private theorem sdiff_filledHull_decomposition {α : Type*}
-    {Da Db Db' F U C γ₁ γ₂ J₁ J₂ κ σb : Set α} {p₁ p₂ : α}
+    {Da Db Db' F U C γ₁ γ₂ J₁ J₂ κ : Set α} {p₁ p₂ : α}
     (hD_union : Da ∪ Db = U) (hD_inter : Da ∩ Db = κ)
     (hDb_union : F ∪ Db' = Db) (hDb_inter : F ∩ Db' = γ₂)
-    (hF_inside : F \ C ⊆ Db \ (κ ∪ σb))
+    (hF_inside : F \ C ⊆ Db \ κ)
     (hκ_eq : κ = J₁ ∪ γ₁ ∪ J₂) (hγu : γ₁ ∪ γ₂ = C) (hγi : γ₁ ∩ γ₂ = {p₁, p₂})
     (hp₁J₁ : p₁ ∈ J₁) (hp₂J₂ : p₂ ∈ J₂)
-    (hγ₁F : γ₁ ⊆ F) (hγ₂C : γ₂ ⊆ C)
-    (hγ₁Da : γ₁ ⊆ Da) (hγ₂Db' : γ₂ ⊆ Db')
-    (hJ₁Da : J₁ ⊆ Da) (hJ₂Da : J₂ ⊆ Da) (hJ₁Db' : J₁ ⊆ Db') (hJ₂Db' : J₂ ⊆ Db') :
+    (hγ₁F : γ₁ ⊆ F) (hJ₁Db' : J₁ ⊆ Db') (hJ₂Db' : J₂ ⊆ Db') :
     Da ∪ Db' = U \ (F \ C) ∧ Da ∩ Db' = J₁ ∪ J₂ := by
   have hDb'_sub : Db' ⊆ Db := hDb_union ▸ subset_union_right
+  have hκDa : κ ⊆ Da := hD_inter ▸ inter_subset_left
+  have hγ₂C : γ₂ ⊆ C := hγu ▸ subset_union_right
+  have hγ₂Db' : γ₂ ⊆ Db' := hDb_inter ▸ inter_subset_right
+  have hγ₁Da : γ₁ ⊆ Da := (subset_union_right.trans subset_union_left).trans (hκ_eq ▸ hκDa)
+  have hJ₁Da : J₁ ⊆ Da := (subset_union_left.trans subset_union_left).trans (hκ_eq ▸ hκDa)
+  have hJ₂Da : J₂ ⊆ Da := subset_union_right.trans (hκ_eq ▸ hκDa)
   refine ⟨Subset.antisymm ?_ ?_, Subset.antisymm ?_ ?_⟩
   · refine union_subset ?_ ?_
     · intro z hz
       refine ⟨hD_union ▸ Or.inl hz, fun hzC => ?_⟩
       have hzW := hF_inside hzC
-      exact hzW.2 (Or.inl (hD_inter ▸ ⟨hz, hzW.1⟩))
+      exact hzW.2 (hD_inter ▸ ⟨hz, hzW.1⟩)
     · intro z hz
       refine ⟨hD_union ▸ Or.inr (hDb'_sub hz), fun hzC => ?_⟩
       exact hzC.2 (hγ₂C (hDb_inter ▸ ⟨hzC.1, hz⟩))
@@ -132,6 +136,17 @@ private theorem sdiff_filledHull_decomposition {α : Type*}
   · rintro z (hz | hz)
     · exact ⟨hJ₁Da hz, hJ₁Db' hz⟩
     · exact ⟨hJ₂Da hz, hJ₂Db' hz⟩
+
+/-- Concatenating three injective paths whose adjacent pairs meet only at their shared endpoints
+and whose outer ranges are disjoint yields an injective path. -/
+private theorem injective_trans_trans {X : Type*} [TopologicalSpace X] {a b c d : X}
+    {α : Path a b} {β : Path b c} {γ : Path c d}
+    (hα : Injective α) (hβ : Injective β) (hγ : Injective γ)
+    (hαβ : range α ∩ range β = {b}) (hβγ : range β ∩ range γ = {c})
+    (hαγ : Disjoint (range α) (range γ)) :
+    Injective ((α.trans β).trans γ) := by
+  refine Path.injective_trans (Path.injective_trans hα hβ hαβ) hγ ?_
+  rwa [Path.trans_range, union_inter_distrib_right, hαγ.inter_eq, empty_union]
 
 /-- On either real ray `{s * r | r ≥ 0}` (`s = ±1`), a Jordan curve `C ⊆ ball 0 1` enclosing `0`
 has a last intersection point at some radius `t ∈ (0, 1)`, giving an injective radial segment from
@@ -280,11 +295,8 @@ private theorem split_second_half {C : Set ℂ} {p₁ p₂ : ℂ}
     refine Subset.antisymm ((inter_subset_inter_right _ hσ_bS).trans hJ₁S.subset) ?_
     rintro z rfl
     exact ⟨J₁.source_mem_range, σ_b.source_mem_range⟩
-  have hJ₁σb_inj : Injective (J₁.symm.trans σ_b) :=
-    Path.injective_trans (Path.injective_symm_iff.mpr hJ₁) hσ_b hJ₁_σb
-  have hJ₁σb_J₂ : range (J₁.symm.trans σ_b) ∩ range J₂.symm = {-1} := by
-    rw [Path.trans_range, Path.symm_range, Path.symm_range, union_inter_distrib_right,
-      hJ₁J₂.inter_eq, empty_union]
+  have hσb_J₂ : range σ_b ∩ range J₂.symm = {-1} := by
+    rw [Path.symm_range]
     refine Subset.antisymm ?_ ?_
     · rw [inter_comm]
       exact (inter_subset_inter_right _ hσ_bS).trans hJ₂S.subset
@@ -292,7 +304,9 @@ private theorem split_second_half {C : Set ℂ} {p₁ p₂ : ℂ}
       exact ⟨σ_b.target_mem_range, J₂.target_mem_range⟩
   set β₂ : Path p₁ p₂ := (J₁.symm.trans σ_b).trans J₂.symm
   have hβ₂_inj : Injective β₂ :=
-    Path.injective_trans hJ₁σb_inj (Path.injective_symm_iff.mpr hJ₂) hJ₁σb_J₂
+    injective_trans_trans (Path.injective_symm_iff.mpr hJ₁) hσ_b
+      (Path.injective_symm_iff.mpr hJ₂) hJ₁_σb hσb_J₂
+      (by rw [Path.symm_range, Path.symm_range]; exact hJ₁J₂)
   have hβ₂_range : range β₂ = range J₁ ∪ range σ_b ∪ range J₂ := by
     simp [β₂, Path.trans_range]
   have hγ₁_fr : range γ₁ ⊆ frontier W_b := by
@@ -326,9 +340,10 @@ private theorem split_second_half {C : Set ℂ} {p₁ p₂ : ℂ}
     rw [← hC_eq]
     exact hγ₂_cut.filledHull_inter_filledHull_eq_range hW_open hW_bdd hW_frJ hγ₁ hβ₂_inj
       hγ₁_fr hβ₂_fr hγ₁_β₂
-  have hC_inside : filledHull C \ C ⊆ W_b := by
+  have hC_inside : filledHull C \ C ⊆ filledHull J_b \ range κ₁ := by
     rw [← hC_eq]
-    exact (hγ₂_cut.filledHull_sdiff_subset hW_open hW_bdd hW_frJ hγ₁_fr).trans sdiff_subset
+    exact ((hγ₂_cut.filledHull_sdiff_subset hW_open hW_bdd hW_frJ hγ₁_fr).trans sdiff_subset).trans
+      (sdiff_subset_sdiff_right subset_union_left)
   -- Rewrite the boundary unions to match `Aₐ` and `A_b`.
   have hJₐ_eq : Jₐ = range σₐ ∪ range γ₁ ∪ range J₁ ∪ range J₂.symm := by
     simp only [Jₐ, hκ₁_range, Path.symm_range]
@@ -340,11 +355,7 @@ private theorem split_second_half {C : Set ℂ} {p₁ p₂ : ℂ}
   rw [← hJₐ_eq, ← hJ_b'_eq]
   exact sdiff_filledHull_decomposition hD_union hD_inter hD_b_union hD_b_inter hC_inside
     hκ₁_range hγu hγi J₁.target_mem_range J₂.source_mem_range
-    (fun z hz => subset_filledHull (hγ₁C hz)) hγ₂C
-    (fun z hz => subset_filledHull (Or.inl (hκ₁_range ▸ Or.inl (Or.inr hz))))
-    (fun z hz => subset_filledHull (Or.inl hz))
-    (fun z hz => subset_filledHull (Or.inl (hκ₁_range ▸ Or.inl (Or.inl hz))))
-    (fun z hz => subset_filledHull (Or.inl (hκ₁_range ▸ Or.inr hz)))
+    (fun z hz => subset_filledHull (hγ₁C hz))
     (fun z hz => subset_filledHull (Or.inr (hβ₂_range ▸ Or.inl (Or.inl hz))))
     (fun z hz => subset_filledHull (Or.inr (hβ₂_range ▸ Or.inr hz)))
 
@@ -371,9 +382,6 @@ private theorem glue_upper_lower_squares {C : Set ℂ} {p₁ p₂ : ℂ}
       (fun p => (Φ p : ℂ)) '' (univ ×ˢ {1}) = C := by
   have hαpC : range αp ⊆ C := hαu ▸ subset_union_left
   have hαmC : range αm ⊆ C := hαu ▸ subset_union_right
-  let H : sphere (0 : ℂ) 1 × I → ℂ := fun p =>
-    if 0 ≤ (p.1 : ℂ).im then (Φp (circleParam p.1, p.2) : ℂ)
-    else (Φm (circleParam p.1, p.2) : ℂ)
   have hH_agree {u : sphere (0 : ℂ) 1} (hu : (u : ℂ).im = 0) (t : I) :
       (Φp (circleParam u, t) : ℂ) = (Φm (circleParam u, t) : ℂ) := by
     rcases (Circle.im_coe_eq_zero_iff (Circle.homeomorphSphere.symm u)).mp (by simpa using hu) with
@@ -382,30 +390,57 @@ private theorem glue_upper_lower_squares {C : Set ℂ} {p₁ p₂ : ℂ}
       rw [circleParam_eq_zero_of_coe_eq_one hu1, hΦp_left, hΦm_left]
     · have hu1 : (u : ℂ) = -1 := by simpa using congrArg ((↑) : Circle → ℂ) h1
       rw [circleParam_eq_one_of_coe_eq_neg_one hu1, hΦp_right, hΦm_right]
-  have hH_upper {u : sphere (0 : ℂ) 1} (hu : 0 ≤ (u : ℂ).im) (t : I) :
-      H (u, t) = (Φp (circleParam u, t) : ℂ) := by
-    simp [H, hu]
-  have hH_lower {u : sphere (0 : ℂ) 1} (hu : (u : ℂ).im ≤ 0) (t : I) :
-      H (u, t) = (Φm (circleParam u, t) : ℂ) := by
-    rcases hu.eq_or_lt with h0 | hlt
-    · simp [H, h0, hH_agree h0]
-    · simp [H, not_le.mpr hlt]
-  have hH_cont : Continuous H := by
-    have h1 : Continuous fun p : sphere (0 : ℂ) 1 × I =>
-        (Φp (circleParam p.1, p.2) : ℂ) :=
-      continuous_subtypeVal.comp (Φp.continuous.comp
-        ((continuous_circleParam.comp continuous_fst).prodMk continuous_snd))
-    have h2 : Continuous fun p : sphere (0 : ℂ) 1 × I =>
-        (Φm (circleParam p.1, p.2) : ℂ) :=
-      continuous_subtypeVal.comp (Φm.continuous.comp
-        ((continuous_circleParam.comp continuous_fst).prodMk continuous_snd))
-    exact continuous_if_le continuous_const
+  let S_up : Set (sphere (0 : ℂ) 1 × I) := {p | 0 ≤ (p.1 : ℂ).im}
+  let S_dn : Set (sphere (0 : ℂ) 1 × I) := {p | (p.1 : ℂ).im ≤ 0}
+  have hS_up_closed : IsClosed S_up :=
+    isClosed_le continuous_const
       (Complex.continuous_im.comp (continuous_subtypeVal.comp continuous_fst))
-      h1.continuousOn h2.continuousOn fun p hp => hH_agree hp.symm p.2
+  have hS_dn_closed : IsClosed S_dn :=
+    isClosed_le
+      (Complex.continuous_im.comp (continuous_subtypeVal.comp continuous_fst)) continuous_const
+  have hcov : range ((↑) : S_up → sphere (0 : ℂ) 1 × I) ∪
+      range ((↑) : S_dn → sphere (0 : ℂ) 1 × I) = univ := by
+    rw [Subtype.range_coe, Subtype.range_coe]
+    ext p
+    simpa [S_up, S_dn] using le_total 0 (p.1 : ℂ).im
+  let H : C(sphere (0 : ℂ) 1 × I, ℂ) := ContinuousMap.glueClosedEmbeddings
+    ⟨fun p => (Φp (circleParam p.val.1, p.val.2) : ℂ),
+      continuous_subtypeVal.comp (Φp.continuous.comp
+        ((continuous_circleParam.comp (continuous_fst.comp continuous_subtypeVal)).prodMk
+          (continuous_snd.comp continuous_subtypeVal)))⟩
+    ⟨fun p => (Φm (circleParam p.val.1, p.val.2) : ℂ),
+      continuous_subtypeVal.comp (Φm.continuous.comp
+        ((continuous_circleParam.comp (continuous_fst.comp continuous_subtypeVal)).prodMk
+          (continuous_snd.comp continuous_subtypeVal)))⟩
+    hS_up_closed.isClosedEmbedding_subtypeVal hS_dn_closed.isClosedEmbedding_subtypeVal hcov
+    (fun ⟨⟨u, t⟩, hu⟩ ⟨⟨u', t'⟩, hu'⟩ h => by
+      obtain ⟨rfl, rfl⟩ := Prod.mk.inj h
+      exact hH_agree (le_antisymm hu' hu) t)
+  have hH_upper {u : sphere (0 : ℂ) 1} (hu : 0 ≤ (u : ℂ).im) (t : I) :
+      H (u, t) = (Φp (circleParam u, t) : ℂ) :=
+    ContinuousMap.glueClosedEmbeddings_apply_left _ _ _ _ _ _ (⟨(u, t), hu⟩ : S_up)
+  have hH_lower {u : sphere (0 : ℂ) 1} (hu : (u : ℂ).im ≤ 0) (t : I) :
+      H (u, t) = (Φm (circleParam u, t) : ℂ) :=
+    ContinuousMap.glueClosedEmbeddings_apply_right _ _ _ _ _ _ (⟨(u, t), hu⟩ : S_dn)
+  have him_zero_of_seam {u : sphere (0 : ℂ) 1} {t : I} (hu : (u : ℂ).im ≤ 0)
+      (hmem : (Φm (circleParam u, t) : ℂ) ∈ range J₁ ∪ range J₂) : (u : ℂ).im = 0 := by
+    have hparam : circleParam u = 0 ∨ circleParam u = 1 := by
+      rcases hmem with ⟨s, hs⟩ | ⟨s, hs⟩
+      · exact Or.inl <| congrArg Prod.fst <| Φm.injective <| Subtype.ext <|
+          hs.symm.trans (hΦm_left s).symm
+      · have heq : (Φm (circleParam u, t) : ℂ) = Φm (1, σ s) := by
+          rw [← hs, hΦm_right (σ s), Path.symm_apply, Function.comp_apply, unitInterval.symm_symm]
+        exact Or.inr <| congrArg Prod.fst <| Φm.injective <| Subtype.ext heq
+    have hu_pm : (u : ℂ) = 1 ∨ (u : ℂ) = -1 := by
+      rcases hparam with h0 | h1
+      · exact Or.inl <| by rw [← lowerSemicirclePath_circleParam hu, h0, lowerSemicirclePath.source]
+      · exact Or.inr <| by rw [← lowerSemicirclePath_circleParam hu, h1, lowerSemicirclePath.target]
+    rcases hu_pm with h1 | h1 <;> simp [h1]
   have hH_inj : Injective H := by
     rw [← injOn_univ]
-    let S : Bool → Set (sphere (0 : ℂ) 1 × I) := fun b =>
-      if b then {p | (p.1 : ℂ).im ≤ 0} else {p | 0 ≤ (p.1 : ℂ).im}
+    let S : Bool → Set (sphere (0 : ℂ) 1 × I)
+      | false => S_up
+      | true => S_dn
     refine injOn_of_subset_iUnion (S := S) ?_ ?_ ?_
     · intro p _
       rcases le_total 0 (p.1 : ℂ).im with hp | hp
@@ -414,14 +449,12 @@ private theorem glue_upper_lower_squares {C : Set ℂ} {p₁ p₂ : ℂ}
     · intro b
       cases b
       · rintro ⟨u₁, t₁⟩ h1 ⟨u₂, t₂⟩ h2 heq
-        dsimp only [S, Bool.false_eq_true, ↓reduceIte, mem_ofPred_eq] at h1 h2
         rw [hH_upper h1, hH_upper h2] at heq
         obtain ⟨hu_ang, ht⟩ := Prod.mk.inj (Φp.injective (Subtype.ext heq))
         exact Prod.ext (Subtype.ext <| by
           rw [← upperSemicirclePath_circleParam h1, ← upperSemicirclePath_circleParam h2, hu_ang])
           ht
       · rintro ⟨u₁, t₁⟩ h1 ⟨u₂, t₂⟩ h2 heq
-        dsimp only [S, ↓reduceIte, mem_ofPred_eq] at h1 h2
         rw [hH_lower h1, hH_lower h2] at heq
         obtain ⟨hu_ang, ht⟩ := Prod.mk.inj (Φm.injective (Subtype.ext heq))
         exact Prod.ext (Subtype.ext <| by
@@ -430,30 +463,10 @@ private theorem glue_upper_lower_squares {C : Set ℂ} {p₁ p₂ : ℂ}
     · intro i j hij ⟨u₁, t₁⟩ ⟨u₂, t₂⟩ h1 h2 heq
       cases i <;> cases j
       · exact absurd hij (by decide)
-      · simp only [S, ↓reduceIte, mem_ofPred_eq] at h1 h2
-        rcases h2.eq_or_lt with h0 | hlt
-        · exact Or.inr (show 0 ≤ (u₂ : ℂ).im from h0.ge)
-        · exfalso
-          rw [hH_upper h1, hH_lower hlt.le] at heq
-          have hmem : (Φm (circleParam u₂, t₂) : ℂ) ∈ Ap ∩ Am :=
-            ⟨heq ▸ (Φp (circleParam u₁, t₁)).property, (Φm (circleParam u₂, t₂)).property⟩
-          rw [hA_inter] at hmem
-          rcases hmem with ⟨t, ht⟩ | ⟨t, ht⟩
-          · have hs0 : circleParam u₂ = 0 :=
-              congrArg Prod.fst (Φm.injective (Subtype.ext (ht.symm.trans (hΦm_left t).symm)))
-            have hv1 : (u₂ : ℂ) = 1 := by
-              rw [← lowerSemicirclePath_circleParam hlt.le, hs0, lowerSemicirclePath.source]
-            have : (u₂ : ℂ).im = 0 := by simp [hv1]
-            linarith
-          · have hs1 : circleParam u₂ = 1 := by
-              have hval : Φm (circleParam u₂, t₂) = Φm (1, σ t) := Subtype.ext <| by
-                rw [hΦm_right (σ t), Path.symm_apply, Function.comp_apply,
-                  unitInterval.symm_symm, ht]
-              exact congrArg Prod.fst (Φm.injective hval)
-            have hv1 : (u₂ : ℂ) = -1 := by
-              rw [← lowerSemicirclePath_circleParam hlt.le, hs1, lowerSemicirclePath.target]
-            have : (u₂ : ℂ).im = 0 := by simp [hv1]
-            linarith
+      · rw [hH_upper h1, hH_lower h2] at heq
+        have hmem : (Φm (circleParam u₂, t₂) : ℂ) ∈ range J₁ ∪ range J₂ :=
+          hA_inter ▸ ⟨heq ▸ (Φp (circleParam u₁, t₁)).property, (Φm (circleParam u₂, t₂)).property⟩
+        exact Or.inr (him_zero_of_seam h2 hmem).ge
       · exact absurd hij (by decide)
       · exact absurd hij (by decide)
   have hH_range : range H = closedBall (0 : ℂ) 1 \ (filledHull C \ C) := by
@@ -474,7 +487,7 @@ private theorem glue_upper_lower_squares {C : Set ℂ} {p₁ p₂ : ℂ}
         rw [hH_lower (u := ⟨lowerSemicirclePath s, _⟩) (lowerSemicirclePath_im_nonpos s),
           circleParam_lowerSemicirclePath]
         exact congrArg Subtype.val hst
-  have hH_emb : IsEmbedding H := (hH_cont.isClosedEmbedding hH_inj).isEmbedding
+  have hH_emb : IsEmbedding H := (H.continuous.isClosedEmbedding hH_inj).isEmbedding
   let Φ : sphere (0 : ℂ) 1 × I ≃ₜ ↥(closedBall (0 : ℂ) 1 \ (filledHull C \ C)) :=
     hH_emb.toHomeomorph.trans (Homeomorph.setCongr hH_range)
   have hΦ_coe (p : sphere (0 : ℂ) 1 × I) : (Φ p : ℂ) = H p := by
@@ -485,10 +498,10 @@ private theorem glue_upper_lower_squares {C : Set ℂ} {p₁ p₂ : ℂ}
     rcases le_total 0 (u : ℂ).im with hu | hu
     · rw [hH_upper hu, hΦp_top, upperSemicirclePath_circleParam hu]
     · rw [hH_lower hu, hΦm_top, lowerSemicirclePath_circleParam hu]
-  · rw [Set.image_univ_prod_singleton]
+  · rw [Set.prod_singleton, ← Set.image_comp, Set.image_univ]
     refine Subset.antisymm ?_ ?_
     · rintro _ ⟨u, rfl⟩
-      dsimp only
+      dsimp only [Function.comp_apply]
       rw [hΦ_coe]
       rcases le_total 0 (u : ℂ).im with hu | hu
       · rw [hH_upper hu, hΦp_bot]; exact hαpC (mem_range_self _)
@@ -496,11 +509,11 @@ private theorem glue_upper_lower_squares {C : Set ℂ} {p₁ p₂ : ℂ}
     · intro z hz
       rcases hαu.symm.subset hz with ⟨s, rfl⟩ | ⟨s, rfl⟩
       · refine ⟨⟨upperSemicirclePath s, upperSemicirclePath_mem_sphere s⟩, ?_⟩
-        dsimp only
+        dsimp only [Function.comp_apply]
         rw [hΦ_coe, hH_upper (u := ⟨upperSemicirclePath s, _⟩) (upperSemicirclePath_im_nonneg s),
           circleParam_upperSemicirclePath, hΦp_bot]
       · refine ⟨⟨lowerSemicirclePath s, lowerSemicirclePath_mem_sphere s⟩, ?_⟩
-        dsimp only
+        dsimp only [Function.comp_apply]
         rw [hΦ_coe, hH_lower (u := ⟨lowerSemicirclePath s, _⟩) (lowerSemicirclePath_im_nonpos s),
           circleParam_lowerSemicirclePath, hΦm_bot]
 
@@ -521,30 +534,27 @@ private theorem exists_homeomorph_sphere_prod_unitInterval_normalized {C : Set �
   have h1c : ((1 : ℝ) : ℂ) = 1 := Complex.ofReal_one
   have hm1c : ((-1 : ℝ) : ℂ) = -1 := by simp
   let J₁ : Path (1 : ℂ) p₁ := J₁₀.cast h1c.symm rfl
-  let J₂ : Path p₂ (-1 : ℂ) := (J₂₀.cast hm1c.symm rfl).symm
-  have hJ₁_inj : Injective J₁ := by simpa [J₁] using hJ₁₀_inj
-  have hJ₁_cb : range J₁ ⊆ closedBall 0 1 := by simpa [J₁] using hJ₁₀_cb
-  have hJ₁S : range J₁ ∩ sphere 0 1 = {1} := by simpa [J₁, h1c] using hJ₁₀S
-  have hJ₁C : range J₁ ∩ C = {p₁} := by simpa [J₁] using hJ₁₀C
-  have hJ₂_inj : Injective J₂ := by
-    rw [Path.injective_symm_iff]
-    simpa [J₂] using hJ₂₀_inj
-  have hJ₂_cb : range J₂ ⊆ closedBall 0 1 := by
-    rw [Path.symm_range]
-    simpa [J₂] using hJ₂₀_cb
-  have hJ₂S : range J₂ ∩ sphere 0 1 = {-1} := by
-    rw [Path.symm_range]
-    simpa [J₂, hm1c] using hJ₂₀S
-  have hJ₂C : range J₂ ∩ C = {p₂} := by
-    rw [Path.symm_range]
-    simpa [J₂] using hJ₂₀C
+  let J₂₀' : Path (-1 : ℂ) p₂ := J₂₀.cast hm1c.symm rfl
+  let J₂ : Path p₂ (-1 : ℂ) := J₂₀'.symm
+  have hJ₁_coe : (J₁ : I → ℂ) = J₁₀ := Path.cast_coe J₁₀ h1c.symm rfl
+  have hJ₂₀'_coe : (J₂₀' : I → ℂ) = J₂₀ := Path.cast_coe J₂₀ hm1c.symm rfl
+  have hJ₁_range : range J₁ = range J₁₀ := by rw [hJ₁_coe]
+  have hJ₂_range : range J₂ = range J₂₀ := by rw [Path.symm_range, hJ₂₀'_coe]
+  have hJ₁_inj : Injective J₁ := by rw [hJ₁_coe]; exact hJ₁₀_inj
+  have hJ₁_cb : range J₁ ⊆ closedBall 0 1 := hJ₁_range ▸ hJ₁₀_cb
+  have hJ₁S : range J₁ ∩ sphere 0 1 = {1} := by rw [hJ₁_range, hJ₁₀S, h1c]
+  have hJ₁C : range J₁ ∩ C = {p₁} := hJ₁_range ▸ hJ₁₀C
+  have hJ₂_inj : Injective J₂ := by rw [Path.injective_symm_iff, hJ₂₀'_coe]; exact hJ₂₀_inj
+  have hJ₂_cb : range J₂ ⊆ closedBall 0 1 := hJ₂_range ▸ hJ₂₀_cb
+  have hJ₂S : range J₂ ∩ sphere 0 1 = {-1} := by rw [hJ₂_range, hJ₂₀S, hm1c]
+  have hJ₂C : range J₂ ∩ C = {p₂} := hJ₂_range ▸ hJ₂₀C
   have hp₁₂ : p₁ ≠ p₂ := fun h => by
     have hre := congrArg Complex.re h
     simp only [hp₁_eq, hp₂_eq, Complex.ofReal_re, one_mul, neg_one_mul] at hre
     linarith
   have hJ₁J₂ : Disjoint (range J₁) (range J₂) := Set.disjoint_left.mpr fun z hz₁ hz₂ => by
-    have h1 := hJ₁₀_re z (by simpa [J₁] using hz₁)
-    have h2 := hJ₂₀_re z (by simpa [J₂] using hz₂)
+    have h1 := hJ₁₀_re z (hJ₁_range ▸ hz₁)
+    have h2 := hJ₂₀_re z (hJ₂_range ▸ hz₂)
     linarith
   -- Step 2: Split `C` at `p₁, p₂` into `γ₁, γ₂` and form the crosscut `κ₁ = J₁ · γ₁ · J₂`.
   obtain ⟨γ₁, γ₂, hγ₁_inj, hγ₂_inj, hγu, hγi⟩ :=
@@ -554,15 +564,14 @@ private theorem exists_homeomorph_sphere_prod_unitInterval_normalized {C : Set �
   have hJ₁γ₁ : range J₁ ∩ range γ₁ = {p₁} := by
     refine Subset.antisymm ((inter_subset_inter_right _ hγ₁C).trans hJ₁C.subset) ?_
     exact singleton_subset_iff.mpr ⟨J₁.target_mem_range, γ₁.source_mem_range⟩
-  have hJ₁γ₁_inj : Injective (J₁.trans γ₁) := Path.injective_trans hJ₁_inj hγ₁_inj hJ₁γ₁
-  have hJ₁γ₁_J₂ : range (J₁.trans γ₁) ∩ range J₂ = {p₂} := by
-    rw [Path.trans_range, union_inter_distrib_right, hJ₁J₂.inter_eq, empty_union]
+  have hγ₁J₂ : range γ₁ ∩ range J₂ = {p₂} := by
     refine Subset.antisymm ?_
       (singleton_subset_iff.mpr ⟨γ₁.target_mem_range, J₂.source_mem_range⟩)
     rw [inter_comm]
     exact (inter_subset_inter_right _ hγ₁C).trans hJ₂C.subset
   set κ₁ : Path (1 : ℂ) (-1 : ℂ) := (J₁.trans γ₁).trans J₂
-  have hκ₁_inj : Injective κ₁ := Path.injective_trans hJ₁γ₁_inj hJ₂_inj hJ₁γ₁_J₂
+  have hκ₁_inj : Injective κ₁ :=
+    injective_trans_trans hJ₁_inj hγ₁_inj hJ₂_inj hJ₁γ₁ hγ₁J₂ hJ₁J₂
   have hκ₁_range : range κ₁ = range J₁ ∪ range γ₁ ∪ range J₂ := by simp [κ₁, Path.trans_range]
   have hκ₁_cb : range κ₁ ⊆ closedBall 0 1 := by
     rw [hκ₁_range]
@@ -580,7 +589,7 @@ private theorem exists_homeomorph_sphere_prod_unitInterval_normalized {C : Set �
   have hfr_ball : frontier (ball (0 : ℂ) 1) = sphere (0 : ℂ) 1 := frontier_ball 0 one_ne_zero
   have hκ₁_cut : κ₁.IsCrosscut (ball 0 1) := Path.isCrosscut_def.mpr
     ⟨hκ₁_inj, by rw [hfr_ball]; simp, by rw [hfr_ball]; simp, fun t ht => by
-      obtain ⟨hmem, hnot⟩ := Path.image_Ioo_subset_range_sdiff_endpoints hκ₁_inj
+      obtain ⟨hmem, hnot⟩ := (Path.image_Ioo_eq_range_sdiff_endpoints hκ₁_inj).subset
         (mem_image_of_mem κ₁ ht)
       have hnotS : κ₁ t ∉ sphere (0 : ℂ) 1 := fun hS => hnot (hκ₁_S ▸ ⟨hmem, hS⟩)
       rw [mem_ball_zero_iff]
@@ -601,7 +610,7 @@ private theorem exists_homeomorph_sphere_prod_unitInterval_normalized {C : Set �
     hκ₁_cut.isJordanCurve_range_union_range_of_subset_sphere lowerSemicirclePath_injective hσmS
   have hγ₂_open_sub : γ₂ '' Ioo 0 1 ⊆ ball 0 1 \ range κ₁ := by
     intro z hz
-    obtain ⟨hzγ₂, hnot⟩ := Path.image_Ioo_subset_range_sdiff_endpoints hγ₂_inj hz
+    obtain ⟨hzγ₂, hnot⟩ := (Path.image_Ioo_eq_range_sdiff_endpoints hγ₂_inj).subset hz
     refine ⟨hCb (hγ₂C hzγ₂), fun hmem => hnot ?_⟩
     rw [hκ₁_range] at hmem
     rcases hmem with (h | h) | h
@@ -752,8 +761,8 @@ theorem IsJordanCurve.exists_homeomorph_sphere_prod_unitInterval {C₁ C₂ : Se
   obtain ⟨Φ, hΦ0, hΦ1⟩ :=
     exists_homeomorph_sphere_prod_unitInterval_of_homeomorph hC₂ hsub φ
   refine ⟨Φ, ?_, hΦ1⟩
-  rw [Set.image_univ_prod_singleton]
-  have h : (fun u : sphere (0 : ℂ) 1 => (Φ (u, 0) : ℂ)) = Subtype.val ∘ φ :=
+  rw [Set.prod_singleton, ← Set.image_comp, Set.image_univ]
+  have h : (fun p => (Φ p : ℂ)) ∘ (fun u : sphere (0 : ℂ) 1 => (u, (0 : I))) = Subtype.val ∘ φ :=
     funext hΦ0
   rw [h, φ.surjective.range_comp, Subtype.range_coe]
 

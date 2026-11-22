@@ -69,8 +69,10 @@ upper and lower semicircle paths from `1` to `-1` in `ℂ`.
   `[-1, 1]`; with its inverse it covers the circle (`Circle.exists_upperSemicircle_eq_or_inv_eq`),
   meeting the lower semicircle only at `±1` (`Circle.upperSemicircle_eq_inv_iff`).
 * `Circle.semicircleCoord`: the affine homeomorphism `[0, 1] ≃ₜ [-1, 1]` sending `t` to `1 - 2t`.
-* `TauCeti.upperSemicirclePath`, `TauCeti.lowerSemicirclePath`, `TauCeti.circleParam`: the
-  upper and lower semicircle paths from `1` to `-1` in `ℂ` and their shared real-part inverse.
+* `TauCeti.upperSemicirclePath`, `TauCeti.lowerSemicirclePath`, `TauCeti.circleParam`,
+  `TauCeti.mem_range_upperSemicirclePath_iff`, `TauCeti.mem_range_lowerSemicirclePath_iff`: the
+  upper and lower semicircle paths from `1` to `-1` in `ℂ`, their range characterizations, and
+  their shared real-part inverse.
 * `Circle.differentiableAt_coe_inv`: the pointwise inverse of a differentiable circle-valued map
   is differentiable.
 * `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
@@ -548,19 +550,64 @@ theorem circleParam_lowerSemicirclePath (t : unitInterval) :
 
 theorem upperSemicirclePath_circleParam {u : sphere (0 : ℂ) 1} (hu : 0 ≤ (u : ℂ).im) :
     upperSemicirclePath (circleParam u) = u := by
-  have hsq := Complex.re_sq_add_im_sq_of_mem_sphere u.property
-  have himsq : 1 - (u : ℂ).re ^ 2 = (u : ℂ).im ^ 2 := by linarith
-  apply Complex.ext
-  · simp [upperSemicirclePath_apply]
-  · simp [upperSemicirclePath_apply, himsq, Real.sqrt_sq hu]
+  obtain ⟨x, hx | hx⟩ := Circle.exists_upperSemicircle_eq_or_inv_eq (Circle.homeomorphSphere.symm u)
+  · set t := Circle.semicircleCoord.symm x
+    have ht : (upperSemicirclePath t : ℂ) = u := by
+      simpa [upperSemicirclePath_apply, t] using congrArg ((↑) : Circle → ℂ) hx
+    have hp : circleParam u = t := by
+      simpa [ht] using circleParam_upperSemicirclePath t
+    rw [hp, ht]
+  · set t := Circle.semicircleCoord.symm x
+    have hl : (lowerSemicirclePath t : ℂ) = u := by
+      simpa [lowerSemicirclePath_apply, t] using congrArg ((↑) : Circle → ℂ) hx
+    have him0 : (u : ℂ).im = 0 := le_antisymm (hl ▸ lowerSemicirclePath_im_nonpos t) hu
+    have ht : (upperSemicirclePath t : ℂ) = u := by
+      calc
+        upperSemicirclePath t = starRingEnd ℂ (lowerSemicirclePath t) := by
+          rw [upperSemicirclePath_apply, lowerSemicirclePath_apply, Circle.coe_inv_eq_conj,
+            starRingEnd_self_apply]
+        _ = starRingEnd ℂ (u : ℂ) := by rw [hl]
+        _ = u := Complex.conj_eq_iff_im.mpr him0
+    have hp : circleParam u = t := by
+      simpa [ht] using circleParam_upperSemicirclePath t
+    rw [hp, ht]
 
 theorem lowerSemicirclePath_circleParam {u : sphere (0 : ℂ) 1} (hu : (u : ℂ).im ≤ 0) :
     lowerSemicirclePath (circleParam u) = u := by
-  have hsq := Complex.re_sq_add_im_sq_of_mem_sphere u.property
-  have himsq : 1 - (u : ℂ).re ^ 2 = (u : ℂ).im ^ 2 := by linarith
-  apply Complex.ext
-  · simp [lowerSemicirclePath_apply]
-  · simp [lowerSemicirclePath_apply, himsq, Real.sqrt_sq_eq_abs, abs_of_nonpos hu]
+  obtain ⟨x, hx | hx⟩ := Circle.exists_upperSemicircle_eq_or_inv_eq (Circle.homeomorphSphere.symm u)
+  · set t := Circle.semicircleCoord.symm x
+    have hu' : (upperSemicirclePath t : ℂ) = u := by
+      simpa [upperSemicirclePath_apply, t] using congrArg ((↑) : Circle → ℂ) hx
+    have him0 : (u : ℂ).im = 0 := le_antisymm hu (hu' ▸ upperSemicirclePath_im_nonneg t)
+    have ht : (lowerSemicirclePath t : ℂ) = u := by
+      calc
+        lowerSemicirclePath t = starRingEnd ℂ (upperSemicirclePath t) := by
+          rw [lowerSemicirclePath_apply, upperSemicirclePath_apply, Circle.coe_inv_eq_conj]
+        _ = starRingEnd ℂ (u : ℂ) := by rw [hu']
+        _ = u := Complex.conj_eq_iff_im.mpr him0
+    have hp : circleParam u = t := by
+      simpa [ht] using circleParam_lowerSemicirclePath t
+    rw [hp, ht]
+  · set t := Circle.semicircleCoord.symm x
+    have ht : (lowerSemicirclePath t : ℂ) = u := by
+      simpa [lowerSemicirclePath_apply, t] using congrArg ((↑) : Circle → ℂ) hx
+    have hp : circleParam u = t := by
+      simpa [ht] using circleParam_lowerSemicirclePath t
+    rw [hp, ht]
+
+/-- A complex number lies on `TauCeti.upperSemicirclePath` iff it lies on the unit circle with
+nonnegative imaginary part. -/
+theorem mem_range_upperSemicirclePath_iff {z : ℂ} :
+    z ∈ range upperSemicirclePath ↔ z ∈ sphere (0 : ℂ) 1 ∧ 0 ≤ z.im :=
+  ⟨fun ⟨t, ht⟩ ↦ ht ▸ ⟨upperSemicirclePath_mem_sphere t, upperSemicirclePath_im_nonneg t⟩,
+   fun ⟨hz, him⟩ ↦ ⟨circleParam ⟨z, hz⟩, upperSemicirclePath_circleParam him⟩⟩
+
+/-- A complex number lies on `TauCeti.lowerSemicirclePath` iff it lies on the unit circle with
+nonpositive imaginary part. -/
+theorem mem_range_lowerSemicirclePath_iff {z : ℂ} :
+    z ∈ range lowerSemicirclePath ↔ z ∈ sphere (0 : ℂ) 1 ∧ z.im ≤ 0 :=
+  ⟨fun ⟨t, ht⟩ ↦ ht ▸ ⟨lowerSemicirclePath_mem_sphere t, lowerSemicirclePath_im_nonpos t⟩,
+   fun ⟨hz, him⟩ ↦ ⟨circleParam ⟨z, hz⟩, lowerSemicirclePath_circleParam him⟩⟩
 
 theorem circleParam_eq_zero_of_coe_eq_one {u : sphere (0 : ℂ) 1} (hu : (u : ℂ) = 1) :
     circleParam u = 0 := by

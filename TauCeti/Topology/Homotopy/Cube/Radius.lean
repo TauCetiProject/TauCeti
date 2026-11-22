@@ -61,7 +61,8 @@ splitting off the first coordinate identifies the closed unit ball with the cube
 * `TauCeti.closedBallHomeomorphProd`: the closed unit ball of the sup norm on `Fin (n + 1) → ℝ` is
   homeomorphic to `I × I^(Fin n)`, carrying the unit sphere onto `Cube.prodBoundary (Fin n)`.
 * `TauCeti.norm_squareHomeomorphClosedBall_eq_one_iff`: `TauCeti.squareHomeomorphClosedBall`
-  carries `TauCeti.squareBoundary` onto the unit sphere.
+  carries `TauCeti.squareBoundary` onto the unit sphere, inducing
+  `TauCeti.squareBoundaryHomeomorphSphere` and `TauCeti.coe_squareBoundaryHomeomorphSphere_apply`.
 -/
 
 public section
@@ -427,10 +428,28 @@ exactly when it lies on `TauCeti.squareBoundary`. -/
 theorem norm_squareHomeomorphClosedBall_eq_one_iff {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] (hF : Module.finrank ℝ F = 2) (p : I × I) :
     ‖(squareHomeomorphClosedBall hF p : F)‖ = 1 ↔ p ∈ squareBoundary := by
-  have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
   simp only [coe_squareHomeomorphClosedBall_apply,
     ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff,
     norm_cubeHomeomorphClosedBall_eq_one_iff, ← Set.mem_preimage,
     ← squareBoundary_eq_preimage_cubeBoundary]
+
+/-- Restricting `TauCeti.squareHomeomorphClosedBall` to the boundary of the unit square gives a
+homeomorphism `TauCeti.squareBoundary ≃ₜ Metric.sphere (0 : F) 1`. -/
+def squareBoundaryHomeomorphSphere {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (hF : Module.finrank ℝ F = 2) : squareBoundary ≃ₜ Metric.sphere (0 : F) 1 :=
+  ((squareHomeomorphClosedBall hF).subtype fun p =>
+    (norm_squareHomeomorphClosedBall_eq_one_iff hF p).symm.trans
+      mem_sphere_zero_iff_norm.symm).trans
+    { toEquiv := Equiv.subtypeSubtypeEquivSubtype fun hx => Metric.sphere_subset_closedBall hx
+      continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
+
+/-- Coercing the image of a boundary point under `TauCeti.squareBoundaryHomeomorphSphere` to the
+ambient space gives the same point as `TauCeti.squareHomeomorphClosedBall`. -/
+@[simp]
+theorem coe_squareBoundaryHomeomorphSphere_apply {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (hF : Module.finrank ℝ F = 2) (p : squareBoundary) :
+    (squareBoundaryHomeomorphSphere hF p : F) = squareHomeomorphClosedBall hF p :=
+  (rfl)
 
 end TauCeti
