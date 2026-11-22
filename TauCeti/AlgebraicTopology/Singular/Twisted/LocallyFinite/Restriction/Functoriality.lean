@@ -799,7 +799,7 @@ example (L : LocalCoefficientSystem.{u, 0, w} R (TopCat.of ℕ))
         ((borelMooreHomologyRestrict
           (TopCat.ofHom (ContinuousMap.subtypeVal (Set.ofPred Even)))
           (isOpen_discrete _).isOpenEmbedding_subtypeVal L 0).hom x) n =
-      (borelMooreHomologyZeroIsoPi L).hom.hom x n.1 :=
+      (borelMooreHomologyZeroIsoPi L).hom.hom x n.val :=
   borelMooreHomologyRestrict_zero_comp_isoPi
     (TopCat.ofHom (ContinuousMap.subtypeVal (Set.ofPred Even)))
     (isOpen_discrete _).isOpenEmbedding_subtypeVal L x n

@@ -292,16 +292,16 @@ theorem locallyFiniteChainComplexMap_comp_locallyFiniteChainComplexToRelative
   have hright : ((P.locallyFiniteChainComplexToRelative _ hP).f k).hom
       ((eqToHom (locallyFiniteChainComplex_X _ k).symm).hom c) =
       ((P.twistedChainComplexπ _).f k).hom
-        (∑ σ ∈ ((mem_locallyFiniteChains.1 c.2).finite_setOf_inter_nonempty hP).toFinset,
-          (ιTwistedChainComplex _ k σ).hom (c.1 σ)) := by
+        (∑ σ ∈ ((mem_locallyFiniteChains.1 c.property).finite_setOf_inter_nonempty hP).toFinset,
+          (ιTwistedChainComplex _ k σ).hom (c.val σ)) := by
     refine P.twistedChainComplex_ext_coeff _ fun τ hτ ↦ ?_
     rw [P.twistedChainComplexCoeff_locallyFiniteChainComplexToRelative_f_apply _ hP c τ hτ,
       P.twistedChainComplexCoeff_twistedChainComplexπ_f_apply _ τ hτ,
       twistedChainComplexCoeff_sum_ιTwistedChainComplex_apply]
     intro hnot
     by_contra hc0
-    exact hnot (((mem_locallyFiniteChains.1 c.2).finite_setOf_inter_nonempty hP).mem_toFinset.2
-      ⟨hc0, Set.inter_compl_nonempty_iff.2 hτ⟩)
+    exact hnot (((mem_locallyFiniteChains.1 c.property).finite_setOf_inter_nonempty
+      hP).mem_toFinset.2 ⟨hc0, Set.inter_compl_nonempty_iff.2 hτ⟩)
   rw [hright, TopPair.twistedChainComplexMap_f_twistedChainComplexπ_f_apply,
     Q.twistedChainComplexCoeff_twistedChainComplexπ_f_apply L ρ hρ, map_sum, map_sum]
   simp only [twistedChainComplexMap_f_ι_apply]
@@ -313,7 +313,7 @@ theorem locallyFiniteChainComplexMap_comp_locallyFiniteChainComplexToRelative
     -- `L.obj (initialVertex ((TopCat.toSSet.map (Hom.fst g)).app (op ⦋k⦌) σ))`, since `pullback`
     -- composes with `FundamentalGroupoid.map` and `initialVertex` commutes with `toSSet.map`.
     have hc0' :
-        (c.1 σ :
+        (c.val σ :
           L.obj (initialVertex ((TopCat.toSSet.map (Hom.fst g)).app (op ⦋k⦌) σ))) = 0 := hc0
     trans (L.twistedChainComplexCoeff ρ).hom
         ((L.ιTwistedChainComplex k _).hom
@@ -886,12 +886,13 @@ theorem borelMooreHomologyToLim_surjective (j : ℕ) :
 compact exhaustion is bijective when `lim¹` of the relative homology modules in degree `j + 1`
 vanishes. -/
 theorem borelMooreHomologyToLim_bijective (j : ℕ)
-    [Subsingleton ((relativeChainComplexTower L K).homology (j + 1)).limOne] :
+    [Subsingleton ((relativeChainComplexTower L K K.subset_succ).homology (j + 1)).limOne] :
     Function.Bijective (borelMooreHomologyToLim L K j) := by
   let e := (HomologicalComplex.homologyMapIso
     (locallyFiniteChainComplexIsoLimComplex L K) j).toLinearEquiv
   rw [borelMooreHomologyToLim_def, LinearMap.coe_comp]
-  exact (ComplexTower.homologyToLim_bijective (relativeChainComplexTower_shift_surjective L K)
+  exact (ComplexTower.homologyToLim_bijective
+    (relativeChainComplexTower_shift_surjective L K K.subset_succ)
     (ComplexShape.down_mk (j + 1) j rfl)).comp e.bijective
 
 end Milnor

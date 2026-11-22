@@ -1306,10 +1306,9 @@ lemma twistedChainComplexMap_naturality_square :
           (pullbackSquareIso a.hom b.hom c.hom d.hom L (congrArg (·.hom) h)).hom ≫
         twistedChainComplexMap c ((pullback d.hom).obj L) ≫
           twistedChainComplexMap d L := by
-  have heq : twistedChainComplexCoefficientMap
-      (eqToHom (congrArg (fun k : C(A, D) ↦ (pullback k).obj L) (congrArg (·.hom) h))) ≫
-      twistedChainComplexMap (c ≫ d) L = twistedChainComplexMap (a ≫ b) L :=
-    (twistedChainComplexMap_congr _ _ h).symm
+  have heq : twistedChainComplexCoefficientMap (eqToHom (congrArg (fun k : C(A, D) ↦
+      (pullback k).obj L) (congrArg (·.hom) h))) ≫ twistedChainComplexMap (c ≫ d) L =
+      twistedChainComplexMap (a ≫ b) L := (twistedChainComplexMap_congr _ _ h).symm
   simp only [pullbackSquareIso_hom, twistedChainComplexCoefficientMap_comp, Category.assoc,
     ← twistedChainComplexMap_comp, heq]
   simp [← twistedChainComplexCoefficientMap_comp_assoc]

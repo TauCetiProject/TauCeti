@@ -81,7 +81,8 @@ private abbrev complSystem (L : LocalCoefficientSystem.{u, v, max v w} R X) (A :
 /-- The transition maps of the tower of `(U, U \ Kₙ)` correspond under excision to the quotients
 `C(X, X \ Kₙ₊₁; L) ⟶ C(X, X \ Kₙ; L)`. -/
 private lemma relativeChainComplexTower_map_comp_excision (n : ℕ) :
-    (relativeChainComplexTower (complSystem L A) (complExhaustion hK hKA hsub hcover)).map
+    (relativeChainComplexTower (complSystem L A) (complExhaustion hK hKA hsub hcover)
+        (complExhaustion hK hKA hsub hcover).subset_succ).map
         (homOfLE (Nat.le_succ n)).op ≫
       TopPair.twistedChainComplexMap (TopPair.excisionMap Aᶜ (K n)ᶜ) L =
     TopPair.twistedChainComplexMap (TopPair.excisionMap Aᶜ (K (n + 1))ᶜ) L ≫
@@ -121,7 +122,8 @@ private lemma isIso_twistedHomologyMap_excisionMap (n j : ℕ) :
 /-- The comparison `H_j(U, U \ Kₙ; L) ⟶ H_j(X, A; L)`: excision to `H_j(X, X \ Kₙ; L)` followed by
 the inverse of the quotient `H_j(X, A; L) ⟶ H_j(X, X \ Kₙ; L)`. -/
 private def towerToRelative (n j : ℕ) :
-    ((relativeChainComplexTower (complSystem L A) (complExhaustion hK hKA hsub hcover)).homology
+    ((relativeChainComplexTower (complSystem L A) (complExhaustion hK hKA hsub hcover)
+      (complExhaustion hK hKA hsub hcover).subset_succ).homology
       j).obj (op n) ⟶ (TopPair.ofSubset A).twistedHomology L j :=
   TopPair.twistedHomologyMap (TopPair.excisionMap Aᶜ (K n)ᶜ) L j ≫ (outerIso L hKA hzero n j).inv
 
@@ -133,7 +135,8 @@ private lemma isIso_towerToRelative (n j : ℕ) :
 
 /-- The comparisons are compatible with the transition maps of the tower. -/
 private lemma homology_map_comp_towerToRelative (n j : ℕ) :
-    ((relativeChainComplexTower (complSystem L A) (complExhaustion hK hKA hsub hcover)).homology
+    ((relativeChainComplexTower (complSystem L A) (complExhaustion hK hKA hsub hcover)
+        (complExhaustion hK hKA hsub hcover).subset_succ).homology
         j).map (homOfLE (Nat.le_succ n)).op ≫ towerToRelative L hK hKA hsub hcover hzero n j =
       towerToRelative L hK hKA hsub hcover hzero (n + 1) j := by
   have hKK := Set.compl_subset_compl.2 ((hsub n).trans interior_subset)
@@ -151,7 +154,8 @@ private lemma homology_map_comp_towerToRelative (n j : ℕ) :
 /-- The comparisons agree on the components of an element of the limit of the tower. -/
 private lemma towerToRelative_limπ {j : ℕ}
     (z : ((relativeChainComplexTower (complSystem L A)
-      (complExhaustion hK hKA hsub hcover)).homology j).lim) (n : ℕ) :
+      (complExhaustion hK hKA hsub hcover)
+      (complExhaustion hK hKA hsub hcover).subset_succ).homology j).lim) (n : ℕ) :
     (towerToRelative L hK hKA hsub hcover hzero n j).hom (ModuleTower.limπ _ n z) =
       (towerToRelative L hK hKA hsub hcover hzero 0 j).hom (ModuleTower.limπ _ 0 z) := by
   induction n with
@@ -165,16 +169,21 @@ include hKc hzero in
 /-- The transition maps of the tower of relative homology groups are bijective. -/
 private lemma transition_bijective (j n : ℕ) :
     Function.Bijective (((relativeChainComplexTower (complSystem L A)
-      (complExhaustion hK hKA hsub hcover)).homology j).transition n) := by
+      (complExhaustion hK hKA hsub hcover)
+      (complExhaustion hK hKA hsub hcover).subset_succ).homology j).transition n) := by
   have := isIso_towerToRelative L hK hKc hKA hsub hcover hzero n j
   have := isIso_towerToRelative L hK hKc hKA hsub hcover hzero (n + 1) j
   have : IsIso (((relativeChainComplexTower (complSystem L A)
-      (complExhaustion hK hKA hsub hcover)).homology j).map (homOfLE (Nat.le_succ n)).op ≫
+      (complExhaustion hK hKA hsub hcover)
+      (complExhaustion hK hKA hsub hcover).subset_succ).homology j).map
+        (homOfLE (Nat.le_succ n)).op ≫
         towerToRelative L hK hKA hsub hcover hzero n j) := by
     rw [homology_map_comp_towerToRelative]
     infer_instance
   have := IsIso.of_isIso_comp_right (((relativeChainComplexTower (complSystem L A)
-      (complExhaustion hK hKA hsub hcover)).homology j).map (homOfLE (Nat.le_succ n)).op)
+      (complExhaustion hK hKA hsub hcover)
+      (complExhaustion hK hKA hsub hcover).subset_succ).homology j).map
+        (homOfLE (Nat.le_succ n)).op)
     (towerToRelative L hK hKA hsub hcover hzero n j)
   rw [ModuleTower.transition_def]
   exact ConcreteCategory.bijective_of_isIso _
@@ -195,7 +204,7 @@ include hKc in
 private lemma toTwistedHomology_bijective (j : ℕ) :
     Function.Bijective (toTwistedHomology L hK hKA hsub hcover hzero j) := by
   set KU := complExhaustion hK hKA hsub hcover
-  set C := relativeChainComplexTower (complSystem L A) KU
+  set C := relativeChainComplexTower (complSystem L A) KU KU.subset_succ
   have (n : ℕ) := isIso_towerToRelative L hK hKc hKA hsub hcover hzero n j
   -- The inverses of the comparisons are compatible bijections onto the terms of the tower, so they
   -- identify `H_j(X, A; L)` with its limit, with inverse the comparison at stage `0`.
