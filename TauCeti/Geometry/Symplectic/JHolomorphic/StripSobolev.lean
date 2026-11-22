@@ -16,7 +16,7 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 The Cauchy--Riemann operator `∂s + J ∂t` (`TauCeti.StripSobolev.cauchyRiemann`) acts on the
 Sobolev space `W^{1,2}` of the strip with boundary values in `L₀` and `L₁`
 (`TauCeti.StripSobolev.H1`), with values in `L²`, as the first-order operator
-`TauCeti.StripSobolev.jetOperator` of a constant coefficient. For disjoint isotropic `L₀` and
+`TauCeti.jetOperator` of a constant coefficient. For disjoint isotropic `L₀` and
 `L₁`, for instance a transverse pair of Lagrangian subspaces, the energy estimate
 `TauCeti.exists_integral_norm_sq_add_partialDeriv_sq_strip_le_mul` on test sections
 (`TauCeti.StripSobolev.exists_norm_jetLp_le_mul_norm_cauchyRiemann_jetLp`) passes to the closure:
@@ -62,16 +62,14 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 variable {J : AlmostComplexStructure V} {L₀ L₁ : Submodule ℝ V}
 
 /-- The coefficient `(v, v_s, v_t) ↦ v_s + J v_t` of the Cauchy--Riemann operator `∂s + J ∂t`
-on jets. -/
+on jets: the coefficient field `TauCeti.firstOrderJetCoeff` of `∂s + J ∂t + 0`. -/
 noncomputable def cauchyRiemannJetCoeff (J : AlmostComplexStructure V) : V × V × V →L[ℝ] V :=
-  (ContinuousLinearMap.fst ℝ V V).comp (ContinuousLinearMap.snd ℝ V (V × V)) +
-    (LinearMap.toContinuousLinearMap J.toLinearMap).comp
-      ((ContinuousLinearMap.snd ℝ V V).comp (ContinuousLinearMap.snd ℝ V (V × V)))
+  firstOrderJetCoeff (LinearMap.toContinuousLinearMap J.toLinearMap) 0
 
 @[simp]
 theorem cauchyRiemannJetCoeff_apply (J : AlmostComplexStructure V) (v : V × V × V) :
-    cauchyRiemannJetCoeff J v = v.2.1 + J v.2.2 :=
-  (rfl)
+    cauchyRiemannJetCoeff J v = v.2.1 + J v.2.2 := by
+  simp [cauchyRiemannJetCoeff]
 
 /-- On the jet `(ξ, ∂s ξ, ∂t ξ)` of a map, the coefficient gives `∂s ξ + J ∂t ξ`. -/
 theorem cauchyRiemannJetCoeff_jet (J : AlmostComplexStructure V) (ξ : ℝ × ℝ → V)
@@ -83,24 +81,27 @@ theorem cauchyRiemannJetCoeff_jet (J : AlmostComplexStructure V) (ξ : ℝ × �
 variable (J L₀ L₁) in
 /-- The Cauchy--Riemann operator `∂s + J ∂t` from the Sobolev space `W^{1,2}` of the strip with
 boundary values in `L₀` and `L₁` (`TauCeti.StripSobolev.H1`) to `L²(ℝ × [0, 1], V)`: the
-first-order operator `TauCeti.StripSobolev.jetOperator` of the constant coefficient field
+first-order operator `TauCeti.jetOperator` of the constant coefficient field
 `TauCeti.StripSobolev.cauchyRiemannJetCoeff J`, restricted to `H1`. -/
 noncomputable def cauchyRiemann : H1 L₀ L₁ →L[ℝ] Lp V 2 stripMeasure :=
-  (jetOperator fun _ ↦ cauchyRiemannJetCoeff J).comp (H1 L₀ L₁).subtypeL
+  (jetOperator stripMeasure fun _ ↦ cauchyRiemannJetCoeff J).comp (H1 L₀ L₁).subtypeL
 
 /-- The Cauchy--Riemann operator is the first-order operator of its constant coefficient field on
 `L²` jets, restricted to `H1`. -/
 theorem cauchyRiemann_apply (x : H1 L₀ L₁) :
     cauchyRiemann J L₀ L₁ x =
-      jetOperator (fun _ ↦ cauchyRiemannJetCoeff J) (x : Lp (V × V × V) 2 stripMeasure) :=
+      jetOperator stripMeasure (fun _ ↦ cauchyRiemannJetCoeff J)
+        (x : Lp (V × V × V) 2 stripMeasure) :=
   (rfl)
 
 /-- The Cauchy--Riemann operator acts pointwise on `L²` jets: `(v, v_s, v_t) ↦ v_s + J v_t`. -/
 theorem coeFn_cauchyRiemann (x : H1 L₀ L₁) :
     cauchyRiemann J L₀ L₁ x =ᵐ[stripMeasure]
       fun z ↦ ((x : Lp (V × V × V) 2 stripMeasure) z).2.1 +
-        J ((x : Lp (V × V × V) 2 stripMeasure) z).2.2 :=
-  coeFn_jetOperator (memLp_top_const (cauchyRiemannJetCoeff J)) _
+        J ((x : Lp (V × V × V) 2 stripMeasure) z).2.2 := by
+  filter_upwards [coeFn_jetOperator (memLp_top_const (cauchyRiemannJetCoeff J))
+    (x : Lp (V × V × V) 2 stripMeasure)] with z hz
+  rw [cauchyRiemann_apply, hz, cauchyRiemannJetCoeff_apply]
 
 /-- On the jet of a test section `ξ`, the Cauchy--Riemann operator is `∂s ξ + J ∂t ξ`. -/
 theorem cauchyRiemann_jetLp_ae_eq (ξ : testSection L₀ L₁) :
@@ -211,8 +212,8 @@ noncomputable def cauchyRiemannAddJetCoeff (A : ℝ × ℝ → V →L[ℝ] V) (z
 
 @[simp]
 theorem cauchyRiemannAddJetCoeff_apply (A : ℝ × ℝ → V →L[ℝ] V) (z : ℝ × ℝ) (v : V × V × V) :
-    cauchyRiemannAddJetCoeff J A z v = v.2.1 + J v.2.2 + A z v.1 :=
-  (rfl)
+    cauchyRiemannAddJetCoeff J A z v = v.2.1 + J v.2.2 + A z v.1 := by
+  simp [cauchyRiemannAddJetCoeff]
 
 /-- On the jet `(ξ, ∂s ξ, ∂t ξ)` of a map, the coefficient field gives `∂s ξ + J ∂t ξ + A ξ`. -/
 theorem cauchyRiemannAddJetCoeff_jet (J : AlmostComplexStructure V) (A : ℝ × ℝ → V →L[ℝ] V)
@@ -348,7 +349,7 @@ theorem finiteDimensional_ker_jetOperator_cauchyRiemannAddJetCoeff
     (hL : Disjoint L₀ L₁) {A : ℝ × ℝ → V →L[ℝ] V} (hA : Continuous A) {T : ℝ}
     (hAT : ∀ z : ℝ × ℝ, T < |z.1| → A z = 0) :
     FiniteDimensional ℝ
-      ((jetOperator (cauchyRiemannAddJetCoeff J A)).comp (H1 L₀ L₁).subtypeL).ker := by
+      ((jetOperator stripMeasure (cauchyRiemannAddJetCoeff J A)).comp (H1 L₀ L₁).subtypeL).ker := by
   obtain ⟨C, hC⟩ := exists_hasSemiFredholmEstimate_cauchyRiemannAddJetCoeff hg hL₀ hL₁ hL hA hAT
   exact finiteDimensional_ker_jetOperator_comp_subtypeL (memLp_cauchyRiemannAddJetCoeff hA hAT) hC
 
@@ -358,8 +359,9 @@ theorem isClosed_range_jetOperator_cauchyRiemannAddJetCoeff
     (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hL₀ : ω.IsIsotropic L₀) (hL₁ : ω.IsIsotropic L₁)
     (hL : Disjoint L₀ L₁) {A : ℝ × ℝ → V →L[ℝ] V} (hA : Continuous A) {T : ℝ}
     (hAT : ∀ z : ℝ × ℝ, T < |z.1| → A z = 0) :
-    IsClosed (((jetOperator (cauchyRiemannAddJetCoeff J A)).comp (H1 L₀ L₁).subtypeL).range :
-      Set (Lp V 2 stripMeasure)) := by
+    IsClosed
+      (((jetOperator stripMeasure (cauchyRiemannAddJetCoeff J A)).comp (H1 L₀ L₁).subtypeL).range :
+        Set (Lp V 2 stripMeasure)) := by
   obtain ⟨C, hC⟩ := exists_hasSemiFredholmEstimate_cauchyRiemannAddJetCoeff hg hL₀ hL₁ hL hA hAT
   exact isClosed_range_jetOperator_comp_subtypeL (memLp_cauchyRiemannAddJetCoeff hA hAT) hC
 

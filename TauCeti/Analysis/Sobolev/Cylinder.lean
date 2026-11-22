@@ -63,7 +63,7 @@ the setting of the linearized operators of Floer theory along Floer cylinders.
   (`TauCeti.StripSobolev.HasCompactRestriction`). So the functional analysis of
   `TauCeti.Analysis.Sobolev.Strip.Operator` applies to a first-order operator
   `D ξ = M (ξ, ∂s ξ, ∂t ξ)` with an essentially bounded coefficient field `M`, acting on `L²` jets
-  by `TauCeti.StripSobolev.jetOperator M`: if `D` satisfies the semi-Fredholm estimate
+  by `TauCeti.jetOperator stripMeasure M`: if `D` satisfies the semi-Fredholm estimate
 
   `∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C (∫ ‖D ξ‖² + ∫_{[-T, T] × [0, 1]} ‖ξ‖²)`
 
