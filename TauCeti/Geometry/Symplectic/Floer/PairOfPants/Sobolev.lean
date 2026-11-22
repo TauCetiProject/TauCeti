@@ -235,16 +235,7 @@ theorem det_fderiv_endChart_mul_le (q : Puncture) {ξ : ℝ × ℝ → V} {z : �
     ⟨_, q.hasDerivAt_cylindricalEndLift _⟩
   have hρ := (cylindricalWeight_endChart_mul_det_fderiv_mem_Icc q hz).2
   rw [endChart_eq_realChart] at hξ hρ ⊢
-  set φ := Complex.realChart q.cylindricalEndLift
-  have hconf := le_two_mul_norm_smul_add_smul_sq_add_norm_neg_smul_add_smul_sq c.re c.im
-    (fderiv ℝ ξ (φ z) (1, 0)) (fderiv ℝ ξ (φ z) (0, 1))
-  rw [Complex.fderiv_comp_realChart_apply_one_zero hc hξ,
-    Complex.fderiv_comp_realChart_apply_zero_one hc hξ]
-  rw [Complex.det_fderiv_realChart hc, Complex.normSq_apply] at hρ ⊢
-  have hπ : 2 ≤ 20 * π ^ 2 := by nlinarith [two_le_pi]
-  nlinarith [sq_nonneg ‖ξ (φ z)‖,
-    sq_nonneg ‖c.re • fderiv ℝ ξ (φ z) (1, 0) + c.im • fderiv ℝ ξ (φ z) (0, 1)‖,
-    sq_nonneg ‖(-c.im) • fderiv ℝ ξ (φ z) (1, 0) + c.re • fderiv ℝ ξ (φ z) (0, 1)‖]
+  exact Complex.det_fderiv_realChart_mul_le hc hξ hρ (by nlinarith [two_le_pi])
 
 /-- The change of variables along the end chart, on a band `P × [0, 1)` of the end. -/
 private theorem lintegral_image_endChart (q : Puncture) {P : Set ℝ} (hP : MeasurableSet P)

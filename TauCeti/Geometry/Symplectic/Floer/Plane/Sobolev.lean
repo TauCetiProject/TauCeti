@@ -11,8 +11,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Conformal
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
 import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.Analysis.Complex.RealChart
-import TauCeti.Analysis.Normed.Module.Basic
-import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
@@ -145,34 +143,6 @@ section Energy
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- **The weighted density on the end, from the `W^{1,2}` density of the cylinder.** The Jacobian
-of the end lift `φ` times the weighted density `ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²` at `φ(ζ)` is at most
-`4π²` times the `W^{1,2}` density of `ξ ∘ φ` in the end coordinates. -/
-private theorem det_fderiv_mul_cylindricalWeight_le (p : PSSPlane) {ξ : ℝ × ℝ → V}
-    {ζ : ℝ × ℝ} (hξ : DifferentiableAt ℝ ξ (realChart p.cylindricalEndLift ζ)) :
-    (fderiv ℝ (realChart p.cylindricalEndLift) ζ).det *
-        (PSSPlane.cylindricalWeight (realChart p.cylindricalEndLift ζ) *
-            ‖ξ (realChart p.cylindricalEndLift ζ)‖ ^ 2 +
-          ‖fderiv ℝ ξ (realChart p.cylindricalEndLift ζ) (1, 0)‖ ^ 2 +
-          ‖fderiv ℝ ξ (realChart p.cylindricalEndLift ζ) (0, 1)‖ ^ 2) ≤
-      4 * π ^ 2 * (‖fderiv ℝ (ξ ∘ realChart p.cylindricalEndLift) ζ stdComplexLineReal‖ ^ 2 +
-        ‖fderiv ℝ (ξ ∘ realChart p.cylindricalEndLift) ζ stdComplexLineImag‖ ^ 2 +
-        ‖(ξ ∘ realChart p.cylindricalEndLift) ζ‖ ^ 2) := by
-  obtain ⟨c, hc⟩ : ∃ c, HasDerivAt p.cylindricalEndLift c (Complex.equivRealProdCLM.symm ζ) :=
-    ⟨_, p.hasDerivAt_cylindricalEndLift _⟩
-  have hρ := cylindricalWeight_mul_det_fderiv_realChart_cylindricalEndLift_le p ζ
-  set φ := realChart p.cylindricalEndLift
-  have hconf := le_two_mul_norm_smul_add_smul_sq_add_norm_neg_smul_add_smul_sq c.re c.im
-    (fderiv ℝ ξ (φ ζ) (1, 0)) (fderiv ℝ ξ (φ ζ) (0, 1))
-  simp only [stdComplexLineReal, stdComplexLineImag, Function.comp_apply]
-  rw [TauCeti.Complex.fderiv_comp_realChart_apply_one_zero hc hξ,
-    TauCeti.Complex.fderiv_comp_realChart_apply_zero_one hc hξ]
-  rw [TauCeti.Complex.det_fderiv_realChart hc, Complex.normSq_apply] at hρ ⊢
-  have hπ : 2 ≤ 4 * π ^ 2 := by nlinarith [Real.two_le_pi]
-  nlinarith [sq_nonneg ‖ξ (φ ζ)‖,
-    sq_nonneg ‖c.re • fderiv ℝ ξ (φ ζ) (1, 0) + c.im • fderiv ℝ ξ (φ ζ) (0, 1)‖,
-    sq_nonneg ‖(-c.im) • fderiv ℝ ξ (φ ζ) (1, 0) + c.re • fderiv ℝ ξ (φ ζ) (0, 1)‖]
-
 /-- On the part `|w| > exp (2π R)` of the plane, the weighted energy of a `C¹` section `ξ` of
 compact support is at most `4π²` times the `W^{1,2}` energy of `ξ ∘ φ` on the half-cylinder
 `ε s > R`, `0 ≤ t ≤ 1`: the end lift maps the half-strip `ε s > R`, `0 ≤ t < 1` bijectively onto
@@ -220,7 +190,11 @@ private theorem setIntegral_cylindricalWeight_mul_add_le (p : PSSPlane) {ξ : �
       (Eventually.of_forall (prod_mono subset_rfl Ico_subset_Icc_self)))
   beta_reduce
   rw [smul_eq_mul, abs_of_pos (p.det_fderiv_realChart_cylindricalEndLift_pos ζ)]
-  exact det_fderiv_mul_cylindricalWeight_le p ((hξ.differentiable one_ne_zero) _)
+  simpa only [stdComplexLineReal, stdComplexLineImag, Function.comp_apply] using
+    TauCeti.Complex.det_fderiv_realChart_mul_le (p.hasDerivAt_cylindricalEndLift _)
+      ((hξ.differentiable one_ne_zero) _)
+      (cylindricalWeight_mul_det_fderiv_realChart_cylindricalEndLift_le p ζ)
+      (by nlinarith [Real.two_le_pi])
 
 /-- **The weighted energy, from the energies on a disc and on the end.** For a `C¹` section `ξ` of
 compact support and every `R`, the weighted energy `∫ (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` of `ξ` over the
@@ -416,8 +390,8 @@ theorem norm_floerConformalJetCoeff_cylindricalEndLift_le (ω : SymplecticForm V
 
 /-- **The linearized operator of a PSS plane is bounded on `W^{1,2}`.** Let `H` be a jointly `C²`
 period-one Hamiltonian, let `u` be `C¹` on the plane, and let the almost complex structures
-`J(z, ·)` be `C¹` along the graph of `u`. Suppose that on the part `ε s ≥ T` of the end, with
-`T ≥ 2`, read through the end lift `φ`, the structures are a `C¹` family `J_q(t)` of the angular
+`J(z, ·)` be `C¹` along the graph of `u`. Suppose that on the part `ε s ≥ T` of the end, read
+through the end lift `φ`, the structures are a `C¹` family `J_q(t)` of the angular
 coordinate `t`, `u` is bounded and solves the Floer equation for the perturbation of the plane, and
 the slice defect `∂t (u ∘ φ) - X_{H(t)}(u ∘ φ)` of the end datum is bounded. Then the coefficient
 field of the linearized Floer operator on the conformal jets of the cylindrical weight is
@@ -430,7 +404,7 @@ theorem memLp_floerConformalJetCoeff_pssPlane (ω : SymplecticForm V) (hH : Peri
       (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, u z))
     (hu : ContDiff ℝ 1 u) {Jq : ℝ → V → AlmostComplexStructure V}
     (hJq : ContDiff ℝ 1 fun q : ℝ × V ↦ (Jq q.1 q.2).toLinearMap.toContinuousLinearMap)
-    {T : ℝ} (hT : 2 ≤ T)
+    {T : ℝ}
     (hJend : ∀ ζ : ℝ × ℝ, T ≤ p.endSign * ζ.1 → J (realChart p.cylindricalEndLift ζ) = Jq ζ.2)
     (hfl : ∀ ζ : ℝ × ℝ, T ≤ p.endSign * ζ.1 → IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (J (realChart p.cylindricalEndLift ζ) (u (realChart p.cylindricalEndLift ζ)))
@@ -457,23 +431,24 @@ theorem memLp_floerConformalJetCoeff_pssPlane (ω : SymplecticForm V) (hH : Peri
       (fun z _ ↦ (contDiff_uncurry_perturbation (p := p) hH hHs 1).contDiffAt)
       (fun z _ ↦ (contDiff_uncurry_perturbation (p := p) hH hHs Complex.I).contDiffAt)
       hu.contDiffOn
-  -- On the compact disc `|w| ≤ exp (2π T)` the field is continuous, hence bounded.
+  -- On the compact disc `|w| ≤ exp (2π max T 2)` the field is continuous, hence bounded.
   obtain ⟨B₀, hB₀⟩ := (isCompact_setOf_norm_equivRealProdCLM_symm_le
-    (Real.exp (2 * π * T))).exists_bound_of_continuousOn (hcont.mono (subset_univ _))
+    (Real.exp (2 * π * max T 2))).exists_bound_of_continuousOn (hcont.mono (subset_univ _))
   -- On the end the coefficient field of the end datum is bounded, by the estimate on cylinders.
   obtain ⟨B, hB⟩ := ω.exists_forall_norm_floerJetCoeff_le hHs hJq
     (u ∘ realChart p.cylindricalEndLift) Cu Cδ
   refine memLp_top_of_bound (hcont.aestronglyMeasurable MeasurableSet.univ)
     (max B₀ (1 + B + (1 + B) * B / π)) (Eventually.of_forall fun z ↦ ?_)
-  rcases le_or_gt ‖Complex.equivRealProdCLM.symm z‖ (Real.exp (2 * π * T)) with hz | hz
+  rcases le_or_gt ‖Complex.equivRealProdCLM.symm z‖ (Real.exp (2 * π * max T 2)) with hz | hz
   · exact (hB₀ z hz).trans (le_max_left _ _)
   refine le_max_of_le_right ?_
-  -- A point beyond the disc is `φ(ζ)` for some `ζ = (s, t)` with `ε s > T` and `t ∈ [0, 1)`.
+  -- A point beyond the disc is `φ(ζ)` for some `ζ = (s, t)` with `ε s > max T 2`, `t ∈ [0, 1)`.
   obtain ⟨ζ, hζ1, hζ2, rfl⟩ := p.exists_realChart_cylindricalEndLift_eq hz
+  have hζT := (le_max_left T 2).trans hζ1.le
   exact ω.norm_floerConformalJetCoeff_cylindricalEndLift_le hH
-    (fun t ↦ hHs.comp (contDiff_const.prodMk contDiff_id)) (hT.trans hζ1.le)
-    (hJend ζ hζ1.le) ((hu.differentiable one_ne_zero) _) (hfl ζ hζ1.le)
-    (hB ζ (Ico_subset_Icc_self hζ2) (hub ζ hζ1.le) (hδ ζ hζ1.le))
+    (fun t ↦ hHs.comp (contDiff_const.prodMk contDiff_id)) ((le_max_right T 2).trans hζ1.le)
+    (hJend ζ hζT) ((hu.differentiable one_ne_zero) _) (hfl ζ hζT)
+    (hB ζ (Ico_subset_Icc_self hζ2) (hub ζ hζT) (hδ ζ hζT))
 
 /-! ### Peetre's argument on the plane -/
 
