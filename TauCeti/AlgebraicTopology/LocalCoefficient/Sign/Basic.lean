@@ -29,6 +29,12 @@ point to evaluation at the endpoint of its lift
 sections (`IsCoveringMap.monodromy_section`), so a continuous section of such a double cover
 trivializes the sign local system (`IsCoveringMap.signLocalSystemIsoOfSection`).
 
+The construction is contravariant in the covering. A continuous map `φ` from `p` to a second
+covering `p'` over `X`, carrying `σ` to an involution `σ'`, pulls functions changing sign under
+`σ'` back to functions changing sign under `σ`, and these pull-backs form a morphism of local
+systems (`IsCoveringMap.signLocalSystemMap`), because `φ` carries lifts of paths to lifts. When `φ`
+is bijective on every fibre this is an isomorphism (`IsCoveringMap.isIso_signLocalSystemMap`).
+
 For the orientation double cover of a real vector bundle `E` with integral coefficients this is
 the orientation local system `o(E)`: its fibre over `b` is a copy of `ℤ` whose two generators are
 the two orientations of `E_b`, and an orientation of the bundle trivializes it.
@@ -43,6 +49,8 @@ the two orientations of `E_b`, and an orientation of the bundle trivializes it.
 * `IsCoveringMap.signLocalSystemObjEquiv`: the fibres of the sign local system are the modules
   `TauCeti.signFiber`.
 * `IsCoveringMap.signLocalSystemIsoOfSection`: the trivialization given by a continuous section.
+* `IsCoveringMap.signLocalSystemMap`: the morphism of sign local systems induced by a map of
+  coverings intertwining the involutions.
 
 ## Main results
 
@@ -55,6 +63,8 @@ the two orientations of `E_b`, and an orientation of the bundle trivializes it.
   acts by `1` when its lift starting at `e` closes up and by `-1` when that lift ends at `σ e`;
   every loop does one or the other
   (`IsCoveringMap.monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one`).
+* `IsCoveringMap.isIso_signLocalSystemMap`: a map of coverings intertwining the involutions and
+  bijective on fibres induces an isomorphism of sign local systems.
 
 ## References
 
@@ -339,5 +349,70 @@ theorem monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one {x : X}
       (Subtype.ext (h.trans (Function.fiberMap_apply_coe σ hσ x e).symm)))
 
 end Monodromy
+
+/-! ### Maps of coverings -/
+
+section Map
+
+variable {σ hσ} {E' : Type w} [TopologicalSpace E'] {p' : E' → X} (hp' : IsCoveringMap p')
+  {σ' : C(E', E')} {hσ' : p' ∘ σ' = p'} (φ : C(E, E')) (hφ : p' ∘ φ = p)
+  (hφσ : φ ∘ σ = σ' ∘ φ)
+include hφσ
+
+/-- On the fibre over `x`, a map of coverings intertwining `σ` with `σ'` intertwines their
+restrictions. -/
+private theorem fiberMap_fiberMap_comm (x : X) (e : p ⁻¹' {x}) :
+    Function.fiberMap φ hφ x (Function.fiberMap σ hσ x e) =
+      Function.fiberMap σ' hσ' x (Function.fiberMap φ hφ x e) :=
+  Subtype.ext (by simp only [Function.fiberMap_apply_coe]; exact congrFun hφσ e)
+
+/-- A map `φ` of coverings over `X` intertwining `σ` with `σ'` pulls the functions on the fibres
+of `p'` changing sign under `σ'` back to functions on the fibres of `p` changing sign under `σ`.
+Precomposition with `φ` on each fibre is a morphism from the sign local system of `(p', σ')` to
+that of `(p, σ)`, since `φ` intertwines monodromy (`IsCoveringMap.fiberMap_monodromy`). -/
+def signLocalSystemMap : hp'.signLocalSystem R σ' hσ' ⟶ hp.signLocalSystem R σ hσ where
+  app x := ModuleCat.ofHom <|
+    (LinearMap.funLeft R R (Function.fiberMap φ hφ x.as)).restrict fun f hf ↦
+      TauCeti.mem_signFiber_iff.2 fun e ↦ by
+        rw [LinearMap.funLeft_apply, LinearMap.funLeft_apply, fiberMap_fiberMap_comm φ hφ hφσ]
+        exact TauCeti.mem_signFiber_iff.1 hf _
+  naturality {x y} γ := ModuleCat.hom_ext <| LinearMap.ext fun f ↦ Subtype.ext <| funext fun e ↦
+    (congrArg f.val (hp.fiberMap_monodromy hp' φ hφ (inv γ) e)).symm
+
+/-- The morphism of sign local systems induced by a map `φ` of coverings evaluates a function on
+the fibre of `p'` at the image under `φ` of a point of the fibre of `p`. -/
+@[simp]
+theorem signLocalSystemObjEquiv_signLocalSystemMap_app_apply (x : FundamentalGroupoid X)
+    (f : (hp'.signLocalSystem R σ' hσ').obj x) (e : p ⁻¹' {x.as}) :
+    (hp.signLocalSystemObjEquiv σ hσ x
+        (((hp.signLocalSystemMap (hσ := hσ) (hσ' := hσ') hp' φ hφ hφσ).app x).hom f) :
+        p ⁻¹' {x.as} → R) e =
+      (hp'.signLocalSystemObjEquiv σ' hσ' x f : p' ⁻¹' {x.as} → R)
+        (Function.fiberMap φ hφ x.as e) :=
+  (rfl)
+
+/-- A map of coverings intertwining the involutions and bijective on every fibre induces an
+isomorphism of sign local systems. -/
+theorem isIso_signLocalSystemMap (hbij : ∀ x, Function.Bijective (Function.fiberMap φ hφ x)) :
+    IsIso (hp.signLocalSystemMap (R := R) (hσ := hσ) (hσ' := hσ') hp' φ hφ hφσ) := by
+  refine @NatIso.isIso_of_isIso_app _ _ _ _ _ _ _ fun x ↦
+    (ConcreteCategory.isIso_iff_bijective _).2 ⟨fun f f' hff' ↦ ?_, fun f ↦ ?_⟩
+  · -- Precomposition with a surjection is injective.
+    refine Subtype.ext <| funext fun e' ↦ ?_
+    obtain ⟨e, rfl⟩ := (hbij x.as).2 e'
+    exact congrFun (congrArg Subtype.val hff') e
+  · -- A function on the fibre of `p` is the pull-back of its push-forward along the bijection.
+    let ψ := Equiv.ofBijective _ (hbij x.as)
+    have hψσ (e' : p' ⁻¹' {x.as}) :
+        ψ.symm (Function.fiberMap σ' hσ' x.as e') = Function.fiberMap σ hσ x.as (ψ.symm e') :=
+      ψ.symm_apply_eq.2 <| by
+        rw [Equiv.ofBijective_apply, fiberMap_fiberMap_comm φ hφ hφσ]
+        exact congrArg _ (ψ.apply_symm_apply e').symm
+    refine ⟨⟨f.val ∘ ψ.symm, TauCeti.mem_signFiber_iff.2 fun e' ↦ ?_⟩, ?_⟩
+    · simp only [Function.comp_apply, hψσ]
+      exact TauCeti.mem_signFiber_iff.1 f.property _
+    · exact Subtype.ext <| funext fun e ↦ congrArg f.val (ψ.symm_apply_apply e)
+
+end Map
 
 end IsCoveringMap
