@@ -276,7 +276,9 @@ namespace TauCeti
 
 section OscillationExit
 
-variable {X E : Type*} [ConditionallyCompleteLinearOrderBot X] [PseudoMetricSpace E]
+section OneStep
+
+variable {X E : Type*} [ConditionallyCompleteLinearOrder X] [Nonempty X] [PseudoMetricSpace E]
 
 /-- The infimum of times `t` strictly after `u` at which `f t` or its strict left limit
 `f.leftLim t` lies at distance at least `ε` from `f u.untopA`, or `⊤` when no such time exists
@@ -290,22 +292,6 @@ noncomputable def oscillationExitAfter (f : X → E) (ε : ℝ) (u : WithTop X) 
   let A := {t : X | u < (t : WithTop X) ∧
     (ε ≤ dist (f t) (f u.untopA) ∨ ε ≤ dist (f.leftLim t) (f u.untopA))}
   if A.Nonempty then ↑(sInf A) else ⊤
-
-/-- Iterated `ε`-oscillation exit times of a path `f`, obtained by iterating
-`oscillationExitAfter f ε` starting from `⊥`. -/
-noncomputable def oscillationExit (f : X → E) (ε : ℝ) : ℕ → WithTop X
-  | 0 => (⊥ : X)
-  | n + 1 => oscillationExitAfter f ε (oscillationExit f ε n)
-
-@[simp]
-theorem oscillationExit_zero (f : X → E) (ε : ℝ) :
-    oscillationExit f ε 0 = ((⊥ : X) : WithTop X) :=
-  (rfl)
-
-@[simp]
-theorem oscillationExit_succ (f : X → E) (ε : ℝ) (n : ℕ) :
-    oscillationExit f ε (n + 1) = oscillationExitAfter f ε (oscillationExit f ε n) :=
-  (rfl)
 
 @[simp]
 theorem oscillationExitAfter_top (f : X → E) (ε : ℝ) :
@@ -346,7 +332,9 @@ theorem oscillationExitAfter_le_coe_of_le_dist {f : X → E} {ε : ℝ} {u : Wit
     (hdev : ε ≤ dist (f t) (f u.untopA) ∨ ε ≤ dist (f.leftLim t) (f u.untopA)) :
     oscillationExitAfter f ε u ≤ (t : WithTop X) := by
   rw [oscillationExitAfter_eq_coe_csInf ⟨t, hut, hdev⟩, WithTop.coe_le_coe]
-  exact csInf_le ⟨⊥, fun _ _ => bot_le⟩ ⟨hut, hdev⟩
+  cases u with
+  | top => exact (not_top_lt hut).elim
+  | coe a => exact csInf_le ⟨a, fun _ hs => (WithTop.coe_lt_coe.mp hs.1).le⟩ ⟨hut, hdev⟩
 
 /-- The next oscillation exit time never precedes the starting time. -/
 theorem le_oscillationExitAfter (f : X → E) (ε : ℝ) (u : WithTop X) :
@@ -363,10 +351,6 @@ theorem le_oscillationExitAfter (f : X → E) (ε : ℝ) (u : WithTop X) :
       Set.mem_ofPred_eq, not_and, not_or, not_le] at hne
     rw [oscillationExitAfter_eq_top_iff.mpr hne]
     exact le_top
-
-/-- Iterated oscillation exit times form a nondecreasing sequence. -/
-theorem oscillationExit_mono (f : X → E) (ε : ℝ) : Monotone (oscillationExit f ε) :=
-  monotone_nat_of_le_succ fun n => le_oscillationExitAfter f ε (oscillationExit f ε n)
 
 /-- For `ε > 0`, at any time `t` with `u ≤ t` strictly before `oscillationExitAfter f ε u`,
 the path remains within strict distance `ε` of `f u.untopA`. -/
@@ -448,6 +432,34 @@ private theorem setOf_oscillation_eq_stoppedEdist {f : X → E} (hf : IsCadlag f
       simp [WithTop.coe_lt_coe.mpr hat, hval, hlim, edist_dist,
         ENNReal.ofReal_le_ofReal_iff dist_nonneg]
 
+end OneStep
+
+section Iterated
+
+variable {X E : Type*} [ConditionallyCompleteLinearOrderBot X] [PseudoMetricSpace E]
+
+/-- Iterated `ε`-oscillation exit times of a path `f`, obtained by iterating
+`oscillationExitAfter f ε` starting from `⊥`. -/
+noncomputable def oscillationExit (f : X → E) (ε : ℝ) : ℕ → WithTop X
+  | 0 => (⊥ : X)
+  | n + 1 => oscillationExitAfter f ε (oscillationExit f ε n)
+
+@[simp]
+theorem oscillationExit_zero (f : X → E) (ε : ℝ) :
+    oscillationExit f ε 0 = ((⊥ : X) : WithTop X) :=
+  (rfl)
+
+@[simp]
+theorem oscillationExit_succ (f : X → E) (ε : ℝ) (n : ℕ) :
+    oscillationExit f ε (n + 1) = oscillationExitAfter f ε (oscillationExit f ε n) :=
+  (rfl)
+
+/-- Iterated oscillation exit times form a nondecreasing sequence. -/
+theorem oscillationExit_mono (f : X → E) (ε : ℝ) : Monotone (oscillationExit f ε) :=
+  monotone_nat_of_le_succ fun n => le_oscillationExitAfter f ε (oscillationExit f ε n)
+
+end Iterated
+
 end OscillationExit
 
 end TauCeti
@@ -456,8 +468,10 @@ namespace IsCadlag
 
 section OscillationExit
 
-variable {X E : Type*} [ConditionallyCompleteLinearOrderBot X] [TopologicalSpace X]
-  [OrderTopology X] [PseudoMetricSpace E]
+section OneStep
+
+variable {X E : Type*} [ConditionallyCompleteLinearOrder X] [Nonempty X]
+  [TopologicalSpace X] [OrderTopology X] [PseudoMetricSpace E]
 
 /-- When a càdlàg path has a finite `ε`-oscillation exit time `s` after `u` (`ε > 0`), `s` lies
 strictly after `u` and attains the `ε`-deviation threshold in value or strict left limit. -/
@@ -474,6 +488,10 @@ theorem lt_and_le_dist_of_oscillationExitAfter_eq_coe {f : X → E} (hf : IsCadl
     have htop := TauCeti.oscillationExitAfter_eq_top_iff.mpr h
     rw [hs] at htop
     exact WithTop.coe_ne_top htop
+  have hbdd : BddBelow A := by
+    cases u with
+    | top => obtain ⟨t, ht, _⟩ := hne; exact (not_top_lt ht).elim
+    | coe a => exact ⟨a, fun _ ht => (WithTop.coe_lt_coe.mp ht.1).le⟩
   have hs_eq : s = sInf A := by
     rw [TauCeti.oscillationExitAfter_eq_coe_csInf hne] at hs
     exact (WithTop.coe_eq_coe.mp hs).symm
@@ -482,8 +500,7 @@ theorem lt_and_le_dist_of_oscillationExitAfter_eq_coe {f : X → E} (hf : IsCadl
     dsimp only [A]
     rw [hA_eq]
     exact isClosed_Ici.csInf_mem_or_leftLim_mem_of_continuousWithinAt
-      ((TauCeti.isCadlag_stoppedEdist hf u).isRightContinuous _) (hA_eq ▸ hne)
-      ⟨⊥, fun _ _ => bot_le⟩
+      ((TauCeti.isCadlag_stoppedEdist hf u).isRightContinuous _) (hA_eq ▸ hne) (hA_eq ▸ hbdd)
   exact hs_eq ▸ hmem
 
 /-- After any finite time `u`, the next `ε`-oscillation exit (`ε > 0`) of a càdlàg path occurs
@@ -509,6 +526,11 @@ theorem oscillationExitAfter_le_coe_iff {f : X → E} (hf : IsCadlag f) {ε : �
   · rintro ⟨t, htT, hut, hdev⟩
     exact (TauCeti.oscillationExitAfter_le_coe_of_le_dist hut hdev).trans
       (WithTop.coe_le_coe.mpr htT)
+
+end OneStep
+
+variable {X E : Type*} [ConditionallyCompleteLinearOrderBot X] [TopologicalSpace X]
+  [OrderTopology X] [PseudoMetricSpace E]
 
 /-- In a second-countable order topology with a conditionally complete linear order with bottom,
 each horizon `T` admits a single countable subset `S ⊆ (-∞, T]` that characterizes the sublevel

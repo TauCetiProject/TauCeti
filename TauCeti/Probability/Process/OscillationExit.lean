@@ -11,21 +11,23 @@ public import TauCeti.Topology.Order.Cadlag
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.Order.Interval.Set.Union
 import Mathlib.Order.SuccPred.IntervalSucc
+import Mathlib.Topology.Metrizable.Urysohn
+import Mathlib.Topology.Order.T5
 
 /-!
 # Oscillation exit stopping times and càdlàg step approximations
 
 For a strongly progressive process `X : ι → Ω → E` on a second-countable conditionally complete
-linear order with bottom (with the order Borel structure and pseudometrizable topology) having
-everywhere càdlàg paths in a pseudometric space `E` and any threshold `ε > 0`, the pathwise
-`ε`-oscillation exit time `TauCeti.oscillationExitAfter (X · ω) ε (τ ω)` after a stopping time
-`τ` is a stopping time on the raw filtration `ℱ`
-(`MeasureTheory.IsStronglyProgressive.isStoppingTime_oscillationExitAfter`), assuming neither
-completeness nor right continuity of `ℱ` and neither separability nor algebraic structure on `E`.
-Iterating from `⊥` gives an increasing exhausting sequence of stopping times
-`TauCeti.oscillationExit (X · ω) ε n` (`IsStronglyProgressive.isStoppingTime_oscillationExit`). In
-nonnegative real time `ℝ≥0`, these specialize to strongly adapted and adapted càdlàg processes via
-right-continuous progressive measurability (`StronglyAdapted.isStoppingTime_oscillationExitAfter`,
+linear order with bottom (with the order Borel structure) having everywhere càdlàg paths in a
+pseudometric space `E` and any threshold `ε > 0`, the pathwise `ε`-oscillation exit time
+`TauCeti.oscillationExitAfter (X · ω) ε (τ ω)` after a stopping time `τ` is a stopping time on
+the raw filtration `ℱ` (`MeasureTheory.IsStronglyProgressive.isStoppingTime_oscillationExitAfter`),
+assuming neither completeness nor right continuity of `ℱ` and neither separability nor algebraic
+structure on `E`. Iterating from `⊥` gives an increasing exhausting sequence of stopping times
+`TauCeti.oscillationExit (X · ω) ε n` (`IsStronglyProgressive.isStoppingTime_oscillationExit`).
+Without requiring an a priori measurable structure on `ι`, these specialize to strongly adapted
+and adapted càdlàg processes via right-continuous progressive measurability
+(`StronglyAdapted.isStoppingTime_oscillationExitAfter`,
 `StronglyAdapted.isStoppingTime_oscillationExit`).
 
 Freezing a path `f` at each exit time `τ_n` on `[τ_n, τ_{n+1})` defines the step approximation
@@ -51,7 +53,7 @@ passing `ε → 0` yields the optional-ray generation theorem without section or
 public section
 
 open Filter MeasureTheory Set
-open scoped NNReal ENNReal Topology
+open scoped ENNReal Topology
 
 namespace MeasureTheory
 
@@ -62,8 +64,7 @@ section IsStronglyProgressive
 variable {ι Ω E : Type*} {m : MeasurableSpace Ω}
   [ConditionallyCompleteLinearOrderBot ι] [TopologicalSpace ι] [OrderTopology ι]
   [SecondCountableTopology ι] [MeasurableSpace ι] [BorelSpace ι]
-  [TopologicalSpace.PseudoMetrizableSpace ι] [PseudoMetricSpace E]
-  {ℱ : Filtration ι m} {X : ι → Ω → E}
+  [PseudoMetricSpace E] {ℱ : Filtration ι m} {X : ι → Ω → E}
 
 /-- For a strongly progressive process with everywhere càdlàg paths, the first `ε`-oscillation
 exit time (`ε > 0`) after a stopping time `τ` is a stopping time on the raw filtration `ℱ`, with no
@@ -103,25 +104,28 @@ theorem IsStronglyProgressive.isStoppingTime_oscillationExit
 
 end IsStronglyProgressive
 
-variable {Ω E : Type*} {m : MeasurableSpace Ω} [PseudoMetricSpace E]
-  {ℱ : Filtration ℝ≥0 m} {X : ℝ≥0 → Ω → E}
+variable {ι Ω E : Type*} [ConditionallyCompleteLinearOrderBot ι] [TopologicalSpace ι]
+  [OrderTopology ι] [SecondCountableTopology ι] {m : MeasurableSpace Ω} [PseudoMetricSpace E]
+  {ℱ : Filtration ι m} {X : ι → Ω → E}
 
-/-- For a strongly adapted process with everywhere càdlàg paths on `ℝ≥0`, the first `ε`-oscillation
+/-- For a strongly adapted process with everywhere càdlàg paths, the first `ε`-oscillation
 exit time (`ε > 0`) after a stopping time `τ` is a stopping time on the raw filtration `ℱ`, with no
 right-continuity or completeness assumption on `ℱ` and no separability assumption on `E`. -/
 theorem StronglyAdapted.isStoppingTime_oscillationExitAfter
     (hX : StronglyAdapted ℱ X) (hc : ∀ ω, IsCadlag (X · ω))
-    {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ) {ε : ℝ} (hε : 0 < ε) :
-    IsStoppingTime ℱ (fun ω ↦ TauCeti.oscillationExitAfter (X · ω) ε (τ ω)) :=
-  IsStronglyProgressive.isStoppingTime_oscillationExitAfter
+    {τ : Ω → WithTop ι} (hτ : IsStoppingTime ℱ τ) {ε : ℝ} (hε : 0 < ε) :
+    IsStoppingTime ℱ (fun ω ↦ TauCeti.oscillationExitAfter (X · ω) ε (τ ω)) := by
+  borelize ι
+  exact IsStronglyProgressive.isStoppingTime_oscillationExitAfter
     (hX.isStronglyProgressive_of_isRightContinuous fun ω ↦ (hc ω).isRightContinuous) hc hτ hε
 
 /-- Iterated `ε`-oscillation exit times (`ε > 0`) of a strongly adapted càdlàg process are stopping
 times on the raw filtration `ℱ`. -/
 theorem StronglyAdapted.isStoppingTime_oscillationExit
     (hX : StronglyAdapted ℱ X) (hc : ∀ ω, IsCadlag (X · ω)) {ε : ℝ} (hε : 0 < ε) (n : ℕ) :
-    IsStoppingTime ℱ (fun ω ↦ TauCeti.oscillationExit (X · ω) ε n) :=
-  IsStronglyProgressive.isStoppingTime_oscillationExit
+    IsStoppingTime ℱ (fun ω ↦ TauCeti.oscillationExit (X · ω) ε n) := by
+  borelize ι
+  exact IsStronglyProgressive.isStoppingTime_oscillationExit
     (hX.isStronglyProgressive_of_isRightContinuous fun ω ↦ (hc ω).isRightContinuous) hc hε n
 
 /-- For an adapted càdlàg process in a second-countable pseudometric space with measurable open
@@ -130,7 +134,7 @@ the raw filtration `ℱ`. -/
 theorem Adapted.isStoppingTime_oscillationExitAfter
     [SecondCountableTopology E] [MeasurableSpace E] [OpensMeasurableSpace E]
     (hX : Adapted ℱ X) (hc : ∀ ω, IsCadlag (X · ω))
-    {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ) {ε : ℝ} (hε : 0 < ε) :
+    {τ : Ω → WithTop ι} (hτ : IsStoppingTime ℱ τ) {ε : ℝ} (hε : 0 < ε) :
     IsStoppingTime ℱ (fun ω ↦ TauCeti.oscillationExitAfter (X · ω) ε (τ ω)) :=
   hX.stronglyAdapted.isStoppingTime_oscillationExitAfter hc hτ hε
 
@@ -384,7 +388,6 @@ theorem IsStronglyProgressive.measurable_generateFrom_le_oscillationApprox
     {ι Ω E : Type*} {m : MeasurableSpace Ω}
     [ConditionallyCompleteLinearOrderBot ι] [TopologicalSpace ι] [OrderTopology ι]
     [SecondCountableTopology ι] [MeasurableSpace ι] [BorelSpace ι]
-    [TopologicalSpace.PseudoMetrizableSpace ι]
     [PseudoMetricSpace E] [MeasurableSpace E] [BorelSpace E]
     {ℱ : Filtration ι m} {X : ι → Ω → E}
     (hX : IsStronglyProgressive ℱ X) (hc : ∀ ω, IsCadlag (X · ω)) {ε : ℝ} (hε : 0 < ε) :
@@ -400,18 +403,21 @@ theorem IsStronglyProgressive.measurable_generateFrom_le_oscillationApprox
     (Z := fun t ω ↦ TauCeti.oscillationApprox (X · ω) ε t)
     (fun _ _ _ hle hlt ↦ TauCeti.oscillationApprox_eq_of_mem_Ico hle hlt)
 
-/-- For a strongly adapted càdlàg process on `ℝ≥0` in a pseudometric Borel space and `ε > 0`, the
-pathwise step approximation `fun p ↦ TauCeti.oscillationApprox (X · p.2) ε p.1` is measurable with
-respect to the σ-algebra generated by closed stopping-time rays `{p | τ p.2 ≤ p.1}` on the raw
-filtration `ℱ`. -/
+/-- For a strongly adapted càdlàg process in a pseudometric Borel space and `ε > 0`, the pathwise
+step approximation `fun p ↦ TauCeti.oscillationApprox (X · p.2) ε p.1` is measurable with respect
+to the σ-algebra generated by closed stopping-time rays `{p | τ p.2 ≤ p.1}` on the raw filtration
+`ℱ`. -/
 theorem StronglyAdapted.measurable_generateFrom_le_oscillationApprox
-    {Ω E : Type*} {m : MeasurableSpace Ω} [PseudoMetricSpace E] [MeasurableSpace E] [BorelSpace E]
-    {ℱ : Filtration ℝ≥0 m} {X : ℝ≥0 → Ω → E}
+    {ι Ω E : Type*} [ConditionallyCompleteLinearOrderBot ι] [TopologicalSpace ι]
+    [OrderTopology ι] [SecondCountableTopology ι] {m : MeasurableSpace Ω}
+    [PseudoMetricSpace E] [MeasurableSpace E] [BorelSpace E]
+    {ℱ : Filtration ι m} {X : ι → Ω → E}
     (hX : StronglyAdapted ℱ X) (hc : ∀ ω, IsCadlag (X · ω)) {ε : ℝ} (hε : 0 < ε) :
     Measurable[MeasurableSpace.generateFrom
-      {s : Set (ℝ≥0 × Ω) | ∃ τ : Ω → WithTop ℝ≥0, IsStoppingTime ℱ τ ∧ s = {p | τ p.2 ≤ p.1}}]
-      (fun p : ℝ≥0 × Ω ↦ TauCeti.oscillationApprox (X · p.2) ε p.1) :=
-  (hX.isStronglyProgressive_of_isRightContinuous
+      {s : Set (ι × Ω) | ∃ τ : Ω → WithTop ι, IsStoppingTime ℱ τ ∧ s = {p | τ p.2 ≤ p.1}}]
+      (fun p : ι × Ω ↦ TauCeti.oscillationApprox (X · p.2) ε p.1) := by
+  borelize ι
+  exact (hX.isStronglyProgressive_of_isRightContinuous
     fun ω ↦ (hc ω).isRightContinuous).measurable_generateFrom_le_oscillationApprox hc hε
 
 end MeasureTheory
