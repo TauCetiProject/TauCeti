@@ -17,11 +17,23 @@ locally of finite type. The category inherits all morphisms over the base.
 
 public section
 
+universe u
+
 open CategoryTheory
 
-namespace AlgebraicGeometry.Scheme
+namespace TauCeti
 
-universe u
+open AlgebraicGeometry
+
+/-- Locally finite-type, quasi-compact morphisms remain so after base change. This instance
+lets the morphism-property pullback functor act on the finite-type over-category. -/
+instance : MorphismProperty.IsStableUnderBaseChange
+    (@LocallyOfFiniteType ⊓ @QuasiCompact : MorphismProperty Scheme.{u}) :=
+  .inf (P := @LocallyOfFiniteType) (Q := @QuasiCompact)
+
+end TauCeti
+
+namespace AlgebraicGeometry.Scheme
 
 /-- The full subcategory of schemes over the base whose structure morphisms are of finite type. -/
 protected abbrev FiniteType (S : Scheme.{u}) :=

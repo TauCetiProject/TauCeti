@@ -40,12 +40,19 @@ The proper branch uses joint surjectivity; an empty family there is already a Za
 def hPrecoverage : Precoverage Scheme.{u} :=
   zariskiPrecoverage ⊔ Scheme.precoverage (@IsProper ⊓ @Surjective)
 
+/-- The generating h-precoverage is the join of the Zariski and proper-surjective
+precoverages. -/
+lemma hPrecoverage_def :
+    hPrecoverage.{u} = zariskiPrecoverage ⊔ Scheme.precoverage (@IsProper ⊓ @Surjective) := by
+  rw [hPrecoverage]
+
 /-- Membership in the generating precoverage for the h-topology. -/
 lemma mem_hPrecoverage_iff {X : Scheme.{u}} {R : Presieve X} :
     R ∈ hPrecoverage X ↔ R ∈ zariskiPrecoverage X ∨
       (∃ (Y : Scheme.{u}) (f : Y ⟶ X), R f) ∧
         ∀ ⦃Y : Scheme.{u}⦄ ⦃f : Y ⟶ X⦄, R f → IsProper f ∧ Surjective f := by
   classical
+  rw [hPrecoverage_def]
   constructor
   · rintro (hR | hR)
     · exact Or.inl hR
@@ -115,7 +122,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.generate_singleton_mem_hTopology
 /-- The h-topology is the least topology containing Zariski covers and singleton proper
 surjections. -/
 lemma hTopology_le_iff
-    (J : GrothendieckTopology Scheme.{u}) :
+    {J : GrothendieckTopology Scheme.{u}} :
     hTopology ≤ J ↔ zariskiTopology ≤ J ∧
       ∀ ⦃X Y : Scheme.{u}⦄ (f : X ⟶ Y), IsProper f → Surjective f →
         Sieve.generate (Presieve.singleton f) ∈ J Y := by
@@ -175,7 +182,8 @@ private lemma exists_finite_refinement_of_mem_hPrecoverage {X : Scheme.{u}} [Com
     · intro i
       exact compactSpace_of_isAffine (𝒜.openCover.finiteSubcover.X i)
     · intro i
-      exact ⟨_, _, _, ⟨_⟩, ((OpenCover.fromAffineRefinement.{u, u + 1} 𝒰).w₀ _).symm⟩
+      have hi : 𝒜.openCover.sieve₀ (𝒱.f i) := 𝒜.openCover.sieve₀_f (𝒜.openCover.idx i.val)
+      exact (OpenCover.fromAffineRefinement.{u, u + 1} 𝒰).sieve₀_le_sieve₀ _ hi
     · exact zariskiTopology_le_hTopology _ 𝒱.mem_grothendieckTopology
   · have := (hR hf).1
     have := (hR hf).2
