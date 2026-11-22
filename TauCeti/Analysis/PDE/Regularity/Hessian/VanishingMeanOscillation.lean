@@ -20,6 +20,7 @@ import TauCeti.Analysis.Sobolev.Wkp.Extension
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
+import TauCeti.MeasureTheory.Function.LpSeminorm.Ball
 
 /-!
 # The interior `W^{2,p}` estimate for coefficients of vanishing mean oscillation
@@ -46,6 +47,19 @@ radius `R ≤ r₀`
 (`TauCeti.PDE.exists_lpNorm_iteratedGradient_ball_le_of_memVMO`). The restriction `p > 2` is that of
 the whole-space estimate for coefficients of small mean oscillation; the principal part alone is
 treated.
+
+Averaging the `p`-th powers of the interior estimates over all centres turns them into the estimate
+on the whole space (`TauCeti.lpNorm_le_of_ae_lpNorm_restrict_ball_le_add`): for `a` uniformly
+elliptic on `ℝ^{n+1}` with vanishing mean oscillation, every `u ∈ W^{2,p}(ℝ^{n+1})` satisfies
+
+`‖D²u‖_{Lᵖ} ≤ C (‖∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu‖_{Lᵖ} + r₀⁻² ‖u‖_{Lᵖ})`
+
+with the same `r₀` and `C` depending only on `n`, `p`, `λ` and `Λ`
+(`TauCeti.PDE.exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_memVMO`). Bounded lower-order
+terms `⟪b, ∇u⟫ + c u` are then absorbed by the interpolation inequality for the gradient
+(`TauCeti.PDE.exists_norm_iteratedGradient_le_of_sum_mul_inner_add_inner_add_mul_eq_of_memVMO`).
+These are the a priori estimates of Krylov's whole-space theorem without its zero-order shift
+`λ u`, `λ ≥ λ₀`, which removes the term `‖u‖_{Lᵖ}` from the right side.
 
 ## The argument
 
@@ -523,6 +537,189 @@ theorem exists_lpNorm_iteratedGradient_ball_le_of_memVMO (hp : 2 < p) (hp_top : 
     _ = _ := by
         push_cast
         field_simp
+
+/-! ### The estimate on the whole space -/
+
+/-- **The Calderón–Zygmund estimate in `W^{2,p}(ℝ^{n+1})` for coefficients of vanishing mean
+oscillation.** Let `2 < p < ∞` and `0 < λ ≤ Λ`. There is a constant `C`, depending only on `n`,
+`p`, `λ` and `Λ`, with the following property. Let `a` be a coefficient matrix on `ℝ^{n+1}`,
+uniformly elliptic with the constants `λ, Λ`, whose operators `a(x)` have vanishing mean
+oscillation. Then there is a radius `r₀ > 0` such that every `u ∈ W^{2,p}(ℝ^{n+1})` with
+`∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f ∈ Lᵖ(ℝ^{n+1})` almost everywhere satisfies
+
+`‖D²u‖_{Lᵖ} ≤ C (‖f‖_{Lᵖ} + r₀⁻² ‖u‖_{Lᵖ})`.
+
+The radius `r₀` is that of the interior estimate
+`TauCeti.PDE.exists_lpNorm_iteratedGradient_ball_le_of_memVMO`. -/
+theorem exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_memVMO (hp : 2 < p)
+    (hp_top : p ≠ ⊤) (lam Lam : ℝ) :
+    ∃ C : ℝ≥0, ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
+      MemVMO (fun x => Matrix.toEuclideanCLM (𝕜 := ℝ) (a x)) volume →
+      UniformlyEllipticOn univ a lam Lam →
+      ∃ r₀ : ℝ, 0 < r₀ ∧
+      ∀ (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) ⊤ p 2)
+        (f : Lp ℝ p ((volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))).restrict
+          (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))))),
+        (∀ᵐ x, ∑ i, ∑ j, a x i j * ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1),
+          EuclideanSpace.single j 1⟫_ℝ = f x) →
+        ‖Wkp.iteratedGradient 1 u‖ ≤ C * (‖f‖ + (r₀ ^ 2)⁻¹ * ‖Wkp.value 2 u‖) := by
+  obtain ⟨C, hC⟩ := exists_lpNorm_iteratedGradient_ball_le_of_memVMO (n := n) hp hp_top lam Lam
+  refine ⟨2 ^ (n + 2) * C, fun {a} hvmo hell => ?_⟩
+  obtain ⟨r₀, hr₀, hloc⟩ := hC hvmo hell
+  refine ⟨r₀, hr₀, fun u f heq => ?_⟩
+  have hμ : (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))).restrict
+      ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) : Set (EuclideanSpace ℝ (Fin (n + 1)))) =
+        volume := by
+    simp
+  -- Elements of `Lᵖ` over `⊤` are `Lᵖ` functions for `volume`, with the same norm.
+  have hmem : ∀ {G : Type} [NormedAddCommGroup G]
+      (g : Lp G p ((volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))).restrict
+        (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))))), MemLp g p volume := fun g => by
+    convert Lp.memLp g using 1
+    exact hμ.symm
+  have hnorm : ∀ {G : Type} [NormedAddCommGroup G]
+      (g : Lp G p ((volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))).restrict
+        (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))))), ‖g‖ = lpNorm g p volume := fun g => by
+    rw [Lp.norm_def, ← toReal_eLpNorm]
+    exact congrArg (fun ν => (eLpNorm (⇑g) p ν).toReal) hμ
+  -- The interior estimate on `B(y, r₀)`, at every centre `y`.
+  have hlocal : ∀ y, lpNorm (Wkp.iteratedGradient 1 u) p (volume.restrict (ball y (r₀ / 2))) ≤
+      C * lpNorm f p (volume.restrict (ball y (2 * (r₀ / 2)))) +
+        C * (r₀ ^ 2)⁻¹ * lpNorm (Wkp.value 2 u) p (volume.restrict (ball y (2 * (r₀ / 2)))) :=
+    fun y => by
+      rw [show 2 * (r₀ / 2) = r₀ by ring, mul_assoc, ← mul_add]
+      exact hloc le_rfl (fun x _ => trivial) u f (ae_restrict_of_ae heq)
+  have hglobal := lpNorm_le_of_ae_lpNorm_restrict_ball_le_add (Fact.out : 1 ≤ p) hp_top
+    (hmem _) (hmem f) (hmem _) C.coe_nonneg (by positivity) (half_pos hr₀)
+    (Filter.Eventually.of_forall hlocal)
+  rw [finrank_euclideanSpace_fin, ← hnorm, ← hnorm, ← hnorm] at hglobal
+  refine hglobal.trans_eq ?_
+  push_cast
+  ring
+
+/-- **Moving bounded lower-order terms to the right side.** If `b` and `c` are measurable with
+`‖b‖ ≤ β` and `|c| ≤ γ` almost everywhere, and `u ∈ W^{2,p}(ℝ^{n+1})` solves
+`∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu + ⟪b, ∇u⟫ + c u = f ∈ Lᵖ` almost everywhere, then `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = g` for some
+`g ∈ Lᵖ` with `‖g‖ ≤ ‖f‖ + β ‖∇u‖ + γ ‖u‖`. -/
+private theorem exists_sum_mul_inner_eq_and_norm_le_of_sum_mul_inner_add_inner_add_mul_eq
+    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    {b : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+    {c : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {β γ : ℝ} (hb : AEStronglyMeasurable b volume)
+    (hbβ : ∀ᵐ x, ‖b x‖ ≤ β) (hc : AEStronglyMeasurable c volume) (hcγ : ∀ᵐ x, |c x| ≤ γ)
+    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) ⊤ p 2)
+    (f : Lp ℝ p ((volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))).restrict
+      (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1))))))
+    (heq : ∀ᵐ x, ∑ i, ∑ j, a x i j * ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1),
+        EuclideanSpace.single j 1⟫_ℝ +
+      ⟪b x, Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x⟫_ℝ + c x * Wkp.value 2 u x = f x) :
+    ∃ g : Lp ℝ p ((volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))).restrict
+        (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1))))),
+      (∀ᵐ x, ∑ i, ∑ j, a x i j * ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1),
+        EuclideanSpace.single j 1⟫_ℝ = g x) ∧
+      ‖g‖ ≤ ‖f‖ + β * ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)‖ + γ * ‖Wkp.value 2 u‖ := by
+  set v := Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)
+  have hbv : ∀ᵐ x ∂(volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
+      Set (EuclideanSpace ℝ (Fin (n + 1))))), ‖⟪b x, v x⟫_ℝ‖ ≤ β * ‖v x‖ := by
+    filter_upwards [ae_restrict_of_ae hbβ] with x hx
+    rw [Real.norm_eq_abs]
+    exact (abs_real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right hx (norm_nonneg _))
+  have hcu : ∀ᵐ x ∂(volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
+      Set (EuclideanSpace ℝ (Fin (n + 1))))),
+      ‖c x * Wkp.value 2 u x‖ ≤ γ * ‖Wkp.value 2 u x‖ := by
+    filter_upwards [ae_restrict_of_ae hcγ] with x hx
+    rw [norm_mul, Real.norm_eq_abs]
+    exact mul_le_mul_of_nonneg_right hx (norm_nonneg _)
+  -- The lower-order terms are `Lᵖ` functions.
+  have hB : MemLp (fun x => ⟪b x, v x⟫_ℝ) p ((volume : Measure (EuclideanSpace ℝ
+      (Fin (n + 1)))).restrict (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1))))) :=
+    (Lp.memLp v).of_le_mul (hb.restrict.inner (Lp.aestronglyMeasurable v)) hbv
+  have hCu : MemLp (fun x => c x * Wkp.value 2 u x) p ((volume : Measure (EuclideanSpace ℝ
+      (Fin (n + 1)))).restrict (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1))))) :=
+    (Lp.memLp (Wkp.value 2 u)).of_le_mul (hc.restrict.mul (Lp.aestronglyMeasurable _)) hcu
+  refine ⟨f - hB.toLp _ - hCu.toLp _, ?_, ?_⟩
+  · -- Almost everywhere statements for `volume` restricted to `⊤` hold for `volume`.
+    refine ((ae_restrict_iff' (Opens.isOpen ⊤).measurableSet).1 ?_).mono fun _ hx => hx trivial
+    filter_upwards [Lp.coeFn_sub (f - hB.toLp _) (hCu.toLp _), Lp.coeFn_sub f (hB.toLp _),
+      hB.coeFn_toLp, hCu.coeFn_toLp, ae_restrict_of_ae heq] with x h₁ h₂ h₃ h₄ hx
+    rw [h₁, Pi.sub_apply, h₂, Pi.sub_apply, h₃, h₄, ← hx]
+    ring
+  · have h₁ : ‖hB.toLp _‖ ≤ β * ‖v‖ := Lp.norm_le_mul_norm_of_ae_le_mul <| by
+      filter_upwards [hB.coeFn_toLp, hbv] with x hx hxb
+      rwa [hx]
+    have h₂ : ‖hCu.toLp _‖ ≤ γ * ‖Wkp.value 2 u‖ := Lp.norm_le_mul_norm_of_ae_le_mul <| by
+      filter_upwards [hCu.coeFn_toLp, hcu] with x hx hxc
+      rwa [hx]
+    calc ‖f - hB.toLp _ - hCu.toLp _‖ ≤ ‖f‖ + ‖hB.toLp _‖ + ‖hCu.toLp _‖ :=
+          (norm_sub_le _ _).trans (by gcongr; exact norm_sub_le _ _)
+      _ ≤ _ := by gcongr
+
+/-- **The Calderón–Zygmund estimate in `W^{2,p}(ℝ^{n+1})` for coefficients of vanishing mean
+oscillation, with lower-order terms.** Let `2 < p < ∞`, let `a` be a coefficient matrix on
+`ℝ^{n+1}`, uniformly elliptic with constants `λ, Λ`, whose operators `a(x)` have vanishing mean
+oscillation, and let `b`, `c` be measurable with `‖b‖ ≤ β` and `|c| ≤ γ` almost everywhere. Then
+there is a constant `C` such that every `u ∈ W^{2,p}(ℝ^{n+1})` with
+`∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu + ⟪b, ∇u⟫ + c u = f ∈ Lᵖ(ℝ^{n+1})` almost everywhere satisfies
+
+`‖D²u‖_{Lᵖ} ≤ C (‖f‖_{Lᵖ} + ‖u‖_{Lᵖ})`.
+
+The lower-order terms are moved to the right side of
+`TauCeti.PDE.exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_memVMO`, and the gradient
+term is absorbed by the interpolation inequality `TauCeti.Wkp.norm_iteratedGradient_lowerOrder_le`.
+-/
+theorem exists_norm_iteratedGradient_le_of_sum_mul_inner_add_inner_add_mul_eq_of_memVMO
+    (hp : 2 < p) (hp_top : p ≠ ⊤) {lam Lam : ℝ}
+    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    (hvmo : MemVMO (fun x => Matrix.toEuclideanCLM (𝕜 := ℝ) (a x)) volume)
+    (hell : UniformlyEllipticOn univ a lam Lam)
+    {b : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+    {c : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {β γ : ℝ} (hb : AEStronglyMeasurable b volume)
+    (hbβ : ∀ᵐ x, ‖b x‖ ≤ β) (hc : AEStronglyMeasurable c volume) (hcγ : ∀ᵐ x, |c x| ≤ γ) :
+    ∃ C : ℝ, ∀ (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) ⊤ p 2)
+      (f : Lp ℝ p ((volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))).restrict
+        (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))))),
+      (∀ᵐ x, ∑ i, ∑ j, a x i j * ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1),
+          EuclideanSpace.single j 1⟫_ℝ +
+        ⟪b x, Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x⟫_ℝ + c x * Wkp.value 2 u x = f x) →
+      ‖Wkp.iteratedGradient 1 u‖ ≤ C * (‖f‖ + ‖Wkp.value 2 u‖) := by
+  obtain ⟨C, hC⟩ :=
+    exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_memVMO (n := n) hp hp_top lam Lam
+  obtain ⟨r₀, -, hest⟩ := hC hvmo hell
+  set β' := max β 0
+  set γ' := max γ 0
+  have hβ' : 0 ≤ β' := le_max_right _ _
+  -- The step of the interpolation inequality, chosen so that `C β' ε ≤ 1 / 2`.
+  set ε := (2 * C * β' + 1)⁻¹ with hε_def
+  have hε : 0 < ε := by positivity
+  have hCε : (C : ℝ) * β' * ε ≤ 1 / 2 := by
+    rw [hε_def, ← div_eq_mul_inv, div_le_iff₀ (by positivity)]
+    linarith [mul_nonneg C.coe_nonneg hβ']
+  set K := β' * (((n + 1 : ℕ) : ℝ) ^ 2 / ε) + γ' + (r₀ ^ 2)⁻¹
+  have hK : 0 ≤ K := by positivity
+  refine ⟨2 * C * (1 + K), fun u f heq => ?_⟩
+  obtain ⟨g, hg, hgf⟩ := exists_sum_mul_inner_eq_and_norm_le_of_sum_mul_inner_add_inner_add_mul_eq
+    hb (hbβ.mono fun _ hx => hx.trans (le_max_left _ _)) hc
+    (hcγ.mono fun _ hx => hx.trans (le_max_left _ _)) u f heq
+  have hinterp := Wkp.norm_iteratedGradient_lowerOrder_le hp_top u hε
+  rw [finrank_euclideanSpace_fin] at hinterp
+  -- Absorb the gradient term.
+  set D := ‖Wkp.iteratedGradient 1 u‖
+  set U := ‖Wkp.value 2 u‖
+  have hU : 0 ≤ U := norm_nonneg _
+  have hf : 0 ≤ ‖f‖ := norm_nonneg _
+  have hCK : (C : ℝ) * (β' * (ε * D)) ≤ D / 2 := by
+    have := mul_le_mul_of_nonneg_right hCε (norm_nonneg (Wkp.iteratedGradient 1 u))
+    linarith
+  have hD : D ≤ (C : ℝ) * (‖f‖ + K * U) + D / 2 := by
+    calc D ≤ C * (‖g‖ + (r₀ ^ 2)⁻¹ * U) := hest u g hg
+      _ ≤ C * ((‖f‖ + β' * (ε * D + ((n + 1 : ℕ) : ℝ) ^ 2 / ε * U) + γ' * U) +
+          (r₀ ^ 2)⁻¹ * U) := by gcongr; exact hgf.trans (by gcongr)
+      _ = C * (‖f‖ + K * U) + C * (β' * (ε * D)) := by ring
+      _ ≤ _ := by gcongr
+  calc D ≤ 2 * C * (‖f‖ + K * U) := by linarith
+    _ ≤ 2 * C * (1 + K) * (‖f‖ + U) := by
+      rw [mul_assoc (2 * (C : ℝ))]
+      gcongr
+      nlinarith
 
 end Estimate
 
