@@ -93,16 +93,29 @@ private noncomputable def baseVec (d : ℤ) (N R S : ℕ) (i : Fin R × Fin S) :
     EuclideanSpace ℝ ((Fin N × Fin N × Fin N) × Fin 2) :=
   Zsqrtd.famToLp d _ (baseFam d N R S i)
 
+/-- Evaluation of the `j`-th outer derivative of the bivariate monomial `a * z' ^ s * z ^ r` over
+any commutative ring. -/
+private theorem eval_iterate_derivative_map_monomial_monomial {A : Type*} [CommRing A]
+    (a : A) (r s j : ℕ) (z z' : A) :
+    (Polynomial.derivative^[j]
+      ((Polynomial.monomial r (Polynomial.monomial s a)).map
+        (Polynomial.evalRingHom z'))).eval z =
+      a * z' ^ s * (r.descFactorial j : A) * z ^ (r - j) := by
+  simp only [← C_mul_X_pow_eq_monomial, Polynomial.map_mul, Polynomial.map_C, Polynomial.map_pow,
+    Polynomial.map_X, coe_evalRingHom, iterate_derivative_C_mul, iterate_derivative_X_pow_eq_C_mul,
+    eval_mul, eval_C, eval_pow, eval_X, C_eq_natCast, eval_natCast]
+  ring
+
 private theorem jetEval_basePoly_eq (d : ℤ) (N : ℕ) {R S : ℕ} (i : Fin R × Fin S)
     (k : Fin N × Fin N × Fin N) :
     baseFam d N R S i k =
       (⟨k.1.val, -(k.2.1.val : ℤ)⟩ : ℤ√d) ^ i.2.val *
         (i.1.val.descFactorial k.2.2.val : ℤ√d) *
         (⟨k.1.val, (k.2.1.val : ℤ)⟩ : ℤ√d) ^ (i.1.val - k.2.2.val) := by
-  simp only [baseFam, jetEval, basePoly, Polynomial.map_mul, Polynomial.map_C, Polynomial.map_pow,
-    Polynomial.map_X, coe_evalRingHom, eval_pow, eval_X, iterate_derivative_C_mul,
-    iterate_derivative_X_pow_eq_C_mul, eval_mul, eval_C, C_eq_natCast, eval_natCast]
-  ring
+  have hbase : basePoly d i =
+      Polynomial.monomial i.1.val (Polynomial.monomial i.2.val (1 : ℤ√d)) := by
+    simp [basePoly, ← C_mul_X_pow_eq_monomial]
+  rw [baseFam, jetEval, hbase, eval_iterate_derivative_map_monomial_monomial, one_mul]
 
 /-- Extracting the complex jet relation from a real linear dependence among `baseVec`. -/
 private theorem sum_embPos_baseFam_eq_zero_of_sum_smul_eq_zero {d : ℤ} (hd0 : d ≠ 0)
@@ -174,15 +187,14 @@ private theorem dvd_map_evalRingHom_relationPoly {d : ℤ} (hd0 : d ≠ 0) {N R 
           ((nx : ℂ) + (ny : ℂ) * Complex.sqrt d)
       = ∑ i : Fin R × Fin S,
           (c i : ℂ) * Zsqrtd.embPos d (baseFam d N R S i (⟨nx, hnx⟩, ⟨ny, hny⟩, ⟨j, hj⟩)) := by
-        rw [Fintype.sum_prod_type]
-        simp only [relationPoly, Polynomial.map_sum, iterate_derivative_sum, eval_finsetSum]
-        refine Finset.sum_congr rfl fun r _ ↦ ?_
-        rw [← C_mul_X_pow_eq_monomial, Polynomial.map_mul, Polynomial.map_C, Polynomial.map_pow,
-          Polynomial.map_X, coe_evalRingHom, iterate_derivative_C_mul,
-          iterate_derivative_X_pow_eq_C_mul, eval_mul, eval_C, eval_mul, eval_C, eval_pow, eval_X,
-          eval_finsetSum, Finset.sum_mul]
-        refine Finset.sum_congr rfl fun s _ ↦ ?_
-        rw [eval_monomial]
+        have hrel : relationPoly c =
+            ∑ r : Fin R, ∑ s : Fin S,
+              Polynomial.monomial r.val (Polynomial.monomial s.val (c (r, s) : ℂ)) := by
+          simp only [relationPoly, map_sum]
+        rw [hrel, Fintype.sum_prod_type]
+        simp only [Polynomial.map_sum, iterate_derivative_sum, eval_finsetSum,
+          eval_iterate_derivative_map_monomial_monomial]
+        refine Finset.sum_congr rfl fun r _ ↦ Finset.sum_congr rfl fun s _ ↦ ?_
         simp only [jetEval_basePoly_eq, map_mul, map_pow, map_natCast, Zsqrtd.embPos_apply,
           Int.cast_natCast, Int.cast_neg]
         ring

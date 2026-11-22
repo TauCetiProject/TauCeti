@@ -800,10 +800,8 @@ theorem _root_.Squarefree.discr_ne_zero {D : Type*} [CommRing D] [IsDomain D]
 resultant `f.resultant f.derivative` equals the resultant at degree bounds `f.natDegree` and
 `f.natDegree - 1`. -/
 theorem resultant_deriv_eq {f : R[X]} [HasUniqueDiv R] :
-    f.resultant f.derivative = f.resultant f.derivative f.natDegree (f.natDegree - 1) := by
-  show f.resultant f.derivative f.natDegree f.derivative.natDegree =
-    f.resultant f.derivative f.natDegree (f.natDegree - 1)
-  rw [natDegree_derivative]
+    f.resultant f.derivative = f.resultant f.derivative f.natDegree (f.natDegree - 1) :=
+  congrArg (fun n ↦ f.resultant f.derivative f.natDegree n) (natDegree_derivative f)
 
 /-- A squarefree polynomial over a GCD domain of characteristic zero has nonzero resultant with its
 derivative. -/

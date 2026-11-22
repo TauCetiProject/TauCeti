@@ -45,6 +45,8 @@ coprime, coprimality can be read off a unit resultant: against `X - C a` this is
 
 * `Polynomial.sylvester_apply_of_lt`, `Polynomial.sylvester_apply_of_le`: the entries of the
   Sylvester matrix in its first `n` and its last `m` columns.
+* `Polynomial.sylvester_of_coeff`: lift coefficient predicates holding at `0` to the two column
+  blocks of a Sylvester matrix.
 * `Polynomial.dvd_sylvester_of_dvd_coeff`: entrywise divisibility in the top `k` rows of a
   Sylvester matrix from coefficient divisibility.
 * `Polynomial.resultant_C_sub_X_right`
@@ -107,21 +109,34 @@ theorem sylvester_apply_of_le (f g : S[X]) {n m : ℕ} (i x : Fin (n + m))
   · exact propext (by omega)
   · congr 1; omega
 
+/-- Lift predicates `P` and `Q` on coefficients of `f` and `g` (each holding at `0`) to the
+`(i, j)` entry of `sylvester f g m n`, using `Q` on the first `m` columns and `P` on the last `n`
+columns. Every coefficient accessed has index at most `(i : ℕ)`. -/
+theorem sylvester_of_coeff {P Q : S → Prop} {f g : S[X]} {m n : ℕ}
+    (hP0 : P 0) (hQ0 : Q 0) {i j : Fin (m + n)}
+    (hf : ∀ r ≤ (i : ℕ), P (f.coeff r)) (hg : ∀ r ≤ (i : ℕ), Q (g.coeff r)) :
+    (if (j : ℕ) < m then Q else P) (sylvester f g m n i j) := by
+  by_cases hj : (j : ℕ) < m
+  · rw [sylvester_apply_of_lt _ _ _ j hj]
+    simp only [hj, ↓reduceIte]
+    split_ifs
+    · exact hg _ (Nat.sub_le _ _)
+    · exact hQ0
+  · rw [sylvester_apply_of_le _ _ _ j (Nat.le_of_not_lt hj)]
+    simp only [hj, ↓reduceIte]
+    split_ifs
+    · exact hf _ (by omega)
+    · exact hP0
+
 /-- If `a : S` divides the first `k` coefficients of `f` and `g`, then `a` divides every entry
 in the first `k` rows of `sylvester f g m n`. -/
 theorem dvd_sylvester_of_dvd_coeff {f g : S[X]} {a : S} {m n k : ℕ}
     (hf : ∀ r < k, a ∣ f.coeff r) (hg : ∀ r < k, a ∣ g.coeff r)
     {i j : Fin (m + n)} (hi : (i : ℕ) < k) :
     a ∣ sylvester f g m n i j := by
-  by_cases hj : (j : ℕ) < m
-  · rw [sylvester_apply_of_lt _ _ _ j hj]
-    split_ifs
-    · exact hg _ (by omega)
-    · exact dvd_zero _
-  · rw [sylvester_apply_of_le _ _ _ j (Nat.le_of_not_lt hj)]
-    split_ifs
-    · exact hf _ (by omega)
-    · exact dvd_zero _
+  have h := sylvester_of_coeff (m := m) (n := n) (i := i) (j := j) (dvd_zero a) (dvd_zero a)
+    (fun r hr ↦ hf r (hr.trans_lt hi)) (fun r hr ↦ hg r (hr.trans_lt hi))
+  simpa only [ite_self] using h
 
 /-- The permutation of `Fin (m + n)` reversing each of the blocks `Fin m` and `Fin n`. -/
 private def blockRevPerm (m n : ℕ) : Equiv.Perm (Fin (m + n)) :=

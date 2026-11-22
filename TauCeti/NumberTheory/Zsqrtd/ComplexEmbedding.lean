@@ -34,6 +34,7 @@ weighted Euclidean quadratic form `2 * (re ^ 2 + |d| * im ^ 2)` uniformly in the
 ## Main results
 
 * `Zsqrtd.embPos`, `Zsqrtd.embNeg`: the two complex embeddings `ℤ√d →+* ℂ`.
+* `Zsqrtd.embPos_sqrtd`, `Zsqrtd.embNeg_sqrtd`: values on the generator `Zsqrtd.sqrtd`.
 * `Zsqrtd.embPos_star`, `Zsqrtd.embNeg_star`: source conjugation `star` on `ℤ√d` exchanges
   `embPos d` and `embNeg d`.
 * `Zsqrtd.embPos_injective`, `Zsqrtd.embNeg_injective`: injectivity whenever `¬ IsSquare d`.
@@ -67,6 +68,16 @@ theorem embPos_apply (d : ℤ) (u : ℤ√d) :
 theorem embNeg_apply (d : ℤ) (u : ℤ√d) :
     embNeg d u = (u.re : ℂ) + (u.im : ℂ) * (-Complex.sqrt d) := by
   rfl
+
+/-- `Zsqrtd.embPos d` sends the generator `Zsqrtd.sqrtd` to `Complex.sqrt d`. -/
+@[simp]
+theorem embPos_sqrtd (d : ℤ) : embPos d sqrtd = Complex.sqrt d := by
+  simp [embPos]
+
+/-- `Zsqrtd.embNeg d` sends the generator `Zsqrtd.sqrtd` to `-Complex.sqrt d`. -/
+@[simp]
+theorem embNeg_sqrtd (d : ℤ) : embNeg d sqrtd = -Complex.sqrt d := by
+  simp [embNeg]
 
 /-- Source conjugation `star` on `ℤ√d` sends `Zsqrtd.embPos d` to `Zsqrtd.embNeg d`. -/
 @[simp]
@@ -114,8 +125,7 @@ theorem embPos_eq_sqrtEmbedding (d : ℤ) (u : ℤ√d) :
         (algebraMap (QuadraticAlgebra ℤ d 0) (QuadraticAlgebra ℚ d ((0 : ℤ) : ℚ))
           (equivQuadraticAlgebra d u)) := by
   rw [embPos_apply, QuadraticAlgebra.sqrtEmbedding_apply,
-    re_algebraMap_equivQuadraticAlgebra, im_algebraMap_equivQuadraticAlgebra,
-    QuadraticAlgebra.sqrtRadicand_eq_sqrt]
+    re_algebraMap_equivQuadraticAlgebra, im_algebraMap_equivQuadraticAlgebra]
   simp only [Rat.cast_intCast]
 
 /-- `Zsqrtd.embNeg d` agrees with `QuadraticAlgebra.negSqrtEmbedding (d : ℚ)` via
@@ -126,8 +136,7 @@ theorem embNeg_eq_negSqrtEmbedding (d : ℤ) (u : ℤ√d) :
         (algebraMap (QuadraticAlgebra ℤ d 0) (QuadraticAlgebra ℚ d ((0 : ℤ) : ℚ))
           (equivQuadraticAlgebra d u)) := by
   rw [embNeg_apply, QuadraticAlgebra.negSqrtEmbedding_apply,
-    re_algebraMap_equivQuadraticAlgebra, im_algebraMap_equivQuadraticAlgebra,
-    QuadraticAlgebra.sqrtRadicand_eq_sqrt]
+    re_algebraMap_equivQuadraticAlgebra, im_algebraMap_equivQuadraticAlgebra]
   simp only [Rat.cast_intCast, sub_eq_add_neg, mul_neg]
 
 /-- Coordinate norm bound for `Zsqrtd.embPos`, transported from

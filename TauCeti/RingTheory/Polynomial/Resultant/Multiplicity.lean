@@ -45,8 +45,9 @@ specialization to planar grids via the Schwartz–Zippel lemma
 
 ## Main results
 
-* `Polynomial.natDegree_resultant_le`, `Polynomial.natDegree_resultant_deriv_le`: degree bounds
-  for resultants of bivariate polynomials.
+* `Polynomial.natDegree_resultant_le`, `Polynomial.natDegree_resultant_deriv_of_le`,
+  `Polynomial.natDegree_resultant_deriv_natDegree_le`, `Polynomial.natDegree_resultant_deriv_le`:
+  degree bounds for resultants of bivariate polynomials.
 * `Polynomial.rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero`: the Sylvester-row
   bound on fiber root multiplicities over any integral domain.
 * `Squarefree.rootMultiplicity_map_evalRingHom_le`,
@@ -79,13 +80,10 @@ theorem natDegree_resultant_le {R : Type*} [CommRing R] (f g : R[X][X]) (m n df 
     (f.resultant g m n).natDegree ≤ m * dg + n * df := by
   let e : Fin (m + n) → ℕ := fun j ↦ if (j : ℕ) < m then dg else df
   have hcol (i j : Fin (m + n)) : (sylvester f g m n i j).natDegree ≤ e j := by
-    by_cases hj : (j : ℕ) < m
-    · rw [sylvester_apply_of_lt _ _ i j hj]
-      simp only [e, hj, ↓reduceIte]
-      split_ifs <;> [exact hg _; simp]
-    · rw [sylvester_apply_of_le _ _ i j (Nat.le_of_not_lt hj)]
-      simp only [e, hj, ↓reduceIte]
-      split_ifs <;> [exact hf _; simp]
+    have h := sylvester_of_coeff (P := fun p : R[X] ↦ p.natDegree ≤ df)
+      (Q := fun p : R[X] ↦ p.natDegree ≤ dg) (f := f) (g := g) (m := m) (n := n) (i := i) (j := j)
+      (by simp) (by simp) (fun r _ ↦ hf r) (fun r _ ↦ hg r)
+    by_cases hj : (j : ℕ) < m <;> simpa [e, hj] using h
   refine (Matrix.natDegree_det_le_of_natDegree_le (sylvester f g m n) e hcol).trans ?_
   have hsum : ∑ j : Fin (m + n), e j = m * dg + n * df := by
     rw [Fin.sum_univ_add]
@@ -95,23 +93,36 @@ theorem natDegree_resultant_le {R : Type*} [CommRing R] (f g : R[X][X]) (m n df 
     rw [hleft, hright]
   exact hsum.le
 
-/-- The resultant of `Q : R[X][X]` and its outer derivative has degree at most
-`2 * Q.natDegree * (Bivariate.swap Q).natDegree`. -/
-theorem natDegree_resultant_deriv_le {R : Type*} [CommRing R] (Q : R[X][X]) :
-    (Q.resultant Q.derivative).natDegree ≤
+/-- For any `n ≤ Q.natDegree`, the resultant `Q.resultant Q.derivative Q.natDegree n` has degree
+at most `2 * Q.natDegree * (Bivariate.swap Q).natDegree`. -/
+theorem natDegree_resultant_deriv_of_le {R : Type*} [CommRing R] (Q : R[X][X]) {n : ℕ}
+    (hn : n ≤ Q.natDegree) :
+    (Q.resultant Q.derivative Q.natDegree n).natDegree ≤
       2 * Q.natDegree * (Bivariate.swap Q).natDegree := by
   set d := (Bivariate.swap Q).natDegree
   have hQ : ∀ i, (Q.coeff i).natDegree ≤ d := Bivariate.natDegree_coeff_le_natDegree_swap Q
   have hQ' (i : ℕ) : (Q.derivative.coeff i).natDegree ≤ d := by
     rw [coeff_derivative]
     exact (natDegree_mul_le.trans (by simp)).trans (hQ (i + 1))
-  calc (Q.resultant Q.derivative).natDegree
-      ≤ Q.natDegree * d + Q.derivative.natDegree * d :=
+  calc (Q.resultant Q.derivative Q.natDegree n).natDegree
+      ≤ Q.natDegree * d + n * d :=
         natDegree_resultant_le Q Q.derivative _ _ d d hQ hQ'
-    _ ≤ Q.natDegree * d + Q.natDegree * d := by
-        gcongr
-        exact (natDegree_derivative_le Q).trans (Nat.sub_le _ _)
+    _ ≤ Q.natDegree * d + Q.natDegree * d := by gcongr
     _ = 2 * Q.natDegree * d := by ring
+
+/-- The resultant `Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1)` of `Q : R[X][X]` and
+its outer derivative has degree at most `2 * Q.natDegree * (Bivariate.swap Q).natDegree`. -/
+theorem natDegree_resultant_deriv_natDegree_le {R : Type*} [CommRing R] (Q : R[X][X]) :
+    (Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1)).natDegree ≤
+      2 * Q.natDegree * (Bivariate.swap Q).natDegree :=
+  natDegree_resultant_deriv_of_le Q (Nat.sub_le _ _)
+
+/-- The resultant of `Q : R[X][X]` and its outer derivative has degree at most
+`2 * Q.natDegree * (Bivariate.swap Q).natDegree`. -/
+theorem natDegree_resultant_deriv_le {R : Type*} [CommRing R] (Q : R[X][X]) :
+    (Q.resultant Q.derivative).natDegree ≤
+      2 * Q.natDegree * (Bivariate.swap Q).natDegree :=
+  natDegree_resultant_deriv_of_le Q ((natDegree_derivative_le Q).trans (Nat.sub_le _ _))
 
 end DegreeBounds
 
@@ -277,27 +288,24 @@ private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [
             2 * Q.natDegree * (Bivariate.swap Q).natDegree :=
           Nat.add_le_add_left (natDegree_resultant_deriv_le Q) _
 
-/-- **Summed capped fiber multiplicity bound** (Green, Proposition 4.1). Let `(α i, β i)` be a
-finite family of points in `K × K` over a characteristic-zero field `K`, with `β` injective, such
-that every nonzero bivariate polynomial `H : K[X][X]` vanishes at no more than
-`N * (H.natDegree + (Bivariate.swap H).natDegree)` of the points. Then for every nonzero
-`F : K[X][X]`,
-`∑ i : ι, (F.map (evalRingHom (β i))).cappedRootMultiplicity (α i) N ≤
-  N * (F.natDegree + (Bivariate.swap F).natDegree) +
-    2 * F.natDegree * (Bivariate.swap F).natDegree`. -/
-theorem sum_cappedRootMultiplicity_map_evalRingHom_le {K ι : Type*} [Field K] [CharZero K]
+/-- Private form of `sum_cappedRootMultiplicity_map_evalRingHom_le` phrased via `cappedFiberMult`
+for prime-factorization induction with an explicit nonzero premise. -/
+private theorem sum_cappedFiberMult_le {K ι : Type*} [Field K] [CharZero K]
     [DecidableEq K] [Fintype ι] {α β : ι → K} (hβ : Function.Injective β) {N : ℕ}
     (hzero : ∀ H : K[X][X], H ≠ 0 →
       #{i : ι | (H.map (evalRingHom (β i))).eval (α i) = 0} ≤
         N * (H.natDegree + (Bivariate.swap H).natDegree))
-    {F : K[X][X]} (hF : F ≠ 0) :
-    ∑ i : ι, (F.map (evalRingHom (β i))).cappedRootMultiplicity (α i) N ≤
-      N * (F.natDegree + (Bivariate.swap F).natDegree) +
-        2 * F.natDegree * (Bivariate.swap F).natDegree := by
-  change ∑ i : ι, cappedFiberMult (α i) (β i) N F ≤ _
-  revert hF
-  refine UniqueFactorizationMonoid.induction_on_prime F (fun h ↦ absurd rfl h) (fun u hu _ ↦ ?_)
-    (fun a p ha0 hp ih _ ↦ ?_)
+    (F : K[X][X]) :
+    F ≠ 0 →
+      ∑ i : ι, cappedFiberMult (α i) (β i) N F ≤
+        N * (F.natDegree + (Bivariate.swap F).natDegree) +
+          2 * F.natDegree * (Bivariate.swap F).natDegree := by
+  refine UniqueFactorizationMonoid.induction_on_prime
+    (P := fun P ↦ P ≠ 0 →
+      ∑ i : ι, cappedFiberMult (α i) (β i) N P ≤
+        N * (P.natDegree + (Bivariate.swap P).natDegree) +
+          2 * P.natDegree * (Bivariate.swap P).natDegree)
+    F (fun h ↦ absurd rfl h) (fun u hu _ ↦ ?_) (fun a p ha0 hp ih _ ↦ ?_)
   · simp [cappedFiberMult_of_isUnit _ _ N hu]
   · have hp0 : p ≠ 0 := hp.ne_zero
     have hdeg_z : (p * a).natDegree = p.natDegree + a.natDegree := natDegree_mul hp0 ha0
@@ -317,6 +325,25 @@ theorem sum_cappedRootMultiplicity_map_evalRingHom_le {K ι : Type*} [Field K] [
             2 * (p * a).natDegree * (Bivariate.swap (p * a)).natDegree := by
           rw [hdeg_z, hdeg_y]
           nlinarith
+
+/-- **Summed capped fiber multiplicity bound** (Green, Proposition 4.1). Let `(α i, β i)` be a
+finite family of points in `K × K` over a characteristic-zero field `K`, with `β` injective, such
+that every nonzero bivariate polynomial `H : K[X][X]` vanishes at no more than
+`N * (H.natDegree + (Bivariate.swap H).natDegree)` of the points. Then for every nonzero
+`F : K[X][X]`,
+`∑ i : ι, (F.map (evalRingHom (β i))).cappedRootMultiplicity (α i) N ≤
+  N * (F.natDegree + (Bivariate.swap F).natDegree) +
+    2 * F.natDegree * (Bivariate.swap F).natDegree`. -/
+theorem sum_cappedRootMultiplicity_map_evalRingHom_le {K ι : Type*} [Field K] [CharZero K]
+    [DecidableEq K] [Fintype ι] {α β : ι → K} (hβ : Function.Injective β) {N : ℕ}
+    (hzero : ∀ H : K[X][X], H ≠ 0 →
+      #{i : ι | (H.map (evalRingHom (β i))).eval (α i) = 0} ≤
+        N * (H.natDegree + (Bivariate.swap H).natDegree))
+    {F : K[X][X]} (hF : F ≠ 0) :
+    ∑ i : ι, (F.map (evalRingHom (β i))).cappedRootMultiplicity (α i) N ≤
+      N * (F.natDegree + (Bivariate.swap F).natDegree) +
+        2 * F.natDegree * (Bivariate.swap F).natDegree := by
+  simpa only [cappedFiberMult] using sum_cappedFiberMult_le hβ hzero F hF
 
 /-- **Bivariate multiplicity estimate** (Green, Proposition 4.1). Let `(α i, β i)` be a finite
 family of points in `K × K` over a characteristic-zero field `K`, with `β` injective, such that

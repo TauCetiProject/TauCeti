@@ -70,13 +70,17 @@ example (u v : ℚ) : ‖sqrtEmbedding (-1) (⟨u, v⟩ : QuadraticAlgebra ℚ (
 
 /-- At the non-squarefree parameter `20` the positive coordinate bound is attained. -/
 example : ‖sqrtEmbedding 20 (⟨1, 1⟩ : QuadraticAlgebra ℚ 20 0)‖ = 1 + Real.sqrt 20 := by
-  norm_num [sqrtEmbedding_apply, sqrtRadicand_of_nonneg (by norm_num : (0 : ℚ) ≤ 20)]
+  open scoped ComplexOrder in
+  norm_num [sqrtEmbedding_apply,
+    Complex.sqrt_of_nonneg (by norm_num [Complex.le_def] : (0 : ℂ) ≤ 20)]
   rw [← Complex.ofReal_one, ← Complex.ofReal_add, Complex.norm_real,
     Real.norm_of_nonneg (by positivity)]
 
 /-- Changing the sign of the second coordinate makes that bound strict. -/
 example : ‖sqrtEmbedding 20 (⟨1, -1⟩ : QuadraticAlgebra ℚ 20 0)‖ < 1 + Real.sqrt 20 := by
-  norm_num [sqrtEmbedding_apply, sqrtRadicand_of_nonneg (by norm_num : (0 : ℚ) ≤ 20)]
+  open scoped ComplexOrder in
+  norm_num [sqrtEmbedding_apply,
+    Complex.sqrt_of_nonneg (by norm_num [Complex.le_def] : (0 : ℂ) ≤ 20)]
   rw [← sub_eq_add_neg, ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
     Real.norm_eq_abs, abs_lt]
   exact ⟨by linarith, by linarith [Real.sqrt_pos.2 (by norm_num : (0 : ℝ) < 20)]⟩
@@ -86,19 +90,21 @@ example : ‖sqrtEmbedding 20 (⟨1, -1⟩ : QuadraticAlgebra ℚ 20 0)‖ < 1 +
 example : (⟨-2, 1⟩ : QuadraticAlgebra ℚ 4 0) ≠ 0 ∧
     sqrtEmbedding 4 (⟨-2, 1⟩ : QuadraticAlgebra ℚ 4 0) = 0 ∧
     ‖sqrtEmbedding 4 (⟨-2, 1⟩ : QuadraticAlgebra ℚ 4 0)‖ ≤ 4 := by
-  norm_num [sqrtEmbedding_apply, sqrtRadicand_of_nonneg (by norm_num : (0 : ℚ) ≤ 4),
+  open scoped ComplexOrder in
+  norm_num [sqrtEmbedding_apply,
+    Complex.sqrt_of_nonneg (by norm_num [Complex.le_def] : (0 : ℂ) ≤ 4),
     QuadraticAlgebra.ext_iff]
 
 /-- At the repeated-root parameter zero the two complex algebra maps coincide. -/
 example : sqrtEmbedding 0 = negSqrtEmbedding 0 := by
-  exact algHom_ext (by norm_num [sqrtRadicand_of_nonneg (by norm_num : (0 : ℚ) ≤ 0)])
+  exact algHom_ext (by norm_num [Complex.sqrt_zero])
 
 /-- The second coordinate cannot be bounded by the divided recovery formula at `r = 0`:
 the nonzero generator has both complex images zero. -/
 example : ¬ |((ω : QuadraticAlgebra ℚ 0 0).im : ℝ)| ≤
     (‖sqrtEmbedding 0 (ω : QuadraticAlgebra ℚ 0 0)‖ +
       ‖negSqrtEmbedding 0 (ω : QuadraticAlgebra ℚ 0 0)‖) / (2 * Real.sqrt |(0 : ℝ)|) := by
-  norm_num [sqrtRadicand_of_nonneg (by norm_num : (0 : ℚ) ≤ 0)]
+  norm_num [Complex.sqrt_zero]
 
 /-- The coordinate estimate specializes to the Gaussian triangle bound for both embeddings. -/
 example (σ : QuadraticAlgebra ℚ (-1) 0 →ₐ[ℚ] ℂ) (u v : ℚ) :
@@ -110,7 +116,7 @@ example (u v : ℚ) :
     ‖sqrtEmbedding (-1) (⟨u, v⟩ : QuadraticAlgebra ℚ (-1) 0)‖ =
       |(u : ℝ)| + |(v : ℝ)| ↔ u * v = 0 := by
   rw [Complex.norm_eq_sqrt_sq_add_sq]
-  norm_num [sqrtEmbedding_apply, sqrtRadicand_of_nonpos (by norm_num : (-1 : ℚ) ≤ 0)]
+  norm_num [sqrtEmbedding_apply, Complex.sqrt_neg_one]
   rw [Real.sqrt_eq_iff_eq_sq (by positivity) (by positivity), add_sq, sq_abs, sq_abs]
   simp only [add_right_cancel_iff]
   constructor <;> grind [abs_eq_zero, Rat.cast_eq_zero, Rat.cast_zero]
