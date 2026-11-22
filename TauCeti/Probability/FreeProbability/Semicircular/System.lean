@@ -212,8 +212,8 @@ theorem freeCumulant_comp {α : Type*} [LinearOrder α] (h : IsSemicircularSyste
 theorem apply_prod {α : Type*} [LinearOrder α] (h : IsSemicircularSystem φ s C) (t : Finset α)
     (w : α → ι) :
     φ ((t.sort.map (s ∘ w)).prod) =
-      ∑ P : {P : NoncrossingPartition t // P.1.IsPairing},
-        ∏ p ∈ P.1.1.orderedPairs, C (w p.1) (w p.2) := by
+      ∑ P : {P : NoncrossingPartition t // P.val.IsPairing},
+        ∏ p ∈ P.val.val.orderedPairs, C (w p.1) (w p.2) := by
   obtain rfl | ht := t.eq_empty_or_nonempty
   · rw [sort_empty, List.map_nil, List.prod_nil, h.apply_one,
       NoncrossingPartition.sum_isPairing_prod_orderedPairs_empty fun x y => C (w x) (w y)]
@@ -227,8 +227,8 @@ theorem apply_prod {α : Type*} [LinearOrder α] (h : IsSemicircularSystem φ s 
 /-- **Algebraic Wick formula** for words indexed by `Fin n` in a semicircular system. -/
 theorem apply_prod_ofFn (h : IsSemicircularSystem φ s C) {n : ℕ} (w : Fin n → ι) :
     φ (List.ofFn (s ∘ w)).prod =
-      ∑ P : {P : NoncrossingPartition (univ : Finset (Fin n)) // P.1.IsPairing},
-        ∏ p ∈ P.1.1.orderedPairs, C (w p.1) (w p.2) := by
+      ∑ P : {P : NoncrossingPartition (univ : Finset (Fin n)) // P.val.IsPairing},
+        ∏ p ∈ P.val.val.orderedPairs, C (w p.1) (w p.2) := by
   rw [List.ofFn_eq_map, ← Fin.sort_univ]
   exact h.apply_prod univ w
 
@@ -247,9 +247,9 @@ private def wickBlockWeight (C : Matrix ι ι R) {α : Type*} [LinearOrder α] (
 
 private theorem sum_prod_wickBlockWeight_eq {α : Type*} [LinearOrder α] (s : Finset α)
     (w : α → ι) :
-    (∑ π : NoncrossingPartition s, ∏ B ∈ π.1.parts, wickBlockWeight C w B) =
-      ∑ P : {P : NoncrossingPartition s // P.1.IsPairing},
-        ∏ p ∈ P.1.1.orderedPairs, C (w p.1) (w p.2) := by
+    (∑ π : NoncrossingPartition s, ∏ B ∈ π.val.parts, wickBlockWeight C w B) =
+      ∑ P : {P : NoncrossingPartition s // P.val.IsPairing},
+        ∏ p ∈ P.val.val.orderedPairs, C (w p.1) (w p.2) := by
   refine NoncrossingPartition.sum_prod_eq_sum_isPairing_prod_orderedPairs
     (fun i j => C (w i) (w j)) (fun {i j} _ _ hij => ?_) fun B _ hB hcard => ?_
   · have hne : ({i, j} : Finset α).Nonempty := ⟨i, mem_insert_self i _⟩
@@ -267,8 +267,8 @@ private theorem wickBlockWeight_image_orderEmbedding {α β : Type*} [LinearOrde
 private theorem freeCumulant_eq_wickBlockWeight_of_apply_prod_ofFn
     (hprod : ∀ {n : ℕ} (w : Fin n → ι),
       φ (List.ofFn (s ∘ w)).prod =
-        ∑ P : {P : NoncrossingPartition (univ : Finset (Fin n)) // P.1.IsPairing},
-          ∏ p ∈ P.1.1.orderedPairs, C (w p.1) (w p.2))
+        ∑ P : {P : NoncrossingPartition (univ : Finset (Fin n)) // P.val.IsPairing},
+          ∏ p ∈ P.val.val.orderedPairs, C (w p.1) (w p.2))
     {n : ℕ} (hn : n ≠ 0) (w : Fin n → ι) :
     freeCumulant φ (s ∘ w) univ = wickBlockWeight C w univ := by
   have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
@@ -288,12 +288,12 @@ private theorem freeCumulant_eq_wickBlockWeight_of_apply_prod_ofFn
         rw [NoncrossingPartition.coe_comap, NoncrossingPartition.coe_bot,
           Finpartition.part_comap_bot (mem_univ x), mem_filter] at hy
         cases e.injective hy.2
-        exact σ.1.mem_part_self.2 (mem_univ _)⟩
+        exact σ.val.mem_part_self.2 (mem_univ _)⟩
   rw [← (Equiv.ofBijective _ hbij).sum_comp]
   have himg : univ.image (e : Fin #X → Fin n) = X := image_orderEmbOfFin_univ X rfl
   refine (sum_congr rfl fun ρ _ => ?_).trans
     (congrArg (fun Y : Finset (Fin n) =>
-      ∑ ρ : NoncrossingPartition Y, ∏ B ∈ ρ.1.parts, wickBlockWeight C w B) himg)
+      ∑ ρ : NoncrossingPartition Y, ∏ B ∈ ρ.val.parts, wickBlockWeight C w B) himg)
   rw [Equiv.ofBijective_apply, NoncrossingPartition.coe_comap, Finpartition.prod_parts_comap]
   refine prod_congr rfl fun B hB => ?_
   rw [← wickBlockWeight_image_orderEmbedding w e, Finpartition.image_filter_mem_of_mem_parts hB]
@@ -305,8 +305,8 @@ theorem isSemicircularSystem_iff_apply_prod_ofFn :
     IsSemicircularSystem φ s C ↔
       ∀ {n : ℕ} (w : Fin n → ι),
         φ (List.ofFn (s ∘ w)).prod =
-          ∑ P : {P : NoncrossingPartition (univ : Finset (Fin n)) // P.1.IsPairing},
-            ∏ p ∈ P.1.1.orderedPairs, C (w p.1) (w p.2) := by
+          ∑ P : {P : NoncrossingPartition (univ : Finset (Fin n)) // P.val.IsPairing},
+            ∏ p ∈ P.val.val.orderedPairs, C (w p.1) (w p.2) := by
   refine ⟨fun h {n} w => h.apply_prod_ofFn w, fun hprod => ?_⟩
   have h1 : φ 1 = 1 := by
     have h0 := hprod (n := 0) Fin.elim0

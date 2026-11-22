@@ -264,7 +264,8 @@ theorem exists_ne_zero_int_vec_norm_le_of_exp_le (u : ι → κ → ℂ) {N U V 
     rw [← Real.exp_sub, ← Real.exp_add]
     congr 1
     ring
-  simpa [mul_assoc, hexp, pow_mul, ← Real.exp_nat_mul, mul_comm (Fintype.card ι : ℝ)] using hcard
+  simpa [mul_assoc, hexp, pow_mul, ← Real.exp_natCast_mul, mul_comm (Fintype.card ι : ℝ)]
+    using hcard
 
 end Complex
 

@@ -454,14 +454,14 @@ namespace Isometry
 theorem contMDiffAt_of_range_mem_nhds {f : M → N} (hf : Isometry f) {p : M}
     (hr : range f ∈ 𝓝 (f p)) : ContMDiffAt I J ∞ f p :=
   contMDiffAt_of_isometry_domRestrict isOpen_univ (mem_univ p)
-    (hf.comp isometry_subtype_coe) (by simpa only [image_univ] using hr)
+    (hf.comp isometry_subtypeVal) (by simpa only [image_univ] using hr)
 
 /-- A metric isometry `f : M → N` whose range is a neighbourhood of `f p` is a smooth local
 diffeomorphism at `p`. -/
 theorem isLocalDiffeomorphAt_of_range_mem_nhds {f : M → N} (hf : Isometry f) {p : M}
     (hr : range f ∈ 𝓝 (f p)) : IsLocalDiffeomorphAt I J ∞ f p :=
   isLocalDiffeomorphAt_of_isometry_domRestrict isOpen_univ (mem_univ p)
-    (hf.comp isometry_subtype_coe) (by simpa only [image_univ] using hr)
+    (hf.comp isometry_subtypeVal) (by simpa only [image_univ] using hr)
 
 /-- A metric isometry `f : M → N` with open range is smooth. -/
 theorem contMDiff_of_isOpen_range {f : M → N} (hf : Isometry f) (hr : IsOpen (range f)) :
@@ -477,7 +477,7 @@ theorem isLocalDiffeomorph_of_isOpen_range {f : M → N} (hf : Isometry f)
 theorem isLocalRiemannianIsometry_of_isOpen_range {f : M → N} (hf : Isometry f)
     (hr : IsOpen (range f)) : TauCeti.IsLocalRiemannianIsometry I J f :=
   isLocalRiemannianIsometry_of_forall_exists_isometry_domRestrict fun p ↦
-    ⟨univ, isOpen_univ, mem_univ p, hf.comp isometry_subtype_coe,
+    ⟨univ, isOpen_univ, mem_univ p, hf.comp isometry_subtypeVal,
       by simpa only [image_univ] using hr.mem_nhds (mem_range_self p)⟩
 
 /-- A surjective metric isometry `f : M → N` is smooth. -/

@@ -300,8 +300,9 @@ theorem exists_lTensor_coact_eq_tmul_iff_mem_span [IsDomain R] {d : ℕ} {f : Mv
   let _ := polynomialComodule R 2
   refine ⟨fun ⟨h, hfh⟩ ↦ ?_, fun hmem ↦ ?_⟩
   · -- The universal upper unitriangular point over `R[t]`, as a point of the Borel subgroup.
+    -- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
     let u : Matrix.SpecialLinearGroup (Fin 2) R[X] :=
-      ⟨!![1, X; 0, 1], by simp [Matrix.det_fin_two]⟩
+      .mk !![1, X; 0, 1] (by simp [Matrix.det_fin_two])
     have hu : u ∈ (upperTriangularGroup (Fin 2) R[X]).comap Matrix.SpecialLinearGroup.toGL := by
       rw [UpperTriangularGroup.mem_comap_toGL_iff]
       intro i j hij
@@ -510,7 +511,7 @@ instance instFiniteDimensionalBinaryForms : FiniteDimensional k (binaryForms k d
     Module.Finite.iff_fg.mpr (MvPolynomial.homogeneousSubmodule_fg (Fin 2) k d)
   exact Module.Finite.of_injective
     ((SMulMemClass.subtype (binaryForms k d)).codRestrict
-      (MvPolynomial.homogeneousSubmodule (Fin 2) k d) fun f ↦ mem_binaryForms.mp f.2)
+      (MvPolynomial.homogeneousSubmodule (Fin 2) k d) fun f ↦ mem_binaryForms.mp f.property)
     ((LinearMap.injective_codRestrict_iff _).mpr Subtype.val_injective)
 
 /-- **Every nonzero subrepresentation of the binary forms of degree `d` contains `yᵈ`**, over every
@@ -524,7 +525,7 @@ theorem X_one_pow_mem_of_ne_bot {W : Subcomodule k (coordinateHopfAlgebra k 2)
   have hf := mem_binaryForms.mp (hW hfW)
   -- The largest power of `x` occurring in `f`, and a monomial `m₀` of `f` realizing it.
   have hne : (f.support.image (· 0)).Nonempty :=
-    (Finset.nonempty_iff_ne_empty.mpr (by simpa using hf₀)).image _
+    (Finset.ne_empty_iff_nonempty.mp (by simpa using hf₀)).image _
   obtain ⟨m₀, hm₀, hm₀i⟩ := Finset.mem_image.mp ((f.support.image (· 0)).max'_mem hne)
   set i₀ := (f.support.image (· 0)).max' hne
   -- The coefficient of `t ^ i₀` in `f(x - t y, y)` only sees the monomial `m₀`.

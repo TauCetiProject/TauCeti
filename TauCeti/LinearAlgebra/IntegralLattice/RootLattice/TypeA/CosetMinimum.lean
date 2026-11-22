@@ -131,7 +131,7 @@ theorem isLeast_form_self_nsmul_typeAFundamentalWeightClass {k : ℕ} (hk : k �
   · rintro q ⟨x, hx, rfl⟩
     rw [← natCast_zsmul] at hx
     rw [typeARootLattice_form_self_eq_dotProduct]
-    have hsum := (mem_singleParityCheckCode ℚ (Fin (n + 1))).mp (e x).2
+    have hsum := (mem_singleParityCheckCode ℚ (Fin (n + 1))).mp (e x).property
     simpa using mul_sub_div_le_dotProduct_self (k := k) hsum
       (exists_typeAIsometryZeroSumLattice_apply_eq_intCast_sub_of_mk_eq x hx)
 

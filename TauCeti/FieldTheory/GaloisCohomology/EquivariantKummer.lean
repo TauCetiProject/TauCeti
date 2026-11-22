@@ -128,7 +128,7 @@ variable {N : Subgroup (AbsoluteGaloisGroup K)} {α : (SeparableClosure K)ˣ}
 /-- The ratio `h α / α` is an `n`th root of unity when `h` fixes `αⁿ`. -/
 theorem smul_mul_inv_mem_rootsOfUnity_of_smul_pow_eq (hα : ∀ h ∈ N, h • α ^ n = α ^ n) (h : N) :
     (h : AbsoluteGaloisGroup K) • α * α⁻¹ ∈ rootsOfUnity n (SeparableClosure K) := by
-  rw [mem_rootsOfUnity, mul_pow, ← smul_pow', inv_pow, hα _ h.2, mul_inv_cancel]
+  rw [mem_rootsOfUnity, mul_pow, ← smul_pow', inv_pow, hα _ h.property, mul_inv_cancel]
 
 /-- The function `h ↦ h α / α` on a subgroup `N` of `G_K` fixing `αⁿ`, with values in `μₙ`; the
 underlying function of `subgroupKummerCocycle`. -/
@@ -297,7 +297,7 @@ def fixingSubgroupKummerEquivOfTrivial (hn : IsUnit (n : K)) (e : KummerCoeff K 
   (fixingSubgroupKummerEquiv σ hn).trans
     (explicitCoeff1Equiv σ.fieldRange.fixingSubgroup (KummerCoeff K n) e
       continuous_of_discreteTopology continuous_of_discreteTopology fun h ξ => by
-        rw [Subgroup.smul_def, Subgroup.smul_def, hN _ h.2, htriv])
+        rw [Subgroup.smul_def, Subgroup.smul_def, hN _ h.property, htriv])
 
 /-- `fixingSubgroupKummerEquivOfTrivial` is the Kummer isomorphism followed by the coefficient map
 induced by `e`. -/
@@ -309,7 +309,7 @@ theorem fixingSubgroupKummerEquivOfTrivial_apply (hn : IsUnit (n : K)) (e : Kumm
     fixingSubgroupKummerEquivOfTrivial σ hn e htriv hN x =
       explicitCoeff1Equiv σ.fieldRange.fixingSubgroup (KummerCoeff K n) e
         continuous_of_discreteTopology continuous_of_discreteTopology
-        (fun h ξ => by rw [Subgroup.smul_def, Subgroup.smul_def, hN _ h.2, htriv])
+        (fun h ξ => by rw [Subgroup.smul_def, Subgroup.smul_def, hN _ h.property, htriv])
         (fixingSubgroupKummerEquiv σ hn x) :=
   (rfl)
 
@@ -451,7 +451,7 @@ private theorem bijective_torsionByUnitsToKummerCoeff
         H0 ↥sigma.fieldRange.fixingSubgroup (UnitsCoeff K) :=
       (FixedPoints.mem_addSubgroup _ _ _).2 fun g ↦ by
         have h := congrArg (fun z : KummerCoeff K n ↦ ((z.toMul : (SeparableClosure K)ˣ) :
-          SeparableClosure K)) (hN g g.2 xi)
+          SeparableClosure K)) (hN g g.property xi)
         rw [Subgroup.smul_def (α := UnitsCoeff K)]
         refine Additive.toMul.injective (Units.ext ?_)
         simp only [Additive.toMul_smul]
@@ -459,7 +459,7 @@ private theorem bijective_torsionByUnitsToKummerCoeff
     obtain ⟨b, hb⟩ := mem_H0_fixingSubgroup_unitsCoeff_iff.1 hu
     have hbn : b ^ n = 1 := Units.map_injective sigma.toRingHom.injective <| by
       rw [map_pow, hb, map_one]
-      exact (mem_rootsOfUnity n _).1 xi.toMul.2
+      exact (mem_rootsOfUnity n _).1 xi.toMul.property
     refine ⟨⟨Additive.ofMul b, (Submodule.mem_torsionBy_iff _ _).2 ?_⟩, ?_⟩
     · apply Additive.toMul.injective
       simpa [natCast_zsmul] using hbn
@@ -490,7 +490,7 @@ def kummerCoeffFiniteRepresentation
     ⟨fun g ↦ by
       apply LinearMap.ext
       intro xi
-      exact hN g g.2 xi⟩
+      exact hN g g.property xi⟩
   exact (rho.ofQuotient sigma.fieldRange.fixingSubgroup).comp
     (quotientFixingSubgroupFieldRangeEquiv K L sigma).symm.toMonoidHom
 
@@ -516,7 +516,7 @@ theorem kummerCoeffFiniteRepresentation_restrictNormalHom
     ⟨fun h ↦ by
       apply LinearMap.ext
       intro zeta
-      exact hN h h.2 zeta⟩
+      exact hN h h.property zeta⟩
   unfold kummerCoeffFiniteRepresentation
   rw [← quotientFixingSubgroupFieldRangeEquiv_mk K L sigma g]
   rw [MonoidHom.comp_apply]
@@ -553,7 +553,7 @@ theorem coe_torsionByUnitsEquivKummerCoeff_apply
       ∀ xi : KummerCoeff K n, g • xi = xi)
     (x : Submodule.torsionBy ℤ (Additive Lˣ) (n : ℤ)) :
     (((torsionByUnitsEquivKummerCoeff sigma n hN x).toMul : (SeparableClosure K)ˣ) :
-      SeparableClosure K) = sigma (x.1.toMul : L) := by
+      SeparableClosure K) = sigma (x.val.toMul : L) := by
   simp [torsionByUnitsEquivKummerCoeff, torsionByUnitsToKummerCoeff]
 
 /-- The absolute Galois group acts trivially on the constant coefficient module. -/

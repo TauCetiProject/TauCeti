@@ -66,8 +66,8 @@ noncomputable def Scheme.Hom.pointsEquivAlgHom (f : X ⟶ Spec (.of R)) [IsAffin
   ({ toFun x := ⟨x.left ≫ X.isoSpec.hom, by
        rw [Scheme.Hom.isOver_iff, specOverSpec_over, specOverSpec_over]
        simpa [Spec.algebraMap, h1, e] using Over.w x⟩
-     invFun g := Over.homMk (g.1 ≫ X.isoSpec.inv) (by
-       have := g.2
+     invFun g := Over.homMk (g.val ≫ X.isoSpec.inv) (by
+       have := g.property
        rw [Scheme.Hom.isOver_iff, specOverSpec_over, specOverSpec_over] at this
        simp [Spec.algebraMap, e] at this ⊢
        simp [this])

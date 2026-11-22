@@ -137,7 +137,7 @@ theorem _root_.Diffeology.DSmooth.subtype_mk [DiffeologicalSpace Y] {f : Y → X
 `u` is smooth for the subspace diffeology. -/
 theorem isPlotOn_iff_dSmooth_domRestrict {n : ℕ} {u : Set (𝔼ⁿ)} {p : 𝔼ⁿ → X} :
     IsPlotOn u p ↔ _root_.Diffeology.DSmooth (u.domRestrict p) :=
-  ⟨fun hp _ q hq ↦ hp.isPlot_comp (fun z _ ↦ (q z).2) (isPlot_subtype_iff.mp hq).contDiff,
+  ⟨fun hp _ q hq ↦ hp.isPlot_comp (fun z _ ↦ (q z).property) (isPlot_subtype_iff.mp hq).contDiff,
     fun hp ↦ isPlotOn_iff.mpr fun f hfu hf ↦
       hp _ (fun z ↦ ⟨f z, hfu (mem_univ z)⟩) (isPlot_subtype_iff.mpr hf.isPlot)⟩
 
@@ -163,8 +163,8 @@ theorem dTopology_subtype_of_isOpen {U : Set X} (hU : IsOpen[_root_.Diffeology.d
   have hp' : EqOn p (Subtype.val ∘ p') (p ⁻¹' U) := fun y hy ↦ by
     simp [p', show p y ∈ U from hy]
   have hplot : IsPlotOn (p ⁻¹' U) p' :=
-    isPlotOn_subtype_iff.mpr ((isPlotOn_of_isPlot hp _).congr hp')
-  have hzU : p z ∈ U := hx ▸ x.2
+    isPlotOn_subtype_iff.mpr ((hp.isPlotOn _).congr hp')
+  have hzU : p z ∈ U := hx ▸ x.property
   let : TopologicalSpace U := _root_.Diffeology.dTopology
   refine ⟨p ⁻¹' U ∩ p' ⁻¹' W, fun y ⟨hyU, hyW⟩ ↦ ⟨p' y, hyW, (hp' hyU).symm⟩,
     (hplot.continuousOn ho).isOpen_inter_preimage ho hW, hzU, ?_⟩
@@ -225,7 +225,7 @@ theorem IsSubduction.restrictPreimage [DiffeologicalSpace Q] {q : X → Q} (hq :
     -- On `v`, the lift lands in the preimage of `t`, since its image under `q` is `p`.
     have hmem : ∀ y ∈ v, lift y ∈ q ⁻¹' t := fun y hy ↦ by
       rw [mem_preimage, ← comp_apply (f := q), hq' hy]
-      exact (p y).2
+      exact (p y).property
     let lift' : 𝔼ⁿ → q ⁻¹' t := fun y ↦ if h : lift y ∈ q ⁻¹' t then ⟨lift y, h⟩
       else ⟨lift z, hmem z hzv⟩
     have hlift' : ∀ y (hy : y ∈ v), lift' y = ⟨lift y, hmem y hy⟩ := fun y hy ↦ by

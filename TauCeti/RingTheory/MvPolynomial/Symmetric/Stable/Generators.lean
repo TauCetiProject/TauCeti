@@ -248,7 +248,7 @@ theorem esymmAlgHom_injective : Function.Injective (esymmAlgHom R) := by
 /-- A symmetric function of degree `n` is a polynomial in the elementary symmetric functions. -/
 private theorem of_mem_range_esymmAlgHom {n : ℕ} (f : stableSymmetricSubmodule R n) :
     DirectSum.of _ n f ∈ (esymmAlgHom R).range := by
-  have hf := mem_symmetricHomogeneousSubmodule.mp (stableSymmetricProj R n n f).2
+  have hf := mem_symmetricHomogeneousSubmodule.mp (stableSymmetricProj R n n f).property
   obtain ⟨q, hq⟩ :=
     MvPolynomial.esymmAlgHom_surjective R (σ := Fin n) (n := n) (by simp) ⟨_, hf.1⟩
   have hx :

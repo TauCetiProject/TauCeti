@@ -120,7 +120,7 @@ def singularHomologyComplSingletonIsoOfChart (k : ℕ) :
     asIso (TopPair.singularHomologyMap (TopPair.ofSubsetIso
       (X := TopCat.of φ.source) (Y := TopCat.of φ.target) φ.toHomeomorphSourceTarget
       (B := Subtype.val ⁻¹' {x}ᶜ) (B' := Subtype.val ⁻¹' {φ x}ᶜ)
-      fun z ↦ (φ.injOn.eq_iff z.2 hx).not.symm).hom R k) ≪≫
+      fun z ↦ (φ.injOn.eq_iff z.property hx).not.symm).hom R k) ≪≫
     asIso (TopPair.singularHomologyMap
       (TopPair.excisionMap (X := TopCat.of E) φ.target {φ x}ᶜ) R k)
 
@@ -134,10 +134,58 @@ lemma singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfCh
       TopPair.singularHomologyMap (TopPair.ofSubsetIso
           (X := TopCat.of φ.source) (Y := TopCat.of φ.target) φ.toHomeomorphSourceTarget
           (B := Subtype.val ⁻¹' {x}ᶜ) (B' := Subtype.val ⁻¹' {φ x}ᶜ)
-          fun z ↦ (φ.injOn.eq_iff z.2 hx).not.symm).hom R k ≫
+          fun z ↦ (φ.injOn.eq_iff z.property hx).not.symm).hom R k ≫
         TopPair.singularHomologyMap
           (TopPair.excisionMap (X := TopCat.of E) φ.target {φ x}ᶜ) R k := by
   simp [singularHomologyComplSingletonIsoOfChart]
+
+/-- The chart isomorphism carries the relative degree-zero class of a point to that of its
+chart coordinate. This fixes its sign without any orientation choice. -/
+@[reassoc]
+lemma singularHomology₀Section_comp_singularHomologyComplSingletonIsoOfChart_hom :
+    (singularHomology₀Section R x ≫
+        (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomologyπ R 0) ≫
+        (singularHomologyComplSingletonIsoOfChart R φ hx 0).hom =
+      singularHomology₀Section R (φ x) ≫
+        (TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).singularHomologyπ R 0 := by
+  let f := TopPair.excisionMap (X := TopCat.of M) φ.source {x}ᶜ
+  let g := TopPair.ofSubsetIso
+    (X := TopCat.of φ.source) (Y := TopCat.of φ.target) φ.toHomeomorphSourceTarget
+    (B := Subtype.val ⁻¹' {x}ᶜ) (B' := Subtype.val ⁻¹' {φ x}ᶜ)
+    (fun z ↦ (φ.injOn.eq_iff z.property hx).not.symm)
+  let f' := TopPair.excisionMap (X := TopCat.of E) φ.target {φ x}ᶜ
+  let a := singularHomology₀Section R (⟨x, hx⟩ : φ.source) ≫
+    (TopPair.ofSubset (Subtype.val ⁻¹' {x}ᶜ : Set (TopCat.of φ.source))).singularHomologyπ R 0
+  have hg : TopPair.Hom.fst g.hom (⟨x, hx⟩ : φ.source) =
+      (⟨φ x, φ.map_source hx⟩ : φ.target) := by
+    apply Subtype.ext
+    have hg' := congrArg
+      (fun k ↦ TopPair.Hom.fst k (⟨x, hx⟩ : φ.source))
+      (TopPair.ofSubsetIso_hom (X := TopCat.of φ.source) (Y := TopCat.of φ.target)
+        (B := Subtype.val ⁻¹' {x}ᶜ) (B' := Subtype.val ⁻¹' {φ x}ᶜ)
+        φ.toHomeomorphSourceTarget (fun z ↦ (φ.injOn.eq_iff z.property hx).not.symm))
+    exact congrArg Subtype.val (hg'.trans
+      (TopPair.ofSubsetMap_fst_apply (X := TopCat.of φ.source) (Y := TopCat.of φ.target)
+        (B := Subtype.val ⁻¹' {x}ᶜ) (B' := Subtype.val ⁻¹' {φ x}ᶜ)
+        (TopCat.ofHom φ.toHomeomorphSourceTarget) _ ⟨x, hx⟩))
+  calc
+    _ = (a ≫ TopPair.singularHomologyMap f R 0) ≫
+        (singularHomologyComplSingletonIsoOfChart R φ hx 0).hom := by
+      exact congrArg (fun k ↦ k ≫ (singularHomologyComplSingletonIsoOfChart R φ hx 0).hom)
+        (TopPair.singularHomology₀Section_singularHomologyMap _ R f ⟨x, hx⟩ x
+          (TopPair.excisionMap_fst_apply (X := TopCat.of M) φ.source {x}ᶜ ⟨x, hx⟩)).symm
+    _ = (a ≫ TopPair.singularHomologyMap g.hom R 0) ≫
+        TopPair.singularHomologyMap f' R 0 := by
+      rw [Category.assoc,
+        singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom,
+        ← Category.assoc]
+    _ = _ := by
+      exact (congrArg (fun k ↦ k ≫ TopPair.singularHomologyMap f' R 0)
+        (TopPair.singularHomology₀Section_singularHomologyMap _ R g.hom ⟨x, hx⟩
+          ⟨φ x, φ.map_source hx⟩ hg)).trans
+        (TopPair.singularHomology₀Section_singularHomologyMap _ R f'
+          ⟨φ x, φ.map_source hx⟩ (φ x)
+          (TopPair.excisionMap_fst_apply (X := TopCat.of E) φ.target {φ x}ᶜ ⟨φ x, φ.map_source hx⟩))
 
 /-- The inverse of `TauCeti.singularHomologyComplSingletonIsoOfChart` commutes with the excision
 maps from the target and source of `φ` and the inverse homeomorphism between them. -/
@@ -149,7 +197,7 @@ lemma singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfCh
       TopPair.singularHomologyMap (TopPair.ofSubsetIso
           (X := TopCat.of φ.source) (Y := TopCat.of φ.target) φ.toHomeomorphSourceTarget
           (B := Subtype.val ⁻¹' {x}ᶜ) (B' := Subtype.val ⁻¹' {φ x}ᶜ)
-          fun z ↦ (φ.injOn.eq_iff z.2 hx).not.symm).inv R k ≫
+          fun z ↦ (φ.injOn.eq_iff z.property hx).not.symm).inv R k ≫
         TopPair.singularHomologyMap
           (TopPair.excisionMap (X := TopCat.of M) φ.source {x}ᶜ) R k := by
   rw [← cancel_mono (singularHomologyComplSingletonIsoOfChart R φ hx k).hom, Category.assoc,
@@ -312,7 +360,7 @@ theorem isZero_singularHomology_complSingleton_of_ne [FiniteDimensional ℝ E] {
       -- A zero-dimensional space is a point, so its unit sphere is empty.
       have : Subsingleton E := Module.finrank_zero_iff.1 h
       have : IsEmpty (sphere (0 : E) 1) :=
-        ⟨fun z ↦ by simpa [Subsingleton.elim (z : E) 0] using z.2⟩
+        ⟨fun z ↦ by simpa [Subsingleton.elim (z : E) 0] using z.property⟩
       exact isZero_reducedSingularHomologyFunctor_of_isEmpty R _ k
     | succ n =>
       exact (isZero_reducedSingularHomologyFunctor_sphere_of_ne R
@@ -329,7 +377,7 @@ def singularHomologyComplSingletonIsoOfFinrankEqZero [FiniteDimensional ℝ E]
     (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomology R 0 ≅ R :=
   haveI : IsEmpty (TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).snd :=
     have : Subsingleton E := Module.finrank_zero_iff.1 h
-    ⟨fun z ↦ z.2 (Subsingleton.elim _ _)⟩
+    ⟨fun z ↦ z.property (Subsingleton.elim _ _)⟩
   -- The quotient map starts at the homology of the singular simplicial set of `E`, so the
   -- augmentation is taken there; it is `TopCat.singularHomology₀ε` by definition.
   haveI : IsIso ((TopPair.toSSetPair.obj
@@ -354,7 +402,7 @@ lemma singularHomologyπ_comp_singularHomologyComplSingletonIsoOfFinrankEqZero_h
       (TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).fst.singularHomology₀ε R := by
   have : IsEmpty (TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).snd :=
     have : Subsingleton E := Module.finrank_zero_iff.1 h
-    ⟨fun z ↦ z.2 (Subsingleton.elim _ _)⟩
+    ⟨fun z ↦ z.property (Subsingleton.elim _ _)⟩
   simp only [singularHomologyComplSingletonIsoOfFinrankEqZero, Iso.trans_hom, Iso.symm_hom,
     asIso_hom, asIso_inv, Iso.inv_hom_id_assoc, IsIso.hom_inv_id_assoc]
   -- The augmentation of the singular simplicial set of `E` is `TopCat.singularHomology₀ε`.
@@ -509,10 +557,10 @@ theorem isIso_singularHomologyMap_compl_of_chart (hx : x ∈ φ.source) (hK : St
   have hL : ∀ z : TopCat.of φ.source, z ∈ (Subtype.val ⁻¹' (φ.symm '' K)ᶜ : Set φ.source) ↔
       φ.toHomeomorphSourceTarget z ∈ (Subtype.val ⁻¹' Kᶜ : Set φ.target) := fun z ↦ by
     rw [Set.mem_preimage, Set.mem_preimage, φ.symm_image_eq_source_inter_preimage hKφ]
-    simp [z.2]
+    simp [z.property]
   have hy : ∀ z : TopCat.of φ.source, z ∈ (Subtype.val ⁻¹' {x}ᶜ : Set φ.source) ↔
       φ.toHomeomorphSourceTarget z ∈ (Subtype.val ⁻¹' {φ x}ᶜ : Set φ.target) :=
-    fun z ↦ (φ.injOn.eq_iff z.2 hx).not.symm
+    fun z ↦ (φ.injOn.eq_iff z.property hx).not.symm
   -- By excision, it suffices to treat the inclusions of complements in the source of `φ`; these
   -- are carried to the inclusions in the target by the homeomorphism of source and target, and
   -- those are invertible by excision in `E`.

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # The turning points of the spherical pendulum
@@ -43,6 +44,13 @@ the pendulum, such as its rotation angle, as integrals with continuous integrand
 * `TauCeti.two_mul_sub_mul_one_sub_sq_sub_sq_pos`,
   `TauCeti.two_mul_sub_mul_one_sub_sq_sub_sq_nonpos`: the radicand is positive strictly between the
   turning points and nonpositive elsewhere below the north pole.
+* `TauCeti.three_mul_sphericalPendulumLowerTurningPoint_sq_sub_pos`,
+  `TauCeti.three_mul_sphericalPendulumUpperTurningPoint_sq_sub_neg`: the radicand increases through
+  `z₋` and decreases through `z₊`.
+* `TauCeti.snd_two_ne_zero_iff_apply_two_mem_Ioo_of_mem_sphericalPendulumPhaseSpace`: on the
+  fibre, the vertical momentum vanishes exactly at the turning points.
+* `TauCeti.integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq`: integrals over `(-1, 1)`
+  against the inverse square root of the radicand run between the turning points.
 * `TauCeti.continuousOn_sphericalPendulumLowerTurningPoint`,
   `TauCeti.continuousOn_sphericalPendulumUpperTurningPoint`: continuity of the turning points.
 
@@ -69,6 +77,15 @@ def sphericalPendulumTurningPointDomain : Set (ℝ × ℝ) :=
 theorem mem_sphericalPendulumTurningPointDomain_iff {c : ℝ × ℝ} :
     c ∈ sphericalPendulumTurningPointDomain ↔
       c.2 ≠ 0 ∧ ∃ z ∈ Ioo (-1) 1, sphericalPendulumEffectivePotential c.2 z < c.1 := (Iff.rfl)
+
+/-- A value `(h, j)` with `j ≠ 0` and `j² < 2 h` lies strictly above the curve of relative
+equilibria, since the effective potential at the equator is `V_j(0) = j² / 2 < h`. -/
+theorem mem_sphericalPendulumTurningPointDomain_of_sq_lt {h j : ℝ} (hj : j ≠ 0)
+    (hjh : j ^ 2 < 2 * h) : (h, j) ∈ sphericalPendulumTurningPointDomain :=
+  ⟨hj, 0, ⟨by norm_num, by norm_num⟩, by
+    rw [sphericalPendulumEffectivePotential_def,
+      show j ^ 2 / (2 * (1 - (0 : ℝ) ^ 2)) + 0 = j ^ 2 / 2 by ring]
+    linarith⟩
 
 /-- The **lower turning point** `z₋` of the spherical pendulum at energy `h` and vertical angular
 momentum `j`: the infimum of the heights `q₃` of the points of the fibre `F⁻¹(h, j)` of the
@@ -302,6 +319,65 @@ theorem two_mul_sub_mul_one_sub_sq_sub_sq_nonpos (hj : j ≠ 0) (hz₀ : z₀ �
   · have hbz : b ≤ z := not_lt.1 fun hzb ↦ hzab ⟨hza, hzb⟩
     nlinarith [mul_nonneg (mul_nonneg (sub_nonneg.2 hbz) (by linarith : (0 : ℝ) ≤ z - a)) hz3.le]
 
+/-- At the lower turning point `z₋`, half the derivative `3 z² - 2 h z - 1` of the radicand
+`2 (h - z) (1 - z²) - j²` is positive: `3 z₋² - 2 h z₋ - 1 = (z₊ - z₋) (z₃ - z₋)`, where
+`z₃ = h - z₋ - z₊` is the third root. -/
+theorem three_mul_sphericalPendulumLowerTurningPoint_sq_sub_pos (hj : j ≠ 0)
+    (hz₀ : z₀ ∈ Ioo (-1) 1) (hV : sphericalPendulumEffectivePotential j z₀ < h) :
+    0 < 3 * sphericalPendulumLowerTurningPoint h j ^ 2 -
+      2 * h * sphericalPendulumLowerTurningPoint h j - 1 := by
+  have hfac := two_mul_sub_mul_one_sub_sq_sub_sq_eq hj hz₀ hV
+  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
+  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
+  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
+    hj hz₀ hV
+  set a := sphericalPendulumLowerTurningPoint h j
+  set b := sphericalPendulumUpperTurningPoint h j
+  -- Comparing coefficients in the factorization.
+  have : 3 * a ^ 2 - 2 * h * a - 1 = (b - a) * (h - a - b - a) := by
+    linear_combination (hfac 1 - hfac (-1)) / 4
+  rw [this]
+  exact mul_pos (by linarith) (by linarith)
+
+/-- At the upper turning point `z₊`, half the derivative `3 z² - 2 h z - 1` of the radicand
+`2 (h - z) (1 - z²) - j²` is negative: `3 z₊² - 2 h z₊ - 1 = -(z₊ - z₋) (z₃ - z₊)`, where
+`z₃ = h - z₋ - z₊` is the third root. -/
+theorem three_mul_sphericalPendulumUpperTurningPoint_sq_sub_neg (hj : j ≠ 0)
+    (hz₀ : z₀ ∈ Ioo (-1) 1) (hV : sphericalPendulumEffectivePotential j z₀ < h) :
+    3 * sphericalPendulumUpperTurningPoint h j ^ 2 -
+      2 * h * sphericalPendulumUpperTurningPoint h j - 1 < 0 := by
+  have hfac := two_mul_sub_mul_one_sub_sq_sub_sq_eq hj hz₀ hV
+  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
+  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
+  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
+    hj hz₀ hV
+  set a := sphericalPendulumLowerTurningPoint h j
+  set b := sphericalPendulumUpperTurningPoint h j
+  -- Comparing coefficients in the factorization.
+  have : 3 * b ^ 2 - 2 * h * b - 1 = -((b - a) * (h - a - b - b)) := by
+    linear_combination (hfac 1 - hfac (-1)) / 4
+  rw [this, neg_lt_zero]
+  exact mul_pos (by linarith) (by linarith)
+
+/-- **Height quadratures run between the turning points.** Above the curve of relative equilibria,
+the square root of the radicand `2 (h - z) (1 - z²) - j²` vanishes at every height of `[-1, 1]`
+outside the open interval between the turning points. So the integral over `(-1, 1)` of any
+function divided by it is the integral from `z₋` to `z₊`. -/
+theorem integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq (hj : j ≠ 0)
+    (hz₀ : z₀ ∈ Ioo (-1) 1) (hV : sphericalPendulumEffectivePotential j z₀ < h) (g : ℝ → ℝ) :
+    ∫ z in (-1)..1, g z / √(2 * (h - z) * (1 - z ^ 2) - j ^ 2) =
+      ∫ z in (sphericalPendulumLowerTurningPoint h j)..(sphericalPendulumUpperTurningPoint h j),
+        g z / √(2 * (h - z) * (1 - z ^ 2) - j ^ 2) := by
+  have ha := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz₀ hV
+  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
+  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
+  rw [intervalIntegral.integral_of_le (by norm_num), intervalIntegral.integral_of_le hab.le,
+    ← MeasureTheory.integral_Icc_eq_integral_Ioc, MeasureTheory.integral_Ioc_eq_integral_Ioo,
+    MeasureTheory.setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_Icc
+      (s := Ioo _ _) fun z hz ↦ ⟨ha.le.trans hz.1.le, hz.2.le.trans hb.le⟩]
+  rintro z ⟨hz, hzab⟩
+  rw [Real.sqrt_eq_zero'.2 (two_mul_sub_mul_one_sub_sq_sub_sq_nonpos hj hz₀ hV hz.2 hzab), div_zero]
+
 /-- **The heights of a fibre.** Above the curve of relative equilibria, the heights `q₃` of the
 points of the fibre `F⁻¹(h, j)` of the energy–momentum map form the interval `[z₋, z₊]` between
 the turning points. -/
@@ -333,6 +409,30 @@ theorem image_apply_two_preimage_sphericalPendulumEnergyMomentum_eq_Icc (hj : j 
     refine ⟨Ioo_subset_Icc_self hzI, ?_, by linarith⟩
     by_contra hzh
     nlinarith [mul_pos (sub_pos.2 (not_le.1 hzh)) h₁, sq_pos_of_ne_zero hj]
+
+/-- **The vertical momentum vanishes exactly at the turning points.** Above the curve of relative
+equilibria, a point of the fibre `F⁻¹(h, j)` has nonzero vertical momentum `p₃` if and only if its
+height lies strictly between the turning points. -/
+theorem snd_two_ne_zero_iff_apply_two_mem_Ioo_of_mem_sphericalPendulumPhaseSpace (hj : j ≠ 0)
+    (hz₀ : z₀ ∈ Ioo (-1) 1) (hV : sphericalPendulumEffectivePotential j z₀ < h)
+    {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)} (hx : x ∈ sphericalPendulumPhaseSpace)
+    (hF : sphericalPendulumEnergyMomentum x = (h, j)) :
+    x.2 2 ≠ 0 ↔ x.1 2 ∈ Ioo (sphericalPendulumLowerTurningPoint h j)
+      (sphericalPendulumUpperTurningPoint h j) := by
+  have hsq := sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace hx
+  rw [hF] at hsq
+  have hz : x.1 2 ∈ Icc (sphericalPendulumLowerTurningPoint h j)
+      (sphericalPendulumUpperTurningPoint h j) := by
+    rw [← image_apply_two_preimage_sphericalPendulumEnergyMomentum_eq_Icc hj hz₀ hV]
+    exact ⟨x, ⟨hx, hF⟩, rfl⟩
+  refine ⟨fun hp ↦ ?_, fun hz hp ↦ ?_⟩
+  · by_contra hz'
+    have := two_mul_sub_mul_one_sub_sq_sub_sq_nonpos hj hz₀ hV
+      (hz.2.trans (sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV).le) hz'
+    exact hp (pow_eq_zero_iff two_ne_zero |>.1 (le_antisymm (hsq ▸ this) (sq_nonneg _)))
+  · have := two_mul_sub_mul_one_sub_sq_sub_sq_pos hj hz₀ hV hz
+    rw [← hsq, hp] at this
+    simp at this
 
 end Regular
 

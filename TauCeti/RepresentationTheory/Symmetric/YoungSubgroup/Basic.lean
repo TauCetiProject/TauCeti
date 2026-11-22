@@ -58,7 +58,7 @@ theorem youngBlocksEquiv_apply {n : ℕ} (μ : n.Partition)
       Fin ((μ.parts.sort (· ≥ ·)).get i)) :
     (youngBlocksEquiv μ x : ℕ) =
       ∑ i : Fin x.1,
-        (μ.parts.sort (· ≥ ·)).get (Fin.castLE x.1.2.le i) + x.2 := by
+        (μ.parts.sort (· ≥ ·)).get (Fin.castLE x.1.isLt.le i) + x.2 := by
   simp [youngBlocksEquiv]
 
 /-- `youngBlocksEquiv μ` orders block coordinates lexicographically: first by block index, then by
@@ -130,7 +130,7 @@ theorem youngBlockEquiv_apply {n : ℕ} (μ : n.Partition)
 private theorem youngBlockEquiv_val {n : ℕ} (μ : n.Partition)
     (i : Fin (μ.parts.sort (· ≥ ·)).length)
     (j : Fin ((μ.parts.sort (· ≥ ·))[(i : ℕ)])) :
-    (youngBlockEquiv μ i j).1 = youngBlocksEquiv μ ⟨i, j⟩ := by
+    (youngBlockEquiv μ i j).val = youngBlocksEquiv μ ⟨i, j⟩ := by
   simpa only using congrArg Subtype.val (youngBlockEquiv_apply μ i j)
 
 /-- The labels whose `μ`-block is among the first `k` are as many as the first `k` parts of `μ`
@@ -150,7 +150,7 @@ theorem card_filter_youngBlock_lt {n : ℕ} (μ : n.Partition) (k : ℕ) :
       exact ⟨fun h => by rw [h], fun h => Fin.ext h⟩
     · rw [List.getD_eq_default _ _ (Nat.le_of_not_lt hi), Finset.card_eq_zero,
         Finset.filter_eq_empty_iff]
-      exact fun x _ h => hi (h ▸ (youngBlock μ x).2)
+      exact fun x _ h => hi (h ▸ (youngBlock μ x).isLt)
   -- A partial sum of a list is the sum of its first entries, read off with `List.getD`.
   have hsum : ∀ m : ℕ, ((μ.parts.sort (· ≥ ·)).take m).sum =
       ∑ i ∈ Finset.range m, (μ.parts.sort (· ≥ ·)).getD i 0 := by

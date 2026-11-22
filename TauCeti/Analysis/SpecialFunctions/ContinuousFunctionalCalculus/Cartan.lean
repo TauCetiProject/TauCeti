@@ -191,8 +191,8 @@ def cartanHomeomorph : unitary A × selfAdjoint A ≃ₜ Aˣ where
     let : NormedAlgebra ℚ A := .restrictScalars ℚ ℝ A
     refine (Units.isOpenEmbedding_val (R := A)).isEmbedding.continuous_iff.2 ?_
     simp only [Function.comp_def, Units.val_mul, Unitary.val_toUnits_apply, IsUnit.unit_spec]
-    exact (continuous_subtype_val.comp continuous_fst).mul
-      (exp_continuous.comp (continuous_subtype_val.comp continuous_snd))
+    exact (continuous_subtypeVal.comp continuous_fst).mul
+      (exp_continuous.comp (continuous_subtypeVal.comp continuous_snd))
   continuous_invFun :=
     Units.continuous_polarUnitary.prodMk (Units.continuous_log_sqrt_star_mul.subtype_mk _)
 
