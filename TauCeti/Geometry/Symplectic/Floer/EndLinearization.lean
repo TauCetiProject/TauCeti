@@ -189,11 +189,9 @@ theorem eventually_norm_floerLinearization_sub_stationaryCylinderOperator_le
         ε * (‖fderiv ℝ ξ (s, t) stdComplexLineImag‖ + ‖ξ (s, t)‖) := by
   set Jc : ℝ × V → V →L[ℝ] V := fun p ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap
   -- The three coefficient fields `J`, `J dX_H` and `dJ` are continuous in `(t, y)`.
-  have hdJ := (ContDiff.fderiv (f := fun (p : ℝ × V) (y : V) ↦ Jc (p.1, y)) (g := Prod.snd)
-    (n := 0) (hJ.comp (contDiff_fst.fst.prodMk contDiff_snd)) contDiff_snd (by norm_num)).continuous
-  have hdX := (ContDiff.fderiv (f := fun (p : ℝ × V) (y : V) ↦ ω.hamiltonianVectorField (H p.1) y)
-    (g := Prod.snd) (n := 0) ((ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).comp
-      (contDiff_fst.fst.prodMk contDiff_snd)) contDiff_snd (by norm_num)).continuous
+  have hdJ := continuous_fderiv_slice_right (f := fun t y ↦ Jc (t, y)) hJ
+  have hdX := continuous_fderiv_slice_right (f := fun t ↦ ω.hamiltonianVectorField (H t))
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH)
   -- The coefficients along `u` converge uniformly on `T` to those along `x`.
   have hK := hT.image_of_continuousOn ((continuousOn_id' T).prodMk hx)
   have hpair := hu.graph

@@ -450,8 +450,7 @@ theorem nonempty_tameFrameModule_torsion_linearEquiv [Finite G] {σ τ : G}
   obtain ⟨k, hk⟩ := PadicInt.ideal_eq_span_pow_p hne
   exact nonempty_tameFrameModule_torsion_linearEquiv_of_relationMap_injective hgen
     (IsSMulRegular.nat_of_hasUniqueDiv (M := ℤ_[p]) (Fact.out : p.Prime).ne_zero)
-    (tameFrameRelationMap_injective_of_card_ne_zero (isOfFinOrder_of_finite σ)
-      (isOfFinOrder_of_finite τ) hcard) hk
+    (tameFrameRelationMap_injective_of_card_ne_zero (.all σ) (.all τ) hcard) hk
 
 /-- **The torsion of the tame-frame module for supplied sharp exponents.** Let `σ, τ` generate
 the finite automorphism group of `L/K`. If `a, b` describe their action on the `p`-power roots of
