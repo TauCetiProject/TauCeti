@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Quotient.AssociatedBundle
+public import TauCeti.Geometry.Manifold.Quotient.CharacterBundle
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Picard
 public import TauCeti.GroupTheory.OrderOfElement.Basic
-public import TauCeti.Topology.Covering.CharacterBundle
 public import TauCeti.Topology.Covering.Quotient
 public import Mathlib.GroupTheory.OrderOfElement
 
@@ -21,8 +20,11 @@ point-indexed core `IsQuotientCoveringMap.associatedFiniteRankCore ρ` has local
 transitions, so for every model `IB` on `X` and every regularity `n` it defines an object
 `IsQuotientCoveringMap.associatedContMDiffCore IB n ρ` of `ContMDiffFiniteRankBundleCore IB n X`.
 For a character `χ : G →* 𝕜ˣ`, its rank-one specialization
-`IsQuotientCoveringMap.characterContMDiffCore IB n χ` has total space `C^n`-diffeomorphic over `X`
-to `(hp.characterCore χ).TotalSpace` via `IsQuotientCoveringMap.characterFiniteRankCoreDiffeomorph`
+`IsQuotientCoveringMap.characterContMDiffCore IB n χ` is canonically isomorphic in
+`ContMDiffFiniteRankBundleCore IB n X` to the generic scalar presentation
+`FiniteRankBundleCore.ofScalarCore (hp.characterCore χ)`
+(`ofScalarCoreCharacterContMDiffCoreIso`) and has total space `C^n`-diffeomorphic over `X` to
+`(hp.characterCore χ).TotalSpace` via `IsQuotientCoveringMap.characterFiniteRankCoreDiffeomorph`
 (defined in `TauCeti.Geometry.Manifold.Quotient.AssociatedBundle`).
 
 In `ContMDiffFiniteRankBundleCore IB n X`, character line bundles satisfy canonical `C^n`
@@ -37,8 +39,10 @@ isomorphisms (using the categorical tensor power `TauCeti.tensorPow`):
   (`characterContMDiffCoreTensorPowerNatCardIsoUnit`).
 
 Consequently `χ ↦ [L_χ]` is a group homomorphism
-`IsQuotientCoveringMap.characterPicardHom IB n : (G →* 𝕜ˣ) →* ContMDiffPicardGroup IB n X`, and
-the order of `[L_χ]` in `ContMDiffPicardGroup IB n X` divides `orderOf χ` (and `Nat.card G`).
+`IsQuotientCoveringMap.characterPicardHom IB n : (G →* 𝕜ˣ) →* ContMDiffPicardGroup IB n X`, two
+characters have equal Picard class iff their `C^n` cores are isomorphic
+(`characterPicardHom_eq_iff_nonempty_iso`), and the order of `[L_χ]` in
+`ContMDiffPicardGroup IB n X` divides `orderOf χ` (and `Nat.card G`).
 
 When `p` is a `C^n` local diffeomorphism (without assuming completeness of `𝕜`), global `C^n`
 triviality of `L_χ` is decided by equivariant functions on `E`:
@@ -60,9 +64,10 @@ on `E` is constant, so no nontrivial character admits a globally trivial line bu
 * `characterPicardHom_injective`: `(G →* ℂˣ) →* ContMDiffPicardGroup IB n X` is injective;
 * `orderOf_characterPicardHom_eq`: the order of `[L_χ]` in the holomorphic Picard group equals
   `orderOf χ`;
-* `exists_trivialization_baseSet_eq_univ_tensorPow_characterFiniteRankCore_iff_orderOf_dvd` and
-  `isLeast_pos_trivialization_tensorPow_characterFiniteRankCore`: global-trivialization criteria
-  for tensor powers of character line bundles.
+* `nonempty_iso_characterContMDiffCore_iff_eq`: `L_{χ₁} ≅ L_{χ₂}` iff `χ₁ = χ₂`;
+* `nonempty_tensorPow_characterContMDiffCore_iso_unit_iff_orderOf_dvd` and
+  `isLeast_pos_nonempty_tensorPow_characterContMDiffCore_iso_unit`: exact divisibility and
+  least-exponent tensor-unit isomorphism criteria in `ContMDiffFiniteRankBundleCore IB n X`.
 
 ## References
 
@@ -137,6 +142,32 @@ theorem characterContMDiffCore_def (χ : G →* 𝕜ˣ) :
 theorem rank_characterContMDiffCore (χ : G →* 𝕜ˣ) :
     (hp.characterContMDiffCore IB n χ).toCore.rank = 1 :=
   hp.rank_characterFiniteRankCore χ
+
+/-- Canonical isomorphism in `ContMDiffFiniteRankBundleCore IB n X` identifying the generic
+scalar presentation `FiniteRankBundleCore.ofScalarCore (hp.characterCore χ)` with
+`hp.characterContMDiffCore IB n χ`. -/
+noncomputable def ofScalarCoreCharacterContMDiffCoreIso (χ : G →* 𝕜ˣ) :
+    (⟨FiniteRankBundleCore.ofScalarCore (hp.characterCore χ), inferInstance⟩ :
+        ContMDiffFiniteRankBundleCore IB n X) ≅
+      hp.characterContMDiffCore IB n χ :=
+  ContMDiffFiniteRankBundleCore.constIso
+    (A := ⟨FiniteRankBundleCore.ofScalarCore (hp.characterCore χ), inferInstance⟩)
+    (D := hp.characterContMDiffCore IB n χ)
+    (hp.baseSet_ofScalarCore_characterCore χ)
+    (ContinuousLinearEquiv.refl 𝕜 (Fin 1 → 𝕜))
+    fun i j x _ _ ↦ hp.coordChange_ofScalarCore_characterCore_intertwines χ i j x
+
+@[simp] theorem ofScalarCoreCharacterContMDiffCoreIso_hom_toHom (χ : G →* 𝕜ˣ) :
+    (hp.ofScalarCoreCharacterContMDiffCoreIso IB n χ).hom.toHom =
+      (hp.ofScalarCoreCharacterCoreIso χ).hom :=
+  (ContMDiffFiniteRankBundleCore.constIso_hom_toHom _ _ _).trans
+    (hp.ofScalarCoreCharacterCoreIso_def χ ▸ rfl)
+
+@[simp] theorem ofScalarCoreCharacterContMDiffCoreIso_inv_toHom (χ : G →* 𝕜ˣ) :
+    (hp.ofScalarCoreCharacterContMDiffCoreIso IB n χ).inv.toHom =
+      (hp.ofScalarCoreCharacterCoreIso χ).inv :=
+  (ContMDiffFiniteRankBundleCore.constIso_inv_toHom _ _ _).trans
+    (hp.ofScalarCoreCharacterCoreIso_def χ ▸ rfl)
 
 /-- Equality of characters induces a canonical `C^n` isomorphism of their cores. -/
 noncomputable def characterContMDiffCoreCongr {χ ψ : G →* 𝕜ˣ} (h : χ = ψ) :
@@ -339,6 +370,47 @@ theorem orderOf_characterPicardHom_eq_of_injective
     orderOf (hp.characterPicardHom IB n χ) = orderOf χ :=
   orderOf_injective (hp.characterPicardHom IB n) hinj χ
 
+/-- Two characters define the same class in `ContMDiffPicardGroup IB n X` if and only if their
+`C^n` cores are isomorphic in `ContMDiffFiniteRankBundleCore IB n X`. -/
+theorem characterPicardHom_eq_iff_nonempty_iso (χ₁ χ₂ : G →* 𝕜ˣ) :
+    hp.characterPicardHom IB n χ₁ = hp.characterPicardHom IB n χ₂ ↔
+      Nonempty (hp.characterContMDiffCore IB n χ₁ ≅ hp.characterContMDiffCore IB n χ₂) :=
+  ContMDiffPicardGroup.mkOfTensorIsoUnit_eq_mkOfTensorIsoUnit_iff _ _
+
+/-- When `hp.characterPicardHom IB n` is injective, two character `C^n` cores are isomorphic in
+`ContMDiffFiniteRankBundleCore IB n X` if and only if the characters are equal. -/
+theorem nonempty_iso_characterContMDiffCore_iff_eq_of_injective
+    (hinj : Function.Injective (hp.characterPicardHom IB n)) (χ₁ χ₂ : G →* 𝕜ˣ) :
+    Nonempty (hp.characterContMDiffCore IB n χ₁ ≅ hp.characterContMDiffCore IB n χ₂) ↔
+      χ₁ = χ₂ :=
+  (hp.characterPicardHom_eq_iff_nonempty_iso IB n χ₁ χ₂).symm.trans hinj.eq_iff
+
+/-- When `hp.characterPicardHom IB n` is injective, the `m`-th tensor power
+`tensorPow (hp.characterContMDiffCore IB n χ) m` is isomorphic to `𝟙_` in
+`ContMDiffFiniteRankBundleCore IB n X` if and only if `orderOf χ ∣ m`. -/
+theorem nonempty_tensorPow_characterContMDiffCore_iso_unit_iff_orderOf_dvd_of_injective
+    (hinj : Function.Injective (hp.characterPicardHom IB n)) (χ : G →* 𝕜ˣ) (m : ℕ) :
+    Nonempty (tensorPow (hp.characterContMDiffCore IB n χ) m ≅
+        𝟙_ (ContMDiffFiniteRankBundleCore IB n X)) ↔
+      orderOf χ ∣ m := by
+  rw [← hp.characterPicardHom_pow_eq_one_iff_nonempty_iso IB n χ m,
+    ← (hp.characterPicardHom IB n).map_pow, ← (hp.characterPicardHom IB n).map_one,
+    hinj.eq_iff, orderOf_dvd_iff_pow_eq_one]
+
+/-- When `hp.characterPicardHom IB n` is injective and `χ` has finite order, the least positive
+exponent `m` for which `tensorPow (hp.characterContMDiffCore IB n χ) m` is isomorphic to `𝟙_` in
+`ContMDiffFiniteRankBundleCore IB n X` is `orderOf χ`. -/
+theorem isLeast_pos_nonempty_tensorPow_characterContMDiffCore_iso_unit_of_injective
+    (hinj : Function.Injective (hp.characterPicardHom IB n)) {χ : G →* 𝕜ˣ}
+    (hχ : IsOfFinOrder χ) :
+    IsLeast {m : ℕ | 0 < m ∧
+      Nonempty (tensorPow (hp.characterContMDiffCore IB n χ) m ≅
+        𝟙_ (ContMDiffFiniteRankBundleCore IB n X))} (orderOf χ) :=
+  ⟨⟨hχ.orderOf_pos, ⟨hp.characterContMDiffCoreTensorPowerOrderOfIsoUnit IB n χ⟩⟩,
+    fun _ hm ↦ Nat.le_of_dvd hm.1 <|
+      (hp.nonempty_tensorPow_characterContMDiffCore_iso_unit_iff_orderOf_dvd_of_injective
+        IB n hinj χ _).1 hm.2⟩
+
 end General
 
 /-! ### Triviality and exact order via equivariant functions upstairs -/
@@ -476,80 +548,33 @@ theorem characterPicardHom_eq_one_iff_exists_trivialization_baseSet_eq_univ (χ 
     ContMDiffVectorBundle.exists_trivialization_baseSet_eq_univ_iff_exists_ne_zero
       (finrank_self 𝕜)]
 
-/-- The `m`-th tensor power `tensorPow (hp.characterFiniteRankCore χ) m` admits a global compatible
-`C^n` trivialization if and only if `hp.characterCore (χ ^ m)` does. -/
-theorem exists_trivialization_baseSet_eq_univ_tensorPow_characterFiniteRankCore_iff
-    (χ : G →* 𝕜ˣ) (m : ℕ) :
-    (∃ (e : Trivialization (Fin (tensorPow (hp.characterFiniteRankCore χ) m).rank → 𝕜)
-        (π _ (tensorPow (hp.characterFiniteRankCore χ) m).core.Fiber)) (_ : e.IsLinear 𝕜),
-        e.toOpenPartialHomeomorph ∈
-          (contMDiffFiberwiseLinear X (Fin (tensorPow (hp.characterFiniteRankCore χ) m).rank → 𝕜)
-            IB n).maximalAtlas
-            (TotalSpace _ (tensorPow (hp.characterFiniteRankCore χ) m).core.Fiber) ∧
-          e.baseSet = univ) ↔
-      ∃ (e : Trivialization 𝕜 (π 𝕜 (hp.characterCore (χ ^ m)).Fiber)) (_ : e.IsLinear 𝕜),
-        e.toOpenPartialHomeomorph ∈
-          (contMDiffFiberwiseLinear X 𝕜 IB n).maximalAtlas
-            (TotalSpace 𝕜 (hp.characterCore (χ ^ m)).Fiber) ∧
-          e.baseSet = univ := by
-  have h1 : (tensorPow (hp.characterContMDiffCore IB n χ) m).toCore =
-      tensorPow (hp.characterFiniteRankCore χ) m :=
-    ContMDiffFiniteRankBundleCore.toCore_tensorPow _ m
-  have hleft := ContMDiffPicardGroup.ofRankOne_eq_one_iff_exists_trivialization_baseSet_eq_univ
-    (tensorPow (hp.characterContMDiffCore IB n χ) m) (by simp)
-  rw [ContMDiffPicardGroup.ofRankOne_tensorPow _ (hp.rank_characterContMDiffCore IB n χ),
-    hp.ofRankOne_characterContMDiffCore, ← map_pow,
-    hp.characterPicardHom_eq_one_iff_exists_trivialization_baseSet_eq_univ] at hleft
-  exact h1 ▸ hleft.symm
+/-- Over a complete scalar field, two characters define the same class in
+`ContMDiffPicardGroup IB n X` if and only if `hp.characterCore χ₁` and `hp.characterCore χ₂`
+are `C^n` bundle-equivalent over `X`. -/
+theorem characterPicardHom_eq_iff_exists_bundleDiffeomorph_characterCore (χ₁ χ₂ : G →* 𝕜ˣ) :
+    hp.characterPicardHom IB n χ₁ = hp.characterPicardHom IB n χ₂ ↔
+      ∃ e : ∀ x, (hp.characterCore χ₁).Fiber x ≃L[𝕜] (hp.characterCore χ₂).Fiber x,
+        ContMDiff (IB.prod 𝓘(𝕜)) (IB.prod 𝓘(𝕜)) n
+          (fun p : (hp.characterCore χ₁).TotalSpace ↦
+            TotalSpace.mk' 𝕜 p.proj (e p.proj p.snd)) := by
+  have hmul : hp.characterPicardHom IB n χ₁ = hp.characterPicardHom IB n χ₂ ↔
+      hp.characterPicardHom IB n (χ₁⁻¹ * χ₂) = 1 := by
+    rw [(hp.characterPicardHom IB n).map_mul, (hp.characterPicardHom IB n).map_inv,
+      inv_mul_eq_one, eq_comm]
+  rw [hmul, hp.characterPicardHom_eq_one_iff_exists_trivialization_baseSet_eq_univ,
+    ← hp.exists_bundleDiffeomorph_characterCore_iff_exists_trivialization χ₁ χ₂]
 
-/-- Whenever `orderOf χ ∣ m`, the `m`-th tensor power `tensorPow (hp.characterFiniteRankCore χ) m`
-admits a global compatible `C^n` trivialization over `X`. -/
-theorem exists_trivialization_baseSet_eq_univ_tensorPow_characterFiniteRankCore_of_orderOf_dvd
-    {χ : G →* 𝕜ˣ} {m : ℕ} (hdvd : orderOf χ ∣ m) :
-    ∃ (e : Trivialization (Fin (tensorPow (hp.characterFiniteRankCore χ) m).rank → 𝕜)
-      (π _ (tensorPow (hp.characterFiniteRankCore χ) m).core.Fiber)) (_ : e.IsLinear 𝕜),
-      e.toOpenPartialHomeomorph ∈
-        (contMDiffFiberwiseLinear X (Fin (tensorPow (hp.characterFiniteRankCore χ) m).rank → 𝕜)
-          IB n).maximalAtlas
-          (TotalSpace _ (tensorPow (hp.characterFiniteRankCore χ) m).core.Fiber) ∧
-        e.baseSet = univ := by
-  rw [hp.exists_trivialization_baseSet_eq_univ_tensorPow_characterFiniteRankCore_iff,
-    orderOf_dvd_iff_pow_eq_one.1 hdvd]
-  exact hp.exists_trivialization_baseSet_eq_univ_characterCore_one
-
-/-- For every character `χ`, the `orderOf χ`-th tensor power
-`tensorPow (hp.characterFiniteRankCore χ) (orderOf χ)` admits a global compatible `C^n`
-trivialization. -/
-theorem exists_trivialization_baseSet_eq_univ_tensorPow_characterFiniteRankCore_orderOf
-    (χ : G →* 𝕜ˣ) :
-    ∃ (e : Trivialization (Fin (tensorPow (hp.characterFiniteRankCore χ) (orderOf χ)).rank → 𝕜)
-      (π _ (tensorPow (hp.characterFiniteRankCore χ) (orderOf χ)).core.Fiber)) (_ : e.IsLinear 𝕜),
-      e.toOpenPartialHomeomorph ∈
-        (contMDiffFiberwiseLinear X
-          (Fin (tensorPow (hp.characterFiniteRankCore χ) (orderOf χ)).rank → 𝕜)
-          IB n).maximalAtlas
-          (TotalSpace _ (tensorPow (hp.characterFiniteRankCore χ) (orderOf χ)).core.Fiber) ∧
-        e.baseSet = univ :=
-  hp.exists_trivialization_baseSet_eq_univ_tensorPow_characterFiniteRankCore_of_orderOf_dvd dvd_rfl
-
-/-- For every character `χ : G →* 𝕜ˣ`, the `Nat.card G`-th tensor power
-`tensorPow (hp.characterFiniteRankCore χ) (Nat.card G)` admits a global compatible `C^n`
-trivialization; for a finite deck group `G` of order `N = Nat.card G`, every character line bundle
-has `N`-torsion tensor power. -/
-theorem exists_trivialization_baseSet_eq_univ_tensorPow_characterFiniteRankCore_natCard
-    (χ : G →* 𝕜ˣ) :
-    ∃ (e : Trivialization (Fin (tensorPow (hp.characterFiniteRankCore χ) (Nat.card G)).rank → 𝕜)
-      (π _ (tensorPow (hp.characterFiniteRankCore χ) (Nat.card G)).core.Fiber)) (_ : e.IsLinear 𝕜),
-      e.toOpenPartialHomeomorph ∈
-        (contMDiffFiberwiseLinear X
-          (Fin (tensorPow (hp.characterFiniteRankCore χ) (Nat.card G)).rank → 𝕜)
-          IB n).maximalAtlas
-          (TotalSpace _ (tensorPow (hp.characterFiniteRankCore χ) (Nat.card G)).core.Fiber) ∧
-        e.baseSet = univ := by
-  refine hp.exists_trivialization_baseSet_eq_univ_tensorPow_characterFiniteRankCore_of_orderOf_dvd
-    (orderOf_dvd_iff_pow_eq_one.2 ?_)
-  ext g
-  simp [← map_pow, pow_card_eq_one']
+/-- Over a complete scalar field, `hp.characterContMDiffCore IB n χ₁` and
+`hp.characterContMDiffCore IB n χ₂` are isomorphic in `ContMDiffFiniteRankBundleCore IB n X` if and
+only if `hp.characterCore χ₁` and `hp.characterCore χ₂` are `C^n` bundle-equivalent over `X`. -/
+theorem nonempty_iso_characterContMDiffCore_iff_exists_bundleDiffeomorph_characterCore
+    (χ₁ χ₂ : G →* 𝕜ˣ) :
+    Nonempty (hp.characterContMDiffCore IB n χ₁ ≅ hp.characterContMDiffCore IB n χ₂) ↔
+      ∃ e : ∀ x, (hp.characterCore χ₁).Fiber x ≃L[𝕜] (hp.characterCore χ₂).Fiber x,
+        ContMDiff (IB.prod 𝓘(𝕜)) (IB.prod 𝓘(𝕜)) n
+          (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' 𝕜 p.proj (e p.proj p.snd)) :=
+  (hp.characterPicardHom_eq_iff_nonempty_iso IB n χ₁ χ₂).symm.trans
+    (hp.characterPicardHom_eq_iff_exists_bundleDiffeomorph_characterCore χ₁ χ₂)
 
 /-- When `hp.characterPicardHom IB n` is injective, two character line bundles
 `hp.characterCore χ₁` and `hp.characterCore χ₂` are `C^n` bundle-equivalent if and only if
@@ -559,12 +584,8 @@ theorem exists_bundleDiffeomorph_characterCore_iff_eq_of_injective
     (∃ e : ∀ x, (hp.characterCore χ₁).Fiber x ≃L[𝕜] (hp.characterCore χ₂).Fiber x,
         ContMDiff (IB.prod 𝓘(𝕜)) (IB.prod 𝓘(𝕜)) n
           (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' 𝕜 p.proj (e p.proj p.snd))) ↔
-      χ₁ = χ₂ := by
-  refine ⟨fun h ↦ inv_mul_eq_one.1 <| hinj ?_, ?_⟩
-  · rw [map_one, hp.characterPicardHom_eq_one_iff_exists_trivialization_baseSet_eq_univ]
-    exact (hp.exists_bundleDiffeomorph_characterCore_iff_exists_trivialization χ₁ χ₂).1 h
-  · rintro rfl
-    exact ⟨fun x ↦ ContinuousLinearEquiv.refl 𝕜 ((hp.characterCore χ₁).Fiber x), contMDiff_id⟩
+      χ₁ = χ₂ :=
+  (hp.characterPicardHom_eq_iff_exists_bundleDiffeomorph_characterCore χ₁ χ₂).symm.trans hinj.eq_iff
 
 /-- When `hp.characterPicardHom IB n` is injective, the `m`-th tensor power
 `tensorPow (hp.characterFiniteRankCore χ) m` is globally `C^n`-trivial if and only if
@@ -579,10 +600,16 @@ theorem exists_trivialization_tensorPow_characterFiniteRankCore_iff_orderOf_dvd_
             (TotalSpace _ (tensorPow (hp.characterFiniteRankCore χ) m).core.Fiber) ∧
           e.baseSet = univ) ↔
       orderOf χ ∣ m := by
-  refine ⟨fun h ↦ orderOf_dvd_iff_pow_eq_one.2 <| hinj ?_,
-    hp.exists_trivialization_baseSet_eq_univ_tensorPow_characterFiniteRankCore_of_orderOf_dvd⟩
-  rw [map_one, hp.characterPicardHom_eq_one_iff_exists_trivialization_baseSet_eq_univ]
-  exact (hp.exists_trivialization_baseSet_eq_univ_tensorPow_characterFiniteRankCore_iff χ m).1 h
+  have h1 : (tensorPow (hp.characterContMDiffCore IB n χ) m).toCore =
+      tensorPow (hp.characterFiniteRankCore χ) m :=
+    ContMDiffFiniteRankBundleCore.toCore_tensorPow _ m
+  have htriv :=
+    (tensorPow (hp.characterContMDiffCore IB n χ)
+      m).nonempty_iso_tensorUnit_iff_exists_trivialization_baseSet_eq_univ (by simp)
+  rw [h1] at htriv
+  exact htriv.symm.trans
+    (hp.nonempty_tensorPow_characterContMDiffCore_iso_unit_iff_orderOf_dvd_of_injective
+      IB n hinj χ m)
 
 /-- When `hp.characterPicardHom IB n` is injective, the least positive exponent `m` for which
 `tensorPow (hp.characterFiniteRankCore χ) m` is globally `C^n`-trivial is `orderOf χ` whenever `χ`
@@ -658,35 +685,36 @@ theorem orderOf_characterPicardHom_eq_of_compactSpace_base [CompactSpace X] [Con
   hp.orderOf_characterPicardHom_eq hpd hn χ
 
 /-- When `E` is a compact connected complex manifold and `p : E → X` is differentiable (`n ≠ 0`),
-the `m`-th tensor power `tensorPow (hp.characterFiniteRankCore χ) m` admits a global compatible
-`C^n` trivialization if and only if `orderOf χ ∣ m`. -/
-theorem exists_trivialization_baseSet_eq_univ_tensorPow_characterFiniteRankCore_iff_orderOf_dvd
+two character `C^n` cores are isomorphic in `ContMDiffFiniteRankBundleCore IB n X` if and only if
+their characters coincide. -/
+theorem nonempty_iso_characterContMDiffCore_iff_eq [CompactSpace E] [ConnectedSpace E]
+    (χ₁ χ₂ : G →* ℂˣ) :
+    Nonempty (hp.characterContMDiffCore IB n χ₁ ≅ hp.characterContMDiffCore IB n χ₂) ↔
+      χ₁ = χ₂ :=
+  hp.nonempty_iso_characterContMDiffCore_iff_eq_of_injective IB n
+    (hp.characterPicardHom_injective hpd hn) χ₁ χ₂
+
+/-- When `E` is a compact connected complex manifold and `p : E → X` is differentiable (`n ≠ 0`),
+the `m`-th tensor power `tensorPow (hp.characterContMDiffCore IB n χ) m` is isomorphic to `𝟙_` in
+`ContMDiffFiniteRankBundleCore IB n X` if and only if `orderOf χ ∣ m`. -/
+theorem nonempty_tensorPow_characterContMDiffCore_iso_unit_iff_orderOf_dvd
     [CompactSpace E] [ConnectedSpace E] (χ : G →* ℂˣ) (m : ℕ) :
-    (∃ (e : Trivialization (Fin (tensorPow (hp.characterFiniteRankCore χ) m).rank → ℂ)
-        (π _ (tensorPow (hp.characterFiniteRankCore χ) m).core.Fiber)) (_ : e.IsLinear ℂ),
-        e.toOpenPartialHomeomorph ∈
-          (contMDiffFiberwiseLinear X (Fin (tensorPow (hp.characterFiniteRankCore χ) m).rank → ℂ)
-            IB n).maximalAtlas
-            (TotalSpace _ (tensorPow (hp.characterFiniteRankCore χ) m).core.Fiber) ∧
-          e.baseSet = univ) ↔
+    Nonempty (tensorPow (hp.characterContMDiffCore IB n χ) m ≅
+        𝟙_ (ContMDiffFiniteRankBundleCore IB n X)) ↔
       orderOf χ ∣ m :=
-  hp.exists_trivialization_tensorPow_characterFiniteRankCore_iff_orderOf_dvd_of_injective
+  hp.nonempty_tensorPow_characterContMDiffCore_iso_unit_iff_orderOf_dvd_of_injective IB n
     (hp.characterPicardHom_injective hpd hn) χ m
 
 /-- When `E` is a compact connected complex manifold, `p : E → X` is differentiable (`n ≠ 0`), and
-`χ : G →* ℂˣ` has finite order, the exact order of `hp.characterFiniteRankCore χ` under `tensorPow`
-is `orderOf χ`. -/
-theorem isLeast_pos_trivialization_tensorPow_characterFiniteRankCore
+`χ : G →* ℂˣ` has finite order, the least positive exponent `m` for which
+`tensorPow (hp.characterContMDiffCore IB n χ) m` is isomorphic to `𝟙_` in
+`ContMDiffFiniteRankBundleCore IB n X` is `orderOf χ`. -/
+theorem isLeast_pos_nonempty_tensorPow_characterContMDiffCore_iso_unit
     [CompactSpace E] [ConnectedSpace E] {χ : G →* ℂˣ} (hχ : IsOfFinOrder χ) :
     IsLeast {m : ℕ | 0 < m ∧
-      ∃ (e : Trivialization (Fin (tensorPow (hp.characterFiniteRankCore χ) m).rank → ℂ)
-        (π _ (tensorPow (hp.characterFiniteRankCore χ) m).core.Fiber)) (_ : e.IsLinear ℂ),
-        e.toOpenPartialHomeomorph ∈
-          (contMDiffFiberwiseLinear X (Fin (tensorPow (hp.characterFiniteRankCore χ) m).rank → ℂ)
-            IB n).maximalAtlas
-            (TotalSpace _ (tensorPow (hp.characterFiniteRankCore χ) m).core.Fiber) ∧
-          e.baseSet = univ} (orderOf χ) :=
-  hp.isLeast_pos_trivialization_tensorPow_characterFiniteRankCore_of_injective
+      Nonempty (tensorPow (hp.characterContMDiffCore IB n χ) m ≅
+        𝟙_ (ContMDiffFiniteRankBundleCore IB n X))} (orderOf χ) :=
+  hp.isLeast_pos_nonempty_tensorPow_characterContMDiffCore_iso_unit_of_injective IB n
     (hp.characterPicardHom_injective hpd hn) hχ
 
 end ComplexCompact

@@ -19,9 +19,7 @@ Conversely, a locally constant map is smooth (`IsLocallyConstant.contMDiff`).
 These results turn infinitesimal independence of a parameter into independence of that
 parameter itself, for example when separating the factors of a product isometry.
 The argument applies Mathlib's `Convex.is_const_of_fderivWithin_eq_zero` in source and target
-charts, on a ball intersected with the convex range of the source model. Similarly, a map that is
-eventually constant within a set `s` at every point of `s` is `C^n` on `s`
-(`TauCeti.contMDiffOn_of_eventuallyEq_const`).
+charts, on a ball intersected with the convex range of the source model.
 -/
 
 public section
@@ -149,21 +147,3 @@ theorem contMDiff (hf : IsLocallyConstant f) {n : WithTop ℕ∞} : ContMDiff I 
   contMDiffAt_const.congr_of_eventuallyEq ((IsLocallyConstant.iff_eventually_eq f).mp hf x)
 
 end IsLocallyConstant
-
-namespace TauCeti
-
-/-- A map between manifolds that is eventually equal to its value within `s` at every point of `s`
-is `C^n` on `s` for every `n`. -/
-theorem contMDiffOn_of_eventuallyEq_const
-    {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E]
-    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {H G : Type*} [TopologicalSpace H] [TopologicalSpace G]
-    {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G}
-    {M N : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    [TopologicalSpace N] [ChartedSpace G N]
-    {f : M → N} {s : Set M} {n : WithTop ℕ∞}
-    (hf : ∀ x ∈ s, f =ᶠ[𝓝[s] x] fun _ ↦ f x) :
-    ContMDiffOn I J n f s :=
-  fun x hx ↦ contMDiffWithinAt_const.congr_of_eventuallyEq (hf x hx) rfl
-
-end TauCeti

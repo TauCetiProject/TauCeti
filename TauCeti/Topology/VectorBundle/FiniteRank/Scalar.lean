@@ -39,32 +39,37 @@ section ScalarCore
 
 variable (Z : VectorBundleCore 𝕜 B 𝕜 ι)
 
+/-- Unexposed underlying `VectorBundleCore` for `ofScalarCore Z` with model fibre `Fin 1 → 𝕜`. -/
+noncomputable def ofScalarCoreAux : VectorBundleCore 𝕜 B (Fin 1 → 𝕜) B :=
+  let e := ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜
+  { baseSet x := Z.baseSet (Z.indexAt x)
+    isOpen_baseSet x := Z.isOpen_baseSet (Z.indexAt x)
+    indexAt := id
+    mem_baseSet_at x := Z.mem_baseSet_at x
+    coordChange x y z :=
+      e.symm.toContinuousLinearMap.comp
+        ((Z.coordChange (Z.indexAt x) (Z.indexAt y) z).comp e.toContinuousLinearMap)
+    coordChange_self x z hz v := by
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+        Z.coordChange_self (Z.indexAt x) z hz, ContinuousLinearEquiv.symm_apply_apply]
+    continuousOn_coordChange x y :=
+      continuousOn_const.clm_comp
+        ((Z.continuousOn_coordChange (Z.indexAt x) (Z.indexAt y)).clm_comp continuousOn_const)
+    coordChange_comp x y w z hz v := by
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+        ContinuousLinearEquiv.apply_symm_apply,
+        Z.coordChange_comp (Z.indexAt x) (Z.indexAt y) (Z.indexAt w) z hz] }
+
+theorem indexAt_ofScalarCoreAux (x : B) : (ofScalarCoreAux Z).indexAt x = x := (rfl)
+
 /-- Present a scalar line-bundle core `Z : VectorBundleCore 𝕜 B 𝕜 ι` as a point-indexed core of
 rank one, using the preferred chart `Z.indexAt x` at each base point `x` and identifying
 `Fin 1 → 𝕜` with `𝕜` by evaluation at `0`. -/
 @[expose]
 noncomputable def ofScalarCore : FiniteRankBundleCore 𝕜 B where
   rank := 1
-  core :=
-    let e := ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜
-    { baseSet x := Z.baseSet (Z.indexAt x)
-      isOpen_baseSet x := Z.isOpen_baseSet (Z.indexAt x)
-      indexAt := id
-      mem_baseSet_at x := Z.mem_baseSet_at x
-      coordChange x y z :=
-        e.symm.toContinuousLinearMap.comp
-          ((Z.coordChange (Z.indexAt x) (Z.indexAt y) z).comp e.toContinuousLinearMap)
-      coordChange_self x z hz v := by
-        simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-          Z.coordChange_self (Z.indexAt x) z hz, ContinuousLinearEquiv.symm_apply_apply]
-      continuousOn_coordChange x y :=
-        continuousOn_const.clm_comp
-          ((Z.continuousOn_coordChange (Z.indexAt x) (Z.indexAt y)).clm_comp continuousOn_const)
-      coordChange_comp x y w z hz v := by
-        simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-          ContinuousLinearEquiv.apply_symm_apply,
-          Z.coordChange_comp (Z.indexAt x) (Z.indexAt y) (Z.indexAt w) z hz] }
-  indexAt_eq _ := rfl
+  core := ofScalarCoreAux Z
+  indexAt_eq := indexAt_ofScalarCoreAux Z
 
 @[simp] theorem rank_ofScalarCore : (ofScalarCore Z).rank = 1 := (rfl)
 
@@ -88,7 +93,7 @@ theorem coordChange_ofScalarCore (x y z : B) :
     (k : Fin (ofScalarCore Z).rank) :
     (ofScalarCore Z).core.coordChange x y z v k =
       Z.coordChange (Z.indexAt x) (Z.indexAt y) z (v (0 : Fin 1)) := by
-  dsimp +instances only [ofScalarCore] at v k ⊢
+  dsimp +instances only [ofScalarCore, ofScalarCoreAux] at v k ⊢
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     ContinuousLinearEquiv.coe_funUnique, ContinuousLinearEquiv.coe_funUnique_symm,
     Function.const_apply, Function.eval, Fin.default_eq_zero]
@@ -102,9 +107,9 @@ theorem coordChange_ofScalarCore_eq_smul (x y z : B) :
   ext v k
   rw [coordChange_ofScalarCore_apply, _root_.smul_apply, ContinuousLinearMap.id_apply,
     Pi.smul_apply, smul_eq_mul]
-  dsimp only [ofScalarCore] at k ⊢
-  rw [Subsingleton.elim k 0, mul_comm, ← smul_eq_mul, ← ContinuousLinearMap.map_smul,
-    smul_eq_mul, mul_one]
+  have hk : k = (0 : Fin 1) :=
+    Fin.ext (Nat.lt_one_iff.mp (by simpa [rank_ofScalarCore] using k.isLt))
+  rw [hk, mul_comm, ← smul_eq_mul, ← ContinuousLinearMap.map_smul, smul_eq_mul, mul_one]
 
 /-- The cocycle morphism from `(ofScalarCore Z).core` to `Z` acting on every fibre by
 `ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜`. -/

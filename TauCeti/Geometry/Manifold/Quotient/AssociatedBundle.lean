@@ -8,10 +8,11 @@ module
 public import Mathlib.Geometry.Manifold.Complex
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.VectorBundle.Core.Trivial
+public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Scalar
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 public import TauCeti.Topology.Covering.AssociatedBundle
 import TauCeti.Algebra.Group.Hom.Defs
-import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Basic
 
 /-!
@@ -28,10 +29,12 @@ is a holomorphic line bundle. Likewise, the point-indexed finite-rank core
 `IsQuotientCoveringMap.associatedFiniteRankCore ρ` and its character specialization
 `IsQuotientCoveringMap.characterFiniteRankCore χ` have locally constant transitions and hence are
 `C^n` (`isContMDiff_associatedFiniteRankCore`, `isContMDiff_characterFiniteRankCore`); for a
-character `χ`, `characterFiniteRankCoreDiffeomorph` identifies the total space of
-`characterFiniteRankCore χ` with that of `characterCore χ` via a `C^n` diffeomorphism over `X`,
-yielding the equivalence of nowhere-vanishing `C^n` sections
-(`exists_section_ne_zero_characterFiniteRankCore_iff`).
+character `χ`, `ofScalarCoreCharacterCoreDiffeomorph` identifies `FiniteRankBundleCore.ofScalarCore
+(hp.characterCore χ)` with `characterFiniteRankCore χ`, `characterFiniteRankCoreDiffeomorph`
+identifies the total space of `characterFiniteRankCore χ` with that of `characterCore χ` via a
+`C^n` diffeomorphism over `X`, yielding the equivalence of nowhere-vanishing `C^n` sections
+(`exists_section_ne_zero_characterFiniteRankCore_iff`) and global trivializations over complete
+fields (`exists_trivialization_baseSet_eq_univ_characterFiniteRankCore_iff`).
 
 When `p` is moreover a `C^n` local diffeomorphism, as the orbit projection of a free properly
 discontinuous action by `C^n` maps is (`TauCeti.isLocalDiffeomorph_quotientMk`), the regularity
@@ -69,10 +72,13 @@ coincide (`IsQuotientCoveringMap.exists_bundleDiffeomorph_characterCore_iff_eq`)
 * `IsQuotientCoveringMap.isContMDiff_associatedCore`,
   `IsQuotientCoveringMap.isContMDiff_associatedFiniteRankCore`: the associated bundle (and its
   point-indexed finite-rank core) is `C^n`.
-* `IsQuotientCoveringMap.characterFiniteRankCoreDiffeomorph`,
-  `IsQuotientCoveringMap.exists_section_ne_zero_characterFiniteRankCore_iff`: total-space `C^n`
-  diffeomorphism and nowhere-vanishing section equivalence between `characterFiniteRankCore χ` and
-  `characterCore χ`.
+* `IsQuotientCoveringMap.ofScalarCoreCharacterCoreDiffeomorph`,
+  `IsQuotientCoveringMap.characterFiniteRankCoreDiffeomorph`,
+  `IsQuotientCoveringMap.exists_section_ne_zero_characterFiniteRankCore_iff`, and
+  `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterFiniteRankCore_iff`:
+  total-space `C^n` diffeomorphisms, nowhere-vanishing section equivalence, and global
+  trivialization equivalence relating `FiniteRankBundleCore.ofScalarCore (hp.characterCore χ)`,
+  `characterFiniteRankCore χ`, and `characterCore χ`.
 * `IsQuotientCoveringMap.contMDiffAt_section_associatedCore_iff`,
   `IsQuotientCoveringMap.contMDiff_section_associatedCore_iff`: a section is `C^m` at `p y`, or
   globally, exactly when the corresponding equivariant function is `C^m` at `y`, or globally.
@@ -223,6 +229,72 @@ theorem exists_section_ne_zero_characterFiniteRankCore_iff (χ : G →* 𝕜ˣ) 
       ((hp.characterFiniteRankCoreDiffeomorph IB n χ).symm.contMDiff.comp hτ).congr fun x ↦
         (hp.characterFiniteRankCoreDiffeomorph_symm_apply IB n χ ⟨x, τ x⟩).symm,
       fun x h0 ↦ hτ₀ x (congrFun h0 k₀)⟩
+
+/-- Total-space `C^n` diffeomorphism identifying
+`(FiniteRankBundleCore.ofScalarCore (hp.characterCore χ)).core.TotalSpace` with
+`(hp.characterFiniteRankCore χ).core.TotalSpace` over `X`. -/
+noncomputable def ofScalarCoreCharacterCoreDiffeomorph (χ : G →* 𝕜ˣ) :
+    (TauCeti.FiniteRankBundleCore.ofScalarCore (hp.characterCore χ)).core.TotalSpace ≃ₘ^n⟮
+      IB.prod 𝓘(𝕜, Fin (TauCeti.FiniteRankBundleCore.ofScalarCore (hp.characterCore χ)).rank → 𝕜),
+      IB.prod 𝓘(𝕜, Fin (hp.characterFiniteRankCore χ).rank → 𝕜)⟯
+      (hp.characterFiniteRankCore χ).core.TotalSpace :=
+  TauCeti.FiniteRankBundleCore.constIsoDiffeomorph
+    (A := TauCeti.FiniteRankBundleCore.ofScalarCore (hp.characterCore χ))
+    (D := hp.characterFiniteRankCore χ)
+    (hp.baseSet_ofScalarCore_characterCore χ)
+    (ContinuousLinearEquiv.refl 𝕜 (Fin 1 → 𝕜))
+    fun i j x _ _ ↦ hp.coordChange_ofScalarCore_characterCore_intertwines χ i j x
+
+@[simp] theorem coe_ofScalarCoreCharacterCoreDiffeomorph (χ : G →* 𝕜ˣ) :
+    ⇑(hp.ofScalarCoreCharacterCoreDiffeomorph IB n χ) =
+      (hp.ofScalarCoreCharacterCoreIso χ).hom.totalSpaceMap := by
+  rw [hp.ofScalarCoreCharacterCoreIso_def χ]
+  exact TauCeti.FiniteRankBundleCore.coe_constIsoDiffeomorph (I := IB) (n := n) _ _ _
+
+@[simp] theorem coe_ofScalarCoreCharacterCoreDiffeomorph_symm (χ : G →* 𝕜ˣ) :
+    ⇑(hp.ofScalarCoreCharacterCoreDiffeomorph IB n χ).symm =
+      (hp.ofScalarCoreCharacterCoreIso χ).inv.totalSpaceMap := by
+  rw [hp.ofScalarCoreCharacterCoreIso_def χ]
+  exact TauCeti.FiniteRankBundleCore.coe_constIsoDiffeomorph_symm (I := IB) (n := n) _ _ _
+
+/-- Over a complete scalar field, `hp.characterFiniteRankCore χ` admits a global compatible `C^n`
+trivialization if and only if `hp.characterCore χ` does. -/
+theorem exists_trivialization_baseSet_eq_univ_characterFiniteRankCore_iff [CompleteSpace 𝕜]
+    (χ : G →* 𝕜ˣ) :
+    (∃ (e : Trivialization (Fin (hp.characterFiniteRankCore χ).rank → 𝕜)
+          (π _ (hp.characterFiniteRankCore χ).core.Fiber)) (_ : e.IsLinear 𝕜),
+        e.toOpenPartialHomeomorph ∈
+          (contMDiffFiberwiseLinear X
+            (Fin (hp.characterFiniteRankCore χ).rank → 𝕜) IB n).maximalAtlas
+            (TotalSpace _ (hp.characterFiniteRankCore χ).core.Fiber) ∧
+          e.baseSet = univ) ↔
+      ∃ (e : Trivialization 𝕜 (π 𝕜 (hp.characterCore χ).Fiber)) (_ : e.IsLinear 𝕜),
+        e.toOpenPartialHomeomorph ∈
+          (contMDiffFiberwiseLinear X 𝕜 IB n).maximalAtlas
+            (TotalSpace 𝕜 (hp.characterCore χ).Fiber) ∧
+          e.baseSet = univ := by
+  have hhom : ContMDiff
+      (IB.prod 𝓘(𝕜,
+        Fin (TauCeti.FiniteRankBundleCore.ofScalarCore (hp.characterCore χ)).rank → 𝕜))
+      (IB.prod 𝓘(𝕜, Fin (hp.characterFiniteRankCore χ).rank → 𝕜)) n
+      (hp.ofScalarCoreCharacterCoreIso χ).hom.totalSpaceMap :=
+    (hp.coe_ofScalarCoreCharacterCoreDiffeomorph IB n χ) ▸
+      (hp.ofScalarCoreCharacterCoreDiffeomorph IB n χ).contMDiff
+  have hinv : ContMDiff
+      (IB.prod 𝓘(𝕜, Fin (hp.characterFiniteRankCore χ).rank → 𝕜))
+      (IB.prod 𝓘(𝕜,
+        Fin (TauCeti.FiniteRankBundleCore.ofScalarCore (hp.characterCore χ)).rank → 𝕜)) n
+      (hp.ofScalarCoreCharacterCoreIso χ).inv.totalSpaceMap :=
+    (hp.coe_ofScalarCoreCharacterCoreDiffeomorph_symm IB n χ) ▸
+      (hp.ofScalarCoreCharacterCoreDiffeomorph IB n χ).symm.contMDiff
+  have hiff := VectorBundleCore.CoordinateHom.exists_trivialization_baseSet_eq_univ_iff_of_inv
+    (by simp) (by simp)
+    (hp.ofScalarCoreCharacterCoreIso χ).hom (hp.ofScalarCoreCharacterCoreIso χ).inv
+    (hp.ofScalarCoreCharacterCoreIso χ).hom_inv_id
+    (hp.ofScalarCoreCharacterCoreIso χ).inv_hom_id hhom hinv
+  exact hiff.symm.trans
+    (TauCeti.FiniteRankBundleCore.exists_trivialization_baseSet_eq_univ_ofScalarCore_iff
+      (hp.characterCore χ))
 
 end FiniteRankComparison
 
