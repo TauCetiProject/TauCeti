@@ -17,6 +17,7 @@ public import TauCeti.AlgebraicTopology.Singular.Basic
 public import TauCeti.Topology.Category.TopCat.Subspace
 public import TauCeti.Topology.Category.TopCat.Opens
 public import TauCeti.Topology.Category.TopPair
+import Mathlib.Data.Int.Order.Units
 
 /-!
 # Relative singular chains
@@ -435,6 +436,17 @@ noncomputable def singularHomologyMapIso (e : P ≅ P') (n : ℕ) :
   inv := P'.singularHomologyMap e.inv R n
   hom_inv_id := by rw [← singularHomologyMap_comp, e.hom_inv_id, singularHomologyMap_id]
   inv_hom_id := by rw [← singularHomologyMap_comp, e.inv_hom_id, singularHomologyMap_id]
+
+variable {P P'} in
+/-- Isomorphisms of pairs inducing the same map in homology up to a sign `s` have inverses inducing
+the same map up to `s`. -/
+lemma singularHomologyMap_inv_eq_units_smul (φ φ' : P ≅ P') (n : ℕ) (s : ℤˣ)
+    (h : P.singularHomologyMap φ'.hom R n = (s : ℤ) • P.singularHomologyMap φ.hom R n) :
+    P'.singularHomologyMap φ'.inv R n = (s : ℤ) • P'.singularHomologyMap φ.inv R n :=
+  Iso.inv_ext (f := singularHomologyMapIso R φ' n) (by
+    rw [singularHomologyMapIso_hom, h, Preadditive.zsmul_comp, Preadditive.comp_zsmul,
+      ← singularHomologyMap_comp, Iso.hom_inv_id, singularHomologyMap_id, smul_smul,
+      ← Units.val_mul, Int.units_mul_self, Units.val_one, one_smul])
 
 /-- The canonical isomorphism `Hₘ(X, A; R) ≅ Hₙ(X, A; R)` induced by an equality of degrees
 `m = n`. -/
