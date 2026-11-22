@@ -29,6 +29,7 @@ structure and `volume` live in `TauCeti.MeasureTheory.Measure.SelfAdjointMatrix.
   `selfAdjoint.inner_eq_rclike_re_trace_mul`, `selfAdjoint.norm_sq_eq_rclike_re_trace_sq`.
 * `Matrix.UnitaryGroup.selfAdjointConj`.
 * `TauCeti.selfAdjointCoordinates` reads the real diagonal and strict upper entries.
+* `TauCeti.selfAdjointDiagonal` embeds real diagonal entries as a self-adjoint diagonal matrix.
 * `TauCeti.unitaryConjCoordinates` expresses unitary conjugation in these coordinates.
 -/
 
@@ -288,6 +289,27 @@ theorem selfAdjointCoordinates_apply
     (x : SelfAdjointCoordinates n 𝕜) {i j : Fin n} (h : j < i) :
     (selfAdjointCoordinates.symm x : Matrix (Fin n) (Fin n) 𝕜) i j = star (x.2 ⟨(j, i), h⟩) := by
   simp [selfAdjointCoordinates, h, h.not_gt]
+
+/-- The self-adjoint diagonal matrix with the given real diagonal entries, as the matrix whose
+diagonal coordinates are these entries and whose strict upper coordinates vanish. -/
+def selfAdjointDiagonal :
+    (Fin n → ℝ) →L[ℝ] selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜) :=
+  selfAdjointCoordinates.symm.toContinuousLinearMap.comp
+    (ContinuousLinearMap.inl ℝ (Fin n → ℝ) (FinStrictUpper n → 𝕜))
+
+/-- The self-adjoint diagonal has the given diagonal coordinates and no strict upper ones. -/
+@[simp] theorem selfAdjointCoordinates_selfAdjointDiagonal (d : Fin n → ℝ) :
+    selfAdjointCoordinates (selfAdjointDiagonal (𝕜 := 𝕜) d) = (d, 0) :=
+  selfAdjointCoordinates.apply_symm_apply _
+
+/-- Ambient matrix formula for the self-adjoint diagonal. -/
+@[simp] theorem coe_selfAdjointDiagonal (d : Fin n → ℝ) :
+    (selfAdjointDiagonal (𝕜 := 𝕜) d : Matrix (Fin n) (Fin n) 𝕜) = diagonal fun i ↦ (d i : 𝕜) := by
+  ext i j
+  rcases lt_trichotomy i j with h | rfl | h
+  · simp [selfAdjointDiagonal, h, h.ne]
+  · simp [selfAdjointDiagonal]
+  · simp [selfAdjointDiagonal, h, h.ne']
 
 /-- Coordinate change induced by conjugation with a unitary frame. -/
 def unitaryConjCoordinates (U : unitaryGroup (Fin n) 𝕜) :

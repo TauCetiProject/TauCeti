@@ -44,23 +44,11 @@ open Matrix
 
 variable {n : ℕ} {𝕜 : Type*} [RCLike 𝕜]
 
-/-- The diagonal embedding of real eigenvalue coordinates as a continuous real linear map. -/
-private def diagonalRealL : (Fin n → ℝ) →L[ℝ] Matrix (Fin n) (Fin n) 𝕜 :=
-  LinearMap.toContinuousLinearMap
-    { toFun := fun d ↦ diagonal fun i ↦ (d i : 𝕜)
-      map_add' := fun d e ↦ by simp [diagonal_add]
-      map_smul' := fun c d ↦ by
-        ext i j
-        by_cases h : i = j <;> simp [h, Algebra.smul_def] }
-
-private theorem diagonalRealL_apply (d : Fin n → ℝ) :
-    diagonalRealL d = (diagonal fun i ↦ (d i : 𝕜)) := (rfl)
-
 /-- The spectral parametrization in matrix coordinates based at the identity frame.
 The first input is the diagonal and the second gives the transverse unitary directions. -/
 def spectralCoordinates (x : SelfAdjointCoordinates n 𝕜) : SelfAdjointCoordinates n 𝕜 :=
   selfAdjointCoordinatesLinearMap
-    (Unitary.conjStarAlgAut ℝ _ (expStrictUpper x.2) (diagonalRealL x.1))
+    (Unitary.conjStarAlgAut ℝ _ (expStrictUpper x.2) (selfAdjointDiagonal (𝕜 := 𝕜) x.1))
 
 /-- The parametrization reads the matrix coordinates of the unitary conjugate of the diagonal. -/
 theorem spectralCoordinates_apply (x : SelfAdjointCoordinates n 𝕜) :
@@ -69,7 +57,7 @@ theorem spectralCoordinates_apply (x : SelfAdjointCoordinates n 𝕜) :
         ((expStrictUpper x.2 : Matrix (Fin n) (Fin n) 𝕜) *
           diagonal (fun i ↦ (x.1 i : 𝕜)) *
           star (expStrictUpper x.2 : Matrix (Fin n) (Fin n) 𝕜)) := by
-  rw [spectralCoordinates, Unitary.conjStarAlgAut_apply, diagonalRealL_apply]
+  rw [spectralCoordinates, Unitary.conjStarAlgAut_apply, coe_selfAdjointDiagonal]
 
 /-- At zero angles the parametrization returns the original coordinates. -/
 @[simp] theorem spectralCoordinates_zero (d : Fin n → ℝ) :
@@ -109,11 +97,6 @@ theorem det_spectralGapMap (d : Fin n → ℝ) :
     LinearMap.det_pi]
   simp [f, LinearMap.det_smul]
 
-private theorem diagonalRealL_isHermitian (d : Fin n → ℝ) :
-    (diagonalRealL (𝕜 := 𝕜) d).IsHermitian := by
-  rw [diagonalRealL_apply]
-  exact isHermitian_diagonal_of_self_adjoint _ (by ext i; simp)
-
 section Differentiation
 
 open scoped Matrix.Norms.L2Operator
@@ -124,7 +107,7 @@ attribute [local instance] Matrix.l2OpNormedAlgebraReal
 private theorem hasFDerivAt_spectralCoordinates_relative (x : SelfAdjointCoordinates n 𝕜) :
     HasFDerivAt
       (fun y : SelfAdjointCoordinates n 𝕜 ↦ selfAdjointCoordinatesLinearMap
-        (Unitary.conjStarAlgAut ℝ _ (relativeFrame x.2 y.2) (diagonalRealL y.1)))
+        (Unitary.conjStarAlgAut ℝ _ (relativeFrame x.2 y.2) (selfAdjointDiagonal (𝕜 := 𝕜) y.1)))
       ((spectralGapMap x.1).comp
         ((ContinuousLinearMap.id ℝ _).prodMap (spectralAngularFDeriv x.2))) x := by
   let F (b : FinStrictUpper n → 𝕜) := (relativeFrame x.2 b : Matrix (Fin n) (Fin n) 𝕜)
@@ -133,7 +116,8 @@ private theorem hasFDerivAt_spectralCoordinates_relative (x : SelfAdjointCoordin
     ((contDiff_relativeFrame x.2 (k := 1)).differentiable one_ne_zero x.2).hasFDerivAt
   have h1 : F x.2 = 1 := by simp [F]
   have hFF := hF.comp x (ContinuousLinearMap.snd ℝ (Fin n → ℝ) (FinStrictUpper n → 𝕜)).hasFDerivAt
-  have hd := (diagonalRealL (𝕜 := 𝕜)).hasFDerivAt.comp x
+  have hd := ((selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)).subtypeL.comp
+    selfAdjointDiagonal).hasFDerivAt.comp x
     (ContinuousLinearMap.fst ℝ (Fin n → ℝ) (FinStrictUpper n → 𝕜)).hasFDerivAt
   have h := selfAdjointCoordinatesLinearMap.hasFDerivAt.comp x ((hFF.fun_mul' hd).fun_mul' hFF.star)
   have hread (v : FinStrictUpper n → 𝕜) (ij : FinStrictUpper n) :
@@ -150,7 +134,8 @@ private theorem hasFDerivAt_spectralCoordinates_relative (x : SelfAdjointCoordin
     simp only [ContinuousLinearMap.comp_apply, Function.comp_apply,
       ContinuousLinearMap.coe_prodMap',
       ContinuousLinearMap.coe_snd', ContinuousLinearMap.coe_fst', add_apply, smul_apply,
-      h1, star_one, Matrix.one_mul, diagonalRealL_apply]
+      h1, star_one, Matrix.one_mul, ContinuousLinearMap.coe_comp, Submodule.coe_subtypeL,
+      Submodule.coe_subtype, coe_selfAdjointDiagonal]
     apply Prod.ext <;> funext i
     · simp [mul_diagonal, diagonal_mul, hs, mul_comm]
     · simp [hread, mul_diagonal, diagonal_mul,
@@ -160,18 +145,21 @@ private theorem hasFDerivAt_spectralCoordinates_relative (x : SelfAdjointCoordin
 /-- The spectral parametrization is smooth in the diagonal and angular variables. -/
 theorem contDiff_spectralCoordinates {k : WithTop ℕ∞} :
     ContDiff ℝ k (spectralCoordinates (n := n) (𝕜 := 𝕜)) := by
+  let D := (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)).subtypeL.comp
+    (selfAdjointDiagonal (n := n) (𝕜 := 𝕜))
   have hparam : spectralCoordinates (n := n) (𝕜 := 𝕜) = fun x ↦
       selfAdjointCoordinatesLinearMap ((expStrictUpper x.2 : Matrix (Fin n) (Fin n) 𝕜) *
-        diagonalRealL x.1 * star (expStrictUpper x.2 : Matrix (Fin n) (Fin n) 𝕜)) := by
+        D x.1 * star (expStrictUpper x.2 : Matrix (Fin n) (Fin n) 𝕜)) := by
     funext x
-    rw [spectralCoordinates_apply, diagonalRealL_apply]
+    rw [spectralCoordinates, Unitary.conjStarAlgAut_apply]
+    rfl
   rw [hparam]
   have h := (contDiff_expStrictUpper (n := n) (𝕜 := 𝕜) (k := k)).comp
     (contDiff_snd : ContDiff ℝ k (Prod.snd : SelfAdjointCoordinates n 𝕜 → _))
   let S := (starL' ℝ : Matrix (Fin n) (Fin n) 𝕜 ≃L[ℝ] _).toContinuousLinearMap
   have hstar := S.contDiff.comp h
   exact (selfAdjointCoordinatesLinearMap (n := n) (𝕜 := 𝕜)).contDiff.comp
-    ((h.mul ((diagonalRealL (n := n) (𝕜 := 𝕜)).contDiff.comp contDiff_fst)).mul hstar)
+    ((h.mul (D.contDiff.comp contDiff_fst)).mul hstar)
 
 /-- In the moving frame, the differential is the angular differential followed by the
 gap operator, with the diagonal component fixed. -/
@@ -184,8 +172,8 @@ theorem hasFDerivAt_spectralCoordinates (x : SelfAdjointCoordinates n 𝕜) :
     (hasFDerivAt_spectralCoordinates_relative x)
   refine h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ ?_)
   let A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜) :=
-    ⟨Unitary.conjStarAlgAut ℝ _ (relativeFrame x.2 y.2) (diagonalRealL y.1),
-      (diagonalRealL_isHermitian (𝕜 := 𝕜) y.1).isSelfAdjoint.conjugate
+    ⟨Unitary.conjStarAlgAut ℝ _ (relativeFrame x.2 y.2) (selfAdjointDiagonal (𝕜 := 𝕜) y.1),
+      (selfAdjoint.isHermitian_coe (selfAdjointDiagonal (𝕜 := 𝕜) y.1)).isSelfAdjoint.conjugate
         (relativeFrame x.2 y.2)⟩
   simp only [Function.comp_apply, ContinuousLinearEquiv.coe_coe]
   rw [unitaryConjCoordinates_apply_selfAdjointCoordinatesLinearMap (A := A)]
@@ -263,20 +251,18 @@ spectral parametrization. -/
 theorem coe_spectralMatrix (U : unitaryGroup (Fin n) 𝕜) (x : SelfAdjointCoordinates n 𝕜) :
     (spectralMatrix U x : Matrix (Fin n) (Fin n) 𝕜) =
       Unitary.conjStarAlgAut ℝ _ (U * expStrictUpper x.2) (diagonal fun i ↦ (x.1 i : 𝕜)) := by
-  let D := diagonal fun i : Fin n ↦ (x.1 i : 𝕜)
-  have hD : IsSelfAdjoint D :=
-    (isHermitian_diagonal_of_self_adjoint _ (by ext i; simp)).isSelfAdjoint
+  let D := selfAdjointDiagonal (𝕜 := 𝕜) x.1
   let B : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜) :=
-    ⟨Unitary.conjStarAlgAut ℝ _ (expStrictUpper x.2) D, hD.conjugate (expStrictUpper x.2)⟩
-  have hB : spectralCoordinates x = selfAdjointCoordinatesLinearMap B.val := by
-    rw [spectralCoordinates_apply]
-    rfl
+    ⟨Unitary.conjStarAlgAut ℝ _ (expStrictUpper x.2) D,
+      (selfAdjoint.isHermitian_coe D).isSelfAdjoint.conjugate (expStrictUpper x.2)⟩
+  have hB : spectralCoordinates x = selfAdjointCoordinatesLinearMap B.val := (rfl)
   have hC : selfAdjointCoordinates ((UnitaryGroup.selfAdjointConj U) B) =
       selfAdjointCoordinatesLinearMap (Unitary.conjStarAlgAut ℝ _ U B.val) := by
     rw [selfAdjointCoordinates_apply, UnitaryGroup.coe_selfAdjointConj_apply]
     rfl
   rw [spectralMatrix, hB, unitaryConjCoordinates_apply_selfAdjointCoordinatesLinearMap, ← hC,
-    ContinuousLinearEquiv.symm_apply_apply, UnitaryGroup.coe_selfAdjointConj_apply]
+    ContinuousLinearEquiv.symm_apply_apply, UnitaryGroup.coe_selfAdjointConj_apply,
+    ← coe_selfAdjointDiagonal]
   exact (Unitary.conjStarAlgAut_mul_apply U (expStrictUpper x.2) D).symm
 
 /-- In the decreasing chamber the diagonal coordinate is the ordered eigenvalue vector. -/
