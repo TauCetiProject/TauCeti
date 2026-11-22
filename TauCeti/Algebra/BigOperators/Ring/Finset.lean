@@ -7,10 +7,14 @@ module
 
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
 /-!
-# Identities for finite sums in commutative rings
+# Identities for finite sums and products in commutative rings
+
+`Finset.sq_dvd_prod_sub_one_sub_sum_add_card` expands a product of elements congruent to `1`
+modulo `r`, up to terms divisible by `r ^ 2`.
 
 ## Scaling weighted sums of natural numbers
 
@@ -85,5 +89,22 @@ theorem sum_filter_mem_mul_eq {α R : Type*} [NonUnitalNonAssocSemiring R] (S : 
     (U : Set α) [DecidablePred (· ∈ U)] {w r : α → R} (hw : ∀ s ∉ U, w s = 0) :
     ∑ s ∈ S.filter (· ∈ U), w s * r s = ∑ s ∈ S, w s * r s :=
   sum_filter_of_ne fun s _ hs ↦ by_contra fun hsU ↦ hs <| by rw [hw s hsU, zero_mul]
+
+/-- If every factor is `1` modulo `r`, its product is `1 + ∑ (u i - 1)` modulo `r²`. -/
+theorem sq_dvd_prod_sub_one_sub_sum_add_card {R ι : Type*} [CommRing R] (s : Finset ι)
+    {u : ι → R} {r : R} (hu : ∀ i ∈ s, r ∣ u i - 1) :
+    r ^ 2 ∣ ∏ i ∈ s, u i - 1 - ∑ i ∈ s, u i + s.card := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s has ih =>
+    obtain ⟨f, hf⟩ := ih fun i hi ↦ hu i (mem_insert_of_mem hi)
+    obtain ⟨c, hc⟩ := hu a (mem_insert_self a s)
+    obtain ⟨e, he⟩ : r ∣ ∑ i ∈ s, u i - s.card := by
+      simpa [sum_sub_distrib] using dvd_sum fun i hi ↦ hu i (mem_insert_of_mem hi)
+    rw [prod_insert has, sum_insert has, card_insert_of_notMem has]
+    push_cast
+    refine ⟨f + c * (r * f + e), ?_⟩
+    linear_combination (∏ i ∈ s, u i - 1) * hc + (1 + r * c) * hf + r * c * he
 
 end Finset

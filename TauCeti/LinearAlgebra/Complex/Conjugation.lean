@@ -308,7 +308,7 @@ involutive.  This is `LinearMap.liftBaseChange_complex_injective_of_conj` for th
 the real points. -/
 theorem realPointsLift_injective : Function.Injective (realPointsLift K) :=
   (realPoints K).subtype.liftBaseChange_complex_injective_of_conj Subtype.val_injective
-    fun w ↦ w.2
+    fun w ↦ w.property
 
 /-- **A complex vector space is the complexification of the real points of any conjugation on
 it.**  The isomorphism is `c ⊗ₜ w ↦ c • w`; surjectivity is the decomposition

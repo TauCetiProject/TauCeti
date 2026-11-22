@@ -285,20 +285,19 @@ theorem exists_tendsto_atTop
 compact set on which `fderiv ℝ f` is continuous and every critical point of `f` is nondegenerate
 converges to a critical point of `f` in that set.
 
-Nondegeneracy enters only through the finiteness of the critical locus, which is
-`TauCeti.HasNondegenerateCriticalPointsOn.finite_setOfPred_fderiv_eq_zero`; the differentiability
-and the continuity of the gradient are read off the continuity of `fderiv ℝ f` on `K`, the
+Nondegeneracy enters through the finiteness of the critical locus, which is
+`TauCeti.HasNondegenerateCriticalPointsOn.finite_setOfPred_fderiv_eq_zero`, and through the
+differentiability of `f` on `K`
+(`TauCeti.HasNondegenerateCriticalPointsOn.differentiableAt`); the continuity of the gradient is
+read off the continuity of `fderiv ℝ f` on `K`, the
 gradient being the differential transported by the Riesz isometry. -/
 theorem exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn
     (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Ici 0)) (hK : IsCompact K)
-    (hmaps : MapsTo γ (Ici 0) K) (hdiff : ∀ y ∈ K, DifferentiableAt ℝ f y)
+    (hmaps : MapsTo γ (Ici 0) K)
     (hfderiv : ContinuousOn (fderiv ℝ f) K) (hM : HasNondegenerateCriticalPointsOn f K) :
     ∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atTop (𝓝 p) := by
-  have hgradeq : ∇ f = fun y ↦ (toDual ℝ E).symm (fderiv ℝ f y) := by
-    funext y
-    rw [← toDual_gradient (𝕜 := ℝ) (f := f) (x := y), LinearIsometryEquiv.symm_apply_apply]
-  refine exists_tendsto_atTop hγ hK hmaps hdiff ?_ ?_
-  · rw [hgradeq]
+  refine exists_tendsto_atTop hγ hK hmaps (fun _ hy ↦ hM.differentiableAt hy) ?_ ?_
+  · rw [gradient_eq_toDual_symm_comp_fderiv]
     exact (toDual ℝ E).symm.continuous.comp_continuousOn hfderiv
   · exact (hM.finite_setOfPred_fderiv_eq_zero hK hfderiv).subset
       fun y hy ↦ ⟨hy.1, gradient_eq_zero_iff.mp hy.2⟩
@@ -337,16 +336,17 @@ theorem exists_tendsto_atBot
 compact set on which `fderiv ℝ f` is continuous and every critical point is nondegenerate converges
 backwards to a critical point in that set.
 
-As in `exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn`, nondegeneracy is used only to
-obtain finiteness of the critical locus. -/
+As in `exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn`, nondegeneracy is used to obtain
+finiteness of the critical locus and differentiability of `f` on `K`. -/
 theorem exists_tendsto_atBot_of_hasNondegenerateCriticalPointsOn
     (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic 0)) (hK : IsCompact K)
-    (hmaps : MapsTo γ (Iic 0) K) (hdiff : ∀ y ∈ K, DifferentiableAt ℝ f y)
+    (hmaps : MapsTo γ (Iic 0) K)
     (hfderiv : ContinuousOn (fderiv ℝ f) K) (hM : HasNondegenerateCriticalPointsOn f K) :
     ∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atBot (𝓝 p) := by
-  apply exists_tendsto_atBot hγ hK hmaps hdiff
-    ((toDual ℝ E).symm.continuous.comp_continuousOn hfderiv)
-  exact (hM.finite_setOfPred_fderiv_eq_zero hK hfderiv).subset
-    fun y hy ↦ ⟨hy.1, gradient_eq_zero_iff.mp hy.2⟩
+  refine exists_tendsto_atBot hγ hK hmaps (fun _ hy ↦ hM.differentiableAt hy) ?_ ?_
+  · rw [gradient_eq_toDual_symm_comp_fderiv]
+    exact (toDual ℝ E).symm.continuous.comp_continuousOn hfderiv
+  · exact (hM.finite_setOfPred_fderiv_eq_zero hK hfderiv).subset
+      fun y hy ↦ ⟨hy.1, gradient_eq_zero_iff.mp hy.2⟩
 
 end IsIntegralCurveOn

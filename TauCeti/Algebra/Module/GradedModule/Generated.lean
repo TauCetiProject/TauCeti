@@ -251,8 +251,8 @@ theorem IsGeneratedInDegree.piece_add_eq_smul (hG : G.IsGeneratedInDegree A d) (
   rw [← DirectSum.decompose_of_mem_same G.piece hx, DirectSum.decompose_sum,
     DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum]
   refine Submodule.sum_mem _ fun i _ ↦ ?_
-  rw [_root_.DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).2]
-  exact Submodule.smul_mem_smul (DirectSum.decompose 𝒜 (c i) m).2 (g i).2
+  rw [_root_.DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).property]
+  exact Submodule.smul_mem_smul (DirectSum.decompose 𝒜 (c i) m).property (g i).property
 
 omit [IsScalarTower k A M] in
 /-- Over a nonnegatively graded scalar semiring, a module generated in degree `d` has no nonzero
@@ -265,12 +265,12 @@ theorem IsGeneratedInDegree.piece_eq_bot_of_lt (h𝒜 : ∀ i < 0, 𝒜 i = ⊥)
   rw [← DirectSum.decompose_of_mem_same G.piece hx, DirectSum.decompose_sum,
     DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum]
   refine Finset.sum_eq_zero fun i _ ↦ ?_
-  have h := _root_.DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).2
+  have h := _root_.DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).property
     (a := c i) (i := p - d)
   rw [sub_add_cancel] at h
   have h0 : (DirectSum.decompose 𝒜 (c i) (p - d) : A) = 0 := by
     exact (Submodule.eq_bot_iff _).1 (h𝒜 (p - d) (by omega)) _
-      (DirectSum.decompose 𝒜 (c i) (p - d)).2
+      (DirectSum.decompose 𝒜 (c i) (p - d)).property
   rw [h, h0, zero_smul]
 
 /-- A graded module generated in degree `d` has every homogeneous piece of degree above `d`
@@ -293,7 +293,8 @@ theorem apply_mem_smul_top_of_isGeneratedInDegree (h𝒜 : ∀ i < 0, 𝒜 i = �
   classical
   rw [← DirectSum.sum_support_decompose G'.piece x, map_sum]
   refine Submodule.sum_mem _ fun p _ ↦ ?_
-  have hx : (DirectSum.decompose G'.piece x p : M') ∈ G'.piece p := (DirectSum.decompose _ x p).2
+  have hx : (DirectSum.decompose G'.piece x p : M') ∈ G'.piece p :=
+      (DirectSum.decompose _ x p).property
   rcases lt_or_ge p d' with hp | hp
   · rw [(Submodule.eq_bot_iff _).1 (hG'.piece_eq_bot_of_lt 𝒜 h𝒜 hp) _ hx, map_zero]
     exact Submodule.zero_mem _
