@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Etale
+public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
+public import Mathlib.CategoryTheory.LiftingProperties.Basic
 public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.RingHom.Smooth
 public import TauCeti.AlgebraicGeometry.Morphisms.Thickening
 public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
-import TauCeti.AlgebraicGeometry.Morphisms.Etale.UniversalHomeomorphism
 
 /-!
 # Formally smooth and formally étale morphisms of schemes
@@ -33,10 +33,16 @@ Definitions 37.11.1 (02H0) and 37.8.1 (02HG)). The test thickenings are Tau Ceti
 
 * Isomorphisms are formally smooth and formally étale, and both classes are stable under
   composition and base change.
+* `TauCeti.AlgebraicGeometry.FormallySmooth.hasLiftingProperty`: a formally smooth morphism has
+  the right lifting property, in the sense of `CategoryTheory.HasLiftingProperty`, against affine
+  first-order thickenings.
 * `TauCeti.AlgebraicGeometry.FormallyEtale.formallySmooth`: a formally étale morphism is formally
   smooth.
-* `TauCeti.AlgebraicGeometry.formallyEtale_iff`: `f` is formally étale exactly when it is formally
-  smooth and lifts along affine first-order thickenings are unique.
+* `TauCeti.AlgebraicGeometry.formallyEtale_iff`: formally étale means formally smooth and formally
+  unramified in the sense of Mathlib's `AlgebraicGeometry.FormallyUnramified`.
+* `TauCeti.AlgebraicGeometry.FormallySmooth.of_comp_of_formallyUnramified` and
+  `TauCeti.AlgebraicGeometry.FormallyEtale.of_comp_of_formallyUnramified`: if `g ≫ j` is formally
+  smooth (formally étale) and `j` is formally unramified, then so is `g`.
 * `TauCeti.AlgebraicGeometry.formallySmooth_iff_exists_lift_quotient` and
   `TauCeti.AlgebraicGeometry.formallyEtale_iff_existsUnique_lift_quotient`: it suffices to test
   the lifting property on `Spec (B ⧸ I) ⟶ Spec B` for rings `B` and ideals `I` with `I ^ 2 = ⊥`.
@@ -46,24 +52,17 @@ Definitions 37.11.1 (02H0) and 37.8.1 (02HG)). The test thickenings are Tau Ceti
   smooth (formally étale) exactly when `A` is, in the sense of Mathlib's `Algebra.FormallySmooth`
   (`Algebra.FormallyEtale`).
 * `TauCeti.AlgebraicGeometry.FormallyEtale.of_isOpenImmersion`: open immersions are formally
-  étale, hence formally smooth.
-* `TauCeti.AlgebraicGeometry.formallyEtale_iff_formallySmooth_and_formallyUnramified`: formally
-  étale means formally smooth and formally unramified in the sense of Mathlib's
-  `AlgebraicGeometry.FormallyUnramified`.
-* `TauCeti.AlgebraicGeometry.FormallySmooth.formallySmooth_appLE` and
-  `TauCeti.AlgebraicGeometry.FormallyEtale.formallyEtale_appLE`: the ring maps of a formally smooth
+  étale, hence formally smooth. The general statement for étale morphisms,
+  `FormallyEtale.of_etale`, needs the étale lifting theory and lives downstream.
+* `AlgebraicGeometry.Scheme.Hom.formallySmooth_appLE` and
+  `AlgebraicGeometry.Scheme.Hom.formallyEtale_appLE`: the ring maps of a formally smooth
   (formally étale) morphism on affine opens are formally smooth (formally étale), and
   `formallySmooth_iff_of_isAffine`, `formallyEtale_iff_of_isAffine` characterise morphisms of
   affine schemes by their ring maps on global sections.
-* `TauCeti.AlgebraicGeometry.etale_iff_formallyEtale`: a morphism locally of finite presentation
-  is étale if and only if it is formally étale. Étale morphisms are formally étale
-  (`FormallyEtale.of_etale`) because first-order thickenings are universal homeomorphisms, which
-  lift uniquely against étale morphisms.
-* `TauCeti.AlgebraicGeometry.smooth_of_formallySmooth`: a formally smooth morphism locally of
-  finite presentation is smooth; conversely a smooth affine morphism is formally smooth
-  (`FormallySmooth.of_smooth_of_isAffineHom`), so `smooth_iff_formallySmooth_of_isAffineHom`.
-  That an arbitrary smooth morphism is formally smooth requires gluing lifts over a cover of the
-  source, which form a torsor rather than being unique, and is not proved here.
+
+The comparison with smooth and étale morphisms is in
+`TauCeti.AlgebraicGeometry.Morphisms.Smooth.FormallySmooth` and
+`TauCeti.AlgebraicGeometry.Morphisms.Etale.FormallyEtale`.
 
 ## References
 
@@ -71,10 +70,6 @@ Definitions 37.11.1 (02H0) and 37.8.1 (02HG)). The test thickenings are Tau Ceti
 * [Stacks Project, Definition 37.8.1](https://stacks.math.columbia.edu/tag/02HG).
 * [Stacks Project, Lemmas 37.11.4 and 37.11.5](https://stacks.math.columbia.edu/tag/02HH), for
   composition and base change.
-* [Stacks Project, Lemma 37.11.7](https://stacks.math.columbia.edu/tag/02H6), smooth morphisms
-  and formally smooth morphisms locally of finite presentation.
-* [Stacks Project, Lemma 37.8.10](https://stacks.math.columbia.edu/tag/02HM), étale morphisms
-  and formally étale morphisms locally of finite presentation.
 -/
 
 public section
@@ -120,6 +115,16 @@ instance comp (f : X ⟶ Y) (g : Y ⟶ S) [FormallySmooth f] [FormallySmooth g] 
     obtain ⟨l₂, hl₂, hl₂'⟩ := exists_lift (f := f) i a l₁ hl₁.symm
     exact ⟨l₂, hl₂, by rw [← Category.assoc, hl₂', hl₁']⟩
 
+instance : MorphismProperty.IsStableUnderComposition @FormallySmooth where
+  comp_mem _ _ _ _ := inferInstance
+
+instance : MorphismProperty.IsMultiplicative @FormallySmooth where
+  id_mem _ := inferInstance
+
+instance : MorphismProperty.RespectsIso @FormallySmooth :=
+  MorphismProperty.respectsIso_of_isStableUnderComposition fun _ _ f (_ : IsIso f) ↦
+    inferInstance
+
 /-- Formal smoothness is stable under base change: lift into `X` and pair with the given map to
 `Y`. -/
 instance pullback_snd (f : X ⟶ S) (g : Y ⟶ S) [FormallySmooth f] :
@@ -136,13 +141,13 @@ instance pullback_fst (f : X ⟶ S) (g : Y ⟶ S) [FormallySmooth g] :
   rw [← pullbackSymmetry_hom_comp_snd]
   infer_instance
 
-/-- If `g ≫ j` is formally smooth and `j` is a monomorphism, for instance an open immersion, then
-`g` is formally smooth. -/
-theorem of_comp_of_mono (g : X ⟶ Y) (j : Y ⟶ S) [Mono j] [FormallySmooth (g ≫ j)] :
-    FormallySmooth g where
-  exists_lift i _ a h w := by
-    obtain ⟨l, hl, hl'⟩ := exists_lift (f := g ≫ j) i a (h ≫ j) (by simp [reassoc_of% w])
-    exact ⟨l, hl, by rwa [← cancel_mono j, Category.assoc]⟩
+/-- A formally smooth morphism has the right lifting property against every first-order
+thickening with affine target. -/
+instance hasLiftingProperty {T T' : Scheme.{u}} [IsAffine T'] (i : T ⟶ T')
+    [IsFirstOrderThickening i] (f : X ⟶ S) [FormallySmooth f] : HasLiftingProperty i f where
+  sq_hasLift {a h} sq :=
+    let ⟨l, hl, hl'⟩ := exists_lift i a h sq.w
+    ⟨⟨⟨l, hl, hl'⟩⟩⟩
 
 end FormallySmooth
 
@@ -163,7 +168,7 @@ end FormallyEtale
 
 /-- A morphism is formally étale exactly when it is formally smooth and lifts along affine
 first-order thickenings are unique. -/
-theorem formallyEtale_iff (f : X ⟶ S) :
+private theorem formallyEtale_iff_formallySmooth_and_lift_unique (f : X ⟶ S) :
     FormallyEtale f ↔ FormallySmooth f ∧
       ∀ {T T' : Scheme.{u}} [IsAffine T'] (i : T ⟶ T') [IsFirstOrderThickening i]
         (l₁ l₂ : T' ⟶ X), i ≫ l₁ = i ≫ l₂ → l₁ ≫ f = l₂ ≫ f → l₁ = l₂ := by
@@ -172,23 +177,53 @@ theorem formallyEtale_iff (f : X ⟶ S) :
   obtain ⟨l, hl, hl'⟩ := hs.exists_lift i g h w
   exact ⟨l, ⟨hl, hl'⟩, fun l' ⟨hl₁, hl₂⟩ ↦ hu i l' l (hl₁.trans hl.symm) (hl₂.trans hl'.symm)⟩
 
+/-- A morphism is formally étale exactly when it is formally smooth and formally unramified in the
+sense of Mathlib's `AlgebraicGeometry.FormallyUnramified`. -/
+theorem formallyEtale_iff (f : X ⟶ S) :
+    FormallyEtale f ↔ FormallySmooth f ∧ FormallyUnramified f := by
+  rw [formallyEtale_iff_formallySmooth_and_lift_unique]
+  refine and_congr_right fun _ ↦ ⟨fun H ↦ ?_, fun _ {_ _} _ i _ _ _ h₁ h₂ ↦ ?_⟩
+  · refine FormallyUnramified.of_hom_ext f fun R _ φ hφ hker g₁ g₂ h₁ h₂ ↦ ?_
+    have := (IsFirstOrderThickening.SpecMap_iff φ hφ).2 (by rwa [← pow_two])
+    exact H (Spec.map φ) g₁ g₂ h₁ h₂
+  · exact FormallyUnramified.hom_ext i
+      ⟨2, by simp [pow_two, IsFirstOrderThickening.ker_mul_self]⟩ f h₁ h₂
+
 namespace FormallyEtale
+
+/-- A formally étale morphism is formally unramified. -/
+instance (priority := 100) formallyUnramified (f : X ⟶ S) [FormallyEtale f] :
+    FormallyUnramified f :=
+  ((formallyEtale_iff f).1 ‹_›).2
 
 /-- An isomorphism is formally étale. -/
 instance (priority := 100) of_isIso (f : X ⟶ S) [IsIso f] : FormallyEtale f :=
-  (formallyEtale_iff f).mpr ⟨inferInstance, fun _ _ _ _ _ h ↦ by simpa using h =≫ inv f⟩
+  (formallyEtale_iff_formallySmooth_and_lift_unique f).mpr
+    ⟨inferInstance, fun _ _ _ _ _ h ↦ by simpa using h =≫ inv f⟩
 
 /-- A composite of formally étale morphisms is formally étale. -/
 instance comp (f : X ⟶ Y) (g : Y ⟶ S) [FormallyEtale f] [FormallyEtale g] :
     FormallyEtale (f ≫ g) := by
-  refine (formallyEtale_iff _).mpr ⟨inferInstance, fun i _ l₁ l₂ h₁ h₂ ↦ ?_⟩
+  refine (formallyEtale_iff_formallySmooth_and_lift_unique _).mpr
+    ⟨inferInstance, fun i _ l₁ l₂ h₁ h₂ ↦ ?_⟩
   have h₂' : l₁ ≫ f = l₂ ≫ f := lift_unique g i (by simp [reassoc_of% h₁]) (by simpa using h₂)
   exact lift_unique f i h₁ h₂'
+
+instance : MorphismProperty.IsStableUnderComposition @FormallyEtale where
+  comp_mem _ _ _ _ := inferInstance
+
+instance : MorphismProperty.IsMultiplicative @FormallyEtale where
+  id_mem _ := inferInstance
+
+instance : MorphismProperty.RespectsIso @FormallyEtale :=
+  MorphismProperty.respectsIso_of_isStableUnderComposition fun _ _ f (_ : IsIso f) ↦
+    inferInstance
 
 /-- Formal étaleness is stable under base change. -/
 instance pullback_snd (f : X ⟶ S) (g : Y ⟶ S) [FormallyEtale f] :
     FormallyEtale (pullback.snd f g) := by
-  refine (formallyEtale_iff _).mpr ⟨inferInstance, fun i _ l₁ l₂ h₁ h₂ ↦ ?_⟩
+  refine (formallyEtale_iff_formallySmooth_and_lift_unique _).mpr
+    ⟨inferInstance, fun i _ l₁ l₂ h₁ h₂ ↦ ?_⟩
   have h : l₁ ≫ pullback.fst f g = l₂ ≫ pullback.fst f g :=
     lift_unique f i (by simp [reassoc_of% h₁]) (by simp [pullback.condition, reassoc_of% h₂])
   exact pullback.hom_ext h h₂
@@ -199,14 +234,25 @@ instance pullback_fst (f : X ⟶ S) (g : Y ⟶ S) [FormallyEtale g] :
   rw [← pullbackSymmetry_hom_comp_snd]
   infer_instance
 
-/-- If `g ≫ j` is formally étale and `j` is a monomorphism, for instance an open immersion, then
-`g` is formally étale. -/
-theorem of_comp_of_mono (g : X ⟶ Y) (j : Y ⟶ S) [Mono j] [FormallyEtale (g ≫ j)] :
-    FormallyEtale g :=
-  (formallyEtale_iff g).mpr ⟨FormallySmooth.of_comp_of_mono g j,
-    fun i _ _ _ h₁ h₂ ↦ lift_unique (g ≫ j) i h₁ (by simp [reassoc_of% h₂])⟩
-
 end FormallyEtale
+
+/-- If `g ≫ j` is formally smooth and `j` is formally unramified, for instance a monomorphism or
+an open immersion, then `g` is formally smooth: a lift `l` for `g ≫ j` satisfies `l ≫ g = h`
+because both agree after `j` and along the thickening. -/
+theorem FormallySmooth.of_comp_of_formallyUnramified (g : X ⟶ Y) (j : Y ⟶ S)
+    [FormallyUnramified j] [FormallySmooth (g ≫ j)] : FormallySmooth g where
+  exists_lift i _ a h w := by
+    obtain ⟨l, hl, hl'⟩ := exists_lift (f := g ≫ j) i a (h ≫ j) (by simp [reassoc_of% w])
+    refine ⟨l, hl, FormallyUnramified.hom_ext i
+      ⟨2, by simp [pow_two, IsFirstOrderThickening.ker_mul_self]⟩ j ?_ (by simpa using hl')⟩
+    rw [reassoc_of% hl, w]
+
+/-- If `g ≫ j` is formally étale and `j` is formally unramified, for instance a monomorphism or
+an open immersion, then `g` is formally étale. -/
+theorem FormallyEtale.of_comp_of_formallyUnramified (g : X ⟶ Y) (j : Y ⟶ S)
+    [FormallyUnramified j] [FormallyEtale (g ≫ j)] : FormallyEtale g :=
+  have := FormallyUnramified.of_comp g j
+  (formallyEtale_iff g).2 ⟨FormallySmooth.of_comp_of_formallyUnramified g j, inferInstance⟩
 
 /-- Formal smoothness can be tested on the first-order thickenings `Spec (B ⧸ I) ⟶ Spec B` with
 `I ^ 2 = ⊥`. -/
@@ -324,122 +370,56 @@ instance (priority := 100) FormallyEtale.of_isOpenImmersion (j : X ⟶ S) [IsOpe
       fun l ⟨_, hl⟩ ↦ IsOpenImmersion.lift_uniq _ _ _ l hl⟩
     rw [← cancel_mono j, Category.assoc, IsOpenImmersion.lift_fac, w]
 
-/-! ### Formal unramifiedness -/
-
-/-- A morphism is formally étale exactly when it is formally smooth and formally unramified in the
-sense of Mathlib's `AlgebraicGeometry.FormallyUnramified`. -/
-theorem formallyEtale_iff_formallySmooth_and_formallyUnramified (f : X ⟶ S) :
-    FormallyEtale f ↔ FormallySmooth f ∧ FormallyUnramified f := by
-  rw [formallyEtale_iff]
-  refine and_congr_right fun _ ↦ ⟨fun H ↦ ?_, fun _ {_ _} _ i _ _ _ h₁ h₂ ↦ ?_⟩
-  · refine FormallyUnramified.of_hom_ext f fun R _ φ hφ hker g₁ g₂ h₁ h₂ ↦ ?_
-    have := (IsFirstOrderThickening.SpecMap_iff φ hφ).2 (by rwa [← pow_two])
-    exact H (Spec.map φ) g₁ g₂ h₁ h₂
-  · exact FormallyUnramified.hom_ext i
-      ⟨2, by simp [pow_two, IsFirstOrderThickening.ker_mul_self]⟩ f h₁ h₂
-
-/-- A formally étale morphism is formally unramified. -/
-instance (priority := 100) FormallyEtale.formallyUnramified (f : X ⟶ S) [FormallyEtale f] :
-    FormallyUnramified f :=
-  ((formallyEtale_iff_formallySmooth_and_formallyUnramified f).1 ‹_›).2
+end TauCeti.AlgebraicGeometry
 
 /-! ### Ring maps on affine opens -/
 
+namespace AlgebraicGeometry.Scheme.Hom
+
+open TauCeti.AlgebraicGeometry
+
+variable {X S : Scheme.{u}}
+
 /-- For affine opens `U ⊆ S` and `V ⊆ X` with `f(V) ⊆ U`, the ring map `Γ(S, U) ⟶ Γ(X, V)` induced
 by a formally smooth morphism `f : X ⟶ S` is formally smooth. -/
-theorem FormallySmooth.formallySmooth_appLE (f : X ⟶ S) [FormallySmooth f] {U : S.Opens}
+theorem formallySmooth_appLE (f : X ⟶ S) [FormallySmooth f] {U : S.Opens}
     (hU : IsAffineOpen U) {V : X.Opens} (hV : IsAffineOpen V) (e : V ≤ f ⁻¹ᵁ U) :
     (f.appLE U V e).hom.FormallySmooth := by
   have : FormallySmooth (Spec.map (f.appLE U V e) ≫ hU.fromSpec) := by
     rw [hU.SpecMap_appLE_fromSpec f hV e]
     infer_instance
-  have := FormallySmooth.of_comp_of_mono (Spec.map (f.appLE U V e)) hU.fromSpec
+  have := FormallySmooth.of_comp_of_formallyUnramified (Spec.map (f.appLE U V e)) hU.fromSpec
   exact (formallySmooth_SpecMap_iff _).1 this
 
 /-- For affine opens `U ⊆ S` and `V ⊆ X` with `f(V) ⊆ U`, the ring map `Γ(S, U) ⟶ Γ(X, V)` induced
 by a formally étale morphism `f : X ⟶ S` is formally étale. -/
-theorem FormallyEtale.formallyEtale_appLE (f : X ⟶ S) [FormallyEtale f] {U : S.Opens}
+theorem formallyEtale_appLE (f : X ⟶ S) [FormallyEtale f] {U : S.Opens}
     (hU : IsAffineOpen U) {V : X.Opens} (hV : IsAffineOpen V) (e : V ≤ f ⁻¹ᵁ U) :
     (f.appLE U V e).hom.FormallyEtale := by
   have : FormallyEtale (Spec.map (f.appLE U V e) ≫ hU.fromSpec) := by
     rw [hU.SpecMap_appLE_fromSpec f hV e]
     infer_instance
-  have := FormallyEtale.of_comp_of_mono (Spec.map (f.appLE U V e)) hU.fromSpec
+  have := FormallyEtale.of_comp_of_formallyUnramified (Spec.map (f.appLE U V e)) hU.fromSpec
   exact (formallyEtale_SpecMap_iff _).1 this
+
+end AlgebraicGeometry.Scheme.Hom
+
+namespace TauCeti.AlgebraicGeometry
+
+variable {X S : Scheme.{u}}
 
 /-- A morphism `f : X ⟶ S` of affine schemes is formally smooth if and only if the ring map
 `Γ(S, ⊤) ⟶ Γ(X, ⊤)` is formally smooth. -/
 theorem formallySmooth_iff_of_isAffine [IsAffine X] [IsAffine S] (f : X ⟶ S) :
-    FormallySmooth f ↔ f.appTop.hom.FormallySmooth := by
-  rw [← formallySmooth_SpecMap_iff]
-  refine ⟨fun _ ↦ ?_, fun _ ↦ ?_⟩
-  · rw [(Iso.eq_inv_comp _).2 (Scheme.isoSpec_hom_naturality f)]
-    infer_instance
-  · rw [(Iso.inv_comp_eq _).1 (Scheme.isoSpec_inv_naturality f).symm]
-    infer_instance
+    FormallySmooth f ↔ f.appTop.hom.FormallySmooth :=
+  (MorphismProperty.arrow_mk_iso_iff @FormallySmooth (arrowIsoSpecΓOfIsAffine f)).trans
+    (formallySmooth_SpecMap_iff _)
 
 /-- A morphism `f : X ⟶ S` of affine schemes is formally étale if and only if the ring map
 `Γ(S, ⊤) ⟶ Γ(X, ⊤)` is formally étale. -/
 theorem formallyEtale_iff_of_isAffine [IsAffine X] [IsAffine S] (f : X ⟶ S) :
-    FormallyEtale f ↔ f.appTop.hom.FormallyEtale := by
-  rw [← formallyEtale_SpecMap_iff]
-  refine ⟨fun _ ↦ ?_, fun _ ↦ ?_⟩
-  · rw [(Iso.eq_inv_comp _).2 (Scheme.isoSpec_hom_naturality f)]
-    infer_instance
-  · rw [(Iso.inv_comp_eq _).1 (Scheme.isoSpec_inv_naturality f).symm]
-    infer_instance
-
-/-! ### Smooth and étale morphisms -/
-
-/-- A smooth affine morphism is formally smooth. -/
-instance (priority := 100) FormallySmooth.of_smooth_of_isAffineHom (f : X ⟶ S) [Smooth f]
-    [IsAffineHom f] : FormallySmooth f where
-  exists_lift {T T'} _ i _ a h w := by
-    -- Lift through the base change `X ×_S T' ⟶ T'`, a smooth morphism of affine schemes.
-    have : FormallySmooth (pullback.snd f h) := by
-      rw [formallySmooth_iff_of_isAffine]
-      exact ((HasRingHomProperty.iff_of_isAffine (P := @Smooth)).1 inferInstance).formallySmooth
-    obtain ⟨l, hl, hl'⟩ := exists_lift (f := pullback.snd f h) i (pullback.lift a i w) (𝟙 T')
-      (by simp)
-    refine ⟨l ≫ pullback.fst f h, by rw [reassoc_of% hl, pullback.lift_fst], ?_⟩
-    rw [Category.assoc, pullback.condition, reassoc_of% hl']
-
-/-- A formally smooth morphism locally of finite presentation is smooth. -/
-@[stacks 02H6]
-theorem smooth_of_formallySmooth (f : X ⟶ S) [FormallySmooth f]
-    [LocallyOfFinitePresentation f] : Smooth f := by
-  rw [HasRingHomProperty.iff_appLE (P := @Smooth)]
-  exact fun U V e ↦ RingHom.smooth_def.2
-    ⟨FormallySmooth.formallySmooth_appLE f U.property V.property e,
-      f.finitePresentation_appLE U.property V.property e⟩
-
-/-- An affine morphism locally of finite presentation is smooth if and only if it is formally
-smooth. -/
-theorem smooth_iff_formallySmooth_of_isAffineHom (f : X ⟶ S) [IsAffineHom f]
-    [LocallyOfFinitePresentation f] : Smooth f ↔ FormallySmooth f :=
-  ⟨fun _ ↦ inferInstance, fun _ ↦ smooth_of_formallySmooth f⟩
-
-/-- An étale morphism is formally étale. -/
-instance (priority := 100) FormallyEtale.of_etale (f : X ⟶ S) [Etale f] : FormallyEtale f :=
-  -- First-order thickenings are universal homeomorphisms, which lift against étale morphisms.
-  (formallyEtale_iff_formallySmooth_and_formallyUnramified f).2
-    ⟨⟨fun i _ a h w ↦ let sq : CommSq a i f h := ⟨w⟩; ⟨sq.lift, sq.fac_left, sq.fac_right⟩⟩,
-      inferInstance⟩
-
-/-- A formally étale morphism locally of finite presentation is étale. -/
-theorem etale_of_formallyEtale (f : X ⟶ S) [FormallyEtale f]
-    [LocallyOfFinitePresentation f] : Etale f := by
-  rw [HasRingHomProperty.iff_appLE (P := @Etale)]
-  intro U V e
-  have := FormallyEtale.formallyEtale_appLE f U.property V.property e
-  have := f.finitePresentation_appLE U.property V.property e
-  algebraize [(f.appLE U V e).hom]
-  exact RingHom.etale_algebraMap.2 ⟨inferInstance, inferInstance⟩
-
-/-- A morphism locally of finite presentation is étale if and only if it is formally étale. -/
-@[stacks 02HM]
-theorem etale_iff_formallyEtale (f : X ⟶ S) [LocallyOfFinitePresentation f] :
-    Etale f ↔ FormallyEtale f :=
-  ⟨fun _ ↦ inferInstance, fun _ ↦ etale_of_formallyEtale f⟩
+    FormallyEtale f ↔ f.appTop.hom.FormallyEtale :=
+  (MorphismProperty.arrow_mk_iso_iff @FormallyEtale (arrowIsoSpecΓOfIsAffine f)).trans
+    (formallyEtale_SpecMap_iff _)
 
 end TauCeti.AlgebraicGeometry
