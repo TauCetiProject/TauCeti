@@ -15,33 +15,33 @@ import TauCeti.Geometry.Symplectic.Manifold.Opens
 # Symplectic neighbourhood germs with a prescribed ambient derivative
 
 Let `θ` and `σ` be closed two-forms on manifolds `M` and `N`, with `M` boundaryless, let
-`f : Q → M` be a compact embedded submanifold along which `θ` is nondegenerate, and let `Ψ` be a
-partial diffeomorphism from `M` to `N`, defined near `f(Q)`, whose differential at every point of
-`f(Q)` is a linear symplectic map: `σ(dΨ v, dΨ w) = θ(v, w)` for all tangent vectors `v`, `w` of
+`i : Q → M` be a compact embedded submanifold along which `θ` is nondegenerate, and let `Ψ` be a
+partial diffeomorphism from `M` to `N`, defined near `i(Q)`, whose differential at every point of
+`i(Q)` is a linear symplectic map: `σ(dΨ v, dΨ w) = θ(v, w)` for all tangent vectors `v`, `w` of
 `M` at that point. Then `Ψ` can be corrected to a diffeomorphism of neighbourhoods pulling `σ`
-back to `θ` without changing it to first order along `f(Q)`: there are open neighbourhoods `U₀`
-of `f(Q)` and `U₁` of `Ψ(f(Q))` and a diffeomorphism `φ : U₀ → U₁` pulling `σ` back to `θ` which
-agrees with `Ψ` at every point of `f(Q)` and has the same differential there
+back to `θ` without changing it to first order along `i(Q)`: there are open neighbourhoods `U₀`
+of `i(Q)` and `U₁` of `Ψ(i(Q))` and a diffeomorphism `φ : U₀ → U₁` pulling `σ` back to `θ` which
+agrees with `Ψ` at every point of `i(Q)` and has the same differential there
 (`TauCeti.SmoothTwoForm.exists_diffeomorph_opens_mfderiv_eq_of_eval₂_eq`).
 
 The hypothesis says that `Ψ^* σ` and `θ` agree as bilinear forms on the full ambient tangent spaces
-along `f(Q)`. The relative Moser theorem in this form
+along `i(Q)`. The relative Moser theorem in this form
 (`TauCeti.SmoothTwoForm.exists_diffeomorph_fix_embedding_eventually_mpullback_eq`) gives a
-diffeomorphism `Θ` of the source of `Ψ` which fixes `f(Q)`, has the identity as differential along
-it, and pulls `Ψ^* σ` back to `θ` near `f(Q)`. The correction is `φ = Ψ ∘ Θ`, and the chain rule
-gives `dφ = dΨ ∘ dΘ = dΨ` along `f(Q)`.
+diffeomorphism `Θ` of the source of `Ψ` which fixes `i(Q)`, has the identity as differential along
+it, and pulls `Ψ^* σ` back to `θ` near `i(Q)`. The correction is `φ = Ψ ∘ Θ`, and the chain rule
+gives `dφ = dΨ ∘ dΘ = dΨ` along `i(Q)`.
 
-Together with the realization of a bundle isomorphism along `f(Q)` as the differential of a
+Together with the realization of a bundle isomorphism along `i(Q)` as the differential of a
 partial diffeomorphism (`TauCeti.SmoothEmbedding.exists_partialDiffeomorph_mfderiv_eq`), this gives
 symplectic neighbourhood germs with a prescribed ambient derivative
-(`TauCeti.SmoothTwoForm.exists_diffeomorph_opens_mfderiv_eq`). Let `i : Q → M` be a compact
-embedded submanifold along which `θ` is nondegenerate, let `g : Q → N` be a smooth map inducing
-the topology of `Q`, and let `A q : T_{i q} M → T_{g q} N` be linear isomorphisms, smooth in
-tangent coordinates, with `A q ∘ d i_q = d g_q` and `σ(A q v, A q w) = θ(v, w)`. Then there is a
+(`TauCeti.SmoothTwoForm.exists_diffeomorph_opens_mfderiv_eq`). With `θ`, `σ` and `i` as above,
+let `g : Q → N` be a smooth map inducing the topology of `Q`, and let
+`A q : T_{i q} M → T_{g q} N` be linear isomorphisms, smooth in tangent coordinates, with
+`A q ∘ d i_q = d g_q` and `σ(A q v, A q w) = θ(v, w)`. Then there is a
 diffeomorphism `φ` between open neighbourhoods of `i(Q)` and `g(Q)` pulling `σ` back to `θ`, with
-`φ (i q) = g q` and `d φ_{i q} = A q`. For a diffeomorphism `f : Q → Q'` and a second compact
-embedded submanifold `j : Q' → N`, the case `g = j ∘ f` realizes a symplectic bundle isomorphism
-`A : i^* TM → j^* TN` over `f`. No constant-rank hypothesis on the pullback of `θ` to `Q` is
+`φ (i q) = g q` and `d φ_{i q} = A q`. For a diffeomorphism `e : Q → Q'` and a second compact
+embedded submanifold `j : Q' → N`, the case `g = j ∘ e` realizes a symplectic bundle isomorphism
+`A : i^* TM → j^* TN` over `e`. No constant-rank hypothesis on the pullback of `θ` to `Q` is
 needed. Conversely, the restriction and the differentials along `i(Q)` of any such `φ` are data of
 this kind, so these conditions characterize them
 (`TauCeti.SmoothTwoForm.exists_diffeomorph_opens_mfderiv_eq_iff`).
@@ -50,7 +50,7 @@ this kind, so these conditions characterize them
 
 * `TauCeti.SmoothTwoForm.exists_diffeomorph_opens_mfderiv_eq_of_eval₂_eq`: a partial
   diffeomorphism whose differential carries `σ` to `θ` along a compact embedded submanifold
-  `f(Q)` agrees to first order along `f(Q)` with a diffeomorphism of neighbourhoods pulling `σ`
+  `i(Q)` agrees to first order along `i(Q)` with a diffeomorphism of neighbourhoods pulling `σ`
   back to `θ`.
 * `TauCeti.SmoothTwoForm.exists_diffeomorph_opens_mfderiv_eq`: a symplectic bundle isomorphism
   along a compact embedded submanifold is the differential of a diffeomorphism of neighbourhoods
@@ -208,9 +208,9 @@ linear isomorphisms, smooth in tangent coordinates, which extend the differentia
 `U₁` of `g(Q)` and a diffeomorphism `φ : U₀ → U₁` pulling `σ` back to `θ`, with `φ (i q) = g q`
 and `d φ_{i q} = A q` for every `q`.
 
-For a diffeomorphism `f : Q → Q'` onto a second compact embedded submanifold `j : Q' → N`, the
-case `g = j ∘ f` is a symplectomorphism of neighbourhoods with `φ ∘ i = j ∘ f` realizing a
-symplectic bundle isomorphism `A : i^* TM → j^* TN` over `f`. -/
+For a diffeomorphism `e : Q → Q'` onto a second compact embedded submanifold `j : Q' → N`, the
+case `g = j ∘ e` is a symplectomorphism of neighbourhoods with `φ ∘ i = j ∘ e` realizing a
+symplectic bundle isomorphism `A : i^* TM → j^* TN` over `e`. -/
 theorem exists_diffeomorph_opens_mfderiv_eq (i : SmoothEmbedding J I ∞ Q M) {g : Q → N}
     (hg : ContMDiff J K ∞ g) (hgi : Topology.IsInducing g)
     {θ : SmoothTwoForm I M} (hθ : θ.IsClosed) (hnd : ∀ q, (θ.bilinFormAt (i q)).Nondegenerate)
