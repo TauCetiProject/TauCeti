@@ -138,7 +138,7 @@ theorem locallyOfFiniteType_restrictPreimage_presentationLimitPreAdicSpaceComap
   refine Hom.prop_restrictPreimage_of_forall_exists_le f (@LocallyOfFiniteType.{u})
     (fun _ ↦ LocallyOfFiniteType.of_iSup_eq_top_restrictPreimage) W fun y ↦ ?_
   -- every point of `W` lies in a rational subset `R(T/s)` contained in `W`
-  obtain ⟨R, hR, hyR, hRW⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens U.plus) y.2
+  obtain ⟨R, hR, hyR, hRW⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens U.plus) y.property
   obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hR
   refine ⟨_, hyR, hRW, ?_⟩
   have hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT

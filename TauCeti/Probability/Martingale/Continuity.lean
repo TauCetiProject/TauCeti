@@ -60,6 +60,6 @@ theorem Martingale.continuous_toLp [TopologicalSpace ι] [FirstCountableTopology
   simp only [Function.comp_apply, Lp.edist_toLp_toLp]
   exact tendsto_Lp_finite_of_tendsto_ae (Fact.out : 1 ≤ p) hp_top
     (fun n => hui.aestronglyMeasurable (u n))
-    (hui.memLp t) (hui.1.comp u) (hcont.mono fun ω hω => (hω.tendsto t).comp hu)
+    (hui.memLp t) (hui.unifIntegrable.comp u) (hcont.mono fun ω hω => (hω.tendsto t).comp hu)
 
 end MeasureTheory

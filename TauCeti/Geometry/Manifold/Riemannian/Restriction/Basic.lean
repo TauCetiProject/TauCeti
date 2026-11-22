@@ -28,8 +28,13 @@ pullback along the inclusion, whose differential is invertible also at the bound
   metric.
 * `Bundle.ContMDiffRiemannianMetric.restrictOpenTangentSpace_eq_of_inner_eq`: metrics that agree
   on an open set have equal restrictions to it.
+* `Bundle.ContMDiffRiemannianMetric.restrictOpenTangentSpace_rescale`: restricting a conformally
+  rescaled metric commutes with rescaling.
 * `TauCeti.Manifold.contMDiffRiemannianMetricOpen`: the ambient instance metric restricted to an
   open submanifold.
+* `TauCeti.Manifold.tangentSpaceOpenLinearIsometryEquiv`: for the inherited metric, the
+  identification of the tangent spaces of an open submanifold and of the ambient manifold is a
+  linear isometric equivalence.
 * `TauCeti.Manifold.instRiemannianBundleOpen`,
   `TauCeti.Manifold.instIsContinuousRiemannianBundleOpen`, and
   `TauCeti.Manifold.instIsContMDiffRiemannianBundleOpen`: the corresponding scoped instances.
@@ -74,27 +79,27 @@ noncomputable def restrictOpenTangentSpace
   symm x v w := by
     rw [TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply,
       TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply]
-    exact g.symm x.1 _ _
+    exact g.symm x.val _ _
   pos x v hv := by
     rw [TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply]
-    exact g.pos x.1 _
+    exact g.pos x.val _
       ((TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).toLinearEquiv.map_ne_zero_iff.mpr hv)
   continuousAt x := by
     have h : ContinuousAt (fun v : TangentSpace I x ↦
-        g.inner x.1 (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x v)
+        g.inner x.val (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x v)
           (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x v)) 0 :=
-      (g.continuousAt x.1).comp_of_eq
+      (g.continuousAt x.val).comp_of_eq
         (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).continuousAt (map_zero _)
     simpa only [TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply] using h
   isVonNBounded x := by
     have heq : {v | TauCeti.Manifold.restrictOpenTangentSpaceBilinear g.inner U x v v < 1} =
         (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).symm.toContinuousLinearMap ''
-          {v | g.inner x.1 v v < 1} := by
+          {v | g.inner x.val v v < 1} := by
       simp only [TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply,
         ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.image_symm_eq_preimage,
         Set.preimage_ofPred_eq]
     rw [heq]
-    exact (g.isVonNBounded x.1).image
+    exact (g.isVonNBounded x.val).image
       (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).symm.toContinuousLinearMap
 
 /-- Restricting a Riemannian metric evaluates the ambient metric through the canonical tangent-space
@@ -149,7 +154,7 @@ theorem restrictOpenTangentSpace_inner
 /-- Restriction to an open submanifold is pullback along its inclusion. -/
 theorem restrictOpenTangentSpace_eq_pullback [FiniteDimensional ℝ E]
     (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (U : Opens M) :
-    g.restrictOpenTangentSpace U = g.pullback (Subtype.val : U → M) contMDiff_subtype_val
+    g.restrictOpenTangentSpace U = g.pullback (Subtype.val : U → M) contMDiff_subtypeVal
       (TauCeti.Manifold.mfderiv_subtype_val_injective (I := I)) := by
   ext x v w
   simp only [restrictOpenTangentSpace_inner, pullback_inner,
@@ -169,7 +174,19 @@ theorem restrictOpenTangentSpace_eq_of_inner_eq
     (h : ∀ x ∈ U, g₁.inner x = g₂.inner x) :
     g₁.restrictOpenTangentSpace U = g₂.restrictOpenTangentSpace U := by
   ext x v w
-  simp only [restrictOpenTangentSpace_inner, h x x.2]
+  simp only [restrictOpenTangentSpace_inner, h x x.property]
+
+/-- Restricting a conformally rescaled metric `f g` to an open submanifold `U` equals rescaling
+the restricted metric by `f ∘ Subtype.val`. -/
+@[simp]
+theorem restrictOpenTangentSpace_rescale
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (U : Opens M)
+    (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) n f) (hf_pos : ∀ x, 0 < f x) :
+    (g.rescale f hf hf_pos).restrictOpenTangentSpace U =
+      (g.restrictOpenTangentSpace U).rescale (f ∘ Subtype.val)
+        (hf.comp contMDiff_subtypeVal) (fun y ↦ hf_pos y.val) := by
+  ext y v w
+  simp only [restrictOpenTangentSpace_inner, rescale_inner, Function.comp_apply]
 
 end Bundle.ContMDiffRiemannianMetric
 
@@ -284,6 +301,22 @@ theorem inner_tangentSpace_open
       (tangentSpaceOpenEquiv (I := I) x v) (tangentSpaceOpenEquiv (I := I) x w) := by
   exact Bundle.RiemannianMetric.restrictOpenTangentSpace_inner RiemannianBundle.g U x v w
 
+/-- On an open subset of a real inner product space, the inherited tangent inner product
+is the ambient inner product of the coordinate velocities. -/
+theorem inner_tangentSpace_open_vectorSpace
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (U : Opens F) (x : U) (v w : TangentSpace 𝓘(ℝ, F) x) :
+    letI := instRiemannianBundleOpen (I := 𝓘(ℝ, F)) U
+    inner ℝ v w = inner ℝ
+      (mvfderiv 𝓘(ℝ, F) (Subtype.val : U → F) x v)
+      (mvfderiv 𝓘(ℝ, F) (Subtype.val : U → F) x w) := by
+  rw [inner_tangentSpace_open]
+  simp only [mvfderiv, ContinuousLinearMap.comp_apply, mfderiv_subtype_val,
+    ContinuousLinearEquiv.coe_coe]
+  -- The native model-space metric is the inner product transported along
+  -- `NormedSpace.fromTangentSpace`.
+  rfl
+
 /-- The norm installed on an open submanifold is the ambient Riemannian norm under the canonical
 tangent-space identification. -/
 @[simp]
@@ -304,6 +337,25 @@ theorem enorm_tangentSpace_open
     letI := instRiemannianBundleOpen (I := I) U
     ‖v‖ₑ = ‖tangentSpaceOpenEquiv (I := I) x v‖ₑ := by
   simp only [eNorm, nnNorm, norm_tangentSpace_open]
+
+/-- For the Riemannian metric inherited by an open submanifold `U`, the identification
+`tangentSpaceOpenEquiv` of the tangent spaces of `U` and `M` at `x ∈ U` is a linear isometric
+equivalence. -/
+def tangentSpaceOpenLinearIsometryEquiv
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] (U : Opens M) (x : U) :
+    letI := instRiemannianBundleOpen (I := I) U
+    TangentSpace I x ≃ₗᵢ[ℝ] TangentSpace I (x : M) :=
+  letI := instRiemannianBundleOpen (I := I) U
+  { (tangentSpaceOpenEquiv (I := I) x).toLinearEquiv with
+    norm_map' := fun v ↦ (norm_tangentSpace_open U x v).symm }
+
+/-- As a function, `tangentSpaceOpenLinearIsometryEquiv` is `tangentSpaceOpenEquiv`. -/
+@[simp]
+theorem coe_tangentSpaceOpenLinearIsometryEquiv
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] (U : Opens M) (x : U) :
+    letI := instRiemannianBundleOpen (I := I) U
+    ⇑(tangentSpaceOpenLinearIsometryEquiv (I := I) U x) = tangentSpaceOpenEquiv (I := I) x :=
+  (rfl)
 
 end Manifold
 
@@ -346,7 +398,7 @@ theorem pathELength_subtypeVal_comp {γ : ℝ → U} {a b : ℝ} :
       (fun h ↦ hd ((ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff γ Set.univ t).1 h))]
     simp
   have hv : MDiffAt (Subtype.val : U → M) (γ t) :=
-    (contMDiff_subtype_val (γ t)).mdifferentiableAt one_ne_zero
+    (contMDiff_subtypeVal (γ t)).mdifferentiableAt one_ne_zero
   rw [(HasMFDerivAt.comp t hv.hasMFDerivAt hd.hasMFDerivAt).mfderiv, mfderiv_subtype_val]
   simp
 
@@ -370,7 +422,7 @@ theorem riemannianEDist_le_riemannianEDist_subtype (U : Opens M) (x y : U) :
     (I := I) fun γ h0 h1 hγ ↦ ?_
   rw [TauCeti.Manifold.pathELength_subtypeVal_comp]
   exact Manifold.riemannianEDist_le_pathELength
-    (contMDiff_subtype_val.comp_contMDiffOn hγ)
+    (contMDiff_subtypeVal.comp_contMDiffOn hγ)
     (congrArg Subtype.val h0) (congrArg Subtype.val h1) zero_le_one
 
 end TopologicalSpace.Opens

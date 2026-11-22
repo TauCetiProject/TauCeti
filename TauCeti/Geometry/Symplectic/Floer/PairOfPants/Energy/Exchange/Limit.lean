@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Exchange
-import TauCeti.Geometry.Symplectic.Floer.Curvature.Continuity
+import TauCeti.Geometry.Symplectic.Floer.Curvature.CompactSupport
 
 /-!
 # The energy of the input-exchange family from the limits of its end terms
@@ -151,11 +151,12 @@ theorem IsNondegenerate.integrableOn_hamiltonianCurvature_exchangePerturbation
     IntegrableOn (fun z ↦ ω.hamiltonianCurvature
       (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z (u z)) thricePuncturedSphereReal :=
-  ⟨(hω.continuousOn_hamiltonianCurvature_comp isOpen_thricePuncturedSphereReal hu
-      (contMDiffOn_uncurry_exchangePerturbation hH hHs c 1)
-      (contMDiffOn_uncurry_exchangePerturbation hH hHs c Complex.I)).aestronglyMeasurable
-      isOpen_thricePuncturedSphereReal.measurableSet,
+      z (u z)) thricePuncturedSphereReal := by
+  have hK (v : ℂ) (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) (x : M) :=
+    (contMDiffOn_uncurry_exchangePerturbation hH hHs c v).contMDiffAt
+      ((isOpen_thricePuncturedSphereReal.prod isOpen_univ).mem_nhds ⟨hz, mem_univ x⟩)
+  exact ⟨(hω.continuousOn_hamiltonianCurvature_comp isOpen_thricePuncturedSphereReal (hK 1)
+      (hK Complex.I) hu).aestronglyMeasurable isOpen_thricePuncturedSphereReal.measurableSet,
     (setLIntegral_le_lintegral _ _).trans_lt
       ((lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le ω hH hHs hB hc₀ hc₁ u).trans_lt
         (ENNReal.sum_lt_top.2 fun _ _ ↦ ENNReal.ofReal_lt_top))⟩

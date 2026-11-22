@@ -115,7 +115,7 @@ private theorem residue_apply_eq {g : P.integers.decompositionSubgroup F}
     (hy : (y : F') = (g : F' ≃ₐ[F] F') x) :
     IsLocalRing.residue P.integers y = IsLocalRing.residue P.integers x := by
   rw [residue_eq_iff_sub_mem_filtration_one, hy]
-  simpa using (mem_ramificationGroup_iff F P).mp hg x x.2
+  simpa using (mem_ramificationGroup_iff F P).mp hg x x.property
 
 omit [Algebra k F] [IsScalarTower k F F'] in
 private theorem residue_apply_mul_inv_ne_zero (ht : P.ord t = 1)
@@ -148,7 +148,7 @@ noncomputable def tameCharacter (ht : P.ord t = 1) :
       have hτmem := apply_mul_inv_mem_integers F P ht (h : P.integers.decompositionSubgroup F)
       have hστ : σ (τ t * t⁻¹) ∈ P.integers :=
         (mem_integers_decompositionSubgroup_apply F P _).mpr hτmem
-      have hres := residue_apply_eq F P g.2 ⟨_, hτmem⟩ ⟨_, hστ⟩ rfl
+      have hres := residue_apply_eq F P g.property ⟨_, hτmem⟩ ⟨_, hστ⟩ rfl
       rw [← hres, ← map_mul]
       congr 1
       ext
@@ -206,7 +206,7 @@ theorem tameCharacter_eq_of_ord_eq_one {t' : F'} (ht : P.ord t = 1) (ht' : P.ord
   have huinv : (t' * t⁻¹)⁻¹ ∈ P.integers := by
     rw [mem_integers_iff_ord_nonneg, ord_inv, P.ord_mul ht0' (inv_ne_zero ht0), ord_inv, ht, ht']
     norm_num
-  have hres := residue_apply_eq F P g.2 ⟨_, hu⟩ ⟨_, hσu⟩ rfl
+  have hres := residue_apply_eq F P g.property ⟨_, hu⟩ ⟨_, hσu⟩ rfl
   rw [coe_tameCharacter_of_eq F P ht' g (y := ⟨_, apply_mul_inv_mem_integers F P ht' _⟩) rfl,
     coe_tameCharacter_of_eq F P ht g (y := ⟨_, apply_mul_inv_mem_integers F P ht _⟩) rfl]
   have hsplit : (⟨σ t' * t'⁻¹, apply_mul_inv_mem_integers F P ht' _⟩ : P.integers) =
@@ -405,7 +405,7 @@ private theorem mem_ramificationGroup_one_of_sub_mem_filtration_two
   have hcancel : (d : F') = (d : F') * u * (u' : F') := by
     rw [mul_assoc, ← MulMemClass.coe_mul, hu', OneMemClass.coe_one, mul_one]
   rw [← hdcoe, hcancel]
-  simpa using P.mul_mem_filtration hσw (P.mem_filtration_zero_iff.mpr u'.2)
+  simpa using P.mul_mem_filtration hσw (P.mem_filtration_zero_iff.mpr u'.property)
 
 /-- **Membership in the first ramification group is decided at a uniformizer**, when the residue
 extension is separable (Stichtenoth, Proposition 3.8.5): an element of `G_0(P)` lies in `G_1(P)`
@@ -428,7 +428,7 @@ theorem ker_tameCharacter [Algebra.IsSeparable (P.restrict k F).ResidueField P.R
     (ramificationGroup_one_subgroupOf_le_ker_tameCharacter F P ht)
   rw [MonoidHom.mem_ker, tameCharacter_eq_one_iff] at hg
   rw [Subgroup.mem_subgroupOf]
-  exact mem_ramificationGroup_one_of_sub_mem_filtration_two F P ht g.2 hg
+  exact mem_ramificationGroup_one_of_sub_mem_filtration_two F P ht g.property hg
 
 /-- The induced tame character is injective when the residue extension is separable. -/
 theorem tameCharacterGraded_injective

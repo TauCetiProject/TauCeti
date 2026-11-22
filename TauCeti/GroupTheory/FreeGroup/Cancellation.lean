@@ -183,7 +183,7 @@ theorem length_le_of_mem_patterns {v : List (Z × Bool)} (hv : v ∈ P.patterns)
   · intro k hk a ha a' ha'
     simp only [Set.mem_ofPred_eq, List.mem_toFinset] at ha ha'
     have hki : i ≠ k := fun h => (Finset.mem_erase.1 hk).1 (Fin.ext h.symm)
-    have h₁ : a.1 = a'.1 := P.subsingleton_of_ne hi k.2 hki
+    have h₁ : a.1 = a'.1 := P.subsingleton_of_ne hi k.isLt hki
       ⟨List.mem_map_of_mem ha.1, List.mem_map.2 ⟨_, ha.2, rfl⟩⟩
       ⟨List.mem_map_of_mem ha'.1, List.mem_map.2 ⟨_, ha'.2, rfl⟩⟩
     exact List.inj_on_of_nodup_map hnd ha.1 ha'.1 h₁
