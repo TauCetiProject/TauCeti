@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.DirectSum.Internal
+public import TauCeti.LinearAlgebra.RootSystem.DirectSum.Base
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 
 /-!

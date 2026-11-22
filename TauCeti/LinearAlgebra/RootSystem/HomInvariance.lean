@@ -201,6 +201,30 @@ end Chain
 
 end Hom
 
+/-- An equivalence of root pairings transports `IsRootSystem` from the source to the target. -/
+theorem Equiv.isRootSystem (e : P.Equiv P₂) [P.IsRootSystem] : P₂.IsRootSystem where
+  span_root_eq_top := by
+    have h := congrArg (Submodule.map e.weightEquiv.toLinearMap)
+      (IsRootSystem.span_root_eq_top (P := P))
+    rw [Submodule.map_span, Submodule.map_top, LinearEquiv.range] at h
+    convert h using 2
+    rw [← Set.range_comp]
+    have hcomp : (e.weightEquiv.toLinearMap : M → M₂) ∘ P.root = P₂.root ∘ e.indexEquiv := by
+      ext i
+      exact Hom.root_weightMap_apply P P₂ i e.toHom
+    rw [hcomp, EquivLike.range_comp]
+  span_coroot_eq_top := by
+    have h := congrArg (Submodule.map e.coweightEquiv.symm.toLinearMap)
+      (IsRootSystem.span_coroot_eq_top (P := P))
+    rw [Submodule.map_span, Submodule.map_top, LinearEquiv.range] at h
+    convert h using 2
+    rw [← Set.range_comp]
+    have hcomp : (e.coweightEquiv.symm.toLinearMap : N → N₂) ∘ P.coroot =
+        P₂.coroot ∘ e.indexEquiv := by
+      ext i
+      simp [← Equiv.inv_coweightMap, Hom.coroot_coweightMap_apply]
+    rw [hcomp, EquivLike.range_comp]
+
 /-- An equivalence of root pairings transports reducedness from the source to the target. -/
 theorem Equiv.isReduced (e : P.Equiv P₂) [P.IsReduced] : P₂.IsReduced :=
   e.toHom.isReduced e.bijective_weightMap.injective

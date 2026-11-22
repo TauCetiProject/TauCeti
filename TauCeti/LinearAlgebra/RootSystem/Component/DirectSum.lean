@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Component.Base
-public import TauCeti.LinearAlgebra.RootSystem.DirectSum.Weyl
+public import TauCeti.LinearAlgebra.RootSystem.Component.Pairing
+public import TauCeti.LinearAlgebra.RootSystem.DirectSum.Internal
 
 /-!
 # Irreducible component decomposition as an internal direct sum
@@ -14,16 +14,13 @@ public import TauCeti.LinearAlgebra.RootSystem.DirectSum.Weyl
 A finite root system `P : RootPairing ι K M N` over a field with `2 ≠ 0` is canonically
 equivalent to the internal direct sum of its irreducible component pairings
 `P.componentPairing : ∀ C : P.Component, RootPairing C.supp K (P.componentSpace C) _`. This file
-constructs that equivalence `RootPairing.equivInternalDirectSumComponentPairing`, shows that
-assembling `RootPairing.Base.componentBase` recovers the transported base, and derives the
-canonical splitting of `P.weylGroup` into the product of the component Weyl groups.
+constructs that equivalence `RootPairing.equivInternalDirectSumComponentPairing` and records the
+formulas for its maps.
 
 ## Main definitions
 
 * `RootPairing.equivInternalDirectSumComponentPairing`: canonical equivalence between `P` and the
   internal direct sum of `P.componentPairing`.
-* `RootPairing.componentWeylGroupEquiv`: canonical multiplicative isomorphism between
-  `P.weylGroup` and `∀ C : P.Component, (P.componentPairing C).weylGroup`.
 
 ## Main results
 
@@ -31,12 +28,6 @@ canonical splitting of `P.weylGroup` into the product of the component Weyl grou
   `RootPairing.equivInternalDirectSumComponentPairing_coweightMap`,
   `RootPairing.equivInternalDirectSumComponentPairing_indexEquiv`: formulas for the maps of
   `RootPairing.equivInternalDirectSumComponentPairing`.
-* `RootPairing.Base.internalDirectSum_componentBase`: assembling `Base.componentBase` across all
-  components recovers the base transported along `equivInternalDirectSumComponentPairing`.
-* `RootPairing.componentProj_smul_eq_componentWeylGroupEquiv`,
-  `RootPairing.componentWeylGroupEquiv_ofIdx_self`,
-  `RootPairing.componentWeylGroupEquiv_ofIdx_ne`: equivariance and generator formulas for
-  `RootPairing.componentWeylGroupEquiv`.
 
 ## References
 
@@ -98,60 +89,5 @@ theorem equivInternalDirectSumComponentPairing_indexEquiv [NeZero (2 : K)] [Fini
     [P.IsRootSystem] (i : ι) :
     (P.equivInternalDirectSumComponentPairing).indexEquiv i = ⟨P.componentOf i, ⟨i, rfl⟩⟩ :=
   (rfl)
-
-/-- **Assembling the component bases `Base.componentBase` recovers the original base** under
-`RootPairing.equivInternalDirectSumComponentPairing`. -/
-@[simp]
-theorem Base.internalDirectSum_componentBase [NeZero (2 : K)] [Finite ι] [P.IsRootSystem]
-    (b : P.Base) :
-    Base.internalDirectSum P.iSupIndep_componentSpace
-        (P.iSup_componentSpace.trans IsRootSystem.span_root_eq_top)
-        (fun C ↦ b.componentBase C) =
-      b.map P.equivInternalDirectSumComponentPairing := by
-  classical
-  ext ⟨C, ⟨i, hi⟩⟩
-  simp only [Base.mem_support_internalDirectSum, Base.mem_support_componentBase,
-    Base.support_map_eq, Finset.mem_image, equivInternalDirectSumComponentPairing_indexEquiv]
-  constructor
-  · intro h
-    exact ⟨i, h, by subst hi; rfl⟩
-  · rintro ⟨j, hj, heq⟩
-    rcases Sigma.ext_iff.mp heq with ⟨hC, hij⟩
-    subst hC
-    rw [heq_eq_eq] at hij
-    cases hij
-    exact hj
-
-/-- **The Weyl group of a finite root system splits canonically as the product of the Weyl groups
-of its irreducible components** (Bourbaki, Lie VI §1, no. 2, Proposition 5). -/
-noncomputable def componentWeylGroupEquiv [NeZero (2 : K)] [Finite ι] [P.IsRootSystem] :
-    P.weylGroup ≃* ∀ C : P.Component, (P.componentPairing C).weylGroup :=
-  (P.equivInternalDirectSumComponentPairing).weylGroupEquiv.trans
-    (internalDirectSumWeylGroupEquiv P.iSupIndep_componentSpace
-      (P.iSup_componentSpace.trans IsRootSystem.span_root_eq_top) P.componentPairing)
-
-/-- The component Weyl-group isomorphism intertwines the action on `M` with the component actions
-along `RootPairing.componentProj`. -/
-theorem componentProj_smul_eq_componentWeylGroupEquiv [NeZero (2 : K)] [Finite ι]
-    [P.IsRootSystem] (w : P.weylGroup) (C : P.Component) (x : M) :
-    P.componentProj C (w • x) = P.componentWeylGroupEquiv w C • P.componentProj C x := by
-  have h1 := P.equivInternalDirectSumComponentPairing.weylGroupEquiv_smul w x
-  have hw : (P.equivInternalDirectSumComponentPairing.weylGroupEquiv w) • x = w • x := by
-    simpa [Equiv.weightEquiv_apply] using h1
-  rw [← internalProjection_componentSpace_eq_componentProj, ← hw,
-    internalProjection_smul_internalDirectSum, internalProjection_componentSpace_eq_componentProj]
-  rfl
-
-@[simp]
-theorem componentWeylGroupEquiv_ofIdx_self [NeZero (2 : K)] [Finite ι] [P.IsRootSystem] (i : ι) :
-    P.componentWeylGroupEquiv (weylGroup.ofIdx P i) (P.componentOf i) =
-      weylGroup.ofIdx (P.componentPairing (P.componentOf i)) ⟨i, rfl⟩ := by
-  simp [componentWeylGroupEquiv]
-
-@[simp]
-theorem componentWeylGroupEquiv_ofIdx_ne [NeZero (2 : K)] [Finite ι] [P.IsRootSystem]
-    {C : P.Component} {i : ι} (hC : C ≠ P.componentOf i) :
-    P.componentWeylGroupEquiv (weylGroup.ofIdx P i) C = 1 := by
-  simp [componentWeylGroupEquiv, hC]
 
 end RootPairing

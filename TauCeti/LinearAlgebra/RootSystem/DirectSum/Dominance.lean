@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.DirectSum.Internal
+public import TauCeti.LinearAlgebra.RootSystem.DirectSum.Base
 public import TauCeti.LinearAlgebra.RootSystem.Dominance
 
 /-!
@@ -46,19 +46,12 @@ variable {κ R : Type*} [Fintype κ] [DecidableEq κ] [CommRing R] [NeZero (2 : 
   [∀ c, AddCommGroup (N c)] [∀ c, Module R (N c)]
   {P : ∀ c, RootPairing (ι c) R (M c) (N c)}
 
-private theorem mem_posRootCone_iff_mem_span {ι R M N : Type*} [CommRing R]
-    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-    (P : RootPairing ι R M N) (b : P.Base) (v : M) :
-    v ∈ TauCeti.posRootCone P b ↔ v ∈ span ℕ (P.root '' b.support) := by
-  rw [TauCeti.mem_posRootCone, Submodule.mem_span_image_finset_iff_exists_fun']
-  exact exists_congr fun _ ↦ eq_comm
-
 /-- **The positive root cone of a finite direct sum decomposes coordinatewise.** -/
 theorem mem_posRootCone_pi_iff (b : ∀ c, (P c).Base) (x : ∀ c, M c) :
     x ∈ TauCeti.posRootCone (pi P) (Base.pi b) ↔
       ∀ c, x c ∈ TauCeti.posRootCone (P c) (b c) := by
-  rw [mem_posRootCone_iff_mem_span, Base.support_pi, Finset.coe_sigma, Finset.coe_univ]
-  simpa only [← mem_posRootCone_iff_mem_span] using
+  rw [TauCeti.mem_posRootCone_iff_mem_span, Base.support_pi, Finset.coe_sigma, Finset.coe_univ]
+  simpa only [← TauCeti.mem_posRootCone_iff_mem_span] using
     mem_span_pi_root_image_iff P ℕ (fun c ↦ (b c).support) x
 
 /-- **Integral root dominance on a finite direct sum is coordinatewise integral root dominance.** -/
