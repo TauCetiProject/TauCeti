@@ -67,7 +67,7 @@ elements of a CSA group are moved into general position by conjugating their ent
 
 public section
 
-open Group Monoid Subgroup
+open Group TauCeti Subgroup
 
 namespace IsFreeGroup
 

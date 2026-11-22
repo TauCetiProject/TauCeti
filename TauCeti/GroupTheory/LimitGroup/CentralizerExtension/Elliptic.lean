@@ -48,7 +48,7 @@ element `b` is still `⟨b⟩`.
 
 public section
 
-open Monoid Subgroup
+open Subgroup
 
 namespace TauCeti.LimitGroup.CentralizerExt
 

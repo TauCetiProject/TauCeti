@@ -181,7 +181,7 @@ theorem isFullyResiduallyFree_orientable_two_zero :
     IsFullyResiduallyFree (SurfaceGroup.Orientable 2 0) :=
   (isFullyResiduallyFree_centralizerExt
     (isFullyResiduallyFree_of_isFreeGroup (G := FreeGroup (Fin 2)))
-    (Monoid.ne_one_of_not_isProperPower
+    (ne_one_of_not_isProperPower
       (FreeGroup.not_isProperPower_inv_mul_inv_mul_mul (by decide)))).of_injective
     SurfaceGroup.Orientable.genusTwoToCentralizerExt_injective
 

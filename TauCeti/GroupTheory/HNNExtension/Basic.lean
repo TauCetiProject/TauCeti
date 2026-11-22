@@ -206,10 +206,10 @@ is not commutative transitive: a root of `u` commutes with `u`, and `u` with the
 but the root does not commute with the stable letter. In a torsion-free group, every nontrivial
 element has infinite order. -/
 theorem not_isCommTransitive_zpowers_of_isProperPower {u : G}
-    (hu : Monoid.IsProperPower u) (hfin : ¬IsOfFinOrder u) :
+    (hu : TauCeti.IsProperPower u) (hfin : ¬IsOfFinOrder u) :
     ¬ Group.IsCommTransitive
       (HNNExtension G (zpowers u) (zpowers u) (MulEquiv.refl (zpowers u))) := fun h =>
-  Monoid.not_isProperPower_of_zpowers_eq_centralizer hfin
+  TauCeti.not_isProperPower_of_zpowers_eq_centralizer hfin
     (le_antisymm (zpowers_le_centralizer_singleton u) (centralizer_le_of_isCommTransitive h
       (mem_zpowers _) fun hu1 => hfin (hu1 ▸ IsOfFinOrder.one))) hu
 

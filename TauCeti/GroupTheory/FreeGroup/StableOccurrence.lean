@@ -68,11 +68,11 @@ variable {α : Type*} [DecidableEq α]
 period is nontrivial, since `1 = 1 ^ 2` is a proper power. (In §7.1, p. 92, the source also excludes
 the elements of the coefficient group; there is no coefficient group here.) -/
 def IsPeriod (A : FreeGroup α) : Prop :=
-  IsCyclicallyReduced A.toWord ∧ ¬Monoid.IsProperPower A
+  IsCyclicallyReduced A.toWord ∧ ¬TauCeti.IsProperPower A
 
 /-- An element is a period exactly when it is cyclically reduced and not a proper power. -/
 theorem isPeriod_iff {A : FreeGroup α} :
-    A.IsPeriod ↔ IsCyclicallyReduced A.toWord ∧ ¬Monoid.IsProperPower A :=
+    A.IsPeriod ↔ IsCyclicallyReduced A.toWord ∧ ¬TauCeti.IsProperPower A :=
   Iff.rfl
 
 /-- A period is cyclically reduced. -/
@@ -81,12 +81,13 @@ theorem IsPeriod.isCyclicallyReduced {A : FreeGroup α} (hA : A.IsPeriod) :
   hA.1
 
 /-- A period is not a proper power. -/
-theorem IsPeriod.not_isProperPower {A : FreeGroup α} (hA : A.IsPeriod) : ¬Monoid.IsProperPower A :=
+theorem IsPeriod.not_isProperPower {A : FreeGroup α} (hA : A.IsPeriod) :
+    ¬TauCeti.IsProperPower A :=
   hA.2
 
 /-- A period is nontrivial. -/
 theorem IsPeriod.ne_one {A : FreeGroup α} (hA : A.IsPeriod) : A ≠ 1 :=
-  Monoid.ne_one_of_not_isProperPower hA.2
+  TauCeti.ne_one_of_not_isProperPower hA.2
 
 /-- Every generator is a period. -/
 @[simp]
@@ -134,7 +135,7 @@ theorem IsStableOccurrence.isCyclicallyReduced {W A : FreeGroup α} {i q : ℕ}
 /-- If a power of `A` has a stable occurrence in `W`, then `A` is a period exactly when it is not
 a proper power. -/
 theorem IsStableOccurrence.isPeriod_iff {W A : FreeGroup α} {i q : ℕ}
-    (h : W.IsStableOccurrence A i q) : A.IsPeriod ↔ ¬Monoid.IsProperPower A :=
+    (h : W.IsStableOccurrence A i q) : A.IsPeriod ↔ ¬TauCeti.IsProperPower A :=
   ⟨IsPeriod.not_isProperPower, fun hA => ⟨h.isCyclicallyReduced, hA⟩⟩
 
 /-- For a cyclically reduced `A`, the power `A ^ q` has a stable occurrence at the start of
@@ -150,8 +151,8 @@ positions congruent modulo `|A|`. This applies in particular when the powers `A 
 themselves share a letter, which is the form of the source. Only powers of the same sign are
 compared here: the source's remark that occurrences of `A ^ q` and of `A⁻¹ ^ p` are disjoint is
 not part of this statement. -/
-theorem modEq_of_isStableOccurrence {W A : FreeGroup α} (hA : ¬Monoid.IsProperPower A) {i q j r : ℕ}
-    (h₁ : W.IsStableOccurrence A i q) (h₂ : W.IsStableOccurrence A j r)
+theorem modEq_of_isStableOccurrence {W A : FreeGroup α} (hA : ¬TauCeti.IsProperPower A)
+    {i q j r : ℕ} (h₁ : W.IsStableOccurrence A i q) (h₂ : W.IsStableOccurrence A j r)
     (hij : i ≤ j + (r + 1) * A.toWord.length) (hji : j ≤ i + (q + 1) * A.toWord.length) :
     i ≡ j [MOD A.toWord.length] := by
   wlog hle : i ≤ j generalizing i q j r
@@ -392,27 +393,27 @@ end Examples
 
 /- The element `aba` of the free group on two generators is not a proper power: it has
 exponent sum `1` in `b`. -/
-private theorem not_isProperPower_aba : ¬Monoid.IsProperPower (of (0 : Fin 2) * of 1 * of 0) := by
+private theorem not_isProperPower_aba : ¬TauCeti.IsProperPower (of (0 : Fin 2) * of 1 * of 0) := by
   let f : FreeGroup (Fin 2) →* Multiplicative ℤ :=
     FreeGroup.lift fun c => if c = 1 then Multiplicative.ofAdd 1 else 1
   intro h
-  exact Monoid.not_isProperPower_ofAdd_one (by simpa [f] using h.map f)
+  exact TauCeti.not_isProperPower_ofAdd_one (by simpa [f] using h.map f)
 
 /-- Lemma 57 needs `A` not to be a proper power: `A = (ab)²` has stable occurrences at `0` and
 `2` in `(ab)⁷`, whose blocks share `10 ≥ |A|` letters, at positions not congruent modulo
 `|A| = 4`. -/
-example : Monoid.IsProperPower ((of (0 : Fin 2) * of 1) ^ 2) ∧
+example : TauCeti.IsProperPower ((of (0 : Fin 2) * of 1) ^ 2) ∧
     ((of (0 : Fin 2) * of 1) ^ 7).IsStableOccurrence ((of 0 * of 1) ^ 2) 0 1 ∧
     ((of (0 : Fin 2) * of 1) ^ 7).IsStableOccurrence ((of 0 * of 1) ^ 2) 2 1 ∧
     0 ≤ 2 + (1 + 1) * ((of (0 : Fin 2) * of 1) ^ 2).toWord.length ∧
     2 ≤ 0 + (1 + 1) * ((of (0 : Fin 2) * of 1) ^ 2).toWord.length ∧
     ¬0 ≡ 2 [MOD ((of (0 : Fin 2) * of 1) ^ 2).toWord.length] :=
-  ⟨Monoid.isProperPower_pow _ le_rfl, ⟨le_rfl, [], [(0, true), (1, true)], by decide, rfl⟩,
+  ⟨TauCeti.isProperPower_pow _ le_rfl, ⟨le_rfl, [], [(0, true), (1, true)], by decide, rfl⟩,
     ⟨le_rfl, [(0, true), (1, true)], [], by decide, rfl⟩, by decide, by decide, by decide⟩
 
 /-- Lemma 57 needs stability: the period `A = aba` occurs (without flanks) at positions `0` and
 `2` of `ababa`, which are not congruent modulo `|A| = 3`. -/
-example : ¬Monoid.IsProperPower (of (0 : Fin 2) * of 1 * of 0) ∧
+example : ¬TauCeti.IsProperPower (of (0 : Fin 2) * of 1 * of 0) ∧
     ((of (0 : Fin 2) * of 1) ^ 2 * of 0).toWord =
       [] ++ (of (0 : Fin 2) * of 1 * of 0).toWord ++ [(1, true), (0, true)] ∧
     ((of (0 : Fin 2) * of 1) ^ 2 * of 0).toWord =
@@ -423,7 +424,7 @@ example : ¬Monoid.IsProperPower (of (0 : Fin 2) * of 1 * of 0) ∧
 /-- Lemma 57 needs the blocks to overlap in at least `|A|` letters: the period `A = aba` has
 stable occurrences `(0, 1)` and `(8, 1)` in `W = (aba)³ ba (aba)²`, whose blocks share one
 letter, at positions not congruent modulo `|A| = 3`. -/
-example : ¬Monoid.IsProperPower (of (0 : Fin 2) * of 1 * of 0) ∧
+example : ¬TauCeti.IsProperPower (of (0 : Fin 2) * of 1 * of 0) ∧
     ((of (0 : Fin 2) * of 1 * of 0) ^ 3 * (of 1 * of 0) *
       (of 0 * of 1 * of 0) ^ 2).IsStableOccurrence (of 0 * of 1 * of 0) 0 1 ∧
     ((of (0 : Fin 2) * of 1 * of 0) ^ 3 * (of 1 * of 0) *

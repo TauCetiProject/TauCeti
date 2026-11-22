@@ -39,7 +39,6 @@ public section
 
 open scoped commutatorElement
 
-open Monoid
 
 namespace TauCeti.LimitGroup
 

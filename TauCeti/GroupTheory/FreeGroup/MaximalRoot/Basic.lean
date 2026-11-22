@@ -24,7 +24,7 @@ The results hold for every group with `IsFreeGroup`, in particular for `FreeGrou
 
 Conjugation and inversion transport maximal roots: `(g * r * g⁻¹) ^ k = g * x * g⁻¹` and
 `r⁻¹ ^ k = x⁻¹`, and neither operation creates or destroys proper powers
-(`Monoid.isProperPower_conj_iff`, `Monoid.isProperPower_inv`), so by uniqueness the maximal
+(`TauCeti.isProperPower_conj_iff`, `TauCeti.isProperPower_inv`), so by uniqueness the maximal
 roots of `g * x * g⁻¹` and `x⁻¹` are `g * r * g⁻¹` and `r⁻¹`, with the same exponent. For
 `m ≠ 0`, the maximal root of `x ^ m` is `r`, with exponent `m * k`.
 
@@ -61,7 +61,7 @@ torsion-freeness of free groups pins down the exponents. -/
 
 public section
 
-open Monoid Subgroup
+open TauCeti Subgroup
 
 namespace IsFreeGroup
 

@@ -111,7 +111,7 @@ every entry of a tuple and every commutator of consecutive entries nontrivial.
 
 public section
 
-open Group Monoid
+open Group
 open scoped commutatorElement
 
 universe u v

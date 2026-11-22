@@ -13,19 +13,19 @@ public import Mathlib.Order.SuccPred.Nat
 
 A proper power is a power with a natural exponent at least two. In particular the identity is
 a proper power; the predicate makes no exception for it, so an element that is not a proper
-power is nontrivial. Homomorphisms preserve proper powers, and conjugation by a unit preserves
+power is nontrivial. Multiplicative maps preserve proper powers, and conjugation by a unit preserves
 and reflects them (`IsConj.isProperPower_iff`).
 
 An element whose root exponents are bounded has a maximal-root decomposition: a nonzero
 exponent and a root that is not a proper power, of greatest exponent
-(`Monoid.exists_maximalRoot_of_bddAbove`).
+(`TauCeti.exists_maximalRoot_of_bddAbove`).
 
 The results on cyclic subgroups and centralizers are in `TauCeti.GroupTheory.ProperPower`.
 -/
 
 public section
 
-namespace Monoid
+namespace TauCeti
 
 section Monoid
 
@@ -42,11 +42,18 @@ theorem isProperPower_iff {x : M} :
 
 namespace IsProperPower
 
-/-- Homomorphisms preserve proper powers. -/
-theorem map {N F : Type*} [Monoid N] [FunLike F M N] [MonoidHomClass F M N] (f : F) {x : M}
+/-- Multiplicative maps preserve proper powers. They need not preserve the identity, since the
+exponent of a proper power is positive. -/
+theorem map {N F : Type*} [Monoid N] [FunLike F M N] [MulHomClass F M N] (f : F) {x : M}
     (hx : IsProperPower x) : IsProperPower (f x) := by
   obtain ⟨y, n, hn, rfl⟩ := hx
-  exact ⟨f y, n, hn, by simp⟩
+  -- `f` preserves every positive power, by induction from the exponent `1`.
+  have key (m : ℕ) : f (y ^ (m + 1)) = f y ^ (m + 1) := by
+    induction m with
+    | zero => simp
+    | succ m ih => rw [pow_succ, map_mul, ih, ← pow_succ]
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  exact ⟨f y, m + 1, hn, key m⟩
 
 /-- The identity is a proper power in every monoid. -/
 @[simp] theorem one : IsProperPower (1 : M) :=
@@ -55,7 +62,7 @@ theorem map {N F : Type*} [Monoid N] [FunLike F M N] [MonoidHomClass F M N] (f :
 end IsProperPower
 
 /-- Every natural power with exponent at least two is a proper power. -/
-theorem isProperPower_pow (y : M) {n : ℕ} (hn : 2 ≤ n) : IsProperPower (y ^ n) :=
+@[simp] theorem isProperPower_pow (y : M) {n : ℕ} (hn : 2 ≤ n) : IsProperPower (y ^ n) :=
   ⟨y, n, hn, rfl⟩
 
 /-- An element that is not a proper power is not the identity. -/
@@ -94,7 +101,8 @@ variable {G : Type*} [DivisionMonoid G]
   exact ⟨fun h => inv_inv x ▸ key _ h, key x⟩
 
 /-- An integer power with absolute exponent at least two is a proper power. -/
-theorem isProperPower_zpow (y : G) {n : ℤ} (hn : 2 ≤ n.natAbs) : IsProperPower (y ^ n) := by
+@[simp] theorem isProperPower_zpow (y : G) {n : ℤ} (hn : 2 ≤ n.natAbs) :
+    IsProperPower (y ^ n) := by
   -- `y ^ n` is `y ^ n.natAbs` or its inverse, and `isProperPower_inv` handles the inverse.
   obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg n <;>
     simpa using isProperPower_pow y (n := m) (by simpa using hn)
@@ -109,18 +117,18 @@ theorem natAbs_eq_one_of_not_isProperPower_zpow {y : G} {n : ℤ}
 
 end DivisionMonoid
 
-end Monoid
+end TauCeti
 
 namespace MulEquiv
 
 /-- A multiplicative equivalence preserves and reflects proper powers. -/
 @[simp] theorem isProperPower_map_iff {M N : Type*} [Monoid M] [Monoid N] (e : M ≃* N) {x : M} :
-    Monoid.IsProperPower (e x) ↔ Monoid.IsProperPower x :=
+    TauCeti.IsProperPower (e x) ↔ TauCeti.IsProperPower x :=
   ⟨fun h => by simpa using h.map e.symm, .map e⟩
 
 end MulEquiv
 
-open Monoid in
+open TauCeti in
 /-- Conjugation by a unit preserves and reflects proper powers. -/
 theorem IsConj.isProperPower_iff {M : Type*} [Monoid M] {x y : M} (h : IsConj x y) :
     IsProperPower x ↔ IsProperPower y := by
@@ -128,16 +136,14 @@ theorem IsConj.isProperPower_iff {M : Type*} [Monoid M] {x y : M} (h : IsConj x 
   have key {x y : M} (h : IsConj x y) : IsProperPower x → IsProperPower y := by
     rintro ⟨r, n, hn, rfl⟩
     obtain ⟨c, hc⟩ := h
-    have hr : SemiconjBy (c : M) r (c * r * ↑c⁻¹) := by
-      simp [SemiconjBy, mul_assoc]
-    exact ⟨_, n, hn, (Units.mul_left_inj c).1 (hc.eq.symm.trans (hr.pow_right n).eq)⟩
+    exact ⟨c * r * ↑c⁻¹, n, hn, by rw [Units.conj_pow, hc.eq, Units.mul_inv_cancel_right]⟩
   exact ⟨key h, key h.symm⟩
 
-namespace Monoid
+namespace TauCeti
 
 /-- Conjugation preserves and reflects proper powers. -/
 @[simp] theorem isProperPower_conj_iff {G : Type*} [Group G] (g x : G) :
     IsProperPower (g * x * g⁻¹) ↔ IsProperPower x :=
   (isConj_iff.2 ⟨g, rfl⟩).isProperPower_iff.symm
 
-end Monoid
+end TauCeti
