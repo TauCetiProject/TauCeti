@@ -470,7 +470,7 @@ theorem morphismDifferential_submatrix {p' : X' → Prop} [DecidablePred p']
     fun x y hxy => ⟨⟨y, by_contra fun hy => hxy (hp x y x.property hy)⟩, rfl⟩
   rw [morphismDifferential_apply, morphismDifferential_apply, hcoeff, hcoeff', ← hmul', ← hmul,
     ← Matrix.submatrix_map]
-  rfl
+  simp only [Matrix.submatrix_add, Pi.add_apply]
 
 end Restrict
 

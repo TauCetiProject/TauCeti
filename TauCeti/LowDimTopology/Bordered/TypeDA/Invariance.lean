@@ -32,7 +32,7 @@ idempotents (`TauCeti.TypeDAStructure.boxTensorTypeD`) is invariant under homoto
 * **`P ⊠ id = id`.** For a strictly unital bimodule, the only path contributing to `P ⊠ id` is the
   single step through the identity morphism `id x x = ι (idem x)`, so `P ⊠ id` is the diagonal
   matrix of the idempotents `ι (idem y)` on the generators `(y, x)` with `idemA y = idem x`, and
-  zero on the others (`TauCeti.TypeDAStructure.IsStrictlyUnital.boxMorphism_idMorphism`). No
+  zero on the others (`TauCeti.TypeDAStructure.IsStrictlyUnital.boxMorphism_idMorphism_apply`). No
   boundedness is needed.
 * **Restriction to `P ⊠_I N`.** For a morphism `F`, the morphism `P ⊠ F` never leads to a generator
   `(y', x')` with `idemA y' ≠ idem x'`: the last entry along each path ends at `x'`, and right
@@ -67,7 +67,7 @@ idempotents (`TauCeti.TypeDAStructure.boxTensorTypeD`) is invariant under homoto
 
 ## Main results
 
-* `TauCeti.TypeDAStructure.IsStrictlyUnital.boxMorphism_idMorphism` and
+* `TauCeti.TypeDAStructure.IsStrictlyUnital.boxMorphism_idMorphism_apply` and
   `TauCeti.TypeDAStructure.IsStrictlyUnital.boxTensorMorphism_idMorphism`: `P ⊠ id = id`.
 * `TauCeti.TypeDAStructure.boxMorphism_eq_zero_of_isRightIdemCompatible`: `P ⊠ F` does not lead to
   generators with mismatched idempotents.
@@ -113,7 +113,7 @@ variable {P} [DecidableEq Y] [DecidableEq T] {idemA : Y → T}
 `(y', x')` is `ιB (idem y)` when the two generators agree and `idemA y = idem x`, and `0`
 otherwise: every path through the identity morphism `id x x = ιA (idem x)` carries an idempotent
 input, so only the single step `δ¹₂(y, ιA (idem x))` survives. -/
-theorem IsStrictlyUnital.boxMorphism_idMorphism (hPu : P.IsStrictlyUnital ιA idemA)
+theorem IsStrictlyUnital.boxMorphism_idMorphism_apply (hPu : P.IsStrictlyUnital ιA idemA)
     (N : TypeDStructure dA ιA X) (p q : Y × X) :
     P.boxMorphism N N N.idMorphism p q =
       if p = q ∧ idemA p.1 = N.idem p.2 then ιB (P.idem p.1) else 0 := by
@@ -288,7 +288,7 @@ theorem IsStrictlyUnital.boxTensorMorphism_idMorphism [DecidableEq Y]
     P.boxTensorMorphism idemA N N N.idMorphism =
       (P.boxTensorTypeD N hP hιA hdB hN).idMorphism := by
   ext p q
-  rw [boxTensorMorphism_apply, hPu.boxMorphism_idMorphism, TypeDStructure.idMorphism_apply,
+  rw [boxTensorMorphism_apply, hPu.boxMorphism_idMorphism_apply, TypeDStructure.idMorphism_apply,
     boxTensorTypeD_idem]
   by_cases hpq : p = q
   · rw [ite_eq_left ⟨congrArg Subtype.val hpq, p.property⟩, ite_eq_left hpq]
