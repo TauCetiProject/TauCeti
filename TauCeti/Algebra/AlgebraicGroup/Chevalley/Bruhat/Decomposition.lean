@@ -12,8 +12,6 @@ public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 import TauCeti.Algebra.Group.Subgroup.Map
-import TauCeti.LinearAlgebra.RootSystem.Inversions.Exchange
-import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 
 /-!
 # Steinberg's sharp Bruhat normal form for a Chevalley datum

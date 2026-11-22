@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem
 public import TauCeti.GroupTheory.TitsSystem.Bruhat.Length
 import TauCeti.GroupTheory.DoubleCoset.Map
-import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # Bruhat cells and the Bruhat decomposition of a Chevalley datum

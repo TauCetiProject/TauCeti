@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
 import TauCeti.FieldTheory.IsAlgClosed.Units
-import TauCeti.LinearAlgebra.Basis.DiagonalTorus.CharacterMap
 
 /-!
 # Injectivity of root subgroup parametrizations over fields
@@ -18,8 +17,8 @@ the character lattice is needed.
 
 The proof passes to an algebraic closure, uses the nonvanishing of the coordinate root
 `D.coordinateRoot γ` (recovered from `ChevalleyDatum.sum_coordinateRoot_smul` and
-`RootPairing.ne_zero`) to extend a nonzero root parameter to a torus character via
-`TauCeti.torusPointMap_surjective_of_injective`, and conjugates by that torus point to reach the
+`RootPairing.ne_zero`) to realize a nonzero root parameter as a torus character via
+`TauCeti.torusCharacter_surjective`, and conjugates by that torus point to reach the
 nontriviality theorem `ChevalleyDatum.rootSubgroupPoints_ofAdd_one_ne_one`.
 
 ## Main results
@@ -65,14 +64,8 @@ theorem rootSubgroupPoints_injective (k : Type v) [Field k] (γ : Fin t.numRoots
     exact (t.simplyConnectedRootDatum ht).ne_zero γ hsum.symm
   let ι := algebraMap k (AlgebraicClosure k)
   let c : (AlgebraicClosure k)ˣ := Units.mk0 (ι (Multiplicative.toAdd u)) (by simpa [ι] using ha)
-  let φ : (Unit → ℤ) →ₗ[ℤ] (Fin t.rank → ℤ) :=
-    LinearMap.smulRight (LinearMap.proj ()) (D.coordinateRoot γ)
-  have hφ : Function.Injective φ := fun x y h => funext fun () =>
-    smul_left_injective ℤ hcoord (by simpa [φ] using h)
-  obtain ⟨s, hs⟩ := torusPointMap_surjective_of_injective (R := AlgebraicClosure k) hφ fun _ => c⁻¹
-  have hchar : torusCharacter s (D.coordinateRoot γ) = c⁻¹ := by
-    have h := congrFun hs ()
-    simpa [φ, torusPointMap_apply] using h
+  obtain ⟨s, hchar⟩ := torusCharacter_surjective (R := AlgebraicClosure k) hcoord c⁻¹
+  dsimp only at hchar
   have hmap : D.rootSubgroupPoints γ (AlgebraicClosure k)
       (Multiplicative.ofAdd (ι (Multiplicative.toAdd u))) = 1 := by
     have h := congrArg ((D.pointsPresentation k).map

@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
 public import TauCeti.LinearAlgebra.RootSystem.LongestElement
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # The root action of the Chevalley Weyl subgroup
