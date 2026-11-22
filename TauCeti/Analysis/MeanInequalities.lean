@@ -59,8 +59,6 @@ of a higher-order Sobolev space.
 * `Real.prod_rpow_add_prod_rpow_le_prod_add_rpow`: the weighted geometric mean is superadditive.
 * `Real.sq_add_sq_le_rpow_mul_rpow`: two interpolation bounds combine into one for the Euclidean
   norms of the pairs.
-* `Real.mul_rpow_mul_mul_rpow_of_add_eq_one`: the two-point weighted geometric mean is
-  positively homogeneous.
 * `Real.geom_mean_le_arith_mean2_weighted_div_mul`,
   `Real.geom_mean_lt_arith_mean2_weighted_div_mul`: two-point weighted AM-GM after normalizing
   by positive scalars, with the strict form.
@@ -68,8 +66,6 @@ of a higher-order Sobolev space.
   sums of coordinate pairs.
 * `Real.le_div_add_rpow_mul_of_le_add_mul_rpow_mul_rpow`: absorption of a power `M^θ`, `θ < 1`,
   in a bound `M ≤ A + B M^θ N^(1 - θ)`.
-* `Real.pow_mul_le_rpow_mul_rpow`: `s^(a + b) u ≤ M` gives
-  `s^a u ≤ M^(a / (a + b)) u^(b / (a + b))`.
 * `ENNReal.geom_mean_le_arith_mean2_weighted_ofReal`: two-point weighted AM-GM in `ℝ≥0∞` with
   the real weights `1 - θ` and `θ`.
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
@@ -154,13 +150,6 @@ theorem rpow_one_sub_mul_rpow_eq_div_mul {A B a b θ : ℝ} (ha : 0 < a) (hb : 0
   have := (rpow_pos_of_pos hb θ).ne'
   field_simp
 
-/-- **Homogeneity of the two-point weighted geometric mean.** For weights with `a + b = 1` and
-`t, x, y ≥ 0`, `(t x) ^ a (t y) ^ b = t (x ^ a y ^ b)`. -/
-theorem mul_rpow_mul_mul_rpow_of_add_eq_one {t x y a b : ℝ} (ht : 0 ≤ t) (hx : 0 ≤ x)
-    (hy : 0 ≤ y) (hab : a + b = 1) : (t * x) ^ a * (t * y) ^ b = t * (x ^ a * y ^ b) := by
-  rw [mul_rpow ht hx, mul_rpow ht hy, mul_mul_mul_comm,
-    ← rpow_add' ht (by rw [hab]; exact one_ne_zero), hab, rpow_one]
-
 /-- **Normalized weighted AM-GM.** For positive normalizers `a` and `b`, the weighted geometric
 mean of `A` and `B` is at most the weighted arithmetic mean of `A / a` and `B / b` times the
 weighted geometric mean of `a` and `b`. -/
@@ -211,23 +200,6 @@ theorem le_div_add_rpow_mul_of_le_add_mul_rpow_mul_rpow {M A B N θ : ℝ} (hθ0
       _ ≤ _ := by gcongr
   rw [div_add' _ _ _ (by linarith), le_div_iff₀ (by linarith)]
   nlinarith
-
-/-- If `s^(a + b) u ≤ M` with `s, u ≥ 0` and `b > 0`, then
-`s^a u ≤ M^(a / (a + b)) u^(b / (a + b))`: split `s^a u` as
-`(s^(a + b) u)^(a / (a + b)) u^(b / (a + b))`. -/
-theorem pow_mul_le_rpow_mul_rpow {s u M : ℝ} {a b : ℕ} (hb : 0 < b) (hs : 0 ≤ s) (hu : 0 ≤ u)
-    (hM : s ^ (a + b) * u ≤ M) :
-    s ^ a * u ≤ M ^ ((a : ℝ) / (a + b)) * u ^ ((b : ℝ) / (a + b)) := by
-  have hsplit : s ^ a * u = (s ^ (a + b) * u) ^ ((a : ℝ) / (a + b)) * u ^ ((b : ℝ) / (a + b)) := by
-    rw [mul_rpow (by positivity) hu, ← rpow_natCast s (a + b), ← rpow_mul hs,
-      mul_assoc, ← rpow_add' hu (by field_simp; positivity)]
-    push_cast
-    have hmul : ((a : ℝ) + b) * (a / (a + b)) = a := by field_simp
-    have hsum : (a : ℝ) / (a + b) + b / (a + b) = 1 := by field_simp
-    rw [hmul, hsum, rpow_one, rpow_natCast]
-  rw [hsplit]
-  exact mul_le_mul_of_nonneg_right (rpow_le_rpow (by positivity) hM (by positivity))
-    (by positivity)
 
 end Real
 
@@ -383,14 +355,10 @@ theorem Lp_le_mul_Lp_of_nonneg {ι : Type*} (s : Finset ι) {f g : ι → ℝ} {
         · exact Finset.sum_nonneg fun i hi ↦ rpow_nonneg (hf i hi) p
         · exact hf i hi
         · exact hfg i hi
-    _ ≤ c * (∑ i ∈ s, g i ^ p) ^ (1 / p) := by
-        rcases hc.eq_or_lt with rfl | hc
-        · simp [zero_rpow hp.ne', zero_rpow (inv_ne_zero hp.ne')]
-        have hg (i : ι) (hi : i ∈ s) : 0 ≤ g i :=
-          nonneg_of_mul_nonneg_right (by simpa [mul_comm] using (hf i hi).trans (hfg i hi)) hc
-        rw [Finset.sum_congr rfl fun i hi ↦ mul_rpow hc.le (hg i hi), ← Finset.mul_sum,
-          mul_rpow (rpow_nonneg hc.le p) (Finset.sum_nonneg fun i hi ↦ rpow_nonneg (hg i hi) p),
-          ← rpow_mul hc.le, mul_one_div_cancel hp.ne', rpow_one]
+    _ = c * (∑ i ∈ s, g i ^ p) ^ (1 / p) := by
+        simp only [mul_rpow_of_nonneg_left hc]
+        rw [← Finset.mul_sum, mul_rpow_of_nonneg_left (rpow_nonneg hc p), one_div,
+          rpow_rpow_inv hc hp.ne']
 
 /-- The finite `ℓᵖ` expression of a constant `t ≥ 0` over `s` is `#s ^ (1 / p) * t`. -/
 theorem Lp_const_of_nonneg {ι : Type*} (s : Finset ι) {t p : ℝ} (ht : 0 ≤ t) (hp : p ≠ 0) :
