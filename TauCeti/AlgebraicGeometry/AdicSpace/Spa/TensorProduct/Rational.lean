@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.BaseChange
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.TensorProduct.Plus
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.CompletedRationalSubset
 public import TauCeti.RingTheory.Huber.TensorProduct.Rational.Pair
-import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
@@ -26,7 +25,7 @@ hypotheses):
    `completedTensor.inr_spaComap_preimage_rationalSubset`,
    `completedTensor.inl_preimage_inter_inr_preimage_rationalSubset`, and their `spaRationalFamily`
    counterparts): `p_B⁻¹(U)`, `p_C⁻¹(V)` and `p_B⁻¹(U) ∩ p_C⁻¹(V)` belong to `spaRationalFamily`,
-   with explicit presentation `completedTensor.interPresentation`.
+   with explicit presentation `TauCeti.Huber.CompletedTensor.interPresentation`.
 2. **Comparison of completed rational-localisation pairs** (`completedTensor.rationalRingEquiv`,
    `completedTensor.isHomeomorph_rationalRingEquiv`, `completedTensor.map_plus_rationalRingEquiv`,
    `completedTensor.rationalRingEquiv_toCompletion_tmul`): along `O(W) → O(U)` and `O(W) → O(V)`,
@@ -40,8 +39,6 @@ hypotheses):
 
 ## Main definitions
 
-* `TauCeti.Huber.Pair.completedTensor.interPresentation`: canonical presentation of
-  `p_B⁻¹(U) ∩ p_C⁻¹(V)` on `B ⊗̂_A C`.
 * `TauCeti.Huber.Pair.completedTensor.rationalRingEquiv`: topological ring equivalence
   `O(U) ⊗̂_{O(W)} O(V) ≃+* O_D(d)`.
 * `TauCeti.Huber.Pair.completedTensor.rationalSpaHomeomorph`: induced homeomorphism
@@ -147,31 +144,6 @@ theorem completedTensor.inr_spaComap_preimage_mem_spaRationalFamily
       simpa only [completedTensor.toRingHom_inr] using
         (CompletedTensor.isAdicHom_inr A B C).isOpen_map hJ) hV
 
-omit [IsHuberRing B] [IsHuberRing C] in
-open Classical in
-/-- When `T · B` and `T' · C` are open ideals, the intersection numerator finset
-`insert (inl s) (inl T) * insert (inr s') (inr T')` generates an open ideal in `B ⊗̂_A C`. -/
-theorem completedTensor.isOpen_span_inl_mul_inr {T : Finset B} {s : B} {T' : Finset C} {s' : C}
-    (hT : IsOpen (Ideal.span (T : Set B) : Set B))
-    (hT' : IsOpen (Ideal.span (T' : Set C) : Set C)) :
-    IsOpen (Ideal.span
-      ((insert (CompletedTensor.inl A B C s) (T.image (CompletedTensor.inl A B C)) *
-        insert (CompletedTensor.inr A B C s') (T'.image (CompletedTensor.inr A B C)) :
-          Finset (CompletedTensor A B C)) : Set (CompletedTensor A B C)) :
-      Set (CompletedTensor A B C)) := by
-  obtain ⟨PD⟩ := IsHuberRing.nonempty_pairOfDefinition (A := CompletedTensor A B C)
-  have hTl : IsOpen (Ideal.span ((T.image (CompletedTensor.inl A B C) :
-      Finset (CompletedTensor A B C)) : Set (CompletedTensor A B C)) :
-      Set (CompletedTensor A B C)) := by
-    rw [Finset.coe_image, ← Ideal.map_span]
-    exact (CompletedTensor.isAdicHom_inl A B C).isOpen_map hT
-  have hTr : IsOpen (Ideal.span ((T'.image (CompletedTensor.inr A B C) :
-      Finset (CompletedTensor A B C)) : Set (CompletedTensor A B C)) :
-      Set (CompletedTensor A B C)) := by
-    rw [Finset.coe_image, ← Ideal.map_span]
-    exact (CompletedTensor.isAdicHom_inr A B C).isOpen_map hT'
-  exact PD.isOpen_span_insert_mul_insert hTl hTr
-
 /-- Intersection of the preimages of two rational subsets with open numerator ideals belongs to
 `spaRationalFamily` of the completed tensor pair. -/
 theorem completedTensor.inl_preimage_inter_inr_preimage_mem_spaRationalFamily
@@ -183,40 +155,8 @@ theorem completedTensor.inl_preimage_inter_inr_preimage_mem_spaRationalFamily
           (Subtype.val ⁻¹' rationalSubset UC.plus T' s') ∈
       spaRationalFamily (UB.completedTensor A UC).plus := by
   classical
-  exact mem_spaRationalFamily_iff.mpr ⟨_, _, completedTensor.isOpen_span_inl_mul_inr hT hT',
+  exact mem_spaRationalFamily_iff.mpr ⟨_, _, CompletedTensor.isOpen_span_inl_mul_inr hT hT',
     completedTensor.inl_preimage_inter_inr_preimage_rationalSubset UB UC T s T' s'⟩
-
-open Classical in
-/-- **The canonical presentation of `p_B⁻¹(R(T/s)) ∩ p_C⁻¹(R(T'/s'))`** with respect to a pair of
-definition `PD` on `B ⊗̂_A C`, when `T · B` and `T' · C` are open ideals. -/
-noncomputable def completedTensor.interPresentation
-    (PD : PairOfDefinition (CompletedTensor A B C)) {T : Finset B} (s : B) {T' : Finset C} (s' : C)
-    (hT : IsOpen (Ideal.span (T : Set B) : Set B))
-    (hT' : IsOpen (Ideal.span (T' : Set C) : Set C)) : PD.Presentation where
-  num := insert (CompletedTensor.inl A B C s) (T.image (CompletedTensor.inl A B C)) *
-    insert (CompletedTensor.inr A B C s') (T'.image (CompletedTensor.inr A B C))
-  den := CompletedTensor.inl A B C s * CompletedTensor.inr A B C s'
-  hasDenominatorPower := CompletedTensor.hasDenominatorPower_inl_mul_inr PD hT hT' _
-
-omit [IsHuberRing B] [IsHuberRing C] in
-open Classical in
-/-- Numerator finset of `completedTensor.interPresentation`. -/
-@[simp] theorem completedTensor.interPresentation_num
-    (PD : PairOfDefinition (CompletedTensor A B C)) {T : Finset B} (s : B) {T' : Finset C} (s' : C)
-    (hT : IsOpen (Ideal.span (T : Set B) : Set B))
-    (hT' : IsOpen (Ideal.span (T' : Set C) : Set C)) :
-    (completedTensor.interPresentation PD s s' hT hT').num =
-      insert (CompletedTensor.inl A B C s) (T.image (CompletedTensor.inl A B C)) *
-        insert (CompletedTensor.inr A B C s') (T'.image (CompletedTensor.inr A B C)) := (rfl)
-
-omit [IsHuberRing B] [IsHuberRing C] in
-/-- Denominator of `completedTensor.interPresentation`. -/
-@[simp] theorem completedTensor.interPresentation_den
-    (PD : PairOfDefinition (CompletedTensor A B C)) {T : Finset B} (s : B) {T' : Finset C} (s' : C)
-    (hT : IsOpen (Ideal.span (T : Set B) : Set B))
-    (hT' : IsOpen (Ideal.span (T' : Set C) : Set C)) :
-    (completedTensor.interPresentation PD s s' hT hT').den =
-      CompletedTensor.inl A B C s * CompletedTensor.inr A B C s' := (rfl)
 
 /-- Degenerate case `U = Spa(B, B⁺)` (`T = {1}`, `s = 1`): intersecting with `p_B⁻¹(R({1}/1))`
 leaves `p_C⁻¹(V)` unchanged. -/
@@ -234,26 +174,6 @@ theorem completedTensor.inl_preimage_zero_inter_inr_preimage
       (completedTensor.inr A UB UC).spaComap ⁻¹'
         (Subtype.val ⁻¹' rationalSubset UC.plus T' s') = ∅ := by
   ext x; simp
-
-omit [IsHuberRing B] [IsHuberRing C] in
-open Classical in
-/-- Degenerate case `s = 0`: the completed rational localisation of `B ⊗̂_A C` at
-`completedTensor.interPresentation PD 0 s' hT hT'` is trivial (`Subsingleton`). -/
-theorem completedTensor.subsingleton_completion_interPresentation_zero
-    (PD : PairOfDefinition (CompletedTensor A B C)) {T : Finset B} {T' : Finset C} (s' : C)
-    (hT : IsOpen (Ideal.span (T : Set B) : Set B))
-    (hT' : IsOpen (Ideal.span (T' : Set C) : Set C)) :
-    let d₀ := completedTensor.interPresentation PD (T := T) 0 (T' := T') s' hT hT'
-    letI := locUniformSpace PD d₀.num d₀.den _ d₀.hasDenominatorPower
-    Subsingleton (Completion (Localization.Away d₀.den)) := by
-  intro d₀
-  let _ := locUniformSpace PD d₀.num d₀.den _ d₀.hasDenominatorPower
-  have hS : Subsingleton (Localization.Away d₀.den) :=
-    IsLocalization.subsingleton (M := Submonoid.powers d₀.den) ⟨1, by simp [d₀]⟩
-  exact subsingleton_of_zero_eq_one <| by
-    simpa only [Completion.coe_zero, Completion.coe_one] using
-      congrArg (fun x : Localization.Away d₀.den ↦ (x : Completion (Localization.Away d₀.den)))
-        (Subsingleton.elim 0 1)
 
 end Preimage
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.AdicHom.Localization
-public import TauCeti.RingTheory.Huber.LocalizationTopology.Pair
 public import TauCeti.RingTheory.Huber.TensorProduct.Pair
 
 /-!

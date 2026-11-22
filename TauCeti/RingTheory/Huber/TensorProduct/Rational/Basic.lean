@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.AdicHom.Localization
+public import TauCeti.RingTheory.Huber.LocalizationTopology.Presentation
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Restriction
 public import TauCeti.RingTheory.Huber.TensorProduct.Map
 
@@ -41,6 +42,8 @@ are compared; rings of integral elements are not.
 
 ## Main definitions
 
+* `TauCeti.Huber.CompletedTensor.interPresentation`: canonical presentation of the intersection
+  denominator `inl(s) · inr(s')` on `B ⊗̂_A C`.
 * `TauCeti.Huber.CompletedTensor.completionLocEquiv`: the ring isomorphism
   `B⟨T/s⟩ ⊗̂_A C⟨T'/s'⟩ ≃+* D⟨T''/(inl(s) · inr(s'))⟩`.
 
@@ -48,6 +51,10 @@ are compared; rings of integral elements are not.
 
 * `TauCeti.Huber.CompletedTensor.hasDenominatorPower_inl_mul_inr`: if `T · B` and `T' · C` are
   open, the localisation of `D` at `T''` and `inl(s) · inr(s')` is defined.
+* `TauCeti.Huber.CompletedTensor.isOpen_span_inl_mul_inr`: if `T · B` and `T' · C` are open,
+  the intersection numerator finset `T''` generates an open ideal in `D`.
+* `TauCeti.Huber.CompletedTensor.interPresentation_num` and `interPresentation_den`: numerator and
+  denominator of `interPresentation`.
 * `TauCeti.Huber.CompletedTensor.isHomeomorph_completionLocEquiv`: the isomorphism is a
   homeomorphism.
 * `TauCeti.Huber.CompletedTensor.completionLocEquiv_inl_toCompletionLoc` and `…_inr_…`: it sends
@@ -106,6 +113,56 @@ theorem hasDenominatorPower_inl_mul_inr (Q : PairOfDefinition (CompletedTensor A
     rw [Finset.mem_coe, mul_comm (inr A B C t')]
     exact Finset.mul_mem_mul (Finset.mem_insert_self _ _)
       (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ ht'))
+
+/-- When `T · B` and `T' · C` are open ideals, the intersection numerator finset
+`insert (inl s) (inl T) * insert (inr s') (inr T')` generates an open ideal in `B ⊗̂_A C`. -/
+theorem isOpen_span_inl_mul_inr {T : Finset B} {s : B} {T' : Finset C} {s' : C}
+    (hT : IsOpen (Ideal.span (T : Set B) : Set B))
+    (hT' : IsOpen (Ideal.span (T' : Set C) : Set C)) :
+    IsOpen (Ideal.span
+      ((insert (inl A B C s) (T.image (inl A B C)) *
+        insert (inr A B C s') (T'.image (inr A B C)) :
+          Finset (CompletedTensor A B C)) : Set (CompletedTensor A B C)) :
+      Set (CompletedTensor A B C)) := by
+  obtain ⟨PD⟩ := IsHuberRing.nonempty_pairOfDefinition (A := CompletedTensor A B C)
+  have hTl : IsOpen (Ideal.span ((T.image (inl A B C) :
+      Finset (CompletedTensor A B C)) : Set (CompletedTensor A B C)) :
+      Set (CompletedTensor A B C)) := by
+    rw [Finset.coe_image, ← Ideal.map_span]
+    exact (isAdicHom_inl A B C).isOpen_map hT
+  have hTr : IsOpen (Ideal.span ((T'.image (inr A B C) :
+      Finset (CompletedTensor A B C)) : Set (CompletedTensor A B C)) :
+      Set (CompletedTensor A B C)) := by
+    rw [Finset.coe_image, ← Ideal.map_span]
+    exact (isAdicHom_inr A B C).isOpen_map hT'
+  convert PD.isOpen_span_insert_mul_insert hTl hTr
+
+/-- **The canonical presentation at denominator `inl(s) · inr(s')`** with respect to a pair of
+definition `PD` on `B ⊗̂_A C`, when `T · B` and `T' · C` are open ideals. -/
+noncomputable def interPresentation
+    (PD : PairOfDefinition (CompletedTensor A B C)) {T : Finset B} (s : B) {T' : Finset C} (s' : C)
+    (hT : IsOpen (Ideal.span (T : Set B) : Set B))
+    (hT' : IsOpen (Ideal.span (T' : Set C) : Set C)) : PD.Presentation where
+  num := insert (inl A B C s) (T.image (inl A B C)) *
+    insert (inr A B C s') (T'.image (inr A B C))
+  den := inl A B C s * inr A B C s'
+  hasDenominatorPower := hasDenominatorPower_inl_mul_inr PD hT hT' _
+
+/-- Numerator finset of `interPresentation`. -/
+@[simp] theorem interPresentation_num
+    (PD : PairOfDefinition (CompletedTensor A B C)) {T : Finset B} (s : B) {T' : Finset C} (s' : C)
+    (hT : IsOpen (Ideal.span (T : Set B) : Set B))
+    (hT' : IsOpen (Ideal.span (T' : Set C) : Set C)) :
+    (interPresentation PD s s' hT hT').num =
+      insert (inl A B C s) (T.image (inl A B C)) *
+        insert (inr A B C s') (T'.image (inr A B C)) := (rfl)
+
+/-- Denominator of `interPresentation`. -/
+@[simp] theorem interPresentation_den
+    (PD : PairOfDefinition (CompletedTensor A B C)) {T : Finset B} (s : B) {T' : Finset C} (s' : C)
+    (hT : IsOpen (Ideal.span (T : Set B) : Set B))
+    (hT' : IsOpen (Ideal.span (T' : Set C) : Set C)) :
+    (interPresentation PD s s' hT hT').den = inl A B C s * inr A B C s' := (rfl)
 
 variable (P : PairOfDefinition B) (T : Finset B) (s : B) (S : Type*) [CommRing S] [Algebra B S]
   [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)

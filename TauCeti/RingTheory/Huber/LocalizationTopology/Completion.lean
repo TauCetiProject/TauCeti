@@ -60,6 +60,8 @@ complete Hausdorff targets.
   denominator becomes a pseudouniformiser, so the completed localization is Tate.
 * `isTateRing_completion_locTopology_of_isTateRing`: over a Tate base the completed localization
   is Tate for every denominator.
+* `subsingleton_completion_locTopology_of_eq_zero`: when the denominator is zero, the completed
+  localization is trivial (`Subsingleton`).
 * `existsUnique_continuous_ringHom_completion_locTopology_of_isBounded_submonoidClosure`: the
   universal property, for complete Hausdorff targets and an arbitrary numerator set.
 * `existsUnique_continuous_ringHom_completion_locTopology`: its form for a finite numerator set,
@@ -592,6 +594,22 @@ theorem isTateRing_completion_locTopology_of_isTateRing [IsTopologicalRing A] [I
   have _ := isHuberRing_completion_locTopology P T s S hden
   -- the structure map is continuous, so `IsTateRing.of_continuous` carries the pseudouniformiser
   exact IsTateRing.of_continuous (A := A) (continuous_toCompletionLoc P T s S hden)
+
+/-- If the denominator `s` is zero, the completed rational localisation `A⟨T/s⟩` is trivial
+(`Subsingleton`). -/
+theorem subsingleton_completion_locTopology_of_eq_zero [IsTopologicalRing A]
+    (P : PairOfDefinition A) (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+    [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) (hs : s = 0) :
+    letI := locUniformSpace P T s S hden
+    Subsingleton (UniformSpace.Completion S) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ : Subsingleton S :=
+    IsLocalization.subsingleton (M := Submonoid.powers s) ⟨1, by simp [hs]⟩
+  exact subsingleton_of_zero_eq_one <| by
+    simpa only [UniformSpace.Completion.coe_zero, UniformSpace.Completion.coe_one] using
+      congrArg (fun x : S ↦ (x : UniformSpace.Completion S)) (Subsingleton.elim 0 1)
 
 /-- **Maps out of `A⟨T/s⟩` are determined on `A`.** Two continuous ring homomorphisms into a
 semiring carrying a Hausdorff topology that agree after composing with the structure map

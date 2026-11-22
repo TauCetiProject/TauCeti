@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Huber.LocalizationTopology.Pair
 public import TauCeti.RingTheory.Huber.TensorProduct.Pushout
 public import TauCeti.RingTheory.Huber.TensorProduct.Rational.Base
 public import TauCeti.RingTheory.Huber.TensorProduct.Rational.Basic
