@@ -79,11 +79,11 @@ theorem taylorPolynomial_mem_polynomialsDegLE (m : ℕ) (u : EuclideanSpace ℝ 
     (y : EuclideanSpace ℝ ι) :
     taylorPolynomial ℝ m u y ∈ polynomialsDegLE ι m := by
   have h : taylorPolynomial ℝ m u y = fun x ↦
-      (finiteJetSeries m (fun i ↦ iteratedFDeriv ℝ i.val u y)).partialSum (m + 1) (x - y) := by
-    ext x
-    rw [taylorPolynomial_eq_finiteJetPolynomial, finiteJetPolynomial_apply,
-      FormalMultilinearSeries.partialSum, ← Fin.sum_univ_eq_sum_range]
-    simp
+      (finiteJetSeries m (fun i ↦ iteratedFDeriv ℝ i.val u y)).partialSum (m + 1) (x - y) :=
+    funext fun x ↦ by
+      rw [taylorPolynomial_eq_finiteJetPolynomial]
+      exact (finiteJetPolynomial_hasFiniteFPowerSeriesOnBall m
+        (fun i ↦ iteratedFDeriv ℝ i.val u y) y).eq_partialSum' x (by simp) (m + 1) le_rfl
   rw [h]
   simpa using comp_sub_mem_polynomialsDegLE y
     ((finiteJetSeries m (fun i ↦ iteratedFDeriv ℝ i.val u y)).partialSum_mem_polynomialsDegLE

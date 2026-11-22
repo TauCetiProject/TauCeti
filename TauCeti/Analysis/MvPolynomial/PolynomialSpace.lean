@@ -295,8 +295,9 @@ theorem comp_affineMap_mem_polynomialsDegLE {κ : Type*} [Finite κ] {m : ℕ}
   simp only [Function.comp_apply, polynomialEvalₗ_apply, ← aeval_eq_eval, comp_aeval_apply]
   congr 1; ext i
   have hx : F x = F 0 + ∑ j : κ, x j • F.linear (b j) := by
-    conv_lhs => rw [← add_zero x, ← vadd_eq_add, AffineMap.map_vadd, vadd_eq_add, add_comm,
-      ← b.sum_repr x, map_sum]
+    rw [congrFun F.decomp x, Pi.add_apply, add_comm]
+    congr 1
+    conv_lhs => rw [← b.sum_repr x, map_sum]
     simp [b]
   simp [g, hx, mul_comm]
 
