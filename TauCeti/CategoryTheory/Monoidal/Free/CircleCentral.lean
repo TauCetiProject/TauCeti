@@ -21,6 +21,9 @@ Every self-duality whose circle is central at its underlying object gives a stro
 functor from this quotient, unique up to a monoidal natural isomorphism compatible with the
 chosen identification of the generator. The target is an arbitrary monoidal category: it
 need not be braided, linear, or strict, and centrality at its other objects is not required.
+Conversely, centrality of the circle at `V` is necessary: a strong monoidal functor sending a
+self-duality with central circle to the self-duality of `V` makes the circle of `V` central at
+`V` (`TauCeti.SendsSelfDuality.circlesCommuteAt`).
 
 The construction uses `TauCeti.FreeSelfDualityCat` and the monoidal quotient machinery;
 it does not identify the presented category with a combinatorial model of planar diagrams.
@@ -38,6 +41,16 @@ universe u v
 open CategoryTheory MonoidalCategory Functor.LaxMonoidal Functor.OplaxMonoidal
 
 namespace TauCeti
+
+/-- A strong monoidal functor sending a self-duality of `g` to one of `V` carries centrality of
+the closed circle at `g` to centrality of the closed circle at `V`. So centrality of the circle
+at `V` is necessary for `V` to be the image of a self-duality with central circle. -/
+theorem SendsSelfDuality.circlesCommuteAt {C : Type u} [Category.{v} C] [MonoidalCategory C]
+    {D : Type*} [Category* D] [MonoidalCategory D] {g : D} [ExactPairing g g] {F : D ⥤ C}
+    [F.Monoidal] {V : C} [ExactPairing V V] {e : F.obj g ≅ V} (h : SendsSelfDuality F V e)
+    (hg : CirclesCommuteAt (η_ g g ≫ ε_ g g) g) : CirclesCommuteAt (η_ V V ≫ ε_ V V) V := by
+  rw [← h.coevaluation_comp_evaluation]
+  exact ObjectProperty.prop_of_iso _ e (hg.map F)
 
 namespace CircleCentralSelfDualityCat
 
@@ -235,6 +248,15 @@ theorem lift_unique (G : CircleCentralSelfDualityCat ⥤ C) [G.Monoidal]
     simpa only [j, Iso.trans_hom, NatTrans.comp_app, Iso.symm_hom,
       CategoryTheory.Quotient.lift.isLift_inv, Category.comp_id, liftObjIso_inv,
       FreeSelfDualityCat.liftObjIso_inv] using heq
+
+/-- **Necessity of circle centrality**: if a strong monoidal functor out of
+`CircleCentralSelfDualityCat` sends the generating self-duality to that of `V`, then the closed
+circle of `V` is central at `V`. Together with `lift` and `lift_unique`, this characterizes the
+self-dualities that are images of the generating one. -/
+theorem circlesCommuteAt_of_sendsSelfDuality (G : CircleCentralSelfDualityCat ⥤ C) [G.Monoidal]
+    {e : G.obj generator ≅ V} (he : SendsSelfDuality G V e) :
+    CirclesCommuteAt (η_ V V ≫ ε_ V V) V :=
+  he.circlesCommuteAt circlesCommuteAt_generator
 
 end Lift
 
