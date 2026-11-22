@@ -92,14 +92,14 @@ end IntegralPoints
 
 /-- When `O → K` is injective, a point of the generic fiber is integral exactly when its values on
 `1 ⊗ a` lie in the image of `O` for every `a ∈ A`. -/
-theorem mem_integralPoints_iff {O K : Type*} [CommRing O] [CommRing K] [Algebra O K]
+theorem mem_integralPoints_iff {O K : Type*} [CommSemiring O] [CommSemiring K] [Algebra O K]
     [FaithfulSMul O K] (A : Type*) [Semiring A] [_root_.HopfAlgebra O A]
     (g : WithConv (K ⊗[O] A →ₐ[K] K)) :
-    g ∈ integralPoints O K A ↔ ∀ a : A, g (1 ⊗ₜ[O] a) ∈ (algebraMap O K).range := by
+    g ∈ integralPoints O K A ↔ ∀ a : A, g (1 ⊗ₜ[O] a) ∈ (algebraMap O K).rangeS := by
   rw [integralPoints_def, AlgHom.pointsBaseChange_def, MonoidHom.range_comp, Subgroup.mem_map_equiv,
     MonoidHom.mem_range, ← MonoidHom.mem_mrange,
     AlgHom.mem_mrange_mapValue_iff (FaithfulSMul.algebraMap_injective O K)]
-  simp only [AlgHom.baseChangePointsMulEquiv_symm_apply, AlgHom.mem_range, RingHom.mem_range,
+  simp only [AlgHom.baseChangePointsMulEquiv_symm_apply, AlgHom.mem_range, RingHom.mem_rangeS,
     Algebra.ofId_apply]
 
 variable {O K : Type u} [CommRing O] [CommRing K] [Algebra O K]
@@ -161,7 +161,7 @@ theorem mem_integralPoints_iff [FaithfulSMul O K] (g : WithConv (H →ₐ[K] K))
       g (FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.hom (1 ⊗ₜ[O] a)) ∈
         (algebraMap O K).range := by
   simp only [mem_integralPoints_iff_mapDomain, IntegralModel.mem_integralPoints_iff,
-    BialgHom.mapDomain_apply_apply]
+    BialgHom.mapDomain_apply_apply, RingHom.mem_rangeS, RingHom.mem_range]
 
 /-- A morphism of smooth models `𝒢' → 𝒢`, given by a Hopf map `O[𝒢] → O[𝒢']` of coordinate
 algebras over the identity of `H`. -/
