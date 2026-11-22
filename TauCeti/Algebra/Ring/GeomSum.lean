@@ -41,6 +41,8 @@ exactly when `x ^ d ≠ 1` for each of its indices `d`.
 * `TauCeti.prod_geom_sum_ne_zero_iff`: a product of `x`-integers is nonzero exactly when no index
   `d` has `x ^ d = 1`.
 * `TauCeti.geom_sum_range_mul`: `[m n]_x = [m]_x [n]_{x ^ m}` in any semiring.
+* `TauCeti.sq_geom_sum_dvd_geom_sum_range_mul_sub`: `[m]_x ^ 2` divides `[m n]_x - n [m]_x` in
+  any commutative ring.
 -/
 
 public section
@@ -144,5 +146,19 @@ theorem geom_sum_range_mul {R : Type*} [Semiring R] (x : R) (m n : ℕ) :
   | succ n ih =>
     rw [Nat.mul_add_one, sum_range_add, ih, sum_range_succ, mul_add, ← pow_mul, sum_mul _ _ (x ^ _)]
     simp only [add_comm (m * n), pow_add]
+
+/-- The `x`-integer `[m]_x` divides `[n]_{x ^ m} - n`, in any commutative ring: `x ^ m ≡ 1` modulo
+`[m]_x` because `[m]_x * (x - 1) = x ^ m - 1`. -/
+theorem geom_sum_dvd_geom_sum_pow_sub {R : Type*} [CommRing R] (x : R) (m n : ℕ) :
+    ∑ i ∈ range m, x ^ i ∣ ∑ j ∈ range n, (x ^ m) ^ j - n := by
+  have h : ∑ j ∈ range n, (x ^ m) ^ j - n = ∑ j ∈ range n, ((x ^ m) ^ j - 1) := by simp
+  rw [h]
+  exact dvd_sum fun j _ => (Dvd.intro _ (geom_sum_mul x m)).trans (sub_one_dvd_pow_sub_one _ j)
+
+/-- The `x`-integers satisfy `[m n]_x ≡ n [m]_x` modulo `[m]_x ^ 2`, in any commutative ring. -/
+theorem sq_geom_sum_dvd_geom_sum_range_mul_sub {R : Type*} [CommRing R] (x : R) (m n : ℕ) :
+    (∑ i ∈ range m, x ^ i) ^ 2 ∣ ∑ i ∈ range (m * n), x ^ i - n * ∑ i ∈ range m, x ^ i := by
+  rw [geom_sum_range_mul, sq, mul_comm (n : R), ← mul_sub]
+  exact mul_dvd_mul_left _ (geom_sum_dvd_geom_sum_pow_sub x m n)
 
 end TauCeti

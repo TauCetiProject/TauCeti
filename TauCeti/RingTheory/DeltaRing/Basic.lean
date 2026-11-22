@@ -158,6 +158,16 @@ theorem IsFrobeniusLift.mk_eq {f : A →+* A} (hf : IsFrobeniusLift p f) (x : A)
       Ideal.Quotient.mk (Ideal.span {(p : A)}) (x ^ p) :=
   (isFrobeniusLift_iff_mk_eq f).mp hf x
 
+/-- The `n`-th iterate of a Frobenius lift `f` satisfies `f^[n] x ≡ x ^ p ^ n` modulo `p`. -/
+theorem IsFrobeniusLift.mk_pow_apply {f : A →+* A} (hf : IsFrobeniusLift p f) (n : ℕ) (x : A) :
+    Ideal.Quotient.mk (Ideal.span {(p : A)}) ((f ^ n) x) =
+      Ideal.Quotient.mk (Ideal.span {(p : A)}) x ^ p ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ', RingHom.coe_mul, Function.comp_apply, hf.mk_eq, map_pow, ih, ← pow_mul,
+      pow_succ]
+
 /-- If `x` lies in an ideal `I`, so does `addCorrection p x y`: each of its monomials
 `x ^ i * y ^ (p - i)` has `0 < i`. -/
 theorem addCorrection_mem_of_mem_left {I : Ideal A} {x : A} (y : A) (hx : x ∈ I) :
