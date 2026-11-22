@@ -22,14 +22,15 @@ compact domain each of them attains a positive minimum.
 These facts apply, for example, to separating positive continuous functions in the proof of
 Pietsch domination.
 
-Now let `𝕜` be a linearly ordered semifield in which `a ≤ b` gives `b = a + c` for some `c`
-(`ExistsAddOfLE 𝕜`), such as `ℝ≥0` or any linearly ordered field, again with continuous addition
-and continuous multiplication by a constant. A linear functional `L` on `C(X, 𝕜)` that is bounded
-above on the uniformly positive functions is nonpositive on them, since they form a cone. It is
-then nonpositive on every nonnegative function `h`: if `0 < L h`, then a suitable nonnegative
-multiple of `h` plus the constant function `1` is uniformly positive and has positive value under
-`L`. In the real-valued proof of Pietsch domination this gives the sign of the functional produced
-by separating the uniformly positive functions from a cone: it is nonpositive on the nonnegative
+Now let `𝕜` be a linearly ordered semifield (`IsOrderedRing 𝕜`, so addition need not be strictly
+monotone) in which `a ≤ b` gives `b = a + c` for some `c` (`ExistsAddOfLE 𝕜`), such as `ℝ≥0`, any
+linearly ordered field, or `ℝ≥0` with `max` as addition, again with continuous addition and
+continuous multiplication by a constant. A linear functional `L` on `C(X, 𝕜)` with `L g < u` for
+every uniformly positive `g` is nonpositive on them, since they form a cone. It is then nonpositive
+on every nonnegative function `h`: if `0 < L h`, then a suitable nonnegative multiple of `h` plus
+the constant function `1` is uniformly positive and has positive value under `L`. In the
+real-valued proof of Pietsch domination this gives the sign of the functional produced by
+separating the uniformly positive functions from a cone: it is nonpositive on the nonnegative
 functions, so its negation is a positive functional.
 
 A continuous map from a compact space into a metric space (or normed additive group) stays at a
@@ -46,8 +47,9 @@ uniform positive distance from every point outside its range.
 * `ContinuousMap.exists_pos_le_norm_sub_of_notMem_range`: the normed-group form `δ ≤ ‖f x - y‖`.
 * `ContinuousMap.norm_evalCLM_le_one`, `ContinuousMap.norm_evalCLM`: point evaluation on `C(K, E)`
   for compact `K` has operator norm at most `1`, and exactly `1` when `E` has nontrivial topology.
-* `LinearMap.apply_nonpos_of_forall_uniformlyPositive_lt`: a linear functional on `C(X, 𝕜)` that is
-  bounded above on the uniformly positive functions is nonpositive on the nonnegative functions.
+* `LinearMap.apply_nonpos_of_forall_uniformlyPositive_lt`: a linear functional on `C(X, 𝕜)` that
+  stays strictly below some `u` on the uniformly positive functions is nonpositive on the
+  nonnegative functions.
 -/
 
 public section
@@ -133,37 +135,42 @@ end ContinuousMap
 
 namespace LinearMap
 
-/-- A linear functional on `C(X, 𝕜)` that is bounded above on the functions bounded below by a
+/-- A linear functional `L` on `C(X, 𝕜)` with `L g < u` for every function `g` bounded below by a
 positive constant is nonpositive on the nonnegative functions. Here `𝕜` is a linearly ordered
-semifield in which `a ≤ b` gives `b = a + c` for some `c` (`ExistsAddOfLE 𝕜`), such as `ℝ≥0` or any
-linearly ordered field, with a topology in which addition and multiplication by a constant are
+semifield (`IsOrderedRing 𝕜`, so addition need not be strictly monotone) in which `a ≤ b` gives
+`b = a + c` for some `c` (`ExistsAddOfLE 𝕜`), such as `ℝ≥0`, any linearly ordered field, or `ℝ≥0`
+with `max` as addition, with a topology in which addition and multiplication by a constant are
 continuous. -/
 theorem apply_nonpos_of_forall_uniformlyPositive_lt {𝕜 : Type*} [Semifield 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] [ExistsAddOfLE 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
+    [IsOrderedRing 𝕜] [ExistsAddOfLE 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
     [ContinuousConstSMul 𝕜 𝕜] (L : C(X, 𝕜) →ₗ[𝕜] 𝕜) {u : 𝕜}
     (hL : ∀ h ∈ {h : C(X, 𝕜) | ∃ δ > 0, ∀ x, δ ≤ h x}, L h < u) {h : C(X, 𝕜)} (hh : 0 ≤ h) :
     L h ≤ 0 := by
+  -- Multiplication by a positive element is strictly monotone in a linearly ordered semifield,
+  -- even when addition is not.
+  have := PosMulMono.toPosMulReflectLT (α := 𝕜)
+  have := PosMulReflectLT.toPosMulStrictMono 𝕜
   -- The uniformly positive functions form a cone, so `L` is nonpositive on them: if `L g > 0`,
-  -- then `t • g` with `t = (max u 0 + 1) / L g` is uniformly positive and
-  -- `L (t • g) = max u 0 + 1 > u`.
+  -- then `0 < L g < u`, so `t • g` with `t = u / L g` is uniformly positive and `L (t • g) = u`.
   have hL' (g : C(X, 𝕜)) (hg : g ∈ {h : C(X, 𝕜) | ∃ δ > 0, ∀ x, δ ≤ h x}) : L g ≤ 0 := by
-    obtain ⟨δ, hδ, hgδ⟩ := hg
     by_contra! hpos
-    have ht : 0 < (max u 0 + 1) / L g :=
-      div_pos (add_pos_of_nonneg_of_pos (le_max_right u 0) one_pos) hpos
-    have hlt := hL (((max u 0 + 1) / L g) • g) ⟨_, mul_pos ht hδ, fun x ↦ by
+    obtain ⟨δ, hδ, hgδ⟩ := hg
+    have ht : 0 < u / L g := div_pos (hpos.trans (hL g ⟨δ, hδ, hgδ⟩)) hpos
+    have hlt := hL ((u / L g) • g) ⟨_, mul_pos ht hδ, fun x ↦ by
       simpa using mul_le_mul_of_nonneg_left (hgδ x) ht.le⟩
     rw [map_smul, smul_eq_mul, div_mul_cancel₀ _ hpos.ne'] at hlt
-    exact (le_max_left u 0).not_gt ((lt_add_one _).trans hlt)
-  -- As `L 1 ≤ 0`, write `L 1 + c = 0` with `0 ≤ c`. If `0 < L h`, then `t • h + 1` with
-  -- `t = (c + 1) / L h` is uniformly positive and `L (t • h + 1) = c + 1 + L 1 = 1` is positive.
-  obtain ⟨c, hc0, hc⟩ := le_iff_exists_nonneg_add.1 (hL' 1 ⟨1, one_pos, fun _ ↦ le_rfl⟩)
+    exact lt_irrefl u hlt
+  -- As `L 1 ≤ 0 < 1`, write `1 = L 1 + s`. Then `0 ≤ s`, since `s < 0` would give `L 1 + s ≤ 0`.
+  -- If `0 < L h`, then `t • h + 1` with `t = s / L h` is uniformly positive and
+  -- `L (t • h + 1) = s + L 1 = 1` is positive.
+  have h1 := hL' 1 ⟨1, one_pos, fun _ ↦ le_rfl⟩
+  obtain ⟨s, hs⟩ := exists_add_of_le (h1.trans zero_le_one)
+  have hs0 : 0 ≤ s := le_of_not_gt fun hs0 ↦
+    (add_nonpos h1 hs0.le).not_gt (hs ▸ zero_lt_one)
   by_contra! hpos
-  have ht : 0 ≤ (c + 1) / L h := div_nonneg (add_nonneg hc0 zero_le_one) hpos.le
-  have hle := hL' (((c + 1) / L h) • h + 1) ⟨1, one_pos, fun x ↦
-    le_add_of_nonneg_left (mul_nonneg ht (hh x))⟩
-  rw [map_add, map_smul, smul_eq_mul, div_mul_cancel₀ _ hpos.ne', add_right_comm, add_comm c,
-    hc, zero_add] at hle
+  have hle := hL' ((s / L h) • h + 1) ⟨1, one_pos, fun x ↦
+    le_add_of_nonneg_left (mul_nonneg (div_nonneg hs0 hpos.le) (hh x))⟩
+  rw [map_add, map_smul, smul_eq_mul, div_mul_cancel₀ _ hpos.ne', add_comm, ← hs] at hle
   exact hle.not_gt one_pos
 
 end LinearMap
