@@ -234,12 +234,12 @@ private theorem fiber_count_of_ne [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(�
   refine ⟨?_, hbij.finite_iff_finite.mpr S.finite_toSet, hsum2.trans hcount'⟩
   -- The count is positive, so `S` is nonempty, and `hbij` carries a point of the fibre onto it.
   obtain ⟨z, hz⟩ : S.Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty]
+    rw [← Finset.ne_empty_iff_nonempty]
     rintro rfl
     rw [Finset.sum_empty] at hcount'
     exact hpos.ne' hcount'.symm
   obtain ⟨x', hx', -⟩ := hbij.2.2 (Finset.mem_coe.2 hz)
-  exact Set.nonempty_iff_ne_empty.1 ⟨x', hx'⟩
+  exact Set.ne_empty_iff_nonempty.2 ⟨x', hx'⟩
 
 /-- The chart form of `TauCeti.RiemannSurface.exists_nhds_localMultiplicity_fiber_sum`, read in
 arbitrary charts `e` at `x` and `e'` at `f x` of the maximal atlases, with the neighbourhood `U`
@@ -306,7 +306,7 @@ private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
     subst hcentral
     refine ⟨?_, ?_, ?_⟩
     · rw [hcenter]
-      exact Set.singleton_ne_empty x
+      exact (Set.singleton_nonempty x).ne_empty
     · rw [hcenter]
       exact Set.finite_singleton x
     · rw [hcenter, finsum_mem_eq_finite_toFinset_sum _ (Set.finite_singleton x)]

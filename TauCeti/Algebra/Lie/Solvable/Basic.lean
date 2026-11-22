@@ -51,6 +51,7 @@ whole algebra.
   solvable.
 * `LieIdeal.isSolvable_of_isSolvable_map`: solvability descends from the image together with the
   part of the ideal lying in the kernel.
+* `LieAlgebra.lie_mem_derivedSeries_one`: every bracket lies in the derived ideal.
 * `LieAlgebra.derivedAbelianOfIdeal_le`: Mathlib's abelian ideal `LieAlgebra.derivedAbelianOfIdeal`
   of an ideal (the last nonzero term of its derived series when the ideal is solvable, and `⊥`
   otherwise) lies inside the ideal.
@@ -63,8 +64,8 @@ whole algebra.
   the two readings are trivial, respectively solvable, together, and
   `LieIdeal.eq_bot_of_le_of_isSolvable`: **a solvable ideal inside an ideal with trivial radical
   is trivial**.
-* `LieAlgebra.hasTrivialRadical_of_equiv`: triviality of the radical transfers along an
-  isomorphism of Lie algebras.
+* `LieAlgebra.hasTrivialRadical_of_equiv` and `LieAlgebra.hasCentralRadical_of_equiv`: triviality
+  of the radical, and its equality with the centre, transfer along an isomorphism of Lie algebras.
 * `LieAlgebra.hasTrivialRadical_quotient_radical`: **the quotient of a Noetherian Lie algebra by
   its radical has trivial radical**, with `LieAlgebra.radical_le_of_hasTrivialRadical_quotient`
   and `LieAlgebra.hasTrivialRadical_quotient_iff`: the radical is the smallest ideal, and the
@@ -182,7 +183,7 @@ private theorem restrictIncl_injective (I J : LieIdeal R L) :
 
 private theorem restrictIncl_surjective {I J : LieIdeal R L} (h : J ≤ I) :
     Function.Surjective (restrictIncl I J) :=
-  fun x => ⟨⟨⟨(x : L), h x.2⟩, x.2⟩, Subtype.ext (I.incl.coe_lieIdealComap_apply J _)⟩
+  fun x => ⟨⟨⟨(x : L), h x.property⟩, x.property⟩, Subtype.ext (I.incl.coe_lieIdealComap_apply J _)⟩
 
 /-- Read inside an ideal, a solvable ideal stays solvable. -/
 instance isSolvable_restrict (I J : LieIdeal R L) [IsSolvable ↥J] :
@@ -222,6 +223,11 @@ namespace LieAlgebra
 
 variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
 
+/-- Every bracket lies in the derived ideal `⁅L, L⁆`, the first term of the derived series. -/
+theorem lie_mem_derivedSeries_one (x y : L) : ⁅x, y⁆ ∈ derivedSeries R L 1 := by
+  rw [derivedSeries_def, derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero]
+  exact LieSubmodule.lie_mem_lie (LieSubmodule.mem_top x) (LieSubmodule.mem_top y)
+
 /-- The ideal `derivedAbelianOfIdeal I` is contained in `I`. When `I` is solvable this is the last
 nonzero term of its derived series; otherwise it is `⊥`. -/
 theorem derivedAbelianOfIdeal_le (I : LieIdeal R L) : derivedAbelianOfIdeal I ≤ I := by
@@ -260,6 +266,26 @@ theorem hasTrivialRadical_of_equiv [HasTrivialRadical R L] (e : L ≃ₗ⁅R⁆ 
     have hker : (e.symm : L' →ₗ⁅R⁆ L).ker = ⊥ := (LieHom.ker_eq_bot _).mpr e.symm.injective
     rw [LieIdeal.map_eq_bot_iff, hker, le_bot_iff] at hbot
     exact hbot
+
+/-- **Reductivity transfers along an isomorphism of Lie algebras**: if the radical of `L` is its
+centre, then so is the radical of `L'`.
+
+No finiteness hypothesis is needed: neither Lie algebra has to be Noetherian or
+finite-dimensional. -/
+theorem hasCentralRadical_of_equiv [HasCentralRadical R L] (e : L ≃ₗ⁅R⁆ L') :
+    HasCentralRadical R L' :=
+  hasCentralRadical_of_radical_le R L' fun x hx => by
+    have hker : IsSolvable ↥(e.symm : L' →ₗ⁅R⁆ L).ker := by
+      rw [(LieHom.ker_eq_bot _).mpr e.symm.injective]
+      infer_instance
+    -- the inverse isomorphism carries the radical of `L'` onto the radical of `L`, its centre
+    have hx' : e.symm x ∈ center R L := by
+      rw [← radical_eq_center, ← LieIdeal.radical_map_eq _ e.symm.surjective hker]
+      exact LieIdeal.mem_map hx
+    rw [LieModule.mem_maxTrivSubmodule] at hx' ⊢
+    intro y
+    have h := congrArg e (hx' (e.symm y))
+    rwa [LieEquiv.map_lie, e.apply_symm_apply, e.apply_symm_apply, map_zero] at h
 
 variable (R L)
 

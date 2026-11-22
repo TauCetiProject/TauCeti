@@ -98,7 +98,7 @@ theorem mem_holomorphyRing_setOf_restrict_mem_iff_isIntegral (hF : IsFunctionFie
     simpa using hP' ⟨x, hx⟩
   · refine P'.mem_integers_of_isIntegral (fun r ↦ ?_) hint
     rw [IsScalarTower.algebraMap_apply ↥(holomorphyRing S) F F']
-    exact (Place.mem_integers_restrict_iff k F P' _).mp (mem_holomorphyRing_iff.mp r.2 _ hP')
+    exact (Place.mem_integers_restrict_iff k F P' _).mp (mem_holomorphyRing_iff.mp r.property _ hP')
 
 /-- **The integral closure of a holomorphy ring**, over a set of places: the holomorphy ring of
 the places of `F' / k'` lying over `S` is the integral closure of `𝒪_S` in `F'` (Stichtenoth,
@@ -156,7 +156,7 @@ of `S`, then `F → F'` restricts to a ring homomorphism `𝒪_S → 𝒪_{S'}`.
 noncomputable def holomorphyRingMap (hS : ∀ P' ∈ S', P'.restrict k F ∈ S) :
     holomorphyRing S →+* holomorphyRing S' :=
   ((algebraMap F F').comp (holomorphyRing S).val.toRingHom).codRestrict _ fun z ↦
-    algebraMap_mem_holomorphyRing hS z.2
+    algebraMap_mem_holomorphyRing hS z.property
 
 omit [Algebra.IsIntegral k k'] in
 @[simp]

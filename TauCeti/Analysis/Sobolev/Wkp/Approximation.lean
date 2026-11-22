@@ -50,10 +50,10 @@ theorem Wkp.tendsto_mollified_value (hp : p ≠ ∞) (hU : U ≤ Omega)
         simpa only [one_smul] using Measure.restrict_mono_set mu
           (subset_univ (U : Set E))) <|
         normedBumpLp hp (phi i) (mu.restrict (univ : Set E))
-          (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet (subset_univ _)
+          (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet (subset_univ _)
             (Wkp.value k u))) l (nhds (Wkp.value k (Wkp.restrictL hU k u))) := by
   rw [Wkp.value_restrictL]
-  exact tendsto_normedBumpLp_extendByZero_restrict hp Omega.isOpen.measurableSet
+  exact tendsto_normedBumpLp_extendByZero_restrict hp Omega.isOpen.nullMeasurableSet
     (SetLike.coe_subset_coe.mpr hU) hphi (Wkp.value k u)
 
 /-- Mollification of the zero extension of the highest derivative of
@@ -68,11 +68,11 @@ theorem Wkp.tendsto_mollified_iteratedGradient (hp : p ≠ ∞) (hU : U ≤ Omeg
         simpa only [one_smul] using Measure.restrict_mono_set mu
           (subset_univ (U : Set E))) <|
         normedBumpLp hp (phi i) (mu.restrict (univ : Set E))
-          (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet (subset_univ _)
+          (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet (subset_univ _)
             (Wkp.iteratedGradient k u))) l
       (nhds (Wkp.iteratedGradient k (Wkp.restrictL hU (k + 1) u))) := by
   rw [Wkp.iteratedGradient_restrictL]
-  exact tendsto_normedBumpLp_extendByZero_restrict hp Omega.isOpen.measurableSet
+  exact tendsto_normedBumpLp_extendByZero_restrict hp Omega.isOpen.nullMeasurableSet
     (SetLike.coe_subset_coe.mpr hU) hphi
     (Wkp.iteratedGradient k u)
 
