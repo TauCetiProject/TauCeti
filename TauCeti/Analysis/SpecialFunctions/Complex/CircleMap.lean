@@ -17,6 +17,8 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
 
 * `TauCeti.norm_circleMap_sub_center`: the circle of radius `R ≥ 0` about `c` has distance `R`
   from `c`.
+* `TauCeti.one_sub_mul_circleMap_ne_zero`: a scaled circle subtracted from `1` avoids zero
+  whenever its radius after scaling differs from `1`.
 * `TauCeti.circleMap_norm_arg`, `TauCeti.circleMap_norm_sub_arg_sub`: polar coordinates about
   `c`, so every point `w` is `circleMap c ‖w - c‖ (arg (w - c))`.
 * `TauCeti.hasDerivAt_circleMap_radius`: along the ray at angle `θ`, the radius derivative of
@@ -46,6 +48,14 @@ open scoped Real
 theorem norm_circleMap_sub_center (c : ℂ) {R : ℝ} (hR : 0 ≤ R) (θ : ℝ) :
     ‖circleMap c R θ - c‖ = R := by
   rw [circleMap_sub_center, norm_circleMap_zero, abs_of_nonneg hR]
+
+/-- Subtracting a point of the scaled circle `z * circleMap 0 ρ θ` from `1` gives a nonzero
+point whenever the scaled radius differs from `1`. -/
+theorem one_sub_mul_circleMap_ne_zero {z : ℂ} {ρ : ℝ} (hzρ : ‖z‖ * |ρ| ≠ 1) (θ : ℝ) :
+    1 - z * circleMap 0 ρ θ ≠ 0 := by
+  intro heq
+  have hn := congrArg norm (sub_eq_zero.mp heq)
+  exact hzρ (by simpa [norm_mul, norm_circleMap_zero] using hn.symm)
 
 /-- Polar coordinates about `c`: the point at radius `‖w‖` and angle `arg w` about `c` is
 `c + w`. -/
