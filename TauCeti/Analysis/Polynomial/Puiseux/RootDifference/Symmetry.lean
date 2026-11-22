@@ -45,10 +45,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
   {U : Set E} [SimplyConnectedSpace U] {F : E × ℂ → ℂ[X]} {d n a c : ℕ} {R R' : ℝ}
   {u v : E × ℂ → ℂ} {τ : E → E}
 
-omit [FiniteDimensional ℂ E] in
+omit [FiniteDimensional ℂ E] [SimplyConnectedSpace U] in
 /-- The conjugation symmetry of the punctured root branches is carried by a unique involutive
-permutation of the labels. -/
-private lemma existsUnique_involutive_perm_root_conj (hR' : 0 < R') (hn : n ≠ 0)
+permutation of the labels. A connected base suffices here. -/
+private lemma existsUnique_involutive_perm_root_conj [ConnectedSpace U] (hR' : 0 < R') (hn : n ≠ 0)
     (hR : R' ^ n ≤ R) (hu0 : ∀ b ∈ U ×ˢ ball 0 R, u b ≠ 0)
     (hlead : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), (F b).coeff d = b.2 ^ a * u b)
     (hτ : ContinuousOn τ U) (hτU : MapsTo τ U U) (hττ : ∀ x ∈ U, τ (τ x) = x)

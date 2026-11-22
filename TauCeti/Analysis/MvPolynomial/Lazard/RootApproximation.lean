@@ -8,14 +8,14 @@ module
 public import TauCeti.RingTheory.MvPolynomial.Lazard.Uniform
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
-public import Mathlib.Topology.MetricSpace.ProperSpace
 import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Approximation
 import Mathlib.Algebra.Polynomial.Bivariate
+import Mathlib.Topology.Algebra.Polynomial
 
 /-!
 # Approximating Lazard roots by roots of monomial deformations
 
-Every root of the nonzero Lazard evaluation at a base point is approximated by roots
+Every root of the Lazard evaluation at a base point is approximated by roots
 of ordinary fibers along an evaluator's monomial curve. Ordinary specialization at
 the center may be nullified. Divide out the common curve power using the polynomial
 Taylor expansion, then apply finite-root approximation to the resulting polynomial
@@ -39,10 +39,11 @@ namespace TauCeti
 
 /-- Every root of a Lazard evaluation is approached by ordinary roots along any monomial
 curve whose evaluator separates the removed base exponent. Nullified ordinary fibers
-at the center and degree drops in the divided deformation are allowed. -/
+at the center and degree drops in the divided deformation are allowed, and so is `p = 0`,
+where every fiber vanishes. -/
 theorem eventually_exists_isRoot_monomialCurve_norm_sub_lt
-    {K : Type*} [NormedField K] [IsAlgClosed K] [ProperSpace K] {n : ℕ}
-    (p : MvPolynomial (Fin n) K[X]) (hp : p ≠ 0) (a : Fin n → K)
+    {K : Type*} [NormedField K] [IsAlgClosed K] {n : ℕ}
+    (p : MvPolynomial (Fin n) K[X]) (a : Fin n → K)
     {V : Set (Fin n →₀ ℕ)} {c : Fin n → ℕ}
     (hv : p.lazardExponent (Polynomial.C ∘ a) ∈ V) (hc : IsLazardEvaluator V c)
     {z : K} (hz : (p.lazardEval (Polynomial.C ∘ a)).IsRoot z)
@@ -51,6 +52,8 @@ theorem eventually_exists_isRoot_monomialCurve_norm_sub_lt
       (MvPolynomial.eval (fun i ↦ Polynomial.C (a i + y ^ c i)) p).IsRoot w ∧
         ‖z - w‖ < ε := by
   classical
+  rcases eq_or_ne p 0 with rfl | hp
+  · exact .of_forall fun _ ↦ ⟨z, by simp, by simpa using hε⟩
   let α : Fin n → K[X] := Polynomial.C ∘ a
   obtain ⟨Q, hQ⟩ := p.exists_aeval_monomialCurve_eq_pow_mul
     (S := {α}) hv hc (fun b hb u hu ↦ by

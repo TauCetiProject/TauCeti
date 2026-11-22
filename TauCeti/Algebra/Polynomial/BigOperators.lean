@@ -198,7 +198,7 @@ theorem isRoot_C_mul_prod_X_sub_C_iff {R ι : Type*} [CommRing R] [NoZeroDivisor
   have : Nontrivial R := ⟨⟨l, 0, hl⟩⟩
   have := NoZeroDivisors.to_isDomain R
   rw [root_mul, iff_false_intro (not_isRoot_C _ z hl), false_or, isRoot_prod]
-  simp [sub_eq_zero, eq_comm]
+  simp only [root_X_sub_C]
 
 /-- **The polynomial form of `cᵢ = bᵢ + qᵢ + qᵢ₋₁`.**  If `c₀ = b₀ + q₀` and
 `cᵢ₊₁ = bᵢ₊₁ + qᵢ₊₁ + qᵢ` for `i < n`, then

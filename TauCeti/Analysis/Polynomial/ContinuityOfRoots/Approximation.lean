@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
-import TauCeti.Algebra.Polynomial.BigOperators
+public import Mathlib.Analysis.Normed.Field.Basic
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
+import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Multiset
+import Mathlib.Analysis.Normed.Field.Lemmas
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.Topology.Algebra.Polynomial.Root.Multiplicity
 
@@ -18,9 +20,10 @@ coefficient family with locally bounded degree. Nearby degrees may exceed the ce
 roots escaping to infinity do not affect the approximation of finite roots.
 
 Translate to a nonroot of the central polynomial and reflect at a fixed degree bound.
-The reflected leading coefficient stays nonzero, so the existing fixed-degree root
-matching theorem `Polynomial.eventually_exists_C_mul_prod_X_sub_C_norm_sub_lt` applies.
-Reciprocal coordinates then recover the finite roots.
+The reflected leading coefficient stays nonzero. Writing a nearby reflected polynomial as
+its leading coefficient times the product of `X - b` over its roots, its small value at
+the reflected central root forces one of those roots to be close. Reciprocal coordinates
+then recover the finite roots. No local compactness of the field is needed.
 This is useful for polynomial deformations whose limiting leading coefficient vanishes.
 
 ## References
@@ -39,7 +42,7 @@ namespace TauCeti
 of a continuous coefficient family with locally bounded degree. No constancy of degree or
 root multiplicity is required. -/
 theorem eventually_exists_isRoot_norm_sub_lt
-    {K B : Type*} [NormedField K] [IsAlgClosed K] [ProperSpace K] [TopologicalSpace B]
+    {K B : Type*} [NormedField K] [IsAlgClosed K] [TopologicalSpace B]
     {F : B → K[X]} {x₀ : B} {d : ℕ}
     (hF : ∀ i ≤ d, ContinuousAt (fun x ↦ (F x).coeff i) x₀)
     (hdeg : ∀ᶠ x in 𝓝 x₀, (F x).natDegree ≤ d) (hzero : F x₀ ≠ 0)
@@ -74,23 +77,29 @@ theorem eventually_exists_isRoot_norm_sub_lt
     apply hcont.eventually_lt continuousAt_const
     simpa [u, sub_add_cancel] using hε
   obtain ⟨δ, hδ, hδclose⟩ := Metric.eventually_nhds_iff.1 hclose
-  filter_upwards [eventually_exists_C_mul_prod_X_sub_C_norm_sub_lt
-    (fun i _ ↦ hGcoeff i) hGdeg hδ, hdeg] with x hx hxdeg
-  obtain ⟨a, b, ha, hb, hab⟩ := hx
-  have hGa : ∃ i, a i = u := by
-    have hlc : (G x₀).leadingCoeff ≠ 0 :=
-      leadingCoeff_ne_zero.mpr (ne_zero_of_coe_le_degree hGdeg.self_of_nhds.ge)
-    rw [ha] at hroot
-    obtain ⟨i, -, hi⟩ := (isRoot_C_mul_prod_X_sub_C_iff hlc _ a u).1 hroot
-    exact ⟨i, hi⟩
-  obtain ⟨i, hi⟩ := hGa
-  have hbi : b i ≠ 0 ∧ ‖z - ((b i)⁻¹ + τ)‖ < ε :=
-    hδclose (by simpa [dist_eq_norm, hi, norm_sub_rev] using hab i)
-  refine ⟨(b i)⁻¹ + τ, ?_, hbi.2⟩
-  have hbroot : (G x).eval (b i) = 0 := by
-    rw [hb, eval_mul, eval_C, eval_prod]
-    apply mul_eq_zero_of_right
-    exact Finset.prod_eq_zero (Finset.mem_univ i) (by simp)
-  exact (isRoot_reflect_taylor_iff hxdeg τ hbi.1).1 hbroot
+  -- Near `x₀`, `G x` is small at `u` compared with its leading coefficient.
+  have hδ' : 0 < min δ 1 := lt_min hδ one_pos
+  have hsmall : ∀ᶠ x in 𝓝 x₀, ‖(G x).eval u‖ < ‖(G x).coeff d‖ * min δ 1 ^ d := by
+    have hGd : ∀ᶠ x in 𝓝 x₀, (G x).natDegree ≤ d :=
+      hGdeg.mono fun x hx ↦ natDegree_le_of_degree_le hx.le
+    refine (continuousAt_eval (fun i _ ↦ hGcoeff i) hGd continuousAt_const).norm.eventually_lt
+      ((hGcoeff d).norm.mul continuousAt_const) ?_
+    rw [hroot.eq_zero, norm_zero, htop]
+    exact mul_pos (norm_pos_iff.2 hτ) (pow_pos hδ' d)
+  filter_upwards [hsmall, hGdeg, hdeg] with x hx hxGdeg hxdeg
+  -- So some root of `G x` lies within `δ` of `u`.
+  obtain ⟨b, hb, hub⟩ : ∃ b ∈ (G x).roots, ‖u - b‖ < min δ 1 := by
+    by_contra! h
+    have hnat : (G x).natDegree = d := natDegree_eq_of_degree_eq_some hxGdeg
+    have hprod : min δ 1 ^ d ≤ ((G x).roots.map fun b ↦ ‖u - b‖).prod :=
+      calc min δ 1 ^ d ≤ min δ 1 ^ Multiset.card (G x).roots :=
+            pow_le_pow_of_le_one hδ'.le (min_le_right _ _) (hnat ▸ card_roots' _)
+        _ = ((G x).roots.map fun _ ↦ min δ 1).prod := by simp
+        _ ≤ _ := Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ hδ'.le) h
+    rw [(IsAlgClosed.splits (G x)).eval_eq_prod_roots, norm_mul, Multiset.norm_prod_map,
+      leadingCoeff, hnat] at hx
+    exact hx.not_ge (by gcongr)
+  have hbu := hδclose (by rw [dist_eq_norm, norm_sub_rev]; exact hub.trans_le (min_le_left _ _))
+  exact ⟨b⁻¹ + τ, (isRoot_reflect_taylor_iff hxdeg τ hbu.1).1 (isRoot_of_mem_roots hb), hbu.2⟩
 
 end TauCeti
