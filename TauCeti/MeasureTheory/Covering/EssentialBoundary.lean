@@ -11,6 +11,8 @@ public import TauCeti.MeasureTheory.OuterMeasure.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Topology.Order.IntermediateValue
+import Mathlib.Analysis.Convex.Measure
+import TauCeti.Analysis.Normed.Module.Convex
 
 /-!
 # Densities, essential interior and essential boundary
@@ -46,6 +48,13 @@ fill a fixed positive proportion of arbitrarily small closed balls: the proporti
 continuously on the radius, so as it tends neither to `0` nor to `1` it takes intermediate values
 at arbitrarily small radii.
 
+For a convex set `s` with nonempty interior, every frontier point is a point of the essential
+boundary, so the essential boundary is exactly the topological frontier. Near a frontier point
+`x`, a ball in the interior of `s` shrinks homothetically towards `x`, so `s` fills a fixed
+proportion of every small ball around `x`; reflecting that ball through `x` gives a ball of the
+same size in the complement, since the midpoint of an interior point and a point of `s` is
+interior.
+
 ## Main declarations
 
 * `TauCeti.HasDensityAt μ s x d`: the set `s` has density `d` at `x` with respect to `μ`.
@@ -64,6 +73,8 @@ at arbitrarily small radii.
 * `TauCeti.exists_pos_frequently_ofReal_mul_measure_closedBall_le`: at a point of the essential
   boundary, `s` and its complement both fill a proportion at least `a > 0` of arbitrarily small
   closed balls.
+* `Convex.frontier_subset_essentialBoundary` and `Convex.essentialBoundary_eq_frontier`: for a
+  convex set with nonempty interior, the essential boundary is the frontier.
 
 ## References
 
@@ -589,6 +600,103 @@ theorem exists_pos_frequently_ofReal_mul_measure_closedBall_le (hx : x ∈ essen
     have := min_le_right c (1 - d)
     have := (hD0 hr).le
     nlinarith
+
+/-! ### Convex sets -/
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Near a point `x` of the closure of a convex set `s` whose interior contains `ball z ρ`,
+the ball `ball x r`, for `0 < r ≤ ‖z - x‖ + ρ`, contains a ball in the interior of `s`, and the
+reflected ball in the complement of `s` when `x` is not interior. Both have radius
+`ρ r / (‖z - x‖ + ρ)`: they are the images of `ball z ρ` under the homotheties with centre `x` and
+ratios `± r / (‖z - x‖ + ρ)`. -/
+private theorem _root_.Convex.balls_subset_inter_ball
+    {z : E} {ρ r : ℝ} (hs : Convex ℝ s) (hz : ball z ρ ⊆ interior s) (hρ : 0 < ρ)
+    (hx : x ∈ closure s) (hr : 0 < r) (hrR : r ≤ ‖z - x‖ + ρ) :
+    ball (x + (r / (‖z - x‖ + ρ)) • (z - x)) (r / (‖z - x‖ + ρ) * ρ) ⊆ interior s ∩ ball x r ∧
+      (x ∉ interior s →
+        ball (x - (r / (‖z - x‖ + ρ)) • (z - x)) (r / (‖z - x‖ + ρ) * ρ) ⊆ sᶜ ∩ ball x r) := by
+  set R := ‖z - x‖ + ρ
+  set l := r / R
+  have hR : 0 < R := by positivity
+  have hl : 0 < l := div_pos hr hR
+  have hl1 : l ≤ 1 := (div_le_one hR).2 hrR
+  have hlR : l * R = r := div_mul_cancel₀ r hR.ne'
+  -- Both balls lie in `ball x r`, since their centres are at distance `l ‖z - x‖` from `x`.
+  have hsub {c : E} (hc : ‖c - x‖ = l * ‖z - x‖) : ball c (l * ρ) ⊆ ball x r := by
+    intro y hy
+    rw [mem_ball_iff_norm] at hy ⊢
+    calc ‖y - x‖ ≤ ‖y - c‖ + ‖c - x‖ := norm_sub_le_norm_sub_add_norm_sub y c x
+      _ < l * ρ + l * ‖z - x‖ := by rw [hc]; gcongr
+      _ = r := by rw [← hlR]; ring
+  have hint : ball (x + l • (z - x)) (l * ρ) ⊆ interior s := by
+    have h := ball_add_smul_sub_subset_interior_of_forall_starConvex
+      (fun w hw => hs.starConvex (interior_subset (hz hw))) hx (t := 1 - l) (by linarith)
+      (by linarith)
+    convert h using 2
+    · module
+    · ring
+  refine ⟨subset_inter hint (hsub (by simp [norm_smul, Real.norm_of_nonneg hl.le])),
+    fun hxi => subset_inter (fun y hy hys => hxi ?_) (hsub (by
+      rw [sub_sub_cancel_left, norm_neg, norm_smul, Real.norm_of_nonneg hl.le]))⟩
+  -- The reflection `2 • x - y` of `y` lies in the interior, so their midpoint `x` would too.
+  have hy' : (2 : ℝ) • x - y ∈ ball (x + l • (z - x)) (l * ρ) := by
+    rw [mem_ball_iff_norm] at hy ⊢
+    rw [← norm_neg]
+    convert hy using 2
+    module
+  convert hs.add_smul_sub_mem_interior' (subset_closure hys) (hint hy')
+    (t := 1 / 2) ⟨by norm_num, by norm_num⟩ using 1
+  module
+
+/-- **The frontier of a convex set lies in its essential boundary.** Against an additive Haar
+measure, a convex set with nonempty interior has neither density zero nor density one at any
+point of its frontier. -/
+theorem _root_.Convex.frontier_subset_essentialBoundary (hs : Convex ℝ s)
+    (hs' : (interior s).Nonempty) : frontier s ⊆ essentialBoundary μ s := by
+  intro x hx
+  obtain ⟨z, hz⟩ := hs'
+  obtain ⟨ρ, hρ, hzρ⟩ := Metric.isOpen_iff.1 isOpen_interior z hz
+  set R := ‖z - x‖ + ρ
+  have hR : 0 < R := by positivity
+  set n := Module.finrank ℝ E
+  have hB0 : μ (ball (0 : E) 1) ≠ 0 := (measure_ball_pos μ 0 one_pos).ne'
+  have hBtop : μ (ball (0 : E) 1) ≠ ∞ := measure_ball_lt_top.ne
+  set c : ℝ≥0∞ := ENNReal.ofReal ((R / ρ) ^ n) * (μ (ball (0 : E) 1))⁻¹
+  have hc : c ≠ ∞ := ENNReal.mul_ne_top ENNReal.ofReal_ne_top (ENNReal.inv_ne_top.2 hB0)
+  -- A ball of radius `ρ r / R` has measure `(ρ / R) ^ n` times that of a ball of radius `r`.
+  have hball (y : E) {r : ℝ} (hr : 0 < r) :
+      ENNReal.ofReal (r ^ n) = c * μ (ball y (r / R * ρ)) := by
+    rw [Measure.addHaar_ball_of_pos μ y (by positivity), mul_comm (ENNReal.ofReal _),
+      ← mul_assoc, mul_assoc (ENNReal.ofReal _), ENNReal.inv_mul_cancel hB0 hBtop, mul_one,
+      ← ENNReal.ofReal_mul (by positivity), ← mul_pow]
+    congr 2
+    field_simp
+  have hev : ∀ᶠ r in 𝓝[>] (0 : ℝ), 0 < r ∧ r ≤ R := Ioc_mem_nhdsGT hR
+  rw [mem_essentialBoundary, mem_essentialInterior, mem_essentialExterior]
+  constructor
+  · -- The complement fills a fixed proportion of small balls, so `s` has no density one.
+    intro h1
+    have h0 : HasDensityAt μ sᶜ x 0 := by
+      simpa using h1.compl (hs.nullMeasurableSet μ)
+        (Metric.eventually_measure_closedBall_ne_zero_ne_top μ x)
+    refine not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball hc ?_ h0
+    filter_upwards [hev] with r hr
+    rw [hball (x - (r / R) • (z - x)) hr.1]
+    gcongr
+    exact (hs.balls_subset_inter_ball hzρ hρ hx.1 hr.1 hr.2).2 hx.2
+  · -- The set fills a fixed proportion of small balls, so it has no density zero.
+    refine not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball hc ?_
+    filter_upwards [hev] with r hr
+    rw [hball (x + (r / R) • (z - x)) hr.1]
+    gcongr
+    exact (hs.balls_subset_inter_ball hzρ hρ hx.1 hr.1 hr.2).1.trans
+      (inter_subset_inter_left _ interior_subset)
+
+/-- **The essential boundary of a convex set is its frontier.** Against an additive Haar measure,
+a convex set with nonempty interior has essential boundary equal to its topological frontier. -/
+theorem _root_.Convex.essentialBoundary_eq_frontier (hs : Convex ℝ s)
+    (hs' : (interior s).Nonempty) : essentialBoundary μ s = frontier s :=
+  essentialBoundary_subset_frontier.antisymm (hs.frontier_subset_essentialBoundary hs')
 
 end AddHaar
 
