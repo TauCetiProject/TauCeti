@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.LieRinehartAlgebra.Cohomology
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating.Tensoriality
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating.Wedge
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating.Extension
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
@@ -59,7 +60,7 @@ def cochainZeroEquiv (A : LieAlgebroid I F V) : A.Cochain 0 ≃ₗ[C^∞⟮I, M;
 
 private lemma cochainZeroEquiv_eq (A : LieAlgebroid I F V) (ξ : A.Cochain 0) :
     ContMDiffSection.trivialEquiv (ContMDiffSection.alternatingIsEmptyEquiv ξ) =
-      A.cochainZeroEquiv ξ := by rw [cochainZeroEquiv, LinearEquiv.trans_apply]
+      A.cochainZeroEquiv ξ := rfl
 end Cochain
 
 section Complex
@@ -84,13 +85,12 @@ def cochainAlternatingEquiv (k : ℕ) :
 @[simp] theorem cochainAlternatingEquiv_symm_apply_sections {k : ℕ}
     (Φ : A.Sections [⋀^Fin k]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯) (s : Fin k → Cₛ^∞⟮I; F, V⟯) (x : M) :
     (A.cochainAlternatingEquiv k).symm Φ x (fun i ↦ s i x) =
-      Φ (fun i ↦ A.sectionsEquiv.symm (s i)) x := by
-  simp [cochainAlternatingEquiv, AlternatingMap.domLCongr]
+      Φ (fun i ↦ A.sectionsEquiv.symm (s i)) x := by simp [cochainAlternatingEquiv]
 
 /-- Evaluate a cochain on smooth sections via `cochainAlternatingEquiv`. -/
 theorem cochain_apply_sections {k : ℕ} (η : A.Cochain k) (s : Fin k → Cₛ^∞⟮I; F, V⟯) (x : M) :
-    η x (fun i ↦ s i x) =
-      A.cochainAlternatingEquiv k η (fun i ↦ A.sectionsEquiv.symm (s i)) x := by simp
+    η x (fun i ↦ s i x) = A.cochainAlternatingEquiv k η (fun i ↦ A.sectionsEquiv.symm (s i)) x := by
+  simp
 
 @[simp] theorem cochainAlternatingEquiv_zero_apply (η : A.Cochain 0) (s : Fin 0 → A.Sections) :
     A.cochainAlternatingEquiv 0 η s = A.cochainZeroEquiv η := by
@@ -116,8 +116,7 @@ def lieDeriv {k : ℕ} : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] A.Cochain k →ₗ[�
 @[simp] theorem cochainAlternatingEquiv_lieDeriv {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (η : A.Cochain k) :
     A.cochainAlternatingEquiv k (A.lieDeriv a η) =
       TauCeti.LieRinehartAlgebra.Cohomology.lieDeriv ℝ (A.sectionsEquiv.symm a)
-        (A.cochainAlternatingEquiv k η) := by
-  rw [lieDeriv]; exact (A.cochainAlternatingEquiv k).apply_symm_apply _
+        (A.cochainAlternatingEquiv k η) := (A.cochainAlternatingEquiv k).apply_symm_apply _
 
 /-- The Lie derivative commutes with degree casts on cochains. -/
 theorem lieDeriv_cast {m n : ℕ} (h : m = n) (a : Cₛ^∞⟮I; F, V⟯) (η : A.Cochain m) :
@@ -134,17 +133,14 @@ theorem lieDeriv_apply_sections {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (η : A.Co
     TauCeti.LieRinehartAlgebra.Cohomology.lieDeriv_apply, ContMDiffMap.coe_sub,
     ContMDiffMap.coe_sum, Pi.sub_apply, Finset.sum_apply, Sections.lie_def,
     LinearEquiv.apply_symm_apply]
-  congr 1
-  · congr 2; ext y; simp
-  · refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [cochainAlternatingEquiv_apply]; congr 1; funext j; by_cases hij : j = i <;> simp [hij]
+  refine congr_arg₂ (· - ·) (by congr 2; ext y; simp) (Finset.sum_congr rfl fun i _ ↦ ?_)
+  rw [cochainAlternatingEquiv_apply]; congr 1; funext j; by_cases hij : j = i <;> simp [hij]
 
 @[simp] theorem cochainZeroEquiv_lieDeriv (a : Cₛ^∞⟮I; F, V⟯) (η : A.Cochain 0) :
     A.cochainZeroEquiv (A.lieDeriv a η) = A.anchorDeriv a (A.cochainZeroEquiv η) := by
   rw [← A.cochainAlternatingEquiv_zero_apply (A.lieDeriv a η) ![],
-    A.cochainAlternatingEquiv_lieDeriv, TauCeti.LieRinehartAlgebra.Cohomology.lieDeriv_apply,
-    Finset.univ_eq_empty, Finset.sum_empty, sub_zero, A.cochainAlternatingEquiv_zero_apply,
-    Sections.lie_def, LinearEquiv.apply_symm_apply]
+    A.cochainAlternatingEquiv_lieDeriv, TauCeti.LieRinehartAlgebra.Cohomology.lieDeriv_apply]
+  simp [Sections.lie_def]
 
 /-- Product rule for the Lie derivative on a scalar multiple `f • η`. -/
 @[simp] theorem lieDeriv_smul {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ⟯) (η : A.Cochain k) :
@@ -160,8 +156,7 @@ def extDeriv (k : ℕ) : A.Cochain k →ₗ[ℝ] A.Cochain (k + 1) :=
 @[simp] theorem cochainAlternatingEquiv_extDeriv (k : ℕ) (η : A.Cochain k) :
     A.cochainAlternatingEquiv (k + 1) (A.extDeriv k η) =
       TauCeti.LieRinehartAlgebra.Cohomology.d ℝ C^∞⟮I, M; ℝ⟯ A.Sections k
-        (A.cochainAlternatingEquiv k η) := by
-  rw [extDeriv]; exact (A.cochainAlternatingEquiv (k + 1)).apply_symm_apply _
+        (A.cochainAlternatingEquiv k η) := (A.cochainAlternatingEquiv (k + 1)).apply_symm_apply _
 
 /-- The Chevalley–Eilenberg differential commutes with degree casts on cochains. -/
 theorem extDeriv_cast {m n : ℕ} (h : m = n) (η : A.Cochain m) :
@@ -197,17 +192,14 @@ theorem extDeriv_succ_apply_sections {k : ℕ} (η : A.Cochain (k + 1))
     ContMDiffMap.coe_sum, Pi.add_apply, Finset.sum_apply, Finset.sum_apply]
   have hz (c : ℤ) (g : C^∞⟮I, M; ℝ⟯) : (c • g) x = c • g x :=
     map_zsmul (ContMDiffMap.evalRingHom x) c g
-  congr 1
-  · refine Finset.sum_congr rfl fun i _ ↦ ?_
-    have hrem : A.cochainAlternatingEquiv (k + 1) η
-          (i.removeNth fun r ↦ A.sectionsEquiv.symm (s r)) =
+  refine congr_arg₂ (· + ·) (Finset.sum_congr rfl fun i _ ↦ ?_) (Finset.sum_congr rfl fun i _ ↦ ?_)
+  · have hrem : A.cochainAlternatingEquiv (k + 1) η
+        (i.removeNth fun r ↦ A.sectionsEquiv.symm (s r)) =
         ContMDiffSection.scalarAlternatingEquiv η (i.removeNth s) := by ext y; simp [Fin.removeNth]
     rw [hz, Sections.lie_def, LinearEquiv.apply_symm_apply, hrem]
-  · refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [ContMDiffMap.coe_sum, Finset.sum_apply]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [hz, cochainAlternatingEquiv_apply]
-    congr 2; funext r; refine Fin.cases (by simp) (fun _ ↦ by simp [Fin.removeNth]) r
+  · rw [ContMDiffMap.coe_sum, Finset.sum_apply]; refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [hz, cochainAlternatingEquiv_apply]; congr 2; funext r
+    refine Fin.cases (by simp) (fun _ ↦ by simp [Fin.removeNth]) r
 
 /-- The algebroid Chevalley–Eilenberg differential squares to zero in every degree. -/
 @[simp] theorem extDeriv_extDeriv (k : ℕ) (η : A.Cochain k) :
@@ -261,8 +253,7 @@ theorem extDeriv_one_apply_sections (α : A.Cochain 1) (a b : Cₛ^∞⟮I; F, V
   have hb : (![b x] : Fin 1 → V x) = fun i ↦ (![b] i) x := funext fun i ↦ by fin_cases i; rfl
   have hco : A.cochainZeroEquiv (ContMDiffSection.interior a α) =
       ContMDiffSection.scalarAlternatingEquiv α ![a] := by
-    ext y; simpa [ContMDiffSection.interior_apply] using
-      congr_arg (α y) (funext fun i ↦ by fin_cases i; rfl)
+    ext y; simpa using congr_arg (α y) (funext fun i ↦ by fin_cases i; rfl)
   change (A.extDeriv 1 α) x (Matrix.vecCons (a x) ![b x]) = _
   rw [← ContMDiffSection.interior_apply a, A.interior_extDeriv_succ, ContMDiffSection.coe_sub,
     Pi.sub_apply, ContinuousAlternatingMap.sub_apply, hb, A.lieDeriv_apply_sections a α ![b] x,
@@ -282,17 +273,13 @@ theorem interior_lieDeriv {k : ℕ} (a b : Cₛ^∞⟮I; F, V⟯) (η : A.Cochai
     ContMDiffSection.interior b (A.lieDeriv a η) =
       A.lieDeriv a (ContMDiffSection.interior b η) - ContMDiffSection.interior (A.bracket a b) η :=
   (A.cochainAlternatingEquiv k).injective <| by
-    have hbr : A.sectionsEquiv.symm (A.bracket a b) =
-        ⁅A.sectionsEquiv.symm a, A.sectionsEquiv.symm b⁆ := A.sectionsEquiv.injective (by simp)
-    simp [map_sub, hbr, TauCeti.LieRinehartAlgebra.Cohomology.curryLeft_lieDeriv]
+    simp [map_sub, TauCeti.LieRinehartAlgebra.Cohomology.curryLeft_lieDeriv]
 
 /-- The Lie derivative is a Lie algebra representation: `L_{[a, b]} = L_a ∘ L_b - L_b ∘ L_a`. -/
 theorem lieDeriv_bracket {k : ℕ} (a b : Cₛ^∞⟮I; F, V⟯) (η : A.Cochain k) :
     A.lieDeriv (A.bracket a b) η = A.lieDeriv a (A.lieDeriv b η) - A.lieDeriv b (A.lieDeriv a η) :=
   (A.cochainAlternatingEquiv k).injective <| by
-    have hbr : A.sectionsEquiv.symm (A.bracket a b) =
-        ⁅A.sectionsEquiv.symm a, A.sectionsEquiv.symm b⁆ := A.sectionsEquiv.injective (by simp)
-    simp [map_sub, hbr, TauCeti.LieRinehartAlgebra.Cohomology.lieDeriv_lie]
+    simp [map_sub, TauCeti.LieRinehartAlgebra.Cohomology.lieDeriv_lie]
 
 /-- The Lie derivative commutes with the Chevalley–Eilenberg differential:
 `L_a (d_A η) = d_A (L_a η)`. -/
@@ -402,11 +389,12 @@ theorem extDeriv_wedge {k l : ℕ} (φ : A.Cochain k) (ψ : A.Cochain l) :
     refine ContMDiffSection.ext_of_interior (k := k + 1 + l + 1) fun a ↦ ?_
     have ih₁ := ih (k + (l + 1)) (by omega) (ContMDiffSection.interior a φ) ψ rfl
     have ih₂ := ih ((k + 1) + l) (by omega) φ (ContMDiffSection.interior a ψ) rfl
-    have hsmul_add (c : ℝ) (x y : A.Cochain (k + 1 + l + 1)) := smul_add c x y
-    have hsmul_sub (c : ℝ) (x y : A.Cochain (k + 1 + l + 1)) := smul_sub c x y
-    have hsmul_sq (ξ : A.Cochain (k + 1 + l + 1)) :
-        (-1 : ℝ) ^ (k + 1) • (-1 : ℝ) ^ (k + 1) • ξ = ξ := by
-      rw [smul_smul, ← pow_add, Even.neg_one_pow ⟨k + 1, rfl⟩, one_smul]
+    have hsmul_add {m : ℕ} (x y : A.Cochain m) : (-1 : ℝ) ^ (k + 1) • (x + y) =
+        (-1 : ℝ) ^ (k + 1) • x + (-1 : ℝ) ^ (k + 1) • y := smul_add ((-1 : ℝ) ^ (k + 1)) x y
+    have hsmul_sub {m : ℕ} (x y : A.Cochain m) : (-1 : ℝ) ^ (k + 1) • (x - y) =
+        (-1 : ℝ) ^ (k + 1) • x - (-1 : ℝ) ^ (k + 1) • y := smul_sub ((-1 : ℝ) ^ (k + 1)) x y
+    have hsmul_sq {m : ℕ} (x : A.Cochain m) : (-1 : ℝ) ^ (k + 1) • (-1 : ℝ) ^ (k + 1) • x = x :=
+      by rw [smul_smul, ← pow_add, Even.neg_one_pow ⟨k + 1, rfl⟩, one_smul]
     have hpow₁ : (-1 : ℝ) ^ (k + 1) = -((-1 : ℝ) ^ k) := by rw [pow_succ, mul_neg, mul_one]
     have hpow₂ : (-1 : ℝ) ^ (k + 1 + 1) = (-1 : ℝ) ^ k := by rw [pow_succ, pow_succ]; ring
     refine (A.interior_extDeriv_succ (k := k + 1 + l) a (ContMDiffSection.wedge φ ψ)).trans ?_

@@ -56,8 +56,7 @@ theorem tangent_extDeriv_toContMDiffSection {k : ℕ} (φ : SmoothForm I M ℝ k
   ext x v
   choose V hV using fun i ↦ ContMDiffSection.evalLinearMap_surjective (I := I) (F := E) ∞
     (V := (TangentSpace I : M → Type _)) x (v i)
-  have hv : (fun i ↦ V i x) = v := funext fun i ↦ by
-    simpa only [ContMDiffSection.evalLinearMap_apply] using hV i
+  have hv : (fun i ↦ V i x) = v := funext fun i ↦ by simpa using hV i
   rw [← hv]; cases k with
   | zero =>
     have htup : (fun i : Fin 1 ↦ V i x) = ![V 0 x] := funext fun i ↦ by fin_cases i; rfl
@@ -66,17 +65,14 @@ theorem tangent_extDeriv_toContMDiffSection {k : ℕ} (φ : SmoothForm I M ℝ k
     congr 2; ext y; simp
   | succ k =>
     rw [(tangent I M).extDeriv_succ_apply_sections,
-      (mextDerivₗ I (k + 1) φ).toContMDiffSection_apply x, mextDerivₗ_apply,
+      (mextDerivₗ I (k + 1) φ).toContMDiffSection_apply, mextDerivₗ_apply,
       TauCeti.mextDeriv_apply_vectorField (φ.mdifferentiableAt x)
         (fun i ↦ (V i).contMDiff.mdifferentiableAt (by simp)),
       sub_eq_add_neg, ← Finset.sum_neg_distrib]
-    congr 1
-    · refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [anchorDeriv_apply, tangent_anchor_apply]; congr 3; ext y
-      simp only [ContMDiffSection.scalarAlternatingEquiv_apply, SmoothForm.toContMDiffSection_apply]
-      congr 1
-    · refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [← Finset.sum_neg_distrib]; refine Finset.sum_congr rfl fun j _ ↦ ?_
+    refine congr_arg₂ (· + ·) (Finset.sum_congr rfl fun i _ ↦ ?_)
+      (Finset.sum_congr rfl fun i _ ↦ ?_)
+    · rw [anchorDeriv_apply, tangent_anchor_apply]; congr 3; ext y; simp [Fin.removeNth]; rfl
+    · rw [← Finset.sum_neg_distrib]; refine Finset.sum_congr rfl fun j _ ↦ ?_
       rw [φ.toContMDiffSection_apply x, tangent_bracket_apply, pow_succ, mul_neg, mul_one, neg_smul]
 
 /-- `tangentCochainEquiv` intertwines the de Rham exterior derivative `TauCeti.mextDerivₗ` with

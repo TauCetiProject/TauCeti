@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
-import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
@@ -116,6 +116,18 @@ theorem contMDiff_constVectorField (v : E) {n : WithTop ℕ∞} :
     ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent n
       (fun z ↦ (⟨z, constVectorField v z⟩ : TangentBundle 𝓘(ℝ, E) E)) :=
   contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
+
+omit [FiniteDimensional ℝ E] in
+/-- The constant vector field with value `v` on the model space, bundled as a `C^n` section. -/
+noncomputable def constVectorFieldSection (n : ℕ∞ω) (v : E) :
+    Cₛ^n⟮𝓘(ℝ, E); E, (TangentSpace 𝓘(ℝ, E) : E → Type _)⟯ :=
+  ⟨constVectorField v, contMDiff_constVectorField v⟩
+
+omit [FiniteDimensional ℝ E] in
+/-- Under `NormedSpace.fromTangentSpace`, `constVectorFieldSection` takes the value `v` at
+every point. -/
+@[simp] theorem constVectorFieldSection_apply {n : ℕ∞ω} (v z : E) :
+    constVectorFieldSection n v z = (NormedSpace.fromTangentSpace z).symm v := (rfl)
 
 variable (E) in
 /-- The constant vector field with value `v` in the preferred chart at `p`, pulled back to the

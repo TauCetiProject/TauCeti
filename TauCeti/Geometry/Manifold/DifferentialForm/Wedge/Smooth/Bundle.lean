@@ -7,11 +7,10 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
-public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-public import Mathlib.Geometry.Manifold.VectorBundle.Hom
-import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating.Wedge
+import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap.Wedge
 
 /-!
 # Smooth paired wedges with bundle coefficients
@@ -162,8 +161,7 @@ theorem coe_wedgeWith (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y
       (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) y (μ y)))
     (φ : SmoothBundleForm I F₁ V₁ k) (ψ : SmoothBundleForm I F₂ V₂ l) :
     (wedgeWith μ hμ hpair φ ψ : RoughBundleForm I M V₃ (k + l)) =
-      bundleWedgeWith μ hμ φ.val ψ.val := by
-  rw [wedgeWith, LinearMap.mk₂_apply]
+      bundleWedgeWith μ hμ φ.val ψ.val := by rw [wedgeWith, LinearMap.mk₂_apply]
 
 /-- Evaluation of the smooth bundle wedge on a tangent tuple. -/
 theorem wedgeWith_apply (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y)
@@ -189,8 +187,7 @@ theorem wedgeWith_apply_one_one
     (y : M) (v w : TangentSpace I y) :
     (wedgeWith μ hμ hpair φ ψ).val y ![v, w] =
       μ y (φ.val y ![v]) (ψ.val y ![w]) - μ y (φ.val y ![w]) (ψ.val y ![v]) := by
-  simpa only [coe_wedgeWith] using
-    (bundleWedgeWith_apply_one_one μ hμ φ.val ψ.val y v w)
+  simpa only [coe_wedgeWith] using bundleWedgeWith_apply_one_one μ hμ φ.val ψ.val y v w
 
 end SmoothBundleForm
 

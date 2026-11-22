@@ -278,17 +278,15 @@ def ofCurryLeftSMul (f : M [⋀^Fin (n + 1)]→ₗ[R] N)
     (hf : ∀ (a : A) (m : M) (w : Fin n → M), f.curryLeft (a • m) w = a • f.curryLeft m w) :
     M [⋀^Fin (n + 1)]→ₗ[A] N where
   toFun := f
-  map_update_add' := by intro _ m i x y; exact f.map_update_add m i x y
-  map_update_smul' := by
-    intro inst v i a m
+  map_update_add' := fun {inst} m i x y ↦ by
+    cases Subsingleton.elim inst _; exact f.map_update_add m i x y
+  map_update_smul' := fun {inst} v i a m ↦ by
     obtain rfl : inst = instDecidableEqFin (n + 1) := Subsingleton.elim _ _
     by_cases hi : i = 0
     · subst hi
-      have h₁ : Function.update v 0 (a • m) = Matrix.vecCons (a • m) (tail v) := by
-        ext j; refine cases (by simp) (fun _ ↦ by simp [tail]) j
-      have h₂ : Function.update v 0 m = Matrix.vecCons m (tail v) := by
-        ext j; refine cases (by simp) (fun _ ↦ by simp [tail]) j
-      rw [h₁, h₂]; exact hf a m (tail v)
+      have hupd (x : M) : Function.update v 0 x = Matrix.vecCons x (tail v) :=
+        funext fun j ↦ cases (by simp) (fun _ ↦ by simp [tail]) j
+      rw [hupd, hupd]; exact hf a m (tail v)
     · let u₁ : Fin (n + 1) → M := Function.update v i (a • m)
       let u₂ : Fin (n + 1) → M := Function.update v i m
       have hswap : f (u₁ ∘ Equiv.swap 0 i) = a • f (u₂ ∘ Equiv.swap 0 i) := by

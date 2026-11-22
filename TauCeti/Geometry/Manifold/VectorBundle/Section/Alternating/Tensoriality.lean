@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating
-import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Trivial
 import TauCeti.Geometry.Manifold.VectorBundle.Tensoriality
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
@@ -60,8 +60,7 @@ private lemma fiberAlternatingMap_update {ι : Type*} [Finite ι] [instDec : Dec
     (x : M) (w : ι → W x) (i : ι) (t : Cₛ^∞⟮I; FW, W⟯) (u : W x) (ht : t x = u) :
     Φ (fun r ↦ liftSection x (Function.update w i u r)) x =
       Φ (Function.update (fun r ↦ liftSection x (w r)) i t) x := by
-  let _ := Fintype.ofFinite ι
-  exact Φ.contMDiffSection_eval_congr x fun r ↦ by
+  let _ := Fintype.ofFinite ι; exact Φ.contMDiffSection_eval_congr x fun r ↦ by
     by_cases hr : r = i <;> simp [hr, liftSection_apply, ht]
 
 section FixedIndex
@@ -70,16 +69,14 @@ variable {ι : Type*} [Fintype ι]
 private def fiberAlternatingMap
     (Φ : Cₛ^∞⟮I; FW, W⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯) (x : M) : W x [⋀^ι]→ₗ[ℝ] V x where
   toFun w := Φ (fun i ↦ liftSection x (w i)) x
-  map_update_add' := by
-    intro inst w i u₁ u₂
+  map_update_add' := fun {inst} w i u₁ u₂ ↦ by
     have hU := fiberAlternatingMap_update (instDec := inst) Φ x w i
     rw [hU (liftSection x u₁ + liftSection x u₂) (u₁ + u₂) (by simp [liftSection_apply]),
       hU (liftSection x u₁) u₁ (liftSection_apply x u₁),
       hU (liftSection x u₂) u₂ (liftSection_apply x u₂)]
     exact congr_arg (· x)
       (Φ.map_update_add (fun r ↦ liftSection x (w r)) i (liftSection x u₁) (liftSection x u₂))
-  map_update_smul' := by
-    intro inst w i c u
+  map_update_smul' := fun {inst} w i c u ↦ by
     have hU := fiberAlternatingMap_update (instDec := inst) Φ x w i
     rw [hU (algebraMap ℝ C^∞⟮I, M; ℝ⟯ c • liftSection x u) (c • u) (by simp [liftSection_apply]),
       hU (liftSection x u) u (liftSection_apply x u)]
@@ -115,9 +112,9 @@ private lemma fiberContinuousAlternatingMap_apply
 private lemma fiberContinuousAlternatingMap_apply_sections
     (Φ : Cₛ^∞⟮I; FW, W⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯)
     (s : ι → Cₛ^∞⟮I; FW, W⟯) (x : M) :
-    fiberContinuousAlternatingMap Φ x (fun i ↦ s i x) = Φ s x := by
-  rw [fiberContinuousAlternatingMap_apply]
-  exact Φ.contMDiffSection_eval_congr x fun i ↦ liftSection_apply x (s i x)
+    fiberContinuousAlternatingMap Φ x (fun i ↦ s i x) = Φ s x :=
+  (fiberContinuousAlternatingMap_apply Φ x _).trans <|
+    Φ.contMDiffSection_eval_congr x fun i ↦ liftSection_apply x (s i x)
 
 private lemma contMDiff_fiberContinuousAlternatingMap
     (Φ : Cₛ^∞⟮I; FW, W⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯) :
@@ -130,18 +127,17 @@ private lemma contMDiff_fiberContinuousAlternatingMap
   have hnhds : eW.baseSet ∈ 𝓝 x₀ :=
     eW.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt FW W x₀)
   obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hnhds).mem_iff.mp hnhds
-  let s : ι → Cₛ^∞⟮I; FW, W⟯ := fun i ↦
-    ⟨(ρ : M → ℝ) • fun y ↦ eW.symm y (v i),
-      ρ.contMDiff.contMDiffOn.smul_section_of_tsupport eW.open_baseSet hρ
-        (TauCeti.Manifold.contMDiffOn_symm_baseSet (v i))⟩
+  let s : ι → Cₛ^∞⟮I; FW, W⟯ := fun i ↦ ⟨(ρ : M → ℝ) • fun y ↦ eW.symm y (v i),
+    ρ.contMDiff.contMDiffOn.smul_section_of_tsupport eW.open_baseSet hρ
+      (TauCeti.Manifold.contMDiffOn_symm_baseSet (v i))⟩
   set eV := trivializationAt FV V x₀ with heV
   have hΦs : ContMDiffAt I 𝓘(ℝ, FV) ∞ (fun y ↦ (eV ⟨y, Φ s y⟩).2) x₀ :=
     (contMDiffAt_totalSpace_iff.mp ((Φ s).contMDiff x₀)).2
   refine hΦs.congr_of_eventuallyEq ?_
   filter_upwards [ρ.eventuallyEq_one, hnhds,
     eV.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt FV V x₀)] with y hρ1 hyW hyV
-  have hs_eq : (fun i ↦ eW.symmL ℝ y (v i)) = fun i ↦ s i y := by
-    funext i; simp [s, hρ1, Trivialization.symmL_apply _ hyW]
+  have hs_eq : (fun i ↦ eW.symmL ℝ y (v i)) = fun i ↦ s i y :=
+    funext fun i ↦ by simp [s, hρ1, Trivialization.symmL_apply _ hyW]
   rw [ContinuousAlternatingMap.inCoordinates]
   simp only [ContinuousLinearMap.compContinuousAlternatingMap_coe,
     ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def, ← heW, ← heV,
@@ -156,8 +152,8 @@ def alternatingEquiv :
   toFun := toAlternatingMap
   invFun Φ := ⟨fiberContinuousAlternatingMap Φ, contMDiff_fiberContinuousAlternatingMap Φ⟩
   left_inv φ := by ext x w; simp [fiberContinuousAlternatingMap_apply, liftSection_apply]
-  right_inv Φ := by
-    ext s x; rw [toAlternatingMap_apply]; exact fiberContinuousAlternatingMap_apply_sections Φ s x
+  right_inv Φ := by ext s x; rw [toAlternatingMap_apply]; exact
+    fiberContinuousAlternatingMap_apply_sections Φ s x
   map_add' _ _ := by ext s x; simp
   map_smul' _ _ := by ext s x; simp
 
@@ -190,8 +186,8 @@ def scalarAlternatingEquiv {ι : Type*} [Fintype ι] :
 
 @[simp] theorem scalarAlternatingEquiv_apply {ι : Type*} [Fintype ι]
     (φ : Cₛ^∞⟮I; FW [⋀^ι]→L[ℝ] ℝ, fun x ↦ W x [⋀^ι]→L[ℝ] ℝ⟯) (s : ι → Cₛ^∞⟮I; FW, W⟯)
-    (x : M) :
-    scalarAlternatingEquiv φ s x = φ x (fun i ↦ s i x) := by rw [scalarAlternatingEquiv]; simp
+    (x : M) : scalarAlternatingEquiv φ s x = φ x (fun i ↦ s i x) := by
+  rw [scalarAlternatingEquiv]; simp
 @[simp] theorem scalarAlternatingEquiv_symm_apply_sections {ι : Type*} [Fintype ι]
     (Φ : Cₛ^∞⟮I; FW, W⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯) (s : ι → Cₛ^∞⟮I; FW, W⟯)
     (x : M) : (scalarAlternatingEquiv.symm Φ) x (fun i ↦ s i x) = Φ s x := by

@@ -78,17 +78,14 @@ def lieDeriv {ι : Type*} [Fintype ι] [inst₀ : DecidableEq ι] :
     { toFun ω :=
         { toFun := ⇑⁅x, ω.restrictScalars R⁆
           map_update_add' := fun {inst} m i x₁ y ↦ by
-            obtain rfl : inst = inst₀ := Subsingleton.elim _ _
+            cases Subsingleton.elim inst inst₀
             exact ⁅x, ω.restrictScalars R⁆.map_update_add m i x₁ y
           map_update_smul' := fun {inst} v i a y ↦ by
-            obtain rfl : inst = inst₀ := Subsingleton.elim _ _
+            cases Subsingleton.elim inst inst₀
             exact lie_restrictScalars_update_smul R x ω v i a y
           map_eq_zero_of_eq' := ⁅x, ω.restrictScalars R⁆.map_eq_zero_of_eq }
       map_add' _ _ := by ext v; simp [add_apply, restrictScalars_add, lie_add]
-      map_smul' c ω := by
-        ext v; simp only [AlternatingMap.coe_mk, MultilinearMap.coe_mk, smul_apply,
-          restrictScalars_smul, RingHom.id_apply]
-        exact congr($(lie_smul c x (ω.restrictScalars R)) v) }
+      map_smul' c ω := by ext v; simp [congr($(lie_smul c x (ω.restrictScalars R)) v)] }
   map_add' x y := by ext ω v; exact congr($(add_lie x y (ω.restrictScalars R)) v)
   map_smul' c x := by ext ω v; exact congr($(smul_lie c x (ω.restrictScalars R)) v)
 
@@ -104,16 +101,17 @@ def lieDeriv {ι : Type*} [Fintype ι] [inst₀ : DecidableEq ι] :
 
 /-- The Lie derivative commutes with the Lie bracket: `L_{[x, y]} = [L_x, L_y]`. -/
 theorem lieDeriv_lie {ι : Type*} [Fintype ι] [DecidableEq ι] (x y : L) (ω : L [⋀^ι]→ₗ[A] A) :
-    lieDeriv R ⁅x, y⁆ ω = lieDeriv R x (lieDeriv R y ω) - lieDeriv R y (lieDeriv R x ω) := by
-  refine restrictScalars_injective R ?_
-  simpa only [restrictScalars_sub, restrictScalars_lieDeriv] using lie_lie x y (ω.restrictScalars R)
+    lieDeriv R ⁅x, y⁆ ω = lieDeriv R x (lieDeriv R y ω) - lieDeriv R y (lieDeriv R x ω) :=
+  restrictScalars_injective R <| by
+    simpa only [restrictScalars_sub, restrictScalars_lieDeriv] using
+      lie_lie x y (ω.restrictScalars R)
 
 /-- Commutator of Lie derivative and interior product: `ι_y (L_x ω) = L_x (ι_y ω) - ι_{[x,y]} ω`. -/
 theorem curryLeft_lieDeriv {n : ℕ} (x y : L) (ω : L [⋀^Fin (n + 1)]→ₗ[A] A) :
-    (lieDeriv R x ω).curryLeft y = lieDeriv R x (ω.curryLeft y) - ω.curryLeft ⁅x, y⁆ := by
-  refine restrictScalars_injective R ?_
-  simpa only [restrictScalars_curryLeft, restrictScalars_lieDeriv, restrictScalars_sub] using
-    AlternatingMap.curryLeft_lie x (ω.restrictScalars R) y
+    (lieDeriv R x ω).curryLeft y = lieDeriv R x (ω.curryLeft y) - ω.curryLeft ⁅x, y⁆ :=
+  restrictScalars_injective R <| by
+    simpa only [restrictScalars_curryLeft, restrictScalars_lieDeriv, restrictScalars_sub] using
+      AlternatingMap.curryLeft_lie x (ω.restrictScalars R) y
 
 /-- Scalar derivation formula for the Lie derivative on `a • ω`. -/
 @[simp] theorem lieDeriv_smul_right {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -149,8 +147,7 @@ theorem lieModule_d_smul_apply :
           (⁅Matrix.vecCons x w i, a⁆ * η (i.removeNth (Matrix.vecCons x w))) =
         ⁅x, a⁆ * η w - ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) •
           (⁅w j, a⁆ * η.curryLeft x (j.removeNth w)) := by
-      rw [Fin.sum_univ_succ]
-      simp [Matrix.vecCons, removeNth_succ_cons, pow_succ, curryLeft_apply_apply, sub_eq_add_neg]
+      rw [Fin.sum_univ_succ]; simp [Matrix.vecCons, removeNth_succ_cons, pow_succ, sub_eq_add_neg]
     rw [← curryLeft_apply_apply, TauCeti.LieModule.Cohomology.curryLeft_d_succ,
       ← curryLeft_apply_apply, TauCeti.LieModule.Cohomology.curryLeft_d_succ, sub_apply, sub_apply,
       hlie, hcurry, lieModule_d_smul_apply a (η.curryLeft x) w, hsum, mul_sub]; abel
@@ -163,8 +160,7 @@ private theorem curryLeft_d_restrictScalars_smul :
   | 0, ω, a, x, w => by
     simp [TauCeti.LieModule.Cohomology.curryLeft_d_zero, AlternatingMap.lie_apply, smul_eq_mul]
   | n + 1, ω, a, x, w => by
-    rw [TauCeti.LieModule.Cohomology.curryLeft_d_succ,
-      TauCeti.LieModule.Cohomology.curryLeft_d_succ, sub_apply, sub_apply]
+    simp only [TauCeti.LieModule.Cohomology.curryLeft_d_succ, sub_apply]
     have hcurry : (ω.restrictScalars R).curryLeft (a • x) =
         a • (ω.curryLeft x).restrictScalars R := by ext u; simp [ω.map_vecCons_smul]
     have hlie : ⁅a • x, ω.restrictScalars R⁆ w =
@@ -175,8 +171,7 @@ private theorem curryLeft_d_restrictScalars_smul :
           a * ω (Function.update w k ⁅x, w k⁆) -
             (-1 : ℤ) ^ (k : ℕ) • (⁅w k, a⁆ * ω.curryLeft x (k.removeNth w)) := by
         have hbr : ⁅a • x, w k⁆ = a • ⁅x, w k⁆ - ⁅w k, a⁆ • x := by
-          rw [← lie_skew, LieRinehartRing.leibniz_smul_right, neg_add, ← smul_neg, lie_skew,
-            sub_eq_add_neg]
+          rw [← lie_skew, LieRinehartRing.leibniz_smul_right, neg_add, ← smul_neg, lie_skew]; abel
         rw [hbr, ω.map_update_sub, ω.map_update_smul, ω.map_update_smul, smul_eq_mul, smul_eq_mul]
         congr 1; rw [← insertNth_removeNth k x w, ω.map_insertNth, curryLeft_apply_apply,
           mul_comm (⁅w k, a⁆), smul_mul_assoc, mul_comm _ (⁅w k, a⁆)]
@@ -217,8 +212,8 @@ theorem d_apply_eq_lieModule (n : ℕ) (ω : L [⋀^Fin n]→ₗ[A] A) (v : Fin 
     (d R A L (n + 1) ω).curryLeft x = lieDeriv R x ω - d R A L n (ω.curryLeft x) :=
   restrictScalars_injective R <| by
     simpa only [restrictScalars_curryLeft, restrictScalars_d, restrictScalars_sub,
-      restrictScalars_lieDeriv] using
-      TauCeti.LieModule.Cohomology.curryLeft_d_succ (ω.restrictScalars R) x
+      restrictScalars_lieDeriv] using TauCeti.LieModule.Cohomology.curryLeft_d_succ
+        (ω.restrictScalars R) x
 
 /-- The differential of a `0`-cochain evaluates to the anchor action on its value `ω ![]`. -/
 @[simp] theorem d_zero_apply (ω : L [⋀^Fin 0]→ₗ[A] A) (v : Fin 1 → L) :
@@ -250,9 +245,7 @@ theorem d_smul_apply {n : ℕ} (a : A) (ω : L [⋀^Fin n]→ₗ[A] A) (v : Fin 
 
 /-- The Chevalley–Eilenberg differential of a Lie–Rinehart algebra squares to zero. -/
 @[simp] theorem d_d (n : ℕ) (ω : L [⋀^Fin n]→ₗ[A] A) : d R A L (n + 1) (d R A L n ω) = 0 :=
-  restrictScalars_injective R <| by
-    simpa only [restrictScalars_d, restrictScalars_zero] using
-      TauCeti.LieModule.Cohomology.d_d n (ω.restrictScalars R)
+  restrictScalars_injective R <| by simp
 
 variable (R A L)
 

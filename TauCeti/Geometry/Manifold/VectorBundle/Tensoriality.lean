@@ -231,21 +231,17 @@ theorem MultilinearMap.contMDiffSection_eval_congr
     rw [hins, ← ih]; conv_rhs => rw [← hu_self]
     let Ψ : (Π y : M, W y) → V x := fun t ↦
       if ht : CMDiff ∞ (T% t) then Φ (Function.update u j ⟨t, ht⟩) x else 0
-    have hΨ (t : Cₛ^∞⟮I; FW, W⟯) : Φ (Function.update u j t) x = Ψ ⇑t := by
-      cases t with | mk t ht => simp [Ψ, ht]
+    have hΨ (t : Cₛ^∞⟮I; FW, W⟯) : Φ (Function.update u j t) x = Ψ ⇑t := by cases t; simp [Ψ, *]
     rw [hΨ (s' j), hΨ (s j)]
     refine TauCeti.Manifold.eq_of_contMDiff_tensorial Ψ x
       (fun {t₁ t₂} ht₁ ht₂ ↦ ?_) (fun {f t} hf ht ↦ ?_) (s' j).contMDiff (s j).contMDiff (h j).symm
     · simp only [Ψ, ht₁, ht₂, ht₁.add_section ht₂, ↓reduceDIte]
-      have hadd : (⟨t₁ + t₂, ht₁.add_section ht₂⟩ : Cₛ^∞⟮I; FW, W⟯) = ⟨t₁, ht₁⟩ + ⟨t₂, ht₂⟩ :=
-        ContMDiffSection.ext fun _ ↦ rfl
-      rw [hadd]; exact congr($(Φ.map_update_add u j ⟨t₁, ht₁⟩ ⟨t₂, ht₂⟩) x)
+      exact congr($(Φ.map_update_add u j ⟨t₁, ht₁⟩ ⟨t₂, ht₂⟩) x)
     · simp only [Ψ, ht, hf.smul_section ht, ↓reduceDIte]
       let F : C^∞⟮I, M; ℝ⟯ := ⟨f, hf⟩
       have hft : (⟨f • t, hf.smul_section ht⟩ : Cₛ^∞⟮I; FW, W⟯) = F • ⟨t, ht⟩ :=
         ContMDiffSection.ext fun y ↦ (ContMDiffSection.smul_apply F ⟨t, ht⟩ y).symm
-      rw [hft]; exact (congr($(Φ.map_update_smul u j F ⟨t, ht⟩) x)).trans (by
-        rw [RingHom.id_apply, ContMDiffSection.smul_apply]; rfl)
+      rw [hft, Φ.map_update_smul, RingHom.id_apply, ContMDiffSection.smul_apply]; rfl
 
 /-- A `C^∞(M, ℝ)`-multilinear alternating map on `Γ(W)` depends at `x` only on the values of its
 input sections at `x`. -/
