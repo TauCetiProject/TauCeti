@@ -84,7 +84,7 @@ In the namespace `TauCeti.SmoothEmbedding`:
   negative normal bundle has rank `r` and a Thom class over a nontrivial commutative ring `K`, then
   `dim Hₙ(D_ε, S_ε; K) = b_{n - r}(S; K)` if `r ≤ n`, and `0` otherwise.
 * `IsNondegenerateCriticalSubmanifold.finrank_singularHomology_negativeDiscSpherePair`: the same
-  over a field of characteristic two for a Morse–Bott submanifold of index `r`.
+  in characteristic two for a Morse–Bott submanifold of index `r`.
 
 In the namespace `TauCeti.IsMorseBottFamily`:
 
