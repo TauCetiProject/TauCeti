@@ -154,6 +154,26 @@ private theorem generatingTarget_chainHead_eq_generatingSource_chainTail_iff {q 
   -- In each internal vertex, the action differs from the matching sum by a constant.
   simp only [chainHead, chainTail, add_assoc (S₀ (q, a)), mvfderiv_add_const, mvfderiv_const_add]
 
+/-- Along a branch `b` through `(a, c)`, continuous at `(q, Q)`, the three edges
+`(y.1, (b y).1)`, `b y` and `((b y).2, y.2)` of the chain tend to their base points. -/
+private theorem tendsto_chainEdges {b : M₁ × M₄ → M₂ × M₃} {q : M₁} {a : M₂} {c : M₃} {Q : M₄}
+    (hb : ContinuousAt b (q, Q)) (hb₀ : b (q, Q) = (a, c)) :
+    Tendsto (fun y : M₁ × M₄ ↦ (y.1, (b y).1)) (𝓝 (q, Q)) (𝓝 (q, a)) ∧
+      Tendsto b (𝓝 (q, Q)) (𝓝 (a, c)) ∧
+      Tendsto (fun y : M₁ × M₄ ↦ ((b y).2, y.2)) (𝓝 (q, Q)) (𝓝 (c, Q)) :=
+  ⟨by simpa only [hb₀] using (continuousAt_fst.prodMk hb.fst).tendsto,
+    by simpa only [hb₀] using hb.tendsto,
+    by simpa only [hb₀] using (hb.snd.prodMk continuousAt_snd).tendsto⟩
+
+/-- A real function that is `C^(n+2)` at a point is differentiable near it. -/
+private theorem eventually_mdifferentiableAt_of_contMDiffAt {E H M : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {n : WithTop ℕ∞} {f : M → ℝ}
+    {x : M} (hf : ContMDiffAt I 𝓘(ℝ) (n + 2) f x) :
+    ∀ᶠ z in 𝓝 x, MDifferentiableAt I 𝓘(ℝ) f z :=
+  ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 (hf.of_le (le_add_left one_le_two))).mono
+    fun _ hz ↦ hz.mdifferentiableAt one_ne_zero
+
 /-! ### Elimination of the internal vertices -/
 
 section Elimination
@@ -204,25 +224,12 @@ theorem exists_generatingComposition_three [CompleteSpace E₁] [CompleteSpace E
     exists_generatingComposition hH hT h
   /- Step 2: the three edges are differentiable near their base points, which the splitting of the
   matching equation needs. -/
-  have h1 : (1 : WithTop ℕ∞) ≤ n + 2 := le_add_left one_le_two
-  have hd₀ : ∀ᶠ z in 𝓝 (q₀, a₀), MDifferentiableAt (I₁.prod I₂) 𝓘(ℝ) S₀ z :=
-    ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 (hS₀.of_le h1)).mono
-      fun _ hz ↦ hz.mdifferentiableAt one_ne_zero
-  have hd₁ : ∀ᶠ z in 𝓝 (a₀, c₀), MDifferentiableAt (I₂.prod I₃) 𝓘(ℝ) S₁ z :=
-    ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 (hS₁.of_le h1)).mono
-      fun _ hz ↦ hz.mdifferentiableAt one_ne_zero
-  have hd₂ : ∀ᶠ z in 𝓝 (c₀, Q₀), MDifferentiableAt (I₃.prod I₄) 𝓘(ℝ) S₂ z :=
-    ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 (hS₂.of_le h1)).mono
-      fun _ hz ↦ hz.mdifferentiableAt one_ne_zero
+  have hd₀ := eventually_mdifferentiableAt_of_contMDiffAt hS₀
+  have hd₁ := eventually_mdifferentiableAt_of_contMDiffAt hS₁
+  have hd₂ := eventually_mdifferentiableAt_of_contMDiffAt hS₂
   refine ⟨b, R, hb₀, hRdef, hb, hR, ?_, ?_⟩
   /- Step 3: split the matching of the head and the tail along the branch. -/
-  · have hbc : ContinuousAt b (q₀, Q₀) := hb.continuousAt
-    have hto₀ : Tendsto (fun y : M₁ × M₄ ↦ (y.1, (b y).1)) (𝓝 (q₀, Q₀)) (𝓝 (q₀, a₀)) := by
-      simpa only [hb₀] using (continuousAt_fst.prodMk hbc.fst).tendsto
-    have hto₁ : Tendsto b (𝓝 (q₀, Q₀)) (𝓝 (a₀, c₀)) := by
-      simpa only [hb₀] using hbc.tendsto
-    have hto₂ : Tendsto (fun y : M₁ × M₄ ↦ ((b y).2, y.2)) (𝓝 (q₀, Q₀)) (𝓝 (c₀, Q₀)) := by
-      simpa only [hb₀] using (hbc.snd.prodMk continuousAt_snd).tendsto
+  · obtain ⟨hto₀, hto₁, hto₂⟩ := tendsto_chainEdges hb.continuousAt hb₀
     filter_upwards [hDo.mem_nhds hDmem, hto₀.eventually hd₀, hto₁.eventually hd₁,
       hto₂.eventually hd₂] with y hyD hy₀ hy₁ hy₂
     obtain ⟨hmatch, hsrc, htgt⟩ := hrel y hyD
@@ -278,32 +285,15 @@ theorem generatedMap_eventuallyEq_comp_three {R : M₁ × M₄ → ℝ} {b : M�
       generatingTarget I₄ R y = generatingTarget I₄ S₂ ((b y).2, y.2)) :
     generatedMap hR hMR =ᶠ[𝓝 (generatingSource I₁ R (q, Q))]
       generatedMap hS₂ hM₂ ∘ generatedMap hS₁ hM₁ ∘ generatedMap hS₀ hM₀ := by
-  have hto₀ : Tendsto (fun y : M₁ × M₄ ↦ (y.1, (b y).1)) (𝓝 (q, Q)) (𝓝 (q, a)) := by
-    simpa only [hb₀] using (continuousAt_fst.prodMk hb.fst).tendsto
-  have hto₁ : Tendsto b (𝓝 (q, Q)) (𝓝 (a, c)) := by
-    simpa only [hb₀] using hb.tendsto
-  have hto₂ : Tendsto (fun y : M₁ × M₄ ↦ ((b y).2, y.2)) (𝓝 (q, Q)) (𝓝 (c, Q)) := by
-    simpa only [hb₀] using (hb.snd.prodMk continuousAt_snd).tendsto
+  obtain ⟨hto₀, hto₁, hto₂⟩ := tendsto_chainEdges hb hb₀
   -- On the source projection of `R`, both maps send `src R y` to `tgt R y`.
-  have hsrc : ∀ᶠ y in 𝓝 (q, Q),
-      generatedMap hR hMR (generatingSource I₁ R y) =
-        (generatedMap hS₂ hM₂ ∘ generatedMap hS₁ hM₁ ∘ generatedMap hS₀ hM₀)
-          (generatingSource I₁ R y) := by
-    filter_upwards [hrel, eventually_generatedMap_generatingSource hR hMR,
-      hto₀.eventually (eventually_generatedMap_generatingSource hS₀ hM₀),
-      hto₁.eventually (eventually_generatedMap_generatingSource hS₁ hM₁),
-      hto₂.eventually (eventually_generatedMap_generatingSource hS₂ hM₂)]
-      with y ⟨hm₁, hm₂, hsrcR, htgtR⟩ hRy hy₀ hy₁ hy₂
-    rw [hRy, comp_apply, comp_apply, hsrcR, hy₀, hm₁, hy₁, hm₂, hy₂, htgtR]
-  -- Every point near the source point is the source projection of a point near `(q, Q)`, its
-  -- image under the branch of `R`.
-  have hβ : Tendsto (generatingBranch hR hMR) (𝓝 (generatingSource I₁ R (q, Q))) (𝓝 (q, Q)) := by
-    have hc := ((generatingBranch hR hMR).mdifferentiableAt (by simp)
-      (mem_generatingBranch_source hR hMR)).continuousAt
-    simpa only [generatingBranch_generatingSource] using hc.tendsto
-  filter_upwards [hβ.eventually hsrc, eventually_generatingSource_generatingBranch hR hMR
-    (mem_generatingBranch_source hR hMR)] with z hz hz'
-  rwa [hz'] at hz
+  refine eventuallyEq_of_eventually_generatingSource hR hMR ?_
+  filter_upwards [hrel, eventually_generatedMap_generatingSource hR hMR,
+    hto₀.eventually (eventually_generatedMap_generatingSource hS₀ hM₀),
+    hto₁.eventually (eventually_generatedMap_generatingSource hS₁ hM₁),
+    hto₂.eventually (eventually_generatedMap_generatingSource hS₂ hM₂)]
+    with y ⟨hm₁, hm₂, hsrcR, htgtR⟩ hRy hy₀ hy₁ hy₂
+  rw [hRy, comp_apply, comp_apply, hsrcR, hy₀, hm₁, hy₁, hm₂, hy₂, htgtR]
 
 end GeneratedMap
 

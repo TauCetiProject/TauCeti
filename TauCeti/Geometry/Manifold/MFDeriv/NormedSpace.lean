@@ -247,8 +247,11 @@ theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_zero_iff
   refine ⟨fun h ↦ ⟨ContinuousLinearMap.ext fun v ↦ ?_, ContinuousLinearMap.ext fun w ↦ ?_⟩,
     fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_⟩
   · rw [← hf.mvfderiv_prod_eq_apply_of_snd_eq_zero (v := (v, 0)) rfl, h]
+    -- Both zero maps evaluate to zero. `ContinuousLinearMap.zero_apply` cannot rewrite `0 (v, 0)`,
+    -- since `(v, 0)` typechecks only through the tangent-space wrapper, so this is closed by `rfl`.
     rfl
   · rw [← hf.mvfderiv_prod_eq_apply_of_fst_eq_zero (v := (0, w)) rfl, h]
+    -- As in the previous case, closed by `rfl` through the tangent-space wrapper.
     rfl
   · rw [hf.mvfderiv_prod_eq_add_apply, h.1, h.2]
     -- The zero maps evaluate to zero; the components of `v` are vectors of the model spaces.
