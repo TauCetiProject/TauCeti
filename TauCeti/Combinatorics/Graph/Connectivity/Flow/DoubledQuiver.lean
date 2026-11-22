@@ -61,7 +61,6 @@ theorem bidirectedNetwork_lower (G : Graph V E) (c : E(G) → K) (hc : 0 ≤ c)
   (rfl)
 
 /-- The upper bound on a bidirected arrow is its edge's capacity. -/
-@[simp]
 theorem bidirectedNetwork_upper (G : Graph V E) (c : E(G) → K) (hc : 0 ≤ c)
     {x y : V(G)} (a : (G.bidirectedNetwork c hc).Hom x y) :
     (G.bidirectedNetwork c hc).upper a = G.bidirectedCapacity c a :=
@@ -95,7 +94,6 @@ theorem bidirectedDoubledVertexEquiv_apply
 
 /-- The inverse vertex equivalence sends a doubled-quiver vertex to the corresponding actual
 vertex of `Graph.ofSimpleGraph G`. -/
-@[simp]
 theorem bidirectedDoubledVertexEquiv_symm_vertex (x : V) :
     G.bidirectedDoubledVertexEquiv.symm (DoubledQuiver.vertex G x) =
       G.toOfSimpleGraphVertex x := by
@@ -124,7 +122,6 @@ def bidirectedDoubledHomEquiv (x y : (Graph.ofSimpleGraph G).vertexSet) :
 
 /-- The arrow equivalence sends a directed incidence to the doubled-quiver arrow induced by the
 same adjacency. -/
-@[simp]
 theorem bidirectedDoubledHomEquiv_apply
     {x y : (Graph.ofSimpleGraph G).vertexSet}
     (a : (Graph.ofSimpleGraph G).BidirectedHom x y) :
@@ -133,7 +130,6 @@ theorem bidirectedDoubledHomEquiv_apply
   (rfl)
 
 /-- The inverse arrow equivalence recovers the unordered pair of its source and target. -/
-@[simp]
 theorem bidirectedDoubledHomEquiv_symm_apply_val
     {x y : (Graph.ofSimpleGraph G).vertexSet}
     (a : G.bidirectedDoubledVertexEquiv x ⟶ G.bidirectedDoubledVertexEquiv y) :
@@ -155,7 +151,6 @@ theorem doubledCapacity_apply (c : Sym2 V → K) {x y : DoubledQuiver G} (a : x 
   (rfl)
 
 /-- The doubled-quiver arrow induced by an adjacency carries the capacity of that edge. -/
-@[simp]
 theorem doubledCapacity_arrow (c : Sym2 V → K) {x y : V} (h : G.Adj x y) :
     G.doubledCapacity c (DoubledQuiver.arrow G h) = c s(x, y) :=
   by simp only [doubledCapacity_apply, DoubledQuiver.vertexEquiv_symm_vertex]
@@ -188,7 +183,6 @@ theorem doubledNetwork_lower (c : Sym2 V → K) (hc : ∀ e ∈ G.edgeSet, 0 ≤
   (rfl)
 
 /-- The upper bound on a doubled-quiver arrow is its pair capacity. -/
-@[simp]
 theorem doubledNetwork_upper (c : Sym2 V → K) (hc : ∀ e ∈ G.edgeSet, 0 ≤ c e)
     {x y : DoubledQuiver G} (a : (G.doubledNetwork c hc).Hom x y) :
     (G.doubledNetwork c hc).upper a = G.doubledCapacity c a :=
