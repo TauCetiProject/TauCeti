@@ -412,7 +412,7 @@ theorem not_forallExistsAlt_sq_freeGroup {A : Type*} [Nonempty A] (ι : G →* F
   have hsq : ∀ x : FreeGroup A, ∃ y, y ^ 2 = x := by
     simpa [forallExistsAlt_one, mul_inv_eq_one] using h
   obtain ⟨y, hy⟩ := hsq (of a)
-  exact not_isProperPower_of a (Group.isProperPower_iff.2 ⟨y, 2, le_rfl, hy.symm⟩)
+  exact not_isProperPower_of a (Monoid.isProperPower_iff.2 ⟨y, 2, le_rfl, hy.symm⟩)
 
 /-- The sentence `∀ x ∃ y (y² = x)` has no formal solution over any group of coefficients. -/
 theorem not_isFormalSolution_sq (q : Fin 1 → GX G (Fin 1)) :

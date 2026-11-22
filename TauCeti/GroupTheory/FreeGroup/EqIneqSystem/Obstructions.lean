@@ -64,7 +64,7 @@ theorem not_isSolution_pow_eq_of {n : ℕ} (hn : n ≠ 1) (x : X) (a : A) (v : X
   have hx : v x ^ n = of a := by simpa [isSolution_iff, mul_inv_eq_one] using h
   obtain rfl | hn0 := Nat.eq_zero_or_pos n
   · exact FreeGroup.of_ne_one a (by simpa using hx.symm)
-  · exact FreeGroup.not_isProperPower_of a (Group.isProperPower_iff.2 ⟨v x, n, by omega, hx.symm⟩)
+  · exact FreeGroup.not_isProperPower_of a (Monoid.isProperPower_iff.2 ⟨v x, n, by omega, hx.symm⟩)
 
 end EqIneqSystem
 

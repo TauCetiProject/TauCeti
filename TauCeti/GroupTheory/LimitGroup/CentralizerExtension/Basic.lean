@@ -593,15 +593,15 @@ end CentralizerExt
 /-- A step `G ↦ G(u, ℤⁿ)` of an iterated extension of centralizers is *admissible* when `u` is not
 a proper power (in particular `u ≠ 1`) and the added rank `n` is positive. -/
 def IsAdmissibleCentralizerStep (u : G) (n : ℕ) : Prop :=
-  ¬Group.IsProperPower u ∧ 0 < n
+  ¬Monoid.IsProperPower u ∧ 0 < n
 
 theorem isAdmissibleCentralizerStep_iff {u : G} {n : ℕ} :
-    IsAdmissibleCentralizerStep u n ↔ ¬Group.IsProperPower u ∧ 0 < n :=
+    IsAdmissibleCentralizerStep u n ↔ ¬Monoid.IsProperPower u ∧ 0 < n :=
   Iff.rfl
 
 theorem IsAdmissibleCentralizerStep.ne_one {u : G} {n : ℕ} (h : IsAdmissibleCentralizerStep u n) :
     u ≠ 1 :=
-  Group.ne_one_of_not_isProperPower h.1
+  Monoid.ne_one_of_not_isProperPower h.1
 
 /-- An admissible step adds positive rank. -/
 theorem IsAdmissibleCentralizerStep.pos {u : G} {n : ℕ} (h : IsAdmissibleCentralizerStep u n) :

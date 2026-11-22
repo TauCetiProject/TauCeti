@@ -207,7 +207,7 @@ theorem isComplete_centralizer_iff :
 
 /-- In a free group, the twist diagram of `G(u, ℤ)` is complete when `u` is not a proper power. -/
 theorem isComplete_centralizer_of_not_isProperPower [IsFreeGroup G]
-    (hu : ¬Group.IsProperPower u) : (centralizer u).IsComplete (.id G) :=
+    (hu : ¬Monoid.IsProperPower u) : (centralizer u).IsComplete (.id G) :=
   isComplete_centralizer_iff.2 fun _ hg =>
     IsFreeGroup.centralizer_singleton_eq_zpowers_self hu ▸ mem_centralizer_singleton_iff.2
       (mem_centralizer_iff.1 hg u (mem_centralizer_singleton_iff.2 rfl)).symm

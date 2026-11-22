@@ -80,7 +80,7 @@ element commuting with two non-commuting elements is trivial.
 
 public section
 
-open Group Subgroup
+open Group Monoid Subgroup
 
 namespace TauCeti.LimitGroup.CentralizerExt
 

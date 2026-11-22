@@ -48,7 +48,7 @@ public section
 
 open scoped commutatorElement
 
-open Group Subgroup TauCeti
+open Monoid Subgroup TauCeti
 
 namespace IsFreeGroup
 

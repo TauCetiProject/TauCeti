@@ -67,7 +67,7 @@ elements of a CSA group are moved into general position by conjugating their ent
 
 public section
 
-open Group Subgroup
+open Group Monoid Subgroup
 
 namespace IsFreeGroup
 
@@ -199,7 +199,8 @@ theorem not_isCommTransitive_hnnExtension_zpowers_sq {α : Type*} (a : α) :
     ¬ IsCommTransitive (HNNExtension (FreeGroup α) (zpowers (FreeGroup.of a ^ 2))
       (zpowers (FreeGroup.of a ^ 2)) (MulEquiv.refl _)) :=
   HNNExtension.not_isCommTransitive_zpowers_of_isProperPower (FreeGroup.isProperPower_of_sq a)
-    ((pow_eq_one_iff_left two_ne_zero).not.2 (FreeGroup.of_ne_one a))
+    (not_isOfFinOrder_of_isMulTorsionFree
+      ((pow_eq_one_iff_left two_ne_zero).not.2 (FreeGroup.of_ne_one a)))
 
 /-- The HNN extension of a free group along the identity of `zpowers (a ^ 2)` is not CSA. This
 is the extension of the centralizer of `a ^ 2` taken with `zpowers (a ^ 2)` in place of the full

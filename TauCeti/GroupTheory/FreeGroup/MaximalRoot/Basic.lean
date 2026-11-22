@@ -24,7 +24,7 @@ The results hold for every group with `IsFreeGroup`, in particular for `FreeGrou
 
 Conjugation and inversion transport maximal roots: `(g * r * g⁻¹) ^ k = g * x * g⁻¹` and
 `r⁻¹ ^ k = x⁻¹`, and neither operation creates or destroys proper powers
-(`Group.isProperPower_conj_iff`, `Group.isProperPower_inv`), so by uniqueness the maximal
+(`Monoid.isProperPower_conj_iff`, `Monoid.isProperPower_inv`), so by uniqueness the maximal
 roots of `g * x * g⁻¹` and `x⁻¹` are `g * r * g⁻¹` and `r⁻¹`, with the same exponent.
 
 ## Main results
@@ -43,9 +43,6 @@ roots of `g * x * g⁻¹` and `x⁻¹` are `g * r * g⁻¹` and `r⁻¹`, with t
   `ℤ`, via `k ↦ u ^ k`.
 * `IsFreeGroup.eq_or_eq_inv_of_commute`: two commuting non-proper-powers are equal or inverse.
 
-* `Group.maximalRoot_conj`, `Group.maximalRoot_inv`, `Group.maximalRoot_pow`: transport
-  maximal-root decompositions under conjugation, inversion, and positive powers.
-
 ## References
 
 * O. Kharlampovich, A. Myasnikov, V. Remeslennikov, D. Serbin, *Subgroups of fully residually
@@ -59,7 +56,7 @@ torsion-freeness of free groups pins down the exponents. -/
 
 public section
 
-open Group Subgroup
+open Monoid Subgroup
 
 namespace IsFreeGroup
 

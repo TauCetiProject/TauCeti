@@ -89,7 +89,7 @@ private theorem period_spec {v : List (α × Bool)} (hv : v ≠ []) :
 /- The block of least period of a nonempty cyclically reduced word is not a proper power. -/
 private theorem not_isProperPower_mk_take_period {v : List (α × Bool)}
     (hv : IsCyclicallyReduced v) (hv0 : v ≠ []) :
-    ¬Group.IsProperPower (mk (v.take (period v))) := by
+    ¬Monoid.IsProperPower (mk (v.take (period v))) := by
   obtain ⟨hj, hjv, hrep, hmin⟩ := period_spec hv0
   set j := period v
   set b := v.take j with hbdef
@@ -131,7 +131,7 @@ private theorem rootWord_nil : rootWord ([] : List (α × Bool)) = ([], 0) := by
 
 private theorem rootWord_toWord {x : FreeGroup α} (hx : x ≠ 1) :
     ∃ r : FreeGroup α, ∃ k : ℕ, rootWord x.toWord = (r.toWord, k) ∧
-      k ≠ 0 ∧ r ^ k = x ∧ ¬Group.IsProperPower r := by
+      k ≠ 0 ∧ r ^ k = x ∧ ¬Monoid.IsProperPower r := by
   set c := reduceCyclically.conjugator x.toWord
   set v := reduceCyclically x.toWord
   have hv0 : v ≠ [] := reduceCyclically_toWord_eq_nil_iff.not.mpr hx
@@ -146,7 +146,7 @@ private theorem rootWord_toWord {x : FreeGroup α} (hx : x ≠ 1) :
     ?_, ?_⟩
   · rw [hr, conj_pow, pow_mk, ← hrep, inv_mk, mul_mk, mul_mk,
       reduceCyclically.conj_conjugator_reduceCyclically, mk_toWord]
-  · rw [hr, Group.isProperPower_conj_iff]
+  · rw [hr, Monoid.isProperPower_conj_iff]
     exact not_isProperPower_mk_take_period hv hv0
 
 private theorem primrec_rootWord [Primcodable α] :
@@ -186,7 +186,7 @@ theorem exists_primrec_maximalRoot [Primcodable α] [DecidableEq α] :
     ∃ f : List (α × Bool) → List (α × Bool) × ℕ, Primrec f ∧
       (∀ w, mk w = 1 → f w = ([], 0)) ∧
       ∀ w, mk w ≠ 1 → ∀ (r : FreeGroup α) (k : ℕ),
-        f w = (r.toWord, k) ↔ k ≠ 0 ∧ r ^ k = mk w ∧ ¬Group.IsProperPower r := by
+        f w = (r.toWord, k) ↔ k ≠ 0 ∧ r ^ k = mk w ∧ ¬Monoid.IsProperPower r := by
   refine ⟨fun w => rootWord (reduce w), primrec_rootWord.comp primrec_reduce,
     fun w hw => ?_, fun w hw r k => ?_⟩
   · dsimp only

@@ -39,7 +39,7 @@ the element represented by `w`.
 
 public section
 
-open Group
+open Monoid
 
 namespace FreeGroup
 
@@ -50,7 +50,7 @@ of a repeated block. The conjugator and block are extracted from the input by bo
 indices, and the exponent is bounded by its length. -/
 theorem isProperPower_mk_iff_exists_bounded_replicate {w : List (α × Bool)}
     (hw : IsReduced w) :
-    Group.IsProperPower (mk w) ↔ w = [] ∨
+    Monoid.IsProperPower (mk w) ↔ w = [] ∨
       ∃ i ≤ w.length, ∃ j ≤ w.length, ∃ n ≤ w.length, 2 ≤ n ∧
         w = w.take i ++ (List.replicate n ((w.drop i).take j)).flatten ++
           invRev (w.take i) := by
@@ -59,7 +59,7 @@ theorem isProperPower_mk_iff_exists_bounded_replicate {w : List (α × Bool)}
   · intro h
     by_cases hw0 : w = []
     · exact Or.inl hw0
-    obtain ⟨y, n, hn, hy⟩ := Group.isProperPower_iff.mp h
+    obtain ⟨y, n, hn, hy⟩ := Monoid.isProperPower_iff.mp h
     let c := reduceCyclically.conjugator y.toWord
     let v := reduceCyclically y.toWord
     have heq : w = c ++ (List.replicate n v).flatten ++ invRev c := by
@@ -96,10 +96,10 @@ theorem isProperPower_mk_iff_exists_bounded_replicate {w : List (α × Bool)}
     exact Or.inr ⟨c.length, hi, v.length, hj, n, hnlen, hn,
       by simpa only [htake, hblock] using heq⟩
   · rintro (rfl | ⟨i, _, j, _, n, _, hn, heq⟩)
-    · simpa only [← one_eq_mk] using (Group.IsProperPower.one (G := FreeGroup α))
+    · simpa only [← one_eq_mk] using (Monoid.IsProperPower.one (M := FreeGroup α))
     · rw [heq, ← mul_mk, ← mul_mk, ← inv_mk, ← pow_mk]
-      exact (Group.isProperPower_conj_iff _ _).mpr
-        (Group.isProperPower_pow _ hn)
+      exact (Monoid.isProperPower_conj_iff _ _).mpr
+        (Monoid.isProperPower_pow _ hn)
 
 /-- A cyclically reduced word represents a proper power exactly when it is the concatenation of
 `l ≥ 2` copies of a single word. This is `FreeGroup.isProperPower_mk_iff_exists_bounded_replicate`
