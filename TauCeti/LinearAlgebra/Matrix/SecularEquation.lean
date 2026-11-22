@@ -20,7 +20,7 @@ it solves the *secular equation*
 
 Every eigenvector `x` of `A + u vᵀ` for such a `μ` is `-(v ⬝ᵥ x) • (A - μ • 1)⁻¹ *ᵥ u`, and at a
 root of the secular equation the eigenspace is the line spanned by `(A - μ • 1)⁻¹ *ᵥ u`; the
-eigenvector formulas hold over any commutative ring. The eigenvalues of a finite-rank
+eigenvector formulas hold over any commutative ring. The eigenvalues of a rank-one
 perturbation which leave the spectrum of the unperturbed matrix (outliers) are located by this
 equation, and the formula for their eigenvectors gives their overlap with the perturbation
 direction.
