@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Regular.LinearMap
 import Mathlib.Algebra.GroupWithZero.Action.Regular
+import Mathlib.RingTheory.Nilpotent.Defs
 
 /-!
 # Ideals together with their annihilators
@@ -19,10 +20,15 @@ regular element of `J.annihilator ⊔ J`.
 This is the input that splits an idempotent off the total ring of fractions of a reduced
 Noetherian ring with two minimal primes, as in `IsLocalRing.isDomain_of_isIntegrallyClosed`.
 
+A nilpotent ideal of a nontrivial ring, at the other extreme, kills a nonzero element: its last
+nonzero power does.
+
 ## Main results
 
 * `Ideal.exists_mem_annihilator_sup_isSMulRegular`: in a reduced Noetherian ring, every ideal
   together with its annihilator contains a nonzerodivisor.
+* `Ideal.exists_ne_zero_forall_mul_eq_zero_of_isNilpotent`: a nilpotent ideal of a nontrivial
+  ring kills a nonzero element.
 -/
 
 public section
@@ -48,3 +54,13 @@ theorem Ideal.exists_mem_annihilator_sup_isSMulRegular {R : Type*} [CommRing R]
   refine LinearMap.ext fun q ↦ ?_
   obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective q
   rw [hmk, map_smul, h0, smul_zero, LinearMap.zero_apply]
+
+/-- A nilpotent ideal `I` of a nontrivial commutative ring kills a nonzero element: every nonzero
+element of the last nonzero power of `I` will do. -/
+theorem Ideal.exists_ne_zero_forall_mul_eq_zero_of_isNilpotent {R : Type*} [CommRing R]
+    [Nontrivial R] {I : Ideal R} (hI : IsNilpotent I) : ∃ s ≠ 0, ∀ x ∈ I, x * s = 0 := by
+  obtain ⟨s, hsmem, hs⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (pow_pred_nilpotencyClass hI)
+  refine ⟨s, hs, fun x hx ↦ ?_⟩
+  have hmem := Ideal.mul_mem_mul hx hsmem
+  rwa [← pow_succ', Nat.sub_add_cancel (pos_nilpotencyClass_iff.mpr hI), pow_nilpotencyClass hI,
+    Ideal.zero_eq_bot, Ideal.mem_bot] at hmem

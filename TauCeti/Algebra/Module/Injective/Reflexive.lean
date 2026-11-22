@@ -13,7 +13,9 @@ public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Defs
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.RingTheory.Finiteness.Basic
 import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
+import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Module.Submodule.Superfluous
+import TauCeti.RingTheory.Ideal.Annihilator
 
 /-!
 # Reflexive modules over a self-injective local ring are finitely generated
@@ -76,18 +78,17 @@ theorem finite_quotient_smul_top_of_isReflexive [Module.Injective R R] (I : Idea
     by_contra hxI
     obtain ⟨y, i, hi, hyx⟩ := Ideal.IsMaximal.exists_inv ‹_› hxI
     have hxs : x * s = 0 := by simpa using hx
-    apply hs
-    calc s = (y * x + i) * s := by rw [hyx, one_mul]
-      _ = 0 := by rw [add_mul, mul_assoc, hxs, mul_zero, zero_add, hIs i hi]
+    exact hs (by linear_combination (-s) * hyx + y * hxs + hIs i hi)
   -- Composing with `σ` and `π` turns residue-field functionals on `V` into functionals on `M`.
   let j : Dual (R ⧸ I) V →ₗ[R] Dual R M :=
     { toFun := fun φ ↦ σ ∘ₗ φ.restrictScalars R ∘ₗ π
       map_add' := fun φ ψ ↦ by ext; simp
       map_smul' := fun r φ ↦ by ext; simp }
+  have hj_apply (φ : Dual (R ⧸ I) V) (m : M) : j φ m = σ (φ (π m)) := rfl
   have hj : Function.Injective j := by
     refine LinearMap.ker_eq_bot.mp (LinearMap.ker_eq_bot'.mpr fun φ hφ ↦ LinearMap.ext fun v ↦ ?_)
     obtain ⟨m, rfl⟩ := (I • (⊤ : Submodule R M)).mkQ_surjective v
-    have hm : σ (φ (π m)) = 0 := LinearMap.congr_fun hφ m
+    have hm : σ (φ (π m)) = 0 := by simpa [hj_apply] using LinearMap.congr_fun hφ m
     exact hσ (by simpa [π] using hm)
   -- Self-injectivity extends functionals along `j`, and reflexivity of `M` realises the
   -- extension as evaluation at an element of `M`.
@@ -97,7 +98,7 @@ theorem finite_quotient_smul_top_of_isReflexive [Module.Injective R R] (I : Idea
       Module.Injective.extension_property R R _ _ j hj (σ ∘ₗ Ψ.restrictScalars R)
     obtain ⟨m, rfl⟩ := (bijective_dual_eval R M).2 h
     refine ⟨π m, LinearMap.ext fun φ ↦ hσ ?_⟩
-    simpa [j] using LinearMap.congr_fun hh φ
+    simpa [hj_apply] using LinearMap.congr_fun hh φ
   have : IsReflexive (R ⧸ I) V := ⟨⟨eval_apply_injective _, hsurj⟩⟩
   infer_instance
 
@@ -106,20 +107,8 @@ generated.** This applies to `O ⧸ 𝔪 ^ k` for a discrete valuation ring `O` 
 generally to every self-injective Artinian local ring. -/
 theorem Finite.of_isReflexive_of_isNilpotent [IsLocalRing R] [Module.Injective R R]
     (h : IsNilpotent (IsLocalRing.maximalIdeal R)) [IsReflexive R M] : Module.Finite R M := by
-  classical
   set 𝔪 := IsLocalRing.maximalIdeal R
-  -- The last nonzero power of `𝔪` is killed by `𝔪`.
-  have hex : ∃ n, 𝔪 ^ n = ⊥ := h
-  have hn : Nat.find hex ≠ 0 := fun h0 ↦ by
-    have := Nat.find_spec hex
-    rw [h0, pow_zero, Ideal.one_eq_top] at this
-    exact top_ne_bot this
-  obtain ⟨k, hk⟩ := Nat.exists_eq_add_one_of_ne_zero hn
-  obtain ⟨s, hsmem, hs⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-    (Nat.find_min hex (hk ▸ k.lt_add_one))
-  have h𝔪s : ∀ x ∈ 𝔪, x * s = 0 := fun x hx ↦ by
-    have hmem := Ideal.mul_mem_mul hx hsmem
-    rwa [← pow_succ', ← hk, Nat.find_spec hex, Ideal.mem_bot] at hmem
+  obtain ⟨s, hs, h𝔪s⟩ := Ideal.exists_ne_zero_forall_mul_eq_zero_of_isNilpotent h
   have : 𝔪.IsMaximal := IsLocalRing.maximalIdeal.isMaximal R
   have : Module.Finite (R ⧸ 𝔪) (M ⧸ 𝔪 • (⊤ : Submodule R M)) :=
     finite_quotient_smul_top_of_isReflexive 𝔪 hs h𝔪s

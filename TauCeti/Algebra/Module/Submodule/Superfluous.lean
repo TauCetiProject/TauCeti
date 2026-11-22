@@ -354,9 +354,10 @@ theorem IsSuperfluous.finite_of_finite_quotient {N : Submodule R M} (hN : IsSupe
   choose t ht using fun i ↦ N.mkQ_surjective (s i)
   -- Lifts of generators of `M ⧸ N` span a supplement of `N`, which is everything.
   refine ⟨⟨Finset.univ.image t, hN.eq_top_of_sup_eq_top ?_⟩⟩
-  rw [← Submodule.map_mkQ_eq_top, Submodule.map_span, Finset.coe_image, Finset.coe_univ,
-    Set.image_univ, ← Set.range_comp, ← hs]
-  exact congrArg _ (congrArg Set.range (funext ht))
+  rw [← Submodule.map_mkQ_eq_top, Submodule.map_span, ← hs]
+  congr 1
+  ext
+  simp [← ht]
 
 end Ring
 
