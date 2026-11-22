@@ -113,6 +113,7 @@ theorem eval₂_rename_quinticF20Invariant {R : Type*} [CommRing R] (x : Fin 5 �
   simp only [Fin.isValue, Fin.reduceAdd, Fin.reduceSub]
 
 /-- The translation `a ↦ a + 1` fixes the `F₂₀`-invariant: it reindexes the sum. -/
+@[simp]
 theorem rename_finRotate_quinticF20Invariant :
     MvPolynomial.rename (⇑(finRotate 5)) quinticF20Invariant = quinticF20Invariant := by
   have e1 : ∀ a : Fin 5, a - 1 + 1 = a + 1 - 1 := by decide

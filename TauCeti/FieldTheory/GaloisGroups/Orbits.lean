@@ -8,9 +8,6 @@ module
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
 public import TauCeti.RingTheory.Polynomial.Factors
-import Mathlib.GroupTheory.GroupAction.Transitive
-import Mathlib.GroupTheory.Perm.Fin
-import TauCeti.GroupTheory.Perm.Partition
 import TauCeti.GroupTheory.Perm.PermCongr
 import TauCeti.GroupTheory.Perm.Recognition
 
@@ -57,9 +54,11 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
   `E`, if the automorphism group `Gal(E/F)` is transitive on the roots, then so is `p.Gal`.
 * `TauCeti.isPretransitive_algEquiv_rootSet_iff_gal`: in a normal splitting extension `E`, the
   automorphism group `Gal(E/F)` is transitive on the roots exactly when `p.Gal` is.
-* `TauCeti.exists_gal_apply_rootSet_numbering_eq_finRotate`: in a normal splitting extension,
-  the roots of a separable irreducible polynomial of prime degree `n` can be numbered so that some
-  automorphism acts on them as the rotation `finRotate n`.
+* `TauCeti.exists_algEquiv_apply_rootSet_numbering_eq_numbering_finRotate`: in a normal splitting
+  extension, the roots of a separable irreducible polynomial of prime degree `n` can be numbered so
+  that some automorphism acts on them as the rotation `finRotate n`.
+* `TauCeti.irreducible_of_map_eq_prod_X_sub_C_of_cycle`: a polynomial whose linear factors over an
+  extension are those of distinct elements cycled by an automorphism is irreducible.
 * `TauCeti.irreducible_map_iff_isPretransitive_fixingSubgroup`: in a normal splitting extension
   `E`, a separable `p` stays irreducible over an intermediate field `K` exactly when the
   automorphisms fixing `K` act transitively on the roots.
@@ -297,8 +296,8 @@ extension of `F` in which a separable irreducible polynomial `p` of prime degree
 the roots of `p` in `E` can be numbered by `Fin n` so that some automorphism of `E` over `F` acts on
 them as the rotation `finRotate n`, that is `a ↦ a + 1`: the transitive Galois image contains a
 full cycle by Cauchy's theorem, and a full cycle is conjugate to the rotation. -/
-theorem exists_gal_apply_rootSet_numbering_eq_finRotate [Normal F E] (hsep : p.Separable)
-    (hirr : Irreducible p) {n : ℕ} (hdeg : p.natDegree = n) (hn : n.Prime) :
+theorem exists_algEquiv_apply_rootSet_numbering_eq_numbering_finRotate [Normal F E]
+    (hsep : p.Separable) (hirr : Irreducible p) {n : ℕ} (hdeg : p.natDegree = n) (hn : n.Prime) :
     ∃ (e : p.rootSet E ≃ Fin n) (g : E ≃ₐ[F] E), ∀ i, g (e.symm i) = e.symm (finRotate n i) := by
   classical
   have hcard : Fintype.card (p.rootSet E) = n := hdeg ▸ card_rootSet_eq_natDegree hsep Fact.out
@@ -316,6 +315,39 @@ theorem exists_gal_apply_rootSet_numbering_eq_finRotate [Normal F E] (hsep : p.S
   refine ⟨e₀.trans τ, g, fun i => ?_⟩
   rw [← hτ]
   simp [Equiv.permCongr_apply, Equiv.Perm.inv_def, Gal.galActionHom_restrict]
+
+variable {E} in
+open Fin.NatCast in
+/-- **Irreducibility from a cycle of roots.** Let `q` be a polynomial over `F` whose image over an
+extension `E` is the product of the linear factors `X - C (u k)` of an injective family `u` indexed
+by `Fin (n + 1)`, and let an automorphism `g` of `E` over `F` cycle that family,
+`g (u k) = u (k + 1)`. Then `q` is irreducible: its roots are distinct, and the powers of `g` act
+transitively on them. -/
+theorem irreducible_of_map_eq_prod_X_sub_C_of_cycle {q : F[X]} {n : ℕ} {u : Fin (n + 1) → E}
+    (g : E ≃ₐ[F] E) (hinj : Function.Injective u) (hu : ∀ k, g (u k) = u (k + 1))
+    (hq : q.map (algebraMap F E) = ∏ k, (X - C (u k))) : Irreducible q := by
+  have : Fact ((q.map (algebraMap F E)).Splits) := ⟨hq ▸ Splits.prod fun k _ => Splits.X_sub_C _⟩
+  have hsep : q.Separable := (separable_map _).1 (hq ▸ separable_prod_X_sub_C_iff.2 hinj)
+  have hdeg : 0 < q.natDegree := by
+    rw [← natDegree_map (algebraMap F E), hq,
+      natDegree_prod_of_monic _ _ fun _ _ => monic_X_sub_C _]
+    simp
+  -- Every root is some `u k`, and `g ^ m` moves `u k` to `u (k + m)`.
+  have hroot : ∀ y ∈ q.rootSet E, ∃ k, u k = y := fun y hy => by
+    have hy := aeval_eq_zero_of_mem_rootSet hy
+    rw [aeval_def, eval₂_eq_eval_map, hq, eval_prod, Finset.prod_eq_zero_iff] at hy
+    obtain ⟨k, -, hk⟩ := hy
+    exact ⟨k, (sub_eq_zero.1 (by simpa using hk)).symm⟩
+  have hpow : ∀ (m : ℕ) k, (g ^ m) (u k) = u (k + m) := fun m => by
+    induction m with
+    | zero => simp
+    | succ m ih => intro k; rw [pow_succ', AlgEquiv.mul_apply, ih, hu, Nat.cast_succ, add_assoc]
+  refine (isPretransitive_iff_irreducible E hsep hdeg).1 <|
+    isPretransitive_gal_rootSet_of_isPretransitive_algEquiv E ⟨fun y z => ?_⟩
+  obtain ⟨i, hi⟩ := hroot y y.property
+  obtain ⟨j, hj⟩ := hroot z z.property
+  refine ⟨g ^ (j - i).val, Subtype.ext ?_⟩
+  simp [← hi, ← hj, hpow]
 
 /-- **Irreducibility over an intermediate field.** Let `E` be a normal extension of `F` in which a
 separable polynomial `p` of positive degree splits, and let `K` be an intermediate field. Then `p`

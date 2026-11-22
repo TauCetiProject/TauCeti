@@ -21,7 +21,7 @@ exactly when its Galois group is solvable
 form, `TauCeti.isSolvable_gal_iff_exists_isRoot_specialize_quinticF20Spec_of_five_ne_zero`, this
 happens exactly when its `F₂₀` resolvent sextic has a root in the base field. When it does, the
 sextic is a linear factor times an irreducible quintic
-(`TauCeti.exists_eq_X_sub_C_mul_of_isRoot_specialize_quinticF20Spec`).
+(`TauCeti.exists_irreducible_eq_X_sub_C_mul_of_isRoot_specialize_quinticF20Spec`).
 
 ## Main results
 

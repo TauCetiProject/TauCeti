@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Spec
 public import TauCeti.RingTheory.Polynomial.Factors
 
 import Mathlib.FieldTheory.Galois.Infinite
+import TauCeti.Algebra.MvPolynomial.Rename
 import TauCeti.FieldTheory.GaloisGroups.Orbits
 import TauCeti.RingTheory.Polynomial.RootEnumeration
 
@@ -126,8 +127,8 @@ private theorem apply_eval₂_rootEnum (e : f.rootSet E ≃ Fin n) (ϕ : E ≃�
     ϕ (MvPolynomial.eval₂ (Int.castRingHom E) (rootEnum e) Ψ)
       = MvPolynomial.eval₂ (Int.castRingHom E) (rootEnum e) (MvPolynomial.rename
           ⇑(e.permCongrHom (Gal.galActionHom f E (Gal.restrict f E ϕ))) Ψ) :=
-  MvPolynomial.apply_eval₂_intCastRingHom_of_comp_eq (ϕ : E →+* E)
-    (rootEnum_comp_permCongrHom e ϕ).symm Ψ
+  MvPolynomial.apply_eval₂_intCastRingHom_of_comp_eq Ψ (ϕ : E →+* E)
+    (rootEnum_comp_permCongrHom e ϕ).symm
 
 -- An element of the transported Galois image comes from an automorphism of `E` over `F`.
 private theorem exists_eq_of_mem_image [Normal F E] (e : f.rootSet E ≃ Fin n)

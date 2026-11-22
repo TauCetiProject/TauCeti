@@ -56,8 +56,6 @@ it is not the substitution above.
 * `MvPolynomial.galResolvent_comp_perm` and `MvPolynomial.galResolvent_map`: it does not depend
   on the numbering of the roots, and it commutes with a ring morphism applied to them.
 * `MvPolynomial.galResolvent_rename`: renaming the invariant does not change the orbit resolvent.
-* `MvPolynomial.apply_eval₂_intCastRingHom_of_comp_eq`: a ring homomorphism moving the points
-  along a map of indices carries the value of an integral polynomial to that of its renaming.
 * `TauCeti.monic_map_vietaHom` and `TauCeti.natDegree_map_vietaHom`: the specialization is monic
   of degree the size of the orbit, over every nonzero coefficient ring.
 -/
@@ -89,15 +87,6 @@ theorem galResolvent_rename (e : Equiv.Perm (Fin n)) (Φ : MvPolynomial (Fin n) 
     (x : Fin n → L) :
     galResolvent (rename (⇑e) Φ) x = galResolvent Φ x := by
   rw [galResolvent_def, galResolvent_def, renameOrbit_rename]
-
-/-- A ring homomorphism `φ` that moves a family of points along a map of indices,
-`φ ∘ x = y ∘ π`, carries the value at `x` of an integral polynomial `Ψ` to the value at `y` of `Ψ`
-renamed along `π`. -/
-theorem apply_eval₂_intCastRingHom_of_comp_eq {ι κ L' : Type*} [CommRing L'] (φ : L →+* L')
-    {x : ι → L} {y : κ → L'} {π : ι → κ} (h : ⇑φ ∘ x = y ∘ π) (Ψ : MvPolynomial ι ℤ) :
-    φ (eval₂ (Int.castRingHom L) x Ψ) = eval₂ (Int.castRingHom L') y (rename π Ψ) := by
-  rw [hom_eval₂, eval₂_rename, ← h, RingHom.ext_int (φ.comp _) (Int.castRingHom L')]
-  rfl
 
 /-- The orbit resolvent at `x` is the image of the universal resolvent under evaluation at `x`. -/
 theorem map_universalResolvent_eq_galResolvent (Φ : MvPolynomial (Fin n) ℤ) (x : Fin n → L) :

@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Data.ZMod.Basic
 
 import Mathlib.Algebra.Field.ZMod
-import Mathlib.Logic.Function.Iterate
 import Mathlib.Tactic.Ring
 
 /-!
@@ -27,8 +26,9 @@ equally spaced points `k.val * (L / N)` of step `L / N` in any division semiring
 Over a prime `p`, the multiples of any nonzero `d : ZMod p` exhaust `ZMod p`, so a function on
 `ZMod p` with a nonzero period is constant (`Function.Periodic.apply_eq_apply_zmod`). Hence, when a
 map `g` advances a family `u` indexed by `ZMod p` by one step, a single coincidence `u k = u l` with
-`k ≠ l` makes `u` constant (`ZMod.apply_eq_apply_of_semiconj_add_one`); for any `N`, so does a
-fixed point of `g` among the values (`ZMod.apply_eq_of_semiconj_add_one`).
+`k ≠ l` makes `u` constant (`Function.Semiconj.apply_eq_apply_of_collision_zmod_add_one`); for any
+`N ≠ 0`, so does a fixed point of `g` among the values
+(`Function.Semiconj.apply_eq_of_isFixedPt_zmod_add_one`).
 
 ## Main results
 
@@ -40,9 +40,10 @@ fixed point of `g` among the values (`ZMod.apply_eq_of_semiconj_add_one`).
   `L`-periodic function evaluated at `s₀ + k.val * (L / N)` shifts the argument by `±L / N`.
 * `Function.Periodic.apply_eq_apply_zmod`: a function on `ZMod p`, `p` prime, with a nonzero
   period is constant.
-* `ZMod.apply_eq_of_semiconj_add_one`, `ZMod.apply_eq_apply_of_semiconj_add_one`: a family that a
-  map advances by one step is constant once one of its values is a fixed point of the map, or,
-  over a prime, once two of its values coincide.
+* `Function.Semiconj.apply_eq_of_isFixedPt_zmod_add_one`,
+  `Function.Semiconj.apply_eq_apply_of_collision_zmod_add_one`: a family indexed by `ZMod N` that a
+  map advances by one step is constant once, for `N ≠ 0`, one of its values is a fixed point of the
+  map, or, for `N` prime, its values at two distinct indices coincide.
 -/
 
 public section
@@ -117,26 +118,24 @@ theorem Periodic.apply_eq_apply_zmod {α : Type*} {p : ℕ} [Fact p.Prime] {u : 
     rw [ZMod.natCast_zmod_val, div_mul_cancel₀ _ hd, add_sub_cancel]
   rw [← hl, hu.nat_mul _ k]
 
-end Function
+namespace Semiconj
 
-namespace ZMod
+variable {α : Type*} {g : α → α}
 
-variable {α : Type*} {N : ℕ} {g : α → α} {u : ZMod N → α}
-
-open Function in
-/-- If a map `g` advances a family `u` indexed by `ZMod N` by one step, `u (k + 1) = g (u k)`, and
-one of the values `u k` is a fixed point of `g`, then every value `u l` equals it. -/
-theorem apply_eq_of_semiconj_add_one [NeZero N] (hu : Semiconj u (· + 1) g) {v : α}
-    (hv : g v = v) {k : ZMod N} (hk : u k = v) (l : ZMod N) : u l = v := by
+/-- If a map `g` advances a family `u` indexed by `ZMod N`, `N ≠ 0`, by one step,
+`u (k + 1) = g (u k)`, and one of the values `u k` is a fixed point of `g`, then every value `u l`
+equals it. -/
+theorem apply_eq_of_isFixedPt_zmod_add_one {N : ℕ} [NeZero N] {u : ZMod N → α}
+    (hu : Semiconj u (· + 1) g) {v : α} (hv : IsFixedPt g v) {k : ZMod N} (hk : u k = v)
+    (l : ZMod N) : u l = v := by
   -- `l` is reached from `k` in `(l - k).val` steps.
   have hl : k + (l - k).val • (1 : ZMod N) = l := by
     rw [nsmul_one, ZMod.natCast_zmod_val, add_sub_cancel]
   rw [← hl, ← add_right_iterate_apply, (hu.iterate_right _).eq, hk, iterate_fixed hv]
 
-open Function in
 /-- If a map `g` advances a family `u` indexed by `ZMod p`, `p` prime, by one step,
 `u (k + 1) = g (u k)`, then a single coincidence `u k = u l` with `k ≠ l` makes `u` constant. -/
-theorem apply_eq_apply_of_semiconj_add_one {p : ℕ} [Fact p.Prime] {u : ZMod p → α}
+theorem apply_eq_apply_of_collision_zmod_add_one {p : ℕ} [Fact p.Prime] {u : ZMod p → α}
     (hu : Semiconj u (· + 1) g) {k l : ZMod p} (hkl : k ≠ l) (h : u k = u l) (a b : ZMod p) :
     u a = u b := by
   refine Periodic.apply_eq_apply_zmod (d := l - k) (fun m => ?_) (sub_ne_zero.2 hkl.symm) a b
@@ -150,4 +149,6 @@ theorem apply_eq_apply_of_semiconj_add_one {p : ℕ} [Fact p.Prime] {u : ZMod p 
   congr 1
   ring
 
-end ZMod
+end Semiconj
+
+end Function
