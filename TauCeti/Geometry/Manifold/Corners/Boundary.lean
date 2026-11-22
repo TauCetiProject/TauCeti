@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Instances.Real
 public import TauCeti.Geometry.Manifold.Boundary.OfHomeomorph
+public import TauCeti.Geometry.Manifold.Corners.Model
 
 /-!
 # The boundary of a manifold with corners is a topological manifold
@@ -216,14 +216,6 @@ end Model
 
 section Manifold
 
-/-- The quadrant model sends a point to the frontier of its range exactly when the point has a
-vanishing coordinate. -/
-private theorem mem_frontier_range_euclideanQuadrant_iff {n : ℕ} (z : EuclideanQuadrant n) :
-    (𝓡c n) z ∈ frontier (range (𝓡c n)) ↔ ∃ i, z.val i = 0 := by
-  rw [frontier_range_modelWithCornersEuclideanQuadrant, modelWithCornersEuclideanQuadrant_apply]
-  simp only [mem_ofPred_eq, eq_comm (a := (0 : ℝ))]
-  exact and_iff_right z.property
-
 /-- **Topological invariance of the boundary.** A point of a charted space modelled on the
 quadrant `[0, ∞)ⁿ` lies on the boundary exactly when any chart around it, in the atlas or not,
 reads it with a vanishing coordinate. -/
@@ -233,7 +225,7 @@ theorem ModelWithCorners.mem_boundary_euclideanQuadrant_iff {n : ℕ} {M : Type*
     x ∈ (𝓡c n).boundary M ↔ ∃ i, (e x).val i = 0 := by
   rw [ModelWithCorners.boundary, mem_ofPred_eq,
     ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional hx,
-    mem_frontier_range_euclideanQuadrant_iff]
+    modelWithCornersEuclideanQuadrant_mem_frontier_range_iff]
 
 variable (m) in
 /-- The boundary coordinates of the quadrant, on the points that the model sends to the frontier
@@ -241,7 +233,7 @@ of its range. -/
 private noncomputable def euclideanQuadrantFrontierHomeomorph :
     {z : EuclideanQuadrant (m + 1) // (𝓡c (m + 1)) z ∈ frontier (range (𝓡c (m + 1)))} ≃ₜ
       EuclideanSpace ℝ (Fin m) :=
-  ((Homeomorph.refl _).subtype mem_frontier_range_euclideanQuadrant_iff).trans
+  ((Homeomorph.refl _).subtype modelWithCornersEuclideanQuadrant_mem_frontier_range_iff).trans
     (euclideanQuadrantBoundaryHomeomorph m)
 
 variable {m : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanQuadrant (m + 1)) M]
