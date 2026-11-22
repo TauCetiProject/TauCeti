@@ -48,16 +48,17 @@ noncomputable def globalFlowOn (v : (x : M) → TangentSpace I x)
     (hv : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (K : Set M)
     (hK : ∀ x ∈ K, maximalIntegralCurveInterval v x = univ)
     (hKv : ∀ x ∈ K, ∀ t, maximalIntegralCurve v x t ∈ K) : Flow ℝ K where
-  toFun t x := ⟨maximalIntegralCurve v x t, hKv x x.2 t⟩
+  toFun t x := ⟨maximalIntegralCurve v x t, hKv x x.property t⟩
   cont' := by
     refine Continuous.subtype_mk ?_ _
     refine (contMDiffOn_maximalIntegralCurve (n := 1) le_rfl hv).continuousOn.comp_continuous
-      ((continuous_subtype_val.comp continuous_snd).prodMk continuous_fst) fun p ↦ ?_
-    simp [hK p.2 p.2.2]
+      ((continuous_subtypeVal.comp continuous_snd).prodMk continuous_fst) fun p ↦ ?_
+    simp [hK p.snd p.snd.property]
   map_add' t₁ t₂ x := by
     refine Subtype.ext ?_
     simp only
-    rw [add_comm, maximalIntegralCurve_add hv (by simp [hK x x.2]) (by simp [hK x x.2])]
+    rw [add_comm,
+      maximalIntegralCurve_add hv (by simp [hK x x.property]) (by simp [hK x x.property])]
   map_zero' x := Subtype.ext maximalIntegralCurve_zero
 
 variable (hv : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
@@ -74,6 +75,6 @@ theorem coe_globalFlowOn_apply (t : ℝ) (x : K) :
 theorem isMIntegralCurve_coe_globalFlowOn (x : K) :
     IsMIntegralCurve (fun t ↦ (globalFlowOn v hv K hK hKv t x : M)) v := by
   simp only [coe_globalFlowOn_apply]
-  exact isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv (hK x x.2)
+  exact isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv (hK x x.property)
 
 end TauCeti

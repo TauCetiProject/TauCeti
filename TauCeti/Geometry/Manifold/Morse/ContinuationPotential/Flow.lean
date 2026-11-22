@@ -310,7 +310,7 @@ private theorem slabFlow_lyapunov [CompleteSpace E]
     by_cases hc : (slabFlow hv hV hδ hf₀ hf₁ t y : M × ℝ) ∈
       criticalPoints (I.prod 𝓘(ℝ)) (continuationPotential C f)
     · simp [mem_criticalPoints.1 hc]
-    · exact (hVF _ (slabFlow hv hV hδ hf₀ hf₁ t y).2.2 hc).le
+    · exact (hVF _ (slabFlow hv hV hδ hf₀ hf₁ t y).property.2 hc).le
   · -- Along the orbit `F` is constant, so its derivative `dF(V)` at `y` vanishes.
     by_contra hc
     have hd := Manifold.hasDerivAt_comp_curve (hF _) (hγ y 0)
@@ -318,7 +318,7 @@ private theorem slabFlow_lyapunov [CompleteSpace E]
         fun _ ↦ continuationPotential C f y := funext hy
     rw [horbit] at hd
     have hy0 : (slabFlow hv hV hδ hf₀ hf₁ 0 y : M × ℝ) = y := by rw [Flow.map_zero_apply]
-    exact (hVF _ (slabFlow hv hV hδ hf₀ hf₁ 0 y).2.2 (by rwa [hy0])).ne
+    exact (hVF _ (slabFlow hv hV hδ hf₀ hf₁ 0 y).property.2 (by rwa [hy0])).ne
       (hd.unique (hasDerivAt_const _ _))
 
 /-- **Ends of the trajectories in the slab, relative to a finite set.** Let `l` be `atTop` or
@@ -350,11 +350,11 @@ private theorem exists_tendsto_maximalIntegralCurve_of_finite {l : Filter ℝ}
   have hrest' : ∀ w, MapClusterPt w l (fun t ↦ slabFlow hv hV hδ hf₀ hf₁ t ⟨z, mem_univ _, hz⟩) →
       (∀ t, continuationPotential C f (slabFlow hv hV hδ hf₀ hf₁ t w) =
         continuationPotential C f w) → (w : M × ℝ) ∈ S := fun w hw hc ↦
-    hSc w w.2.2 (hrest w hc) (by
+    hSc w w.property.2 (hrest w hc) (by
       rw [← hcoe]
-      exact hw.continuousAt_comp continuous_subtype_val.continuousAt)
+      exact hw.continuousAt_comp continuous_subtypeVal.continuousAt)
   have hg : Continuous fun y : (univ ×ˢ Icc (0 : ℝ) 1 : Set (M × ℝ)) ↦
-      continuationPotential C f y := hf.continuationPotential.continuous.comp continuous_subtype_val
+      continuationPotential C f y := hf.continuationPotential.continuous.comp continuous_subtypeVal
   obtain ⟨w, hw, hlim⟩ : ∃ w ∈ Subtype.val ⁻¹' S,
       Tendsto (fun t ↦ slabFlow hv hV hδ hf₀ hf₁ t ⟨z, mem_univ _, hz⟩) l (𝓝 w) := by
     rcases hl with rfl | rfl
@@ -364,7 +364,7 @@ private theorem exists_tendsto_maximalIntegralCurve_of_finite {l : Filter ℝ}
         (hS.preimage Subtype.val_injective.injOn) _ hrest'
   refine ⟨w, hw, ?_⟩
   rw [← hcoe]
-  exact (continuous_subtype_val.tendsto w).comp hlim
+  exact (continuous_subtypeVal.tendsto w).comp hlim
 
 /-- **Forward ends of the trajectories in the slab.** Let `M` be a compact boundaryless manifold,
 `f` a differentiable path independent of the time for `t < δ` and for `t > 1 - δ`, with

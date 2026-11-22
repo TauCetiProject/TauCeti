@@ -254,13 +254,13 @@ theorem mfderiv_eq_zero_of_mem_unstableSet {a y : M} (hy : y ∈ hX.flow.unstabl
 theorem exists_tendsto_atTop (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
     ∃ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atTop (𝓝 x) :=
   Flow.exists_tendsto_atTop_of_antitone hX.flow hf.contMDiff.continuous hX.antitone_flow
-    hf.finite_setOf_mfderiv_eq_zero y (fun z _ hz ↦ hX.mfderiv_eq_zero_of_forall_eq hz)
+    hf.finite_setOf_mfderiv_eq_zero y (fun _ _ hz ↦ hX.mfderiv_eq_zero_of_forall_eq hz)
 
 /-- **Every orbit converges backward in time to a critical point.** -/
 theorem exists_tendsto_atBot (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
     ∃ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atBot (𝓝 x) :=
   Flow.exists_tendsto_atBot_of_antitone hX.flow hf.contMDiff.continuous hX.antitone_flow
-    hf.finite_setOf_mfderiv_eq_zero y (fun z _ hz ↦ hX.mfderiv_eq_zero_of_forall_eq hz)
+    hf.finite_setOf_mfderiv_eq_zero y (fun _ _ hz ↦ hX.mfderiv_eq_zero_of_forall_eq hz)
 
 /-- **An orbit trapped near a critical point converges to it.** If the forward orbit of `w` stays
 in a closed set `K` whose only critical point of the Morse function `f` is `x`, then the orbit
