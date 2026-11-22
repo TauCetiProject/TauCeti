@@ -359,6 +359,26 @@ theorem coefficientCochainComplexXEquiv_d (n : ℤ) (x : (m.coefficientCochainCo
       m.coefficientDifferential hM (m.coefficientCochainComplexXEquiv hM n x) :=
   gradedCochainComplexXEquiv_d n x
 
+section CoefficientMap
+
+variable {N : Type uM} [AddCommGroup N] [Module R N] [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N]
+  {𝒩 : ℤ → Submodule R N} [DirectSum.Decomposition 𝒩]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece 𝒩]
+  {dN : N →ₗ[R] N} (hN : IsDGRightModule hA 𝒩 dN)
+
+/-- Under `coefficientCochainComplexXEquiv`, the components of the coefficient map of a morphism of
+DG right modules apply the morphism to every coefficient. -/
+@[simp]
+theorem coefficientCochainComplexXEquiv_coefficientCochainComplexMap_f_apply
+    (f : DGRightModuleHom hM hN) (n : ℤ) (x : (m.coefficientCochainComplex hM).X n) :
+    (m.coefficientCochainComplexXEquiv hN n
+        (((m.coefficientCochainComplexMap hM hN f).f n).hom x) : P →₀ N) =
+      Finsupp.mapRange.linearMap (f.toLinearMap.restrictScalars R)
+        (m.coefficientCochainComplexXEquiv hM n x) :=
+  gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply _ _ _ n x
+
+end CoefficientMap
+
 /-- For finite `P`, the finite-support/function equivalence intertwines the coefficient
 differential with the original finite twisted differential. -/
 theorem linearEquivFunOnFinite_coefficientDifferential [Fintype P] (f : P →₀ M) :

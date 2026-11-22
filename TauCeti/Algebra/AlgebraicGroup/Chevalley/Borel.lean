@@ -219,7 +219,7 @@ theorem weylElement_conj_rootSubgroupPoints_simpleIndex_mem_borelSubgroup_iff
       negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
     rw [← t.reflectionPerm_rationalRootSystem ht]
     exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots _ _ _).mpr
-      (support_subset_posRoots _ _ (t.simpleIndex_mem_support i))
+      (simpleIndex_mem_posRoots i)
   rw [D.weylElement_conj_rootSubgroupPoints,
     D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots A hneg,
     ← D.weylElement_conj_rootSubgroupPoints, conj_eq_one_iff]
@@ -230,11 +230,9 @@ theorem exists_weylElement_conj_notMem_borelSubgroup [Nontrivial A] (i : Fin t.r
     ∃ b : D.borelSubgroup A,
       D.weylElement (t.simpleIndex ht i) A 1 * b.val *
         (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ ∉ D.borelSubgroup A := by
-  have hpos : t.simpleIndex ht i ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) :=
-    support_subset_posRoots _ _ (t.simpleIndex_mem_support i)
   refine ⟨⟨D.rootSubgroupPoints (t.simpleIndex ht i) A (Multiplicative.ofAdd 1),
     D.positivePoints_le_borelSubgroup A
-      (D.rootSubgroupPoints_mem_positivePoints A hpos _)⟩, ?_⟩
+      (D.rootSubgroupPoints_mem_positivePoints A (simpleIndex_mem_posRoots i) _)⟩, ?_⟩
   rw [D.weylElement_conj_rootSubgroupPoints_simpleIndex_mem_borelSubgroup_iff]
   exact D.rootSubgroupPoints_ofAdd_one_ne_one A (t.simpleIndex ht i)
 

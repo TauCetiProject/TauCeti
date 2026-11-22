@@ -5,122 +5,185 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Circle
-public import Mathlib.LinearAlgebra.BilinearMap
+public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.Topology.LocallyConstant.Basic
-import Mathlib.Topology.Algebra.PontryaginDual
+public import TauCeti.Algebra.Ring.Periodic
+public import TauCeti.Topology.Algebra.Group.CharacterAnnihilator
 
 /-!
-# Annihilators for bilinear character pairings
+# Fourier identities for subgroups and character annihilators
 
-For an additive subgroup `U` and a bilinear map `B`, the character annihilator consists of the
-frequencies `w` at which `ψ (B u w) = 1` for all `u ∈ U`. Unlike orthogonality for a bilinear
-form, this condition generally defines only an additive subgroup, not a submodule.
+Let `ψ : AddChar R Circle`, `L : V →ₗ[R] W →ₗ[R] R` and `μ` a measure on `V`, and write
+`𝓕 f = VectorFourier.fourierIntegral ψ μ L f`, so that `𝓕 f w = ∫ ψ (-L v w) • f v ∂μ`. This file
+relates periods of `f` and the support of `𝓕 f` through the character annihilator
+`U.characterAnnihilator ψ L` of an additive subgroup `U` of `V`, and computes the transform of the
+indicator of `U` and of its cosets. These are the identities behind Fourier analysis on a
+nonarchimedean local field, where a Schwartz–Bruhat function is a finite combination of indicators
+of cosets of a compact open lattice, and the self-dual measure is normalized by the volumes of a
+lattice and of its annihilator. Here `R` is any commutative ring and `V`, `W` any modules: no
+topology, nondegeneracy or Haar normalization is assumed beyond what each statement uses.
 
-For a jointly continuous pairing, the restricted phase on a compact subgroup is locally
-constant in the frequency. This uses Mathlib's discreteness of the Pontryagin dual of a compact
-monoid, and in particular gives openness of the annihilator.
+All transforms are Mathlib's totalized Bochner integrals, so none of the identities carries an
+integrability hypothesis. Translation invariance of `μ` is needed only where a period of `f` is
+used.
+
+## Main results
+
+* `VectorFourier.fourierIntegral_eq_zero_of_periodic`: a period `u` of `f` kills `𝓕 f` at every
+  frequency `w` with `ψ (L u w) ≠ 1`.
+* `VectorFourier.support_fourierIntegral_subset`: if every element of `U` is a period of `f`, then
+  `𝓕 f` is supported in the annihilator of `U`.
+* `VectorFourier.fourierIntegral_indicator_addSubgroup`: `𝓕 (1_U · c) = 1_(U⊥) · μ.real U • c`.
+* `VectorFourier.fourierIntegral_indicator_addSubgroup_comp_sub_right`: the transform of the
+  indicator of the coset `a + U`.
+* `VectorFourier.fourierIntegral_char_smul`: modulation by `ψ (L · w₀)` translates the transform
+  by `w₀`.
+* `VectorFourier.periodic_fourierIntegral`: if `f` is supported in `U`, every element of the
+  annihilator of `U` is a period of `𝓕 f`.
+* `VectorFourier.isLocallyConstant_fourierIntegral`: the transform of a function supported in a
+  compact subgroup is locally constant when the pairing is continuous on `U × W`.
+* `VectorFourier.hasCompactSupport_fourierIntegral`: if `f` is `U`-periodic and the annihilator of
+  `U` is compact, `𝓕 f` has compact support.
+* `VectorFourier.fourierIntegral_fourierIntegral_indicator_addSubgroup`: Fourier inversion for the
+  indicator of `U`, when `U` is the annihilator of its annihilator and the two volumes are
+  reciprocal.
+
+## References
+
+* J. Tate, *Fourier analysis in number fields and Hecke's zeta-functions*, Thesis (1950), in
+  Cassels–Fröhlich, *Algebraic Number Theory*, §2.2.
 -/
 
 public section
 
-namespace AddSubgroup
+open MeasureTheory Function Set
 
-variable {R V W W' : Type*} [CommSemiring R]
-  [AddCommGroup V] [Module R V] [AddCommGroup W] [Module R W]
+namespace VectorFourier
 
-/-- The additive subgroup of `W` pairing trivially with `U` under the character `ψ` and
-bilinear map `B`. -/
-noncomputable def characterAnnihilator (U : AddSubgroup V) (ψ : AddChar R Circle)
-    (B : V →ₗ[R] W →ₗ[R] R) : AddSubgroup W :=
-  ⨅ u : U, (ψ.toAddMonoidHom.comp (B u).toAddMonoidHom).ker
+variable {R V W E : Type*} [CommRing R] [AddCommGroup V] [Module R V] [MeasurableSpace V]
+  [AddCommGroup W] [Module R W] [NormedAddCommGroup E] [NormedSpace ℂ E]
+  (ψ : AddChar R Circle) (μ : Measure V) (L : V →ₗ[R] W →ₗ[R] R)
 
-/-- A frequency is in the character annihilator precisely when its phase on `U` is trivial. -/
-theorem mem_characterAnnihilator {U : AddSubgroup V} {ψ : AddChar R Circle}
-    {B : V →ₗ[R] W →ₗ[R] R} {w : W} :
-    w ∈ U.characterAnnihilator ψ B ↔ ∀ u ∈ U, ψ (B u w) = 1 := by
-  simp [characterAnnihilator, Subtype.forall]
+section Period
 
-/-- The zero subgroup is annihilated by all frequencies. -/
-@[simp] theorem characterAnnihilator_bot (ψ : AddChar R Circle) (B : V →ₗ[R] W →ₗ[R] R) :
-    (⊥ : AddSubgroup V).characterAnnihilator ψ B = ⊤ := by
+variable [MeasurableAdd V] [μ.IsAddRightInvariant]
+
+/-- **Fourier vanishing from a period.** If `u` is a period of `f` and the phase `ψ (L u w)` is
+nontrivial, the Fourier transform of `f` vanishes at `w`. -/
+theorem fourierIntegral_eq_zero_of_periodic {f : V → E} {u : V} (hf : Periodic f u) {w : W}
+    (hw : ψ (L u w) ≠ 1) : fourierIntegral ψ μ L f w = 0 := by
+  have hfu : (f ∘ fun v ↦ v + u) = f := funext hf
+  have h := congrFun (fourierIntegral_comp_add_right ψ μ L f u) w
+  rw [hfu, Circle.smul_def] at h
+  -- `h` says that `𝓕 f w` is fixed by the scalar `ψ (L u w) ≠ 1`.
+  have hsub : ((ψ (L u w) : ℂ) - 1) • fourierIntegral ψ μ L f w = 0 := by
+    rw [sub_smul, one_smul, ← h, sub_self]
+  refine (smul_eq_zero.mp hsub).resolve_left (sub_ne_zero.mpr fun h1 ↦ hw ?_)
+  exact Circle.ext (by simpa using h1)
+
+/-- **Fourier support lies in the period annihilator.** If every element of `U` is a period of
+`f`, the Fourier transform of `f` is supported in `U.characterAnnihilator ψ L`. -/
+theorem support_fourierIntegral_subset {f : V → E} {U : AddSubgroup V}
+    (hf : ∀ u ∈ U, Periodic f u) :
+    support (fourierIntegral ψ μ L f) ⊆ U.characterAnnihilator ψ L := by
+  intro w hw
+  rw [SetLike.mem_coe, AddSubgroup.mem_characterAnnihilator]
+  intro u hu
+  by_contra h
+  exact hw (fourierIntegral_eq_zero_of_periodic ψ μ L (hf u hu) h)
+
+variable [CompleteSpace E]
+
+/-- **Fourier transform of a subgroup indicator.** For a measurable additive subgroup `U` and a
+right-invariant measure `μ`, the transform of `1_U · c` is `μ.real U • c` times the indicator of
+the annihilator of `U`. No normalization of `μ` is assumed. -/
+theorem fourierIntegral_indicator_addSubgroup {U : AddSubgroup V}
+    (hU : MeasurableSet (U : Set V)) (c : E) :
+    fourierIntegral ψ μ L ((U : Set V).indicator fun _ ↦ c) =
+      (U.characterAnnihilator ψ L : Set W).indicator fun _ ↦ μ.real U • c := by
   ext w
-  simp [mem_characterAnnihilator]
+  by_cases hw : w ∈ U.characterAnnihilator ψ L
+  · rw [indicator_of_mem hw, ← integral_indicator_const c hU, fourierIntegral]
+    -- On `U` the phase `ψ (-L v w)` is trivial, so the integrand is the indicator itself.
+    congr 1 with v
+    by_cases hv : v ∈ U
+    · rw [indicator_of_mem hv, ← LinearMap.neg_apply, ← map_neg,
+        AddSubgroup.mem_characterAnnihilator.mp hw _ (neg_mem hv), one_smul]
+    · rw [indicator_of_notMem hv, smul_zero]
+  · rw [indicator_of_notMem hw]
+    exact notMem_support.mp fun h ↦ hw <| support_fourierIntegral_subset ψ μ L
+      (fun _ ↦ Periodic.indicator_addSubgroup fun _ ↦ rfl) h
 
-/-- The zero pairing has trivial phase at all frequencies. -/
-@[simp] theorem characterAnnihilator_zero (U : AddSubgroup V) (ψ : AddChar R Circle) :
-    U.characterAnnihilator ψ (0 : V →ₗ[R] W →ₗ[R] R) = ⊤ := by
+/-- **Fourier transform of a coset indicator.** The transform of `v ↦ 1_U (v - a) · c`, the
+indicator of the coset `a + U`, is the subgroup formula multiplied by the phase `ψ (-L a w)`. -/
+theorem fourierIntegral_indicator_addSubgroup_comp_sub_right {U : AddSubgroup V}
+    (hU : MeasurableSet (U : Set V)) (c : E) (a : V) :
+    fourierIntegral ψ μ L (fun v ↦ (U : Set V).indicator (fun _ ↦ c) (v - a)) =
+      fun w ↦ ψ (-L a w) •
+        (U.characterAnnihilator ψ L : Set W).indicator (fun _ ↦ μ.real U • c) w := by
+  have h := fourierIntegral_comp_add_right ψ μ L ((U : Set V).indicator fun _ ↦ c) (-a)
+  simp only [fourierIntegral_indicator_addSubgroup ψ μ L hU, map_neg, LinearMap.neg_apply] at h
+  simpa [comp_def, sub_eq_add_neg] using h
+
+end Period
+
+/-- **Fourier transform of a character modulation.** Multiplying `f` by the character
+`ψ (L · w₀)` translates its Fourier transform by `w₀`. No invariance of `μ` is needed. -/
+theorem fourierIntegral_char_smul (f : V → E) (w₀ : W) :
+    fourierIntegral ψ μ L (fun v ↦ ψ (L v w₀) • f v) =
+      fun w ↦ fourierIntegral ψ μ L f (w - w₀) := by
   ext w
-  simp [mem_characterAnnihilator]
+  simp only [fourierIntegral, smul_smul, ← AddChar.map_add_eq_mul, map_sub, neg_sub,
+    neg_add_eq_sub]
 
-/-- A trivial character imposes no restriction on frequencies. -/
-@[simp] theorem characterAnnihilator_one (U : AddSubgroup V) (B : V →ₗ[R] W →ₗ[R] R) :
-    U.characterAnnihilator 1 B = ⊤ := by
-  ext w
-  simp [mem_characterAnnihilator]
+/-- **Frequency periods from support containment.** If `f` is supported in `U`, every element of
+the annihilator of `U` is a period of the Fourier transform of `f`. No invariance of `μ` is
+needed. -/
+theorem periodic_fourierIntegral {f : V → E} {U : AddSubgroup V} (hf : support f ⊆ U) {a : W}
+    (ha : a ∈ U.characterAnnihilator ψ L) : Periodic (fourierIntegral ψ μ L f) a := fun w ↦ by
+  -- Modulation by `ψ (L · a)` fixes `f`: the phase is trivial on `U` and `f` vanishes off `U`.
+  have hmod : (fun v ↦ ψ (L v a) • f v) = f := funext fun v ↦ by
+    by_cases hv : v ∈ U
+    · rw [AddSubgroup.mem_characterAnnihilator.mp ha v hv, one_smul]
+    · rw [notMem_support.mp fun h ↦ hv (hf h), smul_zero]
+  simpa [hmod] using congrFun (fourierIntegral_char_smul ψ μ L f a) (w + a)
 
-/-- Enlarging the subgroup shrinks its character annihilator. -/
-theorem characterAnnihilator_anti (ψ : AddChar R Circle) (B : V →ₗ[R] W →ₗ[R] R) :
-    Antitone (fun U : AddSubgroup V ↦ U.characterAnnihilator ψ B) :=
-  fun _ _ h _ hw ↦ mem_characterAnnihilator.mpr fun u hu ↦ mem_characterAnnihilator.mp hw u (h hu)
+/-- **Local constancy of the Fourier transform.** The Fourier transform of a function supported
+in a compact additive subgroup `U` is locally constant if the pairing is continuous on `U × W`.
+No compatibility between the topology and the addition of `W` is needed. -/
+theorem isLocallyConstant_fourierIntegral [TopologicalSpace V] [TopologicalSpace W]
+    {f : V → E} {U : AddSubgroup V}
+    (hU : IsCompact (U : Set V)) (hψL : Continuous fun p : U × W ↦ ψ (L p.1 p.2))
+    (hf : support f ⊆ U) : IsLocallyConstant (fourierIntegral ψ μ L f) := by
+  refine (IsLocallyConstant.iff_exists_open _).mpr fun w ↦
+    ⟨_, U.isOpen_setOf_sub_mem_characterAnnihilator hU hψL w, by simp, fun w' hw' ↦ ?_⟩
+  simpa using periodic_fourierIntegral ψ μ L hf hw' w
 
-/-- Pulling back the frequency variable of the pairing pulls back the annihilator. -/
-@[simp] theorem characterAnnihilator_compl₂ [AddCommGroup W'] [Module R W']
-    (U : AddSubgroup V) (ψ : AddChar R Circle) (B : V →ₗ[R] W →ₗ[R] R) (T : W' →ₗ[R] W) :
-    U.characterAnnihilator ψ (B.compl₂ T) =
-      (U.characterAnnihilator ψ B).comap T.toAddMonoidHom := by
-  ext w
-  simp [mem_characterAnnihilator, LinearMap.compl₂_apply]
+/-- **Compact support from a compact period annihilator.** If every element of `U` is a period of
+`f` and the annihilator of `U` is compact in the `R₁` space `W`, the Fourier transform of `f` has
+compact support. -/
+theorem hasCompactSupport_fourierIntegral [MeasurableAdd V] [μ.IsAddRightInvariant]
+    [TopologicalSpace W] [R1Space W] {f : V → E} {U : AddSubgroup V}
+    (hf : ∀ u ∈ U, Periodic f u) (hU : IsCompact (U.characterAnnihilator ψ L : Set W)) :
+    HasCompactSupport (fourierIntegral ψ μ L f) :=
+  HasCompactSupport.of_support_subset_isCompact hU (support_fourierIntegral_subset ψ μ L hf)
 
-/-- To annihilate a cyclic additive subgroup it suffices to annihilate its generator. -/
-@[simp] theorem mem_characterAnnihilator_zmultiples {ψ : AddChar R Circle}
-    {B : V →ₗ[R] W →ₗ[R] R} {v : V} {w : W} :
-    w ∈ (zmultiples v).characterAnnihilator ψ B ↔ ψ (B v w) = 1 := by
-  rw [mem_characterAnnihilator]
-  let φ := ψ.toAddMonoidHom.comp (B.flip w).toAddMonoidHom
-  exact (zmultiples_le (H := φ.ker))
+/-- **Fourier inversion for a subgroup indicator.** Let `μ` on `V` and `ν` on `W` be
+right-invariant, and let `A = U.characterAnnihilator ψ L`. If the annihilator of `A` for the
+transposed pairing `L.flip` is contained in `U` (it always contains `U`), and the volumes satisfy
+`μ.real U * ν.real A = 1`, then transforming `1_U · c` first for `(μ, L)` and then for
+`(ν, L.flip)` returns `1_U · c`. Since `U = -U`, this is the inversion formula `𝓕 (𝓕 f) v = f (-v)`
+for `f = 1_U · c`. -/
+theorem fourierIntegral_fourierIntegral_indicator_addSubgroup [MeasurableAdd V]
+    [μ.IsAddRightInvariant] [CompleteSpace E] [MeasurableSpace W] [MeasurableAdd W]
+    (ν : Measure W) [ν.IsAddRightInvariant] {U : AddSubgroup V} (hU : MeasurableSet (U : Set V))
+    (hA : MeasurableSet (U.characterAnnihilator ψ L : Set W))
+    (hdual : (U.characterAnnihilator ψ L).characterAnnihilator ψ L.flip ≤ U)
+    (hvol : μ.real U * ν.real (U.characterAnnihilator ψ L) = 1) (c : E) :
+    fourierIntegral ψ ν L.flip (fourierIntegral ψ μ L ((U : Set V).indicator fun _ ↦ c)) =
+      (U : Set V).indicator fun _ ↦ c := by
+  rw [fourierIntegral_indicator_addSubgroup ψ μ L hU, fourierIntegral_indicator_addSubgroup ψ ν
+    L.flip hA, le_antisymm hdual (U.le_characterAnnihilator_characterAnnihilator_flip ψ L),
+    smul_smul, mul_comm, hvol, one_smul]
 
-/-- The character annihilator is closed when the phase is continuous in the frequency
-variable for each element of the subgroup. -/
-theorem isClosed_characterAnnihilator [TopologicalSpace W] (U : AddSubgroup V)
-    {ψ : AddChar R Circle} {B : V →ₗ[R] W →ₗ[R] R}
-    (h : ∀ u ∈ U, Continuous (fun w ↦ ψ (B u w))) :
-    IsClosed (U.characterAnnihilator ψ B : Set W) := by
-  have hset : (U.characterAnnihilator ψ B : Set W) = ⋂ u : U, {w | ψ (B u w) = 1} := by
-    ext w
-    simp [mem_characterAnnihilator, Subtype.forall]
-  rw [hset]
-  exact isClosed_iInter fun u ↦ isClosed_eq (h u u.property) continuous_const
-
-/-- If the pairing is jointly continuous on `U × W` and `U` is compact, the restricted
-character is locally constant as a function of the frequency. -/
-theorem isLocallyConstant_characterPairing [TopologicalSpace V] [TopologicalSpace W]
-    (U : AddSubgroup V) {ψ : AddChar R Circle} {B : V →ₗ[R] W →ₗ[R] R}
-    (hU : IsCompact (U : Set V)) (h : Continuous (fun p : U × W ↦ ψ (B p.1 p.2))) :
-    IsLocallyConstant (fun w (u : U) ↦ ψ (B u w)) := by
-  let : CompactSpace U := isCompact_iff_compactSpace.mp hU
-  let χ (w : W) : PontryaginDual (Multiplicative U) :=
-    { toFun := fun u ↦ ψ (B u.toAdd w)
-      map_one' := by simp
-      map_mul' := fun u v ↦ by simp [ψ.map_add_eq_mul]
-      continuous_toFun := h.comp (continuous_toAdd.prodMk continuous_const) }
-  have hχ : Continuous χ := by
-    apply (ContinuousMonoidHom.isInducing_toContinuousMap _ _).continuous_iff.mpr
-    apply ContinuousMap.continuous_of_continuous_uncurry
-    exact h.comp ((continuous_toAdd.comp continuous_snd).prodMk continuous_fst)
-  exact (IsLocallyConstant.of_discrete (fun (η : PontryaginDual (Multiplicative U)) (u : U) ↦
-    η (Multiplicative.ofAdd u))).comp_continuous hχ
-
-/-- A compact additive subgroup has open character annihilator for a jointly continuous
-pairing. No compatibility of the frequency topology with addition is needed. -/
-theorem isOpen_characterAnnihilator [TopologicalSpace V] [TopologicalSpace W]
-    (U : AddSubgroup V) {ψ : AddChar R Circle} {B : V →ₗ[R] W →ₗ[R] R}
-    (hU : IsCompact (U : Set V)) (h : Continuous (fun p : U × W ↦ ψ (B p.1 p.2))) :
-    IsOpen (U.characterAnnihilator ψ B : Set W) := by
-  have hset : (U.characterAnnihilator ψ B : Set W) = {w | (fun u : U ↦ ψ (B u w)) = 1} := by
-    ext w
-    simp [mem_characterAnnihilator, funext_iff, Subtype.forall]
-  rw [hset]
-  exact (U.isLocallyConstant_characterPairing hU h).isOpen_fiber 1
-
-end AddSubgroup
+end VectorFourier

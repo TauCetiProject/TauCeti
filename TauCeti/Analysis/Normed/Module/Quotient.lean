@@ -17,9 +17,10 @@ import TauCeti.Analysis.Normed.Operator.RingOpNorm
 # Norm estimates on quotient modules
 
 Descending a continuous semilinear map through a submodule contained in its kernel preserves its
-operator norm. Equivalently, precomposition with the quotient projection preserves operator
-norms. These facts apply to seminormed spaces and arbitrary submodules, and supply the metric
-part of the duality between a quotient and the annihilator of its defining submodule.
+operator norm, so the map is bounded by its operator norm times the quotient norm. Equivalently,
+precomposition with the quotient projection preserves operator norms. These facts apply to
+seminormed spaces and arbitrary submodules, and supply the metric part of the duality between a
+quotient and the annihilator of its defining submodule.
 Likewise, descending a bounded semilinear map to `SeparationQuotient E` via
 `SeparationQuotient.liftCLM` preserves its operator norm (`SeparationQuotient.norm_liftCLM`).
 The quotient projection is moreover a normed quotient map on the underlying seminormed additive
@@ -89,6 +90,12 @@ theorem norm_liftQL (S : Submodule 𝕜 E) (f : E →SL[σ] F) (h : S ≤ f.ker)
     ‖S.liftQL f h‖ = ‖f‖ := by
   have heq : (S.liftQL f h).comp S.mkQL = f := by ext x; simp
   rw [← S.norm_comp_mkQL (S.liftQL f h), heq]
+
+/-- A continuous semilinear map vanishing on `S` is bounded by its operator norm times the quotient
+norm modulo `S`. -/
+theorem norm_apply_le_norm_mul_norm_quotientMk (S : Submodule 𝕜 E) (f : E →SL[σ] F)
+    (h : S ≤ f.ker) (x : E) : ‖f x‖ ≤ ‖f‖ * ‖(Submodule.Quotient.mk x : E ⧸ S)‖ := by
+  simpa [S.norm_liftQL f h] using (S.liftQL f h).le_opNorm (Submodule.Quotient.mk x)
 
 /-- The norm of a quotient class is its distance to the submodule. -/
 theorem norm_mkQL_apply (S : Submodule 𝕜 E) (x : E) :
