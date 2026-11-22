@@ -57,6 +57,24 @@ theorem upperJump_iff_isLocalRingUpperJump (u : RamificationIndexDomain) :
   simp_rw [upperRamificationGroup_eq_isLocalRingUpperRamificationGroup]
   exact ⟨fun hu v huv ↦ hu ⟨v, u.property.trans huv.le⟩ huv, fun hu v huv ↦ hu v huv⟩
 
+/-- For a tower `K₀ ⊆ K ⊆ L` of nonarchimedean local fields, `UpperJump K L` agrees with
+`TauCeti.IsLocalRing.UpperJump` on `integralClosure 𝒪[K₀] L`. -/
+theorem upperJump_iff_isLocalRingUpperJump_integralClosure (K₀ K L : Type*)
+    [Field K₀] [ValuativeRel K₀] [TopologicalSpace K₀] [IsNonarchimedeanLocalField K₀]
+    [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+    [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+    [Algebra K₀ K] [Algebra K L] [Algebra K₀ L] [ValuativeExtension K₀ L] [ValuativeExtension K L]
+    [Module.Finite K L] [IsGalois K L] [Algebra.IsAlgebraic K₀ L]
+    [IsScalarTower 𝒪[K₀] K L] [IsLocalRing (integralClosure 𝒪[K₀] L)]
+    (u : RamificationIndexDomain) :
+    UpperJump K L u ↔
+      TauCeti.IsLocalRing.UpperJump (L ≃ₐ[K] L) (integralClosure 𝒪[K₀] L) u := by
+  rw [upperJump_iff_isLocalRingUpperJump]
+  exact TauCeti.IsLocalRing.upperJump_iff_of_ramificationGroup_eq_comap
+    (φ := MonoidHom.id (L ≃ₐ[K] L)) Function.bijective_id
+    (fun i ↦ by simpa only [Subgroup.comap_id] using
+      ramificationGroup_integerRing_eq_integralClosure K₀ K L i) u
+
 /-- An upper break requires a nontrivial Galois group. -/
 theorem UpperJump.nontrivial {u : RamificationIndexDomain} (hu : UpperJump K L u) :
     Nontrivial (L ≃ₐ[K] L) := by

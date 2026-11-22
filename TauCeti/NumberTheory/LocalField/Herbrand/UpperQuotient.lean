@@ -8,7 +8,6 @@ module
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Tower
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.NumberTheory.LocalField.Herbrand.Jump
-import TauCeti.NumberTheory.LocalField.Herbrand.Tower
 import TauCeti.RingTheory.DiscreteValuationRing.Herbrand.IntegralClosure
 
 /-!
@@ -93,7 +92,7 @@ variable (K L M : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [Algebra K M] [ValuativeExtension K M]
   [IsScalarTower K L M] [IsGalois K L] [IsGalois K M]
 
-open TauCeti.IsLocalRing _root_.IsLocalRing _root_.IsDiscreteValuationRing in
+open TauCeti.IsLocalRing in
 private theorem tower_integralClosure_bridge (v : RamificationIndexDomain) :
     haveI : Module.Finite K M := Module.Finite.trans L M
     haveI := IsGalois.tower_top_of_isGalois K L M
@@ -104,16 +103,18 @@ private theorem tower_integralClosure_bridge (v : RamificationIndexDomain) :
     (UpperJump K M v ↔ UpperJump K L v ∨ UpperJump L M (inverseHerbrand K L v)) := by
   have : Module.Finite K M := Module.Finite.trans L M
   have := IsGalois.tower_top_of_isGalois K L M
-  refine withIntegralClosureTower K L M fun hMK hML hLK ↦ ?_
-  simp only [upperRamificationGroup_eq_isLocalRingUpperRamificationGroup,
-    coe_inverseHerbrand_eq_inverseHerbrandFun, upperJump_iff_isLocalRingUpperJump,
-    upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap Function.bijective_id hMK,
-    upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap Function.bijective_id hML,
-    upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap Function.bijective_id hLK,
-    inverseHerbrandFun_eq_of_ramificationGroup_eq_comap Function.bijective_id hLK,
-    upperJump_iff_of_ramificationGroup_eq_comap Function.bijective_id hMK,
-    upperJump_iff_of_ramificationGroup_eq_comap Function.bijective_id hML,
-    upperJump_iff_of_ramificationGroup_eq_comap Function.bijective_id hLK, Subgroup.comap_id]
+  let _ := IsScalarTower.to₁₃₄ 𝒪[K] K L M
+  let _ := isDiscreteValuationRing_integralClosure K M
+  let _ := isLocalHom_algebraMap_integralClosure K M
+  let _ := finite_residueField_integralClosure K M
+  let _ := TauCeti.isLocalRing_integralClosure_of_tower 𝒪[K] L M
+  simp only [upperRamificationGroup_eq_isLocalRingUpperRamificationGroup_integralClosure K K M,
+    upperRamificationGroup_eq_isLocalRingUpperRamificationGroup_integralClosure K L M,
+    upperRamificationGroup_eq_isLocalRingUpperRamificationGroup_integralClosure K K L,
+    coe_inverseHerbrand_eq_inverseHerbrandFun_integralClosure K K L,
+    upperJump_iff_isLocalRingUpperJump_integralClosure K K M,
+    upperJump_iff_isLocalRingUpperJump_integralClosure K L M,
+    upperJump_iff_isLocalRingUpperJump_integralClosure K K L]
   exact ⟨map_restrictNormalHom_upperRamificationGroup_integralClosure 𝒪[K] L v,
     comap_restrictScalarsHom_upperRamificationGroup_integralClosure 𝒪[K] L v,
     upperJump_integralClosure_tower_iff 𝒪[K] L v⟩

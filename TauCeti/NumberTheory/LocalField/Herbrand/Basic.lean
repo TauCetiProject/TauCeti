@@ -592,4 +592,63 @@ end AlgEquiv
 
 end Transport
 
+section IntegralClosure
+
+open TauCeti.IsLocalRing in
+/-- For a tower `K₀ ⊆ K ⊆ L` of nonarchimedean local fields, `herbrand K L` agrees with
+`TauCeti.IsLocalRing.herbrandFun` on `integralClosure 𝒪[K₀] L`. -/
+theorem coe_herbrand_eq_herbrandFun_integralClosure (K₀ K L : Type*)
+    [Field K₀] [ValuativeRel K₀] [TopologicalSpace K₀] [IsNonarchimedeanLocalField K₀]
+    [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+    [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+    [Algebra K₀ K] [Algebra K L] [Algebra K₀ L] [ValuativeExtension K₀ L] [ValuativeExtension K L]
+    [Module.Finite K L] [IsGalois K L] [Algebra.IsAlgebraic K₀ L]
+    [IsScalarTower 𝒪[K₀] K L] [IsLocalRing (integralClosure 𝒪[K₀] L)]
+    (u : RamificationIndexDomain) :
+    (herbrand K L u : ℝ) = herbrandFun (L ≃ₐ[K] L) (integralClosure 𝒪[K₀] L) u := by
+  rw [coe_herbrand_eq_herbrandFun]
+  exact herbrandFun_eq_of_ramificationGroup_eq_comap (φ := MonoidHom.id (L ≃ₐ[K] L))
+    Function.bijective_id (fun i ↦ by simpa only [Subgroup.comap_id] using
+      ramificationGroup_integerRing_eq_integralClosure K₀ K L i) u
+
+open TauCeti.IsLocalRing in
+/-- For a tower `K₀ ⊆ K ⊆ L` of nonarchimedean local fields, `inverseHerbrand K L` agrees with
+`TauCeti.IsLocalRing.inverseHerbrandFun` on `integralClosure 𝒪[K₀] L`. -/
+theorem coe_inverseHerbrand_eq_inverseHerbrandFun_integralClosure (K₀ K L : Type*)
+    [Field K₀] [ValuativeRel K₀] [TopologicalSpace K₀] [IsNonarchimedeanLocalField K₀]
+    [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+    [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+    [Algebra K₀ K] [Algebra K L] [Algebra K₀ L] [ValuativeExtension K₀ L] [ValuativeExtension K L]
+    [Module.Finite K L] [IsGalois K L] [Algebra.IsAlgebraic K₀ L]
+    [IsScalarTower 𝒪[K₀] K L] [IsLocalRing (integralClosure 𝒪[K₀] L)]
+    (v : RamificationIndexDomain) :
+    (inverseHerbrand K L v : ℝ) =
+      inverseHerbrandFun (L ≃ₐ[K] L) (integralClosure 𝒪[K₀] L) v := by
+  rw [coe_inverseHerbrand_eq_inverseHerbrandFun]
+  exact inverseHerbrandFun_eq_of_ramificationGroup_eq_comap (φ := MonoidHom.id (L ≃ₐ[K] L))
+    Function.bijective_id (fun i ↦ by simpa only [Subgroup.comap_id] using
+      ramificationGroup_integerRing_eq_integralClosure K₀ K L i) v
+
+open TauCeti.IsLocalRing in
+/-- For a tower `K₀ ⊆ K ⊆ L` of nonarchimedean local fields, `upperRamificationGroup K L` agrees
+with `TauCeti.IsLocalRing.upperRamificationGroup` on `integralClosure 𝒪[K₀] L`. -/
+theorem upperRamificationGroup_eq_isLocalRingUpperRamificationGroup_integralClosure (K₀ K L : Type*)
+    [Field K₀] [ValuativeRel K₀] [TopologicalSpace K₀] [IsNonarchimedeanLocalField K₀]
+    [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+    [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+    [Algebra K₀ K] [Algebra K L] [Algebra K₀ L] [ValuativeExtension K₀ L] [ValuativeExtension K L]
+    [Module.Finite K L] [IsGalois K L] [Algebra.IsAlgebraic K₀ L]
+    [IsScalarTower 𝒪[K₀] K L] [IsLocalRing (integralClosure 𝒪[K₀] L)]
+    (v : RamificationIndexDomain) :
+    upperRamificationGroup K L v =
+      TauCeti.IsLocalRing.upperRamificationGroup (L ≃ₐ[K] L) (integralClosure 𝒪[K₀] L) v := by
+  rw [upperRamificationGroup_eq_isLocalRingUpperRamificationGroup]
+  simpa only [Subgroup.comap_id] using
+    upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap
+      (φ := MonoidHom.id (L ≃ₐ[K] L)) Function.bijective_id
+      (fun i ↦ by simpa only [Subgroup.comap_id] using
+        ramificationGroup_integerRing_eq_integralClosure K₀ K L i) v
+
+end IntegralClosure
+
 end TauCeti.LocalFieldsRamification

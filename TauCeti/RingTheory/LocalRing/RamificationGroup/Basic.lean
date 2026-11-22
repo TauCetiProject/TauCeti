@@ -911,6 +911,19 @@ theorem apply_mem_ramificationGroupReal_iff
   rw [mem_ramificationGroupReal_iff_of_lowerIndex_eq (ENat.natCast_toNat (hne htop)).symm,
     ← h_eq hj.symm, mem_ramificationGroupReal_iff_of_lowerIndex_eq hj.symm, hφ.le_iff_le]
 
+/-- If `g` has finite lower index and maximizes `lowerIndex` in its coset `g * π.ker`,
+then `π g` also has finite lower index when `G'` acts faithfully on `C`. -/
+theorem lowerIndex_ne_top_of_forall_mem_ker_le
+    {G G' B C : Type*} [Group G] [Group G']
+    [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [MulSemiringAction G B]
+    [CommRing C] [IsDomain C] [IsDiscreteValuationRing C] [MulSemiringAction G' C]
+    [FaithfulSMul G' C] {π : G →* G'} {g : G} (hg_ne : lowerIndex B g ≠ ⊤)
+    (hg : ∀ h ∈ π.ker, lowerIndex B (g * h) ≤ lowerIndex B g) :
+    lowerIndex C (π g) ≠ ⊤ := by
+  rw [ne_eq, lowerIndex_eq_top_iff, ← MonoidHom.mem_ker]
+  exact fun hker ↦ hg_ne <| top_le_iff.1 <| by
+    simpa [mul_inv_cancel] using hg g⁻¹ (π.ker.inv_mem hker)
+
 /-- **Herbrand-style quotient image**: if `π : G →* G'` is surjective with finite kernel, `φ` is
 strictly monotone, and coset-maximal lifts `g` satisfy `i_B(g) ≠ ⊤ → i_C(π g) ≠ ⊤` and
 `φ (i_B(g) - 1) = i_C(π g) - 1`, then `(G_u).map π = G'_{φ(u)}`. -/
@@ -928,23 +941,23 @@ theorem map_ramificationGroupReal_eq_of_surjective
         φ ((j : ℝ) - 1) = ((lowerIndex C (π g)).toNat : ℝ) - 1)
     (u : ℝ) :
     (ramificationGroupReal G B u).map π = ramificationGroupReal G' C (φ u) := by
-  have hmk (g : G) {h : G} (hh : h ∈ π.ker) : π (g * h) = π g := by
-    rw [map_mul, MonoidHom.mem_ker.1 hh, mul_one]
+  have hrep (g : G) : ∃ g' : G, π g' = π g ∧ lowerIndex B g ≤ lowerIndex B g' ∧
+      (π g ∈ ramificationGroupReal G' C (φ u) ↔ g' ∈ ramificationGroupReal G B u) := by
+    obtain ⟨h₀, hh₀_mem, hh₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le (S := B) π.ker g
+    have hpi : π (g * h₀) = π g := by rw [map_mul, MonoidHom.mem_ker.1 hh₀_mem, mul_one]
+    refine ⟨g * h₀, hpi, ?_, ?_⟩
+    · simpa [mul_inv_cancel_right] using hh₀ h₀⁻¹ (π.ker.inv_mem hh₀_mem)
+    · rw [← hpi, apply_mem_ramificationGroupReal_iff hφ (hne _ hh₀) (h_eq _ hh₀)]
   ext q
   rw [Subgroup.mem_map]
   refine ⟨fun ⟨g, hg, hq⟩ ↦ ?_, fun hq ↦ ?_⟩
-  · obtain ⟨h₀, hh₀_mem, hh₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le (S := B) π.ker g
-    rw [← hq, ← hmk g hh₀_mem,
-      apply_mem_ramificationGroupReal_iff hφ (hne _ hh₀) (h_eq _ hh₀),
-      ramificationGroupReal_def, mem_ramificationGroup_iff_le_lowerIndex]
+  · obtain ⟨g', -, hle, hiff⟩ := hrep g
+    rw [← hq, hiff, ramificationGroupReal_def, mem_ramificationGroup_iff_le_lowerIndex]
     rw [ramificationGroupReal_def, mem_ramificationGroup_iff_le_lowerIndex] at hg
-    exact hg.trans (by simpa [mul_inv_cancel_right] using hh₀ h₀⁻¹ (π.ker.inv_mem hh₀_mem))
+    exact hg.trans hle
   · obtain ⟨g, rfl⟩ := hπ q
-    obtain ⟨h₀, hh₀_mem, hh₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le (S := B) π.ker g
-    exact ⟨g * h₀,
-      (apply_mem_ramificationGroupReal_iff hφ (hne _ hh₀) (h_eq _ hh₀) u).1
-        (hmk g hh₀_mem ▸ hq),
-      hmk g hh₀_mem⟩
+    obtain ⟨g', hpi, -, hiff⟩ := hrep g
+    exact ⟨g', hiff.1 hq, hpi⟩
 
 end RealDiscreteValuationRing
 

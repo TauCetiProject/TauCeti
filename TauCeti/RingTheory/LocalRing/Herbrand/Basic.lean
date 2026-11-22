@@ -16,15 +16,13 @@ import Mathlib.Topology.Order.IntermediateValue
 # Herbrand functions and the upper numbering on a local ring
 
 For a group `G` acting by ring automorphisms on a local ring `S`, we define the **Herbrand
-function** `herbrandFun G S u = ∫ t in 0..u, #G_t / #G_0`, its inverse `inverseHerbrandFun G S`,
-`upperRamificationGroup G S v = G_{ψ(v)}`, and `UpperJump G S`. These are finite-level
-constructions intended for `[Finite G]`: the unrestricted definitions accept infinite `G` only for
-signature simplicity, do not provide the inverse-limit filtration (since `Nat.card` collapses to `0`
-on infinite subgroups), and the inverse characterization requires `[Finite G]`. For finite `G`,
-`herbrandFun G S` is a continuous, strictly increasing, concave bijection of `ℝ` restricting to
-`herbrandOrderIso G S` on `[-1, ∞)`, `ψ` maps `ℕ` to `ℕ` (`psiNat G S`), and
-`(G^u).subgroupOf H = H^{φ_H(ψ_G(u))}` (`subgroupOf_upperRamificationGroup`). Adapts
-`NumberTheory/LocalField/Herbrand/{Basic,Jump,Quotient}.lean`.
+function** `herbrandFun G S u = ∫ t in 0..u, #G_t / #G_0`. When `G` is finite, we define its
+inverse `inverseHerbrandFun G S`, the upper-numbering filtration
+`upperRamificationGroup G S v = G_{ψ(v)}`, `UpperJump G S`, and `psiNat G S`: `herbrandFun G S`
+is a continuous, strictly increasing, concave bijection of `ℝ` restricting to `herbrandOrderIso G S`
+on `[-1, ∞)`, `ψ` maps `ℕ` to `ℕ` (`psiNat G S`), and `(G^u).subgroupOf H = H^{φ_H(ψ_G(u))}`
+(`subgroupOf_upperRamificationGroup`).
+Adapts `NumberTheory/LocalField/Herbrand/{Basic,Jump,Quotient}.lean`.
 
 ## References
 
@@ -48,93 +46,9 @@ def herbrandFun (u : ℝ) : ℝ :=
     (Nat.card (ramificationGroupReal G S t) : ℝ) / Nat.card (ramificationGroup G S 0)
 theorem herbrandFun_def (u : ℝ) : herbrandFun G S u = ∫ t in (0 : ℝ)..u,
     (Nat.card (ramificationGroupReal G S t) : ℝ) / Nat.card (ramificationGroup G S 0) := (rfl)
-/-- The **inverse Herbrand function** `ψ(v) = sInf {u : ℝ | v ≤ φ(u)}`. This is a finite-level
-construction: the unrestricted definition does not provide the inverse-limit filtration, and the
-inverse characterization (`isLeast_inverseHerbrandFun`, `herbrandFun_inverseHerbrandFun`) requires
-`[Finite G]`. -/
-def inverseHerbrandFun (v : ℝ) : ℝ := sInf {u : ℝ | v ≤ herbrandFun G S u}
-theorem inverseHerbrandFun_def (v : ℝ) :
-    inverseHerbrandFun G S v = sInf {u : ℝ | v ≤ herbrandFun G S u} := (rfl)
-/-- The **upper-numbering ramification group** `G^v = G_{ψ(v)}` of `G` acting on `S`. This is a
-finite-level construction: the unrestricted definition does not provide the inverse-limit
-filtration, and its inverse properties require `[Finite G]`. -/
-def upperRamificationGroup (v : ℝ) : Subgroup G :=
-  ramificationGroupReal G S (inverseHerbrandFun G S v)
-theorem upperRamificationGroup_def (v : ℝ) :
-    upperRamificationGroup G S v = ramificationGroupReal G S (inverseHerbrandFun G S v) := (rfl)
-variable {G S} in
-@[simp] theorem mem_upperRamificationGroup_iff {v : ℝ} {σ : G} : σ ∈ upperRamificationGroup G S v ↔
-    σ ∈ ramificationGroupReal G S (inverseHerbrandFun G S v) := Iff.rfl
-instance instNormalUpperRamificationGroup (v : ℝ) : (upperRamificationGroup G S v).Normal := by
-  rw [upperRamificationGroup_def]; infer_instance
 @[simp] theorem herbrandFun_zero : herbrandFun G S 0 = 0 := by rw [herbrandFun_def, integral_same]
-/-- An **upper break** of the ramification filtration: `G^v < G^u` for every `v > u`. This is a
-finite-level construction: for infinite `G` the underlying upper filtration does not provide the
-inverse-limit filtration, and the Herbrand break correspondence requires `[Finite G]`. -/
-def UpperJump (u : ℝ) : Prop :=
-  ∀ v : ℝ, u < v → upperRamificationGroup G S v < upperRamificationGroup G S u
-theorem upperJump_iff (u : ℝ) : UpperJump G S u ↔
-    ∀ v : ℝ, u < v → upperRamificationGroup G S v < upperRamificationGroup G S u := Iff.rfl
-/-- The **integral inverse Herbrand function** `ψℕ : ℕ → ℕ` (`coe_psiNat`). This is a
-finite-level construction: the unrestricted definition does not provide the inverse-limit
-filtration, and its characterization (`coe_psiNat`, `psiNat_eq_iff`) requires `[Finite G]`. -/
-def psiNat (n : ℕ) : ℕ := ⌊inverseHerbrandFun G S n⌋₊
-theorem psiNat_def (n : ℕ) : psiNat G S n = ⌊inverseHerbrandFun G S n⌋₊ := (rfl)
-end Defs
 
-section Transport
-section Actions
-variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
-  {H : Type*} [Group H]
-section Comap
-variable {T : Type*} [CommRing T] [IsLocalRing T] [MulSemiringAction H T] {φ : G →* H}
-  (hφ : Function.Bijective φ)
-  (he : ∀ i : ℤ, ramificationGroup G S i = (ramificationGroup H T i).comap φ)
-include hφ he
-/-- A bijective `φ : G →* H` pulling back all lower ramification groups preserves `herbrandFun`. -/
-theorem herbrandFun_eq_of_ramificationGroup_eq_comap (u : ℝ) :
-    herbrandFun G S u = herbrandFun H T u := by
-  have hcard (i : ℤ) : Nat.card (ramificationGroup G S i) = Nat.card (ramificationGroup H T i) :=
-    Nat.card_congr ((Equiv.ofBijective φ hφ).subtypeEquiv fun _ ↦ by rw [he i]; rfl)
-  simp only [herbrandFun_def, ramificationGroupReal_def, hcard]
-/-- A bijective `φ : G →* H` pulling back lower groups preserves `inverseHerbrandFun`. -/
-theorem inverseHerbrandFun_eq_of_ramificationGroup_eq_comap (v : ℝ) :
-    inverseHerbrandFun G S v = inverseHerbrandFun H T v := by
-  simp only [inverseHerbrandFun_def, herbrandFun_eq_of_ramificationGroup_eq_comap hφ he]
-/-- A bijective `φ : G →* H` pulling back lower groups pulls back `upperRamificationGroup`. -/
-theorem upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap (v : ℝ) :
-    upperRamificationGroup G S v = (upperRamificationGroup H T v).comap φ := by
-  simp only [upperRamificationGroup_def, inverseHerbrandFun_eq_of_ramificationGroup_eq_comap hφ he,
-    ramificationGroupReal_def, he]
-/-- A bijective `φ : G →* H` pulling back lower groups preserves `UpperJump`. -/
-theorem upperJump_iff_of_ramificationGroup_eq_comap (u : ℝ) :
-    UpperJump G S u ↔ UpperJump H T u := by
-  simp_rw [upperJump_iff, upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap hφ he,
-    Subgroup.comap_lt_comap_of_surjective hφ.2]
-end Comap
-section SMul
-variable {φ : G →* H} (hφ : Function.Bijective φ) [MulSemiringAction H S]
-  (he : ∀ (g : G) (x : S), g • x = φ g • x)
-include hφ he
-/-- Two groups linked by a bijective action-compatible homomorphism share `herbrandFun`. -/
-theorem herbrandFun_eq_of_smul_eq (u : ℝ) : herbrandFun G S u = herbrandFun H S u :=
-  herbrandFun_eq_of_ramificationGroup_eq_comap hφ (ramificationGroup_eq_comap_of_smul_eq he) u
-/-- Two groups linked by a bijective action-compatible homomorphism share `inverseHerbrandFun`. -/
-theorem inverseHerbrandFun_eq_of_smul_eq (v : ℝ) :
-    inverseHerbrandFun G S v = inverseHerbrandFun H S v :=
-  inverseHerbrandFun_eq_of_ramificationGroup_eq_comap hφ
-    (ramificationGroup_eq_comap_of_smul_eq he) v
-/-- A bijective action-compatible map pulls back `upperRamificationGroup`. -/
-theorem upperRamificationGroup_eq_comap_of_smul_eq (v : ℝ) :
-    upperRamificationGroup G S v = (upperRamificationGroup H S v).comap φ :=
-  upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap hφ
-    (ramificationGroup_eq_comap_of_smul_eq he) v
-/-- Two groups linked by a bijective action-compatible homomorphism share `UpperJump`. -/
-theorem upperJump_iff_of_smul_eq (u : ℝ) : UpperJump G S u ↔ UpperJump H S u :=
-  upperJump_iff_of_ramificationGroup_eq_comap hφ (ramificationGroup_eq_comap_of_smul_eq he) u
-end SMul
-end Actions
-end Transport
+end Defs
 
 section Finite
 variable (G : Type*) [Group G] [Finite G] (S : Type*) [CommRing S] [IsLocalRing S]
@@ -266,24 +180,56 @@ theorem herbrandFun_surjective : Function.Surjective (herbrandFun G S) := fun y 
     ⟨by linarith [neg_abs_le y], by linarith [le_abs_self y]⟩).imp fun _ ↦ And.right
 private def herbrandRealOrderIso : ℝ ≃o ℝ :=
   StrictMono.orderIsoOfSurjective _ (herbrandFun_strictMono G S) (herbrandFun_surjective G S)
-private theorem inverseHerbrandFun_eq_symm (v : ℝ) :
-    inverseHerbrandFun G S v = (herbrandRealOrderIso G S).symm v := by
-  rw [inverseHerbrandFun_def, (Set.ext fun _ ↦ (herbrandRealOrderIso G S).symm_apply_le.symm :
+private theorem herbrandRealOrderIso_apply (u : ℝ) :
+    herbrandRealOrderIso G S u = herbrandFun G S u :=
+  congrFun (StrictMono.coe_orderIsoOfSurjective _ _ _) u
+/-- The **inverse Herbrand function** `ψ(v) = sInf {u : ℝ | v ≤ φ(u)}` for a finite group `G`. -/
+def inverseHerbrandFun (v : ℝ) : ℝ := (herbrandRealOrderIso G S).symm v
+theorem inverseHerbrandFun_def (v : ℝ) :
+    inverseHerbrandFun G S v = sInf {u : ℝ | v ≤ herbrandFun G S u} := by
+  rw [inverseHerbrandFun, (Set.ext fun x ↦ by
+    rw [Set.mem_ofPred_eq, ← herbrandRealOrderIso_apply, ← (herbrandRealOrderIso G S).symm_apply_le,
+      Set.mem_Ici] :
     {u : ℝ | v ≤ herbrandFun G S u} = Ici ((herbrandRealOrderIso G S).symm v)), csInf_Ici]
+/-- The **upper-numbering ramification group** `G^v = G_{ψ(v)}` of a finite group `G` acting on
+`S`. -/
+def upperRamificationGroup (v : ℝ) : Subgroup G :=
+  ramificationGroupReal G S (inverseHerbrandFun G S v)
+theorem upperRamificationGroup_def (v : ℝ) :
+    upperRamificationGroup G S v = ramificationGroupReal G S (inverseHerbrandFun G S v) := (rfl)
+variable {G S} in
+@[simp] theorem mem_upperRamificationGroup_iff {v : ℝ} {σ : G} :
+    σ ∈ upperRamificationGroup G S v ↔
+      σ ∈ ramificationGroupReal G S (inverseHerbrandFun G S v) := Iff.rfl
+instance instNormalUpperRamificationGroup (v : ℝ) :
+    (upperRamificationGroup G S v).Normal := by
+  rw [upperRamificationGroup_def]; infer_instance
+/-- An **upper break** of the ramification filtration of a finite group `G`: `G^v < G^u` for every
+`v > u`. -/
+def UpperJump (u : ℝ) : Prop :=
+  ∀ v : ℝ, u < v → upperRamificationGroup G S v < upperRamificationGroup G S u
+theorem upperJump_iff (u : ℝ) : UpperJump G S u ↔
+    ∀ v : ℝ, u < v → upperRamificationGroup G S v < upperRamificationGroup G S u := Iff.rfl
+/-- The **integral inverse Herbrand function** `ψℕ : ℕ → ℕ` (`coe_psiNat`) for a finite group
+`G`. -/
+def psiNat (n : ℕ) : ℕ := ⌊inverseHerbrandFun G S n⌋₊
+theorem psiNat_def (n : ℕ) : psiNat G S n = ⌊inverseHerbrandFun G S n⌋₊ := (rfl)
 /-- `herbrandFun` is a left inverse to `inverseHerbrandFun` (`φ (ψ v) = v`). -/
 @[simp] theorem herbrandFun_inverseHerbrandFun (v : ℝ) :
-    herbrandFun G S (inverseHerbrandFun G S v) = v :=
-  inverseHerbrandFun_eq_symm G S v ▸ (herbrandRealOrderIso G S).apply_symm_apply v
+    herbrandFun G S (inverseHerbrandFun G S v) = v := by
+  rw [inverseHerbrandFun, ← herbrandRealOrderIso_apply,
+    (herbrandRealOrderIso G S).apply_symm_apply]
 /-- `inverseHerbrandFun` is a left inverse to `herbrandFun`. -/
 @[simp] theorem inverseHerbrandFun_herbrandFun (u : ℝ) :
-    inverseHerbrandFun G S (herbrandFun G S u) = u :=
-  (inverseHerbrandFun_eq_symm G S _).trans ((herbrandRealOrderIso G S).symm_apply_apply u)
+    inverseHerbrandFun G S (herbrandFun G S u) = u := by
+  rw [inverseHerbrandFun, ← herbrandRealOrderIso_apply,
+    (herbrandRealOrderIso G S).symm_apply_apply]
 /-- `inverseHerbrandFun` is strictly increasing on `ℝ`. -/
 theorem inverseHerbrandFun_strictMono : StrictMono (inverseHerbrandFun G S) := by
-  simpa [funext (inverseHerbrandFun_eq_symm G S)] using (herbrandRealOrderIso G S).symm.strictMono
+  exact (herbrandRealOrderIso G S).symm.strictMono
 /-- `inverseHerbrandFun` is continuous on `ℝ`. -/
 @[fun_prop] theorem continuous_inverseHerbrandFun : Continuous (inverseHerbrandFun G S) := by
-  simpa [funext (inverseHerbrandFun_eq_symm G S)] using (herbrandRealOrderIso G S).symm.continuous
+  exact (herbrandRealOrderIso G S).symm.continuous
 @[simp] theorem inverseHerbrandFun_zero : inverseHerbrandFun G S 0 = 0 := by
   simpa using inverseHerbrandFun_herbrandFun G S 0
 @[simp] theorem inverseHerbrandFun_neg_one : inverseHerbrandFun G S (-1) = -1 := by
@@ -310,24 +256,28 @@ theorem inverseHerbrandFun_eq_self_of_neg_one_le_of_nonpos {v : ℝ} (h₁ : -1 
   (inverseHerbrandFun_strictMono G S).injective.eq_iff
 /-- Lower-bound adjunction `u ≤ ψ(v) ↔ φ(u) ≤ v`. -/
 theorem le_inverseHerbrandFun_iff {u v : ℝ} :
-    u ≤ inverseHerbrandFun G S v ↔ herbrandFun G S u ≤ v :=
-  inverseHerbrandFun_eq_symm G S v ▸ (herbrandRealOrderIso G S).le_symm_apply
+    u ≤ inverseHerbrandFun G S v ↔ herbrandFun G S u ≤ v := by
+  rw [inverseHerbrandFun, (herbrandRealOrderIso G S).le_symm_apply,
+    herbrandRealOrderIso_apply]
 /-- Upper-bound adjunction `ψ(v) ≤ u ↔ v ≤ φ(u)`. -/
 theorem inverseHerbrandFun_le_iff {u v : ℝ} :
-    inverseHerbrandFun G S v ≤ u ↔ v ≤ herbrandFun G S u :=
-  inverseHerbrandFun_eq_symm G S v ▸ (herbrandRealOrderIso G S).symm_apply_le
+    inverseHerbrandFun G S v ≤ u ↔ v ≤ herbrandFun G S u := by
+  rw [inverseHerbrandFun, (herbrandRealOrderIso G S).symm_apply_le,
+    herbrandRealOrderIso_apply]
 /-- For finite `G`, `ψ(v)` is the least `u : ℝ` satisfying `v ≤ φ(u)`. -/
 theorem isLeast_inverseHerbrandFun (v : ℝ) :
     IsLeast {u : ℝ | v ≤ herbrandFun G S u} (inverseHerbrandFun G S v) :=
   ⟨(herbrandFun_inverseHerbrandFun G S v).ge, fun _ hu ↦ (inverseHerbrandFun_le_iff G S).2 hu⟩
 /-- Strict lower-bound adjunction `u < ψ(v) ↔ φ(u) < v`. -/
 theorem lt_inverseHerbrandFun_iff {u v : ℝ} :
-    u < inverseHerbrandFun G S v ↔ herbrandFun G S u < v :=
-  inverseHerbrandFun_eq_symm G S v ▸ (herbrandRealOrderIso G S).lt_symm_apply
+    u < inverseHerbrandFun G S v ↔ herbrandFun G S u < v := by
+  rw [inverseHerbrandFun, (herbrandRealOrderIso G S).lt_symm_apply,
+    herbrandRealOrderIso_apply]
 /-- Strict upper-bound adjunction `ψ(v) < u ↔ v < φ(u)`. -/
 theorem inverseHerbrandFun_lt_iff {u v : ℝ} :
-    inverseHerbrandFun G S v < u ↔ v < herbrandFun G S u :=
-  inverseHerbrandFun_eq_symm G S v ▸ (herbrandRealOrderIso G S).symm_apply_lt
+    inverseHerbrandFun G S v < u ↔ v < herbrandFun G S u := by
+  rw [inverseHerbrandFun, (herbrandRealOrderIso G S).symm_apply_lt,
+    herbrandRealOrderIso_apply]
 @[simp] theorem neg_one_le_herbrandFun_iff {u : ℝ} : -1 ≤ herbrandFun G S u ↔ -1 ≤ u := by
   rw [← inverseHerbrandFun_le_iff, inverseHerbrandFun_neg_one]
 @[simp] theorem herbrandFun_le_neg_one_iff {u : ℝ} : herbrandFun G S u ≤ -1 ↔ u ≤ -1 := by
@@ -373,7 +323,11 @@ def herbrandOrderIso : Ici (-1 : ℝ) ≃o Ici (-1 : ℝ) :=
   ((herbrandRealOrderIso G S).Ici (-1)).trans
     (Set.orderIsoOfEq _ _ (congrArg Ici (herbrandFun_neg_one G S)))
 @[simp] theorem coe_herbrandOrderIso_apply (u : Ici (-1 : ℝ)) :
-    (herbrandOrderIso G S u : ℝ) = herbrandFun G S u := (rfl)
+    (herbrandOrderIso G S u : ℝ) = herbrandFun G S u := by
+  have hIci : (((herbrandRealOrderIso G S).Ici (-1) u : Ici _) : ℝ) =
+      herbrandRealOrderIso G S u := rfl
+  rw [herbrandOrderIso, OrderIso.trans_apply, Set.orderIsoOfEq_apply, hIci,
+    herbrandRealOrderIso_apply]
 @[simp] theorem coe_herbrandOrderIso_symm_apply (v : Ici (-1 : ℝ)) :
     ((herbrandOrderIso G S).symm v : ℝ) = inverseHerbrandFun G S v :=
   (herbrandFun_strictMono G S).injective <| by
@@ -398,15 +352,6 @@ theorem upperRamificationGroup_eq_bot_of_ramificationGroup_zero_eq_bot
   rw [upperRamificationGroup_def, ramificationGroupReal_def,
     inverseHerbrandFun_eq_self_of_ramificationGroup_zero_eq_bot G S h0 hv.le]
   exact eq_bot_iff.2 ((ramificationGroup_antitone G S (Int.le_ceil_iff.2 (by simpa))).trans h0.le)
-omit [Finite G] in
-@[simp] theorem herbrandFun_of_subsingleton [Subsingleton G] (u : ℝ) : herbrandFun G S u = u := by
-  rcases le_total (-1) u with hu | hu
-  · exact herbrandFun_eq_self_of_ramificationGroup_zero_eq_bot G S (Subsingleton.elim _ _) hu
-  · rw [herbrandFun_of_le_neg_one G S hu, Nat.card_eq_one_iff_unique.2 ⟨inferInstance, ⟨1⟩⟩,
-      Nat.card_eq_one_iff_unique.2 ⟨inferInstance, ⟨1⟩⟩]; norm_num
-omit [Finite G] in
-@[simp] theorem inverseHerbrandFun_of_subsingleton [Subsingleton G] (v : ℝ) :
-    inverseHerbrandFun G S v = v := by simpa using inverseHerbrandFun_herbrandFun G S v
 /-- For every `n : ℕ`, `inverseHerbrandFun G S n` is the natural number `psiNat G S n`. -/
 @[simp] theorem coe_psiNat (n : ℕ) : (psiNat G S n : ℝ) = inverseHerbrandFun G S n := by
   set u := inverseHerbrandFun G S n; set m := ⌊u⌋₊
@@ -527,4 +472,71 @@ theorem UpperJump.neg_one_le {v : ℝ} (hv : UpperJump G S v) : -1 ≤ v :=
   (neg_one_le_inverseHerbrandFun_iff G S).1
     ((lowerJump_inverseHerbrandFun_iff G S v).2 hv).neg_one_le
 end Finite
+
+section Transport
+section Actions
+variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
+  {H : Type*} [Group H]
+section Comap
+variable {T : Type*} [CommRing T] [IsLocalRing T] [MulSemiringAction H T] {φ : G →* H}
+  (hφ : Function.Bijective φ)
+  (he : ∀ i : ℤ, ramificationGroup G S i = (ramificationGroup H T i).comap φ)
+include hφ he
+/-- A bijective `φ : G →* H` pulling back all lower ramification groups preserves `herbrandFun`. -/
+theorem herbrandFun_eq_of_ramificationGroup_eq_comap (u : ℝ) :
+    herbrandFun G S u = herbrandFun H T u := by
+  have hcard (i : ℤ) : Nat.card (ramificationGroup G S i) = Nat.card (ramificationGroup H T i) :=
+    Nat.card_congr ((Equiv.ofBijective φ hφ).subtypeEquiv fun _ ↦ by rw [he i]; rfl)
+  simp only [herbrandFun_def, ramificationGroupReal_def, hcard]
+/-- A bijective `φ : G →* H` pulling back lower groups preserves `inverseHerbrandFun`. -/
+theorem inverseHerbrandFun_eq_of_ramificationGroup_eq_comap [Finite G] [Finite H] (v : ℝ) :
+    inverseHerbrandFun G S v = inverseHerbrandFun H T v := by
+  simp only [inverseHerbrandFun_def, herbrandFun_eq_of_ramificationGroup_eq_comap hφ he]
+/-- A bijective `φ : G →* H` pulling back lower groups pulls back `upperRamificationGroup`. -/
+theorem upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap [Finite G] [Finite H]
+    (v : ℝ) :
+    upperRamificationGroup G S v = (upperRamificationGroup H T v).comap φ := by
+  simp only [upperRamificationGroup_def,
+    inverseHerbrandFun_eq_of_ramificationGroup_eq_comap hφ he, ramificationGroupReal_def, he]
+/-- A bijective `φ : G →* H` pulling back lower groups preserves `UpperJump`. -/
+theorem upperJump_iff_of_ramificationGroup_eq_comap [Finite G] [Finite H] (u : ℝ) :
+    UpperJump G S u ↔ UpperJump H T u := by
+  simp_rw [upperJump_iff, upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap hφ he,
+    Subgroup.comap_lt_comap_of_surjective hφ.2]
+end Comap
+section SMul
+variable {φ : G →* H} (hφ : Function.Bijective φ) [MulSemiringAction H S]
+  (he : ∀ (g : G) (x : S), g • x = φ g • x)
+include hφ he
+/-- Two groups linked by a bijective action-compatible homomorphism share `herbrandFun`. -/
+theorem herbrandFun_eq_of_smul_eq (u : ℝ) : herbrandFun G S u = herbrandFun H S u :=
+  herbrandFun_eq_of_ramificationGroup_eq_comap hφ (ramificationGroup_eq_comap_of_smul_eq he) u
+/-- Two groups linked by a bijective action-compatible homomorphism share `inverseHerbrandFun`. -/
+theorem inverseHerbrandFun_eq_of_smul_eq [Finite G] [Finite H] (v : ℝ) :
+    inverseHerbrandFun G S v = inverseHerbrandFun H S v :=
+  inverseHerbrandFun_eq_of_ramificationGroup_eq_comap hφ
+    (ramificationGroup_eq_comap_of_smul_eq he) v
+/-- A bijective action-compatible map pulls back `upperRamificationGroup`. -/
+theorem upperRamificationGroup_eq_comap_of_smul_eq [Finite G] [Finite H] (v : ℝ) :
+    upperRamificationGroup G S v = (upperRamificationGroup H S v).comap φ :=
+  upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap hφ
+    (ramificationGroup_eq_comap_of_smul_eq he) v
+/-- Two groups linked by a bijective action-compatible homomorphism share `UpperJump`. -/
+theorem upperJump_iff_of_smul_eq [Finite G] [Finite H] (u : ℝ) :
+    UpperJump G S u ↔ UpperJump H S u :=
+  upperJump_iff_of_ramificationGroup_eq_comap hφ (ramificationGroup_eq_comap_of_smul_eq he) u
+end SMul
+end Actions
+end Transport
+section Subsingleton
+variable (G : Type*) [Group G] (S : Type*) [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
+  [Subsingleton G]
+@[simp] theorem herbrandFun_of_subsingleton (u : ℝ) : herbrandFun G S u = u := by
+  rcases le_total (-1) u with hu | hu
+  · exact herbrandFun_eq_self_of_ramificationGroup_zero_eq_bot G S (Subsingleton.elim _ _) hu
+  · rw [herbrandFun_of_le_neg_one G S hu, Nat.card_eq_one_iff_unique.2 ⟨inferInstance, ⟨1⟩⟩,
+      Nat.card_eq_one_iff_unique.2 ⟨inferInstance, ⟨1⟩⟩]; norm_num
+@[simp] theorem inverseHerbrandFun_of_subsingleton (v : ℝ) :
+    inverseHerbrandFun G S v = v := by simpa using inverseHerbrandFun_herbrandFun G S v
+end Subsingleton
 end TauCeti.IsLocalRing

@@ -72,6 +72,7 @@ theorem herbrandFun_integralClosure_tower (u : ℝ) :
 `E / K` normal): `ψ_{L/K}(v) = ψ_{L/E}(ψ_{E/K}(v))`. -/
 theorem inverseHerbrandFun_integralClosure_tower (v : ℝ) :
     haveI := IsScalarTower.to₁₃₄ A K E L; haveI := isLocalRing_integralClosure_of_tower A E L
+    haveI := Module.Finite.left K E L; haveI := Module.Finite.right K E L
     inverseHerbrandFun (L ≃ₐ[K] L) (integralClosure A L) v =
       inverseHerbrandFun (L ≃ₐ[E] L) (integralClosure A L)
         (inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v) := by
@@ -84,11 +85,13 @@ theorem inverseHerbrandFun_integralClosure_tower (v : ℝ) :
 `AlgEquiv.restrictScalarsHom K` gives `Gal(L/E)^{ψ_{E/K}(v)}`. -/
 @[simp] theorem comap_restrictScalarsHom_upperRamificationGroup_integralClosure (v : ℝ) :
     haveI := IsScalarTower.to₁₃₄ A K E L; haveI := isLocalRing_integralClosure_of_tower A E L
+    haveI := Module.Finite.left K E L; haveI := Module.Finite.right K E L
     (upperRamificationGroup (L ≃ₐ[K] L) (integralClosure A L) v).comap
         (AlgEquiv.restrictScalarsHom (S := E) K) =
       upperRamificationGroup (L ≃ₐ[E] L) (integralClosure A L)
         (inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v) := by
   let _ := IsScalarTower.to₁₃₄ A K E L; let _ := isLocalRing_integralClosure_of_tower A E L
+  have _ := Module.Finite.left K E L; have _ := Module.Finite.right K E L
   rw [upperRamificationGroup_def, upperRamificationGroup_def,
     inverseHerbrandFun_integralClosure_tower A E v, ramificationGroupReal_def,
     ramificationGroupReal_def]
@@ -97,22 +100,26 @@ theorem inverseHerbrandFun_integralClosure_tower (v : ℝ) :
 /-- **Image of `Gal(L/E)^{ψ_{E/K}(v)}` in `Gal(L/K)`** in a field tower `L / E / K`. -/
 theorem map_restrictScalarsHom_upperRamificationGroup_integralClosure (v : ℝ) :
     haveI := IsScalarTower.to₁₃₄ A K E L; haveI := isLocalRing_integralClosure_of_tower A E L
+    haveI := Module.Finite.left K E L; haveI := Module.Finite.right K E L
     (upperRamificationGroup (L ≃ₐ[E] L) (integralClosure A L)
         (inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v)).map
         (AlgEquiv.restrictScalarsHom (S := E) K) =
       (AlgEquiv.restrictScalarsHom (S := E) K).range ⊓
         upperRamificationGroup (L ≃ₐ[K] L) (integralClosure A L) v := by
   let _ := IsScalarTower.to₁₃₄ A K E L; let _ := isLocalRing_integralClosure_of_tower A E L
+  have _ := Module.Finite.left K E L; have _ := Module.Finite.right K E L
   rw [← comap_restrictScalarsHom_upperRamificationGroup_integralClosure A E v,
     Subgroup.map_comap_eq]
 /-- **Herbrand's theorem for normal subextensions** in a field tower `L / E / K` (`L / K` finite
 Galois, `E / K` normal): `AlgEquiv.restrictNormalHom E` maps `Gal(L/K)^v` onto `Gal(E/K)^v`. -/
 @[simp] theorem map_restrictNormalHom_upperRamificationGroup_integralClosure (v : ℝ) :
     haveI := IsScalarTower.to₁₃₄ A K E L; haveI := isLocalRing_integralClosure_of_tower A E L
+    haveI := Module.Finite.left K E L
     (upperRamificationGroup (L ≃ₐ[K] L) (integralClosure A L) v).map
         (AlgEquiv.restrictNormalHom E) =
       upperRamificationGroup (E ≃ₐ[K] E) (integralClosure A E) v := by
   let _ := IsScalarTower.to₁₃₄ A K E L; let _ := isLocalRing_integralClosure_of_tower A E L
+  have _ := Module.Finite.left K E L
   have := IsGalois.tower_bot_of_normal K E L
   let eK := TauCeti.equivFixedFieldEmbeddingSubgroup K E L
   apply Subgroup.map_injective (f := MonoidHom.ofClass eK.autCongr)
@@ -128,11 +135,13 @@ Galois, `E / K` normal): `AlgEquiv.restrictNormalHom E` maps `Gal(L/K)^v` onto `
 `Gal(L/E)`. -/
 theorem upperJump_integralClosure_tower_iff (v : ℝ) :
     haveI := IsScalarTower.to₁₃₄ A K E L; haveI := isLocalRing_integralClosure_of_tower A E L
+    haveI := Module.Finite.left K E L; haveI := Module.Finite.right K E L
     UpperJump (L ≃ₐ[K] L) (integralClosure A L) v ↔
       UpperJump (E ≃ₐ[K] E) (integralClosure A E) v ∨
         UpperJump (L ≃ₐ[E] L) (integralClosure A L)
           (inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v) := by
   let _ := IsScalarTower.to₁₃₄ A K E L; let _ := isLocalRing_integralClosure_of_tower A E L
+  have _ := Module.Finite.left K E L; have _ := Module.Finite.right K E L
   have := IsGalois.tower_bot_of_normal K E L
   rw [upperJump_iff_upperJump_quotient_or_upperJump_inverseHerbrandFun A (integralClosure A L)
       (L ≃ₐ[K] L) (TauCeti.embeddingSubgroup K E L) v,

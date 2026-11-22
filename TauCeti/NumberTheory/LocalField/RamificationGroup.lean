@@ -82,8 +82,7 @@ subgroup `Gal(L/K') ≤ Gal(L/K)` of a tower `L/K'/K`.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroupReal_eq_ramificationGroupReal` and
   `TauCeti.LocalFieldsRamification.lowerJump_iff_isLocalRingLowerJump`: agreement with the
   `TauCeti.IsLocalRing` lower filtration and lower breaks on `𝒪[L]`.
-* `TauCeti.LocalFieldsRamification.ramificationGroup_integerRing_eq_integralClosure` and
-  `TauCeti.LocalFieldsRamification.ramificationGroup_integerRing_eq_comap_integralClosure`:
+* `TauCeti.LocalFieldsRamification.ramificationGroup_integerRing_eq_integralClosure`:
   agreement of the lower filtration on `𝒪[L]` with that on `integralClosure 𝒪[K₀] L` for
   `K₀ ⊆ K ⊆ L`.
 
@@ -553,22 +552,6 @@ end
 section IntegralClosure
 
 open TauCeti.IsLocalRing in
-/-- Comap form of `ramificationGroup_integerRing_eq_integralClosure` along `MonoidHom.id`,
-for transport lemmas expecting `ramificationGroup ... = (...).comap φ`. -/
-theorem ramificationGroup_integerRing_eq_comap_integralClosure (K₀ K L : Type*)
-    [Field K₀] [ValuativeRel K₀] [TopologicalSpace K₀] [IsNonarchimedeanLocalField K₀]
-    [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-    [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
-    [Algebra K₀ K] [Algebra K L] [Algebra K₀ L] [ValuativeExtension K₀ L] [ValuativeExtension K L]
-    [Module.Finite K L] [Algebra.IsAlgebraic K₀ L]
-    [IsScalarTower 𝒪[K₀] K L] [IsLocalRing (integralClosure 𝒪[K₀] L)] (i : ℤ) :
-    ramificationGroup (L ≃ₐ[K] L) 𝒪[L] i =
-      (ramificationGroup (L ≃ₐ[K] L) (integralClosure 𝒪[K₀] L) i).comap (MonoidHom.id _) :=
-  ramificationGroup_eq_comap_of_ringEquiv (φ := MonoidHom.id (L ≃ₐ[K] L))
-    (e := (TauCeti.integerRingEquivIntegralClosure K₀ L).toRingEquiv)
-    (fun _ _ ↦ Subtype.ext (by simp)) i
-
-open TauCeti.IsLocalRing in
 /-- For a tower `K₀ ⊆ K ⊆ L` of nonarchimedean local fields, the lower ramification filtration
 of `Gal(L/K)` on `𝒪[L]` equals its lower ramification filtration on `integralClosure 𝒪[K₀] L`. -/
 theorem ramificationGroup_integerRing_eq_integralClosure (K₀ K L : Type*)
@@ -580,8 +563,44 @@ theorem ramificationGroup_integerRing_eq_integralClosure (K₀ K L : Type*)
     [IsScalarTower 𝒪[K₀] K L] [IsLocalRing (integralClosure 𝒪[K₀] L)] (i : ℤ) :
     ramificationGroup (L ≃ₐ[K] L) 𝒪[L] i =
       ramificationGroup (L ≃ₐ[K] L) (integralClosure 𝒪[K₀] L) i := by
-  simpa only [Subgroup.comap_id] using
-    ramificationGroup_integerRing_eq_comap_integralClosure K₀ K L i
+  simpa only [Subgroup.comap_id] using ramificationGroup_eq_comap_of_ringEquiv
+    (φ := MonoidHom.id (L ≃ₐ[K] L))
+    (e := (TauCeti.integerRingEquivIntegralClosure K₀ L).toRingEquiv)
+    (fun _ _ ↦ Subtype.ext (by simp)) i
+
+/-- The integral closure of `𝒪[K]` in a compatible algebraic local field extension `L/K` is a
+discrete valuation ring. -/
+theorem isDiscreteValuationRing_integralClosure (K L : Type*) [Field K] [ValuativeRel K]
+    [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L]
+    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] :
+    IsDiscreteValuationRing (integralClosure 𝒪[K] L) :=
+  have : Module.Finite K L := TauCeti.finite_of_valuativeExtension K L
+  IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing
+    (TauCeti.integerRingEquivIntegralClosure K L)
+
+/-- The structure map `𝒪[K] → integralClosure 𝒪[K] L` for a compatible algebraic local field
+extension `L/K` is a local homomorphism. -/
+theorem isLocalHom_algebraMap_integralClosure (K L : Type*) [Field K] [ValuativeRel K]
+    [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L]
+    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] :
+    IsLocalHom (algebraMap 𝒪[K] (integralClosure 𝒪[K] L)) := by
+  have : Module.Finite K L := TauCeti.finite_of_valuativeExtension K L
+  let e := TauCeti.integerRingEquivIntegralClosure K L
+  have := IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing e
+  rw [← e.toAlgHom.comp_algebraMap]
+  infer_instance
+
+/-- The residue field of `integralClosure 𝒪[K] L` for a compatible algebraic local field
+extension `L/K` is finite. -/
+theorem finite_residueField_integralClosure (K L : Type*) [Field K] [ValuativeRel K]
+    [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L]
+    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+    [IsLocalRing (integralClosure 𝒪[K] L)] :
+    Finite (IsLocalRing.ResidueField (integralClosure 𝒪[K] L)) :=
+  have : Module.Finite K L := TauCeti.finite_of_valuativeExtension K L
+  Finite.of_equiv (IsLocalRing.ResidueField 𝒪[L])
+    (IsLocalRing.ResidueField.mapEquiv
+      (TauCeti.integerRingEquivIntegralClosure K L).toRingEquiv).toEquiv
 
 end IntegralClosure
 

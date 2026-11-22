@@ -28,16 +28,23 @@ the finite-index content of the theorem.
 
 ## Main results
 
-* `TauCeti.LocalFieldsRamification.lowerIndex_mul_restrictScalars_of_forall_le`:
+All declarations live in `TauCeti.LocalFieldsRamification`.
+
+* `lowerIndex_mul_restrictScalars_of_forall_le`:
   `i_G(σ τ) = min (i_H(τ), i_G(σ))` for `σ` of largest lower index in its coset.
-* `TauCeti.LocalFieldsRamification.ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum_card`:
+* `ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum_card`:
   `e(M/L) · i_{G/H}(σ|_L) = ∑_{k < i_G(σ)} #H_k` for such `σ`.
-* `TauCeti.LocalFieldsRamification.coe_herbrand_lowerIndex_sub_one`: Serre's lemma
+* `coe_herbrand_lowerIndex_sub_one`: Serre's lemma
   `φ_{M/L}(i_G(σ) - 1) = i_{G/H}(σ|_L) - 1` for such `σ`.
-* `TauCeti.LocalFieldsRamification.map_restrictNormalHom_lowerRamificationGroupReal`:
+* `map_restrictNormalHom_lowerRamificationGroupReal`:
   **Herbrand's theorem**, `(G/H)_{φ_{M/L}(u)} = G_u H / H`.
-* `TauCeti.LocalFieldsRamification.lowerRamificationGroupReal_eq_map_inverseHerbrand`: the same
+* `lowerRamificationGroupReal_eq_map_inverseHerbrand`: the same
   statement read at `v = φ_{M/L}(u)`, that is `(G/H)_v = G_{ψ_{M/L}(v)} H / H`.
+* `natCard_lowerRamificationGroupReal_herbrand_mul`: Herbrand's
+  theorem in counting form, `#(G/H)_{φ_{M/L}(u)} · #H_u = #G_u`.
+* `lowerRamificationGroupReal_eq_of_forall_eq_of_herbrand_lt_of_le_herbrand`:
+  the filtration of `L/K` is constant on `(φ_{M/L}(a), φ_{M/L}(b)]` when that of `M/K` is
+  constant on `(a, b]`.
 
 ## References
 
@@ -96,19 +103,17 @@ theorem ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum_card (σ : M ≃�
   simp_rw [lowerIndex_mul_restrictScalars_of_forall_le σ hσ, hj, lowerRamificationGroup_def]
   exact TauCeti.IsLocalRing.sum_min_lowerIndex_natCast (G := M ≃ₐ[L] M) (S := 𝒪[M]) j
 
+omit [ValuativeExtension L M] [Module.Finite L M] [IsGalois L M] in
 /-- If `σ` has the largest lower index in its coset `σ H` and `i_G(σ)` is finite, then so is
 `i_{G/H}(σ|_L)`: a restriction of largest lower index among its lifts is trivial only when the
 lift is. -/
 theorem lowerIndex_restrictNormal_ne_top (σ : M ≃ₐ[K] M) (hj : lowerIndex 𝒪[M] σ ≠ ⊤)
     (hσ : ∀ τ : M ≃ₐ[L] M, lowerIndex 𝒪[M] (σ * τ.restrictScalars K) ≤ lowerIndex 𝒪[M] σ) :
     lowerIndex 𝒪[L] (σ.restrictNormal L) ≠ ⊤ := by
-  obtain ⟨j, hj⟩ := ENat.ne_top_iff_exists.1 hj
-  intro htop
-  have hsum := ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum_card σ hj.symm hσ
-  have he : (ramificationIndex L M : ℕ∞) ≠ 0 := by
-    exact_mod_cast (ramificationIndex_pos (K := L) (L := M)).ne'
-  rw [htop, ENat.mul_top he, ← Nat.cast_sum] at hsum
-  exact ENat.natCast_ne_top _ hsum.symm
+  rw [← AlgEquiv.restrictNormalHom_apply_eq_restrictNormal K L M]
+  refine TauCeti.IsLocalRing.lowerIndex_ne_top_of_forall_mem_ker_le hj fun γ hγ ↦ ?_
+  obtain ⟨τ, rfl⟩ := (AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K L M).ge hγ
+  exact hσ τ
 
 /-- **Serre's lemma on the lower index of a quotient.** If `σ` has the largest lower index in its
 coset `σ H`, and `i_G(σ) = j` is finite, then `φ_{M/L}(j - 1) = i_{G/H}(σ|_L) - 1`. -/
@@ -171,5 +176,61 @@ theorem lowerRamificationGroupReal_eq_map_inverseHerbrand [Normal K M]
       (lowerRamificationGroupReal K M (inverseHerbrand L M v)).map
         (AlgEquiv.restrictNormalHom L) := by
   rw [map_restrictNormalHom_lowerRamificationGroupReal, herbrand_inverseHerbrand]
+
+section Counting
+
+variable (K L M : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Field M] [ValuativeRel M] [TopologicalSpace M]
+  [IsNonarchimedeanLocalField M]
+  [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
+  [Algebra L M] [ValuativeExtension L M] [Module.Finite L M]
+  [Algebra K M] [ValuativeExtension K M]
+  [IsScalarTower K L M]
+
+/-- **Herbrand's theorem in counting form.** For `G = Gal(M/K)`, `H = Gal(M/L)` and
+`G/H = Gal(L/K)`, the orders satisfy `#(G/H)_{φ_{M/L}(u)} · #H_u = #G_u`: the lower ramification
+group of the quotient at `φ_{M/L}(u)` is the image of `G_u` under restriction to `L`, and the
+kernel of restriction on `G_u` is `H ∩ G_u = H_u`. -/
+theorem natCard_lowerRamificationGroupReal_herbrand_mul [Normal K L] [IsGalois L M] [Normal K M]
+    (u : RamificationIndexDomain) :
+    haveI : Module.Finite K M := Module.Finite.trans L M
+    Nat.card (lowerRamificationGroupReal K L (herbrand L M u)) *
+        Nat.card (lowerRamificationGroupReal L M u) =
+      Nat.card (lowerRamificationGroupReal K M u) := by
+  have : Module.Finite K M := Module.Finite.trans L M
+  rw [← map_restrictNormalHom_lowerRamificationGroupReal (K := K) (L := L) (M := M) u,
+    ← MonoidHom.domRestrict_range,
+    ← Subgroup.card_map_of_injective (K := lowerRamificationGroupReal L M u)
+      (AlgEquiv.restrictScalarsHom_injective K),
+    map_restrictScalarsHom_lowerRamificationGroupReal K M L u,
+    AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K L M,
+    ← Subgroup.subgroupOf_map_subtype, Subgroup.card_subtype, ← MonoidHom.ker_domRestrict,
+    mul_comm, Subgroup.card_ker_mul_card_range]
+
+/-- Through Herbrand's theorem, the lower filtration of `L/K` is constant on the interval
+`(φ_{M/L}(a), φ_{M/L}(b)]` as soon as that of `M/K` is constant on `(a, b]`. -/
+theorem lowerRamificationGroupReal_eq_of_forall_eq_of_herbrand_lt_of_le_herbrand [Normal K L]
+    [IsGalois L M] [Normal K M] {a b : RamificationIndexDomain} {t : ℝ}
+    (ht₁ : (herbrand L M a : ℝ) < t) (ht₂ : t ≤ herbrand L M b) :
+    haveI : Module.Finite K M := Module.Finite.trans L M
+    (∀ s : ℝ, (a : ℝ) < s → s ≤ b →
+      lowerRamificationGroupReal K M s = lowerRamificationGroupReal K M b) →
+    lowerRamificationGroupReal K L t = lowerRamificationGroupReal K L (herbrand L M b) := by
+  have : Module.Finite K M := Module.Finite.trans L M
+  intro h
+  set s : RamificationIndexDomain := ⟨t, Set.mem_Ici.2 ((herbrand L M a).property.trans ht₁.le)⟩
+  -- `t = φ_{M/L}(ψ_{M/L}(t))` with `a < ψ_{M/L}(t) ≤ b`.
+  have hs₁ : a < inverseHerbrand L M s := by
+    rw [← inverseHerbrand_herbrand L M a]
+    exact inverseHerbrand_strictMono L M (Subtype.coe_lt_coe.1 ht₁)
+  have hs₂ : inverseHerbrand L M s ≤ b := by
+    rw [← inverseHerbrand_herbrand L M b]
+    exact (inverseHerbrand_strictMono L M).monotone (Subtype.coe_le_coe.1 ht₂)
+  have ht : t = herbrand L M (inverseHerbrand L M s) := by rw [herbrand_inverseHerbrand]
+  rw [ht, ← map_restrictNormalHom_lowerRamificationGroupReal,
+    ← map_restrictNormalHom_lowerRamificationGroupReal, h _ hs₁ hs₂]
+
+end Counting
 
 end TauCeti.LocalFieldsRamification

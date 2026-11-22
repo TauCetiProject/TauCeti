@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 
 /-!
@@ -22,6 +23,8 @@ is the residue field `κ`. Likewise, any surjective `R₀`-algebra map `ψ : R �
   sending the class of `r` to `residue R r`.
 * `TauCeti.residueFieldAlgEquivOfSurjective`: `ResidueField R ≃ₐ[R₀] L` induced by a surjective
   `R₀`-algebra map `ψ : R →ₐ[R₀] L` onto a field `L`.
+* `TauCeti.isSeparable_quotient_of_residueField`: transports `Algebra.IsSeparable` from
+  `ResidueField A → ResidueField B` to `(A ⧸ maximalIdeal A) → (B ⧸ maximalIdeal B)`.
 -/
 
 public section
@@ -81,5 +84,22 @@ theorem residueFieldAlgEquivOfSurjective_symm_apply {R₀ L : Type*} [CommRing R
     (residueFieldAlgEquivOfSurjective hψ).symm (ψ r) = residue R r :=
   (residueFieldAlgEquivOfSurjective hψ).symm_apply_eq.mpr
     (residueFieldAlgEquivOfSurjective_residue hψ r).symm
+
+/-- If a local homomorphism `A → B` of local rings induces a separable residue field extension
+`ResidueField B / ResidueField A`, then `(B ⧸ maximalIdeal B) / (A ⧸ maximalIdeal A)` is also
+separable. -/
+theorem isSeparable_quotient_of_residueField
+    (A B : Type*) [CommRing A] [IsLocalRing A]
+    [CommRing B] [IsLocalRing B] [Algebra A B] [IsLocalHom (algebraMap A B)]
+    [hsep : Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
+    let := Ideal.Quotient.field (maximalIdeal A)
+    let := Ideal.Quotient.field (maximalIdeal B)
+    Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B) := by
+  let := Ideal.Quotient.field (maximalIdeal A)
+  let := Ideal.Quotient.field (maximalIdeal B)
+  -- `ResidueField R` is `def ResidueField := R ⧸ maximalIdeal R` with `Algebra` instance
+  -- `Ideal.Quotient.algebraOfLiesOver`.
+  dsimp only [ResidueField] at hsep
+  exact hsep
 
 end TauCeti

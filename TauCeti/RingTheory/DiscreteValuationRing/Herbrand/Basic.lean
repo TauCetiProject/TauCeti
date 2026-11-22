@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.LowerIndex
 public import TauCeti.RingTheory.LocalRing.Herbrand.Basic
+import TauCeti.RingTheory.DiscreteValuationRing.Inertia
 
 /-!
 # Herbrand's lemma and transitivity of Herbrand functions on discrete valuation rings
@@ -67,14 +68,16 @@ theorem ramificationGroupReal_quotient_eq_map_inverseHerbrandFun (v : ℝ) :
 theorem natCard_ramificationGroupReal_quotient_herbrandFun_mul (u : ℝ) :
     Nat.card (ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u)) *
         Nat.card (ramificationGroupReal H B u) = Nat.card (ramificationGroupReal G B u) := by
+  have hker : ((QuotientGroup.mk' H).domRestrict (ramificationGroupReal G B u)).ker =
+      H.subgroupOf (ramificationGroupReal G B u) := by
+    rw [MonoidHom.ker_domRestrict, QuotientGroup.ker_mk']
+  have hcard : Nat.card ((QuotientGroup.mk' H).domRestrict (ramificationGroupReal G B u)).ker =
+      Nat.card (ramificationGroupReal H B u) := by
+    rw [hker, ← subgroupOf_ramificationGroupReal G B H u, ← Subgroup.card_subtype,
+      ← Subgroup.card_subtype, Subgroup.subgroupOf_map_subtype, Subgroup.subgroupOf_map_subtype,
+      inf_comm]
   rw [ramificationGroupReal_quotient_herbrandFun, ← MonoidHom.domRestrict_range, mul_comm,
-    ← Subgroup.card_ker_mul_card_range ((QuotientGroup.mk' H).domRestrict
-      (ramificationGroupReal G B u))]
-  congr 1; rw [← subgroupOf_ramificationGroupReal G B H u, ← Subgroup.card_subtype,
-    ← Subgroup.card_subtype, (by ext; simp [Subgroup.mem_subgroupOf] :
-      ((QuotientGroup.mk' H).domRestrict (ramificationGroupReal G B u)).ker =
-        H.subgroupOf (ramificationGroupReal G B u)),
-    Subgroup.subgroupOf_map_subtype, Subgroup.subgroupOf_map_subtype, inf_comm]
+    ← hcard, Subgroup.card_ker_mul_card_range]
 private theorem natCard_ramificationGroup_quotient_zero_mul :
     Nat.card (ramificationGroup (G ⧸ H) (FixedPoints.subalgebra A B H) 0) *
         Nat.card (ramificationGroup H B 0) = Nat.card (ramificationGroup G B 0) := by

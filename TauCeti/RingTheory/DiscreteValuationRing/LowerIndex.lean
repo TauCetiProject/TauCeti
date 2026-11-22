@@ -10,18 +10,15 @@ public import TauCeti.RingTheory.DiscreteValuationRing.Invariant
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 public import TauCeti.RingTheory.Valuation.AddValuation
-import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 
 /-!
-# Inertia cardinality and Serre's lower-index quotient formula on discrete valuation rings
+# Serre's lower-index quotient formula on discrete valuation rings
 
 Let a finite group `G` act faithfully on a discrete valuation ring `B` by `A`-algebra
-automorphisms, and let `H` be a normal subgroup. When `B` has invariant DVR `A` and separable
-residue extension, `#G_0 = e(B / A)` (`natCard_ramificationGroup_zero`). More generally, over any
-local ring `A` with separable residue extension, `#G_0 = e(B / B^G)`
-(`natCard_ramificationGroup_zero_fixedPoints`), and Serre's quotient formula compares Serre's
-lower index `i_G(σ) = min_x v_B(σ x - x)` (`TauCeti.IsLocalRing.lowerIndex`) on `B` and on `B^H`:
+automorphisms over a local ring `A` with separable residue extension, and let `H` be a normal
+subgroup. Serre's quotient formula compares Serre's lower index `i_G(σ) = min_x v_B(σ x - x)`
+(`TauCeti.IsLocalRing.lowerIndex`) on `B` and on `B^H`:
 
 `e · i_{G/H}(σ H) = ∑_{τ ∈ H} i_G(σ τ)`,
 
@@ -32,8 +29,6 @@ of its residue field is assumed. Adapts the coset formula and its counting form 
 
 ## Main results
 
-* `TauCeti.IsLocalRing.natCard_ramificationGroup_zero`: `#G_0 = e(B / A)` for invariant DVR `A`.
-* `TauCeti.IsLocalRing.natCard_ramificationGroup_zero_fixedPoints`: `#G_0 = e(B / B^G)`.
 * `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top`: the quotient
   formula `e · i(σ|_C) = ∑_{τ ∈ H} i(σ τ)` for a tower of monogenic discrete valuation rings.
 * `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum` and
@@ -102,73 +97,12 @@ theorem ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top {x : B}
 
 end Monogenic
 
-private noncomputable def residueFieldEquivQuotient
-    (R : Type*) [CommRing R] [_root_.IsLocalRing R] :
-    ResidueField R ≃+* R ⧸ maximalIdeal R :=
-  let := Ideal.Quotient.field (maximalIdeal R)
-  have : IsLocalHom (Ideal.Quotient.mk (maximalIdeal R)) :=
-    ⟨fun _ h ↦ not_not.1 fun hnot ↦
-      (isUnit_iff_ne_zero.1 h) (Ideal.Quotient.eq_zero_iff_mem.2 ((mem_maximalIdeal _).2 hnot))⟩
-  let toHom := ResidueField.lift (Ideal.Quotient.mk (maximalIdeal R))
-  let invHom := Ideal.Quotient.lift (maximalIdeal R) (residue R)
-    fun _ h ↦ (residue_eq_zero_iff _).2 h
-  { toFun := toHom
-    invFun := invHom
-    left_inv x := by obtain ⟨r, rfl⟩ := residue_surjective x; rfl
-    right_inv x := by obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x; rfl
-    map_mul' := toHom.map_mul
-    map_add' := toHom.map_add }
-
-private theorem isSeparable_quotient_of_residueField
-    (A B : Type*) [CommRing A] [_root_.IsLocalRing A]
-    [CommRing B] [_root_.IsLocalRing B] [Algebra A B] [IsLocalHom (algebraMap A B)]
-    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
-    let := Ideal.Quotient.field (maximalIdeal A)
-    let := Ideal.Quotient.field (maximalIdeal B)
-    Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B) := by
-  let := Ideal.Quotient.field (maximalIdeal A)
-  let := Ideal.Quotient.field (maximalIdeal B)
-  refine Algebra.IsSeparable.of_equiv_equiv (residueFieldEquivQuotient A)
-    (residueFieldEquivQuotient B) (RingHom.ext fun x ↦ ?_)
-  obtain ⟨a, rfl⟩ := residue_surjective x
-  rfl
-
-/-- For a faithful finite Galois action `G` on a DVR `B` with invariant DVR `A` and separable
-residue extension, `#G_0 = e(B / A)`. -/
-theorem natCard_ramificationGroup_zero {A B G : Type*} [CommRing A] [IsDomain A]
-    [_root_.IsDiscreteValuationRing A] [CommRing B] [IsDomain B] [_root_.IsDiscreteValuationRing B]
-    [Algebra A B] [IsLocalHom (algebraMap A B)] [Group G] [Finite G] [MulSemiringAction G B]
-    [IsGaloisGroup G A B] [Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
-    Nat.card (ramificationGroup G B 0) = (maximalIdeal B).ramificationIdx A := by
-  have _ : Algebra.IsIntegral A B := Algebra.IsInvariant.isIntegral A B G
-  have _ : FaithfulSMul A B := IsDiscreteValuationRing.faithfulSMul_of_isIntegral (R := A) (S := B)
-  have _ : Module.Finite A B := IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G A B
-  let := Ideal.Quotient.field (maximalIdeal A)
-  let := Ideal.Quotient.field (maximalIdeal B)
-  have _ : Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B) :=
-    isSeparable_quotient_of_residueField A B
-  rw [ramificationGroup_zero_eq_inertia,
-    ← Ideal.ramificationIdxIn_eq_ramificationIdx (maximalIdeal A) (maximalIdeal B) G]
-  exact Ideal.card_inertia_eq_ramificationIdxIn_of_isSeparable (G := G)
-    (maximalIdeal A) (maximalIdeal B)
-
 section
 
 variable (A B G : Type*) [CommRing A] [IsLocalRing A] [CommRing B] [IsDomain B]
   [_root_.IsDiscreteValuationRing B] [Algebra A B] [IsLocalHom (algebraMap A B)] [Group G]
   [Finite G] [MulSemiringAction G B] [SMulCommClass G A B] [FaithfulSMul G B]
   [Algebra.IsSeparable (ResidueField A) (ResidueField B)]
-
-/-- For a finite group `G` acting faithfully on a DVR `B` over a local ring `A` with separable
-residue extension, `#G_0 = e(B / B^G)`. -/
-theorem natCard_ramificationGroup_zero_fixedPoints :
-    Nat.card (ramificationGroup G B 0) =
-      (maximalIdeal B).ramificationIdx (FixedPoints.subalgebra A B G) :=
-  let _ : IsGaloisGroup G (FixedPoints.subalgebra A B G) B :=
-    ⟨inferInstance, inferInstance, inferInstance⟩
-  have _ : Algebra.IsSeparable (ResidueField (FixedPoints.subalgebra A B G)) (ResidueField B) :=
-    Algebra.isSeparable_tower_top_of_isSeparable (ResidueField A) _ (ResidueField B)
-  natCard_ramificationGroup_zero
 
 /-- **Serre's quotient formula for the lower index**: for normal `H ≤ G`,
 `e(B / B^H) · i_{G ⧸ H}(g H) = ∑ᶠ h : H, i_G(g h)`. -/
@@ -236,9 +170,9 @@ theorem lowerIndex_quotient_mk'_eq_top_iff :
 `lowerIndex B^H (QuotientGroup.mk' H g) ≠ ⊤`. -/
 theorem lowerIndex_quotient_mk'_ne_top (hj : lowerIndex B g ≠ ⊤)
     (hg : ∀ h : H, lowerIndex B (g * h) ≤ lowerIndex B g) :
-    lowerIndex (FixedPoints.subalgebra A B H) (QuotientGroup.mk' H g) ≠ ⊤ := by
-  rw [ne_eq, lowerIndex_quotient_mk'_eq_top_iff]
-  exact fun hgH ↦ hj <| top_le_iff.1 <| by simpa using hg ⟨g⁻¹, H.inv_mem hgH⟩
+    lowerIndex (FixedPoints.subalgebra A B H) (QuotientGroup.mk' H g) ≠ ⊤ :=
+  lowerIndex_ne_top_of_forall_mem_ker_le hj fun h hh ↦
+    hg ⟨h, by simpa [QuotientGroup.ker_mk'] using hh⟩
 
 end
 

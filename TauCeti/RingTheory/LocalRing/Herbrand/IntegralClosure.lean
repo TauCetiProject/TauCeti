@@ -40,24 +40,33 @@ theorem _root_.AlgEquiv.herbrandFun_integralClosure_eq_of_algEquiv (u : ℝ) :
     e.ramificationGroup_integralClosure_eq_comap_autCongr u
 
 /-- `e : E ≃ₐ[K] E'` over `A` preserves `inverseHerbrandFun` on `integralClosure`. -/
-theorem _root_.AlgEquiv.inverseHerbrandFun_integralClosure_eq_of_algEquiv (v : ℝ) :
+theorem _root_.AlgEquiv.inverseHerbrandFun_integralClosure_eq_of_algEquiv
+    [Finite (E ≃ₐ[K] E)] (v : ℝ) :
+    haveI : Finite (E' ≃ₐ[K] E') := Finite.of_equiv _ e.autCongr.toEquiv
     inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v =
       inverseHerbrandFun (E' ≃ₐ[K] E') (integralClosure A E') v :=
+  let _ : Finite (E' ≃ₐ[K] E') := Finite.of_equiv _ e.autCongr.toEquiv
   inverseHerbrandFun_eq_of_ramificationGroup_eq_comap e.autCongr.bijective
     e.ramificationGroup_integralClosure_eq_comap_autCongr v
 
 /-- Conjugation `e.autCongr` pulls back `upperRamificationGroup` on `integralClosure`. -/
-theorem _root_.AlgEquiv.upperRamificationGroup_integralClosure_eq_comap_autCongr (v : ℝ) :
+theorem _root_.AlgEquiv.upperRamificationGroup_integralClosure_eq_comap_autCongr
+    [Finite (E ≃ₐ[K] E)] (v : ℝ) :
+    haveI : Finite (E' ≃ₐ[K] E') := Finite.of_equiv _ e.autCongr.toEquiv
     upperRamificationGroup (E ≃ₐ[K] E) (integralClosure A E) v =
       (upperRamificationGroup (E' ≃ₐ[K] E') (integralClosure A E') v).comap
         (e.autCongr : (E ≃ₐ[K] E) →* (E' ≃ₐ[K] E')) :=
+  let _ : Finite (E' ≃ₐ[K] E') := Finite.of_equiv _ e.autCongr.toEquiv
   upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap e.autCongr.bijective
     e.ramificationGroup_integralClosure_eq_comap_autCongr v
 
 /-- `e : E ≃ₐ[K] E'` over `A` preserves `UpperJump` on `integralClosure`. -/
-theorem _root_.AlgEquiv.upperJump_integralClosure_iff_of_algEquiv (u : ℝ) :
+theorem _root_.AlgEquiv.upperJump_integralClosure_iff_of_algEquiv
+    [Finite (E ≃ₐ[K] E)] (u : ℝ) :
+    haveI : Finite (E' ≃ₐ[K] E') := Finite.of_equiv _ e.autCongr.toEquiv
     UpperJump (E ≃ₐ[K] E) (integralClosure A E) u ↔
       UpperJump (E' ≃ₐ[K] E') (integralClosure A E') u :=
+  let _ : Finite (E' ≃ₐ[K] E') := Finite.of_equiv _ e.autCongr.toEquiv
   upperJump_iff_of_ramificationGroup_eq_comap e.autCongr.bijective
     e.ramificationGroup_integralClosure_eq_comap_autCongr u
 
