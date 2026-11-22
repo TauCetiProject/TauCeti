@@ -41,10 +41,10 @@ support, and null-set agreement with `TauCeti.Manifold.ae`) are proved in
 
 ## Main results
 
-* `TauCeti.IsPositiveContinuousDensity.chartWeight_eq_of_map_restrict_eq`: uniqueness of the
-  continuous chart weight on the extended chart target.
-* `TauCeti.IsPositiveContinuousDensity.chartWeight_haar_eq`: scaling of chart weights under a
-  change of additive Haar measure.
+* `TauCeti.IsPositiveContinuousDensity.chartWeight_eqOn_target_of_map_restrict_eq`: uniqueness of
+  the continuous chart weight on the extended chart target.
+* `TauCeti.IsPositiveContinuousDensity.chartWeight_eq_addHaarScalarFactor_mul`: scaling of chart
+  weights under a change of additive Haar measure.
 * `TauCeti.IsPositiveContinuousDensity.chartWeight_changeChart`: Jacobian transformation rule for
   chart weights across overlapping charts of the `C¹` maximal atlas.
 * `TauCeti.isPositiveContinuousDensity_of_atlas`,
@@ -234,7 +234,7 @@ variable {I}
 maximal atlas, relative to an additive Haar measure `ν` on the model space. When `E` is
 finite-dimensional with `BorelSpace E`, its values on `(e.extend I).target` are uniquely
 determined by `μ`, `e`, and `ν`; see
-`IsPositiveContinuousDensity.chartWeight_eq_of_map_restrict_eq`. -/
+`IsPositiveContinuousDensity.chartWeight_eqOn_target_of_map_restrict_eq`. -/
 def IsPositiveContinuousDensity.chartWeight {μ : Measure M}
     (hμ : IsPositiveContinuousDensity I μ) {e : OpenPartialHomeomorph M H}
     (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure] : E → ℝ :=
@@ -264,8 +264,8 @@ theorem IsPositiveContinuousDensity.map_restrict_eq_withDensity_chartWeight {μ 
 /-- Uniqueness of the continuous chart weight: any continuous nonnegative function on
 `(e.extend I).target` presenting `(μ.restrict e.source).map (e.extend I)` against `ν` agrees with
 `hμ.chartWeight he ν` on `(e.extend I).target`. -/
-theorem IsPositiveContinuousDensity.chartWeight_eq_of_map_restrict_eq [FiniteDimensional ℝ E]
-    [BorelSpace E] {μ : Measure M} (hμ : IsPositiveContinuousDensity I μ)
+theorem IsPositiveContinuousDensity.chartWeight_eqOn_target_of_map_restrict_eq
+    [FiniteDimensional ℝ E] [BorelSpace E] {μ : Measure M} (hμ : IsPositiveContinuousDensity I μ)
     {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I 1 M)
     (ν : Measure E) [ν.IsAddHaarMeasure] {w : E → ℝ}
     (hw : ContinuousOn w (e.extend I).target) (hw0 : ∀ y ∈ (e.extend I).target, 0 ≤ w y)
@@ -284,9 +284,9 @@ theorem IsPositiveContinuousDensity.chartWeight_eq_of_map_restrict_eq [FiniteDim
 
 /-- Changing the reference additive Haar measure from `ν₁` to `ν₂` multiplies the chart weight by
 `Measure.addHaarScalarFactor ν₁ ν₂`. -/
-theorem IsPositiveContinuousDensity.chartWeight_haar_eq [FiniteDimensional ℝ E] [BorelSpace E]
-    {μ : Measure M} (hμ : IsPositiveContinuousDensity I μ) {e : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M)
+theorem IsPositiveContinuousDensity.chartWeight_eq_addHaarScalarFactor_mul
+    [FiniteDimensional ℝ E] [BorelSpace E] {μ : Measure M} (hμ : IsPositiveContinuousDensity I μ)
+    {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I 1 M)
     (ν₁ ν₂ : Measure E) [ν₁.IsAddHaarMeasure] [ν₂.IsAddHaarMeasure]
     {y : E} (hy : y ∈ (e.extend I).target) :
     hμ.chartWeight he ν₂ y =
@@ -298,7 +298,7 @@ theorem IsPositiveContinuousDensity.chartWeight_haar_eq [FiniteDimensional ℝ E
       Measure.withDensity_eq_withDensity_addHaarScalarFactor ν₁ ν₂, restrict_withDensity']
     refine congrArg (ν₂.restrict (e.extend I).target).withDensity (funext fun z ↦ ?_)
     rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (NNReal.coe_nonneg _)]
-  exact hμ.chartWeight_eq_of_map_restrict_eq he ν₂
+  exact hμ.chartWeight_eqOn_target_of_map_restrict_eq he ν₂
     (continuousOn_const.mul (hμ.continuousOn_chartWeight he ν₁))
     (fun z hz ↦ mul_nonneg (Measure.addHaarScalarFactor ν₁ ν₂).coe_nonneg
       (hμ.chartWeight_pos he ν₁ hz).le) hmap hy
