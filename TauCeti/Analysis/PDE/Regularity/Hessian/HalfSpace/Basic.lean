@@ -293,14 +293,10 @@ private theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
         ((normalHalfSpace (E := E) (a / c) : Opens (WithLp 2 (ℝ × E))) :
           Set (WithLp 2 (ℝ × E))) =
           e ⁻¹' (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) := by
-  -- the symmetric part of `A` is symmetric with the same quadratic form
-  have hS : (((2⁻¹ : ℝ) • (A + A.adjoint) : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) :
-      WithLp 2 (ℝ × E) →ₗ[ℝ] WithLp 2 (ℝ × E)).IsSymmetric :=
-    A.isSymmetric_symmPart
   set ν : WithLp 2 (ℝ × E) := WithLp.toLp 2 (1, 0)
   obtain ⟨e, hee, ⟨c, hc, hcν⟩, he⟩ :=
-    ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric _ hS hlam
-      (fun ξ => by rw [RCLike.re_to_real, A.inner_symmPart_apply_self]; exact hA ξ)
+    A.exists_continuousLinearEquiv_comp_adjoint_eq_two_inv_smul_add hlam
+      (fun ξ => by rw [RCLike.re_to_real]; exact hA ξ) (ν := ν)
   -- over `ℝ` the scalar `(c : ℝ)` produced by the `RCLike` statement is `c` itself
   rw [RCLike.ofReal_real_eq_id, id_eq] at hcν
   have hinner (x : WithLp 2 (ℝ × E)) : ⟪x, ν⟫_ℝ = (WithLp.ofLp x).1 := by

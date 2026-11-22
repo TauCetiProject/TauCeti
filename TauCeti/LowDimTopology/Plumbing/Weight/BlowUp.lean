@@ -163,7 +163,7 @@ theorem characteristicWeight_le_blowUpCharacteristic (k : P.characteristicVector
   have hδ : Odd ((δ : ℤ)) := by
     rcases Int.units_eq_one_or δ with rfl | rfl <;> norm_num
   have h := P.two_mul_characteristicWeight_blowUpCharacteristic v k (δ : ℤ) hδ x s
-  have hnn := Int.zero_le_mul_sub_units δ s
+  have hnn := Int.zero_le_mul_sub_of_abs_le_one (Int.isUnit_iff_abs_eq.mp δ.isUnit).le s
   linarith
 
 /-- Forgetting the exceptional coordinate cannot increase a cube's characteristic weight
