@@ -70,9 +70,8 @@ Three consequences follow:
 * `TauCeti.hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff`,
   `TauCeti.hasVaughtCount_conjunction_inf_infiniteSentence_iff`,
   `TauCeti.not_countable_quotient_isoSetoid_modelsOfTheory_nat_or_hasPerfectAntichainOn_iff`,
-  `TauCeti.mk_isoClasses_modelsOfTheory_nat_le_aleph0_or_eq_continuum_of_aleph_one_eq_continuum`,
   and `TauCeti.mk_isoClasses_modelsOfTheory_nat_le_aleph0_or_eq_continuum_iff`: reduction to
-  `L_{ω₁ω}`, counterexample profile, and CH / `< 𝔠` equivalences on `ℕ`.
+  `L_{ω₁ω}`, counterexample profile, and `< 𝔠` equivalence on `ℕ`.
 * `TauCeti.VaughtConjecture.countable_or_hasPerfectAntichainOn_modelsOfTheory` and
   `TauCeti.VaughtConjecture.firstOrder`: `VaughtConjecture` implies the first-order conjecture.
 * `TauCeti.firstOrderVaughtConjecture_iff_forall_universe`,
@@ -136,34 +135,6 @@ theorem hasPerfectAntichainOn_modelsOfTheory_onTheory_iff (V : Type w) (T : L.Th
     (fun _ _ => e.isoSetoid_onConfiguration_iff) (modelsOfTheory T)
 
 end FirstOrder.Language.LEquiv
-
-namespace TauCeti.RelationalConfiguration
-
-open TauCeti
-
-variable {L : Language.{u, v}} [L.IsRelational]
-
-/-- The `L_{ω₁ω}` conjunction of a countable first-order theory `T` has the same number of
-isomorphism classes of models on `V` as `T`. -/
-@[simp]
-theorem mk_quotient_isoSetoidOn_conjunction_image_toOmega {V : Type w} {T : L.Theory}
-    (hT : (BoundedFormula.toOmega '' T).Countable) :
-    #(Quotient (isoSetoidOn V (Theoryω.conjunction (BoundedFormula.toOmega '' T) hT))) =
-      #(Quotient ((isoSetoid L V).comap (Subtype.val : modelsOfTheory T → _))) := by
-  rw [Setoid.mk_quotient_comap_val_eq_mk_image, Setoid.mk_quotient_comap_val_eq_mk_image,
-    modelsOf_conjunction_image_toOmega hT]
-
-/-- The `L_{ω₁ω}` conjunction of a countable first-order theory `T` has countably many
-isomorphism classes of models on `V` exactly when `T` does. -/
-@[simp]
-theorem countable_quotient_isoSetoidOn_conjunction_image_toOmega_iff {V : Type w} {T : L.Theory}
-    (hT : (BoundedFormula.toOmega '' T).Countable) :
-    Countable
-        (Quotient (isoSetoidOn V (Theoryω.conjunction (BoundedFormula.toOmega '' T) hT))) ↔
-      Countable (Quotient ((isoSetoid L V).comap (Subtype.val : modelsOfTheory T → _))) := by
-  rw [← mk_le_aleph0_iff, ← mk_le_aleph0_iff, mk_quotient_isoSetoidOn_conjunction_image_toOmega]
-
-end TauCeti.RelationalConfiguration
 
 namespace TauCeti
 
@@ -244,20 +215,12 @@ theorem not_countable_quotient_isoSetoid_modelsOfTheory_nat_or_hasPerfectAnticha
   have h := not_hasVaughtDichotomy_iff (φ :=
     Theoryω.conjunction (BoundedFormula.toOmega '' T) (T.to_countable.image _) ⊓
       L.infiniteSentence)
-  simpa only [hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff,
+  rw [hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff,
     countableModelCount_inf_infiniteSentence,
-    hasPerfectlyManyCountableModels_inf_infiniteSentence_iff,
-    mk_quotient_isoSetoidOn_conjunction_image_toOmega,
-    modelsOf_conjunction_image_toOmega] using h
-
-/-- Under CH, the models on `ℕ` of every first-order theory in a countable relational vocabulary
-satisfy Vaught's cardinal dichotomy. -/
-theorem mk_isoClasses_modelsOfTheory_nat_le_aleph0_or_eq_continuum_of_aleph_one_eq_continuum
-    (hCH : ℵ₁ = (𝔠 : Cardinal.{v})) (T : L.Theory) :
-    #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : modelsOfTheory T → _))) ≤ ℵ₀ ∨
-      #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : modelsOfTheory T → _))) = 𝔠 :=
-  (hasVaughtCount_conjunction_inf_infiniteSentence_iff (T.to_countable.image _)).1
-    (hasVaughtCount_of_aleph_one_eq_continuum hCH _)
+    hasPerfectlyManyCountableModels_inf_infiniteSentence_iff] at h
+  unfold isoSetoidOn at h
+  rw [modelsOf_conjunction_image_toOmega] at h
+  exact h
 
 /-- When `ℵ₁ < 𝔠`, the cardinal dichotomy on `ℕ` for a first-order theory `T` is equivalent to the
 witnessed perfect-set dichotomy on `ℕ`. -/
@@ -378,7 +341,8 @@ theorem firstOrderVaughtConjecture_iff_bfScattered :
 
 /-- **The cardinal formulation of the first-order Vaught conjecture** when `ℵ₁ < 𝔠`. Under CH,
 every first-order theory already satisfies the cardinal dichotomy on `ℕ`
-(`mk_isoClasses_modelsOfTheory_nat_le_aleph0_or_eq_continuum_of_aleph_one_eq_continuum`), so the
+(by `cardinalVaughtConjecture_of_aleph_one_eq_continuum` and
+`CardinalVaughtConjecture.mk_isoClasses_modelsOfTheory_nat_le_aleph0_or_eq_continuum`), so the
 equivalence requires `ℵ₁ < 𝔠`. -/
 theorem firstOrderVaughtConjecture_iff_cardinal (hc : ℵ₁ < (𝔠 : Cardinal.{0})) :
     FirstOrderVaughtConjecture ↔

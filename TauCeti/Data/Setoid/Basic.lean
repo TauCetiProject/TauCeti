@@ -17,8 +17,8 @@ This file records small generic additions to Mathlib's `Setoid` API.
 
 * `TauCeti.Setoid.map_of_le_mk`: the quotient map induced by a setoid inequality sends a
   representative to the same representative in the larger quotient.
-* `Setoid.comapValQuotientEquiv`: the restriction of `s` to `K` is in bijection with
-  `Quotient.mk s '' K`.
+* `Setoid.comapValQuotientEquiv` and `Setoid.coe_comapValQuotientEquiv_mk`: the restriction of `s`
+  to `K` is in bijection with `Quotient.mk s '' K`, sending `⟦x⟧` to `Quotient.mk s x.val`.
 * `Setoid.ofPred_rel_eq_iff`: two elements have the same class exactly when they are related.
 * `Setoid.map_of_le_surjective`: the quotient map induced by a setoid inequality is surjective.
 * `Setoid.preimage_image_quotientMk_eq_relPreimage` and `Setoid.preimage_image_quotientMk`: the
@@ -52,6 +52,13 @@ namespace Setoid
 noncomputable def comapValQuotientEquiv {α : Type*} (s : Setoid α) (K : Set α) :
     Quotient (s.comap ((↑) : K → α)) ≃ Quotient.mk s '' K :=
   (comapQuotientEquiv _ _).trans (Set.equivOfEq (by rw [Set.range_comp, Subtype.range_coe]))
+
+/-- `Setoid.comapValQuotientEquiv` sends the equivalence class of `x : K` to `Quotient.mk s x.val`
+in `Quotient s`. -/
+@[simp]
+theorem coe_comapValQuotientEquiv_mk {α : Type*} (s : Setoid α) (K : Set α) (x : K) :
+    (comapValQuotientEquiv s K ⟦x⟧ : Quotient s) = Quotient.mk s x.val := by
+  rfl
 
 /-- Two elements have the same class exactly when they are related. -/
 theorem ofPred_rel_eq_iff {α : Type*} {r : Setoid α} {x y : α} :

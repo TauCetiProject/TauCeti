@@ -115,13 +115,6 @@ theorem isoSetoidOn_apply {V : Type w} {φ : L.SentenceInf ι} {c d : modelsOf (
     isoSetoidOn V φ c d ↔ isoSetoid L V c d :=
   Iff.rfl
 
-/-- If every model of `φ` on `V` is a model of `ψ`, the models of `φ` on `V` have at most as many
-isomorphism classes as those of `ψ`: the inclusion of model classes is injective on classes. -/
-theorem mk_quotient_isoSetoidOn_le_of_subset {ι' : Type uι'} {V : Type w} {φ : L.SentenceInf ι}
-    {ψ : L.SentenceInf ι'} (h : modelsOf (V := V) φ ⊆ modelsOf ψ) :
-    #(Quotient (isoSetoidOn V φ)) ≤ #(Quotient (isoSetoidOn V ψ)) :=
-  Setoid.mk_quotient_comap_val_le_of_subset h
-
 /-- On a countable carrier, in a language with countably many relation symbols of each arity,
 the models of a sentence have at most continuum many isomorphism classes. -/
 theorem mk_quotient_isoSetoidOn_le_continuum [∀ n, Countable (L.Relations n)] (V : Type w)
@@ -238,8 +231,8 @@ theorem countableModelCount_le_of_subset {φ : L.SentenceInf ι} {ψ : L.Sentenc
     (hℕ : modelsOf (V := ℕ) φ ⊆ modelsOf ψ) (hfin : ∀ n, modelsOf (V := Fin n) φ ⊆ modelsOf ψ) :
     countableModelCount φ ≤ countableModelCount ψ := by
   rw [countableModelCount_eq_add_sum, countableModelCount_eq_add_sum]
-  exact add_le_add (mk_quotient_isoSetoidOn_le_of_subset hℕ)
-    (sum_le_sum _ _ fun n => mk_quotient_isoSetoidOn_le_of_subset (hfin n))
+  exact add_le_add (Setoid.mk_quotient_comap_val_le_of_subset hℕ)
+    (sum_le_sum _ _ fun n => Setoid.mk_quotient_comap_val_le_of_subset (hfin n))
 
 /-- In a language with countably many relation symbols of each arity, there are at most continuum
 many countable models. -/
