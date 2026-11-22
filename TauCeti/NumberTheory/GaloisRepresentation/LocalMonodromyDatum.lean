@@ -30,8 +30,10 @@ A **local monodromy datum** `D` on a profinite group `H` consists of
 
 such that `H / I ≅ ℤ̂` as topological groups by an isomorphism sending `Fr` to the generator, and
 `t(Φ σ Φ⁻¹) = q⁻¹ t(σ)` for `Φ ∈ Fr` and `σ ∈ I`. The tame character is written
-multiplicatively, as a continuous homomorphism to `Multiplicative ℚ_[ℓ]`, matching
-`TauCeti.inertiaPadicTameCharacter`.
+multiplicatively, as a continuous homomorphism to `Multiplicative ℚ_[ℓ]`, in the same way as
+`TauCeti.inertiaPadicTameCharacter`. The latter takes values in `ℤ_ℓ(1)` rather than `ℚ_ℓ`, so
+the tame character of a Galois group depends on a trivialization `ℤ_ℓ(1) ≅ ℤ_ℓ`, which is
+determined only up to a unit.
 
 Data are *marked*: an isomorphism `D → D'` of local monodromy data is a topological group
 isomorphism carrying inertia onto inertia and the Frobenius coset onto the Frobenius coset, with
@@ -51,13 +53,11 @@ character by `c` gives the datum `c • D`, isomorphic to `D` through the identi
 
 * `TauCeti.LocalMonodromyDatum.mem_frobenius_iff_inv_mul_mem`: the Frobenius coset is a single
   coset of inertia.
-* `TauCeti.LocalMonodromyDatum.one_notMem_frobenius`: the Frobenius coset is not inertia itself;
-  otherwise the twist would force `(1 - q⁻¹) t = 0`.
+* `TauCeti.LocalMonodromyDatum.one_notMem_frobenius`: the Frobenius coset is not inertia itself.
 * `TauCeti.LocalMonodromyDatum.denseRange_zpow_frobClass`: the class of Frobenius topologically
   generates `H / I`.
 * `TauCeti.LocalMonodromyDatum.exists_tame_ne_one_of_isOpen`: the tame character is not
-  identically zero on any open subgroup of inertia, since such a subgroup has finite index in the
-  compact group `I`.
+  identically zero on any open subgroup of inertia.
 * `TauCeti.LocalMonodromyDatum.IsIso.refl`, `IsIso.symm`, `IsIso.trans`: identity, inverse and
   composition of isomorphisms, with constants `1`, `c⁻¹` and `c' * c`.
 * `TauCeti.LocalMonodromyDatum.isIso_refl_smul`, `isIso_smul_refl`: the identity is an isomorphism
@@ -86,8 +86,11 @@ that is not identically zero, an integer `q ≥ 2` prime to `ℓ`, and a class `
 be isomorphic to `ℤ̂` as a topological group by an isomorphism sending `frobClass` to the
 generator, and conjugation by a Frobenius element `Φ` scales the tame character by `q⁻¹`:
 `t(Φ σ Φ⁻¹) = q⁻¹ t(σ)`. For a nonarchimedean local field `k` with residue field `𝔽_q` and
-`ℓ ≠ p`, the absolute Galois group carries such a datum with inertia `I_k`, the `ℓ`-adic tame
-character and the coset of geometric Frobenius lifts.
+`ℓ ≠ p`, the absolute Galois group carries such a datum with inertia `I_k`, the coset of
+geometric Frobenius lifts, and as tame character the `ℓ`-adic tame character
+`TauCeti.inertiaPadicTameCharacter`, valued in `ℤ_ℓ(1)`, composed with a choice of
+trivialization `ℤ_ℓ(1) ≅ ℤ_ℓ`. That choice is determined only up to a unit of `ℤ_ℓ`, which is
+why isomorphisms of local monodromy data carry a constant.
 
 Since the tame character is invariant under conjugation by inertia, the twist holds on the whole
 Frobenius coset as soon as it holds at one Frobenius lift
@@ -160,12 +163,12 @@ theorem mem_frobenius_iff_inv_mul_mem {Φ Φ' : H} (hΦ : Φ ∈ D.frobenius) :
   rw [mem_frobenius, ← hΦ, eq_comm, QuotientGroup.eq]
 
 /-- A Frobenius element times an element of inertia is a Frobenius element. -/
-theorem mul_mem_frobenius {Φ σ : H} (hΦ : Φ ∈ D.frobenius) (hσ : σ ∈ D.inertia) :
+theorem mul_mem_frobenius_right {Φ σ : H} (hΦ : Φ ∈ D.frobenius) (hσ : σ ∈ D.inertia) :
     Φ * σ ∈ D.frobenius := by
   rwa [mem_frobenius_iff_inv_mul_mem hΦ, inv_mul_cancel_left]
 
 /-- An element of inertia times a Frobenius element is a Frobenius element. -/
-theorem mul_mem_frobenius_of_mem_inertia {σ Φ : H} (hσ : σ ∈ D.inertia) (hΦ : Φ ∈ D.frobenius) :
+theorem mul_mem_frobenius_left {σ Φ : H} (hσ : σ ∈ D.inertia) (hΦ : Φ ∈ D.frobenius) :
     σ * Φ ∈ D.frobenius := by
   rw [mem_frobenius, QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff σ).2 hσ, one_mul]
   exact hΦ
@@ -178,31 +181,33 @@ theorem q_ne_zero : (D.q : ℚ_[ℓ]) ≠ 0 :=
 theorem q_ne_one : (D.q : ℚ_[ℓ]) ≠ 1 :=
   Nat.cast_ne_one.2 (by have := D.two_le_q; lia)
 
-/-- The tame character is not identically zero on any open subgroup of inertia: such a subgroup
-has finite index in the compact group `I`, so it contains a positive power `σ ^ n` of an element
-with `t(σ) ≠ 0`, and `t(σ ^ n) = n t(σ) ≠ 0` in characteristic zero. -/
+variable (D) in
+/-- The tame character takes a nonzero value, in additive form. -/
+theorem exists_toAdd_tame_ne_zero : ∃ σ, (D.tame σ).toAdd ≠ 0 := by
+  obtain ⟨σ, hσ⟩ := DFunLike.ne_iff.1 D.tame_ne_one
+  exact ⟨σ, fun h ↦ hσ (Multiplicative.toAdd.injective h)⟩
+
+/-- The tame character is not identically zero on any open subgroup of inertia. -/
 theorem exists_tame_ne_one_of_isOpen (U : Subgroup D.inertia) (hU : IsOpen (U : Set D.inertia)) :
     ∃ σ ∈ U, D.tame σ ≠ 1 := by
-  obtain ⟨σ, hσ⟩ := DFunLike.ne_iff.1 D.tame_ne_one
+  -- `U` has finite index in the compact group `I`, so it contains a positive power `σ ^ n` of an
+  -- element with `t(σ) ≠ 0`, and `t(σ ^ n) = n t(σ) ≠ 0` in characteristic zero.
+  obtain ⟨σ, hσ⟩ := D.exists_toAdd_tame_ne_zero
   have : Finite (D.inertia ⧸ U) := U.quotient_finite_of_isOpen hU
   obtain ⟨n, hn, -, hσn⟩ := Subgroup.exists_pow_mem_of_index_ne_zero U.index_ne_zero_of_finite σ
   refine ⟨σ ^ n, hσn, fun h ↦ hσ ?_⟩
   replace h := congrArg Multiplicative.toAdd h
   rw [map_pow, toAdd_pow, toAdd_one, nsmul_eq_mul] at h
-  exact Multiplicative.toAdd.injective
-    ((mul_eq_zero.1 h).resolve_left (Nat.cast_ne_zero.2 hn.ne'))
+  exact (mul_eq_zero.1 h).resolve_left (Nat.cast_ne_zero.2 hn.ne')
 
-/-- **`1` is not a Frobenius element.** Otherwise the twist at `Φ = 1` would give
-`(1 - q⁻¹) t = 0`, and `q ≠ 1` would force the tame character to vanish. -/
+/-- **`1` is not a Frobenius element.** -/
 theorem one_notMem_frobenius : (1 : H) ∉ D.frobenius := by
+  -- The twist at `Φ = 1` gives `(1 - q⁻¹) t(σ) = 0`, and `q ≠ 1`.
   intro h
-  refine D.tame_ne_one (ContinuousMonoidHom.ext fun σ ↦ Multiplicative.toAdd.injective ?_)
-  have hσ := D.tame_conj 1 h σ
-  rw [map_one, MulAut.one_apply] at hσ
-  have hq : (D.q : ℚ_[ℓ])⁻¹ ≠ 1 := inv_ne_one.2 D.q_ne_one
-  rw [ContinuousMonoidHom.one_toFun, toAdd_one]
-  by_contra hne
-  exact hq (mul_right_cancel₀ hne (by rw [one_mul]; exact hσ.symm))
+  obtain ⟨σ, hσ⟩ := D.exists_toAdd_tame_ne_zero
+  have hσ' := D.tame_conj 1 h σ
+  rw [map_one, MulAut.one_apply, ← sub_eq_zero, ← one_sub_mul] at hσ'
+  exact hσ ((mul_eq_zero.1 hσ').resolve_left (sub_ne_zero.2 (inv_ne_one.2 D.q_ne_one).symm))
 
 /-- The Frobenius class is not trivial in `H ⧸ inertia`. -/
 theorem frobClass_ne_one : D.frobClass ≠ 1 := fun h ↦
@@ -213,14 +218,12 @@ theorem disjoint_frobenius_inertia : Disjoint D.frobenius (D.inertia : Set H) :=
   Set.disjoint_left.2 fun Φ hΦ hI ↦ D.frobClass_ne_one <| by
     rw [← mem_frobenius.1 hΦ, (QuotientGroup.eq_one_iff Φ).2 hI]
 
-/-- **The Frobenius class topologically generates `H ⧸ inertia`**: its integer powers are dense,
-since it corresponds to the generator of `ℤ̂`. -/
+/-- **The Frobenius class topologically generates `H ⧸ inertia`**: its integer powers are
+dense. -/
 theorem denseRange_zpow_frobClass : DenseRange fun n : ℤ ↦ D.frobClass ^ n := by
   obtain ⟨e, he⟩ := D.exists_continuousMulEquiv_zHat
-  have hgen : DenseRange fun n : ℤ ↦ (zHat.gen : zHat.{u}) ^ n := by
-    rw [DenseRange, ← Subgroup.coe_zpowers, dense_iff_closure_eq,
-      ← Subgroup.topologicalClosure_coe, zHat.topologicalClosure_zpowers_gen, Subgroup.coe_top]
-  convert e.symm.surjective.denseRange.comp hgen e.symm.continuous using 2 with n
+  convert e.symm.surjective.denseRange.comp zHat.denseRange_zpow_gen e.symm.continuous
+    using 2 with n
   simp [← he]
 
 end Basic
@@ -259,10 +262,9 @@ instance : SMul ℚ_[ℓ]ˣ (LocalMonodromyDatum ℓ H) where
         { toMonoidHom := (AddMonoidHom.mulLeft (c : ℚ_[ℓ])).toMultiplicative.comp D.tame
           continuous_toFun := continuous_ofAdd.comp
             (continuous_const.mul (continuous_toAdd.comp D.tame.continuous)) }
-      tame_ne_one := fun h ↦ D.tame_ne_one <| ContinuousMonoidHom.ext fun σ ↦
-        Multiplicative.toAdd.injective <|
-          (mul_eq_zero.1 (congrArg Multiplicative.toAdd (DFunLike.congr_fun h σ))).resolve_left
-            c.ne_zero
+      tame_ne_one := fun h ↦
+        have ⟨σ, hσ⟩ := D.exists_toAdd_tame_ne_zero
+        mul_ne_zero c.ne_zero hσ (congrArg Multiplicative.toAdd (DFunLike.congr_fun h σ))
       q := D.q
       two_le_q := D.two_le_q
       coprime_q := D.coprime_q
@@ -286,6 +288,11 @@ theorem toAdd_smul_tame (σ : D.inertia) : ((c • D).tame σ).toAdd = c * (D.ta
 /-- Rescaling does not change `q`. -/
 @[simp]
 theorem smul_q : (c • D).q = D.q :=
+  (rfl)
+
+/-- Rescaling does not change the Frobenius class. -/
+@[simp]
+theorem smul_frobClass : (c • D).frobClass = D.frobClass :=
   (rfl)
 
 /-- Rescaling does not change the Frobenius coset. -/
@@ -368,12 +375,11 @@ theorem trans (h : IsIso D D' α c) (h' : IsIso D' D'' β c') :
     rw [h'.toAdd_tame_map _ hσ', h.toAdd_tame_map σ hσ hσ', Units.val_mul, mul_assoc]
 
 /-- The constant of an isomorphism of local monodromy data is determined by the underlying group
-isomorphism, since the tame character is not identically zero. -/
+isomorphism. -/
 theorem const_eq (h : IsIso D D' α c) (h' : IsIso D D' α c') : c = c' := by
-  obtain ⟨σ, hσ⟩ := DFunLike.ne_iff.1 D.tame_ne_one
+  obtain ⟨σ, hσ⟩ := D.exists_toAdd_tame_ne_zero
   have hσ' := (h.map_mem_inertia_iff σ).2 σ.property
-  have ht : (D.tame σ).toAdd ≠ 0 := fun h0 ↦ hσ (Multiplicative.toAdd.injective h0)
-  exact Units.ext <| mul_right_cancel₀ ht <|
+  exact Units.ext <| mul_right_cancel₀ hσ <|
     (h.toAdd_tame_map σ σ.property hσ').symm.trans (h'.toAdd_tame_map σ σ.property hσ')
 
 end IsIso

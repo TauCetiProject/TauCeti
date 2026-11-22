@@ -79,10 +79,10 @@ theorem map_conjNormal_val (ψ : N →* M) (a x : N) : ψ (MulAut.conjNormal (a 
   exact (isConj_iff_eq.mp (ψ.map_isConj h)).symm
 
 /-- **A homomorphism from a normal subgroup to a commutative monoid, composed with conjugation by
-`g`, depends only on the coset `g N`**: it agrees at `g` and `g₀` when `g₀⁻¹ g ∈ N`, since
-conjugation by an element of `N` does not move it (`MonoidHom.map_conjNormal_val`). -/
+`g`, depends only on the coset `g N`**: it agrees at `g` and `g₀` when `g₀⁻¹ g ∈ N`. -/
 theorem map_conjNormal_eq_of_inv_mul_mem (ψ : N →* M) {g₀ g : G} (h : g₀⁻¹ * g ∈ N) (x : N) :
     ψ (MulAut.conjNormal g x) = ψ (MulAut.conjNormal g₀ x) := by
+  -- Write `g = g₀ a` with `a ∈ N`; conjugation by `a` does not move `ψ`.
   obtain ⟨a, rfl⟩ : ∃ a : N, g = g₀ * a := ⟨⟨g₀⁻¹ * g, h⟩, by simp⟩
   rw [map_mul, MulAut.mul_apply]
   exact (ψ.comp (MulAut.conjNormal g₀).toMonoidHom).map_conjNormal_val a x
