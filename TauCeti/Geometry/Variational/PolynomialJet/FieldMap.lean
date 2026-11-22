@@ -140,6 +140,7 @@ theorem fieldMap_fieldJet (f : (α →₀ R) →ₛₗ[σ] (β →₀ S)) (I : �
     simp
 
 /-- The extensions commute with every total derivative. -/
+@[simp]
 theorem totalDeriv_fieldMap (f : (α →₀ R) →ₛₗ[σ] (β →₀ S)) (i : ι) (p : PolynomialJet R ι α) :
     totalDeriv i (fieldMap f p) = fieldMap f (totalDeriv i p) := by
   classical
