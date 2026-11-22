@@ -18,6 +18,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.Analysis.Calculus.FDeriv.Add
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Strip
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
@@ -30,6 +31,8 @@ import TauCeti.Topology.Connected.MetricSpace
 import TauCeti.Topology.Connected.TotallyDisconnected
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.OmegaLimit
+import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
+import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
 # Loops with square-integrable defect accumulate at, and converge to, periodic orbits
@@ -105,6 +108,15 @@ cylinder, as needed along the necks of a breaking sequence of Floer cylinders:
   constant `δ` over a strip `(a, b) × [0, 1]`, then all loops at `s ∈ [a + η, b - η]` are uniformly
   close to one single periodic solution, with `δ` and the margin `η` independent of the map and of
   `b - a` (`TauCeti.exists_pos_forall_exists_periodic_hasDerivAt_forall_dist_lt`).
+
+Conversely, at an end along which the loops of `u` converge uniformly to a continuous loop `x`
+and the defect tends uniformly to zero, the slice velocity `∂_t u` converges uniformly to
+`t ↦ X(t, x(t))` (`TauCeti.tendstoUniformlyOn_fderiv_apply_of_sliceDefect`), so `u` and `∂_t u`
+are bounded on the strip when this holds at both ends
+(`TauCeti.exists_forall_norm_le_and_norm_fderiv_apply_le_of_sliceDefect`). Both conditions pass
+from two `C¹` maps to every point `u + μ (u' - u)` of the segment between them
+(`TauCeti.tendstoUniformlyOn_add_smul_sub_and_sliceDefect`). These are the asymptotics along which
+the linearized Floer operator is deformed.
 
 ## References
 
@@ -1061,5 +1073,69 @@ theorem exists_pos_forall_exists_periodic_hasDerivAt_forall_dist_lt (hK : IsComp
   exact ⟨y, ⟨hyper, hy, hyK⟩, hyd⟩
 
 end Neck
+
+section Segment
+
+/-! ### Uniform asymptotics at an end, along a segment of maps -/
+
+variable {x : ℝ → V} {l : Filter ℝ}
+
+/-- If the loops of `u` converge uniformly to a continuous loop `x` and the slice defect
+`∂t u - X_t(u)` tends uniformly to zero, then `∂t u` converges uniformly to `t ↦ X_t(x t)`. -/
+theorem tendstoUniformlyOn_fderiv_apply_of_sliceDefect [ProperSpace V] (hX : Continuous (uncurry X))
+    (hx : Continuous x) (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
+    (hδ : TendstoUniformlyOn (fun s t ↦ sliceDefect X u (s, t)) 0 l (Icc 0 1)) :
+    TendstoUniformlyOn (fun s t ↦ fderiv ℝ u (s, t) (0, 1)) (fun t ↦ X t (x t)) l (Icc 0 1) := by
+  refine ((hδ.fun_add (isCompact_Icc.tendstoUniformlyOn_comp_prodMk_of_continuous hX
+    hx.continuousOn hux)).congr (.of_forall fun s t _ ↦ ?_)).congr_right fun t _ ↦ ?_
+  · simp only [sliceDefect_def, uncurry_apply_pair, sub_add_cancel]
+  · simp only [Pi.zero_apply, uncurry_apply_pair, zero_add]
+
+/-- A `C¹` map of the cylinder and its derivative in `t` are bounded on the strip `ℝ × [0, 1]`
+when its loops converge uniformly to continuous loops at both ends and its slice defects for
+continuous vector fields tend uniformly to zero there. -/
+theorem exists_forall_norm_le_and_norm_fderiv_apply_le_of_sliceDefect [ProperSpace V]
+    {Y : ℝ → V → V} (hX : Continuous (uncurry X)) (hY : Continuous (uncurry Y))
+    (hu : ContDiff ℝ 1 u) {xm xp : ℝ → V} (hxm : Continuous xm) (hxp : Continuous xp)
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn (fun s t ↦ sliceDefect X u (s, t)) 0 atBot (Icc 0 1))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn (fun s t ↦ sliceDefect Y u (s, t)) 0 atTop (Icc 0 1)) :
+    ∃ C, ∀ s, ∀ t ∈ Icc (0 : ℝ) 1, ‖u (s, t)‖ ≤ C ∧ ‖fderiv ℝ u (s, t) (0, 1)‖ ≤ C := by
+  obtain ⟨C₁, hC₁⟩ := exists_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc
+    hu.continuous.continuousOn huxm huxp
+  obtain ⟨C₂, hC₂⟩ := exists_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc
+    (f := fun z ↦ fderiv ℝ u z (0, 1))
+    ((hu.continuous_fderiv one_ne_zero).clm_apply continuous_const).continuousOn
+    (tendstoUniformlyOn_fderiv_apply_of_sliceDefect hX hxm huxm hδm)
+    (tendstoUniformlyOn_fderiv_apply_of_sliceDefect hY hxp huxp hδp)
+  exact ⟨max C₁ C₂, fun s t ht ↦
+    ⟨(hC₁ s t ht).trans (le_max_left _ _), (hC₂ s t ht).trans (le_max_right _ _)⟩⟩
+
+/-- If two differentiable maps have loops converging uniformly to the same continuous loop `x` at
+an end, with slice defects tending uniformly to zero there, then so does every point
+`u + μ (u' - u)` of the segment between them. -/
+theorem tendstoUniformlyOn_add_smul_sub_and_sliceDefect [ProperSpace V]
+    (hX : Continuous (uncurry X))
+    {u' : ℝ × ℝ → V} (hu : Differentiable ℝ u) (hu' : Differentiable ℝ u') (hx : Continuous x)
+    (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
+    (hδ : TendstoUniformlyOn (fun s t ↦ sliceDefect X u (s, t)) 0 l (Icc 0 1))
+    (hu'x : TendstoUniformlyOn (fun s t ↦ u' (s, t)) x l (Icc 0 1))
+    (hδ' : TendstoUniformlyOn (fun s t ↦ sliceDefect X u' (s, t)) 0 l (Icc 0 1)) (μ : ℝ) :
+    TendstoUniformlyOn (fun s t ↦ (u + μ • (u' - u)) (s, t)) x l (Icc 0 1) ∧
+      TendstoUniformlyOn (fun s t ↦ sliceDefect X (u + μ • (u' - u)) (s, t)) 0 l
+        (Icc 0 1) := by
+  have hv : TendstoUniformlyOn (fun s t ↦ (u + μ • (u' - u)) (s, t)) x l (Icc 0 1) :=
+    (hux.fun_add ((hu'x.fun_sub hux).const_smul μ)).congr_right fun t _ ↦ by simp
+  refine ⟨hv, ?_⟩
+  have hd := tendstoUniformlyOn_fderiv_apply_of_sliceDefect hX hx hux hδ
+  have hd' := tendstoUniformlyOn_fderiv_apply_of_sliceDefect hX hx hu'x hδ'
+  refine (((hd.fun_add ((hd'.fun_sub hd).const_smul μ)).fun_sub
+    (isCompact_Icc.tendstoUniformlyOn_comp_prodMk_of_continuous hX hx.continuousOn hv)).congr
+      (.of_forall fun s t _ ↦ ?_)).congr_right fun t _ ↦ ?_
+  · simp [sliceDefect_def, fderiv_add_smul_sub_apply (hu _) (hu' _)]
+  · simp
+
+end Segment
 
 end TauCeti
