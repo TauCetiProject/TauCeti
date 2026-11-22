@@ -15,6 +15,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Poi
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.PointsDivisor
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ZModProdAut
 import TauCeti.AlgebraicGeometry.IdealSheaf.Product
+import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 
 /-!
 # Naive level structures on an elliptic curve
@@ -272,9 +273,8 @@ theorem isClosedImmersion_naiveLocusι_left [Finite A] {N : ℕ}
     (hN : ∀ s : S, (N : S.residueField s) ≠ 0) (hu : ∀ a, u a ^ N = 1) :
     IsClosedImmersion (naiveLocusι u).left := by
   rw [naiveLocusι_left]
-  apply IsClosedImmersion.of_isPreimmersion
-  rw [Scheme.Opens.range_ι, coe_naiveLocusOpens]
-  exact (isClopen_naiveLocus u hN hu).isClosed
+  exact Scheme.Opens.isClosedImmersion_ι_of_isClosed _
+    (by rw [coe_naiveLocusOpens]; exact (isClopen_naiveLocus u hN hu).isClosed)
 
 /-- **The naive locus is finite where `N` is invertible.** If `H` is finite over `S`, the natural
 number `N` is invertible in every residue field of `S` and every point `u a` is killed by `N`, then
@@ -351,8 +351,8 @@ disjoint sections. -/
 theorem IsFiberwiseInjective.pointsDivisor_eq_iInf_ker [Fintype A]
     (hφ : E.IsFiberwiseInjective φ) : E.pointsDivisor φ = ⨅ a, (φ a).left.ker := by
   rw [pointsDivisor_def]
-  apply Scheme.IdealSheafData.prod_eq_iInf_of_pairwise_disjoint_support
-  intro a b hab
+  refine (Scheme.IdealSheafData.prod_eq_iInf_of_pairwise_disjoint_support
+    fun a _ b _ hab ↦ ?_).trans (by simp)
   apply disjoint_iff.mpr
   apply SetLike.coe_injective
   simpa only [Set.bot_eq_empty, TopologicalSpace.Closeds.coe_inf,

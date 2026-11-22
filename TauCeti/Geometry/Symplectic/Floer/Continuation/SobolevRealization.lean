@@ -33,9 +33,12 @@ proves that
 
 These are the cases `R = 1` of the corresponding statements for Floer data cylindrical near the
 ends in `TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization`, whose input is the semi-Fredholm
-estimate of `TauCeti.Geometry.Symplectic.Floer.Continuation.SemiFredholm`. The finiteness of the
-cokernel, hence the Fredholm property and the index, needs the same estimate for the formal
-adjoint of `D_u`.
+estimate of `TauCeti.Geometry.Symplectic.Floer.Continuation.SemiFredholm`. The semi-Fredholm
+estimate for the formal adjoint `D_u^*` on `C²` covector fields, for Floer data cylindrical near
+the ends such as continuation data, is the `_of_cylindrical` version of
+`TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_add`.
+The finiteness of the cokernel, hence the Fredholm property and the index, still needs the Sobolev
+realization of `D_u^*` and the regularity of weak `L²` cokernel elements.
 
 ## References
 

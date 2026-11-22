@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MatlisDuality.Artinian.Bidual
+public import TauCeti.RingTheory.MatlisDuality.Complete
 import TauCeti.Algebra.Module.Dual.Bidual
 import TauCeti.RingTheory.AdicCompletion.Injective
 public import TauCeti.RingTheory.AdicCompletion.ResidueField
@@ -185,7 +185,7 @@ theorem isArtinian_adicCompletion_linearMap_iff_finite (N : Type w) [AddCommGrou
   have : IsArtinian (_root_.AdicCompletion (maximalIdeal R) R)
       (N →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) :=
     isArtinian_of_tower R inferInstance
-  exact (hι.adicCompletion.isArtinian_linearMap_iff_finite N).mp this
+  exact (hι.adicCompletion.finite_iff_isArtinian_linearMap N).mpr this
 
 /-- **General Matlis biduality for Artinian `R`-modules**: over any Noetherian local ring `R`,
 evaluation identifies an Artinian `R`-module `M` with `Hom_{R̂}(Hom_R(M, E), E)`. -/

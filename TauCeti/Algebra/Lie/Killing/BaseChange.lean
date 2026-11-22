@@ -32,8 +32,9 @@ already says that the Killing form of `A ⊗[R] L` is the base change of the Kil
 `LinearMap.BilinForm.nondegenerate_of_nondegenerate_baseChange` and
 `LinearMap.BilinForm.nondegenerate_baseChange_iff` say how a base change of integral domains
 reflects and preserves nondegeneracy of a bilinear form on a finite free module. What remains is to
-read `IsKilling` as nondegeneracy of the Killing form in both directions;
-`TauCeti.isKilling_of_killingForm_nondegenerate` is the direction Mathlib does not already provide.
+read `IsKilling` as nondegeneracy of the Killing form in both directions, with
+`TauCeti.isKilling_iff_killingForm_nondegenerate`, whose reverse direction Mathlib does not already
+provide.
 
 Nothing here needs the coefficients to be a field, and no characteristic hypothesis appears: the
 counterexamples to `HasTrivialRadical → IsKilling` in positive characteristic concern the passage
