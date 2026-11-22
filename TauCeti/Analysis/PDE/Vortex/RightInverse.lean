@@ -37,8 +37,10 @@ is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` of norm at most `c^(-1/2)` such 
 solution of `L_x y = f` for every `f`, and `Q f` is orthogonal to the weak kernel
 (`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le`). Thus
 `Q f` is the weak solution of least norm, and `Q` is the right inverse `L_x* (L_x L_x*)⁻¹` on the
-`L²`-orthogonal complement of the weak kernel. At an actual vortex with `|α| → 1`, the spectral
-gap `exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` supplies the lower
+`L²`-orthogonal complement of the weak kernel. It is unique, since a weak solution orthogonal to
+the weak kernel is (`TauCeti.Vortex.eq_of_integral_inner_gaugeFixedAdjoint_eq`). At an actual
+vortex with `|α| → 1`, the spectral gap
+`exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` supplies the lower
 bound (`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`). The
 uniform gap `exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` over
 the smooth vortices of a given degree `m` gives the same for the bound on `Q`: one constant,
@@ -63,6 +65,17 @@ is `(L_x L_x*)⁻¹ L_x`. It satisfies the same weighted estimate,
 (`TauCeti.Vortex.exists_eLpNorm_exp_mul_smul_adjoint_apply_le`). This is dual to the estimate for
 `Q` at the rate `-c`, by `ContinuousLinearMap.eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le`.
 
+The constant `K` depends on the vortex only through its spectral gap `c₀` and a radius `R`
+beyond which its squared mass `|α|² / 4` exceeds a fixed `a` with `c² < a ≤ 1/4`
+(`TauCeti.Vortex.exists_forall_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq`).
+Both are uniform over the smooth vortices of degree `m` whose zeros lie in a fixed disc: the
+spectral gap over all of `Sym^m ℂ`, and the radius by the localization of small moduli near the
+zeros (`TauCeti.Vortex.exists_forall_lt_normSq_of_forall_mem_norm_le`). So one constant,
+depending only on `m`, the radius of the disc and `c`, serves for `Q` and for `Q†` over every
+compact window of divisors, collisions of zeros included
+(`TauCeti.Vortex.exists_forall_eLpNorm_exp_mul_smul_le_of_forall_mem_norm_le`,
+`TauCeti.Vortex.exists_forall_eLpNorm_exp_mul_smul_adjoint_apply_le_of_forall_mem_norm_le`).
+
 These are statements about weak solutions in `L²`. At a bounded field, weak solutions lie in `H¹`
 by the elliptic regularity of `TauCeti.Analysis.PDE.Vortex.EllipticRegularity`, so `Q f ∈ H¹`
 there. The Fredholm property and the dimension of the kernel of the Sobolev realization of `L_x`
@@ -76,6 +89,11 @@ are not proved here.
   right inverse at a plane vortex with `|α| → 1`.
 * `exists_forall_exists_continuousLinearMap_norm_le_integral_inner_gaugeFixedAdjoint_eq`: a bound
   on its norm uniform over the smooth vortices of degree `m`.
+* `TauCeti.Vortex.exists_forall_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq`:
+  the exponentially weighted `L²` estimate for the weak right inverse, with a constant depending
+  only on a spectral gap and an exterior mass.
+* `TauCeti.Vortex.eq_of_integral_inner_gaugeFixedAdjoint_eq`: a weak solution orthogonal to the
+  weak kernel is unique, so the weak right inverse is.
 * `TauCeti.Vortex.exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq`: the
   exponentially weighted `L²` estimate for the weak right inverse at such a vortex.
 * `TauCeti.Vortex.adjoint_apply_ae_eq_of_ae_eq_gaugeFixedAdjoint`,
@@ -83,6 +101,10 @@ are not proved here.
   of the weak right inverse is the left inverse of `L_x*` vanishing on the weak kernel.
 * `TauCeti.Vortex.exists_eLpNorm_exp_mul_smul_adjoint_apply_le`: the exponentially weighted `L²`
   estimate for the adjoint.
+* `TauCeti.Vortex.exists_forall_eLpNorm_exp_mul_smul_le_of_forall_mem_norm_le`,
+  `TauCeti.Vortex.exists_forall_eLpNorm_exp_mul_smul_adjoint_apply_le_of_forall_mem_norm_le`: both
+  weighted estimates with one constant over the vortices of degree `m` whose zeros lie in a fixed
+  disc.
 
 ## References
 
@@ -223,6 +245,37 @@ theorem exists_forall_exists_continuousLinearMap_norm_le_integral_inner_gaugeFix
   exact ⟨(√c)⁻¹, fun x D hx hsol hframe hD ↦
     exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le hx.continuous hc
       (hgap x D hx hsol hframe hD)⟩
+
+/-- **Uniqueness of the weak solution orthogonal to the weak kernel.** At a continuous field `x`,
+two weak solutions of `L_x y = f` that are both orthogonal to the weak kernel of `L_x` are equal.
+Hence a bounded weak right inverse of `L_x` with values orthogonal to the weak kernel, as in
+`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le`, is unique. -/
+theorem eq_of_integral_inner_gaugeFixedAdjoint_eq (hx : Continuous x)
+    {y₁ y₂ f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
+    (h₁ : ∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, ⟪y₁ z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ)
+    (h₂ : ∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, ⟪y₂ z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ)
+    (hK₁ : ∀ w : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪w z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+      ∫ z, ⟪y₁ z, w z⟫ ∂μ = 0)
+    (hK₂ : ∀ w : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪w z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+      ∫ z, ⟪y₂ z, w z⟫ ∂μ = 0) :
+    y₁ = y₂ := by
+  -- The difference `y₁ - y₂` lies in the weak kernel, and is orthogonal to itself.
+  have hw (η : ℂ → EuclideanSpace ℝ (Fin 4)) (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
+      ∫ z, ⟪(y₁ - y₂) z, gaugeFixedAdjoint x η z⟫ ∂μ = 0 := by
+    have hm : MemLp (gaugeFixedAdjoint x η) 2 μ :=
+      (continuous_gaugeFixedAdjoint hx (hη.of_le (by norm_cast))).memLp_of_hasCompactSupport
+        (hasCompactSupport_gaugeFixedAdjoint hηc)
+    rw [← L2.inner_toLp _ hm, inner_sub_left, L2.inner_toLp _ hm, L2.inner_toLp _ hm,
+      h₁ η hη hηc, h₂ η hη hηc, sub_self]
+  have h0 : ⟪y₁ - y₂, y₁ - y₂⟫ = 0 := by
+    rw [inner_sub_left, L2.inner_def y₁, L2.inner_def y₂, hK₁ _ hw, hK₂ _ hw, sub_zero]
+  exact sub_eq_zero.1 (inner_self_eq_zero.1 h0)
 
 /-! ### The exponentially weighted estimate -/
 
@@ -503,78 +556,77 @@ private theorem integral_sq_mul_norm_sq_le_of_forall_exists_lt
     exact mul_le_of_le_one_right hε.le ((div_le_one (by positivity)).2 (by linarith))
   linarith
 
-/-- **The exponentially weighted estimate for the weak right inverse.** Let `x` be a `C¹`
-solution of the plane vortex equation with `|α| → 1` at infinity, let `ρ(z) = √(1 + |z|²)` and
-`|c| < 1/2`. There is `K` such that every square-integrable weak solution `y` of `L_x y = f`
-orthogonal to the weak kernel of `L_x` satisfies
-
-`‖exp(c ρ) y‖₂ ≤ K ‖exp(c ρ) f‖₂`,
-
-where either side may be infinite. Such a `y` is unique
-(`LinearMap.eq_of_inner_apply_eq_of_mem_orthogonal`), so it is the value at `f` of the weak right
-inverse `Q` of `exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`, and this is the
-weighted output estimate `‖exp(c ρ) Q f‖₂ ≤ K ‖exp(c ρ) f‖₂` for every `f ∈ L²`. For `c > 0` it
-says that `Q` maps inputs decaying like `exp(-c ρ)` in `L²` to outputs decaying at the same rate.
-
-The proof applies the weighted coercivity of `L_x L_x*`
-(`exists_pos_mul_integral_sq_mul_norm_sq_le_integral_sq_mul_inner_gaugeFixedOperator`) to the
-bounded weights `W / (1 + ε W)`, `W = exp(c √(b + |z|²))`, approximating `y` in `L²` by values
-`L_x* η` on test fields, and then lets `ε → 0` by Fatou's lemma. -/
-theorem exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq
-    (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    {c : ℝ} (hc : |c| < 1 / 2) :
-    ∃ K : ℝ≥0, ∀ f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+/-- The weighted estimate for the weight `W = exp(c √(b + |z|²))` itself, at a field with
+spectral gap `c₀` for which `L_x L_x*` is weighted-coercive with constant `δ` against weights with
+logarithmic gradient at most that of `W`. Applying the bounded-weight estimate to the truncations
+`W / (1 + W / (n + 1))` and letting `n → ∞` by Fatou's lemma gives, for every square-integrable
+weak solution `y` of `L_x y = f` orthogonal to the weak kernel,
+`∫ W² |y|² ≤ (4 / δ + 8 c² / δ²) ∫ W² |f|²`, where either side may be infinite. -/
+private theorem lintegral_ofReal_exp_sq_mul_norm_sq_le (hx : ContDiff ℝ 1 x)
+    {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
+    (hweak : ∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ)
+    (horth : ∀ u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
       (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
-        ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) →
-      (∀ u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
-        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
-          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
-        ∫ z, ⟪y z, u z⟫ ∂μ = 0) →
-      eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 μ ≤
-        K * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 μ := by
-  obtain ⟨c₀, hc₀, hgap⟩ :=
-    exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (μ := μ) hx hsol hlim
-  obtain ⟨b, hb, δ, hδ, hcoer⟩ :=
-    exists_pos_mul_integral_sq_mul_norm_sq_le_integral_sq_mul_inner_gaugeFixedOperator (μ := μ)
-      hx hsol hlim hc
-  have hb₀ : 0 < b := by linarith
-  set K₀ : ℝ := 4 / δ + 8 * c ^ 2 / δ ^ 2
-  set E : ℝ := Real.exp (|c| * √|b - 1|) ^ 2
-  have hK₀ : 0 ≤ K₀ := by positivity
-  have hE : 0 ≤ E := by positivity
-  set K : ℝ≥0 := Real.toNNReal √(E * E * K₀) with hK_def
-  refine ⟨K, fun f y hweak horth ↦ ?_⟩
-  set w : ℂ → ℝ := fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))
-  set W : ℂ → ℝ := fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2))
+        ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+      ∫ z, ⟪y z, u z⟫ ∂μ = 0)
+    {c₀ : ℝ} (hc₀ : 0 < c₀)
+    (hgap : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+      c₀ * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ)
+    {b c δ : ℝ} (hb₀ : 0 < b) (hδ : 0 < δ)
+    (hcoer : ∀ V : ℂ → ℝ, ContDiff ℝ 2 V → (∀ z, 0 ≤ V z) →
+      (∀ z, ‖fderiv ℝ V z‖ ≤ |c| * (‖z‖ / √(b + ‖z‖ ^ 2)) * V z) →
+      ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+      δ * (∫ z, V z ^ 2 * ‖η z‖ ^ 2 ∂μ) ≤
+        ∫ z, V z ^ 2 * ⟪gaugeFixedOperator x (gaugeFixedAdjoint x η) z, η z⟫ ∂μ) :
+    ∫⁻ z, ENNReal.ofReal (Real.exp (c * √(b + ‖z‖ ^ 2)) ^ 2 * ‖y z‖ ^ 2) ∂μ ≤
+      ENNReal.ofReal (4 / δ + 8 * c ^ 2 / δ ^ 2) *
+        ∫⁻ z, ENNReal.ofReal (Real.exp (c * √(b + ‖z‖ ^ 2)) ^ 2 * ‖f z‖ ^ 2) ∂μ := by
   have hy := Lp.memLp y
   have hf := Lp.memLp f
-  -- The estimate for the bounded weights `V_n = W / (1 + W / (n + 1))`.
-  set V : ℕ → ℂ → ℝ := fun n z ↦ W z / (1 + 1 / ((n : ℝ) + 1) * W z)
-  have hVn (n : ℕ) : ∫⁻ z, ENNReal.ofReal (V n z ^ 2 * ‖y z‖ ^ 2) ∂μ ≤
-      ENNReal.ofReal K₀ * ∫⁻ z, ENNReal.ofReal (W z ^ 2 * ‖f z‖ ^ 2) ∂μ := by
-    have hε : 0 < 1 / ((n : ℝ) + 1) := by positivity
-    have hV : ContDiff ℝ 2 (V n) := contDiff_exp_div_one_add_mul_exp c hb₀ hε.le
-    have hV₀ (z : ℂ) : 0 ≤ V n z := exp_div_one_add_mul_exp_nonneg c hε.le z
-    have hVB (z : ℂ) : V n z ^ 2 ≤ (1 / (1 / ((n : ℝ) + 1))) ^ 2 :=
-      pow_le_pow_left₀ (hV₀ z) (exp_div_one_add_mul_exp_le_one_div c hε z) 2
-    have h := integral_sq_mul_norm_sq_le_of_forall_exists_lt hx hy hf hweak
-      (fun ε hε ↦ exists_integral_norm_sub_gaugeFixedAdjoint_sq_lt hx.continuous horth hε) hc₀
-      hgap hV hVB (fun z ↦ norm_fderiv_sq_le_of_norm_fderiv_le c hb₀.le (hV₀ z)
-        (norm_fderiv_exp_div_one_add_mul_exp_le c hb₀ hε.le z)) hδ
-      (hcoer (V n) hV hV₀ (norm_fderiv_exp_div_one_add_mul_exp_le c hb₀ hε.le))
-    have hwt {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hg : MemLp g 2 μ) :=
-      hg.integrable_sq_mul_norm_sq hV.continuous.aestronglyMeasurable (ae_of_all _ hVB)
-    rw [← ofReal_integral_eq_lintegral_ofReal (hwt hy) (ae_of_all _ fun z ↦ by positivity)]
-    refine (ENNReal.ofReal_le_ofReal h).trans ?_
-    rw [ENNReal.ofReal_mul hK₀,
-      ofReal_integral_eq_lintegral_ofReal (hwt hf) (ae_of_all _ fun z ↦ by positivity)]
-    gcongr with z
-    exact exp_div_one_add_mul_exp_le_exp c hε.le z
-  -- Fatou's lemma as `n → ∞`, since `V_n → W` pointwise.
-  have hWy := lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le
+  refine lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le
+    (u := fun z ↦ ‖y z‖ ^ 2)
     (contDiff_exp_mul_sqrt_add_norm_sq (n := 0) c hb₀).continuous.aemeasurable
-    ((Lp.aestronglyMeasurable y).norm.pow 2).aemeasurable hVn
+    ((Lp.aestronglyMeasurable y).norm.pow 2).aemeasurable fun n ↦ ?_
+  -- The estimate for the bounded weight `V = W / (1 + W / (n + 1))`.
+  have hε : 0 < 1 / ((n : ℝ) + 1) := by positivity
+  set V : ℂ → ℝ := fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) /
+    (1 + 1 / ((n : ℝ) + 1) * Real.exp (c * √(b + ‖z‖ ^ 2)))
+  have hV : ContDiff ℝ 2 V := contDiff_exp_div_one_add_mul_exp c hb₀ hε.le
+  have hV₀ (z : ℂ) : 0 ≤ V z := exp_div_one_add_mul_exp_nonneg c hε.le z
+  have hVB (z : ℂ) : V z ^ 2 ≤ (1 / (1 / ((n : ℝ) + 1))) ^ 2 :=
+    pow_le_pow_left₀ (hV₀ z) (exp_div_one_add_mul_exp_le_one_div c hε z) 2
+  have h := integral_sq_mul_norm_sq_le_of_forall_exists_lt hx hy hf hweak
+    (fun ε hε ↦ exists_integral_norm_sub_gaugeFixedAdjoint_sq_lt hx.continuous horth hε) hc₀
+    hgap hV hVB (fun z ↦ norm_fderiv_sq_le_of_norm_fderiv_le c hb₀.le (hV₀ z)
+      (norm_fderiv_exp_div_one_add_mul_exp_le c hb₀ hε.le z)) hδ
+    (hcoer V hV hV₀ (norm_fderiv_exp_div_one_add_mul_exp_le c hb₀ hε.le))
+  have hwt {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hg : MemLp g 2 μ) :=
+    hg.integrable_sq_mul_norm_sq hV.continuous.aestronglyMeasurable (ae_of_all _ hVB)
+  rw [← ofReal_integral_eq_lintegral_ofReal (hwt hy) (ae_of_all _ fun z ↦ by positivity)]
+  refine (ENNReal.ofReal_le_ofReal h).trans ?_
+  rw [ENNReal.ofReal_mul (by positivity),
+    ofReal_integral_eq_lintegral_ofReal (hwt hf) (ae_of_all _ fun z ↦ by positivity)]
+  gcongr with z
+  exact exp_div_one_add_mul_exp_le_exp c hε.le z
+
+omit [μ.IsAddHaarMeasure] in
+/-- From the weight `exp(c √(b + |z|²))` to the weight `exp(c ρ)`, `ρ = √(1 + |z|²)`: the two
+are comparable up to the factor `E = exp(|c| √|b - 1|)²` in either direction, so a bound
+`∫ exp(c √(b + |z|²))² |y|² ≤ K₀ ∫ exp(c √(b + |z|²))² |f|²` gives
+`‖exp(c ρ) y‖₂ ≤ √(E² K₀) ‖exp(c ρ) f‖₂`. -/
+private theorem eLpNorm_exp_mul_smul_le_of_lintegral_le {b c K₀ : ℝ} (hK₀ : 0 ≤ K₀)
+    {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
+    (h : ∫⁻ z, ENNReal.ofReal (Real.exp (c * √(b + ‖z‖ ^ 2)) ^ 2 * ‖y z‖ ^ 2) ∂μ ≤
+      ENNReal.ofReal K₀ *
+        ∫⁻ z, ENNReal.ofReal (Real.exp (c * √(b + ‖z‖ ^ 2)) ^ 2 * ‖f z‖ ^ 2) ∂μ) :
+    eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 μ ≤
+      Real.toNNReal √(Real.exp (|c| * √|b - 1|) ^ 2 * Real.exp (|c| * √|b - 1|) ^ 2 * K₀) *
+        eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 μ := by
+  set E : ℝ := Real.exp (|c| * √|b - 1|) ^ 2
+  have hE : 0 ≤ E := by positivity
+  set w : ℂ → ℝ := fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))
+  set W : ℂ → ℝ := fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2))
   -- The weights `w` and `W` are comparable.
   have hcmp {u v : ℂ → ℝ} (huv : ∀ z, u z ^ 2 ≤ E * v z ^ 2)
       (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
@@ -594,19 +646,96 @@ theorem exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq
       (Lp.aestronglyMeasurable g)
   rw [eLpNorm_two_smul_eq_lintegral_ofReal_rpow (hsm y),
     eLpNorm_two_smul_eq_lintegral_ofReal_rpow (hsm f)]
-  have hK : (K : ℝ≥0∞) = ENNReal.ofReal (E * E * K₀) ^ (1 / 2 : ℝ) := by
+  have hK : (Real.toNNReal √(E * E * K₀) : ℝ≥0∞) = ENNReal.ofReal (E * E * K₀) ^ (1 / 2 : ℝ) := by
     rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num),
-      ← Real.sqrt_eq_rpow, ← ENNReal.ofReal_coe_nnreal, hK_def,
-      Real.coe_toNNReal _ (Real.sqrt_nonneg _)]
+      ← Real.sqrt_eq_rpow, ← ENNReal.ofReal_coe_nnreal, Real.coe_toNNReal _ (Real.sqrt_nonneg _)]
   rw [hK, ← ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)]
   gcongr
   calc ∫⁻ z, ENNReal.ofReal (w z ^ 2 * ‖y z‖ ^ 2) ∂μ
       ≤ ENNReal.ofReal E * (ENNReal.ofReal K₀ *
           (ENNReal.ofReal E * ∫⁻ z, ENNReal.ofReal (w z ^ 2 * ‖f z‖ ^ 2) ∂μ)) :=
-        hwy.trans (by gcongr; exact hWy.trans (by gcongr))
+        hwy.trans (by gcongr; exact h.trans (by gcongr))
     _ = ENNReal.ofReal (E * E * K₀) * ∫⁻ z, ENNReal.ofReal (w z ^ 2 * ‖f z‖ ^ 2) ∂μ := by
         rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul hE]
         ring
+
+/-- **The exponentially weighted estimate for the weak right inverse, from a spectral gap and an
+exterior mass.** Let `c₀ > 0`, `c² < a ≤ 1/4` and `R` be real numbers, and `ρ(z) = √(1 + |z|²)`.
+There is `K`, depending only on `c₀`, `a`, `c` and `R`, with the following property. Let `x` be a
+`C¹` vortex whose adjoint has spectral gap `c₀`, `c₀ ∫ |η|² ≤ ∫ |L_x* η|²` on test fields, and
+whose squared mass `|α|² / 4` is at least `a` outside the disc of radius `R`. Then every
+square-integrable weak solution `y` of `L_x y = f` orthogonal to the weak kernel of `L_x`
+satisfies
+
+`‖exp(c ρ) y‖₂ ≤ K ‖exp(c ρ) f‖₂`,
+
+where either side may be infinite. Since `K` does not depend on `x`, the estimate is uniform over
+every family of vortices with a common spectral gap and a common radius beyond which the mass
+exceeds `a`; for instance over the vortices of degree `m` whose zeros lie in a fixed disc
+(`exists_forall_eLpNorm_exp_mul_smul_le_of_forall_mem_norm_le`).
+
+The proof applies the weighted coercivity of `L_x L_x*`
+(`exists_pos_forall_mul_integral_sq_mul_norm_sq_le_integral_sq_mul_inner_gaugeFixedOperator`) to
+the bounded weights `W / (1 + ε W)`, `W = exp(c √(b + |z|²))`, approximating `y` in `L²` by
+values `L_x* η` on test fields, and then lets `ε → 0` by Fatou's lemma. -/
+theorem exists_forall_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq
+    {c₀ a c : ℝ} (hc₀ : 0 < c₀) (ha : a ≤ 1 / 4) (hca : c ^ 2 < a) (R : ℝ) :
+    ∃ K : ℝ≥0, ∀ x : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 1 x →
+      (∀ z, equation x z = 0) →
+      (∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+        c₀ * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ) →
+      (∀ z, R < ‖z‖ → a ≤ x z 2 ^ 2 + x z 3 ^ 2) →
+      ∀ f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) →
+      (∀ u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+        ∫ z, ⟪y z, u z⟫ ∂μ = 0) →
+      eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 μ ≤
+        K * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 μ := by
+  obtain ⟨b, hb, δ, hδ, hcoer⟩ :=
+    exists_pos_forall_mul_integral_sq_mul_norm_sq_le_integral_sq_mul_inner_gaugeFixedOperator
+      (μ := μ) hc₀ ha hca R
+  exact ⟨_, fun x hx hsol hgap hR f y hweak horth ↦
+    eLpNorm_exp_mul_smul_le_of_lintegral_le (by positivity)
+      (lintegral_ofReal_exp_sq_mul_norm_sq_le hx hweak horth hc₀ hgap (by linarith) hδ
+        (hcoer x hx hsol hgap hR))⟩
+
+/-- **The exponentially weighted estimate for the weak right inverse.** Let `x` be a `C¹`
+solution of the plane vortex equation with `|α| → 1` at infinity, let `ρ(z) = √(1 + |z|²)` and
+`|c| < 1/2`. There is `K` such that every square-integrable weak solution `y` of `L_x y = f`
+orthogonal to the weak kernel of `L_x` satisfies
+
+`‖exp(c ρ) y‖₂ ≤ K ‖exp(c ρ) f‖₂`,
+
+where either side may be infinite. Such a `y` is unique
+(`LinearMap.eq_of_inner_apply_eq_of_mem_orthogonal`), so it is the value at `f` of the weak right
+inverse `Q` of `exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`, and this is the
+weighted output estimate `‖exp(c ρ) Q f‖₂ ≤ K ‖exp(c ρ) f‖₂` for every `f ∈ L²`. For `c > 0` it
+says that `Q` maps inputs decaying like `exp(-c ρ)` in `L²` to outputs decaying at the same rate.
+This is `exists_forall_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq` with the
+spectral gap of the vortex and an exterior mass `a` strictly between `c²` and `1 / 4`. -/
+theorem exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq
+    (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    {c : ℝ} (hc : |c| < 1 / 2) :
+    ∃ K : ℝ≥0, ∀ f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) →
+      (∀ u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+        ∫ z, ⟪y z, u z⟫ ∂μ = 0) →
+      eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 μ ≤
+        K * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 μ := by
+  have hc2 : c ^ 2 < 1 / 4 := by nlinarith [sq_abs c, abs_nonneg c]
+  obtain ⟨c₀, hc₀, hgap⟩ :=
+    exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (μ := μ) hx hsol hlim
+  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (a := (c ^ 2 + 1 / 4) / 2) (by linarith)
+  obtain ⟨K, hK⟩ := exists_forall_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq
+    (μ := μ) (a := (c ^ 2 + 1 / 4) / 2) (c := c) hc₀ (by linarith) (by linarith) R
+  exact ⟨K, hK x hx hsol hgap fun z hz ↦ (hR z hz).le⟩
 
 /-! ### The adjoint of the weak right inverse -/
 
@@ -649,6 +778,41 @@ theorem adjoint_apply_eq_zero_of_integral_inner_gaugeFixedAdjoint_eq_zero
   rw [ContinuousLinearMap.adjoint_inner_left, inner_zero_left, real_inner_comm, L2.inner_def]
   exact hQ f u hu
 
+/-- **Weighted estimates pass to the adjoint by duality.** Suppose every square-integrable weak
+solution `y` of `L_x y = f` orthogonal to the weak kernel of `L_x` satisfies
+`‖exp(-c ρ) y‖₂ ≤ K ‖exp(-c ρ) f‖₂`, with `ρ = √(1 + |z|²)`. Let `Q` be a bounded operator on
+`L²(ℂ; ℝ⁴)` such that `Q f` is such a solution for every `f`. Then its Hilbert space adjoint
+satisfies `‖exp(c ρ) Q† g‖₂ ≤ K ‖exp(c ρ) g‖₂` for every `g ∈ L²`. -/
+private theorem eLpNorm_exp_mul_smul_adjoint_apply_le {c : ℝ} {K : ℝ≥0}
+    (hK : ∀ f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) →
+      (∀ u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+        ∫ z, ⟪y z, u z⟫ ∂μ = 0) →
+      eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • y z) 2 μ ≤
+        K * eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • f z) 2 μ)
+    {Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
+    (hweak : ∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ)
+    (horth : ∀ f u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+      ∫ z, ⟪Q f z, u z⟫ ∂μ = 0)
+    (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
+    eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • ContinuousLinearMap.adjoint Q g z) 2 μ ≤
+      K * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ := by
+  have hw : AEStronglyMeasurable (fun z : ℂ ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))) μ :=
+    (contDiff_exp_mul_sqrt_add_norm_sq (n := 0) c one_pos).continuous.aestronglyMeasurable
+  have h := ContinuousLinearMap.eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le
+    (ContinuousLinearMap.adjoint Q) (p := 2) (p' := 2) (q := 2) (q' := 2) ENNReal.ofNat_ne_top
+    (ae_of_all _ fun z ↦ (Real.exp_pos (c * √(1 + ‖z‖ ^ 2))).ne') hw (C := K) (fun f ↦ ?_) g
+  · simpa using h
+  · -- `Q†† = Q`, and `exp(c ρ)⁻¹ = exp(-c ρ)`.
+    simpa [ContinuousLinearMap.adjoint_adjoint, ← Real.exp_neg, neg_mul] using
+      hK f (Q f) (hweak f) (horth f)
+
 /-- **Exponentially weighted estimate for the adjoint of the weak right inverse.** Let `x` be a
 `C¹` solution of the plane vortex equation with `|α| → 1` at infinity, let `ρ = √(1 + |z|²)` and
 `|c| < 1/2`. There is `K`, depending only on the vortex and `c`, with the following property. Let
@@ -677,18 +841,85 @@ theorem exists_eLpNorm_exp_mul_smul_adjoint_apply_le (hx : ContDiff ℝ 1 x)
       ∀ g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
         eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • ContinuousLinearMap.adjoint Q g z) 2 μ ≤
           K * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ := by
-  -- The estimate for `Q` at the rate `-c`, transferred to `Q†` by duality.
   obtain ⟨K, hK⟩ := exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq (μ := μ)
     hx hsol hlim (c := -c) (by rwa [abs_neg])
-  refine ⟨K, fun Q hweak horth g ↦ ?_⟩
-  have hw : AEStronglyMeasurable (fun z : ℂ ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))) μ :=
-    (contDiff_exp_mul_sqrt_add_norm_sq (n := 0) c one_pos).continuous.aestronglyMeasurable
-  have h := ContinuousLinearMap.eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le
-    (ContinuousLinearMap.adjoint Q) (p := 2) (p' := 2) (q := 2) (q' := 2) ENNReal.ofNat_ne_top
-    (ae_of_all _ fun z ↦ (Real.exp_pos (c * √(1 + ‖z‖ ^ 2))).ne') hw (C := K) (fun f ↦ ?_) g
-  · simpa using h
-  · -- `Q†† = Q`, and `exp(c ρ)⁻¹ = exp(-c ρ)`.
-    simpa [ContinuousLinearMap.adjoint_adjoint, ← Real.exp_neg, neg_mul] using
-      hK f (Q f) (hweak f) (horth f)
+  exact ⟨K, fun Q hweak horth ↦ eLpNorm_exp_mul_smul_adjoint_apply_le hK hweak horth⟩
+
+/-! ### Uniformity over windows of divisors -/
+
+/-- **The weighted estimate for the weak right inverse, uniformly over a window of divisors.**
+For every degree `m`, radius `r` and rate `|c| < 1/2` there is a constant `K` with the following
+property, where `ρ(z) = √(1 + |z|²)`. Let `x` be a smooth plane vortex with the degree-`m` end
+framing whose zeros lie in the closed disc of radius `r`. Then every square-integrable weak
+solution `y` of `L_x y = f` orthogonal to the weak kernel of `L_x`, in particular the value at
+`f` of the weak right inverse, satisfies
+
+`‖exp(c ρ) y‖₂ ≤ K ‖exp(c ρ) f‖₂`,
+
+where either side may be infinite. The constant depends only on `m`, `r` and `c`, not on the
+vortex or on the position of its zeros in the disc, collisions included. Every compact window
+of `Sym ℂ m` lies in such a disc.
+
+The two inputs of `exists_forall_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq`
+are uniform here: the spectral gap over all vortices of degree `m`
+(`exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint`), and a radius
+beyond which `|α|²` is close to one for all vortices whose zeros lie in the disc
+(`exists_forall_lt_normSq_of_forall_mem_norm_le`). -/
+theorem exists_forall_eLpNorm_exp_mul_smul_le_of_forall_mem_norm_le (m : ℕ) (r : ℝ) {c : ℝ}
+    (hc : |c| < 1 / 2) :
+    ∃ K : ℝ≥0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) → (∀ a ∈ D, ‖a‖ ≤ r) →
+      ∀ f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) →
+      (∀ u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+        ∫ z, ⟪y z, u z⟫ ∂μ = 0) →
+      eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 μ ≤
+        K * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 μ := by
+  have hc2 : c ^ 2 < 1 / 4 := by nlinarith [sq_abs c, abs_nonneg c]
+  obtain ⟨c₀, hc₀, hgap⟩ :=
+    exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (μ := μ) m
+  obtain ⟨R, hR⟩ := exists_forall_lt_normSq_of_forall_mem_norm_le m r
+    (θ := 2 * c ^ 2 + 1 / 2) (by linarith)
+  obtain ⟨K, hK⟩ := exists_forall_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq
+    (μ := μ) (a := (c ^ 2 + 1 / 4) / 2) (c := c) hc₀ (by linarith) (by linarith) R
+  exact ⟨K, fun x D hx hsol hframe hD hDr ↦ hK x (hx.of_le (by simp)) hsol
+    (hgap x D hx hsol hframe hD) fun z hz ↦ by linarith [hR x D hx hsol hframe hD hDr z hz]⟩
+
+/-- **The weighted estimate for the adjoint of the weak right inverse, uniformly over a window of
+divisors.** For every degree `m`, radius `r` and rate `|c| < 1/2` there is a constant `K` with the
+following property, where `ρ(z) = √(1 + |z|²)`. Let `x` be a smooth plane vortex with the
+degree-`m` end framing whose zeros lie in the closed disc of radius `r`, and let `Q` be a bounded
+operator on `L²(ℂ; ℝ⁴)` such that `Q f` is a weak solution of `L_x y = f` orthogonal to the weak
+kernel of `L_x`, for every `f`. Then its Hilbert space adjoint `Q†`, the left inverse of `L_x*`
+vanishing on the weak kernel, satisfies
+
+`‖exp(c ρ) Q† g‖₂ ≤ K ‖exp(c ρ) g‖₂`  for every `g ∈ L²`.
+
+The constant depends only on `m`, `r` and `c`. -/
+theorem exists_forall_eLpNorm_exp_mul_smul_adjoint_apply_le_of_forall_mem_norm_le (m : ℕ)
+    (r : ℝ) {c : ℝ} (hc : |c| < 1 / 2) :
+    ∃ K : ℝ≥0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) → (∀ a ∈ D, ‖a‖ ≤ r) →
+      ∀ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      (∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) →
+      (∀ f u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+        ∫ z, ⟪Q f z, u z⟫ ∂μ = 0) →
+      ∀ g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+        eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • ContinuousLinearMap.adjoint Q g z) 2 μ ≤
+          K * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ := by
+  obtain ⟨K, hK⟩ := exists_forall_eLpNorm_exp_mul_smul_le_of_forall_mem_norm_le (μ := μ) m r
+    (c := -c) (by rwa [abs_neg])
+  exact ⟨K, fun x D hx hsol hframe hD hDr Q hweak horth ↦
+    eLpNorm_exp_mul_smul_adjoint_apply_le (hK x D hx hsol hframe hD hDr) hweak horth⟩
 
 end TauCeti.Vortex

@@ -7,8 +7,12 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Analysis.Calculus.FDeriv.Affine
 import Mathlib.Analysis.Calculus.FDeriv.Const
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # The derivative under restriction of scalars
@@ -22,7 +26,9 @@ of one variable, the real derivative is multiplication by the complex derivative
 the same norm. Precomposition
 with the multiplication by a scalar `c` of the larger field is differentiated by the chain rule,
 without any differentiability assumption; for instance, the real derivative of `w ↦ f (c * w)` on
-`ℂ` is `v ↦ fderiv ℝ f (c * w) (c * v)`.
+`ℂ` is `v ↦ fderiv ℝ f (c * w) (c * v)`. An affine automorphism of a finite-dimensional space over
+`𝕜'` has, over `𝕜`, the invertible derivative given by its linear part; for instance, the
+automorphism `z ↦ a z + b` of `ℂ` with `a ≠ 0` has an invertible real derivative.
 
 ## Main results
 
@@ -37,6 +43,8 @@ without any differentiability assumption; for instance, the real derivative of `
 * `TauCeti.fderiv_comp_smul_apply`: the derivative over `𝕜` of `w ↦ f (c • w)` for `c : 𝕜'`.
 * `TauCeti.hasFDerivAtFilter_restrictScalars_iff`: a `𝕜'`-linear map is a derivative exactly when
   its scalar restriction to `𝕜` is, assuming only `LinearMap.CompatibleSMul`.
+* `AffineEquiv.hasFDerivAt_restrictScalars`: the derivative over `𝕜` of an affine automorphism over
+  `𝕜'` is its linear part.
 -/
 
 public section
@@ -97,6 +105,19 @@ theorem fderiv_comp_smul_apply {𝕜 𝕜' V F : Type*} [NontriviallyNormedField
   · have h := ((ContinuousLinearEquiv.smulLeft (R₁ := 𝕜') (Units.mk0 c hc)).restrictScalars 𝕜
       |>.comp_right_fderiv (f := f) (x := x))
     simpa [Function.comp_def] using congrArg (fun L ↦ L v) h
+
+/-- An affine automorphism `f` of a finite-dimensional space over `𝕜'` has, over `𝕜`, the
+invertible derivative given by its linear part. For instance, an affine automorphism of `ℂ` has an
+invertible real derivative. -/
+theorem _root_.AffineEquiv.hasFDerivAt_restrictScalars [CompleteSpace 𝕜'] [FiniteDimensional 𝕜' V]
+    (f : V ≃ᵃ[𝕜'] V) (x : V) :
+    HasFDerivAt f ((f.linear.toContinuousLinearEquiv.restrictScalars 𝕜 : V ≃L[𝕜] V) :
+      V →L[𝕜] V) x := by
+  have h := (ContinuousAffineMap.hasFDerivAt
+    (f := f.toContinuousAffineEquiv.toContinuousAffineMap) (x := x)).restrictScalars 𝕜
+  rw [ContinuousAffineEquiv.coe_toContinuousAffineMap, AffineEquiv.coe_toContinuousAffineEquiv]
+    at h
+  exact h.congr_fderiv (by ext; simp [ContinuousAffineEquiv.toContinuousAffineMap_toAffineMap])
 
 end TauCeti
 
