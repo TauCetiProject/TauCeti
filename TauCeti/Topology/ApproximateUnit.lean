@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.SelfAdjoint
 public import Mathlib.Topology.Algebra.Star
 public import Mathlib.Topology.ApproximateUnit
 
@@ -29,6 +30,9 @@ vanish: `TauCeti.faithfulSMul_of_tendsto_mul_left` (if `x * c = y * c` for every
 `x = y`) and `TauCeti.faithfulSMul_mulOpposite_of_tendsto_mul_right` (if `c * x = c * y` for
 every `c`, then `x = y`). This nondegeneracy is what makes double centralizers of an algebra with
 an approximate unit behave like multipliers.
+
+Taking adjoints along a filter of self-adjoint elements turns a right approximate unit for `z`
+into a left approximate unit for `star z`, `TauCeti.tendsto_mul_star_of_tendsto_mul`.
 -/
 
 public section
@@ -114,5 +118,11 @@ theorem faithfulSMul_mulOpposite_of_tendsto_mul_right (hl : ∀ a, Tendsto (· *
     have hxy : (· * x.unop) = (· * y.unop) := funext fun c => by
       simpa only [MulOpposite.smul_eq_mul_unop] using h c
     exact MulOpposite.unop_injective <| tendsto_nhds_unique (hl x.unop) (hxy ▸ hl y.unop)
+
+/-- Along a filter of self-adjoint elements, `z * e → z` implies `e * star z → star z`. -/
+theorem tendsto_mul_star_of_tendsto_mul {R : Type*} [Mul R] [StarMul R] [TopologicalSpace R]
+    [ContinuousStar R] {l : Filter R} {z : R} (he : ∀ᶠ e in l, IsSelfAdjoint e)
+    (hz : Tendsto (z * ·) l (𝓝 z)) : Tendsto (· * star z) l (𝓝 (star z)) :=
+  hz.star.congr' (he.mono fun _ he ↦ by rw [star_mul, he.star_eq])
 
 end TauCeti
