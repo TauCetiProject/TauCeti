@@ -19,6 +19,7 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import Mathlib.MeasureTheory.Function.UniformIntegrable
+import Mathlib.Probability.IdentDistrib
 import Mathlib.Topology.Instances.EReal.Lemmas
 import TauCeti.Dynamics.BirkhoffSum.Limsup
 import TauCeti.Dynamics.BirkhoffSum.Maximal
@@ -48,9 +49,8 @@ indicators to an arbitrary real Banach space `E` requires no separability hypoth
 convergence holds on simple functions by linearity and transfers to all `Integrable` functions via
 `L¹`-density of simple functions and the weak-type maximal inequality; `Lᵖ` convergence for
 `1 ≤ p < ∞` then follows directly from uniform integrability of the iterates `f ∘ T^[k]` and their
-averages (`uniformIntegrable_of`, `uniformIntegrable_average`,
-`UniformIntegrable.memLp_of_ae_tendsto`, and `tendsto_Lp_finite_of_tendsto_ae`) combined with the
-pointwise theorem.
+averages (`ProbabilityTheory.MemLp.uniformIntegrable_of_identDistrib`, `uniformIntegrable_average`,
+`MemLp.condExp`, and `tendsto_Lp_finite_of_tendsto_ae`) combined with the pointwise theorem.
 
 Supporting general-purpose lemmas live in their canonical homes: pointwise norm bounds in
 `TauCeti.Dynamics.BirkhoffSum.Norm`, orbit invariance of `limsup`/`liminf` in
@@ -423,33 +423,22 @@ theorem tendsto_eLpNorm_birkhoffAverage_sub_condExp (hT : MeasurePreserving T μ
     Tendsto
       (fun n ↦ eLpNorm (birkhoffAverage ℝ T f n - μ[f | MeasurableSpace.invariants T]) p μ)
       atTop (𝓝 0) := by
-  have hmeas (k : ℕ) : AEStronglyMeasurable (f ∘ T^[k]) μ :=
-    hf.aestronglyMeasurable.comp_quasiMeasurePreserving (hT.iterate k).quasiMeasurePreserving
   have hui_iter : UniformIntegrable (fun k ↦ f ∘ T^[k]) p μ := by
-    refine uniformIntegrable_of hp1 hp hmeas fun ε hε ↦ ?_
-    obtain ⟨C, _, hC⟩ := hf.eLpNorm_indicator_norm_ge_pos_le hε
-    refine ⟨C.toNNReal, fun k ↦ hC.trans_eq' ?_⟩
-    have hind_meas : AEStronglyMeasurable ({x | C ≤ ‖f x‖₊}.indicator f) μ :=
-      hf.aestronglyMeasurable.indicator₀
-        (nullMeasurableSet_le aemeasurable_const
-          hf.aestronglyMeasurable.nnNorm.aemeasurable.coe_nnreal_real)
-    have hcomp : {x | C.toNNReal ≤ ‖(f ∘ T^[k]) x‖₊}.indicator (f ∘ T^[k]) =
-        ({x | C ≤ ‖f x‖₊}.indicator f) ∘ T^[k] := by
-      ext x
-      simp only [Set.indicator, Set.mem_ofPred_eq, Function.comp_apply,
-        Real.toNNReal_le_iff_le_coe]
-    rw [hcomp, eLpNorm_comp_measurePreserving hind_meas (hT.iterate k)]
+    let : MeasurableSpace E := borel E
+    have : BorelSpace E := ⟨rfl⟩
+    let law := ProbabilityTheory.hasLaw_map hf.aestronglyMeasurable.aemeasurable
+    exact ProbabilityTheory.MemLp.uniformIntegrable_of_identDistrib hp1 hp
+      (show MemLp ((fun k ↦ f ∘ T^[k]) 0) p μ from hf)
+      fun k ↦ (law.comp (hT.iterate k).hasLaw).identDistrib law
   have havg_eq : (fun n : ℕ ↦ (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, f ∘ T^[k]) =
       birkhoffAverage ℝ T f := by
     ext n x
     simp [birkhoffAverage, birkhoffSum]
   have hui_avg : UniformIntegrable (birkhoffAverage ℝ T f) p μ :=
     havg_eq ▸ uniformIntegrable_average hp1 hui_iter
-  have htend : ∀ᵐ x ∂μ, Tendsto (fun n ↦ birkhoffAverage ℝ T f n x) atTop
-      (𝓝 (μ[f | MeasurableSpace.invariants T] x)) :=
-    hT.ae_tendsto_birkhoffAverage_condExp (hf.integrable hp1)
   exact tendsto_Lp_finite_of_tendsto_ae hp1 hp hui_avg.aestronglyMeasurable
-    (hui_avg.memLp_of_ae_tendsto htend) hui_avg.unifIntegrable htend
+    (hf.condExp hp1) hui_avg.unifIntegrable
+    (hT.ae_tendsto_birkhoffAverage_condExp (hf.integrable hp1))
 
 /-- **`L¹` ergodic theorem.** For a measure-preserving endomorphism `T` of a finite measure space
 `(Ω, μ)` and an integrable Banach-valued observable `f`, the mean norm deviation between
