@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Basic
+public import TauCeti.Geometry.Manifold.DifferentialOperator.LaplaceType.Section
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Section
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian.Energy
 import TauCeti.Geometry.Manifold.Riemannian.Basic
@@ -37,7 +38,8 @@ geometric principal symbol (`TauCeti.sectionPrincipalSymbol`) is
 `σ_geom(∇*∇)(ξ) = -‖ξ‖² Id`,
 
 equivalently `σ_F(∇*∇)(ξ) = ‖ξ‖² Id` in the Fourier convention, where `∂ⱼ` has symbol `i ξⱼ`.
-This is the symbol of an operator of Laplace type with constant `1`. For a metric connection
+This is the symbol of an operator of Laplace type with constant `1`
+(`CovariantDerivative.isSectionLaplaceType_smoothRoughLaplacian`). For a metric connection
 `∇`, the Levi-Civita connection `∇ᵀ` and a manifold without boundary, the energy identity makes
 `∇*∇` its own formal adjoint for the Riemannian volume
 (`CovariantDerivative.IsMetricCompatible.isFormalAdjoint_smoothRoughLaplacian`).
@@ -53,6 +55,8 @@ This is the symbol of an operator of Laplace type with constant `1`. For a metri
   most two.
 * `CovariantDerivative.sectionPrincipalSymbol_smoothRoughLaplacian`: its geometric principal
   symbol is `ξ ↦ -‖ξ‖² Id`.
+* `CovariantDerivative.isSectionLaplaceType_smoothRoughLaplacian`: `∇*∇` is of Laplace type with
+  constant `1`.
 * `CovariantDerivative.IsMetricCompatible.isFormalAdjoint_smoothRoughLaplacian`: for a metric
   connection, `∇*∇` is formally self-adjoint for the Riemannian volume.
 
@@ -177,6 +181,15 @@ theorem sectionPrincipalSymbol_smoothRoughLaplacian [FiniteDimensional ℝ F] {x
     real_inner_self_eq_norm_sq, TauCeti.Manifold.norm_mgradient_eq_norm_mvfderiv,
     Nat.factorial_two, LinearMap.smul_apply, LinearMap.id_apply]
   module
+
+/-- **The rough Laplacian is of Laplace type** with constant `1`: its geometric principal symbol
+is `-‖ξ‖² Id`. In particular it is elliptic (`TauCeti.IsSectionLaplaceType.isSectionElliptic`). -/
+theorem isSectionLaplaceType_smoothRoughLaplacian [FiniteDimensional ℝ F] :
+    TauCeti.IsSectionLaplaceType
+      ⟨cov.smoothRoughLaplacian covT, cov.smoothRoughLaplacian_mem_differentialOperators_two covT⟩
+        1 :=
+  TauCeti.isSectionLaplaceType_iff.2
+    ⟨one_pos, fun _ hx ξ ↦ by rw [sectionPrincipalSymbol_smoothRoughLaplacian, one_mul]⟩
 
 end Operator
 
