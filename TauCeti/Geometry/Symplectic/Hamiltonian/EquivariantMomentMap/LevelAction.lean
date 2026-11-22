@@ -143,6 +143,19 @@ theorem coe_levelSubMulAction (h : σ.IsEquivariantMomentMap μ) :
     (h.levelSubMulAction c : Set M) = μ ⁻¹' {c} :=
   (rfl)
 
+variable (c) in
+/-- The inclusion of the level `μ⁻¹(c)` into `M`, equivariant along the inclusion `G_c → G` of the
+coadjoint stabilizer. -/
+def levelSubMulActionSubtype (h : σ.IsEquivariantMomentMap μ) :
+    h.levelSubMulAction c →ₑ[((↑) : (Lie.coadjointRepresentation ℝ I G).stabilizer c → G)] M where
+  toFun := Subtype.val
+  map_smul' k z := SubMulAction.val_smul k z
+
+@[simp]
+theorem coe_levelSubMulActionSubtype (h : σ.IsEquivariantMomentMap μ) :
+    ⇑(h.levelSubMulActionSubtype c) = Subtype.val :=
+  (rfl)
+
 /-! ### Orbits -/
 
 /-- **The reduced space is a space of `G`-orbits.** The map `μ⁻¹(c) / G_c → M / G` sending the
