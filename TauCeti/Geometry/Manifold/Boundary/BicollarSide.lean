@@ -348,8 +348,9 @@ private theorem mem_interiorChart_target (hCo : IsOpen (C \ range f)) (x : C)
 `e.symm` sends it into the source of `e'`. -/
 private theorem mem_target_and_mem_source_of_mem_symm_trans_source {α β : Type*}
     [TopologicalSpace α] [TopologicalSpace β] {e e' : OpenPartialHomeomorph α β} {w : β}
-    (hw : w ∈ (e.symm ≫ₕ e').source) : w ∈ e.target ∧ e.symm w ∈ e'.source :=
-  hw
+    (hw : w ∈ (e.symm ≫ₕ e').source) : w ∈ e.target ∧ e.symm w ∈ e'.source := by
+  rwa [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source, mem_inter_iff,
+    mem_preimage] at hw
 
 variable {k : WithTop ℕ∞}
 
@@ -443,7 +444,8 @@ private theorem contMDiffOn_collarChart_symm_trans_collarChart [IsManifold (𝓡
     ContMDiffOn (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) k
       ((collarChart (n := n) hC hb y).symm ≫ₕ collarChart (n := n) hC hb y')
       ((collarChart (n := n) hC hb y).symm ≫ₕ collarChart (n := n) hC hb y').source := by
-  rintro z ⟨hzt, hzs⟩
+  intro z hz
+  obtain ⟨hzt, hzs⟩ := mem_target_and_mem_source_of_mem_symm_trans_source hz
   have hF : ⇑((collarChart (n := n) hC hb y).symm ≫ₕ collarChart (n := n) hC hb y') = fun w ↦
       EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n
         (chartAt (EuclideanSpace ℝ (Fin n)) y' ((chartAt (EuclideanSpace ℝ (Fin n)) y).symm
