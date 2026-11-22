@@ -9,6 +9,7 @@ public import TauCeti.Statistics.Experiments.Mixture
 public import TauCeti.Statistics.Sufficiency.Basic
 
 import Mathlib.Probability.Kernel.CondDistrib
+import TauCeti.MeasureTheory.Measure.Decomposition.RNDeriv
 import TauCeti.Probability.Kernel.Disintegration.Map
 
 /-!
@@ -76,7 +77,7 @@ theorem IsSufficientStatistic.exists_factorization [Nonempty Θ] {P : Θ → Mea
       ae_of_all _ fun _ ↦ ENNReal.toReal_nonneg, ?_⟩
     rw [eq_withDensity_rnDeriv_map_of_map_prodMk_eq_compProd hT (hdom θ) (hdis θ) hLdis]
     exact withDensity_congr_ae
-      (ae_of_ae_map hT.aemeasurable (ofReal_toReal_rnDeriv ((P θ).map T) (L.map T)).symm)
+      (ae_of_ae_map hT.aemeasurable (Measure.ofReal_toReal_rnDeriv ((P θ).map T) (L.map T)).symm)
   exact (hf θ).ae_eq_of_sigmaFinite (hPL_dens.trans hh_dens)
 
 /-- Converse direction of the factorization theorem: on a standard Borel space `X`, if the

@@ -24,8 +24,9 @@ and develops the conditional-expectation characterization of sufficiency:
 * `TauCeti.IsSufficientStatistic P T`: `T : X → S` is measurable and there exists a single Markov
   kernel `K : Kernel S X` disintegrating every joint law `(P θ).map (fun x ↦ (T x, x))` as
   `(P θ).map T ⊗ₘ K`.
-* `TauCeti.isSufficientStatistic_of_forall_setLIntegral_eq`: rectangle introduction lemma for
-  sufficiency of finite families.
+* `TauCeti.isSufficientStatistic_of_forall_setLIntegral_eq`,
+  `TauCeti.isSufficientStatistic_iff_forall_setLIntegral_eq`: rectangle introduction and
+  characterization lemmas for sufficiency of finite families.
 * `TauCeti.IsMinimalSufficientStatistic.{u, v, w, r} P T`: `T` is sufficient and factors
   `P θ`-almost everywhere through every sufficient statistic `U : X → S'` whose codomain
   `S' : Type r` lies in the explicit universe parameter `r`, via a measurable map `φ : S' → S`.
@@ -91,6 +92,20 @@ theorem isSufficientStatistic_of_forall_setLIntegral_eq {P : Θ → Measure X}
       ∫⁻ x in T ⁻¹' A, K (T x) B ∂P θ = P θ (T ⁻¹' A ∩ B)) :
     IsSufficientStatistic P T :=
   ⟨hT, K, inferInstance, fun θ ↦ (map_prodMk_eq_compProd_iff hT).mpr (hrect θ)⟩
+
+/-- Rectangle characterization of sufficiency for a family of finite measures: `T` is sufficient if
+and only if `T` is measurable and there exists a single Markov kernel `K` matching the joint
+rectangle masses `∫⁻ x in T ⁻¹' A, K (T x) B ∂(P θ) = P θ (T ⁻¹' A ∩ B)` for every `θ` and all
+measurable `A : Set S` and `B : Set X`. -/
+theorem isSufficientStatistic_iff_forall_setLIntegral_eq {P : Θ → Measure X}
+    [∀ θ, IsFiniteMeasure (P θ)] {T : X → S} :
+    IsSufficientStatistic P T ↔
+      Measurable T ∧ ∃ K : Kernel S X, IsMarkovKernel K ∧
+        ∀ θ {A : Set S} {B : Set X}, MeasurableSet A → MeasurableSet B →
+          ∫⁻ x in T ⁻¹' A, K (T x) B ∂P θ = P θ (T ⁻¹' A ∩ B) :=
+  ⟨fun ⟨hT, K, hK, hdis⟩ ↦ ⟨hT, K, hK, fun θ _ _ hA hB ↦
+    (map_prodMk_eq_compProd_iff hT).mp (hdis θ) hA hB⟩,
+    fun ⟨hT, K, _, hrect⟩ ↦ isSufficientStatistic_of_forall_setLIntegral_eq hT K hrect⟩
 
 /-- A sufficient statistic is measurable. -/
 @[fun_prop]

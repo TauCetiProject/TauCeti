@@ -64,12 +64,16 @@ namespace ProbabilityTheory
 variable {Θ X S F : Type*} [MeasurableSpace X] [MeasurableSpace S]
   {μ : Measure X} [SFinite μ] {T : X → S} {K : Kernel S X} [IsSFiniteKernel K]
 
+private theorem snd_map_prodMk_id {ν : Measure X} {T : X → S} (hT : Measurable T) :
+    (ν.map (fun x ↦ (T x, x))).snd = ν := by
+  rw [Measure.snd_map_prodMk hT measurable_id', Measure.map_id']
+
 /-- Reconstructing `μ` from a disintegration `μ.map (T, id) = μ.map T ⊗ₘ K`: composing the kernel
 with the marginal law `μ.map T` recovers `μ`. -/
 theorem comp_map_eq_self_of_map_prodMk_eq_compProd (hT : Measurable T)
     (h : μ.map (fun x ↦ (T x, x)) = μ.map T ⊗ₘ K) :
     K ∘ₘ μ.map T = μ := by
-  rw [← Measure.snd_compProd, ← h, Measure.snd_map_prodMk hT measurable_id', Measure.map_id']
+  rw [← Measure.snd_compProd, ← h, snd_map_prodMk_id hT]
 
 /-- Rectangle characterization of graph disintegration for a finite measure `μ`:
 `μ.map (T, id) = μ.map T ⊗ₘ K` holds if and only if for all measurable `A : Set S` and
@@ -265,7 +269,6 @@ theorem eq_withDensity_rnDeriv_map_of_map_prodMk_eq_compProd {P L : Measure X} [
   have hjoint : P.map (fun x ↦ (T x, x)) = (L.withDensity (q ∘ T)).map (fun x ↦ (T x, x)) := by
     rw [map_prodMk_withDensity_comp_eq_compProd hT hL hq, hmarg, hP]
   have hsnd := congrArg Measure.snd hjoint
-  rwa [Measure.snd_map_prodMk hT measurable_id', Measure.snd_map_prodMk hT measurable_id',
-    Measure.map_id', Measure.map_id'] at hsnd
+  rwa [snd_map_prodMk_id hT, snd_map_prodMk_id hT] at hsnd
 
 end ProbabilityTheory
