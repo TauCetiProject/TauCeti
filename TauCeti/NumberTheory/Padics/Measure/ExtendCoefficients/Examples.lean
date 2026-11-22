@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.Measure.Dirac
 import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.BaseChange
 import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.Clopen
 import TauCeti.NumberTheory.Padics.Measure.IntegralUnitBall
-import TauCeti.NumberTheory.Padics.Measure.Units.Basic
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # Arithmetic examples of coefficient extension
@@ -21,11 +20,12 @@ extension, character evaluation, and the Amice transform of pure tensors.
 
 For the Amice-transform identity, use `ext n <;> simp` to simplify each power series coefficient.
 This uses `AbstractMeasure.amiceTransform_extendScalars` and
-`AbstractMeasure.amiceTransform_extendCoefficients_algebraMap`. The source coefficient ring is
+`AbstractMeasure.amiceTransform_extendCoefficients_of_finite`. The source coefficient ring is
 finite free over `ℤ_[p]`, the target is a complete ultrametric normed field, and both actions of
 `ℤ_[p]` are continuous. The coefficient map is a `ℤ_[p]`-algebra map with image in the closed
 unit ball. For the coefficient map `algebraMap O L`, the same calculation uses the compatible
-scalar tower `ℤ_[p] → O → L`.
+scalar tower `ℤ_[p] → O → L` and
+`AbstractMeasure.amiceTransform_extendCoefficients_algebraMap`.
 -/
 
 noncomputable section

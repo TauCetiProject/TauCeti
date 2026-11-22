@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Ultra
-public import Mathlib.Topology.ContinuousMap.Compact
 public import TauCeti.NumberTheory.Padics.Measure.CoefficientRestriction
 public import TauCeti.NumberTheory.Padics.Measure.FiniteProjection
 import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
@@ -62,18 +61,12 @@ The dense-extension construction and its norm proof follow the formal pattern of
   extension has operator norm at most `B`.
 * `AbstractMeasure.extendCoefficients_apply_comp`: `ι_j(μ)(j ∘ f) = j(μ(f))` for continuous `j`.
 * `AbstractMeasure.eq_extendCoefficients_of_apply_comp`: this property characterises `ι_j(μ)`.
-* `RingHom.exists_apply_comp_eq_of_mem_range`: restrict coefficients through an embedding when
-  every transported test has its integral in the coefficient image.
 * `AbstractMeasure.mem_range_extendCoefficients_iff_apply_comp_mem_range`: a measure belongs to
   the range exactly when the integrals of transported tests lie in the coefficient image.
-* `AbstractMeasure.exists_apply_comp_eq_of_norm_le_one`: over a nontrivially normed field `K`,
-  for an embedding `j` onto its closed unit ball and compact `X`, a `K`-valued measure of norm at
-  most `1` restricts to an `O`-valued measure.
 * `AbstractMeasure.mem_range_extendCoefficients_iff`,
-  `AbstractMeasure.existsUnique_extendCoefficients_eq_iff_norm_le_one`,
-  `AbstractMeasure.existsUnique_apply_comp_eq_iff_norm_le_one`: over a nontrivially normed field
-  `K`, for an embedding `j` onto its closed unit ball, the extensions of coefficients form the
-  closed unit ball of `D(X, K)`.
+  `AbstractMeasure.existsUnique_extendCoefficients_eq_iff_norm_le_one`: over a nontrivially
+  normed field `K`, for an embedding `j` onto its closed unit ball, the extensions of
+  coefficients form the closed unit ball of `D(X, K)`.
 * `AbstractMeasure.extendCoefficients_comp`: coefficient extension in two stages agrees with
   coefficient extension along the composite.
 * `AbstractMeasure.extendCoefficients_smul`, `AbstractMeasure.extendCoefficients_dirac`,
@@ -439,69 +432,6 @@ section OperatorNorm
 variable [CompactSpace X] {K O : Type*} [NontriviallyNormedField K] [CommRing O]
   [TopologicalSpace O] [IsTopologicalRing O] {j : O →+* K}
 
-section CoefficientRestriction
-
-variable (hj : ∀ a, ‖j a‖ ≤ 1)
-
-include hj in
-/-- If `j` is a topological embedding onto the closed unit ball of `K`, a `K`-valued measure `ν` of
-norm at most `1` sends the test functions `j ∘ f` into the image of `j`, and the preimages form an
-`O`-valued measure `μ` with `ν (j ∘ f) = j (μ f)`. -/
-theorem exists_apply_comp_eq_of_norm_le_one (hje : Topology.IsEmbedding j)
-    (hjr : Metric.closedBall 0 1 ⊆ Set.range j) {ν : D(X, K)} (hν : ‖toCLMEquiv ν‖ ≤ 1) :
-    ∃ μ : D(X, O), ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) = j (μ f) := by
-  let J : C(O, K) := ⟨j, hje.continuous⟩
-  refine j.exists_apply_comp_eq_of_mem_range hje ν fun f ↦ hjr ?_
-  rw [mem_closedBall_zero_iff, ← coe_toCLMEquiv]
-  have hf : ‖J.comp f‖ ≤ 1 := (ContinuousMap.norm_le _ zero_le_one).mpr fun x ↦ hj (f x)
-  exact ((toCLMEquiv ν).le_of_opNorm_le_of_le hν hf).trans_eq (one_mul 1)
-
-include hj in
-/-- If `j` is a topological embedding onto the closed unit ball of `K`, a `K`-valued measure `ν`
-has operator norm at most `1` exactly when there is a unique `O`-valued measure `μ` with
-`ν (j ∘ f) = j (μ f)` for every `f ∈ C(X, O)`. -/
-theorem existsUnique_apply_comp_eq_iff_norm_le_one (hje : Topology.IsEmbedding j)
-    (hjr : Metric.closedBall 0 1 ⊆ Set.range j) (ν : D(X, K)) :
-    (∃! μ : D(X, O), ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) = j (μ f)) ↔
-      ‖toCLMEquiv ν‖ ≤ 1 := by
-  refine ⟨fun ⟨μ, hμ, _⟩ ↦ ?_, fun hν ↦ ?_⟩
-  · -- a test function of norm at most `1` factors through `j`, so `ν` does not increase it
-    have hunit (g : C(X, K)) (hg : ‖g‖ ≤ 1) : ‖ν g‖ ≤ 1 := by
-      have hmem (x : X) : g x ∈ Set.range j := hjr <| by
-        rw [mem_closedBall_zero_iff]
-        exact (ContinuousMap.norm_coe_le_norm g x).trans hg
-      choose h hh using hmem
-      have hcont : Continuous h := hje.continuous_iff.mpr <| by
-        have : j ∘ h = g := funext hh
-        rw [this]; exact g.continuous
-      have hg' : g = (⟨j, hje.continuous⟩ : C(O, K)).comp ⟨h, hcont⟩ := by ext x; exact (hh x).symm
-      rw [hg', hμ]
-      exact hj _
-    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun g ↦ ?_
-    rw [coe_toCLMEquiv, one_mul]
-    -- rescale by a value of `g` of maximal norm
-    rcases isEmpty_or_nonempty X with hX | hX
-    · have : g = 0 := Subsingleton.elim _ _
-      simp [this]
-    obtain ⟨t, -, ht⟩ := isCompact_univ.exists_isMaxOn Set.univ_nonempty
-      (continuous_norm.comp g.continuous).continuousOn
-    have hgt : ‖g t‖ = ‖g‖ := le_antisymm (ContinuousMap.norm_coe_le_norm g t)
-      ((ContinuousMap.norm_le _ (norm_nonneg _)).2 fun x ↦ ht (Set.mem_univ x))
-    rcases eq_or_ne (g t) 0 with h0 | h0
-    · have : g = 0 := by
-        rw [← norm_eq_zero, ← hgt, h0, norm_zero]
-      simp [this]
-    have hnorm : ‖(g t)⁻¹ • g‖ ≤ 1 := by
-      rw [norm_smul, norm_inv, hgt, ← hgt]
-      exact (inv_mul_cancel₀ (norm_ne_zero_iff.2 h0)).le
-    have := hunit _ hnorm
-    rw [map_smul, smul_eq_mul, norm_mul, norm_inv] at this
-    rw [← hgt]
-    rwa [inv_mul_le_iff₀ (norm_pos_iff.2 h0), mul_one] at this
-  · obtain ⟨μ, hμ⟩ := exists_apply_comp_eq_of_norm_le_one hj hje hjr hν
-    exact ⟨μ, hμ, fun μ' hμ' ↦ ext fun f ↦ hje.injective ((hμ' f).symm.trans (hμ f))⟩
-
-end CoefficientRestriction
 
 variable [T2Space X] [TotallyDisconnectedSpace X] [CompleteSpace K] [IsUltrametricDist K]
   (j)
