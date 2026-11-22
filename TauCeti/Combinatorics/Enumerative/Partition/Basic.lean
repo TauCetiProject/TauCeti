@@ -125,6 +125,7 @@ theorem card_parts_le {n : ℕ} (μ : n.Partition) : μ.parts.card ≤ n := by
 
 /-- A partition of `n` has at most one part if and only if it is the coarsest partition
 `Nat.Partition.indiscrete n`. -/
+@[simp]
 theorem card_parts_le_one_iff {n : ℕ} (p : n.Partition) :
     p.parts.card ≤ 1 ↔ p = indiscrete n := by
   rcases eq_or_ne n 0 with rfl | hn
@@ -140,8 +141,7 @@ theorem card_parts_le_one_iff {n : ℕ} (p : n.Partition) :
 `n` is at least `n`. -/
 theorem le_sum_pow_parts {n k : ℕ} (μ : n.Partition) (hk : k ≠ 0) :
     n ≤ (μ.parts.map (· ^ k)).sum :=
-  calc n = (μ.parts.map id).sum := by rw [Multiset.map_id, μ.parts_sum]
-    _ ≤ _ := Multiset.sum_map_le_sum_map _ _ fun x _ => Nat.le_self_pow hk x
+  μ.parts_sum.ge.trans <| Multiset.sum_le_sum_map _ fun x _ => Nat.le_self_pow hk x
 
 /-- The decreasingly sorted parts of a partition of `n` sum to `n`. -/
 @[simp]
