@@ -1024,6 +1024,38 @@ theorem fst_positiveEndCoord_positiveEndChart (q : Puncture) (ζ : ℝ × ℝ) :
   obtain ⟨k, hk⟩ := exists_positiveEndCoord_positiveEndChart q ζ
   simp [hk]
 
+/-- A point of `S` beyond `T` on the end `q` is the image under the positive end chart of a point
+of the half-cylinder `(T, ∞) × [0, 1)`. -/
+theorem mem_image_positiveEndChart_of_lt_fst_positiveEndCoord {q : Puncture} {T : ℝ} {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) (hzT : T < (positiveEndCoord q z).1) :
+    z ∈ positiveEndChart q '' (Ioi T ×ˢ Ico 0 1) := by
+  set c := positiveEndCoord q z
+  have hper : Periodic (fun t ↦ positiveEndChart q (c.1, t)) 1 :=
+    fun t ↦ positiveEndChart_add_one q c.1 t
+  have h : positiveEndChart q (c.1, c.2 - ⌊c.2⌋ * 1) = positiveEndChart q (c.1, c.2) :=
+    hper.sub_int_mul_eq ⌊c.2⌋
+  refine ⟨(c.1, Int.fract c.2), ⟨hzT, Int.fract_nonneg _, Int.fract_lt_one _⟩, ?_⟩
+  rw [mul_one, Int.self_sub_floor] at h
+  rw [h]
+  exact positiveEndChart_positiveEndCoord q
+    (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
+
+/-- A lower integral over `S` is at most its lower integral over the truncation `S_T` plus its
+lower integrals over the images of the half-cylinders `(T, ∞) × [0, 1)` under the three positive
+end charts, which cover the rest of `S`. -/
+theorem lintegral_thricePuncturedSphereReal_le (T : ℝ) (f : ℝ × ℝ → ENNReal) :
+    ∫⁻ z in thricePuncturedSphereReal, f z ≤
+      (∫⁻ z in Complex.equivRealProdCLM.symm ⁻¹' truncation T, f z) +
+        ∑ q, ∫⁻ z in positiveEndChart q '' (Ioi T ×ˢ Ico 0 1), f z := by
+  have hcover : thricePuncturedSphereReal ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation T ∪
+      ⋃ q, positiveEndChart q '' (Ioi T ×ˢ Ico 0 1) := fun z hz ↦ by
+    by_cases hzT : Complex.equivRealProdCLM.symm z ∈ truncation T
+    · exact Or.inl hzT
+    · obtain ⟨q, hq⟩ := exists_lt_fst_positiveEndCoord_of_notMem_truncation hz hzT
+      exact Or.inr (mem_iUnion.2 ⟨q, mem_image_positiveEndChart_of_lt_fst_positiveEndCoord hz hq⟩)
+  exact (lintegral_mono_set hcover).trans ((lintegral_union_le _ _ _).trans
+    (add_le_add le_rfl ((lintegral_iUnion_le _ _).trans_eq (tsum_fintype _))))
+
 /-- A function with compact support in `S` vanishes, in the positive end chart of `q`, near every
 point beyond some height. -/
 theorem exists_forall_comp_positiveEndChart_eventuallyEq_zero {M : Type*} [Zero M]

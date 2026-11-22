@@ -51,8 +51,10 @@ the almost complex structure (`integral_associatedBilinForm_floerLinearization_i
   (`floerLinearization_comp_positiveEndChart`), and changing variables along the chart, whose
   Jacobian determinant is `a² + b²`, bounds its `L²` norm by that of `D_u ξ` on `S`.
 
-Sections are `C²` maps `ξ : ℝ × ℝ → V` with compact support in `S`. The Sobolev completion, the
-finiteness of the cokernel and the Fredholm index are not treated here.
+Sections are `C²` maps `ξ : ℝ × ℝ → V` with compact support in `S`. The estimate is carried to the
+Sobolev completion, where it gives finite-dimensional kernel and closed range, in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.SemiFredholm`. The finiteness of the
+cokernel and the Fredholm index are not treated here.
 
 ## References
 
@@ -69,6 +71,29 @@ public section
 
 open Filter Function Set MeasureTheory TauCeti.ThricePuncturedSphere
 open scoped Topology NNReal Manifold
+
+namespace TauCeti.Floer
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- A `C¹` section with compact support in `S` has integrable `W^{1,2}` energy density in each
+positive end chart, over every half-cylinder `(a, ∞) × [0, 1]`. -/
+theorem integrableOn_sobolevDensity_comp_positiveEndChart {ξ : ℝ × ℝ → V}
+    (hξ : ContDiff ℝ 1 ξ) (hξc : HasCompactSupport ξ)
+    (hξS : tsupport ξ ⊆ thricePuncturedSphereReal) (q : Puncture) (a : ℝ) :
+    IntegrableOn (sobolevDensity (ξ ∘ positiveEndChart q)) (Ioi a ×ˢ Icc 0 1) := by
+  -- Beyond some `N` in the end chart, `ξ` vanishes identically.
+  obtain ⟨N, hzero⟩ := exists_forall_comp_positiveEndChart_eventuallyEq_zero hξc hξS q
+  have hg : ContDiff ℝ 1 (ξ ∘ positiveEndChart q) := hξ.comp (contDiff_positiveEndChart q 1)
+  have hK : IsCompact (Icc a N ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
+  refine (((continuous_sobolevDensity hg).continuousOn).integrableOn_compact
+    hK).of_forall_sdiff_eq_zero (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
+  have hζN : N < ζ.1 := by
+    by_contra! h
+    exact hζ.2 ⟨⟨le_of_lt hζ.1.1, h⟩, hζ.1.2⟩
+  rw [sobolevDensity_congr_of_eventuallyEq (hzero ζ hζN), sobolevDensity_zero]
+
+end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm
 
@@ -270,24 +295,6 @@ private theorem integral_norm_floerLinearization_fun_smul_sq_le (ω : Symplectic
           integral_const_mul, integral_indicator hK.measurableSet]
 
 omit [FiniteDimensional ℝ V] in
-/-- A `C²` section with compact support in `S` has integrable `W^{1,2}` energy density in each
-positive end chart, over every half-cylinder `(a, ∞) × [0, 1]`. -/
-private theorem integrableOn_sobolevDensity_comp_positiveEndChart {ξ : ℝ × ℝ → V}
-    (hξ : ContDiff ℝ 2 ξ) (hξc : HasCompactSupport ξ)
-    (hξS : tsupport ξ ⊆ thricePuncturedSphereReal) (q : Puncture) (a : ℝ) :
-    IntegrableOn (sobolevDensity (ξ ∘ positiveEndChart q)) (Ioi a ×ˢ Icc 0 1) := by
-  -- Beyond some `N` in the end chart, `ξ` vanishes identically.
-  obtain ⟨N, hzero⟩ := exists_forall_comp_positiveEndChart_eventuallyEq_zero hξc hξS q
-  have hg : ContDiff ℝ 2 (ξ ∘ positiveEndChart q) := hξ.comp (contDiff_positiveEndChart q 2)
-  have hK : IsCompact (Icc a N ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  refine (((continuous_sobolevDensity (hg.of_le one_le_two)).continuousOn).integrableOn_compact
-    hK).of_forall_sdiff_eq_zero (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
-  have hζN : N < ζ.1 := by
-    by_contra! h
-    exact hζ.2 ⟨⟨le_of_lt hζ.1.1, h⟩, hζ.1.2⟩
-  rw [sobolevDensity_congr_of_eventuallyEq (hzero ζ hζN), sobolevDensity_zero]
-
-omit [FiniteDimensional ℝ V] in
 /-- **The end piece.** Beyond `R₀ + 1` on the end `q`, a section agrees with its cut-off `β_q ξ`,
 so the energy of `ξ` there is at most the energy of the cut-off section on the whole end. -/
 private theorem setIntegral_sobolevDensity_le_endCutoff {R₀ : ℝ} (hR₀ : 0 ≤ R₀) (q : Puncture)
@@ -306,7 +313,8 @@ private theorem setIntegral_sobolevDensity_le_endCutoff {R₀ : ℝ} (hR₀ : 0 
         simp only [Function.comp_apply]
         rw [endCutoff_eq_one (q := q)
           (by rw [fst_positiveEndCoord_positiveEndChart]; exact le_of_lt hζ'), one_smul]
-    _ ≤ _ := setIntegral_mono_set (integrableOn_sobolevDensity_comp_positiveEndChart hβξ
+    _ ≤ _ := setIntegral_mono_set (integrableOn_sobolevDensity_comp_positiveEndChart
+        (hβξ.of_le one_le_two)
         hξc.smul_left ((tsupport_smul_subset_right _ _).trans hξS) q 0)
         (ae_of_all _ fun ζ ↦ sobolevDensity_nonneg _ ζ)
         (.of_forall fun _ hζ ↦ prod_mono (Ioi_subset_Ioi (by linarith)) subset_rfl hζ)
@@ -537,7 +545,7 @@ compatible along `u` on `S = ℂ ∖ {0, 1}`, with `J` `C¹` and `K_s`, `K_t` `C
 controls the energy in the positive end chart `φ'_q`: there are `C q` and `R q` such that every
 `C²` section `ξ` with compact support in the part `±s > R q` of the end satisfies
 `∫_{(0, ∞) × [0, 1]} (‖∂s (ξ ∘ φ'_q)‖² + ‖∂t (ξ ∘ φ'_q)‖² + ‖ξ ∘ φ'_q‖²) ≤ C q ∫ ‖D_u ξ‖²`.
-Then there are `C ≥ 0` and `T` such that every `C²` section `ξ` with compact support in `S`
+Then there are `C ≥ 0` and `T ≥ 0` such that every `C²` section `ξ` with compact support in `S`
 satisfies
 
 `∑_q ∫_{(T, ∞) × [0, 1]} (‖∂s (ξ ∘ φ'_q)‖² + ‖∂t (ξ ∘ φ'_q)‖² + ‖ξ ∘ φ'_q‖²)`
@@ -560,7 +568,7 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
       ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ ≤
         C q * ∫ z, ‖ω.floerLinearization
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) :
-    ∃ C', 0 ≤ C' ∧ ∃ T, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → HasCompactSupport ξ →
+    ∃ C', 0 ≤ C' ∧ ∃ T, 0 ≤ T ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → HasCompactSupport ξ →
       tsupport ξ ⊆ thricePuncturedSphereReal →
       (∑ q, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ) +
         ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation T, sobolevDensity ξ z ≤
@@ -580,7 +588,7 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
   obtain ⟨C₂, hC₂, h₂⟩ := ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_aux hJ hKs
     hKt hu hc (C := C) (R := R) hend (R₀ := R₀ + 1) (by linarith) fun q ↦ (hR q).trans
       (lt_add_one _)
-  refine ⟨C₁ + C₂, by positivity, R₀ + 1, fun ξ hξ hξc hξS ↦ ?_⟩
+  refine ⟨C₁ + C₂, by positivity, R₀ + 1, by linarith, fun ξ hξ hξc hξS ↦ ?_⟩
   have e₁ := h₁ hξ hξc hξS
   have e₂ := h₂ hξ hξc hξS
   have hξ2 := hξ.continuous.norm.pow 2
@@ -611,8 +619,8 @@ cylindrical far out on each end, `J(φ'_q(s, t)) = J_q(t)` for `s ≥ R₁` with
 compatible along `x_q`. Let `u` be a `C¹` solution on `S` of the Floer equation for the
 pair-of-pants perturbation of `H`, along which `J` is compatible, whose loops in each positive end
 chart `φ'_q` converge uniformly to `x_q` while the slice defects `∂t (u ∘ φ'_q) - X_{H'_q}` tend
-uniformly to zero. Then there are `C ≥ 0` and `T` such that every `C²` section `ξ` with compact
-support in `S` satisfies
+uniformly to zero. Then there are `C ≥ 0` and `T ≥ 0` such that every `C²` section `ξ` with
+compact support in `S` satisfies
 
 `∑_q ∫_{(T, ∞) × [0, 1]} (‖∂s (ξ ∘ φ'_q)‖² + ‖∂t (ξ ∘ φ'_q)‖² + ‖ξ ∘ φ'_q‖²)`
 `  + ∫_{S_T} (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C (∫ ‖D_u ξ‖² + ∫_{S_{T + 1}} ‖ξ‖²)`
@@ -648,7 +656,7 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
     (hδ : ∀ q, TendstoUniformlyOn (fun s t ↦ sliceDefect
       (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
         (s, t)) 0 atTop (Icc 0 1)) :
-    ∃ C, 0 ≤ C ∧ ∃ T, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → HasCompactSupport ξ →
+    ∃ C, 0 ≤ C ∧ ∃ T, 0 ≤ T ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → HasCompactSupport ξ →
       tsupport ξ ⊆ thricePuncturedSphereReal →
       (∑ q, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ) +
         ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation T, sobolevDensity ξ z ≤

@@ -53,11 +53,11 @@ the end coordinates.
   the truncation `S_T`, which is compact, the coefficient field is continuous. Hence it is
   essentially bounded on `S` (`TauCeti.SymplecticForm.memLp_floerConformalJetCoeff_pairOfPants`).
 
-The bounds on `u` and on the slice defects on the ends are of the kind provided by the convergence
-of the ends of a finite-energy Floer pair of pants to its asymptotic orbits; deriving them from that
-convergence is not done here. The semi-Fredholm estimate of `D_u` in this norm, and with it
-finite-dimensional kernel and closed range by
-`TauCeti.ConformalSobolev.finiteDimensional_ker_of_estimate`, are not proved here either.
+The bounds on `u` and on the slice defects are needed only over one period `t ∈ [0, 1]` of the
+ends, since the end charts are periodic in `t`. They are of the kind provided by the convergence of
+the ends of a finite-energy Floer pair of pants to its asymptotic orbits. The semi-Fredholm estimate
+of `D_u` in this norm, with finite-dimensional kernel and closed range, is in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.SemiFredholm`.
 
 ## References
 
@@ -220,10 +220,10 @@ theorem norm_floerConformalJetCoeff_positiveEndChart_le (ω : SymplecticForm V)
 jointly `C²` period-one Hamiltonians on the three ends of `S = ℂ ∖ {0, 1}`, let `u` be `C¹` on `S`,
 and let the almost complex structures `J(z, ·)` be `C¹` along the graph of `u`. Suppose that beyond
 a height `T ≥ 2` of every end `q`, read in the positive end chart `φ'_q`, the structures are a `C¹`
-family `J_q(t)` of the end coordinate `t`, `u` is bounded and solves the Floer equation for the
-pair-of-pants perturbation, and the slice defect `∂t (u ∘ φ'_q) - X_{H'_q(t)}(u ∘ φ'_q)` of the end
-datum is bounded. Then the coefficient field of the linearized Floer operator on the jets of the
-cylindrical weight of `S` is essentially bounded on `S`, so that
+family `J_q(t)` of the end coordinate `t`, `u` solves the Floer equation for the pair-of-pants
+perturbation, and `u` and the slice defect `∂t (u ∘ φ'_q) - X_{H'_q(t)}(u ∘ φ'_q)` of the end
+datum are bounded for `t ∈ [0, 1]`. Then the coefficient field of the linearized Floer operator
+on the jets of the cylindrical weight of `S` is essentially bounded on `S`, so that
 `TauCeti.SymplecticForm.floerConformalSobolevOperator` realizes `D_u` from `W^{1,2}_0(S, V)` to
 `L²(S, V)`. -/
 theorem memLp_floerConformalJetCoeff_pairOfPants (ω : SymplecticForm V)
@@ -241,8 +241,8 @@ theorem memLp_floerConformalJetCoeff_pairOfPants (ω : SymplecticForm V)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
         (positiveEndChart q ζ) : ℝ × ℝ →ₗ[ℝ] V))
-    {Cu Cδ : ℝ} (hub : ∀ q ζ, T ≤ ζ.1 → ‖u (positiveEndChart q ζ)‖ ≤ Cu)
-    (hδ : ∀ q ζ, T ≤ ζ.1 → ‖sliceDefect
+    {Cu Cδ : ℝ} (hub : ∀ q ζ, T ≤ ζ.1 → ζ.2 ∈ Icc 0 1 → ‖u (positiveEndChart q ζ)‖ ≤ Cu)
+    (hδ : ∀ q ζ, T ≤ ζ.1 → ζ.2 ∈ Icc 0 1 → ‖sliceDefect
       (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t))
       (u ∘ positiveEndChart q) ζ‖ ≤ Cδ) :
     MemLp (ω.floerConformalJetCoeff cylindricalWeight
@@ -279,25 +279,14 @@ theorem memLp_floerConformalJetCoeff_pairOfPants (ω : SymplecticForm V)
   -- A point beyond the truncation is `φ'_q(ζ)` for some end `q` and `ζ = (s, t)` with `s > T`
   -- and, by periodicity of the chart, `t ∈ [0, 1)`.
   obtain ⟨q, hq⟩ := exists_lt_fst_positiveEndCoord_of_notMem_truncation hz hzT
-  rw [fst_positiveEndCoord] at hq
-  have hne := ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q
-  set t₀ := q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).im
-  set ζ : ℝ × ℝ := (q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re, Int.fract t₀)
-  have hζz : positiveEndChart q ζ = z := by
-    have hper : Periodic (fun t ↦ positiveEndChart q (ζ.1, t)) 1 :=
-      fun t ↦ positiveEndChart_add_one q ζ.1 t
-    have h := hper.sub_int_mul_eq (x := t₀) ⌊t₀⌋
-    rw [mul_one] at h
-    exact h.trans (positiveEndChart_endSign_mul_endCoord hne)
-  have hζ1 : T ≤ ζ.1 := hq.le
-  have hζ2 : ζ.2 ∈ Icc (0 : ℝ) 1 := ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩
-  have hzS : positiveEndChart q ζ ∈ S := hζz ▸ hz
-  rw [← hζz]
+  obtain ⟨ζ, ⟨hζ1, hζ2⟩, rfl⟩ := mem_image_positiveEndChart_of_lt_fst_positiveEndCoord hz hq
+  replace hζ1 : T ≤ ζ.1 := le_of_lt hζ1
+  replace hζ2 : ζ.2 ∈ Icc (0 : ℝ) 1 := Ico_subset_Icc_self hζ2
   exact ω.norm_floerConformalJetCoeff_positiveEndChart_le hH
     (fun t ↦ (hHs q).comp (contDiff_const.prodMk contDiff_id)) (hT.trans hζ1) (hJend q ζ hζ1)
     ((hu.differentiableOn one_ne_zero).differentiableAt
-      (isOpen_thricePuncturedSphereReal.mem_nhds hzS)) (hfl q ζ hζ1)
-    ((hBq q ζ hζ2 (hub q ζ hζ1) (hδ q ζ hζ1)).trans (hBqB q))
+      (isOpen_thricePuncturedSphereReal.mem_nhds hz)) (hfl q ζ hζ1)
+    ((hBq q ζ hζ2 (hub q ζ hζ1 hζ2) (hδ q ζ hζ1 hζ2)).trans (hBqB q))
 
 end SymplecticForm
 

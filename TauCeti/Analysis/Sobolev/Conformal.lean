@@ -444,6 +444,44 @@ theorem coeFn_restrictWeightedValue (K : Set (ℝ × ℝ))
   (LpToLpRestrictCLM_coeFn ℝ _ _).trans
     (ae_restrict_of_ae ((ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLpL f))
 
+/-- On a measurable set `K ⊆ U`, the squared norm of the restricted weighted value of the `L²` jet
+of a section `ξ` is the weighted energy `∫_K ρ ‖ξ‖²`. -/
+theorem sq_norm_restrictWeightedValue_eq (hρ : IsWeight U ρ) {K : Set (ℝ × ℝ)}
+    (hK : MeasurableSet K) (hKU : K ⊆ U) {f : Lp (V × V × V) 2 (volume.restrict U)}
+    (hf : f =ᵐ[volume.restrict U] jet ρ ξ) :
+    ‖restrictWeightedValue V U K f‖ ^ 2 = ∫ z in K, ρ z * ‖ξ z‖ ^ 2 := by
+  have h : ∫ z, ‖(restrictWeightedValue V U K f : ℝ × ℝ → V) z‖ ^ 2
+      ∂((volume.restrict U).restrict K) =
+        ∫ z, ρ z * ‖ξ z‖ ^ 2 ∂((volume.restrict U).restrict K) := by
+    refine integral_congr_ae ?_
+    filter_upwards [coeFn_restrictWeightedValue K f, ae_restrict_of_ae hf, ae_restrict_mem hK]
+      with z h₁ h₂ hz
+    rw [h₁, h₂, jet_apply, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs,
+      Real.sq_sqrt (hρ.pos z (hKU hz)).le]
+  rw [← Lp.integral_norm_sq_eq_norm_sq, h, Measure.restrict_restrict hK, inter_eq_left.2 hKU]
+
+omit [NormedSpace ℝ V] in
+/-- On a compact set `K ⊆ U` the weight is bounded below by a positive constant, so the `L²` energy
+on `K` of a section continuous on `K` is at most a multiple of its weighted energy
+`∫_K ρ ‖ξ‖²`. -/
+theorem exists_forall_setIntegral_norm_sq_le_mul (hρ : IsWeight U ρ) {K : Set (ℝ × ℝ)}
+    (hK : IsCompact K) (hKU : K ⊆ U) :
+    ∃ B, 0 ≤ B ∧ ∀ ξ : ℝ × ℝ → V, ContinuousOn ξ K →
+      ∫ z in K, ‖ξ z‖ ^ 2 ≤ B * ∫ z in K, ρ z * ‖ξ z‖ ^ 2 := by
+  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (f := fun z ↦ (ρ z)⁻¹)
+    ((hρ.continuousOn.mono hKU).inv₀ fun z hz ↦ (hρ.pos z (hKU hz)).ne')
+  refine ⟨max B 0, le_max_right _ _, fun ξ hξ ↦ ?_⟩
+  rw [← integral_const_mul]
+  refine setIntegral_mono_on ((hξ.norm.pow 2).integrableOn_compact hK)
+    ((continuousOn_const.mul ((hρ.continuousOn.mono hKU).mul (hξ.norm.pow 2))).integrableOn_compact
+      hK) hK.measurableSet fun z hz ↦ ?_
+  calc ‖ξ z‖ ^ 2 = (ρ z)⁻¹ * (ρ z * ‖ξ z‖ ^ 2) := by
+        rw [← mul_assoc, inv_mul_cancel₀ (hρ.pos z (hKU hz)).ne', one_mul]
+    _ ≤ max B 0 * (ρ z * ‖ξ z‖ ^ 2) := by
+        have := (hρ.pos z (hKU hz)).le
+        gcongr
+        exact (le_abs_self _).trans ((Real.norm_eq_abs _ ▸ hB z hz).trans (le_max_left _ _))
+
 /-- A continuous function with compact support inside `U` is bounded by a multiple of `√ρ`. -/
 private theorem exists_abs_le_mul_sqrt (hρ : IsWeight U ρ) {g : ℝ × ℝ → ℝ} (hg : Continuous g)
     (hgc : HasCompactSupport g) (hgU : tsupport g ⊆ U) :
