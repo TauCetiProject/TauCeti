@@ -14,16 +14,17 @@ public import Mathlib.Data.Nat.Prime.Defs
 
 A natural number that is a unit in `K` stays nonzero in every nontrivial `K`-algebra `L`. Results
 stated over an extension, such as the separable closure `Kˢ`, often need `(m : L) ≠ 0`, while the
-hypothesis available is `IsUnit (m : K)`, which holds for every `m ≠ 0` in a `ℚ`-algebra.
+hypothesis available is `IsUnit (m : K)`, which holds for every `m ≠ 0` in an algebra over a
+characteristic-zero semifield, such as a `ℚ`-algebra.
 Likewise a subalgebra over `K` is closed under division by such a natural number.
 
 Because natural-number casts commute with every element of a semiring, any divisor of an invertible
 natural cast is again a unit, and a nonzero natural number casts to a unit if and only if each of
 its prime factors does.
 
-In a `ℚ`-algebra every positive natural number is invertible, so dividing by `k + 1` and
-multiplying by `k + 1` cancel. This is how termwise integration of power series inverts
-differentiation.
+In an algebra over a characteristic-zero semifield `K` (for instance `K = ℚ`) every positive
+natural number is invertible, so dividing by `k + 1` and multiplying by `k + 1` cancel. This is
+how termwise integration of power series inverts differentiation.
 
 ## Main results
 
@@ -36,13 +37,13 @@ differentiation.
 * `TauCeti.isUnit_natCast_of_forall_prime_dvd`, `TauCeti.isUnit_natCast_iff_forall_prime_dvd`: a
   nonzero natural number casts to a unit in a semiring if and only if all of its prime divisors do.
 * `TauCeti.isUnit_natCast_of_ne_zero`, `TauCeti.isUnit_natCast_add_of_ne_zero`,
-  `TauCeti.isUnit_natCast_add_one`: every nonzero natural number (in particular `(m : K) + k` for
-  `k ≠ 0` and `(m : K) + 1`) is a unit in a `ℚ`-algebra.
-* `TauCeti.natCast_mul_algebraMap_inv`: `m · (1 / m) = 1` in a `ℚ`-algebra, for `m ≠ 0`.
+  `TauCeti.isUnit_natCast_add_one`: every nonzero natural number (in particular `(m : A) + k` for
+  `k ≠ 0` and `(m : A) + 1`) is a unit in an algebra `A` over a characteristic-zero semifield `K`.
+* `TauCeti.natCast_mul_algebraMap_inv`: `m · (1 / m) = 1` in a `K`-algebra, for `m ≠ 0`.
 * `TauCeti.inv_natCast_add_one_smul_mul_natCast_add_one`: `(k + 1)⁻¹ • a * (k + 1) = a` in a
-  `ℚ`-algebra.
+  `K`-algebra.
 * `TauCeti.natCast_add_one_mul_algebraMap_inv_smul`: `(k + 1) * ((1 / (k + 1)) • a) = a` in an
-  algebra over a `ℚ`-algebra, the scalar `1 / (k + 1)` coming from `ℚ`.
+  algebra over a `K`-algebra, the scalar `1 / (k + 1)` coming from `K`.
 -/
 
 public section
@@ -82,21 +83,16 @@ namespace TauCeti
 /-- A nonzero natural number casts to a unit in a semiring whenever all of its prime divisors do. -/
 theorem isUnit_natCast_of_forall_prime_dvd {R : Type*} [Semiring R] {n : ℕ} (hn : n ≠ 0)
     (hp : ∀ p : ℕ, p.Prime → p ∣ n → IsUnit (p : R)) : IsUnit (n : R) := by
-  induction n using Nat.strongRecOn with
-  | ind n ih =>
-    rcases eq_or_ne n 1 with rfl | hn1
-    · rw [Nat.cast_one]
-      exact isUnit_one
-    · have hp_prime : n.minFac.Prime := Nat.minFac_prime hn1
-      have hp_dvd : n.minFac ∣ n := n.minFac_dvd
-      have hdiv_pos : 0 < n / n.minFac := Nat.div_pos (Nat.le_of_dvd (Nat.pos_of_ne_zero hn) hp_dvd)
-        hp_prime.pos
-      have hdiv_lt : n / n.minFac < n := Nat.div_lt_self (Nat.pos_of_ne_zero hn) hp_prime.one_lt
-      have heq : n = n.minFac * (n / n.minFac) := (Nat.mul_div_cancel' hp_dvd).symm
-      rw [heq, Nat.cast_mul]
-      exact (hp n.minFac hp_prime hp_dvd).mul
-        (ih (n / n.minFac) hdiv_lt hdiv_pos.ne' fun q hq hqd ↦
-          hp q hq (hqd.trans ⟨n.minFac, by rw [mul_comm]; exact heq⟩))
+  induction n using Nat.strongRecOn with | ind n ih => ?_
+  rcases eq_or_ne n 1 with rfl | hn1
+  · simp
+  -- Split off the least prime factor `n.minFac` and recurse on the cofactor `m < n`.
+  obtain ⟨m, hm⟩ := n.minFac_dvd
+  have hm0 : m ≠ 0 := by rintro rfl; exact hn hm
+  have hmn : m < n := hm ▸ (Nat.lt_mul_iff_one_lt_left hm0.bot_lt).2 (Nat.minFac_prime hn1).one_lt
+  rw [hm, Nat.cast_mul]
+  exact (hp _ (Nat.minFac_prime hn1) n.minFac_dvd).mul
+    (ih m hmn hm0 fun q hq hqm ↦ hp q hq (hqm.trans (Dvd.intro_left _ hm.symm)))
 
 /-- A nonzero natural number casts to a unit in a semiring if and only if all of its prime divisors
 cast to units. -/
@@ -104,40 +100,44 @@ theorem isUnit_natCast_iff_forall_prime_dvd {R : Type*} [Semiring R] {n : ℕ} (
     IsUnit (n : R) ↔ ∀ p : ℕ, p.Prime → p ∣ n → IsUnit (p : R) :=
   ⟨fun hu _ _ hpn ↦ hu.natCast_of_dvd hpn, isUnit_natCast_of_forall_prime_dvd hn⟩
 
-/-- Every nonzero natural number is a unit in a `ℚ`-algebra. -/
-theorem isUnit_natCast_of_ne_zero {K : Type*} [Semiring K] [Algebra ℚ K] {m : ℕ}
-    (hm : m ≠ 0) : IsUnit (m : K) := by
-  simpa using (Nat.cast_ne_zero.2 hm : (m : ℚ) ≠ 0).isUnit.map (algebraMap ℚ K)
+/-- Every nonzero natural number is a unit in an algebra over a characteristic-zero semifield `K`,
+for instance in every `ℚ`-algebra. -/
+theorem isUnit_natCast_of_ne_zero (K : Type*) {A : Type*} [Semifield K] [CharZero K] [Semiring A]
+    [Algebra K A] {m : ℕ} (hm : m ≠ 0) : IsUnit (m : A) := by
+  simpa using (Nat.cast_ne_zero.2 hm : (m : K) ≠ 0).isUnit.map (algebraMap K A)
 
-/-- Adding a nonzero natural number to a natural number gives a unit in a `ℚ`-algebra. -/
-theorem isUnit_natCast_add_of_ne_zero {K : Type*} [Semiring K] [Algebra ℚ K] (m : ℕ) {k : ℕ}
-    (hk : k ≠ 0) : IsUnit ((m : K) + k) := by
-  simpa only [Nat.cast_add] using isUnit_natCast_of_ne_zero (K := K) (m := m + k) (by omega)
+/-- Adding a nonzero natural number to a natural number gives a unit in an algebra over a
+characteristic-zero semifield `K`. -/
+theorem isUnit_natCast_add_of_ne_zero (K : Type*) {A : Type*} [Semifield K] [CharZero K]
+    [Semiring A] [Algebra K A] (m : ℕ) {k : ℕ} (hk : k ≠ 0) : IsUnit ((m : A) + k) := by
+  simpa only [Nat.cast_add] using isUnit_natCast_of_ne_zero K (A := A) (m := m + k) (by omega)
 
-/-- For every natural number `m`, `(m : K) + 1` is a unit in a `ℚ`-algebra. -/
-theorem isUnit_natCast_add_one {K : Type*} [Semiring K] [Algebra ℚ K] (m : ℕ) :
-    IsUnit ((m : K) + 1) := by
-  simpa only [Nat.cast_one] using isUnit_natCast_add_of_ne_zero (K := K) m one_ne_zero
+/-- For every natural number `m`, `(m : A) + 1` is a unit in an algebra over a characteristic-zero
+semifield `K`. -/
+theorem isUnit_natCast_add_one (K : Type*) {A : Type*} [Semifield K] [CharZero K] [Semiring A]
+    [Algebra K A] (m : ℕ) : IsUnit ((m : A) + 1) := by
+  simpa only [Nat.cast_one] using isUnit_natCast_add_of_ne_zero K (A := A) m one_ne_zero
 
-/-- Multiplying by a nonzero natural number `m` and by the image of `m⁻¹ : ℚ` cancel in a
-`ℚ`-algebra. -/
-theorem natCast_mul_algebraMap_inv {K : Type*} [Semiring K] [Algebra ℚ K] {m : ℕ}
-    (hm : m ≠ 0) : (m : K) * algebraMap ℚ K (m : ℚ)⁻¹ = 1 := by
-  rw [← map_natCast (algebraMap ℚ K), ← map_mul, mul_inv_cancel₀ (Nat.cast_ne_zero.2 hm), map_one]
+/-- Multiplying by a nonzero natural number `m` and by the image of `m⁻¹ : K` cancel in an algebra
+over a characteristic-zero semifield `K`. -/
+theorem natCast_mul_algebraMap_inv {K A : Type*} [Semifield K] [CharZero K] [Semiring A]
+    [Algebra K A] {m : ℕ} (hm : m ≠ 0) : (m : A) * algebraMap K A (m : K)⁻¹ = 1 := by
+  rw [← map_natCast (algebraMap K A), ← map_mul, mul_inv_cancel₀ (Nat.cast_ne_zero.2 hm), map_one]
 
-/-- Dividing by `k + 1` and multiplying by `k + 1` cancel in a `ℚ`-algebra. -/
-theorem inv_natCast_add_one_smul_mul_natCast_add_one {R : Type*} [Semiring R] [Algebra ℚ R]
-    (a : R) (k : ℕ) : ((k : ℚ) + 1)⁻¹ • a * ((k : R) + 1) = a := by
-  have hcast : (k : R) + 1 = algebraMap ℚ R ((k : ℚ) + 1) := by simp
+/-- Dividing by `k + 1` and multiplying by `k + 1` cancel in an algebra over a characteristic-zero
+semifield `K`. -/
+theorem inv_natCast_add_one_smul_mul_natCast_add_one {K R : Type*} [Semifield K] [CharZero K]
+    [Semiring R] [Algebra K R] (a : R) (k : ℕ) : ((k : K) + 1)⁻¹ • a * ((k : R) + 1) = a := by
+  have hcast : (k : R) + 1 = algebraMap K R ((k : K) + 1) := by simp
   rw [hcast, ← Algebra.commutes, ← Algebra.smul_def, smul_smul]
   simp [Nat.cast_add_one_ne_zero]
 
-/-- Multiplying by `k + 1` cancels the scalar `1 / (k + 1)` of a `ℚ`-algebra `R` acting on an
-`R`-algebra `A`. -/
-theorem natCast_add_one_mul_algebraMap_inv_smul {R A : Type*} [CommSemiring R] [Algebra ℚ R]
-    [Semiring A] [Algebra R A] (k : ℕ) (a : A) :
-    ((k : A) + 1) * (algebraMap ℚ R ((k : ℚ) + 1)⁻¹ • a) = a := by
-  have h := natCast_mul_algebraMap_inv (K := R) k.succ_ne_zero
+/-- Multiplying by `k + 1` cancels the scalar `1 / (k + 1)` of a characteristic-zero semifield `K`
+acting, through a `K`-algebra `R`, on an `R`-algebra `A`. -/
+theorem natCast_add_one_mul_algebraMap_inv_smul {K R A : Type*} [Semifield K] [CharZero K]
+    [CommSemiring R] [Algebra K R] [Semiring A] [Algebra R A] (k : ℕ) (a : A) :
+    ((k : A) + 1) * (algebraMap K R ((k : K) + 1)⁻¹ • a) = a := by
+  have h := natCast_mul_algebraMap_inv (K := K) (A := R) k.succ_ne_zero
   push_cast at h
   have hcast : (k : A) + 1 = algebraMap R A ((k : R) + 1) := by simp
   rw [Algebra.smul_def, ← mul_assoc, hcast, ← map_mul, h, map_one, one_mul]

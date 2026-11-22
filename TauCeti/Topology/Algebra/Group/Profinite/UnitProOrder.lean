@@ -151,7 +151,7 @@ theorem hasUnitProOrder_of_preconnectedSpace [SeparatelyContinuousMul U] [Precon
 `ℚ`-algebra. -/
 theorem hasUnitProOrder_of_algebra_rat [SeparatelyContinuousMul U] [CompactSpace U]
     [Algebra ℚ A] : HasUnitProOrder A U :=
-  fun _ ↦ isUnit_natCast_of_ne_zero Nat.card_pos.ne'
+  fun _ ↦ isUnit_natCast_of_ne_zero ℚ Nat.card_pos.ne'
 
 /-- Invertible pro-order is preserved along semiring homomorphisms. -/
 theorem HasUnitProOrder.map {B : Type w} [Semiring B] (hU : HasUnitProOrder A U) (f : A →+* B) :

@@ -160,7 +160,7 @@ theorem aeval_psum_esymmPsumPoly (σ : Type*) [Fintype σ] (n : ℕ) :
   | _ n ih =>
     obtain _ | n := n
     · simp
-    refine (isUnit_natCast_add_one (K := MvPolynomial σ R) n).mul_left_cancel ?_
+    refine (isUnit_natCast_add_one ℚ (A := MvPolynomial σ R) n).mul_left_cancel ?_
     rw [esymmPsumPoly_succ, map_smul, natCast_add_one_mul_algebraMap_inv_smul, map_sum,
       mul_esymm_succ_eq_sum]
     refine sum_congr rfl fun x hx => ?_

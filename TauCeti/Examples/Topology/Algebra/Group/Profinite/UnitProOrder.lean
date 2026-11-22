@@ -77,7 +77,7 @@ example :
       ¬ HasUnitProOrder ℚ (Multiplicative (ℕ →₀ ZMod 2)) := by
   let _ : TopologicalSpace (Multiplicative (ℕ →₀ ZMod 2)) := ⊥
   have : DiscreteTopology (Multiplicative (ℕ →₀ ZMod 2)) := ⟨rfl⟩
-  refine ⟨isProP_iff.mpr fun N x ↦ ?_, isUnit_natCast_of_ne_zero (by decide), ?_⟩
+  refine ⟨isProP_iff.mpr fun N x ↦ ?_, isUnit_natCast_of_ne_zero ℚ (by decide), ?_⟩
   · obtain ⟨v, rfl⟩ := QuotientGroup.mk'_surjective N.toSubgroup x
     refine ⟨1, ?_⟩
     rw [pow_one, ← map_pow]
