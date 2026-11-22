@@ -224,6 +224,17 @@ theorem complexify_ofReal (T : X →ₗ[ℝ] Y) (x : X) :
     T.complexify (ofReal x) = ofReal (T x) := by
   ext <;> simp
 
+/-- Complexification preserves identity maps. -/
+@[simp]
+theorem complexify_id : (LinearMap.id : X →ₗ[ℝ] X).complexify = LinearMap.id := by
+  ext z <;> simp
+
+/-- Complexification preserves composition. -/
+@[simp]
+theorem complexify_comp {Z : Type*} [AddCommGroup Z] [Module ℝ Z] (T : Y →ₗ[ℝ] Z)
+    (S : X →ₗ[ℝ] Y) : (T ∘ₗ S).complexify = T.complexify ∘ₗ S.complexify := by
+  ext z <;> simp
+
 /-- Complexification preserves and reflects finite rank. -/
 @[simp]
 theorem hasFiniteRange_complexify_iff (T : X →ₗ[ℝ] Y) :

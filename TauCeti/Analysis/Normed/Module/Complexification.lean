@@ -278,7 +278,7 @@ def equivPi : Complexification (ι → ℝ) ≃L[ℂ] (ι → ℂ) where
       (imCLM _).continuous.congr imCLM_apply
     -- Each coordinate is `Complex.equivRealProdCLM.symm (z.re i, z.im i)`.
     exact continuous_pi fun i ↦ Complex.equivRealProdCLM.symm.continuous.comp
-      (by fun_prop : Continuous fun z : Complexification (ι → ℝ) ↦ (z.re i, z.im i))
+      (((continuous_apply i).comp hre).prodMk ((continuous_apply i).comp him))
   continuous_invFun := by
     have h : Continuous fun v : ι → ℂ ↦ (equivProd (ι → ℝ)).symm
         (fun i ↦ (v i).re, fun i ↦ (v i).im) := by fun_prop
