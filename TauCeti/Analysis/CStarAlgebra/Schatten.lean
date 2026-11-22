@@ -35,8 +35,10 @@ modulus identification `operatorAbs_columnEuclideanLM`, and the Schatten realiza
   `TauCeti.matrixLpSeminorm`
 * `TauCeti.norm_trace_mul_le_norm_mul_matrixLpGauge_one`,
   `TauCeti.exists_norm_le_one_and_trace_mul_eq_matrixLpGauge_one`
-* `TauCeti.columnEuclideanLM`, `TauCeti.matrixLpGauge_columnSquare_eq_schatten`,
-  `TauCeti.matrixLpGauge_rowSquare_eq_schatten`
+* `TauCeti.columnEuclideanLM`, `TauCeti.norm_columnSquare_apply_sq_eq`,
+  `TauCeti.norm_rowSquare_apply_sq_eq`, `TauCeti.matrixLpGauge_columnSquare_eq_schatten`,
+  `TauCeti.matrixLpGauge_rowSquare_eq_schatten`, `TauCeti.matrixLpGauge_two_columnSquare_sq`,
+  `TauCeti.matrixLpGauge_two_rowSquare_sq`
 
 ## References
 
@@ -125,8 +127,8 @@ theorem matrixLpGauge_nonneg (p : ℝ≥0) (x : CStarMatrix n n ℂ) : 0 ≤ mat
 theorem matrixLpGauge_rpow {p : ℝ≥0} (hp : 0 < p) (x : CStarMatrix n n ℂ) :
     matrixLpGauge p x ^ (p : ℝ) =
       (Matrix.trace (CStarMatrix.ofMatrix.symm (CFC.nnrpow (CFC.sqrt (star x * x)) p))).re := by
-  rw [matrixLpGauge_def, ← Real.rpow_mul (re_trace_nnrpow_sqrt_star_mul_self_nonneg p x),
-    one_div_mul_cancel (NNReal.coe_pos.mpr hp).ne', Real.rpow_one]
+  rw [matrixLpGauge_def, one_div,
+    Real.rpow_inv_rpow (re_trace_nnrpow_sqrt_star_mul_self_nonneg p x) (NNReal.coe_pos.mpr hp).ne']
 
 /-- At exponent `0`, `matrixLpGauge 0 x` evaluates to `1` through `1 / 0 = 0` and `r ^ 0 = 1`. -/
 @[simp] theorem matrixLpGauge_zero_left (x : CStarMatrix n n ℂ) : matrixLpGauge 0 x = 1 := by
@@ -141,6 +143,13 @@ theorem matrixLpGauge_one (x : CStarMatrix n n ℂ) :
 theorem matrixLpGauge_one_of_nonneg {x : CStarMatrix n n ℂ} (hx : 0 ≤ x) :
     matrixLpGauge 1 x = (Matrix.trace (CStarMatrix.ofMatrix.symm x)).re := by
   rw [matrixLpGauge_one, hx.star_eq, CFC.sqrt_mul_self x hx]
+
+/-- At `p = 2`, `matrixLpGauge 2 x ^ 2 = (tr(x⋆ x)).re`. -/
+theorem matrixLpGauge_two_sq (x : CStarMatrix n n ℂ) :
+    matrixLpGauge 2 x ^ 2 = (Matrix.trace (CStarMatrix.ofMatrix.symm (star x * x))).re := by
+  have h := matrixLpGauge_rpow (p := 2) (by norm_num) x
+  norm_num at h
+  rw [h, CFC.nnrpow_one (star x * x) (star_mul_self_nonneg x)]
 
 /-- **Singular-value formula for `matrixLpGauge`.** For `0 < p`, `matrixLpGauge p x` equals
 `(∑ᵢ σᵢ(x)^p) ^ (1 / p)`, where `σᵢ(x)` are the singular values of `toEuclideanCLM x`. -/
@@ -231,7 +240,7 @@ theorem matrixLpGauge_smul {p : ℝ≥0} (hp : 0 < p) (c : ℂ) (x : CStarMatrix
     ContinuousLinearMap.toLinearMap_smul, hsum, Real.mul_rpow (Real.rpow_nonneg (norm_nonneg c) _)
       (Finsupp.sum_nonneg (h₁ := fun _ s => s ^ (p : ℝ)) fun i _ =>
         Real.rpow_nonneg (A.singularValues_nonneg i) _),
-    ← Real.rpow_mul (norm_nonneg c), mul_one_div_cancel hp'.ne', Real.rpow_one]
+    one_div, Real.rpow_rpow_inv (norm_nonneg c) hp'.ne']
 
 variable (n) in
 /-- For `1 ≤ p`, `matrixLpGauge p` bundled as a `ℂ`-seminorm on `CStarMatrix n n ℂ`. -/
@@ -257,8 +266,8 @@ theorem norm_le_matrixLpGauge {p : ℝ≥0} (hp : 0 < p) (x : CStarMatrix n n �
     · exact Finset.single_le_sum (fun i _ => Real.rpow_nonneg (A.singularValues_nonneg i) _) h0
     · rw [Finsupp.notMem_support_iff.mp h0, Real.zero_rpow hp'.ne']
       exact Finsupp.sum_nonneg fun i _ => Real.rpow_nonneg (A.singularValues_nonneg i) _
-  simpa only [← Real.rpow_mul (A.singularValues_nonneg 0), mul_one_div_cancel hp'.ne',
-    Real.rpow_one] using Real.rpow_le_rpow (Real.rpow_nonneg (A.singularValues_nonneg 0) _) hle
+  simpa only [one_div, Real.rpow_rpow_inv (A.singularValues_nonneg 0) hp'.ne'] using
+    Real.rpow_le_rpow (Real.rpow_nonneg (A.singularValues_nonneg 0) _) hle
       (by positivity : (0 : ℝ) ≤ 1 / (p : ℝ))
 
 /-- **Left ideal inequality.** For `0 < p`, `matrixLpGauge p (x * y) ≤ ‖x‖ * matrixLpGauge p y`. -/
@@ -285,7 +294,7 @@ theorem matrixLpGauge_mul_le_left {p : ℝ≥0} (hp : 0 < p) (x y : CStarMatrix 
   rw [Real.mul_rpow (Real.rpow_nonneg (norm_nonneg x) _)
       (Finsupp.sum_nonneg (h₁ := fun _ s => s ^ (p : ℝ)) fun i _ =>
         Real.rpow_nonneg (B.singularValues_nonneg i) _),
-    ← Real.rpow_mul (norm_nonneg x), mul_one_div_cancel hp'.ne', Real.rpow_one]
+    one_div, Real.rpow_rpow_inv (norm_nonneg x) hp'.ne']
 
 /-- **Right ideal inequality.** For `0 < p`, `matrixLpGauge p (x * y) ≤ matrixLpGauge p x * ‖y‖`. -/
 theorem matrixLpGauge_mul_le_right {p : ℝ≥0} (hp : 0 < p) (x y : CStarMatrix n n ℂ) :
@@ -388,6 +397,25 @@ theorem operatorAbs_columnEuclideanLM [Fintype ι] (b : ι → CStarMatrix m m �
   exact LinearMap.ext fun v => DFunLike.congr_fun
     ((LinearMap.toContinuousLinearMap_operatorAbs _).trans (CFC.sqrt_unique hsq hnonneg)) v
 
+/-- Pointwise Euclidean norm of `columnSquare b`:
+`‖toEuclideanCLM (columnSquare b) ξ‖ ^ 2 = ∑ k, ‖toEuclideanCLM (b k) ξ‖ ^ 2`. -/
+theorem norm_columnSquare_apply_sq_eq [Fintype ι] (b : ι → CStarMatrix m m ℂ)
+    (ξ : EuclideanSpace ℂ m) :
+    ‖CStarMatrix.toEuclideanCLM (columnSquare b) ξ‖ ^ 2 =
+      ∑ k, ‖CStarMatrix.toEuclideanCLM (b k) ξ‖ ^ 2 := by
+  have h : CStarMatrix.toEuclideanCLM (columnSquare b) ξ = (columnEuclideanLM b).operatorAbs ξ := by
+    rw [← ContinuousLinearMap.coe_coe, operatorAbs_columnEuclideanLM]
+  rw [h, LinearMap.norm_operatorAbs_apply, PiLp.norm_sq_eq_of_L2]
+  simp
+
+/-- Pointwise Euclidean norm of `rowSquare x`:
+`‖toEuclideanCLM (rowSquare x) ξ‖ ^ 2 = ∑ k, ‖toEuclideanCLM (star (x k)) ξ‖ ^ 2`. -/
+theorem norm_rowSquare_apply_sq_eq [Fintype ι] (x : ι → CStarMatrix m m ℂ)
+    (ξ : EuclideanSpace ℂ m) :
+    ‖CStarMatrix.toEuclideanCLM (rowSquare x) ξ‖ ^ 2 =
+      ∑ k, ‖CStarMatrix.toEuclideanCLM (star (x k)) ξ‖ ^ 2 := by
+  rw [rowSquare_eq_columnSquare_star, norm_columnSquare_apply_sq_eq]
+
 /-- For `1 ≤ p`, `matrixLpGauge p (columnSquare b)` equals the Schatten `p`-seminorm of the column
 stacking operator `columnEuclideanLM b`. -/
 theorem matrixLpGauge_columnSquare_eq_schatten [Fintype ι] (p : ℝ≥0) [Fact (1 ≤ (p : ℝ≥0∞))]
@@ -407,6 +435,22 @@ theorem matrixLpGauge_rowSquare_eq_schatten [Fintype ι] (p : ℝ≥0) [Fact (1 
       (columnEuclideanLM (fun k => star (c k))).adjoint := by
   rw [rowSquare_eq_columnSquare_star, matrixLpGauge_columnSquare_eq_schatten,
     UnitarilyInvariantSeminorm.schatten_apply_adjoint]
+
+omit [DecidableEq m] in
+/-- At `p = 2`, the squared Schatten gauge of `columnSquare a` equals
+`∑ k, matrixLpGauge 2 (a k) ^ 2`. -/
+theorem matrixLpGauge_two_columnSquare_sq [Fintype ι] (a : ι → CStarMatrix m m ℂ) :
+    matrixLpGauge 2 (columnSquare a) ^ 2 = ∑ k, matrixLpGauge 2 (a k) ^ 2 := by
+  rw [matrixLpGauge_two_sq, (columnSquare_nonneg a).star_eq, columnSquare_mul_self]
+  simp only [← CStarMatrix.traceLinearMap_apply (R := ℝ), map_sum, Complex.re_sum,
+    matrixLpGauge_two_sq]
+
+omit [DecidableEq m] in
+/-- At `p = 2`, the squared Schatten gauge of `rowSquare a` equals
+`∑ k, matrixLpGauge 2 (a k) ^ 2`. -/
+theorem matrixLpGauge_two_rowSquare_sq [Fintype ι] (a : ι → CStarMatrix m m ℂ) :
+    matrixLpGauge 2 (rowSquare a) ^ 2 = ∑ k, matrixLpGauge 2 (a k) ^ 2 := by
+  simp only [rowSquare_eq_columnSquare_star, matrixLpGauge_two_columnSquare_sq, matrixLpGauge_star]
 
 end ColumnRow
 

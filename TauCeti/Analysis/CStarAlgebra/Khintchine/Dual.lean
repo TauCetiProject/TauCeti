@@ -37,7 +37,7 @@ Pisier constant `√3`:
   `TauCeti.sum_inv_card_smul_sum_units_smul_mul_star_le`
 * `TauCeti.norm_columnSquare_inv_card_smul_sum_units_smul_le`,
   `TauCeti.norm_rowSquare_inv_card_smul_sum_units_smul_le`
-* `TauCeti.inv_card_smul_sum_units_smul_mul₄`, `TauCeti.norm_inv_card_smul_sum_units_smul_mul₄_le`
+* `TauCeti.norm_inv_card_smul_sum_units_smul_mul₄_le`
 * `TauCeti.exists_isSelfAdjoint_inv_card_smul_sum_units_smul_eq_and_norm_le`,
   `TauCeti.exists_inv_card_smul_sum_units_smul_eq_and_norm_le`
 
@@ -148,37 +148,6 @@ end Bessel
 /-! ### The Pisier–Haagerup fourth-moment inequality -/
 
 section FourthMoment
-
-/-- Exact algebraic expansion of the fourth Rademacher moment into the three pair matchings minus
-twice the diagonal fourth product. -/
-theorem inv_card_smul_sum_units_smul_mul₄ {ι 𝕜 A : Type*} [Fintype ι] [DecidableEq ι]
-    [DivisionSemiring 𝕜] [CharZero 𝕜] [NonUnitalRing A] [Module 𝕜 A] (x : ι → A) :
-    (Fintype.card (ι → ℤˣ) : 𝕜)⁻¹ • ∑ ε : ι → ℤˣ,
-        (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) =
-      (∑ i, x i * x i) * (∑ i, x i * x i) + (∑ i, ∑ j, x i * x j * x i * x j) +
-      (∑ i, x i * (∑ j, x j * x j) * x i) - 2 • ∑ i, x i * x i * x i * x i := by
-  have hsum : ∑ ε : ι → ℤˣ,
-        (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) =
-      Fintype.card (ι → ℤˣ) • ((∑ i, x i * x i) * (∑ i, x i * x i) +
-        (∑ i, ∑ j, x i * x j * x i * x j) + (∑ i, x i * (∑ j, x j * x j) * x i) -
-        2 • ∑ i, x i * x i * x i * x i) := by
-    simp_rw [sum_units_smul_mul₄]
-    have hswap (f : (ι → ℤˣ) → ι → ι → ι → ι → A) :
-        ∑ ε, ∑ i, ∑ j, ∑ k, ∑ l, f ε i j k l = ∑ i, ∑ j, ∑ k, ∑ l, ∑ ε, f ε i j k l := by
-      rw [Finset.sum_comm]; refine Finset.sum_congr rfl fun _ _ => ?_
-      rw [Finset.sum_comm]; refine Finset.sum_congr rfl fun _ _ => ?_
-      rw [Finset.sum_comm]; exact Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-    rw [hswap]
-    simp_rw [← Finset.sum_smul, sum_units_apply_mul₄, mul_zsmul, natCast_zsmul, ← Finset.smul_sum]
-    congr 1
-    simp_rw [sub_smul, add_smul, Finset.sum_sub_distrib, Finset.sum_add_distrib]
-    refine congrArg₂ Sub.sub (congrArg₂ HAdd.hAdd (congrArg₂ HAdd.hAdd ?_ ?_) ?_) ?_
-    · rw [Finset.sum_mul]; simp [ite_smul, ite_and, Finset.mul_sum, mul_assoc]
-    · simp [ite_smul, ite_and]
-    · simp [ite_smul, ite_and, Finset.sum_mul, Finset.mul_sum, mul_assoc]
-    · simp [mul_ite, ite_smul, ite_and, Finset.smul_sum, two_smul]
-  rw [hsum, ← Nat.cast_smul_eq_nsmul 𝕜,
-    inv_smul_smul₀ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)]
 
 variable {ι A : Type*} [Fintype ι] [NonUnitalCStarAlgebra A]
   [PartialOrder A] [StarOrderedRing A]
@@ -487,18 +456,6 @@ theorem exists_isSelfAdjoint_inv_card_smul_sum_units_smul_eq_and_norm_le
     simp_rw [hcomm, ← Finset.smul_sum, smul_comm (Fintype.card (ι → ℤˣ) : ℝ)⁻¹, hΨ_avg i]
     exact smul_inv_smul₀ hs (x i)
 
-private def entryLinearMap {B : Type*} [NonUnitalCStarAlgebra B] (p q : Fin 2) :
-    CStarMatrix (Fin 2) (Fin 2) B →ₗ[ℝ] B where
-  toFun M := M p q
-  map_add' M N := CStarMatrix.add_apply M N p q
-  map_smul' r M := CStarMatrix.smul_apply r M p q
-
-@[simp] private theorem entryLinearMap_apply {B : Type*} [NonUnitalCStarAlgebra B] (p q : Fin 2)
-    (M : CStarMatrix (Fin 2) (Fin 2) B) : entryLinearMap p q M = M p q := rfl
-
-private theorem ofMatrix_antidiag_apply_zero_one {B : Type*} [Zero B] (a b : B) :
-    CStarMatrix.ofMatrix !![0, a; b, 0] 0 1 = a := rfl
-
 /-- **Dual Rademacher factorization in a non-unital C⋆-algebra** (Haagerup–Musat, Pisier): for any
 `x : ι → A`, there exists `Φ` with `|ι → ℤˣ|⁻¹ • ∑ ε, ε i • Φ ε = x i` and
 `‖Φ ε‖ ≤ √3 * max ‖columnSquare x‖ ‖rowSquare x‖`. -/
@@ -530,10 +487,10 @@ theorem exists_inv_card_smul_sum_units_smul_eq_and_norm_le (x : ι → A) :
     exists_isSelfAdjoint_inv_card_smul_sum_units_smul_eq_and_norm_le hX_sa
   refine ⟨fun ε => Ψ ε 0 1, fun i => ?_, fun ε =>
     CStarMatrix.norm_entry_le_norm.trans ((hΨ_norm ε).trans_eq (by rw [hX_norm]))⟩
-  have h := congrArg (entryLinearMap 0 1) (hΨ_avg i)
+  have h := congrArg (CStarMatrix.entryLinearMap ℝ A (0 : Fin 2) 1) (hΨ_avg i)
   rw [map_smul, map_sum] at h
-  simpa only [Units.smul_def, map_zsmul, entryLinearMap_apply, X,
-    ofMatrix_antidiag_apply_zero_one] using h
+  simpa only [Units.smul_def, map_zsmul, CStarMatrix.entryLinearMap_apply, X,
+    CStarMatrix.ofMatrix_apply, Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one] using h
 
 end TruncationStep
 

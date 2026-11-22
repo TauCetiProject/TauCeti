@@ -97,6 +97,29 @@ theorem inv_card_smul_sum_units_smul_sum_units_smul {𝕜 M : Type*} [DecidableE
   rw [sum_units_smul_sum_units_smul, ← Nat.cast_smul_eq_nsmul 𝕜,
     inv_smul_smul₀ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)]
 
+/-- Sign-cube coefficient transfer for a bilinear pairing: pairing the Rademacher Fourier
+coefficients `|ι → ℤˣ|⁻¹ • ∑ ε, ε k • Φ ε` with `b k` and summing over `k` equals averaging
+`B (Φ ε) (∑ k, ε k • b k)` over the sign cube. -/
+theorem sum_bilinear_inv_card_smul_sum_units_smul {𝕜 M N P : Type*} [DecidableEq ι]
+    [Semifield 𝕜] [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+    [AddCommGroup P] [Module 𝕜 P] (B : M →ₗ[𝕜] N →ₗ[𝕜] P)
+    (Φ : (ι → ℤˣ) → M) (b : ι → N) :
+    ∑ k, B ((Fintype.card (ι → ℤˣ) : 𝕜)⁻¹ • ∑ ε : ι → ℤˣ, ε k • Φ ε) (b k) =
+      (Fintype.card (ι → ℤˣ) : 𝕜)⁻¹ • ∑ ε : ι → ℤˣ, B (Φ ε) (∑ k, ε k • b k) := by
+  simp_rw [map_smul, map_sum, LinearMap.smul_apply, LinearMap.sum_apply, Units.smul_def,
+    map_zsmul, LinearMap.smul_apply, ← Finset.smul_sum]
+  rw [Finset.sum_comm]
+
+/-- Sign-cube coefficient transfer for an `ℝ`-bilinear pairing into an `RCLike` scalar field,
+expressed as an expectation `𝔼` over the sign cube. -/
+theorem sum_bilinear_inv_card_smul_sum_units_smul_eq_expect {𝕜 M N : Type*} [DecidableEq ι]
+    [RCLike 𝕜] [AddCommGroup M] [Module ℝ M] [AddCommGroup N] [Module ℝ N]
+    (B : M →ₗ[ℝ] N →ₗ[ℝ] 𝕜) (Φ : (ι → ℤˣ) → M) (b : ι → N) :
+    ∑ k, B ((Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε : ι → ℤˣ, ε k • Φ ε) (b k) =
+      𝔼 ε : ι → ℤˣ, B (Φ ε) (∑ k, ε k • b k) := by
+  rw [sum_bilinear_inv_card_smul_sum_units_smul, Finset.expect_eq_sum_div_card, Finset.card_univ,
+    RCLike.real_smul_eq_coe_mul, RCLike.ofReal_inv, RCLike.ofReal_natCast, div_eq_inv_mul]
+
 /-- A Rademacher sum of self-adjoint elements is self-adjoint. -/
 theorem isSelfAdjoint_sum_units_smul {M : Type*} [AddCommGroup M] [StarAddMonoid M]
     {x : ι → M} (hx : ∀ i, IsSelfAdjoint (x i)) (ε : ι → ℤˣ) :
@@ -110,16 +133,14 @@ theorem sum_units_smul_mul₄ {A : Type*} [NonUnitalNonAssocRing A]
     (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) =
       ∑ i, ∑ j, ∑ k, ∑ l,
         ((ε i : ℤ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ)) • (x i * x j * x k * x l) := by
-  rw [Finset.sum_mul, Finset.sum_mul, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  conv_lhs => enter [1, 1]; rw [Finset.mul_sum]
-  rw [Finset.sum_mul, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  conv_lhs => enter [1]; rw [Finset.mul_sum]
-  rw [Finset.sum_mul]
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [Finset.mul_sum]
-  refine Finset.sum_congr rfl fun l _ ↦ ?_
+  have h3 : (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) =
+      ∑ i, ∑ j, ∑ k, (ε i • x i) * (ε j • x j) * (ε k • x k) := by
+    rw [Fintype.sum_mul_sum]
+    simp_rw [Finset.sum_mul, Finset.mul_sum]
+  rw [h3]
+  simp_rw [Finset.sum_mul, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦
+    Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun l _ ↦ ?_
   simp only [Units.smul_def, smul_mul_assoc, mul_smul_comm, smul_smul]
   congr 1
   ring
@@ -164,6 +185,37 @@ theorem expect_units_apply_mul₄ [DecidableEq ι] (i j k l : ι) :
   push_cast at hcast
   rw [Finset.expect_eq_sum_div_card, Finset.card_univ, hcast,
     mul_div_cancel_left₀ _ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)]
+
+/-- Exact algebraic expansion of the fourth Rademacher moment into the three pair matchings minus
+twice the diagonal fourth product. -/
+theorem inv_card_smul_sum_units_smul_mul₄ {𝕜 A : Type*} [DecidableEq ι]
+    [DivisionSemiring 𝕜] [CharZero 𝕜] [NonUnitalRing A] [Module 𝕜 A] (x : ι → A) :
+    (Fintype.card (ι → ℤˣ) : 𝕜)⁻¹ • ∑ ε : ι → ℤˣ,
+        (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) =
+      (∑ i, x i * x i) * (∑ i, x i * x i) + (∑ i, ∑ j, x i * x j * x i * x j) +
+      (∑ i, x i * (∑ j, x j * x j) * x i) - 2 • ∑ i, x i * x i * x i * x i := by
+  have hsum : ∑ ε : ι → ℤˣ,
+        (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) =
+      Fintype.card (ι → ℤˣ) • ((∑ i, x i * x i) * (∑ i, x i * x i) +
+        (∑ i, ∑ j, x i * x j * x i * x j) + (∑ i, x i * (∑ j, x j * x j) * x i) -
+        2 • ∑ i, x i * x i * x i * x i) := by
+    simp_rw [sum_units_smul_mul₄]
+    have hswap (f : (ι → ℤˣ) → ι → ι → ι → ι → A) :
+        ∑ ε, ∑ i, ∑ j, ∑ k, ∑ l, f ε i j k l = ∑ i, ∑ j, ∑ k, ∑ l, ∑ ε, f ε i j k l := by
+      rw [Finset.sum_comm]; refine Finset.sum_congr rfl fun _ _ => ?_
+      rw [Finset.sum_comm]; refine Finset.sum_congr rfl fun _ _ => ?_
+      rw [Finset.sum_comm]; exact Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+    rw [hswap]
+    simp_rw [← Finset.sum_smul, sum_units_apply_mul₄, mul_zsmul, natCast_zsmul, ← Finset.smul_sum]
+    congr 1
+    simp_rw [sub_smul, add_smul, Finset.sum_sub_distrib, Finset.sum_add_distrib]
+    refine congrArg₂ Sub.sub (congrArg₂ HAdd.hAdd (congrArg₂ HAdd.hAdd ?_ ?_) ?_) ?_
+    · rw [Finset.sum_mul]; simp [ite_smul, ite_and, Finset.mul_sum, mul_assoc]
+    · simp [ite_smul, ite_and]
+    · simp [ite_smul, ite_and, Finset.sum_mul, Finset.mul_sum, mul_assoc]
+    · simp [mul_ite, ite_smul, ite_and, Finset.smul_sum, two_smul]
+  rw [hsum, ← Nat.cast_smul_eq_nsmul 𝕜,
+    inv_smul_smul₀ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)]
 
 end Signs
 

@@ -136,8 +136,8 @@ theorem randomSumGauge_eq_rademacherMoment {p : ℝ≥0} (hp : 1 ≤ p) (a : ι 
     Finset.expect_nonneg fun _ _ => Real.rpow_nonneg (matrixLpGauge_nonneg p _) _
   have hsum : ∑ ε : ι → ℤˣ, matrixLpGauge p (∑ k, ε k • a k) ^ (p : ℝ) = 0 := by
     have hpow := congrArg (· ^ (p : ℝ)) h
-    rw [randomSumGauge_eq_expect_units, ← Real.rpow_mul hnn, one_div_mul_cancel hp'.ne',
-      Real.rpow_one, Real.zero_rpow hp'.ne', Finset.expect_eq_sum_div_card, Finset.card_univ,
+    rw [randomSumGauge_eq_expect_units, one_div, Real.rpow_inv_rpow hnn hp'.ne',
+      Real.zero_rpow hp'.ne', Finset.expect_eq_sum_div_card, Finset.card_univ,
       div_eq_zero_iff] at hpow
     exact hpow.resolve_right (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
   have hall (ε : ι → ℤˣ) : ∑ k, ε k • a k = 0 := (matrixLpGauge_eq_zero_iff hp).mp <|
@@ -172,7 +172,7 @@ theorem randomSumGauge_smul {p : ℝ≥0} (hp : 0 < p) (c : ℂ) (a : ι → CSt
   simp_rw [hsum, matrixLpGauge_smul hp, Real.mul_rpow (norm_nonneg c) (matrixLpGauge_nonneg p _)]
   rw [← Finset.mul_expect, Real.mul_rpow (Real.rpow_nonneg (norm_nonneg c) _)
       (Finset.expect_nonneg fun _ _ => Real.rpow_nonneg (matrixLpGauge_nonneg p _) _),
-    ← Real.rpow_mul (norm_nonneg c), mul_one_div_cancel hp'.ne', Real.rpow_one]
+    one_div, Real.rpow_rpow_inv (norm_nonneg c) hp'.ne']
 
 /-- Reindexing a family along an equivalence preserves `randomSumGauge`. -/
 theorem randomSumGauge_comp_equiv {κ : Type*} [Fintype κ] [DecidableEq κ] (e : κ ≃ ι)
@@ -435,14 +435,6 @@ theorem exists_mul_columnSquare_and_norm_columnSquare_le_one (b : ι → CStarMa
     exact (LinearMap.isStarProjection_toContinuousLinearMap_iff.mpr
       A.isPartialIsometry_polarFactor.isStarProjection_adjoint_comp_self).norm_le
 
-private theorem norm_sum_trace_star_mul_star (x y : ι → CStarMatrix m m ℂ) :
-    ‖∑ k, Matrix.trace (CStarMatrix.ofMatrix.symm (star (x k) * star (y k)))‖ =
-      ‖∑ k, Matrix.trace (CStarMatrix.ofMatrix.symm (x k * y k))‖ := by
-  rw [← norm_star (∑ k, Matrix.trace (CStarMatrix.ofMatrix.symm (x k * y k))), star_sum]; congr 1
-  exact Finset.sum_congr rfl fun k _ => by
-    rw [← Matrix.trace_conjTranspose, ← CStarMatrix.ofMatrix_symm_star, star_mul,
-      CStarMatrix.ofMatrix_symm_mul, CStarMatrix.ofMatrix_symm_mul, Matrix.trace_mul_comm]
-
 /-- **Column-row trace-pairing Hölder inequality**:
 `‖∑ k, tr(x k * b k)‖ ≤ ‖rowSquare x‖ * matrixLpGauge 1 (columnSquare b)`. -/
 theorem norm_sum_trace_mul_le_norm_rowSquare_mul_matrixLpGauge_one_columnSquare
@@ -465,32 +457,10 @@ theorem norm_sum_trace_mul_le_norm_columnSquare_mul_matrixLpGauge_one_rowSquare
     (x c : ι → CStarMatrix m m ℂ) :
     ‖∑ k, Matrix.trace (CStarMatrix.ofMatrix.symm (x k * c k))‖ ≤
       ‖columnSquare x‖ * matrixLpGauge 1 (rowSquare c) := by
-  simpa only [norm_sum_trace_star_mul_star, ← rowSquare_eq_columnSquare_star,
+  simpa only [CStarMatrix.norm_sum_trace_star_mul_star, ← rowSquare_eq_columnSquare_star,
     ← columnSquare_eq_rowSquare_star] using
     norm_sum_trace_mul_le_norm_rowSquare_mul_matrixLpGauge_one_columnSquare
       (fun k => star (x k)) (fun k => star (c k))
-
-private theorem norm_rowSquare_apply_sq_eq [DecidableEq m] (x : ι → CStarMatrix m m ℂ)
-    (ξ : EuclideanSpace ℂ m) :
-    ‖CStarMatrix.toEuclideanCLM (rowSquare x) ξ‖ ^ 2 =
-      ∑ k, ‖CStarMatrix.toEuclideanCLM (star (x k)) ξ‖ ^ 2 := by
-  set R := CStarMatrix.toEuclideanCLM (rowSquare x)
-  set C := columnEuclideanLM (fun k => star (x k))
-  have hgram : C.adjoint ∘ₗ C = (R * R).toLinearMap := by
-    rw [adjoint_comp_columnEuclideanLM]
-    simp_rw [star_star]
-    rw [← rowSquare_mul_self, map_mul, ContinuousLinearMap.toLinearMap_mul, Module.End.mul_eq_comp]
-  have hR_adj : R.adjoint = R := by
-    rw [← ContinuousLinearMap.star_eq_adjoint, ← map_star, (isSelfAdjoint_rowSquare x).star_eq]
-  have hinner : ⟪R ξ, R ξ⟫_ℂ = ⟪C ξ, C ξ⟫_ℂ := by
-    calc ⟪R ξ, R ξ⟫_ℂ
-        = ⟪R.adjoint (R ξ), ξ⟫_ℂ := (ContinuousLinearMap.adjoint_inner_left R ξ (R ξ)).symm
-      _ = ⟪(R * R) ξ, ξ⟫_ℂ := by rw [hR_adj]; rfl
-      _ = ⟪(C.adjoint ∘ₗ C) ξ, ξ⟫_ℂ := by rw [hgram]; rfl
-      _ = ⟪C ξ, C ξ⟫_ℂ := LinearMap.adjoint_inner_left C ξ (C ξ)
-  have hnorm : ‖R ξ‖ ^ 2 = ‖C ξ‖ ^ 2 := by
-    simpa only [inner_self_eq_norm_sq] using congrArg RCLike.re hinner
-  simpa only [PiLp.norm_sq_eq_of_L2, C, columnEuclideanLM_apply] using hnorm
 
 private theorem matrixLpGauge_one_columnSquare_rankOne [DecidableEq m]
     (η : ι → EuclideanSpace ℂ m) {ξ : EuclideanSpace ℂ m} (hξ : ‖ξ‖ = 1) {s : ℝ}
@@ -557,7 +527,7 @@ theorem norm_columnSquare_le_of_forall_norm_sum_trace_mul_le
         C * matrixLpGauge 1 (rowSquare c)) : ‖columnSquare x‖ ≤ C := by
   rw [columnSquare_eq_rowSquare_star]
   refine norm_rowSquare_le_of_forall_norm_sum_trace_mul_le hC fun b => ?_
-  simpa only [← norm_sum_trace_star_mul_star x (fun k => star (b k)), star_star,
+  simpa only [← CStarMatrix.norm_sum_trace_star_mul_star x (fun k => star (b k)), star_star,
     rowSquare_eq_columnSquare_star] using h (fun k => star (b k))
 
 /-- **Row/column trace-pairing bound**: if `‖columnSquare x‖ ≤ 1` and `‖rowSquare x‖ ≤ 1`, then
@@ -632,18 +602,6 @@ section KhintchineOne
 
 variable {ι m : Type*} [Fintype ι] [DecidableEq ι] [Fintype m]
 
-private theorem sum_trace_inv_card_smul_sum_units_smul_mul
-    (Φ : (ι → ℤˣ) → CStarMatrix m m ℂ) (b : ι → CStarMatrix m m ℂ) :
-    (∑ k, Matrix.trace (CStarMatrix.ofMatrix.symm
-        (((Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε : ι → ℤˣ, ε k • Φ ε) * b k))) =
-      𝔼 ε : ι → ℤˣ, Matrix.trace (CStarMatrix.ofMatrix.symm (Φ ε * ∑ k, ε k • b k)) := by
-  simp only [smul_mul_assoc, CStarMatrix.ofMatrix_symm_smul, Matrix.trace_smul,
-    ← CStarMatrix.traceLinearMap_apply (R := ℂ), Finset.sum_mul, Finset.mul_sum, map_sum]
-  rw [← Finset.smul_sum, Finset.sum_comm, Finset.expect_eq_sum_div_card, Finset.card_univ,
-    Complex.real_smul, Complex.ofReal_inv, Complex.ofReal_natCast, div_eq_inv_mul]
-  congr 1; refine Finset.sum_congr rfl fun ε _ => Finset.sum_congr rfl fun k _ => ?_
-  simp only [Units.smul_def, mul_smul_comm]
-
 /-- **Sign-cube trace-pairing bound**: if `∀ ε, ‖Φ ε‖ ≤ C`, then the Fourier-coefficient pairing
 of `Φ` with `a` satisfies `‖∑ k, tr((|2^ι|⁻¹ ∑_ε ε k • Φ ε) * a k)‖ ≤ C * randomSumGauge 1 a`.
 -/
@@ -653,8 +611,10 @@ theorem norm_sum_trace_inv_card_smul_sum_units_smul_mul_le
     ‖∑ k, Matrix.trace (CStarMatrix.ofMatrix.symm
         (((Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε : ι → ℤˣ, ε k • Φ ε) * a k))‖ ≤
       C * randomSumGauge 1 a := by
-  rw [sum_trace_inv_card_smul_sum_units_smul_mul, randomSumGauge_one_eq_expect_units,
-    Finset.mul_expect]
+  have htr := sum_bilinear_inv_card_smul_sum_units_smul_eq_expect
+    ((LinearMap.mul ℝ (CStarMatrix m m ℂ)).compr₂ (CStarMatrix.traceLinearMap m ℝ ℂ)) Φ a
+  simp only [LinearMap.compr₂_apply, LinearMap.mul_apply', CStarMatrix.traceLinearMap_apply] at htr
+  rw [htr, randomSumGauge_one_eq_expect_units, Finset.mul_expect]
   refine (RCLike.norm_expect_le (K := ℂ)).trans (Finset.expect_le_expect fun ε _ => ?_)
   exact (norm_trace_mul_le_norm_mul_matrixLpGauge_one _ _).trans
     (mul_le_mul_of_nonneg_right (hΦ ε) (matrixLpGauge_nonneg 1 _))
@@ -671,8 +631,10 @@ theorem exists_norm_le_one_and_sum_trace_inv_card_smul_sum_units_smul_mul_eq_ran
   choose Φ hΦ_norm hΦ_tr using fun ε : ι → ℤˣ =>
     exists_norm_le_one_and_trace_mul_eq_matrixLpGauge_one (∑ k, ε k • a k)
   refine ⟨Φ, hΦ_norm, ?_⟩
-  rw [sum_trace_inv_card_smul_sum_units_smul_mul, randomSumGauge_one_eq_expect_units,
-    Complex.ofReal_expect]
+  have htr := sum_bilinear_inv_card_smul_sum_units_smul_eq_expect
+    ((LinearMap.mul ℝ (CStarMatrix m m ℂ)).compr₂ (CStarMatrix.traceLinearMap m ℝ ℂ)) Φ a
+  simp only [LinearMap.compr₂_apply, LinearMap.mul_apply', CStarMatrix.traceLinearMap_apply] at htr
+  rw [htr, randomSumGauge_one_eq_expect_units, Complex.ofReal_expect]
   exact Finset.expect_congr rfl fun ε _ => hΦ_tr ε
 
 /-- **Matrix duality for `randomSumGauge 1` (attained maximum)**: `randomSumGauge 1 a` is the
