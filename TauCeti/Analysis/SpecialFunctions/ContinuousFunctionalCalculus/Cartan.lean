@@ -9,7 +9,6 @@ public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Exp
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
 public import TauCeti.Geometry.Lie.Exponential.Units.Basic
-import Mathlib.Analysis.Normed.Ring.Units
 
 /-!
 # The Cartan decomposition of the group of units

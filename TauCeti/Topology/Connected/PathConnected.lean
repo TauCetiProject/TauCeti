@@ -38,6 +38,8 @@ value at the two ends of the path.
 * `TauCeti.isPathConnected_partialSups`: path connectedness of successive finite unions.
 * `IsPathConnected.pathComponentIn_eq_of_not_isPathConnected`: if a set that is not path connected
   is covered by two path-connected subsets, each of them is one of its path components.
+* `PathConnectedSpace.pathComponent_eq_univ`: in a path-connected space, every path component
+  is `Set.univ`.
 * `TauCeti.exists_pathComponent_representative`: a choice of base point in each path component.
 * `Path.eq_of_eventually_eq`: a function locally constant along a path takes the same value at its
   two ends.
@@ -88,6 +90,12 @@ theorem _root_.IsPathConnected.pathComponentIn_eq_of_not_isPathConnected {A B : 
   exact hA ⟨x, hBA hx, fun {z} hz ↦
     (hABC hz).elim (fun hzB ↦ hB.joinedIn _ hx _ hzB |>.mono hBA)
       (fun hzC ↦ (hq : JoinedIn A _ q).trans ((hC.joinedIn _ hqC _ hzC).mono hCA))⟩
+
+/-- In a path-connected space, the path component of any point is the whole space. -/
+@[simp]
+theorem _root_.PathConnectedSpace.pathComponent_eq_univ [PathConnectedSpace X] (x : X) :
+    pathComponent x = Set.univ :=
+  Set.eq_univ_of_forall (PathConnectedSpace.joined x)
 
 /-- **Base points of path components.** There is a map sending each point to a point joined to
 it, constant on path components. -/

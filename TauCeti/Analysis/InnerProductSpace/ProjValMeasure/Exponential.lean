@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Integral
 
 /-!
