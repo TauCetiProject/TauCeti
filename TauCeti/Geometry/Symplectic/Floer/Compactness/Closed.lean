@@ -68,9 +68,10 @@ in `C`
 The constants of the mean-value inequality in each chart are uniform over the window
 (`IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_energy_parametric`), and
 the convergence where the densities are bounded already allows the data to vary along the sequence.
-This is the compactness statement for the one-parameter families of Floer data, such as
-continuation homotopies and the comparison families of products, whose boundary counts give chain
-homotopies. A single datum is the constant family over a one-point window
+This is the compactness off finitely many points, over a compact domain window, that families of
+Floer data over a finite-dimensional parameter space, such as continuation homotopies, need; the
+breaking and the bubbles at `Z` that their boundary counts also require are not treated. A single
+datum is the constant family over a one-point window
 (`IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset`).
 
 The bubbles at the points of `Z`, the regularity of the limit and breaking along cylindrical ends
@@ -112,10 +113,10 @@ private theorem IsNondegenerate.exists_pos_forall_exists_chart_mean_value
     (hC : IsCompact C) (hD : IsCompact D) (hCDW : C ×ˢ D ⊆ W)
     (hJ : ∀ α, ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I α (uncurry J))
       (W ×ˢ (extChartAt I α).target))
-    (hXs : ∀ α, ContDiffOn ℝ 2 (fun q : (P × (ℝ × ℝ)) × E ↦
-      ω.hamiltonianVectorFieldInChartAt α (Ks q.1.1) (q.1.2, q.2)) (W ×ˢ (extChartAt I α).target))
-    (hXt : ∀ α, ContDiffOn ℝ 2 (fun q : (P × (ℝ × ℝ)) × E ↦
-      ω.hamiltonianVectorFieldInChartAt α (Kt q.1.1) (q.1.2, q.2)) (W ×ˢ (extChartAt I α).target))
+    (hXs : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α (uncurry Ks))
+      (W ×ˢ (extChartAt I α).target))
+    (hXt : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α (uncurry Kt))
+      (W ×ˢ (extChartAt I α).target))
     (hJt : ∀ p ∈ C, ∀ z ∈ D, ∀ x, (hω.symplecticFormAt x).Tames (J p z x)) :
     ∃ l > 0, ∃ δ > 0, ∃ C' ≥ 0, ∀ x : M, ∃ α : M, ∃ K : Set E,
       (∀ y, dist (e y) (e x) < l → y ∈ (extChartAt I α).source ∩ extChartAt I α ⁻¹' K) ∧
@@ -201,10 +202,10 @@ theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_dist_l
     (hC : IsCompact C) (hD : IsCompact D) (hCDW : C ×ˢ D ⊆ W)
     (hJ : ∀ α, ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I α (uncurry J))
       (W ×ˢ (extChartAt I α).target))
-    (hXs : ∀ α, ContDiffOn ℝ 2 (fun q : (P × (ℝ × ℝ)) × E ↦
-      ω.hamiltonianVectorFieldInChartAt α (Ks q.1.1) (q.1.2, q.2)) (W ×ˢ (extChartAt I α).target))
-    (hXt : ∀ α, ContDiffOn ℝ 2 (fun q : (P × (ℝ × ℝ)) × E ↦
-      ω.hamiltonianVectorFieldInChartAt α (Kt q.1.1) (q.1.2, q.2)) (W ×ˢ (extChartAt I α).target))
+    (hXs : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α (uncurry Ks))
+      (W ×ˢ (extChartAt I α).target))
+    (hXt : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α (uncurry Kt))
+      (W ×ˢ (extChartAt I α).target))
     (hJt : ∀ p ∈ C, ∀ z ∈ D, ∀ x, (hω.symplecticFormAt x).Tames (J p z x)) :
     ∃ l > 0, ∃ δ > 0, ∃ C' ≥ 0, ∀ ⦃p : P⦄ ⦃u : ℝ × ℝ → M⦄ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃z₀ : ℝ × ℝ⦄
       ⦃r : ℝ⦄, p ∈ C → IsOpen Ω → 0 ≤ r → closedBall z₀ r ⊆ Ω → closedBall z₀ r ⊆ D →
@@ -260,17 +261,23 @@ private theorem two_mul_sqrt_add_mul_div_lt {c N B l : ℝ} (hc : 0 < c) (hN : 0
   rw [hsq]
   nlinarith
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [CompactSpace M] [FiniteDimensional ℝ P] in
-/-- The Hamiltonian vector field of one member `K_p` of a family, read in a chart, is continuous
-where the family read in the chart is `C²` jointly in the parameter. -/
-private theorem continuousOn_hamiltonianVectorFieldInChartAt_apply {K : P → ℝ × ℝ → M → ℝ}
-    {α : M} {W : Set (P × (ℝ × ℝ))} {Ω : Set (ℝ × ℝ)} {p : P}
-    (hX : ContDiffOn ℝ 2 (fun q : (P × (ℝ × ℝ)) × E ↦
-      ω.hamiltonianVectorFieldInChartAt α (K q.1.1) (q.1.2, q.2)) (W ×ˢ (extChartAt I α).target))
-    (hΩ : ∀ y ∈ Ω, (p, y) ∈ W) :
-    ContinuousOn (ω.hamiltonianVectorFieldInChartAt α (K p)) (Ω ×ˢ (extChartAt I α).target) :=
-  hX.continuousOn.comp (by fun_prop : Continuous fun y : (ℝ × ℝ) × E ↦ ((p, y.1), y.2)).continuousOn
-    fun y hy ↦ ⟨hΩ y.1 hy.1, hy.2⟩
+omit [FiniteDimensional ℝ E] [CompactSpace M] [FiniteDimensional ℝ P] in
+/-- The Floer energy density of a `C³` map for one member `K_p` of a family is continuous on an
+open set `Ω` with `{p} × Ω ⊆ W`, where the Hamiltonian vector fields of the family, read in every
+chart, are `C²` jointly in the parameter. -/
+private theorem continuousOn_floerEnergyDensity_of_parametric {W : Set (P × (ℝ × ℝ))}
+    {Ω : Set (ℝ × ℝ)} {p : P} {u : ℝ × ℝ → M}
+    (hXs : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α (uncurry Ks))
+      (W ×ˢ (extChartAt I α).target))
+    (hXt : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α (uncurry Kt))
+      (W ×ˢ (extChartAt I α).target))
+    (hΩ : IsOpen Ω) (hpΩ : ∀ y ∈ Ω, (p, y) ∈ W) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u Ω) :
+    ContinuousOn (ω.floerEnergyDensity (Ks p) (Kt p) u) Ω :=
+  ω.continuousOn_floerEnergyDensity_of_continuousOn_inChartAt hΩ (hu.of_le (by norm_num))
+    (fun α ↦ continuousOn_hamiltonianVectorFieldInChartAt_of_uncurry (hXs α).continuousOn
+      fun y hy ↦ ⟨hpΩ y.1 hy.1, hy.2⟩)
+    (fun α ↦ continuousOn_hamiltonianVectorFieldInChartAt_of_uncurry (hXt α).continuousOn
+      fun y hy ↦ ⟨hpΩ y.1 hy.1, hy.2⟩)
 
 /-- Energy on the discs of Hofer's lemma, over a compact parameter window. There are `σ > 0`,
 `δ > 0` and `κ > 0` with the following property, for every parameter `p ∈ C`. Let `N = √ρ(z₀)` for
@@ -285,10 +292,10 @@ private theorem IsNondegenerate.exists_pos_forall_le_setIntegral_floerEnergyDens
     (hC : IsCompact C) (hD : IsCompact D) (hCDW : C ×ˢ D ⊆ W)
     (hJ : ∀ α, ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I α (uncurry J))
       (W ×ˢ (extChartAt I α).target))
-    (hXs : ∀ α, ContDiffOn ℝ 2 (fun q : (P × (ℝ × ℝ)) × E ↦
-      ω.hamiltonianVectorFieldInChartAt α (Ks q.1.1) (q.1.2, q.2)) (W ×ˢ (extChartAt I α).target))
-    (hXt : ∀ α, ContDiffOn ℝ 2 (fun q : (P × (ℝ × ℝ)) × E ↦
-      ω.hamiltonianVectorFieldInChartAt α (Kt q.1.1) (q.1.2, q.2)) (W ×ˢ (extChartAt I α).target))
+    (hXs : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α (uncurry Ks))
+      (W ×ˢ (extChartAt I α).target))
+    (hXt : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α (uncurry Kt))
+      (W ×ˢ (extChartAt I α).target))
     (hJt : ∀ p ∈ C, ∀ z ∈ D, ∀ x, (hω.symplecticFormAt x).Tames (J p z x)) {c B : ℝ}
     (hc : 0 < c)
     (hJc : ∀ p ∈ C, ∀ z ∈ D, ∀ x v, c * ‖mvfderiv I e x v‖ ^ 2 ≤
@@ -377,10 +384,10 @@ theorem IsNondegenerate.exists_pos_forall_eventually_le_setIntegral_floerEnergyD
     (hC : IsCompact C) (hD : IsCompact D) (hCDW : C ×ˢ D ⊆ W)
     (hJ : ∀ α, ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I α (uncurry J))
       (W ×ˢ (extChartAt I α).target))
-    (hXs : ∀ α, ContDiffOn ℝ 2 (fun q : (P × (ℝ × ℝ)) × E ↦
-      ω.hamiltonianVectorFieldInChartAt α (Ks q.1.1) (q.1.2, q.2)) (W ×ˢ (extChartAt I α).target))
-    (hXt : ∀ α, ContDiffOn ℝ 2 (fun q : (P × (ℝ × ℝ)) × E ↦
-      ω.hamiltonianVectorFieldInChartAt α (Kt q.1.1) (q.1.2, q.2)) (W ×ˢ (extChartAt I α).target))
+    (hXs : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α (uncurry Ks))
+      (W ×ˢ (extChartAt I α).target))
+    (hXt : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α (uncurry Kt))
+      (W ×ˢ (extChartAt I α).target))
     (hJt : ∀ p ∈ C, ∀ z ∈ D, ∀ x, (hω.symplecticFormAt x).Tames (J p z x)) {c B : ℝ}
     (hc : 0 < c)
     (hJc : ∀ p ∈ C, ∀ z ∈ D, ∀ x v, c * ‖mvfderiv I e x v‖ ^ 2 ≤
@@ -409,11 +416,8 @@ theorem IsNondegenerate.exists_pos_forall_eventually_le_setIntegral_floerEnergyD
   have : (l ⊓ 𝓟 S).NeBot := frequently_iff_neBot.1 hcon
   -- The energy densities are continuous on `Ω`.
   have hρc (i : ι) : ContinuousOn (ρ i) Ω :=
-    ω.continuousOn_floerEnergyDensity_of_continuousOn_inChartAt hΩ ((hu i).of_le (by norm_num))
-      (fun α ↦ continuousOn_hamiltonianVectorFieldInChartAt_apply (hXs α)
-        fun y hy ↦ hCDW ⟨hpC i, hΩD hy⟩)
-      (fun α ↦ continuousOn_hamiltonianVectorFieldInChartAt_apply (hXt α)
-        fun y hy ↦ hCDW ⟨hpC i, hΩD hy⟩)
+    continuousOn_floerEnergyDensity_of_parametric hXs hXt hΩ (fun y hy ↦ hCDW ⟨hpC i, hΩD hy⟩)
+      (hu i)
   -- Hofer's lemma for `√ρᵢ` gives centres `cᵢ → z₀` and radii `sᵢ` on whose discs
   -- `√ρᵢ ≤ 2 Nᵢ`, where `Nᵢ = √(ρᵢ(cᵢ)) → ∞` and `sᵢ Nᵢ → ∞`.
   obtain ⟨r₀, hr₀, hr₀Ω⟩ := nhds_basis_closedBall.mem_iff.1 (hΩ.mem_nhds hz₀)
@@ -477,10 +481,10 @@ theorem IsNondegenerate.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp
     (hC : IsCompact C) (hD : IsCompact D) (hCDW : C ×ˢ D ⊆ W)
     (hJ : ∀ α, ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I α (uncurry J))
       (W ×ˢ (extChartAt I α).target))
-    (hXs : ∀ α, ContDiffOn ℝ 2 (fun q : (P × (ℝ × ℝ)) × E ↦
-      ω.hamiltonianVectorFieldInChartAt α (Ks q.1.1) (q.1.2, q.2)) (W ×ˢ (extChartAt I α).target))
-    (hXt : ∀ α, ContDiffOn ℝ 2 (fun q : (P × (ℝ × ℝ)) × E ↦
-      ω.hamiltonianVectorFieldInChartAt α (Kt q.1.1) (q.1.2, q.2)) (W ×ˢ (extChartAt I α).target))
+    (hXs : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α (uncurry Ks))
+      (W ×ˢ (extChartAt I α).target))
+    (hXt : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α (uncurry Kt))
+      (W ×ˢ (extChartAt I α).target))
     (hJt : ∀ p ∈ C, ∀ z ∈ D, ∀ x, (hω.symplecticFormAt x).Tames (J p z x)) {c B : ℝ}
     (hc : 0 < c)
     (hJc : ∀ p ∈ C, ∀ z ∈ D, ∀ x v, c * ‖mvfderiv I e x v‖ ^ 2 ≤
@@ -510,11 +514,8 @@ theorem IsNondegenerate.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp
   obtain ⟨p₀, hp₀, ψ₀, hψ₀, hlim₀⟩ := hC.tendsto_subseq hpC
   set ρ : ℕ → ℝ × ℝ → ℝ := fun k ↦ ω.floerEnergyDensity (Ks (p k)) (Kt (p k)) (u k)
   have hρc (k : ℕ) : ContinuousOn (ρ k) Ω :=
-    ω.continuousOn_floerEnergyDensity_of_continuousOn_inChartAt hΩ ((hu k).of_le (by norm_num))
-      (fun α ↦ continuousOn_hamiltonianVectorFieldInChartAt_apply (hXs α)
-        fun y hy ↦ hCDW ⟨hpC k, hΩD hy⟩)
-      (fun α ↦ continuousOn_hamiltonianVectorFieldInChartAt_apply (hXt α)
-        fun y hy ↦ hCDW ⟨hpC k, hΩD hy⟩)
+    continuousOn_floerEnergyDensity_of_parametric hXs hXt hΩ (fun y hy ↦ hCDW ⟨hpC k, hΩD hy⟩)
+      (hu k)
   -- Energy concentrates wherever the densities blow up, so they are bounded on compact sets off
   -- finitely many concentration points.
   obtain ⟨φ, hφ, Z, hZΩ, hcard, hZ, hbd⟩ := exists_strictMono_finset_forall_le_of_concentration
@@ -592,19 +593,17 @@ theorem IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_
           TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (φ n)) (e ∘ v) atTop (Ω \ ↑Z) ∧
           ∀ z ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (φ n) z) atTop (𝓝 (v z)) := by
   -- The constant family over the one-point parameter space `Unit`, on `W = univ × U`.
-  set pr : (Unit × (ℝ × ℝ)) × E →L[ℝ] (ℝ × ℝ) × E :=
-    (ContinuousLinearMap.snd ℝ Unit (ℝ × ℝ) ∘L ContinuousLinearMap.fst ℝ _ E).prod
-      (ContinuousLinearMap.snd ℝ _ E)
-  have hpr (α : M) : MapsTo pr ((univ ×ˢ U) ×ˢ (extChartAt I α).target)
-      (U ×ˢ (extChartAt I α).target) := fun q hq ↦ ⟨hq.1.2, hq.2⟩
+  have hπ (α : M) : MapsTo (fun q : (Unit × (ℝ × ℝ)) × E ↦ (q.1.2, q.2))
+      ((univ ×ˢ U) ×ˢ (extChartAt I α).target) (U ×ˢ (extChartAt I α).target) :=
+    fun q hq ↦ ⟨hq.1.2, hq.2⟩
   obtain ⟨δ, hδ, h⟩ :=
     hω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset
       (J := fun _ ↦ J) (Ks := fun _ ↦ Ks) (Kt := fun _ ↦ Kt) (C := univ) he he_inj
       (isOpen_univ.prod hU) isCompact_univ hD (prod_mono subset_rfl hDU)
-      (fun α ↦ ((hJ α).comp pr.contDiff.contDiffOn (hpr α)).congr fun q _ ↦
-        Floer.almostComplexInChartAt_uncurry _ _ _ _)
-      (fun α ↦ (hXs α).comp pr.contDiff.contDiffOn (hpr α))
-      (fun α ↦ (hXt α).comp pr.contDiff.contDiffOn (hpr α)) (fun _ _ ↦ hJt) hc (fun _ _ ↦ hJc)
+      (fun α ↦ Floer.contDiffOn_almostComplexInChartAt_uncurry_const (hJ α) (hπ α))
+      (fun α ↦ contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const (hXs α) (hπ α))
+      (fun α ↦ contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const (hXt α) (hπ α))
+      (fun _ _ ↦ hJt) hc (fun _ _ ↦ hJc)
       (fun _ _ ↦ hBs) fun _ _ ↦ hBt
   refine ⟨δ, hδ, fun Ω u E₀ hΩ hΩD hu hfl hint hE ↦ ?_⟩
   obtain ⟨φ, hφ, -, -, -, Z, hZΩ, hcard, hZ, hbd, v, hv, hconv, hpt⟩ :=

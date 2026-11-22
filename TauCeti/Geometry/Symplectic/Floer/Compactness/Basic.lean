@@ -16,6 +16,7 @@ import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence
 import TauCeti.Geometry.Symplectic.Floer.Graph.Basic
+import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.MeasureTheory.Integral.WithLp
@@ -1162,13 +1163,6 @@ section Parameter
 
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
 
-/-- The standard complex structure `(a, b) ↦ (-b, a)` on `P × P`. -/
-private noncomputable def rotationL : P × P →L[ℝ] P × P :=
-  (-ContinuousLinearMap.snd ℝ P P).prod (ContinuousLinearMap.fst ℝ P P)
-
-private theorem rotationL_rotationL (ζ : P × P) : rotationL (rotationL ζ) = -ζ := by
-  ext <;> simp [rotationL]
-
 /-- The point of `(P × (ℝ × ℝ)) × F` read off from a point `(z, ((a, b), x))`: the parameter `a`,
 the domain point `z` and the target point `x`. -/
 private noncomputable def augmentedPoint :
@@ -1183,16 +1177,19 @@ omit [FiniteDimensional ℝ F] in
 private theorem augmentedPoint_apply (z : ℝ × ℝ) (a b : P) (x : F) :
     augmentedPoint (z, ((a, b), x)) = ((a, z), x) := (rfl)
 
-/-- The structure on `(P × P) × F` adjoining the parameter. -/
+/-- The structure on `(P × P) × F` adjoining the parameter: the standard structure
+`(a, b) ↦ (-b, a)` on `P × P` and `J` on `F`. -/
 private noncomputable def augmentedJ (J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F)
     (q : (ℝ × ℝ) × ((P × P) × F)) : (P × P) × F →L[ℝ] (P × P) × F :=
-  ContinuousLinearMap.prodMapL ℝ (P × P) (P × P) F F (rotationL, J (augmentedPoint q))
+  ContinuousLinearMap.prodMapL ℝ (P × P) (P × P) F F
+    ((SmoothAlmostComplexStructure.product P).toEndomorphism 0, J (augmentedPoint q))
 
 omit [FiniteDimensional ℝ F] in
 @[simp]
 private theorem augmentedJ_apply (J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F)
     (q : (ℝ × ℝ) × ((P × P) × F)) (ζ : (P × P) × F) :
-    augmentedJ J q ζ = (rotationL ζ.1, J (augmentedPoint q) ζ.2) := (rfl)
+    augmentedJ J q ζ = ((-ζ.1.2, ζ.1.1), J (augmentedPoint q) ζ.2) :=
+  Prod.ext (SmoothAlmostComplexStructure.product_apply 0 ζ.1) rfl
 
 /-- The one-form with values in `(P × P) × F` adjoining the parameter. -/
 private noncomputable def augmentedX (X : (P × (ℝ × ℝ)) × F → ℝ × ℝ →L[ℝ] F)
@@ -1262,7 +1259,7 @@ theorem exists_pos_forall_sq_mul_norm_fderiv_sq_le_of_small_energy_of_finiteDime
         exact hCDKW ⟨⟨ha, hz⟩, hx⟩)
       (by
         rintro z hz _ ⟨⟨a, x⟩, ⟨ha, hx⟩, rfl⟩ ζ
-        ext <;> simp [rotationL_rotationL, hJsq a ha z hz x hx])
+        ext <;> simp [hJsq a ha z hz x hx])
   refine ⟨δ, hδ, C', hC', fun p u z₀ r hp hr hrD hu hu' hfl huK hE ↦ ?_⟩
   -- The constant parameter coordinate does not change the derivative in `F`.
   have hderiv (y v : ℝ × ℝ) : fderiv ℝ (fun w ↦ ((p, (0 : P)), u w)) y v = (0, fderiv ℝ u y v) := by
@@ -1272,7 +1269,7 @@ theorem exists_pos_forall_sq_mul_norm_fderiv_sq_le_of_small_energy_of_finiteDime
     simp [hderiv]
   have h := hmean (u := fun w ↦ ((p, 0), u w)) hr hrD (contDiffOn_const.prodMk hu)
     ((continuousOn_const.prodMk hu').congr fun y _ ↦ hderiv y _)
-    (fun y hy ↦ by simp [hderiv, hfl y hy, rotationL, Prod.zero_eq_mk])
+    (fun y hy ↦ by simp [hderiv, hfl y hy, Prod.zero_eq_mk])
     (fun y hy ↦ ⟨(p, u y), ⟨hp, huK y hy⟩, rfl⟩) (by simpa only [hnorm] using hE)
   simpa only [hnorm] using h
 

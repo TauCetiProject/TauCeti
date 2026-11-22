@@ -315,8 +315,8 @@ theorem IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_sq_le {P : Typ
     {D : Set (ℝ × ℝ)} {K : Set E} (hC : IsCompact C) (hD : IsCompact D) (hK : IsCompact K)
     (hKα : K ⊆ (extChartAt I α).target)
     (hJ : ContinuousOn (Floer.almostComplexInChartAt I α (Function.uncurry J)) ((C ×ˢ D) ×ˢ K))
-    (hX : ContinuousOn (fun q : (P × (ℝ × ℝ)) × E ↦
-      ω.hamiltonianVectorFieldInChartAt α (Ks q.1.1) (q.1.2, q.2)) ((C ×ˢ D) ×ˢ K))
+    (hX : ContinuousOn (ω.hamiltonianVectorFieldInChartAt α (Function.uncurry Ks))
+      ((C ×ˢ D) ×ˢ K))
     (hJt : ∀ p ∈ C, ∀ z ∈ D, ∀ y ∈ K, (hω.symplecticFormAt ((extChartAt I α).symm y)).Tames
       (J p z ((extChartAt I α).symm y))) :
     ∃ A ≥ 0, ∃ B ≥ 0, ∀ ⦃p : P⦄ ⦃u : ℝ × ℝ → M⦄ ⦃z : ℝ × ℝ⦄, p ∈ C → z ∈ D →
@@ -360,8 +360,8 @@ theorem exists_forall_floerEnergyDensity_le_norm_fderiv_extChartAt_comp_sq {P : 
     {D : Set (ℝ × ℝ)} {K : Set E} (hC : IsCompact C) (hD : IsCompact D) (hK : IsCompact K)
     (hKα : K ⊆ (extChartAt I α).target)
     (hJ : ContinuousOn (Floer.almostComplexInChartAt I α (Function.uncurry J)) ((C ×ˢ D) ×ˢ K))
-    (hX : ContinuousOn (fun q : (P × (ℝ × ℝ)) × E ↦
-      ω.hamiltonianVectorFieldInChartAt α (Ks q.1.1) (q.1.2, q.2)) ((C ×ˢ D) ×ˢ K)) :
+    (hX : ContinuousOn (ω.hamiltonianVectorFieldInChartAt α (Function.uncurry Ks))
+      ((C ×ˢ D) ×ˢ K)) :
     ∃ A ≥ 0, ∃ B ≥ 0, ∀ ⦃p : P⦄ ⦃u : ℝ × ℝ → M⦄ ⦃z : ℝ × ℝ⦄, p ∈ C → z ∈ D →
       u z ∈ (extChartAt I α).source → extChartAt I α (u z) ∈ K →
       MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z →
@@ -394,8 +394,8 @@ theorem exists_forall_floerEnergyDensity_le_norm_fderiv_extChartAt_comp_sq {P : 
     · simpa using (le_opNorm _ _).trans
         (mul_le_mul_of_nonneg_right (hJb.trans (le_max_right _ _)) (norm_nonneg a))
   have hf : ‖f‖ ≤ max β₁ 0 := (hβ₁ _ hq).trans (le_max_left _ _)
-  have hXb : ‖ω.hamiltonianVectorFieldInChartAt α (Ks p) (z, extChartAt I α (u z))‖ ≤ β₃ :=
-    hβ₃ _ hq
+  have hXb : ‖ω.hamiltonianVectorFieldInChartAt α (Ks p) (z, extChartAt I α (u z))‖ ≤ β₃ := by
+    simpa only [hamiltonianVectorFieldInChartAt_uncurry] using hβ₃ _ hq
   have ha2 : ‖a‖ ^ 2 ≤
       2 * ‖fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal‖ ^ 2 + 2 * β₃ ^ 2 := by
     have h1 := (norm_sub_le (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal)
@@ -442,8 +442,8 @@ theorem IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_le
   obtain ⟨A₁, hA₁, B₁, -, hpt⟩ :=
     hω.exists_forall_norm_fderiv_extChartAt_comp_sq_le (J := fun (_ : Unit) ↦ J)
       (Ks := fun _ ↦ Ks) (Kt := fun _ ↦ Kt) α isCompact_univ hD hK hKα
-      ((hJ.comp (by fun_prop) hπ).congr fun q _ ↦ Floer.almostComplexInChartAt_uncurry _ _ _ _)
-      (hXs.comp (by fun_prop) hπ) fun _ _ ↦ hJt
+      (Floer.continuousOn_almostComplexInChartAt_uncurry_const hJ hπ)
+      (continuousOn_hamiltonianVectorFieldInChartAt_uncurry_const hXs hπ) fun _ _ ↦ hJt
   obtain ⟨βJ, hβJ⟩ := (hD.prod hK).exists_bound_of_continuousOn hJ
   obtain ⟨βs, hβs⟩ := (hD.prod hK).exists_bound_of_continuousOn hXs
   obtain ⟨βt, hβt⟩ := (hD.prod hK).exists_bound_of_continuousOn hXt
@@ -513,9 +513,9 @@ theorem IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_extChartAt_s
   obtain ⟨A, hA0, B, hB0, hpt⟩ :=
     hω.exists_forall_norm_fderiv_extChartAt_comp_sq_le (J := fun (_ : Unit) ↦ J)
       (Ks := fun _ ↦ Ks) (Kt := fun _ ↦ Kt) α isCompact_univ hD hK hKα
-      ((hJ.continuousOn.comp (by fun_prop) hπ).congr
-        fun q _ ↦ Floer.almostComplexInChartAt_uncurry _ _ _ _)
-      (hXs.continuousOn.comp (by fun_prop) hπ) fun _ _ ↦ hJt
+      (Floer.continuousOn_almostComplexInChartAt_uncurry_const hJ.continuousOn hπ)
+      (continuousOn_hamiltonianVectorFieldInChartAt_uncurry_const hXs.continuousOn hπ)
+      fun _ _ ↦ hJt
   -- The coordinate expressions solve the coordinate Floer equation for `J` and `X_K` read in the
   -- chart, with derivatives controlled by the intrinsic energy density.
   open Floer in

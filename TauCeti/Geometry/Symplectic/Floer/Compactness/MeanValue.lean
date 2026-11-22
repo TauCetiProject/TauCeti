@@ -107,10 +107,8 @@ theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_
     {Ks Kt : P → ℝ × ℝ → M → ℝ} (hω : ω.IsNondegenerate) (α : M)
     {W : Set ((P × (ℝ × ℝ)) × E)} {C : Set P} {D : Set (ℝ × ℝ)} {K : Set E} (hW : IsOpen W)
     (hJ : ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I α (Function.uncurry J)) W)
-    (hXs : ContDiffOn ℝ 2 (fun q : (P × (ℝ × ℝ)) × E ↦
-      ω.hamiltonianVectorFieldInChartAt α (Ks q.1.1) (q.1.2, q.2)) W)
-    (hXt : ContDiffOn ℝ 2 (fun q : (P × (ℝ × ℝ)) × E ↦
-      ω.hamiltonianVectorFieldInChartAt α (Kt q.1.1) (q.1.2, q.2)) W)
+    (hXs : ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α (Function.uncurry Ks)) W)
+    (hXt : ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α (Function.uncurry Kt)) W)
     (hC : IsCompact C) (hD : IsCompact D) (hK : IsCompact K) (hKα : K ⊆ (extChartAt I α).target)
     (hCDKW : (C ×ˢ D) ×ˢ K ⊆ W)
     (hJt : ∀ p ∈ C, ∀ z ∈ D, ∀ y ∈ K, (hω.symplecticFormAt ((extChartAt I α).symm y)).Tames
@@ -136,10 +134,9 @@ theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_
   -- The mean-value inequality for the coordinate expressions.
   obtain ⟨δ, hδ, C, hC0, hmean⟩ :=
     Floer.exists_pos_forall_sq_mul_norm_fderiv_sq_le_of_small_energy_of_finiteDimensional_parametric
-      hW hJ (contDiffOn_hamiltonianOneFormInChartAt_parametric hXs hXt) hC hD hK hCDKW
+      hW hJ (contDiffOn_hamiltonianOneFormInChartAt hXs hXt) hC hD hK hCDKW
       fun p _ z _ y hy v ↦ by
-        rw [Floer.almostComplexInChartAt_uncurry]
-        exact Floer.almostComplexInChartAt_apply_apply (hKα hy) z v
+        rw [Floer.almostComplexInChartAt_uncurry, Floer.almostComplexInChartAt_apply_apply (hKα hy)]
   set κ := 1 + 4 * (A + B + 1) with hκ
   have hκ0 : 0 < κ := by positivity
   refine ⟨δ / κ, div_pos hδ hκ0, A' * C * κ + B', by positivity,
@@ -166,7 +163,7 @@ theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_
     rw [hκ]
     linear_combination hIg + 4 * hIf0 + 3 * mul_nonneg hA0 hIf0 + 3 * mul_nonneg hB0 hIf0
   have hmv := hmean hp hr hrD hcd hu'
-    (fun y hy ↦ by rw [Floer.almostComplexInChartAt_uncurry]; exact hcfl y hy)
+    (fun y hy ↦ by simpa using hcfl y hy)
     (fun y hy ↦ (huK hy).2) (hIgκ.trans_lt <| by
       calc κ * (r ^ 2 + ∫ y in ball z₀ r, f y) < κ * (δ / κ) := by gcongr
         _ = δ := mul_div_cancel₀ _ hκ0.ne')
@@ -217,17 +214,14 @@ theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_
       r ^ 2 * ω.floerEnergyDensity Ks Kt u z₀ ≤
         C * (r ^ 2 + ∫ y in ball z₀ r, ω.floerEnergyDensity Ks Kt u y) := by
   -- The constant family over the one-point parameter space `Unit`.
-  set pr : (Unit × (ℝ × ℝ)) × E →L[ℝ] (ℝ × ℝ) × E :=
-    (ContinuousLinearMap.snd ℝ Unit (ℝ × ℝ) ∘L ContinuousLinearMap.fst ℝ _ E).prod
-      (ContinuousLinearMap.snd ℝ _ E)
+  set pr := fun q : (Unit × (ℝ × ℝ)) × E ↦ (q.1.2, q.2)
+  have hπ : MapsTo pr (pr ⁻¹' W) W := mapsTo_preimage _ _
   obtain ⟨δ, hδ, C, hC, h⟩ :=
     hω.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_energy_parametric
       (J := fun _ ↦ J) (Ks := fun _ ↦ Ks) (Kt := fun _ ↦ Kt) (C := univ) α
-      (hW.preimage pr.continuous)
-      ((hJ.comp pr.contDiff.contDiffOn (mapsTo_preimage _ _)).congr fun q _ ↦
-        Floer.almostComplexInChartAt_uncurry _ _ _ _)
-      (hXs.comp pr.contDiff.contDiffOn (mapsTo_preimage _ _))
-      (hXt.comp pr.contDiff.contDiffOn (mapsTo_preimage _ _)) isCompact_univ hD hK hKα
+      (hW.preimage (by fun_prop)) (Floer.contDiffOn_almostComplexInChartAt_uncurry_const hJ hπ)
+      (contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const hXs hπ)
+      (contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const hXt hπ) isCompact_univ hD hK hKα
       (fun q hq ↦ hDKW ⟨hq.1.2, hq.2⟩) fun _ _ ↦ hJt
   exact ⟨δ, hδ, C, hC, fun u z₀ r hr hrD hu hu' hfl huK hint hE ↦
     h (mem_univ ()) hr hrD hu hu' hfl huK hint hE⟩
