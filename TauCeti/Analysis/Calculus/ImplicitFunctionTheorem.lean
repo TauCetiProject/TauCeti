@@ -7,12 +7,12 @@ module
 
 public import Mathlib.Analysis.Calculus.ImplicitContDiff
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.LocallyConvex.HahnBanach
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # Smoothness of the complemented-kernel implicit function theorem
@@ -72,10 +72,7 @@ and `h` is as smooth as `f` and `g`.
   (`ContinuousLinearMap.linearCoord_apply_fst`, `ContinuousLinearMap.linearCoord_apply_snd_coe`),
   and the linear section `ContinuousLinearMap.linearSection` of `A`, `y ↦ L⁻¹ (y, 0)`
   (`ContinuousLinearMap.apply_linearSection`, `ContinuousLinearMap.linearCoord_linearSection`).
-  Every `x` is `s (A x) + P x` (`ContinuousLinearMap.linearSection_add_linearCoord_snd`), so on
-  inner product spaces `⟪x, ζ⟫ = ⟪A x, sᵀ ζ⟫ + ⟪P x, ζ⟫`
-  (`ContinuousLinearMap.inner_eq_inner_linearCoord`), where `sᵀ Aᵀ = id`
-  (`ContinuousLinearMap.adjoint_linearSection_adjoint_apply`).
+  Every `x` is `s (A x) + P x` (`ContinuousLinearMap.linearSection_add_linearCoord_snd`).
 * `HasStrictFDerivAt.implicitCoordSource`: an open neighbourhood of the base point on which the
   derivative of the coordinate map stays invertible.
 * `HasStrictFDerivAt.implicitToOpenPartialHomeomorphOfComplemented_congr` and
@@ -292,6 +289,7 @@ theorem apply_linearSection (y : E') : A (A.linearSection hA y) = y := by
   rw [← A.linearCoord_apply_fst hA, linearCoord_linearSection]
 
 /-- `linearSection` is a right inverse of `A`. -/
+@[simp]
 theorem comp_linearSection : A.comp (A.linearSection hA) = ContinuousLinearMap.id ℝ E' := by
   ext y
   exact A.apply_linearSection hA y
@@ -304,30 +302,6 @@ theorem linearSection_add_linearCoord_snd (x : E) :
   rw [map_add, linearCoord_apply_fst, linearSection_apply, linearCoord_symm_apply_zero_mk]
 
 end LinearCoord
-
-section InnerProductSpace
-
-open scoped InnerProduct RealInnerProductSpace
-
-variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
-  (A : E →L[ℝ] E') (hA : Function.Surjective A)
-
-/-- `sᵀ` is a left inverse of `Aᵀ`, where `s` is the linear section `linearSection` of `A`. -/
-theorem adjoint_linearSection_adjoint_apply (η : E') :
-    ((A.linearSection hA)†) ((A†) η) = η := by
-  rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
-    ContinuousLinearMap.comp_linearSection,
-    ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
-
-/-- A vector `ζ` pairs with `x` as `sᵀ ζ` with `A x` plus `ζ` with the `ker A`-coordinate of
-`x`, where `s` is the linear section `linearSection` of `A`. -/
-theorem inner_eq_inner_linearCoord (x ζ : E) :
-    ⟪x, ζ⟫ = ⟪A x, ((A.linearSection hA)†) ζ⟫ + ⟪((A.linearCoord hA x).2 : E), ζ⟫ := by
-  conv_lhs => rw [← A.linearSection_add_linearCoord_snd hA x]
-  rw [inner_add_left, ContinuousLinearMap.adjoint_inner_right]
-
-end InnerProductSpace
 
 end ContinuousLinearMap
 

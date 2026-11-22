@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Distribution.WaveFrontSet.ChangeOfVariables
 import TauCeti.Analysis.Distribution.WaveFrontSet.EllipticRegularity
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
+import TauCeti.Analysis.InnerProductSpace.LinearCoord
 import TauCeti.MeasureTheory.Measure.Haar.Disintegration
 
 /-!
