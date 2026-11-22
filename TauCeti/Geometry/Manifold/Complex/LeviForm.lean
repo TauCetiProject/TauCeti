@@ -56,7 +56,8 @@ index is at most `dim_ℂ E + q`.
   `(Hess f(v, v) + Hess f(I • v, I • v)) / 4`.
 * `TauCeti.manifoldLeviForm_add`, `TauCeti.manifoldLeviForm_neg`,
   `TauCeti.manifoldLeviForm_mul_apply`, `TauCeti.manifoldLeviForm_scalar_comp_apply`: the sum,
-  negation, product and composition rules.
+  negation, product and composition rules, and `TauCeti.manifoldLeviForm_const`: the Levi form
+  of a constant function vanishes.
 * `TauCeti.manifoldLeviForm_comp_apply`: the pullback rule under a complex `C²` map.
 * `TauCeti.le_re_manifoldLeviForm_scalar_comp_apply_self`: post-composition with an increasing
   convex function preserves positivity of the Levi form.
@@ -181,6 +182,11 @@ theorem manifoldLeviForm_add {g : M → ℝ} (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘
 theorem manifoldLeviForm_neg (f : M → ℝ) (x : M) :
     manifoldLeviForm E (-f) x = -manifoldLeviForm E f x :=
   leviForm_neg (f ∘ (chartAt E x).symm) (chartAt E x x)
+
+/-- The Levi form of a constant function vanishes. -/
+@[simp]
+theorem manifoldLeviForm_const (c : ℝ) (x : M) : manifoldLeviForm E (fun _ : M ↦ c) x = 0 :=
+  leviForm_const c (chartAt E x x)
 
 /-- **The product rule** for the Levi form on a complex manifold. Writing `∂f` for the
 complex-linear extension `StrongDual.extendRCLike` of the real differential `mvfderiv 𝓘(ℝ, E) f x`,
