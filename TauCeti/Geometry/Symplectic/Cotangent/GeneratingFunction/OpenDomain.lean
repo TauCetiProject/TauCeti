@@ -231,7 +231,7 @@ theorem exists_diffeomorph_opens_of_isInvertible_mixedHessian
   have : Nonempty U₀ := ⟨y.1⟩
   obtain ⟨Φ, β, hyΦ, hβy, -, hβ, hΦ, -, -⟩ := exists_partialDiffeomorph_of_isInvertible_mixedHessian
     (hW.preimage (continuous_subtypeVal.prodMap continuous_subtypeVal))
-    (show Prod.map Subtype.val Subtype.val y ∈ W from hxW)
+    ((mem_preimage (a := y)).2 hxW)
     (hS.comp (contMDiff_subtypeVal.prodMap contMDiff_subtypeVal).contMDiffOn
       (mapsTo_preimage _ _))
     (by rwa [mixedHessian_comp_prodMap_subtype_val])

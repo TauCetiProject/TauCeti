@@ -448,21 +448,14 @@ theorem exists_partialDiffeomorph_openInclusion_eq {U : Opens M} {V : Opens N} [
     (mpullback_restrictOpen_symplecticForm (I := I) U))
   have hrV := congrArg Subtype.val (mpullback_restrictOpen_symplecticForm (I := J) V)
   simp only [SmoothForm.coe_mpullback] at hrU hrV
-  -- A pullback along `r⁻¹` at `a` only sees the form at `r⁻¹ a`.
-  have key {θ θ' : RoughForm (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (CotangentBundle I U) ℝ 2}
-      (h : θ (r.symm a) = θ' (r.symm a)) :
-      mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) r.symm θ a =
-        mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) r.symm θ' a := by
-    ext v
-    simp only [mpullback_apply, h]
   have hΦa := Φ.mdifferentiableAt (by simp) haΦ
   rw [mpullback_liftOpens_apply_coe Φ' (by simp) hA hB _ ha, hΦ', ← Function.comp_assoc,
     mpullback_comp_at (r.symm.mdifferentiable (by simp) _)
       ((r'.mdifferentiable (by simp) _).comp _ hΦa),
-    key (θ' := mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ)) Φ
+    mpullback_apply_congr (η := mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ)) Φ
       (symplecticForm J V).val)
       (by rw [mpullback_comp_at hΦa (r'.mdifferentiable (by simp) _), hrV]),
-    key (hΦ _ haΦ), hrU]
+    mpullback_apply_congr (hΦ _ haΦ), hrU]
   exact mpullback_subtype_val_apply _ a
 
 end Transport

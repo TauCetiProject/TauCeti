@@ -303,18 +303,22 @@ theorem _root_.Filter.EventuallyEq.mpullback_eq {f g : M → M'} {x : M} (h : f 
   rw [← mpullbackWithin_univ, ← mpullbackWithin_univ]
   exact (h.filter_mono nhdsWithin_le_nhds).mpullbackWithin_eq h.eq_of_nhds ω
 
+/-- Two forms that agree at `f x` have the same pullback along `f` at `x`. -/
+theorem mpullback_apply_congr {f : M → M'} {ω η : RoughForm I' M' F k} {x : M}
+    (h : ω (f x) = η (f x)) : mpullback I I' f ω x = mpullback I I' f η x := by
+  ext v
+  simp [mpullback_apply, h]
+
 /-- If the derivative of `f` at `x` is surjective, two forms have the same pullback along `f` at
 `x` exactly when they agree at `f x`. -/
 theorem mpullback_apply_eq_mpullback_apply_iff {f : M → M'} {x : M}
     (hf : Function.Surjective (mfderiv I I' f x)) {ω η : RoughForm I' M' F k} :
     mpullback I I' f ω x = mpullback I I' f η x ↔ ω (f x) = η (f x) := by
-  refine ⟨fun h ↦ ContinuousAlternatingMap.ext fun v ↦ ?_, fun h ↦ ?_⟩
-  · choose w hw using fun i ↦ hf (v i)
-    have h₁ := DFunLike.congr_fun h w
-    simp only [mpullback_apply, hw] at h₁
-    exact h₁
-  · refine ContinuousAlternatingMap.ext fun v ↦ ?_
-    rw [mpullback_apply, mpullback_apply, h]
+  refine ⟨fun h ↦ ContinuousAlternatingMap.ext fun v ↦ ?_, mpullback_apply_congr⟩
+  choose w hw using fun i ↦ hf (v i)
+  have h₁ := DFunLike.congr_fun h w
+  simp only [mpullback_apply, hw] at h₁
+  exact h₁
 
 /-- A pullback vanishes at every point where the form vanishes at the image point. -/
 theorem mpullback_apply_eq_zero {f : M → M'} {ω : RoughForm I' M' F k} {x : M}

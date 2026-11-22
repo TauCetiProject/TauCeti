@@ -83,6 +83,8 @@ theorem mvfderiv_comp_subtype_val {F : Type*} [NormedAddCommGroup F] [NormedSpac
     mvfderiv J (f ∘ (Subtype.val : U → N)) x = mvfderiv J f (x : N) := by
   ext v
   simp only [mvfderiv, ContinuousLinearMap.comp_apply, mfderiv_comp_subtype_val_apply]
+  -- The tangent spaces at `x` in `U` and at `(x : N)` in `N` are both the model space `E'`, and
+  -- `fromTangentSpace` is the identity of it at either base point.
   rfl
 
 /-- A map read in the coordinate of a chart `e` of the maximal atlas, `x ↦ g (e x)`, is
