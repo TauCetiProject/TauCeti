@@ -216,14 +216,6 @@ theorem criticalHessian_sphereHeight_sq_add_smul_sphereHeight_apply
     sphereHeight_apply, real_inner_comm (p : E) (u : E), real_inner_comm (p : E) (v : E)]
   ring
 
-/-- The tangent vector at the north pole `v` which the inclusion sends to `u`. -/
-private theorem exists_mvfderiv_coe_sphere_eq (huv : ⟪(u : E), (v : E)⟫ = 0) :
-    ∃ b : TangentSpace (𝓡 n) v, mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) v b = u := by
-  have h : (u : E) ∈ (ℝ ∙ (v : E))ᗮ :=
-    Submodule.mem_orthogonal_singleton_iff_inner_right.2 (by rw [real_inner_comm, huv])
-  rw [← range_mvfderiv_subtypeVal (n := n) v] at h
-  exact LinearMap.mem_range.1 h
-
 /-- At the north pole the critical Hessian is `2 ⟪ι a, u⟫ ⟪ι b, u⟫ - t ⟪ι a, ι b⟫`. -/
 private theorem criticalHessian_sphereHeight_sq_add_smul_sphereHeight_self
     (huv : ⟪(u : E), (v : E)⟫ = 0) (ht : t ≠ 0) (a b : TangentSpace (𝓡 n) v) :
@@ -246,7 +238,7 @@ theorem isManifoldNondegenerateCriticalPoint_sphereHeight_sq_add_smul_sphereHeig
     ((contMDiff_sphereHeight_sq_add_smul_sphereHeight v).of_le (by simp))
     ((mem_criticalPoints_sphereHeight_sq_add_smul_sphereHeight_iff huv ht₀).2 (Or.inl rfl))
     fun a h ↦ ?_
-  obtain ⟨b, hb⟩ := exists_mvfderiv_coe_sphere_eq (n := n) huv
+  obtain ⟨b, hb⟩ := exists_mvfderiv_coe_sphere_eq (n := n) v (by rw [real_inner_comm, huv])
   have hu : ⟪(u : E), (u : E)⟫ = 1 := inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere u)
   set x := mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) v a
   -- Pairing with `b` gives `(2 - t) ⟪x, u⟫ = 0`; then pairing with `a` gives `-t ‖x‖² = 0`.
@@ -269,7 +261,7 @@ negative definite on the tangent vectors orthogonal to `u`. -/
 theorem manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_self
     (huv : ⟪(u : E), (v : E)⟫ = 0) (ht₀ : 0 < t) (ht₂ : t < 2) :
     manifoldMorseIndex (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) v = n - 1 := by
-  obtain ⟨b, hb⟩ := exists_mvfderiv_coe_sphere_eq (n := n) huv
+  obtain ⟨b, hb⟩ := exists_mvfderiv_coe_sphere_eq (n := n) v (by rw [real_inner_comm, huv])
   have hu : ⟪(u : E), (u : E)⟫ = 1 := inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere u)
   have hb0 : b ≠ 0 := by
     rintro rfl

@@ -9,7 +9,7 @@ public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.RingTheory.Nilpotent.Defs
 public import TauCeti.Algebra.Lie.AdjointAction.Basic
-import Mathlib.Data.Nat.Choose.Dvd
+import TauCeti.Algebra.CharP.Lemmas
 -- Non-public: `Module.End.instExpChar` gives `Module.End R A` the exponential characteristic
 -- of `A`.
 import TauCeti.Algebra.CharP.LinearMaps
@@ -33,31 +33,23 @@ additive on it, and each of the two factors is a multiplication operator by a po
 identity is characteristic-free in the exponential sense: for `p = 1` it is a tautology, and its
 content is the prime case.
 
-In prime characteristic `p`, the `(p - 1)`-st iterate of `ad R A a` also simplifies cleanly: since
-`((p - 1).choose m : A) = (-1) ^ m` for `m < p`, all signs and binomial coefficients cancel,
-giving `(ad R A a ^ (p - 1)) b = ∑ m ∈ range p, a ^ m * b * a ^ (p - 1 - m)`. This is the
-noncommutative derivative identity behind Jacobson's formula for `(a + b) ^ p`.
-
-Two consequences follow at once.  Iterating the commutator `p ^ n` times collapses to a single
-commutator with `a ^ p ^ n` (`ad_pow_expChar_pow_apply`), and, when `p` is a genuine prime,
-`ad R A a` is nilpotent exactly when some Frobenius power `a ^ p ^ n` is central
-(`isNilpotent_ad_iff_exists_pow_expChar_pow_mem_center`).  The forward direction of that
-equivalence is the passage from adjoint nilpotence to a central `p`-th power that the
-positive-characteristic half of Ado--Iwasawa runs on.
-
 The characteristic-free iterated-commutator expansion that this identity collapses,
-`ad_pow_apply`, is in `TauCeti.Algebra.Lie.AdjointAction.Basic`.
+`ad_pow_apply`, is in `TauCeti.Algebra.Lie.AdjointAction.Basic`. One step earlier it collapses
+too: for a prime `p`, the `(p - 1)`-fold commutator with `a` is the sum of all products
+`a ^ m * b * a ^ (p - 1 - m)` (`ad_pow_sub_one_apply`, and as an operator sum
+`ad_pow_sub_one_eq_sum`), since `(p - 1).choose m = (-1) ^ m` in characteristic `p`. This is the
+form in which the `(p - 1)`-fold commutator enters Jacobson's formula for `(a + b) ^ p`.
 
 ## Main statements
 
 * `TauCeti.LieAlgebra.ad_pow_expChar_pow`: the Frobenius commutator identity.
+* `TauCeti.LieAlgebra.ad_pow_sub_one_apply`, `TauCeti.LieAlgebra.ad_pow_sub_one_eq_sum`: in
+  characteristic a prime `p`, the `(p - 1)`-fold commutator with `a` is
+  `b ↦ ∑ m < p, a ^ m * b * a ^ (p - 1 - m)`.
 * `TauCeti.LieAlgebra.ad_pow_expChar_pow_eq_zero_iff`: the `p ^ n`-th power of `ad R A a` vanishes
   exactly when `a ^ p ^ n` is central.
 * `TauCeti.LieAlgebra.isNilpotent_ad_iff_exists_pow_expChar_pow_mem_center`: in characteristic
   `p`, adjoint nilpotence is centrality of a Frobenius power.
-* `TauCeti.LieAlgebra.ad_pow_prime_sub_one_eq_sum`,
-  `TauCeti.LieAlgebra.ad_pow_prime_sub_one_apply`: in prime characteristic `p`, the `(p - 1)`-st
-  iterate of `ad R A a` is `b ↦ ∑ m ∈ range p, a ^ m * b * a ^ (p - 1 - m)`.
 
 ## References
 
@@ -133,57 +125,25 @@ theorem isNilpotent_ad_iff_exists_pow_expChar_pow_mem_center (p : ℕ) [ExpChar 
   ⟨exists_pow_expChar_pow_mem_center_of_isNilpotent_ad p hp,
     fun ⟨_, h⟩ ↦ isNilpotent_ad_of_pow_expChar_pow_mem_center p h⟩
 
-/-- In prime characteristic `p`, the `(p - 1)`-st iterate of `ad R A a` applied to `b` expands as
-`∑ m ∈ range p, a ^ m * b * a ^ (p - 1 - m)`: every binomial coefficient `(p - 1).choose m`
-cancels the alternating sign `(-1) ^ (p - 1 - m)` modulo `p`. -/
-theorem ad_pow_prime_sub_one_apply (p : ℕ) [Fact p.Prime] [CharP A p] (a b : A) :
-    (LieAlgebra.ad R A a ^ (p - 1)) b =
-      ∑ m ∈ Finset.range p, a ^ m * b * a ^ (p - 1 - m) := by
-  have hp : p.Prime := Fact.out
-  have hchoose : ∀ m, m < p → ((p - 1).choose m : A) = (-1 : A) ^ m := by
-    intro m hm
-    induction m with
-    | zero => simp
-    | succ m ih =>
-      have hdvd : p ∣ p.choose (m + 1) := hp.dvd_choose_self m.succ_ne_zero hm
-      have hzero : (p.choose (m + 1) : A) = 0 := (CharP.cast_eq_zero_iff A p _).2 hdvd
-      have hpascal : p.choose (m + 1) = (p - 1).choose m + (p - 1).choose (m + 1) := by
-        simpa [Nat.sub_add_cancel hp.pos] using Nat.choose_succ_succ (p - 1) m
-      rw [hpascal, Nat.cast_add, ih (by omega)] at hzero
-      calc (((p - 1).choose (m + 1) : ℕ) : A)
-          = -((-1 : A) ^ m) := eq_neg_of_add_eq_zero_right hzero
-        _ = (-1 : A) ^ (m + 1) := by rw [pow_succ, mul_neg_one]
-  have hneg1 : (-1 : A) ^ (p - 1) = 1 := by
-    rcases hp.eq_two_or_odd' with rfl | hodd
-    · have h2 : (2 : A) = 0 := by simpa using CharP.cast_eq_zero A 2
-      have h11 : (1 : A) + 1 = 0 := by simpa [one_add_one_eq_two] using h2
-      simpa using (eq_neg_of_add_eq_zero_right h11).symm
-    · exact (Nat.Odd.sub_odd hodd odd_one).neg_one_pow
-  rw [ad_pow_apply, Nat.sub_add_cancel hp.pos]
+/-- In characteristic a prime `p`, the `(p - 1)`-fold commutator of `a` with `b` is the sum of
+the `p` products `a ^ m * b * a ^ (p - 1 - m)`, all with coefficient `1`. -/
+theorem ad_pow_sub_one_apply (p : ℕ) [Fact p.Prime] [CharP A p] (a b : A) :
+    (LieAlgebra.ad R A a ^ (p - 1)) b = ∑ m ∈ Finset.range p, a ^ m * b * a ^ (p - 1 - m) := by
+  rw [ad_pow_apply, Nat.sub_add_cancel (Fact.out : p.Prime).one_le]
   refine Finset.sum_congr rfl fun m hm ↦ ?_
-  have hmp : m < p := Finset.mem_range.mp hm
-  have hcoeff : (((p - 1).choose m : ℕ) : A) * (-1 : A) ^ (p - 1 - m) = 1 := by
-    rw [hchoose m hmp, ← pow_add, Nat.add_sub_cancel' (by omega), hneg1]
-  have hpow : (-a) ^ (p - 1 - m) = (-1 : A) ^ (p - 1 - m) * a ^ (p - 1 - m) :=
-    neg_pow a (p - 1 - m)
-  rw [nsmul_eq_mul, hpow]
-  calc (((p - 1).choose m : ℕ) : A) * (a ^ m * b * ((-1 : A) ^ (p - 1 - m) * a ^ (p - 1 - m)))
-      = (((p - 1).choose m : ℕ) : A) *
-          (((-1 : A) ^ (p - 1 - m) * (a ^ m * b)) * a ^ (p - 1 - m)) := by
-        rw [← mul_assoc (a ^ m * b), ((Commute.neg_one_right _).pow_right _).eq]
-    _ = (((p - 1).choose m : ℕ) : A) * (-1 : A) ^ (p - 1 - m) *
-          (a ^ m * b * a ^ (p - 1 - m)) := by
-        simp only [mul_assoc]
-    _ = a ^ m * b * a ^ (p - 1 - m) := by rw [hcoeff, one_mul]
+  have hm : m ≤ p - 1 := by grind
+  rw [← Nat.choose_symm hm, ← Nat.cast_smul_eq_nsmul A,
+    TauCeti.natCast_choose_sub_one_eq_neg_one_pow p (Nat.sub_le _ _), neg_pow a]
+  rcases neg_one_pow_eq_or A (p - 1 - m) with h | h <;> simp [h]
 
 /-- In prime characteristic `p`, the `(p - 1)`-st iterate of `ad R A a` as an operator sum of
 left and right multiplications by powers of `a`. -/
-theorem ad_pow_prime_sub_one_eq_sum (p : ℕ) [Fact p.Prime] [CharP A p] (a : A) :
+theorem ad_pow_sub_one_eq_sum (p : ℕ) [Fact p.Prime] [CharP A p] (a : A) :
     LieAlgebra.ad R A a ^ (p - 1) =
       ∑ m ∈ Finset.range p,
         LinearMap.mulLeft R (a ^ m) * LinearMap.mulRight R (a ^ (p - 1 - m)) := by
   ext b
-  rw [ad_pow_prime_sub_one_apply, LinearMap.sum_apply]
+  rw [ad_pow_sub_one_apply, LinearMap.sum_apply]
   refine Finset.sum_congr rfl fun m _ ↦ ?_
   simp only [mul_apply_eq_comp, LinearMap.mulLeft_apply, LinearMap.mulRight_apply, mul_assoc]
 

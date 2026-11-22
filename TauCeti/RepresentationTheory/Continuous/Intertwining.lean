@@ -32,8 +32,10 @@ one.
   the original representation and `ContRepresentation.toRepresentation_toContRepresentation`
   recovering a continuous one.
 
-The file also records that continuous intertwiners between finite-dimensional representations form
-a finite-dimensional space, over any field and without completeness.
+The file also records that continuous intertwiners from a finitely generated representation to a
+Noetherian one form a finitely generated module, over any commutative ring and without
+completeness; over a field, intertwiners between finite-dimensional representations thus form a
+finite-dimensional space.
 -/
 
 public section
@@ -56,17 +58,23 @@ end ContIntertwiningMap
 
 namespace ContIntertwiningMap
 
-variable {𝕜 G V W : Type*} [Field 𝕜] [Monoid G]
-  [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V] [IsTopologicalAddGroup V]
-  [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W] [IsTopologicalAddGroup W]
-  [ContinuousConstSMul 𝕜 W] {π : ContRepresentation 𝕜 G V} {ρ : ContRepresentation 𝕜 G W}
+variable {R G V W : Type*} [CommRing R] [Monoid G]
+  [AddCommGroup V] [Module R V] [TopologicalSpace V] [IsTopologicalAddGroup V]
+  [AddCommGroup W] [Module R W] [TopologicalSpace W] [IsTopologicalAddGroup W]
+  [ContinuousConstSMul R W] {π : ContRepresentation R G V} {ρ : ContRepresentation R G W}
 
-/-- Continuous intertwiners between finite-dimensional representations form a finite-dimensional
-space: forgetting the intertwining condition and continuity embeds them into the linear maps. -/
-instance [FiniteDimensional 𝕜 V] [FiniteDimensional 𝕜 W] :
-    FiniteDimensional 𝕜 (ContIntertwiningMap π ρ) :=
-  FiniteDimensional.of_injective
-    { toFun f := (f.toContinuousLinearMap : V →ₗ[𝕜] W)
+/-- Continuous intertwiners from a finitely generated representation to a Noetherian one form a
+finitely generated module. In particular, over a field, continuous intertwiners between
+finite-dimensional representations form a finite-dimensional space.
+
+This is the continuous counterpart of Mathlib's instance
+`Representation.IntertwiningMap.instFiniteOfIsNoetherian` for algebraic intertwiners. -/
+instance instModuleFinite [Module.Finite R V] [IsNoetherian R W] :
+    Module.Finite R (ContIntertwiningMap π ρ) :=
+  -- As in Mathlib's algebraic instance: embed into the linear maps `V →ₗ[R] W`, which form a
+  -- Noetherian module by `isNoetherian_linearMap`.
+  .of_injective (σ := RingHom.id R)
+    { toFun f := (f.toContinuousLinearMap : V →ₗ[R] W)
       map_add' _ _ := rfl
       map_smul' _ _ := rfl }
     fun _ _ h ↦ ContIntertwiningMap.ext (ContinuousLinearMap.coe_injective h)
@@ -77,10 +85,7 @@ namespace ContRepresentation
 
 section Intertwiners
 
-universe u v w x y
-
-variable {𝕜 : Type u} {G : Type v} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Monoid G]
-  {V : Type w} {W : Type x} {U : Type y}
+variable {𝕜 G V W U : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Monoid G]
   [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V] [IsTopologicalAddGroup V]
   [ContinuousSMul 𝕜 V] [T2Space V] [FiniteDimensional 𝕜 V]
   [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W] [IsTopologicalAddGroup W]
@@ -99,21 +104,11 @@ noncomputable def intertwiningMapEquiv :
   toFun f := f.toIntertwiningMap
   invFun f :=
     { toContinuousLinearMap := LinearMap.toContinuousLinearMap f.toLinearMap
-      isIntertwining' := fun g => by
-        ext v
-        exact Representation.IntertwiningMap.isIntertwining _ _ f g v }
-  left_inv f := by
-    apply ContIntertwiningMap.ext
-    rfl
-  right_inv f := by
-    apply Representation.IntertwiningMap.ext
-    rfl
-  map_add' f g := by
-    apply Representation.IntertwiningMap.ext
-    rfl
-  map_smul' c f := by
-    apply Representation.IntertwiningMap.ext
-    rfl
+      isIntertwining' g := ContinuousLinearMap.ext (f.isIntertwining _ _ g) }
+  left_inv _ := ContIntertwiningMap.ext rfl
+  right_inv _ := Representation.IntertwiningMap.ext rfl
+  map_add' _ _ := Representation.IntertwiningMap.ext rfl
+  map_smul' _ _ := Representation.IntertwiningMap.ext rfl
 
 /-- The forward intertwiner identification is the existing forgetful map. -/
 theorem intertwiningMapEquiv_apply (f : ContIntertwiningMap π ρ) :
@@ -152,9 +147,8 @@ theorem intertwiningMapEquiv_comp [T2Space W] [FiniteDimensional 𝕜 W]
 @[simp high]
 theorem intertwiningMapEquiv_symm_id :
     intertwiningMapEquiv.symm (Representation.IntertwiningMap.id π.toRepresentation) =
-      (ContIntertwiningMap.id : ContIntertwiningMap π π) := by
-  apply ContIntertwiningMap.ext
-  rfl
+      (ContIntertwiningMap.id : ContIntertwiningMap π π) :=
+  ContIntertwiningMap.ext rfl
 
 /-- The inverse intertwiner identification preserves composition. -/
 @[simp high]
@@ -162,9 +156,8 @@ theorem intertwiningMapEquiv_symm_comp [T2Space W] [FiniteDimensional 𝕜 W]
     (f : Representation.IntertwiningMap ρ.toRepresentation τ.toRepresentation)
     (g : Representation.IntertwiningMap π.toRepresentation ρ.toRepresentation) :
     intertwiningMapEquiv.symm (f.comp g) =
-      (intertwiningMapEquiv.symm f).comp (intertwiningMapEquiv.symm g) := by
-  apply ContIntertwiningMap.ext
-  rfl
+      (intertwiningMapEquiv.symm f).comp (intertwiningMapEquiv.symm g) :=
+  ContIntertwiningMap.ext rfl
 
 end Intertwiners
 
@@ -181,16 +174,11 @@ variable {𝕜 G V W : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜
 continuously equivalent exactly when their underlying algebraic representations are equivalent. -/
 theorem nonempty_equiv_iff :
     Nonempty (_root_.ContRepresentation.Equiv π ρ) ↔
-      Nonempty (Representation.Equiv π.toRepresentation ρ.toRepresentation) := by
-  constructor
-  · rintro ⟨φ⟩
-    refine ⟨Representation.Equiv.mk φ.toContinuousLinearEquiv.toLinearEquiv fun g ↦ ?_⟩
-    ext v
-    exact congr($(φ.isIntertwining g) v)
-  · rintro ⟨φ⟩
-    refine ⟨_root_.ContRepresentation.Equiv.mk φ.toLinearEquiv.toContinuousLinearEquiv fun g ↦ ?_⟩
-    ext v
-    exact congr($(φ.isIntertwining' g) v)
+      Nonempty (Representation.Equiv π.toRepresentation ρ.toRepresentation) :=
+  ⟨fun ⟨φ⟩ ↦ ⟨.mk φ.toContinuousLinearEquiv.toLinearEquiv fun g ↦
+      LinearMap.ext (φ.toContIntertwiningMap.isIntertwining g)⟩,
+    fun ⟨φ⟩ ↦ ⟨.mk φ.toLinearEquiv.toContinuousLinearEquiv fun g ↦
+      ContinuousLinearMap.ext (φ.toIntertwiningMap.isIntertwining _ _ g)⟩⟩
 
 end Equivalence
 

@@ -41,8 +41,9 @@ sublevel exactly in `Θ(S_ε)` (`IsCriticalSubmanifold.mem_negativeSphereBundle_
 of a closed embedding of the disc bundle `TauCeti.gaugeDiscBundle` of a fibre gauge on a vector
 bundle attached along its sphere bundle. `D_ε` is cut out of the whole normal bundle by the normal
 Hessian, as the disc bundle of the gauge `v ↦ √(-Hess(v, v) / (2ε))` on the negative normal
-spaces, so applying that theorem to `D_ε` still needs the negative normal bundle as a vector bundle
-with that gauge.
+spaces (`IsCriticalSubmanifold.negativeNormalGauge`); with the negative normal bundle as a vector
+bundle, `IsNondegenerateCriticalSubmanifold.exists_isIso_singularHomologyMap_negativeNormalGauge`
+applies that theorem to `D_ε`.
 
 When `D_ε` is compact, as it is for a compact Morse–Bott submanifold and a smooth fibre metric
 (`IsNondegenerateCriticalSubmanifold.isCompact_negativeDiscBundle`), a normal form which is
@@ -485,8 +486,10 @@ private theorem exists_homotopyEquiv_pushout_of_deformation [T2Space S] [Compact
       sq.inr_isoPushout_inv, TopCat.ofHom_apply, ContinuousMap.inclusion_apply_coe]
   refine ⟨α, hα, ((TopCat.homeoOfIso sq.isoPushout.symm).trans
     (Homeomorph.setCongr (inter_eq_right.2 hU).symm)).toHomotopyEquiv.trans
-    (ContinuousMap.HomotopyEquiv.ofRetraction _ ρ hρ R.toHomotopy), fun z ↦ ?_⟩
-  rw [ContinuousMap.HomotopyEquiv.trans_apply, ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply]
+    (ContinuousMap.HomotopyEquiv.ofDeformationRetraction (.inclusion _) ρ hρ
+      (ContinuousMap.HomotopicRel.homotopic ⟨R⟩)), fun z ↦ ?_⟩
+  rw [ContinuousMap.HomotopyEquiv.trans_apply,
+    ContinuousMap.HomotopyEquiv.ofDeformationRetraction_apply, ContinuousMap.inclusion_apply_coe]
   exact hinr z
 
 /-- **Crossing a Morse–Bott level between regular levels attaches the negative disc bundle.** Let
@@ -698,11 +701,13 @@ theorem exists_isPushout_iUnion_negativeDiscBundle_homotopyEquiv [T2Space M]
   have hρ' : (ContinuousMap.inclusion hX).comp ρ =
       (ContinuousMap.inclusion inter_subset_left).comp r :=
     ContinuousMap.ext fun _ ↦ rfl
-  set e := ContinuousMap.HomotopyEquiv.ofRetraction hX ρ hρ (G.toHomotopy.cast hρ'.symm rfl)
-  have he₁ (x) : (e x : M) = x := ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply _ _ _ _ x
-  have he : e.toFun = ContinuousMap.inclusion hX := ContinuousMap.ext fun x ↦ Subtype.ext (he₁ x)
-  have he' : e.invFun = ρ :=
-    ContinuousMap.ext (ContinuousMap.HomotopyEquiv.coe_ofRetraction_symm_apply _ _ _ _)
+  set e := ContinuousMap.HomotopyEquiv.ofDeformationRetraction (.inclusion hX) ρ hρ
+    ⟨G.toHomotopy.cast hρ'.symm rfl⟩
+  have he₁ (x) : (e x : M) = x :=
+    congrArg Subtype.val (ContinuousMap.HomotopyEquiv.ofDeformationRetraction_apply _ _ _ _ x)
+  have he : e.toFun = ContinuousMap.inclusion hX :=
+    ContinuousMap.HomotopyEquiv.ofDeformationRetraction_toFun ..
+  have he' : e.invFun = ρ := ContinuousMap.HomotopyEquiv.ofDeformationRetraction_invFun ..
   refine ⟨e, he₁, fun x ↦ ?_, ?_⟩
   · simpa only [← he, ← he'] using hρ x
   · rw [he, he', hρ']; exact ContinuousMap.HomotopicRel.mono ⟨G⟩ fun y hy ↦ Or.inl hy

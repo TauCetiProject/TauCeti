@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.Ideal
 public import Mathlib.Algebra.Lie.Subalgebra
 public import TauCeti.Algebra.Lie.Restricted.Jacobson
-import Mathlib.LinearAlgebra.Matrix.Notation
 import TauCeti.Algebra.Lie.AdjointAction.Frobenius
 
 /-!
@@ -25,7 +24,7 @@ with a `p`-map `pMap : L → L` (`x ↦ x^[p]`) satisfying:
 1. `p`-homogeneity: `pMap (c • x) = c ^ p • pMap x` for `c : R`, `x : L`;
 2. adjoint compatibility: `LieAlgebra.ad R L (pMap x) = LieAlgebra.ad R L x ^ p`;
 3. Jacobson's additivity law:
-   `pMap (x + y) = pMap x + pMap y + FreeLieAlgebra.lift R ![x, y] (jacobsonLie R p)`.
+   `pMap (x + y) = pMap x + pMap y + TauCeti.LieAlgebra.jacobson p x y`.
 
 The `p`-map is genuine data rather than a property: on an abelian Lie algebra `R` of prime
 characteristic `p` with `1 ≠ 0`, `pMap = 0` (`ofAbelianZero`) and `pMap x = x ^ p`
@@ -73,7 +72,8 @@ namespace TauCeti
 /-- A restricted Lie algebra (or `p`-Lie algebra, Jacobson 1941; Katz 1970, §5.0) over a
 commutative ring `R`: a Lie algebra `L` of prime characteristic `p` (`p.Prime` and
 `∀ x : L, p • x = 0`) equipped with a `p`-map `pMap : L → L` that is `p`-homogeneous, compatible
-with the adjoint action, and satisfies Jacobson's additivity formula with `jacobsonLie R p`. -/
+with the adjoint action, and satisfies Jacobson's additivity formula with
+`TauCeti.LieAlgebra.jacobson`. -/
 @[ext]
 class RestrictedLieAlgebra (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] (p : ℕ) where
   /-- The characteristic `p` is prime. -/
@@ -87,8 +87,7 @@ class RestrictedLieAlgebra (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R 
   /-- Compatibility with the adjoint action: `ad (pMap x) = (ad x) ^ p`. -/
   ad_pMap (x : L) : LieAlgebra.ad R L (pMap x) = LieAlgebra.ad R L x ^ p
   /-- Jacobson's additivity formula for `pMap (x + y)`. -/
-  pMap_add (x y : L) :
-    pMap (x + y) = pMap x + pMap y + FreeLieAlgebra.lift R ![x, y] (jacobsonLie R p)
+  pMap_add (x y : L) : pMap (x + y) = pMap x + pMap y + LieAlgebra.jacobson p x y
 
 namespace RestrictedLieAlgebra
 
@@ -105,7 +104,7 @@ theorem lie_pMap (x y : L) :
 @[simp]
 theorem pMap_zero : pMap (R := R) (p := p) (0 : L) = 0 := by
   have h := pMap_add (R := R) (p := p) (0 : L) (0 : L)
-  rw [add_zero, lift_jacobsonLie_zero_left, add_zero] at h
+  rw [add_zero, LieAlgebra.jacobson_zero_left, add_zero] at h
   exact add_left_cancel (by rw [add_zero]; exact h.symm)
 
 /-- `pMap (-x) = (-1 : R) ^ p • pMap x`. -/
@@ -126,8 +125,7 @@ theorem pMap_neg_of_even (hp : Even p) (x : L) :
 /-- On commuting elements `x, y`, `pMap` is additive. -/
 theorem pMap_add_of_lie_eq_zero {x y : L} (h : ⁅x, y⁆ = 0) :
     pMap (R := R) (p := p) (x + y) = pMap (R := R) (p := p) x + pMap (R := R) (p := p) y := by
-  rw [pMap_add,
-    lift_jacobsonLie_eq_zero_of_lie_eq_zero (prime (R := R) (L := L) (p := p)).ne_zero h, add_zero]
+  rw [pMap_add, LieAlgebra.jacobson_eq_zero_of_lie_eq_zero p h, add_zero]
 
 /-- On commuting elements `x, y`, `pMap (x - y) = pMap x + (-1 : R) ^ p • pMap y`. -/
 theorem pMap_sub_of_lie_eq_zero {x y : L} (h : ⁅x, y⁆ = 0) :
@@ -397,9 +395,8 @@ instance instRestrictedLieAlgebra (S : RestrictedLieSubalgebra R p L) :
       (LieSubalgebra.coe_ad_pow (R := R) (L := L) S.toLieSubalgebra x y p).symm
   pMap_add x y := by
     refine Subtype.ext ?_
-    have hincl : (FreeLieAlgebra.lift R ![x, y] (jacobsonLie R p) : L) =
-        FreeLieAlgebra.lift R ![(x : L), (y : L)] (jacobsonLie R p) :=
-      map_lift_jacobsonLie p S.toLieSubalgebra.incl x y
+    have hincl : ((LieAlgebra.jacobson p x y : S) : L) = LieAlgebra.jacobson p (x : L) (y : L) :=
+      LieHom.map_jacobson S.toLieSubalgebra.incl p x y
     dsimp only
     rw [coe_add, coe_add, coe_add, hincl]
     exact RestrictedLieAlgebra.pMap_add (R := R) (p := p) (x : L) (y : L)
@@ -683,9 +680,7 @@ def RestrictedLieAlgebra.ofAbelianZero (R L : Type*) [CommRing R] [LieRing L] [L
       exact trivial_lie_zero L L x y
     rw [map_zero, h0, zero_pow (Fact.out : p.Prime).ne_zero]
   pMap_add x y := by
-    rw [add_zero,
-      lift_jacobsonLie_eq_zero_of_lie_eq_zero (Fact.out : p.Prime).ne_zero
-        (trivial_lie_zero L L x y),
+    rw [add_zero, LieAlgebra.jacobson_eq_zero_of_lie_eq_zero p (trivial_lie_zero L L x y),
       add_zero]
 
 @[simp]
@@ -712,7 +707,7 @@ def RestrictedLieAlgebra.ofAssociative (R A : Type*) [CommRing R] [Ring A] [Alge
   ad_pMap a := by
     have : ExpChar A p := ExpChar.prime Fact.out
     simpa only [pow_one] using TauCeti.LieAlgebra.ad_pow_expChar_pow (R := R) p a 1
-  pMap_add a b := add_pow_eq_jacobson R p a b
+  pMap_add a b := LieAlgebra.add_pow_eq_jacobson p a b
 
 @[simp]
 theorem RestrictedLieAlgebra.ofAssociative_pMap (R A : Type*) [CommRing R] [Ring A] [Algebra R A]

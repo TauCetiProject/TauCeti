@@ -251,14 +251,13 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- Jacobson's formula for the `p`-th power of a sum of derivations. -/
 theorem pPow_add (D E : Derivation R A A) (p : ℕ) [Fact p.Prime] [CharP A p] :
-    (D + E).pPow p =
-      D.pPow p + E.pPow p + FreeLieAlgebra.lift R ![D, E] (TauCeti.jacobsonLie R p) := by
+    (D + E).pPow p = D.pPow p + E.pPow p + TauCeti.LieAlgebra.jacobson p D E := by
   have : CharP (Module.End R A) p :=
     charP_of_injective_ringHom (f := (Algebra.lmul R A : A →ₐ[R] Module.End R A).toRingHom)
       Algebra.lmul_injective p
   refine toLinearMapLieHom_injective ?_
-  have hjac := TauCeti.add_pow_eq_jacobson R p (D : Module.End R A) (E : Module.End R A)
-  have hmap := TauCeti.map_lift_jacobsonLie p (toLinearMapLieHom R A) D E
+  have hjac := TauCeti.LieAlgebra.add_pow_eq_jacobson p (D : Module.End R A) (E : Module.End R A)
+  have hmap := LieHom.map_jacobson (toLinearMapLieHom R A) p D E
   simp only [toLinearMapLieHom_apply] at hmap
   have hadd (D₁ D₂ : Derivation R A A) :
       ((D₁ + D₂ : Derivation R A A) : Module.End R A) =
