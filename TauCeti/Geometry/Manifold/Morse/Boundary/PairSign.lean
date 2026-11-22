@@ -172,8 +172,10 @@ theorem pairSign_def
         (hX₀.pairComparison hX₁ φp φq y).toLinearMap :=
   (rfl)
 
-/-- The number of points of `W^u_{X₀}(p) ∩ W^s_{X₁}(q)` counted with their signs. When the
-intersection is infinite, this is the junk value `0`. -/
+/-- The number of points of `W^u_{X₀}(p) ∩ W^s_{X₁}(q)` counted with their signs. When
+infinitely many points of the intersection have nonzero sign, this is the junk value `0`. For a
+Morse–Smale pair of Morse–Smale pseudo-gradients adapted to Morse functions, the intersection is
+finite (`IsMorseSmalePair.finite_unstableSet_inter_stableSet`). -/
 noncomputable def signedPairCount
     (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f₀ p)))
     (oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f₁ q)))
