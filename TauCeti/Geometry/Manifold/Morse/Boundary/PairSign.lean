@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Integral
 public import TauCeti.Geometry.Manifold.Morse.Stable.Pair
-import TauCeti.LinearAlgebra.Ray
+public import TauCeti.LinearAlgebra.Orientation.LinearMapSign
 
 /-!
 # Signed counts for a Morse–Smale pair of pseudo-gradients
@@ -38,8 +38,9 @@ The **comparison map** `Nq ∘ Fp : Vp → Vq`
 (`TauCeti.IsAdaptedPseudoGradient.pairComparison`) is an isomorphism when `ind p = ind q`
 (`TauCeti.IsAdaptedPseudoGradient.bijective_pairComparison`): the two manifolds are transverse at
 `y` and of complementary dimensions, so they meet only in `0` at the level of tangent spaces. The
-**sign** of `y` (`TauCeti.IsAdaptedPseudoGradient.pairSign`) is `+1` if this isomorphism carries
-`op` to `oq`, and `-1` otherwise: `y` counts positively when a positive basis of `T_y W^u_{X₀}(p)`
+**sign** of `y` (`TauCeti.IsAdaptedPseudoGradient.pairSign`), the sign
+`Orientation.linearMapSign` of the comparison map, is `+1` if this isomorphism carries `op` to
+`oq`, and `-1` otherwise: `y` counts positively when a positive basis of `T_y W^u_{X₀}(p)`
 projects to a positive basis of the normal space of `W^s_{X₁}(q)`. Unlike the signs of the
 trajectories counted by the Morse boundary (`TauCeti.IsAdaptedPseudoGradient.trajectorySign`),
 there is no flow direction to split off, since the intersection is not invariant under a flow.
@@ -146,21 +147,30 @@ theorem pairComparison_apply (y : M) (v : {i // φp.weight i < 0} → ℝ) :
     hX₀.pairComparison hX₁ φp φq y v = hX₁.stableNormal φq y (hX₀.unstableFrame φp y v) :=
   (rfl)
 
-open scoped Classical in
 /-- The **sign of a point** `y` of `W^u_{X₀}(p) ∩ W^s_{X₁}(q)`, for orientations `op` and `oq` of
-the unstable manifolds of `X₀` at `p` and of `X₁` at `q`, of the same dimension: `1` when the
-comparison map is an isomorphism carrying `op` to `oq`, `-1` when it is an isomorphism reversing
-them, and `0` when it is not an isomorphism. The last case does not happen on the intersection
-when the pair is Morse–Smale and the pseudo-gradients are linear in the charts
+the unstable manifolds of `X₀` at `p` and of `X₁` at `q`, of the same dimension: the sign
+`Orientation.linearMapSign` of the comparison map, that is, `1` when it is an isomorphism carrying
+`op` to `oq`, `-1` when it is an isomorphism reversing them, and `0` when it is not an
+isomorphism. The last case does not happen on the intersection when the pair is Morse–Smale, `f₀`
+is Morse and the pseudo-gradients are linear in the charts
 (`TauCeti.IsAdaptedPseudoGradient.bijective_pairComparison`). -/
 noncomputable def pairSign
     (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f₀ p)))
     (oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f₁ q)))
     (hpq : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₁ q) (y : M) : ℤ :=
-  if h : Bijective (hX₀.pairComparison hX₁ φp φq y) then
-    if Orientation.map _ (LinearEquiv.ofBijective (hX₀.pairComparison hX₁ φp φq y).toLinearMap h)
-        op = Orientation.reindex ℝ _ (finCongr hpq.symm) oq then 1 else -1
-  else 0
+  op.linearMapSign (Orientation.reindex ℝ _ (finCongr hpq.symm) oq)
+    (hX₀.pairComparison hX₁ φp φq y).toLinearMap
+
+/-- The sign of a point is the sign of the comparison map, with the target orientation reindexed
+by the index of the source. -/
+theorem pairSign_def
+    (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f₀ p)))
+    (oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f₁ q)))
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₁ q) (y : M) :
+    hX₀.pairSign hX₁ φp φq op oq hpq y =
+      op.linearMapSign (Orientation.reindex ℝ _ (finCongr hpq.symm) oq)
+        (hX₀.pairComparison hX₁ φp φq y).toLinearMap :=
+  (rfl)
 
 /-- The number of points of `W^u_{X₀}(p) ∩ W^s_{X₁}(q)` counted with their signs. When the
 intersection is infinite, this is the junk value `0`. -/
@@ -190,28 +200,19 @@ to with `oq`. -/
 theorem pairSign_of_bijective {y : M} (h : Bijective (hX₀.pairComparison hX₁ φp φq y)) :
     hX₀.pairSign hX₁ φp φq op oq hpq y =
       if Orientation.map _ (LinearEquiv.ofBijective (hX₀.pairComparison hX₁ φp φq y).toLinearMap h)
-          op = Orientation.reindex ℝ _ (finCongr hpq.symm) oq then 1 else -1 := by
-  simp only [pairSign, h, ↓reduceDIte]
+          op = Orientation.reindex ℝ _ (finCongr hpq.symm) oq then 1 else -1 :=
+  Orientation.linearMapSign_of_bijective h
 
 /-- Where the comparison map is not an isomorphism, the sign is `0`. -/
 theorem pairSign_of_not_bijective {y : M} (h : ¬Bijective (hX₀.pairComparison hX₁ φp φq y)) :
-    hX₀.pairSign hX₁ φp φq op oq hpq y = 0 := by
-  simp only [pairSign, h, ↓reduceDIte]
+    hX₀.pairSign hX₁ φp φq op oq hpq y = 0 :=
+  Orientation.linearMapSign_of_not_bijective h
 
 /-- **The sign of a point is `±1`** wherever the comparison map is an isomorphism. -/
 theorem pairSign_eq_one_or_eq_neg_one_of_bijective {y : M}
     (h : Bijective (hX₀.pairComparison hX₁ φp φq y)) :
-    hX₀.pairSign hX₁ φp φq op oq hpq y = 1 ∨ hX₀.pairSign hX₁ φp φq op oq hpq y = -1 := by
-  rw [pairSign_of_bijective h]
-  split_ifs <;> simp
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
-/-- Every orientation of `Vq` indexed by `Fin (ind p)` is the reindexed `oq` or its reverse. -/
-private theorem eq_or_eq_neg_reindex
-    (o : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f₀ p))) :
-    o = Orientation.reindex ℝ _ (finCongr hpq.symm) oq ∨
-      o = -Orientation.reindex ℝ _ (finCongr hpq.symm) oq :=
-  o.eq_or_eq_neg _ (by rw [Nat.card_fin, φq.finrank_negativeWeight_fun, hpq])
+    hX₀.pairSign hX₁ φp φq op oq hpq y = 1 ∨ hX₀.pairSign hX₁ φp φq op oq hpq y = -1 :=
+  Orientation.linearMapSign_eq_one_or_eq_neg_one_of_bijective h
 
 /-- **Reading off the sign.** If a linear equivalence `L` agrees with the comparison map and
 carries `op` to `oq`, reindexed, scaled by a unit sign `u`, the sign of the point is `u`. -/
@@ -221,40 +222,23 @@ theorem pairSign_eq_of_map_eq {y : M}
     (hu : Orientation.map _ L op =
       Units.map (Int.castRingHom ℝ).toMonoidHom u •
         Orientation.reindex ℝ _ (finCongr hpq.symm) oq) :
-    hX₀.pairSign hX₁ φp φq op oq hpq y = u := by
-  have h : Bijective (hX₀.pairComparison hX₁ φp φq y) := by
-    rw [← funext hL]
-    exact L.bijective
-  rw [pairSign_of_bijective h,
-    show LinearEquiv.ofBijective _ h = L from LinearEquiv.ext fun v ↦ (hL v).symm, hu,
-    Orientation.intCast_units_smul_eq_ite]
-  rcases Int.units_eq_one_or u with rfl | rfl
-  · simp
-  · simp [(Module.Ray.ne_neg_self _).symm]
+    hX₀.pairSign hX₁ φp φq op oq hpq y = u :=
+  Orientation.linearMapSign_eq_of_map_eq L hL hu
 
 /-- **Reversing the orientation at the source reverses the sign.** -/
 @[simp]
 theorem pairSign_neg_left (y : M) :
-    hX₀.pairSign hX₁ φp φq (-op) oq hpq y = -hX₀.pairSign hX₁ φp φq op oq hpq y := by
-  by_cases h : Bijective (hX₀.pairComparison hX₁ φp φq y)
-  · rw [pairSign_of_bijective h, pairSign_of_bijective h, Orientation.map_neg]
-    generalize Orientation.map _ (LinearEquiv.ofBijective _ h) op = o
-    rcases eq_or_eq_neg_reindex (oq := oq) (hpq := hpq) o with rfl | rfl
-    · simp [(Module.Ray.ne_neg_self _).symm]
-    · simp [(Module.Ray.ne_neg_self _).symm, Module.Ray.neg_neg]
-  · rw [pairSign_of_not_bijective h, pairSign_of_not_bijective h, neg_zero]
+    hX₀.pairSign hX₁ φp φq (-op) oq hpq y = -hX₀.pairSign hX₁ φp φq op oq hpq y :=
+  Orientation.linearMapSign_neg_left
+    (by rw [Fintype.card_fin, φq.finrank_negativeWeight_fun, hpq])
 
 /-- **Reversing the orientation at the target reverses the sign.** -/
 @[simp]
 theorem pairSign_neg_right (y : M) :
     hX₀.pairSign hX₁ φp φq op (-oq) hpq y = -hX₀.pairSign hX₁ φp φq op oq hpq y := by
-  by_cases h : Bijective (hX₀.pairComparison hX₁ φp φq y)
-  · rw [pairSign_of_bijective h, pairSign_of_bijective h, Orientation.reindex_neg]
-    generalize Orientation.map _ (LinearEquiv.ofBijective _ h) op = o
-    rcases eq_or_eq_neg_reindex (oq := oq) (hpq := hpq) o with rfl | rfl
-    · simp [Module.Ray.ne_neg_self]
-    · simp [(Module.Ray.ne_neg_self _).symm]
-  · rw [pairSign_of_not_bijective h, pairSign_of_not_bijective h, neg_zero]
+  rw [pairSign_def, pairSign_def, Orientation.reindex_neg]
+  exact Orientation.linearMapSign_neg_right
+    (by rw [Fintype.card_fin, φq.finrank_negativeWeight_fun, hpq])
 
 /-- Reversing the orientation at the source reverses the signed count. -/
 @[simp]
@@ -413,33 +397,9 @@ theorem pairSign_map_negativeChange (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
     hX₀.pairSign hX₁ φp' φq' (Orientation.map _ (φp.negativeChange φp') op)
         (Orientation.map _ (φq.negativeChange φq') oq) hpq y =
       hX₀.pairSign hX₁ φp φq op oq hpq y := by
-  set e := φq.negativeChange φq'
-  -- The comparison map in the new charts is `e ∘ C ∘ ep⁻¹`, for `C` the one in the old charts and
-  -- `ep` the change of negative coordinates at `p`.
-  have hC (v : {i // φp.weight i < 0} → ℝ) :
-      hX₀.pairComparison hX₁ φp' φq' y (φp.negativeChange φp' v) =
-        e (hX₀.pairComparison hX₁ φp φq y v) :=
-    pairComparison_negativeChange hφp hφp' hφq hφq' hf₀ hy v
-  have hC' : ⇑(hX₀.pairComparison hX₁ φp φq y) =
-      e.symm ∘ hX₀.pairComparison hX₁ φp' φq' y ∘ φp.negativeChange φp' :=
-    funext fun v ↦ by simp [hC]
-  have hC'' : ⇑(hX₀.pairComparison hX₁ φp' φq' y) =
-      e ∘ hX₀.pairComparison hX₁ φp φq y ∘ (φp.negativeChange φp').symm := funext fun w ↦ by
-    simpa using hC ((φp.negativeChange φp').symm w)
-  by_cases h : Bijective (hX₀.pairComparison hX₁ φp φq y)
-  · have h' : Bijective (hX₀.pairComparison hX₁ φp' φq' y) := by
-      rw [hC'']
-      exact e.bijective.comp (h.comp (φp.negativeChange φp').symm.bijective)
-    have hmap : (φp.negativeChange φp').trans
-        (LinearEquiv.ofBijective (hX₀.pairComparison hX₁ φp' φq' y).toLinearMap h') =
-        (LinearEquiv.ofBijective (hX₀.pairComparison hX₁ φp φq y).toLinearMap h).trans e :=
-      LinearEquiv.ext hC
-    rw [pairSign_of_bijective h, pairSign_of_bijective h', ← Orientation.map_reindex,
-      ← Orientation.map_trans, hmap, Orientation.map_trans, (Orientation.map _ e).injective.eq_iff]
-  · have h' : ¬Bijective (hX₀.pairComparison hX₁ φp' φq' y) := fun h' ↦ h (by
-      rw [hC']
-      exact e.symm.bijective.comp (h'.comp (φp.negativeChange φp').bijective))
-    rw [pairSign_of_not_bijective h, pairSign_of_not_bijective h']
+  rw [pairSign_def, pairSign_def, ← Orientation.map_reindex]
+  exact Orientation.linearMapSign_map_map _ _
+    (pairComparison_negativeChange hφp hφp' hφq hφq' hf₀ hy)
 
 /-- **The signed count does not depend on the Morse charts**: it is unchanged when the Morse
 charts are changed and the orientations of their coordinates of negative weight are transported
@@ -466,8 +426,9 @@ variable (hX₀ : IsAdaptedPseudoGradient f₀ X₀) (hX₁ : IsAdaptedPseudoGra
 
 /-- The coefficient of the critical point `q` of `f₁` in the image of the critical point `p` of
 `f₀` under the signed pair map: `TauCeti.IsAdaptedPseudoGradient.signedPairCount` when
-`ind p = ind q`, and `0` otherwise. When the pair is Morse–Smale, this is the number of points of
-`W^u_{X₀}(p) ∩ W^s_{X₁}(q)` counted with their signs. -/
+`ind p = ind q`, and `0` otherwise. For a Morse–Smale pair of Morse–Smale pseudo-gradients
+adapted to Morse functions, this is the number of points of `W^u_{X₀}(p) ∩ W^s_{X₁}(q)` counted
+with their signs. -/
 noncomputable def signedPairCoeff (p : criticalPoints 𝓘(ℝ, E) f₀)
     (q : criticalPoints 𝓘(ℝ, E) f₁) : ℤ :=
   if hpq : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₁ q then
@@ -557,9 +518,9 @@ theorem IsMorseSmale.signedPairCoeff_self {𝔬 : MorseOrientation f X} (h : hX.
 variable (hX₀ hX₁ 𝔬₀ 𝔬₁) in
 /-- **The signed pair map with coefficients in a ring `R`.** The `R`-linear map from the free module
 on the critical points of `f₀` to that on the critical points of `f₁` sending a critical point `p`
-to the sum of the critical points `q` with `ind q = ind p`, each weighted by `signedPairCoeff`. When
-the pair is Morse–Smale, that weight is the number of points of `W^u_{X₀}(p) ∩ W^s_{X₁}(q)` counted
-with their signs. -/
+to the sum of the critical points `q` with `ind q = ind p`, each weighted by `signedPairCoeff`. For
+a Morse–Smale pair of Morse–Smale pseudo-gradients adapted to Morse functions, that weight is the
+number of points of `W^u_{X₀}(p) ∩ W^s_{X₁}(q)` counted with their signs. -/
 noncomputable def signedPairMap (hf₁ : IsMorse 𝓘(ℝ, E) f₁) (R : Type*) [Ring R] :
     (criticalPoints 𝓘(ℝ, E) f₀ →₀ R) →ₗ[R] (criticalPoints 𝓘(ℝ, E) f₁ →₀ R) :=
   haveI := hf₁.finite_criticalPoints.to_subtype
