@@ -90,6 +90,9 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
   `SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_linearIsometryEquiv`,
   `SchwartzMap.fourierInv_compCLMOfContinuousLinearEquiv_linearIsometryEquiv`: the same as
   identities of Schwartz functions, for `𝓕` and `𝓕⁻`.
+* `SchwartzMap.fourierMultiplierCLM_compCLMOfContinuousLinearEquiv_linearIsometryEquiv`:
+  composition with a linear isometry equivalence `A` carries the Fourier multiplier with symbol `g`
+  to the one with symbol `g ∘ A`, `T_{g ∘ A} (f ∘ A) = (T_g f) ∘ A`.
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply`: the Fourier transform of a second
   directional derivative.
 * `SchwartzMap.fourier_laplacian_apply`: the Fourier transform of the Laplacian.
@@ -120,6 +123,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
   Section 9.4.
+* L. Grafakos, *Classical Fourier Analysis*, 3rd ed., Proposition 2.2.11 (the Fourier transform
+  commutes with orthogonal changes of variables).
 -/
 
 public section
@@ -416,6 +421,30 @@ theorem fourierInv_compCLMOfContinuousLinearEquiv_linearIsometryEquiv {D : Type*
       compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv (𝓕⁻ f) := by
   ext x
   simp [fourierInv_coe, Real.fourierInv_comp_linearIsometry]
+
+/-- Composition with a linear isometry equivalence `A` intertwines Fourier multipliers, carrying
+the symbol `g` to `g ∘ A`: `T_{g ∘ A} (f ∘ A) = (T_g f) ∘ A`. In particular a Fourier multiplier
+whose symbol is invariant under a linear isometry of `E` commutes with composition with it. -/
+theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv_linearIsometryEquiv {D : Type*}
+    [NormedAddCommGroup D] [InnerProductSpace ℝ D] [FiniteDimensional ℝ D] [MeasurableSpace D]
+    [BorelSpace D] {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℂ 𝕜 F]
+    (A : D ≃ₗᵢ[ℝ] E) (g : E → 𝕜) (f : 𝓢(E, F)) :
+    fourierMultiplierCLM F (g ∘ A) (compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv f) =
+      compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv (fourierMultiplierCLM F g f) := by
+  by_cases hg : g.HasTemperateGrowth
+  · have hgA' : (g ∘ A).HasTemperateGrowth :=
+      A.toContinuousLinearEquiv.hasTemperateGrowth_comp_iff.mpr hg
+    have hgA : (g ∘ A) ∘ A.toContinuousLinearEquiv.symm = g := by
+      ext x
+      simp
+    rw [fourierMultiplierCLM_apply, fourierMultiplierCLM_apply,
+      fourier_compCLMOfContinuousLinearEquiv_linearIsometryEquiv,
+      smulLeftCLM_compCLMOfContinuousLinearEquiv ℂ hgA', hgA,
+      fourierInv_compCLMOfContinuousLinearEquiv_linearIsometryEquiv]
+  · have hgA : ¬(g ∘ A).HasTemperateGrowth :=
+      A.toContinuousLinearEquiv.hasTemperateGrowth_comp_iff.not.mpr hg
+    simp [fourierMultiplierCLM_apply, smulLeftCLM_of_not_hasTemperateGrowth hg,
+      smulLeftCLM_of_not_hasTemperateGrowth hgA]
 
 /-- The Fourier transform of the second directional derivative `∂_v ∂_w u` of a Schwartz function
 is `𝓕 u` multiplied by `-(2π)² ⟪ξ, v⟫ ⟪ξ, w⟫`. -/
