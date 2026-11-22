@@ -253,7 +253,7 @@ theorem exists_pos_forall_eq_of_forall_dist_lt_of_mem_image {F : Type*} [NormedA
   obtain ⟨x, hx, hxK, rfl⟩ := exists_mem_periodicSolutions_comp_eq hK he_inj hde hY hyper hy hyK
   -- Inside `K`, the neighbourhoods of `x 0` are read through `e`.
   obtain ⟨V, hV, hVx⟩ := hK.exists_mem_nhds_inter_preimage_subset he he_inj (hxK 0)
-    (hiso x hx hxK)
+    (mem_nhdsWithin_of_mem_nhds (hiso x hx hxK))
   obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.1 hV
   refine ⟨ε, hε, fun y' hy'per hy' hy'K hdist ↦ ?_⟩
   obtain ⟨x', hx', hx'K, rfl⟩ :=
