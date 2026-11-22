@@ -66,7 +66,7 @@ private theorem ae_le_of_ae_measure_Iic_eq {M : Ω → Measure ℝ≥0}
 represented almost surely by cumulative counts `N` has singleton mass at most one simultaneously
 at all positive times. Neither independent increments nor measurability of `M` or `N` is
 assumed. -/
-theorem ae_measure_singleton_le_one_of_small_time [IsFiniteMeasure P]
+theorem ae_forall_pos_measure_singleton_le_one_of_small_time [IsFiniteMeasure P]
     {M : Ω → Measure ℝ≥0}
     (hcount : ∀ᵐ ω ∂P, ∀ t, M ω (Iic t) = (N t ω : ℝ≥0∞))
     (hstat : ∀ s h, IdentDistrib (fun ω ↦ N (s + h) ω - N s ω)
@@ -82,20 +82,22 @@ theorem ae_measure_singleton_le_one_of_small_time [IsFiniteMeasure P]
     rw [Measure.measure_Ioc_eq_natCast_sub (hω s) (hω t)]
     have hsub : N t ω - N s ω ≤ 1 := by omega
     exact_mod_cast hsub
-  exact (measure_mono (show {t} ⊆ Ioc s t from singleton_subset_iff.mpr ⟨hst, le_rfl⟩)).trans hIoc
+  have hsubset : {t} ⊆ Ioc s t := singleton_subset_iff.mpr ⟨hst, le_rfl⟩
+  exact (measure_mono hsubset).trans hIoc
 
 /-- Stationary increment laws and `P(N h - N 0 ≥ 2) = o(h)` imply that
 `countPathMeasure (N · ω)` has singleton mass at most one simultaneously at all positive times,
 whenever sample paths are monotone and right-continuous on one event of full measure. Neither
 independent increments nor coordinate measurability is assumed. -/
-theorem ae_countPathMeasure_singleton_le_one_of_small_time [IsFiniteMeasure P]
+theorem ae_forall_pos_countPathMeasure_singleton_le_one_of_small_time [IsFiniteMeasure P]
     (hreg : ∀ᵐ ω ∂P, Monotone (N · ω) ∧ IsRightContinuous (N · ω))
     (hstat : ∀ s h, IdentDistrib (fun ω ↦ N (s + h) ω - N s ω)
       (fun ω ↦ N h ω - N 0 ω) P P)
     (hsmall : (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω - N 0 ω}) =o[𝓝[>] 0]
       (fun h : ℝ≥0 ↦ (h : ℝ))) :
     ∀ᵐ ω ∂P, ∀ t > (0 : ℝ≥0), countPathMeasure (N · ω) {t} ≤ 1 :=
-  ae_measure_singleton_le_one_of_small_time (ae_countPathMeasure_Iic_eq hreg) hstat hsmall
+  ae_forall_pos_measure_singleton_le_one_of_small_time (ae_countPathMeasure_Iic_eq hreg) hstat
+    hsmall
 
 /-- If in addition `N 0 ≤ 1` almost surely, stationary increment laws and
 `P(N h - N 0 ≥ 2) = o(h)` make any random measure `M` represented almost surely by cumulative
@@ -110,7 +112,7 @@ theorem ae_forall_measure_singleton_le_one_of_small_time [IsFiniteMeasure P]
       (fun h : ℝ≥0 ↦ (h : ℝ))) :
     ∀ᵐ ω ∂P, ∀ t, M ω {t} ≤ 1 := by
   filter_upwards [hcount, h0,
-    ae_measure_singleton_le_one_of_small_time hcount hstat hsmall] with ω hω h0ω hpos t
+    ae_forall_pos_measure_singleton_le_one_of_small_time hcount hstat hsmall] with ω hω h0ω hpos t
   rcases eq_or_lt_of_le (zero_le : (0 : ℝ≥0) ≤ t) with rfl | ht
   · have hIic : Iic (0 : ℝ≥0) = {0} := by ext; simp
     rw [← hIic, hω 0]

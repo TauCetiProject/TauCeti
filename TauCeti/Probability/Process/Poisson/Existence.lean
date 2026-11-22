@@ -14,6 +14,7 @@ import TauCeti.Probability.Independence.Process.HasIndepIncrements
 import TauCeti.Probability.PointProcess.Poisson.Count
 import TauCeti.Probability.PointProcess.Poisson.Construction
 import TauCeti.Probability.PointProcess.Poisson.Simplicity
+import TauCeti.Probability.RandomMeasure.Cumulative
 
 /-!
 # Existence of homogeneous Poisson processes
@@ -125,13 +126,14 @@ theorem exists_isFilteredPoissonProcess (α : ℝ≥0) :
       fun t ht => ⟨0, ht, by simp [hK]⟩⟩
     rw [show (K · μ) = fun _ => 0 from funext hK]
     exact IsRightContinuous.const
-  · obtain ⟨_, hint, hsimple⟩ : μ ∈ G := by
+  · obtain ⟨hloc, hint, hsimple⟩ : μ ∈ G := by
       by_contra hμG
       exact hμS (subset_toMeasurable P Gᶜ hμG)
+    have : IsLocallyFiniteMeasure μ := hloc
     have hK (t : ℝ≥0) : K t μ = C t μ := by simp [K, hμS]
     have hKC : (K · μ) = (C · μ) := funext hK
-    refine ⟨by simp [hK, C], hKC ▸ Measure.monotone_nat_count,
-      hKC ▸ hint.isRightContinuous_nat_count, fun t ht => ?_⟩
+    refine ⟨by simp [hK, C], hKC ▸ μ.monotone_natFloor_Ioc 0,
+      hKC ▸ μ.isRightContinuous_natFloor_Ioc 0, fun t ht => ?_⟩
     obtain ⟨s, hst, hle⟩ := hint.exists_nat_count_le_add_floor ht
     have hfloor : ⌊(μ {t}).toNNReal⌋₊ ≤ 1 :=
       Nat.floor_le_one_of_le_one <| by

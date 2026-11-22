@@ -10,7 +10,6 @@ public import TauCeti.Probability.PointProcess.Poisson.Count
 public import TauCeti.Probability.PointProcess.Poisson.Independence
 public import TauCeti.Probability.PointProcess.Poisson.IntegerValued
 import Mathlib.MeasureTheory.Function.Floor
-import TauCeti.MeasureTheory.Measure.IntegerValued.Stieltjes
 
 /-!
 # Splitting marked temporal Poisson measures
@@ -161,7 +160,7 @@ private theorem ae_nat_count_prod_cast (h : IsPoissonRandomMeasure P M Λ)
   filter_upwards [hP.ae_isIntegerValued, hP.ae_isLocallyFiniteMeasure] with ω hi hf t
   let := hf
   simpa only [Measure.map_fst_restrict_prod_apply _ _ _ measurableSet_Ioc,
-    inter_eq_left.mpr Ioc_subset_Ioi_self] using hi.natCast_nat_count_Ioc 0 t
+    inter_eq_left.mpr Ioc_subset_Ioi_self] using hi.natCast_natFloor_Ioc 0 t
 
 /-- Counts on a finite disjoint family of measurable mark sets add simultaneously at every
 time if each selection has finite intensity on bounded positive-time windows. -/

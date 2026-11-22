@@ -22,6 +22,7 @@ The canonical coercions `ℚ≥0 → ℝ≥0` and `ℚ≥0 → ℝ` are isometri
   preservation under `ℚ≥0 → ℝ≥0`.
 * `NNRat.dist_cast_real`, `NNRat.nndist_cast_real`, `NNRat.edist_cast_real`: metric preservation
   under `ℚ≥0 → ℝ`.
+* `exists_nnrat_btwn`: density of `ℚ≥0` in `ℝ≥0`.
 -/
 
 public section
@@ -81,3 +82,13 @@ theorem edist_cast_real (x y : ℚ≥0) : edist (x : ℝ) (y : ℝ) = edist x y 
   isometry_cast_real.edist_eq x y
 
 end NNRat
+
+open scoped NNRat in
+/-- Between any two nonnegative real numbers `a < b`, there is a nonnegative rational number. -/
+theorem exists_nnrat_btwn {a b : ℝ≥0} (h : a < b) :
+    ∃ r : ℚ≥0, a < (r : ℝ≥0) ∧ (r : ℝ≥0) < b := by
+  obtain ⟨q, hq, haq, hqb⟩ := (NNReal.lt_iff_exists_rat_btwn a b).1 h
+  let r : ℚ≥0 := ⟨q, hq⟩
+  have hcoe : (r : ℝ≥0) = Real.toNNReal q :=
+    NNReal.eq (by rw [Real.coe_toNNReal _ (Rat.cast_nonneg.2 hq)]; norm_cast)
+  exact ⟨r, hcoe ▸ haq, hcoe ▸ hqb⟩

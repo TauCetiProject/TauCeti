@@ -9,9 +9,9 @@ public import TauCeti.Probability.PointProcess.Poisson.Count
 public import TauCeti.Probability.PointProcess.OccurrenceTime.Path
 public import TauCeti.Probability.Process.Poisson.Filtered
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Order
+import TauCeti.Probability.IdentDistrib
 import TauCeti.Probability.Independence.Process.HasIndepIncrements
 import TauCeti.Probability.PointProcess.Poisson.Construction
-import Mathlib.MeasureTheory.Function.Floor
 
 /-!
 # Recognizing temporal Poisson random measures from their counts
@@ -69,7 +69,7 @@ theorem isPoissonRandomMeasure_of_count_increments
   -- Recover a measurable version without changing any whole path off a null set.
   let N' : ℝ≥0 → Ω → ℕ := fun t ω ↦ ⌊(M ω (Iic t)).toNNReal⌋₊
   have hN' (t) : Measurable (N' t) :=
-    ((Measure.measurable_coe measurableSet_Iic).comp hM).ennreal_toNNReal.nat_floor
+    (measurable_pi_apply t).comp (measurable_natFloor_measure_Iic.comp hM)
   have heq : ∀ᵐ ω ∂P, ∀ t, N' t ω = N t ω := by
     filter_upwards [hcount] with ω hω t using by simp [N', hω t]
   have hcount' : ∀ᵐ ω ∂P, ∀ t, M ω (Iic t) = (N' t ω : ℝ≥0∞) := by
@@ -82,10 +82,8 @@ theorem isPoissonRandomMeasure_of_count_increments
   have hlaw' s t (hst : s ≤ t) : HasLaw (fun ω ↦ N' t ω - N' s ω)
       (poissonMeasure (Λ (Ioc s t)).toNNReal) P :=
     (hlaw s t hst).congr (heq.mono fun ω hω ↦ by simp [hω])
-  have hmono : ∀ᵐ ω ∂P, Monotone (fun t ↦ N' t ω) := by
-    filter_upwards [hcount'] with ω hω s t hst
-    exact_mod_cast (hω s).symm.trans_le
-      ((measure_mono (Iic_subset_Iic.mpr hst)).trans_eq (hω t))
+  have hmono : ∀ᵐ ω ∂P, Monotone (fun t ↦ N' t ω) :=
+    ae_monotone_of_ae_measure_Iic_eq hcount'
   have hfinite : ∀ᵐ ω ∂P, ∀ t, M ω (Iic t) ≠ ∞ := by
     filter_upwards [hcount'] with ω hω t
     rw [hω t]
@@ -110,8 +108,7 @@ theorem isPoissonRandomMeasure_of_count_increments
     hcount'.mono fun _ hω ↦ funext fun t ↦ (hω t).symm
   have heqQ : (fun μ t ↦ (C t μ : ℝ≥0∞)) =ᵐ[Q] (fun μ t ↦ μ (Iic t)) :=
     hCcount.mono fun _ hμ ↦ funext fun t ↦ (hμ t).symm
-  have hcum' := (IdentDistrib.of_ae_eq hcum.aemeasurable_fst heqM).symm.trans
-    (hcum.trans (IdentDistrib.of_ae_eq hcum.aemeasurable_snd heqQ))
+  have hcum' := hcum.congr heqM heqQ
   exact hQ.of_identDistrib hM
     ((identDistrib_measure_iff_Iic hM.aemeasurable measurable_id.aemeasurable
       hfinite hQfinite).mpr hcum').symm

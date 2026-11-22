@@ -25,6 +25,8 @@ whenever the original variables have the same law.
 * `TauCeti.Probability.ae_forall_eq_of_identDistrib` — a countable family of random variables,
   each identically distributed with an almost surely constant random variable, is almost surely
   equal to that constant at every index simultaneously.
+* `ProbabilityTheory.IdentDistrib.congr` — equality in distribution is invariant under
+  almost-everywhere equality of both random variables.
 * `ProbabilityTheory.IdentDistrib.integral_indicator_setOf_norm_le_eq` — identically distributed
   variables have equal integrals after cutting off the values of norm greater than `R`.
 -/
@@ -49,6 +51,15 @@ theorem ae_forall_eq_of_identDistrib {ι : Sort*} [Countable ι] {Ω Ω' Z : Typ
 end TauCeti.Probability
 
 namespace ProbabilityTheory.IdentDistrib
+
+/-- Equality in distribution is invariant under almost-everywhere equality of both random
+variables. -/
+theorem congr {Ω Ω' α : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω'] [MeasurableSpace α]
+    {P : Measure Ω} {Q : Measure Ω'} {f f' : Ω → α} {g g' : Ω' → α}
+    (h : IdentDistrib f g P Q) (hf : f =ᵐ[P] f') (hg : g =ᵐ[Q] g') :
+    IdentDistrib f' g' P Q :=
+  (IdentDistrib.of_ae_eq h.aemeasurable_fst hf).symm.trans
+    (h.trans (IdentDistrib.of_ae_eq h.aemeasurable_snd hg))
 
 variable {α β E : Type*} [MeasurableSpace α] [MeasurableSpace β]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]

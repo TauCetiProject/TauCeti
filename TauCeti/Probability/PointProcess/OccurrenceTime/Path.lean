@@ -9,8 +9,11 @@ public import TauCeti.Probability.PointProcess.OccurrenceTime.Reconstruction
 public import TauCeti.Probability.RandomMeasure.Cumulative
 public import Mathlib.Data.NNRat.Defs
 import Mathlib.Data.NNRat.Encodable
+import TauCeti.MeasureTheory.Measure.IntegerValued.Stieltjes
 import TauCeti.MeasureTheory.Measure.Interval
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
+import TauCeti.Probability.IdentDistrib
+import TauCeti.Topology.Instances.NNRat
 
 /-!
 # Converting between counting paths and temporal point measures
@@ -70,6 +73,13 @@ noncomputable def countJumpTime (f : ℝ≥0 → ℕ) (n : ℕ) : ℝ≥0∞ :=
 theorem countJumpTime_def (f : ℝ≥0 → ℕ) (n : ℕ) :
     countJumpTime f n = ⨅ (q : ℚ≥0) (_ : n + 1 ≤ f q), ((q : ℝ≥0) : ℝ≥0∞) := (rfl)
 
+/-- Jump times depend only on the restriction of the counting path to nonnegative rational
+times. -/
+theorem countJumpTime_congr {f g : ℝ≥0 → ℕ} (h : ∀ q : ℚ≥0, f q = g q) :
+    countJumpTime f = countJumpTime g := by
+  funext n
+  simp only [countJumpTime_def, h]
+
 /-- A jump time is strictly below a bound exactly when some earlier nonnegative rational time
 already reaches the count threshold `n + 1`. -/
 theorem countJumpTime_lt_iff (f : ℝ≥0 → ℕ) (n : ℕ) (b : ℝ≥0∞) :
@@ -110,7 +120,7 @@ theorem countJumpTime_zero (n : ℕ) : countJumpTime 0 n = ∞ := by
 
 /-- Extracting the `n`-th jump time is measurable whenever the process is measurable at
 nonnegative rational times. -/
-theorem measurable_countJumpTime_of_nnrat {Ω : Type*} [MeasurableSpace Ω] {N : ℝ≥0 → Ω → ℕ}
+theorem measurable_countJumpTime_apply_of_nnrat {Ω : Type*} [MeasurableSpace Ω] {N : ℝ≥0 → Ω → ℕ}
     (hN : ∀ q : ℚ≥0, Measurable (N q)) (n : ℕ) :
     Measurable fun ω ↦ countJumpTime (N · ω) n := by
   have heq (ω : Ω) : countJumpTime (N · ω) n =
@@ -124,18 +134,22 @@ theorem measurable_countJumpTime_of_nnrat {Ω : Type*} [MeasurableSpace Ω] {N :
   exact Measurable.iInf fun q ↦
     measurable_const.ite (measurableSet_le measurable_const (hN q)) measurable_const
 
+/-- Extracting the jump-time sequence is measurable whenever the process is measurable at
+nonnegative rational times. -/
+theorem measurable_countJumpTime_of_nnrat {Ω : Type*} [MeasurableSpace Ω] {N : ℝ≥0 → Ω → ℕ}
+    (hN : ∀ q : ℚ≥0, Measurable (N q)) :
+    Measurable fun ω ↦ countJumpTime (N · ω) :=
+  measurable_pi_iff.2 (measurable_countJumpTime_apply_of_nnrat hN)
+
+/-- Extracting the jump-time sequence is measurable on `ℝ≥0 → ℕ` with its product σ-algebra. -/
+@[fun_prop]
+theorem measurable_countJumpTime : Measurable countJumpTime :=
+  measurable_countJumpTime_of_nnrat fun q ↦ measurable_pi_apply (q : ℝ≥0)
+
 /-- Extracting the `n`-th jump time is measurable on `ℝ≥0 → ℕ` with its product σ-algebra. -/
 @[fun_prop]
-theorem measurable_countJumpTime (n : ℕ) : Measurable fun f : ℝ≥0 → ℕ ↦ countJumpTime f n :=
-  measurable_countJumpTime_of_nnrat (fun q ↦ measurable_pi_apply (q : ℝ≥0)) n
-
-private theorem exists_nnrat_btwn {a b : ℝ≥0} (h : a < b) :
-    ∃ r : ℚ≥0, a < (r : ℝ≥0) ∧ (r : ℝ≥0) < b := by
-  obtain ⟨q, hq, haq, hqb⟩ := (NNReal.lt_iff_exists_rat_btwn a b).1 h
-  let r : ℚ≥0 := ⟨q, hq⟩
-  have hcoe : (r : ℝ≥0) = Real.toNNReal q :=
-    NNReal.eq (by rw [Real.coe_toNNReal _ (Rat.cast_nonneg.2 hq)]; norm_cast)
-  exact ⟨r, hcoe ▸ haq, hcoe ▸ hqb⟩
+theorem measurable_countJumpTime_apply (n : ℕ) : Measurable fun f : ℝ≥0 → ℕ ↦ countJumpTime f n :=
+  measurable_countJumpTime_apply_of_nnrat (fun q ↦ measurable_pi_apply (q : ℝ≥0)) n
 
 /-- If `f` stays at least `n + 1` throughout a nonempty open interval `(t, δ)`, then
 `countJumpTime f n ≤ t`, without global monotonicity or right-continuity assumptions. -/
@@ -152,13 +166,18 @@ theorem countJumpTime_le_of_le_of_monotone {f : ℝ≥0 → ℕ} (hf : Monotone 
     (ht : n + 1 ≤ f t) : countJumpTime f n ≤ t :=
   countJumpTime_le_of_forall_Ioo (lt_add_one t) fun _ hs ↦ ht.trans (hf hs.1.le)
 
+private theorem countJumpTime_eq_iInf_of_le {f : ℝ≥0 → ℕ} {n : ℕ}
+    (h : ∀ t : ℝ≥0, n + 1 ≤ f t → countJumpTime f n ≤ t) :
+    countJumpTime f n = ⨅ (t : ℝ≥0) (_ : n + 1 ≤ f t), (t : ℝ≥0∞) := by
+  refine le_antisymm ?_ ?_
+  · exact le_iInf fun t ↦ le_iInf fun ht ↦ h t ht
+  · exact le_iInf fun q ↦ le_iInf fun hq ↦ iInf_le_of_le (q : ℝ≥0) (iInf_le_of_le hq le_rfl)
+
 /-- On a monotone path, `countJumpTime` agrees with the infimum over all `t : ℝ≥0`, without
 assuming right-continuity. -/
 theorem countJumpTime_eq_iInf_of_monotone {f : ℝ≥0 → ℕ} (hf : Monotone f) (n : ℕ) :
-    countJumpTime f n = ⨅ (t : ℝ≥0) (_ : n + 1 ≤ f t), (t : ℝ≥0∞) := by
-  refine le_antisymm ?_ ?_
-  · exact le_iInf fun t ↦ le_iInf fun ht ↦ countJumpTime_le_of_le_of_monotone hf ht
-  · exact le_iInf fun q ↦ le_iInf fun hq ↦ iInf_le_of_le (q : ℝ≥0) (iInf_le_of_le hq le_rfl)
+    countJumpTime f n = ⨅ (t : ℝ≥0) (_ : n + 1 ≤ f t), (t : ℝ≥0∞) :=
+  countJumpTime_eq_iInf_of_le fun _ ht ↦ countJumpTime_le_of_le_of_monotone hf ht
 
 /-- On a path that is right-continuous at `t`, reaching `n + 1` at `t` bounds `countJumpTime f n`
 by `t`, without assuming monotonicity. -/
@@ -173,10 +192,8 @@ theorem countJumpTime_le_of_le_of_continuousWithinAt {f : ℝ≥0 → ℕ} {t : 
 /-- On a right-continuous path, `countJumpTime` agrees with the infimum over all `t : ℝ≥0`,
 without assuming monotonicity. -/
 theorem countJumpTime_eq_iInf_of_isRightContinuous {f : ℝ≥0 → ℕ} (hrc : IsRightContinuous f)
-    (n : ℕ) : countJumpTime f n = ⨅ (t : ℝ≥0) (_ : n + 1 ≤ f t), (t : ℝ≥0∞) := by
-  refine le_antisymm ?_ ?_
-  · exact le_iInf fun t ↦ le_iInf fun ht ↦ countJumpTime_le_of_le_of_continuousWithinAt (hrc t) ht
-  · exact le_iInf fun q ↦ le_iInf fun hq ↦ iInf_le_of_le (q : ℝ≥0) (iInf_le_of_le hq le_rfl)
+    (n : ℕ) : countJumpTime f n = ⨅ (t : ℝ≥0) (_ : n + 1 ≤ f t), (t : ℝ≥0∞) :=
+  countJumpTime_eq_iInf_of_le fun t ht ↦ countJumpTime_le_of_le_of_continuousWithinAt (hrc t) ht
 
 /-- For a monotone path that is right-continuous at `t`, the `n`-th jump occurs on `[0, t]` if and
 only if `n + 1 ≤ f t`. -/
@@ -222,14 +239,19 @@ noncomputable def countPathMeasure (f : ℝ≥0 → ℕ) : Measure ℝ≥0 :=
 theorem countPathMeasure_def (f : ℝ≥0 → ℕ) :
     countPathMeasure f = occurrenceTimeMeasure (countJumpTime f) := (rfl)
 
+/-- The reconstructed counting measure depends only on the restriction of the counting path to
+nonnegative rational times. -/
+theorem countPathMeasure_congr {f g : ℝ≥0 → ℕ} (h : ∀ q : ℚ≥0, f q = g q) :
+    countPathMeasure f = countPathMeasure g := by
+  simp only [countPathMeasure_def, countJumpTime_congr h]
+
 /-- Reconstructing the temporal measure from a counting process is measurable as soon as the
 process is measurable at nonnegative rational times. No measurability of any regular-path event is
 required. -/
 theorem measurable_countPathMeasure_of_nnrat {Ω : Type*} [MeasurableSpace Ω] {N : ℝ≥0 → Ω → ℕ}
     (hN : ∀ q : ℚ≥0, Measurable (N q)) :
     Measurable fun ω ↦ countPathMeasure (N · ω) :=
-  measurable_occurrenceTimeMeasure.comp
-    (measurable_pi_iff.2 (measurable_countJumpTime_of_nnrat hN))
+  measurable_occurrenceTimeMeasure.comp (measurable_countJumpTime_of_nnrat hN)
 
 /-- Reconstructing the temporal measure from a counting path is measurable for the product
 σ-algebra on `ℝ≥0 → ℕ`. -/
@@ -326,13 +348,7 @@ theorem countPathMeasure_add {f g : ℝ≥0 → ℕ} (hf : Monotone f) (hrcf : I
     (hg : Monotone g) (hrcg : IsRightContinuous g) :
     countPathMeasure (f + g) = countPathMeasure f + countPathMeasure g := by
   have hadd : Monotone (f + g) := hf.add hg
-  have hrc : IsRightContinuous (f + g) := fun t ↦ by
-    rw [ContinuousWithinAt, nhds_discrete, tendsto_pure]
-    filter_upwards
-      [tendsto_pure.1 (by simpa only [ContinuousWithinAt, nhds_discrete] using hrcf t),
-       tendsto_pure.1 (by simpa only [ContinuousWithinAt, nhds_discrete] using hrcg t)]
-      with s hfs hgs
-    simp [hfs, hgs]
+  have hrc : IsRightContinuous (f + g) := hrcf.continuous_comp₂ hrcg continuous_add
   refine Measure.ext_of_Iic' _ _ (fun t ↦ ?_) fun t ↦ ?_
   · rw [countPathMeasure_Iic hadd hrc t]
     exact ENNReal.natCast_ne_top _
@@ -362,27 +378,17 @@ theorem countPathMeasure_singleton_le_one_iff {f : ℝ≥0 → ℕ} (hf : Monoto
     (hrc : IsRightContinuous f) {t : ℝ≥0} (ht : 0 < t) :
     countPathMeasure f {t} ≤ 1 ↔ ∃ s < t, f t ≤ f s + 1 := by
   refine ⟨fun hle ↦ ?_, fun ⟨s, hst, hs⟩ ↦ ?_⟩
-  · obtain ⟨u, hu_mono, hu_mem, hu_lim⟩ := exists_seq_strictMono_tendsto' ht
-    have hu_lt (n : ℕ) : u n < t := (hu_mem n).2
-    have hInter : (⋂ n : ℕ, Ioc (u n) t) = {t} := by
-      ext x
-      simp only [mem_iInter, mem_Ioc, mem_singleton_iff]
-      refine ⟨fun hx ↦ le_antisymm (hx 0).2 ?_, fun hxt n ↦ ⟨hxt ▸ hu_lt n, hxt.le⟩⟩
-      exact le_of_tendsto hu_lim (Eventually.of_forall fun n ↦ (hx n).1.le)
-    have htend : Tendsto (fun n ↦ countPathMeasure f (Ioc (u n) t))
-        atTop (𝓝 (countPathMeasure f {t})) := by
-      rw [← hInter]
-      refine tendsto_measure_iInter_atTop (fun _ ↦ measurableSet_Ioc.nullMeasurableSet)
-        (fun m n hmn ↦ Ioc_subset_Ioc_left (hu_mono.monotone hmn)) ⟨0, ?_⟩
-      rw [countPathMeasure_Ioc hf hrc]
-      exact ENNReal.natCast_ne_top _
-    have hlt2 : countPathMeasure f {t} < 2 :=
-      hle.trans_lt (by norm_num)
-    obtain ⟨n, hn⟩ := (htend.eventually (isOpen_Iio.mem_nhds hlt2)).exists
-    have hn' : countPathMeasure f (Ioc (u n) t) < 2 := hn
-    rw [countPathMeasure_Ioc hf hrc] at hn'
-    have hn'' : f t - f (u n) < 2 := by exact_mod_cast hn'
-    exact ⟨u n, hu_lt n, by omega⟩
+  · have : IsLocallyFiniteMeasure (countPathMeasure f) :=
+      isLocallyFiniteMeasure_countPathMeasure hf
+    obtain ⟨s, hst, hs⟩ :=
+      (isIntegerValued_countPathMeasure f).exists_nat_count_le_add_floor ht
+    rw [countPathMeasure_Ioc hf hrc, countPathMeasure_Ioc hf hrc] at hs
+    simp only [ENNReal.toNNReal_natCast, Nat.floor_natCast] at hs
+    have hfloor : ⌊(countPathMeasure f {t}).toNNReal⌋₊ ≤ 1 :=
+      (Nat.floor_mono (ENNReal.toNNReal_mono ENNReal.one_ne_top hle)).trans_eq (by simp)
+    have hf0_s : f 0 ≤ f s := hf (zero_le (a := s))
+    have hf0_t : f 0 ≤ f t := hf (zero_le (a := t))
+    exact ⟨s, hst, by omega⟩
   · calc
       countPathMeasure f {t} ≤ countPathMeasure f (Ioc s t) :=
         measure_mono (singleton_subset_iff.2 ⟨hst, le_rfl⟩)
@@ -474,8 +480,8 @@ theorem IsIntegerValued.countPathMeasure_natFloor_Ioc [IsLocallyFiniteMeasure μ
 
 /-- When a locally finite integer-valued measure has no mass at zero, reconstructing from the
 counts on `(0, t]` recovers the entire measure. -/
-theorem IsIntegerValued.countPathMeasure_natFloor_Ioc_of_singleton_zero [IsLocallyFiniteMeasure μ]
-    (hμ : μ.IsIntegerValued) (h0 : μ {0} = 0) :
+theorem IsIntegerValued.countPathMeasure_natFloor_Ioc_of_measure_singleton_eq_zero
+    [IsLocallyFiniteMeasure μ] (hμ : μ.IsIntegerValued) (h0 : μ {0} = 0) :
     countPathMeasure (fun t ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊) = μ := by
   rw [hμ.countPathMeasure_natFloor_Ioc 0]
   refine Measure.restrict_eq_self_of_ae_mem ?_
@@ -492,12 +498,6 @@ section LawEquivalence
 
 variable {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω']
   {P : Measure Ω} {Q : Measure Ω'}
-
-private theorem identDistrib_congr {α : Type*} [MeasurableSpace α]
-    {f f' : Ω → α} {g g' : Ω' → α} (h : IdentDistrib f g P Q)
-    (hf : f =ᵐ[P] f') (hg : g =ᵐ[Q] g') : IdentDistrib f' g' P Q :=
-  (IdentDistrib.of_ae_eq h.aemeasurable_fst hf).symm.trans
-    (h.trans (IdentDistrib.of_ae_eq h.aemeasurable_snd hg))
 
 private theorem natFloor_Iic_countPathMeasure_ae_eq {N : ℝ≥0 → Ω → ℕ}
     (hreg : ∀ᵐ ω ∂P, Monotone (N · ω) ∧ IsRightContinuous (N · ω)) :
@@ -519,7 +519,7 @@ theorem identDistrib_countPathMeasure_iff {N : ℝ≥0 → Ω → ℕ} {N' : ℝ
     (hreg' : ∀ᵐ ω ∂Q, Monotone (N' · ω) ∧ IsRightContinuous (N' · ω)) :
     IdentDistrib (fun ω ↦ countPathMeasure (N · ω)) (fun ω ↦ countPathMeasure (N' · ω)) P Q ↔
       IdentDistrib (fun ω t ↦ N t ω) (fun ω t ↦ N' t ω) P Q :=
-  ⟨fun h ↦ identDistrib_congr (h.comp measurable_natFloor_measure_Iic)
+  ⟨fun h ↦ (h.comp measurable_natFloor_measure_Iic).congr
     (natFloor_Iic_countPathMeasure_ae_eq hreg) (natFloor_Iic_countPathMeasure_ae_eq hreg'),
   fun h ↦ h.comp measurable_countPathMeasure⟩
 
@@ -532,7 +532,7 @@ theorem identDistrib_measure_iff_natFloor_Iic {M : Ω → Measure ℝ≥0} {M' :
       IdentDistrib (fun ω t ↦ ⌊(M ω (Iic t)).toNNReal⌋₊)
         (fun ω t ↦ ⌊(M' ω (Iic t)).toNNReal⌋₊) P Q :=
   ⟨fun h ↦ h.comp measurable_natFloor_measure_Iic,
-  fun h ↦ identDistrib_congr (h.comp measurable_countPathMeasure)
+  fun h ↦ (h.comp measurable_countPathMeasure).congr
     (countPathMeasure_natFloor_Iic_ae_eq hreg) (countPathMeasure_natFloor_Iic_ae_eq hreg')⟩
 
 /-- Direct law comparison between an almost surely locally finite integer-valued random measure
@@ -543,9 +543,9 @@ theorem identDistrib_measure_countPathMeasure_iff {M : Ω → Measure ℝ≥0} {
     (hregN : ∀ᵐ ω ∂Q, Monotone (N · ω) ∧ IsRightContinuous (N · ω)) :
     IdentDistrib M (fun ω ↦ countPathMeasure (N · ω)) P Q ↔
       IdentDistrib (fun ω t ↦ ⌊(M ω (Iic t)).toNNReal⌋₊) (fun ω t ↦ N t ω) P Q :=
-  ⟨fun h ↦ identDistrib_congr (h.comp measurable_natFloor_measure_Iic)
+  ⟨fun h ↦ (h.comp measurable_natFloor_measure_Iic).congr
     .rfl (natFloor_Iic_countPathMeasure_ae_eq hregN),
-  fun h ↦ identDistrib_congr (h.comp measurable_countPathMeasure)
+  fun h ↦ (h.comp measurable_countPathMeasure).congr
     (countPathMeasure_natFloor_Iic_ae_eq hregM) .rfl⟩
 
 /-- When `M` almost surely has no mass at the origin, comparing `M` in law with
@@ -565,7 +565,7 @@ theorem identDistrib_measure_countPathMeasure_iff_natFloor_Ioc
     have hIcc : Icc (0 : ℝ≥0) t = Iic t := by ext; simp
     rw [measure_congr (Ioc_ae_eq_Icc' h0), hIcc]
   rw [identDistrib_measure_countPathMeasure_iff hregM hregN]
-  exact ⟨fun h ↦ identDistrib_congr h heqM .rfl, fun h ↦ identDistrib_congr h heqM.symm .rfl⟩
+  exact ⟨fun h ↦ h.congr heqM .rfl, fun h ↦ h.congr heqM.symm .rfl⟩
 
 end LawEquivalence
 

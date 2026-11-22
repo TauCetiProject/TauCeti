@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.Topology.Algebra.Order.Floor
 import TauCeti.MeasureTheory.Measure.Interval
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
+import TauCeti.Probability.IdentDistrib
 
 /-!
 # Cumulative coordinates of random measures on the half-line
@@ -145,8 +146,7 @@ theorem identDistrib_measure_iff_Iic {Ω' : Type*} [MeasurableSpace Ω']
       heqM.mono fun ω hω ↦ by simp [hω]
     have hcN : (fun ω t ↦ N ω (Iic t)) =ᵐ[Q] (fun ω t ↦ N' ω (Iic t)) :=
       heqN.mono fun ω hω ↦ by simp [hω]
-    have h' := (ProbabilityTheory.IdentDistrib.of_ae_eq h.aemeasurable_fst hcM).symm.trans
-      (h.trans (ProbabilityTheory.IdentDistrib.of_ae_eq h.aemeasurable_snd hcN))
+    have h' := h.congr hcM hcN
     refine ⟨hM, hN, ?_⟩
     rw [Measure.map_congr heqM, Measure.map_congr heqN]
     refine Measure.ext fun s hs ↦ ?_
@@ -280,8 +280,8 @@ theorem isRightContinuous_natFloor_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMe
       (𝓝[>] t) (pure ⌊((μ (Iic t)).toNNReal : ℝ)⌋.toNat) :=
     (tendsto_pure_pure Int.toNat _).comp hfloor
   rw [ContinuousWithinAt, nhds_discrete]
-  simpa only [Function.comp_def, Int.floor_toNat,
-    show ∀ x : ℝ≥0, ⌊(x : ℝ)⌋₊ = ⌊x⌋₊ from fun x ↦ Nonneg.nat_floor_coe x] using htoNat
+  simp only [Int.floor_toNat] at htoNat
+  exact htoNat
 
 /-- For a locally finite measure on `ℝ≥0` and any cutoff `a`, the floored counts on `(a, t]` are
 monotone in `t`. -/

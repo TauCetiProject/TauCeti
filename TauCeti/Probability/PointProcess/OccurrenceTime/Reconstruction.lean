@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Measure.IntegerValued.Basic
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.Probability.IdentDistrib
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
+import TauCeti.Probability.IdentDistrib
 
 /-!
 # Reconstruction from ordered occurrence times
@@ -241,9 +242,7 @@ theorem of_occurrenceTime
     (hN' : ∀ᵐ ω ∂P', IsLocallyFiniteMeasure (N' ω) ∧ (N' ω).IsIntegerValued) :
     IdentDistrib N N' P P' := by
   have hRlaw := h.comp measurable_occurrenceTimeMeasure
-  exact (IdentDistrib.of_ae_eq hRlaw.aemeasurable_fst
-    (occurrenceTimeMeasure_occurrenceTime_ae_eq hN)).symm.trans
-      (hRlaw.trans (IdentDistrib.of_ae_eq hRlaw.aemeasurable_snd
-        (occurrenceTimeMeasure_occurrenceTime_ae_eq hN')))
+  exact hRlaw.congr (occurrenceTimeMeasure_occurrenceTime_ae_eq hN)
+    (occurrenceTimeMeasure_occurrenceTime_ae_eq hN')
 
 end ProbabilityTheory.IdentDistrib

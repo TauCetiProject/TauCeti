@@ -12,7 +12,6 @@ public import TauCeti.MeasureTheory.Measure.NNReal
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 import Mathlib.MeasureTheory.Function.Floor
 import TauCeti.Probability.RandomMeasure.Cumulative
-import TauCeti.MeasureTheory.Measure.IntegerValued.Stieltjes
 
 /-!
 # Counts of temporal Poisson random measures
@@ -79,7 +78,7 @@ theorem ae_monotone_nat_count [IsLocallyFiniteMeasure Λ]
     ∀ᵐ ω ∂P, Monotone (fun t : ℝ≥0 ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊) := by
   filter_upwards [h.ae_isLocallyFiniteMeasure] with ω hω
   let := hω
-  exact Measure.monotone_nat_count
+  exact Measure.monotone_natFloor_Ioc (M ω) 0
 
 /-- If the intensity gives no mass to the origin, cumulative masses equal the natural-valued
 counts simultaneously at every time, on one event of full probability. In particular the
@@ -97,7 +96,7 @@ theorem ae_forall_measure_Iic_eq_natCast_nat_count [IsLocallyFiniteMeasure Λ]
     have hbot : Iic (0 : ℝ≥0) = {0} := by ext x; simp
     rw [Iic_union_Ioc_eq_Iic (zero_le (a := t)), hbot, hz, zero_add] at hu
     exact hu
-  rw [hinterval, hint.natCast_nat_count_Ioc]
+  rw [hinterval, hint.natCast_natFloor_Ioc]
 
 private theorem ae_nat_count_sub_eq [IsLocallyFiniteMeasure Λ]
     (h : IsPoissonRandomMeasure P M Λ) {s t : ℝ≥0} (hst : s ≤ t) :
