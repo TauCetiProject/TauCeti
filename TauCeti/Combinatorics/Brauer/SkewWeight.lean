@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Defs
 public import TauCeti.Combinatorics.Brauer.Congr
-public import TauCeti.Combinatorics.Brauer.Generator
 
 /-!
 # Skew-symmetric arc products of Brauer diagrams
@@ -49,8 +48,6 @@ Hence for any skew-symmetric matrix `W` (`∀ x y, W y x = -W x y`), the quantit
 
 * `TauCeti.BrauerDiagram.skewArcProd_eq_of_isFraming`: **framing independence** of the signed arc
   product for skew-symmetric `W`.
-* `TauCeti.BrauerDiagram.isFraming_capCup`: the transposition `Equiv.swap (Sum.inr a) (Sum.inl b)`
-  frames `capCup a b`.
 * `TauCeti.BrauerDiagram.skewArcProd_permToBrauer`, `TauCeti.BrauerDiagram.skewArcProd_capCup`,
   `TauCeti.BrauerDiagram.skewArcProd_congr` and `TauCeti.BrauerDiagram.skewArcProd_relabel`: values
   of the signed arc product on permutation diagrams, cap-cup diagrams and transported diagrams.
@@ -70,11 +67,6 @@ namespace TauCeti
 variable {k : ℕ}
 
 namespace BrauerDiagram
-
-/-- The transposition `Equiv.swap (Sum.inr a) (Sum.inl b)` frames `capCup a b`. -/
-theorem isFraming_capCup (a b : Fin k) :
-    (capCup a b).IsFraming (Equiv.swap (Sum.inr a) (Sum.inl b)) := by
-  rw [isFraming_def, capCup_def]
 
 /-! ### Skew-symmetric arc products and framing independence -/
 

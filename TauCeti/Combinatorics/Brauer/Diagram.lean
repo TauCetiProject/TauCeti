@@ -33,6 +33,7 @@ diagrams in all.
   ends index the arcs of a diagram.
 * `TauCeti.permToBrauer`: the diagram of a permutation.
 * `TauCeti.permToBrauerEquiv`: permutations are the diagrams all of whose arcs go through.
+* `TauCeti.capCup`: the cap-cup diagram on a pair of indices.
 
 ## Main results
 
@@ -322,5 +323,23 @@ theorem card_brauerDiagram_forall_isThrough (k : ℕ) :
 /-- The permutation diagram determines the permutation. -/
 theorem permToBrauer_injective (k : ℕ) : Function.Injective (permToBrauer (k := k)) :=
   fun _ _ h => (permToBrauerEquiv k).injective (Subtype.ext h)
+
+/-- **The cap-cup diagram** on the pair `{a, b}`: the Brauer diagram whose only horizontal arcs
+are the cap joining the bottom points `a` and `b` and the cup joining the top points `a` and `b`.
+It is the Brauer generator `e` of the pair; the classical generator `eᵢ` is the case of a
+consecutive pair, the two indices of `Fin k` with values `i` and `i + 1` where `i + 1 < k`.
+
+It is the identity diagram transported along the transposition exchanging the top point `a` with
+the bottom point `b`, which bends the strands ending at `a` and at `b` into a cap and a cup. On
+the degenerate pair `a = a` that transposition exchanges the two ends of a single identity strand,
+so it carries that strand to itself and `TauCeti.capCup_self` gives back the identity diagram. -/
+def capCup {k : ℕ} (a b : Fin k) : BrauerDiagram k :=
+  PerfectMatching.congr (Equiv.swap (Sum.inr a) (Sum.inl b)) (permToBrauer 1)
+
+/-- The cap-cup generator `capCup a b` is the identity diagram transported along the boundary
+transposition exchanging `Sum.inr a` with `Sum.inl b`. -/
+theorem capCup_def {k : ℕ} (a b : Fin k) :
+    capCup a b = PerfectMatching.congr (Equiv.swap (Sum.inr a) (Sum.inl b)) (permToBrauer 1) :=
+  (rfl)
 
 end TauCeti

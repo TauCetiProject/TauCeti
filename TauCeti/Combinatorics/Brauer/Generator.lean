@@ -33,9 +33,10 @@ identity diagram, so it carries that strand to itself and leaves the matching un
 `capCup a a` is the identity diagram (`TauCeti.capCup_self`), and the lemmas below carry the
 distinctness `a ≠ b` exactly where they need it.
 
-This file builds these diagrams and proves, on the diagram basis, the relations that the loop-
-weighted multiplication `D₁ * D₂ = δ ^ middleLoopCount D₁ D₂ • composeDiagram D₁ D₂` of the
-Brauer algebra turns into Brauer's relations:
+This file studies the relations on `TauCeti.capCup` (defined in
+`TauCeti/Combinatorics/Brauer/Diagram.lean`) and proves, on the diagram basis, the relations that
+the loop-weighted multiplication `D₁ * D₂ = δ ^ middleLoopCount D₁ D₂ • composeDiagram D₁ D₂` of
+the Brauer algebra turns into Brauer's relations:
 
 * `e * e = δ • e`: stacking a cap-cup diagram on itself returns that diagram
   (`TauCeti.composeDiagram_capCup_capCup`) and closes up exactly one loop in the middle
@@ -62,10 +63,6 @@ The Brauer relation `s * s = 1` is `TauCeti.composeDiagram_permToBrauer` togethe
 `Equiv.swap_mul_self`, and the braid relations are the same lemma applied to the braid relation
 in `Equiv.Perm (Fin k)`; both are already available on the permutation diagrams and are not
 restated here.
-
-## Main definitions
-
-* `TauCeti.capCup`: the cap-cup diagram on a pair of indices, the Brauer generator `e`.
 
 ## Main results
 
@@ -110,29 +107,11 @@ namespace TauCeti
 
 variable {k : ℕ} {a b c d i j : Fin k}
 
-/-- **The cap-cup diagram** on the pair `{a, b}`: the Brauer diagram whose only horizontal arcs
-are the cap joining the bottom points `a` and `b` and the cup joining the top points `a` and `b`.
-It is the Brauer generator `e` of the pair; the classical generator `eᵢ` is the case of a
-consecutive pair, the two indices of `Fin k` with values `i` and `i + 1` where `i + 1 < k`.
-
-It is the identity diagram transported along the transposition exchanging the top point `a` with
-the bottom point `b`, which bends the strands ending at `a` and at `b` into a cap and a cup. On
-the degenerate pair `a = a` that transposition exchanges the two ends of a single identity strand,
-so it carries that strand to itself and `TauCeti.capCup_self` gives back the identity diagram. -/
-def capCup (a b : Fin k) : BrauerDiagram k :=
-  PerfectMatching.congr (Equiv.swap (Sum.inr a) (Sum.inl b)) (permToBrauer 1)
-
-/-- The cap-cup generator `capCup a b` is the identity diagram transported along the boundary
-transposition exchanging `Sum.inr a` with `Sum.inl b`. -/
-theorem capCup_def (a b : Fin k) :
-    capCup a b = PerfectMatching.congr (Equiv.swap (Sum.inr a) (Sum.inl b)) (permToBrauer 1) :=
-  (rfl)
-
 /-- The arcs of a cap-cup diagram, read off the transported identity diagram. -/
 private theorem capCup_val_apply (a b : Fin k) (x : Fin k ⊕ Fin k) :
     (capCup a b).val x =
       Equiv.swap (Sum.inr a) (Sum.inl b) (Equiv.swap (Sum.inr a) (Sum.inl b) x).swap := by
-  rw [capCup, PerfectMatching.congr_val_apply, Equiv.symm_swap]
+  rw [capCup_def, PerfectMatching.congr_val_apply, Equiv.symm_swap]
   generalize Equiv.swap (Sum.inr a) (Sum.inl b) x = y
   rcases y with i | i
   · simp
@@ -373,7 +352,7 @@ theorem relabel_capCup (a b : Fin k) (σ : Equiv.Perm (Fin k)) :
       mul_one, mul_inv_cancel]
   have hswap := Equiv.swap_apply_apply (Equiv.Perm.sumCongr σ σ) (Sum.inr a) (Sum.inl b)
   simp only [Equiv.Perm.sumCongr_apply, Sum.map_inr, Sum.map_inl] at hswap
-  rw [capCup, capCup, hswap, relabel_def, Equiv.Perm.mul_def, Equiv.Perm.mul_def,
+  rw [capCup_def, capCup_def, hswap, relabel_def, Equiv.Perm.mul_def, Equiv.Perm.mul_def,
     ← PerfectMatching.congr_trans, hone, ← PerfectMatching.congr_trans]
 
 /-- **Renaming the top boundary by the transposition of the pair fixes a cap-cup diagram**: for

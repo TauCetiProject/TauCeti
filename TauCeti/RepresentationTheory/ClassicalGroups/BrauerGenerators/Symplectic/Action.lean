@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.BrauerAlgebra.Generation
 public import TauCeti.Combinatorics.Brauer.SkewWeight
-public import TauCeti.LinearAlgebra.PiTensorProduct.Basis.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Crossing
 -- Non-public: `Equiv.Perm.sign_sumComm` evaluates the reflection sign, `Matrix.Congruence` expands
 -- `(P * J * Qᵀ) i j` entrywise, and `SymplecticGroup` supplies reindexing, entrywise, and
