@@ -34,6 +34,7 @@ and it vanishes in degree zero.
   `TrivialLieModule 𝕜 L N`, transported along `TrivialLieModule.equiv`.
 * `TauCeti.LieModule.Cohomology.trivialD_zero`, `TauCeti.LieModule.Cohomology.trivialD_succ_apply`:
   the explicit formula.
+* `TauCeti.LieModule.Cohomology.trivialD_trivialD`: `trivialD` squares to zero.
 
 ## References
 
@@ -87,5 +88,17 @@ theorem trivialD_succ_apply {n : ℕ} (ω : L [⋀^Fin (n + 1)]→L[𝕜] N) (v 
       ∑ i : Fin (n + 1), ∑ j ≥ i, (-1 : ℤ) ^ (i + j + 1 : ℕ) •
         ω (Matrix.vecCons ⁅v i.castSucc, v j.succ⁆ (j.removeNth (i.castSucc.removeNth v))) := by
   simp [trivialD_apply, d_succ_apply, trivial_lie_zero, map_sum, map_zsmul]
+
+/-- The Chevalley–Eilenberg differential with trivial coefficients squares to zero. -/
+@[simp]
+theorem trivialD_trivialD (n : ℕ) (ω : L [⋀^Fin n]→L[𝕜] N) :
+    trivialD 𝕜 L N (n + 1) (trivialD 𝕜 L N n ω) = 0 := by
+  ext v
+  simp [trivialD]
+
+/-- The Chevalley–Eilenberg differential with trivial coefficients squares to zero, as a composite
+of linear maps. -/
+theorem trivialD_comp_trivialD (n : ℕ) : trivialD 𝕜 L N (n + 1) ∘ₗ trivialD 𝕜 L N n = 0 :=
+  LinearMap.ext (trivialD_trivialD n)
 
 end TauCeti.LieModule.Cohomology
