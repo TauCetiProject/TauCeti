@@ -11,6 +11,8 @@ public import TauCeti.Probability.LargeDeviations.Weak
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import TauCeti.Data.EReal.Operations
 import TauCeti.Probability.Concentration.SubgaussianTail
+import TauCeti.Probability.Distributions.Gaussian.PDF
+import TauCeti.Probability.Distributions.Gaussian.Sum
 import TauCeti.Probability.Independence.ConvolutionPower
 import TauCeti.Probability.Moments.SubGaussian
 
@@ -22,9 +24,10 @@ tending to `0`, satisfy a large deviation principle at speed `ε` with the good 
 `x ↦ (x - m)² / (2v)`. They are exponentially tight at every eventually positive and eventually
 bounded speed.
 
-In particular, the sample means `(X 0 + ⋯ + X (n - 1)) / n` of independent standard Gaussians,
-whose law is `gaussianReal 0 (1 / n)`, satisfy the large deviation principle at speed `1 / n`
-with rate `x ↦ x² / 2`. This is Cramér's theorem for the standard Gaussian.
+In particular, the sample means `(X 0 + ⋯ + X (n - 1)) / n` of independent random variables with
+common law `gaussianReal m v`, `v ≠ 0`, whose law is `gaussianReal m (v / n)` for `n ≥ 1`, satisfy
+the large deviation principle at speed `1 / n` with rate `x ↦ (x - m)² / (2v)`. This is Cramér's
+theorem for Gaussian laws; for standard Gaussians the rate is `x ↦ x² / 2`.
 
 ## Main results
 
@@ -33,8 +36,8 @@ with rate `x ↦ x² / 2`. This is Cramér's theorem for the standard Gaussian.
 * `TauCeti.Probability.isExponentiallyTight_gaussianReal`: these laws are exponentially tight at
   every eventually positive and eventually bounded speed.
 * `TauCeti.Probability.isGoodRateFunction_ofReal_sq_sub_div`: the rate function is good.
-* `ProbabilityTheory.iIndepFun.hasLDP_map_sum_range_div_gaussianReal`: the large deviation
-  principle for the sample means of independent standard Gaussians.
+* `ProbabilityTheory.iIndepFun.hasLDP_map_sum_range_div_of_hasLaw_gaussianReal`: the large
+  deviation principle for the sample means of independent Gaussians with a common law.
 
 ## References
 
@@ -51,22 +54,12 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} {l : Filter ι} {ε : ι → ℝ≥0}
 
-/-- An extended real below `-s` for every real `s` with `ofReal s ≤ d` is below `-d`. -/
-private theorem le_neg_coe_of_forall_ofReal_le {a : EReal} {d : ℝ≥0∞}
-    (h : ∀ s : ℝ, ENNReal.ofReal s ≤ d → a ≤ -(s : EReal)) : a ≤ -(d : EReal) := by
-  rcases eq_top_or_lt_top d with rfl | hd
-  · have hbot : a = ⊥ := (EReal.eq_bot_iff_forall_lt a).2 fun y =>
-      (h (1 - y) le_top).trans_lt (by rw [← EReal.coe_neg, EReal.coe_lt_coe_iff]; linarith)
-    simp [hbot]
-  · simpa [← EReal.coe_ennreal_toReal hd.ne] using h d.toReal (ENNReal.ofReal_toReal hd.ne).le
-
 /-- At a positive speed `e`, a set at distance at least `√(2vs)` from the mean has Gaussian
 measure decaying at rate `s`: `e log (gaussianReal m (e * v) A) ≤ e log 2 - s`. -/
 private theorem coe_mul_log_gaussianReal_le (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) {e : ℝ≥0}
     (he : 0 < e) {s : ℝ} (hs : 0 ≤ s) {A : Set ℝ} (hA : A ⊆ {x | √(2 * v * s) ≤ |x - m|}) :
     ((e : ℝ) : EReal) * ENNReal.log (gaussianReal m (e * v) A) ≤
       ((e * Real.log 2 - s : ℝ) : EReal) := by
-  have he' : (0 : ℝ) < e := he
   have hlaw : HasLaw (fun x => x - m) (gaussianReal 0 (e * v)) (gaussianReal m (e * v)) :=
     ⟨by fun_prop, by rw [gaussianReal_map_sub_const, sub_self]⟩
   have htail := hlaw.hasSubgaussianMGF.measureReal_abs_ge_le (Real.sqrt_nonneg (2 * v * s))
@@ -80,7 +73,7 @@ private theorem coe_mul_log_gaussianReal_le (m : ℝ) {v : ℝ≥0} (hv : v ≠ 
       exact ENNReal.ofReal_le_ofReal htail
   calc ((e : ℝ) : EReal) * ENNReal.log (gaussianReal m (e * v) A)
       ≤ ((e : ℝ) : EReal) * ENNReal.log (ENNReal.ofReal (2 * Real.exp (-s / e))) :=
-        mul_le_mul_of_nonneg_left (ENNReal.log_monotone hμ) (by exact_mod_cast he'.le)
+        monotone_coe_mul_log e hμ
     _ = ((e * Real.log 2 - s : ℝ) : EReal) := by
       rw [ENNReal.log_ofReal_of_pos (by positivity), ← EReal.coe_mul, Real.log_mul two_ne_zero
         (Real.exp_pos _).ne', Real.log_exp]
@@ -93,7 +86,7 @@ private theorem limsup_coe_mul_log_gaussianReal_le [l.NeBot] (m : ℝ) {v : ℝ�
     (hε : Tendsto ε l (𝓝 0)) (hpos : ∀ᶠ i in l, 0 < ε i) (A : Set ℝ) :
     limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (gaussianReal m (ε i * v) A)) l ≤
       -((⨅ x ∈ A, ENNReal.ofReal ((x - m) ^ 2 / (2 * v)) : ℝ≥0∞) : EReal) := by
-  refine le_neg_coe_of_forall_ofReal_le fun s hs => ?_
+  refine EReal.le_neg_coe_ennreal_of_forall_ofReal_le fun s hs => ?_
   rcases le_or_gt s 0 with hs0 | hs0
   · -- Probabilities have nonpositive logarithms.
     refine (limsup_le_of_le (a := (0 : EReal)) (by isBoundedDefault)
@@ -113,31 +106,6 @@ private theorem limsup_coe_mul_log_gaussianReal_le [l.NeBot] (m : ℝ) {v : ℝ�
         limsup_le_limsup (hpos.mono fun i hi => coe_mul_log_gaussianReal_le m hv hi hs0.le hA)
     _ = -(s : EReal) := by rw [hlim.limsup_eq, EReal.coe_neg]
 
-/-- The Gaussian density bound on a symmetric interval: on `[x - δ, x + δ]` the density of
-`gaussianReal m w` is at least its value at distance `|x - m| + δ` from the mean. -/
-private theorem ofReal_mul_le_gaussianReal_Icc (m x : ℝ) {w : ℝ≥0} (hw : w ≠ 0) (δ : ℝ) :
-    ENNReal.ofReal ((√(2 * π * w))⁻¹ * Real.exp (-(|x - m| + δ) ^ 2 / (2 * w)) * (2 * δ)) ≤
-      gaussianReal m w (Icc (x - δ) (x + δ)) := by
-  have hvol : volume (Icc (x - δ) (x + δ)) = ENNReal.ofReal (2 * δ) := by
-    rw [Real.volume_Icc]
-    ring_nf
-  rw [gaussianReal_of_var_ne_zero m hw, withDensity_apply _ measurableSet_Icc, ENNReal.ofReal_mul
-    (by positivity), ← hvol, ← setLIntegral_const]
-  refine setLIntegral_mono (measurable_gaussianPDF m w) fun y hy => ?_
-  rw [gaussianPDF_def, gaussianPDFReal_def]
-  refine ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 ?_)
-    (by positivity))
-  have hy' : |y - m| ≤ |x - m| + δ := by
-    calc |y - m| ≤ |y - x| + |x - m| := abs_sub_le y x m
-      _ ≤ δ + |x - m| := by
-        gcongr
-        exact abs_le.2 ⟨by linarith [hy.1], by linarith [hy.2]⟩
-      _ = |x - m| + δ := add_comm _ _
-  have hsq : (y - m) ^ 2 ≤ (|x - m| + δ) ^ 2 := by
-    rw [← sq_abs (y - m)]
-    exact pow_le_pow_left₀ (abs_nonneg _) hy' 2
-  exact div_le_div_of_nonneg_right (neg_le_neg hsq) (by positivity)
-
 /-- The Gaussian lower bound near `x`, up to the radius `δ` of the interval used. -/
 private theorem coe_le_liminf_coe_mul_log_gaussianReal [l.NeBot] (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0)
     (hε : Tendsto ε l (𝓝 0)) (hpos : ∀ᶠ i in l, 0 < ε i) {x δ : ℝ} (hδ : 0 < δ) {U : Set ℝ}
@@ -154,17 +122,17 @@ private theorem coe_le_liminf_coe_mul_log_gaussianReal [l.NeBot] (m : ℝ) {v : 
       ((ε i : ℝ) : EReal) * ENNReal.log (gaussianReal m (ε i * v) U) := by
     filter_upwards [hpos] with i hi
     have hi' : (0 : ℝ) < ε i := hi
-    have hw : ε i * v ≠ 0 := mul_ne_zero hi.ne' hv
     have hc : 0 < (√(2 * π * ((ε i * v : ℝ≥0) : ℝ)))⁻¹ *
         Real.exp (-(|x - m| + δ) ^ 2 / (2 * ((ε i * v : ℝ≥0) : ℝ))) * (2 * δ) := by positivity
+    -- Isolate the speed as a factor, so that `Real.log_mul` splits off `log (ε i)`.
+    have hvar : 2 * π * ((ε i : ℝ) * v) = (2 * π * v) * ε i := by ring
     have hlog : Real.log ((√(2 * π * ((ε i * v : ℝ≥0) : ℝ)))⁻¹ *
         Real.exp (-(|x - m| + δ) ^ 2 / (2 * ((ε i * v : ℝ≥0) : ℝ))) * (2 * δ)) =
         -((Real.log (2 * π * v) + Real.log (ε i)) / 2) +
           -(|x - m| + δ) ^ 2 / (2 * (ε i * v)) + Real.log (2 * δ) := by
       rw [Real.log_mul (by positivity) (by positivity), Real.log_mul (by positivity)
         (by positivity), Real.log_inv, Real.log_sqrt (by positivity), Real.log_exp,
-        NNReal.coe_mul, show 2 * π * (ε i * v) = (2 * π * v) * ε i by ring,
-        Real.log_mul (by positivity) hi'.ne']
+        NNReal.coe_mul, hvar, Real.log_mul (by positivity) hi'.ne']
     calc ((g (ε i) : ℝ) : EReal)
         = ((ε i : ℝ) : EReal) * ENNReal.log (ENNReal.ofReal
             ((√(2 * π * ((ε i * v : ℝ≥0) : ℝ)))⁻¹ *
@@ -174,9 +142,8 @@ private theorem coe_le_liminf_coe_mul_log_gaussianReal [l.NeBot] (m : ℝ) {v : 
           field_simp
           ring
       _ ≤ ((ε i : ℝ) : EReal) * ENNReal.log (gaussianReal m (ε i * v) U) :=
-          mul_le_mul_of_nonneg_left (ENNReal.log_monotone <|
-            (ofReal_mul_le_gaussianReal_Icc m x hw δ).trans (measure_mono hU))
-            (by exact_mod_cast hi'.le)
+          monotone_coe_mul_log (ε i)
+            ((ofReal_mul_le_gaussianReal_Icc m x (ε i * v) δ).trans (measure_mono hU))
   have hlim : Tendsto (fun i => ((g (ε i) : ℝ) : EReal)) l
       (𝓝 ((-(|x - m| + δ) ^ 2 / (2 * v) : ℝ) : EReal)) := by
     refine (continuous_coe_real_ereal.tendsto _).comp ?_
@@ -215,12 +182,9 @@ theorem hasLDP_gaussianReal (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (hε : Tendst
     ENNReal.continuous_ofReal.comp (by fun_prop)
   rcases l.eq_or_neBot with rfl | hl
   · exact ⟨hcont.lowerSemicontinuous, fun _ _ => by simp, fun _ _ => by simp⟩
-  refine ⟨hcont.lowerSemicontinuous, fun G hG => ?_,
+  exact ⟨hcont.lowerSemicontinuous, fun G hG => EReal.neg_coe_ennreal_biInf_le_iff.2 fun x hx =>
+    neg_le_liminf_coe_mul_log_gaussianReal m hv hε hpos (hG.mem_nhds hx),
     fun F _ => limsup_coe_mul_log_gaussianReal_le m hv hε hpos F⟩
-  rw [EReal.neg_le]
-  simp_rw [EReal.coe_ennreal_iInf]
-  exact le_iInf₂ fun x hx => EReal.neg_le.1
-    (neg_le_liminf_coe_mul_log_gaussianReal m hv hε hpos (hG.mem_nhds hx))
 
 /-- At an eventually positive and eventually bounded speed `ε`, the Gaussian laws
 `gaussianReal m (ε i * v)` are exponentially tight. -/
@@ -259,44 +223,46 @@ theorem isGoodRateFunction_ofReal_sq_sub_div (m : ℝ) {v : ℝ≥0} (hv : v ≠
   exact (isExponentiallyTight_gaussianReal m v hε.isBoundedUnder_le hpos).isGoodRateFunction
     h.lowerSemicontinuous h.lower_bound
 
-/-- The `n`-fold convolution power of the standard Gaussian is `gaussianReal 0 n`. -/
-private theorem convolutionPower_gaussianReal_zero_one (n : ℕ) :
-    (gaussianReal 0 1).convolutionPower n = gaussianReal 0 n := by
-  induction n with
-  | zero => simp [gaussianReal_zero_var]
-  | succ n ih => rw [Measure.convolutionPower_succ, ih, gaussianReal_conv_gaussianReal]; simp
-
 end TauCeti.Probability
 
 namespace ProbabilityTheory.iIndepFun
 
 open TauCeti.Probability
 
-/-- **Cramér's theorem for the standard Gaussian.** The sample means
-`(X 0 + ⋯ + X (n - 1)) / n` of independent standard Gaussian random variables satisfy a large
-deviation principle at speed `1 / n` with rate function `x ↦ x² / 2`. -/
-theorem hasLDP_map_sum_range_div_gaussianReal {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    {X : ℕ → Ω → ℝ} (hind : iIndepFun X P) (hX : ∀ i, HasLaw (X i) (gaussianReal 0 1) P) :
+/-- **Cramér's theorem for Gaussian laws.** The sample means `(X 0 + ⋯ + X (n - 1)) / n` of
+independent random variables with common law `gaussianReal m v`, `v ≠ 0`, satisfy a large
+deviation principle at speed `1 / n` with rate function `x ↦ (x - m)² / (2v)`. -/
+theorem hasLDP_map_sum_range_div_of_hasLaw_gaussianReal {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : ℕ → Ω → ℝ} (hind : iIndepFun X P) {m : ℝ} {v : ℝ≥0} (hv : v ≠ 0)
+    (hX : ∀ i, HasLaw (X i) (gaussianReal m v) P) :
     HasLDP atTop (fun n : ℕ => (n : ℝ≥0)⁻¹)
       (fun n => P.map fun ω => (∑ i ∈ Finset.range n, X i ω) / n)
-      (fun x => ENNReal.ofReal (x ^ 2 / 2)) := by
-  have hlaw (n : ℕ) : P.map (fun ω => (∑ i ∈ Finset.range n, X i ω) / n) =
-      gaussianReal 0 ((n : ℝ≥0)⁻¹ * 1) := by
+      (fun x => ENNReal.ofReal ((x - m) ^ 2 / (2 * v))) := by
+  -- For `n ≥ 1` the sample mean has law `gaussianReal m (v / n)`; at `n = 0` it is the constant
+  -- `0`, so the laws agree only eventually.
+  have hlaw : ∀ᶠ n : ℕ in atTop, P.map (fun ω => (∑ i ∈ Finset.range n, X i ω) / n) =
+      gaussianReal m ((n : ℝ≥0)⁻¹ * v) := by
+    filter_upwards [eventually_ne_atTop 0] with n hn
     have hsum := hind.hasLaw_finset_sum_convolutionPower hX (Finset.range n)
-    rw [Finset.card_range, convolutionPower_gaussianReal_zero_one] at hsum
+    rw [Finset.card_range, gaussianReal_convolutionPower] at hsum
     have hmean := gaussianReal_div_const hsum n
-    simp only [Finset.sum_apply, zero_div] at hmean
+    simp only [Finset.sum_apply] at hmean
+    have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn
     rw [hmean.map_eq]
     congr 1
-    ext
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · simp only [NNReal.coe_div, NNReal.coe_mk, NNReal.coe_inv, NNReal.coe_natCast, mul_one]
+    · field_simp
+    · ext
+      simp only [NNReal.coe_div, NNReal.coe_mk, NNReal.coe_mul, NNReal.coe_inv,
+        NNReal.coe_natCast]
       field_simp
   have hε : Tendsto (fun n : ℕ => (n : ℝ≥0)⁻¹) atTop (𝓝 0) :=
     tendsto_inv_atTop_zero.comp tendsto_natCast_atTop_atTop
   have hpos : ∀ᶠ n : ℕ in atTop, 0 < (n : ℝ≥0)⁻¹ :=
     (eventually_gt_atTop 0).mono fun n hn => by positivity
-  simpa [hlaw] using hasLDP_gaussianReal 0 one_ne_zero hε hpos
+  have h := hasLDP_gaussianReal m hv hε hpos
+  refine ⟨h.lowerSemicontinuous, fun G hG => (h.lower_bound G hG).trans_eq (liminf_congr ?_),
+    fun F hF => (limsup_congr ?_).trans_le (h.upper_bound F hF)⟩ <;>
+  · filter_upwards [hlaw] with n hn
+    rw [hn]
 
 end ProbabilityTheory.iIndepFun

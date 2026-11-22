@@ -20,11 +20,12 @@ notions combine to the full principle: at a speed tending to `0`, an exponential
 satisfying a weak principle satisfies the full one. In an `R₁` space, along a nontrivial filter,
 the rate function of such a family is then good.
 
-Weak principles are usually obtained from local estimates. At an eventually positive speed
-tending to `0`, if the measures of small neighbourhoods of each point `x` decay at the rate `I x`,
-from above and from below, and `I` is lower semicontinuous, then the weak principle holds with
-rate `I`. Together with exponential tightness, this is how the large deviation principles for
-empirical spectral measures and extreme eigenvalues of Gaussian ensembles are proved.
+Weak principles are usually obtained from local estimates. Suppose the speed is eventually
+positive and tends to `0`, and `I` is lower semicontinuous. Suppose also that at each point `x`
+every neighbourhood has liminf rate at least `-I x`, and that for every `c > -I x` some
+neighbourhood has limsup rate below `c`. Then the weak principle holds with rate `I`. Together
+with exponential tightness, this is how the large deviation principles for empirical spectral
+measures and extreme eigenvalues of Gaussian ensembles are proved.
 
 ## Main definitions
 
@@ -102,8 +103,8 @@ theorem HasLDP.hasWeakLDP [R1Space X] (h : HasLDP l ε μ I) : HasWeakLDP l ε �
         (fun y hy => hc.trans_le (biInf_le _ hy)) hx
   calc limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i K)) l
       ≤ limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i (closure K))) l :=
-        limsup_le_limsup (.of_forall fun i => mul_le_mul_of_nonneg_left
-          (ENNReal.log_monotone (measure_mono subset_closure)) (by exact_mod_cast (ε i).coe_nonneg))
+        limsup_le_limsup (.of_forall fun i =>
+          monotone_coe_mul_log (ε i) (measure_mono subset_closure))
     _ ≤ -((⨅ x ∈ closure K, I x : ℝ≥0∞) : EReal) := h.upper_bound _ isClosed_closure
     _ ≤ -((⨅ x ∈ K, I x : ℝ≥0∞) : EReal) :=
         EReal.neg_le_neg_iff.2 (EReal.coe_ennreal_le_coe_ennreal_iff.2 hinf)
@@ -126,12 +127,9 @@ theorem limsup_le_of_isClosed (ht : IsExponentiallyTight l ε μ) (hε : Tendsto
   obtain ⟨K, hKc, hKL⟩ := ht L
   -- Split `F` into its compact part `F ∩ K` and the exponentially small remainder `Kᶜ`.
   have hsplit (i : ι) : ((ε i : ℝ) : EReal) * ENNReal.log (μ i F) ≤
-      ((ε i : ℝ) : EReal) * ENNReal.log (μ i (F ∩ K) + μ i Kᶜ) := by
-    refine mul_le_mul_of_nonneg_left (ENNReal.log_monotone ?_) (by exact_mod_cast (ε i).coe_nonneg)
-    refine (measure_mono fun x hx => ?_).trans (measure_union_le (F ∩ K) Kᶜ)
-    by_cases hxK : x ∈ K
-    · exact Or.inl ⟨hx, hxK⟩
-    · exact Or.inr hxK
+      ((ε i : ℝ) : EReal) * ENNReal.log (μ i (F ∩ K) + μ i Kᶜ) :=
+    monotone_coe_mul_log (ε i) <| (measure_le_inter_add_sdiff (μ i) F K).trans
+      (add_le_add le_rfl (measure_mono (Set.sdiff_subset_compl F K)))
   have hFK : -((⨅ x ∈ F ∩ K, I x : ℝ≥0∞) : EReal) ≤ -((⨅ x ∈ F, I x : ℝ≥0∞) : EReal) :=
     EReal.neg_le_neg_iff.2 <| EReal.coe_ennreal_le_coe_ennreal_iff.2 <|
       biInf_mono fun _ hx => hx.1
@@ -143,9 +141,9 @@ theorem limsup_le_of_isClosed (ht : IsExponentiallyTight l ε μ) (hε : Tendsto
         (limsup_coe_mul_log_add _ _ hε).le
     _ < c := max_lt (((hK _ (hKc.inter_left hF)).trans hFK).trans_lt hc) (hKL.trans_lt hL)
 
-/-- Under exponential tightness in an `R₁` space, for instance a Hausdorff space, a lower
-semicontinuous function satisfying the large deviation lower bound on open sets is a good rate
-function. -/
+/-- Under exponential tightness in an `R₁` space, for instance a Hausdorff space, along a
+nontrivial filter, a lower semicontinuous function satisfying the large deviation lower bound on
+open sets is a good rate function. -/
 theorem isGoodRateFunction [R1Space X] [l.NeBot] (ht : IsExponentiallyTight l ε μ)
     (hI : LowerSemicontinuous I)
     (hlower : ∀ G : Set X, IsOpen G →
@@ -157,9 +155,8 @@ theorem isGoodRateFunction [R1Space X] [l.NeBot] (ht : IsExponentiallyTight l ε
   -- The lower bound on the open set `(closure K)ᶜ` forces `I > α` off the compact `closure K`.
   have hKL' : limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i (closure K)ᶜ)) l ≤
       -((α.toReal + 1 : ℝ) : EReal) :=
-    (limsup_le_limsup (.of_forall fun i => mul_le_mul_of_nonneg_left (ENNReal.log_monotone
-      (measure_mono (Set.compl_subset_compl.2 subset_closure)))
-      (by exact_mod_cast (ε i).coe_nonneg))).trans hKL
+    (limsup_le_limsup (.of_forall fun i => monotone_coe_mul_log (ε i)
+      (measure_mono (Set.compl_subset_compl.2 subset_closure)))).trans hKL
   have hrate : ((α.toReal + 1 : ℝ) : EReal) ≤ ((⨅ x ∈ (closure K)ᶜ, I x : ℝ≥0∞) : EReal) :=
     EReal.neg_le_neg_iff.1 <|
       ((hlower _ isClosed_closure.isOpen_compl).trans liminf_le_limsup).trans hKL'
@@ -183,18 +180,18 @@ theorem hasLDP (h : HasWeakLDP l ε μ I) (ht : IsExponentiallyTight l ε μ)
   ⟨h.lowerSemicontinuous, h.lower_bound, fun _ hF => ht.limsup_le_of_isClosed hε h.upper_bound hF⟩
 
 /-- The rate function of a weak large deviation principle for an exponentially tight family in an
-`R₁` space is good. -/
+`R₁` space, along a nontrivial filter, is good. -/
 theorem isGoodRateFunction [R1Space X] [l.NeBot] (h : HasWeakLDP l ε μ I)
     (ht : IsExponentiallyTight l ε μ) : IsGoodRateFunction I :=
   ht.isGoodRateFunction h.lowerSemicontinuous h.lower_bound
 
 end HasWeakLDP
 
-/-- **Local criterion for the weak large deviation principle.** Suppose that, at an eventually
-positive speed tending to `0`, the measures of sufficiently small neighbourhoods of every point
-`x` decay at least at the rate `I x`, while the measures of all neighbourhoods of `x` decay at
-most at that rate. Then a lower semicontinuous `I` is the rate function of a weak large deviation
-principle. -/
+/-- **Local criterion for the weak large deviation principle.** Let the speed be eventually
+positive and tend to `0`, and let `I` be lower semicontinuous. Suppose that at every point `x`,
+every neighbourhood of `x` has liminf rate at least `-I x`, and for every `c > -I x` some
+neighbourhood of `x` has limsup rate below `c`. Then `I` is the rate function of a weak large
+deviation principle. -/
 theorem hasWeakLDP_of_forall_nhds
     (hupper : ∀ x, ⨅ U ∈ 𝓝 x,
       limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i U)) l ≤ -(I x : EReal))
@@ -203,9 +200,7 @@ theorem hasWeakLDP_of_forall_nhds
     (hI : LowerSemicontinuous I) (hε : Tendsto ε l (𝓝 0)) (hpos : ∀ᶠ i in l, 0 < ε i) :
     HasWeakLDP l ε μ I := by
   refine ⟨hI, fun G hG => ?_, fun K hK => le_of_forall_gt fun c hc => ?_⟩
-  · rw [EReal.neg_le]
-    simp_rw [EReal.coe_ennreal_iInf]
-    exact le_iInf₂ fun x hx => EReal.neg_le.1 (hlower x G (hG.mem_nhds hx))
+  · exact EReal.neg_coe_ennreal_biInf_le_iff.2 fun x hx => hlower x G (hG.mem_nhds hx)
   -- Cover `K` by finitely many neighbourhoods whose rates are below `c`.
   have hU (x : X) (hx : x ∈ K) : ∃ U ∈ 𝓝 x,
       limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i U)) l < c := by
@@ -216,8 +211,7 @@ theorem hasWeakLDP_of_forall_nhds
   obtain ⟨t, htK, hKt⟩ := hK.elim_nhds_subcover U hUx
   have hcover (i : ι) : ((ε i : ℝ) : EReal) * ENNReal.log (μ i K) ≤
       ((ε i : ℝ) : EReal) * ENNReal.log (∑ x ∈ t, μ i (U x)) :=
-    mul_le_mul_of_nonneg_left (ENNReal.log_monotone <|
-      (measure_mono hKt).trans (measure_biUnion_finset_le t U)) (by exact_mod_cast (ε i).coe_nonneg)
+    monotone_coe_mul_log (ε i) ((measure_mono hKt).trans (measure_biUnion_finset_le t U))
   calc limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i K)) l
       ≤ limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (∑ x ∈ t, μ i (U x))) l :=
         limsup_le_limsup (.of_forall hcover)

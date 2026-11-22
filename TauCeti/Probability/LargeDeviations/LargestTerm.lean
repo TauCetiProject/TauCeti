@@ -9,6 +9,8 @@ public import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLogExp
 public import Mathlib.Order.Filter.ENNReal
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Topology.Instances.ENNReal.Lemmas
+import TauCeti.Order.LiminfLimsup
+import TauCeti.Probability.LargeDeviations.Basic
 
 /-!
 # The principle of the largest term
@@ -19,7 +21,8 @@ the larger of the two rates:
 For finitely many summands the rate of the sum is the largest of the rates, once the speed is
 eventually positive; this is also what makes the rate of an empty sum `⊥`. The liminf companion
 bounds `liminf ε log (a + b)` by the liminf rate of `a` and the limsup rate of `b`. It lets an
-exponentially negligible error be absorbed in a lower bound.
+exponentially negligible error be absorbed in a lower bound. At a speed that is only eventually
+bounded, a sum of two sequences of rate `⊥` still has rate `⊥`.
 
 These estimates split events into a main part and an error part in the proofs of large deviation
 principles, as in the passage from weak to full principles and in exponential equivalence.
@@ -29,6 +32,8 @@ principles, as in the passage from weak to full principles and in exponential eq
 * `TauCeti.Probability.limsup_coe_mul_log_add`: the principle of the largest term for two
   summands.
 * `TauCeti.Probability.liminf_coe_mul_log_add_le`: its liminf companion.
+* `TauCeti.Probability.limsup_coe_mul_log_add_eq_bot`: at an eventually bounded speed, a sum of
+  two sequences of rate `⊥` has rate `⊥`.
 * `TauCeti.Probability.limsup_coe_mul_log_sum`: the principle for a finite sum.
 
 ## References
@@ -64,18 +69,7 @@ private theorem liminf_coe_mul_log (u : ι → ℝ≥0∞) :
 private theorem limsup_coe_mul_log_mono {u v : ι → ℝ≥0∞} (h : ∀ i, u i ≤ v i) :
     limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (u i)) l ≤
       limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (v i)) l :=
-  limsup_le_limsup (.of_forall fun i => mul_le_mul_of_nonneg_left (ENNReal.log_monotone (h i))
-    (by exact_mod_cast (ε i).coe_nonneg))
-
-private theorem rpow_add_le_two_rpow_mul_max (a b : ℝ≥0∞) (r : ℝ≥0) :
-    (a + b) ^ (r : ℝ) ≤ 2 ^ (r : ℝ) * max (a ^ (r : ℝ)) (b ^ (r : ℝ)) := by
-  have hab : a + b ≤ 2 * max a b := by
-    rw [two_mul]
-    exact add_le_add (le_max_left a b) (le_max_right a b)
-  calc (a + b) ^ (r : ℝ) ≤ (2 * max a b) ^ (r : ℝ) := ENNReal.rpow_le_rpow hab r.coe_nonneg
-    _ = 2 ^ (r : ℝ) * (max a b) ^ (r : ℝ) := ENNReal.mul_rpow_of_nonneg _ _ r.coe_nonneg
-    _ = 2 ^ (r : ℝ) * max (a ^ (r : ℝ)) (b ^ (r : ℝ)) :=
-      congrArg (2 ^ (r : ℝ) * ·) (ENNReal.monotone_rpow_of_nonneg r.coe_nonneg).map_max
+  limsup_le_limsup (.of_forall fun i => monotone_coe_mul_log (ε i) (h i))
 
 private theorem tendsto_two_rpow (hε : Tendsto ε l (𝓝 0)) :
     Tendsto (fun i => (2 : ℝ≥0∞) ^ (ε i : ℝ)) l (𝓝 1) := by
@@ -88,39 +82,33 @@ private theorem tendsto_two_rpow (hε : Tendsto ε l (𝓝 0)) :
   refine h2.congr fun i => ?_
   rw [← ENNReal.ofReal_rpow_of_pos two_pos, ENNReal.ofReal_ofNat]
 
-private theorem limsup_two_rpow_mul_le (hε : Tendsto ε l (𝓝 0)) (w : ι → ℝ≥0∞) :
-    limsup (fun i => 2 ^ (ε i : ℝ) * w i) l ≤ limsup w l := by
+/-- At a speed tending to `0`, doubling a sequence does not raise its limsup rate. -/
+private theorem limsup_coe_mul_log_add_self_le (hε : Tendsto ε l (𝓝 0)) (w : ι → ℝ≥0∞) :
+    limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (w i + w i)) l ≤
+      limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (w i)) l := by
   rcases l.eq_or_neBot with rfl | hl
   · simp
   have h1 := (tendsto_two_rpow hε).limsup_eq
-  calc limsup (fun i => 2 ^ (ε i : ℝ) * w i) l
-      ≤ limsup (fun i => (2 : ℝ≥0∞) ^ (ε i : ℝ)) l * limsup w l :=
+  rw [limsup_coe_mul_log, limsup_coe_mul_log, ENNReal.log_le_log_iff]
+  simp only [← two_mul, ENNReal.mul_rpow_of_nonneg _ _ NNReal.zero_le_coe]
+  calc limsup (fun i => 2 ^ (ε i : ℝ) * w i ^ (ε i : ℝ)) l
+      ≤ limsup (fun i => (2 : ℝ≥0∞) ^ (ε i : ℝ)) l * limsup (fun i => w i ^ (ε i : ℝ)) l :=
         ENNReal.limsup_mul_le' (by simp [h1]) (by simp [h1])
-    _ = limsup w l := by rw [h1, one_mul]
+    _ = limsup (fun i => w i ^ (ε i : ℝ)) l := by rw [h1, one_mul]
 
-private theorem liminf_two_rpow_mul_le (hε : Tendsto ε l (𝓝 0)) (w : ι → ℝ≥0∞) :
-    liminf (fun i => 2 ^ (ε i : ℝ) * w i) l ≤ liminf w l := by
+/-- At a speed tending to `0`, doubling a sequence does not raise its liminf rate. -/
+private theorem liminf_coe_mul_log_add_self_le (hε : Tendsto ε l (𝓝 0)) (w : ι → ℝ≥0∞) :
+    liminf (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (w i + w i)) l ≤
+      liminf (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (w i)) l := by
   rcases l.eq_or_neBot with rfl | hl
   · simp
   have h1 := (tendsto_two_rpow hε).limsup_eq
-  calc liminf (fun i => 2 ^ (ε i : ℝ) * w i) l
-      ≤ limsup (fun i => (2 : ℝ≥0∞) ^ (ε i : ℝ)) l * liminf w l :=
+  rw [liminf_coe_mul_log, liminf_coe_mul_log, ENNReal.log_le_log_iff]
+  simp only [← two_mul, ENNReal.mul_rpow_of_nonneg _ _ NNReal.zero_le_coe]
+  calc liminf (fun i => 2 ^ (ε i : ℝ) * w i ^ (ε i : ℝ)) l
+      ≤ limsup (fun i => (2 : ℝ≥0∞) ^ (ε i : ℝ)) l * liminf (fun i => w i ^ (ε i : ℝ)) l :=
         ENNReal.liminf_mul_le (by simp [h1]) (by simp [h1])
-    _ = liminf w l := by rw [h1, one_mul]
-
-/-- The liminf of a pointwise maximum is at most the larger of the liminf of the first sequence
-and the limsup of the second. -/
-private theorem liminf_max_le_max_liminf_limsup (u v : ι → ℝ≥0∞) :
-    liminf (fun i => max (u i) (v i)) l ≤ max (liminf u l) (limsup v l) := by
-  refine le_of_forall_lt fun c hc => ?_
-  by_contra! h
-  obtain ⟨d, hcd, hd⟩ := exists_between hc
-  have hu : ∀ᶠ i in l, d ≤ u i := by
-    filter_upwards [eventually_lt_of_lt_liminf hd,
-      eventually_lt_of_limsup_lt ((le_max_right _ _).trans h |>.trans_lt hcd)] with i h₁ h₂
-    exact ((lt_max_iff.1 h₁).resolve_right h₂.not_gt).le
-  exact (hcd.trans_le (le_liminf_of_le (by isBoundedDefault) hu)).not_ge
-    ((le_max_left _ _).trans h)
+    _ = liminf (fun i => w i ^ (ε i : ℝ)) l := by rw [h1, one_mul]
 
 /-- **The principle of the largest term.** At a speed tending to `0`, the limsup rate of a sum of
 two nonnegative sequences is the larger of their limsup rates. -/
@@ -130,14 +118,15 @@ theorem limsup_coe_mul_log_add (u v : ι → ℝ≥0∞) (hε : Tendsto ε l (�
         (limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (v i)) l) := by
   refine le_antisymm ?_ (max_le (limsup_coe_mul_log_mono fun i => le_self_add)
     (limsup_coe_mul_log_mono fun i => le_add_self))
-  rw [limsup_coe_mul_log, limsup_coe_mul_log, limsup_coe_mul_log,
-    ← ENNReal.log_monotone.map_max, ENNReal.log_le_log_iff]
-  calc limsup (fun i => (u i + v i) ^ (ε i : ℝ)) l
-      ≤ limsup (fun i => 2 ^ (ε i : ℝ) * max (u i ^ (ε i : ℝ)) (v i ^ (ε i : ℝ))) l :=
-        limsup_le_limsup (.of_forall fun i => rpow_add_le_two_rpow_mul_max _ _ _)
-    _ ≤ limsup (fun i => max (u i ^ (ε i : ℝ)) (v i ^ (ε i : ℝ))) l :=
-        limsup_two_rpow_mul_le hε _
-    _ = _ := limsup_max
+  -- Bound the sum by twice the larger term; the rate of a maximum is the maximum of the rates.
+  calc limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (u i + v i)) l
+      ≤ limsup (fun i => ((ε i : ℝ) : EReal) *
+          ENNReal.log (max (u i) (v i) + max (u i) (v i))) l :=
+        limsup_coe_mul_log_mono fun i => add_le_add (le_max_left _ _) (le_max_right _ _)
+    _ ≤ limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (max (u i) (v i))) l :=
+        limsup_coe_mul_log_add_self_le hε _
+    _ = _ := (limsup_congr (.of_forall fun i => (monotone_coe_mul_log (ε i)).map_max)).trans
+        limsup_max
 
 /-- At a speed tending to `0`, the liminf rate of a sum of two nonnegative sequences is at most
 the larger of the liminf rate of the first and the limsup rate of the second. If the second rate
@@ -146,14 +135,44 @@ theorem liminf_coe_mul_log_add_le (u v : ι → ℝ≥0∞) (hε : Tendsto ε l 
     liminf (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (u i + v i)) l ≤
       max (liminf (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (u i)) l)
         (limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (v i)) l) := by
-  rw [liminf_coe_mul_log, liminf_coe_mul_log, limsup_coe_mul_log,
-    ← ENNReal.log_monotone.map_max, ENNReal.log_le_log_iff]
-  calc liminf (fun i => (u i + v i) ^ (ε i : ℝ)) l
-      ≤ liminf (fun i => 2 ^ (ε i : ℝ) * max (u i ^ (ε i : ℝ)) (v i ^ (ε i : ℝ))) l :=
-        liminf_le_liminf (.of_forall fun i => rpow_add_le_two_rpow_mul_max _ _ _)
-    _ ≤ liminf (fun i => max (u i ^ (ε i : ℝ)) (v i ^ (ε i : ℝ))) l :=
-        liminf_two_rpow_mul_le hε _
+  calc liminf (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (u i + v i)) l
+      ≤ liminf (fun i => ((ε i : ℝ) : EReal) *
+          ENNReal.log (max (u i) (v i) + max (u i) (v i))) l :=
+        liminf_le_liminf (.of_forall fun i => monotone_coe_mul_log (ε i)
+          (add_le_add (le_max_left _ _) (le_max_right _ _)))
+    _ ≤ liminf (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (max (u i) (v i))) l :=
+        liminf_coe_mul_log_add_self_le hε _
+    _ = liminf (fun i => max (((ε i : ℝ) : EReal) * ENNReal.log (u i))
+          (((ε i : ℝ) : EReal) * ENNReal.log (v i))) l :=
+        liminf_congr (.of_forall fun i => (monotone_coe_mul_log (ε i)).map_max)
     _ ≤ _ := liminf_max_le_max_liminf_limsup _ _
+
+/-- At an eventually bounded speed, the sum of two nonnegative sequences of limsup rate `⊥` has
+limsup rate `⊥`. Unlike `limsup_coe_mul_log_add`, this needs no vanishing speed. -/
+theorem limsup_coe_mul_log_add_eq_bot {u v : ι → ℝ≥0∞} (hε : IsBoundedUnder (· ≤ ·) l ε)
+    (hu : limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (u i)) l = ⊥)
+    (hv : limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (v i)) l = ⊥) :
+    limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (u i + v i)) l = ⊥ := by
+  have hmax : limsup (fun i => max (u i) (v i) ^ (ε i : ℝ)) l = 0 := by
+    rw [← ENNReal.log_eq_bot_iff, ← limsup_coe_mul_log,
+      limsup_congr (.of_forall fun i => (monotone_coe_mul_log (ε i)).map_max), limsup_max, hu, hv,
+      max_self]
+  obtain ⟨B, hB⟩ := hε
+  refine le_bot_iff.1 ((limsup_coe_mul_log_mono fun i =>
+    add_le_add (le_max_left (u i) (v i)) (le_max_right (u i) (v i))).trans ?_)
+  rw [limsup_coe_mul_log, le_bot_iff, ENNReal.log_eq_bot_iff, ← nonpos_iff_eq_zero]
+  -- Bound the sum by twice the larger term, and the factor `2 ^ ε` by `2 ^ B`.
+  calc limsup (fun i => (max (u i) (v i) + max (u i) (v i)) ^ (ε i : ℝ)) l
+      ≤ limsup (fun i => 2 ^ (B : ℝ) * max (u i) (v i) ^ (ε i : ℝ)) l := by
+        refine limsup_le_limsup ?_
+        filter_upwards [hB] with i hi
+        rw [← two_mul, ENNReal.mul_rpow_of_nonneg _ _ (ε i).coe_nonneg]
+        gcongr
+        · norm_num
+        · exact_mod_cast hi
+    _ = 0 := by
+      rw [ENNReal.limsup_const_mul_of_ne_top (ENNReal.rpow_ne_top_of_nonneg B.coe_nonneg
+        ENNReal.ofNat_ne_top), hmax, mul_zero]
 
 /-- **The principle of the largest term** for a finite sum. At an eventually positive speed
 tending to `0`, the limsup rate of a finite sum of nonnegative sequences is the largest of their

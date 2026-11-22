@@ -6,9 +6,10 @@ Authors: Codex
 module
 
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
+public import TauCeti.MeasureTheory.Group.Convolution.Power
 
 /-!
-# Convolution of multivariate Gaussian laws
+# Convolution of Gaussian laws
 
 Independent Gaussian vectors add their means and covariance matrices. The convolution identity
 allows singular covariances and empty coordinate types. In particular, exponentiating this sum
@@ -16,12 +17,16 @@ identifies componentwise products of independent multivariate log-normal vectors
 
 The proof uses Mathlib's `charFun_multivariateGaussian` and characteristic-function uniqueness,
 following the scalar `ProbabilityTheory.gaussianReal_conv_gaussianReal`.
+
+Iterating the scalar identity, the `n`-fold convolution power of `gaussianReal m v` is
+`gaussianReal (n * m) (n * v)`: this is the law of a sum of `n` independent random variables with
+common law `gaussianReal m v`, and hence of their sample mean after rescaling.
 -/
 
 public section
 
 open MeasureTheory ProbabilityTheory
-open scoped RealInnerProductSpace
+open scoped NNReal RealInnerProductSpace
 
 namespace TauCeti.Probability
 
@@ -41,5 +46,15 @@ theorem multivariateGaussian_conv_multivariateGaussian (m₁ m₂ : EuclideanSpa
   congr 1
   simp only [inner_add_right, Matrix.add_mulVec, dotProduct_add, Complex.ofReal_add]
   ring
+
+/-- The `n`-fold convolution power of `gaussianReal m v` is `gaussianReal (n * m) (n * v)`. -/
+@[simp]
+theorem gaussianReal_convolutionPower (m : ℝ) (v : ℝ≥0) (n : ℕ) :
+    (gaussianReal m v).convolutionPower n = gaussianReal (n * m) (n * v) := by
+  induction n with
+  | zero => simp [gaussianReal_zero_var]
+  | succ n ih =>
+    rw [Measure.convolutionPower_succ, ih, gaussianReal_conv_gaussianReal]
+    congr 1 <;> push_cast <;> ring
 
 end TauCeti.Probability

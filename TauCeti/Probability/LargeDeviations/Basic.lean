@@ -29,15 +29,20 @@ with `ε i` as a multiplier in `EReal`, where `0 * ⊥ = 0`, so a speed `ε i = 
 
 ## Main results
 
+* `TauCeti.Probability.monotone_coe_mul_log`: at a nonnegative speed `e`, the rate
+  `x ↦ e * log x` is monotone, so the rate `e * log (μ A)` is monotone in the set `A`.
 * `TauCeti.Probability.IsGoodRateFunction.exists_eq_biInf`: a good rate function attains its
   infimum over a closed set whenever that infimum is finite.
+* `TauCeti.Probability.HasLDP.eventually_pos`: the speed of a large deviation principle is
+  eventually positive.
 
 The contraction principle is in `TauCeti.Probability.LargeDeviations.Contraction`, the
 Dirac-mass example in `TauCeti.Probability.LargeDeviations.Dirac`, weak principles and
 exponential tightness in `TauCeti.Probability.LargeDeviations.Weak`, exponential equivalence in
-`TauCeti.Probability.LargeDeviations.ExponentialEquivalence`, uniqueness of the rate function and
-concentration on its zeros in `TauCeti.Probability.LargeDeviations.RateFunction`, and Gaussian
-laws in `TauCeti.Probability.LargeDeviations.Gaussian`.
+`TauCeti.Probability.LargeDeviations.ExponentialEquivalence`, uniqueness of the rate function,
+concentration on its zeros and infima over thickenings in
+`TauCeti.Probability.LargeDeviations.RateFunction`, and Gaussian laws in
+`TauCeti.Probability.LargeDeviations.Gaussian`.
 
 ## References
 
@@ -52,6 +57,11 @@ open scoped ENNReal NNReal
 namespace TauCeti.Probability
 
 variable {ι X : Type*}
+
+/-- At a nonnegative speed `e`, the rate `x ↦ e * log x` is monotone. -/
+theorem monotone_coe_mul_log (e : ℝ≥0) :
+    Monotone fun x : ℝ≥0∞ => ((e : ℝ) : EReal) * ENNReal.log x :=
+  fun _ _ h => mul_le_mul_of_nonneg_left (ENNReal.log_monotone h) (by exact_mod_cast e.coe_nonneg)
 
 /-- A rate function is *good* if it is lower semicontinuous and has compact sublevel sets at every
 finite level. -/
@@ -89,5 +99,17 @@ structure HasLDP [TopologicalSpace X] [MeasurableSpace X] (l : Filter ι) (ε : 
   upper_bound : ∀ F : Set X, IsClosed F →
     limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i F)) l ≤
       -((⨅ x ∈ F, I x : ℝ≥0∞) : EReal)
+
+/-- A large deviation principle forces the speed to be eventually positive: at a zero speed the
+empty set would have rate `0` instead of `⊥`. -/
+theorem HasLDP.eventually_pos [TopologicalSpace X] [MeasurableSpace X] {l : Filter ι}
+    {ε : ι → ℝ≥0} {μ : ι → Measure X} {I : X → ℝ≥0∞} (h : HasLDP l ε μ I) :
+    ∀ᶠ i in l, 0 < ε i := by
+  have hbot := h.upper_bound ∅ isClosed_empty
+  simp only [measure_empty, ENNReal.log_zero, Set.mem_empty_iff_false, iInf_false, iInf_top,
+    EReal.coe_ennreal_top, EReal.neg_top] at hbot
+  filter_upwards [eventually_lt_of_limsup_lt (hbot.trans_lt EReal.bot_lt_zero)] with i hi
+  refine pos_iff_ne_zero.2 fun h0 => ?_
+  simp [h0] at hi
 
 end TauCeti.Probability
