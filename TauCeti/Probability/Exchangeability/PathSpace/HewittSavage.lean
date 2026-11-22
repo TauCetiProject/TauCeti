@@ -11,7 +11,7 @@ public import TauCeti.Probability.Exchangeability.IID
 -- Public: `cylinder` appears in the hypothesis of `measure_eq_zero_or_one_of_exchangeableSigma`.
 public import Mathlib.MeasureTheory.Constructions.Cylinders
 -- Non-public: used only inside proofs.
-import TauCeti.MeasureTheory.Constructions.CylinderApproximation
+import TauCeti.MeasureTheory.Constructions.Cylinder.Approximation
 import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 import TauCeti.Probability.Independence.InfinitePi
 import TauCeti.MeasureTheory.Measure.ZeroOne
