@@ -309,15 +309,6 @@ private theorem aemeasurable_enorm_inner_halfWavePropagator {τ : ℝ × ℝ →
   ((aestronglyMeasurable_phasePropagator_apply sqrtNegLaplacianSymbol hτ.aestronglyMeasurable
     (T.continuous.comp_aestronglyMeasurable hY.comp_snd)).inner hG.comp_fst).eNorm
 
-/-- Reflecting time, `t ↦ -t`, preserves mixed norms. -/
-private theorem eLpNorm_eLpNorm_comp_neg {H : ℝ → Lp ℂ 2 (volume : Measure E)}
-    (hH : AEStronglyMeasurable H) {q r : ℝ≥0∞} :
-    eLpNorm (fun t ↦ eLpNorm (H (-t)) r volume) q volume =
-      eLpNorm (fun t ↦ eLpNorm (H t) r volume) q volume :=
-  eLpNorm_comp_measurePreserving (g := fun t ↦ eLpNorm (H t) r volume)
-    (hH.aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable
-    (Measure.measurePreserving_neg (volume : Measure ℝ))
-
 /-- The mixed norm of a family vanishing at every time is zero. -/
 private theorem eLpNorm_eLpNorm_eq_zero {H : ℝ → Lp ℂ 2 (volume : Measure E)}
     (hH : ∀ t, H t = 0) {q r : ℝ≥0∞} :
@@ -346,7 +337,7 @@ private theorem eLpNorm_eLpNorm_le_mul_two_mul {w u : ℝ → Lp ℂ 2 (volume :
         gcongr
         exact eLpNorm_add_le hq
     _ = _ := by
-        rw [eLpNorm_eLpNorm_comp_neg hu]
+        rw [hu.eLpNorm_eLpNorm_comp_neg]
         ring
 
 /-- Reflecting time turns a bilinear bound for the pairings `⟪W₊(t - s) T F(s), G(t)⟫` into the
@@ -371,7 +362,7 @@ private theorem lintegral_lintegral_enorm_inner_halfWavePropagator_neg_sub_le
     _ = ∫⁻ t, ∫⁻ s, ‖⟪halfWavePropagator ℂ (t - s) (T (F (-s))), G (-t)⟫_ℂ‖ₑ := by
         simp only [neg_sub_neg, neg_sub]
     _ ≤ _ := h _ _ (hF.comp_measurePreserving hneg) (hG.comp_measurePreserving hneg)
-    _ = _ := by rw [eLpNorm_eLpNorm_comp_neg hF, eLpNorm_eLpNorm_comp_neg hG]
+    _ = _ := by rw [hF.eLpNorm_eLpNorm_comp_neg, hG.eLpNorm_eLpNorm_comp_neg]
 
 /-- If the pairings `⟪W₊(t - s) T F(s), G(t)⟫` satisfy a bilinear bound with constant `X`, then
 those of `c (W₊(t - s) - W₊(-(t - s))) T F(s)` satisfy it with constant `2 ‖c‖ X`. -/

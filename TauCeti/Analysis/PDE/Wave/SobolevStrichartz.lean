@@ -10,8 +10,7 @@ public import TauCeti.Analysis.PDE.Wave.Strichartz
 import TauCeti.Analysis.PDE.Strichartz.LittlewoodPaley
 import TauCeti.Analysis.PDE.Wave.Endpoint
 import TauCeti.Analysis.PDE.Wave.MixedNorm
-import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
-import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
+import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 
 /-!
 # Strichartz estimates for the wave equation with homogeneous Sobolev data
@@ -57,8 +56,8 @@ the square function `(∑ⱼ |W₊(t) Pⱼ f|²)^{1/2}`, since the propagators a
 commute with the blocks. Because `q, r ≥ 2`, Minkowski's inequality moves the square sum outside
 the `L^r_x` norm and then outside the `L^q_t` norm, leaving the square sum of the
 frequency-localized estimates. Strong solutions are identified with
-`cos(tD) u(0) + D⁻¹ sin(tD) ∂ₜu(0)` by Duhamel's formula
-(`TauCeti.IsWaveSolutionOn.eq_waveCosPropagator_add_waveSinPropagator_add_integral`).
+`cos(tD) u(0) + D⁻¹ sin(tD) ∂ₜu(0)` by Duhamel's formula, which bounds their mixed norms by those of
+this free solution (`TauCeti.IsWaveSolutionOn.eLpNorm_eLpNorm_restrict_le`).
 
 ## Main declarations
 
@@ -96,10 +95,37 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   {q : ℝ≥0} {r : ℝ≥0∞}
 
 /-- Sum frequency-localized mixed-norm estimates with weights `2^{jσ}` in square-sum form, for a
-strongly continuous family `T(t)` of operators on `L²(E)` commuting with the Fourier multipliers,
-over the Littlewood–Paley blocks, for a wave-admissible pair `(q, r)` with `r < ∞`. This is the
-common step of the estimates for `W₊(t)`, `cos(tD)` and `D⁻¹ sin(tD)`. -/
-private theorem exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_littlewoodPaley_le (hq : 2 < q)
+family `T(t)` of operators on `L²(E)` commuting with the Fourier multipliers, over the
+Littlewood–Paley blocks, for `2 ≤ q` and `2 ≤ r < ∞`. This is the common step of the estimates
+for `W₊(t)`, `cos(tD)` and `D⁻¹ sin(tD)`. -/
+private theorem exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_littlewoodPaley_le {q : ℝ≥0∞}
+    (hq : 2 ≤ q) (hr2 : 2 ≤ r) (hr : r ≠ ∞) (σ : ℝ)
+    (T : ℝ → Lp ℂ 2 (volume : Measure E) →L[ℂ] Lp ℂ 2 (volume : Measure E))
+    (hT : ∀ x, AEStronglyMeasurable (fun t ↦ T t x))
+    (hcomm : ∀ t (n : Lp ℂ ∞ (volume : Measure E)) x,
+      T t (Lp.fourierMultiplierCLM ℂ n x) = Lp.fourierMultiplierCLM ℂ n (T t x))
+    (hloc : ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ f : Lp ℂ 2 (volume : Measure E),
+        eLpNorm (fun t ↦ eLpNorm (T t (Lp.fourierMultiplierCLM ℂ m f)) r volume) q volume ≤
+          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) * ‖f‖ₑ) :
+    ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
+      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ f : Lp ℂ 2 (volume : Measure E),
+        eLpNorm (fun t ↦ eLpNorm (T t f) r volume) q volume ≤
+          C * (∑' j : ℤ, (ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) *
+            ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ) ^ 2) ^ (2⁻¹ : ℝ) := by
+  obtain ⟨C, hC⟩ := hloc
+  obtain ⟨K, hK⟩ := φ.exists_eLpNorm_eLpNorm_le_mul_tsum_sq_rpow (F := ℂ) (β := ℝ)
+    (ρ := volume) σ hq hr2 hr
+  refine ⟨K * C, fun m hm f ↦ (hK m hm T hT (fun t k x ↦ hcomm t (m k) x) C
+    (fun k x ↦ hC k (m k) (hm k) x) f).trans_eq ?_⟩
+  push_cast
+  ring
+
+/-- `ContDiffBump.exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_littlewoodPaley_le` for a strongly
+continuous family `T(t)` and a wave-admissible pair `(q, r)` with `2 < q` and `r < ∞`. At `r = 0`
+every mixed norm vanishes; otherwise wave-admissibility gives `2 ≤ r`. -/
+private theorem exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_waveAdmissible (hq : 2 < q)
     (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 2) (hr : r ≠ ∞) (σ : ℝ)
     (T : ℝ → Lp ℂ 2 (volume : Measure E) →L[ℂ] Lp ℂ 2 (volume : Measure E))
@@ -119,13 +145,8 @@ private theorem exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_littlewoodPaley_le (hq
   rcases eq_or_ne r 0 with rfl | hr0
   · exact ⟨0, fun _ _ _ ↦ by simp [eLpNorm_exponent_zero, Lp.aestronglyMeasurable]⟩
   obtain ⟨-, -, hr2⟩ := two_le_finrank_of_waveAdmissible hq hr0 hqr Module.finrank_pos
-  obtain ⟨C, hC⟩ := hloc
-  obtain ⟨K, hK⟩ := φ.exists_eLpNorm_eLpNorm_le_mul_tsum_sq_rpow (F := ℂ) (β := ℝ)
-    (ρ := volume) σ (q := q) (by exact_mod_cast hq.le) hr2 hr
-  refine ⟨K * C, fun m hm f ↦ (hK m hm T (fun x ↦ (hT x).aestronglyMeasurable)
-    (fun t k x ↦ hcomm t (m k) x) C (fun k x ↦ hC k (m k) (hm k) x) f).trans_eq ?_⟩
-  push_cast
-  ring
+  exact φ.exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_littlewoodPaley_le
+    (by exact_mod_cast hq.le) hr2 hr σ T (fun x ↦ (hT x).aestronglyMeasurable) hcomm hloc
 
 /-- **The Strichartz estimate for the half-wave propagator with data in `\dot H^γ`.** Let `E` be
 nontrivial of dimension `n`, let `ψⱼ` be the Littlewood–Paley cutoffs built from `φ`, and let `Pⱼ`
@@ -144,24 +165,11 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow (hq : 2 < q)
           C * (∑' j : ℤ, (ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
             Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹)) *
               ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ) ^ 2) ^ (2⁻¹ : ℝ) :=
-  φ.exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_littlewoodPaley_le hq hqr hr _ _
+  φ.exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_waveAdmissible hq hqr hr _ _
     (continuous_phasePropagator_apply _)
     (fun t n x ↦ (fourierMultiplierCLM_halfWavePropagator_apply t n x).symm) <|
       φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le hq
         (NNReal.HolderConjugate.conjExponent (one_lt_two.trans hq)).symm hqr
-
-omit [Nontrivial E] in
-/-- Reversing time does not change the mixed norm of `t ↦ W₊(t) f`, since `t ↦ -t` preserves
-Lebesgue measure. -/
-private theorem eLpNorm_eLpNorm_halfWavePropagator_neg (q : ℝ≥0∞)
-    (f : Lp ℂ 2 (volume : Measure E)) :
-    eLpNorm (fun t ↦ eLpNorm (halfWavePropagator ℂ (-t) f) r volume) q volume =
-      eLpNorm (fun t ↦ eLpNorm (halfWavePropagator ℂ t f) r volume) q volume := by
-  have hW : Continuous fun t ↦ halfWavePropagator ℂ t f := continuous_phasePropagator_apply _ _
-  simpa only [Function.comp_def] using eLpNorm_comp_measurePreserving (p := q)
-    (g := fun t ↦ eLpNorm (halfWavePropagator ℂ t f) r volume)
-    (hW.aestronglyMeasurable.aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable
-    (Measure.measurePreserving_neg (volume : Measure ℝ))
 
 /-- **The Strichartz estimate for the backward half-wave propagator with data in `\dot H^γ`.**
 Under the hypotheses of `ContDiffBump.exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow`,
@@ -179,7 +187,8 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_neg_le_tsum_sq_rpow (hq : 2 < 
             Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹)) *
               ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ) ^ 2) ^ (2⁻¹ : ℝ) := by
   obtain ⟨C, hC⟩ := φ.exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow hq hqr hr
-  exact ⟨C, fun m hm f ↦ (eLpNorm_eLpNorm_halfWavePropagator_neg _ f).trans_le (hC m hm f)⟩
+  exact ⟨C, fun m hm f ↦ ((continuous_phasePropagator_apply _ f).aestronglyMeasurable
+    |>.eLpNorm_eLpNorm_comp_neg).trans_le (hC m hm f)⟩
 
 /-- **The endpoint Strichartz estimate for the half-wave propagator with data in `\dot H^γ`.** Let
 `E` have dimension `n ≥ 4`, let `ψⱼ` be the Littlewood–Paley cutoffs built from `φ`, and let `Pⱼ`
@@ -198,18 +207,11 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow_of_endpoint
           C * (∑' j : ℤ, (ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
             Module.finrank ℝ E * (r⁻¹).toReal - 2⁻¹)) *
               ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ) ^ 2) ^ (2⁻¹ : ℝ) := by
-  obtain ⟨hr2, hr⟩ := two_le_and_ne_top_of_waveEndpoint (by exact_mod_cast hn) hr
-  obtain ⟨C, hC⟩ :=
-    φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_endpoint hn ‹_›
-  obtain ⟨K, hK⟩ := φ.exists_eLpNorm_eLpNorm_le_mul_tsum_sq_rpow (F := ℂ) (β := ℝ)
-    (ρ := volume) ((Module.finrank ℝ E : ℝ) / 2 - Module.finrank ℝ E * (r⁻¹).toReal - 2⁻¹)
-    le_rfl hr2 hr
-  refine ⟨K * C, fun m hm f ↦ (hK m hm _
+  obtain ⟨hr2, hr'⟩ := two_le_and_ne_top_of_waveEndpoint (by exact_mod_cast hn) hr
+  exact φ.exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_littlewoodPaley_le le_rfl hr2 hr' _ _
     (fun x ↦ (continuous_phasePropagator_apply _ x).aestronglyMeasurable)
-    (fun t k x ↦ (fourierMultiplierCLM_halfWavePropagator_apply t (m k) x).symm) C
-    (fun k x ↦ hC k (m k) (hm k) x) f).trans_eq ?_⟩
-  push_cast
-  ring
+    (fun t n x ↦ (fourierMultiplierCLM_halfWavePropagator_apply t n x).symm) <|
+      φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_endpoint hn hr
 
 /-- **The endpoint Strichartz estimate for the backward half-wave propagator with data in
 `\dot H^γ`.** Under the hypotheses of
@@ -228,7 +230,8 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_neg_le_tsum_sq_rpow_of_endpoin
             Module.finrank ℝ E * (r⁻¹).toReal - 2⁻¹)) *
               ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ) ^ 2) ^ (2⁻¹ : ℝ) := by
   obtain ⟨C, hC⟩ := φ.exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow_of_endpoint hn hr
-  exact ⟨C, fun m hm f ↦ (eLpNorm_eLpNorm_halfWavePropagator_neg _ f).trans_le (hC m hm f)⟩
+  exact ⟨C, fun m hm f ↦ ((continuous_phasePropagator_apply _ f).aestronglyMeasurable
+    |>.eLpNorm_eLpNorm_comp_neg).trans_le (hC m hm f)⟩
 
 /-- **The Strichartz estimate for `cos(tD)` with data in `\dot H^γ`.** Let `E` be nontrivial of
 dimension `n`, let `ψⱼ` be the Littlewood–Paley cutoffs built from `φ`, and let `Pⱼ` be the `L²`
@@ -247,13 +250,9 @@ theorem exists_eLpNorm_eLpNorm_waveCosPropagator_le_tsum_sq_rpow (hq : 2 < q)
           C * (∑' j : ℤ, (ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
             Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹)) *
               ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ) ^ 2) ^ (2⁻¹ : ℝ) :=
-  φ.exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_littlewoodPaley_le hq hqr hr _ _
+  φ.exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_waveAdmissible hq hqr hr _ _
     continuous_waveCosPropagator_apply
-    -- Fourier multipliers commute, since their symbols do.
-    (fun t n x ↦ by
-      rw [waveCosPropagator_def, Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply,
-        Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply, Lp.smul_eq_mul, Lp.smul_eq_mul,
-        mul_comm]) <|
+    (fun t n x ↦ (fourierMultiplierCLM_waveCosPropagator_apply t n x).symm) <|
       φ.exists_eLpNorm_eLpNorm_waveCosPropagator_littlewoodPaley_le hq
         (NNReal.HolderConjugate.conjExponent (one_lt_two.trans hq)).symm hqr
 
@@ -272,13 +271,9 @@ theorem exists_eLpNorm_eLpNorm_waveSinPropagator_le_tsum_sq_rpow (hq : 2 < q)
           C * (∑' j : ℤ, (ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
             Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹ - 1)) *
               ‖Lp.fourierMultiplierCLM ℂ (m j) g‖ₑ) ^ 2) ^ (2⁻¹ : ℝ) :=
-  φ.exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_littlewoodPaley_le hq hqr hr _ _
+  φ.exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_waveAdmissible hq hqr hr _ _
     continuous_waveSinPropagator_apply
-    -- Fourier multipliers commute, since their symbols do.
-    (fun t n x ↦ by
-      rw [waveSinPropagator_def, Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply,
-        Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply, Lp.smul_eq_mul, Lp.smul_eq_mul,
-        mul_comm]) <|
+    (fun t n x ↦ (fourierMultiplierCLM_waveSinPropagator_apply t n x).symm) <|
       φ.exists_eLpNorm_eLpNorm_waveSinPropagator_littlewoodPaley_le hq
         (NNReal.HolderConjugate.conjExponent (one_lt_two.trans hq)).symm hqr
 
@@ -310,18 +305,11 @@ theorem exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_s
   obtain ⟨C₁, h₁⟩ := φ.exists_eLpNorm_eLpNorm_waveCosPropagator_le_tsum_sq_rpow hq hqr hr
   obtain ⟨C₂, h₂⟩ := φ.exists_eLpNorm_eLpNorm_waveSinPropagator_le_tsum_sq_rpow hq hqr hr
   refine ⟨C₁ + C₂, fun m hm f g ↦ ?_⟩
-  have hu : Continuous fun t ↦ waveCosPropagator ℂ t f + waveSinPropagator ℂ t g :=
-    (continuous_waveCosPropagator_apply f).add (continuous_waveSinPropagator_apply g)
-  calc _ ≤ eLpNorm (fun t ↦ eLpNorm (waveCosPropagator ℂ t f) r volume +
-          eLpNorm (waveSinPropagator ℂ t g) r volume) q volume :=
-        eLpNorm_mono_eNorm
-          (hu.aestronglyMeasurable.aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable fun t ↦ by
-            simp only [eNorm_eq_self]
-            rw [eLpNorm_congr_ae (Lp.coeFn_add _ _)]
-            exact eLpNorm_add_le (one_le_two.trans hr2)
-    _ ≤ eLpNorm (fun t ↦ eLpNorm (waveCosPropagator ℂ t f) r volume) q volume +
+  calc _ ≤ eLpNorm (fun t ↦ eLpNorm (waveCosPropagator ℂ t f) r volume) q volume +
           eLpNorm (fun t ↦ eLpNorm (waveSinPropagator ℂ t g) r volume) q volume :=
-        eLpNorm_add_le (by exact_mod_cast one_le_two.trans hq.le)
+        eLpNorm_eLpNorm_add_le (continuous_waveCosPropagator_apply f).aestronglyMeasurable
+          (continuous_waveSinPropagator_apply g).aestronglyMeasurable
+          (by exact_mod_cast one_le_two.trans hq.le) (one_le_two.trans hr2)
     _ ≤ _ := by
         grw [h₁ m hm f, h₂ m hm g, ENNReal.coe_add, add_mul, mul_add, mul_add]
         gcongr
@@ -352,15 +340,7 @@ theorem exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_isWaveSolutionOn (hq : 2 < q)
                 ‖Lp.fourierMultiplierCLM ℂ (m j) (u' 0)‖ₑ) ^ 2) ^ (2⁻¹ : ℝ)) := by
   obtain ⟨C, hC⟩ :=
     φ.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_sq_rpow hq hqr hr
-  refine ⟨C, fun m hm s _ h0 u u' u'' hu ↦ ?_⟩
-  -- By Duhamel's formula with no forcing, `u(t) = cos(tD) u(0) + D⁻¹ sin(tD) u'(0)` on `s`.
-  have hrep : ∀ᵐ t ∂volume.restrict s, eLpNorm (u t) r volume =
-      eLpNorm (waveCosPropagator ℂ t (u 0) + waveSinPropagator ℂ t (u' 0)) r volume :=
-    ae_restrict_of_forall_mem (Set.OrdConnected.measurableSet ‹_›) fun t ht ↦ by
-      rw [hu.eq_waveCosPropagator_add_waveSinPropagator_add_integral h0 ht
-        intervalIntegrable_const]
-      simp
-  rw [eLpNorm_congr_ae hrep]
-  exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans (hC m hm _ _)
+  exact ⟨C, fun m hm s _ h0 u u' u'' hu ↦
+    (hu.eLpNorm_eLpNorm_restrict_le h0).trans (hC m hm _ _)⟩
 
 end ContDiffBump
