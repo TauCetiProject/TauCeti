@@ -16,7 +16,11 @@ detected by their intersection with the frontier in lattice-point counting argum
 
 The coordinates of a real basis `b` carry any additive Haar measure `μ` to Lebesgue measure on
 `ι → ℝ`, scaled by the measure of the fundamental domain of `b`
-(`Module.Basis.addHaar_eq_measure_fundamentalDomain_mul_volume_image`).
+(`Module.Basis.addHaar_eq_measure_fundamentalDomain_mul_volume_image`). Scaling a basis scales
+its fundamental domain, so every nontrivial finite-dimensional real space is tiled by the lattice
+translates of a bounded convex cell of arbitrarily large measure
+(`TauCeti.exists_isAddFundamentalDomain_convex_le_measure`); such tilings turn estimates on one
+cell, with constants depending only on its measure and diameter, into estimates on the whole space.
 
 It also records basic facts about lattices: a full lattice is the `ℤ`-span of a basis of
 the ambient space, and membership in the pull-back `ZLattice.comap` of a lattice is membership of
@@ -24,7 +28,9 @@ the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is a
 so is the pull-back of a discrete subgroup or of a full lattice along a linear isometry
 equivalence; precomposing a linear map with a linear equivalence likewise preserves discreteness
 and fullness of its range. A discrete subgroup containing a full lattice is a full lattice, and so
-is a discrete subgroup of finite index in one (`IsZLattice.of_relIndex_ne_zero`).
+is a discrete subgroup of finite index in one (`IsZLattice.of_relIndex_ne_zero`). At most `dim E`
+vectors whose integer span contains a full lattice are linearly independent
+(`IsZLattice.linearIndependent_of_le_span`).
 
 ## Main results
 
@@ -35,6 +41,8 @@ is a discrete subgroup of finite index in one (`IsZLattice.of_relIndex_ne_zero`)
   the fundamental domains.
 * `Module.Basis.addHaar_eq_measure_fundamentalDomain_mul_volume_image`: `μ s` is the measure of
   the fundamental domain of `b` times the Lebesgue measure of the coordinate image of `s`.
+* `TauCeti.exists_isAddFundamentalDomain_convex_le_measure`: a finite-dimensional real space is
+  tiled by the lattice translates of a bounded convex cell of arbitrarily large measure.
 * `Module.Basis.mem_span_basisFun_iff`: a point of `ℝ^ι` lies in the standard lattice `ℤ^ι`
   exactly when it is the coordinate vector of an element of `Λ` in a `ℤ`-basis of `Λ`.
 * `ZLattice.exists_basis_span_eq`: a full lattice is the `ℤ`-span of a basis of the ambient space.
@@ -54,6 +62,8 @@ is a discrete subgroup of finite index in one (`IsZLattice.of_relIndex_ne_zero`)
 * `ZLattice.discreteTopology_of_norm_sq_mem_int_mul`: a lattice whose squared norms are all
   multiples of a positive constant `c` by integers is discrete.
 * `IsZLattice.of_le`: a discrete subgroup containing a full lattice is a full lattice.
+* `IsZLattice.linearIndependent_of_le_span`: at most `dim E` vectors whose integer span contains a
+  full lattice are linearly independent.
 * `ZLattice.instDiscreteTopologySpanSingleton`: the `ℤ`-span of a single vector in a real normed
   space is discrete.
 -/
@@ -131,6 +141,41 @@ theorem _root_.ZSpan.fundamentalDomain_pi_basis {η : Type*} [Fintype η] {F : �
     ZSpan.fundamentalDomain (Pi.basis b) = Set.univ.pi fun i ↦ ZSpan.fundamentalDomain (b i) := by
   ext x
   simp [ZSpan.mem_fundamentalDomain, Sigma.forall]
+
+open scoped ENNReal Pointwise in
+/-- **Lattice tilings with large cells.** A nontrivial finite-dimensional real normed space `E`
+is tiled by the translates of a bounded convex set `T` under a countable subgroup `G`, with `T` of
+measure at least any prescribed `M < ∞` for a given additive Haar measure `μ`. One may take for
+`T` the fundamental domain of a basis scaled by a large enough factor. -/
+theorem exists_isAddFundamentalDomain_convex_le_measure [FiniteDimensional ℝ E] [Nontrivial E]
+    [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure] {M : ℝ≥0∞}
+    (hM : M ≠ ∞) :
+    ∃ (G : AddSubgroup E) (T : Set E), Countable G ∧ IsAddFundamentalDomain G T μ ∧
+      Convex ℝ T ∧ Bornology.IsBounded T ∧ M ≤ μ T := by
+  set b₀ := Module.finBasis ℝ E
+  set T₀ := ZSpan.fundamentalDomain b₀
+  have hT₀ : μ T₀ ≠ 0 := ZSpan.measure_fundamentalDomain_ne_zero b₀
+  have hT₀fin : μ T₀ ≠ ∞ := (ZSpan.fundamentalDomain_isBounded b₀).measure_lt_top.ne
+  have hv : 0 < μ.real T₀ := ENNReal.toReal_pos hT₀ hT₀fin
+  -- Scale the basis by `L ≥ 1`, large enough that the cell has measure at least `M`.
+  set L := max 1 (M.toReal / μ.real T₀)
+  have hL : 1 ≤ L := le_max_left _ _
+  have hL₀ : L ≠ 0 := (zero_lt_one.trans_le hL).ne'
+  set b := b₀.map (LinearEquiv.smulOfNeZero ℝ E L hL₀)
+  refine ⟨(Submodule.span ℤ (range b)).toAddSubgroup, ZSpan.fundamentalDomain b,
+    inferInstanceAs (Countable (Submodule.span ℤ (range b))), ZSpan.isAddFundamentalDomain' b μ,
+    ZSpan.convex_fundamentalDomain b, ZSpan.fundamentalDomain_isBounded b, ?_⟩
+  have himage : ZSpan.fundamentalDomain b = L • T₀ := by
+    rw [← ZSpan.map_fundamentalDomain, ← Set.image_smul]
+    simp only [LinearEquiv.smulOfNeZero_apply, T₀]
+  have hLn : L ≤ L ^ finrank ℝ E := le_self_pow₀ hL Module.finrank_pos.ne'
+  have hLn₀ : (0 : ℝ) ≤ L ^ finrank ℝ E := by positivity
+  have h1 : M.toReal / μ.real T₀ ≤ L := le_max_right _ _
+  rw [div_le_iff₀ hv] at h1
+  -- Compare the real parts: `M ≤ L ^ n μ(T₀)`.
+  rw [himage, Measure.addHaar_smul, ← ENNReal.toReal_le_toReal hM (by finiteness)]
+  simp only [ENNReal.toReal_mul, ← measureReal_def, abs_of_nonneg hLn₀, ENNReal.toReal_ofReal hLn₀]
+  nlinarith
 
 /-- A point of `ℝ^ι` lies in the standard lattice `ℤ^ι` exactly when it is the vector of
 coordinates in the `ℤ`-basis `b` of some `l : Λ`, read in `ℝ`. -/
@@ -259,6 +304,18 @@ theorem _root_.IsZLattice.of_relIndex_ne_zero {K : Type*} [NormedField K] [CharZ
     rw [← Nat.cast_smul_eq_nsmul K, inv_smul_smul₀ (Nat.cast_ne_zero.2 hn.ne')]
   rw [hx']
   exact Submodule.smul_mem _ _ (Submodule.subset_span hmem.1)
+
+/-- **At most `dim E` vectors whose integer span contains a full lattice are independent.** If the
+integer span of a family of at most `dim E` vectors contains a full lattice `L`, the family spans
+`E` over `K`, as `L` does, so it is linearly independent over `K`. -/
+theorem _root_.IsZLattice.linearIndependent_of_le_span {K : Type*} [NormedField K] {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace K E] {L : Submodule ℤ E} [DiscreteTopology L]
+    [IsZLattice K L] {ι : Type*} [Fintype ι] {v : ι → E} (hcard : Fintype.card ι ≤ finrank K E)
+    (hv : L ≤ Submodule.span ℤ (range v)) : LinearIndependent K v := by
+  have hspan : (⊤ : Submodule K E) ≤ Submodule.span K (range v) := by
+    rw [← IsZLattice.span_top (K := K) (L := L), Submodule.span_le]
+    exact fun x hx ↦ Submodule.span_le_restrictScalars ℤ K _ (hv hx)
+  exact linearIndependent_of_top_le_span_of_card_le_finrank hspan hcard
 
 variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K] [HasSolidNorm K]
   [FloorRing K] {E : Type u} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E]

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IsSepClosed
-public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Normalization
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 
@@ -15,13 +15,16 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 
 This file proves that a finite-dimensional nondegenerate quadratic form over a separably closed
 field of characteristic different from two is equivalent to a sum of squares, so that such forms
-are classified up to equivalence by their dimension. It also characterizes representation by
-the dimension inequality and proves isotropy in dimension at least two.
+are classified up to equivalence by their dimension, and that such a form has a basis whose Gram
+matrix is the identity. It also characterizes representation by the dimension inequality and
+proves isotropy in dimension at least two.
 
 ## Main results
 
 * `QuadraticForm.equivalent_weightedSumSquares_of_isSepClosed`: a nondegenerate quadratic form is
   equivalent to the standard sum of squares.
+* `QuadraticForm.exists_toMatrix_eq_one_of_isSepClosed`: a nondegenerate quadratic form has a
+  basis whose Gram matrix is the identity.
 * `QuadraticForm.equivalent_of_finrank_eq_of_isSepClosed`: nondegenerate quadratic forms on spaces
   of the same dimension are equivalent.
 * `QuadraticForm.equivalent_iff_finrank_eq_of_isSepClosed`: nondegenerate quadratic forms are
@@ -67,6 +70,16 @@ theorem equivalent_weightedSumSquares_of_isSepClosed [Invertible (2 : K)] {M : T
   classical
   let ⟨w, ⟨e⟩⟩ := Q.equivalent_weightedSumSquares_units_of_nondegenerate' hQ
   exact ⟨e.trans (isometryEquivSumSquaresUnits w)⟩
+
+/-- Over a separably closed field of characteristic different from two, a finite-dimensional
+nondegenerate quadratic form has a basis indexed by `Fin (finrank K M)` whose Gram matrix is the
+identity. -/
+theorem exists_toMatrix_eq_one_of_isSepClosed [Invertible (2 : K)] {M : Type*} [AddCommGroup M]
+    [Module K M] [FiniteDimensional K M] (Q : QuadraticForm K M)
+    (hQ : (associated Q).SeparatingLeft) :
+    ∃ b : Module.Basis (Fin (Module.finrank K M)) K M, Q.toMatrix b = 1 :=
+  (equivalent_weightedSumSquares_one_iff_exists_toMatrix_eq_one Q).1
+    (Q.equivalent_weightedSumSquares_of_isSepClosed hQ)
 
 /-- Nondegenerate quadratic forms over a separably closed field of characteristic different from
 two, on possibly different finite-dimensional spaces, are equivalent when their dimensions

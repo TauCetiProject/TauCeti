@@ -100,7 +100,7 @@ private theorem tendsto_eLpNorm_indicator_closedBall {a A M : ℝ} (ha : 0 < a) 
   have hbeq (n : ℕ) : eLpNorm ((closedBall (0 : ℂ) (2 * (a + n))).indicator
       fun _ ↦ A * (a + n)⁻¹ * (M / (a + n))) 2 volume =
         ENNReal.ofReal (2 * A * M * √π / (a + n)) := by
-    rw [Complex.eLpNorm_two_indicator_closedBall_const _ _ (by positivity),
+    rw [Complex.eLpNorm_two_indicator_closedBall_const,
       Real.eNorm_eq_ofReal (by positivity), ← ENNReal.ofReal_mul (by positivity)]
     congr 1
     field_simp
@@ -219,7 +219,7 @@ theorem _root_.HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingL2
   set R : ℕ → ℝ := fun n ↦ 2 * r + n
   have hR (n : ℕ) : 0 < R n := by positivity
   have hrR (n : ℕ) : 2 * r ≤ R n := by simp only [R]; linarith [n.cast_nonneg (α := ℝ)]
-  choose χ χ' hχs _ hχ1 hχ0 hχd hχ' using fun n ↦ hcut 0 (R n) (hR n)
+  choose χ χ' hχs _ hχ1 hχ0 hχd hχ' _ _ using fun n ↦ hcut 0 (R n) (hR n)
   have hχfd (n : ℕ) (x : ℂ) : ‖fderiv ℝ (χ n) x‖ ≤ C₀ * (R n)⁻¹ := by
     rw [(hχd n x).fderiv]
     exact hχ' n x
