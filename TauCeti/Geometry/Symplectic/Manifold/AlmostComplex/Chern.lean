@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ComplexTangentBundle
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Polar
+public import TauCeti.Topology.VectorBundle.Complex.ChernCocycle
 public import TauCeti.Topology.VectorBundle.Complex.LinearPart
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.RestrictScalars
 import TauCeti.Geometry.Symplectic.Cayley.Basic
@@ -45,6 +46,11 @@ on `J`, and so defines the first Chern number of `σ` on spheres.
   numbers do not (`TauCeti.clutchingNumberHom_homotopyGroupTransport`). In particular the first
   Chern number is invariant under the action of the fundamental group on `π₂(M, x)`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_fundamentalGroup_smul`).
+* **Factorization through homology.** The first Chern numbers at all base points come from one
+  additive map `H₂(M; ℤ) → ℤ` on integral singular homology, composed with the Hurewicz map
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_addMonoidHom_hurewiczIntHom_eq_firstChernHom`),
+  as clutching numbers do (`TauCeti.exists_addMonoidHom_hurewiczIntHom_eq_clutchingNumberHom`).
+  So the first Chern number of a sphere only depends on its Hurewicz class.
 * **Complex manifolds.** On a complex manifold `M` modelled on `E`, if `σ` tames the complex
   structure `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold E M`, multiplication by `i`,
   then the complex vector bundle `(TM, i)` is the holomorphic tangent bundle: the identity of `E`
@@ -74,6 +80,8 @@ with a cohomological first Chern class is made.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_homotopyGroupTransport`,
   `TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_fundamentalGroup_smul`: the first Chern
   number does not depend on the base point.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.exists_addMonoidHom_hurewiczIntHom_eq_firstChernHom`: the
+  first Chern number factors through the Hurewicz map `π₂(M, x) → H₂(M; ℤ)`, uniformly in `x`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_eq_clutchingNumberHom_tangentSpace`: on a
   complex manifold, for a two-form taming the complex structure, it is the clutching number
   homomorphism of the holomorphic tangent bundle.
@@ -186,6 +194,37 @@ theorem firstChernHom_fundamentalGroup_smul (h : σ.IsNondegenerate) {x : M}
 end IsNondegenerate
 
 end TauCeti.SmoothTwoForm
+
+namespace TauCeti.SmoothTwoForm.IsNondegenerate
+
+open AlgebraicTopology
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] [SigmaCompactSpace M] {σ : SmoothTwoForm I M}
+
+/-- **The first Chern number factors through the Hurewicz map.** For a fiberwise nondegenerate
+two-form `σ` on a Hausdorff σ-compact manifold `M`, for instance a symplectic form, there is an
+additive map `c : H₂(M; ℤ) → ℤ` whose value on the Hurewicz class of every `a ∈ π₂(M, x)`, at
+every base point `x`, is the first Chern number of `σ` on `a`. -/
+theorem exists_addMonoidHom_hurewiczIntHom_eq_firstChernHom (h : σ.IsNondegenerate) :
+    ∃ c : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj
+        (TopCat.of M) →+ ℤ,
+      ∀ (x : M) (a : Additive (π_ 2 M x)),
+        c (HomotopyGroup.hurewiczIntHom M x 1 a) = h.firstChernHom x a := by
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+  · exact ⟨0, fun x ↦ isEmptyElim x⟩
+  have : Fact (finrank ℝ E = 2 * finrank ℂ (EuclideanSpace ℂ (Fin (finrank ℝ E / 2)))) :=
+    ⟨two_mul_finrank_euclideanSpace h x₀⟩
+  -- The first Chern number is the clutching number of the tangent bundle with a compatible `J`.
+  set J := (exists_compatible h).choose
+  obtain ⟨c, hc⟩ := exists_addMonoidHom_hurewiczIntHom_eq_clutchingNumberHom
+    (EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) (J.toContMDiff ⊤).toContinuousComplexStructure.Fiber
+  refine ⟨c, fun x a ↦ ?_⟩
+  rw [hc, firstChernHom_eq_clutchingNumberHom (EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) h
+    (exists_compatible h).choose_spec.tames ⊤ x]
+
+end TauCeti.SmoothTwoForm.IsNondegenerate
 
 /-! ### Complex manifolds -/
 
