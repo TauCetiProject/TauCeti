@@ -10,6 +10,7 @@ public import TauCeti.Analysis.BoundedVariation.Perimeter
 import Mathlib.Analysis.Normed.Module.RCLike.Real
 import TauCeti.Analysis.BoundedVariation.Ball
 import TauCeti.Analysis.BoundedVariation.Isoperimetric.Basic
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Isoperimetric
 import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Equality
@@ -54,11 +55,11 @@ In positive dimension, suppose `s` has finite positive volume and satisfies
 symmetral `S_e s` preserves volume (`TauCeti.volume_steinerSymmetrization`) and does not increase
 perimeter (`TauCeti.perimeter_steinerSymmetrization_le`). Applying the sharp isoperimetric
 inequality (`NullMeasurableSet.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow`)
-to `S_e s` squeezes `P(S_e s)^n = P(s)^n`, hence `P(S_e s) = P(s)`. By equality in Steiner's
-perimeter inequality
-(`NullMeasurableSet.ae_exists_ordConnected_lineSection_of_perimeter_steinerSymmetrization_eq`),
-almost every line section of `s` along `e` agrees a.e. with an interval. Since this holds in every
-unit direction, the interval-section rigidity theorem
+to `S_e s` squeezes `P(S_e s)^n = P(s)^n`, hence `P(S_e s) = P(s)`. Equality in Steiner's
+perimeter inequality,
+`NullMeasurableSet.ae_exists_ordConnected_ae_eq_lineSection_of_perimeter_steinerSymmetrization_eq`,
+implies that almost every line section of `s` along `e` agrees a.e. with an interval. Since this
+holds in every unit direction, the interval-section rigidity theorem
 (`NullMeasurableSet.perimeter_pow_eq_iff_exists_ae_eq_ball_of_ae_lineSection_ordConnected`)
 yields an open ball of positive radius agreeing a.e. with `s`.
 
@@ -106,14 +107,9 @@ private theorem eq_univ_and_ball_of_finrank_zero {s : Set E} (hn : finrank ℝ E
     (hs0 : volume s ≠ 0) :
     s = univ ∧ ball (0 : E) 1 = univ ∧ volume (ball (0 : E) 1) = 1 := by
   have _ : Subsingleton E := Module.finrank_zero_iff.mp hn
-  obtain ⟨x, hx⟩ := nonempty_of_measure_ne_zero hs0
-  have hsuniv : s = univ := eq_univ_of_forall fun y ↦ Subsingleton.elim y x ▸ hx
-  have hball : ball (0 : E) 1 = univ :=
-    eq_univ_of_forall fun y ↦ by simp [Subsingleton.elim y 0]
-  let b := stdOrthonormalBasis ℝ E
-  have hb : parallelepiped b = univ := eq_univ_of_forall fun y ↦
-    (mem_parallelepiped_iff _ _).2 ⟨0, ⟨le_rfl, fun _ ↦ zero_le_one⟩, Subsingleton.elim _ _⟩
-  exact ⟨hsuniv, hball, by rw [hball, ← hb, b.volume_parallelepiped]⟩
+  exact ⟨Subsingleton.eq_univ_of_nonempty (nonempty_of_measure_ne_zero hs0),
+    Subsingleton.eq_univ_of_nonempty ⟨0, mem_ball_self one_pos⟩,
+    volume_eq_one_of_subsingleton ⟨0, mem_ball_self one_pos⟩⟩
 
 end TauCeti
 
@@ -161,8 +157,8 @@ theorem perimeter_pow_eq_iff_exists_ae_eq_ball
           simpa only [hSvol] using
             hSm.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow
               (hSvol.symm ▸ hμs) (hSvol.symm ▸ hs0)
-      exact hs.ae_exists_ordConnected_lineSection_of_perimeter_steinerSymmetrization_eq hμs hP e he
-        ((ENNReal.pow_right_strictMono hn).injective hSpow)
+      exact hs.ae_exists_ordConnected_ae_eq_lineSection_of_perimeter_steinerSymmetrization_eq
+        hμs hP e he ((ENNReal.pow_right_strictMono hn).injective hSpow)
     exact (hs.perimeter_pow_eq_iff_exists_ae_eq_ball_of_ae_lineSection_ordConnected
       hn (pos_iff_ne_zero.2 hs0) hμs hsections).1 heq
   · rintro ⟨c, r, hr, hsr⟩
@@ -263,20 +259,13 @@ theorem perimeter_pow_eq_iff_exists_eq_closedBall_of_closure_interior_eq
         (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) *
           volume s ^ (finrank ℝ E - 1) ↔
       ∃ c : E, ∃ r : ℝ, 0 < r ∧ s = closedBall c r := by
-  have hclosed : IsClosed s := hs ▸ isClosed_closure
-  have hnm : NullMeasurableSet s volume := hclosed.measurableSet.nullMeasurableSet
+  have hnm : NullMeasurableSet s volume := (hs ▸ isClosed_closure).measurableSet.nullMeasurableSet
   rw [hnm.perimeter_pow_eq_iff_exists_ae_eq_ball hμs hs0]
   refine ⟨fun ⟨c, r, hr, hsr⟩ ↦ ⟨c, r, hr, ?_⟩, fun ⟨c, r, hr, hsr⟩ ↦
     ⟨c, r, hr, hsr ▸ volume.addHaar_closedBall_ae_eq_ball_of_ne_zero c r hr.ne'⟩⟩
-  have hsub1 : ball c r ⊆ interior s :=
-    interior_maximal ((isOpen_ball.subset_closure_of_ae_le (hsr.mono fun _ h ↦ h.2)).trans_eq
-      hclosed.closure_eq) isOpen_ball
-  have hsub2 : interior s ⊆ ball c r := by
-    rw [← interior_closedBall c hr.ne']
-    refine interior_maximal ?_ isOpen_interior
-    rw [← closure_ball c hr.ne']
-    exact isOpen_interior.subset_closure_of_ae_le (hsr.mono fun _ h hx ↦ h.1 (interior_subset hx))
-  rw [← hs, Subset.antisymm hsub2 hsub1, closure_ball c hr.ne']
+  exact eq_of_ae_eq_of_closure_interior_eq hs
+    (by rw [interior_closedBall c hr.ne', closure_ball c hr.ne'])
+    (hsr.trans (volume.addHaar_closedBall_ae_eq_ball_of_ne_zero c r hr.ne').symm)
 
 end TauCeti
 

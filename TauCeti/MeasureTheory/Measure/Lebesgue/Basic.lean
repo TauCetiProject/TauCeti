@@ -89,9 +89,7 @@ theorem volume_eball_ofReal_symmDiff_le (a b : ℝ) :
   have hvol (r : ℝ) : volume (Metric.eball (0 : ℝ) (ENNReal.ofReal r / 2)) = ENNReal.ofReal r := by
     rw [Real.volume_eball, ENNReal.mul_div_cancel (by norm_num) (by norm_num)]
   have hofmax (r : ℝ) : ENNReal.ofReal r = ENNReal.ofReal (max r 0) := by
-    rcases le_or_gt r 0 with hr | hr
-    · rw [max_eq_right hr, ENNReal.ofReal_of_nonpos hr, ENNReal.ofReal_zero]
-    · rw [max_eq_left hr.le]
+    simp [ENNReal.ofReal_max]
   have hle {x y : ℝ} (hx : 0 ≤ x) (hxy : x ≤ y) :
       volume (Metric.eball (0 : ℝ) (ENNReal.ofReal x / 2) ∆
           Metric.eball (0 : ℝ) (ENNReal.ofReal y / 2)) ≤ ENNReal.ofReal |x - y| := by

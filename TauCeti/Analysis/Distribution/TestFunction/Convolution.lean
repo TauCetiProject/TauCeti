@@ -101,6 +101,9 @@ theorem iteratedFDeriv_mollify (φ : 𝓓(Ω, F)) (μ : Measure E) [μ.IsAddHaar
   exact φ.hasCompactSupport.iteratedFDeriv_normed_convolution φ.contDiff ρ (by simp)
 
 /-- Divergence commutes with mollification of test vector fields. -/
+-- Tagged `@[simp high]` so `simp` commutes divergence through mollification before
+-- `divergenceCLM_apply` expands it to a trace.
+@[simp high]
 theorem divergenceCLM_mollify (φ : 𝓓(Ω, E)) (μ : Measure E) [μ.IsAddHaarMeasure]
     (ρ : ContDiffBump (0 : E)) (h : closedBall (0 : E) ρ.rOut + tsupport φ ⊆ (Ω : Set E))
     (x : E) :

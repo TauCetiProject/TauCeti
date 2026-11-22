@@ -248,6 +248,13 @@ theorem normed_convolution_mem_Icc (φ : ContDiffBump (0 : G)) {w : G → ℝ} {
     convolution_lsmul_le_of_forall_le (μ := μ) φ.support_normed_eq.subset
     φ.nonneg_normed φ.integral_normed hexists fun y _ => (hwab y).2⟩
 
+/-- Mollifying a locally integrable nonnegative constant indicator by a normalized bump keeps its
+values in `[0, c]`. -/
+theorem normed_convolution_indicator_mem_Icc (φ : ContDiffBump (0 : G)) {S : Set G} {c : ℝ}
+    (hc : 0 ≤ c) (hS : LocallyIntegrable (S.indicator (fun _ ↦ c)) μ) (x : G) :
+    (φ.normed μ ⋆[lsmul ℝ ℝ, μ] S.indicator (fun _ ↦ c)) x ∈ Set.Icc 0 c :=
+  φ.normed_convolution_mem_Icc hS (fun z ↦ by by_cases hz : z ∈ S <;> simp [hz, hc]) x
+
 open Set in
 /-- Mollifying a function that is continuous on a ball by bumps with radii tending to `0`
 converges uniformly on the half-radius ball, along any filter of parameters. -/
@@ -379,8 +386,8 @@ theorem ContDiffBump.integral_mul_normed_convolution_eq_of_bdd {G : Type*} [Norm
     _ = ∫ t, ∫ x, (κ t * f (x - t)) * h x ∂μ ∂μ := by
           rw [← integral_neg_eq_self (fun t ↦ ∫ x, f (x + t) * (κ t * h x) ∂μ)]
           refine integral_congr_ae (.of_forall fun t ↦ integral_congr_ae (.of_forall fun x ↦ ?_))
-          dsimp only
-          rw [show κ (-t) = κ t from ρ.normed_neg t, ← sub_eq_add_neg]; ring
+          dsimp only [κ]
+          rw [ρ.normed_neg t, ← sub_eq_add_neg]; ring
     _ = ∫ x, ∫ t, (κ t * f (x - t)) * h x ∂μ ∂μ := integral_integral_swap hprod'
     _ = ∫ x, (κ ⋆[lsmul ℝ ℝ, μ] f) x * h x ∂μ := integral_congr_ae (.of_forall fun _ ↦ by
           dsimp only; simp only [convolution_lsmul, smul_eq_mul, ← integral_mul_const])
@@ -388,10 +395,10 @@ theorem ContDiffBump.integral_mul_normed_convolution_eq_of_bdd {G : Type*} [Norm
 /-- If `h : G → ℝ` and `φ₀ : G → F` are continuous and satisfy `h z ^ 2 + ‖φ₀ z‖ ^ 2 ≤ 1`
 everywhere, then their convolutions with a normalized bump satisfy
 `(ρ ⋆ h) y ≤ √(1 - ‖(ρ ⋆ φ₀) y‖ ^ 2)`. -/
-theorem ContDiffBump.normed_convolution_le_sqrt_one_sub_sq {G F : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] [FiniteDimensional ℝ G] [MeasurableSpace G] [BorelSpace G]
-    {μ : Measure G} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-    (ρ : ContDiffBump (0 : G)) {h : G → ℝ} {φ₀ : G → F} (hh : Continuous h)
+theorem ContDiffBump.normed_convolution_le_sqrt_one_sub_norm_sq {G F : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G] [MeasurableSpace G]
+    [BorelSpace G] {μ : Measure G} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [CompleteSpace F] (ρ : ContDiffBump (0 : G)) {h : G → ℝ} {φ₀ : G → F} (hh : Continuous h)
     (hφ₀ : Continuous φ₀) (hle : ∀ z, h z ^ 2 + ‖φ₀ z‖ ^ 2 ≤ 1) (y : G) :
     (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] h) y ≤
       √(1 - ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] φ₀) y‖ ^ 2) := by

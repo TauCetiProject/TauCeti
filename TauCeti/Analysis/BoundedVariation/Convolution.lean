@@ -143,11 +143,8 @@ theorem _root_.ContDiffBump.integrable_norm_fderiv_normed_convolution
   have hsmooth : ContDiff ℝ 1 (φ.normed μ ⋆[lsmul ℝ ℝ, μ] u) :=
     φ.hasCompactSupport_normed.contDiff_convolution_left _ (φ.contDiff_normed (n := 1)) hu
   refine ⟨(hsmooth.continuous_fderiv one_ne_zero).norm.aestronglyMeasurable, ?_⟩
-  rw [HasFiniteIntegral,
-    show (fun x ↦ ‖‖fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] u) x‖‖ₑ) =
-        fun x ↦ ‖fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] u) x‖ₑ from
-      funext fun _ ↦ eNorm_norm _,
-    φ.lintegral_enorm_fderiv_normed_convolution_eq hu]
+  rw [HasFiniteIntegral]
+  simp only [eNorm_norm, φ.lintegral_enorm_fderiv_normed_convolution_eq hu]
   exact (φ.totalVariationOn_normed_convolution_le (hu.locallyIntegrableOn _)
     fun _ _ ↦ subset_univ _).trans_lt hfin.lt_top
 

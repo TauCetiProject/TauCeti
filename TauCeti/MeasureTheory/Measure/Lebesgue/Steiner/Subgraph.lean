@@ -20,8 +20,7 @@ is
 `S = {x : E | |⟪e, x⟫| < w y / 2}`,
 
 where `y` is the orthogonal projection of `x` onto `H`. Each parallel line section of `S` along `e`
-is the centered open interval `Metric.eball 0 (ENNReal.ofReal (w y) / 2)`
-(`TauCeti.lineSection_setOf_abs_inner_lt_div_two`).
+is the centered open interval `Metric.eball 0 (ENNReal.ofReal (w y) / 2)`.
 
 When `w` is `C¹`, the whole-space distributional perimeter of `S` satisfies the area-formula upper
 bound
@@ -39,7 +38,8 @@ Writing `h x = w (q x) / 2 - |⟪e, x⟫|`, the subgraph is `{0 < h}`. For any `
 coarea formula (`LocallyLipschitzOn.lintegral_perimeter_eq_setLIntegral_enorm_fderiv`) along lines
 parallel to `e` bounds `∫⁻ r in Ioo 0 δ, P({r < h})` by `δ · ∫⁻_{0 < w} √(4 + ‖Dw‖²)`, so for
 every `k` there is `r_k ∈ (0, 1 / (k + 1))` with `P({r_k < h}) ≤ B + 1 / (k + 1)`. Since
-`{r_k < h} → {0 < h}` locally in measure, lower semicontinuity of the perimeter concludes.
+`{r_k < h} → {0 < h}` locally in measure via `TauCeti.tendsto_measure_setOf_pos_lt_le_inter`,
+lower semicontinuity of the perimeter concludes.
 
 ## References
 
@@ -58,27 +58,171 @@ open scoped ENNReal RealInnerProductSpace Topology symmDiff
 
 namespace TauCeti
 
+/-- For an almost-everywhere measurable real function `f` on a finite-measure carrier `K` and a
+decreasing sequence `δ k → 0`, the measure of the shrinking positive level strips
+`{x | 0 < f x ∧ f x ≤ δ k} ∩ K` tends to `0`. -/
+theorem tendsto_measure_setOf_pos_lt_le_inter {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {f : α → ℝ} (hf : AEMeasurable f μ) {K : Set α} (hK : NullMeasurableSet K μ)
+    (hKfin : μ K ≠ ∞) {δ : ℕ → ℝ} (hδ_anti : Antitone δ)
+    (hδ_lim : Tendsto δ atTop (𝓝 0)) :
+    Tendsto (fun k ↦ μ ({x | 0 < f x ∧ f x ≤ δ k} ∩ K)) atTop (𝓝 0) := by
+  let G : ℕ → Set α := fun k ↦ {x | 0 < f x ∧ f x ≤ δ k} ∩ K
+  have hGm (k : ℕ) : NullMeasurableSet (G k) μ :=
+    ((nullMeasurableSet_lt aemeasurable_const hf).inter
+      (nullMeasurableSet_le hf aemeasurable_const)).inter hK
+  have hGanti : Antitone G := fun _ _ hmn _ ⟨⟨h1, h2⟩, hxK⟩ ↦
+    ⟨⟨h1, h2.trans (hδ_anti hmn)⟩, hxK⟩
+  have hGfin : μ (G 0) ≠ ∞ :=
+    ne_top_of_le_ne_top hKfin (measure_mono inter_subset_right)
+  have hGinter : (⋂ k, G k) = ∅ := eq_empty_of_forall_notMem fun x hx ↦ by
+    simp only [mem_iInter, mem_inter_iff, mem_ofPred_eq, G] at hx
+    exact (hx 0).1.1.not_ge (ge_of_tendsto' hδ_lim fun k ↦ (hx k).1.2)
+  simpa only [Function.comp_def, hGinter, measure_empty] using
+    tendsto_measure_iInter_atTop hGm hGanti ⟨0, hGfin⟩
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-/-- Line sections of an open symmetric subgraph `{x | |⟪e, x⟫| < f y / 2}` along the unit
-direction `e` are the centered open intervals `Metric.eball 0 (ENNReal.ofReal (f y) / 2)`. -/
-theorem lineSection_setOf_abs_inner_lt_div_two (e : E) (he : ‖e‖ = 1)
-    (f : (ℝ ∙ e)ᗮ → ℝ) (y : (ℝ ∙ e)ᗮ) :
-    {t : ℝ | (y : E) + t • e ∈
-        {x : E | |⟪e, x⟫_ℝ| < f ((orthogonalLineEquiv e he).symm x).1 / 2}} =
-      Metric.eball (0 : ℝ) (ENNReal.ofReal (f y) / 2) := by
-  ext t
-  have hqyt : ((orthogonalLineEquiv e he).symm ((y : E) + t • e)).1 = y := by
-    rw [← orthogonalLineEquiv_apply e he y t, (orthogonalLineEquiv e he).symm_apply_apply]
-  simp only [mem_ofPred_eq, inner_add_smul e he, hqyt, Metric.mem_eball, edist_zero_right,
-    Real.eNorm_eq_ofReal_abs]
-  rw [← ENNReal.ofReal_ofNat, ← ENNReal.ofReal_div_of_pos zero_lt_two]
-  rcases le_or_gt (f y) 0 with hle | hgt
-  · rw [ENNReal.ofReal_of_nonpos (div_nonpos_of_nonpos_of_nonneg hle zero_le_two)]
-    exact ⟨fun h ↦ by linarith [abs_nonneg t], fun h ↦ absurd h (not_lt_of_ge zero_le)⟩
-  · rw [ENNReal.ofReal_lt_ofReal_iff (div_pos hgt zero_lt_two)]
+/-- Clamped-gradient formula for a `C¹` symmetric subgraph: clamping `h x = w (q x) / 2 - |⟪e, x⟫|`
+to `[0, δ]` has a.e. gradient norm `(1 / 2) √(4 + ‖Dw (q x)‖²)` on `{0 < h < δ}` and `0` outside. -/
+private theorem enorm_fderiv_clamp_subgraph_ae (e : E) (he : ‖e‖ = 1)
+    {w : (ℝ ∙ e)ᗮ → ℝ} (hw : ContDiff ℝ 1 w) {δ : ℝ} (hδ : 0 < δ) :
+    let q : E →L[ℝ] (ℝ ∙ e)ᗮ :=
+      (ContinuousLinearMap.fst ℝ (ℝ ∙ e)ᗮ ℝ).comp
+        (orthogonalLineEquiv e he).symm.toContinuousLinearMap
+    let h : E → ℝ := fun x ↦ w (q x) / 2 - |⟪e, x⟫_ℝ|
+    let u : E → ℝ := fun x ↦ min (max (h x) 0) δ
+    ∀ᵐ x : E ∂volume,
+      ‖fderiv ℝ u x‖ₑ =
+        {x : E | 0 < h x ∧ h x < δ}.indicator
+          (fun x ↦ ENNReal.ofReal ((1 / 2) * √(4 + ‖fderiv ℝ w (q x)‖ ^ 2))) x := by
+  intro q h u
+  let H := (ℝ ∙ e)ᗮ
+  have hqyt (y : H) (t : ℝ) : q ((y : E) + t • e) = y := by
+    rw [← orthogonalLineEquiv_apply e he y t]
+    exact congrArg Prod.fst ((orthogonalLineEquiv e he).symm_apply_apply (y, t))
+  have hhyt (y : H) (t : ℝ) : h ((y : E) + t • e) = w y / 2 - |t| := by
+    simp [h, hqyt, inner_add_smul e he]
+  have hcont_h : Continuous h :=
+    ((hw.continuous.comp q.continuous).div_const 2).sub
+      (continuous_const.inner continuous_id).abs
+  let Z : Set E := {x : E | h x = 0 ∨ h x = δ ∨ ⟪e, x⟫_ℝ = 0}
+  have hZ_closed : IsClosed Z :=
+    (isClosed_eq hcont_h continuous_const).union
+      ((isClosed_eq hcont_h continuous_const).union
+        (isClosed_eq (continuous_const.inner continuous_id) continuous_const))
+  have hZ_null : volume Z = 0 := by
+    rw [volume_eq_lintegral_volume_lineSection e he hZ_closed.measurableSet.nullMeasurableSet]
+    refine (lintegral_eq_zero_iff'
+      (aemeasurable_volume_lineSection e he hZ_closed.measurableSet.nullMeasurableSet)).2
+      (.of_forall fun y ↦ ?_)
+    set R : ℝ := w y / 2
+    have hsub : {t : ℝ | (y : E) + t • e ∈ Z} ⊆ {0, R, -R, R - δ, -(R - δ)} := fun t ht ↦ by
+      simp only [Z, mem_ofPred_eq, hhyt, inner_add_smul e he] at ht
+      rcases ht with h1 | h2 | h3
+      · have habs : |t| = R := by dsimp only [R]; linarith
+        rcases (abs_eq (habs ▸ abs_nonneg t)).1 habs with rfl | rfl <;> simp
+      · have habs : |t| = R - δ := by dsimp only [R]; linarith
+        rcases (abs_eq (habs ▸ abs_nonneg t)).1 habs with rfl | rfl <;> simp
+      · exact Or.inl h3
+    exact measure_mono_null hsub (Set.Finite.measure_zero (by simp) volume)
+  have hZ_ae : ∀ᵐ x : E ∂volume, x ∉ Z :=
+    ae_iff.2 (by simpa only [not_not, ofPred_mem_eq] using hZ_null)
+  filter_upwards [hZ_ae] with x hxZ
+  simp only [Z, mem_ofPred_eq, not_or] at hxZ
+  obtain ⟨hx0, hxδ, hxt⟩ := hxZ
+  rcases lt_or_gt_of_ne hx0 with hneg | hpos
+  · have hev : u =ᶠ[𝓝 x] fun _ ↦ (0 : ℝ) := by
+      filter_upwards [(isOpen_lt hcont_h continuous_const).mem_nhds hneg] with z hz
+      simp [u, max_eq_right (le_of_lt hz), min_eq_left hδ.le]
+    have hx_not : x ∉ {x : E | 0 < h x ∧ h x < δ} := fun hx ↦ hneg.not_gt hx.1
+    rw [hev.fderiv_eq, fderiv_const_apply, indicator_of_notMem hx_not]
+    exact (eNorm_eq_zero (a := (0 : E →L[ℝ] ℝ))).2 rfl
+  · rcases lt_or_gt_of_ne hxδ with hlt | hgt
+    · have hx_mem : x ∈ {x : E | 0 < h x ∧ h x < δ} := ⟨hpos, hlt⟩
+      rw [indicator_of_mem hx_mem]
+      have hev_u : u =ᶠ[𝓝 x] h := by
+        filter_upwards [((isOpen_lt continuous_const hcont_h).inter
+            (isOpen_lt hcont_h continuous_const)).mem_nhds ⟨hpos, hlt⟩] with z hz
+        simp [u, max_eq_left hz.1.le, min_eq_left hz.2.le]
+      rw [hev_u.fderiv_eq]
+      have hd1 : HasFDerivAt (fun z : E ↦ w (q z) / 2)
+          (((1 / 2 : ℝ) • fderiv ℝ w (q x)).comp q) x := by
+        simpa [div_eq_inv_mul, smul_eq_mul, ContinuousLinearMap.smul_comp] using
+          (((hw.differentiable one_ne_zero (q x)).hasFDerivAt).comp x
+            q.hasFDerivAt).const_mul (1 / 2 : ℝ)
+      let σ : ℝ := if 0 < ⟪e, x⟫_ℝ then -1 else 1
+      have hσsq : σ ^ 2 = 1 := by dsimp [σ]; split_ifs <;> norm_num
+      have hd2 : HasFDerivAt (fun z : E ↦ -|⟪e, z⟫_ℝ|) (σ • innerSL ℝ e) x := by
+        rcases lt_or_gt_of_ne hxt with ht_neg | ht_pos
+        · have hev : (fun z : E ↦ -|⟪e, z⟫_ℝ|) =ᶠ[𝓝 x] fun z ↦ ⟪e, z⟫_ℝ := by
+            filter_upwards [(isOpen_lt (continuous_const.inner continuous_id)
+              continuous_const).mem_nhds ht_neg] with z hz
+            dsimp only [id_eq] at hz; rw [abs_of_neg hz, neg_neg]
+          have hσ_eq : σ = 1 := ite_eq_right (not_lt.2 ht_neg.le)
+          rw [hσ_eq, one_smul]
+          exact (innerSL ℝ e).hasFDerivAt.congr_of_eventuallyEq hev
+        · have hev : (fun z : E ↦ -|⟪e, z⟫_ℝ|) =ᶠ[𝓝 x] fun z ↦ -⟪e, z⟫_ℝ := by
+            filter_upwards [(isOpen_lt continuous_const
+              (continuous_const.inner continuous_id)).mem_nhds ht_pos] with z hz
+            dsimp only [id_eq] at hz; rw [abs_of_pos hz]
+          have hσ_eq : σ = -1 := ite_eq_left ht_pos
+          rw [hσ_eq, neg_one_smul]
+          exact (innerSL ℝ e).hasFDerivAt.neg.congr_of_eventuallyEq hev
+      have hdh : HasFDerivAt h
+          ((((1 / 2 : ℝ) • fderiv ℝ w (q x)).comp q) + σ • innerSL ℝ e) x :=
+        (hd1.add hd2).congr_of_eventuallyEq (.of_forall fun _ ↦ (sub_eq_add_neg _ _).symm)
+      let v : H := (InnerProductSpace.toDual ℝ H).symm ((1 / 2 : ℝ) • fderiv ℝ w (q x))
+      have hv_norm : ‖v‖ = (1 / 2) * ‖fderiv ℝ w (q x)‖ := by
+        rw [LinearIsometryEquiv.norm_map, norm_smul, Real.norm_of_nonneg (by positivity)]
+      have hdual : (((1 / 2 : ℝ) • fderiv ℝ w (q x)).comp q) + σ • innerSL ℝ e =
+          InnerProductSpace.toDual ℝ E ((v : E) + σ • e) := by
+        ext z
+        obtain ⟨⟨y_z, t_z⟩, rfl⟩ := (orthogonalLineEquiv e he).surjective z
+        have hv_apply : ⟪(v : E), (y_z : E)⟫_ℝ = ((1 / 2 : ℝ) • fderiv ℝ w (q x)) y_z := by
+          simpa [v] using InnerProductSpace.toDual_symm_apply
+            (y := (1 / 2 : ℝ) • fderiv ℝ w (q x)) (x := y_z)
+        simp only [add_apply, ContinuousLinearMap.comp_apply, smul_apply, innerSL_apply_apply,
+          orthogonalLineEquiv_apply, hqyt, InnerProductSpace.toDual_apply_apply, inner_add_left,
+          inner_add_right, inner_smul_left, inner_smul_right,
+          Submodule.mem_orthogonal_singleton_iff_inner_left.mp v.property,
+          Submodule.mem_orthogonal_singleton_iff_inner_right.mp y_z.property,
+          real_inner_self_eq_norm_sq, he, smul_eq_mul, starRingEnd_apply, star_trivial,
+          mul_zero, add_zero, zero_add, one_pow, mul_one, hv_apply]
+        ring
+      rw [← ofReal_norm, hdh.fderiv, hdual, LinearIsometryEquiv.norm_map]
+      congr 1
+      have hsq : ‖(v : E) + σ • e‖ ^ 2 = ((1 / 2) * √(4 + ‖fderiv ℝ w (q x)‖ ^ 2)) ^ 2 := by
+        rw [norm_add_smul_sq e he, hv_norm, hσsq, mul_pow, mul_pow,
+          Real.sq_sqrt (add_nonneg (by norm_num) (sq_nonneg _))]
+        ring
+      nlinarith [norm_nonneg ((v : E) + σ • e), Real.sqrt_nonneg (4 + ‖fderiv ℝ w (q x)‖ ^ 2)]
+    · have hev : u =ᶠ[𝓝 x] fun _ ↦ δ := by
+        filter_upwards [(isOpen_lt continuous_const hcont_h).mem_nhds hgt] with z hz
+        simp [u, max_eq_left (hδ.trans hz).le, min_eq_right hz.le]
+      have hx_not : x ∉ {x : E | 0 < h x ∧ h x < δ} := fun hx ↦ hgt.not_gt hx.2
+      rw [hev.fderiv_eq, fderiv_const_apply, indicator_of_notMem hx_not]
+      exact (eNorm_eq_zero (a := (0 : E →L[ℝ] ℝ))).2 rfl
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+/-- One-dimensional strip-length bound: `{t : ℝ | 0 < R - |t| ∧ R - |t| < δ}` consists of two
+symmetric open intervals of total length at most `2 * δ`. -/
+private theorem volume_setOf_pos_sub_abs_lt_le (R : ℝ) {δ : ℝ} (hδ : 0 < δ) :
+    volume {t : ℝ | 0 < R - |t| ∧ R - |t| < δ} ≤ ENNReal.ofReal (2 * δ) := by
+  have hTsub : {t : ℝ | 0 < R - |t| ∧ R - |t| < δ} ⊆
+      Ioo (R - δ) R ∪ Ioo (-R) (-(R - δ)) := by
+    intro t ht
+    simp only [mem_ofPred_eq] at ht
+    rcases ht with ⟨h1, h2⟩
+    rcases le_or_gt 0 t with ht0 | ht0
+    · rw [abs_of_nonneg ht0] at h1 h2
+      exact Or.inl ⟨by linarith, by linarith⟩
+    · rw [abs_of_neg ht0] at h1 h2
+      exact Or.inr ⟨by linarith, by linarith⟩
+  refine ((measure_mono hTsub).trans (measure_union_le _ _)).trans_eq ?_
+  rw [Real.volume_Ioo, Real.volume_Ioo]
+  have hlen1 : R - (R - δ) = δ := by ring
+  have hlen2 : -(R - δ) - -R = δ := by ring
+  rw [hlen1, hlen2, ← ENNReal.ofReal_add hδ.le hδ.le, two_mul]
 
 /-- **Perimeter upper bound for a `C¹` symmetric subgraph.** Let `w : (ℝ ∙ e)ᗮ → ℝ` be `C¹`. The
 open symmetric subgraph `S = {x : E | |⟪e, x⟫| < w y / 2}` (where `y` is the orthogonal projection
@@ -123,102 +267,11 @@ theorem perimeter_setOf_abs_inner_lt_div_two_le (e : E) (he : ‖e‖ = 1)
     have hsuper : ∀ r ∈ Ioo 0 δ, {x : E | r < u x} = {x : E | r < h x} := fun r hr ↦ by
       ext x; simp only [u, mem_ofPred_eq, lt_min_iff, lt_max_iff]
       exact ⟨fun ⟨h1, _⟩ ↦ h1.resolve_right (not_lt.2 hr.1.le), fun hx ↦ ⟨Or.inl hx, hr.2⟩⟩
-    let Z : Set E := {x : E | h x = 0 ∨ h x = δ ∨ ⟪e, x⟫_ℝ = 0}
-    have hZ_closed : IsClosed Z :=
-      (isClosed_eq hcont_h continuous_const).union
-        ((isClosed_eq hcont_h continuous_const).union
-          (isClosed_eq (continuous_const.inner continuous_id) continuous_const))
-    have hZ_null : volume Z = 0 := by
-      rw [volume_eq_lintegral_volume_lineSection e he hZ_closed.measurableSet.nullMeasurableSet]
-      refine (lintegral_eq_zero_iff'
-        (aemeasurable_volume_lineSection e he hZ_closed.measurableSet.nullMeasurableSet)).2
-        (.of_forall fun y ↦ ?_)
-      set R : ℝ := w y / 2
-      have hsub : {t : ℝ | (y : E) + t • e ∈ Z} ⊆ {0, R, -R, R - δ, -(R - δ)} := fun t ht ↦ by
-        simp only [Z, mem_ofPred_eq, hhyt, inner_add_smul e he] at ht
-        rcases ht with h1 | h2 | h3
-        · have habs : |t| = R := by dsimp only [R]; linarith
-          rcases (abs_eq (habs ▸ abs_nonneg t)).1 habs with rfl | rfl <;> simp
-        · have habs : |t| = R - δ := by dsimp only [R]; linarith
-          rcases (abs_eq (habs ▸ abs_nonneg t)).1 habs with rfl | rfl <;> simp
-        · exact Or.inl h3
-      exact measure_mono_null hsub (Set.Finite.measure_zero (by simp) volume)
     have hgrad_ae : ∀ᵐ x : E ∂volume,
         ‖fderiv ℝ u x‖ₑ =
           {x : E | 0 < h x ∧ h x < δ}.indicator
-            (fun x ↦ ENNReal.ofReal ((1 / 2) * √(4 + ‖fderiv ℝ w (q x)‖ ^ 2))) x := by
-      filter_upwards [ae_iff.2 (by simpa using hZ_null : volume {x : E | ¬x ∉ Z} = 0)] with x hxZ
-      simp only [Z, mem_ofPred_eq, not_or] at hxZ
-      obtain ⟨hx0, hxδ, hxt⟩ := hxZ
-      rcases lt_or_gt_of_ne hx0 with hneg | hpos
-      · have hev : u =ᶠ[𝓝 x] fun _ ↦ (0 : ℝ) := by
-          filter_upwards [(isOpen_lt hcont_h continuous_const).mem_nhds hneg] with z hz
-          simp [u, max_eq_right (le_of_lt hz), min_eq_left hδ.le]
-        rw [hev.fderiv_eq, fderiv_const_apply,
-          indicator_of_notMem (fun (hx : 0 < h x ∧ h x < δ) ↦ hneg.not_gt hx.1)]
-        exact (eNorm_eq_zero (a := (0 : E →L[ℝ] ℝ))).2 rfl
-      · rcases lt_or_gt_of_ne hxδ with hlt | hgt
-        · rw [indicator_of_mem (show x ∈ {x : E | 0 < h x ∧ h x < δ} from ⟨hpos, hlt⟩)]
-          have hev_u : u =ᶠ[𝓝 x] h := by
-            filter_upwards [((isOpen_lt continuous_const hcont_h).inter
-                (isOpen_lt hcont_h continuous_const)).mem_nhds ⟨hpos, hlt⟩] with z hz
-            simp [u, max_eq_left hz.1.le, min_eq_left hz.2.le]
-          rw [hev_u.fderiv_eq]
-          have hd1 : HasFDerivAt (fun z : E ↦ w (q z) / 2)
-              (((1 / 2 : ℝ) • fderiv ℝ w (q x)).comp q) x := by
-            simpa [div_eq_inv_mul, smul_eq_mul, ContinuousLinearMap.smul_comp] using
-              (((hw.differentiable one_ne_zero (q x)).hasFDerivAt).comp x
-                q.hasFDerivAt).const_mul (1 / 2 : ℝ)
-          let σ : ℝ := if 0 < ⟪e, x⟫_ℝ then -1 else 1
-          have hσsq : σ ^ 2 = 1 := by dsimp [σ]; split_ifs <;> norm_num
-          have hd2 : HasFDerivAt (fun z : E ↦ -|⟪e, z⟫_ℝ|) (σ • innerSL ℝ e) x := by
-            rcases lt_or_gt_of_ne hxt with ht_neg | ht_pos
-            · have hev : (fun z : E ↦ -|⟪e, z⟫_ℝ|) =ᶠ[𝓝 x] fun z ↦ ⟪e, z⟫_ℝ := by
-                filter_upwards [(isOpen_lt (continuous_const.inner continuous_id)
-                  continuous_const).mem_nhds ht_neg] with z hz
-                dsimp only [id_eq] at hz; rw [abs_of_neg hz, neg_neg]
-              rw [show σ = 1 from ite_eq_right (not_lt.2 ht_neg.le), one_smul]
-              exact (innerSL ℝ e).hasFDerivAt.congr_of_eventuallyEq hev
-            · have hev : (fun z : E ↦ -|⟪e, z⟫_ℝ|) =ᶠ[𝓝 x] fun z ↦ -⟪e, z⟫_ℝ := by
-                filter_upwards [(isOpen_lt continuous_const
-                  (continuous_const.inner continuous_id)).mem_nhds ht_pos] with z hz
-                dsimp only [id_eq] at hz; rw [abs_of_pos hz]
-              rw [show σ = -1 from ite_eq_left ht_pos, neg_one_smul]
-              exact (innerSL ℝ e).hasFDerivAt.neg.congr_of_eventuallyEq hev
-          have hdh : HasFDerivAt h
-              ((((1 / 2 : ℝ) • fderiv ℝ w (q x)).comp q) + σ • innerSL ℝ e) x :=
-            (hd1.add hd2).congr_of_eventuallyEq (.of_forall fun _ ↦ (sub_eq_add_neg _ _).symm)
-          let v : H := (InnerProductSpace.toDual ℝ H).symm ((1 / 2 : ℝ) • fderiv ℝ w (q x))
-          have hv_norm : ‖v‖ = (1 / 2) * ‖fderiv ℝ w (q x)‖ := by
-            rw [LinearIsometryEquiv.norm_map, norm_smul, Real.norm_of_nonneg (by positivity)]
-          have hdual : (((1 / 2 : ℝ) • fderiv ℝ w (q x)).comp q) + σ • innerSL ℝ e =
-              InnerProductSpace.toDual ℝ E ((v : E) + σ • e) := by
-            ext z
-            obtain ⟨⟨y_z, t_z⟩, rfl⟩ := (orthogonalLineEquiv e he).surjective z
-            have hv_apply : ⟪(v : E), (y_z : E)⟫_ℝ = ((1 / 2 : ℝ) • fderiv ℝ w (q x)) y_z := by
-              simpa [v] using InnerProductSpace.toDual_symm_apply
-                (y := (1 / 2 : ℝ) • fderiv ℝ w (q x)) (x := y_z)
-            simp only [add_apply, ContinuousLinearMap.comp_apply, smul_apply, innerSL_apply_apply,
-              orthogonalLineEquiv_apply, hqyt, InnerProductSpace.toDual_apply_apply, inner_add_left,
-              inner_add_right, inner_smul_left, inner_smul_right,
-              Submodule.mem_orthogonal_singleton_iff_inner_left.mp v.property,
-              Submodule.mem_orthogonal_singleton_iff_inner_right.mp y_z.property,
-              real_inner_self_eq_norm_sq, he, smul_eq_mul, starRingEnd_apply, star_trivial,
-              mul_zero, add_zero, zero_add, one_pow, mul_one, hv_apply]
-            ring
-          rw [← ofReal_norm, hdh.fderiv, hdual, LinearIsometryEquiv.norm_map]
-          congr 1
-          have hsq : ‖(v : E) + σ • e‖ ^ 2 = ((1 / 2) * √(4 + ‖fderiv ℝ w (q x)‖ ^ 2)) ^ 2 := by
-            rw [norm_add_smul_sq e he, hv_norm, hσsq, mul_pow, mul_pow,
-              Real.sq_sqrt (add_nonneg (by norm_num) (sq_nonneg _))]
-            ring
-          nlinarith [norm_nonneg ((v : E) + σ • e), Real.sqrt_nonneg (4 + ‖fderiv ℝ w (q x)‖ ^ 2)]
-        · have hev : u =ᶠ[𝓝 x] fun _ ↦ δ := by
-            filter_upwards [(isOpen_lt continuous_const hcont_h).mem_nhds hgt] with z hz
-            simp [u, max_eq_left (hδ.trans hz).le, min_eq_right hz.le]
-          rw [hev.fderiv_eq, fderiv_const_apply,
-            indicator_of_notMem (fun (hx : 0 < h x ∧ h x < δ) ↦ hgt.not_gt hx.2)]
-          exact (eNorm_eq_zero (a := (0 : E →L[ℝ] ℝ))).2 rfl
+            (fun x ↦ ENNReal.ofReal ((1 / 2) * √(4 + ‖fderiv ℝ w (q x)‖ ^ 2))) x :=
+      enorm_fderiv_clamp_subgraph_ae e he hw hδ
     have hgrad_meas : AEMeasurable
         ({x : E | 0 < h x ∧ h x < δ}.indicator
           (fun x ↦ ENNReal.ofReal ((1 / 2) * √(4 + ‖fderiv ℝ w (q x)‖ ^ 2)))) volume :=
@@ -249,26 +302,16 @@ theorem perimeter_setOf_abs_inner_lt_div_two_le (e : E) (he : ‖e‖ = 1)
             (measurableSet_lt measurable_const
               (measurable_const.sub continuous_abs.measurable)).inter
               (measurableSet_lt (measurable_const.sub continuous_abs.measurable) measurable_const)
-          rw [show (fun t : ℝ ↦ {x : E | 0 < h x ∧ h x < δ}.indicator
+          have hind_eq : (fun t : ℝ ↦ {x : E | 0 < h x ∧ h x < δ}.indicator
               (fun x ↦ ENNReal.ofReal ((1 / 2) * √(4 + ‖fderiv ℝ w (q x)‖ ^ 2)))
-              ((y : E) + t • e)) = T.indicator (fun _ ↦ c) from funext fun t ↦ by
-                by_cases ht : t ∈ T
-                · rw [indicator_of_mem ht, indicator_of_mem (by simpa [T, hhyt] using ht), hqyt]
-                · rw [indicator_of_notMem ht, indicator_of_notMem (by simpa [T, hhyt] using ht)],
-            lintegral_indicator_const hTm]
+              ((y : E) + t • e)) = T.indicator (fun _ ↦ c) := funext fun t ↦ by
+            by_cases ht : t ∈ T
+            · rw [indicator_of_mem ht, indicator_of_mem (by simpa [T, hhyt] using ht), hqyt]
+            · rw [indicator_of_notMem ht, indicator_of_notMem (by simpa [T, hhyt] using ht)]
+          rw [hind_eq, lintegral_indicator_const hTm]
           by_cases hy : 0 < w y
           · rw [indicator_of_mem hy]
-            set R : ℝ := w y / 2
-            have hTvol : volume T ≤ ENNReal.ofReal (2 * δ) := by
-              have hTsub : T ⊆ Ioo (R - δ) R ∪ Ioo (-R) (-(R - δ)) := fun t ⟨h1, h2⟩ ↦ by
-                change 0 < R - |t| at h1; change R - |t| < δ at h2
-                rcases le_or_gt 0 t with ht | ht
-                · rw [abs_of_nonneg ht] at h1 h2; exact Or.inl ⟨by linarith, by linarith⟩
-                · rw [abs_of_neg ht] at h1 h2; exact Or.inr ⟨by linarith, by linarith⟩
-              refine ((measure_mono hTsub).trans (measure_union_le _ _)).trans_eq ?_
-              rw [Real.volume_Ioo, Real.volume_Ioo, show R - (R - δ) = δ by ring,
-                show -(R - δ) - -R = δ by ring, ← ENNReal.ofReal_add hδ.le hδ.le, two_mul]
-            refine (mul_le_mul_right hTvol c).trans_eq ?_
+            refine (mul_le_mul_right (volume_setOf_pos_sub_abs_lt_le (w y / 2) hδ) c).trans_eq ?_
             rw [← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul hδ.le]
             congr 1; ring
           · rw [indicator_of_notMem hy,
@@ -303,22 +346,12 @@ theorem perimeter_setOf_abs_inner_lt_div_two_le (e : E) (he : ‖e‖ = 1)
     refine perimeter_le_liminf
       (.of_forall fun _ ↦ (measurableSet_lt measurable_const hcont_h.measurable).nullMeasurableSet)
       (measurableSet_lt measurable_const hcont_h.measurable).nullMeasurableSet fun K hK _ ↦ ?_
-    let G : ℕ → Set E := fun k ↦ {x : E | 0 < h x ∧ h x ≤ 1 / ((k : ℝ) + 1)} ∩ K
-    have hGm (k : ℕ) : NullMeasurableSet (G k) volume :=
-      (((measurableSet_lt measurable_const hcont_h.measurable).inter
-        (measurableSet_le hcont_h.measurable measurable_const)).inter
-        hK.measurableSet).nullMeasurableSet
-    have hGanti : Antitone G := fun m n hmn _ ⟨⟨h1, h2⟩, hxK⟩ ↦
-      ⟨⟨h1, h2.trans (one_div_le_one_div_of_le (by positivity) (by gcongr))⟩, hxK⟩
-    have hGfin : volume (G 0) ≠ ∞ :=
-      ne_top_of_le_ne_top hK.measure_lt_top.ne (measure_mono inter_subset_right)
-    have hGinter : (⋂ k, G k) = ∅ := eq_empty_of_forall_notMem fun x hx ↦ by
-      simp only [mem_iInter, mem_inter_iff, mem_ofPred_eq, G] at hx
-      exact (hx 0).1.1.not_ge
-        (ge_of_tendsto' tendsto_one_div_add_atTop_nhds_zero_nat fun k ↦ (hx k).1.2)
-    have hGlim : Tendsto (fun k : ℕ ↦ volume (G k)) atTop (𝓝 0) := by
-      simpa only [Function.comp_def, hGinter, measure_empty] using
-        tendsto_measure_iInter_atTop hGm hGanti ⟨0, hGfin⟩
+    have hGlim : Tendsto
+        (fun k : ℕ ↦ volume ({x : E | 0 < h x ∧ h x ≤ 1 / ((k : ℝ) + 1)} ∩ K)) atTop (𝓝 0) :=
+      tendsto_measure_setOf_pos_lt_le_inter hcont_h.measurable.aemeasurable
+        hK.measurableSet.nullMeasurableSet hK.measure_lt_top.ne
+        (fun _ _ hmn ↦ one_div_le_one_div_of_le (by positivity) (by gcongr))
+        tendsto_one_div_add_atTop_nhds_zero_nat
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hGlim
       (fun _ ↦ zero_le) fun k ↦ measure_mono fun x ⟨hx, hxK⟩ ↦ ⟨?_, hxK⟩
     rcases hx with ⟨h1, h2⟩ | ⟨h1, h2⟩

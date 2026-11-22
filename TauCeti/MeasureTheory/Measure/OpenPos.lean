@@ -37,6 +37,7 @@ set whose closure contains the point, for any measure positive on nonempty open 
 * `IsOpen.ext_closure_of_ae_eq`: a continuous function on the closure of an open set is determined
   by its values at almost every point of the set.
 * `TauCeti.eq_of_ae_eq_of_interior_closure_eq`: a.e. equal regular open sets are equal.
+* `TauCeti.eq_of_ae_eq_of_closure_interior_eq`: a.e. equal regular closed sets are equal.
 * `Metric.measureReal_ball_pos`: a ball of positive radius has positive real measure.
 * `Metric.measureReal_closedBall_pos`: a closed ball of positive radius has positive real
   measure.
@@ -115,6 +116,18 @@ theorem eq_of_ae_eq_of_interior_closure_eq {X : Type*} [TopologicalSpace X] [Mea
     s = t := by
   have hsopen : IsOpen s := hs ▸ isOpen_interior
   rw [← hs, ← ht, hsopen.closure_eq_of_ae_eq (ht ▸ isOpen_interior) hst]
+
+/-- Regular closed sets are determined by their almost-everywhere classes for a measure positive
+on nonempty open sets. Regular closedness is expressed by `closure (interior s) = s`; ordinary
+closedness alone does not suffice. -/
+theorem eq_of_ae_eq_of_closure_interior_eq {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    {μ : Measure X} [μ.IsOpenPosMeasure] {s t : Set X}
+    (hs : closure (interior s) = s) (ht : closure (interior t) = t) (hst : s =ᵐ[μ] t) :
+    s = t := by
+  have hcompl (u : Set X) (hu : closure (interior u) = u) : interior (closure uᶜ) = uᶜ := by
+    rw [closure_compl, interior_compl, hu]
+  exact compl_inj_iff.mp <|
+    eq_of_ae_eq_of_interior_closure_eq (hcompl s hs) (hcompl t ht) hst.compl
 
 /-- In a proper space, a measure that is positive on nonempty open sets and finite on compact sets
 gives every ball of positive radius positive real measure. -/
