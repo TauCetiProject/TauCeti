@@ -684,24 +684,6 @@ theorem setAverage_closedBall_restrict_norm_sub_le {κ C V R t : ℝ} (hc : 0 < 
   rw [hrhs]
   exact setAverage_closedBall_restrict_norm_sub_le_sqrt_of_setIntegral_le hc ht hd hg hψ
 
-/-- If `Ω` has density at least `c` in `closedBall z s`, `s ≤ R`, and `∫_{B(z, R) ∩ Ω} ‖g‖² ≤ V`,
-then the average `g_s` of `g` over `ball z s ∩ Ω` satisfies `c (s / R)ⁿ μ(B(z, R)) ‖g_s‖² ≤ V`. -/
-private lemma mul_sq_norm_setAverage_ball_inter_le {s R V : ℝ} (hs : 0 < s) (hsR : s ≤ R)
-    (hR : 0 < R) (hd : (c : ℝ≥0∞) * μ (closedBall z s) ≤ μ (closedBall z s ∩ Ω))
-    (hg : MemLp g 2 (μ.restrict (ball z R ∩ Ω))) (hΦR : ∫ x in ball z R ∩ Ω, ‖g x‖ ^ 2 ∂μ ≤ V) :
-    c * ((s / R) ^ finrank ℝ E * μ.real (ball z R)) * ‖⨍ y in ball z s ∩ Ω, g y ∂μ‖ ^ 2 ≤ V := by
-  have hsub : ball z s ∩ Ω ⊆ ball z R ∩ Ω := inter_subset_inter_left _ (ball_subset_ball hsR)
-  have h1 := (measureReal_mul_sq_norm_setAverage_le measure_ball_inter_ne_top
-    (hg.mono_measure (Measure.restrict_mono hsub le_rfl))).trans
-    ((setIntegral_mono_set ((hg.integrableOn_norm_sub_sq_of_subset subset_rfl
-      measure_ball_inter_ne_top 0).congr
-      (ae_of_all _ fun _ => by simp only [sub_zero])) (ae_of_all _ fun _ => by positivity)
-      hsub.eventuallySubset).trans hΦR)
-  have h2 := μ.mul_measureReal_ball_le_measureReal_ball_inter hd
-  rw [(div_eq_iff (measureReal_ball_pos μ z hR).ne').1
-    (μ.addHaar_real_ball_div_addHaar_real_ball z z hR hs)] at h2
-  exact (mul_le_mul_of_nonneg_right h2 (sq_nonneg _)).trans h1
-
 /-- **Bounded averages from an `L²` bound.** Let `c > 0`, let `Ω` have density at least `c` in
 `closedBall z t`, and let `S ⊇ ball z t ∩ Ω` have finite measure with `∫_S ‖g‖² ≤ Φ`. Then the
 average of `g` over `closedBall z t` for `μ.restrict Ω` has norm at most
@@ -723,6 +705,22 @@ theorem norm_setAverage_closedBall_restrict_le_sqrt {S : Set E} {t Φ : ℝ} (hc
   rw [Real.le_sqrt (norm_nonneg _) (div_nonneg hΦ0 h0.le), le_div_iff₀ h0, mul_comm]
   exact (mul_le_mul_of_nonneg_right (μ.mul_measureReal_ball_le_measureReal_ball_inter hd)
     (sq_nonneg _)).trans (h1.trans h2)
+
+/-- If `Ω` has density at least `c` in `closedBall z s`, `s ≤ R`, and `∫_{B(z, R) ∩ Ω} ‖g‖² ≤ V`,
+then the average `g_s` of `g` over `ball z s ∩ Ω` satisfies `c (s / R)ⁿ μ(B(z, R)) ‖g_s‖² ≤ V`. -/
+private lemma mul_sq_norm_setAverage_ball_inter_le {s R V : ℝ} (hc : 0 < c) (hs : 0 < s)
+    (hsR : s ≤ R) (hR : 0 < R) (hd : (c : ℝ≥0∞) * μ (closedBall z s) ≤ μ (closedBall z s ∩ Ω))
+    (hg : MemLp g 2 (μ.restrict (ball z R ∩ Ω))) (hΦR : ∫ x in ball z R ∩ Ω, ‖g x‖ ^ 2 ∂μ ≤ V) :
+    c * ((s / R) ^ finrank ℝ E * μ.real (ball z R)) * ‖⨍ y in ball z s ∩ Ω, g y ∂μ‖ ^ 2 ≤ V := by
+  have h0 : 0 < (c : ℝ) * μ.real (ball z s) := mul_pos hc (measureReal_ball_pos μ z hs)
+  have hV0 : 0 ≤ V := (integral_nonneg fun _ => by positivity).trans hΦR
+  have h := norm_setAverage_closedBall_restrict_le_sqrt hc hs hd
+    (inter_subset_inter_left _ (ball_subset_ball hsR)) measure_ball_inter_ne_top hg hΦR
+  rw [μ.restrict_restrict_closedBall_eq_restrict_ball_inter,
+    Real.le_sqrt (norm_nonneg _) (div_nonneg hV0 h0.le), le_div_iff₀ h0,
+    (div_eq_iff (measureReal_ball_pos μ z hR).ne').1
+      (μ.addHaar_real_ball_div_addHaar_real_ball z z hR hs)] at h
+  exact (mul_comm _ _).trans_le h
 
 end NormedSpace
 
@@ -797,7 +795,7 @@ private lemma sq_norm_setAverage_ball_inter_le {κ θ C₂ R V t : ℝ} (hκ : 0
     exact mul_le_mul_of_nonneg_left (mul_le_of_le_one_right (Real.sqrt_nonneg _) hθκ) hcc)
   -- The average at radius `θ R` is controlled by `∫_{B(z, R) ∩ Ω} ‖g‖² ≤ V`.
   have hmθ : ‖⨍ y in ball z (θ * R) ∩ Ω, g y ∂μ‖ ^ 2 ≤ W / (c * θ ^ finrank ℝ E) := by
-    have h := mul_sq_norm_setAverage_ball_inter_le hθR0 hθR hR (hdens _ hθR0 le_rfl) hg hΦR
+    have h := mul_sq_norm_setAverage_ball_inter_le hc hθR0 hθR hR (hdens _ hθR0 le_rfl) hg hΦR
     rw [mul_div_cancel_right₀ θ hR.ne'] at h
     rw [div_div, le_div_iff₀ (by positivity)]
     exact (le_of_eq (by ring)).trans h
