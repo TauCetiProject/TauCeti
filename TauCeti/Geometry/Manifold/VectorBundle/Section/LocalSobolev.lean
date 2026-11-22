@@ -237,11 +237,7 @@ theorem IsLocallySobolevAt.add {s : ℝ} {T T' : BundleTest I F V →L_c[ℝ] �
     IsLocallySobolevAt s (T + T') x := by
   obtain ⟨t, _, c, hc, hcs, hct, hx, hT⟩ := h
   refine ⟨t, inferInstance, c, hc, hcs, hct, hx, fun v ↦ ?_⟩
-  have hadd : t.chartComponent c hc hct (T + T') v =
-      t.chartComponent c hc hct T v + t.chartComponent c hc hct T' v := by
-    ext φ
-    simp
-  rw [hadd]
+  rw [chartComponent_add]
   exact (hT v).add ((isLocallySobolevAt_iff T' hc hcs hct hx).1 h' v)
 
 /-- A real multiple of a functional `H^s` near `x` is `H^s` near `x`. -/
@@ -249,10 +245,7 @@ theorem IsLocallySobolevAt.smul {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ}
     (h : IsLocallySobolevAt s T x) (a : ℝ) : IsLocallySobolevAt s (a • T) x := by
   obtain ⟨t, _, c, hc, hcs, hct, hx, hT⟩ := h
   refine ⟨t, inferInstance, c, hc, hcs, hct, hx, fun v ↦ ?_⟩
-  have hsmul : t.chartComponent c hc hct (a • T) v = (a : ℂ) • t.chartComponent c hc hct T v := by
-    ext φ
-    simp
-  rw [hsmul]
+  rw [chartComponent_smul]
   exact (hT v).smul _
 
 /-- The negative of a functional `H^s` near `x` is `H^s` near `x`. -/
@@ -367,20 +360,6 @@ theorem exists_forall_isLocallySobolevAt (T : BundleTest I F V →L_c[ℝ] ℝ) 
 
 /-! ### Point masses -/
 
-omit [MeasurableSpace E] [BorelSpace E] [I.Boundaryless] in
-/-- The component along `v` of the local representative of the point mass `δ_x ℓ`, in a chart
-whose source contains `x`, is the Euclidean point mass at `c x` times `ℓ (t⁻¹ v)`. -/
-private theorem chartComponent_delta_of_mem {t : Trivialization F (π F V)}
-    [MemTrivializationAtlas t] {c : OpenPartialHomeomorph M E}
-    (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hct : c.source ⊆ t.baseSet) {x : M}
-    (hx : x ∈ c.source) (ℓ : V x →L[ℝ] ℝ) (v : F) :
-    t.chartComponent c hc hct (BundleTest.delta x ℓ) v =
-      ((ℓ (t.symmL ℝ x v) : ℝ) : ℂ) •
-        mapCLM ofRealCLM (Distribution.delta (c x) : 𝓓'(⟨c.target, c.open_target⟩, ℝ)) := by
-  rw [chartComponent_def, chartDistributionCLM_delta_of_mem _ _ _ _ hx]
-  ext φ
-  simp [mul_comm]
-
 /-- **Point masses are `H^s` below the critical order.** On a manifold without boundary of
 dimension `d`, the point mass `δ_x ℓ` has empty `H^s` singular support for `s < -d / 2`. -/
 theorem sobolevSingularSupport_delta_eq_empty {s : ℝ}
@@ -390,10 +369,10 @@ theorem sobolevSingularSupport_delta_eq_empty {s : ℝ}
   obtain ⟨c, hc, hcs, hct, hp⟩ := exists_chart_source_subset_baseSet F I V (n := ∞) p
   refine ⟨trivializationAt F V p, inferInstance, c, hc, hcs, hct, hp, fun v ↦ ?_⟩
   by_cases hx : x ∈ c.source
-  · rw [chartComponent_delta_of_mem hc hct hx]
+  · rw [chartComponent_delta_of_mem _ _ _ _ hx]
     exact ((notMem_sobolevSingularSupport_iff (c.map_source hp)).1
       (by simp [Distribution.sobolevSingularSupport_delta_eq_empty hs])).smul _
-  · rw [chartComponent_def, chartDistributionCLM_delta_of_notMem _ _ _ _ hx, map_zero]
+  · rw [chartComponent_delta_of_notMem _ _ _ _ hx]
     exact isLocallySobolevAt_zero_iff.2 (c.map_source hp)
 
 /-- **The `H^s` singular support of a point mass.** On a manifold without boundary of positive
@@ -413,11 +392,11 @@ theorem sobolevSingularSupport_delta [Nontrivial E] {s : ℝ}
     by_contra hpx
     refine h fun v ↦ ?_
     by_cases hx : x ∈ c.source
-    · rw [chartComponent_delta_of_mem hc hct hx]
+    · rw [chartComponent_delta_of_mem _ _ _ _ hx]
       refine ((notMem_sobolevSingularSupport_iff (c.map_source hp)).1 ?_).smul _
       rw [hdelta _ (c.map_source hx), mem_singleton_iff]
       exact fun h' ↦ hpx (c.injOn hp hx h')
-    · rw [chartComponent_def, chartDistributionCLM_delta_of_notMem _ _ _ _ hx, map_zero]
+    · rw [chartComponent_delta_of_notMem _ _ _ _ hx]
       exact isLocallySobolevAt_zero_iff.2 (c.map_source hp)
   · -- At `x`, some component is a nonzero multiple of the point mass at `c x`.
     rintro rfl h
@@ -425,7 +404,7 @@ theorem sobolevSingularSupport_delta [Nontrivial E] {s : ℝ}
       by_contra! h0
       exact hℓ (ContinuousLinearMap.ext h0)
     have hv := h ((trivializationAt F V p).continuousLinearMapAt ℝ p u)
-    rw [chartComponent_delta_of_mem hc hct hp,
+    rw [chartComponent_delta_of_mem _ _ _ _ hp,
       (trivializationAt F V p).symmL_continuousLinearMapAt (hct hp),
       isLocallySobolevAt_smul_iff (Complex.ofReal_ne_zero.2 hu)] at hv
     exact (notMem_sobolevSingularSupport_iff (c.map_source hp)).2 hv

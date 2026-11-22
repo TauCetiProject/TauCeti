@@ -103,6 +103,48 @@ theorem chartComponent_zero (v : F) :
   ext φ
   simp
 
+@[simp]
+theorem chartComponent_add (T T' : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
+    t.chartComponent c hc hct (T + T') v =
+      t.chartComponent c hc hct T v + t.chartComponent c hc hct T' v := by
+  ext φ
+  simp
+
+@[simp]
+theorem chartComponent_smul (a : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
+    t.chartComponent c hc hct (a • T) v = (a : ℂ) • t.chartComponent c hc hct T v := by
+  ext φ
+  simp
+
+@[simp]
+theorem chartComponent_neg (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
+    t.chartComponent c hc hct (-T) v = -t.chartComponent c hc hct T v := by
+  ext φ
+  simp
+
+@[simp]
+theorem chartComponent_sub (T T' : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
+    t.chartComponent c hc hct (T - T') v =
+      t.chartComponent c hc hct T v - t.chartComponent c hc hct T' v := by
+  ext φ
+  simp
+
+/-- The component along `v` of the local representative of the point mass `δ_x ℓ`, in a chart
+whose source contains `x`, is the Euclidean point mass at `c x` times `ℓ (t⁻¹ v)`. -/
+theorem chartComponent_delta_of_mem {x : M} (hx : x ∈ c.source) (ℓ : V x →L[ℝ] ℝ) (v : F) :
+    t.chartComponent c hc hct (BundleTest.delta x ℓ) v =
+      ((ℓ (t.symmL ℝ x v) : ℝ) : ℂ) •
+        mapCLM ofRealCLM (Distribution.delta (c x) : 𝓓'(⟨c.target, c.open_target⟩, ℝ)) := by
+  rw [chartComponent_def, chartDistributionCLM_delta_of_mem _ _ _ _ hx]
+  ext φ
+  simp [mul_comm]
+
+/-- In a chart whose source does not contain `x`, every component of the local representative of a
+point mass at `x` vanishes. -/
+theorem chartComponent_delta_of_notMem {x : M} (hx : x ∉ c.source) (ℓ : V x →L[ℝ] ℝ) (v : F) :
+    t.chartComponent c hc hct (BundleTest.delta x ℓ) v = 0 := by
+  rw [chartComponent_def, chartDistributionCLM_delta_of_notMem _ _ _ _ hx, map_zero]
+
 /-- The components along a basis of the model fibre determine all components: the component along
 `v` is the combination of those along `b i` with the coordinates of `v`. -/
 theorem chartComponent_eq_sum_basis {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ F)
