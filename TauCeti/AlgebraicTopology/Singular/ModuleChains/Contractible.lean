@@ -19,7 +19,10 @@ homology of a path-connected space vanishes in degree zero.  For chains with coe
 ring, this file states these facts on elements: a cycle of positive degree is a boundary, and a
 `0`-chain of augmentation zero is a boundary.  It also states them for the whole complex: the
 augmented singular chain complex of a contractible space is exact, that is, the augmentation onto
-the coefficient ring in degree `0` is a quasi-isomorphism (a `QuasiIso` instance).
+the coefficient ring in degree `0` is a quasi-isomorphism (a `QuasiIso` instance). Conversely, a
+path-connected space whose chains have no homology in positive degrees has the homology of a point:
+the map to a point induces isomorphisms on singular homology
+(`TauCeti.isIso_singularHomologyMap_isTerminalPUnit_from_of_subsingleton`).
 
 ## Main results
 
@@ -130,5 +133,31 @@ instance quasiIso_singularChainsAugmentation (X : TopCat.{u}) [ContractibleSpace
       exact (HomologicalComplex.exactAt_iff_isZero_homology _ _).2
         (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of k k) X
           (Nat.succ_ne_zero m))
+
+variable (k) in
+/-- In a positive degree, the map from `Y` to a point induces an isomorphism on singular homology
+with coefficients in `k` exactly when the homology of `Y` vanishes in that degree. -/
+theorem isIso_singularHomologyMap_isTerminalPUnit_from_succ_iff (Y : TopCat.{u}) (i : ℕ) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{u} k) (i + 1)).obj (ModuleCat.of k k)).map
+        (TopCat.isTerminalPUnit.from Y)) ↔
+      Subsingleton (((singularChains k).obj Y).homology (i + 1)) := by
+  have hpt := isZero_singularHomologyFunctor_of_totallyDisconnectedSpace (ModuleCat.{u} k) (i + 1)
+    (ModuleCat.of k k) (TopCat.of PUnit.{u + 1}) i.succ_ne_zero
+  refine ⟨fun _ ↦ ?_, fun h ↦ (ModuleCat.isZero_iff_subsingleton.2 h).isIso hpt _⟩
+  exact (subsingleton_singularChains_homology_iff_of_isIso k (TopCat.isTerminalPUnit.from Y)
+    (i + 1)).2 (ModuleCat.isZero_iff_subsingleton.1 hpt)
+
+variable (k) in
+/-- **A path-connected space without positive-degree homology has the homology of a point**: with
+coefficients in `k`, the map to a point induces isomorphisms on singular homology in every degree.
+In degree zero both augmentations are isomorphisms. -/
+theorem isIso_singularHomologyMap_isTerminalPUnit_from_of_subsingleton (Y : TopCat.{u})
+    [PathConnectedSpace Y] (hY : ∀ i, Subsingleton (((singularChains k).obj Y).homology (i + 1)))
+    (q : ℕ) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{u} k) q).obj (ModuleCat.of k k)).map
+      (TopCat.isTerminalPUnit.from Y)) := by
+  rcases q with _ | i
+  · exact IsIso.of_isIso_fac_right (singularHomologyMap_singularHomology₀ε _ _)
+  · exact (isIso_singularHomologyMap_isTerminalPUnit_from_succ_iff k Y i).2 (hY i)
 
 end TauCeti

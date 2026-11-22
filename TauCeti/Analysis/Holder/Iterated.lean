@@ -58,7 +58,12 @@ conditions are closed under uniform convergence, which gives completeness.
   `D(Df)` by the derivative fields, and the Hölder bound on `D(Df)` for `k = 2`.
 * `TauCeti.CkHolderSpace.iteratedFDerivL` and `TauCeti.CkHolderSpace.iteratedFDerivHolderL`: the
   derivative fields as continuous linear maps; the second has operator norm at most one.
+* `TauCeti.CkHolderSpace.holderWith`: for `α ≤ 1`, an element is itself globally `α`-Hölder.
 * `TauCeti.CkHolderSpace.instCompleteSpace`: completeness when the codomain is complete.
+* `TauCeti.supportedCkHolderSubmodule`: the elements vanishing off a set `s`; it is closed
+  (`TauCeti.isClosed_supportedCkHolderSubmodule`), hence complete for a complete codomain, and
+  its elements have compact support when `s` is compact
+  (`TauCeti.hasCompactSupport_of_mem_supportedCkHolderSubmodule`).
 
 ## References
 
@@ -393,6 +398,12 @@ theorem holderWith_iteratedFDeriv_of_le (f : CkHolderSpace k α E F) (hα : α �
         (fun x _ ↦ f.norm_iteratedFDeriv_apply_le hj x))
     convert h using 1; ring
 
+/-- A bounded `C^{k,α}` map is itself globally `α`-Hölder, with constant `3 ‖f‖`, when `α ≤ 1`. -/
+theorem holderWith (f : CkHolderSpace k α E F) (hα : α ≤ 1) : HolderWith (3 * ‖f‖₊) α f := by
+  have h := f.holderWith_iteratedFDeriv_of_le hα (Nat.zero_le k)
+  rw [iteratedFDeriv_zero_eq_comp] at h
+  exact (continuousMultilinearCurryFin0 ℝ E F).symm.isometry.holderWith_comp_iff.mp h
+
 /-- The `C^{k,α}` norm is at most `(k + 1) M + K` when every derivative through order `k` is
 bounded by `M` and the `k`-th derivative is `α`-Hölder with constant `K`. -/
 theorem norm_le_of_norm_iteratedFDeriv_le_of_holderWith {f : CkHolderSpace k α E F} {M : ℝ}
@@ -609,6 +620,16 @@ theorem coe_smul (c : ℝ) (f : CkHolderSpace k α E F) : ⇑(c • f) = c • �
     _root_.smul_apply]
   simp
 
+/-- The underlying function of a negation is the negation of the underlying function. -/
+@[simp]
+theorem coe_neg (f : CkHolderSpace k α E F) : ⇑(-f) = -⇑f := by
+  rw [← neg_one_smul ℝ f, coe_smul, neg_one_smul]
+
+/-- The underlying function of a difference is the difference of the underlying functions. -/
+@[simp]
+theorem coe_sub (f g : CkHolderSpace k α E F) : ⇑(f - g) = f - g := by
+  rw [sub_eq_add_neg, coe_add, coe_neg, sub_eq_add_neg]
+
 /-- The underlying bounded continuous function of a sum. -/
 @[simp]
 theorem toBoundedContinuousFunction_add (f g : CkHolderSpace k α E F) :
@@ -753,5 +774,33 @@ theorem support_subset_of_mem_supportedCkHolderSubmodule {E F : Type*}
   intro x hx
   by_contra h
   exact hx (hf x h)
+
+/-- An element of the supported Hölder submodule of a compact set has compact support. -/
+theorem hasCompactSupport_of_mem_supportedCkHolderSubmodule {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {k : ℕ} {α : ℝ≥0} {s : Set E} {f : CkHolderSpace k α E F} (hs : IsCompact s)
+    (hf : f ∈ supportedCkHolderSubmodule k α s) : HasCompactSupport f :=
+  HasCompactSupport.of_support_subset_isCompact hs
+    (support_subset_of_mem_supportedCkHolderSubmodule hf)
+
+/-- The supported `C^{k,α}` subspace is closed, as an intersection of kernels of evaluations. -/
+theorem isClosed_supportedCkHolderSubmodule {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (k : ℕ) (α : ℝ≥0) (s : Set E) :
+    IsClosed (supportedCkHolderSubmodule (F := F) k α s : Set (CkHolderSpace k α E F)) := by
+  have h : (supportedCkHolderSubmodule (F := F) k α s : Set (CkHolderSpace k α E F)) =
+      ⋂ x ∈ sᶜ, (fun f ↦ CkHolderSpace.toBoundedContinuousFunctionCLM f x) ⁻¹' {0} := by
+    ext f
+    simp
+  rw [h]
+  exact isClosed_biInter fun x _ ↦ isClosed_singleton.preimage
+    ((continuous_eval_const x).comp (ContinuousLinearMap.continuous _))
+
+/-- The supported `C^{k,α}` subspace is a Banach space when the codomain is. -/
+instance instCompleteSpaceSupportedCkHolderSubmodule {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [CompleteSpace F] (k : ℕ) (α : ℝ≥0) (s : Set E) :
+    CompleteSpace (supportedCkHolderSubmodule (F := F) k α s) :=
+  (isClosed_supportedCkHolderSubmodule k α s).completeSpace_coe
 
 end TauCeti

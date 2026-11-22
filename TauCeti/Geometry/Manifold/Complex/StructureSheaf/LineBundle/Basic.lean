@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.Trivial
+import TauCeti.Geometry.Manifold.VectorBundle.MaximalAtlas
 
 /-!
 # The sheaf of holomorphic sections of a holomorphic vector bundle
@@ -25,17 +26,23 @@ structure on `V`: sums and scalar multiples of analytic sections are analytic by
 `ContMDiffAt.add_section` and `ContMDiffAt.const_smul_section`.
 
 The underlying sheaf of types is Mathlib's `TopCat.subsheafToTypes` for the local predicate
-`TauCeti.holomorphicSectionLocalPredicate`. Analyticity of the bundled map is local, by Mathlib's
-local predicate for `ContMDiff` maps. The sheaf of complex vector spaces has exactly this
-underlying presheaf of types, which gives its sheaf condition, as for
+`TauCeti.holomorphicSectionLocalPredicate`. Analyticity of the bundled map is local, using
+`TauCeti.contMDiffLocalPredicate` with independent source and target universes. The sheaf of complex
+vector spaces has exactly this underlying presheaf of types, which gives its sheaf condition, as for
 `TauCeti.holomorphicStructureSheafModules`.
 
 ## Main definitions
 
+* `Bundle.Trivialization.holomorphicSectionLinearEquiv`: a holomorphic rank-one frame and
+  model coordinate identify native bundle sections with native holomorphic functions inside
+  its base set; this commutes with restriction and makes no integrability assertion.
+
 * `TauCeti.holomorphicBundleSections`: the holomorphic sections of `V` over an open set, as a
   complex subspace of all sections.
+* `TauCeti.holomorphicBundleSections.topEquivContMDiffSection`: global holomorphic sections
+  identified with native analytic sections, preserving their values in the original fibres.
 * `TauCeti.holomorphicSectionSheaf`: the sheaf of holomorphic sections, as a
-  `TopCat.Sheaf (ModuleCat ℂ)`.
+  `TopCat.Sheaf (ModuleCat.{max u v} ℂ)`.
 * `TauCeti.holomorphicSectionSheaf.homOfLinearMap`: the sheaf morphism induced by a fibrewise
   linear map whose total-space map is analytic.
 * `TauCeti.holomorphicSectionSheaf.isoOfLinearEquiv`: the sheaf isomorphism induced by an
@@ -65,25 +72,33 @@ public noncomputable section
 open Bundle CategoryTheory CategoryTheory.Limits Opposite TopologicalSpace
 open scoped ContDiff Manifold
 
+universe u v
+
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℂ E H)
-  {X : Type} [TopologicalSpace X] [ChartedSpace H X]
+  {X : Type u} [TopologicalSpace X] [ChartedSpace H X]
   (F : Type*) [NormedAddCommGroup F] [NormedSpace ℂ F]
-  (V : X → Type) [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
+  (V : X → Type v) [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
   [FiberBundle F V]
 
 /-- Analyticity of the bundled map `x ↦ ⟨x, s x⟩` into the total space, as a local predicate on
 sections of `V` over open sets. -/
 def holomorphicSectionLocalPredicate : TopCat.LocalPredicate (fun x : TopCat.of X ↦ V x) where
   pred {U} s := ContMDiff I (I.prod 𝓘(ℂ, F)) ω (fun x : U ↦ TotalSpace.mk' F (x : X) (s x))
-  res {_ _} i _ h :=
-    ((contDiffWithinAt_localInvariantProp (I := I) (I' := I.prod 𝓘(ℂ, F)) ω).localPredicate
-      X (TotalSpace F V)).res i _ h
-  locality {_} _ w :=
-    ((contDiffWithinAt_localInvariantProp (I := I) (I' := I.prod 𝓘(ℂ, F)) ω).localPredicate
-      X (TotalSpace F V)).locality _ w
+  res {U W} i f h := by
+    have hf := (contMDiffLocalPredicate_pred (I := I) (J := I.prod 𝓘(ℂ, F)) (n := ω)
+      (fun x : W ↦ TotalSpace.mk' F (x : X) (f x))).mpr h
+    exact (contMDiffLocalPredicate_pred (I := I) (J := I.prod 𝓘(ℂ, F)) (n := ω) _).mp
+      ((contMDiffLocalPredicate I (I.prod 𝓘(ℂ, F)) ω X (TotalSpace F V)).res i _ hf)
+  locality {U} f w := by
+    apply (contMDiffLocalPredicate_pred (I := I) (J := I.prod 𝓘(ℂ, F)) (n := ω) _).mp
+    apply (contMDiffLocalPredicate I (I.prod 𝓘(ℂ, F)) ω X (TotalSpace F V)).locality
+    intro x
+    obtain ⟨W, hx, i, hW⟩ := w x
+    exact ⟨W, hx, i,
+      (contMDiffLocalPredicate_pred (I := I) (J := I.prod 𝓘(ℂ, F)) (n := ω) _).mpr hW⟩
 
 @[simp]
 theorem holomorphicSectionLocalPredicate_pred {U : Opens (TopCat.of X)} (s : (x : U) → V x) :
@@ -135,6 +150,33 @@ def holomorphicBundleSections (U : Opens X) : Submodule ℂ ((x : U) → V x) wh
     filter_upwards [U.isOpen.mem_nhds x.property] with y (hy : y ∈ U)
     simp [extendSection, hy]
 
+namespace holomorphicBundleSections
+
+/-- Global sections of the holomorphic section sheaf are exactly the native analytic bundle
+sections, with the same values in every original fibre. -/
+def topEquivContMDiffSection :
+    holomorphicBundleSections I F V ⊤ ≃ₗ[ℂ] Cₛ^ω⟮I; F, V⟯ where
+  toFun s :=
+    { toFun x := s.val ⟨x, trivial⟩
+      contMDiff_toFun x := by
+        apply (contMDiffAt_subtype_iff (U := ⊤) (x := ⟨x, trivial⟩)).mp
+        exact s.property ⟨x, trivial⟩ }
+  invFun s := ⟨fun x ↦ s x, s.contMDiff.comp contMDiff_subtypeVal⟩
+  left_inv s := Subtype.ext (funext fun _ ↦ rfl)
+  right_inv s := ContMDiffSection.ext fun _ ↦ rfl
+  map_add' s t := ContMDiffSection.ext fun _ ↦ rfl
+  map_smul' c s := ContMDiffSection.ext fun _ ↦ rfl
+
+@[simp]
+theorem topEquivContMDiffSection_apply (s : holomorphicBundleSections I F V ⊤) (x : X) :
+    topEquivContMDiffSection I F V s x = s.val ⟨x, trivial⟩ := (rfl)
+
+@[simp]
+theorem topEquivContMDiffSection_symm_apply (s : Cₛ^ω⟮I; F, V⟯) (x : (⊤ : Opens X)) :
+    ((topEquivContMDiffSection I F V).symm s).val x = s x := (rfl)
+
+end holomorphicBundleSections
+
 theorem mem_holomorphicBundleSections_iff {U : Opens X} {s : (x : U) → V x} :
     s ∈ holomorphicBundleSections I F V U ↔
       ContMDiff I (I.prod 𝓘(ℂ, F)) ω (fun x : U ↦ TotalSpace.mk' F (x : X) (s x)) :=
@@ -143,7 +185,7 @@ theorem mem_holomorphicBundleSections_iff {U : Opens X} {s : (x : U) → V x} :
 /-- The sheaf of holomorphic sections of a vector bundle `V` over a complex manifold, as a sheaf
 of complex vector spaces. Its sections over `U` are the sections of `V` over `U` whose bundled
 map into the total space is complex analytic. -/
-def holomorphicSectionSheaf : TopCat.Sheaf (ModuleCat ℂ) (TopCat.of X) where
+def holomorphicSectionSheaf : TopCat.Sheaf (ModuleCat.{max u v} ℂ) (TopCat.of X) where
   obj :=
     { obj := fun U ↦ ModuleCat.of ℂ (holomorphicBundleSections I F V (unop U))
       map := fun h ↦ ModuleCat.ofHom
@@ -153,7 +195,10 @@ def holomorphicSectionSheaf : TopCat.Sheaf (ModuleCat ℂ) (TopCat.of X) where
       map_id := fun _ ↦ rfl
       map_comp := fun _ _ ↦ rfl }
   property := by
-    rw [Presheaf.isSheaf_iff_isSheaf_forget _ _ (forget (ModuleCat ℂ))]
+    have : HasLimitsOfSize.{u, u} (ModuleCat.{max u v} ℂ) :=
+      ModuleCat.hasLimitsOfSize.{u, u, max u v, 0}
+    apply (Presheaf.isSheaf_iff_isSheaf_comp
+      (Opens.grothendieckTopology (TopCat.of X)) _ (forget (ModuleCat.{max u v} ℂ))).2
     exact (TopCat.subsheafToTypes (holomorphicSectionLocalPredicate I F V)).property
 
 namespace holomorphicSectionSheaf
@@ -225,22 +270,109 @@ theorem map_apply {U W : (Opens (TopCat.of X))ᵒᵖ} (h : U ⟶ W)
 
 /-- **Gluing.** Holomorphic sections over the members of a family of open sets that agree on all
 overlaps glue to a unique holomorphic section over the union. -/
-theorem existsUnique_gluing {ι : Type} (U : ι → Opens X)
+theorem existsUnique_gluing {ι : Type*} (U : ι → Opens X)
     (s : ∀ i, (holomorphicSectionSheaf I F V).obj.obj (op (U i)))
     (h : ∀ i j (x : X) (hi : x ∈ U i) (hj : x ∈ U j), s i ⟨x, hi⟩ = s j ⟨x, hj⟩) :
     ∃! t : (holomorphicSectionSheaf I F V).obj.obj (op (iSup U)),
       ∀ i (x : U i), t ⟨x, le_iSup U i x.property⟩ = s i x := by
+  have : HasLimitsOfSize.{u, u} (ModuleCat.{max u v} ℂ) :=
+    ModuleCat.hasLimitsOfSize.{u, u, max u v, 0}
   have hc : TopCat.Presheaf.IsCompatible (holomorphicSectionSheaf I F V).obj U s :=
     fun i j ↦ ext fun x ↦ h i j x.val _ _
   obtain ⟨t, ht, hu⟩ := (holomorphicSectionSheaf I F V).existsUnique_gluing U s hc
   refine ⟨t, fun i x ↦ congrArg (fun r ↦ toFun I F V r x) (ht i), fun t' ht' ↦ hu t' ?_⟩
   exact fun i ↦ ext fun x ↦ ht' i x
 
+section LocalCoordinates
+
+variable [ContMDiffVectorBundle ω F V I]
+  (τ : Trivialization F (π F V)) [τ.IsLinear ℂ] (q : F ≃L[ℂ] ℂ)
+  (hτa : τ.toOpenPartialHomeomorph ∈
+    (contMDiffFiberwiseLinear X F I ω).maximalAtlas (TotalSpace F V))
+  {U U' : Opens X}
+
+/-- A holomorphic trivialization and a scalar model coordinate identify native holomorphic
+bundle sections with native holomorphic functions on an open inside the frame's base set.
+This is an equivalence of holomorphic sections, with no integrability assertion. -/
+def _root_.Bundle.Trivialization.holomorphicSectionLinearEquiv
+    (hτ : (U : Set X) ⊆ τ.baseSet) :
+    (holomorphicSectionSheaf I F V).obj.obj (op U) ≃ₗ[ℂ]
+      (holomorphicStructureSheafModules I X).obj.obj (op U) where
+  toFun s := holomorphicStructureSheafModules.ofContMDiff
+    (fun x : U ↦ q (τ.continuousLinearMapAt ℂ x (s x))) (by
+      have hc := fun x : U ↦ ((τ.contMDiffAt_iff_of_mem_maximalAtlas hτa
+        (f := fun x : U ↦ TotalSpace.mk' F (x : X) (s x))
+        ((τ.mem_source).2 (hτ x.property))).1 ((contMDiff s) x)).2
+      refine (q.contDiff.contMDiff.comp hc).congr fun x ↦ ?_
+      simp only [Function.comp_apply]
+      rw [Trivialization.continuousLinearMapAt_apply_of_mem ℂ τ (hτ x.property)])
+  invFun f := ofContMDiff (fun x : U ↦ τ.symmL ℂ x (q.symm (f x))) (by
+    intro x
+    refine (τ.contMDiffAt_iff_of_mem_maximalAtlas hτa
+      ((τ.mem_source).2 (hτ x.property))).2 ⟨contMDiff_subtypeVal x, ?_⟩
+    refine ((q.symm.contDiff.contMDiff).contMDiffAt.comp x
+      ((holomorphicStructureSheafModules.contMDiff f) x)).congr_of_eventuallyEq ?_
+    exact Filter.Eventually.of_forall fun y ↦ by
+      simp only [Function.comp_apply]
+      rw [τ.symmL_apply (hτ y.property), τ.apply_mk_symm (hτ y.property)])
+  left_inv s := by
+    apply Subtype.ext
+    funext x
+    simp only [toFun, ofContMDiff, holomorphicStructureSheafModules.ofContMDiff_apply,
+      q.symm_apply_apply, τ.symmL_continuousLinearMapAt (hτ x.property)]
+  right_inv f := by
+    apply holomorphicStructureSheafModules.ext
+    intro x
+    simp only [toFun, ofContMDiff, holomorphicStructureSheafModules.ofContMDiff_apply,
+      τ.continuousLinearMapAt_symmL (hτ x.property), q.apply_symm_apply]
+  map_add' s t := by
+    apply holomorphicStructureSheafModules.ext
+    intro x
+    simp only [holomorphicStructureSheafModules.ofContMDiff_apply,
+      holomorphicStructureSheafModules.add_apply, add_apply, map_add]
+  map_smul' c s := by
+    apply holomorphicStructureSheafModules.ext
+    intro x
+    simp only [holomorphicStructureSheafModules.ofContMDiff_apply,
+      holomorphicStructureSheafModules.smul_apply, smul_apply, map_smul, RingHom.id_apply]
+
+/-- Evaluation of a holomorphic section in a scalar frame coordinate. -/
+@[simp]
+theorem _root_.Bundle.Trivialization.holomorphicSectionLinearEquiv_apply
+    (hτ : (U : Set X) ⊆ τ.baseSet)
+    (s : (holomorphicSectionSheaf I F V).obj.obj (op U)) (x : U) :
+    τ.holomorphicSectionLinearEquiv q hτa hτ s x = q (τ.continuousLinearMapAt ℂ x (s x)) := by
+  exact holomorphicStructureSheafModules.ofContMDiff_apply _ _ x
+
+/-- Evaluation of a holomorphic function as a section in its actual frame. -/
+@[simp]
+theorem _root_.Bundle.Trivialization.holomorphicSectionLinearEquiv_symm_apply
+    (hτ : (U : Set X) ⊆ τ.baseSet)
+    (f : (holomorphicStructureSheafModules I X).obj.obj (op U)) (x : U) :
+    toFun I F V ((τ.holomorphicSectionLinearEquiv q hτa hτ).symm f) x =
+      τ.symmL ℂ x (q.symm (f x)) := by rfl
+
+/-- The local scalar coordinate of a native section commutes with native restriction. -/
+theorem _root_.Bundle.Trivialization.holomorphicSectionLinearEquiv_restrict
+    (hτ : (U : Set X) ⊆ τ.baseSet) (h : U' ≤ U)
+    (s : (holomorphicSectionSheaf I F V).obj.obj (op U)) :
+    τ.holomorphicSectionLinearEquiv q hτa ((SetLike.coe_subset_coe.2 h).trans hτ)
+        ((holomorphicSectionSheaf I F V).obj.map (homOfLE h).op s) =
+      (holomorphicStructureSheafModules I X).obj.map (homOfLE h).op
+        (τ.holomorphicSectionLinearEquiv q hτa hτ s) := by
+  apply holomorphicStructureSheafModules.ext
+  intro x
+  rw [holomorphicStructureSheafModules.map_apply,
+    Trivialization.holomorphicSectionLinearEquiv_apply,
+    Trivialization.holomorphicSectionLinearEquiv_apply, map_apply]
+
+end LocalCoordinates
+
 variable {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℂ F₁]
-  {V₁ : X → Type} [TopologicalSpace (TotalSpace F₁ V₁)] [∀ x, TopologicalSpace (V₁ x)]
+  {V₁ : X → Type v} [TopologicalSpace (TotalSpace F₁ V₁)] [∀ x, TopologicalSpace (V₁ x)]
   [FiberBundle F₁ V₁] [∀ x, AddCommGroup (V₁ x)] [∀ x, Module ℂ (V₁ x)] [VectorBundle ℂ F₁ V₁]
   {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace ℂ F₂]
-  {V₂ : X → Type} [TopologicalSpace (TotalSpace F₂ V₂)] [∀ x, TopologicalSpace (V₂ x)]
+  {V₂ : X → Type v} [TopologicalSpace (TotalSpace F₂ V₂)] [∀ x, TopologicalSpace (V₂ x)]
   [FiberBundle F₂ V₂] [∀ x, AddCommGroup (V₂ x)] [∀ x, Module ℂ (V₂ x)] [VectorBundle ℂ F₂ V₂]
 
 /-- Two morphisms between sheaves of holomorphic sections are equal if they agree on the values
@@ -287,7 +419,7 @@ theorem homOfLinearMap_id
 /-- Fibrewise composition of linear maps induces composition of sheaf morphisms. -/
 @[reassoc (attr := simp)]
 theorem homOfLinearMap_comp {F₃ : Type*} [NormedAddCommGroup F₃] [NormedSpace ℂ F₃]
-    {V₃ : X → Type} [TopologicalSpace (TotalSpace F₃ V₃)] [∀ x, TopologicalSpace (V₃ x)]
+    {V₃ : X → Type v} [TopologicalSpace (TotalSpace F₃ V₃)] [∀ x, TopologicalSpace (V₃ x)]
     [FiberBundle F₃ V₃] [∀ x, AddCommGroup (V₃ x)] [∀ x, Module ℂ (V₃ x)] [VectorBundle ℂ F₃ V₃]
     (φ : ∀ x, V₁ x →ₗ[ℂ] V₂ x)
     (hφ : ContMDiff (I.prod 𝓘(ℂ, F₁)) (I.prod 𝓘(ℂ, F₂)) ω

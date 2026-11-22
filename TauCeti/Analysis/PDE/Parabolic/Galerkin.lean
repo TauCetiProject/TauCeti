@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteDimensional
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
@@ -188,7 +189,9 @@ theorem exists_hasWeakLineDerivOn_gelfandDual_of_finiteDimensional (hι : Inject
   -- `x` is `u₀` plus the primitive of `M x + F` on `(a, b)`, so it has weak derivative `M x + F`.
   have hxg := ((hasWeakLineDerivOn_const (μ := volume) (Ω := ⟨Ioo a b, isOpen_Ioo⟩) (v := 1)
     u₀).add (hasWeakLineDerivOn_intervalIntegral_left
-      (integrableOn_clm_apply_add hM hMK hF hx))).congr_ae
+      ((IntegrableOn.clm_apply_continuousOn_of_ae_mem (Integrable.of_bound hM _ hMK) hx
+        isCompact_Icc (ae_restrict_of_forall_mem measurableSet_Ioo fun _ ht ↦
+          Ioo_subset_Icc_self ht)).add hF))).congr_ae
     ((ae_restrict_iff' measurableSet_Ioo).2 (Eventually.of_forall fun t ht ↦
       (hxeq t (Ioo_subset_Icc_self ht)).symm)) |>.congr_ae_deriv (EventuallyEq.of_eq (zero_add _))
   -- Applying `G` gives the weak derivative `G (M x + F) = f - A x` of `G x`.
