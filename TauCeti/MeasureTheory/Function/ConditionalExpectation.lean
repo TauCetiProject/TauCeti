@@ -46,6 +46,8 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 - `integral_comp_mul_eq_of_forall_setIntegral_preimage_eq`: the regression identity
   `E[f(X) Y] = E[f(X) g(X)]` when `g(X)` is a version of `E[Y | X]`, given by its set integrals
   over the events `{X ∈ A}`.
+- `integral_mul_sub_condExp`: the residual `g - μ[g | m]` of an integrable `g` is orthogonal to
+  every a.e. `m`-measurable `f`, `∫ f * (g - μ[g | m]) = 0`.
 - `condExpLp`: for a finite measure and `1 ≤ p ≤ ∞`, conditional expectation as a contractive
   continuous linear operator on `Lᵖ`.
 - `condExp_ae_eq_const_iff`: a Banach-valued conditional expectation is almost surely equal to a
@@ -379,6 +381,30 @@ theorem integral_comp_mul_eq_of_forall_setIntegral_preimage_eq {Ω α : Type*}
     (hg.comp hXc).stronglyMeasurable ?_ (hf.comp hXc).stronglyMeasurable hfY
   rintro _ ⟨A, hA, rfl⟩
   exact (hreg A hA).symm
+
+/-- **Orthogonality of the conditional-expectation residual.** If `f` is a.e. `m`-measurable and
+`g` is integrable, then the residual `g - μ[g | m]` is orthogonal to `f`:
+`∫ f * (g - μ[g | m]) = 0`. No integrability of the product is assumed: without it the integral
+is `0` by convention. -/
+theorem integral_mul_sub_condExp {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    {m : MeasurableSpace Ω} (hm : m ≤ mΩ) [SigmaFinite (μ.trim hm)] {f g : Ω → ℝ}
+    (hf : AEStronglyMeasurable[m] f μ) (hg : Integrable g μ) :
+    ∫ ω, f ω * (g ω - μ[g | m] ω) ∂μ = 0 := by
+  by_cases hfg : Integrable (fun ω ↦ f ω * (g ω - μ[g | m] ω)) μ
+  swap
+  · exact integral_undef hfg
+  -- The residual has conditional expectation `0`.
+  have hres : μ[g - μ[g | m] | m] =ᵐ[μ] 0 := by
+    refine (condExp_sub hg integrable_condExp m).trans ?_
+    rw [condExp_of_stronglyMeasurable hm stronglyMeasurable_condExp integrable_condExp, sub_self]
+  have hpull : μ[f * (g - μ[g | m]) | m] =ᵐ[μ] f * μ[g - μ[g | m] | m] :=
+    condExp_mul_of_aestronglyMeasurable_left hf hfg (hg.sub integrable_condExp)
+  have hzero : μ[f * (g - μ[g | m]) | m] =ᵐ[μ] 0 := by
+    filter_upwards [hpull, hres] with ω h1 h2
+    simp [h1, h2]
+  calc ∫ ω, f ω * (g ω - μ[g | m] ω) ∂μ = ∫ ω, μ[f * (g - μ[g | m]) | m] ω ∂μ :=
+        (integral_condExp hm).symm
+    _ = 0 := by simp [integral_congr_ae hzero]
 
 section Lp
 
