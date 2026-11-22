@@ -21,7 +21,7 @@ outside the tube to `∞`. Following it by the projection `OnePoint (S × V) →
 Pontryagin–Thom collapse onto the sphere (`TauCeti.map_snd_thomCollapse`).
 
 The Thom space carries the framed tube `S × V → OnePoint (S × V)` around its zero section
-(`TauCeti.isFramedTube_coe`), whose complement is contractible
+(`TauCeti.isFramedTube_onePoint_coe`), whose complement is contractible
 (`TauCeti.contractibleSpace_compl_range_onePoint_zeroSection`). So the homology of the Thom space
 in a positive degree `n + k` is its homology relative to that complement, which is the shifted
 homology of the zero section:
@@ -31,13 +31,14 @@ homology of the zero section:
 (`TauCeti.TopCat.onePointProdHomologyIso`). This is the Thom isomorphism of the trivial bundle, read
 on its Thom space.
 
-The **shriek map** `i_! : H_{n+k}(B) → Hₙ(S)` of the framed submanifold is the map to the homology
-of `B` relative to the complement of the core, followed by the local homology along the core
-(`TauCeti.TopCat.singularHomologyComplPreimageCoreIso`), and by the identification of the core
-with `S`. It is the map induced by the Thom collapse followed by the Thom isomorphism of the Thom
-space (`TauCeti.TopCat.singularHomologyπ_comp_singularHomologyComplPreimageCoreIso_hom`):
+The **shriek map** `i_! : H_{n+k}(B) → Hₙ(f(S))` of the framed submanifold is the map to the
+homology of `B` relative to the complement of the core, followed by the local homology along the
+core (`TauCeti.TopCat.singularHomologyComplPreimageCoreIso`). It is the map induced by the Thom
+collapse, followed by the Thom isomorphism of the Thom space and the map induced by the core
+`f : S → f(S)` (`TauCeti.IsFramedTube.coreHom`)
+(`TauCeti.TopCat.singularHomologyπ_comp_singularHomologyComplPreimageCoreIso_hom`):
 
-`i_! = (Thom isomorphism) ∘ (c_S)_*`.
+`i_! = f_* ∘ (Thom isomorphism) ∘ (c_S)_*`.
 
 This is how the shriek map of a closed submanifold is computed from its Pontryagin–Thom collapse.
 The local homology along the core needs no orientation and no fundamental class: Poincaré duality
@@ -58,7 +59,8 @@ enters only when `i_!` is compared with `[S] ⌢ i^* D_B⁻¹`.
 * `TauCeti.TopCat.onePointProdHomologyIso_hom_comp_map_coreHom`: the Thom isomorphism of the Thom
   space, read in its zero section, is the local homology along the zero section.
 * `TauCeti.TopCat.singularHomologyπ_comp_singularHomologyComplPreimageCoreIso_hom`: the shriek map
-  of the core is the Thom collapse followed by the Thom isomorphism of the Thom space.
+  of the core is the Thom collapse followed by the Thom isomorphism of the Thom space and the map
+  induced by the core.
 
 ## Implementation notes
 
@@ -148,7 +150,7 @@ variable [Zero V]
 
 /-- The Thom space `OnePoint (S × V)` is a framed tube around its zero section `x ↦ (x, 0)`, through
 the inclusion of `S × V`. -/
-theorem isFramedTube_coe :
+theorem isFramedTube_onePoint_coe :
     IsFramedTube (fun x : S ↦ ((x, (0 : V)) : OnePoint (S × V))) ((↑) : S × V → OnePoint (S × V)) :=
   ⟨isOpenEmbedding_coe, fun _ ↦ rfl⟩
 
@@ -228,7 +230,7 @@ omit [CompactSpace S] [T2Space S] [NormedSpace ℝ V] [FiniteDimensional ℝ V] 
 /-- The zero section is the core of the framed tube of the Thom space. -/
 private lemma isoOfHomeo_zeroSectionHomeomorph_hom :
     (_root_.TopCat.isoOfHomeo (zeroSectionHomeomorph (S := S) (V := V))).hom =
-      isFramedTube_coe.coreHom := by
+      isFramedTube_onePoint_coe.coreHom := by
   ext x
   rfl
 
@@ -244,8 +246,8 @@ def onePointProdHomologyIso (n m : ℕ) (h : n + finrank ℝ V = m + 1) :
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).obj
         (_root_.TopCat.of S) :=
   @asIso _ _ _ _ _ (isIso_singularHomologyπ_onePointProd M m) ≪≫
-    singularHomologyComplPreimageCoreIso isFramedTube_coe M isFramedTube_coe.isClosed_range one_pos
-      (serreFibrations.of_isIso _) n (m + 1) h ≪≫
+    singularHomologyComplPreimageCoreIso isFramedTube_onePoint_coe M
+      isFramedTube_onePoint_coe.isClosed_range one_pos (serreFibrations.of_isIso _) n (m + 1) h ≪≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).mapIso
       (_root_.TopCat.isoOfHomeo zeroSectionHomeomorph).symm
 
@@ -253,8 +255,9 @@ private lemma onePointProdHomologyIso_hom_eq (n m : ℕ) (h : n + finrank ℝ V 
     (onePointProdHomologyIso M n m h).hom =
       (TopPair.ofSubset ((𝟙 (_root_.TopCat.of (OnePoint (S × V)))) ⁻¹'
           range fun x : S ↦ ((x, (0 : V)) : OnePoint (S × V)))ᶜ).singularHomologyπ M (m + 1) ≫
-        (singularHomologyComplPreimageCoreIso isFramedTube_coe M isFramedTube_coe.isClosed_range
-          one_pos (serreFibrations.of_isIso _) n (m + 1) h).hom ≫
+        (singularHomologyComplPreimageCoreIso isFramedTube_onePoint_coe M
+          isFramedTube_onePoint_coe.isClosed_range one_pos (serreFibrations.of_isIso _) n (m + 1)
+          h).hom ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
           (_root_.TopCat.isoOfHomeo zeroSectionHomeomorph).inv :=
   (rfl)
@@ -266,11 +269,12 @@ local homology along the zero section. -/
 lemma onePointProdHomologyIso_hom_comp_map_coreHom (n m : ℕ) (h : n + finrank ℝ V = m + 1) :
     (onePointProdHomologyIso M n m h).hom ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
-          (isFramedTube_coe.coreHom) =
+          (isFramedTube_onePoint_coe.coreHom) =
       (TopPair.ofSubset ((𝟙 (_root_.TopCat.of (OnePoint (S × V)))) ⁻¹'
           range fun x : S ↦ ((x, (0 : V)) : OnePoint (S × V)))ᶜ).singularHomologyπ M (m + 1) ≫
-        (singularHomologyComplPreimageCoreIso isFramedTube_coe M isFramedTube_coe.isClosed_range
-          one_pos (serreFibrations.of_isIso _) n (m + 1) h).hom := by
+        (singularHomologyComplPreimageCoreIso isFramedTube_onePoint_coe M
+          isFramedTube_onePoint_coe.isClosed_range one_pos (serreFibrations.of_isIso _) n (m + 1)
+          h).hom := by
   rw [onePointProdHomologyIso_hom_eq]
   -- The source of the quotient map is the homology of the Thom space only up to unfolding, which
   -- `rw` does not see through, so the first reassociation is applied as a term.
@@ -317,14 +321,15 @@ theorem singularHomologyπ_comp_singularHomologyComplPreimageCoreIso_hom (n m : 
   -- The collapse sends the point `f x` of the core to the point `(x, 0)` of the zero section, so
   -- the composite of the three maps of cores is the identity.
   have hid : (hτ.thomCollapseHom).preimageMapOver hg
-      (mapsTo_range_of_apply_eq isFramedTube_coe hτ (φ := id) hs) ≫
+      (mapsTo_range_of_apply_eq isFramedTube_onePoint_coe hτ (φ := id) hs) ≫
         (_root_.TopCat.isoOfHomeo (zeroSectionHomeomorph (S := S) (V := V))).inv ≫ hτ.coreHom =
         𝟙 _ := by
     ext ⟨b, x, hx⟩
     obtain rfl : f x = b := hx
     have hx' : zeroSectionHomeomorph.symm
         ((hτ.thomCollapseHom).preimageMapOver hg
-          (mapsTo_range_of_apply_eq isFramedTube_coe hτ (φ := id) hs) ⟨f x, x, rfl⟩) = x := by
+          (mapsTo_range_of_apply_eq isFramedTube_onePoint_coe hτ (φ := id) hs) ⟨f x, x, rfl⟩) =
+        x := by
       rw [Homeomorph.symm_apply_eq]
       apply Subtype.ext
       rw [TopCat.Hom.coe_preimageMapOver_apply, IsFramedTube.thomCollapseHom_apply]
@@ -334,16 +339,17 @@ theorem singularHomologyπ_comp_singularHomologyComplPreimageCoreIso_hom (n m : 
     rfl
   have key : TopPair.singularHomologyMap (TopPair.ofSubsetMap (hτ.thomCollapseHom)
       (mapsTo_compl_preimage_range_compl_preimage_range hg hsf)) M (m + 1) ≫
-        (singularHomologyComplPreimageCoreIso isFramedTube_coe M isFramedTube_coe.isClosed_range
-          one_pos (serreFibrations.of_isIso _) n (m + 1) h).hom ≫
+        (singularHomologyComplPreimageCoreIso isFramedTube_onePoint_coe M
+          isFramedTube_onePoint_coe.isClosed_range one_pos (serreFibrations.of_isIso _) n (m + 1)
+          h).hom ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
           (_root_.TopCat.isoOfHomeo (zeroSectionHomeomorph (S := S) (V := V))).inv ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (hτ.coreHom) =
       (singularHomologyComplPreimageCoreIso hτ M hτ.isClosed_range one_pos
           (serreFibrations.of_isIso _) n (m + 1) h).hom := by
-    rw [singularHomologyComplPreimageCoreIso_hom_naturality_of_apply_eq_assoc isFramedTube_coe hτ hg
-      hs hsf, ← Functor.map_comp, ← Functor.map_comp, hid, CategoryTheory.Functor.map_id,
-      Category.comp_id]
+    rw [singularHomologyComplPreimageCoreIso_hom_naturality_of_apply_eq_assoc
+      isFramedTube_onePoint_coe hτ hg hs hsf, ← Functor.map_comp, ← Functor.map_comp, hid,
+      CategoryTheory.Functor.map_id, Category.comp_id]
   rw [← key, ← Category.assoc, ← hπ, onePointProdHomologyIso_hom_eq]
   -- The two sides differ by associativity, across the identification of the source of the
   -- quotient map with the homology of the Thom space, which `rw` does not see through.
