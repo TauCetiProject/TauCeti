@@ -68,7 +68,11 @@ compactness theorem in a symplectic chart therefore applies to the `vₖ` on a f
 namespace `TauCeti.SmoothTwoForm.IsNondegenerate`). It is the manifold-target counterpart of
 `exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_positiveEndChart` in the
 namespace `TauCeti.SymplecticForm`. When `Rₖ → ∞` the limits of the `vₖ` are the Floer cylinders
-that break off at the end `q`.
+that break off at the end `q`. For smooth solutions the coordinate maps converge in `C¹`, and the
+limit is a `C¹` solution of the Floer equation of the positive end with energy at most `E`
+(`exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset_comp_positiveEndChart` in the
+namespace `TauCeti.SmoothTwoForm.IsNondegenerate`), by the `C¹` compactness theorem in a symplectic
+chart.
 
 Here the image of `Ω`, or of the translated window, is assumed to stay in one chart. Localizing the
 images of small discs into charts on a closed manifold, the bubbles at the points of `Z` and the
@@ -128,6 +132,31 @@ theorem contDiffOn_positiveEndHamiltonian_comp_symm {n : ℕ∞} {m : WithTop �
       (univ ×ˢ φ.target) :=
   φ.contDiffOn_comp_symm_of_contMDiffOn (K := positiveEndHamiltonian H q) isOpen_univ
     (contMDiff_uncurry_positiveEndHamiltonian hHs).contMDiffOn hnm
+
+/-- **The end datum read in a chart.** Read in a chart `φ`, the cylindrical datum `H'_q(t) dt` of
+the positive end `q` is `C³`, and the structures `J'_q(±t)` are `C²`, on an open set containing
+`D × φ(C)`, when `J'_q` is `C²` on an open set containing `ℝ × φ(C)`. -/
+private theorem exists_isOpen_and_contDiffOn_positiveEndHamiltonian_comp_symm
+    [FiniteDimensional ℝ V] {q : Puncture}
+    (hHq : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
+    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {Jq' : ℝ → V → AlmostComplexStructure V}
+    {W : Set (ℝ × V)} (hW : IsOpen W)
+    (hJ' : ContDiffOn ℝ 2
+      (fun p : ℝ × V ↦ (Jq' p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    {D : Set (ℝ × ℝ)} {C : Set M} (hCφ : C ⊆ φ.source) (hCW : univ ×ˢ (φ '' C) ⊆ W) :
+    ∃ Wc : Set ((ℝ × ℝ) × V), IsOpen Wc ∧ D ×ˢ (φ '' C) ⊆ Wc ∧
+      ContDiffOn ℝ 3 (fun p : (ℝ × ℝ) × V ↦ positiveEndHamiltonian H q p.1.2 (φ.symm p.2)) Wc ∧
+      ContDiffOn ℝ 2 (fun p : (ℝ × ℝ) × V ↦
+        (Jq' (q.endSign * p.1.2) p.2).toLinearMap.toContinuousLinearMap) Wc := by
+  have hσ : ContDiff ℝ 2 fun p : (ℝ × ℝ) × V ↦ (q.endSign * p.1.2, p.2) :=
+    (contDiff_const.mul (contDiff_snd.comp contDiff_fst)).prodMk contDiff_snd
+  refine ⟨(fun p : (ℝ × ℝ) × V ↦ (q.endSign * p.1.2, p.2)) ⁻¹' W ∩ univ ×ˢ φ.target,
+    (hW.preimage hσ.continuous).inter (isOpen_univ.prod φ.open_target), ?_,
+    (contDiffOn_positiveEndHamiltonian_comp_symm hHq φ (WithTop.coe_le_coe.2 le_top)).comp
+      ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd).contDiffOn
+      fun _ hp ↦ ⟨mem_univ _, hp.2.2⟩, hJ'.comp hσ.contDiffOn fun _ hp ↦ hp.1⟩
+  rintro ⟨z, _⟩ ⟨-, x, hx, rfl⟩
+  exact ⟨hCW ⟨mem_univ _, x, hx, rfl⟩, mem_univ _, φ.toPartialEquiv.map_source (hCφ hx)⟩
 
 end Floer
 
@@ -424,26 +453,13 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
           (Ω \ ↑Z) ∧
         ∀ y ∈ Ω \ ↑Z,
           Tendsto (fun n ↦ u (ψ n) (positiveEndChart q (y + (R (ψ n), 0)))) atTop (𝓝 (v y)) := by
-  -- In the chart, the datum `H'_q(t) dt` is `C³` and the structure `J'_q(±t)` is `C²` near
-  -- `D × φ(C)`.
-  have hσ : ContDiff ℝ 2 fun p : (ℝ × ℝ) × V ↦ (q.endSign * p.1.2, p.2) :=
-    (contDiff_const.mul (contDiff_snd.comp contDiff_fst)).prodMk contDiff_snd
-  set Wc : Set ((ℝ × ℝ) × V) :=
-    (fun p : (ℝ × ℝ) × V ↦ (q.endSign * p.1.2, p.2)) ⁻¹' W ∩ univ ×ˢ φ.target
-  have hWc : IsOpen Wc := (hW.preimage hσ.continuous).inter (isOpen_univ.prod φ.open_target)
-  have hDCW : D ×ˢ (φ '' C) ⊆ Wc := by
-    rintro ⟨z, _⟩ ⟨-, x, hx, rfl⟩
-    exact ⟨hCW ⟨mem_univ _, x, hx, rfl⟩, mem_univ _, φ.toPartialEquiv.map_source (hCφ hx)⟩
-  have hKt : ContDiffOn ℝ 3
-      (fun p : (ℝ × ℝ) × V ↦ positiveEndHamiltonian H q p.1.2 (φ.symm p.2)) Wc :=
-    (contDiffOn_positiveEndHamiltonian_comp_symm hHq φ (WithTop.coe_le_coe.2 le_top)).comp
-      ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd).contDiffOn
-      fun _ hp ↦ ⟨mem_univ _, hp.2.2⟩
+  obtain ⟨Wc, hWc, hDCW, hKt, hJc⟩ :=
+    exists_isOpen_and_contDiffOn_positiveEndHamiltonian_comp_symm hHq φ hW hJ' hCφ hCW (D := D)
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset φ
     (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ positiveEndHamiltonian H q w.2)
     (J := fun z ↦ Jq (q.endSign * z.2)) (J' := fun z ↦ Jq' (q.endSign * z.2))
-    hφ (fun _ _ x hx ↦ hJJ' _ x hx) hWc contDiffOn_const hKt
-    (hJ'.comp hσ.contDiffOn fun _ hp ↦ hp.1) hD hC hCφ hDCW fun _ _ x hx ↦ hJt _ x hx
+    hφ (fun _ _ x hx ↦ hJJ' _ x hx) hWc contDiffOn_const hKt hJc hD hC hCφ hDCW
+    fun _ _ x hx ↦ hJt _ x hx
   refine ⟨δ, hδ, fun Ω u R E hΩ hΩD hR hu hfl hE0 hE huC ↦ ?_⟩
   -- The translated windows lie in the band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end
   -- chart.
@@ -458,6 +474,96 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
       hJ hJt hΩ (hΩT k) (hu k) (hfl k) hE0 (hE k) (huC k)
   exact hconv hΩ hΩD (fun k ↦ (h k).1) (fun k ↦ (h k).2.1) huC (fun k ↦ (h k).2.2.1)
     fun k ↦ (h k).2.2.2
+
+/-- **The translated ends of smooth Floer pairs of pants in a symplectic chart of a manifold
+converge in `C¹` off finitely many bubbling points to a Floer cylinder.** Under the hypotheses of
+`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_positiveEndChart`, there is a
+threshold `δ > 0` with the following property. Let `uₖ` be smooth solutions of
+`(du - X_K)^{0,1} = 0` on `S` for `J(z, u)` with energy at most `E ≥ 0`, let `Rₖ ≥ 0` be heights,
+and let the translated ends `vₖ(z) = uₖ(φ'_q(z + (Rₖ, 0)))` map an open `Ω ⊆ D` into `C`. Then
+there are a subsequence `ψ`, a finite set `Z ⊆ Ω` with `#Z * δ ≤ E`, and a map `v` with values in
+`C` on `Ω \ Z` such that along `ψ` every disc about a point of `Z` eventually carries energy at
+least `δ` for the cylindrical datum `H'_q dt`, the coordinate maps `φ ∘ v_{ψ n}` and their
+derivatives converge to `φ ∘ v` and its derivative locally uniformly on `Ω \ Z`, `v` is a `C¹`
+solution on `Ω \ Z` of the Floer equation of the positive end, for the datum `H'_q dt` and the
+structures `J_q(±t)`, and the energy of `v` over `Ω \ Z` is finite and at most `E`. -/
+theorem exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset_comp_positiveEndChart
+    (hω : ω.IsNondegenerate) {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {q : Puncture}
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : Periodic (H q) 1)
+    (hHq : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
+    {Jq : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    (hJ : ∀ s t x, T₀ ≤ s → J (endChart q (q.endSign * s, t)) x = Jq t x)
+    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {Jq' : ℝ → V → AlmostComplexStructure V}
+    {W : Set (ℝ × V)} {D : Set (ℝ × ℝ)} {C : Set M} {t₀ : ℝ}
+    (hφ : ∀ x ∈ C, ∀ v w : TangentSpace I x,
+      ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
+    (hJJ' : ∀ t, ∀ x ∈ C,
+      IsComplexLinearMap (Jq t x) (Jq' t (φ x)) (mvfderiv I φ x).toLinearMap) (hW : IsOpen W)
+    (hJ' : ContDiffOn ℝ 2
+      (fun p : ℝ × V ↦ (Jq' p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hJt : ∀ t, ∀ x ∈ C, (hω.symplecticFormAt x).Tames (Jq t x))
+    (hD : IsCompact D) (hDT : D ⊆ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1)) (hC : IsCompact C)
+    (hCφ : C ⊆ φ.source) (hCW : univ ×ˢ (φ '' C) ⊆ W) :
+    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃R : ℕ → ℝ⦄ ⦃E : ℝ⦄,
+      IsOpen Ω → Ω ⊆ D → (∀ k, 0 ≤ R k) →
+      (∀ k, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) (u k) thricePuncturedSphereReal) →
+      (∀ k, ∀ z ∈ thricePuncturedSphereReal,
+        IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u k z))
+          (ω.perturbedMFDeriv (fun z x ↦ K (equivRealProdCLM.symm z) x 1)
+            (fun z x ↦ K (equivRealProdCLM.symm z) x Complex.I) (u k) z).toLinearMap) →
+      0 ≤ E →
+      (∀ k, ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ K (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (equivRealProdCLM.symm z) x Complex.I) (u k) z) ≤ ENNReal.ofReal E) →
+      (∀ k, MapsTo (fun z ↦ u k (positiveEndChart q (z + (R k, 0)))) Ω C) →
+      ∃ (ψ : ℕ → ℕ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → M), StrictMono ψ ∧
+        ↑Z ⊆ Ω ∧ Z.card * δ ≤ E ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity
+          (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
+          (fun z ↦ u (ψ n) (positiveEndChart q (z + (R (ψ n), 0)))) y) ∧
+        ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) C ∧
+        TendstoLocallyUniformlyOn
+          (fun n ↦ φ ∘ fun z ↦ u (ψ n) (positiveEndChart q (z + (R (ψ n), 0)))) (φ ∘ v) atTop
+          (Ω \ ↑Z) ∧
+        TendstoLocallyUniformlyOn
+          (fun n ↦ fderiv ℝ (φ ∘ fun z ↦ u (ψ n) (positiveEndChart q (z + (R (ψ n), 0)))))
+          (fderiv ℝ (φ ∘ v)) atTop (Ω \ ↑Z) ∧
+        (∀ z ∈ Ω \ ↑Z, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+          (Jq (q.endSign * z.2) (v z))
+          (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2) v
+            z).toLinearMap) ∧
+        IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
+          v) (Ω \ ↑Z) ∧
+        ∫ z in Ω \ ↑Z, ω.floerEnergyDensity (fun _ _ ↦ 0)
+          (fun w ↦ positiveEndHamiltonian H q w.2) v z ≤ E := by
+  obtain ⟨Wc, hWc, hDCW, hKt, hJc⟩ :=
+    exists_isOpen_and_contDiffOn_positiveEndHamiltonian_comp_symm hHq φ hW hJ' hCφ hCW (D := D)
+  obtain ⟨δ, hδ, hconv⟩ :=
+    hω.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset φ
+      (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ positiveEndHamiltonian H q w.2)
+      (J := fun z ↦ Jq (q.endSign * z.2)) (J' := fun z ↦ Jq' (q.endSign * z.2))
+      hφ (fun _ _ x hx ↦ hJJ' _ x hx) hWc contDiffOn_const hKt hJc hD hC hCφ hDCW
+      fun _ _ x hx ↦ hJt _ x hx
+  refine ⟨δ, hδ, fun Ω u R E hΩ hΩD hR hu hfl hE0 hE huC ↦ ?_⟩
+  -- The translated windows lie in the band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end
+  -- chart.
+  have hΩT (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) :
+      z + (R k, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1) := by
+    obtain ⟨h₁, h₂⟩ := hDT (hΩD hz)
+    refine ⟨?_, by simpa using h₂⟩
+    simp only [Prod.fst_add, mem_Ioi]
+    linarith [hR k, mem_Ioi.1 h₁]
+  have hvC (k : ℕ) :
+      ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) (fun z ↦ u k (positiveEndChart q (z + (R k, 0)))) Ω :=
+    (hu k).comp ((contDiff_positiveEndChart q _).comp
+      (contDiff_id.add contDiff_const)).contMDiff.contMDiffOn fun z hz ↦
+        positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt (hΩT k z hz).1)
+  have h (k : ℕ) :=
+    contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positiveEndChart_add hω hKH hH hHq
+      hJ hJt hΩ (hΩT k) ((hu k).of_le (WithTop.coe_le_coe.2 le_top)) (hfl k) hE0 (hE k) (huC k)
+  exact hconv hΩ hΩD hvC (fun k ↦ (h k).2.1) huC (fun k ↦ (h k).2.2.1) fun k ↦ (h k).2.2.2
 
 end SmoothTwoForm.IsNondegenerate
 
