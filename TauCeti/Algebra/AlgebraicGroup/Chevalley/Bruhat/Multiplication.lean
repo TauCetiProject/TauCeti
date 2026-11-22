@@ -10,7 +10,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 public import TauCeti.GroupTheory.DoubleCoset.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Intersection
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!

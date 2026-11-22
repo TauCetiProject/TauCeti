@@ -39,8 +39,6 @@ Combining `B(A) ∩ N(A) = T_D(A)` with `U(A) ∩ T_D(A) = ⊥` from `Chevalley.
   pointwise membership criterion for `B(A) ∩ N(A) = T(A)`.
 * `TauCeti.DynkinType.ChevalleyDatum.normal_borelSubgroup_subgroupOf_weylSubgroup`:
   `B(A) ∩ N(A)` is normal in `N(A)`.
-* `TauCeti.DynkinType.ChevalleyDatum.weylSubgroup_conj_torusPoints_mem_borelSubgroup`:
-  `D.weylSubgroup A` conjugates actual torus points into `D.borelSubgroup A`.
 * `TauCeti.DynkinType.ChevalleyDatum.weylProjection_eq_one_of_mem_borelSubgroup`:
   any element of `N(K)` lying in `B(K)` has trivial Weyl projection.
 
@@ -58,29 +56,6 @@ universe v
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 variable (A : Type v) [CommRing A]
-
-/-- Over any nontrivial commutative ring, if a product of pinned simple Weyl representatives
-equals an actual torus point times a positive point, then the Weyl word evaluates to `1` in the
-Weyl group. -/
-theorem geckWeylWordProd_eq_one_of_list_prod_eq_torusPoints_mul_positive [Nontrivial A]
-    {l : List (Fin t.rank)} {s : Fin t.rank → Aˣ} {u : D.points A}
-    (hu : u ∈ D.positivePoints A)
-    (h : (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod =
-      D.torusPoints A s * u) :
-    t.geckWeylWordProd ht l = 1 :=
-  D.geckWeylWordProd_eq_one_of_mem_borelSubgroup A l <| h ▸
-    mul_mem (D.range_torusPoints_le_borelSubgroup A ⟨s, rfl⟩)
-      (D.positivePoints_le_borelSubgroup A hu)
-
-/-- Conjugating any point of the actual weight-lattice torus by an element of `D.weylSubgroup A`
-stays inside `D.borelSubgroup A`. -/
-theorem weylSubgroup_conj_torusPoints_mem_borelSubgroup (w : D.weylSubgroup A)
-    (s : Fin t.rank → Aˣ) :
-    (w : D.points A) * D.torusPoints A s * (w : D.points A)⁻¹ ∈ D.borelSubgroup A :=
-  D.range_torusPoints_le_borelSubgroup A <|
-    (Subgroup.mem_normalizer_iff.mp
-      (D.weylSubgroup_le_normalizer_range_torusPoints A w.property)
-      (D.torusPoints A s)).mp ⟨s, rfl⟩
 
 /-- Over any commutative ring, the intersection of the Borel subgroup with the Weyl subgroup is
 the actual weight-lattice torus. -/

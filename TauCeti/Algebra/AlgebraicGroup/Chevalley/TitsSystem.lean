@@ -300,6 +300,14 @@ theorem titsSimpleReflection_mem_simple (i : Fin t.rank) :
 
 /-! ### Identification of the Tits Weyl group -/
 
+private theorem titsSystem_intersection_eq_comap :
+    (D.titsSystem K).intersection =
+      (((D.torusPoints K).range).subgroupOf (D.weylSubgroup K)).comap
+        (D.titsSubgroupNMulEquiv K).toMonoidHom := by
+  ext n
+  rw [D.mem_titsSystem_intersection_iff K n, Subgroup.mem_comap, MulEquiv.coe_toMonoidHom,
+    Subgroup.mem_subgroupOf, D.coe_titsSubgroupNMulEquiv K]
+
 /-- The canonical isomorphism between the Weyl group of `D.titsSystem K` and the Weyl group of the
 root datum. -/
 noncomputable def titsWeylGroupMulEquiv :
@@ -307,11 +315,7 @@ noncomputable def titsWeylGroupMulEquiv :
   (QuotientGroup.congr (D.titsSystem K).intersection
       (((D.torusPoints K).range).subgroupOf (D.weylSubgroup K))
       (D.titsSubgroupNMulEquiv K) (by
-        have h : (D.titsSystem K).intersection =
-            (((D.torusPoints K).range).subgroupOf (D.weylSubgroup K)).comap
-              (D.titsSubgroupNMulEquiv K).toMonoidHom :=
-          D.borelSubgroupOf_subgroupOf_weylSubgroupOf_eq K
-        rw [h]
+        rw [D.titsSystem_intersection_eq_comap K]
         exact Subgroup.map_comap_eq_self_of_surjective
           (D.titsSubgroupNMulEquiv K).surjective _)).trans
     (D.weylQuotientMulEquiv K)

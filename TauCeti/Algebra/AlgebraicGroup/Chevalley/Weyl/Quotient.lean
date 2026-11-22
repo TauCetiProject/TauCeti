@@ -325,7 +325,8 @@ theorem weylQuotientMulEquiv_symm_weylProjection (g : Nₖ) :
     (D.weylQuotientMulEquiv K).symm (D.weylProjection K g) =
       QuotientGroup.mk g := by
   rw [D.weylQuotientMulEquiv_symm_apply]
-  have hg : D.weylProjection K g = D.fieldQuotientProjection K (QuotientGroup.mk g) := rfl
+  have hg : D.weylProjection K g = D.fieldQuotientProjection K (QuotientGroup.mk g) := by
+    simp only [fieldQuotientProjection, QuotientGroup.lift_mk]
   rw [hg, ← MonoidHom.comp_apply, D.quotientSection_comp_fieldQuotientProjection K,
     MonoidHom.id_apply]
 
