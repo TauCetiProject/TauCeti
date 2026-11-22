@@ -176,31 +176,37 @@ private theorem exists_mem_stateSpace_apply_eq_of_isStarNormal_of_mem_spectrum (
   exact ⟨StrongDual.toWeakDual (ω : B →L[ℂ] ℂ), ω.toWeakDual_mem_stateSpace_iff.2 hnorm,
     by simpa using hp 0 1⟩
 
+private theorem isUnit_of_isUnit_mul_of_isUnit_mul {M : Type*} [Monoid M] {x y : M}
+    (h₁ : IsUnit (y * x)) (h₂ : IsUnit (x * y)) : IsUnit x := by
+  obtain ⟨u, hu⟩ := h₁
+  obtain ⟨v, hv⟩ := h₂
+  exact isUnit_iff_exists_and_exists.2
+    ⟨⟨y * ↑v⁻¹, by rw [← mul_assoc, ← hv, v.mul_inv]⟩,
+     ⟨↑u⁻¹ * y, by rw [mul_assoc, ← hu, u.inv_mul]⟩⟩
+
+private theorem exists_mem_stateSpace_apply_eq_zero_of_not_isUnit_star_mul_self {y : B}
+    (hy : ¬ IsUnit (star y * y)) : ∃ φ ∈ stateSpace B, φ y = 0 := by
+  have : IsStarNormal (star y * y) := (star_mul_self_nonneg y).isSelfAdjoint.isStarNormal
+  have h0 : (0 : ℂ) ∈ spectrum ℂ (star y * y) := by rw [spectrum.mem_iff]; simpa using hy
+  obtain ⟨φ, hφ, hφ0⟩ :=
+    exists_mem_stateSpace_apply_eq_of_isStarNormal_of_mem_spectrum (star y * y) h0
+  have hle : ‖φ y‖ ^ 2 ≤ 0 := by simpa [hφ0] using norm_apply_sq_le_of_mem_stateSpace hφ y
+  exact ⟨φ, hφ, norm_eq_zero.1 (sq_eq_zero_iff.1 (le_antisymm hle (sq_nonneg _)))⟩
+
 /-- **Spectral attainment by states.** For every element `b` of a unital C⋆-algebra `B`, every
 spectral value `z ∈ spectrum ℂ b` is attained by some state `φ ∈ stateSpace B`. -/
 theorem exists_mem_stateSpace_apply_eq_of_mem_spectrum (b : B) {z : ℂ}
     (hz : z ∈ spectrum ℂ b) : ∃ φ ∈ stateSpace B, φ b = z := by
   rw [spectrum.mem_iff] at hz
   set x : B := algebraMap ℂ B z - b
-  have hvanish {y : B} (hy : ¬ IsUnit (star y * y)) : ∃ φ ∈ stateSpace B, φ y = 0 := by
-    have : IsStarNormal (star y * y) := (star_mul_self_nonneg y).isSelfAdjoint.isStarNormal
-    have h0 : (0 : ℂ) ∈ spectrum ℂ (star y * y) := by rw [spectrum.mem_iff]; simpa using hy
-    obtain ⟨φ, hφ, hφ0⟩ :=
-      exists_mem_stateSpace_apply_eq_of_isStarNormal_of_mem_spectrum (star y * y) h0
-    have hle : ‖φ y‖ ^ 2 ≤ 0 := by simpa [hφ0] using norm_apply_sq_le_of_mem_stateSpace hφ y
-    exact ⟨φ, hφ, norm_eq_zero.1 (sq_eq_zero_iff.1 (le_antisymm hle (sq_nonneg _)))⟩
-  have hnot : ¬ IsUnit (star x * x) ∨ ¬ IsUnit (star (star x) * star x) := by
-    rw [← not_and_or]
-    rintro ⟨⟨u, hu⟩, ⟨v, hv⟩⟩
-    rw [star_star] at hv
-    have hl : (↑u⁻¹ * star x) * x = 1 := by rw [mul_assoc, ← hu, u.inv_mul]
-    have hr : x * (star x * ↑v⁻¹) = 1 := by rw [← mul_assoc, ← hv, v.mul_inv]
-    exact hz (isUnit_iff_exists_and_exists.2 ⟨⟨star x * ↑v⁻¹, hr⟩, ⟨↑u⁻¹ * star x, hl⟩⟩)
-  have ⟨φ, hφ, hφx⟩ : ∃ φ ∈ stateSpace B, φ x = 0 := by
-    rcases hnot with h1 | h2
-    · exact hvanish h1
-    · obtain ⟨φ, hφ, hφsx⟩ := hvanish h2
-      exact ⟨φ, hφ, star_eq_zero.1 ((map_star_of_mem_stateSpace hφ x).symm.trans hφsx)⟩
+  obtain ⟨φ, hφ, hφx⟩ : ∃ φ ∈ stateSpace B, φ x = 0 := by
+    by_cases h₁ : IsUnit (star x * x)
+    · by_cases h₂ : IsUnit (x * star x)
+      · exact absurd (isUnit_of_isUnit_mul_of_isUnit_mul h₁ h₂) hz
+      · obtain ⟨φ, hφ, hφsx⟩ := exists_mem_stateSpace_apply_eq_zero_of_not_isUnit_star_mul_self
+          (y := star x) (by simpa [star_star] using h₂)
+        exact ⟨φ, hφ, star_eq_zero.1 ((map_star_of_mem_stateSpace hφ x).symm.trans hφsx)⟩
+    · exact exists_mem_stateSpace_apply_eq_zero_of_not_isUnit_star_mul_self h₁
   refine ⟨φ, hφ, ?_⟩
   have hsub : z - φ b = 0 := by
     simpa [x, map_sub, Algebra.algebraMap_eq_smul_one, map_smul, map_one_of_mem_stateSpace hφ]

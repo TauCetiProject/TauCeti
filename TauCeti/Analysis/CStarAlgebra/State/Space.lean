@@ -93,8 +93,8 @@ theorem inv_norm_toStrongDual_smul_mem_stateSpace_of_map_nonneg_of_ne_zero
     ‖toStrongDual φ‖⁻¹ • φ ∈ stateSpace A := by
   have hnorm : 0 < ‖toStrongDual φ‖ := by simp [hφ]
   refine mem_stateSpace_iff.2 ⟨fun a ha => smul_nonneg (inv_nonneg.2 hnorm.le) (hpos a ha), ?_⟩
-  rw [WeakDual.real_smul_eq_coe_smul, map_smul, norm_smul, RCLike.norm_ofReal,
-    abs_of_nonneg (inv_nonneg.2 hnorm.le), inv_mul_cancel₀ hnorm.ne']
+  rw [WeakDual.real_smul_eq_coe_smul]
+  simp [norm_smul, hnorm.ne']
 
 /-- If `0 ≤ φ a` for every state `φ` of `A`, then `0 ≤ φ a` for every positive functional
 `φ : WeakDual ℂ A`. -/
