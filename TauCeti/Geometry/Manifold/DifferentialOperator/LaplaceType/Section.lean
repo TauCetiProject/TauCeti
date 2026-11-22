@@ -38,7 +38,7 @@ covector.
   most one keep the Laplace type.
 * `TauCeti.IsSectionLaplaceType.unique`: over a manifold of positive dimension, the constant is
   determined by the operator as soon as some fibre over an interior point is nonzero.
-* `TauCeti.IsSectionLaplaceType.bijective_sectionPrincipalSymbol`: operators of Laplace type are
+* `TauCeti.IsSectionLaplaceType.sectionPrincipalSymbol_bijective`: operators of Laplace type are
   elliptic.
 
 ## References
@@ -137,7 +137,7 @@ theorem IsSectionLaplaceType.unique [Nontrivial E] {x : M} (hx : I.IsInteriorPoi
 
 /-- **Operators of Laplace type are elliptic**: at every nonzero covector `ξ` at an interior point,
 the principal symbol `-(c ‖ξ‖²) Id` is bijective. -/
-theorem IsSectionLaplaceType.bijective_sectionPrincipalSymbol (hP : IsSectionLaplaceType P c)
+theorem IsSectionLaplaceType.sectionPrincipalSymbol_bijective (hP : IsSectionLaplaceType P c)
     {x : M} (hx : I.IsInteriorPoint x) {ξ : TangentSpace I x →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
     Function.Bijective (sectionPrincipalSymbol I hx P ξ) := by
   have hξ := (norm_pos_iff (E := TangentSpace I x →L[ℝ] ℝ)).2 hξ

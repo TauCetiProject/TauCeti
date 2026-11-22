@@ -37,7 +37,7 @@ symbols multiply under composition, and the principal symbol of the formal adjoi
 fibrewise adjoint of that of `D` (`LinearMap.IsFormalAdjoint.inner_sectionPrincipalSymbol_apply`),
 so `σ_geom(D* D)(ξ) = -σ(ξ)* σ(ξ) = -‖ξ‖² Id`. In particular the principal symbol of an operator of
 Dirac type is injective at every nonzero covector
-(`TauCeti.IsDiracType.injective_sectionPrincipalSymbol`).
+(`TauCeti.IsDiracType.sectionPrincipalSymbol_injective`).
 
 ## Main definitions
 
@@ -46,7 +46,7 @@ Dirac type is injective at every nonzero covector
 ## Main results
 
 * `TauCeti.isDiracType_iff_inner_add_inner`: the polarized form of the Clifford relation.
-* `TauCeti.IsDiracType.injective_sectionPrincipalSymbol`: the principal symbol of an operator of
+* `TauCeti.IsDiracType.sectionPrincipalSymbol_injective`: the principal symbol of an operator of
   Dirac type is injective at every nonzero covector.
 * `TauCeti.IsDiracType.isSectionLaplaceType_comp`: if `D` is of Dirac type and the first-order
   operator `Q` is a formal adjoint of `D`, then `Q ∘ D` is of Laplace type with constant `1`.
@@ -132,8 +132,8 @@ theorem isDiracType_iff_inner_add_inner : IsDiracType D ↔
     linear_combination hξ / 2
 
 /-- **The symbol of an operator of Dirac type is injective** at every nonzero covector at an
-interior point: `‖σ(ξ) v‖ = ‖ξ‖ ‖v‖`. -/
-theorem IsDiracType.injective_sectionPrincipalSymbol (hD : IsDiracType D) {x : M}
+interior point, since `‖σ(ξ) v‖ = ‖ξ‖ ‖v‖`. -/
+theorem IsDiracType.sectionPrincipalSymbol_injective (hD : IsDiracType D) {x : M}
     (hx : I.IsInteriorPoint x) {ξ : TangentSpace I x →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
     Function.Injective (sectionPrincipalSymbol I hx D ξ) := by
   rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
