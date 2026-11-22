@@ -17,7 +17,7 @@ closed ball `closedBall w r` lies in `{y | ⟪y, ν⟫ < c}` whenever `⟪w, ν�
 (`TauCeti.closedBall_subset_setOf_inner_lt`) and in `{y | c < ⟪y, ν⟫}` whenever
 `c + r * ‖ν‖ < ⟪w, ν⟫` (`TauCeti.closedBall_subset_setOf_lt_inner`). Relative to an
 orthonormal basis `(eᵢ)`, a bilinear form splits into a part along `ν` and a part along the
-projected basis vectors `eᵢ - (⟪eᵢ, ν⟫ / ‖ν‖²) ν`. In rigid coordinates
+basis vectors projected onto `(ℝ ∙ ν)ᗮ`. In rigid coordinates
 `e : F ≃ᵃⁱ ℝ × E`, the normal coordinate `(e x).fst` is `⟪x, ν⟫` plus a constant, so the region
 where it is positive is a half-space.
 -/
@@ -79,50 +79,51 @@ open scoped InnerProductSpace
 /-- Splitting a bilinear form along `ν` and the subspace orthogonal to it: for an orthonormal
 basis `(eᵢ)`,
 `B(g, w) = ⟪g, ν⟫ ∑ⱼ B(ν', eⱼ) ⟪w, eⱼ⟫ + ∑ᵢ ∑ⱼ ⟪g, P eᵢ⟫ B(eᵢ, eⱼ) ⟪w, eⱼ⟫`, where
-`ν' = ν / ‖ν‖²` and `P z = z - (⟪z, ν⟫ / ‖ν‖²) ν`. -/
+`ν' = ν / ‖ν‖²` and `P` is the orthogonal projection onto `(ℝ ∙ ν)ᗮ`. -/
 theorem bilin_eq_inner_mul_sum_add_sum_sum {ι E : Type*} [Fintype ι] [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] (b : OrthonormalBasis ι ℝ E) (B : E →L[ℝ] E →L[ℝ] ℝ)
     (ν g w : E) :
     B g w = ⟪g, ν⟫_ℝ * ∑ j, B ((‖ν‖ ^ 2)⁻¹ • ν) (b j) * ⟪w, b j⟫_ℝ +
-      ∑ i, ∑ j, ⟪g, b i - (⟪b i, ν⟫_ℝ / ‖ν‖ ^ 2) • ν⟫_ℝ * (B (b i) (b j) * ⟪w, b j⟫_ℝ) := by
+      ∑ i, ∑ j, ⟪g, (ℝ ∙ ν)ᗮ.starProjection (b i)⟫_ℝ * (B (b i) (b j) * ⟪w, b j⟫_ℝ) := by
   have hw : ∀ p, B p w = ∑ j, B p (b j) * ⟪w, b j⟫_ℝ := fun p => by
     conv_lhs => rw [← b.sum_repr' w]
     simp only [map_sum, map_smul, smul_eq_mul, real_inner_comm, mul_comm]
-  have hν : ∑ i, (⟪b i, ν⟫_ℝ / ‖ν‖ ^ 2 * ⟪g, ν⟫_ℝ) • b i = (⟪g, ν⟫_ℝ / ‖ν‖ ^ 2) • ν := by
-    have h := congrArg (fun z => (⟪g, ν⟫_ℝ / ‖ν‖ ^ 2) • z) (b.sum_repr' ν)
-    simp only [Finset.smul_sum, smul_smul] at h
-    rw [← h]
-    exact Finset.sum_congr rfl fun i _ => by congr 1; ring
+  -- `g` is its projection `⟪g, ν⟫ ν'` onto `ℝ ∙ ν` plus its projection onto `(ℝ ∙ ν)ᗮ`, and the
+  -- latter has coordinates `⟪g, P eᵢ⟫` because the projection is self-adjoint.
   have hg : ⟪g, ν⟫_ℝ • (‖ν‖ ^ 2)⁻¹ • ν +
-      ∑ i, ⟪g, b i - (⟪b i, ν⟫_ℝ / ‖ν‖ ^ 2) • ν⟫_ℝ • b i = g := by
-    have hsum : ∑ i, ⟪g, b i⟫_ℝ • b i = g := by
-      simpa only [real_inner_comm] using b.sum_repr' g
-    simp only [inner_sub_right, real_inner_smul_right, sub_smul, Finset.sum_sub_distrib, hν]
-    rw [hsum, smul_smul, div_eq_mul_inv]
-    abel
+      ∑ i, ⟪g, (ℝ ∙ ν)ᗮ.starProjection (b i)⟫_ℝ • b i = g := by
+    have hP : ∀ i, ⟪g, (ℝ ∙ ν)ᗮ.starProjection (b i)⟫_ℝ =
+        ⟪b i, (ℝ ∙ ν)ᗮ.starProjection g⟫_ℝ := fun i => by
+      rw [← Submodule.inner_starProjection_left_eq_right, real_inner_comm]
+    simp only [hP, b.sum_repr']
+    conv_rhs => rw [← (ℝ ∙ ν).starProjection_add_starProjection_orthogonal g]
+    rw [Submodule.starProjection_singleton, RCLike.ofReal_real_eq_id, id_eq, smul_smul,
+      div_eq_mul_inv, real_inner_comm]
   conv_lhs => rw [← hg]
   simp [hw, Finset.mul_sum, mul_assoc]
 
 /-- **The normal part of a bilinear form.** For an orthonormal basis `(eᵢ)`, subtracting the
 tangential parts `∑ⱼ B(ν', eⱼ) ⟪g, P eⱼ⟫` from `∑ⱼ B(ν', eⱼ) ⟪g, eⱼ⟫` leaves `B(ν', ν') ⟪g, ν⟫`,
-where `ν' = ν / ‖ν‖²` and `P z = z - (⟪z, ν⟫ / ‖ν‖²) ν`. -/
+where `ν' = ν / ‖ν‖²` and `P` is the orthogonal projection onto `(ℝ ∙ ν)ᗮ`. -/
 theorem sum_smul_inner_sub_sum_smul_inner_proj {ι E : Type*} [Fintype ι] [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] (b : OrthonormalBasis ι ℝ E) (B : E →L[ℝ] E →L[ℝ] ℝ) (ν g : E) :
     (∑ j, B ((‖ν‖ ^ 2)⁻¹ • ν) (b j) • ⟪g, b j⟫_ℝ) -
-      ∑ j, B ((‖ν‖ ^ 2)⁻¹ • ν) (b j) • ⟪g, b j - (⟪b j, ν⟫_ℝ / ‖ν‖ ^ 2) • ν⟫_ℝ =
+      ∑ j, B ((‖ν‖ ^ 2)⁻¹ • ν) (b j) • ⟪g, (ℝ ∙ ν)ᗮ.starProjection (b j)⟫_ℝ =
       B ((‖ν‖ ^ 2)⁻¹ • ν) ((‖ν‖ ^ 2)⁻¹ • ν) * ⟪g, ν⟫_ℝ := by
   set ν' : E := (‖ν‖ ^ 2)⁻¹ • ν
-  have hν'sum : ∑ j, (⟪b j, ν⟫_ℝ / ‖ν‖ ^ 2) • b j = ν' := by
-    simp only [ν', div_eq_inv_mul, ← smul_smul, ← Finset.smul_sum, b.sum_repr']
-  have hν' : ∑ j, B ν' (b j) * (⟪b j, ν⟫_ℝ / ‖ν‖ ^ 2) = B ν' ν' := by
-    calc ∑ j, B ν' (b j) * (⟪b j, ν⟫_ℝ / ‖ν‖ ^ 2)
-        = B ν' (∑ j, (⟪b j, ν⟫_ℝ / ‖ν‖ ^ 2) • b j) := by
-          simp only [map_sum, map_smul, smul_eq_mul, mul_comm]
-      _ = B ν' ν' := by rw [hν'sum]
-  simp only [inner_sub_right, real_inner_smul_right, smul_eq_mul, mul_sub, Finset.sum_sub_distrib]
-  rw [← hν', Finset.sum_mul]
-  simp only [sub_sub_cancel]
-  exact Finset.sum_congr rfl fun j _ => by ring
+  -- `⟪g, eⱼ⟫ - ⟪g, P eⱼ⟫ = ⟪(ℝ ∙ ν).starProjection g, eⱼ⟫ = ⟪g, ν⟫ ⟪ν', eⱼ⟫`.
+  have hg : (ℝ ∙ ν).starProjection g = ⟪g, ν⟫_ℝ • ν' := by
+    rw [Submodule.starProjection_singleton, RCLike.ofReal_real_eq_id, id_eq, smul_smul,
+      div_eq_mul_inv, real_inner_comm]
+  have hν' : ∑ j, B ν' (b j) * ⟪ν', b j⟫_ℝ = B ν' ν' := by
+    conv_rhs => enter [2]; rw [← b.sum_repr' ν']
+    simp only [map_sum, map_smul, smul_eq_mul, real_inner_comm, mul_comm]
+  rw [← Finset.sum_sub_distrib, ← hν', Finset.sum_mul]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [smul_eq_mul, smul_eq_mul, ← mul_sub, ← inner_sub_right,
+    Submodule.starProjection_orthogonal_val, sub_sub_cancel,
+    ← Submodule.inner_starProjection_left_eq_right, hg, real_inner_smul_left]
+  ring
 
 end OrthonormalBasis
 

@@ -118,12 +118,11 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam c : ℝ} {K : ℝ≥0} {ν : EuclideanSpace ℝ ι}
 
 omit [DecidableEq ι] in
-/-- Splitting the gradient of a test function `φ` along `ν` and the hyperplane orthogonal to `ν`
-(`P z = z - (⟪z, ν⟫ / ‖ν‖²) ν`) turns the energy form `a(u, φ)` into the sum of the normal term
-`∫ (∂_ν φ) ∑ⱼ ⟪ν', a eⱼ⟫ ∂ⱼu` and the tangential terms `∑ᵢⱼ ∫ (∂_{P eᵢ} φ) aⁱʲ ∂ⱼu`. -/
+/-- Splitting the gradient of a test function `φ` along `ν` and the subspace orthogonal to `ν`
+(with `P` the orthogonal projection onto `(ℝ ∙ ν)ᗮ`) turns the energy form `a(u, φ)` into the
+sum of the normal term `∫ (∂_ν φ) ∑ⱼ ⟪ν', a eⱼ⟫ ∂ⱼu` and the tangential terms
+`∑ᵢⱼ ∫ (∂_{P eᵢ} φ) aⁱʲ ∂ⱼu`. -/
 private theorem setIntegral_energyFormH1_split
-    {P : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
-    (hP : ∀ z, P z = z - (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • ν)
     {U : W1p mu Omega 2} {f : Lp ℝ 2 (mu.restrict Omega)}
     (hloc : ∀ p j, LocallyIntegrableOn (fun x => matrixBilinearForm (a x) p
       (EuclideanSpace.basisFun ι ℝ j) •
@@ -135,13 +134,14 @@ private theorem setIntegral_energyFormH1_split
       ∑ j, matrixBilinearForm (a x) ((‖ν‖ ^ 2)⁻¹ • ν) (EuclideanSpace.basisFun ι ℝ j) •
         ⟪W1p.gradient U x, EuclideanSpace.basisFun ι ℝ j⟫_ℝ ∂mu +
       ∑ i, ∑ j, ∫ x, lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x
-        (P (EuclideanSpace.basisFun ι ℝ i)) •
+        ((ℝ ∙ ν)ᗮ.starProjection (EuclideanSpace.basisFun ι ℝ i)) •
         (matrixBilinearForm (a x) (EuclideanSpace.basisFun ι ℝ i)
           (EuclideanSpace.basisFun ι ℝ j) •
           ⟪W1p.gradient U x, EuclideanSpace.basisFun ι ℝ j⟫_ℝ) ∂mu =
       ∫ x in Omega, f x * φ x ∂mu := by
   set b := EuclideanSpace.basisFun ι ℝ
   set ν' : EuclideanSpace ℝ ι := (‖ν‖ ^ 2)⁻¹ • ν
+  set P := (ℝ ∙ ν)ᗮ.starProjection
   have hφ : Differentiable ℝ (φ : EuclideanSpace ℝ ι → ℝ) := φ.contDiff.differentiable (by simp)
   have hW := locallyIntegrableOn_finsetSum Finset.univ fun j _ => hloc ν' j
   have hI : ∀ (v p : EuclideanSpace ℝ ι) j, Integrable (fun x =>
@@ -162,7 +162,7 @@ private theorem setIntegral_energyFormH1_split
     rw [W1p.gradient_ofTestFunctionₗ, hx,
       b.bilin_eq_inner_mul_sum_add_sum_sum (matrixBilinearForm (a x)) ν]
     simp only [inner_gradient_left, (hφ x).lineDeriv_eq_fderiv, smul_eq_mul, Finset.mul_sum,
-      hP, ν']
+      ν', P]
   rw [← hU φ, energyFormH1_zero_zero_eq_setIntegral, hpt,
     integral_add hIW.integrableOn (integrable_finsetSum _ fun i _ =>
       integrable_finsetSum _ fun j _ => (hI (P (b i)) (b i) j).integrableOn),
@@ -178,7 +178,7 @@ private theorem setIntegral_energyFormH1_split
 omit [DecidableEq ι] in
 /-- **The equation gives a normal derivative.** Let `u ∈ H¹(Ω)` satisfy `a(u, φ) = ∫_Ω f φ` for
 every test function `φ`, where `a` is the energy form of a coefficient field continuous on `Ω`.
-Let `ν' = ν / ‖ν‖²` and let `P z = z - (⟪z, ν⟫ / ‖ν‖²) ν` be the projection onto the hyperplane
+Let `ν' = ν / ‖ν‖²` and let `P` be the orthogonal projection onto the subspace `(ℝ ∙ ν)ᗮ`
 orthogonal to `ν`. If each product `aⁱʲ ∂ⱼu` has a weak derivative `Gᵢⱼ` in the tangential
 direction `P eᵢ`, then `∑ⱼ ⟪ν', a eⱼ⟫ ∂ⱼu` has the weak derivative `-(f + ∑ᵢⱼ Gᵢⱼ)` in the
 direction `ν`. -/
@@ -191,14 +191,13 @@ private theorem hasWeakLineDerivOn_sum_smul_inner_gradient
     (hG : ∀ i j, HasWeakLineDerivOn mu Omega
       (fun x => matrixBilinearForm (a x) (EuclideanSpace.basisFun ι ℝ i)
           (EuclideanSpace.basisFun ι ℝ j) • ⟪W1p.gradient U x, EuclideanSpace.basisFun ι ℝ j⟫_ℝ)
-      (G i j) (EuclideanSpace.basisFun ι ℝ i -
-        (⟪EuclideanSpace.basisFun ι ℝ i, ν⟫_ℝ / ‖ν‖ ^ 2) • ν)) :
+      (G i j) ((ℝ ∙ ν)ᗮ.starProjection (EuclideanSpace.basisFun ι ℝ i))) :
     HasWeakLineDerivOn mu Omega (fun x => ∑ j, matrixBilinearForm (a x) ((‖ν‖ ^ 2)⁻¹ • ν)
         (EuclideanSpace.basisFun ι ℝ j) • ⟪W1p.gradient U x, EuclideanSpace.basisFun ι ℝ j⟫_ℝ)
       (fun x => -(f x + ∑ i, ∑ j, G i j x)) ν := by
   set b := EuclideanSpace.basisFun ι ℝ
   set ν' : EuclideanSpace ℝ ι := (‖ν‖ ^ 2)⁻¹ • ν
-  set P : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι := fun z => z - (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • ν
+  set P := (ℝ ∙ ν)ᗮ.starProjection
   have hΩ : IsLocallyClosed (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.isLocallyClosed
   have hloc : ∀ p j, LocallyIntegrableOn (fun x => matrixBilinearForm (a x) p (b j) •
       ⟪W1p.gradient U x, b j⟫_ℝ) Omega mu := fun p j => by
@@ -213,8 +212,8 @@ private theorem hasWeakLineDerivOn_sum_smul_inner_gradient
     Lp.locallyIntegrableOn f (by norm_num)
   refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hW, (hfloc.add hGloc).neg,
     fun φ => ?_⟩
-  -- The weak equation, with the gradient of `φ` split along `ν` and the hyperplane.
-  have heq := setIntegral_energyFormH1_split (P := P) (fun z => rfl) hloc hU φ
+  -- The weak equation, with the gradient of `φ` split along `ν` and `(ℝ ∙ ν)ᗮ`.
+  have heq := setIntegral_energyFormH1_split (ν := ν) hloc hU φ
   -- Each tangential term moves its derivative onto the coefficient product.
   have htan : ∀ i j, ∫ x, lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x (P (b i)) •
       (matrixBilinearForm (a x) (b i) (b j) • ⟪W1p.gradient U x, b j⟫_ℝ) ∂mu =
@@ -224,7 +223,7 @@ private theorem hasWeakLineDerivOn_sum_smul_inner_gradient
     fun i j => φ.integrable_smul (hG i j).locallyIntegrableOn_deriv
   have hR := TestFunction.neg_integral_smul_neg_add_eq φ hfloc hIG
   rw [hR, ← heq]
-  simp only [b] at htan ⊢
+  simp only [b, P] at htan ⊢
   simp only [htan, Finset.sum_neg_distrib]
   ring
 
@@ -402,12 +401,6 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal
     have h1 := mul_le_mul_of_nonneg_left (mul_le_of_le_one_left hM (hPb j)) ha.upper_nonneg
     have h2 := mul_le_mul_of_nonneg_left (hPb j) hgK
     linarith)
-  -- `hasWeakLineDerivOn_sum_smul_inner_gradient` and `sum_smul_inner_sub_sum_smul_inner_proj`
-  -- state `P` by its formula `P z = z - (⟪z, e⟫ / ‖e‖²) e`.
-  have hPeq : ∀ z, P z = z - (⟪z, e⟫_ℝ / ‖e‖ ^ 2) • e := fun z => by
-    rw [Submodule.starProjection_orthogonal_val, Submodule.starProjection_singleton,
-      RCLike.ofReal_real_eq_id, id_eq, real_inner_comm]
-  simp only [hPeq] at hG hT
   -- The normal derivative of `W = ∑ⱼ ⟪e, a eⱼ⟫ ∂ⱼu`, from the equation.
   have hW := hasWeakLineDerivOn_sum_smul_inner_gradient
     (fun p q => (lipschitzOnWith_matrixBilinearForm_apply_apply hK p q).continuousOn)
