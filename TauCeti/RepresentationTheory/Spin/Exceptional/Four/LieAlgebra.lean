@@ -10,9 +10,8 @@ public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Representatio
 public import TauCeti.RepresentationTheory.Spin.Structure
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Characterization
-import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Four
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.MatrixProd
-import TauCeti.RepresentationTheory.Spin.Dimension
+import TauCeti.LinearAlgebra.Dimension.Basis
 import TauCeti.RepresentationTheory.Spin.Polarization.Faithful
 
 /-!
@@ -35,7 +34,7 @@ In particular each half-spin action alone has image `sl₂`; it is not faithful,
 factor acts on it trivially. This is the Lie-algebra counterpart of the group isomorphism
 `exists_spinGroup_mulEquiv_specialLinearGroup_prod_and_halfSpin_equiv_stdSLRep_of_finrank_eq_four`
 in `TauCeti`, and it is the restriction of the same matrix model of the even Clifford algebra
-(`typeDHalfSpinLieEquivSlProdSl_apply_eq_evenCliffordEquivProdEnd`).
+(`typeDHalfSpinLieEquivSlProdSl_apply_eq_evenCliffordEquivProdEnd_trans_toMatrix`).
 
 ## The argument
 
@@ -43,11 +42,11 @@ The even structure theorem `TauCeti.SpinPolarizationData.evenCliffordEquivProdEn
 even Clifford algebra with `End S⁺ × End S⁻`, and in matrices with `M₂ × M₂`. In this model
 reversal is adjugation in both factors (`map_reverseEven_eq_adjugate_prod_of_finrank_eq_four`),
 and a `2 × 2` matrix `A` has adjugate `tr A • 1 - A`. So an even element is negated by reversal
-exactly when both of its half-spin actions have trace zero. Quadratic Clifford elements are negated
-by reversal, which gives the trace condition. Conversely, an even element negated by reversal has
-odd commutators with vectors that are fixed by reversal; in dimension four these are vectors
-(`mem_range_ι_of_mem_evenOdd_one_of_reverse_eq_of_finrank_le_four`), so the element is quadratic
-(`mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_range_ι`). The paired
+exactly when both of its half-spin actions have trace zero
+(`reverseEven_eq_neg_iff_trace_eq_zero_prod_of_finrank_eq_four`). Quadratic Clifford elements are
+negated by reversal, which gives the trace condition. Conversely, in dimension four an even element
+negated by reversal is quadratic
+(`mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_finrank_le_four`). The paired
 action is injective in every rank
 (`TauCeti.SpinPolarizationData.typeDSpinPlusLieRep_prod_typeDSpinMinusLieRep_injective`).
 
@@ -64,7 +63,8 @@ All declarations are in the namespace `TauCeti.SpinPolarizationData`.
   `mem_range_typeDSpinMinusLieRep_iff_of_card_eq_two`: each half-spin image is `sl₂`.
 * `typeDHalfSpinLieEquivSlProdSl`: the Lie algebra isomorphism `so₄ ≃ sl₂ × sl₂` given by the
   matrices of the two half-spin actions.
-* `typeDHalfSpinLieEquivSlProdSl_apply_eq_evenCliffordEquivProdEnd`: this isomorphism is the
+* `typeDHalfSpinLieEquivSlProdSl_apply_eq_evenCliffordEquivProdEnd_trans_toMatrix`: this
+  isomorphism is the
   matrix model of the even Clifford algebra, applied to the quadratic Clifford realization.
 * `typeDSpinPlusLieModuleEquivStd` and `typeDSpinMinusLieModuleEquivStd`: through this
   isomorphism, `S⁺` and `S⁻` are the standard modules of the first and second factor `sl₂`.
@@ -95,65 +95,24 @@ omit [Invertible (2 : K)] [DecidableEq ι] in
 include b hline in
 private theorem finrank_eq_four_of_card_eq_two (hι : Fintype.card ι = 2) : finrank K V = 4 := by
   classical
-  rw [finrank_eq_card_basis (P.typeDBasis b hline), Fintype.card_sum, hι]
+  rw [finrank_eq_two_mul_card_of_basis_sum (P.typeDBasis b hline), hι]
 
-omit [DecidableEq ι] in
-include b in
 /-- In dimension four, an even Clifford element is negated by reversal exactly when it acts on both
-half-spin modules by trace-zero endomorphisms: in the matrix model `M₂ × M₂`, reversal is
-adjugation, and `adjugate A = tr A • 1 - A`. -/
-private theorem reverseEven_eq_neg_iff_trace_eq_zero (hι : Fintype.card ι = 2) (z : even Q) :
+half-spin modules by trace-zero endomorphisms: this is
+`reverseEven_eq_neg_iff_trace_eq_zero_prod_of_finrank_eq_four` in the matrix model
+`evenCliffordEquivProdMatrix`. -/
+private theorem reverseEven_eq_neg_iff_trace_eq_zero (hV : finrank K V = 4) (z : even Q) :
     reverseEven Q z = -z ↔
       LinearMap.trace K (spinPlus Q P) (spinPlusAction Q P hline z) = 0 ∧
         LinearMap.trace K (spinMinus Q P) (spinMinusAction Q P hline z) = 0 := by
-  have hV := P.finrank_eq_four_of_card_eq_two b hline hι
   have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
-  have : FiniteDimensional K P.W := b.finiteDimensional_of_finite
-  have hW : finrank K P.W = 2 := by rw [finrank_eq_card_basis b, hι]
-  have hplus : finrank K (spinPlus Q P) = 2 := by rw [finrank_spinPlus P, hW]; rfl
-  have hminus : finrank K (spinMinus Q P) = 2 := by
-    rw [finrank_spinMinus P (Submodule.finrank_eq_zero.not.1 (by omega)), hW]; rfl
-  let B := Module.finBasisOfFinrankEq K (spinPlus Q P) hplus
-  let B' := Module.finBasisOfFinrankEq K (spinMinus Q P) hminus
-  let e := (P.evenCliffordEquivProdEnd hline).trans
-    ((LinearMap.toMatrixAlgEquiv B).prodCongr (LinearMap.toMatrixAlgEquiv B'))
-  have he (y : even Q) : e y = (LinearMap.toMatrix B B (spinPlusAction Q P hline y),
-      LinearMap.toMatrix B' B' (spinMinusAction Q P hline y)) := by
-    simp only [e, AlgEquiv.trans_apply, AlgEquiv.prodCongr_apply,
-      P.evenCliffordEquivProdEnd_apply, evenSpinActionProd_apply,
-      LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply,
-      Equiv.prodCongr_apply, Prod.map_apply, AlgEquiv.coe_toEquiv]
-  have h := map_reverseEven_eq_adjugate_prod_of_finrank_eq_four Q
-    (P.nondegenerate_of_line_eq_bot hline) hV e z
-  rw [← e.injective.eq_iff, h, map_neg, he, Prod.neg_mk, Prod.mk.injEq,
-    Matrix.adjugate_fin_two_eq_trace_smul_one_sub, Matrix.adjugate_fin_two_eq_trace_smul_one_sub,
-    sub_eq_neg_self, sub_eq_neg_self, smul_eq_zero, smul_eq_zero,
-    LinearMap.trace_eq_matrix_trace K B, LinearMap.trace_eq_matrix_trace K B']
-  simp
-
-omit [DecidableEq ι] in
-include b hline in
-/-- In dimension four, an even Clifford element negated by reversal is quadratic: its commutator
-with a vector is odd and fixed by reversal, hence a vector. -/
-private theorem mem_quadraticLieSubalgebra_of_reverseEven_eq_neg (hι : Fintype.card ι = 2)
-    {z : even Q} (hz : reverseEven Q z = -z) :
-    (z : CliffordAlgebra Q) ∈ quadraticLieSubalgebra Q := by
-  have hV := P.finrank_eq_four_of_card_eq_two b hline hι
-  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
-  have hrev : reverse (z : CliffordAlgebra Q) = -z := by
-    simpa using congrArg Subtype.val hz
-  have hz0 : (z : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
-    rw [← even_toSubmodule]
-    exact z.property
-  refine mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_range_ι Q
-    (P.nondegenerate_of_line_eq_bot hline) z.property hrev fun v ↦ ?_
-  refine mem_range_ι_of_mem_evenOdd_one_of_reverse_eq_of_finrank_le_four Q hV.le ?_ ?_
-  · rw [Ring.lie_def]
-    exact Submodule.sub_mem _
-      (by simpa using SetLike.mul_mem_graded hz0 (ι_mem_evenOdd_one Q v))
-      (by simpa using SetLike.mul_mem_graded (ι_mem_evenOdd_one Q v) hz0)
-  · rw [Ring.lie_def, map_sub, reverse.map_mul, reverse.map_mul, reverse_ι, hrev, mul_neg, neg_mul,
-      sub_neg_eq_add, neg_add_eq_sub]
+  have hW : P.W ≠ ⊥ := Submodule.nontrivial_iff_ne_bot.mp <|
+    Module.nontrivial_of_finrank_eq_succ (P.finrank_W_eq_of_finrank_eq_two_mul (l := 2) hV)
+  rw [reverseEven_eq_neg_iff_trace_eq_zero_prod_of_finrank_eq_four Q
+      (P.nondegenerate_of_line_eq_bot hline) hV (P.evenCliffordEquivProdMatrix (l := 2) hW hV),
+    evenCliffordEquivProdMatrix_apply, Algebra.endAlgEquivMatrix_apply,
+    Algebra.endAlgEquivMatrix_apply, ← LinearMap.trace_eq_matrix_trace,
+    ← LinearMap.trace_eq_matrix_trace]
 
 include b in
 /-- Both half-spin actions of an element of `so₄` have trace zero, since its quadratic Clifford
@@ -164,7 +123,8 @@ private theorem trace_typeDSpinLieRep_eq_zero_of_card_eq_two (hι : Fintype.card
       LinearMap.trace K (spinMinus Q P) (P.typeDSpinMinusLieRep b hline x) = 0 := by
   have h := P.evenSpinActionProd_typeDQuadraticEquiv b hline x
   rw [evenSpinActionProd_apply, Prod.mk.injEq] at h
-  rw [← h.1, ← h.2, ← P.reverseEven_eq_neg_iff_trace_eq_zero b hline hι]
+  rw [← h.1, ← h.2,
+    ← P.reverseEven_eq_neg_iff_trace_eq_zero hline (P.finrank_eq_four_of_card_eq_two b hline hι)]
   exact Subtype.ext (by simp)
 
 /-! ### The image of `so₄` in `End S⁺ × End S⁻` -/
@@ -195,12 +155,14 @@ theorem mem_range_typeDSpinPlusLieRep_prod_typeDSpinMinusLieRep_iff_of_card_eq_t
   refine ⟨fun ⟨x, hx⟩ ↦ ?_, fun hf ↦ ?_⟩
   · rw [LieHom.prod_apply, Prod.mk.injEq] at hx
     exact hx.1 ▸ hx.2 ▸ P.trace_typeDSpinLieRep_eq_zero_of_card_eq_two b hline hι x
-  have : FiniteDimensional K V := Module.finite_of_finrank_pos
-    (by rw [P.finrank_eq_four_of_card_eq_two b hline hι]; omega)
+  have hV := P.finrank_eq_four_of_card_eq_two b hline hι
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   obtain ⟨z, hz⟩ := evenSpinActionProd_surjective P hline (f, f')
   rw [evenSpinActionProd_apply, Prod.mk.injEq] at hz
-  have hmem := P.mem_quadraticLieSubalgebra_of_reverseEven_eq_neg b hline hι
-    ((P.reverseEven_eq_neg_iff_trace_eq_zero b hline hι z).2 (hz.1 ▸ hz.2 ▸ hf))
+  have hrev := (P.reverseEven_eq_neg_iff_trace_eq_zero hline hV z).2 (hz.1 ▸ hz.2 ▸ hf)
+  have hmem := mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_finrank_le_four Q
+    (P.nondegenerate_of_line_eq_bot hline) hV.le z.property
+    (by simpa using congrArg Subtype.val hrev)
   set x := (P.typeDQuadraticEquiv b hline).symm ⟨z, hmem⟩
   have hx : (⟨P.typeDQuadraticEquiv b hline x,
       quadraticLieSubalgebra_le_even Q (P.typeDQuadraticEquiv b hline x).property⟩ : even Q) = z :=
@@ -343,9 +305,10 @@ under the even structure isomorphism `even Q ≃ End S⁺ × End S⁻` followed 
 `B` and `B'`. This is the model from which
 `exists_spinGroup_mulEquiv_specialLinearGroup_prod_and_halfSpin_equiv_stdSLRep_of_finrank_eq_four`
 builds `Spin₄ ≅ SL₂ × SL₂`. -/
-theorem typeDHalfSpinLieEquivSlProdSl_apply_eq_evenCliffordEquivProdEnd [FiniteDimensional K V]
+theorem typeDHalfSpinLieEquivSlProdSl_apply_eq_evenCliffordEquivProdEnd_trans_toMatrix
     (hι : Fintype.card ι = 2) (B : Basis κ K (spinPlus Q P)) (B' : Basis κ' K (spinMinus Q P))
     (x : LieAlgebra.Orthogonal.typeD ι K) :
+    haveI := Module.Finite.of_basis (P.typeDBasis b hline)
     (((P.typeDHalfSpinLieEquivSlProdSl b hline hι B B' x).1 : Matrix κ κ K),
         ((P.typeDHalfSpinLieEquivSlProdSl b hline hι B B' x).2 : Matrix κ' κ' K)) =
       ((P.evenCliffordEquivProdEnd hline).trans
@@ -406,6 +369,24 @@ theorem typeDSpinPlusLieModuleEquivStd_apply (hι : Fintype.card ι = 2)
     P.typeDSpinPlusLieModuleEquivStd b hline hι B B' s = B.equivFun s :=
   (rfl)
 
+/-- The inverse of the Lie module equivalence `typeDSpinPlusLieModuleEquivStd` reconstructs a
+spinor from its coordinates in `B`. -/
+@[simp]
+theorem typeDSpinPlusLieModuleEquivStd_symm_apply (hι : Fintype.card ι = 2)
+    (B : Basis κ K (spinPlus Q P)) (B' : Basis κ' K (spinMinus Q P)) (v : κ → K) :
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
+      LieRingModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
+      LieModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (κ → K) :=
+      LieRingModule.compLieHom _ ((SpecialLinear.sl κ K).incl.comp
+        ((LieHom.fst K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (κ → K) :=
+      LieModule.compLieHom _ ((SpecialLinear.sl κ K).incl.comp
+        ((LieHom.fst K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
+    (P.typeDSpinPlusLieModuleEquivStd b hline hι B B').symm v = B.equivFun.symm v :=
+  (rfl)
+
 /-- **`S⁻` is the standard module of the second factor `sl₂`.** Make `S⁻` a module over `so₄`
 through its half-spin action, and `κ' → K` through the second component of
 `typeDHalfSpinLieEquivSlProdSl` followed by the matrix action. Then taking coordinates in `B'` is
@@ -451,6 +432,24 @@ theorem typeDSpinMinusLieModuleEquivStd_apply (hι : Fintype.card ι = 2)
       LieModule.compLieHom _ ((SpecialLinear.sl κ' K).incl.comp
         ((LieHom.snd K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
     P.typeDSpinMinusLieModuleEquivStd b hline hι B B' s = B'.equivFun s :=
+  (rfl)
+
+/-- The inverse of the Lie module equivalence `typeDSpinMinusLieModuleEquivStd` reconstructs a
+spinor from its coordinates in `B'`. -/
+@[simp]
+theorem typeDSpinMinusLieModuleEquivStd_symm_apply (hι : Fintype.card ι = 2)
+    (B : Basis κ K (spinPlus Q P)) (B' : Basis κ' K (spinMinus Q P)) (v : κ' → K) :
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinMinus Q P) :=
+      LieRingModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (spinMinus Q P) :=
+      LieModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (κ' → K) :=
+      LieRingModule.compLieHom _ ((SpecialLinear.sl κ' K).incl.comp
+        ((LieHom.snd K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (κ' → K) :=
+      LieModule.compLieHom _ ((SpecialLinear.sl κ' K).incl.comp
+        ((LieHom.snd K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
+    (P.typeDSpinMinusLieModuleEquivStd b hline hι B B').symm v = B'.equivFun.symm v :=
   (rfl)
 
 end TauCeti.SpinPolarizationData
