@@ -368,11 +368,12 @@ private theorem integral_commutator_of_hasWeakFDerivOn [FiniteDimensional ℝ V]
     Opens.exists_between_and_isCompact_closure φ.hasCompactSupport φ.tsupport_subset
   obtain ⟨ρ, hρ0, hball⟩ :=
     ContDiffBump.exists_seq_tendsto_rOut_closedBall_subset W.isOpen φ.hasCompactSupport hφW
-  have hξW : MemLp ξ q (volume.restrict W) := hξq.memLp_of_closure_subset hWc hWΩ
-  have hDξW : MemLp Dξ q (volume.restrict W) := hDξq.memLp_of_closure_subset hWc hWΩ
-  have hJW : MemLp J p (volume.restrict W) := hc.memLpLoc_coeff.memLp_of_closure_subset hWc hWΩ
+  have hξW : MemLp ξ q (volume.restrict W) := hξq.memLp_restrict_of_isCompact_closure hWc hWΩ
+  have hDξW : MemLp Dξ q (volume.restrict W) := hDξq.memLp_restrict_of_isCompact_closure hWc hWΩ
+  have hJW : MemLp J p (volume.restrict W) :=
+    hc.memLpLoc_coeff.memLp_restrict_of_isCompact_closure hWc hWΩ
   have hDJW (w : ℂ) : MemLp (fun z => DJ z w) p (volume.restrict W) :=
-    (hc.memLpLoc_deriv.memLp_of_closure_subset hWc hWΩ).continuousLinearMap_comp
+    (hc.memLpLoc_deriv.memLp_restrict_of_isCompact_closure hWc hWΩ).continuousLinearMap_comp
       (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) w)
   have hξext : MemLp ((W : Set ℂ).indicator ξ) q volume :=
     (memLp_indicator_iff_restrict W.isOpen.measurableSet.nullMeasurableSet).2 hξW

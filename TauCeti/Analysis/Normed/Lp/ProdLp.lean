@@ -29,7 +29,8 @@ It also records that taking a component of `WithLp p (α × β)` commutes with `
 Mathlib's `norm_indicator_eq_indicator_norm` does for the norm, that an indexed family of pairs in
 `WithLp p (α × β)` has bounded range if and only if each coordinate family does, and that a graph
 map `x ↦ (f x, u x)` into `WithLp p (E × V)` is the sum of `f` and `u` followed by the inclusions
-of the two factors.
+of the two factors. The dimension of `WithLp p (M × M')` is the sum of the dimensions of the
+factors.
 
 Finally, it bundles the componentwise action of two continuous linear maps `f` and `g` on
 `WithLp p (α × β)` as a continuous linear map `f.withLpProdMap p g`, the continuous counterpart of
@@ -39,7 +40,9 @@ orthogonal block sum `f ⊕ g`. It is compatible with the algebraic operations o
 exactly when `f` and `g` are, so the spectrum of a block sum of endomorphisms is the union of
 their spectra, and its operator norm is the larger of the two operator norms. The
 projections onto the factors and the inclusions of the factors are contractions, and fixing one
-coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
+coordinate embeds the other factor isometrically into `WithLp p (α × β)`. A kernel on
+`WithLp p (X × Y)` consisting of the pairs whose components lie in the ranges of two injective
+linear maps is identified with the product of their sources.
 
 ## Main statements
 
@@ -61,6 +64,7 @@ coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
   `ContinuousLinearMap.withLpDiagL` — the block sum `f ⊕ g` on `WithLp p (α × β)` and its
   continuous-linear bundlings `(f, g) ↦ f ⊕ g` and `f ↦ f ⊕ f`.
 * `LinearMap.rank_withLpMap` — lifting a linear map to `WithLp` preserves its rank.
+* `WithLp.finrank_prod` — `WithLp p (M × M')` has dimension `finrank M + finrank M'`.
 * `ContinuousLinearMap.rank_withLpProdMap` — `rank (f ⊕ g) = rank f + rank g`.
 * `ContinuousLinearMap.finrank_range_withLpProdMap`,
   `ContinuousLinearMap.finiteDimensional_range_withLpProdMap_iff` — the same for finite ranks.
@@ -69,6 +73,9 @@ coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
 * `ContinuousLinearMap.spectrum_withLpProdMap` — the spectrum of `f ⊕ g` is the union of the
   spectra of `f` and `g`.
 * `ContinuousLinearMap.norm_withLpProdMap` — `‖f ⊕ g‖ = max ‖f‖ ‖g‖`.
+* `ContinuousLinearMap.kerEquivProdOfInjective` — a kernel on `WithLp p (X × Y)` that is the
+  product of the ranges of two injective linear maps is equivalent to the product of their
+  sources.
 * `WithLp.norm_fstL_le_one`, `WithLp.norm_sndL_le_one`,
   `WithLp.norm_prodContinuousLinearEquiv_symm_comp_inl_le_one`,
   `WithLp.norm_prodContinuousLinearEquiv_symm_comp_inr_le_one` — the projections onto and the
@@ -258,6 +265,14 @@ theorem rank_withLpMap {p : ℝ≥0∞} {K V V' : Type*} [Semiring K] [AddCommGr
   exact LinearEquiv.rank_map_eq _ _
 
 end LinearMap
+
+/-- The `L^p` product of two finite free modules has the sum of their dimensions. -/
+@[simp]
+theorem WithLp.finrank_prod {p : ℝ≥0∞} {R M M' : Type*} [Ring R] [StrongRankCondition R]
+    [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M]
+    [AddCommGroup M'] [Module R M'] [Module.Free R M'] [Module.Finite R M'] :
+    Module.finrank R (WithLp p (M × M')) = Module.finrank R M + Module.finrank R M' := by
+  rw [(WithLp.linearEquiv p R (M × M')).finrank_eq, Module.finrank_prod]
 
 namespace ContinuousLinearMap
 
@@ -517,6 +532,56 @@ theorem spectrum_withLpProdMap {R : Type*} [CommSemiring R] [Algebra R 𝕜] [Al
     not_and_or]
 
 end Normed
+
+section KerEquivProd
+
+variable {p : ℝ≥0∞} {R X Y Z M₁ M₂ : Type*} [Semiring R] [AddCommGroup X] [Module R X]
+  [TopologicalSpace X] [AddCommGroup Y] [Module R Y] [TopologicalSpace Y] [AddCommGroup Z]
+  [Module R Z] [TopologicalSpace Z] [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂]
+  [Module R M₂] (T : WithLp p (X × Y) →L[R] Z) {ι₁ : M₁ →ₗ[R] X} {ι₂ : M₂ →ₗ[R] Y}
+  (h₁ : Function.Injective ι₁) (h₂ : Function.Injective ι₂)
+  (hT : ∀ w, T w = 0 ↔ w.fst ∈ LinearMap.range ι₁ ∧ w.snd ∈ LinearMap.range ι₂)
+
+/-- The kernel of an operator on `WithLp p (X × Y)`, when it consists of the pairs whose components
+lie in the ranges of two injective linear maps, is linearly equivalent to the product of their
+sources. -/
+noncomputable def kerEquivProdOfInjective : T.ker ≃ₗ[R] M₁ × M₂ :=
+  (LinearEquiv.ofInjective ((WithLp.linearEquiv p R _).symm.toLinearMap ∘ₗ ι₁.prodMap ι₂)
+      ((WithLp.linearEquiv p R _).symm.injective.comp <| Prod.map_injective.mpr ⟨h₁, h₂⟩) ≪≫ₗ
+    LinearEquiv.ofEq _ _ (by
+      ext w
+      rw [LinearMap.mem_ker, coe_coe, hT]
+      constructor
+      · rintro ⟨⟨x, y⟩, rfl⟩
+        exact ⟨⟨x, rfl⟩, ⟨y, rfl⟩⟩
+      · rintro ⟨⟨x, hx⟩, ⟨y, hy⟩⟩
+        exact ⟨(x, y),
+          WithLp.ofLp_injective p <| Prod.ext (by simpa using hx) (by simpa using hy)⟩)).symm
+
+/-- `kerEquivProdOfInjective` sends a pair to the pair of its images under the two injections. -/
+@[simp]
+theorem coe_kerEquivProdOfInjective_symm_apply (q : M₁ × M₂) :
+    ((kerEquivProdOfInjective T h₁ h₂ hT).symm q : WithLp p (X × Y)) =
+      WithLp.toLp p (ι₁ q.1, ι₂ q.2) := by
+  simp [kerEquivProdOfInjective]
+
+/-- The first component of `kerEquivProdOfInjective w` is the preimage of the first component of
+`w` under the first injection. -/
+@[simp]
+theorem apply_kerEquivProdOfInjective_apply_fst (w : T.ker) :
+    ι₁ (kerEquivProdOfInjective T h₁ h₂ hT w).1 = (w : WithLp p (X × Y)).fst := by
+  obtain ⟨q, rfl⟩ := (kerEquivProdOfInjective T h₁ h₂ hT).symm.surjective w
+  simp
+
+/-- The second component of `kerEquivProdOfInjective w` is the preimage of the second component of
+`w` under the second injection. -/
+@[simp]
+theorem apply_kerEquivProdOfInjective_apply_snd (w : T.ker) :
+    ι₂ (kerEquivProdOfInjective T h₁ h₂ hT w).2 = (w : WithLp p (X × Y)).snd := by
+  obtain ⟨q, rfl⟩ := (kerEquivProdOfInjective T h₁ h₂ hT).symm.surjective w
+  simp
+
+end KerEquivProd
 
 end ContinuousLinearMap
 

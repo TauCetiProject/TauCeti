@@ -70,8 +70,8 @@ theorem MemWkpLoc.memLpLoc_of_holderTriple (hp : 2 < p) (hqp : q ≤ p) [Fact (1
   obtain ⟨Dg, hDg, hDq⟩ := hg.exists_weakFDeriv_of_isOpen
   obtain ⟨C, hC⟩ := W1p.exists_eLpNorm_le_of_holderTriple (μ := volume) (Ω := ⟨W, hWo⟩)
     (G := G) (r := r) (by simpa using hp) hqp hK hKW
-  have hgW := hg.memLpLoc.memLp_of_closure_subset hWc hWΩ
-  have hDW := (memWkpLoc_zero_iff.1 hDq).memLp_of_closure_subset hWc hWΩ
+  have hgW := hg.memLpLoc.memLp_restrict_of_isCompact_closure hWc hWΩ
+  have hDW := (memWkpLoc_zero_iff.1 hDq).memLp_restrict_of_isCompact_closure hWc hWΩ
   exact (hC g Dg (hDg.mono (subset_closure.trans hWΩ)) hgW hDW).trans_lt
     (ENNReal.mul_lt_top ENNReal.coe_lt_top
       (ENNReal.add_lt_top.2 ⟨hgW.eLpNorm_lt_top, hDW.eLpNorm_lt_top⟩))

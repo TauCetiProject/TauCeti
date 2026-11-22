@@ -306,9 +306,11 @@ private theorem isWeakCRSolution_of_hasWeakFDerivOn_ae {Ω : Opens ℂ} {p : ℝ
     obtain ⟨ρ, hρ0, hball⟩ :=
       ContDiffBump.exists_seq_tendsto_rOut_closedBall_subset W.isOpen φ.hasCompactSupport hφW
     have hWm : NullMeasurableSet (W : Set ℂ) volume := W.isOpen.measurableSet.nullMeasurableSet
-    have hJW : MemLp J' p (volume.restrict W) := hc'.memLpLoc_coeff.memLp_of_closure_subset hWc hWΩ
-    have hDJW : MemLp DJ p (volume.restrict W) := hc'.memLpLoc_deriv.memLp_of_closure_subset hWc hWΩ
-    have hξW : MemLp ξ 2 (volume.restrict W) := hξ2.memLp_of_closure_subset hWc hWΩ
+    have hJW : MemLp J' p (volume.restrict W) :=
+      hc'.memLpLoc_coeff.memLp_restrict_of_isCompact_closure hWc hWΩ
+    have hDJW : MemLp DJ p (volume.restrict W) :=
+      hc'.memLpLoc_deriv.memLp_restrict_of_isCompact_closure hWc hWΩ
+    have hξW : MemLp ξ 2 (volume.restrict W) := hξ2.memLp_restrict_of_isCompact_closure hWc hWΩ
     let J_n (n : ℕ) :=
       (ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (W : Set ℂ).indicator J'
     let DJ_n (n : ℕ) :=
