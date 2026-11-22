@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Induction.Conjugate
 public import TauCeti.RepresentationTheory.Simple.Basic
 import TauCeti.RepresentationTheory.AsModule
+import TauCeti.RepresentationTheory.CharacterTable.Determined
 
 /-!
 # The inertia group of a representation of a normal subgroup
@@ -60,6 +61,8 @@ restriction with a single `G`-orbit.
 * `FDRep.inertia_resFDRep`: a representation restricted from `G` to `N` has full inertia.
 * `TauCeti.char_conj_eq_of_mem_inertia`: the character of `A` is invariant under conjugation
   by an element of the inertia group.
+* `TauCeti.mem_inertia_iff_forall_character_eq`: for a finite `N` in characteristic zero, this
+  invariance characterises the inertia group.
 -/
 
 public section
@@ -161,6 +164,17 @@ theorem mem_inertia_iff_exists_linearEquiv {A : FDRep k N} {g : G} :
     -- conjugate is `A.ρ (conjNormal g⁻¹ n)` (`conjNormalFDRep_ρ`, a `rfl` lemma); as above, the
     -- two semiring structures on `k` block rewriting, so the instance of `ha` is closed directly.
     exact (ha _ x).trans (congrArg (fun m ↦ A.ρ m (a x)) hn)
+
+/-- **The inertia group is read off the character** when `N` is finite and `k` has characteristic
+zero: `g ∈ inertia A` exactly when `χ(g⁻¹xg) = χ(x)` for every `x : N`, where `χ` is the
+character of `A`. The forward direction is `TauCeti.char_conj_eq_of_mem_inertia`, valid over any
+field; the converse holds because the character of `{}^g A` is `x ↦ χ(g⁻¹xg)`
+(`TauCeti.char_conjNormalFDRep_mk`) and such representations are determined by their characters. -/
+theorem mem_inertia_iff_forall_character_eq [CharZero k] [Finite N] {A : FDRep k N} {g : G} :
+    g ∈ inertia A ↔ ∀ x : N,
+      A.character ⟨g⁻¹ * (x : G) * g, hN.conj_mem' (x : G) x.property g⟩ = A.character x := by
+  refine ⟨fun hg ↦ char_conj_eq_of_mem_inertia hg, fun h ↦ mem_inertia_iff.2 ?_⟩
+  exact FDRep.nonempty_iso_of_character_eq _ _ (funext fun x ↦ by rw [char_conjNormalFDRep_mk, h])
 
 end Field
 
