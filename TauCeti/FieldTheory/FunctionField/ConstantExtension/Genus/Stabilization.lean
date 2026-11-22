@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Basic
 import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint.Stabilization
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.PoleDegree
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.Equiv
 import TauCeti.FieldTheory.IntermediateField.ScalarTower
@@ -21,9 +21,9 @@ already exists a finite intermediate field `L` of `k' / k` such that `L` is exac
 `g(F · L / L) = g(F' / k')`.
 
 The proof combines linear-disjointness stabilization from
-`TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint` with a single nonspecial
-multiple `l • (z)_∞` of a pole divisor whose Riemann–Roch space is spanned by elements already
-defined over a finite constant subextension `M`
+`TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint.Stabilization` with a single
+nonspecial multiple `l • (z)_∞` of a pole divisor whose Riemann–Roch space is spanned by elements
+already defined over a finite constant subextension `M`
 (`TauCeti.Divisor.dim_nsmul_poles_le_of_forall_exists`).
 
 ## Main results

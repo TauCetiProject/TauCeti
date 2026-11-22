@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
 public import TauCeti.FieldTheory.FunctionField.Divisor.ProductFormula
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint.Basic
 
 /-!
 # Pole divisor degrees under linearly disjoint constant extensions

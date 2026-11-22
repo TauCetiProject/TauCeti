@@ -10,7 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Conorm
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.RiemannRoch
 public import TauCeti.FieldTheory.FunctionField.Differential.CanonicalDivisor
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.DegreeZero
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint.Stabilization
 
 /-!
 # The genus under a constant field extension
@@ -34,9 +34,9 @@ class of `F' / k'` is spoken of, it follows from exactness of `k` in `F`
 For any algebraic extension of constants `F' = F · k'`, finite or not, separable or not, there
 exists a finite intermediate field `L` of `k' / k` after which `F · L` and `k'` are linearly
 disjoint over `L` (`TauCeti.exists_finiteDimensional_linearDisjoint_of_constantCompositum_eq_top` in
-`ConstantExtension.LinearDisjoint`): each failure of linear disjointness strictly lowers the degree
-over a rational subfield. Consequently the genus never increases under any algebraic extension of
-constants. For a finite extension the conorm comparison also gives
+`ConstantExtension.LinearDisjoint.Stabilization`): each failure of linear disjointness strictly
+lowers the degree over a rational subfield. Consequently the genus never increases under any
+algebraic extension of constants. For a finite extension the conorm comparison also gives
 `[k' : k] (g(F' / k') - 1) ≤ [F' : F] (g(F / k) - 1)`. Without separability the genus inequality can
 be strict (`TauCeti.GenusDrop.genus_lt_genus`).
 

@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Basic
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Singularity.Basic
 public import TauCeti.FieldTheory.FunctionField.Repartition.IndexOfSpecialty
-import TauCeti.FieldTheory.FunctionField.Place.Extension.PurelyInseparable
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.Equiv
 import TauCeti.FieldTheory.IntermediateField.ScalarTower
 import TauCeti.LinearAlgebra.Pi
@@ -31,9 +31,11 @@ normalization. Their quotient has finite `k'`-dimension, the **singularity degre
 
 `δ_P = dim_{k'} (𝒪'_P ⧸ 𝒪_P ⊗_k k')`
 
-(`TauCeti.Place.singularityDegree`), which vanishes at all but finitely many places without any
-exactness assumption on `k'` in `F'`. For any algebraic extension `k'' / k'` inside `F'` that is
-exact in `F'` (in particular `k'' = algebraicClosure k' F'`), Schröer's genus-change formula gives
+(`TauCeti.Place.singularityDegree`, defined in
+`TauCeti.FieldTheory.FunctionField.ConstantExtension.Singularity.Basic`), which vanishes at all
+but finitely many places without any exactness assumption on `k'` in `F'`. For any algebraic
+extension `k'' / k'` inside `F'` that is exact in `F'` (in particular
+`k'' = algebraicClosure k' F'`), Schröer's genus-change formula gives
 
 `g(F / k) - 1 = [k'' : k'] (g(F' / k'') - 1) + ∑_P δ_P`,
 
@@ -51,21 +53,12 @@ and `k'` is exact in `F'`.
 For genus stabilization under arbitrary algebraic constant field extensions, see
 `TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Stabilization`.
 
-## Main definitions
-
-The rings `𝒪_P · k'` and `𝒪'_P` come from
-`TauCeti.FieldTheory.FunctionField.ConstantExtension.IntegralBasis`.
-
-* `TauCeti.Place.singularityQuotient`: the quotient `𝒪'_P ⧸ 𝒪_P · k'`.
-* `TauCeti.Place.singularityDegree`: its `k'`-dimension `δ_P`.
-
 ## Main results
 
-* `TauCeti.Place.singularityQuotientLinearEquiv`: when `F' / F` is purely inseparable,
-  `𝒪_{P'} ⧸ 𝒪_P · k'` is `k`-linearly isomorphic to `P.singularityQuotient k' F'`.
+The local quotient `𝒪'_P ⧸ 𝒪_P · k'` and singularity degree `δ_P` come from
+`TauCeti.FieldTheory.FunctionField.ConstantExtension.Singularity.Basic`.
+
 * `TauCeti.Place.finiteDimensional_singularityQuotient`: `𝒪'_P ⧸ 𝒪_P · k'` is finite-dimensional.
-* `TauCeti.Place.singularityDegree_eq_zero_iff`: when `𝒪'_P ⧸ 𝒪_P · k'` is finite-dimensional,
-  `δ_P = 0` exactly when `𝒪_P · k'` is integrally closed in `F'`.
 * `TauCeti.finite_setOf_singularityDegree_ne_zero`: `δ_P = 0` at all but finitely many places.
 * `TauCeti.genus_sub_one_eq_finrank_mul_genus_sub_one_add_finsum_singularityDegree` and
   `TauCeti.genus_add_finrank_eq_finrank_mul_genus_add_finsum_singularityDegree_add_one`:
@@ -115,97 +108,6 @@ variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
-
-attribute [local instance 10] Place.algebraIntegersExtension Place.isScalarTowerIntegersExtension
-
-namespace Place
-
-variable (k' F') (P : Place k F)
-
-variable [Algebra.IsIntegral k k']
-
-/-- The quotient `𝒪'_P ⧸ 𝒪_P · k'`, which measures how far `𝒪_P ⊗_k k'` is from being integrally
-closed in `F'`. -/
-abbrev singularityQuotient : Type v' :=
-  ↥(integralClosureSubmodule k' F' P) ⧸
-    (constantSpanIntegers k' F' P).submoduleOf (integralClosureSubmodule k' F' P)
-
-/-- The **singularity degree** `δ_P = dim_{k'} (𝒪'_P ⧸ 𝒪_P · k')` of `P` in `F' = F · k'`: the
-total `k'`-dimensional normalization defect along the fiber over `P` of the curve of `F / k` after
-extending the constants to `k'`. The fiber may consist of several points, and `δ_P` sums their
-contributions. It is finite (`TauCeti.Place.finiteDimensional_singularityQuotient`). When `k'`
-remains exact in `F'`, `g(F / k) = g(F' / k') + ∑_P δ_P`
-(`TauCeti.genus_eq_genus_add_finsum_singularityDegree`); in the general case with constant growth,
-see `TauCeti.genus_sub_one_eq_finrank_mul_genus_sub_one_add_finsum_singularityDegree`. -/
-noncomputable def singularityDegree : ℕ :=
-  finrank k' (singularityQuotient k' F' P)
-
-theorem singularityDegree_def :
-    singularityDegree k' F' P = finrank k' (singularityQuotient k' F' P) :=
-  (rfl)
-
-/-- **A place has singularity degree zero exactly when `𝒪_P · k'` is integrally closed**: when
-`𝒪'_P ⧸ 𝒪_P · k'` is finite-dimensional, `δ_P = 0` if and only if `𝒪_P ⊗_k k'` is the integral
-closure of `𝒪_P` in `F'`. The finiteness holds at every place in the setting of the genus drop
-(`TauCeti.Place.finiteDimensional_singularityQuotient`). -/
-theorem singularityDegree_eq_zero_iff [FiniteDimensional k' (singularityQuotient k' F' P)] :
-    singularityDegree k' F' P = 0 ↔
-      constantSpanIntegers k' F' P = integralClosureSubmodule k' F' P := by
-  rw [singularityDegree_def, Module.finrank_zero_iff, Submodule.Quotient.subsingleton_iff,
-    Submodule.submoduleOf_eq_top]
-  exact ⟨fun hle ↦ le_antisymm (constantSpanIntegers_le_integralClosureSubmodule k' F' P) hle,
-    fun heq ↦ heq.ge⟩
-
-end Place
-
-variable (k F) in
-/-- When `F' / F` is purely inseparable, `P'` is the unique place over `P = P'|_F`, so `𝒪'_P`
-coincides with `𝒪_{P'}` and `P'.integers ⧸ P'.constantSpanSubmodule k F` is `k`-linearly isomorphic
-to `P.singularityQuotient k' F'`. -/
-noncomputable def Place.singularityQuotientLinearEquiv [Algebra.IsIntegral k k']
-    [IsPurelyInseparable F F'] (hF' : IsFunctionField k' F') (P' : Place k' F') :
-    letI := Place.integersAlgebraBase k P'
-    haveI := Place.isScalarTower_integersAlgebraBase k P'
-    haveI := Place.isScalarTower_integers_restrict k F P'
-    (P'.integers ⧸ P'.constantSpanSubmodule k F) ≃ₗ[k]
-      (P'.restrict k F).singularityQuotient k' F' :=
-  letI := Place.integersAlgebraBase k P'
-  haveI := Place.isScalarTower_integersAlgebraBase k P'
-  haveI := Place.isScalarTower_integers_restrict k F P'
-  let P := P'.restrict k F
-  have : IsIntegralClosure P'.integers P.integers F' := Place.isIntegralClosure_integers hF' P'
-  let e := IsIntegralClosure.equiv P.integers P'.integers F' (integralClosure P.integers F')
-  have he (z : P'.integers) : ((e z : integralClosure P.integers F') : F') = (z : F') :=
-    IsIntegralClosure.algebraMap_equiv P.integers P'.integers F' (integralClosure P.integers F') z
-  let toIC (z : F') (hz : z ∈ P.integralClosureSubmodule k' F') : integralClosure P.integers F' :=
-    ⟨z, (mem_integralClosure_iff P.integers F').2 ((P.mem_integralClosureSubmodule_iff k' F').1 hz)⟩
-  let eTop : P'.integers ≃ₗ[k] ↥(P.integralClosureSubmodule k' F') :=
-    { toFun := fun x ↦ ⟨((e x : integralClosure P.integers F') : F'),
-        (P.mem_integralClosureSubmodule_iff k' F').2
-          ((mem_integralClosure_iff P.integers F').1 (e x).property)⟩
-      invFun := fun y ↦ e.symm (toIC y.val y.property)
-      left_inv := fun x ↦ by simp [e, toIC]
-      right_inv := fun y ↦ Subtype.ext <| by simp [toIC]
-      map_add' := fun x y ↦ Subtype.ext <| by simp
-      map_smul' := fun c x ↦ Subtype.ext <| by
-        rw [RingHom.id_apply, Submodule.coe_smul_of_tower, he, Algebra.smul_def, Algebra.smul_def,
-          Subring.coe_mul, IsScalarTower.algebraMap_apply k k' P'.integers,
-          Place.coe_algebraMap_constants, ← IsScalarTower.algebraMap_apply k k' F', he] }
-  ((Submodule.Quotient.restrictScalarsEquiv k (P'.constantSpanSubmodule k F)).symm.trans
-    (Submodule.Quotient.equiv ((P'.constantSpanSubmodule k F).restrictScalars k)
-      (((P.constantSpanIntegers k' F').submoduleOf
-        (P.integralClosureSubmodule k' F')).restrictScalars k) eTop (by
-        ext ⟨z, hz⟩
-        simp only [Submodule.mem_map, Submodule.restrictScalars_mem,
-          Place.mem_constantSpanSubmodule_iff, eTop]
-        refine ⟨fun ⟨x, hx, hxz⟩ ↦ ?_, fun hz' ↦ ⟨e.symm (toIC z hz), ?_, Subtype.ext ?_⟩⟩
-        · have hxz' : (x : F') = z := by simpa [he] using congrArg Subtype.val hxz
-          exact hxz' ▸ hx
-        · have hz_eq : ((e.symm (toIC z hz) : P'.integers) : F') = z := by
-            simp [← he, toIC]
-          rwa [hz_eq]
-        · simp [toIC]))).trans
-    (Submodule.Quotient.restrictScalarsEquiv k _)
 
 /-! ### The local comparison -/
 
