@@ -16,28 +16,28 @@ Let `C` be an `R`-algebra carrying a comultiplication. This file records that, f
 product of linear maps `C →ₗ[R] C ⊗[R] C`, comultiplication is the convolution product of the two
 canonical inclusions `c ↦ c ⊗ₜ 1` and `c ↦ 1 ⊗ₜ c` of `C` into its tensor square.
 
+For the convolution dual `Module.Dual R C` of a module carrying comultiplication and counit
+data, the unit is the counit and multiplication is successive contraction of comultiplication.
+
 The file also provides the exterior convolution product `WithConv.mulTensor`: linear maps
-out of modules `M` and `N`, valued in an algebra, applied legwise on `M ⊗[R] N` and
-multiplied in the codomain. Its normalization rules (zero, addition, scalars) and its
-multiplicativity for the convolution product make it the engine for composition-level
-convolution calculations: convolution products interleave legwise, and composing with a
-multiplication lands in the image of `mulTensor` for maps with a suitable multiplicativity
-law. This file proves that for an **algebra map**
+out of modules `M` and `N`, valued in a (not necessarily unital or associative) algebra,
+applied legwise on `M ⊗[R] N` and multiplied in the codomain. Its normalization rules (zero,
+addition, scalars) and its multiplicativity for the convolution product make it the engine for
+composition-level convolution calculations: convolution products interleave legwise, and
+composing with a multiplication lands in the image of `mulTensor` for maps with a suitable
+multiplicativity law. This file proves that for an **algebra map**
 (`AlgHom.toConv_toLinearMap_comp_mul'`); the Leibniz-rule counterpart for counit-valued
 derivations is in `TauCeti/Algebra/AlgebraicGroup/Tangent/Basic.lean`.
 
-Finally, the file records how convolution algebras change with their coefficients. An algebra
+The file also records how convolution algebras change with their coefficients. An algebra
 map `g : B →ₐ[R] B'` induces Mathlib's `AlgHom.convPostcomp` on convolution algebras, and when
 `B'` is a `B`-algebra with a basis over `B`, taking coordinates identifies the convolution
 algebra with coefficients in `B'` with a free module over the one with coefficients in `B`.
 
-Last, convolution products respect ideal-valued maps: the convolution product of maps with values
-in ideals `I` and `J` of a commutative algebra has values in `I * J`, so the `n`-th convolution
+Finally, convolution products respect ideal-valued maps: the convolution product of maps with
+values in ideals `I` and `J` of an algebra has values in `I * J`, so the `n`-th convolution
 power of a map with values in `I` has values in `I ^ n`. For a point `x = 1 + D` of an affine
 group with `D` valued in `I`, this controls the binomial expansion of the powers of `x`.
-
-For the convolution dual, the unit is the counit and multiplication is successive
-contraction of comultiplication.
 
 ## Main declarations
 
@@ -71,7 +71,7 @@ open TensorProduct WithConv
 namespace LinearMap
 
 variable {R C : Type*} [CommSemiring R]
-  [AddCommMonoid C] [Module R C] [Coalgebra R C]
+  [AddCommMonoid C] [Module R C] [CoalgebraStruct R C]
 
 /-- The unit of the convolution dual is the coalgebra counit. -/
 @[simp]
@@ -161,16 +161,11 @@ theorem toConv_comp_comulAlgHom {A : Type*} [CommSemiring A] [Algebra R A]
   apply WithConv.ofConv_injective
   apply AlgHom.toLinearMap_injective
   apply WithConv.toConv_injective
-  rw [AlgHom.toLinearMap_convMul]
-  have hcomul :
-      (Bialgebra.comulAlgHom R H).toLinearMap =
-        (toConv (Algebra.TensorProduct.includeLeft (R := R) (A := H) (B := H)).toLinearMap *
-          toConv (Algebra.TensorProduct.includeRight
-            (R := R) (A := H) (B := H)).toLinearMap).ofConv := by
-    rw [← Coalgebra.comul_eq_convMul_includeLeft_includeRight (R := R) (C := H)]
-    simp
-  simp only [AlgHom.comp_toLinearMap, hcomul]
-  exact congrArg WithConv.toConv (LinearMap.algHom_comp_convMul_distrib phi _ _)
+  rw [AlgHom.toLinearMap_convMul, AlgHom.comp_toLinearMap, Bialgebra.toLinearMap_comulAlgHom]
+  -- Split `Δ` into the two tensor inclusions and distribute `phi` over their product.
+  rw [← ofConv_toConv Coalgebra.comul, Coalgebra.comul_eq_convMul_includeLeft_includeRight,
+    LinearMap.algHom_comp_convMul_distrib, toConv_ofConv]
+  simp only [AlgHom.comp_toLinearMap]
 
 /-- The identity of the convolution monoid of base-valued points `H →ₐ[R] R` is the counit. -/
 theorem ofConv_one_eq_counitAlgHom :
@@ -219,7 +214,8 @@ section ExteriorProduct
 open WithConv TensorProduct
 
 variable {R M N S : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-  [AddCommMonoid N] [Module R N] [Semiring S] [Algebra R S]
+  [AddCommMonoid N] [Module R N] [NonUnitalNonAssocSemiring S] [Module R S]
+  [SMulCommClass R S S] [IsScalarTower R S S]
 
 namespace WithConv
 
@@ -272,20 +268,24 @@ lemma mulTensor_add_right (s : WithConv (M →ₗ[R] S)) (t₁ t₂ : WithConv (
 lemma mulTensor_smul_left (r : R) (s : WithConv (M →ₗ[R] S)) (t : WithConv (N →ₗ[R] S)) :
     mulTensor (r • s) t = r • mulTensor s t := by
   refine ofConv_injective (TensorProduct.ext' fun x y => ?_)
-  simp
+  simp [smul_mul_assoc]
 
 /-- Scalars pull out of the right factor of the exterior product. -/
 @[simp]
 lemma mulTensor_smul_right (r : R) (s : WithConv (M →ₗ[R] S)) (t : WithConv (N →ₗ[R] S)) :
     mulTensor s (r • t) = r • mulTensor s t := by
   refine ofConv_injective (TensorProduct.ext' fun x y => ?_)
-  simp
+  simp [mul_smul_comm]
 
 end WithConv
 
+end ExteriorProduct
+
+section ExteriorProductAlgHom
+
 namespace AlgHom
 
-variable {A : Type*} [Semiring A] [Algebra R A]
+variable {R A S : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Semiring S] [Algebra R S]
 
 /-- An algebra-map point composed with multiplication is its own exterior square:
 the multiplicativity of the point, in convolution form. -/
@@ -299,7 +299,7 @@ lemma toConv_toLinearMap_comp_mul' (g : A →ₐ[R] S) :
 
 end AlgHom
 
-end ExteriorProduct
+end ExteriorProductAlgHom
 
 section ExteriorConvolution
 
@@ -308,24 +308,28 @@ open WithConv TensorProduct
 variable {R C D S : Type*} [CommSemiring R]
   [AddCommMonoid C] [Module R C] [CoalgebraStruct R C]
   [AddCommMonoid D] [Module R D] [CoalgebraStruct R D]
-  [CommSemiring S] [Algebra R S]
+  [NonUnitalCommSemiring S] [Module R S] [SMulCommClass R S S] [IsScalarTower R S S]
 
 namespace WithConv
 
 /-- The exterior product is multiplicative for convolution: products interleave
 legwise. Only the comultiplication *data* on each leg is used — no multiplication on the
-sources and no bialgebra compatibility — so the two legs may be distinct coalgebras. -/
+sources and no bialgebra compatibility — so the two legs may be distinct coalgebras. The
+coefficients need to be commutative and associative, but not unital. -/
 @[simp]
 lemma mulTensor_convMul
     (s u : WithConv (C →ₗ[R] S)) (t v : WithConv (D →ₗ[R] S)) :
     mulTensor s t * mulTensor u v = mulTensor (s * u) (t * v) := by
-  have h := LinearMap.algHom_comp_convMul_distrib
-    (Algebra.TensorProduct.lmul' R (S := S))
-    (toConv (map s.ofConv t.ofConv)) (toConv (map u.ofConv v.ofConv))
-  -- The multiplication algebra map and the plain multiplication linear map agree;
-  -- transport the resulting composition identity through the convolution type tag.
-  rw [map_convMul_map, Algebra.TensorProduct.lmul'_toLinearMap] at h
-  simpa only [mulTensor, ofConv_toConv, toConv_ofConv] using congrArg toConv h.symm
+  refine ofConv_injective (TensorProduct.ext' fun x y => ?_)
+  simp only [LinearMap.convMul_apply, TensorProduct.comul_tmul, mulTensor_apply_tmul]
+  -- On pure tensors `Δ x = a ⊗ b` and `Δ y = c ⊗ d` both sides are
+  -- `s a * u b * (t c * v d)` up to `mul_mul_mul_comm`; extend additively in each leg.
+  induction (CoalgebraStruct.comul x : C ⊗[R] C) with
+  | add a b ha hb => simp_all [add_tmul, add_mul]
+  | tmul a b =>
+    induction (CoalgebraStruct.comul y : D ⊗[R] D) with
+    | add c d hc hd => simp_all [tmul_add, mul_add]
+    | tmul c d => simp [mul_mul_mul_comm]
 
 end WithConv
 
@@ -408,7 +412,7 @@ open WithConv
 
 namespace LinearMap
 
-variable {R C A : Type*} [CommSemiring R] [AddCommMonoid C] [Module R C] [CommSemiring A]
+variable {R C A : Type*} [CommSemiring R] [AddCommMonoid C] [Module R C] [Semiring A]
   [Algebra R A]
 
 /-- The convolution product of a linear map with values in an ideal `I` and one with values in an
@@ -425,8 +429,8 @@ theorem convMul_apply_mem_mul [CoalgebraStruct R C] {I J : Ideal A} {f g : WithC
 theorem convPow_apply_mem_pow [_root_.Coalgebra R C] {I : Ideal A} {f : WithConv (C →ₗ[R] A)}
     (hf : ∀ c, f c ∈ I) (n : ℕ) (c : C) : (f ^ n) c ∈ I ^ n := by
   induction n generalizing c with
-  | zero => simp
-  | succ n ih => simpa [pow_succ] using convMul_apply_mem_mul ih hf c
+  | zero => simp [Submodule.pow_zero, Ideal.one_eq_top]
+  | succ n ih => simpa [pow_succ, Submodule.pow_succ] using convMul_apply_mem_mul ih hf c
 
 end LinearMap
 
