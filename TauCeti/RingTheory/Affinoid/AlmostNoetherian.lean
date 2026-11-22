@@ -53,8 +53,8 @@ statements directly for quotients of `𝒪[K]⟨X₁, …, Xₙ⟩`, see
 * `AlgHom.map_unitClosedBall_of_isEmpty`, `AlgHom.map_unitClosedBall_self_of_isEmpty`: in zero
   variables, `π(K⟨X⟩°)` is the image of `K°` in `A`, and equals `K°` on `A = K`.
 * `AlgHom.isNoetherianRing_map_unitClosedBall` (registered as an instance),
-  `AlgHom.isNoetherianRing_map_unitClosedBall_of_integer`: when `K°` (or `𝒪[K]`) is noetherian,
-  `π(K⟨X⟩°)` is noetherian.
+  `AlgHom.isNoetherianRing_map_unitClosedBall_of_isNoetherianRing_integer`: when `K°` (or `𝒪[K]`) is
+  noetherian, `π(K⟨X⟩°)` is noetherian.
 * `AlgHom.exists_fg_le_forall_smul_mem_map_unitClosedBall`,
   `AlgHom.exists_fg_le_forall_smul_mem_map_unitClosedBall_of_isScalarTower`: Kiehl's Satz 5.1 for
   finitely generated modules over `π(K⟨X⟩°)`.
@@ -124,7 +124,8 @@ theorem unitClosedBallMapHom_unitClosedBallCoeffHom (π : Tate σ →ₐ[K] A)
     rw [coe_unitClosedBallMapHom, TauCeti.MvPowerSeries.coe_unitClosedBallCoeffHom]
     exact π.commutes (c : K)
 
-theorem coe_unitClosedBallMapHom_coeffHom (π : Tate σ →ₐ[K] A) (c : Subring.unitClosedBall K) :
+theorem coe_unitClosedBallMapHom_unitClosedBallCoeffHom (π : Tate σ →ₐ[K] A)
+    (c : Subring.unitClosedBall K) :
     (π.unitClosedBallMapHom
         (TauCeti.MvPowerSeries.unitClosedBallCoeffHom (σ := σ) (r := fun _ ↦ 1) c) : A) =
       algebraMap K A c := by
@@ -166,7 +167,7 @@ instance isNoetherianRing_map_unitClosedBall [CompleteSpace K] [_root_.Finite σ
 /-- Over a complete nontrivially normed ultrametric field `K` whose valuation ring `𝒪[K]` is
 noetherian (for instance a complete discretely valued field), every integral presentation subring
 `π(K⟨X⟩°)` in finitely many variables is noetherian. -/
-theorem isNoetherianRing_map_unitClosedBall_of_integer
+theorem isNoetherianRing_map_unitClosedBall_of_isNoetherianRing_integer
     {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
     [IsNoetherianRing 𝒪[K]] {σ : Type*} [_root_.Finite σ]
     {A : Type*} [CommRing A] [Algebra K A]

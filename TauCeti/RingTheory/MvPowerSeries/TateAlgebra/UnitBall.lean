@@ -108,6 +108,9 @@ many variables and for complete `L`, evaluation at a point `x` with coordinates 
 ## References
 
 * [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §§5.1.2–5.1.3.
+* S. Bosch, *Lectures on Formal and Rigid Geometry*, Lecture Notes in Mathematics 2105, Springer
+  (2014), §6.4, proof of Lemma 5 (pp. 137–138), for the general localization step extending a
+  `K°`-compatible homomorphism on the Gauss unit ball to `K{X/r}`.
 -/
 
 public section
@@ -292,7 +295,10 @@ theorem restrictedUnitClosedBallEquiv_algebraMap (c : Subring.unitClosedBall R) 
     coe_algebraMap_isRestrictedSubring, coe_algebraMap_isRestrictedSubring, coeff_C, coeff_C]
   split_ifs <;> simp
 
-/-- **Inverting any unit of `R` of norm `< 1` localizes `R{X/r}°` to `R{X/r}`.** -/
+/-- **Inverting any unit of `R` of norm `< 1` localizes `R{X/r}°` to `R{X/r}`.**
+
+This is the general localization step underlying the integral-presentation bridge (cf. Bosch,
+*Lectures on Formal and Rigid Geometry*, §6.4, proof of Lemma 5, pp. 137–138). -/
 theorem isLocalizationAway_unitClosedBallCoeffHom (π : Subring.unitClosedBall R)
     (hπ0 : IsUnit (π : R)) (hπ1 : ‖(π : R)‖ < 1) :
     IsLocalization.Away (unitClosedBallCoeffHom (σ := σ) (r := r) π)
@@ -306,10 +312,12 @@ theorem isLocalizationAway_unitClosedBallCoeffHom (π : Subring.unitClosedBall R
       exact hπ0.map (algebraMap R (IsRestricted.subring (R := R) r)))
 
 /-- **Unique extension of a ring homomorphism on the Gauss unit ball to a `K`-algebra
-homomorphism.** Over a nontrivially normed ultrametric field `K`, any ring homomorphism
+homomorphism** (generalizing Bosch, *Lectures on Formal and Rigid Geometry*, §6.4, proof of
+Lemma 5, pp. 137–138). Over a nontrivially normed ultrametric field `K`, any ring homomorphism
 `ψ : Subring.unitClosedBall (IsRestricted.subring (R := K) r) →+* A` into a commutative
 `K`-algebra `A` that agrees with `algebraMap K A` on `Subring.unitClosedBall K` extends uniquely
-to a `K`-algebra homomorphism `π : IsRestricted.subring (R := K) r →ₐ[K] A`. -/
+to a `K`-algebra homomorphism `π : IsRestricted.subring (R := K) r →ₐ[K] A` via localization at a
+pseudouniformizer. -/
 theorem _root_.RingHom.existsUnique_algHom_of_unitClosedBall {σ K A : Type*}
     [NontriviallyNormedField K] [IsUltrametricDist K] {r : σ → ℝ} [∀ i, Fact (0 < r i)]
     [CommRing A] [Algebra K A]

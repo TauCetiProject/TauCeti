@@ -51,8 +51,8 @@ Otherwise the norms below `1` are dense up to `1`, so any `0 < ε < 1` factors t
 
 ## Main results
 
-* `TauCeti.MvPowerSeries.isNoetherianRing_unitClosedBall_of_isRestricted_subring`: if `R{X/r}°` is
-  noetherian, then `R°` is noetherian.
+* `isNoetherianRing_unitClosedBall_of_isNoetherianRing_restrictedUnitClosedBall` (in
+  `TauCeti.MvPowerSeries`): if `R{X/r}°` is noetherian, then `R°` is noetherian.
 * `TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring_unitClosedBall` and
   `TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring_integer`: in finitely many variables
   at any positive polyradius `r`, `K°{X/r}` (and `𝒪[K]{X/r}` for nontrivially normed `K`) is
@@ -88,8 +88,9 @@ section Noetherian
 
 /-- If the Gauss unit ball `R{X/r}°` of a restricted power-series ring is noetherian, then `R°` is
 noetherian, via the constant-coefficient retraction. -/
-theorem isNoetherianRing_unitClosedBall_of_isRestricted_subring {R : Type*} [NormedCommRing R]
-    [IsUltrametricDist R] [NormOneClass R] (σ : Type*) (r : σ → ℝ) [∀ i, Fact (0 < r i)]
+theorem isNoetherianRing_unitClosedBall_of_isNoetherianRing_restrictedUnitClosedBall {R : Type*}
+    [NormedCommRing R] [IsUltrametricDist R] [NormOneClass R] (σ : Type*) (r : σ → ℝ)
+    [∀ i, Fact (0 < r i)]
     [IsNoetherianRing (Subring.unitClosedBall (IsRestricted.subring (R := R) r))] :
     IsNoetherianRing (Subring.unitClosedBall R) :=
   isNoetherianRing_of_surjective _ _ (unitClosedBallConstantCoeffHom (σ := σ) (r := r)) fun c ↦
@@ -178,7 +179,8 @@ noetherian.** -/
 theorem isNoetherianRing_unitClosedBall_iff [CompleteSpace K] [Finite σ] :
     IsNoetherianRing (Subring.unitClosedBall (Tate σ)) ↔
       IsNoetherianRing (Subring.unitClosedBall K) :=
-  ⟨fun _ ↦ isNoetherianRing_unitClosedBall_of_isRestricted_subring σ (fun _ ↦ 1),
+  ⟨fun _ ↦
+      isNoetherianRing_unitClosedBall_of_isNoetherianRing_restrictedUnitClosedBall σ (fun _ ↦ 1),
     fun _ ↦ inferInstance⟩
 
 end Noetherian
@@ -363,7 +365,7 @@ private theorem exists_mul_add_optionTruncHom_of_isMulDistinguished [CompleteSpa
 
 /-- Weierstrass-remainder approximation for an ideal `J` of `K⟨X, Y⟩°` containing a rescaled
 multiplicatively distinguished series `g' = a • g₀` dominating `‖d‖ * ‖h‖` on `J`. -/
-private theorem isAlmostNoetherianIdeal_of_isMulDistinguished [CompleteSpace K] {σ : Type*}
+private theorem exists_fg_le_forall_smul_mem_of_isMulDistinguished [CompleteSpace K] {σ : Type*}
     (hdense : ¬ ∃ ρ : ℝ, ρ < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ρ)
     (hσ : IsAlmostNoetherianModule (unitClosedBallCoeffHom (σ := σ) (R := K) (r := fun _ ↦ 1))
       (Subring.unitClosedBall (Tate σ)))
@@ -459,7 +461,8 @@ private theorem isAlmostNoetherianModule_option [CompleteSpace K] {σ : Type*} [
     obtain ⟨f, hfI, rfl⟩ := (Ideal.mem_map_iff_of_surjective _ e₀.surjective).mp hh
     rw [RingEquiv.restrict_apply_coe, AlgEquiv.coe_toRingEquiv, he_norm, ht₀]
     exact hgd f hfI
-  obtain ⟨J', hJ'fg, hJ'le, hJ'smul⟩ := isAlmostNoetherianIdeal_of_isMulDistinguished hdense hσ
+  obtain ⟨J', hJ'fg, hJ'le, hJ'smul⟩ := exists_fg_le_forall_smul_mem_of_isMulDistinguished
+    hdense hσ
     (Ideal.mem_map_of_mem _ hgI) ha_pos heg ((he_norm g₀).trans hg₀_norm)
     (PowerSeries.isMulDistinguished_iff_isUnit.mpr ⟨hd_dist, hu_dist⟩) hδ0 hδ1 hfac hdom
   -- Pull `J'` back along `e₀.symm` to obtain a finitely generated ideal `I' ≤ I`.

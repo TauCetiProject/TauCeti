@@ -78,6 +78,9 @@ type or norm is introduced here.
 ## References
 
 * Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §5.1.1, §5.1.3, and §5.2.1.
+* S. Bosch, *Lectures on Formal and Rigid Geometry*, Lecture Notes in Mathematics 2105, Springer
+  (2014), §6.4, proof of Lemma 5 (pp. 137–138), for the integral-presentation comparison and unique
+  extension theorem.
 * T. Wedhorn, *Adic Spaces*, §5.6, for the restricted-series topology.
 -/
 
@@ -471,14 +474,22 @@ end Tate
 
 section IntegerEquiv
 
+/-! ### Comparison with completed integral series and unique extension
+
+Following Bosch, *Lectures on Formal and Rigid Geometry*, §6.4, proof of Lemma 5 (pp. 137–138),
+identifying the completed integral restricted-series ring `𝒪[K]⟨X₁, …, Xₙ⟩` with the Gauss unit
+ball `K⟨X₁, …, Xₙ⟩°` lets any `K`-compatible ring homomorphism out of `𝒪[K]⟨X₁, …, Xₙ⟩` extend
+uniquely to a `K`-algebra homomorphism out of `K⟨X₁, …, Xₙ⟩`. -/
+
 open _root_.MvPowerSeries TauCeti.MvPowerSeries
 open scoped NormedField Valued
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
-/-- **Completed integral restricted series agree with the Gauss unit ball.** Over a complete
-nontrivially normed ultrametric field `K`, `restrictedMvPowerSeriesCompletion n 𝒪[K]` is identified
-with `Subring.unitClosedBall (K⟨X₁, …, Xₙ⟩)`, preserving scalar constants from `𝒪[K]`. -/
+/-- **Completed integral restricted series agree with the Gauss unit ball** (Bosch, *Lectures on
+Formal and Rigid Geometry*, §6.4, proof of Lemma 5, pp. 137–138). Over a complete nontrivially
+normed ultrametric field `K`, `restrictedMvPowerSeriesCompletion n 𝒪[K]` is identified with
+`Subring.unitClosedBall (K⟨X₁, …, Xₙ⟩)`, preserving scalar constants from `𝒪[K]`. -/
 noncomputable def restrictedMvPowerSeriesCompletionIntegerEquiv (n : ℕ) :
     restrictedMvPowerSeriesCompletion n 𝒪[K] ≃+*
       Subring.unitClosedBall (IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)) :=
@@ -574,8 +585,9 @@ theorem continuous_restrictedMvPowerSeriesCompletionIntegerEquiv_symm (n : ℕ) 
   exact (continuous_restrictedMvPowerSeriesCompletionGaussEquiv_symm (n := n) (R := 𝒪[K])).comp
     hisom.continuous
 
-/-- **Unique extension of an integral presentation to a `K`-algebra Tate homomorphism.** Let `K` be
-a complete nontrivially normed ultrametric field, `A` a commutative `K`-algebra, and
+/-- **Unique extension of an integral presentation to a `K`-algebra Tate homomorphism** (Bosch,
+*Lectures on Formal and Rigid Geometry*, §6.4, proof of Lemma 5, pp. 137–138). Let `K` be a
+complete nontrivially normed ultrametric field, `A` a commutative `K`-algebra, and
 `φ : restrictedMvPowerSeriesCompletion n 𝒪[K] →+* A` a ring homomorphism compatible with
 `algebraMap K A` on `𝒪[K]`. Then there is a unique `K`-algebra homomorphism
 `π : K⟨X₁, …, Xₙ⟩ →ₐ[K] A` extending
