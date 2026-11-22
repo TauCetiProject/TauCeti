@@ -47,6 +47,10 @@ equations. None of these hypotheses is used by the first-order calculus of this 
   an imaginary one-form on the determinant line, `∇_{A + a} = ∇_A + a / 2`, so this is the law
   `D_{A + a} = D_A + c(a) / 2`.
 
+The polarized form `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫` of the Clifford relation
+`c(v)² = -⟪v, v⟫` holds for any linear map into endomorphisms
+(`ContinuousLinearMap.apply_apply_add_swap_eq_neg_two_inner`).
+
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry*, Princeton University Press, 1989,
@@ -199,3 +203,15 @@ theorem diracOperator_addOneForm_of_forall_apply_eq
   simp only [hA, map_smul, map_sum, FunLike.coe_sum, Finset.sum_apply, smul_apply]
 
 end CovariantDerivative
+
+/-- **The polarized Clifford relation.** If a linear map `c : W → End U` from a real inner product
+space satisfies the Clifford relation `c(v)² = -⟪v, v⟫`, then
+`c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
+theorem ContinuousLinearMap.apply_apply_add_swap_eq_neg_two_inner {W U : Type*}
+    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [AddCommGroup U] [Module ℝ U]
+    [TopologicalSpace U] [IsTopologicalAddGroup U] [ContinuousSMul ℝ U] (c : W →L[ℝ] U →L[ℝ] U)
+    (hc : ∀ (v : W) (s : U), c v (c v s) = -⟪v, v⟫ • s) (u v : W) (s : U) :
+    c u (c v s) + c v (c u s) = -(2 * ⟪u, v⟫) • s := by
+  have h := hc (u + v) s
+  simp only [map_add, add_apply, hc, inner_add_left, inner_add_right, real_inner_comm u v] at h
+  linear_combination (norm := module) h
