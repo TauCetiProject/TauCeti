@@ -89,12 +89,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E �
 
 /-! ### The parameter along a curve of critical points -/
 
-/-- The Hessian of `f t` at `x` is symmetric when the family is jointly `C²` at `(t, x)`. -/
-private theorem fderiv_fderiv_apply_comm_of_uncurry (hf : ContDiffAt ℝ 2 (uncurry f) (t, x))
-    (u w : E) :
-    fderiv ℝ (fderiv ℝ (f t)) x u w = fderiv ℝ (fderiv ℝ (f t)) x w u :=
-  (hf.comp x (contDiffAt_const.prodMk contDiffAt_id)).isSymmSndFDerivAt (by simp) u w
-
 /-- **Differentiating the critical equation along a curve of critical points.** If `c` is a curve
 of critical points of the family, `C²` at `0` and through a point where the family is jointly
 `C²`, then near `0`, with `c' = (τ', ξ')` the velocity of `c`,

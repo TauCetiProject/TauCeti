@@ -164,8 +164,7 @@ private theorem eventually_injective_of_birthDeath (hf : ContDiffAt ℝ 3 (uncur
   have hf2 : ContDiffAt ℝ 2 (uncurry f) (t, x) := hf.of_le (by norm_num)
   have hG : ContDiffAt ℝ 2 G (t, x) := hf.fderiv_slice (m := 2) le_rfl
   have hH : ContDiffAt ℝ 1 H (t, x) := hG.fderiv_slice (m := 1) le_rfl
-  have hsymm : ∀ u w, H (t, x) u w = H (t, x) w u :=
-    (hf2.comp x (contDiffAt_const.prodMk contDiffAt_id)).isSymmSndFDerivAt (by simp)
+  have hsymm : ∀ u w, H (t, x) u w = H (t, x) w u := fderiv_fderiv_apply_comm_of_uncurry hf2
   have hker : ∀ u, H (t, x) u = 0 → ∃ c : ℝ, u = c • v :=
     fun u hu ↦ exists_eq_smul_of_fderiv_fderiv_apply_eq_zero hf2 hs hv0 hv hu
   have ha : deriv (fun s ↦ fderiv ℝ (f s) x) t v ≠ 0 :=
