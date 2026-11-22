@@ -7,6 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Function.Coarea.Basic
 public import TauCeti.MeasureTheory.Function.Coarea.Measurability
+public import Mathlib.Analysis.Convex.Function
+import Mathlib.Analysis.Convex.Continuous
 import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Measurable
 import TauCeti.Analysis.InnerProductSpace.NormDet
@@ -37,6 +39,9 @@ preimage from the level integrals `∫_{{h = t} ∩ {Dh ≠ 0}} ‖Dh‖⁻¹ dH
   `h⁻¹(I)` is the integral of the level integrals over `I`.
 * `MeasureTheory.lintegral_comp_norm_fderiv_eq_lintegral_setLIntegral`: a gradient integral
   `∫ G(‖Dh‖)` with `G 0 = 0` is the integral over levels of `∫_{{h = t} ∩ {Dh ≠ 0}} G(‖Dh‖) ‖Dh‖⁻¹`.
+* `ConvexOn.lintegral_ofReal_comp_norm_fderiv_eq_lintegral_setLIntegral`: the same identity for
+  `G = ENNReal.ofReal ∘ Φ` with `Φ` convex on `[0, ∞)` and `Φ 0 ≤ 0`, where measurability of `G`
+  comes from convexity.
 
 ## References
 
@@ -196,5 +201,32 @@ theorem lintegral_comp_norm_fderiv_eq_lintegral_setLIntegral {h : E → ℝ} {G 
   · -- Off `R` the integrand is `G 0 = 0`.
     by_contra hxR
     exact hx (by simp_all [R])
+
+/-- **Convex gradient integrals as integrals over levels.** For every function `h : E → ℝ` and
+every `Φ` convex on `[0, ∞)` with `Φ 0 ≤ 0`, the integral of the positive part of `Φ (‖Dh‖)` is
+the integral over the levels `t` of `∫_{{h = t} ∩ {Dh ≠ 0}} Φ (‖Dh‖)⁺ ‖Dh‖⁻¹ dHⁿ⁻¹`. This is
+`lintegral_comp_norm_fderiv_eq_lintegral_setLIntegral` with measurability supplied by the
+continuity of `Φ` on `(0, ∞)`. Both sides may be infinite. -/
+theorem _root_.ConvexOn.lintegral_ofReal_comp_norm_fderiv_eq_lintegral_setLIntegral {h : E → ℝ}
+    {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦ0 : Φ 0 ≤ 0) :
+    ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ h x‖) =
+      ∫⁻ t, ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t},
+        ENNReal.ofReal (Φ ‖fderiv ℝ h x‖) * ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1] := by
+  classical
+  -- A measurable function agreeing with `ENNReal.ofReal ∘ Φ` on `[0, ∞)`.
+  set G : ℝ → ℝ≥0∞ := (Ioi 0).piecewise (fun s ↦ ENNReal.ofReal (Φ s)) 0
+  have hG (s : ℝ) (hs : 0 ≤ s) : G s = ENNReal.ofReal (Φ s) := by
+    rcases hs.eq_or_lt with rfl | hs
+    · simp [G, ENNReal.ofReal_eq_zero.2 hΦ0]
+    · exact piecewise_eq_of_mem _ _ _ hs
+  have hGm : Measurable G := by
+    refine ContinuousOn.measurable_piecewise ?_ continuousOn_const measurableSet_Ioi
+    have hcont := hΦ.continuousOn_interior
+    rw [interior_Ici] at hcont
+    exact ENNReal.continuous_ofReal.comp_continuousOn hcont
+  have key := lintegral_comp_norm_fderiv_eq_lintegral_setLIntegral (h := h) hGm
+    ((hG 0 le_rfl).trans (ENNReal.ofReal_eq_zero.2 hΦ0))
+  simp_rw [hG _ (norm_nonneg _)] at key
+  exact key
 
 end MeasureTheory

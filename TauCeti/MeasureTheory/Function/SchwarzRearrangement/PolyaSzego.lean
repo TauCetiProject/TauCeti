@@ -7,7 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.Function.SchwarzRearrangement.CriticalValues
 public import Mathlib.Analysis.Convex.Function
-import Mathlib.Analysis.Convex.Continuous
 import TauCeti.Analysis.BoundedVariation.LevelSurface
 import TauCeti.Analysis.BoundedVariation.SchwarzRearrangement
 import TauCeti.Analysis.Calculus.FDeriv.Norm
@@ -71,29 +70,6 @@ open scoped ENNReal NNReal
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- The coarea formula for the gradient integral `∫ Φ(‖∇g‖)`, as an integral over levels. -/
-private theorem lintegral_ofReal_comp_norm_fderiv_eq [FiniteDimensional ℝ E] [MeasurableSpace E]
-    [BorelSpace E] {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦ0 : Φ 0 ≤ 0) (g : E → ℝ) :
-    ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ g x‖) =
-      ∫⁻ t, ∫⁻ x in {x | fderiv ℝ g x ≠ 0} ∩ g ⁻¹' {t},
-        ENNReal.ofReal (Φ ‖fderiv ℝ g x‖) * ‖fderiv ℝ g x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1] := by
-  classical
-  -- A measurable function agreeing with `ENNReal.ofReal ∘ Φ` on `[0, ∞)`.
-  set G : ℝ → ℝ≥0∞ := (Ioi 0).piecewise (fun s ↦ ENNReal.ofReal (Φ s)) 0
-  have hG (s : ℝ) (hs : 0 ≤ s) : G s = ENNReal.ofReal (Φ s) := by
-    rcases hs.eq_or_lt with rfl | hs
-    · simp [G, ENNReal.ofReal_eq_zero.2 hΦ0]
-    · exact piecewise_eq_of_mem _ _ _ hs
-  have hGm : Measurable G := by
-    refine ContinuousOn.measurable_piecewise ?_ continuousOn_const measurableSet_Ioi
-    have hcont := hΦ.continuousOn_interior
-    rw [interior_Ici] at hcont
-    exact ENNReal.continuous_ofReal.comp_continuousOn hcont
-  have h := lintegral_comp_norm_fderiv_eq_lintegral_setLIntegral (h := g) hGm
-    ((hG 0 le_rfl).trans (ENNReal.ofReal_eq_zero.2 hΦ0))
-  simp_rw [hG _ (norm_nonneg _)] at h
-  exact h
 
 /-- **The area comparison.** For a Lipschitz `h` whose positive superlevel sets have finite volume
 and its real Schwarz rearrangement `h*`, at almost every level `t > 0` the regular part
@@ -206,7 +182,8 @@ theorem lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le (hh : L
     have hzero (g : E → ℝ) (x : E) : fderiv ℝ g x = 0 :=
       ContinuousLinearMap.ext fun v ↦ by rw [Subsingleton.elim v 0, map_zero, map_zero]
     simp [hzero, ENNReal.ofReal_eq_zero.2 hΦ0]
-  rw [lintegral_ofReal_comp_norm_fderiv_eq hΦ hΦ0, lintegral_ofReal_comp_norm_fderiv_eq hΦ hΦ0]
+  rw [hΦ.lintegral_ofReal_comp_norm_fderiv_eq_lintegral_setLIntegral hΦ0,
+    hΦ.lintegral_ofReal_comp_norm_fderiv_eq_lintegral_setLIntegral hΦ0]
   refine lintegral_mono_ae ?_
   filter_upwards [ae_setLIntegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le hh hfin
     hΦ hΦ0, volume.ae_ne (0 : ℝ)] with t ht ht0
