@@ -104,9 +104,8 @@ private theorem exists_eq_intCast_mul_sphericalPendulumPeriod {s : Set ℝ} (hs 
     {f : ℝ → ℝ} (hf : ContinuousOn f s)
     (hfT : ∀ t ∈ s, ∃ m : ℤ, f t = m * sphericalPendulumPeriod (1 + r * cos t) (r * sin t)) :
     ∃ m : ℤ, ∀ t ∈ s, f t = m * sphericalPendulumPeriod (1 + r * cos t) (r * sin t) := by
-  have hT : ∀ t ∈ s, sphericalPendulumPeriod (1 + r * cos t) (r * sin t) ≠ 0 := fun t ht ↦ by
-    obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 (hγ t ht)
-    exact (sphericalPendulumPeriod_pos hj hz hV).ne'
+  have hT : ∀ t ∈ s, sphericalPendulumPeriod (1 + r * cos t) (r * sin t) ≠ 0 := fun t ht ↦
+    (sphericalPendulumPeriod_pos_of_mem (hγ t ht)).ne'
   have hTc : ContinuousOn (fun t ↦ sphericalPendulumPeriod (1 + r * cos t) (r * sin t)) s :=
     continuousOn_sphericalPendulumPeriod.comp
       (by fun_prop : Continuous fun t : ℝ ↦ (1 + r * cos t, r * sin t)).continuousOn
@@ -274,9 +273,9 @@ theorem exists_eq_add_zsmul_of_mem_closure_sphericalPendulumPeriod (hr : 0 < r)
       hγ (-m)
       (L := fun t ↦ v t 1) ((continuous_apply 1).comp_continuousOn hv) fun t ht hs ↦ by
         obtain ⟨m', n, h₀, h₁⟩ := hcoord t ht hs
-        obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 (hγ t hs)
-        have hmm : (m' : ℝ) = m := mul_right_cancel₀ (sphericalPendulumPeriod_pos hj hz hV).ne'
-          (h₀.symm.trans (hm t ht hs))
+        have hmm : (m' : ℝ) = m :=
+          mul_right_cancel₀ (sphericalPendulumPeriod_pos_of_mem (hγ t hs)).ne'
+            (h₀.symm.trans (hm t ht hs))
         rw [h₁, hmm, Real.Angle.angle_eq_iff_two_pi_dvd_sub]
         exact ⟨n, by push_cast; ring⟩
   ext i
@@ -312,9 +311,8 @@ theorem exists_eq_add_zsmul_of_mem_hamiltonianFlowStabilizer_sphericalPendulum (
         v t 0 = m * sphericalPendulumPeriod (1 + r * cos t) (r * sin t)) ∧
       v (2 * π) = v 0 + m • ![0, 2 * π] :=
   exists_eq_add_zsmul_of_mem_closure_sphericalPendulumPeriod hr hγ hv fun t ht hs ↦ by
-    obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1
-      (hγ t hs)
-    rw [← hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure hj hz hV (hx t hs)]
+    rw [← hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure_of_mem (hγ t hs)
+      (hx t hs)]
     exact hvΛ t ht hs
 
 /-- **Sections of the period lattice returning after one turn.** Along the circle
@@ -370,12 +368,11 @@ theorem closure_pair_ne_hamiltonianFlowStabilizer_sphericalPendulum (hr : 0 < r)
         isIntegrableSystem_sphericalPendulumEnergyMomentumVec.poissonBracket_eq_zero
         isCompleteVectorField_hamiltonianVectorField_sphericalPendulumEnergyMomentumVec (x t) := by
   intro h
-  obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1
-    (hγ t hs)
   have hγ₂ : ![sphericalPendulumPeriod (1 + r * cos t) (r * sin t),
       -sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t)] ∈
       AddSubgroup.closure {v t, w t} := by
-    rw [h, hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure hj hz hV (hx t hs)]
+    rw [h, hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure_of_mem (hγ t hs)
+      (hx t hs)]
     exact AddSubgroup.subset_closure (mem_insert _ _)
   obtain ⟨a, b, hab⟩ := AddSubgroup.mem_closure_pair.1 hγ₂
   have hv0 :=
@@ -384,7 +381,7 @@ theorem closure_pair_ne_hamiltonianFlowStabilizer_sphericalPendulum (hr : 0 < r)
   have hw0 :=
     apply_zero_eq_zero_of_mem_hamiltonianFlowStabilizer_sphericalPendulum hr hγ hx hw hwΛ hwper ht
       hs
-  exact (sphericalPendulumPeriod_pos hj hz hV).ne (by simpa [hv0, hw0] using congrFun hab 0)
+  exact (sphericalPendulumPeriod_pos_of_mem (hγ t hs)).ne (by simpa [hv0, hw0] using congrFun hab 0)
 
 end Monodromy
 

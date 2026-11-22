@@ -12,7 +12,6 @@ import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.Analysis.SpecialFunctions.Integrals.SqrtQuadratic
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.MeasureTheory.Function.Jacobian.OneDim
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # The equations of motion of the spherical pendulum
@@ -406,6 +405,12 @@ theorem sphericalPendulumPeriod_pos (hj : j ≠ 0) (hz₀ : z₀ ∈ Ioo (-1) 1)
     (intervalIntegrable_inv_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq hj hz₀ hV)
     (fun z hz ↦ inv_pos.2 (Real.sqrt_pos.2 (two_mul_sub_mul_one_sub_sq_sub_sq_pos hj hz₀ hV hz)))
     (sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV)
+
+/-- On the domain of distinct nonpolar turning points, the period of the height is positive. -/
+theorem sphericalPendulumPeriod_pos_of_mem
+    (hc : (h, j) ∈ sphericalPendulumTurningPointDomain) : 0 < sphericalPendulumPeriod h j :=
+  let ⟨hj, _, hz₀, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 hc
+  sphericalPendulumPeriod_pos hj hz₀ hV
 
 /-- **The period of the height of the spherical pendulum.** Above the curve of relative
 equilibria, let a motion of the spherical pendulum with energy `h` and vertical angular momentum
