@@ -26,8 +26,9 @@ is holomorphic on the open unit disc, with Taylor coefficients the Fourier coeff
 nonnegative index. This file proves the theorem of Privalov that the Cauchy integral preserves
 Hölder continuity: if `φ` is `α`-Hölder on the circle with constant `K`, for `0 < α < 1`, then `F`
 is `α`-Hölder on the open disc, with constant `C(α) K`
-(`TauCeti.holderOnWith_ball_circleIntegral_sub_inv_smul`). Being uniformly continuous, `F` then
-extends continuously to the closed disc; that extension is not constructed here.
+(`TauCeti.holderOnWith_ball_two_pi_I_inv_smul_circleIntegral_sub_inv_smul`). Being uniformly
+continuous, `F` then extends continuously to the closed disc; that extension is not constructed
+here.
 
 This is the existence half of the Hölder theory of the Riemann–Hilbert problem on the disc: a
 holomorphic function with prescribed Hölder boundary data modulo the boundary condition is built
@@ -57,8 +58,9 @@ The proof estimates the derivative and then integrates it.
 
 * `TauCeti.norm_deriv_circleIntegral_sub_inv_smul_le`: the derivative of the Cauchy integral of an
   `α`-Hölder function on the circle is at most `144 K (1 - |z|)^(α - 1) / (1 - α)`.
-* `TauCeti.holderOnWith_ball_circleIntegral_sub_inv_smul`: **Privalov's theorem.** The Cauchy
-  integral of an `α`-Hölder function on the circle, `0 < α < 1`, is `α`-Hölder on the open disc.
+* `TauCeti.holderOnWith_ball_two_pi_I_inv_smul_circleIntegral_sub_inv_smul`: **Privalov's
+  theorem.** The Cauchy integral of an `α`-Hölder function on the circle, `0 < α < 1`, is
+  `α`-Hölder on the open disc.
 
 ## References
 
@@ -256,8 +258,8 @@ theorem norm_deriv_circleIntegral_sub_inv_smul_le [CompleteSpace E] {φ : ℂ �
 /-- **Privalov's theorem.** If `φ` is `α`-Hölder on the unit circle with constant `K`, for
 `0 < α < 1`, then its Cauchy integral `z ↦ (2 π i)⁻¹ ∮_{|w| = 1} φ(w) / (w - z) dw` is `α`-Hölder
 on the open unit disc, with constant `(3 + 2 / α) · 36 K / (1 - α)`. -/
-theorem holderOnWith_ball_circleIntegral_sub_inv_smul [CompleteSpace E] {φ : ℂ → E}
-    {K α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) (hφ : HolderOnWith K α φ (sphere 0 1)) :
+theorem holderOnWith_ball_two_pi_I_inv_smul_circleIntegral_sub_inv_smul [CompleteSpace E]
+    {φ : ℂ → E} {K α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) (hφ : HolderOnWith K α φ (sphere 0 1)) :
     HolderOnWith ((3 + 2 / α) * (36 / (1 - α) * K)) α
       (fun z ↦ (2 * π * I)⁻¹ • ∮ w in C(0, 1), (w - z)⁻¹ • φ w) (ball 0 1) := by
   have hint : CircleIntegrable φ 0 1 := (hφ.continuousOn hα0).circleIntegrable zero_le_one
