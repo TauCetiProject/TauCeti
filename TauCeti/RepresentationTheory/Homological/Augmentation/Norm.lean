@@ -164,7 +164,8 @@ private theorem norm_eq_zero_of_smul_eq_zero [Fintype Q] (B : Rep ℤ Q) {γ : M
   ext v
   have h := congrArg B.ρ.asModuleEquiv (hγ (B.ρ.asModuleEquiv.symm v))
   rw [Representation.asModuleEquiv_map_smul, LinearEquiv.apply_symm_apply, map_zero,
-    MonoidAlgebra.eq_sum_single_of_mul_single_eq_self hinv hεγ, map_sum, LinearMap.sum_apply] at h
+    MonoidAlgebra.eq_sum_single_of_mul_single_eq_self
+      (IsSMulRegular.of_ne_zero Fintype.card_ne_zero) hinv hεγ, map_sum, LinearMap.sum_apply] at h
   simp only [Representation.asAlgebraHom_single_one] at h
   rw [Representation.norm, LinearMap.sum_apply, LinearMap.zero_apply]
   exact h
