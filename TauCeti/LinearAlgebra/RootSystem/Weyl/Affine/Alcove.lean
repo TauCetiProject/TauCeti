@@ -390,6 +390,10 @@ or `k = 0` and `αⱼ` is a positive root. -/
 private def IsAffinePos (p : ι × ℤ) : Prop :=
   p.2 < 0 ∨ (p.2 = 0 ∧ 0 < b.height p.1)
 
+private lemma isAffinePos_iff {p : ι × ℤ} :
+    IsAffinePos b p ↔ p.2 < 0 ∨ (p.2 = 0 ∧ 0 < b.height p.1) :=
+  Iff.rfl
+
 /-- The positive affine roots whose hyperplane separates `x` from the fundamental alcove. -/
 private def sepSet (x : N) : Set (ι × ℤ) :=
   {p | IsAffinePos b p ∧ P.root' p.1 x < p.2}
@@ -587,7 +591,8 @@ theorem exists_mem_closure_affineWallReflections_apply_mem_closedFundamentalAlco
       obtain ⟨h₂pos, h₂lt⟩ := (mem_sepSet b).mp h₂
       exact Prod.ext rfl (Int.cast_injective
         ((hu j₁ k₁ h₁pos h₁lt).symm.trans (hu j₁ k₂ h₂pos h₂lt))))
-    (fun u k₀ j₀ c hu _ hwall0 hpres w hw hwz ↦ ?_) hsep
+    (fun u k₀ j₀ c hu _ hwall0 hpres w hw hwz ↦ ?_)
+    (fun j k hpos ↦ hsep j k ((isAffinePos_iff b).mp hpos))
   obtain ⟨hwpos, hwlt⟩ := (mem_sepSet b).mp hwz
   have hj₀y : P.root' j₀ y = c := by
     rcases hw with rfl | rfl
