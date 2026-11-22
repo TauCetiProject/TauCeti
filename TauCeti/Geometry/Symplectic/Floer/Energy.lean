@@ -18,6 +18,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
 # Curvature of Hamiltonian perturbations and the Floer energy identity
@@ -77,6 +78,8 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
 * `SymplecticForm.norm_fderiv_stdComplexLineReal_sq_le`: the energy density and the Hamiltonian
   vector field control `‖∂_s u‖²`.
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
+* `SymplecticForm.exists_mem_Icc_mul_setIntegral_floerEnergyDensity_le`: some slice of a
+  rectangle has at most the average energy.
 * `SymplecticForm.floerEnergyDensity_add_hamiltonianCurvature_eq`: for a `C²` map, the energy
   density plus the curvature is the exterior derivative of the one-form `K(u) + λ(u)`, where
   `λₓ(v) = ½ ω(x, v)` is the primitive of `ω`; this globalizes the energy identity to domains
@@ -933,6 +936,22 @@ theorem setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le (ω : SymplecticForm
   rw [div_mul_eq_mul_div, le_div_iff₀ hc, mul_comm]
   exact ω.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity hc.le (hJc z hz)
     (hJM z hz) (h z hz)
+
+variable {U : Set (ℝ × ℝ)} {s : ℝ}
+
+/-- **A slice of at most average energy.** Let `u` and the perturbation data `Ks`, `Kt` be `C¹`
+over an open set `U` containing the rectangle `[s, s + h] × [0, 1]`, with `h > 0`. Then some slice
+`σ ∈ [s, s + h]` has energy at most the average energy of the rectangle:
+`h ∫₀¹ e(σ, t) dt ≤ ∫_{[s, s + h] × [0, 1]} e`. -/
+theorem exists_mem_Icc_mul_setIntegral_floerEnergyDensity_le (ω : SymplecticForm V)
+    (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) (hKs : ContDiffOn ℝ 1 (uncurry Ks) (U ×ˢ univ))
+    (hKt : ContDiffOn ℝ 1 (uncurry Kt) (U ×ˢ univ)) {h : ℝ} (hh : 0 < h)
+    (hR : Icc s (s + h) ×ˢ Icc (0 : ℝ) 1 ⊆ U) :
+    ∃ σ ∈ Icc s (s + h), h * ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity Ks Kt u (σ, t) ≤
+      ∫ z in Icc s (s + h) ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u z := by
+  simpa only [add_sub_cancel_left] using exists_mem_Icc_mul_setIntegral_slice_le_setIntegral_rect
+    (lt_add_of_pos_right s hh) (((ω.continuousOn_floerEnergyDensity hU hu hKs hKt).mono
+      hR).integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
 
 end Integral
 

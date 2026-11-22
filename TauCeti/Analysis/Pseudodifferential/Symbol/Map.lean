@@ -23,8 +23,10 @@ the same property (`TauCeti.Symbol.IsUniform.map`, `TauCeti.Symbol.HasCompactSpa
 as does the image of a smoothing symbol (`TauCeti.Symbol.IsSmoothing.map`).
 
 The product `ψ(x) a(x, ξ)` of a symbol with a smooth function of the position
-(`TauCeti.Symbol.smulLeft`) is a symbol of the same order, with compact spatial support when `a`
-or `ψ` has compact support (`TauCeti.Symbol.HasCompactSpatialSupport.smulLeft`,
+(`TauCeti.Symbol.smulLeft`, with coefficient `TauCeti.Symbol.coefficient_smulLeft`, and
+`TauCeti.Symbol.coefficient_smulLeft_ofReal` for a real `ψ`) is a symbol of the same order, with
+compact spatial support when `a` or `ψ` has compact support
+(`TauCeti.Symbol.HasCompactSpatialSupport.smulLeft`,
 `TauCeti.Symbol.hasCompactSpatialSupport_smulLeft`), and smoothing when `a` is smoothing
 (`TauCeti.Symbol.IsSmoothing.smulLeft`).
 -/
@@ -98,9 +100,9 @@ theorem frequencyDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a
     exact Φ.coordinateDeriv_comp_left [j]
       ((a.contDiff_coefficient.comp (contDiff_const.prodMk contDiff_id)).of_le (by simp)) ξ)
 
-/-- A symbol commutes with `T` at every point exactly when its images under right and left
+/-- If every value of a symbol commutes with an operator `T`, its images under right and left
 composition with `T` agree. -/
-private theorem map_compL_flip_eq_map_compL {a : Symbol n V V m} {T : V →L[ℂ] V}
+theorem map_compL_flip_eq_map_compL {a : Symbol n V V m} {T : V →L[ℂ] V}
     (h : ∀ p, Commute (a.coefficient p) T) :
     a.map (((ContinuousLinearMap.compL ℂ V V V).flip T).restrictScalars ℝ) =
       a.map ((ContinuousLinearMap.compL ℂ V V V T).restrictScalars ℝ) :=
@@ -157,6 +159,14 @@ theorem coefficient_smulLeft {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff �
     (a : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n) :
     (smulLeft hψ a).coefficient p = ψ p.1 • a.coefficient p := by
   simp [smulLeft, coefficient_inclusion, ContinuousLinearMap.smul_comp]
+
+/-- `TauCeti.Symbol.coefficient_smulLeft` for a real smooth function `ψ`, viewed in `ℂ`: the
+coefficient of `ψ(x) a(x, ξ)` is the real multiple `ψ(x) • a(x, ξ)`. -/
+theorem coefficient_smulLeft_ofReal {ψ : CoordinateSpace n → ℝ}
+    (hψ : ContDiff ℝ ∞ (Complex.ofRealCLM ∘ ψ)) (a : Symbol n V W m)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (smulLeft hψ a).coefficient p = ψ p.1 • a.coefficient p := by
+  simp [Complex.coe_smul]
 
 /-- Multiplying a symbol with compact spatial support by a smooth function of the position keeps
 compact spatial support. -/
