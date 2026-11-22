@@ -73,6 +73,10 @@ and heights may lie on the boundary of the domains. Only the full-space comparis
   with inequality heights only, under monotone outer derivatives.
 * `TauCeti.CompositionLift.fst_image_sharedOuterApprox_subset_directOuterApprox_of_monotone`:
   the same comparison when `h` is monotone on the whole height space.
+* `TauCeti.CompositionLift.sharedOuterApprox_empty_heights`,
+  `TauCeti.CompositionLift.directOuterApprox_of_isEmpty` and
+  `TauCeti.CompositionLift.fst_image_sharedOuterApprox_of_isEmpty`: the degenerate cases of no
+  admissible heights and no anchors.
 
 ## References
 
@@ -104,6 +108,12 @@ def outerRow (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : X) (Dh : (ι
 
 theorem outerRow_def : outerRow g h a Dh y = h (g a) + Dh (y - g a) :=
   (rfl)
+
+/-- For the outer sum, the outer row at any anchor is the sum of the heights. -/
+@[simp]
+theorem outerRow_sum_coord [Fintype ι] :
+    outerRow g (fun y ↦ ∑ j, y j) a (∑ j, ContinuousLinearMap.proj j) y = ∑ j, y j := by
+  simp [outerRow_def, Finset.sum_sub_distrib]
 
 @[simp]
 theorem outerRow_self : outerRow g h a Dh (g a) = h (g a) := by
@@ -144,6 +154,12 @@ def directRow (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : X) (Dg : X 
 
 theorem componentRow_def : componentRow g a Dg x = g a + Dg (x - a) :=
   (rfl)
+
+/-- The component row of the identity inner map is the identity at every anchor. -/
+@[simp]
+theorem componentRow_id [Fintype ι] (a x : ι → ℝ) :
+    componentRow id a (ContinuousLinearMap.id ℝ _) x = x := by
+  simp [componentRow_def]
 
 theorem directRow_def : directRow g h a Dg Dh x = h (g a) + Dh (Dg (x - a)) :=
   (rfl)
@@ -280,6 +296,37 @@ theorem sharedOuterApproxOn_empty :
 theorem sharedOuterApproxOn_anti (hJ : J' ⊆ J) :
     sharedOuterApproxOn J D E g h a Dg Dh b ⊆ sharedOuterApproxOn J' D E g h a Dg Dh b :=
   fun _ hz ↦ ⟨hz.1, fun i j hj ↦ hz.2 i j (hJ hj)⟩
+
+/-! ### Degenerate cases -/
+
+/-- The shared approximation lies in the product of the domain and the admissible heights. -/
+theorem sharedOuterApprox_subset_prod : sharedOuterApprox D E g h a Dg Dh b ⊆ D ×ˢ E :=
+  fun _ hz ↦ ⟨hz.1, hz.2.1⟩
+
+/-- With no admissible heights the shared approximation is empty, whatever the anchors, rows and
+budget. -/
+@[simp]
+theorem sharedOuterApprox_empty_heights : sharedOuterApprox D ∅ g h a Dg Dh b = ∅ :=
+  subset_empty_iff.1 <| sharedOuterApprox_subset_prod.trans (prod_empty (s := D)).subset
+
+/-- Without anchors the direct approximation is the domain. -/
+@[simp]
+theorem directOuterApprox_of_isEmpty [IsEmpty κ] : directOuterApprox D g h a Dg Dh b = D := by
+  ext x
+  simp
+
+/-- Without anchors the shared approximation is the product of the domain and the heights. -/
+@[simp]
+theorem sharedOuterApprox_of_isEmpty [IsEmpty κ] :
+    sharedOuterApprox D E g h a Dg Dh b = D ×ˢ E := by
+  ext z
+  simp
+
+/-- Without anchors and with some admissible height, the projected shared approximation is the
+domain. -/
+theorem fst_image_sharedOuterApprox_of_isEmpty [IsEmpty κ] (hE : E.Nonempty) :
+    Prod.fst '' sharedOuterApprox D E g h a Dg Dh b = D := by
+  rw [sharedOuterApprox_of_isEmpty, fst_image_prod _ hE]
 
 /-! ### The comparison theorems -/
 
