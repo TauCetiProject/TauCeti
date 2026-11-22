@@ -36,6 +36,8 @@ In Lean a letter is `a : ℕ × Fin d`, the pair `(A, j - 1)`, and `γ_j` is `li
 * `TauCeti.branchDenom a x`: the denominator `q_a (w) = 1 + (A + 1) (1 - w_j)`.
 * `TauCeti.branchMap a x`: the branch `F_a` in chart coordinates.
 * `TauCeti.linearMove j`: the linear map `γ_{j+1}` of `ℝ^{d+2}`.
+* `TauCeti.lastMoveMap x`: the action `w ↦ (w₁, …, w_{n-2}) / (1 + w₁ + ⋯ + w_{n-2})` of
+  `γ_{n-1}` in chart coordinates.
 
 ## Main results
 
@@ -53,6 +55,9 @@ In Lean a letter is `a : ℕ × Fin d`, the pair `(A, j - 1)`, and `γ_j` is `li
   in the letter.
 * `TauCeti.contDiffAt_branchMap`: each branch is smooth wherever its denominator is nonzero, in
   particular on a neighbourhood of the simplex.
+* `TauCeti.linearMove_last_simplexLift`, `TauCeti.branchMap_succ`,
+  `TauCeti.branchMap_eq_iterate_lastMoveMap`: `lastMoveMap` is the projective action of
+  `γ_{n-1}`, and the branch of `(A, j)` is its `A`-th iterate after the branch of `(0, j)`.
 
 ## References
 
@@ -375,5 +380,126 @@ theorem linearMove_last_pow_linearMove_mem_orderedCone (a : ℕ × Fin d) {y : F
   rw [linearMove_last_pow_linearMove_of_mem_orderedCone a hy]
   exact smul_mem_orderedCone (simplexLift_mem_orderedCone (branchMap_mem_orderedSimplex a hx))
     (mul_pos (pos_last_of_mem_orderedCone hy) hq)
+
+/-! ### The last move in chart coordinates -/
+
+/-- The action of `γ_{n-1}` on the ordered simplex in chart coordinates. Since
+`γ_{n-1} (w, 1) = (w₁, …, w_{n-2}, 1, 1 + w₁ + ⋯ + w_{n-2})`, it divides the chart coordinates by
+`1 + ∑ xᵢ`. The accelerated branch of `(A, j)` is its `A`-th iterate after the branch of
+`(0, j)`. -/
+noncomputable def lastMoveMap (x : Fin d → ℝ) : Fin d → ℝ :=
+  fun i => x i / (1 + ∑ k, x k)
+
+@[simp]
+theorem lastMoveMap_apply (x : Fin d → ℝ) (i : Fin d) :
+    lastMoveMap x i = x i / (1 + ∑ k, x k) :=
+  (rfl)
+
+/-- The chart coordinates of `lastMoveMap x` sum to `∑ xᵢ / (1 + ∑ xᵢ)`. -/
+theorem sum_lastMoveMap (x : Fin d → ℝ) :
+    ∑ i, lastMoveMap x i = (∑ k, x k) / (1 + ∑ k, x k) := by
+  simp only [lastMoveMap_apply, ← Finset.sum_div]
+
+/-- The last coordinate of the image of the last move is `1 / (1 + ∑ xᵢ)`. -/
+theorem simplexPoint_lastMoveMap_last {x : Fin d → ℝ} (hx : 1 + ∑ k, x k ≠ 0) :
+    simplexPoint (lastMoveMap x) (Fin.last d) = 1 / (1 + ∑ k, x k) := by
+  rw [simplexPoint_last, sum_lastMoveMap]
+  field_simp
+  ring
+
+/-- The lift `(w, 1)` with the full point `w` written out. -/
+private theorem simplexLift_eq_snoc_snoc (x : Fin d → ℝ) :
+    simplexLift x = Fin.snoc (Fin.snoc x (1 - ∑ k, x k) : Fin (d + 1) → ℝ) 1 := by
+  ext i
+  induction i using Fin.lastCases with
+  | last => simp
+  | cast i => induction i using Fin.lastCases with
+    | last => simp
+    | cast i => simp
+
+/-- **The homogeneous identity** for `γ_{n-1}`: `γ_{n-1} (w, 1) = (1 + ∑ xᵢ) (G (w), 1)` for the
+last move `G = lastMoveMap`, wherever `1 + ∑ xᵢ ≠ 0`. -/
+theorem linearMove_last_simplexLift {x : Fin d → ℝ} (hx : 1 + ∑ k, x k ≠ 0) :
+    linearMove (Fin.last d) (simplexLift x) = (1 + ∑ k, x k) • simplexLift (lastMoveMap x) := by
+  rw [simplexLift_eq_snoc_snoc x, linearMove_last_snoc_snoc]
+  ext i
+  induction i using Fin.lastCases with
+  | last => simp only [Fin.snoc_last, Pi.smul_apply, simplexLift_last, smul_eq_mul]; ring
+  | cast i => induction i using Fin.lastCases with
+    | last =>
+      simp only [Fin.snoc_castSucc, Fin.snoc_last, Pi.smul_apply, simplexLift_castSucc,
+        smul_eq_mul]
+      rw [simplexPoint_lastMoveMap_last hx]
+      field_simp
+    | cast i => simp [mul_div_cancel₀ _ hx]
+
+/-- The last move maps the ordered simplex into itself. -/
+theorem lastMoveMap_mem_orderedSimplex {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
+    lastMoveMap x ∈ orderedSimplex d := by
+  obtain ⟨h0, hmono, -⟩ := mem_orderedSimplex_iff.mp hx
+  have hs : 0 ≤ ∑ k, x k := Finset.sum_nonneg fun k _ => h0 k
+  have hpos : 0 < 1 + ∑ k, x k := by linarith
+  refine mem_orderedSimplex_iff.mpr ⟨fun i => div_nonneg (h0 i) hpos.le,
+    fun i j hij => div_le_div_of_nonneg_right (hmono hij) hpos.le, fun i => ?_⟩
+  rw [← simplexPoint_last, simplexPoint_lastMoveMap_last hpos.ne', lastMoveMap_apply]
+  exact div_le_div_of_nonneg_right ((le_one_half_of_mem_orderedSimplex hx i).trans
+    (by norm_num)) hpos.le
+
+/-- The last move maps the ordered simplex into itself. -/
+theorem mapsTo_lastMoveMap : MapsTo lastMoveMap (orderedSimplex d) (orderedSimplex d) :=
+  fun _ hx => lastMoveMap_mem_orderedSimplex hx
+
+/-- The last move is smooth at every point where `1 + ∑ xᵢ` does not vanish, in particular on a
+neighbourhood of the simplex. -/
+theorem contDiffAt_lastMoveMap {x : Fin d → ℝ} (hx : 1 + ∑ k, x k ≠ 0) {n : WithTop ℕ∞} :
+    ContDiffAt ℝ n lastMoveMap x := by
+  rw [contDiffAt_pi]
+  intro i
+  have h : (fun y => lastMoveMap y i) = fun y : Fin d → ℝ => y i / (1 + ∑ k, y k) :=
+    funext fun y => lastMoveMap_apply y i
+  rw [h]
+  exact ContDiffAt.div (by fun_prop) (by fun_prop) hx
+
+/-- The last move is smooth on the ordered simplex. -/
+theorem contDiffOn_lastMoveMap {n : WithTop ℕ∞} :
+    ContDiffOn ℝ n lastMoveMap (orderedSimplex d) := fun x hx => by
+  have h0 := (mem_orderedSimplex_iff.mp hx).1
+  have hs : 0 ≤ ∑ k, x k := Finset.sum_nonneg fun k _ => h0 k
+  exact (contDiffAt_lastMoveMap (by linarith)).contDiffWithinAt
+
+/-- Raising the acceleration by one adds `1 - w_j` to the denominator. -/
+theorem branchDenom_succ (A : ℕ) (j : Fin d) (x : Fin d → ℝ) :
+    branchDenom (A + 1, j) x = branchDenom (A, j) x + (1 - x j) := by
+  simp only [branchDenom_def]
+  push_cast
+  ring
+
+/-- Raising the acceleration by one applies the last move: `F_{(A + 1, j)} = G ∘ F_{(A, j)}`,
+the chart form of `γ_{n-1}^{A+1} γ_j = γ_{n-1} (γ_{n-1}^A γ_j)`. -/
+theorem branchMap_succ (A : ℕ) (j : Fin d) {x : Fin d → ℝ} (hx : branchDenom (A, j) x ≠ 0) :
+    branchMap (A + 1, j) x = lastMoveMap (branchMap (A, j) x) := by
+  ext i
+  rw [lastMoveMap_apply, sum_branchMap, branchMap_apply, branchMap_apply, branchDenom_succ,
+    one_add_div hx, div_div_div_cancel_right₀ hx]
+
+/-- Each accelerated branch is an iterate of the last move after an unaccelerated branch:
+`F_{(A, j)} = G^A ∘ F_{(0, j)}` wherever `w_j ≤ 1`, in particular on the simplex. -/
+theorem branchMap_eq_iterate_lastMoveMap (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : x a.2 ≤ 1) :
+    branchMap a x = lastMoveMap^[a.1] (branchMap (0, a.2) x) := by
+  obtain ⟨A, j⟩ := a
+  dsimp only at hx ⊢
+  induction A with
+  | zero => rfl
+  | succ A ih =>
+    rw [branchMap_succ A j (branchDenom_pos (A, j) hx).ne', ih,
+      Function.iterate_succ_apply']
+
+/-- The last coordinate of an image of a branch is the last coordinate `w_{d+2}` of the full
+point, divided by the denominator: deleting `w_j` with `j ≤ d + 1` shifts `w_{d+2}` into the last
+chart slot. -/
+theorem branchMap_apply_last (a : ℕ × Fin (d + 1)) (x : Fin (d + 1) → ℝ) :
+    branchMap a x (Fin.last d) = (1 - ∑ k, x k) / branchDenom a x := by
+  rw [branchMap_apply, Fin.succAbove_of_le_castSucc _ _ (Fin.castSucc_le_castSucc_iff.mpr
+    (Fin.le_last a.2)), Fin.succ_last, simplexPoint_last]
 
 end TauCeti
