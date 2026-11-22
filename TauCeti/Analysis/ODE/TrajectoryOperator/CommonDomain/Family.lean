@@ -53,6 +53,8 @@ bounded interval remains, which is where the compactness of `D → H` enters.
   the estimate for paths supported where `A` is near its limit along a filter, with the versions
   `exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_tendsto_atTop`
   and `..._atBot` at the two ends.
+* `TauCeti.WeakDerivStep.inner_apply_eq_inner_of_tendsto`: a limit of `ι`-symmetric operators is
+  `ι`-symmetric.
 
 ## References
 
@@ -207,6 +209,19 @@ theorem exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_tendsto
   obtain ⟨T, hT⟩ := mem_atBot_sets.1 hS
   exact ⟨C, T, fun u hu ↦ hC u (hu.mono fun s hs hsS ↦
     hs (lt_of_not_ge fun h ↦ hsS (hT s h)))⟩
+
+omit [CompleteSpace D] [CompleteSpace H] in
+/-- **A limit of `ι`-symmetric operators is `ι`-symmetric.** If `A s → B` along `l` and `A s` is
+`ι`-symmetric (`⟪A s x, ι y⟫ = ⟪ι x, A s y⟫`) for `s` frequently along `l`, then `B` is
+`ι`-symmetric. -/
+theorem inner_apply_eq_inner_of_tendsto {α : Type*} {l : Filter α} {A : α → D →L[ℝ] H}
+    {B : D →L[ℝ] H} (hSymm : ∃ᶠ s in l, ∀ x y : D, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ)
+    (hA : Tendsto A l (𝓝 B)) (x y : D) :
+    ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ := by
+  have hx := ((ContinuousLinearMap.apply ℝ H x).continuous.tendsto B).comp hA
+  have hy := ((ContinuousLinearMap.apply ℝ H y).continuous.tendsto B).comp hA
+  exact tendsto_nhds_unique_of_frequently_eq (hx.inner tendsto_const_nhds)
+    (tendsto_const_nhds.inner hy) (hSymm.mono fun s hs ↦ hs x y)
 
 end Symmetric
 
