@@ -114,37 +114,47 @@ variable (k : Type*) [Field k] [IsAlgClosed k]
 character. -/
 @[simp]
 theorem monoidalAutCharacter_characterMonoidalAut (χ : universalGradingGroup C →* kˣ) :
-    monoidalAutCharacter (hfin := hfin) k (characterMonoidalAut k χ) = χ :=
-  monoidalAutCharacterOfSurjective_characterMonoidalAut k
-    (fun X _ ↦ (bijective_algebraMap_end_of_simple k X).surjective) χ
+    monoidalAutCharacter (hfin := hfin) k (characterMonoidalAut k χ) = χ := by
+  rw [monoidalAutCharacter_eq_monoidalAutCharacterOfSurjective]
+  exact monoidalAutCharacterOfSurjective_characterMonoidalAut k _ χ
 
 /-- Extending the character extracted from an automorphism recovers that automorphism. -/
 @[simp]
 theorem characterMonoidalAut_monoidalAutCharacter (a : Aut (LaxMonoidalFunctor.of (𝟭 C))) :
-    characterMonoidalAut k (monoidalAutCharacter (hfin := hfin) k a) = a :=
-  characterMonoidalAut_monoidalAutCharacterOfSurjective k
-    (fun X _ ↦ (bijective_algebraMap_end_of_simple k X).surjective) a
+    characterMonoidalAut k (monoidalAutCharacter (hfin := hfin) k a) = a := by
+  rw [monoidalAutCharacter_eq_monoidalAutCharacterOfSurjective]
+  exact characterMonoidalAut_monoidalAutCharacterOfSurjective k _ a
 
 /-- Monoidal natural automorphisms of the identity are the characters of the universal grading
 group, as groups. The forward map extracts the scalar on each simple object; the inverse
 extends a character to every object using finite semisimplicity. -/
-@[expose]
 def monoidalAutCharacterEquiv :
     Aut (LaxMonoidalFunctor.of (𝟭 C)) ≃* (universalGradingGroup C →* kˣ) :=
   monoidalAutCharacterEquivOfSurjective k
     fun X _ ↦ (bijective_algebraMap_end_of_simple k X).surjective
 
+/-- `monoidalAutCharacterEquiv` is the specialization of `monoidalAutCharacterEquivOfSurjective`
+to an algebraically closed field via Schur's lemma. -/
+theorem monoidalAutCharacterEquiv_eq_monoidalAutCharacterEquivOfSurjective :
+    monoidalAutCharacterEquiv (hfin := hfin) k (C := C) =
+      monoidalAutCharacterEquivOfSurjective k fun X _ ↦
+        (bijective_algebraMap_end_of_simple k X).surjective :=
+  (rfl)
+
 /-- The classification sends an automorphism to its character on simple degrees. -/
 @[simp]
 theorem monoidalAutCharacterEquiv_apply (a : Aut (LaxMonoidalFunctor.of (𝟭 C))) :
-    monoidalAutCharacterEquiv (hfin := hfin) k a = monoidalAutCharacter (hfin := hfin) k a :=
-  (rfl)
+    monoidalAutCharacterEquiv (hfin := hfin) k a = monoidalAutCharacter (hfin := hfin) k a := by
+  rw [monoidalAutCharacterEquiv_eq_monoidalAutCharacterEquivOfSurjective,
+    monoidalAutCharacter_eq_monoidalAutCharacterOfSurjective]
+  exact monoidalAutCharacterEquivOfSurjective_apply k _ a
 
 /-- The inverse classification extends a character to a monoidal automorphism. -/
 @[simp]
 theorem monoidalAutCharacterEquiv_symm_apply (χ : universalGradingGroup C →* kˣ) :
-    (monoidalAutCharacterEquiv (hfin := hfin) k).symm χ = characterMonoidalAut k χ :=
-  (rfl)
+    (monoidalAutCharacterEquiv (hfin := hfin) k).symm χ = characterMonoidalAut k χ := by
+  rw [monoidalAutCharacterEquiv_eq_monoidalAutCharacterEquivOfSurjective]
+  exact monoidalAutCharacterEquivOfSurjective_symm_apply k _ χ
 
 end AlgClosed
 

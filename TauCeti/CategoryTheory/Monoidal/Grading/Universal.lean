@@ -80,6 +80,21 @@ theorem degree_classOf_eq_mul {X Y U : C} [Simple X] [Simple Y] [Simple U] (f : 
   refine degree_mul _ _ _ (e.hom ≫ f ≫ t.inv) fun h ↦ hf ?_
   simpa using e.inv ≫= h =≫ t.hom
 
+/-- A simple object admitting a nonzero morphism into its tensor square has neutral universal
+degree. -/
+theorem degree_classOf_eq_one_of_hom_tensor_self_ne_zero {X : C} [Simple X]
+    {f : X ⟶ X ⊗ X} (hf : f ≠ 0) : degree (SimpleClasses.classOf X) = 1 :=
+  mul_eq_left.mp (degree_classOf_eq_mul f hf).symm
+
+/-- Homomorphisms out of the universal grading group into any monoid are determined by simple
+degrees. -/
+@[ext]
+theorem hom_ext {G : Type w} [Monoid G] {f g : universalGradingGroup C →* G}
+    (h : ∀ S, f (degree S) = g (degree S)) : f = g := by
+  have h' : f.toHomUnits = g.toHomUnits := PresentedGroup.ext fun S ↦ Units.ext (h S)
+  ext x
+  exact congrArg Units.val (DFunLike.congr_fun h' x)
+
 variable {G : Type w} [Group G]
 
 /-- Extend an assignment of degrees satisfying the tensor-constituent relations to a group
@@ -95,11 +110,6 @@ def lift (d : SimpleClasses C → G)
 @[simp]
 theorem lift_degree (d : SimpleClasses C → G) (hd) (S : SimpleClasses C) :
     lift d hd (degree S) = d S := PresentedGroup.toGroup.of _
-
-/-- Homomorphisms out of the universal grading group are determined by simple degrees. -/
-@[ext]
-theorem hom_ext {f g : universalGradingGroup C →* G}
-    (h : ∀ S, f (degree S) = g (degree S)) : f = g := PresentedGroup.ext h
 
 /-- The universal property of the grading group: maps from it correspond to assignments of
 degrees to simple objects respecting every tensor constituent. -/
@@ -136,15 +146,9 @@ variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [MonoidalCategory C]
 
 /-- The tensor unit has neutral universal degree. -/
 @[simp]
-theorem degree_unit : degree (SimpleClasses.classOf (𝟙_ C)) = 1 := by
-  let I := SimpleClasses.classOf (𝟙_ C)
-  let e := SimpleClasses.classOfReprIso (𝟙_ C)
-  let a : I.repr ≅ I.repr ⊗ I.repr := e ≪≫ (λ_ (𝟙_ C)).symm ≪≫ (e.symm ⊗ᵢ e.symm)
-  have ha : a.hom ≠ 0 := by
-    intro h
-    exact CategoryTheory.id_ne_zero I.repr (by rw [← a.hom_inv_id, h, zero_comp])
-  have h := degree_mul I I I a.hom ha
-  exact (mul_eq_left.mp h.symm)
+theorem degree_unit : degree (SimpleClasses.classOf (𝟙_ C)) = 1 :=
+  degree_classOf_eq_one_of_hom_tensor_self_ne_zero (f := (λ_ (𝟙_ C)).inv) fun h ↦
+    CategoryTheory.id_ne_zero (𝟙_ C) (by rw [← (λ_ (𝟙_ C)).inv_hom_id, h, zero_comp])
 
 end Unit
 

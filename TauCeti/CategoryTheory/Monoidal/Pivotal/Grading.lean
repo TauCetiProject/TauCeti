@@ -183,8 +183,9 @@ def characterEquiv (P : PivotalCategory C) :
 @[simp]
 theorem characterEquiv_apply (P Q : PivotalCategory C) :
     characterEquiv (hfin := hfin) k P Q =
-      monoidalAutCharacter (hfin := hfin) k (Q /ₛ P) :=
-  characterEquivOfSurjective_apply k
+      monoidalAutCharacter (hfin := hfin) k (Q /ₛ P) := by
+  rw [monoidalAutCharacter_eq_monoidalAutCharacterOfSurjective]
+  exact characterEquivOfSurjective_apply k
     (fun X _ ↦ (bijective_algebraMap_end_of_simple k X).surjective) P Q
 
 /-- A character parametrizes the pivotal structure obtained by twisting the base structure. -/
@@ -213,8 +214,9 @@ def groupoidCharacterEquiv (P : PivotalCategory C) :
 @[simp]
 theorem groupoidCharacterEquiv_apply (P Q : PivotalCategory C) :
     groupoidCharacterEquiv (hfin := hfin) k P Q =
-      monoidalAutGroupoidCharacter (hfin := hfin) k (Q /ₛ P) :=
-  groupoidCharacterEquivOfSurjective_apply k
+      monoidalAutGroupoidCharacter (hfin := hfin) k (Q /ₛ P) := by
+  rw [monoidalAutGroupoidCharacter_eq_monoidalAutGroupoidCharacterOfSurjective]
+  exact groupoidCharacterEquivOfSurjective_apply k
     (fun X _ ↦ (bijective_algebraMap_end_of_simple k X).surjective) P Q
 
 /-- A groupoid character parametrizes the pivotal structure obtained by twisting `P`. -/

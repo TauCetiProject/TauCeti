@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
 public import TauCeti.CategoryTheory.Monoidal.Scalar
 public import TauCeti.CategoryTheory.Semisimple.Multiplicity
-public import TauCeti.CategoryTheory.Simple.Rigid
 
 /-!
 # Simple summands of the tensor unit and Peircian support
@@ -25,11 +23,12 @@ objects (`TauCeti.UnitSimpleClasses.tensorUnitBicone`,
 nontrivially into `𝟙_ C`. Every simple object `X` has a unique left support
 `TauCeti.leftUnitClass X` and a unique right support `TauCeti.rightUnitClass X` in
 `UnitSimpleClasses C` characterized by `(leftUnitClass X).repr ⊗ X ≅ X` and
-`X ⊗ (rightUnitClass X).repr ≅ X`. Every nonzero morphism `U ⟶ X ⊗ Y` between simple objects
-satisfies the composability and boundary conditions
-`rightUnitClass X = leftUnitClass Y`, `leftUnitClass U = leftUnitClass X`, and
-`rightUnitClass U = rightUnitClass Y`. When `Y` admits a right dual, duality swaps the left and
-right unit classes and `X ⊗ Y` is nonzero precisely when `rightUnitClass X = leftUnitClass Y`.
+`X ⊗ (rightUnitClass X).repr ≅ X`, explicitly realized by `TauCeti.leftUnitClassReprIso` and
+`TauCeti.rightUnitClassReprIso` via the summand inclusions and projections with the unitors. Every
+nonzero morphism `U ⟶ X ⊗ Y` between simple objects satisfies the composability and boundary
+conditions `rightUnitClass X = leftUnitClass Y`, `leftUnitClass U = leftUnitClass X`, and
+`rightUnitClass U = rightUnitClass Y`. Exact-pairing and rigid-duality results for these supports
+are in `TauCeti/CategoryTheory/Semisimple/UnitSummands/Rigid.lean`.
 
 ## Main declarations
 
@@ -49,8 +48,6 @@ right unit classes and `X ⊗ Y` is nonzero precisely when `rightUnitClass X = l
 * `TauCeti.rightUnitClass_eq_leftUnitClass_of_hom_ne_zero`,
   `TauCeti.leftUnitClass_eq_of_hom_ne_zero`, `TauCeti.rightUnitClass_eq_of_hom_ne_zero`:
   endpoint compatibility along nonzero morphisms `U ⟶ X ⊗ Y`.
-* `TauCeti.not_isZero_tensorObj_iff_rightUnitClass_eq_leftUnitClass`: when `Y` has a right dual,
-  `X ⊗ Y` is nonzero for simple `X, Y` iff `rightUnitClass X = leftUnitClass Y`.
 * `TauCeti.UnitSimpleClasses.equiv`: transport of unit summand classes along a monoidal equivalence.
 
 ## References
@@ -347,6 +344,24 @@ def tensorUnitBicone : Bicone (fun I : UnitSimpleClasses C ↦ I.repr) where
       simp
     · simp [h, ι_comp_π_ne h]
 
+/-- The point of `tensorUnitBicone` is the tensor unit `𝟙_ C`. -/
+@[simp]
+theorem tensorUnitBicone_pt : (tensorUnitBicone (C := C)).pt = 𝟙_ C := (rfl)
+
+/-- The projection leg of `tensorUnitBicone` at `I` is `π I` up to the point identification. -/
+@[simp]
+theorem tensorUnitBicone_π (I : UnitSimpleClasses C) :
+    (tensorUnitBicone (C := C)).π I = eqToHom (tensorUnitBicone_pt (C := C)) ≫ π I := by
+  change π I = eqToHom (rfl : 𝟙_ C = 𝟙_ C) ≫ π I
+  simp
+
+/-- The inclusion leg of `tensorUnitBicone` at `I` is `ι I` up to the point identification. -/
+@[simp]
+theorem tensorUnitBicone_ι (I : UnitSimpleClasses C) :
+    (tensorUnitBicone (C := C)).ι I = ι I ≫ eqToHom (tensorUnitBicone_pt (C := C)).symm := by
+  change ι I = ι I ≫ eqToHom (rfl : 𝟙_ C = 𝟙_ C)
+  simp
+
 private theorem π_equiv (i : (chosenTensorUnitDecomp C).ι) :
     π ((chosenTensorUnitDecomp C).equiv i) =
       (chosenTensorUnitDecomp C).iso.hom ≫ biproduct.π _ i ≫
@@ -576,19 +591,111 @@ private theorem exists_unitSimpleClasses_iso_right (X : C) [Simple X] :
 def leftUnitClass (X : C) [Simple X] : UnitSimpleClasses C :=
   (exists_unitSimpleClasses_iso_left X).choose
 
-/-- For any simple object `X`, tensoring on the left with `(leftUnitClass X).repr` leaves `X`
-isomorphic to itself. -/
-def leftUnitClassReprIso (X : C) [Simple X] : (leftUnitClass X).repr ⊗ X ≅ X :=
-  (exists_unitSimpleClasses_iso_left X).choose_spec.some
-
 /-- The unique simple summand class `I` of `𝟙_ C` such that `X ⊗ I.repr ≅ X`. -/
 def rightUnitClass (X : C) [Simple X] : UnitSimpleClasses C :=
   (exists_unitSimpleClasses_iso_right X).choose
 
+/-- Tensoring a simple object `X` on the left by any unit summand other than `leftUnitClass X`
+yields a zero object. -/
+theorem isZero_unitRepr_tensorObj_of_ne {X : C} [Simple X] {I : UnitSimpleClasses C}
+    (h : I ≠ leftUnitClass X) : IsZero (I.repr ⊗ X) := by
+  let e : (leftUnitClass X).repr ⊗ X ≅ X := (exists_unitSimpleClasses_iso_left X).choose_spec.some
+  have hz := (tensorRight X).map_isZero (UnitSimpleClasses.isZero_tensorObj_of_ne h)
+  exact hz.of_iso ((α_ I.repr (leftUnitClass X).repr X) ≪≫ whiskerLeftIso I.repr e).symm
+
+/-- Tensoring a simple object `X` on the right by any unit summand other than `rightUnitClass X`
+yields a zero object. -/
+theorem isZero_tensorObj_unitRepr_of_ne {X : C} [Simple X] {I : UnitSimpleClasses C}
+    (h : I ≠ rightUnitClass X) : IsZero (X ⊗ I.repr) := by
+  let e : X ⊗ (rightUnitClass X).repr ≅ X := (exists_unitSimpleClasses_iso_right X).choose_spec.some
+  have hz := (tensorLeft X).map_isZero (UnitSimpleClasses.isZero_tensorObj_of_ne h.symm)
+  exact hz.of_iso ((α_ X (rightUnitClass X).repr I.repr).symm ≪≫ whiskerRightIso e I.repr).symm
+
+/-- For any simple object `X`, tensoring on the left with `(leftUnitClass X).repr` leaves `X`
+isomorphic to itself, via the summand inclusion and the left unitor. -/
+def leftUnitClassReprIso (X : C) [Simple X] : (leftUnitClass X).repr ⊗ X ≅ X where
+  hom := UnitSimpleClasses.ι (leftUnitClass X) ▷ X ≫ (λ_ X).hom
+  inv := (λ_ X).inv ≫ UnitSimpleClasses.π (leftUnitClass X) ▷ X
+  hom_inv_id := by
+    rw [Category.assoc, Iso.hom_inv_id_assoc, ← comp_whiskerRight,
+      UnitSimpleClasses.ι_comp_π_self, id_whiskerRight]
+  inv_hom_id := by
+    classical
+    let := Fintype.ofFinite (UnitSimpleClasses C)
+    have hsum : (UnitSimpleClasses.π (leftUnitClass X) ≫ UnitSimpleClasses.ι (leftUnitClass X)) ▷
+        X = 𝟙 (𝟙_ C ⊗ X) := by
+      calc
+        (UnitSimpleClasses.π (leftUnitClass X) ≫ UnitSimpleClasses.ι (leftUnitClass X)) ▷ X =
+            ∑ I : UnitSimpleClasses C,
+              (UnitSimpleClasses.π I ≫ UnitSimpleClasses.ι I) ▷ X := by
+          rw [Finset.sum_eq_single (leftUnitClass X)]
+          · intro I _ hne
+            rw [comp_whiskerRight]
+            have h0 : UnitSimpleClasses.π I ▷ X = 0 :=
+              (isZero_unitRepr_tensorObj_of_ne hne).eq_of_tgt _ _
+            rw [h0, zero_comp]
+          · intro hmem
+            exact False.elim (hmem (Finset.mem_univ _))
+        _ = (∑ I : UnitSimpleClasses C,
+              UnitSimpleClasses.π I ≫ UnitSimpleClasses.ι I) ▷ X := by
+          simp only [sum_whiskerRight]
+        _ = 𝟙 (𝟙_ C ⊗ X) := by
+          rw [UnitSimpleClasses.sum_π_comp_ι, id_whiskerRight]
+    rw [Category.assoc, ← Category.assoc (UnitSimpleClasses.π (leftUnitClass X) ▷ X),
+      ← comp_whiskerRight, hsum, Category.id_comp, Iso.inv_hom_id]
+
+@[reassoc]
+theorem leftUnitClassReprIso_hom (X : C) [Simple X] :
+    (leftUnitClassReprIso X).hom = UnitSimpleClasses.ι (leftUnitClass X) ▷ X ≫ (λ_ X).hom :=
+  (rfl)
+
+@[reassoc]
+theorem leftUnitClassReprIso_inv (X : C) [Simple X] :
+    (leftUnitClassReprIso X).inv = (λ_ X).inv ≫ UnitSimpleClasses.π (leftUnitClass X) ▷ X :=
+  (rfl)
+
 /-- For any simple object `X`, tensoring on the right with `(rightUnitClass X).repr` leaves `X`
-isomorphic to itself. -/
-def rightUnitClassReprIso (X : C) [Simple X] : X ⊗ (rightUnitClass X).repr ≅ X :=
-  (exists_unitSimpleClasses_iso_right X).choose_spec.some
+isomorphic to itself, via the summand inclusion and the right unitor. -/
+def rightUnitClassReprIso (X : C) [Simple X] : X ⊗ (rightUnitClass X).repr ≅ X where
+  hom := X ◁ UnitSimpleClasses.ι (rightUnitClass X) ≫ (ρ_ X).hom
+  inv := (ρ_ X).inv ≫ X ◁ UnitSimpleClasses.π (rightUnitClass X)
+  hom_inv_id := by
+    rw [Category.assoc, Iso.hom_inv_id_assoc, ← whiskerLeft_comp,
+      UnitSimpleClasses.ι_comp_π_self, whiskerLeft_id]
+  inv_hom_id := by
+    classical
+    let := Fintype.ofFinite (UnitSimpleClasses C)
+    have hsum : X ◁ (UnitSimpleClasses.π (rightUnitClass X) ≫
+        UnitSimpleClasses.ι (rightUnitClass X)) = 𝟙 (X ⊗ 𝟙_ C) := by
+      calc
+        X ◁ (UnitSimpleClasses.π (rightUnitClass X) ≫ UnitSimpleClasses.ι (rightUnitClass X)) =
+            ∑ I : UnitSimpleClasses C,
+              X ◁ (UnitSimpleClasses.π I ≫ UnitSimpleClasses.ι I) := by
+          rw [Finset.sum_eq_single (rightUnitClass X)]
+          · intro I _ hne
+            rw [whiskerLeft_comp]
+            have h0 : X ◁ UnitSimpleClasses.π I = 0 :=
+              (isZero_tensorObj_unitRepr_of_ne hne).eq_of_tgt _ _
+            rw [h0, zero_comp]
+          · intro hmem
+            exact False.elim (hmem (Finset.mem_univ _))
+        _ = X ◁ (∑ I : UnitSimpleClasses C,
+              UnitSimpleClasses.π I ≫ UnitSimpleClasses.ι I) := by
+          simp only [whiskerLeft_sum]
+        _ = 𝟙 (X ⊗ 𝟙_ C) := by
+          rw [UnitSimpleClasses.sum_π_comp_ι, whiskerLeft_id]
+    rw [Category.assoc, ← Category.assoc (X ◁ UnitSimpleClasses.π (rightUnitClass X)),
+      ← whiskerLeft_comp, hsum, Category.id_comp, Iso.inv_hom_id]
+
+@[reassoc]
+theorem rightUnitClassReprIso_hom (X : C) [Simple X] :
+    (rightUnitClassReprIso X).hom = X ◁ UnitSimpleClasses.ι (rightUnitClass X) ≫ (ρ_ X).hom :=
+  (rfl)
+
+@[reassoc]
+theorem rightUnitClassReprIso_inv (X : C) [Simple X] :
+    (rightUnitClassReprIso X).inv = (ρ_ X).inv ≫ X ◁ UnitSimpleClasses.π (rightUnitClass X) :=
+  (rfl)
 
 theorem not_isZero_leftUnitClass_tensorObj (X : C) [Simple X] :
     ¬ IsZero ((leftUnitClass X).repr ⊗ X) :=
@@ -597,22 +704,6 @@ theorem not_isZero_leftUnitClass_tensorObj (X : C) [Simple X] :
 theorem not_isZero_tensorObj_rightUnitClass (X : C) [Simple X] :
     ¬ IsZero (X ⊗ (rightUnitClass X).repr) :=
   fun h ↦ Simple.not_isZero X (h.of_iso (rightUnitClassReprIso X).symm)
-
-/-- Tensoring a simple object `X` on the left by any unit summand other than `leftUnitClass X`
-yields a zero object. -/
-theorem isZero_unitRepr_tensorObj_of_ne {X : C} [Simple X] {I : UnitSimpleClasses C}
-    (h : I ≠ leftUnitClass X) : IsZero (I.repr ⊗ X) := by
-  have hz := (tensorRight X).map_isZero (UnitSimpleClasses.isZero_tensorObj_of_ne h)
-  exact hz.of_iso ((α_ I.repr (leftUnitClass X).repr X) ≪≫
-    whiskerLeftIso I.repr (leftUnitClassReprIso X)).symm
-
-/-- Tensoring a simple object `X` on the right by any unit summand other than `rightUnitClass X`
-yields a zero object. -/
-theorem isZero_tensorObj_unitRepr_of_ne {X : C} [Simple X] {I : UnitSimpleClasses C}
-    (h : I ≠ rightUnitClass X) : IsZero (X ⊗ I.repr) := by
-  have hz := (tensorLeft X).map_isZero (UnitSimpleClasses.isZero_tensorObj_of_ne h.symm)
-  exact hz.of_iso ((α_ X (rightUnitClass X).repr I.repr).symm ≪≫
-    whiskerRightIso (rightUnitClassReprIso X) I.repr).symm
 
 /-- `leftUnitClass X` is the unique unit summand `I` for which `I.repr ⊗ X` is nonzero. -/
 theorem leftUnitClass_eq_iff {X : C} [Simple X] {I : UnitSimpleClasses C} :
@@ -686,6 +777,30 @@ def UnitSimpleClasses.tensorSelfIso (I : UnitSimpleClasses C) :
   whiskerRightIso (eqToIso (congrArg UnitSimpleClasses.repr (leftUnitClass_unitRepr I)).symm)
     I.repr ≪≫ leftUnitClassReprIso I.repr
 
+@[reassoc]
+theorem UnitSimpleClasses.tensorSelfIso_hom (I : UnitSimpleClasses C) :
+    (UnitSimpleClasses.tensorSelfIso I).hom = ι I ▷ I.repr ≫ (λ_ I.repr).hom := by
+  dsimp only [tensorSelfIso]
+  rw [Iso.trans_hom, whiskerRightIso_hom, eqToIso.hom, leftUnitClassReprIso_hom,
+    ← Category.assoc, ← comp_whiskerRight]
+  have h : ∀ {K : UnitSimpleClasses C} (hk : K = I),
+      eqToHom (congrArg UnitSimpleClasses.repr hk).symm ≫ ι K = ι I := by
+    rintro _ rfl
+    simp
+  rw [h (leftUnitClass_unitRepr I)]
+
+@[reassoc]
+theorem UnitSimpleClasses.tensorSelfIso_inv (I : UnitSimpleClasses C) :
+    (UnitSimpleClasses.tensorSelfIso I).inv = (λ_ I.repr).inv ≫ π I ▷ I.repr := by
+  dsimp only [tensorSelfIso]
+  rw [Iso.trans_inv, whiskerRightIso_inv, eqToIso.inv, leftUnitClassReprIso_inv,
+    Category.assoc, ← comp_whiskerRight]
+  have h : ∀ {K : UnitSimpleClasses C} (hk : K = I),
+      π K ≫ eqToHom (congrArg UnitSimpleClasses.repr hk) = π I := by
+    rintro _ rfl
+    simp
+  rw [h (leftUnitClass_unitRepr I)]
+
 /-- If the tensor product `X ⊗ Y` of two simple objects is nonzero, then
 `rightUnitClass X = leftUnitClass Y`. -/
 theorem rightUnitClass_eq_leftUnitClass_of_not_isZero {X Y : C} [Simple X] [Simple Y]
@@ -736,64 +851,6 @@ theorem rightUnitClass_eq_of_hom_ne_zero {X Y U : C} [Simple Y] [Simple U]
   have hid : 𝟙 (U ⊗ J.repr) = 0 := by
     rw [← id_whiskerRight, ← IsSplitMono.id f, comp_whiskerRight, h0, zero_comp]
   exact not_isZero_tensorObj_rightUnitClass U ((IsZero.iff_id_eq_zero _).2 hid)
-
-/-- In a finite semisimple monoidal category, if `Y` admits a right dual `Y'`, then the tensor
-product of simple objects `X` and `Y` is nonzero if and only if
-`rightUnitClass X = leftUnitClass Y`. -/
-theorem not_isZero_tensorObj_iff_rightUnitClass_eq_leftUnitClass (X Y : C) {Y' : C}
-    [ExactPairing Y Y'] [Simple X] [Simple Y] :
-    ¬ IsZero (X ⊗ Y) ↔ rightUnitClass X = leftUnitClass Y := by
-  refine ⟨rightUnitClass_eq_leftUnitClass_of_not_isZero, fun h hz ↦ ?_⟩
-  obtain ⟨I, f, _, hf⟩ :=
-    exists_unitSimpleClasses_comp_ne_zero (coevaluation_ne_zero (Y := Y') (Simple.not_isZero Y))
-  have hI : I = rightUnitClass X := by
-    have hIY : I = leftUnitClass Y := by simpa using leftUnitClass_eq_of_hom_ne_zero hf
-    exact hIY.trans h.symm
-  have := isSplitMono_of_nonzero_from_simple hf
-  have hz' : IsZero (X ⊗ (Y ⊗ Y')) :=
-    ((tensorRight Y').map_isZero hz).of_iso (α_ X Y Y').symm
-  have h0 : X ◁ (f ≫ η_ Y Y') = 0 := hz'.eq_of_tgt _ _
-  have hid : 𝟙 (X ⊗ I.repr) = 0 := by
-    rw [← whiskerLeft_id, ← IsSplitMono.id (f ≫ η_ Y Y'), whiskerLeft_comp, h0, zero_comp]
-  exact not_isZero_tensorObj_rightUnitClass X (hI ▸ (IsZero.iff_id_eq_zero _).2 hid)
-
-section Rigid
-
-variable [RigidCategory C]
-
-/-- Right duality interchanges left and right unit classes: the left unit class of `Xᘁ` is the
-right unit class of `X`. -/
-@[simp]
-theorem leftUnitClass_rightDual (X : C) [Simple X] :
-    leftUnitClass Xᘁ = rightUnitClass X := by
-  obtain ⟨I, f, _, hf⟩ :=
-    exists_unitSimpleClasses_comp_ne_zero (coevaluation_ne_zero (Y := Xᘁ) (Simple.not_isZero X))
-  exact (rightUnitClass_eq_leftUnitClass_of_hom_ne_zero hf).symm
-
-/-- Right duality interchanges left and right unit classes: the right unit class of `Xᘁ` is the
-left unit class of `X`. -/
-@[simp]
-theorem rightUnitClass_rightDual (X : C) [Simple X] :
-    rightUnitClass Xᘁ = leftUnitClass X := by
-  obtain ⟨I, f, _, hf⟩ :=
-    exists_unitSimpleClasses_comp_ne_zero (coevaluation_ne_zero (Y := Xᘁ) (Simple.not_isZero X))
-  have hI₁ : I = leftUnitClass X := by
-    simpa using leftUnitClass_eq_of_hom_ne_zero hf
-  have hI₂ : I = rightUnitClass Xᘁ := by
-    simpa using rightUnitClass_eq_of_hom_ne_zero hf
-  exact hI₂.symm.trans hI₁
-
-@[simp]
-theorem leftUnitClass_dual_repr (S : SimpleClasses C) :
-    leftUnitClass S.dual.repr = rightUnitClass S.repr := by
-  rw [leftUnitClass_congr (SimpleClasses.dualReprIso S), leftUnitClass_rightDual]
-
-@[simp]
-theorem rightUnitClass_dual_repr (S : SimpleClasses C) :
-    rightUnitClass S.dual.repr = leftUnitClass S.repr := by
-  rw [rightUnitClass_congr (SimpleClasses.dualReprIso S), rightUnitClass_rightDual]
-
-end Rigid
 
 section Equivalence
 

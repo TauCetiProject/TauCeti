@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.CategoryTheory.Core
 public import Mathlib.CategoryTheory.Groupoid.FreeGroupoid
 public import Mathlib.CategoryTheory.Quotient
-public import TauCeti.CategoryTheory.Semisimple.UnitSummands
+public import TauCeti.CategoryTheory.Semisimple.UnitSummands.Rigid
 
 /-!
 # The universal grading groupoid of a multitensor category
@@ -209,15 +210,19 @@ theorem degree_congr {S T : SimpleClasses C} (h : S = T) :
   simp
 
 /-- The universal grading morphism of a simple object `X`. -/
-@[expose]
 def degreeOf (X : C) [Simple X] :
     mkObj (leftUnitClass X) ⟶ mkObj (rightUnitClass X) :=
   eqToHom (by simp) ≫ degree (SimpleClasses.classOf X) ≫ eqToHom (by simp)
 
+/-- `degreeOf X` is `degree (SimpleClasses.classOf X)` conjugated by the unit-class equalities
+along `SimpleClasses.classOfReprIso X`. -/
+theorem degreeOf_def (X : C) [Simple X] :
+    degreeOf X = eqToHom (by simp) ≫ degree (SimpleClasses.classOf X) ≫ eqToHom (by simp) :=
+  (rfl)
+
 @[simp]
 theorem degreeOf_repr (S : SimpleClasses C) : degreeOf S.repr = degree S := by
-  dsimp only [degreeOf]
-  rw [degree_congr (SimpleClasses.classOf_repr S)]
+  rw [degreeOf_def, degree_congr (SimpleClasses.classOf_repr S)]
   simp
 
 /-- Isomorphic simple objects have equal universal grading degrees up to endpoint transports. -/
@@ -228,8 +233,7 @@ theorem degreeOf_congr {X Y : C} [Simple X] [Simple Y] (e : X ≅ Y) :
         eqToHom (congrArg mkObj (rightUnitClass_congr e)).symm := by
   have hcls : SimpleClasses.classOf X = SimpleClasses.classOf Y :=
     (SimpleClasses.classOf_eq_iff_nonempty_iso X Y).2 ⟨e⟩
-  dsimp only [degreeOf]
-  rw [degree_congr hcls]
+  rw [degreeOf_def, degreeOf_def, degree_congr hcls]
   simp [Category.assoc]
 
 /-- Every nonzero morphism `U.repr ⟶ S.repr ⊗ T.repr` identifies `degree U` with the composite of
@@ -267,7 +271,7 @@ theorem degreeOf_comp {X Y U : C} [Simple X] [Simple Y] [Simple U] (f : U ⟶ X 
     have h0 := eU.inv ≫= h =≫ eXY.hom
     simpa [Category.assoc] using h0
   have hdeg := degree_comp (eU.hom ≫ f ≫ eXY.inv) hf'
-  simp only [degreeOf, hdeg, Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
+  simp only [degreeOf_def, hdeg, Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
 
 /-- Every simple summand of the tensor unit has trivial universal degree. -/
 @[simp]
@@ -340,11 +344,9 @@ theorem lift_degree (γ : GroupoidGrading C G) (S : SimpleClasses C) :
 theorem lift_degreeOf (γ : GroupoidGrading C G) (X : C) [Simple X] :
     (lift γ).map (degreeOf X) =
       eqToHom (by simp) ≫ γ.deg (SimpleClasses.classOf X) ≫ eqToHom (by simp) := by
-  simp [degreeOf, eqToHom_map, Category.assoc]
+  simp [degreeOf_def, eqToHom_map, Category.assoc]
 
-/-- Functors out of `universalGradingGroupoid C` are uniquely determined by their action on unit
-summand objects `mkObj I` and generating simple degrees `degree S`. -/
-theorem functor_ext {F₁ F₂ : universalGradingGroupoid C ⥤ G}
+private theorem functor_ext_of_groupoid {F₁ F₂ : universalGradingGroupoid C ⥤ G}
     (hobj : ∀ I : UnitSimpleClasses C, F₁.obj (mkObj I) = F₂.obj (mkObj I))
     (hdeg : ∀ S : SimpleClasses C,
       F₁.map (degree S) = eqToHom (hobj _) ≫ F₂.map (degree S) ≫ eqToHom (hobj _).symm) :
@@ -374,6 +376,31 @@ theorem functor_ext {F₁ F₂ : universalGradingGroupoid C ⥤ G}
     _ = toQuotientFunctor (C := C) ⋙ (fromQuotientFunctor (C := C) ⋙ F₂) := by rw [hcomp]
     _ = (toQuotientFunctor (C := C) ⋙ fromQuotientFunctor (C := C)) ⋙ F₂ := rfl
     _ = F₂ := by rw [toQuotient_comp_fromQuotient, Functor.id_comp]
+
+end UniversalProperty
+
+/-- Functors out of `universalGradingGroupoid C` into any category are uniquely determined by
+their action on unit summand objects `mkObj I` and generating simple degrees `degree S`. -/
+@[ext (iff := false) high]
+theorem functor_ext {G : Type u₂} [Category.{v₂} G]
+    {F₁ F₂ : universalGradingGroupoid C ⥤ G}
+    (hobj : ∀ I : UnitSimpleClasses C, F₁.obj (mkObj I) = F₂.obj (mkObj I))
+    (hdeg : ∀ S : SimpleClasses C,
+      F₁.map (degree S) = eqToHom (hobj _) ≫ F₂.map (degree S) ≫ eqToHom (hobj _).symm) :
+    F₁ = F₂ := by
+  have hcore : Core.functorToCore F₁ = Core.functorToCore F₂ := by
+    refine functor_ext_of_groupoid (fun I ↦ congrArg Core.mk (hobj I)) fun S ↦
+      Core.hom_ext ?_
+    have heq : ∀ {x y : Core G} (p : x = y),
+        (eqToHom p).iso.hom = eqToHom (congrArg Core.of p) := by
+      rintro _ _ rfl
+      rfl
+    simpa [heq] using hdeg S
+  exact congrArg (· ⋙ Core.inclusion G) hcore
+
+section UniversalProperty
+
+variable {G : Type u₂} [Groupoid.{v₂} G]
 
 /-- Restrict a functor `universalGradingGroupoid C ⥤ G` to a `GroupoidGrading C G`. -/
 private def gradingOfFunctor (F : universalGradingGroupoid C ⥤ G) : GroupoidGrading C G where
@@ -474,8 +501,8 @@ theorem mapEquivalence_degreeOf (e : C ≌ D) [e.functor.Monoidal] (X : C) [Simp
       eqToHom (by simp) ≫
         @degreeOf D _ _ _ _ _ (e.functor.obj X) (CategoryTheory.simple_obj e.functor X) ≫
         eqToHom (by simp) := by
-  dsimp only [degreeOf]
-  simp only [CategoryTheory.Functor.map_comp, eqToHom_map, mapEquivalence_degree, Category.assoc]
+  simp only [degreeOf_def, CategoryTheory.Functor.map_comp, eqToHom_map, mapEquivalence_degree,
+    Category.assoc]
   rw [degree_congr (SimpleClasses.equiv_apply_classOf e X)]
   simp only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
 
@@ -583,36 +610,47 @@ private theorem quotFunctor_map_inv_of (S : SimpleClasses C) :
   unfold degree quotFunctor
   exact HEq.rfl
 
+section ExactPairing
+
+/-- In an exact pairing of simple objects, `degreeOf Y` is the inverse of `degreeOf X` up to
+endpoint transports. -/
+theorem degreeOf_of_exactPairing {X Y : C} [ExactPairing X Y] [Simple X] [Simple Y] :
+    degreeOf Y =
+      eqToHom (congrArg mkObj leftUnitClass_of_exactPairing) ≫
+        inv (degreeOf X) ≫
+        eqToHom (congrArg mkObj rightUnitClass_of_exactPairing).symm := by
+  obtain ⟨I, f, _, hf⟩ :=
+    exists_unitSimpleClasses_comp_ne_zero (coevaluation_ne_zero (Y := Y) (Simple.not_isZero X))
+  have hcomp := degreeOf_comp (f ≫ η_ X Y) hf
+  rw [degreeOf_unitRepr] at hcomp
+  have hinv : eqToHom (congrArg mkObj (rightUnitClass_eq_leftUnitClass_of_hom_ne_zero hf)) ≫
+      degreeOf Y =
+      inv (degreeOf X) ≫
+        eqToHom (congrArg mkObj rightUnitClass_of_exactPairing).symm := by
+    rw [IsIso.eq_inv_comp]
+    simpa [Category.assoc] using
+      eqToHom (congrArg mkObj (leftUnitClass_eq_of_hom_ne_zero hf)).symm ≫= hcomp.symm =≫
+        eqToHom (congrArg mkObj (rightUnitClass_eq_of_hom_ne_zero hf))
+  simpa [Category.assoc] using
+    eqToHom (congrArg mkObj (rightUnitClass_eq_leftUnitClass_of_hom_ne_zero hf)).symm ≫= hinv
+
+end ExactPairing
+
 section Rigid
 
 variable [RigidCategory C]
+
+@[simp]
+theorem degreeOf_rightDual (X : C) [Simple X] :
+    degreeOf Xᘁ = eqToHom (by simp) ≫ inv (degreeOf X) ≫ eqToHom (by simp) := by
+  simpa using degreeOf_of_exactPairing (X := X) (Y := Xᘁ)
 
 /-- Dual simple classes have inverse degrees in `universalGradingGroupoid C`. -/
 @[simp]
 theorem degree_dual (S : SimpleClasses C) :
     degree S.dual = eqToHom (by simp) ≫ inv (degree S) ≫ eqToHom (by simp) := by
-  obtain ⟨I, f, _, hf⟩ :=
-    exists_unitSimpleClasses_comp_ne_zero (coevaluation_ne_zero (Y := S.reprᘁ)
-      (Simple.not_isZero S.repr))
-  let t := whiskerLeftIso S.repr (SimpleClasses.dualReprIso S).symm
-  have hg : (f ≫ η_ S.repr S.reprᘁ) ≫ t.hom ≠ 0 := fun h ↦ hf <| by
-    rw [← Category.comp_id (f ≫ η_ S.repr S.reprᘁ), ← t.hom_inv_id, ← Category.assoc, h, zero_comp]
-  have hcomp := degree_comp ((f ≫ η_ S.repr S.reprᘁ) ≫ t.hom) hg
-  rw [degree_unitSummand] at hcomp
-  have hinv : eqToHom (by simp) ≫ degree S.dual =
-      inv (degree S) ≫ eqToHom (by simp) := by
-    rw [IsIso.eq_inv_comp]
-    simpa [Category.assoc] using
-      eqToHom (congrArg mkObj (leftUnitClass_eq_of_hom_ne_zero hg)).symm ≫= hcomp.symm =≫
-        eqToHom (congrArg mkObj (rightUnitClass_eq_of_hom_ne_zero hg))
-  simpa [Category.assoc] using
-    eqToHom (congrArg mkObj (rightUnitClass_eq_leftUnitClass_of_hom_ne_zero hg)).symm ≫= hinv
-
-@[simp]
-theorem degreeOf_rightDual (X : C) [Simple X] :
-    degreeOf Xᘁ = eqToHom (by simp) ≫ inv (degreeOf X) ≫ eqToHom (by simp) := by
-  dsimp only [degreeOf]
-  rw [degree_congr (SimpleClasses.dual_classOf X).symm]
+  rw [← degreeOf_repr S.dual, degreeOf_congr (SimpleClasses.dualReprIso S),
+    degreeOf_rightDual S.repr, degreeOf_repr S]
   simp [Category.assoc]
 
 /-- In a rigid finite semisimple monoidal category, every morphism in

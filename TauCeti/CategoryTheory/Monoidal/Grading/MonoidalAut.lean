@@ -207,6 +207,27 @@ end Character
 
 section Injective
 
+variable (R : Type w) [CommSemiring R] {C : Type u} [Category.{v} C] [Abelian C]
+  [MonoidalCategory C] [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
+  [IsFiniteSemisimpleCategory C]
+
+/-- If units of `R` act faithfully by scalar multiplication on the identity of every simple
+representative, distinct characters of the universal grading group give distinct monoidal
+automorphisms of the identity functor. -/
+theorem characterMonoidalAut_injective_of_smul_injective
+    (hinj : ∀ S : SimpleClasses C, Function.Injective (fun u : Rˣ ↦ (u : R) • 𝟙 S.repr)) :
+    Function.Injective (characterMonoidalAut R (C := C)) := by
+  intro χ ψ h
+  ext S
+  have hS := congrArg
+    (fun a ↦ (LaxMonoidalFunctor.forgetAut (𝟭 C) a).asIso.hom.app S.repr) h
+  simp only [characterMonoidalAut_app_of_simple, SimpleClasses.classOf_repr] at hS
+  exact congrArg Units.val (hinj S hS)
+
+end Injective
+
+section Field
+
 variable (k : Type w) [Field k] {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
   [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C] [IsFiniteSemisimpleCategory C]
 
@@ -214,14 +235,10 @@ variable (k : Type w) [Field k] {C : Type u} [Category.{v} C] [Abelian C] [Monoi
 automorphisms of the identity functor, since a character is determined by its values on the
 degrees of the simple objects. -/
 theorem characterMonoidalAut_injective :
-    Function.Injective (characterMonoidalAut k (C := C)) := by
-  intro χ ψ h
-  ext S
-  have hS := congrArg
-    (fun a ↦ (LaxMonoidalFunctor.forgetAut (𝟭 C) a).asIso.hom.app S.repr) h
-  simp only [characterMonoidalAut_app_of_simple, SimpleClasses.classOf_repr] at hS
-  exact smul_left_injective k (CategoryTheory.id_ne_zero S.repr) hS
+    Function.Injective (characterMonoidalAut k (C := C)) :=
+  characterMonoidalAut_injective_of_smul_injective k fun S _ _ h ↦
+    Units.ext (smul_left_injective k (CategoryTheory.id_ne_zero S.repr) h)
 
-end Injective
+end Field
 
 end TauCeti

@@ -46,6 +46,7 @@ section Monoid
 variable {C : Type u₁} [Category.{v₁} C] {M : Type w₁} [Monoid M]
 
 /-- Two functors into `SingleObj M` are equal if they agree on every morphism. -/
+@[ext 1100]
 theorem functor_ext {F G : C ⥤ SingleObj M}
     (h : ∀ {X Y : C} (f : X ⟶ Y), F.map f = G.map f) : F = G := by
   refine CategoryTheory.Functor.ext (fun _ ↦ rfl) fun _ _ f ↦ ?_

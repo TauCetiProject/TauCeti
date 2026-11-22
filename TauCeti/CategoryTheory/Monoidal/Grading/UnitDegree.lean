@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Grading.Universal
-public import TauCeti.CategoryTheory.Semisimple.UnitSummands
+public import TauCeti.CategoryTheory.Semisimple.UnitSummands.Basic
 
 /-!
 # Universal grading degrees of unit summands
@@ -43,7 +43,8 @@ theorem degree_unitSummand (I : UnitSimpleClasses C) :
   let a := (UnitSimpleClasses.tensorSelfIso I).symm
   have ha : a.hom ≠ 0 := fun h ↦
     CategoryTheory.id_ne_zero I.repr (by rw [← a.hom_inv_id, h, zero_comp])
-  exact mul_eq_left.mp (universalGradingGroup.degree_mul I.val I.val I.val a.hom ha).symm
+  simpa only [SimpleClasses.classOf_repr] using
+    degree_classOf_eq_one_of_hom_tensor_self_ne_zero ha
 
 /-- Any simple object mapping nontrivially into `𝟙_ C` has trivial degree in
 `universalGradingGroup C`. -/

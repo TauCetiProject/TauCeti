@@ -11,24 +11,28 @@ public import TauCeti.CategoryTheory.Linear.Endomorphism
 /-!
 # Endomorphisms of a simple object are scalars
 
-Let `k` be an algebraically closed field and `X` a simple object of a `k`-linear preadditive
-category with kernels, whose endomorphisms form a finite-dimensional `k`-vector space. Schur's
-lemma (`CategoryTheory.endomorphism_simple_eq_smul_id`) says that every endomorphism of `X` is a
-scalar multiple `c • 𝟙 X` of the identity. We package this as a `k`-algebra isomorphism
-`TauCeti.endAlgEquivOfSimple k X : End X ≃ₐ[k] k`, the inverse of the structure map
-`algebraMap k (End X)`, which sends `c` to `c • 𝟙 X`.
+Let `k` be a field and `X` an object of a `k`-linear preadditive category with nontrivial
+endomorphism ring whose structure map `algebraMap k (End X)` is surjective (in particular, a
+simple object over an algebraically closed field `k`, with kernels and finite-dimensional
+endomorphisms, by Schur's lemma `CategoryTheory.endomorphism_simple_eq_smul_id`). We package this
+as a `k`-algebra isomorphism `TauCeti.endAlgEquivOfSurjective` (specialized to
+`TauCeti.endAlgEquivOfSimple k X : End X ≃ₐ[k] k`), the inverse of `algebraMap k (End X)`, which
+sends `c` to `c • 𝟙 X`.
 
 Applied to a simple monoidal unit, this identifies the scalars `𝟙_ C ⟶ 𝟙_ C` of a fusion
 category with elements of `k`, which is how traces and dimensions are read as numbers.
 
-The finite-dimensionality assumption cannot be dropped: finite-dimensional vector spaces over
-the rational function field `k(t)`, viewed as a `k`-linear category, have a simple unit whose
-endomorphism algebra is `k(t)`.
+The finite-dimensionality assumption in the algebraically closed case cannot be dropped:
+finite-dimensional vector spaces over the rational function field `k(t)`, viewed as a `k`-linear
+category, have a simple unit whose endomorphism algebra is `k(t)`.
 
 ## Main declarations
 
-* `TauCeti.endAlgEquivOfSimple`: the isomorphism `End X ≃ₐ[k] k`, whose inverse is
-  `algebraMap k (End X)` by `TauCeti.endAlgEquivOfSimple_symm_apply` and
+* `TauCeti.endAlgEquivOfSurjective`: the isomorphism `End X ≃ₐ[k] k` whenever `End X` is
+  nontrivial and `algebraMap k (End X)` is surjective, with
+  `TauCeti.endAlgEquivOfSurjective_smul_id` and `TauCeti.endAlgEquivOfSurjective_apply_eq_iff`;
+* `TauCeti.endAlgEquivOfSimple`: the algebraically closed simple specialization `End X ≃ₐ[k] k`,
+  whose inverse is `algebraMap k (End X)` by `TauCeti.endAlgEquivOfSimple_symm_apply` and
   `TauCeti.algebraMap_endAlgEquivOfSimple`;
 * `TauCeti.endAlgEquivOfSimple_smul_id`: every endomorphism `f` is `endAlgEquivOfSimple k X f`
   times the identity, and `TauCeti.endAlgEquivOfSimple_apply_eq_iff` characterizes the scalar;
@@ -52,25 +56,72 @@ universe w v u
 
 namespace TauCeti
 
+section Surjective
+
+variable (k : Type w) [Field k]
+variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear k C]
+
+/-- If the structure map `k → End X` of a nontrivial endomorphism algebra over a field `k` is
+surjective, it is bijective. -/
+theorem bijective_algebraMap_end_of_surjective (X : C) [Nontrivial (End X)]
+    (hsurj : Function.Surjective (algebraMap k (End X))) :
+    Function.Bijective (algebraMap k (End X)) :=
+  ⟨(algebraMap k (End X)).injective, hsurj⟩
+
+/-- Packaging scalar endomorphisms as an algebra isomorphism: if `End X` is nontrivial and
+`algebraMap k (End X)` is surjective, then `End X` is isomorphic as a `k`-algebra to `k`. -/
+noncomputable def endAlgEquivOfSurjective (X : C) [Nontrivial (End X)]
+    (hsurj : Function.Surjective (algebraMap k (End X))) : End X ≃ₐ[k] k :=
+  (AlgEquiv.ofBijective (Algebra.ofId k (End X)) <| by
+    rw [show ⇑(Algebra.ofId k (End X)) = algebraMap k (End X) from funext (Algebra.ofId_apply _)]
+    exact bijective_algebraMap_end_of_surjective k X hsurj).symm
+
+variable {k}
+variable {X : C} [Nontrivial (End X)] {hsurj : Function.Surjective (algebraMap k (End X))}
+
+/-- The inverse of `endAlgEquivOfSurjective` is the structure map `algebraMap k (End X)`. -/
+@[simp]
+theorem endAlgEquivOfSurjective_symm_apply (c : k) :
+    (endAlgEquivOfSurjective k X hsurj).symm c = algebraMap k (End X) c := by
+  rw [endAlgEquivOfSurjective, AlgEquiv.symm_symm, AlgEquiv.ofBijective_apply, Algebra.ofId_apply]
+
+/-- The structure map `algebraMap k (End X)` sends the scalar of an endomorphism `f` back to
+`f`. -/
+theorem algebraMap_endAlgEquivOfSurjective (f : End X) :
+    algebraMap k (End X) (endAlgEquivOfSurjective k X hsurj f) = f := by
+  rw [← endAlgEquivOfSurjective_symm_apply (hsurj := hsurj), AlgEquiv.symm_apply_apply]
+
+/-- Every endomorphism of an object with scalar endomorphisms is its scalar times the identity. -/
+@[simp]
+theorem endAlgEquivOfSurjective_smul_id (f : End X) :
+    endAlgEquivOfSurjective k X hsurj f • 𝟙 X = f.asHom := by
+  rw [← End.algebraMap_asHom, algebraMap_endAlgEquivOfSurjective]
+
+/-- The scalar of an endomorphism `f` is the unique `c` with `f = c • 𝟙 X`. -/
+theorem endAlgEquivOfSurjective_apply_eq_iff (f : End X) (c : k) :
+    endAlgEquivOfSurjective k X hsurj f = c ↔ f.asHom = c • 𝟙 X := by
+  rw [← AlgEquiv.eq_symm_apply, End.ext_iff, endAlgEquivOfSurjective_symm_apply,
+    End.algebraMap_asHom]
+
+end Surjective
+
 variable (k : Type w) [Field k] [IsAlgClosed k]
 variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear k C] [HasKernels C]
 
 /-- The structure map `k → End X` of a simple object `X` with finite-dimensional endomorphisms
 over an algebraically closed field is bijective: this is Schur's lemma. -/
 theorem bijective_algebraMap_end_of_simple (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
-    Function.Bijective (algebraMap k (End X)) := by
-  refine ⟨(algebraMap k (End X)).injective, fun f ↦ ?_⟩
-  obtain ⟨c, hc⟩ := endomorphism_simple_eq_smul_id k f.asHom
-  exact ⟨c, End.ext (by simpa [Algebra.algebraMap_eq_smul_one] using hc)⟩
+    Function.Bijective (algebraMap k (End X)) :=
+  bijective_algebraMap_end_of_surjective k X fun f ↦ by
+    obtain ⟨c, hc⟩ := endomorphism_simple_eq_smul_id k f.asHom
+    exact ⟨c, End.ext (by simpa [Algebra.algebraMap_eq_smul_one] using hc)⟩
 
 /-- **Schur's lemma** as an identification of algebras: the endomorphisms of a simple object `X`
 with finite-dimensional endomorphisms over an algebraically closed field `k` are the scalars
 `k`. This is the inverse of the structure map `algebraMap k (End X)`, `c ↦ c • 𝟙 X`. -/
 noncomputable def endAlgEquivOfSimple (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
     End X ≃ₐ[k] k :=
-  (AlgEquiv.ofBijective (Algebra.ofId k (End X)) <| by
-    rw [show ⇑(Algebra.ofId k (End X)) = algebraMap k (End X) from funext (Algebra.ofId_apply _)]
-    exact bijective_algebraMap_end_of_simple k X).symm
+  endAlgEquivOfSurjective k X (bijective_algebraMap_end_of_simple k X).surjective
 
 section Scalar
 
@@ -80,24 +131,24 @@ variable {X : C} [Simple X] [FiniteDimensional k (X ⟶ X)]
 /-- The inverse of `endAlgEquivOfSimple` is the structure map `algebraMap k (End X)`. -/
 @[simp]
 theorem endAlgEquivOfSimple_symm_apply (c : k) :
-    (endAlgEquivOfSimple k X).symm c = algebraMap k (End X) c := by
-  rw [endAlgEquivOfSimple, AlgEquiv.symm_symm, AlgEquiv.ofBijective_apply, Algebra.ofId_apply]
+    (endAlgEquivOfSimple k X).symm c = algebraMap k (End X) c :=
+  endAlgEquivOfSurjective_symm_apply c
 
 /-- The structure map `algebraMap k (End X)` sends the scalar of an endomorphism `f` back to
 `f`. -/
 theorem algebraMap_endAlgEquivOfSimple (f : End X) :
-    algebraMap k (End X) (endAlgEquivOfSimple k X f) = f := by
-  rw [← endAlgEquivOfSimple_symm_apply, AlgEquiv.symm_apply_apply]
+    algebraMap k (End X) (endAlgEquivOfSimple k X f) = f :=
+  algebraMap_endAlgEquivOfSurjective f
 
 /-- Every endomorphism of a simple object is its scalar times the identity. -/
 @[simp]
-theorem endAlgEquivOfSimple_smul_id (f : End X) : endAlgEquivOfSimple k X f • 𝟙 X = f.asHom := by
-  rw [← End.algebraMap_asHom, algebraMap_endAlgEquivOfSimple]
+theorem endAlgEquivOfSimple_smul_id (f : End X) : endAlgEquivOfSimple k X f • 𝟙 X = f.asHom :=
+  endAlgEquivOfSurjective_smul_id f
 
 /-- The scalar of an endomorphism `f` is the unique `c` with `f = c • 𝟙 X`. -/
 theorem endAlgEquivOfSimple_apply_eq_iff (f : End X) (c : k) :
-    endAlgEquivOfSimple k X f = c ↔ f.asHom = c • 𝟙 X := by
-  rw [← AlgEquiv.eq_symm_apply, End.ext_iff, endAlgEquivOfSimple_symm_apply, End.algebraMap_asHom]
+    endAlgEquivOfSimple k X f = c ↔ f.asHom = c • 𝟙 X :=
+  endAlgEquivOfSurjective_apply_eq_iff f c
 
 end Scalar
 

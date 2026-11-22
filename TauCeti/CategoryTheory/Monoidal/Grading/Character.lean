@@ -56,37 +56,17 @@ section Surjective
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [MonoidalCategory C] [Linear k C]
 
-private def endRingEquivOfSurjective
-    (hsurj : ∀ (X : C) [Simple X], Function.Surjective (algebraMap k (End X)))
-    (X : C) [Simple X] : End X ≃+* k :=
-  have : Nontrivial (End X) :=
-    ⟨⟨1, 0, fun h ↦ CategoryTheory.id_ne_zero X (congrArg End.asHom h)⟩⟩
-  (RingEquiv.ofBijective (algebraMap k (End X))
-    ⟨(algebraMap k (End X)).injective, hsurj X⟩).symm
-
-omit [MonoidalCategory C] in
-private theorem endRingEquivOfSurjective_smul_id
-    (hsurj : ∀ (X : C) [Simple X], Function.Surjective (algebraMap k (End X)))
-    {X : C} [Simple X] (f : End X) :
-    endRingEquivOfSurjective k hsurj X f • 𝟙 X = f.asHom := by
-  rw [← End.algebraMap_asHom]
-  have : Nontrivial (End X) :=
-    ⟨⟨1, 0, fun h ↦ CategoryTheory.id_ne_zero X (congrArg End.asHom h)⟩⟩
-  exact congrArg End.asHom
-    ((RingEquiv.ofBijective (algebraMap k (End X))
-      ⟨(algebraMap k (End X)).injective, hsurj X⟩).apply_symm_apply f)
-
 private def simpleAutScalar
     (hsurj : ∀ (X : C) [Simple X], Function.Surjective (algebraMap k (End X)))
     (a : Aut (LaxMonoidalFunctor.of (𝟭 C))) (X : C) [Simple X] : kˣ :=
-  Units.map (endRingEquivOfSurjective k hsurj X).toMonoidHom
+  Units.map (endAlgEquivOfSurjective k X (hsurj X)).toMonoidHom
     ((Aut.unitsEndEquivAut X).symm
       (Aut.of ((LaxMonoidalFunctor.forgetAut (𝟭 C) a).asIso.app X)))
 
 private theorem simpleAutScalar_val
     (hsurj : ∀ (X : C) [Simple X], Function.Surjective (algebraMap k (End X)))
     (a : Aut (LaxMonoidalFunctor.of (𝟭 C))) (X : C) [Simple X] :
-    (simpleAutScalar k hsurj a X : k) = endRingEquivOfSurjective k hsurj X
+    (simpleAutScalar k hsurj a X : k) = endAlgEquivOfSurjective k X (hsurj X)
       (End.of ((LaxMonoidalFunctor.forgetAut (𝟭 C) a).asIso.hom.app X)) := (rfl)
 
 private theorem simpleAutScalar_smul_id
@@ -94,7 +74,7 @@ private theorem simpleAutScalar_smul_id
     (a : Aut (LaxMonoidalFunctor.of (𝟭 C))) (X : C) [Simple X] :
     (simpleAutScalar k hsurj a X : k) • 𝟙 X =
       (LaxMonoidalFunctor.forgetAut (𝟭 C) a).asIso.hom.app X :=
-  endRingEquivOfSurjective_smul_id k hsurj _
+  endAlgEquivOfSurjective_smul_id _
 
 private theorem simpleAutScalar_mul
     (hsurj : ∀ (X : C) [Simple X], Function.Surjective (algebraMap k (End X)))
@@ -219,10 +199,17 @@ include hfin
 
 /-- A monoidal natural automorphism of the identity gives a character of the universal grading
 group: on the degree of a simple object it is the scalar by which the automorphism acts. -/
-@[expose]
 def monoidalAutCharacter : Aut (LaxMonoidalFunctor.of (𝟭 C)) →*
     (universalGradingGroup C →* kˣ) :=
   monoidalAutCharacterOfSurjective k fun X _ ↦ (bijective_algebraMap_end_of_simple k X).surjective
+
+/-- `monoidalAutCharacter` is the specialization of `monoidalAutCharacterOfSurjective` to an
+algebraically closed field via Schur's lemma. -/
+theorem monoidalAutCharacter_eq_monoidalAutCharacterOfSurjective :
+    monoidalAutCharacter (hfin := hfin) k (C := C) =
+      monoidalAutCharacterOfSurjective k fun X _ ↦
+        (bijective_algebraMap_end_of_simple k X).surjective :=
+  (rfl)
 
 /-- The value of the character on a simple degree is the scalar of the corresponding component
 of the automorphism. -/
@@ -231,8 +218,9 @@ theorem monoidalAutCharacter_degree (a : Aut (LaxMonoidalFunctor.of (𝟭 C)))
     (monoidalAutCharacter (hfin := hfin) k a (universalGradingGroup.degree S) : k) =
       endAlgEquivOfSimple k S.repr
         (End.of ((LaxMonoidalFunctor.forgetAut (𝟭 C) a).asIso.hom.app S.repr)) := by
-  rw [eq_comm, endAlgEquivOfSimple_apply_eq_iff]
-  simpa only [monoidalAutCharacter, SimpleClasses.classOf_repr] using
+  rw [eq_comm, endAlgEquivOfSimple_apply_eq_iff,
+    monoidalAutCharacter_eq_monoidalAutCharacterOfSurjective]
+  simpa only [SimpleClasses.classOf_repr] using
     (monoidalAutCharacterOfSurjective_degree_smul_id k _ a S.repr).symm
 
 /-- The character on the universal degree of a simple object recovers the component of the
@@ -242,8 +230,9 @@ theorem monoidalAutCharacter_degree_smul_id (a : Aut (LaxMonoidalFunctor.of (�
     (X : C) [Simple X] :
     (monoidalAutCharacter (hfin := hfin) k a
         (universalGradingGroup.degree (SimpleClasses.classOf X)) : k) • 𝟙 X =
-      (LaxMonoidalFunctor.forgetAut (𝟭 C) a).asIso.hom.app X :=
-  monoidalAutCharacterOfSurjective_degree_smul_id k _ a X
+      (LaxMonoidalFunctor.forgetAut (𝟭 C) a).asIso.hom.app X := by
+  rw [monoidalAutCharacter_eq_monoidalAutCharacterOfSurjective]
+  exact monoidalAutCharacterOfSurjective_degree_smul_id k _ a X
 
 end Character
 
@@ -258,8 +247,9 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
 /-- In a finite semisimple category, the character of the universal grading group determines a
 monoidal natural automorphism of the identity. -/
 theorem monoidalAutCharacter_injective :
-    Function.Injective (monoidalAutCharacter (hfin := hfin) k (C := C)) :=
-  monoidalAutCharacterOfSurjective_injective k _
+    Function.Injective (monoidalAutCharacter (hfin := hfin) k (C := C)) := by
+  rw [monoidalAutCharacter_eq_monoidalAutCharacterOfSurjective]
+  exact monoidalAutCharacterOfSurjective_injective k _
 
 end Semisimple
 
