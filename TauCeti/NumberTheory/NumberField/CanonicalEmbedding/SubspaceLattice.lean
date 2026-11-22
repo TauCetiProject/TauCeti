@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Rat
 public import TauCeti.NumberTheory.NumberField.SubspaceIntegerPoints
 
+import Mathlib.Topology.Algebra.Module.Equiv.Pi
 import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.Dual.Lemmas
@@ -234,15 +235,14 @@ theorem mulMixedSubmodule_mul (W : Submodule K (ι → K)) (c₁ c₂ : mixedSpa
 open Classical in
 private theorem continuous_mulMixedAmbient (c : mixedSpace K) :
     Continuous (mulMixedAmbient (ι := ι) c) := by
-  have h1 : (⇑(mulMixedAmbient (ι := ι) c)) =
-      WithLp.toLp 2 ∘ fun x i ↦ (euclidean.toMixed K).symm (c * euclidean.toMixed K (x i)) := by
+  let e : (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) ≃L[ℝ] (ι → mixedSpace K) :=
+    (PiLp.continuousLinearEquiv 2 ℝ _).trans
+      (ContinuousLinearEquiv.piCongrRight fun _ ↦ euclidean.toMixed K)
+  have h1 : (⇑(mulMixedAmbient (ι := ι) c)) = fun x ↦ e.symm ((fun _ ↦ c) * e x) := by
     ext x i
-    exact mulMixedAmbient_apply c x i
+    simp [e]
   rw [h1]
-  refine (PiLp.continuous_toLp 2 _).comp (continuous_pi fun i ↦ ?_)
-  have : Continuous fun x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K ↦ x i :=
-    (continuous_apply i).comp (PiLp.continuous_ofLp 2 _)
-  fun_prop
+  exact e.symm.continuous.comp ((continuous_const.mul continuous_id).comp e.continuous)
 
 /-- Coordinatewise multiplication by a unit `c : mixedSpace K` as a continuous linear equivalence
 on `W.euclideanSpan`. -/
@@ -250,19 +250,39 @@ def mulMixedSubmoduleEquiv (W : Submodule K (ι → K)) {c : mixedSpace K} (hc :
     W.euclideanSpan ≃L[ℝ] W.euclideanSpan :=
   let f : LinearMap.GeneralLinearGroup ℝ (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) :=
     Units.map (mulMixedAmbient (K := K) (ι := ι) : mixedSpace K →* Module.End ℝ _) hc.unit
+  have hf_to : ⇑f.toLinearEquiv = mulMixedAmbient c := by
+    ext x
+    simp [f, LinearMap.GeneralLinearGroup.coe_toLinearEquiv, Units.coe_map]
+  have hf_inv :
+      ⇑f.toLinearEquiv.symm =
+        mulMixedAmbient ((hc.unit⁻¹ : (mixedSpace K)ˣ) : mixedSpace K) := by
+    ext x
+    rw [← LinearEquiv.coe_inv, ← LinearMap.GeneralLinearGroup.toLinearEquiv_inv,
+      LinearMap.GeneralLinearGroup.coe_toLinearEquiv]
+    simp [f]
   let eAmb : (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) ≃L[ℝ]
       (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) :=
     { toLinearEquiv := f.toLinearEquiv
       continuous_toFun := by
-        rw [LinearEquiv.toFun_eq_coe]
-        exact continuous_mulMixedAmbient (hc.unit : mixedSpace K)
+        rw [LinearEquiv.toFun_eq_coe, hf_to]
+        exact continuous_mulMixedAmbient c
       continuous_invFun := by
-        rw [LinearEquiv.invFun_eq_symm]
+        rw [LinearEquiv.invFun_eq_symm, hf_inv]
         exact continuous_mulMixedAmbient ((hc.unit⁻¹ : (mixedSpace K)ˣ) : mixedSpace K) }
+  have he_to (x) : (eAmb : (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) →ₗ[ℝ] _) x =
+      mulMixedAmbient c x :=
+    congrFun hf_to x
+  have he_inv (x) :
+      eAmb.symm x = mulMixedAmbient ((hc.unit⁻¹ : (mixedSpace K)ˣ) : mixedSpace K) x :=
+    congrFun hf_inv x
   eAmb.ofSubmodules W.euclideanSpan W.euclideanSpan <| by
     refine le_antisymm
-      (Submodule.map_le_iff_le_comap.2 fun x hx ↦ W.mulMixedAmbient_mem_euclideanSpan _ hx)
-      fun x hx ↦ ⟨eAmb.symm x, W.mulMixedAmbient_mem_euclideanSpan _ hx, eAmb.apply_symm_apply x⟩
+      (Submodule.map_le_iff_le_comap.2 fun x hx ↦ ?_)
+      fun x hx ↦ ⟨eAmb.symm x, ?_, eAmb.apply_symm_apply x⟩
+    · rw [Submodule.mem_comap, he_to]
+      exact W.mulMixedAmbient_mem_euclideanSpan c hx
+    · rw [he_inv]
+      exact W.mulMixedAmbient_mem_euclideanSpan _ hx
 
 /-- Applying `W.mulMixedSubmoduleEquiv hc` agrees with `W.mulMixedSubmodule c`. -/
 @[simp]
@@ -437,8 +457,9 @@ theorem coe_integerPointsEquivComapMulMixed_apply [Fintype ι] (W : Submodule K 
     {c : mixedSpace K} (hc : IsUnit c) (z : W.integerPoints) :
     (W.integerPointsEquivComapMulMixed hc z : W.euclideanSpan) =
       W.mulMixedSubmodule c (W.integerPointsEquivIntegerLattice z : W.euclideanSpan) := by
-  rw [integerPointsEquivComapMulMixed, LinearEquiv.trans_apply, ZLattice.comap_equiv_apply]
-  exact W.mulMixedSubmoduleEquiv_apply hc _
+  rw [integerPointsEquivComapMulMixed, LinearEquiv.trans_apply, ZLattice.comap_equiv_apply,
+    ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.symm_symm,
+    ContinuousLinearEquiv.coe_toLinearEquiv, W.mulMixedSubmoduleEquiv_apply hc]
 
 end Equiv
 
@@ -722,15 +743,18 @@ private theorem mulMixedSubmodule_comp_piMixedEquivEuclideanSpan [Fintype ι]
       (LinearMap.piMap fun _ : Fin (finrank K W) ↦ Algebra.lmul ℝ (mixedSpace K) c)
           (piMixedBasis W (k, ν)) =
         ∑ ν' : index K, B₁.repr (c * B₁ ν) ν' • piMixedBasis W (k, ν') := by
-    ext1 j
-    simp only [LinearMap.coe_piMap, Pi.map_apply, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply',
-      piMixedBasis, Basis.reindex_apply, Equiv.sigmaEquivProd_symm_apply, Pi.basis_apply,
-      Finset.sum_apply, Pi.smul_apply]
-    by_cases hj : j = k
-    · subst hj
-      simp only [Pi.single_eq_same]
-      exact (B₁.sum_repr (c * B₁ ν)).symm
-    · simp [hj]
+    have hbasis (ν' : index K) : piMixedBasis W (k, ν') = Pi.single k (B₁ ν') := by
+      simp [piMixedBasis, B₁]
+    have hmul :
+        (LinearMap.piMap fun _ : Fin (finrank K W) ↦ Algebra.lmul ℝ (mixedSpace K) c)
+            (Pi.single k (B₁ ν)) =
+          (fun _ ↦ c) * Pi.single k (B₁ ν) :=
+      funext fun j ↦ by simp [Pi.map_apply]
+    rw [hbasis ν, hmul, ← Pi.single_mul_right,
+      ← LinearMap.single_apply ℝ (fun _ ↦ mixedSpace K) (i := k)]
+    conv_lhs => rw [← B₁.sum_repr (c * B₁ ν), map_sum]
+    refine Finset.sum_congr rfl fun ν' _ ↦ ?_
+    rw [map_smul, LinearMap.single_apply, hbasis ν']
   apply Subtype.ext
   ext1 i
   apply (euclidean.toMixed K).injective

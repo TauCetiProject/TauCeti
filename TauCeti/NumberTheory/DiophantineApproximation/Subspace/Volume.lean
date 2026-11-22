@@ -13,7 +13,6 @@ public import TauCeti.NumberTheory.NumberField.FinitePlace.ValueFloor
 
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
-import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Basic
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.ConvexBody
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.ModuleCovolume
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MulVolume

@@ -44,9 +44,6 @@ constructed by composing `Pi.constAlgHom`, `Algebra.lmul`, and `LinearEquiv.conj
   determined by its pairings against a basis.
 * `TauCeti.NumberField.mixedEmbedding.mulMixedAmbient_apply`: coordinatewise evaluation
   formula.
-* `TauCeti.NumberField.mixedEmbedding.mulMixedAmbient_one`: multiplying by `1` is the identity.
-* `TauCeti.NumberField.mixedEmbedding.mulMixedAmbient_mul`: `mulMixedAmbient` is multiplicative in
-  the scaling element `c : mixedSpace K`.
 -/
 
 public section
@@ -228,20 +225,6 @@ theorem mulMixedAmbient_apply (c : mixedSpace K)
     (x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) (i : ι) :
     mulMixedAmbient c x i = (euclidean.toMixed K).symm (c * euclidean.toMixed K (x i)) := by
   simp [mulMixedAmbient]
-
-/-- Multiplying by `1 : mixedSpace K` acts as the identity on the ambient Euclidean Minkowski
-space. -/
-@[simp]
-theorem mulMixedAmbient_one :
-    (mulMixedAmbient (1 : mixedSpace K) :
-        (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) →ₗ[ℝ] _) = LinearMap.id :=
-  map_one (mulMixedAmbient (K := K) (ι := ι))
-
-/-- `mulMixedAmbient` is multiplicative in the scaling element of `mixedSpace K`. -/
-theorem mulMixedAmbient_mul (c₁ c₂ : mixedSpace K)
-    (x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) :
-    mulMixedAmbient (c₁ * c₂) x = mulMixedAmbient c₁ (mulMixedAmbient c₂ x) := by
-  simp [map_mul]
 
 end MulMixedAmbient
 

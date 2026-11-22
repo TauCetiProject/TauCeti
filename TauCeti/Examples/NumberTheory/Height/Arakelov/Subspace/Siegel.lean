@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.NumberTheory.Height.Arakelov.SiegelsLemma
+import TauCeti.NumberTheory.Height.Arakelov.Subspace.Siegel
 
 /-!
 # Worked examples: Minkowski-ball and rational Euclidean Siegel bounds

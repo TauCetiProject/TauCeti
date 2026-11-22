@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Group.GeometryOfNumbers
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Covolume
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.SuccessiveMinima
+public import TauCeti.MeasureTheory.Group.GeometryOfNumbers.Basic
 import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
 
 /-!
@@ -90,16 +90,16 @@ theorem exists_ne_zero_mem_of_two_pow_mul_sqrt_determinant_lt {E : Type*}
   set Λ := LinearMap.range φ
   have hc : √(L.determinant : ℝ) = ZLattice.covolume Λ := by
     rw [← covolume_range_sq_eq_determinant hφ hspan, Real.sqrt_sq (ZLattice.covolume_pos _ _).le]
-  let b := Free.chooseBasis ℤ Λ
-  have hfund := ZLattice.isAddFundamentalDomain b volume
+  have hfund := ZLattice.isAddFundamentalDomain (Free.chooseBasis ℤ Λ) volume
   have : Countable Λ.toAddSubgroup := (inferInstance : Countable Λ)
   -- Convert the `ENNReal` power in the geometry-of-numbers theorem to the `ofReal` form in `hK`.
   have htwo_pow : (2 : ENNReal) ^ finrank ℝ E = ENNReal.ofReal (2 ^ finrank ℝ E) := by
     simp [ENNReal.ofReal_pow]
-  have hvol : volume (ZSpan.fundamentalDomain (b.ofZLatticeBasis ℝ)) * 2 ^ finrank ℝ E <
-      volume K := by
-    rwa [← ofReal_measureReal (ZSpan.fundamentalDomain_isBounded _).measure_lt_top.ne,
-      ← ZLattice.covolume_eq_measure_fundamentalDomain _ _ hfund, ← hc, htwo_pow,
+  have hvol :
+      volume (ZSpan.fundamentalDomain ((Free.chooseBasis ℤ Λ).ofZLatticeBasis ℝ)) *
+          2 ^ finrank ℝ E <
+        volume K := by
+    rwa [ZLattice.measure_fundamentalDomain_chooseBasis Λ volume, ← hc, htwo_pow,
       ← ENNReal.ofReal_mul (Real.sqrt_nonneg _), mul_comm]
   obtain ⟨⟨_, ⟨y, rfl⟩⟩, hy0, hyK⟩ :=
     exists_ne_zero_mem_lattice_of_measure_mul_two_pow_lt_measure (L := Λ.toAddSubgroup) hfund

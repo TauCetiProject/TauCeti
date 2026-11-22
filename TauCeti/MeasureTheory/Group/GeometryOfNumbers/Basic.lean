@@ -20,6 +20,8 @@ measure.
 
 * `MeasureTheory.exists_ne_zero_int_vec_mem_of_two_pow_le_volume`: a compact convex symmetric
   set `s ⊆ η → ℝ` of volume at least `2 ^ |η|` contains a nonzero integer vector.
+* `ZLattice.measure_fundamentalDomain_chooseBasis`: identifies the `μ`-measure of the chosen
+  basis fundamental domain of `L` with `ENNReal.ofReal (ZLattice.covolume L μ)`.
 * `ZLattice.exists_ne_zero_mem_of_covolume_mul_two_pow_le`: a compact convex symmetric set `s` in a
   nontrivial finite-dimensional real normed space `E` with `covolume L μ * 2 ^ finrank ℝ E ≤ μ s`
   contains a nonzero vector of the full lattice `L`.
@@ -33,6 +35,18 @@ namespace ZLattice
 
 open MeasureTheory
 
+/-- The `μ`-measure of the fundamental domain of `Free.chooseBasis ℤ L` equals
+`ENNReal.ofReal (ZLattice.covolume L μ)`. -/
+theorem measure_fundamentalDomain_chooseBasis
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
+    (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] :
+    μ (ZSpan.fundamentalDomain ((Free.chooseBasis ℤ L).ofZLatticeBasis ℝ)) =
+      ENNReal.ofReal (ZLattice.covolume L μ) := by
+  rw [ZLattice.covolume_eq_measure_fundamentalDomain L μ
+      (ZLattice.isAddFundamentalDomain (Free.chooseBasis ℤ L) μ),
+    ofReal_measureReal (ZSpan.fundamentalDomain_isBounded _).measure_lt_top.ne]
+
 /-- **Minkowski's convex body theorem for a full lattice.** Let `L` be a full `ℤ`-lattice in a
 nontrivial finite-dimensional real normed space `E` with Haar measure `μ`. Every compact convex
 symmetric set `s ⊆ E` with `covolume L μ * 2 ^ finrank ℝ E ≤ μ s` contains a nonzero vector of
@@ -44,13 +58,14 @@ theorem exists_ne_zero_mem_of_covolume_mul_two_pow_le
     {s : Set E} (h_symm : ∀ x ∈ s, -x ∈ s) (h_conv : Convex ℝ s) (h_cpt : IsCompact s)
     (h : ENNReal.ofReal (ZLattice.covolume L μ) * 2 ^ finrank ℝ E ≤ μ s) :
     ∃ x ∈ L, x ≠ 0 ∧ x ∈ s := by
-  let b := Free.chooseBasis ℤ L
-  have hfund := ZLattice.isAddFundamentalDomain b μ
+  have hfund := ZLattice.isAddFundamentalDomain (Free.chooseBasis ℤ L) μ
   have : Countable L.toAddSubgroup := (inferInstance : Countable L)
   have : DiscreteTopology L.toAddSubgroup := (inferInstance : DiscreteTopology L)
-  have hvol : μ (ZSpan.fundamentalDomain (b.ofZLatticeBasis ℝ)) * 2 ^ finrank ℝ E ≤ μ s := by
-    rwa [ZLattice.covolume_eq_measure_fundamentalDomain L μ hfund,
-      ofReal_measureReal (ZSpan.fundamentalDomain_isBounded _).measure_lt_top.ne] at h
+  have hvol :
+      μ (ZSpan.fundamentalDomain ((Free.chooseBasis ℤ L).ofZLatticeBasis ℝ)) *
+          2 ^ finrank ℝ E ≤
+        μ s := by
+    rwa [ZLattice.measure_fundamentalDomain_chooseBasis L μ]
   obtain ⟨⟨x, hxL⟩, hx0, hxs⟩ :=
     exists_ne_zero_mem_lattice_of_measure_mul_two_pow_le_measure (L := L.toAddSubgroup)
       hfund h_symm h_conv h_cpt hvol

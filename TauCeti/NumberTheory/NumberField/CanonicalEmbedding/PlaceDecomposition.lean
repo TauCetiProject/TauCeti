@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SubspaceLattic
 import TauCeti.LinearAlgebra.Dimension.BaseChange
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.CubeSlice
-import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Basic
 
 /-!
 # Archimedean place decomposition and convex slices of a number-field subspace
