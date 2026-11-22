@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import Mathlib.Data.Nat.Choose.Cast
 import TauCeti.Analysis.Complex.RealIdentity
-import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 import TauCeti.Analysis.SpecialFunctions.Pochhammer
 import TauCeti.Data.Nat.Factorial.Basic
 import TauCeti.RingTheory.Polynomial.Pochhammer
