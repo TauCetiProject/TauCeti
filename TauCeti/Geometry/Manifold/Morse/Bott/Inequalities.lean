@@ -24,8 +24,8 @@ Let `f` be a Morse–Bott function on a compact boundaryless manifold `M`, exhib
 Suppose that the negative normal bundle of each piece `S a`, relative to some smooth fibre metric
 on its normal bundle, has rank `r a` (the index of the piece) and a Thom class with coefficients
 in `K`. This holds for every field when the negative normal bundles are oriented
-(`TauCeti.VectorBundleOrientation.exists_isThomClass`), and for every bundle when the only unit of
-`K` is `1`, that is over `𝔽₂` (`TauCeti.existsUnique_isThomClass_of_subsingleton_units`). Write
+(`TauCeti.VectorBundleOrientation.exists_isThomClass`), and for every bundle when `K` has
+characteristic two, for instance over `𝔽₂` (`TauCeti.exists_isThomClass_of_two_eq_zero`). Write
 `bⱼ = dim Hⱼ(M; K)` and let
 
 `cⱼ = ∑ₐ b_{j - r a}(S a; K)`,
@@ -35,14 +35,14 @@ Morse–Bott polynomial `∑ₐ t^{r a} P_{S a}(t)`. This file proves the **Mors
 for `b` and `c`: the weak inequalities `bⱼ ≤ cⱼ`, the strong inequalities
 `bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀`, Euler's equality in degrees at least `dim M`, and the
 polynomial identity `∑ⱼ cⱼ tʲ = ∑ⱼ bⱼ tʲ + (1 + t) Q(t)` with `Q` having natural number
-coefficients. Over `𝔽₂` they hold for every Morse–Bott function, the index of each piece being
-given as its Morse index. Over every field `K`, for instance `ℚ`, they hold when the negative normal
-bundles of the pieces relative to given smooth fibre metrics are oriented (the `_of_orientation`
-versions), as for a Morse–Bott function whose negative normal bundles carry complex structures.
-Over `𝔽₂`, when no two consecutive `cⱼ` are both nonzero the inequalities force `bⱼ = cⱼ`, the
-lacunary principle: the function is perfect over `𝔽₂`. For a Morse function every piece is a point
-of index the Morse index, so `cⱼ` is the number of critical points of index `j`, and these are the
-Morse inequalities.
+coefficients. Over a field of characteristic two they hold for every Morse–Bott function, the index
+of each piece being given as its Morse index. Over every field `K`, for instance `ℚ`, they hold when
+the negative normal bundles of the pieces relative to given smooth fibre metrics are oriented (the
+`_of_orientation` versions), as for a Morse–Bott function whose negative normal bundles carry
+complex structures. In characteristic two, when no two consecutive `cⱼ` are both nonzero the
+inequalities force `bⱼ = cⱼ`, the lacunary principle: the function is perfect over `K`. For a Morse
+function every piece is a point of index the Morse index, so `cⱼ` is the number of critical points
+of index `j`, and these are the Morse inequalities.
 
 Without a Thom class the untwisted statement can fail: over a field of characteristic other than
 `2`, the contribution of a piece whose negative normal bundle is not orientable is its homology
@@ -82,7 +82,7 @@ In the namespace `TauCeti.SmoothEmbedding`:
   negative normal bundle has rank `r` and a Thom class over a nontrivial commutative ring `K`, then
   `dim Hₙ(D_ε, S_ε; K) = b_{n - r}(S; K)` if `r ≤ n`, and `0` otherwise.
 * `IsNondegenerateCriticalSubmanifold.finrank_singularHomology_negativeDiscSpherePair`: the same
-  over `𝔽₂` for a Morse–Bott submanifold of index `r`.
+  over a field of characteristic two for a Morse–Bott submanifold of index `r`.
 
 In the namespace `TauCeti.IsMorseBottFamily`:
 
@@ -96,8 +96,9 @@ In the namespace `TauCeti.IsMorseBottFamily`:
   hypothesis.
 * `finrank_singularHomology_sublevelPair_eq_sum`, `bettiNumber_le_sum`,
   `sum_range_neg_one_pow_mul_bettiNumber_le_sum`, `sum_range_neg_one_pow_mul_bettiNumber_eq_sum` and
-  `exists_sum_range_monomial_sum_eq_add_mul`: the same over `𝔽₂`, for every Morse–Bott function.
-* `bettiNumber_eq_sum_of_forall_eq_zero_or_eq_zero`: the lacunary principle over `𝔽₂`,
+  `exists_sum_range_monomial_sum_eq_add_mul`: the same over a field of characteristic two, such as
+  `𝔽₂`, for every Morse–Bott function.
+* `bettiNumber_eq_sum_of_forall_eq_zero_or_eq_zero`: the lacunary principle in characteristic two,
   `bₙ = cₙ` when no two consecutive `cₙ` are both nonzero.
 * `finrank_singularHomology_sublevelPair_eq_sum_of_orientation`,
   `bettiNumber_le_sum_of_orientation`,
@@ -200,10 +201,11 @@ variable {E : Type} {H M E' H' P : Type*} {S : Type} [NormedAddCommGroup E] [Nor
 /-- **The mod `2` homology of the negative disc bundle of a Morse–Bott submanifold.** Let `i` be a
 nondegenerate critical submanifold of a smooth function `f`, with Morse index `r` at every point,
 and let `g` be a smooth fibre metric on its normal bundle. Let `K` be a nontrivial commutative ring
-whose only unit is `1`, such as `ZMod 2`. For `ε > 0`, the negative disc bundle `D_ε` relative to
-`g`, taken relative to its boundary `S_ε`, has `dim Hₙ(D_ε, S_ε; K) = b_{n - r}(S; K)` when
-`r ≤ n`, and `0` when `n < r`: it has the homology of the Thom pair of the negative normal
-bundle, a vector bundle of rank `r`, which has a mod `2` Thom class with no orientation needed. -/
+in which `2 = 0`, such as `ZMod 2` or a field of characteristic two. For `ε > 0`, the negative disc
+bundle `D_ε` relative to `g`, taken relative to its boundary `S_ε`, has
+`dim Hₙ(D_ε, S_ε; K) = b_{n - r}(S; K)` when `r ≤ n`, and `0` when `n < r`: it has the homology of
+the Thom pair of the negative normal bundle, a vector bundle of rank `r`, which has a mod `2` Thom
+class with no orientation needed. -/
 theorem finrank_singularHomology_negativeDiscSpherePair
     (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
     (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
@@ -211,7 +213,7 @@ theorem finrank_singularHomology_negativeDiscSpherePair
       letI := i.normalSpaceVectorBundle hn hdim
       ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r) {ε : ℝ} (hε : 0 < ε) (K : Type) [CommRing K]
-    [Nontrivial K] [Subsingleton Kˣ] (n : ℕ) :
+    [Nontrivial K] (h2 : (2 : K) = 0) (n : ℕ) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     finrank K ((h.negativeDiscSpherePair hn P g.toRiemannianMetric ε).singularHomology
@@ -223,19 +225,19 @@ theorem finrank_singularHomology_negativeDiscSpherePair
   let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
   let := hV.fiberBundle
   have := hV.vectorBundle
-  obtain ⟨u, hu, -⟩ := existsUnique_isThomClass_of_subsingleton_units (F := Fin r → ℝ)
-    (E := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) K
+  obtain ⟨u, hu⟩ := exists_isThomClass_of_two_eq_zero (F := Fin r → ℝ)
+    (E := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) K h2
   exact h.finrank_singularHomology_negativeDiscSpherePair_of_isThomClass hn
     g.toRiemannianMetric hdim hV hε u hu n
 
-/-- For a Morse–Bott submanifold of constant index `r` and a field `K` whose only unit is `1`, the
+/-- For a Morse–Bott submanifold of constant index `r` and a field `K` of characteristic two, the
 negative normal bundle relative to some smooth fibre metric has a Thom class with coefficients in
 `K`. -/
-private theorem exists_isThomClass_negativeNormalSpace_of_subsingleton_units
+private theorem exists_isThomClass_negativeNormalSpace_of_two_eq_zero
     (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
     [T2Space M] [SigmaCompactSpace S] (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
     {r : ℕ} (hr : ∀ s, manifoldMorseIndex I f (i s) = r) (K : Type) [Field K]
-    [Subsingleton Kˣ] :
+    (h2 : (2 : K) = 0) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     ∃ (g : ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn)
@@ -252,7 +254,7 @@ private theorem exists_isThomClass_negativeNormalSpace_of_subsingleton_units
   let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
   let := hV.fiberBundle
   have := hV.vectorBundle
-  exact ⟨g, hV, (existsUnique_isThomClass_of_subsingleton_units K).exists⟩
+  exact ⟨g, hV, exists_isThomClass_of_two_eq_zero K h2⟩
 
 end SmoothEmbedding.IsNondegenerateCriticalSubmanifold
 
@@ -574,18 +576,18 @@ theorem exists_sum_range_monomial_sum_eq_add_mul_of_isThomClass {n : ℕ}
 
 end ThomClass
 
-/-! #### Coefficients in `𝔽₂` -/
+/-! #### Coefficients of characteristic two -/
 
-section SubsingletonUnits
+section TwoEqZero
 
-variable [Subsingleton Kˣ] (hr : ∀ j s, manifoldMorseIndex I f (i j s) = r j)
+variable (h2 : (2 : K) = 0) (hr : ∀ j s, manifoldMorseIndex I f (i j s) = r j)
 
-include h hr
+include h h2 hr
 
 omit [SecondCountableTopology M] [Fintype ι] [∀ j, (J j).Boundaryless] in
-/-- Over a field whose only unit is `1`, the negative normal bundle of every piece of a Morse–Bott
+/-- Over a field of characteristic two, the negative normal bundle of every piece of a Morse–Bott
 family, of rank its index, has a Thom class relative to some smooth fibre metric. -/
-private theorem exists_isThomClass_of_subsingleton_units (j : ι) :
+private theorem exists_isThomClass_of_two_eq_zero (j : ι) :
     letI := (i j).normalSpaceFiberBundle hn (finrank_euclideanSpace_fin (𝕜 := ℝ)
       (n := finrank ℝ E - finrank ℝ (E' j)))
     letI := (i j).normalSpaceVectorBundle hn (finrank_euclideanSpace_fin (𝕜 := ℝ)
@@ -604,12 +606,12 @@ private theorem exists_isThomClass_of_subsingleton_units (j : ι) :
           g.toRiemannianMetric s) u :=
   have : CompactSpace (S j) := h.compactSpace_of_range_subset isCompact_univ (subset_univ _)
   have hN := h.isNondegenerateCriticalSubmanifold j
-  hN.exists_isThomClass_negativeNormalSpace_of_subsingleton_units hn h.contMDiff _ (hr j) K
+  hN.exists_isThomClass_negativeNormalSpace_of_two_eq_zero hn h.contMDiff _ (hr j) K h2
 
 open scoped Classical in
 /-- **The mod `2` homology of a critical band of a Morse–Bott function.** Let the family
 `i j : S j → M` exhibit `f` as a Morse–Bott function on a compact boundaryless manifold, the piece
-`S j` having index `r j`, and let `K` be a field whose only unit is `1`, such as `ZMod 2`. Let
+`S j` having index `r j`, and let `K` be a field of characteristic two, such as `ZMod 2`. Let
 `a < c < b` be such that `c` is the only critical value of `f` in `[a, b]`. Then
 `dim Hₙ({f ≤ b}, {f ≤ a}; K) = ∑ b_{n - r j}(S j; K)`, the sum running over the pieces on the
 level `f = c` of index at most `n`. If `c` is not a critical value, the sum is empty. -/
@@ -619,31 +621,32 @@ theorem finrank_singularHomology_sublevelPair_eq_sum {a b c : ℝ} (hac : a < c)
         ModuleCat K) =
       ∑ j with (∀ s, f (i j s) = c) ∧ r j ≤ n, bettiNumber K (S j) (n - r j) :=
   h.finrank_singularHomology_sublevelPair_eq_sum_of_isThomClass (by simp) K
-    (fun _ ↦ finrank_euclideanSpace_fin) (h.exists_isThomClass_of_subsingleton_units _ K hr) hac
+    (fun _ ↦ finrank_euclideanSpace_fin) (h.exists_isThomClass_of_two_eq_zero _ K h2 hr) hac
     hcb hcrit n
 
-/-- **The weak Morse–Bott inequalities over `𝔽₂`.** Let the family `i j : S j → M` exhibit `f` as
-a Morse–Bott function on a compact boundaryless manifold, the piece `S j` having index `r j`, and
-let `K` be a field whose only unit is `1`, such as `ZMod 2`. Then
+/-- **The weak Morse–Bott inequalities in characteristic two.** Let the family `i j : S j → M`
+exhibit `f` as a Morse–Bott function on a compact boundaryless manifold, the piece `S j` having
+index `r j`, and let `K` be a field of characteristic two, such as `ZMod 2`. Then
 `bₙ(M; K) ≤ ∑ b_{n - r j}(S j; K)`, the sum running over the pieces of index at most `n`. -/
 theorem bettiNumber_le_sum (n : ℕ) :
     bettiNumber K M n ≤ ∑ p with r p ≤ n, bettiNumber K (S p) (n - r p) :=
   h.bettiNumber_le_sum_of_isThomClass (by simp) K (fun _ ↦ finrank_euclideanSpace_fin)
-    (h.exists_isThomClass_of_subsingleton_units _ K hr) n
+    (h.exists_isThomClass_of_two_eq_zero _ K h2 hr) n
 
-/-- **The strong Morse–Bott inequalities over `𝔽₂`.** Let the family `i j : S j → M` exhibit `f`
-as a Morse–Bott function on a compact boundaryless manifold, the piece `S j` having index `r j`,
-and let `K` be a field whose only unit is `1`, such as `ZMod 2`. Write `bₖ = bₖ(M; K)` and
-`cₖ = ∑ b_{k - r j}(S j; K)` over the pieces of index at most `k`, the coefficient of `tᵏ` in the
-Morse–Bott polynomial `∑ⱼ t^{r j} P_{S j}(t)`. Then `bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀`. -/
+/-- **The strong Morse–Bott inequalities in characteristic two.** Let the family
+`i j : S j → M` exhibit `f` as a Morse–Bott function on a compact boundaryless manifold, the piece
+`S j` having index `r j`, and let `K` be a field of characteristic two, such as `ZMod 2`. Write
+`bₖ = bₖ(M; K)` and `cₖ = ∑ b_{k - r j}(S j; K)` over the pieces of index at most `k`, the
+coefficient of `tᵏ` in the Morse–Bott polynomial `∑ⱼ t^{r j} P_{S j}(t)`. Then
+`bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀`. -/
 theorem sum_range_neg_one_pow_mul_bettiNumber_le_sum (n : ℕ) :
     ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - k) * bettiNumber K M k ≤
       ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - k) *
         ((∑ p with r p ≤ k, bettiNumber K (S p) (k - r p) : ℕ) : ℤ) :=
   h.sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_isThomClass (by simp) K
-    (fun _ ↦ finrank_euclideanSpace_fin) (h.exists_isThomClass_of_subsingleton_units _ K hr) n
+    (fun _ ↦ finrank_euclideanSpace_fin) (h.exists_isThomClass_of_two_eq_zero _ K h2 hr) n
 
-/-- **Euler's equality for a Morse–Bott function over `𝔽₂`.** Under the hypotheses of
+/-- **Euler's equality for a Morse–Bott function in characteristic two.** Under the hypotheses of
 `TauCeti.IsMorseBottFamily.sum_range_neg_one_pow_mul_bettiNumber_le_sum`, for every `n` at least the
 dimension of `M`, `∑ₖ₌₀ⁿ (-1)ᵏ bₖ = ∑ₖ₌₀ⁿ (-1)ᵏ cₖ`. -/
 theorem sum_range_neg_one_pow_mul_bettiNumber_eq_sum {n : ℕ} (hdimn : finrank ℝ E ≤ n) :
@@ -651,9 +654,9 @@ theorem sum_range_neg_one_pow_mul_bettiNumber_eq_sum {n : ℕ} (hdimn : finrank 
       ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ k *
         ((∑ p with r p ≤ k, bettiNumber K (S p) (k - r p) : ℕ) : ℤ) :=
   h.sum_range_neg_one_pow_mul_bettiNumber_eq_sum_of_isThomClass (by simp) K
-    (fun _ ↦ finrank_euclideanSpace_fin) (h.exists_isThomClass_of_subsingleton_units _ K hr) hdimn
+    (fun _ ↦ finrank_euclideanSpace_fin) (h.exists_isThomClass_of_two_eq_zero _ K h2 hr) hdimn
 
-/-- **The Morse–Bott polynomial identity over `𝔽₂`.** Under the hypotheses of
+/-- **The Morse–Bott polynomial identity in characteristic two.** Under the hypotheses of
 `TauCeti.IsMorseBottFamily.sum_range_neg_one_pow_mul_bettiNumber_le_sum`, for every `n` at least the
 dimension of `M`, `∑ₖ₌₀ⁿ cₖ tᵏ = ∑ₖ₌₀ⁿ bₖ tᵏ + (1 + t) Q(t)` for a polynomial `Q` with natural
 number coefficients: the Morse–Bott polynomial `∑ⱼ t^{r j} P_{S j}(t)` exceeds the Poincaré
@@ -663,10 +666,10 @@ theorem exists_sum_range_monomial_sum_eq_add_mul {n : ℕ} (hdimn : finrank ℝ 
         monomial k (∑ p with r p ≤ k, bettiNumber K (S p) (k - r p)) =
       ∑ k ∈ Finset.range (n + 1), monomial k (bettiNumber K M k) + (1 + Polynomial.X) * Q :=
   h.exists_sum_range_monomial_sum_eq_add_mul_of_isThomClass (by simp) K
-    (fun _ ↦ finrank_euclideanSpace_fin) (h.exists_isThomClass_of_subsingleton_units _ K hr) hdimn
+    (fun _ ↦ finrank_euclideanSpace_fin) (h.exists_isThomClass_of_two_eq_zero _ K h2 hr) hdimn
 
-/-- **The lacunary principle for a Morse–Bott function over `𝔽₂`.** Under the hypotheses of
-`TauCeti.IsMorseBottFamily.sum_range_neg_one_pow_mul_bettiNumber_le_sum`, write
+/-- **The lacunary principle for a Morse–Bott function in characteristic two.** Under the
+hypotheses of `TauCeti.IsMorseBottFamily.sum_range_neg_one_pow_mul_bettiNumber_le_sum`, write
 `cₖ = ∑ b_{k - r j}(S j; K)` over the pieces of index at most `k`. If of any two consecutive counts
 `cₖ` and `cₖ₊₁` one vanishes, then `bₙ(M; K) = cₙ` for every `n`: the Morse–Bott function is
 perfect over `K`. -/
@@ -675,9 +678,9 @@ theorem bettiNumber_eq_sum_of_forall_eq_zero_or_eq_zero
       ∑ p with r p ≤ k + 1, bettiNumber K (S p) (k + 1 - r p) = 0) (n : ℕ) :
     bettiNumber K M n = ∑ p with r p ≤ n, bettiNumber K (S p) (n - r p) :=
   congrFun (eq_of_forall_sum_range_neg_one_pow_mul_le
-    (h.sum_range_neg_one_pow_mul_bettiNumber_le_sum K hr) hlac) n
+    (h.sum_range_neg_one_pow_mul_bettiNumber_le_sum K h2 hr) hlac) n
 
-end SubsingletonUnits
+end TwoEqZero
 
 /-! #### Oriented negative normal bundles -/
 
