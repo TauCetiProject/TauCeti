@@ -354,7 +354,7 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α] {μ : Measure
 private theorem measure_setOf_eqOn [MeasurableSingletonClass α]
     (hX : ∀ i, AEMeasurable (X i) μ) (w : ℕ → α) (m : ℕ) :
     μ {ω | ∀ i ≤ m, X i ω = w i} = prefixLaw μ X (m + 1) {fun i : Fin (m + 1) ↦ w i.val} := by
-  rw [prefixLaw_singleton_eq_measure hX]
+  rw [prefixLaw_singleton_eq_measure fun i => hX i.val]
   exact congrArg μ (Set.ext fun ω ↦
     ⟨fun hω i ↦ hω i.val (Nat.lt_succ_iff.1 i.isLt),
       fun hω i hi ↦ hω ⟨i, Nat.lt_succ_of_le hi⟩⟩)

@@ -31,7 +31,8 @@ orientations of these lines for the linearized operators: as the operator varies
 cokernel jump, but the determinant lines fit together into a line bundle, a construction not
 carried out here. This file sets up the pointwise object:
 
-* an isomorphism `f.detLine ≃ R` when `f` is bijective (`LinearMap.detLineEquivOfBijective`);
+* an isomorphism `f.detLine ≃ R` when `f` is bijective (`LinearMap.detLineEquivOfBijective`), and
+  `f.detLine ≃ det (ker f)` when `f` is surjective (`LinearMap.detLineEquivOfSurjective`);
 * the isomorphism `f.detLine ≃ g.detLine` induced by isomorphisms of kernels and of cokernels
   (`LinearMap.detLineCongrKerCoker`);
 * the transport of determinant lines along a commuting square whose horizontal sides are linear
@@ -61,9 +62,12 @@ the linear algebra itself is standard.
 * `LinearMap.detLineEquivOfBijective_symm_one_eq_ιMulti_tmul`: the element `1` of the
   determinant line of a bijective map is the empty exterior product of the kernel tensored with
   the trivialization of the determinant line of the cokernel.
+* `LinearMap.detLineEquivOfSurjective`: the determinant line of a surjective map is that of its
+  kernel.
 * `LinearMap.detLineCongrKerCoker`: the isomorphism of determinant lines induced by isomorphisms
   of kernels and of cokernels.
 * `LinearMap.detLineCongr`: transport of determinant lines along a commuting square.
+* `LinearMap.detLineCongrOfEq`: the identification of the determinant lines of equal maps.
 * `LinearMap.instNegRayDetLine`, `LinearMap.instInvolutiveNegRayDetLine`: the opposite orientation
   of the determinant line of `f`, as `Module.Ray`'s negation, found by instance search.
 
@@ -86,6 +90,11 @@ the linear algebra itself is standard.
   convention).
 * `LinearMap.detLineCongr_refl`, `LinearMap.detLineCongr_trans` and `LinearMap.detLineCongr_symm`:
   transport along commuting squares is functorial.
+* `LinearMap.detLineCongrOfEq_eq_detLineCongr`: the identification of the determinant lines of
+  equal maps is transport along the commuting square of identities.
+* `LinearMap.detLineCongrOfEq_rfl`, `LinearMap.detLineCongrOfEq_trans` and
+  `LinearMap.detLineCongrOfEq_symm`: the identifications of the determinant lines of equal maps are
+  functorial.
 * `LinearMap.detLineCongr_apply_eq_det_smul`: automorphisms of source and target act on the
   determinant line by the determinant on the kernel times the inverse determinant on the cokernel.
 * `LinearMap.detLineCongr_apply_of_forall_eq_smul`: multiplication by a unit `c` on source and
@@ -284,17 +293,45 @@ theorem finrank_quotient_range_eq_zero_of_surjective [Nontrivial R] (hf : Functi
     Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr hf)
   finrank_zero_of_subsingleton
 
-/-- The determinant line of a bijective linear map is `R`. Kernel and cokernel are zero, so their
-determinant lines are spanned by empty exterior products; the isomorphism sends `1 ⊗ φ` to the
-value of `φ` on the empty exterior product of the cokernel
-(`LinearMap.detLineEquivOfBijective_tmul_ιMulti`). -/
-def detLineEquivOfBijective [Nontrivial R] (hf : Function.Bijective f) : f.detLine ≃ₗ[R] R :=
-  (TensorProduct.congr
-      (TauCeti.detLineEquivOfFinrankEqZero (finrank_ker_eq_zero_of_injective hf.1))
+/-- The determinant line of a surjective linear map is the determinant line of its kernel. The
+cokernel is zero, so the dual of its determinant line is `R`, through evaluation at the empty
+exterior product; the isomorphism sends `x ⊗ φ` to `φ (∧ ∅) • x`
+(`LinearMap.detLineEquivOfSurjective_tmul_ιMulti`). -/
+def detLineEquivOfSurjective [Nontrivial R] (hf : Function.Surjective f) :
+    f.detLine ≃ₗ[R] TauCeti.detLine R (ker f) :=
+  (TensorProduct.congr (LinearEquiv.refl R _)
       ((TauCeti.detLineEquivOfFinrankEqZero
-          (finrank_quotient_range_eq_zero_of_surjective hf.2)).symm.dualMap.trans
+          (finrank_quotient_range_eq_zero_of_surjective hf)).symm.dualMap.trans
         (ringLmapEquivSelf R R R))).trans
-    (TensorProduct.lid R R)
+    (TensorProduct.rid R _)
+
+/-- The cokernel of a surjective map is zero, so every family `w` indexed by `Fin 0` gives the
+empty exterior product, at which the functional `φ` is evaluated. -/
+theorem detLineEquivOfSurjective_tmul_ιMulti [Nontrivial R] (hf : Function.Surjective f)
+    (x : TauCeti.detLine R (ker f)) (φ : Dual R (TauCeti.detLine R (N ⧸ range f)))
+    (w : Fin (finrank R (N ⧸ range f)) → N ⧸ range f) :
+    detLineEquivOfSurjective hf (x ⊗ₜ φ) = φ (exteriorPower.ιMulti R _ w) • x := by
+  simp only [detLineEquivOfSurjective, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
+    LinearEquiv.refl_apply, TensorProduct.rid_tmul, ringLmapEquivSelf_apply,
+    LinearEquiv.dualMap_apply]
+  congr 2
+  rw [LinearEquiv.symm_apply_eq, TauCeti.detLineEquivOfFinrankEqZero_ιMulti]
+
+/-- The inverse sends `x` to `x ⊗ φ`, for any functional `φ` taking the value `1` on the empty
+exterior product of the cokernel. -/
+theorem detLineEquivOfSurjective_symm_apply [Nontrivial R] (hf : Function.Surjective f)
+    (x : TauCeti.detLine R (ker f)) (φ : Dual R (TauCeti.detLine R (N ⧸ range f)))
+    (w : Fin (finrank R (N ⧸ range f)) → N ⧸ range f) (hφ : φ (exteriorPower.ιMulti R _ w) = 1) :
+    (detLineEquivOfSurjective hf).symm x = x ⊗ₜ φ := by
+  rw [LinearEquiv.symm_apply_eq, detLineEquivOfSurjective_tmul_ιMulti hf x φ w, hφ, one_smul]
+
+/-- The determinant line of a bijective linear map is `R`: it is the determinant line of the kernel
+(`LinearMap.detLineEquivOfSurjective`), which is zero, so its determinant line is spanned by the
+empty exterior product. The isomorphism sends `1 ⊗ φ` to the value of `φ` on the empty exterior
+product of the cokernel (`LinearMap.detLineEquivOfBijective_tmul_ιMulti`). -/
+def detLineEquivOfBijective [Nontrivial R] (hf : Function.Bijective f) : f.detLine ≃ₗ[R] R :=
+  (detLineEquivOfSurjective hf.2).trans
+    (TauCeti.detLineEquivOfFinrankEqZero (finrank_ker_eq_zero_of_injective hf.1))
 
 /-- The cokernel of a bijective map is zero, so every family `w` indexed by `Fin 0` gives the empty
 exterior product, at which the functional `φ` is evaluated. -/
@@ -304,11 +341,9 @@ theorem detLineEquivOfBijective_tmul_ιMulti [Nontrivial R] (hf : Function.Bijec
     (w : Fin (finrank R (N ⧸ range f)) → N ⧸ range f) :
     detLineEquivOfBijective hf (exteriorPower.ιMulti R _ v ⊗ₜ φ) =
       φ (exteriorPower.ιMulti R _ w) := by
-  simp only [detLineEquivOfBijective, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
-    TauCeti.detLineEquivOfFinrankEqZero_ιMulti, TensorProduct.lid_tmul, one_smul,
-    ringLmapEquivSelf_apply, LinearEquiv.dualMap_apply]
-  congr 1
-  rw [LinearEquiv.symm_apply_eq, TauCeti.detLineEquivOfFinrankEqZero_ιMulti]
+  rw [detLineEquivOfBijective, LinearEquiv.trans_apply,
+    detLineEquivOfSurjective_tmul_ιMulti hf.2 _ _ w, map_smul,
+    TauCeti.detLineEquivOfFinrankEqZero_ιMulti, smul_eq_mul, mul_one]
 
 /-- The inverse sends `1` to `v ⊗ φ`, for the empty exterior product `v` of the kernel and any
 functional `φ` taking the value `1` on the empty exterior product of the cokernel. -/
@@ -337,6 +372,16 @@ the ambient spaces; for instance `f` and `g` may act on spaces of different dime
 def detLineCongrKerCoker (e₁ : ker f ≃ₗ[R] ker g) (e₂ : (N ⧸ range f) ≃ₗ[R] (N' ⧸ range g)) :
     f.detLine ≃ₗ[R] g.detLine :=
   TensorProduct.congr (LinearEquiv.detLineCongr e₁) (LinearEquiv.detLineCongr e₂).symm.dualMap
+
+variable {g : M' →ₗ[R] N'} in
+/-- `LinearMap.detLineCongrKerCoker` is the tensor product of the isomorphisms of the kernel
+determinant lines and of the duals of the cokernel determinant lines. -/
+theorem detLineCongrKerCoker_def (e₁ : ker f ≃ₗ[R] ker g)
+    (e₂ : (N ⧸ range f) ≃ₗ[R] (N' ⧸ range g)) :
+    detLineCongrKerCoker e₁ e₂ =
+      TensorProduct.congr (LinearEquiv.detLineCongr e₁)
+        (LinearEquiv.detLineCongr e₂).symm.dualMap :=
+  (rfl)
 
 variable {g : M' →ₗ[R] N'} in
 @[simp]
@@ -437,6 +482,18 @@ theorem toLinearMap_detLineCongr (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁
         (f.map_range_eq_range_of_comp_eq e₁.surjective h))).symm.dualMap.toLinearMap :=
   TensorProduct.toLinearMap_congr _ _
 
+/-- The transport of determinant lines along a commuting square `g ∘ e₁ = e₂ ∘ f` is the tensor
+product of the isomorphism of kernel determinant lines induced by the restriction of `e₁` and the
+dual of the inverse of the isomorphism of cokernel determinant lines induced by `e₂`. -/
+theorem detLineCongr_eq_congr (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M ≃ₗ[R] M')
+    (e₂ : N ≃ₗ[R] N') (h : g ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f) :
+    f.detLineCongr e₁ e₂ h = TensorProduct.congr
+      (LinearEquiv.detLineCongr
+        (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁.surjective e₂.injective h)))
+      (LinearEquiv.detLineCongr (Submodule.Quotient.equiv _ _ e₂
+        (f.map_range_eq_range_of_comp_eq e₁.surjective h))).symm.dualMap :=
+  (rfl)
+
 /-- Transport along the identity square is the identity. -/
 @[simp]
 theorem detLineCongr_refl :
@@ -494,6 +551,40 @@ theorem detLineCongr_symm (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M �
   refine LinearEquiv.ext fun z ↦ ?_
   rw [LinearEquiv.symm_apply_eq, ← LinearEquiv.trans_apply, ← detLineCongr_trans]
   simp
+
+/-- The identification of the determinant lines of equal linear maps `f = g`: transport along the
+commuting square of identities. -/
+def detLineCongrOfEq {g : M →ₗ[R] N} (h : f = g) : f.detLine ≃ₗ[R] g.detLine :=
+  f.detLineCongr (LinearEquiv.refl R M) (LinearEquiv.refl R N)
+    (by rw [h, LinearEquiv.refl_toLinearMap, LinearEquiv.refl_toLinearMap, comp_id, id_comp])
+
+/-- The identification of the determinant lines of equal maps `f = g` is transport along the
+commuting square of identities, so it combines with `detLineCongr_trans` and `detLineCongr_symm`
+for other commuting squares. -/
+theorem detLineCongrOfEq_eq_detLineCongr {g : M →ₗ[R] N} (h : f = g) :
+    detLineCongrOfEq h = f.detLineCongr (LinearEquiv.refl R M) (LinearEquiv.refl R N)
+      (by rw [h, LinearEquiv.refl_toLinearMap, LinearEquiv.refl_toLinearMap, comp_id, id_comp]) :=
+  (rfl)
+
+/-- Identifying the determinant line of `f` with itself is the identity. -/
+@[simp]
+theorem detLineCongrOfEq_rfl : detLineCongrOfEq (rfl : f = f) = LinearEquiv.refl R _ :=
+  detLineCongr_refl
+
+/-- Identifying the determinant lines of equal maps twice is identifying them once. -/
+@[simp]
+theorem detLineCongrOfEq_trans {g k : M →ₗ[R] N} (h : f = g) (h' : g = k) :
+    (detLineCongrOfEq h).trans (detLineCongrOfEq h') = detLineCongrOfEq (h.trans h') := by
+  subst h h'
+  simp only [detLineCongrOfEq_rfl, LinearEquiv.refl_trans]
+
+/-- Reversing the identification of the determinant lines of equal maps is the identification in
+the other direction. -/
+@[simp]
+theorem detLineCongrOfEq_symm {g : M →ₗ[R] N} (h : f = g) :
+    (detLineCongrOfEq h).symm = detLineCongrOfEq h.symm := by
+  subst h
+  simp only [detLineCongrOfEq_rfl, LinearEquiv.refl_symm]
 
 /-- Transport along a commuting square of automorphisms `e₁` of `M` and `e₂` of `N` multiplies the
 determinant line of `f` by `det k₁ * (det k₂)⁻¹`, where `k₁` and `k₂` are the automorphisms that
@@ -571,6 +662,16 @@ involutive negation, supplied for the same reason as `LinearMap.instNegRayDetLin
 instance instInvolutiveNegRayDetLine (f : M →ₗ[R] N) :
     InvolutiveNeg (Module.Ray R f.detLine) :=
   @Module.Ray.instInvolutiveNeg R _ _ _ f.detLine TensorProduct.addCommGroup _
+
+/-- Identifying the orientations of the determinant lines of equal maps twice is identifying them
+once. -/
+@[simp]
+theorem map_detLineCongrOfEq_map_detLineCongrOfEq {f g k : M →ₗ[R] N} (h : f = g) (h' : g = k)
+    (o : Module.Ray R f.detLine) :
+    Module.Ray.map (detLineCongrOfEq h') (Module.Ray.map (detLineCongrOfEq h) o) =
+      Module.Ray.map (detLineCongrOfEq (h.trans h')) o := by
+  subst h h'
+  simp only [detLineCongrOfEq_rfl, Module.Ray.map_refl, Equiv.refl_apply]
 
 end Orientation
 
