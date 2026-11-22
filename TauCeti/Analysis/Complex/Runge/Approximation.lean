@@ -12,7 +12,9 @@ public import TauCeti.Analysis.Complex.Runge.Operator
 public import TauCeti.Analysis.Normed.Module.Exhaustion
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.AbsMax
+import Mathlib.Analysis.Complex.SummableUniformlyOn
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Analysis.Complex.PowerSeries.Approximation
 import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Analysis.Normed.Module.FilledIn
@@ -45,6 +47,9 @@ connected complement.
 * `TauCeti.IsRungeCompactPair.exists_differentiableOn_norm_sub_lt` and
   `TauCeti.isRungeCompactPair_iff_approximation`: forward uniform Runge approximation of functions
   with values in a complex normed space, and the full domain-relative Runge equivalence.
+* `TauCeti.differentiableOn_tsum_of_forall_norm_le_filledExhaustion`: a series of holomorphic
+  functions whose `k`-th term is bounded on the `k`-th stage by a summable sequence has a
+  holomorphic sum.
 * `TauCeti.holomorphicHull_eq_fill` and `TauCeti.holomorphicHull_eq_self_iff_isFilledIn`:
   topological characterization of `TauCeti.holomorphicHull Ω K` for open `Ω` and compact `K ⊆ Ω`.
 * `TauCeti.isRungeCompactPair_iff_holomorphicHull_eq` and
@@ -113,6 +118,27 @@ theorem IsRungeCompactPair.exists_differentiableOn_norm_sub_lt {W : Type*} [Norm
   · exact DifferentiableOn.fun_sum fun j _ => ((hg_diff j).const_mul (w j)).smul_const (f (ζ j))
   exact (norm_sub_sum_smul_le_of_scalar hbound hf hB1.le hLB hz).trans_lt
     ((div_mul_cancel₀ _ hB1.ne').trans_lt (half_lt_self hε))
+
+/-- A series of functions holomorphic on an open set `Y ⊆ Ω`, whose `k`-th term is bounded by
+`u k` on the stage `filledExhaustion Ω k` for a summable `u`, has a holomorphic sum on `Y`: each
+compact subset of `Y` lies in all but finitely many stages, so the series converges locally
+uniformly on `Y`. This is how Runge corrections chosen stage by stage sum to a holomorphic
+function. -/
+theorem differentiableOn_tsum_of_forall_norm_le_filledExhaustion {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] {Ω Y : Set ℂ} (hY : IsOpen Y)
+    (hYΩ : Y ⊆ Ω) {t : ℕ → ℂ → F} {u : ℕ → ℝ} (hu : Summable u)
+    (ht : ∀ k, DifferentiableOn ℂ (t k) Y)
+    (hb : ∀ k, ∀ z ∈ filledExhaustion Ω k, ‖t k z‖ ≤ u k) :
+    DifferentiableOn ℂ (fun z ↦ ∑' k, t k z) Y := by
+  refine SummableLocallyUniformlyOn.differentiableOn hY
+    (.of_locally_bounded_eventually hY fun K hKY hK ↦ ?_)
+    fun k z hz ↦ (ht k).differentiableAt (hY.mem_nhds hz)
+  obtain ⟨j, hj⟩ := hK.exists_subset_interior_filledExhaustion
+    (hKY.trans (hY.subset_interior_iff.2 hYΩ))
+  refine ⟨u, hu, ?_⟩
+  rw [Nat.cofinite_eq_atTop]
+  filter_upwards [Filter.eventually_ge_atTop j] with k hk z hz
+  exact hb k z (filledExhaustion_mono hk (interior_subset (hj hz)))
 
 /-- **Runge's approximation theorem** (domain-relative form): for compact `K ⊆ Ω` with `Ω ⊆ ℂ`
 open, `IsRungeCompactPair Ω K` holds if and only if every function holomorphic on an open
