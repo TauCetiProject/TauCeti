@@ -27,7 +27,11 @@ isomorphisms of group schemes.
 * `CommHopfAlgCat.swapEnd`, `swapEnd_comp_swapEnd`, `swapEnd_comp_mulBialgHom`: the factor-swap
   endomorphism, its involutivity, and its invariance on multiplication `H ⊗[R] H ⟶ H`.
 * `CommHopfAlgCat.tensorProductCongr`: the tensor product of two isomorphisms, with
-  `tensorProductCongr_refl`, `tensorProductCongr_symm` and `tensorProductCongr_trans`.
+  `tensorProductCongr_refl`, `tensorProductCongr_symm` and `tensorProductCongr_trans`, and
+  `tensorProductCongr_hom_comp_self_eq_id_iff`: `e ⊗ f` is an involution exactly when `e` and `f`
+  are. The construction and its basic API generalize those of
+  `TauCeti.FiniteTypeCommHopfAlgCat.tensorProductCongr` to all of `CommHopfAlgCat R`; the
+  finite-type isomorphism is defined as the lift of this one.
 -/
 
 public section
@@ -70,15 +74,28 @@ variable {H H' H'' K K' K'' : CommHopfAlgCat.{v} R}
 /-- **The tensor product of two isomorphisms of commutative Hopf algebras**: for `e : H ≅ H'`
 and `f : K ≅ K'`, the isomorphism `H ⊗[R] K ≅ H' ⊗[R] K'` sending `x ⊗ₜ y` to `e x ⊗ₜ f y`. Its
 inverse is the tensor product of the inverses. On affine group schemes it is the product of the
-two isomorphisms. -/
+two isomorphisms. The finite-type isomorphism `TauCeti.FiniteTypeCommHopfAlgCat.tensorProductCongr`
+is lifted from this construction. -/
 noncomputable def tensorProductCongr (e : H ≅ H') (f : K ≅ K') :
     CommHopfAlgCat.of R (H ⊗[R] K) ≅ CommHopfAlgCat.of R (H' ⊗[R] K') where
   hom := CommHopfAlgCat.ofHom (Bialgebra.TensorProduct.map e.hom.hom f.hom.hom)
   inv := CommHopfAlgCat.ofHom (Bialgebra.TensorProduct.map e.inv.hom f.inv.hom)
-  hom_inv_id := CommHopfAlgCat.hom_ext <| TauCeti.Bialgebra.TensorProduct.map_comp_map_eq_id
-    (congrArg CommHopfAlgCat.Hom.hom e.hom_inv_id) (congrArg CommHopfAlgCat.Hom.hom f.hom_inv_id)
-  inv_hom_id := CommHopfAlgCat.hom_ext <| TauCeti.Bialgebra.TensorProduct.map_comp_map_eq_id
-    (congrArg CommHopfAlgCat.Hom.hom e.inv_hom_id) (congrArg CommHopfAlgCat.Hom.hom f.inv_hom_id)
+  hom_inv_id := by
+    rw [← CommHopfAlgCat.ofHom_comp, ← CommHopfAlgCat.ofHom_id]
+    congr 1
+    refine TauCeti.Bialgebra.TensorProduct.map_comp_map_eq_id_iff.2 ⟨?_, ?_⟩
+    · rw [← CommHopfAlgCat.hom_comp, e.hom_inv_id]
+      rfl
+    · rw [← CommHopfAlgCat.hom_comp, f.hom_inv_id]
+      rfl
+  inv_hom_id := by
+    rw [← CommHopfAlgCat.ofHom_comp, ← CommHopfAlgCat.ofHom_id]
+    congr 1
+    refine TauCeti.Bialgebra.TensorProduct.map_comp_map_eq_id_iff.2 ⟨?_, ?_⟩
+    · rw [← CommHopfAlgCat.hom_comp, e.inv_hom_id]
+      rfl
+    · rw [← CommHopfAlgCat.hom_comp, f.inv_hom_id]
+      rfl
 
 /-- The bialgebra map underlying `tensorProductCongr e f` is the tensor product of the bialgebra
 maps underlying `e` and `f`. -/
@@ -94,11 +111,6 @@ theorem tensorProductCongr_inv_hom (e : H ≅ H') (f : K ≅ K') :
     (tensorProductCongr e f).inv.hom = Bialgebra.TensorProduct.map e.inv.hom f.inv.hom :=
   CommHopfAlgCat.hom_ofHom _
 
-/-- `tensorProductCongr e f` sends `x ⊗ₜ y` to `e x ⊗ₜ f y`. -/
-theorem tensorProductCongr_hom_hom_tmul (e : H ≅ H') (f : K ≅ K') (x : H) (y : K) :
-    (tensorProductCongr e f).hom.hom (x ⊗ₜ[R] y) = e.hom.hom x ⊗ₜ[R] f.hom.hom y := by
-  simp
-
 /-- The inverse of a tensor product of isomorphisms is the tensor product of the inverses. -/
 @[simp]
 theorem tensorProductCongr_symm (e : H ≅ H') (f : K ≅ K') :
@@ -110,7 +122,10 @@ theorem tensorProductCongr_symm (e : H ≅ H') (f : K ≅ K') :
 theorem tensorProductCongr_refl (H K : CommHopfAlgCat.{v} R) :
     tensorProductCongr (Iso.refl H) (Iso.refl K) = Iso.refl (CommHopfAlgCat.of R (H ⊗[R] K)) := by
   ext : 2
-  exact BialgHom.coe_toAlgHom_injective <| Algebra.TensorProduct.ext' fun _ _ ↦ rfl
+  rw [tensorProductCongr_hom_hom]
+  apply BialgHom.coe_toAlgHom_injective
+  rw [Bialgebra.TensorProduct.map_toAlgHom]
+  exact Algebra.TensorProduct.map_id
 
 /-- Tensor products of isomorphisms compose factorwise. -/
 theorem tensorProductCongr_trans (e : H ≅ H') (e' : H' ≅ H'') (f : K ≅ K') (f' : K' ≅ K'') :
@@ -121,30 +136,15 @@ theorem tensorProductCongr_trans (e : H ≅ H') (e' : H' ≅ H'') (f : K ≅ K')
   simp only [Iso.trans_hom, CommHopfAlgCat.hom_comp, tensorProductCongr_hom_hom,
     BialgHom.comp_toAlgHom, Bialgebra.TensorProduct.map_toAlgHom, Algebra.TensorProduct.map_comp]
 
-/-- **Products of involutions.** The tensor product `e ⊗ f` of two automorphisms is an involution
-exactly when both `e` and `f` are. The reverse direction restricts to `H ⊗ 1` and `1 ⊗ K`, which
-the counit projections retract. -/
-theorem tensorProductCongr_hom_comp_self_iff (e : H ≅ H) (f : K ≅ K) :
+/-- **Products of involutions.** The tensor product `e ⊗ f` of two automorphisms squares to the
+identity if and only if both `e` and `f` do. -/
+@[simp]
+theorem tensorProductCongr_hom_comp_self_eq_id_iff (e : H ≅ H) (f : K ≅ K) :
     (tensorProductCongr e f).hom ≫ (tensorProductCongr e f).hom =
         𝟙 (CommHopfAlgCat.of R (H ⊗[R] K)) ↔
       e.hom ≫ e.hom = 𝟙 H ∧ f.hom ≫ f.hom = 𝟙 K := by
-  constructor
-  · intro h
-    have h' (t : H ⊗[R] K) :=
-      congrArg (fun φ : CommHopfAlgCat.of R (H ⊗[R] K) ⟶ _ ↦ φ.hom t) h
-    refine ⟨CommHopfAlgCat.hom_ext <| BialgHom.ext fun x ↦ ?_,
-      CommHopfAlgCat.hom_ext <| BialgHom.ext fun y ↦ ?_⟩
-    · simpa using congrArg (TauCeti.Bialgebra.TensorProduct.projectLeft (R := R) (H₁ := H)
-        (H₂ := K)) (h' (x ⊗ₜ 1))
-    · simpa using congrArg (TauCeti.Bialgebra.TensorProduct.projectRight (R := R) (H₁ := H)
-        (H₂ := K)) (h' (1 ⊗ₜ y))
-  · rintro ⟨he, hf⟩
-    refine CommHopfAlgCat.hom_ext <| BialgHom.coe_toAlgHom_injective <|
-      Algebra.TensorProduct.ext' fun x y ↦ ?_
-    have hx := congrArg (fun φ : H ⟶ H ↦ φ.hom x) he
-    have hy := congrArg (fun φ : K ⟶ K ↦ φ.hom y) hf
-    simp only [CommHopfAlgCat.hom_comp, BialgHom.comp_apply] at hx hy
-    simp [hx, hy]
+  simp only [CommHopfAlgCat.hom_ext_iff, CommHopfAlgCat.hom_comp, tensorProductCongr_hom_hom]
+  exact TauCeti.Bialgebra.TensorProduct.map_comp_map_eq_id_iff
 
 end TensorProductCongr
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
-public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Product
 public import TauCeti.Topology.Algebra.PointTopology.Functoriality
 
@@ -36,7 +35,7 @@ For `GLₙ` the standard example is inverse transpose, whose twisted real form i
 For real affine group schemes `G₁ = Spec H₁` and `G₂ = Spec H₂`, the coordinate Hopf algebra of
 `G₁ × G₂` is `H₁ ⊗[ℝ] H₂`, and automorphisms `θ₁`, `θ₂` of the factors give the product
 automorphism `θ₁ × θ₂`, represented by `CommHopfAlgCat.tensorProductCongr θ₁ θ₂`. Its twisted
-real form is the product of the twisted real forms of `θ₁` and `θ₂`
+real points are the products of the twisted real points of `θ₁` and `θ₂`
 (`TauCeti.twistedRealPoints_tensorProductCongr`), and these always contain the identity point.
 Hence `θ₁ × θ₂` is a Cartan involution exactly when `θ₁` and `θ₂` are
 (`TauCeti.isCartanInvolution_tensorProductCongr_iff`).
@@ -162,6 +161,7 @@ open TensorProduct
 /-- **The identity point is twisted-real for every automorphism**: an automorphism `θ` of the
 coordinate Hopf algebra preserves the counit, and the identity point `h ↦ ε(h)` takes real values,
 so it satisfies `1 = θ(conj 1)`. -/
+@[simp high]
 theorem one_mem_twistedRealPoints (θ : H ≅ H) :
     (1 : WithConv (H →ₐ[ℝ] ℂ)).ofConv ∈ twistedRealPoints θ := by
   intro h
@@ -176,23 +176,27 @@ variable {H₁ H₂ : CommHopfAlgCat.{v} ℝ}
 /-- **Twisted real points of a product.** A complex point of `H₁ ⊗[ℝ] H₂`, that is a complex
 point of the product group, is twisted-real for the product automorphism `θ₁ ⊗ θ₂` exactly when
 its restrictions to the two factors are twisted-real for `θ₁` and for `θ₂`. -/
+@[simp high]
 theorem mem_twistedRealPoints_tensorProductCongr_iff {θ₁ : H₁ ≅ H₁} {θ₂ : H₂ ≅ H₂}
     {p : H₁ ⊗[ℝ] H₂ →ₐ[ℝ] ℂ} :
     p ∈ twistedRealPoints (CommHopfAlgCat.tensorProductCongr θ₁ θ₂) ↔
       p.comp Algebra.TensorProduct.includeLeft ∈ twistedRealPoints θ₁ ∧
         p.comp Algebra.TensorProduct.includeRight ∈ twistedRealPoints θ₂ := by
-  simp only [mem_twistedRealPoints_iff, AlgHom.comp_apply, Algebra.TensorProduct.includeLeft_apply,
-    Algebra.TensorProduct.includeRight_apply]
-  refine ⟨fun hp ↦ ⟨fun x ↦ by simpa using hp (x ⊗ₜ 1), fun y ↦ by simpa using hp (1 ⊗ₜ y)⟩,
-    fun ⟨hp₁, hp₂⟩ t ↦ ?_⟩
-  -- A point of the tensor product is the product of its restrictions to the two factors.
-  have hsplit (x : H₁) (y : H₂) : p (x ⊗ₜ y) = p (x ⊗ₜ 1) * p (1 ⊗ₜ y) := by
-    rw [← map_mul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
-  induction t using TensorProduct.inductionOn with
-  | tmul x y =>
-    rw [CommHopfAlgCat.tensorProductCongr_hom_hom_tmul, hsplit (θ₁.hom.hom x), star_mul', ← hp₁,
-      ← hp₂, hsplit]
-  | add t u ht hu => simp only [map_add, ht, hu, star_add]
+  rw [mem_twistedRealPoints_iff_comp_eq, mem_twistedRealPoints_iff_comp_eq,
+    mem_twistedRealPoints_iff_comp_eq, CommHopfAlgCat.tensorProductCongr_hom_hom,
+    Bialgebra.TensorProduct.map_toAlgHom]
+  -- Both sides of `p ∘ (θ₁ ⊗ θ₂) = conj ∘ p` restrict along the two inclusions to the factor
+  -- equations, and `Algebra.TensorProduct.ext` reassembles them.
+  have hl : (p.comp (Algebra.TensorProduct.map (θ₁.hom.hom : H₁ →ₐ[ℝ] H₁)
+      (θ₂.hom.hom : H₂ →ₐ[ℝ] H₂))).comp Algebra.TensorProduct.includeLeft =
+        (p.comp Algebra.TensorProduct.includeLeft).comp (θ₁.hom.hom : H₁ →ₐ[ℝ] H₁) := by
+    rw [AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeLeft, AlgHom.comp_assoc]
+  have hr : (p.comp (Algebra.TensorProduct.map (θ₁.hom.hom : H₁ →ₐ[ℝ] H₁)
+      (θ₂.hom.hom : H₂ →ₐ[ℝ] H₂))).comp Algebra.TensorProduct.includeRight =
+        (p.comp Algebra.TensorProduct.includeRight).comp (θ₂.hom.hom : H₂ →ₐ[ℝ] H₂) := by
+    rw [AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeRight, AlgHom.comp_assoc]
+  rw [← hl, ← hr, ← AlgHom.comp_assoc _ p, ← AlgHom.comp_assoc _ p]
+  exact ⟨fun h ↦ ⟨by rw [h], by rw [h]⟩, fun ⟨h₁, h₂⟩ ↦ Algebra.TensorProduct.ext h₁ h₂⟩
 
 open scoped PointTopology in
 /-- Under the identification of the complex points of `H₁ ⊗[ℝ] H₂` with pairs of complex points
@@ -203,24 +207,21 @@ theorem twistedRealPoints_tensorProductCongr (θ₁ : H₁ ≅ H₁) (θ₂ : H�
       PointTopology.tensorProductHomeomorph ℝ H₁ H₂ ℂ ⁻¹'
         (twistedRealPoints θ₁ ×ˢ twistedRealPoints θ₂) := by
   ext p
-  have h₁ : (PointTopology.tensorProductHomeomorph ℝ H₁ H₂ ℂ p).1 =
-      p.comp Algebra.TensorProduct.includeLeft :=
-    AlgHom.ext fun _ ↦ PointTopology.tensorProductHomeomorph_apply_fst _ _
-  have h₂ : (PointTopology.tensorProductHomeomorph ℝ H₁ H₂ ℂ p).2 =
-      p.comp Algebra.TensorProduct.includeRight :=
-    AlgHom.ext fun _ ↦ PointTopology.tensorProductHomeomorph_apply_snd _ _
-  rw [Set.mem_preimage, Set.mem_prod, h₁, h₂, mem_twistedRealPoints_tensorProductCongr_iff]
+  rw [Set.mem_preimage, Set.mem_prod, PointTopology.tensorProductHomeomorph_apply_fst,
+    PointTopology.tensorProductHomeomorph_apply_snd, mem_twistedRealPoints_tensorProductCongr_iff]
 
 open scoped PointTopology in
 /-- **Cartan involutions of a product**: for real affine group schemes `G₁ = Spec H₁` and
 `G₂ = Spec H₂`, the product automorphism `θ₁ × θ₂` of `G₁ × G₂` is a Cartan involution exactly
-when `θ₁` and `θ₂` are. The twisted real form of `θ₁ × θ₂` is the product of the twisted real
-forms, which is compact exactly when both factors are, since neither factor is empty. -/
+when `θ₁` and `θ₂` are. The twisted real points of `θ₁ × θ₂` are the product of the twisted real
+points of the factors, which is compact exactly when both factors are, since neither factor is
+empty. -/
+@[simp]
 theorem isCartanInvolution_tensorProductCongr_iff {θ₁ : H₁ ≅ H₁} {θ₂ : H₂ ≅ H₂} :
     IsCartanInvolution (CommHopfAlgCat.tensorProductCongr θ₁ θ₂) ↔
       IsCartanInvolution θ₁ ∧ IsCartanInvolution θ₂ := by
   simp only [isCartanInvolution_iff_isCompact, twistedRealPoints_tensorProductCongr,
-    Homeomorph.isCompact_preimage, CommHopfAlgCat.tensorProductCongr_hom_comp_self_iff]
+    Homeomorph.isCompact_preimage, CommHopfAlgCat.tensorProductCongr_hom_comp_self_eq_id_iff]
   refine ⟨fun ⟨⟨h₁, h₂⟩, hc⟩ ↦ ⟨⟨h₁, ?_⟩, ⟨h₂, ?_⟩⟩, fun ⟨⟨h₁, hc₁⟩, ⟨h₂, hc₂⟩⟩ ↦
     ⟨⟨h₁, h₂⟩, hc₁.prod hc₂⟩⟩
   · simpa only [Set.fst_image_prod _ (twistedRealPoints_nonempty θ₂)] using
