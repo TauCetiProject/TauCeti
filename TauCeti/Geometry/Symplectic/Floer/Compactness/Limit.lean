@@ -31,14 +31,20 @@ cylinders breaking off at the ends are to be attached.
 The first point is the `C¹` convergence theorem for the coordinate equation
 `∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)`
 (`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer`), read in the coordinate
-`Complex.equivRealProdCLM` of the domain. In the form of the Floer equation used here it is
-`TauCeti.SymplecticForm.tendstoLocallyUniformlyOn_fderiv_of_floer`. The second is Fatou's
-lemma: the energy density `ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t})` of the limit is the pointwise limit of
-the energy densities along the sequence, since it depends continuously on the value and the
-derivative of the map (`TauCeti.SymplecticForm.tendsto_floerEnergyDensity`), so the energy is
-lower semicontinuous (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_le_liminf`). The
-limit equation is read back from the coordinate equation by
-`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_iff_fderiv_comp_equivRealProdCLM_I_sub`.
+`Complex.equivRealProdCLM` of the domain. For the equation
+`∂ₜu - X(z, u)(0, 1) = J(z, u)(∂ₛu - X(z, u)(1, 0))` on `ℝ × ℝ`, with `C¹` data `J` and `X`, where
+`J² = -1` along the solutions, and a finite-dimensional normed target, it is
+`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub`; this form also applies
+to the coordinate expressions of Floer solutions in a chart of a manifold. In the form of the Floer
+equation used here it is `TauCeti.SymplecticForm.tendstoLocallyUniformlyOn_fderiv_of_floer`.
+
+The second point is Fatou's lemma: the energy density `ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t})` of the
+limit is the pointwise limit of the energy densities along the sequence, since it depends
+continuously on the value and the derivative of the map
+(`TauCeti.SymplecticForm.tendsto_floerEnergyDensity`), so the energy is lower semicontinuous
+(`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_le_liminf`). The Floer equation is the
+coordinate equation for the Hamiltonian one-form `X = X_K`
+(`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_iff_fderiv_stdComplexLineImag_sub`).
 
 The same holds for solutions in a symplectic chart of a manifold, in the namespace
 `TauCeti.SmoothTwoForm` of `TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold`:
@@ -46,6 +52,9 @@ The same holds for solutions in a symplectic chart of a manifold, in the namespa
 
 ## Main results
 
+* `TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub`: smooth solutions of
+  the coordinate Floer equation on `ℝ × ℝ` with locally bounded derivatives converging pointwise
+  converge in `C¹` to a solution.
 * `TauCeti.SymplecticForm.tendstoLocallyUniformlyOn_fderiv_of_floer`: smooth Floer solutions
   with locally bounded derivatives converging pointwise converge in `C¹` to a Floer solution.
 * `TauCeti.SymplecticForm.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`:
@@ -62,6 +71,74 @@ The same holds for solutions in a symplectic chart of a manifold, in the namespa
 public section
 
 open Complex Filter Function MeasureTheory Metric Set Topology
+
+namespace TauCeti.Floer
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- **The derivatives of solutions of the coordinate Floer equation converge.** Let `J` and `X` be
+`C¹` on an open set `W ⊆ (ℝ × ℝ) × V`, and let `Ω ⊆ ℝ × ℝ` be open. Let `uₙ` be smooth solutions of
+`∂ₜu - X(z, u)(0, 1) = J(z, u)(∂ₛu - X(z, u)(1, 0))` on `Ω`, along which `J² = -1`, whose
+derivatives are bounded on each compact subset of `Ω` uniformly in `n`, and which converge
+pointwise on `Ω` to a map `v` whose graph over `Ω` lies in `W`. Then `v` is `C¹` on `Ω`,
+`duₙ → dv` locally uniformly on `Ω`, and `v` solves the equation on `Ω`. This is
+`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer` read in the coordinate
+`Complex.equivRealProdCLM` of the domain. -/
+theorem tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub
+    {J : (ℝ × ℝ) × V → V →L[ℝ] V} {X : (ℝ × ℝ) × V → ℝ × ℝ →L[ℝ] V}
+    {W : Set ((ℝ × ℝ) × V)} {Ω : Set (ℝ × ℝ)} (hW : IsOpen W) (hJ : ContDiffOn ℝ 1 J W)
+    (hX : ContDiffOn ℝ 1 X W) (hΩ : IsOpen Ω) {u : ℕ → ℝ × ℝ → V} {v : ℝ × ℝ → V}
+    (hvW : ∀ z ∈ Ω, (z, v z) ∈ W) (hu : ∀ n, ContDiffOn ℝ (⊤ : ℕ∞) (u n) Ω)
+    (hJsq : ∀ n, ∀ z ∈ Ω, ∀ w, J (z, u n z) (J (z, u n z) w) = -w)
+    (hfl : ∀ n, ∀ z ∈ Ω, fderiv ℝ (u n) z stdComplexLineImag - X (z, u n z) stdComplexLineImag =
+      J (z, u n z) (fderiv ℝ (u n) z stdComplexLineReal - X (z, u n z) stdComplexLineReal))
+    (hbd : ∀ C, IsCompact C → C ⊆ Ω → ∃ M, ∀ n, ∀ z ∈ C, ‖fderiv ℝ (u n) z‖ ≤ M)
+    (hlim : ∀ z ∈ Ω, Tendsto (fun n ↦ u n z) atTop (𝓝 (v z))) :
+    ContDiffOn ℝ 1 v Ω ∧
+      TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u n)) (fderiv ℝ v) atTop Ω ∧
+      ∀ z ∈ Ω, fderiv ℝ v z stdComplexLineImag - X (z, v z) stdComplexLineImag =
+        J (z, v z) (fderiv ℝ v z stdComplexLineReal - X (z, v z) stdComplexLineReal) := by
+  set e : ℂ ≃L[ℝ] ℝ × ℝ := equivRealProdCLM
+  set g : ℂ × V → (ℝ × ℝ) × V := fun q ↦ (e q.1, q.2)
+  have hg {n : WithTop ℕ∞} : ContDiff ℝ n g := (e.contDiff.comp contDiff_fst).prodMk contDiff_snd
+  -- Derivatives of `u n ∘ e` are bounded on compact subsets of `e ⁻¹' Ω`.
+  have hbd' : ∀ C, IsCompact C → C ⊆ e ⁻¹' Ω →
+      ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u n ∘ e) y‖ ≤ M := by
+    intro C hC hCΩ
+    obtain ⟨M, hM⟩ := hbd (e '' C) (hC.image e.continuous) (image_subset_iff.2 hCΩ)
+    refine ⟨M * ‖(e : ℂ →L[ℝ] ℝ × ℝ)‖, fun n y hy ↦ ?_⟩
+    rw [e.comp_right_fderiv]
+    exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+      (mul_le_mul_of_nonneg_right (hM n _ (mem_image_of_mem e hy)) (norm_nonneg _))
+  -- The theorem in the complex coordinate, for `u n ∘ e` on `e ⁻¹' Ω`.
+  obtain ⟨hv', hconv', heq'⟩ := tendstoLocallyUniformlyOn_fderiv_of_floer
+    (J := fun q ↦ J (g q)) (X := fun q ↦ X (g q) ∘L (e : ℂ →L[ℝ] ℝ × ℝ))
+    (W := g ⁻¹' W) (Ω := e ⁻¹' Ω) (u := fun n ↦ u n ∘ e) (v := v ∘ e)
+    (hW.preimage (hg (n := 0)).continuous) (hJ.comp hg.contDiffOn (mapsTo_preimage g W))
+    ((hX.comp hg.contDiffOn (mapsTo_preimage g W)).clm_comp contDiffOn_const)
+    (hΩ.preimage e.continuous) (fun y hy ↦ hvW (e y) hy)
+    (fun n ↦ (hu n).comp e.contDiff.contDiffOn (mapsTo_preimage e Ω))
+    (fun n y hy w ↦ hJsq n (e y) hy w)
+    (fun n y hy ↦ fderiv_comp_equivRealProdCLM_I_sub_iff_fderiv_stdComplexLineImag_sub.2
+      (hfl n (e y) hy)) hbd' (fun y hy ↦ hlim (e y) hy)
+  -- Back to the original coordinates.
+  have hmaps : MapsTo e.symm Ω (e ⁻¹' Ω) := fun z hz ↦ by simpa using hz
+  have hfd (w : ℝ × ℝ → V) (z : ℝ × ℝ) :
+      fderiv ℝ w z = fderiv ℝ (w ∘ e) (e.symm z) ∘L (e.symm : ℝ × ℝ →L[ℝ] ℂ) := by
+    rw [e.comp_right_fderiv, e.apply_symm_apply, ContinuousLinearMap.comp_assoc]
+    simp
+  refine ⟨?_, ?_, fun z hz ↦ ?_⟩
+  · have h := hv'.comp e.symm.contDiff.contDiffOn hmaps
+    exact h.congr fun z _ ↦ by simp
+  · have h := ((ContinuousLinearMap.compL ℝ (ℝ × ℝ) ℂ V).flip
+      (e.symm : ℝ × ℝ →L[ℝ] ℂ)).uniformContinuous.comp_tendstoLocallyUniformlyOn
+        (hconv'.comp e.symm hmaps e.symm.continuous.continuousOn)
+    convert h using 1 <;> funext <;> exact hfd _ _
+  · have h := (fderiv_comp_equivRealProdCLM_I_sub_iff_fderiv_stdComplexLineImag_sub
+      (u := v) (y := e.symm z)).1 (heq' (e.symm z) (hmaps hz))
+    rwa [show equivRealProdCLM (e.symm z) = z from e.apply_symm_apply z] at h
+
+end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm
 
@@ -89,55 +166,16 @@ theorem tendstoLocallyUniformlyOn_fderiv_of_floer (ω : SymplecticForm V)
       TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u n)) (fderiv ℝ v) atTop Ω ∧
       ∀ z ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (v z))
         (ω.perturbedFDeriv Ks Kt v z : ℝ × ℝ →ₗ[ℝ] V) := by
-  set e : ℂ ≃L[ℝ] ℝ × ℝ := equivRealProdCLM with he
-  set g : ℂ × V → (ℝ × ℝ) × V := fun q ↦ (e q.1, q.2)
-  have hg {n : WithTop ℕ∞} : ContDiff ℝ n g := (e.contDiff.comp contDiff_fst).prodMk contDiff_snd
-  -- The Hamiltonian one-form `X_K` is `C¹` on `W`.
-  have hX : ContDiffOn ℝ 1 (uncurry (ω.hamiltonianOneForm Ks Kt)) W :=
-    ω.contDiffOn_uncurry_hamiltonianOneForm hW hKs hKt
-  -- Derivatives of `u n ∘ e` are bounded on compact subsets of `e ⁻¹' Ω`.
-  have hbd' : ∀ C, IsCompact C → C ⊆ e ⁻¹' Ω →
-      ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u n ∘ e) y‖ ≤ M := by
-    intro C hC hCΩ
-    obtain ⟨M, hM⟩ := hbd (e '' C) (hC.image e.continuous) (image_subset_iff.2 hCΩ)
-    refine ⟨M * ‖(e : ℂ →L[ℝ] ℝ × ℝ)‖, fun n y hy ↦ ?_⟩
-    rw [e.comp_right_fderiv]
-    exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-      (mul_le_mul_of_nonneg_right (hM n _ (mem_image_of_mem e hy)) (norm_nonneg _))
-  -- The coordinate theorem, for `u n ∘ e` on `e ⁻¹' Ω`.
-  obtain ⟨hv', hconv', heq'⟩ := Floer.tendstoLocallyUniformlyOn_fderiv_of_floer
-    (J := fun q ↦ (J (e q.1) q.2).toLinearMap.toContinuousLinearMap)
-    (X := fun q ↦ ω.hamiltonianOneForm Ks Kt (e q.1) q.2 ∘L (e : ℂ →L[ℝ] ℝ × ℝ))
-    (W := g ⁻¹' W) (Ω := e ⁻¹' Ω) (u := fun n ↦ u n ∘ e) (v := v ∘ e)
-    (hW.preimage (hg (n := 0)).continuous) (hJ.comp hg.contDiffOn (mapsTo_preimage g W))
-    ((hX.comp hg.contDiffOn (mapsTo_preimage g W)).clm_comp contDiffOn_const)
-    (hΩ.preimage e.continuous) (fun y hy ↦ hvW (e y) hy)
-    (fun n ↦ (hu n).comp e.contDiff.contDiffOn (mapsTo_preimage e Ω))
-    (fun n y _ w ↦ by simp)
-    (fun n y hy ↦
-      (ω.isComplexLinearMap_perturbedFDeriv_iff_fderiv_comp_equivRealProdCLM_I_sub).1
-        (hfl n (e y) hy)) hbd'
-    (fun y hy ↦ hlim (e y) hy)
-  -- Back to the original coordinates.
-  have hmaps : MapsTo e.symm Ω (e ⁻¹' Ω) := fun z hz ↦ by simpa using hz
-  have hfd (w : ℝ × ℝ → V) (z : ℝ × ℝ) :
-      fderiv ℝ w z = fderiv ℝ (w ∘ e) (e.symm z) ∘L (e.symm : ℝ × ℝ →L[ℝ] ℂ) := by
-    rw [e.comp_right_fderiv, e.apply_symm_apply, ContinuousLinearMap.comp_assoc]
-    simp
-  refine ⟨?_, ?_, fun z hz ↦ ?_⟩
-  · have h := hv'.comp e.symm.contDiff.contDiffOn hmaps
-    exact h.congr fun z _ ↦ by simp
-  · have h := ((ContinuousLinearMap.compL ℝ (ℝ × ℝ) ℂ V).flip
-      (e.symm : ℝ × ℝ →L[ℝ] ℂ)).uniformContinuous.comp_tendstoLocallyUniformlyOn
-        (hconv'.comp e.symm hmaps e.symm.continuous.continuousOn)
-    convert h using 1
-    · funext n z
-      exact hfd (u n) z
-    · funext z
-      exact hfd v z
-  · have h := (ω.isComplexLinearMap_perturbedFDeriv_iff_fderiv_comp_equivRealProdCLM_I_sub
-      (Ks := Ks) (Kt := Kt) (J := J) (u := v) (y := e.symm z)).2 (heq' (e.symm z) (hmaps hz))
-    simpa [he] using h
+  have hfl' (w : ℝ × ℝ → V) (z : ℝ × ℝ) :=
+    ω.isComplexLinearMap_perturbedFDeriv_iff_fderiv_stdComplexLineImag_sub (Ks := Ks) (Kt := Kt)
+      (J := J) (u := w) (z := z)
+  obtain ⟨hv, hconv, heq⟩ := Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub
+    (J := fun p ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (X := uncurry (ω.hamiltonianOneForm Ks Kt)) hW hJ
+    (ω.contDiffOn_uncurry_hamiltonianOneForm hW hKs hKt) hΩ hvW hu
+    (fun n z _ w ↦ AlmostComplexStructure.apply_apply _ w)
+    (fun n z hz ↦ (hfl' (u n) z).1 (hfl n z hz)) hbd hlim
+  exact ⟨hv, hconv, fun z hz ↦ (hfl' v z).2 (heq z hz)⟩
 
 /-- **Floer solutions of bounded energy converge in `C¹` off finitely many bubbling points.** Let
 `K = K_s ds + K_t dt` be `C³` and `J(z, x)` be `C²` on an open set `W ⊆ (ℝ × ℝ) × V` containing
