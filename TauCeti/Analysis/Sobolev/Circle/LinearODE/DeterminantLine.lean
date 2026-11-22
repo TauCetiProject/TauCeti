@@ -303,6 +303,17 @@ theorem quotientRangeLoopOperatorEquiv_mk (f : C(AddCircle T, E)) :
   rw [hj]
   simp [quotientRangeLoopOperatorEquiv]
 
+/-- Every class in the cokernel of `L_S` is the class of a continuous loop. -/
+theorem exists_mk_ofContinuousMap_eq
+    (y : CircleSobolev 0 E ⧸ range (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E)) :
+    ∃ f : C(AddCircle T, E), Submodule.Quotient.mk (ofContinuousMap T f) = y := by
+  obtain ⟨a, rfl⟩ := Submodule.Quotient.mk_surjective _ y
+  obtain ⟨_, ⟨g, rfl⟩, _, ⟨b, rfl⟩, rfl⟩ :=
+    Submodule.mem_sup.1 ((sup_range_eq_top T S).symm ▸ Submodule.mem_top (x := a))
+  refine ⟨twistedContinuousOneEquiv E T g, ?_⟩
+  rw [← toH0_apply, Submodule.Quotient.eq, sub_add_cancel_left]
+  exact Submodule.neg_mem _ (LinearMap.mem_range_self _ b)
+
 /-- **The determinant line of `L_S` is that of `1 - Ψ(T)`.** Evaluation at `0` on the kernel
 (`TauCeti.CircleSobolev.kerLoopOperatorEquiv`) and the endpoint map on the cokernel
 (`TauCeti.CircleSobolev.quotientRangeLoopOperatorEquiv`) identify the determinant line
