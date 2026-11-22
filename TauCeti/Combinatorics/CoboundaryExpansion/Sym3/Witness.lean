@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Complete
 import TauCeti.GroupTheory.Perm.FinThree.Basic
 import Mathlib.Data.List.GetD
+import TauCeti.Algebra.BigOperators.Finset.Filter
 
 /-!
 # Layers 6.2 and 6.3: multiples of four, and the witnesses at `k = 5, …, 8`
@@ -61,12 +62,6 @@ theorem h1_complete_movedNorm_fin_three_of_four_dvd {V : Type*} [Fintype V] [Lin
 
 /-! ## 6.3 Explicit witnesses for `k = 5, …, 8` -/
 
-/- The one-line notation `(1 2 0)`: `0 ↦ 1`, `1 ↦ 2`, `2 ↦ 0`. -/
-private def cyc120 : Perm (Fin 3) := swap 0 1 * swap 1 2
-
-/- The one-line notation `(2 0 1)`: `0 ↦ 2`, `1 ↦ 0`, `2 ↦ 1`. -/
-private def cyc201 : Perm (Fin 3) := swap 1 2 * swap 0 1
-
 /-- Non-identity edges of the `k = 5` witness: `(0, 1)`, `(1, 2)`, `(2, 3) ↦ (1 0 2)`. -/
 private def edge5 (u v : Fin 5) : Perm (Fin 3) :=
   if u = 0 ∧ v = 1 then swap 0 1 else if u = 1 ∧ v = 2 then swap 0 1
@@ -75,9 +70,9 @@ private def edge5 (u v : Fin 5) : Perm (Fin 3) :=
 /-- Non-identity edges of the `k = 6` witness: `(0, 1)`, `(1, 3) ↦ (1 2 0)` and
 `(0, 3)`, `(0, 4)`, `(1, 5)`, `(4, 5) ↦ (2 0 1)`. -/
 private def edge6 (u v : Fin 6) : Perm (Fin 3) :=
-  if u = 0 ∧ v = 1 then cyc120 else if u = 1 ∧ v = 3 then cyc120
-  else if u = 0 ∧ v = 3 then cyc201 else if u = 0 ∧ v = 4 then cyc201
-  else if u = 1 ∧ v = 5 then cyc201 else if u = 4 ∧ v = 5 then cyc201 else 1
+  if u = 0 ∧ v = 1 then finRotate 3 else if u = 1 ∧ v = 3 then finRotate 3
+  else if u = 0 ∧ v = 3 then (finRotate 3)⁻¹ else if u = 0 ∧ v = 4 then (finRotate 3)⁻¹
+  else if u = 1 ∧ v = 5 then (finRotate 3)⁻¹ else if u = 4 ∧ v = 5 then (finRotate 3)⁻¹ else 1
 
 /-- Non-identity edges of the `k = 7` witness: the six pairs
 `(0, 1)`, `(0, 3)`, `(0, 4)`, `(1, 2)`, `(1, 5)`, `(2, 3) ↦ (1 0 2)`. -/
@@ -97,7 +92,8 @@ private def edge8 (u v : Fin 8) : Perm (Fin 3) :=
   else if u = 1 ∧ v = 4 then swap 0 1 else if u = 1 ∧ v = 6 then swap 0 1
   else if u = 3 ∧ v = 7 then swap 0 1 else if u = 0 ∧ v = 4 then swap 0 2
   else if u = 2 ∧ v = 3 then swap 0 2 else if u = 2 ∧ v = 4 then swap 0 2
-  else if u = 4 ∧ v = 7 then cyc201 else 1
+  else if u = 4 ∧ v = 7 then (finRotate 3)⁻¹ else 1
+
 
 private theorem defect_eq {k : ℕ} (f : Fin k → Fin k → Perm (Fin 3)) :
     (Cochain.ofLt (complete (Fin k)) f).defect (movedNorm (Fin 3)) =
@@ -114,20 +110,21 @@ private theorem defect_eq {k : ℕ} (f : Fin k → Fin k → Perm (Fin 3)) :
     rw [Cochain.holonomy_ofLt_complete _ hp.2.1 hp.2.2, movedNorm_apply]
   rw [sum_congr rfl h, ← Nat.cast_sum]
 
-private theorem cost_one_eq {k : ℕ} (f : Fin k → Fin k → Perm (Fin 3)) :
-    (Cochain.ofLt (complete (Fin k)) f).cost (movedNorm (Fin 3)) (fun _ => 1) =
+
+private theorem cost_eq_card {k : ℕ} (α : Fin k → Fin k → Perm (Fin 3)) (β : Fin k → Perm (Fin 3)) :
+    (Cochain.ofLt (complete (Fin k)) α).cost (movedNorm (Fin 3)) β =
       (∑ p ∈ univ.filter fun p : Fin k × Fin k => p.1 < p.2,
-        (f p.1 p.2).support.card : ℝ) := by
+        ((β p.1)⁻¹ * α p.1 p.2 * β p.2).support.card : ℝ) := by
   rw [Cochain.cost_complete]
   have h : ∀ p ∈ univ.filter fun p : Fin k × Fin k => p.1 < p.2,
-      movedNorm (Fin 3) ((1 : Perm (Fin 3))⁻¹ *
-        (Cochain.ofLt (complete (Fin k)) f) p.1 p.2 * 1) =
-        (((f p.1 p.2).support.card : ℕ) : ℝ) := by
+      movedNorm (Fin 3) ((β p.1)⁻¹ *
+        (Cochain.ofLt (complete (Fin k)) α) p.1 p.2 * β p.2) =
+        (((β p.1)⁻¹ * α p.1 p.2 * β p.2).support.card : ℝ) := by
     intro p hp
     rw [mem_filter] at hp
-    rw [Cochain.ofLt_apply_of_lt _ ((adj_complete _ _).mpr hp.2.ne) hp.2, inv_one, one_mul,
-      mul_one, movedNorm_apply]
+    rw [Cochain.ofLt_apply_of_lt _ ((adj_complete _ _).mpr hp.2.ne) hp.2, movedNorm_apply]
   rw [sum_congr rfl h, ← Nat.cast_sum]
+
 
 /-- The README 6.3 witness at `k = 5`: `(0, 1)`, `(1, 2)`, `(2, 3) ↦ (1 0 2)`, and `1` on every
 other ordered pair `u < v`. -/
@@ -177,28 +174,32 @@ theorem witness8_defect : witness8.defect (movedNorm (Fin 3)) = 72 := by
 
 /-- The identity gauge costs `6` against `witness5`. -/
 theorem witness5_cost_one : witness5.cost (movedNorm (Fin 3)) (fun _ => 1) = 6 := by
-  rw [witness5, cost_one_eq]
+  rw [witness5, cost_eq_card]
+  simp only [inv_one, one_mul, mul_one]
   have h6 : ∑ p ∈ univ.filter fun p : Fin 5 × Fin 5 => p.1 < p.2,
       (edge5 p.1 p.2).support.card = 6 := by decide +kernel
   exact_mod_cast h6
 
 /-- The identity gauge costs `18` against `witness6`. -/
 theorem witness6_cost_one : witness6.cost (movedNorm (Fin 3)) (fun _ => 1) = 18 := by
-  rw [witness6, cost_one_eq]
+  rw [witness6, cost_eq_card]
+  simp only [inv_one, one_mul, mul_one]
   have h18 : ∑ p ∈ univ.filter fun p : Fin 6 × Fin 6 => p.1 < p.2,
       (edge6 p.1 p.2).support.card = 18 := by decide +kernel
   exact_mod_cast h18
 
 /-- The identity gauge costs `12` against `witness7`. -/
 theorem witness7_cost_one : witness7.cost (movedNorm (Fin 3)) (fun _ => 1) = 12 := by
-  rw [witness7, cost_one_eq]
+  rw [witness7, cost_eq_card]
+  simp only [inv_one, one_mul, mul_one]
   have h12 : ∑ p ∈ univ.filter fun p : Fin 7 × Fin 7 => p.1 < p.2,
       (edge7 p.1 p.2).support.card = 12 := by decide +kernel
   exact_mod_cast h12
 
 /-- The identity gauge costs `27` against `witness8`. -/
 theorem witness8_cost_one : witness8.cost (movedNorm (Fin 3)) (fun _ => 1) = 27 := by
-  rw [witness8, cost_one_eq]
+  rw [witness8, cost_eq_card]
+  simp only [inv_one, one_mul, mul_one]
   have h27 : ∑ p ∈ univ.filter fun p : Fin 8 × Fin 8 => p.1 < p.2,
       (edge8 p.1 p.2).support.card = 27 := by decide +kernel
   exact_mod_cast h27
@@ -258,13 +259,6 @@ private def search {k : ℕ} (α : Fin k → Fin k → Perm (Fin 3)) (D : ℕ) :
   | 0, l => decide (D ≤ pcost α l)
   | f + 1, l => decide (D ≤ pcost α l) || sym3Elems.all fun a => search α D f (l ++ [a])
 
-private theorem sum_map_le {ι : Type*} (l : List ι) (f g : ι → ℕ) (h : ∀ i ∈ l, f i ≤ g i) :
-    (l.map f).sum ≤ (l.map g).sum := by
-  induction l with
-  | nil => simp
-  | cons a t ih =>
-    simp only [List.map_cons, List.sum_cons]
-    exact Nat.add_le_add (h a (by simp)) (ih fun i hi => h i (by simp [hi]))
 
 private theorem lt_of_mem_edgeList {k : ℕ} {e : Fin k × Fin k} (h : e ∈ edgeList k) :
     e.1.val < e.2.val := by
@@ -275,7 +269,7 @@ private theorem lt_of_mem_edgeList {k : ℕ} {e : Fin k × Fin k} (h : e ∈ edg
 private theorem pcost_mono {k : ℕ} (α : Fin k → Fin k → Perm (Fin 3))
     (l rest : List (Perm (Fin 3))) :
     pcost α l ≤ pcost α (l ++ rest) := by
-  apply sum_map_le
+  apply List.sum_le_sum
   intro e he
   have h12 : e.1.val < e.2.val := lt_of_mem_edgeList he
   by_cases h1 : e.2.val < l.length
@@ -314,49 +308,17 @@ private theorem search_step {k : ℕ} (α : Fin k → Fin k → Perm (Fin 3)) (D
   simp only [search, Bool.or_eq_true, List.all_eq_true]
   exact Or.inr h
 
-private theorem sum_map_flatMap {α β : Type*} (l : List α) (g : α → List β) (f : β → ℕ) :
-    ((l.flatMap g).map f).sum = (l.map fun a => ((g a).map f).sum).sum := by
-  induction l with
-  | nil => simp
-  | cons a t ih => simp [List.flatMap_cons, List.map_append, List.sum_append, ih]
-
-private theorem sum_map_filter {α : Type*} (l : List α) (p : α → Bool) (f : α → ℕ) :
-    ((l.filter p).map f).sum = (l.map fun a => if p a then f a else 0).sum := by
-  induction l with
-  | nil => simp
-  | cons a t ih =>
-    simp only [List.filter_cons, List.map_cons, List.sum_cons]
-    split <;> simp [ih]
-
-private theorem sum_map_finRange {k : ℕ} (g : Fin k → ℕ) :
-    ((List.finRange k).map g).sum = ∑ i : Fin k, g i := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    simp only [List.finRange_succ, List.map_cons, List.sum_cons, List.map_map]
-    rw [ih]
-    simp [Function.comp_apply, Fin.sum_univ_succ]
 
 private theorem sum_edgeList {k : ℕ} (f : Fin k × Fin k → ℕ) :
-    ((edgeList k).map f).sum =
-      ∑ u : Fin k, ∑ v ∈ univ.filter fun v => u < v, f (u, v) := by
-  have hflat : ((edgeList k).map f).sum =
-      ((List.finRange k).map fun u =>
-        ((((List.finRange k).filter fun v => decide (u < v)).map fun v => (u, v)).map
-            f).sum).sum := by
-    simpa [edgeList] using sum_map_flatMap (List.finRange k)
-      (fun u => ((List.finRange k).filter fun v => decide (u < v)).map fun v => (u, v)) f
-  rw [hflat, sum_map_finRange]
+    ((edgeList k).map f).sum = ∑ p ∈ univ.filter fun p : Fin k × Fin k => p.1 < p.2, f p := by
+  rw [edgeList, List.flatMap_def, List.map_flatten, List.sum_flatten, List.map_map,
+    ← List.ofFn_eq_map, List.map_ofFn, List.sum_ofFn, ← univ_product_univ,
+    sum_filter_product univ univ (· < ·) fun u v => f (u, v)]
   refine Finset.sum_congr rfl fun u _ => ?_
-  rw [List.map_map, sum_map_filter, sum_map_finRange, Finset.sum_filter]
-  simp [decide_eq_true_eq]
-
-private theorem sum_filter_prod {k : ℕ} (f : Fin k × Fin k → ℕ) :
-    ∑ u : Fin k, ∑ v ∈ univ.filter fun v => u < v, f (u, v) =
-      ∑ p ∈ univ.filter fun p : Fin k × Fin k => p.1 < p.2, f p := by
-  rw [Finset.sum_filter, Fintype.sum_prod_type]
-  refine Finset.sum_congr rfl fun u _ => ?_
-  rw [← Finset.sum_filter]
+  rw [Function.comp_apply, Function.comp_apply, List.map_map,
+    ← List.sum_toFinset _ ((List.nodup_finRange k).filter _), List.toFinset_filter,
+    List.toFinset_finRange]
+  simp
 
 private theorem pcost_ofFn {k : ℕ} (α : Fin k → Fin k → Perm (Fin 3)) (β : Fin k → Perm (Fin 3)) :
     pcost α (List.ofFn β) =
@@ -373,46 +335,26 @@ private theorem pcost_ofFn {k : ℕ} (α : Fin k → Fin k → Perm (Fin 3)) (β
     simp only [term, List.getD_eq_getElem (List.ofFn β) 1 (hlen e.1),
       List.getD_eq_getElem (List.ofFn β) 1 (hlen e.2), List.getElem_ofFn]
   rw [hmap, sum_edgeList]
-  exact sum_filter_prod fun e => movedFast ((β e.1)⁻¹ * α e.1 e.2 * β e.2)
 
-private theorem cost_eq_card {k : ℕ} (α : Fin k → Fin k → Perm (Fin 3)) (β : Fin k → Perm (Fin 3)) :
-    (Cochain.ofLt (complete (Fin k)) α).cost (movedNorm (Fin 3)) β =
-      (∑ p ∈ univ.filter fun p : Fin k × Fin k => p.1 < p.2,
-        ((β p.1)⁻¹ * α p.1 p.2 * β p.2).support.card : ℝ) := by
-  rw [Cochain.cost_complete]
-  have h : ∀ p ∈ univ.filter fun p : Fin k × Fin k => p.1 < p.2,
-      movedNorm (Fin 3) ((β p.1)⁻¹ *
-        (Cochain.ofLt (complete (Fin k)) α) p.1 p.2 * β p.2) =
-        (((β p.1)⁻¹ * α p.1 p.2 * β p.2).support.card : ℝ) := by
+
+/-- The gauge prefixes of length `n` over `sym3Elems`. -/
+private def prefixes : ℕ → List (List (Perm (Fin 3)))
+  | 0 => [[]]
+  | n + 1 => sym3Elems.flatMap fun a => (prefixes n).map (a :: ·)
+
+/-- A search with fuel `f + n` succeeds once its extensions by every length-`n` prefix succeed with
+fuel `f`. -/
+private theorem search_of_prefixes {k : ℕ} (α : Fin k → Fin k → Perm (Fin 3)) (D f : ℕ) :
+    ∀ (n : ℕ) (l : List (Perm (Fin 3))),
+      ((prefixes n).all fun p => search α D f (l ++ p)) = true → search α D (f + n) l = true
+  | 0, l, h => by simpa [prefixes] using h
+  | n + 1, l, h => by
+    apply search_step α D (f + n) l
+    intro a ha
+    apply search_of_prefixes α D f n (l ++ [a])
+    simp only [prefixes, List.all_eq_true, List.mem_flatMap, List.mem_map] at h ⊢
     intro p hp
-    rw [mem_filter] at hp
-    rw [Cochain.ofLt_apply_of_lt _ ((adj_complete _ _).mpr hp.2.ne) hp.2, movedNorm_apply]
-  rw [sum_congr rfl h, ← Nat.cast_sum]
-
-private theorem and6 {a b c d e f : Bool}
-    (h : (a && b && c) && (d && e && f) = true) :
-    a = true ∧ b = true ∧ c = true ∧ d = true ∧ e = true ∧ f = true := by
-  revert a b c d e f
-  decide +kernel
-
-private theorem search_and6 {k : ℕ} (α : Fin k → Fin k → Perm (Fin 3)) (D f : ℕ)
-    (l : List (Perm (Fin 3)))
-    (h : (search α D f (l ++ [g0]) && search α D f (l ++ [g1]) &&
-          search α D f (l ++ [g2])) &&
-        (search α D f (l ++ [g3]) && search α D f (l ++ [g4]) &&
-          search α D f (l ++ [g5])) = true) :
-    search α D (f + 1) l = true := by
-  apply search_step α D f l
-  intro a ha
-  obtain ⟨ha0, ha1, ha2, ha3, ha4, ha5⟩ := and6 h
-  simp only [sym3Elems, List.mem_cons, List.not_mem_nil, or_false] at ha
-  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact ha0
-  · exact ha1
-  · exact ha2
-  · exact ha3
-  · exact ha4
-  · exact ha5
+    simpa using h (a :: p) ⟨a, ha, p, hp, rfl⟩
 
 private theorem le_cost_of_search {m : ℕ}
     (α : Fin (m + 1) → Fin (m + 1) → Perm (Fin 3)) (D : ℕ)
@@ -427,464 +369,186 @@ private theorem le_cost_of_search {m : ℕ}
   simp only [movedFast_eq] at hsum
   exact_mod_cast hsum ▸ hs
 
+
 private theorem search5_root : search edge5 6 4 [g0] = true := by
   decide +kernel
 
-private theorem search6_leaves :
-    (search edge6 18 4 [g0, g0] && search edge6 18 4 [g0, g1] && search edge6 18 4 [g0, g2]) &&
-      (search edge6 18 4 [g0, g3] &&
-        search edge6 18 4 [g0, g4] &&
-        search edge6 18 4 [g0, g5]) = true := by
-  decide +kernel
+/-- Two-level form of `search_of_prefixes`, so that each `decide` below checks only the six
+fuel-`f` searches under one node. -/
+private theorem search_of_nodes {k : ℕ} (α : Fin k → Fin k → Perm (Fin 3)) (D f : ℕ)
+    (l : List (Perm (Fin 3)))
+    (h : ∀ a ∈ sym3Elems, ((prefixes 1).all fun p => search α D f (l ++ [a] ++ p)) = true) :
+    search α D (f + 2) l :=
+  search_step α D (f + 1) l fun a ha => search_of_prefixes α D f 1 (l ++ [a]) (h a ha)
 
 private theorem search6_root : search edge6 18 5 [g0] = true :=
-  search_and6 edge6 18 4 [g0] search6_leaves
-
-private theorem search7_0 :
-    (search edge7 12 4 [g0, g0, g0] && search edge7 12 4 [g0, g0, g1] &&
-      search edge7 12 4 [g0, g0, g2]) &&
-      (search edge7 12 4 [g0, g0, g3] && search edge7 12 4 [g0, g0, g4] &&
-        search edge7 12 4 [g0, g0, g5]) = true := by
-  decide +kernel
-private theorem search7_node_0 : search edge7 12 5 [g0, g0] = true :=
-  search_and6 edge7 12 4 [g0, g0] search7_0
-
-private theorem search7_1 :
-    (search edge7 12 4 [g0, g1, g0] && search edge7 12 4 [g0, g1, g1] &&
-      search edge7 12 4 [g0, g1, g2]) &&
-      (search edge7 12 4 [g0, g1, g3] && search edge7 12 4 [g0, g1, g4] &&
-        search edge7 12 4 [g0, g1, g5]) = true := by
-  decide +kernel
-private theorem search7_node_1 : search edge7 12 5 [g0, g1] = true :=
-  search_and6 edge7 12 4 [g0, g1] search7_1
-
-private theorem search7_2 :
-    (search edge7 12 4 [g0, g2, g0] && search edge7 12 4 [g0, g2, g1] &&
-      search edge7 12 4 [g0, g2, g2]) &&
-      (search edge7 12 4 [g0, g2, g3] && search edge7 12 4 [g0, g2, g4] &&
-        search edge7 12 4 [g0, g2, g5]) = true := by
-  decide +kernel
-private theorem search7_node_2 : search edge7 12 5 [g0, g2] = true :=
-  search_and6 edge7 12 4 [g0, g2] search7_2
-
-private theorem search7_3 :
-    (search edge7 12 4 [g0, g3, g0] && search edge7 12 4 [g0, g3, g1] &&
-      search edge7 12 4 [g0, g3, g2]) &&
-      (search edge7 12 4 [g0, g3, g3] && search edge7 12 4 [g0, g3, g4] &&
-        search edge7 12 4 [g0, g3, g5]) = true := by
-  decide +kernel
-private theorem search7_node_3 : search edge7 12 5 [g0, g3] = true :=
-  search_and6 edge7 12 4 [g0, g3] search7_3
-
-private theorem search7_4 :
-    (search edge7 12 4 [g0, g4, g0] && search edge7 12 4 [g0, g4, g1] &&
-      search edge7 12 4 [g0, g4, g2]) &&
-      (search edge7 12 4 [g0, g4, g3] && search edge7 12 4 [g0, g4, g4] &&
-        search edge7 12 4 [g0, g4, g5]) = true := by
-  decide +kernel
-private theorem search7_node_4 : search edge7 12 5 [g0, g4] = true :=
-  search_and6 edge7 12 4 [g0, g4] search7_4
-
-private theorem search7_5 :
-    (search edge7 12 4 [g0, g5, g0] && search edge7 12 4 [g0, g5, g1] &&
-      search edge7 12 4 [g0, g5, g2]) &&
-      (search edge7 12 4 [g0, g5, g3] && search edge7 12 4 [g0, g5, g4] &&
-        search edge7 12 4 [g0, g5, g5]) = true := by
-  decide +kernel
-private theorem search7_node_5 : search edge7 12 5 [g0, g5] = true :=
-  search_and6 edge7 12 4 [g0, g5] search7_5
+  search_of_prefixes edge6 18 4 1 [g0] (by decide +kernel)
 
 private theorem search7_root : search edge7 12 6 [g0] = true := by
-  apply search_and6 edge7 12 5 [g0]
-  simp [search7_node_0, search7_node_1, search7_node_2,
-    search7_node_3, search7_node_4, search7_node_5]
-private theorem search8_0_0 :
-    (search edge8 27 4 [g0, g0, g0, g0] && search edge8 27 4 [g0, g0, g0, g1] &&
-      search edge8 27 4 [g0, g0, g0, g2]) &&
-      (search edge8 27 4 [g0, g0, g0, g3] && search edge8 27 4 [g0, g0, g0, g4] &&
-        search edge8 27 4 [g0, g0, g0, g5]) = true := by
-  decide +kernel
-private theorem search8_node_0_0 :
-    search edge8 27 5 [g0, g0, g0] = true :=
-  search_and6 edge8 27 4 [g0, g0, g0] search8_0_0
+  refine search_of_nodes edge7 12 4 [g0] ?_
+  intro a ha
+  simp only [sym3Elems, List.mem_cons, List.not_mem_nil, or_false] at ha
+  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
 
-private theorem search8_0_1 :
-    (search edge8 27 4 [g0, g0, g1, g0] && search edge8 27 4 [g0, g0, g1, g1] &&
-      search edge8 27 4 [g0, g0, g1, g2]) &&
-      (search edge8 27 4 [g0, g0, g1, g3] && search edge8 27 4 [g0, g0, g1, g4] &&
-        search edge8 27 4 [g0, g0, g1, g5]) = true := by
-  decide +kernel
-private theorem search8_node_0_1 :
-    search edge8 27 5 [g0, g0, g1] = true :=
-  search_and6 edge8 27 4 [g0, g0, g1] search8_0_1
+/-! At `k = 8` one declaration can afford only one six-leaf `decide` within the default
+heartbeat budget, so the tree is checked node by node. -/
 
-private theorem search8_0_2 :
-    (search edge8 27 4 [g0, g0, g2, g0] && search edge8 27 4 [g0, g0, g2, g1] &&
-      search edge8 27 4 [g0, g0, g2, g2]) &&
-      (search edge8 27 4 [g0, g0, g2, g3] && search edge8 27 4 [g0, g0, g2, g4] &&
-        search edge8 27 4 [g0, g0, g2, g5]) = true := by
-  decide +kernel
-private theorem search8_node_0_2 :
-    search edge8 27 5 [g0, g0, g2] = true :=
-  search_and6 edge8 27 4 [g0, g0, g2] search8_0_2
+private theorem search8_node_0_0 : search edge8 27 5 [g0, g0, g0] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
 
-private theorem search8_0_3 :
-    (search edge8 27 4 [g0, g0, g3, g0] && search edge8 27 4 [g0, g0, g3, g1] &&
-      search edge8 27 4 [g0, g0, g3, g2]) &&
-      (search edge8 27 4 [g0, g0, g3, g3] && search edge8 27 4 [g0, g0, g3, g4] &&
-        search edge8 27 4 [g0, g0, g3, g5]) = true := by
-  decide +kernel
-private theorem search8_node_0_3 :
-    search edge8 27 5 [g0, g0, g3] = true :=
-  search_and6 edge8 27 4 [g0, g0, g3] search8_0_3
+private theorem search8_node_0_1 : search edge8 27 5 [g0, g0, g1] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
 
-private theorem search8_0_4 :
-    (search edge8 27 4 [g0, g0, g4, g0] && search edge8 27 4 [g0, g0, g4, g1] &&
-      search edge8 27 4 [g0, g0, g4, g2]) &&
-      (search edge8 27 4 [g0, g0, g4, g3] && search edge8 27 4 [g0, g0, g4, g4] &&
-        search edge8 27 4 [g0, g0, g4, g5]) = true := by
-  decide +kernel
-private theorem search8_node_0_4 :
-    search edge8 27 5 [g0, g0, g4] = true :=
-  search_and6 edge8 27 4 [g0, g0, g4] search8_0_4
+private theorem search8_node_0_2 : search edge8 27 5 [g0, g0, g2] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
 
-private theorem search8_0_5 :
-    (search edge8 27 4 [g0, g0, g5, g0] && search edge8 27 4 [g0, g0, g5, g1] &&
-      search edge8 27 4 [g0, g0, g5, g2]) &&
-      (search edge8 27 4 [g0, g0, g5, g3] && search edge8 27 4 [g0, g0, g5, g4] &&
-        search edge8 27 4 [g0, g0, g5, g5]) = true := by
-  decide +kernel
-private theorem search8_node_0_5 :
-    search edge8 27 5 [g0, g0, g5] = true :=
-  search_and6 edge8 27 4 [g0, g0, g5] search8_0_5
+private theorem search8_node_0_3 : search edge8 27 5 [g0, g0, g3] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_0_4 : search edge8 27 5 [g0, g0, g4] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_0_5 : search edge8 27 5 [g0, g0, g5] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_1_0 : search edge8 27 5 [g0, g1, g0] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_1_1 : search edge8 27 5 [g0, g1, g1] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_1_2 : search edge8 27 5 [g0, g1, g2] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_1_3 : search edge8 27 5 [g0, g1, g3] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_1_4 : search edge8 27 5 [g0, g1, g4] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_1_5 : search edge8 27 5 [g0, g1, g5] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_2_0 : search edge8 27 5 [g0, g2, g0] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_2_1 : search edge8 27 5 [g0, g2, g1] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_2_2 : search edge8 27 5 [g0, g2, g2] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_2_3 : search edge8 27 5 [g0, g2, g3] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_2_4 : search edge8 27 5 [g0, g2, g4] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_2_5 : search edge8 27 5 [g0, g2, g5] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_3_0 : search edge8 27 5 [g0, g3, g0] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_3_1 : search edge8 27 5 [g0, g3, g1] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_3_2 : search edge8 27 5 [g0, g3, g2] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_3_3 : search edge8 27 5 [g0, g3, g3] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_3_4 : search edge8 27 5 [g0, g3, g4] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_3_5 : search edge8 27 5 [g0, g3, g5] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_4_0 : search edge8 27 5 [g0, g4, g0] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_4_1 : search edge8 27 5 [g0, g4, g1] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_4_2 : search edge8 27 5 [g0, g4, g2] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_4_3 : search edge8 27 5 [g0, g4, g3] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_4_4 : search edge8 27 5 [g0, g4, g4] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_4_5 : search edge8 27 5 [g0, g4, g5] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_5_0 : search edge8 27 5 [g0, g5, g0] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_5_1 : search edge8 27 5 [g0, g5, g1] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_5_2 : search edge8 27 5 [g0, g5, g2] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_5_3 : search edge8 27 5 [g0, g5, g3] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_5_4 : search edge8 27 5 [g0, g5, g4] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
+
+private theorem search8_node_5_5 : search edge8 27 5 [g0, g5, g5] = true :=
+  search_of_prefixes edge8 27 4 1 _ (by decide +kernel)
 
 private theorem search8_mid_0 : search edge8 27 6 [g0, g0] = true := by
-  apply search_and6 edge8 27 5 [g0, g0]
-  simp [search8_node_0_0, search8_node_0_1, search8_node_0_2,
-    search8_node_0_3, search8_node_0_4, search8_node_0_5]
-private theorem search8_1_0 :
-    (search edge8 27 4 [g0, g1, g0, g0] && search edge8 27 4 [g0, g1, g0, g1] &&
-      search edge8 27 4 [g0, g1, g0, g2]) &&
-      (search edge8 27 4 [g0, g1, g0, g3] && search edge8 27 4 [g0, g1, g0, g4] &&
-        search edge8 27 4 [g0, g1, g0, g5]) = true := by
-  decide +kernel
-private theorem search8_node_1_0 :
-    search edge8 27 5 [g0, g1, g0] = true :=
-  search_and6 edge8 27 4 [g0, g1, g0] search8_1_0
-
-private theorem search8_1_1 :
-    (search edge8 27 4 [g0, g1, g1, g0] && search edge8 27 4 [g0, g1, g1, g1] &&
-      search edge8 27 4 [g0, g1, g1, g2]) &&
-      (search edge8 27 4 [g0, g1, g1, g3] && search edge8 27 4 [g0, g1, g1, g4] &&
-        search edge8 27 4 [g0, g1, g1, g5]) = true := by
-  decide +kernel
-private theorem search8_node_1_1 :
-    search edge8 27 5 [g0, g1, g1] = true :=
-  search_and6 edge8 27 4 [g0, g1, g1] search8_1_1
-
-private theorem search8_1_2 :
-    (search edge8 27 4 [g0, g1, g2, g0] && search edge8 27 4 [g0, g1, g2, g1] &&
-      search edge8 27 4 [g0, g1, g2, g2]) &&
-      (search edge8 27 4 [g0, g1, g2, g3] && search edge8 27 4 [g0, g1, g2, g4] &&
-        search edge8 27 4 [g0, g1, g2, g5]) = true := by
-  decide +kernel
-private theorem search8_node_1_2 :
-    search edge8 27 5 [g0, g1, g2] = true :=
-  search_and6 edge8 27 4 [g0, g1, g2] search8_1_2
-
-private theorem search8_1_3 :
-    (search edge8 27 4 [g0, g1, g3, g0] && search edge8 27 4 [g0, g1, g3, g1] &&
-      search edge8 27 4 [g0, g1, g3, g2]) &&
-      (search edge8 27 4 [g0, g1, g3, g3] && search edge8 27 4 [g0, g1, g3, g4] &&
-        search edge8 27 4 [g0, g1, g3, g5]) = true := by
-  decide +kernel
-private theorem search8_node_1_3 :
-    search edge8 27 5 [g0, g1, g3] = true :=
-  search_and6 edge8 27 4 [g0, g1, g3] search8_1_3
-
-private theorem search8_1_4 :
-    (search edge8 27 4 [g0, g1, g4, g0] && search edge8 27 4 [g0, g1, g4, g1] &&
-      search edge8 27 4 [g0, g1, g4, g2]) &&
-      (search edge8 27 4 [g0, g1, g4, g3] && search edge8 27 4 [g0, g1, g4, g4] &&
-        search edge8 27 4 [g0, g1, g4, g5]) = true := by
-  decide +kernel
-private theorem search8_node_1_4 :
-    search edge8 27 5 [g0, g1, g4] = true :=
-  search_and6 edge8 27 4 [g0, g1, g4] search8_1_4
-
-private theorem search8_1_5 :
-    (search edge8 27 4 [g0, g1, g5, g0] && search edge8 27 4 [g0, g1, g5, g1] &&
-      search edge8 27 4 [g0, g1, g5, g2]) &&
-      (search edge8 27 4 [g0, g1, g5, g3] && search edge8 27 4 [g0, g1, g5, g4] &&
-        search edge8 27 4 [g0, g1, g5, g5]) = true := by
-  decide +kernel
-private theorem search8_node_1_5 :
-    search edge8 27 5 [g0, g1, g5] = true :=
-  search_and6 edge8 27 4 [g0, g1, g5] search8_1_5
+  refine search_step edge8 27 5 _ fun a ha => ?_
+  simp only [sym3Elems, List.mem_cons, List.not_mem_nil, or_false] at ha
+  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [search8_node_0_0, search8_node_0_1, search8_node_0_2, search8_node_0_3,
+    search8_node_0_4, search8_node_0_5]
 
 private theorem search8_mid_1 : search edge8 27 6 [g0, g1] = true := by
-  apply search_and6 edge8 27 5 [g0, g1]
-  simp [search8_node_1_0, search8_node_1_1, search8_node_1_2,
-    search8_node_1_3, search8_node_1_4, search8_node_1_5]
-private theorem search8_2_0 :
-    (search edge8 27 4 [g0, g2, g0, g0] && search edge8 27 4 [g0, g2, g0, g1] &&
-      search edge8 27 4 [g0, g2, g0, g2]) &&
-      (search edge8 27 4 [g0, g2, g0, g3] && search edge8 27 4 [g0, g2, g0, g4] &&
-        search edge8 27 4 [g0, g2, g0, g5]) = true := by
-  decide +kernel
-private theorem search8_node_2_0 :
-    search edge8 27 5 [g0, g2, g0] = true :=
-  search_and6 edge8 27 4 [g0, g2, g0] search8_2_0
-
-private theorem search8_2_1 :
-    (search edge8 27 4 [g0, g2, g1, g0] && search edge8 27 4 [g0, g2, g1, g1] &&
-      search edge8 27 4 [g0, g2, g1, g2]) &&
-      (search edge8 27 4 [g0, g2, g1, g3] && search edge8 27 4 [g0, g2, g1, g4] &&
-        search edge8 27 4 [g0, g2, g1, g5]) = true := by
-  decide +kernel
-private theorem search8_node_2_1 :
-    search edge8 27 5 [g0, g2, g1] = true :=
-  search_and6 edge8 27 4 [g0, g2, g1] search8_2_1
-
-private theorem search8_2_2 :
-    (search edge8 27 4 [g0, g2, g2, g0] && search edge8 27 4 [g0, g2, g2, g1] &&
-      search edge8 27 4 [g0, g2, g2, g2]) &&
-      (search edge8 27 4 [g0, g2, g2, g3] && search edge8 27 4 [g0, g2, g2, g4] &&
-        search edge8 27 4 [g0, g2, g2, g5]) = true := by
-  decide +kernel
-private theorem search8_node_2_2 :
-    search edge8 27 5 [g0, g2, g2] = true :=
-  search_and6 edge8 27 4 [g0, g2, g2] search8_2_2
-
-private theorem search8_2_3 :
-    (search edge8 27 4 [g0, g2, g3, g0] && search edge8 27 4 [g0, g2, g3, g1] &&
-      search edge8 27 4 [g0, g2, g3, g2]) &&
-      (search edge8 27 4 [g0, g2, g3, g3] && search edge8 27 4 [g0, g2, g3, g4] &&
-        search edge8 27 4 [g0, g2, g3, g5]) = true := by
-  decide +kernel
-private theorem search8_node_2_3 :
-    search edge8 27 5 [g0, g2, g3] = true :=
-  search_and6 edge8 27 4 [g0, g2, g3] search8_2_3
-
-private theorem search8_2_4 :
-    (search edge8 27 4 [g0, g2, g4, g0] && search edge8 27 4 [g0, g2, g4, g1] &&
-      search edge8 27 4 [g0, g2, g4, g2]) &&
-      (search edge8 27 4 [g0, g2, g4, g3] && search edge8 27 4 [g0, g2, g4, g4] &&
-        search edge8 27 4 [g0, g2, g4, g5]) = true := by
-  decide +kernel
-private theorem search8_node_2_4 :
-    search edge8 27 5 [g0, g2, g4] = true :=
-  search_and6 edge8 27 4 [g0, g2, g4] search8_2_4
-
-private theorem search8_2_5 :
-    (search edge8 27 4 [g0, g2, g5, g0] && search edge8 27 4 [g0, g2, g5, g1] &&
-      search edge8 27 4 [g0, g2, g5, g2]) &&
-      (search edge8 27 4 [g0, g2, g5, g3] && search edge8 27 4 [g0, g2, g5, g4] &&
-        search edge8 27 4 [g0, g2, g5, g5]) = true := by
-  decide +kernel
-private theorem search8_node_2_5 :
-    search edge8 27 5 [g0, g2, g5] = true :=
-  search_and6 edge8 27 4 [g0, g2, g5] search8_2_5
+  refine search_step edge8 27 5 _ fun a ha => ?_
+  simp only [sym3Elems, List.mem_cons, List.not_mem_nil, or_false] at ha
+  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [search8_node_1_0, search8_node_1_1, search8_node_1_2, search8_node_1_3,
+    search8_node_1_4, search8_node_1_5]
 
 private theorem search8_mid_2 : search edge8 27 6 [g0, g2] = true := by
-  apply search_and6 edge8 27 5 [g0, g2]
-  simp [search8_node_2_0, search8_node_2_1, search8_node_2_2,
-    search8_node_2_3, search8_node_2_4, search8_node_2_5]
-private theorem search8_3_0 :
-    (search edge8 27 4 [g0, g3, g0, g0] && search edge8 27 4 [g0, g3, g0, g1] &&
-      search edge8 27 4 [g0, g3, g0, g2]) &&
-      (search edge8 27 4 [g0, g3, g0, g3] && search edge8 27 4 [g0, g3, g0, g4] &&
-        search edge8 27 4 [g0, g3, g0, g5]) = true := by
-  decide +kernel
-private theorem search8_node_3_0 :
-    search edge8 27 5 [g0, g3, g0] = true :=
-  search_and6 edge8 27 4 [g0, g3, g0] search8_3_0
-
-private theorem search8_3_1 :
-    (search edge8 27 4 [g0, g3, g1, g0] && search edge8 27 4 [g0, g3, g1, g1] &&
-      search edge8 27 4 [g0, g3, g1, g2]) &&
-      (search edge8 27 4 [g0, g3, g1, g3] && search edge8 27 4 [g0, g3, g1, g4] &&
-        search edge8 27 4 [g0, g3, g1, g5]) = true := by
-  decide +kernel
-private theorem search8_node_3_1 :
-    search edge8 27 5 [g0, g3, g1] = true :=
-  search_and6 edge8 27 4 [g0, g3, g1] search8_3_1
-
-private theorem search8_3_2 :
-    (search edge8 27 4 [g0, g3, g2, g0] && search edge8 27 4 [g0, g3, g2, g1] &&
-      search edge8 27 4 [g0, g3, g2, g2]) &&
-      (search edge8 27 4 [g0, g3, g2, g3] && search edge8 27 4 [g0, g3, g2, g4] &&
-        search edge8 27 4 [g0, g3, g2, g5]) = true := by
-  decide +kernel
-private theorem search8_node_3_2 :
-    search edge8 27 5 [g0, g3, g2] = true :=
-  search_and6 edge8 27 4 [g0, g3, g2] search8_3_2
-
-private theorem search8_3_3 :
-    (search edge8 27 4 [g0, g3, g3, g0] && search edge8 27 4 [g0, g3, g3, g1] &&
-      search edge8 27 4 [g0, g3, g3, g2]) &&
-      (search edge8 27 4 [g0, g3, g3, g3] && search edge8 27 4 [g0, g3, g3, g4] &&
-        search edge8 27 4 [g0, g3, g3, g5]) = true := by
-  decide +kernel
-private theorem search8_node_3_3 :
-    search edge8 27 5 [g0, g3, g3] = true :=
-  search_and6 edge8 27 4 [g0, g3, g3] search8_3_3
-
-private theorem search8_3_4 :
-    (search edge8 27 4 [g0, g3, g4, g0] && search edge8 27 4 [g0, g3, g4, g1] &&
-      search edge8 27 4 [g0, g3, g4, g2]) &&
-      (search edge8 27 4 [g0, g3, g4, g3] && search edge8 27 4 [g0, g3, g4, g4] &&
-        search edge8 27 4 [g0, g3, g4, g5]) = true := by
-  decide +kernel
-private theorem search8_node_3_4 :
-    search edge8 27 5 [g0, g3, g4] = true :=
-  search_and6 edge8 27 4 [g0, g3, g4] search8_3_4
-
-private theorem search8_3_5 :
-    (search edge8 27 4 [g0, g3, g5, g0] && search edge8 27 4 [g0, g3, g5, g1] &&
-      search edge8 27 4 [g0, g3, g5, g2]) &&
-      (search edge8 27 4 [g0, g3, g5, g3] && search edge8 27 4 [g0, g3, g5, g4] &&
-        search edge8 27 4 [g0, g3, g5, g5]) = true := by
-  decide +kernel
-private theorem search8_node_3_5 :
-    search edge8 27 5 [g0, g3, g5] = true :=
-  search_and6 edge8 27 4 [g0, g3, g5] search8_3_5
+  refine search_step edge8 27 5 _ fun a ha => ?_
+  simp only [sym3Elems, List.mem_cons, List.not_mem_nil, or_false] at ha
+  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [search8_node_2_0, search8_node_2_1, search8_node_2_2, search8_node_2_3,
+    search8_node_2_4, search8_node_2_5]
 
 private theorem search8_mid_3 : search edge8 27 6 [g0, g3] = true := by
-  apply search_and6 edge8 27 5 [g0, g3]
-  simp [search8_node_3_0, search8_node_3_1, search8_node_3_2,
-    search8_node_3_3, search8_node_3_4, search8_node_3_5]
-private theorem search8_4_0 :
-    (search edge8 27 4 [g0, g4, g0, g0] && search edge8 27 4 [g0, g4, g0, g1] &&
-      search edge8 27 4 [g0, g4, g0, g2]) &&
-      (search edge8 27 4 [g0, g4, g0, g3] && search edge8 27 4 [g0, g4, g0, g4] &&
-        search edge8 27 4 [g0, g4, g0, g5]) = true := by
-  decide +kernel
-private theorem search8_node_4_0 :
-    search edge8 27 5 [g0, g4, g0] = true :=
-  search_and6 edge8 27 4 [g0, g4, g0] search8_4_0
-
-private theorem search8_4_1 :
-    (search edge8 27 4 [g0, g4, g1, g0] && search edge8 27 4 [g0, g4, g1, g1] &&
-      search edge8 27 4 [g0, g4, g1, g2]) &&
-      (search edge8 27 4 [g0, g4, g1, g3] && search edge8 27 4 [g0, g4, g1, g4] &&
-        search edge8 27 4 [g0, g4, g1, g5]) = true := by
-  decide +kernel
-private theorem search8_node_4_1 :
-    search edge8 27 5 [g0, g4, g1] = true :=
-  search_and6 edge8 27 4 [g0, g4, g1] search8_4_1
-
-private theorem search8_4_2 :
-    (search edge8 27 4 [g0, g4, g2, g0] && search edge8 27 4 [g0, g4, g2, g1] &&
-      search edge8 27 4 [g0, g4, g2, g2]) &&
-      (search edge8 27 4 [g0, g4, g2, g3] && search edge8 27 4 [g0, g4, g2, g4] &&
-        search edge8 27 4 [g0, g4, g2, g5]) = true := by
-  decide +kernel
-private theorem search8_node_4_2 :
-    search edge8 27 5 [g0, g4, g2] = true :=
-  search_and6 edge8 27 4 [g0, g4, g2] search8_4_2
-
-private theorem search8_4_3 :
-    (search edge8 27 4 [g0, g4, g3, g0] && search edge8 27 4 [g0, g4, g3, g1] &&
-      search edge8 27 4 [g0, g4, g3, g2]) &&
-      (search edge8 27 4 [g0, g4, g3, g3] && search edge8 27 4 [g0, g4, g3, g4] &&
-        search edge8 27 4 [g0, g4, g3, g5]) = true := by
-  decide +kernel
-private theorem search8_node_4_3 :
-    search edge8 27 5 [g0, g4, g3] = true :=
-  search_and6 edge8 27 4 [g0, g4, g3] search8_4_3
-
-private theorem search8_4_4 :
-    (search edge8 27 4 [g0, g4, g4, g0] && search edge8 27 4 [g0, g4, g4, g1] &&
-      search edge8 27 4 [g0, g4, g4, g2]) &&
-      (search edge8 27 4 [g0, g4, g4, g3] && search edge8 27 4 [g0, g4, g4, g4] &&
-        search edge8 27 4 [g0, g4, g4, g5]) = true := by
-  decide +kernel
-private theorem search8_node_4_4 :
-    search edge8 27 5 [g0, g4, g4] = true :=
-  search_and6 edge8 27 4 [g0, g4, g4] search8_4_4
-
-private theorem search8_4_5 :
-    (search edge8 27 4 [g0, g4, g5, g0] && search edge8 27 4 [g0, g4, g5, g1] &&
-      search edge8 27 4 [g0, g4, g5, g2]) &&
-      (search edge8 27 4 [g0, g4, g5, g3] && search edge8 27 4 [g0, g4, g5, g4] &&
-        search edge8 27 4 [g0, g4, g5, g5]) = true := by
-  decide +kernel
-private theorem search8_node_4_5 :
-    search edge8 27 5 [g0, g4, g5] = true :=
-  search_and6 edge8 27 4 [g0, g4, g5] search8_4_5
+  refine search_step edge8 27 5 _ fun a ha => ?_
+  simp only [sym3Elems, List.mem_cons, List.not_mem_nil, or_false] at ha
+  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [search8_node_3_0, search8_node_3_1, search8_node_3_2, search8_node_3_3,
+    search8_node_3_4, search8_node_3_5]
 
 private theorem search8_mid_4 : search edge8 27 6 [g0, g4] = true := by
-  apply search_and6 edge8 27 5 [g0, g4]
-  simp [search8_node_4_0, search8_node_4_1, search8_node_4_2,
-    search8_node_4_3, search8_node_4_4, search8_node_4_5]
-private theorem search8_5_0 :
-    (search edge8 27 4 [g0, g5, g0, g0] && search edge8 27 4 [g0, g5, g0, g1] &&
-      search edge8 27 4 [g0, g5, g0, g2]) &&
-      (search edge8 27 4 [g0, g5, g0, g3] && search edge8 27 4 [g0, g5, g0, g4] &&
-        search edge8 27 4 [g0, g5, g0, g5]) = true := by
-  decide +kernel
-private theorem search8_node_5_0 :
-    search edge8 27 5 [g0, g5, g0] = true :=
-  search_and6 edge8 27 4 [g0, g5, g0] search8_5_0
-
-private theorem search8_5_1 :
-    (search edge8 27 4 [g0, g5, g1, g0] && search edge8 27 4 [g0, g5, g1, g1] &&
-      search edge8 27 4 [g0, g5, g1, g2]) &&
-      (search edge8 27 4 [g0, g5, g1, g3] && search edge8 27 4 [g0, g5, g1, g4] &&
-        search edge8 27 4 [g0, g5, g1, g5]) = true := by
-  decide +kernel
-private theorem search8_node_5_1 :
-    search edge8 27 5 [g0, g5, g1] = true :=
-  search_and6 edge8 27 4 [g0, g5, g1] search8_5_1
-
-private theorem search8_5_2 :
-    (search edge8 27 4 [g0, g5, g2, g0] && search edge8 27 4 [g0, g5, g2, g1] &&
-      search edge8 27 4 [g0, g5, g2, g2]) &&
-      (search edge8 27 4 [g0, g5, g2, g3] && search edge8 27 4 [g0, g5, g2, g4] &&
-        search edge8 27 4 [g0, g5, g2, g5]) = true := by
-  decide +kernel
-private theorem search8_node_5_2 :
-    search edge8 27 5 [g0, g5, g2] = true :=
-  search_and6 edge8 27 4 [g0, g5, g2] search8_5_2
-
-private theorem search8_5_3 :
-    (search edge8 27 4 [g0, g5, g3, g0] && search edge8 27 4 [g0, g5, g3, g1] &&
-      search edge8 27 4 [g0, g5, g3, g2]) &&
-      (search edge8 27 4 [g0, g5, g3, g3] && search edge8 27 4 [g0, g5, g3, g4] &&
-        search edge8 27 4 [g0, g5, g3, g5]) = true := by
-  decide +kernel
-private theorem search8_node_5_3 :
-    search edge8 27 5 [g0, g5, g3] = true :=
-  search_and6 edge8 27 4 [g0, g5, g3] search8_5_3
-
-private theorem search8_5_4 :
-    (search edge8 27 4 [g0, g5, g4, g0] && search edge8 27 4 [g0, g5, g4, g1] &&
-      search edge8 27 4 [g0, g5, g4, g2]) &&
-      (search edge8 27 4 [g0, g5, g4, g3] && search edge8 27 4 [g0, g5, g4, g4] &&
-        search edge8 27 4 [g0, g5, g4, g5]) = true := by
-  decide +kernel
-private theorem search8_node_5_4 :
-    search edge8 27 5 [g0, g5, g4] = true :=
-  search_and6 edge8 27 4 [g0, g5, g4] search8_5_4
-
-private theorem search8_5_5 :
-    (search edge8 27 4 [g0, g5, g5, g0] && search edge8 27 4 [g0, g5, g5, g1] &&
-      search edge8 27 4 [g0, g5, g5, g2]) &&
-      (search edge8 27 4 [g0, g5, g5, g3] && search edge8 27 4 [g0, g5, g5, g4] &&
-        search edge8 27 4 [g0, g5, g5, g5]) = true := by
-  decide +kernel
-private theorem search8_node_5_5 :
-    search edge8 27 5 [g0, g5, g5] = true :=
-  search_and6 edge8 27 4 [g0, g5, g5] search8_5_5
+  refine search_step edge8 27 5 _ fun a ha => ?_
+  simp only [sym3Elems, List.mem_cons, List.not_mem_nil, or_false] at ha
+  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [search8_node_4_0, search8_node_4_1, search8_node_4_2, search8_node_4_3,
+    search8_node_4_4, search8_node_4_5]
 
 private theorem search8_mid_5 : search edge8 27 6 [g0, g5] = true := by
-  apply search_and6 edge8 27 5 [g0, g5]
-  simp [search8_node_5_0, search8_node_5_1, search8_node_5_2,
-    search8_node_5_3, search8_node_5_4, search8_node_5_5]
+  refine search_step edge8 27 5 _ fun a ha => ?_
+  simp only [sym3Elems, List.mem_cons, List.not_mem_nil, or_false] at ha
+  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [search8_node_5_0, search8_node_5_1, search8_node_5_2, search8_node_5_3,
+    search8_node_5_4, search8_node_5_5]
+
 private theorem search8_root : search edge8 27 7 [g0] = true := by
-  apply search_and6 edge8 27 6 [g0]
-  simp [search8_mid_0, search8_mid_1, search8_mid_2, search8_mid_3, search8_mid_4, search8_mid_5]
+  refine search_step edge8 27 6 [g0] fun a ha => ?_
+  simp only [sym3Elems, List.mem_cons, List.not_mem_nil, or_false] at ha
+  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [search8_mid_0, search8_mid_1, search8_mid_2, search8_mid_3, search8_mid_4,
+    search8_mid_5]
 
 private theorem witness5_le_cost (β : Fin 5 → Perm (Fin 3)) (hβ : β 0 = 1) :
     (6 : ℝ) ≤ witness5.cost (movedNorm (Fin 3)) β := by
@@ -959,19 +623,31 @@ theorem witness8_attains :
   rw [witness8_defect, witness8_gaugeDist, h1_complete_fin_eight]
   norm_num
 
-/-- At eight vertices the replicated seed `(64, 24)` and `witness8` `(72, 27)` both have ratio
-`8 / 3`. -/
-theorem replicatedSeed_two_and_witness8 :
-    (Sym3.replicatedSeed 2).defect (movedNorm (Fin 3)) = 64 ∧
-      (Sym3.replicatedSeed 2).gaugeDist (movedNorm (Fin 3)) = 24 ∧
-      witness8.defect (movedNorm (Fin 3)) = 72 ∧
-      witness8.gaugeDist (movedNorm (Fin 3)) = 27 ∧
-      (Sym3.replicatedSeed 2).defect (movedNorm (Fin 3)) /
-          (Sym3.replicatedSeed 2).gaugeDist (movedNorm (Fin 3)) = 8 / 3 ∧
-      witness8.defect (movedNorm (Fin 3)) / witness8.gaugeDist (movedNorm (Fin 3)) = 8 / 3 := by
-  refine ⟨Sym3.replicatedSeed_defect_two, Sym3.replicatedSeed_gaugeDist_two, witness8_defect,
-    witness8_gaugeDist, Sym3.replicatedSeed_ratio_two, ?_⟩
-  rw [witness8_defect, witness8_gaugeDist]
+/-! ## Checks at small sizes
+
+The 6.2 seed at `q = 2` and the 6.3 witness at `k = 8` are different cochains on eight vertices,
+`(64, 24)` and `(72, 27)`, with the same ratio `8 / 3`. -/
+
+example : (Sym3.replicatedSeed 1).defect (movedNorm (Fin 3)) = 8 ∧
+    (Sym3.replicatedSeed 1).gaugeDist (movedNorm (Fin 3)) = 6 := by
+  rw [Sym3.replicatedSeed_defect, Sym3.replicatedSeed_gaugeDist]
+  norm_num
+
+example : (Sym3.replicatedSeed 2).defect (movedNorm (Fin 3)) = 64 ∧
+    (Sym3.replicatedSeed 2).gaugeDist (movedNorm (Fin 3)) = 24 := by
+  rw [Sym3.replicatedSeed_defect, Sym3.replicatedSeed_gaugeDist]
+  norm_num
+
+example : (Sym3.replicatedSeed 3).defect (movedNorm (Fin 3)) = 216 ∧
+    (Sym3.replicatedSeed 3).gaugeDist (movedNorm (Fin 3)) = 54 := by
+  rw [Sym3.replicatedSeed_defect, Sym3.replicatedSeed_gaugeDist]
+  norm_num
+
+example : (Sym3.replicatedSeed 2).defect (movedNorm (Fin 3)) /
+      (Sym3.replicatedSeed 2).gaugeDist (movedNorm (Fin 3)) = 8 / 3 ∧
+    witness8.defect (movedNorm (Fin 3)) / witness8.gaugeDist (movedNorm (Fin 3)) = 8 / 3 := by
+  rw [Sym3.replicatedSeed_defect, Sym3.replicatedSeed_gaugeDist, witness8_defect,
+    witness8_gaugeDist]
   norm_num
 
 end TauCeti
