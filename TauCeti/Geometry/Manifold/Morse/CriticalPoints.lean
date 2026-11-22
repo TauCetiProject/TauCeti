@@ -114,6 +114,9 @@ polynomial in the Morse inequalities.
 * `TauCeti.IsMorse.exists_lt_lt_forall_mem_Ioo`: on a compact manifold, for `a < b` there are
   levels `a < c₂ < c₁ < b` such that every critical value strictly between `a` and `b` lies
   strictly between `c₂` and `c₁`.
+* `TauCeti.IsMorse.band_induction`: a property of compact bands between regular values follows
+  from its validity across bands without critical points, across single critical levels, and
+  along triples of levels.
 * `TauCeti.IsCriticalBand` and `TauCeti.IsCriticalBandCut`: compact bands with at most one
   critical value, strictly inside, and sequences of values cutting `f` into such bands, which are
   strictly increasing (`TauCeti.IsCriticalBandCut.strictMono`), with
@@ -123,9 +126,6 @@ polynomial in the Morse inequalities.
   ending above all values of `f`.
 * `TauCeti.exists_monotone_isCriticalBand_of_finite_image_criticalPoints`: the same cut indexed by
   `ℕ`, at regular values.
-* `TauCeti.IsMorse.band_induction`: a property of compact bands between regular values follows
-  from its validity across bands without critical points, across single critical levels, and
-  along triples of levels.
 * `TauCeti.IsMorse.exists_regular_sublevel_partition`: on a compact manifold, regular values
   cutting the values of a Morse function into bands with at most one critical value each.
 * `TauCeti.criticalCount` and `TauCeti.totalCriticalCount`: the extended counts of critical
@@ -901,47 +901,6 @@ theorem IsMorse.band_induction (hf : IsMorse I f) {P : ∀ s t : ℝ, s ≤ t �
   exact htrans _ _ _ _ _ hcompact
     (htrans _ _ _ _ _ (hcompact' le_rfl (by linarith)) hlow hmid) hup
 
-/-- **A regular partition of the values of a Morse function.** For a Morse function `f` on a
-compact boundaryless manifold, there are regular values `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)` with
-`s 0 < f ≤ s (N + 1)` on `M`, such that each band `f⁻¹[s j, s (j + 1)]` contains at most one
-critical value. -/
-theorem IsMorse.exists_regular_sublevel_partition [CompactSpace M] (hf : IsMorse I f) :
-    ∃ (s : ℕ → ℝ) (N : ℕ), Monotone s ∧ (∀ x, s 0 < f x) ∧ (∀ x, f x ≤ s (N + 1)) ∧
-      (∀ j ≤ N + 1, IsRegularValue I 𝓘(ℝ) f (s j)) ∧
-      ∀ j ≤ N, ∀ x ∈ criticalPoints I f, ∀ y ∈ criticalPoints I f,
-        f x ∈ Icc (s j) (s (j + 1)) → f y ∈ Icc (s j) (s (j + 1)) → f x = f y := by
-  set C := f '' criticalPoints I f
-  have hC : C.Finite := hf.finite_criticalPoints.image f
-  -- A step `δ` smaller than the distance between any two distinct critical values.
-  have hev : ∀ᶠ δ in 𝓝[>] (0 : ℝ), ∀ p ∈ {p ∈ C ×ˢ C | p.1 ≠ p.2}, δ < |p.1 - p.2| :=
-    (Filter.eventually_all_finite ((hC.prod hC).subset (sep_subset _ _))).2 fun p hp ↦
-      (eventually_lt_nhds (abs_pos.2 (sub_ne_zero.2 hp.2))).filter_mono nhdsWithin_le_nhds
-  obtain ⟨δ, hgap, hδ⟩ := (hev.and self_mem_nhdsWithin).exists
-  obtain ⟨L, hL⟩ := (isCompact_range hf.contMDiff.continuous).bddBelow
-  obtain ⟨U, hU⟩ := (isCompact_range hf.contMDiff.continuous).bddAbove
-  set N := ⌈(U - L + 1) / δ⌉₊
-  -- Start the arithmetic progression `a + j δ` at an `a` which keeps its first terms off `C`.
-  have hB : (⋃ j ∈ Finset.range (N + 2), (fun c ↦ c - j * δ) '' C).Finite :=
-    (Finset.range (N + 2)).finite_toSet.biUnion fun j _ ↦ hC.image _
-  obtain ⟨a, ⟨haL, haL'⟩, ha⟩ := ((Ioo_infinite (sub_one_lt L)).sdiff hB).nonempty
-  simp only [mem_iUnion, mem_image, Finset.mem_range, not_exists, not_and] at ha
-  refine ⟨fun j ↦ a + j * δ, N, fun i j hij ↦ by dsimp only; gcongr,
-    fun x ↦ by simpa using haL'.trans_le (hL (mem_range_self x)), fun x ↦ ?_, fun j hj ↦ ?_,
-    fun j _ x hx y hy hxj hyj ↦ ?_⟩
-  · have hN : (U - L + 1) / δ ≤ N := Nat.le_ceil _
-    rw [div_le_iff₀ hδ] at hN
-    have := hU (mem_range_self x)
-    push_cast
-    nlinarith
-  · refine isRegularValue_iff_notMem_image_criticalPoints.2 fun hc ↦ ha j (by lia) _ hc ?_
-    ring
-  · -- Two values in an interval of length `δ` are at distance at most `δ`.
-    by_contra hxy
-    have h := hgap (f x, f y) ⟨⟨mem_image_of_mem f hx, mem_image_of_mem f hy⟩, hxy⟩
-    simp only [Nat.cast_add, Nat.cast_one, mem_Icc] at h hxj hyj
-    rw [lt_abs] at h
-    rcases h with h | h <;> linarith [hxj.1, hxj.2, hyj.1, hyj.2]
-
 end IsManifold
 
 /-! ### Critical-band cuts -/
@@ -1037,6 +996,23 @@ theorem IsMorse.exists_isCriticalBandCut [IsManifold I 1 M] [CompactSpace M] (hf
     ∃ a : ℤ → ℝ, IsCriticalBandCut I f a ∧ (∃ q₀, ∀ x, a q₀ < f x) ∧ ∃ q₁, ∀ x, f x ≤ a q₁ :=
   exists_isCriticalBandCut_of_finite_image_criticalPoints hf.contMDiff.continuous
     (hf.finite_criticalPoints.image f)
+
+/-- **A regular partition of the values of a Morse function.** For a Morse function `f` on a
+compact manifold, there are regular values `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)` with `s 0 < f ≤ s (N + 1)`
+on `M`, such that each band `f⁻¹[s j, s (j + 1)]` contains at most one critical value. This is a
+special case of `TauCeti.exists_monotone_isCriticalBand_of_finite_image_criticalPoints`. -/
+theorem IsMorse.exists_regular_sublevel_partition [IsManifold I 1 M] [CompactSpace M]
+    (hf : IsMorse I f) :
+    ∃ (s : ℕ → ℝ) (N : ℕ), Monotone s ∧ (∀ x, s 0 < f x) ∧ (∀ x, f x ≤ s (N + 1)) ∧
+      (∀ j ≤ N + 1, IsRegularValue I 𝓘(ℝ) f (s j)) ∧
+      ∀ j ≤ N, ∀ x ∈ criticalPoints I f, ∀ y ∈ criticalPoints I f,
+        f x ∈ Icc (s j) (s (j + 1)) → f y ∈ Icc (s j) (s (j + 1)) → f x = f y := by
+  obtain ⟨s, N, hs, h0, hN, hband, hreg⟩ :=
+    exists_monotone_isCriticalBand_of_finite_image_criticalPoints hf.contMDiff.continuous
+      (hf.finite_criticalPoints.image f)
+  refine ⟨s, N, hs, h0, hN, fun j _ ↦ hreg j, fun j _ x hx y hy hxj hyj ↦ ?_⟩
+  obtain ⟨c, -, hc⟩ := (hband j).exists_mem_Ioo_forall_eq
+  exact (hc x hx hxj).trans (hc y hy hyj).symm
 
 /-! ### Counting critical points -/
 
