@@ -8,8 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.ContMDiff.EuclideanHalfSpace
 public import TauCeti.Geometry.Manifold.SmoothSingular.Transfer.Basic
 
-import Mathlib.Geometry.Manifold.Algebra.LieGroup
-import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.SmoothSingular.Contractible
 
 /-!

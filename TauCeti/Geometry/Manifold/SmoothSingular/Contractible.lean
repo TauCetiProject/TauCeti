@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
-public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import TauCeti.AlgebraicTopology.Singular.Empty
@@ -41,10 +40,9 @@ positive degrees (`TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff
 
 The same holds for the empty manifold, where both complexes vanish
 (`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty`). For an open set `U` of
-the model space `H` of a model with corners `I : ModelWithCorners ℝ E H` whose image `I '' U` is
-star-convex about `c`, the map `(t, x) ↦ I.symm (c + (1 - ψ t) • (I x - c))`, with `ψ` the smooth
-transition function from `0` to `1`, is such a smooth contraction
-(`TauCeti.exists_contMDiff_contraction_of_starConvex`), so the inclusion is a quasi-isomorphism
+the model space `H` of a model with corners `I` whose image `I '' U` is star-convex about `c`,
+`TauCeti.exists_contMDiff_contraction_of_starConvex` provides such a smooth contraction, so the
+inclusion is a quasi-isomorphism
 (`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex`), and the smooth
 singular homology of `U` vanishes in positive degrees
 (`TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`). The model may have boundary
@@ -78,8 +76,6 @@ of a real normed space (`StarConvex.smoothSingularChainHomotopyEquivOfStarConvex
 * `ModelWithCorners.smoothSingularChainHomotopyEquivModelSpace`,
   `StarConvex.smoothSingularChainHomotopyEquivOfStarConvex`: unconditional smooth-chain homotopy
   equivalences on real model spaces with corners and star-convex open subsets of normed spaces.
-* `TauCeti.exists_contMDiff_contraction_of_starConvex`: an open set of the model space with
-  star-convex image is smoothly contractible.
 * `TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`: a smoothly contractible manifold
   has no smooth singular homology in positive degrees.
 * `TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`: neither has an open set of
@@ -116,27 +112,6 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty [Categor
   have := (SSet.isZero_chainComplex (smoothSingularSubcomplex I M : SSet) R).isIso
     (SSet.isZero_chainComplex _ R) (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R)
   infer_instance
-
-/-! ### Open sets with star-convex image in the model -/
-
-/-- **The straight-line contraction of an open set with star-convex image in the model.** Let `U`
-be an open set of the model space `H` of a model with corners `I` whose image `I '' U` is
-star-convex about `c`. Then `(t, x) ↦ I.symm (c + (1 - ψ t) • (I x - c))`, with `ψ` the smooth
-transition function from `0` to `1`, is a smooth map `ℝ × U → U` joining the identity to the
-constant map with value `I.symm c`. This is the case `M = H` of
-`exists_contMDiff_contraction_of_starConvex_image_extChartAt`, where the extended chart is `I`. -/
-theorem exists_contMDiff_contraction_of_starConvex {U : TopologicalSpace.Opens H} {c : E}
-    (hU : StarConvex ℝ c (I '' U)) :
-    ∃ F : ℝ × U → U, ContMDiff (𝓘(ℝ).prod I) I ∞ F ∧ (∀ x, F (0, x) = x) ∧
-      ∀ x, (F (1, x) : H) = I.symm c := by
-  rcases (U : Set H).eq_empty_or_nonempty with hempty | hne
-  · have : IsEmpty U := ⟨fun x ↦ eq_empty_iff_forall_notMem.1 hempty x x.property⟩
-    exact ⟨fun p ↦ isEmptyElim p.2, fun p ↦ isEmptyElim p.2, isEmptyElim, isEmptyElim⟩
-  obtain ⟨y₀, hy₀, rfl⟩ := hU.mem (hne.image I)
-  obtain ⟨F, hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_starConvex_image_extChartAt
-    (I := I) (M := H) (n := ⊤) (x := y₀) (by simp) ⟨y₀, hy₀⟩
-    (by simpa [extChartAt_self_eq] using hU)
-  exact ⟨F, hF, h₀, fun x ↦ by rw [h₁, I.left_inv]⟩
 
 /-! ### Smoothly contractible manifolds -/
 
@@ -337,30 +312,27 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {C : Type*} [Category* C] [Preadditive C] [HasCoproducts.{u} C]
 
 /-- **Smooth-chain homotopy equivalence on any model space with corners.** Because `range I` is
-convex in `E` with nonempty interior, the straight-line contraction
-`(t, x) ↦ I.symm (I x₀ + ψ(t) • (I x - I x₀))` towards an interior point `x₀` stays in `range I`
-and is jointly smooth on `ℝ × H`, so the inclusion of smooth singular chains on `H` is a chain
-homotopy equivalence. -/
+convex in `E` with nonempty interior, applying `exists_contMDiff_contraction_of_starConvex` to the
+full open set `⊤` yields a smooth contraction from the identity to an interior point `x₀`, so the
+inclusion of smooth singular chains on `H` is a chain homotopy equivalence. -/
 def smoothSingularChainHomotopyEquivModelSpace (I : ModelWithCorners ℝ E H) (R : C) :
     HomotopyEquiv ((smoothSingularSubcomplex I H : SSet).chainComplex R)
       ((TopCat.toSSet.obj (TopCat.of H)).chainComplex R) := by
   let x₀ : H := I.symm I.nonempty_interior.some
-  let ΦE : ℝ × H → E := fun p ↦
-    I x₀ + Real.smoothTransition p.1 • (I p.2 - I x₀)
-  have hψ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) ∞ fun p : ℝ × H ↦ Real.smoothTransition p.1 :=
-    Real.smoothTransition.contDiff.contMDiff.comp contMDiff_fst
-  have hI : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ, E) ∞ fun p : ℝ × H ↦ I p.2 :=
-    I.contMDiff.comp contMDiff_snd
-  have hΦE : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ, E) ∞ ΦE :=
-    contMDiff_const.add (hψ.smul (hI.sub contMDiff_const))
-  have hmem : ∀ p : ℝ × H, ΦE p ∈ range I := fun p ↦
-    (I.convex_range.starConvex (mem_range_self x₀)).add_smul_sub_mem (mem_range_self p.2)
-      (Real.smoothTransition.nonneg p.1) (Real.smoothTransition.le_one p.1)
-  have hΦ : ContMDiff (𝓘(ℝ).prod I) I ∞ (fun p : ℝ × H ↦ I.symm (ΦE p)) :=
-    I.contMDiffOn_symm.comp_contMDiff hΦE hmem
-  exact smoothSingularChainHomotopyEquivOfContractible x₀ hΦ
-    (fun x ↦ by simp [ΦE, Real.smoothTransition.zero])
-    (fun x ↦ by simp [ΦE, Real.smoothTransition.one]) R
+  have htop : StarConvex ℝ (I x₀) (I '' ((⊤ : TopologicalSpace.Opens H) : Set H)) := by
+    simpa using I.convex_range.starConvex (mem_range_self x₀)
+  have hex := exists_contMDiff_contraction_of_starConvex htop
+  let F := hex.choose
+  have hF := hex.choose_spec
+  let toTop : H → (⊤ : TopologicalSpace.Opens H) := fun x ↦ ⟨x, trivial⟩
+  have htoTop : ContMDiff I I ∞ toTop :=
+    ((ContMDiff.subtypeVal_comp_iff (⊤ : TopologicalSpace.Opens H)) toTop).mp contMDiff_id
+  let G : ℝ × H → H := fun p ↦ (F (p.1, toTop p.2)).val
+  have hG : ContMDiff (𝓘(ℝ).prod I) I ∞ G :=
+    contMDiff_subtypeVal.comp (hF.1.comp (contMDiff_fst.prodMk (htoTop.comp contMDiff_snd)))
+  exact smoothSingularChainHomotopyEquivOfContraction R hG x₀
+    (fun x ↦ congrArg Subtype.val (hF.2.1 (toTop x)))
+    (fun x ↦ by rw [show G (1, x) = (F (1, toTop x)).val from rfl, hF.2.2, I.left_inv])
 
 /-- The forward map of `smoothSingularChainHomotopyEquivModelSpace` is the inclusion of smooth
 singular chains into continuous singular chains on `H`. -/
