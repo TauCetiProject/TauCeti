@@ -38,6 +38,7 @@ together gives an algebra map from `⨂_{i : σ} B` to `B` itself. It is the ind
 
 ## Main results
 
+* `PiTensorProduct.fiberwiseMul_def`: it is the product map of the factor inclusions.
 * `PiTensorProduct.fiberwiseMul_tprod`, `PiTensorProduct.fiberwiseMul_singleAlgHom`: its values on
   pure tensors and on the factor inclusions.
 * `PiTensorProduct.fiberwiseMul_id`, `PiTensorProduct.fiberwiseMul_comp`: functoriality in `f`.
@@ -75,12 +76,17 @@ noncomputable def fiberwiseMul [Fintype σ] [DecidableEq τ] (f : σ → τ) :
 
 variable [Fintype σ] [DecidableEq τ]
 
+/-- `PiTensorProduct.fiberwiseMul f` is `PiTensorProduct.productMap` of the factor inclusions
+`singleAlgHom (f i)`. -/
+theorem fiberwiseMul_def (f : σ → τ) :
+    fiberwiseMul (R := R) (A := A) f = productMap fun i ↦ singleAlgHom (A := A) (f i) := (rfl)
+
 /-- `PiTensorProduct.fiberwiseMul f` places each factor of a pure tensor in its slot and multiplies
 the results. -/
 @[simp]
 theorem fiberwiseMul_tprod (f : σ → τ) (x : ∀ i, A (f i)) :
     fiberwiseMul f (tprod R x) = ∏ i, singleAlgHom (f i) (x i) := by
-  rw [fiberwiseMul, productMap_tprod]
+  rw [fiberwiseMul_def, productMap_tprod]
 
 /-- `PiTensorProduct.fiberwiseMul f` sends the factor inclusion at `i` to the factor inclusion at
 `f i`. It is a pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite the inner
@@ -88,7 +94,7 @@ factor inclusion first. -/
 @[simp↓]
 theorem fiberwiseMul_singleAlgHom [DecidableEq σ] (f : σ → τ) (i : σ) (a : A (f i)) :
     fiberwiseMul f (singleAlgHom (R := R) (A := fun i ↦ A (f i)) i a) = singleAlgHom (f i) a := by
-  rw [fiberwiseMul, productMap_singleAlgHom]
+  rw [fiberwiseMul_def, productMap_singleAlgHom]
 
 variable (R A) in
 /-- `PiTensorProduct.fiberwiseMul` along the identity is the identity. -/
