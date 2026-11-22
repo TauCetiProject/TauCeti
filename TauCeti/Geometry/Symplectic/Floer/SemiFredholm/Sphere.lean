@@ -230,55 +230,6 @@ private theorem integral_le_of_eq_add {ξ ξ₁ χ : ℝ × ℝ → V} {R : ℝ}
   nlinarith [(inv_sq_mul_norm_sq_le hR hχR z).1, mul_le_mul_of_nonneg_left h0 hρ0,
     sq_nonneg ‖ξ₁ z‖, mul_le_mul_of_nonneg_right hρ1 (sq_nonneg ‖ξ₁ z‖)]
 
-/-- **Multiplying by a cutoff.** Let `γ` be a function with `|γ| ≤ 1` and `‖dγ‖ ≤ B`, whose
-derivative vanishes off a set `K` on which `‖J(z, u z)‖ ≤ N`. Then
-`‖D(γ ξ)‖² ≤ 2 ‖D ξ‖² + 2 (B (1 + N))² 1_K ‖ξ‖²` pointwise. -/
-private theorem norm_floerLinearization_smul_sq_le {ξ : ℝ × ℝ → V} {γ : ℝ × ℝ → ℝ}
-    {K : Set (ℝ × ℝ)} {B N : ℝ} (hγ : Differentiable ℝ γ) (hγ1 : ∀ z, |γ z| ≤ 1)
-    (hB : ∀ z, ‖fderiv ℝ γ z‖ ≤ B) (hγK : ∀ z ∉ K, fderiv ℝ γ z = 0)
-    (hN : ∀ z ∈ K, ‖(J z (u z)).toLinearMap.toContinuousLinearMap‖ ≤ N)
-    (hξ : Differentiable ℝ ξ) (z : ℝ × ℝ) :
-    ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
-        (fun w ↦ γ w • ξ w) z‖ ^ 2 ≤
-      2 * ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-        Ks Kt u ξ z‖ ^ 2 + 2 * (B * (1 + N)) ^ 2 * K.indicator (fun z ↦ ‖ξ z‖ ^ 2) z := by
-  by_cases hz : z ∈ K
-  · simpa only [indicator_of_mem hz] using ω.norm_floerLinearization_fun_smul_sq_le
-      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ (hγ z) (hξ z) (hγ1 z)
-      (hB z) (hN z hz)
-  · have h := ω.norm_floerLinearization_fun_smul_sq_le
-      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ (hγ z) (hξ z) (hγ1 z)
-      (M := 0) (by simp [hγK z hz]) le_rfl
-    simpa only [indicator_of_notMem hz, zero_mul, zero_pow two_ne_zero, mul_zero, add_zero]
-      using h
-
-/-- Integrating the pointwise bound of `norm_floerLinearization_smul_sq_le`. -/
-private theorem integral_norm_floerLinearization_sq_le
-    (hJ : ∀ z, ContDiffAt ℝ 1
-      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
-    (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
-    (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
-    {ξ ψ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) (hξc : HasCompactSupport ξ) {K : Set (ℝ × ℝ)}
-    (hK : MeasurableSet K) {c : ℝ}
-    (h : ∀ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-        Ks Kt u ψ z‖ ^ 2 ≤ 2 * ‖ω.floerLinearization
-          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2 +
-        c * K.indicator (fun z ↦ ‖ξ z‖ ^ 2) z) :
-    ∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-        Ks Kt u ψ z‖ ^ 2 ≤ 2 * (∫ z, ‖ω.floerLinearization
-          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) +
-        c * ∫ z in K, ‖ξ z‖ ^ 2 := by
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  have hiD := (ω.integrable_norm_floerLinearization_sq (μ := volume)
-    (ω.continuous_floerLinearization
-      (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu hξ) hξc).const_mul 2
-  have hiξ := ((hξ.continuous.integrable_norm_sq_of_hasCompactSupport (μ := volume) hξc).indicator
-    hK).const_mul c
-  refine (integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ sq_nonneg _) (hiD.add hiξ)
-    (Eventually.of_forall h)).trans_eq ?_
-  simp only [Pi.add_apply]
-  rw [integral_add hiD hiξ, integral_const_mul, integral_const_mul, integral_indicator hK]
-
 /-- **The interior estimate for a section supported in `K`.** If the interior estimate holds on
 `K` with constant `C₁`, a `C²` section `ξ₁` supported in `K` with `∫ ‖D_u ξ₁‖² ≤ c` and
 `∫_K ‖ξ₁‖² ≤ d` has Dirichlet energy at most `C₁ (c + d)`. -/
@@ -311,37 +262,36 @@ private theorem integral_dirichlet_le_of_tsupport_subset
   linarith [setIntegral_le_integral (s := K) hiD₁ (Eventually.of_forall fun _ ↦ sq_nonneg _)]
 
 /-- The arithmetic combining the four bounds of the proof of `integral_le_of_bump`. -/
-private theorem add_le_of_bounds {X₁ X₂ X₃ X₄ ID IK C₁ C₂ B R : ℝ} (h₁ : X₁ ≤ IK)
-    (h₂ : X₂ ≤ (4 / R) ^ 2 * X₄) (h₃ : X₃ ≤ C₁ * (2 * ID + 2 * B ^ 2 * IK + IK))
-    (h₄ : X₄ ≤ C₂ * (2 * ID + 2 * B ^ 2 * IK)) (hID : 0 ≤ ID) (hIK : 0 ≤ IK) (hC₁ : 0 ≤ C₁)
-    (hC₂ : 0 ≤ C₂) :
+private theorem add_le_of_bounds {X₁ X₂ X₃ X₄ ID IK C₁ C₂ M R : ℝ} (h₁ : X₁ ≤ IK)
+    (h₂ : X₂ ≤ (4 / R) ^ 2 * X₄) (h₃ : X₃ ≤ C₁ * (2 * ID + M * IK + IK))
+    (h₄ : X₄ ≤ C₂ * (2 * ID + M * IK)) (hID : 0 ≤ ID) (hIK : 0 ≤ IK) (hC₁ : 0 ≤ C₁)
+    (hC₂ : 0 ≤ C₂) (hM : 0 ≤ M) :
     2 * X₁ + 2 * X₂ + 2 * X₃ + 2 * X₄ ≤
-      (2 + 2 * C₁ * (2 * B ^ 2 + 3) + (2 + 2 * (4 / R) ^ 2) * C₂ * (2 * B ^ 2 + 2)) *
-        (ID + IK) := by
-  have h₃' : C₁ * (2 * ID + 2 * B ^ 2 * IK + IK) ≤ C₁ * (2 * B ^ 2 + 3) * (ID + IK) := by
+      (2 + 2 * C₁ * (M + 3) + (2 + 2 * (4 / R) ^ 2) * C₂ * (M + 2)) * (ID + IK) := by
+  have h₃' : C₁ * (2 * ID + M * IK + IK) ≤ C₁ * (M + 3) * (ID + IK) := by
     rw [mul_assoc C₁]
-    exact mul_le_mul_of_nonneg_left (by nlinarith [sq_nonneg B]) hC₁
-  have h₄' : C₂ * (2 * ID + 2 * B ^ 2 * IK) ≤ C₂ * (2 * B ^ 2 + 2) * (ID + IK) := by
+    exact mul_le_mul_of_nonneg_left (by nlinarith [mul_nonneg hM hID]) hC₁
+  have h₄' : C₂ * (2 * ID + M * IK) ≤ C₂ * (M + 2) * (ID + IK) := by
     rw [mul_assoc C₂]
-    exact mul_le_mul_of_nonneg_left (by nlinarith [sq_nonneg B]) hC₂
+    exact mul_le_mul_of_nonneg_left (by nlinarith [mul_nonneg hM hID]) hC₂
   have h₂' := mul_le_mul_of_nonneg_left (h₄.trans h₄') (sq_nonneg (4 / R))
   nlinarith [h₃.trans h₃', h₄.trans h₄']
 
 /-- **The estimate for one section.** Let `β` be a `C²` bump function with `0 ≤ β ≤ 1`, equal to
-`1` on the square `‖w‖ ≤ R` and supported in `K = {‖w‖ ≤ 2 R}`, with `‖dβ‖ ≤ B`, and let
-`‖J(z, u z)‖ ≤ N` on `K`. Given the interior estimate on `K`, with constant `C₁`, and the estimate
-near infinity on sections vanishing on `‖w‖ < R`, with constant `C₂`, the squared `W^{1,2}` norm
-of `ξ` on the sphere is bounded by `∫ ‖D_u ξ‖²` and the `L²` norm of `ξ` on `K`. -/
+`1` on the square `‖w‖ ≤ R` and supported in `K = {‖w‖ ≤ 2 R}`, such that multiplying `ξ` by `β`
+or by `1 - β` costs at most `M ∫_K ‖ξ‖²` in `∫ ‖D_u ·‖²`
+(`TauCeti.SymplecticForm.exists_integral_norm_floerLinearization_smul_sq_le`). Given the interior
+estimate on `K`, with constant `C₁`, and the estimate near infinity on sections vanishing on
+`‖w‖ < R`, with constant `C₂`, the squared `W^{1,2}` norm of `ξ` on the sphere is bounded by
+`∫ ‖D_u ξ‖²` and the `L²` norm of `ξ` on `K`. -/
 private theorem integral_le_of_bump
     (hJ : ∀ z, ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
     (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
     (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
-    {β : ℝ × ℝ → ℝ} {R B N C₁ C₂ : ℝ} (hR : 0 < R) (hβ : ContDiff ℝ 2 β)
+    {β : ℝ × ℝ → ℝ} {R M C₁ C₂ : ℝ} (hR : 0 < R) (hβ : ContDiff ℝ 2 β)
     (hβ01 : ∀ z, β z ∈ Icc 0 1) (hβR : ∀ z : ℝ × ℝ, ‖z‖ ≤ R → β z = 1)
-    (hβK : tsupport β ⊆ closedBall 0 (2 * R)) (hB : ∀ z, ‖fderiv ℝ β z‖ ≤ B)
-    (hN : ∀ z ∈ closedBall (0 : ℝ × ℝ) (2 * R),
-      ‖(J z (u z)).toLinearMap.toContinuousLinearMap‖ ≤ N)
+    (hβK : tsupport β ⊆ closedBall 0 (2 * R))
     (hC₁ : 0 ≤ C₁) (hint : ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → tsupport ξ ⊆ closedBall 0 (2 * R) →
       ∫ z in closedBall 0 (2 * R), (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
           ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2) ≤
@@ -352,11 +302,18 @@ private theorem integral_le_of_bump
       ∫ z, (‖fderiv ℝ χ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ χ z stdComplexLineImag‖ ^ 2) ≤
         C₂ * ∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
           Ks Kt u χ z‖ ^ 2)
-    {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 2 ξ) (hξc : HasCompactSupport ξ) :
+    {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 2 ξ) (hξc : HasCompactSupport ξ) (hM : 0 ≤ M)
+    (hY₁ : ∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+        Ks Kt u (fun w ↦ β w • ξ w) z‖ ^ 2 ≤ 2 * (∫ z, ‖ω.floerLinearization
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) +
+        M * ∫ z in closedBall 0 (2 * R), ‖ξ z‖ ^ 2)
+    (hY₂ : ∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+        Ks Kt u (fun w ↦ (1 - β w) • ξ w) z‖ ^ 2 ≤ 2 * (∫ z, ‖ω.floerLinearization
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) +
+        M * ∫ z in closedBall 0 (2 * R), ‖ξ z‖ ^ 2) :
     ∫ z, (((1 + z.1 ^ 2 + z.2 ^ 2) ^ 2)⁻¹ * ‖ξ z‖ ^ 2 +
         ‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2) ≤
-      (2 + 2 * C₁ * (2 * (B * (1 + N)) ^ 2 + 3) +
-          (2 + 2 * (4 / R) ^ 2) * C₂ * (2 * (B * (1 + N)) ^ 2 + 2)) *
+      (2 + 2 * C₁ * (M + 3) + (2 + 2 * (4 / R) ^ 2) * C₂ * (M + 2)) *
         ((∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
           Ks Kt u ξ z‖ ^ 2) + ∫ z in closedBall 0 (2 * R), ‖ξ z‖ ^ 2) := by
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
@@ -364,7 +321,6 @@ private theorem integral_le_of_bump
   set ID := ∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
     Ks Kt u ξ z‖ ^ 2
   set IK := ∫ z in K, ‖ξ z‖ ^ 2
-  set B' := B * (1 + N)
   -- The pieces `β ξ`, supported in `K`, and `χ = (1 - β) ξ`, vanishing on `‖w‖ < R`.
   set ξ₁ : ℝ × ℝ → V := fun w ↦ β w • ξ w
   set χ : ℝ × ℝ → V := fun w ↦ (1 - β w) • ξ w
@@ -373,19 +329,6 @@ private theorem integral_le_of_bump
   have hξ₁c : HasCompactSupport ξ₁ := hξc.smul_left
   have hξ₁K : tsupport ξ₁ ⊆ K := (tsupport_smul_subset_left _ _).trans hβK
   have hχR (z : ℝ × ℝ) (hz : ‖z‖ < R) : χ z = 0 := by simp [χ, hβR z hz.le]
-  have hγK (z : ℝ × ℝ) (hz : z ∉ K) : fderiv ℝ β z = 0 :=
-    Function.notMem_support.1 fun h ↦ hz (hβK (support_fderiv_subset ℝ h))
-  -- The linearized operator on the two pieces.
-  have hY₁ := integral_norm_floerLinearization_sq_le (ω := ω) hJ hKs hKt hu (hξ.of_le one_le_two)
-    hξc measurableSet_closedBall (norm_floerLinearization_smul_sq_le (hβ.differentiable two_ne_zero)
-      (fun z ↦ abs_le.2 ⟨by linarith [(hβ01 z).1], (hβ01 z).2⟩) hB hγK hN
-      (hξ.differentiable two_ne_zero))
-  have hY₂ := integral_norm_floerLinearization_sq_le (ω := ω) hJ hKs hKt hu (hξ.of_le one_le_two)
-    hξc measurableSet_closedBall (norm_floerLinearization_smul_sq_le (γ := fun z ↦ 1 - β z)
-      (differentiable_const _ |>.sub (hβ.differentiable two_ne_zero))
-      (fun z ↦ abs_le.2 ⟨by linarith [(hβ01 z).2], by linarith [(hβ01 z).1]⟩)
-      (fun z ↦ by rw [fderiv_const_sub, norm_neg]; exact hB z)
-      (fun z hz ↦ by rw [fderiv_const_sub, hγK z hz, neg_zero]) hN (hξ.differentiable two_ne_zero))
   have hξ₁ξ (z : ℝ × ℝ) : ‖ξ₁ z‖ ≤ ‖ξ z‖ := by
     simp only [ξ₁, norm_smul, Real.norm_of_nonneg (hβ01 z).1]
     exact mul_le_of_le_one_left (norm_nonneg _) (hβ01 z).2
@@ -395,7 +338,7 @@ private theorem integral_le_of_bump
     setIntegral_mono_on hiξ₁.integrableOn hiξ.integrableOn measurableSet_closedBall
       fun z _ ↦ pow_le_pow_left₀ (norm_nonneg _) (hξ₁ξ z) 2
   have hX₃ := integral_dirichlet_le_of_tsupport_subset (ω := ω) hJ hKs hKt hu hC₁ hint hξ₁ hξ₁c
-    hξ₁K (c := 2 * ID + 2 * B' ^ 2 * IK) hY₁ hX₁
+    hξ₁K (c := 2 * ID + M * IK) hY₁ hX₁
   have hX₄ := (hinf hχ ((hξc.smul_left (f := fun z ↦ 1 - β z))) hχR).trans
     (mul_le_mul_of_nonneg_left hY₂ hC₂)
   have hX₂ := integral_inv_sq_mul_norm_sq_le hR (hχ.of_le one_le_two)
@@ -408,7 +351,7 @@ private theorem integral_le_of_bump
   refine (integral_le_of_eq_add hR (hξ₁.of_le one_le_two) (hχ.of_le one_le_two) hξ₁c
     (hξc.smul_left (f := fun z ↦ 1 - β z)) (by funext w; simp [ξ₁, χ, sub_smul]) hχR).trans
     (add_le_of_bounds hX₁' hX₂ hX₃ hX₄ (integral_nonneg fun _ ↦ sq_nonneg _)
-      (setIntegral_nonneg measurableSet_closedBall fun _ _ ↦ sq_nonneg _) hC₁ hC₂)
+      (setIntegral_nonneg measurableSet_closedBall fun _ _ ↦ sq_nonneg _) hC₁ hC₂ hM)
 
 /-- **The semi-Fredholm estimate on the Riemann sphere.** Let the Floer data `J`, `K_s`, `K_t` on
 the plane `ℝ × ℝ ≅ ℂ` be the fixed `ω`-compatible structure `J₀` and the zero perturbation on
@@ -441,14 +384,26 @@ theorem exists_forall_integral_le_mul_integral_floerLinearization_add_of_eq_base
   have hR : 0 < R := lt_of_lt_of_le one_pos (le_max_right _ _)
   -- A bump function `β`, equal to `1` on the square `‖w‖ ≤ R` and supported in `‖w‖ ≤ 2 R`.
   let β : ContDiffBump (0 : ℝ × ℝ) := ⟨R, 2 * R, hR, by linarith⟩
-  obtain ⟨B, hB⟩ : ∃ B, ∀ z, ‖fderiv ℝ β z‖ ≤ B :=
-    ((β.contDiff (n := 1)).continuous_fderiv one_ne_zero).bounded_above_of_compact_support
-      (β.hasCompactSupport.fderiv (𝕜 := ℝ))
-  have hJu : Continuous fun z ↦ (J z (u z)).toLinearMap.toContinuousLinearMap :=
-    continuous_iff_continuousAt.2 fun z ↦ ContinuousAt.comp (f := fun w ↦ (w, u w))
-      (hJ z).continuousAt (continuousAt_id.prodMk hu.continuous.continuousAt)
-  obtain ⟨N, hN⟩ := (isCompact_closedBall (0 : ℝ × ℝ) (2 * R)).exists_bound_of_continuousOn
-    hJu.continuousOn
+  -- The cost of multiplying by `β` and by `1 - β`, whose derivatives vanish off `‖w‖ ≤ 2 R`.
+  have hβK (z : ℝ × ℝ) (hz : z ∉ closedBall 0 (2 * R)) : fderiv ℝ β z = 0 :=
+    Function.notMem_support.1 fun h ↦ hz (β.tsupport_eq.subset (support_fderiv_subset ℝ h))
+  obtain ⟨M₁, hM₁, hY₁⟩ := ω.exists_integral_norm_floerLinearization_smul_sq_le
+    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
+    (β.contDiff (n := 1)) (fun z ↦ ⟨β.nonneg, β.le_one⟩) (isCompact_closedBall 0 (2 * R)) hβK
+  obtain ⟨M₂, -, hY₂⟩ := ω.exists_integral_norm_floerLinearization_smul_sq_le
+    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
+    (β := fun z ↦ 1 - β z) (contDiff_const.sub (β.contDiff (n := 1)))
+    (fun z ↦ ⟨sub_nonneg.2 β.le_one, sub_le_self _ β.nonneg⟩) (isCompact_closedBall 0 (2 * R))
+    fun z hz ↦ by rw [fderiv_const_sub, hβK z hz, neg_zero]
+  have hY (M' : ℝ) (hM' : M' ≤ max M₁ M₂) {ξ : ℝ × ℝ → V} {X : ℝ}
+      (h : X ≤ 2 * (∫ z, ‖ω.floerLinearization
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) +
+        M' * ∫ z in closedBall 0 (2 * R), ‖ξ z‖ ^ 2) :
+      X ≤ 2 * (∫ z, ‖ω.floerLinearization
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) +
+        max M₁ M₂ * ∫ z in closedBall 0 (2 * R), ‖ξ z‖ ^ 2 :=
+    h.trans (add_le_add_right (mul_le_mul_of_nonneg_right hM'
+      (setIntegral_nonneg measurableSet_closedBall fun _ _ ↦ sq_nonneg _)) _)
   -- The interior estimate on the disc, and the estimate near infinity.
   obtain ⟨C₁, hC₁, hint⟩ :=
    exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization_of_tsupport_subset
@@ -458,7 +413,9 @@ theorem exists_forall_integral_le_mul_integral_floerLinearization_add_of_eq_base
     hKs₀ hKt₀
   refine ⟨2 * R, _, by positivity, fun ξ hξ hξc ↦ integral_le_of_bump hJ hKs hKt hu hR
     β.contDiff (fun z ↦ ⟨β.nonneg, β.le_one⟩)
-    (fun z hz ↦ β.one_of_mem_closedBall (mem_closedBall_zero_iff.2 hz)) β.tsupport_eq.subset hB
-    hN hC₁ hint hC₂ (fun χ hχ hχc h ↦ hinf hχ hχc fun z hz ↦ h z (hz.trans_le (le_max_left _ _)))
-    hξ hξc⟩
+    (fun z hz ↦ β.one_of_mem_closedBall (mem_closedBall_zero_iff.2 hz)) β.tsupport_eq.subset
+    hC₁ hint hC₂ (fun χ hχ hχc h ↦ hinf hχ hχc fun z hz ↦ h z (hz.trans_le (le_max_left _ _)))
+    hξ hξc (hM₁.trans (le_max_left _ _))
+    (hY M₁ (le_max_left _ _) (hY₁ (hξ.of_le one_le_two) hξc))
+    (hY M₂ (le_max_right _ _) (hY₂ (hξ.of_le one_le_two) hξc))⟩
 end TauCeti.SymplecticForm
