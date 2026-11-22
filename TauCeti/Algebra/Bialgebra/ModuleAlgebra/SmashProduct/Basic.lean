@@ -8,9 +8,7 @@ module
 public import Mathlib.RingTheory.Bialgebra.Equiv
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.TensorProduct.Finite
-public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.Basic
-import Mathlib.LinearAlgebra.Basis.VectorSpace
-import Mathlib.LinearAlgebra.Dual.Lemmas
+public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.Compatibility
 
 /-!
 # The smash product of a left module algebra
@@ -37,11 +35,9 @@ and the module-algebra axioms express the covariance relation between these two 
   tensors, valued in `A ⊗[R] H`.
 * `TauCeti.LeftModuleAlgebra.includeA` and `TauCeti.LeftModuleAlgebra.includeH`: the canonical
   `R`-algebra homomorphisms `a ↦ a # 1` and `h ↦ 1 # h`.
-* `TauCeti.LeftModuleAlgebra.SmashCompatible`: the covariance relation
-  `fH h * fA a = ∑ fA (h₁ · a) * fH h₂` for pairs of `R`-algebra maps out of `A` and `H`.
 * `TauCeti.LeftModuleAlgebra.SmashProduct.lift` and
   `TauCeti.LeftModuleAlgebra.SmashProduct.liftEquiv`: the universal property of `A # H` for
-  covariant pairs of algebra homomorphisms.
+  covariant (`TauCeti.LeftModuleAlgebra.SmashCompatible`) pairs of algebra homomorphisms.
 * `TauCeti.LeftModuleAlgebra.SmashProduct.map`, `mapHom`, `mapRestrict`, and `congr`:
   functoriality of `A # H` in equivariant algebra homomorphisms and bialgebra homomorphisms.
 * `TauCeti.LeftModuleAlgebra.SmashProduct.trivialAlgEquiv` and `baseAlgEquiv`: the `R`-algebra
@@ -52,11 +48,11 @@ and the module-algebra axioms express the covariance relation between these two 
 * `TauCeti.LeftModuleAlgebra.SmashProduct.algHom_ext`: `R`-algebra homomorphisms out of `A # H`
   are determined by their restrictions along `includeA` and `includeH`.
 * `TauCeti.LeftModuleAlgebra.includeA_injective`: `a ↦ a # 1` is unconditionally injective.
-* `TauCeti.LeftModuleAlgebra.ker_includeH_eq_top`,
-  `TauCeti.LeftModuleAlgebra.includeH_injective_of_apply_one_eq_one`, and
-  `TauCeti.LeftModuleAlgebra.includeH_injective`: `h ↦ 1 # h` has kernel `⊤` when `A` is
-  subsingleton, is injective whenever `1 : A` admits an `R`-linear retraction to `1 : R`, and in
-  particular is injective over any field when `A` is nontrivial.
+* `TauCeti.LeftModuleAlgebra.ker_includeH_eq_top` and
+  `TauCeti.LeftModuleAlgebra.includeH_injective_of_apply_one_eq_one`: `h ↦ 1 # h` has kernel `⊤`
+  when `A` is subsingleton, and is injective whenever `1 : A` admits an `R`-linear retraction to
+  `1 : R` (see `TauCeti.LeftModuleAlgebra.includeH_injective` in
+  `TauCeti.Algebra.Bialgebra.ModuleAlgebra.SmashProduct.Field` for the field case).
 
 ## References
 
@@ -214,92 +210,6 @@ theorem smashMulPure_eq_sum (μ : LeftModuleAlgebra R H A) {h : H} {ι : Type*}
   rw [smashMulPure, ← r.eq, map_sum]
   simp only [TensorProduct.map_tmul, LinearMap.comp_apply, LinearMap.flip_apply,
     AlgHom.toLinearMap_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
-
-/-- Compatibility of algebra maps `fA : A →ₐ[R] C` and `fH : H →ₐ[R] C` for descending to
-the smash product `A # H`: for every `h : H` and `a : A`,
-`fH h * fA a = ∑ fA (h₁ · a) * fH h₂`. -/
-def SmashCompatible (μ : LeftModuleAlgebra R H A) {C : Type*} [Semiring C] [Algebra R C]
-    (fA : A →ₐ[R] C) (fH : H →ₐ[R] C) : Prop :=
-  ∀ h a, fH h * fA a =
-    LinearMap.mul' R C
-      (TensorProduct.map (fA.toLinearMap ∘ₗ μ.action.toLinearMap.flip a) fH.toLinearMap
-        (Coalgebra.comul (R := R) h))
-
-/-- The covariance relation in any finite representation of `comul h`. -/
-theorem SmashCompatible.mul_eq_sum {μ : LeftModuleAlgebra R H A} {C : Type*}
-    [Semiring C] [Algebra R C] {fA : A →ₐ[R] C} {fH : H →ₐ[R] C}
-    (hf : μ.SmashCompatible fA fH) {h : H} {ι : Type*} (r : Coalgebra.Repr R h ι) (a : A) :
-    fH h * fA a = ∑ i ∈ r.index, fA (μ.action (r.left i) a) * fH (r.right i) := by
-  rw [hf h a, ← r.eq, map_sum, map_sum]
-  simp
-
-/-- Characterization of `SmashCompatible` using a family of finite coproduct representations. -/
-theorem smashCompatible_iff_sum (μ : LeftModuleAlgebra R H A) {C : Type*}
-    [Semiring C] [Algebra R C] (fA : A →ₐ[R] C) (fH : H →ₐ[R] C)
-    {ι : H → Type*} (r : ∀ h, Coalgebra.Repr R h (ι h)) :
-    μ.SmashCompatible fA fH ↔ ∀ h a,
-      fH h * fA a = ∑ i ∈ (r h).index, fA (μ.action ((r h).left i) a) * fH ((r h).right i) := by
-  refine ⟨fun hf h a => hf.mul_eq_sum (r h) a, fun hf h a => ?_⟩
-  rw [hf h a, ← (r h).eq, map_sum, map_sum]
-  simp
-
-/-- Post-composing a `SmashCompatible` pair with an `R`-algebra homomorphism yields a
-`SmashCompatible` pair. -/
-theorem SmashCompatible.comp {μ : LeftModuleAlgebra R H A} {C D : Type*}
-    [Semiring C] [Algebra R C] [Semiring D] [Algebra R D] {fA : A →ₐ[R] C} {fH : H →ₐ[R] C}
-    (hf : μ.SmashCompatible fA fH) (φ : C →ₐ[R] D) :
-    μ.SmashCompatible (φ.comp fA) (φ.comp fH) := by
-  rw [μ.smashCompatible_iff_sum _ _ (ℛ R)]
-  intro h a
-  simpa only [AlgHom.comp_apply, map_mul, map_sum] using congrArg φ (hf.mul_eq_sum (ℛ R h) a)
-
-/-- Tensoring a `SmashCompatible` pair `(fA, fH)` on the right with an `R`-algebra homomorphism
-`gH : H →ₐ[R] D` via the comultiplication of `H` yields a `SmashCompatible` pair in `C ⊗[R] D`. -/
-theorem SmashCompatible.includeLeft_map_comul {μ : LeftModuleAlgebra R H A} {C D : Type*}
-    [Semiring C] [Algebra R C] [Semiring D] [Algebra R D] {fA : A →ₐ[R] C} {fH : H →ₐ[R] C}
-    (hf : μ.SmashCompatible fA fH) (gH : H →ₐ[R] D) :
-    μ.SmashCompatible (Algebra.TensorProduct.includeLeft.comp fA)
-      ((Algebra.TensorProduct.map fH gH).comp (Bialgebra.comulAlgHom R H)) := by
-  rw [μ.smashCompatible_iff_sum _ _ (ℛ R)]
-  intro h a
-  set r := ℛ R h
-  let r₁ := fun i => ℛ R (r.left i)
-  let r₂ := fun i => ℛ R (r.right i)
-  let Φ : H ⊗[R] (H ⊗[R] H) →ₗ[R] C ⊗[R] D :=
-    TensorProduct.map
-      (LinearMap.mul' R C ∘ₗ
-        TensorProduct.map (fA.toLinearMap ∘ₗ μ.action.toLinearMap.flip a) fH.toLinearMap)
-      gH.toLinearMap ∘ₗ (TensorProduct.assoc R H H H).symm.toLinearMap
-  have hco := congrArg Φ (Coalgebra.sum_tmul_tmul_eq r r₁ r₂)
-  simp only [Φ, map_sum, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    TensorProduct.assoc_symm_tmul, TensorProduct.map_tmul, LinearMap.flip_apply,
-    AlgHom.toLinearMap_apply, LinearMap.mul'_apply] at hco
-  calc ((Algebra.TensorProduct.map fH gH).comp (Bialgebra.comulAlgHom R H)) h *
-          (Algebra.TensorProduct.includeLeft.comp fA) a
-      = (∑ i ∈ r.index, fH (r.left i) ⊗ₜ[R] gH (r.right i)) * (fA a ⊗ₜ[R] 1) := by
-          simp only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply, ← r.eq, map_sum,
-            Algebra.TensorProduct.map_tmul, Algebra.TensorProduct.includeLeft_apply]
-    _ = ∑ i ∈ r.index, ∑ j ∈ (r₁ i).index,
-          (fA (μ.action ((r₁ i).left j) a) * fH ((r₁ i).right j)) ⊗ₜ[R] gH (r.right i) := by
-          rw [Finset.sum_mul]
-          refine Finset.sum_congr rfl fun i _ => ?_
-          rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, hf.mul_eq_sum (r₁ i) a,
-            TensorProduct.sum_tmul]
-    _ = ∑ i ∈ r.index, ∑ j ∈ (r₂ i).index,
-          (fA (μ.action (r.left i) a) * fH ((r₂ i).left j)) ⊗ₜ[R] gH ((r₂ i).right j) := hco
-    _ = _ := by
-          refine Finset.sum_congr rfl fun i _ => ?_
-          simp only [AlgHom.comp_apply, Algebra.TensorProduct.includeLeft_apply,
-            Bialgebra.comulAlgHom_apply, ← (r₂ i).eq, map_sum, Algebra.TensorProduct.map_tmul,
-            Finset.mul_sum, Algebra.TensorProduct.tmul_mul_tmul, one_mul]
-
-/-- Left multiplication by `A` and `μ.action` form a `SmashCompatible` pair in `Module.End R A`. -/
-theorem smashCompatible_lsmul_action (μ : LeftModuleAlgebra R H A) :
-    μ.SmashCompatible (Algebra.lsmul R R A) μ.action := by
-  rw [μ.smashCompatible_iff_sum _ _ (ℛ R)]
-  intro h a
-  ext b
-  simpa [LinearMap.sum_apply] using μ.action_mul_eq_sum (ℛ R h) a b
 
 namespace SmashProduct
 
@@ -624,20 +534,6 @@ theorem includeH_injective_of_apply_one_eq_one (φ : A →ₗ[R] R) (hφ : φ 1 
   Function.LeftInverse.injective (μ.retractH_includeH hφ)
 
 end Embeddings
-
-section FieldEmbedding
-
-variable {K : Type u} {H : Type v} {A : Type w}
-  [Field K] [Semiring H] [Bialgebra K H] [Semiring A] [Algebra K A]
-
-/-- Over a field, `includeH : H →ₐ[K] A # H` is injective whenever `A` is nontrivial. -/
-theorem includeH_injective (μ : LeftModuleAlgebra K H A) [Nontrivial A] :
-    Function.Injective μ.includeH := by
-  let _ := Module.addCommMonoidToAddCommGroup K (M := A)
-  obtain ⟨φ, hφ⟩ := Module.Projective.exists_dual_eq_one K (one_ne_zero : (1 : A) ≠ 0)
-  exact μ.includeH_injective_of_apply_one_eq_one φ hφ
-
-end FieldEmbedding
 
 /-! ### Universal property -/
 

@@ -21,8 +21,6 @@ and `A # H`-linear maps are `A`-linear maps that commute with the `H`-action.
 
 ## Main definitions
 
-* `TauCeti.LeftModuleAlgebra.IsCompatibleAction`: predicate on `R`-compatible `Module A M` and
-  `Module H M` instances expressing the smash-product Leibniz law via `SmashCompatible`.
 * `TauCeti.LeftModuleAlgebra.IsSmashModule`: compatibility mixin relating `Module A M`,
   `Module H M`, and `Module μ.SmashProduct M` by `(a # h) • m = a • (h • m)`.
 * `TauCeti.LeftModuleAlgebra.toEndAlgHom`: the canonical `R`-algebra homomorphism
@@ -87,37 +85,7 @@ theorem toEndAlgHom_includeH (μ : LeftModuleAlgebra R H A) (h : H) (b : A) :
     μ.toEndAlgHom (μ.includeH h) b = μ.action h b := by
   simp
 
-/-! ### Compatible `A`- and `H`-actions -/
-
-/-- Predicate expressing that `R`-compatible `A`- and `H`-module structures on `M` satisfy the
-smash-product Leibniz law `h • (a • m) = ∑ (h₁ · a) • (h₂ • m)`, formulated without choosing a
-coproduct representation. -/
-@[mk_iff]
-class IsCompatibleAction (μ : LeftModuleAlgebra R H A) (M : Type*)
-    [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M]
-    [Module H M] [IsScalarTower R H M] : Prop where
-  /-- The `A`-action and `H`-action form a `SmashCompatible` pair in `Module.End R M`. -/
-  smashCompatible : μ.SmashCompatible (Algebra.lsmul R (A := A) R M) (Algebra.lsmul R (A := H) R M)
-
-/-- The smash-product Leibniz law in any finite representation of `comul h`. -/
-theorem IsCompatibleAction.smul_smul_eq_sum {μ : LeftModuleAlgebra R H A} {M : Type*}
-    [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M]
-    [Module H M] [IsScalarTower R H M] [hc : μ.IsCompatibleAction M]
-    {h : H} {ι : Type*} (r : Coalgebra.Repr R h ι) (a : A) (m : M) :
-    h • (a • m) = ∑ i ∈ r.index, μ.action (r.left i) a • (r.right i • m) := by
-  simpa [LinearMap.sum_apply] using DFunLike.congr_fun (hc.smashCompatible.mul_eq_sum r a) m
-
-/-- Characterization of `IsCompatibleAction` using a family of finite coproduct representations. -/
-theorem isCompatibleAction_iff_sum (μ : LeftModuleAlgebra R H A) (M : Type*)
-    [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M]
-    [Module H M] [IsScalarTower R H M] {ι : H → Type*} (r : ∀ h, Coalgebra.Repr R h (ι h)) :
-    μ.IsCompatibleAction M ↔ ∀ h a (m : M),
-      h • (a • m) = ∑ i ∈ (r h).index, μ.action ((r h).left i) a • ((r h).right i • m) := by
-  rw [isCompatibleAction_iff, μ.smashCompatible_iff_sum _ _ r]
-  refine ⟨fun hf h a m => by simpa [LinearMap.sum_apply] using DFunLike.congr_fun (hf h a) m,
-    fun hf h a => ?_⟩
-  ext m
-  simpa [LinearMap.sum_apply] using hf h a m
+/-! ### Smash-product modules -/
 
 /-- Compatibility mixin relating `Module A M`, `Module H M`, and `Module μ.SmashProduct M` by
 `(a # h) • m = a • (h • m)`. -/
