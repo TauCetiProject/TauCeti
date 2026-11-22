@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.Adjoint.Representation.Subgroup
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Subgroup
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Basic
 
 import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Map

@@ -127,6 +127,7 @@ finite-dimensional Lie group structure on a subgroup `K` with its subspace topol
 differential at the identity of the inclusion `K → G` has range `Subgroup.groupLieSubalgebra K`.
 The inclusion is continuous, hence smooth by automatic smoothness, so no separate smoothness
 hypothesis on the inclusion is needed. -/
+@[simp]
 theorem range_groupLieAlgebraMap_subtype :
     LinearMap.range (K.subtype.groupLieAlgebraMap J I).toLinearMap =
       (K.groupLieSubalgebra (I := I)).toSubmodule := by
@@ -160,6 +161,7 @@ differential `dι` of the inclusion exactly when it annihilates the Lie algebra 
 separate smoothness hypothesis on the inclusion is needed. For a moment map `μ` this identifies
 the zero level of the restricted moment map `x ↦ (μ x) ∘ dι` with the points where `μ` takes values
 in `𝔨⁰`. -/
+@[simp]
 theorem comp_groupLieAlgebraMap_subtype_eq_zero_iff (ν : Module.Dual ℝ (GroupLieAlgebra I G)) :
     ν.comp (K.subtype.groupLieAlgebraMap J I).toLinearMap = 0 ↔
       ν ∈ (K.groupLieSubalgebra (I := I)).toSubmodule.dualAnnihilator := by

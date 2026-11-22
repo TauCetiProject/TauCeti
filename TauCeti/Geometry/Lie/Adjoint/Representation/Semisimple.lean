@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
 
 import TauCeti.RepresentationTheory.Compact.Semisimple

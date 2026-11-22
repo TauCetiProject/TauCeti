@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
 public import TauCeti.Geometry.Lie.Subgroup.GroupLieAlgebra
-import TauCeti.RepresentationTheory.Dual
 
 /-!
-# Adjoint actions on subgroup Lie algebras and coadjoint actions on their annihilators
+# Adjoint actions on subgroup Lie algebras
 
 Let `K` be a subgroup of a Lie group `G`, with Lie algebra `𝔨 = Subgroup.groupLieSubalgebra K`
 in the tangent Lie algebra `𝔤`. The adjoint action `Ad_g` of an element `g` of the normalizer of
@@ -18,8 +17,8 @@ in the tangent Lie algebra `𝔤`. The adjoint action `Ad_g` of an element `g` o
 adjoint representation. If moreover `N` is closed, then `Ad_n ξ - ξ ∈ 𝔫` for `n ∈ N` and every
 `ξ ∈ 𝔤`, so `N` acts trivially on `𝔤 ⧸ 𝔫`.
 
-Dually, the coadjoint action of the normalizer of `K` preserves the annihilator `𝔨⁰ ⊆ 𝔤*`, and a
-closed normal subgroup `N` fixes `𝔫⁰` pointwise.
+The dual statements for the coadjoint action on the annihilator `𝔨⁰ ⊆ 𝔤*` are in
+`TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Subgroup`.
 
 ## Main results
 
@@ -29,10 +28,6 @@ closed normal subgroup `N` fixes `𝔫⁰` pointwise.
   subgroup is a subrepresentation of the adjoint representation.
 * `TauCeti.Lie.adjointRepresentation_apply_sub_mem_groupLieSubalgebra`: for `n` in a closed normal
   subgroup `N`, `Ad_n - 1` maps `𝔤` into `𝔫`.
-* `TauCeti.Lie.coadjointRepresentation_apply_mem_dualAnnihilator_groupLieSubalgebra`: the
-  coadjoint action of the normalizer of `K` preserves `𝔨⁰`.
-* `TauCeti.Lie.coadjointRepresentation_apply_eq_self_of_mem_dualAnnihilator_groupLieSubalgebra`:
-  a closed normal subgroup `N` fixes `𝔫⁰` pointwise.
 
 ## References
 
@@ -82,29 +77,5 @@ theorem adjointRepresentation_apply_sub_mem_groupLieSubalgebra {N : Subgroup G}
   rw [mem_groupLieSubalgebra_iff, map_sub,
     tangentToLeftInvariantDerivation_adjointRepresentation_apply]
   exact Ad_sub_mem_lieSubalgebraOfSubgroup hN hn _
-
-/-- **The coadjoint action of the normalizer preserves the annihilator of the Lie algebra of a
-subgroup**: for `g` in the normalizer of `K` and `ν ∈ 𝔨⁰`, `Ad*_g ν ∈ 𝔨⁰`. -/
-theorem coadjointRepresentation_apply_mem_dualAnnihilator_groupLieSubalgebra
-    {K : Subgroup G} {g : G} (hg : g ∈ Subgroup.normalizer (K : Set G))
-    {ν : Module.Dual ℝ (GroupLieAlgebra I G)}
-    (hν : ν ∈ (K.groupLieSubalgebra (I := I)).toSubmodule.dualAnnihilator) :
-    coadjointRepresentation ℝ I G g ν ∈
-      (K.groupLieSubalgebra (I := I)).toSubmodule.dualAnnihilator := by
-  rw [coadjointRepresentation_def]
-  exact (adjointRepresentation ℝ I G).dualAnnihilator_le_comap_dual
-    (fun _ hξ ↦ adjointRepresentation_apply_mem_groupLieSubalgebra
-      (Subgroup.inv_mem _ hg) hξ) hν
-
-/-- **A closed normal subgroup fixes the annihilator of its Lie algebra**: `Ad*_n ν = ν` for
-`n ∈ N` and `ν ∈ 𝔫⁰`. -/
-theorem coadjointRepresentation_apply_eq_self_of_mem_dualAnnihilator_groupLieSubalgebra
-    {N : Subgroup G} [N.Normal]
-    (hN : IsClosed (N : Set G)) {n : G} (hn : n ∈ N) {ν : Module.Dual ℝ (GroupLieAlgebra I G)}
-    (hν : ν ∈ (N.groupLieSubalgebra (I := I)).toSubmodule.dualAnnihilator) :
-    coadjointRepresentation ℝ I G n ν = ν := by
-  rw [coadjointRepresentation_def]
-  exact Representation.dual_apply_eq_self_of_mem_dualAnnihilator
-    (adjointRepresentation_apply_sub_mem_groupLieSubalgebra hN hn) hν
 
 end TauCeti.Lie

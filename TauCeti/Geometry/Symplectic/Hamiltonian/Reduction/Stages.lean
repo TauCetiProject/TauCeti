@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.Adjoint.Representation.Quotient
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Quotient
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap
 import TauCeti.LinearAlgebra.Dual.Annihilator
 
@@ -30,9 +30,10 @@ and the moment map property there are not proved here.
   It is the candidate lift to `Z` of the residual moment map on the first reduced space.
 * Write `[g] · φ` for the dual action of `G ⧸ N` on `(𝔤 ⧸ 𝔫)*` induced by the adjoint
   representation, and pull it back along `G → G ⧸ N` to an action of `G` by `g · φ = [g] · φ`.
-  If `G` acts on `Z` compatibly with `i`, the map is `G`-equivariant for this pulled-back action,
-  `μ_res (g • z) = [g] · μ_res z` (`TauCeti.residualMomentMapLift_smul`). If `N` acts on `Z`
-  compatibly with `i`, the map is `N`-invariant
+  If `G` acts on `Z` compatibly with `i` and `μ` is coadjoint-equivariant, the map is
+  `G`-equivariant for this pulled-back action, `μ_res (g • z) = [g] · μ_res z`
+  (`TauCeti.residualMomentMapLift_smul`). Likewise, if `N` acts on `Z` compatibly with `i`, the
+  map is `N`-invariant
   (`TauCeti.residualMomentMapLift_subgroup_smul_eq_self`); this is the invariance needed for it
   to descend along the projection to the first reduced space. This pulled-back equivariance is
   what is proved here, and it uses no Lie group structure on `G ⧸ N`. When `G ⧸ N` carries a
@@ -88,10 +89,11 @@ variable (μ N i) in
 /-- **The candidate lift to the level of the residual moment map of reduction in stages.** For a
 map `i : Z → M` into the zero level of the moment map of `N`, so that `μ (i z)` annihilates the Lie
 algebra `𝔫` of `N`, this sends `z` to `μ (i z)` read as a linear form on `𝔤 ⧸ 𝔫`, through the
-identification `(𝔤 ⧸ 𝔫)* ≃ 𝔫⁰` (`Submodule.dualQuotEquivDualAnnihilator`). Under compatible
-actions it is `N`-invariant (`TauCeti.residualMomentMapLift_subgroup_smul_eq_self`); its descent to
-the first reduced space, and the moment map property of the descended map, are not part of this
-definition. -/
+identification `(𝔤 ⧸ 𝔫)* ≃ 𝔫⁰` (`Submodule.dualQuotEquivDualAnnihilator`). When `N` is closed and
+normal, `μ_res (n • z) = μ_res z` for `n ∈ N` whenever `i (n • z) = n • i z` and `μ` is
+coadjoint-equivariant for `n` at `i z` (`TauCeti.residualMomentMapLift_subgroup_smul_eq_self`); its
+descent to the first reduced space, and the moment map property of the descended map, are not part
+of this definition. -/
 def residualMomentMapLift
     (hi : ∀ z, μ (i z) ∈ (N.groupLieSubalgebra (I := I)).toSubmodule.dualAnnihilator)
     (z : Z) :
@@ -151,8 +153,9 @@ theorem residualMomentMapLift_smul [SMul G M] [SMul G Z] [N.Normal]
   rw [hiG, hμ]
 
 /-- **The lifted residual moment map is `N`-invariant**: `μ_res (n • z) = μ_res z` for `n ∈ N`.
-Only an action of `N` on `Z`, compatibility of `i` with `n` at `z` and the coadjoint equivariance
-of `μ` for `n` at `i z` are used. -/
+This assumes that `N` is closed and normal, and uses only an action of `N` on `Z`, compatibility
+`i (n • z) = n • i z` of `i` with `n` at `z`, and the coadjoint equivariance of `μ` for `n` at
+`i z`. -/
 theorem residualMomentMapLift_subgroup_smul_eq_self [SMul G M] [SMul N Z] [N.Normal]
     (hN : IsClosed (N : Set G))
     (hi : ∀ z, μ (i z) ∈ (N.groupLieSubalgebra (I := I)).toSubmodule.dualAnnihilator)

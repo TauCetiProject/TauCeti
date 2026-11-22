@@ -40,9 +40,8 @@ theorem symmetricAlgebraInvariants_ofQuotient :
 @[simp]
 theorem symmetricAlgebraInvariants_dual_ofQuotient :
     (ρ.ofQuotient S).dual.symmetricAlgebraInvariants = ρ.dual.symmetricAlgebraInvariants := by
-  have h : (ρ.ofQuotient S).dual.comp (QuotientGroup.mk' S) = ρ.dual := by
-    rw [← dual_comp, ρ.ofQuotient_comp_mk']
   exact ((ρ.ofQuotient S).dual.symmetricAlgebraInvariants_comp_of_surjective _
-    (QuotientGroup.mk'_surjective S)).symm.trans (congrArg symmetricAlgebraInvariants h)
+    (QuotientGroup.mk'_surjective S)).symm.trans
+      (congrArg symmetricAlgebraInvariants (ρ.dual_ofQuotient_comp_mk' S))
 
 end Representation
