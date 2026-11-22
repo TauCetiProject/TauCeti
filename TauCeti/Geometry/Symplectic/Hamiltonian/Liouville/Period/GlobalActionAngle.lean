@@ -113,17 +113,17 @@ theorem contMDiff_of_actionAngle : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ a := by
   rw [show a ∘ π = torusActions p ∘ Φ from funext fun y ↦ (hΦa y).symm]
   exact (contMDiff_torusActions p).comp hΦ.contMDiff
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [BoundarylessManifold I M]
-  [I.Boundaryless] [FiniteDimensional ℝ F] [IsManifold J ∞ B] [T2Space B] [TopologicalSpace M]
-  [TopologicalSpace B] in
-include hΦa in
-/-- In global action–angle coordinates with actions `a ∘ π`, every point `x` has coordinates
-`κ(θ, a(π x))` for some angles `θ`. -/
-private theorem exists_apply_eq_actionAngleCover (x : M) :
-    ∃ θ, Φ x = actionAngleCover p (θ, a (π x)) := by
+omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless]
+  [FiniteDimensional ℝ F] [IsManifold J ∞ B] [T2Space B] in
+include h hΦa in
+/-- In global action–angle coordinates with actions `a ∘ π`, the fibre over `b` has a point `x`,
+and it has coordinates `κ(θ, a(b))` for some angles `θ`. -/
+private theorem exists_apply_eq_actionAngleCover (b : B) :
+    ∃ (x : π ⁻¹' {b}) (θ : ι → ℝ), Φ x = actionAngleCover p (θ, a b) := by
+  obtain ⟨x⟩ := (h.isConnected_preimage_singleton b).nonempty.to_subtype
   obtain ⟨⟨θ, A⟩, hθ⟩ := surjective_actionAngleCover p (Φ x)
-  refine ⟨θ, ?_⟩
-  rw [← hθ, ← hΦa, ← hθ, torusActions_actionAngleCover]
+  refine ⟨x, θ, ?_⟩
+  rw [← hθ, ← x.property, ← hΦa, ← hθ, torusActions_actionAngleCover]
 
 /-! ### The fibre action in action–angle coordinates -/
 
@@ -172,15 +172,17 @@ theorem apply_fiberAction_of_actionAngle (b : B) (c : ι → ℝ) {α : F →L[�
   simp only [zero_smul, add_zero, one_smul] at h0
   exact h0
 
-include h hσc hΦ hΦσ hΦa in
+include h hΦ hΦσ hΦa in
 /-- **The fibres fill the tori of the actions.** For global action–angle coordinates with actions
 `a ∘ π`, every point `κ(θ, a(b))` of the torus `{I = a(b)}` is the image of a point of the fibre
 over `b`: translating the angles by the fibre action reaches it. -/
 theorem exists_apply_eq_actionAngleCover_of_actionAngle (b : B) (θ : ι → ℝ) :
     ∃ y, π y = b ∧ Φ y = actionAngleCover p (θ, a b) := by
-  obtain ⟨x⟩ := (h.isConnected_preimage_singleton b).nonempty.to_subtype
-  obtain ⟨θ₀, hθ₀⟩ := exists_apply_eq_actionAngleCover p hΦa x
-  rw [x.property] at hθ₀
+  -- `σ` is closed, as the pullback of the closed canonical form.
+  have hσc : σ.IsClosed := hΦσ ▸ (isSymplectic_symplecticForm
+    (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (M := ι → AddCircle p)).isClosed.mpullback Φ
+    hΦ.contMDiff
+  obtain ⟨x, θ₀, hθ₀⟩ := h.exists_apply_eq_actionAngleCover p hΦa b
   -- The covector `v ↦ (θ - θ₀) ⬝ᵥ da_b(v)` moves `x` to the point with angles `θ`.
   set α : F →L[ℝ] ℝ := (LinearMap.toContinuousLinearMap (dotProductEquiv ℝ ι (θ - θ₀))).comp
     (mfderiv J 𝓘(ℝ, ι → ℝ) a b)
@@ -233,9 +235,7 @@ theorem periodLattice_eq_closure_of_actionAngle (hΦi : Injective Φ) (b : B) :
     h.periodLattice hσc b = AddSubgroup.closure (range fun j ↦
       p • ((ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ).comp
         (mfderiv J 𝓘(ℝ, ι → ℝ) a b) : F →L[ℝ] ℝ)) := by
-  obtain ⟨x⟩ := (h.isConnected_preimage_singleton b).nonempty.to_subtype
-  obtain ⟨θ, hθ⟩ := exists_apply_eq_actionAngleCover p hΦa x
-  rw [x.property] at hθ
+  obtain ⟨x, θ, hθ⟩ := h.exists_apply_eq_actionAngleCover p hΦa b
   -- A covector `v ↦ c ⬝ᵥ da_b(v)` is a period exactly when `c ∈ p ℤ^ι`.
   have hmem (c : ι → ℝ) {α : F →L[ℝ] ℝ} (hα : ∀ v, α v = c ⬝ᵥ mfderiv J 𝓘(ℝ, ι → ℝ) a b v) :
       α ∈ h.periodLattice hσc b ↔ ∃ m : ι → ℤ, c = fun i ↦ m i * p := by
@@ -259,13 +259,9 @@ theorem periodLattice_eq_closure_of_actionAngle (hΦi : Injective Φ) (b : B) :
     set D := LinearEquiv.ofBijective D₀.toLinearMap (h.bijective_mfderiv_of_actionAngle p hΦ hΦa b)
     set c : ι → ℝ := fun j ↦ α (D.symm (Pi.single j 1))
     have hα' (v : F) : α v = c ⬝ᵥ D₀ v := by
-      have hDv : ∑ j, D₀ v j • Pi.single j 1 = D v := by
-        ext i
-        simp only [Finset.sum_apply, Pi.smul_apply, Pi.single_apply, smul_eq_mul, mul_ite,
-          mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
-        rfl
       calc α v = α (D.symm (∑ j, D₀ v j • Pi.single j (1 : ℝ))) := by
-            rw [hDv, LinearEquiv.symm_apply_apply]
+            rw [← pi_eq_sum_univ' (D₀ v)]
+            exact congrArg α (LinearEquiv.ofBijective_symm_apply_apply D₀.toLinearMap v).symm
         _ = ∑ j, D₀ v j * c j := by simp only [map_sum, map_smul, smul_eq_mul, c]
         _ = c ⬝ᵥ D₀ v := by simp only [dotProduct, mul_comm]
     obtain ⟨m, hm⟩ := (hmem c hα').1 hα
@@ -281,23 +277,22 @@ theorem periodLattice_eq_closure_of_actionAngle (hΦi : Injective Φ) (b : B) :
 
 /-! ### Injective actions -/
 
-include h hσc hΦ hΦσ hΦa in
+include h hΦ hΦσ hΦa in
 /-- **Global action–angle coordinates have injective actions.** For global action–angle
 coordinates with actions `a ∘ π`, the developing map `a` is injective: translating the angles,
 the fibre over `b` reaches every point of the torus `{I = a(b)}`, so two fibres with the same
 actions have images meeting in a point, and coincide by injectivity of `Φ`. -/
 theorem injective_of_actionAngle (hΦi : Injective Φ) : Injective a := by
   intro b b' hbb'
-  obtain ⟨x'⟩ := (h.isConnected_preimage_singleton b').nonempty.to_subtype
-  obtain ⟨θ, hθ⟩ := exists_apply_eq_actionAngleCover p hΦa x'
-  rw [x'.property, ← hbb'] at hθ
+  obtain ⟨x', θ, hθ⟩ := h.exists_apply_eq_actionAngleCover p hΦa b'
+  rw [← hbb'] at hθ
   -- The point of the fibre over `b` with the coordinates of `x'` is `x'`.
-  obtain ⟨y, hy, hyθ⟩ := h.exists_apply_eq_actionAngleCover_of_actionAngle p hσc hΦ hΦσ hΦa b θ
+  obtain ⟨y, hy, hyθ⟩ := h.exists_apply_eq_actionAngleCover_of_actionAngle p hΦ hΦσ hΦa b θ
   rw [← hy, hΦi (hyθ.trans hθ.symm), x'.property]
 
 /-! ### A Lagrangian section -/
 
-include h hσc hΦ hΦσ hΦa in
+include h hΦ hΦσ hΦa in
 /-- **Global action–angle coordinates give a Lagrangian section.** For global action–angle
 coordinates `Φ` with actions `a ∘ π`, the zero angles `θ = 0` define a smooth section `s` of `π`,
 `Φ(s(b)) = κ(0, a(b))`, and `s^* σ = 0` because `κ(0, ·)` pulls the canonical form back to zero. -/
@@ -311,7 +306,7 @@ theorem exists_lagrangian_section_of_actionAngle (hΦi : Injective Φ) :
   -- The zero angles `κ(0, a(b))` are the coordinates of a point of the fibre over `b`.
   set g : B → (ι → ℝ) × (ι → ℝ) := fun b ↦ ((0 : ι → ℝ), a b)
   have hfib (b : B) : ∃ y, π y = b ∧ Φ y = actionAngleCover p (g b) :=
-    h.exists_apply_eq_actionAngleCover_of_actionAngle p hσc hΦ hΦσ hΦa b 0
+    h.exists_apply_eq_actionAngleCover_of_actionAngle p hΦ hΦσ hΦa b 0
   have : Nonempty M := ⟨(hfib b₀).choose⟩
   -- The section `s = Φ⁻¹ ∘ κ(0, a(·))`, smooth since `Φ` is an injective local diffeomorphism.
   set s : B → M := invFunOn Φ univ ∘ actionAngleCover p ∘ g
