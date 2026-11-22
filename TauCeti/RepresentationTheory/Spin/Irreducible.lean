@@ -183,7 +183,7 @@ private theorem spinGroupRepresentation_apply_mk {K : Type u} [Field K]
     {V : Type v} [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
     {M : Type*} [AddCommGroup M] [Module K M]
     (F : CliffordAlgebra.even Q →ₐ[K] Module.End K M) (g : spinGroup Q) :
-    spinGroupRepresentation F g = F ⟨g, spinGroup.mem_even g.2⟩ := by
+    spinGroupRepresentation F g = F ⟨g, spinGroup.mem_even g.property⟩ := by
   rw [spinGroupRepresentation_apply]
   exact congrArg F (Subtype.ext (coe_spinGroupToEven_apply Q g))
 
@@ -200,7 +200,7 @@ private theorem range_spinGroupToEven {K : Type u} [Field K]
     {V : Type v} [AddCommGroup V] [Module K V] (Q : QuadraticForm K V) :
     Set.range ⇑(spinGroupToEven Q) =
       Set.range fun g : spinGroup Q ↦
-        (⟨g, spinGroup.mem_even g.2⟩ : CliffordAlgebra.even Q) :=
+        (⟨g, spinGroup.mem_even g.property⟩ : CliffordAlgebra.even Q) :=
   congrArg Set.range (funext fun g ↦ Subtype.ext (coe_spinGroupToEven_apply Q g))
 
 private theorem spinGroupAlgebraHom_surjective {K : Type u} [Field K]
@@ -222,7 +222,7 @@ private theorem spinGroupAlgebraHom_surjective {K : Type u} [Field K]
   rw [range_spinGroupToEven]
   apply (Submodule.span_range_subtype_eq_top_iff
     (CliffordAlgebra.even Q).toSubmodule
-      (fun g : spinGroup Q ↦ spinGroup.mem_even g.2)).2
+      (fun g : spinGroup Q ↦ spinGroup.mem_even g.property)).2
   -- Return to the ambient Clifford algebra, where `hspan` states the spanning result.
   change Submodule.span K
     (Set.range (Subtype.val : spinGroup Q → CliffordAlgebra Q)) = _
@@ -261,7 +261,7 @@ private theorem intertwines_even_of_intertwines_spinGroup {K : Type u} [Field K]
     (F : CliffordAlgebra.even Q →ₐ[K] Module.End K M)
     (G : CliffordAlgebra.even Q →ₐ[K] Module.End K N) (φ : M →ₗ[K] N)
     (hφ : ∀ (g : spinGroup Q) (m : M),
-      φ (F ⟨g, spinGroup.mem_even g.2⟩ m) = G ⟨g, spinGroup.mem_even g.2⟩ (φ m))
+      φ (F ⟨g, spinGroup.mem_even g.property⟩ m) = G ⟨g, spinGroup.mem_even g.property⟩ (φ m))
     (x : CliffordAlgebra.even Q) (m : M) : φ (F x m) = G x (φ m) := by
   obtain ⟨a, rfl⟩ := spinGroupAlgebraHom_surjective hspan x
   let φ' : (spinGroupRepresentation F).IntertwiningMap (spinGroupRepresentation G) :=

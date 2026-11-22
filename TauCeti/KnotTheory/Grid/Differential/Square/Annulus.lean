@@ -63,7 +63,7 @@ theorem unblockedRectangles_eq_empty_or_unblockedRectangles_eq_empty (x y : Grid
     G.unblockedRectangles x y = ∅ ∨ G.unblockedRectangles y x = ∅ := by
   by_cases hxy : G.unblockedRectangles x y = ∅
   · exact Or.inl hxy
-  obtain ⟨r, hr⟩ := Finset.nonempty_iff_ne_empty.mpr hxy
+  obtain ⟨r, hr⟩ := Finset.ne_empty_iff_nonempty.1 hxy
   refine Or.inr (Finset.eq_empty_iff_forall_notMem.mpr fun s hs => ?_)
   rcases r.not_disjoint_coveredSquares_or_not_disjoint_coveredSquares s G.X with hc | hc
   · exact hc (G.disjoint_XSet_of_mem_unblockedRectangles hr)

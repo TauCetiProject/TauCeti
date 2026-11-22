@@ -58,24 +58,24 @@ theorem aestronglyMeasurable_restrict_iff_comap_subtypeVal {β : Type*} [Topolog
     (hs : MeasurableSet s) {f : α → β} :
     AEStronglyMeasurable f (μ.restrict s) ↔
       AEStronglyMeasurable (fun x : s ↦ f x) (μ.comap ((↑) : s → α)) := by
-  rw [← map_comap_subtype_coe hs,
-    (MeasurableEmbedding.subtype_coe hs).aestronglyMeasurable_map_iff]
+  rw [← map_comap_subtypeVal hs,
+    (MeasurableEmbedding.subtypeVal hs).aestronglyMeasurable_map_iff]
   rfl
 
 /-- The essential supremum seminorm on `(s, μ.comap (↑))` agrees with that on `μ.restrict s`. -/
 theorem eLpNormEssSup_comp_subtypeVal {ε : Type*} [TopologicalSpace ε] [ContinuousENorm ε]
     (hs : MeasurableSet s) (f : α → ε) :
     eLpNormEssSup (fun x : s ↦ f x) (μ.comap ((↑) : s → α)) = eLpNormEssSup f (μ.restrict s) := by
-  rw [← map_comap_subtype_coe hs,
-    (MeasurableEmbedding.subtype_coe hs).eLpNormEssSup_map_measure]
+  rw [← map_comap_subtypeVal hs,
+    (MeasurableEmbedding.subtypeVal hs).eLpNormEssSup_map_measure]
   rfl
 
 /-- The `Lᵖ` seminorm on `(s, μ.comap (↑))` agrees with that on `μ.restrict s`. -/
 theorem eLpNorm_comp_subtypeVal {ε : Type*} [TopologicalSpace ε] [ContinuousENorm ε]
     (hs : MeasurableSet s) (f : α → ε) (p : ℝ≥0∞) :
     eLpNorm (fun x : s ↦ f x) p (μ.comap ((↑) : s → α)) = eLpNorm f p (μ.restrict s) := by
-  rw [← map_comap_subtype_coe hs,
-    (MeasurableEmbedding.subtype_coe hs).eLpNorm_map_measure]
+  rw [← map_comap_subtypeVal hs,
+    (MeasurableEmbedding.subtypeVal hs).eLpNorm_map_measure]
   rfl
 
 /-- Membership in `Lᵖ` on `μ.restrict s` is equivalent to membership in `Lᵖ` on
@@ -83,8 +83,8 @@ theorem eLpNorm_comp_subtypeVal {ε : Type*} [TopologicalSpace ε] [ContinuousEN
 theorem memLp_restrict_iff_comap_subtypeVal {ε : Type*} [TopologicalSpace ε] [ContinuousENorm ε]
     (hs : MeasurableSet s) {f : α → ε} :
     MemLp f p (μ.restrict s) ↔ MemLp (fun x : s ↦ f x) p (μ.comap ((↑) : s → α)) := by
-  rw [← map_comap_subtype_coe hs,
-    (MeasurableEmbedding.subtype_coe hs).memLp_map_measure_iff]
+  rw [← map_comap_subtypeVal hs,
+    (MeasurableEmbedding.subtypeVal hs).memLp_map_measure_iff]
   rfl
 
 end RestrictBridge

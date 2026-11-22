@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
+import TauCeti.Analysis.Calculus.ContDiff.ClosedInterval
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
@@ -44,11 +46,17 @@ is a primitive of `-F` plus an affine function, which is in general no better th
 * `TauCeti.PDE.exists_ae_mul_gradient_add_eq_sub_intervalIntegral`: the first integral
   `a u' + F = k - ∫_{x₀}^t f`, and its converse
   `TauCeti.PDE.setIntegral_mul_deriv_eq_sub_of_ae_add_eq_sub_intervalIntegral`.
+* `TauCeti.PDE.exists_contDiff_eq_intervalRepresentativeL_and_deriv_eq`: for a continuous
+  nonvanishing coefficient and continuous `F`, the first integral holds pointwise and `ū` is `C¹`
+  up to the boundary, with `ū' = (k - ∫_{x₀}^t f - F) / a`.
 * `TauCeti.PDE.abs_add_setIntegral_inv_mul_div_le`: for `λ ≤ a ≤ M`, the bound for the constant
   `k = (δ + ∫ a⁻¹ G) / ∫ a⁻¹` of a first integral, independent of `a` beyond `λ` and `M`.
 * `TauCeti.PDE.ae_abs_gradient_le_of_forall_integral_eq`: the explicit pointwise bound for `u'`.
 * `TauCeti.PDE.abs_intervalRepresentativeL_sub_le_of_forall_integral_eq`: the explicit bound for
   the increments of `ū`.
+* `TauCeti.PDE.abs_intervalRepresentativeL_sub_le_min_mul_div`: for equal endpoint values `g`,
+  the decay `|ū y - g| ≤ min (y - x₀) (x₁ - y) * N / λ`, where `N` bounds the oscillation of
+  `∫_{x₀}^t f + F`.
 * `TauCeti.PDE.exists_norm_intervalRepresentativeL_le_and_holderWith`: the global estimate
   `‖ū‖_∞ + [ū]_{1 - 1 / s} ≲ |ū x₀| + |ū x₁| + ‖f‖₁ + ‖F‖ₛ`, with a constant depending only on
   the interval, `λ`, `M` and `s`.
@@ -157,6 +165,58 @@ theorem setIntegral_mul_deriv_eq_sub_of_ae_add_eq_sub_intervalIntegral
     measurableSet_Ioo) (h2.integrableOn.congr_fun (fun t _ => mul_comm _ _) measurableSet_Ioo),
     hkΦ]
 
+/-- **Continuous coefficients give `C¹` solutions.** Let `a` be continuous and nonvanishing on
+`[x₀, x₁]`, let `f` be integrable on `(x₀, x₁)` and `F` continuous on `[x₀, x₁]`, and let
+`u ∈ W^{1,p}(x₀, x₁)` solve `-(a u')' = f + F'` in the sense of distributions. Then the continuous
+representative `ū` of `u` is `C¹` up to the boundary: it agrees on `[x₀, x₁]` with a `C¹` function
+`w` on `ℝ`, and for a constant `k` the first integral holds pointwise on `[x₀, x₁]`,
+`w' t = (k - ∫_{x₀}^t f - F t) / a t`. -/
+theorem exists_contDiff_eq_intervalRepresentativeL_and_deriv_eq (hx : x₀ < x₁)
+    (ha : ContinuousOn a (Icc x₀ x₁)) (ha0 : ∀ t ∈ Icc x₀ x₁, a t ≠ 0)
+    (hf : IntegrableOn f (Ioo x₀ x₁)) (hF : ContinuousOn F (Icc x₀ x₁))
+    (hu : ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+      ∫ t in Ioo x₀ x₁, a t * W1p.gradient u t * deriv φ t =
+        (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t) :
+    ∃ k : ℝ, ∃ w : ℝ → ℝ, ContDiff ℝ 1 w ∧
+      (∀ t : Icc x₀ x₁, W1p.intervalRepresentativeL hx u t = w t) ∧
+      ∀ t ∈ Icc x₀ x₁, deriv w t = (k - (∫ s in x₀..t, f s) - F t) / a t := by
+  obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn ha
+  obtain ⟨k, hk⟩ := exists_ae_mul_gradient_add_eq_sub_intervalIntegral
+    ((ha.mono Ioo_subset_Icc_self).aestronglyMeasurable measurableSet_Ioo)
+    ((ae_restrict_iff' measurableSet_Ioo).2 (Eventually.of_forall fun t ht =>
+      (Real.norm_eq_abs _).symm.trans_le (hM t (Ioo_subset_Icc_self ht))))
+    hf (hF.integrableOn_Icc.mono_set Ioo_subset_Icc_self) hu
+  -- The derivative `g = (k - ∫ f - F) / a` is continuous on `[x₀, x₁]`; extend it by projection.
+  set g : ℝ → ℝ := fun t => (k - (∫ s in x₀..t, f s) - F t) / a t
+  have hg : ContinuousOn g (Icc x₀ x₁) :=
+    ((continuousOn_const.sub
+      (TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hf
+        (left_mem_Icc.2 hx.le))).sub hF).div ha ha0
+  set ĝ : ℝ → ℝ := fun t => g (projIcc x₀ x₁ hx.le t)
+  set x₀' : Icc x₀ x₁ := ⟨x₀, left_mem_Icc.2 hx.le⟩
+  obtain ⟨hw, hdw⟩ := hg.contDiff_and_deriv_const_add_integral_comp_projIcc hx.le
+    (W1p.intervalRepresentativeL hx u x₀')
+  refine ⟨k, fun t => W1p.intervalRepresentativeL hx u x₀' + ∫ s in x₀..t, ĝ s, hw, fun t => ?_,
+    fun t ht => ?_⟩
+  · -- On `(x₀, x₁)` the weak gradient is `g` almost everywhere, by the first integral.
+    have hgrad : ∀ᵐ s ∂volume.restrict (Ioo x₀ t), W1p.gradient u s = ĝ s := by
+      have hk' := (ae_restrict_iff' measurableSet_Ioo).1 hk
+      rw [ae_restrict_iff' measurableSet_Ioo]
+      filter_upwards [hk'] with s hs hst
+      have hs' : s ∈ Ioo x₀ x₁ := ⟨hst.1, hst.2.trans_le t.property.2⟩
+      have has := ha0 s (Ioo_subset_Icc_self hs')
+      simp only [ĝ, g, projIcc_of_mem hx.le (Ioo_subset_Icc_self hs')]
+      rw [eq_div_iff has, ← hs hs']
+      ring
+    have hĝint : ∫ s in x₀..t, W1p.gradient u s = ∫ s in x₀..t, ĝ s := by
+      simp only [intervalIntegral.integral_of_le t.property.1, integral_Ioc_eq_integral_Ioo]
+      exact integral_congr_ae hgrad
+    have hint := W1p.integral_gradient_eq_intervalRepresentativeL_sub hx u x₀' t
+    rw [hĝint] at hint
+    simp only [hint, add_sub_cancel]
+  · rw [hdw]
+    simp only [g, projIcc_of_mem hx.le ht]
+
 /-- **The constant of a first integral is bounded independently of the coefficient.** If
 `λ ≤ a ≤ M` almost everywhere on `(x₀, x₁)`, with `λ > 0`, and `G` is integrable there, then
 `|(δ + ∫ a⁻¹ G) / ∫ a⁻¹| ≤ M / (x₁ - x₀) * (|δ| + λ⁻¹ ∫ |G|)` for every `δ`, all integrals being
@@ -208,9 +268,9 @@ theorem mul_setIntegral_inv_eq (hx : x₀ < x₁) {lam : ℝ} (hlam : 0 < lam)
     (Integrable.of_bound ha.aemeasurable.inv.aestronglyMeasurable _ hinv).const_mul k
   have h2 : Integrable (fun t => (a t)⁻¹ * (Φ t + F t)) (volume.restrict (Ioo x₀ x₁)) :=
     (hΦ.add hF).bdd_mul ha.aemeasurable.inv.aestronglyMeasurable hinv
-  rw [W1p.intervalTraceL_apply, ← W1p.integral_gradient_eq_intervalRepresentativeL_sub,
-    intervalIntegral.integral_of_le hx.le, integral_Ioc_eq_integral_Ioo, integral_congr_ae hgrad,
-    integral_sub h1 h2, integral_const_mul]
+  rw [W1p.intervalTraceL_apply,
+    ← W1p.setIntegral_Ioo_gradient_eq_intervalRepresentativeL_sub hx u (s := ⟨x₀, _⟩) (t := ⟨x₁, _⟩)
+      hx.le, integral_congr_ae hgrad, integral_sub h1 h2, integral_const_mul]
   ring
 
 /-- The constant `k` of the first integral `a u' + F = k - Φ`, where `|Φ| ≤ N` on `(x₀, x₁)`, is
@@ -327,7 +387,7 @@ theorem abs_intervalRepresentativeL_sub_le_of_forall_integral_eq (hx : x₀ < x�
     Real.isFiniteMeasure_restrict_Ioo x₀ x₁
   have : IsFiniteMeasure (volume.restrict (Ioo (y : ℝ) z)) := Real.isFiniteMeasure_restrict_Ioo _ _
   have : Fact (1 ≤ s) := ⟨hs⟩
-  have hsub : Ioo (y : ℝ) z ⊆ Ioo x₀ x₁ := Ioo_subset_Ioo y.2.1 z.2.2
+  have hsub : Ioo (y : ℝ) z ⊆ Ioo x₀ x₁ := Ioo_subset_Ioo y.property.1 z.property.2
   have hFi : IntegrableOn F (Ioo x₀ x₁) := hF.integrable hs
   set K := (M / (x₁ - x₀) * (|(W1p.intervalTraceL hx u).2 - (W1p.intervalTraceL hx u).1| +
       ((x₁ - x₀) * (∫ t in Ioo x₀ x₁, |f t|) + ∫ t in Ioo x₀ x₁, |F t|) / lam) +
@@ -348,8 +408,8 @@ theorem abs_intervalRepresentativeL_sub_le_of_forall_integral_eq (hx : x₀ < x�
     refine h.trans (mul_le_mul_of_nonneg_left (ENNReal.toReal_mono hF.eLpNorm_ne_top
       (eLpNorm_mono_measure _ (Measure.restrict_mono hsub le_rfl)))
       (Real.rpow_nonneg (sub_nonneg.2 hyz) _))
-  rw [← W1p.integral_gradient_eq_intervalRepresentativeL_sub, intervalIntegral.integral_of_le hyz,
-    integral_Ioc_eq_integral_Ioo, abs_of_nonneg (sub_nonneg.2 hyz)]
+  rw [← W1p.setIntegral_Ioo_gradient_eq_intervalRepresentativeL_sub hx u hyz,
+    abs_of_nonneg (sub_nonneg.2 hyz)]
   calc |∫ t in Ioo (y : ℝ) z, W1p.gradient u t|
       ≤ ∫ t in Ioo (y : ℝ) z, |W1p.gradient u t| := abs_integral_le_integral_abs
     _ ≤ ∫ t in Ioo (y : ℝ) z, (K + |F t| / lam) :=
@@ -422,7 +482,8 @@ private theorem abs_intervalRepresentativeL_sub_le_mul_rpow (hx : x₀ < x₁) {
       |(z : ℝ) - y| ≤ (x₁ - x₀) ^ (1 / s.toReal) * |(z : ℝ) - y| ^ (1 - 1 / s.toReal) := by
     calc |(z : ℝ) - y| = |(z : ℝ) - y| ^ (1 / s.toReal) * |(z : ℝ) - y| ^ (1 - 1 / s.toReal) := by
           rw [← Real.rpow_add' (abs_nonneg _) (by norm_num), add_sub_cancel, Real.rpow_one]
-      _ ≤ _ := by gcongr; exact abs_sub_le_of_le_of_le z.2.1 z.2.2 y.2.1 y.2.2
+      _ ≤ _ := by
+          gcongr; exact abs_sub_le_of_le_of_le z.property.1 z.property.2 y.property.1 y.property.2
   refine (abs_intervalRepresentativeL_sub_le_of_forall_integral_eq hx hlam ha haM hf hs hF hu
     y z).trans ?_
   have hFB : (eLpNorm F s (volume.restrict (Ioo x₀ x₁))).toReal ≤
@@ -437,6 +498,107 @@ private theorem abs_intervalRepresentativeL_sub_le_mul_rpow (hx : x₀ < x₁) {
   calc _ ≤ c * B * ((x₁ - x₀) ^ (1 / s.toReal) * |(z : ℝ) - y| ^ (1 - 1 / s.toReal)) +
         B / lam * |(z : ℝ) - y| ^ (1 - 1 / s.toReal) := by gcongr
     _ = _ := by ring
+
+/-- Let `v a = k - G` almost everywhere on `(x₀, x₁)`, with `λ ≤ a ≤ M` and `G` in `[m, m + N]`,
+and let `v` have integral zero over `(x₀, x₁)`, as the derivative `v = u'` of a solution with equal
+endpoint values does. Then `|v| ≤ N / λ`: the flux constant `k` lies in `[m, m + N]`, since
+otherwise `v` would have a fixed sign and a nonzero integral. -/
+private theorem ae_abs_le_div_of_integral_eq_zero (hx : x₀ < x₁) {lam M : ℝ} (hlam : 0 < lam)
+    (haM : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t ∧ a t ≤ M) {v G : ℝ → ℝ} {k m N : ℝ}
+    (hv : IntegrableOn v (Ioo x₀ x₁)) (hint : ∫ t in Ioo x₀ x₁, v t = 0)
+    (hva : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), v t * a t = k - G t)
+    (hG : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), m ≤ G t ∧ G t ≤ m + N) :
+    ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), |v t| ≤ N / lam := by
+  have : IsFiniteMeasure (volume.restrict (Ioo x₀ x₁)) := Real.isFiniteMeasure_restrict_Ioo x₀ x₁
+  have : (ae (volume.restrict (Ioo x₀ x₁))).NeBot := ae_restrict_neBot.2 (by simp [hx])
+  have hM : 0 < M := hlam.trans_le (le_of_eventually_le_and_le haM)
+  -- A function bounded away from zero with a fixed sign has nonzero integral over `(x₀, x₁)`.
+  have hvol : (volume.restrict (Ioo x₀ x₁)).real univ = x₁ - x₀ := by
+    rw [measureReal_restrict_apply_univ, Real.volume_real_Ioo_of_le hx.le]
+  have hpos : ∀ c, 0 < c → ¬∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), c ≤ v t := fun c hc h => by
+    have hle := integral_mono_ae (integrable_const c) hv h
+    rw [hint, integral_const, smul_eq_mul, hvol] at hle
+    nlinarith [sub_pos.2 hx]
+  have hneg : ∀ c, 0 < c → ¬∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), v t ≤ -c := fun c hc h => by
+    have hle := integral_mono_ae hv (integrable_const (-c)) h
+    rw [hint, integral_const, smul_eq_mul, hvol] at hle
+    nlinarith [sub_pos.2 hx]
+  -- The flux constant lies in `[m, m + N]`.
+  have hk₁ : k ≤ m + N := by
+    by_contra! hlt
+    refine hpos ((k - (m + N)) / M) (div_pos (sub_pos.2 hlt) hM) ?_
+    filter_upwards [hva, hG, haM] with t ht htG hat
+    have hv0 : 0 < v t := by nlinarith [hlam.trans_le hat.1]
+    rw [div_le_iff₀ hM]
+    nlinarith [mul_le_mul_of_nonneg_left hat.2 hv0.le]
+  have hk₀ : m ≤ k := by
+    by_contra! hlt
+    refine hneg ((m - k) / M) (div_pos (sub_pos.2 hlt) hM) ?_
+    filter_upwards [hva, hG, haM] with t ht htG hat
+    have hv0 : v t < 0 := by nlinarith [hlam.trans_le hat.1]
+    rw [← neg_div, le_div_iff₀ hM]
+    nlinarith [mul_le_mul_of_nonpos_left hat.2 hv0.le]
+  filter_upwards [hva, hG, haM] with t ht htG hat
+  have hat0 : 0 < a t := hlam.trans_le hat.1
+  have h1 : |v t| * a t ≤ N := by
+    rw [← abs_of_pos hat0, ← abs_mul, ht, abs_le]
+    constructor <;> linarith
+  rw [le_div_iff₀ hlam]
+  exact (mul_le_mul_of_nonneg_left hat.1 (abs_nonneg _)).trans h1
+
+/-- **Decay towards equal boundary values.** Let `λ ≤ a ≤ M` almost everywhere on `(x₀, x₁)`, with
+`λ > 0`, let `f` and `F` be integrable there, and let `u ∈ W^{1,p}(x₀, x₁)` solve
+`-(a u')' = f + F'` in the sense of distributions, with the same value `g` at both endpoints. If
+`G t = ∫_{x₀}^t f + F t` lies in an interval `[m, m + N]` for almost every `t ∈ (x₀, x₁)`, then
+the continuous representative `ū` satisfies
+
+`|ū y - g| ≤ min (y - x₀) (x₁ - y) * N / λ` for every `y ∈ [x₀, x₁]`,
+
+so `|ū - g| ≤ (x₁ - x₀) N / (2 λ)`. For instance, for `f ≥ 0` and `F = 0` one may take `m = 0`
+and `N = ‖f‖₁`. The upper bound `M` on `a` does not enter the estimate. -/
+theorem abs_intervalRepresentativeL_sub_le_min_mul_div (hx : x₀ < x₁) {lam M : ℝ}
+    (hlam : 0 < lam) (ha : AEStronglyMeasurable a (volume.restrict (Ioo x₀ x₁)))
+    (haM : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t ∧ a t ≤ M)
+    (hf : IntegrableOn f (Ioo x₀ x₁)) (hF : IntegrableOn F (Ioo x₀ x₁))
+    (hu : ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+      ∫ t in Ioo x₀ x₁, a t * W1p.gradient u t * deriv φ t =
+        (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t)
+    {g : ℝ} (htr : W1p.intervalTraceL hx u = (g, g)) {m N : ℝ}
+    (hG : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
+      m ≤ (∫ s in x₀..t, f s) + F t ∧ (∫ s in x₀..t, f s) + F t ≤ m + N)
+    (y : Icc x₀ x₁) :
+    |W1p.intervalRepresentativeL hx u y - g| ≤ min ((y : ℝ) - x₀) (x₁ - y) * N / lam := by
+  have : IsFiniteMeasure (volume.restrict ((⟨Ioo x₀ x₁, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) :=
+    Real.isFiniteMeasure_restrict_Ioo x₀ x₁
+  have : (ae (volume.restrict (Ioo x₀ x₁))).NeBot := ae_restrict_neBot.2 (by simp [hx])
+  obtain ⟨k, hk⟩ := exists_ae_mul_gradient_add_eq_sub_intervalIntegral ha
+    (haM.mono fun t ht => abs_le.2 ⟨by linarith [ht.1], ht.2⟩) hf hF hu
+  rw [W1p.intervalTraceL_apply, Prod.mk.injEq] at htr
+  have hgi : IntegrableOn (W1p.gradient u) (Ioo x₀ x₁) :=
+    (Lp.memLp (W1p.gradient u)).integrable Fact.out
+  have hint : ∫ t in Ioo x₀ x₁, W1p.gradient u t = 0 := by
+    rw [W1p.setIntegral_Ioo_gradient_eq_intervalRepresentativeL_sub hx u
+      (s := ⟨x₀, left_mem_Icc.2 hx.le⟩) (t := ⟨x₁, right_mem_Icc.2 hx.le⟩) hx.le, htr.1, htr.2,
+      sub_self]
+  have hbound := ae_abs_le_div_of_integral_eq_zero hx hlam haM hgi hint
+    (hk.mono fun t ht => by linarith) hG
+  have hN : 0 ≤ N / lam := by
+    obtain ⟨t, ht⟩ := hbound.exists
+    exact (abs_nonneg _).trans ht
+  -- Integrating `|u'| ≤ N / λ` from either endpoint.
+  have hI : ∀ c d : Icc x₀ x₁, (c : ℝ) ≤ d → |W1p.intervalRepresentativeL hx u d -
+      W1p.intervalRepresentativeL hx u c| ≤ ((d : ℝ) - c) * (N / lam) := fun c d hcd => by
+    rw [← W1p.setIntegral_Ioo_gradient_eq_intervalRepresentativeL_sub hx u hcd, ← Real.norm_eq_abs]
+    refine (norm_setIntegral_le_of_norm_le_const_ae measure_Ioo_lt_top
+      (ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo c.property.1 d.property.2)
+        (hbound.mono fun t ht => (Real.norm_eq_abs _).trans_le ht))).trans_eq ?_
+    rw [Real.volume_real_Ioo_of_le hcd, mul_comm]
+  have hl := hI ⟨x₀, left_mem_Icc.2 hx.le⟩ y y.property.1
+  have hr := hI y ⟨x₁, right_mem_Icc.2 hx.le⟩ y.property.2
+  rw [htr.1] at hl
+  rw [htr.2, abs_sub_comm] at hr
+  rw [mul_div_assoc, min_mul_of_nonneg _ _ hN]
+  exact le_min hl hr
 
 /-- **Global Hölder estimate on an interval.** Let `x₀ < x₁`, `0 < λ` and `1 ≤ s ≤ ∞`. There is a
 constant `C > 0`, depending only on `x₀`, `x₁`, `λ`, `M` and `s`, with the following property. Let
@@ -489,7 +651,8 @@ theorem exists_norm_intervalRepresentativeL_le_and_holderWith (hx : x₀ < x₁)
   · -- The supremum bound, from the value at `x₀` and the Hölder bound.
     have h0 := hinc ⟨x₀, left_mem_Icc.2 hx.le⟩ t
     have hpow : |(t : ℝ) - x₀| ^ (1 - 1 / s.toReal) ≤ (x₁ - x₀) ^ (1 - 1 / s.toReal) :=
-      Real.rpow_le_rpow (abs_nonneg _) (abs_sub_le_of_le_of_le t.2.1 t.2.2 le_rfl hx.le) hβ0
+      Real.rpow_le_rpow (abs_nonneg _) (abs_sub_le_of_le_of_le t.property.1 t.property.2 le_rfl
+          hx.le) hβ0
     have h1 : |ū ⟨x₀, left_mem_Icc.2 hx.le⟩| ≤ B := by
       simp only [hB, W1p.intervalTraceL_apply]
       have : 0 ≤ ∫ t in Ioo x₀ x₁, |f t| := integral_nonneg fun t => abs_nonneg (f t)
