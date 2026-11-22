@@ -10,6 +10,7 @@ public import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import TauCeti.NumberTheory.ArithmeticFunction.Zeta
 public import Mathlib.NumberTheory.Harmonic.Bounds
+import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
 
 /-!
 # Bounds for divisor sums
@@ -36,7 +37,10 @@ gives the same subpolynomial bound for every fixed order, including order zero.
 The ordered divisor functions also satisfy coefficient-one harmonic and summatory mean
 bounds, with natural cutoffs including zero and real cutoffs at least one. The pointwise
 coefficient comparisons give explicit mean bounds for three to the number of distinct prime
-factors and for the squared ordinary divisor count.
+factors and for the squared ordinary divisor count. The ordinary divisor count itself satisfies
+`∑_{n ≤ Z} σ₀(n) ≤ Z (1 + log Z)`. Over the integers, the pairs `(c, d)` with `d ∣ c` and
+`0 < |c| < Y` therefore number at most `4 Y (1 + log Y)`, where a pointwise bound for each
+`σ₀(|c|)` would lose a power of `Y`.
 
 These mean bounds extend Arend Mellendijk's 2023 formalization of the squarefree divisor
 majorants in [Prime Number Theorem and More][PNT-Aux]. Heath-Brown's Lemma 3.1, in notes by
@@ -327,4 +331,72 @@ theorem sum_Ioc_sigma_zero_sq_le_mul_one_add_log_cube {Z : ℝ} (hZ : 1 ≤ Z) :
   refine le_trans (sum_le_sum fun n _ ↦ ?_) (sum_Ioc_zeta_pow_le_mul_one_add_log_pow 4 hZ)
   exact_mod_cast sigma_zero_sq_le_zeta_pow_four n
 
+/-- The summatory divisor function satisfies `∑_{n ≤ Z} σ₀(n) ≤ Z (1 + log Z)` for `Z ≥ 1`. -/
+theorem sum_Ioc_sigma_zero_le_mul_one_add_log {Z : ℝ} (hZ : 1 ≤ Z) :
+    (∑ n ∈ Ioc 0 ⌊Z⌋₊, (sigma 0 n : ℝ)) ≤ Z * (1 + Real.log Z) := by
+  simpa only [sq, zeta_mul_zeta, Nat.add_one_sub_one, pow_one] using
+    sum_Ioc_zeta_pow_le_mul_one_add_log_pow 2 hZ
+
 end ArithmeticFunction
+
+namespace TauCeti
+
+open Finset
+
+/-- Sending `(c, d)` to `((|c|, |d|), (sign c, sign d))` embeds the integer pairs with `d ∣ c` and
+`0 < |c| < Y` into the natural divisor pairs below `Y`, times a choice of two signs. -/
+private theorem mapsTo_injOn_setOf_dvd_of_abs_lt (Y : ℝ) :
+    Set.MapsTo (fun p : ℤ × ℤ ↦ ((p.1.natAbs, p.2.natAbs), (p.1.sign, p.2.sign)))
+        {p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1}
+        ↑(((Ioc 0 ⌊Y⌋₊).biUnion fun a ↦ a.divisors.image fun d ↦ (a, d)) ×ˢ
+          (({1, -1} : Finset ℤ) ×ˢ ({1, -1} : Finset ℤ))) ∧
+      Set.InjOn (fun p : ℤ × ℤ ↦ ((p.1.natAbs, p.2.natAbs), (p.1.sign, p.2.sign)))
+        {p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1} := by
+  have hsign {c : ℤ} (hc : c ≠ 0) : c.sign ∈ ({1, -1} : Finset ℤ) := by
+    rcases lt_or_gt_of_ne hc with h | h
+    · simp [Int.sign_eq_neg_one_of_neg h]
+    · simp [Int.sign_eq_one_of_pos h]
+  refine ⟨?_, ?_⟩
+  · rintro ⟨c, d⟩ ⟨hc, hcY, hd⟩
+    have hd0 : d ≠ 0 := by rintro rfl; exact hc (zero_dvd_iff.mp hd)
+    have hcN : c.natAbs ≤ ⌊Y⌋₊ := Nat.le_floor (by rw [Nat.cast_natAbs, Int.cast_abs]; exact hcY.le)
+    simp only [coe_product, Set.mem_prod, mem_coe, mem_biUnion, mem_Ioc, mem_image,
+      Nat.mem_divisors, Prod.mk.injEq]
+    exact ⟨⟨c.natAbs, ⟨Int.natAbs_pos.mpr hc, hcN⟩, d.natAbs,
+      ⟨Int.natAbs_dvd_natAbs.mpr hd, Int.natAbs_ne_zero.mpr hc⟩, rfl, rfl⟩, hsign hc, hsign hd0⟩
+  · rintro ⟨c, d⟩ - ⟨c', d'⟩ - h
+    simp only [Prod.mk.injEq] at h
+    obtain ⟨⟨h1, h2⟩, h3, h4⟩ := h
+    rw [Prod.mk.injEq, ← Int.sign_mul_natAbs c, ← Int.sign_mul_natAbs c',
+      ← Int.sign_mul_natAbs d, ← Int.sign_mul_natAbs d', h1, h2, h3, h4]
+    exact ⟨rfl, rfl⟩
+
+/-- There are finitely many integer pairs `(c, d)` with `d ∣ c` and `0 < |c| < Y`. -/
+theorem finite_setOf_dvd_of_abs_lt (Y : ℝ) :
+    {p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1}.Finite :=
+  Set.Finite.of_injOn (mapsTo_injOn_setOf_dvd_of_abs_lt Y).1
+    (mapsTo_injOn_setOf_dvd_of_abs_lt Y).2 (finite_toSet _)
+
+/-- The integer pairs `(c, d)` with `d ∣ c` and `0 < |c| < Y` number at most `4 Y (1 + log Y)`
+for `Y ≥ 1`. This is the summatory divisor bound over the integers, both signs of `c` and of
+`d` being counted. -/
+theorem ncard_setOf_dvd_of_abs_lt_le {Y : ℝ} (hY : 1 ≤ Y) :
+    ({p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1}.ncard : ℝ) ≤
+      4 * (Y * (1 + Real.log Y)) := by
+  classical
+  have hle := Set.ncard_le_ncard_of_injOn _ (mapsTo_injOn_setOf_dvd_of_abs_lt Y).1
+    (mapsTo_injOn_setOf_dvd_of_abs_lt Y).2 (finite_toSet _)
+  rw [Set.ncard_coe_finset, card_product, card_product] at hle
+  have hS : ({1, -1} : Finset ℤ).card = 2 := by decide
+  have hR : (((Ioc 0 ⌊Y⌋₊).biUnion fun a ↦ a.divisors.image fun d ↦ (a, d)).card : ℝ) ≤
+      ∑ a ∈ Ioc 0 ⌊Y⌋₊, (ArithmeticFunction.sigma 0 a : ℝ) := by
+    simp only [ArithmeticFunction.sigma_zero_apply]
+    exact_mod_cast card_biUnion_le.trans (sum_le_sum fun a _ ↦ card_image_le)
+  rw [hS] at hle
+  have := ArithmeticFunction.sum_Ioc_sigma_zero_le_mul_one_add_log hY
+  calc ({p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1}.ncard : ℝ)
+      ≤ (((Ioc 0 ⌊Y⌋₊).biUnion fun a ↦ a.divisors.image fun d ↦ (a, d)).card * (2 * 2) : ℕ) := by
+        exact_mod_cast hle
+    _ ≤ 4 * (Y * (1 + Real.log Y)) := by push_cast; linarith
+
+end TauCeti
