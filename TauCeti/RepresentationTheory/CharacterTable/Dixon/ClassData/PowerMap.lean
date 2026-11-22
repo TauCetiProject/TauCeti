@@ -30,7 +30,8 @@ across `TauCeti.ClassData.map`.
 
 ## Main definitions
 
-* `TauCeti.ClassData.invIndex`: the numbered inverse-class map on `Fin d.numClasses`.
+* `TauCeti.ClassData.invIndex`, `TauCeti.ClassData.invEquiv`: the numbered inverse-class map
+  and permutation on `Fin d.numClasses`.
 * `TauCeti.ClassData.powIndex`, `TauCeti.ClassData.zpowIndex`: the numbered `ℕ`-power and
   `ℤ`-power maps on `Fin d.numClasses`.
 
@@ -115,6 +116,22 @@ theorem invIndex_invIndex (i : Fin d.numClasses) : d.invIndex (d.invIndex i) = i
 /-- `TauCeti.ClassData.invIndex` is involutive. -/
 theorem invIndex_involutive : Function.Involutive d.invIndex :=
   d.invIndex_invIndex
+
+/-- **The numbered inverse-class permutation**: bundles `TauCeti.ClassData.invIndex` as a
+permutation of `Fin d.numClasses`. -/
+@[expose] def invEquiv : Equiv.Perm (Fin d.numClasses) where
+  toFun := d.invIndex
+  invFun := d.invIndex
+  left_inv := d.invIndex_invIndex
+  right_inv := d.invIndex_invIndex
+
+/-- Applying `TauCeti.ClassData.invEquiv` reduces to `TauCeti.ClassData.invIndex`. -/
+@[simp]
+theorem invEquiv_apply (i : Fin d.numClasses) : d.invEquiv i = d.invIndex i := (rfl)
+
+/-- Applying the inverse of `TauCeti.ClassData.invEquiv` reduces to `TauCeti.ClassData.invIndex`. -/
+@[simp]
+theorem invEquiv_symm_apply (i : Fin d.numClasses) : d.invEquiv.symm i = d.invIndex i := (rfl)
 
 /-- **A class index is fixed by `d.invIndex` if and only if the class it names is real.** -/
 theorem invIndex_eq_self_iff {i : Fin d.numClasses} :
@@ -342,6 +359,26 @@ theorem zpowIndex_neg_one (i : Fin d.numClasses) : d.zpowIndex (-1) i = d.invInd
 theorem zpowIndex_zpowIndex (z w : ℤ) (i : Fin d.numClasses) :
     d.zpowIndex w (d.zpowIndex z i) = d.zpowIndex (z * w) i := by
   rw [← d.index_rep i, zpowIndex_index, zpowIndex_index, zpowIndex_index, ← zpow_mul]
+
+/-- Signed power maps commute with the inverse-class map. -/
+@[simp]
+theorem zpowIndex_invIndex (z : ℤ) (i : Fin d.numClasses) :
+    d.zpowIndex z (d.invIndex i) = d.invIndex (d.zpowIndex z i) := by
+  rw [invIndex, zpowIndex_index, inv_zpow, ← invIndex_index, ← zpowIndex]
+
+-- Lower priority than `zpowIndex_natCast` so `d.zpowIndex (m : ℤ) (d.powIndex n i)` reduces to
+-- `d.powIndex (n * m) i` rather than `d.zpowIndex ((n : ℤ) * (m : ℤ)) i`.
+/-- Composing a `ℕ`-power map with a `ℤ`-power map yields a `ℤ`-power map. -/
+@[simp low]
+theorem zpowIndex_powIndex (z : ℤ) (n : ℕ) (i : Fin d.numClasses) :
+    d.zpowIndex z (d.powIndex n i) = d.zpowIndex ((n : ℤ) * z) i := by
+  rw [← zpowIndex_natCast, zpowIndex_zpowIndex]
+
+/-- Composing a `ℤ`-power map with a `ℕ`-power map yields a `ℤ`-power map. -/
+@[simp]
+theorem powIndex_zpowIndex (n : ℕ) (z : ℤ) (i : Fin d.numClasses) :
+    d.powIndex n (d.zpowIndex z i) = d.zpowIndex (z * n) i := by
+  rw [← zpowIndex_natCast, zpowIndex_zpowIndex]
 
 /-- The `z`-th integer power of class `i` depends only on `z` modulo `orderOf (d.rep i)`. -/
 theorem zpowIndex_eq_of_modEq {z w : ℤ} {i : Fin d.numClasses}
