@@ -48,6 +48,8 @@ form
   structures exist in even dimension.
 * `TauCeti.AlmostComplexStructure.toBasis_orientation_eq_symplecticForm_orientation`: every adapted
   orthonormal basis in dimension `2 * n` induces the symplectic orientation of `ω(v, w) = ⟪J v, w⟫`.
+* `TauCeti.AlmostComplexStructure.orthonormal_unitaryFour`: unit vectors `ξ`, `η` with `η`
+  orthogonal to `ξ` and `J ξ` give the orthonormal family `(ξ, J ξ, η, J η)`.
 * `TauCeti.AlmostComplexStructure.exists_unitary_orthonormalBasis_of_norm_eq_one`,
   `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation_of_norm_eq_one`, and
   `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation`:
@@ -176,6 +178,30 @@ theorem toBasis_orientation_eq_symplecticForm_orientation {n : ℕ} {ω : Symple
 
 end EvenDimension
 
+section UnitaryFour
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- For an orthogonal almost complex structure `J`, unit vectors `ξ` and `η` with `η` orthogonal
+to `ξ` and to `J ξ` give the orthonormal family `(ξ, J ξ, η, J η)`. -/
+theorem orthonormal_unitaryFour {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
+    {ξ η : V} (hξ : ‖ξ‖ = 1) (hη : ‖η‖ = 1) (hξη : ⟪ξ, η⟫ = 0) (hJξη : ⟪J ξ, η⟫ = 0) :
+    Orthonormal ℝ ![ξ, J ξ, η, J η] := by
+  have hskew (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ :=
+    J.bilinForm_apply_left_eq_neg_apply_right (g := innerₗ V) hJ v w
+  have hξJη : ⟪ξ, J η⟫ = 0 := by rw [← neg_eq_zero, ← hskew, hJξη]
+  have hJξJη : ⟪J ξ, J η⟫ = 0 := by rw [hJ, hξη]
+  refine ⟨fun i ↦ by fin_cases i <;> simp [hξ, hη, J.norm_apply hJ], fun {i j} hij ↦ ?_⟩
+  have hξJ := J.inner_self_apply hJ ξ
+  have hηJη := J.inner_self_apply hJ η
+  fin_cases i <;> fin_cases j <;> dsimp only <;> first
+    | exact absurd rfl hij
+    | exact hξJ | exact hξη | exact hξJη | exact hJξη | exact hJξJη | exact hηJη
+    | (rw [real_inner_comm]; first
+        | exact hξJ | exact hξη | exact hξJη | exact hJξη | exact hJξJη | exact hηJη)
+
+end UnitaryFour
+
 section DimensionFour
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
@@ -202,25 +228,12 @@ theorem exists_unitary_orthonormalBasis_of_norm_eq_one {J : AlmostComplexStructu
     (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {ξ : V} (hξ : ‖ξ‖ = 1) :
     ∃ e : OrthonormalBasis (Fin 4) ℝ V, e 0 = ξ ∧ J (e 0) = e 1 ∧ J (e 2) = e 3 := by
   classical
-  have hskew (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ :=
-    J.bilinForm_apply_left_eq_neg_apply_right (g := innerₗ V) hJ v w
   obtain ⟨η, hη_norm, hηK⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (𝕜 := ℝ)
     ({ξ, J ξ} : Finset V) (by
       rw [Fact.out (p := finrank ℝ V = 4)]
       exact Finset.card_le_two.trans_lt (by norm_num))
-  have hξη : ⟪ξ, η⟫ = 0 := hηK ξ (by simp)
-  have hJξη : ⟪J ξ, η⟫ = 0 := hηK (J ξ) (by simp)
-  have hξJη : ⟪ξ, J η⟫ = 0 := by rw [← neg_eq_zero, ← hskew, hJξη]
-  have hJξJη : ⟪J ξ, J η⟫ = 0 := by rw [hJ, hξη]
-  have hon₄ : Orthonormal ℝ ![ξ, J ξ, η, J η] := by
-    refine ⟨fun i ↦ by fin_cases i <;> simp [hξ, hη_norm, J.norm_apply hJ], fun {i j} hij ↦ ?_⟩
-    have hξJ := J.inner_self_apply hJ ξ
-    have hηJη := J.inner_self_apply hJ η
-    fin_cases i <;> fin_cases j <;> dsimp only <;> first
-      | exact absurd rfl hij
-      | exact hξJ | exact hξη | exact hξJη | exact hJξη | exact hJξJη | exact hηJη
-      | (rw [real_inner_comm]; first
-          | exact hξJ | exact hξη | exact hξJη | exact hJξη | exact hJξJη | exact hηJη)
+  have hon₄ : Orthonormal ℝ ![ξ, J ξ, η, J η] :=
+    orthonormal_unitaryFour hJ hξ hη_norm (hηK ξ (by simp)) (hηK (J ξ) (by simp))
   have hcard : Fintype.card (Fin 4) = finrank ℝ V :=
     (Fintype.card_fin 4).trans (Fact.out : finrank ℝ V = 4).symm
   let e : OrthonormalBasis (Fin 4) ℝ V :=
