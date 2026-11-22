@@ -80,6 +80,23 @@ theorem prodMap {E F E' F' : Type*} [Zero E] [TopologicalSpace E] [TopologicalSp
   obtain ⟨L, hL, hBL⟩ := hB
   exact ⟨K ×ˢ L, hK.prod hL, prod_mem_nhds hAK hBL⟩
 
+/-- A product map is compact exactly when both factors are compact. -/
+@[simp]
+theorem _root_.isCompactOperator_prodMap_iff {E F E' F' : Type*} [Zero E] [TopologicalSpace E]
+    [TopologicalSpace F] [Zero E'] [TopologicalSpace E'] [TopologicalSpace F']
+    {A : E → F} {B : E' → F'} :
+    IsCompactOperator (Prod.map A B) ↔ IsCompactOperator A ∧ IsCompactOperator B := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.1.prodMap h.2⟩
+  obtain ⟨K, hK, h⟩ := h
+  have hl : Tendsto (fun x : E ↦ (x, (0 : E'))) (𝓝 0) (𝓝 (0 : E × E')) :=
+    (continuous_id.prodMk continuous_const).tendsto 0
+  have hr : Tendsto (fun y : E' ↦ ((0 : E), y)) (𝓝 0) (𝓝 (0 : E × E')) :=
+    (continuous_const.prodMk continuous_id).tendsto 0
+  exact ⟨⟨Prod.fst '' K, hK.image continuous_fst,
+      mem_of_superset (hl h) fun x hx ↦ ⟨(A x, B 0), hx, rfl⟩⟩,
+    ⟨Prod.snd '' K, hK.image continuous_snd,
+      mem_of_superset (hr h) fun y hy ↦ ⟨(A 0, B y), hy, rfl⟩⟩⟩
+
 variable {𝕜₁ 𝕜₂ X Y : Type*} [NontriviallyNormedField 𝕜₁] [SeminormedRing 𝕜₂]
   {σ₁₂ : 𝕜₁ →+* 𝕜₂} [SeminormedAddCommGroup X] [NormedSpace 𝕜₁ X] [AddCommMonoid Y]
   [Module 𝕜₂ Y] {K : X →ₛₗ[σ₁₂] Y}
