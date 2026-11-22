@@ -52,8 +52,9 @@ Everything is stated on `𝔤*`, for an arbitrary Lie group, with no invariant i
 compact group with an `Ad`-invariant inner product `B` and `μ x = B(p, ·)`, invariance of `B`
 turns `⁅X, μ x⁆ = 0` into `⁅X, p⁆ = 0` and the quadratic form above into
 `ξ ↦ -B(⁅ξ, p⁆, ⁅ξ, X⁆)`, the second derivative of `t ↦ B(Ad_(exp (t ξ)) p, X)` at `t = 0`. That
-translation, and the evaluation of the Morse index at torus points in a root-plane decomposition,
-are in `TauCeti.Geometry.Symplectic.Coadjoint.Height.RootPlane`.
+translation is in `TauCeti.Geometry.Symplectic.Coadjoint.Height.InvariantForm`, and the evaluation
+of the Morse index at torus points in a root-plane decomposition is in
+`TauCeti.Geometry.Symplectic.Coadjoint.Height.RootPlane`.
 
 ## Main results
 
