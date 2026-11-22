@@ -290,7 +290,7 @@ is at most `A` at every point `(s, t)` with `s ∈ [a + 1, b - 1]`. -/
 theorem IsNondegenerate.exists_pos_forall_floerEnergyDensity_le_of_setLIntegral_le
     [CompactSpace M] [I.Boundaryless] (hω : ω.IsNondegenerate) (hHper : Periodic H 1)
     {J : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
-    (hJ : ∀ α, ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I α fun z ↦ J z.2)
+    (hJ : ∀ α, ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I α fun z : ℝ × ℝ ↦ J z.2)
       (univ ×ˢ (extChartAt I α).target))
     (hX : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α fun z ↦ H z.2)
       (univ ×ˢ (extChartAt I α).target))
@@ -370,7 +370,7 @@ theorem IsNondegenerate.exists_pos_forall_exists_mem_periodicSolutions_forall_di
     [CompactSpace M] [T2Space M] [I.Boundaryless] (hω : ω.IsNondegenerate)
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 2 (uncurry H)) (hHper : Periodic H 1)
     {J : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
-    (hJ : ∀ α, ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I α fun z ↦ J z.2)
+    (hJ : ∀ α, ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I α fun z : ℝ × ℝ ↦ J z.2)
       (univ ×ˢ (extChartAt I α).target))
     (hX : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α fun z ↦ H z.2)
       (univ ×ˢ (extChartAt I α).target))
