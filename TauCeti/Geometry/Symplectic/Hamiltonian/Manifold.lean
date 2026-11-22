@@ -154,10 +154,10 @@ Hamiltonian vector fields and Poisson brackets restrict to open submanifolds, fo
 * `TauCeti.SmoothTwoForm.contMDiff_hamiltonianVectorField_of_isInvertible`: on a Banach manifold
   with invertible flat maps, a `C^(n+1)` Hamiltonian has a `C^n` Hamiltonian vector field, with the
   version `TauCeti.SmoothTwoForm.contMDiff_hamiltonianVectorField_uncurry_of_isInvertible` for
-  jointly `C^(n+1)` families of Hamiltonians, such as time-dependent ones, and the
-  finite-dimensional forms `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField`
-  and `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField_uncurry`, the latter
-  with its pointwise form
+  jointly `C^(n+1)` families of Hamiltonians, such as time-dependent ones, its pointwise form
+  `TauCeti.SmoothTwoForm.contMDiffAt_hamiltonianVectorField_uncurry_of_isInvertible`, and the
+  finite-dimensional forms `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField`,
+  `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField_uncurry` and
   `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiffAt_hamiltonianVectorField_uncurry`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`: `X^{cσ}_f = c⁻¹ X^σ_f`.
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`: conservation
@@ -568,6 +568,21 @@ theorem contMDiff_hamiltonianVectorField_of_isInvertible [CompleteSpace E] {n : 
     ContMDiff I I.tangent n (T% (σ.hamiltonianVectorField f)) :=
   contMDiff_inverse_flat_apply hσ hn hf.contMDiff_totalSpaceMk_mvfderiv
 
+/-- **Joint regularity of Hamiltonian vector fields of a family at a point.** On a Banach
+manifold, if every flat map of `σ` is invertible, and `H : N → M → ℝ` is a family of Hamiltonians
+which is jointly `C^(n+1)` at `q ∈ N × M`, the Hamiltonian vector fields `(p, x) ↦ X_{H p}(x)` are
+jointly `C^n` at `q`, for `n ≤ ∞`. This applies to families which are only regular over an open set
+of parameters, such as Hamiltonian perturbations on a punctured domain. -/
+theorem contMDiffAt_hamiltonianVectorField_uncurry_of_isInvertible [CompleteSpace E]
+    {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
+    {n : WithTop ℕ∞} (hn : n ≤ ∞) {H : N → M → ℝ} {q : N × M}
+    (hH : ContMDiffAt (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry H) q) :
+    ContMDiffAt (J.prod I) I.tangent n
+      (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) q :=
+  ((((contMDiff_inverse_flat hσ).of_le hn).comp contMDiff_snd) q).clm_bundle_apply
+    hH.contMDiffAt_totalSpaceMk_mvfderiv_uncurry
+
 /-- **Joint regularity of Hamiltonian vector fields of a family.** On a Banach manifold, if every
 flat map of `σ` is invertible, and `H : N → M → ℝ` is a family of Hamiltonians which is jointly
 `C^(n+1)` on `N × M`, the Hamiltonian vector fields `(p, x) ↦ X_{H p}(x)` are jointly `C^n`, for
@@ -580,8 +595,7 @@ theorem contMDiff_hamiltonianVectorField_uncurry_of_isInvertible [CompleteSpace 
     (hH : ContMDiff (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry H)) :
     ContMDiff (J.prod I) I.tangent n
       (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) :=
-  (((contMDiff_inverse_flat hσ).of_le hn).comp contMDiff_snd).clm_bundle_apply
-    hH.contMDiff_totalSpaceMk_mvfderiv_uncurry
+  fun q ↦ contMDiffAt_hamiltonianVectorField_uncurry_of_isInvertible hσ hn (hH q)
 
 end IsInvertible
 
@@ -739,9 +753,7 @@ theorem contMDiffAt_hamiltonianVectorField_uncurry {E' H' N : Type*} [NormedAddC
     {q : N × M} (hH : ContMDiffAt (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry H) q) :
     ContMDiffAt (J.prod I) I.tangent n
       (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) q :=
-  ((((σ.contMDiff_flat.clm_bundle_inverse h.isInvertible_flat).of_le hn).comp
-    contMDiff_snd).contMDiffAt (x := q)).clm_bundle_apply
-    hH.contMDiffAt_totalSpaceMk_mvfderiv_uncurry
+  contMDiffAt_hamiltonianVectorField_uncurry_of_isInvertible h.isInvertible_flat hn hH
 
 /-- **Joint regularity of Hamiltonian vector fields of a family.** For a nondegenerate two-form on a
 finite-dimensional manifold and a family of Hamiltonians `H : N → M → ℝ` which is jointly
