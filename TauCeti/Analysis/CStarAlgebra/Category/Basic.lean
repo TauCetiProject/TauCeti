@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
+public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.CategoryTheory.Dagger.Basic
 
@@ -392,20 +393,28 @@ def normedAlgebraOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
   letI := normedRingOf hcore hcomp
   ⟨fun c a => ((normedSpaceCoreOf hcore).norm_smul c a).le⟩
 
-/-- Transport completeness from `X ⟶ X` to `End X` along `End.addEquiv`. -/
+/-- Transport `End X ≃ₗᵢ[𝕜] (X ⟶ X)` from a `NormedSpace.Core` on `X ⟶ X`. -/
+@[expose]
+def linearIsometryEquivOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X)) :
+    letI := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
+    letI := NormedAddCommGroup.ofCore hcore
+    End X ≃ₗᵢ[𝕜] (X ⟶ X) :=
+  letI := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
+  letI := NormedAddCommGroup.ofCore hcore
+  { toLinearEquiv := End.linearEquiv
+    norm_map' _ := rfl }
+
+/-- Transport completeness from `X ⟶ X` to `End X` along `End.linearIsometryEquivOf`. -/
 theorem completeSpaceOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
     (hcore : NormedSpace.Core 𝕜 (X ⟶ X))
     (hcomplete : letI := NormedAddCommGroup.ofCore hcore; CompleteSpace (X ⟶ X)) :
     letI := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
-    CompleteSpace (End X) := by
-  let := NormedAddCommGroup.ofCore hcore
-  have : CompleteSpace (X ⟶ X) := hcomplete
-  let := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
-  let e : End X ≃ᵢ (X ⟶ X) :=
-    { toEquiv := End.addEquiv.toEquiv
-      isometry_toFun := AddMonoidHomClass.isometry_of_norm End.addEquiv fun a => by
-        rw [End.addEquiv_apply, End.norm_def] }
-  exact e.completeSpace
+    CompleteSpace (End X) :=
+  letI := NormedAddCommGroup.ofCore hcore
+  haveI := hcomplete
+  letI := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
+  (linearIsometryEquivOf hcore).toIsometryEquiv.completeSpace
 
 /-- Transport `CStarRing` on `End X` from a `NormedSpace.Core` on `X ⟶ X`, submultiplicative
 composition, and the C*-inequality on `X ⟶ X`. -/
@@ -512,13 +521,5 @@ theorem nonneg_iff {a : End X} : 0 ≤ a ↔ ∃ (Y : C) (f : X ⟶ Y), a = End.
     exact ⟨X, b.asHom, End.ext (by simp)⟩
   · rintro ⟨Y, f, rfl⟩
     exact self_comp_dagger_nonneg f
-
-/-- An endomorphism `a : End X` is positive if and only if `a.asHom = g ≫ dagger g` for an
-endomorphism `g : X ⟶ X` on the same object. -/
-theorem nonneg_iff_exists_self_comp_dagger {a : End X} :
-    0 ≤ a ↔ ∃ g : X ⟶ X, a.asHom = g ≫ dagger g := by
-  rw [CStarAlgebra.nonneg_iff_eq_star_mul_self]
-  exact ⟨fun ⟨b, hb⟩ => ⟨b.asHom, by rw [hb, mul_asHom, star_asHom]⟩,
-    fun ⟨g, hg⟩ => ⟨End.of g, End.ext hg⟩⟩
 
 end CategoryTheory.End

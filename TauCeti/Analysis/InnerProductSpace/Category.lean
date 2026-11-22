@@ -464,8 +464,9 @@ instance instFiniteDimensionalHom (X Y : FDHilbertCat.{u, v} 𝕜) :
 subsingleton. -/
 theorem isZero_iff_subsingleton (X : FDHilbertCat.{u, v} 𝕜) :
     Limits.IsZero X ↔ Subsingleton X := by
-  rw [Limits.IsZero.iff_id_eq_zero, ← X.obj.isZero_iff_subsingleton, Limits.IsZero.iff_id_eq_zero]
-  exact ⟨congrArg InducedCategory.Hom.hom, InducedCategory.hom_ext⟩
+  let ι := (HilbertCat.isFiniteDimensional.{u, v} 𝕜).ι
+  refine ⟨fun hX => X.obj.isZero_iff_subsingleton.mp (ι.map_isZero hX), fun hX => ?_⟩
+  exact Limits.IsZero.of_full_of_faithful_of_isZero ι X (X.obj.isZero_iff_subsingleton.mpr hX)
 
 /-- A subsingleton finite-dimensional Hilbert space is a zero object of `FDHilbertCat 𝕜`. -/
 theorem isZero_of_subsingleton (X : FDHilbertCat.{u, v} 𝕜) [Subsingleton X] :
@@ -496,13 +497,6 @@ def endStarAlgEquiv (X : FDHilbertCat.{u, v} 𝕜) : End X ≃⋆ₐ[𝕜] (X �
   EquivLike.injective X.endStarAlgEquiv <| by
     rw [StarAlgEquiv.apply_symm_apply, endStarAlgEquiv_apply]
     rfl
-
-/-- `FDHilbertCat.endStarAlgEquiv` factors through `Functor.mapEndStarAlgEquiv` along the full
-subcategory inclusion into `HilbertCat 𝕜`. -/
-theorem endStarAlgEquiv_eq_trans (X : FDHilbertCat.{u, v} 𝕜) :
-    X.endStarAlgEquiv =
-      (((HilbertCat.isFiniteDimensional.{u, v} 𝕜).ι).mapEndStarAlgEquiv 𝕜 X).trans
-        X.obj.endStarAlgEquiv := (rfl)
 
 -- `FDHilbertCat ℂ` inherits `CStarCategory` automatically as a full subcategory of `HilbertCat ℂ`.
 example : CStarCategory (FDHilbertCat.{0, v} ℂ) := inferInstance

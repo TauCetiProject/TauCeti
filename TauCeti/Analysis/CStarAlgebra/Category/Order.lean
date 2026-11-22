@@ -70,11 +70,11 @@ theorem complexSpectrum_self_comp_dagger_nonneg (f : X ⟶ Y) ⦃z : ℂ⦄
 positive elements of `End X` for any `f : X ⟶ Y`. -/
 theorem comp_asHom_comp_dagger_nonneg (f : X ⟶ Y) {a : End Y} (ha : 0 ≤ a) :
     0 ≤ End.of (f ≫ a.asHom ≫ dagger f) := by
-  obtain ⟨g, hg⟩ := nonneg_iff_exists_self_comp_dagger.mp ha
-  have hfg : f ≫ a.asHom ≫ dagger f = (f ≫ g) ≫ dagger (f ≫ g) := by
-    rw [hg, dagger_comp, Category.assoc, Category.assoc]
+  obtain ⟨b, hb⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp ha
+  have hfg : f ≫ a.asHom ≫ dagger f = (f ≫ b.asHom) ≫ dagger (f ≫ b.asHom) := by
+    rw [hb, mul_asHom, star_asHom, dagger_comp, Category.assoc, Category.assoc]
   rw [hfg]
-  exact self_comp_dagger_nonneg (f ≫ g)
+  exact self_comp_dagger_nonneg (f ≫ b.asHom)
 
 /-- Congruence `a ↦ End.of (f ≫ a.asHom ≫ dagger f)` is monotone from `End Y` to `End X`. -/
 theorem comp_asHom_comp_dagger_mono (f : X ⟶ Y) {a b : End Y} (hab : a ≤ b) :
@@ -102,10 +102,13 @@ theorem dagger_comp_asHom_comp_mono (g : X ⟶ Y) {a b : End X} (hab : a ≤ b) 
 `(‖g‖ ^ 2) • End.of (f ≫ dagger f)`. -/
 theorem comp_dagger_self_comp_le (f : X ⟶ Y) (g : Y ⟶ Z) :
     End.of ((f ≫ g) ≫ dagger (f ≫ g)) ≤ (‖g‖ ^ 2) • End.of (f ≫ dagger f) := by
-  have hle : End.of (g ≫ dagger g) ≤ algebraMap ℝ (End Y) ‖End.of (g ≫ dagger g)‖ :=
-    IsSelfAdjoint.le_algebraMap_norm_self _
-      (IsSelfAdjoint.of_nonneg (self_comp_dagger_nonneg g))
-  rw [norm_of, CStarCategory.norm_self_comp_dagger] at hle
+  obtain ⟨h, hh⟩ := CStarCategory.exists_self_comp_dagger_eq g
+  have hnorm : ‖End.of h‖ ^ 2 = ‖g‖ ^ 2 := by
+    rw [End.norm_of, ← CStarCategory.norm_self_comp_dagger, ← hh,
+      CStarCategory.norm_self_comp_dagger]
+  have hle : End.of (g ≫ dagger g) ≤ algebraMap ℝ (End Y) (‖g‖ ^ 2) := by
+    rw [hh, ← hnorm]
+    exact CStarAlgebra.star_mul_le_algebraMap_norm_sq (End.of h)
   have hcong := comp_asHom_comp_dagger_mono f hle
   have hlhs : End.of (f ≫ (End.of (g ≫ dagger g)).asHom ≫ dagger f) =
       End.of ((f ≫ g) ≫ dagger (f ≫ g)) := by

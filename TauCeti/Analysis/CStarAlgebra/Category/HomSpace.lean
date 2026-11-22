@@ -220,10 +220,8 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear ℂ C]
 
 /-- `End.asHom` and `End.of` form a `ℂ`-linear isometric equivalence between `End X` and
 `X ⟶ X` (with its norm-induced structure). -/
-def linearIsometryEquiv (X : C) : End X ≃ₗᵢ[ℂ] (X ⟶ X) where
-  __ := End.addEquiv
-  map_smul' _ _ := rfl
-  norm_map' _ := rfl
+def linearIsometryEquiv (X : C) : End X ≃ₗᵢ[ℂ] (X ⟶ X) :=
+  linearIsometryEquivOf (CStarCategory.normedSpaceCore X X)
 
 /-- Forward evaluation of `End.linearIsometryEquiv`. -/
 @[simp] theorem linearIsometryEquiv_apply {X : C} (a : End X) :

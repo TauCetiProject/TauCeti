@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Conj
 public import Mathlib.CategoryTheory.NatIso
 public import TauCeti.CategoryTheory.Dagger.Basic
 public import TauCeti.CategoryTheory.Linear.Endomorphism
+public import TauCeti.CategoryTheory.Preadditive.Endomorphism
 
 /-!
 # Dagger-preserving functors and natural transformations
@@ -113,18 +114,6 @@ def mapEndStarAlgHom (X : C) : End X →⋆ₐ[R] End (F.obj X) where
     (F.mapEndStarAlgHom R X a).asHom = F.map a.asHom :=
   F.mapEndAlgHom_asHom R X a
 
-variable (R) in
-/-- A full linear dagger functor surjects onto the image object's endomorphism star-algebra. -/
-theorem mapEndStarAlgHom_surjective [F.Full] (X : C) :
-    Function.Surjective (F.mapEndStarAlgHom R X) := by
-  have h : (F.mapEndStarAlgHom R X : End X → End (F.obj X)) =
-      (End.homEquiv (X := F.obj X)).symm ∘ F.map ∘ End.homEquiv := by
-    funext a
-    exact End.ext (F.mapEndStarAlgHom_asHom X a)
-  rw [h]
-  exact (End.homEquiv (X := F.obj X)).symm.surjective.comp
-    (F.map_surjective.comp End.homEquiv.surjective)
-
 end Linear
 
 section EndStarAlgEquiv
@@ -137,21 +126,29 @@ variable (F : C ⥤ D) (R : Type w) [Semiring R]
 algebras over any `Semiring R`. -/
 noncomputable def mapEndStarAlgEquiv (X : C) :
     End X ≃⋆ₐ[R] End (F.obj X) where
-  __ := (End.homEquiv (X := X)).trans
-    (((Functor.FullyFaithful.ofFullyFaithful F).homEquiv).trans
-      (End.homEquiv (X := F.obj X)).symm)
-  map_mul' f g := by ext; simp
-  map_add' f g := by ext; simp
-  map_smul' r f := by ext; simp
-  map_star' f := by ext; simp
+  __ := RingEquiv.ofBijective (F.mapEndRingHom X) <| by
+    have heq : (F.mapEndRingHom X : End X → End (F.obj X)) =
+        ((End.homEquiv (X := X)).trans
+          (((Functor.FullyFaithful.ofFullyFaithful F).homEquiv).trans
+            (End.homEquiv (X := F.obj X)).symm)) := by
+      funext a
+      exact End.ext (F.mapEndRingHom_apply_asHom X a)
+    rw [heq]
+    exact Equiv.bijective _
+  map_smul' r f := by ext; simp [RingEquiv.coe_ofBijective]
+  map_star' f := by ext; simp [RingEquiv.coe_ofBijective]
 
 /-- Forward evaluation of `CategoryTheory.Functor.mapEndStarAlgEquiv` on underlying arrows. -/
 @[simp, grind =] theorem mapEndStarAlgEquiv_apply_asHom (X : C) (f : End X) :
-    (F.mapEndStarAlgEquiv R X f).asHom = F.map f.asHom := (rfl)
+    (F.mapEndStarAlgEquiv R X f).asHom = F.map f.asHom := by
+  simp [mapEndStarAlgEquiv, RingEquiv.coe_ofBijective]
 
 /-- Inverse evaluation of `CategoryTheory.Functor.mapEndStarAlgEquiv` on underlying arrows. -/
 @[simp, grind =] theorem mapEndStarAlgEquiv_symm_apply_asHom (X : C) (g : End (F.obj X)) :
-    ((F.mapEndStarAlgEquiv R X).symm g).asHom = F.preimage g.asHom := (rfl)
+    ((F.mapEndStarAlgEquiv R X).symm g).asHom = F.preimage g.asHom := by
+  apply F.map_injective
+  rw [F.map_preimage, ← F.mapEndStarAlgEquiv_apply_asHom R X]
+  exact congrArg End.asHom ((F.mapEndStarAlgEquiv R X).apply_symm_apply g)
 
 end EndStarAlgEquiv
 
@@ -249,8 +246,7 @@ variable (R : Type w) [Semiring R] [Preadditive C] [CategoryTheory.Linear R C]
 star-algebra equivalence. -/
 def endStarAlgEquiv {X Y : C} (e : X ≅ Y) (he : IsUnitary e.hom) :
     End X ≃⋆ₐ[R] End Y where
-  __ := e.conj
-  map_add' f g := by ext; simp
+  __ := e.endRingEquiv
   map_smul' r f := by ext; simp
   map_star' f := by
     ext
@@ -261,14 +257,16 @@ def endStarAlgEquiv {X Y : C} (e : X ≅ Y) (he : IsUnitary e.hom) :
     (he : IsUnitary e.hom) (f : End X) :
     (e.endStarAlgEquiv R he f).asHom = dagger e.hom ≫ f.asHom ≫ e.hom := by
   rw [e.dagger_hom_eq_inv_of_isUnitary he]
-  rfl
+  exact e.endRingEquiv_apply_asHom f
 
 /-- Inverse conjugation by a unitary isomorphism acts as `e.hom ≫ g.asHom ≫ dagger e.hom`. -/
 @[simp, grind =] theorem endStarAlgEquiv_symm_apply_asHom {X Y : C} (e : X ≅ Y)
     (he : IsUnitary e.hom) (g : End Y) :
     ((e.endStarAlgEquiv R he).symm g).asHom = e.hom ≫ g.asHom ≫ dagger e.hom := by
-  rw [e.dagger_hom_eq_inv_of_isUnitary he]
-  rfl
+  have h := congrArg End.asHom ((e.endStarAlgEquiv R he).apply_symm_apply g)
+  rw [endStarAlgEquiv_apply_asHom, e.dagger_hom_eq_inv_of_isUnitary he] at h
+  rw [e.dagger_hom_eq_inv_of_isUnitary he, ← h]
+  simp
 
 end EndStarAlgEquiv
 
