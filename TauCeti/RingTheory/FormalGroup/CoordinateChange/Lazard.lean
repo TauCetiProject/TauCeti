@@ -114,14 +114,14 @@ theorem coordinateChangeLift_C
 theorem coordinateChangeLift_X
     (p : {F : FormalGroup R // F.IsComm} × (FormalCoordinate.linearCoeff (R := R)).ker)
     (i : ℕ+) :
-    coordinateChangeLift p (X i) = PowerSeries.coeff (i + 1) p.2.1.toPowerSeries :=
+    coordinateChangeLift p (X i) = PowerSeries.coeff (i + 1) p.2.val.toPowerSeries :=
   FormalCoordinate.strictLift_X _ i
 
 /-- The homomorphism classifying `(F, φ)` specializes the universal strict coordinate to `φ`. -/
 @[simp]
 theorem map_coordinateChangeLift_universalStrictCoordinate
     (p : {F : FormalGroup R // F.IsComm} × (FormalCoordinate.linearCoeff (R := R)).ker) :
-    FormalCoordinate.map (coordinateChangeLift p) universalStrictCoordinate = p.2.1 :=
+    FormalCoordinate.map (coordinateChangeLift p) universalStrictCoordinate = p.2.val :=
   FormalCoordinate.map_strictLift_universalStrictCoordinate _
 
 /-- The **right unit** `η_R : L →+* L[b₁, b₂, …]`: the homomorphism classifying the change of
@@ -143,7 +143,7 @@ the target `φ • F` of the strict isomorphism `φ`. -/
 theorem coordinateChangeLift_comp_rightUnit
     (p : {F : FormalGroup R // F.IsComm} × (FormalCoordinate.linearCoeff (R := R)).ker) :
     (coordinateChangeLift p).comp rightUnit =
-      lift ⟨p.2.1 • p.1.1, have := p.1.2; inferInstance⟩ :=
+      lift ⟨p.2.val • p.1.val, have := p.1.property; inferInstance⟩ :=
   hom_ext <| by
     rw [← FormalGroup.map_comp, map_rightUnit, FormalGroup.map_smul,
       map_coordinateChangeLift_universalStrictCoordinate, FormalGroup.map_comp,

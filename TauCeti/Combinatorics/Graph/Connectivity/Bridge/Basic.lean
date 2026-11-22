@@ -172,7 +172,7 @@ theorem componentCount_deleteEdges_of_not_isBridge (he : ¬ G.IsBridge e) :
     exact (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_map_iff hle).mp hCD
   · induction C using SimpleGraph.ConnectedComponent.ind with | h z => ?_
     exact ⟨_, (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff hle).mpr
-      (Reachable.refl z.2)⟩
+      (Reachable.refl z.property)⟩
 
 /-- Deleting a bridge increases the number of connected components by exactly one: the
 component containing its ends splits into the components of its two ends, and every other
@@ -210,7 +210,7 @@ theorem IsBridge.componentCount_deleteEdges [Finite G.ConnectedComponent] (he : 
         exact h.reachable.trans ((toSimpleGraph_connectedComponentMk_eq_iff.mp hz).symm.mono hle)
       · refine ⟨⟨_, hz⟩, ?_⟩
         exact (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff hle).mpr
-          (Reachable.refl z.2)
+          (Reachable.refl z.property)
   have : Finite G.toSimpleGraph.ConnectedComponent := Finite.of_equiv _ G.connectedComponentEquiv
   have : Finite {C // C ≠ A} := Finite.of_equiv _ (Equiv.ofBijective ψ hψ).symm
   rw [componentCount_eq_natCard_toSimpleGraph, componentCount_eq_natCard_toSimpleGraph,

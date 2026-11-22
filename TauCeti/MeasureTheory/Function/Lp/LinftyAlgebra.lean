@@ -40,7 +40,11 @@ almost everywhere equalities in place of pointwise ones.
 
 * `MeasureTheory.Lp.smul_eq_mul`: the product is the Hölder product at exponents `∞, ∞, ∞`.
 * `MeasureTheory.Lp.coeFn_mul`: the product is pointwise almost everywhere.
+* `MeasureTheory.Lp.sum_mul_eq_of_ae_eq`: an almost everywhere identity `∑ₖ aₖ aⱼ = aⱼ` of
+  representatives gives the same identity in `Lp R ∞ μ`.
 * `MeasureTheory.Lp.coeFn_algebraMap`: scalars act as almost everywhere constant classes.
+* `MeasureTheory.Lp.lpSMul_mul_assoc` and `MeasureTheory.Lp.mul_lpSMul_comm`: heterogeneous `L∞`
+  scalar multiplication associates and commutes with multiplication in `Lp R ∞ μ`.
 * The instances `NormedRing`, `NormedCommRing`, `NormedAlgebra`, `StarRing`, `CStarRing`,
   `CStarAlgebra` and `CommCStarAlgebra` on `Lp R ∞ μ`.
 * `MeasureTheory.Lp.reCLM_mul`, `MeasureTheory.Lp.imCLM_mul`, `MeasureTheory.Lp.normLp_mul_self_eq`:
@@ -117,7 +121,42 @@ instance inftyNontrivial [Nontrivial R] [NeZero μ] : Nontrivial (Lp R ∞ μ) :
     rw [h, norm_zero, eq_comm, norm_eq_zero] at h₁
     exact one_ne_zero h₁
 
+/-- If the classes `mₖ ∈ L^∞` are almost everywhere the functions `aₖ`, and
+`∑_{k ∈ s} aₖ aⱼ = aⱼ` almost everywhere, then `∑_{k ∈ s} mₖ mⱼ = mⱼ` in `L^∞`. -/
+theorem sum_mul_eq_of_ae_eq {ι : Type*} {m : ι → Lp R ∞ μ} {a : ι → α → R}
+    (hm : ∀ k, m k =ᵐ[μ] a k) {s : Finset ι} {j : ι}
+    (h : ∀ᵐ x ∂μ, ∑ k ∈ s, a k x * a j x = a j x) :
+    ∑ k ∈ s, m k * m j = m j := by
+  apply Lp.ext
+  filter_upwards [coeFn_fun_finsetSum s fun k ↦ m k * m j,
+    (Filter.eventually_all_finset s).2 fun k _ ↦ coeFn_mul (m k) (m j),
+    (Filter.eventually_all_finset s).2 fun k _ ↦ hm k, hm j, h] with x h₁ h₂ h₃ hj h₄
+  rw [h₁, hj, ← h₄]
+  refine Finset.sum_congr rfl fun k hk ↦ ?_
+  rw [h₂ k hk, Pi.mul_apply, h₃ k hk, hj]
+
 end NormedRing
+
+section LpSMul
+
+variable [NormedRing 𝕜] [NormedRing R] [MulActionWithZero 𝕜 R] [IsBoundedSMul 𝕜 R]
+
+/-- Heterogeneous `L∞` scalar multiplication associates with multiplication in `Lp R ∞ μ`. -/
+theorem lpSMul_mul_assoc [IsScalarTower 𝕜 R R] (a : Lp 𝕜 ∞ μ) (f g : Lp R ∞ μ) :
+    (a • f : Lp R ∞ μ) * g = (a • (f * g) : Lp R ∞ μ) := Lp.ext <| by
+  filter_upwards [coeFn_mul (a • f : Lp R ∞ μ) g, coeFn_lpSMul (r := ∞) a f,
+    coeFn_lpSMul (r := ∞) a (f * g), coeFn_mul f g] with x h₁ h₂ h₃ h₄
+  simp [h₁, h₂, h₃, h₄, smul_mul_assoc]
+
+/-- Multiplication in `Lp R ∞ μ` commutes with heterogeneous `L∞` scalar multiplication on the
+right factor. -/
+theorem mul_lpSMul_comm [SMulCommClass 𝕜 R R] (a : Lp 𝕜 ∞ μ) (f g : Lp R ∞ μ) :
+    f * (a • g : Lp R ∞ μ) = (a • (f * g) : Lp R ∞ μ) := Lp.ext <| by
+  filter_upwards [coeFn_mul f (a • g : Lp R ∞ μ), coeFn_lpSMul (r := ∞) a g,
+    coeFn_lpSMul (r := ∞) a (f * g), coeFn_mul f g] with x h₁ h₂ h₃ h₄
+  simp [h₁, h₂, h₃, h₄, mul_smul_comm]
+
+end LpSMul
 
 instance inftyNormedCommRing [NormedCommRing R] : NormedCommRing (Lp R ∞ μ) where
   mul_comm f g := by

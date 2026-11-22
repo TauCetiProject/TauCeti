@@ -119,7 +119,7 @@ private theorem exists_mem_binaryOctahedralCosetCoords_of_coe_eq {g : SU2} {w : 
       toComplexMatrix ⟨w 0 / √2, w 1 / √2, w 2 / √2, w 3 / √2⟩) :
     ∃ w ∈ binaryOctahedralCosetCoords, (g : Matrix (Fin 2) (Fin 2) ℂ) =
       toComplexMatrix ⟨w 0 / √2, w 1 / √2, w 2 / √2, w 3 / √2⟩ := by
-  have hdet := (Matrix.mem_specialUnitaryGroup_iff.mp g.2).2
+  have hdet := (Matrix.mem_specialUnitaryGroup_iff.mp g.property).2
   rw [hg, det_toComplexMatrix, normSq_mk_div, Real.sq_sqrt zero_le_two, ← Complex.ofReal_one,
     Complex.ofReal_inj, div_eq_one_iff_eq two_ne_zero] at hdet
   refine ⟨w, mem_binaryOctahedralCosetCoords_iff.mpr ?_, hg⟩
@@ -280,8 +280,9 @@ theorem binaryTetrahedralSubgroup_le_binaryOctahedralSubgroup :
 tetrahedral coordinates, or scaled coordinates of the second family. -/
 private noncomputable def binaryOctahedralCoordsFun :
     binaryTetrahedralCoords ⊕ binaryOctahedralCosetCoords → binaryOctahedralSubgroup
-  | .inl v => ⟨binaryTetrahedralCoordsEquiv v, .inl (binaryTetrahedralCoordsEquiv v).2⟩
-  | .inr w => ⟨⟨_, toComplexMatrix_mem_of_mem_binaryOctahedralCosetCoords w.2⟩, .inr ⟨w, w.2, rfl⟩⟩
+  | .inl v => ⟨binaryTetrahedralCoordsEquiv v, .inl (binaryTetrahedralCoordsEquiv v).property⟩
+  | .inr w => ⟨⟨_, toComplexMatrix_mem_of_mem_binaryOctahedralCosetCoords w.property⟩, .inr ⟨w,
+      w.property, rfl⟩⟩
 
 private theorem binaryOctahedralCoordsFun_bijective :
     Function.Bijective binaryOctahedralCoordsFun := by
@@ -293,8 +294,8 @@ private theorem binaryOctahedralCoordsFun_bijective :
     · refine congrArg Sum.inl
         (binaryTetrahedralCoordsEquiv.injective (Subtype.ext (Subtype.ext ?_)))
       rw [coe_binaryTetrahedralCoordsEquiv_apply, coe_binaryTetrahedralCoordsEquiv_apply, h]
-    · exact absurd h (toComplexMatrix_ne_of_mem_binaryOctahedralCosetCoords w'.2)
-    · exact absurd h.symm (toComplexMatrix_ne_of_mem_binaryOctahedralCosetCoords w.2)
+    · exact absurd h (toComplexMatrix_ne_of_mem_binaryOctahedralCosetCoords w'.property)
+    · exact absurd h.symm (toComplexMatrix_ne_of_mem_binaryOctahedralCosetCoords w.property)
     · have h := toComplexMatrix_injective h
       simp only [QuaternionAlgebra.mk.injEq, div_left_inj₀ (Real.sqrt_ne_zero'.mpr two_pos),
         Int.cast_inj] at h

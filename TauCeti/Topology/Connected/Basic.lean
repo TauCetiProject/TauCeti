@@ -18,7 +18,11 @@ contained in a union of disjoint open cells lies in a single cell.
 Dually, when a preconnected set is the union of a locally finite family of closed sets, any two
 nonempty members are joined by a chain of members in which consecutive sets meet
 (`IsPreconnected.transGen_of_iUnion_of_isClosed`). For instance, the irreducible components of a
-connected Noetherian space form a connected intersection graph.
+connected Noetherian space form a connected intersection graph. Likewise, open sets covering a
+preconnected set and each meeting it are joined by chains of members overlapping inside the set
+(`IsPreconnected.reflTransGen_of_subset_biUnion`). The fibres `V ∩ f ⁻¹' {v}` of a map in a set
+`V` are all preconnected once those over points of `f '' V` are, the others being empty
+(`TauCeti.isPreconnected_inter_preimage_singleton_of_forall_mem_image`).
 
 The same principle selects a limit: a function which tends to a finite subset of a Hausdorff
 space along a filter in which arbitrarily small sets have preconnected images tends to a single
@@ -35,7 +39,8 @@ For `f` continuously mapping a preconnected set `s` into `u`, with `x ∈ s` and
 
 A continuous injection on a compact set into a Hausdorff space is a closed embedding of that set,
 so preconnectedness of the image is equivalent to preconnectedness of the set
-(`IsCompact.isPreconnected_image_iff_of_injOn`).
+(`IsCompact.isPreconnected_image_iff_of_injOn`). An inducing map, such as the inclusion of a
+subspace, reflects connectedness of images (`Topology.IsInducing.isConnected_image`).
 
 A continuous function on a preconnected set that is locally constant near each point where it
 takes a given value `f z`, for some `z` in the set, is constant
@@ -169,7 +174,7 @@ theorem Filter.Tendsto.exists_mem_tendsto_nhds {β : Type*} [T2Space α] {f : β
     (hl : ∀ s ∈ l, ∃ t ∈ l, t ⊆ s ∧ IsPreconnected (f '' t)) : ∃ y ∈ S, Tendsto f l (𝓝 y) := by
   obtain ⟨U, hU, hdisj⟩ := hS.t2_separation
   have hdisj' : Pairwise (Disjoint on fun y : S ↦ U y) :=
-    fun a b hab ↦ hdisj a.2 b.2 (Subtype.coe_injective.ne hab)
+    fun a b hab ↦ hdisj a.property b.property (Subtype.coe_injective.ne hab)
   -- Choose a set of `l` with preconnected image inside the union of the separating sets.
   have hV : (⋃ y : S, U y) ∈ 𝓝ˢ S :=
     (isOpen_iUnion fun y : S ↦ (hU y).2).mem_nhdsSet.2 fun y hy ↦
@@ -181,7 +186,7 @@ theorem Filter.Tendsto.exists_mem_tendsto_nhds {β : Type*} [T2Space α] {f : β
   have hsub : f '' t ⊆ U y₀ :=
     htc.subset_of_subset_iUnion (fun y : S ↦ (hU y).2) hdisj' (image_subset_iff.2 hts)
       ⟨f x, mem_image_of_mem f hx, hy₀⟩
-  refine ⟨y₀, y₀.2, fun W hW ↦ ?_⟩
+  refine ⟨y₀, y₀.property, fun W hW ↦ ?_⟩
   -- Near `y₀` shrink its separating set to `W`; near the other points keep theirs.
   have hW' : (W ∩ U y₀ ∪ ⋃ y : {y : S // y ≠ y₀}, U y) ∈ 𝓝ˢ S := by
     refine mem_nhdsSet_iff_forall.2 fun y hy ↦ ?_
@@ -195,7 +200,7 @@ theorem Filter.Tendsto.exists_mem_tendsto_nhds {β : Type*} [T2Space α] {f : β
   rcases hzW with hz | hz
   · exact hz.1
   · obtain ⟨y, hy⟩ := mem_iUnion.1 hz
-    exact absurd (hdisj' y.2 |>.ne_of_mem hy hz₀) (by simp)
+    exact absurd (hdisj' y.property |>.ne_of_mem hy hz₀) (by simp)
 
 /-- **Preconnectedness pulls back along a continuous injection on a compact set.** If `f` is
 continuous and injective on a compact `K` with values in a Hausdorff space, then `f '' K` is
@@ -208,6 +213,13 @@ theorem IsCompact.isPreconnected_image_iff_of_injOn {β : Type*} [TopologicalSpa
   rw [isPreconnected_iff_preconnectedSpace (s := K), preconnectedSpace_iff_univ,
     ← (hf.domRestrict.isClosedEmbedding hinj.injective).isInducing.isPreconnected_image, image_univ,
     range_domRestrict]
+
+/-- **Connectedness pulls back along an inducing map.** For an inducing map `f`, for instance the
+inclusion of a subspace, `f '' s` is connected exactly when `s` is. -/
+theorem Topology.IsInducing.isConnected_image {β : Type*} [TopologicalSpace β] {f : α → β}
+    {s : Set α} (hf : IsInducing f) : IsConnected (f '' s) ↔ IsConnected s :=
+  ⟨fun h ↦ ⟨h.nonempty.of_image, hf.isPreconnected_image.1 h.isPreconnected⟩,
+    fun h ↦ h.image f hf.continuous.continuousOn⟩
 
 namespace TauCeti
 
@@ -223,7 +235,41 @@ theorem reflTransGen_inter_nonempty_of_isOpen_cover {t : Set ι} {V : ι → Set
     convert hU using 1
     ext
     simp
-  exact (hU'.transGen_of_iUnion (fun k ↦ hV k k.2) ⟨i₀, hi₀⟩ ⟨j, hj⟩
-    hVi₀ hVj).to_reflTransGen.lift Subtype.val (fun k l hkl ↦ ⟨k.2, l.2, hkl⟩)
+  exact (hU'.transGen_of_iUnion (fun k ↦ hV k k.property) ⟨i₀, hi₀⟩ ⟨j, hj⟩
+    hVi₀ hVj).to_reflTransGen.lift Subtype.val (fun k l hkl ↦ ⟨k.property, l.property, hkl⟩)
+
+/-- **Chains of overlaps along a preconnected set.** If open sets `U i`, `i ∈ T`, cover a
+preconnected set `C`, then any two members `U i` and `U j` meeting `C` are joined by a chain of
+members any two consecutive of which meet inside `C`. -/
+theorem _root_.IsPreconnected.reflTransGen_of_subset_biUnion {C : Set α} {T : Set ι}
+    {U : ι → Set α} (hC : IsPreconnected C) (hU : ∀ i ∈ T, IsOpen (U i))
+    (hcover : C ⊆ ⋃ i ∈ T, U i) {i j : ι} (hi : i ∈ T) (hiC : (U i ∩ C).Nonempty) (hj : j ∈ T)
+    (hjC : (U j ∩ C).Nonempty) :
+    Relation.ReflTransGen (fun i j ↦ i ∈ T ∧ j ∈ T ∧ (U i ∩ U j ∩ C).Nonempty) i j := by
+  have := isPreconnected_iff_preconnectedSpace.1 hC
+  have hunion : (⋃ k ∈ T, ((↑) : C → α) ⁻¹' U k) = univ :=
+    eq_univ_of_forall fun c ↦ by simpa using hcover c.property
+  have hne {k : ι} (hkC : (U k ∩ C).Nonempty) : (((↑) : C → α) ⁻¹' U k).Nonempty :=
+    let ⟨c, hcU, hcC⟩ := hkC
+    ⟨⟨c, hcC⟩, hcU⟩
+  refine Relation.ReflTransGen.mono ?_ _ _ (reflTransGen_inter_nonempty_of_isOpen_cover
+    (hunion ▸ isPreconnected_univ) (fun k hk ↦ continuous_subtypeVal.isOpen_preimage _ (hU k hk))
+    hi (hne hiC) hj (hne hjC))
+  rintro k l ⟨hk, hl, c, hck, hcl⟩
+  exact ⟨hk, hl, c, ⟨hck, hcl⟩, c.property⟩
+
+/-- Fibres of `f` in `V` over points outside `f '' V` are empty, so it suffices to check that the
+fibres over points of `f '' V` are preconnected. -/
+theorem isPreconnected_inter_preimage_singleton_of_forall_mem_image {β : Type*} {f : α → β}
+    {V : Set α} (h : ∀ v ∈ f '' V, IsPreconnected (V ∩ f ⁻¹' {v})) (v : β) :
+    IsPreconnected (V ∩ f ⁻¹' {v}) := by
+  by_cases hv : v ∈ f '' V
+  · exact h v hv
+  · convert isPreconnected_empty
+    ext x
+    simp only [mem_inter_iff, mem_preimage, mem_singleton_iff, mem_empty_iff_false, iff_false,
+      not_and]
+    rintro hxV rfl
+    exact hv (mem_image_of_mem f hxV)
 
 end TauCeti

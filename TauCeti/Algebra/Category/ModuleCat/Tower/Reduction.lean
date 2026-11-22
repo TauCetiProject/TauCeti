@@ -8,9 +8,10 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Tower.AdicSystem
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Quotient
+public import TauCeti.Algebra.Category.ModuleCat.Tower.Product
 public import TauCeti.RingTheory.Ideal.Quotient.PowTransition
 
-import TauCeti.RingTheory.AdicCompletion.Finite
+public import TauCeti.RingTheory.AdicCompletion.Finite
 
 /-!
 # Finite modules over a complete ring as adic systems
@@ -41,6 +42,9 @@ formal scheme as compatible systems of coherent modules on its thickenings.
 * `TauCeti.ModuleTower.toLimReduction`: the canonical map from `M` to the limit of its reduction.
 * `TauCeti.ModuleTower.FiniteAdicSystem`: the category of `I`-adic systems with finite `M₀`.
 * `TauCeti.ModuleTower.finiteReduction`: reduction of finite modules to finite adic systems.
+* `TauCeti.ModuleTower.finiteLim`: inverse limit of finite adic systems over a precomplete ring.
+* `TauCeti.ModuleTower.finiteReductionEquiv`: the explicit reduction–limit equivalence, with
+  counit induced by the limit projections.
 
 ## Main results
 
@@ -152,7 +156,8 @@ private noncomputable def ofAdicCompletion : AdicCompletion I M →ₗ[A] (reduc
       simp only [LinearMap.comp_apply, AdicCompletion.eval_apply, AdicCompletion.mk_apply_coe,
         Submodule.mkQ_apply, ofAdicQuotient_mk, transition_quotientsπ]
       -- This is the Cauchy condition on the sequence `x`.
-      exact (quotientsπ_eq_quotientsπ_iff _ _).2 (SModEq.sub_mem.1 (x.2 (n + 1).le_succ).symm)
+      exact (quotientsπ_eq_quotientsπ_iff _ _).2 (SModEq.sub_mem.1 (x.property
+          (n + 1).le_succ).symm)
 
 private theorem limπ_ofAdicCompletion (x : AdicCompletion I M) (n : ℕ) :
     (reduction I M).limπ n (ofAdicCompletion I M x) = ofAdicQuotient I M n (x.val (n + 1)) := by
@@ -168,7 +173,7 @@ noncomputable def limReductionEquiv : (reduction I M).lim ≃ₗ[A] AdicCompleti
       simp only [LinearMap.comp_apply, toAdicCompletion_val, limπ_ofAdicCompletion,
         AdicCompletion.mk_apply_coe, Submodule.mkQ_apply, ofAdicQuotient_mk,
         toAdicQuotient_reductionπ, LinearMap.id_apply]
-      exact (x.2 n.le_succ).symm)
+      exact (x.property n.le_succ).symm)
     (by
       ext n y
       obtain ⟨x, hx⟩ := quotientsπ_surjective _ _ (n + 1) ((reduction I M).limπ (n + 1) y)
@@ -396,6 +401,10 @@ noncomputable def finiteReduction : FGModuleCat.{v} A ⥤ FiniteAdicSystem.{v} I
       ⟨isAdicSystem_reduction I M,
         .of_surjective _ (quotientsπ_surjective _ (I.pow_succ_smul_top_antitone M) 0)⟩
 
+/-- Reduction of finite modules preserves addition of morphisms. -/
+instance : (finiteReduction.{v} I).Additive :=
+  inferInstanceAs ((isFiniteAdicSystem I).lift _ _).Additive
+
 instance [IsNoetherianRing A] [IsAdicComplete I A] : (finiteReduction I).Faithful where
   map_injective {M N} u v huv := by
     have := IsAdicComplete.of_finite I N
@@ -420,6 +429,103 @@ instance [IsPrecomplete I A] : (finiteReduction.{v} I).EssSurj where
 `I`-adic systems with finite `M₀`, with quasi-inverse the limit. -/
 instance finiteReduction_isEquivalence [IsNoetherianRing A] [IsAdicComplete I A] :
     (finiteReduction.{v} I).IsEquivalence where
+
+/-- The inverse limit of a finite adic system, as a finite module over a precomplete ring. -/
+-- The underlying module must reduce to the limit for the counit projection formula.
+@[expose, simps! obj_obj map_hom]
+noncomputable def finiteLim [IsPrecomplete I A] : FiniteAdicSystem.{v} I ⥤ FGModuleCat.{v} A :=
+  (ModuleCat.isFG A).lift ((isFiniteAdicSystem I).ι ⋙ limFunctor A) fun F ↦ by
+    obtain ⟨hF, _⟩ := (isFiniteAdicSystem_iff I _).1 F.property
+    exact hF.finite_lim
+
+/-- Taking inverse limits of finite adic systems preserves addition. -/
+instance [IsPrecomplete I A] : (finiteLim.{v} I).Additive :=
+  inferInstanceAs ((ModuleCat.isFG A).lift _ _).Additive
+
+/-- Reduction and inverse limit give an equivalence between finite modules and finite adic
+systems over a noetherian complete ring. The counit is induced by the limit projections. -/
+-- Its functor projections must reduce in the types of elementwise counit formulas.
+@[expose]
+noncomputable def finiteReductionEquiv [IsNoetherianRing A] [IsAdicComplete I A] :
+    FGModuleCat.{v} A ≌ FiniteAdicSystem.{v} I where
+  functor := finiteReduction I
+  inverse := finiteLim I
+  unitIso := NatIso.ofComponents (fun M ↦ by
+    have := IsAdicComplete.of_finite I M
+    have : Module.Finite A (reduction I M).lim :=
+      ((finiteLim I).obj ((finiteReduction I).obj M)).property
+    exact (LinearEquiv.ofBijective (toLimReduction I M)
+      (toLimReduction_bijective I M)).toFGModuleCatIso) (by
+    intro M N f
+    apply FGModuleCat.hom_ext
+    ext x
+    -- The unit component is `toLimReduction` bundled by `toFGModuleCatIso`;
+    -- the lifted functors act by `reductionMap` and `limMap`. This component is
+    -- constructed inline above, so it has no named evaluation lemma to rewrite here.
+    -- Exposing these wrappers lets the existing linear-map naturality lemma apply.
+    change toLimReduction I N (f.hom.hom x) =
+      limMap (reductionMap I f.hom.hom) (toLimReduction I M x)
+    exact (limMap_reductionMap_toLimReduction I f.hom.hom x).symm)
+  counitIso := NatIso.ofComponents (fun F ↦ by
+    obtain ⟨hF, _⟩ := (isFiniteAdicSystem_iff I _).1 F.property
+    exact ObjectProperty.isoMk _ hF.reductionLimIso) (by
+    intro F G f
+    have := ((isFiniteAdicSystem_iff I _).1 F.property).2
+    have := ((isFiniteAdicSystem_iff I _).1 G.property).2
+    apply ObjectProperty.hom_ext
+    ext ⟨n⟩ : 2
+    ext z
+    obtain ⟨x, rfl⟩ := quotientsπ_surjective _ (I.pow_succ_smul_top_antitone F.obj.lim) n z
+    -- `ObjectProperty.isoMk` bundles `reductionLimIso`, and the lifted composite
+    -- `finiteLim I ⋙ finiteReduction I` maps `f` by `reductionMap I (limMap f.hom)`.
+    -- The counit components are constructed inline above and have no named evaluation
+    -- lemma here; expose their underlying maps so the projection lemmas below match.
+    change (((isFiniteAdicSystem_iff I _).1 G.property).1.reductionLimIso.hom.app (op n)).hom
+        (((reductionMap I (limMap f.hom)).app (op n)).hom (reductionπ I F.obj.lim n x)) =
+      (f.hom.app (op n)).hom
+        ((((isFiniteAdicSystem_iff I _).1 F.property).1.reductionLimIso.hom.app (op n)).hom
+          (reductionπ I F.obj.lim n x))
+    rw [reductionMap_app_reductionπ, IsAdicSystem.reductionLimIso_hom_app_reductionπ,
+      IsAdicSystem.reductionLimIso_hom_app_reductionπ]
+    exact LinearMap.congr_fun (limπ_comp_limMap f.hom n) x)
+  functor_unitIso_comp M := by
+    have : Module.Finite A ((reduction I M).obj (op 0)) :=
+      ((isFiniteAdicSystem_iff I _).1 ((finiteReduction I).obj M).property).2
+    apply ObjectProperty.hom_ext
+    ext ⟨n⟩ : 2
+    ext z
+    obtain ⟨x, rfl⟩ := quotientsπ_surjective _ (I.pow_succ_smul_top_antitone M) n z
+    -- Mapping the unit through the lifted reduction functor gives
+    -- `reductionMap I (toLimReduction I M)`; the counit is `reductionLimIso` bundled
+    -- by `ObjectProperty.isoMk`, and the identity acts as the identity on elements.
+    -- These inline components have no evaluation lemmas until this equivalence is
+    -- defined, so expose their underlying maps before rewriting the projections.
+    change ((isAdicSystem_reduction I M).reductionLimIso.hom.app (op n)).hom
+      (((reductionMap I (toLimReduction I M)).app (op n)).hom (reductionπ I M n x)) =
+        reductionπ I M n x
+    rw [reductionMap_app_reductionπ, IsAdicSystem.reductionLimIso_hom_app_reductionπ,
+      limπ_apply, coe_toLimQuotients_apply]
+
+/-- The forward functor of the finite reduction equivalence is reduction. -/
+@[simp]
+theorem finiteReductionEquiv_functor [IsNoetherianRing A] [IsAdicComplete I A] :
+    (finiteReductionEquiv.{v} I).functor = finiteReduction I := (rfl)
+
+/-- The inverse functor of the finite reduction equivalence is inverse limit. -/
+@[simp]
+theorem finiteReductionEquiv_inverse [IsNoetherianRing A] [IsAdicComplete I A] :
+    (finiteReductionEquiv.{v} I).inverse = finiteLim I := (rfl)
+
+/-- The counit of the finite reduction equivalence evaluates a reduction class by the limit
+projection. -/
+@[simp]
+theorem finiteReductionEquiv_counitIso_hom_app_reductionπ [IsNoetherianRing A]
+    [IsAdicComplete I A] (F : FiniteAdicSystem.{v} I) (n : ℕ) (x : F.obj.lim) :
+    dsimp% only [CategoryTheory.Functor.comp_obj, CategoryTheory.Functor.id_obj]
+    (((finiteReductionEquiv I).counitIso.hom.app F).hom.app (op n)).hom
+      (reductionπ I F.obj.lim n x) = F.obj.limπ n x := by
+  have := ((isFiniteAdicSystem_iff I _).1 F.property).2
+  exact ((isFiniteAdicSystem_iff I _).1 F.property).1.reductionLimIso_hom_app_reductionπ n x
 
 end Finite
 

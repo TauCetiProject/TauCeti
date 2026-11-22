@@ -6,21 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Diagonal
-public import TauCeti.Probability.RandomMatrix.Wigner
 public import TauCeti.Probability.StrongLaw
 
 /-!
-# Removing an i.i.d. diagonal without moment assumptions
+# Removing the diagonal of a random matrix
 
 Adding a real i.i.d. diagonal divided by a normalization tending to infinity preserves almost
 sure weak spectral limits of Hermitian matrix families. Pairwise independence of the diagonal
 coordinates suffices. No diagonal moment, centering, or independence from the matrix family is
 required. The full-measure event works for every limiting probability measure at once.
-
-In particular a Wigner matrix and its zero-diagonal version have the same almost-sure weak
-spectral limits. This separates the arbitrary diagonal law from the finite-second-moment
-off-diagonal hypotheses in the semicircle law. The result concerns global spectral limits;
-individual extreme eigenvalues need not be stable under these perturbations.
+The result concerns global spectral limits; individual extreme eigenvalues need not be stable
+under these perturbations.
 
 ## References
 
@@ -30,7 +26,7 @@ individual extreme eigenvalues need not be stable under these perturbations.
 
 public section
 
-open Filter MeasureTheory ProbabilityTheory Matrix
+open Filter MeasureTheory ProbabilityTheory Matrix Finset
 open scoped Topology
 
 namespace TauCeti.Probability
@@ -70,26 +66,5 @@ theorem ae_tendsto_spectralMeasure_add_diagonal_div_iff {𝕜 : Type*} [RCLike �
   apply Finset.sum_congr rfl
   intro i hi
   simp [Finset.mem_range.1 hi, abs_div, abs_of_pos hn, lt_div_iff₀ hn]
-
-/-- A Wigner family with an identically distributed, pairwise independent real diagonal has
-the same weak spectral limits as its zero-diagonal version, almost surely, without any
-diagonal moment assumption. The upper entries may be arbitrary and may depend on the diagonal. -/
-theorem ae_tendsto_spectralMeasure_wignerMatrix_zero_iff
-    (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ)
-    (hindep : Pairwise fun i j ↦ IndepFun (η i) (η j) P)
-    (hid : ∀ i, IdentDistrib (η i) (η 0) P P) :
-    ∀ᵐ ω ∂P, ∀ μ : ProbabilityMeasure ℝ,
-      Tendsto (fun n ↦ (wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω).spectralMeasure
-        (wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1))) atTop (𝓝 μ) ↔
-      Tendsto (fun n ↦ (wignerMatrix ξ η (n + 1) ω).spectralMeasure
-        (wignerMatrix_isHermitian ξ η ω (n + 1))) atTop (𝓝 μ) := by
-  have h := ae_tendsto_spectralMeasure_add_diagonal_div_iff
-    (fun n ω ↦ wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω)
-    (fun n ω ↦ wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1))
-    η hindep hid (fun n ↦ Real.sqrt n)
-    (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
-  filter_upwards [h] with ω hω
-  simpa only [wignerMatrix_eq_add_diagonal ξ η, RCLike.ofReal_eq_complex_ofReal] using
-    fun μ ↦ (hω μ).symm
 
 end TauCeti.Probability

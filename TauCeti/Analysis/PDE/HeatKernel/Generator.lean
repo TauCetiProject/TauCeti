@@ -130,7 +130,8 @@ theorem heatSemigroup_sub_eq_integral (hp : p ≠ ∞) (hφ : ContDiff ℝ 2 φ)
   have hprod : Integrable (Function.uncurry fun s x => (heatKernel s ⋆ Δ φ) x)
       ((volume.restrict (Ioc 0 t)).prod (volume.restrict A)) := by
     refine (integrable_const C₂).mono'
-      (stronglyMeasurable_heatKernel_convolution hΔ).aestronglyMeasurable ?_
+      (stronglyMeasurable_heatKernel_convolution (f := fun _ => Δ φ) measurable_id
+        (hΔ.stronglyMeasurable.comp_measurable measurable_snd)).aestronglyMeasurable ?_
     rw [Measure.prod_restrict]
     filter_upwards [ae_restrict_mem (measurableSet_Ioc.prod hAm)] with z hz
     exact norm_heatKernel_convolution_le hz.1.1 (ae_of_all _ hC₂) z.2
@@ -323,7 +324,7 @@ theorem generator_heatSemigroup_eq_weakLaplacianLp (hp : p ≠ ∞) :
   obtain ⟨f, rfl⟩ := (LinearPMap.mem_graph_iff' _).1 hfg
   have hf : (f : Lp F p (volume : Measure E)) ∈ (heatSemigroup hp).domain := by
     rw [← StronglyContinuousSemigroup.generator_domain]
-    exact f.2
+    exact f.property
   have hlim := (heatSemigroup (E := E) (F := F) hp).generator_tendsto ⟨f, hf⟩
   exact mem_graph_weakLaplacianLp_iff.2 (integral_laplacian_smul_eq_of_tendsto hp hlim)
 

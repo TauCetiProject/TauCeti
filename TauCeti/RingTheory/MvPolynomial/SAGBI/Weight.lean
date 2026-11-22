@@ -198,20 +198,20 @@ theorem IsSAGBIBasis.exists_pos_weight_range_weightReesAeval [Finite ι]
   classical
   set a := fun i ↦ m.degree (c i)
   obtain ⟨B, hB, hspan⟩ := TauCeti.exists_finset_toricIdeal_eq_span a
-  let b : B → MvPolynomial ι k := fun j ↦ monomial j.1.1 1 - monomial j.1.2 1
+  let b : B → MvPolynomial ι k := fun j ↦ monomial j.val.1 1 - monomial j.val.2 1
   have hJ : TauCeti.toricIdeal k a = Ideal.span (Set.range b) := by
     rw [hspan k]
     congr 1
     exact Set.image_eq_range _ _
-  choose Q hQc hQ using fun j : B ↦ h.exists_aeval_eq_aeval_sub hc (hB j.1 j.2)
+  choose Q hQc hQ using fun j : B ↦ h.exists_aeval_eq_aeval_sub hc (hB j.val j.property)
   obtain ⟨w, hw, hcw, hgw, hQw⟩ := exists_pos_weight_forall_mem_weightFiltrationLT hc hQ
   let d := fun i ↦ Finsupp.weight w (a i)
   have hwA (u : ι →₀ ℕ) : Finsupp.weight d u =
       Finsupp.weight w (Finsupp.linearCombination ℕ a u) :=
     Finsupp.weight_comp_eq_apply_linearCombination (Finsupp.weight w) a u
-  have hb (j : B) : (b j).IsWeightedHomogeneous d (Finsupp.weight d j.1.1) := by
+  have hb (j : B) : (b j).IsWeightedHomogeneous d (Finsupp.weight d j.val.1) := by
     exact (isWeightedHomogeneous_monomial _ _ _ rfl).sub
-      (isWeightedHomogeneous_monomial _ _ _ (by rw [hwA, hwA, hB j.1 j.2]))
+      (isWeightedHomogeneous_monomial _ _ _ (by rw [hwA, hwA, hB j.val j.property]))
   have hker : RingHom.ker (aeval (fun i ↦ monomial (a i) (1 : k))) =
       Ideal.span (Set.range b) := by
     rw [← TauCeti.toricIdeal_eq_ker_aeval_monomial, hJ]

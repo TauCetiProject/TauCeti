@@ -36,12 +36,17 @@ if every `ψ_t` preserves `σ`, then for the pointwise composite `ψ_t ∘ φ_t`
 `(x, t) ↦ G (φ_t x, t) + F (x, t)` is a Hamiltonian; if every `φ_t` preserves `σ`, then for the
 inverse `φ_t⁻¹` the function `(x, t) ↦ -F (φ_t⁻¹ x, t)` is one; and for the conjugate
 `f ∘ φ_t ∘ f⁻¹` by a diffeomorphism `f` the function `(y, t) ↦ F (f⁻¹ y, t)` is one for the form
-`σ` when `F` is a Hamiltonian for `f^* σ`. The flow of a complete Hamiltonian vector field `X_f`
-of a smooth function `f`, run for duration `a`, is Hamiltonian with Hamiltonian
+`σ` when `F` is a Hamiltonian for `f^* σ`. More generally, if a smooth map `g : M' → M`, not
+necessarily a diffeomorphism, intertwines a diffeotopy `φ'_t` of `M'` with `φ_t`, then
+`(x, t) ↦ F (g x, t)` is a Hamiltonian of `φ'_t` for `g^* σ`
+(`TauCeti.Diffeotopy.HasHamiltonian.mpullback_of_semiconj`). The flow of a complete Hamiltonian
+vector field `X_f` of a smooth function `f`, run for duration `a`, is Hamiltonian with Hamiltonian
 `(x, t) ↦ a f(x)` (`TauCeti.Diffeotopy.hasHamiltonian_globalFlowDiffeotopy`).
 
-The flux form of a diffeotopy with a Hamiltonian is exact
-(`TauCeti.Diffeotopy.HasHamiltonian.fluxForm_mem_exactForms`), so Hamiltonian isotopies have zero
+The flux form of a diffeotopy with a Hamiltonian `F` is the exterior derivative of a smooth
+function vanishing wherever `F (x, ·) = 0`, constructed as `x ↦ ∫₀¹ F (x, t) dt`
+(`TauCeti.Diffeotopy.HasHamiltonian.exists_fluxForm_eq_mextDerivₗ`), so it is exact
+(`TauCeti.Diffeotopy.HasHamiltonian.fluxForm_mem_exactForms`) and Hamiltonian isotopies have zero
 flux (`TauCeti.Diffeotopy.IsHamiltonian.flux_eq_zero`).
 
 The **Hamiltonian group** `Ham(M, σ)` (`TauCeti.SmoothForm.hamiltonianGroup`) is the group of
@@ -72,12 +77,20 @@ vanishes on both ends of the cylinder, so the cochain-homotopy identity of the h
 
 ## Main results
 
+* `TauCeti.Diffeotopy.HasHamiltonian.exists_fluxForm_eq_mextDerivₗ`: the flux form of a
+  diffeotopy with Hamiltonian `F` is `d g` for a smooth function `g` vanishing wherever
+  `F (x, ·) = 0`.
 * `TauCeti.Diffeotopy.HasHamiltonian.fluxForm_mem_exactForms`,
   `TauCeti.Diffeotopy.IsHamiltonian.flux_eq_zero`: Hamiltonian diffeotopies have exact flux form
   and zero flux.
 * `TauCeti.Diffeotopy.HasHamiltonian.trans`, `TauCeti.Diffeotopy.HasHamiltonian.symm`,
   `TauCeti.Diffeotopy.HasHamiltonian.transDiffeomorph`: Hamiltonians of composites, inverses
   and conjugates.
+* `TauCeti.Diffeotopy.HasHamiltonian.add`: Hamiltonians are additive in the two-form.
+* `TauCeti.Diffeotopy.HasHamiltonian.mpullback_of_semiconj`,
+  `TauCeti.Diffeotopy.IsHamiltonian.mpullback_of_semiconj`: if a smooth map `g` intertwines two
+  diffeotopies, `g ∘ φ'_t = φ_t ∘ g`, a Hamiltonian `F` of `φ_t` for `σ` gives the Hamiltonian
+  `F ∘ (g × id)` of `φ'_t` for `g^* σ`.
 * `TauCeti.Diffeotopy.isHamiltonian_globalFlowDiffeotopy`: complete autonomous Hamiltonian flows
   are Hamiltonian diffeotopies.
 * `TauCeti.SmoothForm.hamiltonianGroup_le_isotopyStabilizer`,
@@ -124,7 +137,7 @@ def HasHamiltonian (σ : SmoothForm J M ℝ 2) (Φ : Diffeotopy J ∞ M)
     (F : M × unitInterval → ℝ) : Prop :=
   ContMDiff (J.prod (𝓡∂ 1)) 𝓘(ℝ) ∞ F ∧
     ∀ (p : M × unitInterval) (v : E),
-      mpullback (J.prod (𝓡∂ 1)) J Φ.cylinderMap σ.1 p
+      mpullback (J.prod (𝓡∂ 1)) J Φ.cylinderMap σ.val p
           ![((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)), (v, (0 : EuclideanSpace ℝ (Fin 1)))] =
         mvfderiv (J.prod (𝓡∂ 1)) F p (v, (0 : EuclideanSpace ℝ (Fin 1)))
 
@@ -135,7 +148,7 @@ variable {σ : SmoothForm J M ℝ 2} {Φ Ψ : Diffeotopy J ∞ M} {F G : M × un
 theorem hasHamiltonian_iff : Φ.HasHamiltonian σ F ↔
     ContMDiff (J.prod (𝓡∂ 1)) 𝓘(ℝ) ∞ F ∧
       ∀ (p : M × unitInterval) (v : E),
-        mpullback (J.prod (𝓡∂ 1)) J Φ.cylinderMap σ.1 p
+        mpullback (J.prod (𝓡∂ 1)) J Φ.cylinderMap σ.val p
             ![((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)), (v, (0 : EuclideanSpace ℝ (Fin 1)))] =
           mvfderiv (J.prod (𝓡∂ 1)) F p (v, (0 : EuclideanSpace ℝ (Fin 1))) :=
   Iff.rfl
@@ -149,7 +162,7 @@ theorem HasHamiltonian.contMDiff (h : Φ.HasHamiltonian σ F) :
 `σ_{φ_t x}(∂ₜ φ_t x, dφ_t v) = d(F_t)_x(v)`. -/
 theorem HasHamiltonian.mpullback_cylinderMap_apply (h : Φ.HasHamiltonian σ F)
     (p : M × unitInterval) (v : E) :
-    mpullback (J.prod (𝓡∂ 1)) J Φ.cylinderMap σ.1 p
+    mpullback (J.prod (𝓡∂ 1)) J Φ.cylinderMap σ.val p
         ![((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)), (v, (0 : EuclideanSpace ℝ (Fin 1)))] =
       mvfderiv (J.prod (𝓡∂ 1)) F p (v, (0 : EuclideanSpace ℝ (Fin 1))) :=
   h.2 p v
@@ -214,19 +227,24 @@ private theorem mextDeriv_smulTimeForm_apply (hF : ContMDiff (J.prod (𝓡∂ 1)
     Matrix.cons_val_zero, mvfderiv_timeCoord, Pi.zero_apply, ContinuousAlternatingMap.coe_zero,
     mul_zero, add_zero]
 
-/-- **The flux form of a Hamiltonian diffeotopy is exact.** If `φ_t` has a Hamiltonian `F` for
-`σ`, read along the motion, then the flux form of `φ_t` is exact. Neither closedness nor
-nondegeneracy of `σ` is needed. -/
-theorem HasHamiltonian.fluxForm_mem_exactForms (h : Φ.HasHamiltonian σ F) :
-    Φ.fluxForm σ ∈ exactForms J M 1 := by
+/-- **The flux form of a Hamiltonian diffeotopy.** If `φ_t` has a Hamiltonian `F` for `σ`, read
+along the motion, then the flux form of `φ_t` is `d g` for some smooth function `g` vanishing
+at every point `x` with `F (x, t) = 0` for all `t`. The proof takes `g x = ∫₀¹ F (x, t) dt`.
+Neither closedness nor nondegeneracy of `σ` is needed. -/
+theorem HasHamiltonian.exists_fluxForm_eq_mextDerivₗ (h : Φ.HasHamiltonian σ F) :
+    ∃ g : SmoothForm J M ℝ 0, (∀ x, (∀ t, F (x, t) = 0) → g.val x = 0) ∧
+      Φ.fluxForm σ = mextDerivₗ J 0 g := by
   have : IsManifold J ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
   have hβ := isSmoothForm_smulTimeForm h.1
   -- `h (d (F dt)) = -d (h (F dt))`, because `F dt` vanishes on both ends of the cylinder.
   have key := homotopyOperator_mextDeriv_of_mpullback_eq_zero (hβ.of_le (by simp))
     (mpullback_smulTimeForm_eq_zero F 0) (mpullback_smulTimeForm_eq_zero F 1)
-  rw [exactForms_succ]
   refine ⟨⟨homotopyOperator (smulTimeForm J F),
-    (IsSmoothForm.homotopyOperator hβ).mem_smoothBundleForms⟩, Subtype.ext ?_⟩
+    (IsSmoothForm.homotopyOperator hβ).mem_smoothBundleForms⟩, fun x hx ↦ ?_,
+    (Subtype.ext ?_).symm⟩
+  · -- Over such a point the one-form `F dt` vanishes at every time.
+    refine homotopyOperator_apply_eq_zero fun t v ↦ ?_
+    rw [smulTimeForm, hx t, zero_smul, ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
   rw [mextDerivₗ_apply, coe_fluxForm, ← neg_eq_iff_eq_neg.mpr key,
     ← neg_one_smul ℝ (homotopyOperator (mextDeriv (smulTimeForm J F))), ← homotopyOperator_smul]
   -- The integrands of the two homotopy operators agree: both are `dF` on spatial vectors.
@@ -247,7 +265,7 @@ theorem HasHamiltonian.fluxForm_mem_exactForms (h : Φ.HasHamiltonian σ F) :
   have h1 : mextDeriv (smulTimeForm J F) p ![u, w] = -mvfderiv (J.prod (𝓡∂ 1)) F p w := by
     have hw : mvfderiv (𝓡∂ 1) (Subtype.val : unitInterval → ℝ) p.2 w.2 = 0 := map_zero _
     rw [mextDeriv_smulTimeForm_apply h.1, hu, hw, mul_zero, zero_sub, mul_one]
-  have h2 : (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ).1 p ![u, w] =
+  have h2 : (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ).val p ![u, w] =
       mvfderiv (J.prod (𝓡∂ 1)) F p w := by
     rw [SmoothForm.coe_mpullback]
     exact h.2 p (v 0)
@@ -256,9 +274,18 @@ theorem HasHamiltonian.fluxForm_mem_exactForms (h : Φ.HasHamiltonian σ F) :
   exact (congrArg Neg.neg ((congrArg (mextDeriv (smulTimeForm J F) p) hv).trans h1)).trans
     ((neg_neg _).trans (h2.symm.trans (congrArg _ hv.symm)))
 
+/-- **The flux form of a Hamiltonian diffeotopy is exact.** If `φ_t` has a Hamiltonian `F` for
+`σ`, read along the motion, then the flux form of `φ_t` is exact. Neither closedness nor
+nondegeneracy of `σ` is needed. -/
+theorem HasHamiltonian.fluxForm_mem_exactForms (h : Φ.HasHamiltonian σ F) :
+    Φ.fluxForm σ ∈ exactForms J M 1 := by
+  obtain ⟨g, -, hg⟩ := h.exists_fluxForm_eq_mextDerivₗ
+  rw [exactForms_succ]
+  exact ⟨g, hg.symm⟩
+
 /-- **The flux of a Hamiltonian diffeotopy vanishes.** -/
-theorem HasHamiltonian.flux_eq_zero {σ : closedForms J M 2} (h : Φ.HasHamiltonian σ.1 F)
-    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1) : Φ.flux σ hΦ = 0 := by
+theorem HasHamiltonian.flux_eq_zero {σ : closedForms J M 2} (h : Φ.HasHamiltonian σ.val F)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val) : Φ.flux σ hΦ = 0 := by
   rw [flux_def, deRhamCohomology.mk_eq_zero_iff]
   exact h.fluxForm_mem_exactForms
 
@@ -283,9 +310,9 @@ time slice `M × {t}` to `σ`. -/
 private theorem mpullback_cylinderMap_apply_space
     (hΨ : ∀ t, Ψ.timeSlice t ∈ SmoothForm.diffeomorphStabilizer σ) (q : M × unitInterval)
     (a b : TangentSpace J q.1) :
-    mpullback (J.prod (𝓡∂ 1)) J Ψ.cylinderMap σ.1 q
+    mpullback (J.prod (𝓡∂ 1)) J Ψ.cylinderMap σ.val q
         ![(a, (0 : EuclideanSpace ℝ (Fin 1))), (b, (0 : EuclideanSpace ℝ (Fin 1)))] =
-      σ.1 q.1 ![a, b] := by
+      σ.val q.1 ![a, b] := by
   have hs : MDifferentiable J (J.prod (𝓡∂ 1)) fun z : M ↦ (z, q.2) :=
     (contMDiff_id.prodMk contMDiff_const).mdifferentiable (n := 1) one_ne_zero
   have hslice : Ψ.cylinderMap ∘ (fun z ↦ (z, q.2)) = Ψ.timeSlice q.2 :=
@@ -293,7 +320,7 @@ private theorem mpullback_cylinderMap_apply_space
   rw [← (SmoothForm.mem_diffeomorphStabilizer_iff_forall.1 (hΨ q.2)) q.1, ← hslice,
     mpullback_comp hs (Ψ.contMDiff_cylinderMap.mdifferentiable (by simp))]
   simp only [mpullback_apply]
-  refine congrArg (σ.1 (Ψ.cylinderMap q)) (funext fun i : Fin 2 ↦ ?_)
+  refine congrArg (σ.val (Ψ.cylinderMap q)) (funext fun i : Fin 2 ↦ ?_)
   refine congrArg (mfderiv (J.prod (𝓡∂ 1)) J Ψ.cylinderMap q) ?_
   rw [mfderiv_prod_left]
   -- `mfderiv_prod_left` gives `ContinuousLinearMap.inl` into
@@ -308,13 +335,13 @@ private theorem mpullback_cylinderMap_apply_space
 private theorem mpullback_cylinderMap_trans_apply
     (hΨ : ∀ t, Ψ.timeSlice t ∈ SmoothForm.diffeomorphStabilizer σ) (p : M × unitInterval)
     (v : E) :
-    mpullback (J.prod (𝓡∂ 1)) J (Φ.trans Ψ).cylinderMap σ.1 p
+    mpullback (J.prod (𝓡∂ 1)) J (Φ.trans Ψ).cylinderMap σ.val p
         ![((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)), (v, (0 : EuclideanSpace ℝ (Fin 1)))] =
-      mpullback (J.prod (𝓡∂ 1)) J Ψ.cylinderMap σ.1 (Φ.cylinderMap p, p.2)
+      mpullback (J.prod (𝓡∂ 1)) J Ψ.cylinderMap σ.val (Φ.cylinderMap p, p.2)
           ![((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)),
             (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p (v, (0 : EuclideanSpace ℝ (Fin 1))),
               (0 : EuclideanSpace ℝ (Fin 1)))] +
-        mpullback (J.prod (𝓡∂ 1)) J Φ.cylinderMap σ.1 p
+        mpullback (J.prod (𝓡∂ 1)) J Φ.cylinderMap σ.val p
           ![((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)), (v, (0 : EuclideanSpace ℝ (Fin 1)))] := by
   set q : M × unitInterval := (Φ.cylinderMap p, p.2)
   set a : TangentSpace J q.1 :=
@@ -335,8 +362,8 @@ private theorem mpullback_cylinderMap_trans_apply
     · exact Φ.mfderiv_cylinderMap_prodMk_snd (by simp) p _
   rw [cylinderMap_trans, mpullback_comp (Φ.contMDiff_cylinderMap_prodMk_snd.mdifferentiable
       (by simp)) (Ψ.contMDiff_cylinderMap.mdifferentiable (by simp)), mpullback_apply]
-  refine ((congrArg (mpullback (J.prod (𝓡∂ 1)) J Ψ.cylinderMap σ.1 q) hvec).trans
-    ((mpullback (J.prod (𝓡∂ 1)) J Ψ.cylinderMap σ.1 q).vecCons_add _ _ _)).trans
+  refine ((congrArg (mpullback (J.prod (𝓡∂ 1)) J Ψ.cylinderMap σ.val q) hvec).trans
+    ((mpullback (J.prod (𝓡∂ 1)) J Ψ.cylinderMap σ.val q).vecCons_add _ _ _)).trans
     (congrArg (_ + ·) ?_)
   -- Since `ψ_t` preserves `σ`, the purely spatial term is the integrand of `φ`.
   refine (mpullback_cylinderMap_apply_space hΨ q a b).trans ?_
@@ -368,7 +395,7 @@ theorem hasHamiltonian_refl : (refl J ∞ M).HasHamiltonian σ 0 := by
   have hcyl : (refl J ∞ M).cylinderMap = Prod.fst := funext fun p ↦ by simp
   rw [hcyl, mpullback_apply, mfderiv_fst, mvfderiv_zero]
   -- The motion is stationary, so its time derivative vanishes.
-  exact (σ.1 p.1).map_coord_zero 0 rfl
+  exact (σ.val p.1).map_coord_zero 0 rfl
 
 /-- **Hamiltonians of the inverse diffeotopy.** If `F` is a Hamiltonian of `φ_t`, read along its
 motion, and every `φ_t` preserves `σ`, then `(x, t) ↦ -F (φ_t⁻¹ x, t)` is a Hamiltonian of the
@@ -388,6 +415,60 @@ theorem HasHamiltonian.symm (hF : Φ.HasHamiltonian σ F)
     (DFunLike.congr_fun (mvfderiv_fun_neg (g := fun q ↦ F (Φ.symm.cylinderMap q, q.2)) (x := p))
       _).symm)
 
+/-- **Hamiltonians are additive in the form.** If `F` is a Hamiltonian of `φ_t` for `σ` and `G`
+is one for `τ`, then `F + G` is a Hamiltonian of `φ_t` for `σ + τ`. -/
+theorem HasHamiltonian.add {τ : SmoothForm J M ℝ 2} (hF : Φ.HasHamiltonian σ F)
+    (hG : Φ.HasHamiltonian τ G) : Φ.HasHamiltonian (σ + τ) (fun p ↦ F p + G p) := by
+  refine ⟨hF.1.add hG.1, fun p v ↦ ?_⟩
+  rw [SmoothForm.add_toRoughForm, mpullback_add, Pi.add_apply,
+    ContinuousAlternatingMap.add_apply, hF.2 p v, hG.2 p v]
+  exact (DFunLike.congr_fun (mvfderiv_fun_add (g := F) (g' := G) (x := p)
+    (hF.1.mdifferentiableAt (by simp)) (hG.1.mdifferentiableAt (by simp))) _).symm
+
+section Semiconj
+
+variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
+  [IsManifold J' ∞ M'] {Φ' : Diffeotopy J' ∞ M'} {g : M' → M}
+
+/-- **Naturality of Hamiltonians under intertwining maps.** If a smooth map `g : M' → M`
+intertwines a diffeotopy `φ'_t` of `M'` with the diffeotopy `φ_t` of `M`, `g ∘ φ'_t = φ_t ∘ g` for
+every `t`, and `F` is a Hamiltonian of `φ_t` for `σ`, then `(x, t) ↦ F (g x, t)` is a Hamiltonian
+of `φ'_t` for the pullback `g^* σ`. The map `g` need not be a diffeomorphism. -/
+theorem HasHamiltonian.mpullback_of_semiconj (hg : ContMDiff J' J ∞ g)
+    (h : ∀ t, Function.Semiconj g (Φ'.timeSlice t) (Φ.timeSlice t))
+    (hF : Φ.HasHamiltonian σ F) :
+    Φ'.HasHamiltonian (SmoothForm.mpullback g hg σ) (fun p ↦ F (g p.1, p.2)) := by
+  have hP : ContMDiff (J'.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1)) ∞
+      (Prod.map g (id : unitInterval → unitInterval)) :=
+    hg.prodMap contMDiff_id
+  refine ⟨hF.1.comp hP, fun p v ↦ ?_⟩
+  -- The map `g × id` sends `∂ₜ` to `∂ₜ` and `(v, 0)` to `(dg v, 0)`.
+  have hdP (w : TangentSpace (J'.prod (𝓡∂ 1)) p) :
+      mfderiv (J'.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1)) (Prod.map g (id : unitInterval → unitInterval))
+        p w = (mfderiv J' J g p.1 w.1, w.2) := by
+    have := Manifold.mfderiv_prodMap_apply (hg.mdifferentiable (by simp) p.1)
+      (mdifferentiableAt_id (I := 𝓡∂ 1) (x := p.2)) (w.1, w.2)
+    rw [Manifold.tangentSpaceProdEquiv_symm_apply, Manifold.tangentSpaceProdEquiv_symm_apply,
+      mfderiv_id, ContinuousLinearMap.id_apply] at this
+    -- `(w.1, w.2)` is `w` by eta for pairs.
+    exact this
+  rw [SmoothForm.coe_mpullback, ← mpullback_comp
+      (Φ'.contMDiff_cylinderMap.mdifferentiable (by simp)) (hg.mdifferentiable (by simp)),
+    Φ.comp_cylinderMap_of_semiconj h,
+    mpullback_comp (hP.mdifferentiable (by simp))
+      (Φ.contMDiff_cylinderMap.mdifferentiable (by simp)), mpullback_apply]
+  refine (congrArg _ (funext fun i : Fin 2 ↦ ?_)).trans
+    ((hF.2 (g p.1, p.2) (mfderiv J' J g p.1 v)).trans ?_)
+  · fin_cases i
+    · exact (hdP _).trans (Prod.ext (map_zero _) rfl)
+    · exact hdP _
+  · exact ((mvfderiv_comp_apply (g := F) p (hF.1.mdifferentiableAt (by simp))
+      (hP.mdifferentiableAt (by simp)) ((v, 0) : TangentSpace (J'.prod (𝓡∂ 1)) p)).trans
+        (congrArg _ (hdP _))).symm
+
+end Semiconj
+
 /-- **Naturality of Hamiltonians.** If `F` is a Hamiltonian of `φ_t` for the pullback `f^* σ` of
 `σ` along a diffeomorphism `f : M → P`, then `(y, t) ↦ F (f⁻¹ y, t)` is a Hamiltonian of the
 conjugated diffeotopy `f ∘ φ_t ∘ f⁻¹` for `σ`. -/
@@ -395,34 +476,9 @@ theorem HasHamiltonian.transDiffeomorph {P : Type*} [TopologicalSpace P] [Charte
     [IsManifold J ∞ P] {σ : SmoothForm J P ℝ 2} (f : M ≃ₘ⟮J, J⟯ P)
     (hF : Φ.HasHamiltonian (SmoothForm.mpullback f f.contMDiff σ) F) :
     (Φ.transDiffeomorph f).HasHamiltonian σ (fun p ↦ F (f.symm p.1, p.2)) := by
-  have hP : ContMDiff (J.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1)) ∞
-      (Prod.map f.symm (id : unitInterval → unitInterval)) :=
-    f.symm.contMDiff.prodMap contMDiff_id
-  refine ⟨hF.1.comp hP, fun p v ↦ ?_⟩
-  -- The motion of the conjugate is `f ∘ Φ ∘ (f⁻¹ × id)`, and `f⁻¹ × id` sends `∂ₜ` to `∂ₜ`
-  -- and `(v, 0)` to `(df⁻¹ v, 0)`.
-  have hdP (w : TangentSpace (J.prod (𝓡∂ 1)) p) :
-      mfderiv (J.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1)) (Prod.map f.symm (id : unitInterval → unitInterval))
-        p w = (mfderiv J J f.symm p.1 w.1, w.2) := by
-    have := Manifold.mfderiv_prodMap_apply (f.symm.mdifferentiable (by simp) p.1)
-      (mdifferentiableAt_id (I := 𝓡∂ 1) (x := p.2)) (w.1, w.2)
-    rw [Manifold.tangentSpaceProdEquiv_symm_apply, Manifold.tangentSpaceProdEquiv_symm_apply,
-      mfderiv_id, ContinuousLinearMap.id_apply] at this
-    -- `(w.1, w.2)` is `w` by eta for pairs.
-    exact this
-  rw [cylinderMap_transDiffeomorph, ← Function.comp_assoc,
-    mpullback_comp (hP.mdifferentiable (by simp))
-      ((f.contMDiff.comp Φ.contMDiff_cylinderMap).mdifferentiable (by simp)),
-    mpullback_comp (Φ.contMDiff_cylinderMap.mdifferentiable (by simp))
-      (f.mdifferentiable (by simp)), ← SmoothForm.coe_mpullback f f.contMDiff σ, mpullback_apply]
-  refine (congrArg _ (funext fun i : Fin 2 ↦ ?_)).trans
-    (((hF.2 (f.symm p.1, p.2) (mfderiv J J f.symm p.1 v))).trans ?_)
-  · fin_cases i
-    · exact (hdP _).trans (Prod.ext (map_zero _) rfl)
-    · exact hdP _
-  · exact ((mvfderiv_comp_apply (g := F) p (hF.1.mdifferentiableAt (by simp))
-      (hP.mdifferentiableAt (by simp)) ((v, 0) : TangentSpace (J.prod (𝓡∂ 1)) p)).trans
-        (congrArg _ (hdP _))).symm
+  have h := hF.mpullback_of_semiconj f.symm.contMDiff
+    (Φ.semiconj_symm_timeSlice_transDiffeomorph f)
+  rwa [SmoothForm.mpullback_symm_mpullback] at h
 
 /-- A diffeotopy `φ_t` is **Hamiltonian** for a two-form `σ` when every map `φ_t` preserves `σ`
 and `φ_t` has a Hamiltonian read along its motion (`TauCeti.Diffeotopy.HasHamiltonian`): it is
@@ -473,14 +529,31 @@ theorem IsHamiltonian.transDiffeomorph {f : M ≃ₘ⟮J, J⟯ M}
     fun p ↦ F (f.symm p.1, p.2), HasHamiltonian.transDiffeomorph (F := F) f ?_⟩
   rwa [SmoothForm.mem_diffeomorphStabilizer.1 hf]
 
+section Semiconj
+
+variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
+  [IsManifold J' ∞ M'] {Φ' : Diffeotopy J' ∞ M'} {g : M' → M}
+
+/-- If a smooth map `g` intertwines a diffeotopy `φ'_t` with a Hamiltonian diffeotopy `φ_t` of
+`σ` at every time, then `φ'_t` is a Hamiltonian diffeotopy of `g^* σ`. -/
+theorem IsHamiltonian.mpullback_of_semiconj (hg : ContMDiff J' J ∞ g)
+    (h : ∀ t, Function.Semiconj g (Φ'.timeSlice t) (Φ.timeSlice t)) (hΦ : Φ.IsHamiltonian σ) :
+    Φ'.IsHamiltonian (SmoothForm.mpullback g hg σ) := by
+  obtain ⟨hΦσ, F, hF⟩ := hΦ
+  exact ⟨fun t ↦ SmoothForm.mem_diffeomorphStabilizer_mpullback_of_semiconj hg (h t) (hΦσ t),
+    _, hF.mpullback_of_semiconj hg h⟩
+
+end Semiconj
+
 /-- The flux form of a Hamiltonian diffeotopy is exact. -/
 theorem IsHamiltonian.fluxForm_mem_exactForms (hΦ : Φ.IsHamiltonian σ) :
     Φ.fluxForm σ ∈ exactForms J M 1 :=
   hΦ.2.choose_spec.fluxForm_mem_exactForms
 
 /-- **The flux of a Hamiltonian isotopy vanishes.** -/
-theorem IsHamiltonian.flux_eq_zero {σ : closedForms J M 2} (hΦ : Φ.IsHamiltonian σ.1)
-    (h : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1) : Φ.flux σ h = 0 :=
+theorem IsHamiltonian.flux_eq_zero {σ : closedForms J M 2} (hΦ : Φ.IsHamiltonian σ.val)
+    (h : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val) : Φ.flux σ h = 0 :=
   hΦ.2.choose_spec.flux_eq_zero h
 
 /-! ### Autonomous Hamiltonian flows -/
@@ -507,7 +580,7 @@ for duration `a` has the Hamiltonian `(x, t) ↦ a f(x)`, read along its motion.
 theorem hasHamiltonian_globalFlowDiffeotopy (hf : ContMDiff J 𝓘(ℝ) ∞ f)
     (hX : σ.IsHamiltonianVectorField f X) (hc : IsCompleteVectorField X) (a : ℝ) :
     (globalFlowDiffeotopy le_top X.contMDiff hc a).HasHamiltonian σ (fun p ↦ a * f p.1) := by
-  have hXi : RoughForm.interior X σ.1 = mextDeriv (RoughForm.ofFunction J f) :=
+  have hXi : RoughForm.interior X σ.val = mextDeriv (RoughForm.ofFunction J f) :=
     SmoothTwoForm.isHamiltonianVectorField_iff_interior_eq.1 hX
   have hXs := mem_symplecticVectorFields_of_isHamiltonianVectorField_of_contMDiff hf hX
   have hfst : ContMDiff (J.prod (𝓡∂ 1)) 𝓘(ℝ) ∞ (f ∘ Prod.fst : M × unitInterval → ℝ) :=
@@ -518,9 +591,9 @@ theorem hasHamiltonian_globalFlowDiffeotopy (hf : ContMDiff J 𝓘(ℝ) ∞ f)
   -- The motion `(x, t) ↦ ψ_(a t) x` has velocity `a X` and spatial derivative `dψ_(a t)`, and the
   -- flow preserves `ι_X σ = df`.
   have hpull : mpullback (J.prod (𝓡∂ 1)) J
-      (globalFlowDiffeotopy le_top X.contMDiff hc a).cylinderMap σ.1 p
+      (globalFlowDiffeotopy le_top X.contMDiff hc a).cylinderMap σ.val p
         ![((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)), (v, (0 : EuclideanSpace ℝ (Fin 1)))] =
-      σ.1 (flowOf X (a * p.2) p.1) (Matrix.vecCons (a • X (flowOf X (a * p.2) p.1))
+      σ.val (flowOf X (a * p.2) p.1) (Matrix.vecCons (a • X (flowOf X (a * p.2) p.1))
         fun i ↦ mfderiv J J (flowOf X (a * p.2)) p.1 (![v] i)) := by
     refine (mpullback_apply _ _ _ _).trans ?_
     rw [congrFun (cylinderMap_globalFlowDiffeotopy le_top X.contMDiff hc a) p]
@@ -620,7 +693,7 @@ Hamiltonian group lies in the kernel of the endpoint flux `G_σ → H¹_dR(M) / 
 theorem hamiltonianGroup_subgroupOf_le_ker_endpointFlux {E H : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [TopologicalSpace H] {J : ModelWithCorners ℝ E H} {M : Type*}
     [TopologicalSpace M] [ChartedSpace H M] [IsManifold J ∞ M] (σ : closedForms J M 2) :
-    (SmoothForm.hamiltonianGroup σ.1).subgroupOf (SmoothForm.isotopyStabilizer σ.1) ≤
+    (SmoothForm.hamiltonianGroup σ.val).subgroupOf (SmoothForm.isotopyStabilizer σ.val) ≤
       (endpointFlux σ).ker := by
   intro φ hφ
   obtain ⟨Φ, hΦ, hfin⟩ := SmoothForm.mem_hamiltonianGroup.1 (Subgroup.mem_subgroupOf.1 hφ)
