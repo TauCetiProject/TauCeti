@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.Morse.Gluing.Centre
 import Mathlib.Geometry.Manifold.Metrizable
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Topology.Closure
 
 /-!
 # Gluing at a broken trajectory
@@ -717,14 +718,8 @@ theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart
       (by rw [hχ']; exact ⟨.refl ℝ _, rfl⟩) (hχ₀.trans hΦy₂.symm) hy₂ε hε hU' hV'
   rw [hΦy₁, hΦy₂] at he₀ hcl
   -- The end of the gluing arc is an unbroken gluing pair.
-  have hz : (e ⟨r₀, right_mem_Icc.2 hr₀.le⟩).val ∈ splitGluingPairs ε r₀ g k := by
-    have hmem : (e ⟨r₀, right_mem_Icc.2 hr₀.le⟩).val ∈
-        insert (Φ y₁, Φ y₂) (splitGluingPairs ε r₀ g k) :=
-      hcl ▸ (e ⟨r₀, right_mem_Icc.2 hr₀.le⟩).property
-    refine hmem.resolve_left fun h0 ↦ hr₀.ne ?_
-    have : e ⟨r₀, right_mem_Icc.2 hr₀.le⟩ = e ⟨0, left_mem_Icc.2 hr₀.le⟩ :=
-      Subtype.ext (h0.trans he₀.symm)
-    exact (congrArg Subtype.val (e.injective this)).symm
+  have hz : (e ⟨r₀, right_mem_Icc.2 hr₀.le⟩).val ∈ splitGluingPairs ε r₀ g k :=
+    val_mem_of_closure_eq_insert hcl e.injective he₀ fun h ↦ hr₀.ne' (congrArg Subtype.val h)
   set z := (e ⟨r₀, right_mem_Icc.2 hr₀.le⟩).val
   obtain ⟨⟨z₁, ⟨⟨hw, hwf, hws⟩, hz₁, hwu, hwN₁⟩, hwz⟩,
     z₂, ⟨⟨hw', hw'f, hw's⟩, hz₂, hw'Z, hw'N⟩, hw'z⟩ := hpairs z hz

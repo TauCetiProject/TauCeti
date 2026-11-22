@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Gluing.Broken
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.Flow.HittingTime
+import TauCeti.Topology.Closure
 
 /-!
 # Half-open gluing charts into a transverse set
@@ -103,17 +104,6 @@ private theorem exists_pos_forall_mul_sq_lt_sq {n ε r₀ : ℝ} (hn : 0 ≤ n) 
   exact ⟨r₁, hr₁, min_le_left _ _, (min_le_right _ _).trans
     ((div_le_one (by positivity)).2 (by linarith)), fun u hu hu' ↦
     lt_of_le_of_lt (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hu hu' 2) hn) hr₁n⟩
-
-/-- A homeomorphism from `[0, r₀]` onto `closure S = insert z₀ S`, taking `0` to `z₀`, takes every
-nonzero parameter into `S`. -/
-private theorem val_homeomorph_mem_of_ne_zero {X : Type*} [TopologicalSpace X] {S : Set X}
-    {z₀ : X} {r₀ : ℝ} (hr₀ : 0 ≤ r₀) (e : Icc (0 : ℝ) r₀ ≃ₜ closure S)
-    (hcl : closure S = insert z₀ S) (he₀ : (e ⟨0, left_mem_Icc.2 hr₀⟩).val = z₀)
-    (s : Icc (0 : ℝ) r₀) (hs : (s : ℝ) ≠ 0) : (e s).val ∈ S := by
-  have hmem : (e s).val ∈ insert z₀ S := hcl ▸ (e s).property
-  refine hmem.resolve_left fun h0 ↦ hs ?_
-  have : e s = e ⟨0, left_mem_Icc.2 hr₀⟩ := Subtype.ext (h0.trans he₀.symm)
-  exact congrArg Subtype.val (e.injective this)
 
 namespace IsAdaptedPseudoGradient
 
@@ -470,7 +460,8 @@ private theorem IsMorseSmale.exists_transverseGluingArc {hX : IsAdaptedPseudoGra
   have hepair : ∀ s : Icc (0 : ℝ) r₀, (s : ℝ) ≠ 0 →
       (e s).val ∈ splitGluingPairs ε r₀ g k ∧ ‖(e s).val.1.snd‖ = s * ε := by
     intro s hs
-    refine ⟨val_homeomorph_mem_of_ne_zero hr₀.le e hcl he₀ s hs, ?_⟩
+    refine ⟨val_mem_of_closure_eq_insert hcl e.injective he₀ fun h ↦
+      hs (congrArg Subtype.val h), ?_⟩
     have := he (e s)
     rw [e.symm_apply_apply] at this
     rw [this, div_mul_cancel₀ _ hε.ne']
