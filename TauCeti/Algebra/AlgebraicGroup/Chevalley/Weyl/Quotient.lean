@@ -312,12 +312,13 @@ local notation "Nₖ" => D.weylSubgroup K
 local notation "Hₖ" => Subgroup.subgroupOf (MonoidHom.range (D.torusPoints K)) Nₖ
 
 private theorem quotientSection_comp_fieldQuotientProjection :
-    (D.quotientSection K).comp (D.fieldQuotientProjection K) = MonoidHom.id _ := by
-  refine MonoidHom.ext fun q => ?_
-  obtain ⟨w, rfl⟩ := D.quotientSection_surjective K q
-  simp only [MonoidHom.comp_apply, MonoidHom.id_apply]
-  exact congrArg (D.quotientSection K)
-    (DFunLike.congr_fun (D.fieldQuotientProjection_comp_quotientSection K) w)
+    (D.quotientSection K).comp (D.fieldQuotientProjection K) = MonoidHom.id _ :=
+  MonoidHom.ext fun q =>
+    (Function.LeftInverse.rightInverse_of_surjective
+      (fun w => by
+        simpa only [MonoidHom.comp_apply, MonoidHom.id_apply] using
+          DFunLike.congr_fun (D.fieldQuotientProjection_comp_quotientSection K) w)
+      (D.quotientSection_surjective K)) q
 
 /-- The inverse Weyl quotient equivalence sends a Weyl projection to its quotient class. -/
 @[simp]
