@@ -59,26 +59,26 @@ instance instCountableProbabilityMeasureCodeIndex : Countable (ProbabilityMeasur
 
 /-- The measurable evaluation code of a probability measure on a countably generated space. -/
 def probabilityMeasureCode (P : ProbabilityMeasure α) : ProbabilityMeasureCodeIndex α → ℝ≥0∞ :=
-  fun s => (P : Measure α) s.1
+  fun s => (P : Measure α) s.val
 
 /-- Evaluation of the probability-measure code. -/
 @[simp]
 theorem probabilityMeasureCode_apply (P : ProbabilityMeasure α)
     (s : ProbabilityMeasureCodeIndex α) :
-    probabilityMeasureCode P s = (P : Measure α) s.1 :=
+    probabilityMeasureCode P s = (P : Measure α) s.val :=
   (rfl)
 
 /-- Every member of the coding set algebra is measurable. -/
 theorem measurableSet_probabilityMeasureCodeIndex (s : ProbabilityMeasureCodeIndex α) :
-    MeasurableSet (s.1 : Set α) :=
+    MeasurableSet (s.val : Set α) :=
   (generateFrom_generateSetAlgebra_eq.trans generateFrom_countableGeneratingSet).le _
-    (measurableSet_generateFrom s.2)
+    (measurableSet_generateFrom s.property)
 
 /-- The evaluation code is measurable into its countable product space. -/
 theorem measurable_probabilityMeasureCode : Measurable (probabilityMeasureCode (α := α)) :=
   Measurable.of_eval fun s =>
     (Measure.measurable_coe (measurableSet_probabilityMeasureCodeIndex s)).comp
-      measurable_subtype_coe
+      measurable_subtypeVal
 
 /-- The Giry measurable space on probability measures over a countably generated space is the
 pullback of the product measurable space along the canonical evaluation code. -/
