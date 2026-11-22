@@ -439,8 +439,7 @@ private theorem exists_norm_sum_toLp_symbol_smul_le [Countable ι] (hP : IsDyadi
         L := by
   obtain ⟨L, hL0, hL⟩ := hP.sum_sq
   refine ⟨L, hL0, fun s ↦ ?_⟩
-  rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
-  refine ENNReal.toReal_le_of_le_ofReal hL0 (eLpNormEssSup_le_of_ae_bound ?_)
+  refine Lp.norm_le_of_ae_bound_top hL0 ?_
   filter_upwards [Lp.coeFn_fun_finsetSum s fun i ↦
       ((σ i).toLp ∞ volume • (σ i).toLp ∞ volume : Lp ℂ ∞ (volume : Measure V)),
     ae_all_iff.2 fun i ↦ Lp.coeFn_lpSMul (r := ∞) ((σ i).toLp ∞ (volume : Measure V))
@@ -994,11 +993,9 @@ theorem norm_fourierMultiplierCLM_littlewoodPaley_le {j : ℤ}
     {m : Lp ℂ ∞ (volume : Measure V)} (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :
     ‖Lp.fourierMultiplierCLM (E := V) F m‖ ≤ 1 := by
   refine (Lp.norm_fourierMultiplierCLM_le m).trans ?_
-  rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable m)]
-  exact ENNReal.toReal_le_of_le_ofReal zero_le_one (eLpNormEssSup_le_of_ae_bound
-    (hm.mono fun ξ h ↦ by
-      rw [h, Complex.norm_real, Real.norm_eq_abs]
-      exact φ.abs_littlewoodPaley_le_one j ξ))
+  exact Lp.norm_le_of_ae_bound_top zero_le_one (hm.mono fun ξ h ↦ by
+    rw [h, Complex.norm_real, Real.norm_eq_abs]
+    exact φ.abs_littlewoodPaley_le_one j ξ)
 
 /-- **The neighbouring blocks reproduce `Pⱼ`.** If the cutoffs whose indices differ by at least
 `L` have disjoint supports, as for the `L` of `ContDiffBump.exists_littlewoodPaley_mul_eq_zero φ`,
