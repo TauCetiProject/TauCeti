@@ -13,10 +13,8 @@ public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.Group.Subgroup.Map
-import TauCeti.GroupTheory.DoubleCoset.Basic
 import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Length
-import TauCeti.LinearAlgebra.RootSystem.Inversions.Length
 
 /-!
 # The Tits system and Weyl quotient of a Chevalley datum
@@ -48,6 +46,7 @@ quotient isomorphism `D.weylSubgroupQuotientMulEquiv K : N(K) / T_D(K) ≃* W` o
   on `D.extendedElementarySubgroup K`, whose `B ∩ N` intersection consists of the points of the
   actual torus `T_D(K)`.
 * `ChevalleyDatum.titsWeylGroupMulEquiv`, `ChevalleyDatum.titsSimpleReflection_injective`,
+  `ChevalleyDatum.wordLength_eq_ncard_inversions`,
   `ChevalleyDatum.wordLength_titsWeylGroupMulEquiv_symm`, and
   `ChevalleyDatum.wordLength_titsSimpleReflection_mul_gt_iff_mem_posRoots`: the isomorphism
   `(D.titsSystem K).WeylGroup ≃* W`, injectivity of the numbered simple reflections,
@@ -338,6 +337,17 @@ private theorem closure_titsSimpleAux_eq_top :
   rw [← hn_eq, QuotientGroup.mk_mul, htE, mul_one]
   exact hword l
 
+private theorem mem_doubleCoset_borelSubgroupOf_iff
+    (a x : D.extendedElementarySubgroup K) :
+    x ∈ DoubleCoset.doubleCoset a
+        (((D.borelSubgroup K).subgroupOf (D.extendedElementarySubgroup K) :
+          Subgroup (D.extendedElementarySubgroup K)) : Set (D.extendedElementarySubgroup K))
+        ((D.borelSubgroup K).subgroupOf (D.extendedElementarySubgroup K)) ↔
+      (x : D.points K) ∈ DoubleCoset.doubleCoset (a : D.points K)
+        (D.borelSubgroup K) (D.borelSubgroup K) := by
+  rw [DoubleCoset.mem_doubleCoset_subgroupOf_iff,
+    inf_of_le_left (D.borelSubgroup_le_extendedElementarySubgroup K)]
+
 /-- The canonical Tits system on the extended elementary subgroup of a Chevalley datum over a
 field, with Borel subgroup `D.borelSubgroup K` and Weyl subgroup `D.weylSubgroup K`. -/
 noncomputable def titsSystem : TitsSystem (D.extendedElementarySubgroup K) where
@@ -366,8 +376,7 @@ noncomputable def titsSystem : TitsSystem (D.extendedElementarySubgroup K) where
     rintro _ ⟨i, rfl⟩
     refine ⟨D.titsSimpleRepAux K i, rfl, fun w x hx => ?_⟩
     obtain ⟨y, hy, z, hz, rfl⟩ := hx
-    rw [DoubleCoset.mem_doubleCoset_subgroupOf_iff,
-      inf_of_le_left (D.borelSubgroup_le_extendedElementarySubgroup K)] at hy hz
+    rw [D.mem_doubleCoset_borelSubgroupOf_iff K] at hy hz
     have hprod : ((y * z : D.extendedElementarySubgroup K) : D.points K) ∈
         DoubleCoset.doubleCoset (D.weylElement (t.simpleIndex ht i) K 1 *
             ((w : D.extendedElementarySubgroup K) : D.points K))
@@ -379,14 +388,11 @@ noncomputable def titsSystem : TitsSystem (D.extendedElementarySubgroup K) where
         ⟨(y : D.points K), hy, (z : D.points K), hz, rfl⟩
     rcases hprod with hleft | hright
     · left
-      rw [DoubleCoset.mem_doubleCoset_subgroupOf_iff,
-        inf_of_le_left (D.borelSubgroup_le_extendedElementarySubgroup K), Subgroup.coe_mul,
-        Subgroup.coe_mul, D.coe_titsSimpleRepAux K]
+      rw [D.mem_doubleCoset_borelSubgroupOf_iff K, Subgroup.coe_mul, Subgroup.coe_mul,
+        D.coe_titsSimpleRepAux K]
       exact hleft
     · right
-      rw [DoubleCoset.mem_doubleCoset_subgroupOf_iff,
-        inf_of_le_left (D.borelSubgroup_le_extendedElementarySubgroup K)]
-      exact hright
+      exact (D.mem_doubleCoset_borelSubgroupOf_iff K _ _).mpr hright
   exists_conj_not_mem := by
     rintro _ ⟨i, rfl⟩
     obtain ⟨b, hb⟩ := D.exists_weylElement_conj_notMem_borelSubgroup K i
@@ -516,14 +522,11 @@ private theorem bruhatCell_titsSimpleReflection_mul_eq_of_mem_posRoots
   apply Set.Subset.antisymm
   · rintro x ⟨y, hy, z, hz, rfl⟩
     rw [titsSimpleReflection, (D.titsSystem K).bruhatCell_mk, titsSystem_subgroupB,
-      DoubleCoset.mem_doubleCoset_subgroupOf_iff,
-      inf_of_le_left (D.borelSubgroup_le_extendedElementarySubgroup K)] at hy
+      D.mem_doubleCoset_borelSubgroupOf_iff K] at hy
     rw [(D.titsSystem K).bruhatCell_mk, titsSystem_subgroupB,
-      DoubleCoset.mem_doubleCoset_subgroupOf_iff,
-      inf_of_le_left (D.borelSubgroup_le_extendedElementarySubgroup K)] at hz
+      D.mem_doubleCoset_borelSubgroupOf_iff K] at hz
     rw [titsSimpleReflection, ← QuotientGroup.mk_mul, (D.titsSystem K).bruhatCell_mk,
-      titsSystem_subgroupB, DoubleCoset.mem_doubleCoset_subgroupOf_iff,
-      inf_of_le_left (D.borelSubgroup_le_extendedElementarySubgroup K), Subgroup.coe_mul,
+      titsSystem_subgroupB, D.mem_doubleCoset_borelSubgroupOf_iff K, Subgroup.coe_mul,
       Subgroup.coe_mul, D.coe_titsSimpleRep K, ← D.coe_titsSubgroupNMulEquiv K,
       ← D.doubleCoset_weylElement_mul_eq_of_mem_posRoots K i (D.titsSubgroupNMulEquiv K n) hpos]
     exact ⟨(y : D.points K), hy, (z : D.points K), hz, rfl⟩
@@ -635,14 +638,12 @@ theorem titsSimpleReflection_injective : Function.Injective (D.titsSimpleReflect
     (fun h => hne (Fin.ext (by simpa using congrArg Fin.val h)))
     hidx
 
-/-- Transporting a root-datum Weyl element to `(D.titsSystem K).WeylGroup` turns its inversion
-count into its Tits word length. -/
-@[simp]
-theorem wordLength_titsWeylGroupMulEquiv_symm
-    (w : (t.simplyConnectedRootDatum ht).weylGroup) :
-    (D.titsSystem K).simpleGenerators.wordLength
-        ((D.titsWeylGroupMulEquiv K).symm w) =
-      (inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) w).ncard := by
+/-- The Tits word length of `q : (D.titsSystem K).WeylGroup` equals the inversion count of
+`D.titsWeylGroupMulEquiv K q`. -/
+theorem wordLength_eq_ncard_inversions (q : (D.titsSystem K).WeylGroup) :
+    (D.titsSystem K).simpleGenerators.wordLength q =
+      (inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
+        (D.titsWeylGroupMulEquiv K q)).ncard := by
   let _ := t.isReduced_simplyConnectedRootDatum ht
   let T := D.titsSystem K
   let P := t.simplyConnectedRootDatum ht
@@ -662,11 +663,21 @@ theorem wordLength_titsWeylGroupMulEquiv_symm
     intro k
     simp [cs, T, P, he_symm]
   have hlen := RootPairing.length_eq_ncard_inversions_of_simple_eq P b cs hcs
-    (D.titsWeylGroupMulEquiv K ((D.titsWeylGroupMulEquiv K).symm w))
+    (D.titsWeylGroupMulEquiv K q)
   dsimp only [cs] at hlen
   rw [CoxeterSystem.length_reindex, CoxeterSystem.length_map,
-    TitsSystem.coxeterSystem_length, MulEquiv.apply_symm_apply] at hlen
+    TitsSystem.coxeterSystem_length] at hlen
   exact hlen
+
+/-- Transporting a root-datum Weyl element to `(D.titsSystem K).WeylGroup` turns its inversion
+count into its Tits word length. -/
+@[simp]
+theorem wordLength_titsWeylGroupMulEquiv_symm
+    (w : (t.simplyConnectedRootDatum ht).weylGroup) :
+    (D.titsSystem K).simpleGenerators.wordLength
+        ((D.titsWeylGroupMulEquiv K).symm w) =
+      (inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) w).ncard := by
+  rw [D.wordLength_eq_ncard_inversions K, MulEquiv.apply_symm_apply]
 
 /-- Left multiplication by the `i`-th simple reflection increases the Tits word length of `q`
 precisely when `(titsWeylGroupMulEquiv q)⁻¹(αᵢ)` is a positive root. -/
@@ -680,13 +691,8 @@ theorem wordLength_titsSimpleReflection_mul_gt_iff_mem_posRoots
   have hpos : (t.simplyConnectedBase ht).IsPos (t.simpleIndex ht i) :=
     (t.simplyConnectedBase ht).isPos_of_mem_support
       ((t.mem_support_simplyConnectedBase ht).mpr (by simp))
-  have hlen (x : (D.titsSystem K).WeylGroup) :
-      (D.titsSystem K).simpleGenerators.wordLength x =
-        (inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
-          (D.titsWeylGroupMulEquiv K x)).ncard := by
-    simpa only [MulEquiv.symm_apply_apply] using
-      D.wordLength_titsWeylGroupMulEquiv_symm K (D.titsWeylGroupMulEquiv K x)
-  simp only [hlen, map_mul, D.titsWeylGroupMulEquiv_titsSimpleReflection K i,
+  simp only [D.wordLength_eq_ncard_inversions K, map_mul,
+    D.titsWeylGroupMulEquiv_titsSimpleReflection K i,
     lt_ncard_inversions_ofIdx_mul_iff _ _ _ hpos, mem_inversions, and_iff_right hpos, not_not,
     t.posRoots_rationalRootSystem ht, mem_posRoots]
 
