@@ -426,23 +426,23 @@ theorem lift_symbol {A : Type v} [AddCommGroup A] (c : Rˣ → Rˣ → A)
 noncomputable def liftEquiv {A : Type v} [AddCommGroup A] :
     (SymbolGroup R →+ A) ≃ {c : Rˣ → Rˣ → A // IsSteinbergPairing c} where
   toFun f := ⟨fun a b ↦ f (symbol a b), isSteinbergPairing_symbol.comp_addMonoidHom f⟩
-  invFun c := (lift c.1 c.2).toAddMonoidHom
+  invFun c := (lift c.val c.property).toAddMonoidHom
   left_inv f := addMonoidHom_ext fun a b ↦
     lift_symbol (fun a b ↦ f (symbol a b)) (isSteinbergPairing_symbol.comp_addMonoidHom f) a b
-  right_inv c := Subtype.ext (funext₂ fun a b ↦ lift_symbol c.1 c.2 a b)
+  right_inv c := Subtype.ext (funext₂ fun a b ↦ lift_symbol c.val c.property a b)
 
 /-- Evaluating `liftEquiv f` on `(a, b)` returns `f (symbol a b)`. -/
 @[simp]
 theorem liftEquiv_apply {A : Type v} [AddCommGroup A] (f : SymbolGroup R →+ A) (a b : Rˣ) :
-    (liftEquiv f).1 a b = f (symbol a b) := by
+    (liftEquiv f).val a b = f (symbol a b) := by
   rfl
 
 /-- Evaluating the inverse of `liftEquiv` on a symbol returns the pairing value. -/
 @[simp]
 theorem liftEquiv_symm_symbol {A : Type v} [AddCommGroup A]
     (c : {c : Rˣ → Rˣ → A // IsSteinbergPairing c}) (a b : Rˣ) :
-    liftEquiv.symm c (symbol a b) = c.1 a b :=
-  lift_symbol c.1 c.2 a b
+    liftEquiv.symm c (symbol a b) = c.val a b :=
+  lift_symbol c.val c.property a b
 
 /-- Functoriality of `SymbolGroup`: a ring homomorphism `f : R →+* S` induces a `ℤ`-linear map
 `SymbolGroup R →ₗ[ℤ] SymbolGroup S` sending `{a, b}` to `{f(a), f(b)}`. -/

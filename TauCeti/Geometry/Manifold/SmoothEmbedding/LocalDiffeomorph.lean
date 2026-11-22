@@ -147,14 +147,13 @@ theorem val_comp_codRestrict [IsManifold J n N] (f : SmoothEmbedding I J n M N)
 section InverseFunctionTheorem
 
 variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
-  [FiniteDimensional 𝕂 F] {K : ModelWithCorners 𝕂 F H}
+  {K : ModelWithCorners 𝕂 F H}
   {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕂 F'] [FiniteDimensional 𝕂 F']
   {K' : ModelWithCorners 𝕂 F' G}
   {X : Type*} [TopologicalSpace X] [ChartedSpace H X]
   {Y : Type*} [TopologicalSpace Y] [ChartedSpace G Y]
   [IsManifold K n X] [IsManifold K' n Y] [BoundarylessManifold K X]
 
-omit [FiniteDimensional 𝕂 F] in
 /-- A smooth embedding of a boundaryless manifold into a manifold modelled on a space of the same
 finite dimension is a local diffeomorphism. -/
 theorem isLocalDiffeomorph (f : SmoothEmbedding K K' n X Y)

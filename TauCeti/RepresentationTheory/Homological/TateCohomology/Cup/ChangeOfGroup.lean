@@ -59,11 +59,11 @@ private theorem posMap_cupH0_H0π (M N : Rep k Q) (p : ℕ) (x : tateCohomology 
     (v : N.ρ.invariants) :
     posMap φ (𝟙 (Rep.res φ (M ⊗ N))) (p + 1) (cupH0 M N (p + 1 : ℕ) x (H0π N v)) =
       cupH0 (Rep.res φ M) (Rep.res φ N) (p + 1 : ℕ) (posMap φ (𝟙 (Rep.res φ M)) (p + 1) x)
-        (H0π (Rep.res φ N) ⟨v, fun g ↦ v.2 (φ g)⟩) := by
+        (H0π (Rep.res φ N) ⟨v, fun g ↦ v.property (φ g)⟩) := by
   rw [cupH0_H0π, cupH0_H0π, ← ModuleCat.comp_apply, map_comp_posMap, ← ModuleCat.comp_apply,
     posMap_comp_map]
   have hcoef : (resFunctor φ).map (M.tensorInvariant v) =
-      (Rep.res φ M).tensorInvariant (N := Rep.res φ N) ⟨v, fun g ↦ v.2 (φ g)⟩ := by
+      (Rep.res φ M).tensorInvariant (N := Rep.res φ N) ⟨v, fun g ↦ v.property (φ g)⟩ := by
     simpa only [Submodule.inclusion_apply] using Rep.resMap_tensorInvariant M N φ v
   rw [Category.comp_id, Category.id_comp, hcoef]
   rfl
@@ -74,7 +74,7 @@ omit [Fintype Q] in
 private theorem fromGroupCohomology_zero_map (N : Rep k Q) (z : groupCohomology N 0) :
     fromGroupCohomology (Rep.res φ N) 0 (groupCohomology.map φ (𝟙 (Rep.res φ N)) 0 z) =
       H0π (Rep.res φ N) ⟨(groupCohomology.H0Iso N).hom z,
-        fun g ↦ ((groupCohomology.H0Iso N).hom z).2 (φ g)⟩ := by
+        fun g ↦ ((groupCohomology.H0Iso N).hom z).property (φ g)⟩ := by
   rw [fromGroupCohomology_zero, ModuleCat.comp_apply]
   exact congrArg (H0π (Rep.res φ N)) (Subtype.ext
     (groupCohomology.map_H0Iso_hom_f_apply φ (𝟙 (Rep.res φ N)) z))
@@ -103,8 +103,8 @@ private theorem posMap_cup_fromGroupCohomology_succ (M : Rep k Q) (p : ℕ)
   -- Write `z = δ z'` for the dimension-shifting sequence `0 → N → Coind_⊥^Q N → N' → 0`.
   let D := ShortComplex.mk (coindBotUnit N) (dimensionShiftUpπ N)
     (coindBotUnit_comp_dimensionShiftUpπ N)
-  have hD : D.ShortExact := by
-    simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact N
+  have hD : D.ShortExact :=
+    dimensionShiftUpSES_shortExact N
   have hresD : (D.map (Rep.resFunctor φ)).ShortExact := (shortExact_res φ).2 hD
   obtain ⟨z', rfl⟩ : ∃ z', groupCohomology.δ hD q (q + 1) rfl z' = z :=
     (ModuleCat.epi_iff_surjective _).1

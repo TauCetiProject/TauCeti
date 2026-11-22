@@ -142,7 +142,7 @@ noncomputable def Base.conjFundamentalAlcoveStabilizer :
     b.basedAut →* MulAut (P.fundamentalAlcoveStabilizer b) :=
   (P.fundamentalAlcoveStabilizer b).normalizerMonoidHom.comp
     ((P.coweightAffineHom.comp b.basedAut.subtype).codRestrict _ fun δ ↦
-      map_basedAut_le_normalizer_fundamentalAlcoveStabilizer P b ⟨δ, δ.2, rfl⟩)
+      map_basedAut_le_normalizer_fundamentalAlcoveStabilizer P b ⟨δ, δ.property, rfl⟩)
 
 /-- A based automorphism `δ` acts on `Ω` by `ω ↦ δ ω δ⁻¹`. -/
 @[simp]
@@ -156,7 +156,7 @@ theorem Base.coe_conjFundamentalAlcoveStabilizer_apply (δ : b.basedAut)
 theorem Base.conjFundamentalAlcoveStabilizer_apply_zero (δ : b.basedAut)
     (ω : P.fundamentalAlcoveStabilizer b) :
     (b.conjFundamentalAlcoveStabilizer δ ω : N ≃ᵃ[R] N) 0 =
-      (δ : P.Aut).coweightEquiv.symm (ω.1 0) := by
+      (δ : P.Aut).coweightEquiv.symm (ω.val 0) := by
   simp only [coe_conjFundamentalAlcoveStabilizer_apply, AffineEquiv.coe_mul, Function.comp_apply,
     ← map_inv, coweightAffineHom_apply, map_zero]
 

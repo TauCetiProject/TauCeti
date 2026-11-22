@@ -166,7 +166,7 @@ theorem isSymplecticSubmanifoldEmbedding_coe_sphericalPendulumPhaseSpace :
   rw [SymplecticForm.isNondegenerate_constSmooth_symplecticFormAt,
     range_mfderiv_coe_sphericalPendulumPhaseSpace]
   exact isSymplectic_ker_fderiv_sphericalPendulumConstraint
-    (norm_ne_zero_iff.1 ((mem_sphericalPendulumPhaseSpace.1 x.2).1.symm ▸ one_ne_zero))
+    (norm_ne_zero_iff.1 ((mem_sphericalPendulumPhaseSpace.1 x.property).1.symm ▸ one_ne_zero))
 
 /-- **The symplectic form of the spherical pendulum is symplectic.** -/
 theorem isSymplectic_sphericalPendulumSymplecticForm :

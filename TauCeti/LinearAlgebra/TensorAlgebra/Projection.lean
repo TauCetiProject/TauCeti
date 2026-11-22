@@ -206,7 +206,8 @@ def tensorPowerEquivRangePow (d : ℕ) :
   LinearEquiv.ofLinearMap
     (TensorPower.toTensorAlgebra.codRestrict _ (TensorPower.toTensorAlgebra_mem_range_pow d))
     ((tensorPowerProjection d).comp (Submodule.subtype _))
-    (LinearMap.ext fun x ↦ Subtype.ext (toTensorAlgebra_tensorPowerProjection_of_mem_range_pow x.2))
+    (LinearMap.ext fun x ↦
+      Subtype.ext (toTensorAlgebra_tensorPowerProjection_of_mem_range_pow x.property))
     (LinearMap.ext fun x ↦ tensorPowerProjection_toTensorAlgebra d x)
 
 /-- The equivalence `tensorPowerEquivRangePow` acts as `TensorPower.toTensorAlgebra`. -/

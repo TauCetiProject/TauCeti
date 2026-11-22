@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Data.Nat.Prime.Defs
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.SetTheory.Cardinal.Finite
-import Mathlib.Algebra.GroupWithZero.Units.Fintype
-import Mathlib.FieldTheory.Finite.Basic
-import Mathlib.RingTheory.IntegralDomain
+import Mathlib.FieldTheory.Finite.GaloisField
 import TauCeti.FieldTheory.Finite.Card
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.PowMonoidHom
 
@@ -21,16 +20,32 @@ Let `F` be a finite field with `q` elements and `n ∣ q - 1`. A nonzero `a ∈ 
 exactly when `a ^ ((q - 1) / n) = 1`. At `n = 2` this is Mathlib's `FiniteField.isSquare_iff`
 (in odd characteristic).
 
+In a finite extension `F'/F` of finite fields of degree `d = [F' : F]`, the Euler exponent
+factors as `(#F' - 1) / n = ((q - 1) / n) * ((#F' - 1) / (q - 1))`. Since raising to the power
+`(#F' - 1) / (q - 1)` is the field norm `Algebra.norm F` (`FiniteField.algebraMap_norm_eq_pow`),
+whose restriction to `F` is the `d`-th power map (`Algebra.norm_algebraMap`), we obtain
+`a ^ ((#F' - 1) / n) = (a ^ ((q - 1) / n)) ^ d` in `F'`. For a prime `p`, an element `a ∈ F`
+therefore becomes a `p`-th power in `F'` if and only if either `a` is already a `p`-th power in `F`
+or `p ∣ [F' : F]`. At `p = 2` this gives the squareness criterion: `r ∈ F` is a square in `F'` if
+and only if `r` is a square in `F` or `[F' : F]` is even (in all characteristics, including
+characteristic two where every element is already a square).
+
 ## Main results
 
 * `TauCeti.FiniteField.exists_pow_eq_iff_pow_card_sub_one_div_eq_one`: Euler's criterion for
   `n`-th powers in a finite field.
 * `TauCeti.FiniteField.pow_card_div_two_eq_neg_one`: a nonsquare `r` satisfies
   `r ^ (#F / 2) = -1`.
-* `TauCeti.FiniteField.natCard_isSquare_units_eq_natCard_not_isSquare`: in odd characteristic,
-  there are equally many square and nonsquare units.
-* `TauCeti.FiniteField.exists_add_eq_one_not_isSquare`: in odd characteristic, two nonsquare
-  units sum to `1`.
+* `TauCeti.FiniteField.algebraMap_pow_card_sub_one_div`: for `n ∣ #F - 1`, raising `a ∈ F` to the
+  Euler exponent `(#F' - 1) / n` in a finite extension `F'/F` agrees with raising
+  `a ^ ((#F - 1) / n)` to the extension degree `[F' : F]`.
+* `TauCeti.FiniteField.exists_pow_eq_algebraMap_iff_pow_finrank_eq_one`: Euler's criterion in a
+  finite field extension.
+* `TauCeti.FiniteField.exists_pow_eq_algebraMap_iff`: for a prime `p`, `a ∈ F` is a `p`-th power
+  in `F'` if and only if `a` is a `p`-th power in `F` or `p ∣ [F' : F]`.
+* `TauCeti.FiniteField.isSquare_algebraMap_iff` and
+  `TauCeti.FiniteField.not_isSquare_algebraMap_iff`: `r ∈ F` is a square in `F'` if and only if
+  `r` is a square in `F` or `[F' : F]` is even.
 -/
 
 public section
@@ -72,79 +87,87 @@ theorem pow_card_div_two_eq_neg_one {F : Type*} [Field F] [Finite F] {r : F}
   exact (FiniteField.pow_dichotomy hF hr0).resolve_left
     fun h ↦ hr ((FiniteField.isSquare_iff hF hr0).mpr h)
 
-/-- In a finite field of odd characteristic, there are equally many square and nonsquare units. -/
-theorem natCard_isSquare_units_eq_natCard_not_isSquare {F : Type*} [Field F] [Finite F]
-    (hF : ringChar F ≠ 2) :
-    Nat.card {u : Fˣ // IsSquare u} = Nat.card {u : Fˣ // ¬IsSquare u} := by
-  have := Fintype.ofFinite F
-  obtain ⟨g, hg⟩ := FiniteField.exists_nonsquare hF
-  have hg0 : g ≠ 0 := by rintro rfl; exact hg .zero
-  let g₀ : Fˣ := Units.mk0 g hg0
-  have hg₀ : ¬IsSquare g₀ := fun h ↦ hg (by simpa [g₀] using h.map (Units.coeHom F))
-  -- Multiplication by the nonsquare `g₀` is a bijection between squares and nonsquares in `Fˣ`.
-  refine Nat.card_congr
-    { toFun := fun u ↦ ⟨g₀ * u.1, fun hgu ↦ hg₀ ?_⟩
-      invFun := fun v ↦ ⟨g₀⁻¹ * v.1, (FiniteField.unit_isSquare_iff hF _).mpr ?_⟩
-      left_inv := fun u ↦ Subtype.ext (inv_mul_cancel_left g₀ u.1)
-      right_inv := fun v ↦ Subtype.ext (mul_inv_cancel_left g₀ v.1) }
-  · rcases u.2 with ⟨x, hx⟩
-    rcases hgu with ⟨y, hy⟩
-    refine ⟨y * x⁻¹, ?_⟩
-    have hmul : g₀ = (y * y) * (x * x)⁻¹ := eq_mul_inv_of_mul_eq (by rw [← hx]; exact hy)
-    rw [hmul, mul_inv]
-    simp [mul_comm, mul_left_comm, mul_assoc]
-  · apply Units.ext
-    have hv' : ¬IsSquare (v.1 : F) := fun h ↦ v.2 (Units.isSquare_coe_iff.mp h)
-    have hv_pow := pow_card_div_two_eq_neg_one hv'
-    have hg_pow := pow_card_div_two_eq_neg_one hg
-    rw [Nat.card_eq_fintype_card] at hv_pow hg_pow
-    simp only [Units.val_pow_eq_pow_val, Units.val_mul, Units.val_inv_eq_inv_val, Units.val_one,
-      mul_pow, inv_pow, g₀, Units.val_mk0, hg_pow, hv_pow]
-    simp
+/-! ### Powers and squares in finite field extensions -/
 
-/-- In a finite field of odd characteristic, there exist two nonsquare units summing to `1`. -/
-theorem exists_add_eq_one_not_isSquare {F : Type*} [Field F] [Finite F]
-    (hF : ringChar F ≠ 2) :
-    ∃ a b : Fˣ, (a : F) + b = 1 ∧ ¬IsSquare a ∧ ¬IsSquare b := by
-  have := Fintype.ofFinite F
-  classical
-  let S : Finset Fˣ := Finset.univ.filter fun u : Fˣ ↦ IsSquare u
-  let N : Finset Fˣ := Finset.univ.filter fun u : Fˣ ↦ ¬IsSquare u
-  have hcard : S.card = N.card := by
-    have h := natCard_isSquare_units_eq_natCard_not_isSquare hF
-    simpa only [Nat.card_eq_fintype_card, Fintype.card_subtype] using h
-  -- If `1 - u` were a square for every nonsquare `u`, then `u ↦ 1 - u` would inject `N` into
-  -- `S \ {1}`, contradicting `|N| = |S|`.
-  by_contra hcontra
-  push Not at hcontra
-  let f : Fˣ → Fˣ := fun u ↦
-    if h : u ≠ 1 then Units.mk0 (1 - (u : F)) (sub_ne_zero.mpr fun h1 ↦ h (Units.ext h1.symm))
-    else 1
-  have hne1 : ∀ u ∈ N, u ≠ 1 := fun u hu h1 ↦ by
-    rw [Finset.mem_filter] at hu
-    exact hu.2 (h1 ▸ IsSquare.one)
-  have hf_val : ∀ u ∈ N, (f u : F) = 1 - (u : F) := fun u hu ↦ by
-    simp [f, hne1 u hu]
-  have hmaps : Set.MapsTo f N (S.erase 1) := fun u hu ↦ by
-    rw [Finset.mem_coe] at hu ⊢
-    have hval := hf_val u hu
-    rw [Finset.mem_erase, Finset.mem_filter]
-    refine ⟨fun h1 ↦ Units.ne_zero u ?_, Finset.mem_univ _, ?_⟩
-    · have h1' : (1 : F) - (u : F) = 1 := by simpa [h1] using hval.symm
-      exact sub_eq_self.mp h1'
-    · rw [Finset.mem_filter] at hu
-      exact hcontra u (f u) (by rw [hval]; ring) hu.2
-  have hinj : Set.InjOn f N := fun u₁ hu₁ u₂ hu₂ heq ↦ by
-    rw [Finset.mem_coe] at hu₁ hu₂
-    apply Units.ext
-    have h1 := hf_val u₁ hu₁
-    have h2 := hf_val u₂ hu₂
-    rw [heq] at h1
-    exact sub_right_injective (h1.symm.trans h2)
-  have hle : N.card ≤ (S.erase 1).card := Finset.card_le_card_of_injOn f hmaps hinj
-  have h1S : (1 : Fˣ) ∈ S := Finset.mem_filter.mpr ⟨Finset.mem_univ _, IsSquare.one⟩
-  have hpos : 0 < S.card := Finset.card_pos.mpr ⟨1, h1S⟩
-  rw [Finset.card_erase_of_mem h1S, hcard] at hle
-  omega
+section Extension
+
+variable {F F' : Type*} [Field F] [Field F'] [Finite F'] [Algebra F F']
+
+/-- In a finite extension `F'/F` of finite fields with `n ∣ #F - 1`, raising `a ∈ F` to the Euler
+exponent `(#F' - 1) / n` in `F'` agrees with raising `a ^ ((#F - 1) / n)` to the extension degree
+`[F' : F]`. -/
+theorem algebraMap_pow_card_sub_one_div {n : ℕ} (hn : n ∣ Nat.card F - 1) (a : F) :
+    algebraMap F F' a ^ ((Nat.card F' - 1) / n) =
+      algebraMap F F' ((a ^ ((Nat.card F - 1) / n)) ^ Module.finrank F F') := by
+  have : Finite F := Finite.of_injective _ (algebraMap F F').injective
+  have : Module.Finite F F' := .of_finite
+  have hq : Nat.card F - 1 ∣ Nat.card F' - 1 := by
+    rw [Module.natCard_eq_pow_finrank (K := F) (V := F')]
+    exact Nat.sub_one_dvd_pow_sub_one _ _
+  have hdiv : (Nat.card F' - 1) / n =
+      (Nat.card F - 1) / n * ((Nat.card F' - 1) / (Nat.card F - 1)) := by
+    rw [Nat.div_mul_right_comm hn, Nat.mul_div_cancel' hq]
+  rw [hdiv, pow_mul, ← map_pow, ← FiniteField.algebraMap_norm_eq_pow, Algebra.norm_algebraMap]
+
+/-- **Euler's criterion in a finite field extension.** If `n ∣ #F - 1`, then a nonzero element
+`a ∈ F` becomes an `n`-th power in a finite extension `F'/F` exactly when
+`(a ^ ((#F - 1) / n)) ^ [F' : F] = 1`. -/
+theorem exists_pow_eq_algebraMap_iff_pow_finrank_eq_one {n : ℕ} (hn : n ∣ Nat.card F - 1)
+    {a : F} (ha : a ≠ 0) :
+    (∃ b : F', b ^ n = algebraMap F F' a) ↔
+      (a ^ ((Nat.card F - 1) / n)) ^ Module.finrank F F' = 1 := by
+  have : Finite F := Finite.of_injective _ (algebraMap F F').injective
+  have : Module.Finite F F' := .of_finite
+  have hn' : n ∣ Nat.card F' - 1 := by
+    rw [Module.natCard_eq_pow_finrank (K := F) (V := F')]
+    exact dvd_trans hn (Nat.sub_one_dvd_pow_sub_one _ _)
+  rw [exists_pow_eq_iff_pow_card_sub_one_div_eq_one hn'
+      ((map_ne_zero_iff _ (algebraMap F F').injective).mpr ha),
+    algebraMap_pow_card_sub_one_div hn, map_eq_one_iff _ (algebraMap F F').injective]
+
+/-- **Criterion for `p`-th powers in a finite field extension.** For a prime `p`, an element
+`a ∈ F` becomes a `p`-th power in a finite extension `F'/F` of finite fields if and only if either
+`a` is already a `p`-th power in `F` or `p` divides the extension degree `[F' : F]`. -/
+theorem exists_pow_eq_algebraMap_iff {p : ℕ} (hp : p.Prime) {a : F} :
+    (∃ b : F', b ^ p = algebraMap F F' a) ↔
+      (∃ b : F, b ^ p = a) ∨ p ∣ Module.finrank F F' := by
+  have : Finite F := Finite.of_injective _ (algebraMap F F').injective
+  rcases eq_or_ne a 0 with rfl | ha
+  · exact iff_of_true ⟨0, by simp [zero_pow hp.ne_zero]⟩ (.inl ⟨0, zero_pow hp.ne_zero⟩)
+  by_cases hpq : p ∣ Nat.card F - 1
+  · rw [exists_pow_eq_algebraMap_iff_pow_finrank_eq_one hpq ha,
+      exists_pow_eq_iff_pow_card_sub_one_div_eq_one hpq ha]
+    set ζ := a ^ ((Nat.card F - 1) / p)
+    by_cases hζ : ζ = 1
+    · simp [hζ]
+    · have := Fintype.ofFinite F
+      have hζp : ζ ^ p = 1 := by
+        rw [← pow_mul, Nat.div_mul_cancel hpq]
+        simpa [Nat.card_eq_fintype_card] using FiniteField.pow_card_sub_one_eq_one a ha
+      let : Fact p.Prime := ⟨hp⟩
+      have hord : orderOf ζ = p := orderOf_eq_prime hζp hζ
+      rw [← orderOf_dvd_iff_pow_eq_one, hord, iff_false_intro hζ, false_or]
+  · have hcop : (Nat.card Fˣ).Coprime p := by
+      rw [Nat.card_units]
+      exact (hp.coprime_iff_not_dvd.mpr hpq).symm
+    obtain ⟨u, hu⟩ := hcop.pow_left_bijective.surjective (Units.mk0 a ha)
+    have hb : (u : F) ^ p = a := by simpa using congrArg Units.val hu
+    exact iff_of_true ⟨algebraMap F F' u, by rw [← map_pow, hb]⟩ (.inl ⟨u, hb⟩)
+
+/-- **Squares in a finite field extension.** An element `r ∈ F` becomes a square in a finite
+extension `F'/F` of finite fields if and only if either `r` is already a square in `F` or the
+extension degree `[F' : F]` is even. -/
+theorem isSquare_algebraMap_iff {r : F} :
+    IsSquare (algebraMap F F' r) ↔ IsSquare r ∨ Even (Module.finrank F F') := by
+  simpa only [isSquare_iff_exists_sq, even_iff_two_dvd, eq_comm] using
+    exists_pow_eq_algebraMap_iff (F' := F') Nat.prime_two (a := r)
+
+/-- An element `r ∈ F` stays a nonsquare in a finite extension `F'/F` of finite fields if and only
+if `r` is not a square in `F` and the extension degree `[F' : F]` is odd. -/
+theorem not_isSquare_algebraMap_iff {r : F} :
+    ¬IsSquare (algebraMap F F' r) ↔ ¬IsSquare r ∧ Odd (Module.finrank F F') := by
+  rw [isSquare_algebraMap_iff, not_or, Nat.not_even_iff_odd]
+
+end Extension
 
 end TauCeti.FiniteField

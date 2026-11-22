@@ -653,7 +653,8 @@ theorem coe_degreeTwoEquiv_symm_symbol (a b : Rˣ) :
 /-- Naturality of `degreeTwoEquiv`: for any ring homomorphism `f : R →+* S`, the degree-`2`
 restriction of `MilnorK.map f` corresponds to `SymbolGroup.map f`. -/
 theorem degreeTwoEquiv_map {S : Type w} [CommSemiring S] (f : R →+* S) (x : degree R 2) :
-    degreeTwoEquiv S ⟨map f x, map_mem_degree f x.2⟩ = SymbolGroup.map f (degreeTwoEquiv R x) := by
+    degreeTwoEquiv S ⟨map f x, map_mem_degree f x.property⟩ =
+      SymbolGroup.map f (degreeTwoEquiv R x) := by
   apply (degreeTwoEquiv S).symm.injective
   rw [LinearEquiv.symm_apply_apply]
   apply Subtype.ext; dsimp only
@@ -730,7 +731,7 @@ homomorphism `f : R →+* S`, the degree-`n` restriction of `MilnorK.map f` corr
 `quotTensorPowerMap f n`. -/
 theorem degreeEquivQuotTensorPower_map {S : Type w} [CommSemiring S] (f : R →+* S) (n : ℕ)
     (x : degree R n) :
-    degreeEquivQuotTensorPower S n ⟨map f x, map_mem_degree f x.2⟩ =
+    degreeEquivQuotTensorPower S n ⟨map f x, map_mem_degree f x.property⟩ =
       quotTensorPowerMap f n (degreeEquivQuotTensorPower R n x) := by
   apply (degreeEquivQuotTensorPower S n).symm.injective
   rw [LinearEquiv.symm_apply_apply]
