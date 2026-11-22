@@ -154,17 +154,14 @@ theorem exists_isOpen_forall_exists_norm_sub_lt {Γ' : Set E}
       ∀ η ∈ U, ∃ ξ ∈ Γ', ‖η - ξ‖ < ε * ‖η‖ := by
   refine ⟨⋃ ξ ∈ Γ', {η | ‖η - ξ‖ < ε * ‖η‖},
     isOpen_biUnion fun ξ _ ↦ isOpen_lt (by fun_prop) (by fun_prop),
-    fun ξ hξ ↦ mem_biUnion hξ.1 (by simpa using mul_pos hε (norm_pos_iff.2 hξ.2)), ?_,
-    fun η hη ↦ by simpa using hη⟩
-  intro t ht η hη htη
-  obtain ⟨ξ, hξ, hηξ⟩ := mem_iUnion₂.1 htη
-  refine hη (mem_biUnion (hc _ (inv_pos.2 ht) ξ hξ) ?_)
-  have heq : η - t⁻¹ • ξ = t⁻¹ • (t • η - ξ) := by
-    rw [smul_sub, smul_smul, inv_mul_cancel₀ ht.ne', one_smul]
-  rw [mem_ofPred_eq, norm_smul, Real.norm_of_nonneg ht.le] at hηξ
-  rw [mem_ofPred_eq, heq, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 ht.le)]
-  calc t⁻¹ * ‖t • η - ξ‖ < t⁻¹ * (ε * (t * ‖η‖)) := by gcongr
-    _ = ε * ‖η‖ := by field_simp
+    fun ξ hξ ↦ mem_biUnion hξ.1 (by simpa using mul_pos hε (norm_pos_iff.2 hξ.2)),
+    forall_smul_mem_compl fun t ht η hη ↦ ?_, fun η hη ↦ by simpa using hη⟩
+  -- The thickening itself is closed under multiplication by positive reals.
+  obtain ⟨ξ, hξ, hηξ⟩ := mem_iUnion₂.1 hη
+  refine mem_biUnion (hc t ht ξ hξ) ?_
+  rw [mem_ofPred_eq] at hηξ ⊢
+  rw [← smul_sub, norm_smul, norm_smul, Real.norm_of_nonneg ht.le, mul_left_comm]
+  exact mul_lt_mul_of_pos_left hηξ ht
 
 omit [NormedSpace ℝ E] in
 /-- If `ζ` is at distance at least `α ‖ζ‖` from `ξ` and `ξ` is within `ε ‖u‖` of `u`, with
@@ -235,15 +232,9 @@ theorem exists_cones_of_notMem_add [ProperSpace E] (h₁ : IsClosed Γ₁) (h₂
   obtain ⟨κ, hκ, hκab⟩ := exists_mul_norm_add_norm_le_norm_add h₁ h₂ hc₁ hc₂ hopp
   -- An open cone `Γ` around `ζ₀` stays away from the closed cone `Γ₁ + Γ₂` proportionally to
   -- the norm.
-  have hcompl : ∀ t : ℝ, 0 < t → ∀ ζ ∈ (Γ₁ + Γ₂)ᶜ, t • ζ ∈ (Γ₁ + Γ₂)ᶜ := by
-    intro t ht ζ hζ hmem
-    obtain ⟨a, ha, b, hb, hab⟩ := Set.mem_add.1 hmem
-    refine hζ (Set.mem_add.2
-      ⟨t⁻¹ • a, hc₁ _ (inv_pos.2 ht) a ha, t⁻¹ • b, hc₂ _ (inv_pos.2 ht) b hb, ?_⟩)
-    rw [← smul_add, hab, smul_smul, inv_mul_cancel₀ ht.ne', one_smul]
   have hcl := isClosed_add_of_forall_neg_mem_imp_eq_zero h₁ h₂ hc₁ hc₂ hopp
-  obtain ⟨Γ, hΓo, hζΓ, hΓc, α, hα, hball⟩ :=
-    hcl.isOpen_compl.exists_cone_closedBall_subset hcompl hζ₀
+  obtain ⟨Γ, hΓo, hζΓ, hΓc, α, hα, hball⟩ := hcl.isOpen_compl.exists_cone_closedBall_subset
+    (forall_smul_mem_compl (forall_smul_mem_add hc₁ hc₂)) hζ₀
   have hαΓ : ∀ ζ ∈ Γ, ∀ a ∈ Γ₁, ∀ b ∈ Γ₂, α * ‖ζ‖ ≤ ‖ζ - (a + b)‖ := fun ζ hζ a ha b hb ↦ by
     by_contra hlt
     refine hball ζ hζ (mem_closedBall.2 ?_) (add_mem_add ha hb)

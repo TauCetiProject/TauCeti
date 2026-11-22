@@ -92,10 +92,8 @@ taken at each point.
 * `Distribution.cutoffProduct_apply_of_apply_eq_integral_right`,
   `Distribution.cutoffProduct_apply_of_apply_eq_integral_left`: agreement with multiplication by
   a smooth function.
-* `Distribution.cutoffProduct_complexPairing`, `Distribution.localFourier_cutoffProduct`: the
+* `Distribution.complexPairing_cutoffProduct`, `Distribution.localFourier_cutoffProduct`: the
   product on complex test functions, and its localized Fourier transforms as convolutions.
-* `Distribution.isClosed_insert_zero_image_snd_waveFrontSet_inter`: the frequencies of a wave
-  front set over a compact set, together with `0`, form a closed set.
 * `Distribution.waveFrontSet_cutoffProduct_subset_of_cones`,
   `Distribution.waveFrontSet_cutoffProduct_subset`: the wave front set of the product.
 
@@ -236,30 +234,6 @@ theorem not_noOppositeCovectorsOn_delta_delta [Nontrivial E] {x₀ : E} (hx₀ :
     exact ⟨rfl, hξ⟩
   · rw [waveFrontSet_delta hx₀]
     exact ⟨rfl, neg_ne_zero.2 hξ⟩
-
-omit [FiniteDimensional ℝ E] in
-/-- The frequencies of the wave front set of `T` over a compact set `K ⊆ Ω`, together with `0`,
-form a closed set: microlocal smoothness is an open condition, and `K` is compact. -/
-theorem isClosed_insert_zero_image_snd_waveFrontSet_inter {K : Set E} (hK : IsCompact K)
-    (hKΩ : K ⊆ Ω) (T : 𝓓'(Ω, ℂ)) :
-    IsClosed (insert 0 (Prod.snd '' (T.waveFrontSet ∩ K ×ˢ univ))) := by
-  have hmem (ζ : E) : ζ ∈ (insert 0 (Prod.snd '' (T.waveFrontSet ∩ K ×ˢ univ)))ᶜ ↔
-      ¬ζ = 0 ∧ ∀ x, (x, ζ) ∈ T.waveFrontSet → x ∉ K := by
-    simp only [mem_compl_iff, mem_insert_iff, mem_image, mem_inter_iff, mem_prod, mem_univ,
-      and_true, Prod.exists, exists_eq_right, not_or, not_exists, not_and]
-  refine isOpen_compl_iff.1 (isOpen_iff_mem_nhds.2 fun ζ hζ ↦ ?_)
-  obtain ⟨hζ0, hζK⟩ := (hmem ζ).1 hζ
-  -- Near `ζ`, the distribution is microlocally smooth at every point of `K`.
-  have hsmooth : ∀ x ∈ K, ∀ᶠ p : E × E in 𝓝 (ζ, x), T.IsMicrolocallySmoothAt p.2 p.1 := by
-    intro x hx
-    have hx' : T.IsMicrolocallySmoothAt x ζ := by
-      by_contra hns
-      exact hζK x (mem_waveFrontSet_iff.2 ⟨hKΩ hx, hζ0, hns⟩) hx
-    exact ((isOpen_setOf_isMicrolocallySmoothAt T).preimage continuous_swap).mem_nhds hx'
-  filter_upwards [hK.eventually_forall_of_forall_eventually
-    (P := fun ζ' x ↦ T.IsMicrolocallySmoothAt x ζ') hsmooth,
-    isOpen_ne.mem_nhds hζ0] with ζ' hζ' hζ'0
-  exact (hmem ζ').2 ⟨hζ'0, fun x hx hxK ↦ (mem_waveFrontSet_iff.1 hx).2.2 (hζ' x hxK)⟩
 
 variable [MeasurableSpace E] [BorelSpace E]
 
@@ -612,7 +586,7 @@ theorem cutoffProduct_apply_of_apply_eq_integral_left {U : Set E} (hU : IsOpen U
 
 /-- The product `φ² S T` paired with a complex test function `f`:
 `∫ S (φ e_η) T (f φ e_(-η)) dη`. -/
-theorem cutoffProduct_complexPairing {φ : 𝓓(Ω, ℂ)} (h : NoOppositeCovectorsOn S T (tsupport φ))
+theorem complexPairing_cutoffProduct {φ : 𝓓(Ω, ℂ)} (h : NoOppositeCovectorsOn S T (tsupport φ))
     (f : 𝓓(Ω, ℂ)) :
     (S.cutoffProduct T φ h).complexPairing f = ∫ η, S.localFourier φ η *
       T.localFourier (bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) φ.contDiff f) (-η) := by
@@ -642,7 +616,7 @@ theorem localFourier_cutoffProduct {φ : 𝓓(Ω, ℂ)} (h : NoOppositeCovectors
     (χ : 𝓓(Ω, ℂ)) (ζ : E) :
     (S.cutoffProduct T φ h).localFourier χ ζ = ∫ η, S.localFourier φ η *
       T.localFourier (bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) φ.contDiff χ) (ζ - η) := by
-  rw [localFourier_def, cutoffProduct_complexPairing]
+  rw [localFourier_def, complexPairing_cutoffProduct]
   congr 1
   ext η
   congr 1

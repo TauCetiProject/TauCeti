@@ -163,8 +163,8 @@ theorem exists_one_add_norm_pow_mul_norm_integral_mul_le {F G : E → ℂ} {A B 
         refine norm_integral_le_of_norm_le (hint' ζ) (ae_of_all _ fun η ↦ ?_)
         rw [norm_mul]
         norm_cast
-        rw [Real.norm_of_nonneg (by positivity), hw, hw, ← div_eq_mul_inv, ← div_eq_mul_inv,
-          div_add_div _ _ (by positivity) (by positivity), le_div_iff₀ (by positivity)]
+        rw [Real.norm_of_nonneg (by positivity), hw, hw]
+        field_simp
         linarith [hD ζ hζ η]
     _ = 2 * D * ∫ θ, w θ ∂μ := by
         rw [integral_add (hint.const_mul D) ((hint.comp_sub_left ζ).const_mul D),
