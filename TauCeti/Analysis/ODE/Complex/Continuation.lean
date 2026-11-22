@@ -93,14 +93,6 @@ private def ContinuesUpTo (E : LinearEquation U n) (c : I → ℂ) (y : ℂ → 
   ∃ f : I → ℂ → ℂ, IsAnalyticContinuationAlong f c (Iic T) ∧ f 0 = y ∧
     ∀ t ∈ Iic T, E.IsSolutionNear (c t) (f t)
 
-/-- Times between two times of a ball in the unit interval lie in the ball. -/
-private theorem mem_ball_of_mem_Icc {s t u T : I} {ε : ℝ} (hu : u ∈ Icc s t)
-    (hs : s ∈ ball T ε) (ht : t ∈ ball T ε) : u ∈ ball T ε := by
-  have h₁ : (s : ℝ) ≤ u := hu.1
-  have h₂ : (u : ℝ) ≤ t := hu.2
-  rw [mem_ball, Subtype.dist_eq, Real.dist_eq, abs_sub_lt_iff] at hs ht ⊢
-  constructor <;> linarith [hs.1, hs.2, ht.1, ht.2]
-
 /-- The germ of a local solution at `c 0` continues over the single time `0`. -/
 private theorem continuesUpTo_zero {c : I → ℂ} (hc : Continuous c)
     (hy : E.IsSolutionNear (c 0) y) : ContinuesUpTo E c y 0 := by
@@ -142,11 +134,13 @@ private theorem eventually_continuesUpTo_eq {c : I → ℂ} (hc : Continuous c)
   obtain ⟨r, hr, hrU⟩ := EMetric.isOpen_iff.mp U.isOpen (c T) (hcU T)
   obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.mp
     (hc.continuousAt.preimage_mem_nhds (isOpen_eball.mem_nhds (mem_eball_self hr)))
+  have hball : (ball T ε).OrdConnected :=
+    (Real.ball_eq_Ioo (T : ℝ) ε ▸ ordConnected_Ioo).preimage_mono (Subtype.mono_coe _)
   have key : ∀ s ∈ ball T ε, ∀ t ∈ ball T ε, ContinuesUpTo E c y s → ContinuesUpTo E c y t := by
     intro s hs t ht h
     rcases le_total s t with hst | hts
     · exact h.of_le (V := ⟨eball (c T) r, isOpen_eball⟩) hc hst hrU rfl
-        fun u hu ↦ hεV (mem_ball_of_mem_Icc hu hs ht)
+        fun u hu ↦ hεV (hball.out hs ht hu)
     · obtain ⟨f, hf, hf0, hfE⟩ := h
       exact ⟨f, hf.mono (Iic_subset_Iic.mpr hts), hf0, fun u hu ↦ hfE u (le_trans hu hts)⟩
   filter_upwards [ball_mem_nhds T hε] with u hu
@@ -259,6 +253,32 @@ theorem initialJet_initialJetEquivOfIsSimplyConnected_symm (hU : IsSimplyConnect
     (ha : a ∈ U) (v : Fin n → ℂ) :
     E.initialJet ha ((E.initialJetEquivOfIsSimplyConnected hU ha).symm v) = v :=
   (E.initialJetEquivOfIsSimplyConnected hU ha).apply_symm_apply v
+
+/-- The underlying linear map of `initialJetEquivOfIsSimplyConnected` is the unscaled initial
+jet. -/
+@[simp]
+theorem initialJetEquivOfIsSimplyConnected_toLinearMap (hU : IsSimplyConnected (U : Set ℂ))
+    (ha : a ∈ U) :
+    (E.initialJetEquivOfIsSimplyConnected hU ha).toLinearMap = E.initialJet ha :=
+  LinearMap.ext fun _ ↦ rfl
+
+/-- The inverse of `initialJetEquivOfIsSimplyConnected` recovers a solution from its initial
+jet. -/
+@[simp]
+theorem initialJetEquivOfIsSimplyConnected_symm_initialJet (hU : IsSimplyConnected (U : Set ℂ))
+    (ha : a ∈ U) (f : E.solutionSpace) :
+    (E.initialJetEquivOfIsSimplyConnected hU ha).symm (E.initialJet ha f) = f :=
+  (E.initialJetEquivOfIsSimplyConnected hU ha).symm_apply_apply f
+
+/-- The `j`-th derivative at `a` of the extended solution
+`(E.initialJetEquivOfIsSimplyConnected hU ha).symm v` is `v j`. -/
+@[simp]
+theorem iteratedDeriv_extend_initialJetEquivOfIsSimplyConnected_symm
+    (hU : IsSimplyConnected (U : Set ℂ)) (ha : a ∈ U) (v : Fin n → ℂ) (j : Fin n) :
+    iteratedDeriv j
+      (HolomorphicFunctions.extend ((E.initialJetEquivOfIsSimplyConnected hU ha).symm v).val) a =
+      v j := by
+  rw [← initialJet_apply ha, initialJet_initialJetEquivOfIsSimplyConnected_symm]
 
 /-- On a simply connected domain the solution space of a monic equation of order `n` has complex
 dimension `n`. -/
