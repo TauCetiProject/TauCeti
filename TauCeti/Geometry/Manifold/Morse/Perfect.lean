@@ -27,8 +27,11 @@ functions on a compact manifold (`TauCeti.IsPerfectMorse.criticalCount_le`), and
 critical points altogether (`TauCeti.IsPerfectMorse.totalCriticalCount_le`). In terms of the
 Morse polynomial identity `∑ cⱼ tʲ = ∑ bⱼ tʲ + (1 + t) Q(t)` of a Morse function on a compact
 manifold (`TauCeti.morse_inequalities`), the function is perfect exactly when `Q = 0`
-(`TauCeti.IsMorse.isPerfectMorse_iff_eq_zero`). Whether a perfect Morse function exists depends on
-the coefficients, as projective spaces show.
+(`TauCeti.IsMorse.isPerfectMorse_iff_eq_zero`). The Betti number `bⱼ` of a perfect Morse
+function vanishes exactly when it has no critical point of index `j`
+(`TauCeti.IsPerfectMorse.bettiNumber_eq_zero_iff`), and the sum of the Betti numbers is the number
+of critical points (`TauCeti.IsPerfectMorse.sum_bettiNumber_eq_totalCriticalCount`). Whether a
+perfect Morse function exists depends on the coefficients, as projective spaces show.
 
 * **Spheres.** The height function on `Sⁿ` has one critical point of index `0` and one of index
   `n`, matching the homology of `Sⁿ`, so it is perfect over every division ring
@@ -37,7 +40,9 @@ the coefficients, as projective spaces show.
   `1` are adjacent.
 * **The lacunary principle.** A Morse function on a compact manifold no two of whose critical
   points have indices differing by one is perfect for every choice of coefficients
-  (`TauCeti.IsMorse.isPerfectMorse_of_forall_ne_add_one`). On `ℂℙⁿ` the moment function
+  (`TauCeti.IsMorse.isPerfectMorse_of_forall_ne_add_one`). In particular a Morse function all of
+  whose critical points have even index is perfect, and its odd Betti numbers vanish
+  (`TauCeti.IsMorse.isPerfectMorse_of_even`). On `ℂℙⁿ` the moment function
   `[z] ↦ (∑ⱼ wⱼ |zⱼ|²) / ∑ⱼ |zⱼ|²` with pairwise distinct weights has only even indices, so it is
   perfect for every division ring of coefficients
   (`TauCeti.isPerfectMorse_projectiveMomentFunction_complex`).
@@ -114,6 +119,24 @@ structure IsPerfectMorse (k : Type u) [DivisionRing k] (f : M → ℝ) : Prop wh
     finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj
       (ModuleCat.of k k)).obj (TopCat.of M))
 
+variable {k : Type u} [DivisionRing k] in
+/-- **Vanishing Betti numbers of a perfect Morse function.** If `f` is a perfect Morse function,
+the Betti number `bⱼ(M; k)` vanishes exactly when `f` has no critical point of index `j`. -/
+theorem IsPerfectMorse.bettiNumber_eq_zero_iff (hf : IsPerfectMorse I k f) (j : ℕ) :
+    bettiNumber k M j = 0 ↔ ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≠ j := by
+  rw [← criticalCount_eq_zero_iff, hf.criticalCount_eq j, bettiNumber_def]
+  exact_mod_cast Iff.rfl
+
+variable {k : Type u} [DivisionRing k] in
+/-- **The total Betti number of a perfect Morse function.** If `f` is a perfect Morse function on
+a manifold, the sum of the Betti numbers of the manifold is the number of critical points
+of `f`. -/
+theorem IsPerfectMorse.sum_bettiNumber_eq_totalCriticalCount (hf : IsPerfectMorse I k f) :
+    ((∑ j ∈ Finset.range (finrank ℝ E + 1), bettiNumber k M j : ℕ) : ℕ∞) =
+      totalCriticalCount I f := by
+  rw [← sum_criticalCount_eq_totalCriticalCount, Nat.cast_sum]
+  exact Finset.sum_congr rfl fun j _ ↦ by rw [hf.criticalCount_eq j, bettiNumber_def]
+
 section Compact
 
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [CompactSpace M]
@@ -156,6 +179,15 @@ theorem IsMorse.isPerfectMorse_of_forall_ne_add_one (hf : IsMorse I f)
   rw [hf.finrank_singularHomology_eq_of_forall_ne_add_one (ModuleCat.of k k) hind n,
     ModuleCat.finrank_of_self, mul_one,
     ENat.natCast_toNat_eq_self.2 (hf.criticalCount_ne_top n)]
+
+/-- **A Morse function with only even indices is perfect.** On a compact manifold, a Morse
+function all of whose critical points have even index is perfect for every division ring of
+coefficients, by the lacunary principle. -/
+theorem IsMorse.isPerfectMorse_of_even (hf : IsMorse I f)
+    (heven : ∀ x ∈ criticalPoints I f, Even (manifoldMorseIndex I f x)) :
+    IsPerfectMorse I k f :=
+  hf.isPerfectMorse_of_forall_ne_add_one fun x hx y hy h ↦
+    Nat.even_add_one.1 (h ▸ heven x hx) (heven y hy)
 
 /-- **A Morse function is perfect exactly when its Morse polynomial vanishes.** If `Q` is the
 polynomial of the Morse polynomial identity `cⱼ = bⱼ + coeff ((1 + X) * Q) j` of a Morse function
