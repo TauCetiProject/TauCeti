@@ -9,7 +9,7 @@ public import Mathlib.Order.Interval.Finset.Nat
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 public import TauCeti.NumberTheory.Padics.BilinearForm.Classification.Invariants
 public import TauCeti.NumberTheory.Padics.BilinearForm.GaussSum
-import TauCeti.Algebra.Group.AddChar
+import TauCeti.Algebra.Group.AddChar.Basic
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.GaussSum
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
