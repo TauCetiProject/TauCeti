@@ -22,9 +22,10 @@ action converge to the *levels* of the limit, and between two levels the traject
 `1`-periodic orbit `x` (`TauCeti.Geometry.Symplectic.Floer.Trajectory.Breaking`). This file proves
 that the two levels on either side of a neck are joined at `x`: the lower level converges to `x` as
 `s → ∞`, and the upper level converges to `x` as `s → -∞`, uniformly in `t`. Likewise the first
-and the last level converge to the common end orbits of the `u_k`. So the limit of a breaking
-sequence is a broken trajectory: a chain of levels, from the start orbit to the end orbit, in which
-the end of each level is the start of the next.
+and the last level converge to the common end orbits of the `u_k`. These are the matching
+conditions of a broken limit: the end of each level is the start of the next, and the chain runs
+from the start orbit to the end orbit. Combining the end theorems with the selection of the levels,
+and showing that the levels are themselves Floer trajectories, are not done here.
 
 **Necks are close to one orbit throughout.** Suppose that the actions of the loops at `σ_k` are at
 least `b`, those at `σ'_k` at most `b'`, and that at most one orbit action `c` lies in `[b, b']`. A
@@ -421,8 +422,8 @@ theorem tendstoUniformly_atBot_of_forall_tendstoUniformly_atBot
   exact dist_lt_of_eventually_mem hε hy hstart hs' (tendsto_of_eventually_dist_lt hx)
     (fun t ↦ by simpa using hg' (s, t)) t
 
-/-- **Breaking sequences of Floer trajectories converge to broken trajectories.** Let `H`, `J`
-and `K` be as in
+/-- **Consecutive levels of a breaking sequence meet at the neck orbits.** Let `H`, `J` and `K`
+be as in
 `TauCeti.SymplecticForm.tendstoUniformly_atTop_and_tendstoUniformly_atBot_of_tendsto_sub_atTop`,
 and let `u_k` be `C³` Floer trajectories with `1`-periodic loops in `K` and a common Lipschitz
 constant. Let `b 0 < b 1 < ⋯ < b m` be values none of which is the action of a `1`-periodic
