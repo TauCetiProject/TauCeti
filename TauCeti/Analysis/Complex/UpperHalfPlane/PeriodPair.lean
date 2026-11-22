@@ -1054,8 +1054,9 @@ theorem exists_smul_eq_and_denom_eq_of_lattice_periodPair_eq {z z' : ℍ} {c : �
       rw [← key]
       exact mul_pos z.im_pos (Complex.normSq_pos.mpr hc₀)
     exact_mod_cast pos_of_mul_pos_left this z'.im_pos.le
-  let γ : SL(2, ℤ) := ⟨!![a, b; c', d], by
-    rw [Matrix.det_fin_two_of]; exact Int.eq_one_of_mul_eq_one_right hpos.le hdet⟩
+  -- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
+  let γ : SL(2, ℤ) := .mk !![a, b; c', d] (by
+    rw [Matrix.det_fin_two_of]; exact Int.eq_one_of_mul_eq_one_right hpos.le hdet)
   have hden : denom γ z' = c := by
     rw [ModularGroup.denom_apply]
     simpa [γ] using hcd

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Translation
 import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.MeasureTheory.Measure.Haar.Prod
 
@@ -86,9 +87,10 @@ private theorem lintegral_ball_floerEnergyDensity_comp_add_le {H : ℝ → V →
       ((0 : ℝ), (1 : ℝ)) (s, t)
     simp only [hu1, hH1, Prod.mk_add_mk, add_zero] at h
     rw [h]
-  have htr := ω.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u
-    (s₀, 0) (univ ×ˢ Icc (-1) 2)
+  have htr := ω.constSmooth.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0)
+    (fun w ↦ H w.2) u (s₀, 0) (univ ×ˢ Icc (-1) 2)
   rw [hpre] at htr
+  simp only [floerEnergyDensity_constSmooth] at htr
   refine (lintegral_mono_set hsub).trans (le_of_eq_of_le ?_
     (htr.le.trans (setLIntegral_univ_prod_Icc_neg_one_two_le hgper)))
   refine lintegral_congr fun w ↦ congrArg ENNReal.ofReal ?_
