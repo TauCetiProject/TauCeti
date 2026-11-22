@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.CircleIntegral
 public import TauCeti.Analysis.Contour.Curve.Rectangle
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Complex.Laurent.Basic
+import TauCeti.Analysis.Contour.Cauchy.Circle
 import TauCeti.Analysis.Contour.Cycle.Circle
 import TauCeti.Analysis.Contour.Cycle.Fubini
 import TauCeti.Analysis.Contour.Winding.Number.Rectangle
@@ -98,8 +99,8 @@ theorem integral_rectPolygon_sub_inv {z₀ w₀ w : ℂ}
     simp only [mul_one, mul_inv_cancel_left₀ hne] at hmul
     rw [← hmul]
     exact intervalIntegral.integral_congr fun t _ ↦ by rw [smul_eq_mul, mul_comm]
-  rw [Polygon.contourCycle_def, Polygon.contourCurve_def, Cycle.integral_of_raw,
-    Nat.cast_ofNat, ← rectBoundary_def, hint]
+  rw [(rectPolygon z₀ w₀).integral_contourCycle_eq_integral_boundaryParam, Nat.cast_ofNat,
+    ← rectBoundary_def, hint]
 
 /-- **Cauchy kernel integral on a rectangle boundary.** Four-edge corollary of
 `integral_rectPolygon_sub_inv`: for a point `w` in the open rectangle `(σ₁, σ₂) ×ℂ (t₁, t₂)`,
@@ -128,28 +129,6 @@ end Kernel
 section CircleSum
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-
-/-- The exterior Cauchy integral `z ↦ (2πi)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w` is complex
-differentiable at every point off `sphere ρ r`. -/
-private theorem differentiableAt_sub_inv_smul_circleIntegral {f : ℂ → E} {ρ z : ℂ} {r : ℝ}
-    (hr : 0 < r) (hf : CircleIntegrable f ρ r) (hz : z ∉ sphere ρ r) :
-    DifferentiableAt ℂ (fun s ↦ (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (s - w)⁻¹ • f w) z := by
-  have hz' : z ∉ sphere ρ |r| := by rwa [abs_of_pos hr]
-  have hd : DifferentiableAt ℂ (fun s ↦ ∮ w in C(ρ, r), (w - s)⁻¹ • f w) z :=
-    (hasDerivAt_circleIntegral_sub_inv_smul hf hz').differentiableAt
-  have heq : (fun s ↦ (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (s - w)⁻¹ • f w) =
-      fun s ↦ -((2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (w - s)⁻¹ • f w) := by
-    funext s
-    have hneg : (∮ w in C(ρ, r), (s - w)⁻¹ • f w) = -(∮ w in C(ρ, r), (w - s)⁻¹ • f w) := by
-      calc ∮ w in C(ρ, r), (s - w)⁻¹ • f w
-          = ∮ w in C(ρ, r), (-1 : ℂ) • ((w - s)⁻¹ • f w) := by
-            refine circleIntegral.integral_congr hr.le fun w _ ↦ ?_
-            rw [neg_one_smul, ← neg_smul, ← inv_neg, neg_sub]
-        _ = (-1 : ℂ) • ∮ w in C(ρ, r), (w - s)⁻¹ • f w := circleIntegral.integral_smul _ _ _ _
-        _ = -(∮ w in C(ρ, r), (w - s)⁻¹ • f w) := neg_one_smul _ _
-    rw [hneg, smul_neg]
-  rw [heq]
-  exact (hd.const_smul _).neg
 
 /-- By Fubini's theorem for cycles and the Cauchy kernel integral on a rectangle, the boundary
 integral of the exterior Cauchy integral of `f` over `C(ρ, r)` around an enclosing rectangle
@@ -243,8 +222,10 @@ theorem integral_rectPolygon_eq_sum_circleIntegral
         (Cycle.trace (rectPolygon z₀ w₀).contourCycle) := by
     rw [htrace]
     exact fun ρ hρ z hz ↦
-      (differentiableAt_sub_inv_smul_circleIntegral hr ((hfc_r ρ hρ).circleIntegrable hr.le)
-        fun hsp ↦ hfr_out z hz ρ hρ (sphere_subset_closedBall hsp)).continuousAt.continuousWithinAt
+      (differentiableAt_two_pi_I_inv_smul_circleIntegral_sub_inv_smul_left
+        ((hfc_r ρ hρ).circleIntegrable hr.le) fun hsp ↦
+          hfr_out z hz ρ hρ
+            (sphere_subset_closedBall (abs_of_pos hr ▸ hsp))).continuousAt.continuousWithinAt
   have hsplit : Cycle.integral g (rectPolygon z₀ w₀).contourCycle =
       Cycle.integral f (rectPolygon z₀ w₀).contourCycle -
         ∑ ρ ∈ P, Cycle.integral (fun z ↦ (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w)

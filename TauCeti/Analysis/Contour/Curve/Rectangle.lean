@@ -247,8 +247,8 @@ theorem integral_rectBoundary {f : ℂ → E} (hf : ContinuousOn f (frontier (Re
         I • (∫ y : ℝ in z.im..w.im, f (w.re + y * I)) -
         I • (∫ y : ℝ in z.im..w.im, f (z.re + y * I)) := by
   have hpoly := (rectPolygon z w).integral_contourCycle (boundary_rectPolygon z w ▸ hf)
-  rw [Polygon.contourCycle_def, Polygon.contourCurve_def, TauCeti.Contour.Cycle.integral_of_raw,
-    Nat.cast_ofNat, ← rectBoundary_def] at hpoly
+  rw [(rectPolygon z w).integral_contourCycle_eq_integral_boundaryParam, Nat.cast_ofNat,
+    ← rectBoundary_def] at hpoly
   -- The four edges are alternately horizontal and vertical segments.
   rw [hpoly, Fin.sum_univ_four]
   simp only [Polygon.edgePath]
@@ -268,8 +268,8 @@ theorem integral_contourCycle_rectPolygon {f : ℂ → E}
       (∫ x : ℝ in z.re..w.re, f (x + z.im * I)) - (∫ x : ℝ in z.re..w.re, f (x + w.im * I)) +
         I • (∫ y : ℝ in z.im..w.im, f (w.re + y * I)) -
         I • (∫ y : ℝ in z.im..w.im, f (z.re + y * I)) := by
-  rw [Polygon.contourCycle_def, Polygon.contourCurve_def, TauCeti.Contour.Cycle.integral_of_raw,
-    Nat.cast_ofNat, ← rectBoundary_def, integral_rectBoundary hf]
+  rw [(rectPolygon z w).integral_contourCycle_eq_integral_boundaryParam, Nat.cast_ofNat,
+    ← rectBoundary_def, integral_rectBoundary hf]
 
 end Integral
 
