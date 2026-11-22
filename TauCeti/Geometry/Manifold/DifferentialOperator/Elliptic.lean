@@ -118,29 +118,48 @@ theorem isSectionEllipticAt_iff : IsSectionEllipticAt P x ↔
 theorem isSectionElliptic_iff : IsSectionElliptic P ↔ ∀ x, IsSectionEllipticAt P x :=
   Iff.rfl
 
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
+/-- In positive dimension, every cotangent space contains a nonzero covector. -/
+private theorem exists_cotangent_ne_zero [Nontrivial E] (x : M) :
+    ∃ ξ : TangentSpace I x →L[ℝ] ℝ, ξ ≠ 0 :=
+  -- `TangentSpace I x` is `E` by definition.
+  exists_ne (0 : E →L[ℝ] ℝ)
+
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
+/-- In dimension zero, every covector vanishes. -/
+private theorem cotangent_eq_zero [Subsingleton E] (ξ : TangentSpace I x →L[ℝ] ℝ) : ξ = 0 :=
+  -- `TangentSpace I x` is `E` by definition.
+  Subsingleton.elim (α := E →L[ℝ] ℝ) _ _
+
 /-- The principal symbol of an operator elliptic at `x` is bijective at every nonzero covector. -/
-theorem IsSectionEllipticAt.bijective (hP : IsSectionEllipticAt P x) (hx : I.IsInteriorPoint x)
-    {ξ : TangentSpace I x →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
+theorem IsSectionEllipticAt.sectionPrincipalSymbol_bijective (hP : IsSectionEllipticAt P x)
+    (hx : I.IsInteriorPoint x) {ξ : TangentSpace I x →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
     Function.Bijective (sectionPrincipalSymbol I hx P ξ) :=
   hP hx ξ hξ
 
+/-- Between bundles of the same rank, an injective principal symbol is bijective. -/
+theorem sectionPrincipalSymbol_bijective_of_injective [FiniteDimensional ℝ F']
+    (hF : Module.finrank ℝ F = Module.finrank ℝ F') (hx : I.IsInteriorPoint x)
+    {ξ : TangentSpace I x →L[ℝ] ℝ} (h : Function.Injective (sectionPrincipalSymbol I hx P ξ)) :
+    Function.Bijective (sectionPrincipalSymbol I hx P ξ) := by
+  have := VectorBundle.finiteDimensional ℝ F V x
+  have := VectorBundle.finiteDimensional ℝ F' W x
+  refine ⟨h, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 h⟩
+  rw [VectorBundle.finrank_eq ℝ F V x, VectorBundle.finrank_eq ℝ F' W x, hF]
+
 /-- **Dimension zero.** Over a manifold modelled on the zero space, every cotangent vector vanishes,
 so every operator is elliptic, whatever the ranks of the two bundles. -/
-theorem isSectionEllipticAt_of_subsingleton [Subsingleton E] : IsSectionEllipticAt P x := by
-  intro hx ξ hξ
-  have : Subsingleton (TangentSpace I x) := inferInstanceAs (Subsingleton E)
-  exact absurd (ContinuousLinearMap.ext fun v ↦ by rw [Subsingleton.elim v 0, map_zero, map_zero])
-    hξ
+theorem isSectionEllipticAt_of_subsingleton [Subsingleton E] : IsSectionEllipticAt P x :=
+  fun _ ξ hξ ↦ absurd (cotangent_eq_zero ξ) hξ
 
 /-- **Ellipticity forces equal ranks.** Over a manifold of positive dimension, if `P` is elliptic
 at an interior point, then `V` and `W` have the same rank: the principal symbol at a nonzero
 covector is a linear isomorphism `V_x ≃ W_x`. -/
 theorem IsSectionEllipticAt.finrank_eq [Nontrivial E] (hP : IsSectionEllipticAt P x)
     (hx : I.IsInteriorPoint x) : Module.finrank ℝ F = Module.finrank ℝ F' := by
-  -- `TangentSpace I x` is `E`, so it carries a nonzero covector.
-  obtain ⟨ξ, hξ⟩ : ∃ ξ : TangentSpace I x →L[ℝ] ℝ, ξ ≠ 0 := exists_ne (0 : E →L[ℝ] ℝ)
+  obtain ⟨ξ, hξ⟩ := exists_cotangent_ne_zero (I := I) x
   rw [← VectorBundle.finrank_eq ℝ F V x, ← VectorBundle.finrank_eq ℝ F' W x]
-  exact (LinearEquiv.ofBijective _ (hP.bijective hx hξ)).finrank_eq
+  exact (LinearEquiv.ofBijective _ (hP.sectionPrincipalSymbol_bijective hx hξ)).finrank_eq
 
 /-- **Ellipticity forces equal ranks.** Over a nonempty boundaryless manifold of positive
 dimension, the two bundles of an elliptic operator have the same rank. -/
@@ -157,7 +176,7 @@ theorem IsSectionEllipticAt.sectionPrincipalSymbol_ne_zero [Nontrivial F]
     (VectorBundle.continuousLinearEquivAt ℝ F V x).symm.injective.nontrivial
   obtain ⟨v, hv⟩ := exists_ne (0 : V x)
   intro h
-  refine hv ((hP.bijective hx hξ).injective ?_)
+  refine hv ((hP.sectionPrincipalSymbol_bijective hx hξ).injective ?_)
   rw [h, LinearMap.zero_apply, map_zero]
 
 /-- **Elliptic operators have exact order.** Over a manifold of positive dimension and a nonzero
@@ -168,7 +187,7 @@ theorem IsSectionEllipticAt.notMem_differentialOperators [Nontrivial E] [Nontriv
     (hP : IsSectionEllipticAt P x) (hx : I.IsInteriorPoint x) :
     (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) ∉
       differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m := fun hm ↦ by
-  obtain ⟨ξ, hξ⟩ : ∃ ξ : TangentSpace I x →L[ℝ] ℝ, ξ ≠ 0 := exists_ne (0 : E →L[ℝ] ℝ)
+  obtain ⟨ξ, hξ⟩ := exists_cotangent_ne_zero (I := I) x
   exact hP.sectionPrincipalSymbol_ne_zero hx hξ
     (sectionPrincipalSymbol_eq_zero_of_mem_differentialOperators hx P hm ξ)
 
@@ -177,7 +196,7 @@ at any interior point. -/
 theorem not_isSectionEllipticAt_zero [Nontrivial E] [Nontrivial F] (hx : I.IsInteriorPoint x) :
     ¬IsSectionEllipticAt (0 : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
       x := fun h ↦ by
-  obtain ⟨ξ, hξ⟩ : ∃ ξ : TangentSpace I x →L[ℝ] ℝ, ξ ≠ 0 := exists_ne (0 : E →L[ℝ] ℝ)
+  obtain ⟨ξ, hξ⟩ := exists_cotangent_ne_zero (I := I) x
   exact h.sectionPrincipalSymbol_ne_zero hx hξ (sectionPrincipalSymbol_zero hx ξ)
 
 /-! ### Operations preserving ellipticity -/
@@ -199,9 +218,14 @@ theorem IsSectionEllipticAt.smul (hP : IsSectionEllipticAt P x) {c : ℝ} (hc : 
     IsSectionEllipticAt (c • P) x :=
   (isSectionEllipticAt_smul_iff hc).2 hP
 
+/-- Multiplying an operator by a nonzero constant does not change its ellipticity. -/
+theorem isSectionElliptic_smul_iff {c : ℝ} (hc : c ≠ 0) :
+    IsSectionElliptic (c • P) ↔ IsSectionElliptic P :=
+  forall_congr' fun _ ↦ isSectionEllipticAt_smul_iff hc
+
 theorem IsSectionElliptic.smul (hP : IsSectionElliptic P) {c : ℝ} (hc : c ≠ 0) :
     IsSectionElliptic (c • P) :=
-  fun x ↦ (hP x).smul hc
+  (isSectionElliptic_smul_iff hc).2 hP
 
 @[simp]
 theorem isSectionEllipticAt_neg : IsSectionEllipticAt (-P) x ↔ IsSectionEllipticAt P x := by
@@ -222,6 +246,25 @@ theorem isSectionEllipticAt_add_iff
   simp only [isSectionEllipticAt_iff, sectionPrincipalSymbol_add,
     sectionPrincipalSymbol_eq_zero_of_mem_differentialOperators _ Q hQ, add_zero]
 
+/-- **Perturbations of lower order.** Adding an operator of order at most `m` to an operator of
+order at most `m + 1` elliptic at `x` gives an operator elliptic at `x`. -/
+theorem IsSectionEllipticAt.add
+    {P Q : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ (m + 1)}
+    (hP : IsSectionEllipticAt P x)
+    (hQ : (Q : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m) :
+    IsSectionEllipticAt (P + Q) x :=
+  (isSectionEllipticAt_add_iff hQ).2 hP
+
+/-- **Perturbations of lower order.** Adding an operator of order at most `m` to an operator of
+order at most `m + 1` does not change its ellipticity. -/
+theorem isSectionElliptic_add_iff
+    {P Q : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ (m + 1)}
+    (hQ : (Q : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m) :
+    IsSectionElliptic (P + Q) ↔ IsSectionElliptic P :=
+  forall_congr' fun _ ↦ isSectionEllipticAt_add_iff hQ
+
 /-- **Perturbations of lower order.** Adding an operator of order at most `m` to an elliptic
 operator of order at most `m + 1` gives an elliptic operator. -/
 theorem IsSectionElliptic.add
@@ -230,7 +273,7 @@ theorem IsSectionElliptic.add
     (hQ : (Q : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) ∈
       differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m) :
     IsSectionElliptic (P + Q) :=
-  fun x ↦ (isSectionEllipticAt_add_iff hQ).2 (hP x)
+  (isSectionElliptic_add_iff hQ).2 hP
 
 section Comp
 
@@ -252,7 +295,7 @@ theorem IsSectionEllipticAt.comp
         comp_mem_differentialOperators P.property Q.property⟩ x := by
   intro hx ξ hξ
   rw [sectionPrincipalSymbol_comp, LinearMap.coe_comp]
-  exact (hP.bijective hx hξ).comp (hQ.bijective hx hξ)
+  exact (hP.sectionPrincipalSymbol_bijective hx hξ).comp (hQ.sectionPrincipalSymbol_bijective hx hξ)
 
 /-- **Composition.** The composition of elliptic operators is elliptic. -/
 theorem IsSectionElliptic.comp
@@ -311,9 +354,7 @@ theorem IsFormalAdjoint.isSectionEllipticAt
       (Q : Cₛ^∞⟮I; F', W⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯) μ)
     (hP : IsSectionEllipticAt P x) : IsSectionEllipticAt Q x := by
   intro hx ξ hξ
-  have := VectorBundle.finiteDimensional ℝ F V x
-  have := VectorBundle.finiteDimensional ℝ F' W x
-  have hA := hP.bijective hx hξ
+  have hA := hP.sectionPrincipalSymbol_bijective hx hξ
   -- The symbol of `Q` is injective: if it kills `w`, then `w` is orthogonal to the range of the
   -- symbol of `P`, which is everything.
   have hinj : Function.Injective (sectionPrincipalSymbol I hx Q ξ) := by
@@ -323,9 +364,10 @@ theorem IsFormalAdjoint.isSectionEllipticAt
     have hi := h.inner_sectionPrincipalSymbol_apply hx ξ v (sectionPrincipalSymbol I hx P ξ v)
     rw [hw, inner_zero_right, mul_zero] at hi
     exact inner_self_eq_zero.1 hi
-  -- It is then bijective, the fibres having the same dimension.
-  refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 hinj⟩
-  exact (LinearEquiv.ofBijective _ hA).finrank_eq.symm
+  -- It is then bijective, the bundles having the same rank: the dimension is positive, since
+  -- there is a nonzero covector.
+  have : Nontrivial E := not_subsingleton_iff_nontrivial.1 fun _ ↦ hξ (cotangent_eq_zero ξ)
+  exact sectionPrincipalSymbol_bijective_of_injective (hP.finrank_eq hx).symm hx hinj
 
 /-- **Formal adjoints of elliptic operators.** If `Q` is a formal adjoint of `P`, then `Q` is
 elliptic at `x` exactly when `P` is. -/
@@ -353,13 +395,9 @@ variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 /-- An operator of Dirac type between bundles of the same rank is elliptic: its principal symbol
 at a nonzero covector is injective, hence bijective. -/
 theorem IsDiracType.isSectionElliptic (hD : IsDiracType D)
-    (hF : Module.finrank ℝ F = Module.finrank ℝ F') : IsSectionElliptic D := by
-  intro x hx ξ hξ
-  have := VectorBundle.finiteDimensional ℝ F V x
-  have := VectorBundle.finiteDimensional ℝ F' W x
-  have hinj := hD.sectionPrincipalSymbol_injective hx hξ
-  refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 hinj⟩
-  rw [VectorBundle.finrank_eq ℝ F V x, VectorBundle.finrank_eq ℝ F' W x, hF]
+    (hF : Module.finrank ℝ F = Module.finrank ℝ F') : IsSectionElliptic D :=
+  fun _ hx _ hξ ↦
+    sectionPrincipalSymbol_bijective_of_injective hF hx (hD.sectionPrincipalSymbol_injective hx hξ)
 
 /-- **Ellipticity of operators of Dirac type.** Over a manifold of positive dimension, an operator
 of Dirac type is elliptic at an interior point exactly when its two bundles have the same rank. -/
