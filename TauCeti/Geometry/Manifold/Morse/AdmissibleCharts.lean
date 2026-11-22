@@ -35,6 +35,9 @@ prescribed neighbourhoods of their centres; the disjoint charts themselves come 
 
 * `TauCeti.IsMorse.exists_admissible_morseCharts`: the compatible choice of the width `ε` and of
   disjoint normalized Morse charts at all critical points on the level `f⁻¹(c)`.
+* `TauCeti.IsMorse.exists_admissible_width`: a bound on the admissible widths shared by finitely
+  many compact families of coordinate domains whose joint domains are neighbourhoods of their
+  centres.
 
 ## References
 
@@ -48,6 +51,45 @@ open Function Set Filter Topology Metric
 open scoped ContDiff Manifold
 
 namespace TauCeti
+
+/-- Finitely many compact families of coordinate domains in a compact Morse band admit a common
+positive bound `ε₀`. At every width `0 < ε ≤ ε₀` the band is compact, has no critical point
+whose value is different from `c`, and every domain contains the closed ball of radius `√(2ε)`.
+The joint domains need only contain a neighbourhood of each `(p, 0)`, not be open everywhere. -/
+theorem IsMorse.exists_admissible_width {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+    [IsManifold I 1 M] {f : M → ℝ} (hf : IsMorse I f) {c δ : ℝ}
+    {P : Type*} [TopologicalSpace P] [CompactSpace P] {ι : Type*} [Finite ι]
+    {F : Type*} [PseudoMetricSpace F] [Zero F] (U : P → ι → Set F)
+    (hnhds : ∀ p i, {q : P × F | q.2 ∈ U q.1 i} ∈ 𝓝 (p, 0))
+    (hδ : 0 < δ) (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ))) :
+    ∃ ε₀ ∈ Ioc 0 δ, ∀ ε ∈ Ioc 0 ε₀,
+      IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) ∧
+      (∀ x, c - ε ≤ f x → f x ≤ c + ε → f x ≠ c → mfderiv I 𝓘(ℝ) f x ≠ 0) ∧
+      ∀ p i, closedBall (0 : F) √(2 * ε) ⊆ U p i := by
+  -- Compactness turns the joint neighbourhoods into one neighbourhood of zero.
+  have htarget : ∀ᶠ z : F in 𝓝 0, ∀ i p, z ∈ U p i := by
+    apply eventually_all.2
+    intro i
+    have hi := isCompact_univ.eventually_forall_of_forall_eventually
+      (X := F) (Y := P) (x₀ := 0) (P := fun z p ↦ z ∈ U p i)
+      (fun p _ ↦ (continuous_swap.continuousAt (x := ((0 : F), p))).preimage_mem_nhds (hnhds p i))
+    simpa only [mem_univ, forall_const] using hi
+  obtain ⟨r, hr, hball⟩ := nhds_basis_closedBall.eventually_iff.1 htarget
+  obtain ⟨η, hη, hηδ, hcrit⟩ := hf.exists_criticalPoints_inter_preimage_Icc_subset hδ hcompact
+  refine ⟨min η (r ^ 2 / 2), ⟨lt_min hη (by positivity), (min_le_left _ _).trans hηδ⟩,
+    fun ε hε ↦ ?_⟩
+  have hεη : ε ≤ η := hε.2.trans (min_le_left _ _)
+  have hεδ : ε ≤ δ := hεη.trans hηδ
+  refine ⟨hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
+    (preimage_mono (Icc_subset_Icc (by linarith [hεδ]) (by linarith [hεδ]))), ?_, ?_⟩
+  · intro x hlow hupp hne hderiv
+    exact hne (hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.mpr hderiv,
+      by constructor <;> linarith⟩)
+  · intro p i z hz
+    apply hball (closedBall_subset_closedBall (ε₁ := √(2 * ε)) (ε₂ := r) ?_ hz) i p
+    rw [Real.sqrt_le_left hr.le]
+    linarith [hε.2.trans (min_le_right η (r ^ 2 / 2))]
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
