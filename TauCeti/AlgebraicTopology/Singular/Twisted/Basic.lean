@@ -1152,6 +1152,7 @@ contravariant `Hom(-, M)`. -/
 instance isSplitMono_twistedChainsMap_app [Mono f] (k : SimplexCategoryᵒᵖ) :
     IsSplitMono ((twistedChainsMap f L).app k) :=
   TauCeti.isSplitMono_sigmaMap' (fun σ ↦ L.obj (initialVertex σ)) ((TopCat.toSSet.map f).app k)
+    ((mono_iff_injective _).1 inferInstance)
 
 /-- A monomorphism of spaces induces a degreewise split monomorphism of twisted chain
 complexes. -/
@@ -1330,6 +1331,15 @@ def subsetTwistedChainComplexMap (h : A ⊆ B) :
         (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).hom.app L) ≫
     twistedChainComplexMap (TopCat.ofHom (ContinuousMap.inclusion h))
       ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L)
+
+/-- The map induced by `A ⊆ B` is the change of coefficients identifying the two restrictions of
+`L` to `A`, followed by the map induced by the inclusion of `A` into `B`. -/
+lemma subsetTwistedChainComplexMap_def (h : A ⊆ B) :
+    subsetTwistedChainComplexMap L h = twistedChainComplexCoefficientMap
+        ((pullbackCompIso (TopCat.ofHom (ContinuousMap.inclusion h)).hom
+          (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).hom.app L) ≫
+      twistedChainComplexMap (TopCat.ofHom (ContinuousMap.inclusion h))
+        ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L) := (rfl)
 
 /-- The map induced by `A ⊆ B` followed by the map induced by `B ⊆ X` is the map induced by
 `A ⊆ X`. -/

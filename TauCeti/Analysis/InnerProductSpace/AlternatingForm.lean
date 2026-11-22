@@ -94,6 +94,13 @@ theorem alternatingFormEquiv_ιMulti_apply {k : ℕ} (u v : Fin k → V) :
     alternatingFormEquiv V k (ιMulti ℝ k u) v = (Matrix.of fun i j ↦ ⟪u j, v i⟫).det := by
   rw [alternatingFormEquiv_apply, inner_ιMulti_ιMulti]
 
+/-- The form of a wedge of vectors `u₁ ∧ ⋯ ∧ uₖ` vanishes on every frame `v` having a vector `vᵢ`
+orthogonal to every `uⱼ`. -/
+theorem alternatingFormEquiv_ιMulti_apply_eq_zero_of_forall_inner_eq_zero {k : ℕ} (u v : Fin k → V)
+    {i : Fin k} (h : ∀ j, ⟪u j, v i⟫ = 0) : alternatingFormEquiv V k (ιMulti ℝ k u) v = 0 := by
+  rw [alternatingFormEquiv_ιMulti_apply]
+  exact Matrix.det_eq_zero_of_row_eq_zero i fun j ↦ by simp [h]
+
 /-- The form of a wedge of vectors is the alternatization of the product of the covectors
 `⟪uⱼ, ·⟫`. -/
 private theorem alternatingFormEquiv_ιMulti_toAlternatingMap {k : ℕ} (u : Fin k → V) :
@@ -214,6 +221,12 @@ theorem alternatingFormInner_self_nonneg {k : ℕ} (α : V [⋀^Fin k]→L[ℝ] 
 theorem alternatingFormInner_self_eq_zero {k : ℕ} {α : V [⋀^Fin k]→L[ℝ] ℝ} :
     alternatingFormInner V k α α = 0 ↔ α = 0 := by
   rw [alternatingFormInner_apply, inner_self_eq_zero, LinearEquiv.map_eq_zero_iff]
+
+/-- The Hilbert norm `√⟨α, α⟩` of a form is the norm of the element of `⋀ᵏ V` representing it. -/
+theorem _root_.ContinuousAlternatingMap.sqrt_alternatingFormInner_self {k : ℕ}
+    (α : V [⋀^Fin k]→L[ℝ] ℝ) :
+    √(alternatingFormInner V k α α) = ‖(alternatingFormEquiv V k).symm α‖ := by
+  rw [alternatingFormInner_apply, real_inner_self_eq_norm_sq, Real.sqrt_sq (norm_nonneg _)]
 
 /-- **The inner product of forms in an orthonormal basis**: if `(eᵢ)` is an orthonormal basis of
 `V` indexed by a linear order, then `⟨α, β⟩ = ∑ α(e_{i₁}, …, e_{iₖ}) β(e_{i₁}, …, e_{iₖ})`, the sum

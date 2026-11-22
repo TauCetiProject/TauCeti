@@ -71,6 +71,12 @@ with `γ₁ ^ p₁` and last with `γ_j ^ p_j` (`twistPoint_concat`).
 * `TauCeti.GroupAlgGeom.Lift.phi`: the products `φ_{j,p}` of powers of the terms of a sequence,
   continued periodically.
 * `TauCeti.GroupAlgGeom.Lift.twistPoint`: the point `φ_{j,p} v`.
+* `TauCeti.GroupAlgGeom.Lift.basicWordSeqData`, `TauCeti.GroupAlgGeom.Lift.basicSeqData`: the basic
+  sequences as lists of twist data, which also record the words of the twists
+  (`map_toMulAut_basicWordSeqData`, `map_toMulAut_basicSeqData`), with one equation per
+  orientable form (`basicSeqData_orientable`, `basicSeqData_orientableCoeff_of_eq_zero`,
+  `basicSeqData_orientableCoeff_of_ne_zero`); their substitutions fix the equation
+  (`twistHom_toWord_of_mem_basicSeqData`).
 
 ## Main results
 
@@ -278,6 +284,39 @@ theorem map_phi {N F : Type*} [Monoid N] [FunLike F M N] [MonoidHomClass F M N] 
     (p : List ℕ) : f (phi Γ p) = phi (Γ.map f) p := by
   have hget (o : Option M) : f (o.getD 1) = (o.map f).getD 1 := by cases o <;> simp
   simp [phi, map_list_prod, Function.comp_def, hget]
+
+/-- Repeating a sequence `J ≠ 0` times does not change the products `φ_{j,p}`, which continue the
+sequence periodically. -/
+theorem phi_flatten_replicate {J : ℕ} (hJ : J ≠ 0) (p : List ℕ) :
+    phi (List.replicate J Γ).flatten p = phi Γ p := by
+  -- The entry of index `i mod J K` of the repetition is the entry of index `i mod K` of `Γ`.
+  have h (i : ℕ) : (List.replicate J Γ).flatten.getD (i % (List.replicate J Γ).flatten.length) 1 =
+      Γ.getD (i % Γ.length) 1 := by
+    rcases eq_or_ne Γ [] with rfl | hΓ
+    · simp
+    have hL : 0 < Γ.length := List.length_pos_iff.2 hΓ
+    have hlen : (List.replicate J Γ).flatten.length = J * Γ.length := by simp
+    have hlt : i % (J * Γ.length) < J * Γ.length :=
+      Nat.mod_lt _ (Nat.mul_pos (Nat.pos_of_ne_zero hJ) hL)
+    have key : (List.replicate J Γ).flatten =
+        List.ofFn (Fin.repeat J fun k : Fin Γ.length => Γ[k]) := by simp
+    rw [hlen, List.getD_eq_getElem _ _ (hlen ▸ hlt), List.getD_eq_getElem _ _ (Nat.mod_lt _ hL),
+      List.getElem_of_eq key, List.getElem_ofFn]
+    simp [Fin.repeat_apply, Fin.modNat]
+  simp only [phi_def, h]
+
+/-- Prepending a term `γ` to the sequence and an exponent `k` to the tuple multiplies `φ_{j,p}` by
+`γ ^ k` on the left, as long as the tuple is no longer than the sequence (no index wraps around):
+`φ_{j+1,(k,p)} = γ ^ k * φ_{j,p}`. -/
+theorem phi_cons_cons (γ : M) (k : ℕ) {p : List ℕ} (hp : p.length ≤ Γ.length) :
+    phi (γ :: Γ) (k :: p) = γ ^ k * phi Γ p := by
+  induction p using List.reverseRecOn with
+  | nil => simp
+  | append_singleton p e ih =>
+    rw [List.length_append, List.length_singleton] at hp
+    rw [← List.cons_append, phi_concat, ih (by lia), phi_concat, mul_assoc,
+      List.length_cons, List.length_cons, Nat.mod_eq_of_lt (by lia), Nat.mod_eq_of_lt hp,
+      List.getD_cons_succ]
 
 end Phi
 
@@ -651,5 +690,117 @@ theorem length_basicSeq_conjugates {z : Fin 3 → X} {c : Fin 3 → G} {d : G}
   simp
 
 end Examples
+
+/-! ### The twist data of the basic sequence -/
+
+section Data
+
+variable {x y : Fin n → X} {z : Fin m → X} (inj : (Sum.elim (Sum.elim x y) z).Injective)
+  (c : Fin m → G)
+
+/-- The twist data of the basic sequence `basicWordSeq`: for each of its automorphisms, the word
+`A` by which it multiplies or conjugates the variables of one or two atoms, and the exponents. -/
+noncomputable def basicWordSeqData : List (TwistData G X) :=
+  (List.ofFn fun j : Fin (m - 1) => basicCoeffData inj c ⟨j, by omega⟩ ⟨j + 1, by omega⟩) ++
+    (if h : 0 < m ∧ 0 < n then [basicLinkData inj c ⟨m - 1, by omega⟩ ⟨0, h.2⟩] else []) ++
+    (List.ofFn fun i : Fin n => [basicYData inj i, basicXData inj i, basicYData inj i] ++
+      if h : (i : ℕ) + 1 < n then [basicCommData inj i ⟨i + 1, h⟩] else []).flatten
+
+theorem basicWordSeqData_def :
+    basicWordSeqData inj c =
+      (List.ofFn fun j : Fin (m - 1) => basicCoeffData inj c ⟨j, by omega⟩ ⟨j + 1, by omega⟩) ++
+        (if h : 0 < m ∧ 0 < n then [basicLinkData inj c ⟨m - 1, by omega⟩ ⟨0, h.2⟩] else []) ++
+        (List.ofFn fun i : Fin n => [basicYData inj i, basicXData inj i, basicYData inj i] ++
+          if h : (i : ℕ) + 1 < n then [basicCommData inj i ⟨i + 1, h⟩] else []).flatten := (rfl)
+
+/-- The basic sequence is the list of automorphisms of its twist data. -/
+@[simp]
+theorem map_toMulAut_basicWordSeqData :
+    (basicWordSeqData inj c).map TwistData.toMulAut = basicWordSeq inj c := by
+  rw [basicWordSeqData_def, basicWordSeq_def]
+  split_ifs <;> simp [Function.comp_def, apply_dite]
+
+/-- The substitution of each twist datum of the basic sequence fixes the word `S₀`. -/
+theorem twistHom_basicWord_of_mem_basicWordSeqData {d : TwistData G X}
+    (hd : d ∈ basicWordSeqData inj c) : twistHom d.A d.e (basicWord x y z c) = basicWord x y z c :=
+  (d.toMulAut_apply _).symm.trans <| apply_basicWord_of_mem_basicWordSeq inj c <|
+    map_toMulAut_basicWordSeqData inj c ▸ List.mem_map_of_mem hd
+
+end Data
+
+section StandardData
+
+open Quadratic Quadratic.Standard
+
+/-- The twist data of the basic sequence `basicSeq S` of a standard orientable quadratic
+equation. -/
+noncomputable def basicSeqData : (S : Standard G X) → S.IsOrientable → List (TwistData G X)
+  | .orientable _ _ _ _ inj, _ => basicWordSeqData (inj.sumElim_of_isEmpty Fin.elim0) Fin.elim0
+  | .orientableCoeff _ m _ _ _ _ inj c _ _ _, _ =>
+    if m = 0 then basicWordSeqData inj c else
+      basicWordSeqData (inj.sumElim_sumElim_swap_comp Fin.rev_injective Fin.rev_injective
+        Fin.rev_injective) fun j => (c j.rev)⁻¹
+  | .nonorientable _ hn _ inj, h => (not_isOrientable_nonorientable hn inj h).elim
+  | .nonorientableCoeff _ _ hn _ _ inj _ hc _ hd, h =>
+    (not_isOrientable_nonorientableCoeff hn inj hc hd h).elim
+
+variable {x y : Fin n → X} {z : Fin m → X} {c : Fin m → G} {d : G}
+
+/-- The twist data of the basic sequence of `∏ᵢ [xᵢ, yᵢ] = 1` are those of the word `S₀` of its
+variables. -/
+theorem basicSeqData_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
+    basicSeqData (G := G) (orientable n hn x y inj) (isOrientable_orientable hn inj) =
+      basicWordSeqData (inj.sumElim_of_isEmpty Fin.elim0) Fin.elim0 := (rfl)
+
+/-- The twist data of the basic sequence of `∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1`: those of the word
+`S₀` of its variables if there are no coefficient atoms, of the mirrored variables and
+coefficients otherwise. -/
+theorem basicSeqData_orientableCoeff (hnm : 0 < n + m)
+    (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    basicSeqData (orientableCoeff n m hnm x y z inj c hc d hd)
+        (isOrientable_orientableCoeff hnm inj hc hd) =
+      if m = 0 then basicWordSeqData inj c else
+        basicWordSeqData (inj.sumElim_sumElim_swap_comp Fin.rev_injective Fin.rev_injective
+          Fin.rev_injective) fun j => (c j.rev)⁻¹ := (rfl)
+
+/-- Without coefficient atoms, the twist data of the basic sequence of `∏ᵢ [xᵢ, yᵢ] d = 1` are
+those of the word `S₀` of its variables. -/
+theorem basicSeqData_orientableCoeff_of_eq_zero (hnm : 0 < n + m)
+    (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) (hm : m = 0) :
+    basicSeqData (orientableCoeff n m hnm x y z inj c hc d hd)
+        (isOrientable_orientableCoeff hnm inj hc hd) = basicWordSeqData inj c := by
+  rw [basicSeqData_orientableCoeff, ite_eq_left hm]
+
+/-- With coefficient atoms, the twist data of the basic sequence of
+`∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1` are those of the word `S₀` of the mirrored variables
+`y ∘ Fin.rev`, `x ∘ Fin.rev`, `z ∘ Fin.rev` and coefficients `fun j => (c j.rev)⁻¹`. -/
+theorem basicSeqData_orientableCoeff_of_ne_zero (hnm : 0 < n + m)
+    (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) (hm : m ≠ 0) :
+    basicSeqData (orientableCoeff n m hnm x y z inj c hc d hd)
+        (isOrientable_orientableCoeff hnm inj hc hd) =
+      basicWordSeqData (inj.sumElim_sumElim_swap_comp Fin.rev_injective Fin.rev_injective
+        Fin.rev_injective) fun j => (c j.rev)⁻¹ := by
+  rw [basicSeqData_orientableCoeff, ite_eq_right hm]
+
+/-- The basic sequence of a standard orientable quadratic equation is the list of automorphisms
+of its twist data. -/
+@[simp]
+theorem map_toMulAut_basicSeqData (S : Standard G X) (hS : S.IsOrientable) :
+    (basicSeqData S hS).map TwistData.toMulAut = basicSeq S hS := by
+  cases S with
+  | orientable => simp [basicSeqData, basicSeq]
+  | orientableCoeff => simp only [basicSeqData, basicSeq]; split_ifs <;> simp
+  | nonorientable _ hn _ inj => exact (not_isOrientable_nonorientable hn inj hS).elim
+  | nonorientableCoeff _ _ hn _ _ inj _ hc _ hd =>
+    exact (not_isOrientable_nonorientableCoeff hn inj hc hd hS).elim
+
+/-- The substitution of each twist datum of the basic sequence of a standard orientable quadratic
+equation fixes the left side of the equation. -/
+theorem twistHom_toWord_of_mem_basicSeqData {S : Standard G X} (hS : S.IsOrientable)
+    {d : TwistData G X} (hd : d ∈ basicSeqData S hS) : twistHom d.A d.e S.toWord = S.toWord :=
+  (d.toMulAut_apply _).symm.trans <| apply_toWord_of_mem_basicSeq hS <|
+    map_toMulAut_basicSeqData S hS ▸ List.mem_map_of_mem hd
+
+end StandardData
 
 end TauCeti.GroupAlgGeom.Lift

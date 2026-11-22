@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
+public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.GroupTheory.Perm.Basic
 
@@ -34,6 +35,8 @@ alternatization is absorbed into the outer one
   `v ↦ φ ∧ g v`.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_smulRight_apply`: alternatizing `v ↦ a v • ψ`
   for a covector `a` gives the wedge `a ∧ ψ`.
+* `ContinuousAlternatingMap.alternatizeUncurryFin_smulRight_apply_eq_wedge`: the same identity
+  for a real-valued form `ψ`, stated with the real wedge.
 -/
 
 public section
@@ -196,5 +199,18 @@ theorem alternatizeUncurryFin_smulRight_apply (a : E →L[ℝ] ℝ) (ψ : E [⋀
   have h₁ (j : Fin l) : Fin.cast (show 1 + l = l + 1 by omega) (Fin.natAdd 1 j) = j.succ :=
     Fin.ext (by simp)
   simp [h₀, h₁, Perm.sign_permCongr]
+
+/-- Alternatizing the linear family `v ↦ a v • ψ` of real-valued forms, for a covector `a`, gives
+the real wedge `a ∧ ψ` of `a`, regarded as a one-form, with `ψ`. The degree `1 + l` is identified
+with `l + 1` by `Fin.cast`. -/
+theorem alternatizeUncurryFin_smulRight_apply_eq_wedge (a : E →L[ℝ] ℝ) (ψ : E [⋀^Fin l]→L[ℝ] ℝ)
+    (v : Fin (l + 1) → E) :
+    alternatizeUncurryFin (a.smulRight ψ) v =
+      wedge (ofSubsingleton ℝ E ℝ (0 : Fin 1) a) ψ
+        (v ∘ Fin.cast (show 1 + l = l + 1 by omega)) := by
+  -- On `ℝ`, scalar multiplication is multiplication, the pairing of the real wedge.
+  have hμ : ContinuousLinearMap.lsmul ℝ ℝ = ContinuousLinearMap.mul ℝ ℝ := by
+    ext; simp
+  rw [alternatizeUncurryFin_smulRight_apply, wedge_def, hμ]
 
 end ContinuousAlternatingMap

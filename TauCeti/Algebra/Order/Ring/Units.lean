@@ -51,7 +51,8 @@ determined by any of its nonzero powers. -/
 instance instHasUniqueRootsPosSubgroup (R : Type*) [Semiring R] [LinearOrder R]
     [IsStrictOrderedRing R] : HasUniqueRoots (Units.posSubgroup R) where
   pow_left_injective _ hn x y h := Subtype.ext <| Units.ext <|
-    (pow_left_inj₀ ((Units.mem_posSubgroup _).1 x.2).le ((Units.mem_posSubgroup _).1 y.2).le
+    (pow_left_inj₀ ((Units.mem_posSubgroup _).1 x.property).le
+        ((Units.mem_posSubgroup _).1 y.property).le
       hn).1 (by simpa using congrArg (fun z : Units.posSubgroup R ↦ ((z : Rˣ) : R)) h)
 
 variable {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]

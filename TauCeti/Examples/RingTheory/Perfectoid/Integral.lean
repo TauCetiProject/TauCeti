@@ -7,7 +7,7 @@ module
 
 import Mathlib.NumberTheory.Padics.PadicIntegers
 import Mathlib.Algebra.Polynomial.Degree.Lemmas
-import TauCeti.RingTheory.Perfectoid.Integral
+import TauCeti.RingTheory.Perfectoid.Integral.Basic
 
 /-!
 # Checks for integral perfectoid rings

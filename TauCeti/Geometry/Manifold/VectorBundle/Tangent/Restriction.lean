@@ -11,11 +11,13 @@ public import TauCeti.Topology.VectorBundle.Pullback
 import Mathlib.Geometry.Manifold.VectorBundle.Hom
 
 /-!
-# Restricting tangent Hom fields to open products
+# Restricting tangent Hom fields and vector fields to open subsets
 
 The canonical tangent-space identifications of open submanifolds preserve the native Hom-section
-regularity, at every order. The coordinate comparison uses the inherited tangent charts and
-applies to arbitrary normed models, without completeness or finite-dimensionality assumptions.
+regularity, at every order, and the regularity of vector fields
+(`TauCeti.Manifold.contMDiffAt_restrictOpen_vectorField`). The coordinate comparison uses the
+inherited tangent charts and applies to arbitrary normed models, without completeness or
+finite-dimensionality assumptions.
 -/
 
 public noncomputable section
@@ -87,7 +89,7 @@ theorem eventually_inCoordinates_openTangentSpaceHom_eq {U : Opens M} {V : Opens
     continuousAt_snd.eventually
       ((trivializationAt F (TangentSpace I' : V → Type _) x').open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt F (TangentSpace I' : V → Type _) x')),
-    (continuousAt_subtype_val.comp continuousAt_snd).eventually
+    (continuousAt_subtypeVal.comp continuousAt_snd).eventually
       ((trivializationAt F (TangentSpace I' : N → Type _) (x' : N)).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt F (TangentSpace I' : N → Type _) (x' : N)))]
       with q hs ht hqV hqN
@@ -129,17 +131,17 @@ theorem contMDiff_restrictOpenTangentSpaceHom {n : ℕ∞ω}
             (TangentSpace I')) q) q (restrictOpenTangentSpaceHom A U V q)) := by
   have hinc : ContMDiff (I.prod I') (I.prod I') n
       (fun q : U × V ↦ ((q.1 : M), (q.2 : N))) :=
-    ((contMDiff_subtype_val (I := I) (U := U)).comp contMDiff_fst).prodMk
-      ((contMDiff_subtype_val (I := I') (U := V)).comp contMDiff_snd)
+    ((contMDiff_subtypeVal (I := I) (U := U)).comp contMDiff_fst).prodMk
+      ((contMDiff_subtypeVal (I := I') (U := V)).comp contMDiff_snd)
   intro q
   have ha := (contMDiffAt_hom_bundle _).mp ((hA.comp hinc) q)
   rw [contMDiffAt_hom_bundle]
   refine ⟨contMDiffAt_id, ha.2.congr_of_eventuallyEq ?_⟩
   filter_upwards [eventually_inCoordinates_openTangentSpaceHom_eq (I := I) (I' := I') q.1 q.2,
-    (continuousAt_subtype_val.comp continuousAt_fst).eventually
+    (continuousAt_subtypeVal.comp continuousAt_fst).eventually
       ((trivializationAt E (TangentSpace I : M → Type _) (q.1 : M)).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) (q.1 : M))),
-    (continuousAt_subtype_val.comp continuousAt_snd).eventually
+    (continuousAt_subtypeVal.comp continuousAt_snd).eventually
       ((trivializationAt F (TangentSpace I' : N → Type _) (q.2 : N)).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt F (TangentSpace I' : N → Type _) (q.2 : N))),
     continuousAt_fst.eventually
@@ -192,7 +194,7 @@ theorem contMDiff_restrictOpenTangentSpaceEnd {n : ℕ∞ω}
         (restrictOpenTangentSpaceEnd A U q)) := by
   have hinc : ContMDiff (IS.prod I) (IS.prod I) n
       (fun q : S × U ↦ (q.1, (q.2 : M))) :=
-    contMDiff_fst.prodMk ((contMDiff_subtype_val (I := I) (U := U)).comp contMDiff_snd)
+    contMDiff_fst.prodMk ((contMDiff_subtypeVal (I := I) (U := U)).comp contMDiff_snd)
   intro q
   have ha := (contMDiffAt_hom_bundle _).mp ((hA.comp hinc) q)
   rw [contMDiffAt_hom_bundle]
@@ -202,12 +204,44 @@ theorem contMDiff_restrictOpenTangentSpaceEnd {n : ℕ∞ω}
     continuousAt_snd.eventually
       ((trivializationAt E (TangentSpace I : U → Type _) q.2).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt E (TangentSpace I : U → Type _) q.2)),
-    (continuousAt_subtype_val.comp continuousAt_snd).eventually
+    (continuousAt_subtypeVal.comp continuousAt_snd).eventually
       ((trivializationAt E (TangentSpace I : M → Type _) (q.2 : M)).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) (q.2 : M)))]
       with y hs hyU hyM
   exact inCoordinates_openTangentSpaceHom_eq (A (y.1, y.2)) hyU hyM hs hs
 
 end Endomorphism
+
+section VectorField
+
+/-- Restricting a vector field to an open submanifold, through the canonical tangent-space
+identification, preserves `C^n` regularity at a point. -/
+theorem contMDiffAt_restrictOpen_vectorField {n : ℕ∞ω} {X : Π x : M, TangentSpace I x}
+    {U : Opens M} {x : U} (hX : ContMDiffAt I I.tangent n (T% X) (x : M)) :
+    ContMDiffAt I I.tangent n
+      (T% fun y : U ↦ (tangentSpaceOpenEquiv (I := I) y).symm (X y)) x := by
+  rw [contMDiffAt_section_iff]
+  refine (contMDiffAt_subtype_iff.2 ((contMDiffAt_section_iff (x : M)).1 hX)).congr_of_eventuallyEq
+    ?_
+  filter_upwards [
+    (trivializationAt E (TangentSpace I : U → Type _) x).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt E (TangentSpace I : U → Type _) x),
+    continuousAt_subtypeVal.eventually
+      ((trivializationAt E (TangentSpace I : M → Type _) (x : M)).open_baseSet.mem_nhds
+        (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) (x : M))),
+    eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq (I := I) x] with y hyU hyM hsymm
+  -- Both sides read the same vector in trivializations which agree under the identification.
+  have hw : (tangentSpaceOpenEquiv (I := I) y).symm (X y) =
+      (trivializationAt E (TangentSpace I : U → Type _) x).symmL 𝕜 y
+        ((trivializationAt E (TangentSpace I : M → Type _) (x : M)).continuousLinearMapAt 𝕜
+          (y : M) (X y)) := by
+    apply (tangentSpaceOpenEquiv (I := I) y).injective
+    rw [ContinuousLinearEquiv.apply_symm_apply, hsymm,
+      Trivialization.symmL_continuousLinearMapAt _ hyM]
+  rw [hw, ← congrFun (Trivialization.coe_linearMapAt_of_mem (R := 𝕜) _ hyU),
+    ← congrFun (Trivialization.coe_linearMapAt_of_mem (R := 𝕜) _ hyM)]
+  exact Trivialization.continuousLinearMapAt_symmL _ hyU _
+
+end VectorField
 
 end TauCeti.Manifold

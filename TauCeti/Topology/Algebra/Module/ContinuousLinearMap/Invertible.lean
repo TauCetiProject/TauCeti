@@ -22,20 +22,31 @@ inverse families. The difference of two inverses satisfies the resolvent identit
 controls variation of inverse operators by variation of the original operators.
 
 Over a semifield, multiplying a map by a nonzero scalar `c` preserves invertibility, and the inverse
-of `c • f` is `c⁻¹ • f.inverse`; this is how the inverse of a positively homogeneous family of
-maps is seen to be homogeneous of the opposite degree. Scaling the identity by a nonzero scalar `c`
+of `c • f` is `c⁻¹ • f.inverse`, also for `c` from a subfield of the scalars; this is how the
+inverse of a positively homogeneous family of maps is seen to be homogeneous of the opposite
+degree. Scaling the identity by a nonzero scalar `c`
 from a group with zero acting on the space, such as complex multiplication on `ℂ` viewed as a
-real-linear map, is invertible (`ContinuousLinearMap.isUnit_smul_id_of_ne_zero`).
+real-linear map, is invertible (`ContinuousLinearMap.isUnit_smul_id_of_ne_zero`). On a
+topological semifield, `a ↦ a • c` is invertible exactly when `c ≠ 0`
+(`ContinuousLinearMap.isInvertible_toSpanSingleton_iff`).
+
+A one-sided inverse of an invertible map is its inverse
+(`ContinuousLinearMap.IsInvertible.eq_inverse_of_comp_eq_id_left` and `_right`).
 
 An endomorphism is invertible exactly when it is a unit of the endomorphism ring
 (`ContinuousLinearMap.isInvertible_iff_isUnit`).
+
+A map agreeing pointwise with an equality cast is invertible
+(`ContinuousLinearMap.isInvertible_of_eq_cast`), including zero modules.
 
 The file also records that the product `f.prodMap g` of two continuous linear maps is invertible
 exactly when both factors are, which is how block-diagonal second derivatives on a product space
 are shown to be invertible. More generally, a map `M₁ × M₂ → M₁ × M₃` which preserves the first
 coordinate is block lower triangular, and it is invertible exactly when its diagonal block
 `M₂ → M₃` is. This is the shape of the differential of a fibre-preserving map between vector
-bundles over the same base, read in bundle charts.
+bundles over the same base, read in bundle charts. For an endomorphism `B`, the map
+`(u, l) ↦ (B u + l, u)` of `M × M` is invertible
+(`ContinuousLinearMap.isInvertible_coprod_id_prod_fst`).
 
 Between uniformly topologized modules an invertible continuous linear map transfers
 completeness from the codomain to the domain, because its inverse is a uniform homeomorphism.
@@ -51,6 +62,15 @@ open Filter
 open scoped Topology
 
 namespace ContinuousLinearMap
+
+/-- A continuous linear map equal to the equality cast between its fibres is invertible. -/
+theorem isInvertible_of_eq_cast {R M : Type*} [Semiring R] {V : M → Type*}
+    [∀ x, AddCommMonoid (V x)] [∀ x, Module R (V x)] [∀ x, TopologicalSpace (V x)]
+    {x₀ x₁ : M} (h : x₀ = x₁) (A : V x₀ →L[R] V x₁)
+    (hA : ∀ v, A v = cast (congrArg V h) v) : A.IsInvertible := by
+  subst x₁
+  obtain rfl : A = ContinuousLinearMap.id R (V x₀) := ContinuousLinearMap.ext hA
+  exact ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl R (V x₀))
 
 section IsUnit
 
@@ -79,6 +99,25 @@ theorem IsInvertible.inverse_sub_inverse {f g : E →L[R] F}
   simp [hf.inverse_apply_self, hg.self_apply_inverse]
 
 end Sub
+
+section OneSided
+
+variable {R M M₂ : Type*} [Semiring R]
+  [TopologicalSpace M] [AddCommMonoid M] [Module R M]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module R M₂]
+  {f : M →L[R] M₂} {g : M₂ →L[R] M}
+
+/-- A left inverse of an invertible continuous linear map is its inverse. -/
+theorem IsInvertible.eq_inverse_of_comp_eq_id_left (hf : f.IsInvertible)
+    (h : g ∘L f = .id R M) : g = f.inverse := by
+  rw [← comp_id g, ← hf.self_comp_inverse, ← comp_assoc, h, id_comp]
+
+/-- A right inverse of an invertible continuous linear map is its inverse. -/
+theorem IsInvertible.eq_inverse_of_comp_eq_id_right (hf : f.IsInvertible)
+    (h : f ∘L g = .id R M₂) : g = f.inverse := by
+  rw [← id_comp g, ← hf.inverse_comp_self, comp_assoc, h, comp_id]
+
+end OneSided
 
 section CompleteSpace
 
@@ -152,6 +191,17 @@ theorem inverse_smul (c : 𝕜) (f : M →L[𝕜] M₂) : (c • f).inverse = c�
     (ContinuousLinearEquiv.symm_apply_eq _ (y := c⁻¹ • y)).2 (by simp [smul_smul, hc]),
     map_smul, smul_apply]
 
+/-- The inverse of `c • f` is `c⁻¹ • f.inverse` also for a scalar `c` from a subfield `S` of the
+scalars of `f`, such as a real multiple of a complex-linear map. -/
+theorem inverse_smul_of_isScalarTower {S : Type*} [Semifield S] [Algebra S 𝕜]
+    [Module S M] [IsScalarTower S 𝕜 M] [ContinuousConstSMul S M]
+    [Module S M₂] [IsScalarTower S 𝕜 M₂] [ContinuousConstSMul S M₂]
+    (c : S) (f : M →L[𝕜] M₂) : (c • f).inverse = c⁻¹ • f.inverse := by
+  have h (d : S) (g : M₂ →L[𝕜] M) : d • g = algebraMap S 𝕜 d • g := by
+    ext; simp [algebraMap_smul]
+  rw [show c • f = algebraMap S 𝕜 c • f by ext; simp [algebraMap_smul], inverse_smul, h,
+    map_inv₀]
+
 end Smul
 
 section SMulId
@@ -169,6 +219,23 @@ theorem isUnit_smul_id_of_ne_zero {c : S} (hc : c ≠ 0) :
   ext; simp [ContinuousLinearEquiv.toUnit]
 
 end SMulId
+
+section ToSpanSingleton
+
+variable {𝕜 : Type*} [Semifield 𝕜] [TopologicalSpace 𝕜] [ContinuousMul 𝕜]
+
+/-- On a topological semifield, the continuous linear map `a ↦ a • c` is invertible exactly when
+`c ≠ 0`. -/
+@[simp]
+theorem isInvertible_toSpanSingleton_iff {c : 𝕜} :
+    (toSpanSingleton 𝕜 c).IsInvertible ↔ c ≠ 0 := by
+  refine ⟨?_, fun hc ↦ .of_inverse (g := toSpanSingleton 𝕜 c⁻¹) ?_ ?_⟩
+  · rintro h rfl
+    rw [toSpanSingleton_zero, isInvertible_zero_iff] at h
+    exact not_subsingleton 𝕜 h.1
+  all_goals ext; simp [hc]
+
+end ToSpanSingleton
 
 section ProdMap
 
@@ -244,6 +311,21 @@ theorem isInvertible_iff_of_fst_comp_eq {T : M₁ × M₂ →L[R] M₁ × M₃}
       simp [hKp, add_comm]
 
 end FstPreserving
+
+section CoprodId
+
+variable {R M : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
+  [IsTopologicalAddGroup M]
+
+/-- For an endomorphism `B`, the map `(u, l) ↦ (B u + l, u)` of `M × M` is invertible, with
+inverse `(f, g) ↦ (g, f - B g)`. -/
+theorem isInvertible_coprod_id_prod_fst (B : M →L[R] M) :
+    ((B.coprod (ContinuousLinearMap.id R M)).prod (fst R M M)).IsInvertible :=
+  ⟨ContinuousLinearEquiv.ofContinuousLinearMap ((B.coprod (ContinuousLinearMap.id R M)).prod
+    (fst R M M)) ((snd R M M).prod (fst R M M - B ∘L snd R M M)) (ext fun _ ↦ by simp)
+    (ext fun _ ↦ by simp), rfl⟩
+
+end CoprodId
 
 section OneSubComp
 

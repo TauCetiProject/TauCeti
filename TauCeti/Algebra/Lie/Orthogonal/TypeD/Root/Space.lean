@@ -378,7 +378,7 @@ theorem toEnd_typeDDiagonalCartan_matrix_eq_toLin_diagonal (A : typeDDiagonalCar
   simp only [LieSubalgebra.coe_bracket_of_module]
   have hA : (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈ diagonalCartan K (ι ⊕ ι) := by
     rw [mem_diagonalCartan_iff_isDiag]
-    exact mem_typeDDiagonalCartan_iff_isDiag.mp A.2
+    exact mem_typeDDiagonalCartan_iff_isDiag.mp A.property
   rw [lie_single_of_mem_diagonalCartan hA]
 
 /-- Over a reduced ring, the root spaces for the split diagonal Cartan are honest simultaneous
@@ -418,7 +418,7 @@ theorem typeDDiagonalCartan_lie_apply (A : typeDDiagonalCartan K ι)
         X⁆ a b = typeDMatrixWeight a b A * X a b := by
   have hA : (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈ diagonalCartan K (ι ⊕ ι) := by
     rw [mem_diagonalCartan_iff_isDiag]
-    exact mem_typeDDiagonalCartan_iff_isDiag.mp A.2
+    exact mem_typeDDiagonalCartan_iff_isDiag.mp A.property
   rw [lie_apply_of_mem_diagonalCartan hA, typeDMatrixWeight_apply]
 
 /-- An entry of a generalized root vector vanishes when its weight difference from the root is
@@ -496,13 +496,7 @@ theorem mem_rootSpace_typeDDiagonalCartan_iff
     by_contra hcon
     push Not at hcon
     exact hab ((typeDDiagonalCartanBasis (K := K) (ι := ι)).ext hcon)
-  rw [rootSpace_typeDDiagonalCartan_eq_weightSpace, LieModule.mem_weightSpace] at hX
-  let A := typeDDiagonalCartanBasis (K := K) (ι := ι) k
-  have hEq := congrArg Subtype.val (hX A)
-  have hentry := congrFun (congrFun hEq a) b
-  rw [SetLike.val_smul, Matrix.smul_apply] at hentry
-  simp only [LieSubalgebra.coe_bracket_of_module, LieSubalgebra.coe_bracket] at hentry
-  rw [typeDDiagonalCartan_lie_apply] at hentry
-  exact (mul_eq_zero.mp (by linear_combination hentry)).resolve_left (sub_ne_zero.mpr hk)
+  exact rootSpace_typeDDiagonalCartan_apply_eq_zero_of_isRegular hX a b _
+    (isRegular_iff_ne_zero.mpr (sub_ne_zero.mpr hk))
 
 end TauCeti

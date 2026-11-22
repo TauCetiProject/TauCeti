@@ -108,27 +108,8 @@ theorem cartanGeneratorMatrixQ_apply (i : Fin 6) (a b : Fin 27 ⊕ Fin 27) :
 /-- The rational doubled minuscule matrices satisfy the type-`E₆` Serre relations. -/
 theorem isSerreSystemQ :
     TauCeti.IsSerreSystem ℚ (CartanMatrix.E 6)ᵀ cartanGeneratorMatrixQ raisingMatrixQ
-      loweringMatrixQ := by
-  have h := isSerreSystem.map (matrixIntCastLieHom ℚ)
-  have hH : matrixIntCastLieHom ℚ ∘ cartanGeneratorMatrix = cartanGeneratorMatrixQ := by
-    funext i
-    rfl
-  have hE : matrixIntCastLieHom ℚ ∘ raisingMatrix = raisingMatrixQ := by
-    funext i
-    rfl
-  have hF : matrixIntCastLieHom ℚ ∘ loweringMatrix = loweringMatrixQ := by
-    funext i
-    rfl
-  rw [hH, hE, hF] at h
-  refine { h with
-    ad_pow_lie_E_E := ?_
-    ad_pow_lie_F_F := ?_ }
-  · intro i j
-    rw [← ad_pow_apply_eq_ad_pow_apply ℤ ℚ]
-    exact h.ad_pow_lie_E_E i j
-  · intro i j
-    rw [← ad_pow_apply_eq_ad_pow_apply ℤ ℚ]
-    exact h.ad_pow_lie_F_F i j
+      loweringMatrixQ :=
+  (isSerreSystem.map (matrixIntCastLieHom ℚ)).changeScalars
 
 /-- At every node, the rational Cartan, raising, and lowering matrices of the doubled minuscule
 representation form an `sl₂` triple. -/
@@ -249,8 +230,8 @@ noncomputable def lattice : Submodule ℤ ((Fin 27 ⊕ Fin 27) → ℚ) :=
   TauCeti.coordinateLattice (Fin 27 ⊕ Fin 27)
 
 /-- The doubled minuscule coordinate lattice is finitely generated and spans the rational module. -/
-instance instIsLatticeLattice : Submodule.IsLattice ℚ lattice where
-  __ := TauCeti.instIsLatticeCoordinateLattice (Fin 27 ⊕ Fin 27)
+instance instIsFullLatticeLattice : Submodule.IsFullLattice ℚ lattice where
+  __ := TauCeti.instIsFullLatticeCoordinateLattice (Fin 27 ⊕ Fin 27)
 
 /-- A vector belongs to the doubled minuscule lattice exactly when every coordinate is integral. -/
 @[simp]
