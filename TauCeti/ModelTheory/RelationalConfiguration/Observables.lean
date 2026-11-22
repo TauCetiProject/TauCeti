@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.RelationalConfiguration.SentenceTheory
+public import TauCeti.ModelTheory.RelationalConfiguration.Sentence.Basic
 import TauCeti.ModelTheory.RelationalConfiguration.LopezEscobar
 import TauCeti.Topology.MetricSpace.Polish.Pi
 

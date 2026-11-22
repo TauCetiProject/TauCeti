@@ -51,13 +51,13 @@ noncomputable def scottFormula {n : ℕ} (a : Fin n → M) (α : Ordinal.{o}) :
     (motive := fun _ => (k : ℕ) → (Fin k → M) → L.BoundedFormulaω Empty k) α
     (fun _ a => atomicDiagram a)
     (fun _ ih k a => ih k a ⊓
-      (.iInfAlong (IndexCoding.ofEncodableWith (Encodable.ofCountable M))
+      (.iInfAlong (IndexCoding.ofCountable M)
         (fun x => (ih (k + 1) (snoc a x)).ex) ⊓
-      (BoundedFormulaInf.iSupAlong (IndexCoding.ofEncodableWith (Encodable.ofCountable M))
+      (BoundedFormulaInf.iSupAlong (IndexCoding.ofCountable M)
         (fun x => ih (k + 1) (snoc a x))).all))
     (fun β _ ih k a => if hβ : β < ω₁ then
       letI := (Cardinal.countable_Iio_of_lt_omega_one hβ).to_subtype
-      .iInfAlong (IndexCoding.ofEncodableWith (Encodable.ofCountable (Set.Iio β)))
+      .iInfAlong (IndexCoding.ofCountable (Set.Iio β))
         (fun γ => ih γ γ.prop k a)
       else ⊤)
     n a
@@ -73,9 +73,9 @@ theorem scottFormula_zero (a : Fin n → M) :
 /-- A successor approximation retains the preceding formula and adds forth and back clauses. -/
 theorem scottFormula_add_one (a : Fin n → M) (α : Ordinal.{o}) :
     scottFormula (L := L) a (α + 1) = scottFormula a α ⊓
-      (.iInfAlong (IndexCoding.ofEncodableWith (Encodable.ofCountable M))
+      (.iInfAlong (IndexCoding.ofCountable M)
         (fun x => (scottFormula (snoc a x) α).ex) ⊓
-      (BoundedFormulaInf.iSupAlong (IndexCoding.ofEncodableWith (Encodable.ofCountable M))
+      (BoundedFormulaInf.iSupAlong (IndexCoding.ofCountable M)
         (fun x => scottFormula (snoc a x) α)).all) := by
   simp [scottFormula]
 
@@ -83,9 +83,8 @@ theorem scottFormula_add_one (a : Fin n → M) (α : Ordinal.{o}) :
 theorem scottFormula_limit (a : Fin n → M) {α : Ordinal.{o}}
     (hlim : Order.IsSuccLimit α) (hα : α < ω₁) :
     scottFormula (L := L) a α =
-      .iInfAlong (IndexCoding.ofEncodableWith
-        (letI := (Cardinal.countable_Iio_of_lt_omega_one hα).to_subtype;
-          Encodable.ofCountable (Set.Iio α)))
+      letI := (Cardinal.countable_Iio_of_lt_omega_one hα).to_subtype
+      .iInfAlong (IndexCoding.ofCountable (Set.Iio α))
         (fun β => scottFormula a β) := by
   classical
   simp [scottFormula, Ordinal.limitRecOn_limit _ _ _ _ hlim, hα]

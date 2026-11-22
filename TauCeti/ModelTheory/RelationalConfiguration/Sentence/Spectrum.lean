@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.RelationalConfiguration.SentenceTheory
+public import TauCeti.ModelTheory.RelationalConfiguration.Sentence.Basic
 public import TauCeti.SetTheory.Descriptive.Antichain
 import TauCeti.Data.Set.Countable
 import TauCeti.Data.Setoid.Countable
@@ -204,21 +204,17 @@ theorem isThinOn_of_sentence_splits [∀ n, Countable (L.Relations n)] [Countabl
       (Quotient.mk (isoSetoid L V) '' (C ∩ modelsOf θ)).Countable ∨
         (Quotient.mk (isoSetoid L V) '' (C \ modelsOf θ)).Countable) :
     (isoSetoid L V).IsThinOn C := by
-  let classOf : C → Quotient (isoSetoid L V) := fun c => Quotient.mk (isoSetoid L V) c.val
+  let classOf : C → Quotient (isoSetoid L V) := Quot.mk _ ∘ Subtype.val
   refine isThinOn_of_splits_along classOf
     (fun c d hcd φ => (isomorphismInvariant_modelsOf φ).mem_iff (Quotient.exact hcd)) fun θ => ?_
   have hpos : classOf '' {c : C | c.val ∈ modelsOf θ} =
       Quotient.mk (isoSetoid L V) '' (C ∩ modelsOf θ) := by
-    ext q
-    simp only [classOf, mem_image, Subtype.exists, mem_ofPred_eq, mem_inter_iff]
-    exact ⟨fun ⟨c, hc, hθ, hq⟩ => ⟨c, ⟨hc, hθ⟩, hq⟩,
-      fun ⟨c, ⟨hc, hθ⟩, hq⟩ => ⟨c, hc, hθ, hq⟩⟩
+    change (Quotient.mk (isoSetoid L V) ∘ Subtype.val) '' (Subtype.val ⁻¹' modelsOf θ) = _
+    rw [Set.image_comp, Subtype.image_preimage_val]
   have hneg : classOf '' {c : C | c.val ∉ modelsOf θ} =
       Quotient.mk (isoSetoid L V) '' (C \ modelsOf θ) := by
-    ext q
-    simp only [classOf, mem_image, Subtype.exists, mem_ofPred_eq, mem_sdiff]
-    exact ⟨fun ⟨c, hc, hθ, hq⟩ => ⟨c, ⟨hc, hθ⟩, hq⟩,
-      fun ⟨c, ⟨hc, hθ⟩, hq⟩ => ⟨c, hc, hθ, hq⟩⟩
+    change (Quotient.mk (isoSetoid L V) ∘ Subtype.val) '' (Subtype.val ⁻¹' (modelsOf θ)ᶜ) = _
+    rw [Set.image_comp, Subtype.image_preimage_val, ← Set.sdiff_eq]
   rw [hpos, hneg]
   exact hsplit θ
 

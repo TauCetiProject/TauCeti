@@ -8,7 +8,6 @@ module
 public import TauCeti.ModelTheory.Basic
 public import TauCeti.ModelTheory.Interpolation.Craig
 public import TauCeti.ModelTheory.RelationalConfiguration.LanguageMap
-import Mathlib.Topology.MetricSpace.PiNat
 import TauCeti.Topology.Algebra.Group.Perm
 import TauCeti.Topology.Instances.CantorSpace
 
@@ -207,14 +206,9 @@ private theorem realize_wordSentence {L : Language.{u, v}} {V : Type w}
       @Structure.RelMap (L.sum (baireWitnessLang V)) M _ 0 (Sum.inr (i, j)) Fin.elim0 ↔ x i = j)
     (w : List ℕ) :
     SentenceInf.Realize (wordSentence L V w) M ↔ x ∈ PiNat.wordCylinder w := by
-  simp only [wordSentence, SentenceInf.realize_def, FormulaInf.realize_def,
-    BoundedFormulaInf.realize_foldr_inf, PiNat.mem_wordCylinder_iff]
-  refine ⟨fun h i hi => ?_, fun h φ hφ => ?_⟩
-  · have hi' := h _ (List.mem_ofFn.2 ⟨⟨i, hi⟩, rfl⟩)
-    rwa [← FormulaInf.realize_def, ← SentenceInf.realize_def, realize_bitSentence, hx] at hi'
-  · obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hφ
-    simp only [← FormulaInf.realize_def, ← SentenceInf.realize_def, realize_bitSentence, hx]
-    exact h i i.isLt
+  simp only [wordSentence, SentenceInf.realize_foldr_inf, List.forall_mem_ofFn_iff,
+    realize_bitSentence, hx, PiNat.mem_wordCylinder_iff, Fin.forall_iff]
+  rfl
 
 /-- Countable disjunction over prefix cylinders contained in `U`, expressing `x ∈ U` for an open
 subset `U ⊆ ℕ → ℕ`. -/
@@ -231,18 +225,15 @@ private theorem realize_openBaireSentence {L : Language.{u, v}} {V : Type w}
     {U : Set (ℕ → ℕ)} (hU : IsOpen U) :
     SentenceInf.Realize (openBaireSentence L V U) M ↔ x ∈ U := by
   classical
-  simp only [openBaireSentence, SentenceInf.realize_def, FormulaInf.realize_def,
-    BoundedFormulaInf.realize_iSupAlong]
+  simp only [openBaireSentence, SentenceInf.realize_iSupAlong]
   refine ⟨fun ⟨w, hw⟩ => ?_, fun hxU => ?_⟩
   · split_ifs at hw with hsub
-    · rw [← FormulaInf.realize_def, ← SentenceInf.realize_def, realize_wordSentence hx] at hw
-      exact hsub hw
+    · exact hsub ((realize_wordSentence hx w).1 hw)
     · simp at hw
   · obtain ⟨_, ⟨w, rfl⟩, hx_mem, hsub⟩ :=
       (PiNat.isTopologicalBasis_wordCylinder (α := ℕ)).exists_subset_of_mem_open hxU hU
     refine ⟨w, ?_⟩
-    simp only [hsub, ↓reduceIte, ← FormulaInf.realize_def, ← SentenceInf.realize_def,
-      realize_wordSentence hx]
+    simp only [hsub, ↓reduceIte, realize_wordSentence hx]
     exact hx_mem
 
 /-- Sentence asserting that the witness constants `constTerm L v` are pairwise distinct. -/
@@ -260,16 +251,15 @@ private theorem realize_carrierInjectiveSentence {L : Language.{u, v}} {V : Type
       Function.Injective (fun v : V =>
         @Structure.funMap (L.sum (baireWitnessLang V)) M _ 0 (Sum.inr v) Fin.elim0) := by
   classical
-  simp only [carrierInjectiveSentence, SentenceInf.realize_def, FormulaInf.realize_def,
-    BoundedFormulaInf.realize_iInfAlong]
+  simp only [carrierInjectiveSentence, SentenceInf.realize_iInfAlong]
   refine ⟨fun h v₁ v₂ heq => by_contra fun hne => ?_, fun hinj v₁ v₂ => ?_⟩
   · have h1 := h v₁ v₂
-    simp only [hne, ↓reduceIte, BoundedFormulaInf.realize_not, BoundedFormulaInf.realize_equal,
+    simp only [hne, ↓reduceIte, SentenceInf.realize_not, SentenceInf.realize_equal,
       realize_constTerm] at h1
     exact h1 heq
   · by_cases h : v₁ = v₂
     · simp [h]
-    · simp only [h, ↓reduceIte, BoundedFormulaInf.realize_not, BoundedFormulaInf.realize_equal,
+    · simp only [h, ↓reduceIte, SentenceInf.realize_not, SentenceInf.realize_equal,
         realize_constTerm]
       exact fun heq => h (hinj heq)
 
@@ -286,9 +276,9 @@ private theorem realize_carrierSurjectiveSentence {L : Language.{u, v}} {V : Typ
     SentenceInf.Realize (carrierSurjectiveSentence L V) M ↔
       Function.Surjective (fun v : V =>
         @Structure.funMap (L.sum (baireWitnessLang V)) M _ 0 (Sum.inr v) Fin.elim0) := by
-  simp only [carrierSurjectiveSentence, SentenceInf.realize_def, FormulaInf.realize_def,
-    BoundedFormulaInf.realize_all, BoundedFormulaInf.realize_iSupAlong,
-    BoundedFormulaInf.realize_equal, Term.realize_var, Sum.elim_inr, realize_constTerm]
+  simp only [carrierSurjectiveSentence, SentenceInf.realize_all,
+    BoundedFormulaInf.realize_iSupAlong, BoundedFormulaInf.realize_equal, Term.realize_var,
+    Sum.elim_inr, realize_constTerm]
   exact forall_congr' fun _ => exists_congr fun _ => eq_comm
 
 /-- Sentence asserting that every atom of `L` over the witness constants agrees with `f x`. -/
@@ -313,9 +303,11 @@ private theorem realize_diagramSentence {L : Language.{u, v}} {V : Type w}
             (fun r => @Structure.funMap (L.sum (baireWitnessLang V)) M _ 0 (Sum.inr (t r))
               Fin.elim0) ↔
           SentenceInf.Realize (openBaireSentence L V {x | (f x).eval (atom R t) = true}) M := by
-  simp only [diagramSentence, SentenceInf.realize_def, FormulaInf.realize_def,
-    BoundedFormulaInf.realize_iInfAlong, Sigma.forall, Prod.forall,
-    BoundedFormulaInf.realize_iff, BoundedFormulaInf.realize_rel, realize_constTerm]
+  simp only [diagramSentence, SentenceInf.realize_iInfAlong, Sigma.forall, Prod.forall,
+    SentenceInf.realize_iff]
+  refine forall_congr' fun n => forall_congr' fun R => forall_congr' fun t => iff_congr ?_ Iff.rfl
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_rel,
+    realize_constTerm]
   rfl
 
 /-- Complete `L.sum (baireWitnessLang V)`-sentence cutting out the `PC_{ω₁ω}` class of structures

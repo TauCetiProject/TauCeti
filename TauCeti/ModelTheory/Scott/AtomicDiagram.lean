@@ -99,14 +99,14 @@ variable [Countable (Σ k, L.Relations k)]
 For a relational language this is its complete atomic diagram. -/
 noncomputable def atomicDiagram (a : Fin n → M) : L.BoundedFormulaω Empty n := by
   classical
-  exact .iInfAlong (IndexCoding.ofEncodableWith (Encodable.ofCountable (AtomicIdx L n)))
+  exact .iInfAlong (IndexCoding.ofCountable (AtomicIdx L n))
     (fun i => if i.Holds a then i.toFormula.toOmega else i.toFormula.toOmega.not)
 
 open Classical in
 /-- The atomic diagram is a coded conjunction of signed atomic formulas. -/
 theorem atomicDiagram_def (a : Fin n → M) :
     atomicDiagram (L := L) a =
-      .iInfAlong (IndexCoding.ofEncodableWith (Encodable.ofCountable (AtomicIdx L n)))
+      .iInfAlong (IndexCoding.ofCountable (AtomicIdx L n))
         (fun i => if i.Holds a then i.toFormula.toOmega else i.toFormula.toOmega.not) := by
   classical
   rfl

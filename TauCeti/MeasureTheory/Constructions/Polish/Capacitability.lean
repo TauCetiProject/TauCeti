@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.MeasureTheory.Measure.NullMeasurable
 
 import Mathlib.Tactic.Positivity
+import TauCeti.MeasureTheory.Constructions.Polish.Analytic
 import TauCeti.Topology.Instances.NatNat
 
 /-!
@@ -217,13 +218,10 @@ strictly below the Choquet capacity of an analytic set is exceeded on a compact 
 theorem IsChoquetCapacity.exists_isCompact_subset_lt (hI : IsChoquetCapacity I)
     {S : Set X} (hS : AnalyticSet S) {r : ℝ≥0∞} (hr : r < I S) :
     ∃ K : Set X, IsCompact K ∧ K ⊆ S ∧ r < I K := by
-  obtain ⟨Z, _, _, f, hf_cont, rfl⟩ := analyticSet_iff_exists_polishSpace_range.mp hS
-  rcases isEmpty_or_nonempty Z with _ | _
-  · rw [range_eq_empty] at hr ⊢
-    exact ⟨∅, isCompact_empty, Subset.rfl, hr⟩
-  · obtain ⟨g, hg, hsurj⟩ := PolishSpace.exists_nat_nat_continuous_surjective Z
-    rw [← hsurj.range_comp f] at hr ⊢
-    exact hI.exists_isCompact_subset_range_lt (hf_cont.comp hg) hr
+  rcases S.eq_empty_or_nonempty with rfl | hne
+  · exact ⟨∅, isCompact_empty, Subset.rfl, hr⟩
+  · obtain ⟨f, hf_cont, rfl⟩ := hS.exists_continuous_range_eq hne
+    exact hI.exists_isCompact_subset_range_lt hf_cont hr
 
 /-- **Choquet's capacitability theorem.** On a Hausdorff space, the capacity of every analytic set
 equals the supremum of the capacities of its compact subsets. -/

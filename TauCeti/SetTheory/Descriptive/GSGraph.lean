@@ -321,11 +321,11 @@ theorem exists_mem_orientedGS_of_not_isMeagre (hS : DenseWords S) (hA : BaireMea
   obtain ⟨x, hx⟩ : u.Nonempty :=
     nonempty_of_not_isMeagre fun h ↦ hn ((hAu'.union h).mono (subset_sdiff_union A u))
   -- By density, `u` contains the cylinder of a word `s ∈ S`.
-  obtain ⟨_, ⟨y, n, rfl⟩, -, hyu⟩ :=
-    (isTopologicalBasis_cylinders fun _ ↦ Bool).exists_subset_of_mem_open hx hu
-  obtain ⟨s, hs, hrs⟩ := hS (res y n).reverse
+  obtain ⟨_, ⟨r, rfl⟩, -, hru⟩ :=
+    (PiNat.isTopologicalBasis_wordCylinder (α := Bool)).exists_subset_of_mem_open hx hu
+  obtain ⟨s, hs, hrs⟩ := hS r
   have hsu : wordCylinder s ⊆ u :=
-    hrs.wordCylinder_subset.trans ((wordCylinder_reverse_res y n).trans_subset hyu)
+    hrs.wordCylinder_subset.trans hru
   -- The flip at `s.length` carries the `false` half of `wordCylinder s` onto the `true` half, so
   -- some point of the `false` half lies, together with its flip, outside `u \ A`.
   set f := flipAt s.length

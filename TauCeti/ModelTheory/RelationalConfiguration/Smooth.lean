@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.RelationalConfiguration.SentenceTheory
+public import TauCeti.ModelTheory.RelationalConfiguration.Sentence.Basic
 public import TauCeti.SetTheory.Descriptive.BorelReducibility
 import TauCeti.ModelTheory.RelationalConfiguration.Observables
 import TauCeti.ModelTheory.Scott.Isomorphism

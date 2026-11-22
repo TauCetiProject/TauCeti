@@ -178,11 +178,10 @@ theorem isMeagre_or_mem_residual_of_eZero_invariant (hB : BaireMeasurableSet B)
   · exact .inl <| mem_of_superset hBu.mem_iff fun y hy hyB => notMem_empty y (hy.1 hyB)
   refine .inr ?_
   -- `B` is comeagre in `u`, hence in a word cylinder inside `u`.
-  obtain ⟨-, ⟨z, n, rfl⟩, -, hzu⟩ :=
-    (isTopologicalBasis_cylinders fun _ : ℕ => Bool).exists_subset_of_mem_open hx hu
-  have hw : IsMeagre (wordCylinder (res z n).reverse \ B) := by
-    rw [wordCylinder_reverse_res]
-    exact mem_of_superset hBu.mem_iff fun y hy hyuB => hyuB.2 (hy.2 (hzu hyuB.1))
+  obtain ⟨-, ⟨w₀, rfl⟩, -, hwu⟩ :=
+    (PiNat.isTopologicalBasis_wordCylinder (α := Bool)).exists_subset_of_mem_open hx hu
+  have hw : IsMeagre (wordCylinder w₀ \ B) :=
+    mem_of_superset hBu.mem_iff fun y hy hyuB => hyuB.2 (hy.2 (hwu hyuB.1))
   -- Shorten the word one letter at a time.
   suffices ∀ w : List Bool, IsMeagre (wordCylinder w \ B) → IsMeagre Bᶜ by
     simpa [IsMeagre] using this _ hw

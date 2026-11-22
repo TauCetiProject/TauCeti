@@ -48,14 +48,14 @@ variable (M : Type w) [L.Structure M] [Countable M]
 At a countable internally stabilizing level it describes a back-and-forth class of structures. -/
 noncomputable def scottSentenceAt (α : Ordinal.{o}) : L.Sentenceω :=
   scottFormula (L := L) (Fin.elim0 : Fin 0 → M) α ⊓
-    .iInfAlong (IndexCoding.ofEncodableWith (Encodable.ofCountable (Σ n, Fin n → M)))
+    .iInfAlong (IndexCoding.ofCountable (Σ n, Fin n → M))
       (fun p => ((scottFormula p.2 α).imp (scottFormula p.2 (α + 1))).alls)
 
 /-- The defining conjunction of the empty-tuple approximation and the tuple-upgrade clauses. -/
 theorem scottSentenceAt_def (α : Ordinal.{o}) :
     scottSentenceAt (L := L) M α =
       scottFormula (L := L) (Fin.elim0 : Fin 0 → M) α ⊓
-        .iInfAlong (IndexCoding.ofEncodableWith (Encodable.ofCountable (Σ n, Fin n → M)))
+        .iInfAlong (IndexCoding.ofCountable (Σ n, Fin n → M))
           (fun p => ((scottFormula p.2 α).imp (scottFormula p.2 (α + 1))).alls) := (rfl)
 
 variable [L.IsRelational] {N : Type w'} [L.Structure N]

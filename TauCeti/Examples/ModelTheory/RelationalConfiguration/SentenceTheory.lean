@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.ModelTheory.RelationalConfiguration.SentenceTheory
+import TauCeti.ModelTheory.RelationalConfiguration.Sentence.Basic
 
 /-!
 # Regression example: every Boolean sequence is a truth sequence
