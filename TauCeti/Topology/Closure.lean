@@ -23,10 +23,6 @@ away from the point.
 
 A set containing a punctured neighbourhood of a non-isolated point `x` has `x` in its closure.
 
-When the closure of `S` adds a single point `z₀` to `S`, an injective map into `closure S` sends
-every point other than the one going to `z₀` into `S`. This is how the endpoint of a gluing arc
-`[0, r₀] ≃ₜ closure S` is told apart from its other points.
-
 Membership in a closed set passes to limits, so pointwise limits of maps into a closed set map
 into it.
 
@@ -42,8 +38,6 @@ into it.
   `closure B \ B` is not contained in `A ∪ {y₀}` for any `A` disjoint from `B`.
 * `TauCeti.mem_closure_of_mem_nhdsNE`: a set containing a punctured neighbourhood of a
   non-isolated point has that point in its closure.
-* `TauCeti.val_mem_of_closure_eq_insert`: when `closure S = insert z₀ S`, an injective map into
-  `closure S` sends every point other than a preimage of `z₀` into `S`.
 * `TauCeti.mapsTo_of_tendsto_of_isClosed`: pointwise limits of maps into a closed set map into
   it.
 * `TauCeti.subset_closure_range_domRestrict_preimage`: the values of a family that lie in an open
@@ -93,14 +87,6 @@ closure. -/
 theorem mem_closure_of_mem_nhdsNE {s : Set X} {x : X} [(𝓝[≠] x).NeBot] (hs : s ∈ 𝓝[≠] x) :
     x ∈ closure s :=
   mem_closure_iff_nhdsWithin_neBot.2 (Filter.neBot_of_le (nhdsWithin_le_of_mem hs))
-
-/-- When `closure S = insert z₀ S`, an injective map `e` into `closure S` with `e a₀ = z₀` sends
-every `a ≠ a₀` into `S`. -/
-theorem val_mem_of_closure_eq_insert {α : Type*} {S : Set X} {z₀ : X}
-    (hcl : closure S = insert z₀ S) {e : α → closure S} (he : Function.Injective e) {a₀ a : α}
-    (he₀ : (e a₀).val = z₀) (ha : a ≠ a₀) : (e a).val ∈ S := by
-  have hmem : (e a).val ∈ insert z₀ S := hcl ▸ (e a).property
-  exact hmem.resolve_left fun h ↦ ha (he (Subtype.ext (h.trans he₀.symm)))
 
 /-- Pointwise limits of maps into a closed set `L` map into `L`: if every `u m` maps `S` into
 `L` and `u m s → v s` for every `s ∈ S`, then `v` maps `S` into `L`. -/

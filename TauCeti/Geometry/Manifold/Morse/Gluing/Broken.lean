@@ -13,7 +13,7 @@ import TauCeti.Analysis.Calculus.Morse.Gluing.Centre
 import Mathlib.Geometry.Manifold.Metrizable
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.PullbackGroupoid
-import TauCeti.Topology.Closure
+import TauCeti.Data.Set.Function
 
 /-!
 # Gluing at a broken trajectory
@@ -764,7 +764,7 @@ theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart
   rw [hΦy₁, hΦy₂] at he₀ hcl
   -- The end of the gluing arc is an unbroken gluing pair.
   have hz : (e ⟨r₀, right_mem_Icc.2 hr₀.le⟩).val ∈ splitGluingPairs ε r₀ g k :=
-    val_mem_of_closure_eq_insert hcl e.injective he₀ fun h ↦ hr₀.ne' (congrArg Subtype.val h)
+    e.injective.val_mem_of_subset_insert hcl.subset he₀ fun h ↦ hr₀.ne' (congrArg Subtype.val h)
   set z := (e ⟨r₀, right_mem_Icc.2 hr₀.le⟩).val
   obtain ⟨⟨z₁, ⟨⟨hw, hwf, hws⟩, hz₁, hwu, hwN₁⟩, hwz⟩,
     z₂, ⟨⟨hw', hw'f, hw's⟩, hz₂, hw'Z, hw'N⟩, hw'z⟩ := hpairs z hz

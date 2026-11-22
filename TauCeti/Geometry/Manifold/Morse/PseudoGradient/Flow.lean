@@ -51,6 +51,9 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atTop` and
   `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atBot`: every orbit converges to a critical point
   forward, respectively backward, in time.
+* `TauCeti.IsAdaptedPseudoGradient.exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt`: a point
+  of `W^u(p)` whose orbit passes below a level `c ≤ f p` lies on a trajectory from `p` to a
+  critical point below `c`.
 * `TauCeti.IsAdaptedPseudoGradient.mem_stableSet_of_forall_mem` and
   `TauCeti.IsAdaptedPseudoGradient.mem_unstableSet_of_forall_mem`: an orbit trapped in a closed set
   whose only critical point is `x` converges to `x`.
@@ -272,6 +275,19 @@ theorem exists_tendsto_atBot (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
   refine ⟨x, hx, ?_⟩
   have := htend.comp tendsto_neg_atBot_atTop
   simpa [comp_def, Flow.reverse_apply] using this
+
+/-- A point of `W^u(p)` whose orbit passes below a level `c ≤ f p` lies on a trajectory from `p`
+to a critical point `b ≠ p` below `c`. -/
+theorem exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt (hf : IsMorse 𝓘(ℝ, E) f)
+    {p w : M} (hw : w ∈ hX.flow.unstableSet p) {t c : ℝ} (ht : f (hX.flow t w) < c)
+    (hcp : c ≤ f p) :
+    ∃ b, p ≠ b ∧ w ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet b ∧ f b < c := by
+  obtain ⟨b, -, hb⟩ := hX.exists_tendsto_atTop hf w
+  have hb : w ∈ hX.flow.stableSet b := Flow.mem_stableSet.2 hb
+  have hfb : f b ≤ f (hX.flow t w) :=
+    Flow.le_of_mem_stableSet_of_antitone ((Flow.apply_mem_stableSet_iff _ t).2 hb)
+      hX.mdifferentiable.continuous.continuousAt (hX.antitone_flow _)
+  exact ⟨b, by rintro rfl; linarith, ⟨hw, hb⟩, hfb.trans_lt ht⟩
 
 /-- **An orbit trapped near a critical point converges to it.** If the forward orbit of `w` stays
 in a closed set `K` whose only critical point of the Morse function `f` is `x`, then the orbit

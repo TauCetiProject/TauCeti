@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Gluing.Broken
 import TauCeti.Dynamics.Flow.Lyapunov
-import TauCeti.Geometry.Manifold.Flow.HittingTime
-import TauCeti.Topology.Closure
+import TauCeti.Data.Set.Function
 
 /-!
 # Half-open gluing charts into a transverse set
@@ -50,10 +49,11 @@ of `W^u(p)` through `y₁` and the set `Z' = flow (-T) ⁻¹' Z` through `y₂` 
 (`TauCeti.exists_homeomorph_closure_splitGluingPairs_of_hasStrictFDerivAt`) joins them by a
 half-open arc of entrance and exit points. Unlike a stable manifold, `Z'` is not invariant under the
 flow, so the point of `Z'` on an orbit must be recovered from its exit point. Since `Z'` is
-transverse to `W^u(q)` and of complementary dimension, the velocity `X y₂` is not tangent to it,
-so near a regular point an orbit meets `Z'` at most once
-(`TauCeti.IsAdaptedPseudoGradient.eventually_eq_zero_of_flow_eq_of_isSliceChart`, from the local
-uniqueness of hitting times of a transverse section `TauCeti.eventually_eq_flowHittingTime_iff`).
+transverse to `W^u(q)` and of complementary dimension, the velocity `X y₂` is not tangent to it
+(`TauCeti.IsAdaptedPseudoGradient.notMem_span_mtangentConeAt_of_isSliceChart`), so near a regular
+point an orbit meets `Z'` at most once
+(`TauCeti.IsAdaptedPseudoGradient.eventually_eq_zero_of_flow_eq_of_isSliceChart`; both are in
+`TauCeti.Geometry.Manifold.Morse.Stable.Transversality`).
 Hence the flow embeds `[-1, 1] × K` for a compact piece `K` of `Z'`, and the point of `Z'` depends
 continuously on the exit point.
 
@@ -61,8 +61,6 @@ continuously on the exit point.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `eventually_eq_zero_of_flow_eq_of_isSliceChart`: near a regular point, an orbit meets a
-  flattened set transverse to the flow at most once.
 * `IsMorseSmale.exists_homeomorph_Ico_of_isSliceChart`: the half-open gluing chart into a
   transverse set.
 * `IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet`: for consecutive
@@ -107,144 +105,6 @@ private theorem exists_pos_forall_mul_sq_lt_sq {n ε r₀ : ℝ} (hn : 0 ≤ n) 
     lt_of_le_of_lt (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hu hu' 2) hn) hr₁n⟩
 
 namespace IsAdaptedPseudoGradient
-
-/-- **An orbit meets a set transverse to the flow at most once near a regular point.** Let `Z` be
-a set flattened near a point `y` by a chart of the maximal atlas, with `X y` not tangent to `Z` at
-`y`, so that `X y ≠ 0` and `y` is not a critical point. Then two points of `Z` near `y` on a common
-orbit are equal, and the time from one to the other is `0`. -/
-theorem eventually_eq_zero_of_flow_eq_of_isSliceChart (hX : IsAdaptedPseudoGradient f X)
-    {Z : Set M} {y : M} {L : Submodule ℝ E} {φZ : OpenPartialHomeomorph M E}
-    (hφZ : φZ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) (hZ : IsSliceChart φZ (L : Set E) Z)
-    (hyφZ : y ∈ φZ.source) (hyZ : y ∈ Z)
-    (hXZ : X y ∉ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) Z y)) :
-    ∀ᶠ w : M × M in 𝓝 (y, y), w.1 ∈ Z → w.2 ∈ Z → ∀ t, hX.flow t w.1 = w.2 → t = 0 := by
-  have hL : IsClosed (L : Set E) := Submodule.isClosed_of_finiteDimensional _
-  -- `y` is not a critical point, since `X y` is not tangent to `Z`, so in particular nonzero.
-  have hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0 := mt hX.eq_zero_iff.2 fun h0 ↦ hXZ (by
-    rw [h0]
-    exact zero_mem _)
-  -- A linear form `ℓ` vanishing on `L` but not on the image of `X y` in the chart: the level of
-  -- `g = ℓ ∘ φZ` through `y` contains `Z` near `y` and is transverse to the flow.
-  have hXL : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φZ y (X y) ∉ L := fun h ↦ hXZ <| by
-    rw [hZ.span_mtangentConeAt_eq_comap (by simp) hφZ hL hyφZ hyZ]
-    exact h
-  obtain ⟨ℓ, hℓ, hLℓ⟩ := Submodule.exists_le_ker_of_notMem hXL
-  set ℓc : E →L[ℝ] ℝ := LinearMap.toContinuousLinearMap ℓ
-  set g : M → ℝ := ℓc ∘ φZ with hg
-  have hφZy : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ φZ y := contMDiffAt_of_mem_maximalAtlas hφZ hyφZ
-  have hgd : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) ∞ g y := ℓc.contMDiff.contMDiffAt.comp y hφZy
-  have hgv : mvfderiv 𝓘(ℝ, E) g y (X y) ≠ 0 := by
-    have h := mvfderiv_comp_apply (g := ℓc) (f := φZ) y
-      ((ℓc.contMDiff (n := ∞)).mdifferentiable (by simp) _) (hφZy.mdifferentiableAt (by simp)) (X y)
-    rw [← hg] at h
-    rw [h, mvfderiv_eq_fderiv_apply, ℓc.fderiv]
-    exact hℓ
-  -- Near `(0, y)` the orbit of a point meets the level of `g` through `y` at a unique time.
-  have hv : CMDiff 1 (fun z ↦ (⟨z, X z⟩ : TangentBundle 𝓘(ℝ, E) M)) := hX.contMDiff.of_le (by simp)
-  have hT := mem_flowDomain_zero hv y
-  have hhit := eventually_eq_flowHittingTime_iff hv hT
-    (by rw [flowOf_zero]; exact hgd.of_le (by simp)) (by rw [flowOf_zero]; exact hgv)
-  rw [flowOf_zero] at hhit
-  have hflow : ∀ t z, flowOf X t z = hX.flow t z := fun t z ↦ by
-    rw [flowOf_apply, hX.flow_apply]
-  obtain ⟨A, hA, B, hB, hAB⟩ := mem_nhds_prod_iff.1 hhit
-  obtain ⟨δ, hδ, hδA⟩ := Metric.mem_nhds_iff.1 hA
-  -- Far from time `0`, `f` has dropped or risen along the orbit by a definite amount.
-  have hanti := hX.strictAnti_comp (hX.isMIntegralCurve_flow y) (hX.mfderiv_flow_ne_zero hy)
-  have h₁ : f (hX.flow (δ / 2) y) < f y := by
-    simpa using hanti (half_pos hδ)
-  have h₂ : f y < f (hX.flow (-(δ / 2)) y) := by
-    simpa using hanti (neg_lt_zero.2 (half_pos hδ))
-  have hc₁ : Continuous fun w ↦ f (hX.flow (δ / 2) w) :=
-    hX.mdifferentiable.continuous.comp (hX.contMDiff_flow_apply _).continuous
-  have hc₂ : Continuous fun w ↦ f (hX.flow (-(δ / 2)) w) :=
-    hX.mdifferentiable.continuous.comp (hX.contMDiff_flow_apply _).continuous
-  obtain ⟨m₁, hm₁, hm₁'⟩ := exists_between h₁
-  obtain ⟨m₂, hm₂, hm₂'⟩ := exists_between h₂
-  have hfy := hX.mdifferentiable.continuous.continuousAt (x := y)
-  have hB' : ∀ᶠ w in 𝓝 y, w ∈ B := hB
-  have hN₁ : ∀ᶠ w in 𝓝 y, f (hX.flow (δ / 2) w) < m₁ ∧ m₂ < f (hX.flow (-(δ / 2)) w) ∧
-      w ∈ B ∧ w ∈ φZ.source :=
-    (hc₁.continuousAt.eventually (gt_mem_nhds hm₁)).and
-      ((hc₂.continuousAt.eventually (lt_mem_nhds hm₂')).and
-        (hB'.and (φZ.open_source.mem_nhds hyφZ)))
-  have hN₂ : ∀ᶠ w in 𝓝 y, m₁ < f w ∧ f w < m₂ ∧ w ∈ φZ.source :=
-    (hfy.eventually (lt_mem_nhds hm₁')).and
-      ((hfy.eventually (gt_mem_nhds hm₂)).and (φZ.open_source.mem_nhds hyφZ))
-  have hgZ : ∀ w ∈ φZ.source, w ∈ Z → g w = 0 := fun w hw hwZ ↦
-    LinearMap.mem_ker.1 (hLℓ ((hZ.mem_iff hw).1 hwZ))
-  filter_upwards [hN₁.prodMk_nhds hN₂] with w ⟨⟨hw₁, hw₂, hwB, hwφ⟩, hw'₁, hw'₂, hw'φ⟩ hwZ hw'Z t ht
-  have hw1 := hX.antitone_flow w.1
-  rcases lt_or_ge t (δ / 2) with htδ | htδ
-  · rcases lt_or_ge (-(δ / 2)) t with htδ' | htδ'
-    · -- For small times, both `0` and `t` are the hitting time of the level of `g` through `y`.
-      have htA : t ∈ A := hδA (by
-        rw [Metric.mem_ball, Real.dist_eq, sub_zero, abs_lt]; constructor <;> linarith)
-      have h0A : (0 : ℝ) ∈ A := hδA (by simpa using hδ)
-      have hgy : g y = 0 := hgZ y hyφZ hyZ
-      have e₁ := (hAB (mk_mem_prod htA hwB)).1 (by
-        simp only [hflow, ht, hgy]
-        exact hgZ _ hw'φ hw'Z)
-      have e₀ := (hAB (mk_mem_prod h0A hwB)).1 (by
-        simp only [hflow, Flow.map_zero_apply, hgy]
-        exact hgZ _ hwφ hwZ)
-      exact e₁.trans e₀.symm
-    · -- For times at most `-δ / 2`, `f` has risen.
-      have := hw1 htδ'
-      simp only [ht] at this
-      linarith
-  · -- For times at least `δ / 2`, `f` has dropped.
-    have := hw1 htδ
-    simp only [ht] at this
-    linarith
-
-/-- A point of `W^u(p)` whose orbit passes below a level `c ≤ f p` lies on a trajectory from `p`
-to a critical point `b ≠ p` below `c`. -/
-private theorem exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt
-    (hX : IsAdaptedPseudoGradient f X) (hf : IsMorse 𝓘(ℝ, E) f) {p w : M}
-    (hw : w ∈ hX.flow.unstableSet p) {t c : ℝ} (ht : f (hX.flow t w) < c) (hcp : c ≤ f p) :
-    ∃ b, p ≠ b ∧ w ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet b ∧ f b < c := by
-  obtain ⟨b, -, hb⟩ := hX.exists_tendsto_atTop hf w
-  have hb : w ∈ hX.flow.stableSet b := Flow.mem_stableSet.2 hb
-  have hfb : f b ≤ f (hX.flow t w) :=
-    Flow.le_of_mem_stableSet_of_antitone ((Flow.apply_mem_stableSet_iff _ t).2 hb)
-      hX.mdifferentiable.continuous.continuousAt (hX.antitone_flow _)
-  exact ⟨b, by rintro rfl; linarith, ⟨hw, hb⟩, hfb.trans_lt ht⟩
-
-/-- **A set transverse to an unstable manifold, of complementary dimension, is transverse to the
-flow.** Let `Z` be flattened near a regular point `y` of `W^u(q)`, of dimension `n - ind q` and
-transverse to `W^u(q)` at `y`. Then the tangent spaces of `Z` and `W^u(q)` at `y` meet in `0`, so
-`X y`, which is tangent to `W^u(q)` and nonzero, is not tangent to `Z`. -/
-private theorem notMem_span_mtangentConeAt_of_isSliceChart (hX : IsAdaptedPseudoGradient f X)
-    (hf : IsMorse 𝓘(ℝ, E) f) {q y : M} {Z : Set M} {L : Submodule ℝ E}
-    {φZ : OpenPartialHomeomorph M E} (hφZ : φZ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
-    (hZ : IsSliceChart φZ (L : Set E) Z) (hyφZ : y ∈ φZ.source) (hyZ : y ∈ Z)
-    (hy : y ∈ hX.flow.unstableSet q) (hyc : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0)
-    (hdim : Module.finrank ℝ L + manifoldMorseIndex 𝓘(ℝ, E) f q = Module.finrank ℝ E)
-    (htr : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) Z y) ⊔
-      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet q) y) = ⊤) :
-    X y ∉ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) Z y) := by
-  have hL : IsClosed (L : Set E) := Submodule.isClosed_of_finiteDimensional _
-  intro hXy
-  have hXu : X y ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet q) y) :=
-    Submodule.subset_span (hX.mem_mtangentConeAt_of_isInvariant
-      (hX.flow.isInvariant_unstableSet q) hy)
-  have hsum := Submodule.finrank_sup_add_finrank_inf_eq
-    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) Z y))
-    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet q) y))
-  rw [htr, finrank_top, hZ.finrank_span_mtangentConeAt (by simp) hφZ hL hyφZ hyZ,
-    hX.finrank_span_mtangentConeAt_unstableSet hf hy] at hsum
-  have hinf := Submodule.finrank_eq_zero.1 (by omega : Module.finrank ℝ ↥(
-    Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) Z y) ⊓
-      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet q) y)) = 0)
-  have hmem : X y ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) Z y) ⊓
-      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet q) y) := ⟨hXy, hXu⟩
-  have h0 : X y = 0 := by
-    rw [hinf] at hmem
-    exact (Submodule.mem_bot ℝ).1 hmem
-  have := hX.mvfderiv_apply_lt_zero y hyc
-  rw [h0, map_zero] at this
-  exact lt_irrefl _ this
 
 /-- **The point of a transverse set on an orbit depends continuously on the orbit.** Let `Z` be a
 set flattened near a point `y ≠ q` of `W^u(q)` by a chart of the maximal atlas, of dimension
@@ -449,7 +309,7 @@ private theorem IsMorseSmale.exists_transverseGluingArc {hX : IsAdaptedPseudoGra
   have hepair : ∀ s : Icc (0 : ℝ) r₀, (s : ℝ) ≠ 0 →
       (e s).val ∈ splitGluingPairs ε r₀ g k ∧ ‖(e s).val.1.snd‖ = s * ε := by
     intro s hs
-    refine ⟨val_mem_of_closure_eq_insert hcl e.injective he₀ fun h ↦
+    refine ⟨e.injective.val_mem_of_subset_insert hcl.subset he₀ fun h ↦
       hs (congrArg Subtype.val h), ?_⟩
     have := he (e s)
     rw [e.symm_apply_apply] at this
