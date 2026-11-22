@@ -57,17 +57,17 @@ theorem _root_.ContinuousOn.isLocallyConstant_windingNumber_of_integer {γ : ℝ
     (hderiv_int : IntervalIntegrable (deriv γ) volume a b)
     (hint : ∀ z, z ∉ γ '' uIcc a b → ∃ n : ℤ, windingNumber γ a b z = n) :
     IsLocallyConstant
-      (fun z : {z : ℂ // z ∉ γ '' uIcc a b} ↦ windingNumber γ a b z.1) := by
+      (fun z : {z : ℂ // z ∉ γ '' uIcc a b} ↦ windingNumber γ a b z.val) := by
   classical
-  choose n hn using fun z : {z : ℂ // z ∉ γ '' uIcc a b} ↦ hint z.1 z.2
+  choose n hn using fun z : {z : ℂ // z ∉ γ '' uIcc a b} ↦ hint z.val z.property
   have hc : Continuous
-      (fun z : {z : ℂ // z ∉ γ '' uIcc a b} ↦ windingNumber γ a b z.1) := by
+      (fun z : {z : ℂ // z ∉ γ '' uIcc a b} ↦ windingNumber γ a b z.val) := by
     refine continuous_iff_continuousAt.mpr fun z ↦ ?_
-    have havoid : ∀ t ∈ uIcc a b, γ t ≠ z.1 := by
-      simpa only [mem_image, not_exists, not_and] using z.2
+    have havoid : ∀ t ∈ uIcc a b, γ t ≠ z.val := by
+      simpa only [mem_image, not_exists, not_and] using z.property
     exact (continuousAt_windingNumber_of_avoidance hγ_cont havoid
       (intervalIntegrable_inv_sub_mul_deriv hγ_cont havoid hderiv_int)).comp
-        continuous_subtype_val.continuousAt
+        continuous_subtypeVal.continuousAt
   have hncont : Continuous n := Complex.isClosedEmbedding_intCast.isEmbedding.continuous_iff.mpr
     (by simpa only [Function.comp_def, ← hn] using hc)
   simpa only [Function.comp_def, ← hn] using
@@ -82,14 +82,14 @@ theorem isLocallyConstant_windingNumber_of_closed {γ : ℝ → ℂ} {a b : ℝ}
     (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) :
     IsLocallyConstant
-      (fun w : {w : ℂ // ∀ t ∈ uIcc a b, γ t ≠ w} ↦ windingNumber γ a b w.1) := by
+      (fun w : {w : ℂ // ∀ t ∈ uIcc a b, γ t ≠ w} ↦ windingNumber γ a b w.val) := by
   have hac := hγ_cont.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable hP
     (fun t ht ↦ (hγ_diff t ht).hasDerivAt) hderiv_int
   have h := hγ_cont.isLocallyConstant_windingNumber_of_integer hderiv_int
     (fun _ hz ↦ hac.exists_int_windingNumber hclosed hz)
   -- Reindex by the same point with its equivalent trace-avoidance predicate.
-  exact h.comp_continuous (continuous_subtype_val.subtype_mk
-    (fun z ↦ by simpa only [mem_image, not_exists, not_and] using z.2))
+  exact h.comp_continuous (continuous_subtypeVal.subtype_mk
+    (fun z ↦ by simpa only [mem_image, not_exists, not_and] using z.property))
 
 /-- A continuous curve with integrable derivative and integer indices has constant winding
 number on every connected component of its trace complement. -/
@@ -173,7 +173,7 @@ theorem exists_ball_windingNumber_zero {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} 
   -- around `w`; push that set forward along the open inclusion to a `ℂ`-ball.
   have hlc := isLocallyConstant_windingNumber_of_closed hclosed hP hγ_cont hγ_diff hderiv_int
   obtain ⟨V, hV_open, hwV, hV_const⟩ := hlc.exists_open ⟨w, hoff⟩
-  have hVℂ : IsOpen (Subtype.val '' V) := hSopen.isOpenMap_subtype_val V hV_open
+  have hVℂ : IsOpen (Subtype.val '' V) := hSopen.isOpenMap_subtypeVal V hV_open
   obtain ⟨ε₂, hε₂, hball₂⟩ := Metric.isOpen_iff.mp hVℂ w ⟨⟨w, hoff⟩, hwV, rfl⟩
   refine ⟨min ε₁ ε₂, lt_min hε₁ hε₂, fun w' hw' ↦ ⟨fun t ht ↦ ?_, ?_⟩⟩
   · exact sub_ne_zero.mp (norm_pos_iff.mp (lt_of_lt_of_le hε₁

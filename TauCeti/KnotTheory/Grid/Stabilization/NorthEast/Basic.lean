@@ -167,7 +167,7 @@ theorem stabilizeXSuccHomologyMap_unblockedHomologyClass
     G.stabilizeXSuccHomologyMap s R
         ((G.stabilizeX s.succ (G.X s).succ s).unblockedHomologyClass R z) =
       G.unblockedHomologyClass R
-        ⟨G.stabilizeXSuccChainMap s R z, G.stabilizeXSuccChainMap_mem_ker s R z.2⟩ := by
+        ⟨G.stabilizeXSuccChainMap s R z, G.stabilizeXSuccChainMap_mem_ker s R z.property⟩ := by
   simp only [stabilizeXSuccHomologyMap, LinearMap.coe_mk, AddHom.coe_mk,
     stabilizeXSuccSourceEquiv, unblockedHomologyEquivOfIntertwining_unblockedHomologyClass,
     unblockedHomologyRotateEquiv_symm_unblockedHomologyClass,

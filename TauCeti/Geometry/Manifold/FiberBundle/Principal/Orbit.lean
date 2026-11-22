@@ -72,7 +72,7 @@ noncomputable def orbitDiffeomorph (p : P b) :
   have he := ManifoldTotalSpace.isSmoothEmbedding_coe_fiber G P IB IG hn b
   exact {
     toFun g := ⟨ι ⟨b, op g • p⟩, by simp⟩
-    invFun q := (e ⟨b, p⟩).2⁻¹ * (e ((ι).symm q.1)).2
+    invFun q := (e ⟨b, p⟩).2⁻¹ * (e ((ι).symm q.val)).2
     left_inv g := by simp [e.snd_apply_smul hb]
     right_inv q := by
       rcases q with ⟨q, hq⟩
@@ -88,14 +88,14 @@ noncomputable def orbitDiffeomorph (p : P b) :
       rw [← contMDiffOn_univ]
       exact contMDiffOn_const.mul
         (ManifoldTotalSpace.contMDiffOn_trivialization_snd_comp e he.contMDiff.contMDiffOn
-          fun q _ ↦ by simpa only [q.2] using hb)
+          fun q _ ↦ by simpa only [q.property] using hb)
   }
 
 /-- The orbit diffeomorphism acts by the principal right action. -/
 @[simp]
 theorem orbitDiffeomorph_apply (p : P b) (g : G) :
     letI := ManifoldTotalSpace.fiberChartedSpace G P IB IG hn b
-    (orbitDiffeomorph G IB IG hn p g).1 = ι ⟨b, op g • p⟩ :=
+    (orbitDiffeomorph G IB IG hn p g).val = ι ⟨b, op g • p⟩ :=
   (rfl)
 
 /-- The inverse orbit diffeomorphism is the principal division map. -/
@@ -112,8 +112,8 @@ theorem orbitDiffeomorph_symm_apply (p q : P b) :
 /-- Multiplication in the group corresponds to the right action on the fibre. -/
 theorem orbitDiffeomorph_mul (p : P b) (g h : G) :
     letI := ManifoldTotalSpace.fiberChartedSpace G P IB IG hn b
-    (orbitDiffeomorph G IB IG hn p (g * h)).1 =
-      op h • (orbitDiffeomorph G IB IG hn p g).1 := by
+    (orbitDiffeomorph G IB IG hn p (g * h)).val =
+      op h • (orbitDiffeomorph G IB IG hn p g).val := by
   simp [op_mul, mul_smul]
 
 /-- Changing the origin of the fibre from `p` to `p·a` is left multiplication by `a`
@@ -130,7 +130,7 @@ theorem orbitDiffeomorph_smul (p : P b) (a g : G) :
 @[simp]
 theorem totalSpaceMk_op_orbitDiffeomorph_symm_smul (p : P b) (x : {x : T // π₀ x = b}) :
     letI := ManifoldTotalSpace.fiberChartedSpace G P IB IG hn b
-    ι ⟨b, op ((orbitDiffeomorph G IB IG hn p).symm x) • p⟩ = x.1 := by
+    ι ⟨b, op ((orbitDiffeomorph G IB IG hn p).symm x) • p⟩ = x.val := by
   let := ManifoldTotalSpace.fiberChartedSpace G P IB IG hn b
   simpa only [orbitDiffeomorph_apply] using
     congrArg Subtype.val ((orbitDiffeomorph G IB IG hn p).apply_symm_apply x)
@@ -138,7 +138,7 @@ theorem totalSpaceMk_op_orbitDiffeomorph_symm_smul (p : P b) (x : {x : T // π�
 /-- The inverse orbit coordinate is the unique group element carrying the origin to the point. -/
 theorem orbitDiffeomorph_symm_apply_eq_iff (p : P b) (x : {x : T // π₀ x = b}) (g : G) :
     letI := ManifoldTotalSpace.fiberChartedSpace G P IB IG hn b
-    (orbitDiffeomorph G IB IG hn p).symm x = g ↔ ι ⟨b, op g • p⟩ = x.1 := by
+    (orbitDiffeomorph G IB IG hn p).symm x = g ↔ ι ⟨b, op g • p⟩ = x.val := by
   constructor
   · intro h
     rw [← h]
@@ -155,7 +155,7 @@ theorem orbitDiffeomorph_symm_apply_eq_of_mem_baseSet
     (hb : b ∈ e.baseSet) (p : P b) (x : {x : T // π₀ x = b}) :
     letI := ManifoldTotalSpace.fiberChartedSpace G P IB IG hn b
     (orbitDiffeomorph G IB IG hn p).symm x =
-      (e ⟨b, p⟩).2⁻¹ * (e ((ι).symm x.1)).2 := by
+      (e ⟨b, p⟩).2⁻¹ * (e ((ι).symm x.val)).2 := by
   rcases x with ⟨x, hx⟩
   obtain ⟨⟨b', q⟩, rfl⟩ := (ι).surjective x
   simp only [Homeomorph.symm_apply_apply] at hx
@@ -179,7 +179,7 @@ theorem orbitDiffeomorph_symm_apply_smul (p : P b)
     (x : {x : T // π₀ x = b}) (h : G) :
     letI := ManifoldTotalSpace.fiberChartedSpace G P IB IG hn b
     (orbitDiffeomorph G IB IG hn p).symm
-      ⟨op h • x.1, by simpa only [ManifoldTotalSpace.homeomorph_symm_smul] using x.2⟩ =
+      ⟨op h • x.val, by simpa only [ManifoldTotalSpace.homeomorph_symm_smul] using x.property⟩ =
         (orbitDiffeomorph G IB IG hn p).symm x * h := by
   apply (orbitDiffeomorph G IB IG hn p).injective
   apply Subtype.ext

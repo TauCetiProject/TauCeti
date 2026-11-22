@@ -39,6 +39,8 @@ which is functorial in `φ`.
   next page.
 * `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_id`,
   `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_comp`: functoriality.
+* `CategoryTheory.Abelian.SpectralObject.isIso_spectralSequenceMap`: an isomorphism of spectral
+  objects induces isomorphisms of pages and of spectral sequences.
 * `spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom`: on the first page, identified
   with objects `H^n(f)`, the morphism is the component of `φ`.
 
@@ -230,7 +232,8 @@ lemma homologyMap_spectralSequencePageMap_comp_iso_hom (r r' : ℤ) (hrr' : r + 
           (data.deg pq) (data.deg pq + 1) rfl (by lia) rfl).hom :=
     spectralSequencePageXIso_hom_comp_EMap data φ r' hr' pq _ _ _ _ rfl rfl rfl rfl
       (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) rfl _ _
-  exact γ.homologyMap_comp_homologyIso_trans_hom _ _ _ hg
+  simpa only [Iso.trans_hom, Category.assoc, spectralSequencePageMap_f] using
+    γ.homologyMap_comp_homologyIso_trans_hom _ _ _ hg
 
 /-- The morphism of spectral sequences induced by a morphism of spectral objects. -/
 noncomputable def spectralSequenceMap : X.spectralSequence data ⟶ Y.spectralSequence data where
@@ -277,6 +280,29 @@ lemma spectralSequenceMap_comp :
     spectralSequenceMap data (φ ≫ ψ) = spectralSequenceMap data φ ≫ spectralSequenceMap data ψ := by
   ext r hr : 2
   simp
+
+section IsIso
+
+variable [IsIso φ]
+
+instance isIso_spectralSequencePageXMap (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
+    IsIso (spectralSequencePageXMap data φ r hr pq) :=
+  ⟨spectralSequencePageXMap data (inv φ) r hr pq,
+    by rw [← spectralSequencePageXMap_comp, IsIso.hom_inv_id, spectralSequencePageXMap_id],
+    by rw [← spectralSequencePageXMap_comp, IsIso.inv_hom_id, spectralSequencePageXMap_id]⟩
+
+instance isIso_spectralSequencePageMap (r : ℤ) (hr : r₀ ≤ r) :
+    IsIso (spectralSequencePageMap data φ r hr) :=
+  ⟨spectralSequencePageMap data (inv φ) r hr,
+    by rw [← spectralSequencePageMap_comp, IsIso.hom_inv_id, spectralSequencePageMap_id],
+    by rw [← spectralSequencePageMap_comp, IsIso.inv_hom_id, spectralSequencePageMap_id]⟩
+
+instance isIso_spectralSequenceMap : IsIso (spectralSequenceMap data φ) :=
+  ⟨spectralSequenceMap data (inv φ),
+    by rw [← spectralSequenceMap_comp, IsIso.hom_inv_id, spectralSequenceMap_id],
+    by rw [← spectralSequenceMap_comp, IsIso.inv_hom_id, spectralSequenceMap_id]⟩
+
+end IsIso
 
 section FirstPage
 

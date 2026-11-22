@@ -10,9 +10,11 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import Mathlib.Analysis.InnerProductSpace.Calculus
+public import Mathlib.LinearAlgebra.FixedSubmodule
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Topology.MetricSpace.HausdorffDimension
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Reflections in inner product spaces
@@ -24,6 +26,11 @@ the same norm with a real inner product are exchanged by the reflection in the h
 orthogonal to their difference (`Submodule.reflection_sub_of_inner_comm`). In Euclidean
 space, the reflection in the axis spanned by a basis vector `eᵢ` keeps the `i`-th coordinate and
 negates the others (`EuclideanSpace.reflection_singleton_single_apply`).
+
+Over `ℝ`, reflecting `x` across `K` changes its squared distance to `y` by `4 ⟪P x, y⟫`, where `P`
+is the orthogonal projection onto `Kᗮ` (`Submodule.norm_reflection_sub_sq`). In finite dimension,
+a linear map preserving the inner product whose fixed vectors form a hyperplane is the reflection in
+that hyperplane (`LinearMap.reflection_fixedSubmodule_apply`).
 
 The remaining lemmas describe reflection across the hyperplane perpendicular to a vector in a real
 inner product space. They supply the reflection identities used by the half-space Green kernel,
@@ -45,8 +52,11 @@ reflections. It supplies the sphere motion which interchanges the two halves of 
 
 In the same way, two unit vectors `a` and `b` with `a ≠ -b` are joined by a rotation in the plane
 they span: reflecting in the hyperplane orthogonal to `a` and then in the one orthogonal to `a + b`
-sends `a` to `b` and fixes every vector orthogonal to both. Moving the second normal from `a` to
-`a + b` connects this rotation to the identity by an analytic path of linear isometries
+(`TauCeti.pairRotation`) sends `a` to `b` and fixes every vector orthogonal to both. Away from
+`b = -a` this rotation depends continuously on `b` (`ContinuousOn.pairRotation_apply`), so it
+moves a fixed point of a sphere continuously to every point of the complement of its antipode, as
+local trivializations of bundles of frames over the sphere need. Moving the second normal from `a`
+to `a + b` connects this rotation to the identity by an analytic path of linear isometries
 (`TauCeti.exists_contDiff_path_apply_eq`).
 
 Composing four such reflections rotates a whole `C^k` path `u` of unit vectors orthogonal to a
@@ -139,6 +149,69 @@ theorem reflection_sub_of_inner_comm {v w : E} (h : ‖v‖ = ‖w‖)
 
 end Submodule
 
+namespace Submodule
+
+open scoped InnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- Reflecting `x` across `K` changes its squared distance to `y` by four times the inner product
+of the `Kᗮ`-component of `x` with `y`, so the reflection brings `x` nearer to `y` exactly when that
+inner product is negative. -/
+theorem norm_reflection_sub_sq (K : Submodule ℝ F) [K.HasOrthogonalProjection] (x y : F) :
+    ‖K.reflection x - y‖ ^ 2 = ‖x - y‖ ^ 2 + 4 * ⟪Kᗮ.starProjection x, y⟫_ℝ := by
+  have hx : K.reflection x - y = (x - y) - (2 : ℝ) • Kᗮ.starProjection x := by
+    rw [reflection_apply, starProjection_orthogonal_val]
+    module
+  have hpx : ⟪Kᗮ.starProjection x, x⟫_ℝ = ‖Kᗮ.starProjection x‖ ^ 2 := by
+    simpa using Kᗮ.re_inner_starProjection_eq_normSq x
+  rw [hx, norm_sub_sq_real, inner_smul_right, norm_smul, inner_sub_left,
+    real_inner_comm (Kᗮ.starProjection x) x, real_inner_comm (Kᗮ.starProjection x) y, hpx]
+  norm_num
+  ring
+
+end Submodule
+
+namespace LinearMap
+
+open scoped InnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+
+/-- A linear map preserving the inner product whose fixed vectors form a hyperplane is the
+orthogonal reflection in that hyperplane. -/
+theorem reflection_fixedSubmodule_apply {f : F →ₗ[ℝ] F} (hf : ∀ v w, ⟪f v, f w⟫_ℝ = ⟪v, w⟫_ℝ)
+    (hfix : Module.finrank ℝ (F ⧸ f.fixedSubmodule) = 1) (x : F) :
+    f.fixedSubmodule.reflection x = f x := by
+  set H := f.fixedSubmodule
+  have hrank : Module.finrank ℝ Hᗮ = 1 := H.finrank_orthogonal_eq_finrank_quotient.trans hfix
+  -- `f` preserves the line `Hᗮ` and the length of its vectors, and fixes none of them but `0`.
+  have hneg : ∀ q ∈ Hᗮ, f q = -q := by
+    intro q hq
+    have hfq : f q ∈ Hᗮ := fun h hh ↦
+      calc ⟪h, f q⟫_ℝ = ⟪f h, f q⟫_ℝ := by rw [mem_fixedSubmodule_iff.1 hh]
+        _ = 0 := (hf h q).trans (hq h hh)
+    by_cases hq0 : q = 0
+    · simp [hq0]
+    obtain ⟨c, hc⟩ := exists_smul_eq_of_finrank_eq_one hrank (x := (⟨q, hq⟩ : Hᗮ))
+      (by simpa using hq0) ⟨f q, hfq⟩
+    have hc' : f q = c • q := by simpa using congrArg Subtype.val hc.symm
+    have hcc : c * c = 1 := by
+      have h := hf q q
+      rw [hc', real_inner_smul_left, real_inner_smul_right, ← mul_assoc] at h
+      exact mul_right_cancel₀ (by simpa using hq0) (h.trans (one_mul _).symm)
+    rcases mul_self_eq_one_iff.1 hcc with rfl | rfl
+    · have hqH : q ∈ H := mem_fixedSubmodule_iff.2 (by rw [hc', one_smul])
+      simpa [H.inf_orthogonal_eq_bot, hq0] using Submodule.mem_inf.2 ⟨hqH, hq⟩
+    · rw [hc', neg_one_smul]
+  have hx := H.starProjection_add_starProjection_orthogonal x
+  conv_rhs => rw [← hx]
+  rw [map_add, mem_fixedSubmodule_iff.1 (H.starProjection_apply_mem x),
+    hneg _ (Hᗮ.starProjection_apply_mem x), Submodule.reflection_apply]
+  linear_combination (norm := module) hx
+
+end LinearMap
+
 namespace EuclideanSpace
 
 /-- The reflection of Euclidean space in the coordinate axis spanned by the basis vector `eᵢ`
@@ -221,13 +294,9 @@ four times the product of the two signed distances to the boundary. -/
 theorem norm_sub_reflection_orthogonal_singleton_sq {v : F} (hv : ‖v‖ = 1) (x y : F) :
     ‖y - (ℝ ∙ v)ᗮ.reflection x‖ ^ 2 =
       ‖y - x‖ ^ 2 + 4 * ⟪v, x⟫_ℝ * ⟪v, y⟫_ℝ := by
-  have heq : y - (ℝ ∙ v)ᗮ.reflection x =
-      (y - x) + (2 * ⟪v, x⟫_ℝ) • v := by
-    rw [reflection_orthogonal_singleton_apply hv]
-    abel
-  rw [heq, norm_add_sq_real, inner_smul_right, inner_sub_left, norm_smul, hv]
-  simp only [mul_one, Real.norm_eq_abs, sq_abs]
-  rw [real_inner_comm y v, real_inner_comm x v]
+  rw [norm_sub_rev y, norm_sub_rev y, (ℝ ∙ v)ᗮ.norm_reflection_sub_sq]
+  simp only [Submodule.orthogonal_orthogonal, Submodule.starProjection_singleton, hv,
+    real_inner_smul_left, RCLike.ofReal_real_eq_id, id_eq, one_pow, div_one]
   ring
 
 /-- For a point `y` of the hyperplane perpendicular to a unit vector `v`, the squared distance
@@ -316,10 +385,7 @@ determinant `-1`: the reflection in the hyperplane orthogonal to a nonzero vecto
 theorem exists_det_eq_neg_one [Nontrivial F] [FiniteDimensional ℝ F] :
     ∃ r : F ≃ₗᵢ[ℝ] F, (LinearEquiv.det r.toLinearEquiv : ℝ) = -1 := by
   obtain ⟨v, hv⟩ := exists_ne (0 : F)
-  refine ⟨(ℝ ∙ v)ᗮ.reflection, ?_⟩
-  rw [Submodule.linearEquiv_det_reflection, Submodule.orthogonal_orthogonal,
-    finrank_span_singleton hv]
-  simp
+  exact ⟨(ℝ ∙ v)ᗮ.reflection, linearEquiv_det_reflection_orthogonal_singleton hv⟩
 
 /-- A nontrivial finite-dimensional real inner product space has a linear isometry whose
 underlying continuous linear map has negative determinant, the form taken by the
@@ -455,6 +521,15 @@ theorem contDiff_reflection_orthogonal_singleton_apply {X : Type*} [NormedAddCom
   exact hy.sub ((contDiff_const.mul ((hc.inner ℝ hy).div ((contDiff_norm_sq ℝ).comp hc)
     fun p => pow_ne_zero 2 (norm_ne_zero_iff.2 (hc₀ p)))).smul hc)
 
+/-- Reflection in the hyperplane orthogonal to a normal `c x`, applied to a vector `y x`, depends
+continuously on a parameter `x` wherever the normal does not vanish. -/
+theorem _root_.ContinuousOn.reflection_orthogonal_singleton_apply {X : Type*} [TopologicalSpace X]
+    {s : Set X} {c y : X → F} (hc : ContinuousOn c s) (hy : ContinuousOn y s)
+    (hc₀ : ∀ x ∈ s, c x ≠ 0) : ContinuousOn (fun x => (ℝ ∙ c x)ᗮ.reflection (y x)) s := by
+  simp only [reflection_orthogonal_singleton_apply_div_norm_sq]
+  exact hy.sub ((continuousOn_const.mul ((hc.inner hy).div (hc.norm.pow 2)
+    fun x hx => pow_ne_zero 2 (norm_ne_zero_iff.2 (hc₀ x hx)))).smul hc)
+
 /-- Reflecting in the hyperplane orthogonal to `a` and then in the hyperplane orthogonal to a
 nonvanishing analytic normal `c t` is analytic jointly in the time and the vector. -/
 private theorem contDiff_reflection_trans_reflection {a : F} {c : ℝ → F} (hc : ContDiff ℝ ω c)
@@ -463,10 +538,58 @@ private theorem contDiff_reflection_trans_reflection {a : F} {c : ℝ → F} (hc
   contDiff_reflection_orthogonal_singleton_apply (hc.comp contDiff_fst)
     ((ℝ ∙ a)ᗮ.reflection.toContinuousLinearEquiv.contDiff.comp contDiff_snd) fun p => hc₀ p.1
 
-/-- The rotation from `a` toward `b` at time `t`: the reflection in the hyperplane orthogonal to
-`a`, followed by the reflection in the hyperplane orthogonal to `a + t² b`. -/
-private def pairRotation (a b : F) (t : ℝ) : F ≃ₗᵢ[ℝ] F :=
-  (ℝ ∙ a)ᗮ.reflection.trans (ℝ ∙ (a + t ^ 2 • b))ᗮ.reflection
+/-- **The rotation carrying `a` to `b`**: the reflection in the hyperplane orthogonal to `a`,
+followed by the reflection in the hyperplane orthogonal to `a + b`. When `a` and `b` have the same
+norm it sends `a` to `b` (`TauCeti.pairRotation_apply_self`), and it fixes every vector
+orthogonal to both (`TauCeti.pairRotation_apply_of_inner_eq_zero`). It depends continuously on `b`
+away from `b = -a` (`ContinuousOn.pairRotation_apply`), where the second hyperplane degenerates. -/
+def pairRotation (a b : F) : F ≃ₗᵢ[ℝ] F :=
+  (ℝ ∙ a)ᗮ.reflection.trans (ℝ ∙ (a + b))ᗮ.reflection
+
+theorem pairRotation_apply (a b x : F) :
+    pairRotation a b x = (ℝ ∙ (a + b))ᗮ.reflection ((ℝ ∙ a)ᗮ.reflection x) :=
+  (rfl)
+
+theorem pairRotation_symm_apply (a b x : F) :
+    (pairRotation a b).symm x = (ℝ ∙ a)ᗮ.reflection ((ℝ ∙ (a + b))ᗮ.reflection x) :=
+  (rfl)
+
+/-- The rotation carrying `a` to a vector `b` of the same norm sends `a` to `b`. -/
+theorem pairRotation_apply_self {a b : F} (h : ‖a‖ = ‖b‖) : pairRotation a b a = b := by
+  rw [pairRotation_apply, Submodule.reflection_orthogonalComplement_singleton_eq_neg]
+  exact reflection_orthogonal_singleton_add_apply_neg h
+
+/-- The rotation carrying `a` to `b` fixes every vector orthogonal to both `a` and `b`. -/
+theorem pairRotation_apply_of_inner_eq_zero {a b x : F} (hax : ⟪a, x⟫ = 0) (hbx : ⟪b, x⟫ = 0) :
+    pairRotation a b x = x := by
+  rw [pairRotation_apply, reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hax,
+    reflection_orthogonal_singleton_eq_self_of_inner_eq_zero (by rw [inner_add_left, hax, hbx,
+      add_zero])]
+
+/-- The rotation carrying `a` to itself is the identity. -/
+@[simp]
+theorem pairRotation_self (a : F) : pairRotation a a = LinearIsometryEquiv.refl ℝ F := by
+  have hspan : (ℝ ∙ (a + a)) = ℝ ∙ a := by
+    rw [← two_smul ℝ a, Submodule.span_singleton_smul_eq (isUnit_of_invertible (2 : ℝ))]
+  simp only [pairRotation, hspan, Submodule.reflection_trans_reflection]
+
+/-- The rotation carrying `a` to `b x`, applied to `y x`, depends continuously on a parameter `x`
+wherever `a + b x ≠ 0`. -/
+theorem _root_.ContinuousOn.pairRotation_apply {X : Type*} [TopologicalSpace X] {s : Set X}
+    {a : F} {b y : X → F} (hb : ContinuousOn b s) (hy : ContinuousOn y s)
+    (h : ∀ x ∈ s, a + b x ≠ 0) : ContinuousOn (fun x => pairRotation a (b x) (y x)) s := by
+  simp only [TauCeti.pairRotation_apply]
+  exact (continuousOn_const.add hb).reflection_orthogonal_singleton_apply
+    ((ℝ ∙ a)ᗮ.reflection.continuous.comp_continuousOn hy) h
+
+/-- The inverse of the rotation carrying `a` to `b x`, applied to `y x`, depends continuously on a
+parameter `x` wherever `a + b x ≠ 0`. -/
+theorem _root_.ContinuousOn.pairRotation_symm_apply {X : Type*} [TopologicalSpace X] {s : Set X}
+    {a : F} {b y : X → F} (hb : ContinuousOn b s) (hy : ContinuousOn y s)
+    (h : ∀ x ∈ s, a + b x ≠ 0) : ContinuousOn (fun x => (pairRotation a (b x)).symm (y x)) s := by
+  simp only [TauCeti.pairRotation_symm_apply]
+  exact (ℝ ∙ a)ᗮ.reflection.continuous.comp_continuousOn
+    ((continuousOn_const.add hb).reflection_orthogonal_singleton_apply hy h)
 
 /-- **Rotating one unit vector to another.** Two unit vectors `a` and `b` with `a ≠ -b` are
 joined by an analytic path of linear isometries, starting at the identity, whose time-one map
@@ -483,19 +606,13 @@ theorem exists_contDiff_path_apply_eq {a b : F} (ha : ‖a‖ = 1) (hb : ‖b‖
       rwa [norm_neg, norm_smul, ha, hb, mul_one, Real.norm_of_nonneg (sq_nonneg t), eq_comm]
         at this
     rw [h₁, hs, one_smul]
-  refine ⟨pairRotation a b, ?_, fun x => ?_, ?_, fun x hax hbx => ?_⟩
+  -- At time `t`, rotate `a` toward `t² b`; at time `1` this is the rotation carrying `a` to `b`.
+  refine ⟨fun t => pairRotation a (t ^ 2 • b), ?_, fun x => ?_, ?_, fun x hax hbx => ?_⟩
   · exact contDiff_reflection_trans_reflection (c := fun t => a + t ^ 2 • b)
       (contDiff_const.add ((contDiff_id.pow 2).smul contDiff_const)) hu
-  · simp [pairRotation]
-  · rw [pairRotation, LinearIsometryEquiv.trans_apply,
-      Submodule.reflection_orthogonalComplement_singleton_eq_neg]
-    simpa only [one_pow, one_smul] using
-      reflection_orthogonal_singleton_add_apply_neg (ha.trans hb.symm)
-  · rw [pairRotation, LinearIsometryEquiv.trans_apply,
-      reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hax,
-      reflection_orthogonal_singleton_eq_self_of_inner_eq_zero]
-    rw [inner_add_left, inner_smul_left, hax, hbx]
-    simp
+  · simp [pairRotation_apply]
+  · simpa only [one_pow, one_smul] using pairRotation_apply_self (ha.trans hb.symm)
+  · simpa only [one_pow, one_smul] using pairRotation_apply_of_inner_eq_zero hax hbx
 
 /-- A differentiable path `u`, in a space where the orthogonal complement of `v` has dimension at
 least three, avoids the antipode of some unit vector `p` orthogonal to `v`: `u s + p ≠ 0` for
@@ -517,14 +634,14 @@ theorem exists_forall_add_ne_zero {v : F}
     exact hq ⟨(0, 0), Subtype.ext (by simp [g, h])⟩
   refine ⟨‖(q : F)‖⁻¹ • (q : F), norm_smul_inv_norm hq0, ?_, fun s hs => hq ⟨(s, ‖(q : F)‖), ?_⟩⟩
   · rw [real_inner_smul_left, real_inner_comm,
-      Submodule.mem_orthogonal_singleton_iff_inner_right.1 q.2, mul_zero]
+      Submodule.mem_orthogonal_singleton_iff_inner_right.1 q.property, mul_zero]
   · -- From `u s + ‖q‖⁻¹ • q = 0`, the point `q` is `‖q‖ • (-u s)`.
     have hqs : (q : F) = ‖(q : F)‖ • -u s := by
       rw [← eq_neg_of_add_eq_zero_right hs, smul_smul,
         mul_inv_cancel₀ (norm_ne_zero_iff.2 hq0), one_smul]
     have hmem : -u s ∈ K := by
       rw [← eq_neg_of_add_eq_zero_right hs]
-      exact K.smul_mem _ q.2
+      exact K.smul_mem _ q.property
     refine Subtype.ext ?_
     simp only [g, Submodule.coe_smul,
       K.orthogonalProjectionOnto_mem_subspace_eq_self ⟨-u s, hmem⟩]
