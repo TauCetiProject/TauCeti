@@ -9,10 +9,9 @@ public import TauCeti.Analysis.Normed.Module.Bases.Unconditional
 public import TauCeti.Analysis.SpecialFunctions.Pow.Burkholder
 public import TauCeti.MeasureTheory.Function.Lp.HaarBasis.Basic
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
-import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
-import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 import TauCeti.MeasureTheory.Function.Lp.Duality
+import TauCeti.MeasureTheory.Function.Lp.HaarBasis.L2
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -42,10 +41,6 @@ identity, unimodular Haar multipliers are `L²` isometries, and `nnNormProjBound
 
 * `TauCeti.unitInterval.integral_burkholderPhi_haarFun_nonneg`: nonnegativity of the integrated
   Burkholder function on signed Haar partial sums for `2 ≤ p`.
-* `TauCeti.unitInterval.inner_haarBasis_two`,
-  `TauCeti.unitInterval.norm_sq_sum_haarBasis_two`,
-  `TauCeti.unitInterval.norm_sum_unimodular_haarBasis_two`: `L²` inner products, Parseval's
-  identity, and `L²` isometry of unimodular Haar multipliers.
 * `TauCeti.unitInterval.norm_sum_signed_haarBasis_real_le`: real `Lᵖ` sign-transform bound
   `max p.toReal (p.toReal / (p.toReal - 1)) - 1` on signed Haar sums for `1 < p < ∞`.
 * `TauCeti.unitInterval.norm_sum_signed_haarBasis_le`: `Lᵖ(I; 𝕜)` sign-transform bound on signed
@@ -70,7 +65,7 @@ public section
 noncomputable section
 
 open MeasureTheory Filter TauCeti
-open scoped ENNReal InnerProductSpace Topology unitInterval
+open scoped ENNReal Topology unitInterval
 
 namespace TauCeti.unitInterval
 
@@ -323,59 +318,6 @@ theorem norm_sum_signed_haarBasis_real_le_of_two_le {p : ℝ≥0∞} [Fact (1 �
     (mul_nonneg (by linarith) (norm_nonneg f)) (by linarith : 0 < r)).1 ?_
   rw [Real.mul_rpow (by linarith) (norm_nonneg f), hg_rpow, hf_rpow]
   exact integral_rpow_abs_haarFun_signed_le hr2 c hε N
-
-/-! ### `L²` orthogonality and unimodular multipliers -/
-
-/-- Inner product of two Haar basis vectors in `L²([0, 1]; 𝕜)`: it vanishes off the diagonal and
-equals the squared `L²` norm `2 ^ (-⌊log₂ j⌋)` on the diagonal. -/
-theorem inner_haarBasis_two (𝕜 : Type*) [RCLike 𝕜] (j k : ℕ) :
-    ⟪haarBasis 𝕜 2 ENNReal.ofNat_ne_top j, haarBasis 𝕜 2 ENNReal.ofNat_ne_top k⟫_𝕜 =
-      if j = k then ((2 ^ Nat.log 2 j : ℕ) : 𝕜)⁻¹ else 0 := by
-  rw [L2.inner_def]
-  have hcongr :
-      ∫ x, ⟪haarBasis 𝕜 2 ENNReal.ofNat_ne_top j x, haarBasis 𝕜 2 ENNReal.ofNat_ne_top k x⟫_𝕜 =
-        ((∫ x, haarFun j x * haarFun k x : ℝ) : 𝕜) := by
-    rw [← integral_ofReal]
-    refine integral_congr_ae ?_
-    filter_upwards [coeFn_haarBasis (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top j,
-      coeFn_haarBasis (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top k] with x hj hk
-    rw [hj, hk, RCLike.inner_apply, RCLike.conj_ofReal]
-    push_cast
-    ring
-  rw [hcongr]
-  split_ifs with hjk
-  · subst hjk
-    simp_rw [← sq]
-    rw [integral_haarFun_sq, RCLike.ofReal_inv, RCLike.ofReal_natCast]
-  · simp [hjk]
-
-/-- **Parseval's identity for finite Haar sums in `L²([0, 1]; 𝕜)`.** -/
-theorem norm_sq_sum_haarBasis_two (𝕜 : Type*) [RCLike 𝕜] (c : ℕ → 𝕜) (A : Finset ℕ) :
-    ‖∑ k ∈ A, c k • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k‖ ^ 2 =
-      ∑ k ∈ A, ‖c k‖ ^ 2 * ∫ x, haarFun k x ^ 2 := by
-  have horth : (A : Set ℕ).Pairwise fun j k =>
-      ⟪c j • haarBasis 𝕜 2 ENNReal.ofNat_ne_top j,
-        c k • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k⟫_𝕜 = 0 := by
-    intro j _ k _ hjk
-    rw [inner_smul_left, inner_smul_right, inner_haarBasis_two, ite_eq_right hjk, mul_zero,
-      mul_zero]
-  rw [TauCeti.norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero horth]
-  refine Finset.sum_congr rfl fun k _ => ?_
-  rw [norm_smul, mul_pow]
-  congr 1
-  rw [norm_sq_eq_re_inner (𝕜 := 𝕜), inner_haarBasis_two, ite_eq_left rfl, integral_haarFun_sq,
-    ← RCLike.ofReal_natCast, ← RCLike.ofReal_inv, RCLike.ofReal_re]
-
-/-- Unimodular Haar multipliers (`‖u k‖ = 1` for `k ∈ A`, in particular real signs `±1`) are
-`L²` isometries. -/
-theorem norm_sum_unimodular_haarBasis_two (𝕜 : Type*) [RCLike 𝕜]
-    (c : ℕ → 𝕜) {u : ℕ → 𝕜} (A : Finset ℕ) (hu : ∀ k ∈ A, ‖u k‖ = 1) :
-    ‖∑ k ∈ A, (u k * c k) • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k‖ =
-      ‖∑ k ∈ A, c k • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k‖ := by
-  refine sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _) |>.1 ?_
-  rw [norm_sq_sum_haarBasis_two, norm_sq_sum_haarBasis_two]
-  refine Finset.sum_congr rfl fun k hk => ?_
-  rw [norm_mul, hu k hk, one_mul]
 
 /-! ### Hölder duality for `1 < p ≤ 2` -/
 

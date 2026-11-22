@@ -198,6 +198,13 @@ theorem integral_haarFun_sq (n : ℕ) :
   · rw [haarFun_sq_eq_indicator hn, integral_indicator_one (measurableSet_dyadicCell n),
       measureReal_def, volume_dyadicCell hn, ENNReal.toReal_inv, ENNReal.toReal_natCast]
 
+/-- Diagonal `L²` product integral of a Haar function on the unit interval. -/
+@[simp]
+theorem integral_haarFun_mul_self (n : ℕ) :
+    ∫ x, haarFun n x * haarFun n x = ((2 ^ Nat.log 2 n : ℕ) : ℝ)⁻¹ := by
+  simp_rw [← sq]
+  exact integral_haarFun_sq n
+
 /-- Distinct Haar functions are orthogonal on the unit interval. -/
 @[simp]
 theorem integral_haarFun_mul_of_ne {m n : ℕ} (hmn : m ≠ n) :
