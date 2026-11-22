@@ -23,9 +23,9 @@ For an empty source the operator norm is zero by subsingleton elimination, and
 `spectrum.of_subsingleton` gives the empty Gram spectrum.
 
 For a Hermitian matrix, each ordered eigenvalue is bounded in absolute value by the operator
-norm. For a nonempty Hermitian matrix, the `2 * k`-th power of the operator norm is bounded by
-the real trace of the `2 * k`-th matrix power. This is the trace bound behind moment estimates
-for the operator norm of random matrices.
+norm, and the `2 * k`-th power of the operator norm is bounded by the real trace of the
+`2 * k`-th matrix power, provided the matrix is nonempty when `k = 0`. This is the trace bound
+behind moment estimates for the operator norm of random matrices.
 
 All matrix norms here use `Matrix.Norms.L2Operator`, hence agree with the norms of the
 native maps on `EuclideanSpace`. The proof uses Mathlib's
@@ -134,14 +134,17 @@ theorem IsHermitian.norm_eigenvalues₀_le_l2_opNorm {A : Matrix n n 𝕜}
   simpa only [hA.eigenvalues_apply_equivOfCardEq] using
     norm_le_pi_norm hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n)) j)
 
-/-- For a nonempty Hermitian matrix, the `2*k`-th power of the Euclidean operator norm is
-bounded by the real trace of its `2*k`-th power. -/
-theorem IsHermitian.l2_opNorm_pow_two_mul_le_re_trace_pow_two_mul [Nonempty n] {A : Matrix n n 𝕜}
-    (hA : A.IsHermitian) (k : ℕ) : ‖A‖ ^ (2 * k) ≤ RCLike.re (A ^ (2 * k)).trace := by
+/-- For a Hermitian matrix, the `2*k`-th power of the Euclidean operator norm is bounded by the
+real trace of its `2*k`-th power. The dimension must be nonempty only for `k = 0`, where the
+power of the norm is `1` and the trace is the dimension. -/
+theorem IsHermitian.l2_opNorm_pow_two_mul_le_re_trace_pow_two_mul {A : Matrix n n 𝕜}
+    (hA : A.IsHermitian) (k : ℕ) (hn : k = 0 → Nonempty n) :
+    ‖A‖ ^ (2 * k) ≤ RCLike.re (A ^ (2 * k)).trace := by
   rw [hA.l2_opNorm_eq_norm_eigenvalues, hA.trace_pow_eq_sum_eigenvalues_pow]
   simp only [map_sum, ← RCLike.ofReal_pow, RCLike.ofReal_re]
   rcases eq_or_ne k 0 with rfl | hk
-  · simpa using (Nat.one_le_cast.mpr Fintype.card_pos : (1 : ℝ) ≤ Fintype.card n)
+  · have := hn rfl
+    simpa using (Nat.one_le_cast.mpr Fintype.card_pos : (1 : ℝ) ≤ Fintype.card n)
   · simpa only [Real.norm_eq_abs, pow_abs_two_mul] using
       Pi.norm_pow_le_sum_norm_pow hA.eigenvalues (mul_ne_zero two_ne_zero hk)
 

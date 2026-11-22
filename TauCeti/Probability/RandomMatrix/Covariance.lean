@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.TraceWord.Connected
 public import TauCeti.Probability.RandomMatrix.MomentBounds
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Probability.RandomMatrix.Wigner.TraceIntegrability
 
 /-!
 # Connected two-trace expansion and covariance bounds for Wigner moments

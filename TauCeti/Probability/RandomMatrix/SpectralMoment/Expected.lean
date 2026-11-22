@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Integral.Bind
 public import TauCeti.Probability.Distributions.Semicircle.Moments
 public import TauCeti.Probability.Moments.WeakConvergence
 public import TauCeti.Probability.RandomMatrix.LeadingMoments
+import TauCeti.Probability.RandomMatrix.Wigner.TraceIntegrability
 
 /-!
 # Expected empirical spectral moments and expected semicircle law for Wigner matrices

@@ -63,10 +63,10 @@ theorem meas_l2_opNorm_ge_le_integral_re_trace_pow_two_mul_div_pow
     simp [hnorm, not_le_of_gt hr]
   have hnonneg : ∀ᵐ ω ∂P, 0 ≤ RCLike.re ((A ω) ^ (2 * k)).trace :=
     hA.mono fun ω hω ↦ (by positivity : 0 ≤ ‖A ω‖ ^ (2 * k)).trans
-      (hω.l2_opNorm_pow_two_mul_le_re_trace_pow_two_mul k)
+      (hω.l2_opNorm_pow_two_mul_le_re_trace_pow_two_mul k fun _ ↦ hι)
   have hsub : {ω | r ≤ ‖A ω‖} ≤ᵐ[P] {ω | r ^ (2 * k) ≤ RCLike.re ((A ω) ^ (2 * k)).trace} :=
-    hA.mono fun _ hω h ↦
-      (pow_le_pow_left₀ hr.le h _).trans (hω.l2_opNorm_pow_two_mul_le_re_trace_pow_two_mul k)
+    hA.mono fun _ hω h ↦ (pow_le_pow_left₀ hr.le h _).trans
+      (hω.l2_opNorm_pow_two_mul_le_re_trace_pow_two_mul k fun _ ↦ hι)
   refine (measure_mono_ae hsub).trans ?_
   simpa only [pow_one] using meas_ge_le_integral_pow_div_pow
     (Y := fun ω ↦ RCLike.re ((A ω) ^ (2 * k)).trace) 1 (by simpa only [pow_one] using hint)

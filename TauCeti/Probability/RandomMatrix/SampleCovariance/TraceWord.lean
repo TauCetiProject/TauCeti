@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.Trace.Pow
 public import TauCeti.Probability.Independence.Integration
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Data.Fintype.SmallRange
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 
 /-!
@@ -200,13 +201,6 @@ private theorem norm_readFactor (s : Fin k ⊕ Fin k) (z : 𝕜) : ‖readFactor
 private theorem card_univ_sum_fin : #(univ : Finset (Fin k ⊕ Fin k)) = 2 * k := by
   simp [two_mul]
 
-/-- The Hölder exponent of a product of `m ≠ 0` factors in `L^(q * m)` is `q`. -/
-private theorem inv_natCast_mul_inv_mul_natCast {m : ℕ} (hm : m ≠ 0) (q : ℝ≥0∞) :
-    ((m : ℝ≥0∞) * (q * m)⁻¹)⁻¹ = q := by
-  have hm' : (m : ℝ≥0∞) ≠ 0 := by simpa
-  rw [ENNReal.mul_inv (.inr (by simp)) (.inr hm'), mul_left_comm,
-    ENNReal.mul_inv_cancel hm' (by simp), mul_one, inv_inv]
-
 /-- A bound on the `2k`th absolute moments of the entries of a matrix with a nonempty set of
 positions is nonnegative. -/
 private theorem nonneg_of_integral_norm_pow_le [Nonempty p] [Nonempty n] {B : ℝ}
@@ -221,14 +215,13 @@ private theorem memLp_prod_mul_star [IsFiniteMeasure P] {q : ℝ≥0∞}
   rcases eq_or_ne k 0 with rfl | hk
   · simp [memLp_const]
   simp_rw [prod_mul_star_eq_prod_readFactor]
-  have h := MemLp.fun_prod (s := (univ : Finset (Fin k ⊕ Fin k))) (p := fun _ ↦ q * (2 * k : ℕ))
+  refine memLp_fun_prod_of_memLp_mul_card
     (f := fun s ω ↦ readFactor s (X ω (bipartiteEdge u v s).1 (bipartiteEdge u v s).2))
-    fun s _ ↦ by
-      cases s
-      · exact hX _ _
-      · exact (hX _ _).star
-  rwa [sum_const, card_univ_sum_fin, nsmul_eq_mul,
-    inv_natCast_mul_inv_mul_natCast (by omega)] at h
+    ⟨.inl ⟨0, Nat.pos_of_ne_zero hk⟩, mem_univ _⟩ fun s _ ↦ ?_
+  rw [card_univ_sum_fin]
+  cases s
+  · exact hX _ _
+  · exact (hX _ _).star
 
 /-- On a finite measure space, the trace of the `k`th power of the sample covariance matrix of
 `X` lies in `L^q` whenever all entries of `X` lie in `L^(q * 2k)`. Neither independence nor

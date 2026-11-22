@@ -47,26 +47,15 @@ theorem integral_sq_spectralMeasure_wignerMatrix_coordinates (n : ℕ) (ω : Ω)
         ((∑ i : Fin (n + 1), η i.val ω ^ 2) +
           2 * ∑ p : FinStrictUpper (n + 1),
             ‖ξ ⟨(p.val.1.val, p.val.2.val), p.property⟩ ω‖ ^ 2) := by
-  let H := wignerMatrix ξ η (n + 1) ω
-  have hs : ∀ i j, ‖H i j‖ ^ 2 = ‖H j i‖ ^ 2 := by
-    intro i j
-    have h := (wignerMatrix_isHermitian ξ η ω (n + 1)).apply i j
-    dsimp only [H] at h ⊢
-    rw [← h, norm_star]
-  have hd (i : Fin (n + 1)) :
-      ‖H i i‖ ^ 2 = (n + 1 : ℝ)⁻¹ * η i.val ω ^ 2 := by
-    simpa only [Nat.cast_add, Nat.cast_one] using norm_wignerMatrix_apply_self_sq ξ η ω i
-  have hu (p : FinStrictUpper (n + 1)) :
-      ‖H p.val.1 p.val.2‖ ^ 2 =
-        (n + 1 : ℝ)⁻¹ * ‖ξ ⟨(p.val.1.val, p.val.2.val), Fin.val_fin_lt.2 p.property⟩ ω‖ ^ 2 := by
-    simpa only [Nat.cast_add, Nat.cast_one] using
-      norm_wignerMatrix_apply_sq_of_lt ξ η ω (Fin.val_fin_lt.2 p.property)
-  rw [integral_sq_spectralMeasure_wignerMatrix]
-  -- Name the Wigner matrix so the diagonal and upper-coordinate identities apply.
-  change (n + 1 : ℝ)⁻¹ * (∑ i, ∑ j, ‖H i j‖ ^ 2) = _
-  rw [sum_symmetric_pairs _ hs]
-  simp only [nsmul_eq_mul]
-  simp_rw [hd, hu, ← Finset.mul_sum]
+  -- The pairs whose values are ordered are the pairs ordered in `Fin (n + 1)`.
+  have hpairs : ∑ u : StrictUpperFin (n + 1), ‖ξ (wignerUpperIndex u) ω‖ ^ 2 =
+      ∑ p : FinStrictUpper (n + 1), ‖ξ ⟨(p.val.1.val, p.val.2.val), p.property⟩ ω‖ ^ 2 :=
+    Fintype.sum_equiv (Equiv.subtypeEquivRight fun _ ↦ Fin.val_fin_lt) _ _ fun u ↦ by
+      rw [show wignerUpperIndex u = ⟨(u.val.1.val, u.val.2.val), u.prop⟩ from
+        Subtype.ext (wignerUpperIndex_val u)]
+      rfl
+  rw [integral_sq_spectralMeasure_wignerMatrix, sum_norm_wignerMatrix_apply_sq, hpairs]
+  push_cast
   ring
 
 variable [MeasurableSpace Ω] {P : Measure Ω}

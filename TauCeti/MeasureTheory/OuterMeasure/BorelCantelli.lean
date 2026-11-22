@@ -50,14 +50,11 @@ theorem ae_eventually_notMem_of_eventually_measure_le {s : ℕ → Set α} {b : 
     (hb : (∑' n, b n) < ∞) (h : ∀ᶠ n in atTop, μ (s n) ≤ b n) :
     ∀ᵐ x ∂μ, ∀ᶠ n in atTop, x ∉ s n := by
   obtain ⟨N, hN⟩ := eventually_atTop.1 h
-  let t (n : ℕ) : Set α := if N ≤ n then s n else ∅
-  have ht : (∑' n, μ (t n)) < ∞ := (tsum_le_tsum fun n ↦ by
-    by_cases hn : N ≤ n
-    · simpa only [t, ite_eq_left hn] using hN n hn
-    · simp only [t, ite_eq_right hn, measure_empty, zero_le]).trans_lt hb
-  filter_upwards [ae_eventually_notMem ht.ne] with x hx
-  filter_upwards [hx, eventually_ge_atTop N] with n hn hn'
-  simpa only [t, ite_eq_left hn'] using hn
+  have hs : ∑' n, μ (s (n + N)) ≠ ∞ :=
+    ((tsum_le_tsum fun n ↦ hN _ (Nat.le_add_left N n)).trans
+      (tsum_comp_le_tsum_of_injective (add_left_injective N) b)).trans_lt hb |>.ne
+  filter_upwards [ae_eventually_notMem hs] with x hx
+  rwa [← map_add_atTop_eq_nat N, eventually_map]
 
 /-- If consecutive sets of a sequence differ by sets of summable measure, then for almost every
 point, membership in the sets is eventually the same as membership in their `liminf`. -/

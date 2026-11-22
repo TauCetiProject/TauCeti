@@ -9,7 +9,6 @@ public import TauCeti.Probability.Independence.Integration
 public import TauCeti.Combinatorics.TreeWalk.Product
 public import TauCeti.LinearAlgebra.Matrix.Trace.Pow
 public import TauCeti.Probability.RandomMatrix.Wigner.Basic
-public import TauCeti.Probability.RandomMatrix.Wigner.TraceIntegrability
 
 /-!
 # Trace words of Wigner matrices
@@ -43,10 +42,12 @@ case and proves integrability first.
   expectation.
 * `TauCeti.integral_prod_wignerMatrix_apply_eq_zero`: for independent centred corner entries, a
   product of entries reading some edge exactly once has expectation zero.
-* `TauCeti.integral_trace_pow_wignerMatrix`: when the corner entries are independent, centred and
-  in `Lᵏ`, the expectation of `(Hₙ ^ k).trace` is the sum, over the closed walks of length `k`
-  traversing each of their edges at least twice, of the expected products of entries along the
-  walk. Its integrability, `TauCeti.integrable_trace_pow_wignerMatrix`, is in
+* `TauCeti.integral_trace_pow_wignerMatrix`: for `k > 0`, when the corner entries are
+  independent, centred and in `Lᵏ`, the expectation of `(Hₙ ^ k).trace` is the sum, over the
+  closed walks of length `k` traversing each of their edges at least twice, of the expected
+  products of entries along the walk. The integrability of `(Hₙ ^ k).trace` for corner entries
+  in `Lᵏ`, which holds for every `k` including `0` and needs neither independence nor centering,
+  is `TauCeti.integrable_trace_pow_wignerMatrix` in
   `TauCeti.Probability.RandomMatrix.Wigner.TraceIntegrability`.
 
 * `TauCeti.integrable_prod_wignerMatrix_apply_path`,

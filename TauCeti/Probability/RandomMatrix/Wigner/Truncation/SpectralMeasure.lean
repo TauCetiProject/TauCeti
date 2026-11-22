@@ -11,17 +11,19 @@ public import TauCeti.Probability.RandomMatrix.SpectralMeasure.Perturbation
 /-!
 # Spectral statistics of truncated Wigner corners
 
-Here a spectral statistic is the empirical spectral average of a Lipschitz test function. The
-expected normalized squared Frobenius error bounds the Bochner integral of the squared difference
-of such averages and the outer probability of a large difference, uniformly over positive
-dimensions. At a fixed dimension, only the upper entries of that corner need a common centered,
-square-integrable law, and both bounds hold for an unrestricted diagonal. The common diagonal
-cancels in the matrix difference, but not necessarily in the difference of the averages, which
-depend nonlinearly on the matrix. So the integral bound is mean-square control only when that
-squared difference is integrable, for instance when the diagonal entries of the corner are almost
-everywhere measurable. Likewise, a nonmeasurable diagonal can make the event of a large
-difference nonmeasurable; the tail bounds are ordinary probability bounds whenever those events
-are measurable.
+Here a spectral statistic is the empirical spectral average of a Lipschitz test function. For a
+`K`-Lipschitz test function, `K²` times the expected normalized squared Frobenius error bounds the
+Bochner integral of the squared difference of such averages, and `K² / ε²` times it bounds the
+outer probability of a difference at least `ε > 0`. For truncation at `R`, that error is at most
+the second absolute moment of the common upper-entry law discarded beyond `R`, so the bounds are
+uniform over positive dimensions. At a fixed dimension, only the upper entries of that corner
+need a common centered, square-integrable law, and both bounds hold for an unrestricted diagonal.
+The common diagonal cancels in the matrix difference, but not necessarily in the difference of
+the averages, which depend nonlinearly on the matrix. So the integral bound is mean-square
+control only when that squared difference is integrable, for instance when the diagonal entries
+of the corner are almost everywhere measurable. Likewise, a nonmeasurable diagonal can make the
+event of a large difference nonmeasurable; the tail bounds are ordinary probability bounds
+whenever those events are measurable.
 
 ## References
 

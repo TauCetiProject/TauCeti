@@ -56,11 +56,16 @@ and resolvent methods:
 * the normalisation check `E trₙ Hₙ² = (σ² + (n - 1) s)/n` when the diagonal entries have second
   moment `σ²` and the off-diagonal ones second absolute moment `s`
   (`integral_re_trace_wignerMatrix_mul_self`);
+* the squared entry norms of a Wigner matrix of size `n` sum to `1/n` times the squared diagonal
+  coordinates plus twice the squared upper coordinates of the corner
+  (`sum_norm_wignerMatrix_apply_sq`);
 * the squared Frobenius distance of two Wigner matrices sharing a diagonal is `2/n` times the sum
   of the squared upper differences in the corner
-  (`TauCeti.Probability.norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin`). Hence, if the upper
-  differences in the corner of size `n + 1` have second absolute moment `s`, the matrices differ
-  by expected squared Frobenius norm `n s` (`integral_norm_wignerMatrix_sub_sq`).
+  (`TauCeti.Probability.norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin`), so its expectation is
+  `2/n` times the sum of their second absolute moments
+  (`integral_norm_wignerMatrix_sub_sq_eq_sum`). Hence, if the upper differences in the corner of
+  size `n + 1` have second absolute moment `s`, the matrices differ by expected squared Frobenius
+  norm `n s` (`integral_norm_wignerMatrix_sub_sq`).
 
 Centring, the second-moment normalisation and independence of the entries are not properties of
 the constructor: each theorem that uses one states it as a hypothesis.
@@ -343,8 +348,8 @@ theorem norm_wignerMatrix_apply_sq_of_ne {i j : Fin n} (h : i ≠ j) :
 absolute value divided by the matrix size. -/
 theorem norm_wignerMatrix_apply_sq_of_lt {i j : Fin n} (h : i.val < j.val) :
     ‖wignerMatrix ξ η n ω i j‖ ^ 2 = (n : ℝ)⁻¹ * ‖ξ ⟨(i.val, j.val), h⟩ ω‖ ^ 2 := by
-  rw [wignerMatrix_apply_of_lt _ _ _ h, norm_mul, mul_pow, norm_inv_ofReal_sqrt_natCast, inv_pow,
-    Real.sq_sqrt (Nat.cast_nonneg n)]
+  simpa only [min_eq_left h.le, max_eq_right h.le] using
+    norm_wignerMatrix_apply_sq_of_ne ξ η ω (Fin.ne_of_val_ne h.ne)
 
 /-- The normalised Wigner matrix is Hermitian for every sample point. -/
 theorem wignerMatrix_isHermitian (n : ℕ) : (wignerMatrix ξ η n ω).IsHermitian := by
@@ -409,6 +414,29 @@ section Frobenius
 
 open scoped Matrix.Norms.Frobenius
 
+/-- The squared entry norms of a Wigner matrix of size `n` sum to the squared diagonal
+coordinates plus twice the squared strictly upper coordinates of the corner, divided by `n`. -/
+theorem sum_norm_wignerMatrix_apply_sq (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ) (n : ℕ)
+    (ω : Ω) :
+    ∑ i : Fin n, ∑ j : Fin n, ‖wignerMatrix ξ η n ω i j‖ ^ 2 =
+      (n : ℝ)⁻¹ * (∑ i : Fin n, η i.val ω ^ 2 +
+        2 * ∑ u : StrictUpperFin n, ‖ξ (wignerUpperIndex u) ω‖ ^ 2) := by
+  have hsymm (i j : Fin n) :
+      ‖wignerMatrix ξ η n ω i j‖ ^ 2 = ‖wignerMatrix ξ η n ω j i‖ ^ 2 := by
+    rw [← (wignerMatrix_isHermitian ξ η ω n).apply i j, norm_star]
+  have hupper (u : StrictUpperFin n) : ‖wignerMatrix ξ η n ω u.val.1 u.val.2‖ ^ 2 =
+      (n : ℝ)⁻¹ * ‖ξ (wignerUpperIndex u) ω‖ ^ 2 :=
+    norm_wignerMatrix_apply_sq_of_lt ξ η ω u.prop
+  -- The pairs ordered in `Fin n` are the pairs whose values are ordered.
+  have hpairs : ∑ p : {p : Fin n × Fin n // p.1 < p.2},
+      ‖wignerMatrix ξ η n ω p.val.1 p.val.2‖ ^ 2 =
+        ∑ u : StrictUpperFin n, ‖wignerMatrix ξ η n ω u.val.1 u.val.2‖ ^ 2 :=
+    Fintype.sum_equiv (Equiv.subtypeEquivRight fun _ ↦ Fin.val_fin_lt.symm) _ _ fun _ ↦ rfl
+  rw [sum_symmetric_pairs _ hsymm, hpairs]
+  simp only [norm_wignerMatrix_apply_self_sq, hupper, ← Finset.mul_sum, nsmul_eq_mul,
+    Nat.cast_ofNat]
+  ring
+
 /-- Squared Frobenius error between Wigner matrices with a common diagonal, in terms of
 the squared errors on the strictly upper corner. -/
 theorem Probability.norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin
@@ -417,29 +445,10 @@ theorem Probability.norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin
     ‖wignerMatrix ξ η n ω - wignerMatrix ζ η n ω‖ ^ 2 =
       (2 / (n : ℝ)) * ∑ i : StrictUpperFin n,
         ‖ξ (wignerUpperIndex i) ω - ζ (wignerUpperIndex i) ω‖ ^ 2 := by
-  let d (ij : StrictUpper) (ω : Ω) := ξ ij ω - ζ ij ω
-  let D := wignerMatrix d (fun _ _ ↦ 0) n ω
-  have hD : wignerMatrix ξ η n ω - wignerMatrix ζ η n ω = D := by
-    simp only [wignerMatrix_sub, sub_self, D, d]
-  have hDh : D.IsHermitian := wignerMatrix_isHermitian d _ ω n
-  have hsymm (i j : Fin n) : ‖D i j‖ ^ 2 = ‖D j i‖ ^ 2 := by
-    rw [← hDh.apply i j, norm_star]
-  have hdiag (i : Fin n) : ‖D i i‖ ^ 2 = 0 := by
-    simp [D]
-  have hupper (p : StrictUpperFin n) : ‖D p.val.1 p.val.2‖ ^ 2 =
-      (n : ℝ)⁻¹ * ‖ξ (wignerUpperIndex p) ω - ζ (wignerUpperIndex p) ω‖ ^ 2 := by
-    have hp : wignerUpperIndex p = ⟨(p.val.1.val, p.val.2.val), p.prop⟩ :=
-      Subtype.ext (wignerUpperIndex_val _)
-    rw [hp]
-    exact norm_wignerMatrix_apply_sq_of_lt d (fun _ _ ↦ 0) ω p.prop
-  -- The pairs ordered in `Fin n` are the pairs whose values are ordered.
-  have hpairs : ∑ p : {p : Fin n × Fin n // p.1 < p.2}, ‖D p.val.1 p.val.2‖ ^ 2 =
-      ∑ p : StrictUpperFin n, ‖D p.val.1 p.val.2‖ ^ 2 :=
-    Fintype.sum_equiv (Equiv.subtypeEquivRight fun _ ↦ Fin.val_fin_lt.symm) _ _ fun p ↦ by
-      rw [Equiv.subtypeEquivRight_apply]
-  rw [hD, Matrix.frobenius_norm_sq_eq_sum_norm_sq, sum_symmetric_pairs _ hsymm, hpairs]
-  simp only [hdiag, Finset.sum_const_zero, zero_add, hupper, ← Finset.mul_sum, nsmul_eq_mul,
-    Nat.cast_ofNat, div_eq_mul_inv, mul_assoc]
+  rw [wignerMatrix_sub, Matrix.frobenius_norm_sq_eq_sum_norm_sq, sum_norm_wignerMatrix_apply_sq]
+  simp only [sub_self, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow,
+    Finset.sum_const_zero, zero_add]
+  ring
 
 end Frobenius
 
@@ -854,6 +863,20 @@ theorem integral_re_trace_wignerMatrix_mul_self {σ2 s : ℝ}
   · field_simp
 
 open scoped Matrix.Norms.Frobenius in
+/-- Keeping the same diagonal, the expected squared Frobenius error at size `n` is `2 / n` times
+the sum of the second absolute moments of the upper-coordinate differences in the corner.
+The differences may have different laws, and entries outside the corner are unrestricted. -/
+theorem integral_norm_wignerMatrix_sub_sq_eq_sum {ξ' : StrictUpper → Ω → ℂ} {n : ℕ}
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (fun ω ↦ ξ ij ω - ξ' ij ω) 2 P) :
+    ∫ ω, ‖wignerMatrix ξ η n ω - wignerMatrix ξ' η n ω‖ ^ 2 ∂P =
+      (2 / (n : ℝ)) * ∑ u : StrictUpperFin n,
+        ∫ ω, ‖ξ (wignerUpperIndex u) ω - ξ' (wignerUpperIndex u) ω‖ ^ 2 ∂P := by
+  have hj (u : StrictUpperFin n) : (wignerUpperIndex u).val.2 < n := u.val.2.isLt
+  simp_rw [Probability.norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin]
+  rw [integral_const_mul, integral_finsetSum _ fun u _ ↦
+    (memLp_two_iff_integrable_sq_norm (hξ _ (hj u)).aestronglyMeasurable).mp (hξ _ (hj u))]
+
+open scoped Matrix.Norms.Frobenius in
 /-- Keeping the same diagonal, a common second absolute moment `s` of the upper-coordinate
 differences in the corner gives expected squared Frobenius error `n * s` at size `n + 1`.
 Entries outside the corner are unrestricted. -/
@@ -868,9 +891,7 @@ theorem integral_norm_wignerMatrix_sub_sq {ξ' : StrictUpper → Ω → ℂ} {n 
     rw [Fintype.card_subtype]
     simp only [Fin.val_fin_lt, Fintype.card_product_filter_lt, Fintype.card_fin]
     exact_mod_cast h.symm
-  simp_rw [Probability.norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin]
-  rw [integral_const_mul, integral_finsetSum _ fun u _ ↦
-    (memLp_two_iff_integrable_sq_norm (hξ _ (hj u)).aestronglyMeasurable).mp (hξ _ (hj u))]
+  rw [integral_norm_wignerMatrix_sub_sq_eq_sum hξ]
   simp only [hs _ (hj _), Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
   push_cast
   field_simp
