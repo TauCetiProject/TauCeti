@@ -83,6 +83,8 @@ equivalent to a nonarchimedean absolute value.
   `2` has a unique infinite place.
 * `NumberField.InfinitePlace.embedding_eq_or_eq_conjugate`: in a field with a unique infinite
   place, every complex embedding is `w.embedding` or its conjugate.
+* `NumberField.InfinitePlace.IsComplex.embedding_ne_conjugate`: at a complex place, `w.embedding`
+  is distinct from its conjugate.
 -/
 
 public section
@@ -266,6 +268,11 @@ theorem InfinitePlace.embedding_eq_or_eq_conjugate [Subsingleton (InfinitePlace 
     (w : InfinitePlace K) (σ : K →+* ℂ) :
     σ = w.embedding ∨ σ = ComplexEmbedding.conjugate w.embedding :=
   (mk_eq_iff.mp ((mk_embedding w).trans (Subsingleton.elim _ _))).imp Eq.symm Eq.symm
+
+/-- At a complex infinite place `w`, `w.embedding` is distinct from its complex conjugate. -/
+theorem InfinitePlace.IsComplex.embedding_ne_conjugate {w : InfinitePlace K} (hw : w.IsComplex) :
+    w.embedding ≠ ComplexEmbedding.conjugate w.embedding := fun h ↦
+  not_isReal_iff_isComplex.mpr hw (isReal_iff.mpr (ComplexEmbedding.isReal_iff.mpr h.symm))
 
 /-- The real embedding of the restriction of a real place `w` along `f` is the real embedding of
 `w` composed with `f`. -/

@@ -148,14 +148,9 @@ theorem unitaryWeight_angularGrossencharacter_two_add_toInteger_eq_inv_prod {F :
     [NumberField F] [IsCyclotomicExtension {4} ℚ F] {ζ : F} (hζ : IsPrimitiveRoot ζ 4) (k : ℤ) :
     (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) =
       (∏ τ : F →+* ℂ, τ (2 + ζ) ^ (angularGrossencharacter F k).infinityType τ)⁻¹ := by
-  set α : 𝓞 F := (2 : 𝓞 F) + hζ.toInteger
-  have hαF : (algebraMap (𝓞 F) F α) ≠ 0 :=
-    RingOfIntegers.coe_ne_zero_iff.mpr (two_add_toInteger_ne_zero_of_four hζ)
-  let x : Fˣ := Units.mk0 (algebraMap (𝓞 F) F α) hαF
-  have hcompat := (angularGrossencharacter F k).compatibility_inv x (isCongrOne_one x) α rfl
-  have hxval : (x : F) = 2 + ζ := by
-    simp [x, α, map_ofNat, hζ.coe_toInteger]
-  simpa [idealShift_angularGrossencharacter, hxval] using hcompat
+  simpa [RingOfIntegers.coe_eq_algebraMap, map_add, map_ofNat, hζ.coe_toInteger] using
+    unitaryWeight_angularGrossencharacter_span_singleton_eq_inv_prod k
+      (two_add_toInteger_ne_zero_of_four hζ)
 
 /-- **Sign check at `2 + i` (negative half)**: for `k ≠ 0`, the ideal value of
 `angularGrossencharacter F k` at `(2 + ζ)` is **not** equal to the uninverted archimedean monomial
@@ -195,17 +190,13 @@ theorem angularGrossencharacter_not_isNormTwist
   have hNβ : Ideal.absNorm (Ideal.span {β}) = 5 :=
     GaussianRationals.absNorm_span_two_sub hζ.minpoly_toInteger_eq_X_sq_add_one
       (IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ)
-  have hαgood : (angularGrossencharacter F k).unitaryWeight.val.IsGood (Ideal.span {α}) := by
-    rw [MultiplicativeIdealWeight.IsGood, badPrimes_unitaryWeight_angularGrossencharacter,
-      Ideal.isPrimeTo_empty]
-    exact Ideal.absNorm_eq_zero_iff.not.mp (by omega)
-  have hβgood : (angularGrossencharacter F k).unitaryWeight.val.IsGood (Ideal.span {β}) := by
-    rw [MultiplicativeIdealWeight.IsGood, badPrimes_unitaryWeight_angularGrossencharacter,
-      Ideal.isPrimeTo_empty]
-    exact Ideal.absNorm_eq_zero_iff.not.mp (by omega)
+  have hgood {I : Ideal (𝓞 F)} (hI : Ideal.absNorm I ≠ 0) :
+      (angularGrossencharacter F k).unitaryWeight.val.IsGood I :=
+    (Grossencharacter.isGood_unitaryWeight_modulus_one_iff _ _).mpr
+      (Ideal.absNorm_eq_zero_iff.not.mp hI)
   have heqαβ : (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {α}) =
       (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {β}) :=
-    htwist.eq_of_absNorm_eq hαgood hβgood (hNα.trans hNβ.symm)
+    htwist.eq_of_absNorm_eq (hgood (by omega)) (hgood (by omega)) (hNα.trans hNβ.symm)
   have hmul5 : α * β = (5 : 𝓞 F) :=
     GaussianRationals.two_add_mul_two_sub_eq_five hζ.minpoly_toInteger_eq_X_sq_add_one
   have hval5 : (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {(5 : 𝓞 F)}) = 1 := by

@@ -35,9 +35,8 @@ roots of unity of absolute value `√2`.
   cardinality.
 * `TauCeti.norm_map_multiset_sum_le_card`: the image in `ℂ` of a sum of `n`-th roots of unity has
   absolute value at most the number of summands, under any ring homomorphism.
-* `Complex.zpow_mul_eq_one_of_pow_eq_one`, `Complex.div_norm_zpow_mul_eq_one_of_pow_eq_one`:
-  multiple-of-`n` integer powers of a complex `n`-th root of unity and its unit-norm quotient
-  equal `1`.
+* `Complex.div_norm_zpow_mul_eq_one_of_pow_eq_one`: multiple-of-`n` integer powers of a unit-norm
+  normalized complex `n`-th root of unity equal `1`.
 * `Complex.isPrimitiveRoot_four_iff`: the complex primitive fourth roots of unity are `± I`.
 
 ## References
@@ -129,18 +128,14 @@ end TauCeti
 
 namespace Complex
 
-/-- Any integer multiple of `n` raises a complex `n`-th root of unity to `1`. -/
-theorem zpow_mul_eq_one_of_pow_eq_one {z : ℂ} {n : ℕ} (hz : z ^ n = 1) (m : ℤ) :
-    z ^ ((n : ℤ) * m) = 1 := by
-  rw [zpow_mul, zpow_natCast, hz, one_zpow]
-
-/-- Normalizing a complex `n`-th root of unity (`n ≠ 0`) by its norm and raising to any integer
-multiple of `n` yields `1`. -/
-theorem div_norm_zpow_mul_eq_one_of_pow_eq_one {z : ℂ} {n : ℕ} (hz : z ^ n = 1)
-    (hn : n ≠ 0) (m : ℤ) :
+/-- Normalizing a complex `n`-th root of unity by its norm and raising to any integer multiple of
+`n` yields `1`. -/
+theorem div_norm_zpow_mul_eq_one_of_pow_eq_one {z : ℂ} {n : ℕ} (hz : z ^ n = 1) (m : ℤ) :
     (z / (‖z‖ : ℂ)) ^ ((n : ℤ) * m) = 1 := by
-  rw [norm_eq_one_of_pow_eq_one hz hn, ofReal_one, div_one]
-  exact zpow_mul_eq_one_of_pow_eq_one hz m
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  · rw [norm_eq_one_of_pow_eq_one hz hn, ofReal_one, div_one, zpow_mul, zpow_natCast, hz,
+      one_zpow]
 
 /-- The complex primitive fourth roots of unity are `Complex.I` and `-Complex.I`. -/
 theorem isPrimitiveRoot_four_iff {ζ : ℂ} :

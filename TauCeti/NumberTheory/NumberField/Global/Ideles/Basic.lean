@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.AdeleRing
+public import Mathlib.Topology.Algebra.Group.Units
+public import TauCeti.NumberTheory.NumberField.Global.Places.Connected
 
-import Mathlib.Topology.Algebra.Group.Units
 import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Units
 
@@ -26,12 +27,14 @@ finite-idele theory of fractional ideals: on a principal idele the finite compon
 principal finite idele of the same element.
 
 The coordinate maps `IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord` and
-`NumberField.InfinitePlace.ideleInfiniteCoord` read the local units of an idele, and
+`NumberField.InfinitePlace.ideleInfiniteCoord` read the local units of an idele,
 `NumberField.InfinitePlace.continuous_ideleInfiniteCoord` records continuity of the infinite
-coordinate maps. `NumberField.IdeleGroup.ext` determines an idele by equality of all these
-coordinates. The constructor `TauCeti.GlobalNumberFields.ideleOfUnits` assembles local units that
-are integral units at almost every finite place;
-`TauCeti.GlobalNumberFields.ideleFiniteCoord_ideleOfUnits` and
+coordinate maps, and `NumberField.InfinitePlace.ideleComplexCoord` bundles the continuous
+projection to `ℂˣ` at any complex infinite place together with its coercion, principal-idele,
+archimedean-local, and finite-local evaluation rules. `NumberField.IdeleGroup.ext` determines an
+idele by equality of all these coordinates. The constructor
+`TauCeti.GlobalNumberFields.ideleOfUnits` assembles local units that are integral units at almost
+every finite place; `TauCeti.GlobalNumberFields.ideleFiniteCoord_ideleOfUnits` and
 `TauCeti.GlobalNumberFields.ideleInfiniteCoord_ideleOfUnits` recover those units.
 
 The embeddings of the units of the completions, at the infinite and at the finite places, into
@@ -212,7 +215,9 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele_toFini
     (v : HeightOneSpectrum R) (x : IdeleGroup R K) :
     v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele R K (IdeleGroup.toFiniteIdele R K x)) =
       v.ideleFiniteCoord x :=
-  Units.ext (rfl)
+  Units.ext <| by
+    rw [coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele, IdeleGroup.coe_toFiniteIdele,
+      coe_ideleFiniteCoord]
 
 @[simp]
 theorem NumberField.InfinitePlace.coe_ideleInfiniteCoord
@@ -225,6 +230,70 @@ theorem NumberField.InfinitePlace.coe_ideleInfiniteCoord
 theorem NumberField.InfinitePlace.continuous_ideleInfiniteCoord (w : InfinitePlace K) :
     Continuous (w.ideleInfiniteCoord : IdeleGroup R K → w.Completionˣ) :=
   ((continuous_apply w).comp continuous_fst).units_map _
+
+/-- The continuous homomorphism extracting the complex coordinate of an idele at a complex place
+`w` as a unit in `ℂˣ`, via `continuousMulEquivComplexOfIsComplex hw`. -/
+def NumberField.InfinitePlace.ideleComplexCoord {w : InfinitePlace K} (hw : w.IsComplex) :
+    IdeleGroup R K →ₜ* ℂˣ :=
+  (ContinuousMonoidHom.toContinuousMonoidHom
+    (Units.mapContinuousMulEquiv (Completion.continuousMulEquivComplexOfIsComplex hw))).comp
+    ⟨w.ideleInfiniteCoord, w.continuous_ideleInfiniteCoord⟩
+
+/-- The complex coordinate of an idele coerces to `continuousMulEquivComplexOfIsComplex hw` applied
+to its infinite coordinate at `w`. -/
+@[simp]
+theorem NumberField.InfinitePlace.coe_ideleComplexCoord {w : InfinitePlace K} (hw : w.IsComplex)
+    (x : IdeleGroup R K) :
+    (w.ideleComplexCoord (R := R) hw x : ℂ) =
+      Completion.continuousMulEquivComplexOfIsComplex hw (w.ideleInfiniteCoord x : w.Completion) :=
+  (rfl)
+
+/-- On a principal idele, the complex coordinate at `w` is `w.embedding` of the global element. -/
+@[simp]
+theorem NumberField.InfinitePlace.ideleComplexCoord_unitEmbedding {w : InfinitePlace K}
+    (hw : w.IsComplex) (x : Kˣ) :
+    w.ideleComplexCoord (R := R) hw (IdeleGroup.unitEmbedding R K x) =
+      Units.map w.embedding.toMonoidHom x := by
+  apply Units.ext
+  rw [coe_ideleComplexCoord, Completion.continuousMulEquivComplexOfIsComplex_apply,
+    coe_ideleInfiniteCoord, IdeleGroup.val_unitEmbedding_apply]
+  simp
+
+/-- On an idele concentrated at the complex place `w`, the complex coordinate at `w` is the image
+of the local unit under `continuousMulEquivComplexOfIsComplex hw`. -/
+@[simp]
+theorem NumberField.InfinitePlace.ideleComplexCoord_ofCompletion_self {w : InfinitePlace K}
+    (hw : w.IsComplex) (u : w.Completionˣ) :
+    w.ideleComplexCoord (R := R) hw (IdeleGroup.ofCompletion R K w u) =
+      Units.mapContinuousMulEquiv (Completion.continuousMulEquivComplexOfIsComplex hw) u := by
+  apply Units.ext
+  classical
+  rw [coe_ideleComplexCoord, coe_ideleInfiniteCoord, Units.mapContinuousMulEquiv_apply,
+    Units.coe_map]
+  exact congrArg (Completion.continuousMulEquivComplexOfIsComplex hw)
+    ((InfiniteAdeleRing.ofCompletion_apply w u w).trans (Pi.mulSingle_eq_same _ _))
+
+/-- On an idele concentrated at a different infinite place `w' ≠ w`, the complex coordinate at `w`
+is `1`. -/
+@[simp]
+theorem NumberField.InfinitePlace.ideleComplexCoord_ofCompletion_of_ne {w w' : InfinitePlace K}
+    (hw : w.IsComplex) (h : w ≠ w') (u : w'.Completionˣ) :
+    w.ideleComplexCoord (R := R) hw (IdeleGroup.ofCompletion R K w' u) = 1 := by
+  apply Units.ext
+  classical
+  rw [coe_ideleComplexCoord, coe_ideleInfiniteCoord, Units.val_one]
+  exact (congrArg (Completion.continuousMulEquivComplexOfIsComplex hw)
+    ((InfiniteAdeleRing.ofCompletion_apply w' u w).trans (Pi.mulSingle_eq_of_ne h _))).trans
+    (map_one _)
+
+/-- On an idele concentrated at a finite place `v`, the complex coordinate at `w` is `1`. -/
+@[simp]
+theorem NumberField.InfinitePlace.ideleComplexCoord_ofAdicCompletion {w : InfinitePlace K}
+    (hw : w.IsComplex) (v : HeightOneSpectrum R) (u : (v.adicCompletion K)ˣ) :
+    w.ideleComplexCoord (R := R) hw (IdeleGroup.ofAdicCompletion R K v u) = 1 := by
+  apply Units.ext
+  rw [coe_ideleComplexCoord, coe_ideleInfiniteCoord, Units.val_one]
+  exact map_one _
 
 /-- **Ideles are determined by their coordinates**: two ideles with the same coordinate at every
 infinite and finite place are equal. -/

@@ -71,6 +71,11 @@ L-function `Grossencharacter.lFunctionC` is the canonical meromorphic continuati
   `raySubgroup 𝔪 = ⊤`.
 * `TauCeti.LFunctions.Grossencharacter.badPrimes_unitaryWeight`: the bad primes of the unitary
   weight of a presentation are the primes in the support of `𝔪`.
+* `TauCeti.LFunctions.Grossencharacter.isGood_unitaryWeight_iff_of_finitePart_eq_top`,
+  `TauCeti.LFunctions.Grossencharacter.isGood_unitaryWeight_modulus_one_iff`: an ideal is good for
+  the unitary weight of a presentation with trivial finite modulus part iff it is nonzero.
+* `TauCeti.LFunctions.Grossencharacter.unitaryWeight_eq_mul`: multiplying underlying Hecke
+  characters at the same modulus multiplies their unitary ideal weights.
 * `TauCeti.LFunctions.Grossencharacter.isAlgebraic`: the presented Hecke character is algebraic.
 * `TauCeti.LFunctions.Grossencharacter.conductorExponent_le_exponent`,
   `TauCeti.LFunctions.Grossencharacter.finiteConductor_dvd_finitePart`,
@@ -192,6 +197,26 @@ theorem badPrimes_unitaryWeight (χ : Grossencharacter K 𝔪) :
   rw [χ.unitaryWeight_apply v hv u hu'] at h0
   exact Units.ne_zero _ h0
 
+/-- An ideal is good for the unitary weight of a presentation at a modulus with trivial finite part
+if and only if the ideal is nonzero. -/
+theorem isGood_unitaryWeight_iff_of_finitePart_eq_top (χ : Grossencharacter K 𝔪)
+    (h : 𝔪.finitePart = ⊤) (I : Ideal (𝓞 K)) :
+    χ.unitaryWeight.val.IsGood I ↔ I ≠ ⊥ := by
+  have hsupp : 𝔪.support = ∅ := by
+    ext v
+    rw [Modulus.mem_support_iff, h]
+    simpa only [Finset.notMem_empty, iff_false, ← Ideal.one_eq_top] using v.prime.not_dvd_one
+  rw [MultiplicativeIdealWeight.IsGood, χ.badPrimes_unitaryWeight, hsupp, Finset.coe_empty,
+    Ideal.isPrimeTo_empty]
+
+/-- For a presentation at `Modulus.one K`, an ideal is good for the unitary weight if and only if
+it is nonzero. -/
+@[simp]
+theorem isGood_unitaryWeight_modulus_one_iff (χ : Grossencharacter K (Modulus.one K))
+    (I : Ideal (𝓞 K)) :
+    χ.unitaryWeight.val.IsGood I ↔ I ≠ ⊥ :=
+  χ.isGood_unitaryWeight_iff_of_finitePart_eq_top Modulus.one_finitePart I
+
 /-- Two presentations of the same Hecke character, even at different moduli, have the same
 algebraic infinity type. -/
 theorem infinityType_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K 𝔫}
@@ -210,6 +235,24 @@ theorem infinityType_eq_zero_of_isFiniteOrder (χ : Grossencharacter K 𝔪)
     exact ⟨ε, (zero_add _).symm⟩
   exact AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff.mp
     (χ.agreesOnIdentityComponent.symm.trans hagrees)
+
+/-- If the underlying Hecke character of a presentation `ξ` at `𝔪` is the product of those of
+presentations `χ` and `ψ` at the same modulus `𝔪`, then `ξ.unitaryWeight = χ.unitaryWeight *
+ψ.unitaryWeight`. -/
+theorem unitaryWeight_eq_mul {ξ χ ψ : Grossencharacter K 𝔪}
+    (h : ξ.toHeckeCharacter = χ.toHeckeCharacter * ψ.toHeckeCharacter) :
+    ξ.unitaryWeight = χ.unitaryWeight * ψ.unitaryWeight := by
+  refine Subtype.ext (MultiplicativeIdealWeight.ext_heightOneSpectrum fun v ↦ ?_)
+  rw [UnitaryIdealWeight.val_mul, MultiplicativeIdealWeight.mul_apply]
+  by_cases hv : v.asIdeal ∣ 𝔪.finitePart
+  · rw [ξ.unitaryWeight_apply_of_dvd hv, χ.unitaryWeight_apply_of_dvd hv,
+      ψ.unitaryWeight_apply_of_dvd hv, mul_zero]
+  · have : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+    obtain ⟨u, hu⟩ := TauCeti.exists_isUniformizer (v.adicCompletion K)
+    have hu' := v.isUniformizer_iff_valued_eq_exp_neg_one.mp hu
+    rw [ξ.unitaryWeight_apply v hv u hu', χ.unitaryWeight_apply v hv u hu',
+      ψ.unitaryWeight_apply v hv u hu', h, HeckeCharacter.unitaryPart_mul,
+      HeckeCharacter.finiteComponent_mul, ContinuousMonoidHom.mul_apply, Units.val_mul]
 
 /-- **A presentation is determined by its Hecke character.** The infinity type is determined on
 the identity component (`AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff`), and
