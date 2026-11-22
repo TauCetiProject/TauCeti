@@ -50,11 +50,8 @@ theorem hasFDerivAt_comp_inverse_fderiv_zero {g : E → F} (hinv : (fderiv 𝕜 
     have h := hg'.comp (0 : F) (fderiv 𝕜 g 0).inverse.hasFDerivAt
     rwa [hinv.self_comp_inverse] at h
   -- Otherwise the derivative is `0`, which is invertible only when `F` is trivial.
-  · obtain ⟨e, he⟩ := hinv
-    rw [fderiv_zero_of_not_differentiableAt hg] at he
-    have : Subsingleton F := ⟨fun y y' ↦ by
-      rw [← e.apply_symm_apply y, ← e.apply_symm_apply y', ← ContinuousLinearEquiv.coe_coe, he]
-      simp⟩
+  · rw [fderiv_zero_of_not_differentiableAt hg] at hinv
+    have := (ContinuousLinearMap.isInvertible_zero_iff.1 hinv).2
     exact (hasFDerivAt_of_subsingleton _ _).congr_fderiv (Subsingleton.elim _ _)
 
 /-- **Normalizing a family by its derivatives at zero.** Let `B` be jointly `C^(n + 1)` on an
