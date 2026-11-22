@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Basic
 public import Mathlib.CategoryTheory.Subobject.Limits
-import Mathlib.CategoryTheory.Abelian.Exact
+public import TauCeti.CategoryTheory.Subobject.Limits
 import Mathlib.CategoryTheory.Abelian.Subobject
 import TauCeti.CategoryTheory.Abelian.ImageSubobject
 import TauCeti.CategoryTheory.Subobject.Image
@@ -29,8 +29,6 @@ of a subquotient back to the ambient object.
   subobject of `X` along `p` is that subobject.
 * `CategoryTheory.Subobject.pullback_exists_eq_self_of_kernelSubobject_le`: the preimage of the
   image of a subobject of `Y` containing the kernel of `p` is that subobject.
-* `CategoryTheory.Limits.kernelSubobject_cokernel_π`: the kernel of the cokernel of a
-  monomorphism `f` is the subobject represented by `f`.
 -/
 
 public section
@@ -40,18 +38,6 @@ open CategoryTheory Limits
 universe v u
 
 variable {C : Type u} [Category.{v} C] [Abelian C] {X Y : C}
-
-namespace CategoryTheory.Limits
-
-/-- The kernel of the cokernel of a monomorphism `f` is the subobject represented by `f`. -/
-@[simp]
-lemma kernelSubobject_cokernel_π {W : C} (f : W ⟶ Y) [Mono f] :
-    kernelSubobject (cokernel.π f) = Subobject.mk f := by
-  rw [← imageSubobject_mono f]
-  exact ((ShortComplex.mk f (cokernel.π f) (cokernel.condition f)).exact_iff_image_eq_kernel.1
-    (ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel f))).symm
-
-end CategoryTheory.Limits
 
 namespace CategoryTheory.Subobject
 

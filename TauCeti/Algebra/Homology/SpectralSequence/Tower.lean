@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.SpectralSequence.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.Subquotient
+import TauCeti.CategoryTheory.Subobject.Basic
 
 /-!
 # Cycle and boundary towers, stabilisation, and degeneration of spectral sequences
@@ -84,24 +85,24 @@ section Tower
 variable (E : SpectralSequence C c r₀) (pq : κ)
 
 /-- The canonical subquotient presentation of `(E.page r).X pq` inside `(E.page r₀).X pq`, built
-by induction on `r ≥ r₀` from `SubquotientPresentation.id` and `ShortComplex.homologyPresentation`
+by induction on `r ≥ r₀` from `SubquotientPresentation.refl` and `ShortComplex.homologyPresentation`
 transported along `E.iso`. -/
 noncomputable def pagePresentation (r : ℤ) (hr : r₀ ≤ r := by lia) :
     SubquotientPresentation ((E.page r₀).X pq) ((E.page r hr).X pq) :=
   Int.leInduction
     (motive := fun r hr ↦ SubquotientPresentation ((E.page r₀).X pq) ((E.page r hr).X pq))
-    (SubquotientPresentation.id ((E.page r₀).X pq))
-    (fun s hs p ↦ p.comp ((((E.page s hs).sc pq).homologyPresentation).transIso
+    (SubquotientPresentation.refl ((E.page r₀).X pq))
+    (fun s hs p ↦ p.trans ((((E.page s hs).sc pq).homologyPresentation).mapIso
       (E.iso s (s + 1) pq rfl hs))) r hr
 
 @[simp]
 theorem pagePresentation_base :
-    E.pagePresentation pq r₀ le_rfl = SubquotientPresentation.id ((E.page r₀).X pq) :=
+    E.pagePresentation pq r₀ le_rfl = SubquotientPresentation.refl ((E.page r₀).X pq) :=
   Int.leInduction_base _ _
 
 theorem pagePresentation_add_one (r : ℤ) (hr : r₀ ≤ r) :
-    E.pagePresentation pq (r + 1) (Int.le_add_one hr) = (E.pagePresentation pq r hr).comp
-      ((((E.page r hr).sc pq).homologyPresentation).transIso (E.iso r (r + 1) pq rfl hr)) :=
+    E.pagePresentation pq (r + 1) (Int.le_add_one hr) = (E.pagePresentation pq r hr).trans
+      ((((E.page r hr).sc pq).homologyPresentation).mapIso (E.iso r (r + 1) pq rfl hr)) :=
   Int.leInduction_add_one _ _ r hr
 
 /-- The `r`-cycle subobject `Z_r(pq) ≤ (E.page r₀).X pq` at position `pq`. -/
@@ -114,23 +115,27 @@ noncomputable abbrev boundariesSubobject (r : ℤ) (hr : r₀ ≤ r := by lia) :
 
 @[simp]
 theorem cyclesSubobject_base : E.cyclesSubobject pq r₀ le_rfl = ⊤ := by
-  rw [cyclesSubobject, pagePresentation_base]
+  rw [cyclesSubobject, pagePresentation_base, SubquotientPresentation.refl_Z]
 
 @[simp]
 theorem boundariesSubobject_base : E.boundariesSubobject pq r₀ le_rfl = ⊥ := by
-  rw [boundariesSubobject, pagePresentation_base]
+  rw [boundariesSubobject, pagePresentation_base, SubquotientPresentation.refl_B]
 
 /-- On page `r + 1`, `Z_{r+1}(pq)` is the preimage of `kernelSubobject ((E.page r).dFrom pq)`. -/
 theorem cyclesSubobject_add_one (r : ℤ) (hr : r₀ ≤ r) :
     E.cyclesSubobject pq (r + 1) (Int.le_add_one hr) =
       (E.pagePresentation pq r hr).preimage (kernelSubobject ((E.page r hr).dFrom pq)) := by
-  rw [cyclesSubobject, pagePresentation_add_one E pq r hr]; rfl
+  rw [cyclesSubobject, pagePresentation_add_one E pq r hr, SubquotientPresentation.trans_Z,
+    SubquotientPresentation.mapIso_Z, SubquotientPresentation.ofIsColimit_Z]
+  rfl
 
 /-- On page `r + 1`, `B_{r+1}(pq)` is the preimage of `imageSubobject ((E.page r).dTo pq)`. -/
 theorem boundariesSubobject_add_one (r : ℤ) (hr : r₀ ≤ r) :
     E.boundariesSubobject pq (r + 1) (Int.le_add_one hr) =
       (E.pagePresentation pq r hr).preimage (imageSubobject ((E.page r hr).dTo pq)) := by
-  rw [boundariesSubobject, pagePresentation_add_one E pq r hr]; rfl
+  rw [boundariesSubobject, pagePresentation_add_one E pq r hr, SubquotientPresentation.trans_B,
+    SubquotientPresentation.mapIso_B, SubquotientPresentation.ofIsColimit_B]
+  rfl
 
 /-- On every page `r ≥ r₀`, boundaries lie inside cycles: `B_r(pq) ≤ Z_r(pq)`. -/
 theorem boundariesSubobject_le_cyclesSubobject (r : ℤ) (hr : r₀ ≤ r := by lia) :
@@ -139,12 +144,12 @@ theorem boundariesSubobject_le_cyclesSubobject (r : ℤ) (hr : r₀ ≤ r := by 
 /-- The cycle tower decreases at each page: `Z_{r+1}(pq) ≤ Z_r(pq)`. -/
 theorem cyclesSubobject_add_one_le (r : ℤ) (hr : r₀ ≤ r) :
     E.cyclesSubobject pq (r + 1) (Int.le_add_one hr) ≤ E.cyclesSubobject pq r hr := by
-  rw [cyclesSubobject_add_one E pq r hr]; exact (E.pagePresentation pq r hr).preimage_le _
+  rw [cyclesSubobject_add_one E pq r hr]; exact (E.pagePresentation pq r hr).preimage_le_Z _
 
 /-- The boundary tower increases at each page: `B_r(pq) ≤ B_{r+1}(pq)`. -/
 theorem le_boundariesSubobject_add_one (r : ℤ) (hr : r₀ ≤ r) :
     E.boundariesSubobject pq r hr ≤ E.boundariesSubobject pq (r + 1) (Int.le_add_one hr) := by
-  rw [boundariesSubobject_add_one E pq r hr]; exact (E.pagePresentation pq r hr).le_preimage _
+  rw [boundariesSubobject_add_one E pq r hr]; exact (E.pagePresentation pq r hr).B_le_preimage _
 
 /-- The cycle tower `r ↦ Z_r(pq)` is antitone. -/
 theorem cyclesSubobject_anti {r₁ r₂ : ℤ} (h₁ : r₀ ≤ r₁) (h₁₂ : r₁ ≤ r₂) :
@@ -202,12 +207,12 @@ theorem isZero_page_X_iff_boundariesSubobject_eq_cyclesSubobject (r : ℤ) (hr :
 /-- Rebasing compatibility for `pagePresentation`. -/
 theorem pagePresentation_eq_comp_fromPage (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hsr : s ≤ r) :
     E.pagePresentation pq r (hs.trans hsr) =
-      (E.pagePresentation pq s hs).comp ((E.fromPage s hs).pagePresentation pq r hsr) := by
+      (E.pagePresentation pq s hs).trans ((E.fromPage s hs).pagePresentation pq r hsr) := by
   induction r, hsr using Int.leInduction with
-  | base => rw [pagePresentation_base, SubquotientPresentation.comp_id]
+  | base => rw [pagePresentation_base, SubquotientPresentation.trans_refl]
   | succ r hsr ih =>
     rw [pagePresentation_add_one E pq r (hs.trans hsr),
-      pagePresentation_add_one (E.fromPage s hs) pq r hsr, ih, SubquotientPresentation.comp_assoc]
+      pagePresentation_add_one (E.fromPage s hs) pq r hsr, ih, SubquotientPresentation.trans_assoc]
 
 /-- Rebasing compatibility for cycles. -/
 theorem cyclesSubobject_eq_preimage_fromPage (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hsr : s ≤ r) :
@@ -241,8 +246,9 @@ private theorem mapInduced_pagePresentation_aux (r : ℤ) (hr : r₀ ≤ r) :
       (Subobject.existsPullbackAdj f₀).gc.l_bot], ?_⟩
     rw [SubquotientPresentation.mapInduced_congr (E.pagePresentation_base pq)
       (E'.pagePresentation_base pq) rfl _ _ (by simp)
-      (by simp only [le_bot_iff]; exact (Subobject.existsPullbackAdj _).gc.l_bot)]
-    exact SubquotientPresentation.id_mapInduced_id f₀ _ _
+      (by simp only [SubquotientPresentation.refl_B, le_bot_iff]
+          exact (Subobject.existsPullbackAdj _).gc.l_bot)]
+    exact SubquotientPresentation.refl_mapInduced_refl f₀ _ _
   | succ r hr ih =>
     obtain ⟨hZ, hB, hmap⟩ := ih
     let p := E.pagePresentation pq r hr; let p' := E'.pagePresentation pq r hr
@@ -262,11 +268,15 @@ private theorem mapInduced_pagePresentation_aux (r : ℤ) (hr : r₀ ≤ r) :
         (ShortComplex.mapInduced_homologyPresentation φ)
     refine ⟨by rwa [cyclesSubobject_add_one, cyclesSubobject_add_one],
       by rwa [boundariesSubobject_add_one, boundariesSubobject_add_one], ?_⟩
-    rw [SubquotientPresentation.mapInduced_congr (pagePresentation_add_one E pq r hr)
-        (pagePresentation_add_one E' pq r hr) rfl _ _ hZ' hB',
-      SubquotientPresentation.mapInduced_comp_presentation p p' _ _ f₀ hZ hB hZ_s hB_s,
-      SubquotientPresentation.mapInduced_transIso, hhom, f.comm r (r + 1) pq rfl hr,
-      Iso.inv_hom_id_assoc]
+    refine (SubquotientPresentation.mapInduced_congr (pagePresentation_add_one E pq r hr)
+        (pagePresentation_add_one E' pq r hr) rfl _ _ hZ' hB').trans ?_
+    refine (SubquotientPresentation.mapInduced_trans p p' _ _ f₀ hZ hB hZ_s hB_s).trans ?_
+    refine (SubquotientPresentation.mapInduced_mapIso
+        ((E.page r hr).sc pq).homologyPresentation
+        ((E'.page r hr).sc pq).homologyPresentation
+        (E.iso r (r + 1) pq rfl hr) (E'.iso r (r + 1) pq rfl hr)
+        (p.mapInduced p' f₀ hZ hB) hZ_s hB_s).trans ?_
+    rw [hhom, f.comm r (r + 1) pq rfl hr, Iso.inv_hom_id_assoc]
 
 /-- Naturality of the cycle tower: `f : E ⟶ E'` maps `Z_r(E, pq)` into `Z_r(E', pq)`. -/
 theorem Hom.exists_cyclesSubobject_le (r : ℤ) (hr : r₀ ≤ r := by lia) :
@@ -531,18 +541,22 @@ theorem pageXIsoOfStabilises_add_one (s : ℤ) (hs : r₀ ≤ s) (h : E.Stabilis
 
 /-- When `E` stabilises at `pq` from page `s`, `pagePresentation` on page `r ≥ s` is the
 page-`s` presentation transported along `pageXIsoOfStabilises`. -/
-theorem pagePresentation_eq_transIso_pageXIsoOfStabilises (s : ℤ) (hs : r₀ ≤ s)
+theorem pagePresentation_eq_mapIso_pageXIsoOfStabilises (s : ℤ) (hs : r₀ ≤ s)
     (h : E.StabilisesAt pq s hs) (r : ℤ) (hsr : s ≤ r) :
     E.pagePresentation pq r (hs.trans hsr) =
-      (E.pagePresentation pq s hs).transIso (E.pageXIsoOfStabilises pq s hs h r hsr) := by
+      (E.pagePresentation pq s hs).mapIso (E.pageXIsoOfStabilises pq s hs h r hsr) := by
   induction r, hsr using Int.leInduction with
-  | base => rw [pageXIsoOfStabilises_self, SubquotientPresentation.transIso_refl]
+  | base => rw [pageXIsoOfStabilises_self, SubquotientPresentation.mapIso_refl]
   | succ t hst ih =>
     rw [pagePresentation_add_one E pq t (hs.trans hst), ih,
       pageXIsoOfStabilises_add_one E pq s hs h t hst,
-      ShortComplex.homologyPresentation_eq_id_transIso _ (h.dTo_eq_zero hst) (h.dFrom_eq_zero hst),
-      SubquotientPresentation.transIso_trans, SubquotientPresentation.comp_transIso,
-      SubquotientPresentation.comp_id, SubquotientPresentation.transIso_trans]
+      ShortComplex.homologyPresentation_eq_refl_mapIso _ (h.dTo_eq_zero hst) (h.dFrom_eq_zero hst),
+      SubquotientPresentation.mapIso_trans, SubquotientPresentation.trans_mapIso]
+    have htr : ((E.pagePresentation pq s hs).mapIso (E.pageXIsoOfStabilises pq s hs h t hst)).trans
+        (SubquotientPresentation.refl (((E.page t (hs.trans hst)).sc pq).X₂)) =
+      (E.pagePresentation pq s hs).mapIso (E.pageXIsoOfStabilises pq s hs h t hst) :=
+      SubquotientPresentation.trans_refl _
+    rw [htr, SubquotientPresentation.mapIso_trans]
     simp only [Iso.trans_assoc]
 
 /-- Composition compatibility of `pageXIsoOfStabilises` for `s ≤ t ≤ r`. -/
@@ -600,10 +614,10 @@ theorem Hom.pageXIsoOfStabilises_naturality (f : E ⟶ E') (pq : κ) (s : ℤ) (
       (E.pageXIsoOfStabilises pq s hs h r hsr).hom ≫ (f.hom r (hs.trans hsr)).f pq := by
   have hmap := f.mapInduced_pagePresentation pq r (hs.trans hsr)
   rw [SubquotientPresentation.mapInduced_congr
-      (E.pagePresentation_eq_transIso_pageXIsoOfStabilises pq s hs h r hsr)
-      (E'.pagePresentation_eq_transIso_pageXIsoOfStabilises pq s hs h' r hsr) rfl _ _
+      (E.pagePresentation_eq_mapIso_pageXIsoOfStabilises pq s hs h r hsr)
+      (E'.pagePresentation_eq_mapIso_pageXIsoOfStabilises pq s hs h' r hsr) rfl _ _
       (f.exists_cyclesSubobject_le pq s hs) (f.exists_boundariesSubobject_le pq s hs),
-    SubquotientPresentation.mapInduced_transIso, f.mapInduced_pagePresentation pq s hs] at hmap
+    SubquotientPresentation.mapInduced_mapIso, f.mapInduced_pagePresentation pq s hs] at hmap
   rw [← hmap, Iso.hom_inv_id_assoc]
 
 variable (e : E ≅ E')

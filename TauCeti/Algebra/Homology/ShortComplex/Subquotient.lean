@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.ShortComplex.Abelian
-public import TauCeti.CategoryTheory.Subobject.Subquotient
+public import TauCeti.CategoryTheory.Abelian.SubquotientPresentation
 
 /-!
 # Homology of a short complex as a subquotient presentation
@@ -14,7 +14,7 @@ public import TauCeti.CategoryTheory.Subobject.Subquotient
 In an abelian category `C`, `CategoryTheory.ShortComplex.homologyPresentation` canonically presents
 `S.homology` as `kernelSubobject S.g / imageSubobject S.f` in `S.X₂`, naturally in `S`
 (`CategoryTheory.ShortComplex.mapInduced_homologyPresentation`), reducing to the identity
-presentation when `S.f = 0` and `S.g = 0` (`homologyPresentation_eq_id_transIso`).
+presentation when `S.f = 0` and `S.g = 0` (`homologyPresentation_eq_refl_mapIso`).
 -/
 
 public section
@@ -62,37 +62,46 @@ section
 
 variable (S : ShortComplex C)
 
-/-- `imageSubobject S.f ⟶ kernelSubobject S.g` vanishes upon composition with the homology map. -/
-theorem ofLE_comp_homologyPresentation_π :
-    Subobject.ofLE (imageSubobject S.f) (kernelSubobject S.g) S.imageSubobject_le_kernelSubobject ≫
-      (kernelSubobjectIso S.g).hom ≫ S.cyclesIsoKernel.inv ≫ S.homologyπ = 0 := by
-  have hfac : factorThruImageSubobject S.f ≫
+private theorem factorThruImageSubobject_comp_ofLE_comp :
+    factorThruImageSubobject S.f ≫
       Subobject.ofLE (imageSubobject S.f) (kernelSubobject S.g)
         S.imageSubobject_le_kernelSubobject ≫
       (kernelSubobjectIso S.g).hom ≫ S.cyclesIsoKernel.inv = S.toCycles := by
-    rw [← cancel_mono S.iCycles]; simp [cyclesIsoKernel]
-  exact zero_of_epi_comp (factorThruImageSubobject S.f)
-    (by rw [reassoc_of% hfac, S.toCycles_comp_homologyπ])
+  rw [← cancel_mono S.iCycles]
+  simp [cyclesIsoKernel]
+
+/-- `imageSubobject S.f ⟶ kernelSubobject S.g` vanishes upon composition with the homology map. -/
+theorem ofLE_comp_homologyPresentation_π :
+    Subobject.ofLE (imageSubobject S.f) (kernelSubobject S.g) S.imageSubobject_le_kernelSubobject ≫
+      (kernelSubobjectIso S.g).hom ≫ S.cyclesIsoKernel.inv ≫ S.homologyπ = 0 :=
+  zero_of_epi_comp (factorThruImageSubobject S.f)
+    (by rw [reassoc_of% (factorThruImageSubobject_comp_ofLE_comp S), S.toCycles_comp_homologyπ])
 
 /-- The cokernel cofork presenting `S.homology` as `kernelSubobject S.g / imageSubobject S.f`. -/
 noncomputable def homologyIsCokernelOfLE :
     IsColimit (CokernelCofork.ofπ
       ((kernelSubobjectIso S.g).hom ≫ S.cyclesIsoKernel.inv ≫ S.homologyπ)
       S.ofLE_comp_homologyPresentation_π) := by
-  let e : (kernelSubobject S.g : C) ≅ S.cycles := kernelSubobjectIso S.g ≪≫ S.cyclesIsoKernel.symm
-  have hfac : factorThruImageSubobject S.f ≫
-      Subobject.ofLE (imageSubobject S.f) (kernelSubobject S.g)
-        S.imageSubobject_le_kernelSubobject ≫ e.hom = S.toCycles := by
-    rw [← cancel_mono S.iCycles]; simp [e, cyclesIsoKernel]
-  exact CokernelCofork.IsColimit.ofπ _ _
-    (fun k hk ↦ S.descHomology (e.inv ≫ k)
-      (by rw [← hfac, Category.assoc, Category.assoc, Iso.hom_inv_id_assoc, hk, comp_zero]))
-    (fun k _ ↦ by
-      simp only [Category.assoc, S.π_descHomology]; simpa [e] using e.hom_inv_id_assoc k)
-    (fun k _ m hm ↦ (cancel_epi ((kernelSubobjectIso S.g).hom ≫ S.cyclesIsoKernel.inv ≫
-      S.homologyπ)).mp (by
-        rw [hm]; simp only [Category.assoc, S.π_descHomology]
-        exact (by simpa [e] using e.hom_inv_id_assoc k : _ = k).symm))
+  let e : S.cycles ≅ (kernelSubobject S.g : C) := S.cyclesIsoKernel ≪≫ (kernelSubobjectIso S.g).symm
+  have hcomp :
+      factorThruImageSubobject S.f ≫
+          Subobject.ofLE (imageSubobject S.f) (kernelSubobject S.g)
+            S.imageSubobject_le_kernelSubobject =
+        S.toCycles ≫ e.hom :=
+    (Iso.comp_inv_eq e).mp (by
+      simpa [e, Category.assoc] using factorThruImageSubobject_comp_ofLE_comp S)
+  have hc : IsColimit (CokernelCofork.ofπ
+      ((kernelSubobjectIso S.g).hom ≫ S.cyclesIsoKernel.inv ≫ S.homologyπ)
+      (by rw [Category.assoc, reassoc_of% (factorThruImageSubobject_comp_ofLE_comp S),
+        S.toCycles_comp_homologyπ] :
+        (factorThruImageSubobject S.f ≫
+          Subobject.ofLE (imageSubobject S.f) (kernelSubobject S.g)
+            S.imageSubobject_le_kernelSubobject) ≫
+          (kernelSubobjectIso S.g).hom ≫ S.cyclesIsoKernel.inv ≫ S.homologyπ = 0)) :=
+    IsCokernel.ofIso S.toCycles S.homologyIsCokernel _ (Iso.refl S.X₁) e (Iso.refl S.homology)
+      (by simpa using hcomp) (by simpa [e] using e.hom_inv_id_assoc S.homologyπ)
+  exact isCokernelOfComp (factorThruImageSubobject S.f) _ hc
+    S.ofLE_comp_homologyPresentation_π rfl
 
 /-- Canonical presentation of `S.homology` as `kernelSubobject S.g / imageSubobject S.f`. -/
 noncomputable abbrev homologyPresentation : SubquotientPresentation S.X₂ S.homology :=
@@ -103,18 +112,26 @@ noncomputable abbrev homologyPresentation : SubquotientPresentation S.X₂ S.hom
 @[reassoc]
 theorem homologyPresentation_π :
     S.homologyPresentation.π = (kernelSubobjectIso S.g).hom ≫ S.cyclesIsoKernel.inv ≫ S.homologyπ :=
-  SubquotientPresentation.ofIsColimit_π _ _ _ _
+  SubquotientPresentation.π_ofIsColimit _ _ _ _
 
 /-- When `S.f = 0` and `S.g = 0`, `S.homologyPresentation` is the identity presentation transported
 along `(S.cyclesIsoX₂ hg).symm ≪≫ S.asIsoHomologyπ hf`. -/
-theorem homologyPresentation_eq_id_transIso (hf : S.f = 0) (hg : S.g = 0) :
-    S.homologyPresentation = (SubquotientPresentation.id S.X₂).transIso
+theorem homologyPresentation_eq_refl_mapIso (hf : S.f = 0) (hg : S.g = 0) :
+    S.homologyPresentation = (SubquotientPresentation.refl S.X₂).mapIso
       ((S.cyclesIsoX₂ hg).symm ≪≫ S.asIsoHomologyπ hf) := by
-  refine SubquotientPresentation.ext ((kernelSubobject_eq_top_iff S.g).mpr hg) ?_
-  rw [homologyPresentation_π, SubquotientPresentation.transIso_π, SubquotientPresentation.id_π]
-  simp only [Iso.trans_hom, Iso.symm_hom, asIsoHomologyπ_hom, ← Category.assoc]
-  refine congrArg (· ≫ S.homologyπ) ?_
-  rw [← cancel_mono S.iCycles]; simp [cyclesIsoKernel]
+  refine SubquotientPresentation.ext (by simp [hf]) (by simp [hg]) ?_
+  calc S.homologyPresentation.π
+      = S.homologyPresentation.Z.arrow ≫ (S.cyclesIsoX₂ hg).inv ≫ S.homologyπ := by
+        rw [homologyPresentation_π]
+        dsimp only [homologyPresentation, SubquotientPresentation.ofIsColimit]
+        rw [← Category.assoc, ← Category.assoc]
+        refine congrArg (· ≫ S.homologyπ) ?_
+        rw [← cancel_mono S.iCycles]
+        simp [cyclesIsoKernel]
+    _ = _ := by
+        rw [SubquotientPresentation.π_mapIso', SubquotientPresentation.π_refl,
+          Subobject.ofLE_comp_ofLE_assoc, Subobject.ofLE_arrow_assoc]
+        simp [asIsoHomologyπ]
 
 end
 
@@ -124,13 +141,15 @@ theorem mapInduced_homologyPresentation {S S' : ShortComplex C} (φ : S ⟶ S') 
         (exists_kernelSubobject_le φ) (exists_imageSubobject_le φ) =
       ShortComplex.homologyMap φ := by
   symm; refine S.homologyPresentation.mapInduced_unique S'.homologyPresentation φ.τ₂ _ _ ?_
-  rw [homologyPresentation_π_assoc, homologyPresentation_π, ShortComplex.homologyπ_naturality]
+  rw [homologyPresentation_π_assoc, homologyPresentation_π]
+  dsimp only [homologyPresentation, SubquotientPresentation.ofIsColimit]
+  rw [Category.assoc, Category.assoc, ShortComplex.homologyπ_naturality]
   simp only [← Category.assoc]
   refine congrArg (· ≫ S'.homologyπ) ?_
   rw [← cancel_mono S'.iCycles]
   simp only [cyclesIsoKernel_inv, Category.assoc, liftCycles_comp_cyclesMap, liftCycles_i,
     kernelSubobject_arrow_assoc, kernelSubobject_arrow]
-  exact (S.homologyPresentation.liftZ_comp_arrow S'.homologyPresentation φ.τ₂ _).symm
+  exact (S.homologyPresentation.liftZ_arrow S'.homologyPresentation φ.τ₂ _).symm
 
 end Abelian
 
