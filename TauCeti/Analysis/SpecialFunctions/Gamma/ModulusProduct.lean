@@ -9,6 +9,7 @@ public import Mathlib.Analysis.PSeries
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.Analysis.SpecialFunctions.Log.Summable
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Cotangent
 import TauCeti.Analysis.Complex.Basic
 
 /-!
@@ -36,7 +37,8 @@ monotonicity of `|Γ(x + iy)| / Γ(x)` in `x > 0`, and the values of `|Γ|²` on
 The partial products of 5.8.3 are exactly `|GammaSeq x n / GammaSeq (x + iy) n|²`, so the
 product follows from Euler's limit `Complex.GammaSeq_tendsto_Gamma`. The values on vertical
 lines come from the reflection formula `Complex.Gamma_mul_Gamma_one_sub` and
-`Γ(conj z) = conj Γ(z)`.
+`Γ(conj z) = conj Γ(z)`. The product for `sinh(πy)/(πy)` is Euler's sine product
+`euler_sineTerm_tprod` at `z = iy`.
 
 The proofs of DLMF 5.8.3 and 5.4.3 are adapted from the lean-DLMF project
 (<https://github.com/bjbraams/lean-DLMF>), files `DLMF/Gamma/Products.lean` and
@@ -61,34 +63,20 @@ theorem norm_GammaSeq_div_GammaSeq_add_mul_I_sq {x : ℝ} (hx : ∀ n : ℕ, x �
     {n : ℕ} (hn : 0 < n) :
     ‖GammaSeq x n / GammaSeq (x + y * I) n‖ ^ 2 =
       ∏ k ∈ range (n + 1), (1 + y ^ 2 / (x + k) ^ 2) := by
-  have hxk' : ∀ k : ℕ, (x + k : ℝ) ≠ 0 := fun k h => hx k (eq_neg_of_add_eq_zero_left h)
-  have hxk : ∀ k : ℕ, (x : ℂ) + k ≠ 0 := fun k h => hxk' k (by exact_mod_cast h)
-  have hn' : (n : ℂ) ≠ 0 := by exact_mod_cast hn.ne'
-  have hf : (n.factorial : ℂ) ≠ 0 := by exact_mod_cast n.factorial_ne_zero
-  have hP1 : ∏ j ∈ range (n + 1), ((x : ℂ) + j) ≠ 0 :=
-    prod_ne_zero_iff.mpr fun j _ => hxk j
-  have hP2 : ∏ j ∈ range (n + 1), ((x : ℂ) + y * I + j) ≠ 0 :=
-    prod_ne_zero_iff.mpr fun j _ h =>
-      ofReal_add_mul_I_ne_neg_natCast hx y j (eq_neg_of_add_eq_zero_left h)
-  have hc1 : (n : ℂ) ^ (x : ℂ) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hn')
-  have hc2 : (n : ℂ) ^ ((x : ℂ) + y * I) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hn')
-  have hsplit : GammaSeq x n / GammaSeq (x + y * I) n =
-      ((n : ℂ) ^ (x : ℂ) / (n : ℂ) ^ ((x : ℂ) + y * I)) *
-        (∏ j ∈ range (n + 1), ((x : ℂ) + y * I + j)) / ∏ j ∈ range (n + 1), ((x : ℂ) + j) := by
-    simp only [GammaSeq]
-    field_simp
-  rw [hsplit, norm_div, norm_mul, norm_div, norm_natCast_cpow_of_pos hn,
-    norm_natCast_cpow_of_pos hn]
+  have hxk : ∀ k : ℕ, (x + k : ℝ) ≠ 0 := fun k h => hx k (eq_neg_of_add_eq_zero_left h)
+  have hA : (0 : ℝ) < (n : ℝ) ^ x * n.factorial := by positivity
   have hre : ((x : ℂ) + y * I).re = x := by simp
-  rw [hre, ofReal_re, div_self (Real.rpow_pos_of_pos (Nat.cast_pos.mpr hn) x).ne', one_mul,
-    norm_prod, norm_prod, div_pow, ← prod_pow, ← prod_pow, ← prod_div_distrib]
+  simp only [GammaSeq, norm_div, norm_mul, norm_natCast_cpow_of_pos hn, hre, ofReal_re,
+    norm_natCast]
+  rw [div_div_div_cancel_left₀ _ _ hA.ne', norm_prod, norm_prod, div_pow, ← prod_pow,
+    ← prod_pow, ← prod_div_distrib]
   refine prod_congr rfl fun j _ => ?_
   have h1 : ‖(x : ℂ) + y * I + j‖ ^ 2 = (x + j) ^ 2 + y ^ 2 := by
-    rw [← normSq_eq_norm_sq, normSq_apply]; simp; ring
+    rw [add_right_comm, ← ofReal_natCast, ← ofReal_add, Complex.sq_norm, normSq_add_mul_I]
   have h2 : ‖(x : ℂ) + j‖ ^ 2 = (x + j) ^ 2 := by
     rw [← ofReal_natCast, ← ofReal_add, norm_real, Real.norm_eq_abs, sq_abs]
   rw [h1, h2]
-  have := hxk' j
+  have := hxk j
   field_simp
 
 /-- **DLMF 5.8.3.** For real `x` that is not a nonpositive integer and real `y`, the product
@@ -106,13 +94,12 @@ theorem hasProd_Gamma_norm_quotient {x : ℝ} (hx : ∀ n : ℕ, x ≠ -(n : ℝ
       atTop (𝓝 (‖Gamma x / Gamma (x + y * I)‖ ^ 2)) :=
     (((GammaSeq_tendsto_Gamma _).div (GammaSeq_tendsto_Gamma _)
       (Gamma_ne_zero (ofReal_add_mul_I_ne_neg_natCast hx y))).norm).pow 2
-  have hP := (hmul.hasProd.tendsto_prod_nat.comp (tendsto_add_atTop_nat 1)).congr'
-    ((eventually_gt_atTop 0).mono fun n hn =>
-      (norm_GammaSeq_div_GammaSeq_add_mul_I_sq hx y hn).symm)
-  have h := tendsto_nhds_unique hlim hP
-  rw [Gamma_ofReal, norm_div, norm_real, Real.norm_eq_abs, div_pow, sq_abs] at h
-  rw [h]
-  exact hmul.hasProd
+  have hval : ‖Gamma x / Gamma (x + y * I)‖ ^ 2 =
+      Real.Gamma x ^ 2 / ‖Gamma ((x : ℂ) + y * I)‖ ^ 2 := by
+    rw [Gamma_ofReal, norm_div, norm_real, Real.norm_eq_abs, div_pow, sq_abs]
+  rw [← hval, hmul.hasProd_iff_tendsto_nat]
+  exact (tendsto_add_atTop_iff_nat 1).mp (hlim.congr' ((eventually_gt_atTop 0).mono
+    fun n hn => norm_GammaSeq_div_GammaSeq_add_mul_I_sq hx y hn))
 
 /-- The modulus of `Γ` on a horizontal line, compared at two real parts: for `0 < x ≤ x′`,
 `|Γ(x + iy)| ≤ Γ(x)/Γ(x′) · |Γ(x′ + iy)|`. This is the termwise comparison of the products in
@@ -124,7 +111,7 @@ theorem norm_Gamma_add_mul_I_le {x x' : ℝ} (hx : 0 < x) (hxx' : x ≤ x') (y :
     have : (0 : ℝ) ≤ n := Nat.cast_nonneg n
     linarith
   have hne : ∀ {u : ℝ}, 0 < u → Gamma ((u : ℂ) + y * I) ≠ 0 := fun hu =>
-    Gamma_ne_zero (ofReal_add_mul_I_ne_neg_natCast (hnot hu) y)
+    Gamma_ne_zero_of_re_pos (by simpa using hu)
   have hG' := Real.Gamma_pos_of_pos hx'
   have hN := norm_pos_iff.mpr (hne hx)
   have hN' := norm_pos_iff.mpr (hne hx')
@@ -184,11 +171,15 @@ theorem norm_Gamma_one_add_mul_I_sq {y : ℝ} (hy : y ≠ 0) :
 indexed from `k = 0` as `∏_{k ≥ 0} (1 + y²/(1 + k)²)`. -/
 theorem hasProd_one_add_sq_div_succ_sq {y : ℝ} (hy : y ≠ 0) :
     HasProd (fun k : ℕ => 1 + y ^ 2 / (1 + k) ^ 2) (Real.sinh (π * y) / (π * y)) := by
-  have h1 : ∀ n : ℕ, (1 : ℝ) ≠ -(n : ℝ) := fun n h => by
-    have : (0 : ℝ) ≤ n := Nat.cast_nonneg n
-    linarith
-  have h := hasProd_Gamma_norm_quotient h1 y
-  rw [ofReal_one, norm_Gamma_one_add_mul_I_sq hy, Real.Gamma_one, one_pow, one_div_div] at h
-  exact h
+  have hyI : (y : ℂ) * I ≠ 0 := mul_ne_zero (ofReal_ne_zero.mpr hy) I_ne_zero
+  have h := (multipliable_sineTerm (y * I)).hasProd
+  rw [euler_sineTerm_tprod hyI] at h
+  rw [← (isometry_ofReal.isEmbedding.isInducing (f := ofRealHom)).hasProd_iff]
+  convert h using 1
+  · ext k
+    simp [sineTerm, mul_pow, add_comm]
+  · rw [show (π : ℂ) * (y * I) = ((π * y : ℝ) : ℂ) * I by push_cast; ring, sin_mul_I]
+    simp
+    field_simp
 
 end TauCeti
