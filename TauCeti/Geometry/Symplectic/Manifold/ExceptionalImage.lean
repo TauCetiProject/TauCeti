@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.IntersectionForm
 public import TauCeti.Geometry.Symplectic.JHolomorphic.CanonicalCycle
 public import TauCeti.Geometry.Symplectic.JHolomorphic.PointConfigurationCount
 public import TauCeti.Geometry.Symplectic.Manifold.EmbeddedCurve

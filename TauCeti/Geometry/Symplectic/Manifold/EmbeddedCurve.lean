@@ -59,11 +59,6 @@ Every compact connected Riemann surface is an embedded pseudoholomorphic curve i
 the identity, with class its fundamental class
 (`TauCeti.EmbeddedPseudoholomorphicCurve.homologyClass_id`).
 
-The intersection forms on `H₂(X; ℤ)` that pair these classes are the `ℤ`-bilinear forms
-`TauCeti.IntersectionForm X` for the `ℤ`-module structure `AddCommGroup.toIntModule`, the one the
-abstract counts and cycles over an additive group use, with symmetry
-`TauCeti.IntersectionForm.IsSymm`.
-
 ## References
 
 * C. H. Taubes, *Counting pseudo-holomorphic submanifolds in dimension 4*, J. Differential Geom.
@@ -83,18 +78,6 @@ open scoped Manifold ContDiff TauCeti.ComplexManifold
 namespace TauCeti
 
 open SmoothAlmostComplexStructure
-
-/-- The `ℤ`-bilinear forms on `H₂(X; ℤ)`, such as the intersection form of a closed oriented
-four-manifold `X`. They are bilinear for the `ℤ`-module structure `AddCommGroup.toIntModule`, the
-one the abstract counts and cycles over an additive group use, rather than for the `ModuleCat ℤ`
-structure of `secondHomology X`, which agrees with it only propositionally. -/
-abbrev IntersectionForm (X : Type) [TopologicalSpace X] : Type :=
-  @LinearMap.BilinForm ℤ _ (secondHomology X) _ (AddCommGroup.toIntModule _)
-
-/-- An intersection form `B : TauCeti.IntersectionForm X` is **symmetric**,
-`LinearMap.BilinForm.IsSymm` for the `ℤ`-module structure `AddCommGroup.toIntModule`. -/
-abbrev IntersectionForm.IsSymm {X : Type} [TopologicalSpace X] (B : IntersectionForm X) : Prop :=
-  @LinearMap.BilinForm.IsSymm ℤ (secondHomology X) _ _ (AddCommGroup.toIntModule _) B
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {X : Type} [TopologicalSpace X] [ChartedSpace H X]
