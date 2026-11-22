@@ -10,7 +10,6 @@ public import Mathlib.Analysis.InnerProductSpace.Trace
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 public import TauCeti.LinearAlgebra.Trace.Basic
 public import TauCeti.Topology.Algebra.Module.Trace
-import Mathlib.Analysis.Matrix.Hermitian
 import TauCeti.Analysis.InnerProductSpace.Positive.Definite
 
 /-!
@@ -48,10 +47,8 @@ pairing `tr (T* U) = tr (T U)` is real.
   endomorphism, and the trace pairing `tr (T U)` of two of them, are real.
 * `ContinuousLinearMap.traceCLM_symmPart_comp`: over `ℝ`, only the symmetric part of `A` enters
   the trace pairing `tr (A M)` with a self-adjoint `M`.
-* `ContinuousLinearMap.sum_toMatrix_symmPart_mul_repr`,
-  `ContinuousLinearMap.posDef_toMatrix_symmPart`: in an orthonormal basis, the matrix of the
-  symmetric part computes the trace pairing with a self-adjoint endomorphism, and it is positive
-  definite when `A` is.
+* `ContinuousLinearMap.sum_toMatrix_symmPart_mul_repr`: in an orthonormal basis, the matrix of
+  the symmetric part computes the trace pairing with a self-adjoint endomorphism.
 * `ContinuousLinearMap.traceCLM_comp_adjoint_comp_comp_of_comp_eq_id`: if `M N = 1`, then
   `tr ((N A N†) (M† D M)) = tr (A D)`.
 * `ContinuousLinearMap.traceCLM_comp_eq_sum_inner`: if `H f = (T f)† g`, then
@@ -157,36 +154,6 @@ theorem sum_toMatrix_symmPart_mul_repr {V : Type*} [NormedAddCommGroup V]
     A.isSymmetric_two_inv_smul_add_adjoint
   rw [← hS]
   simpa only [real_inner_comm (b _) (S (b j))] using b.sum_inner_mul_inner (S (b j)) (H (b j))
-
-open scoped Matrix in
-/-- The matrix of the symmetric part `(A + A†) / 2` of a positive definite endomorphism `A` of a
-real inner product space in an orthonormal basis is positive definite. -/
-theorem posDef_toMatrix_symmPart {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    [FiniteDimensional ℝ V] {A : V →L[ℝ] V} (hA : ∀ ξ, ξ ≠ 0 → 0 < ⟪A ξ, ξ⟫_ℝ) {ι : Type*}
-    [Fintype ι] [DecidableEq ι] (b : OrthonormalBasis ι ℝ V) :
-    (LinearMap.toMatrix b.toBasis b.toBasis
-      (((2⁻¹ : ℝ) • (A + A.adjoint) : V →L[ℝ] V) : V →ₗ[ℝ] V)).PosDef := by
-  set S : V →L[ℝ] V := (2⁻¹ : ℝ) • (A + A.adjoint)
-  have hS : ∀ x y, ⟪S x, y⟫_ℝ = ⟪x, S y⟫_ℝ := A.isSymmetric_two_inv_smul_add_adjoint
-  have hM : ∀ i j, LinearMap.toMatrix b.toBasis b.toBasis (S : V →ₗ[ℝ] V) i j = ⟪S (b i), b j⟫_ℝ :=
-    fun i j => by
-      rw [LinearMap.toMatrix_apply, OrthonormalBasis.coe_toBasis_repr_apply,
-        OrthonormalBasis.coe_toBasis, OrthonormalBasis.repr_apply_apply, coe_coe, hS,
-        real_inner_comm]
-  refine Matrix.posDef_iff_dotProduct_mulVec.2
-    ⟨(LinearMap.isHermitian_toMatrix_iff b).2 A.isSymmetric_two_inv_smul_add_adjoint,
-      fun x hx => ?_⟩
-  set v : V := b.repr.symm (WithLp.toLp 2 x)
-  have hxv : ∀ i, x i = ⟪b i, v⟫_ℝ := fun i => by
-    rw [← b.repr_apply_apply, LinearIsometryEquiv.apply_symm_apply]
-  have hv : v ≠ 0 := fun h => hx (funext fun i => by rw [hxv i, h, inner_zero_right]; rfl)
-  calc 0 < ⟪A v, v⟫_ℝ := hA v hv
-    _ = ⟪S v, v⟫_ℝ := (A.re_inner_two_inv_smul_add_adjoint_apply v).symm
-    _ = ∑ i, ⟪v, b i⟫_ℝ * ∑ j, ⟪S (b i), b j⟫_ℝ * ⟪b j, v⟫_ℝ := by
-        simp only [b.sum_inner_mul_inner]
-        simp only [hS, b.sum_inner_mul_inner]
-    _ = star x ⬝ᵥ (LinearMap.toMatrix b.toBasis b.toBasis (S : V →ₗ[ℝ] V) *ᵥ x) := by
-        simp only [dotProduct, Matrix.mulVec, star_trivial, hM, hxv, real_inner_comm v]
 
 open TauCeti in
 /-- Conjugating the trace pairing by a one-sided inverse pair and its adjoint: if `M ∘ N = 1`,

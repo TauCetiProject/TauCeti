@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Morrey
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Frontier
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Embedding
-import TauCeti.Analysis.Sobolev.Wkp.Exponent
 import TauCeti.Data.ENNReal.Inv
 
 /-!
@@ -47,9 +46,9 @@ compact operator for every `β` below the respective exponent.
   `C^{0,β}(closure Ω)` is compact for every `β < 1 - n/(k p)`.
 * `TauCeti.Wkp.exists_continuousOn_closure_ae_eq_of_isLipschitzDomainWith`: for `n < k p` every
   `u ∈ W^{k,p}(Ω)` has a representative continuous on `closure Ω`.
-* `TauCeti.Wkp.exists_continuousOn_closure_ae_eq_and_eqOn_frontier`: for `n ≤ p < ∞` every
-  `u ∈ W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` has a representative continuous on `closure Ω` that vanishes on
-  `frontier Ω`.
+* `TauCeti.Wkp.exists_continuousOn_closure_ae_eq_and_eqOn_frontier`: for `n < 2 p` and `p < ∞`,
+  every `u ∈ W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` has a representative continuous on `closure Ω` that
+  vanishes on `frontier Ω`.
 
 ## References
 
@@ -180,32 +179,22 @@ theorem Wkp.exists_continuousOn_closure_ae_eq_of_isLipschitzDomainWith {p : ℝ�
   exact ⟨f, hf, (hT u).symm.trans hTf⟩
 
 /-- **Continuous representatives with zero boundary values.** If `Ω ⊆ ℝ × E` is a bounded
-Lipschitz domain of dimension `n` and `n ≤ p < ∞`, then every `u ∈ W^{2,p}(Ω)` whose first-order
-part lies in `W^{1,p}_0(Ω)` agrees almost everywhere on `Ω` with a function continuous on
-`closure Ω` that vanishes on `frontier Ω`. -/
+Lipschitz domain of dimension `n` and `n < 2 p`, `p < ∞`, then every `u ∈ W^{2,p}(Ω)` whose
+first-order part lies in `W^{1,p}_0(Ω)` agrees almost everywhere on `Ω` with a function continuous
+on `closure Ω` that vanishes on `frontier Ω`. -/
 theorem Wkp.exists_continuousOn_closure_ae_eq_and_eqOn_frontier (hp_top : p ≠ ⊤)
-    (hpn : (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞) ≤ p)
+    (hpn : (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞) < 2 * p)
     (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
     (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) {u : Wkp volume Ω p 2}
     (hu0 : Wkp.firstOrder 1 u ∈ w1p0Submodule volume Ω p) :
     ∃ ū : WithLp 2 (ℝ × E) → ℝ, ContinuousOn ū (closure (Ω : Set (WithLp 2 (ℝ × E)))) ∧
       Wkp.value 2 u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] ū ∧
       EqOn ū 0 (frontier (Ω : Set (WithLp 2 (ℝ × E)))) := by
-  set N := finrank ℝ (WithLp 2 (ℝ × E))
-  have hN : (1 : ℝ≥0) ≤ N := by
-    have : 0 < N := Module.finrank_pos
-    exact_mod_cast this
-  have : Fact (1 ≤ ((N : ℝ≥0) : ℝ≥0∞)) := ⟨by exact_mod_cast hN⟩
-  have : IsFiniteMeasure (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))) :=
-    isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
-  have hpn' : ((N : ℝ≥0) : ℝ≥0∞) ≤ p := by simpa using hpn
-  -- Lower the exponent to `n`, where `n < 2 n` gives a continuous representative.
+  lift p to ℝ≥0 using hp_top
   obtain ⟨ū, hcont, huū⟩ := Wkp.exists_continuousOn_closure_ae_eq_of_isLipschitzDomainWith
-    (by push_cast; exact lt_mul_left (zero_lt_one.trans_le hN) one_lt_two :
-      (N : ℝ≥0) < (2 : ℕ) * (N : ℝ≥0)) hΩ hb (Wkp.ofExponentLEL hpn' 2 u)
-  have huū' := (Wkp.value_ofExponentLEL_ae hpn' 2 u).symm.trans huū
-  exact ⟨ū, hcont, huū', (W1p.mem_w1p0Submodule_iff_eqOn_frontier hp_top hΩ hb hcont
-    (by rw [Wkp.value_firstOrder]; exact huū')).1 hu0⟩
+    (k := 2) (by exact_mod_cast hpn) hΩ hb u
+  exact ⟨ū, hcont, huū, (W1p.mem_w1p0Submodule_iff_eqOn_frontier ENNReal.coe_ne_top hΩ hb hcont
+    (by rw [Wkp.value_firstOrder]; exact huū)).1 hu0⟩
 
 end TauCeti
 

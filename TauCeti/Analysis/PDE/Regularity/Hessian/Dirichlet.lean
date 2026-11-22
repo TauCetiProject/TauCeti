@@ -12,7 +12,6 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Morrey
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.RellichKondrachov
 public import TauCeti.Analysis.Sobolev.Wkp.Compactness
 public import TauCeti.Analysis.Sobolev.Wkp.Exponent
-import TauCeti.MeasureTheory.Function.Lp.Trace
 
 /-!
 # The `W^{2,p}` Dirichlet problem with continuous coefficients: estimate and uniqueness
@@ -78,9 +77,9 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- **The global estimate for the Dirichlet problem** (Gilbarg–Trudinger, Theorem 9.14). Let
-`1 < p < ∞` and let `Ω ⊆ ℝ × E` be a bounded open set with `C²` boundary. Let `A` be measurable
-on `Ω`, continuous within `Ω` and elliptic at every point of `closure Ω`, and let `b`, `c` be
-measurable and bounded. Then there is `C` such that every `u ∈ W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` solving
+`1 < p < ∞` and let `Ω ⊆ ℝ × E` be a bounded open set with `C²` boundary. Let `A` be continuous
+within `Ω` and elliptic at every point of `closure Ω`, and let `b`, `c` be measurable and
+bounded. Then there is `C` such that every `u ∈ W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` solving
 `tr (A ∘ D²u) + ⟪b, ∇u⟫ + c u = f ∈ Lᵖ(Ω)` almost everywhere satisfies
 `‖u‖_{W^{2,p}(Ω)} ≤ C (‖f‖_{Lᵖ(Ω)} + ‖u‖_{Lᵖ(Ω)})`. -/
 theorem exists_norm_le_of_continuousWithinAt_of_contDiff_graph (hp : 1 < p) (hp_top : p ≠ ⊤)
@@ -91,7 +90,6 @@ theorem exists_norm_le_of_continuousWithinAt_of_contDiff_graph (hp : 1 < p) (hp_
         e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ φ 0 = 0 ∧ ContDiff ℝ 2 φ ∧
           ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Omega ↔ φ z.snd < z.fst))
     {A : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
-    (hA : AEStronglyMeasurable A (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
     (hcont : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))), ContinuousWithinAt A Omega x)
     (hell : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))),
       ∃ lam : ℝ, 0 < lam ∧ ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A x ξ, ξ⟫_ℝ)
@@ -108,6 +106,9 @@ theorem exists_norm_le_of_continuousWithinAt_of_contDiff_graph (hp : 1 < p) (hp_
         traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L iteratedGradient 1 u x) +
           ⟪b x, iteratedGradient 0 (lowerOrder 1 u) x⟫_ℝ + c x * value 2 u x = f x) →
       ‖u‖ ≤ C * (‖f‖ + ‖value 2 u‖) := by
+  have hA : AEStronglyMeasurable A (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))) :=
+    ContinuousOn.aestronglyMeasurable (fun x hx => hcont x (subset_closure hx))
+      Omega.isOpen.measurableSet
   obtain ⟨C₀, hC₀⟩ := exists_norm_iteratedGradient_le_of_continuousWithinAt_of_contDiff_graph hp
     hp_top hΩ hbdry hA hcont hell hb hbβ hc hcγ
   obtain ⟨L, hL⟩ := exists_isLipschitzDomainWith_of_isBounded_of_contDiff one_le_two hΩ hbdry
@@ -161,7 +162,9 @@ theorem eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero (hp_top : p �
       traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L iteratedGradient 1 u x) + c x * value 2 u x = 0) :
     u = 0 := by
   obtain ⟨ū, hcont, huū, hfr⟩ :=
-    exists_continuousOn_closure_ae_eq_and_eqOn_frontier hp_top hpn hΩ hb hu0
+    exists_continuousOn_closure_ae_eq_and_eqOn_frontier hp_top (hpn.trans_lt (by
+      rw [two_mul]
+      exact ENNReal.lt_add_right hp_top (zero_lt_one.trans_le Fact.out).ne')) hΩ hb hu0
   -- Apply the weak maximum principle to `v = u ∈ W^{2,n}(Ω)` and to `-v`.
   have : Fact (1 ≤ (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞)) :=
     ⟨Nat.one_le_cast.2 Module.finrank_pos⟩
@@ -197,10 +200,10 @@ theorem eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero (hp_top : p �
 
 /-- **The a priori estimate for the Dirichlet problem** (Gilbarg–Trudinger, Lemma 9.17). Let
 `Ω ⊆ ℝ × E` be a bounded open set of dimension `n` with `C²` boundary, and let `n ≤ p < ∞`,
-`1 < p`. Let `A` be measurable on `Ω`, continuous within `Ω` and elliptic at every point of
-`closure Ω`, and let `c` be measurable, bounded and `c ≤ 0` almost everywhere. Then there is `C`
-such that every `u ∈ W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` solving `tr (A ∘ D²u) + c u = f ∈ Lᵖ(Ω)` almost
-everywhere satisfies `‖u‖_{W^{2,p}(Ω)} ≤ C ‖f‖_{Lᵖ(Ω)}`. -/
+`1 < p`. Let `A` be continuous within `Ω` and elliptic at every point of `closure Ω`, and let
+`c` be measurable, bounded and `c ≤ 0` almost everywhere. Then there is `C` such that every
+`u ∈ W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` solving `tr (A ∘ D²u) + c u = f ∈ Lᵖ(Ω)` almost everywhere
+satisfies `‖u‖_{W^{2,p}(Ω)} ≤ C ‖f‖_{Lᵖ(Ω)}`. -/
 theorem exists_norm_le_of_traceCLM_comp_iteratedGradient_add_mul_eq (hp : 1 < p)
     (hp_top : p ≠ ⊤) (hpn : (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞) ≤ p)
     {Omega : Opens (WithLp 2 (ℝ × E))}
@@ -210,7 +213,6 @@ theorem exists_norm_le_of_traceCLM_comp_iteratedGradient_add_mul_eq (hp : 1 < p)
         e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ φ 0 = 0 ∧ ContDiff ℝ 2 φ ∧
           ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Omega ↔ φ z.snd < z.fst))
     {A : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
-    (hA : AEStronglyMeasurable A (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
     (hcont : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))), ContinuousWithinAt A Omega x)
     (hell : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))),
       ∃ lam : ℝ, 0 < lam ∧ ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A x ξ, ξ⟫_ℝ)
@@ -225,6 +227,9 @@ theorem exists_norm_le_of_traceCLM_comp_iteratedGradient_add_mul_eq (hp : 1 < p)
         traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L iteratedGradient 1 u x) + c x * value 2 u x =
           f x) →
       ‖u‖ ≤ C * ‖f‖ := by
+  have hA : AEStronglyMeasurable A (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))) :=
+    ContinuousOn.aestronglyMeasurable (fun x hx => hcont x (subset_closure hx))
+      Omega.isOpen.measurableSet
   obtain ⟨L, hL⟩ := exists_isLipschitzDomainWith_of_isBounded_of_contDiff one_le_two hΩ hbdry
   -- `A` is bounded on `Ω`, by continuity up to the compact boundary.
   obtain ⟨U, hKU, -, hbdd⟩ :=
@@ -246,7 +251,7 @@ theorem exists_norm_le_of_traceCLM_comp_iteratedGradient_add_mul_eq (hp : 1 < p)
     exact h1.trans h2
   -- Theorem 9.14 with `b = 0`, with a nonnegative constant `D`.
   obtain ⟨D₀, hD₀⟩ := exists_norm_le_of_continuousWithinAt_of_contDiff_graph hp hp_top hΩ hbdry
-    hA hcont hell (b := 0) (β := 0) aestronglyMeasurable_const (ae_of_all _ fun _ => by simp) hc
+    hcont hell (b := 0) (β := 0) aestronglyMeasurable_const (ae_of_all _ fun _ => by simp) hc
     hcγ
   have hpos : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
       ∀ ξ, ξ ≠ 0 → 0 < ⟪A x ξ, ξ⟫_ℝ := by
