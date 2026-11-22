@@ -55,6 +55,8 @@ finite field with `q` elements whose point counts are `1 + qⁿ - tₙ`.
 * `PowerSeries.subst_exp_logOf` and `PowerSeries.logOf_subst_exp`: `exp (log f) = f` and
   `log (exp g) = g`.
 * `PowerSeries.logOf_mul`: `log (f g) = log f + log g`.
+* `PowerSeries.logOf_rescale`, `PowerSeries.logOf_expand`: `log` commutes with rescaling and
+  exponent expansion.
 * `PowerSeries.logOf_eq_mk_iff`: `log f = ∑ sₙ Xⁿ / n` exactly when `(∑ sₙ₊₁ Xⁿ) f = f'`.
 * `PowerSeries.logOf_one_sub_C_mul_X` and `PowerSeries.logOf_one_sub_C_mul_X_add_C_mul_X_sq`: the
   logarithms of `1 - c X` and of `1 - a X + q X²`.
@@ -234,6 +236,23 @@ theorem logOf_prod {ι : Type*} {s : Finset ι} {f : ι → A⟦X⟧}
         (by rw [map_prod]; exact Finset.prod_eq_one hs),
       ih hs]
 
+/-- The formal logarithm commutes with rescaling when the constant coefficient is one. -/
+theorem logOf_rescale (q : A) {f : A⟦X⟧} (hf : constantCoeff f = 1) :
+    logOf (rescale q f) = rescale q (logOf f) := by
+  have hsub1 : HasSubst (f - 1) := HasSubst.sub_one hf
+  have hsub2 : HasSubst (q • X : A⟦X⟧) := HasSubst.of_constantCoeff_zero' (by simp)
+  rw [logOf_eq, logOf_eq, rescale_eq_subst, rescale_eq_subst,
+    ← (by rw [subst_sub hsub2, subst_one] :
+      subst (q • X : A⟦X⟧) (f - 1) = subst (q • X : A⟦X⟧) f - 1),
+    subst_comp_subst_apply hsub1 hsub2]
+
+/-- The formal logarithm commutes with expansion when the constant coefficient is one. -/
+theorem logOf_expand (p : ℕ) (hp : p ≠ 0) {f : A⟦X⟧} (hf : constantCoeff f = 1) :
+    logOf (expand p hp f) = expand p hp (logOf f) := by
+  have hsub : HasSubst (f - 1) := HasSubst.sub_one hf
+  rw [logOf_eq, logOf_eq, ← (by rw [map_sub, map_one] : expand p hp (f - 1) = expand p hp f - 1)]
+  exact (PowerSeries.expand_subst p hp hsub (log A)).symm
+
 /-! ## Logarithms of linear and quadratic polynomials -/
 
 /-- The logarithm of `1 - c X` is `-∑ cⁿ Xⁿ / n`. -/
@@ -245,13 +264,8 @@ theorem logOf_one_sub_C_mul_X (c : A) :
 /-- The logarithm of `1 - c X ^ j` (`j ≠ 0`) is the `j`-fold expansion of `-∑ cⁿ Xⁿ / n`. -/
 theorem logOf_one_sub_C_mul_X_pow (c : A) {j : ℕ} (hj : j ≠ 0) :
     logOf (1 - C c * X ^ j) = expand j hj (mk fun n ↦ (n : ℚ)⁻¹ • -c ^ n) := by
-  have hsub : HasSubst (-(C c * X) : A⟦X⟧) := HasSubst.of_constantCoeff_zero' (by simp)
-  have h1 : (1 - C c * X - 1 : A⟦X⟧) = -(C c * X) := by ring
-  have h2 : (1 - C c * X ^ j - 1 : A⟦X⟧) = -(C c * X ^ j) := by ring
-  have hbase := congrArg (expand j hj) (logOf_one_sub_C_mul_X c)
-  rw [logOf_eq, h1] at hbase
-  rw [logOf_eq, h2, ← expand_X j hj, ← expand_C j hj, ← map_mul, ← map_neg]
-  exact (PowerSeries.expand_subst j hj hsub (log A)).symm.trans hbase
+  rw [show (1 - C c * X ^ j : A⟦X⟧) = expand j hj (1 - C c * X) by simp [expand_C],
+    logOf_expand j hj (by simp), logOf_one_sub_C_mul_X]
 
 /-- The logarithm of `1 - a X + q X²` is `-∑ tₙ Xⁿ / n`, where `t` is the sequence with `t₀ = 2`,
 `t₁ = a` and `tₙ₊₂ = a tₙ₊₁ - q tₙ`. If `1 - a X + q X²` factors as `(1 - α X)(1 - β X)`, then

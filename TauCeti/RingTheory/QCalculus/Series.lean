@@ -5,14 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.LaurentSeries
-public import Mathlib.RingTheory.PowerSeries.Exp
+public import Mathlib.RingTheory.HahnSeries.PowerSeries
 public import Mathlib.RingTheory.PowerSeries.Log
+public import TauCeti.Algebra.Ring.QPochhammer
 public import TauCeti.RingTheory.QCalculus.Basic
-import Mathlib.RingTheory.PowerSeries.Expand
 import Mathlib.Tactic.Ring
 import TauCeti.RingTheory.PowerSeries.Evaluation
-import TauCeti.RingTheory.PowerSeries.Exp.Basic
 import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.RingTheory.PowerSeries.Order
 import TauCeti.RingTheory.PowerSeries.Rescale
@@ -33,22 +31,30 @@ product identity:
 * `TauCeti.eulerSqSeries R` and `TauCeti.eulerOddProd R`: the two sides of Euler's raw identity
   `∑_{n ≥ 0} r ^ (n ^ 2) / (r ^ 2; r ^ 2)_n = ∏_{i ≥ 0} (1 + r ^ (2 i + 1))` in `R⟦X⟧`.
 
-Coefficients use `Ring.inverse` so definitions carry no invertibility arguments and theorems hold
-over arbitrary commutative rings under the minimal unit hypotheses `∀ n, IsUnit [n + 1]_q` or
-`∀ n, IsUnit (1 - q ^ (n + 1))`.
+Definitions use `Ring.inverse` so they carry no invertibility hypotheses over arbitrary commutative
+rings (`CommSemiring` for `jacksonExp` and `eulerOddProd`). The functional equations, uniqueness,
+and base-change theorems for `jacksonExp` assume `∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i)`; those
+for `qPochhammerSeries`, `qPochhammerInvSeries`, and `qBinomialSeries` (including Euler's
+reciprocal identity and the `q`-binomial identity) assume `∀ n, IsUnit (1 - q ^ (n + 1))`. The
+`q = 1` specialization `jacksonExp_one` and the formal logarithm identities
+`logOf_qPochhammerSeries` and `logOf_qPochhammerInvSeries` additionally require `[Algebra ℚ A]`
+(along with the corresponding unit hypotheses), while `integralQPochhammer` and
+`eulerSqSeries_eq_eulerOddProd` hold over any commutative ring with no unit hypotheses.
 
 ## References
 
-* W. J. G. Ong, notes of P. Scholze's course *V5A2 – The Habiro Ring of a Number Field*
-  (winter 2024/25), Propositions 1.5, 2.1, 2.2, 2.5, 2.7 and Corollary 2.6.
+* W. J. G. Ong, notes of P. Scholze's course *V5A2 – The Habiro Ring of a Number Field*, Bonn,
+  winter 2024/25 (6 March 2025 version,
+  https://wgabrielong.github.io/academic-writing/notes/bonn-winter-24-25/V5A2-Habiro-Rings/Habiro_Rings_Notes.pdf),
+  Propositions 1.5, 2.1, 2.2, 2.5, 2.7 and Corollary 2.6.
 * S. Garoufalidis, P. Scholze, C. Wheeler, D. Zagier, *The Habiro ring of a number field*,
-  Section 2.1, (46).
+  arXiv:2412.04241v2, Section 2.1, (46).
 -/
 
 public section
 
 open Finset PowerSeries
-open scoped LaurentSeries Polynomial PowerSeries
+open scoped Polynomial PowerSeries
 
 namespace TauCeti
 
@@ -138,7 +144,9 @@ noncomputable def qPochhammerSeries (q : A) : A⟦X⟧ :=
   PowerSeries.mk fun n ↦ (-1) ^ n * q ^ (n * (n - 1) / 2) * Ring.inverse (qPochhammer q q n)
 
 /-- The **formal reciprocal `q`-Pochhammer series** `U_q(t) = ∑_{n ≥ 0} t ^ n / (q; q)_n`, defined
-over any commutative ring via `Ring.inverse`. -/
+over any commutative ring via `Ring.inverse` (which returns `0` when `(q; q)_n` is not a unit).
+When every `1 - q ^ (n + 1)` is a unit, `qPochhammerInvSeries q` is the multiplicative inverse of
+`qPochhammerSeries q` (`TauCeti.qPochhammerSeries_mul_qPochhammerInvSeries`). -/
 noncomputable def qPochhammerInvSeries (q : A) : A⟦X⟧ :=
   PowerSeries.mk fun n ↦ Ring.inverse (qPochhammer q q n)
 
@@ -307,25 +315,28 @@ theorem eq_qPochhammerSeries_iff {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) 
     rw [ih] at hf
     exact (hq n).mul_left_cancel (by linear_combination hf - hE)
 
+/-- **Shift identity for `qBinomialSeries`**: `(1 - t) f(t) = (1 - a t) f(q t)`. -/
+theorem one_sub_X_mul_qBinomialSeries (a : A) {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
+    (1 - X) * qBinomialSeries a q = (1 - C a * X) * rescale q (qBinomialSeries a q) := by
+  ext (_ | n)
+  · simp
+  · simp only [sub_mul, one_mul, map_sub, mul_assoc, coeff_C_mul, coeff_succ_X_mul, coeff_rescale]
+    have hstep : (1 - q ^ (n + 1)) * coeff (n + 1) (qBinomialSeries a q) =
+        (1 - a * q ^ n) * coeff n (qBinomialSeries a q) := by
+      rw [coeff_qBinomialSeries, coeff_qBinomialSeries, qPochhammer_succ a q n,
+        qPochhammer_succ q q n, ← pow_succ', Ring.inverse_mul (Or.inr (hq n))]
+      linear_combination
+        ((1 - a * q ^ n) * (qPochhammer a q n * Ring.inverse (qPochhammer q q n))) *
+          Ring.mul_inverse_cancel _ (hq n)
+    linear_combination hstep
+
 /-- **Uniqueness for the `q`-binomial functional equation**: when every `1 - q ^ (n + 1)` is a
 unit, `qBinomialSeries a q` is the unique power series with constant coefficient `1` satisfying
 `(1 - t) f(t) = (1 - a t) f(q t)`. -/
 theorem eq_qBinomialSeries_iff {a q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) {f : A⟦X⟧} :
     f = qBinomialSeries a q ↔
       (1 - X) * f = (1 - C a * X) * rescale q f ∧ constantCoeff f = 1 := by
-  have hB : (1 - X) * qBinomialSeries a q = (1 - C a * X) * rescale q (qBinomialSeries a q) := by
-    ext (_ | n)
-    · simp
-    · simp only [sub_mul, one_mul, map_sub, mul_assoc, coeff_C_mul, coeff_succ_X_mul,
-        coeff_rescale]
-      have hstep : (1 - q ^ (n + 1)) * coeff (n + 1) (qBinomialSeries a q) =
-          (1 - a * q ^ n) * coeff n (qBinomialSeries a q) := by
-        rw [coeff_qBinomialSeries, coeff_qBinomialSeries, qPochhammer_succ a q n,
-          qPochhammer_succ q q n, ← pow_succ', Ring.inverse_mul (Or.inr (hq n))]
-        linear_combination
-          ((1 - a * q ^ n) * (qPochhammer a q n * Ring.inverse (qPochhammer q q n))) *
-            Ring.mul_inverse_cancel _ (hq n)
-      linear_combination hstep
+  have hB := one_sub_X_mul_qBinomialSeries a hq
   refine ⟨fun h ↦ h ▸ ⟨hB, constantCoeff_qBinomialSeries a q⟩, ?_⟩
   rintro ⟨heq, hzero⟩
   ext n
@@ -367,19 +378,10 @@ variable {A : Type*} [CommRing A] [Algebra ℚ A]
 theorem logOf_qPochhammerSeries {q : A} (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
     logOf (qPochhammerSeries q) =
       PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ • -Ring.inverse (1 - q ^ n) := by
-  have hres :
-      logOf (rescale q (qPochhammerSeries q)) = rescale q (logOf (qPochhammerSeries q)) := by
-    have hsub1 : HasSubst (qPochhammerSeries q - 1) := HasSubst.of_constantCoeff_zero' (by simp)
-    have hsub2 : HasSubst (q • X : A⟦X⟧) := HasSubst.of_constantCoeff_zero' (by simp)
-    rw [logOf_eq, logOf_eq, rescale_eq_subst, rescale_eq_subst,
-      ← (by rw [subst_sub hsub2, subst_one] :
-        subst (q • X : A⟦X⟧) (qPochhammerSeries q - 1) =
-          subst (q • X : A⟦X⟧) (qPochhammerSeries q) - 1),
-      subst_comp_subst_apply hsub1 hsub2]
   have hlog : logOf (qPochhammerSeries q) =
       logOf (1 - X : A⟦X⟧) + rescale q (logOf (qPochhammerSeries q)) := by
     conv_lhs => rw [qPochhammerSeries_eq_one_sub_X_mul_rescale hq]
-    rw [logOf_mul (by simp) (by simp), hres]
+    rw [logOf_mul (by simp) (by simp), logOf_rescale q (constantCoeff_qPochhammerSeries q)]
   have h1X : logOf (1 - X : A⟦X⟧) = PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ • (-1 : A) := by
     simpa using logOf_one_sub_C_mul_X (1 : A)
   ext (_ | n)

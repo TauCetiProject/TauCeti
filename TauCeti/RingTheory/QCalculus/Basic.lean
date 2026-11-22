@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.RingTheory.PowerSeries.Derivative
-public import TauCeti.Algebra.Ring.QPochhammer
-import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.Ring
@@ -17,11 +15,8 @@ import Mathlib.Tactic.Ring
 # Finite q-calculus and Jackson derivatives
 
 This file develops the algebraic finite `q`-calculus toolkit over arbitrary commutative
-(semi)rings, without any division or invertibility assumptions, building on `TauCeti.qFactorial`
-and `TauCeti.qPochhammer` from `TauCeti.Algebra.Ring.QPochhammer`:
+(semi)rings, without any division or invertibility assumptions:
 
-* Supplementary unit/divisibility/zero-base lemmas for `TauCeti.qFactorial` and
-  `TauCeti.qPochhammer`.
 * `Polynomial.jacksonDeriv q` and `Polynomial.adaptedJacksonDeriv q`:
   `D_q (X ^ n) = [n]_q X ^ (n - 1)` and `D'_q = (1 - q) D_q` on `A[X]`.
 * `PowerSeries.jacksonDeriv q` / `PowerSeries.adaptedJacksonDeriv q`: the same operators on `A⟦X⟧`,
@@ -32,70 +27,16 @@ holding in positive characteristic and at roots of unity without inverting `1 - 
 
 ## References
 
-* W. J. G. Ong, notes of P. Scholze's course *V5A2 – The Habiro Ring of a Number Field*
-  (winter 2024/25), Definition 1.1, Table 1, and Propositions 2.1–2.2.
+* W. J. G. Ong, notes of P. Scholze's course *V5A2 – The Habiro Ring of a Number Field*, Bonn,
+  winter 2024/25 (6 March 2025 version,
+  https://wgabrielong.github.io/academic-writing/notes/bonn-winter-24-25/V5A2-Habiro-Rings/Habiro_Rings_Notes.pdf),
+  Definition 1.1, Table 1, and Propositions 2.1–2.2.
 -/
 
 public section
 
 open Finset
 open scoped Polynomial PowerSeries
-
-namespace TauCeti
-
-/-! ### Supplementary `q`-factorial lemmas -/
-
-section QFactorial
-
-variable {R : Type*} [CommSemiring R]
-
-/-- Specializing the `q`-factorial at `q = 0` gives `1`. -/
-@[simp] theorem qFactorial_zero_left (n : ℕ) : qFactorial (0 : R) n = 1 := by
-  simp [qFactorial_def, zero_geom_sum]
-
-/-- If `m ≤ n`, then `[m]_q!` divides `[n]_q!`. -/
-theorem qFactorial_dvd_of_le (q : R) {m n : ℕ} (h : m ≤ n) :
-    qFactorial q m ∣ qFactorial q n := by
-  rw [qFactorial_def, qFactorial_def]
-  exact prod_dvd_prod_of_subset _ _ _ (range_mono h)
-
-/-- `[n]_q!` is a unit if and only if `[k]_q` is a unit for all `1 ≤ k ≤ n`. -/
-theorem isUnit_qFactorial_iff (q : R) (n : ℕ) :
-    IsUnit (qFactorial q n) ↔ ∀ k < n, IsUnit (∑ j ∈ range (k + 1), q ^ j) := by
-  simp [qFactorial_def, IsUnit.prod_iff]
-
-end QFactorial
-
-/-! ### Supplementary finite `q`-Pochhammer lemmas -/
-
-section QPochhammer
-
-variable {R : Type*} [CommRing R]
-
-/-- At `q = 0` and `n ≠ 0`, `(x; 0)_n = 1 - x`. -/
-theorem qPochhammer_zero_right (x : R) {n : ℕ} (hn : n ≠ 0) : qPochhammer x (0 : R) n = 1 - x := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-  simp [qPochhammer_succ']
-
-/-- If `m ≤ n`, then `(x; q)_m` divides `(x; q)_n`. -/
-theorem qPochhammer_dvd_of_le (x q : R) {m n : ℕ} (h : m ≤ n) :
-    qPochhammer x q m ∣ qPochhammer x q n := by
-  rw [qPochhammer_def, qPochhammer_def]
-  exact prod_dvd_prod_of_subset _ _ _ (range_mono h)
-
-/-- `(x; q)_n` is a unit if and only if each factor `1 - x q ^ i` (`i < n`) is a unit. -/
-theorem isUnit_qPochhammer_iff (x q : R) (n : ℕ) :
-    IsUnit (qPochhammer x q n) ↔ ∀ i < n, IsUnit (1 - x * q ^ i) := by
-  simp [qPochhammer_def, IsUnit.prod_iff]
-
-/-- `(q; q)_n` is a unit if and only if each `1 - q ^ (i + 1)` (`i < n`) is a unit. -/
-theorem isUnit_qPochhammer_self_iff (q : R) (n : ℕ) :
-    IsUnit (qPochhammer q q n) ↔ ∀ i < n, IsUnit (1 - q ^ (i + 1)) := by
-  simp [qPochhammer_self, IsUnit.prod_iff]
-
-end QPochhammer
-
-end TauCeti
 
 /-! ### Polynomial Jackson derivative -/
 
