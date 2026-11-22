@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 public import TauCeti.NumberTheory.Padics.Measure.BaseChange.Basic
 public import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.Algebra
 import TauCeti.NumberTheory.Padics.Measure.IntegralUnitBall
@@ -28,12 +29,16 @@ This file proves that these constructions are compatible without assuming contin
 * for finite projective `O`, `extendCoefficients j hj (extendScalars O μ)` equals the coefficient
   extension of `μ` along `j.comp (algebraMap R O)`
   (`AbstractMeasure.extendCoefficients_extendScalars`), `extendCoefficients_baseChange_tmul` gives
-  the formula on pure tensors, and for an `R`-algebra map `j : O →ₐ[R] K` into the closed unit
-  ball it equals the extension along `algebraMap R K`
+  the formula on pure tensors, `extendCoefficients_baseChange` lifts this to an equality on all of
+  `O ⊗[R] D(X, R)` using the `O`-action through `j`, and for an `R`-algebra map `j : O →ₐ[R] K`
+  into the closed unit ball it equals the extension along `algebraMap R K`
   (`AbstractMeasure.extendCoefficients_algHom_extendScalars`);
 * in any finite `R`-basis `b` of `O`, the extension of every `ν ∈ D(X, O)` decomposes via the
   coordinate retractions `AbstractMeasure.mapScalars (b.coord i) ν`
   (`AbstractMeasure.extendCoefficients_eq_sum_basis`);
+* on `ℤ_p`, `AbstractMeasure.amiceTransform_extendCoefficients_baseChange` identifies the Amice
+  transform of `extendCoefficients j hj (baseChangeLinearEquiv O z)` with the tensor lift of
+  `PowerSeries.map (algebraMap ℤ_[p] K) ∘ amiceTransform`;
 * on a profinite topological monoid `G`, extended character integration
   `ContinuousMonoidHom.extendedCharacterRingHom` decomposes correspondingly in any finite `R`-basis
   `b` of `O` (`ContinuousMonoidHom.extendedCharacterRingHom_eq_sum_basis`).
@@ -86,6 +91,31 @@ theorem extendCoefficients_baseChange_tmul (j : O →+* K) (hj : ∀ a, ‖j a�
       j a • extendCoefficients (j.comp (algebraMap R O)) (fun r ↦ hj (algebraMap R O r)) μ := by
   rw [baseChangeLinearEquiv_tmul, extendCoefficients_smul, extendCoefficients_extendScalars]
 
+/-- Extending coefficients of an arbitrary base-changed measure `baseChangeLinearEquiv O z`
+equals the `O`-linear tensor lift of coefficient extension along `j.comp (algebraMap R O)`, with
+`O` acting on `D(X, K)` through `j`. -/
+theorem extendCoefficients_baseChange (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1)
+    (z : O ⊗[R] D(X, R)) :
+    letI : Module O D(X, K) := Module.compHom D(X, K) j
+    letI : Module R D(X, K) := Module.restrictScalars R O D(X, K)
+    letI : IsScalarTower R O D(X, K) := IsScalarTower.restrictScalars R O D(X, K)
+    extendCoefficients j hj (baseChangeLinearEquiv O z) =
+      LinearMap.liftBaseChange O
+        { toFun := extendCoefficients (j.comp (algebraMap R O)) (fun r ↦ hj (algebraMap R O r))
+          map_add' := map_add _
+          map_smul' := fun r μ ↦ by
+            rw [RingHom.id_apply, extendCoefficients_smul]
+            rfl } z := by
+  let : Module O D(X, K) := Module.compHom D(X, K) j
+  let : Module R D(X, K) := Module.restrictScalars R O D(X, K)
+  let : IsScalarTower R O D(X, K) := IsScalarTower.restrictScalars R O D(X, K)
+  induction z using TensorProduct.inductionOn with
+  | tmul a μ =>
+    rw [LinearMap.liftBaseChange_tmul]
+    exact extendCoefficients_baseChange_tmul j hj a μ
+  | add z₁ z₂ hz₁ hz₂ =>
+    simp only [map_add, hz₁, hz₂]
+
 /-- When `K` is an `R`-algebra and `j : O →ₐ[R] K` is an `R`-algebra homomorphism into the closed
 unit ball, extending `extendScalars O μ` along `j` agrees with extending `μ` along
 `algebraMap R K`. -/
@@ -116,6 +146,64 @@ theorem extendCoefficients_eq_sum_basis {ι : Type*} [Fintype ι] (b : Module.Ba
   simp [map_sum]
 
 end ProfiniteSpace
+
+section Amice
+
+variable {p : ℕ} [Fact p.Prime]
+  {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
+  [Algebra ℤ_[p] O] [IsModuleTopology ℤ_[p] O] [Module.Projective ℤ_[p] O] [Module.Finite ℤ_[p] O]
+  {K : Type*} [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
+  [Algebra ℤ_[p] K] [ContinuousSMul ℤ_[p] K]
+
+/-- On an arbitrary base-changed measure `baseChangeLinearEquiv O z` over `ℤ_p`, taking the Amice
+transform after extending coefficients along a `ℤ_p`-algebra homomorphism `j : O →ₐ[ℤ_[p]] K` into
+the closed unit ball agrees with the `O`-linear tensor lift of `PowerSeries.map (algebraMap ℤ_[p] K)
+∘ amiceTransform`, with `O` acting on `K⟦X⟧` through `j`. -/
+theorem amiceTransform_extendCoefficients_baseChange (j : O →ₐ[ℤ_[p]] K)
+    (hj : ∀ a, ‖j a‖ ≤ 1) (z : O ⊗[ℤ_[p]] D(ℤ_[p], ℤ_[p])) :
+    letI : Module O K⟦X⟧ := Module.compHom K⟦X⟧ (j : O →+* K)
+    letI : IsScalarTower ℤ_[p] O K⟦X⟧ := ⟨fun r a F ↦ by
+      have h : j (r • a) • F = r • (j a • F) := by
+        rw [Algebra.smul_def r a, map_mul, j.commutes, mul_smul, algebraMap_smul]
+      exact h⟩
+    (extendCoefficients (j : O →+* K) hj (baseChangeLinearEquiv O z)).amiceTransform =
+      LinearMap.liftBaseChange O
+        ((PowerSeries.mapAlgHom (Algebra.ofId ℤ_[p] K)).toLinearMap ∘ₗ
+          (amiceTransform : D(ℤ_[p], ℤ_[p]) →ₗ[ℤ_[p]] ℤ_[p]⟦X⟧)) z := by
+  let : Module O D(ℤ_[p], K) := Module.compHom D(ℤ_[p], K) (j : O →+* K)
+  let : Module ℤ_[p] D(ℤ_[p], K) := Module.restrictScalars ℤ_[p] O D(ℤ_[p], K)
+  let : IsScalarTower ℤ_[p] O D(ℤ_[p], K) := IsScalarTower.restrictScalars ℤ_[p] O D(ℤ_[p], K)
+  let : Module O K⟦X⟧ := Module.compHom K⟦X⟧ (j : O →+* K)
+  let : IsScalarTower ℤ_[p] O K⟦X⟧ := ⟨fun r a F ↦ by
+    have h : j (r • a) • F = r • (j a • F) := by
+      rw [Algebra.smul_def r a, map_mul, j.commutes, mul_smul, algebraMap_smul]
+    exact h⟩
+  rw [extendCoefficients_baseChange (j : O →+* K) hj]
+  let amiceO : D(ℤ_[p], K) →ₗ[O] K⟦X⟧ :=
+    { (amiceTransform : D(ℤ_[p], K) →ₗ[K] K⟦X⟧).toAddHom with
+      map_smul' := fun a ν ↦ by
+        exact (amiceTransform : D(ℤ_[p], K) →ₗ[K] K⟦X⟧).map_smul (j a) ν }
+  have hamiceO (ν : D(ℤ_[p], K)) : ν.amiceTransform = amiceO ν := (rfl)
+  rw [hamiceO, ← LinearMap.comp_apply, LinearMap.comp_liftBaseChange]
+  refine congrArg (fun l ↦ LinearMap.liftBaseChange O l z) ?_
+  ext μ n
+  simp only [LinearMap.coe_comp, LinearMap.coe_restrictScalars, Function.comp_apply,
+    LinearMap.coe_mk, AddHom.coe_mk, AlgHom.toLinearMap_apply, amiceO]
+  have h1 := amiceTransform_extendCoefficients (Algebra.ofId ℤ_[p] K)
+    (continuous_algebraMap ℤ_[p] K) (fun r ↦ by simpa using hj (algebraMap ℤ_[p] O r)) μ
+  have h2 : extendCoefficients ((j : O →+* K).comp (algebraMap ℤ_[p] O))
+      (fun r ↦ hj (algebraMap ℤ_[p] O r)) μ =
+      extendCoefficients (Algebra.ofId ℤ_[p] K : ℤ_[p] →+* K)
+        (fun r ↦ by simpa using hj (algebraMap ℤ_[p] O r)) μ := by
+    simp only [j.comp_algebraMap, Algebra.toRingHom_ofId]
+  have h3 : (((extendCoefficients ((j : O →+* K).comp (algebraMap ℤ_[p] O))
+      (fun r ↦ hj (algebraMap ℤ_[p] O r)) μ).amiceTransform)).coeff n =
+      ((PowerSeries.mapAlgHom (Algebra.ofId ℤ_[p] K)) μ.amiceTransform).coeff n := by
+    rw [h2, h1]
+    rfl
+  exact h3
+
+end Amice
 
 end AbstractMeasure
 
