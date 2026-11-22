@@ -61,9 +61,11 @@ lemma localHomologyMapOfCoefficients_def (S : Set M) (k : ℕ) :
     (SSet.homologyNatTransOfCoefficients φ k).app (toSSet.obj (TopCat.of M)) ≫
         (ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ R' k =
       (ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ R k ≫
-        localHomologyMapOfCoefficients φ S k :=
-  SSetPair.homologyNatTransOfCoefficients_app_comp_homologyπ φ k
-    (toSSetPair.obj (ofSubset (Sᶜ : Set (TopCat.of M))))
+        localHomologyMapOfCoefficients φ S k := by
+  rw [SSet.homologyNatTransOfCoefficients_app, localHomologyMapOfCoefficients_def,
+    SSetPair.homologyNatTransOfCoefficients_app]
+  exact SSetPair.homologyπ_coefficient_naturality
+    (toSSetPair.obj (ofSubset (Sᶜ : Set (TopCat.of M)))) φ k
 end SingleSpace
 @[reassoc] lemma localHomologyMap_comp_localHomologyMapOfCoefficients {M N : Type w}
     [TopologicalSpace M] [TopologicalSpace N] (j : C(M, N)) {S : Set M} {T : Set N}

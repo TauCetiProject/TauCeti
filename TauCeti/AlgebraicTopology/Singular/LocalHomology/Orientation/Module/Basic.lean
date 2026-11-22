@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Field.ZMod
 public import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 public import TauCeti.Algebra.Group.Units.ULift
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Coefficients
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 public import TauCeti.Data.ZMod.RingHoms
 import TauCeti.Geometry.Manifold.ModelTransport.Finrank
 /-!
@@ -18,20 +18,19 @@ import TauCeti.Geometry.Manifold.ModelTransport.Finrank
 For Hausdorff `M` modelled on a finite-dimensional real normed space `E`, ring `R`, and `R`-module
 `N`, a *local `N`-orientation* at `x` (`ModuleLocalOrientation N M x d`) generates
 `H_d(M, M ∖ {x}; N)`, and an *`N`-orientation* (`ModuleOrientation N M E d`) is a
-transport-invariant choice at each `x`. Feeds `Orientation.Module.FundamentalClass` (relative/global
-fundamental classes for closed-manifold Poincaré duality over arbitrary rings); for `N = R`,
-`d = finrank ℝ E`, this is Hatcher's *`R`-orientation* (§3.3):
+transport-invariant choice at each `x`. Feeds `Orientation.{Basic,Transport,Homological}`
+and `Orientation.OpenEmbedding` (where `ULift ℤ` specializes to `HomologicalOrientation`) and
+`Orientation.Module.FundamentalClass` (relative/global fundamental classes for closed-manifold
+Poincaré duality over arbitrary rings); for `N = R`, `d = finrank ℝ E`, this is Hatcher's
+*`R`-orientation* (§3.3):
 * `[IsDedekindFiniteMonoid R]`: local `N`-orientations in a fibre `≃ₗ[R] R` match `Rˣ`
   (`equivUnits`); `Rˣ` acts pretransitively (transitive when `R`-orientable) on `R`-orientations of
   a connected `n`-manifold (`exists_units_smul_eq`).
 * `[CommRing R]`, `[FaithfulSMul R N]`: `Rˣ` acts freely on nonempty `n`-manifolds
   (`units_smul_injective`).
-* `ULift ℤ` recovers `HomologicalOrientation` (`equivHomologicalOrientation`).
 * Dedekind-finite `K`, `[Subsingleton Kˣ]`: unique `K`-orientation (`uniqueOfSubsingletonUnits`).
 * `[CommRing R]`, `(2 : R) = 0`: exact scalar extension (`extendScalars`, via `extendScalarsObj`)
   along `ZMod.castULiftHom` from `ULift (ZMod 2)` yields `ofTwoEqZero`.
-Adapts `Orientation.{Basic,Transport,Homological,OpenEmbedding}` and `IsFundamentalClass`'s
-faithfulness argument via `LinearEquiv.eq_one_of_smul_eq_self_of_span_singleton_eq_top`.
 Ref: A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), §3.3. -/
 public noncomputable section
 open CategoryTheory Limits Module Topology
@@ -43,7 +42,7 @@ open scoped ChangeOfRings
 universe w v u
 namespace TauCeti
 section Local
-variable {M M' : Type w} [TopologicalSpace M] [TopologicalSpace M']
+variable {M : Type w} [TopologicalSpace M]
   {R : Type u} [Ring R] (N : ModuleCat.{w} R)
 /-- `z ∈ H_d(M, M ∖ {x}; N)` is a *local `N`-orientation* when it generates that `R`-module. -/
 def IsModuleLocalOrientation (x : M) (d : ℕ) (z : ↑(localHomology N {x} d)) : Prop :=
@@ -54,13 +53,6 @@ theorem isModuleLocalOrientation_iff (x : M) (d : ℕ) (z : ↑(localHomology N 
 abbrev ModuleLocalOrientation (M : Type w) [TopologicalSpace M] (x : M) (d : ℕ) :=
   {z : ↑(localHomology N {x} d) // IsModuleLocalOrientation N x d z}
 variable {N} {x : M} {d : ℕ}
-theorem isModuleLocalOrientation_map_iff {N' : ModuleCat.{w} R} {y : M'}
-    (e : localHomology N {x} d ≅ localHomology N' {y} d) {z : ↑(localHomology N {x} d)} :
-    IsModuleLocalOrientation N' y d (e.hom z) ↔ IsModuleLocalOrientation N x d z :=
-  span_singleton_apply_eq_top_iff e.hom
-theorem IsModuleLocalOrientation.map {N' : ModuleCat.{w} R} {y : M'} {z : ↑(localHomology N {x} d)}
-    (hz : IsModuleLocalOrientation N x d z) (e : localHomology N {x} d ≅ localHomology N' {y} d) :
-    IsModuleLocalOrientation N' y d (e.hom z) := (isModuleLocalOrientation_map_iff e).2 hz
 theorem isModuleLocalOrientation_smul_iff_of_isUnit {r : R} (hr : IsUnit r)
     {z : ↑(localHomology N {x} d)} :
     IsModuleLocalOrientation N x d (r • z) ↔ IsModuleLocalOrientation N x d z := by
@@ -77,13 +69,6 @@ instance : MulAction Rˣ (ModuleLocalOrientation N M x d) where
   mul_smul u v z := Subtype.ext (mul_smul (u : R) (v : R) z.val)
 instance : InvolutiveNeg (ModuleLocalOrientation N M x d) :=
   { neg := fun z ↦ ⟨-z.val, z.property.neg⟩, neg_neg := fun z ↦ Subtype.ext (neg_neg z.val) }
-/-- With coefficients `ULift ℤ`, `IsModuleLocalOrientation` matches `IsLocalOrientation`. -/
-theorem isModuleLocalOrientation_iff_isLocalOrientation (x : M) (d : ℕ)
-    (z : ↑(localHomology (of ℤ (ULift.{w} ℤ)) {x} d)) :
-    IsModuleLocalOrientation (of ℤ (ULift.{w} ℤ)) x d z ↔ IsLocalOrientation x d z := by
-  rw [isModuleLocalOrientation_iff, Submodule.span_singleton_eq_top_iff, isLocalOrientation_iff]
-  exact forall_congr' fun _ ↦ exists_congr fun c ↦
-    iff_of_eq (congrArg (· = _) (int_smul_eq_zsmul _ c _))
 namespace ModuleLocalOrientation
 @[simp] lemma coe_smul (u : Rˣ) (z : ModuleLocalOrientation N M x d) :
     (u • z).val = (u : R) • z.val := (rfl)
@@ -108,15 +93,6 @@ variable {N' : ModuleCat.{w} R} (e : N ≅ N') (x : M) (d : ℕ)
     equivOfCoefficientsIso e x d (-z) = -equivOfCoefficientsIso e x d z :=
   Subtype.ext (map_neg (localHomologyIsoOfCoefficientsIso e {x} d).hom.hom z.val)
 end
-/-- With coefficients `ULift ℤ`, local module orientations match `TauCeti.LocalOrientation`. -/
-def equivLocalOrientation (M : Type w) [TopologicalSpace M] (x : M) (d : ℕ) :
-    ModuleLocalOrientation (of ℤ (ULift.{w} ℤ)) M x d ≃ LocalOrientation M x d :=
-  Equiv.subtypeEquivRight (isModuleLocalOrientation_iff_isLocalOrientation x d)
-@[simp] lemma coe_equivLocalOrientation (x : M) (d : ℕ)
-    (z : ModuleLocalOrientation (of ℤ (ULift.{w} ℤ)) M x d) :
-    (equivLocalOrientation M x d z).val = z.val := (rfl)
-@[simp] lemma coe_equivLocalOrientation_symm (x : M) (d : ℕ) (z : LocalOrientation M x d) :
-    ((equivLocalOrientation M x d).symm z).val = z.val := (rfl)
 end ModuleLocalOrientation
 end Local
 section BaseRing
@@ -128,13 +104,10 @@ theorem isModuleLocalOrientation_inv_one : IsModuleLocalOrientation N x d (e.sym
   e.symm.span_singleton_apply_eq_top_iff.2
     ((Ideal.eq_top_iff_one _).2 (Submodule.mem_span_singleton_self 1))
 variable [IsDedekindFiniteMonoid R]
-/-- Over a Dedekind-finite ring, `z ∈ H_d(M, M ∖ {x}; N)` generates iff `IsUnit (e z)`. -/
-theorem isModuleLocalOrientation_iff_isUnit (z : ↑(localHomology N {x} d)) :
-    IsModuleLocalOrientation N x d z ↔ IsUnit (e z) := e.span_singleton_eq_top_iff_isUnit
 namespace ModuleLocalOrientation
 /-- Over a Dedekind-finite ring, `e : H_d ≃ₗ[R] R` identifies local orientations with `Rˣ`. -/
 def equivUnits : ModuleLocalOrientation N M x d ≃ Rˣ :=
-  ⟨fun z ↦ ((isModuleLocalOrientation_iff_isUnit e z.val).1 z.property).unit,
+  ⟨fun z ↦ (e.span_singleton_eq_top_iff_isUnit.1 z.property).unit,
    fun u ↦ u • ⟨e.symm 1, isModuleLocalOrientation_inv_one e⟩,
    fun z ↦ Subtype.ext <| by rw [coe_smul, IsUnit.unit_spec, ← map_smul, smul_eq_mul, mul_one,
      e.symm_apply_apply], fun u ↦ Units.ext <| (IsUnit.unit_spec _).trans <| by
@@ -147,11 +120,6 @@ def equivUnits : ModuleLocalOrientation N M x d ≃ Rˣ :=
     equivUnits e (u • z) = u * equivUnits e z := Units.ext <| by simp [smul_eq_mul]
 @[simp] lemma equivUnits_neg (z : ModuleLocalOrientation N M x d) :
     equivUnits e (-z) = -equivUnits e z := Units.ext <| by simp
-include e in
-/-- Over a Dedekind-finite ring, two local `N`-orientations in a fibre `≃ₗ[R] R` differ by `Rˣ`. -/
-theorem exists_units_smul_eq_of_iso (z z' : ModuleLocalOrientation N M x d) :
-    ∃ u : Rˣ, u • z = z' :=
-  ⟨equivUnits e z' * (equivUnits e z)⁻¹, (equivUnits e).injective (by simp [mul_assoc])⟩
 end ModuleLocalOrientation
 end
 section Chart
@@ -299,7 +267,8 @@ theorem IsModuleLocalOrientation.extendScalarsObj {N : ModuleCat.{w} R}
 theorem IsModuleLocalOrientation.extendScalars {z : ↑(localHomology (of R R) {x} d)}
     (hz : IsModuleLocalOrientation (of R R) x d z) : IsModuleLocalOrientation (of S S) x d
       ((localHomologyExtendScalarsIso f {x} d).hom ((1 : S) ⊗ₜ[R, f] z)) :=
-  (span_singleton_apply_eq_top_iff _).2 (span_singleton_one_tmul_eq_top f hz)
+  ((congr_hom (localHomologyExtendScalarsIso_hom f {x} d) ((1 : S) ⊗ₜ[R, f] z)).trans
+    (comp_apply _ _ _)) ▸ (span_singleton_apply_eq_top_iff _).2 (hz.extendScalarsObj f)
 namespace ModuleLocalOrientation
 variable {N : ModuleCat.{w} R}
 /-- Exact extension of scalars along `f : R →+* S` on local `N`-orientations for arbitrary `N`. -/
@@ -349,7 +318,7 @@ structure ModuleOrientation {R : Type u} [Ring R] (N : ModuleCat.{w} R) (M E : T
   moduleLocalOrientationTransport_toFun' {x y : FundamentalGroupoid M} (f : x ⟶ y) :
     moduleLocalOrientationTransport N M E d f (toFun x.as) = toFun y.as
 namespace ModuleOrientation
-open ModuleLocalOrientation (equivLocalOrientation coe_equivOfCoefficientsIso coe_extendScalarsObj)
+open ModuleLocalOrientation (coe_equivOfCoefficientsIso coe_extendScalarsObj)
 open IsOpenEmbedding (coe_moduleLocalOrientationEquiv)
 variable {M E : Type w} [TopologicalSpace M] [T2Space M]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
@@ -415,26 +384,6 @@ variable {N' : ModuleCat.{w} R} (e : N ≅ N')
 @[simp] theorem equivOfCoefficientsIso_neg (o : ModuleOrientation N M E d) :
     equivOfCoefficientsIso e (-o) = -equivOfCoefficientsIso e o := ext fun _ ↦ by simp
 end
-/-- With coefficients `ULift ℤ`, `ModuleOrientation` is equivalent to `HomologicalOrientation`. -/
-def equivHomologicalOrientation :
-    ModuleOrientation (of ℤ (ULift.{w} ℤ)) M E d ≃ HomologicalOrientation M E d :=
-  ⟨fun o ↦ ⟨fun x ↦ equivLocalOrientation M x d (o x), fun _ ↦ Subtype.ext <| by
-      simp [coe_localOrientationTransport]⟩,
-   fun o ↦ ⟨fun x ↦ (equivLocalOrientation M x d).symm (o x), fun _ ↦ Subtype.ext <| by
-      simp [← coe_localOrientationTransport, o.localOrientationTransport_apply]⟩,
-   fun _ ↦ ext fun _ ↦ (equivLocalOrientation M _ d).symm_apply_apply _,
-   fun _ ↦ HomologicalOrientation.ext fun _ ↦ (equivLocalOrientation M _ d).apply_symm_apply _⟩
-@[simp] theorem coe_equivHomologicalOrientation_apply
-    (o : ModuleOrientation (of ℤ (ULift.{w} ℤ)) M E d) (x : M) :
-    (equivHomologicalOrientation o x).val = (o x).val := (rfl)
-@[simp] theorem coe_equivHomologicalOrientation_symm_apply (o : HomologicalOrientation M E d)
-    (x : M) : (equivHomologicalOrientation.symm o x).val = (o x).val := (rfl)
-@[simp] theorem equivHomologicalOrientation_neg (o : ModuleOrientation (of ℤ (ULift.{w} ℤ)) M E d) :
-    equivHomologicalOrientation (-o) = -equivHomologicalOrientation o :=
-  HomologicalOrientation.ext fun _ ↦ Subtype.ext (by simp)
-@[simp] theorem equivHomologicalOrientation_symm_neg (o : HomologicalOrientation M E d) :
-    equivHomologicalOrientation.symm (-o) = -equivHomologicalOrientation.symm o :=
-  ext fun _ ↦ Subtype.ext (by simp)
 /-- **An `N`-orientation of a connected manifold is determined by its value at one point.** -/
 theorem eq_of_apply_eq [ConnectedSpace M] {o o' : ModuleOrientation N M E d} {x : M}
     (h : o x = o' x) : o = o' := by
@@ -448,34 +397,62 @@ theorem eq_of_apply_eq [ConnectedSpace M] {o o' : ModuleOrientation N M E d} {x 
 theorem exists_units_smul_eq {R : Type w} [Ring R] [IsDedekindFiniteMonoid R] [ConnectedSpace M]
     (hd : finrank ℝ E = d) (o o' : ModuleOrientation (of R R) M E d) : ∃ u : Rˣ, u • o = o' := by
   subst hd; obtain ⟨x⟩ := ConnectedSpace.toNonempty (α := M)
-  obtain ⟨u, hu⟩ := ModuleLocalOrientation.exists_units_smul_eq_of_iso
-    (singularHomologyComplSingletonFinrankIso (of R R) (chartAt E x)
-      (mem_chart_source E x)).toLinearEquiv (o x) (o' x); exact ⟨u, eq_of_apply_eq (x := x) hu⟩
+  obtain ⟨u, hu⟩ := (singularHomologyComplSingletonFinrankIso (of R R) (chartAt E x)
+    (mem_chart_source E x)).toLinearEquiv.exists_units_smul_eq_of_span_singleton_eq_top
+      (o x).property (o' x).property
+  exact ⟨u, eq_of_apply_eq (x := x) (Subtype.ext hu)⟩
 /-- On a nonempty `n`-manifold (`[CommRing R]`, faithful `N`), `Rˣ` acts freely. -/
 theorem units_smul_injective {R : Type u} [CommRing R] {N : ModuleCat.{w} R} [FaithfulSMul R N]
     [Nonempty M] (hd : finrank ℝ E = d) (o : ModuleOrientation N M E d) :
     Function.Injective fun u : Rˣ ↦ u • o :=
   let ⟨x⟩ := ‹Nonempty M›; fun _ _ huv ↦ (o x).units_smul_injective hd (DFunLike.congr_fun huv x)
+section Transport
+variable [PathConnectedSpace M]
+/-- **Orientations by transport.** On a path-connected manifold, a local `N`-orientation `z` at `x`
+whose transport along path classes from `x` depends only on their end extends to an
+`N`-orientation. -/
+def ofLocalOrientationTransport (x : M) (z : ModuleLocalOrientation N M x d)
+    (h : ∀ {y : FundamentalGroupoid M} (f g : FundamentalGroupoid.mk x ⟶ y),
+      moduleLocalOrientationTransport N M E d f z = moduleLocalOrientationTransport N M E d g z) :
+    ModuleOrientation N M E d where
+  toFun y := moduleLocalOrientationTransport N M E d
+    (Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x y) :
+      FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) z
+  moduleLocalOrientationTransport_toFun' _ := by
+    rw [← Equiv.trans_apply, ← moduleLocalOrientationTransport_comp]; exact h _ _
+theorem ofLocalOrientationTransport_apply (x : M) (z : ModuleLocalOrientation N M x d)
+    (h : ∀ {y : FundamentalGroupoid M} (f g : FundamentalGroupoid.mk x ⟶ y),
+      moduleLocalOrientationTransport N M E d f z = moduleLocalOrientationTransport N M E d g z)
+    (y : M) (f : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) :
+    ofLocalOrientationTransport (E := E) x z h y = moduleLocalOrientationTransport N M E d f z :=
+  h _ f
+@[simp] theorem ofLocalOrientationTransport_apply_self (x : M)
+    (z : ModuleLocalOrientation N M x d)
+    (h : ∀ {y : FundamentalGroupoid M} (f g : FundamentalGroupoid.mk x ⟶ y),
+      moduleLocalOrientationTransport N M E d f z = moduleLocalOrientationTransport N M E d g z) :
+    ofLocalOrientationTransport (E := E) x z h x = z := by
+  rw [ofLocalOrientationTransport_apply x z h x (𝟙 _), moduleLocalOrientationTransport_id]; rfl
+end Transport
 section SimplyConnected
 variable [SimplyConnectedSpace M]
 section
 variable (x : M) (z : ModuleLocalOrientation N M x d)
+private theorem moduleLocalOrientationTransport_eq_of_simplyConnectedSpace
+    {y : FundamentalGroupoid M} (f g : FundamentalGroupoid.mk x ⟶ y) :
+    moduleLocalOrientationTransport N M E d f z = moduleLocalOrientationTransport N M E d g z :=
+  congrArg (moduleLocalOrientationTransport N M E d · z)
+    (Subsingleton.elim (α := Path.Homotopic.Quotient x _) f g)
 /-- **Simply connected manifold**: extend a local orientation globally by path transport. -/
 def ofSimplyConnectedSpace : ModuleOrientation N M E d :=
-  ⟨fun y ↦ moduleLocalOrientationTransport N M E d
-      (Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x y) :
-        FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) z,
-   fun _ ↦ by
-     rw [← Equiv.trans_apply, ← moduleLocalOrientationTransport_comp]
-     exact congrArg (moduleLocalOrientationTransport N M E d · z)
-       (Subsingleton.elim (α := Path.Homotopic.Quotient x _) _ _)⟩
+  ofLocalOrientationTransport x z (moduleLocalOrientationTransport_eq_of_simplyConnectedSpace x z)
 theorem ofSimplyConnectedSpace_apply (y : M)
     (f : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) :
     ofSimplyConnectedSpace (E := E) x z y = moduleLocalOrientationTransport N M E d f z :=
-  congrArg (moduleLocalOrientationTransport N M E d · z)
-    (Subsingleton.elim (α := Path.Homotopic.Quotient x y) _ _)
-@[simp] theorem ofSimplyConnectedSpace_apply_self : ofSimplyConnectedSpace (E := E) x z x = z := by
-  rw [ofSimplyConnectedSpace_apply x z x (𝟙 _), moduleLocalOrientationTransport_id]; rfl
+  ofLocalOrientationTransport_apply x z
+    (moduleLocalOrientationTransport_eq_of_simplyConnectedSpace x z) y f
+@[simp] theorem ofSimplyConnectedSpace_apply_self : ofSimplyConnectedSpace (E := E) x z x = z :=
+  ofLocalOrientationTransport_apply_self x z
+    (moduleLocalOrientationTransport_eq_of_simplyConnectedSpace x z)
 end
 /-- Every simply connected `n`-manifold has an `R`-orientation over any ring `R`. -/
 theorem nonempty_of_simplyConnectedSpace {R : Type w} [Ring R] (hd : finrank ℝ E = d) :
@@ -588,6 +565,9 @@ variable (o : ModuleOrientation (of R R) M E d)
 def extendScalars : ModuleOrientation (of S S) M E d :=
   equivOfCoefficientsIso ((εIso (ModuleCat.extendScalars.{w} f)).symm : _ ≅ of S S)
     (o.extendScalarsObj f)
+lemma extendScalars_def : o.extendScalars f =
+    equivOfCoefficientsIso ((εIso (ModuleCat.extendScalars.{w} f)).symm : _ ≅ of S S)
+      (o.extendScalarsObj f) := (rfl)
 @[simp] lemma extendScalars_apply (x : M) : o.extendScalars f x = (o x).extendScalars f := (rfl)
 lemma coe_extendScalars_apply (x : M) : (o.extendScalars f x).val =
     (localHomologyExtendScalarsIso f {x} d).hom ((1 : S) ⊗ₜ[R, f] (o x).val) :=

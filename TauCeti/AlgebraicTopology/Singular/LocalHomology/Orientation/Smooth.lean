@@ -1052,14 +1052,8 @@ private theorem localOrientationTransport_chartAt {H : Type v} [TopologicalSpace
       mul {c d e g} hg {g'} hg' := by
         rw [Set.mem_ofPred_eq, localOrientationTransport_comp, Equiv.trans_apply, hg, hg'] }
   -- It contains the classes of paths in the sets `U b`, so it is everything.
-  have hS : S = ⊤ := by
-    rw [eq_top_iff, ← FundamentalGroupoid.iSup_im_map_subtypeVal_eq_top (U := U)
-      fun b ↦ ⟨b, hU b⟩]
-    refine iSup_le fun b ↦ ?_
-    rw [Subgroupoid.im, Subgroupoid.map_le_iff_le_comap]
-    rintro ⟨⟨c⟩, ⟨d⟩, g⟩ -
-    induction g using Path.Homotopic.Quotient.ind with | mk γ =>
-    exact hpath b (γ.map continuous_subtypeVal) fun t ↦ (γ t).property
+  have hS : S = ⊤ := FundamentalGroupoid.subgroupoid_eq_top_of_path_mem (U := U)
+    (fun b ↦ ⟨b, hU b⟩) S fun b _ _ γ hγ ↦ hpath b γ hγ
   have hf : f ∈ S.arrows x y := hS ▸ trivial
   exact hf
 

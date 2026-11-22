@@ -173,77 +173,8 @@ lemma homologyObjIso_inv (X : SSet.{w}) (n : ℕ) :
       (homologyObjIso F R X n).hom ≫ SSet.homologyMap g (F.obj R) n :=
   (homologyFunctorObjCompIso F R n).hom.naturality g
 end Coefficients
-
-/-- **Extension of scalars commutes with simplicial homology** along a ring map `f : R →+* S` whose
-extension of scalars is exact, for instance a flat one
-(`ModuleCat.preservesFiniteLimits_extendScalars_of_flat`): extending scalars of the homology with
-coefficients in `R` gives the homology with coefficients in `S`. The `R`-coefficient object is the
-native `ULift R`; the `S`-coefficient object is `S`. -/
-def homologyExtendScalarsIso {R S : Type u} [CommRing R] [CommRing S] (X : SSet.{u})
-    (f : R →+* S) [PreservesFiniteLimits (ModuleCat.extendScalars.{u} f)] (n : ℕ) :
-    (ModuleCat.extendScalars f).obj (X.homology (ModuleCat.of R (ULift.{u} R)) n) ≅
-      X.homology (ModuleCat.of S S) n := by
-  let F : ModuleCat.{u} R ⥤ ModuleCat.{u} S := ModuleCat.extendScalars f
-  have : F.Additive := Functor.additive_of_preserves_binary_products F
-  let M := ModuleCat.of R (ULift.{u} R)
-  let C := X.chainComplex M
-  let eUnit : F.obj (ModuleCat.of R R) ≅ ModuleCat.of S S :=
-    letI := f.toAlgebra
-    (TensorProduct.AlgebraTensorModule.rid R S S).toModuleIso
-  let eM : F.obj M ≅ ModuleCat.of S S :=
-    F.mapIso ULift.moduleEquiv.toModuleIso ≪≫ eUnit
-  let eH : F.obj (C.homology n) ≅ X.homology (F.obj M) n :=
-    ((C.sc n).mapHomologyIso F).symm ≪≫
-      HomologicalComplex.homologyMapIso ((SSet.chainComplexFunctorObjCompMapIso F M).app X) n
-  let eC : X.homology (F.obj M) n ≅ X.homology (ModuleCat.of S S) n :=
-    HomologicalComplex.homologyMapIso
-      (((SSet.chainComplexFunctor.{u} (ModuleCat.{u} S)).flip.obj X).mapIso eM) n
-  exact eH ≪≫ eC
-
-/-- The identification `SSet.homologyExtendScalarsIso` is the composite of three comparisons:
-extension of scalars commutes with the homology of the chain complex, with the simplicial chain
-complex, and carries the coefficients `ULift R` to `S`. -/
-theorem homologyExtendScalarsIso_hom {R S : Type u} [CommRing R] [CommRing S] (X : SSet.{u})
-    (f : R →+* S) [PreservesFiniteLimits (ModuleCat.extendScalars.{u, u, u} f)] (n : ℕ) :
-    (X.homologyExtendScalarsIso f n).hom =
-      (((X.chainComplex (ModuleCat.of R (ULift.{u} R))).sc n).mapHomologyIso
-          (ModuleCat.extendScalars f)).inv ≫
-        HomologicalComplex.homologyMap ((SSet.chainComplexFunctorObjCompMapIso
-          (ModuleCat.extendScalars f) (ModuleCat.of R (ULift.{u} R))).hom.app X) n ≫
-        HomologicalComplex.homologyMap
-          (((SSet.chainComplexFunctor (ModuleCat.{u} S)).flip.obj X).map
-            ((ModuleCat.extendScalars f).map ULift.moduleEquiv.toModuleIso.hom ≫
-              (letI := f.toAlgebra; (TensorProduct.AlgebraTensorModule.rid R S S).toModuleIso.hom)))
-          n :=
-  (rfl)
-
-/-- The identification of the extension of scalars of the homology with coefficients in `R` with
-the homology with coefficients in `S` is natural in the simplicial set. -/
-@[reassoc]
-theorem homologyExtendScalarsIso_hom_naturality {R S : Type u} [CommRing R] [CommRing S]
-    {X Y : SSet.{u}} (g : X ⟶ Y) (f : R →+* S)
-    [PreservesFiniteLimits (ModuleCat.extendScalars.{u, u, u} f)] (n : ℕ) :
-    (ModuleCat.extendScalars f).map (SSet.homologyMap g (ModuleCat.of R (ULift.{u} R)) n) ≫
-        (Y.homologyExtendScalarsIso f n).hom =
-      (X.homologyExtendScalarsIso f n).hom ≫ SSet.homologyMap g (ModuleCat.of S S) n := by
-  let F : ModuleCat.{u} R ⥤ ModuleCat.{u} S := ModuleCat.extendScalars f
-  have : F.Additive := Functor.additive_of_preserves_binary_products F
-  let M := ModuleCat.of R (ULift.{u} R)
-  let eM : F.obj M ≅ ModuleCat.of S S := F.mapIso ULift.moduleEquiv.toModuleIso ≪≫
-    (letI := f.toAlgebra; (TensorProduct.AlgebraTensorModule.rid R S S).toModuleIso)
-  -- `homologyExtendScalarsIso` is the composite of three comparisons, each natural.
-  have h₁ := ShortComplex.mapHomologyIso_inv_naturality
-    ((HomologicalComplex.shortComplexFunctor _ (.down ℕ) n).map (chainComplexMap g M)) F
-  have h₂ := congrArg (HomologicalComplex.homologyMap · n)
-    ((SSet.chainComplexFunctorObjCompMapIso F M).hom.naturality g)
-  have h₃ := congrArg (HomologicalComplex.homologyMap · n)
-    (((SSet.chainComplexFunctor (ModuleCat.{u} S)).map eM.hom).naturality g)
-  simp only [HomologicalComplex.homologyMap_comp, Functor.comp_map] at h₂ h₃
-  rw [homologyExtendScalarsIso_hom, homologyExtendScalarsIso_hom]
-  -- The squares name the same objects in different unfolded forms, so they are chained explicitly.
-  exact ((reassoc_of% h₁) _).trans <| congrArg (_ ≫ ·) <| ((reassoc_of% h₂) _).trans <|
-    congrArg (_ ≫ ·) h₃
 end SSet
+
 namespace RingHom
 open ModuleCat (extendScalars of)
 open CategoryTheory.Functor.Monoidal (εIso)
@@ -265,3 +196,122 @@ lemma simplicialHomologyFunctorExtendScalarsIso_inv_app (X : SSet.{u}) (n : ℕ)
       (homologyIsoOfCoefficientsIso (εIso _).symm X n).inv ≫
         (homologyObjIso (extendScalars.{u} f) (of R R) X n).inv := (rfl)
 end RingHom
+
+namespace SSet
+
+private def homologyFunctorExtendScalarsIso {R S : Type u} [CommRing R] [CommRing S]
+    (f : R →+* S) [PreservesFiniteLimits (ModuleCat.extendScalars.{u} f)] (n : ℕ) :
+    homologyFunctor.{u} (ModuleCat.of R (ULift.{u} R)) n ⋙ ModuleCat.extendScalars.{u} f ≅
+      homologyFunctor.{u} (ModuleCat.of S S) n :=
+  Functor.isoWhiskerRight
+      (homologyNatIsoOfCoefficientsIso.{u} (ULift.moduleEquiv.{u, u} (R := R)).toModuleIso n)
+      (ModuleCat.extendScalars.{u} f) ≪≫
+    f.simplicialHomologyFunctorExtendScalarsIso n
+
+/-- **Extension of scalars commutes with simplicial homology** along a ring map `f : R →+* S` whose
+extension of scalars is exact, for instance a flat one
+(`ModuleCat.preservesFiniteLimits_extendScalars_of_flat`): extending scalars of the homology with
+coefficients in `R` gives the homology with coefficients in `S`. The `R`-coefficient object is the
+native `ULift R`; the `S`-coefficient object is `S`. -/
+def homologyExtendScalarsIso {R S : Type u} [CommRing R] [CommRing S] (X : SSet.{u})
+    (f : R →+* S) [PreservesFiniteLimits (ModuleCat.extendScalars.{u} f)] (n : ℕ) :
+    (ModuleCat.extendScalars f).obj (X.homology (ModuleCat.of R (ULift.{u} R)) n) ≅
+      X.homology (ModuleCat.of S S) n :=
+  (homologyFunctorExtendScalarsIso f n).app X
+
+/-- The identification `SSet.homologyExtendScalarsIso` is the composite of three comparisons:
+extension of scalars commutes with the homology of the chain complex, with the simplicial chain
+complex, and carries the coefficients `ULift R` to `S`. -/
+theorem homologyExtendScalarsIso_hom {R S : Type u} [CommRing R] [CommRing S] (X : SSet.{u})
+    (f : R →+* S) [PreservesFiniteLimits (ModuleCat.extendScalars.{u, u, u} f)] (n : ℕ) :
+    (X.homologyExtendScalarsIso f n).hom =
+      (((X.chainComplex (ModuleCat.of R (ULift.{u} R))).sc n).mapHomologyIso
+          (ModuleCat.extendScalars f)).inv ≫
+        HomologicalComplex.homologyMap ((SSet.chainComplexFunctorObjCompMapIso
+          (ModuleCat.extendScalars f) (ModuleCat.of R (ULift.{u} R))).hom.app X) n ≫
+        HomologicalComplex.homologyMap
+          (((SSet.chainComplexFunctor (ModuleCat.{u} S)).flip.obj X).map
+            ((ModuleCat.extendScalars f).map ULift.moduleEquiv.toModuleIso.hom ≫
+              (letI := f.toAlgebra; (TensorProduct.AlgebraTensorModule.rid R S S).toModuleIso.hom)))
+          n := by
+  let F : ModuleCat.{u} R ⥤ ModuleCat.{u} S := ModuleCat.extendScalars f
+  let M := ModuleCat.of R (ULift.{u} R)
+  let φ : M ⟶ ModuleCat.of R R := ULift.moduleEquiv.{u, u}.toModuleIso.hom
+  let := f.toAlgebra
+  have hε : (CategoryTheory.Functor.Monoidal.εIso F).symm.hom =
+      (TensorProduct.AlgebraTensorModule.rid R S S).toModuleIso.hom :=
+    ModuleCat.extendScalars_η f
+  have hinv : (F.mapHomologicalComplexCompHomologyFunctorIso (.down ℕ) n).inv.app
+      (X.chainComplex M) = (((X.chainComplex M).sc n).mapHomologyIso F).inv := by
+    rw [← cancel_mono (((X.chainComplex M).sc n).mapHomologyIso F).hom, Iso.inv_hom_id,
+      ← Functor.mapHomologicalComplexCompHomologyFunctorIso_hom_app]
+    exact ((F.mapHomologicalComplexCompHomologyFunctorIso (.down ℕ) n).app
+      (X.chainComplex M)).inv_hom_id
+  have hcc : (F.mapHomologicalComplex (.down ℕ)).map (((SSet.chainComplexFunctor _).map φ).app X) ≫
+      (SSet.chainComplexFunctorObjCompMapIso F (ModuleCat.of R R)).hom.app X =
+      (SSet.chainComplexFunctorObjCompMapIso F M).hom.app X ≫
+        ((SSet.chainComplexFunctor _).map (F.map φ)).app X := by
+    refine HomologicalComplex.hom_ext _ _ fun k ↦
+      (Limits.isColimitOfPreserves F (X.isColimitChainComplexXCofan M k)).hom_ext fun ⟨x⟩ ↦ ?_
+    have h₁ : X.ιChainComplex x ≫ (((SSet.chainComplexFunctor _).map φ).app X).f k =
+        φ ≫ X.ιChainComplex x := by
+      simp [SSet.chainComplexFunctor, SSet.ιChainComplex]
+    have h₂ : X.ιChainComplex x ≫ (((SSet.chainComplexFunctor _).map (F.map φ)).app X).f k =
+        F.map φ ≫ X.ιChainComplex x := by
+      simp [SSet.chainComplexFunctor, SSet.ιChainComplex]
+    change F.map (X.ιChainComplex x) ≫
+        F.map ((((SSet.chainComplexFunctor _).map φ).app X).f k) ≫
+        ((SSet.chainComplexFunctorObjCompMapIso F (ModuleCat.of R R)).hom.app X).f k =
+      F.map (X.ιChainComplex x) ≫
+        ((SSet.chainComplexFunctorObjCompMapIso F M).hom.app X).f k ≫
+        (((SSet.chainComplexFunctor _).map (F.map φ)).app X).f k
+    rw [← F.map_comp_assoc, h₁, F.map_comp_assoc,
+      SSet.map_ιChainComplex_chainComplexFunctorObjCompMapIso_hom_app_f,
+      SSet.map_ιChainComplex_chainComplexFunctorObjCompMapIso_hom_app_f_assoc, h₂]
+  have hnat :
+      F.map (HomologicalComplex.homologyMap (((SSet.chainComplexFunctor _).map φ).app X) n) ≫
+        (F.mapHomologicalComplexCompHomologyFunctorIso (.down ℕ) n).inv.app
+          (X.chainComplex (ModuleCat.of R R)) =
+      (F.mapHomologicalComplexCompHomologyFunctorIso (.down ℕ) n).inv.app (X.chainComplex M) ≫
+        HomologicalComplex.homologyMap
+          ((F.mapHomologicalComplex (.down ℕ)).map
+            (((SSet.chainComplexFunctor _).map φ).app X)) n :=
+    (F.mapHomologicalComplexCompHomologyFunctorIso (.down ℕ) n).inv.naturality
+      (((SSet.chainComplexFunctor _).map φ).app X)
+  have hh := congrArg (HomologicalComplex.homologyMap · n) hcc
+  simp only [HomologicalComplex.homologyMap_comp] at hh
+  have hhh : F.map ((homologyNatTransOfCoefficients φ n).app X) ≫
+      (homologyObjIso F (ModuleCat.of R R) X n).hom =
+      (homologyObjIso F M X n).hom ≫ (homologyNatTransOfCoefficients (F.map φ) n).app X :=
+    ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hnat)).trans
+      ((Category.assoc _ _ _).trans (congrArg ((F.mapHomologicalComplexCompHomologyFunctorIso
+        (.down ℕ) n).inv.app (X.chainComplex M) ≫ ·) hh))
+  have hlast :
+      (homologyNatTransOfCoefficients (F.map φ) n).app X ≫
+        (homologyNatTransOfCoefficients (CategoryTheory.Functor.Monoidal.εIso F).symm.hom n).app X =
+      HomologicalComplex.homologyMap
+        (((SSet.chainComplexFunctor (ModuleCat.{u} S)).flip.obj X).map
+          (F.map φ ≫ (TensorProduct.AlgebraTensorModule.rid R S S).toModuleIso.hom)) n := by
+    rw [← NatTrans.comp_app, ← homologyNatTransOfCoefficients_comp, hε]
+    rfl
+  simp only [homologyExtendScalarsIso, homologyFunctorExtendScalarsIso, Iso.app_hom,
+    Iso.trans_hom, Functor.isoWhiskerRight_hom, NatTrans.comp_app, Functor.whiskerRight_app,
+    RingHom.simplicialHomologyFunctorExtendScalarsIso_hom_app, homologyIsoOfCoefficientsIso_hom,
+    homologyNatIsoOfCoefficientsIso_hom]
+  refine ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hhh)).trans ?_
+  refine (Category.assoc _ _ _).trans ((congrArg ((homologyObjIso F M X n).hom ≫ ·) hlast).trans ?_)
+  rw [homologyObjIso_hom, homologyFunctorObjCompIso_hom_app, hinv]
+  exact Category.assoc _ _ _
+
+/-- The identification of the extension of scalars of the homology with coefficients in `R` with
+the homology with coefficients in `S` is natural in the simplicial set. -/
+@[reassoc]
+theorem homologyExtendScalarsIso_hom_naturality {R S : Type u} [CommRing R] [CommRing S]
+    {X Y : SSet.{u}} (g : X ⟶ Y) (f : R →+* S)
+    [PreservesFiniteLimits (ModuleCat.extendScalars.{u, u, u} f)] (n : ℕ) :
+    (ModuleCat.extendScalars f).map (SSet.homologyMap g (ModuleCat.of R (ULift.{u} R)) n) ≫
+        (Y.homologyExtendScalarsIso f n).hom =
+      (X.homologyExtendScalarsIso f n).hom ≫ SSet.homologyMap g (ModuleCat.of S S) n :=
+  (homologyFunctorExtendScalarsIso f n).hom.naturality g
+
+end SSet

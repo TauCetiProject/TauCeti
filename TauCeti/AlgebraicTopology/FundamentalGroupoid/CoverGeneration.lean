@@ -169,6 +169,20 @@ theorem functor_ext (hU : ∀ x, ∃ i, U i ∈ 𝓝 x) {D : Type*} [Category D]
     trivial
   exact hf
 
+/-- A subgroupoid of `FundamentalGroupoid X` containing the classes of all paths lying inside
+members of a neighbourhood cover `U` is the whole fundamental groupoid. -/
+theorem subgroupoid_eq_top_of_path_mem (hU : ∀ x, ∃ i, U i ∈ 𝓝 x)
+    (S : Subgroupoid (_root_.FundamentalGroupoid X))
+    (hS : ∀ i {a b : X} (γ : Path a b), (∀ t, γ t ∈ U i) →
+      (Path.Homotopic.Quotient.mk γ : mk a ⟶ mk b) ∈ S.arrows (mk a) (mk b)) :
+    S = ⊤ := by
+  rw [eq_top_iff, ← iSup_im_map_subtypeVal_eq_top hU]
+  refine iSup_le fun i ↦ ?_
+  rw [Subgroupoid.im, Subgroupoid.map_le_iff_le_comap]
+  rintro ⟨⟨a⟩, ⟨b⟩, g⟩ -
+  induction g using Path.Homotopic.Quotient.ind with | mk γ =>
+  exact hS i (γ.map continuous_subtypeVal) fun t ↦ (γ t).property
+
 /-! ### Pushing paths off simply connected sets -/
 
 section PushOff
@@ -331,18 +345,13 @@ theorem _root_.Path.exists_range_subset_homotopic {V : Set X} {W : ι → Set X}
     obtain hV | ⟨i, hi⟩ := hcover y
     exacts [⟨none, hV⟩, ⟨some i, hi⟩]
   -- Every morphism coming from a single member of the cover lies in `S`, so `S` is everything.
-  have hS : S = ⊤ := by
-    rw [eq_top_iff, ← iSup_im_map_subtypeVal_eq_top hU]
-    refine iSup_le fun o ↦ ?_
-    rw [Subgroupoid.im, Subgroupoid.map_le_iff_le_comap]
-    rintro ⟨⟨c⟩, ⟨d⟩, g⟩ -
-    induction g using Path.Homotopic.Quotient.ind with | mk δ =>
-    have hδ : IsArrowIn (U o) (Path.Homotopic.Quotient.mk (δ.map continuous_subtypeVal) :
-        mk c.val ⟶ mk d.val) := ⟨_, by rintro _ ⟨t, rfl⟩; exact (δ t).property, rfl⟩
+  have hS : S = ⊤ := subgroupoid_eq_top_of_path_mem hU S fun o _ _ δ hδ ↦ by
+    have hδ' : IsArrowIn (U o) (Path.Homotopic.Quotient.mk δ : mk _ ⟶ mk _) :=
+      ⟨δ, range_subset_iff.2 hδ, rfl⟩
     intro u v e e' he he'
     cases o with
-    | none => exact IsArrowIn.conj_of_isAdmissible hW hWV hδ he he'
-    | some i => exact IsArrowIn.conj_of_isAdmissible_of_isArrowIn hW hWV hdisj hδ he he'
+    | none => exact IsArrowIn.conj_of_isAdmissible hW hWV hδ' he he'
+    | some i => exact IsArrowIn.conj_of_isAdmissible_of_isArrowIn hW hWV hdisj hδ' he he'
   have hγ : (Path.Homotopic.Quotient.mk γ : mk a ⟶ mk b) ∈ S.arrows (mk a) (mk b) := by
     rw [hS]
     trivial

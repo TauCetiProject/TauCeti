@@ -132,17 +132,56 @@ instance : InvolutiveNeg (HomologicalOrientation M E d) where
 theorem neg_apply (o : HomologicalOrientation M E d) (x : M) : (-o) x = -o x :=
   (rfl)
 
+end HomologicalOrientation
+
+namespace ModuleOrientation
+
+variable {M E d}
+
+/-- With coefficients `ULift ℤ`, `ModuleOrientation` is equivalent to `HomologicalOrientation`. -/
+def equivHomologicalOrientation :
+    ModuleOrientation (ModuleCat.of ℤ (ULift.{w} ℤ)) M E d ≃ HomologicalOrientation M E d where
+  toFun o := ⟨fun x ↦ ModuleLocalOrientation.equivLocalOrientation M x d (o x), fun f ↦
+    Subtype.ext <| by simp [coe_localOrientationTransport]⟩
+  invFun o := ⟨fun x ↦ (ModuleLocalOrientation.equivLocalOrientation M x d).symm (o x), fun f ↦
+    Subtype.ext <| by simp [← coe_localOrientationTransport, o.localOrientationTransport_apply]⟩
+  left_inv _ := ext fun _ ↦ (ModuleLocalOrientation.equivLocalOrientation M _ d).symm_apply_apply _
+  right_inv _ := HomologicalOrientation.ext fun _ ↦
+    (ModuleLocalOrientation.equivLocalOrientation M _ d).apply_symm_apply _
+
+@[simp]
+theorem coe_equivHomologicalOrientation_apply
+    (o : ModuleOrientation (ModuleCat.of ℤ (ULift.{w} ℤ)) M E d) (x : M) :
+    (equivHomologicalOrientation o x).val = (o x).val :=
+  ModuleLocalOrientation.coe_equivLocalOrientation x d (o x)
+
+@[simp]
+theorem coe_equivHomologicalOrientation_symm_apply (o : HomologicalOrientation M E d)
+    (x : M) : (equivHomologicalOrientation.symm o x).val = (o x).val :=
+  ModuleLocalOrientation.coe_equivLocalOrientation_symm x d (o x)
+
+@[simp]
+theorem equivHomologicalOrientation_neg
+    (o : ModuleOrientation (ModuleCat.of ℤ (ULift.{w} ℤ)) M E d) :
+    equivHomologicalOrientation (-o) = -equivHomologicalOrientation o :=
+  HomologicalOrientation.ext fun _ ↦ Subtype.ext (by simp)
+
+@[simp]
+theorem equivHomologicalOrientation_symm_neg (o : HomologicalOrientation M E d) :
+    equivHomologicalOrientation.symm (-o) = -equivHomologicalOrientation.symm o :=
+  ext fun _ ↦ Subtype.ext (by simp)
+
+end ModuleOrientation
+
+namespace HomologicalOrientation
+
+variable {M E d}
+
 /-- **An orientation of a connected manifold is determined by its value at one point.** -/
 theorem eq_of_apply_eq [ConnectedSpace M] {o o' : HomologicalOrientation M E d} {x : M}
-    (h : o x = o' x) : o = o' := by
-  have := ChartedSpace.locallyPathConnectedSpace E M
-  have := PathConnectedSpace.of_locallyPathConnectedSpace (X := M)
-  refine ext fun y ↦ ?_
-  -- Transport the agreement at `x` along a path from `x` to `y`.
-  let f : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y :=
-    Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x y)
-  have hf := congrArg (localOrientationTransport M E d f) h
-  rwa [localOrientationTransport_apply, localOrientationTransport_apply] at hf
+    (h : o x = o' x) : o = o' :=
+  ModuleOrientation.equivHomologicalOrientation.symm.injective
+    (ModuleOrientation.eq_of_apply_eq (Subtype.ext <| by simpa using congrArg Subtype.val h))
 
 /-- **A connected manifold has at most two orientations**: in the dimension of the manifold, any
 two orientations of a connected manifold agree up to reversal. -/
@@ -168,6 +207,20 @@ theorem zsmul_left_injective (hd : finrank ℝ E = d) (o : HomologicalOrientatio
     (singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x)), sub_zsmul, h]
   simp
 
+private theorem moduleLocalOrientationTransport_eq_of_eq {x : M} (z : LocalOrientation M x d)
+    (h : ∀ {y : FundamentalGroupoid M} (f g : FundamentalGroupoid.mk x ⟶ y),
+      localOrientationTransport M E d f z = localOrientationTransport M E d g z)
+    {y : FundamentalGroupoid M} (f g : FundamentalGroupoid.mk x ⟶ y) :
+    moduleLocalOrientationTransport (ModuleCat.of ℤ (ULift.{w} ℤ)) M E d f
+        ((ModuleLocalOrientation.equivLocalOrientation M x d).symm z) =
+      moduleLocalOrientationTransport (ModuleCat.of ℤ (ULift.{w} ℤ)) M E d g
+        ((ModuleLocalOrientation.equivLocalOrientation M x d).symm z) :=
+  Subtype.ext <| by
+    have h' := congrArg Subtype.val (h f g)
+    rwa [coe_localOrientationTransport, coe_localOrientationTransport,
+      ← ModuleLocalOrientation.coe_equivLocalOrientation_symm x d z,
+      ← coe_moduleLocalOrientationTransport, ← coe_moduleLocalOrientationTransport] at h'
+
 section Transport
 
 variable [PathConnectedSpace M]
@@ -178,13 +231,11 @@ paths, to an orientation. -/
 def ofLocalOrientationTransport (x : M) (z : LocalOrientation M x d)
     (h : ∀ {y : FundamentalGroupoid M} (f g : FundamentalGroupoid.mk x ⟶ y),
       localOrientationTransport M E d f z = localOrientationTransport M E d g z) :
-    HomologicalOrientation M E d where
-  toFun y := localOrientationTransport M E d
-    (Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x y) :
-      FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) z
-  localOrientationTransport_toFun' f := by
-    rw [← Equiv.trans_apply, ← localOrientationTransport_comp]
-    exact h _ _
+    HomologicalOrientation M E d :=
+  ModuleOrientation.equivHomologicalOrientation
+    (ModuleOrientation.ofLocalOrientationTransport x
+      ((ModuleLocalOrientation.equivLocalOrientation M x d).symm z)
+      (moduleLocalOrientationTransport_eq_of_eq z h))
 
 /-- The orientation obtained by transport from a local orientation `z` at `x` is, at `y`, the
 transport of `z` along any path class from `x` to `y`. -/
@@ -193,16 +244,24 @@ theorem ofLocalOrientationTransport_apply (x : M) (z : LocalOrientation M x d)
       localOrientationTransport M E d f z = localOrientationTransport M E d g z) (y : M)
     (f : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) :
     ofLocalOrientationTransport x z h y = localOrientationTransport M E d f z :=
-  h _ f
+  Subtype.ext <| by
+    rw [ofLocalOrientationTransport, ModuleOrientation.coe_equivHomologicalOrientation_apply,
+      ModuleOrientation.ofLocalOrientationTransport_apply x _
+        (moduleLocalOrientationTransport_eq_of_eq z h) y f,
+      coe_moduleLocalOrientationTransport, coe_localOrientationTransport,
+      ModuleLocalOrientation.coe_equivLocalOrientation_symm]
 
 /-- The orientation obtained by transport from a local orientation `z` at `x` is `z` at `x`. -/
 @[simp]
 theorem ofLocalOrientationTransport_apply_self (x : M) (z : LocalOrientation M x d)
     (h : ∀ {y : FundamentalGroupoid M} (f g : FundamentalGroupoid.mk x ⟶ y),
       localOrientationTransport M E d f z = localOrientationTransport M E d g z) :
-    ofLocalOrientationTransport x z h x = z := by
-  rw [ofLocalOrientationTransport_apply x z h x (𝟙 _), localOrientationTransport_id,
-    Equiv.refl_apply]
+    ofLocalOrientationTransport x z h x = z :=
+  Subtype.ext <| by
+    rw [ofLocalOrientationTransport, ModuleOrientation.coe_equivHomologicalOrientation_apply,
+      ModuleOrientation.ofLocalOrientationTransport_apply_self x _
+        (moduleLocalOrientationTransport_eq_of_eq z h),
+      ModuleLocalOrientation.coe_equivLocalOrientation_symm]
 
 end Transport
 

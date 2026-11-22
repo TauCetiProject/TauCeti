@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.System
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Module.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 import TauCeti.Algebra.Group.ZMultiples
@@ -106,6 +106,45 @@ lemma LocalOrientation.coe_neg {M : Type w} [TopologicalSpace M] {x : M} {d : �
     (z : LocalOrientation M x d) : (↑(-z) : localHomology (A := ModuleCat.{w} ℤ)
       (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d) = -z.val :=
   (rfl)
+
+/-- With coefficients `ULift ℤ`, `IsModuleLocalOrientation` matches `IsLocalOrientation`. -/
+theorem isModuleLocalOrientation_iff_isLocalOrientation {M : Type w} [TopologicalSpace M]
+    (x : M) (d : ℕ) (z : ↑(localHomology (ModuleCat.of ℤ (ULift.{w} ℤ)) {x} d)) :
+    IsModuleLocalOrientation (ModuleCat.of ℤ (ULift.{w} ℤ)) x d z ↔ IsLocalOrientation x d z := by
+  rw [isModuleLocalOrientation_iff, Submodule.span_singleton_eq_top_iff, isLocalOrientation_iff]
+  exact forall_congr' fun _ ↦ exists_congr fun c ↦
+    iff_of_eq (congrArg (· = _) (int_smul_eq_zsmul _ c _))
+
+namespace ModuleLocalOrientation
+
+/-- With coefficients `ULift ℤ`, local module orientations match `TauCeti.LocalOrientation`. -/
+def equivLocalOrientation (M : Type w) [TopologicalSpace M] (x : M) (d : ℕ) :
+    ModuleLocalOrientation (ModuleCat.of ℤ (ULift.{w} ℤ)) M x d ≃ LocalOrientation M x d :=
+  Equiv.subtypeEquivRight (isModuleLocalOrientation_iff_isLocalOrientation x d)
+
+@[simp]
+lemma coe_equivLocalOrientation {M : Type w} [TopologicalSpace M] (x : M) (d : ℕ)
+    (z : ModuleLocalOrientation (ModuleCat.of ℤ (ULift.{w} ℤ)) M x d) :
+    (equivLocalOrientation M x d z).val = z.val := (rfl)
+
+@[simp]
+lemma coe_equivLocalOrientation_symm {M : Type w} [TopologicalSpace M] (x : M) (d : ℕ)
+    (z : LocalOrientation M x d) :
+    ((equivLocalOrientation M x d).symm z).val = z.val := (rfl)
+
+@[simp]
+lemma equivLocalOrientation_neg {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
+    (z : ModuleLocalOrientation (ModuleCat.of ℤ (ULift.{w} ℤ)) M x d) :
+    equivLocalOrientation M x d (-z) = -equivLocalOrientation M x d z :=
+  Subtype.ext rfl
+
+@[simp]
+lemma equivLocalOrientation_symm_neg {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
+    (z : LocalOrientation M x d) :
+    (equivLocalOrientation M x d).symm (-z) = -(equivLocalOrientation M x d).symm z :=
+  Subtype.ext rfl
+
+end ModuleLocalOrientation
 
 /-- An isomorphism of integral local homology groups preserves the generator condition. The two
 groups may sit in different degrees. -/

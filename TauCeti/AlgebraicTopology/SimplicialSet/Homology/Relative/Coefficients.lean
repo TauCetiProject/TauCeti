@@ -15,8 +15,8 @@ import Mathlib.CategoryTheory.Preadditive.Biproducts
 Adapts `SSet.chainComplexFunctorObjCompMapIso` and `SimplicialSet.Homology.Coefficients` to
 `SSetPair` in preadditive `[CategoryWithHomology]` categories with `w`-coproducts, using the
 degreewise `IsSplitMono` instance from `SimplicialSet.Homology.Relative.Basic` (Hatcher, §3.A):
-* `SSetPair.homologyNatTransOfCoefficients`, `homologyNatIsoOfCoefficientsIso`, and
-  `homologyNatTransOfCoefficients_app_comp_homologyπ`: naturality and `homologyπ` compatibility.
+* `SSetPair.homologyNatTransOfCoefficients` and `homologyNatIsoOfCoefficientsIso`:
+  coefficient-change naturality on relative simplicial homology.
 * `CokernelCofork.isColimitMapOfIsSplitMono` / `SSetPair.isColimitMapCokernelCofork`: additive
   preservation of the split cokernel cofork via `isBilimitBinaryBiconeOfIsSplitMonoOfCokernel`.
 * `SSetPair.chainComplexObjMapIso`, `chainComplexFunctorObjCompMapIso`, `homologyFunctorObjCompIso`:
@@ -75,18 +75,6 @@ def homologyNatIsoOfCoefficientsIso (n : ℕ) : homologyFunctor.{w} R n ≅ homo
     homologyNatIsoOfCoefficientsIso.{w} (e₁ ≪≫ e₂) n =
       homologyNatIsoOfCoefficientsIso e₁ n ≪≫ homologyNatIsoOfCoefficientsIso e₂ n :=
   Iso.ext (homologyNatTransOfCoefficients_comp e₁.hom e₂.hom n)
-@[reassoc] lemma homologyNatTransOfCoefficients_app_comp_homologyπ (φ : R ⟶ R') (n : ℕ)
-    (P : SSetPair.{w}) : (SSet.homologyNatTransOfCoefficients φ n).app P.right ≫ P.homologyπ R' n =
-      P.homologyπ R n ≫ (homologyNatTransOfCoefficients φ n).app P :=
-  ((congrArg (· ≫ P.homologyπ R' n) (SSet.homologyNatTransOfCoefficients_app φ n P.right)).trans
-      (HomologicalComplex.homologyMap_comp _ _ n).symm).trans <|
-    (congrArg (homologyMap · n) (congrArg (·.app P) ((chainComplexFunctorπ C).naturality φ))).trans
-      (HomologicalComplex.homologyMap_comp _ _ n)
-@[reassoc] lemma homologyIsoOfCoefficientsIso_hom_comp_homologyπ (n : ℕ) (P : SSetPair.{w}) :
-    (SSet.homologyIsoOfCoefficientsIso e P.right n).hom ≫ P.homologyπ R' n =
-      P.homologyπ R n ≫ (homologyNatIsoOfCoefficientsIso e n).hom.app P := by
-  rw [SSet.homologyIsoOfCoefficientsIso_hom, homologyNatIsoOfCoefficientsIso_hom]
-  exact homologyNatTransOfCoefficients_app_comp_homologyπ e.hom n P
 end CoefficientsMap
 variable {C : Type u} {D : Type u'} [Category.{v} C] [Category.{v'} D]
   [Preadditive C] [Preadditive D] [HasCoproducts.{w} C]

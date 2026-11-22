@@ -924,14 +924,8 @@ theorem localHomologyRestriction_univ_comp_localHomologyTransport (k : ℕ)
       mul {c d e f} hf {g} hg := by
         rw [Set.mem_ofPred_eq, localHomologyTransport_comp, ← Category.assoc, hf, hg] }
   -- It contains the classes of paths inside the domains of patches, so it is everything.
-  have hS : S = ⊤ := by
-    rw [eq_top_iff, ← FundamentalGroupoid.iSup_im_map_subtypeVal_eq_top
-      (U := Patch.domain (M := M) (E := E)) Patch.exists_domain_mem_nhds]
-    refine iSup_le fun P ↦ ?_
-    rw [Subgroupoid.im, Subgroupoid.map_le_iff_le_comap]
-    rintro ⟨⟨a⟩, ⟨b⟩, g⟩ -
-    induction g using Path.Homotopic.Quotient.ind with | mk γ =>
-    exact hpatch P (γ.map continuous_subtypeVal) fun s ↦ (γ s).property
+  have hS : S = ⊤ := FundamentalGroupoid.subgroupoid_eq_top_of_path_mem
+    Patch.exists_domain_mem_nhds S fun P _ _ γ hγ ↦ hpatch P γ hγ
   have hf : f ∈ S.arrows x y := hS ▸ trivial
   exact hf
 
@@ -969,13 +963,10 @@ theorem map_localHomologyTransport_comp_of_restriction {B : Type*} [Category* B]
         rw [Set.mem_ofPred_eq] at hg₁ hg₂ ⊢
         rw [localHomologyTransport_comp, localHomologyTransport_comp, F.map_comp, Category.assoc,
           hg₂, reassoc_of% hg₁] }
-  have hS : S = ⊤ := by
-    rw [eq_top_iff, ← FundamentalGroupoid.iSup_im_map_subtypeVal_eq_top
-      (U := Patch.domain (M := M) (E := E)) Patch.exists_domain_mem_nhds]
-    refine iSup_le fun P ↦ ?_; rw [Subgroupoid.im, Subgroupoid.map_le_iff_le_comap]
-    rintro ⟨⟨a⟩, ⟨b⟩, g⟩ -; induction g using Path.Homotopic.Quotient.ind with | mk γ =>
-    exact hpatch P (γ.map continuous_subtypeVal) fun s ↦ (γ s).property
+  have hS : S = ⊤ := FundamentalGroupoid.subgroupoid_eq_top_of_path_mem
+    Patch.exists_domain_mem_nhds S fun P _ _ γ hγ ↦ hpatch P γ hγ
   exact show f ∈ S.arrows x y from hS ▸ trivial
+
 /-- Local homology images of any global class `μ ∈ Hₖ(M; N)` are invariant under path transport. -/
 @[simp] theorem localHomologyTransport_singularHomologyToLocalHomology {Λ : Type*} [Ring Λ]
     {N : ModuleCat.{w} Λ} {k : ℕ} {x y : FundamentalGroupoid M} (g : x ⟶ y)
