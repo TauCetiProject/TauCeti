@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Matrix.Basic
+public import Mathlib.LinearAlgebra.Matrix.Defs
+public import TauCeti.Combinatorics.Brauer.Congr
 public import TauCeti.Combinatorics.Brauer.Generator
 
 /-!
@@ -48,6 +49,8 @@ Hence for any skew-symmetric matrix `W` (`∀ x y, W y x = -W x y`), the quantit
 
 * `TauCeti.BrauerDiagram.skewArcProd_eq_of_isFraming`: **framing independence** of the signed arc
   product for skew-symmetric `W`.
+* `TauCeti.BrauerDiagram.isFraming_capCup`: the transposition `Equiv.swap (Sum.inr a) (Sum.inl b)`
+  frames `capCup a b`.
 * `TauCeti.BrauerDiagram.skewArcProd_permToBrauer`, `TauCeti.BrauerDiagram.skewArcProd_capCup`,
   `TauCeti.BrauerDiagram.skewArcProd_congr` and `TauCeti.BrauerDiagram.skewArcProd_relabel`: values
   of the signed arc product on permutation diagrams, cap-cup diagrams and transported diagrams.
@@ -68,6 +71,11 @@ variable {k : ℕ}
 
 namespace BrauerDiagram
 
+/-- The transposition `Equiv.swap (Sum.inr a) (Sum.inl b)` frames `capCup a b`. -/
+theorem isFraming_capCup (a b : Fin k) :
+    (capCup a b).IsFraming (Equiv.swap (Sum.inr a) (Sum.inl b)) := by
+  rw [isFraming_def, capCup_def]
+
 /-! ### Skew-symmetric arc products and framing independence -/
 
 section SkewArcProd
@@ -79,112 +87,33 @@ private def rawArcProd (W : Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) R)
     (π : Equiv.Perm (Fin k ⊕ Fin k)) : R :=
   ((Equiv.Perm.sign π : ℤ) : R) * ∏ r : Fin k, W (π (Sum.inl r)) (π (Sum.inr r))
 
-/-- Multiplying on the left by `ρ` pulls `W` back along `ρ` and scales by `sign ρ`. -/
-private theorem rawArcProd_mul_left (W : Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) R)
-    (ρ π : Equiv.Perm (Fin k ⊕ Fin k)) :
-    rawArcProd W (ρ * π) =
-      ((Equiv.Perm.sign ρ : ℤ) : R) * rawArcProd (W.submatrix ρ ρ) π := by
-  simp only [rawArcProd, map_mul, Units.val_mul, Int.cast_mul, mul_assoc, Matrix.submatrix_apply,
-    Equiv.Perm.mul_apply]
+/-- Permuting the `k` arcs simultaneously on the right by `Equiv.Perm.sumCongr σ σ` preserves
+`rawArcProd`. -/
+private theorem rawArcProd_mul_sumCongr (W : Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) R)
+    (φ : Equiv.Perm (Fin k ⊕ Fin k)) (σ : Equiv.Perm (Fin k)) :
+    rawArcProd W (φ * Equiv.Perm.sumCongr σ σ) = rawArcProd W φ := by
+  rw [rawArcProd, rawArcProd, map_mul, Equiv.Perm.sign_sumCongr, Int.units_mul_self, mul_one]
+  exact congrArg _ (Equiv.prod_comp σ fun r => W (φ (Sum.inl r)) (φ (Sum.inr r)))
 
-/-- Reversing the `r`-th pair leaves `rawArcProd` unchanged when `W` is skew-symmetric: the `-1`
-from `sign` cancels the `-1` from `W y x = -W x y`. -/
-private theorem rawArcProd_mul_swap_inl_inr {W : Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) R}
-    (hW : ∀ x y, W y x = -W x y) (π : Equiv.Perm (Fin k ⊕ Fin k)) (r : Fin k) :
-    rawArcProd W (π * Equiv.swap (Sum.inl r) (Sum.inr r)) = rawArcProd W π := by
-  rw [rawArcProd, rawArcProd, map_mul, Equiv.Perm.sign_swap Sum.inl_ne_inr]
-  rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ r),
-    ← Finset.mul_prod_erase Finset.univ (fun s => W (π (Sum.inl s)) (π (Sum.inr s)))
-      (Finset.mem_univ r)]
-  have hrest : ∏ s ∈ Finset.univ.erase r,
-      W ((π * Equiv.swap (Sum.inl r) (Sum.inr r)) (Sum.inl s))
-        ((π * Equiv.swap (Sum.inl r) (Sum.inr r)) (Sum.inr s)) =
-      ∏ s ∈ Finset.univ.erase r, W (π (Sum.inl s)) (π (Sum.inr s)) := by
-    refine Finset.prod_congr rfl fun s hs => ?_
-    have hsr : s ≠ r := Finset.ne_of_mem_erase hs
-    simp [Equiv.swap_apply_of_ne_of_ne, Sum.inl_injective.ne hsr, Sum.inr_injective.ne hsr]
-  rw [hrest]
-  simp only [Equiv.Perm.mul_apply, Equiv.swap_apply_left, Equiv.swap_apply_right,
-    hW (π (Sum.inl r)) (π (Sum.inr r)), Units.val_mul, Units.val_neg, Units.val_one, Int.cast_mul,
-    Int.cast_neg, Int.cast_one]
-  ring
-
-/-- A boundary permutation commuting with `Sum.swap` and fixing every pair `{Sum.inl r, Sum.inr r}`
-setwise acts by reversing a subset of pairs, so it preserves `rawArcProd`. -/
-private theorem rawArcProd_eq_of_subset {W : Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) R}
-    (hW : ∀ x y, W y x = -W x y) (S : Finset (Fin k)) :
-    ∀ χ : Equiv.Perm (Fin k ⊕ Fin k),
-      (∀ x, χ x.swap = (χ x).swap) →
-      (∀ r, χ (Sum.inl r) = Sum.inl r ∨ χ (Sum.inl r) = Sum.inr r) →
-      (∀ r, r ∉ S → χ (Sum.inl r) = Sum.inl r) →
-      rawArcProd W χ = rawArcProd W 1 := by
-  induction S using Finset.induction_on with
-  | empty =>
-    intro χ hswap _ hfix
-    suffices χ = 1 by rw [this]
-    ext x
-    rcases x with r | r
-    · exact hfix r (Finset.notMem_empty r)
-    · simpa [hfix r (Finset.notMem_empty r)] using hswap (Sum.inl r)
-  | insert r₀ S _ ih =>
-    intro χ hswap hor hfix
-    rcases hor r₀ with hr₀_eq | hr₀_eq
-    · refine ih χ hswap hor fun r hr => ?_
-      rcases eq_or_ne r r₀ with rfl | hne
-      · exact hr₀_eq
-      · exact hfix r (by simp [hne, hr])
-    · rw [← rawArcProd_mul_swap_inl_inr hW χ r₀]
-      refine ih (χ * Equiv.swap (Sum.inl r₀) (Sum.inr r₀))
-        (fun x => ?_) (fun r => ?_) fun r hr => ?_
-      · rw [Equiv.Perm.mul_apply, Equiv.Perm.mul_apply, ← hswap]
-        congr 1
-        rcases x with r | r <;> rcases eq_or_ne r r₀ with rfl | hne
-        · simp
-        · simp [Equiv.swap_apply_of_ne_of_ne, Sum.inl_injective.ne hne, Sum.inr_injective.ne hne]
-        · simp
-        · simp [Equiv.swap_apply_of_ne_of_ne, Sum.inl_injective.ne hne, Sum.inr_injective.ne hne]
-      · rcases eq_or_ne r r₀ with rfl | hne
-        · exact Or.inl (by simpa [hr₀_eq] using hswap (Sum.inl r))
-        · simpa [Equiv.swap_apply_of_ne_of_ne (Sum.inl_injective.ne hne) Sum.inl_ne_inr] using hor r
-      · rcases eq_or_ne r r₀ with rfl | hne
-        · simpa [hr₀_eq] using hswap (Sum.inl r)
-        · simpa [Equiv.swap_apply_of_ne_of_ne (Sum.inl_injective.ne hne) Sum.inl_ne_inr] using
-            hfix r (by simp [hne, hr])
-
-/-- Every boundary permutation commuting with `Sum.swap` preserves `rawArcProd`: decompose it into
-a pair permutation `Equiv.Perm.sumCongr σ σ` and pair reversals. -/
-private theorem rawArcProd_eq_of_comm_swap {W : Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) R}
-    (hW : ∀ x y, W y x = -W x y) {ψ : Equiv.Perm (Fin k ⊕ Fin k)}
-    (hswap : ∀ x, ψ x.swap = (ψ x).swap) :
-    rawArcProd W ψ = rawArcProd W 1 := by
-  let σ : Equiv.Perm (Fin k) := Equiv.ofBijective (fun r => Sum.elim id id (ψ (Sum.inl r)))
-    (Finite.injective_iff_bijective.mp fun r₁ r₂ h => by
-      rcases h₁ : ψ (Sum.inl r₁) with s₁ | s₁ <;> rcases h₂ : ψ (Sum.inl r₂) with s₂ | s₂ <;>
-        simp only [h₁, h₂, Sum.elim_inl, Sum.elim_inr, id_eq] at h <;> subst h
-      · exact Sum.inl_injective (ψ.injective (h₁.trans h₂.symm))
-      · exact absurd (ψ.injective (h₁.trans (by simpa [h₂] using (hswap (Sum.inl r₂)).symm)))
-          Sum.inl_ne_inr
-      · exact absurd (ψ.injective (h₂.trans (by simpa [h₁] using (hswap (Sum.inl r₁)).symm)))
-          Sum.inl_ne_inr
-      · exact Sum.inl_injective (ψ.injective (h₁.trans h₂.symm)))
-  let χ : Equiv.Perm (Fin k ⊕ Fin k) := ψ * (Equiv.Perm.sumCongr σ σ)⁻¹
-  have hχ_swap (x : Fin k ⊕ Fin k) : χ x.swap = (χ x).swap := by
-    rcases x with r | r
-    · simpa [χ] using hswap (Sum.inl (σ⁻¹ r))
-    · simpa [χ] using hswap (Sum.inr (σ⁻¹ r))
-  have hχ_or (r : Fin k) : χ (Sum.inl r) = Sum.inl r ∨ χ (Sum.inl r) = Sum.inr r := by
-    have hunproj : Sum.elim id id (χ (Sum.inl r)) = r := σ.apply_symm_apply r
-    rcases h : χ (Sum.inl r) with s | s <;> rw [h] at hunproj
-    · exact Or.inl (congrArg Sum.inl hunproj)
-    · exact Or.inr (congrArg Sum.inr hunproj)
-  have hsign : Equiv.Perm.sign (Equiv.Perm.sumCongr σ σ) = 1 := by
-    rw [Equiv.Perm.sign_sumCongr, Int.units_mul_self]
-  have hprod : rawArcProd W (χ * Equiv.Perm.sumCongr σ σ) = rawArcProd W χ := by
-    rw [rawArcProd, rawArcProd, map_mul, hsign, mul_one]
-    exact congrArg _ (Equiv.prod_comp σ fun r => W (χ (Sum.inl r)) (χ (Sum.inr r)))
-  rw [← inv_mul_cancel_right ψ (Equiv.Perm.sumCongr σ σ), hprod]
-  exact rawArcProd_eq_of_subset hW Finset.univ χ hχ_swap hχ_or fun _ hr =>
-    absurd (Finset.mem_univ _) hr
+/-- Reversing a subset of arcs via `Equiv.prodCongrLeft τ` preserves `rawArcProd` when `W` is
+skew-symmetric: on each arc `r`, the sign of `τ r : Equiv.Perm Bool` cancels any endpoint swap. -/
+private theorem rawArcProd_mul_prodCongrLeft {W : Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) R}
+    (hW : ∀ x y, W y x = -W x y) (φ : Equiv.Perm (Fin k ⊕ Fin k))
+    (τ : Fin k → Equiv.Perm Bool) :
+    rawArcProd W
+        (φ * (Equiv.boolProdEquivSum (Fin k)).permCongr (Equiv.prodCongrLeft τ)) =
+      rawArcProd W φ := by
+  let χ := (Equiv.boolProdEquivSum (Fin k)).permCongr (Equiv.prodCongrLeft τ)
+  have hsign : ((Equiv.Perm.sign χ : ℤ) : R) = ∏ r : Fin k, ((Equiv.Perm.sign (τ r) : ℤ) : R) := by
+    simp [χ, Equiv.Perm.sign_permCongr, Equiv.Perm.sign_prodCongrLeft]
+  rw [rawArcProd, rawArcProd, map_mul, Units.val_mul, Int.cast_mul, mul_assoc, hsign,
+    ← Finset.prod_mul_distrib]
+  refine congrArg _ (Finset.prod_congr rfl fun r _ => ?_)
+  rcases (by decide : ∀ e : Equiv.Perm Bool, e = 1 ∨ e = Equiv.swap false true) (τ r) with
+    hτ | hτ
+  · simp [Equiv.Perm.mul_apply, hτ, Equiv.boolProdEquivSum]
+  · simp [Equiv.Perm.mul_apply, hτ, Equiv.boolProdEquivSum,
+      Equiv.Perm.sign_swap (by decide : false ≠ true), hW (φ (Sum.inl r)) (φ (Sum.inr r))]
 
 /-- **The signed arc product of a Brauer diagram** for a boundary matrix `W`: the product of `W`
 over the oriented arcs of `D.framing`, multiplied by `sign D.framing`. When `W` is skew-symmetric,
@@ -219,16 +148,10 @@ theorem skewArcProd_eq_of_isFraming (D : BrauerDiagram k)
     {π : Equiv.Perm (Fin k ⊕ Fin k)} (hπ : D.IsFraming π) :
     D.skewArcProd W =
       ((Equiv.Perm.sign π : ℤ) : R) * ∏ r : Fin k, W (π (Sum.inl r)) (π (Sum.inr r)) := by
-  set ψ := π⁻¹ * D.framing
-  have hD : D.framing = π * ψ := by simp [ψ]
-  have hcomm (x : Fin k ⊕ Fin k) : ψ x.swap = (ψ x).swap := π.injective <| by
-    calc π (ψ x.swap) = D.framing x.swap := by simp [ψ]
-      _ = D.val (D.framing x) := (D.isFraming_framing.val_apply x).symm
-      _ = D.val (π (ψ x)) := by simp [ψ]
-      _ = π (ψ x).swap := hπ.val_apply (ψ x)
-  have hW' (x y : Fin k ⊕ Fin k) : W.submatrix π π y x = -W.submatrix π π x y := hW (π x) (π y)
-  rw [skewArcProd_eq_rawArcProd, hD, rawArcProd_mul_left, rawArcProd_eq_of_comm_swap hW' hcomm]
-  simp [rawArcProd]
+  obtain ⟨σ, τ, hdecomp⟩ := exists_mul_sumCongr_mul_of_congr_permToBrauer_one_eq
+    (((D.isFraming_def π).mp hπ).trans ((D.isFraming_def D.framing).mp D.isFraming_framing).symm)
+  rw [skewArcProd_eq_rawArcProd, hdecomp, rawArcProd_mul_prodCongrLeft hW, rawArcProd_mul_sumCongr]
+  rfl
 
 /-- On the identity diagram, the signed arc product is `∏ r, W (Sum.inl r) (Sum.inr r)`. -/
 theorem skewArcProd_permToBrauer_one {W : Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) R}

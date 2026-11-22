@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.LinearAlgebra.Matrix.Kronecker.Power
+public import TauCeti.LinearAlgebra.PiTensorProduct.Basis.Basic
 
 /-!
 # Permuting tensor factors
@@ -204,21 +204,19 @@ theorem map_reindex_range_permTensorAction_asAlgebraHom {m : ℕ} (h : m = d)
 whose `i`-th factor is the `f i`-th standard basis vector of `Rⁿ`. -/
 noncomputable def tensorPowerBasis :
     Module.Basis (Fin d → Fin n) R (⨂[R] _ : Fin d, Fin n → R) :=
-  Basis.piTensorProduct fun _ => Pi.basisFun R (Fin n)
+  piTensorPowerBasis R (Fin d) (Fin n)
 
 /-- The monomial basis is the tensor product of the standard bases.  The definition is not
 exposed, so this is its defining equation, used to compare it with the `Basis.piTensorProduct`
 spelling of the weight theory. -/
 theorem tensorPowerBasis_def :
     tensorPowerBasis R n d = Basis.piTensorProduct fun _ : Fin d => Pi.basisFun R (Fin n) :=
-  (rfl)
+  piTensorPowerBasis_def R (Fin d) (Fin n)
 
 @[simp]
 theorem tensorPowerBasis_apply (f : Fin d → Fin n) :
-    tensorPowerBasis R n d f = PiTensorProduct.tprod R fun i => Pi.single (f i) (1 : R) := by
-  classical
-  rw [tensorPowerBasis, Basis.piTensorProduct_apply]
-  simp
+    tensorPowerBasis R n d f = PiTensorProduct.tprod R fun i => Pi.single (f i) (1 : R) :=
+  piTensorPowerBasis_apply R (Fin d) (Fin n) f
 
 /-- **The dimension of `(Rⁿ)^{⊗d}` is `nᵈ`**, read off the monomial basis
 `TauCeti.tensorPowerBasis`, whose index type is `Fin d → Fin n`. -/

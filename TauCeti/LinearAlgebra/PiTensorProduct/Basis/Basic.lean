@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
+public import Mathlib.LinearAlgebra.StdBasis
 
 /-!
 # Coordinates of reindexed tensors in a product basis
@@ -17,6 +18,9 @@ coordinate of `t` at `w ∘ e`.
 
 ## Main declarations
 
+* `TauCeti.piTensorPowerBasis`: the coordinate monomial basis of `⨂[R] _ : ι, (κ → R)`.
+* `TauCeti.piTensorPowerBasis_apply`: each basis vector is the pure tensor of standard basis
+  vectors `Pi.single (u i) 1`.
 * `Basis.piTensorProduct_repr_reindex`: reindexing the factors of a tensor reindexes its
   coordinates in a product basis.
 -/
@@ -25,6 +29,32 @@ public section
 
 open PiTensorProduct Module
 open scoped TensorProduct
+
+namespace TauCeti
+
+/-- **The coordinate monomial basis** of `⨂[R] _ : ι, (κ → R)`: the basis vector at `u : ι → κ`
+is the pure tensor whose `i`-th factor is the standard basis vector `Pi.single (u i) 1`. -/
+noncomputable def piTensorPowerBasis (R : Type*) [CommSemiring R] (ι κ : Type*)
+    [Finite ι] [Finite κ] :
+    Module.Basis (ι → κ) R (⨂[R] _ : ι, κ → R) :=
+  Basis.piTensorProduct fun _ => Pi.basisFun R κ
+
+/-- Defining equation of `TauCeti.piTensorPowerBasis` via `Basis.piTensorProduct`. -/
+theorem piTensorPowerBasis_def (R : Type*) [CommSemiring R] (ι κ : Type*)
+    [Finite ι] [Finite κ] :
+    piTensorPowerBasis R ι κ = Basis.piTensorProduct fun _ : ι => Pi.basisFun R κ :=
+  (rfl)
+
+/-- A coordinate monomial basis vector of `⨂[R] _ : ι, (κ → R)` is the pure tensor of standard
+basis vectors `Pi.single (u i) 1`. -/
+@[simp]
+theorem piTensorPowerBasis_apply (R : Type*) [CommSemiring R] (ι κ : Type*)
+    [Finite ι] [Finite κ] [DecidableEq κ] (u : ι → κ) :
+    piTensorPowerBasis R ι κ u = PiTensorProduct.tprod R fun i => Pi.single (u i) (1 : R) := by
+  rw [piTensorPowerBasis_def, Basis.piTensorProduct_apply]
+  simp
+
+end TauCeti
 
 variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 

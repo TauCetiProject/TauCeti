@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.BrauerAlgebra.Generation
 public import TauCeti.Combinatorics.Brauer.SkewWeight
+public import TauCeti.LinearAlgebra.PiTensorProduct.Basis.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Crossing
 -- Non-public: `Equiv.Perm.sign_sumComm` evaluates the reflection sign, `Matrix.Congruence` expands
 -- `(P * J * Qᵀ) i j` entrywise, and `SymplecticGroup` supplies reindexing, entrywise, and
@@ -78,7 +79,7 @@ strands it agrees with `TauCeti.symplecticCupCapAt`.
   relabelling, coefficient maps, coordinate reindexing, and diagram reflection.
 * `TauCeti.BrauerDiagram.symplecticActionMatrix_mul`: **the symplectic loop rule**,
   `M(D₁) * M(D₂) = (-(2 * |ι| : R)) ^ c • M(D₁ ∘ D₂)` with `c` the number of closed middle loops.
-* `TauCeti.brauerActionSymp_of_symplecticTensorPowerBasis`,
+* `TauCeti.brauerActionSymp_of_piTensorPowerBasis`,
   `TauCeti.brauerActionSymp_of_permToBrauer`, `TauCeti.brauerActionSymp_comp_ofPerm`, and
   `TauCeti.brauerActionSymp_of_capCup`: values of the Brauer algebra action on monomial basis
   tensors, permutation diagrams, the group algebra of `Sₖ`, and cap-cup generators.
@@ -737,10 +738,8 @@ variable (R : Type u) [CommRing R] (n k : ℕ)
 noncomputable def brauerActionSymp :
     BrauerAlgebra R (-(2 * n : R)) k →ₐ[R] Module.End R (⨂[R]^k ((Fin n ⊕ Fin n) → R)) :=
   BrauerAlgebra.lift
-    (fun D => Matrix.toLin
-      (Basis.piTensorProduct fun _ : Fin k => Pi.basisFun R (Fin n ⊕ Fin n))
-      (Basis.piTensorProduct fun _ : Fin k => Pi.basisFun R (Fin n ⊕ Fin n))
-      (D.symplecticActionMatrix R (Fin n)))
+    (fun D => Matrix.toLin (piTensorPowerBasis R (Fin k) (Fin n ⊕ Fin n))
+      (piTensorPowerBasis R (Fin k) (Fin n ⊕ Fin n)) (D.symplecticActionMatrix R (Fin n)))
     (by
       rw [BrauerDiagram.symplecticActionMatrix_permToBrauer_one, Matrix.toLin_one,
         Module.End.one_eq_id])
@@ -755,17 +754,19 @@ theorem brauerActionSymp_of (D : BrauerDiagram k) :
       Matrix.toLin
         (Basis.piTensorProduct fun _ : Fin k => Pi.basisFun R (Fin n ⊕ Fin n))
         (Basis.piTensorProduct fun _ : Fin k => Pi.basisFun R (Fin n ⊕ Fin n))
-        (D.symplecticActionMatrix R (Fin n)) :=
-  BrauerAlgebra.lift_of ..
+        (D.symplecticActionMatrix R (Fin n)) := by
+  rw [← piTensorPowerBasis_def]
+  exact BrauerAlgebra.lift_of ..
 
 /-- **A Brauer diagram on a monomial basis tensor.** The diagram `D` sends
-`symplecticTensorPowerBasis R n k u` to the combination of the basis tensors weighted by
-`D.symplecticActionMatrix R (Fin n) v u`. -/
-theorem brauerActionSymp_of_symplecticTensorPowerBasis (D : BrauerDiagram k)
+`piTensorPowerBasis R (Fin k) (Fin n ⊕ Fin n) u` to the combination of the basis tensors weighted
+by `D.symplecticActionMatrix R (Fin n) v u`. -/
+theorem brauerActionSymp_of_piTensorPowerBasis (D : BrauerDiagram k)
     (u : Fin k → Fin n ⊕ Fin n) :
-    brauerActionSymp R n k (BrauerAlgebra.of D) (symplecticTensorPowerBasis R n k u) =
-      ∑ v, D.symplecticActionMatrix R (Fin n) v u • symplecticTensorPowerBasis R n k v := by
-  rw [symplecticTensorPowerBasis_def, brauerActionSymp_of, Matrix.toLin_self]
+    brauerActionSymp R n k (BrauerAlgebra.of D) (piTensorPowerBasis R (Fin k) (Fin n ⊕ Fin n) u) =
+      ∑ v, D.symplecticActionMatrix R (Fin n) v u •
+        piTensorPowerBasis R (Fin k) (Fin n ⊕ Fin n) v := by
+  rw [piTensorPowerBasis_def, brauerActionSymp_of, Matrix.toLin_self]
 
 /-- In the monomial basis, the matrix of `brauerActionSymp` on a single diagram `D` is
 `D.symplecticActionMatrix`.
@@ -806,15 +807,11 @@ factors along `σ` and multiplying by `sign σ`. -/
 theorem brauerActionSymp_of_permToBrauer (σ : Equiv.Perm (Fin k)) :
     brauerActionSymp R n k (BrauerAlgebra.of (permToBrauer σ)) =
       symplecticPermTensorAction R n k σ := by
-  set B := Basis.piTensorProduct fun _ : Fin k => Pi.basisFun R (Fin n ⊕ Fin n)
-  have hB (u : Fin k → Fin n ⊕ Fin n) : B u =
-      PiTensorProduct.tprod R fun t => (Pi.single (u t) (1 : R) : (Fin n ⊕ Fin n) → R) := by
-    simp [B, Basis.piTensorProduct_apply]
-  refine B.ext fun u => ?_
-  rw [brauerActionSymp_of, Matrix.toLin_self]
+  refine (piTensorPowerBasis R (Fin k) (Fin n ⊕ Fin n)).ext fun u => ?_
+  rw [brauerActionSymp_of_piTensorPowerBasis]
   simp only [BrauerDiagram.symplecticActionMatrix_permToBrauer_apply, ite_smul, zero_smul,
-    Finset.sum_ite_eq', Finset.mem_univ, ite_true]
-  rw [hB u, symplecticPermTensorAction_tprod, hB]
+    Finset.sum_ite_eq', Finset.mem_univ, ite_true, piTensorPowerBasis_apply,
+    symplecticPermTensorAction_tprod]
 
 /-- **Restriction to the symmetric group.** Along the embedding `TauCeti.BrauerAlgebra.ofPerm` of
 `R[Sₖ]`, the symplectic Brauer action restricts to the monoid-algebra extension of
