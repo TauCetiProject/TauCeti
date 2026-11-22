@@ -12,7 +12,6 @@ public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.Geometry.Manifold.MFDeriv.Basic
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.DetSign
-import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Dynamics.FixedPoints.Topology
@@ -92,7 +91,8 @@ nondegenerate fixed points (`TauCeti.fixedPointDet_ne_zero_iff`), and it is `det
 preserves it, whether or not the diffeomorphism preserves an orientation
 (`Diffeomorph.fixedPointDet_eq_of_semiconj`). On a zero-dimensional manifold every point has
 `fixedPointDet I f x = 1` and Lefschetz sign `1`. Along the iterates of a fixed point, the
-Lefschetz signs form a geometric sequence (`TauCeti.fixedPointSign_iterate_succ`):
+Lefschetz signs form a geometric sequence (`TauCeti.fixedPointSign_iterate_succ`): if `f` is
+differentiable at `x` and `x` is a nondegenerate fixed point of `f^[k + 1]`, then
 `sgn det (1 - D ^ (k + 1)) = sgn det (1 - D) * ((-1) ^ i₋) ^ k`, where `i₋` counts the real
 eigenvalues of `D` below `-1`.
 
@@ -111,6 +111,8 @@ eigenvalues of `D` below `-1`.
 
 ## Main results
 
+* `Diffeomorph.mfderiv_comp_mfderiv_of_semiconj`: a diffeomorphism conjugating `f` to `g`
+  intertwines their differentials at a fixed point.
 * `Diffeomorph.isNondegenerateFixedPt_iff_of_semiconj`: nondegeneracy is invariant under
   conjugation by a diffeomorphism.
 * `TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`: on a manifold modelled on a
@@ -158,8 +160,9 @@ eigenvalues of `D` below `-1`.
   sign.
 * `TauCeti.fixedPointSign_iterate_apply_iterate`: the Lefschetz sign of `f^[n]` is constant along
   a periodic orbit of period `n`.
-* `TauCeti.fixedPointSign_iterate_succ`: the Lefschetz signs of the iterates at a fixed point form
-  a geometric sequence.
+* `TauCeti.fixedPointSign_iterate_succ`: at a fixed point `x` where `f` is differentiable, the
+  Lefschetz signs of the iterates `f^[k + 1]` at which `x` is nondegenerate form a geometric
+  sequence.
 
 ## References
 
@@ -223,6 +226,27 @@ theorem congr_of_eventuallyEq {g : M → M} (h : IsNondegenerateFixedPt I f x) (
 
 end IsNondegenerateFixedPt
 
+/-- If a diffeomorphism `Φ` intertwines `f` and `g`, `Φ ∘ f = g ∘ Φ`, and `x` is a fixed point of
+`f`, then the differential of `Φ` at `x` intertwines the differentials:
+`dg_{Φ x} ∘ dΦ_x = dΦ_x ∘ df_x`.
+The differentials are stated as maps between the model spaces `E` and `F`, the tangent spaces of
+`M` and `N` at every point, so that `f x = x` can be substituted without transport. -/
+theorem _root_.Diffeomorph.mfderiv_comp_mfderiv_of_semiconj {F H' N : Type*}
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace H'] {J : ModelWithCorners 𝕜 F H'}
+    [TopologicalSpace N] [ChartedSpace H' N] {n : ℕ∞ω} (Φ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {g : N → N}
+    (h : Semiconj Φ f g) (hx : IsFixedPt f x) :
+    ((mfderiv J J g (Φ x)).comp (mfderiv I J Φ x) : E →L[𝕜] F) =
+      (mfderiv I J Φ x).comp (mfderiv I I f x) := by
+  have hcomp : (Φ : M → N) ∘ f = g ∘ Φ := funext h
+  -- Differentiating `Φ ∘ f = g ∘ Φ` at `x` gives `dg ∘ dΦ = dΦ_{f x} ∘ df`.
+  have hder : ((mfderiv J J g (Φ x)).comp (mfderiv I J Φ x) : E →L[𝕜] F) =
+      (mfderiv I J Φ (f x)).comp (mfderiv I I f x) := by
+    refine (Φ.mfderiv_comp_diffeomorph hn g x).symm.trans ?_
+    rw [← hcomp]
+    exact Φ.mfderiv_diffeomorph_comp hn f x
+  have hΦ : (mfderiv I J Φ (f x) : E →L[𝕜] F) = mfderiv I J Φ x := by rw [hx.eq]
+  rwa [hΦ] at hder
+
 /-- **Nondegeneracy is invariant under conjugation by a diffeomorphism.** If a diffeomorphism `Φ`
 intertwines `f` and `g`, `Φ ∘ f = g ∘ Φ`, then `Φ x` is a nondegenerate fixed point of `g` exactly
 when `x` is a nondegenerate fixed point of `f`: the differential of `Φ` at `x` carries the vectors
@@ -238,14 +262,6 @@ theorem _root_.Diffeomorph.isNondegenerateFixedPt_iff_of_semiconj {F H' N : Type
     exact Φ.injective.eq_iff
   have hdiff : MDifferentiableAt J J g (Φ x) ↔ MDifferentiableAt I I f x := by
     rw [← Φ.mdifferentiableAt_comp_diffeomorph_iff hn, ← hcomp, Φ.mdifferentiableAt_comp_iff hn]
-  -- The differentials are maps between the model spaces `E` and `F`, the tangent spaces of `M`
-  -- and `N` at every point; stating them so lets `f x = x` be substituted without transport.
-  -- Differentiating `Φ ∘ f = g ∘ Φ` at `x` gives `dg ∘ dΦ = dΦ ∘ df`.
-  have hder : ((mfderiv J J g (Φ x)).comp (mfderiv I J Φ x) : E →L[𝕜] F) =
-      (mfderiv I J Φ (f x)).comp (mfderiv I I f x) := by
-    refine (Φ.mfderiv_comp_diffeomorph hn g x).symm.trans ?_
-    rw [← hcomp]
-    exact Φ.mfderiv_diffeomorph_comp hn f x
   have hl (w : E) : (mfderiv J I Φ.symm (Φ x) (mfderiv I J Φ x w) : E) = w :=
     Φ.mfderiv_symm_apply_mfderiv_apply hn x w
   have hr (v : F) : (mfderiv I J Φ x (mfderiv J I Φ.symm (Φ x) v) : F) = v :=
@@ -253,10 +269,8 @@ theorem _root_.Diffeomorph.isNondegenerateFixedPt_iff_of_semiconj {F H' N : Type
   have hinj : Injective (mfderiv I J Φ x : E → F) := fun a b hab ↦ by rw [← hl a, hab, hl b]
   -- At a fixed point of `f`, `dg (dΦ w) = dΦ (df w)` for every `w`.
   have hfg (hfx : f x = x) (w : E) :
-      (mfderiv J J g (Φ x) (mfderiv I J Φ x w) : F) = mfderiv I J Φ x (mfderiv I I f x w) := by
-    have hΦ : (mfderiv I J Φ (f x) : E →L[𝕜] F) = mfderiv I J Φ x := by rw [hfx]
-    rw [hΦ] at hder
-    exact congrArg (fun A : E →L[𝕜] F ↦ A w) hder
+      (mfderiv J J g (Φ x) (mfderiv I J Φ x w) : F) = mfderiv I J Φ x (mfderiv I I f x w) :=
+    congrArg (fun A : E →L[𝕜] F ↦ A w) (Φ.mfderiv_comp_mfderiv_of_semiconj hn h hfx)
   constructor
   · rintro ⟨hgx, hgd, hg⟩
     have hfx : f x = x := (hfix.1 hgx).eq
@@ -833,30 +847,19 @@ theorem _root_.Diffeomorph.fixedPointDet_eq_of_semiconj {F H' N : Type*}
     [TopologicalSpace N] [ChartedSpace H' N] {n : ℕ∞ω} (Φ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {g : N → N}
     (h : Semiconj Φ f g) (hx : IsFixedPt f x) :
     fixedPointDet J g (Φ x) = fixedPointDet I f x := by
-  have hcomp : (Φ : M → N) ∘ f = g ∘ Φ := funext h
   -- The tangent spaces of `M` and `N` are the model spaces `E` and `F`; read the differentials
-  -- of `f`, `g`, `Φ` and `Φ.symm` there.
+  -- of `f`, `g` and `Φ` there.
   let A : E →L[𝕜] E := mfderiv I I f x
   let B : F →L[𝕜] F := mfderiv J J g (Φ x)
   let T : E →L[𝕜] F := mfderiv I J Φ x
-  let T' : F →L[𝕜] E := mfderiv J I (⇑Φ.symm) (Φ x)
   have hA : fixedPointDet I f x = LinearMap.det (LinearMap.id - (A : E →ₗ[𝕜] E)) := rfl
   have hB : fixedPointDet J g (Φ x) = LinearMap.det (LinearMap.id - (B : F →ₗ[𝕜] F)) := rfl
   -- Differentiating `Φ ∘ f = g ∘ Φ` at the fixed point `x` gives `B ∘ T = T ∘ A`.
-  have hder : B.comp T = T.comp A := by
-    have h₀ : ((mfderiv J J g (Φ x)).comp (mfderiv I J Φ x) : E →L[𝕜] F) =
-        (mfderiv I J Φ (f x)).comp (mfderiv I I f x) := by
-      refine (Φ.mfderiv_comp_diffeomorph hn g x).symm.trans ?_
-      rw [← hcomp]
-      exact Φ.mfderiv_diffeomorph_comp hn f x
-    have hΦ : (mfderiv I J Φ (f x) : E →L[𝕜] F) = T := by rw [hx.eq]
-    rwa [hΦ] at h₀
-  -- `T` and `T'` are mutually inverse, so they form a linear equivalence `e`.
-  let e : E ≃ₗ[𝕜] F :=
-    { toLinearMap := (T : E →ₗ[𝕜] F)
-      invFun := T'
-      left_inv := Φ.mfderiv_symm_apply_mfderiv_apply hn x
-      right_inv := Φ.mfderiv_apply_mfderiv_symm_apply hn x }
+  have hder : B.comp T = T.comp A := Φ.mfderiv_comp_mfderiv_of_semiconj hn h hx
+  -- The differential `T` of `Φ` is a linear equivalence `e`.
+  let e : E ≃ₗ[𝕜] F := (Φ.mfderivToContinuousLinearEquiv hn x).toLinearEquiv
+  have he (w : E) : e w = T w :=
+    congrArg (fun L : E →L[𝕜] F ↦ L w) (Φ.mfderivToContinuousLinearEquiv_coe hn)
   -- So `1 - B` is the conjugate of `1 - A` by `e`.
   have hconj : LinearMap.id - (B : F →ₗ[𝕜] F) =
       (e : E →ₗ[𝕜] F) ∘ₗ (LinearMap.id - (A : E →ₗ[𝕜] E)) ∘ₗ (e.symm : F →ₗ[𝕜] E) := by
@@ -865,6 +868,7 @@ theorem _root_.Diffeomorph.fixedPointDet_eq_of_semiconj {F H' N : Type*}
     have hw : B (T w) = T (A w) := congrArg (fun L : E →L[𝕜] F ↦ L w) hder
     simp only [LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply,
       LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply, map_sub, ContinuousLinearMap.coe_coe]
+    simp only [he]
     exact congrArg (T w - ·) hw
   rw [hB, hconj, LinearMap.det_conj, hA]
 
@@ -984,14 +988,10 @@ theorem fixedPointSign_iterate_succ [FiniteDimensional ℝ E] (hx : IsFixedPt f 
   have hk : (1 - D ^ (k + 1)).det ≠ 0 := by
     have := h.fixedPointDet_ne_zero
     rwa [fixedPointDet_iterate hx hf] at this
-  -- Nondegeneracy of `f^[k + 1]` forces nondegeneracy of `f`, as `1 - D` divides `1 - D ^ (k + 1)`.
-  have h₁ : fixedPointDet I f x ≠ 0 := by
-    rw [fixedPointDet_eq_det_id_sub_fixedPointDerivative hx, ← Module.End.one_eq_id]
-    exact left_ne_zero_of_mul (by rwa [← map_mul, mul_neg_geom_sum])
-  rw [h.fixedPointSign_eq_sign, fixedPointSign_eq_sign h₁, fixedPointDet_iterate hx hf,
-    fixedPointDet_eq_det_id_sub_fixedPointDerivative hx, ← Module.End.one_eq_id,
-    D.sign_det_one_sub_pow_succ k hk, pow_mul', SignType.coe_mul, SignType.coe_pow,
-    SignType.coe_pow, SignType.coe_neg_one]
+  rw [h.fixedPointSign_eq_sign, (h.of_iterate hf hx).fixedPointSign_eq_sign,
+    fixedPointDet_iterate hx hf, fixedPointDet_eq_det_id_sub_fixedPointDerivative hx,
+    ← Module.End.one_eq_id, D.sign_det_one_sub_pow_succ k hk]
+  simp [D, pow_mul']
 
 end Sign
 
