@@ -139,42 +139,27 @@ theorem isOrderMatching_insert_iff [DecidableEq α] {s : Finset α} {r : α → 
     s.IsOrderMatching r (insert (a, b) E) ↔
       s.IsOrderMatching r E ∧ a ∈ s ∧ b ∈ s ∧ r a b ∧
       (∀ e ∈ E, e.1 = a → e = (a, b)) ∧ (∀ e ∈ E, e.2 = b → e = (a, b)) := by
-  constructor
-  · intro h
-    refine ⟨h.subset (subset_insert _ _), h.fst_mem (mem_insert_self _ _),
-      h.snd_mem (mem_insert_self _ _), h.rel (mem_insert_self _ _), ?_, ?_⟩
-    · intro e he he1
-      exact h.injOn_fst (mem_coe.mpr (mem_insert_of_mem he)) (mem_coe.mpr (mem_insert_self _ _)) he1
-    · intro e he he2
-      exact h.injOn_snd (mem_coe.mpr (mem_insert_of_mem he)) (mem_coe.mpr (mem_insert_self _ _)) he2
-  · rintro ⟨hE, has, hbs, hab, hfst, hsnd⟩
-    refine ⟨?_, ?_, ?_, ?_, ?_⟩
-    · intro e he
-      rcases mem_insert.mp he with rfl | he'
-      · exact has
-      · exact hE.fst_mem he'
-    · intro e he
-      rcases mem_insert.mp he with rfl | he'
-      · exact hbs
-      · exact hE.snd_mem he'
-    · intro e he
-      rcases mem_insert.mp he with rfl | he'
-      · exact hab
-      · exact hE.rel he'
-    · intro e₁ he₁ e₂ he₂ heq
-      rcases mem_insert.mp (mem_coe.mp he₁) with rfl | he₁' <;>
-        rcases mem_insert.mp (mem_coe.mp he₂) with rfl | he₂'
-      · rfl
-      · exact (hfst e₂ he₂' heq.symm).symm
-      · exact hfst e₁ he₁' heq
-      · exact hE.injOn_fst he₁' he₂' heq
-    · intro e₁ he₁ e₂ he₂ heq
-      rcases mem_insert.mp (mem_coe.mp he₁) with rfl | he₁' <;>
-        rcases mem_insert.mp (mem_coe.mp he₂) with rfl | he₂'
-      · rfl
-      · exact (hsnd e₂ he₂' heq.symm).symm
-      · exact hsnd e₁ he₁' heq
-      · exact hE.injOn_snd he₁' he₂' heq
+  by_cases habE : (a, b) ∈ E
+  · rw [insert_eq_of_mem habE]
+    exact ⟨fun h ↦ ⟨h, h.fst_mem habE, h.snd_mem habE, h.rel habE,
+      fun _ he ↦ h.injOn_fst he habE, fun _ he ↦ h.injOn_snd he habE⟩, And.left⟩
+  · have hnot : (a, b) ∉ (E : Set (α × α)) := mem_coe.not.mpr habE
+    have hinj {p : α × α → α} :
+        ((insert (a, b) E : Finset (α × α)) : Set (α × α)).InjOn p ↔
+          (E : Set (α × α)).InjOn p ∧ ∀ e ∈ E, p e = p (a, b) → e = (a, b) := by
+      rw [coe_insert, Set.injOn_insert hnot]
+      exact and_congr_right fun _ ↦
+        ⟨fun h e he hp ↦ absurd ⟨e, he, hp⟩ h, fun h ⟨e, he, hp⟩ ↦ habE (h e he hp ▸ he)⟩
+    constructor
+    · intro h
+      exact ⟨h.subset (subset_insert _ _), h.fst_mem (mem_insert_self _ _),
+        h.snd_mem (mem_insert_self _ _), h.rel (mem_insert_self _ _),
+        (hinj.mp h.injOn_fst).2, (hinj.mp h.injOn_snd).2⟩
+    · rintro ⟨hE, has, hbs, hab, hfst, hsnd⟩
+      exact ⟨(forall_mem_insert _ _ _).mpr ⟨has, fun _ he ↦ hE.fst_mem he⟩,
+        (forall_mem_insert _ _ _).mpr ⟨hbs, fun _ he ↦ hE.snd_mem he⟩,
+        (forall_mem_insert _ _ _).mpr ⟨hab, fun _ he ↦ hE.rel he⟩,
+        hinj.mpr ⟨hE.injOn_fst, hfst⟩, hinj.mpr ⟨hE.injOn_snd, hsnd⟩⟩
 
 /-- Relation embeddings preserve and reflect order matchings. -/
 @[simp]
@@ -186,14 +171,13 @@ theorem isOrderMatching_map_iff {β : Type*} {r : α → α → Prop} {r' : β �
   have hff : (ff : α × α → β × β) = Prod.map f f := by
     dsimp only [ff]
     rw [Function.Embedding.coe_prodMap, RelEmbedding.coe_toEmbedding]
-  have hfst : ((E.map ff : Finset (β × β)) : Set (β × β)).InjOn Prod.fst ↔
-      (E : Set (α × α)).InjOn Prod.fst := by
-    rw [coe_map, ← ff.injective.injOn.comp_iff, hff, Prod.map_fst']
+  have hinj (p : β × β → β) (q : α × α → α) (hpq : p ∘ ff = f ∘ q) :
+      ((E.map ff : Finset (β × β)) : Set (β × β)).InjOn p ↔
+        (E : Set (α × α)).InjOn q := by
+    rw [coe_map, ← ff.injective.injOn.comp_iff, hpq]
     exact ⟨Set.InjOn.of_comp, f.injective.comp_injOn⟩
-  have hsnd : ((E.map ff : Finset (β × β)) : Set (β × β)).InjOn Prod.snd ↔
-      (E : Set (α × α)).InjOn Prod.snd := by
-    rw [coe_map, ← ff.injective.injOn.comp_iff, hff, Prod.map_snd']
-    exact ⟨Set.InjOn.of_comp, f.injective.comp_injOn⟩
+  have hfst := hinj Prod.fst Prod.fst (by rw [hff, Prod.map_fst'])
+  have hsnd := hinj Prod.snd Prod.snd (by rw [hff, Prod.map_snd'])
   refine ⟨fun h ↦ ⟨?_, ?_, ?_, hfst.mp h.injOn_fst, hsnd.mp h.injOn_snd⟩,
     fun h ↦ ⟨?_, ?_, ?_, hfst.mpr h.injOn_fst, hsnd.mpr h.injOn_snd⟩⟩
   · exact fun _ he ↦ (mem_map' f.toEmbedding).mp (h.fst_mem (mem_map_of_mem ff he))
