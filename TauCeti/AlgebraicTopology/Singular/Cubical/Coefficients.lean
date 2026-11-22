@@ -151,13 +151,12 @@ variable {R S : Type*} [Ring R] [Ring S]
 
 /-- Change of coefficients commutes with the cubical boundary operator. -/
 theorem mapRingHom_boundary (φ : R →+* S) {n : ℕ} (g : CubicalChain X R (n + 1)) :
-    mapRingHom X φ n (boundary X R n g) = boundary X S n (mapRingHom X φ (n + 1) g) := by
+    mapRingHom X φ n (boundary X R R n g) = boundary X S S n (mapRingHom X φ (n + 1) g) := by
   induction g using Finsupp.induction_linear with
   | zero => simp
   | add a b ha hb => simp [ha, hb]
   | single c r =>
-    simp only [boundary_single, mapRingHom_single, map_sum, map_smulₛₗ, map_sub, map_pow,
-      map_neg, map_one]
+    simp only [boundary_single, mapRingHom_single, map_sum, map_zsmul, map_sub]
 
 end Ring
 
