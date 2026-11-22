@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Analysis.Calculus.Jet.FirstOrder
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Topology.VectorBundle.Trivialization
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -43,6 +44,8 @@ change of charts.
   `J¹V` for a `C^(n+1)` section `s` (`TauCeti.FirstJetBundle.contMDiff_jet`).
   For the trivial bundle over a model space it is `(s x, fderiv 𝕜 s x)`, and for a constant
   section `v` of a trivial bundle it is `(v, 0)` (`TauCeti.FirstJetBundle.jet_trivial_const`).
+  Its vanishing is equivalent to zero value and chart derivative
+  (`TauCeti.FirstJetBundle.jet_eq_zero_iff_localRep`).
 * `TauCeti.FirstJetBundle.value` and `TauCeti.FirstJetBundle.ofDeriv`: the fibres of the projection
   `J¹V → V` and of the inclusion `Hom(TM, V) → J¹V` of continuous linear maps (for
   finite-dimensional fibres, `Hom(TM, V) = T*M ⊗ V`). The projection sends `j¹s(x)` to
@@ -123,13 +126,28 @@ theorem mem_extChartAt_source_of_mem_baseSet {i y : M}
   exact hy.2
 
 /-- Near the image in the extended chart at `j` of a point `y` of the first-jet chart domain at `i`
+and the chart domain at `j`, in the whole model space, the inverse of that extended chart lands in
+the first-jet chart domain at `i`. -/
+theorem eventually_extChartAt_symm_mem_baseSet_nhds {i j y : M}
+    (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ (chartAt H j).source) :
+    ∀ᶠ z in 𝓝 (extChartAt I j y), (extChartAt I j).symm z ∈ baseSet (H := H) F V i :=
+  extChartAt_preimage_mem_nhds' (by rwa [extChartAt_source]) ((isOpen_baseSet F V i).mem_nhds hi)
+
+/-- Near the image in the extended chart at `j` of a point `y` of the first-jet chart domain at `i`
 and the chart domain at `j`, the inverse of that extended chart lands in the first-jet chart domain
 at `i`. -/
 theorem eventually_extChartAt_symm_mem_baseSet {i j y : M}
     (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ (chartAt H j).source) :
     ∀ᶠ z in 𝓝[range I] extChartAt I j y, (extChartAt I j).symm z ∈ baseSet (H := H) F V i :=
-  mem_nhdsWithin_of_mem_nhds (extChartAt_preimage_mem_nhds'
-    (by rwa [extChartAt_source]) ((isOpen_baseSet F V i).mem_nhds hi))
+  mem_nhdsWithin_of_mem_nhds (eventually_extChartAt_symm_mem_baseSet_nhds I hi hj)
+
+/-- On a boundaryless manifold, the change of extended charts from `j` to `i` is `C^n` at the
+image of a point of the first-jet chart domains at `i` and `j` when `M` is. -/
+theorem contDiffAt_ext_coord_change_of_mem_baseSet [I.Boundaryless] {n : ℕ∞ω} [IsManifold I n M]
+    {i j y : M} (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ baseSet (H := H) F V j) :
+    ContDiffAt 𝕜 n (extChartAt I i ∘ (extChartAt I j).symm) (extChartAt I j y) :=
+  contDiffAt_ext_coord_change i j (PartialEquiv.mem_symm_trans_source _
+    (mem_extChartAt_source_of_mem_baseSet I hj) (mem_extChartAt_source_of_mem_baseSet I hi))
 
 end FirstJetBundle
 
@@ -184,6 +202,15 @@ theorem hasFDerivWithinAt_fiberCoordChange [IsManifold I 1 M] [ContMDiffVectorBu
       (extChartAt I j y) :=
   ((contDiffWithinAt_fiberCoordChange (n := 1) hi hj).differentiableWithinAt
     one_ne_zero).hasFDerivWithinAt
+
+/-- On a boundaryless manifold, the coordinate change of `V`, written in a chart, is `C^n` at the
+image of a point of the chart domains when `M` and `V` are. -/
+theorem contDiffAt_fiberCoordChange [I.Boundaryless] {n : ℕ∞ω} [IsManifold I n M]
+    [ContMDiffVectorBundle n F V I] {i j y : M} (hi : y ∈ (trivializationAt F V i).baseSet)
+    (hj : y ∈ baseSet (H := H) F V j) :
+    ContDiffAt 𝕜 n (fiberCoordChange I F V i j) (extChartAt I j y) := by
+  have h := contDiffWithinAt_fiberCoordChange (I := I) (n := n) hi hj
+  rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
 
 section
 
@@ -526,18 +553,39 @@ theorem contDiffWithinAt_localRep {n : ℕ∞ω} [IsManifold I n M] [ContMDiffVe
   exact contMDiffWithinAt_iff_contDiffWithinAt.1 (h₁.comp_contMDiffWithinAt _
     (contMDiffWithinAt_extChartAt_symm_range i ((extChartAt I i).map_source hy)))
 
+/-- On a boundaryless manifold, the local representative in the chart and trivialization at `i`
+of a section that is `C^n` at a point `y` of the first-jet chart domain at `i` is `C^n` at the
+image of `y`. -/
+theorem contDiffAt_localRep [I.Boundaryless] {n : ℕ∞ω} [IsManifold I n M]
+    [ContMDiffVectorBundle n F V I] {s : ∀ x, V x} {i y : M}
+    (hs : ContMDiffAt I (I.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F x (s x)) y)
+    (hi : y ∈ baseSet (H := H) F V i) :
+    ContDiffAt 𝕜 n (localRep I F s i) (extChartAt I i y) := by
+  have h := contDiffWithinAt_localRep I F hs hi
+  rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
+
+/-- **Transformation law for local representatives**, in the whole model space. Near the image of
+a point `y` of the first-jet chart domains at `i` and `j`, the local representative at `j` is the
+coordinate change of `V` from `i` to `j` applied to the local representative at `i` after the
+change of charts. -/
+theorem localRep_eventuallyEq_fiberCoordChange_nhds (s : ∀ x, V x) {i j y : M}
+    (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ baseSet (H := H) F V j) :
+    localRep I F s j =ᶠ[𝓝 (extChartAt I j y)] fun z ↦ fiberCoordChange I F V i j z
+      (localRep I F s i ((extChartAt I i ∘ (extChartAt I j).symm) z)) := by
+  filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I hi hj.2,
+    eventually_extChartAt_symm_mem_baseSet_nhds I hj hj.2] with z hzi hzj
+  rw [Function.comp_apply, localRep_extChartAt I F s hzi.2, fiberCoordChange_apply,
+    ContinuousLinearEquiv.coe_coe,
+    Trivialization.coordChangeL_apply_snd 𝕜 _ _ (p := ⟨_, s _⟩) hzi.1 hzj.1, localRep_apply]
+
 /-- **Transformation law for local representatives.** Near the image of a point `y` of the
 first-jet chart domains at `i` and `j`, the local representative at `j` is the coordinate change
 of `V` from `i` to `j` applied to the local representative at `i` after the change of charts. -/
 theorem localRep_eventuallyEq_fiberCoordChange (s : ∀ x, V x) {i j y : M}
     (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ baseSet (H := H) F V j) :
     localRep I F s j =ᶠ[𝓝[range I] (extChartAt I j y)] fun z ↦ fiberCoordChange I F V i j z
-      (localRep I F s i ((extChartAt I i ∘ (extChartAt I j).symm) z)) := by
-  filter_upwards [eventually_extChartAt_symm_mem_baseSet I hi hj.2,
-    eventually_extChartAt_symm_mem_baseSet I hj hj.2] with z hzi hzj
-  rw [Function.comp_apply, localRep_extChartAt I F s hzi.2, fiberCoordChange_apply,
-    ContinuousLinearEquiv.coe_coe,
-    Trivialization.coordChangeL_apply_snd 𝕜 _ _ (p := ⟨_, s _⟩) hzi.1 hzj.1, localRep_apply]
+      (localRep I F s i ((extChartAt I i ∘ (extChartAt I j).symm) z)) :=
+  (localRep_eventuallyEq_fiberCoordChange_nhds I F s hi hj).filter_mono nhdsWithin_le_nhds
 
 section
 
@@ -619,7 +667,7 @@ trivialization of `V` at `i`. -/
 theorem trivializationAt_apply_snd (i : M)
     (p : TotalSpace (F × (E →L[𝕜] F)) (FirstJetBundle I F V)) :
     (trivializationAt (F × (E →L[𝕜] F)) (FirstJetBundle I F V) i p).2 =
-      coordChange I F V p.1 i p.1 p.2 := (rfl)
+      coordChange I F V p.proj i p.proj p.snd := (rfl)
 
 /-- In the preferred trivialization of `J¹V` at `i`, the first jet of a section differentiable
 at `y` consists of the value and the chart derivative of its local representative at `i`. -/
@@ -772,6 +820,15 @@ theorem value_eq_zero_iff (x : M) (j : FirstJetBundle I F V x) : value I F x j =
   rw [h]
   refine ⟨fun h0 ↦ ?_, fun h0 ↦ by rw [h0, map_zero]⟩
   rw [← (trivializationAt F V x).continuousLinearMapAt_symmL (R := 𝕜) hx j.1, h0, map_zero]
+
+/-- A section has zero first jet exactly when its value and the derivative of its local
+representative in the preferred chart vanish. No differentiability hypothesis is needed: the
+first jet records the totalized chart derivative. -/
+theorem jet_eq_zero_iff_localRep {s : ∀ x, V x} {x : M} :
+    jet I F s x = 0 ↔ s x = 0 ∧
+      fderivWithin 𝕜 (localRep I F s x) (range I) (extChartAt I x x) = 0 := by
+  rw [← value_jet I F s x, value_eq_zero_iff, ← jet_snd]
+  exact Prod.ext_iff
 
 /-- A first jet with value coordinate zero has value zero. -/
 @[simp]

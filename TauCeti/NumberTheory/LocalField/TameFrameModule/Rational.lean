@@ -104,10 +104,10 @@ theorem tameFrameRelationMap_injective_of_card_ne_zero [Monoid G] {R : Type u} [
 
 variable {k : Type u} [Field k]
 
-/-- Let `G` be finite and suppose that its cardinality is nonzero in `k`. If the tame-frame
+/-- Suppose that the cardinality of `G` is nonzero in `k` (so `G` is finite). If the tame-frame
 relation map is injective, then the tame-frame module is linearly equivalent to the regular
 representation `k[G]`. -/
-theorem nonempty_tameFrameModule_linearEquiv_of_relationMap_injective [Group G] [Finite G]
+theorem nonempty_tameFrameModule_linearEquiv_of_relationMap_injective [Group G]
     [NeZero (Nat.card G : k)]
     (σ τ : G) (a b : k) (hinj : Function.Injective (tameFrameRelationMap k G σ τ a b)) :
     Nonempty (TameFrameModule k G σ τ a b ≃ₗ[MonoidAlgebra k G] MonoidAlgebra k G) := by
@@ -117,11 +117,11 @@ theorem nonempty_tameFrameModule_linearEquiv_of_relationMap_injective [Group G] 
   exact ⟨(Submodule.quotEquivOfEq _ _ (by rw [Set.range_unique])).trans e⟩
 
 /-- **The base change of the tame-frame module to a field is the regular representation.** Let
-`G` be finite, `R` a commutative ring and `k` a flat `R`-algebra which is a field in which the
-order of `G` is nonzero. If the integral tame-frame relation map is injective, then the base change
-`M₀ ⊗[R] k` of the tame-frame module is linearly equivalent, as a left `R[G]`-module, to the base
-change `R[G] ⊗[R] k` of the group ring. -/
-theorem nonempty_tameFrameModule_tensor_linearEquiv_of_relationMap_injective [Group G] [Finite G]
+`R` be a commutative ring and `k` a flat `R`-algebra which is a field in which the cardinality of
+`G` is nonzero (so `G` is finite). If the integral tame-frame relation map is injective, then the
+base change `M₀ ⊗[R] k` of the tame-frame module is linearly equivalent, as a left
+`R[G]`-module, to the base change `R[G] ⊗[R] k` of the group ring. -/
+theorem nonempty_tameFrameModule_tensor_linearEquiv_of_relationMap_injective [Group G]
     {R : Type*} [CommRing R] [Algebra R k] [Module.Flat R k] [NeZero (Nat.card G : k)]
     (σ τ : G) (a b : R)
     (hinj : Function.Injective (tameFrameRelationMap R G σ τ a b)) :

@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Geometry.Symplectic.Duality
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem
 
@@ -397,9 +398,8 @@ theorem integral_fderiv_apply_annulus [FiniteDimensional ℝ V]
   have hcircle (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) :
       deriv (fun θ ↦ u (circleMap z₀ r θ)) θ =
         fderiv ℝ u (circleMap z₀ r θ) (circleMap 0 r θ * I) := by
-    have hm : circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
-      simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
-        abs_of_nonneg (le_trans ha hr.1)] using (mem_Icc.mp hr)
+    have hm : circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} :=
+      circleMap_mem_setOf_le_norm_sub_le ha hr θ
     exact (((hu _ hm).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt θ
       (hasDerivAt_circleMap z₀ r θ)).deriv
   have hgreen := B.integral_bilinear_fderiv_sub_annulus z₀ ha hab hu

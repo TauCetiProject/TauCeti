@@ -337,7 +337,7 @@ theorem finrank_range_negativeSpectralProjection (hh : IsStrictlyPositive h♯)
   obtain ⟨hcompl, hneg, hpos⟩ := isCompl_range_ker_negativeSpectralProjection hh hq
   refine (QuadraticForm.sigNeg_eq_finrank_of_isCompl_of_negDef _ hcompl
     (fun x hx0 ↦ ?_) fun x hx ↦ by simpa using hpos x hx).symm
-  have := hneg x x.2 (by simpa using hx0)
+  have := hneg x x.property (by simpa using hx0)
   simpa [QuadraticMap.restrict_apply] using this
 
 /-- **The nullity of the negative spectral projection is the positive index of inertia of a
@@ -351,7 +351,7 @@ theorem finrank_ker_negativeSpectralProjection (hh : IsStrictlyPositive h♯)
     (fun x hx0 ↦ ?_) fun x hx ↦ ?_).symm
   · -- A vector `x` of the kernel is its own complement `x - P x`.
     have hxP : (x : E) - q.negativeSpectralProjection h x = x := by
-      rw [show q.negativeSpectralProjection h x = 0 from LinearMap.mem_ker.mp x.2, sub_zero]
+      rw [show q.negativeSpectralProjection h x = 0 from LinearMap.mem_ker.mp x.property, sub_zero]
     have := apply_sub_negativeSpectralProjection_apply_self_pos hh hq hq' (u := x)
       (by rw [hxP]; simpa using hx0)
     rw [hxP] at this

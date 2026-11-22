@@ -201,7 +201,7 @@ section of `Ω_D` over `U`. -/
 theorem restrict_mem_differentialSections {U : Opens X} {ω : OneForm X}
     (hω : ∀ x ∈ U, IsDifferentialSectionAt D ω x) :
     (fun x : U ↦ ω x) ∈ differentialSections D U :=
-  fun x ↦ ⟨ω, hω x x.2, Eventually.of_forall fun _ ↦ rfl⟩
+  fun x ↦ ⟨ω, hω x x.property, Eventually.of_forall fun _ ↦ rfl⟩
 
 /-- Sections of `Ω_D` restrict to smaller open sets. -/
 theorem comp_inclusion_mem_differentialSections {U V : Opens X} (h : V ≤ U)
@@ -221,7 +221,7 @@ theorem apply_eq_zero_of_mem_differentialSections {U : Opens X}
 /-- Membership in `differentialSections D U` is local on `U`. -/
 private theorem mem_differentialSections_of_local {U : Opens X}
     (s : (x : U) → TangentSpace 𝓘(ℂ) (x : X) →L[ℂ] ℂ)
-    (hs : ∀ x : U, ∃ (V : Opens X) (_ : x.1 ∈ V) (i : V ⟶ U),
+    (hs : ∀ x : U, ∃ (V : Opens X) (_ : x.val ∈ V) (i : V ⟶ U),
       (fun y : V ↦ s (Opens.inclusion i.le y)) ∈ differentialSections D V) :
     s ∈ differentialSections D U := by
   intro x
@@ -244,7 +244,8 @@ private def differentialLocalPredicate (D : WeilDivisor X) :
 private def differentialRestrict (D : WeilDivisor X) {U V : Opens X} (i : V ⟶ U) :
     differentialSections D U →ₗ[ℂ] differentialSections D V where
   toFun s :=
-    ⟨fun y ↦ s.1 (Opens.inclusion i.le y), comp_inclusion_mem_differentialSections i.le s.2⟩
+    ⟨fun y ↦ s.val (Opens.inclusion i.le y), comp_inclusion_mem_differentialSections i.le
+        s.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
@@ -286,8 +287,8 @@ def differentialSheafSectionsEquiv (D : WeilDivisor X) (U : Opens X) :
 @[simp]
 theorem differentialSheafSectionsEquiv_map (D : WeilDivisor X) {U V : Opens X} (h : V ⟶ U)
     (s : (differentialSheaf D).obj.obj (op U)) (y : V) :
-    (differentialSheafSectionsEquiv D V ((differentialSheaf D).obj.map h.op s)).1 y =
-      (differentialSheafSectionsEquiv D U s).1 (Opens.inclusion h.le y) := (rfl)
+    (differentialSheafSectionsEquiv D V ((differentialSheaf D).obj.map h.op s)).val y =
+      (differentialSheafSectionsEquiv D U s).val (Opens.inclusion h.le y) := (rfl)
 
 section IsManifold
 
@@ -328,23 +329,23 @@ namespace differentialSections
 variable (D) in
 /-- A global section of `Ω_D`, read as a `1`-form on `X`. -/
 def toOneForm : differentialSections D ⊤ →ₗ[ℂ] OneForm X where
-  toFun s y := s.1 ⟨y, trivial⟩
+  toFun s y := s.val ⟨y, trivial⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
 @[simp]
 theorem toOneForm_apply (s : differentialSections D ⊤) (y : X) :
-    toOneForm D s y = s.1 ⟨y, trivial⟩ :=
+    toOneForm D s y = s.val ⟨y, trivial⟩ :=
   (rfl)
 
 /-- A global section of `Ω_D` is determined by its `1`-form. -/
 theorem toOneForm_injective (D : WeilDivisor X) : Function.Injective (toOneForm D) :=
-  fun _ _ h ↦ Subtype.ext (funext fun y ↦ congrFun h y.1)
+  fun _ _ h ↦ Subtype.ext (funext fun y ↦ congrFun h y.val)
 
 /-- A global section of `Ω_D`, read as a `1`-form, is a local section of `Ω_D` at every point. -/
 theorem isDifferentialSectionAt_toOneForm (s : differentialSections D ⊤) (x : X) :
     IsDifferentialSectionAt D (toOneForm D s) x := by
-  obtain ⟨η, hη, e⟩ := mem_differentialSections_iff.1 s.2 ⟨x, trivial⟩
+  obtain ⟨η, hη, e⟩ := mem_differentialSections_iff.1 s.property ⟨x, trivial⟩
   refine hη.congr ?_
   rw [← (⊤ : Opens X).isOpenEmbedding'.map_nhds_eq ⟨x, trivial⟩, eventually_map]
   exact e.mono fun y hy ↦ hy.symm
@@ -355,9 +356,9 @@ theorem order_toOneForm_ne_top [IsManifold 𝓘(ℂ) 1 X] [PreconnectedSpace X]
   intro hx
   have hu := (OneForm.isClopen_setOfPred_order_eq_top fun y ↦
     (isDifferentialSectionAt_toOneForm s y).meromorphicAt).eq_univ ⟨x, hx⟩
-  refine hs (Subtype.ext (eq_of_eventually_codiscrete s.2 (zero_mem _)
+  refine hs (Subtype.ext (eq_of_eventually_codiscrete s.property (zero_mem _)
     (eventually_codiscrete_iff_forall_eventually_nhdsNE.2 fun y ↦ ?_)))
-  have ht := continuous_subtype_val.continuousAt.tendsto_nhdsNE (x := y) Subtype.val_injective
+  have ht := continuous_subtypeVal.continuousAt.tendsto_nhdsNE (x := y) Subtype.val_injective
   exact ht.eventually
     (OneForm.eventually_apply_eq_zero_of_order_eq_top (eq_univ_iff_forall.1 hu y))
 
@@ -370,8 +371,8 @@ def differentialSectionsZeroEquiv :
   toFun s := ⟨differentialSections.toOneForm 0 s, mem_holomorphicOneForms.2 fun x ↦
     (isDifferentialSectionAt_iff_of_eq_zero rfl).1
       (differentialSections.isDifferentialSectionAt_toOneForm s x)⟩
-  invFun ω := ⟨fun y ↦ ω.1 y, restrict_mem_differentialSections fun x _ ↦
-    (isDifferentialSectionAt_iff_of_eq_zero rfl).2 (mem_holomorphicOneForms.1 ω.2 x)⟩
+  invFun ω := ⟨fun y ↦ ω.val y, restrict_mem_differentialSections fun x _ ↦
+    (isDifferentialSectionAt_iff_of_eq_zero rfl).2 (mem_holomorphicOneForms.1 ω.property x)⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl
@@ -379,12 +380,12 @@ def differentialSectionsZeroEquiv :
 
 @[simp]
 theorem differentialSectionsZeroEquiv_apply (s : differentialSections (0 : WeilDivisor X) ⊤)
-    (x : X) : (differentialSectionsZeroEquiv s).1 x = s.1 ⟨x, trivial⟩ :=
+    (x : X) : (differentialSectionsZeroEquiv s).val x = s.val ⟨x, trivial⟩ :=
   (rfl)
 
 @[simp]
 theorem differentialSectionsZeroEquiv_symm_apply (ω : holomorphicOneForms X)
-    (x : (⊤ : Opens X)) : (differentialSectionsZeroEquiv.symm ω).1 x = ω.1 x :=
+    (x : (⊤ : Opens X)) : (differentialSectionsZeroEquiv.symm ω).val x = ω.val x :=
   (rfl)
 
 /-! ### Increasing the divisor -/
@@ -405,7 +406,7 @@ theorem ite_mem_differentialSections {E : WeilDivisor X} (h : D ≤ E) {U : Open
 /-- The map `Ω_D(U) → Ω_E(U)` for `D ≤ E`. -/
 private def differentialSectionsMapOfLE {E : WeilDivisor X} (h : D ≤ E) (U : Opens X) :
     differentialSections D U →ₗ[ℂ] differentialSections E U where
-  toFun s := ⟨fun y ↦ if E y ≤ 0 then s.1 y else 0, ite_mem_differentialSections h s.2⟩
+  toFun s := ⟨fun y ↦ if E y ≤ 0 then s.val y else 0, ite_mem_differentialSections h s.property⟩
   map_add' s t := by
     apply Subtype.ext
     funext y
@@ -441,8 +442,8 @@ def differentialSheafMapOfLE {E : WeilDivisor X} (h : D ≤ E) :
 theorem differentialSheafMapOfLE_app {E : WeilDivisor X} (h : D ≤ E) (U : Opens X)
     (s : (differentialSheaf D).obj.obj (op U)) (y : U) :
     (no_index (differentialSheafSectionsEquiv E U
-      ((differentialSheafMapOfLE h).hom.app (op U) s))).1 y =
-      if E y ≤ 0 then (differentialSheafSectionsEquiv D U s).1 y else 0 := (rfl)
+      ((differentialSheafMapOfLE h).hom.app (op U) s))).val y =
+      if E y ≤ 0 then (differentialSheafSectionsEquiv D U s).val y else 0 := (rfl)
 
 section IsManifold
 
@@ -454,15 +455,15 @@ theorem differentialSheafMapOfLE_app_injective {E : WeilDivisor X} (h : D ≤ E)
   intro s t hst
   apply (differentialSheafSectionsEquiv D U).injective
   apply Subtype.ext
-  refine eq_of_eventually_codiscrete (differentialSheafSectionsEquiv D U s).2
-    (differentialSheafSectionsEquiv D U t).2 ?_
-  have hst' (y : U) := congrArg (fun r ↦ (differentialSheafSectionsEquiv E U r).1 y) hst
+  refine eq_of_eventually_codiscrete (differentialSheafSectionsEquiv D U s).property
+    (differentialSheafSectionsEquiv D U t).property ?_
+  have hst' (y : U) := congrArg (fun r ↦ (differentialSheafSectionsEquiv E U r).val y) hst
   simp only [differentialSheafMapOfLE_app] at hst'
   refine eventually_codiscreteWithin_iff_forall_eventually_nhdsNE.2 fun x _ ↦ ?_
   -- Near `x`, every point other than `x` lies off the poles allowed by `E`.
   have hval : Tendsto (Subtype.val : U → X) (𝓝[≠] x) (𝓝[≠] (x : X)) :=
     tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      (continuous_subtype_val.continuousAt.mono_left nhdsWithin_le_nhds)
+      (continuous_subtypeVal.continuousAt.mono_left nhdsWithin_le_nhds)
       (eventually_nhdsWithin_of_forall fun _ hy ↦ Subtype.coe_injective.ne hy)
   have := ChartedSpace.t1Space ℂ X
   have hev : ∀ᶠ y : U in 𝓝[≠] x, E y ≤ 0 :=
@@ -489,7 +490,7 @@ theorem differentialSheafMapOfLE_refl :
   by_cases hy : D y ≤ 0
   · exact ite_eq_left hy
   · exact (ite_eq_right hy).trans (apply_eq_zero_of_mem_differentialSections
-      (differentialSheafSectionsEquiv D U.unop s).2 (not_le.1 hy)).symm
+      (differentialSheafSectionsEquiv D U.unop s).property (not_le.1 hy)).symm
 
 /-- The maps `Ω_D ⟶ Ω_E` compose. -/
 @[reassoc (attr := simp)]

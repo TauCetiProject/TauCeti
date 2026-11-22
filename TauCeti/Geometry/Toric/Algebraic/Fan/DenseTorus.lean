@@ -78,10 +78,10 @@ theorem denseTorusι_eq (Φ : Fan i) (hΦ₀ hΦ₁ : Nonempty Φ.cones) :
 theorem denseTorusι_face (Φ : Fan i) (σ : Φ.cones) :
     Φ.denseTorusι (Nonempty.intro σ) =
       faceAffineToricSchemeMap Φ.lattice
-          ((Φ.isToricCone σ.2).salient.bot_isFaceOf) ≫
+          ((Φ.isToricCone σ.property).salient.bot_isFaceOf) ≫
         Φ.affineToricChartι σ := by
-  have hbot : (⊥ : PointedCone ℝ V).IsFaceOf σ.1 :=
-    (Φ.isToricCone σ.2).salient.bot_isFaceOf
+  have hbot : (⊥ : PointedCone ℝ V).IsFaceOf σ.val :=
+    (Φ.isToricCone σ.property).salient.bot_isFaceOf
   symm
   simpa [denseTorusι, denseTorus, denseTorusScheme, botCone] using
     (faceAffineToricSchemeMap_comp_affineToricChartι (Φ := Φ)
@@ -119,9 +119,9 @@ theorem denseTorusι_comp_algebraicMap (f : FanHom Φ Ψ) (hΦ₀ : Nonempty Φ.
     Φ.denseTorusι hΦ₀ ≫ f.algebraicMap =
       affineToricSchemeMap (σ := ⊥) (τ := ⊥) Φ.lattice Ψ.lattice f.latticeMap f.realMap
           f.map_lattice (by simp [Set.MapsTo]) ≫
-        Ψ.denseTorusι ⟨⟨_, f.leastCone_mem hΦ₀.some.2⟩⟩ := by
-  have hΦ : (⊥ : PointedCone ℝ V) ∈ Φ.cones := Φ.bot_mem hΦ₀.some.2
-  have hΨ : (⊥ : PointedCone ℝ V') ∈ Ψ.cones := Ψ.bot_mem (f.leastCone_mem hΦ₀.some.2)
+        Ψ.denseTorusι ⟨⟨_, f.leastCone_mem hΦ₀.some.property⟩⟩ := by
+  have hΦ : (⊥ : PointedCone ℝ V) ∈ Φ.cones := Φ.bot_mem hΦ₀.some.property
+  have hΨ : (⊥ : PointedCone ℝ V') ∈ Ψ.cones := Ψ.bot_mem (f.leastCone_mem hΦ₀.some.property)
   rw [Φ.denseTorusι_eq_affineToricChartι hΦ₀ hΦ, Ψ.denseTorusι_eq_affineToricChartι _ hΨ]
   exact f.affineToricChartι_comp_algebraicMap_of_mapsTo ⟨⊥, hΦ⟩ ⟨⊥, hΨ⟩ (by simp [Set.MapsTo])
 

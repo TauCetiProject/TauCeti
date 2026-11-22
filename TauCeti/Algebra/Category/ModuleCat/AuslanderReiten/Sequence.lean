@@ -22,7 +22,7 @@ the Auslander–Reiten theorem: every finitely generated indecomposable non-proj
 
 `0 → τ M → E → M → 0`,
 
-whose left-hand end is the Auslander–Reiten translate `τ M = ModuleCat.arTranslate k M` and whose
+whose left-hand end is the Auslander–Reiten translate `τ M = ModuleCat.arTranslate k k M` and whose
 middle term is finitely generated (`ModuleCat.exists_isAlmostSplit_arTranslate`). Dually, every
 finitely generated indecomposable non-injective module starts an almost-split sequence with
 finitely generated middle term and right-hand end
@@ -69,17 +69,20 @@ generated indecomposable non-projective module `M` ends an almost-split sequence
 term is finitely generated. -/
 theorem exists_isAlmostSplit_arTranslate (M : ModuleCat.{max u v w} A) [Module.Finite A M]
     (hiM : Indecomposable M) (hpM : ¬ Projective M) :
-    ∃ (E : ModuleCat.{max u v w} A) (i : arTranslate k M ⟶ E) (p : E ⟶ M) (h : i ≫ p = 0),
+    ∃ (E : ModuleCat.{max u v w} A) (i : arTranslate k k M ⟶ E) (p : E ⟶ M) (h : i ≫ p = 0),
       Module.Finite A E ∧ (ShortComplex.mk i p h).IsAlmostSplit := by
   have : IsArtinianRing A := IsArtinianRing.of_finite k A
+  have : Module.FinitePresentation A M := Module.finitePresentation_of_finite A M
   -- Compute the translate from a minimal presentation `P`.
   obtain ⟨P, hP⟩ := FiniteProjectivePresentation.exists_isMinimal (M := M)
-  obtain ⟨e⟩ := nonempty_iso_arTranslate k M P hP
-  have : IsLocalRing (End (ModuleCat.of A (AuslanderReitenTranslate k P.p))) :=
+  obtain ⟨e⟩ := nonempty_iso_arTranslate k k M P hP
+  have : IsLocalRing (End (ModuleCat.of A (AuslanderReitenTranslate k k P.p))) :=
     isLocalRing_end_of_indecomposable (R := k)
-      (((indecomposable_arTranslate_iff k M hiM).mpr hpM).of_iso e)
-  have hinj : ¬ Injective (ModuleCat.of A (AuslanderReitenTranslate k P.p)) := fun h ↦
-    hpM ((injective_arTranslate_iff k M).mp (Injective.of_iso e.symm h))
+      (((indecomposable_arTranslate_iff (length_quotient_linearMap_self_eq_one k) M hiM).mpr
+          hpM).of_iso e)
+  have hinj : ¬ Injective (ModuleCat.of A (AuslanderReitenTranslate k k P.p)) := fun h ↦
+    hpM ((injective_arTranslate_iff (length_quotient_linearMap_self_eq_one k) M).mp
+        (Injective.of_iso e.symm h))
   obtain ⟨E, i, p, h, hS, hE, hi⟩ := P.p.exists_isLeftAlmostSplit_translate (k := k) hinj
   -- Replace the ends by `τ M` and by `M ≅ P₀ ⧸ im(P₁)`.
   let c : ModuleCat.of A (P.P₀ ⧸ LinearMap.range P.p) ≅ M :=
@@ -111,7 +114,8 @@ theorem exists_isAlmostSplit_of_not_injective (N : ModuleCat.{max u v w} A) [Mod
     (hiN : Indecomposable N) (hinj : ¬ Injective N) :
     ∃ (E M : ModuleCat.{max u v w} A) (i : N ⟶ E) (p : E ⟶ M) (h : i ≫ p = 0),
       Module.Finite A E ∧ Module.Finite A M ∧ (ShortComplex.mk i p h).IsAlmostSplit := by
-  obtain ⟨M, _, hiM, hpM, ⟨e⟩⟩ := exists_nonempty_iso_arTranslate k N hiN hinj
+  obtain ⟨M, _, hiM, hpM, ⟨e⟩⟩ := exists_nonempty_iso_arTranslate
+      (length_quotient_linearMap_self_eq_one k) N hiN hinj
   obtain ⟨E, i, p, h, hE, hS⟩ := exists_isAlmostSplit_arTranslate k M hiM hpM
   exact ⟨E, M, e.inv ≫ i, p, by simp [h], hE, inferInstance,
     ShortComplex.isAlmostSplit_of_iso (S₁ := ShortComplex.mk i p h)

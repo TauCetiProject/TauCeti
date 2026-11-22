@@ -5,210 +5,313 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.PathConnected
-public import Mathlib.Analysis.Normed.Module.Convex
+public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Topology.MetricSpace.Thickening
 public import TauCeti.Topology.FilledIn
--- Provides `NormedSpace.toLocallyConvexSpace`, hence `LocallyConnectedSpace E`.
+import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
+import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.Normed.Module.FilledHull
+import TauCeti.Topology.ConnectedComponents
+import TauCeti.Topology.Frontier
 
 /-!
 # Filled compact exhaustions of open sets
 
-The main theorem `IsOpen.exists_isFilledIn_compact_exhaustion` says that every open subset `Ω` of
-a proper real normed space has an exhaustion by compact sets `K n ⊆ interior (K (n + 1))`, each of
-which is filled in `Ω` in the sense of `TauCeti.IsFilledIn`: no connected component of `Ω \ K n`
-is relatively compact in `Ω`. Such an exhaustion is the device which turns Runge approximation on
-compact sets into the solution of an equation on all of `Ω`: successive local solutions are
-corrected by global approximants with summable errors on the `K n`.
+Every open subset `Ω` of a proper real seminormed space has an exhaustion by compact sets
+`K n ⊆ interior (K (n + 1))`, each of which is filled in `Ω` in the sense of `TauCeti.IsFilledIn`:
+no connected component of `Ω \ K n` is relatively compact in `Ω`
+(`IsOpen.exists_isFilledIn_compact_exhaustion`). Such an exhaustion is the device which turns
+Runge-type approximation on compact sets into global constructions and solutions of equations on
+all of `Ω`: successive local solutions are corrected by global approximants with summable errors
+on the stages `K n`.
 
-The explicit sequence `TauCeti.rungeExhaustion Ω n = closedBall 0 (n + 1) \ thickening (n + 1)⁻¹ Ωᶜ`
-realizes this exhaustion: each stage is compact, lies in `Ω`, nests into the interior of the next
-stage, and is filled in `Ω` by `IsOpen.isFilledIn_closedBall_sdiff_thickening`.
+For any subset `Ω` of a seminormed group `E`, `TauCeti.filledExhaustion Ω n` is the explicit stage
+
+`K n = closedBall 0 (n + 1) \ thickening (n + 1 : ℝ)⁻¹ Ωᶜ`,
+
+consisting of the points of norm at most `n + 1` at extended distance at least `(n + 1)⁻¹` from
+`Ωᶜ`. Each stage is closed and bounded, lies in `Ω`, and satisfies
+`K n ⊆ interior (K (n + 1))`, with union `⋃ n, K n = interior Ω` (`= Ω` when `Ω` is open).
+Consequently every compact subset of an open set `Ω` lies in `interior (K n)` for some `n`
+(`IsOpen.exists_subset_interior_filledExhaustion`).
+
+In a proper space each stage is compact (`TauCeti.isCompact_filledExhaustion`). In a real
+seminormed space, `IsOpen.isFilledIn_closedBall_sdiff_thickening` shows without properness that
+removing any thickening of `Ωᶜ` from a closed ball of nonnegative radius produces a set filled in
+an open set `Ω`: a point outside the stage either lies outside the ball, hence outside the filled
+hull of the ball and so of the stage, or is joined to a point of `Ωᶜ` by a short segment avoiding
+the stage. Combining both properties yields `IsOpen.exists_isFilledIn_compact_exhaustion` on proper
+real seminormed spaces.
 
 ## Main declarations
 
-* `IsOpen.isFilledIn_closedBall_sdiff_thickening`: a closed ball with a thickening of `Ωᶜ`
-  removed is filled in `Ω`.
-* `TauCeti.rungeExhaustion`: the explicit exhaustion
-  `closedBall 0 (n + 1) \ thickening (n + 1)⁻¹ Ωᶜ`, with compactness, interior nesting,
-  monotonicity, covering of `Ω`, compact cofinality, and filledness in `Ω`.
-* `IsOpen.exists_isFilledIn_compact_exhaustion`: an open set in a proper real normed space has a
-  compact exhaustion by sets filled in it.
+* `TauCeti.filledExhaustion`: the explicit exhaustion stages
+  `closedBall 0 (n + 1) \ thickening (n + 1 : ℝ)⁻¹ Ωᶜ`.
+* `TauCeti.mem_filledExhaustion_iff`, `TauCeti.norm_le_of_mem_filledExhaustion`,
+  `TauCeti.le_edist_of_mem_filledExhaustion`, and `TauCeti.le_dist_of_mem_filledExhaustion`:
+  membership and norm/complement-distance bounds on each stage.
+* `TauCeti.filledExhaustion_subset_interior_succ`, `TauCeti.filledExhaustion_subset_interior`,
+  `TauCeti.filledExhaustion_monotone`, `TauCeti.filledExhaustion_mono`,
+  `TauCeti.iUnion_filledExhaustion`, `IsOpen.iUnion_filledExhaustion`,
+  `IsOpen.exists_subset_interior_filledExhaustion`, and `IsOpen.exists_subset_filledExhaustion`:
+  monotonicity, interior nesting, union, and compact cofinality.
+* `TauCeti.isCompact_filledExhaustion`: compactness of each stage in a proper space.
+* `IsOpen.isFilledIn_closedBall_sdiff_thickening` and `IsOpen.isFilledIn_filledExhaustion`:
+  filledness of `closedBall a r \ thickening δ Ωᶜ` and of each exhaustion stage in an open `Ω`.
+* `IsOpen.exists_isFilledIn_compact_exhaustion`: an open set in a proper real seminormed space has
+  a compact exhaustion by sets filled in it.
 
 ## References
 
 * W. Rudin, *Real and Complex Analysis*, 3rd ed., Theorem 13.3.
 * L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, 3rd ed., Theorem 1.3.9.
-* A. Rainer, *Advanced Complex Analysis*, proof of Theorem 12.1.
+* A. Rainer, *Advanced Complex Analysis*, Theorem 12.1.
 -/
 
 public section
 
-open Metric Set
-open scoped ENNReal
-
-section ClosedBallThickening
-
-open TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
-
-/-- **A closed ball minus a thickening of `Ωᶜ` is filled in `Ω`.** A point outside
-`K = closedBall a r \ thickening δ Ωᶜ` either lies outside the ball, hence outside the filled hull
-of the ball and so of `K`, or lies within `δ` of a point `y ∉ Ω`, to which the segment from it
-leads without meeting `K`. -/
-theorem IsOpen.isFilledIn_closedBall_sdiff_thickening {Ω : Set E} (hΩ : IsOpen Ω) (a : E)
-    {r δ : ℝ} (hr : 0 ≤ r) (hδ : 0 < δ) :
-    IsFilledIn (closedBall a r \ thickening δ Ωᶜ) Ω := by
-  have hKΩ : closedBall a r \ thickening δ Ωᶜ ⊆ Ω := fun x hx => by
-    by_contra hxΩ
-    exact hx.2 (self_subset_thickening hδ _ hxΩ)
-  rw [isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset
-    (isClosed_closedBall.sdiff isOpen_thickening) hΩ hKΩ]
-  rintro x ⟨hxH, hxK⟩ hDΩ
-  by_cases hx : x ∈ closedBall a r
-  · -- `x` is within `δ` of a point `y ∉ Ω`; the segment `[x, y]` stays that close to `y`, so it
-    -- avoids `K` and carries `y` into the component of `x` in `Kᶜ`.
-    have hxt : x ∈ thickening δ Ωᶜ := by
-      by_contra hxt
-      exact hxK ⟨hx, hxt⟩
-    obtain ⟨y, hy, hxy⟩ := mem_thickening_iff.mp hxt
-    have hseg : segment ℝ x y ⊆ connectedComponentIn (closedBall a r \ thickening δ Ωᶜ)ᶜ x :=
-      (convex_segment x y).isPreconnected.subset_connectedComponentIn (left_mem_segment ℝ x y)
-        fun z hz hzK => hzK.2 <| mem_thickening_iff.mpr
-          ⟨y, hy, (mem_closedBall.mp (segment_subset_closedBall_right x y hz)).trans_lt hxy⟩
-    exact hy (hDΩ (hseg (right_mem_segment ℝ x y)))
-  · -- The filled hull of `K` lies in that of the ball, hence in its closed convex hull: the ball.
-    exact hx (closedConvexHull_min subset_rfl (convex_closedBall _ _) isClosed_closedBall
-      (filledHull_subset_closedConvexHull (nonempty_closedBall.mpr hr)
-        (filledHull_mono sdiff_subset hxH)))
-
-end ClosedBallThickening
+open Bornology Metric Set
 
 namespace TauCeti
 
-section RungeExhaustion
+section Stages
 
-variable {E : Type*} [NormedAddCommGroup E]
+variable {E : Type*} [SeminormedAddCommGroup E]
 
-/-- The explicit Runge exhaustion of an open subset `Ω` of a proper real normed space:
-`rungeExhaustion Ω n = closedBall 0 (n + 1) \ thickening (n + 1 : ℝ)⁻¹ Ωᶜ`, whose stages are filled
-in `Ω` by `IsOpen.isFilledIn_closedBall_sdiff_thickening`. -/
-noncomputable def rungeExhaustion (Ω : Set E) (n : ℕ) : Set E :=
-  closedBall (0 : E) (n + 1) \ thickening (n + 1 : ℝ)⁻¹ Ωᶜ
+/-- The `n`th canonical filled-exhaustion stage of `Ω`:
+`closedBall 0 (n + 1) \ thickening (n + 1 : ℝ)⁻¹ Ωᶜ`, consisting of the points of norm at most
+`n + 1` at extended distance at least `(n + 1)⁻¹` from `Ωᶜ`. -/
+noncomputable def filledExhaustion (Ω : Set E) (n : ℕ) : Set E :=
+  closedBall 0 (n + 1) \ thickening (n + 1 : ℝ)⁻¹ Ωᶜ
 
-/-- Unfolding `TauCeti.rungeExhaustion`. -/
-theorem rungeExhaustion_def (Ω : Set E) (n : ℕ) :
-    rungeExhaustion Ω n = closedBall (0 : E) (n + 1) \ thickening (n + 1 : ℝ)⁻¹ Ωᶜ :=
+theorem filledExhaustion_def (Ω : Set E) (n : ℕ) :
+    filledExhaustion Ω n = closedBall 0 (n + 1) \ thickening (n + 1 : ℝ)⁻¹ Ωᶜ :=
   (rfl)
 
-/-- Membership in `TauCeti.rungeExhaustion`: `x ∈ rungeExhaustion Ω n` iff `‖x‖ ≤ n + 1` and the
-extended distance from `x` to `Ωᶜ` is at least `(n + 1)⁻¹`. -/
-theorem mem_rungeExhaustion_iff {Ω : Set E} {n : ℕ} {x : E} :
-    x ∈ rungeExhaustion Ω n ↔
+/-- Membership in `filledExhaustion Ω n` in terms of norm and extended distance to `Ωᶜ`. -/
+@[grind =]
+theorem mem_filledExhaustion_iff {Ω : Set E} {n : ℕ} {x : E} :
+    x ∈ filledExhaustion Ω n ↔
       ‖x‖ ≤ n + 1 ∧ ENNReal.ofReal (n + 1 : ℝ)⁻¹ ≤ infEDist x Ωᶜ := by
-  rw [rungeExhaustion_def, mem_sdiff, mem_closedBall_zero_iff, mem_thickening_iff_infEDist_lt,
+  rw [filledExhaustion_def, mem_sdiff, mem_closedBall_zero_iff, mem_thickening_iff_infEDist_lt,
     not_lt]
 
-/-- Each stage of `TauCeti.rungeExhaustion` is contained in `Ω`. -/
-theorem rungeExhaustion_subset (Ω : Set E) (n : ℕ) : rungeExhaustion Ω n ⊆ Ω := fun _ hx => by
+/-- Every point of `filledExhaustion Ω n` has norm at most `n + 1`. -/
+theorem norm_le_of_mem_filledExhaustion {Ω : Set E} {n : ℕ} {x : E}
+    (hx : x ∈ filledExhaustion Ω n) : ‖x‖ ≤ n + 1 :=
+  (mem_filledExhaustion_iff.mp hx).1
+
+/-- Every point of `filledExhaustion Ω n` is at extended distance at least
+`ENNReal.ofReal (n + 1 : ℝ)⁻¹` from any point outside `Ω`. -/
+theorem le_edist_of_mem_filledExhaustion {Ω : Set E} {n : ℕ} {x y : E}
+    (hx : x ∈ filledExhaustion Ω n) (hy : y ∉ Ω) :
+    ENNReal.ofReal (n + 1 : ℝ)⁻¹ ≤ edist x y :=
+  (mem_filledExhaustion_iff.mp hx).2.trans (infEDist_le_edist_of_mem hy)
+
+/-- Every point of `filledExhaustion Ω n` is at distance at least `(n + 1 : ℝ)⁻¹` from any point
+outside `Ω`. -/
+theorem le_dist_of_mem_filledExhaustion {Ω : Set E} {n : ℕ} {x y : E}
+    (hx : x ∈ filledExhaustion Ω n) (hy : y ∉ Ω) :
+    (n + 1 : ℝ)⁻¹ ≤ dist x y := by
+  have h := le_edist_of_mem_filledExhaustion hx hy
+  rw [edist_dist] at h
+  exact (ENNReal.ofReal_le_ofReal_iff dist_nonneg).mp h
+
+/-- Every stage `filledExhaustion Ω n` lies in `Ω`. -/
+theorem filledExhaustion_subset (Ω : Set E) (n : ℕ) : filledExhaustion Ω n ⊆ Ω := fun x hx ↦ by
   by_contra hxΩ
-  exact hx.2 (self_subset_thickening (by positivity) _ hxΩ)
+  have h := le_dist_of_mem_filledExhaustion hx hxΩ
+  rw [dist_self] at h
+  exact h.not_gt (by positivity)
 
-/-- The Runge exhaustion of the empty set is empty at every stage. -/
 @[simp]
-theorem rungeExhaustion_empty (n : ℕ) : rungeExhaustion (∅ : Set E) n = ∅ :=
-  eq_empty_of_subset (rungeExhaustion_subset ∅ n) rfl
+theorem filledExhaustion_empty (n : ℕ) : filledExhaustion (∅ : Set E) n = ∅ :=
+  subset_empty_iff.mp (filledExhaustion_subset ∅ n)
 
-/-- The Runge exhaustion of `Set.univ` is the sequence of closed balls `closedBall 0 (n + 1)`. -/
 @[simp]
-theorem rungeExhaustion_univ (n : ℕ) :
-    rungeExhaustion (Set.univ : Set E) n = closedBall 0 (n + 1) := by
-  simp [rungeExhaustion_def]
+theorem filledExhaustion_univ (n : ℕ) :
+    filledExhaustion (univ : Set E) n = closedBall 0 (n + 1) := by
+  rw [filledExhaustion_def, compl_univ, thickening_empty, sdiff_empty]
 
-/-- Each stage of `TauCeti.rungeExhaustion` is compact. -/
-theorem isCompact_rungeExhaustion [ProperSpace E] (Ω : Set E) (n : ℕ) :
-    IsCompact (rungeExhaustion Ω n) :=
-  (isCompact_closedBall (0 : E) _).diff isOpen_thickening
+/-- For `1 ≤ n`, `filledExhaustion Ω (n - 1)` is `closedBall 0 n \ thickening n⁻¹ Ωᶜ`. -/
+theorem filledExhaustion_sub_one (Ω : Set E) {n : ℕ} (hn : 1 ≤ n) :
+    filledExhaustion Ω (n - 1) = closedBall 0 n \ thickening (n : ℝ)⁻¹ Ωᶜ := by
+  have hcast : ((n - 1 : ℕ) : ℝ) + 1 = n := by exact_mod_cast Nat.sub_add_cancel hn
+  rw [filledExhaustion_def, hcast]
 
-/-- Successive stages of `TauCeti.rungeExhaustion` nest into each other's interiors:
-`rungeExhaustion Ω n ⊆ interior (rungeExhaustion Ω (n + 1))`. -/
-theorem rungeExhaustion_subset_interior_succ (Ω : Set E) (n : ℕ) :
-    rungeExhaustion Ω n ⊆ interior (rungeExhaustion Ω (n + 1)) := by
+/-- Every stage `filledExhaustion Ω n` lies in `closedBall 0 (n + 1)`. -/
+theorem filledExhaustion_subset_closedBall (Ω : Set E) (n : ℕ) :
+    filledExhaustion Ω n ⊆ closedBall 0 (n + 1) := fun _ hx ↦
+  mem_closedBall_zero_iff.mpr (norm_le_of_mem_filledExhaustion hx)
+
+/-- Every stage `filledExhaustion Ω n` is closed. -/
+theorem isClosed_filledExhaustion (Ω : Set E) (n : ℕ) : IsClosed (filledExhaustion Ω n) := by
+  rw [filledExhaustion_def]
+  exact isClosed_closedBall.sdiff isOpen_thickening
+
+/-- Every stage `filledExhaustion Ω n` is bounded. -/
+theorem isBounded_filledExhaustion (Ω : Set E) (n : ℕ) : IsBounded (filledExhaustion Ω n) :=
+  isBounded_closedBall.subset (filledExhaustion_subset_closedBall Ω n)
+
+/-- Each stage `filledExhaustion Ω n` lies in the interior of the next stage
+`filledExhaustion Ω (n + 1)`. -/
+theorem filledExhaustion_subset_interior_succ (Ω : Set E) (n : ℕ) :
+    filledExhaustion Ω n ⊆ interior (filledExhaustion Ω (n + 1)) := by
+  -- `K n` lies in the open set `ball 0 (n + 2) \ cthickening (n + 2)⁻¹ Ωᶜ ⊆ K (n + 1)`.
   have hopen : IsOpen (ball (0 : E) (n + 1 + 1) \ cthickening (n + 1 + 1 : ℝ)⁻¹ Ωᶜ) :=
     isOpen_ball.sdiff isClosed_cthickening
   refine Subset.trans ?_ (hopen.subset_interior_iff.mpr ?_)
-  · rintro x ⟨hx₁, hx₂⟩
-    refine ⟨mem_ball_zero_iff.mpr ((mem_closedBall_zero_iff.mp hx₁).trans_lt (by linarith)),
-      fun h => hx₂ (cthickening_subset_thickening' (by positivity) ?_ _ h)⟩
+  · intro x hx
+    rw [filledExhaustion_def] at hx
+    refine ⟨mem_ball_zero_iff.mpr ((mem_closedBall_zero_iff.mp hx.1).trans_lt (by linarith)),
+      fun h ↦ hx.2 (cthickening_subset_thickening' (by positivity) ?_ _ h)⟩
     gcongr
     linarith
-  · simp only [rungeExhaustion_def, Nat.cast_add, Nat.cast_one]
+  · simp only [filledExhaustion_def, Nat.cast_add, Nat.cast_one]
     exact sdiff_subset_sdiff ball_subset_closedBall (thickening_subset_cthickening _ _)
 
-/-- Stagewise monotonicity of `TauCeti.rungeExhaustion`. -/
-theorem rungeExhaustion_monotone (Ω : Set E) : Monotone (rungeExhaustion Ω) :=
-  monotone_nat_of_le_succ fun n =>
-    (rungeExhaustion_subset_interior_succ Ω n).trans interior_subset
+/-- The stages `filledExhaustion Ω n` increase with `n`. -/
+theorem filledExhaustion_monotone (Ω : Set E) : Monotone (filledExhaustion Ω) :=
+  monotone_nat_of_le_succ fun n ↦
+    (filledExhaustion_subset_interior_succ Ω n).trans interior_subset
 
-/-- Monotonicity of `TauCeti.rungeExhaustion` in both the ambient set `Ω` and the stage `n`. -/
+/-- Enlarging the stage index `n` enlarges `filledExhaustion Ω n`. -/
 @[gcongr]
-theorem rungeExhaustion_mono {Ω₁ Ω₂ : Set E} {m n : ℕ} (hΩ : Ω₁ ⊆ Ω₂) (hmn : m ≤ n) :
-    rungeExhaustion Ω₁ m ⊆ rungeExhaustion Ω₂ n :=
-  (sdiff_subset_sdiff Subset.rfl (thickening_subset_of_subset _ (compl_subset_compl.mpr hΩ))).trans
-    (rungeExhaustion_monotone Ω₂ hmn)
+theorem filledExhaustion_mono {Ω : Set E} {m n : ℕ} (h : m ≤ n) :
+    filledExhaustion Ω m ⊆ filledExhaustion Ω n :=
+  filledExhaustion_monotone Ω h
 
-/-- The stages of `TauCeti.rungeExhaustion` cover an open `Ω`. -/
-theorem iUnion_rungeExhaustion {Ω : Set E} (hΩ : IsOpen Ω) :
-    ⋃ n, rungeExhaustion Ω n = Ω := by
-  refine Subset.antisymm (iUnion_subset (rungeExhaustion_subset Ω)) fun x hx => ?_
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hΩ x hx
+/-- For `m < n`, `filledExhaustion Ω m` lies in `interior (filledExhaustion Ω n)`. -/
+theorem filledExhaustion_subset_interior {Ω : Set E} {m n : ℕ} (h : m < n) :
+    filledExhaustion Ω m ⊆ interior (filledExhaustion Ω n) :=
+  (filledExhaustion_subset_interior_succ Ω m).trans (interior_mono (filledExhaustion_mono h))
+
+/-- Enlarging the ambient set `Ω` enlarges each stage `filledExhaustion Ω n`. -/
+@[gcongr]
+theorem filledExhaustion_mono_left {Ω₁ Ω₂ : Set E} (h : Ω₁ ⊆ Ω₂) (n : ℕ) :
+    filledExhaustion Ω₁ n ⊆ filledExhaustion Ω₂ n := by
+  rw [filledExhaustion_def, filledExhaustion_def]
+  exact sdiff_subset_sdiff Subset.rfl (thickening_subset_of_subset _ (compl_subset_compl.mpr h))
+
+/-- For any set `Ω`, the union of the stages `filledExhaustion Ω n` is `interior Ω`. -/
+theorem iUnion_filledExhaustion (Ω : Set E) : ⋃ n, filledExhaustion Ω n = interior Ω := by
+  refine Subset.antisymm (iUnion_subset fun n ↦ (filledExhaustion_subset_interior_succ Ω n).trans
+    (interior_mono (filledExhaustion_subset Ω (n + 1)))) fun x hx ↦ ?_
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp (mem_interior_iff_mem_nhds.mp hx)
   obtain ⟨n, hn⟩ := exists_nat_ge (max ‖x‖ ε⁻¹)
   have hn₁ : ‖x‖ ≤ n := (le_max_left _ _).trans hn
   have hn₂ : ε⁻¹ < n + 1 := ((le_max_right _ _).trans hn).trans_lt (by linarith)
-  refine mem_iUnion.mpr ⟨n, mem_closedBall_zero_iff.mpr (by linarith), fun h => ?_⟩
+  refine mem_iUnion.mpr ⟨n, ?_⟩
+  rw [filledExhaustion_def]
+  refine ⟨mem_closedBall_zero_iff.mpr (by linarith), fun h ↦ ?_⟩
   obtain ⟨y, hy, hxy⟩ := mem_thickening_iff.mp h
   refine hy (hball ?_)
   rw [mem_ball, dist_comm]
   exact hxy.trans (inv_lt_of_inv_lt₀ hε hn₂)
 
-/-- Compact cofinality: every compact subset of an open `Ω` is contained in some stage of
-`TauCeti.rungeExhaustion Ω`. -/
-theorem exists_subset_rungeExhaustion_of_isCompact {Ω K : Set E} (hΩ : IsOpen Ω)
-    (hK : IsCompact K) (hKΩ : K ⊆ Ω) : ∃ n : ℕ, K ⊆ rungeExhaustion Ω n := by
-  have hcov : K ⊆ ⋃ n, interior (rungeExhaustion Ω (n + 1)) := fun x hx => by
-    obtain ⟨n, hn⟩ := mem_iUnion.mp ((iUnion_rungeExhaustion hΩ).symm ▸ hKΩ hx)
-    exact mem_iUnion.mpr ⟨n, rungeExhaustion_subset_interior_succ Ω n hn⟩
-  have hmono : Monotone fun n => interior (rungeExhaustion Ω (n + 1)) :=
-    fun m n hmn => interior_mono (rungeExhaustion_monotone Ω (Nat.add_le_add_right hmn 1))
-  obtain ⟨n, hn⟩ := hK.elim_directed_cover (fun n => interior (rungeExhaustion Ω (n + 1)))
-    (fun _ => isOpen_interior) hcov hmono.directed_le
-  exact ⟨n + 1, hn.trans interior_subset⟩
+/-- For an open set `Ω`, the stages `filledExhaustion Ω n` have union `Ω`. -/
+theorem _root_.IsOpen.iUnion_filledExhaustion {Ω : Set E} (hΩ : IsOpen Ω) :
+    ⋃ n, filledExhaustion Ω n = Ω := by
+  rw [TauCeti.iUnion_filledExhaustion, hΩ.interior_eq]
 
-/-- Each stage of `TauCeti.rungeExhaustion` is filled in an open `Ω`. -/
-theorem isFilledIn_rungeExhaustion [NormedSpace ℝ E] [ProperSpace E] {Ω : Set E} (hΩ : IsOpen Ω)
-    (n : ℕ) : IsFilledIn (rungeExhaustion Ω n) Ω :=
-  hΩ.isFilledIn_closedBall_sdiff_thickening 0 (by positivity) (by positivity)
+/-- **Compact cofinality in the interior.** Every compact subset `K ⊆ interior Ω` lies inside
+`interior (filledExhaustion Ω n)` for some `n`. -/
+theorem _root_.IsCompact.exists_subset_interior_filledExhaustion {Ω K : Set E}
+    (hK : IsCompact K) (hKΩ : K ⊆ interior Ω) :
+    ∃ n, K ⊆ interior (filledExhaustion Ω n) := by
+  refine hK.elim_directed_cover (fun n ↦ interior (filledExhaustion Ω n))
+    (fun _ ↦ isOpen_interior) ?_
+    (Monotone.directed_le fun _ _ h ↦ interior_mono (filledExhaustion_monotone Ω h))
+  intro x hx
+  obtain ⟨n, hn⟩ := mem_iUnion.mp ((iUnion_filledExhaustion Ω).symm ▸ hKΩ hx)
+  exact mem_iUnion.mpr ⟨n + 1, filledExhaustion_subset_interior_succ Ω n hn⟩
 
-end RungeExhaustion
+/-- **Compact cofinality (strict).** Every compact subset `K` of an open set `Ω` lies inside
+`interior (filledExhaustion Ω n)` for some `n`. -/
+theorem _root_.IsOpen.exists_subset_interior_filledExhaustion {Ω K : Set E}
+    (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    ∃ n, K ⊆ interior (filledExhaustion Ω n) :=
+  hK.exists_subset_interior_filledExhaustion (by rwa [hΩ.interior_eq])
+
+/-- **Compact cofinality.** Every compact subset `K` of an open set `Ω` lies inside
+`filledExhaustion Ω n` for some `n`. -/
+theorem _root_.IsOpen.exists_subset_filledExhaustion {Ω K : Set E}
+    (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    ∃ n, K ⊆ filledExhaustion Ω n :=
+  (hΩ.exists_subset_interior_filledExhaustion hK hKΩ).imp fun _ h ↦ h.trans interior_subset
+
+end Stages
+
+section Compact
+
+variable {E : Type*} [SeminormedAddCommGroup E] [ProperSpace E]
+
+/-- In a proper space, each stage `filledExhaustion Ω n` is compact. -/
+theorem isCompact_filledExhaustion (Ω : Set E) (n : ℕ) : IsCompact (filledExhaustion Ω n) := by
+  rw [filledExhaustion_def]
+  exact (isCompact_closedBall _ _).diff isOpen_thickening
+
+end Compact
 
 end TauCeti
+
+section Filled
+
+open TauCeti
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **A closed ball minus a thickening of `Ωᶜ` is filled in `Ω`.** In a real seminormed space, for
+any open set `Ω`, radius `0 ≤ r`, and `δ : ℝ`, no connected component of
+`Ω \ (closedBall a r \ thickening δ Ωᶜ)` has compact closure contained in `Ω`. -/
+theorem IsOpen.isFilledIn_closedBall_sdiff_thickening {Ω : Set E} (hΩ : IsOpen Ω) (a : E)
+    {r : ℝ} (hr : 0 ≤ r) (δ : ℝ) :
+    IsFilledIn (closedBall a r \ thickening δ Ωᶜ) Ω := by
+  set K := closedBall a r \ thickening δ Ωᶜ
+  have hKclosed : IsClosed K := isClosed_closedBall.sdiff isOpen_thickening
+  rw [isFilledIn_iff]
+  rintro x hx ⟨hcpt, hcl⟩
+  set C := connectedComponentIn (Ω \ K) x
+  have hfrK : frontier C ⊆ K :=
+    (hΩ.frontier_connectedComponentIn_sdiff_subset_closure hcl).trans hKclosed.closure_subset
+  by_cases hxb : x ∈ closedBall a r
+  · have hxt : x ∈ thickening δ Ωᶜ := by_contra fun hxt ↦ hx.2 ⟨hxb, hxt⟩
+    obtain ⟨y, hy, hxy⟩ := mem_thickening_iff.mp hxt
+    have hseg : segment ℝ x y ⊆ C :=
+      (convex_segment x y).isPreconnected.subset_of_disjoint_frontier
+        (disjoint_left.mpr fun z hzS hzfr ↦ (hfrK hzfr).2 <| mem_thickening_iff.mpr
+          ⟨y, hy, (mem_closedBall.mp (segment_subset_closedBall_right x y hzS)).trans_lt hxy⟩)
+        ⟨x, left_mem_segment ℝ x y, mem_connectedComponentIn hx⟩
+    exact hy (hcl (subset_closure (hseg (right_mem_segment ℝ x y))))
+  · exact hxb (closedConvexHull_min subset_rfl (convex_closedBall a r) isClosed_closedBall
+      (filledHull_subset_closedConvexHull (nonempty_closedBall.mpr hr)
+        (filledHull_mono sdiff_subset
+          (subset_filledHull_of_frontier_subset (hcpt.isBounded.subset subset_closure) hfrK
+            (mem_connectedComponentIn hx)))))
+
+/-- Every stage `filledExhaustion Ω n` of an open set `Ω` in a real seminormed space is filled in
+`Ω`. -/
+theorem IsOpen.isFilledIn_filledExhaustion {Ω : Set E} (hΩ : IsOpen Ω) (n : ℕ) :
+    IsFilledIn (filledExhaustion Ω n) Ω := by
+  rw [filledExhaustion_def]
+  exact hΩ.isFilledIn_closedBall_sdiff_thickening 0 (by positivity) _
+
+end Filled
 
 section Exhaustion
 
 open TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
 
-/-- **Filled compact exhaustion.** Every open set `Ω` of a proper real normed space is the union of
-compact sets `K n` with `K n ⊆ interior (K (n + 1))`, each of which is filled in `Ω`: no connected
-component of `Ω \ K n` is relatively compact in `Ω`. -/
+/-- **Filled compact exhaustion.** Every open set `Ω` of a proper real seminormed space is the
+union of compact sets `K n` with `K n ⊆ interior (K (n + 1))`, each of which is filled in `Ω`: no
+connected component of `Ω \ K n` is relatively compact in `Ω`. -/
 theorem IsOpen.exists_isFilledIn_compact_exhaustion {Ω : Set E} (hΩ : IsOpen Ω) :
     ∃ K : ℕ → Set E, (∀ n, IsCompact (K n)) ∧ (∀ n, K n ⊆ interior (K (n + 1))) ∧
       ⋃ n, K n = Ω ∧ ∀ n, IsFilledIn (K n) Ω :=
-  ⟨rungeExhaustion Ω, isCompact_rungeExhaustion Ω, rungeExhaustion_subset_interior_succ Ω,
-    iUnion_rungeExhaustion hΩ, isFilledIn_rungeExhaustion hΩ⟩
+  ⟨filledExhaustion Ω, isCompact_filledExhaustion Ω, filledExhaustion_subset_interior_succ Ω,
+    hΩ.iUnion_filledExhaustion, hΩ.isFilledIn_filledExhaustion⟩
 
 end Exhaustion
