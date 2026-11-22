@@ -328,8 +328,7 @@ private theorem fiberClassAux_eq (e e' : Trivialization F (π F E)) [e.IsLinear 
     simp only [TopPair.singularHomologyMapIso_inv] at hinv
     rw [fiberClassAux, fiberClassAux, h', hinv]
   · have h' : (e'.mapOrientation ι hx').symm ω = -o := by
-      rw [Equiv.symm_apply_eq, Trivialization.mapOrientation_neg, h]
-      exact (neg_neg ω).symm
+      rw [← neg_neg ω, ← h, Trivialization.mapOrientation_symm_neg, Equiv.symm_apply_apply]
     have hinv : TopPair.singularHomologyMap
         (e'.continuousLinearEquivAt ℝ x hx').complZeroPairIso.inv
         (ModuleCat.of R R) (finrank ℝ F) =
@@ -769,14 +768,10 @@ pair unchanged. -/
 @[simp]
 theorem thomPairSignFiberClass_neg (b : B) :
     thomPairSignFiberClass F E R hι (-ω) b = -thomPairSignFiberClass F E R hι ω b := by
-  have h : ((trivializationAt F E b).mapOrientation ι
-      (FiberBundle.mem_baseSet_trivializationAt' b)).symm (-ω) =
-      -((trivializationAt F E b).mapOrientation ι
-        (FiberBundle.mem_baseSet_trivializationAt' b)).symm ω := by
-    rw [Equiv.symm_apply_eq, Trivialization.mapOrientation_neg, Equiv.apply_symm_apply]
   rw [thomPairSignFiberClass, thomPairSignFiberClass, ← map_neg]
   congr 1
-  rw [fiberClass, fiberClass, fiberClassAux, fiberClassAux, h, fiberSignIso_neg_inv,
+  rw [fiberClass, fiberClass, fiberClassAux, fiberClassAux,
+    Trivialization.mapOrientation_symm_neg, fiberSignIso_neg_inv,
     TopPair.twistedHomologyCoefficientMap_neg]
   simp only [ModuleCat.hom_neg, LinearMap.neg_apply, map_neg]
 
