@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Quotient
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.LinearAlgebra.RootSystem.Inversions.Exchange
@@ -291,10 +290,11 @@ private theorem exists_inversionPoints_mul_borelSubgroup_of_ncard_eq (k : ℕ) :
         (P := t.simplyConnectedRootDatum ht) (b := t.simplyConnectedBase ht)
         (inv_ne_one.mpr hne)
       omega
-    have hnB : (n : D.points K) ∈ D.borelSubgroup K :=
-      D.range_torusPoints_le_borelSubgroup K
-        (Subgroup.mem_subgroupOf.mp
-          ((D.ker_weylProjection K).le ((D.weylProjection K).mem_ker.mpr hw1)))
+    have hnB : (n : D.points K) ∈ D.borelSubgroup K := by
+      have hn : (n : D.points K) ∈ D.bruhatCell K (D.weylProjection K n) := by
+        rw [D.bruhatCell_weylProjection]
+        exact DoubleCoset.mem_doubleCoset.mpr ⟨1, one_mem _, 1, one_mem _, by rw [one_mul, mul_one]⟩
+      rwa [hw1, D.bruhatCell_one] at hn
     refine ⟨1, one_mem _, (n : D.points K)⁻¹ * u₁ * (n : D.points K),
       mul_mem (mul_mem (inv_mem hnB) (D.positivePoints_le_borelSubgroup K hu₁)) hnB, ?_⟩
     group
