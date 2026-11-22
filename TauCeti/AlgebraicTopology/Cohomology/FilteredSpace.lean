@@ -34,6 +34,12 @@ on `X (p - 1)`.
 * **First page.** The object at `(p, q)` on the first page is the relative singular cohomology
   `Hⁿ(X p, X (p - 1))` with `p + q = n`
   (`TauCeti.filteredSpaceCohomologySpectralSequenceFirstPageXIso`); it vanishes when `p + q < 0`.
+* **First differential.** The differential `d₁ : E₁^{p,q} ⟶ E₁^{p+1,q}` is the connecting map
+  `Hⁿ(X p, X (p - 1)) ⟶ Hⁿ⁺¹(X (p + 1), X p)` of the triple `(X (p + 1), X p, X (p - 1))`
+  (`TauCeti.filteredSpaceCohomologySpectralSequence_first_page_d_eq`). This holds because the
+  sequence of graded pieces `F^{p+1}/F^{p+2} ⟶ F^p/F^{p+2} ⟶ F^p/F^{p+1}`, whose connecting map is
+  the first differential (`CochainComplex.decreasingFiltrationSpectralSequence_first_page_d_eq`),
+  is isomorphic to the relative singular cochain sequence of the triple.
 * **Convergence.** The abutment in degree `n` is `Hⁿ(Y)`
   (`TauCeti.filteredSpaceCohomologyAbutmentIso`). When `X a = ∅` and `X b = Y`, the filtration is
   finite and the spectral sequence converges strongly: on late pages the object at `(p, q)` is the
@@ -59,10 +65,9 @@ on `X (p - 1)`.
   (`TauCeti.isZero_filteredSpaceCohomologySpectralObject_abutmentFiltration`).
 
 Filtering the total space of a fibration by the preimages of the skeleta of the base gives the
-cohomology Serre spectral sequence, with `E₁^{p,q} = H^{p+q}(Eₚ, Eₚ₋₁)`; see
-`TauCeti.AlgebraicTopology.Singular.Fibration.Cohomology`. The identification of the first
-differential with the connecting map of the triple `(X (p + 1), X p, X (p - 1))`
-(`TauCeti.TopTriple.singularCohomologyδ`) is not treated here.
+cohomology Serre spectral sequence, with `E₁^{p,q} = H^{p+q}(Eₚ, Eₚ₋₁)` and first differential the
+connecting map of three consecutive preimages of skeleta; see
+`TauCeti.AlgebraicTopology.Singular.Fibration.Cohomology`.
 
 This is the cohomological counterpart of `TauCeti.filteredSpaceSpectralSequence`
 (`TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic`), whose construction it dualises.
@@ -487,5 +492,191 @@ def filteredSpaceCohomologySpectralSequencePageXIsoGradedOfFirstQuadrant
     r hr p q hp hq
 
 end SpectralSequence
+
+section FirstDifferential
+
+variable {a b c : ℤ} (hab : X a ⊆ X b) (hbc : X b ⊆ X c)
+
+/-- Restricting cochains from `(Y, X b)` to `(X c, X b)` and then to `(X c, X a)` is restricting
+them to `(Y, X a)` and then to `(X c, X a)`. -/
+private lemma extendMap_innerToTotal_comp_extendMap_totalToOuter :
+    extendMap (TopPair.singularCochainComplexMap (R := R) (k := k) (M := M)
+        (TopTriple.innerToTotal.app (TopTriple.ofSubset hbc))) ComplexShape.embeddingUpNat ≫
+      extendMap (TopPair.singularCochainComplexMap
+        (TopTriple.totalToOuter.app (TopTriple.ofInclusions hab hbc))) ComplexShape.embeddingUpNat =
+    extendMap (TopPair.singularCochainComplexMap (R := R) (k := k) (M := M)
+        (TopTriple.totalToOuter.app (TopTriple.ofSubset hab))) ComplexShape.embeddingUpNat ≫
+      extendMap (TopPair.singularCochainComplexMap
+        (TopTriple.innerToTotal.app (TopTriple.ofSubset (hab.trans hbc))))
+        ComplexShape.embeddingUpNat := by
+  -- Both composites are induced by the inclusion `(X c, X a) ⟶ (Y, X b)`. The pairs of the triples
+  -- agree only up to definitional unfolding, so the composites are formed with `exact`.
+  have h : TopTriple.totalToOuter.app (TopTriple.ofInclusions hab hbc) ≫
+        TopTriple.innerToTotal.app (TopTriple.ofSubset hbc) =
+      TopTriple.innerToTotal.app (TopTriple.ofSubset (hab.trans hbc)) ≫
+        TopTriple.totalToOuter.app (TopTriple.ofSubset hab) := by
+    ext : 2 <;> rfl
+  exact (extendMap_comp _ _ _).symm.trans <| (congrArg (extendMap · _) <|
+    (TopPair.singularCochainComplexMap_comp _ _).symm.trans <|
+      (congrArg (TopPair.singularCochainComplexMap (R := R) (k := k) (M := M)) h).trans
+        (TopPair.singularCochainComplexMap_comp _ _)).trans (extendMap_comp _ _ _)
+
+/-- Restricting cochains from `(Y, X a)` to `(X c, X a)` and then to `(X b, X a)` is restricting
+them to `(X b, X a)`. -/
+private lemma extendMap_innerToTotal_comp_extendMap_innerToTotal :
+    extendMap (TopPair.singularCochainComplexMap (R := R) (k := k) (M := M)
+        (TopTriple.innerToTotal.app (TopTriple.ofSubset (hab.trans hbc))))
+        ComplexShape.embeddingUpNat ≫
+      extendMap (TopPair.singularCochainComplexMap
+        (TopTriple.innerToTotal.app (TopTriple.ofInclusions hab hbc))) ComplexShape.embeddingUpNat =
+    extendMap (TopPair.singularCochainComplexMap (R := R) (k := k) (M := M)
+        (TopTriple.innerToTotal.app (TopTriple.ofSubset hab))) ComplexShape.embeddingUpNat := by
+  -- As above, the composite is formed with `exact`.
+  have h : TopTriple.innerToTotal.app (TopTriple.ofInclusions hab hbc) ≫
+        TopTriple.innerToTotal.app (TopTriple.ofSubset (hab.trans hbc)) =
+      TopTriple.innerToTotal.app (TopTriple.ofSubset hab) := by
+    ext : 2 <;> rfl
+  exact (extendMap_comp _ _ _).symm.trans <| congrArg (extendMap · _) <|
+    (TopPair.singularCochainComplexMap_comp _ _).symm.trans
+      (congrArg (TopPair.singularCochainComplexMap (R := R) (k := k) (M := M)) h)
+
+variable {hab hbc} in
+/-- On the quotient `C*(Y, X b)/C*(Y, X c)`, identified with the cochains of `(X c, X b)`, the
+restriction to `(X c, X a)` is induced by the inclusion `C*(Y, X b) ⊆ C*(Y, X a)`. -/
+private lemma cokernelOfLEIsoOfEq_trans_hom_comp_extendMap_totalToOuter
+    (hAB : singularCochainFiltration R k M X c ≤ singularCochainFiltration R k M X b)
+    (hBD : singularCochainFiltration R k M X b ≤ singularCochainFiltration R k M X a) :
+    (Subobject.cokernelOfLEIsoOfEq rfl rfl hAB (singularCochainFiltration_anti R k M hbc) ≪≫
+        singularCochainFiltrationCokernelIso R k M hbc).hom ≫
+      extendMap (TopPair.singularCochainComplexMap (R := R) (k := k) (M := M)
+        (TopTriple.totalToOuter.app (TopTriple.ofInclusions hab hbc)))
+        ComplexShape.embeddingUpNat =
+    cokernel.map (Subobject.ofLE _ _ hAB) (Subobject.ofLE _ _ hAB ≫ Subobject.ofLE _ _ hBD)
+        (𝟙 _) (Subobject.ofLE _ _ hBD) (by simp) ≫
+      (cokernelIsoOfEq (Subobject.ofLE_comp_ofLE _ _ _ hAB hBD) ≪≫
+        singularCochainFiltrationCokernelIso R k M (hab.trans hbc)).hom := by
+  apply coequalizer.hom_ext
+  simp only [TopTriple.totalPair_obj_ofInclusions, coequalizer_as_cokernel, Iso.trans_hom,
+    TopTriple.outerPair_obj_ofInclusions, Category.assoc, Subobject.π_cokernelOfLEIsoOfEq_hom_assoc,
+    Subobject.ofLE_refl, π_singularCochainFiltrationCokernelIso_hom_assoc, Category.id_comp,
+    cokernel.π_desc_assoc, π_comp_cokernelIsoOfEq_hom_assoc,
+    π_singularCochainFiltrationCokernelIso_hom]
+  -- The composites pass through pairs of different triples, which agree only up to definitional
+  -- unfolding, so they are reassociated by hand.
+  exact (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·)
+    (extendMap_innerToTotal_comp_extendMap_totalToOuter _ _ _ hab hbc)).trans <|
+      (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _)
+        (ofLE_comp_singularCochainFiltrationIso_hom R k M hab).symm).trans (Category.assoc _ _ _)
+
+variable {hab hbc} in
+/-- On the quotient `C*(Y, X a)/C*(Y, X c)`, identified with the cochains of `(X c, X a)`, the
+restriction to `(X b, X a)` is the projection to `C*(Y, X a)/C*(Y, X b)`. -/
+private lemma cokernelIsoOfEq_trans_hom_comp_extendMap_innerToTotal
+    (hAB : singularCochainFiltration R k M X c ≤ singularCochainFiltration R k M X b)
+    (hBD : singularCochainFiltration R k M X b ≤ singularCochainFiltration R k M X a) :
+    (cokernelIsoOfEq (Subobject.ofLE_comp_ofLE _ _ _ hAB hBD) ≪≫
+        singularCochainFiltrationCokernelIso R k M (hab.trans hbc)).hom ≫
+      extendMap (TopPair.singularCochainComplexMap (R := R) (k := k) (M := M)
+        (TopTriple.innerToTotal.app (TopTriple.ofInclusions hab hbc)))
+        ComplexShape.embeddingUpNat =
+    cokernel.map (Subobject.ofLE _ _ hAB ≫ Subobject.ofLE _ _ hBD) (Subobject.ofLE _ _ hBD)
+        (Subobject.ofLE _ _ hAB) (𝟙 _) (by simp) ≫
+      (Subobject.cokernelOfLEIsoOfEq rfl rfl hBD (singularCochainFiltration_anti R k M hab) ≪≫
+        singularCochainFiltrationCokernelIso R k M hab).hom := by
+  apply coequalizer.hom_ext
+  simp only [TopTriple.innerPair_obj_ofInclusions, coequalizer_as_cokernel, Iso.trans_hom,
+    TopTriple.totalPair_obj_ofInclusions, Category.assoc, π_comp_cokernelIsoOfEq_hom_assoc,
+    π_singularCochainFiltrationCokernelIso_hom_assoc, cokernel.π_desc_assoc, Category.id_comp,
+    Subobject.π_cokernelOfLEIsoOfEq_hom_assoc, Subobject.ofLE_refl,
+    π_singularCochainFiltrationCokernelIso_hom]
+  -- As above, the composite is reassociated by hand.
+  exact (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·)
+    (extendMap_innerToTotal_comp_extendMap_innerToTotal _ _ _ hab hbc)).trans
+      (Category.id_comp _).symm
+
+/-- For `X a ⊆ X b ⊆ X c` and subobjects `A ≤ B ≤ D` equal to the cochains vanishing on `X c`,
+`X b` and `X a`, the connecting map of the sequence `B/A ⟶ D/A ⟶ D/B` is the connecting map of the
+cochain sequence of the triple `(X c, X b, X a)`, under the identifications of the quotients with
+relative cochains. -/
+private lemma δ_comp_homologyMap_cokernelOfLEIsoOfEq_trans_hom
+    {A B D : Subobject ((Y.singularCochainComplex R k M).extend ComplexShape.embeddingUpNat)}
+    (hA : A = singularCochainFiltration R k M X c) (hB : B = singularCochainFiltration R k M X b)
+    (hD : D = singularCochainFiltration R k M X a) (hAB : A ≤ B) (hBD : B ≤ D) (n₀ n₁ : ℤ)
+    (h : (ComplexShape.up ℤ).Rel n₀ n₁) :
+    (cokernelCompSequence_shortExact (Subobject.ofLE A B hAB)
+        (Subobject.ofLE B D hBD)).δ n₀ n₁ h ≫
+      HomologicalComplex.homologyMap (Subobject.cokernelOfLEIsoOfEq hA hB hAB
+        (singularCochainFiltration_anti R k M hbc) ≪≫
+          singularCochainFiltrationCokernelIso R k M hbc).hom n₁ =
+    HomologicalComplex.homologyMap (Subobject.cokernelOfLEIsoOfEq hB hD hBD
+        (singularCochainFiltration_anti R k M hab) ≪≫
+          singularCochainFiltrationCokernelIso R k M hab).hom n₀ ≫
+      (((TopTriple.ofInclusions hab hbc).shortExact_singularCochainComplexShortComplex R k M).extend
+        ComplexShape.embeddingUpNat).δ n₀ n₁ h := by
+  subst hA hB hD
+  -- The morphism from the sequence of graded pieces to the extended cochain sequence of the
+  -- triple, given by the identifications of the graded pieces with relative cochains. The squares
+  -- are read in the extended sequence, whose objects are the reindexed relative cochain complexes
+  -- only after unfolding `extendFunctor`.
+  let ψ : cokernelCompSequence (Subobject.ofLE _ _ hAB) (Subobject.ofLE _ _ hBD) ⟶
+      ((TopTriple.ofInclusions hab hbc).singularCochainComplexShortComplex R k M).map
+        (ComplexShape.embeddingUpNat.extendFunctor _) :=
+    { τ₁ := (Subobject.cokernelOfLEIsoOfEq rfl rfl hAB _ ≪≫
+        singularCochainFiltrationCokernelIso R k M hbc).hom
+      τ₂ := (cokernelIsoOfEq (Subobject.ofLE_comp_ofLE _ _ _ hAB hBD) ≪≫
+        singularCochainFiltrationCokernelIso R k M (hab.trans hbc)).hom
+      τ₃ := (Subobject.cokernelOfLEIsoOfEq rfl rfl hBD _ ≪≫
+        singularCochainFiltrationCokernelIso R k M hab).hom
+      comm₁₂ := cokernelOfLEIsoOfEq_trans_hom_comp_extendMap_totalToOuter R k M hAB hBD
+      comm₂₃ := cokernelIsoOfEq_trans_hom_comp_extendMap_innerToTotal R k M hAB hBD }
+  exact HomologicalComplex.HomologySequence.δ_naturality ψ (cokernelCompSequence_shortExact _ _)
+    (((TopTriple.ofInclusions hab hbc).shortExact_singularCochainComplexShortComplex R k M).extend
+      ComplexShape.embeddingUpNat) n₀ n₁ h
+
+variable (hX : Monotone X)
+
+/-- **The first differential of the cohomology spectral sequence of a filtered space.** Under the
+identifications of the first page with relative singular cohomology, the differential
+`d₁ : E₁^{p,q} ⟶ E₁^{p+1,q}` is the connecting map `Hⁿ(X p, X (p - 1)) ⟶ Hⁿ⁺¹(X (p + 1), X p)` of
+the triple `(X (p + 1), X p, X (p - 1))`, where `p + q = n`. -/
+theorem filteredSpaceCohomologySpectralSequence_first_page_d_eq (p q : ℤ) (n : ℕ)
+    (hn : p + q = n) :
+    ((filteredSpaceCohomologySpectralSequence R k M hX).page 1).d (p, q) (p + 1, q) =
+      (filteredSpaceCohomologySpectralSequenceFirstPageXIso R k M hX p q (p - 1) p rfl rfl n
+          hn).hom ≫
+        (TopTriple.ofInclusions (hX (by lia : p - 1 ≤ p))
+          (hX (by lia : p ≤ p + 1))).singularCohomologyδ R k M n (n + 1) ≫
+        (filteredSpaceCohomologySpectralSequenceFirstPageXIso R k M hX (p + 1) q p (p + 1)
+          (by lia) rfl (n + 1) (by push_cast; lia)).inv := by
+  -- The first differential is the connecting map of the quotients of the stages of the filtration
+  -- (`CochainComplex.decreasingFiltrationSpectralSequence_first_page_d_eq`). It is that of the
+  -- extended cochain sequence of the triple, which is the connecting map of the triple.
+  have key := δ_comp_homologyMap_cokernelOfLEIsoOfEq_trans_hom R k M (hX (by lia : p - 1 ≤ p))
+    (hX (by lia : p ≤ p + 1)) (A := singularCochainFiltration R k M X (p + 1 + 1 - 1))
+    (B := singularCochainFiltration R k M X (p + 1 - 1)) (by rw [add_sub_cancel_right])
+    (by rw [add_sub_cancel_right]) rfl
+    (antitone_singularCochainFiltration_sub_one R k M hX (by lia))
+    (antitone_singularCochainFiltration_sub_one R k M hX (by lia)) (p + q) (p + 1 + q)
+    (by simp only [ComplexShape.up_Rel]; lia)
+  have hext := ShortComplex.ShortExact.extend_δ_comp_extendHomologyIso_hom
+    (TopTriple.shortExact_singularCochainComplexShortComplex
+      (TopTriple.ofInclusions (hX (by lia : p - 1 ≤ p)) (hX (by lia : p ≤ p + 1))) R k M)
+    ComplexShape.embeddingUpNat (i := n) (j := n + 1) (i' := p + q) (j' := p + 1 + q) (by simp)
+    hn.symm (by rw [ComplexShape.embeddingUpNat_f]; push_cast; lia)
+    (by simp only [ComplexShape.up_Rel]; lia)
+  rw [CochainComplex.decreasingFiltrationSpectralSequence_first_page_d_eq,
+    (Iso.eq_comp_inv (HomologicalComplex.homologyMapIso _ (p + 1 + q))).2 key,
+    (Iso.eq_comp_inv (HomologicalComplex.extendHomologyIso _ _ _)).2 hext,
+    filteredSpaceCohomologySpectralSequenceFirstPageXIso,
+    filteredSpaceCohomologySpectralSequenceFirstPageXIso, firstPageXIsoExtend, firstPageXIsoExtend]
+  simp only [Iso.trans_hom, Iso.trans_inv, Functor.mapIso_hom, Functor.mapIso_inv,
+    HomologicalComplex.homologyFunctor_map, Category.assoc]
+  -- The left-hand side is reassociated by hand: its composites pass through the objects of the
+  -- extended cochain sequence of the triple, which agree with those of the right-hand side only
+  -- after unfolding, so `simp` cannot reach them.
+  exact congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans ((Category.assoc _ _ _).trans
+    (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans (Category.assoc _ _ _)))))
+
+end FirstDifferential
 
 end TauCeti

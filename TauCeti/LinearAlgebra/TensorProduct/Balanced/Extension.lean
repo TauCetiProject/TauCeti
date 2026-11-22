@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Actions
+public import Mathlib.Algebra.Algebra.RestrictScalars
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Unit
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
 public import TauCeti.LinearAlgebra.Matrix.Idempotent
 
 import TauCeti.Algebra.Module.Projective.Semilinear
@@ -37,8 +39,11 @@ commutativity is assumed.
 * `TauCeti.BalancedExtension.map`: functoriality in `R`-linear maps, and
   `TauCeti.BalancedExtension.congr` for `R`-linear equivalences.
 * `TauCeti.BalancedExtension.lid`: extension along the identity, `R ⊗_R P ≃ P`.
+* `TauCeti.BalancedExtension.moduleBase`: for an `A`-algebra `S`, the `A`-action on `S ⊗_R P`
+  restricted from the `S`-action; it is not an instance.
 * `TauCeti.BalancedExtension.cancelBaseChange`: extension along a composite,
   `T ⊗_S (S ⊗_R P) ≃ T ⊗_R P`.
+* `TauCeti.BalancedExtension.rid`: extension of the regular module, `S ⊗_R R ≃ S`.
 * `TauCeti.BalancedExtension.piScalarRight`: extension of a finite free module,
   `S ⊗_R Rⁿ ≃ Sⁿ`.
 * `TauCeti.BalancedExtension.piEquiv`: extension of a finite product of modules,
@@ -299,6 +304,62 @@ theorem congr_symm (θ : P ≃ₗ[R] P') : (congr f θ).symm = congr f θ.symm :
 
 end Map
 
+/-- Transport balanced extension along equality of the scalar ring homomorphisms. -/
+def congrRingHom {g : R →+* S} (h : f = g) :
+    BalancedExtension f P ≃ₗ[S] BalancedExtension g P := by
+  subst g
+  exact .refl _ _
+
+/-- Transport along an equality of ring homomorphisms keeps both factors of a pure tensor. -/
+@[simp]
+theorem congrRingHom_tmul {g : R →+* S} (h : f = g) (s : S) (p : P) :
+    congrRingHom h (tmul f s p) = tmul g s p := by
+  subst g
+  rfl
+
+/-- The inverse of transport along `h` is transport along the reversed equality `h.symm`. -/
+@[simp]
+theorem congrRingHom_symm {g : R →+* S} (h : f = g) :
+    (congrRingHom h).symm = congrRingHom (P := P) h.symm := by
+  subst g
+  rfl
+
+/-- Transport along reflexive equality is the identity equivalence. -/
+@[simp]
+theorem congrRingHom_refl : congrRingHom (P := P) (rfl : f = f) = LinearEquiv.refl S _ := by rfl
+
+/-- Successive transports compose to transport along the transitive equality. -/
+@[simp]
+theorem congrRingHom_trans {g h : R →+* S} (hfg : f = g) (hgh : g = h) :
+    (congrRingHom (P := P) hfg).trans (congrRingHom hgh) = congrRingHom (hfg.trans hgh) := by
+  subst g h
+  rfl
+
+section CentralAction
+
+/-- Scalars acting compatibly with the destination ring act on the first factor of `S ⊗_R P`. -/
+@[simp]
+theorem smul_tmul' {C : Type*} [SMul C S] [SMul C (BalancedExtension f P)]
+    [IsScalarTower C S (BalancedExtension f P)] (c : C) (s : S) (p : P) :
+    c • tmul f s p = tmul f (c • s) p := by
+  rw [tmul_eq_smul_one_tmul, ← smul_assoc, ← tmul_eq_smul_one_tmul]
+
+variable (A : Type*) [CommSemiring A] [Algebra A S]
+
+variable (f P) in
+/-- The `A`-action on `S ⊗_R P` restricted from the `S`-action, for an `A`-algebra `S`. As with
+`TauCeti.CentralBaseChange.module`, it is not an instance; activate it locally when needed. -/
+noncomputable abbrev moduleBase : Module A (BalancedExtension f P) :=
+  Module.restrictScalars A S _
+
+attribute [local instance low] moduleBase
+
+/-- Restricting the destination action to an `A`-algebra structure forms a scalar tower. -/
+instance : IsScalarTower A S (BalancedExtension f P) :=
+  IsScalarTower.restrictScalars A S _
+
+end CentralAction
+
 section Identity
 
 variable (R P) in
@@ -384,6 +445,27 @@ theorem cancelBaseChange_symm_tmul (t : T) (p : P) :
   simp [cancelBaseChange]
 
 end Composition
+
+section RightUnit
+
+variable (f)
+
+/-- **Extension of the regular module.** `S ⊗_R R ≃ S`, sending `s ⊗ r` to `s * f r`. It is the
+right unit identification `TauCeti.BalancedTensorProduct.rid` of the right `R`-module `S`. -/
+noncomputable def rid : BalancedExtension f R ≃ₗ[S] S where
+  toAddEquiv := (BalancedTensorProduct.rid ℤ R (Scalars f)).toAddEquiv.trans (Scalars.of f).symm
+  map_smul' s x := congrArg (Scalars.of f).symm
+    (BalancedTensorProduct.rid_smul_left ℤ R (Scalars f) S s x)
+
+@[simp]
+theorem rid_tmul (s : S) (r : R) : rid f (tmul f s r) = s * f r := by
+  simp [rid, tmul_def]
+
+@[simp]
+theorem rid_symm_apply (s : S) : (rid f).symm s = tmul f s 1 := by
+  rw [LinearEquiv.symm_apply_eq, rid_tmul, map_one, mul_one]
+
+end RightUnit
 
 section Pi
 

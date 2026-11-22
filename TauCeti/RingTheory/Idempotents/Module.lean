@@ -66,6 +66,7 @@ hypothesis in the intended applications.
 * `IsIdempotentElem.mem_smul_top_iff_smul_eq_self`: for an idempotent `e`, membership in
   `e • M` is the fixed-point condition `e • x = x`. The scalar `e` needs only a distributive
   monoid action on `M`.
+* `Module.End.smul_top_eq_range`: for an endomorphism `f`, the piece `f • M` is `range f`.
 * `TauCeti.isInternal_smul_top`: **the decomposition** `M = ⨁ᵢ eᵢ M`, with the component of `x` at
   `i` being `eᵢ • x` (`TauCeti.coe_ofBijective_coeLinearMap_symm_apply_smul_top`).
 * `TauCeti.smul_coeLinearMap_smul_top`: multiplying by `eᵢ` reads off the `i`-th component of a
@@ -114,6 +115,20 @@ theorem smul_eq_self_of_mem_smul_top {e : R} (he : IsIdempotentElem e) {x : M}
   he.mem_smul_top_iff_smul_eq_self.1 hx
 
 end IsIdempotentElem
+
+namespace Module.End
+
+variable {S M : Type*} [CommSemiring S] [AddCommMonoid M] [Module S M]
+
+/-- **An endomorphism acting on `⊤` gives its range**: the piece `f • M` cut out by an
+endomorphism `f : Module.End S M`, acting through Mathlib's pointwise action, is `range f`. -/
+theorem smul_top_eq_range (f : Module.End S M) :
+    f • (⊤ : Submodule S M) = LinearMap.range f := by
+  rw [Submodule.pointwise_smul_def, Submodule.map_top]
+  exact congrArg LinearMap.range <| LinearMap.ext fun x ↦ by
+    rw [DistribSMul.toLinearMap_apply, Module.End.smul_def]
+
+end Module.End
 
 namespace TauCeti
 
