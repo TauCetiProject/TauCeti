@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Orientation.Cochains
-public import Mathlib.LinearAlgebra.Projection
+import Mathlib.LinearAlgebra.Projection
 import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!
@@ -40,13 +40,19 @@ noncomputable def harmonicCochains (K : Type w) [DivisionRing K] [Fintype G.edge
     Submodule K (G.edgeSet → K) :=
   LinearMap.ker (edgeDivergence K tail head length)
 
+/-- The space of harmonic cochains is the kernel of weighted divergence. -/
+theorem harmonicCochains_eq_ker (K : Type w) [DivisionRing K] [Fintype G.edgeSet]
+    (tail head : G.edgeSet → G.vertexSet) (length : G.edgeSet → ℚ) :
+    harmonicCochains K tail head length = LinearMap.ker (edgeDivergence K tail head length) := by
+  rfl
+
 @[simp]
 theorem mem_harmonicCochains_iff (K : Type w) [DivisionRing K] [Fintype G.edgeSet]
     (tail head : G.edgeSet → G.vertexSet) (length : G.edgeSet → ℚ)
     (c : G.edgeSet → K) :
     c ∈ harmonicCochains K tail head length ↔
       edgeDivergence K tail head length c = 0 := by
-  rw [harmonicCochains, LinearMap.mem_ker]
+  rw [harmonicCochains_eq_ker, LinearMap.mem_ker]
 
 /-- For finite actual vertex and edge sets, positive rational edge lengths, and a
 characteristic-zero coefficient field, the harmonic and exact subspaces are complementary.
@@ -58,10 +64,11 @@ theorem isCompl_harmonic_exact (K : Type w) [Field K] [CharZero K]
     IsCompl (harmonicCochains K tail head length) (exactCochains K tail head) := by
   classical
   let := Fintype.ofFinite G.vertexSet
-  rw [harmonicCochains, exactCochains_eq_range, edgeDivergence_eq_matrix,
-    edgeDifferentialLinear_eq_matrix]
-  exact (endpointMatrix tail head).isCompl_ker_mulVecLin_transpose_mul_diagonal_range_map
-    (Rat.castHom K) _ (fun e ↦ inv_pos.2 (hpos e))
+  rw [harmonicCochains_eq_ker, exactCochains_eq_range, edgeDivergence_eq_vecMulLinear,
+    Matrix.vecMulLinear_transpose, edgeDifferentialLinear_eq_mulVecLin]
+  simpa only [signedIncMatrix_map] using
+    Matrix.isCompl_ker_mulVecLin_transpose_mul_diagonal_range_map
+      (signedIncMatrix ℚ tail head) (Rat.castHom K) _ (fun e ↦ inv_pos.2 (hpos e))
 
 /-- Every cochain of a finite oriented multigraph with positive rational edge lengths and
 coefficients in a characteristic-zero field has a unique harmonic/exact pair.
@@ -101,6 +108,7 @@ theorem harmonicProjectionOnto_apply_harmonic (K : Type w) [Field K] [CharZero K
   exact Submodule.projectionOnto_apply_left _ c
 
 /-- The kernel of harmonic projection is exactly the space of differentials. -/
+@[simp]
 theorem ker_harmonicProjectionOnto (K : Type w) [Field K] [CharZero K]
     [Finite G.vertexSet] [Fintype G.edgeSet]
     (tail head : G.edgeSet → G.vertexSet) (length : G.edgeSet → ℚ)
@@ -109,24 +117,25 @@ theorem ker_harmonicProjectionOnto (K : Type w) [Field K] [CharZero K]
       exactCochains K tail head := by
   exact Submodule.ker_projectionOnto _
 
-/-- Exact cochains have zero harmonic component. -/
+/-- A cochain has zero harmonic component if and only if it is exact. -/
+@[simp]
+theorem harmonicProjectionOnto_eq_zero_iff (K : Type w) [Field K] [CharZero K]
+    [Finite G.vertexSet] [Fintype G.edgeSet]
+    (tail head : G.edgeSet → G.vertexSet) (length : G.edgeSet → ℚ)
+    (hpos : ∀ e, 0 < length e) (c : G.edgeSet → K) :
+    harmonicProjectionOnto K tail head length hpos c = 0 ↔
+      c ∈ exactCochains K tail head := by
+  rw [← ker_harmonicProjectionOnto K tail head length hpos, LinearMap.mem_ker]
+
+/-- A differential has zero harmonic component. -/
 @[simp]
 theorem harmonicProjectionOnto_differential (K : Type w) [Field K] [CharZero K]
     [Finite G.vertexSet] [Fintype G.edgeSet]
     (tail head : G.edgeSet → G.vertexSet) (length : G.edgeSet → ℚ)
     (hpos : ∀ e, 0 < length e) (f : G.vertexSet → K) :
     harmonicProjectionOnto K tail head length hpos (edgeDifferential tail head f) = 0 := by
-  apply (Submodule.projectionOnto_apply_eq_zero_iff _).2
-  exact (mem_exactCochains_iff K tail head _).2 ⟨f, rfl⟩
-
-/-- Adding a differential preserves the harmonic component. -/
-theorem harmonicProjectionOnto_add_differential (K : Type w) [Field K] [CharZero K]
-    [Finite G.vertexSet] [Fintype G.edgeSet]
-    (tail head : G.edgeSet → G.vertexSet) (length : G.edgeSet → ℚ)
-    (hpos : ∀ e, 0 < length e) (c : G.edgeSet → K) (f : G.vertexSet → K) :
-    harmonicProjectionOnto K tail head length hpos (c + edgeDifferential tail head f) =
-      harmonicProjectionOnto K tail head length hpos c := by
-  rw [map_add, harmonicProjectionOnto_differential, add_zero]
+  exact (harmonicProjectionOnto_eq_zero_iff K tail head length hpos _).2
+    ((mem_exactCochains_iff K tail head _).2 ⟨f, rfl⟩)
 
 /-- Subtracting the harmonic component leaves an exact cochain. -/
 theorem sub_harmonicProjectionOnto_mem_exact (K : Type w) [Field K] [CharZero K]
@@ -145,8 +154,25 @@ theorem harmonicProjectionOnto_eq_iff_sub_mem_exact (K : Type w) [Field K] [Char
     (hpos : ∀ e, 0 < length e) (c : G.edgeSet → K) (h : harmonicCochains K tail head length) :
     harmonicProjectionOnto K tail head length hpos c = h ↔
       c - (h : G.edgeSet → K) ∈ exactCochains K tail head := by
-  rw [← ker_harmonicProjectionOnto K tail head length hpos, LinearMap.mem_ker, map_sub,
+  rw [← harmonicProjectionOnto_eq_zero_iff K tail head length hpos, map_sub,
     harmonicProjectionOnto_apply_harmonic, sub_eq_zero]
+
+private theorem map_projection_of_mem {R S M N : Type*} [Ring R] [Ring S]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module S N]
+    {p q : Submodule R M} {p' q' : Submodule S N}
+    (hpq : IsCompl p q) (hpq' : IsCompl p' q') (φ : M →+ N)
+    (hp : ∀ x ∈ p, φ x ∈ p') (hq : ∀ x ∈ q, φ x ∈ q') (x : M) :
+    p'.projection q' hpq' (φ x) = φ (p.projection q hpq x) := by
+  have h := congrArg φ (Submodule.projection_add_projection_eq_self hpq x)
+  rw [map_add] at h
+  have hp' := hp _ (Submodule.projection_apply_mem hpq x)
+  have hq' := hq _ (Submodule.projection_apply_mem hpq.symm x)
+  calc
+    _ = p'.projection q' hpq' (φ (p.projection q hpq x) + φ (q.projection p hpq.symm x)) :=
+      congrArg (p'.projection q' hpq') h.symm
+    _ = _ := by
+      rw [map_add, Submodule.projection_apply_of_mem_left hpq' hp',
+        Submodule.projection_apply_of_mem_right hpq' hq', add_zero]
 
 /-- Extending coefficients sends the harmonic component to the harmonic component of the
 extended cochain. -/
@@ -156,43 +182,58 @@ theorem harmonicProjectionOnto_map {K L : Type*} [Field K] [CharZero K] [Field L
     (φ : K →+* L) (c : G.edgeSet → K) :
     (harmonicProjectionOnto L tail head length hpos (φ ∘ c) : G.edgeSet → L) =
       φ ∘ (harmonicProjectionOnto K tail head length hpos c : G.edgeSet → K) := by
-  let h := harmonicProjectionOnto K tail head length hpos c
-  have hh := (mem_harmonicCochains_iff K tail head length _).1 h.property
-  let h' : harmonicCochains L tail head length := ⟨φ ∘ (h : G.edgeSet → K),
-    (mem_harmonicCochains_iff L tail head length _).2 (by simp [edgeDivergence_map, hh])⟩
-  obtain ⟨f, hf⟩ := (mem_exactCochains_iff K tail head _).1
-    (sub_harmonicProjectionOnto_mem_exact K tail head length hpos c)
-  have heq : harmonicProjectionOnto L tail head length hpos (φ ∘ c) = h' := by
-    apply (harmonicProjectionOnto_eq_iff_sub_mem_exact L tail head length hpos _ _).2
-    refine (mem_exactCochains_iff L tail head _).2 ⟨φ ∘ f, ?_⟩
-    have hmap : edgeDifferential tail head (φ ∘ f) = φ ∘ edgeDifferential tail head f :=
-      edgeDifferential_map tail head φ.toAddMonoidHom f
-    rw [hmap, hf]
-    funext e
-    exact map_sub φ (c e) (h.val e)
-  exact congrArg Subtype.val heq
+  refine map_projection_of_mem (isCompl_harmonic_exact K tail head length hpos)
+    (isCompl_harmonic_exact L tail head length hpos)
+    (φ.toAddMonoidHom.compLeft G.edgeSet) ?_ ?_ c
+  · intro h hh
+    change φ ∘ h ∈ harmonicCochains L tail head length
+    rw [mem_harmonicCochains_iff] at hh ⊢
+    simp [edgeDivergence_map, hh]
+  · intro r hr
+    change φ ∘ r ∈ exactCochains L tail head
+    rw [mem_exactCochains_iff] at hr ⊢
+    obtain ⟨f, rfl⟩ := hr
+    exact ⟨φ ∘ f, edgeDifferential_map tail head φ.toAddMonoidHom f⟩
 
-/-- Reversing the selected edges changes the sign of their harmonic components. -/
+/-- Swapping the selected endpoints and negating the same input coordinates negates exactly
+those coordinates of the harmonic projection. -/
 theorem harmonicProjectionOnto_swap (K : Type w) [Field K] [CharZero K]
     [Finite G.vertexSet] [Fintype G.edgeSet]
     (tail head : G.edgeSet → G.vertexSet) (length : G.edgeSet → ℚ) (hpos : ∀ e, 0 < length e)
     (s : G.edgeSet → Prop) [DecidablePred s] (c : G.edgeSet → K) :
     (harmonicProjectionOnto K (edgeSwapTail tail head s) (edgeSwapHead tail head s) length hpos
-        (edgeSignChange s c) : G.edgeSet → K) =
-      edgeSignChange s (harmonicProjectionOnto K tail head length hpos c : G.edgeSet → K) := by
-  let h := harmonicProjectionOnto K tail head length hpos c
-  have hh := (mem_harmonicCochains_iff K tail head length _).1 h.property
-  let h' : harmonicCochains K (edgeSwapTail tail head s) (edgeSwapHead tail head s) length :=
-    ⟨edgeSignChange s (h : G.edgeSet → K),
-      (mem_harmonicCochains_iff K _ _ length _).2 (by rw [edgeDivergence_swap, hh])⟩
-  obtain ⟨f, hf⟩ := (mem_exactCochains_iff K tail head _).1
-    (sub_harmonicProjectionOnto_mem_exact K tail head length hpos c)
-  have heq : harmonicProjectionOnto K _ _ length hpos (edgeSignChange s c) = h' := by
-    apply (harmonicProjectionOnto_eq_iff_sub_mem_exact K _ _ length hpos _ _).2
-    refine (mem_exactCochains_iff K _ _ _).2 ⟨f, ?_⟩
-    rw [edgeDifferential_swap, hf]
+        (edgeSignChange K s c) : G.edgeSet → K) =
+      edgeSignChange K s (harmonicProjectionOnto K tail head length hpos c : G.edgeSet → K) := by
+  refine map_projection_of_mem (isCompl_harmonic_exact K tail head length hpos)
+    (isCompl_harmonic_exact K _ _ length hpos)
+    (edgeSignChange K s).toLinearMap.toAddMonoidHom ?_ ?_ c
+  · intro h hh
+    change edgeSignChange K s h ∈ harmonicCochains K _ _ length
+    rw [mem_harmonicCochains_iff, edgeDivergence_swap]
+    exact (mem_harmonicCochains_iff K tail head length h).1 hh
+  · intro r hr
+    change edgeSignChange K s r ∈ exactCochains K _ _
+    rw [mem_exactCochains_iff] at hr ⊢
+    obtain ⟨f, rfl⟩ := hr
+    exact ⟨f, edgeDifferential_swap K tail head s f⟩
+
+/-- Harmonic projection commutes with the change of cochain coordinates induced by reversing
+the selected edges of an orientation. -/
+theorem Orientation.harmonicProjectionOnto_reverseOn (o : G.Orientation)
+    (K : Type w) [Field K] [CharZero K] [Finite G.vertexSet] [Fintype G.edgeSet]
+    (length : G.edgeSet → ℚ) (hpos : ∀ e, 0 < length e)
+    (s : G.edgeSet → Prop) [DecidablePred s] (c : G.edgeSet → K) :
+    (harmonicProjectionOnto K (o.reverseOn s).tail (o.reverseOn s).head length hpos
+        (edgeSignChange K s c) : G.edgeSet → K) =
+      edgeSignChange K s (harmonicProjectionOnto K o.tail o.head length hpos c :
+        G.edgeSet → K) := by
+  have ht : (o.reverseOn s).tail = edgeSwapTail o.tail o.head s := by
     funext e
-    by_cases he : s e <;> simp [h', h, he, sub_eq_add_neg, add_comm]
-  exact congrArg Subtype.val heq
+    simp
+  have hh : (o.reverseOn s).head = edgeSwapHead o.tail o.head s := by
+    funext e
+    simp
+  rw [ht, hh]
+  exact harmonicProjectionOnto_swap K o.tail o.head length hpos s c
 
 end Graph

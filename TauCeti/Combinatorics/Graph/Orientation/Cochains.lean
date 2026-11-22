@@ -25,7 +25,7 @@ directions changes the signs of their cochain coordinates.
 
 - `Graph.edgeDifferentialLinear` sends vertex potentials to their edge differences.
 - `Graph.edgeDivergence` sends edge cochains to weighted vertex currents.
-- `Graph.endpointMatrix` gives the rational signed incidence matrix for these operators.
+- `Graph.signedIncMatrix` gives the signed incidence matrix for these operators.
 -/
 
 public section
@@ -68,7 +68,9 @@ theorem edgeDifferentialLinear_apply (R : Type*) [Semiring R] {A : Type w}
     [AddCommGroup A] [Module R A] (tail head : G.edgeSet → G.vertexSet)
     (f : G.vertexSet → A) :
     edgeDifferentialLinear R tail head f = edgeDifferential tail head f := by
-  rfl
+  ext e
+  simp only [edgeDifferentialLinear, LinearMap.sub_apply, LinearMap.funLeft_apply,
+    Pi.sub_apply, edgeDifferential_apply]
 
 /-- Cochains that are differentials of vertex potentials. -/
 def exactCochains (R : Type*) [Semiring R] {A : Type w} [AddCommGroup A] [Module R A]
@@ -118,6 +120,38 @@ theorem edgeDifferential_eq_zero_iff {A : Type w} [AddCommGroup A] (o : G.Orient
     simpa only [edgeDifferential_apply, Pi.zero_apply, sub_eq_zero] using
       h _ _ (o.isLink e).reachable
 
+/-- The tail-minus-head signed incidence matrix on actual edge and vertex coordinates.
+A row is zero when the two endpoints agree. -/
+def signedIncMatrix (R : Type*) [AddGroupWithOne R] [DecidableEq G.vertexSet]
+    (tail head : G.edgeSet → G.vertexSet) : Matrix G.edgeSet G.vertexSet R :=
+  fun e ↦ Pi.single (tail e) 1 - Pi.single (head e) 1
+
+/-- The entry of the signed incidence matrix at an edge and a vertex. -/
+theorem signedIncMatrix_apply (R : Type*) [AddGroupWithOne R] [DecidableEq G.vertexSet]
+    (tail head : G.edgeSet → G.vertexSet) (e : G.edgeSet) (v : G.vertexSet) :
+    signedIncMatrix R tail head e v =
+      (if tail e = v then 1 else 0) - (if head e = v then 1 else 0) := by
+  simp only [signedIncMatrix, Pi.sub_apply, Pi.single_apply, eq_comm]
+
+/-- Changing the coefficient ring preserves the signed incidence matrix. -/
+theorem signedIncMatrix_map {R S : Type*} [NonAssocRing R] [NonAssocRing S]
+    [DecidableEq G.vertexSet] (φ : R →+* S) (tail head : G.edgeSet → G.vertexSet) :
+    (signedIncMatrix R tail head).map φ = signedIncMatrix S tail head := by
+  ext e v
+  simp only [Matrix.map_apply, signedIncMatrix_apply]
+  split_ifs <;> simp
+
+/-- The scalar differential is multiplication by the signed incidence matrix. -/
+theorem edgeDifferentialLinear_eq_mulVecLin (R : Type w) [CommRing R]
+    [Fintype G.vertexSet] [DecidableEq G.vertexSet]
+    (tail head : G.edgeSet → G.vertexSet) :
+    edgeDifferentialLinear R tail head = (signedIncMatrix R tail head).mulVecLin := by
+  apply LinearMap.ext
+  intro f
+  ext e
+  simp only [edgeDifferentialLinear_apply, edgeDifferential_apply, mulVecLin_apply,
+    Matrix.mulVec, signedIncMatrix, sub_dotProduct, single_dotProduct, one_mul]
+
 /-- Weighted divergence on actual edge coordinates. The two contributions of an edge cancel
 when its tail equals its head, as for a loop in a graph orientation. Only the actual edge
 set needs to be finite.
@@ -126,9 +160,8 @@ noncomputable def edgeDivergence (K : Type w) [DivisionRing K]
     [Fintype G.edgeSet] (tail head : G.edgeSet → G.vertexSet)
     (length : G.edgeSet → ℚ) : (G.edgeSet → K) →ₗ[K] (G.vertexSet → K) := by
   classical
-  exact Matrix.vecMulLinear (Matrix.of fun e v ↦
-    (if tail e = v then (length e : K)⁻¹ else 0) -
-      (if head e = v then (length e : K)⁻¹ else 0))
+  exact Matrix.vecMulLinear
+    (((signedIncMatrix K tail head)ᵀ * diagonal (fun e ↦ (length e : K)⁻¹))ᵀ)
 
 /-- Divergence sums the tail contributions and subtracts the head contributions. -/
 theorem edgeDivergence_apply (K : Type w) [DivisionRing K] [Fintype G.edgeSet]
@@ -138,8 +171,10 @@ theorem edgeDivergence_apply (K : Type w) [DivisionRing K] [Fintype G.edgeSet]
     edgeDivergence K tail head length c v =
       ∑ e, ((if tail e = v then c e / (length e : K) else 0) -
         (if head e = v then c e / (length e : K) else 0)) := by
+  classical
   unfold edgeDivergence
-  simp only [Matrix.vecMulLinear_apply, Matrix.vecMul, dotProduct, Matrix.of_apply]
+  simp only [Matrix.vecMulLinear_apply, Matrix.vecMul, dotProduct, Matrix.transpose_apply,
+    Matrix.mul_diagonal, signedIncMatrix_apply]
   apply Finset.sum_congr rfl
   intro e _
   split_ifs <;> simp [div_eq_mul_inv]
@@ -154,52 +189,22 @@ theorem edgeDivergence_map {K L : Type*} [DivisionRing K] [DivisionRing L]
   simp only [Function.comp_apply, edgeDivergence_apply, map_sum, map_sub, apply_ite, map_div₀,
     map_ratCast, map_zero]
 
-/-- The tail-minus-head incidence matrix on actual edge and vertex coordinates. A row is zero
-when the two endpoints agree. -/
-noncomputable def endpointMatrix [DecidableEq G.vertexSet]
-    (tail head : G.edgeSet → G.vertexSet) : Matrix G.edgeSet G.vertexSet ℚ :=
-  fun e v ↦ (if tail e = v then 1 else 0) - (if head e = v then 1 else 0)
-
-/-- The entry of the rational incidence matrix at an edge and a vertex. -/
-theorem endpointMatrix_apply [DecidableEq G.vertexSet]
-    (tail head : G.edgeSet → G.vertexSet) (e : G.edgeSet) (v : G.vertexSet) :
-    endpointMatrix tail head e v =
-      (if tail e = v then 1 else 0) - (if head e = v then 1 else 0) := by
-  rfl
-
-/-- The scalar differential is the rational incidence matrix after extending coefficients. -/
-theorem edgeDifferentialLinear_eq_matrix (K : Type w) [Field K] [CharZero K]
-    [Fintype G.vertexSet] [DecidableEq G.vertexSet]
-    (tail head : G.edgeSet → G.vertexSet) :
-    edgeDifferentialLinear K tail head =
-      ((endpointMatrix tail head).map (Rat.castHom K)).mulVecLin := by
-  apply LinearMap.ext
-  intro f
-  ext e
-  simp only [edgeDifferentialLinear_apply, edgeDifferential_apply, mulVecLin_apply,
-    Matrix.mulVec, dotProduct, Matrix.map_apply]
-  have hterm (v : G.vertexSet) :
-      (Rat.castHom K) (endpointMatrix tail head e v) * f v =
-        (if tail e = v then f v else 0) - (if head e = v then f v else 0) := by
-    unfold endpointMatrix
-    split_ifs <;> simp
-  simp_rw [hterm, Finset.sum_sub_distrib]
-  simp [eq_comm]
-
-/-- Weighted divergence is the weighted transpose incidence matrix after extending
-coefficients. -/
-theorem edgeDivergence_eq_matrix (K : Type w) [Field K] [CharZero K]
+/-- Weighted divergence is right multiplication by the transpose of the rational weighted
+incidence matrix after extending coefficients. -/
+theorem edgeDivergence_eq_vecMulLinear (K : Type w) [DivisionRing K] [CharZero K]
     [Fintype G.edgeSet] [DecidableEq G.edgeSet] [DecidableEq G.vertexSet]
     (tail head : G.edgeSet → G.vertexSet) (length : G.edgeSet → ℚ) :
     edgeDivergence K tail head length =
-      (((endpointMatrix tail head)ᵀ * diagonal (fun e ↦ (length e)⁻¹)).map
-        (Rat.castHom K)).mulVecLin := by
+      Matrix.vecMulLinear
+        ((((signedIncMatrix ℚ tail head)ᵀ * diagonal (fun e ↦ (length e)⁻¹)).map
+          (Rat.castHom K))ᵀ) := by
   unfold edgeDivergence
-  rw [← Matrix.vecMulLinear_transpose]
+  rw [Matrix.map_mul, Matrix.transpose_map, signedIncMatrix_map,
+    Matrix.diagonal_map (map_zero (Rat.castHom K))]
+  simp only [map_inv₀, Rat.coe_castHom]
   congr 1
   ext e v
-  simp only [Matrix.transpose_apply, Matrix.map_apply, Matrix.mul_diagonal,
-    endpointMatrix_apply, Matrix.of_apply]
+  simp only [Matrix.transpose_apply, Matrix.mul_diagonal, signedIncMatrix_apply]
   split_ifs <;> simp
 
 /-- The tail after swapping endpoints on the selected actual edges. -/
@@ -226,24 +231,78 @@ theorem edgeSwapHead_apply (tail head : G.edgeSet → G.vertexSet)
     edgeSwapHead tail head p e = if p e then tail e else head e := by
   rfl
 
-/-- Change the cochain sign on the selected actual edges. A loop coordinate may change sign,
-although its contributions to the differential and divergence remain zero. -/
-def edgeSignChange {A : Type w} [AddCommGroup A] (p : G.edgeSet → Prop) [DecidablePred p]
-    (c : G.edgeSet → A) : G.edgeSet → A :=
-  fun e ↦ if p e then -c e else c e
+namespace Orientation
 
+/-- Reverse the selected actual edges, preserving their identities and incidences. -/
+def reverseOn (o : G.Orientation) (p : G.edgeSet → Prop) [DecidablePred p] :
+    G.Orientation where
+  tail := edgeSwapTail o.tail o.head p
+  head := edgeSwapHead o.tail o.head p
+  isLink e := by
+    by_cases h : p e
+    · simpa only [edgeSwapTail_apply, edgeSwapHead_apply, h, ↓reduceIte] using (o.isLink e).symm
+    · simpa only [edgeSwapTail_apply, edgeSwapHead_apply, h, ↓reduceIte] using o.isLink e
+
+/-- Selected-edge reversal exchanges the tail and head exactly on the selected edges. -/
 @[simp]
-theorem edgeSignChange_apply {A : Type w} [AddCommGroup A]
-    (p : G.edgeSet → Prop) [DecidablePred p] (c : G.edgeSet → A) (e : G.edgeSet) :
-    edgeSignChange p c e = if p e then -c e else c e := by
-  rfl
+theorem reverseOn_tail (o : G.Orientation) (p : G.edgeSet → Prop) [DecidablePred p]
+    (e : G.edgeSet) : (o.reverseOn p).tail e = if p e then o.head e else o.tail e := by
+  exact edgeSwapTail_apply o.tail o.head p e
+
+/-- Selected-edge reversal exchanges the head and tail exactly on the selected edges. -/
+@[simp]
+theorem reverseOn_head (o : G.Orientation) (p : G.edgeSet → Prop) [DecidablePred p]
+    (e : G.edgeSet) : (o.reverseOn p).head e = if p e then o.tail e else o.head e := by
+  exact edgeSwapHead_apply o.tail o.head p e
+
+/-- Reversing the same selected edges twice restores the orientation. -/
+@[simp]
+theorem reverseOn_reverseOn (o : G.Orientation) (p : G.edgeSet → Prop) [DecidablePred p] :
+    (o.reverseOn p).reverseOn p = o := by
+  ext e
+  by_cases h : p e <;> simp [h]
+
+end Orientation
+
+/-- Negate the selected edge coordinates as an involutive linear equivalence. When the endpoint
+maps agree, as on a loop of a graph orientation, that coordinate contributes zero to the
+differential and divergence even when sign change changes the coordinate. -/
+def edgeSignChange (R : Type*) [Semiring R] {A : Type w} [AddCommGroup A] [Module R A]
+    (p : G.edgeSet → Prop) [DecidablePred p] : (G.edgeSet → A) ≃ₗ[R] (G.edgeSet → A) :=
+  LinearEquiv.piCongrRight fun e ↦ if p e then LinearEquiv.neg R else LinearEquiv.refl R A
+
+/-- Sign change negates exactly the selected edge coordinates. -/
+@[simp]
+theorem edgeSignChange_apply (R : Type*) [Semiring R] {A : Type w}
+    [AddCommGroup A] [Module R A] (p : G.edgeSet → Prop) [DecidablePred p]
+    (c : G.edgeSet → A) (e : G.edgeSet) :
+    edgeSignChange R p c e = if p e then -c e else c e := by
+  simp only [edgeSignChange, LinearEquiv.piCongrRight_apply]
+  split_ifs <;> simp only [LinearEquiv.neg_apply, LinearEquiv.refl_apply]
+
+/-- Sign change is its own inverse linear equivalence. -/
+@[simp]
+theorem edgeSignChange_symm (R : Type*) [Semiring R] {A : Type w}
+    [AddCommGroup A] [Module R A] (p : G.edgeSet → Prop) [DecidablePred p] :
+    (edgeSignChange R (A := A) p).symm = edgeSignChange R p := by
+  simp only [edgeSignChange, LinearEquiv.piCongrRight_symm]
+  congr 1
+  funext e
+  split_ifs <;> simp
+
+/-- Applying the same selected sign change twice restores the cochain. -/
+@[simp]
+theorem edgeSignChange_edgeSignChange (R : Type*) [Semiring R] {A : Type w}
+    [AddCommGroup A] [Module R A] (p : G.edgeSet → Prop) [DecidablePred p]
+    (c : G.edgeSet → A) : edgeSignChange R p (edgeSignChange R p c) = c := by
+  simpa only [edgeSignChange_symm] using (edgeSignChange R p).symm_apply_apply c
 
 /-- Swapping the selected endpoint pairs changes exactly the corresponding differential signs. -/
-theorem edgeDifferential_swap {A : Type w} [AddCommGroup A]
-    (tail head : G.edgeSet → G.vertexSet) (p : G.edgeSet → Prop) [DecidablePred p]
-    (f : G.vertexSet → A) :
+theorem edgeDifferential_swap (R : Type*) [Semiring R] {A : Type w} [AddCommGroup A]
+    [Module R A] (tail head : G.edgeSet → G.vertexSet) (p : G.edgeSet → Prop)
+    [DecidablePred p] (f : G.vertexSet → A) :
     edgeDifferential (edgeSwapTail tail head p) (edgeSwapHead tail head p) f =
-      edgeSignChange p (edgeDifferential tail head f) := by
+      edgeSignChange R p (edgeDifferential tail head f) := by
   funext e
   by_cases h : p e <;> simp [h]
 
@@ -252,7 +311,7 @@ theorem edgeDivergence_swap (K : Type w) [DivisionRing K] [Fintype G.edgeSet]
     (tail head : G.edgeSet → G.vertexSet) (length : G.edgeSet → ℚ)
     (p : G.edgeSet → Prop) [DecidablePred p] (c : G.edgeSet → K) :
     edgeDivergence K (edgeSwapTail tail head p) (edgeSwapHead tail head p) length
-        (edgeSignChange p c) =
+        (edgeSignChange K p c) =
       edgeDivergence K tail head length c := by
   classical
   funext v
@@ -260,8 +319,25 @@ theorem edgeDivergence_swap (K : Type w) [DivisionRing K] [Fintype G.edgeSet]
   apply Finset.sum_congr rfl
   intro e _
   by_cases h : p e
-  · simp only [edgeSwapTail, edgeSwapHead, h, ↓reduceIte, edgeSignChange_apply, neg_div]
+  · simp only [edgeSwapTail_apply, edgeSwapHead_apply, h, ↓reduceIte,
+      edgeSignChange_apply, neg_div]
     split_ifs <;> abel
-  · simp [edgeSwapTail, edgeSwapHead, h]
+  · simp [h]
+
+/-- Reversing selected edges changes their differential coordinates by the sign equivalence. -/
+theorem edgeDifferential_reverseOn (R : Type*) [Semiring R] {A : Type w}
+    [AddCommGroup A] [Module R A] (o : G.Orientation) (p : G.edgeSet → Prop)
+    [DecidablePred p] (f : G.vertexSet → A) :
+    edgeDifferential (o.reverseOn p).tail (o.reverseOn p).head f =
+      edgeSignChange R p (edgeDifferential o.tail o.head f) :=
+  edgeDifferential_swap R o.tail o.head p f
+
+/-- Reversing selected edges and negating the same input coordinates preserves divergence. -/
+theorem edgeDivergence_reverseOn (K : Type w) [DivisionRing K] [Fintype G.edgeSet]
+    (o : G.Orientation) (length : G.edgeSet → ℚ) (p : G.edgeSet → Prop) [DecidablePred p]
+    (c : G.edgeSet → K) :
+    edgeDivergence K (o.reverseOn p).tail (o.reverseOn p).head length (edgeSignChange K p c) =
+      edgeDivergence K o.tail o.head length c :=
+  edgeDivergence_swap K o.tail o.head length p c
 
 end Graph
