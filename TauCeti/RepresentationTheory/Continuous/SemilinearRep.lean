@@ -41,9 +41,10 @@ character are different representations on the same line, with no nonzero equiva
 * `TauCeti.SemilinearRep.subrepresentation`, `TauCeti.SemilinearRep.prod`,
   `TauCeti.SemilinearRep.pi`: invariant submodules, binary products and arbitrary products.
 * `TauCeti.SemilinearRep.Hom`: equivariant continuous `B`-linear maps, with identities,
-  composition, `TauCeti.SemilinearRep.Hom.ofLinearMap` for sources with the module topology, and
-  the kernel and image representations `TauCeti.SemilinearRep.Hom.kerRep` and
-  `TauCeti.SemilinearRep.Hom.rangeRep`.
+  composition, `TauCeti.SemilinearRep.Hom.ofLinearMap` for sources with the module topology, the
+  kernel and image representations `TauCeti.SemilinearRep.Hom.kerRep` and
+  `TauCeti.SemilinearRep.Hom.rangeRep`, the lift `TauCeti.SemilinearRep.Hom.kerLift` into a kernel,
+  and the maps `TauCeti.SemilinearRep.Hom.prod` and `TauCeti.SemilinearRep.Hom.pi` into products.
 
 ## Main results
 
@@ -238,11 +239,14 @@ theorem twist_act (ρ : SemilinearRep G B W) (χ : G →ₜ* R) (g : G) (w : W) 
     (ρ.twist χ).act g w = χ g • ρ.act g w :=
   (rfl)
 
+/-- Twisting by the trivial character gives back the representation. -/
 @[simp]
 theorem twist_one (ρ : SemilinearRep G B W) : ρ.twist (1 : G →ₜ* R) = ρ := by
   ext g w
   simp
 
+/-- Twisting by `χ` and then by `ψ` is twisting by `ψ * χ`. -/
+@[simp]
 theorem twist_twist [ContinuousMul R] (ρ : SemilinearRep G B W) (χ ψ : G →ₜ* R) :
     (ρ.twist χ).twist ψ = ρ.twist (ψ * χ) := by
   ext g w
@@ -385,16 +389,16 @@ theorem comp_apply (f' : Hom ρ₂ ρ₃) (f : Hom ρ₁ ρ₂) (w : W₁) : f'.
 
 @[simp]
 theorem id_comp (f : Hom ρ₁ ρ₂) : (id ρ₂).comp f = f :=
-  (rfl)
+  ext fun _ => rfl
 
 @[simp]
 theorem comp_id (f : Hom ρ₁ ρ₂) : f.comp (id ρ₁) = f :=
-  (rfl)
+  ext fun _ => rfl
 
 theorem comp_assoc {W₄ : Type*} [AddCommMonoid W₄] [Module B W₄] [TopologicalSpace W₄]
     {ρ₄ : SemilinearRep G B W₄} (f'' : Hom ρ₃ ρ₄) (f' : Hom ρ₂ ρ₃) (f : Hom ρ₁ ρ₂) :
     (f''.comp f').comp f = f''.comp (f'.comp f) :=
-  (rfl)
+  ext fun _ => rfl
 
 /-- The kernel of a morphism is stable under `G`. -/
 theorem act_mem_ker (f : Hom ρ₁ ρ₂) (g : G) {w : W₁}
@@ -436,7 +440,7 @@ section Morphisms
 /-- The inclusion of a subrepresentation. -/
 def subtype (ρ : SemilinearRep G B W) (N : Submodule B W) (hN : ∀ g, ∀ w ∈ N, ρ.act g w ∈ N) :
     Hom (ρ.subrepresentation N hN) ρ :=
-  ⟨⟨N.subtype, continuous_subtypeVal⟩, fun _ _ => rfl⟩
+  ⟨N.subtypeL, fun _ _ => rfl⟩
 
 @[simp]
 theorem subtype_apply (ρ : SemilinearRep G B W) (N : Submodule B W)
@@ -451,9 +455,7 @@ def Hom.kerι {ρ₁ : SemilinearRep G B W₁} {ρ₂ : SemilinearRep G B W₂} 
 /-- A morphism factors through its image representation. -/
 def Hom.rangeRestrict {ρ₁ : SemilinearRep G B W₁} {ρ₂ : SemilinearRep G B W₂} (f : Hom ρ₁ ρ₂) :
     Hom ρ₁ f.rangeRep :=
-  ⟨⟨LinearMap.rangeRestrict (f : W₁ →ₗ[B] W₂),
-    (map_continuous f).subtype_mk fun w => LinearMap.mem_range_self (f : W₁ →ₗ[B] W₂) w⟩,
-    fun g w => Subtype.ext (by simp)⟩
+  ⟨f.toContinuousLinearMap.rangeRestrict, fun g w => Subtype.ext (f.map_act g w)⟩
 
 @[simp]
 theorem Hom.kerι_apply {ρ₁ : SemilinearRep G B W₁} {ρ₂ : SemilinearRep G B W₂} (f : Hom ρ₁ ρ₂)
@@ -480,12 +482,33 @@ image. -/
 @[simp]
 theorem Hom.rangeι_comp_rangeRestrict {ρ₁ : SemilinearRep G B W₁}
     {ρ₂ : SemilinearRep G B W₂} (f : Hom ρ₁ ρ₂) : f.rangeι.comp f.rangeRestrict = f :=
+  Hom.ext fun _ => rfl
+
+/-- A morphism vanishes on its kernel. -/
+@[simp]
+theorem Hom.map_coe_ker {ρ₁ : SemilinearRep G B W₁} {ρ₂ : SemilinearRep G B W₂} (f : Hom ρ₁ ρ₂)
+    (w : LinearMap.ker (f : W₁ →ₗ[B] W₂)) : f (w : W₁) = 0 :=
+  LinearMap.mem_ker.mp w.property
+
+/-- **The universal property of the kernel**: a morphism `h` into the source of `f` with `f ∘ h = 0`
+factors through the kernel representation of `f`. -/
+def Hom.kerLift {ρ : SemilinearRep G B W} {ρ₁ : SemilinearRep G B W₁}
+    {ρ₂ : SemilinearRep G B W₂} (f : Hom ρ₁ ρ₂) (h : Hom ρ ρ₁) (hh : ∀ w, f (h w) = 0) :
+    Hom ρ f.kerRep :=
+  ⟨h.toContinuousLinearMap.codRestrict _ fun w => LinearMap.mem_ker.mpr (hh w),
+    fun g w => Subtype.ext (by simp)⟩
+
+@[simp]
+theorem Hom.coe_kerLift_apply {ρ : SemilinearRep G B W} {ρ₁ : SemilinearRep G B W₁}
+    {ρ₂ : SemilinearRep G B W₂} (f : Hom ρ₁ ρ₂) (h : Hom ρ ρ₁) (hh : ∀ w, f (h w) = 0) (w : W) :
+    (f.kerLift h hh w : W₁) = h w :=
   (rfl)
 
-/-- A morphism vanishes on its kernel representation. -/
-theorem Hom.comp_kerι_apply {ρ₁ : SemilinearRep G B W₁} {ρ₂ : SemilinearRep G B W₂} (f : Hom ρ₁ ρ₂)
-    (w : LinearMap.ker (f : W₁ →ₗ[B] W₂)) : f.comp f.kerι w = 0 :=
-  w.property
+@[simp]
+theorem Hom.kerι_comp_kerLift {ρ : SemilinearRep G B W} {ρ₁ : SemilinearRep G B W₁}
+    {ρ₂ : SemilinearRep G B W₂} (f : Hom ρ₁ ρ₂) (h : Hom ρ ρ₁) (hh : ∀ w, f (h w) = 0) :
+    f.kerι.comp (f.kerLift h hh) = h :=
+  Hom.ext fun _ => rfl
 
 variable (ρ₁ : SemilinearRep G B W₁) (ρ₂ : SemilinearRep G B W₂)
 
@@ -521,6 +544,29 @@ theorem inl_apply (w : W₁) : inl ρ₁ ρ₂ w = (w, 0) :=
 theorem inr_apply (w : W₂) : inr ρ₁ ρ₂ w = (0, w) :=
   (rfl)
 
+section HomProd
+
+variable {ρ₁ ρ₂} {σ : SemilinearRep G B W}
+
+/-- **The universal property of the direct sum**: two morphisms out of `σ` pair to a morphism into
+the direct sum. -/
+def Hom.prod (f : Hom σ ρ₁) (f' : Hom σ ρ₂) : Hom σ (ρ₁.prod ρ₂) :=
+  ⟨f.toContinuousLinearMap.prod f'.toContinuousLinearMap, fun g w => by simp⟩
+
+@[simp]
+theorem Hom.prod_apply (f : Hom σ ρ₁) (f' : Hom σ ρ₂) (w : W) : f.prod f' w = (f w, f' w) :=
+  (rfl)
+
+@[simp]
+theorem fst_comp_prod (f : Hom σ ρ₁) (f' : Hom σ ρ₂) : (fst ρ₁ ρ₂).comp (f.prod f') = f :=
+  Hom.ext fun _ => rfl
+
+@[simp]
+theorem snd_comp_prod (f : Hom σ ρ₁) (f' : Hom σ ρ₂) : (snd ρ₁ ρ₂).comp (f.prod f') = f' :=
+  Hom.ext fun _ => rfl
+
+end HomProd
+
 variable {ι : Type*} {V : ι → Type*} [∀ i, AddCommMonoid (V i)] [∀ i, Module B (V i)]
   [∀ i, TopologicalSpace (V i)] (ρ : ∀ i, SemilinearRep G B (V i))
 
@@ -541,6 +587,25 @@ def single [DecidableEq ι] (i : ι) : Hom (ρ i) (pi ρ) :=
 @[simp]
 theorem single_apply [DecidableEq ι] (i : ι) (w : V i) : single ρ i w = Pi.single i w :=
   (rfl)
+
+section HomPi
+
+variable {ρ} {σ : SemilinearRep G B W}
+
+/-- **The universal property of the product**: a family of morphisms out of `σ` gives a morphism
+into the product. -/
+def Hom.pi (f : ∀ i, Hom σ (ρ i)) : Hom σ (SemilinearRep.pi ρ) :=
+  ⟨ContinuousLinearMap.pi fun i => (f i).toContinuousLinearMap, fun g w => by ext i; simp⟩
+
+@[simp]
+theorem Hom.pi_apply (f : ∀ i, Hom σ (ρ i)) (w : W) (i : ι) : Hom.pi f w i = f i w :=
+  (rfl)
+
+@[simp]
+theorem proj_pi (f : ∀ i, Hom σ (ρ i)) (i : ι) : (proj ρ i).comp (Hom.pi f) = f i :=
+  Hom.ext fun _ => rfl
+
+end HomPi
 
 end Morphisms
 
