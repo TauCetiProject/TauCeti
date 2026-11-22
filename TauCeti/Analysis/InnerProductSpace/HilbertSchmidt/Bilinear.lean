@@ -72,13 +72,8 @@ theorem bilinearHilbertSchmidtEnergy_eq_sum_sq_hilbertSchmidtNorm
     bilinearHilbertSchmidtEnergy T = ∑ i, (T (b₁ i)).hilbertSchmidtNorm ^ 2 := by
   let b₂ := stdOrthonormalBasis 𝕜 E₂
   rw [bilinearHilbertSchmidtEnergy_eq_sum b₁ b₂]
-  apply Finset.sum_congr rfl
-  intro i _
-  rw [ContinuousLinearMap.sq_hilbertSchmidtNorm _ b₂.toHilbertBasis,
-    ContinuousLinearMap.hilbertSchmidtEnergy_eq_ofReal_sq_frobenius,
-    ENNReal.toReal_ofReal (sq_nonneg _),
-    TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_apply b₂]
-  simp only [ContinuousLinearMap.coe_coe]
+  simp [sq_hilbertSchmidtNorm _ b₂.toHilbertBasis, hilbertSchmidtEnergy_def,
+    ENNReal.toReal_sum, ENNReal.toReal_pow]
 
 /-- Bilinear Hilbert–Schmidt energy is homogeneous of degree two. -/
 @[simp]
