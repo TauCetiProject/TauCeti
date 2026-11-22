@@ -44,13 +44,19 @@ particular a top-degree class of `(E, E₀)` is determined by its restrictions t
 (`TauCeti.singularCohomology_thomPair_ext`), and local classes realizing prescribed fibre classes
 near every point glue to a class of `(E, E₀)` (`TauCeti.exists_singularCohomology_thomPair_fiber`).
 
-With coefficients in a commutative ring `K` whose only unit is `1`, such as `ZMod 2`, a module
-isomorphic to `K` has a single generator (`LinearEquiv.eq_of_span_singleton_eq_top`). So the local
-Thom classes over trivializing sets, pulled back from a generator of `Hʳ(F, F ∖ {0}; K)`, have the
-same restriction to every fibre and glue: every real vector bundle has a unique Thom class with
-coefficients in `K` (`TauCeti.existsUnique_isThomClass_of_subsingleton_units`). With integral
-coefficients the fibre generators have to be chosen compatibly, which is what an orientation of the
-bundle provides (`TauCeti.VectorBundleOrientation.exists_isThomClass`).
+Two linear trivializations read a class of `(F, F ∖ {0})` as classes of a fibre pair differing by
+a sign, so with coefficients in a commutative ring `K` in which `2 = 0` they read it as the same
+class (`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_of_two_eq_zero`). The
+local classes over trivializing sets pulled back from a class `g` of `Hʳ(F, F ∖ {0})` then have the
+same restriction to every fibre, and glue to a unique class of the Thom pair
+(`TauCeti.existsUnique_singularCohomology_thomPair_fiber_of_two_eq_zero`). For a generator `g` this
+is a Thom class: in characteristic two every real vector bundle has a Thom class, with no
+orientation (`TauCeti.exists_isThomClass_of_two_eq_zero`). When `1` is the only unit of `K`, as
+for `ZMod 2`, a module isomorphic to `K` has a single generator
+(`LinearEquiv.eq_of_span_singleton_eq_top`), so the Thom class is unique
+(`TauCeti.existsUnique_isThomClass_of_subsingleton_units`). With integral coefficients the fibre
+generators have to be chosen compatibly, which is what an orientation of the bundle provides
+(`TauCeti.VectorBundleOrientation.exists_isThomClass`).
 
 ## Main results
 
@@ -68,6 +74,11 @@ bundle provides (`TauCeti.VectorBundleOrientation.exists_isThomClass`).
   pair `(E, E₀)` and on fibres.
 * `TauCeti.exists_singularCohomology_thomPair_fiber`: local classes realizing prescribed fibre
   classes near every point glue to a class of the Thom pair `(E, E₀)`.
+* `TauCeti.existsUnique_singularCohomology_thomPair_fiber_of_two_eq_zero`: when `2 = 0` in the
+  coefficients, every class of `(F, F ∖ {0})` spreads uniquely to a class of `(E, E₀)` restricting
+  on each fibre to its pull-back along every linear trivialization.
+* `TauCeti.exists_isThomClass_of_two_eq_zero`: every real vector bundle has a Thom class with
+  coefficients in a ring in which `2 = 0`, such as a field of characteristic two.
 * `TauCeti.existsUnique_isThomClass_of_subsingleton_units`: every real vector bundle has a unique
   Thom class with coefficients in a ring whose only unit is `1`, such as `ZMod 2`.
 
@@ -598,6 +609,67 @@ theorem singularCohomology_thomPair_ext
     (fun b ↦ (trivializationAt F E b).open_baseSet)
     (fun b ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩) h
 
+/-- **In characteristic two, every class of the model fibre pair spreads to the Thom pair.** If
+`2 = 0` in the commutative ring `K`, then for every class `g ∈ Hʳ(F, F ∖ {0}; R, M)`, `r = dim F`
+and `R` projective, there is a unique class of `Hʳ(E, E₀; R, M)` whose restriction to the fibre
+pair `(E_b, E_b ∖ {0})` over every point `b` is the pull-back of `g` along every linear
+trivialization whose base set contains `b`. No orientation of the bundle is needed, and the base is
+arbitrary. With an orientation instead of `2 = 0`, the analogous statement is
+`TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_fiber`. -/
+theorem existsUnique_singularCohomology_thomPair_fiber_of_two_eq_zero {K : Type*} [CommRing K]
+    (h2 : (2 : K) = 0) {R M : ModuleCat.{w} K} [Module.Projective K R]
+    (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R K M
+      (finrank ℝ F)) :
+    ∃! u : (thomPair F E).singularCohomology R K M (finrank ℝ F),
+      ∀ (e : Trivialization F (π F E)) [e.IsLinear ℝ] (b : B) (hb : b ∈ e.baseSet),
+        TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
+          TopPair.singularCohomologyMap
+            (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g := by
+  -- The local classes over the trivializing sets, pulled back from `g`, agree on every fibre, since
+  -- two trivializations read `g` alike when `2 = 0`; so they glue.
+  choose u hu using fun c ↦
+    (trivializationAt F E c).exists_singularCohomology_thomPairOver_fiber ℝ subset_rfl g
+  obtain ⟨x, hx, -⟩ := existsUnique_singularCohomology_thomPair_of_iUnion_eq_univ
+    (fun c ↦ (trivializationAt F E c).baseSet) R M
+    (iUnion_eq_univ_iff.2 fun b ↦ ⟨b, mem_baseSet_trivializationAt F E b⟩)
+    (fun c ↦ (trivializationAt F E c).open_baseSet)
+    (fun c ↦ ⟨trivializationAt F E c, inferInstance, subset_rfl⟩) u
+    fun c c' b hc hc' ↦ by
+      rw [hu c b hc, hu c' b hc']
+      exact ((trivializationAt F E c).singularCohomologyMap_complZeroPairIso_hom_eq_of_two_eq_zero
+        _ h2 hc hc' g).symm
+  have hx' (e : Trivialization F (π F E)) [e.IsLinear ℝ] (b : B) (hb : b ∈ e.baseSet) :
+      TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ x =
+        TopPair.singularCohomologyMap
+          (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g := by
+    rw [hx b b (mem_baseSet_trivializationAt F E b), hu]
+    exact ((trivializationAt F E b).singularCohomologyMap_complZeroPairIso_hom_eq_of_two_eq_zero e
+      h2 (mem_baseSet_trivializationAt F E b) hb g).symm
+  refine ⟨x, hx', fun y hy ↦ singularCohomology_thomPair_ext fun b ↦ ?_⟩
+  have hb := mem_baseSet_trivializationAt F E b
+  exact (hy (trivializationAt F E b) b hb).trans (hx' (trivializationAt F E b) b hb).symm
+
+/-- **In characteristic two every real vector bundle has a Thom class**: if `2 = 0` in the
+commutative ring `K`, for instance for every field of characteristic two, then there is a class
+of `Hʳ(E, E₀; K, K)`, `r = dim F`, restricting to a generator of `Hʳ(E_b, E_b ∖ {0}; K, K) ≅ K` on
+every fibre. No orientation of the bundle is needed, and the base is arbitrary. It is unique when
+`1` is the only unit of `K` (`TauCeti.existsUnique_isThomClass_of_subsingleton_units`); in general
+any unit multiple of it is again a Thom class. -/
+theorem exists_isThomClass_of_two_eq_zero (K : Type w) [CommRing K] (h2 : (2 : K) = 0) :
+    ∃ u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
+      (finrank ℝ F), IsThomClass F E u := by
+  -- A generator `g` of the local cohomology `Hʳ(F, F ∖ {0}; K) ≅ K`, spread over the Thom pair.
+  obtain ⟨g, hg⟩ := exists_span_singularCohomology_complSingleton_eq_top (k := K)
+    (OpenPartialHomeomorph.refl F) (mem_univ 0)
+  obtain ⟨u, hu, -⟩ := existsUnique_singularCohomology_thomPair_fiber_of_two_eq_zero (E := E) h2 g
+  -- On each fibre it is the pull-back of `g` along a linear trivialization, which generates.
+  refine ⟨u, isThomClass_iff.2 ⟨inferInstance, fun b ↦ ?_⟩⟩
+  rw [hu (trivializationAt F E b) b (mem_baseSet_trivializationAt F E b)]
+  exact ((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K (ModuleCat.of K K)
+    (finrank ℝ F)).mapIso ((trivializationAt F E b).continuousLinearEquivAt ℝ b
+      (mem_baseSet_trivializationAt F E b)).complZeroPairIso.op
+        ).toLinearEquiv.span_singleton_apply_eq_top_iff.2 hg
+
 section SubsingletonUnits
 
 variable (K : Type w) [CommRing K] [Subsingleton Kˣ]
@@ -623,30 +695,10 @@ mod `2` Thom class. -/
 theorem existsUnique_isThomClass_of_subsingleton_units :
     ∃! u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
       (finrank ℝ F), IsThomClass F E u := by
-  -- A generator `g` of the local cohomology `Hʳ(F, F ∖ {0}; K) ≅ K`.
-  obtain ⟨g, hg⟩ := exists_span_singularCohomology_complSingleton_eq_top (k := K)
-    (OpenPartialHomeomorph.refl F) (mem_univ 0)
-  -- Its pull-back to a fibre along a linear trivialization generates.
-  have hgen (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet) :
-      Submodule.span K {(TopPair.singularCohomologyMap
-        (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g)} = ⊤ :=
-    ((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K (ModuleCat.of K K)
-      (finrank ℝ F)).mapIso (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.op
-        ).toLinearEquiv.span_singleton_apply_eq_top_iff.2 hg
-  -- The local Thom classes over the trivializing sets agree on every fibre, so they glue.
-  choose u hu using fun c ↦
-    (trivializationAt F E c).exists_singularCohomology_thomPairOver_fiber ℝ subset_rfl g
-  obtain ⟨x, hx, -⟩ := existsUnique_singularCohomology_thomPair_of_iUnion_eq_univ
-    (fun c ↦ (trivializationAt F E c).baseSet) (ModuleCat.of K K) (ModuleCat.of K K)
-    (iUnion_eq_univ_iff.2 fun b ↦ ⟨b, mem_baseSet_trivializationAt F E b⟩)
-    (fun c ↦ (trivializationAt F E c).open_baseSet)
-    (fun c ↦ ⟨trivializationAt F E c, inferInstance, subset_rfl⟩) u
-    fun c c' b hc hc' ↦ by
-      rw [hu c b hc, hu c' b hc']
-      exact eq_of_span_fiber_eq_top K (hgen _ hc) (hgen _ hc')
-  have hxT : IsThomClass F E x := isThomClass_iff.2 ⟨inferInstance, fun b ↦ by
-    rw [hx b b (mem_baseSet_trivializationAt F E b), hu]
-    exact hgen _ _⟩
+  -- The only unit is `1`, so `-1 = 1` and `2 = 0` in `K`.
+  have h1 : (-1 : K) = 1 := by simpa using congrArg Units.val (Subsingleton.elim (-1 : Kˣ) 1)
+  have h2 : (2 : K) = 0 := by linear_combination -h1
+  obtain ⟨x, hxT⟩ := exists_isThomClass_of_two_eq_zero (F := F) (E := E) K h2
   exact ⟨x, hxT, fun y hy ↦
     singularCohomology_thomPair_ext fun b ↦ eq_of_span_fiber_eq_top K
       ((isThomClass_iff.1 hy).2 b) ((isThomClass_iff.1 hxT).2 b)⟩
