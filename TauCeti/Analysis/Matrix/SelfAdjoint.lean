@@ -10,6 +10,7 @@ public import TauCeti.Algebra.BigOperators.Finset.Pairs
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
 public import Mathlib.Topology.UniformSpace.Matrix
+import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
 # Frobenius geometry and unitary conjugation on self-adjoint matrix subspaces
@@ -200,6 +201,12 @@ theorem selfAdjointConj_mul (U V : Matrix.unitaryGroup (Fin p) 𝕜) :
       Unitary.conjStarAlgAut_apply, Unitary.coe_star, star_eq_conjTranspose] using
       Unitary.conjStarAlgAut_mul_apply (S := ℝ) U V (A : Matrix (Fin p) (Fin p) 𝕜)
 
+/-- Conjugating by a product applies the two conjugations in turn. -/
+theorem selfAdjointConj_mul_apply (U V : Matrix.unitaryGroup (Fin p) 𝕜)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :
+    selfAdjointConj (U * V) A = selfAdjointConj U (selfAdjointConj V A) := by
+  rw [selfAdjointConj_mul, LinearIsometryEquiv.trans_apply]
+
 /-- Conjugating by `U⁻¹` is the inverse linear isometry equivalence. -/
 @[simp] theorem selfAdjointConj_inv (U : Matrix.unitaryGroup (Fin p) 𝕜) :
     selfAdjointConj U⁻¹ = (selfAdjointConj U).symm :=
@@ -322,11 +329,10 @@ theorem abs_det_unitaryConjCoordinates (U : unitaryGroup (Fin n) 𝕜) :
     |(unitaryConjCoordinates U).toContinuousLinearMap.det| = 1 := by
   let T := UnitaryGroup.selfAdjointConj U
   -- Conjugating the real linear isometry by a coordinate equivalence preserves its determinant.
-  rw [ContinuousLinearMap.det, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
-    unitaryConjCoordinates, ContinuousLinearEquiv.trans_toLinearEquiv,
-    ContinuousLinearEquiv.trans_toLinearEquiv, ContinuousLinearEquiv.toLinearEquiv_symm,
-    LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, LinearEquiv.coe_trans,
-    LinearEquiv.coe_trans, LinearMap.comp_assoc, LinearMap.det_conj]
+  rw [unitaryConjCoordinates, ← ContinuousLinearEquiv.comp_coe, ← ContinuousLinearEquiv.comp_coe,
+    ContinuousLinearMap.comp_assoc, ContinuousLinearMap.det_conj, ContinuousLinearMap.det,
+    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+    LinearEquiv.toLinearEquiv_toContinuousLinearEquiv]
   -- In an orthonormal basis the isometry has an orthogonal matrix, whose determinant is a unit.
   let b := stdOrthonormalBasis ℝ (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜))
   rw [← LinearMap.det_toMatrix b.toBasis, ← Real.norm_eq_abs]
@@ -342,11 +348,20 @@ theorem unitaryConjCoordinates_apply (U : unitaryGroup (Fin n) 𝕜) (x : SelfAd
 
 /-- Conjugating the coordinates of a self-adjoint matrix gives the coordinates of its
 unitary conjugate. -/
-theorem unitaryConjCoordinates_apply_selfAdjointCoordinatesLinearMap
+@[simp] theorem unitaryConjCoordinates_selfAdjointCoordinates
     (U : unitaryGroup (Fin n) 𝕜) (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)) :
-    unitaryConjCoordinates U (selfAdjointCoordinatesLinearMap A.val) =
+    unitaryConjCoordinates U (selfAdjointCoordinates A) =
+      selfAdjointCoordinates (UnitaryGroup.selfAdjointConj U A) := by
+  rw [unitaryConjCoordinates, ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.symm_apply_apply, ContinuousLinearEquiv.trans_apply,
+    LinearEquiv.coe_toContinuousLinearEquiv', LinearIsometryEquiv.coe_toLinearEquiv]
+
+/-- The coordinates of a unitary conjugate read the ambient conjugated matrix. -/
+theorem selfAdjointCoordinates_selfAdjointConj (U : unitaryGroup (Fin n) 𝕜)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)) :
+    selfAdjointCoordinates (UnitaryGroup.selfAdjointConj U A) =
       selfAdjointCoordinatesLinearMap (Unitary.conjStarAlgAut ℝ _ U A.val) := by
-  rw [← selfAdjointCoordinates_apply A, unitaryConjCoordinates_apply,
-    ContinuousLinearEquiv.symm_apply_apply]
+  rw [selfAdjointCoordinates_apply, UnitaryGroup.coe_selfAdjointConj_apply,
+    Unitary.conjStarAlgAut_apply, star_eq_conjTranspose]
 
 end TauCeti

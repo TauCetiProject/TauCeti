@@ -41,6 +41,8 @@ the affine cofactor pullback, `ContinuousLinearEquiv.sum_fderiv_affineFluxPullba
   `ContinuousLinearMap.det_piMap`, `ContinuousLinearMap.det_prodMap`: the determinant of the
   identity, of a composition, of a scalar multiple, of a coordinatewise endomorphism of a finite
   dependent product and of a product of two endomorphisms.
+* `ContinuousLinearMap.det_conj`: conjugating by a continuous linear equivalence preserves the
+  determinant.
 * `ContinuousLinearMap.det_one_sub_comp_comm`: Sylvester's identity
   `det (1 - X ∘L Y) = det (1 - Y ∘L X)` for continuous linear maps between free modules of finite
   rank, read from `LinearMap.det_one_sub_comp_comm`.
@@ -92,6 +94,13 @@ theorem det_prodMap {M' : Type*} [TopologicalSpace M'] [AddCommGroup M'] [Module
     [Module.Free R M] [Module.Finite R M] [Module.Free R M'] [Module.Finite R M']
     (f : M →L[R] M) (f' : M' →L[R] M') : (f.prodMap f').det = f.det * f'.det := by
   rw [det, coe_prodMap, LinearMap.det_prodMap]
+
+/-- Conjugating a continuous linear endomorphism by a continuous linear equivalence does not change
+its determinant. -/
+@[simp]
+theorem det_conj {N : Type*} [TopologicalSpace N] [AddCommGroup N] [Module R N] (f : M →L[R] M)
+    (e : M ≃L[R] N) : ((e : M →L[R] N) ∘L f ∘L (e.symm : N →L[R] M)).det = f.det :=
+  LinearMap.det_conj (f : M →ₗ[R] M) e.toLinearEquiv
 
 /-- **Sylvester's determinant identity** for continuous linear maps: for `X : N →L[R] M` and
 `Y : M →L[R] N` between free modules of finite rank, `det (1 - X ∘L Y) = det (1 - Y ∘L X)`. This is
@@ -180,7 +189,7 @@ theorem det_symm_comp_comp_comp (T : M ≃L[R] N) (B : N →L[R] N) (S : M →L[
       B.det * ((T.symm : N →L[R] M).comp S).det * A.det := by
   -- Reading `B` in `M` through `T` does not change its determinant.
   have hB : ((T.symm : N →L[R] M).comp (B.comp (T : M →L[R] N))).det = B.det :=
-    LinearMap.det_conj (B : N →ₗ[R] N) T.symm.toLinearEquiv
+    ContinuousLinearMap.det_conj B T.symm
   have h : (T.symm : N →L[R] M).comp (B.comp (S.comp A)) =
       ((T.symm : N →L[R] M).comp (B.comp (T : M →L[R] N))).comp
         (((T.symm : N →L[R] M).comp S).comp A) := by

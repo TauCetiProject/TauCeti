@@ -101,14 +101,14 @@ theorem contDiff_expStrictUpper {k : WithTop ℕ∞} :
   simp only [coe_expStrictUpper]
   have he : ContDiff ℝ k (NormedSpace.exp : Matrix (Fin n) (Fin n) 𝕜 → _) :=
     contDiff_iff_contDiffAt.mpr fun z ↦ (NormedSpace.exp_analytic (𝕂 := ℝ) z).contDiffAt
-  exact he.comp (skewAdjointOfStrictUpper (n := n) (𝕜 := 𝕜)).contDiff
+  exact he.comp (skewAdjointOfStrictUpper (n := n) (E := 𝕜)).contDiff
 
 /-- At zero, the derivative of the underlying matrix is the skew-adjoint extension of the
 strict upper coordinates. -/
 theorem hasFDerivAt_expStrictUpper_zero :
     HasFDerivAt (fun a : FinStrictUpper n → 𝕜 ↦
       (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜)) skewAdjointOfStrictUpper 0 := by
-  let K := skewAdjointOfStrictUpper (n := n) (𝕜 := 𝕜)
+  let K := skewAdjointOfStrictUpper (n := n) (E := 𝕜)
   have h : HasFDerivAt NormedSpace.exp (ContinuousLinearMap.id ℝ (Matrix (Fin n) (Fin n) 𝕜))
       (K 0) := by
     simpa only [K, map_zero, ContinuousLinearMap.one_def] using

@@ -81,6 +81,7 @@ theorem lintegral_image_spectralMatrix
   let : μ.IsAddHaarMeasure := c.isAddHaarMeasure_map ν
   let F := unitaryConjCoordinates U ∘ spectralCoordinates
   have hF : F = e ∘ spectralMatrix U := by
+    rw [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph]
     funext x
     exact (selfAdjointCoordinates_spectralMatrix U x).symm
   have hp : e ⁻¹' (F '' s) = spectralMatrix U '' s := by

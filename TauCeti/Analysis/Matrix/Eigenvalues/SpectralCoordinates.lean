@@ -174,14 +174,11 @@ theorem hasFDerivAt_spectralCoordinates (x : SelfAdjointCoordinates n 𝕜) :
   have h := (unitaryConjCoordinates (expStrictUpper x.2)).toContinuousLinearMap.hasFDerivAt.comp x
     (hasFDerivAt_spectralCoordinates_relative x)
   refine h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ ?_)
-  let A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜) :=
-    ⟨Unitary.conjStarAlgAut ℝ _ (relativeFrame x.2 y.2) (selfAdjointDiagonal (𝕜 := 𝕜) y.1),
-      (selfAdjoint.isHermitian_coe (selfAdjointDiagonal (𝕜 := 𝕜) y.1)).isSelfAdjoint.conjugate
-        (relativeFrame x.2 y.2)⟩
+  -- Both sides are coordinates of unitary conjugates of the same self-adjoint diagonal.
   simp only [Function.comp_apply, ContinuousLinearEquiv.coe_coe]
-  rw [unitaryConjCoordinates_apply_selfAdjointCoordinatesLinearMap (A := A)]
-  simp only [A, ← Unitary.conjStarAlgAut_mul_apply, expStrictUpper_mul_relativeFrame,
-    spectralCoordinates]
+  rw [← selfAdjointCoordinates_selfAdjointConj, unitaryConjCoordinates_selfAdjointCoordinates,
+    ← UnitaryGroup.selfAdjointConj_mul_apply, expStrictUpper_mul_relativeFrame,
+    selfAdjointCoordinates_selfAdjointConj, spectralCoordinates]
 
 end Differentiation
 
@@ -191,11 +188,10 @@ theorem abs_det_fderiv_spectralCoordinates (x : SelfAdjointCoordinates n 𝕜) :
     |(fderiv ℝ spectralCoordinates x).det| =
       |(spectralAngularFDeriv x.2).det| *
         ∏ ij : FinStrictUpper n, |x.1 ij.val.2 - x.1 ij.val.1| ^ Module.finrank ℝ 𝕜 := by
-  rw [(hasFDerivAt_spectralCoordinates x).fderiv, ContinuousLinearMap.det_comp,
-    ContinuousLinearMap.det_comp, ContinuousLinearMap.det_prodMap, ContinuousLinearMap.det_id,
-    one_mul, det_spectralGapMap, abs_mul, abs_mul, abs_det_unitaryConjCoordinates, one_mul,
-    Finset.abs_prod]
-  simp only [abs_pow, mul_comm]
+  rw [(hasFDerivAt_spectralCoordinates x).fderiv]
+  simp only [ContinuousLinearMap.det_comp, ContinuousLinearMap.det_prodMap,
+    ContinuousLinearMap.det_id, det_spectralGapMap, abs_mul, abs_det_unitaryConjCoordinates,
+    Finset.abs_prod, abs_pow, one_mul, mul_comm]
 
 /-- At a diagonal with distinct entries, spectral coordinates give a local chart
 centered at zero angle, in any fixed unitary frame. -/
@@ -213,18 +209,15 @@ theorem exists_spectralCoordinates_openPartialHomeomorph (d : Fin n → ℝ)
     refine Finset.prod_ne_zero_iff.mpr fun ij _ ↦ ?_
     have hne := hd.ne ij.property.ne.symm
     exact pow_ne_zero _ (abs_ne_zero.mpr (sub_ne_zero.mpr hne))
-  let L' := (LinearMap.equivOfIsUnitDet (isUnit_iff_ne_zero.mpr hL)).toContinuousLinearEquiv
-  have hL' : L'.toContinuousLinearMap = L := by
-    apply ContinuousLinearMap.ext
-    exact LinearMap.equivOfIsUnitDet_apply _
-  have hF := hasFDerivAt_spectralCoordinates x
-  have hF' : HasFDerivAt spectralCoordinates L'.toContinuousLinearMap x := by
-    rw [hL']
-    exact hF.differentiableAt.hasFDerivAt
+  have hF' : HasFDerivAt spectralCoordinates
+      (L.toContinuousLinearEquivOfDetNeZero hL : _ →L[ℝ] _) x := by
+    rw [ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero]
+    exact (hasFDerivAt_spectralCoordinates x).differentiableAt.hasFDerivAt
   have h := (contDiff_spectralCoordinates (k := 1)).contDiffAt.hasStrictFDerivAt hF' one_ne_zero
   refine ⟨(h.toOpenPartialHomeomorph _).transHomeomorph (unitaryConjCoordinates U).toHomeomorph,
     ?_, h.mem_toOpenPartialHomeomorph_source⟩
-  exact congrArg (fun f ↦ unitaryConjCoordinates U ∘ f) h.toOpenPartialHomeomorph_coe
+  rw [OpenPartialHomeomorph.transHomeomorph_apply, ContinuousLinearEquiv.coe_toHomeomorph,
+    h.toOpenPartialHomeomorph_coe]
 
 /-- Conjugate the real diagonal of the first component by the fixed frame and the
 transverse unitary exponential of the second component. -/
@@ -244,20 +237,10 @@ spectral parametrization. -/
 theorem coe_spectralMatrix (U : unitaryGroup (Fin n) 𝕜) (x : SelfAdjointCoordinates n 𝕜) :
     (spectralMatrix U x : Matrix (Fin n) (Fin n) 𝕜) =
       Unitary.conjStarAlgAut ℝ _ (U * expStrictUpper x.2) (diagonal fun i ↦ (x.1 i : 𝕜)) := by
-  let D := selfAdjointDiagonal (𝕜 := 𝕜) x.1
-  let B : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜) :=
-    ⟨Unitary.conjStarAlgAut ℝ _ (expStrictUpper x.2) D,
-      (selfAdjoint.isHermitian_coe D).isSelfAdjoint.conjugate (expStrictUpper x.2)⟩
-  have hB : spectralCoordinates x = selfAdjointCoordinatesLinearMap B.val := by
-    rw [spectralCoordinates]
-  have hC : selfAdjointCoordinates ((UnitaryGroup.selfAdjointConj U) B) =
-      selfAdjointCoordinatesLinearMap (Unitary.conjStarAlgAut ℝ _ U B.val) := by
-    rw [selfAdjointCoordinates_apply, UnitaryGroup.coe_selfAdjointConj_apply,
-      Unitary.conjStarAlgAut_apply, star_eq_conjTranspose]
-  rw [spectralMatrix, hB, unitaryConjCoordinates_apply_selfAdjointCoordinatesLinearMap, ← hC,
-    ContinuousLinearEquiv.symm_apply_apply, UnitaryGroup.coe_selfAdjointConj_apply,
-    ← coe_selfAdjointDiagonal]
-  exact (Unitary.conjStarAlgAut_mul_apply U (expStrictUpper x.2) D).symm
+  rw [spectralMatrix, spectralCoordinates, ← selfAdjointCoordinates_selfAdjointConj,
+    unitaryConjCoordinates_selfAdjointCoordinates, ContinuousLinearEquiv.symm_apply_apply,
+    ← UnitaryGroup.selfAdjointConj_mul_apply, UnitaryGroup.coe_selfAdjointConj_apply,
+    coe_selfAdjointDiagonal, Unitary.conjStarAlgAut_apply, star_eq_conjTranspose]
 
 /-- In the decreasing chamber the diagonal coordinate is the ordered eigenvalue vector. -/
 theorem eigenvalues₀_spectralMatrix (U : unitaryGroup (Fin n) 𝕜) (x : SelfAdjointCoordinates n 𝕜)
@@ -285,11 +268,12 @@ theorem exists_spectralMatrix_openPartialHomeomorph
   let hA := selfAdjoint.isHermitian_coe A
   obtain ⟨e, he, hsource⟩ := exists_spectralCoordinates_openPartialHomeomorph hA.eigenvalues hs
     hA.eigenvectorUnitary
-  let e' := e.transHomeomorph selfAdjointCoordinates.symm.toHomeomorph
-  have he' : (e' : _ → _) = spectralMatrix hA.eigenvectorUnitary := by
+  have he' : (e.transHomeomorph selfAdjointCoordinates.symm.toHomeomorph : _ → _) =
+      spectralMatrix hA.eigenvectorUnitary := by
+    rw [OpenPartialHomeomorph.transHomeomorph_apply, ContinuousLinearEquiv.coe_toHomeomorph, he]
     funext x
-    exact congrArg selfAdjointCoordinates.symm (congrFun he x)
-  refine ⟨hA.eigenvectorUnitary, hA.eigenvalues, e', he', hsource, ?_⟩
+    rw [Function.comp_apply, Function.comp_apply, spectralMatrix]
+  refine ⟨hA.eigenvectorUnitary, hA.eigenvalues, _, he', hsource, ?_⟩
   apply Subtype.ext
   rw [he', coe_spectralMatrix, expStrictUpper_zero, mul_one]
   exact hA.spectral_theorem.symm
