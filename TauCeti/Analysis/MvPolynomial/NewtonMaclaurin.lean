@@ -348,6 +348,7 @@ def hessianCone (n k : ℕ) : Set (Fin n → ℝ) :=
   {μ | ∀ j ∈ Finset.Icc 1 k, 0 < eval μ (esymm (Fin n) ℝ j)}
 
 /-- The defining property of `TauCeti.hessianCone`. -/
+@[simp]
 theorem mem_hessianCone {n k : ℕ} {μ : Fin n → ℝ} :
     μ ∈ hessianCone n k ↔ ∀ j ∈ Finset.Icc 1 k, 0 < eval μ (esymm (Fin n) ℝ j) :=
   Iff.rfl
