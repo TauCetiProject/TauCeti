@@ -607,8 +607,8 @@ private theorem exists_isClosed_and_mem_iff_energyFormH1_eq {W : Opens (Euclidea
       ∫ x in W, Wkp.value k p.2 x * W1p.value (v : W1p mu W 2) x ∂mu := by
     simp only [φ, _root_.sub_apply, ContinuousLinearMap.comp_apply,
       ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', ContinuousLinearMap.flip_apply,
-      energyFormH1L_apply, innerSL_apply_apply, Wkp.valueL_apply, L2.inner_def]
-    congr 1
+      energyFormH1L_apply, innerSL_apply_apply, Wkp.valueL_apply, L2.inner_def,
+      RCLike.inner_apply, conj_trivial]
   rw [hφ, sub_eq_zero]
 
 /-- **The interior `H^{k+2}` estimate.** Let `a` be uniformly elliptic on `Ω`, with entries of
@@ -623,15 +623,7 @@ satisfies `‖u‖_{W^{k+2,2}(V)} ≤ C (‖F‖_{W^{k,2}(Ω)} + ‖u‖_{H¹(Ω
 `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_contDiffOn`.
 
 As for the regularity statement, no regularity of `∂Ω`, sign of `c` or smallness of `b` is
-assumed, and the coefficients need not be bounded on `Ω`.
-
-The estimate follows from the regularity statement by the closed graph theorem. Fix an open `W`
-between `V` and `Ω` with compact closure in `Ω`, on which the coefficients are bounded. The pairs
-`(u, F) ∈ H¹(W) × W^{k,2}(W)` of a weak solution on `W` and its forcing form a closed subspace,
-since the energy form is continuous on `H¹(W)`. Interior regularity on `W` maps such a pair to
-the element of `W^{k+2,2}(V)` with the value of `u`, and this map is bounded
-(`ContinuousLinearMap.exists_norm_le_of_range_le_range`), because the value map on
-`W^{k+2,2}(V)` is injective. Restricting a solution on `Ω` to `W` does not increase the norms. -/
+assumed, and the coefficients need not be bounded on `Ω`. -/
 theorem UniformlyEllipticOn.exists_norm_le_of_value_eq_value_restrictL_of_contDiffOn
     [DecidableEq ι] {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
     (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam) (k : ℕ)
