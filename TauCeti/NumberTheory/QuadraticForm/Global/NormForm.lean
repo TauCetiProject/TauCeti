@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
 import TauCeti.LinearAlgebra.QuadraticForm.Binary
-import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 import TauCeti.NumberTheory.ClassFieldTheory.Global.HasseNorm.Quadratic
 import TauCeti.NumberTheory.HilbertSymbol.NormSubgroup
 import TauCeti.NumberTheory.LocalField.QuadraticForm.OddResidue.Padic
@@ -32,12 +31,9 @@ solvability in `w.Completion` with the real-place Hilbert symbol when `w` is rea
 (`TauCeti.hilbertSymbol_completion_eq_one_of_isComplex`). When `d` is a nonzero square in `K`, the
 plane `⟨1, -d⟩` is regular and isotropic over `K`, so it already represents every scalar globally.
 
-Diagonalizing an arbitrary regular binary form `Q` over `K` via
-`TauCeti.exists_presentedForm_equivalent` and rescaling by the inverse of its first diagonal
-coefficient extends local-to-global scalar representation to every regular two-dimensional
-quadratic form over `K`. Reading unit representation of `⟨1, -d⟩` through the norm-equation Hilbert
-symbol (`TauCeti.mem_unitValueSet_binary_one_neg_iff_hilbertSymbol_eq_one`) yields the
-local-to-global triviality criterion for `TauCeti.hilbertSymbol` over number fields.
+Reading unit representation of `⟨1, -d⟩` through the norm-equation Hilbert symbol
+(`TauCeti.mem_unitValueSet_binary_one_neg_iff_hilbertSymbol_eq_one`) yields the local-to-global
+triviality criterion for `TauCeti.hilbertSymbol` over number fields.
 
 ## Main results
 
@@ -49,9 +45,6 @@ local-to-global triviality criterion for `TauCeti.hilbertSymbol` over number fie
   local representation of a global unit by `⟨1, -d⟩` as positivity of the localized Hilbert symbol.
 * `QuadraticForm.represents_weightedSumSquares_one_neg_iff_locallyRepresentsScalar`: the
   local-to-global principle for scalar representation by `⟨1, -d⟩` for any nonzero `d ∈ K`.
-* `QuadraticForm.represents_iff_locallyRepresentsScalar_of_finrank_eq_two`: a regular binary
-  quadratic form over a number field represents a scalar globally if and only if it represents it
-  at every finite and real place.
 * `TauCeti.hilbertSymbol_eq_one_iff_forall_places` and
   `TauCeti.hilbertSymbol_eq_neg_one_iff_exists_place`: global triviality and nontriviality of the
   Hilbert symbol detected by finite and real places.
@@ -71,7 +64,7 @@ public section
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField NumberField.InfinitePlace
   QuadraticMap
 
-universe u v
+universe u
 
 namespace QuadraticForm
 
@@ -173,29 +166,6 @@ theorem represents_weightedSumSquares_one_neg_iff_locallyRepresentsScalar
                 ⟨w, hw⟩ d' u, hd', hu]
             exact hloc.2 ⟨w, hw⟩
           · exact TauCeti.hilbertSymbol_completion_eq_one_of_isComplex hw _ _
-
-/-- **Local-to-global scalar representation for regular binary forms.** Every regular
-two-dimensional quadratic form over a number field `K` represents a scalar `a ∈ K` over `K` if and
-only if it represents `a` at every finite and every real place. -/
-theorem represents_iff_locallyRepresentsScalar_of_finrank_eq_two
-    {V : Type v} [AddCommGroup V] [Module K V]
-    {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate)
-    (hrank : Module.finrank K V = 2) (a : K) :
-    Represents Q a ↔ Q.LocallyRepresentsScalar a := by
-  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
-  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  obtain ⟨⟨n, w⟩, ⟨e⟩⟩ := TauCeti.exists_presentedForm_equivalent Q hQ
-  obtain rfl : n = 2 := by simpa [hrank] using e.toLinearEquiv.finrank_eq.symm
-  let d : Kˣ := -((w 0)⁻¹ * w 1)
-  have hscale : TauCeti.presentedForm ⟨2, w⟩ =
-      (w 0 : K) • weightedSumSquares K ![1, -(d : K)] := by
-    rw [TauCeti.presentedForm_two, smul_weightedSumSquares]
-    congr 1
-    funext i
-    fin_cases i <;> simp [d]
-  rw [e.represents_iff, QuadraticMap.Equivalent.locallyRepresentsScalar_iff ⟨e⟩, hscale,
-    represents_smul_iff (w 0).ne_zero, locallyRepresentsScalar_smul_iff (w 0).ne_zero]
-  exact represents_weightedSumSquares_one_neg_iff_locallyRepresentsScalar d.ne_zero _
 
 end NormPlane
 
