@@ -24,8 +24,9 @@ about surjective valuations that do not involve the order are in
 value group is full with no condition (and for a valuation from a division ring into an ordered
 group with zero, full value group means surjectivity), the valuation is nontrivial exactly when
 its target has an element other than `0` and `1`, equivalent surjective valuations are equal when
-the units of the target form a cyclic group, and the valuation ring is discrete when those units
-are moreover nontrivial.
+the units of the target form a cyclic group, and for a surjective valuation from a field into a
+linearly ordered commutative group with zero whose units form a nontrivial cyclic group, the
+valuation ring is a discrete valuation ring.
 As `WithZero.log 0 = 0`, the order has the junk value `ord_v f = 0` whenever `v f = 0`.
 On a division ring, `v f = 0` is equivalent to `f = 0`; hypotheses excluding zero are
 included where necessary.
