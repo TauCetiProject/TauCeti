@@ -204,12 +204,13 @@ namespace LinearMap
 
 open Module Set
 
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {f : ℕ}
-  {V : ZMod f → Submodule R M} {F : Module.End R M}
+section Semiring
 
-/-- If `F` maps `V i` into `V (i + 1)` for every `i : ZMod f`, then `F ^ k` maps `V i` into
-`V (i + k)`. -/
-theorem mapsTo_pow_add_natCast (hF : ∀ i, MapsTo F (V i) (V (i + 1))) (k : ℕ) (i : ZMod f) :
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {F : Module.End R M}
+
+/-- If `F` maps `V i` into `V (i + 1)` for every `i`, then `F ^ k` maps `V i` into `V (i + k)`. -/
+theorem mapsTo_pow_add_natCast {G : Type*} [AddMonoidWithOne G] {V : G → Submodule R M}
+    (hF : ∀ i, MapsTo F (V i) (V (i + 1))) (k : ℕ) (i : G) :
     MapsTo (F ^ k) (V i) (V (i + k)) := by
   induction k generalizing i with
   | zero => simpa using mapsTo_id _
@@ -220,12 +221,16 @@ theorem mapsTo_pow_add_natCast (hF : ∀ i, MapsTo F (V i) (V (i + 1))) (k : ℕ
 
 /-- If `F` maps `V i` into `V (i + 1)` for every `i : ZMod f`, then `F ^ f` maps each `V i` into
 itself. -/
-theorem mapsTo_pow_self (hF : ∀ i, MapsTo F (V i) (V (i + 1))) (i : ZMod f) :
+theorem mapsTo_pow_self {f : ℕ} {V : ZMod f → Submodule R M}
+    (hF : ∀ i, MapsTo F (V i) (V (i + 1))) (i : ZMod f) :
     MapsTo (F ^ f) (V i) (V i) := by
   simpa using mapsTo_pow_add_natCast hF f i
 
-variable [Module.Free R M] [Module.Finite R M] [∀ i, Module.Free R (V i)]
-  [∀ i, Module.Finite R (V i)]
+end Semiring
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {f : ℕ}
+  {V : ZMod f → Submodule R M} {F : Module.End R M} [Module.Free R M] [Module.Finite R M]
+  [∀ i, Module.Free R (V i)] [∀ i, Module.Finite R (V i)]
 
 /-- **Cyclic block determinant.** Let `M` be the internal direct sum of `V i` for `i : ZMod f`, and
 let `F` map each `V i` into `V (i + 1)`. Up to powers of `X` accounting for the ranks, the
@@ -247,14 +252,11 @@ theorem X_pow_mul_charpoly_eq_X_pow_mul_expand [NeZero f] (hV : DirectSum.IsInte
     rw [← charpoly_toMatrix _ (v a), ← Matrix.charpoly_reindex (Equiv.sigmaSubtype a), toMatrix_pow]
     congr 1
     ext p q
-    -- `Equiv.sigmaSubtype a` sends `⟨⟨a, p⟩, rfl⟩` to `p`, by definition
-    have he (p : Free.ChooseBasisIndex R (V a)) :
-        ((Equiv.sigmaSubtype (β := fun i ↦ Free.ChooseBasisIndex R (V i)) a).symm p).1 =
-          ⟨a, p⟩ := rfl
-    rw [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.toSquareBlock_def, Matrix.of_apply,
-      he, he, toMatrix_apply, toMatrix_apply, hV.collectedBasis_coe]
-    rw [hV.collectedBasis_repr_of_mem v (mapsTo_pow_self hF a (Submodule.coe_mem (v a q)))]
-    exact congr_arg (fun x ↦ (v a).repr x p) (Subtype.ext (coe_restrict_apply _ _).symm)
+    simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.toSquareBlock_def,
+      Matrix.of_apply, toMatrix_apply, B, hV.collectedBasis_coe]
+    -- `(Equiv.sigmaSubtype a).symm p` unfolds to the index `⟨⟨a, p⟩, rfl⟩`
+    exact (hV.collectedBasis_repr_of_mem v (mapsTo_pow_self hF a (v a q).2)).trans
+      (congr_arg (fun x ↦ (v a).repr x p) (Subtype.ext (coe_restrict_apply _ _).symm))
   have hcard : Fintype.card {r : Σ i, Free.ChooseBasisIndex R (V i) // r.1 = a} =
       finrank R (V a) := by
     rw [Fintype.card_congr (Equiv.sigmaSubtype a), Module.finrank_eq_card_chooseBasisIndex]
