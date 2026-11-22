@@ -57,6 +57,8 @@ of a higher-order Sobolev space.
 ## Main statements
 
 * `Real.prod_rpow_add_prod_rpow_le_prod_add_rpow`: the weighted geometric mean is superadditive.
+* `Real.sq_add_sq_le_rpow_mul_rpow`: two interpolation bounds combine into one for the Euclidean
+  norms of the pairs.
 * `Real.mul_rpow_mul_mul_rpow_of_add_eq_one`: the two-point weighted geometric mean is
   positively homogeneous.
 * `Real.geom_mean_le_arith_mean2_weighted_div_mul`,
@@ -73,7 +75,7 @@ of a higher-order Sobolev space.
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
 * `ENNReal.inner_le_Lp_mul_Lq_tsum`: Hölder's inequality for unconditional sums in `ℝ≥0∞`.
 * `ENNReal.Lq_le_Lp_tsum`: the `ℓᵖ` norm of an `ℝ≥0∞`-valued family is antitone in `p`.
-* `ENNReal.tsum_sum_Ico_mul_le`: Cauchy–Schwarz for a banded double sum in `ℝ≥0∞`.
+* `ENNReal.tsum_sum_mul_le_of_card_le`: Cauchy–Schwarz for a banded double sum in `ℝ≥0∞`.
 * `Real.Lq_le_Lp_of_nonneg`: the same for finite sums of nonnegative reals.
 * `Real.Lp_le_mul_Lp_of_nonneg`: termwise domination `0 ≤ f i ≤ c * g i` bounds the finite
   `ℓᵖ` expression of `f` by `c` times that of `g`.
@@ -122,6 +124,26 @@ theorem prod_rpow_add_prod_rpow_le_prod_add_rpow {ι : Type*} (s : Finset ι) {w
     _ ≤ ∑ i ∈ s, w i := Finset.sum_le_sum fun i hi =>
         mul_le_of_le_one_right (hw i hi) (div_self_le_one _)
     _ = 1 := hw'
+
+/-- Two interpolation bounds `a ≤ a₀ ^ (1 - θ) a₁ ^ θ` and `b ≤ b₀ ^ (1 - θ) b₁ ^ θ` combine into
+the interpolation bound for the squared Euclidean norms of the pairs `(a, b)`, `(a₀, b₀)` and
+`(a₁, b₁)`, by Hölder's inequality for two terms. -/
+theorem sq_add_sq_le_rpow_mul_rpow {a b a₀ a₁ b₀ b₁ θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    (ha : 0 ≤ a) (hb : 0 ≤ b) (ha₀ : 0 ≤ a₀) (ha₁ : 0 ≤ a₁) (hb₀ : 0 ≤ b₀) (hb₁ : 0 ≤ b₁)
+    (hal : a ≤ a₀ ^ (1 - θ) * a₁ ^ θ) (hbl : b ≤ b₀ ^ (1 - θ) * b₁ ^ θ) :
+    a ^ 2 + b ^ 2 ≤ (a₀ ^ 2 + b₀ ^ 2) ^ (1 - θ) * (a₁ ^ 2 + b₁ ^ 2) ^ θ := by
+  have key := prod_rpow_add_prod_rpow_le_prod_add_rpow Finset.univ (w := ![1 - θ, θ])
+    (a := ![a₀ ^ 2, a₁ ^ 2]) (b := ![b₀ ^ 2, b₁ ^ 2])
+    (by simp [Fin.forall_fin_two, hθ.1, hθ.2]) (by simp [Fin.sum_univ_two])
+    (by simp [Fin.forall_fin_two, sq_nonneg]) (by simp [Fin.forall_fin_two, sq_nonneg])
+  simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one] at key
+  calc a ^ 2 + b ^ 2 ≤ (a₀ ^ (1 - θ) * a₁ ^ θ) ^ 2 + (b₀ ^ (1 - θ) * b₁ ^ θ) ^ 2 :=
+        add_le_add (pow_le_pow_left₀ ha hal 2) (pow_le_pow_left₀ hb hbl 2)
+    _ = (a₀ ^ 2) ^ (1 - θ) * (a₁ ^ 2) ^ θ + (b₀ ^ 2) ^ (1 - θ) * (b₁ ^ 2) ^ θ := by
+        rw [mul_pow, mul_pow, rpow_pow_comm ha₀, rpow_pow_comm ha₁,
+          rpow_pow_comm hb₀, rpow_pow_comm hb₁]
+    _ ≤ _ := key
 
 /-- Splitting a weighted geometric mean through positive normalizers `a` and `b`:
 `A ^ (1 - θ) * B ^ θ = (A / a) ^ (1 - θ) * (B / b) ^ θ * (a ^ (1 - θ) * b ^ θ)`. -/
@@ -269,63 +291,60 @@ theorem Lq_le_Lp_tsum {ι : Type*} (f : ι → ℝ≥0∞) {p q : ℝ} (hp : 0 <
         rw [ENNReal.tsum_mul_right, ← hSp, ← rpow_add_of_nonneg _ _ hp.le hpq', add_sub_cancel]
 
 
-/-- **Cauchy–Schwarz for a banded double sum.** Summing `a j * b k` over the pairs of natural
-numbers with `|j - k| < L` gives at most `2 L (∑ a²)^{1/2} (∑ b²)^{1/2}`, since each index
-occurs in fewer than `2 L` of these pairs. No summability hypotheses are needed; both sides may be
-infinite. -/
-theorem tsum_sum_Ico_mul_le (L : ℕ) (a b : ℕ → ℝ≥0∞) :
-    ∑' j, ∑ k ∈ Finset.Ico (j + 1 - L) (j + L), a j * b k ≤
-      2 * L * ((∑' j, a j ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by
-  refine ENNReal.tsum_le_of_sum_range_le fun N ↦ ?_
-  set W : ℕ → Finset ℕ := fun j ↦ Finset.Ico (j + 1 - L) (j + L)
-  have hcard : ∀ s : Finset ℕ, ∀ k, s ⊆ W k → (s.card : ℝ≥0∞) ≤ 2 * L := fun s k hs ↦ by
-    have : s.card ≤ 2 * L := (Finset.card_le_card hs).trans (by simp only [W, Nat.card_Ico]; omega)
-    exact_mod_cast this
-  -- Cauchy–Schwarz over the finite set `T` of pairs `(j, k)` with `j < N` and `k ∈ W j`, in which
-  -- each first index `j` and each second index `k` occurs at most `2 L` times.
-  set T := (Finset.range N).sigma W
-  have ha : ∑ x ∈ T, a x.1 ^ (2 : ℝ) ≤ 2 * L * ∑' j, a j ^ 2 := by
+/-- **Cauchy–Schwarz for a banded double sum.** Let `W i` be finite sets of indices, each with at
+most `L` elements, such that every index `k` lies in at most `L` of them. Summing `a i * b k` over
+the pairs with `k ∈ W i` gives at most `L (∑ a²)^{1/2} (∑ b²)^{1/2}`. No summability hypotheses
+are needed; both sides may be infinite. -/
+theorem tsum_sum_mul_le_of_card_le {ι : Type*} [DecidableEq ι] (W : ι → Finset ι) {L : ℕ}
+    (hW : ∀ i, (W i).card ≤ L) (hW' : ∀ (s : Finset ι) (k : ι), (s.filter (k ∈ W ·)).card ≤ L)
+    (a b : ι → ℝ≥0∞) :
+    ∑' i, ∑ k ∈ W i, a i * b k ≤
+      L * ((∑' i, a i ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by
+  rw [_root_.tsum_eq_iSup_sum]
+  refine iSup_le fun s ↦ ?_
+  -- Cauchy–Schwarz over the finite set `T` of pairs `(i, k)` with `i ∈ s` and `k ∈ W i`, in which
+  -- each first index `i` and each second index `k` occurs at most `L` times.
+  set T := s.sigma W
+  have ha : ∑ x ∈ T, a x.1 ^ (2 : ℝ) ≤ L * ∑' i, a i ^ 2 := by
     rw [Finset.sum_sigma]
     simp only [rpow_two, Finset.sum_const, nsmul_eq_mul]
-    calc ∑ j ∈ Finset.range N, ((W j).card : ℝ≥0∞) * a j ^ 2
-        ≤ ∑ j ∈ Finset.range N, 2 * L * a j ^ 2 := by
-          gcongr with j
-          exact hcard _ j subset_rfl
-      _ ≤ 2 * L * ∑' j, a j ^ 2 := by
+    calc ∑ i ∈ s, ((W i).card : ℝ≥0∞) * a i ^ 2 ≤ ∑ i ∈ s, (L : ℝ≥0∞) * a i ^ 2 := by
+          gcongr with i
+          exact_mod_cast hW i
+      _ ≤ L * ∑' i, a i ^ 2 := by
           rw [← Finset.mul_sum]
           gcongr
           exact _root_.sum_le_tsum _
-  have hb : ∑ x ∈ T, b x.2 ^ (2 : ℝ) ≤ 2 * L * ∑' k, b k ^ 2 := by
-    rw [Finset.sum_sigma, Finset.sum_comm' (t' := Finset.range (N + L))
-      (s' := fun k ↦ (Finset.range N).filter (· ∈ W k))]
+  have hb : ∑ x ∈ T, b x.2 ^ (2 : ℝ) ≤ L * ∑' k, b k ^ 2 := by
+    rw [Finset.sum_sigma, Finset.sum_comm' (t' := s.biUnion W)
+      (s' := fun k ↦ s.filter (k ∈ W ·))]
     · simp only [rpow_two, Finset.sum_const, nsmul_eq_mul]
-      calc ∑ k ∈ Finset.range (N + L),
-            (((Finset.range N).filter (· ∈ W k)).card : ℝ≥0∞) * b k ^ 2
-          ≤ ∑ k ∈ Finset.range (N + L), 2 * L * b k ^ 2 := by
+      calc ∑ k ∈ s.biUnion W, ((s.filter (k ∈ W ·)).card : ℝ≥0∞) * b k ^ 2
+          ≤ ∑ k ∈ s.biUnion W, (L : ℝ≥0∞) * b k ^ 2 := by
             gcongr with k
-            exact hcard _ k fun j hj ↦ (Finset.mem_filter.1 hj).2
-        _ ≤ 2 * L * ∑' k, b k ^ 2 := by
+            exact_mod_cast hW' s k
+        _ ≤ L * ∑' k, b k ^ 2 := by
             rw [← Finset.mul_sum]
             gcongr
             exact _root_.sum_le_tsum _
-    · intro j k
-      simp only [Finset.mem_filter, Finset.mem_range, W, Finset.mem_Ico]
-      omega
-  have hL : ((2 * L : ℝ≥0∞) ^ (2⁻¹ : ℝ)) * (2 * L) ^ (2⁻¹ : ℝ) = 2 * L := by
+    · intro i k
+      simp only [Finset.mem_filter, Finset.mem_biUnion]
+      exact ⟨fun h ↦ ⟨⟨h.1, h.2⟩, i, h.1, h.2⟩, fun h ↦ h.1⟩
+  have hL : ((L : ℝ≥0∞) ^ (2⁻¹ : ℝ)) * (L : ℝ≥0∞) ^ (2⁻¹ : ℝ) = L := by
     rw [← rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
     norm_num
-  calc ∑ j ∈ Finset.range N, ∑ k ∈ W j, a j * b k = ∑ x ∈ T, a x.1 * b x.2 := by
+  calc ∑ i ∈ s, ∑ k ∈ W i, a i * b k = ∑ x ∈ T, a x.1 * b x.2 := by
         rw [Finset.sum_sigma]
     _ ≤ (∑ x ∈ T, a x.1 ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) * (∑ x ∈ T, b x.2 ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) :=
         inner_le_Lp_mul_Lq T (fun x ↦ a x.1) (fun x ↦ b x.2) Real.HolderConjugate.two_two
-    _ ≤ (2 * L * ∑' j, a j ^ 2) ^ (2⁻¹ : ℝ) * (2 * L * ∑' k, b k ^ 2) ^ (2⁻¹ : ℝ) := by
+    _ ≤ (L * ∑' i, a i ^ 2) ^ (2⁻¹ : ℝ) * (L * ∑' k, b k ^ 2) ^ (2⁻¹ : ℝ) := by
         rw [one_div]
         gcongr
-    _ = (2 * L) ^ (2⁻¹ : ℝ) * (2 * L) ^ (2⁻¹ : ℝ) *
-          ((∑' j, a j ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by
-        rw [mul_rpow_of_nonneg _ _ (by norm_num), mul_rpow_of_nonneg (2 * L : ℝ≥0∞) _ (by norm_num)]
+    _ = (L : ℝ≥0∞) ^ (2⁻¹ : ℝ) * (L : ℝ≥0∞) ^ (2⁻¹ : ℝ) *
+          ((∑' i, a i ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by
+        rw [mul_rpow_of_nonneg _ _ (by norm_num), mul_rpow_of_nonneg (L : ℝ≥0∞) _ (by norm_num)]
         ring
-    _ = 2 * L * ((∑' j, a j ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by rw [hL]
+    _ = L * ((∑' i, a i ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by rw [hL]
 
 end ENNReal
 
