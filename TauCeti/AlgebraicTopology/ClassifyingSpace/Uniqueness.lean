@@ -8,7 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.PointedMaps
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
-import TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison
+import TauCeti.AlgebraicTopology.ClassifyingSpace.Cellular
+import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
 import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
 import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Basic
 
@@ -27,13 +28,13 @@ with the identifications of both fundamental groups with `G`
 (`TauCeti.IsAspherical.exists_homotopyEquiv_classifyingSpace`). So the classifying space is well
 defined up to homotopy equivalence among spaces of CW type.
 
-When both spaces are well-pointed (their base points have the homotopy extension property), the
-pointed-map classification `TauCeti.IsAspherical.fundamentalGroupFunctor_map_bijective` upgrades
-this to a canonical isomorphism `TauCeti.IsAspherical.pointedHomotopyCatIso` in
-`TauCeti.PointedHomotopyCat`, which is unique among pointed homotopy equivalences realizing `φ`
-(`TauCeti.IsAspherical.eq_pointedHomotopyCatIso_of_fundamentalGroupFunctor_map_eq`).
-Well-pointedness cannot be dropped: the comb space based at a non-locally-contractible point is
-contractible without being pointed homotopy equivalent to a point.
+When a space is well-pointed (its base point has the homotopy extension property), the generic
+pointed uniqueness isomorphism `TauCeti.IsAspherical.pointedHomotopyCatIso` from
+`TauCeti.AlgebraicTopology.EilenbergMacLane.PointedMaps` specializes to a canonical isomorphism
+`TauCeti.IsAspherical.pointedHomotopyCatIsoClassifyingSpace` in `TauCeti.PointedHomotopyCat`
+with Milnor's classifying space `classifyingSpace G`. Well-pointedness cannot be dropped: the comb
+space based at a non-locally-contractible point is contractible without being pointed homotopy
+equivalent to a point.
 
 The cellular classifying space `C` of a presentation of `π₁(X, x)` is homotopy equivalent to both
 spaces by homotopy equivalences `f : C ≃ₕ X` and `g : C ≃ₕ Y` whose forward maps are pointed and
@@ -56,8 +57,6 @@ for abelian `G`, which need not have CW type.
 
 ## Main definitions
 
-* `TauCeti.IsAspherical.pointedHomotopyCatIso`: **the unique isomorphism in `PointedHomotopyCat`
-  between well-pointed aspherical spaces of CW type realizing a prescribed isomorphism on `π₁`.**
 * `TauCeti.IsAspherical.pointedHomotopyCatIsoClassifyingSpace`: **the unique isomorphism in
   `PointedHomotopyCat` from a well-pointed aspherical space of CW type to `classifyingSpace G`
   realizing a given identification on `π₁`.**
@@ -72,8 +71,6 @@ for abelian `G`, which need not have CW type.
 * `TauCeti.IsAspherical.exists_homotopyEquiv_classifyingSpace`: an aspherical space of CW type
   with fundamental group identified with `G` is homotopy equivalent to `classifyingSpace G`,
   compatibly with the identifications of fundamental groups.
-* `TauCeti.IsAspherical.eq_pointedHomotopyCatIso_of_fundamentalGroupFunctor_map_eq`: uniqueness of
-  the pointed isomorphism realizing a prescribed isomorphism on `π₁`.
 
 ## References
 
@@ -107,8 +104,8 @@ theorem IsAspherical.exists_homotopyEquiv {X Y : Type u} [TopologicalSpace X]
     (hY : IsAspherical Y y) (φ : FundamentalGroup X x ≃* FundamentalGroup Y y) :
     ∃ (e : X ≃ₕ Y) (γ : Path (e.toFun x) y),
       ∀ a, fundamentalGroupMulEquivOfPath γ (map e.toFun x a) = φ a := by
-  obtain ⟨R, -, -, hC⟩ :=
-    exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace (FundamentalGroup X x)
+  obtain ⟨R, hC⟩ :=
+    exists_cellularClassifyingSpace_isEilenbergMacLaneSpaceOne (FundamentalGroup X x)
   obtain ⟨ψ⟩ := hC.nonempty_fundamentalGroupMulEquiv
   have : PathConnectedSpace (cellularClassifyingSpace R) := hC.isAspherical.pathConnectedSpace
   -- Pointed homotopy equivalences from the cellular classifying space realizing `ψ` and `φ ∘ ψ`.
@@ -205,86 +202,6 @@ theorem IsEilenbergMacLaneSpaceOne.exists_isWeakHomotopyEquivalence_classifyingS
   obtain ⟨eX⟩ := hX.nonempty_fundamentalGroupMulEquiv
   obtain ⟨f, -, hf, -⟩ := hX.isAspherical.exists_isWeakHomotopyEquivalence_classifyingSpace eX
   exact ⟨f, hf⟩
-
-/-- **Pointed uniqueness of well-pointed aspherical spaces of CW type.** Two well-pointed
-aspherical spaces of CW type are isomorphic in `PointedHomotopyCat` by a canonical isomorphism
-realizing any prescribed isomorphism `φ` on fundamental groups. This isomorphism is unique
-(`TauCeti.IsAspherical.eq_pointedHomotopyCatIso_of_fundamentalGroupFunctor_map_eq`).
-
-The well-pointedness hypotheses (`HasHomotopyExtensionProperty`) cannot be dropped in general:
-for example, the comb space based at a non-locally-contractible point is contractible (hence
-aspherical and of CW type) without being pointed homotopy equivalent to a point. -/
-def IsAspherical.pointedHomotopyCatIso {X Y : BasedTopologicalSpace.{u}} [CWType X.carrier]
-    [CWType Y.carrier] (hX : IsAspherical X.carrier X.basepoint)
-    (hY : IsAspherical Y.carrier Y.basepoint)
-    (hX_hep : HasHomotopyExtensionProperty ({X.basepoint} : Set X.carrier))
-    (hY_hep : HasHomotopyExtensionProperty ({Y.basepoint} : Set Y.carrier))
-    (φ : FundamentalGroup X.carrier X.basepoint ≃* FundamentalGroup Y.carrier Y.basepoint) :
-    PointedHomotopyCat.quotient.obj X ≅ PointedHomotopyCat.quotient.obj Y :=
-  let hXY := hX.fundamentalGroupFunctor_map_bijective hX_hep
-    (fun y n ↦ (hY.of_basepoint y).subsingleton_homotopyGroup n)
-  let hYX := hY.fundamentalGroupFunctor_map_bijective hY_hep
-    (fun x n ↦ (hX.of_basepoint x).subsingleton_homotopyGroup n)
-  let hf := hXY.2 (GrpCat.ofHom φ.toMonoidHom)
-  let hg := hYX.2 (GrpCat.ofHom φ.symm.toMonoidHom)
-  { hom := hf.choose
-    inv := hg.choose
-    hom_inv_id := (hX.fundamentalGroupFunctor_map_bijective hX_hep
-        (fun x n ↦ (hX.of_basepoint x).subsingleton_homotopyGroup n)).1 <| by
-      rw [CategoryTheory.Functor.map_comp, hf.choose_spec, hg.choose_spec,
-        CategoryTheory.Functor.map_id]
-      exact GrpCat.hom_ext <| MonoidHom.ext fun a ↦ φ.symm_apply_apply a
-    inv_hom_id := (hY.fundamentalGroupFunctor_map_bijective hY_hep
-        (fun y n ↦ (hY.of_basepoint y).subsingleton_homotopyGroup n)).1 <| by
-      rw [CategoryTheory.Functor.map_comp, hg.choose_spec, hf.choose_spec,
-        CategoryTheory.Functor.map_id]
-      exact GrpCat.hom_ext <| MonoidHom.ext fun a ↦ φ.apply_symm_apply a }
-
-/-- The forward morphism of `IsAspherical.pointedHomotopyCatIso` induces `φ` on `π₁`. -/
-@[simp]
-theorem IsAspherical.fundamentalGroupFunctor_map_pointedHomotopyCatIso_hom
-    {X Y : BasedTopologicalSpace.{u}} [CWType X.carrier] [CWType Y.carrier]
-    (hX : IsAspherical X.carrier X.basepoint) (hY : IsAspherical Y.carrier Y.basepoint)
-    (hX_hep : HasHomotopyExtensionProperty ({X.basepoint} : Set X.carrier))
-    (hY_hep : HasHomotopyExtensionProperty ({Y.basepoint} : Set Y.carrier))
-    (φ : FundamentalGroup X.carrier X.basepoint ≃* FundamentalGroup Y.carrier Y.basepoint) :
-    PointedHomotopyCat.fundamentalGroupFunctor.map
-        (hX.pointedHomotopyCatIso hY hX_hep hY_hep φ).hom =
-      GrpCat.ofHom φ.toMonoidHom :=
-  ((hX.fundamentalGroupFunctor_map_bijective hX_hep
-    (fun y n ↦ (hY.of_basepoint y).subsingleton_homotopyGroup n)).2
-      (GrpCat.ofHom φ.toMonoidHom)).choose_spec
-
-/-- The inverse morphism of `IsAspherical.pointedHomotopyCatIso` induces `φ⁻¹` on `π₁`. -/
-@[simp]
-theorem IsAspherical.fundamentalGroupFunctor_map_pointedHomotopyCatIso_inv
-    {X Y : BasedTopologicalSpace.{u}} [CWType X.carrier] [CWType Y.carrier]
-    (hX : IsAspherical X.carrier X.basepoint) (hY : IsAspherical Y.carrier Y.basepoint)
-    (hX_hep : HasHomotopyExtensionProperty ({X.basepoint} : Set X.carrier))
-    (hY_hep : HasHomotopyExtensionProperty ({Y.basepoint} : Set Y.carrier))
-    (φ : FundamentalGroup X.carrier X.basepoint ≃* FundamentalGroup Y.carrier Y.basepoint) :
-    PointedHomotopyCat.fundamentalGroupFunctor.map
-        (hX.pointedHomotopyCatIso hY hX_hep hY_hep φ).inv =
-      GrpCat.ofHom φ.symm.toMonoidHom :=
-  ((hY.fundamentalGroupFunctor_map_bijective hY_hep
-    (fun x n ↦ (hX.of_basepoint x).subsingleton_homotopyGroup n)).2
-      (GrpCat.ofHom φ.symm.toMonoidHom)).choose_spec
-
-/-- **Uniqueness of the pointed isomorphism realizing `φ`.** Every isomorphism in
-`PointedHomotopyCat` between well-pointed aspherical spaces of CW type that induces `φ` on `π₁`
-agrees with `IsAspherical.pointedHomotopyCatIso`. -/
-theorem IsAspherical.eq_pointedHomotopyCatIso_of_fundamentalGroupFunctor_map_eq
-    {X Y : BasedTopologicalSpace.{u}} [CWType X.carrier] [CWType Y.carrier]
-    (hX : IsAspherical X.carrier X.basepoint) (hY : IsAspherical Y.carrier Y.basepoint)
-    (hX_hep : HasHomotopyExtensionProperty ({X.basepoint} : Set X.carrier))
-    (hY_hep : HasHomotopyExtensionProperty ({Y.basepoint} : Set Y.carrier))
-    (φ : FundamentalGroup X.carrier X.basepoint ≃* FundamentalGroup Y.carrier Y.basepoint)
-    {e : PointedHomotopyCat.quotient.obj X ≅ PointedHomotopyCat.quotient.obj Y}
-    (he : PointedHomotopyCat.fundamentalGroupFunctor.map e.hom = GrpCat.ofHom φ.toMonoidHom) :
-    e = hX.pointedHomotopyCatIso hY hX_hep hY_hep φ :=
-  CategoryTheory.Iso.ext <| (hX.fundamentalGroupFunctor_map_bijective hX_hep
-    (fun y n ↦ (hY.of_basepoint y).subsingleton_homotopyGroup n)).1
-    (he.trans (hX.fundamentalGroupFunctor_map_pointedHomotopyCatIso_hom hY hX_hep hY_hep φ).symm)
 
 /-- **Every well-pointed `K(G, 1)` of CW type is canonically isomorphic in `PointedHomotopyCat` to
 Milnor's classifying space `classifyingSpace G`.** -/

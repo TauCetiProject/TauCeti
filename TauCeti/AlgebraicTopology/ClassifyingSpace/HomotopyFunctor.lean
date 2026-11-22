@@ -60,9 +60,6 @@ contractible, hence isomorphic to `classifyingSpace PUnit`, yet `{0}` is not `G_
 
 ## Main results
 
-* `TauCeti.fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace`: pointed homotopy
-  classes of maps out of a cellular classifying space into a space with no higher homotopy groups
-  are classified by their effect on `π₁`.
 * `TauCeti.quotient_map_eq_quotient_map_comp_cellularClassifyingSpace`: a pointed map from the
   cellular model realizing a homomorphism is pointed homotopic to the comparison of the two models
   followed by the strictly functorial map.
@@ -178,46 +175,6 @@ section Cellular
 
 variable {S : Type u} (R : Set (FreeGroup S))
 
-/-- Based maps out of the cellular classifying space into a space without higher homotopy groups
-that induce the same homomorphism of fundamental groups have the same pointed homotopy class. -/
-private theorem quotient_map_eq_cellularClassifyingSpace {Y : BasedTopologicalSpace.{u}}
-    (hY : ∀ (y : Y.carrier) (n : ℕ), Subsingleton (π_ (n + 2) Y.carrier y))
-    {f g : cellularClassifyingSpaceBased R ⟶ Y}
-    (h : BasedTopologicalSpace.fundamentalGroupFunctor.map f =
-      BasedTopologicalSpace.fundamentalGroupFunctor.map g) :
-    PointedHomotopyCat.quotient.map f = PointedHomotopyCat.quotient.map g :=
-  (PointedHomotopyCat.quotient_map_eq_iff f g).2
-    (homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace R hY f.map_basepoint g.map_basepoint
-      (by
-        have h' := congrArg GrpCat.Hom.hom h
-        rw [BasedTopologicalSpace.fundamentalGroupFunctor_map_hom,
-          BasedTopologicalSpace.fundamentalGroupFunctor_map_hom] at h'
-        exact h'))
-
-/-- **Pointed maps out of a cellular classifying space are classified by `π₁`.** If the homotopy
-groups of `Y` vanish from degree `2` on, at every point, then a pointed homotopy class of maps from
-the cellular classifying space `cellularClassifyingSpace R` to `Y` is determined by the homomorphism
-it induces on fundamental groups, and every homomorphism is induced by such a class. -/
-theorem fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace
-    {Y : BasedTopologicalSpace.{u}}
-    (hY : ∀ (y : Y.carrier) (n : ℕ), Subsingleton (π_ (n + 2) Y.carrier y)) :
-    Function.Bijective (PointedHomotopyCat.fundamentalGroupFunctor.map
-      (X := PointedHomotopyCat.quotient.obj (cellularClassifyingSpaceBased R))
-      (Y := PointedHomotopyCat.quotient.obj Y)) := by
-  refine ⟨fun a b hab ↦ ?_, fun ψ ↦ ?_⟩
-  · obtain ⟨f, rfl⟩ := PointedHomotopyCat.quotient.map_surjective a
-    obtain ⟨g, rfl⟩ := PointedHomotopyCat.quotient.map_surjective b
-    simp only [PointedHomotopyCat.fundamentalGroupFunctor_map_quotient_map] at hab
-    exact quotient_map_eq_cellularClassifyingSpace R hY hab
-  · obtain ⟨f, hf, hfψ⟩ := exists_mapOfEq_cellularClassifyingSpace R
-      (fun k hk ↦ by
-        obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hk
-        exact hY _ n) ψ.hom
-    exact ⟨PointedHomotopyCat.quotient.map ⟨f, hf⟩, GrpCat.hom_ext <|
-      (congrArg GrpCat.Hom.hom
-        (PointedHomotopyCat.fundamentalGroupFunctor_map_quotient_map _)).trans
-        ((BasedTopologicalSpace.fundamentalGroupFunctor_map_hom _).trans hfψ)⟩
-
 /-- **The map induced by a homomorphism is determined up to pointed homotopy.** Let
 `e : PresentedGroup R ≃* G` be a presentation and `φ : G ⟶ H`. Every pointed map from the cellular
 classifying space of `R` to `classifyingSpace H` that induces `φ` under the identifications of both
@@ -234,8 +191,9 @@ theorem quotient_map_eq_quotient_map_comp_cellularClassifyingSpace {G H : GrpCat
     PointedHomotopyCat.quotient.map f =
       PointedHomotopyCat.quotient.map
         (cellularHomotopyEquivClassifyingSpaceBasedHom R e ≫ classifyingSpaceFunctor.map φ) := by
-  refine quotient_map_eq_cellularClassifyingSpace R
-    (fun y n ↦ subsingleton_homotopyGroup_classifyingSpace H n y) ?_
+  refine (fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace R
+    (fun y n ↦ subsingleton_homotopyGroup_classifyingSpace H n y)).1 ?_
+  simp only [PointedHomotopyCat.fundamentalGroupFunctor_map_quotient_map]
   dsimp only [classifyingSpaceFunctor]
   rw [Functor.map_comp]
   refine GrpCat.hom_ext <| MonoidHom.ext fun a ↦
