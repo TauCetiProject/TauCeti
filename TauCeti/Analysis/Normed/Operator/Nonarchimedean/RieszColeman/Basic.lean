@@ -271,11 +271,8 @@ theorem range_le_of_reverse_dvd {P : R[X]} {F : M →L[R] M}
     (hE : IsRieszColemanProjection u P E) (hF : IsRieszColemanProjection u Q F)
     (hPQ : P.reverse ∣ Q.reverse) : E.range ≤ F.range := by
   obtain ⟨A, hA⟩ := hPQ
-  rw [mul_comm] at hA
-  rw [hE.range_eq_ker, hF.range_eq_ker, hA]
-  simpa only [map_mul, mul_def, toLinearMap_comp] using
-    LinearMap.ker_le_ker_comp (aeval u P.reverse : M →L[R] M).toLinearMap
-      (aeval u A : M →L[R] M).toLinearMap
+  rw [hE.range_eq_ker, hF.range_eq_ker, hA, toLinearMap_aeval, toLinearMap_aeval]
+  exact le_sup_left.trans Polynomial.sup_ker_aeval_le_ker_aeval_mul
 
 /-- **The range of `Q*(u)` is the complementary summand `ker E`.** -/
 theorem range_aeval_reverse_eq_ker (hE : IsRieszColemanProjection u Q E) :
@@ -286,6 +283,15 @@ theorem range_aeval_reverse_eq_ker (hE : IsRieszColemanProjection u Q E) :
   refine ⟨?_, fun hx ↦ ⟨hE.inverse x, hE.aeval_reverse_apply_inverse hx⟩⟩
   rintro ⟨y, rfl⟩
   simpa only [mul_apply_eq_comp, zero_apply] using congr($(hE.mul_aeval_reverse_eq_zero) y)
+
+/-- **Monotonicity in the polynomial.** If the leading coefficient of `Q` is a unit and `Q ∣ Q'`,
+then the range `ker Q*(u)` of a Riesz–Coleman projection of `u` for `Q` lies in the range
+`ker Q'*(u)` of any Riesz–Coleman projection of `u` for `Q'`. -/
+theorem range_le_range_of_dvd {Q' : R[X]} {E' : M →L[R] M} (hE : IsRieszColemanProjection u Q E)
+    (hE' : IsRieszColemanProjection u Q' E') (hQ : IsUnit Q.leadingCoeff) (hQQ' : Q ∣ Q') :
+    LinearMap.range (E : M →ₗ[R] M) ≤ LinearMap.range (E' : M →ₗ[R] M) :=
+  hE.range_le_of_reverse_dvd hE'
+    (reverse_dvd_reverse_of_isLeftRegular_leadingCoeff hQ.isRegular.left hQQ')
 
 /-- **Topological decomposition `M = ker Q*(u) ⊕ range Q*(u)`.** -/
 theorem isTopCompl_ker_range_aeval_reverse (hE : IsRieszColemanProjection u Q E) :

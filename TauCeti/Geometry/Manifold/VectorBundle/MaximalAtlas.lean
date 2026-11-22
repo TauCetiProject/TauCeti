@@ -48,6 +48,8 @@ maximal atlas.
   member of the maximal atlas is a member exactly when the gauge is bi-`C^n`.
 * `Bundle.Trivialization.mem_maximalAtlas_of_eq_on_baseSet`: a trivialization agreeing on its base
   set with a member of `G.maximalAtlas` also belongs to `G.maximalAtlas`.
+* `Bundle.Trivialization.contMDiffOn_of_mem_maximalAtlas`: members of the maximal atlas are
+  smooth on their source.
 * `Bundle.Trivialization.contMDiffWithinAt_iff_of_mem_maximalAtlas`,
   `Bundle.Trivialization.contMDiffAt_section_iff_of_mem_maximalAtlas`: smoothness of maps into
   the total space and of sections can be read off in any member of the maximal atlas.
@@ -454,6 +456,19 @@ theorem contMDiffAt_iff_of_mem_maximalAtlas
 end Map
 
 variable [VectorBundle 𝕜 F E] [ContMDiffVectorBundle n F E IB]
+
+/-- A member of the maximal atlas of smooth bundle trivializations is smooth on its source,
+as a map from the native total-space manifold to base times model fibre. -/
+theorem contMDiffOn_of_mem_maximalAtlas
+    (he : e.toOpenPartialHomeomorph ∈
+      (contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F E)) :
+    ContMDiffOn (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n e e.source := by
+  intro p hp
+  have h := (contMDiffWithinAt_iff_of_mem_maximalAtlas
+    (IM := IB.prod 𝓘(𝕜, F)) (f := id) (s := e.source) he hp).mp contMDiffWithinAt_id
+  refine (h.1.prodMk h.2).congr (fun q hq ↦ ?_) ?_
+  · exact Prod.ext (e.coe_fst hq) rfl
+  · exact Prod.ext (e.coe_fst hp) rfl
 
 /-- A section of a `C^n` vector bundle is `C^n` within a set at a point of the base set of a member
 of the maximal atlas of `C^n` trivializations exactly when its coordinate in that member is. -/

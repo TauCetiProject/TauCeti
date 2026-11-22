@@ -167,9 +167,9 @@ theorem card_mul_volume_ball_le_covolume [DiscreteTopology Γ] {ι : Type*} (s :
       intro z hz₁ hz₂
       exact hne (h 1 Γ.one_mem i hi j hj z (by rwa [one_smul]) hz₂).2
   rw [← hvol, hF.covolume_eq_volume]
-  refine hF.measure_le_of_disjoint_smul
+  refine hF.measure_le_of_aedisjoint_smul
     (s.measurableSet_biUnion fun i _ ↦ measurableSet_ball).nullMeasurableSet
-    fun k hk ↦ ?_
+    fun k hk ↦ Disjoint.aedisjoint ?_
   simp only [t, smul_set_iUnion₂, disjoint_iUnion₂_left, disjoint_iUnion₂_right]
   intro i hi j hj
   rw [Set.disjoint_left]
