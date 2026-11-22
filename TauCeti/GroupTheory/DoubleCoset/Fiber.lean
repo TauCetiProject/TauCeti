@@ -13,6 +13,7 @@ public import TauCeti.GroupTheory.DoubleCoset.Orbits
 If `H` has finite index in `K`, every fibre of the map from `H`-orbits to `K`-orbits
 is finite. The cosets of `H` in `K` cover each fibre by translating a representative of
 the larger orbit. This applies even when the ambient action has nontrivial stabilizers.
+So there are finitely many `H`-orbits when there are finitely many `K`-orbits.
 
 When the stabilizer of the representative acts trivially on the coset space, distinct
 cosets give distinct `H`-orbits. The resulting equivalence counts the fibre by the
@@ -88,6 +89,14 @@ theorem finite_fiber_orbitRel_map_of_isFiniteRelIndex {H K : Subgroup G}
     have : Finite (K ⧸ H.subgroupOf K) := inferInstance
     exact Finite.of_surjective (cosetToOrbitRelMapFiber h x)
       (cosetToOrbitRelMapFiber_surjective h x)
+
+/-- A finite-index subgroup of a subgroup with finitely many orbits has finitely many orbits:
+the fibres of the map between the orbit spaces are finite. -/
+theorem finite_orbitRelQuotient_of_le {H K : Subgroup G} (h : H ≤ K) [H.IsFiniteRelIndex K]
+    [Finite (orbitRel.Quotient K X)] : Finite (orbitRel.Quotient H X) :=
+  have := finite_fiber_orbitRel_map_of_isFiniteRelIndex (X := X) h
+  Finite.of_equiv _ (Equiv.sigmaFiberEquiv
+    (Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := X) h)))
 
 /-- The fibre over the orbit of `x` is the orbit space for the action of the stabilizer of
 `x` on the cosets of the smaller subgroup.
