@@ -660,10 +660,7 @@ theorem matrixAct_eq_zero_of_lt (h : X → ℕ) {n : ℕ} (hn : univ.sup h < n)
     by_contra hne
     push Not at hne
     have hx : StrictMono (h ∘ x) := Fin.strictMono_iff_lt_succ.mpr fun l => hF l _ _ (hne l)
-    have := hx.add_sub_le_nat (Fin.zero_le (Fin.last n))
-    simp only [Function.comp_apply, Fin.val_last, Fin.val_zero, Nat.sub_zero] at this
-    have := le_sup (f := h) (mem_univ (x (Fin.last n)))
-    omega
+    exact hn.not_ge hx.le_univ_sup_nat
   rw [(Mm.act n).map_coord_zero l hl, LinearMap.zero_apply, ite_self]
 
 /-- **Composing operations of the matrix module.** The `z`-component of

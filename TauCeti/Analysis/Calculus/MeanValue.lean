@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Deriv.AffineMap
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Topology.MetricSpace.Holder
 public import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
@@ -57,6 +58,10 @@ The file also records the one-variable form of Mathlib's
 `Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le'`, bounding the increment of a function
 against a fixed derivative `φ` (`Convex.norm_image_sub_le_of_norm_hasDerivWithin_le'`).
 
+For a map whose derivative is `α`-Hölder with constant `H` on the closed ball of radius `R` about
+`x`, the linearization error at `x` of an increment between two points of that ball is at most
+`H R^α` times the increment (`TauCeti.norm_sub_sub_le_of_holderOnWith`).
+
 For a function on the real line with derivative of norm at most `D r ^ (β - 1)` at every `r > 0`,
 where `0 ≤ β ≤ 1`, the increments satisfy `‖u b - u a‖ ≤ 2 D |b - a| a ^ (β - 1)` for `a > 0` and
 `a / 2 ≤ b` (`TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt`).
@@ -67,6 +72,12 @@ If `f` is differentiable near `a` and `Df(x) = o(‖x - a‖ ^ r)` as `x → a`,
 `f(x) - f(a) = o(‖x - a‖ ^ (r + 1))`, by the mean value inequality on balls about `a`
 (`TauCeti.sub_isLittleO_norm_rpow_add_one_of_fderiv`). This is the little-o counterpart of
 Mathlib's `sub_isBigO_norm_rpow_add_one_of_fderiv`.
+
+## Along a polygonal path
+
+On a set that is not convex, the mean value inequality still bounds the increment of a function
+along any polygonal path inside the set by the derivative bound times the length of the path
+(`TauCeti.norm_image_sub_le_of_norm_fderiv_le_of_segment_subset`, for three segments).
 
 ## Space-time functions vanishing outside a time interval
 
@@ -379,6 +390,28 @@ theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt {F : Type*} [NormedAddCom
     _ ≤ D * (2 * a ^ (β - 1)) * |b - a| := by gcongr
     _ = _ := by ring
 
+open Metric in
+open scoped NNReal in
+/-- **The linearization error of a map with a Hölder derivative.** If on the closed ball of radius
+`R` about `x` the map `g` has derivative `g'` and `g'` is `α`-Hölder with constant `H`, then for
+points `u, v` of that ball, `‖g u - g v - g' x (u - v)‖ ≤ H R^α ‖u - v‖`: on the segment from `v`
+to `u` the derivative stays within `H R^α` of `g' x`. -/
+theorem norm_sub_sub_le_of_holderOnWith {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {g : E → F} {g' : E → E →L[ℝ] F} {x : E} {R : ℝ}
+    (hg : ∀ z ∈ closedBall x R, HasFDerivWithinAt g (g' z) (closedBall x R) z) {H α : ℝ≥0}
+    (hg' : HolderOnWith H α g' (closedBall x R)) {u v : E} (hu : ‖u - x‖ ≤ R)
+    (hv : ‖v - x‖ ≤ R) :
+    ‖g u - g v - g' x (u - v)‖ ≤ H * R ^ (α : ℝ) * ‖u - v‖ := by
+  have hu' : u ∈ closedBall x R := by rwa [mem_closedBall, dist_eq_norm]
+  have hv' : v ∈ closedBall x R := by rwa [mem_closedBall, dist_eq_norm]
+  have hx : x ∈ closedBall x R := mem_closedBall_self ((norm_nonneg _).trans hu)
+  refine (convex_closedBall x R).norm_image_sub_le_of_norm_hasFDerivWithin_le' hg
+    (fun z hz ↦ ?_) hv' hu'
+  rw [← dist_eq_norm]
+  refine (hg'.dist_le hz hx).trans ?_
+  gcongr
+  exact mem_closedBall.1 hz
+
 section Direction
 
 variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
@@ -457,6 +490,25 @@ theorem _root_.HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero {g : F → G}
   linarith [le_abs_self R]
 
 end Direction
+
+/-- **The mean value inequality along three segments.** If the segments `[x, p]`, `[p, q]` and
+`[q, y]` lie in a set `s` on which `g` is differentiable with derivative bounded by `L`, then
+`‖g y - g x‖ ≤ L (‖x - p‖ + ‖p - q‖ + ‖q - y‖)`. Compare
+`Convex.norm_image_sub_le_of_norm_fderiv_le` for a single segment. -/
+theorem norm_image_sub_le_of_norm_fderiv_le_of_segment_subset {F G : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] {s : Set F} {g : F → G} {L : ℝ}
+    (hg : ∀ z ∈ s, DifferentiableAt ℝ g z) (hL : ∀ z ∈ s, ‖fderiv ℝ g z‖ ≤ L) {x p q y : F}
+    (hxp : segment ℝ x p ⊆ s) (hpq : segment ℝ p q ⊆ s) (hqy : segment ℝ q y ⊆ s) :
+    ‖g y - g x‖ ≤ L * (dist x p + dist p q + dist q y) := by
+  have hseg : ∀ {a b : F}, segment ℝ a b ⊆ s → ‖g b - g a‖ ≤ L * dist a b := fun {a b} hab ↦ by
+    rw [dist_comm, dist_eq_norm]
+    exact (convex_segment a b).norm_image_sub_le_of_norm_fderiv_le (fun z hz ↦ hg z (hab hz))
+      (fun z hz ↦ hL z (hab hz)) (left_mem_segment ℝ a b) (right_mem_segment ℝ a b)
+  calc ‖g y - g x‖ = ‖(g p - g x) + (g q - g p) + (g y - g q)‖ := by abel_nf
+    _ ≤ ‖g p - g x‖ + ‖g q - g p‖ + ‖g y - g q‖ := norm_add₃_le
+    _ ≤ L * dist x p + L * dist p q + L * dist q y := by
+      gcongr <;> exact hseg ‹_›
+    _ = _ := by ring
 
 /-- A function with derivative bounded by `C` that vanishes outside the time interval `(a, b)` is
 bounded by `C * (b - a)`, by the mean value inequality from its value at the time `a`. -/
