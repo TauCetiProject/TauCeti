@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Add
 -- continuity and measurability of `x ↦ x ^ q` on `ℝ≥0∞` inside the proof of
 -- `TauCeti.lintegral_rpow_le_of_forall_le`.
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 
 /-!
@@ -32,6 +33,9 @@ power of them integrable, so a bound on `∫⁻ φ ^ q` proved for all `φ ≤ G
 finite passes to `∫⁻ G ^ q`. This is the usual way to divide an inequality by a power of the
 quantity being estimated.
 
+A bound on `∫⁻ V_n² u` for the bounded truncations `V_n = W / (1 + W / (n + 1))` of a real weight
+`W` passes to `W` itself by Fatou's lemma, since `V_n → W` pointwise.
+
 ## Main statements
 
 * `TauCeti.tendsto_lintegral_min_atTop`: `∫⁻ x, min (f x) M ∂μ → ∫⁻ x, f x ∂μ` as `M → ∞`.
@@ -43,6 +47,8 @@ quantity being estimated.
   `∫⁻ φ ^ q` finite is a bound on `∫⁻ G ^ q`.
 * `TauCeti.measurable_rpow_mul_setLIntegral_lt`, `TauCeti.measurable_rpow_mul_setLIntegral_le`:
   the weighted upper and lower truncated integrals of `f ^ q` are measurable in the height.
+* `TauCeti.lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le`: Fatou's lemma for
+  the truncated weights `W / (1 + W / (n + 1))`.
 -/
 
 public section
@@ -188,5 +194,32 @@ theorem measurable_rpow_mul_setLIntegral_le {f : α → ℝ≥0∞} {c : ℝ} (q
     exact le_trans hx (ENNReal.ofReal_le_ofReal (by nlinarith))
   · refine Antitone.measurable fun t₁ t₂ ht => lintegral_mono_set fun x hx => ?_
     exact le_trans hx (ENNReal.ofReal_le_ofReal (by nlinarith))
+
+/-- **Fatou's lemma for truncated weights.** A bound on `∫⁻ V_n² u` for all the truncations
+`V_n = W / (1 + W / (n + 1))` of a weight `W` holds for `W` itself, since `V_n → W` pointwise. -/
+theorem lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le
+    {W u : α → ℝ} (hW : AEMeasurable W μ) (hu : AEMeasurable u μ) {C : ℝ≥0∞}
+    (h : ∀ n : ℕ,
+      ∫⁻ x, ENNReal.ofReal ((W x / (1 + 1 / ((n : ℝ) + 1) * W x)) ^ 2 * u x) ∂μ ≤ C) :
+    ∫⁻ x, ENNReal.ofReal (W x ^ 2 * u x) ∂μ ≤ C := by
+  have hlim (x : α) : Tendsto (fun n : ℕ ↦
+      ENNReal.ofReal ((W x / (1 + 1 / ((n : ℝ) + 1) * W x)) ^ 2 * u x)) atTop
+      (𝓝 (ENNReal.ofReal (W x ^ 2 * u x))) := by
+    have hc : ContinuousAt (fun ε : ℝ ↦ ENNReal.ofReal ((W x / (1 + ε * W x)) ^ 2 * u x)) 0 :=
+      ENNReal.continuous_ofReal.continuousAt.comp
+        (((continuousAt_const.div (continuousAt_const.add
+          (continuousAt_id.mul continuousAt_const)) (by simp)).pow 2).mul continuousAt_const)
+    have h := hc.tendsto
+    simp only [zero_mul, add_zero, div_one] at h
+    exact h.comp (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
+  calc ∫⁻ x, ENNReal.ofReal (W x ^ 2 * u x) ∂μ
+      = ∫⁻ x, liminf (fun n : ℕ ↦
+          ENNReal.ofReal ((W x / (1 + 1 / ((n : ℝ) + 1) * W x)) ^ 2 * u x)) atTop ∂μ :=
+        lintegral_congr fun x ↦ (hlim x).liminf_eq.symm
+    _ ≤ liminf (fun n : ℕ ↦
+          ∫⁻ x, ENNReal.ofReal ((W x / (1 + 1 / ((n : ℝ) + 1) * W x)) ^ 2 * u x) ∂μ) atTop :=
+        lintegral_liminf_le' fun n ↦ (((hW.div (aemeasurable_const.add
+          (aemeasurable_const.mul hW))).pow_const 2).mul hu).ennreal_ofReal
+    _ ≤ C := liminf_le_of_frequently_le' (Frequently.of_forall h)
 
 end TauCeti
