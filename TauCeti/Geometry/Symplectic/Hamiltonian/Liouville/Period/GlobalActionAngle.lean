@@ -11,6 +11,7 @@ import Mathlib.Algebra.Group.Subgroup.Finsupp
 import TauCeti.Geometry.Manifold.Flow.Related
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Topology.Algebra.Module.Matrix
 
 /-!
 # Global action–angle coordinates force exact periods, injective actions and a Lagrangian section
@@ -124,13 +125,6 @@ private theorem exists_apply_eq_actionAngleCover (b : B) :
   obtain ⟨⟨θ, A⟩, hθ⟩ := surjective_actionAngleCover p (Φ x)
   refine ⟨x, θ, ?_⟩
   rw [← hθ, ← x.property, ← hΦa, ← hθ, torusActions_actionAngleCover]
-
-/-- The covector `v ↦ c ⬝ᵥ v` on `ℝ^ι`, as a continuous linear map. -/
-private def dotProductCLM (c : ι → ℝ) : (ι → ℝ) →L[ℝ] ℝ :=
-  LinearMap.toContinuousLinearMap (dotProductEquiv ℝ ι c)
-
-private theorem dotProductCLM_apply (c v : ι → ℝ) : dotProductCLM c v = c ⬝ᵥ v := by
-  simp [dotProductCLM, dotProductEquiv]
 
 /-! ### The fibre action in action–angle coordinates -/
 
