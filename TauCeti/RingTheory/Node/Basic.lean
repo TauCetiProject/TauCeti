@@ -44,8 +44,13 @@ variable {R : Type*} [CommRing R] (a : R)
 instance : CommRing (NodeAlgebra R a) :=
   inferInstanceAs (CommRing (MvPolynomial (Fin 2) R ⧸ Ideal.span {X 0 * X 1 - C a}))
 
-instance : Algebra R (NodeAlgebra R a) :=
-  inferInstanceAs (Algebra R (MvPolynomial (Fin 2) R ⧸ Ideal.span {X 0 * X 1 - C a}))
+instance {S : Type*} [CommSemiring S] [Algebra S R] : Algebra S (NodeAlgebra R a) :=
+  inferInstanceAs (Algebra S (MvPolynomial (Fin 2) R ⧸ Ideal.span {X 0 * X 1 - C a}))
+
+instance {S T : Type*} [SMul S T] [CommSemiring S] [CommSemiring T]
+    [Algebra S R] [Algebra T R] [IsScalarTower S T R] :
+    IsScalarTower S T (NodeAlgebra R a) :=
+  inferInstanceAs (IsScalarTower S T (MvPolynomial (Fin 2) R ⧸ Ideal.span {X 0 * X 1 - C a}))
 
 /-- The quotient algebra map from polynomials to the nodal algebra. -/
 def mk : MvPolynomial (Fin 2) R →ₐ[R] NodeAlgebra R a :=
