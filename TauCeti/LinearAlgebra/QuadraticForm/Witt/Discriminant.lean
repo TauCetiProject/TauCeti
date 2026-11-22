@@ -49,6 +49,7 @@ The quotient `I/I²` is Mathlib's `Ideal.Cotangent`. The square-class group is
 * `TauCeti.oneFoldPfisterClass_eq_zero_iff`: `⟨⟨a⟩⟩ = 0` in `W(K)` exactly when `a` is a square.
 * `TauCeti.oneFoldPfisterClass_eq_oneFoldPfisterClass_iff`: `⟨⟨a⟩⟩ = ⟨⟨b⟩⟩` exactly when `a` and
   `b` have the same square class.
+* `TauCeti.wittClass_rankOne_eq_one_iff`: `⟨a⟩ = ⟨1⟩` in `W(K)` exactly when `a` is a square.
 * `TauCeti.signedDiscrHom_surjective` and `TauCeti.signedDiscrHom_eq_zero_iff`: `d±` maps `I(K)`
   onto the square-class group with kernel `I(K)²`.
 
@@ -236,6 +237,14 @@ theorem oneFoldPfisterClass_eq_oneFoldPfisterClass_iff {a b : Kˣ} :
       exact ⟨a⁻¹ * r, by rw [mul_mul_mul_comm, ← hr]; group⟩
     rw [← mul_inv_cancel_left a b, oneFoldPfisterClass_mul, oneFoldPfisterClass_eq_zero_iff.mpr hs,
       mul_zero, add_zero, sub_zero]
+
+/-- **A line has the Witt class of `⟨1⟩` exactly when its coefficient is a square**, since
+`⟨1⟩ - ⟨a⟩ = ⟨⟨a⟩⟩` in the Witt ring. -/
+@[simp]
+theorem wittClass_rankOne_eq_one_iff {a : Kˣ} :
+    wittClass (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) = 1 ↔ IsSquare a := by
+  rw [← oneFoldPfisterClass_eq_zero_iff, oneFoldPfisterClass_eq, wittClass_rankOne_neg,
+    ← sub_eq_add_neg, sub_eq_zero, eq_comm]
 
 /-- Every element of `I(K)` is congruent modulo `I(K)²` to a one-fold Pfister class `⟨⟨a⟩⟩`, with
 `a` in the square class of its signed discriminant. -/
