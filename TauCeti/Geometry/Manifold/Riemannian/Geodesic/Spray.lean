@@ -203,8 +203,8 @@ theorem hasMFDerivWithinAt_curveVelocityLiftWithin_iff
     exact (Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hr _).symm
   have hcont := ContMDiffOn.continuousOn_curveVelocityLiftWithin (hγ.of_le one_le_two)
     hs.uniqueMDiffOn t ht
-  refine (hasMFDerivWithinAt_totalSpace_curve_iff_of_continuousWithinAt
-    (F := E) (V := fun x : M ↦ TangentSpace I x) hcont).trans ?_
+  refine ((hasMFDerivWithinAt_totalSpace_curve_iff (F := E)
+    (V := fun x : M ↦ TangentSpace I x)).trans (and_iff_right hcont)).trans ?_
   simp only [curveVelocityLiftWithin_proj]
   refine (and_iff_right (hasDerivWithinAt_extChartAt_comp_curve
     (hasMFDerivWithinAt_curveVelocityWithin (hγd t ht)))).trans <|

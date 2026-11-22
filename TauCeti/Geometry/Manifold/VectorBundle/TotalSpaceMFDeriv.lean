@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
 # Differentiating a map into the total space of a fibre bundle
@@ -16,9 +17,9 @@ chart of the total space centred at `f x`.  By `FiberBundle.extChartAt` that cha
 trivialization at the base point `(f x).proj` followed by the base chart there, so the reading of
 `f` is the pair of its base map read in the base chart and of its fibre coordinate read in that
 trivialization.  This file turns that observation into a criterion: `f` has the manifold
-derivative `L₁.prod L₂` within a set exactly when its base map has the manifold derivative `L₁`
-and its fibre coordinate has the derivative `L₂`.  This is the derivative form of
-`Bundle.mdifferentiableWithinAt_totalSpace`.
+derivative `L` within a set exactly when its base map has the manifold derivative `L` followed by
+the first projection and its fibre coordinate has the derivative `L` followed by the second
+projection.  This is the derivative form of `mdifferentiableWithinAt_totalSpace`.
 
 For a curve `z` the criterion is restated with ordinary derivatives: the curve has a manifold
 derivative within a parameter set exactly when it is continuous there and its base curve read in
@@ -30,8 +31,9 @@ curve and one on its velocity.
 ## Main results
 
 * `TauCeti.Manifold.hasMFDerivWithinAt_totalSpace_iff`: the manifold derivative of a map into a
-  total space, within a set, read as the pair of the manifold derivative of its base map and of
-  the derivative of its fibre coordinate in the trivialization at the base point of the image.
+  total space, within a set, read through its two components: the manifold derivative of its base
+  map and the derivative of its fibre coordinate in the trivialization at the base point of the
+  image.
 * `TauCeti.Manifold.hasMFDerivAt_totalSpace_iff`: its unrestricted case.
 * `TauCeti.Manifold.hasMFDerivWithinAt_totalSpace_curve_iff`: the case of a curve, read as the
   pair of the derivative of its base curve in the base chart and of the derivative of its fibre
@@ -78,18 +80,19 @@ section General
 variable {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM] {HM : Type*}
   [TopologicalSpace HM] {IM : ModelWithCorners 𝕜 EM HM} {M : Type*} [TopologicalSpace M]
   [ChartedSpace HM M] {f : M → TotalSpace F V} {u : Set M} {x : M}
-  {L₁ : TangentSpace IM x →L[𝕜] TangentSpace IB (f x).proj} {L₂ : TangentSpace IM x →L[𝕜] F}
+  {L : TangentSpace IM x →L[𝕜] TangentSpace (IB.prod 𝓘(𝕜, F)) (f x)}
 
 /-- **The manifold derivative of a map into a total space.**  A map `f` into the total space of a
-fibre bundle has the manifold derivative `L₁.prod L₂` within `u` at `x` exactly when its base map
-has the manifold derivative `L₁` there and its fibre coordinate, read in the trivialization at
-`(f x).proj`, has the derivative `L₂`.  This is the derivative form of
-`Bundle.mdifferentiableWithinAt_totalSpace`. -/
+fibre bundle has the manifold derivative `L` within `u` at `x` exactly when its base map has the
+manifold derivative `L` followed by the first projection there and its fibre coordinate, read in
+the trivialization at `(f x).proj`, has the derivative `L` followed by the second projection.
+This is the derivative form of `mdifferentiableWithinAt_totalSpace`. -/
 theorem hasMFDerivWithinAt_totalSpace_iff :
-    HasMFDerivWithinAt IM (IB.prod 𝓘(𝕜, F)) f u x (L₁.prod L₂) ↔
-      HasMFDerivWithinAt IM IB (fun y ↦ (f y).proj) u x L₁ ∧
+    HasMFDerivWithinAt IM (IB.prod 𝓘(𝕜, F)) f u x L ↔
+      HasMFDerivWithinAt IM IB (fun y ↦ (f y).proj) u x
+          ((ContinuousLinearMap.fst 𝕜 (TangentSpace IB (f x).proj) F).comp L) ∧
         HasMFDerivWithinAt IM 𝓘(𝕜, F) (fun y ↦ (trivializationAt F V (f x).proj (f y)).2) u x
-          L₂ := by
+          ((ContinuousLinearMap.snd 𝕜 (TangentSpace IB (f x).proj) F).comp L) := by
   set e := trivializationAt F V (f x).proj with he
   unfold HasMFDerivWithinAt
   rw [and_and_and_comm, ← FiberBundle.continuousWithinAt_totalSpace, and_congr_right_iff]
@@ -101,10 +104,13 @@ theorem hasMFDerivWithinAt_totalSpace_iff :
         (writtenInExtChartAt IM IB x (fun y ↦ (f y).proj) v,
           writtenInExtChartAt IM 𝓘(𝕜, F) x (fun y ↦ (e (f y)).2) v) := by
     intro v hv
-    simp only [writtenInExtChartAt, FiberBundle.extChartAt, extChartAt_model_space_eq_id,
-      Function.comp_apply, PartialEquiv.trans_apply, PartialEquiv.prod_coe,
-      PartialEquiv.refl_coe, OpenPartialHomeomorph.coe_toPartialEquiv, Trivialization.coe_coe,
-      id_eq, ← he, Trivialization.coe_fst _ (e.mem_source.2 hv)]
+    refine Prod.ext ?_ ?_
+    · simp only [writtenInExtChartAt, FiberBundle.extChartAt, Function.comp_apply,
+        PartialEquiv.trans_apply, PartialEquiv.prod_coe, OpenPartialHomeomorph.coe_toPartialEquiv,
+        Trivialization.coe_coe, ← he, Trivialization.coe_fst _ (e.mem_source.2 hv)]
+    · simp only [writtenInExtChartAt, Function.comp_apply, extChartAt_model_space_eq_id,
+        PartialEquiv.refl_coe, id_eq]
+      exact extChartAt_totalSpace_apply_snd _ _
   have hmem : (fun y ↦ (f y).proj) ⁻¹' e.baseSet ∈ 𝓝[u] x :=
     ((FiberBundle.continuous_proj F V).continuousWithinAt.comp hf (mapsTo_image f u))
       (e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt F V _))
@@ -115,14 +121,17 @@ theorem hasMFDerivWithinAt_totalSpace_iff :
   refine (Filter.EventuallyEq.hasFDerivWithinAt_iff hfun hx).trans ?_
   -- `tangentSpaceCastModel` is the identity of the model spaces, so the derivative of the pair is
   -- the pair of the derivatives of its components, as in `HasMFDerivWithinAt.prodMk`.
-  exact ⟨fun h ↦ ⟨h.fst.congr_fderiv (ContinuousLinearMap.fst_comp_prod _ _),
-    h.snd.congr_fderiv (ContinuousLinearMap.snd_comp_prod _ _)⟩, fun h ↦ h.1.prodMk h.2⟩
+  refine ⟨fun h ↦ ⟨h.fst, h.snd⟩, fun h ↦ (h.1.prodMk h.2).congr_fderiv ?_⟩
+  -- A continuous linear map into a product is the pair of its two components.
+  ext v <;> rfl
 
 /-- The unrestricted case of `TauCeti.Manifold.hasMFDerivWithinAt_totalSpace_iff`. -/
 theorem hasMFDerivAt_totalSpace_iff :
-    HasMFDerivAt IM (IB.prod 𝓘(𝕜, F)) f x (L₁.prod L₂) ↔
-      HasMFDerivAt IM IB (fun y ↦ (f y).proj) x L₁ ∧
-        HasMFDerivAt IM 𝓘(𝕜, F) (fun y ↦ (trivializationAt F V (f x).proj (f y)).2) x L₂ :=
+    HasMFDerivAt IM (IB.prod 𝓘(𝕜, F)) f x L ↔
+      HasMFDerivAt IM IB (fun y ↦ (f y).proj) x
+          ((ContinuousLinearMap.fst 𝕜 (TangentSpace IB (f x).proj) F).comp L) ∧
+        HasMFDerivAt IM 𝓘(𝕜, F) (fun y ↦ (trivializationAt F V (f x).proj (f y)).2) x
+          ((ContinuousLinearMap.snd 𝕜 (TangentSpace IB (f x).proj) F).comp L) :=
   hasMFDerivWithinAt_univ.symm.trans <| hasMFDerivWithinAt_totalSpace_iff.trans <|
     and_congr hasMFDerivWithinAt_univ hasMFDerivWithinAt_univ
 
@@ -139,23 +148,21 @@ theorem hasMFDerivWithinAt_totalSpace_curve_iff :
       ContinuousWithinAt z s t ∧
         HasDerivWithinAt (fun r ↦ extChartAt IB (z t).proj (z r).proj) a s t ∧
           HasDerivWithinAt (fun r ↦ (trivializationAt F V (z t).proj (z r)).2) b s t := by
-  -- The derivative of the curve is the pair of the derivatives of its two components.
-  have hab : (1 : 𝕜 →L[𝕜] 𝕜).smulRight (a, b) =
-      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight a).prod ((1 : 𝕜 →L[𝕜] 𝕜).smulRight b) := by
-    ext <;> simp
-  -- The manifold derivative of the base curve is the derivative of its reading in the base chart.
-  have hbase : HasMFDerivWithinAt 𝓘(𝕜, 𝕜) IB (fun r ↦ (z r).proj) s t
-      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight a) ↔ ContinuousWithinAt (fun r ↦ (z r).proj) s t ∧
-        HasDerivWithinAt (fun r ↦ extChartAt IB (z t).proj (z r).proj) a s t := by
-    unfold HasMFDerivWithinAt
-    simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
-      PartialEquiv.refl_coe, preimage_id_eq, id_eq, ModelWithCorners.range_eq_univ, inter_univ,
-      Function.comp_id, hasDerivWithinAt_iff_hasFDerivWithinAt]
-    -- `tangentSpaceCastModel` is the identity of the model spaces, so the two derivatives agree.
-    rfl
-  -- `rw [hab]` fails here: in the goal the derivative is typed through the tangent spaces.
-  refine (iff_of_eq (congrArg (HasMFDerivWithinAt 𝓘(𝕜, 𝕜) (IB.prod 𝓘(𝕜, F)) z s t) hab)).trans
-    (hasMFDerivWithinAt_totalSpace_iff.trans ?_)
+  -- The components of the derivative of the curve are the derivatives determined by `a` and `b`.
+  have h₁ : (ContinuousLinearMap.fst 𝕜 EB F).comp ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (a, b)) =
+      (1 : 𝕜 →L[𝕜] 𝕜).smulRight a := by
+    rw [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton,
+      ContinuousLinearMap.comp_toSpanSingleton, ContinuousLinearMap.coe_fst',
+      ← ContinuousLinearMap.smulRight_one_eq_toSpanSingleton]
+  have h₂ : (ContinuousLinearMap.snd 𝕜 EB F).comp ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (a, b)) =
+      (1 : 𝕜 →L[𝕜] 𝕜).smulRight b := by
+    rw [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton,
+      ContinuousLinearMap.comp_toSpanSingleton, ContinuousLinearMap.coe_snd',
+      ← ContinuousLinearMap.smulRight_one_eq_toSpanSingleton]
+  -- `rw [h₁, h₂]` fails here: in the goal the derivatives are typed through the tangent spaces.
+  refine hasMFDerivWithinAt_totalSpace_iff.trans <| (and_congr
+    ⟨fun h ↦ h.congr_mfderiv h₁, fun h ↦ h.congr_mfderiv h₁.symm⟩
+    ⟨fun h ↦ h.congr_mfderiv h₂, fun h ↦ h.congr_mfderiv h₂.symm⟩).trans ?_
   -- The fibre coordinate has values in the model fibre, where the two derivatives agree.
   have hfib : HasMFDerivWithinAt 𝓘(𝕜, 𝕜) 𝓘(𝕜, F)
       (fun r ↦ (trivializationAt F V (z t).proj (z r)).2) s t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight b) ↔
@@ -163,23 +170,11 @@ theorem hasMFDerivWithinAt_totalSpace_curve_iff :
     rw [hasDerivWithinAt_iff_hasFDerivWithinAt,
       ← ContinuousLinearMap.smulRight_one_eq_toSpanSingleton]
     exact hasMFDerivWithinAt_iff_hasFDerivWithinAt
-  refine (and_congr hbase hfib).trans ?_
+  refine (and_congr hasMFDerivWithinAt_curve_iff hfib).trans ?_
   rw [FiberBundle.continuousWithinAt_totalSpace]
   -- The continuity of the fibre coordinate follows from its derivative.
   exact ⟨fun ⟨⟨h₁, h₂⟩, h₃⟩ ↦ ⟨⟨h₁, h₃.continuousWithinAt⟩, h₂, h₃⟩,
     fun ⟨⟨h₁, _⟩, h₂, h₃⟩ ↦ ⟨⟨h₁, h₂⟩, h₃⟩⟩
-
-/-- A curve into the total space which is continuous within `s` at `t` has a manifold derivative
-there exactly when its base curve, read in the base chart at the current base point, and its fibre
-coordinate, read in the trivialization at that same point, have the corresponding derivatives.
-This is `TauCeti.Manifold.hasMFDerivWithinAt_totalSpace_curve_iff` with the continuity of the curve
-supplied as a hypothesis rather than as a conjunct. -/
-theorem hasMFDerivWithinAt_totalSpace_curve_iff_of_continuousWithinAt
-    (hz : ContinuousWithinAt z s t) :
-    HasMFDerivWithinAt 𝓘(𝕜, 𝕜) (IB.prod 𝓘(𝕜, F)) z s t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (a, b)) ↔
-      HasDerivWithinAt (fun r ↦ extChartAt IB (z t).proj (z r).proj) a s t ∧
-        HasDerivWithinAt (fun r ↦ (trivializationAt F V (z t).proj (z r)).2) b s t := by
-  rw [hasMFDerivWithinAt_totalSpace_curve_iff, and_iff_right hz]
 
 /-- The unrestricted case of `TauCeti.Manifold.hasMFDerivWithinAt_totalSpace_curve_iff`. -/
 theorem hasMFDerivAt_totalSpace_curve_iff :

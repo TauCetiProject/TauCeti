@@ -46,6 +46,9 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
 * `TauCeti.Manifold.hasDerivWithinAt_comp_curve`: the chain rule
   `(g ∘ γ)' (t) = d g (γ t) (γ' t)` for a function `g` from the manifold to a normed space,
   with `TauCeti.Manifold.hasDerivAt_comp_curve` its unrestricted case.
+* `TauCeti.Manifold.hasMFDerivWithinAt_curve_iff`: a curve has a given velocity within a
+  parameter set exactly when it is continuous there and its reading in the chart centred at the
+  current point has that velocity as its derivative.
 * `TauCeti.Manifold.exists_contMDiffAt_curveVelocity_eq`: every tangent vector on a
   manifold interior point is realized by a curve of the given regularity at the given parameter.
 * `TauCeti.Manifold.fromTangentSpace_curveVelocityWithin`: the velocity of a curve in an open
@@ -177,6 +180,22 @@ theorem hasDerivAt_comp_curve {g : M → F} (hg : MDifferentiableAt I 𝓘(𝕜,
     HasDerivAt (g ∘ γ) (mvfderiv I g (γ t) w) t := by
   rw [← hasDerivWithinAt_univ]
   exact hasDerivWithinAt_comp_curve hg hγ.hasMFDerivWithinAt
+
+/-- **The manifold derivative of a curve, read in a chart.**  A curve has the velocity `w` within
+the parameter set `s` at `t` exactly when it is continuous there and its reading in the extended
+chart centred at `γ t` has the derivative `w`.  This is the definition of `HasMFDerivWithinAt`
+once the extended chart of the parameter line is recognised as the identity. -/
+theorem hasMFDerivWithinAt_curve_iff :
+    HasMFDerivWithinAt 𝓘(𝕜, 𝕜) I γ s t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w) ↔
+      ContinuousWithinAt γ s t ∧ HasDerivWithinAt (extChartAt I (γ t) ∘ γ) w s t := by
+  unfold HasMFDerivWithinAt
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
+    PartialEquiv.refl_coe, Set.preimage_id_eq, id_eq, ModelWithCorners.range_eq_univ,
+    Set.inter_univ, Function.comp_id]
+  -- `HasDerivWithinAt` is by definition `HasFDerivWithinAt` with the derivative
+  -- `(1 : 𝕜 →L[𝕜] 𝕜).smulRight w`, and `tangentSpaceCastModel` is the identity of the model
+  -- spaces, so the two sides agree.
+  rfl
 
 /-! ### The velocity of a curve -/
 
