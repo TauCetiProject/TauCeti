@@ -40,6 +40,8 @@ system without solutions.
   through `ι`.
 * `TauCeti.LimitGroup.MRDiagram.modular`: the modular group of the root.
 * `TauCeti.LimitGroup.MRDiagram.branchHoms`: the set of composites along the branches.
+* `TauCeti.LimitGroup.MRDiagram.edgeImage`: the values at a tuple of the root group of the branch
+  composites through one edge at the root.
 * `TauCeti.LimitGroup.MRDiagram.IsComplete`: every `A`-homomorphism to the target is a branch
   composite.
 * `TauCeti.LimitGroup.MRDiagram.IsSound`: every branch composite sends a given tuple of the root
@@ -54,6 +56,8 @@ system without solutions.
 
 * `TauCeti.LimitGroup.MRDiagram.exists_mem_branchHoms_node`: every choice of an edge at the root,
   a modular automorphism and a branch composite below is realised by a branch composite.
+* `TauCeti.LimitGroup.MRDiagram.iUnion_edgeImage`: the values at a tuple of the branch composites
+  of a vertex are those obtained through its edges.
 * `TauCeti.LimitGroup.MRDiagram.isSound_node`, `TauCeti.LimitGroup.MRDiagram.isSound_edge`: a
   vertex is sound exactly when its subdiagrams are sound at the transported tuples.
 * `TauCeti.LimitGroup.MRDiagram.isComplete_node_iff_of_forall_isComplete`: a vertex with complete
@@ -70,6 +74,9 @@ system without solutions.
   `TauCeti.LimitGroup.MRDiagram.isComplete_coordGroup_iff`: a diagram of the coordinate group of a
   system is sound for that system, and it is complete exactly when every solution of the system is
   the value of a branch composite on the variables; likewise for the group presented by the system.
+* `TauCeti.LimitGroup.MRDiagram.iUnion_edgeImage_eq_V_of_isComplete`: if the values at a tuple of
+  the `A`-homomorphisms from the root group are the solutions of a system, the solutions obtained
+  through the edges at the root of a complete diagram cover the solution set.
 
 ## References
 
@@ -187,6 +194,44 @@ theorem branchHoms_node_zero (M : Subgroup (MulAut H))
     [∀ i, Group (K i)] {κ : ∀ i, A →* K i} (π : ∀ i, GHom ι (κ i))
     (child : ∀ i, MRDiagram (κ i)) : (node M hM π child).branchHoms ιL = ∅ :=
   Set.eq_empty_of_forall_notMem fun _ h => (mem_branchHoms_node.1 h).choose.elim0
+
+/-! ### The values at a tuple obtained through an edge at the root -/
+
+section edgeImage
+
+variable {X : Type*} {K : Type u} [Group K] {κ : A →* K}
+
+variable (ιL) in
+/-- The values at the tuple `x` of the root group of the branch composites through an edge at
+the root: the edge is labelled `π`, the root has modular group `M`, and `D` is the subdiagram at
+the end of the edge. -/
+def edgeImage (x : X → H) (M : Subgroup (MulAut H)) (π : GHom ι κ) (D : MRDiagram κ) :
+    Set (X → L) :=
+  {v | ∃ σ ∈ M, ∃ ψ ∈ D.branchHoms ιL, ∀ j, v j = ψ (π (σ (x j)))}
+
+@[simp]
+theorem mem_edgeImage {x : X → H} {M : Subgroup (MulAut H)} {π : GHom ι κ} {D : MRDiagram κ}
+    {v : X → L} :
+    v ∈ edgeImage ιL x M π D ↔ ∃ σ ∈ M, ∃ ψ ∈ D.branchHoms ιL, ∀ j, v j = ψ (π (σ (x j))) :=
+  Iff.rfl
+
+end edgeImage
+
+/-- The values at a tuple of the branch composites of a vertex are those obtained through its
+edges. -/
+theorem iUnion_edgeImage {X : Type*} {M : Subgroup (MulAut H)}
+    {hM : M ≤ fixingSubgroup (MulAut H) (Set.range ι)} {n : ℕ} {K : Fin n → Type u}
+    [∀ i, Group (K i)] {κ : ∀ i, A →* K i} {π : ∀ i, GHom ι (κ i)}
+    {child : ∀ i, MRDiagram (κ i)} (x : X → H) :
+    ⋃ i, edgeImage ιL x M (π i) (child i) =
+      (fun (φ : GHom ι ιL) (j : X) => φ (x j)) '' (node M hM π child).branchHoms ιL := by
+  ext v
+  simp only [Set.mem_iUnion, mem_edgeImage, Set.mem_image]
+  refine ⟨fun ⟨i, σ, hσ, ψ, hψ, hv⟩ => ?_, fun ⟨φ, hφ, hv⟩ => ?_⟩
+  · obtain ⟨φ, hφ, hφx⟩ := exists_mem_branchHoms_node hM π child i hσ hψ
+    exact ⟨φ, hφ, funext fun j => (hφx _).trans (hv j).symm⟩
+  · obtain ⟨i, σ, hσ, ψ, hψ, h⟩ := mem_branchHoms_node.1 hφ
+    exact ⟨i, σ, hσ, ψ, hψ, fun j => hv ▸ h _⟩
 
 /-! ### Completeness and soundness -/
 
@@ -510,6 +555,29 @@ theorem isComplete_iff_of_equiv {D : MRDiagram ι} {x : X → H} (e : GHom ι ι
   · rw [← he, e.apply_symm_apply]
   · obtain ⟨ψ, hψ, hψv⟩ := h _ (e φ).property
     rwa [← e.injective (Subtype.ext (funext fun i => (he ψ i).trans (hψv i)))]
+
+variable {S} in
+/-- If the values at the tuple `x` of the homomorphisms from the root group to the target fixing
+the coefficients are the solutions of the system `S`, then the values at `x` of the branch
+composites of a complete diagram are all the solutions of `S`. -/
+theorem image_branchHoms_eq_V_of_isComplete {x : X → H} {D : MRDiagram ι}
+    (hx : Set.range (fun (φ : GHom ι ιL) (j : X) => φ (x j)) = V ιL S)
+    (hc : D.IsComplete ιL) :
+    (fun (φ : GHom ι ιL) (j : X) => φ (x j)) '' D.branchHoms ιL = V ιL S := by
+  rw [isComplete_iff_branchHoms_eq_univ.1 hc, Set.image_univ, hx]
+
+variable {S} in
+/-- If the values at the tuple `x` of the homomorphisms from the root group to the target fixing
+the coefficients are the solutions of the system `S`, then the solutions obtained through the
+edges at the root of a complete diagram are all the solutions of `S`. -/
+theorem iUnion_edgeImage_eq_V_of_isComplete {M : Subgroup (MulAut H)}
+    {hM : M ≤ fixingSubgroup (MulAut H) (Set.range ι)} {n : ℕ} {K : Fin n → Type u}
+    [∀ i, Group (K i)] {κ : ∀ i, A →* K i} {π : ∀ i, GHom ι (κ i)}
+    {child : ∀ i, MRDiagram (κ i)} {x : X → H}
+    (hx : Set.range (fun (φ : GHom ι ιL) (j : X) => φ (x j)) = V ιL S)
+    (hc : (node M hM π child).IsComplete ιL) :
+    ⋃ i, edgeImage ιL x M (π i) (child i) = V ιL S :=
+  (iUnion_edgeImage x).trans (image_branchHoms_eq_V_of_isComplete hx hc)
 
 /-- A diagram of the coordinate group of a system `S` over the target is sound for `S` at the
 variables: every branch composite is a solution of `S`. -/

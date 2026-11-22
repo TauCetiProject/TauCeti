@@ -171,9 +171,9 @@ theorem
     have hzL : q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re < L / 2 := hz.2
     rw [endSign_eq_one hq, one_mul] at hzL
     rw [plumbedPerturbation_of_re_endCoord_le hq hab (by linarith) x]
-  refine hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isOpen
-    (fun r w x hw ↦ pairOfPantsPerturbation_eq_smul_endAngularForm (H := Hb) hw x) hHb hHbs he hB
-    he_inj hde (isOpen_endSign_mul_re_endCoord_lt q (L / 2)) (hu.mono hUP)
+  refine hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isOpen r
+    (fun w x hw ↦ pairOfPantsPerturbation_eq_smul_endAngularForm (H := Hb) hw x) (hHb r) (hHbs r)
+    he hB he_inj hde (isOpen_endSign_mul_re_endCoord_lt q (L / 2)) (hu.mono hUP)
     (fun z hz ↦ huB z (hUP z hz)) J hc (fun z hz ↦ hJc z (hUP z hz)) (fun z hz ↦ ?_)
     (ne_top_of_le_ne_top hE ?_) (a := 0)
     fun ζ hζ ↦ positiveEndChart_mem_endSign_mul_re_endCoord_lt hr (by linarith) hζ
@@ -258,14 +258,15 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_plumbingMap_endChart_of_fl
   have hud : ∀ z ∈ U, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (ψ z) := fun z hz ↦
     (hu.contMDiffAt ((isOpen_plumbedSphere q L).mem_nhds (hψ z hz))).mdifferentiableAt
       one_ne_zero
-  refine hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isOpen
+  refine hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isOpen r
     (K := pairOfPantsPerturbation Ha)
-    (fun r w x hw ↦ pairOfPantsPerturbation_eq_smul_endAngularForm (H := Ha) hw x) hHa hHas he hB
-    he_inj hde hUo (u := u ∘ ψ)
+    (fun w x hw ↦ pairOfPantsPerturbation_eq_smul_endAngularForm (H := Ha) hw x) (hHa r) (hHas r)
+    he hB he_inj hde hUo (u := u ∘ ψ)
     (hu.comp (contDiff_realChart_plumbingMap q L).contMDiff.contMDiffOn hψ)
     (fun z hz ↦ huB _ (hψ z hz)) (fun z ↦ J (ψ z)) hc (fun z hz ↦ hJc _ (hψ z hz))
     (fun z hz ↦ ω.isComplexLinearMap_perturbedMFDeriv_comp_realChart_plumbingMap hq hHa hHb hHas
-      hHbs hab hL (mem_thricePuncturedSphereReal_iff.1 hz.1) hz.2.le (hud z hz)
+      hHbs hab hL (mem_thricePuncturedSphereReal_iff.1 hz.1) (hz.2.le.trans (by linarith))
+      (hud z hz)
       (hfloer _ (hψ z hz)))
     (ne_top_of_le_ne_top hE ?_) (a := 0)
     (fun ζ hζ ↦ positiveEndChart_mem_endSign_mul_re_endCoord_lt hr (by linarith) hζ) |>.imp
@@ -277,7 +278,7 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_plumbingMap_endChart_of_fl
       fun z hz ↦ by
         rw [abs_of_nonneg (det_fderiv_realChart_plumbingMap_nonneg q L z)]
         exact ω.floerEnergyDensity_comp_realChart_plumbingMap hq hHa hHb hHas hHbs hab hL
-          (mem_thricePuncturedSphereReal_iff.1 hz.1) hz.2.le (hud z hz)]
+          (mem_thricePuncturedSphereReal_iff.1 hz.1) (hz.2.le.trans (by linarith)) (hud z hz)]
     refine lintegral_mono_set ?_
     rintro _ ⟨z, hz, rfl⟩
     exact hψ z hz

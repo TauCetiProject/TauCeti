@@ -22,7 +22,7 @@ import Mathlib.Topology.Coherent
 # Sublevels of real functions
 
 If a real function has a unique global minimum and one compact sublevel strictly above it,
-then sufficiently small sublevels lie in any prescribed open neighbourhood of the minimum
+then sufficiently small sublevels lie in any prescribed neighbourhood of the minimum
 (`TauCeti.exists_pos_sublevel_subset_of_unique_min`). More generally, if `f` is strictly positive
 outside a set `A` and one positive sublevel `{f ≤ a}` is compact with `f` continuous on it, every
 neighbourhood of `A` contains a positive sublevel `{f ≤ δ}`
@@ -63,7 +63,9 @@ sublevel `{f ≤ b}` is homeomorphic to the whole space (`TauCeti.sublevelHomeom
 (`TauCeti.coe_sublevelHomeomorphUniv_comp_sublevelInclusion`,
 `TauCeti.sublevelInclusion_comp_sublevelHomeomorphUniv`). This is the topological half
 of the deformation of sublevels across a band without critical points, where the motion is the
-flow of a vector field `X` with `df(X) = -1` on the band. The sublevels form the topological pair
+flow of a vector field `X` with `df(X) = -1` on the band. With its codomain restricted to the
+points of `{f ≤ b}` at which `f ≤ a`, `TauCeti.sublevelInclusion` is
+`TauCeti.sublevelInclusionHomeomorph`, a homeomorphism. The sublevels form the topological pair
 `TauCeti.sublevelPair f : ({f ≤ b}, {f ≤ a})`, whose relative homology measures the change in
 topology across the band. The band itself, relative to its lower level, is the pair
 `TauCeti.bandPair f : (f⁻¹[a, b], f⁻¹(a))`, which includes into the sublevel pair by
@@ -104,35 +106,6 @@ universe u
 
 namespace TauCeti
 
-/-- Small sublevels of a function with a unique global minimum lie in any open neighbourhood
-of that minimum, provided one sublevel strictly above the minimum is compact and `f` is
-continuous on it. -/
-theorem exists_pos_sublevel_subset_of_unique_min {X : Type*} [TopologicalSpace X]
-    {f : X → ℝ} {x : X} {a : ℝ}
-    (hcompact : IsCompact {y | f y ≤ a}) (hf : ContinuousOn f {y | f y ≤ a})
-    (ha : f x < a) (hmin : ∀ y, f y ≤ f x → y = x)
-    {U : Set X} (hU : IsOpen U) (hx : x ∈ U) :
-    ∃ ε > 0, {y | f y ≤ f x + ε} ⊆ U := by
-  by_cases hne : ({y | f y ≤ a} \ U).Nonempty
-  · obtain ⟨z, hz, hzm⟩ := (hcompact.diff hU).exists_isMinOn hne
-      (hf.mono sdiff_subset)
-    have hxz : f x < f z := by
-      by_contra! hle
-      exact hz.2 (hmin z hle ▸ hx)
-    let ε := min (a - f x) (f z - f x) / 2
-    have hε : 0 < ε := by dsimp [ε]; positivity
-    refine ⟨ε, hε, fun y hy ↦ ?_⟩
-    have hεa : ε ≤ (a - f x) / 2 := div_le_div_of_nonneg_right (min_le_left _ _) (by norm_num)
-    have hεz : ε ≤ (f z - f x) / 2 := div_le_div_of_nonneg_right (min_le_right _ _) (by norm_num)
-    by_contra hyU
-    have hyK : y ∈ {y | f y ≤ a} \ U := ⟨by dsimp at hy ⊢; linarith, hyU⟩
-    have hzy : f z ≤ f y := hzm hyK
-    dsimp at hy
-    linarith
-  · refine ⟨(a - f x) / 2, by positivity, fun y hy ↦ ?_⟩
-    by_contra hyU
-    exact hne ⟨y, ⟨by dsimp at hy ⊢; linarith, hyU⟩⟩
-
 /-- If `f` is strictly positive outside a set `A` and one positive sublevel `{f ≤ a}` (`a > 0`) is
 compact with `f` continuous on it, then every neighbourhood `W` of `A` contains a positive sublevel
 `{f ≤ δ}` (`δ > 0`). -/
@@ -141,18 +114,33 @@ theorem exists_pos_sublevel_subset_of_isCompact_of_mem_nhdsSet {X : Type*} [Topo
     (hf : ContinuousOn f {x | f x ≤ a}) {A W : Set X} (hpos : ∀ x ∉ A, 0 < f x)
     (hW : W ∈ 𝓝ˢ A) : ∃ δ > 0, {x | f x ≤ δ} ⊆ W := by
   have hAint : A ⊆ interior W := subset_interior_iff_mem_nhdsSet.2 hW
-  by_cases hne : ({x | f x ≤ a} \ interior W).Nonempty
-  · obtain ⟨z, hz, hzm⟩ := (hcompact.diff isOpen_interior).exists_isMinOn hne
-      (hf.mono sdiff_subset)
-    have hfz : 0 < f z := hpos z fun hzA ↦ hz.2 (hAint hzA)
-    refine ⟨min a (f z) / 2, half_pos (lt_min ha hfz), fun y hy ↦ interior_subset ?_⟩
-    by_contra hyW
-    have hy' : f y ≤ min a (f z) / 2 := hy
-    have hyK : y ∈ {x | f x ≤ a} \ interior W :=
-      ⟨hy'.trans (by linarith [min_le_left a (f z)]), hyW⟩
-    have hzy : f z ≤ f y := hzm hyK
-    linarith [min_le_right a (f z)]
-  · exact ⟨a, ha, fun y hy ↦ interior_subset (by_contra fun hyW ↦ hne ⟨y, hy, hyW⟩)⟩
+  -- On the compact part of `{f ≤ a}` outside `interior W`, `f` is bounded below by some `c > 0`.
+  obtain ⟨c, hc, hcf⟩ := (hcompact.diff isOpen_interior).exists_forall_le' (hf.mono sdiff_subset)
+    fun z hz ↦ hpos z fun hzA ↦ hz.2 (hAint hzA)
+  refine ⟨min a (c / 2), lt_min ha (half_pos hc), fun y hy ↦ interior_subset ?_⟩
+  have hy' : f y ≤ min a (c / 2) := hy
+  by_contra hyW
+  linarith [hcf y ⟨hy'.trans (min_le_left a _), hyW⟩, min_le_right a (c / 2)]
+
+/-- Small sublevels of a function with a unique global minimum lie in any neighbourhood of that
+minimum, provided one sublevel strictly above the minimum is compact and `f` is continuous on
+it. -/
+theorem exists_pos_sublevel_subset_of_unique_min {X : Type*} [TopologicalSpace X]
+    {f : X → ℝ} {x : X} {a : ℝ}
+    (hcompact : IsCompact {y | f y ≤ a}) (hf : ContinuousOn f {y | f y ≤ a})
+    (ha : f x < a) (hmin : ∀ y, f y ≤ f x → y = x) {U : Set X} (hU : U ∈ 𝓝 x) :
+    ∃ ε > 0, {y | f y ≤ f x + ε} ⊆ U := by
+  -- Apply `exists_pos_sublevel_subset_of_isCompact_of_mem_nhdsSet` to `f - f x` and `A = {x}`.
+  have hset (c : ℝ) : {y | f y - f x ≤ c} = {y | f y ≤ f x + c} := by
+    ext y
+    exact sub_le_iff_le_add'
+  have hsub := hset (a - f x)
+  rw [add_sub_cancel] at hsub
+  obtain ⟨ε, hε, hεU⟩ := exists_pos_sublevel_subset_of_isCompact_of_mem_nhdsSet
+    (f := fun y ↦ f y - f x) (sub_pos.2 ha) (hsub ▸ hcompact) (hsub ▸ hf.sub continuousOn_const)
+    (fun y hy ↦ sub_pos.2 (lt_of_not_ge fun hle ↦ hy (mem_singleton_iff.2 (hmin y hle))))
+    (by rwa [nhdsSet_singleton])
+  exact ⟨ε, hε, hset ε ▸ hεU⟩
 
 /-- On a compact space `X`, if `f : X → ℝ` is continuous and strictly positive outside `A`, then
 every neighbourhood `W` of `A` contains a positive sublevel `{f ≤ δ}` (`δ > 0`). -/
@@ -201,13 +189,11 @@ theorem exists_forall_abs_le_notMem {X : Type*} [TopologicalSpace X] {w : X → 
     (hw : Continuous w) {δ : ℝ} (hδ : 0 < δ) (hK : IsCompact {x | -δ ≤ w x}) {C : Set X}
     (hC : IsClosed C) (hCw : ∀ x ∈ C, w x ≠ 0) :
     ∃ η, 0 < η ∧ η ≤ δ ∧ ∀ x, |w x| ≤ η → x ∉ C := by
-  rcases ({x | -δ ≤ w x} ∩ C).eq_empty_or_nonempty with hA | hA
-  · exact ⟨δ, hδ, le_rfl, fun x hx hxC => hA.subset ⟨neg_le_of_abs_le hx, hxC⟩⟩
-  obtain ⟨x₀, hx₀, hmin⟩ := (hK.inter_right hC).exists_isMinOn hA hw.abs.continuousOn
-  have hm : 0 < |w x₀| := abs_pos.2 (hCw x₀ hx₀.2)
-  refine ⟨min δ (|w x₀| / 2), lt_min hδ (half_pos hm), min_le_left _ _, fun x hx hxC => ?_⟩
-  have := isMinOn_iff.1 hmin x ⟨neg_le_of_abs_le (hx.trans (min_le_left _ _)), hxC⟩
-  linarith [min_le_right δ (|w x₀| / 2)]
+  -- On the compact set `{-δ ≤ w} ∩ C`, `|w|` is bounded below by some `c > 0`.
+  obtain ⟨c, hc, hcw⟩ := (hK.inter_right hC).exists_forall_le' hw.abs.continuousOn
+    fun x hx ↦ abs_pos.2 (hCw x hx.2)
+  refine ⟨min δ (c / 2), lt_min hδ (half_pos hc), min_le_left _ _, fun x hx hxC ↦ ?_⟩
+  linarith [hcw x ⟨neg_le_of_abs_le (hx.trans (min_le_left _ _)), hxC⟩, min_le_right δ (c / 2)]
 
 /-- A sublevel of a function restricted to a set `S` of a Hausdorff space is not compact if `S`
 accumulates at a point `p ∉ S` where the function is continuous and strictly below the level.
@@ -271,12 +257,20 @@ open Filter Topology in
 /-- For continuous `f`, the space carries the topology coherent with the sublevels `{f ≤ a k}`
 along levels `a k` tending to infinity: every point has one of them as a neighbourhood. -/
 theorem isCoherentWith_range_sublevel_of_tendsto {X ι β : Type*} [TopologicalSpace X]
-    [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β] [NoMaxOrder β] {f : X → β}
+    [LinearOrder β] [TopologicalSpace β] [ClosedIciTopology β] {f : X → β}
     (hf : Continuous f) {l : Filter ι} [l.NeBot] {a : ι → β} (ha : Tendsto a l atTop) :
     IsCoherentWith (range fun k ↦ {x | f x ≤ a k}) := .of_nhds fun x ↦ by
-  obtain ⟨k, hk⟩ := (ha.eventually_gt_atTop (f x)).exists
-  exact ⟨_, ⟨k, rfl⟩, mem_of_superset ((isOpen_lt hf continuous_const).mem_nhds hk)
-    fun _ hy ↦ le_of_lt hy⟩
+  by_cases hx : ∃ k, f x < a k
+  · -- Then the open set `{f < a k}` is a neighbourhood of `x` inside `{f ≤ a k}`.
+    obtain ⟨k, hk⟩ := hx
+    exact ⟨_, ⟨k, rfl⟩, mem_of_superset ((isOpen_Iio.preimage hf).mem_nhds hk)
+      fun _ hy ↦ le_of_lt hy⟩
+  -- Otherwise no level exceeds `f x`, so `f x` is the largest value of `f`, and the sublevel at a
+  -- level `a k ≥ f x` is the whole space.
+  obtain ⟨k, hk⟩ := (ha.eventually_ge_atTop (f x)).exists
+  refine ⟨_, ⟨k, rfl⟩, mem_of_superset univ_mem fun y _ ↦ ?_⟩
+  obtain ⟨j, hj⟩ := (ha.eventually_ge_atTop (f y)).exists
+  exact hj.trans ((not_lt.1 fun h ↦ hx ⟨j, h⟩).trans hk)
 
 /-- The inclusion `{f ≤ a} → {f ≤ b}` of sublevels of `f`, for `a ≤ b`. -/
 def sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β) (a b : β)
@@ -310,6 +304,35 @@ theorem range_sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β
     {a b : β} (hab : a ≤ b) :
     range (sublevelInclusion f a b hab) = ((↑) ⁻¹' {x | f x ≤ a} : Set {x | f x ≤ b}) :=
   range_inclusion (sublevel_mono f hab)
+
+/-- The inclusion of the sublevel `{f ≤ a}` onto the points of the sublevel `{f ≤ b}` at which
+`f ≤ a`, for `a ≤ b`, as a homeomorphism: `TauCeti.sublevelInclusion f a b hab` with its codomain
+restricted to its range. -/
+def sublevelInclusionHomeomorph {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β)
+    (a b : β) (hab : a ≤ b) : {x | f x ≤ a} ≃ₜ {y : {x | f x ≤ b} | f y ≤ a} where
+  toFun x := ⟨sublevelInclusion f a b hab x, x.property⟩
+  invFun y := ⟨y.val.val, y.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := (map_continuous _).subtype_mk _
+  continuous_invFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+
+@[simp]
+theorem coe_sublevelInclusionHomeomorph_apply {X β : Type*} [TopologicalSpace X] [Preorder β]
+    (f : X → β) {a b : β} (hab : a ≤ b) (x : {x | f x ≤ a}) :
+    (sublevelInclusionHomeomorph f a b hab x : {x | f x ≤ b}) = sublevelInclusion f a b hab x :=
+  (rfl)
+
+theorem coe_coe_sublevelInclusionHomeomorph_apply {X β : Type*} [TopologicalSpace X]
+    [Preorder β] (f : X → β) {a b : β} (hab : a ≤ b) (x : {x | f x ≤ a}) :
+    ((sublevelInclusionHomeomorph f a b hab x : {x | f x ≤ b}) : X) = x := by
+  simp
+
+@[simp]
+theorem coe_sublevelInclusionHomeomorph_symm_apply {X β : Type*} [TopologicalSpace X]
+    [Preorder β] (f : X → β) {a b : β} (hab : a ≤ b) (y : {y : {x | f x ≤ b} | f y ≤ a}) :
+    ((sublevelInclusionHomeomorph f a b hab).symm y : X) = y :=
+  (rfl)
 
 /-- When `f` is bounded above by `b` everywhere on `X`, the sublevel `{f ≤ b}` is homeomorphic to
 `X` via `Subtype.val`. -/
@@ -403,16 +426,13 @@ omit [TopologicalSpace X] in
 @[simp]
 theorem preimage_neg_Icc_neg (a b : β) : (-f) ⁻¹' Icc (-b) (-a) = f ⁻¹' Icc a b := by
   ext x
-  simp only [mem_preimage, Pi.neg_apply, mem_Icc, neg_le_neg_iff]
-  exact and_comm
+  simp [and_comm]
 
 /-- Negating a function exchanges the two levels of a band: the band pair
 `((-f)⁻¹[-b, -a], (-f)⁻¹(-b))` of `-f` is the upper band pair `(f⁻¹[a, b], f⁻¹(b))` of `f`. -/
 theorem bandPair_neg {a b : β} (hab : a ≤ b) :
     bandPair (-f) (neg_le_neg hab) = upperBandPair f hab := by
-  have hlevel : (-f) ⁻¹' {-b} = f ⁻¹' {b} := by
-    ext x
-    simp
+  have hlevel : (-f) ⁻¹' {-b} = f ⁻¹' {b} := by ext; simp
   exact TopPair.ofInclusion_congr (X := TopCat.of X) _ _ hlevel (preimage_neg_Icc_neg f a b)
 
 end Neg
