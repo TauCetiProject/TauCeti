@@ -390,9 +390,8 @@ theorem sq_eq_neg_one_iff_trace_eq_zero (g : SL(2, R)) :
       rw [hmat, eq_sub_iff_add_eq, neg_add_cancel] at hch
       exact hch.symm
     have hone : A.trace • (1 : Matrix (Fin 2) (Fin 2) R) = 0 :=
-      Matrix.mul_left_injective_of_inv A ((g⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R)
-        (by rw [← coe_mul, mul_inv_cancel, coe_one])
-        (by simpa [Matrix.smul_mul, Matrix.zero_mul] using hsmul)
+      ((Matrix.isUnit_iff_isUnit_det A).mpr (by simp [A, g.det_coe])).mul_left_eq_zero.mp
+        (by simpa [Matrix.smul_mul] using hsmul)
     rw [Matrix.smul_one_eq_diagonal, ← Matrix.scalar_apply,
       ← map_zero (Matrix.scalar (Fin 2)), Matrix.scalar_inj] at hone
     exact hone
@@ -418,9 +417,8 @@ theorem eq_one_of_commute_of_trace_eq_two_of_trace_eq_zero [IsReduced R]
   have hNtr : N.trace = 0 := by simp [N, A, ha]
   have hNsq : N ^ 2 = 0 :=
     Matrix.sub_one_sq_eq_zero_of_det_eq_one_of_trace_eq_two a.det_coe ha
-  have hcommNB : Commute N B := by
-    refine Commute.sub_left ?_ (Commute.one_left B)
-    simpa [Commute, SemiconjBy, A, B, coe_mul] using congrArg Subtype.val hcomm.eq
+  have hcommNB : Commute N B :=
+    (hcomm.map coeMonoidHom).sub_left (Commute.one_left B)
   -- Any two traceless `2 × 2` matrices satisfy `N * B + B * N = trace (N * B) • 1`.
   have hanti : N * B + B * N = (N * B).trace • (1 : Matrix (Fin 2) (Fin 2) R) := by
     have hadj : adjugate (N * B) = B * N := by
@@ -435,9 +433,8 @@ theorem eq_one_of_commute_of_trace_eq_two_of_trace_eq_zero [IsReduced R]
     (Matrix.isNilpotent_trace_of_isNilpotent (hcommNB.isNilpotent_mul_right ⟨2, hNsq⟩)).eq_zero
   rw [hNBtr, zero_smul] at htwoNB
   have htwoN : (2 : R) • N = 0 :=
-    Matrix.mul_left_injective_of_inv B ((b⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R)
-      (by rw [← coe_mul, mul_inv_cancel, coe_one])
-      (by simpa [Matrix.smul_mul, Matrix.zero_mul] using htwoNB)
+    ((Matrix.isUnit_iff_isUnit_det B).mpr (by simp [B, b.det_coe])).mul_left_eq_zero.mp
+      (by simpa [Matrix.smul_mul] using htwoNB)
   exact Subtype.ext (sub_eq_zero.mp (h2.matrix (htwoN.trans (smul_zero _).symm)))
 
 end SpecialLinearGroup
