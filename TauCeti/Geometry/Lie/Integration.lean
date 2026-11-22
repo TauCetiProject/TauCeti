@@ -140,11 +140,11 @@ private theorem lieMap_graphFst_bijective
     Bijective (lieMap (graphFst φ)) := by
   refine ⟨fun Y Y' h ↦ (graphData φ).injective_lieMapToHom ?_, fun X ↦ ?_⟩
   · rw [lieMapToHom_graphData, lieMapToHom_graphData, h]
-  · obtain ⟨Y, hY⟩ : graphLieHom φ X ∈ (graphData φ).lieMapToHom.range := by
+  · obtain ⟨Y, hY⟩ := ((graphData φ).lieMapToHom.mem_range (graphLieHom φ X)).1 <| by
       rw [LieSubalgebra.range_lieMapToHom_integralLeafSubgroupData]
-      exact LieHom.mem_range_self _ X
+      exact LieHom.mem_range_self (graphLieHom φ) X
     refine ⟨Y, ?_⟩
-    rw [LieHom.coe_toLinearMap, lieMapToHom_graphData] at hY
+    rw [lieMapToHom_graphData] at hY
     simpa only [lieMap_fst_graphLieHom] using congrArg (lieMap ContMDiffMonoidMorphism.fst) hY
 
 variable [SimplyConnectedSpace G]
