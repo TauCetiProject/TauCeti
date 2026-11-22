@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Analysis.Calculus.ContDiff.KernelIntegral
 public import TauCeti.Analysis.Quaternion.Kernel
-import Mathlib.Analysis.Calculus.ContDiff.Basic
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # Separated Cauchy–Fueter kernel potentials and decay bounds
@@ -20,22 +18,21 @@ representation hypothesis on the density.
 
 ## Main declarations
 
-* `TauCeti.iteratedFDeriv_bilin_cauchyFueterKernel`: away from the pole `w`, the `m`-th derivative
-  of `p ↦ B (cauchyFueterKernel w p) c` is the `m`-th pole derivative of `cauchyFueterKernel w`
-  postcomposed with `B.flip c`.
-* `TauCeti.hasFTaylorSeriesUpToOn_integral_bilin_cauchyFueterKernel`,
-  `TauCeti.contDiffOn_integral_bilin_cauchyFueterKernel`,
-  `TauCeti.contDiffAt_integral_bilin_cauchyFueterKernel`,
-  `TauCeti.iteratedFDeriv_integral_bilin_cauchyFueterKernel`: `C^∞` Taylor series, smoothness,
-  and differentiation under separated bilinear Cauchy–Fueter integrals on arbitrary measure spaces.
+* `ContinuousLinearMap.iteratedFDeriv_bilin_cauchyFueterKernel`: away from the pole `w`, the
+  `m`-th derivative of `p ↦ B (cauchyFueterKernel w p) c` is the `m`-th pole derivative of
+  `cauchyFueterKernel w` postcomposed with `B.flip c`.
+* `ContinuousLinearMap.hasFTaylorSeriesUpToOn_integral_bilin_cauchyFueterKernel`,
+  `ContinuousLinearMap.contDiffOn_integral_bilin_cauchyFueterKernel`,
+  `ContinuousLinearMap.contDiffAt_integral_bilin_cauchyFueterKernel`,
+  `ContinuousLinearMap.iteratedFDeriv_integral_bilin_cauchyFueterKernel`: `C^∞` Taylor series,
+  smoothness, and differentiation under separated bilinear Cauchy–Fueter integrals on arbitrary
+  measure spaces.
 * `ContinuousLinearMap.exists_norm_iteratedFDeriv_integral_bilinear_cauchyFueterKernel_le`: uniform
   `C / δ ^ (3 + m) * ∫ z, ‖g z‖ ∂μ` decay bound on the `m`-th derivative of a bilinearly weighted
   Cauchy–Fueter kernel potential.
 * `TauCeti.iteratedFDeriv_integral_cauchyFueterKernel_mul_of_mem_ball`,
-  `TauCeti.iteratedFDeriv_integral_cauchyFueterKernel_mul`,
-  `TauCeti.iteratedFDeriv_integral_mul_cauchyFueterKernel_of_mem_ball`,
-  `TauCeti.iteratedFDeriv_integral_mul_cauchyFueterKernel`: iterated derivative formulas for left
-  and right Cauchy–Fueter potentials expressed via quaternion-module actions.
+  `TauCeti.iteratedFDeriv_integral_mul_cauchyFueterKernel_of_mem_ball`: iterated derivative
+  formulas for left and right Cauchy–Fueter potentials expressed via quaternion-module actions.
 * `ContinuousLinearMap.iteratedFDeriv_smul_sum_sub_integral_bilin_cauchyFueterKernel`:
   differentiation under a scalar-rescaled finite sum of upper-minus-lower separated bilinear
   Cauchy–Fueter integrals.
@@ -84,7 +81,7 @@ private theorem exists_norm_iteratedFDeriv_cauchyFueterKernel_zero_le (k : ℕ) 
 /-- Away from the pole `w`, the `m`-th iterated Fréchet derivative of
 `p ↦ B (cauchyFueterKernel w p) c` is the `m`-th pole derivative of `cauchyFueterKernel w`
 postcomposed with `B.flip c`. -/
-theorem iteratedFDeriv_bilin_cauchyFueterKernel
+theorem _root_.ContinuousLinearMap.iteratedFDeriv_bilin_cauchyFueterKernel
     (B : ℍ →L[ℝ] G →L[ℝ] E) {w q : ℍ} (hne : w ≠ q) (c : G) (m : ℕ) :
     iteratedFDeriv ℝ m (fun p ↦ B (cauchyFueterKernel w p) c) q =
       (B.flip c).compContinuousMultilinearMap (iteratedFDeriv ℝ m (cauchyFueterKernel w) q) := by
@@ -93,7 +90,7 @@ theorem iteratedFDeriv_bilin_cauchyFueterKernel
 
 /-- On `Metric.ball q₀ δ`, the integrated spatial jets form a `C^∞` Taylor series for a separated
 bilinear Cauchy–Fueter integral `y ↦ ∫ z, B (cauchyFueterKernel (φ z) y) (w z) ∂μ`. -/
-theorem hasFTaylorSeriesUpToOn_integral_bilin_cauchyFueterKernel
+theorem _root_.ContinuousLinearMap.hasFTaylorSeriesUpToOn_integral_bilin_cauchyFueterKernel
     (B : ℍ →L[ℝ] G →L[ℝ] E) {φ : α → ℍ} (hφ : AEStronglyMeasurable φ μ)
     {w : α → G} (hw : Integrable w μ)
     {q₀ : ℍ} {δ : ℝ} (hδ : ∀ᵐ z ∂μ, δ ≤ ‖φ z - q₀‖) :
@@ -106,28 +103,28 @@ theorem hasFTaylorSeriesUpToOn_integral_bilin_cauchyFueterKernel
       (fun k {_} hρ ↦ exists_norm_iteratedFDeriv_cauchyFueterKernel_zero_le k hρ) hφ hw hδ
 
 /-- Smoothness on `Metric.ball q₀ δ` of `y ↦ ∫ z, B (cauchyFueterKernel (φ z) y) (w z) ∂μ`. -/
-theorem contDiffOn_integral_bilin_cauchyFueterKernel
+theorem _root_.ContinuousLinearMap.contDiffOn_integral_bilin_cauchyFueterKernel
     (B : ℍ →L[ℝ] G →L[ℝ] E) {φ : α → ℍ} (hφ : AEStronglyMeasurable φ μ)
     {w : α → G} (hw : Integrable w μ)
     {q₀ : ℍ} {δ : ℝ} (hδ : ∀ᵐ z ∂μ, δ ≤ ‖φ z - q₀‖) {n : ℕ∞} :
     ContDiffOn ℝ n (fun y ↦ ∫ z, B (cauchyFueterKernel (φ z) y) (w z) ∂μ) (ball q₀ δ) :=
-  (hasFTaylorSeriesUpToOn_integral_bilin_cauchyFueterKernel B hφ hw hδ).contDiffOn.of_le
+  (B.hasFTaylorSeriesUpToOn_integral_bilin_cauchyFueterKernel hφ hw hδ).contDiffOn.of_le
     (WithTop.coe_le_coe.2 le_top)
 
 /-- Pointwise smoothness at `q ∈ Metric.ball q₀ δ` of
 `y ↦ ∫ z, B (cauchyFueterKernel (φ z) y) (w z) ∂μ`. -/
-theorem contDiffAt_integral_bilin_cauchyFueterKernel
+theorem _root_.ContinuousLinearMap.contDiffAt_integral_bilin_cauchyFueterKernel
     (B : ℍ →L[ℝ] G →L[ℝ] E) {φ : α → ℍ} (hφ : AEStronglyMeasurable φ μ)
     {w : α → G} (hw : Integrable w μ)
     {q₀ : ℍ} {δ : ℝ} (hδ : ∀ᵐ z ∂μ, δ ≤ ‖φ z - q₀‖)
     {q : ℍ} (hq : q ∈ ball q₀ δ) {n : ℕ∞} :
     ContDiffAt ℝ n (fun y ↦ ∫ z, B (cauchyFueterKernel (φ z) y) (w z) ∂μ) q :=
-  (contDiffOn_integral_bilin_cauchyFueterKernel B hφ hw hδ q hq).contDiffAt
+  (B.contDiffOn_integral_bilin_cauchyFueterKernel hφ hw hδ q hq).contDiffAt
     (isOpen_ball.mem_nhds hq)
 
 /-- Every iterated real derivative on `Metric.ball q₀ δ` of
 `y ↦ ∫ z, B (cauchyFueterKernel (φ z) y) (w z) ∂μ` commutes with the Bochner integral. -/
-theorem iteratedFDeriv_integral_bilin_cauchyFueterKernel
+theorem _root_.ContinuousLinearMap.iteratedFDeriv_integral_bilin_cauchyFueterKernel
     (B : ℍ →L[ℝ] G →L[ℝ] E) {φ : α → ℍ} (hφ : AEStronglyMeasurable φ μ)
     {w : α → G} (hw : Integrable w μ)
     {q₀ : ℍ} {δ : ℝ} (hδ : ∀ᵐ z ∂μ, δ ≤ ‖φ z - q₀‖)
@@ -154,7 +151,7 @@ theorem
   obtain ⟨C, hC, hbound⟩ :=
     exists_norm_iteratedFDeriv_cauchyFueterKernel_right_le_of_le_norm_sub N
   refine ⟨(‖B‖ + 1) * C, mul_pos (by positivity) hC, fun m hm {X _ μ φ g q₀ δ} hφ hg hδ₀ hδ ↦ ?_⟩
-  have hcomm := iteratedFDeriv_integral_bilin_cauchyFueterKernel B.flip hφ hg hδ m
+  have hcomm := B.flip.iteratedFDeriv_integral_bilin_cauchyFueterKernel hφ hg hδ m
     (mem_ball_self hδ₀)
   simp only [ContinuousLinearMap.flip_apply] at hcomm
   rw [hcomm]
@@ -193,8 +190,8 @@ theorem iteratedFDeriv_integral_cauchyFueterKernel_mul_of_mem_ball {φ g : X →
     (hδ : ∀ᵐ z ∂μ, δ ≤ ‖φ z - q₀‖) (hq : q ∈ ball q₀ δ) :
     iteratedFDeriv ℝ m (fun p ↦ ∫ z, cauchyFueterKernel (φ z) p * g z ∂μ) q =
       ∫ z, MulOpposite.op (g z) • iteratedFDeriv ℝ m (cauchyFueterKernel (φ z)) q ∂μ := by
-  have h := iteratedFDeriv_integral_bilin_cauchyFueterKernel
-    (ContinuousLinearMap.mul ℝ ℍ) hφ hg hδ m hq
+  have h := (ContinuousLinearMap.mul ℝ ℍ).iteratedFDeriv_integral_bilin_cauchyFueterKernel
+    hφ hg hδ m hq
   simp only [ContinuousLinearMap.mul_apply'] at h
   rw [h]
   refine integral_congr_ae ?_
@@ -203,20 +200,11 @@ theorem iteratedFDeriv_integral_cauchyFueterKernel_mul_of_mem_ball {φ g : X →
     intro heq
     have hq' : ‖q - q₀‖ < δ := by simpa [mem_ball, dist_eq_norm] using hq
     linarith [heq ▸ hz]
-  have hpt := iteratedFDeriv_bilin_cauchyFueterKernel (ContinuousLinearMap.mul ℝ ℍ) hne (g z) m
+  have hpt := (ContinuousLinearMap.mul ℝ ℍ).iteratedFDeriv_bilin_cauchyFueterKernel hne (g z) m
   simp only [ContinuousLinearMap.mul_apply'] at hpt
   rw [hpt]
   refine ContinuousMultilinearMap.ext fun v ↦ ?_
   simp [ContinuousLinearMap.compContinuousMultilinearMap_coe, MulOpposite.smul_eq_mul_unop]
-
-/-- **Iterated derivatives of a left Cauchy–Fueter kernel potential.** Right multiplication by
-`g z` acts on each kernel jet through `MulOpposite.op (g z)`. -/
-theorem iteratedFDeriv_integral_cauchyFueterKernel_mul {φ g : X → ℍ}
-    {q₀ : ℍ} {δ : ℝ} (m : ℕ) (hφ : AEStronglyMeasurable φ μ) (hg : Integrable g μ)
-    (hδ₀ : 0 < δ) (hδ : ∀ᵐ z ∂μ, δ ≤ ‖φ z - q₀‖) :
-    iteratedFDeriv ℝ m (fun q ↦ ∫ z, cauchyFueterKernel (φ z) q * g z ∂μ) q₀ =
-      ∫ z, MulOpposite.op (g z) • iteratedFDeriv ℝ m (cauchyFueterKernel (φ z)) q₀ ∂μ :=
-  iteratedFDeriv_integral_cauchyFueterKernel_mul_of_mem_ball m hφ hg hδ (mem_ball_self hδ₀)
 
 /-- **Iterated derivatives of a right Cauchy–Fueter kernel potential on a ball.** Left
 multiplication by `g z` acts on each kernel jet through the left `ℍ`-action `•`. -/
@@ -225,8 +213,8 @@ theorem iteratedFDeriv_integral_mul_cauchyFueterKernel_of_mem_ball {φ g : X →
     (hδ : ∀ᵐ z ∂μ, δ ≤ ‖φ z - q₀‖) (hq : q ∈ ball q₀ δ) :
     iteratedFDeriv ℝ m (fun p ↦ ∫ z, g z * cauchyFueterKernel (φ z) p ∂μ) q =
       ∫ z, g z • iteratedFDeriv ℝ m (cauchyFueterKernel (φ z)) q ∂μ := by
-  have h := iteratedFDeriv_integral_bilin_cauchyFueterKernel
-    (ContinuousLinearMap.mul ℝ ℍ).flip hφ hg hδ m hq
+  have h := (ContinuousLinearMap.mul ℝ ℍ).flip.iteratedFDeriv_integral_bilin_cauchyFueterKernel
+    hφ hg hδ m hq
   simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply'] at h
   rw [h]
   refine integral_congr_ae ?_
@@ -235,21 +223,12 @@ theorem iteratedFDeriv_integral_mul_cauchyFueterKernel_of_mem_ball {φ g : X →
     intro heq
     have hq' : ‖q - q₀‖ < δ := by simpa [mem_ball, dist_eq_norm] using hq
     linarith [heq ▸ hz]
-  have hpt := iteratedFDeriv_bilin_cauchyFueterKernel
-    (ContinuousLinearMap.mul ℝ ℍ).flip hne (g z) m
+  have hpt :=
+    (ContinuousLinearMap.mul ℝ ℍ).flip.iteratedFDeriv_bilin_cauchyFueterKernel hne (g z) m
   simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply'] at hpt
   rw [hpt]
   refine ContinuousMultilinearMap.ext fun v ↦ ?_
   simp [ContinuousLinearMap.compContinuousMultilinearMap_coe, smul_eq_mul]
-
-/-- **Iterated derivatives of a right Cauchy–Fueter kernel potential.** Left multiplication by
-`g z` acts on each kernel jet through the left `ℍ`-action `•`. -/
-theorem iteratedFDeriv_integral_mul_cauchyFueterKernel {φ g : X → ℍ}
-    {q₀ : ℍ} {δ : ℝ} (m : ℕ) (hφ : AEStronglyMeasurable φ μ) (hg : Integrable g μ)
-    (hδ₀ : 0 < δ) (hδ : ∀ᵐ z ∂μ, δ ≤ ‖φ z - q₀‖) :
-    iteratedFDeriv ℝ m (fun q ↦ ∫ z, g z * cauchyFueterKernel (φ z) q ∂μ) q₀ =
-      ∫ z, g z • iteratedFDeriv ℝ m (cauchyFueterKernel (φ z)) q₀ ∂μ :=
-  iteratedFDeriv_integral_mul_cauchyFueterKernel_of_mem_ball m hφ hg hδ (mem_ball_self hδ₀)
 
 end QuaternionKernelPotentials
 
@@ -281,16 +260,16 @@ theorem _root_.ContinuousLinearMap.iteratedFDeriv_smul_sum_sub_integral_bilin_ca
       ((∫ z, iteratedFDeriv ℝ m (fun y ↦ B (cauchyFueterKernel (φ₁ i z) y) (w₁ i z)) q ∂μ i) -
         ∫ z, iteratedFDeriv ℝ m (fun y ↦ B (cauchyFueterKernel (φ₀ i z) y) (w₀ i z)) q ∂μ i) := by
   have hcd₁ (i : ι) :=
-    contDiffAt_integral_bilin_cauchyFueterKernel B (hφ₁ i) (hw₁ i) (hδ₁ i) (hq₁ i) (n := m)
+    B.contDiffAt_integral_bilin_cauchyFueterKernel (hφ₁ i) (hw₁ i) (hδ₁ i) (hq₁ i) (n := m)
   have hcd₀ (i : ι) :=
-    contDiffAt_integral_bilin_cauchyFueterKernel B (hφ₀ i) (hw₀ i) (hδ₀ i) (hq₀ i) (n := m)
+    B.contDiffAt_integral_bilin_cauchyFueterKernel (hφ₀ i) (hw₀ i) (hδ₀ i) (hq₀ i) (n := m)
   rw [iteratedFDeriv_const_smul_apply' (ContDiffAt.sum fun i _ ↦ (hcd₁ i).sub (hcd₀ i)),
     iteratedFDeriv_fun_sum_apply fun i _ ↦ (hcd₁ i).sub (hcd₀ i)]
   congr 1
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [fun_iteratedFDeriv_sub_apply (hcd₁ i) (hcd₀ i),
-    iteratedFDeriv_integral_bilin_cauchyFueterKernel B (hφ₁ i) (hw₁ i) (hδ₁ i) m (hq₁ i),
-    iteratedFDeriv_integral_bilin_cauchyFueterKernel B (hφ₀ i) (hw₀ i) (hδ₀ i) m (hq₀ i)]
+    B.iteratedFDeriv_integral_bilin_cauchyFueterKernel (hφ₁ i) (hw₁ i) (hδ₁ i) m (hq₁ i),
+    B.iteratedFDeriv_integral_bilin_cauchyFueterKernel (hφ₀ i) (hw₀ i) (hδ₀ i) m (hq₀ i)]
 
 end FiniteSum
 

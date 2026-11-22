@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Quaternion.Cauchy
+public import TauCeti.Analysis.Quaternion.Cauchy.Basic
 public import TauCeti.Analysis.Quaternion.Cauchy.Affine
 public import TauCeti.Analysis.Quaternion.Kernel
 

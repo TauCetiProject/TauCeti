@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 public import TauCeti.Analysis.Quaternion.Fueter
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
@@ -367,5 +368,28 @@ theorem exists_norm_iteratedFDeriv_cauchyFueterKernel_right_le_of_mem_closedBall
   have htri := dist_triangle q p q₀
   simp only [dist_eq_norm] at htri
   linarith
+
+/-- Operator-norm bound for the `m`-th pole derivative of `y ↦ cauchyFueterKernel w y * c`. -/
+theorem norm_iteratedFDeriv_cauchyFueterKernel_mul_right_le {w q : ℍ} (h : w ≠ q) (c : ℍ)
+    (m : ℕ) :
+    ‖iteratedFDeriv ℝ m (fun y ↦ cauchyFueterKernel w y * c) q‖ ≤
+      ‖iteratedFDeriv ℝ m (cauchyFueterKernel w) q‖ * ‖c‖ := by
+  have hop : ‖(ContinuousLinearMap.mul ℝ ℍ).flip c‖ ≤ ‖c‖ :=
+    (((ContinuousLinearMap.mul ℝ ℍ).flip.le_opNorm c).trans_eq
+      (by rw [ContinuousLinearMap.opNorm_flip])).trans
+      ((mul_le_mul_of_nonneg_right (ContinuousLinearMap.opNorm_mul_le ℝ ℍ)
+        (norm_nonneg c)).trans_eq (one_mul _))
+  exact ((((ContinuousLinearMap.mul ℝ ℍ).flip c).norm_iteratedFDeriv_comp_left
+      (contDiffAt_cauchyFueterKernel_right h) le_rfl).trans
+    (mul_le_mul_of_nonneg_right hop (norm_nonneg _))).trans_eq (mul_comm _ _)
+
+/-- Operator-norm bound for the `m`-th pole derivative of `y ↦ c * cauchyFueterKernel w y`. -/
+theorem norm_iteratedFDeriv_mul_cauchyFueterKernel_right_le {w q : ℍ} (h : w ≠ q) (c : ℍ)
+    (m : ℕ) :
+    ‖iteratedFDeriv ℝ m (fun y ↦ c * cauchyFueterKernel w y) q‖ ≤
+      ‖c‖ * ‖iteratedFDeriv ℝ m (cauchyFueterKernel w) q‖ :=
+  (((ContinuousLinearMap.mul ℝ ℍ) c).norm_iteratedFDeriv_comp_left
+      (contDiffAt_cauchyFueterKernel_right h) le_rfl).trans
+    (mul_le_mul_of_nonneg_right (ContinuousLinearMap.opNorm_mul_apply_le ℝ ℍ c) (norm_nonneg _))
 
 end TauCeti

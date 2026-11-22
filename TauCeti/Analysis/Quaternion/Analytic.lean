@@ -716,8 +716,7 @@ private abbrev BoxFaceDomain (a b : Fin 4 → ℝ) (p : Fin 4 × Bool) : Type :=
 face at `b p.1`, `false` for the back face at `a p.1`). -/
 private noncomputable def boxFaceChart (a b : Fin 4 → ℝ) (p : Fin 4 × Bool) :
     C(BoxFaceDomain a b p, ℍ) :=
-  ⟨fun z ↦ dq (p.1.insertNth (cond p.2 (b p.1) (a p.1)) z.val),
-    dq.continuous.comp (continuous_const.finInsertNth p.1 continuous_subtypeVal)⟩
+  TauCeti.Quaternion.boxFaceChart a b p.1 (cond p.2 (b p.1) (a p.1))
 
 private theorem integrable_comp_boxFaceChart {a b : Fin 4 → ℝ} {f : ℍ → ℍ}
     (hf : ∀ i : Fin 4,
@@ -741,7 +740,8 @@ private theorem boxBoundarySum_comp_dq_eq_sum (a b : Fin 4 → ℝ) (G : Fin 4 �
   rw [Fintype.sum_prod_type, boxBoundarySum_def]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Fintype.sum_bool]
-  dsimp only [BoxFaceDomain, boxFaceChart, ContinuousMap.coe_mk]
+  dsimp only [BoxFaceDomain, boxFaceChart]
+  simp_rw [boxFaceChart_apply]
   simp only [Bool.cond_true, Bool.cond_false, one_smul, neg_one_smul]
   rw [integral_subtype_comap measurableSet_Icc (fun x ↦ G i (dq (i.insertNth (b i) x))),
     integral_subtype_comap measurableSet_Icc (fun x ↦ -G i (dq (i.insertNth (a i) x))),
@@ -777,8 +777,8 @@ private theorem le_norm_boxFaceChart_sub {a b : Fin 4 → ℝ} {q₀ : ℍ} {δ 
     (p : Fin 4 × Bool) (z : BoxFaceDomain a b p) :
     δ ≤ ‖boxFaceChart a b p z - q₀‖ := by
   rcases p with ⟨i, (_ | _)⟩
-  · simpa only [boxFaceChart, ContinuousMap.coe_mk, Bool.cond_false] using (hδ i z.val z.property).1
-  · simpa only [boxFaceChart, ContinuousMap.coe_mk, Bool.cond_true] using (hδ i z.val z.property).2
+  · simpa only [boxFaceChart, boxFaceChart_apply, Bool.cond_false] using (hδ i z.val z.property).1
+  · simpa only [boxFaceChart, boxFaceChart_apply, Bool.cond_true] using (hδ i z.val z.property).2
 
 private theorem boxFaceChart_ne_of_pos {a b : Fin 4 → ℝ} {q₀ : ℍ} {δ : ℝ} (hδ₀ : 0 < δ)
     (hδ : ∀ i : Fin 4, ∀ z ∈ Icc (a ∘ i.succAbove) (b ∘ i.succAbove),
@@ -797,9 +797,9 @@ private theorem notMem_iUnion_range_boxFaceChart {a b : Fin 4 → ℝ} {q₀ : �
   intro h
   simp only [mem_iUnion, Finset.mem_univ, mem_range, exists_prop, true_and] at h
   rcases h with ⟨⟨i, (_ | _)⟩, z, hzq⟩
-  · simp only [boxFaceChart, ContinuousMap.coe_mk, Bool.cond_false] at hzq
+  · simp only [boxFaceChart, boxFaceChart_apply, Bool.cond_false] at hzq
     exact (hq₀ i z.val z.property).1 hzq
-  · simp only [boxFaceChart, ContinuousMap.coe_mk, Bool.cond_true] at hzq
+  · simp only [boxFaceChart, boxFaceChart_apply, Bool.cond_true] at hzq
     exact (hq₀ i z.val z.property).2 hzq
 
 /-- Quantitative `HasFPowerSeriesOnBall` expansion on `eball q₀ ((√2 - 1) * δ)` of the left

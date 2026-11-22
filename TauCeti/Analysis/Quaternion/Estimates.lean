@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Quaternion.Analytic
 public import TauCeti.Analysis.Quaternion.Cauchy.IteratedFDeriv
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Star
 import TauCeti.Analysis.Quaternion.Reflection
 
@@ -36,9 +34,6 @@ counterparts with the identical dimension-only constants.
 
 ## Main declarations
 
-* `TauCeti.norm_iteratedFDeriv_cauchyFueterKernel_mul_right_le`,
-  `TauCeti.norm_iteratedFDeriv_mul_cauchyFueterKernel_right_le`: operator-norm bounds for weighted
-  pole derivatives of `cauchyFueterKernel`.
 * `TauCeti.exists_leftFueter_iteratedFDeriv_cube_boundary_bound`,
   `TauCeti.exists_rightFueter_iteratedFDeriv_cube_boundary_bound`,
   `TauCeti.exists_leftFueter_iteratedFDeriv_ball_bound`,
@@ -60,31 +55,6 @@ open Filter MeasureTheory Metric Quaternion Set Topology TauCeti.Quaternion
 open scoped ContDiff
 
 namespace TauCeti
-
-/-! ### Pointwise pole derivatives of weighted Cauchy–Fueter kernels -/
-
-/-- Operator-norm bound for the `m`-th pole derivative of `y ↦ cauchyFueterKernel w y * c`. -/
-theorem norm_iteratedFDeriv_cauchyFueterKernel_mul_right_le {w q : ℍ} (h : w ≠ q) (c : ℍ)
-    (m : ℕ) :
-    ‖iteratedFDeriv ℝ m (fun y ↦ cauchyFueterKernel w y * c) q‖ ≤
-      ‖iteratedFDeriv ℝ m (cauchyFueterKernel w) q‖ * ‖c‖ := by
-  have hop : ‖(ContinuousLinearMap.mul ℝ ℍ).flip c‖ ≤ ‖c‖ :=
-    (((ContinuousLinearMap.mul ℝ ℍ).flip.le_opNorm c).trans_eq
-      (by rw [ContinuousLinearMap.opNorm_flip])).trans
-      ((mul_le_mul_of_nonneg_right (ContinuousLinearMap.opNorm_mul_le ℝ ℍ)
-        (norm_nonneg c)).trans_eq (one_mul _))
-  exact ((((ContinuousLinearMap.mul ℝ ℍ).flip c).norm_iteratedFDeriv_comp_left
-      (analyticAt_cauchyFueterKernel_right h).contDiffAt le_top).trans
-    (mul_le_mul_of_nonneg_right hop (norm_nonneg _))).trans_eq (mul_comm _ _)
-
-/-- Operator-norm bound for the `m`-th pole derivative of `y ↦ c * cauchyFueterKernel w y`. -/
-theorem norm_iteratedFDeriv_mul_cauchyFueterKernel_right_le {w q : ℍ} (h : w ≠ q) (c : ℍ)
-    (m : ℕ) :
-    ‖iteratedFDeriv ℝ m (fun y ↦ c * cauchyFueterKernel w y) q‖ ≤
-      ‖c‖ * ‖iteratedFDeriv ℝ m (cauchyFueterKernel w) q‖ :=
-  (((ContinuousLinearMap.mul ℝ ℍ) c).norm_iteratedFDeriv_comp_left
-      (analyticAt_cauchyFueterKernel_right h).contDiffAt le_top).trans
-    (mul_le_mul_of_nonneg_right (ContinuousLinearMap.opNorm_mul_apply_le ℝ ℍ c) (norm_nonneg _))
 
 /-! ### Universal Cauchy–Fueter derivative bounds on cubes and balls -/
 
