@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
-public import Mathlib.RingTheory.Coprime.Lemmas
 public import Mathlib.RingTheory.Flat.Basic
-public import Mathlib.RingTheory.Localization.Away.Basic
-public import Mathlib.Tactic.LinearCombination
+public import TauCeti.RingTheory.Localization.Away.MayerVietoris
 
 /-!
 # Exact squares of commutative rings
@@ -114,84 +112,19 @@ section Zariski
 
 variable [Algebra R L] [IsScalarTower R R₁ L] [IsScalarTower R R₂ L]
 
-/-- In the Zariski square of coprime `f` and `g`, elements of `R[1/f]` and `R[1/g]` with the
-same image in `R[1/(f * g)]` come from a common element of `R`. -/
-private theorem exists_algebraMap_eq_of_isCoprime {f g : R} (hfg : IsCoprime f g)
-    [IsLocalization.Away f R₁] [IsLocalization.Away g R₂] [IsLocalization.Away (f * g) L]
-    {a : R₁} {b : R₂} (hab : algebraMap R₁ L a = algebraMap R₂ L b) :
-    ∃ r : R, algebraMap R R₁ r = a ∧ algebraMap R R₂ r = b := by
-  -- Write `a = x / f ^ n` and `b = y / g ^ m`; their agreement in `L` gives, after
-  -- clearing denominators, numerators `X = x f ^ k`, `Y = y g ^ k` with `X g ^ Q = Y f ^ P`, and a
-  -- combination of `X` and `Y` from a coprimality relation is the common preimage.
-  obtain ⟨n, x, hx⟩ := IsLocalization.Away.surj f a
-  obtain ⟨m, y, hy⟩ := IsLocalization.Away.surj g b
-  have hx' := congr_arg (algebraMap R₁ L) hx
-  have hy' := congr_arg (algebraMap R₂ L) hy
-  simp only [map_mul, map_pow, ← IsScalarTower.algebraMap_apply] at hx' hy'
-  have hL : algebraMap R L (x * g ^ m) = algebraMap R L (y * f ^ n) := by
-    simp only [map_mul, map_pow]
-    linear_combination -(algebraMap R L g ^ m) * hx' + algebraMap R L f ^ n * hy' +
-      algebraMap R L f ^ n * algebraMap R L g ^ m * hab
-  obtain ⟨k, hk⟩ := IsLocalization.Away.exists_of_eq (f * g) hL
-  have hXY : x * f ^ k * g ^ (m + k) = y * g ^ k * f ^ (n + k) := by
-    linear_combination hk
-  obtain ⟨u, v, huv⟩ := hfg.pow (m := n + k) (n := m + k)
-  refine ⟨u * (x * f ^ k) + v * (y * g ^ k), ?_, ?_⟩
-  · refine ((IsLocalization.Away.algebraMap_isUnit f).pow (n + k)).mul_left_injective ?_
-    have e := congr_arg (algebraMap R R₁) (show (u * (x * f ^ k) + v * (y * g ^ k)) *
-      f ^ (n + k) = x * f ^ k by linear_combination x * f ^ k * huv - v * hXY)
-    simp only [map_mul, map_add, map_pow] at e ⊢
-    linear_combination e - algebraMap R R₁ f ^ k * hx
-  · refine ((IsLocalization.Away.algebraMap_isUnit g).pow (m + k)).mul_left_injective ?_
-    have e := congr_arg (algebraMap R R₂) (show (u * (x * f ^ k) + v * (y * g ^ k)) *
-      g ^ (m + k) = y * g ^ k by linear_combination y * g ^ k * huv + u * hXY)
-    simp only [map_mul, map_add, map_pow] at e ⊢
-    linear_combination e - algebraMap R R₂ g ^ k * hy
-
-/-- In the Zariski square of coprime `f` and `g`, every element of `R[1/(f * g)]` is a difference
-of elements of `R[1/f]` and `R[1/g]`. -/
-private theorem surjective_sub_of_isCoprime {f g : R} (hfg : IsCoprime f g)
-    [IsLocalization.Away f R₁] [IsLocalization.Away g R₂] [IsLocalization.Away (f * g) L]
-    (z : L) : ∃ x : R₁ × R₂, algebraMap R₁ L x.1 - algebraMap R₂ L x.2 = z := by
-  obtain ⟨n, w, hw⟩ := IsLocalization.Away.surj (f * g) z
-  obtain ⟨u, v, huv⟩ := hfg.pow (m := n) (n := n)
-  -- `z = w v / f ^ n + w u / g ^ n` since `u f ^ n + v g ^ n = 1`.
-  have ha := IsLocalization.mk'_spec R₁ (w * v) (⟨f ^ n, n, rfl⟩ : Submonoid.powers f)
-  have hb := IsLocalization.mk'_spec R₂ (-(w * u)) (⟨g ^ n, n, rfl⟩ : Submonoid.powers g)
-  refine ⟨(IsLocalization.mk' R₁ (w * v) (⟨f ^ n, n, rfl⟩ : Submonoid.powers f),
-    IsLocalization.mk' R₂ (-(w * u)) (⟨g ^ n, n, rfl⟩ : Submonoid.powers g)), ?_⟩
-  have hunit : IsUnit (algebraMap R L (f * g) ^ n) :=
-    (IsLocalization.Away.algebraMap_isUnit (f * g)).pow n
-  refine hunit.mul_left_injective ?_
-  have ha' := congr_arg (algebraMap R₁ L) ha
-  have hb' := congr_arg (algebraMap R₂ L) hb
-  simp only [map_mul, map_pow, ← IsScalarTower.algebraMap_apply] at ha' hb'
-  have huv' := congr_arg (algebraMap R L) huv
-  simp only [map_add, map_mul, map_pow, map_one] at huv' hw ha' hb' ⊢
-  simp only [map_neg, map_mul] at hb'
-  linear_combination (algebraMap R L g ^ n) * ha' - (algebraMap R L f ^ n) * hb' - hw +
-    (algebraMap R L w) * huv'
-
 /-- For coprime `f` and `g`, the Zariski square `R → R[1/f], R[1/g] → R[1/(f * g)]` is exact.
 This is the sheaf condition of the structure sheaf of `Spec R` for the cover by the basic opens
 `D(f)` and `D(g)`. -/
 theorem exactSquare_of_isCoprime {f g : R} (hfg : IsCoprime f g) [IsLocalization.Away f R₁]
     [IsLocalization.Away g R₂] [IsLocalization.Away (f * g) L] :
     ExactSquare R R₁ R₂ L where
-  injective r s hrs := by
-    obtain ⟨n, hn⟩ := IsLocalization.Away.exists_of_eq f (congr_arg Prod.fst hrs)
-    obtain ⟨m, hm⟩ := IsLocalization.Away.exists_of_eq g (congr_arg Prod.snd hrs)
-    obtain ⟨u, v, huv⟩ := hfg.pow (m := n) (n := m)
-    linear_combination -(r - s) * huv + u * hn + v * hm
-  exact := by
-    rintro ⟨a, b⟩
-    refine ⟨fun hab ↦ ?_, ?_⟩
-    · obtain ⟨r, ha, hb⟩ := exists_algebraMap_eq_of_isCoprime hfg (sub_eq_zero.mp hab)
-      exact ⟨r, Prod.ext ha hb⟩
-    · rintro ⟨r, hr⟩
-      obtain ⟨rfl, rfl⟩ := Prod.mk.inj hr
-      simp only [← IsScalarTower.algebraMap_apply, sub_self]
-  surjective := surjective_sub_of_isCoprime hfg
+  injective := IsLocalization.Away.mayerVietoris_injective hfg
+  exact := IsLocalization.Away.mayerVietoris_exact hfg
+    (fun b ↦ (IsScalarTower.algebraMap_apply R R₁ L b).symm)
+    (fun b ↦ (IsScalarTower.algebraMap_apply R R₂ L b).symm)
+  surjective := IsLocalization.Away.mayerVietoris_surjective hfg
+    (fun b ↦ (IsScalarTower.algebraMap_apply R R₁ L b).symm)
+    (fun b ↦ (IsScalarTower.algebraMap_apply R R₂ L b).symm)
 
 end Zariski
 
