@@ -47,8 +47,8 @@ is why the base is assumed boundaryless.
   (`TauCeti.JetBundle.exists_contMDiffAt_jet_eq`) and `C^n` near it when `M` and `V` are `C^n`
   (`TauCeti.JetBundle.exists_contMDiffOn_jet_eq`). The jet is local
   (`TauCeti.JetBundle.jet_congr_of_eventuallyEq`), linear on sections that are `C^r` at the base
-  point (`TauCeti.JetBundle.jet_add`, `TauCeti.JetBundle.jet_smul`), and vanishes exactly when the
-  derivatives of order at most `r` of the local representative do
+  point (`TauCeti.JetBundle.jet_add`, `TauCeti.JetBundle.jet_const_smul`), and vanishes exactly
+  when the derivatives of order at most `r` of the local representative do
   (`TauCeti.JetBundle.jet_eq_zero_iff_iteratedFDeriv_localRep`).
 
 ## References
@@ -370,7 +370,7 @@ theorem jet_add {s t : ∀ x, V x} {x : M}
     ((contDiffAt_localRep I F ht hx).of_le hk)
 
 /-- **The `r`-jet is homogeneous** on sections that are `C^r` at the base point. -/
-theorem jet_smul (c : 𝕜) {s : ∀ x, V x} {x : M}
+theorem jet_const_smul (c : 𝕜) {s : ∀ x, V x} {x : M}
     (hs : ContMDiffAt I (I.prod 𝓘(𝕜, F)) r (fun x ↦ TotalSpace.mk' F x (s x)) x) :
     jet I F r (c • s) x = c • jet I F r s x := by
   have hx := FirstJetBundle.mem_baseSet_self (H := H) F V x

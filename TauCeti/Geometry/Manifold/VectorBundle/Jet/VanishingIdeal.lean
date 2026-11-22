@@ -130,7 +130,7 @@ def jetLinearMap (x : M) : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] JetBundle I F V r x
     exact jet_add (contMDiffAt_section s x) (contMDiffAt_section t x)
   map_smul' c s := by
     rw [ContMDiffSection.coe_smul]
-    exact jet_smul c (contMDiffAt_section s x)
+    exact jet_const_smul c (contMDiffAt_section s x)
 
 /-- `TauCeti.JetBundle.jetLinearMap I F V r x` sends a smooth section to its `r`-jet at `x`. -/
 @[simp]
