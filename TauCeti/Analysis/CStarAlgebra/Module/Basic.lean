@@ -33,8 +33,8 @@ Riesz theorem.
 ## Main declarations
 
 * `CStarModule.inner_zero_left'`, `CStarModule.inner_zero_right'`, `CStarModule.inner_neg_left'`,
-  `CStarModule.inner_neg_right'`, `CStarModule.inner_sum_right'`: zero, negation, and finite-sum
-  inner-product identities without `[StarModule ℂ A]`.
+  `CStarModule.inner_neg_right'`, `TauCeti.CStarModule.inner_sum_right'`: zero, negation, and
+  finite-sum inner-product identities without `[StarModule ℂ A]`.
 * `TauCeti.CStarModule.parallelogram_law`, `TauCeti.CStarModule.inner_add_add_self_le`,
   `TauCeti.CStarModule.unop_inner_add_add_self_le`: the parallelogram identity and the order
   bounds `⟪x + y, x + y⟫_A ≤ 2 • (⟪x, x⟫_A + ⟪y, y⟫_A)` and
@@ -129,33 +129,22 @@ theorem inner_zero_right' {x : E} : inner A x (0 : E) = 0 := by
 (compare Mathlib's `CStarModule.inner_neg_left`). -/
 @[simp]
 theorem inner_neg_left' {x y : E} : inner A (-x) y = -inner A x y :=
-  eq_neg_of_add_eq_zero_left <| by
-    rw [← inner_add_left, neg_add_cancel, inner_zero_left']
+  eq_neg_of_add_eq_zero_left <| by rw [← inner_add_left, neg_add_cancel, inner_zero_left']
 
 /-- Right negation inner product `⟪x, -y⟫_A = -⟪x, y⟫_A`, without requiring `[StarModule ℂ A]`
 (compare Mathlib's `CStarModule.inner_neg_right`). -/
 @[simp]
 theorem inner_neg_right' {x y : E} : inner A x (-y) = -inner A x y :=
-  eq_neg_of_add_eq_zero_left <| by
-    rw [← inner_add_right, neg_add_cancel, inner_zero_right']
-
-/-- Right finite-sum inner product `⟪x, ∑ i ∈ s, y i⟫_A = ∑ i ∈ s, ⟪x, y i⟫_A`, without requiring
-`[StarModule ℂ A]` (compare Mathlib's `CStarModule.inner_sum_right`). -/
-theorem inner_sum_right' {ι : Type*} {s : Finset ι} {x : E} {y : ι → E} :
-    inner A x (∑ i ∈ s, y i) = ∑ i ∈ s, inner A x (y i) :=
-  map_sum (AddMonoidHom.mk' (inner A x) fun _ _ ↦ inner_add_right) y s
+  eq_neg_of_add_eq_zero_left <| by rw [← inner_add_right, neg_add_cancel, inner_zero_right']
 
 /-- Vectors are determined by their inner products against all vectors in the first slot. -/
 theorem ext_inner_left {x y : E} (h : ∀ z, inner A z x = inner A z y) : x = y := by
-  apply sub_eq_zero.mp
-  apply (inner_self (A := A)).mp
+  apply sub_eq_zero.mp; apply (inner_self (A := A)).mp
   rw [sub_eq_add_neg, inner_add_right, inner_neg_right', h, add_neg_cancel]
 
 /-- Vectors are determined by their inner products against all vectors in the second slot. -/
-theorem ext_inner_right {x y : E} (h : ∀ z, inner A x z = inner A y z) : x = y := by
-  apply ext_inner_left (A := A)
-  intro z
-  simpa using congrArg star (h z)
+theorem ext_inner_right {x y : E} (h : ∀ z, inner A x z = inner A y z) : x = y :=
+  ext_inner_left (A := A) fun z ↦ by simpa using congrArg star (h z)
 
 end NoStarModule
 
@@ -190,8 +179,7 @@ theorem eq_of_forall_inner_map_self {M : Type*} [FunLike M E E] [LinearMapClass 
   DFunLike.ext S T fun y ↦ ext_inner_left (A := A) fun x ↦ by
     have hS := inner_map_polarization (A := A) (LinearMap.id : E →ₗ[ℂ] E) S x y
     have hT := inner_map_polarization (A := A) (LinearMap.id : E →ₗ[ℂ] E) T x y
-    simp only [LinearMap.id_apply, h] at hS hT
-    exact hS.trans hT.symm
+    simp only [LinearMap.id_apply, h] at hS hT; exact hS.trans hT.symm
 
 /-- A complex-linear map between C⋆-modules preserves all inner products if and only if it
 preserves diagonal inner products `⟪x, x⟫_A`. -/
@@ -208,9 +196,8 @@ omit [StarModule ℂ A] in
 the `A`-valued inner product is injective. -/
 theorem injective_of_inner_map_map {F : Type*} [Inner A F] {f : E → F}
     (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y) :
-    Function.Injective f := fun x y hxy ↦
-  ext_inner_left (A := A) fun z ↦ by
-    rw [← hf z x, ← hf z y, hxy]
+    Function.Injective f := fun _ _ hxy ↦
+  ext_inner_left (A := A) fun z ↦ by rw [← hf z _, ← hf z _, hxy]
 
 omit [StarModule ℂ A] in
 /-- Vectors with equal diagonal `A`-valued inner products have equal norms. -/
@@ -244,8 +231,7 @@ def induced (g : M →ₗ[ℂ] E) (hg : Function.Injective g)
     (hnorm x).trans (norm_eq_sqrt_norm_inner_self (A := A) (x := g x))
 
 /-- The inner product of the pullback `CStarModule.induced` structure is the pullback along `g`. -/
-@[simp]
-theorem induced_inner (g : M →ₗ[ℂ] E) (hg : Function.Injective g)
+@[simp] theorem induced_inner (g : M →ₗ[ℂ] E) (hg : Function.Injective g)
     (hA : ∀ (a : A) (x : M), g (a • x) = a • g x)
     (hnorm : ∀ x : M, ‖x‖ = ‖g x‖) (x y : M) :
     @inner A M (induced g hg hA hnorm).toInner x y = inner A (g x) (g y) := (rfl)
@@ -429,6 +415,14 @@ end CStarModule
 
 namespace TauCeti.CStarModule
 
+/-- Right finite-sum inner product `⟪x, ∑ i ∈ s, y i⟫_A = ∑ i ∈ s, ⟪x, y i⟫_A`, without requiring
+`[StarModule ℂ A]` (compare Mathlib's `CStarModule.inner_sum_right`). -/
+theorem inner_sum_right' {A E ι : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A]
+    [PartialOrder A] [Norm A] [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
+    {s : Finset ι} {x : E} {y : ι → E} :
+    inner A x (∑ i ∈ s, y i) = ∑ i ∈ s, inner A x (y i) :=
+  map_sum (AddMonoidHom.mk' (inner A x) fun _ _ ↦ CStarModule.inner_add_right) y s
+
 section Parallelogram
 
 /-- The parallelogram law in a C⋆-module:
@@ -479,10 +473,9 @@ private lemma inr_inner_unitization_smul {E : Type*} [AddCommGroup E] [Module �
   · simp [Unitization.fst_mul]
   · simp only [Unitization.snd_inr, Unitization.snd_mul, Unitization.fst_mul, Unitization.fst_inr,
       Unitization.fst_star, Unitization.snd_star, zero_mul, zero_smul, zero_add, add_zero,
-      CStarModule.inner_add_left, CStarModule.inner_add_right,
-      CStarModule.inner_smul_left_complex, CStarModule.inner_smul_right_complex,
-      CStarModule.inner_op_smul_left, CStarModule.inner_op_smul_right, smul_add, smul_smul,
-      mul_add, mul_smul_comm, mul_assoc]
+      CStarModule.inner_add_left, CStarModule.inner_add_right, CStarModule.inner_smul_left_complex,
+      CStarModule.inner_smul_right_complex, CStarModule.inner_op_smul_left,
+      CStarModule.inner_op_smul_right, smul_add, smul_smul, mul_add, mul_smul_comm, mul_assoc]
 
 /-- Regularized Paschke estimate: for any strictly positive majorant `b ≥ ⟪x, x⟫_A` in
 `Unitization ℂ A`, if `‖v.fst • y + v.snd • y‖ ≤ C * ‖v.fst • x + v.snd • x‖` for `v = √(b⁻¹)`,
@@ -497,9 +490,8 @@ private lemma inr_inner_self_le_sq_smul_of_le {E F : Type*} [AddCommGroup E] [Mo
   set q : Unitization ℂ A := (inner A x x : Unitization ℂ A)
   set p : Unitization ℂ A := (inner A y y : Unitization ℂ A)
   set v : Unitization ℂ A := CFC.sqrt b⁻¹ʳ
+  set x' := v.fst • x + v.snd • x; set y' := v.fst • y + v.snd • y
   have hv_sa : IsSelfAdjoint v := (CFC.sqrt_nonneg _).isSelfAdjoint
-  set x' : E := v.fst • x + v.snd • x
-  set y' : F := v.fst • y + v.snd • y
   have hx'_inner : (inner A x' x' : Unitization ℂ A) = CFC.conjSqrt b⁻¹ʳ q := by
     simpa only [CFC.conjSqrt_apply, hv_sa.star_eq] using inr_inner_unitization_smul v x
   have hy'_inner : (inner A y' y' : Unitization ℂ A) = CFC.conjSqrt b⁻¹ʳ p := by
@@ -560,8 +552,7 @@ theorem inner_self_le_of_norm_smul_le {E F : Type*} [AddCommGroup E] [Module ℂ
       (le_of_tendsto_of_tendsto'
         (tendsto_unitization_smul (CFC.sqrt (q + algebraMap ℝ (Unitization ℂ A) ε)⁻¹ʳ) y).norm
         ((tendsto_unitization_smul (CFC.sqrt (q + algebraMap ℝ (Unitization ℂ A) ε)⁻¹ʳ)
-          x).norm.const_mul C)
-        fun e ↦ h _))
+          x).norm.const_mul C) fun e ↦ h _))
 
 /-- **Paschke's inequality** for any function `T : E → F` commuting with the `A`-action
 (`∀ a x, T (a • x) = a • T x`) and satisfying a pointwise norm bound `‖T x‖ ≤ C * ‖x‖`:
