@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-!
@@ -37,15 +36,19 @@ algebra are descended to it in `TauCeti.RepresentationTheory.Quiver.PathAlgebra.
   scalars.
 * `TauCeti.mul_mem_commutatorSubmodule_comm`: a product is a sum of commutators exactly when its
   rotation is.
+* `TauCeti.commutatorSubmodule_le_iff`: the commutator submodule lies in a submodule exactly
+  when every additive commutator `x * y - y * x` does.
 * `TauCeti.commutatorSubmodule_le_ker_iff`: a linear map kills the commutator submodule exactly
   when it takes equal values on `x * y` and `y * x`.
-* `TauCeti.map_mem_commutatorSubmodule` and `TauCeti.map_mem_commutatorSubmodule_of_ringHom`: a
-  multiplicative linear map, and also any non-unital ring homomorphism from a ring whose scalar
-  action commutes with multiplication, carries commutators to commutators.
-* `TauCeti.trace_map_eq_zero_of_mem_commutatorSubmodule`: the trace of a matrix representation,
-  with entries in any commutative ring that is a module over the scalars, vanishes on the
-  commutator submodule.  A representation in which an element has nonzero trace therefore shows
-  that its cyclic class is nonzero.
+* `TauCeti.map_mem_commutatorSubmodule`: a multiplicative `k`-linear map carries the commutator
+  submodule over `k` into the commutator submodule over `k` of its target.
+* `TauCeti.map_mem_commutatorSubmodule_of_ringHom`: when `k` acts on `A` associatively and
+  centrally, a non-unital ring homomorphism carries the commutator submodule over `k` into the
+  commutator submodule of its target over any semiring of scalars acting on the target.
+
+The trace criterion for nonvanishing cyclic classes, which needs matrices, is
+`TauCeti.trace_map_eq_zero_of_mem_commutatorSubmodule` in
+`TauCeti.LinearAlgebra.Matrix.Trace.CyclicQuotient`.
 
 ## References
 
@@ -68,9 +71,18 @@ def commutatorSubmodule : Submodule k A :=
   Submodule.span k (Set.range fun p : A × A => p.1 * p.2 - p.2 * p.1)
 
 /-- Every additive commutator belongs to the commutator submodule. -/
+@[simp]
 theorem mul_sub_mul_mem_commutatorSubmodule (x y : A) :
     x * y - y * x ∈ commutatorSubmodule k A :=
   Submodule.subset_span ⟨(x, y), rfl⟩
+
+variable {k A} in
+/-- The commutator submodule lies in a submodule `S` exactly when every additive commutator
+`x * y - y * x` lies in `S`. -/
+theorem commutatorSubmodule_le_iff {S : Submodule k A} :
+    commutatorSubmodule k A ≤ S ↔ ∀ x y : A, x * y - y * x ∈ S := by
+  rw [commutatorSubmodule, Submodule.span_le, Set.range_subset_iff, Prod.forall]
+  simp only [SetLike.mem_coe]
 
 variable {k A} in
 /-- The commutator submodule is closed under negation even when `k` is only a semiring: the
@@ -78,10 +90,9 @@ negative of a commutator `x * y - y * x` is the commutator `y * x - x * y`. -/
 theorem neg_mem_commutatorSubmodule {x : A} (hx : x ∈ commutatorSubmodule k A) :
     -x ∈ commutatorSubmodule k A := by
   -- negation, as a `k`-linear map, sends each spanning commutator to a commutator
-  suffices commutatorSubmodule k A ≤ (commutatorSubmodule k A).comap (-LinearMap.id) by
-    simpa using this hx
-  refine Submodule.span_le.2 (Set.range_subset_iff.2 fun p => ?_)
-  simpa using mul_sub_mul_mem_commutatorSubmodule k A p.2 p.1
+  have hle : commutatorSubmodule k A ≤ (commutatorSubmodule k A).comap (-LinearMap.id) :=
+    commutatorSubmodule_le_iff.2 fun x y => by simp
+  simpa using hle hx
 
 variable {k A} in
 /-- The commutator submodule is closed under integer multiples even when `k` is only a
@@ -112,12 +123,15 @@ theorem mul_mem_commutatorSubmodule_comm {x y : A} :
 
 variable {k A} in
 /-- A linear map kills the commutator submodule exactly when it is invariant under exchanging the
-two factors of a product. -/
-theorem commutatorSubmodule_le_ker_iff {M : Type*} [AddCommGroup M] [Module k M]
+two factors of a product.  The target need only be an additive monoid. -/
+theorem commutatorSubmodule_le_ker_iff {M : Type*} [AddCommMonoid M] [Module k M]
     (f : A →ₗ[k] M) :
     commutatorSubmodule k A ≤ LinearMap.ker f ↔ ∀ x y : A, f (x * y) = f (y * x) := by
-  rw [commutatorSubmodule, Submodule.span_le, Set.range_subset_iff]
-  simp only [Prod.forall, SetLike.mem_coe, LinearMap.mem_ker, map_sub, sub_eq_zero]
+  refine commutatorSubmodule_le_iff.trans (forall₂_congr fun x y => ?_)
+  rw [LinearMap.mem_ker]
+  constructor <;> intro h
+  · rw [← sub_add_cancel (x * y) (y * x), map_add, h, zero_add]
+  · rw [sub_eq_add_neg, map_add, h, ← map_add, add_neg_cancel, map_zero]
 
 variable {k A} in
 /-- A multiplicative linear map, such as an algebra homomorphism, carries the commutator submodule
@@ -125,10 +139,8 @@ into the commutator submodule. -/
 theorem map_mem_commutatorSubmodule {B F : Type*} [NonUnitalNonAssocRing B] [Module k B]
     [FunLike F A B] [MulHomClass F A B] [LinearMapClass F k A B] (f : F) {x : A}
     (hx : x ∈ commutatorSubmodule k A) : f x ∈ commutatorSubmodule k B := by
-  have hle : commutatorSubmodule k A ≤ (commutatorSubmodule k B).comap (f : A →ₗ[k] B) := by
-    rw [commutatorSubmodule, Submodule.span_le, Set.range_subset_iff]
-    rintro ⟨x, y⟩
-    simpa using mul_sub_mul_mem_commutatorSubmodule k B (f x) (f y)
+  have hle : commutatorSubmodule k A ≤ (commutatorSubmodule k B).comap (f : A →ₗ[k] B) :=
+    commutatorSubmodule_le_iff.2 fun x y => by simp
   exact hle hx
 
 variable {k A} in
@@ -151,18 +163,6 @@ theorem map_mem_commutatorSubmodule_of_ringHom {l B F : Type*} [Semiring l]
   | zero => intro _; simp
   | add y z _ _ hy hz => intro r; rw [smul_add, map_add]; exact add_mem (hy r) (hz r)
   | smul s y _ hy => intro r; rw [smul_smul]; exact hy (r * s)
-
-variable {k A} in
-/-- **The trace of a matrix representation kills commutators**: if `f` is a multiplicative
-`k`-linear map to square matrices over a (not necessarily unital or associative) commutative ring
-`R` which is a `k`-module, then the trace of `f x` vanishes for every `x` in the commutator
-submodule. -/
-theorem trace_map_eq_zero_of_mem_commutatorSubmodule {n R F : Type*} [Fintype n]
-    [NonUnitalNonAssocCommRing R] [Module k R] [FunLike F A (Matrix n n R)]
-    [MulHomClass F A (Matrix n n R)] [LinearMapClass F k A (Matrix n n R)] (f : F) {x : A}
-    (hx : x ∈ commutatorSubmodule k A) : (f x).trace = 0 :=
-  (commutatorSubmodule_le_ker_iff (Matrix.traceLinearMap n k R)).2
-    (fun X Y => Matrix.trace_mul_comm X Y) (map_mem_commutatorSubmodule f hx)
 
 end Semiring
 
