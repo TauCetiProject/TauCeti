@@ -14,6 +14,8 @@ public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.Data.Finsupp.Multiset
 public import TauCeti.Data.Multiset.Sort
+public import Mathlib.Algebra.TrivSqZeroExt.Basic
+public import TauCeti.RingTheory.GradedAlgebra.PositivePart
 public import TauCeti.RingTheory.GradedAlgebra.Supercommutativity
 
 /-!
@@ -42,6 +44,9 @@ and `e²` to `v` in the graded-commutative algebra `𝔽₂[u, v]/(u²)`, `|u| =
 * `TauCeti.IsFreeGradedCommutative.basis`: the basis of standard monomials.
 * `TauCeti.IsFreeGradedCommutative.lift`: the algebra map out of `A` sending `x i` to `b i`, for
   any `b i` which commute up to the Koszul sign.
+* `TauCeti.IsFreeGradedCommutative.indecomposablesBasis`: when `2` is invertible and every
+  generator has positive degree, the basis of the indecomposables `A⁺ ⧸ A⁺ · A⁺` given by the
+  classes of the generators, so that the indecomposables of `ΛV` are `V`.
 
 ## Main results
 
@@ -57,6 +62,8 @@ and `e²` to `v` in the graded-commutative algebra `𝔽₂[u, v]/(u²)`, `|u| =
   generators are equal.
 * `TauCeti.IsFreeGradedCommutative.existsUnique_algHom`: the universal property of `ΛV` with
   respect to graded-commutative algebras.
+* `TauCeti.IsFreeGradedCommutative.mem_positivePart`: a generator of positive degree lies in the
+  positive part `A⁺`.
 * `MvPolynomial.isFreeGradedCommutative_X`: a polynomial ring is free graded-commutative on its
   variables placed in even degrees.
 
@@ -66,6 +73,8 @@ and `e²` to `v` in the graded-commutative algebra `𝔽₂[u, v]/(u²)`, `|u| =
   205, Springer, 2001, §3.
 * K. Hess, *Rational homotopy theory: a brief introduction*, in *Interactions between homotopy
   theory and algebra*, Contemp. Math. 436, 2007, §1, before Definition 1.10.
+* J. W. Morgan, *The algebraic topology of smooth algebraic varieties*, Publ. Math. IHÉS 48
+  (1978), the note after Definition 5.2, for the indecomposables of `ΛV`.
 -/
 
 public section
@@ -236,6 +245,11 @@ theorem algHom_ext (hx : IsFreeGradedCommutative 𝒜 x deg) {B : Type*} [Semiri
   AlgHom.ext_of_adjoin_eq_top hx.adjoin_range_eq_top <| by
     rintro _ ⟨i, rfl⟩
     exact h i
+
+/-- A generator of positive degree lies in the positive part. -/
+theorem mem_positivePart (hx : IsFreeGradedCommutative 𝒜 x deg) {i : ι} (hi : 0 < deg i) :
+    x i ∈ positivePart 𝒜 :=
+  mem_positivePart_of_mem (by exact_mod_cast hi) (hx.mem i)
 
 section Degree
 
@@ -409,6 +423,150 @@ theorem existsUnique_algHom (hx : IsFreeGradedCommutative 𝒜 x deg) (ℬ : ℤ
     (b : ι → B) (hb : ∀ i, b i ∈ ℬ (deg i)) : ∃! φ : A →ₐ[K] B, ∀ i, φ (x i) = b i :=
   ⟨hx.lift b fun i j => hB (hb i) (hb j), hx.lift_x b _, fun φ hφ =>
     hx.algHom_ext fun i => by rw [hφ, lift_x]⟩
+
+section Indecomposables
+
+open TrivSqZeroExt
+
+variable [GradedAlgebra 𝒜]
+
+omit [GradedAlgebra 𝒜] in
+/-- The algebra map from a free graded-commutative algebra to the trivial square-zero extension
+`K ⊕ (ι →₀ K)` sending each generator `x i` to the basis vector `single i 1`. It reads off the
+coefficients of the generators modulo decomposables. -/
+private noncomputable def toTrivSqZeroExt (hx : IsFreeGradedCommutative 𝒜 x deg) :
+    A →ₐ[K] TrivSqZeroExt K (ι →₀ K) :=
+  hx.lift (fun i => inr (single i 1)) fun _ _ => by simp
+
+omit [GradedAlgebra 𝒜] in
+private theorem toTrivSqZeroExt_x (hx : IsFreeGradedCommutative 𝒜 x deg) (i : ι) :
+    hx.toTrivSqZeroExt (x i) = inr (single i 1) :=
+  hx.lift_x ..
+
+/-- The constant term of `toTrivSqZeroExt` vanishes on the positive part. -/
+private theorem fst_toTrivSqZeroExt_eq_zero (hx : IsFreeGradedCommutative 𝒜 x deg)
+    {a : A} (ha : a ∈ positivePart 𝒜) : (hx.toTrivSqZeroExt a).fst = 0 := by
+  let ε : A →ₐ[K] K := (fstHom K K (ι →₀ K)).comp hx.toTrivSqZeroExt
+  have hε : ε ∘ x = 0 := funext fun i => by simp [ε, toTrivSqZeroExt_x]
+  refine positivePart_le_iff (P := LinearMap.ker ε.toLinearMap).2 (fun p hp => ?_) ha
+  rw [← hx.span_standardMonomial_eq p, Submodule.span_le]
+  rintro _ ⟨f, hf, rfl⟩
+  obtain ⟨i, hi⟩ : ∃ i, f.val i ≠ 0 := by
+    by_contra! h
+    rw [Set.mem_ofPred_eq, show f.val = 0 from Finsupp.ext h, map_zero] at hf
+    omega
+  simp only [SetLike.mem_coe, LinearMap.mem_ker, AlgHom.toLinearMap_apply,
+    map_standardMonomial, hε, standardMonomial_eq_prod]
+  exact Finset.prod_eq_zero (mem_support_iff.2 hi) (by simp [hi])
+
+/-- Modulo its constant term, every element of a free graded-commutative algebra on generators
+of positive degree has positive degree and is a combination of generators modulo decomposables. -/
+private theorem sub_mem_positivePart_and_mem_span_sup (hx : IsFreeGradedCommutative 𝒜 x deg)
+    (hdeg : ∀ i, 0 < deg i) (a : A) :
+    a - algebraMap K A (hx.toTrivSqZeroExt a).fst ∈ positivePart 𝒜 ∧
+      a - algebraMap K A (hx.toTrivSqZeroExt a).fst ∈
+        Submodule.span K (Set.range x) ⊔ positivePart 𝒜 * positivePart 𝒜 := by
+  suffices h : ∀ w ∈ Algebra.adjoin K (Set.range x),
+      w - algebraMap K A (hx.toTrivSqZeroExt w).fst ∈ positivePart 𝒜 ∧
+        w - algebraMap K A (hx.toTrivSqZeroExt w).fst ∈
+          Submodule.span K (Set.range x) ⊔ positivePart 𝒜 * positivePart 𝒜 from
+    h a (hx.adjoin_range_eq_top ▸ Algebra.mem_top)
+  intro w hw
+  induction hw using Algebra.adjoin_induction with
+  | mem w hw =>
+    obtain ⟨i, rfl⟩ := hw
+    simp only [toTrivSqZeroExt_x, fst_inr, map_zero, sub_zero]
+    exact ⟨hx.mem_positivePart (hdeg i),
+      Submodule.mem_sup_left (Submodule.subset_span ⟨i, rfl⟩)⟩
+  | algebraMap r => simp [algebraMap_eq_inl]
+  | add w w' _ _ hw hw' =>
+    simp only [map_add, fst_add]
+    rw [add_sub_add_comm]
+    exact ⟨add_mem hw.1 hw'.1, add_mem hw.2 hw'.2⟩
+  | mul w w' _ _ hw hw' =>
+    set u := w - algebraMap K A (hx.toTrivSqZeroExt w).fst
+    set v := w' - algebraMap K A (hx.toTrivSqZeroExt w').fst
+    have key : w * w' - algebraMap K A (hx.toTrivSqZeroExt (w * w')).fst =
+        u * v + (hx.toTrivSqZeroExt w').fst • u + (hx.toTrivSqZeroExt w).fst • v := by
+      simp only [u, v, map_mul, fst_mul, Algebra.smul_def, mul_sub, sub_mul,
+        Algebra.commutes (hx.toTrivSqZeroExt w').fst w]
+      rw [Algebra.commutes (hx.toTrivSqZeroExt w').fst]
+      abel
+    rw [key]
+    exact ⟨add_mem (add_mem (mul_mem_positivePart_of_left (fun _ => hx.eq_bot_of_neg) hw.1 v)
+        (Submodule.smul_mem _ _ hw.1)) (Submodule.smul_mem _ _ hw'.1),
+      add_mem (add_mem (Submodule.mem_sup_right (Submodule.mul_mem_mul hw.1 hw'.1))
+        (Submodule.smul_mem _ _ hw.2)) (Submodule.smul_mem _ _ hw'.2)⟩
+
+/-- The classes of the generators in the indecomposables are linearly independent: the
+coefficient of `x i` modulo decomposables is read off by `toTrivSqZeroExt`. -/
+private theorem linearIndependent_mk_x (hx : IsFreeGradedCommutative 𝒜 x deg)
+    (hdeg : ∀ i, 0 < deg i) :
+    LinearIndependent K fun i => Indecomposables.mk 𝒜 ⟨x i, hx.mem_positivePart (hdeg i)⟩ := by
+  let L : A →ₗ[K] ι →₀ K := sndHom K (ι →₀ K) ∘ₗ hx.toTrivSqZeroExt.toLinearMap
+  refine LinearIndependent.of_comp (Submodule.liftQ _ (L ∘ₗ (positivePart 𝒜).subtype)
+    fun a ha => ?_) ?_
+  · rw [LinearMap.mem_ker]
+    refine Submodule.mul_induction_on (C := fun a => L a = 0) ha (fun b hb c hc => ?_)
+      fun b c hb hc => ?_
+    · simp [L, fst_toTrivSqZeroExt_eq_zero hx hb, fst_toTrivSqZeroExt_eq_zero hx hc]
+    · simp [hb, hc]
+  · convert (Finsupp.basisSingleOne : Module.Basis ι K (ι →₀ K)).linearIndependent
+    ext1 i
+    simp [L, Indecomposables.mk_apply, toTrivSqZeroExt_x]
+
+/-- The classes of the generators span the indecomposables. -/
+private theorem top_le_span_mk_x (hx : IsFreeGradedCommutative 𝒜 x deg)
+    (hdeg : ∀ i, 0 < deg i) :
+    ⊤ ≤ Submodule.span K
+      (Set.range fun i => Indecomposables.mk 𝒜 ⟨x i, hx.mem_positivePart (hdeg i)⟩) := by
+  have hspan : Submodule.span K (Set.range x) ≤ positivePart 𝒜 :=
+    Submodule.span_le.2 (Set.range_subset_iff.2 fun i => hx.mem_positivePart (hdeg i))
+  -- The class of a combination of generators is the combination of their classes.
+  have key : ∀ s (hs : s ∈ Submodule.span K (Set.range x)),
+      Indecomposables.mk 𝒜 ⟨s, hspan hs⟩ ∈ Submodule.span K
+        (Set.range fun i => Indecomposables.mk 𝒜 ⟨x i, hx.mem_positivePart (hdeg i)⟩) := by
+    intro s hs
+    induction hs using Submodule.span_induction with
+    | mem s hs =>
+      obtain ⟨i, rfl⟩ := hs
+      exact Submodule.subset_span ⟨i, rfl⟩
+    | zero =>
+      rw [show (⟨0, hspan (zero_mem _)⟩ : positivePart 𝒜) = 0 from rfl, map_zero]
+      exact zero_mem _
+    | add s t hs ht hs' ht' =>
+      rw [show (⟨s + t, hspan (add_mem hs ht)⟩ : positivePart 𝒜) =
+        ⟨s, hspan hs⟩ + ⟨t, hspan ht⟩ from rfl, map_add]
+      exact add_mem hs' ht'
+    | smul c s hs hs' =>
+      rw [show (⟨c • s, hspan (Submodule.smul_mem _ c hs)⟩ : positivePart 𝒜) =
+        c • ⟨s, hspan hs⟩ from rfl, map_smul]
+      exact Submodule.smul_mem _ c hs'
+  -- An element of positive degree is a combination of generators modulo decomposables.
+  rintro q -
+  obtain ⟨⟨a, ha⟩, rfl⟩ := Indecomposables.mk_surjective q
+  have h := (hx.sub_mem_positivePart_and_mem_span_sup hdeg a).2
+  rw [fst_toTrivSqZeroExt_eq_zero hx ha, map_zero, sub_zero] at h
+  obtain ⟨s, hs, m, hm, rfl⟩ := Submodule.mem_sup.1 h
+  convert key s hs using 1
+  rw [Indecomposables.mk_eq_mk_iff]
+  simpa using hm
+
+/-- **The indecomposables of `ΛV` are `V`**: when `2` is invertible in `K`, the classes of the
+generators of a free graded-commutative algebra on generators of positive degree form a basis of
+its indecomposables `A⁺ ⧸ A⁺ · A⁺`. The hypothesis on `2` is needed: over `𝔽₂` the polynomial ring
+`𝔽₂[e]`, `|e| = 1`, is free graded-commutative on `e` and `e²`, and the class of `e²` is zero. -/
+noncomputable def indecomposablesBasis (hx : IsFreeGradedCommutative 𝒜 x deg)
+    (hdeg : ∀ i, 0 < deg i) : Module.Basis ι K (Indecomposables 𝒜) :=
+  .mk (hx.linearIndependent_mk_x hdeg) (hx.top_le_span_mk_x hdeg)
+
+@[simp]
+theorem indecomposablesBasis_apply (hx : IsFreeGradedCommutative 𝒜 x deg)
+    (hdeg : ∀ i, 0 < deg i) (i : ι) :
+    hx.indecomposablesBasis hdeg i = Indecomposables.mk 𝒜 ⟨x i, hx.mem_positivePart (hdeg i)⟩ :=
+  Module.Basis.mk_apply ..
+
+end Indecomposables
 
 end IsFreeGradedCommutative
 
