@@ -35,8 +35,8 @@ operator read in a chart, whose terms need not extend to `ℝⁿ`; on `ℝⁿ` t
   symbol `a_m⁻¹`, unique modulo smoothing symbols on `U`
   (`TauCeti.LocalClassicalSymbol.isSmoothing_toLocalSymbol_sub_of_sharpTerms_left`,
   `TauCeti.LocalClassicalSymbol.isSmoothing_toLocalSymbol_sub_of_sharpTerms_right`).
-* `TauCeti.LocalClassicalSymbol.restrict_leftInverseTerms` and
-  `TauCeti.ClassicalSymbol.restrict_leftInverseTerms`, with their right-handed versions: the formal
+* `TauCeti.LocalClassicalSymbol.leftInverseTerms_restrict` and
+  `TauCeti.ClassicalSymbol.leftInverseTerms_restrict`, with their right-handed versions: the formal
   inverses commute with restriction to smaller open sets, and on `U` the formal inverses of a
   classical symbol on `ℝⁿ` are the restrictions of its formal inverses on `ℝⁿ`. So formal inverses
   computed in two charts agree on their overlap.
@@ -302,7 +302,7 @@ theorem isSmoothing_toLocalSymbol_sub_of_sharpTerms_right {b b' : LocalClassical
 /-! ### Restriction to smaller open sets -/
 
 /-- The formal left inverse commutes with restriction to a smaller open set. -/
-theorem restrict_leftInverseTerms (h : U' ≤ U) :
+theorem leftInverseTerms_restrict (h : U' ≤ U) :
     (restrict h a).leftInverseTerms (ha.restrict h) =
       fun k ↦ LocalHomogeneousSymbol.restrict h (a.leftInverseTerms ha k) := by
   have ht : (restrict h a).term = fun j ↦ LocalHomogeneousSymbol.restrict h (a.term j) :=
@@ -313,7 +313,7 @@ theorem restrict_leftInverseTerms (h : U' ≤ U) :
   · rw [ht, ← restrict_sharpTerms, sharpTerms_leftInverseTerms_succ, map_zero]
 
 /-- The formal right inverse commutes with restriction to a smaller open set. -/
-theorem restrict_rightInverseTerms (h : U' ≤ U) :
+theorem rightInverseTerms_restrict (h : U' ≤ U) :
     (restrict h a).rightInverseTerms (ha.restrict h) =
       fun k ↦ LocalHomogeneousSymbol.restrict h (a.rightInverseTerms ha k) := by
   have ht : (restrict h a).term = fun j ↦ LocalHomogeneousSymbol.restrict h (a.term j) :=
@@ -333,7 +333,7 @@ variable [CompleteSpace V] (a : ClassicalSymbol n V W m) (ha : a.IsElliptic)
 
 /-- On an open set, the formal left inverse of the restriction of an elliptic classical symbol on
 `ℝⁿ` is the restriction of its formal left inverse. -/
-theorem restrict_leftInverseTerms :
+theorem leftInverseTerms_restrict :
     (restrict U a).leftInverseTerms ha.restrict =
       fun k ↦ HomogeneousSymbol.restrict U (a.leftInverseTerms (isElliptic_def.1 ha) k) := by
   have ht : (restrict U a).term = fun j ↦ HomogeneousSymbol.restrict U (a.term j) :=
@@ -345,7 +345,7 @@ theorem restrict_leftInverseTerms :
 
 /-- On an open set, the formal right inverse of the restriction of an elliptic classical symbol on
 `ℝⁿ` is the restriction of its formal right inverse. -/
-theorem restrict_rightInverseTerms :
+theorem rightInverseTerms_restrict :
     (restrict U a).rightInverseTerms ha.restrict =
       fun k ↦ HomogeneousSymbol.restrict U (a.rightInverseTerms (isElliptic_def.1 ha) k) := by
   have ht : (restrict U a).term = fun j ↦ HomogeneousSymbol.restrict U (a.term j) :=

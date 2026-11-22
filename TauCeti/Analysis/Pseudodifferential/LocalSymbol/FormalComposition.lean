@@ -78,6 +78,22 @@ theorem sharpTerm_succ (k : ℕ) :
         (a.spatialDeriv (EuclideanSpace.single j 1))).castDegree (by push_cast; ring) :=
   (rfl)
 
+/-- Transporting the degree of the left factor transports the degree of every term of the formal
+composition. -/
+@[simp]
+theorem sharpTerm_castDegree_left {m'' : ℝ} (h : m' = m'') (k : ℕ) :
+    sharpTerm k (b.castDegree h) a = (sharpTerm k b a).castDegree (by rw [h]) := by
+  subst h
+  rw [castDegree_rfl, castDegree_rfl]
+
+/-- Transporting the degree of the right factor transports the degree of every term of the formal
+composition. -/
+@[simp]
+theorem sharpTerm_castDegree_right {m'' : ℝ} (h : m = m'') (k : ℕ) :
+    sharpTerm k b (a.castDegree h) = (sharpTerm k b a).castDegree (by rw [h]) := by
+  subst h
+  rw [castDegree_rfl, castDegree_rfl]
+
 @[simp]
 theorem coefficient_sharpTerm_zero (p : CoordinateSpace n × CoordinateSpace n) :
     (sharpTerm 0 b a).coefficient p = b.coefficient p ∘L a.coefficient p := by
