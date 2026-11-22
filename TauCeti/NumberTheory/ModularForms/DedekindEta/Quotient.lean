@@ -59,6 +59,7 @@ transformation law of `η` at `σ'` gives `η(δ σ τ) = C √(c τ + d) η(A (
   `TauCeti.ModularForm.isZeroAtImInfty_etaQuotient_slash_iff`: `f ∣[k] σ` is bounded at `i ∞`
   exactly when `0 ≤ L`, and tends to zero exactly when `0 < L`.
 * `TauCeti.ModularForm.natCast_div_gcd_mul_etaQuotientOrder`: `w L` equals Ligozat's expression.
+* `TauCeti.ModularForm.etaQuotientOrder_gcd`: `L` depends on `c` only through `gcd(N, c)`.
 
 ## References
 
@@ -257,6 +258,14 @@ theorem etaQuotientOrder_zero (N : ℕ) (r : ℕ → ℤ) :
   have : (δ : ℚ) ≠ 0 := by exact_mod_cast (Nat.pos_of_mem_divisors hδ).ne'
   rw [Int.natAbs_zero, Nat.gcd_zero_right]
   field_simp
+
+/-- The order of an eta quotient at a cusp depends on its denominator `c` only through
+`gcd(N, c)`, a divisor of `N` when `N ≠ 0`. -/
+theorem etaQuotientOrder_gcd (N : ℕ) (r : ℕ → ℤ) (c : ℤ) :
+    etaQuotientOrder N r (N.gcd c.natAbs) = etaQuotientOrder N r c := by
+  simp only [etaQuotientOrder_def, Int.natAbs_natCast]
+  refine Finset.sum_congr rfl fun δ hδ ↦ ?_
+  rw [← Nat.gcd_assoc, Nat.gcd_eq_left (Nat.dvd_of_mem_divisors hδ)]
 
 /-- **Ligozat's formula**, as an identity in `ℚ`. For `d ∣ N` and `w = N / gcd(N, d²)`,
 `w · etaQuotientOrder N r d = (N / 24) ∑_{δ ∣ N} gcd(d, δ)² r δ / (gcd(d, N / d) d δ)`.

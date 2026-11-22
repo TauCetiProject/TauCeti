@@ -52,6 +52,8 @@ checked modulo `8` and modulo `3` by evaluation.
   for odd `c > 0`.
 * `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_of_even_c`: the Kronecker form for even
   `c`.
+* `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d`: the even-`c` form
+  holds for every `c ≥ 0` when `d` is odd.
 
 ## References
 
@@ -472,6 +474,48 @@ private theorem etaMultiplier_eq_kroneckerEven (γ : SL(2, ℤ)) (heven : Even (
       ring
   · exact etaMultiplier_eq_kroneckerEven_of_pos γ hpos heven
 
+/-! ### The even-`c` form at odd `d` -/
+
+/-- `e(12 u v / 24) = χ₄(2 v + 1) ^ u`: the sign `(-1) ^ (u v)` of quadratic reciprocity. -/
+private theorem e24_twelve_mul_mul (u : ℕ) (v : ℤ) :
+    e24 (12 * (u * v)) = (ZMod.χ₄ (2 * v + 1 : ℤ) : ℂ) ^ u := by
+  have h1 : e24 (12 * v) = ZMod.χ₄ (2 * v + 1 : ℤ) := by
+    obtain ⟨j, rfl | rfl⟩ := Int.even_or_odd' v
+    · rw [e24_congr (Int.modEq_iff_dvd.mpr ⟨-j, by ring⟩ : 12 * (2 * j) ≡ 12 * (0 : ℕ) [ZMOD 24]),
+        e24_twelve_mul, ZMod.χ₄_int_one_mod_four (by omega)]
+      simp
+    · rw [e24_congr (Int.modEq_iff_dvd.mpr ⟨-j, by ring⟩ :
+          12 * (2 * j + 1) ≡ 12 * (1 : ℕ) [ZMOD 24]), e24_twelve_mul,
+        ZMod.χ₄_int_three_mod_four (by omega)]
+      simp
+  induction u with
+  | zero => simp [e24]
+  | succ u ih =>
+    rw [pow_succ, ← ih, ← h1, ← e24_add]
+    congr 1
+    push_cast
+    ring
+
+/-- For odd `c > 0` and odd `d`, the odd-`c` and the even-`c` Kronecker forms agree: the symbols
+differ by `(-1) ^ ((c - 1) (d - 1) / 4)` (quadratic reciprocity), and the exponents by
+`3 (c - 1) (d - 1)`. -/
+private theorem kroneckerOdd_eq_kroneckerEven (a b : ℤ) {c : ℕ} {d : ℤ} (hc : Odd c)
+    (hd : Odd d) :
+    (kroneckerSym d c : ℂ) * e24 (oddExp a b c d) = kroneckerSym c d * e24 (evenExp a b c d) := by
+  rw [kroneckerSym_natCast_left_of_odd hc, kroneckerSym_neg_one_left_of_odd hd]
+  obtain ⟨u, rfl⟩ := hc
+  obtain ⟨v, rfl⟩ := hd
+  have hexp : e24 (oddExp a b ((2 * u + 1 : ℕ) : ℤ) (2 * v + 1)) =
+      e24 (evenExp a b ((2 * u + 1 : ℕ) : ℤ) (2 * v + 1)) * e24 (12 * (u * v)) := by
+    rw [← e24_add]
+    congr 1
+    simp only [oddExp, evenExp]
+    push_cast
+    ring
+  rw [hexp, e24_twelve_mul_mul, show (2 * u + 1) / 2 = u by omega]
+  push_cast
+  ring
+
 /-- **The Kronecker form of the eta multiplier, odd `c`** (Strömberg, Remark 2.5): for
 `γ = (a b; c d) ∈ SL(2, ℤ)` with `c > 0` odd,
 `ε(γ) = (d / c) · e(((a + d) c - b d (c² - 1) - 3 c) / 24)`, where `e(x) = exp(2 π i x)` and
@@ -495,5 +539,23 @@ theorem etaMultiplier_eq_kroneckerSym_mul_of_even_c (γ : SL(2, ℤ)) (heven : E
       cexp (2 * π * I * (((γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * γ 1 1 * (γ 1 0 ^ 2 - 1) +
         3 * γ 1 1 - 3 - 3 * γ 1 0 * γ 1 1 : ℤ) : ℂ) / 24) := by
   rw [etaMultiplier_eq_kroneckerEven γ heven, e24, evenExp]
+
+/-- **The Kronecker form of the eta multiplier, odd `d`**: for `γ = (a b; c d) ∈ SL(2, ℤ)` with
+`c ≥ 0` and `d` odd, the even-`c` formula
+`ε(γ) = (c / d) · e(((a + d) c - b d (c² - 1) + 3 d - 3 - 3 c d) / 24)` holds also when `c` is
+odd. For `c > 0` odd it is the odd-`c` formula rewritten by quadratic reciprocity. The hypothesis
+`c ≥ 0` cannot be dropped: at `γ = (-1 0; -1 -1)` the right side is `-ε(γ)`. -/
+theorem etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d (γ : SL(2, ℤ))
+    (hc : 0 ≤ γ 1 0) (hd : Odd (γ 1 1)) :
+    etaMultiplier γ = kroneckerSym (γ 1 0) (γ 1 1) *
+      cexp (2 * π * I * (((γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * γ 1 1 * (γ 1 0 ^ 2 - 1) +
+        3 * γ 1 1 - 3 - 3 * γ 1 0 * γ 1 1 : ℤ) : ℂ) / 24) := by
+  rcases Int.even_or_odd (γ 1 0) with he | ho
+  · exact etaMultiplier_eq_kroneckerSym_mul_of_even_c γ he
+  have hpos : 0 < γ 1 0 := lt_of_le_of_ne hc fun h ↦ Int.not_odd_zero (h ▸ ho)
+  obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le hc
+  have hno : Odd n := (Int.odd_natCast n).mp (hn ▸ ho)
+  rw [etaMultiplier_eq_kroneckerOdd γ hpos ho, hn, kroneckerOdd_eq_kroneckerEven _ _ hno hd, e24,
+    evenExp]
 
 end TauCeti.ModularForm
