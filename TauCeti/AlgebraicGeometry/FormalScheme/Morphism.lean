@@ -73,7 +73,7 @@ noncomputable def glueMorphisms : X ⟶ Y :=
 @[reassoc (attr := simp)] theorem ofRestrict_glueMorphisms (i : ι) :
     X.ofRestrict (U i) ≫ glueMorphisms U hU f hf = f i :=
   fullyFaithfulForgetToLocallyRingedSpace.map_injective <| by
-    erw [Functor.map_comp, forgetToLocallyRingedSpace_map_ofRestrict]
+    simp only [Functor.map_comp, forgetToLocallyRingedSpace_map_ofRestrict]
     exact LocallyRingedSpace.ofRestrict_glueMorphisms U hU _ _ i
 
 /-- Universal property of open-cover morphism gluing for formal schemes. -/
@@ -184,7 +184,8 @@ theorem continuousOnAffines_sectionsHom (f : X ⟶ ofSpf A) :
   let tTop : TopologicalSpace ((Spf A).presheaf.obj (op ⊤)) :=
     (ofSpf A).sectionsTopology ⊤ (isAffineOpen_top_ofSpf A)
   exact @Continuous.comp _ _ _ ‹TopologicalSpace A› tTop (X.sectionsTopology U hU) _ _
-    (sectionMap_continuous f (isAffineOpen_top_ofSpf A) hU fun _ _ ↦ trivial)
+    (continuous_c_app_comp_map_sectionsTopology f (isAffineOpen_top_ofSpf A) hU
+      fun _ _ ↦ trivial)
     ((Spf.topSectionsIso A).commRingCatIsoToRingEquiv.toEquiv.isHomeomorph_iff.mp
       (isHomeomorph_topSectionsIso A)).2
 
@@ -218,11 +219,13 @@ private noncomputable def chartHom (U : Opens X) (hU : X.IsAffineOpen U) : X.res
 
 private theorem sectionsHom_chartHom (U : Opens X) (hU : X.IsAffineOpen U) (a : A) :
     sectionsHom (chartHom φ hφ U hU) a = (X.toPresheafedSpace.restrictTopSectionsIso U).hom
-      (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op (φ a)) := by
-  dsimp only [chartHom]; rw [sectionsHom_comp_apply]
-  -- Unfold `hU.Sections` to `X.presheaf.obj (op U)`.
-  erw [sectionsHom_ofSpfMap_apply (B := hU.Sections)]
-  exact ConcreteCategory.congr_hom (topSectionsIso_inv_isoSpf_hom_c_app_top hU) _
+      (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op (φ a)) :=
+  (sectionsHom_comp_apply _ _ a).trans <|
+    (congrArg ((forgetToLocallyRingedSpace.map hU.isoSpf.hom).c.app (op ⊤))
+      (sectionsHom_ofSpfMap_apply (B := hU.Sections)
+        ((X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op).hom.comp φ)
+        (hφ.continuous_comp U hU) a)).trans <|
+    ConcreteCategory.congr_hom (topSectionsIso_inv_isoSpf_hom_c_app_top hU) _
 
 private theorem hom_ofSpf_ext_of_isAffineOpen {U : Opens X} (hU : X.IsAffineOpen U)
     {g₁ g₂ : X.restrict U ⟶ ofSpf A} (h : sectionsHom g₁ = sectionsHom g₂) : g₁ = g₂ :=
@@ -236,12 +239,20 @@ private theorem restrictHomOfLE_chartHom {W U : Opens X} (hW : X.IsAffineOpen W)
   refine hom_ofSpf_ext_of_isAffineOpen hW (RingHom.ext fun a ↦ ?_)
   rw [sectionsHom_comp_apply, sectionsHom_chartHom, sectionsHom_chartHom,
     forgetToLocallyRingedSpace_map_restrictHomOfLE]
-  have h := ConcreteCategory.congr_hom
+  have h1 := (X.toLocallyRingedSpace.restrictHomOfLE_toHom hWU).symm ▸ ConcreteCategory.congr_hom
     (X.toPresheafedSpace.restrictTopSectionsIso_hom_restrictHomOfLE_c_app_top hWU)
     (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op (φ a))
-  simp only [ConcreteCategory.comp_apply] at h
-  erw [← LocallyRingedSpace.restrictHomOfLE_toHom] at h
-  exact h.trans <| congrArg _ (ConcreteCategory.congr_hom (X.presheaf.map_comp _ _).symm (φ a))
+  have h2 : (X.presheaf.map (homOfLE hWU).op ≫ (X.toPresheafedSpace.restrictTopSectionsIso W).hom)
+        (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op (φ a)) =
+      (X.toPresheafedSpace.restrictTopSectionsIso W).hom
+        (X.presheaf.map (homOfLE (le_top : W ≤ ⊤)).op (φ a)) :=
+    (ConcreteCategory.comp_apply _ _ _).trans <| congrArg
+      (X.toPresheafedSpace.restrictTopSectionsIso W).hom <|
+      (ConcreteCategory.comp_apply (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op)
+        (X.presheaf.map (homOfLE hWU).op) (φ a)).symm.trans <|
+      ConcreteCategory.congr_hom ((X.presheaf.map_comp _ _).symm.trans
+        (congrArg X.presheaf.map (Subsingleton.elim _ _))) (φ a)
+  exact h1.trans h2
 
 private theorem chartHom_overlap (U V : {U : Opens X // X.IsAffineOpen U}) :
     X.restrictHomOfLE (inf_le_left : U.1 ⊓ V.1 ≤ U.1) ≫ chartHom φ hφ U.1 U.2 =
@@ -261,7 +272,7 @@ private theorem chartHom_overlap (U V : {U : Opens X // X.IsAffineOpen U}) :
       hsub : (X.restrict (U.1 ⊓ V.1)).restrict (Wsub w) ⟶ X.restrict w.1) ≫
         X.restrictHomOfLE w.2.2 = (X.restrict (U.1 ⊓ V.1)).ofRestrict (Wsub w) :=
     fullyFaithfulForgetToLocallyRingedSpace.map_injective <| by
-      erw [Functor.map_comp, forgetToLocallyRingedSpace_map_restrictHomOfLE,
+      simp only [Functor.map_comp, forgetToLocallyRingedSpace_map_restrictHomOfLE,
         forgetToLocallyRingedSpace_map_ofRestrict]
       exact LocallyRingedSpace.IsOpenImmersion.lift_fac (H := hImm) rW jW hsub
   rw [← hl, Category.assoc, Category.assoc, restrictHomOfLE_comp_assoc, restrictHomOfLE_comp_assoc,

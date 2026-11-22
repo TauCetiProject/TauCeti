@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Morphism
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Restrict
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Discrete
 public import Mathlib.AlgebraicGeometry.AffineScheme
@@ -95,6 +96,24 @@ The carrier is exposed so the opens and points of `Spf A` apply directly to `ofS
 theorem ofSpf_toLocallyRingedSpace (A : Type u) [CommRing A] [TopologicalSpace A]
     [IsTopologicalRing A] [IsAdicRing A] :
     (ofSpf A).toLocallyRingedSpace = Spf A := (rfl)
+
+section OfSpfMap
+variable {A B C : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
+  [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsAdicRing B] [CommRing C]
+  [TopologicalSpace C] [IsTopologicalRing C] [IsAdicRing C]
+
+/-- Morphism `ofSpf B ⟶ ofSpf A` attached to a continuous ring homomorphism `φ : A →+* B`. -/
+noncomputable def ofSpfMap (φ : A →+* B) (hφ : Continuous φ) : ofSpf B ⟶ ofSpf A :=
+  InducedCategory.homMk (Spf.map φ hφ)
+
+@[simp] theorem forgetToLocallyRingedSpace_map_ofSpfMap (φ : A →+* B) (hφ : Continuous φ) :
+    forgetToLocallyRingedSpace.map (ofSpfMap φ hφ) = Spf.map φ hφ := (rfl)
+@[simp] theorem ofSpfMap_id : ofSpfMap (RingHom.id A) continuous_id = 𝟙 (ofSpf A) :=
+  InducedCategory.hom_ext Spf.map_id
+@[reassoc] theorem ofSpfMap_comp (φ : B →+* C) (hφ : Continuous φ) (ψ : A →+* B)
+    (hψ : Continuous ψ) : ofSpfMap (φ.comp ψ) (hφ.comp hψ) = ofSpfMap φ hφ ≫ ofSpfMap ψ hψ :=
+  InducedCategory.hom_ext (Spf.map_comp φ hφ ψ hψ)
+end OfSpfMap
 
 /-- An open is affine formal if it is the image of an open immersion from a formal spectrum.
 This definition does not choose a presentation or a topology on its ring of sections. -/

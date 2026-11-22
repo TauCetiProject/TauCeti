@@ -15,10 +15,8 @@ import TauCeti.Geometry.RingedSpace.OpenImmersion
 
 For opens `V ≤ W` of a locally ringed space `X`, `AlgebraicGeometry.PresheafedSpace.restrictHomOfLE`
 lifts to an open immersion `restrictHomOfLE : X|_V ⟶ X|_W` of locally ringed spaces compatible with
-`ofRestrict` and functorial in inclusions. We also record global-section cancellations for
-isomorphisms (`iso_inv_c_app_top_comp_hom`, `iso_hom_c_app_top_comp_inv`) and residue-field
-compatibility with `PresheafedSpace.restrictTopSectionsIso`
-(`evaluation_eq_zero_iff_restrict_Γevaluation_eq_zero`).
+`ofRestrict` and functorial in inclusions. We also record residue-field compatibility with
+`PresheafedSpace.restrictTopSectionsIso` (`evaluation_eq_zero_iff_restrict_Γevaluation_eq_zero`).
 -/
 
 public section
@@ -71,20 +69,6 @@ instance isOpenImmersion_restrictHomOfLE {V W : Opens X} (h : V ≤ W) :
 @[reassoc (attr := simp)] theorem restrictHomOfLE_comp {U V W : Opens X} (h : U ≤ V) (k : V ≤ W) :
     X.restrictHomOfLE h ≫ X.restrictHomOfLE k = X.restrictHomOfLE (h.trans k) :=
   Hom.ext' (X.toPresheafedSpace.restrictHomOfLE_comp h k)
-
-/-- Global-section maps of an isomorphism of locally ringed spaces cancel on the left. -/
-@[reassoc (attr := simp)]
-theorem iso_inv_c_app_top_comp_hom {Y₁ Y₂ : LocallyRingedSpace.{u}} (e : Y₁ ≅ Y₂) :
-    (e.inv.c.app (op ⊤) : Y₁.presheaf.obj (op ⊤) ⟶ Y₂.presheaf.obj (op ⊤)) ≫ e.hom.c.app (op ⊤) =
-      𝟙 (Y₁.presheaf.obj (op ⊤)) :=
-  (LocallyRingedSpace.Γ.map_comp e.inv.op e.hom.op).symm.trans <| by
-    rw [← op_comp, e.hom_inv_id, op_id, LocallyRingedSpace.Γ.map_id]; rfl
-
-/-- Global-section maps of an isomorphism of locally ringed spaces cancel on the right. -/
-@[reassoc (attr := simp)]
-theorem iso_hom_c_app_top_comp_inv {Y₁ Y₂ : LocallyRingedSpace.{u}} (e : Y₁ ≅ Y₂) :
-    (e.hom.c.app (op ⊤) : Y₂.presheaf.obj (op ⊤) ⟶ Y₁.presheaf.obj (op ⊤)) ≫ e.inv.c.app (op ⊤) =
-      𝟙 (Y₂.presheaf.obj (op ⊤)) := iso_inv_c_app_top_comp_hom e.symm
 
 /-- `s ∈ Γ(X, U)` vanishes in the residue field at `x ∈ U` iff its image under
 `PresheafedSpace.restrictTopSectionsIso` vanishes in the residue field of `X|_U` at `x`. -/

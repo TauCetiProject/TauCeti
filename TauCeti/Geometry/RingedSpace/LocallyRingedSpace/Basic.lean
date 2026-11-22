@@ -81,6 +81,20 @@ theorem epi_of_base_surjective_of_c_app_mono {X Y : LocallyRingedSpace} (f : X �
   apply Functor.epi_of_epi_map SheafedSpace.forgetToPresheafedSpace
   exact PresheafedSpace.epi_of_base_surjective_of_c_app_mono _ h₁ h₂
 
+/-- Global-section maps of an isomorphism of locally ringed spaces cancel on the left. -/
+@[reassoc (attr := simp)]
+theorem iso_inv_c_app_top_comp_hom {Y₁ Y₂ : LocallyRingedSpace.{_}} (e : Y₁ ≅ Y₂) :
+    (e.inv.c.app (op ⊤) : Y₁.presheaf.obj (op ⊤) ⟶ Y₂.presheaf.obj (op ⊤)) ≫ e.hom.c.app (op ⊤) =
+      𝟙 (Y₁.presheaf.obj (op ⊤)) :=
+  (LocallyRingedSpace.Γ.map_comp e.inv.op e.hom.op).symm.trans <| by
+    rw [← op_comp, e.hom_inv_id, op_id, LocallyRingedSpace.Γ.map_id]; rfl
+
+/-- Global-section maps of an isomorphism of locally ringed spaces cancel on the right. -/
+@[reassoc (attr := simp)]
+theorem iso_hom_c_app_top_comp_inv {Y₁ Y₂ : LocallyRingedSpace.{_}} (e : Y₁ ≅ Y₂) :
+    (e.hom.c.app (op ⊤) : Y₂.presheaf.obj (op ⊤) ⟶ Y₁.presheaf.obj (op ⊤)) ≫ e.inv.c.app (op ⊤) =
+      𝟙 (Y₂.presheaf.obj (op ⊤)) := iso_inv_c_app_top_comp_hom e.symm
+
 end LocallyRingedSpace
 
 universe u

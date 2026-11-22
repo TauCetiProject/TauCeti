@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.GammaSpecAdjunction
 public import TauCeti.AlgebraicGeometry.FormalScheme.Morphism
 public import TauCeti.RingTheory.Huber.Padic.Basic
 
