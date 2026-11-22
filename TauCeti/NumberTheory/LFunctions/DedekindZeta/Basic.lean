@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import TauCeti.Analysis.Meromorphic.Continuation
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
-import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
 
 /-!
 # The continued Dedekind zeta function
@@ -22,10 +20,8 @@ half-plane agree everywhere, so the continued function is well defined, and ever
 `ζ_K` off the half-plane of convergence, such as a factorization through other L-functions, is a
 statement about `dedekindZetaC K`.
 
-For `K = ℚ`, there is a unique integral ideal of each positive norm
-(`TauCeti.dedekindZetaCoeff_rat`), so `NumberField.dedekindZeta ℚ` agrees with `riemannZeta` on
-`Re s > 1` (`TauCeti.LFunctions.dedekindZeta_rat_eq_riemannZeta`), and `dedekindZetaC ℚ` agrees
-with `riemannZeta` as punctured germs everywhere and pointwise away from the pole `s = 1`.
+For the comparison of `ζ_ℚ` and `dedekindZetaC ℚ` with `riemannZeta`, see
+`TauCeti.NumberTheory.LFunctions.DedekindZeta.Rational.Basic`.
 
 ## Main definitions
 
@@ -37,10 +33,6 @@ with `riemannZeta` as punctured germs everywhere and pointwise away from the pol
   `TauCeti.LFunctions.meromorphic_dedekindZetaC`: it is in meromorphic normal form and
   meromorphic on `ℂ`.
 * `TauCeti.LFunctions.analyticOnNhd_dedekindZetaC`: it is holomorphic on `Re s > 1`.
-* `TauCeti.LFunctions.dedekindZeta_rat_eq_riemannZeta`,
-  `TauCeti.LFunctions.dedekindZetaC_rat_eventuallyEq_riemannZeta`, and
-  `TauCeti.LFunctions.dedekindZetaC_rat_eq_riemannZeta`: over `ℚ`, `ζ_ℚ` and `dedekindZetaC ℚ`
-  identify with `riemannZeta`.
 
 ## References
 
@@ -81,33 +73,5 @@ theorem meromorphic_dedekindZetaC : Meromorphic (dedekindZetaC K) :=
 /-- The continued Dedekind zeta function is holomorphic on `Re s > 1`. -/
 theorem analyticOnNhd_dedekindZetaC : AnalyticOnNhd ℂ (dedekindZetaC K) {s | 1 < s.re} :=
   analyticOnNhd_meromorphicContinuation (analyticOnNhd_dedekindZeta K)
-
-/-- **On `Re s > 1`, the Dedekind zeta function of `ℚ` equals the Riemann zeta function.** -/
-theorem dedekindZeta_rat_eq_riemannZeta {s : ℂ} (hs : 1 < s.re) :
-    NumberField.dedekindZeta ℚ s = riemannZeta s := by
-  rw [← ArithmeticFunction.LSeries_zeta_eq_riemannZeta hs,
-    dedekindZeta_eq_LSeries_dedekindZetaCoeff]
-  refine LSeries_congr (fun {n} hn ↦ ?_) s
-  rw [ArithmeticFunction.zeta_apply, ite_eq_right hn, dedekindZetaCoeff_rat, Nat.cast_one]
-
-/-- **The continued Dedekind zeta function of `ℚ` has the punctured germ of `riemannZeta`** at
-every point of the plane, including the pole `s = 1`. -/
-theorem dedekindZetaC_rat_eventuallyEq_riemannZeta (s : ℂ) :
-    dedekindZetaC ℚ =ᶠ[𝓝[≠] s] riemannZeta := by
-  rw [dedekindZetaC_def]
-  exact meromorphicContinuation_eventuallyEq meromorphic_riemannZeta
-    (analyticOn_riemannZeta.mono fun z hz h ↦ by simp [Set.mem_singleton_iff.mp h] at hz)
-    (fun _ hs ↦ (dedekindZeta_rat_eq_riemannZeta hs).symm) s
-
-/-- **The continued Dedekind zeta function of `ℚ` equals `riemannZeta`** at every `s ≠ 1`. At
-`s = 1` both sides have a pole, and `dedekindZetaC_rat_eventuallyEq_riemannZeta` compares their
-germs there. -/
-theorem dedekindZetaC_rat_eq_riemannZeta {s : ℂ} (hs : s ≠ 1) :
-    dedekindZetaC ℚ s = riemannZeta s := by
-  rw [dedekindZetaC_def]
-  exact meromorphicContinuation_apply meromorphic_riemannZeta
-    (analyticOn_riemannZeta.mono fun z hz h ↦ by simp [Set.mem_singleton_iff.mp h] at hz)
-    (fun _ hs ↦ (dedekindZeta_rat_eq_riemannZeta hs).symm)
-    (analyticOn_riemannZeta s hs)
 
 end TauCeti.LFunctions

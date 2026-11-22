@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 public import TauCeti.NumberTheory.LFunctions.Data.SimplePoles
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completion
+import TauCeti.NumberTheory.LFunctions.GammaFactor.Basic
 
 /-!
 # The completed L-function card of the Dedekind zeta function
@@ -40,8 +41,9 @@ are closely adapted from `TauCeti.LFunctions.riemannZetaData`
 ## Main results
 
 * `TauCeti.LFunctions.dedekindZetaData_degree`, `TauCeti.LFunctions.dedekindZetaData_gammaFactor`,
+  `TauCeti.LFunctions.dedekindZetaData_gammaFactor_ne_zero`,
   `TauCeti.LFunctions.dedekindZetaData_conductor_cast`, `TauCeti.LFunctions.dedekindZetaData_dual`:
-  degree, gamma factor, conductor cast, and self-duality.
+  degree, gamma factor, right-half-plane nonvanishing, conductor cast, and self-duality.
 * `TauCeti.LFunctions.dedekindZetaData_hasDirichletAgreement`,
   `TauCeti.LFunctions.dedekindZetaData_hasMeromorphicContinuation`,
   `TauCeti.LFunctions.dedekindZetaData_hasFunctionalEquation`: the analytic L-function axioms.
@@ -118,6 +120,13 @@ theorem dedekindZetaData_gammaFactor (s : ℂ) :
       Gammaℝ s ^ nrRealPlaces K * Gammaℂ s ^ nrComplexPlaces K := by
   simp [AnalyticLFunctionData.gammaFactor_def]
 
+/-- The gamma factor of `dedekindZetaData K` does not vanish on `0 < s.re`. -/
+theorem dedekindZetaData_gammaFactor_ne_zero {s : ℂ} (hs : 0 < s.re) :
+    (dedekindZetaData K).gammaFactor s ≠ 0 :=
+  (dedekindZetaData K).gammaFactor_ne_zero_of_forall_re_add_pos
+    (fun μ hμ ↦ by simpa [Multiset.eq_of_mem_replicate hμ] using hs)
+    (fun ν hν ↦ by simpa [Multiset.eq_of_mem_replicate hν] using hs)
+
 /-- The Dedekind zeta card is self-dual. -/
 @[simp]
 theorem dedekindZetaData_dual : (dedekindZetaData K).dual = dedekindZetaData K := by
@@ -151,11 +160,17 @@ theorem dedekindZetaData_hasDirichletAgreement :
 and no other singularities. -/
 theorem dedekindZetaData_hasMeromorphicContinuation :
     (dedekindZetaData K).HasMeromorphicContinuation :=
-  AnalyticLFunctionData.hasMeromorphicContinuation_of_simple_poles_zero_one
-    (dedekindZetaData_polarOrder K)
-    (meromorphicOrderAt_completedDedekindZeta_zero K)
-    (meromorphicOrderAt_completedDedekindZeta_one K)
-    fun _ h0 h1 ↦ analyticAt_completedDedekindZeta h0 h1
+  AnalyticLFunctionData.hasMeromorphicContinuation_of_meromorphicOrderAt
+    (fun p hp ↦ by
+      rw [dedekindZetaData_polarOrder] at hp ⊢
+      rcases eq_or_ne p 0 with rfl | hp0
+      · simp [meromorphicOrderAt_completedDedekindZeta_zero]
+      rcases eq_or_ne p 1 with rfl | hp1
+      · simp [meromorphicOrderAt_completedDedekindZeta_one]
+      · simp [Ne.symm hp0, Ne.symm hp1] at hp)
+    fun p hp ↦ by
+      rw [dedekindZetaData_polarOrder] at hp
+      exact analyticAt_completedDedekindZeta (by rintro rfl; simp at hp) (by rintro rfl; simp at hp)
 
 /-- The completed Dedekind zeta function satisfies the functional equation `Λ_K(s) = Λ_K(1 - s)`
 with root number `1`. -/

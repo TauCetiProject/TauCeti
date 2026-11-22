@@ -225,6 +225,23 @@ structure HasFunctionalEquation : Prop where
 
 variable {d}
 
+/-- Construct `HasMeromorphicContinuation` from the exact pole orders on the support of
+`d.polarOrder` and analyticity away from the support. Global meromorphy is derived from
+`meromorphicAt_of_meromorphicOrderAt_ne_zero` at recorded poles and analyticity elsewhere. -/
+theorem hasMeromorphicContinuation_of_meromorphicOrderAt
+    (hord : ∀ p : ℂ, d.polarOrder p ≠ 0 →
+      meromorphicOrderAt d.completed p = (-(d.polarOrder p : ℤ) : WithTop ℤ))
+    (ha : ∀ p : ℂ, d.polarOrder p = 0 → AnalyticAt ℂ d.completed p) :
+    d.HasMeromorphicContinuation where
+  meromorphic p := by
+    by_cases hp : d.polarOrder p = 0
+    · exact (ha p hp).meromorphicAt
+    · refine meromorphicAt_of_meromorphicOrderAt_ne_zero ?_
+      rw [hord p hp]
+      simp [hp]
+  meromorphicOrderAt_eq := hord
+  analyticAt := ha
+
 /-- The dual of a card that agrees with a Dirichlet series agrees with the conjugate series. -/
 theorem HasDirichletAgreement.dual (h : d.HasDirichletAgreement) :
     d.dual.HasDirichletAgreement where

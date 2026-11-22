@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
-public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
+public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Rational.Basic
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Basic
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.UnitaryWeight
 import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor

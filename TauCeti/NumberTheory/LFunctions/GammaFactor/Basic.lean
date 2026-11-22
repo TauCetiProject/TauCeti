@@ -198,6 +198,21 @@ theorem invGammaFactor_mul_gammaFactor {s : ℂ} (hs : d.gammaFactor s ≠ 0) :
     d.invGammaFactor s * d.gammaFactor s = 1 := by
   rw [invGammaFactor_def, inv_mul_cancel₀ hs]
 
+/-- Away from gamma poles, the reciprocal conductor and gamma factors cancel the conductor and
+gamma factors pointwise. -/
+theorem conductor_cpow_neg_mul_invGammaFactor_mul_conductor_cpow_mul_gammaFactor_eq_one
+    {s : ℂ} (hγ : d.gammaFactor s ≠ 0) :
+    (((d.conductor : ℕ) : ℂ) ^ (-s / 2) * d.invGammaFactor s) *
+      (((d.conductor : ℕ) : ℂ) ^ (s / 2) * d.gammaFactor s) = 1 := by
+  have hN : ((d.conductor : ℕ) : ℂ) ^ (-s / 2) * ((d.conductor : ℕ) : ℂ) ^ (s / 2) = 1 := by
+    rw [neg_div, Complex.cpow_neg, inv_mul_cancel₀ (d.conductor_cpow_ne_zero (s / 2))]
+  calc
+    (((d.conductor : ℕ) : ℂ) ^ (-s / 2) * d.invGammaFactor s) *
+        (((d.conductor : ℕ) : ℂ) ^ (s / 2) * d.gammaFactor s)
+      = (((d.conductor : ℕ) : ℂ) ^ (-s / 2) * ((d.conductor : ℕ) : ℂ) ^ (s / 2)) *
+          (d.invGammaFactor s * d.gammaFactor s) := by ring
+    _ = 1 := by rw [hN, d.invGammaFactor_mul_gammaFactor hγ, mul_one]
+
 /-- Taking the analytic reciprocal negates the meromorphic order. -/
 theorem meromorphicOrderAt_invGammaFactor (s : ℂ) :
     meromorphicOrderAt d.invGammaFactor s = -meromorphicOrderAt d.gammaFactor s := by

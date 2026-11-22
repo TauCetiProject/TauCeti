@@ -126,10 +126,17 @@ theorem riemannZetaData_hasDirichletAgreement : riemannZetaData.HasDirichletAgre
 others. -/
 theorem riemannZetaData_hasMeromorphicContinuation :
     riemannZetaData.HasMeromorphicContinuation :=
-  AnalyticLFunctionData.hasMeromorphicContinuation_of_simple_poles_zero_one
-    riemannZetaData_polarOrder
-    meromorphicOrderAt_completedRiemannZeta_zero meromorphicOrderAt_completedRiemannZeta_one
-    fun _ h0 h1 ↦ analyticAt_completedRiemannZeta h0 h1
+  AnalyticLFunctionData.hasMeromorphicContinuation_of_meromorphicOrderAt
+    (fun p hp ↦ by
+      rw [riemannZetaData_polarOrder] at hp ⊢
+      rcases eq_or_ne p 0 with rfl | hp0
+      · simp [meromorphicOrderAt_completedRiemannZeta_zero]
+      rcases eq_or_ne p 1 with rfl | hp1
+      · simp [meromorphicOrderAt_completedRiemannZeta_one]
+      · simp [Ne.symm hp0, Ne.symm hp1] at hp)
+    fun p hp ↦ by
+      rw [riemannZetaData_polarOrder] at hp
+      exact analyticAt_completedRiemannZeta (by rintro rfl; simp at hp) (by rintro rfl; simp at hp)
 
 /-- The functional equation `Λ(s) = Λ(1 - s)` of the completed Riemann zeta function, with root
 number `1`. -/

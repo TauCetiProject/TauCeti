@@ -119,8 +119,8 @@ theorem dedekindZetaC_eq_mul_completedDedekindZeta {s : ℂ} (h0 : s ≠ 0) :
   rw [← dedekindZetaData_continuedL K, ← uncompletedProduct_dedekindZetaData]
   by_cases h1 : s = 1
   · subst h1
-    refine (dedekindZetaData_hasMeromorphicContinuation K).continuedL_eq_of_gammaFactor_ne_zero ?_
-    simp [Gammaℝ_one, Gammaℂ_one, Real.pi_ne_zero]
+    exact (dedekindZetaData_hasMeromorphicContinuation K).continuedL_eq_of_gammaFactor_ne_zero
+      (dedekindZetaData_gammaFactor_ne_zero K (by norm_num))
   · refine AnalyticLFunctionData.continuedL_eq_uncompletedProduct_of_analyticAt
       (dedekindZetaData_hasMeromorphicContinuation K).meromorphic
       (AnalyticLFunctionData.analyticAt_uncompletedProduct ?_)
@@ -320,66 +320,42 @@ the corresponding partial-zeta API in
 `completedPartialZeta_one`) as their formal template. -/
 
 variable (K) in
+/-- The continued Dedekind zeta function has a simple pole at `s = 1`. -/
+@[simp]
+theorem meromorphicOrderAt_dedekindZetaC_one :
+    meromorphicOrderAt (dedekindZetaC K) 1 = (-1 : ℤ) := by
+  rw [← dedekindZetaData_continuedL K,
+    AnalyticLFunctionData.meromorphicOrderAt_continuedL
+      (dedekindZetaData_hasMeromorphicContinuation K).meromorphic 1,
+    dedekindZetaData_completed, meromorphicOrderAt_completedDedekindZeta_one,
+    ((dedekindZetaData K).meromorphicOrderAt_gammaFactor_eq_zero_iff 1).mpr
+      (dedekindZetaData_gammaFactor_ne_zero K (by norm_num)),
+    sub_zero]
+
+variable (K) in
 /-- **Analytic class number formula in the complex plane**:
 `(s - 1) * dedekindZetaC K s → NumberField.dedekindZeta_residue K` as `s → 1` in `𝓝[≠] 1`. -/
 theorem tendsto_sub_one_mul_dedekindZetaC :
     Tendsto (fun s : ℂ ↦ (s - 1) * dedekindZetaC K s) (𝓝[≠] 1)
       (𝓝 (NumberField.dedekindZeta_residue K : ℂ)) := by
-  have hdiscr :
-      ContinuousAt (fun s : ℂ ↦ (((dedekindZetaData K).conductor : ℕ) : ℂ) ^ (-s / 2)) 1 :=
-    ((dedekindZetaData K).analyticAt_conductor_cpow (by fun_prop)).continuousAt
-  have harch : Tendsto (fun s : ℂ ↦
-      (((dedekindZetaData K).conductor : ℕ) : ℂ) ^ (-s / 2) *
-        (dedekindZetaData K).invGammaFactor s) (𝓝[≠] 1)
-      (𝓝 ((((dedekindZetaData K).conductor : ℕ) : ℂ) ^ (-(1 : ℂ) / 2) *
-        (dedekindZetaData K).invGammaFactor 1)) :=
-    (hdiscr.mul ((dedekindZetaData K).analyticAt_invGammaFactor 1).continuousAt).tendsto.mono_left
-      nhdsWithin_le_nhds
-  have hprod := harch.mul (tendsto_sub_one_mul_completedDedekindZeta K)
-  have hγ : (dedekindZetaData K).gammaFactor 1 ≠ 0 := by
-    rw [dedekindZetaData_gammaFactor]
-    exact mul_ne_zero (pow_ne_zero _ (Gammaℝ_ne_zero_of_re_pos (by norm_num)))
-      (pow_ne_zero _ (Gammaℂ_ne_zero_of_re_pos (by norm_num)))
-  have hcancel := AnalyticLFunctionData.inv_conductor_cpow_mul_invGammaFactor_mul hγ
-  have hlim :
-      ((((dedekindZetaData K).conductor : ℕ) : ℂ) ^ (-(1 : ℂ) / 2) *
-          (dedekindZetaData K).invGammaFactor 1) *
-          ((2 ^ (nrRealPlaces K + nrComplexPlaces K) * regulator K * classNumber K /
-            torsionOrder K : ℝ) : ℂ) =
-        (NumberField.dedekindZeta_residue K : ℂ) := by
-    rw [two_pow_mul_regulator_mul_classNumber_div_torsionOrder_eq K,
-      ← dedekindZetaData_conductor_cast K,
-      mul_assoc ((((dedekindZetaData K).conductor : ℕ) : ℂ) ^ ((1 : ℂ) / 2)),
-      ← dedekindZetaData_gammaFactor K]
-    calc
-      ((((dedekindZetaData K).conductor : ℕ) : ℂ) ^ (-(1 : ℂ) / 2) *
-          (dedekindZetaData K).invGammaFactor 1) *
-          ((((dedekindZetaData K).conductor : ℕ) : ℂ) ^ ((1 : ℂ) / 2) *
-            (dedekindZetaData K).gammaFactor 1 *
-            (NumberField.dedekindZeta_residue K : ℂ))
-        = ((((dedekindZetaData K).conductor : ℕ) : ℂ) ^ (-(1 : ℂ) / 2) *
-            (dedekindZetaData K).invGammaFactor 1 *
-            ((((dedekindZetaData K).conductor : ℕ) : ℂ) ^ ((1 : ℂ) / 2) *
-              (dedekindZetaData K).gammaFactor 1)) *
-            (NumberField.dedekindZeta_residue K : ℂ) := by ring
-      _ = (NumberField.dedekindZeta_residue K : ℂ) := by rw [hcancel, one_mul]
-  rw [hlim] at hprod
-  refine hprod.congr' ?_
-  filter_upwards [AnalyticLFunctionData.continuedL_eventuallyEq
-    (dedekindZetaData_hasMeromorphicContinuation K).meromorphic 1] with s hs
-  rw [← dedekindZetaData_continuedL K, hs, AnalyticLFunctionData.uncompletedProduct_def,
-    dedekindZetaData_completed]
-  ring
-
-variable (K) in
-/-- The continued Dedekind zeta function has a simple pole at `s = 1`. -/
-@[simp]
-theorem meromorphicOrderAt_dedekindZetaC_one :
-    meromorphicOrderAt (dedekindZetaC K) 1 = (-1 : ℤ) := by
-  have hne : (NumberField.dedekindZeta_residue K : ℂ) ≠ 0 :=
-    ofReal_ne_zero.mpr (NumberField.dedekindZeta_residue_pos K).ne'
-  refine (meromorphic_dedekindZetaC K 1).meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul hne ?_
-  simpa only [smul_eq_mul] using tendsto_sub_one_mul_dedekindZetaC K
+  have hlim : Tendsto (fun s : ℂ ↦ (s - 1) * dedekindZetaC K s) (𝓝[≠] 1)
+      (𝓝 (meromorphicTrailingCoeffAt (dedekindZetaC K) 1)) := by
+    have h := (meromorphic_dedekindZetaC K 1).tendsto_nhds_meromorphicTrailingCoeffAt
+    rw [meromorphicOrderAt_dedekindZetaC_one K] at h
+    simpa [Pi.mul_def] using h
+  have hreal : Tendsto (fun x : ℝ ↦ (x - 1 : ℂ) * dedekindZetaC K x) (𝓝[>] (1 : ℝ))
+      (𝓝 (meromorphicTrailingCoeffAt (dedekindZetaC K) 1)) := by
+    refine hlim.comp (tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩)
+    · exact Complex.continuous_ofReal.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
+    · filter_upwards [self_mem_nhdsWithin] with x (hx : 1 < x)
+      exact Complex.ofReal_injective.ne hx.ne'
+  have hzeta : Tendsto (fun x : ℝ ↦ (x - 1 : ℂ) * dedekindZetaC K x) (𝓝[>] (1 : ℝ))
+      (𝓝 (NumberField.dedekindZeta_residue K : ℂ)) := by
+    refine (NumberField.tendsto_sub_one_mul_dedekindZeta_nhdsGT K).congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with x (hx : 1 < x)
+    have hre : 1 < (x : ℂ).re := by simpa using hx
+    rw [dedekindZetaC_eq hre]
+  rwa [tendsto_nhds_unique hreal hzeta] at hlim
 
 /-- `dedekindZetaC K` is analytic at `s` if and only if `s ≠ 1`. -/
 @[simp]

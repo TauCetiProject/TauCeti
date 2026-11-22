@@ -8,17 +8,15 @@ module
 public import TauCeti.NumberTheory.LFunctions.Data.Growth
 public import TauCeti.NumberTheory.LFunctions.Data.Series
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Card
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
-import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 
 /-!
 # Average growth and `ofSeries` recovery for the Dedekind zeta card
 
 This downstream module proves that `TauCeti.LFunctions.dedekindZetaData K` satisfies
-`HasAverageCoefficientGrowth` and is recovered identically by `AnalyticLFunctionData.ofSeries`.
-Keeping these results separate from `TauCeti.NumberTheory.LFunctions.DedekindZeta.Card` avoids
-loading coefficient-growth and Euler-product machinery when importing the analytic continuation.
+`HasAverageCoefficientGrowth` and is recovered identically by `AnalyticLFunctionData.ofSeries`,
+keeping the card's growth and `ofSeries` results separate from
+`TauCeti.NumberTheory.LFunctions.DedekindZeta.Card`.
 
 The `ofSeries` recovery proof is adapted from `TauCeti.LFunctions.ofSeries_riemannZetaData`
 (`TauCeti.NumberTheory.LFunctions.Data.RiemannZeta`).
@@ -58,13 +56,14 @@ theorem ofSeries_dedekindZetaData :
     (dedekindZetaData_hasFunctionalEquation K)
     (by rw [dedekindZetaData_completed]; exact meromorphicNFOn_completedDedekindZeta K)
     (by simp) ?_
-  rw [dedekindZetaData_completed, completedDedekindZeta_eq (by norm_num : 1 < (2 : ℂ).re)]
-  have hd : ((|discr K| : ℤ) : ℂ) ^ ((2 : ℂ) / 2) ≠ 0 :=
-    cpow_ne_zero_iff.mpr (Or.inl (NumberField.cast_abs_discr_ne_zero K))
-  have hΓℝ : Gammaℝ 2 ≠ 0 := Gammaℝ_ne_zero_of_re_pos (by norm_num)
-  have hΓℂ : Gammaℂ 2 ≠ 0 := Gammaℂ_ne_zero_of_re_pos (by norm_num)
-  have hζ : NumberField.dedekindZeta K 2 ≠ 0 :=
-    TauCeti.dedekindZeta_ne_zero_of_one_lt_re (by norm_num)
-  exact mul_ne_zero (mul_ne_zero (mul_ne_zero hd (pow_ne_zero _ hΓℝ)) (pow_ne_zero _ hΓℂ)) hζ
+  rw [(dedekindZetaData_hasDirichletAgreement K).completed_eq 2 (by norm_num)]
+  have hN : ((((dedekindZetaData K).conductor : ℕ) : ℂ) ^ ((2 : ℂ) / 2)) ≠ 0 :=
+    (dedekindZetaData K).conductor_cpow_ne_zero _
+  have hγ : (dedekindZetaData K).gammaFactor 2 ≠ 0 :=
+    dedekindZetaData_gammaFactor_ne_zero K (by norm_num)
+  have hL : LSeries (dedekindZetaData K).coeff 2 ≠ 0 := by
+    rw [funext (dedekindZetaData_coeff K), ← dedekindZeta_eq_LSeries_normCoeff_one K 2]
+    exact TauCeti.dedekindZeta_ne_zero_of_one_lt_re (by norm_num)
+  exact mul_ne_zero (mul_ne_zero hN hγ) hL
 
 end TauCeti.LFunctions

@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completion
-import TauCeti.Analysis.Meromorphic.Order
-import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
+public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Rational.Basic
 import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
 
 /-!
@@ -22,7 +20,7 @@ and pointwise away from `{0, 1}`.
 The germ-versus-pointwise comparison pair follows
 `TauCeti.LFunctions.dedekindZetaC_rat_eventuallyEq_riemannZeta` and
 `TauCeti.LFunctions.dedekindZetaC_rat_eq_riemannZeta`
-(`TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic`) as its formal template.
+(`TauCeti.NumberTheory.LFunctions.DedekindZeta.Rational.Basic`) as its formal template.
 
 ## Main results
 
@@ -44,7 +42,8 @@ namespace TauCeti.LFunctions
 /-! ### Comparison with the completed Riemann zeta function over `ℚ` -/
 
 /- Adapted from `dedekindZetaC_rat_eventuallyEq_riemannZeta` and
-`dedekindZetaC_rat_eq_riemannZeta` (`TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic`). -/
+`dedekindZetaC_rat_eq_riemannZeta`
+(`TauCeti.NumberTheory.LFunctions.DedekindZeta.Rational.Basic`). -/
 
 private theorem completedDedekindZeta_rat_eqOn :
     EqOn (completedDedekindZeta ℚ) completedRiemannZeta {s | 1 < s.re} := by

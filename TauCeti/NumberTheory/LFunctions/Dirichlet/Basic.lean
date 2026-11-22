@@ -187,7 +187,8 @@ theorem dirichletData_hasMeromorphicContinuation :
     have hbase : (N : ℂ) ∈ slitPlane := natCast_mem_slitPlane.mpr (NeZero.ne N)
     rw [funext (dirichletData_completed χ hχ)]
     fun_prop (disch := assumption)
-  exact ⟨fun s ↦ (ha s).meromorphicAt, by simp [hN], fun s _ ↦ ha s⟩
+  exact AnalyticLFunctionData.hasMeromorphicContinuation_of_meromorphicOrderAt
+    (by simp [hN]) fun s _ ↦ ha s
 
 /-- The conductor-normalized Dirichlet completion satisfies the functional equation against
 the conjugate card, with Mathlib's Gauss-sum root number. -/
