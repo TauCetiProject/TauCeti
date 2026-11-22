@@ -31,7 +31,10 @@ or disjoint exit discs, that closure is homeomorphic to `[0, r₀] × S`, with t
 the parameter `0`. When the Morse indices of the broken trajectory are not consecutive, `p` ranges
 over pairs of a trajectory into the middle critical point and a trajectory out of it, with `g p`
 depending on the first and `k p` on the second. In the split box, this chart is the model from
-which a collar along once-broken trajectories is expected to come.
+which a collar along once-broken trajectories is expected to come. When the discs are the graphs
+`y ↦ (g (s, y), y)` and `x ↦ (x, k (t, x))` of maps `g` and `k` Lipschitz jointly in a parameter
+from a proper space and the point, these hypotheses hold on a small ball of parameters, which
+gives a chart by `[0, r₀]` times that ball.
 
 ## Main results
 
@@ -46,6 +49,8 @@ which a collar along once-broken trajectories is expected to come.
 * `TauCeti.exists_homeomorph_closure_biUnion_splitGluingPairs`: for a compact family of pairs of
   discs, a chart by `[0, r₀] × S` with the gluing parameter as first coordinate and the broken
   pairs at `0`.
+* `TauCeti.exists_homeomorph_closure_biUnion_splitGluingPairs_prod`: for jointly Lipschitz
+  families of graphs over proper parameter spaces, such a chart over a small ball of parameters.
 
 ## References
 
@@ -433,5 +438,101 @@ theorem exists_homeomorph_closure_splitGluingPairs [CompleteSpace Eᵤ]
     he₀ () (mem_univ _)⟩
 
 end Family
+
+/-! ### Jointly Lipschitz families of graphs -/
+
+section ProdFamily
+
+variable {P Q : Type*} [NormedAddCommGroup P] [ProperSpace P] [NormedAddCommGroup Q]
+  [ProperSpace Q]
+
+/-- **The local compactified gluing space of jointly Lipschitz families of graphs.** Let
+`g : P × Eᵤ → Eₛ` and `k : Q × Eₛ → Eᵤ` be Lipschitz on closed balls of radii `δ₁` and `δ₂`, with
+values on the spheres of radius `ε`, so that `y ↦ (g (s, y), y)` and `x ↦ (x, k (t, x))` are
+families of graphs in the entrance and exit faces, indexed by parameters in proper spaces. Suppose
+that distinct parameters give disjoint graphs. Then there are radii `r₀ ≤ 1` and `ρ` such that a
+parameter in the closed ball `S` of radius `ρ` in `P × Q` together with a point of norm at most
+`r₀ * ε` lies in the domains of `g` and `k`, and such that the closure of the entrance and exit
+pairs of the members `(s, t)` of `S` is homeomorphic to `[0, r₀] × S`, with the gluing parameter as
+first inverse coordinate and the broken pairs at the parameter `0`. This closure adds exactly the
+broken pairs of the members of `S`. -/
+theorem exists_homeomorph_closure_biUnion_splitGluingPairs_prod [CompleteSpace Eᵤ]
+    {g : P × Eᵤ → Eₛ} {k : Q × Eₛ → Eᵤ} {δ₁ δ₂ : ℝ}
+    (hg : LipschitzOnWith Kg g (closedBall 0 δ₁)) (hgε : ∀ q ∈ closedBall 0 δ₁, ‖g q‖ = ε)
+    (hk : LipschitzOnWith Kk k (closedBall 0 δ₂)) (hkε : ∀ q ∈ closedBall 0 δ₂, ‖k q‖ = ε)
+    (hginj : ∀ s s' y, (s, y) ∈ closedBall (0 : P × Eᵤ) δ₁ → (s', y) ∈ closedBall 0 δ₁ →
+      g (s, y) = g (s', y) → s = s')
+    (hkinj : ∀ t t' x, (t, x) ∈ closedBall (0 : Q × Eₛ) δ₂ → (t', x) ∈ closedBall 0 δ₂ →
+      k (t, x) = k (t', x) → t = t')
+    (hδ₁ : 0 < δ₁) (hδ₂ : 0 < δ₂) (hε : 0 < ε) :
+    ∃ (r₀ ρ : ℝ) (hr₀ : 0 < r₀), r₀ ≤ 1 ∧ 0 < ρ ∧
+      (∀ p ∈ closedBall (0 : P × Q) ρ,
+        MapsTo (Prod.mk p.1) (closedBall (0 : Eᵤ) (r₀ * ε)) (closedBall 0 δ₁)) ∧
+      (∀ p ∈ closedBall (0 : P × Q) ρ,
+        MapsTo (Prod.mk p.2) (closedBall (0 : Eₛ) (r₀ * ε)) (closedBall 0 δ₂)) ∧
+      (∃ e : (Icc 0 r₀ ×ˢ closedBall (0 : P × Q) ρ : Set (ℝ × (P × Q))) ≃ₜ
+          closure (⋃ p ∈ closedBall (0 : P × Q) ρ,
+            splitGluingPairs ε r₀ (fun y ↦ g (p.1, y)) (fun x ↦ k (p.2, x))),
+        (∀ w, (e.symm w : ℝ × (P × Q)).1 = ‖w.val.1.snd‖ / ε) ∧
+        (∀ q : (Icc 0 r₀ ×ˢ closedBall (0 : P × Q) ρ : Set (ℝ × (P × Q))),
+          0 < (q : ℝ × (P × Q)).1 → (e q).val ∈ splitGluingPairs ε r₀
+            (fun y ↦ g ((q : ℝ × (P × Q)).2.1, y)) (fun x ↦ k ((q : ℝ × (P × Q)).2.2, x))) ∧
+        ∀ p (hp : p ∈ closedBall (0 : P × Q) ρ), (e ⟨(0, p), left_mem_Icc.2 hr₀.le, hp⟩).val =
+          (WithLp.toLp 2 (g (p.1, 0), 0), WithLp.toLp 2 (0, k (p.2, 0)))) ∧
+      closure (⋃ p ∈ closedBall (0 : P × Q) ρ,
+          splitGluingPairs ε r₀ (fun y ↦ g (p.1, y)) (fun x ↦ k (p.2, x))) =
+        (⋃ p ∈ closedBall (0 : P × Q) ρ,
+          splitGluingPairs ε r₀ (fun y ↦ g (p.1, y)) (fun x ↦ k (p.2, x))) ∪
+        (fun p ↦ (WithLp.toLp 2 (g (p.1, 0), 0), WithLp.toLp 2 (0, k (p.2, 0)))) ''
+          closedBall (0 : P × Q) ρ := by
+  -- Choose the parameter radius inside both graph domains, and the gluing radius inside the
+  -- parameter radius and below the contraction threshold.
+  set ρ : ℝ := min δ₁ δ₂
+  set r₀ : ℝ := min 1 (min (ρ / ε) (1 / ((Kk : ℝ) * Kg + 1)))
+  set S := closedBall (0 : P × Q) ρ
+  have hρ : 0 < ρ := lt_min hδ₁ hδ₂
+  have hr₀ : 0 < r₀ := lt_min one_pos (lt_min (div_pos hρ hε) (by positivity))
+  have hr₀₁ : r₀ ≤ 1 := min_le_left _ _
+  have hr₀ρ : r₀ * ε ≤ ρ := (le_div_iff₀ hε).1 ((min_le_right _ _).trans (min_le_left _ _))
+  have hK : ((Kk * 1 : ℝ≥0) : ℝ) * (Kg * 1 : ℝ≥0) * r₀ ^ 2 < 1 := by
+    have hr₀K : r₀ ≤ 1 / ((Kk : ℝ) * Kg + 1) := (min_le_right _ _).trans (min_le_right _ _)
+    rw [le_div_iff₀ (by positivity)] at hr₀K
+    push_cast
+    nlinarith [mul_le_mul_of_nonneg_left (pow_le_of_le_one hr₀.le hr₀₁ two_ne_zero)
+      (by positivity : (0 : ℝ) ≤ Kk * Kg)]
+  -- The parameter and the point of a pair stay inside the graph domains.
+  have hmem₁ : ∀ p ∈ S, MapsTo (Prod.mk p.1) (closedBall (0 : Eᵤ) (r₀ * ε)) (closedBall 0 δ₁) :=
+    fun p hp y hy ↦ by
+      rw [mem_closedBall_zero_iff] at hp hy ⊢
+      exact max_le ((norm_fst_le p).trans (hp.trans (min_le_left _ _)))
+        (hy.trans (hr₀ρ.trans (min_le_left _ _)))
+  have hmem₂ : ∀ p ∈ S, MapsTo (Prod.mk p.2) (closedBall (0 : Eₛ) (r₀ * ε)) (closedBall 0 δ₂) :=
+    fun p hp x hx ↦ by
+      rw [mem_closedBall_zero_iff] at hp hx ⊢
+      exact max_le ((norm_snd_le p).trans (hp.trans (min_le_right _ _)))
+        (hx.trans (hr₀ρ.trans (min_le_right _ _)))
+  have hgL : ∀ p ∈ S, LipschitzOnWith (Kg * 1) (fun y ↦ g (p.1, y)) (closedBall 0 (r₀ * ε)) :=
+    fun p hp ↦ hg.comp (LipschitzWith.prodMk_left p.1).lipschitzOnWith (hmem₁ p hp)
+  have hkL : ∀ p ∈ S, LipschitzOnWith (Kk * 1) (fun x ↦ k (p.2, x)) (closedBall 0 (r₀ * ε)) :=
+    fun p hp ↦ hk.comp (LipschitzWith.prodMk_left p.2).lipschitzOnWith (hmem₂ p hp)
+  have hgc : ∀ y ∈ closedBall (0 : Eᵤ) (r₀ * ε), ContinuousOn (fun p : P × Q ↦ g (p.1, y)) S :=
+    fun y hy ↦ hg.continuousOn.comp (continuous_fst.prodMk continuous_const).continuousOn
+      fun p hp ↦ hmem₁ p hp hy
+  have hkc : ∀ x ∈ closedBall (0 : Eₛ) (r₀ * ε), ContinuousOn (fun p : P × Q ↦ k (p.2, x)) S :=
+    fun x hx ↦ hk.continuousOn.comp (continuous_snd.prodMk continuous_const).continuousOn
+      fun p hp ↦ hmem₂ p hp hx
+  have hgε' : ∀ p ∈ S, ∀ y ∈ closedBall (0 : Eᵤ) (r₀ * ε), ‖g (p.1, y)‖ = ε :=
+    fun p hp y hy ↦ hgε _ (hmem₁ p hp hy)
+  have hkε' : ∀ p ∈ S, ∀ x ∈ closedBall (0 : Eₛ) (r₀ * ε), ‖k (p.2, x)‖ = ε :=
+    fun p hp x hx ↦ hkε _ (hmem₂ p hp hx)
+  obtain ⟨e, he⟩ := exists_homeomorph_closure_biUnion_splitGluingPairs hgL hgε' hkL hkε' hgc hkc
+    hε hr₀ hr₀₁ hK (isCompact_closedBall _ _) fun p hp p' hp' y hy x hx hgy hkx ↦
+      Prod.ext (hginj _ _ _ (hmem₁ p hp hy) (hmem₁ p' hp' hy) hgy)
+        (hkinj _ _ _ (hmem₂ p hp hx) (hmem₂ p' hp' hx) hkx)
+  exact ⟨r₀, ρ, hr₀, hr₀₁, hρ, hmem₁, hmem₂, ⟨e, he⟩,
+    closure_biUnion_splitGluingPairs hgL hgε' hkL hkε' hgc hkc hε hr₀ hr₀₁ hK
+      (isCompact_closedBall _ _)⟩
+
+end ProdFamily
 
 end TauCeti
