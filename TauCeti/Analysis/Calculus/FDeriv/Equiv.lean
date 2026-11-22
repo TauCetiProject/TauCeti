@@ -457,7 +457,7 @@ theorem IsCompact.finite_of_hasFDerivAt_subtype {𝕜 : Type*} [NontriviallyNorm
     ext w
     constructor
     · rintro ⟨z, hz, rfl⟩
-      exact ⟨z.2, (hfg z).trans hz⟩
+      exact ⟨z.property, (hfg z).trans hz⟩
     · rintro ⟨hws, hw⟩
       exact ⟨⟨w, hws⟩, (hfg ⟨w, hws⟩).symm.trans hw, rfl⟩
   have hmem : ∀ w (hw : w ∈ s ∩ f ⁻¹' {y}), (⟨w, hw.1⟩ : s) ∈ g ⁻¹' {y} :=

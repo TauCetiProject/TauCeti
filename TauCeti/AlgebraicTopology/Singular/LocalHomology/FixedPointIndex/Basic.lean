@@ -440,7 +440,7 @@ theorem fixedPointIndex_eq_add {V W : Opens E} (hVU : V ≤ U) (hWU : W ≤ U) (
     rw [preimage_displacement_zero]
     refine disjoint_left.2 ?_
     rintro _ ⟨hz, a, rfl⟩ ⟨-, b, hb⟩
-    exact hVW _ hz a.2 (congrArg Subtype.val hb ▸ b.2)
+    exact hVW _ hz a.property (congrArg Subtype.val hb ▸ b.property)
   have h := HomologicalOrientation.localDegree_eq_add (M := U) (M₁ := V) (M₂ := W)
     (fixedPointOrientation.comap U.isOpenEmbedding') fixedPointOrientation rfl rfl hV hW
     f.displacement
@@ -565,7 +565,7 @@ theorem fixedPointIndex_const {c : E} (hc : c ∈ U) : (const U c).fixedPointInd
 /-- A constant map with value outside `U` has no fixed point, so it has fixed-point index zero. -/
 @[simp]
 theorem fixedPointIndex_const_of_notMem {c : E} (hc : c ∉ U) : (const U c).fixedPointIndex = 0 :=
-  fixedPointIndex_eq_zero_of_forall_ne _ fun z (hz : c = z) ↦ hc (hz ▸ z.2)
+  fixedPointIndex_eq_zero_of_forall_ne _ fun z (hz : c = z) ↦ hc (hz ▸ z.property)
 
 /-- A map on the empty open set has fixed-point index zero. -/
 theorem fixedPointIndex_of_isEmpty [IsEmpty U] (f : C(U, E)) : f.fixedPointIndex = 0 :=
