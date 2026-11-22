@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.InwardSemiflow.Existence
-public import TauCeti.Analysis.ODE.Regularity
+public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.ODE.DysonSeries
 import TauCeti.Analysis.ODE.Gronwall
@@ -14,10 +14,10 @@ import TauCeti.Analysis.ODE.Gronwall
 /-!
 # Smoothness of inward forward semiflows and inward deformations of convex sets
 
-Proves time regularity (`LocallyLipschitzOn.contDiffOn_forwardSemiflow_time`), joint `C^m`
-smoothness up to `t = 0` and `∂C` (`Convex.contDiffOn_forwardSemiflow`, proved at `m = 1` via
-`dysonSeriesLeft` and integral Grönwall, upgraded by induction on `E × (E →L[ℝ] E)`), local/global
-`C^m` inward semiflows, and `C^m` inward deformations of convex sets into their interiors.
+Proves joint `C^m` smoothness up to `t = 0` and `∂C` (`Convex.contDiffOn_forwardSemiflow`, proved
+at `m = 1` via `dysonSeriesLeft` and integral Grönwall, upgraded by induction on
+`E × (E →L[ℝ] E)`), local/global `C^m` inward semiflows, and `C^m` inward deformations of convex
+sets into their interiors.
 
 ## References
 
@@ -31,28 +31,6 @@ public section
 open Filter Function Metric Set intervalIntegral
 open scoped ContDiff NNReal Topology
 
-section TimeRegularity
-
-open TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- For a locally Lipschitz `C^m` field `X` (`m : ℕ∞`) on `S`, each individual trajectory of
-`forwardSemiflow X S` is `C^(m + 1)` on its maximal forward interval. -/
-theorem LocallyLipschitzOn.contDiffOn_forwardSemiflow_time {m : ℕ∞} {S : Set E} {X : E → E}
-    (hX_lip : LocallyLipschitzOn S X) (hX : ContDiffOn ℝ m X S) (x : E) :
-    ContDiffOn ℝ (m + 1) (fun t ↦ forwardSemiflow X S t x)
-      (forwardSemiflowInterval X S x) := by
-  intro t ht
-  obtain ⟨b, htb, hsub⟩ := exists_Ico_subset_of_mem_forwardSemiflowInterval ht
-  exact (contDiffOn_succ_of_hasDerivWithinAt_comp (uniqueDiffOn_Ico 0 b) hX
-    (fun _ hs ↦ forwardSemiflow_mem (hsub hs))
-    (fun _ hs ↦ hX_lip.hasDerivWithinAt_forwardSemiflow_Ico hsub hs) t
-    ⟨nonneg_of_mem_forwardSemiflowInterval ht, htb⟩).mono_of_mem_nhdsWithin <| mem_nhdsWithin.mpr
-      ⟨Iio b, isOpen_Iio, htb, fun _ hs ↦ ⟨nonneg_of_mem_forwardSemiflowInterval hs.2, hs.1⟩⟩
-
-end TimeRegularity
-
 namespace TauCeti
 
 /-! ### Variational derivative and inductive `C^m` smoothness -/
@@ -64,7 +42,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
 /-- Spatial Taylor remainder estimate for the variational propagator `dysonSeriesLeft`: on `[0, τ]`,
 `Φ t₀ y - Φ t₀ y₀ - A y₀ t₀ (y - y₀)` is bounded by `ε / 2 * ‖y - y₀‖` for `y ∈ ball x₀ r ∩ C`
 sufficiently close to `y₀`. -/
-private theorem eventually_norm_sub_dysonSeriesLeft_le {C U : Set E} (hC : Convex ℝ C)
+private theorem exists_pos_norm_sub_sub_dysonSeriesLeft_le {C U : Set E} (hC : Convex ℝ C)
     (hU : IsOpen U) (hU_uniq : UniqueDiffOn ℝ (U ∩ C)) {X : E → E} (hX : ContDiffOn ℝ 1 X (U ∩ C))
     {x₀ y₀ : E} {r τ : ℝ} {KΦ : ℝ≥0} (hτ : 0 < τ) (h2rU : ball x₀ (2 * r) ⊆ U)
     (hy₀ : y₀ ∈ ball x₀ r ∩ C)
@@ -125,8 +103,10 @@ private theorem eventually_norm_sub_dysonSeriesLeft_le {C U : Set E} (hC : Conve
           gcongr; simpa [dist_eq_norm] using (hLipΦ s hsI).dist_le_mul y hy y₀ hy₀
       _ ≤ R₀ := by simp only [R₀, mul_assoc]; gcongr
   have hw_bound (t : ℝ) (ht : t ∈ Icc 0 τ) : ‖w t‖ ≤ R₀ * τ + CD * ∫ s in (0 : ℝ)..t, ‖w s‖ :=
-    norm_sub_dysonSeriesLeft_le_add_mul_integral hτ (by positivity) (hγ_cont hy) (hγ_cont hy₀)
-      (hX_cont hy) (hX_cont hy₀) hM₀_cont hCD_bound (hint y hy) (hint y₀ hy₀) hTaylor_s ht
+    calc ‖w t‖ ≤ R₀ * t + CD * ∫ s in (0 : ℝ)..t, ‖w s‖ :=
+          norm_sub_sub_dysonSeriesLeft_le_add_mul_integral hτ (hγ_cont hy) (hγ_cont hy₀)
+            (hX_cont hy) (hX_cont hy₀) hM₀_cont hCD_bound (hint y hy) (hint y₀ hy₀) hTaylor_s ht
+      _ ≤ R₀ * τ + CD * ∫ s in (0 : ℝ)..t, ‖w s‖ := by gcongr; exact ht.2
   calc ‖w t₀‖ ≤ R₀ * τ * Real.exp (CD * (t₀ - 0)) :=
         le_mul_exp_of_le_add_mul_integral hw_cont.integrableOn_Icc hCD
           (MeasureTheory.ae_restrict_of_forall_mem measurableSet_Icc hw_bound) ht₀
@@ -162,7 +142,7 @@ private theorem hasFDerivWithinAt_local_forwardSemiflow {C U : Set E} (hC : Conv
     fun p hp ↦ ⟨h2rU (hmem p.2 hp.2 p.1 hp.1).1, (hmem p.2 hp.2 p.1 hp.1).2⟩
   obtain ⟨δ₁, hδ₁, hcloseX⟩ :=
     Metric.continuousWithinAt_iff.mp (hXΦ_cont p₀ hp₀) (ε / 2) (half_pos hε)
-  obtain ⟨δ₂, hδ₂, hrem⟩ := eventually_norm_sub_dysonSeriesLeft_le hC hU hU_uniq hX hτ h2rU
+  obtain ⟨δ₂, hδ₂, hrem⟩ := exists_pos_norm_sub_sub_dysonSeriesLeft_le hC hU hU_uniq hX hτ h2rU
     hp₀.2 hmem hint hLipΦ hcontΦ hp₀.1 hε
   filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds p₀ (lt_min hδ₁ hδ₂)),
     self_mem_nhdsWithin] with p hpdist hpS
@@ -398,7 +378,9 @@ private theorem exists_contDiffOn_Icc_of_mem_forwardSemiflowInterval {C U : Set 
       ContDiffOn ℝ (k + 1 : ℕ) (uncurry (forwardSemiflow X (U ∩ C)))
         (Icc 0 (T + δ) ×ˢ (ball x₀ r ∩ C)) := by
   have hX_lip := hC.locallyLipschitzOn_inter_of_contDiffOn hU (hX.of_le (by norm_cast; omega))
-  obtain ⟨r, hr, δ, hδ, _, _, hcd⟩ := hX_lip.exists_Icc_prod_of_mem_forwardSemiflowInterval
+  obtain ⟨rU, hrU, hballU⟩ := Metric.isOpen_iff.mp hU x₀ hx₀.1
+  obtain ⟨r, hr, δ, hδ, _, hcd⟩ := hX_lip.exists_Icc_prod_of_mem_forwardSemiflowInterval
+    (Q := ContDiffOn ℝ (k + 1 : ℕ) (uncurry (forwardSemiflow X (U ∩ C))))
     (fun _ _ h hsub ↦ h.mono hsub) (fun _ h ↦ h.continuousOn)
     (fun _ h p hp ↦ let ⟨W, hW, hpW, hfW⟩ := h p hp
       (hfW p ⟨hp, hpW⟩).mono_of_mem_nhdsWithin
@@ -409,8 +391,15 @@ private theorem exists_contDiffOn_Icc_of_mem_forwardSemiflowInterval {C U : Set 
         hQ₁.comp (contDiffOn_const.prodMk contDiffOn_snd) fun _ hp ↦ ⟨⟨hs0, by linarith⟩, hp.2⟩
       exact (hQ₂.comp ((contDiffOn_fst.sub contDiffOn_const).prodMk hΦs)
         fun p hp ↦ ⟨⟨by linarith [hp.1.1], by linarith [hp.1.2]⟩, hmaps p.2 hp.2⟩).congr hcocycle)
-    (fun x hx ↦ exists_local_forwardSemiflow_contDiffOn_nat k hC hU hX hx (hX_in x hx)) hx₀ hT
-  exact ⟨r, hr, δ, hδ, hcd⟩
+    (fun x hx ↦ by
+      obtain ⟨r, hr, τ, hτ, _, hsub, hcd⟩ :=
+        exists_local_forwardSemiflow_contDiffOn_nat k hC hU hX hx (hX_in x hx)
+      exact ⟨r, hr, τ, hτ, fun y hy ↦ hsub y ⟨hy.1, hy.2.2⟩,
+        hcd.mono (prod_mono Subset.rfl fun _ hy ↦ ⟨hy.1, hy.2.2⟩)⟩)
+    hx₀ hT
+  exact ⟨min r rU, lt_min hr hrU, δ, hδ, hcd.mono (prod_mono Subset.rfl fun _ hy ↦
+    ⟨ball_subset_ball (min_le_left _ _) hy.1,
+      hballU (ball_subset_ball (min_le_right _ _) hy.1), hy.2⟩)⟩
 
 /-- **Joint `C^m` smoothness of the maximal forward semiflow.** For `1 ≤ m` (`m : ℕ∞`, including
 `m = ∞`), if `X` is `C^m` on `U ∩ C` and strictly inward to the convex set `C` at every point of
@@ -519,31 +508,35 @@ theorem Convex.exists_contDiffOn_inwardSemiflow {C U : Set E} (hC : Convex ℝ C
 
 /-- **`C^m` inward deformation of a convex set into its interior.** Given a `C^m` (`1 ≤ m`,
 including `m = ∞`) strictly inward vector field `X` on a convex set `C` whose forward semiflow is
-defined through time `1` for every `x ∈ C`, the time-`1` map `r := forwardSemiflow X C 1` and the
-reparametrized semiflow `H (t, x) := forwardSemiflow X C ((1 - t) ^ 2) x` deform `C` into
+defined through time `T > 0` for every `x ∈ C`, the time-`T` map `r := forwardSemiflow X C T` and
+the reparametrized semiflow `H (t, x) := forwardSemiflow X C (T * (1 - t) ^ 2) x` deform `C` into
 `interior C` while preserving `interior C` at every time. -/
 theorem Convex.exists_contDiffOn_inward_deformation {C : Set E} (hC : Convex ℝ C) {m : ℕ∞}
     (hm : 1 ≤ m) {X : E → E} (hX : ContDiffOn ℝ m X C)
     (hX_in : ∀ x ∈ C, X x ∈ TauCeti.strictInwardCone C x)
-    (h1 : ∀ x ∈ C, (1 : ℝ) ∈ TauCeti.forwardSemiflowInterval X C x) :
+    {T : ℝ} (hT_pos : 0 < T) (hT : ∀ x ∈ C, T ∈ TauCeti.forwardSemiflowInterval X C x) :
     ∃ (r : E → E) (H : ℝ × E → E),
       ContDiffOn ℝ m r C ∧ MapsTo r C (interior C) ∧ ContDiffOn ℝ m H (Icc 0 1 ×ˢ C) ∧
       (∀ x ∈ C, H (0, x) = r x) ∧ (∀ x ∈ C, H (1, x) = x) ∧
       (∀ t ∈ Ico (0 : ℝ) 1, ∀ x ∈ C, H (t, x) ∈ interior C) ∧
       (∀ t ∈ Icc (0 : ℝ) 1, ∀ x ∈ interior C, H (t, x) ∈ interior C) := by
-  have hCD := hC.contDiffOn_forwardSemiflow_Icc hm hX hX_in h1
-  refine ⟨TauCeti.forwardSemiflow X C 1, fun p ↦ TauCeti.forwardSemiflow X C ((1 - p.1) ^ 2) p.2,
-    hCD.comp (contDiffOn_const.prodMk contDiffOn_id) (fun _ hx ↦ ⟨⟨zero_le_one, le_rfl⟩, hx⟩),
-    fun x hx ↦ hC.forwardSemiflow_mem_interior Subset.rfl hX_in (h1 x hx) zero_lt_one,
-    hCD.comp (((contDiffOn_const.sub contDiffOn_fst).pow 2).prodMk contDiffOn_snd)
-      (fun _ hp ↦ ⟨⟨sq_nonneg _, by nlinarith [hp.1.1, hp.1.2]⟩, hp.2⟩),
+  have hCD := hC.contDiffOn_forwardSemiflow_Icc hm hX hX_in hT
+  refine ⟨TauCeti.forwardSemiflow X C T,
+    fun p ↦ TauCeti.forwardSemiflow X C (T * (1 - p.1) ^ 2) p.2,
+    hCD.comp (contDiffOn_const.prodMk contDiffOn_id) (fun _ hx ↦ ⟨⟨hT_pos.le, le_rfl⟩, hx⟩),
+    fun x hx ↦ hC.forwardSemiflow_mem_interior Subset.rfl hX_in (hT x hx) hT_pos,
+    hCD.comp ((contDiffOn_const.mul ((contDiffOn_const.sub contDiffOn_fst).pow 2)).prodMk
+      contDiffOn_snd)
+      (fun _ hp ↦ ⟨⟨mul_nonneg hT_pos.le (sq_nonneg _),
+        mul_le_of_le_one_right hT_pos.le (by nlinarith [hp.1.1, hp.1.2])⟩, hp.2⟩),
     fun _ _ ↦ by simp, fun _ _ ↦ by simp,
-    fun t ht x hx ↦ let hpos := sq_pos_of_pos (sub_pos.mpr ht.2)
+    fun t ht x hx ↦ let hpos := mul_pos hT_pos (sq_pos_of_pos (sub_pos.mpr ht.2))
       hC.forwardSemiflow_mem_interior Subset.rfl hX_in
-        (TauCeti.Icc_subset_forwardSemiflowInterval_of_mem (h1 x hx)
-          ⟨hpos.le, by nlinarith [ht.1, ht.2]⟩) hpos,
-    fun _ _ x hx ↦ hC.forwardSemiflow_mem_interior_of_mem_interior Subset.rfl hX_in hx
-      (TauCeti.Icc_subset_forwardSemiflowInterval_of_mem (h1 x (interior_subset hx))
-        ⟨sq_nonneg _, by nlinarith [‹_ ∈ Icc (0 : ℝ) 1›.1, ‹_ ∈ Icc (0 : ℝ) 1›.2]⟩)⟩
+        (TauCeti.Icc_subset_forwardSemiflowInterval_of_mem (hT x hx)
+          ⟨hpos.le, mul_le_of_le_one_right hT_pos.le (by nlinarith [ht.1, ht.2])⟩) hpos,
+    fun t ht x hx ↦ hC.forwardSemiflow_mem_interior_of_mem_interior Subset.rfl hX_in hx
+      (TauCeti.Icc_subset_forwardSemiflowInterval_of_mem (hT x (interior_subset hx))
+        ⟨mul_nonneg hT_pos.le (sq_nonneg _),
+          mul_le_of_le_one_right hT_pos.le (by nlinarith [ht.1, ht.2])⟩)⟩
 
 end ConvexDeformation

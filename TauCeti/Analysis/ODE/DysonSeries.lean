@@ -72,8 +72,8 @@ one-parameter automorphism groups of C⋆-algebras.
   the Dyson series of `-p` is the inverse of the left Dyson series of `p`.
 * `TauCeti.eq_dysonSeriesLeft_apply_add_integral`: variation of constants, every solution of
   `w' t = M t (w t) + f t` is `w t = Γ t (w 0 + ∫₀ᵗ Γ(s)⁻¹ (f s) ds)`.
-* `TauCeti.norm_sub_dysonSeriesLeft_le_add_mul_integral`: Volterra integral error estimate for the
-  difference between two integral curves and the left Dyson propagator.
+* `TauCeti.norm_sub_sub_dysonSeriesLeft_le_add_mul_integral`: Volterra integral error estimate for
+  the difference between two integral curves and the left Dyson propagator.
 
 ## References
 
@@ -563,10 +563,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
 /-- **Volterra integral bound for the spatial linearization error.** For two integral curves `γ`
 and `γ₀` of `X` on `[0, τ]` starting at `y` and `y₀`, the difference
 `w t = γ t - γ₀ t - dysonSeriesLeft (DX ∘ γ₀) t (y - y₀)` satisfies
-`‖w t‖ ≤ R₀ * τ + CD * ∫ s in 0..t, ‖w s‖` whenever `‖DX (γ₀ s)‖ ≤ CD` and the first-order
+`‖w t‖ ≤ R₀ * t + CD * ∫ s in 0..t, ‖w s‖` whenever `‖DX (γ₀ s)‖ ≤ CD` and the first-order
 remainder of `X` at `(γ₀ s, γ s)` is bounded by `R₀`. -/
-theorem norm_sub_dysonSeriesLeft_le_add_mul_integral {X : E → E} {DX : E → E →L[ℝ] E}
-    {γ γ₀ : ℝ → E} {y y₀ : E} {τ R₀ CD : ℝ} (hτ : 0 < τ) (hR₀ : 0 ≤ R₀)
+theorem norm_sub_sub_dysonSeriesLeft_le_add_mul_integral {X : E → E} {DX : E → E →L[ℝ] E}
+    {γ γ₀ : ℝ → E} {y y₀ : E} {τ R₀ CD : ℝ} (hτ : 0 < τ)
     (hγ_cont : ContinuousOn γ (Icc 0 τ)) (hγ₀_cont : ContinuousOn γ₀ (Icc 0 τ))
     (hX_cont : ContinuousOn (fun s ↦ X (γ s)) (Icc 0 τ))
     (hX₀_cont : ContinuousOn (fun s ↦ X (γ₀ s)) (Icc 0 τ))
@@ -578,7 +578,7 @@ theorem norm_sub_dysonSeriesLeft_le_add_mul_integral {X : E → E} {DX : E → E
     {t : ℝ} (ht : t ∈ Icc 0 τ) :
     let w : ℝ → E := fun s ↦ γ s - γ₀ s -
       dysonSeriesLeft (fun r ↦ DX (γ₀ (projIcc 0 τ hτ.le r))) s (y - y₀)
-    ‖w t‖ ≤ R₀ * τ + CD * ∫ s in (0 : ℝ)..t, ‖w s‖ := by
+    ‖w t‖ ≤ R₀ * t + CD * ∫ s in (0 : ℝ)..t, ‖w s‖ := by
   intro w
   let A := dysonSeriesLeft (fun r ↦ DX (γ₀ (projIcc 0 τ hτ.le r)))
   have hA_cont : Continuous (fun s ↦ A s (y - y₀)) :=
@@ -617,8 +617,8 @@ theorem norm_sub_dysonSeriesLeft_le_add_mul_integral {X : E → E} {DX : E → E
   · refine (intervalIntegral.integral_mono_on ht.1 hrem_int (intervalIntegrable_const.add hw_int)
       fun s hs ↦ add_le_add_left (hTaylor_s s ⟨hs.1, hs.2.trans ht.2⟩) _).trans ?_
     rw [intervalIntegral.integral_add intervalIntegrable_const hw_int,
-      intervalIntegral.integral_const, intervalIntegral.integral_const_mul, sub_zero, smul_eq_mul]
-    linarith [mul_comm t R₀ ▸ mul_le_mul_of_nonneg_left ht.2 hR₀]
+      intervalIntegral.integral_const, intervalIntegral.integral_const_mul, sub_zero, smul_eq_mul,
+      mul_comm t R₀]
 
 end LinearizationError
 

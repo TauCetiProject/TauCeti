@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.ODE.InwardSemiflow.Basic
+public import TauCeti.Analysis.ODE.ForwardSemiflow.Basic
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!

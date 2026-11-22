@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.Convex
-public import Mathlib.Analysis.Convex.Topology
 public import Mathlib.Analysis.Calculus.Deriv.Basic
-public import Mathlib.Analysis.Calculus.FDeriv.Basic
-import Mathlib.Analysis.Calculus.TangentCone.Real
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.FunProp
