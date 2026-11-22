@@ -159,6 +159,11 @@ Hamiltonian vector fields and Poisson brackets restrict to open submanifolds, fo
   finite-dimensional forms `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField`,
   `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField_uncurry` and
   `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiffAt_hamiltonianVectorField_uncurry`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.continuous_mvfderiv_hamiltonianVectorField`: the
+  pushforward `d e (X_{H_t})` by a `C¹` map `e` of the Hamiltonian vector field of a `C¹`
+  time-dependent Hamiltonian is continuous, and uniformly bounded on a compact manifold for a
+  Hamiltonian periodic in time
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_forall_norm_mvfderiv_hamiltonianVectorField_le`).
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`: `X^{cσ}_f = c⁻¹ X^σ_f`.
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`: conservation
   of energy along integral curves on preconnected sets of times, with the global case
@@ -768,6 +773,31 @@ theorem contMDiff_hamiltonianVectorField_uncurry {E' H' N : Type*} [NormedAddCom
     ContMDiff (J.prod I) I.tangent n
       (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) :=
   contMDiff_hamiltonianVectorField_uncurry_of_isInvertible h.isInvertible_flat hn hH
+
+/-- The pushforward `(t, p) ↦ d e_p (X_{H_t}(p))` of the Hamiltonian vector field of a `C¹`
+time-dependent Hamiltonian by a `C¹` map `e` into a normed space is continuous. -/
+theorem continuous_mvfderiv_hamiltonianVectorField {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {e : M → F} {H : ℝ → M → ℝ}
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (Function.uncurry H)) (he : ContMDiff I 𝓘(ℝ, F) 1 e) :
+    Continuous fun q : ℝ × M ↦ mvfderiv I e q.2 (σ.hamiltonianVectorField (H q.1) q.2) :=
+  (he.contMDiff_mvfderiv_apply (m := 0) (by simp)).continuous.comp
+    (h.contMDiff_hamiltonianVectorField_uncurry (n := 0) (by simp) (by simpa using hH)).continuous
+
+/-- On a compact manifold, the pushforwards `d e (X_{H_t})` of the Hamiltonian vector fields of a
+`C¹` Hamiltonian `H`, `1`-periodic in time, by a `C¹` map `e` into a normed space are uniformly
+bounded. -/
+theorem exists_forall_norm_mvfderiv_hamiltonianVectorField_le [CompactSpace M] {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {e : M → F} {H : ℝ → M → ℝ}
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (Function.uncurry H)) (hHper : Function.Periodic H 1)
+    (he : ContMDiff I 𝓘(ℝ, F) 1 e) :
+    ∃ B, ∀ t x, ‖mvfderiv I e x (σ.hamiltonianVectorField (H t) x)‖ ≤ B := by
+  obtain ⟨B, hB⟩ := ((isCompact_Icc (a := (0 : ℝ)) (b := 1)).prod
+    (isCompact_univ (X := M))).exists_bound_of_continuousOn
+      (h.continuous_mvfderiv_hamiltonianVectorField hH he).continuousOn
+  refine ⟨B, fun t x ↦ ?_⟩
+  obtain ⟨t', ht', hHt⟩ := hHper.exists_mem_Ico₀ one_pos t
+  rw [hHt]
+  exact hB (t', x) ⟨Set.Ico_subset_Icc_self ht', Set.mem_univ x⟩
 
 /-- The Hamiltonian vector field of a `C²` function is differentiable. -/
 theorem mdifferentiable_hamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f) :
