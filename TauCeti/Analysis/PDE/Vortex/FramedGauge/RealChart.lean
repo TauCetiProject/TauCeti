@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.EquationMap
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldTopology
+public import TauCeti.Analysis.PDE.Vortex.Gauge.Sobolev
 public import TauCeti.Analysis.Sobolev.BesselPotential.Real
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -48,11 +49,15 @@ the threshold for `C¹` fields, and this file shows:
 * the zeros of `realSobolevEquation` in the real chart are exactly the vortices of `A_m^(k+1)`
   (`realSobolevEquation_realSubRef_eq_zero_iff`).
 
+The gauge-fixing row `d₀*` restricts to real coordinates in the same way
+(`realSobolevGaugeAdjoint f m hk u`).
+
 Real-analyticity uses the bounded real-linear projection `BesselPotentialSpace.realPartCLM` of
 `H^s(ℂ)` onto its real elements: the real map is this projection composed with the complexified
 map. The vortex moduli space near a vortex is the zero set of this map in a slice of the gauge
 action, so these are the nonlinear smoothness statements on which the implicit function theorem
-for the moduli space rests. The slice and the implicit function theorem are not treated here.
+for the moduli space rests. The slice and the implicit function theorem are in
+`TauCeti.Analysis.PDE.Vortex.FramedGauge.SliceChart`.
 
 ## References
 
@@ -75,16 +80,32 @@ variable {f : ContDiffBump (0 : ℝ)} {m k : ℕ} {s : ℝ}
 
 /-! ### Fields from real coordinates -/
 
-/-- The field whose coordinates are the continuous representatives of real coordinates `u`. -/
-private def continuousRepField {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) :
-    ℂ → EuclideanSpace ℝ (Fin 4) :=
-  fun z ↦ WithLp.toLp 2 fun j ↦ continuousRep (u j) z
+/-- **The field of real coordinates** `u`: the field whose coordinates are the continuous
+representatives of the real elements `u j` of `H^s(ℂ)`. For `s > 1` it is the continuous field
+almost everywhere equal to `u` (`coeFn_inclusionLp_ae_eq_continuousRepField`), and the field
+of `A_m^s` with real coordinates `u` is `x_m + continuousRepField u`
+(`SobolevFieldSpace.coe_ofRealSubRef`). It is real-linear in `u`. -/
+def continuousRepField {h : 0 ≤ s} :
+    (Fin 4 → realSubmodule ℂ h) →ₗ[ℝ] ℂ → EuclideanSpace ℝ (Fin 4) :=
+  LinearMap.pi fun z ↦ (WithLp.linearEquiv 2 ℝ (Fin 4 → ℝ)).symm.toLinearMap ∘ₗ
+    LinearMap.pi fun j ↦ LinearMap.proj z ∘ₗ continuousRep ∘ₗ LinearMap.proj j
 
-private theorem continuousRepField_apply {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) (z : ℂ)
+@[simp]
+theorem continuousRepField_apply {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) (z : ℂ)
     (j : Fin 4) : continuousRepField u z j = continuousRep (u j) z :=
   (rfl)
 
-private theorem coeFn_inclusionLp_ae_eq_continuousRepField (hs : 1 < s) {h : 0 ≤ s}
+/-- For `s > 1`, real coordinates are determined by their field. -/
+theorem continuousRepField_injective (hs : 1 < s) {h : 0 ≤ s} :
+    Function.Injective (continuousRepField (h := h)) := by
+  intro u v huv
+  funext j
+  exact continuousRep_injective (finrank_real_complex_lt_two_mul hs)
+    (funext fun z ↦ by simpa using congrArg (fun y ↦ y z j) huv)
+
+/-- For `s > 1`, the `L²` functions of real coordinates `u` are almost everywhere the coordinates
+of their field `continuousRepField u`. -/
+theorem coeFn_inclusionLp_ae_eq_continuousRepField (hs : 1 < s) {h : 0 ≤ s}
     (u : Fin 4 → realSubmodule ℂ h) (j : Fin 4) :
     ⇑(inclusionLp h (u j : H^{s}(ℂ))) =ᵐ[volume] fun z ↦ (continuousRepField u z j : ℂ) := by
   simpa only [continuousRepField_apply] using
@@ -92,7 +113,7 @@ private theorem coeFn_inclusionLp_ae_eq_continuousRepField (hs : 1 < s) {h : 0 �
 
 /-- Above the threshold `s > n + 1`, the continuous representatives of real `H^s` coordinates
 form a `Cⁿ` field. -/
-private theorem contDiff_continuousRepField {n : ℕ} (hs : n + 1 < s) {h : 0 ≤ s}
+theorem contDiff_continuousRepField {n : ℕ} (hs : n + 1 < s) {h : 0 ≤ s}
     (u : Fin 4 → realSubmodule ℂ h) : ContDiff ℝ n (continuousRepField u) := by
   have hs' : (finrank ℝ ℂ : ℝ) + 2 * n < 2 * s := by
     rw [Complex.finrank_real_complex]
@@ -110,7 +131,8 @@ private theorem one_lt_natCast_add_one (hk : 2 ≤ k) : 1 < (k : ℝ) + 1 := by
   have : (2 : ℝ) ≤ k := by exact_mod_cast hk
   linarith
 
-private theorem continuousRepField_mem_sobolevFields (hs : 1 < s) {h : 0 ≤ s}
+/-- For `s > 1`, the field of real `H^s` coordinates lies in `sobolevFields s`. -/
+theorem continuousRepField_mem_sobolevFields (hs : 1 < s) {h : 0 ≤ s}
     (u : Fin 4 → realSubmodule ℂ h) : continuousRepField u ∈ sobolevFields s :=
   mem_sobolevFields.2 fun j ↦
     continuousRep_mem_realSobolevFunctions (finrank_real_complex_lt_two_mul hs) (u j)
@@ -156,7 +178,8 @@ def ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) 
   continuous' := (contDiff_referenceField f m).continuous.add
     (contDiff_continuousRepField (n := 0) (by simpa using hs) u).continuous
 
-private theorem coe_ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) :
+/-- The field with real coordinates `u` is `x_m + continuousRepField u`. -/
+theorem coe_ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) :
     ⇑(ofRealSubRef (f := f) (m := m) hs u) = referenceField f m + continuousRepField u :=
   (rfl)
 
@@ -183,6 +206,12 @@ theorem ofRealSubRef_realSubRef (hs : 1 < s) {h : 0 ≤ s} (x : SobolevFieldSpac
     ofRealSubRef hs (realSubRef h x) = x :=
   subRef_injective h <| funext fun j ↦ by
     rw [← coe_realSubRef h, realSubRef_ofRealSubRef, coe_realSubRef]
+
+/-- For `s > 1`, the field of the real coordinates of `x` is `x - x_m`. -/
+theorem referenceField_add_continuousRepField_realSubRef (hs : 1 < s) {h : 0 ≤ s}
+    (x : SobolevFieldSpace f m s) :
+    referenceField f m + continuousRepField (realSubRef h x) = ⇑x := by
+  rw [← coe_ofRealSubRef hs, ofRealSubRef_realSubRef]
 
 /-- **The real chart of `A_m^s`**, `s > 1`: the real coordinates of `x - x_m` identify the
 continuous fields of `A_m^s` with the real Hilbert space `(H^s_ℝ)⁴`, as topological spaces. -/
@@ -303,6 +332,44 @@ theorem coe_realSobolevLinearizedEquation_apply (hk : 2 ≤ k)
     (realSobolevLinearizedEquation f m hk u v i : H^{(k : ℝ)}(ℂ)) =
       sobolevLinearizedEquation f m (one_le_two.trans hk) (fun a ↦ (u a : H^{(k : ℝ) + 1}(ℂ)))
         (fun a ↦ (v a : H^{(k : ℝ) + 1}(ℂ))) i :=
+  (rfl)
+
+/-- For `k ≥ 2`, at real coordinates `u` the complexified gauge-fixing row sends real variations
+to real values: it computes the pointwise row `d₀*` at the `C¹` field `u` represents. -/
+theorem sobolevGaugeAdjoint_mem_realSubmodule (hk : 2 ≤ k)
+    (u v : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) :
+    sobolevGaugeAdjoint f m (one_le_two.trans hk) (fun a ↦ (u a : H^{(k : ℝ) + 1}(ℂ)))
+      (fun a ↦ (v a : H^{(k : ℝ) + 1}(ℂ))) ∈ realSubmodule ℂ k.cast_nonneg := by
+  have hs := one_lt_natCast_add_one hk
+  rw [mem_realSubmodule_iff]
+  filter_upwards [coeFn_inclusionLp_sobolevGaugeAdjoint_ae_eq (f := f) (m := m)
+    (one_le_two.trans hk) (coeFn_inclusionLp_ae_eq_continuousRepField hs u)
+    (coeFn_inclusionLp_ae_eq_continuousRepField hs v)
+    (contDiff_euclidean.1 (contDiff_continuousRepField (natCast_one_add_one_lt hk) v) 0)
+    (contDiff_euclidean.1 (contDiff_continuousRepField (natCast_one_add_one_lt hk) v) 1)] with z hz
+  rw [hz, Complex.ofReal_im]
+
+variable (f m) in
+/-- **The real gauge-fixing row.** For an integer `k ≥ 2` and real coordinates `u` of a field
+`x ∈ A_m^(k+1)`, the formal adjoint `d₀*` of the infinitesimal gauge action at `x` as a bounded
+real-linear operator `(H^(k+1)_ℝ)⁴ → H^k_ℝ`: the restriction of `sobolevGaugeAdjoint` to real
+coordinates (`coe_realSobolevGaugeAdjoint_apply`). Its kernel is the tangent space of the Coulomb
+slice through `x`. -/
+def realSobolevGaugeAdjoint (hk : 2 ≤ k)
+    (u : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) :
+    (Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) →L[ℝ]
+      realSubmodule ℂ (k.cast_nonneg : (0 : ℝ) ≤ k) :=
+  ((((sobolevGaugeAdjoint f m (one_le_two.trans hk)
+    (fun a ↦ (u a : H^{(k : ℝ) + 1}(ℂ)))).restrictScalars ℝ).comp (coordInclusion _))).codRestrict
+      (realSubmodule ℂ k.cast_nonneg) fun v ↦
+        sobolevGaugeAdjoint_mem_realSubmodule (f := f) (m := m) hk u v
+
+@[simp]
+theorem coe_realSobolevGaugeAdjoint_apply (hk : 2 ≤ k)
+    (u v : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) :
+    (realSobolevGaugeAdjoint f m hk u v : H^{(k : ℝ)}(ℂ)) =
+      sobolevGaugeAdjoint f m (one_le_two.trans hk) (fun a ↦ (u a : H^{(k : ℝ) + 1}(ℂ)))
+        (fun a ↦ (v a : H^{(k : ℝ) + 1}(ℂ))) :=
   (rfl)
 
 /-- The real part, coordinatewise. -/
