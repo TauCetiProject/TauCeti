@@ -79,10 +79,16 @@ theorem ae_mem_Ioc_timeMeasure (T : ℝ≥0) : ∀ᵐ t ∂timeMeasure T, t ∈ 
 theorem timeMeasure_zero : timeMeasure 0 = 0 := by
   simp [timeMeasure_def]
 
-/-- The initial time carries no mass, independently of the horizon. -/
+/-- Every singleton time carries no mass, independently of the horizon. -/
 @[simp]
-theorem timeMeasure_singleton_zero (T : ℝ≥0) : timeMeasure T {0} = 0 := by
-  simp [timeMeasure_apply T (measurableSet_singleton 0)]
+theorem timeMeasure_singleton (T t : ℝ≥0) : timeMeasure T {t} = 0 := by
+  rw [timeMeasure_apply T (measurableSet_singleton t)]
+  exact (Set.subsingleton_singleton.image _ |>.anti
+    (Set.image_mono inter_subset_left)).measure_zero _
+
+/-- The initial time carries no mass, independently of the horizon. -/
+theorem timeMeasure_singleton_zero (T : ℝ≥0) : timeMeasure T {0} = 0 :=
+  timeMeasure_singleton T 0
 
 /-- Restricting time measure again clips the horizon to the smaller endpoint. -/
 @[simp]

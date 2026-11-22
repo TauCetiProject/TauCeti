@@ -259,13 +259,14 @@ endpoint lies strictly below `dyadicCeilTime m (τ ω)` equals the stopped value
 `stoppedProcess I (fun ω' ↦ dyadicCeilTime m (τ ω')) T ω`. -/
 theorem sum_indicator_stopped_sub_eq_stoppedProcess {Ω E : Type*} [AddCommGroup E]
     (I : ℝ≥0 → Ω → E) (τ : Ω → WithTop ℝ≥0) (m : ℕ) (T : ℝ≥0) (ω : Ω) (hI0 : I 0 ω = 0) :
-    let t : ℕ → ℝ≥0 := fun k ↦ min ((k : ℝ≥0) / 2 ^ m) T
-    let A : ℕ → Set Ω := fun k ↦
-      {ω' | (((k : ℝ≥0) / 2 ^ m : ℝ≥0) : WithTop ℝ≥0) < dyadicCeilTime m (τ ω')}
     (∑ k ∈ Finset.range ⌈T * 2 ^ m⌉₊,
-      (A k).indicator (fun ω' ↦ I (t (k + 1)) ω' - I (t k) ω') ω) =
+      {ω' | (((k : ℝ≥0) / 2 ^ m : ℝ≥0) : WithTop ℝ≥0) < dyadicCeilTime m (τ ω')}.indicator
+        (fun ω' ↦ I (min (((k + 1 : ℕ) : ℝ≥0) / 2 ^ m) T) ω' -
+          I (min ((k : ℝ≥0) / 2 ^ m) T) ω') ω) =
       stoppedProcess I (fun ω' ↦ dyadicCeilTime m (τ ω')) T ω := by
-  intro t A
+  let t : ℕ → ℝ≥0 := fun k ↦ min ((k : ℝ≥0) / 2 ^ m) T
+  let A : ℕ → Set Ω := fun k ↦
+    {ω' | (((k : ℝ≥0) / 2 ^ m : ℝ≥0) : WithTop ℝ≥0) < dyadicCeilTime m (τ ω')}
   let σ : Ω → WithTop ℝ≥0 := fun ω' ↦ dyadicCeilTime m (τ ω')
   let d : ℕ → ℝ≥0 := fun k ↦ (k : ℝ≥0) / 2 ^ m
   let N : ℕ := ⌈T * 2 ^ m⌉₊

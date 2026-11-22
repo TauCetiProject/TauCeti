@@ -115,6 +115,16 @@ theorem stoppedProcess_indicator_pos_apply {ι Ω E : Type*} [LinearOrder ι] [O
   rw [stoppedProcess_indicator_comm]
   simp only [Set.indicator_apply, Set.mem_ofPred_eq, stoppedProcess]
 
+/-- Stopping the `{⊥ < τ}`-indicator restriction of a process agrees with stopping the process
+itself when `τ` is everywhere strictly positive. -/
+theorem stoppedProcess_indicator_pos {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [Zero E] (X : ι → Ω → E) {τ : Ω → WithTop ι} (hτ : ∀ ω, (⊥ : WithTop ι) < τ ω) :
+    stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ =
+      stoppedProcess X τ := by
+  ext t ω
+  simp only [stoppedProcess_indicator_comm']
+  exact Set.indicator_of_mem (hτ ω) _
+
 /-- At the initial time, stopping leaves any process unchanged. -/
 @[simp]
 theorem stoppedProcess_bot {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]

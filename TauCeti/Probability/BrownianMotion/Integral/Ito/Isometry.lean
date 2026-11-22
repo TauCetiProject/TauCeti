@@ -114,18 +114,8 @@ the `L²` norm of the integrand for Lebesgue time on `(0,t]` times `P`. -/
 theorem IsItoIntegral.eLpNorm_eq (hI : IsItoIntegral ℱ P W H I)
     (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H) (t : ℝ≥0) :
     eLpNorm (I t) 2 P = eLpNorm (Function.uncurry H) 2 ((timeMeasure t).prod P) := by
-  have := (hW.hasLaw_eval 0).isProbabilityMeasure
   rw [eLpNorm_congr_ae (hW.ae_eq_l2Integral_of_isItoIntegral hH hI t)]
-  have hsub := hW.eLpNorm_l2Integral_sub t hH.isStronglyPredictable stronglyMeasurable_zero
-    (hH.memLp_predictableMeasure t) MemLp.zero
-  rw [MemLp.toLp_zero, map_zero] at hsub
-  have hae : (fun ω ↦ hW.l2Integral t ((hH.memLp_predictableMeasure t).toLp
-      (Function.uncurry H)) ω - (0 : Lp ℝ 2 P) ω) =ᵐ[P]
-      hW.l2Integral t ((hH.memLp_predictableMeasure t).toLp (Function.uncurry H)) :=
-    (Lp.coeFn_zero (E := ℝ) (p := 2) (μ := P)).mono fun ω hω ↦ by
-      dsimp only; rw [hω, Pi.zero_apply, sub_zero]
-  rw [← eLpNorm_congr_ae hae, hsub]
-  simp only [sub_zero]
+  exact hW.eLpNorm_l2Integral t hH.isStronglyPredictable (hH.memLp_predictableMeasure t)
 
 /-- **The Itô isometry.** Against a pre-Brownian motion relative to the filtration, an Itô
 integral `I` of a Brownian-integrable integrand `H` satisfies `E[I_t²] = E ∫_(0,t] H_s² ds`. -/

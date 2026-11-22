@@ -149,6 +149,31 @@ theorem indist_mul_sub_of_isItoIntegral_indicator_Ioc (hW : IsFilteredPreBrownia
 
 /-! ### L² continuity, deterministic bridge, and Doob uniform approximation -/
 
+private theorem tendsto_indicator_Ioc_prod_ae (P : Measure Ω) [SFinite P] (T t : ℝ≥0)
+    (f : ℝ≥0 × Ω → ℝ) :
+    ∀ᵐ p ∂((timeMeasure T).prod P),
+      Tendsto (fun s ↦ (Ioc 0 s ×ˢ (univ : Set Ω)).indicator f p)
+        (𝓝 t) (𝓝 ((Ioc 0 t ×ˢ (univ : Set Ω)).indicator f p)) := by
+  have hnull : ((timeMeasure T).prod P) ({t} ×ˢ (univ : Set Ω)) = 0 := by
+    rw [Measure.prod_prod, timeMeasure_singleton, zero_mul]
+  filter_upwards [compl_mem_ae_iff.mpr hnull] with p hp
+  have hne : p.fst ≠ t := fun h ↦ hp ⟨h, mem_univ _⟩
+  rcases hne.lt_or_gt with hlt | hgt
+  · by_cases h0 : 0 < p.fst
+    · have hmem : p ∈ Ioc 0 t ×ˢ (univ : Set Ω) := ⟨⟨h0, hlt.le⟩, mem_univ _⟩
+      refine tendsto_const_nhds.congr' ?_
+      filter_upwards [Ioi_mem_nhds hlt] with s hs
+      have hmem' : p ∈ Ioc 0 s ×ˢ (univ : Set Ω) := ⟨⟨h0, hs.le⟩, mem_univ _⟩
+      simp [hmem, hmem']
+    · have hle : p.fst ≤ 0 := not_lt.mp h0
+      refine tendsto_const_nhds.congr fun s ↦ ?_
+      simp [hle]
+  · have hnot : p ∉ Ioc 0 t ×ˢ (univ : Set Ω) := fun h ↦ hgt.not_ge h.1.2
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [Iio_mem_nhds hgt] with s hs
+    have hnot' : p ∉ Ioc 0 s ×ˢ (univ : Set Ω) := fun h ↦ hs.not_ge h.1.2
+    simp [hnot, hnot']
+
 /-- **L² time continuity of the Itô integral.** Against a pre-Brownian motion, every Itô integral
 of a Brownian-integrable integrand is continuous in `L²(P)` as a function of time. -/
 theorem tendsto_eLpNorm_sub_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -162,6 +187,7 @@ theorem tendsto_eLpNorm_sub_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ
   have hKm (u : ℝ≥0) : MemLp (K u) 2 (ℱ.predictableMeasure P T) :=
     (hH.memLp_predictableMeasure T).indicator
       (measurableSet_predictable_Ioc_prod 0 u (𝓕 := ℱ) MeasurableSet.univ).nullMeasurableSet
+  -- Stage 1: represent every `I u` (`u ≤ t + 1`) on the common ambient horizon `T = t + 1`.
   have hIeq {u : ℝ≥0} (hu : u ≤ T) :
       I u =ᵐ[P] hW.l2Integral T ((hKm u).toLp (K u)) := by
     have hL : hW.l2Integral T ((hKm u).toLp (K u)) =
@@ -179,19 +205,14 @@ theorem tendsto_eLpNorm_sub_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ
         exact fun h ↦ hgt.not_ge h.1.2
     rw [hL]
     exact hW.ae_eq_l2Integral_of_isItoIntegral hH hI u
+  -- Stage 2: transport the `L²(P)` difference to `L²((timeMeasure T).prod P)` on `𝓝 t`.
   have hcongr : ∀ᶠ s in 𝓝 t,
       eLpNorm (I s - I t) 2 P = eLpNorm (K s - K t) 2 ((timeMeasure T).prod P) := by
     filter_upwards [Iio_mem_nhds (lt_add_one t)] with s hs
     rw [eLpNorm_congr_ae ((hIeq hs.le).sub (hIeq (le_of_lt (lt_add_one t))))]
     exact hW.eLpNorm_l2Integral_sub T (hKp s) (hKp t) (hKm s) (hKm t)
   refine Tendsto.congr' (EventuallyEq.symm hcongr) ?_
-  have hnull : ((timeMeasure T).prod P) {p : ℝ≥0 × Ω | p.fst = t} = 0 := by
-    have ht0 : timeMeasure T {t} = 0 := by
-      rw [timeMeasure_apply T (measurableSet_singleton t)]
-      exact (Set.subsingleton_singleton.image _ |>.anti
-        (Set.image_mono inter_subset_left)).measure_zero _
-    have hset : {p : ℝ≥0 × Ω | p.fst = t} = {t} ×ˢ univ := by ext p; simp
-    rw [hset, Measure.prod_prod, ht0, zero_mul]
+  -- Stage 3: apply dominated convergence using the null slice `{t} ×ˢ univ`.
   refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (C := 2) (by norm_num)
     (Eventually.of_forall fun s ↦ ((hKp s).mono ℱ.predictable_le_prod).aestronglyMeasurable)
     (hH.memLp_timeMeasure T)
@@ -200,24 +221,7 @@ theorem tendsto_eLpNorm_sub_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ
         _ ≤ ‖H p.1 p.2‖ₑ + ‖H p.1 p.2‖ₑ :=
           add_le_add (eNorm_indicator_le_eNorm_self _ _) (eNorm_indicator_le_eNorm_self _ _)
         _ = (2 : ℝ≥0) * ‖H p.1 p.2‖ₑ := by rw [ENNReal.coe_ofNat, two_mul])
-    (?_)
-  filter_upwards [compl_mem_ae_iff.mpr hnull] with p hp
-  have hne : p.fst ≠ t := hp
-  rcases hne.lt_or_gt with hlt | hgt
-  · by_cases h0 : 0 < p.fst
-    · have hmem : p ∈ Ioc 0 t ×ˢ (univ : Set Ω) := ⟨⟨h0, hlt.le⟩, mem_univ _⟩
-      refine tendsto_const_nhds.congr' ?_
-      filter_upwards [Ioi_mem_nhds hlt] with s hs
-      have hmem' : p ∈ Ioc 0 s ×ˢ (univ : Set Ω) := ⟨⟨h0, hs.le⟩, mem_univ _⟩
-      simp [K, hmem, hmem']
-    · have hle : p.fst ≤ 0 := not_lt.mp h0
-      refine tendsto_const_nhds.congr fun s ↦ ?_
-      simp [K, hle]
-  · have hnot : p ∉ Ioc 0 t ×ˢ (univ : Set Ω) := fun h ↦ hgt.not_ge h.1.2
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [Iio_mem_nhds hgt] with s hs
-    have hnot' : p ∉ Ioc 0 s ×ˢ (univ : Set Ω) := fun h ↦ hs.not_ge h.1.2
-    simp [K, hnot, hnot']
+    (tendsto_indicator_Ioc_prod_ae P T t (Function.uncurry H))
 
 /-- **L² continuity in `Lp ℝ 2 P`.** The `L²` class `t ↦ I t` of an Itô integral of a
 Brownian-integrable integrand varies continuously with `t`. -/
@@ -228,27 +232,6 @@ theorem continuous_toLp_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P
   rw [ContinuousAt, Lp.tendsto_Lp_iff_tendsto_eLpNorm']
   exact (hW.tendsto_eLpNorm_sub_of_isItoIntegral hH hI t).congr fun s ↦
     eLpNorm_congr_ae (((hI.memLp hW hH s).coeFn_toLp.sub (hI.memLp hW hH t).coeFn_toLp).symm)
-
-private theorem l2Integral_uncurry_eq_wienerIntegral
-    (hW : IsFilteredPreBrownianReal ℱ W P) {h : ℝ≥0 → ℝ} (hm : Measurable h)
-    (hLp : ∀ T : ℝ≥0, MemLp h 2 (timeMeasure T)) (T : ℝ≥0) :
-    letI := (hW.hasLaw_eval 0).isProbabilityMeasure
-    hW.l2Integral T
-      (((TauCeti.brownianIntegrable_fst (ℱ := ℱ) (P := P) hm hLp).memLp_predictableMeasure T).toLp
-        (Function.uncurry fun t _ ↦ h t)) =
-      hW.toIsPreBrownianReal.wienerIntegral T ((hLp T).toLp h) := by
-  let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  let hbi := TauCeti.brownianIntegrable_fst (ℱ := ℱ) (P := P) hm hLp
-  have hcomp : (hbi.memLp_predictableMeasure T).toLp (Function.uncurry fun t _ ↦ h t) =
-      Lp.compMeasurePreserving Prod.fst (ℱ.measurePreserving_fst_predictableMeasure P T)
-        ((hLp T).toLp h) := by
-    rw [Lp.toLp_compMeasurePreserving (hLp T) (ℱ.measurePreserving_fst_predictableMeasure P T)]
-    refine Lp.ext ?_
-    filter_upwards [(hbi.memLp_predictableMeasure T).coeFn_toLp,
-      ((hLp T).comp_measurePreserving
-        (ℱ.measurePreserving_fst_predictableMeasure P T)).coeFn_toLp] with ⟨t, ω⟩ h1 h2
-    rw [h1, h2, Function.uncurry_apply_pair, Function.comp_apply]
-  rw [hcomp, hW.l2Integral_compMeasurePreserving_fst T ((hLp T).toLp h)]
 
 /-- **Deterministic L² bridge.** For a measurable deterministic integrand `h` in `L²` on every
 finite horizon, any Itô integral agrees almost surely at each horizon `T` with the Wiener
@@ -261,7 +244,8 @@ theorem ae_eq_wienerIntegral_of_isItoIntegral (hW : IsFilteredPreBrownianReal �
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
   let hbi := TauCeti.brownianIntegrable_fst (ℱ := ℱ) (P := P) hm hLp
   refine (hW.ae_eq_l2Integral_of_isItoIntegral hbi hI T).trans ?_
-  rw [hW.l2Integral_uncurry_eq_wienerIntegral hm hLp T]
+  exact EventuallyEq.of_eq <| congrArg (fun f : Lp ℝ 2 P ↦ (f : Ω → ℝ))
+    (hW.l2Integral_uncurry_eq_wienerIntegral T (hLp T) (hbi.memLp_predictableMeasure T))
 
 /-- **Deterministic L² characterization.** For a measurable deterministic integrand `h` in `L²` on
 every finite horizon, an almost surely continuous process `I` is an Itô integral of `h` if and
@@ -275,7 +259,12 @@ theorem isItoIntegral_iff_ae_eq_wienerIntegral (hW : IsFilteredPreBrownianReal �
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
   let hbi := TauCeti.brownianIntegrable_fst (ℱ := ℱ) (P := P) hm hLp
   rw [hW.isItoIntegral_iff_ae_eq_l2Integral hbi hIcont]
-  exact forall_congr' fun T ↦ by rw [hW.l2Integral_uncurry_eq_wienerIntegral hm hLp T]
+  exact forall_congr' fun T ↦ by
+    have heq : hW.l2Integral T
+        ((hbi.memLp_predictableMeasure T).toLp (Function.uncurry fun t _ ↦ h t)) =
+        hW.toIsPreBrownianReal.wienerIntegral T ((hLp T).toLp h) :=
+      hW.l2Integral_uncurry_eq_wienerIntegral T (hLp T) (hbi.memLp_predictableMeasure T)
+    rw [heq]
 
 /-- **Doob uniform approximation for elementary gains.** If simple holdings with square-integrable
 left-measurable heights converge in `L²` on `(0, T] × Ω` to a Brownian-integrable integrand `H`,
@@ -339,18 +328,22 @@ private theorem exists_martingale_sq_sub_ae_eq (hW : IsFilteredPreBrownianReal �
   have hA_adapt : StronglyAdapted ℱ (fun t ω ↦ ∫ s, H s ω ^ 2 ∂timeMeasure t) :=
     hH.isStronglyPredictable.isStronglyPredictable_integral_sq_timeMeasure
       |>.isStronglyProgressive.stronglyAdapted
+  -- Choose `L²`-approximating simple holdings whose gains converge in `L²` to a martingale
+  -- `Z =ᵐ I`.
   obtain ⟨n, τ, a, Z, hτ, ha, ha₂, hlim, hZ, hZmem, hZlim, hZL⟩ :=
     hW.exists_simpleHolding_martingale_approx hH
   have hIZ (t : ℝ≥0) : Z t =ᵐ[P] I t :=
     (hZL t).trans (hW.ae_eq_l2Integral_of_isItoIntegral hH hI t).symm
   let B (k : ℕ) (t : ℝ≥0) (ω : Ω) : ℝ :=
     ∑ j ∈ Finset.range (n k), a k j ω ^ 2 * (↑(min (τ k (j + 1)) t) - ↑(min (τ k j) t))
+  -- Pass the elementary square-compensated martingales `M_k^2 - B_k` to the limit in `L¹(P)`.
   refine ⟨Z, hZ, hIZ, hZmem, martingale_of_tendsto_eLpNorm_one
     (fun k ↦ hW.martingale_sq_simpleGains_sub (hτ k) (ha k) (ha₂ k))
     (fun t ↦ (hZ.stronglyAdapted t).pow 2 |>.sub (hA_adapt t)) fun t ↦ ?_⟩
   have hsq_lim : Tendsto (fun k ↦ eLpNorm
       (fun ω ↦ Finance.simpleGains (τ k) (n k) (a k) W t ω ^ 2 - Z t ω ^ 2) 1 P) atTop (𝓝 0) :=
     TauCeti.tendsto_eLpNorm_sq_sub_one (hZmem t).eLpNorm_ne_top (hZlim t)
+  -- Control `‖B_k t - ∫ H^2‖₁` by the `L¹` product-norm difference of the squared integrands.
   have henergy_lim : Tendsto (fun k ↦ eLpNorm
       (fun ω ↦ B k t ω - ∫ s, H s ω ^ 2 ∂timeMeasure t) 1 P) atTop (𝓝 0) := by
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds

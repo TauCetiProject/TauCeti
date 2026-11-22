@@ -258,15 +258,11 @@ a square-integrable real martingale equals the integral of the difference of squ
 theorem Martingale.setIntegral_sub_sq (hY : Martingale Y ℱ μ) {i j : ι} (hij : i ≤ j)
     (hj : MemLp (Y j) 2 μ) {A : Set Ω} (hA : MeasurableSet[ℱ i] A) :
     ∫ ω in A, (Y j ω - Y i ω) ^ 2 ∂μ = ∫ ω in A, (Y j ω ^ 2 - Y i ω ^ 2) ∂μ := by
-  have hi : MemLp (Y i) 2 μ := by
-    by_cases hμ : SigmaFinite (μ.trim (ℱ.le i))
-    · exact (hj.condExp (m := ℱ i) one_le_two).ae_eq (hY.condExp_ae_eq hij)
-    · have hc := hY.condExp_ae_eq hij
-      rw [condExp_of_not_sigmaFinite (ℱ.le i) hμ] at hc
-      exact MemLp.zero.ae_eq hc
-  have hcross : ∫ ω in A, Y i ω * Y j ω ∂μ = ∫ ω in A, Y i ω ^ 2 ∂μ := by
-    by_cases hμ : SigmaFinite (μ.trim (ℱ.le i))
-    · have hmul : Integrable (A.indicator (Y i) * Y j) μ :=
+  by_cases hμ : SigmaFinite (μ.trim (ℱ.le i))
+  · have hi : MemLp (Y i) 2 μ :=
+      (hj.condExp (m := ℱ i) one_le_two).ae_eq (hY.condExp_ae_eq hij)
+    have hcross : ∫ ω in A, Y i ω * Y j ω ∂μ = ∫ ω in A, Y i ω ^ 2 ∂μ := by
+      have hmul : Integrable (A.indicator (Y i) * Y j) μ :=
         (hi.indicator (ℱ.le i A hA).nullMeasurableSet).integrable_mul hj
       have hce : μ[A.indicator (Y i) * Y j | ℱ i] =ᵐ[μ] A.indicator (Y i) * Y i :=
         (condExp_mul_of_stronglyMeasurable_left ((hY.stronglyAdapted i).indicator hA) hmul
@@ -274,34 +270,31 @@ theorem Martingale.setIntegral_sub_sq (hY : Martingale Y ℱ μ) {i j : ι} (hij
       have h1 := (integral_condExp (ℱ.le i)).symm.trans (integral_congr_ae hce)
       simpa only [Pi.mul_apply, ← Set.indicator_mul_left,
         integral_indicator (ℱ.le i A hA), ← sq] using h1
-    · have hc := hY.condExp_ae_eq hij
-      rw [condExp_of_not_sigmaFinite (ℱ.le i) hμ] at hc
-      have hYi0 : Y i =ᵐ[μ] 0 := hc.symm
-      have hlhs : ∫ ω in A, Y i ω * Y j ω ∂μ = 0 := by
-        rw [setIntegral_congr_ae (ℱ.le i A hA) (g := fun _ ↦ (0 : ℝ))
-          (hYi0.mono fun ω hω _ ↦ by simp [hω]), integral_zero]
-      have hrhs : ∫ ω in A, Y i ω ^ 2 ∂μ = 0 := by
-        rw [setIntegral_congr_ae (ℱ.le i A hA) (g := fun _ ↦ (0 : ℝ))
-          (hYi0.mono fun ω hω _ ↦ by simp [hω]), integral_zero]
-      exact hlhs.trans hrhs.symm
-  have hj2 : IntegrableOn (fun ω ↦ Y j ω ^ 2) A μ := hj.integrable_sq.integrableOn
-  have hi2 : IntegrableOn (fun ω ↦ Y i ω ^ 2) A μ := hi.integrable_sq.integrableOn
-  have hij_on : IntegrableOn (fun ω ↦ Y i ω * Y j ω) A μ := (hi.integrable_mul hj).integrableOn
-  have hexp : (fun ω ↦ (Y j ω - Y i ω) ^ 2) =
-      fun ω ↦ (Y j ω ^ 2 - Y i ω ^ 2) - 2 * (Y i ω * Y j ω - Y i ω ^ 2) := by
-    ext ω; ring
-  have hsub1 : ∫ ω in A, (Y j ω - Y i ω) ^ 2 ∂μ =
-      ∫ ω in A, (Y j ω ^ 2 - Y i ω ^ 2) ∂μ -
-        ∫ ω in A, 2 * (Y i ω * Y j ω - Y i ω ^ 2) ∂μ := by
-    rw [hexp]
-    exact integral_sub (hj2.sub hi2) ((hij_on.sub hi2).const_mul 2)
-  have hsub2 : ∫ ω in A, 2 * (Y i ω * Y j ω - Y i ω ^ 2) ∂μ = 0 := by
-    rw [integral_const_mul]
-    have hdiff : ∫ ω in A, (Y i ω * Y j ω - Y i ω ^ 2) ∂μ =
-        ∫ ω in A, Y i ω * Y j ω ∂μ - ∫ ω in A, Y i ω ^ 2 ∂μ :=
-      integral_sub hij_on hi2
-    rw [hdiff, hcross, sub_self, mul_zero]
-  rw [hsub1, hsub2, sub_zero]
+    have hj2 : IntegrableOn (fun ω ↦ Y j ω ^ 2) A μ := hj.integrable_sq.integrableOn
+    have hi2 : IntegrableOn (fun ω ↦ Y i ω ^ 2) A μ := hi.integrable_sq.integrableOn
+    have hij_on : IntegrableOn (fun ω ↦ Y i ω * Y j ω) A μ := (hi.integrable_mul hj).integrableOn
+    have hexp : (fun ω ↦ (Y j ω - Y i ω) ^ 2) =
+        fun ω ↦ (Y j ω ^ 2 - Y i ω ^ 2) - 2 * (Y i ω * Y j ω - Y i ω ^ 2) := by
+      ext ω; ring
+    have hsub1 : ∫ ω in A, (Y j ω - Y i ω) ^ 2 ∂μ =
+        ∫ ω in A, (Y j ω ^ 2 - Y i ω ^ 2) ∂μ -
+          ∫ ω in A, 2 * (Y i ω * Y j ω - Y i ω ^ 2) ∂μ := by
+      rw [hexp]
+      exact integral_sub (hj2.sub hi2) ((hij_on.sub hi2).const_mul 2)
+    have hsub2 : ∫ ω in A, 2 * (Y i ω * Y j ω - Y i ω ^ 2) ∂μ = 0 := by
+      rw [integral_const_mul]
+      have hdiff : ∫ ω in A, (Y i ω * Y j ω - Y i ω ^ 2) ∂μ =
+          ∫ ω in A, Y i ω * Y j ω ∂μ - ∫ ω in A, Y i ω ^ 2 ∂μ :=
+        integral_sub hij_on hi2
+      rw [hdiff, hcross, sub_self, mul_zero]
+    rw [hsub1, hsub2, sub_zero]
+  · have hc := hY.condExp_ae_eq hij
+    rw [condExp_of_not_sigmaFinite (ℱ.le i) hμ] at hc
+    have hcongr : ∀ g : Ω → ℝ, (∀ ω, Y i ω = 0 → g ω = Y j ω ^ 2) →
+        ∫ ω in A, g ω ∂μ = ∫ ω in A, Y j ω ^ 2 ∂μ := fun g hg ↦
+      setIntegral_congr_ae (ℱ.le i A hA) (hc.symm.mono fun ω hω _ ↦ hg ω (by simpa using hω))
+    exact (hcongr _ fun ω hω ↦ by simp [hω]).trans
+      (hcongr _ fun ω hω ↦ by simp [hω]).symm
 
 /-- A nonnegative position known at time `i` preserves a submartingale's expectation inequality
 between `i` and `j`, provided its products with both values are integrable. -/

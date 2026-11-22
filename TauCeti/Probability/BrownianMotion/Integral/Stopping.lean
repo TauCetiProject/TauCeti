@@ -103,49 +103,61 @@ theorem BrownianIntegrable.tendsto_eLpNorm_ite_le_sub
     filter_upwards [hp.eventually (eventually_gt_nhds (WithTop.coe_lt_top p.1))] with n hn
     exact (ite_eq_left hn.le).symm
 
+/-- Every clipped dyadic cell intersected with the event that the dyadic stopping time exceeds
+its left endpoint is predictable, including cells beyond the horizon (which are empty). -/
+theorem measurableSet_predictable_Ioc_dyadicCeilTime (hτ : IsStoppingTime ℱ τ)
+    (m : ℕ) (T : ℝ≥0) (k : ℕ) :
+    MeasurableSet[ℱ.predictable]
+      (Ioc (min ((k : ℝ≥0) / 2 ^ m) T) (min (((k + 1 : ℕ) : ℝ≥0) / 2 ^ m) T) ×ˢ
+        {ω | (((k : ℝ≥0) / 2 ^ m : ℝ≥0) : WithTop ℝ≥0) < dyadicCeilTime m (τ ω)}) := by
+  by_cases hk : k < ⌈T * 2 ^ m⌉₊
+  · exact measurableSet_predictable_Ioc_prod _ _ (hτ.measurableSet_gt_dyadicCeilTime m hk)
+  · have hT : T ≤ (k : ℝ≥0) / 2 ^ m :=
+      (le_div_iff₀ (by positivity)).mpr (Nat.ceil_le.mp (le_of_not_gt hk))
+    simp [min_eq_right hT]
+
 /-- Rounding a stopping time to the dyadic grid of mesh `2 ^ (-m)` splits the finite-horizon
 predictable `L²` class of the cutoff integrand into a finite sum of predictable-cell
 restrictions. -/
 theorem BrownianIntegrable.toLp_ite_le_dyadicCeilTime_eq_sum [SFinite P]
     (hH : BrownianIntegrable ℱ P H) {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ)
     (m : ℕ) (T : ℝ≥0) :
-    let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-    let σ : Ω → WithTop ℝ≥0 := fun ω ↦ dyadicCeilTime m (τ ω)
-    have hσ : IsStoppingTime ℱ σ := hτ.dyadicCeilTime m
-    let t : ℕ → ℝ≥0 := fun k ↦ min ((k : ℝ≥0) / 2 ^ m) T
-    let A : ℕ → Set Ω := fun k ↦ {ω | (((k : ℝ≥0) / 2 ^ m : ℝ≥0) : WithTop ℝ≥0) < σ ω}
-    let fH := (hH.memLp_predictableMeasure T).toLp (Function.uncurry H)
-    ((hH.ite_le hσ).memLp_predictableMeasure T).toLp _ =
+    ((hH.ite_le (hτ.dyadicCeilTime m)).memLp_predictableMeasure T).toLp _ =
       ∑ k ∈ Finset.range ⌈T * 2 ^ m⌉₊,
-        if hk : k < ⌈T * 2 ^ m⌉₊ then
-          ((Lp.memLp fH).indicator (measurableSet_predictable_Ioc_prod (t k) (t (k + 1))
-            (hτ.measurableSet_gt_dyadicCeilTime m hk)).nullMeasurableSet).toLp
-              ((Ioc (t k) (t (k + 1)) ×ˢ A k).indicator fH)
-        else 0 := by
-  intro _ σ hσ t A fH
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+        ((Lp.memLp ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H))).indicator
+          ((measurableSet_predictable_Ioc_dyadicCeilTime hτ m T k).nullMeasurableSet
+            (m0 := ℱ.predictable))).toLp
+          ((Ioc (min ((k : ℝ≥0) / 2 ^ m) T) (min (((k + 1 : ℕ) : ℝ≥0) / 2 ^ m) T) ×ˢ
+            {ω | (((k : ℝ≥0) / 2 ^ m : ℝ≥0) : WithTop ℝ≥0) <
+              dyadicCeilTime m (τ ω)}).indicator
+            ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H))) := by
+  let σ : Ω → WithTop ℝ≥0 := fun ω ↦ dyadicCeilTime m (τ ω)
   let d : ℕ → ℝ≥0 := fun k ↦ (k : ℝ≥0) / 2 ^ m
+  let t : ℕ → ℝ≥0 := fun k ↦ min (d k) T
+  let A : ℕ → Set Ω := fun k ↦ {ω | ((d k : ℝ≥0) : WithTop ℝ≥0) < σ ω}
   let N : ℕ := ⌈T * 2 ^ m⌉₊
+  let fH := (hH.memLp_predictableMeasure T).toLp (Function.uncurry H)
   have h2pos : (0 : ℝ≥0) < 2 ^ m := by positivity
   let piece (k : ℕ) : Lp ℝ 2 (ℱ.predictableMeasure P T) :=
-    if hk : k < N then
-      ((Lp.memLp fH).indicator (measurableSet_predictable_Ioc_prod (t k) (t (k + 1))
-        (hτ.measurableSet_gt_dyadicCeilTime m hk)).nullMeasurableSet).toLp
-          ((Ioc (t k) (t (k + 1)) ×ˢ A k).indicator fH)
-    else 0
+    ((Lp.memLp fH).indicator
+      ((measurableSet_predictable_Ioc_dyadicCeilTime hτ m T k).nullMeasurableSet
+        (m0 := ℱ.predictable))).toLp
+      ((Ioc (t k) (t (k + 1)) ×ˢ A k).indicator fH)
+  -- Identify each cell's `Lp` representative with the pointwise indicator of `H`.
   have hterms : ∀ k ∈ Finset.range N, (piece k : ℝ≥0 × Ω → ℝ) =ᵐ[ℱ.predictableMeasure P T]
       (Ioc (t k) (t (k + 1)) ×ˢ A k).indicator (Function.uncurry H) := by
-    intro k hk
-    have hk' := Finset.mem_range.mp hk
-    simp only [piece, dite_eq_left hk']
-    filter_upwards [((Lp.memLp fH).indicator (measurableSet_predictable_Ioc_prod (t k) (t (k + 1))
-      (hτ.measurableSet_gt_dyadicCeilTime m hk')).nullMeasurableSet).coeFn_toLp,
+    intro k _
+    filter_upwards [((Lp.memLp fH).indicator
+      ((measurableSet_predictable_Ioc_dyadicCeilTime hτ m T k).nullMeasurableSet
+        (m0 := ℱ.predictable))).coeFn_toLp,
       (hH.memLp_predictableMeasure T).coeFn_toLp] with p hp hHp
-    dsimp only [A, σ, fH] at hp ⊢
+    dsimp only [piece, t, d, A, σ, fH] at hp ⊢
     simp only [hp, indicator_apply, hHp]
+  -- Evaluate both sides on `(0, T] × Ω`, where a single dyadic cell `k₀ = ⌈s * 2^m⌉₊ - 1`
+  -- covers `s`.
   apply Lp.ext
-  filter_upwards [((hH.ite_le hσ).memLp_predictableMeasure T).coeFn_toLp,
-    ℱ.ae_mem_Ioc_prod_predictableMeasure P T,
+  have hL_ae := ((hH.ite_le (hτ.dyadicCeilTime m)).memLp_predictableMeasure T).coeFn_toLp
+  filter_upwards [hL_ae, ℱ.ae_mem_Ioc_prod_predictableMeasure P T,
     Lp.coeFn_finsetSum (s := Finset.range N) piece, eventuallyEq_sum hterms]
     with ⟨s, ω⟩ hL hsT hsum htms
   rw [hL, hsum, htms]
@@ -160,7 +172,8 @@ theorem BrownianIntegrable.toLp_ite_le_dyadicCeilTime_eq_sum [SFinite P]
       (le_div_iff₀ h2pos).mpr (by
         simpa only [k₀, Nat.sub_add_cancel hceil_pos] using Nat.le_ceil _)⟩
   rw [Finset.sum_eq_single k₀]
-  · have hst : s ∈ Ioc (t k₀) (t (k₀ + 1)) := by
+  · -- Inside cell `k₀`, `s ≤ dyadicCeilTime m (τ ω)` holds iff `ω ∈ A k₀`.
+    have hst : s ∈ Ioc (t k₀) (t (k₀ + 1)) := by
       dsimp only [t]
       exact ⟨(min_dyadic_div_eq_left (Finset.mem_range.mp hk₀)).symm ▸ hsk₀.left,
         le_min hsk₀.right hsT.left.right⟩
@@ -169,7 +182,8 @@ theorem BrownianIntegrable.toLp_ite_le_dyadicCeilTime_eq_sum [SFinite P]
     · rw [ite_eq_left hc, indicator_of_mem (mem_prod.mpr ⟨hst, hiff.mp hc⟩),
         Function.uncurry_apply_pair]
     · rw [ite_eq_right hc, indicator_of_notMem (fun h ↦ hc (hiff.mpr (mem_prod.mp h).right))]
-  · intro k hk hne
+  · -- All other cells `k ≠ k₀` are disjoint from `s`.
+    intro k hk hne
     refine indicator_of_notMem (f := Function.uncurry H) fun h ↦ ?_
     rcases lt_or_gt_of_ne hne with hlt | hlt
     · exact ((mem_prod.mp h).left.right.trans <| (min_le_left _ _).trans <|

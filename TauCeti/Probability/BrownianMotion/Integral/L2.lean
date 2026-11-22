@@ -269,6 +269,33 @@ theorem integral_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P) (T : ℝ≥
   simpa only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
     innerSL_apply_apply, one, L2.inner_indicatorConstLp_one, setIntegral_univ, zero_apply] using h
 
+/-- The `L²(P)` norm of a terminal `L²` Brownian integral equals the `L²` norm of its
+predictable integrand for Lebesgue time on `(0, T]` times `P`. -/
+theorem eLpNorm_l2Integral
+    (hW : IsFilteredPreBrownianReal ℱ W P) (T : ℝ≥0) {H : ℝ≥0 × Ω → ℝ}
+    (hHp : StronglyMeasurable[ℱ.predictable] H)
+    (hHm : MemLp H 2 (ℱ.predictableMeasure P T)) :
+    eLpNorm (hW.l2Integral T (hHm.toLp H)) 2 P =
+      eLpNorm H 2 ((timeMeasure T).prod P) := by
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  calc eLpNorm (hW.l2Integral T (hHm.toLp H)) 2 P
+      = edist (hW.l2Integral T (hHm.toLp H)) 0 := by
+        rw [Lp.edist_def]
+        refine eLpNorm_congr_ae ?_
+        filter_upwards [Lp.coeFn_zero (E := ℝ) (p := 2) (μ := P)] with ω hω
+        rw [Pi.sub_apply, hω, Pi.zero_apply, sub_zero]
+    _ = edist (hHm.toLp H) 0 := by
+        simpa only [map_zero] using (hW.l2Integral T).isometry.edist_eq (hHm.toLp H) 0
+    _ = eLpNorm H 2 (ℱ.predictableMeasure P T) := by
+        rw [Lp.edist_def]
+        refine eLpNorm_congr_ae ?_
+        filter_upwards [hHm.coeFn_toLp,
+          Lp.coeFn_zero (E := ℝ) (p := 2) (μ := ℱ.predictableMeasure P T)] with p hp h0
+        rw [Pi.sub_apply, hp, h0, Pi.zero_apply, sub_zero]
+    _ = eLpNorm H 2 ((timeMeasure T).prod P) := by
+        rw [ℱ.predictableMeasure_def]
+        exact eLpNorm_trim ℱ.predictable_le_prod hHp
+
 /-- The `L²(P)` distance between two terminal `L²` Brownian integrals equals the `L²` distance
 between their predictable integrands for Lebesgue time on `(0, T]` times `P`. -/
 theorem eLpNorm_l2Integral_sub
