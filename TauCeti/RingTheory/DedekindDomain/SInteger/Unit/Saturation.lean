@@ -57,8 +57,8 @@ is finitely generated and `Γ ≤ Kˣ` is finitely generated, there is a single 
 theorem exists_pow_mem_of_pow_mem {Γ : Subgroup Kˣ} (hΓ : Γ.FG) :
     ∃ u ≠ 0, ∀ y : Kˣ, ∀ a ≠ 0, y ^ a ∈ Γ → y ^ u ∈ Γ := by
   obtain ⟨S, hS⟩ := exists_finset_le_unit R hΓ
-  obtain ⟨u, hu, h⟩ := (fg_of_le_unit
-    (le_refl ((S : Set (HeightOneSpectrum R)).unit K))).exists_pow_mem_of_mem_of_pow_mem Γ
+  obtain ⟨u, hu, h⟩ := ((Group.fg_iff_subgroup_fg _).mp
+    (Set.unit_fg_of_units (S : Set (HeightOneSpectrum R)) K)).exists_pow_mem_of_mem_of_pow_mem Γ
   exact ⟨u, hu, fun y a ha hy ↦ h y ((Set.pow_mem_unit_iff _ K ha).mp (hS hy)) a ha hy⟩
 
 /-- **Powers in a finitely generated subgroup of `Kˣ` are detected by powers in `Kˣ`.** If `Rˣ` is

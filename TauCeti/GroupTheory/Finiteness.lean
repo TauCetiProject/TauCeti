@@ -357,13 +357,14 @@ theorem Subgroup.FG.exists_pow_mem_of_mem_of_pow_mem {G : Type*} [CommGroup G] {
   have := TauCeti.CommGroup.finite_torsion_of_fg (H ⧸ E.subgroupOf H)
   refine ⟨Monoid.exponent (CommGroup.torsion (H ⧸ E.subgroupOf H)),
     Monoid.exponent_ne_zero_of_finite, fun y hy a ha hya => ?_⟩
-  -- the class of `y` in `H ⧸ (E ⊓ H)` is torsion, so the exponent of the torsion kills it
+  -- a power of the class of `y` in `H ⧸ (E ⊓ H)` is trivial iff that power of `y` is in `E`
+  have key (k : ℕ) : (QuotientGroup.mk (s := E.subgroupOf H) ⟨y, hy⟩) ^ k = 1 ↔ y ^ k ∈ E := by
+    rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf,
+      SubmonoidClass.coe_pow]
+  -- so the class of `y` is torsion, and the exponent of the torsion kills it
   have hq : IsOfFinOrder (QuotientGroup.mk (s := E.subgroupOf H) ⟨y, hy⟩) :=
-    isOfFinOrder_iff_pow_eq_one.mpr ⟨a, Nat.pos_of_ne_zero ha, by
-      rwa [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf]⟩
-  have hu := congrArg Subtype.val
-    (Monoid.pow_exponent_eq_one (⟨_, hq⟩ : CommGroup.torsion (H ⧸ E.subgroupOf H)))
-  rwa [SubmonoidClass.coe_pow, OneMemClass.coe_one, ← QuotientGroup.mk_pow,
-    QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf] at hu
+    isOfFinOrder_iff_pow_eq_one.mpr ⟨a, Nat.pos_of_ne_zero ha, (key a).mpr hya⟩
+  exact (key _).mp (Subtype.ext_iff.mp
+    (Monoid.pow_exponent_eq_one (⟨_, hq⟩ : CommGroup.torsion (H ⧸ E.subgroupOf H))))
 
 end
