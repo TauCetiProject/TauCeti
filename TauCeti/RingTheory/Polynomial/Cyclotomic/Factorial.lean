@@ -54,6 +54,8 @@ when `d k ≤ N`. In characteristic two it is not, since there `Φ_1 = Φ_2`.
 * `TauCeti.X_pow_sub_one_pow_dvd_factorialPoly`, `TauCeti.factorialPoly_dvd_X_pow_sub_one_pow`:
   `(X ^ m - 1) ^ k ∣ P_N` for `0 < m` and `m k ≤ N`, and `P_N ∣ (X ^ m - 1) ^ N` when every
   `1 ≤ i ≤ N` divides `m`.
+* `TauCeti.X_sub_C_pow_dvd_factorialPoly`: `(X - ζ) ^ k ∣ P_N` for `ζ ^ d = 1`, `0 < d` and
+  `d k ≤ N`.
 * `TauCeti.cyclotomic_pow_dvd_factorialPoly_iff`: over a characteristic-zero domain,
   `Φ_d ^ k ∣ P_N ↔ d k ≤ N` for `0 < d`.
 
@@ -233,6 +235,21 @@ theorem X_pow_sub_one_pow_dvd_factorialPoly {m k N : ℕ} (hm : 0 < m) (h : m * 
   rw [← prod_cyclotomic_eq_X_pow_sub_one hm, ← prod_pow]
   exact prod_cyclotomic_pow_dvd_factorialPoly fun d hd ↦
     (Nat.mul_le_mul_right k (Nat.divisor_le hd)).trans h
+
+/-- `(X - ζ) ^ k ∣ P_N` for `ζ ^ d = 1`, `0 < d` and `d k ≤ N`: the factors `1 - X ^ (d j)`,
+`1 ≤ j ≤ k`, of `P_N` all vanish at `ζ`. -/
+theorem X_sub_C_pow_dvd_factorialPoly {ζ : R} {d k N : ℕ} (hd : 0 < d) (hζ : ζ ^ d = 1)
+    (h : d * k ≤ N) : (X - C ζ) ^ k ∣ factorialPoly R N := by
+  induction k generalizing N with
+  | zero => simp
+  | succ k ih =>
+    obtain ⟨M, hM⟩ : ∃ M, d * (k + 1) = M + 1 :=
+      ⟨d * (k + 1) - 1, by have : 0 < d * (k + 1) := Nat.mul_pos hd (by omega); omega⟩
+    have hk : d * k ≤ M := by rw [Nat.mul_succ] at hM; omega
+    refine Dvd.dvd.trans ?_ (factorialPoly_dvd_factorialPoly (hM ▸ h))
+    rw [pow_succ, factorialPoly_succ]
+    refine mul_dvd_mul (ih hk) (dvd_iff_isRoot.mpr ?_)
+    rw [← hM, IsRoot, eval_sub, eval_one, eval_pow, eval_X, pow_mul, hζ, one_pow, sub_self]
 
 /-- `P_N ∣ (X ^ m - 1) ^ N` when every `1 ≤ i ≤ N` divides `m`, for instance `m = N!`. -/
 theorem factorialPoly_dvd_X_pow_sub_one_pow {m N : ℕ} (h : ∀ i ∈ Ioc 0 N, i ∣ m) :
