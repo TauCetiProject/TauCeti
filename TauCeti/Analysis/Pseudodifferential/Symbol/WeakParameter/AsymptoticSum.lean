@@ -40,9 +40,11 @@ in the estimates of order `mₖ + d j + 1` for the derivatives of length at most
 radius `k`, uniformly in `r ∈ R`. This is possible since the cut-off symbols satisfy the estimates
 of order `mₖ + d j + 1` with constants `C / tₖ`, where `C` depends only on the uniform bounds for
 `∂_r^j aₖ`. Since `mₖ + 1 ≤ m_N` for large `k`, the tail of the series is summable in the estimates
-of order `m_N + d j`, uniformly in `r`. This adapts the construction of
-`TauCeti.Symbol.exists_asymptoticSum`, run for all parameter derivatives at once with constants
-uniform in the parameter.
+of order `m_N + d j`, uniformly in `r`. At each `r ∈ R` the `j`-th parameter derivative of the
+remainder is the remainder of the Borel sum `TauCeti.Symbol.borelSum` of the symbols
+`∂_r^j aₖ(·, ·, r)`, so these estimates are those of the construction of
+`TauCeti.Symbol.exists_asymptoticSum` for the families `r ↦ ∂_r^j aₖ(·, ·, r)` over `R`
+(`TauCeti.Symbol.exists_norm_mixedDeriv_borelSum_sub_le_of_forall`).
 
 ## Main declarations
 
@@ -76,83 +78,6 @@ namespace WeakParameterSymbol
 variable {n : ℕ} {R : TopologicalSpace.Opens ℂ} {V W : Type*} [NormedAddCommGroup V]
   [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {d : ℝ}
 
-/-! ### Families of symbols with uniform estimates -/
-
-/-- **Cut-off families.** Let `F τ` be smooth functions satisfying the estimates of order `μ` on
-`K`, uniformly in `τ`. Then the products `χ(ξ / t) F τ`, `t ≥ 1`, satisfy the estimates of every
-order `μ + e`, `e ≥ 0`, with constants `C t^(-e)`, where `C` depends neither on `τ` nor on `t`. -/
-private theorem exists_uniform_norm_mixedDeriv_cutoff_smul_le
-    (χ : FrequencyCutoff (CoordinateSpace n)) {T : Type*} {μ e : ℝ} (he : 0 ≤ e)
-    {F : T → CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hF : ∀ τ, ContDiff ℝ ∞ (F τ))
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K)
-    (hD : ∀ s s' : List (Fin n), ∃ D, 0 ≤ D ∧ ∀ τ, ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv s s' (F τ) x ξ‖ ≤ D * (1 + ‖ξ‖ ^ 2) ^ ((μ - s'.length) / 2))
-    (α β : List (Fin n)) :
-    ∃ C, 0 ≤ C ∧ ∀ t : ℝ, 1 ≤ t → ∀ τ, ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv α β (fun p => χ (t⁻¹ • p.2) • F τ p) x ξ‖ ≤
-        C * t ^ (-e) * (1 + ‖ξ‖ ^ 2) ^ ((e + μ - β.length) / 2) := by
-  choose D _ hD using hD
-  -- The dilated cutoffs satisfy the estimates of order `e` with constants `C t^(-e)`.
-  choose Cc _ hCc using fun s s' : List (Fin n) =>
-    (Symbol.const (ContinuousLinearMap.id ℂ W) : Symbol n W W 0)
-      |>.exists_norm_mixedDeriv_cutoff_smul_le χ hK s s'
-  set S := (β.sublists'.revzip.map fun s' =>
-    (α.sublists'.revzip.map fun s => Cc s.1 s'.1 * D s.2 s'.2).sum).sum
-  refine ⟨max S 0, le_max_right _ _, fun t ht τ x hx ξ => ?_⟩
-  have hfun : (fun p => χ (t⁻¹ • p.2) • F τ p) = fun p =>
-      (χ (t⁻¹ • p.2) •
-        (Symbol.const (ContinuousLinearMap.id ℂ W) : Symbol n W W 0).coefficient p).comp (F τ p) :=
-    funext fun p => by simp
-  have h := Symbol.norm_mixedDeriv_comp_le (m' := e) (m := μ)
-    ((Symbol.const (ContinuousLinearMap.id ℂ W) : Symbol n W W 0).contDiff_cutoff_smul_coefficient
-      χ t) (hF τ) (C := fun s s' => t ^ (-e) * Cc s s') (D := D)
-    (fun s s' => by
-      have h := hCc s s' t ht e he x hx ξ
-      rwa [zero_sub, mul_comm (Cc s s')] at h)
-    (fun s s' => hD s s' τ x hx ξ) α β
-  have hsum : (β.sublists'.revzip.map fun s' => (α.sublists'.revzip.map fun s =>
-      t ^ (-e) * Cc s.1 s'.1 * D s.2 s'.2).sum).sum = t ^ (-e) * S := by
-    simp only [S, mul_assoc, List.sum_map_mul_left]
-  rw [hfun]
-  refine h.trans (le_of_eq_of_le (by rw [hsum]) ?_)
-  calc t ^ (-e) * S * (1 + ‖ξ‖ ^ 2) ^ ((e + μ - β.length) / 2)
-      ≤ t ^ (-e) * max S 0 * (1 + ‖ξ‖ ^ 2) ^ ((e + μ - β.length) / 2) := by
-        gcongr
-        exact le_max_left _ _
-    _ = _ := by ring
-
-/-- **Composed families.** Let `F τ` be smooth functions satisfying the estimates of order `μ` on
-the compact set `K`, uniformly in `τ`, and let `b` be a symbol of order `e`. Then the compositions
-`b ∘ F τ` satisfy the estimates of order `e + μ` on `K`, uniformly in `τ`. -/
-private theorem exists_uniform_norm_mixedDeriv_comp_le {T : Type*} {μ e : ℝ}
-    (b : Symbol n W W e) {F : T → CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W}
-    (hF : ∀ τ, ContDiff ℝ ∞ (F τ)) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
-    (hD : ∀ s s' : List (Fin n), ∃ D, 0 ≤ D ∧ ∀ τ, ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv s s' (F τ) x ξ‖ ≤ D * (1 + ‖ξ‖ ^ 2) ^ ((μ - s'.length) / 2))
-    (α β : List (Fin n)) :
-    ∃ C, 0 ≤ C ∧ ∀ τ, ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv α β (fun p => (b.coefficient p).comp (F τ p)) x ξ‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ ((e + μ - β.length) / 2) := by
-  choose D _ hD using hD
-  choose Cb _ hCb using b.exists_bound K hK
-  set S := (β.sublists'.revzip.map fun s' =>
-    (α.sublists'.revzip.map fun s => Cb s.1 s'.1 * D s.2 s'.2).sum).sum
-  refine ⟨max S 0, le_max_right _ _, fun τ x hx ξ => ?_⟩
-  refine (Symbol.norm_mixedDeriv_comp_le b.contDiff_coefficient (hF τ) (C := Cb) (D := D)
-    (fun s s' => hCb s s' x hx ξ) (fun s s' => hD s s' τ x hx ξ) α β).trans ?_
-  gcongr
-  exact le_max_left _ _
-
-/-- The `i`-th parameter derivatives of `a` satisfy the estimates of order `m₀ + d i` on the
-compact set `K`, uniformly in `r ∈ R`. -/
-private theorem exists_uniform_bound_iteratedDeriv {m₀ : ℝ} (a : WeakParameterSymbol n R V W d m₀)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (i : ℕ) (s s' : List (Fin n)) :
-    ∃ D, 0 ≤ D ∧ ∀ r : R, ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv s s' (fun p => iteratedDeriv i (a.coefficient p) r) x ξ‖ ≤
-        D * (1 + ‖ξ‖ ^ 2) ^ ((m₀ + d * i - s'.length) / 2) := by
-  obtain ⟨D, hD0, hD⟩ := a.exists_bound K hK i s s'
-  exact ⟨D, hD0, fun r x hx ξ => hD x hx ξ r r.property⟩
-
 /-! ### The Borel sum -/
 
 variable {m : ℕ → ℝ}
@@ -171,16 +96,8 @@ private theorem borelRemainder_eq_sum (χ : FrequencyCutoff (CoordinateSpace n))
     {J : ℕ} {p : CoordinateSpace n × CoordinateSpace n} (hp : ‖p.2‖ < J) :
     borelRemainder χ t a N p = fun r =>
       ∑ k ∈ range J, χ ((t k)⁻¹ • p.2) • (a k).coefficient p r -
-        ∑ k ∈ range N, (a k).coefficient p r := by
-  funext r
-  rw [borelRemainder]
-  congr 1
-  refine finsum_eq_sum_of_support_subset _ fun k hk => ?_
-  rw [coe_range, Set.mem_Iio]
-  by_contra hkJ
-  have hJk : (J : ℝ) ≤ k := by exact_mod_cast not_lt.1 hkJ
-  have htk : 0 < t k := by linarith [ht k, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
-  exact hk (by simp only [χ.apply_inv_smul_eq_zero htk (by linarith [ht k]), zero_smul])
+        ∑ k ∈ range N, (a k).coefficient p r :=
+  funext fun r => by rw [borelRemainder, Symbol.finsum_cutoff_smul_eq_sum χ ht _ hp]
 
 /-- The `i`-th parameter derivative of the Borel remainder at `r ∈ R` is the Borel remainder of
 the `i`-th parameter derivatives. -/
@@ -200,6 +117,20 @@ private theorem iteratedDeriv_borelRemainder (χ : FrequencyCutoff (CoordinateSp
   congr 1
   exact Finset.sum_congr rfl fun k _ =>
     iteratedDeriv_fun_const_smul ((a k).contDiffAt_coefficient p hr) _
+
+/-- At `r ∈ R`, the `i`-th parameter derivative of the Borel remainder is the remainder after `N`
+terms of the Borel sum (`TauCeti.Symbol.borelSum`) of the symbols `∂_r^i aₖ(·, ·, r)`. -/
+private theorem iteratedDeriv_borelRemainder_eq_borelSum_sub
+    (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℕ → ℝ} (ht : ∀ k : ℕ, (k : ℝ) + 1 ≤ t k)
+    (a : ∀ k, WeakParameterSymbol n R V W d (m k)) (N i : ℕ) {r : ℂ} (hr : r ∈ R) :
+    (fun p => iteratedDeriv i (borelRemainder χ t a N p) r) =
+      Symbol.borelSum χ t (fun k => (a k).iteratedDerivSymbol i hr) -
+        ∑ k ∈ range N, ((a k).iteratedDerivSymbol i hr).coefficient := by
+  funext p
+  obtain ⟨J, hJ⟩ := exists_nat_gt ‖p.2‖
+  rw [iteratedDeriv_borelRemainder χ ht a N hJ i hr, Pi.sub_apply,
+    Symbol.borelSum_eq_sum χ ht _ hJ, Finset.sum_apply]
+  simp only [coefficient_iteratedDerivSymbol]
 
 /-- The Borel remainder is holomorphic in the parameter on `R`. -/
 private theorem contDiffOn_borelRemainder (χ : FrequencyCutoff (CoordinateSpace n))
@@ -236,6 +167,17 @@ private theorem contDiff_iteratedDeriv_borelRemainder (χ : FrequencyCutoff (Coo
   filter_upwards [(isOpen_lt continuous_snd.norm continuous_const).mem_nhds hJ] with p hp
   exact iteratedDeriv_borelRemainder χ ht a N hp i hr
 
+/-- The `i`-th parameter derivatives `∂_r^i a(·, ·, r)`, `r ∈ R`, as a family of symbols of order
+`m₀ + d i` over `R`, whose estimates on compact sets hold uniformly in `r`. -/
+private theorem exists_bound_iteratedDerivSymbol {m₀ : ℝ} (a : WeakParameterSymbol n R V W d m₀)
+    (i : ℕ) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (s s' : List (Fin n)) :
+    ∃ D, 0 ≤ D ∧ ∀ r : R, ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv s s' (a.iteratedDerivSymbol i r.property).coefficient x ξ‖ ≤
+        D * (1 + ‖ξ‖ ^ 2) ^ ((m₀ + d * i - s'.length) / 2) :=
+  (a.exists_bound K hK i s s').imp fun _ hD => ⟨hD.1, fun r x hx ξ => by
+    simpa only [← funext (coefficient_iteratedDerivSymbol a i r.property)] using
+      hD.2 x hx ξ r r.property⟩
+
 /-- For each `k` there is a radius `t ≥ k + 1` making the cut-off parameter derivatives
 `χ(ξ / t) ∂_r^i aₖ`, `i ≤ k`, at most `2^{-k}` in the estimates of order `mₖ + d i + 1` for the
 derivatives of length at most `k` on the ball of radius `k`, uniformly in `r ∈ R`. -/
@@ -249,14 +191,15 @@ private theorem exists_radius (χ : FrequencyCutoff (CoordinateSpace n))
       ∀ x ∈ closedBall (0 : CoordinateSpace n) k, ∀ ξ,
         ‖mixedDeriv α β (fun p => χ (t⁻¹ • p.2) • iteratedDeriv i ((a k).coefficient p) r) x ξ‖ ≤
           (1 / 2) ^ k * (1 + ‖ξ‖ ^ 2) ^ ((m k + d * i + 1 - β.length) / 2) := by
-    obtain ⟨C, -, hC⟩ := exists_uniform_norm_mixedDeriv_cutoff_smul_le χ zero_le_one
-      (fun r : R => (a k).contDiff_iteratedDeriv i r r.property) (isCompact_closedBall 0 k)
-      ((a k).exists_uniform_bound_iteratedDeriv (isCompact_closedBall 0 k) i) α β
+    obtain ⟨C, -, hC⟩ := Symbol.exists_norm_mixedDeriv_cutoff_smul_le_of_forall χ
+      (fun r : R => (a k).iteratedDerivSymbol i r.property) α β
+      ((a k).exists_bound_iteratedDerivSymbol i (isCompact_closedBall 0 k) α)
     filter_upwards [eventually_ge_atTop 1, eventually_ge_atTop (C * 2 ^ k)]
       with t ht1 htC r hr x hx ξ
     have ht0 : 0 < t := one_pos.trans_le ht1
-    have h := hC t ht1 ⟨r, hr⟩ x hx ξ
-    rw [add_comm (1 : ℝ) (m k + d * i)] at h
+    have h := hC t ht1 (m k + d * i + 1) (by linarith) ⟨r, hr⟩ x hx ξ
+    simp only [coefficient_iteratedDerivSymbol] at h
+    rw [show m k + d * i - (m k + d * i + 1) = -1 by ring] at h
     refine h.trans (mul_le_mul_of_nonneg_right ?_ (by positivity))
     rw [Real.rpow_neg_one, ← div_eq_mul_inv, div_le_iff₀ ht0]
     calc C = (1 / 2) ^ k * (C * 2 ^ k) := by
@@ -288,102 +231,12 @@ private abbrev IsSmallCutoff (χ : FrequencyCutoff (CoordinateSpace n))
       ‖mixedDeriv α β (fun p => χ ((t k)⁻¹ • p.2) • iteratedDeriv i ((a k).coefficient p) r)
         x ξ‖ ≤ (1 / 2) ^ k * (1 + ‖ξ‖ ^ 2) ^ ((m k + d * i + 1 - β.length) / 2)
 
-/-- Near `(x, ξ)` with `‖ξ‖ < J`, the `i`-th parameter derivative of the Borel remainder
-`b - ∑_{k < N} aₖ` splits into the removed cutoffs `(χ(ξ / tₖ) - 1) ∂_r^i aₖ`, `k < N`, and the
-cut-off terms `χ(ξ / tₖ) ∂_r^i aₖ` with `N ≤ k < j₁` and with `j₁ ≤ k < J`; so do its mixed
-derivatives at `(x, ξ)`. -/
-private theorem mixedDeriv_iteratedDeriv_borelRemainder (χ : FrequencyCutoff (CoordinateSpace n))
-    {t : ℕ → ℝ} (ht : ∀ k : ℕ, (k : ℝ) + 1 ≤ t k) (a : ∀ k, WeakParameterSymbol n R V W d (m k))
-    {N j₁ J : ℕ} (hNj₁ : N ≤ j₁) (hj₁J : j₁ ≤ J) (i : ℕ) {r : ℂ} (hr : r ∈ R)
-    (α β : List (Fin n)) (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : ‖ξ‖ < J) :
-    mixedDeriv α β (fun p => iteratedDeriv i (borelRemainder χ t a N p) r) x ξ =
-      ∑ k ∈ range N, mixedDeriv α β
-          ((fun p => χ ((t k)⁻¹ • p.2) • iteratedDeriv i ((a k).coefficient p) r) -
-            fun p => iteratedDeriv i ((a k).coefficient p) r) x ξ +
-        (∑ k ∈ Ico N j₁, mixedDeriv α β
-            (fun p => χ ((t k)⁻¹ • p.2) • iteratedDeriv i ((a k).coefficient p) r) x ξ +
-          ∑ k ∈ Ico j₁ J, mixedDeriv α β
-            (fun p => χ ((t k)⁻¹ • p.2) • iteratedDeriv i ((a k).coefficient p) r) x ξ) := by
-  set g : ℕ → CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W :=
-    fun k p => χ ((t k)⁻¹ • p.2) • iteratedDeriv i ((a k).coefficient p) r
-  set h : ℕ → CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W :=
-    fun k p => iteratedDeriv i ((a k).coefficient p) r
-  have hg : ∀ k, ContDiff ℝ ∞ (g k) := fun k => ((χ.contDiff (n := ⊤)).comp
-    (contDiff_snd.const_smul (t k)⁻¹)).smul ((a k).contDiff_iteratedDeriv i r hr)
-  have hh : ∀ k, ContDiff ℝ ∞ (h k) := fun k => (a k).contDiff_iteratedDeriv i r hr
-  have heq : (fun p => iteratedDeriv i (borelRemainder χ t a N p) r) =ᶠ[𝓝 (x, ξ)]
-      ∑ k ∈ range N, (g k - h k) + (∑ k ∈ Ico N j₁, g k + ∑ k ∈ Ico j₁ J, g k) := by
-    filter_upwards [(isOpen_lt continuous_snd.norm continuous_const).mem_nhds
-      (hξ : ‖(x, ξ).2‖ < J)] with p hp
-    rw [iteratedDeriv_borelRemainder χ ht a N hp i hr, sum_Ico_consecutive _ hNj₁ hj₁J,
-      ← sum_range_add_sum_Ico _ (hNj₁.trans hj₁J), sum_sub_distrib]
-    simp only [Pi.add_apply, Pi.sub_apply, Finset.sum_apply, g, h]
-    abel
-  have hs₁ : ContDiff ℝ ∞ (∑ k ∈ range N, (g k - h k)) := by
-    simpa only [Finset.sum_fn, Pi.sub_apply] using ContDiff.sum fun k _ => (hg k).sub (hh k)
-  have hs₂ : ContDiff ℝ ∞ (∑ k ∈ Ico N j₁, g k) := by
-    simpa only [Finset.sum_fn] using ContDiff.sum fun k _ => hg k
-  have hs₃ : ContDiff ℝ ∞ (∑ k ∈ Ico j₁ J, g k) := by
-    simpa only [Finset.sum_fn] using ContDiff.sum fun k _ => hg k
-  have hs₂₃ : ContDiff ℝ ∞ (∑ k ∈ Ico N j₁, g k + ∑ k ∈ Ico j₁ J, g k) := hs₂.add hs₃
-  rw [heq.mixedDeriv_eq, mixedDeriv_add hs₁ hs₂₃, mixedDeriv_add hs₂ hs₃,
-    mixedDeriv_sum (f := fun k => g k - h k) (fun k _ => (hg k).sub (hh k)),
-    mixedDeriv_sum (fun k _ => hg k), mixedDeriv_sum (fun k _ => hg k)]
-
-/-- The removed cutoffs `(χ(ξ / t) - 1) ∂_r^i a` vanish for `‖ξ‖ ≥ 2 t`, so they satisfy the
-estimates of every order `μ`, uniformly in `r ∈ R`. -/
-private theorem exists_norm_mixedDeriv_cutoff_smul_sub_le (χ : FrequencyCutoff (CoordinateSpace n))
-    {t : ℝ} (ht : 1 ≤ t) {m₀ : ℝ} (a : WeakParameterSymbol n R V W d m₀) (i : ℕ) (μ : ℝ)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
-    ∃ D, 0 ≤ D ∧ ∀ r ∈ R, ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv α β ((fun p => χ (t⁻¹ • p.2) • iteratedDeriv i (a.coefficient p) r) -
-        fun p => iteratedDeriv i (a.coefficient p) r) x ξ‖ ≤
-        D * (1 + ‖ξ‖ ^ 2) ^ ((μ - β.length) / 2) := by
-  -- `(χ(ξ / t) - 1) ∂_r^i a` is the composition with a symbol of order `μ - (m₀ + d i)`.
-  let e : Symbol n W W (μ - (m₀ + d * i)) := Symbol.ofBoundedFrequencySupport
-    (fun p => (χ (t⁻¹ • p.2) - 1) • ContinuousLinearMap.id ℂ W)
-    ((((χ.contDiff (n := ⊤)).comp (contDiff_snd.const_smul t⁻¹)).sub contDiff_const).smul
-      contDiff_const) (2 * t) fun x ξ hξ => by
-        simp [χ.apply_inv_smul_eq_one (one_pos.trans_le ht) hξ]
-  obtain ⟨D, hD0, hD⟩ := exists_uniform_norm_mixedDeriv_comp_le e
-    (fun r : R => a.contDiff_iteratedDeriv i r r.property) hK
-    (a.exists_uniform_bound_iteratedDeriv hK i) α β
-  refine ⟨D, hD0, fun r hr x hx ξ => ?_⟩
-  have hfun : ((fun p => χ (t⁻¹ • p.2) • iteratedDeriv i (a.coefficient p) r) -
-      fun p => iteratedDeriv i (a.coefficient p) r) =
-        fun p => (e.coefficient p).comp (iteratedDeriv i (a.coefficient p) r) := by
-    funext p
-    simp [e, sub_smul]
-  have h := hD ⟨r, hr⟩ x hx ξ
-  rwa [sub_add_cancel, ← hfun] at h
-
-/-- Given orders `mₖ → -∞`, `N`, `i`, a compact set `K` and words `α`, `β`, there is `j₁ ≥ N`
-such that, for radii making the cut-off parameter derivatives small, the cut-off terms
-`χ(ξ / tₖ) ∂_r^i aₖ` with `k ≥ j₁` are at most `2^{-k}` in the estimate of order `m_N + d i` for
-`∂_x^α ∂_ξ^β` on `K`, uniformly in `r ∈ R`. -/
-private theorem exists_forall_ge_norm_mixedDeriv_le (χ : FrequencyCutoff (CoordinateSpace n))
-    (hm' : Tendsto m atTop atBot) (a : ∀ k, WeakParameterSymbol n R V W d (m k)) {t : ℕ → ℝ}
-    (hsmall : IsSmallCutoff χ a t) (N i : ℕ) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
-    (α β : List (Fin n)) :
-    ∃ j₁, N ≤ j₁ ∧ ∀ k, j₁ ≤ k → ∀ r ∈ R, ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv α β (fun p => χ ((t k)⁻¹ • p.2) • iteratedDeriv i ((a k).coefficient p) r)
-        x ξ‖ ≤ (1 / 2) ^ k * (1 + ‖ξ‖ ^ 2) ^ ((m N + d * i - β.length) / 2) := by
-  obtain ⟨ρ, hρ⟩ := hK.isBounded.subset_closedBall 0
-  obtain ⟨j₀, hj₀⟩ := eventually_atTop.1 (hm'.eventually (eventually_le_atBot (m N - 1)))
-  refine ⟨max (max N j₀) (max (max i ⌈ρ⌉₊) (max α.length β.length)),
-    le_max_of_le_left (le_max_left _ _), fun k hk r hr x hx ξ => ?_⟩
-  have hxk : x ∈ closedBall (0 : CoordinateSpace n) k := closedBall_subset_closedBall
-    ((Nat.le_ceil ρ).trans (by exact_mod_cast (show ⌈ρ⌉₊ ≤ k by omega))) (hρ hx)
-  refine (hsmall k i (by omega) α β (by omega) (by omega) r hr x hxk ξ).trans
-    (mul_le_mul_of_nonneg_left (rpow_weight_le_rpow_weight ξ ?_) (by positivity))
-  linarith [hj₀ k (by omega)]
-
 /-- **The remainder estimates.** For radii making the cut-off parameter derivatives small, the
 `i`-th parameter derivative of the Borel remainder `b - ∑_{k < N} aₖ` satisfies the estimates of
-order `m_N + d i`, uniformly in `r ∈ R`. Near `(x, ξ)` it splits into the removed cutoffs
-`(χ(ξ / tₖ) - 1) ∂_r^i aₖ`, `k < N`, which vanish at large frequencies, the finitely many cut-off
-terms with `N ≤ k < j₁`, of orders `mₖ + d i ≤ m_N + d i`, and the cut-off terms with `k ≥ j₁`,
-whose bounds `2^{-k}` sum to at most `2`. -/
+order `m_N + d i`, uniformly in `r ∈ R`. At each `r` it is the remainder of the Borel sum of the
+symbols `∂_r^i aₖ(·, ·, r)` of orders `mₖ + d i`, whose estimates hold uniformly in `r`; so this is
+`TauCeti.Symbol.exists_norm_mixedDeriv_borelSum_sub_le_of_forall` for the family over `R`. The
+cut-off terms are known to be small only on the balls of radius `k` with `k ≥ i`. -/
 private theorem exists_norm_mixedDeriv_iteratedDeriv_borelRemainder_le
     (χ : FrequencyCutoff (CoordinateSpace n)) (hm : Antitone m) (hm' : Tendsto m atTop atBot)
     (a : ∀ k, WeakParameterSymbol n R V W d (m k)) {t : ℕ → ℝ} (ht : ∀ k : ℕ, (k : ℝ) + 1 ≤ t k)
@@ -393,46 +246,31 @@ private theorem exists_norm_mixedDeriv_iteratedDeriv_borelRemainder_le
       ‖mixedDeriv α β (fun p => iteratedDeriv i (borelRemainder χ t a N p) r) x ξ‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ ((m N + d * i - β.length) / 2) := by
   have ht1 : ∀ k, 1 ≤ t k := fun k => by linarith [ht k, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
-  choose D₁ hD₁0 hD₁ using fun k => exists_norm_mixedDeriv_cutoff_smul_sub_le χ (ht1 k) (a k) i
-    (m N + d * i) hK α β
-  -- The cut-off terms satisfy the estimates of the orders `mₖ + d i`, uniformly in `r ∈ R`.
-  choose D₂ hD₂0 hD₂ using fun k => exists_uniform_norm_mixedDeriv_cutoff_smul_le χ le_rfl
-    (fun r : R => (a k).contDiff_iteratedDeriv i r r.property) hK
-    ((a k).exists_uniform_bound_iteratedDeriv hK i) α β
-  obtain ⟨j₁, hNj₁, htail⟩ := exists_forall_ge_norm_mixedDeriv_le χ hm' a hsmall N i hK α β
-  refine ⟨∑ k ∈ range N, D₁ k + ∑ k ∈ range j₁, D₂ k + 2, by
-    have := Finset.sum_nonneg fun k (_ : k ∈ range N) => hD₁0 k
-    have := Finset.sum_nonneg fun k (_ : k ∈ range j₁) => hD₂0 k
-    linarith, fun r hr x hx ξ => ?_⟩
-  set w := (1 + ‖ξ‖ ^ 2) ^ ((m N + d * i - β.length) / 2)
-  have hw0 : 0 ≤ w := by positivity
-  obtain ⟨J₀, hJ₀⟩ := exists_nat_gt ‖ξ‖
-  rw [mixedDeriv_iteratedDeriv_borelRemainder χ ht a hNj₁ (le_max_right J₀ j₁) i hr α β x
-    (hJ₀.trans_le (by exact_mod_cast le_max_left J₀ j₁))]
-  -- The finitely many terms with `N ≤ k < j₁` have orders `mₖ + d i ≤ m_N + d i`.
-  have h2 : ∑ k ∈ Ico N j₁, ‖mixedDeriv α β
-      (fun p => χ ((t k)⁻¹ • p.2) • iteratedDeriv i ((a k).coefficient p) r) x ξ‖ ≤
-        ∑ k ∈ range j₁, D₂ k * w := by
-    refine (Finset.sum_le_sum fun k hk => ?_).trans (Finset.sum_le_sum_of_subset_of_nonneg
-      (fun k hk => mem_range.2 (Finset.mem_Ico.1 hk).2) fun k _ _ => mul_nonneg (hD₂0 k) hw0)
-    have hk' := hD₂ k (t k) (ht1 k) ⟨r, hr⟩ x hx ξ
-    rw [neg_zero, Real.rpow_zero, mul_one, zero_add] at hk'
-    refine hk'.trans (mul_le_mul_of_nonneg_left (rpow_weight_le_rpow_weight ξ ?_) (hD₂0 k))
-    linarith [hm (Finset.mem_Ico.1 hk).1]
-  -- The tail: the `k`-th term is at most `2^{-k}`, and these bounds sum to at most `2`.
-  have h3 : ∑ k ∈ Ico j₁ (max J₀ j₁), ‖mixedDeriv α β
-      (fun p => χ ((t k)⁻¹ • p.2) • iteratedDeriv i ((a k).coefficient p) r) x ξ‖ ≤ 2 * w := by
-    refine (Finset.sum_le_sum fun k hk => htail k (Finset.mem_Ico.1 hk).1 r hr x hx ξ).trans ?_
-    refine (Finset.sum_le_sum_of_subset_of_nonneg
-      (fun k hk => mem_range.2 (Finset.mem_Ico.1 hk).2) fun k _ _ => by positivity).trans ?_
-    rw [← Finset.sum_mul]
-    exact mul_le_mul_of_nonneg_right (sum_geometric_two_le _) hw0
-  refine (norm_add_le _ _).trans ((add_le_add ((norm_sum_le _ _).trans
-    (Finset.sum_le_sum fun k _ => hD₁ k r hr x hx ξ))
-    ((norm_add_le _ _).trans (add_le_add ((norm_sum_le _ _).trans h2)
-      ((norm_sum_le _ _).trans h3)))).trans (le_of_eq ?_))
-  rw [← Finset.sum_mul, ← Finset.sum_mul]
-  ring
+  obtain ⟨ρ, hρ⟩ := hK.isBounded.subset_closedBall 0
+  obtain ⟨C, hC0, hC⟩ := Symbol.exists_norm_mixedDeriv_borelSum_sub_le_of_forall χ
+    (m := fun k => m k + d * i) (hm.add_const _)
+    (tendsto_atBot_add_const_right _ _ hm')
+    (fun (r : R) k => (a k).iteratedDerivSymbol i r.property) ht
+    (S := fun k => if i ≤ k then closedBall 0 k else ∅)
+    (fun r k α hα β hβ x hx ξ => by
+      split_ifs at hx with hik
+      · simpa only [coefficient_iteratedDerivSymbol] using
+          hsmall k i hik α β hα hβ r r.property x hx ξ
+      · exact absurd hx (notMem_empty x))
+    N (by
+      filter_upwards [eventually_ge_atTop i, eventually_ge_atTop ⌈ρ⌉₊] with k hik hk
+      simp only [hik, ↓reduceIte]
+      exact hρ.trans (closedBall_subset_closedBall ((Nat.le_ceil ρ).trans (by exact_mod_cast hk))))
+    α β
+    (fun k => Symbol.exists_norm_mixedDeriv_cutoff_smul_sub_le_of_forall χ (ht1 k)
+      (fun r : R => (a k).iteratedDerivSymbol i r.property) hK
+      ((a k).exists_bound_iteratedDerivSymbol i hK) _ α β)
+    (fun k => Symbol.exists_norm_mixedDeriv_cutoff_smul_le_of_forall χ
+      (fun r : R => (a k).iteratedDerivSymbol i r.property) α β
+      ((a k).exists_bound_iteratedDerivSymbol i hK α))
+  refine ⟨C, hC0, fun r hr x hx ξ => ?_⟩
+  rw [iteratedDeriv_borelRemainder_eq_borelSum_sub χ ht a N i hr]
+  exact hC ⟨r, hr⟩ x hx ξ
 
 /-- The Borel remainder `b - ∑_{k < N} aₖ` as a weakly parameter-dependent symbol of order `m_N`,
 for radii making the cut-off parameter derivatives small. -/
