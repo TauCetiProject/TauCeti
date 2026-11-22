@@ -46,9 +46,10 @@ uses divided powers of `T` instead, so the definition is meant for `ℚ`-algebra
   `a₍₋ₖ₋₁₎|0⟩ = Tᵏ a / k!` over `ℚ`, the creation identity `Y(a,z)|0⟩ = e^{zT} a`.
 * `TauCeti.FormalVertexAxioms.eq_of_ncoeff_apply_vacuum_eq`: Goddard's uniqueness theorem, a field
   local to every `Y(a,z)` is determined by its values on the vacuum.
-* `TauCeti.FormalVertexAxioms.eq_field_of_ncoeff_apply_vacuum_eq` and
-  `TauCeti.FormalVertexAxioms.eq_field_of_lie_translation_ncoeff`: uniqueness of a field `B`
-  agreeing with `Y(b,z)` on the vacuum or at `B₍₋₁₎|0⟩ = b` under translation covariance.
+* `TauCeti.FormalVertexAxioms.eq_field_of_ncoeff_apply_vacuum_eq`: such a field `B` with
+  `B(z)|0⟩ = Y(b,z)|0⟩` is `Y(b,z)`.
+* `TauCeti.FormalVertexAxioms.eq_field_of_lie_translation`: if `V` has unique divisibility, a
+  translation covariant field `B` local with every `Y(a,z)` is `Y(B₍₋₁₎|0⟩, z)`.
 * `TauCeti.FormalVertexAxioms.factorial_smul_hasseDeriv_field` and
   `TauCeti.FormalVertexAxioms.field_ncoeff_neg_succ_apply_vacuum`:
   `k! • ∂_z^{(k)} Y(a, z) = Y(Tᵏ a, z)` and `Y(a₍₋ₖ₋₁₎|0⟩, z) = ∂_z^{(k)} Y(a, z)`.
@@ -253,15 +254,21 @@ theorem eq_field_of_ncoeff_apply_vacuum_eq {B : VertexOperator R V} {b : V}
     (h : ∀ n, (B[[n]]) A.vacuum = ((A.field b)[[n]]) A.vacuum) : B = A.field b :=
   A.eq_of_ncoeff_apply_vacuum_eq hB (A.exists_isLocalOfOrder b) h
 
-/-- When `V` has unique division by positive integers, a translation-covariant field `B` local to
-every `Y(c, z)` is uniquely determined by `b = B₍₋₁₎|0⟩` as `B = Y(b, z)`. -/
-theorem eq_field_of_lie_translation_ncoeff [HasUniqueDiv V] {B : VertexOperator R V} {b : V}
-    (hloc : ∀ c : V, ∃ N : ℕ, B.IsLocalOfOrder (A.field c) N)
-    (hcov : ∀ m : ℤ, ⁅A.translation, B[[m]]⁆ = (derivative B)[[m]])
-    (hb : (B[[-1]]) A.vacuum = b) : B = A.field b :=
-  A.eq_field_of_ncoeff_apply_vacuum_eq hloc
-    (ncoeff_apply_eq_of_lie_of_neg_one_eq A.translation_vacuum hcov (A.lie_translation_ncoeff b)
-      (hb.trans (A.ncoeff_neg_one_field_apply_vacuum b).symm))
+/-- When `V` has unique divisibility (in particular over any `ℚ`-module), a translation covariant
+field `B` that is local with every field `Y(a,z)` is the field of the state `B₍₋₁₎|0⟩`. -/
+theorem eq_field_of_lie_translation [HasUniqueDiv V] {B : VertexOperator R V}
+    (hB : ∀ a, ∃ N, B.IsLocalOfOrder (A.field a) N)
+    (hT : ∀ n : ℤ, ⁅A.translation, B[[n]]⁆ = (derivative B)[[n]]) :
+    B = A.field ((B[[-1]]) A.vacuum) := by
+  refine A.eq_field_of_ncoeff_apply_vacuum_eq hB fun n ↦ ?_
+  by_cases hn : 0 ≤ n
+  · rw [ncoeff_apply_of_nonneg A.translation_vacuum hT hn,
+      A.ncoeff_field_apply_vacuum_of_nonneg _ n hn]
+  · -- Both creation series satisfy `k! • x₍₋ₖ₋₁₎|0⟩ = Tᵏ x₍₋₁₎|0⟩`.
+    obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = -(k : ℤ) - 1 := ⟨(-n - 1).toNat, by omega⟩
+    rw [← nsmul_right_inj k.factorial_ne_zero,
+      factorial_smul_ncoeff_apply A.translation_vacuum hT k,
+      A.factorial_smul_ncoeff_field_apply_vacuum]
 
 /-- Without division, `k!` times the `k`-th Hasse derivative of `Y(a, z)` is `Y(Tᵏ a, z)`. -/
 theorem factorial_smul_hasseDeriv_field (a : V) (k : ℕ) :
@@ -271,11 +278,12 @@ theorem factorial_smul_hasseDeriv_field (a : V) (k : ℕ) :
 /-- The field of `a₍₋ₖ₋₁₎|0⟩` is the `k`-th Hasse derivative of `Y(a, z)`. -/
 @[simp]
 theorem field_ncoeff_neg_succ_apply_vacuum [HasUniqueDiv V] (a : V) (k : ℕ) :
-    A.field (((A.field a)[[-(k : ℤ) - 1]]) A.vacuum) = hasseDeriv k (A.field a) :=
-  (A.eq_field_of_lie_translation_ncoeff
+    A.field (((A.field a)[[-(k : ℤ) - 1]]) A.vacuum) = hasseDeriv k (A.field a) := by
+  have h := A.eq_field_of_lie_translation
     (fun c ↦ let ⟨N, hN⟩ := A.exists_isLocalOfOrder a c; ⟨N + k, hN.hasseDeriv_left k⟩)
     (lie_ncoeff_hasseDeriv (A.lie_translation_ncoeff a) k)
-    (ncoeff_neg_one_hasseDeriv k (A.field a) ▸ rfl)).symm
+  rw [ncoeff_neg_one_hasseDeriv] at h
+  exact h.symm
 
 end FormalVertexAxioms
 
