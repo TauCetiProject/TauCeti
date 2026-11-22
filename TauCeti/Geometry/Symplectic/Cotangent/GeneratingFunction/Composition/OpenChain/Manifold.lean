@@ -304,17 +304,10 @@ private theorem eventually_cotangentGenerating_three_extChartAt {R : M₁ × M�
     simp only [b', e₁, e₄, extChartAt_to_inv, hb₀]
   refine ⟨hb', hb'₀, ?_⟩
   have hφ : Tendsto φ (𝓝 (e₁ q, e₄ Q)) (𝓝 (q, Q)) := by
-    have hc : ContinuousAt φ (e₁ q, e₄ Q) :=
-      ((continuousAt_extChartAt_symm q).comp_of_eq continuousAt_fst rfl).prodMk
-        ((continuousAt_extChartAt_symm Q).comp_of_eq continuousAt_snd rfl)
-    simpa only [φ, e₁, e₄, extChartAt_to_inv] using hc.tendsto
-  have hb'c : ContinuousAt b' (e₁ q, e₄ Q) := hb'.continuousAt
-  have ht₀ : Tendsto (fun z : E₁ × E₄ ↦ (z.1, (b' z).1)) (𝓝 (e₁ q, e₄ Q)) (𝓝 (e₁ q, e₂ a)) := by
-    simpa only [hb'₀] using (continuousAt_fst.prodMk hb'c.fst).tendsto
-  have ht₁ : Tendsto b' (𝓝 (e₁ q, e₄ Q)) (𝓝 (e₂ a, e₃ c)) := by
-    simpa only [hb'₀] using hb'c.tendsto
-  have ht₂ : Tendsto (fun z : E₁ × E₄ ↦ ((b' z).2, z.2)) (𝓝 (e₁ q, e₄ Q)) (𝓝 (e₃ c, e₄ Q)) := by
-    simpa only [hb'₀] using (hb'c.snd.prodMk continuousAt_snd).tendsto
+    simpa only [φ, e₁, e₄, Prod.map_def, extChartAt_to_inv] using
+      ((continuousAt_extChartAt_symm (I := I₁) q).prodMap'
+        (continuousAt_extChartAt_symm (I := I₄) Q)).tendsto
+  obtain ⟨ht₀, ht₁, ht₂⟩ := tendsto_chainEdges hb'.continuousAt hb'₀
   have hbsrc : ∀ᶠ z in 𝓝 (e₁ q, e₄ Q), b (φ z) ∈ e₂.source ×ˢ e₃.source := by
     refine hφ.eventually (hb.continuousAt.preimage_mem_nhds ?_)
     rw [hb₀]
@@ -357,10 +350,9 @@ at `(q, a)`, `(a, c)` and `(c, Q)`. Let `b` be a branch through `(a, c)`, differ
 be `C²` at `(q, Q)` with the source covector of `S₀` along the branch there. Then the mixed
 Hessian of `R` at `(q, Q)` is invertible.
 
-The proof reads the chain in the preferred charts at `q`, `a`, `c` and `Q` and applies
-`TauCeti.isInvertible_cotangentMixedHessian_of_comp_three`: differentiating the source and the two
-matching equations along the branch, a variation `δQ` with `M_R δQ = 0` forces the variations of
-`a` and then of `c` to vanish, and then `δQ` itself. -/
+In the preferred charts at `q`, `a`, `c` and `Q`, this is
+`TauCeti.isInvertible_cotangentMixedHessian_of_comp_three` applied to the coordinate expressions of
+`S₀`, `S₁`, `S₂`, `R` and `b`. -/
 theorem isInvertible_mixedHessian_of_comp_three {R : M₁ × M₄ → ℝ} {b : M₁ × M₄ → M₂ × M₃}
     {q : M₁} {a : M₂} {c : M₃} {Q : M₄} (hS₀ : ContMDiffAt (I₁.prod I₂) 𝓘(ℝ) 2 S₀ (q, a))
     (hS₁ : ContMDiffAt (I₂.prod I₃) 𝓘(ℝ) 2 S₁ (a, c))
