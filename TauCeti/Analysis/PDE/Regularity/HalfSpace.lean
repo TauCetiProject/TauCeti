@@ -175,7 +175,7 @@ private theorem setIntegral_energyFormH1_split
     refine integral_congr_ae ?_
     filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
     rw [W1p.gradient_ofTestFunctionₗ, hx, ← ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
-      b.bilin_eq_inner_mul_sum_add_sum_sum b _ ν]
+      b.bilin_eq_inner_mul_sum_add_sum_sum_inner_starProjection b _ ν]
     simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, RCLike.ofReal_real_eq_id, id_eq,
       real_inner_comm (gradient (φ : EuclideanSpace ℝ ι → ℝ) x), real_inner_comm (W1p.gradient U x),
       inner_gradient_left, (hφ x).lineDeriv_eq_fderiv, smul_eq_mul, Finset.mul_sum, ν', P]
