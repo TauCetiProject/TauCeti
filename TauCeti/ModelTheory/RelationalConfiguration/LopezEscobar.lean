@@ -10,6 +10,7 @@ public import TauCeti.ModelTheory.Interpolation.Craig
 public import TauCeti.ModelTheory.RelationalConfiguration.LanguageMap
 import Mathlib.Topology.MetricSpace.PiNat
 import TauCeti.Topology.Algebra.Group.Perm
+import TauCeti.Topology.Instances.CantorSpace
 
 /-!
 # The López–Escobar theorem and invariant analytic separation
@@ -205,15 +206,15 @@ private theorem realize_wordSentence {L : Language.{u, v}} {V : Type w}
     (hx : ∀ i j : ℕ,
       @Structure.RelMap (L.sum (baireWitnessLang V)) M _ 0 (Sum.inr (i, j)) Fin.elim0 ↔ x i = j)
     (w : List ℕ) :
-    SentenceInf.Realize (wordSentence L V w) M ↔ ∀ i : Fin w.length, x i = w[i] := by
+    SentenceInf.Realize (wordSentence L V w) M ↔ x ∈ PiNat.wordCylinder w := by
   simp only [wordSentence, SentenceInf.realize_def, FormulaInf.realize_def,
-    BoundedFormulaInf.realize_foldr_inf]
-  refine ⟨fun h i => ?_, fun h φ hφ => ?_⟩
-  · have hi := h _ (List.mem_ofFn.2 ⟨i, rfl⟩)
-    rwa [← FormulaInf.realize_def, ← SentenceInf.realize_def, realize_bitSentence, hx] at hi
+    BoundedFormulaInf.realize_foldr_inf, PiNat.mem_wordCylinder_iff]
+  refine ⟨fun h i hi => ?_, fun h φ hφ => ?_⟩
+  · have hi' := h _ (List.mem_ofFn.2 ⟨⟨i, hi⟩, rfl⟩)
+    rwa [← FormulaInf.realize_def, ← SentenceInf.realize_def, realize_bitSentence, hx] at hi'
   · obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hφ
-    simpa only [← FormulaInf.realize_def, ← SentenceInf.realize_def, realize_bitSentence, hx]
-      using h i
+    simp only [← FormulaInf.realize_def, ← SentenceInf.realize_def, realize_bitSentence, hx]
+    exact h i i.isLt
 
 /-- Countable disjunction over prefix cylinders contained in `U`, expressing `x ∈ U` for an open
 subset `U ⊆ ℕ → ℕ`. -/
@@ -221,7 +222,7 @@ private noncomputable def openBaireSentence (L : Language.{u, v}) (V : Type w)
     (U : Set (ℕ → ℕ)) : (L.sum (baireWitnessLang V)).Sentenceω := by
   classical
   exact BoundedFormulaInf.iSupAlong (IndexCoding.ofEncodable (List ℕ)) fun w : List ℕ =>
-    if {z : ℕ → ℕ | ∀ i : Fin w.length, z i = w[i]} ⊆ U then wordSentence L V w else ⊥
+    if PiNat.wordCylinder w ⊆ U then wordSentence L V w else ⊥
 
 private theorem realize_openBaireSentence {L : Language.{u, v}} {V : Type w}
     {M : Type w'} [(L.sum (baireWitnessLang V)).Structure M] {x : ℕ → ℕ}
@@ -237,24 +238,18 @@ private theorem realize_openBaireSentence {L : Language.{u, v}} {V : Type w}
     · rw [← FormulaInf.realize_def, ← SentenceInf.realize_def, realize_wordSentence hx] at hw
       exact hsub hw
     · simp at hw
-  · obtain ⟨_, ⟨y, n, rfl⟩, hx_mem, hsub⟩ :=
-      (PiNat.isTopologicalBasis_cylinders (fun _ : ℕ => ℕ)).exists_subset_of_mem_open hxU hU
-    let w : List ℕ := List.ofFn fun i : Fin n => y i
-    have hcyl : {z : ℕ → ℕ | ∀ i : Fin w.length, z i = w[i]} = PiNat.cylinder y n := by
-      ext z
-      simp only [w, List.length_ofFn, Fin.forall_iff, Fin.getElem_fin, List.getElem_ofFn,
-        mem_ofPred_eq, PiNat.mem_cylinder_iff]
+  · obtain ⟨_, ⟨w, rfl⟩, hx_mem, hsub⟩ :=
+      (PiNat.isTopologicalBasis_wordCylinder (α := ℕ)).exists_subset_of_mem_open hxU hU
     refine ⟨w, ?_⟩
-    split_ifs with hsub'
-    · rw [← FormulaInf.realize_def, ← SentenceInf.realize_def, realize_wordSentence hx]
-      exact mem_ofPred.1 (hcyl.symm ▸ hx_mem)
-    · exact False.elim (hsub' (hcyl.trans_subset hsub))
+    simp only [hsub, ↓reduceIte, ← FormulaInf.realize_def, ← SentenceInf.realize_def,
+      realize_wordSentence hx]
+    exact hx_mem
 
 /-- Sentence asserting that the witness constants `constTerm L v` are pairwise distinct. -/
 private noncomputable def carrierInjectiveSentence (L : Language.{u, v}) (V : Type w)
     [Countable V] : (L.sum (baireWitnessLang V)).Sentenceω := by
   classical
-  let cV : IndexCoding V ℕ := IndexCoding.ofEncodableWith (Encodable.ofCountable V)
+  let cV : IndexCoding V ℕ := IndexCoding.ofCountable V
   exact BoundedFormulaInf.iInfAlong cV fun v₁ : V =>
     BoundedFormulaInf.iInfAlong cV fun v₂ : V =>
       if v₁ = v₂ then ⊤ else (BoundedFormulaInf.equal (constTerm L v₁) (constTerm L v₂)).not
@@ -282,7 +277,7 @@ private theorem realize_carrierInjectiveSentence {L : Language.{u, v}} {V : Type
 `constTerm L v`. -/
 private noncomputable def carrierSurjectiveSentence (L : Language.{u, v}) (V : Type w)
     [Countable V] : (L.sum (baireWitnessLang V)).Sentenceω :=
-  let cV : IndexCoding V ℕ := IndexCoding.ofEncodableWith (Encodable.ofCountable V)
+  let cV : IndexCoding V ℕ := IndexCoding.ofCountable V
   (BoundedFormulaInf.iSupAlong cV fun v : V =>
     BoundedFormulaInf.equal (Term.var (Sum.inr (0 : Fin 1))) (constTerm L v)).all
 
@@ -301,7 +296,7 @@ private noncomputable def diagramSentence {L : Language.{u, v}} {V : Type w}
     [∀ n, Countable (L.Relations n)] [Countable V]
     (f : (ℕ → ℕ) → RelationalConfiguration L V) : (L.sum (baireWitnessLang V)).Sentenceω :=
   let cA : IndexCoding (Σ n, L.Relations n × (Fin n → V)) ℕ :=
-    IndexCoding.ofEncodableWith (Encodable.ofCountable _)
+    IndexCoding.ofCountable _
   BoundedFormulaInf.iInfAlong cA fun p =>
     (BoundedFormulaInf.rel
       ((LHom.sumInl : L →ᴸ L.sum (baireWitnessLang V)).onRelation p.2.1)
@@ -566,6 +561,16 @@ theorem exists_sentence_separating [Countable V]
   exists_sentence_separating_of_forall_not_isoSetoid hA hB fun _ ha _ hb hab =>
     disjoint_left.1 hAB ha ((hB_inv.mem_iff hab).2 hb)
 
+/-- **Suslin–López–Escobar theorem.** On a countable carrier, in a relational language of arbitrary
+cardinality, an isomorphism-invariant bi-analytic set of configurations is the model class of a
+single `L_{ω₁ω}` sentence. -/
+theorem exists_modelsOf_eq_of_analyticSet_compl [Countable V]
+    {A : Set (RelationalConfiguration L V)} (hA : AnalyticSet A) (hAc : AnalyticSet Aᶜ)
+    (hinv : IsomorphismInvariant A) :
+    ∃ θ : L.Sentenceω, modelsOf (V := V) θ = A := by
+  obtain ⟨θ, hsub, hdisj⟩ := exists_sentence_separating hA hAc hinv.compl disjoint_compl_right
+  exact ⟨θ, (disjoint_compl_left_iff_subset.1 hdisj).antisymm hsub⟩
+
 /-- **López–Escobar's theorem.** On a countable carrier, in a relational language of arbitrary
 cardinality, the subsets of `RelationalConfiguration L V` of the form `modelsOf θ` for an `L_{ω₁ω}`
 sentence `θ` are precisely the isomorphism-invariant measurable sets. -/
@@ -587,13 +592,28 @@ theorem exists_modelsOf_eq_iff [Countable V] {B : Set (RelationalConfiguration L
     dsimp only
     rw [hsmul]
     exact hB_inv σ (smul_mem_smul_set hc₀)
-  obtain ⟨θ₀, hsub, hdisj⟩ := exists_sentence_separating hB₀_meas.analyticSet
-    hB₀_meas.compl.analyticSet hB₀_inv.compl disjoint_compl_right
-  have hθ₀ : modelsOf θ₀ = B₀ :=
-    (disjoint_compl_left_iff_subset.1 hdisj).antisymm hsub
+  obtain ⟨θ₀, hθ₀⟩ := exists_modelsOf_eq_of_analyticSet_compl hB₀_meas.analyticSet
+    hB₀_meas.compl.analyticSet hB₀_inv
   refine ⟨ι₀.onBoundedFormulaInf θ₀, ?_⟩
   ext c
   rw [mem_modelsOf, ι₀.realize_sentenceInf_reductConfiguration, ← mem_modelsOf, hθ₀, mem_preimage]
+
+/-- **Relative sentence separation along a Borel map.** Let `X` be a standard Borel space and
+`f : X → RelationalConfiguration L V` a measurable map into configurations on a countable carrier
+in a countable relational vocabulary. If `U` and `W` are measurable subsets of `X` whose `f`-images
+contain no isomorphic pair, then some `L_{ω₁ω}` sentence `θ` satisfies `U ⊆ f ⁻¹' modelsOf θ` and
+`Disjoint W (f ⁻¹' modelsOf θ)`. -/
+theorem exists_sentence_separating_preimage {X : Type*} [MeasurableSpace X] [StandardBorelSpace X]
+    [∀ n, Countable (L.Relations n)] [Countable V]
+    {f : X → RelationalConfiguration L V} (hf : Measurable f) {U W : Set X}
+    (hU : MeasurableSet U) (hW : MeasurableSet W)
+    (hUW : ∀ x ∈ U, ∀ y ∈ W, ¬ isoSetoid L V (f x) (f y)) :
+    ∃ θ : L.Sentenceω, U ⊆ f ⁻¹' modelsOf θ ∧ Disjoint W (f ⁻¹' modelsOf θ) := by
+  obtain ⟨θ, hsub, hdisj⟩ := exists_sentence_separating_of_forall_not_isoSetoid
+    (hU.analyticSet_image hf) (hW.analyticSet_image hf) (by
+      rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ hxy
+      exact hUW x hx y hy hxy)
+  exact ⟨θ, image_subset_iff.1 hsub, disjoint_image_left.1 hdisj⟩
 
 /-- **Relative López–Escobar.** Let `X` be a standard Borel space and
 `f : X → RelationalConfiguration L V` a measurable family of configurations on a countable carrier
@@ -604,14 +624,9 @@ theorem exists_sentence_mem_modelsOf_iff {X : Type*} [MeasurableSpace X] [Standa
     {f : X → RelationalConfiguration L V} (hf : Measurable f) {U : Set X} (hU : MeasurableSet U)
     (hinv : ∀ x y, isoSetoid L V (f x) (f y) → (x ∈ U ↔ y ∈ U)) :
     ∃ θ : L.Sentenceω, ∀ x, f x ∈ modelsOf θ ↔ x ∈ U := by
-  have hAU : AnalyticSet (f '' U) := hU.analyticSet_image hf
-  have hBU : AnalyticSet (f '' Uᶜ) := hU.compl.analyticSet_image hf
-  obtain ⟨θ, hsub, hdisj⟩ := exists_sentence_separating_of_forall_not_isoSetoid hAU hBU
-    (by
-      rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ hxy
-      exact hy ((hinv x y hxy).1 hx))
-  refine ⟨θ, fun x => ⟨fun hθ => by_contra fun hx => ?_, fun hx => hsub ⟨x, hx, rfl⟩⟩⟩
-  exact disjoint_left.1 hdisj ⟨x, mem_compl hx, rfl⟩ hθ
+  obtain ⟨θ, hsub, hdisj⟩ := exists_sentence_separating_preimage hf hU hU.compl
+    fun x hx y hy hxy => hy ((hinv x y hxy).1 hx)
+  exact ⟨θ, fun x => ⟨fun hθ => by_contra fun hx => disjoint_left.1 hdisj hx hθ, fun hx => hsub hx⟩⟩
 
 /-- On a subsingleton carrier, every measurable set of configurations is the model class of an
 `L_{ω₁ω}` sentence, for relational languages of arbitrary cardinality. -/
@@ -630,33 +645,6 @@ theorem exists_sentence_separating_of_disjoint_image_quotientMk [Countable V]
     ∃ θ : L.Sentenceω, A ⊆ modelsOf θ ∧ Disjoint B (modelsOf θ) :=
   exists_sentence_separating_of_forall_not_isoSetoid hA hB fun _ ha _ hb hab =>
     hAB.le_bot ⟨mem_image_of_mem _ ha, Quotient.sound hab ▸ mem_image_of_mem _ hb⟩
-
-/-- **Suslin–López–Escobar theorem.** On a countable carrier, in a relational language of arbitrary
-cardinality, an isomorphism-invariant bi-analytic set of configurations is the model class of a
-single `L_{ω₁ω}` sentence. -/
-theorem exists_modelsOf_eq_of_analyticSet_compl [Countable V]
-    {A : Set (RelationalConfiguration L V)} (hA : AnalyticSet A) (hAc : AnalyticSet Aᶜ)
-    (hinv : IsomorphismInvariant A) :
-    ∃ θ : L.Sentenceω, modelsOf (V := V) θ = A := by
-  obtain ⟨θ, hsub, hdisj⟩ := exists_sentence_separating hA hAc hinv.compl disjoint_compl_right
-  exact ⟨θ, (disjoint_compl_left_iff_subset.1 hdisj).antisymm hsub⟩
-
-/-- **Relative sentence separation along a Borel map.** Let `X` be a standard Borel space and
-`f : X → RelationalConfiguration L V` a measurable map into configurations on a countable carrier
-in a countable relational vocabulary. If `U` and `W` are measurable subsets of `X` whose `f`-images
-contain no isomorphic pair, then some `L_{ω₁ω}` sentence `θ` satisfies `U ⊆ f ⁻¹' modelsOf θ` and
-`Disjoint W (f ⁻¹' modelsOf θ)`. -/
-theorem exists_sentence_separating_preimage {X : Type*} [MeasurableSpace X] [StandardBorelSpace X]
-    [∀ n, Countable (L.Relations n)] [Countable V]
-    {f : X → RelationalConfiguration L V} (hf : Measurable f) {U W : Set X}
-    (hU : MeasurableSet U) (hW : MeasurableSet W)
-    (hUW : ∀ x ∈ U, ∀ y ∈ W, ¬ isoSetoid L V (f x) (f y)) :
-    ∃ θ : L.Sentenceω, U ⊆ f ⁻¹' modelsOf θ ∧ Disjoint W (f ⁻¹' modelsOf θ) := by
-  obtain ⟨θ, hsub, hdisj⟩ := exists_sentence_separating_of_forall_not_isoSetoid
-    (hU.analyticSet_image hf) (hW.analyticSet_image hf) (by
-      rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ hxy
-      exact hUW x hx y hy hxy)
-  exact ⟨θ, image_subset_iff.1 hsub, disjoint_image_left.1 hdisj⟩
 
 end Main
 

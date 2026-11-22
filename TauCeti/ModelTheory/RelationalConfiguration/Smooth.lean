@@ -8,6 +8,8 @@ module
 public import TauCeti.ModelTheory.RelationalConfiguration.SentenceTheory
 public import TauCeti.SetTheory.Descriptive.BorelReducibility
 import TauCeti.ModelTheory.RelationalConfiguration.Observables
+import TauCeti.ModelTheory.Scott.Isomorphism
+import TauCeti.SetTheory.Descriptive.Silver
 
 /-!
 # Smoothness of isomorphism on relational configurations
@@ -21,7 +23,9 @@ measurability of `C` nor countability of the vocabulary `L` is needed for this i
 Conversely, in a relational language with countably many relation symbols of each arity, on any
 Borel subset `C ⊆ RelationalConfiguration L V`, restricted isomorphism is smooth if and only if a
 single countable sequence `θ : ℕ → L.Sentenceω` decides isomorphism within `C`
-(`isSmooth_comap_isoSetoid_iff_exists_sentenceTheory`).
+(`isSmooth_comap_isoSetoid_iff_exists_sentenceTheory`). Combining smoothness with thinness
+characterizes when `C` meets countably many isomorphism classes
+(`countable_quotient_comap_isoSetoid_iff_isThinOn_and_isSmooth`).
 
 ## Main results
 
@@ -32,14 +36,16 @@ single countable sequence `θ : ℕ → L.Sentenceω` decides isomorphism within
   subset `C` of configurations over a countable carrier in a countable relational vocabulary,
   restricted isomorphism is smooth if and only if a countable `L_{ω₁ω}` sentence sequence decides
   isomorphism on `C`.
-* `TauCeti.RelationalConfiguration.isSmooth_isoSetoidOn_of_sentenceTheory` and
-  `TauCeti.RelationalConfiguration.isSmooth_isoSetoidOn_iff_exists_sentenceTheory`: the same
-  criteria specialized to the model class `modelsOf (V := V) φ` (`isoSetoidOn V φ`).
+* `TauCeti.RelationalConfiguration.countable_quotient_comap_isoSetoid_iff_isThinOn_and_isSmooth`: a
+  Borel set `C` meets countably many isomorphism classes if and only if it is thin for isomorphism
+  and restricted isomorphism on `C` is smooth.
 
 ## References
 
 * E. G. K. López-Escobar, *An interpolation theorem for denumerably long formulas*, Fundamenta
   Mathematicae **57** (1965), 253–272.
+* J. H. Silver, *Counting the number of equivalence classes of Borel and coanalytic equivalence
+  relations*, Annals of Mathematical Logic 18 (1980), 1–28.
 * S. Gao, *Invariant Descriptive Set Theory*, Chapman & Hall/CRC, 2009, Chapters 5 and 11.
 * D. Marker, *Lectures on Infinitary Model Theory*, Lecture Notes in Logic 46, Cambridge University
   Press, 2016, Chapter 4.
@@ -49,7 +55,7 @@ public section
 
 universe u v w uκ
 
-open FirstOrder FirstOrder.Language MeasureTheory Set
+open Cardinal FirstOrder FirstOrder.Language MeasureTheory Set
 
 namespace TauCeti.RelationalConfiguration
 
@@ -77,33 +83,34 @@ theorem isSmooth_comap_isoSetoid_iff_exists_sentenceTheory [∀ n, Countable (L.
       ∃ θ : ℕ → L.Sentenceω, ∀ c ∈ C, ∀ d ∈ C,
         isoSetoid L V c d ↔ sentenceTheory θ c = sentenceTheory θ d := by
   refine ⟨fun hsmooth => ?_, isSmooth_comap_isoSetoid_of_exists_sentenceTheory⟩
-  have : StandardBorelSpace C := hC.standardBorel
   obtain ⟨g, hg, hgE⟩ := Setoid.isSmooth_iff.1 hsmooth
-  obtain ⟨θ, hθ⟩ := exists_sentenceTheory_comp_eq (f := (Subtype.val : C → _))
-    measurable_subtypeVal hg fun x y hxy => (hgE x y).1 hxy
+  obtain ⟨θ, hθ⟩ := exists_sentenceTheory_eq_on hC hg fun {x y} hxy => (hgE x y).1 hxy
   exact ⟨θ, fun c hc d hd => (hgE ⟨c, hc⟩ ⟨d, hd⟩).trans
     ⟨fun h => by rw [hθ ⟨c, hc⟩, hθ ⟨d, hd⟩, h],
       fun h => by rwa [hθ ⟨c, hc⟩, hθ ⟨d, hd⟩] at h⟩⟩
 
-/-- Any countable sequence of countable-branching sentences that is a complete isomorphism invariant
-on `modelsOf (V := V) φ` makes `isoSetoidOn V φ` smooth. -/
-theorem isSmooth_isoSetoidOn_of_sentenceTheory {ι : Type*} [Countable ι]
-    {φ : L.SentenceInf κ} {θ : ℕ → L.SentenceInf ι}
-    (hsep : ∀ ⦃c⦄, c ∈ modelsOf (V := V) φ → ∀ ⦃d⦄, d ∈ modelsOf (V := V) φ →
-      (isoSetoid L V c d ↔ sentenceTheory θ c = sentenceTheory θ d)) :
-    (isoSetoidOn V φ).IsSmooth :=
-  isSmooth_comap_isoSetoid_of_exists_sentenceTheory ⟨θ, fun _ hc _ hd => hsep hc hd⟩
-
-/-- **Smoothness of `isoSetoidOn V φ` via `L_{ω₁ω}` sentence spectra.** On a countable carrier `V`
-in a countable relational vocabulary, isomorphism on the models of a countable-branching sentence
-`φ` is smooth if and only if some sequence `θ : ℕ → L.Sentenceω` is a complete isomorphism invariant
-on `modelsOf (V := V) φ`. -/
-theorem isSmooth_isoSetoidOn_iff_exists_sentenceTheory [∀ n, Countable (L.Relations n)]
-    [Countable κ] (φ : L.SentenceInf κ) :
-    (isoSetoidOn V φ).IsSmooth ↔
-      ∃ θ : ℕ → L.Sentenceω,
-        ∀ ⦃c⦄, c ∈ modelsOf (V := V) φ → ∀ ⦃d⦄, d ∈ modelsOf (V := V) φ →
-          (isoSetoid L V c d ↔ sentenceTheory θ c = sentenceTheory θ d) :=
-  isSmooth_comap_isoSetoid_iff_exists_sentenceTheory (measurableSet_modelsOf φ)
+/-- **Characterization of Borel classes with countably many isomorphism classes.** On a countable
+carrier in a countable relational vocabulary, a Borel set `C` meets countably many isomorphism
+classes if and only if `C` is thin for isomorphism and restricted isomorphism on `C` is smooth. -/
+theorem countable_quotient_comap_isoSetoid_iff_isThinOn_and_isSmooth
+    [∀ n, Countable (L.Relations n)]
+    {C : Set (RelationalConfiguration L V)} (hC : MeasurableSet C) :
+    Countable (Quotient ((isoSetoid L V).comap (Subtype.val : C → _))) ↔
+      (isoSetoid L V).IsThinOn C ∧ ((isoSetoid L V).comap (Subtype.val : C → _)).IsSmooth := by
+  refine ⟨fun hcount => ⟨?_, ?_⟩,
+    fun ⟨hthin, hsmooth⟩ => hthin.countable_quotient_comap_of_isSmooth hC hsmooth⟩
+  · refine Setoid.isThinOn_iff_not_hasCantorAntichainOn.2 fun hcantor => ?_
+    exact (aleph0_lt_continuum.trans_le hcantor.continuum_le_mk_quotient_comap).not_ge
+      (mk_le_aleph0_iff.2 hcount)
+  · -- Each individual isomorphism orbit is the Borel model class of its representative's Scott
+    -- sentence.
+    refine Setoid.isSmooth_of_countable_quotient fun x => ?_
+    have horbit : {d : RelationalConfiguration L V | isoSetoid L V x.val d} =
+        modelsOf (@scottSentence L _ V x.val.toStructure _ _) := by
+      ext d
+      exact isoSetoid_apply.trans
+        ((@realize_scottSentence_iff L _ _ V x.val.toStructure _ V d.toStructure _).symm.trans
+          mem_modelsOf.symm)
+    exact (horbit ▸ measurableSet_modelsOf _).preimage measurable_subtypeVal
 
 end TauCeti.RelationalConfiguration
