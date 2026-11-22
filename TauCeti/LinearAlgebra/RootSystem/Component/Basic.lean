@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DirectSum.Decomposition
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.LinearAlgebra.RootSystem.Hom
 public import Mathlib.LinearAlgebra.RootSystem.Irreducible
@@ -312,6 +313,23 @@ theorem componentProj_apply_of_ne {C D : P.Component} (hCD : D ≠ C) {x : M}
     (hx : x ∈ P.componentSpace D) : P.componentProj C x = 0 := by
   classical
   exact DirectSum.IsInternal.ofBijective_coeLinearMap_of_mem_ne P.isInternal_componentSpace hCD hx
+
+/-- The decomposition coordinate of a vector along `P.componentSpace` agrees with
+`P.componentProj`. -/
+theorem decompose_componentSpace_eq_componentProj [DecidableEq P.Component]
+    [DirectSum.Decomposition P.componentSpace] (C : P.Component) (x : M) :
+    DirectSum.decompose P.componentSpace x C = P.componentProj C x := by
+  induction x using DirectSum.Decomposition.inductionOn P.componentSpace with
+  | zero => simp
+  | @homogeneous D y =>
+    apply Subtype.ext
+    by_cases hDC : D = C
+    · subst hDC
+      rw [DirectSum.decompose_of_mem_same P.componentSpace y.property,
+        componentProj_apply_of_mem y.property]
+    · rw [DirectSum.decompose_of_mem_ne P.componentSpace y.property hDC,
+        componentProj_apply_of_ne hDC y.property, ZeroMemClass.coe_zero]
+  | add x y hx hy => simp [hx, hy]
 
 /-- The projection of a root onto its own component space. -/
 @[simp]

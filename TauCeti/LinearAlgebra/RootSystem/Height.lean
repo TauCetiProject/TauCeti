@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.Base
+public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -27,6 +27,8 @@ height: reflection in a simple root subtracts the corresponding Cartan integer.
 
 * `RootPairing.Base.supportPerm` is the permutation of `b.support` induced by an automorphism
   stabilizing `b.support`.
+* `RootPairing.Equiv.supportEquiv` is the bijection `b.support ≃ b'.support` induced by a
+  base-preserving equivalence of root pairings.
 * `TauCeti.heightLinearMap` is the linear extension of root height to the weight
   space of a root system.
 
@@ -48,6 +50,8 @@ height: reflection in a simple root subtracts the corresponding Cartan integer.
   simple reflection by positivity of the corresponding Cartan integer.
 * `RootPairing.pairingIn_eq_sum_of_root_eq_sum` reads the Cartan integers of an integral
   combination of roots off those of its summands.
+* `RootPairing.Equiv.cartanMatrix_supportEquiv`: a base-preserving equivalence preserves Cartan
+  matrix entries along `supportEquiv`.
 * `TauCeti.apply_root_eq_height_zsmul` says that an additive map taking the constant value `c`
   on the simple roots takes the value `ht(α) • c` on every root.
 * `TauCeti.sum_mul_height_eq_zero_of_sum_zsmul_root_eq_zero` says that height respects integral
@@ -250,6 +254,47 @@ theorem pairingIn_eq_sum_of_root_eq_sum {ι R M N : Type*} [CommRing R] [CharZer
   FaithfulSMul.algebraMap_injective ℤ R <| by
     simp_rw [algebraMap_pairingIn, map_sum, map_mul, algebraMap_pairingIn,
       ← root_coroot'_eq_pairing, h, map_sum, map_zsmul, zsmul_eq_mul, eq_intCast]
+
+section EquivBase
+
+variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
+  {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂}
+  (e : P.Equiv Q) {b : P.Base} {b' : Q.Base}
+  (hb : ∀ i, i ∈ b.support ↔ e.indexEquiv i ∈ b'.support)
+
+/-- The bijection `b.support ≃ b'.support` induced by a base-preserving equivalence. -/
+def Equiv.supportEquiv : b.support ≃ b'.support where
+  toFun i := ⟨e.indexEquiv i, (hb i).mp i.property⟩
+  invFun j := ⟨e.indexEquiv.symm j, (hb _).mpr (by simp [j.property])⟩
+  left_inv i := Subtype.ext (e.indexEquiv.symm_apply_apply i)
+  right_inv j := Subtype.ext (e.indexEquiv.apply_symm_apply j)
+
+/-- `Equiv.supportEquiv` acts on root indices by `e.indexEquiv`. -/
+@[simp] theorem Equiv.coe_supportEquiv_apply (i : b.support) :
+    (e.supportEquiv hb i : ι₂) = e.indexEquiv i := (rfl)
+
+/-- `(Equiv.supportEquiv hb).symm` acts on root indices by `e.indexEquiv.symm`. -/
+@[simp] theorem Equiv.coe_supportEquiv_symm_apply (j : b'.support) :
+    ((e.supportEquiv hb).symm j : ι) = e.indexEquiv.symm j := (rfl)
+
+/-- A base-preserving automorphism's powers act on simple roots via `supportEquiv`. -/
+theorem Equiv.coe_supportEquiv_pow {σ : P.Aut} {b : P.Base}
+    (hb : ∀ i, i ∈ b.support ↔ σ.indexEquiv i ∈ b.support) (n : ℕ) (j : b.support) :
+    (((σ.supportEquiv hb ^ n) j : b.support) : ι) = (σ.indexEquiv ^ n) (j : ι) := by
+  rw [_root_.Equiv.Perm.coe_pow, _root_.Equiv.Perm.coe_pow]
+  exact Function.Semiconj.iterate_right (fun i ↦ σ.coe_supportEquiv_apply hb i) n j
+
+/-- A base-preserving equivalence preserves Cartan matrix entries along `supportEquiv`. -/
+@[simp] theorem Equiv.cartanMatrix_supportEquiv [CharZero R] [P.IsCrystallographic]
+    [Q.IsCrystallographic] (i j : b.support) :
+    b'.cartanMatrix (e.supportEquiv hb i) (e.supportEquiv hb j) = b.cartanMatrix i j := by
+  refine FaithfulSMul.algebraMap_injective ℤ R ?_
+  rw [b'.algebraMap_cartanMatrixIn_apply ℤ, b.algebraMap_cartanMatrixIn_apply ℤ]
+  exact e.toHom.pairing
+
+end EquivBase
 
 end RootPairing
 

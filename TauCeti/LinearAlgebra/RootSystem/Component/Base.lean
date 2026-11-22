@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Basis.Basic
+public import TauCeti.LinearAlgebra.RootSystem.Component.Aut
 public import TauCeti.LinearAlgebra.RootSystem.Component.Pairing
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 import TauCeti.Algebra.Group.Submonoid.Closure
-import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Irreducible components from a base
@@ -40,8 +40,8 @@ Heights and positivity of roots of the component are the same for both bases.
   the component.
 * `RootPairing.Base.componentWeightBasis`: the simple roots of `b` in `C` as a basis of
   `P.componentSpace C`.
-* `RootPairing.Equiv.supportEquiv`, `RootPairing.Equiv.diagramGraphIso`: the simple-root bijection
-  and Dynkin-diagram isomorphism induced by a base-preserving equivalence.
+* `RootPairing.Equiv.diagramGraphIso`: the Dynkin-diagram isomorphism induced by a base-preserving
+  equivalence.
 
 ## Main results
 
@@ -512,7 +512,7 @@ coordinates at the simple roots in `C`. -/
 
 end Base
 
-section EquivBase
+section CrystallographicBase
 
 variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
@@ -520,38 +520,7 @@ variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
   {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂}
   (e : P.Equiv Q) {b : P.Base} {b' : Q.Base}
   (hb : ∀ i, i ∈ b.support ↔ e.indexEquiv i ∈ b'.support)
-
-/-- The bijection `b.support ≃ b'.support` induced by a base-preserving equivalence. -/
-def Equiv.supportEquiv : b.support ≃ b'.support where
-  toFun i := ⟨e.indexEquiv i, (hb i).mp i.property⟩
-  invFun j := ⟨e.indexEquiv.symm j, (hb _).mpr (by simp [j.property])⟩
-  left_inv i := Subtype.ext (e.indexEquiv.symm_apply_apply i)
-  right_inv j := Subtype.ext (e.indexEquiv.apply_symm_apply j)
-
-/-- `Equiv.supportEquiv` acts on root indices by `e.indexEquiv`. -/
-@[simp] theorem Equiv.coe_supportEquiv_apply (i : b.support) :
-    (e.supportEquiv hb i : ι₂) = e.indexEquiv i := (rfl)
-
-/-- `(Equiv.supportEquiv hb).symm` acts on root indices by `e.indexEquiv.symm`. -/
-@[simp] theorem Equiv.coe_supportEquiv_symm_apply (j : b'.support) :
-    ((e.supportEquiv hb).symm j : ι) = e.indexEquiv.symm j := (rfl)
-
-/-- A base-preserving automorphism's powers act on simple roots via `supportEquiv`. -/
-theorem Equiv.coe_supportEquiv_pow {σ : P.Aut} {b : P.Base}
-    (hb : ∀ i, i ∈ b.support ↔ σ.indexEquiv i ∈ b.support) (n : ℕ) (j : b.support) :
-    (((σ.supportEquiv hb ^ n) j : b.support) : ι) = (σ.indexEquiv ^ n) (j : ι) :=
-  Function.Semiconj.perm_pow_right (fun i ↦ σ.coe_supportEquiv_apply hb i) n j
-
-section CrystallographicBase
-
-variable [CharZero R] [P.IsCrystallographic] [Q.IsCrystallographic]
-
-/-- A base-preserving equivalence preserves Cartan matrix entries along `supportEquiv`. -/
-@[simp] theorem Equiv.cartanMatrix_supportEquiv (i j : b.support) :
-    b'.cartanMatrix (e.supportEquiv hb i) (e.supportEquiv hb j) = b.cartanMatrix i j := by
-  refine FaithfulSMul.algebraMap_injective ℤ R ?_
-  rw [b'.algebraMap_cartanMatrixIn_apply ℤ, b.algebraMap_cartanMatrixIn_apply ℤ]
-  exact e.toHom.pairing
+  [CharZero R] [P.IsCrystallographic] [Q.IsCrystallographic]
 
 /-- The Dynkin-diagram isomorphism induced by a base-preserving equivalence. -/
 def Equiv.diagramGraphIso : diagramGraph b.cartanMatrix ≃g diagramGraph b'.cartanMatrix where
@@ -573,8 +542,6 @@ theorem Equiv.componentEquiv_base_componentEquiv [IsDomain R] [Finite ι] [Finit
 
 end CrystallographicBase
 
-end EquivBase
-
 section EquivComponentBase
 
 variable {ι ι₂ K M N M₂ N₂ : Type*} [Field K]
@@ -591,6 +558,22 @@ theorem Equiv.mem_support_componentPairingEquiv_indexEquiv_iff (e : P.Equiv Q) {
     (e.componentPairingEquiv C).indexEquiv i ∈ (b'.componentBase (e.componentEquiv C)).support ↔
       i ∈ (b.componentBase C).support := by
   simp [hb]
+
+/-- A base-preserving automorphism fixing `C` permutes the simple roots of `b.componentBase C`. -/
+theorem Equiv.mem_support_restrictComponentAut_indexEquiv_iff {τ : P.Aut} {b : P.Base}
+    (hb : ∀ i, i ∈ b.support ↔ τ.indexEquiv i ∈ b.support) {C : P.Component}
+    (hC : τ.componentEquiv C = C) (i : C.supp) :
+    (τ.restrictComponentAut C hC).indexEquiv i ∈ (b.componentBase C).support ↔
+      i ∈ (b.componentBase C).support := by
+  have htransport {D : P.Component} (h : D = C) (j : D.supp) (k : C.supp)
+      (hjk : (k : ι) = (j : ι)) :
+      k ∈ (b.componentBase C).support ↔ j ∈ (b.componentBase D).support := by
+    subst h
+    obtain rfl : k = j := Subtype.ext hjk
+    rfl
+  rw [htransport hC ((τ.componentPairingEquiv C).indexEquiv i)
+    ((τ.restrictComponentAut C hC).indexEquiv i) (by simp)]
+  exact τ.mem_support_componentPairingEquiv_indexEquiv_iff hb C i
 
 end EquivComponentBase
 

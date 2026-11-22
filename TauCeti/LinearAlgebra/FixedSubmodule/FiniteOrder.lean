@@ -42,18 +42,6 @@ open TensorProduct
 
 namespace LinearMap
 
-/-- If `(f ^ n) x = x`, then the cyclic sum `∑ i ∈ Finset.range n, (f ^ i) x` is fixed by `f`. -/
-theorem sum_range_pow_apply_mem_fixedSubmodule {R M : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] {f : M →ₗ[R] M} {n : ℕ} {x : M} (hx : (f ^ n) x = x) :
-    ∑ i ∈ Finset.range n, (f ^ i) x ∈ f.fixedSubmodule := by
-  rw [mem_fixedSubmodule_iff, map_sum]
-  simp_rw [← LinearMap.comp_apply (f := f), ← Module.End.mul_eq_comp, ← pow_succ']
-  cases n with
-  | zero => simp
-  | succ m =>
-    rw [Finset.sum_range_succ, hx, Finset.sum_range_succ' (fun i ↦ (f ^ i) x) m, pow_zero,
-      Module.End.one_eq_id, LinearMap.id_apply, add_comm]
-
 variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
   (f : M →ₗ[R] M) {n : ℕ}
 

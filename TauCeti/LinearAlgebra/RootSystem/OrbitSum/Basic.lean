@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.FixedSubmodule
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.LinearAlgebra.RootSystem.Basic
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 
 /-!
@@ -427,5 +428,13 @@ theorem zero_notMem_foldedIndices [CharZero R] {b : P.Base}
 
 /-- An empty root pairing has no folded indices. -/
 @[simp] theorem foldedIndices_eq_empty [IsEmpty ι] : P.foldedIndices σ = ∅ := by ext x; simp
+
+omit [Finite ι] in
+/-- An empty root system has a subsingleton fixed submodule for every automorphism. -/
+theorem subsingleton_fixedSubmodule_of_isEmpty (P : RootPairing ι R M N) (σ : P.Aut)
+    [IsEmpty ι] [P.IsRootSystem] :
+    Subsingleton (LinearMap.fixedSubmodule σ.weightMap) :=
+  have := P.subsingleton_weight_of_isEmpty
+  inferInstance
 
 end RootPairing

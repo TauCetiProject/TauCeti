@@ -7,11 +7,11 @@ module
 
 public import TauCeti.LinearAlgebra.FixedSubmodule
 public import TauCeti.LinearAlgebra.RootSystem.Component.Aut
-public import TauCeti.LinearAlgebra.RootSystem.Component.InvariantForm
 public import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
+import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Dynamics.PeriodicPts.Basic
 import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.Cycle.Enumeration
-import TauCeti.LinearAlgebra.FixedSubmodule.FiniteOrder
 
 /-!
 # Component cycles, return automorphisms, and diagonal orbit-sum transport
@@ -21,10 +21,8 @@ For an automorphism `σ` of a root pairing `P` and an irreducible component `C` 
 automorphism** `P.componentReturnAut σ C` on `P.componentPairing C`. Summing `σ`-iterates gives the
 linear isomorphism `P.componentCycleDiag σ C` onto `P.componentCycleFixedSubmodule σ C`,
 transporting orbit sums (`coe_componentCycleDiag_orbitSum`, `componentCycleFoldedIndicesEquiv`),
-direct-sum/product decompositions (`isInternal_componentCycleFixedSubmodule`,
-`componentCycleFixedPiEquiv`), and `σ`-invariant bilinear forms scaled by `c`
-(`rootForm_componentCycleDiag`, `InvariantForm.form_componentCycleDiag`,
-`rootForm_eq_sum_componentCycleFixedProj`).
+root spans (`mem_rootSpan_componentCycleDiag_iff`), and direct-sum/product decompositions
+(`isInternal_componentCycleFixedSubmodule`, `componentCycleFixedPiEquiv`).
 
 ## References
 
@@ -142,7 +140,8 @@ theorem componentCycleSpace_eq_biSup_componentCycle [Finite P.Component] :
     Submodule.map_mono (f := σ.weightMap) (hle σ⁻¹ fun _ hD ↦ by
       rw [σ.componentEquiv_inv, Perm.inv_def]; exact Perm.sameCycle_symm_apply_right.mpr hD)
 
-private theorem pow_componentEquiv_ne_of_ne_lt {r s : ℕ}
+/-- Distinct exponents below the minimal period produce distinct components along the cycle. -/
+theorem pow_componentEquiv_ne_of_ne_lt {r s : ℕ}
     (hr : r < minimalPeriod σ.componentEquiv C) (hs : s < minimalPeriod σ.componentEquiv C)
     (hrs : r ≠ s) : (σ.componentEquiv ^ r) C ≠ (σ.componentEquiv ^ s) C := fun hEq ↦ hrs <| by
   rw [Perm.coe_pow, Perm.coe_pow] at hEq
@@ -155,6 +154,12 @@ def componentCycleFixedSubmodule : Submodule R (LinearMap.fixedSubmodule σ.weig
 section ImplicitCycle
 
 variable {P σ C}
+
+/-- Two components on the same `σ`-cycle have the same cycle-fixed submodule. -/
+theorem componentCycleFixedSubmodule_eq_of_sameCycle (h : SameCycle σ.componentEquiv C D) :
+    P.componentCycleFixedSubmodule σ C = P.componentCycleFixedSubmodule σ D := by
+  rw [componentCycleFixedSubmodule, componentCycleFixedSubmodule,
+    P.componentCycleSpace_eq_of_sameCycle h]
 
 theorem weightMap_mem_componentCycleSpace {x : M} (hx : x ∈ P.componentCycleSpace σ C) :
     σ.weightMap x ∈ P.componentCycleSpace σ C :=
@@ -193,61 +198,47 @@ theorem mem_componentCycleSpace_iff {x : M} :
     (P.componentProj_apply_of_ne (fun (hED : _ = D) ↦ hD (hED ▸ hCE)) hy) :
       P.componentCycleSpace σ C ≤ LinearMap.ker (P.componentProj D)) hx), fun h ↦ ?_⟩
   classical
-  let e := LinearEquiv.ofBijective (DirectSum.coeLinearMap P.componentSpace)
-    P.isInternal_componentSpace
-  have hx : ∑ D ∈ (e.symm x).support, ((e.symm x D : P.componentSpace D) : M) = x := by
-    have hsum := congrArg (DirectSum.coeLinearMap P.componentSpace)
-      (DirectSum.sum_support_of (e.symm x))
-    rw [map_sum] at hsum
-    simpa only [DirectSum.coeLinearMap_of] using hsum.trans (e.apply_symm_apply x)
-  rw [← hx]
+  let _ := P.isInternal_componentSpace.chooseDecomposition
+  rw [← DirectSum.sum_support_decompose P.componentSpace x]
   refine Submodule.sum_mem _ fun D hD ↦
-    P.componentSpace_le_componentCycleSpace ?_ (e.symm x D).property
+    P.componentSpace_le_componentCycleSpace ?_ (DirectSum.decompose P.componentSpace x D).property
   by_contra hnc
-  have hzero : P.componentProj D x = 0 := h D hnc
-  have hcomp : P.componentProj D x = e.symm x D := by
-    have h := congrArg (P.componentProj D) hx
-    rw [map_sum, Finset.sum_eq_single D
-      (fun E _ hED ↦ P.componentProj_apply_of_ne hED (e.symm x E).property)
-      (fun hDn ↦ False.elim (hDn hD)),
-      P.componentProj_apply_of_mem (e.symm x D).property] at h
-    exact h.symm
-  exact DFinsupp.mem_support_iff.mp hD (hcomp.symm.trans hzero)
+  exact DFinsupp.mem_support_iff.mp hD
+    ((P.decompose_componentSpace_eq_componentProj D x).trans (h D hnc))
 
 variable {P σ C} in
 theorem componentProj_eq_zero_of_not_sameCycle {x : M} (hx : x ∈ P.componentCycleSpace σ C)
     (hD : ¬SameCycle σ.componentEquiv C D) : P.componentProj D x = 0 :=
   P.mem_componentCycleSpace_iff.mp hx _ hD
 
-/-- **The component-cycle spaces of distinct cycles are independent.** -/
-theorem iSupIndep_componentCycleSpace :
-    iSupIndep fun O : Quotient (SameCycle.setoid σ.componentEquiv) ↦
-      P.componentCycleSpace σ O.out :=
-  iSupIndep_def.mpr fun O ↦ by
-    have hL : P.componentCycleSpace σ O.out =
-        ⨆ D ∈ {D : P.Component | (⟦D⟧ : Quotient _) = O}, P.componentSpace D := by
-      simp only [componentCycleSpace, Set.mem_ofPred_eq, Perm.sameCycle_out_iff σ.componentEquiv]
-    have hR : (⨆ O' ≠ O, P.componentCycleSpace σ O'.out) ≤
-        ⨆ D ∈ {D : P.Component | (⟦D⟧ : Quotient _) ≠ O}, P.componentSpace D :=
-      iSup₂_le fun _ hO' ↦ iSup₂_le fun D hD ↦ le_iSup₂_of_le D
-        (by rwa [Set.mem_ofPred_eq, (Perm.sameCycle_out_iff σ.componentEquiv).mp hD]) le_rfl
-    rw [hL]
-    exact Disjoint.mono_right hR (P.iSupIndep_componentSpace.disjoint_biSup_biSup
-      (Set.disjoint_left.mpr fun _ h1 h2 ↦ h2 h1))
-
-@[simp] theorem iSup_componentCycleSpace :
-    (⨆ O : Quotient (SameCycle.setoid σ.componentEquiv), P.componentCycleSpace σ O.out) = ⊤ :=
-  eq_top_iff.mpr ((P.iSup_componentSpace.trans IsRootSystem.span_root_eq_top).symm.trans_le
-    (iSup_le fun C ↦ le_iSup_of_le ⟦C⟧ (P.componentSpace_le_componentCycleSpace
-      ((Perm.sameCycle_out_iff σ.componentEquiv).mpr rfl))))
+omit [P.IsRootSystem] in
+private theorem componentCycleSpace_out_eq_iSup
+    (O : Quotient (SameCycle.setoid σ.componentEquiv)) :
+    P.componentCycleSpace σ O.out =
+      ⨆ D : P.Component, ⨆ (_ : (⟦D⟧ : Quotient (SameCycle.setoid σ.componentEquiv)) = O),
+        P.componentSpace D := by
+  simp only [componentCycleSpace, Perm.sameCycle_out_iff σ.componentEquiv]
 
 /-- **The weight space is the internal direct sum of its component-cycle spaces.** -/
 theorem isInternal_componentCycleSpace
     [DecidableEq (Quotient (SameCycle.setoid σ.componentEquiv))] :
     DirectSum.IsInternal fun O : Quotient (SameCycle.setoid σ.componentEquiv) ↦
+      P.componentCycleSpace σ O.out := by
+  classical
+  simpa only [← componentCycleSpace_out_eq_iSup] using
+    P.isInternal_componentSpace.iSup_fiber (Quotient.mk (SameCycle.setoid σ.componentEquiv))
+
+/-- **The component-cycle spaces of distinct cycles are independent.** -/
+theorem iSupIndep_componentCycleSpace :
+    iSupIndep fun O : Quotient (SameCycle.setoid σ.componentEquiv) ↦
       P.componentCycleSpace σ O.out :=
-  DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-    (P.iSupIndep_componentCycleSpace σ) (P.iSup_componentCycleSpace σ)
+  have _ := Classical.decEq (Quotient (SameCycle.setoid σ.componentEquiv))
+  (P.isInternal_componentCycleSpace σ).submodule_iSupIndep
+
+@[simp] theorem iSup_componentCycleSpace :
+    (⨆ O : Quotient (SameCycle.setoid σ.componentEquiv), P.componentCycleSpace σ O.out) = ⊤ :=
+  have _ := Classical.decEq (Quotient (SameCycle.setoid σ.componentEquiv))
+  (P.isInternal_componentCycleSpace σ).submodule_iSup_eq_top
 
 /-- **The fixed space `LinearMap.fixedSubmodule σ.weightMap` is the internal direct sum of the
 cycle-fixed submodules.** -/
@@ -348,6 +339,14 @@ theorem mem_componentCycleFoldedIndices {x : M} :
       ∃ j : ι, SameCycle σ.componentEquiv C (P.componentOf j) ∧ P.orbitSum σ j = x := Iff.rfl
 
 variable {P σ C} in
+/-- Two components on the same `σ`-cycle have the same set of cycle-folded indices. -/
+theorem componentCycleFoldedIndices_eq_of_sameCycle (h : SameCycle σ.componentEquiv C D) :
+    P.componentCycleFoldedIndices σ C = P.componentCycleFoldedIndices σ D := by
+  ext x
+  simp only [mem_componentCycleFoldedIndices]
+  exact ⟨fun ⟨j, hj, hx⟩ ↦ ⟨j, h.symm.trans hj, hx⟩, fun ⟨j, hj, hx⟩ ↦ ⟨j, h.trans hj, hx⟩⟩
+
+variable {P σ C} in
 theorem orbitSum_mem_componentCycleFoldedIndices_of_mem_supp (i : C.supp) :
     P.orbitSum σ (i : ι) ∈ P.componentCycleFoldedIndices σ C :=
   ⟨i, by
@@ -415,19 +414,6 @@ theorem pairwise_disjoint_componentCycleFoldedIndices_of_base [CharZero R] [P.Is
 
 end FiniteRoots
 
-/-! #### Empty root systems -/
-
-section Empty
-
-variable [IsEmpty ι]
-
-theorem subsingleton_fixedSubmodule_of_isEmpty [P.IsRootSystem] :
-    Subsingleton (LinearMap.fixedSubmodule σ.weightMap) :=
-  have := P.subsingleton_weight_of_isEmpty
-  inferInstance
-
-end Empty
-
 end CommRing
 
 /-! ### Return automorphism and diagonal transport over a field -/
@@ -447,10 +433,6 @@ noncomputable def componentReturnAut : (P.componentPairing C).Aut :=
 
 @[simp] theorem coe_componentReturnAut_weightMap (u : P.componentSpace C) :
     ((P.componentReturnAut σ C).weightMap u : M) =
-      (σ.weightMap ^ minimalPeriod σ.componentEquiv C) u := by simp [componentReturnAut]
-
-theorem coe_componentReturnAut_weightEquiv (u : P.componentSpace C) :
-    ((P.componentReturnAut σ C).weightEquiv u : M) =
       (σ.weightMap ^ minimalPeriod σ.componentEquiv C) u := by simp [componentReturnAut]
 
 @[simp] theorem coe_componentReturnAut_coweightMap (v : P.corootComponentSpace C) :
@@ -680,55 +662,6 @@ theorem coe_componentCycleFoldedIndicesEquiv_apply_eq_sum
     ((P.componentCycleFoldedIndicesEquiv σ C).symm w : P.componentSpace C) =
       P.componentProj C w.val := (rfl)
 
-/-! ### Scaling of invariant bilinear forms under `componentCycleDiag` -/
-
-private theorem bilinear_componentCycleDiag (B : M →ₗ[K] M →ₗ[K] K)
-    (hB : ∀ x y, B (σ.weightMap x) (σ.weightMap y) = B x y)
-    (horth : ∀ {D E : P.Component}, D ≠ E → ∀ {x y : M},
-      x ∈ P.componentSpace D → y ∈ P.componentSpace E → B x y = 0)
-    (u v : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap) :
-    B ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M)
-        ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) =
-      (minimalPeriod σ.componentEquiv C : K) * B (u : M) (v : M) := by
-  have hpow (r : ℕ) (x y : M) : B ((σ.weightMap ^ r) x) ((σ.weightMap ^ r) y) = B x y := by
-    induction r with
-    | zero => rfl
-    | succ r ih =>
-      rw [pow_succ', Module.End.mul_eq_comp, LinearMap.comp_apply, LinearMap.comp_apply, hB, ih]
-  rw [P.coe_componentCycleDiag_apply, P.coe_componentCycleDiag_apply]
-  simp only [map_sum, LinearMap.sum_apply]
-  rw [Finset.sum_congr rfl fun s hs ↦ by
-    rw [Finset.sum_eq_single s (fun r hr hrs ↦ horth (P.pow_componentEquiv_ne_of_ne_lt σ C
-      (Finset.mem_range.mp hr) (Finset.mem_range.mp hs) hrs)
-      (P.pow_weightMap_mem_componentSpace u.val.property r)
-      (P.pow_weightMap_mem_componentSpace v.val.property s))
-      (fun h ↦ absurd hs h), hpow s],
-    Finset.sum_const, Finset.card_range, nsmul_eq_mul]
-
-/-- **Scaling of a `σ`-invariant `B : P.InvariantForm` along `componentCycleDiag`** (`2 ≠ 0`). -/
-theorem InvariantForm.form_componentCycleDiag [NeZero (2 : K)] (B : P.InvariantForm) {σ : P.Aut}
-    (hB : ∀ x y, B.form (σ.weightMap x) (σ.weightMap y) = B.form x y) (C : P.Component)
-    (u v : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap) :
-    B.form ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M)
-        ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) =
-      (minimalPeriod σ.componentEquiv C : K) * (B.restrictComponent C).form u.val v.val := by
-  rw [B.restrictComponent_form_apply]; exact P.bilinear_componentCycleDiag σ C B.form hB
-    (fun h _ _ hx hy ↦ B.apply_eq_zero_of_mem_componentSpace h hx hy) u v
-
-/-- **Cartan ratios for a `σ`-invariant `B : P.InvariantForm` are preserved** when the cycle length
-is nonzero in `K`. -/
-theorem InvariantForm.cartanRatio_componentCycleDiag [NeZero (2 : K)] (B : P.InvariantForm)
-    {σ : P.Aut} (hB : ∀ x y, B.form (σ.weightMap x) (σ.weightMap y) = B.form x y)
-    (C : P.Component) (hc : (minimalPeriod σ.componentEquiv C : K) ≠ 0)
-    (u v : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap) :
-    2 * B.form ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M)
-          ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) /
-        B.form ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M)
-          ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) =
-      2 * (B.restrictComponent C).form u.val v.val / (B.restrictComponent C).form v.val v.val := by
-  rw [B.form_componentCycleDiag P hB C, B.form_componentCycleDiag P hB C, mul_left_comm (2 : K),
-    mul_div_mul_left _ _ hc]
-
 /-! ### Independence of the starting component and product assembly across cycles -/
 
 /-- **Changing the starting component conjugates the return automorphism.** -/
@@ -748,10 +681,10 @@ noncomputable def componentReturnFixedShift (k : ℕ) :
   (((σ ^ k).componentPairingEquiv C).weightEquiv).fixedSubmoduleCongr <| by
     ext u
     simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
-      Equiv.coe_componentPairingEquiv_weightEquiv_apply, coe_componentReturnAut_weightMap,
-      minimalPeriod_componentEquiv_pow_apply, σ.weightMap_pow]
-    rw [← LinearMap.comp_apply, ← Module.End.mul_eq_comp, (Commute.pow_pow_self σ.weightMap k _).eq,
-      Module.End.mul_eq_comp, LinearMap.comp_apply]
+      Equiv.weightEquiv_apply, Equiv.coe_componentPairingEquiv_weightMap_apply,
+      coe_componentReturnAut_weightMap, minimalPeriod_componentEquiv_pow_apply, σ.weightMap_pow]
+    rw [← LinearMap.comp_apply, ← Module.End.mul_eq_comp,
+      (Commute.pow_pow_self σ.weightMap k _).eq, Module.End.mul_eq_comp, LinearMap.comp_apply]
 
 @[simp] theorem coe_componentReturnFixedShift_apply (k : ℕ)
     (u : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap) :
@@ -828,87 +761,41 @@ theorem coe_componentCycleFixedPiEquiv_symm_apply
 
 end Finite
 
-/-! ### Scaling and orthogonal decomposition of the canonical `RootForm` -/
+section
 
-section RootForm
+variable (P : RootPairing ι K M N) [Finite ι] [P.IsRootSystem]
 
-variable (P : RootPairing ι K M N) [Fintype ι] [P.IsRootSystem] (σ : P.Aut) (C : P.Component)
+/-- An additive submonoid invariant under `σ.weightMap` and `P.componentProj C` is preserved by
+`componentCycleDiag`. -/
+theorem mem_addSubmonoid_componentCycleDiag_iff (A : AddSubmonoid M) {σ : P.Aut}
+    (hstep : ∀ {x}, x ∈ A → σ.weightMap x ∈ A) (C : P.Component)
+    (hproj : ∀ {x}, x ∈ A → (P.componentProj C x : M) ∈ A)
+    (u : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap) :
+    ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M) ∈ A ↔
+      (u : M) ∈ A := by
+  have hpow (r : ℕ) {x : M} (hx : x ∈ A) : (σ.weightMap ^ r) x ∈ A := by
+    induction r with
+    | zero => simpa using hx
+    | succ r ih => rw [pow_succ', Module.End.mul_eq_comp, LinearMap.comp_apply]; exact hstep ih
+  refine ⟨fun hD ↦ ?_, fun hu ↦ ?_⟩
+  · have h := hproj hD; rwa [P.componentProj_componentCycleDiag] at h
+  · rw [P.coe_componentCycleDiag_apply]; exact AddSubmonoid.sum_mem _ fun r _ ↦ hpow r hu
 
-/-- **Scaling of `P.RootForm` along `componentCycleDiag`** (without needing `2 ≠ 0`). -/
-theorem rootForm_componentCycleDiag [Fintype C.supp]
-    (u v : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap) :
-    P.RootForm ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M)
-        ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) =
-      (minimalPeriod σ.componentEquiv C : K) * (P.componentPairing C).RootForm u.val v.val := by
-  rw [P.bilinear_componentCycleDiag σ C P.RootForm (fun x y ↦ σ.toHom.rootForm_weightMap x y)
-    (fun h _ _ hx hy ↦ P.rootForm_apply_eq_zero_of_mem_componentSpace h hx hy) u v,
-    P.rootForm_componentPairing C]; rfl
+/-- **Root-lattice preservation under `componentCycleDiag`** for any compatible scalar ring `S`. -/
+theorem mem_rootSpan_componentCycleDiag_iff (S : Type*) [CommRing S] [Module S M]
+    [LinearMap.CompatibleSMul M M S K] (σ : P.Aut) (C : P.Component)
+    (u : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap) :
+    ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M) ∈ P.rootSpan S ↔
+      (u : M) ∈ P.rootSpan S :=
+  P.mem_addSubmonoid_componentCycleDiag_iff (P.rootSpan S).toAddSubmonoid
+    (fun {x} hx ↦ (Submodule.span_le.mpr (Set.range_subset_iff.mpr fun j ↦ by
+      rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.restrictScalars_apply,
+        Hom.root_weightMap_apply P P j σ.toHom]
+      exact (P.rootSpanMem S _).property) :
+        P.rootSpan S ≤ (P.rootSpan S).comap (σ.weightMap.restrictScalars S)) hx)
+    C (fun hx ↦ P.componentProj_mem_rootSpan S C hx) u
 
-/-- **Cartan ratios for `P.RootForm` are preserved by `componentCycleDiag`** when the cycle
-length is nonzero in `K`. -/
-theorem rootForm_cartanRatio_componentCycleDiag [Fintype C.supp]
-    (hc : (minimalPeriod σ.componentEquiv C : K) ≠ 0)
-    (u v : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap) :
-    2 * P.RootForm ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M)
-          ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) /
-        P.RootForm ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M)
-          ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) =
-      2 * (P.componentPairing C).RootForm u.val v.val /
-        (P.componentPairing C).RootForm v.val v.val := by
-  rw [P.rootForm_componentCycleDiag σ C, P.rootForm_componentCycleDiag σ C, mul_left_comm (2 : K),
-    mul_div_mul_left _ _ hc]
-
-omit [P.IsRootSystem] in
-/-- Distinct component-cycle spaces are orthogonal under `P.RootForm`. -/
-theorem rootForm_apply_eq_zero_of_mem_componentCycleSpace {C₁ C₂ : P.Component}
-    (h : ¬SameCycle σ.componentEquiv C₁ C₂) {x y : M}
-    (hx : x ∈ P.componentCycleSpace σ C₁) (hy : y ∈ P.componentCycleSpace σ C₂) :
-    P.RootForm x y = 0 := by
-  have hle :
-      Submodule.map₂ P.RootForm (P.componentCycleSpace σ C₁) (P.componentCycleSpace σ C₂) ≤ ⊥ := by
-    simp only [componentCycleSpace, Submodule.map₂_iSup_left, Submodule.map₂_iSup_right]
-    refine iSup₂_le fun D₁ h₁ ↦ iSup₂_le fun D₂ h₂ ↦ Submodule.map₂_le.mpr fun a ha b hb ↦ ?_
-    rw [Submodule.mem_bot]
-    refine P.rootForm_apply_eq_zero_of_mem_componentSpace ?_ ha hb
-    rintro rfl
-    exact h (h₂.trans h₁.symm)
-  exact (Submodule.mem_bot K).mp (hle (Submodule.apply_mem_map₂ _ hx hy))
-
-/-- **Orthogonal decomposition of `P.RootForm` on `σ`-fixed weights across component cycles.** -/
-theorem rootForm_eq_sum_componentCycleFixedProj
-    [Fintype (Quotient (SameCycle.setoid σ.componentEquiv))]
-    [∀ O : Quotient (SameCycle.setoid σ.componentEquiv), Fintype O.out.supp]
-    (x y : LinearMap.fixedSubmodule σ.weightMap) :
-    P.RootForm (x : M) (y : M) =
-      ∑ O : Quotient (SameCycle.setoid σ.componentEquiv),
-        (minimalPeriod σ.componentEquiv O.out : K) *
-          (P.componentPairing O.out).RootForm
-            (P.componentCycleFixedProj σ O.out x).val
-            (P.componentCycleFixedProj σ O.out y).val := by
-  conv_lhs =>
-    rw [← (P.componentCycleFixedPiEquiv σ).symm_apply_apply x,
-      ← (P.componentCycleFixedPiEquiv σ).symm_apply_apply y]
-  rw [P.coe_componentCycleFixedPiEquiv_symm_apply, P.coe_componentCycleFixedPiEquiv_symm_apply]
-  simp only [map_sum, LinearMap.sum_apply, componentCycleFixedPiEquiv_apply]
-  refine Finset.sum_congr rfl fun O _ ↦ ?_
-  have hsum_single :
-      (∑ d : Quotient (SameCycle.setoid σ.componentEquiv),
-        P.RootForm ((P.componentCycleDiag σ d.out (P.componentCycleFixedProj σ d.out x) :
-          LinearMap.fixedSubmodule σ.weightMap) : M)
-          ((P.componentCycleDiag σ O.out (P.componentCycleFixedProj σ O.out y) :
-            LinearMap.fixedSubmodule σ.weightMap) : M)) =
-        P.RootForm ((P.componentCycleDiag σ O.out (P.componentCycleFixedProj σ O.out x) :
-          LinearMap.fixedSubmodule σ.weightMap) : M)
-          ((P.componentCycleDiag σ O.out (P.componentCycleFixedProj σ O.out y) :
-            LinearMap.fixedSubmodule σ.weightMap) : M) :=
-    Finset.sum_eq_single O (fun O' _ hO' ↦ P.rootForm_apply_eq_zero_of_mem_componentCycleSpace σ
-      (fun hsc ↦ hO' (by rw [← (Perm.sameCycle_out_iff σ.componentEquiv).mp hsc, Quotient.out_eq]))
-      (P.componentCycleDiag σ O'.out _).property (P.componentCycleDiag σ O.out _).property)
-      (by simp)
-  rw [hsum_single]
-  exact P.rootForm_componentCycleDiag σ O.out _ _
-
-end RootForm
+end
 
 end Field
 

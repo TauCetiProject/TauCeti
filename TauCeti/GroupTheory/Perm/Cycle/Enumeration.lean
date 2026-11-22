@@ -10,6 +10,7 @@ public import TauCeti.Algebra.BigOperators.Finset.Range
 public import Mathlib.Dynamics.PeriodicPts.Lemmas
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
+import TauCeti.Dynamics.PeriodicPts.Basic
 import TauCeti.GroupTheory.Perm.Basic
 
 /-!

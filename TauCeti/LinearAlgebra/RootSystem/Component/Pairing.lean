@@ -230,25 +230,12 @@ theorem coe_componentPairingEquiv_indexEquiv_apply (e : P.Equiv Q) (C : P.Compon
     (i : C.supp) : ((e.componentPairingEquiv C).indexEquiv i : ι₂) = e.indexEquiv i :=
   (rfl)
 
-/-- The equivalence of component pairings intertwines the weight equivalences on ambient vectors. -/
-theorem coe_componentPairingEquiv_weightEquiv_apply (e : P.Equiv Q) (C : P.Component)
-    (x : P.componentSpace C) :
-    ((e.componentPairingEquiv C).weightEquiv x : M₂) = e.toHom.weightMap x :=
-  (rfl)
-
 /-- The inverse weight equivalence of component pairings acts as `e.weightEquiv.symm`. -/
 @[simp]
 theorem coe_componentPairingEquiv_weightEquiv_symm_apply (e : P.Equiv Q) (C : P.Component)
     (x : Q.componentSpace (e.componentEquiv C)) :
     ((e.componentPairingEquiv C).weightEquiv.symm x : M) = e.weightEquiv.symm x :=
   e.weightEquiv.injective (by simp [← coe_componentPairingEquiv_weightMap_apply])
-
-/-- The equivalence of component pairings intertwines the coweight equivalences on ambient
-vectors. -/
-theorem coe_componentPairingEquiv_coweightEquiv_apply (e : P.Equiv Q) (C : P.Component)
-    (y : Q.corootComponentSpace (e.componentEquiv C)) :
-    ((e.componentPairingEquiv C).coweightEquiv y : N) = e.toHom.coweightMap y :=
-  (rfl)
 
 /-- The inverse coweight equivalence of component pairings acts as `e.coweightEquiv.symm`. -/
 @[simp]

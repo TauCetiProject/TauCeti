@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Dynamics.PeriodicPts.Defs
+public import TauCeti.Dynamics.PeriodicPts.Basic
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 import Mathlib.Data.ZMod.QuotientGroup
 
@@ -14,11 +14,11 @@ import Mathlib.Data.ZMod.QuotientGroup
 
 Let `f : α → β` intertwine a permutation `σ` of `α` with a permutation `τ` of `β`, that is
 `f (σ x) = τ (f x)` for every `x` (`Function.Semiconj f σ τ`). Then `f` carries the cycle of `x`
-onto the cycle of `f x`, going round it a whole number of times. This file records the resulting
-relations between the cycle data of `σ` and of `τ`:
+onto the cycle of `f x`, going round it a whole number of times. Building on
+`Function.Semiconj.minimalPeriod_dvd` and `Function.Semiconj.minimalPeriod_eq_mul_iterate` from
+`TauCeti.Dynamics.PeriodicPts.Basic`, this file records the resulting relations between the cycle
+data of `σ` and of `τ`:
 
-* `Function.Semiconj.minimalPeriod_dvd`: the length of the cycle of `f x` divides the length of
-  the cycle of `x`.
 * `Function.Semiconj.ncard_sameCycle_and_eq_mul_minimalPeriod`: more precisely, the length of the
   cycle of `x` is the length of the cycle of `f x` times the number of points of the cycle of `x`
   that lie in the fibre of `f` through `x`.
@@ -39,15 +39,7 @@ variable {α β : Type*}
 
 namespace Function.Semiconj
 
-variable {f : α → β} {fa : α → α} {fb : β → β}
-
-/-- If `f` intertwines `fa` with `fb`, the minimal period of `f x` under `fb` divides the
-minimal period of `x` under `fa`. When `x` is not periodic the right side is `0`. -/
-theorem minimalPeriod_dvd (h : Semiconj f fa fb) (x : α) :
-    minimalPeriod fb (f x) ∣ minimalPeriod fa x :=
-  ((isPeriodicPt_minimalPeriod fa x).map h).minimalPeriod_dvd
-
-variable {σ : Perm α} {τ : Perm β}
+variable {f : α → β} {σ : Perm α} {τ : Perm β}
 
 /-- If `f` intertwines the permutations `σ` and `τ`, the points of the cycle of `x` that `f`
 sends to `f x` form a single cycle of `σ ^ k`, where `k` is the length of the cycle of `f x`. -/
@@ -83,13 +75,8 @@ theorem ncard_sameCycle_and_eq_mul_minimalPeriod [Finite α] (h : Semiconj f σ 
     {y | σ.SameCycle x y ∧ f y = f x}.ncard * minimalPeriod τ (f x) = minimalPeriod σ x := by
   classical
   have := Fintype.ofFinite α
-  set k := minimalPeriod τ (f x)
-  have hσx : IsPeriodicPt σ (orderOf σ) x := by
-    rw [IsPeriodicPt, IsFixedPt, ← coe_pow, pow_orderOf_eq_one, Equiv.Perm.one_apply]
-  have hk : 0 < k := (hσx.map h).minimalPeriod_pos (orderOf_pos σ)
-  rw [h.setOf_sameCycle_and_eq, ncard_setOf_sameCycle, coe_pow,
-    minimalPeriod_iterate_eq_div_gcd hk.ne', Nat.gcd_eq_right (h.minimalPeriod_dvd x)]
-  exact Nat.div_mul_cancel (h.minimalPeriod_dvd x)
+  rw [h.setOf_sameCycle_and_eq, ncard_setOf_sameCycle, coe_pow, mul_comm,
+    ← h.minimalPeriod_eq_mul_iterate x]
 
 end Function.Semiconj
 

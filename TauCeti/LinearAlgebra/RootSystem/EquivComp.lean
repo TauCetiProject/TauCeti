@@ -121,7 +121,10 @@ theorem smul_index_eq_indexEquiv (g : Aut P) (i : ι) :
 
 /-- Powers of an automorphism act on weights as powers of its weight map. -/
 @[simp] theorem weightMap_pow (σ : Aut P) (n : ℕ) : (σ ^ n).weightMap = σ.weightMap ^ n := by
-  induction n with | zero => rfl | succ n ih => ext x; simp [pow_succ, ih]
+  have h (g : Aut P) :
+      (LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp (weightHom P)) g = g.weightMap :=
+    LinearMap.ext g.weightEquiv_apply
+  rw [← h, ← h, map_pow]
 
 /-- Powers of an automorphism act on root indices as powers of its index permutation. -/
 @[simp] theorem indexEquiv_pow (σ : Aut P) (n : ℕ) : (σ ^ n).indexEquiv = σ.indexEquiv ^ n :=

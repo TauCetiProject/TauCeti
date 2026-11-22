@@ -99,29 +99,6 @@ theorem sameCycle_iff (hg : Function.Semiconj g σ τ) (hinj : Function.Injectiv
   ⟨fun ⟨k, hk⟩ ↦ ⟨k, hinj (by simpa only [← hg.perm_zpow_right k x] using hk)⟩,
     fun ⟨k, hk⟩ ↦ ⟨k, (hg.perm_zpow_right k x).symm.trans (congrArg g hk)⟩⟩
 
-/-- An injective map intertwining two self-maps preserves minimal periods. -/
-theorem minimalPeriod_eq {β : Type*} {fa : α → α} {fb : β → β} {f : α → β}
-    (h : Function.Semiconj f fa fb) (hf : Function.Injective f) (x : α) :
-    Function.minimalPeriod fa x = Function.minimalPeriod fb (f x) :=
-  Function.minimalPeriod_eq_minimalPeriod_iff.mpr fun n ↦ by
-    simp only [Function.IsPeriodicPt, Function.IsFixedPt, ← h.iterate_right n x, hf.eq_iff]
-
-/-- If `f` intertwines `fa` and `fb`, then the minimal period of `x` under `fa` factors as the
-minimal period of `f x` under `fb` times the minimal period of `x` under `fa^[c]`. -/
-theorem minimalPeriod_eq_mul_iterate {β : Type*} {fa : α → α} {fb : β → β} {f : α → β}
-    (h : Function.Semiconj f fa fb) (x : α) :
-    Function.minimalPeriod fa x =
-      Function.minimalPeriod fb (f x) *
-        Function.minimalPeriod (fa^[Function.minimalPeriod fb (f x)]) x := by
-  set c := Function.minimalPeriod fb (f x)
-  have hdvd : c ∣ Function.minimalPeriod fa x :=
-    ((Function.isPeriodicPt_minimalPeriod fa x).map h).minimalPeriod_dvd
-  rcases eq_or_ne c 0 with hc | hc
-  · rw [hc, zero_mul]
-    exact zero_dvd_iff.mp (hc ▸ hdvd)
-  · rw [Function.minimalPeriod_iterate_eq_div_gcd hc, Nat.gcd_eq_right hdvd,
-      Nat.mul_div_cancel' hdvd]
-
 end Function.Semiconj
 
 namespace Equiv.Perm.SameCycle

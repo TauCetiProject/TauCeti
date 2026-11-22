@@ -10,6 +10,7 @@ public import Mathlib.Dynamics.FixedPoints.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.FixedSubmodule
 public import Mathlib.LinearAlgebra.Pi
+import TauCeti.Algebra.DirectSum.Internal
 
 /-!
 # Fixed submodules under restriction and equivalence
@@ -37,6 +38,8 @@ endomorphism. Over a commutative ring the fixed submodule is the eigenspace for 
 * `LinearMap.fixedSubmodule_restrict`: the fixed submodule of the restriction of `f` to an
   invariant submodule `p` is the part of the fixed submodule of `f` that lies in `p`.
 
+* `LinearMap.sum_range_pow_apply_mem_fixedSubmodule`: cyclic sums over a period lie in the
+  fixed submodule.
 * `Module.End.eigenspace_one_eq_fixedSubmodule`: the `1`-eigenspace of an endomorphism is its
   fixed submodule.
 * `DirectSum.IsInternal.mem_fixedSubmodule_iff`,
@@ -69,6 +72,18 @@ theorem pow_apply_of_mem_fixedSubmodule {R M : Type*} [Semiring R] [AddCommMonoi
     (f ^ i) x = x := by
   rw [pow_apply_eq_iterate]
   exact Function.IsFixedPt.iterate (mem_fixedSubmodule_iff.mp hx) i
+
+/-- If `(f ^ n) x = x`, then the cyclic sum `∑ i ∈ Finset.range n, (f ^ i) x` is fixed by `f`. -/
+theorem sum_range_pow_apply_mem_fixedSubmodule {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] {f : M →ₗ[R] M} {n : ℕ} {x : M} (hx : (f ^ n) x = x) :
+    ∑ i ∈ Finset.range n, (f ^ i) x ∈ f.fixedSubmodule := by
+  rw [mem_fixedSubmodule_iff, map_sum]
+  simp_rw [← LinearMap.comp_apply (f := f), ← Module.End.mul_eq_comp, ← pow_succ']
+  cases n with
+  | zero => simp
+  | succ m =>
+    rw [Finset.sum_range_succ, hx, Finset.sum_range_succ' (fun i ↦ (f ^ i) x) m, pow_zero,
+      Module.End.one_eq_id, LinearMap.id_apply, add_comm]
 
 section Restrict
 
@@ -197,6 +212,19 @@ end Module.End
 
 namespace DirectSum.IsInternal
 
+private theorem decompose_eq_ofBijective_symm {R M ι : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [DecidableEq ι] {Q : ι → Submodule R M}
+    [DirectSum.Decomposition Q] (hQ : DirectSum.IsInternal Q) (x : M) :
+    DirectSum.decompose Q x =
+      (LinearEquiv.ofBijective (DirectSum.coeLinearMap Q) hQ).symm x := by
+  classical
+  have hQ' : Function.Bijective (DirectSum.coeLinearMap Q) := hQ
+  set e := LinearEquiv.ofBijective (DirectSum.coeLinearMap Q) hQ'
+  apply e.injective
+  rw [e.apply_symm_apply, LinearEquiv.ofBijective_apply,
+    ← DirectSum.sum_support_of (DirectSum.decompose Q x), map_sum]
+  simpa only [DirectSum.coeLinearMap_of] using DirectSum.sum_support_decompose Q x
+
 /-- An endomorphism preserving every summand of an internal direct sum fixes a vector exactly
 when it fixes every direct-sum component. -/
 theorem mem_fixedSubmodule_iff {R M ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
@@ -206,7 +234,8 @@ theorem mem_fixedSubmodule_iff {R M ι : Type*} [Semiring R] [AddCommMonoid M] [
       ∀ i, ((LinearEquiv.ofBijective (DirectSum.coeLinearMap Q) hQ).symm x i : M) ∈
         f.fixedSubmodule := by
   classical
-  set e := LinearEquiv.ofBijective (DirectSum.coeLinearMap Q) hQ
+  have hQ' : Function.Bijective (DirectSum.coeLinearMap Q) := hQ
+  set e := LinearEquiv.ofBijective (DirectSum.coeLinearMap Q) hQ'
   refine ⟨fun hx i ↦ ?_, fun h ↦ ?_⟩
   · let fQ : (⨁ i, Q i) →ₗ[R] ⨁ i, Q i :=
       DirectSum.lmap fun j ↦ f.restrict fun y hy ↦ hf j (Submodule.mem_map_of_mem hy)
@@ -214,22 +243,21 @@ theorem mem_fixedSubmodule_iff {R M ι : Type*} [Semiring R] [AddCommMonoid M] [
       ext j y
       simp [fQ]
     have hfx : fQ (e.symm x) = e.symm (f x) := e.injective <| by
-      change DirectSum.coeLinearMap Q (fQ (e.symm x)) = DirectSum.coeLinearMap Q (e.symm (f x))
-      rw [← LinearMap.comp_apply, hcomm, LinearMap.comp_apply]
+      dsimp only [e]
+      rw [LinearEquiv.ofBijective_apply, LinearEquiv.ofBijective_apply,
+        ← LinearMap.comp_apply, hcomm, LinearMap.comp_apply]
       exact (congrArg f (e.apply_symm_apply x)).trans (e.apply_symm_apply (f x)).symm
     have hx' : fQ (e.symm x) = e.symm x := by
       rw [hfx, LinearMap.mem_fixedSubmodule_iff.mp hx]
     rw [LinearMap.mem_fixedSubmodule_iff]
     simpa [fQ] using congrArg (fun z : ⨁ i, Q i ↦ (z i : M)) hx'
-  · rw [LinearMap.mem_fixedSubmodule_iff]
-    have hx : ∑ i ∈ (e.symm x).support, ((e.symm x i : Q i) : M) = x := by
-      have hsum := congrArg (DirectSum.coeLinearMap Q) (DirectSum.sum_support_of (e.symm x))
-      rw [map_sum] at hsum
-      simpa only [DirectSum.coeLinearMap_of] using hsum.trans (e.apply_symm_apply x)
-    conv_lhs => rw [← hx]
-    conv_rhs => rw [← hx]
+  · let _ := hQ.chooseDecomposition
+    rw [LinearMap.mem_fixedSubmodule_iff]
+    conv_lhs => rw [← DirectSum.sum_support_decompose Q x]
+    conv_rhs => rw [← DirectSum.sum_support_decompose Q x]
     rw [map_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ LinearMap.mem_fixedSubmodule_iff.mp (h i)
+    refine Finset.sum_congr rfl fun i _ ↦ LinearMap.mem_fixedSubmodule_iff.mp ?_
+    simpa only [decompose_eq_ofBijective_symm hQ x] using h i
 
 /-- An internal direct sum of `f`-invariant submodules restricts to an internal direct sum of
 `f.fixedSubmodule`. -/
@@ -237,35 +265,11 @@ theorem fixedSubmodule_comap {R M ι : Type*} [Semiring R] [AddCommMonoid M] [Mo
     [DecidableEq ι] {Q : ι → Submodule R M} (hQ : DirectSum.IsInternal Q) (f : M →ₗ[R] M)
     (hf : ∀ i, (Q i).map f ≤ Q i) :
     DirectSum.IsInternal fun i ↦ (Q i).comap f.fixedSubmodule.subtype := by
-  classical
-  refine ⟨fun a b hab ↦ ?_, fun y ↦ ?_⟩
-  · let g : (⨁ i, (Q i).comap f.fixedSubmodule.subtype) →ₗ[R] ⨁ i, Q i :=
-      DirectSum.lmap fun i ↦
-        { toFun z := ⟨(z.val : M), z.property⟩
-          map_add' _ _ := rfl
-          map_smul' _ _ := rfl }
-    have hcomp : DirectSum.coeLinearMap Q ∘ₗ g =
-        f.fixedSubmodule.subtype ∘ₗ
-          DirectSum.coeLinearMap (fun i ↦ (Q i).comap f.fixedSubmodule.subtype) := by
-      ext i z
-      simp [g]
-    have hgab : g a = g b := hQ.1 <| by
-      have ha := LinearMap.congr_fun hcomp a
-      have hb := LinearMap.congr_fun hcomp b
-      simp only [LinearMap.coe_comp, Function.comp_apply] at ha hb
-      exact ha.trans ((congrArg f.fixedSubmodule.subtype hab).trans hb.symm)
-    ext i
-    have h := congrArg (fun z : Q i ↦ (z : M)) (DFunLike.congr_fun hgab i)
-    exact h
-  · set e := LinearEquiv.ofBijective (DirectSum.coeLinearMap Q) hQ
-    have hfix := (hQ.mem_fixedSubmodule_iff f hf).mp y.property
-    refine ⟨∑ i ∈ (e.symm (y : M)).support,
-      DirectSum.of (fun i ↦ ↥((Q i).comap f.fixedSubmodule.subtype)) i
-        ⟨⟨((e.symm (y : M) i : Q i) : M), hfix i⟩, (e.symm (y : M) i).property⟩, ?_⟩
-    apply Subtype.ext
-    simp only [map_sum, DirectSum.coeAddMonoidHom_of, Submodule.coe_sum]
-    have hsum := congrArg (DirectSum.coeLinearMap Q) (DirectSum.sum_support_of (e.symm (y : M)))
-    rw [map_sum] at hsum
-    simpa only [DirectSum.coeLinearMap_of] using hsum.trans (e.apply_symm_apply (y : M))
+  let _ := hQ.chooseDecomposition
+  refine TauCeti.DirectSum.isInternal_comap Q _ f.fixedSubmodule.subtype
+    (Submodule.subtype_injective _) (fun _ _ ↦ Iff.rfl) fun i x ↦ ?_
+  have hfix := (hQ.mem_fixedSubmodule_iff f hf).mp x.property i
+  rw [← decompose_eq_ofBijective_symm hQ (x : M)] at hfix
+  exact ⟨⟨_, hfix⟩, rfl⟩
 
 end DirectSum.IsInternal

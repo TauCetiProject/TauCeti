@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Component.Base
+public import TauCeti.LinearAlgebra.RootSystem.Component.Pairing
 public import TauCeti.LinearAlgebra.RootSystem.EquivComp
 
 /-!
@@ -13,8 +13,7 @@ public import TauCeti.LinearAlgebra.RootSystem.EquivComp
 
 When an automorphism `τ` of a finite root system fixes an irreducible component `C`, it restricts
 to an automorphism `Equiv.restrictComponentAut τ C hC` of `P.componentPairing C`. This file
-records its coercion and monoid laws, compatibility with `autCongr`, and preservation of the
-component base `b.componentBase C`.
+records its coercion and monoid laws and compatibility with `autCongr`.
 
 ## References
 
@@ -45,27 +44,22 @@ noncomputable def Equiv.restrictComponentAut : (P.componentPairing C).Aut :=
 /-- The weight map of `restrictComponentAut` preserves `τ.weightMap` on ambient vectors. -/
 @[simp] theorem Equiv.coe_restrictComponentAut_weightMap (x : P.componentSpace C) :
     ((τ.restrictComponentAut C hC).weightMap x : M) = τ.weightMap x := by
-  simp [restrictComponentAut, Equiv.comp, Hom.comp]
-
-/-- The weight equivalence of `restrictComponentAut` preserves `τ.weightMap` on ambient vectors. -/
-theorem Equiv.coe_restrictComponentAut_weightEquiv (x : P.componentSpace C) :
-    ((τ.restrictComponentAut C hC).weightEquiv x : M) = τ.weightMap x :=
-  τ.coe_restrictComponentAut_weightMap C hC x
+  simp [restrictComponentAut]
 
 /-- The coweight map of `restrictComponentAut` preserves `τ.coweightMap` on ambient covectors. -/
 @[simp] theorem Equiv.coe_restrictComponentAut_coweightMap (y : P.corootComponentSpace C) :
     ((τ.restrictComponentAut C hC).coweightMap y : N) = τ.coweightMap y := by
-  simp [restrictComponentAut, Equiv.comp, Hom.comp]
+  simp [restrictComponentAut]
 
 /-- The index permutation of `restrictComponentAut` acts as `τ.indexEquiv`. -/
 @[simp] theorem Equiv.coe_restrictComponentAut_indexEquiv (i : C.supp) :
     ((τ.restrictComponentAut C hC).indexEquiv i : ι) = τ.indexEquiv i := by
-  simp [restrictComponentAut, Equiv.comp, Hom.comp]
+  simp [restrictComponentAut]
 
 /-- The inverse index permutation of `restrictComponentAut` acts as `τ.indexEquiv.symm`. -/
 @[simp] theorem Equiv.coe_restrictComponentAut_indexEquiv_symm (i : C.supp) :
     ((τ.restrictComponentAut C hC).indexEquiv.symm i : ι) = τ.indexEquiv.symm i := by
-  simp [restrictComponentAut, Equiv.comp, Hom.comp]
+  simp [restrictComponentAut]
 
 end RestrictComponentAut
 
@@ -84,7 +78,7 @@ theorem Equiv.restrictComponentAut_mul {τ₁ τ₂ : P.Aut} {C : P.Component}
     (h₁ : τ₁.componentEquiv C = C) (h₂ : τ₂.componentEquiv C = C) :
     (τ₁ * τ₂).restrictComponentAut C (by simp [h₁, h₂]) =
       τ₁.restrictComponentAut C h₁ * τ₂.restrictComponentAut C h₂ := by
-  ext x <;> simp [HMul.hMul, Mul.mul, Equiv.comp, Hom.comp]
+  ext x <;> simp [Equiv.mul_eq_comp]
 
 /-- Restriction to a component preserves inverses. -/
 @[simp] theorem Equiv.restrictComponentAut_inv {τ : P.Aut} {C : P.Component}
@@ -116,15 +110,6 @@ theorem Equiv.autCongr_restrictComponentAut (e : P.Equiv Q) {τ : P.Aut} {C : P.
     (e.componentPairingEquiv C).autCongr (τ.restrictComponentAut C hC) =
       (e.autCongr τ).restrictComponentAut (e.componentEquiv C) (by simp [autCongr_apply, hC]) := by
   ext x <;> simp [autCongr_apply]
-
-/-- A base-preserving automorphism fixing `C` permutes the simple roots of `b.componentBase C`. -/
-theorem Equiv.mem_support_restrictComponentAut_indexEquiv_iff {τ : P.Aut} {b : P.Base}
-    (hb : ∀ i, i ∈ b.support ↔ τ.indexEquiv i ∈ b.support) {C : P.Component}
-    (hC : τ.componentEquiv C = C) (i : C.supp) :
-    (τ.restrictComponentAut C hC).indexEquiv i ∈ (b.componentBase C).support ↔
-      i ∈ (b.componentBase C).support := by
-  rw [Base.mem_support_componentBase, Base.mem_support_componentBase,
-    Equiv.coe_restrictComponentAut_indexEquiv, ← hb]
 
 end Field
 
