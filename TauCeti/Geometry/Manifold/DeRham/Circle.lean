@@ -444,7 +444,6 @@ theorem mpullback_circleAngularForm_apply_eq_im_mlogDeriv {f : M → Circle} {x 
   ring
 
 /-- Pulling back the angular form along a constant map into `Circle` gives `0`. -/
-@[simp]
 theorem mpullback_const_circleAngularForm (z₀ : Circle) :
     mpullback I (𝓡 1) (fun _ : M ↦ z₀) circleAngularForm = 0 :=
   mpullback_const one_ne_zero z₀ _

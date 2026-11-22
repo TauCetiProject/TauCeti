@@ -325,6 +325,7 @@ theorem mpullback_apply_eq_zero {f : M → M'} {ω : RoughForm I' M' F k} {x : M
 
 /-- The pullback of a form of positive degree along a constant map vanishes: the derivative of a
 constant map is zero, and a form of positive degree vanishes on zero vectors. -/
+@[simp]
 theorem mpullback_const (hk : k ≠ 0) (y : M') (ω : RoughForm I' M' F k) :
     mpullback I I' (fun _ : M ↦ y) ω = 0 := by
   ext x v
