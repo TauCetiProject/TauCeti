@@ -348,7 +348,7 @@ private theorem contDiff_covectorPullback_positiveEndChart {q : Puncture}
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {Je : ℝ → V → AlmostComplexStructure V}
     {R₁ R : ℝ} (hJe : ContDiff ℝ 2 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hJeq : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je ζ.2) {u : ℝ × ℝ → V}
-    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 u z) (hR : max R₁ 0 ≤ R)
+    (hu : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → ContDiffAt ℝ 2 u (positiveEndChart q ζ)) (hR : max R₁ 0 ≤ R)
     {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η)
     (hηR : tsupport η ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R < (positiveEndCoord q z).1}) :
     ContDiff ℝ 2 (covectorPullback (positiveEndChart q)
@@ -363,9 +363,8 @@ private theorem contDiff_covectorPullback_positiveEndChart {q : Puncture}
     intro ζ hζ
     have hJζ : ContDiffAt ℝ 2 (fun ζ' : ℝ × ℝ ↦
         (Je ζ'.2 ((u ∘ φ) ζ')).toLinearMap.toContinuousLinearMap) ζ :=
-      hJe.contDiffAt.comp ζ (contDiffAt_snd.prodMk ((hu _
-        (positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt hζ))).comp
-          _ (contDiff_positiveEndChart q 2).contDiffAt))
+      hJe.contDiffAt.comp ζ (contDiffAt_snd.prodMk ((hu ζ ((le_max_left _ _).trans hζ.le)).comp
+        _ (contDiff_positiveEndChart q 2).contDiffAt))
     refine (ContDiffAt.congr_of_eventuallyEq (((contDiff_fst.comp hA).contDiffAt.smul
       (contDiffAt_const (c := (1 : V →L[ℝ] V)))).add
       ((contDiff_snd.comp hA).contDiffAt.smul hJζ)) ?_).contDiffWithinAt
@@ -493,12 +492,13 @@ private theorem setIntegral_norm_floerLinearizationAdjoint_covectorPullback_sq_l
 
 /-- **The end estimate of the formal adjoint along a Floer pair of pants.** Let `u` be a solution
 on `S = ℂ ∖ {0, 1}` of the Floer equation for the pair-of-pants perturbation of jointly `C²`
-period-one Hamiltonians `H`, `C²` on `S`, whose end `q`, read in the positive end chart `φ'_q`,
+period-one Hamiltonians `H`, `C¹` on `S`, whose end `q`, read in the positive end chart `φ'_q`,
 converges uniformly to an orbit `x` of the positive end Hamiltonian `H'_q` starting at a
 nondegenerate fixed point of the time-one map, while the slice defect `∂t (u ∘ φ'_q) - X_{H'_q}`
 tends uniformly to zero. Suppose that `J` is `C¹` and compatible along `u` on `S`, and that far out
-on the end it is a `C²` family `J_q(t)` compatible along `x`. Then there are `C` and `R` such that
-every `C²` covector field `η` with compact support in the part `±s > R` of the end satisfies
+on the end, where `u` is `C²`, `J` is a `C²` family `J_q(t)` compatible along `x`. Then there are
+`C` and `R` such that every `C²` covector field `η` with compact support in the part `±s > R` of
+the end satisfies
 
 `∫_{(0, ∞) × [0, 1]} (‖∂s η'‖² + ‖∂t η'‖² + ‖η'‖²) ≤ C ∫ |z - c_q|² ‖D_u^* η (z)‖²`
 
@@ -524,7 +524,8 @@ theorem exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLineariz
     (hJeq : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je ζ.2) {u : ℝ × ℝ → V}
     (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
-    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 u z)
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
+    (hu₂ : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → ContDiffAt ℝ 2 u (positiveEndChart q ζ))
     (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z)))
     (hF : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (J z (u z)) (ω.perturbedFDeriv
@@ -559,8 +560,8 @@ theorem exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLineariz
   obtain ⟨C₁, -, R₂, hest⟩ :=
     ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint hX hH' hx hnd
     (hJe.of_le one_le_two) hJe1 hJex (u := u ∘ φ)
-    ((eventually_gt_atTop 0).mono fun s hs t ↦ ((hu _ (hφS (ζ := (s, t)) hs)).comp _
-      (contDiff_positiveEndChart q 2).contDiffAt).of_le one_le_two)
+    ((eventually_gt_atTop 0).mono fun s hs t ↦ (hu _ (hφS (ζ := (s, t)) hs)).comp _
+      (contDiff_positiveEndChart q 1).contDiffAt)
     ((eventually_ge_atTop (max R₁ 1)).mono fun s hs t ↦ hJeu (ζ := (s, t)) hs) hux hδ
   set R := max (max R₂ (R₁ + 1)) 2
   have hR : R₂ ≤ R ∧ R₁ + 1 ≤ R ∧ 2 ≤ R :=
@@ -574,7 +575,7 @@ theorem exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLineariz
   have hvan' (s t : ℝ) (hs : s ∉ Ioo R b) : η' (s, t) = 0 := by
     have h₀ : η (φ (s, t)) = 0 := hvan s t hs
     simp only [η', covectorPullback_apply, h₀, ContinuousLinearMap.zero_comp]
-  have hη' : ContDiff ℝ 2 η' := contDiff_covectorPullback_positiveEndChart hJe hJeq hu
+  have hη' : ContDiff ℝ 2 η' := contDiff_covectorPullback_positiveEndChart hJe hJeq hu₂
     (max_le (by linarith) (by linarith)) hη hηR
   have hper (s t : ℝ) : η' (s, t + 1) = η' (s, t) := by
     simp only [η', covectorPullback_apply, φ, positiveEndChart_add_one,
@@ -595,8 +596,8 @@ theorem exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLineariz
     _ ≤ _ := by
         rw [mul_assoc]
         exact mul_le_mul_of_nonneg_left
-          (setIntegral_norm_floerLinearizationAdjoint_covectorPullback_sq_le ω hH hHs hJeq hJ
-            (fun z hz ↦ (hu z hz).of_le one_le_two) hF (hη.of_le one_le_two) hηc
-            (fun z hz ↦ (hηR hz).1) (by linarith) hR.2.2) (le_max_right _ _)
+          (setIntegral_norm_floerLinearizationAdjoint_covectorPullback_sq_le ω hH hHs hJeq hJ hu hF
+            (hη.of_le one_le_two) hηc (fun z hz ↦ (hηR hz).1) (by linarith) hR.2.2)
+          (le_max_right _ _)
 
 end TauCeti.SymplecticForm

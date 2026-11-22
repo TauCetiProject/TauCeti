@@ -898,10 +898,9 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint
   refine ⟨C, hC, R, fun η hη hper a b hab hRa hη₀ ↦ ?_⟩
   -- The error region `{0} × [0, 1]` lies outside the strip, where `η` vanishes.
   have h₀ : ∫ z in Icc (-0 : ℝ) 0 ×ˢ Icc (0 : ℝ) 1, ‖η z‖ ^ 2 = 0 :=
-    setIntegral_eq_zero_of_forall_eq_zero fun z hz ↦ by
-      have hz₀ : z.1 = 0 := by linarith [hz.1.1, hz.1.2]
-      rw [show z = (z.1, z.2) from rfl, hz₀,
-        hη₀ 0 z.2 fun h ↦ by linarith [h.1, le_max_right (max s₀ (-r)) 1], norm_zero]
+    setIntegral_eq_zero_of_forall_eq_zero fun ⟨s, t⟩ hz ↦ by
+      have hs : s = 0 := by linarith [hz.1.1, hz.1.2]
+      rw [hs, hη₀ 0 t fun h ↦ by linarith [h.1, le_max_right (max s₀ (-r)) 1], norm_zero]
       norm_num
   simpa only [h₀, add_zero] using
     h hη hper hab (fun s hs ↦ mem_Ici.2 (hRa.trans hs.1)) hη₀

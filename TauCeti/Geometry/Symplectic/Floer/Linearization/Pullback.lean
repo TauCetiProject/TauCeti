@@ -458,8 +458,7 @@ theorem floerLinearizationAdjoint_perturbationPullback (ω : SymplecticForm V)
   have hηeJ : (fun w' ↦ (covectorPullback φ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
       u η w').comp ((J (φ w') ((u ∘ φ) w')).toLinearMap.toContinuousLinearMap)) =
       fun w' ↦ (A w').1 • Ψ (φ w') - (A w').2 • η (φ w') := by
-    funext w'
-    ext v
+    ext w' v
     simp [covectorPullback_apply, Ψ, A, sub_eq_add_neg]
   -- The derivatives of the composites with `φ` and of the coefficients `a`, `b`.
   have hA : DifferentiableAt ℝ A w :=
@@ -469,10 +468,8 @@ theorem floerLinearizationAdjoint_perturbationPullback (ω : SymplecticForm V)
     hη.hasFDerivAt.comp w hφd.hasFDerivAt
   have hΨφ : HasFDerivAt (fun w' ↦ Ψ (φ w')) ((fderiv ℝ Ψ (φ w)).comp (fderiv ℝ φ w)) w :=
     (hη.clm_comp hJu).hasFDerivAt.comp w hφd.hasFDerivAt
-  have ha : HasFDerivAt (fun w' ↦ (A w').1) ((ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ A w))
-      w := (ContinuousLinearMap.fst ℝ ℝ ℝ).hasFDerivAt.comp w hA.hasFDerivAt
-  have hb : HasFDerivAt (fun w' ↦ (A w').2) ((ContinuousLinearMap.snd ℝ ℝ ℝ).comp (fderiv ℝ A w))
-      w := (ContinuousLinearMap.snd ℝ ℝ ℝ).hasFDerivAt.comp w hA.hasFDerivAt
+  have ha := hA.hasFDerivAt.fst
+  have hb := hA.hasFDerivAt.snd
   have hLi : fderiv ℝ φ w stdComplexLineImag = (-(A w).2, (A w).1) := by
     simpa only [ContinuousLinearMap.coe_coe] using hφJw.apply_stdComplexLineImag_eq
   have hCR := (isComplexLinearMap_fderiv_fderiv_apply_stdComplexLineReal hφ
@@ -487,16 +484,14 @@ theorem floerLinearizationAdjoint_perturbationPullback (ω : SymplecticForm V)
   -- Expand everything on a vector; the derivatives of `a` and `b` cancel by the Cauchy–Riemann
   -- equations.
   ext v
-  simp only [add_apply, sub_apply, smul_apply, ContinuousLinearMap.comp_apply, neg_apply, hLi,
-    Ψ, A, ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_sub,
-    ContinuousLinearMap.comp_smul, ContinuousLinearMap.add_comp]
+  simp only [add_apply, sub_apply, smul_apply, ContinuousLinearMap.comp_apply, neg_apply, hLi, A,
+    ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_sub, ContinuousLinearMap.comp_smul,
+    ContinuousLinearMap.add_comp]
   rw [(fderiv ℝ η (φ w)).apply_stdComplexLine (fderiv ℝ φ w stdComplexLineReal),
     (fderiv ℝ η (φ w)).apply_stdComplexLine (-_, _),
-    (fderiv ℝ (fun z ↦ (η z).comp (J z (u z)).toLinearMap.toContinuousLinearMap) (φ w)
-      ).apply_stdComplexLine (fderiv ℝ φ w stdComplexLineReal),
-    (fderiv ℝ (fun z ↦ (η z).comp (J z (u z)).toLinearMap.toContinuousLinearMap) (φ w)
-      ).apply_stdComplexLine (-_, _)]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.comp_apply, smul_eq_mul,
+    (fderiv ℝ Ψ (φ w)).apply_stdComplexLine (fderiv ℝ φ w stdComplexLineReal),
+    (fderiv ℝ Ψ (φ w)).apply_stdComplexLine (-_, _)]
+  simp only [Ψ, add_apply, smul_apply, ContinuousLinearMap.comp_apply, smul_eq_mul,
     LinearMap.coe_toContinuousLinearMap', AlmostComplexStructure.apply_apply, map_neg,
     ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.coe_fst',
     ContinuousLinearMap.coe_snd', hCR]
