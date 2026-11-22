@@ -16,8 +16,8 @@ import Mathlib.Topology.Algebra.LinearMapCompletion
 Mathlib (`Mathlib.Analysis.InnerProductSpace.l2Space`) provides the norm-square Parseval identities
 for a Hilbert basis (`HilbertBasis.hasSum_norm_inner_sq`, `HilbertBasis.tsum_norm_inner_sq`,
 `HilbertBasis.summable_norm_inner_sq`, and `HilbertBasis.tsum_eNorm_inner_sq`). This file supplies
-the complementary functional Parseval and Bessel identities together with finite coisometric
-contractions:
+the functional Parseval identity, a Bessel-type summability statement for functionals, and finite
+coisometric contractions:
 
 * For a continuous linear functional `A` on a finite orthonormal basis, the squared values
   `‖A (b i)‖ ^ 2` sum to `‖A‖ ^ 2` (`OrthonormalBasis.sum_sq_norm_apply_eq_norm_sq`).
