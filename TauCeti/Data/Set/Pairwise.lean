@@ -22,11 +22,11 @@ open Function
 
 namespace Set
 
-variable {ι α : Type*} {r : α → α → Prop} {f : ι → α} {s : Set ι}
+variable {ι α : Type*} {r : α → α → Prop} {f : ι → α}
 
 /-- For a reflexive relation, the image of a set under any map is pairwise related exactly when
 the set is pairwise related along the map. See also `Set.InjOn.pairwise_image`. -/
-theorem pairwise_image_of_refl [Std.Refl r] :
+theorem pairwise_image_of_refl [Std.Refl r] (s : Set ι) :
     (f '' s).Pairwise r ↔ s.Pairwise (r on f) :=
   ⟨fun h _ hx _ hy _ ↦ h.forall₂ (mem_image_of_mem f hx) (mem_image_of_mem f hy),
     Pairwise.image⟩

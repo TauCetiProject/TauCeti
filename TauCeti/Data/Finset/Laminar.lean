@@ -220,12 +220,12 @@ disjoint exactly when the cuts do not cross. -/
     crosses_sideAvoiding_left, crosses_sideAvoiding_right]
 
 /-- **Root convention.** A family of cuts is pairwise non-crossing exactly when representing
-each cut by its side avoiding a fixed root vertex gives a laminar family. Distinct cuts may have
-the same side avoiding the root, namely `S` and `Sᶜ`; they do not cross, as that side is nested
-with itself. -/
+each cut by its side avoiding a fixed root vertex gives a laminar family. The map to these sides
+is not injective: the distinct finsets `S` and `Sᶜ` represent the same cut, so they have the same
+side avoiding the root. They do not cross, as that side is nested with itself. -/
 theorem pairwise_nestedOrDisjoint_image_sideAvoiding (r : V) {𝒞 : Set (Finset V)} :
     (sideAvoiding r '' 𝒞).Pairwise NestedOrDisjoint ↔ 𝒞.Pairwise fun S T ↦ ¬Crosses S T := by
-  rw [Set.pairwise_image_of_refl]
+  rw [𝒞.pairwise_image_of_refl]
   simp only [Set.Pairwise, nestedOrDisjoint_sideAvoiding_iff]
 
 end Crossing
