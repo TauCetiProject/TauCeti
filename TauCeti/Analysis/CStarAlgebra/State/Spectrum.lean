@@ -281,19 +281,17 @@ theorem exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal [Nontrivial A] 
 the value `‖a‖` at `a`. -/
 theorem exists_mem_stateSpace_apply_eq_norm_of_nonneg [Nontrivial A] {a : A} (ha : 0 ≤ a) :
     ∃ φ ∈ stateSpace A, φ a = ‖a‖ := by
-  rcases eq_or_ne a 0 with rfl | ha0
-  · obtain ⟨φ, hφ⟩ := stateSpace_nonempty (A := A)
-    exact ⟨φ, hφ, by simp⟩
-  · exact exists_mem_stateSpace_apply_eq_norm_of_nonneg_of_ne_zero ha ha0
+  have := ha.isSelfAdjoint.isStarNormal
+  obtain ⟨φ, hφ, hφa⟩ := exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal a
+  exact ⟨φ, hφ, (Complex.norm_of_nonneg' (map_nonneg_of_mem_stateSpace hφ ha)).symm.trans
+    (congr_arg Complex.ofReal hφa)⟩
 
 /-- On a nontrivial C⋆-algebra, every element `a` has a state taking the value `‖a‖ ^ 2` at
 `star a * a`. -/
 theorem exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq [Nontrivial A] (a : A) :
     ∃ φ ∈ stateSpace A, φ (star a * a) = ‖a‖ ^ 2 := by
-  rcases eq_or_ne a 0 with rfl | ha
-  · obtain ⟨φ, hφ⟩ := stateSpace_nonempty (A := A)
-    exact ⟨φ, hφ, by simp⟩
-  · exact exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq_of_ne_zero ha
+  obtain ⟨φ, hφ, hφa⟩ := exists_mem_stateSpace_apply_eq_norm_of_nonneg (star_mul_self_nonneg a)
+  exact ⟨φ, hφ, by simpa [CStarRing.norm_star_mul_self, sq] using hφa⟩
 
 /-- **Norm recovery from states.** For every normal element `a` of a C⋆-algebra `A` (possibly
 nonunital or trivial), `‖a‖` is the supremum of `‖φ a‖` over all states `φ ∈ stateSpace A`. -/

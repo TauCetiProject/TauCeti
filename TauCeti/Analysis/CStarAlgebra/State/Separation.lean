@@ -53,12 +53,12 @@ theorem eq_zero_of_forall_mem_stateSpace_apply_eq_zero {a : A}
     have : IsStarNormal (x : A) := x.property.isStarNormal
     exact norm_eq_zero.1 <| by
       simp [norm_eq_iSup_norm_apply_stateSpace_of_isStarNormal (x : A), hx, Real.iSup_const_zero]
-  rw [← realPart_add_I_smul_imaginaryPart a,
-    hsa (realPart a) fun φ => by
-      simpa [h φ.val φ.property] using map_realPart (StateSpace.toPositiveLinearMap φ) a,
-    hsa (imaginaryPart a) fun φ => by
-      simpa [h φ.val φ.property] using map_imaginaryPart (StateSpace.toPositiveLinearMap φ) a,
-    smul_zero, add_zero]
+  have hre : (realPart a : A) = 0 := hsa (realPart a) fun φ => by
+    simpa [h φ.val φ.property] using map_realPart (StateSpace.toPositiveLinearMap φ) a
+  have him : (imaginaryPart a : A) = 0 := hsa (imaginaryPart a) fun φ => by
+    simpa [h φ.val φ.property] using map_imaginaryPart (StateSpace.toPositiveLinearMap φ) a
+  rw [← realPart_add_I_smul_imaginaryPart a]
+  simp [hre, him]
 
 /-- If `φ (star a * a) = 0` for every state `φ` of `A`, then `a = 0`. -/
 theorem eq_zero_of_forall_mem_stateSpace_apply_star_mul_self_eq_zero {a : A}
