@@ -116,6 +116,27 @@ theorem diracOperator_def (σ : Π y : M, V y) (x : M) :
       ((ContinuousLinearMap.toLinearMap₁₂ (c x)).compl₂ (cov σ x).toLinearMap) := by
   rw [diracOperator]
 
+/-- The Clifford contraction `L ↦ tr ((u, w) ↦ c(u) (L w))` at `x`, as a linear map in `L`: the
+metric trace precomposed with the bundled precomposition `L ↦ c x ∘ L` in the second slot. -/
+private def cliffordContraction (x : M) : (TangentSpace I x →ₗ[ℝ] V x) →ₗ[ℝ] V x :=
+  LinearMap.BilinMap.metricTrace ∘ₗ
+    (LinearMap.llcomp ℝ _ _ _ ∘ₗ ContinuousLinearMap.toLinearMap₁₂ (c x)).flip
+
+private theorem cliffordContraction_apply (x : M) (L : TangentSpace I x →ₗ[ℝ] V x) :
+    cliffordContraction c x L =
+      LinearMap.BilinMap.metricTrace ((ContinuousLinearMap.toLinearMap₁₂ (c x)).compl₂ L) := by
+  have h : (LinearMap.llcomp ℝ _ _ _ ∘ₗ ContinuousLinearMap.toLinearMap₁₂ (c x)).flip L =
+      (ContinuousLinearMap.toLinearMap₁₂ (c x)).compl₂ L :=
+    LinearMap.ext₂ fun u w ↦ by
+      simp only [LinearMap.flip_apply, LinearMap.comp_apply, LinearMap.llcomp_apply,
+        LinearMap.compl₂_apply]
+  rw [cliffordContraction, LinearMap.comp_apply, h]
+
+/-- The Dirac operator at `x` is the Clifford contraction of `∇σ x`. -/
+private theorem diracOperator_eq_cliffordContraction (σ : Π y : M, V y) (x : M) :
+    cov.diracOperator c σ x = cliffordContraction c x (cov σ x).toLinearMap := by
+  rw [diracOperator_def, cliffordContraction_apply]
+
 /-- **The Dirac operator in an orthonormal frame.** For every orthonormal basis `eᵢ` of the
 tangent space at `x`, `D σ = ∑ᵢ c(eᵢ) ∇_{eᵢ} σ`. In particular the sum does not depend on the
 basis. -/
@@ -130,7 +151,7 @@ theorem diracOperator_eq_sum (σ : Π y : M, V y) (x : M) {ι : Type*} [Fintype 
 In particular `D 0 = 0`. -/
 theorem diracOperator_eq_zero_of_eq_zero (x : M) (hσ : cov σ x = 0) :
     cov.diracOperator c σ x = 0 := by
-  simp [diracOperator_eq_sum cov c σ x (stdOrthonormalBasis ℝ (TangentSpace I x)), hσ]
+  rw [diracOperator_eq_cliffordContraction, hσ, ContinuousLinearMap.toLinearMap_zero, map_zero]
 
 /-- The Dirac operator of the zero section is zero. -/
 @[simp]
@@ -141,7 +162,7 @@ theorem diracOperator_zero [VectorBundle ℝ F V] (x : M) :
 /-- The Dirac operator at `x` depends on `σ` only through its covariant derivative `∇σ` at `x`. -/
 theorem diracOperator_congr {x : M} (h : cov σ x = cov τ x) :
     cov.diracOperator c σ x = cov.diracOperator c τ x := by
-  simp only [diracOperator_eq_sum cov c _ x (stdOrthonormalBasis ℝ (TangentSpace I x)), h]
+  rw [diracOperator_def, diracOperator_def, h]
 
 /-- **Locality.** For sections differentiable at `x`, the Dirac operator at `x` depends only on
 their germ at `x`. -/
@@ -154,17 +175,16 @@ theorem diracOperator_congr_of_eventuallyEq {x : M} (hσ : MDiffAt (T% σ) x)
 /-- The Dirac operator is additive on sections differentiable at the point. -/
 theorem diracOperator_add {x : M} (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x) :
     cov.diracOperator c (σ + τ) x = cov.diracOperator c σ x + cov.diracOperator c τ x := by
-  simp only [diracOperator_eq_sum cov c _ x (stdOrthonormalBasis ℝ (TangentSpace I x)),
-    cov.isCovariantDerivativeOnUniv.add hσ hτ, add_apply, map_add,
-    Finset.sum_add_distrib]
+  rw [diracOperator_eq_cliffordContraction, diracOperator_eq_cliffordContraction,
+    diracOperator_eq_cliffordContraction, cov.isCovariantDerivativeOnUniv.add hσ hτ,
+    ContinuousLinearMap.toLinearMap_add, map_add]
 
 /-- The Dirac operator commutes with multiplication of a differentiable section by a
 constant. -/
 theorem diracOperator_const_smul {x : M} (a : ℝ) (hσ : MDiffAt (T% σ) x) :
     cov.diracOperator c (a • σ) x = a • cov.diracOperator c σ x := by
-  simp only [diracOperator_eq_sum cov c _ x (stdOrthonormalBasis ℝ (TangentSpace I x)),
-    cov.isCovariantDerivativeOnUniv.smul_const a hσ, smul_apply, map_smul,
-    Finset.smul_sum]
+  rw [diracOperator_eq_cliffordContraction, diracOperator_eq_cliffordContraction,
+    cov.isCovariantDerivativeOnUniv.smul_const a hσ, ContinuousLinearMap.toLinearMap_smul, map_smul]
 
 /-- The Dirac operator commutes with negation of a differentiable section. -/
 theorem diracOperator_neg {x : M} (hσ : MDiffAt (T% σ) x) :
@@ -209,17 +229,16 @@ theorem diracOperator_smul {x : M} (hf : MDiffAt f x) (hσ : MDiffAt (T% σ) x) 
     cov.diracOperator c (f • σ) x =
       f x • cov.diracOperator c σ x + c x (TauCeti.Manifold.mgradient I f x) (σ x) := by
   -- The Leibniz correction contracts `c x` against the rank-one map `w ↦ ⟪grad f, w⟫ • σ x`.
-  have h : (ContinuousLinearMap.toLinearMap₁₂ (c x)).compl₂ (cov (f • σ) x).toLinearMap =
-      f x • (ContinuousLinearMap.toLinearMap₁₂ (c x)).compl₂ (cov σ x).toLinearMap +
-        (ContinuousLinearMap.toLinearMap₁₂ (c x)).compl₂
-          ((innerₗ (TangentSpace I x) (TauCeti.Manifold.mgradient I f x)).smulRight (σ x)) :=
-    LinearMap.ext₂ fun u w ↦ by
-      simp only [LinearMap.compl₂_apply, ContinuousLinearMap.coe_coe,
-        cov.isCovariantDerivativeOnUniv.leibniz hσ hf, add_apply, smul_apply,
-        ContinuousLinearMap.smulRight_apply, LinearMap.add_apply, LinearMap.smul_apply,
-        LinearMap.smulRight_apply, innerₗ_apply_apply, TauCeti.Manifold.inner_mgradient, map_add,
-        map_smul]
-  rw [diracOperator_def, diracOperator_def, h, map_add, map_smul,
+  have h : ((d% f x).smulRight (σ x) : TangentSpace I x →ₗ[ℝ] V x) =
+      (innerₗ (TangentSpace I x) (TauCeti.Manifold.mgradient I f x)).smulRight (σ x) :=
+    LinearMap.ext fun w ↦ by
+      rw [ContinuousLinearMap.coe_coe, ContinuousLinearMap.smulRight_apply,
+        LinearMap.smulRight_apply, ← TauCeti.Manifold.coe_mvfderiv_eq_innerₗ_mgradient,
+        ContinuousLinearMap.coe_coe]
+  rw [diracOperator_eq_cliffordContraction, diracOperator_eq_cliffordContraction,
+    cov.isCovariantDerivativeOnUniv.leibniz hσ hf, ContinuousLinearMap.toLinearMap_add,
+    ContinuousLinearMap.toLinearMap_smul, h, map_add, map_smul,
+    cliffordContraction_apply c x ((innerₗ _ (TauCeti.Manifold.mgradient I f x)).smulRight (σ x)),
     LinearMap.BilinMap.metricTrace_compl₂_innerₗ_smulRight,
     ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
 
@@ -266,11 +285,9 @@ theorem diracOperator_addOneForm (A : Π y : M, V y →L[ℝ] TangentSpace I y �
     (cov.addOneForm A).diracOperator c σ x =
       cov.diracOperator c σ x + LinearMap.BilinMap.metricTrace
         ((ContinuousLinearMap.toLinearMap₁₂ (c x)).compl₂ (A x (σ x)).toLinearMap) := by
-  rw [diracOperator_def, diracOperator_def, addOneForm_apply, ← map_add]
-  congr 1
-  ext u w
-  simp only [LinearMap.compl₂_apply, ContinuousLinearMap.toLinearMap_add, LinearMap.add_apply,
-    map_add]
+  rw [diracOperator_eq_cliffordContraction, diracOperator_eq_cliffordContraction,
+    addOneForm_apply, ContinuousLinearMap.toLinearMap_add, map_add,
+    cliffordContraction_apply c x (A x (σ x))]
 
 /-- **Change of connection by an inner-product one-form.** If the one-form `A` acts on `σ` at `x`
 by `A_x(σ_x)(w) = ⟪u, w⟫ v`, then adding it to `∇` adds `c(u) v` to the Dirac operator at `x`.

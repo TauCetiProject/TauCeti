@@ -382,8 +382,9 @@ theorem IsMetricCompatible.sum_derivRicciTensor_self_eq_mvfderiv_scalarCurvature
     ∑ i, cov.derivRicciTensor x (b i) (b i) v = mvfderiv I cov.scalarCurvature x v := by
   have hRic (y : M) :
       ContinuousLinearMap.toLinearMap₁₂ (cov.ricciTensor y).toContinuousBilinearMap =
-        cov.ricciTensor y :=
-    LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap _
+        cov.ricciTensor y := by
+    simpa only [ContinuousLinearMap.toBilinForm] using
+      LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap (cov.ricciTensor y)
   have hScal : cov.scalarCurvature = fun y ↦ LinearMap.BilinMap.metricTrace
       (ContinuousLinearMap.toLinearMap₁₂ (cov.ricciTensor y).toContinuousBilinearMap) := by
     funext y

@@ -20,8 +20,8 @@ charts.
 Likewise, the Hessian form pairs two tangent fields differentiable at a point to a function
 differentiable there whenever `∇ grad f` is differentiable at that point
 (`TauCeti.Manifold.mdifferentiableAt_hessianForm_apply`); this holds for a function that is `C³`
-near the point, on a `C³` manifold with a `C²` metric
-(`TauCeti.Manifold.mdifferentiableAt_hessianForm_apply_of_contMDiffOn`).
+at the point, on a `C³` manifold with a `C²` metric
+(`TauCeti.Manifold.mdifferentiableAt_hessianForm_apply_of_contMDiffAt`).
 -/
 
 public noncomputable section
@@ -95,16 +95,19 @@ theorem mdifferentiableAt_hessianForm_apply {f : M → ℝ} {x : M}
   simp only [ModelWithCorners.hessianForm_apply, hessian_def]
   exact mdifferentiableAt_inner hGσ hτ
 
-/-- The Hessian form of a function that is `C³` on an open neighbourhood of `x` pairs two tangent
-fields differentiable at `x` to a function differentiable at `x`, on a `C³` manifold with a `C²`
-metric. -/
-theorem mdifferentiableAt_hessianForm_apply_of_contMDiffOn (hm : 3 ≤ m) (hk : 2 ≤ k) {f : M → ℝ}
-    {U : Set M} (hU : IsOpen U) (hf : ContMDiffOn I 𝓘(ℝ) 3 f U) {x : M} (hx : x ∈ U)
+/-- The Hessian form of a function that is `C³` at `x` pairs two tangent fields differentiable at
+`x` to a function differentiable at `x`, on a `C³` manifold with a `C²` metric. -/
+theorem mdifferentiableAt_hessianForm_apply_of_contMDiffAt (hm : 3 ≤ m) (hk : 2 ≤ k) {f : M → ℝ}
+    {x : M} (hf : ContMDiffAt I 𝓘(ℝ) 3 f x)
     {σ τ : Π y : M, TangentSpace I y} (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x) :
     MDiffAt (fun y ↦ I.hessianForm f y (σ y) (τ y)) x := by
+  have : IsManifold I 3 M := .of_le hm
+  -- `f` is `C³` on an open neighbourhood `U` of `x`, where `∇ grad f` is then `C¹`.
+  obtain ⟨U, hU, hx, hfU⟩ := hf.contMDiffWithinAt (s := univ).contMDiffOn' le_rfl (by simp)
+  rw [insert_eq_of_mem (mem_univ x), univ_inter] at hfU
   have h3 : (1 : ℕ∞ω) + 2 = 3 := by norm_num
   have hA := contMDiffOn_leviCivitaConnection_mgradient (n := 1) (m := m) (k := k) (h3 ▸ hm)
-    (by rwa [one_add_one_eq_two]) hU (h3 ▸ hf)
+    (by rwa [one_add_one_eq_two]) hU (h3 ▸ hfU)
   exact mdifferentiableAt_hessianForm_apply
     ((hA.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt one_ne_zero) hσ hτ
 

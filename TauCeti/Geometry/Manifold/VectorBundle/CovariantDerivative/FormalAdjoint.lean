@@ -195,13 +195,10 @@ theorem formalAdjoint_smul {f : M → ℝ} {x : M} (hf : MDiffAt f x)
       f x • cov.formalAdjoint covT α x - α x (TauCeti.Manifold.mgradient I f x) := by
   -- The Leibniz term is the rank-one map `(v, w) ↦ ⟪grad f, v⟫ • α w`, whose trace is
   -- `α (grad f)`.
-  have hdf : ((d% f x : TangentSpace I x →L[ℝ] ℝ) : TangentSpace I x →ₗ[ℝ] ℝ) =
-      innerₗ (TangentSpace I x) (TauCeti.Manifold.mgradient I f x) :=
-    LinearMap.ext fun w ↦ by
-      rw [ContinuousLinearMap.coe_coe, innerₗ_apply_apply, TauCeti.Manifold.inner_mgradient]
   rw [formalAdjoint_def, formalAdjoint_def,
     (covT.hom cov).isCovariantDerivativeOnUniv.leibniz hα hf, map_add, map_smul,
-    ContinuousLinearMap.toLinearMap₁₂_smulRight, hdf, map_add, map_smul,
+    ContinuousLinearMap.toLinearMap₁₂_smulRight, TauCeti.Manifold.coe_mvfderiv_eq_innerₗ_mgradient,
+    map_add, map_smul,
     LinearMap.BilinMap.metricTrace_innerₗ_smulRight, ContinuousLinearMap.coe_coe, neg_add,
     smul_neg, sub_eq_add_neg]
 
@@ -214,7 +211,9 @@ theorem roughLaplacian_eq_formalAdjoint (hσ : CMDiff ∞ (T% σ)) :
   funext x
   rw [roughLaplacian_def, formalAdjoint_def]
   congr 2
-  exact LinearMap.ext₂ (secondCovariantDerivative_eq_hom_apply cov covT hσ x)
+  refine LinearMap.ext₂ fun v w ↦ ?_
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
+  exact secondCovariantDerivative_eq_hom_apply cov covT hσ x v w
 
 end Definition
 

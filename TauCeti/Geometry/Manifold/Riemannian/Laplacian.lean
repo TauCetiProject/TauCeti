@@ -54,8 +54,9 @@ Riemannian Manifolds*, Chapter 3.
 
 The Laplace–Beltrami locality lemmas are adapted from Giada Franz's locality helper.
 The operator depends only on the germ of the function: locally equal functions have equal
-Laplacians when the gradient is differentiable at the point, and the Laplacian vanishes off
-the function's topological support without any regularity assumption.
+Hessian forms (`ModelWithCorners.hessianForm_congr_of_eventuallyEq`), hence equal Laplacians,
+when the gradient is differentiable at the point, and the Laplacian vanishes off the function's
+topological support without any regularity assumption.
 
 The pointwise Hessian linearity lemmas are adapted from Otis Chodosh's formalization in
 `riccardobrasca/ColdingMinicozziTheory`,
@@ -385,7 +386,7 @@ theorem _root_.ModelWithCorners.laplaceBeltrami_eq_metricTrace_hessianForm
       LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (I.hessianForm f x)) := by
   -- The Hessian form is the metric lowering of the covariant derivative of the gradient.
   rw [laplaceBeltrami_def, divergence_def, I.hessianForm_def,
-    ContinuousLinearMap.toLinearMap₁₂_comp, toLinearMap₁₂_innerSL,
+    ContinuousLinearMap.toLinearMap₁₂_comp, toLinearMap₁₂_innerSL_real,
     ← LinearMap.BilinForm.trace_bilinFormToEnd, LinearMap.bilinFormToEnd_innerₗ_comp]
 
 /-- For a Laplace–Beltrami eigenfunction, the derivative of its Laplacian along its
@@ -662,6 +663,7 @@ theorem hessian_sub_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x : M}
     sub_apply, sub_apply, I.hessianForm_apply, I.hessianForm_apply]
 
 /-- The Hessian form of a function that is `C²` at `x` is symmetric. -/
+@[simp]
 theorem _root_.ModelWithCorners.flip_hessianForm {f : M → ℝ} {x : M}
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) : (I.hessianForm f x).flip = I.hessianForm f x :=
   ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ by
@@ -706,19 +708,32 @@ theorem laplaceBeltrami_const (c : ℝ) (x : M) :
 theorem laplaceBeltrami_zero (x : M) : laplaceBeltrami I (0 : M → ℝ) x = 0 :=
   laplaceBeltrami_const I 0 x
 
+/-- **Locality of the Hessian form.** Locally equal functions have equal Hessian forms at a point
+where the gradient of one function is differentiable. -/
+theorem _root_.ModelWithCorners.hessianForm_congr_of_eventuallyEq {f g : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I I.tangent
+      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (h : f =ᶠ[nhds x] g) : I.hessianForm f x = I.hessianForm g x := by
+  have hev : ∀ᶠ y in nhds x, mgradient I f y = mgradient I g y := by
+    filter_upwards [h.eventuallyEq_nhds] with y hy
+    rw [mgradient_def, mgradient_def, hy.mvfderiv_eq]
+  have hT : (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) =ᶠ[nhds x]
+      fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M) :=
+    hev.mono fun y hy ↦ congrArg (TotalSpace.mk' E y) hy.symm
+  rw [I.hessianForm_def, I.hessianForm_def,
+    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.congr_of_eventuallyEq
+      hf (hf.congr_of_eventuallyEq hT) Filter.univ_mem hev]
+
 /-- Locally equal functions have equal Laplace–Beltrami operators at a point where the gradient
-of one function is differentiable. -/
+of one function is differentiable: the metric trace of
+`ModelWithCorners.hessianForm_congr_of_eventuallyEq`. -/
 theorem laplaceBeltrami_congr_of_eventuallyEq_of_mdifferentiableAt_mgradient
     {f g : M → ℝ} {x : M}
     (hf : MDifferentiableAt I I.tangent
       (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
     (h : f =ᶠ[nhds x] g) : laplaceBeltrami I f x = laplaceBeltrami I g x := by
-  rw [laplaceBeltrami_def, laplaceBeltrami_def]
-  apply divergence_congr_of_eventuallyEq I hf
-  filter_upwards [h.eventuallyEq_nhds] with y hy
-  apply ext_inner_right ℝ
-  intro v
-  rw [inner_mgradient, inner_mgradient, hy.mvfderiv_eq]
+  rw [I.laplaceBeltrami_eq_metricTrace_hessianForm, I.laplaceBeltrami_eq_metricTrace_hessianForm,
+    I.hessianForm_congr_of_eventuallyEq hf h]
 
 /-- Two functions which agree near a point have the same Laplace–Beltrami operator there if
 one is `C²` at the point. -/

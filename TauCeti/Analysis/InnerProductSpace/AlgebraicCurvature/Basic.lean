@@ -415,29 +415,6 @@ theorem algebraicCurvaturePullback_algebraicCurvaturePullback_of_comp_eq_id {f :
   rw [← ContinuousLinearMap.comp_apply, ← algebraicCurvaturePullback_comp, h,
     algebraicCurvaturePullback_id, ContinuousLinearMap.id_apply]
 
-/-- The bilinear form `(x, y) ↦ r(x, u, y, v)` whose metric trace is the Ricci contraction
-(`TauCeti.FourTensor.ricci_apply`). -/
-def ricciSlice (r : FourTensor V) (u v : V) : BilinForm ℝ V :=
-  LinearMap.mk₂ ℝ (fun x y ↦ r ![x, u, y, v])
-    (fun _ _ _ ↦ apply_add_first ..) (fun _ _ _ ↦ apply_smul_first ..)
-    (fun _ _ _ ↦ apply_add_third ..) (fun _ _ _ ↦ apply_smul_third ..)
-
-@[simp]
-theorem ricciSlice_apply (r : FourTensor V) (u v x y : V) :
-    ricciSlice r u v x y = r ![x, u, y, v] :=
-  (rfl)
-
-/-- The bilinear form `(x, y) ↦ r ![u, v, x, y]` slicing the last two slots of a four-tensor. -/
-private def lastSlice (r : FourTensor V) (u v : V) : BilinForm ℝ V :=
-  LinearMap.mk₂ ℝ (fun x y ↦ r ![u, v, x, y])
-    (fun _ _ _ ↦ apply_add_third ..) (fun _ _ _ ↦ apply_smul_third ..)
-    (fun _ _ _ ↦ apply_add_fourth ..) (fun _ _ _ ↦ apply_smul_fourth ..)
-
-/-- Evaluation of `lastSlice r u v`. -/
-private theorem lastSlice_apply (r : FourTensor V) (u v x y : V) :
-    lastSlice r u v x y = r ![u, v, x, y] :=
-  LinearMap.mk₂_apply ..
-
 /-- Curry a continuous four-tensor into a four-fold linear map. -/
 def toLinearMap₄ : FourTensor V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ where
   toFun r := LinearMap.mk₂ ℝ (fun u v ↦ LinearMap.mk₂ ℝ (fun z w ↦ r ![u, v, z, w])
@@ -455,6 +432,18 @@ def toLinearMap₄ : FourTensor V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →�
 /-- Currying a four-tensor into a four-fold linear map is injective. -/
 theorem toLinearMap₄_injective : Function.Injective (toLinearMap₄ (V := V)) := fun _ _ h ↦ by
   ext m; rw [← FinVec.etaExpand_eq m]; exact congr($h (m 0) (m 1) (m 2) (m 3))
+
+/-- The bilinear form `(x, y) ↦ r(x, u, y, v)` whose metric trace is the Ricci contraction
+(`TauCeti.FourTensor.ricci_apply`): the slice of `toLinearMap₄ r` with the second slot fixed to `u`
+and the fourth to `v`. -/
+def ricciSlice (r : FourTensor V) (u v : V) : BilinForm ℝ V :=
+  ((toLinearMap₄ r).flip u).compr₂ (LinearMap.applyₗ v)
+
+@[simp]
+theorem ricciSlice_apply (r : FourTensor V) (u v x y : V) :
+    ricciSlice r u v x y = r ![x, u, y, v] := by
+  rw [ricciSlice, LinearMap.compr₂_apply, LinearMap.flip_apply, LinearMap.applyₗ_apply_apply,
+    toLinearMap₄_apply]
 
 end NormedSpace
 
@@ -767,12 +756,12 @@ theorem sum_mul_constantCurvature_last {ι : Type*} [Fintype ι] (b : Orthonorma
   have heval (u v : V) :
       (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ)) = r ![a, c, u, v] := by
     calc (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ))
-        = ∑ p, ∑ q, lastSlice r a c (b p) (b q) * ⟪b p, u⟫_ℝ * ⟪b q, v⟫_ℝ :=
+        = ∑ p, ∑ q, toLinearMap₄ r a c (b p) (b q) * ⟪b p, u⟫_ℝ * ⟪b q, v⟫_ℝ :=
           Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ by
-            rw [lastSlice_apply, real_inner_comm u, real_inner_comm v]
+            rw [toLinearMap₄_apply, real_inner_comm u, real_inner_comm v]
             ring
       _ = r ![a, c, u, v] := by
-          rw [b.sum_apply_mul_inner_mul_inner b, lastSlice_apply]
+          rw [b.sum_apply_mul_inner_mul_inner b, toLinearMap₄_apply]
   have hsub : (∑ p, ∑ q, r ![a, c, b p, b q] * constantCurvature V ![x, y, b p, b q]) =
       (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪x, b p⟫_ℝ * ⟪y, b q⟫_ℝ)) -
         ∑ p, ∑ q, r ![a, c, b p, b q] * (⟪x, b q⟫_ℝ * ⟪y, b p⟫_ℝ) := by

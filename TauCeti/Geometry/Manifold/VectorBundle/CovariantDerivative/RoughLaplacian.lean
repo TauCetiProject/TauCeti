@@ -238,11 +238,15 @@ theorem roughLaplacian_smul (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hσ : CMDiff ∞
     rw [hYx] at hS
     rw [hS, hH]
     module
-  -- `∑ᵢ df(eᵢ) ∇_{eᵢ} σ = ∇_{grad f} σ`, since `grad f = ∑ᵢ df(eᵢ) eᵢ`.
+  -- `∑ᵢ df(eᵢ) ∇_{eᵢ} σ = ∇_{grad f} σ`: the metric trace of the rank-one map
+  -- `(v, w) ↦ ⟪grad f, v⟫ • ∇_w σ`.
   have hgrad : ∑ i, d% f x (b i) • cov σ x (b i) =
       cov σ x (TauCeti.Manifold.mgradient I f x) := by
-    conv_rhs => rw [← b.sum_repr' (TauCeti.Manifold.mgradient I f x)]
-    simp only [map_sum, map_smul, TauCeti.Manifold.inner_mgradient_right]
+    rw [← ContinuousLinearMap.coe_coe (cov σ x),
+      ← LinearMap.BilinMap.metricTrace_innerₗ_smulRight,
+      ← TauCeti.Manifold.coe_mvfderiv_eq_innerₗ_mgradient,
+      LinearMap.BilinMap.metricTrace_eq_sum _ b]
+    simp only [LinearMap.smulRight_apply, LinearMap.smul_apply, ContinuousLinearMap.coe_coe]
   rw [roughLaplacian_eq_sum cov _ _ x b, roughLaplacian_eq_sum cov _ _ x b,
     TauCeti.Manifold.laplaceBeltrami_eq_sum_hessian I f x b, ← hgrad]
   simp only [hterm, Finset.sum_add_distrib, ← Finset.smul_sum, ← Finset.sum_smul, mul_smul,

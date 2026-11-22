@@ -8,10 +8,11 @@ module
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 
 /-!
-# The real inner product as a continuous bilinear map
+# The inner product as a continuous sesquilinear map
 
-Forgetting the continuity of the real inner product `innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ` gives the
-bilinear form `innerₗ E` (`toLinearMap₁₂_innerSL`). Together with the conversion rules of
+Forgetting the continuity of the inner product `innerSL 𝕜 : E →L⋆[𝕜] E →L[𝕜] 𝕜` gives the
+sesquilinear map `innerₛₗ 𝕜` (`toLinearMap₁₂_innerSL`); over `ℝ` this is the bilinear form
+`innerₗ E` (`toLinearMap₁₂_innerSL_real`). Together with the conversion rules of
 `TauCeti/Topology/Algebra/Module/Spaces/ContinuousLinearMap.lean`, this turns metric lowerings
 `innerSL ℝ ∘L T` into the bilinear forms `innerₗ E ∘ₗ T`, to which the algebraic API of bilinear
 forms applies.
@@ -19,12 +20,18 @@ forms applies.
 
 public section
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- Forgetting continuity of the real inner product gives the bilinear form `innerₗ E`. -/
+/-- Forgetting continuity of the inner product gives the sesquilinear map `innerₛₗ 𝕜`. -/
 @[simp]
-theorem toLinearMap₁₂_innerSL :
-    ContinuousLinearMap.toLinearMap₁₂ (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) = innerₗ E :=
+theorem toLinearMap₁₂_innerSL {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] :
+    ContinuousLinearMap.toLinearMap₁₂ (innerSL 𝕜 : E →L⋆[𝕜] E →L[𝕜] 𝕜) = innerₛₗ 𝕜 :=
   LinearMap.ext₂ fun _ _ ↦ by
     rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, innerSL_apply_apply,
-      innerₗ_apply_apply]
+      innerₛₗ_apply_apply]
+
+/-- Forgetting continuity of the real inner product gives the bilinear form `innerₗ E`: the real
+case of `toLinearMap₁₂_innerSL`, whose right-hand side `innerₛₗ ℝ` is `innerₗ E` only by
+unfolding `innerₗ`. -/
+theorem toLinearMap₁₂_innerSL_real {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] :
+    ContinuousLinearMap.toLinearMap₁₂ (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) = innerₗ E :=
+  toLinearMap₁₂_innerSL

@@ -23,7 +23,7 @@ reproving the conversion pointwise:
 * `ContinuousLinearMap.toLinearMap₁₂_bilinearComp`: precomposition in both arguments,
   `(L.bilinearComp f g).toLinearMap₁₂ = (L.toLinearMap₁₂.comp f).compl₂ g`;
 * `ContinuousLinearMap.toLinearMap₁₂_smulRight`: rank-one maps, `(f.smulRight A).toLinearMap₁₂ =
-  (f : E →ₗ 𝕜).smulRight (A : F →ₗ G)`.
+  (f : E →ₗ 𝕜).smulRight (A : F →ₛₗ G)`, also for a semilinear `A`.
 -/
 
 public section
@@ -72,17 +72,19 @@ end Flip
 
 section SMulRight
 
-variable {𝕜 : Type*} [NormedField 𝕜]
+variable {𝕜 𝕜₂ : Type*} [NormedField 𝕜] [NormedField 𝕜₂] {σ : 𝕜₂ →+* 𝕜} [RingHomSurjective σ]
+  [RingHomIsometric σ]
   {E F G : Type*} [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
-  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
+  [AddCommGroup F] [Module 𝕜₂ F] [TopologicalSpace F]
   [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G] [IsTopologicalAddGroup G]
   [ContinuousSMul 𝕜 G]
 
 /-- Forgetting continuity sends the rank-one map `(v, w) ↦ f v • A w` to the rank-one bilinear map
-of the underlying linear maps. -/
+of the underlying maps. The second slot may be semilinear, as for the conjugate-linear slot of a
+sesquilinear map. -/
 @[simp]
-theorem toLinearMap₁₂_smulRight (f : E →L[𝕜] 𝕜) (A : F →L[𝕜] G) :
-    toLinearMap₁₂ (f.smulRight A) = (f : E →ₗ[𝕜] 𝕜).smulRight (A : F →ₗ[𝕜] G) :=
+theorem toLinearMap₁₂_smulRight (f : E →L[𝕜] 𝕜) (A : F →SL[σ] G) :
+    toLinearMap₁₂ (f.smulRight A) = (f : E →ₗ[𝕜] 𝕜).smulRight (A : F →ₛₗ[σ] G) :=
   LinearMap.ext₂ fun _ _ ↦ by
     simp only [toLinearMap₁₂_apply_apply_apply, LinearMap.smulRight_apply, smulRight_apply,
       LinearMap.smul_apply, smul_apply, coe_coe]

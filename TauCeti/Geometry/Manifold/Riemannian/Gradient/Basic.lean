@@ -36,6 +36,8 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
 * `TauCeti.Manifold.inner_mgradient`: its characteristic property
   `⟪grad f x, v⟫ = df_x v`, and `TauCeti.Manifold.eq_mgradient_iff`, which identifies the
   gradient from it.
+* `TauCeti.Manifold.coe_mvfderiv_eq_innerₗ_mgradient`: the same property for the bundled linear
+  form, `df_x = ⟪grad f x, ·⟫`.
 * `IsMIntegralCurve.comp_neg_neg_mgradient`: reversing time turns a negative gradient
   trajectory of `f` into one of `-f`.
 * `TauCeti.Manifold.mgradient_eq_zero_iff`: the gradient vanishes exactly where the
@@ -104,6 +106,14 @@ theorem inner_mgradient (v : TangentSpace I x) :
 theorem inner_mgradient_right (v : TangentSpace I x) :
     inner ℝ v (mgradient I f x) = mvfderiv I f x v := by
   rw [real_inner_comm, inner_mgradient]
+
+/-- The differential of `f` at `x`, as a linear form, is the metric lowering `⟪grad f x, ·⟫` of
+the gradient. -/
+theorem coe_mvfderiv_eq_innerₗ_mgradient :
+    ((mvfderiv I f x : TangentSpace I x →L[ℝ] ℝ) : TangentSpace I x →ₗ[ℝ] ℝ) =
+      innerₗ (TangentSpace I x) (mgradient I f x) :=
+  LinearMap.ext fun v ↦ by
+    rw [ContinuousLinearMap.coe_coe, innerₗ_apply_apply, inner_mgradient]
 
 /-- A tangent vector is the gradient exactly when its inner product with every vector `v` is
 `df_x v`. -/

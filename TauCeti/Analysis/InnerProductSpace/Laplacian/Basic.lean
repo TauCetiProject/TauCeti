@@ -193,7 +193,7 @@ theorem _root_.ContinuousLinearMap.norm_traceL_apply_le (H : E →L[ℝ] E →L[
 /-- The trace of the real inner product is the dimension of the space. -/
 @[simp] theorem traceL_innerSL :
     traceL (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) = (Module.finrank ℝ E : ℝ) := by
-  rw [ContinuousLinearMap.traceL_apply_eq_metricTrace, toLinearMap₁₂_innerSL,
+  rw [ContinuousLinearMap.traceL_apply_eq_metricTrace, toLinearMap₁₂_innerSL_real,
     LinearMap.BilinMap.metricTrace_inner]
 
 /-- The trace of the rank-one bilinear map `(v, w) ↦ f v • A w` is `A` evaluated at the Riesz
@@ -202,7 +202,7 @@ representative of `f`. -/
     traceL (f.smulRight A) = A ((InnerProductSpace.toDual ℝ E).symm f) := by
   -- The functional `f` is the inner product with its Riesz representative.
   have hf : innerₗ E ((InnerProductSpace.toDual ℝ E).symm f) = (f : E →ₗ[ℝ] ℝ) :=
-    (LinearMap.congr_fun toLinearMap₁₂_innerSL _).symm.trans
+    (LinearMap.congr_fun toLinearMap₁₂_innerSL_real _).symm.trans
       (congrArg ContinuousLinearMap.toLinearMap (InnerProductSpace.innerSL_toDual_symm f))
   rw [ContinuousLinearMap.traceL_apply_eq_metricTrace, ContinuousLinearMap.toLinearMap₁₂_smulRight,
     ← hf, LinearMap.BilinMap.metricTrace_innerₗ_smulRight, ContinuousLinearMap.coe_coe]
