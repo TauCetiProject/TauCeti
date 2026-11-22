@@ -10,6 +10,7 @@ import Mathlib.Analysis.Complex.ExponentialBounds
 import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.Analysis.SpecialFunctions.Log.Base
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.NumberTheory.Chebyshev.Basic
 import TauCeti.NumberTheory.PrimeCounting
 
@@ -24,11 +25,11 @@ terms with `k > log x / log 2` vanishing. Splitting off `k = 1` and `k = 2`,
 and this file turns that decomposition into the explicit two-sided bounds for `ψ − θ` used to pass
 between bounds for `ψ` and for `θ`:
 
-* from any bound `θ(y) ≤ c y` on `y > 0` (or `y ≥ 2`),
+* from any bound `θ(y) ≤ c y` on `y ≥ 2`,
   `ψ(x) − θ(x) ≤ c (√x + (log x / log 2 − 2)⁺ x^{1/3})`; at `c = log 4`
   (`Chebyshev.theta_le_log4_mul_x`) this is unconditional;
-* from relative bounds `(1 − ε) y ≤ θ(y) ≤ (1 + ε) y` for `y ≥ y₀`, the sharper
-  `(1 − ε) √x + θ(x^{1/3}) ≤ ψ(x) − θ(x) ≤ (1 + ε) √x + c (log x / log 2 − 2) x^{1/3}`
+* from relative bounds `a y ≤ θ(y)` and `θ(y) ≤ c' y` for `y ≥ y₀`, the sharper
+  `a √x + θ(x^{1/3}) ≤ ψ(x) − θ(x) ≤ c' √x + c (log x / log 2 − 2) x^{1/3}`
   for `x ≥ y₀²` (and `x ≥ 4` on the right);
 * controlling the cube-root tail by the dimensionless coefficient
   `TauCeti.psiSubThetaTailCoeff x = ∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, x ^ (1 / k - 1 / 3)`, which
@@ -59,9 +60,6 @@ most `π(x) + (log x / log 2 − 1) √x ≤ 6 x / log x` for `x ≥ 2`, giving 
   unconditional lower bounds on `ψ(x) − θ(x)`.
 * `Chebyshev.sum_rpow_one_div_le`:
   `∑_{3 ≤ k ≤ log x / log 2} x^{1/k} ≤ (log x / log 2 − 2)⁺ x^{1/3}`.
-* `Chebyshev.theta_le_mul_of_nonneg`, `Chebyshev.psi_le_mul_of_nonneg`,
-  `Chebyshev.nonneg_of_forall_theta_le`, `Chebyshev.nonneg_of_forall_psi_le`: a linear bound for
-  `θ` or `ψ` on `y > 0` extends to `y = 0` and has a nonnegative constant.
 * `TauCeti.sum_theta_rpow_le`: bounds the `k ≥ 3` sum by `c * psiSubThetaTailCoeff x * x ^ (1 / 3)`.
 * `TauCeti.psiSubThetaTailCoeff_eq_zero_iff`,
   `TauCeti.psiSubThetaTailCoeff_eq_sum_of_mem_Ico`,
@@ -72,22 +70,17 @@ most `π(x) + (log x / log 2 − 1) √x ≤ 6 x / log x` for `x ≥ 2`, giving 
   `TauCeti.psiSubThetaTailBound_le_iff_forall`,
   `TauCeti.antitoneOn_psiSubThetaTailBound`: vanishing, dyadic monotonicity, sharpness, and
   uniform least-upper-bound envelope for `psiSubThetaTailCoeff`.
-* `Chebyshev.psi_sub_theta_le_of_forall_theta_le`, `Chebyshev.psi_sub_theta_le_log_four_mul`,
+* `Chebyshev.psi_sub_theta_le_log_four_mul`,
   `TauCeti.psi_sub_theta_le_of_theta_le`, `TauCeti.psi_sub_theta_le_add_max_mul_cbrt`,
   `TauCeti.psi_sub_theta_le_add_mul_cbrt`, `TauCeti.mul_sqrt_le_psi_sub_theta`,
   `TauCeti.psi_sub_theta_le_mul_rpow_of_theta_le`: unconditional and general-`θ` bounds on `ψ − θ`.
-* `Chebyshev.psi_sub_theta_le_one_add_mul_sqrt_add`,
-  `Chebyshev.one_sub_mul_sqrt_add_theta_rpow_le_psi_sub_theta`: the transfer of a relative bound
-  for `θ` to `ψ − θ`.
-* `Chebyshev.abs_theta_sub_le_abs_psi_sub_add`, `Chebyshev.abs_psi_sub_le_abs_theta_sub_add`,
-  `TauCeti.abs_theta_sub_self_le_of_theta_le`, `TauCeti.abs_psi_sub_self_le_of_theta_le`,
+* `TauCeti.abs_theta_sub_self_le_of_theta_le`, `TauCeti.abs_psi_sub_self_le_of_theta_le`,
   `TauCeti.abs_theta_sub_self_le_mul_of_theta_le_of_abs_psi_sub_self_le`,
   `TauCeti.abs_theta_sub_self_le_mul_of_abs_psi_sub_self_le`,
   `TauCeti.abs_psi_sub_self_le_mul_of_theta_le_of_abs_theta_sub_self_le`,
   `TauCeti.abs_psi_sub_self_le_mul_of_abs_theta_sub_self_le`: additive and relative-error
   conversions between bounds for `|ψ(x) − x|` and `|θ(x) − x|`.
-* `Chebyshev.theta_le_one_add_mul_of_psi_le`, `Chebyshev.theta_ge_psi_sub_mul`,
-  `Chebyshev.theta_ge_of_psi_ge_of_exp_le`,
+* `Chebyshev.theta_ge_psi_sub_mul`,
   `TauCeti.psi_sub_theta_sub_theta_sqrt_le`, `TauCeti.psi_sub_theta_le_add_psiSubThetaTailBound`,
   `TauCeti.mul_sqrt_add_theta_cbrt_le_psi_sub_theta`, `TauCeti.theta_le_of_theta_le_self_of_psi_le`,
   `TauCeti.psi_sub_theta_le_of_psi_le_exp`, `TauCeti.psi_sub_theta_le_mul_rpow_sum`,
@@ -177,157 +170,39 @@ theorem sum_rpow_one_div_le {x : ℝ} (hx : 0 ≤ x) :
     push_cast
     ring
 
-/-- A bound `θ(y) ≤ c y` for `y > 0` extends to `y = 0`. -/
-theorem theta_le_mul_of_nonneg {c y : ℝ} (hc : ∀ y, 0 < y → θ y ≤ c * y)
-    (hy : 0 ≤ y) : θ y ≤ c * y := by
-  rcases hy.eq_or_lt with rfl | hy
-  · simp [theta_zero]
-  · exact hc y hy
-
-/-- A bound `ψ(y) ≤ c y` for `y > 0` extends to `y = 0`. -/
-theorem psi_le_mul_of_nonneg {c y : ℝ} (hc : ∀ y, 0 < y → ψ y ≤ c * y)
-    (hy : 0 ≤ y) : ψ y ≤ c * y := by
-  rcases hy.eq_or_lt with rfl | hy
-  · simp [psi_zero]
-  · exact hc y hy
-
-/-- A bound `θ(y) ≤ c y` for `y > 0` forces `c ≥ 0`, since `θ(2) = log 2 > 0`. -/
-theorem nonneg_of_forall_theta_le {c : ℝ} (hc : ∀ y, 0 < y → θ y ≤ c * y) : 0 ≤ c := by
-  have := hc 2 two_pos
-  have := theta_pos (le_refl (2 : ℝ))
-  linarith
-
-/-- A bound `ψ(y) ≤ c y` for `y > 0` forces `c ≥ 0`, since `θ ≤ ψ`. -/
-theorem nonneg_of_forall_psi_le {c : ℝ} (hc : ∀ y, 0 < y → ψ y ≤ c * y) : 0 ≤ c :=
-  nonneg_of_forall_theta_le fun y hy ↦ (theta_le_psi y).trans (hc y hy)
-
-/-- The terms with `k ≥ 3` of the decomposition: if `θ(y) ≤ c y` for every `y > 0`, then
+/-- The terms with `k ≥ 3` of the decomposition: if `θ(y) ≤ c y` for every `y ≥ 2`, then
 `∑_{3 ≤ k ≤ N} θ(x^{1/k}) ≤ c ∑_{3 ≤ k ≤ N} x^{1/k}` for `x ≥ 0`. -/
-theorem sum_theta_rpow_le_mul_sum_rpow {c x : ℝ} (hc : ∀ y, 0 < y → θ y ≤ c * y) (hx : 0 ≤ x)
+theorem sum_theta_rpow_le_mul_sum_rpow {c x : ℝ} (hc : ∀ y, 2 ≤ y → θ y ≤ c * y) (hx : 0 ≤ x)
     (N : ℕ) :
     ∑ k ∈ Icc 3 N, θ (x ^ ((1 : ℝ) / k)) ≤ c * ∑ k ∈ Icc 3 N, x ^ ((1 : ℝ) / k) := by
   rw [mul_sum]
-  exact sum_le_sum fun k _ ↦ theta_le_mul_of_nonneg hc (rpow_nonneg hx _)
+  exact sum_le_sum fun k _ ↦ TauCeti.theta_le_mul_of_two_le (rpow_nonneg hx _) hc
 
 /-! ### Upper bounds for `ψ − θ` -/
-
-/-- If `θ(y) ≤ c y` for every `y > 0`, then for `x ≥ 0`,
-`ψ(x) − θ(x) ≤ c (√x + (log x / log 2 − 2)⁺ x^{1/3})`. -/
-theorem psi_sub_theta_le_of_forall_theta_le {c x : ℝ} (hc : ∀ y, 0 < y → θ y ≤ c * y)
-    (hx : 0 ≤ x) :
-    ψ x - θ x ≤ c * (√x + max (log x / log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) := by
-  have hc0 := nonneg_of_forall_theta_le hc
-  have hsq := theta_le_mul_of_nonneg hc (sqrt_nonneg x)
-  have hsum := (sum_theta_rpow_le_mul_sum_rpow hc hx ⌊log x / log 2⌋₊).trans
-    (mul_le_mul_of_nonneg_left (sum_rpow_one_div_le hx) hc0)
-  rw [psi_eq_theta_add_theta_sqrt_add_sum hx]
-  linarith
 
 /-- The unconditional bound
 `0 ≤ ψ(x) − θ(x) ≤ (log 4) (√x + (log x / log 2 − 2)⁺ x^{1/3})` for `x ≥ 0`; the lower bound is
 `Chebyshev.theta_le_psi`. -/
 theorem psi_sub_theta_le_log_four_mul {x : ℝ} (hx : 0 ≤ x) :
-    ψ x - θ x ≤ log 4 * (√x + max (log x / log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) :=
-  psi_sub_theta_le_of_forall_theta_le (fun _ hy ↦ theta_le_log4_mul_x hy.le) hx
-
-/-! ### Transfer of a bound for `θ` to `ψ − θ` -/
-
-/-- Upper transfer: if `θ(y) ≤ c y` for every `y > 0` and `θ(y) ≤ (1 + ε) y` for every `y ≥ y₀`,
-then `ψ(x) − θ(x) ≤ (1 + ε) √x + c (log x / log 2 − 2) x^{1/3}` for every `x ≥ max(4, y₀²)`. -/
-theorem psi_sub_theta_le_one_add_mul_sqrt_add {c ε y₀ x : ℝ}
-    (hc : ∀ y, 0 < y → θ y ≤ c * y) (hε : ∀ y, y₀ ≤ y → θ y ≤ (1 + ε) * y)
-    (hx₀ : y₀ ^ 2 ≤ x) (hx : 4 ≤ x) :
-    ψ x - θ x ≤ (1 + ε) * √x + c * (log x / log 2 - 2) * x ^ ((1 : ℝ) / 3) := by
-  have hc0 := nonneg_of_forall_theta_le hc
-  have hK : 0 ≤ log x / log 2 - 2 := by
-    rw [sub_nonneg, le_div_iff₀ (log_pos one_lt_two), ← log_rpow two_pos]
-    exact log_le_log (by positivity) (by rw [rpow_two]; linarith)
-  have hsq : θ √x ≤ (1 + ε) * √x := hε _ ((le_abs_self y₀).trans (abs_le_sqrt hx₀))
-  have hsum := (sum_theta_rpow_le_mul_sum_rpow hc (by linarith) ⌊log x / log 2⌋₊).trans
-    (mul_le_mul_of_nonneg_left (sum_rpow_one_div_le (by linarith)) hc0)
-  rw [max_eq_left hK] at hsum
-  rw [psi_eq_theta_add_theta_sqrt_add_sum (by linarith)]
+    ψ x - θ x ≤ log 4 * (√x + max (log x / log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) := by
+  have hsq := theta_le_log4_mul_x (sqrt_nonneg x)
+  have hsum := (sum_theta_rpow_le_mul_sum_rpow (fun _ hy ↦ theta_le_log4_mul_x (by linarith))
+    hx ⌊log x / log 2⌋₊).trans (mul_le_mul_of_nonneg_left (sum_rpow_one_div_le hx)
+    (log_nonneg (by norm_num)))
+  rw [psi_eq_theta_add_theta_sqrt_add_sum hx]
   linarith
 
-/-- Lower transfer: if `(1 − ε) y ≤ θ(y)` for every `y ≥ y₀`, then
-`(1 − ε) √x + θ(x^{1/3}) ≤ ψ(x) − θ(x)` for every `x ≥ y₀²`. -/
-theorem one_sub_mul_sqrt_add_theta_rpow_le_psi_sub_theta {ε y₀ x : ℝ}
-    (hε : ∀ y, y₀ ≤ y → (1 - ε) * y ≤ θ y) (hx₀ : y₀ ^ 2 ≤ x) :
-    (1 - ε) * √x + θ (x ^ ((1 : ℝ) / 3)) ≤ ψ x - θ x := by
-  have := hε _ ((le_abs_self y₀).trans (abs_le_sqrt hx₀))
-  linarith [theta_sqrt_add_theta_rpow_le_psi_sub_theta ((sq_nonneg y₀).trans hx₀)]
-
-/-! ### Conversions between bounds for `ψ` and for `θ` -/
-
-/-- A bound for `|ψ(x) − x|` gives one for `|θ(x) − x|`: if `θ(y) ≤ c y` for every `y > 0`, then
-`|θ(x) − x| ≤ |ψ(x) − x| + c (√x + (log x / log 2 − 2)⁺ x^{1/3})` for `x ≥ 0`. -/
-theorem abs_theta_sub_le_abs_psi_sub_add {c x : ℝ} (hc : ∀ y, 0 < y → θ y ≤ c * y)
-    (hx : 0 ≤ x) :
-    |θ x - x| ≤ |ψ x - x| + c * (√x + max (log x / log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) := by
-  have h1 := psi_sub_theta_le_of_forall_theta_le hc hx
-  have h2 := theta_le_psi x
-  rw [abs_le]
-  constructor <;> linarith [neg_abs_le (ψ x - x), le_abs_self (ψ x - x)]
-
-/-- A bound for `|θ(x) − x|` gives one for `|ψ(x) − x|`: if `θ(y) ≤ c y` for every `y > 0`, then
-`|ψ(x) − x| ≤ |θ(x) − x| + c (√x + (log x / log 2 − 2)⁺ x^{1/3})` for `x ≥ 0`. -/
-theorem abs_psi_sub_le_abs_theta_sub_add {c x : ℝ} (hc : ∀ y, 0 < y → θ y ≤ c * y)
-    (hx : 0 ≤ x) :
-    |ψ x - x| ≤ |θ x - x| + c * (√x + max (log x / log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) := by
-  have h1 := psi_sub_theta_le_of_forall_theta_le hc hx
-  have h2 := theta_le_psi x
-  rw [abs_le]
-  constructor <;> linarith [neg_abs_le (θ x - x), le_abs_self (θ x - x)]
-
-/-- A global linear bound for `θ` from a bound for `ψ` beyond `x₁` and `θ(y) ≤ y` up to `x₁`:
-if `0 ≤ ε`, `θ(y) ≤ y` for `0 < y ≤ x₁` and `ψ(y) ≤ (1 + ε) y` for `y ≥ x₁`, then
-`θ(x) ≤ (1 + ε) x` for every `x > 0`. -/
-theorem theta_le_one_add_mul_of_psi_le {ε x₁ x : ℝ} (hε : 0 ≤ ε)
-    (hθ : ∀ y, 0 < y → y ≤ x₁ → θ y ≤ y) (hψ : ∀ y, x₁ ≤ y → ψ y ≤ (1 + ε) * y) (hx : 0 < x) :
-    θ x ≤ (1 + ε) * x := by
-  rcases le_total x x₁ with h | h
-  · nlinarith [hθ x hx h]
-  · exact (theta_le_psi x).trans (hψ x h)
-
 /-- A linear upper bound for `ψ` gives a lower bound for `θ` through Costa Pereira's comparison
-`ψ(x) − θ(x) ≤ ψ(x^{1/2}) + ψ(x^{1/3}) + ψ(x^{1/5})`: if `ψ(y) ≤ c₀ y` for every `y > 0`, then
+`ψ(x) − θ(x) ≤ ψ(x^{1/2}) + ψ(x^{1/3}) + ψ(x^{1/5})`: if `ψ(y) ≤ c₀ y` for every `y ≥ 2`, then
 `ψ(x) − c₀ (√x + x^{1/3} + x^{1/5}) ≤ θ(x)` for `x ≥ 0`. -/
-theorem theta_ge_psi_sub_mul {c₀ x : ℝ} (hc₀ : ∀ y, 0 < y → ψ y ≤ c₀ * y) (hx : 0 ≤ x) :
+theorem theta_ge_psi_sub_mul {c₀ x : ℝ} (hc₀ : ∀ y, 2 ≤ y → ψ y ≤ c₀ * y) (hx : 0 ≤ x) :
     ψ x - c₀ * (√x + x ^ ((1 : ℝ) / 3) + x ^ ((1 : ℝ) / 5)) ≤ θ x := by
   have := psi_sub_theta_le_psi_add_psi_add_psi x
   rw [← one_div, ← one_div, ← one_div, ← sqrt_eq_rpow] at this
-  have h2 := psi_le_mul_of_nonneg hc₀ (sqrt_nonneg x)
-  have h3 := psi_le_mul_of_nonneg hc₀ (rpow_nonneg hx ((1 : ℝ) / 3))
-  have h5 := psi_le_mul_of_nonneg hc₀ (rpow_nonneg hx ((1 : ℝ) / 5))
+  have h2 := TauCeti.psi_le_mul_of_two_le (sqrt_nonneg x) hc₀
+  have h3 := TauCeti.psi_le_mul_of_two_le (rpow_nonneg hx ((1 : ℝ) / 3)) hc₀
+  have h5 := TauCeti.psi_le_mul_of_two_le (rpow_nonneg hx ((1 : ℝ) / 5)) hc₀
   linarith
-
-/-- **Broadbent–Kadiri–Lumley–Ng–Wilk, Lemma 11.** If `ψ(y) ≤ c₀ y` for every `y > 0` and
-`(1 − ε) x ≤ ψ(x)`, then `(1 − ε − c₀ (e^{−b/2} + e^{−2b/3} + e^{−4b/5})) x ≤ θ(x)` whenever
-`x ≥ e^b`. -/
-theorem theta_ge_of_psi_ge_of_exp_le {c₀ ε b x : ℝ} (hc₀ : ∀ y, 0 < y → ψ y ≤ c₀ * y)
-    (hψ : (1 - ε) * x ≤ ψ x) (hx : exp b ≤ x) :
-    (1 - ε - c₀ * (exp (-b / 2) + exp (-2 * b / 3) + exp (-4 * b / 5))) * x ≤ θ x := by
-  have hx0 : 0 < x := (exp_pos b).trans_le hx
-  have hc0 : 0 ≤ c₀ := nonneg_of_forall_psi_le hc₀
-  -- `x^{1/k} = x^{−(1 − 1/k)} x ≤ e^{−(1 − 1/k) b} x`, as `log x ≥ b`.
-  have hb : b ≤ log x := (le_log_iff_exp_le hx0).mpr hx
-  have key (k : ℝ) (hk : 1 ≤ k) : x ^ (1 / k) ≤ exp (-((k - 1) / k) * b) * x := by
-    have : 0 ≤ (k - 1) / k := div_nonneg (by linarith) (by linarith)
-    rw [show 1 / k = -((k - 1) / k) + 1 by field_simp; ring, rpow_add_one hx0.ne',
-      rpow_def_of_pos hx0]
-    exact mul_le_mul_of_nonneg_right (exp_le_exp.mpr (by nlinarith)) hx0.le
-  have h2 : √x ≤ exp (-b / 2) * x := by
-    rw [sqrt_eq_rpow]
-    convert key 2 one_le_two using 3
-    ring
-  have h3 : x ^ ((1 : ℝ) / 3) ≤ exp (-2 * b / 3) * x := by
-    convert key 3 (by norm_num) using 3
-    ring
-  have h5 : x ^ ((1 : ℝ) / 5) ≤ exp (-4 * b / 5) * x := by
-    convert key 5 (by norm_num) using 3
-    ring
-  have := theta_ge_psi_sub_mul hc₀ hx0.le
-  nlinarith [mul_le_mul_of_nonneg_left (add_le_add (add_le_add h2 h3) h5) hc0]
 
 /-! ### The number of prime powers -/
 
@@ -501,6 +376,7 @@ theorem psiSubThetaTailCoeff_one : psiSubThetaTailCoeff 1 = 0 :=
   psiSubThetaTailCoeff_eq_zero_of_lt_eight zero_le_one (by norm_num)
 
 /-- `psiSubThetaTailCoeff x ≥ 0` for every `x ≥ 0`. -/
+@[simp]
 theorem psiSubThetaTailCoeff_nonneg {x : ℝ} (hx : 0 ≤ x) : 0 ≤ psiSubThetaTailCoeff x :=
   sum_nonneg fun _ _ ↦ Real.rpow_nonneg hx _
 
@@ -715,21 +591,6 @@ theorem psiSubThetaTailCoeff_two_pow_anti {m n : ℕ} (hm : 9 ≤ m) (hmn : m �
   | refl => exact le_rfl
   | @step k hmk ih => exact (psiSubThetaTailCoeff_two_pow_succ_lt (hm.trans hmk)).le.trans ih
 
-private lemma two_rpow_neg_div_lt {p q : ℕ} {u : ℝ} (hq : q ≠ 0) (hu : 0 < u)
-    (h : 1 < u ^ q * (2 : ℝ) ^ p) : (2 : ℝ) ^ (-(p : ℝ) / q) < u := by
-  rw [← pow_lt_pow_iff_left₀ (by positivity) hu.le hq, ← Real.rpow_natCast,
-    ← Real.rpow_mul zero_le_two, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hq),
-    Real.rpow_neg zero_le_two, Real.rpow_natCast, ← one_div, div_lt_iff₀ (by positivity)]
-  exact h
-
-private lemma lt_two_rpow_neg_div {p q : ℕ} {l : ℝ} (hq : q ≠ 0) (hl : 0 ≤ l)
-    (h : l ^ q * (2 : ℝ) ^ p < 1) : l < (2 : ℝ) ^ (-(p : ℝ) / q) := by
-  rw [← pow_lt_pow_iff_left₀ hl (by positivity) hq,
-    ← Real.rpow_natCast ((2 : ℝ) ^ (-(p : ℝ) / q)),
-    ← Real.rpow_mul zero_le_two, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hq),
-    Real.rpow_neg zero_le_two, Real.rpow_natCast, ← one_div, lt_div_iff₀ (by positivity)]
-  exact h
-
 /-- Sharpness of the threshold `n = 9` in `psiSubThetaTailCoeff_two_pow_succ_lt`:
 at `n = 8`, `psiSubThetaTailCoeff (2 ^ 8) < psiSubThetaTailCoeff (2 ^ 9)`. -/
 theorem psiSubThetaTailCoeff_two_pow_eight_lt_two_pow_nine :
@@ -745,20 +606,21 @@ theorem psiSubThetaTailCoeff_two_pow_eight_lt_two_pow_nine :
       sum_singleton, Nat.cast_ofNat]
     have h4 : (2 : ℝ) ^ ((8 : ℝ) / 4 - 8 / 3) < 63 / 100 := by
       rw [show (8 : ℝ) / 4 - 8 / 3 = -((2 : ℕ) : ℝ) / 3 by norm_num]
-      exact two_rpow_neg_div_lt (by norm_num) (by norm_num) (by norm_num)
+      exact (Real.rpow_neg_div_lt_iff zero_lt_two (by norm_num) (by norm_num)).2 (by norm_num)
     have h5 : (2 : ℝ) ^ ((8 : ℝ) / 5 - 8 / 3) < 48 / 100 := by
       rw [show (8 : ℝ) / 5 - 8 / 3 = -((16 : ℕ) : ℝ) / 15 by norm_num]
-      exact two_rpow_neg_div_lt (by norm_num) (by norm_num) (by norm_num)
+      exact (Real.rpow_neg_div_lt_iff zero_lt_two (by norm_num) (by norm_num)).2 (by norm_num)
     have h6 : (2 : ℝ) ^ ((8 : ℝ) / 6 - 8 / 3) < 40 / 100 := by
       rw [show (8 : ℝ) / 6 - 8 / 3 = -((4 : ℕ) : ℝ) / 3 by norm_num]
-      exact two_rpow_neg_div_lt (by norm_num) (by norm_num) (by norm_num)
+      exact (Real.rpow_neg_div_lt_iff zero_lt_two (by norm_num) (by norm_num)).2 (by norm_num)
     have h7 : (2 : ℝ) ^ ((8 : ℝ) / 7 - 8 / 3) < 36 / 100 := by
       have hle : (2 : ℝ) ^ ((8 : ℝ) / 7 - 8 / 3) ≤ (2 : ℝ) ^ (-((3 : ℕ) : ℝ) / 2) :=
         Real.rpow_le_rpow_of_exponent_le one_le_two (by norm_num)
-      exact hle.trans_lt (two_rpow_neg_div_lt (by norm_num) (by norm_num) (by norm_num))
+      exact hle.trans_lt
+        ((Real.rpow_neg_div_lt_iff zero_lt_two (by norm_num) (by norm_num)).2 (by norm_num))
     have h8' : (2 : ℝ) ^ ((8 : ℝ) / 8 - 8 / 3) < 32 / 100 := by
       rw [show (8 : ℝ) / 8 - 8 / 3 = -((5 : ℕ) : ℝ) / 3 by norm_num]
-      exact two_rpow_neg_div_lt (by norm_num) (by norm_num) (by norm_num)
+      exact (Real.rpow_neg_div_lt_iff zero_lt_two (by norm_num) (by norm_num)).2 (by norm_num)
     linarith
   have h9 : (16 : ℝ) / 5 < psiSubThetaTailCoeff ((2 : ℝ) ^ 9) := by
     rw [psiSubThetaTailCoeff_two_pow (by norm_num), hIcc9]
@@ -770,19 +632,19 @@ theorem psiSubThetaTailCoeff_two_pow_eight_lt_two_pow_nine :
       sum_singleton, Nat.cast_ofNat]
     have h4 : (19 : ℝ) / 32 < (2 : ℝ) ^ ((9 : ℝ) / 4 - 9 / 3) := by
       rw [show (9 : ℝ) / 4 - 9 / 3 = -((3 : ℕ) : ℝ) / 4 by norm_num]
-      exact lt_two_rpow_neg_div (by norm_num) (by norm_num) (by norm_num)
+      exact (Real.lt_rpow_neg_div_iff zero_lt_two (by norm_num) (by norm_num)).2 (by norm_num)
     have h5 : (43 : ℝ) / 100 < (2 : ℝ) ^ ((9 : ℝ) / 5 - 9 / 3) := by
       rw [show (9 : ℝ) / 5 - 9 / 3 = -((6 : ℕ) : ℝ) / 5 by norm_num]
-      exact lt_two_rpow_neg_div (by norm_num) (by norm_num) (by norm_num)
+      exact (Real.lt_rpow_neg_div_iff zero_lt_two (by norm_num) (by norm_num)).2 (by norm_num)
     have h6 : (353 : ℝ) / 1000 < (2 : ℝ) ^ ((9 : ℝ) / 6 - 9 / 3) := by
       rw [show (9 : ℝ) / 6 - 9 / 3 = -((3 : ℕ) : ℝ) / 2 by norm_num]
-      exact lt_two_rpow_neg_div (by norm_num) (by norm_num) (by norm_num)
+      exact (Real.lt_rpow_neg_div_iff zero_lt_two (by norm_num) (by norm_num)).2 (by norm_num)
     have h7 : (304 : ℝ) / 1000 < (2 : ℝ) ^ ((9 : ℝ) / 7 - 9 / 3) := by
       rw [show (9 : ℝ) / 7 - 9 / 3 = -((12 : ℕ) : ℝ) / 7 by norm_num]
-      exact lt_two_rpow_neg_div (by norm_num) (by norm_num) (by norm_num)
+      exact (Real.lt_rpow_neg_div_iff zero_lt_two (by norm_num) (by norm_num)).2 (by norm_num)
     have h8' : (27 : ℝ) / 100 < (2 : ℝ) ^ ((9 : ℝ) / 8 - 9 / 3) := by
       rw [show (9 : ℝ) / 8 - 9 / 3 = -((15 : ℕ) : ℝ) / 8 by norm_num]
-      exact lt_two_rpow_neg_div (by norm_num) (by norm_num) (by norm_num)
+      exact (Real.lt_rpow_neg_div_iff zero_lt_two (by norm_num) (by norm_num)).2 (by norm_num)
     rw [show (2 : ℝ) ^ ((9 : ℝ) / 9 - 9 / 3) = 1 / 4 by
       rw [show (9 : ℝ) / 9 - 9 / 3 = -((2 : ℕ) : ℝ) by norm_num, Real.rpow_neg zero_le_two,
         Real.rpow_natCast]
@@ -905,8 +767,13 @@ theorem psi_sub_theta_le_add_max_mul_cbrt {c c' y₀ x : ℝ} (hyx : y₀ ^ 2 �
 `ψ x - θ x ≤ c * (√x + max (log x / log 2 - 2) 0 * x ^ (1 / 3))`. -/
 theorem psi_sub_theta_le_of_theta_le {c x : ℝ} (hx : 0 ≤ x)
     (hθ : ∀ y, 2 ≤ y → θ y ≤ c * y) :
-    ψ x - θ x ≤ c * (√x + max (Real.log x / Real.log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) :=
-  Chebyshev.psi_sub_theta_le_of_forall_theta_le (fun _ hy ↦ theta_le_mul_of_two_le hy.le hθ) hx
+    ψ x - θ x ≤ c * (√x + max (Real.log x / Real.log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) := by
+  have hc := pos_of_theta_le hθ
+  have hsq := theta_le_mul_of_two_le (Real.sqrt_nonneg x) hθ
+  have hsum := (Chebyshev.sum_theta_rpow_le_mul_sum_rpow hθ hx ⌊Real.log x / Real.log 2⌋₊).trans
+    (mul_le_mul_of_nonneg_left (Chebyshev.sum_rpow_one_div_le hx) hc.le)
+  rw [Chebyshev.psi_eq_theta_add_theta_sqrt_add_sum hx]
+  linarith
 
 /-- Upper transfer from `θ`-bounds for `x ≥ max 4 (y₀ ^ 2)`:
 `ψ x - θ x ≤ c' * √x + c * (log x / log 2 - 2) * x ^ (1 / 3)`. -/
@@ -948,16 +815,22 @@ on `[2, ∞)`. -/
 theorem abs_theta_sub_self_le_of_theta_le {c x : ℝ} (hx : 0 ≤ x)
     (hθ : ∀ y, 2 ≤ y → θ y ≤ c * y) :
     |θ x - x| ≤
-      |ψ x - x| + c * (√x + max (Real.log x / Real.log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) :=
-  Chebyshev.abs_theta_sub_le_abs_psi_sub_add (fun _ hy ↦ theta_le_mul_of_two_le hy.le hθ) hx
+      |ψ x - x| + c * (√x + max (Real.log x / Real.log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) := by
+  have h1 := psi_sub_theta_le_of_theta_le hx hθ
+  have h2 := Chebyshev.theta_le_psi x
+  rw [abs_le]
+  constructor <;> linarith [neg_abs_le (ψ x - x), le_abs_self (ψ x - x)]
 
 /-- Additive transfer from `|θ x - x|` to `|ψ x - x|` using a linear bound `θ y ≤ c * y`
 on `[2, ∞)`. -/
 theorem abs_psi_sub_self_le_of_theta_le {c x : ℝ} (hx : 0 ≤ x)
     (hθ : ∀ y, 2 ≤ y → θ y ≤ c * y) :
     |ψ x - x| ≤
-      |θ x - x| + c * (√x + max (Real.log x / Real.log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) :=
-  Chebyshev.abs_psi_sub_le_abs_theta_sub_add (fun _ hy ↦ theta_le_mul_of_two_le hy.le hθ) hx
+      |θ x - x| + c * (√x + max (Real.log x / Real.log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) := by
+  have h1 := psi_sub_theta_le_of_theta_le hx hθ
+  have h2 := Chebyshev.theta_le_psi x
+  rw [abs_le]
+  constructor <;> linarith [neg_abs_le (θ x - x), le_abs_self (θ x - x)]
 
 /-- Unconditional additive transfer from `|ψ x - x|` to `|θ x - x|`. -/
 theorem abs_theta_sub_self_le_abs_psi_sub_self_add {x : ℝ} (hx : 0 ≤ x) :
@@ -1104,20 +977,20 @@ theorem psi_sub_theta_le_mul_rpow_sum {c₀ X x : ℝ} (hX : 0 < X) (hXx : X ≤
     (hψ : ∀ y, 2 ≤ y → ψ y ≤ c₀ * y) :
     ψ x - θ x ≤
       c₀ * (X ^ (-(1 : ℝ) / 2) + X ^ (-(2 : ℝ) / 3) + X ^ (-(4 : ℝ) / 5)) * x := by
-  have hx : 0 < x := lt_of_lt_of_le hX hXx
+  have hx : 0 ≤ x := hX.le.trans hXx
   have hc₀ : 0 < c₀ := pos_of_psi_le hψ
-  have hrpow (r s : ℝ) (hrs : r = s + 1) (hs : s ≤ 0) : x ^ r ≤ X ^ s * x := by
-    calc x ^ r = x ^ s * x := by rw [hrs, Real.rpow_add_one hx.ne']
-      _ ≤ X ^ s * x := mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_nonpos hX hXx hs) hx.le
-  have h2 : ψ (x ^ (2 : ℝ)⁻¹) ≤ c₀ * (X ^ (-(1 : ℝ) / 2) * x) :=
-    (psi_le_mul_of_two_le (by positivity) hψ).trans
-      (mul_le_mul_of_nonneg_left (hrpow _ _ (by norm_num) (by norm_num)) hc₀.le)
-  have h3 : ψ (x ^ (3 : ℝ)⁻¹) ≤ c₀ * (X ^ (-(2 : ℝ) / 3) * x) :=
-    (psi_le_mul_of_two_le (by positivity) hψ).trans
-      (mul_le_mul_of_nonneg_left (hrpow _ _ (by norm_num) (by norm_num)) hc₀.le)
-  have h5 : ψ (x ^ (5 : ℝ)⁻¹) ≤ c₀ * (X ^ (-(4 : ℝ) / 5) * x) :=
-    (psi_le_mul_of_two_le (by positivity) hψ).trans
-      (mul_le_mul_of_nonneg_left (hrpow _ _ (by norm_num) (by norm_num)) hc₀.le)
+  have h2 : ψ (x ^ (2 : ℝ)⁻¹) ≤ c₀ * (X ^ (-(1 : ℝ) / 2) * x) := by
+    refine (psi_le_mul_of_two_le (by positivity) hψ).trans ?_
+    rw [show (2 : ℝ)⁻¹ = -(1 : ℝ) / 2 + 1 by norm_num]
+    exact mul_le_mul_of_nonneg_left (Real.rpow_add_one_le_rpow_mul hX hXx (by norm_num)) hc₀.le
+  have h3 : ψ (x ^ (3 : ℝ)⁻¹) ≤ c₀ * (X ^ (-(2 : ℝ) / 3) * x) := by
+    refine (psi_le_mul_of_two_le (by positivity) hψ).trans ?_
+    rw [show (3 : ℝ)⁻¹ = -(2 : ℝ) / 3 + 1 by norm_num]
+    exact mul_le_mul_of_nonneg_left (Real.rpow_add_one_le_rpow_mul hX hXx (by norm_num)) hc₀.le
+  have h5 : ψ (x ^ (5 : ℝ)⁻¹) ≤ c₀ * (X ^ (-(4 : ℝ) / 5) * x) := by
+    refine (psi_le_mul_of_two_le (by positivity) hψ).trans ?_
+    rw [show (5 : ℝ)⁻¹ = -(4 : ℝ) / 5 + 1 by norm_num]
+    exact mul_le_mul_of_nonneg_left (Real.rpow_add_one_le_rpow_mul hX hXx (by norm_num)) hc₀.le
   linarith [Chebyshev.psi_sub_theta_le_psi_add_psi_add_psi x]
 
 /-- Exponential-cutoff form of `psi_sub_theta_le_mul_rpow_sum`: for `exp b ≤ x` and

@@ -117,6 +117,9 @@ dyadic intervals.
   `p ∈ Set.Icc p₁ p₂`.
 * `Real.rpow_le_rpow_sub_mul_rpow_of_exponent_le`: `u ^ s ≤ a ^ (s - t) * u ^ t` for `0 < a ≤ u`
   and `s ≤ t`.
+* `Real.rpow_add_one_le_rpow_mul`: `x ^ (s + 1) ≤ X ^ s * x` for `0 < X ≤ x` and `s ≤ 0`.
+* `Real.rpow_neg_div_lt_iff` and `Real.lt_rpow_neg_div_iff`: `b ^ (-p / q) < u ↔ 1 < u ^ q * b ^ p`
+  and `u < b ^ (-p / q) ↔ u ^ q * b ^ p < 1` for `b > 0`, `u ≥ 0`, and `q ≠ 0`.
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
 * `Real.rpow_neg_le_mul_rpow_neg`: `y ^ (-q) ≤ a ^ q x ^ (-q)` for `0 < x ≤ a y`, `a ≥ 0` and
   `q ≥ 0`.
@@ -211,6 +214,26 @@ theorem rpow_le_rpow_sub_mul_rpow_of_exponent_le {a u s t : ℝ} (ha : 0 < a) (h
     _ ≤ a ^ (s - t) * u ^ t :=
       mul_le_mul_of_nonneg_right (rpow_le_rpow_of_nonpos ha hau (sub_nonpos.2 hst))
         (rpow_nonneg (ha.le.trans hau) t)
+
+/-- For `0 < X ≤ x` and `s ≤ 0`, `x ^ (s + 1) ≤ X ^ s * x`. -/
+theorem rpow_add_one_le_rpow_mul {X x s : ℝ} (hX : 0 < X) (hXx : X ≤ x) (hs : s ≤ 0) :
+    x ^ (s + 1) ≤ X ^ s * x := by
+  simpa only [add_sub_cancel_right, rpow_one] using
+    rpow_le_rpow_sub_mul_rpow_of_exponent_le (s := s + 1) (t := 1) hX hXx (by linarith)
+
+/-- For `b > 0`, `u ≥ 0`, and `q ≠ 0`, `b ^ (-p / q) < u` if and only if `1 < u ^ q * b ^ p`. -/
+theorem rpow_neg_div_lt_iff {b u : ℝ} {p q : ℕ} (hb : 0 < b) (hu : 0 ≤ u) (hq : q ≠ 0) :
+    b ^ (-(p : ℝ) / q) < u ↔ 1 < u ^ q * b ^ p := by
+  rw [← pow_lt_pow_iff_left₀ (by positivity) hu hq, ← rpow_natCast (b ^ (-(p : ℝ) / q)),
+    ← rpow_mul hb.le, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hq), rpow_neg hb.le,
+    rpow_natCast, ← one_div, div_lt_iff₀ (pow_pos hb p)]
+
+/-- For `b > 0`, `u ≥ 0`, and `q ≠ 0`, `u < b ^ (-p / q)` if and only if `u ^ q * b ^ p < 1`. -/
+theorem lt_rpow_neg_div_iff {b u : ℝ} {p q : ℕ} (hb : 0 < b) (hu : 0 ≤ u) (hq : q ≠ 0) :
+    u < b ^ (-(p : ℝ) / q) ↔ u ^ q * b ^ p < 1 := by
+  rw [← pow_lt_pow_iff_left₀ hu (by positivity) hq, ← rpow_natCast (b ^ (-(p : ℝ) / q)),
+    ← rpow_mul hb.le, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hq), rpow_neg hb.le,
+    rpow_natCast, ← one_div, lt_div_iff₀ (pow_pos hb p)]
 
 /-- If `2 ≤ y` and `1 ≤ s`, then `y ^ (-s) ≤ 1 / 2`. -/
 theorem rpow_neg_le_half {y s : ℝ} (hy : 2 ≤ y) (hs : 1 ≤ s) : y ^ (-s) ≤ 1 / 2 :=
