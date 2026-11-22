@@ -134,7 +134,7 @@ variable [DecidableEq ι] [GradedAlgebra 𝒜]
 
 /-- The localization map restricted to `𝒜 i`, with values in `awayGrading 𝒜 hf i`. -/
 private noncomputable def algebraMapGrade (i : ι) : 𝒜 i →+ awayGrading 𝒜 hf i where
-  toFun x := ⟨algebraMap A _ x, algebraMap_mem_awayGrading x.2⟩
+  toFun x := ⟨algebraMap A _ x, algebraMap_mem_awayGrading x.property⟩
   map_zero' := Subtype.ext (map_zero _)
   map_add' _ _ := Subtype.ext (map_add _ _ _)
 
@@ -185,7 +185,7 @@ private theorem coe_decomposeAux (x : Localization.Away f) :
 
 private theorem decomposeAux_coe {i : ι} (x : awayGrading 𝒜 hf i) :
     decomposeAux 𝒜 hf x = of (fun d ↦ awayGrading 𝒜 hf d) i x := by
-  obtain ⟨n, a, ha, hx⟩ := x.2
+  obtain ⟨n, a, ha, hx⟩ := x.property
   have hxa : (x : Localization.Away f) * algebraMap A _ (f ^ n) = algebraMap A _ a := by
     rw [hx, Localization.mk_eq_mk'_apply]
     exact IsLocalization.mk'_spec (Localization.Away f) a (Submonoid.pow f n)
@@ -286,7 +286,7 @@ noncomputable def awayGradingZeroEquiv :
     ⟨fun _ _ h ↦ HomogeneousLocalization.val_injective _ congr(Subtype.val $h), fun y ↦ by
       obtain ⟨x, hx⟩ : (y : Localization.Away f) ∈ Set.range HomogeneousLocalization.val := by
         rw [range_val_eq_awayGrading_zero 𝒜 hf]
-        exact y.2
+        exact y.property
       exact ⟨x, Subtype.ext hx⟩⟩
 
 @[simp]

@@ -135,7 +135,7 @@ variable [SlashInvariantFormClass F 𝒢 k]
 /-- Translating a coset by a power of `T` shifts its factor of the norm. -/
 lemma quotientFunc_TSL_zpow_smul (f : F) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) (j : ℤ) (τ : ℍ) :
     quotientFunc f (TSL ^ j • q) τ = quotientFunc f q ((-j : ℝ) +ᵥ τ) := by
-  have hmem : ((TSL ^ (-j) : 𝒮ℒ) : GL (Fin 2) ℝ) ∈ 𝒮ℒ := (TSL ^ (-j) : 𝒮ℒ).2
+  have hmem : ((TSL ^ (-j) : 𝒮ℒ) : GL (Fin 2) ℝ) ∈ 𝒮ℒ := (TSL ^ (-j) : 𝒮ℒ).property
   have hsubtype : (⟨((TSL ^ (-j) : 𝒮ℒ) : GL (Fin 2) ℝ), hmem⟩ : 𝒮ℒ) = TSL ^ (-j) :=
     Subtype.ext rfl
   have hinv : (⟨((TSL ^ (-j) : 𝒮ℒ) : GL (Fin 2) ℝ), hmem⟩ : 𝒮ℒ)⁻¹ = TSL ^ j := by
@@ -189,7 +189,7 @@ private lemma exists_zpow_smul_eq_out (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) 
     ∃ j : ℤ, TSL ^ j • q = (⟦q⟧ : CuspTranslationOrbit 𝒢).out := by
   obtain ⟨h, hh⟩ := (orbitRel_apply (G := Subgroup.zpowers TSL)).mp
     (Quotient.eq.mp (Quotient.out_eq (⟦q⟧ : CuspTranslationOrbit 𝒢)))
-  obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.mp h.2
+  obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.mp h.property
   refine ⟨j, ?_⟩
   rw [hj]
   exact hh
