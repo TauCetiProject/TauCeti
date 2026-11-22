@@ -497,24 +497,22 @@ private theorem integral_triangle_lkjMeasure_three {η : ℝ} (hη : 0 < η) :
         dsimp [r₂]
         split_ifs <;> positivity]
     exact Finset.prod_eq_zero (Finset.mem_univ z21) (by simp)
-  rw [hzero, add_zero, integral_prod_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
-    (lkjPartialCorrelationShape 3 η) (fun _ ↦ (0 : ℝ)) n₁ (lkjPartialCorrelationShape_pos hη)
-    fun ij ↦ by simpa using lkjPartialCorrelationShape_pos hη ij,
+  let _ (ij : strictLowerTriangle 3) :
+      IsProbabilityMeasure (betaMeasure (lkjPartialCorrelationShape 3 η ij)
+        (lkjPartialCorrelationShape 3 η ij)) :=
+    isProbabilityMeasureBeta (lkjPartialCorrelationShape_pos hη ij)
+      (lkjPartialCorrelationShape_pos hη ij)
+  let _ (ij : strictLowerTriangle 3) : IsProbabilityMeasure (μ ij) :=
+    (Measure.isProbabilityMeasure_map_iff (by fun_prop)).2 inferInstance
+  rw [hzero, add_zero]
+  simp_rw [rpow_zero, mul_one]
+  rw [integral_fintype_prod_eq_prod (fun ij (z : ℝ) ↦ z ^ n₁ ij),
     huniv, Finset.prod_insert (by decide), Finset.prod_insert (by decide), Finset.prod_singleton]
-  have hterm (ij : strictLowerTriangle 3) :
-      beta (((2 : ℝ) + 1) / 2) (lkjPartialCorrelationShape 3 η ij) /
-          beta (1 / 2) (lkjPartialCorrelationShape 3 η ij) =
-        1 / (2 * lkjPartialCorrelationShape 3 η ij + 1) := by
-    have ha := lkjPartialCorrelationShape_pos hη ij
-    have hthree : ((2 : ℝ) + 1) / 2 = 1 / 2 + 1 := by norm_num
-    rw [hthree, beta_add_one_left (by norm_num) (by positivity),
-      mul_div_cancel_right₀ _ (beta_pos (by norm_num) ha).ne']
-    field_simp
-    ring
-  simp only [n₁, show z10 ≠ z21 by decide, show z20 ≠ z21 by decide, even_two, Even.zero,
-    ↓reduceIte, add_zero, Nat.cast_ofNat, Nat.cast_zero, zero_add]
-  rw [div_self (beta_pos (by norm_num) (lkjPartialCorrelationShape_pos hη z21)).ne',
-    hterm z10, hterm z20, lkjPartialCorrelationShape_eq, lkjPartialCorrelationShape_eq]
+  simp only [n₁, show z10 ≠ z21 by decide, show z20 ≠ z21 by decide, ↓reduceIte, pow_zero]
+  rw [integral_sq_map_centered_betaMeasure (lkjPartialCorrelationShape_pos hη z10),
+    integral_sq_map_centered_betaMeasure (lkjPartialCorrelationShape_pos hη z20),
+    integral_const, probReal_univ, one_smul, mul_one,
+    lkjPartialCorrelationShape_eq, lkjPartialCorrelationShape_eq]
   norm_num [z10, z20]
   field_simp
   ring
