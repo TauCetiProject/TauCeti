@@ -86,17 +86,10 @@ variable (R ι α)
 
 /-- The finite-order polynomial jet algebra, embedded in the algebra on all jet variables.
 Base-coordinate degree is unrestricted. -/
-def stage (r : ℕ) : Subalgebra R (PolynomialJet R ι α) :=
+@[expose] def stage (r : ℕ) : Subalgebra R (PolynomialJet R ι α) :=
   supported R {v | Sum.elim (fun _ ↦ True) (fun aI ↦ aI.2.degree ≤ r) v}
 
 variable {R ι α}
-
-/-- `stage R ι α r` is the subalgebra of polynomials supported on base coordinates and field
-coordinates of order at most `r`. -/
-theorem stage_eq_supported (r : ℕ) :
-    stage R ι α r =
-      supported R {v | Sum.elim (fun _ ↦ True) (fun aI ↦ aI.2.degree ≤ r) v} := by
-  rfl
 
 /-- Membership in a finite stage means that every field variable occurring has bounded order. -/
 theorem mem_stage_iff (p : PolynomialJet R ι α) (r : ℕ) :

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Derivation
-import Mathlib.Tactic.Ring
 import TauCeti.Algebra.MvPolynomial.Supported
 
 /-!
@@ -18,9 +17,7 @@ values on base constants `C b` and polynomial variables `X i`
 
 If `s ⊆ t` and an `R`-derivation `D` of `MvPolynomial σ B` sends constants and `X i` (`i ∈ s`)
 into `MvPolynomial.supported B t`, then `D` maps `MvPolynomial.supported B s` into
-`MvPolynomial.supported B t` (`Derivation.map_mem_supported`). Similarly, an additive commutator
-identity `D₁ (D₂ p) = D₂ (D₁ p) + E p` for `R`-derivations extends from `C b` and `X i` to all
-polynomials (`Derivation.apply_apply_eq_add_of_C_of_X`).
+`MvPolynomial.supported B t` (`Derivation.map_mem_supported`).
 
 ## Main results
 
@@ -28,8 +25,6 @@ polynomials (`Derivation.apply_apply_eq_add_of_C_of_X`).
   determined by its values on `C b` and `X i`.
 * `Derivation.map_mem_supported`: support preservation/transfer for `R`-derivations of
   `MvPolynomial σ B`.
-* `Derivation.apply_apply_eq_add_of_C_of_X`: extending a commutator identity
-  `D₁ (D₂ p) = D₂ (D₁ p) + E p` from `C b` and `X i` to all polynomials.
 -/
 
 public section
@@ -74,23 +69,5 @@ theorem _root_.Derivation.map_mem_supported
   | mul x y hx hy ihx ihy =>
     rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul]
     exact add_mem (mul_mem (supported_mono hst hx) ihy) (mul_mem (supported_mono hst hy) ihx)
-
-/-- An additive commutator relation `D₁ (D₂ p) = D₂ (D₁ p) + E p` among `R`-derivations of
-`MvPolynomial σ B` holds on all polynomials whenever it holds on base constants `C b` and
-variables `X i`. -/
-theorem _root_.Derivation.apply_apply_eq_add_of_C_of_X
-    (D₁ D₂ E : Derivation R (MvPolynomial σ B) (MvPolynomial σ B))
-    (hC : ∀ b : B, D₁ (D₂ (C b)) = D₂ (D₁ (C b)) + E (C b))
-    (hX : ∀ i : σ, D₁ (D₂ (X i)) = D₂ (D₁ (X i)) + E (X i))
-    (p : MvPolynomial σ B) :
-    D₁ (D₂ p) = D₂ (D₁ p) + E p := by
-  induction p using MvPolynomial.induction_on with
-  | C b => exact hC b
-  | add p q hp hq =>
-    simp only [map_add, hp, hq]
-    ac_rfl
-  | mul_X p i hp =>
-    simp only [Derivation.leibniz, smul_eq_mul, map_add, hp, hX]
-    ring
 
 end Ext

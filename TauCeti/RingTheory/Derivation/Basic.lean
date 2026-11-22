@@ -32,7 +32,10 @@ unit, without factoring it.
 
 A derivation over any scalars `S` which vanishes on the image of `R` is `R`-linear
 (`Derivation.ofMapAlgebraMap`). An `R`-algebra isomorphism `e : A ≃ₐ[R] B` transports a derivation
-`D` of `A` to the derivation `e ∘ D ∘ e⁻¹` of `B` (`Derivation.conjAlgEquiv`).
+`D` of `A` to the derivation `e ∘ D ∘ e⁻¹` of `B` (`Derivation.conjAlgEquiv`). An additive
+commutator identity `D₁ (D₂ a) = D₂ (D₁ a) + E a` among `R`-derivations extends from an algebra
+generating set `s` (`Algebra.adjoin R s = ⊤`) to all of `A`
+(`Derivation.apply_apply_eq_add_of_adjoin_eq_top`).
 
 ## Main results
 
@@ -45,6 +48,8 @@ A derivation over any scalars `S` which vanishes on the image of `R` is `R`-line
 * `Derivation.iterate_smul_apply`: iterates of scalar multiples of a derivation.
 * `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
 * `Derivation.squarefree_of_isUnit`: an element whose derivative is a unit is squarefree.
+* `Derivation.apply_apply_eq_add_of_adjoin_eq_top`: extending an additive commutator relation from
+  an algebra generating set to the whole algebra.
 * `Derivation.ofMapAlgebraMap`: a derivation killing the image of `R` as an `R`-derivation.
 * `Derivation.conjAlgEquiv`: a derivation transported along an algebra isomorphism.
 -/
@@ -139,6 +144,22 @@ theorem squarefree_of_isUnit (D : Derivation R A A) {a : A} (ha : IsUnit (D a)) 
   refine isUnit_of_dvd_unit ?_ ha
   rw [mul_assoc, leibniz, smul_eq_mul, smul_eq_mul]
   exact dvd_add (dvd_mul_right x _) (dvd_mul_of_dvd_left (dvd_mul_right x y) _)
+
+/-- An additive commutator relation `D₁ (D₂ a) = D₂ (D₁ a) + E a` among `R`-derivations of an
+`R`-algebra `A` holds on all of `A` whenever it holds on an algebra generating set `s`. -/
+theorem apply_apply_eq_add_of_adjoin_eq_top {D₁ D₂ E : Derivation R A A} {s : Set A}
+    (hs : Algebra.adjoin R s = ⊤) (h : ∀ x ∈ s, D₁ (D₂ x) = D₂ (D₁ x) + E x) (a : A) :
+    D₁ (D₂ a) = D₂ (D₁ a) + E a := by
+  have ha : a ∈ Algebra.adjoin R s := hs ▸ Algebra.mem_top
+  induction ha using Algebra.adjoin_induction with
+  | mem x hx => exact h x hx
+  | algebraMap r => simp
+  | add x y _ _ hx hy =>
+    simp only [map_add, hx, hy]
+    ac_rfl
+  | mul x y _ _ hx hy =>
+    simp only [leibniz, smul_eq_mul, map_add, hx, hy]
+    ring
 
 end Derivation
 

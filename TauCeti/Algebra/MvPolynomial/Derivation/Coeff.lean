@@ -14,17 +14,19 @@ import TauCeti.RingTheory.Derivation.Basic
 # Coefficientwise lift of derivations to multivariate polynomials
 
 For an `R`-algebra `B`, any `R`-derivation `d : Derivation R B B` lifts coefficientwise to an
-`R`-derivation `d.coeffDeriv` of `MvPolynomial σ B` acting by `d` on `C b` and annihilating `X i`.
+`R`-derivation `d.mapCoeffsMvPolynomial` of `MvPolynomial σ B` acting by `d` on coefficients and
+annihilating `X i`.
 
 ## Main definitions
 
-* `Derivation.coeffDeriv`: coefficientwise lift of `d : Derivation R B B` to
+* `Derivation.mapCoeffsMvPolynomial`: coefficientwise lift of `d : Derivation R B B` to
   `Derivation R (MvPolynomial σ B) (MvPolynomial σ B)`.
 
 ## Main results
 
-* `Derivation.coeffDeriv_C`, `Derivation.coeffDeriv_X`: action of `coeffDeriv` on constants and
-  variables.
+* `Derivation.mapCoeffsMvPolynomial_monomial`, `Derivation.coeff_mapCoeffsMvPolynomial`,
+  `Derivation.mapCoeffsMvPolynomial_C`, `Derivation.mapCoeffsMvPolynomial_X`: action of
+  `mapCoeffsMvPolynomial` on monomials, arbitrary coefficients, constants, and variables.
 -/
 
 public section
@@ -39,26 +41,38 @@ variable {R B σ : Type*} [CommSemiring R] [CommSemiring B] [Algebra R B]
 
 /-- Coefficientwise lift of a base derivation `d : Derivation R B B` to an `R`-derivation of
 `MvPolynomial σ B`, built from `Derivation.baseChange` and `MvPolynomial.algebraTensorAlgEquiv`. -/
-def coeffDeriv (d : Derivation R B B) : Derivation R (MvPolynomial σ B) (MvPolynomial σ B) :=
+def mapCoeffsMvPolynomial (d : Derivation R B B) :
+    Derivation R (MvPolynomial σ B) (MvPolynomial σ B) :=
   ((d.baseChange (MvPolynomial σ R)).restrictScalars R).conjAlgEquiv
     ((Algebra.TensorProduct.comm R (MvPolynomial σ R) B).trans
       ((MvPolynomial.algebraTensorAlgEquiv R B).restrictScalars R))
 
-/-- `d.coeffDeriv` acts on base constants `C b` by `d`. -/
+/-- `d.mapCoeffsMvPolynomial` acts on monomials `monomial m b` by `d` on the coefficient. -/
 @[simp]
-theorem coeffDeriv_C (d : Derivation R B B) (b : B) :
-    d.coeffDeriv (σ := σ) (C b) = C (d b) := by
-  have h1 : (algebraTensorAlgEquiv (σ := σ) R B).symm (C b) = b ⊗ₜ[R] (1 : MvPolynomial σ R) := by
-    simpa [monomial_zero'] using algebraTensorAlgEquiv_symm_monomial (σ := σ) R B 0 b
-  have h2 : algebraTensorAlgEquiv (σ := σ) R B (d b ⊗ₜ[R] (1 : MvPolynomial σ R)) = C (d b) := by
-    simp [algebraTensorAlgEquiv_tmul, Algebra.smul_def, MvPolynomial.algebraMap_eq]
-  simp [coeffDeriv, h1, h2]
+theorem mapCoeffsMvPolynomial_monomial (d : Derivation R B B) (m : σ →₀ ℕ) (b : B) :
+    d.mapCoeffsMvPolynomial (monomial m b) = monomial m (d b) := by
+  simp [mapCoeffsMvPolynomial, smul_monomial]
 
-/-- `d.coeffDeriv` annihilates polynomial variables `X i`. -/
+/-- `d.mapCoeffsMvPolynomial` applies `d` to every coefficient of a polynomial. -/
 @[simp]
-theorem coeffDeriv_X (d : Derivation R B B) (i : σ) :
-    d.coeffDeriv (σ := σ) (X i) = 0 := by
-  simp [coeffDeriv]
+theorem coeff_mapCoeffsMvPolynomial (d : Derivation R B B) (p : MvPolynomial σ B) (m : σ →₀ ℕ) :
+    (d.mapCoeffsMvPolynomial p).coeff m = d (p.coeff m) := by
+  classical
+  induction p using MvPolynomial.induction_on' with
+  | add p q hp hq => simp [hp, hq]
+  | monomial n b => simp [coeff_monomial, apply_ite d]
+
+/-- `d.mapCoeffsMvPolynomial` acts on base constants `C b` by `d`. -/
+@[simp]
+theorem mapCoeffsMvPolynomial_C (d : Derivation R B B) (b : B) :
+    d.mapCoeffsMvPolynomial (σ := σ) (C b) = C (d b) := by
+  rw [← monomial_zero', mapCoeffsMvPolynomial_monomial, monomial_zero']
+
+/-- `d.mapCoeffsMvPolynomial` annihilates polynomial variables `X i`. -/
+@[simp]
+theorem mapCoeffsMvPolynomial_X (d : Derivation R B B) (i : σ) :
+    d.mapCoeffsMvPolynomial (σ := σ) (X i) = 0 := by
+  simp [mapCoeffsMvPolynomial]
 
 end
 
