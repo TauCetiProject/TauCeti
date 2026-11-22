@@ -30,7 +30,9 @@ separate from the estimate here.
 
 The proof freezes the coefficients, uses
 `TauCeti.PDE.exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv`, and absorbs the
-Hölder norm of the Hessian. The pointwise interpolation estimate is the arbitrary-scale form
+Hölder norm of the Hessian. The freezing step is stated on an arbitrary set
+(`TauCeti.PDE.holderOnWith_sum_smul_fderiv_fderiv_of_abs_sub_le`), so that it also serves the
+estimate up to a flat boundary. The pointwise interpolation estimate is the arbitrary-scale form
 of `HolderWith.enorm_le_add_eLpNorm`.
 
 ## References
@@ -52,49 +54,53 @@ variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
-/-- The error of freezing a Hölder coefficient field has the product Hölder bound. -/
-private theorem holderWith_frozen_hessian_error {α ε L J B : ℝ≥0}
+/-- The error of freezing a coefficient field that is Hölder on a set has the product Hölder
+bound there. -/
+private theorem holderOnWith_frozen_hessian_error {α ε L J B : ℝ≥0} {s : Set E}
     {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {H : E → E [×2]→L[ℝ] ℝ}
-    (ha : ∀ x i j, |a x i j - A i j| ≤ ε)
-    (hL : ∀ i j, HolderWith L α (fun x => a x i j))
-    (hJ : HolderWith J α H) (hB : ∀ x, ‖H x‖ ≤ B) :
-    HolderWith (((n + 1 : ℝ≥0) ^ 2) * (ε * J + B * L)) α
+    (ha : ∀ x ∈ s, ∀ i j, |a x i j - A i j| ≤ ε)
+    (hL : ∀ i j, HolderOnWith L α (fun x => a x i j) s)
+    (hJ : HolderOnWith J α H s) (hB : ∀ x ∈ s, ‖H x‖ ≤ B) :
+    HolderOnWith (((n + 1 : ℝ≥0) ^ 2) * (ε * J + B * L)) α
       (fun x => ∑ i, ∑ j, (A i j - a x i j) *
-        H x ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) := by
-  have hterm (i j : Fin (n + 1)) : HolderWith (ε * J + B * L) α (fun x => (A i j - a x i j) *
-      H x ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) := by
-    have hc : HolderWith L α (fun x => A i j - a x i j) := fun x y => by
-      simpa only [edist_sub_left] using hL i j x y
-    have hh : HolderWith J α (fun x => H x
-        ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) := by
-      simpa using holderOnWith_univ.mp
-        ((holderOnWith_univ.mpr hJ).apply_orthonormalBasis (EuclideanSpace.basisFun _ ℝ) i j)
-    have hp := (ContinuousLinearMap.mul ℝ ℝ).holderWith_comp₂ hc hh
+        H x ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) s := by
+  have hterm (i j : Fin (n + 1)) : HolderOnWith (ε * J + B * L) α (fun x => (A i j - a x i j) *
+      H x ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) s := by
+    have hc : HolderOnWith L α (fun x => A i j - a x i j) s := fun x hx y hy => by
+      simpa only [edist_sub_left] using hL i j x hx y hy
+    have hh : HolderOnWith J α (fun x => H x
+        ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) s := by
+      simpa using hJ.apply_orthonormalBasis (EuclideanSpace.basisFun _ ℝ) i j
+    have hp := (ContinuousLinearMap.mul ℝ ℝ).holderOnWith_comp₂ hc hh
       (Mf := ε) (Mg := B)
-      (fun x => by simpa [Real.norm_eq_abs, abs_sub_comm] using ha x i j)
-      (fun x => by
+      (fun x hx => by simpa [Real.norm_eq_abs, abs_sub_comm] using ha x hx i j)
+      (fun x hx => by
         simpa using ((H x).norm_apply_orthonormalBasis_le (EuclideanSpace.basisFun _ ℝ) i j).trans
-          (hB x))
+          (hB x hx))
     simpa only [ContinuousLinearMap.opNNNorm_mul, one_mul,
       ContinuousLinearMap.mul_apply'] using hp
-  exact (HolderWith.sum fun i _ => HolderWith.sum fun j _ => hterm i j).mono
-    (le_of_eq (by simp [Finset.card_univ]; ring))
+  -- Sum the entries as Hölder functions on the subtype `s`.
+  refine HolderWith.restrict_iff.1 ((HolderWith.sum fun i _ => HolderWith.sum fun j _ =>
+    (hterm i j).holderWith).mono (le_of_eq (by simp [Finset.card_univ]; ring)))
 
-/-- The frozen operator `∑ A i j ∂ᵢ∂ⱼ u` is globally Hölder when the operator with coefficients
-`a`, within `ε` of `A` and `L`-Hölder, is `K`-Hölder and the Hessian is `J`-Hölder and bounded
-by `B`. -/
-private theorem holderWith_frozen_operator {α ε L J K B : ℝ≥0}
+/-- **Freezing the coefficients on a set.** The frozen operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` is `α`-Hölder on a
+set `s` when the operator with coefficients `a`, within `ε` of `A` and `L`-Hölder on `s`, is
+`K`-Hölder on `s` and the Hessian is `J`-Hölder on `s` and bounded by `B` there, with constant
+`K + (n + 1)² (ε J + B L)`. -/
+theorem holderOnWith_sum_smul_fderiv_fderiv_of_abs_sub_le {α ε L J K B : ℝ≥0} {s : Set E}
     {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {u : E → ℝ}
-    (ha : ∀ x i j, |a x i j - A i j| ≤ ε) (hL : ∀ i j, HolderWith L α (fun x => a x i j))
-    (hJ : HolderWith J α (iteratedFDeriv ℝ 2 u)) (hB : ∀ x, ‖iteratedFDeriv ℝ 2 u x‖ ≤ B)
-    (hf : HolderWith K α (fun x => ∑ i, ∑ j, a x i j • fderiv ℝ (fderiv ℝ u) x
-      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))) :
-    HolderWith (K + ((n + 1 : ℝ≥0) ^ 2) * (ε * J + B * L)) α
+    (ha : ∀ x ∈ s, ∀ i j, |a x i j - A i j| ≤ ε)
+    (hL : ∀ i j, HolderOnWith L α (fun x => a x i j) s)
+    (hJ : HolderOnWith J α (iteratedFDeriv ℝ 2 u) s)
+    (hB : ∀ x ∈ s, ‖iteratedFDeriv ℝ 2 u x‖ ≤ B)
+    (hf : HolderOnWith K α (fun x => ∑ i, ∑ j, a x i j • fderiv ℝ (fderiv ℝ u) x
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) s) :
+    HolderOnWith (K + ((n + 1 : ℝ≥0) ^ 2) * (ε * J + B * L)) α
       (fun x => ∑ i, ∑ j, A i j • fderiv ℝ (fderiv ℝ u) x
-        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) := by
-  convert hf.add (holderWith_frozen_hessian_error ha hL hJ hB) using 1
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) s := by
+  convert hf.add (holderOnWith_frozen_hessian_error ha hL hJ hB) using 1
   funext x
   simp only [Pi.add_apply, iteratedFDeriv_two_apply, smul_eq_mul, ← Finset.sum_add_distrib,
     Matrix.cons_val_zero, Matrix.cons_val_one]
@@ -103,6 +109,21 @@ private theorem holderWith_frozen_operator {α ε L J K B : ℝ≥0}
   congr 1
   ext j
   ring
+
+/-- **The absorption step of the perturbation argument.** If the Hölder constant `J ≥ 0` of a
+Hessian satisfies `J ≤ κ ((K + N (ε J + (J s + V M) L)) / λ + Q M)`, which is the bound that
+freezing the coefficients gives when the Hessian is bounded by `J s + V M`, and the smallness
+condition `2 κ N (ε + L s) ≤ λ` holds, then `J ≤ 2 κ (K / λ + (N L / λ V + Q) M)`. -/
+theorem le_two_mul_of_le_mul_add_mul_add {J K ε L κ lam s V M Q N : ℝ} (hJ : 0 ≤ J)
+    (hlam : 0 < lam) (hsmall : 2 * κ * N * (ε + L * s) ≤ lam)
+    (h : J ≤ κ * ((K + N * (ε * J + (J * s + V * M) * L)) / lam + Q * M)) :
+    J ≤ 2 * κ * (K / lam + (N * L / lam * V + Q) * M) := by
+  have hX : κ * N * (ε + L * s) / lam ≤ 1 / 2 := by
+    rw [div_le_iff₀ hlam]
+    linarith
+  have h2 := TauCeti.le_two_mul_of_le_add_mul hJ hX (Y := κ * (K / lam + (N * L / lam * V + Q) * M))
+    (h.trans_eq (by field_simp; ring))
+  linarith
 
 /-- **Global a priori Schauder estimate for coefficients of small oscillation.**
 For `0 < α < 1` there is `C > 0`, depending only on dimension and `α`, with the following
@@ -156,7 +177,9 @@ theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_abs_su
     simpa [V, M] using hJ.norm_le_add_eLpNorm_toReal (by norm_num) (by norm_num) hH2 hr x
   let B : ℝ≥0 := (J * r ^ (α : ℝ) + V * M).toNNReal
   have hBc : (B : ℝ) = J * r ^ (α : ℝ) + V * M := Real.coe_toNNReal _ (by positivity)
-  have hg := holderWith_frozen_operator ha hL hJ (fun x => (hsup x).trans_eq hBc.symm) hf
+  have hg := holderOnWith_univ.mp (holderOnWith_sum_smul_fderiv_fderiv_of_abs_sub_le
+    (fun x _ => ha x) (fun i j => (hL i j).holderOnWith univ) (hJ.holderOnWith univ)
+    (fun x _ => (hsup x).trans_eq hBc.symm) (hf.holderOnWith univ))
   -- Apply the interior frozen estimate to each two-point set, with one common global bound.
   have hglobal : HolderWith (κ * ((K + ((n + 1 : ℝ≥0) ^ 2) * (ε * J + B * L)) / lam +
       r ^ (-(((n : ℝ) + 1) / 2 + α)) * M)).toNNReal α H := by
@@ -180,15 +203,11 @@ theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_abs_su
       _ ≤ _ := by dsimp [κ]; gcongr; linarith
   have hbound := hglobal.nnholderNorm_le
   rw [← NNReal.coe_le_coe, Real.coe_toNNReal _ (by positivity)] at hbound
-  have hsmall' : κ * ((n : ℝ) + 1) ^ 2 * (ε + L * r ^ (α : ℝ)) / lam ≤ 1 / 2 := by
-    rw [div_le_iff₀ hlam]
-    dsimp [κ] at *
-    linarith
-  have hfinal := TauCeti.le_two_mul_of_le_add_mul J.coe_nonneg hsmall' (Y := κ * (K / lam +
-    (((n : ℝ) + 1) ^ 2 * L / lam * V + r ^ (-(((n : ℝ) + 1) / 2 + α))) * M))
-    (hbound.trans_eq (by push_cast; rw [hBc]; ring))
+  have hfinal := le_two_mul_of_le_mul_add_mul_add (K := K) (V := V) (M := M)
+    (Q := r ^ (-(((n : ℝ) + 1) / 2 + α))) J.coe_nonneg hlam hsmall
+    (hbound.trans_eq (by push_cast; rw [hBc]))
   exact hJ.mono (by
     rw [← NNReal.coe_le_coe, Real.coe_toNNReal _ (by positivity)]
-    exact hfinal.trans_eq (by simp only [κ, V, M]; ring))
+    exact hfinal.trans_eq (by simp only [V, M]; ring))
 
 end TauCeti.PDE
