@@ -1028,6 +1028,16 @@ theorem euclideanTerminalSolutionBUC_apply_of_ckHolderSpace
     (euclideanBackwardParabolicOperatorL_euclideanTerminalDataCLE_symm_apply _) fun x ↦ by
       rw [hw, euclideanTerminalDataCLE_symm_apply_slabMk_right]
 
+/-- The extension agrees with the classical solution of the terminal-value problem on the image
+`toBUC g` of a bounded `C^{2,α}` terminal datum `g`. -/
+@[simp]
+theorem euclideanTerminalSolutionBUC_toBUC
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (g : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    euclideanTerminalSolutionBUC hα₀ hα₁ hT a b c ha (f, toBUC g) =
+      valueL ((euclideanTerminalDataCLE hα₀ hα₁ hT a b c ha).symm (f, g)) :=
+  euclideanTerminalSolutionBUC_apply_of_ckHolderSpace hα₀ hα₁ hT ha f (toBUC g) g (toBUC_apply g)
+
 /-- **Uniqueness of the extension.** A continuous linear map on `C_b^{α,α/2} × BUC` that agrees
 with the classical solution operator of the terminal-value problem on `C_b^{2,α}` terminal data
 is `euclideanTerminalSolutionBUC`. -/
@@ -1105,8 +1115,7 @@ theorem abs_euclideanTerminalSolutionBUC_apply_sub_le
         (euclideanTerminalDataCLE hα₀ hα₁ hT a b c ha).symm (f, g) p| ≤
       Real.exp (‖c‖ * T) * (1 + T) * δ :=
   abs_apply_sub_le_of_toBUC _ (norm_euclideanTerminalSolutionBUC_le hα₀ hα₁ hT ha) f w g _
-    (euclideanTerminalSolutionBUC_apply_of_ckHolderSpace hα₀ hα₁ hT ha f (toBUC g) g
-      (toBUC_apply g)) hg p
+    (euclideanTerminalSolutionBUC_toBUC hα₀ hα₁ hT ha f g) hg p
 
 /-- **The maximum principle for the terminal-value solution.** Let `c ≤ γ` with `0 ≤ γ`. If the
 forcing satisfies `f ≥ -K` and the terminal datum `g ≤ M`, where `0 ≤ M` and `0 ≤ K`, then the
