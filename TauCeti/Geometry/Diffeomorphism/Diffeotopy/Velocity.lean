@@ -47,6 +47,8 @@ velocity field: the time derivative of `φ_t⁻¹ x` is carried by `dφ_t` to `-
 * `TauCeti.Diffeotopy.mfderiv_timeSlice_mfderiv_cylinderMap_symm`: the velocity of the inverse
   diffeotopy, `dφ_t (∂ₜ (φ_t⁻¹ x)) = -X_t x`.
 * `TauCeti.Diffeotopy.velocity_trans`: the product velocity identity `X_(ψ φ) = X_ψ + (ψ_t)_* X_φ`.
+* `TauCeti.Diffeotopy.mfderiv_timeSlice_velocity_trans_symm`: the velocity of the corrected
+  isotopy `ψ_t⁻¹ ∘ φ_t`, `dψ_t (X_(ψ⁻¹ φ)) = X_φ ∘ ψ_t - X_ψ ∘ ψ_t`.
 
 ## References
 
@@ -190,6 +192,33 @@ theorem velocity_trans (hn : 1 ≤ n) (Ψ : Diffeotopy J n M) (t : I) (z : M) :
   -- `mfderiv_comp_apply` and `mfderiv_cylinderMap_prodMk_snd` leave unreduced.
   exact hl.trans (hc'.trans (hΨ.trans
     (congrArg₂ (· + ·) hvel.symm hinl)))
+
+/-- **The velocity field of a corrected isotopy.** The differential `dψ_t` carries the velocity
+field of the pointwise composite `t ↦ ψ_t⁻¹ ∘ φ_t` to the difference `X_φ - X_ψ` of the velocity
+fields: `dψ_t (X_(ψ⁻¹ φ) x) = X_φ (ψ_t x) - X_ψ (ψ_t x)`. -/
+theorem mfderiv_timeSlice_velocity_trans_symm (hn : 1 ≤ n) (Ψ : Diffeotopy J n M) (t : I)
+    (x : M) : mfderiv J J (Ψ.timeSlice t) x ((Φ.trans Ψ.symm).velocity t x) =
+      Φ.velocity t (Ψ.timeSlice t x) - Ψ.velocity t (Ψ.timeSlice t x) := by
+  obtain ⟨w, rfl⟩ : ∃ w, Ψ.symm (t, w) = x := ⟨Ψ (t, x), Ψ.symm_apply_apply_mk t x⟩
+  -- By the product velocity identity, the field at `ψ_t⁻¹ w` is `X_(ψ⁻¹) + (ψ_t⁻¹)_* X_φ`.
+  have hvt := Φ.velocity_trans hn Ψ.symm t w
+  rw [timeSlice_apply] at hvt
+  -- `dψ_t` sends `X_(ψ⁻¹)` to `-X_ψ w` and undoes `d(ψ_t⁻¹)`.
+  have ha := Ψ.mfderiv_timeSlice_mfderiv_cylinderMap_symm hn t w
+  rw [← Ψ.symm.velocity_apply] at ha
+  have hb : mfderiv J J (Ψ.timeSlice t) (Ψ.symm (t, w))
+      (mfderiv J J (Ψ.symm.timeSlice t) w (Φ.velocity t w)) = Φ.velocity t w :=
+    (congrArg (mfderiv J J (Ψ.timeSlice t) (Ψ.symm (t, w)))
+      (Ψ.symm.mfderiv_cylinderMap_inl hn (w, t) (Φ.velocity t w)).symm).trans
+      (Ψ.mfderiv_timeSlice_mfderiv_cylinderMap_symm_inl hn t w (Φ.velocity t w))
+  have hpush : mfderiv J J (Ψ.timeSlice t) (Ψ.symm (t, w))
+      ((Φ.trans Ψ.symm).velocity t (Ψ.symm (t, w))) = (Φ.velocity t w - Ψ.velocity t w : E) := by
+    rw [hvt, map_add]
+    exact (congrArg₂ (· + ·) ha hb).trans (neg_add_eq_sub _ _)
+  have hy : Ψ.timeSlice t (Ψ.symm (t, w)) = w := by
+    rw [timeSlice_apply]
+    exact Ψ.apply_mk_symm_apply t w
+  exact hpush.trans (congrArg (fun y : M ↦ (Φ.velocity t y - Ψ.velocity t y : E)) hy.symm)
 
 end Diffeotopy
 

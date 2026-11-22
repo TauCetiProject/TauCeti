@@ -168,30 +168,8 @@ theorem isHamiltonianVectorField_velocity_trans_symm (Φ Ψ : Diffeotopy I ∞ M
     (hf : MDifferentiable I 𝓘(ℝ) f)
     (h : σ.IsHamiltonianVectorField f fun x ↦ Φ.velocity t x - Ψ.velocity t x) :
     σ.IsHamiltonianVectorField (f ∘ Ψ.timeSlice t) ((Φ.trans Ψ.symm).velocity t) := by
-  -- `dψ_t` carries the velocity field of `ψ_t⁻¹ ∘ φ_t` to `X_φ - X_ψ`.
-  have hXY : ∀ x, mfderiv I I (Ψ.timeSlice t) x ((Φ.trans Ψ.symm).velocity t x) =
-      Φ.velocity t (Ψ.timeSlice t x) - Ψ.velocity t (Ψ.timeSlice t x) := fun x ↦ by
-    obtain ⟨w, rfl⟩ : ∃ w, Ψ.symm (t, w) = x := ⟨Ψ (t, x), Ψ.symm_apply_apply_mk t x⟩
-    -- By the product velocity identity, the field at `ψ_t⁻¹ w` is `X_(ψ⁻¹) + (ψ_t⁻¹)_* X_φ`.
-    have hvt := Φ.velocity_trans (by simp) Ψ.symm t w
-    rw [timeSlice_apply] at hvt
-    -- `dψ_t` sends `X_(ψ⁻¹)` to `-X_ψ w` and undoes `d(ψ_t⁻¹)`.
-    have ha := Ψ.mfderiv_timeSlice_mfderiv_cylinderMap_symm (by simp) t w
-    rw [← Ψ.symm.velocity_apply] at ha
-    have hb : mfderiv I I (Ψ.timeSlice t) (Ψ.symm (t, w))
-        (mfderiv I I (Ψ.symm.timeSlice t) w (Φ.velocity t w)) = Φ.velocity t w :=
-      (congrArg (mfderiv I I (Ψ.timeSlice t) (Ψ.symm (t, w)))
-        (Ψ.symm.mfderiv_cylinderMap_inl (by simp) (w, t) (Φ.velocity t w)).symm).trans
-        (Ψ.mfderiv_timeSlice_mfderiv_cylinderMap_symm_inl (by simp) t w (Φ.velocity t w))
-    have hpush : mfderiv I I (Ψ.timeSlice t) (Ψ.symm (t, w))
-        ((Φ.trans Ψ.symm).velocity t (Ψ.symm (t, w))) = (Φ.velocity t w - Ψ.velocity t w : E) := by
-      rw [hvt, map_add]
-      exact (congrArg₂ (· + ·) ha hb).trans (neg_add_eq_sub _ _)
-    have hy : Ψ.timeSlice t (Ψ.symm (t, w)) = w := by
-      rw [timeSlice_apply]
-      exact Ψ.apply_mk_symm_apply t w
-    exact hpush.trans (congrArg (fun y : M ↦ (Φ.velocity t y - Ψ.velocity t y : E)) hy.symm)
-  have h' := h.mpullback (Ψ.timeSlice t).contMDiff (fun _ ↦ hf _) hXY
+  have h' := h.mpullback (Ψ.timeSlice t).contMDiff (fun _ ↦ hf _)
+    (Φ.mfderiv_timeSlice_velocity_trans_symm (by simp) Ψ t)
   rwa [SmoothForm.mem_diffeomorphStabilizer.1 hΨ] at h'
 
 end Diffeotopy
