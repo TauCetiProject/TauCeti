@@ -28,8 +28,9 @@ The interchange is built from Mathlib's identification
 `HomologicalComplex.mapBifunctorFlipIso` of the total complex of a bifunctor with that of its
 flip, which carries the signs, followed by the map of total complexes induced by the braiding of
 `C`, which carries no sign. It requires only the tensor products of the two complexes, not a
-monoidal structure on the whole category of complexes. The interchange is natural
-(`HomologicalComplex.tensorBraiding_hom_naturality`), and when `C` is symmetric and the signs are
+monoidal structure on the whole category of complexes. The interchange and its inverse are natural
+(`HomologicalComplex.tensorBraiding_hom_naturality`,
+`HomologicalComplex.tensorBraiding_inv_naturality`), and when `C` is symmetric and the signs are
 symmetric (`TotalComplexShapeSymmetrySymmetry`) interchanging twice is the identity
 (`HomologicalComplex.tensorBraiding_hom_comp_tensorBraiding_hom`).
 
@@ -46,7 +47,9 @@ regrading `C^k = CF_(n-k)` is `ChainComplex.regradeTensorHom_comp_restrictionMap
 * `HomologicalComplex.ιTensorObj_tensorBraiding_hom_f`,
   `HomologicalComplex.ιTensorObj_tensorBraiding_inv_f`: the interchange and its inverse on
   summands.
-* `HomologicalComplex.tensorBraiding_hom_naturality`: naturality in both complexes.
+* `HomologicalComplex.tensorBraiding_hom_naturality`,
+  `HomologicalComplex.tensorBraiding_inv_naturality`: naturality of the interchange and of its
+  inverse in both complexes.
 * `HomologicalComplex.tensorBraiding_inv_eq_reverseBraiding`: with symmetric signs, the inverse
   interchange is the interchange of the swapped complexes for the reversed braiding of `C`.
 * `HomologicalComplex.tensorBraiding_inv`: over symmetric coefficients with symmetric signs, the
@@ -141,6 +144,14 @@ lemma tensorBraiding_hom_naturality {K' L' : HomologicalComplex C c} [K'.HasTens
   simp only [comp_f, ι_tensorHom_assoc, ιTensorObj_tensorBraiding_hom_f,
     ιTensorObj_tensorBraiding_hom_f_assoc, Linear.comp_units_smul, Linear.units_smul_comp,
     Category.assoc, ι_tensorHom, BraidedCategory.braiding_naturality_assoc]
+
+variable {K L} in
+/-- The inverse of the signed interchange is natural in both complexes. -/
+@[reassoc]
+lemma tensorBraiding_inv_naturality {K' L' : HomologicalComplex C c} [K'.HasTensor L']
+    [L'.HasTensor K'] (f : K ⟶ K') (g : L ⟶ L') :
+    tensorHom g f ≫ (tensorBraiding K' L').inv = (tensorBraiding K L).inv ≫ tensorHom f g := by
+  rw [Iso.comp_inv_eq, Category.assoc, tensorBraiding_hom_naturality, Iso.inv_hom_id_assoc]
 
 /-- With symmetric signs, the inverse of the signed interchange of `K ⊗ L` is the signed
 interchange of `L ⊗ K` for the reversed braiding of `C`: on each summand both are the inverse
