@@ -334,9 +334,11 @@ def thomPairTransferLinearEquiv (m : ℕ) :
   (LinearEquiv.ofInjective _ (injective_thomPairTransfer hι m)).trans
     (LinearEquiv.ofEq _ _ (range_thomPairTransfer hι m))
 
+-- Not a simp lemma: simplifying the coercion of the bundled projection changes the implicit
+-- pull-back bundle in the left-hand side, so it is not in simp normal form, as for
+-- `TauCeti.VectorBundleOrientationCover.coe_homologyThomMapDeckEquiv_apply`.
 /-- The identification of the relative homology of the Thom pair with the deck-invariant classes
 upstairs is `TauCeti.VectorBundleOrientationCover.thomPairTransfer`. -/
-@[simp]
 theorem coe_thomPairTransferLinearEquiv_apply {m : ℕ}
     (x : (thomPair F E).singularHomology (C := ModuleCat.{w} K) (ModuleCat.of K K) m) :
     (thomPairTransferLinearEquiv hι m x : (thomPair F
