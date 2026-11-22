@@ -89,7 +89,7 @@ section General
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] {s t : Set V}
 
 /-- A function holomorphic near `s`, as an element of the algebra of germs. -/
-@[expose] def ofFun (f : V → ℂ) (hf : AnalyticOnNhd ℂ f s) : holomorphicGerms s :=
+def ofFun (f : V → ℂ) (hf : AnalyticOnNhd ℂ f s) : holomorphicGerms s :=
   ⟨f, coe_mem_holomorphicGerms_iff.mpr hf⟩
 
 @[simp]
