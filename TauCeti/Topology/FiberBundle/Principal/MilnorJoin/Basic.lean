@@ -334,20 +334,18 @@ theorem continuous_vertex (i : ℕ) : Continuous (vertex i : G → MilnorTotalSp
     exact continuousOn_empty _
 
 instance instT2Space [T2Space G] : T2Space (MilnorTotalSpace G) :=
-  ⟨fun p q hpq ↦ by
+  t2Space_iff_disjoint_nhds.mpr fun p q hpq ↦ by
     by_cases hw : ∀ i, weight i p = weight i q
     · have ⟨i, hpi, hlpq⟩ : ∃ i, p ∈ coordSet G i ∧ label i p ≠ label i q := by
         by_contra! h; exact hpq (ext_coord hw h)
       have hqi : q ∈ coordSet G i := by rwa [mem_coordSet_iff, ← hw i]
-      have hd : Disjoint (𝓝 p) (𝓝 q) :=
-        ((continuousOn_label i).continuousAt ((isOpen_coordSet i).mem_nhds hpi)).tendsto.disjoint
-          (disjoint_nhds_nhds.mpr hlpq)
-          ((continuousOn_label i).continuousAt ((isOpen_coordSet i).mem_nhds hqi)).tendsto
-      obtain ⟨U, ⟨hpU, hU⟩, V, ⟨hqV, hV⟩, hUV⟩ :=
-        ((nhds_basis_opens p).disjoint_iff (nhds_basis_opens q)).mp hd
-      exact ⟨U, V, hU, hV, hpU, hqV, hUV⟩
+      exact ((continuousOn_label i).continuousAt
+        ((isOpen_coordSet i).mem_nhds hpi)).tendsto.disjoint
+        (disjoint_nhds_nhds.mpr hlpq)
+        ((continuousOn_label i).continuousAt ((isOpen_coordSet i).mem_nhds hqi)).tendsto
     · obtain ⟨i, hi⟩ := not_forall.mp hw
-      exact separated_by_continuous (continuous_weight i) hi⟩
+      exact (continuous_weight i).continuousAt.tendsto.disjoint (disjoint_nhds_nhds.mpr hi)
+        (continuous_weight i).continuousAt.tendsto
 
 /-- The carrier identification from `universalGSpace G` (weak simplicial realization topology)
 to `MilnorTotalSpace G` (strong coordinate topology) is continuous. -/
@@ -510,16 +508,13 @@ theorem val_invEquiv (x : universalGSpace G) :
     rw [val_invEquiv, universalGSpaceBasepoint_val, val_basepoint, Finsupp.mapDomain_single,
       inv_one])
 
-/-- Label inversion carries left multiplication by `g⁻¹` to right multiplication by `g`. -/
-theorem invEquiv_inv_smul (g : G) (x : universalGSpace G) :
-    invEquiv G (g⁻¹ • x) = op g • invEquiv G x := by
+/-- Label inversion carries left multiplication by `g` to right multiplication by `g⁻¹`. -/
+@[simp] theorem invEquiv_smul (g : G) (x : universalGSpace G) :
+    invEquiv G (g • x) = op g⁻¹ • invEquiv G x := by
   apply ext_val
   rw [val_invEquiv, universalGSpace_smul_val, val_op_smul, val_invEquiv,
     ← Finsupp.mapDomain_comp, ← Finsupp.mapDomain_comp]
   congr 1; funext ⟨_, a⟩; simp [mul_inv_rev]
-
-@[simp] theorem invEquiv_smul (g : G) (x : universalGSpace G) :
-    invEquiv G (g • x) = op g⁻¹ • invEquiv G x := by simpa using invEquiv_inv_smul g⁻¹ x
 
 end Group
 
@@ -543,10 +538,6 @@ def weakToMilnorTotalSpace (G : Type u) [Group G] [TopologicalSpace G] :
 @[simp] theorem weakToMilnorTotalSpace_basepoint (G : Type u) [Group G] [TopologicalSpace G] :
     weakToMilnorTotalSpace G (universalGSpaceBasepoint G) = MilnorTotalSpace.basepoint G :=
   MilnorTotalSpace.invEquiv_basepoint
-theorem weakToMilnorTotalSpace_inv_smul {G : Type u} [Group G] [TopologicalSpace G]
-    (g : G) (x : universalGSpace G) :
-    weakToMilnorTotalSpace G (g⁻¹ • x) = op g • weakToMilnorTotalSpace G x :=
-  MilnorTotalSpace.invEquiv_inv_smul g x
 @[simp] theorem weakToMilnorTotalSpace_smul {G : Type u} [Group G] [TopologicalSpace G]
     (g : G) (x : universalGSpace G) :
     weakToMilnorTotalSpace G (g • x) = op g⁻¹ • weakToMilnorTotalSpace G x :=
