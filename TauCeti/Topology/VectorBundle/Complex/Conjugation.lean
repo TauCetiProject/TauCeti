@@ -21,7 +21,7 @@ A conjugation identifies `E` with its complex conjugate bundle, whose first Cher
 `φ` be a frame of `E` along a sphere `p`, and let `κ` be the conjugation of `F` in a basis. Then
 `ψ y = c ∘ φ y ∘ κ` is again a complex-linear frame of `E` along `p`. In the fibre over the base
 point, read in a trivialization `e`, the transition `e ∘ ψ y` is the conjugate `κ ∘ (e ∘ φ y) ∘ κ`
-of the transition of `φ`, followed by the fixed automorphism `κ ∘ e⁻¹ ∘ c ∘ e`. Conjugating an
+of the transition of `φ`, followed by the fixed automorphism `e ∘ c ∘ e⁻¹ ∘ κ`. Conjugating an
 automorphism by `κ` conjugates its determinant, and complex conjugation inverts points of the
 circle (`Module.Basis.normalizedDet_coordConjL_trans_trans_coordConjL`). So on the boundary of the
 square the clutching function of `ψ` is the inverse of that of `φ`, up to a constant factor, and its
@@ -38,14 +38,8 @@ distribution `L`, such as the vertical distribution of a cotangent bundle, the r
 bundle vanishes on spheres: along the zero section its tangent bundle is the complexification of the
 tangent bundle of the base.
 
-## Main definitions
-
-* `Module.Basis.coordConjL`: the conjugation of the coordinates in a basis.
-
 ## Main results
 
-* `Module.Basis.normalizedDet_coordConjL_trans_trans_coordConjL`: conjugating an automorphism by
-  the conjugation of the coordinates inverts its normalized determinant.
 * `TauCeti.clutchingNumber_eq_zero_of_conjugateLinear`,
   `TauCeti.clutchingNumberHom_eq_zero_of_conjugateLinear`: a complex vector bundle with a
   conjugation has vanishing clutching numbers.
@@ -68,68 +62,7 @@ public section
 noncomputable section
 
 open Bundle Set Module
-open scoped unitInterval Topology.Homotopy ComplexConjugate
-
-/-! ### The conjugation of a space in a basis -/
-
-namespace Module.Basis
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-  {ι : Type*} [Fintype ι] (b : Basis ι ℂ F)
-
-/-- The **conjugation of the coordinates** in a basis `b` of a finite-dimensional complex normed
-space, a conjugate-linear isomorphism. -/
-def coordConjL : F ≃SL[starRingEnd ℂ] F :=
-  b.equivFunL.trans ((starL ℂ : (ι → ℂ) ≃L⋆[ℂ] (ι → ℂ)).trans b.equivFunL.symm)
-
-theorem coordConjL_apply (v : F) : b.coordConjL v = b.equivFun.symm (star (b.equivFun v)) :=
-  (rfl)
-
-@[simp]
-theorem repr_coordConjL (v : F) (i : ι) : b.repr (b.coordConjL v) i = conj (b.repr v i) := by
-  rw [← b.equivFun_apply, coordConjL_apply, LinearEquiv.apply_symm_apply, Pi.star_apply,
-    b.equivFun_apply]
-  rfl
-
-/-- The conjugation of the coordinates fixes the basis vectors. -/
-@[simp]
-theorem coordConjL_self (i : ι) : b.coordConjL (b i) = b i := by
-  classical
-  refine b.ext_elem fun k ↦ ?_
-  rw [repr_coordConjL, repr_self, Finsupp.single_apply]
-  split_ifs <;> simp
-
-/-- The conjugation of the coordinates is an involution. -/
-@[simp]
-theorem coordConjL_coordConjL (v : F) : b.coordConjL (b.coordConjL v) = v :=
-  b.ext_elem fun i ↦ by simp
-
-/-- **Conjugating an automorphism by the conjugation of the coordinates conjugates its
-determinant**: the matrix of `κ ∘ A ∘ κ` in the basis is the complex conjugate of the matrix of
-`A`. -/
-theorem det_coordConjL_trans_trans_coordConjL (A : F ≃L[ℂ] F) :
-    LinearMap.det ((b.coordConjL.trans (A.trans b.coordConjL) : F ≃L[ℂ] F).toLinearEquiv :
-        F →ₗ[ℂ] F) =
-      conj (LinearMap.det (A.toLinearEquiv : F →ₗ[ℂ] F)) := by
-  classical
-  have hM : LinearMap.toMatrix b b
-      ((b.coordConjL.trans (A.trans b.coordConjL) : F ≃L[ℂ] F).toLinearEquiv : F →ₗ[ℂ] F) =
-        (starRingEnd ℂ).mapMatrix (LinearMap.toMatrix b b (A.toLinearEquiv : F →ₗ[ℂ] F)) := by
-    ext i j
-    simp [LinearMap.toMatrix_apply]
-  rw [← LinearMap.det_toMatrix b, hM, ← RingHom.map_det, LinearMap.det_toMatrix]
-
-/-- **Conjugating an automorphism by the conjugation of the coordinates inverts its normalized
-determinant**, since complex conjugation inverts points of the circle. -/
-theorem normalizedDet_coordConjL_trans_trans_coordConjL (A : F ≃L[ℂ] F) :
-    (b.coordConjL.trans (A.trans b.coordConjL) : F ≃L[ℂ] F).normalizedDet =
-      A.normalizedDet⁻¹ := by
-  ext1
-  rw [Circle.coe_inv_eq_conj, ContinuousLinearEquiv.coe_normalizedDet,
-    ContinuousLinearEquiv.coe_normalizedDet, det_coordConjL_trans_trans_coordConjL,
-    Complex.norm_conj, map_div₀, Complex.conj_ofReal]
-
-end Module.Basis
+open scoped unitInterval Topology.Homotopy
 
 namespace TauCeti
 
@@ -146,7 +79,7 @@ variable {X : Type*} [TopologicalSpace X]
 /-- The finite-dimensional model fibre is complete, as `TauCeti.exists_continuous_frame` needs. -/
 private local instance : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
 
-/-- The automorphism `κ ∘ e⁻¹ ∘ c ∘ e` of the model fibre, read at a point `b` of the base set of a
+/-- The automorphism `e ∘ c ∘ e⁻¹ ∘ κ` of the model fibre, read at a point `b` of the base set of a
 trivialization `e`, and the identity elsewhere. -/
 private def conjCoordinate (c : ∀ x, E x ≃SL[starRingEnd ℂ] E x) (κ : F ≃SL[starRingEnd ℂ] F)
     (e : Trivialization F (π F E)) [e.IsLinear ℂ] (b : X) : F ≃L[ℂ] F :=
@@ -172,7 +105,7 @@ theorem clutchingNumber_eq_zero_of_conjugateLinear (c : ∀ x, E x ≃SL[starRin
   have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt F E x
   have hcφ := continuousOn_clutchingFunction_boundary p hφ e hx
   -- On the boundary, the clutching function of `ψ` is the inverse of that of `φ`, times the
-  -- constant `κ ∘ e⁻¹ ∘ c ∘ e` at the base point.
+  -- constant `e ∘ c ∘ e⁻¹ ∘ κ` at the base point.
   have heq : EqOn (clutchingFunction p ψ e)
       ((clutchingFunction p φ e)⁻¹ * fun _ ↦ (conjCoordinate c κ e x).normalizedDet⁻¹)
       (Cube.boundary (Fin 2)) := by
@@ -235,9 +168,7 @@ private def conjOfAnticommute (c : ∀ x, V x ≃L[ℝ] V x)
   map_smul' z v := by
     -- `z • v = re z • v + im z • J v`, and `c` commutes with `re z` and anticommutes with `J`.
     apply (J.fiberEquiv b).injective
-    rw [ContinuousLinearEquiv.apply_symm_apply, fiberEquiv_smul, fiberEquiv_smul,
-      ContinuousLinearEquiv.apply_symm_apply, map_add, map_smul, map_smul, hc, Complex.conj_re,
-      Complex.conj_im, neg_smul, smul_neg]
+    simp [fiberEquiv_smul, hc]
   left_inv v := by simp
   right_inv v := by simp
   continuous_toFun := (J.fiberEquiv b).symm.continuous.comp

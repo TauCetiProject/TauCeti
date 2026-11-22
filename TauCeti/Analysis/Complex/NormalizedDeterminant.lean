@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import Mathlib.Topology.Algebra.Module.Star
 public import TauCeti.Analysis.Normed.Module.TensorProduct.FiniteDimension
 public import TauCeti.LinearAlgebra.Determinant.TensorProduct
 
@@ -37,6 +39,10 @@ loop of determinants.
   `normalizedDet A₁ ^ dim E₂ * normalizedDet A₂ ^ dim E₁`.
 * `Continuous.normalizedDet`, `ContinuousOn.normalizedDet`: a continuous family of automorphisms
   has continuous normalized determinant.
+* `Module.Basis.coordConjL`: the conjugation of the coordinates in a basis, a conjugate-linear
+  automorphism.
+* `Module.Basis.normalizedDet_coordConjL_trans_trans_coordConjL`: conjugating an automorphism by
+  the conjugation of the coordinates inverts its normalized determinant.
 -/
 
 public section
@@ -180,3 +186,70 @@ theorem ContinuousOn.normalizedDet {X : Type*} [TopologicalSpace X] {A : X → E
     ContinuousOn (fun x => (A x).normalizedDet) s := by
   rw [continuousOn_iff_continuous_domRestrict] at hA ⊢
   exact Continuous.normalizedDet (A := fun x : s => A x) hA
+
+/-! ### The conjugation of a space in a basis -/
+
+namespace Module.Basis
+
+open scoped ComplexConjugate
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+  {ι : Type*} [Fintype ι] (b : Basis ι ℂ F)
+
+/-- The **conjugation of the coordinates** in a basis `b` of a finite-dimensional complex normed
+space, a conjugate-linear isomorphism. -/
+noncomputable def coordConjL : F ≃SL[starRingEnd ℂ] F :=
+  b.equivFunL.trans ((starL ℂ : (ι → ℂ) ≃L⋆[ℂ] (ι → ℂ)).trans b.equivFunL.symm)
+
+theorem coordConjL_apply (v : F) : b.coordConjL v = b.equivFun.symm (star (b.equivFun v)) :=
+  (rfl)
+
+@[simp]
+theorem repr_coordConjL (v : F) (i : ι) : b.repr (b.coordConjL v) i = conj (b.repr v i) := by
+  rw [← b.equivFun_apply, coordConjL_apply, LinearEquiv.apply_symm_apply, Pi.star_apply,
+    b.equivFun_apply, starRingEnd_apply]
+
+/-- The conjugation of the coordinates fixes the basis vectors. -/
+@[simp]
+theorem coordConjL_self (i : ι) : b.coordConjL (b i) = b i := by
+  classical
+  refine b.ext_elem fun k ↦ ?_
+  rw [repr_coordConjL, repr_self, Finsupp.single_apply]
+  split_ifs <;> simp
+
+/-- The conjugation of the coordinates is an involution. -/
+@[simp]
+theorem coordConjL_coordConjL (v : F) : b.coordConjL (b.coordConjL v) = v :=
+  b.ext_elem fun i ↦ by simp
+
+/-- The conjugation of the coordinates is its own inverse. -/
+@[simp]
+theorem coordConjL_symm : b.coordConjL.symm = b.coordConjL :=
+  ContinuousLinearEquiv.ext <| funext fun v ↦ b.coordConjL.injective (by simp)
+
+/-- **Conjugating an automorphism by the conjugation of the coordinates conjugates its
+determinant**: the matrix of `κ ∘ A ∘ κ` in the basis is the complex conjugate of the matrix of
+`A`. -/
+theorem det_coordConjL_trans_trans_coordConjL (A : F ≃L[ℂ] F) :
+    LinearMap.det ((b.coordConjL.trans (A.trans b.coordConjL) : F ≃L[ℂ] F).toLinearEquiv :
+        F →ₗ[ℂ] F) =
+      conj (LinearMap.det (A.toLinearEquiv : F →ₗ[ℂ] F)) := by
+  classical
+  have hM : LinearMap.toMatrix b b
+      ((b.coordConjL.trans (A.trans b.coordConjL) : F ≃L[ℂ] F).toLinearEquiv : F →ₗ[ℂ] F) =
+        (starRingEnd ℂ).mapMatrix (LinearMap.toMatrix b b (A.toLinearEquiv : F →ₗ[ℂ] F)) := by
+    ext i j
+    simp [LinearMap.toMatrix_apply]
+  rw [← LinearMap.det_toMatrix b, hM, ← RingHom.map_det, LinearMap.det_toMatrix]
+
+/-- **Conjugating an automorphism by the conjugation of the coordinates inverts its normalized
+determinant**, since complex conjugation inverts points of the circle. -/
+theorem normalizedDet_coordConjL_trans_trans_coordConjL (A : F ≃L[ℂ] F) :
+    (b.coordConjL.trans (A.trans b.coordConjL) : F ≃L[ℂ] F).normalizedDet =
+      A.normalizedDet⁻¹ := by
+  ext1
+  simp only [Circle.coe_inv_eq_conj, ContinuousLinearEquiv.coe_normalizedDet,
+    det_coordConjL_trans_trans_coordConjL]
+  simp
+
+end Module.Basis
