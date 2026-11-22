@@ -130,6 +130,8 @@ and `c ↦ φ_c, k_c` are smooth into `L²` (`TauCeti.Vortex.contDiff_background
 * `TauCeti.Vortex.reducedEquationMap_eq_zero_of_laplacian_eq`,
   `TauCeti.Vortex.exists_reducedEquationMap_eq_zero`: solutions of the reduced equation are zeros
   of `N`.
+* `TauCeti.Vortex.exists_contDiffAt_backgroundDefect_monicOfCoeff_eq_mul`: near `c₀`,
+  `φ_c = φ_{c₀} ψ_c` with `ψ_c` bounded continuous and smooth in `c`.
 * `TauCeti.Vortex.contDiff_reducedEquationMapOfCoeff`: `Φ` is smooth on `ℂ^m × H²(ℂ)`.
 * `TauCeti.Vortex.hasFDerivAt_reducedEquationMapOfCoeff`,
   `TauCeti.Vortex.coeFn_reducedLinearizationOfCoeff`: its partial derivative in `u` is
@@ -435,7 +437,7 @@ private theorem one_add_norm_sq_ne_zero (P : _root_.Polynomial ℂ) (z : ℂ) :
 
 /-- The source `k = (h - 1) / 8 + 2 ‖P'‖² / (1 + ‖P‖²)²` in terms of the defect `φ = 1 - h`:
 `k = -φ / 8 + 2 ‖P'‖² φ²`. -/
-private theorem backgroundSource_eq_backgroundDefect (P : _root_.Polynomial ℂ) (z : ℂ) :
+theorem backgroundSource_eq_backgroundDefect (P : _root_.Polynomial ℂ) (z : ℂ) :
     (backgroundSource (P.eval ·) z : ℂ) = -8⁻¹ * backgroundDefect P z +
       2 * ((‖P.derivative.eval z‖ ^ 2 : ℝ) : ℂ) * backgroundDefect P z ^ 2 := by
   rw [backgroundSource_def, backgroundWeight_eq_one_sub_inv, _root_.Polynomial.deriv,
@@ -633,6 +635,16 @@ private theorem exists_local_repr (c₀ : Fin m → ℂ) :
       fun i ↦ (contDiff_coeff_derivative_monicOfCoeff i).restrict_scalars ℝ,
     hinv, hdef, fun c z ↦ ?_⟩
   exact normSqWeight_apply P₀ hP₀ hn (natDegree_derivative_monicOfCoeff_lt c) z
+
+/-- **The defect near `c₀` is a smooth bounded multiple of the defect at `c₀`.** Near every `c₀`,
+`φ_c = φ_{c₀} ψ_c` for bounded continuous functions `ψ_c = (1 + ‖P_{c₀}‖²) / (1 + ‖P_c‖²)`
+depending smoothly on `c`. -/
+theorem exists_contDiffAt_backgroundDefect_monicOfCoeff_eq_mul (c₀ : Fin m → ℂ) :
+    ∃ ψ : (Fin m → ℂ) → ℂ →ᵇ ℂ, ContDiffAt ℝ ∞ ψ c₀ ∧
+      ∀ᶠ c in 𝓝 c₀, backgroundDefect (monicOfCoeff c) =
+        backgroundDefect (monicOfCoeff c₀) * ψ c := by
+  obtain ⟨ρ, -, -, hinv, hdef, -⟩ := exists_local_repr c₀
+  exact ⟨_, hinv, hdef⟩
 
 /-- **The defect depends smoothly on the coefficients**, as a bounded continuous function. -/
 theorem contDiff_backgroundDefect_monicOfCoeff :
