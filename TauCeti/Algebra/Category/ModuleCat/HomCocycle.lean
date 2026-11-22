@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Module.HomCocycle.Presentation
 public import TauCeti.Algebra.Homology.Ext.Presentation
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import TauCeti.Algebra.Category.ModuleCat.Quotient
-public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 
 /-!
 # Hom cocycles compute Ext¹
@@ -154,17 +153,5 @@ theorem homCocycleQuotientEquivExt_precomp
       (fun α ↦ α.comp (Ext.mk₀ (ModuleCat.ofHom h)) (add_zero 1)) hclass
 
 end Presentation
-
-/-- The first extension group of a cokernel is finite-dimensional when its presenting
-source and the coefficient module are finite-dimensional. The presenting arrow need
-not be injective, and its source need not be projective. -/
-theorem finiteDimensional_ext_cokernel {K : Type u} [Field K] [Algebra K A]
-    [Module K P₁] [IsScalarTower K A P₁]
-    [Module.Finite K P₁] (f : P₁ →ₗ[A] P₀) (N : ModuleCat.{max u v w} A)
-    [Module.Finite K N] :
-    Module.Finite K (Ext (ModuleCat.of A (P₀ ⧸ range f)) N 1) := by
-  let := Module.Finite.of_injective (restrictScalarsₗ K A P₁ N K)
-    (restrictScalars_injective K)
-  exact (homCocycleQuotientEquivExt (k := K) f N).finiteDimensional
 
 end LinearMap

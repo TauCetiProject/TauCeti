@@ -14,7 +14,7 @@ public import TauCeti.Algebra.Module.AuslanderReiten.PairingNaturality
 A square between finite projective presentations induces a map on their
 Auslander–Reiten translates. Postcomposition by its injective stable class is
 dual to pullback of `Ext¹` along the induced cokernel map. Together with the
-coefficient naturality of `LinearMap.auslanderReitenExtEquiv`, this supplies
+coefficient naturality `LinearMap.auslanderReitenStableHomEquiv_naturality`, this supplies
 both variables of Auslander–Reiten duality.
 
 The statements allow nonminimal presentations, presenting arrows with nonzero

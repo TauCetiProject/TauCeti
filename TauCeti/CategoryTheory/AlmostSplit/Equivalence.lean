@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Abelian.ShortExact
 public import TauCeti.CategoryTheory.AlmostSplit.Sequence
 
 /-!
@@ -13,10 +14,11 @@ public import TauCeti.CategoryTheory.AlmostSplit.Sequence
 Equivalences preserve and reflect almost-split morphisms and almost-split sequences.
 For almost-split morphisms, reflection holds for any fully faithful functor, for instance the
 inclusion of a full subcategory (`CategoryTheory.Functor.isRightAlmostSplit_of_map`,
-`CategoryTheory.Functor.isLeftAlmostSplit_of_map`). The essential surjectivity is needed for
-preservation: the factorization property must hold for every object of the target category. This
-allows almost-split sequences to be transported between module categories and equivalent categories
-of representations.
+`CategoryTheory.Functor.isLeftAlmostSplit_of_map`), and between abelian categories it reflects
+almost-split sequences (`CategoryTheory.ShortComplex.isAlmostSplit_of_map`). The essential
+surjectivity is needed for preservation: the factorization property must hold for every object of
+the target category. This allows almost-split sequences to be transported between module categories
+and equivalent categories of representations.
 -/
 
 public section
@@ -98,5 +100,15 @@ theorem isAlmostSplit_map_iff : (S.map F).IsAlmostSplit ↔ S.IsAlmostSplit := b
     exact ⟨h.shortExact.map F,
       (F.isLeftAlmostSplit_map_iff S.f).mpr h.isLeftAlmostSplit_f,
       (F.isRightAlmostSplit_map_iff S.g).mpr h.isRightAlmostSplit_g⟩
+
+/-- **A fully faithful functor between abelian categories reflects almost-split sequences**, for
+instance the inclusion of finitely generated modules into all modules over a Noetherian ring:
+faithfulness reflects short exactness, and fullness reflects the two lifting properties. -/
+theorem isAlmostSplit_of_map {C D : Type*} [Category* C] [Category* D] [Abelian C] [Abelian D]
+    {S : ShortComplex C} (F : C ⥤ D) [F.PreservesZeroMorphisms] [F.Full] [F.Faithful]
+    (h : (S.map F).IsAlmostSplit) : S.IsAlmostSplit :=
+  ⟨ShortExact.reflects_shortExact_of_faithful F h.shortExact,
+    F.isLeftAlmostSplit_of_map S.f h.isLeftAlmostSplit_f,
+    F.isRightAlmostSplit_of_map S.g h.isRightAlmostSplit_g⟩
 
 end CategoryTheory.ShortComplex

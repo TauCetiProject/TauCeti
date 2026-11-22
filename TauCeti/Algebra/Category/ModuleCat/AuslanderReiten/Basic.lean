@@ -187,19 +187,4 @@ theorem auslanderReitenExtEquiv_apply
       auslanderReitenStableHomEquiv f N h x := by
   simp [auslanderReitenExtEquiv]
 
-/-- Precomposition in injective stable Hom is dual to pushforward of extension classes. -/
-theorem auslanderReitenExtEquiv_naturality
-    (f : P₁ →ₗ[A] P₀) {N N' : ModuleCat.{max u v w} A} (g : N ⟶ N')
-    (h : (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj N' ⟶
-      (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj
-        (ModuleCat.of A (AuslanderReitenTranslate k k f)))
-    (α : CategoryTheory.Abelian.Ext (ModuleCat.of A (P₀ ⧸ range f)) N 1) :
-    auslanderReitenExtEquiv f N
-        ((ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.map g ≫ h) α =
-      auslanderReitenExtEquiv f N' h (α.comp (CategoryTheory.Abelian.Ext.mk₀ g) (add_zero 1)) := by
-  obtain ⟨x, rfl⟩ := (homCocycleQuotientEquivExt (k := k) f N).surjective α
-  rw [← homCocycleQuotientEquivExt_naturality, auslanderReitenExtEquiv_apply,
-    auslanderReitenExtEquiv_apply, auslanderReitenStableHomEquiv_naturality]
-  rfl
-
 end LinearMap

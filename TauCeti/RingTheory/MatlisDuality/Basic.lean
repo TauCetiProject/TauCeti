@@ -33,7 +33,8 @@ Right `A`-modules are modules over `Aᵐᵒᵖ`.
   synonym, since the module of linear maps already carries the action on the codomain.
 * `TauCeti.MatlisDual.map` and `TauCeti.MatlisDual.mapOp`: the contravariant action on morphisms of
   left and of right modules, with the isomorphisms `TauCeti.MatlisDual.congr` and
-  `TauCeti.MatlisDual.congrOp`.
+  `TauCeti.MatlisDual.congrOp`, and `TauCeti.MatlisDual.congrCoeffOp` for an isomorphism of the
+  coefficient modules.
 * `TauCeti.MatlisDual.dualSelfEquiv`: the isomorphism `D_R (Hom_A(A, A)) ≅ D_R A` of left
   `A`-modules.
 * `TauCeti.MatlisDual.evalEquiv` and `TauCeti.MatlisDual.evalEquivOp`: biduality for modules of
@@ -256,6 +257,24 @@ theorem congrOp_trans {N'' : Type*} [AddCommGroup N''] [Module R N''] [Module A�
     congrOp (R := R) (A := A) (E := E) (e.trans e') = (congrOp e').trans (congrOp e) := by
   ext
   simp
+
+variable {E' : Type*} [AddCommGroup E'] [Module R E']
+
+/-- An isomorphism `E ≃ E'` of coefficient modules induces an isomorphism of the duals of a right
+module, by postcomposition. For instance, `ULift.moduleEquiv` compares the duals with values in `E`
+and in a universe lift of `E`. -/
+def congrCoeffOp (f : E ≃ₗ[R] E') : MatlisDual R E N ≃ₗ[A] MatlisDual R E' N where
+  toFun φ := (equivLinearMap R E' N).symm (f.toLinearMap ∘ₗ equivLinearMap R E N φ)
+  invFun φ := (equivLinearMap R E N).symm (f.symm.toLinearMap ∘ₗ equivLinearMap R E' N φ)
+  map_add' _ _ := by ext; simp
+  map_smul' _ _ := by ext; simp
+  left_inv _ := by ext; simp
+  right_inv _ := by ext; simp
+
+@[simp]
+theorem congrCoeffOp_apply (f : E ≃ₗ[R] E') (φ : MatlisDual R E N) (x : N) :
+    equivLinearMap R E' N (congrCoeffOp (A := A) f φ) x = f (equivLinearMap R E N φ x) :=
+  (rfl)
 
 end Right
 
