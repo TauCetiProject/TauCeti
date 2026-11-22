@@ -228,29 +228,6 @@ theorem one_sub_tanh (x : ℝ) : 1 - tanh x = exp (-x) / cosh x := by
   rw [tanh_eq_sinh_div_cosh, ← cosh_sub_sinh]
   field_simp
 
-/-- `1 + exp (2 * x) = 2 * cosh x * exp x`. -/
-theorem one_add_exp_two_mul (x : ℝ) : 1 + exp (2 * x) = 2 * cosh x * exp x := by
-  rw [cosh_eq, mul_div_cancel₀ _ two_ne_zero, add_mul, ← exp_add, ← exp_add, neg_add_cancel,
-    exp_zero, ← two_mul, add_comm]
-
-/-- `(1 - tanh x) / 2 = exp (-2 * x) / (1 + exp (-2 * x))`. -/
-theorem one_sub_tanh_div_two (x : ℝ) :
-    (1 - tanh x) / 2 = exp (-2 * x) / (1 + exp (-2 * x)) := by
-  have h1 : 1 + exp (-2 * x) = 2 * cosh x * exp (-x) := by
-    simpa [mul_neg] using one_add_exp_two_mul (-x)
-  have e₂ : exp (-x) * exp (-x) = exp (-2 * x) := by rw [← exp_add]; ring_nf
-  rw [one_sub_tanh, h1, div_div, mul_comm (cosh x) 2,
-    ← mul_div_mul_right _ _ (exp_pos (-x)).ne', e₂]
-
-/-- `(1 + tanh x) / 2 = 1 / (1 + exp (-2 * x))`, the logistic sigmoid at `2 * x`. -/
-theorem one_add_tanh_div_two (x : ℝ) :
-    (1 + tanh x) / 2 = 1 / (1 + exp (-2 * x)) := by
-  have h : (1 + tanh x) / 2 = 1 - (1 - tanh x) / 2 := by ring
-  rw [h, one_sub_tanh_div_two]
-  have hden : 1 + exp (-2 * x) ≠ 0 := by positivity
-  field_simp [hden]
-  ring
-
 /-- The hyperbolic tangent approaches `-1` exponentially fast:
 `1 + tanh x ≤ 2 * exp (2 * x)`. -/
 theorem one_add_tanh_le (x : ℝ) : 1 + tanh x ≤ 2 * exp (2 * x) := by
@@ -491,3 +468,30 @@ theorem norm_cosh_mul_le (z w : ℂ) : ‖cosh z * w‖ ≤ (‖exp z * w‖ + �
     _ = _ := by rw [norm_mul, norm_mul]; ring
 
 end Complex
+
+namespace Real
+
+/-- `1 + exp (2 * x) = 2 * cosh x * exp x`. -/
+theorem one_add_exp_two_mul (x : ℝ) : 1 + exp (2 * x) = 2 * cosh x * exp x := by
+  apply Complex.ofReal_injective
+  simpa [Complex.ofReal_exp, Complex.ofReal_cosh] using Complex.one_add_exp_two_mul (x : ℂ)
+
+/-- `(1 - tanh x) / 2 = exp (-2 * x) / (1 + exp (-2 * x))`. -/
+theorem one_sub_tanh_div_two (x : ℝ) :
+    (1 - tanh x) / 2 = exp (-2 * x) / (1 + exp (-2 * x)) := by
+  have h1 : 1 + exp (-2 * x) = 2 * cosh x * exp (-x) := by
+    simpa [mul_neg] using one_add_exp_two_mul (-x)
+  have e₂ : exp (-x) * exp (-x) = exp (-2 * x) := by rw [← exp_add]; ring_nf
+  rw [one_sub_tanh, h1, div_div, mul_comm (cosh x) 2,
+    ← mul_div_mul_right _ _ (exp_pos (-x)).ne', e₂]
+
+/-- `(1 + tanh x) / 2 = 1 / (1 + exp (-2 * x))`, the logistic sigmoid at `2 * x`. -/
+theorem one_add_tanh_div_two (x : ℝ) :
+    (1 + tanh x) / 2 = 1 / (1 + exp (-2 * x)) := by
+  have h : (1 + tanh x) / 2 = 1 - (1 - tanh x) / 2 := by ring
+  rw [h, one_sub_tanh_div_two]
+  have hden : 1 + exp (-2 * x) ≠ 0 := by positivity
+  field_simp [hden]
+  ring
+
+end Real

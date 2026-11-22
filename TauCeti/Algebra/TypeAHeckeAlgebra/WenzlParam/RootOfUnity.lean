@@ -45,16 +45,17 @@ open scoped Real
 private theorem two_mul_pi_div_mul_I (l : ℕ) : 2 * (π / (l : ℂ)) * I = 2 * π * I / l := by
   ring
 
-private theorem isPrimitiveRoot_exp_two_pi_mul_I_div {l : ℕ} (hl : 3 ≤ l) :
+private theorem isPrimitiveRoot_exp_two_pi_mul_I_div {l : ℕ} (hl : l ≠ 0) :
     IsPrimitiveRoot (exp (2 * π * I / l)) l :=
-  Complex.isPrimitiveRoot_exp l (by omega)
+  Complex.isPrimitiveRoot_exp l hl
 
 private theorem one_add_exp_two_pi_mul_I_div_ne_zero {l : ℕ} (hl : 3 ≤ l) :
     1 + exp (2 * π * I / l) ≠ 0 := by
   intro h0
   have hζ : exp (2 * π * I / l) = -1 := eq_neg_of_add_eq_zero_right h0
   have hsq : exp (2 * π * I / l) ^ 2 = 1 := by rw [hζ]; norm_num
-  exact (isPrimitiveRoot_exp_two_pi_mul_I_div hl).pow_ne_one_of_pos_of_lt two_ne_zero (by omega) hsq
+  exact (isPrimitiveRoot_exp_two_pi_mul_I_div (by omega)).pow_ne_one_of_pos_of_lt two_ne_zero
+    (by omega) hsq
 
 /-- **The values at the roots of unity.** For `l ≥ 3` and `0 < k < l`, at `Q = exp (2 π i / l)`,
 `a_k(Q) = sin ((k + 1) π / l) / (2 * cos (π / l) * sin (k π / l))`, a real number. -/
@@ -106,7 +107,7 @@ theorem wenzlParam_neg_exp_neg_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk�
 theorem wenzlParam_add_wenzlParam_neg_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k)
     (hkl : k < l) :
     wenzlParam (k : ℤ) (exp (2 * π * I / l)) + wenzlParam (-(k : ℤ)) (exp (2 * π * I / l)) = 1 := by
-  have hζ := isPrimitiveRoot_exp_two_pi_mul_I_div hl
+  have hζ := isPrimitiveRoot_exp_two_pi_mul_I_div (l := l) (by omega)
   have hsum : ∑ i ∈ range k, exp (2 * π * I / l) ^ i ≠ 0 := by
     intro h0
     have hgeom := geom_sum_mul (exp (2 * π * I / l)) k
@@ -116,17 +117,17 @@ theorem wenzlParam_add_wenzlParam_neg_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 �
     mul_ne_zero (one_add_exp_two_pi_mul_I_div_ne_zero hl) (by simpa using hsum)
   exact wenzlParam_add_wenzlParam_neg hden
 
-/-- **Complementary index `l - k` at the roots of unity.** For `l ≥ 3` and `k ≤ l`, at
+/-- **Complementary index `l - k` at the roots of unity.** For `l ≥ 2` and `k ≤ l`, at
 `Q = exp (2 π i / l)`, `a_(l - k)(Q) = a_(-k)(Q)`. -/
-theorem wenzlParam_sub_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hkl : k ≤ l) :
+theorem wenzlParam_sub_exp_two_pi_mul_I_div {l k : ℕ} (hl : 2 ≤ l) (hkl : k ≤ l) :
     wenzlParam ((l - k : ℕ) : ℤ) (exp (2 * π * I / l)) =
       wenzlParam (-(k : ℤ)) (exp (2 * π * I / l)) := by
-  have hζ := isPrimitiveRoot_exp_two_pi_mul_I_div hl
+  have hζ := isPrimitiveRoot_exp_two_pi_mul_I_div (l := l) (by omega)
   rw [Nat.cast_sub hkl, sub_eq_neg_add]
   exact wenzlParam_add_of_pow_eq_one (hζ.ne_one (by omega)) hζ.pow_eq_one (-(k : ℤ))
 
-/-- At `Q = exp (-2 π i / l)`, `a_(l - k)(Q) = a_(-k)(Q)` for `l ≥ 3` and `k ≤ l`. -/
-theorem wenzlParam_sub_exp_neg_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hkl : k ≤ l) :
+/-- At `Q = exp (-2 π i / l)`, `a_(l - k)(Q) = a_(-k)(Q)` for `l ≥ 2` and `k ≤ l`. -/
+theorem wenzlParam_sub_exp_neg_two_pi_mul_I_div {l k : ℕ} (hl : 2 ≤ l) (hkl : k ≤ l) :
     wenzlParam ((l - k : ℕ) : ℤ) (exp (-(2 * π * I / l))) =
       wenzlParam (-(k : ℤ)) (exp (-(2 * π * I / l))) := by
   rw [exp_neg, wenzlParam_inv, wenzlParam_inv, wenzlParam_sub_exp_two_pi_mul_I_div hl hkl]
@@ -153,7 +154,7 @@ theorem wenzlParam_one_exp_two_pi_mul_I_div {l : ℕ} (hl : 3 ≤ l) :
 /-- At `Q = exp (2 π i / l)` with `l ≥ 3`, the last parameter `a_(l - 1)(Q)` is `0`. -/
 theorem wenzlParam_sub_one_exp_two_pi_mul_I_div {l : ℕ} (hl : 3 ≤ l) :
     wenzlParam ((l - 1 : ℕ) : ℤ) (exp (2 * π * I / l)) = 0 := by
-  rw [wenzlParam_sub_exp_two_pi_mul_I_div hl (by omega), Nat.cast_one, wenzlParam_neg_one]
+  rw [wenzlParam_sub_exp_two_pi_mul_I_div (by omega) (by omega), Nat.cast_one, wenzlParam_neg_one]
 
 /-- At `Q = exp (2 π i / l)` with `l ≥ 3`, `a_(-(l - 1))(Q) = 1`. -/
 theorem wenzlParam_neg_sub_one_exp_two_pi_mul_I_div {l : ℕ} (hl : 3 ≤ l) :

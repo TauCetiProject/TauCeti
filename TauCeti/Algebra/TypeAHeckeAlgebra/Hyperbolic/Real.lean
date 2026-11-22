@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.Basic
+import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam.Analytic
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import Mathlib.Tactic.FieldSimp
 
@@ -20,7 +21,7 @@ complementary projection convention assigns `1 - η = (1 + tanh α * tanh θ) / 
 (`TauCeti.hyperbolicWenzlProjParam`).
 
 This file develops the real parameter family `α, θ ∈ ℝ` (`Q = exp (-2 * θ) > 0`), without any
-Wenzl-parameter or root-of-unity dependencies:
+root-of-unity dependencies:
 
 * For `0 < θ`, `α ↦ (1 - Real.tanh α * Real.tanh θ) / 2` is a strictly decreasing bijection from
   `ℝ` onto the open interval `(Q / (1 + Q), 1 / (1 + Q))`, with `α → ±∞` endpoint limits
@@ -386,41 +387,14 @@ theorem tendsto_sSup_range_realHyperbolicProjParam_atBot :
   rw [h]
   exact tendsto_sSup_range_realHyperbolicProjParam_atTop.comp Filter.tendsto_neg_atBot_atTop
 
-private theorem inv_four_mul_cosh_sq_sub_mul_one_sub (θ η : ℝ) :
-    (4 * Real.cosh θ ^ 2)⁻¹ - η * (1 - η) =
-      (η - 1 / (1 + Real.exp (-2 * θ))) * (η - Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))) := by
-  have hprod : (4 * Real.cosh θ ^ 2)⁻¹ =
-      (1 / (1 + Real.exp (-2 * θ))) * (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))) := by
-    have h1 : 1 + Real.exp (-2 * θ) = 2 * Real.cosh θ * Real.exp (-θ) := by
-      simpa [mul_neg] using Real.one_add_exp_two_mul (-θ)
-    have e2 : Real.exp (-θ) ^ 2 = Real.exp (-2 * θ) := by
-      rw [← Real.exp_natCast_mul]
-      ring_nf
-    rw [div_mul_div_comm, one_mul, ← sq, h1, mul_pow, mul_pow, e2]
-    have hsq : (2 : ℝ) ^ 2 * Real.cosh θ ^ 2 * Real.exp (-2 * θ) =
-        (4 * Real.cosh θ ^ 2) * Real.exp (-2 * θ) := by ring
-    rw [hsq, div_mul_cancel_right₀ (Real.exp_pos (-2 * θ)).ne']
-  have hsum : 1 / (1 + Real.exp (-2 * θ)) + Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)) = 1 := by
-    rw [← add_div, div_self (by positivity)]
-  linear_combination hprod + η * hsum
-
-private theorem inv_four_mul_cosh_sq_sub_mul_one_sub_eq_min_max (θ η : ℝ) :
-    (4 * Real.cosh θ ^ 2)⁻¹ - η * (1 - η) =
-      (η - min (1 / (1 + Real.exp (-2 * θ))) (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)))) *
-        (η - max (1 / (1 + Real.exp (-2 * θ))) (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)))) := by
-  rw [inv_four_mul_cosh_sq_sub_mul_one_sub]
-  rcases le_total (1 / (1 + Real.exp (-2 * θ))) (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))) with
-    h | h
-  · rw [min_eq_left h, max_eq_right h]
-  · rw [min_eq_right h, max_eq_left h, mul_comm]
-
 /-- **Boundary relation `τ = η * (1 - η)`.** For every real `θ` and `η`,
 `(4 * cosh θ ^ 2)⁻¹ = η * (1 - η)` holds if and only if `η` is one of the two interval endpoints
 `1 / (1 + exp (-2 * θ))` or `exp (-2 * θ) / (1 + exp (-2 * θ))`. -/
 theorem inv_four_mul_cosh_sq_eq_mul_one_sub_iff {θ η : ℝ} :
     (4 * Real.cosh θ ^ 2)⁻¹ = η * (1 - η) ↔
       η = 1 / (1 + Real.exp (-2 * θ)) ∨ η = Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)) := by
-  rw [← sub_eq_zero, inv_four_mul_cosh_sq_sub_mul_one_sub, mul_eq_zero, sub_eq_zero, sub_eq_zero]
+  rw [← wenzlParam_neg_two_real_exp_neg_two_mul,
+    wenzlParam_neg_two_eq_mul_one_sub_iff (by positivity)]
 
 /-- **Closed-interval characterization `(4 * cosh θ ^ 2)⁻¹ ≤ η * (1 - η)`.** For every real `θ` and
 `η`, `(4 * cosh θ ^ 2)⁻¹ ≤ η * (1 - η)` holds if and only if `η` belongs to the closure of the real
@@ -428,10 +402,8 @@ hyperbolic parameter family `α ↦ realHyperbolicProjParam α θ`. -/
 theorem inv_four_mul_cosh_sq_le_mul_one_sub_iff {θ η : ℝ} :
     (4 * Real.cosh θ ^ 2)⁻¹ ≤ η * (1 - η) ↔
       η ∈ closure (Set.range fun α ↦ realHyperbolicProjParam α θ) := by
-  rw [closure_range_realHyperbolicProjParam, ← sub_nonpos,
-    inv_four_mul_cosh_sq_sub_mul_one_sub_eq_min_max, mul_nonpos_iff, sub_nonneg, sub_nonpos,
-    sub_nonpos, sub_nonneg, Set.mem_Icc]
-  exact ⟨fun h ↦ h.elim id fun ⟨h1, h2⟩ ↦ ⟨min_le_max.trans h2, h1.trans min_le_max⟩, Or.inl⟩
+  rw [← wenzlParam_neg_two_real_exp_neg_two_mul,
+    wenzlParam_neg_two_le_mul_one_sub_iff (by positivity), closure_range_realHyperbolicProjParam]
 
 /-- **Open-interval characterization `(4 * cosh θ ^ 2)⁻¹ < η * (1 - η)`.** For every real `θ` and
 `η`, the strict inequality `(4 * cosh θ ^ 2)⁻¹ < η * (1 - η)` holds if and only if `θ ≠ 0` and
@@ -439,13 +411,8 @@ theorem inv_four_mul_cosh_sq_le_mul_one_sub_iff {θ η : ℝ} :
 theorem inv_four_mul_cosh_sq_lt_mul_one_sub_iff {θ η : ℝ} :
     (4 * Real.cosh θ ^ 2)⁻¹ < η * (1 - η) ↔
       θ ≠ 0 ∧ η ∈ Set.range fun α ↦ realHyperbolicProjParam α θ := by
-  have hiff : (4 * Real.cosh θ ^ 2)⁻¹ < η * (1 - η) ↔
-      η ∈ Set.Ioo (min (1 / (1 + Real.exp (-2 * θ))) (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))))
-        (max (1 / (1 + Real.exp (-2 * θ))) (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)))) := by
-    rw [← sub_neg, inv_four_mul_cosh_sq_sub_mul_one_sub_eq_min_max, mul_neg_iff, sub_pos, sub_neg,
-      sub_neg, sub_pos, Set.mem_Ioo]
-    exact ⟨fun h ↦ h.elim id fun ⟨h1, h2⟩ ↦ absurd (h2.trans h1) (not_lt_of_ge min_le_max), Or.inl⟩
-  rw [hiff]
+  rw [← wenzlParam_neg_two_real_exp_neg_two_mul,
+    wenzlParam_neg_two_lt_mul_one_sub_iff (by positivity)]
   rcases eq_or_ne θ 0 with rfl | hθ
   · simp
   · simp [hθ, range_realHyperbolicProjParam_of_ne_zero hθ]
