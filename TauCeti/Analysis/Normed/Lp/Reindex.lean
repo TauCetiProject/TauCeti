@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.Algebra.BigOperators.Group.Finset.Indicator
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Analysis.Normed.Lp.Basic
 
 /-!
 # Reindexing sequences in `ℓᵖ`
@@ -22,8 +23,9 @@ reindexing yields a norm-preserving additive equivalence between `ℓᵖ(ι, G)`
 (`LinearIsometryEquiv.lpCongrLeft`). Shifts of a sequence indexed
 by `ℕ` are the basic examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`, `j ↦ f (j - d)`. In
 particular a sequence indexed by `ℕ` lies in `ℓᵖ` exactly when its tail `j ↦ f (j + d)` does
-(`TauCeti.memℓp_nat_add_iff`). Two sequences indexed by `ℕ` in `ℓᵖ` can be interleaved into a
-single one, `f 0, g 0, f 1, g 1, …` (`Memℓp.interleave`).
+(`TauCeti.memℓp_nat_add_iff`), with no larger norm (`lp.norm_le_of_forall_eq_nat_add`). Two
+sequences indexed by `ℕ` in `ℓᵖ` can be interleaved into a single one, `f 0, g 0, f 1, g 1, …`
+(`Memℓp.interleave`).
 
 Consequently the **window sums** `j ↦ ∑_{j - L ≤ k < j + L} f k` of a sequence indexed by `ℕ`,
 a sum of `2 L` shifts, lie in `ℓᵖ`, and for `1 ≤ p` their norm is at most `2 L ‖f‖`
@@ -52,6 +54,11 @@ a bijection between index types (possibly in different universes), composing wit
 membership (`Memℓp.comp_equiv`, `Equiv.memℓp_comp_iff`) and the `ℓᵖ` norm
 (`lp.norm_eq_of_forall_eq_comp_equiv`), and for `1 ≤ p` induces the linear isometric equivalence
 `LinearIsometryEquiv.lpCongrLeft` between `ℓᵖ(ι, G)` and `ℓᵖ(ι', G)`.
+
+Reading a sequence `b ∈ ℓᵖ(ℤ)` along `k ↦ -k` and weighting it by `2^{(e - s) (-k)}` gives a
+summable series over `k : ℕ` when `s < e`, or `s = e` and `p ≤ 1`
+(`Memℓp.summable_two_rpow_mul_neg`). This is the summability of the low-frequency
+Littlewood–Paley blocks below the critical regularity.
 -/
 
 public section
@@ -150,6 +157,13 @@ theorem memℓp_nat_add_iff {f : ℕ → G} (d : ℕ) : Memℓp (fun j ↦ f (j 
 
 end TauCeti
 
+/-- **Dropping the first terms does not increase the norm.** A sequence in `ℓᵖ` that reads `f`
+shifted by `d` has norm at most `‖f‖`. -/
+theorem lp.norm_le_of_forall_eq_nat_add {f f' : lp (fun _ : ℕ ↦ G) p} (d : ℕ)
+    (h : ∀ j, f' j = f (j + d)) : ‖f'‖ ≤ ‖f‖ :=
+  lp.norm_le_of_forall_eq_indicator_comp (g := fun j ↦ j + d) (s := Set.univ)
+    (fun _ _ _ _ hab ↦ Nat.add_right_cancel hab) fun j ↦ by simp [h j]
+
 /-- **Window sums in `ℓᵖ`.** If `f ∈ ℓᵖ`, then so is `j ↦ ∑_{j - L ≤ k < j + L} f k`. -/
 theorem Memℓp.sum_Ico_sub_add {f : ℕ → G} (hf : Memℓp f p) (L : ℕ) :
     Memℓp (fun j ↦ ∑ k ∈ Finset.Ico (j - L) (j + L), f k) p := by
@@ -226,14 +240,15 @@ theorem lp.exists_hasSum_and_norm_le_of_summable [Fact (1 ≤ p)] [CompleteSpace
   have hT (d : ℤ) : ‖T d‖ ≤ c * ‖x‖ * a d := by
     -- Compare with the real sequence of the norms of `z d`.
     have had := ha0 d
-    set n : lp (fun _ : ℕ ↦ ℝ) p := ⟨fun j ↦ ‖(z d : ℕ → G) j‖, (lp.memℓp (z d)).norm⟩
+    set n := lp.normSeq (z d)
     calc ‖T d‖ ≤ ‖(c * a d) • n‖ := lp.norm_mono hp fun j ↦ by
-          rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, Real.norm_of_nonneg (by positivity)]
+          rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, lp.normSeq_apply,
+            Real.norm_of_nonneg (by positivity)]
           exact ht d j
       _ ≤ c * a d * ‖x‖ := by
           rw [lp.norm_const_smul hp, Real.norm_of_nonneg (by positivity)]
           gcongr
-          exact (lp.norm_mono hp fun j ↦ (norm_norm _).le).trans (hz d)
+          exact (lp.norm_normSeq _).le.trans (hz d)
       _ = _ := by ring
   have hTs : Summable T := Summable.of_norm_bounded (ha.mul_left (c * ‖x‖)) hT
   refine ⟨∑' d, T d, fun j ↦ ?_, ?_⟩
@@ -460,3 +475,33 @@ theorem coe_lpCongrLeft (e : α ≃ β) :
 end LinearIsometryEquiv
 
 end Equiv
+
+/-- **Weighted summability over the nonpositive integers.** Let `bⱼ ≥ 0`, `j ∈ ℤ`, be a sequence
+in `ℓᵖ`. If `s < e`, or `s = e` and `p ≤ 1`, then `2^{(e - s) j} bⱼ` is summable over the
+nonpositive indices `j = -k`: the weights decay geometrically as `j → -∞` when `s < e`, and
+otherwise `b` itself is summable. -/
+theorem Memℓp.summable_two_rpow_mul_neg {b : ℤ → ℝ} (hb : Memℓp b p) (hb0 : ∀ j, 0 ≤ b j)
+    {s e : ℝ} (hs : s < e ∨ (s = e ∧ p ≤ 1)) :
+    Summable fun k : ℕ ↦ (2 : ℝ) ^ ((e - s) * ((-k : ℤ) : ℝ)) * b (-k) := by
+  rcases hs with hs | ⟨rfl, hp⟩
+  · -- The weights decay geometrically and the sequence is bounded.
+    obtain ⟨M, hM⟩ := memℓp_infty_iff.1 (hb.of_exponent_ge le_top)
+    have hr : (2 : ℝ) ^ (-(e - s)) < 1 :=
+      Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
+    refine Summable.of_nonneg_of_le (fun k ↦ mul_nonneg (by positivity) (hb0 _)) (fun k ↦ ?_)
+      ((summable_geometric_of_lt_one (by positivity) hr).mul_left M)
+    have hbM : b (-k) ≤ M := (Real.le_norm_self _).trans (hM ⟨-k, rfl⟩)
+    have hw : (2 : ℝ) ^ ((e - s) * ((-k : ℤ) : ℝ)) = (2 ^ (-(e - s))) ^ k := by
+      rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two]
+      push_cast
+      ring_nf
+    rw [hw, mul_comm]
+    exact mul_le_mul_of_nonneg_right hbM (by positivity)
+  · -- At the critical regularity the sequence itself is summable.
+    have h1 := (memℓp_gen_iff (by simp : (0 : ℝ) < (1 : ℝ≥0∞).toReal)).1
+      (hb.of_exponent_ge hp)
+    simp only [ENNReal.toReal_one, Real.rpow_one] at h1
+    have hinj : Function.Injective fun k : ℕ ↦ -(k : ℤ) :=
+      neg_injective.comp Nat.cast_injective
+    refine ((h1.comp_injective hinj).of_norm).congr fun k ↦ ?_
+    simp

@@ -24,6 +24,8 @@ This file collects reusable trace facts for field extensions.
 * `TauCeti.Algebra.discr_one_elem_eq_of_sq_algebraMap`: in a quadratic extension, the
   trace-form discriminant of the square-root basis `{1, x}` is `4a` when `x² = a` and
   `x ∉ F`.
+* `TauCeti.Algebra.exists_trace_mul_ne_zero`: in a finite separable extension, a nonzero `x`
+  has some `y` with `Tr (x * y) ≠ 0`.
 
 ## Provenance
 
@@ -110,6 +112,14 @@ theorem discr_one_elem_eq_of_sq_algebraMap {x : L} {a : F} (hfin : finrank F L =
     exact htr0
   rw [Algebra.discr_def, Matrix.det_fin_two, e00, e11, e01, e10]
   ring
+
+/-- In a finite separable extension `L / F`, a nonzero `x` has some `y` with `Tr (x * y) ≠ 0`,
+by nondegeneracy of the trace form (`traceForm_nondegenerate`). This generalizes Mathlib's
+`FiniteField.trace_to_zmod_nondegenerate` from `ZMod (ringChar L)` to any base field. -/
+theorem exists_trace_mul_ne_zero [FiniteDimensional F L] [Algebra.IsSeparable F L] {x : L}
+    (hx : x ≠ 0) : ∃ y, Algebra.trace F L (x * y) ≠ 0 := by
+  by_contra! h
+  exact hx ((traceForm_nondegenerate F L).1 x fun y ↦ by simpa using h y)
 
 end Algebra
 

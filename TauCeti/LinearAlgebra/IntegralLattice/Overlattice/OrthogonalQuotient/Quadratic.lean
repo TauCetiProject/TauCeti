@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Dual
 public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 
@@ -115,13 +115,13 @@ private theorem dualCarrierToOrthogonalQuotient_apply
 /-- A dual vector of `M` has trivial class in `H⊥ / H` exactly when it already lies in `M`. -/
 private theorem dualCarrierToOrthogonalQuotient_eq_zero_iff
     (y : hM.isIntegral.toIntegralLattice.dualCarrier) :
-    dualCarrierToOrthogonalQuotient hL hM y = 0 ↔ (y : V) ∈ M.1 :=
+    dualCarrierToOrthogonalQuotient hL hM y = 0 ↔ (y : V) ∈ M.val :=
   ((L.discriminantQuadraticModule hL).orthogonalQuotientMk_eq_zero_iff
       (L.discriminantSubgroup M) ((isEven_iff_isIsotropic_discriminantSubgroup hL M).mp hM)
       ⟨hM.isIntegral.dualClassHom y,
         hM.isIntegral.dualClassHom_mem_orthogonalComplement y⟩).trans (by
     -- Remove the exposed discriminant-module carrier and orthogonal-complement subtype projections.
-    change hM.isIntegral.dualClassHom y ∈ L.discriminantSubgroup M ↔ (y : V) ∈ M.1
+    change hM.isIntegral.dualClassHom y ∈ L.discriminantSubgroup M ↔ (y : V) ∈ M.val
     rw [hM.isIntegral.dualClassHom_apply]
     exact L.mk_mem_discriminantSubgroup_iff M _)
 
@@ -163,15 +163,15 @@ private theorem discriminantOrthogonalQuotientHom_surjective :
   intro q
   obtain ⟨z, rfl⟩ := (L.discriminantQuadraticModule hL).orthogonalQuotientMk_surjective
     (L.discriminantSubgroup M) ((isEven_iff_isIsotropic_discriminantSubgroup hL M).mp hM) q
-  obtain ⟨x, hx⟩ := Submodule.Quotient.mk_surjective L.carrierInDual z.1
-  have hxdual : (x : V) ∈ (dual M).1 := by
+  obtain ⟨x, hx⟩ := Submodule.Quotient.mk_surjective L.carrierInDual z.val
+  have hxdual : (x : V) ∈ (dual M).val := by
     refine (L.mk_mem_discriminantSubgroup_iff (dual M) x).mp ?_
     rw [discriminantSubgroup_dual, hx]
-    exact z.2
+    exact z.property
   have hy : (x : V) ∈ hM.isIntegral.toIntegralLattice.dualCarrier := by
     rw [hM.isIntegral.toIntegralLattice_dualCarrier]
     exact hxdual
-  have hclass : hM.isIntegral.dualClassHom ⟨(x : V), hy⟩ = z.1 := by
+  have hclass : hM.isIntegral.dualClassHom ⟨(x : V), hy⟩ = z.val := by
     rw [hM.isIntegral.dualClassHom_apply]
     exact hx
   refine ⟨Submodule.Quotient.mk ⟨(x : V), hy⟩, ?_⟩
@@ -195,7 +195,7 @@ private theorem quadratic_dualCarrierToOrthogonalQuotient
   rw [L.discriminantQuadraticModule_quadratic]
   rw [hM.isIntegral.dualClassHom_apply]
   exact L.discriminantQuadraticMap_mk hL
-    ⟨(y : V), hM.isIntegral.dualCarrier_le y.2⟩
+    ⟨(y : V), hM.isIntegral.dualCarrier_le y.property⟩
 
 /-- The quadratic value in `A_M` of the class of a dual vector of `M` is the ambient
 half-norm. -/
@@ -266,8 +266,8 @@ theorem pairing_discriminantOrthogonalQuotientIsometry_mk
   change L.discriminantPairing (hM.isIntegral.dualClassHom y)
     (hM.isIntegral.dualClassHom z) = _
   rw [hM.isIntegral.dualClassHom_apply, hM.isIntegral.dualClassHom_apply]
-  exact L.discriminantPairing_mk ⟨(y : V), hM.isIntegral.dualCarrier_le y.2⟩
-    ⟨(z : V), hM.isIntegral.dualCarrier_le z.2⟩
+  exact L.discriminantPairing_mk ⟨(y : V), hM.isIntegral.dualCarrier_le y.property⟩
+    ⟨(z : V), hM.isIntegral.dualCarrier_le z.property⟩
 
 /-! ## Numerical consequences -/
 

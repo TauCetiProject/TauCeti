@@ -210,7 +210,7 @@ theorem diskBoundaryTwoLoop_apply_one (t : I) :
 private def diskBoundaryTwoReflectFun (w : TopCat.diskBoundary.{0} 2) :
     TopCat.diskBoundary.{0} 2 :=
   ⟨⟨!₂[-(w.down : EuclideanSpace ℝ (Fin 2)) 0, (w.down : EuclideanSpace ℝ (Fin 2)) 1], by
-    have h := mem_sphere_zero_iff_norm.1 w.down.2
+    have h := mem_sphere_zero_iff_norm.1 w.down.property
     rw [mem_sphere_zero_iff_norm, EuclideanSpace.norm_eq, Fin.sum_univ_two] at *
     simpa using h⟩⟩
 

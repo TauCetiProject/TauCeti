@@ -16,10 +16,9 @@ public import Mathlib.CategoryTheory.Simple
 # The vertex simple as a path algebra module
 
 The equivalence between quiver representations and left modules over the path algebra carries
-the vertex simple `Sᵢ` to a module and transports its length-one projective resolution.  Thus
-the path algebra module `Sᵢ` has projective dimension at most one, without an acyclicity
-assumption.  This is the short exact sequence used to calculate its `Ext` groups and Euler
-pairings against other modules.
+the vertex simple `Sᵢ` to a module and transports its length-one projective resolution, without
+an acyclicity assumption.  This is the short exact sequence used to calculate its `Ext` groups
+and Euler pairings against other modules.
 
 The resolution is the standard first-arrow sequence
 `0 ⟶ ⨁_{e : i ⟶ j} Pⱼ ⟶ Pᵢ ⟶ Sᵢ ⟶ 0`; see Assem--Simson--Skowroński,
@@ -88,7 +87,7 @@ theorem nonempty_iso_vertexSimpleModule_of_generator {M : ModuleCat (pathAlgebra
         rw [ZeroMemClass.coe_zero]
         obtain ⟨c, rfl⟩ := hspan y
         exact (coe_vertexProjection_apply_of_mem hy).symm.trans
-          (coe_vertexProjection_apply_eq_zero_of_ne ha (Submodule.smul_mem _ c x₀.2))
+          (coe_vertexProjection_apply_eq_zero_of_ne ha (Submodule.smul_mem _ c x₀.property))
     have hpath {a : Q} (p : Quiver.Path i a) (hp : p.length ≠ 0) :
         pathMap k M p x₀ = 0 := by
       cases p with
@@ -253,16 +252,5 @@ instance projective_vertexSimpleModuleResolution_X₂ (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     Projective (vertexSimpleModuleResolution k i).X₂ := by
   exact Projective.of_iso (vertexSimpleModuleResolutionX₂Iso k i).symm inferInstance
-
-/-- A vertex simple of a path algebra has projective dimension less than two. This holds for
-finite quivers with finitely many arrows leaving the given vertex, including quivers with cycles. -/
-theorem hasProjectiveDimensionLT_two_vertexSimpleModule (i : Q)
-    [Finite ((j : Q) × (i ⟶ j))] :
-    HasProjectiveDimensionLT (vertexSimpleModule k Q i) 2 := by
-  have h := (shortExact_vertexSimpleModuleResolution k i).hasProjectiveDimensionLT_X₃
-    (n := 1) (hasProjectiveDimensionLT_of_ge _ 1 1 (by omega))
-    (hasProjectiveDimensionLT_of_ge _ 1 2 (by omega))
-  let _ := h
-  exact hasProjectiveDimensionLT_of_iso (vertexSimpleModuleResolutionX₃Iso k i) 2
 
 end TauCeti

@@ -400,7 +400,7 @@ theorem _root_.LinearMap.hasSum_mFourierCoeff_smul_apply {F : Type*} [NormedAddC
   rw [SummationFilter.unconditional_filter, Metric.tendsto_nhds]
   intro δ hδ
   have hε : 0 < δ / (|C| + 1) := by positivity
-  filter_upwards [eventually_derivBound_sub_sum f.2 N hε] with s hs
+  filter_upwards [eventually_derivBound_sub_sum f.property N hε] with s hs
   have hT' := hT (f - ∑ n ∈ s, mFourierCoeff (f : UnitAddTorus d → ℂ) n • mFourierSmooth n) _
     (by simpa using hs)
   rw [dist_eq_norm, ← norm_neg, neg_sub]
@@ -495,8 +495,8 @@ theorem tsum_smul_mFourier_mem_smoothFunctions_of_bounded {c : (d → ℤ) → �
 /-- The `n`-th Fourier coefficient as a complex-linear form on the smooth functions. -/
 def mFourierCoeffₗ (n : d → ℤ) : smoothFunctions d →ₗ[ℂ] ℂ where
   toFun f := mFourierCoeff (f : UnitAddTorus d → ℂ) n
-  map_add' f g := mFourierCoeff_add (integrable_of_mem_smoothFunctions f.2)
-    (integrable_of_mem_smoothFunctions g.2) n
+  map_add' f g := mFourierCoeff_add (integrable_of_mem_smoothFunctions f.property)
+    (integrable_of_mem_smoothFunctions g.property) n
   map_smul' c _ := mFourierCoeff_smul c _ n
 
 @[simp]

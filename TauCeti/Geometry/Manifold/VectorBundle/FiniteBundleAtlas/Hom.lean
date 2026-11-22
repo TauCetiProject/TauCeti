@@ -55,6 +55,9 @@ compact space (`TauCeti.FiniteBundleAtlas.exists_closure_dom_subset_baseSet`).
   section of the hom bundle in two charts differ by the coordinate changes of both bundles, which
   for a `V`-valued one-form are the derivative of the chart transition and the coordinate change
   of `V` (`TauCeti.FiniteBundleAtlas.fderiv_transition`).
+* `TauCeti.FiniteBundleAtlas.image_tangentHom`, `TauCeti.FiniteBundleAtlas.overlap_tangentHom`,
+  `TauCeti.FiniteBundleAtlas.transition_tangentHom`: the atlas of `V`-valued one-forms has the
+  chart images, overlaps and transitions of `A`.
 -/
 
 public section
@@ -273,6 +276,22 @@ one-forms on the charts of a finite bundle atlas of `V`. -/
 abbrev tangentHom :
     FiniteBundleAtlas E M (E →L[ℝ] F) (fun x ↦ TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x) :=
   A.tangent.hom A.closure_dom_subset_baseSet
+
+/-- The chart images of the atlas of `V`-valued one-forms are those of `A`. -/
+@[simp]
+theorem image_tangentHom (i : Fin A.n) : A.tangentHom.image i = A.image i :=
+  (image_hom (A := A.tangent) i).trans (image_ofBaseSet i)
+
+/-- The chart overlaps of the atlas of `V`-valued one-forms are those of `A`. -/
+@[simp]
+theorem overlap_tangentHom (i i' : Fin A.n) : A.tangentHom.overlap i i' = A.overlap i i' :=
+  (overlap_hom (A := A.tangent) i i').trans (overlap_ofBaseSet i i')
+
+/-- The chart transitions of the atlas of `V`-valued one-forms are those of `A`. -/
+@[simp]
+theorem transition_tangentHom (i i' : Fin A.n) :
+    A.tangentHom.transition i i' = A.transition i i' :=
+  (transition_ofBaseSet (A := A.tangent) i i').trans (transition_ofBaseSet i i')
 
 /-- A `V`-valued one-form read in a chart of `A.tangentHom` is its value at the corresponding point
 of `M` expressed in the preferred trivializations of the tangent bundle and of `V` at the centre

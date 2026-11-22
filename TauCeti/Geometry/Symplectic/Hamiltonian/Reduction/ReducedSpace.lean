@@ -65,10 +65,14 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMoment
 * `levelSubMulActionChartedSpace`, `isManifold_levelSubMulAction`,
   `isSmoothEmbedding_coe_levelSubMulAction`, `range_mfderiv_coe_levelSubMulAction`: the regular
   level `μ⁻¹(c)`, as a `G_c`-space, is an embedded submanifold with tangent spaces `ker dμ`.
+* `contMDiff_levelSubMulActionSubtype`: its `G_c`-equivariant inclusion into `M` is smooth.
 * `orbitRelQuotientChartedSpace`, `isManifold_orbitRelQuotient`,
   `isSubmersion_quotientMk_levelSubMulAction`: the reduced space `μ⁻¹(c) / G_c` is a smooth
   manifold and the orbit projection is a submersion.
 * `ker_mfderiv_quotientMk_levelSubMulAction`: the vertical directions of the orbit projection.
+* `contMDiffSMul_orbitRelQuotient`, `contMDiffConstSMul_orbitRelQuotient`: a smooth action on the
+  level commuting with `G_c`, or an action by smooth maps commuting with it, descends to one on the
+  reduced space.
 * `existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback`: **the Marsden–Weinstein–Meyer
   theorem**, the unique reduced symplectic form.
 * `finrank_quotientModelSpace_add_finrank_add_finrank_lieAnnihilator`: when the level is nonempty,
@@ -182,6 +186,15 @@ theorem isSmoothEmbedding_coe_levelSubMulAction :
   exact isSmoothEmbedding_comp_diffeomorph _
     (h.toIsMomentMap.isSmoothEmbedding_coe_level hreg hn)
 
+/-- **The inclusion of a regular level is smooth**, as the `G_c`-equivariant map
+`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelSubMulActionSubtype`. -/
+theorem contMDiff_levelSubMulActionSubtype :
+    letI := h.levelSubMulActionChartedSpace c hreg hn
+    ContMDiff 𝓘(ℝ, Fin n → ℝ) I' ∞ (h.levelSubMulActionSubtype c) := by
+  let := h.levelSubMulActionChartedSpace c hreg hn
+  rw [coe_levelSubMulActionSubtype]
+  exact (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff
+
 /-- **The tangent space of a regular level is the kernel of `dμ`**, for the level as a
 `G_c`-space: at `z`, the differential of the inclusion has range `ker dμ_z`. -/
 theorem range_mfderiv_coe_levelSubMulAction (z : h.levelSubMulAction c) :
@@ -261,6 +274,43 @@ theorem isManifold_orbitRelQuotient :
   obtain ⟨_, _, _, _⟩ := h.quotient_hypotheses hreg hn d
   exact ProperSMul.instIsManifoldOrbitRelQuotient
 
+/-- **Commuting actions descend smoothly to the reduced space.** A smooth action of `L` on the
+regular level `μ⁻¹(c)` commuting with that of `G_c` induces a smooth action `l • [z] = [l • z]` on
+the reduced space `μ⁻¹(c) / G_c`. -/
+theorem contMDiffSMul_orbitRelQuotient {EL HL L : Type*} [NormedAddCommGroup EL]
+    [NormedSpace ℝ EL] [TopologicalSpace HL] {IL : ModelWithCorners ℝ EL HL} [IL.Boundaryless]
+    [TopologicalSpace L] [ChartedSpace HL L] [IsManifold IL ∞ L]
+    [SMul L (h.levelSubMulAction c)]
+    [SMulCommClass L ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] :
+    letI := h.levelSubMulActionChartedSpace c hreg hn
+    letI := h.orbitRelQuotientChartedSpace c hreg hn d
+    ContMDiffSMul IL 𝓘(ℝ, Fin n → ℝ) ∞ L (h.levelSubMulAction c) →
+      ContMDiffSMul IL 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ)) ∞ L
+        (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
+          (h.levelSubMulAction c)) := by
+  let := d.chartedSpace
+  let := h.levelSubMulActionChartedSpace c hreg hn
+  obtain ⟨_, _, _, _⟩ := h.quotient_hypotheses hreg hn d
+  intro
+  exact ProperSMul.contMDiffSMul_orbitRelQuotient le_rfl
+
+/-- **Commuting actions by smooth maps descend to the reduced space.** An action of `L` on the
+regular level `μ⁻¹(c)` by smooth maps commuting with that of `G_c` induces an action
+`l • [z] = [l • z]` on the reduced space `μ⁻¹(c) / G_c` by smooth maps. -/
+theorem contMDiffConstSMul_orbitRelQuotient {L : Type*} [SMul L (h.levelSubMulAction c)]
+    [SMulCommClass L ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] :
+    letI := h.levelSubMulActionChartedSpace c hreg hn
+    letI := h.orbitRelQuotientChartedSpace c hreg hn d
+    ContMDiffConstSMul 𝓘(ℝ, Fin n → ℝ) ∞ L (h.levelSubMulAction c) →
+      ContMDiffConstSMul 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ)) ∞ L
+        (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
+          (h.levelSubMulAction c)) := by
+  let := d.chartedSpace
+  let := h.levelSubMulActionChartedSpace c hreg hn
+  obtain ⟨_, _, _, _⟩ := h.quotient_hypotheses hreg hn d
+  intro
+  exact ProperSMul.contMDiffConstSMul_orbitRelQuotient le_rfl
+
 /-- **The orbit projection onto the reduced space is a smooth submersion.** -/
 theorem isSubmersion_quotientMk_levelSubMulAction :
     letI := h.levelSubMulActionChartedSpace c hreg hn
@@ -326,7 +376,7 @@ theorem ker_mfderiv_quotientMk_levelSubMulAction (z : h.levelSubMulAction c) :
   have hemb := h.isSmoothEmbedding_coe_levelSubMulAction hreg hn
   have : LieGroup 𝓘(ℝ, F) 3 ((Lie.coadjointRepresentation ℝ I G).stabilizer c) :=
     LieGroup.of_le (n := ∞) (WithTop.coe_le_coe.2 le_top)
-  have hz : μ z = c := h.mem_levelSubMulAction.1 z.2
+  have hz : μ z = c := h.mem_levelSubMulAction.1 z.property
   set di := (mfderiv 𝓘(ℝ, Fin n → ℝ) I' (Subtype.val : h.levelSubMulAction c → M) z).toLinearMap
   set V := (InfinitesimalAction.fundamental 𝓘(ℝ, F)
     ((Lie.coadjointRepresentation ℝ I G).stabilizer c) 𝓘(ℝ, Fin n → ℝ)
@@ -393,7 +443,7 @@ theorem existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback (hσ : σ.Is
   let := h.orbitRelQuotientChartedSpace c hreg hn d
   have := h.isManifold_orbitRelQuotient hreg hn d
   exact h.existsUnique_isSymplectic_mpullback_eq_mpullback hσ hG hemb.contMDiff
-    (fun z ↦ h.mem_levelSubMulAction.1 z.2) (h.range_mfderiv_coe_levelSubMulAction hreg hn)
+    (fun z ↦ h.mem_levelSubMulAction.1 z.property) (h.range_mfderiv_coe_levelSubMulAction hreg hn)
     (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d) Quotient.mk_surjective
     (h.ker_mfderiv_quotientMk_levelSubMulAction hreg hn d)
     (fun k ↦ ContMDiffSMul.contMDiff_const_smul (I := 𝓘(ℝ, F)) k)
@@ -415,7 +465,7 @@ theorem finrank_quotientModelSpace_add_finrank_add_finrank_lieAnnihilator
   let := h.levelSubMulActionChartedSpace c hreg hn
   have hemb := h.isSmoothEmbedding_coe_levelSubMulAction hreg hn
   let := h.orbitRelQuotientChartedSpace c hreg hn d
-  have hz : μ z = c := h.mem_levelSubMulAction.1 z.2
+  have hz : μ z = c := h.mem_levelSubMulAction.1 z.property
   exact h.toIsMomentMap.finrank_add_finrank_add_finrank_lieAnnihilator
     (hσ.nondegenerate_bilinFormAt z) hz (h.momentCocycle_eq_zero z)
     (h.range_mfderiv_coe_levelSubMulAction hreg hn z)

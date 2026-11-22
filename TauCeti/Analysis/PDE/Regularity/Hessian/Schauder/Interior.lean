@@ -10,6 +10,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Topology.MetricSpace.Holder
@@ -157,8 +158,10 @@ private theorem exists_holderWith_and_abs_le_of_hasCompactSupport {α : ℝ≥0}
     fun i j => ⟨(hC₂ i j).mono (h₂ i j), fun x => (hM₂ i j x).trans (by exact_mod_cast h₂ i j)⟩⟩
 
 /-- On the ball `B_R`, a `C²` function with `‖Du‖ ≤ N` and `‖D²u‖ ≤ N`, and each of its partial
-derivatives, are `α`-Hölder with constant `N (2R)^(1 - α)`: they are `N`-Lipschitz on the convex
-set `B_R`, whose diameter is at most `2R`. -/
+derivatives, are `α`-Hölder with constant `N (2R)^(1 - α)`:
+`TauCeti.holderOnWith_ball_of_norm_fderiv_le` and
+`TauCeti.holderOnWith_fderiv_ball_of_norm_iteratedFDeriv_two_le` give this for `u` and `Du`, and
+evaluation at a unit vector is `1`-Lipschitz. -/
 private theorem holderOnWith_ball_of_norm_le {u : E → ℝ} {x₀ : E} {R : ℝ} {N α : ℝ≥0}
     (hα : α ≤ 1) (hu : ContDiffOn ℝ 2 u (ball x₀ R))
     (hN1 : ∀ x ∈ ball x₀ R, ‖fderiv ℝ u x‖ ≤ N)
@@ -166,33 +169,16 @@ private theorem holderOnWith_ball_of_norm_le {u : E → ℝ} {x₀ : E} {R : ℝ
     HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α u (ball x₀ R) ∧
       ∀ i, HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α
         (fun x => fderiv ℝ u x (EuclideanSpace.single i 1)) (ball x₀ R) := by
-  have hA : ∀ x ∈ ball x₀ R, ∀ y ∈ ball x₀ R, edist x y ≤ (2 * R).toNNReal := by
-    intro x hx y hy
-    rw [edist_dist]
-    refine ENNReal.ofReal_le_ofReal ?_
-    linarith [dist_triangle_right x y x₀, mem_ball.1 hx, mem_ball.1 hy]
-  have hcda (x : E) (hx : x ∈ ball x₀ R) : ContDiffAt ℝ 2 u x :=
-    hu.contDiffAt (isOpen_ball.mem_nhds hx)
-  have hLu : LipschitzOnWith N u (ball x₀ R) :=
-    (convex_ball x₀ R).lipschitzOnWith_of_nnNorm_fderiv_le
-      (fun x hx => (hcda x hx).differentiableAt (by norm_num))
-      fun x hx => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hN1 x hx
-  have hLDu : LipschitzOnWith N (fderiv ℝ u) (ball x₀ R) :=
-    (convex_ball x₀ R).lipschitzOnWith_of_nnNorm_fderiv_le
-      (fun x hx => ((hcda x hx).fderiv_right (m := 1) le_rfl).differentiableAt (by norm_num))
-      fun x hx => by
-        rw [← NNReal.coe_le_coe, coe_nnNorm, ← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
-        exact hN2 x hx
-  have hholder {g : E → ℝ} (hg : LipschitzOnWith N g (ball x₀ R)) :
-      HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α g (ball x₀ R) := by
-    simpa using (holderOnWith_one.2 hg).of_le hA hα
-  refine ⟨hholder hLu, fun i => hholder (LipschitzOnWith.of_dist_le_mul fun x hx y hy => ?_)⟩
-  rw [dist_eq_norm, ← sub_apply]
-  calc ‖(fderiv ℝ u x - fderiv ℝ u y) (EuclideanSpace.single i 1)‖
-      ≤ ‖fderiv ℝ u x - fderiv ℝ u y‖ := (fderiv ℝ u x - fderiv ℝ u y).unit_le_opNorm _ (by simp)
-    _ ≤ N * dist x y := by
-      rw [← dist_eq_norm]
-      exact hLDu.dist_le_mul x hx y hy
+  have hHDu := holderOnWith_fderiv_ball_of_norm_iteratedFDeriv_two_le hα hu hN2
+  refine ⟨holderOnWith_ball_of_norm_fderiv_le hα (hu.differentiableOn two_ne_zero) hN1,
+    fun i => ?_⟩
+  have hev : LipschitzWith 1 fun L : E →L[ℝ] ℝ => L (EuclideanSpace.single i 1) :=
+    LipschitzWith.of_dist_le_mul fun L L' => by
+      rw [dist_eq_norm, dist_eq_norm, ← sub_apply, NNReal.coe_one, one_mul]
+      exact (L - L').unit_le_opNorm _ (by simp)
+  have h := (holderWith_one.2 hev).comp_holderOnWith hHDu
+  simp only [NNReal.coe_one, NNReal.rpow_one, one_mul] at h
+  exact h
 
 /-- The lower-order part `Tᵢⱼ = u ∂ᵢ∂ⱼζ + ∂ᵢζ ∂ⱼu + ∂ⱼζ ∂ᵢu` of the Hessian entry `∂ᵢ∂ⱼ(ζ u)`
 vanishes off `s`, and is globally Hölder and bounded, when the first and second derivatives of `ζ`

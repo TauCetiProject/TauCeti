@@ -61,9 +61,9 @@ theorem isSmooth_comap_isoSetoid_of_exists_sentenceTheory [Countable κ]
       isoSetoid L V c d ↔ sentenceTheory θ c = sentenceTheory θ d) :
     ((isoSetoid L V).comap (Subtype.val : C → _)).IsSmooth := by
   obtain ⟨θ, hθ⟩ := h
-  exact Setoid.isSmooth_iff.2 ⟨fun c : C => sentenceTheory θ c.1,
-    (measurable_sentenceTheory θ).comp measurable_subtype_coe,
-    fun x y => hθ x.1 x.2 y.1 y.2⟩
+  exact Setoid.isSmooth_iff.2 ⟨fun c : C => sentenceTheory θ c.val,
+    (measurable_sentenceTheory θ).comp measurable_subtypeVal,
+    fun x y => hθ x.val x.property y.val y.property⟩
 
 /-- **Smoothness via complete countable sentence lists.** On a Borel subset `C` of configurations
 over a countable carrier in a countable relational vocabulary, restricted isomorphism is smooth if
@@ -77,7 +77,7 @@ theorem isSmooth_comap_isoSetoid_iff_exists_sentenceTheory [∀ n, Countable (L.
   have : StandardBorelSpace C := hC.standardBorel
   obtain ⟨g, hg, hgE⟩ := Setoid.isSmooth_iff.1 hsmooth
   obtain ⟨θ, hθ⟩ := exists_sentenceTheory_comp_eq (f := (Subtype.val : C → _))
-    measurable_subtype_coe hg fun x y hxy => (hgE x y).1 hxy
+    measurable_subtypeVal hg fun x y hxy => (hgE x y).1 hxy
   exact ⟨θ, fun c hc d hd => (hgE ⟨c, hc⟩ ⟨d, hd⟩).trans
     ⟨fun h => by rw [hθ ⟨c, hc⟩, hθ ⟨d, hd⟩, h],
       fun h => by rwa [hθ ⟨c, hc⟩, hθ ⟨d, hd⟩] at h⟩⟩

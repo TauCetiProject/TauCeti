@@ -298,7 +298,7 @@ theorem isUnit_det_toMatrix_submatrix_inr {ι : Type*} [Fintype ι] [DecidableEq
   have _ : Fintype (ToricRay σ) := Fintype.ofFinite (ToricRay σ)
   -- Every ray of a salient cone is salient, by `ConvexCone.Salient.anti` along the face inclusion.
   have hray : ∀ ρ : ToricRay σ, (ρ.toPointedCone : ConvexCone ℝ V).Salient :=
-    fun ρ ↦ hσ.anti fun _ hx ↦ ρ.1.isFaceOf.le hx
+    fun ρ ↦ hσ.anti fun _ hx ↦ ρ.val.isFaceOf.le hx
   have hblocks : B'.toMatrix B = Matrix.fromBlocks 1
       ((B'.toMatrix B).submatrix Sum.inl Sum.inr) 0
       ((B'.toMatrix B).submatrix Sum.inr Sum.inr) := by

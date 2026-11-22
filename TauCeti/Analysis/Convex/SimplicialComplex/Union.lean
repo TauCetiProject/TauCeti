@@ -75,12 +75,12 @@ theorem exists_space_eq_union (hK : K.faces.Finite) (hL : L.faces.Finite) :
   have := hL.to_subtype
   -- Cut `K` along the simplices of `L`, and then `L` along the simplices of the result.
   obtain ⟨K₁, hK₁, hK₁f, hK₁L⟩ := exists_isSubdivision_convexHull_subset_of_inter_nonempty hK
-    (C := fun u : L.faces => convexHull ℝ (u.1 : Set E))
-    fun u => (L.indep u.2).isConvexPolyhedron_convexHull
+    (C := fun u : L.faces => convexHull ℝ (u.val : Set E))
+    fun u => (L.indep u.property).isConvexPolyhedron_convexHull
   have := hK₁f.to_subtype
   obtain ⟨L₁, hL₁, hL₁f, hL₁K⟩ := exists_isSubdivision_convexHull_subset_of_inter_nonempty hL
-    (C := fun s : K₁.faces => convexHull ℝ (s.1 : Set E))
-    fun s => (K₁.indep s.2).isConvexPolyhedron_convexHull
+    (C := fun s : K₁.faces => convexHull ℝ (s.val : Set E))
+    fun s => (K₁.indep s.property).isConvexPolyhedron_convexHull
   -- Both cuts triangulate `|K| ∩ |L|`, the second one subdividing the first.
   set A := K₁.restrictConvexHull L.space
   set B := L₁.restrictConvexHull K₁.space

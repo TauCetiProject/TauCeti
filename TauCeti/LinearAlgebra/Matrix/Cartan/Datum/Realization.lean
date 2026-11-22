@@ -343,7 +343,7 @@ theorem realizationHom_toLinearMap_bijective :
     Function.Bijective (D.realizationHom b).toLinearMap := by
   refine ⟨fun y z h ↦ b.repr.injective <| Finsupp.ext fun k ↦ ?_, fun x ↦ ?_⟩
   · simpa using congr_fun (congrArg Subtype.val h) k
-  · obtain ⟨y, hy⟩ := (D.mem_coweightLattice_iff b).mp x.2
+  · obtain ⟨y, hy⟩ := (D.mem_coweightLattice_iff b).mp x.property
     exact ⟨y, Subtype.ext (by simpa using hy)⟩
 
 /-- The morphism from a Cartan datum to the datum of its realization is bijective on weights. -/
