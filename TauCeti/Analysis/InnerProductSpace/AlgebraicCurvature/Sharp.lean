@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.Analysis.InnerProductSpace.TensorProduct
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Operator
-public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Reaction
+public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Reaction.Basic
 public import TauCeti.Analysis.InnerProductSpace.BilinearForm.End
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Trace
@@ -79,12 +79,6 @@ private abbrev bracketLift (V : Type*) [NormedAddCommGroup V] [InnerProductSpace
     (⋀[ℝ]^2 V) ⊗[ℝ] (⋀[ℝ]^2 V) →ₗ[ℝ] ⋀[ℝ]^2 V :=
   TensorProduct.lift TauCeti.twoVectorBracket
 
-@[simp]
-private theorem bracketLift_tmul {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    (x y : ⋀[ℝ]^2 V) :
-    bracketLift V (x ⊗ₜ[ℝ] y) = TauCeti.twoVectorBracket x y :=
-  rfl
-
 namespace Module.End
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -133,9 +127,11 @@ theorem _root_.OrthonormalBasis.inner_sharpBilin {ι : Type*} [Fintype ι]
       ∑ p : ι × ι, ⟪TauCeti.twoVectorBracket (e p.1) (e p.2), η⟫ • (e p.1 ⊗ₜ[ℝ] e p.2) := by
     conv_lhs => rw [← (e.tensorProduct e).sum_repr' ((bracketLift V).adjoint η)]
     refine Finset.sum_congr rfl fun p _ ↦ ?_
-    rw [OrthonormalBasis.tensorProduct_apply, LinearMap.adjoint_inner_right, bracketLift_tmul]
+    rw [OrthonormalBasis.tensorProduct_apply, LinearMap.adjoint_inner_right]
+    dsimp only [bracketLift]
+    rw [TensorProduct.lift.tmul]
   rw [hη, map_sum, map_sum, inner_sum]
-  simp only [map_smul, TensorProduct.map_tmul, bracketLift_tmul, real_inner_smul_right,
+  simp only [map_smul, TensorProduct.map_tmul, TensorProduct.lift.tmul, real_inner_smul_right,
     Fintype.sum_prod_type]
   congr 1
   refine Finset.sum_congr rfl fun α _ ↦ Finset.sum_congr rfl fun β _ ↦ ?_
@@ -296,74 +292,66 @@ open TauCeti TauCeti.FourTensor
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
-private theorem sum_four_swap {ι : Type*} [Fintype ι] (f : ι → ι → ι → ι → ℝ) :
-    (∑ i, ∑ j, ∑ k, ∑ l, f i j k l) = ∑ k, ∑ l, ∑ i, ∑ j, f i j k l := by
-  have h : (∑ p : ι × ι, ∑ q : ι × ι, f p.1 p.2 q.1 q.2) =
-      ∑ q : ι × ι, ∑ p : ι × ι, f p.1 p.2 q.1 q.2 :=
-    Finset.sum_comm
-  simpa only [Fintype.sum_prod_type] using h
-
-private theorem sum_five_rotate {ι : Type*} [Fintype ι] (f : ι → ι → ι → ι → ι → ℝ) :
-    (∑ i, ∑ j, ∑ k, ∑ l, ∑ q, f i j k l q) = ∑ q, ∑ i, ∑ j, ∑ k, ∑ l, f i j k l q := by
-  have h : (∑ p : ι × ι, ∑ r : ι × ι, ∑ q : ι, f p.1 p.2 r.1 r.2 q) =
-      ∑ q : ι, ∑ p : ι × ι, ∑ r : ι × ι, f p.1 p.2 r.1 r.2 q :=
-    Finset.sum_comm_cycle
-  simpa only [Fintype.sum_prod_type] using h
-
 private theorem inner_sharpBilin_eq_sum_ιMulti {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) (A B : Module.End ℝ (⋀[ℝ]^2 V)) (ξ η : ⋀[ℝ]^2 V) :
     ⟪Module.End.sharpBilin A B ξ, η⟫ =
-      (1 / 8 : ℝ) * ∑ i, ∑ j, ∑ k, ∑ l,
-        ⟪twoVectorBracket (A (ιMulti ℝ 2 ![b i, b j])) (B (ιMulti ℝ 2 ![b k, b l])), ξ⟫ *
-          ⟪twoVectorBracket (ιMulti ℝ 2 ![b i, b j]) (ιMulti ℝ 2 ![b k, b l]), η⟫ := by
+      (1 / 8 : ℝ) * ∑ p : ι × ι, ∑ q : ι × ι,
+        ⟪twoVectorBracket (A (ιMulti ℝ 2 ![b p.1, b p.2]))
+          (B (ιMulti ℝ 2 ![b q.1, b q.2])), ξ⟫ *
+          ⟪twoVectorBracket (ιMulti ℝ 2 ![b p.1, b p.2])
+            (ιMulti ℝ 2 ![b q.1, b q.2]), η⟫ := by
   let e := stdOrthonormalBasis ℝ (⋀[ℝ]^2 V)
   rw [e.inner_sharpBilin]
   have hinner (x y : ⋀[ℝ]^2 V) :
       (∑ β, ⟪twoVectorBracket x (B (e β)), ξ⟫ * ⟪twoVectorBracket y (e β), η⟫) =
-        (1 / 2 : ℝ) * ∑ k, ∑ l,
-          ⟪twoVectorBracket x (B (ιMulti ℝ 2 ![b k, b l])), ξ⟫ *
-            ⟪twoVectorBracket y (ιMulti ℝ 2 ![b k, b l]), η⟫ :=
-    e.sum_apply_mul_eq_half_sum_ιMulti b
+        (1 / 2 : ℝ) * ∑ q : ι × ι,
+          ⟪twoVectorBracket x (B (ιMulti ℝ 2 ![b q.1, b q.2])), ξ⟫ *
+            ⟪twoVectorBracket y (ιMulti ℝ 2 ![b q.1, b q.2]), η⟫ := by
+    rw [Fintype.sum_prod_type]
+    exact e.sum_apply_mul_eq_half_sum_ιMulti b
       (((innerₗ (⋀[ℝ]^2 V)).flip ξ).comp ((twoVectorBracket x).comp B))
       (((innerₗ (⋀[ℝ]^2 V)).flip η).comp (twoVectorBracket y))
   simp_rw [hinner, ← Finset.mul_sum]
   rw [Finset.sum_comm]
-  have houter (k : ι) :
-      (∑ α, ∑ l,
-        ⟪twoVectorBracket (A (e α)) (B (ιMulti ℝ 2 ![b k, b l])), ξ⟫ *
-          ⟪twoVectorBracket (e α) (ιMulti ℝ 2 ![b k, b l]), η⟫) =
-        (1 / 2 : ℝ) * ∑ l, ∑ i, ∑ j,
-          ⟪twoVectorBracket (A (ιMulti ℝ 2 ![b i, b j])) (B (ιMulti ℝ 2 ![b k, b l])), ξ⟫ *
-            ⟪twoVectorBracket (ιMulti ℝ 2 ![b i, b j]) (ιMulti ℝ 2 ![b k, b l]), η⟫ := by
-    rw [Finset.sum_comm, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun l _ ↦ ?_
+  have houter (q : ι × ι) :
+      (∑ α,
+        ⟪twoVectorBracket (A (e α)) (B (ιMulti ℝ 2 ![b q.1, b q.2])), ξ⟫ *
+          ⟪twoVectorBracket (e α) (ιMulti ℝ 2 ![b q.1, b q.2]), η⟫) =
+        (1 / 2 : ℝ) * ∑ p : ι × ι,
+          ⟪twoVectorBracket (A (ιMulti ℝ 2 ![b p.1, b p.2]))
+            (B (ιMulti ℝ 2 ![b q.1, b q.2])), ξ⟫ *
+            ⟪twoVectorBracket (ιMulti ℝ 2 ![b p.1, b p.2])
+              (ιMulti ℝ 2 ![b q.1, b q.2]), η⟫ := by
+    rw [Fintype.sum_prod_type]
     exact e.sum_apply_mul_eq_half_sum_ιMulti b
       (((innerₗ (⋀[ℝ]^2 V)).flip ξ).comp
-        ((twoVectorBracket.flip (B (ιMulti ℝ 2 ![b k, b l]))).comp A))
+        ((twoVectorBracket.flip (B (ιMulti ℝ 2 ![b q.1, b q.2]))).comp A))
       (((innerₗ (⋀[ℝ]^2 V)).flip η).comp
-        (twoVectorBracket.flip (ιMulti ℝ 2 ![b k, b l])))
+        (twoVectorBracket.flip (ιMulti ℝ 2 ![b q.1, b q.2])))
   simp_rw [houter, ← Finset.mul_sum]
-  rw [← sum_four_swap]
+  rw [Finset.sum_comm]
   ring
 
 private theorem sum_inner_twoVectorBracket_contract {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) (A B : Module.End ℝ (⋀[ℝ]^2 V)) (ξ x y : ⋀[ℝ]^2 V) :
-    (∑ i, ∑ j, ∑ k, ∑ l,
-      ⟪twoVectorBracket (A (ιMulti ℝ 2 ![b i, b j])) (B (ιMulti ℝ 2 ![b k, b l])), ξ⟫ *
-        (⟪ιMulti ℝ 2 ![b i, b j], x⟫ * ⟪ιMulti ℝ 2 ![b k, b l], y⟫)) =
+    (∑ p : ι × ι, ∑ q : ι × ι,
+      ⟪twoVectorBracket (A (ιMulti ℝ 2 ![b p.1, b p.2]))
+        (B (ιMulti ℝ 2 ![b q.1, b q.2])), ξ⟫ *
+        (⟪ιMulti ℝ 2 ![b p.1, b p.2], x⟫ * ⟪ιMulti ℝ 2 ![b q.1, b q.2], y⟫)) =
       4 * ⟪twoVectorBracket (A x) (B y), ξ⟫ := by
   have hlhs :
-      ⟪twoVectorBracket (A (∑ i, ∑ j, ⟪ιMulti ℝ 2 ![b i, b j], x⟫ • ιMulti ℝ 2 ![b i, b j]))
-          (B (∑ k, ∑ l, ⟪ιMulti ℝ 2 ![b k, b l], y⟫ • ιMulti ℝ 2 ![b k, b l])), ξ⟫ =
-      ∑ k, ∑ l, ∑ i, ∑ j,
-        ⟪twoVectorBracket (A (ιMulti ℝ 2 ![b i, b j])) (B (ιMulti ℝ 2 ![b k, b l])), ξ⟫ *
-          (⟪ιMulti ℝ 2 ![b i, b j], x⟫ * ⟪ιMulti ℝ 2 ![b k, b l], y⟫) := by
+      ⟪twoVectorBracket
+          (A (∑ p : ι × ι, ⟪ιMulti ℝ 2 ![b p.1, b p.2], x⟫ • ιMulti ℝ 2 ![b p.1, b p.2]))
+          (B (∑ q : ι × ι, ⟪ιMulti ℝ 2 ![b q.1, b q.2], y⟫ • ιMulti ℝ 2 ![b q.1, b q.2])), ξ⟫ =
+      ∑ q : ι × ι, ∑ p : ι × ι,
+        ⟪twoVectorBracket (A (ιMulti ℝ 2 ![b p.1, b p.2]))
+          (B (ιMulti ℝ 2 ![b q.1, b q.2])), ξ⟫ *
+          (⟪ιMulti ℝ 2 ![b p.1, b p.2], x⟫ * ⟪ιMulti ℝ 2 ![b q.1, b q.2], y⟫) := by
     simp only [map_sum, LinearMap.sum_apply, sum_inner, map_smul, LinearMap.smul_apply,
       real_inner_smul_left, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
-      Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
-  rw [sum_four_swap, ← hlhs, b.sum_inner_smul_ιMulti_two x, b.sum_inner_smul_ιMulti_two y,
-    map_smul, map_smul, map_smul, LinearMap.smul_apply, map_smul, real_inner_smul_left,
+    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
+  rw [Finset.sum_comm, ← hlhs]
+  simp only [Fintype.sum_prod_type, b.sum_inner_smul_ιMulti_two, map_smul, LinearMap.smul_apply,
     real_inner_smul_left]
   ring
 
@@ -371,18 +359,19 @@ private theorem sum_inner_twoVectorBracket_contract {ι : Type*} [Fintype ι]
 private theorem two_mul_inner_sharpBilin_ιMulti_right {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) (A B : Module.End ℝ (⋀[ℝ]^2 V)) (ξ : ⋀[ℝ]^2 V) (z w : V) :
     2 * ⟪Module.End.sharpBilin A B ξ, ιMulti ℝ 2 ![z, w]⟫ =
-      ∑ q, (⟪twoVectorBracket (A (ιMulti ℝ 2 ![w, b q])) (B (ιMulti ℝ 2 ![b q, z])), ξ⟫ -
-        ⟪twoVectorBracket (A (ιMulti ℝ 2 ![z, b q])) (B (ιMulti ℝ 2 ![b q, w])), ξ⟫) := by
+      ∑ r, (⟪twoVectorBracket (A (ιMulti ℝ 2 ![w, b r])) (B (ιMulti ℝ 2 ![b r, z])), ξ⟫ -
+        ⟪twoVectorBracket (A (ιMulti ℝ 2 ![z, b r])) (B (ιMulti ℝ 2 ![b r, w])), ξ⟫) := by
   have hsum :
-      (∑ i, ∑ j, ∑ k, ∑ l,
-        ⟪twoVectorBracket (A (ιMulti ℝ 2 ![b i, b j])) (B (ιMulti ℝ 2 ![b k, b l])), ξ⟫ *
-          ⟪twoVectorBracket (ιMulti ℝ 2 ![b i, b j]) (ιMulti ℝ 2 ![b k, b l]),
+      (∑ p : ι × ι, ∑ q : ι × ι,
+        ⟪twoVectorBracket (A (ιMulti ℝ 2 ![b p.1, b p.2]))
+          (B (ιMulti ℝ 2 ![b q.1, b q.2])), ξ⟫ *
+          ⟪twoVectorBracket (ιMulti ℝ 2 ![b p.1, b p.2]) (ιMulti ℝ 2 ![b q.1, b q.2]),
             ιMulti ℝ 2 ![z, w]⟫) =
-      ∑ q, (4 * ⟪twoVectorBracket (A (ιMulti ℝ 2 ![w, b q])) (B (ιMulti ℝ 2 ![b q, z])), ξ⟫ -
-        4 * ⟪twoVectorBracket (A (ιMulti ℝ 2 ![z, b q])) (B (ιMulti ℝ 2 ![b q, w])), ξ⟫) := by
+      ∑ r, (4 * ⟪twoVectorBracket (A (ιMulti ℝ 2 ![w, b r])) (B (ιMulti ℝ 2 ![b r, z])), ξ⟫ -
+        4 * ⟪twoVectorBracket (A (ιMulti ℝ 2 ![z, b r])) (B (ιMulti ℝ 2 ![b r, w])), ξ⟫) := by
     simp_rw [b.inner_twoVectorBracket_ιMulti, Finset.mul_sum, mul_sub]
-    rw [sum_five_rotate]
-    refine Finset.sum_congr rfl fun q _ ↦ ?_
+    rw [Finset.sum_comm_cycle]
+    refine Finset.sum_congr rfl fun r _ ↦ ?_
     simp only [Finset.sum_sub_distrib, sum_inner_twoVectorBracket_contract b A B ξ]
   rw [inner_sharpBilin_eq_sum_ιMulti b, hsum, ← mul_assoc, Finset.mul_sum]
   exact Finset.sum_congr rfl fun _ _ ↦ by ring

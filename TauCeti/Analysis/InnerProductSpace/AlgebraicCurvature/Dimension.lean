@@ -278,13 +278,10 @@ theorem isBivectorSymmetric_fourTensorOfExteriorBilin_iff (B : BilinForm ℝ (�
     ⟨fourTensorOfExteriorBilin_antisymm_first B, fourTensorOfExteriorBilin_antisymm_last B,
       fun u v z w ↦ by simpa only [fourTensorOfExteriorBilin_apply] using h.eq _ _⟩⟩
   have hbil : B = B.flip :=
-    exteriorPower.linearMap_ext (AlternatingMap.ext fun p ↦
-      exteriorPower.linearMap_ext (AlternatingMap.ext fun q ↦ by
-        simp only [LinearMap.compAlternatingMap_apply, LinearMap.BilinForm.flip_apply]
-        rw [show p = ![p 0, p 1] from funext fun i ↦ by fin_cases i <;> rfl,
-          show q = ![q 0, q 1] from funext fun i ↦ by fin_cases i <;> rfl]
-        simpa only [fourTensorOfExteriorBilin_apply] using
-          h.swap_pairs (p 0) (p 1) (q 0) (q 1)))
+    exteriorPower.linearMap_ext_ιMulti_two fun u v ↦
+      exteriorPower.linearMap_ext_ιMulti_two fun z w ↦ by
+        simpa only [LinearMap.BilinForm.flip_apply, fourTensorOfExteriorBilin_apply] using
+          h.swap_pairs u v z w
   exact LinearMap.congr_fun₂ hbil x y
 
 /-- Linear equivalence from `bivectorSymmetricSubmodule V` to symmetric forms on `⋀[ℝ]^2 V`. -/

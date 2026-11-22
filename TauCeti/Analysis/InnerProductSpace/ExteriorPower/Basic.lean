@@ -343,14 +343,9 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 /-- The adjoint of `exteriorPower.map n e.toLinearMap` is
 `exteriorPower.map n e.symm.toLinearMap`. -/
 theorem adjoint_exteriorPowerMap (e : E ≃ₗᵢ[ℝ] F) :
-    LinearMap.adjoint (map n e.toLinearMap) = map n e.symm.toLinearMap := by
-  refine Eq.symm <| (LinearMap.eq_adjoint_iff _ _).2 fun x y ↦ ?_
-  have he : e.toLinearMap ∘ₗ e.symm.toLinearMap = LinearMap.id :=
-    LinearMap.ext fun z ↦ e.apply_symm_apply z
-  have h : ⟪map n e.toLinearMap (map n e.symm.toLinearMap x), map n e.toLinearMap y⟫ =
-      ⟪x, map n e.toLinearMap y⟫ := by
-    rw [← LinearMap.comp_apply, ← map_comp, he, map_id, LinearMap.id_apply]
-  exact (exteriorPower.inner_map_map e.toLinearIsometry _ _).symm.trans h
+    LinearMap.adjoint (map n e.toLinearMap) = map n e.symm.toLinearMap :=
+  ((e.toLinearEquiv.exteriorPower n).isometryOfInner
+    (exteriorPower.inner_map_map e.toLinearIsometry)).adjoint_toLinearMap_eq_symm
 
 /-- Conjugating an endomorphism of `⋀[ℝ]^n F` by a linear isometric equivalence `e : E ≃ₗᵢ[ℝ] F`
 moves the outer `map n e.symm.toLinearMap` to the right inner-product argument as
@@ -613,25 +608,25 @@ theorem twoVectorContraction_twoVectorBracket (F G : ⋀[ℝ]^2 V) :
     twoVectorContraction (twoVectorBracket F G) =
       twoVectorContraction F ∘ₗ twoVectorContraction G -
         twoVectorContraction G ∘ₗ twoVectorContraction F := by
-  let rhs : ⋀[ℝ]^2 V →ₗ[ℝ] ⋀[ℝ]^2 V →ₗ[ℝ] Module.End ℝ V :=
-    LinearMap.mk₂ ℝ (fun F G ↦ twoVectorContraction F ∘ₗ twoVectorContraction G -
-        twoVectorContraction G ∘ₗ twoVectorContraction F)
-      (fun _ _ _ ↦ by simp only [map_add, LinearMap.add_comp, LinearMap.comp_add]; abel)
-      (fun _ _ _ ↦ by simp only [map_smul, LinearMap.smul_comp, LinearMap.comp_smul, smul_sub])
-      (fun _ _ _ ↦ by simp only [map_add, LinearMap.add_comp, LinearMap.comp_add]; abel)
-      (fun _ _ _ ↦ by simp only [map_smul, LinearMap.smul_comp, LinearMap.comp_smul, smul_sub])
-  have h : twoVectorBracket.compr₂ twoVectorContraction = rhs :=
+  let : LieRing (Module.End ℝ V) := LieRing.ofAssociativeRing
+  let : LieRing (Module.End ℝ (Module.End ℝ V)) := LieRing.ofAssociativeRing
+  have h : twoVectorBracket.compr₂ twoVectorContraction =
+      (LieModule.toEnd ℝ (Module.End ℝ V) (Module.End ℝ V)).toLinearMap.compl₁₂
+        twoVectorContraction twoVectorContraction :=
     exteriorPower.linearMap_ext_ιMulti_two fun u₀ u₁ ↦
       exteriorPower.linearMap_ext_ιMulti_two fun v₀ v₁ ↦ by
         ext a
-        simp only [rhs, LinearMap.compr₂_apply, LinearMap.mk₂_apply, twoVectorBracket_ιMulti]
-        simp only [map_add, map_smul, map_neg, sub_eq_add_neg, LinearMap.add_apply,
-          LinearMap.neg_apply, LinearMap.smul_apply, LinearMap.comp_apply,
+        simp only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LieHom.coe_toLinearMap,
+          LieModule.toEnd_apply_apply, Ring.lie_def, Module.End.mul_eq_comp,
+          twoVectorBracket_ιMulti, map_add, map_sub, map_smul, LinearMap.add_apply,
+          LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.comp_apply,
           twoVectorContraction_ιMulti]
         rw [real_inner_comm v₀ u₀, real_inner_comm v₀ u₁, real_inner_comm v₁ u₀,
           real_inner_comm v₁ u₁]
         module
-  simpa only [LinearMap.compr₂_apply, rhs, LinearMap.mk₂_apply] using LinearMap.congr_fun₂ h F G
+  simpa only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LieHom.coe_toLinearMap,
+    LieModule.toEnd_apply_apply, Ring.lie_def, Module.End.mul_eq_comp] using
+    LinearMap.congr_fun₂ h F G
 
 omit [FiniteDimensional ℝ V] in
 /-- The two-vector bracket is skew-symmetric. -/

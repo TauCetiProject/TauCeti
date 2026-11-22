@@ -429,17 +429,13 @@ theorem map_comp_curvatureEndomorphism_compContinuousLinearMap
         curvatureEndomorphism
           (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) =
       curvatureEndomorphism r ∘ₗ exteriorPower.map 2 e.toLinearIsometry.toLinearMap := by
-  have hadj : exteriorPower.map 2 e.toLinearIsometry.toLinearMap ∘ₗ
-      LinearMap.adjoint (exteriorPower.map 2 e.toLinearIsometry.toLinearMap) = LinearMap.id :=
-    exteriorPower.linearMap_ext_inner_ιMulti_two fun _ _ z w ↦ by
-      have hzw : exteriorPower.ιMulti ℝ 2 ![z, w] =
-          exteriorPower.map 2 e.toLinearIsometry.toLinearMap
-            (exteriorPower.ιMulti ℝ 2 ![e.symm z, e.symm w]) := by
-        rw [exteriorPower.map_apply_ιMulti_two]; simp
-      rw [LinearMap.comp_apply, hzw, exteriorPower.inner_map_map e.toLinearIsometry,
-        LinearMap.adjoint_inner_left, ← hzw, LinearMap.id_apply]
+  have he : e.toLinearIsometry.toLinearMap = e.toLinearMap := LinearMap.ext fun _ ↦ rfl
+  have hadj : exteriorPower.map 2 e.toLinearMap ∘ₗ
+      LinearMap.adjoint (exteriorPower.map 2 e.toLinearMap) = LinearMap.id := by
+    rw [e.adjoint_exteriorPowerMap]
+    exact (e.toLinearEquiv.exteriorPower 2).comp_symm
   rw [e.toLinearIsometry.toContinuousLinearMap.curvatureEndomorphism_compContinuousLinearMap,
-    LinearIsometry.toLinearMap_toContinuousLinearMap, ← LinearMap.comp_assoc,
+    LinearIsometry.toLinearMap_toContinuousLinearMap, he, ← LinearMap.comp_assoc,
     ← LinearMap.comp_assoc, hadj, LinearMap.id_comp]
 
 end LinearIsometryEquiv
