@@ -149,21 +149,21 @@ theorem exists_homeomorph_morseTrajectoryPairs {p r : M}
   -- The orbit of each point of the slice meets the level `c₂` at a unique time `τ y`.
   have hτ (y : ↥(hX.flow.unstableSet p ∩ hX.flow.stableSet r ∩ {y | f y = c₁})) :
       ∃! t, f (hX.flow t y) = c₂ :=
-    hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpr y.2.1 hr₂ h₂p
+    hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpr y.property.1 hr₂ h₂p
   choose τ hτ' using fun y ↦ (hτ y).exists
   -- The point of the level `c₂` depends continuously on the point of the level `c₁`.
   have hg : Continuous fun y ↦ hX.flow (τ y) (y : M) := by
     refine continuous_iff_continuousAt.2 fun y ↦ ?_
-    obtain ⟨σ, hσ, hlim⟩ := hX.exists_tendsto_flow_of_tendsto y.2.1 hr₂ h₂p
-      (continuous_subtype_val.tendsto y) (s := τ) hτ'
+    obtain ⟨σ, hσ, hlim⟩ := hX.exists_tendsto_flow_of_tendsto y.property.1 hr₂ h₂p
+      (continuous_subtypeVal.tendsto y) (s := τ) hτ'
     rwa [(hτ y).unique hσ (hτ' y)] at hlim
   refine ⟨
-    { toFun w := ⟨w.1.1, w.2.1, w.2.2.1⟩
-      invFun y := ⟨(y.1, hX.flow (τ y) y.1), y.2.1, y.2.2, hτ' y, τ y, rfl⟩
+    { toFun w := ⟨w.val.1, w.property.1, w.property.2.1⟩
+      invFun y := ⟨(y.val, hX.flow (τ y) y.val), y.property.1, y.property.2, hτ' y, τ y, rfl⟩
       left_inv := ?_
       right_inv y := rfl
-      continuous_toFun := (continuous_fst.comp continuous_subtype_val).subtype_mk _
-      continuous_invFun := (continuous_subtype_val.prodMk hg).subtype_mk _ }, fun w ↦ rfl⟩
+      continuous_toFun := (continuous_fst.comp continuous_subtypeVal).subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.prodMk hg).subtype_mk _ }, fun w ↦ rfl⟩
   rintro ⟨⟨y, z⟩, hy, hyc, hzc, t, ht⟩
   obtain rfl : hX.flow t y = z := ht
   have := (hτ ⟨y, hy, hyc⟩).unique (hτ' ⟨y, hy, hyc⟩) hzc
@@ -221,7 +221,7 @@ theorem ncard_morseBrokenTrajectoryPairs
     obtain ⟨hpq, hqr, hz₁, hz₂⟩ := mem_morseBrokenTrajectorySet'.1 hx
     have h₁ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet (hne hpq) hz₁.1
     have h₂ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet (hne hqr) hz₂.1
-    have hq := hgap q q.2
+    have hq := hgap q q.property
       ⟨h₂.1.trans h₂.2, h₁.1.trans h₁.2⟩
     exact ⟨(hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet (hne hpq) hz₁.1 hq.2
       h₁p).exists, (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet (hne hqr)
@@ -232,7 +232,7 @@ theorem ncard_morseBrokenTrajectoryPairs
   refine ncard_congr (fun x _ ↦ (hX.flow (τ₁ x) x.2.1, hX.flow (τ₂ x) x.2.2)) ?_ ?_ ?_
   · rintro x hx
     obtain ⟨hpq, hqr, hz₁, hz₂⟩ := mem_morseBrokenTrajectorySet'.1 hx
-    exact ⟨x.1, mem_criticalPoints_iff_mfderiv_eq_zero.1 x.1.2, hpq, hqr,
+    exact ⟨x.1, mem_criticalPoints_iff_mfderiv_eq_zero.1 x.1.property, hpq, hqr,
       hX.flow.isInvariant_unstableSet_inter_stableSet _ _ _ hz₁.1, hτ₁ x hx,
       hX.flow.isInvariant_unstableSet_inter_stableSet _ _ _ hz₂.1, hτ₂ x hx⟩
   · rintro ⟨q, z₁, z₂⟩ ⟨q', z₁', z₂'⟩ hx hx' heq
@@ -362,7 +362,7 @@ theorem isOpen_preimage_val_morseTrajectoryPairs {p r : M}
   have hc : IsClosed ((↑) ⁻¹' (closure (hX.morseTrajectoryPairs p r c₁ c₂) \
       hX.morseTrajectoryPairs p r c₁ c₂) : Set (closure (hX.morseTrajectoryPairs p r c₁ c₂))) :=
     (h.finite_closure_diff_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p
-      hgap).isClosed.preimage continuous_subtype_val
+      hgap).isClosed.preimage continuous_subtypeVal
   convert hc.isOpen_compl using 1
   ext x
   simp only [mem_preimage, mem_compl_iff, Set.mem_sdiff, Subtype.coe_prop, true_and, not_not]
@@ -387,12 +387,12 @@ theorem exists_nhds_homeomorph_of_mem_morseTrajectoryPairs {p r : M}
   have hL1 : Module.finrank ℝ L = Module.finrank ℝ ℝ := by rw [Module.finrank_self]; omega
   -- The unbroken trajectories sit openly in the compactified space.
   let ι : hX.morseTrajectoryPairs p r c₁ c₂ → closure (hX.morseTrajectoryPairs p r c₁ c₂) :=
-    fun x ↦ ⟨x.1, subset_closure x.2⟩
+    fun x ↦ ⟨x.val, subset_closure x.property⟩
   have hι : IsOpenEmbedding ι := by
     refine ⟨(IsEmbedding.of_comp_iff IsEmbedding.subtypeVal).1 IsEmbedding.subtypeVal, ?_⟩
     convert h.isOpen_preimage_val_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p hgap
     ext x
-    exact ⟨by rintro ⟨y, rfl⟩; exact y.2, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+    exact ⟨by rintro ⟨y, rfl⟩; exact y.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
   have : Nonempty (hX.morseTrajectoryPairs p r c₁ c₂) := ⟨⟨w, hwP⟩⟩
   let G := ((hι.toOpenPartialHomeomorph ι).symm.trans Φ.toOpenPartialHomeomorph).trans
     ((chartAt L (Φ ⟨w, hwP⟩)).trans

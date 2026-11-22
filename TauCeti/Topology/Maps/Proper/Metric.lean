@@ -19,10 +19,15 @@ import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 A continuous map at uniformly bounded distance from a proper map into a proper metric space
 is proper. For example, a uniformly small smooth perturbation of a proper real-valued
 exhaustion function remains proper. The source needs no metric or separation assumptions.
+Conversely, a proper map into a proper metric space with bounded range has a compact source
+(`IsProperMap.compactSpace_of_isBounded_range`), so on a noncompact space a bounded function is
+never an exhaustion.
 
 The proof uses Mathlib's compactness of closed thickenings in proper metric spaces: the
 inverse image of a compact set under the perturbed map is a closed subset of the original
-map's inverse image of a compact thickening.
+map's inverse image of a compact thickening. Likewise, a family whose images under a proper map
+into a proper metric space frequently lie in a bounded set has a cluster point
+(`IsProperMap.exists_mapClusterPt_of_frequently_mem`).
 
 In a proper normed group the squared distance `v ↦ ‖v - a‖ ^ 2` from a point tends to infinity
 along the cocompact filter, so it is proper, and so is its composition with any closed embedding.
@@ -54,6 +59,25 @@ theorem _root_.IsProperMap.of_dist_le {X Y : Type*} [TopologicalSpace X] [Metric
   intro x hx
   exact Metric.mem_cthickening_of_dist_le (f x) (g x) C K hx (hfg x)
 
+/-- A proper map into a proper pseudometric space with bounded range has a compact source: the
+whole source is the inverse image of the compact closure of the range. For example, a bounded
+continuous real function on a noncompact space, such as `Real.arctan`, is not proper. -/
+theorem _root_.IsProperMap.compactSpace_of_isBounded_range {X Y : Type*} [TopologicalSpace X]
+    [PseudoMetricSpace Y] [ProperSpace Y] {f : X → Y} (hf : IsProperMap f)
+    (hb : Bornology.IsBounded (range f)) : CompactSpace X :=
+  ⟨(hf.isCompact_preimage hb.isCompact_closure).of_isClosed_subset isClosed_univ
+    fun x _ ↦ subset_closure (mem_range_self x)⟩
+
+/-- **Cluster points along proper maps.** If `f` is a proper map into a proper metric space and
+`f (u i)` frequently lies in a bounded set `s` along `l`, then `u` has a cluster point along `l`,
+which `f` maps into the closure of `s`. -/
+theorem _root_.IsProperMap.exists_mapClusterPt_of_frequently_mem {X Y ι : Type*}
+    [TopologicalSpace X] [PseudoMetricSpace Y] [ProperSpace Y] {f : X → Y} (hf : IsProperMap f)
+    {s : Set Y} (hs : Bornology.IsBounded s) {l : Filter ι} {u : ι → X}
+    (hu : ∃ᶠ i in l, f (u i) ∈ s) : ∃ x, f x ∈ closure s ∧ MapClusterPt x l u :=
+  (hf.isCompact_preimage hs.isCompact_closure).exists_mapClusterPt_of_frequently
+    (hu.mono fun _ h ↦ subset_closure h)
+
 /-- In a proper normed group, the squared distance from a point is a proper map. -/
 theorem isProperMap_norm_sq_sub {E : Type*} [NormedAddCommGroup E] [ProperSpace E] (a : E) :
     IsProperMap fun v : E ↦ ‖v - a‖ ^ 2 := by
@@ -82,7 +106,7 @@ proper map exactly when the subset is closed. -/
 theorem isProperMap_norm_sq_sub_subtypeVal_iff {E : Type*} [NormedAddCommGroup E]
     [ProperSpace E] {S : Set E} (a : E) :
     IsProperMap (fun x : S ↦ ‖(x : E) - a‖ ^ 2) ↔ IsClosed S := by
-  rw [isProperMap_norm_sq_sub_comp_iff continuous_subtype_val]
+  rw [isProperMap_norm_sq_sub_comp_iff continuous_subtypeVal]
   exact ⟨fun h ↦ Subtype.range_coe (s := S) ▸ h.isClosed_range,
     IsClosed.isProperMap_subtypeVal⟩
 
@@ -107,7 +131,7 @@ theorem not_isProperMap_norm_sq_sub_compl_singleton (y a : F) [(𝓝[≠] y).NeB
   intro h
   refine not_isCompact_compl_singleton_inter_preimage_Iic (lt_add_one (‖y - a‖ ^ 2)) ?_
   have hK := (h.isCompact_preimage (isCompact_Icc (a := 0) (b := ‖y - a‖ ^ 2 + 1))).image
-    continuous_subtype_val
+    continuous_subtypeVal
   convert hK using 1
   ext v
   simp only [mem_inter_iff, mem_compl_iff, mem_preimage, mem_Iic, mem_image, mem_Icc,

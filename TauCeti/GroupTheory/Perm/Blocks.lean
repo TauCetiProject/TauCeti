@@ -78,8 +78,8 @@ def blockMemOrderIsoCongr (e : X ≃ Y) (he : ∀ (g : G) (x : X), e (g • x) =
     (a : X) : BlockMem G a ≃o BlockMem G (e a) :=
   let f : X →[G] Y := { toFun := e, map_smul' := he }
   { toFun := fun B ↦ ⟨e '' (B : Set X),
-      ⟨⟨a, B.2.1, rfl⟩, B.2.2.image f Function.surjective_id e.injective⟩⟩
-    invFun := fun B ↦ ⟨e ⁻¹' (B : Set Y), ⟨B.2.1, B.2.2.preimage f⟩⟩
+      ⟨⟨a, B.property.1, rfl⟩, B.property.2.image f Function.surjective_id e.injective⟩⟩
+    invFun := fun B ↦ ⟨e ⁻¹' (B : Set Y), ⟨B.property.1, B.property.2.preimage f⟩⟩
     left_inv := fun _ ↦ Subtype.ext (Set.preimage_image_eq _ e.injective)
     right_inv := fun _ ↦ Subtype.ext (Set.image_preimage_eq _ e.surjective)
     map_rel_iff' := Set.image_subset_image_iff e.injective }
@@ -134,7 +134,7 @@ variable {G X : Type*} [Group G] [MulAction G X] [IsPretransitive G X]
 theorem _root_.MulAction.IsBlock.existsUnique_mem_orbit (hB : IsBlock G B) (hBne : B.Nonempty)
     (x : X) : ∃! C : orbit G B, x ∈ (C : Set X) := by
   obtain ⟨C, ⟨hC, hxC⟩, huniq⟩ := (hB.isBlockSystem hBne).1.2 x
-  exact ⟨⟨C, hC⟩, hxC, fun D hxD ↦ Subtype.ext (huniq D ⟨D.2, hxD⟩)⟩
+  exact ⟨⟨C, hC⟩, hxC, fun D hxD ↦ Subtype.ext (huniq D ⟨D.property, hxD⟩)⟩
 
 /-- A block `B` containing `a` is an atom in the block lattice exactly when its setwise stabilizer
 covers the point stabilizer of `a`. -/
@@ -170,11 +170,11 @@ theorem _root_.MulAction.IsBlock.isPreprimitive_stabilizer_of_isAtom
   -- `B` is the orbit of `a` under `stabilizer G B`, so the action on `B` is transitive because
   -- the action on an orbit is; the two carriers differ only by the identification of the sets.
   let f : orbit (stabilizer G B) a →[stabilizer G B] (B : Set X) :=
-    { toFun := fun x ↦ ⟨x, (hB.orbit_stabilizer_eq ha).subset x.2⟩
+    { toFun := fun x ↦ ⟨x, (hB.orbit_stabilizer_eq ha).subset x.property⟩
       map_smul' := fun _ _ ↦ rfl }
   let _ : IsPretransitive (stabilizer G B) B :=
     IsPretransitive.of_surjective_map (f := f)
-      (fun y ↦ ⟨⟨y, (hB.orbit_stabilizer_eq ha).symm.subset y.2⟩, rfl⟩) inferInstance
+      (fun y ↦ ⟨⟨y, (hB.orbit_stabilizer_eq ha).symm.subset y.property⟩, rfl⟩) inferInstance
   rw [← isCoatom_stabilizer_iff_preprimitive (stabilizer G B) ⟨a, ha⟩]
   convert hcoatom using 1
   ext g

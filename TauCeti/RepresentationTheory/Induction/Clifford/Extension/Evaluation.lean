@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Induction.Clifford.Extension.Reconstruction
+public import TauCeti.RepresentationTheory.Induction.Clifford.Extension.Reconstruction.Basic
 
 /-!
 # Equivariant reconstruction from Clifford multiplicities
@@ -68,7 +68,8 @@ theorem cliffordTensorRepresentation_projection_tmul (p : implementers A) (f : M
     cliffordTensorRepresentation A W (projection A p)
         (BalancedTensorProduct.tmul k (End A) (N := V) f x) =
       BalancedTensorProduct.tmul k (End A) (N := V)
-        (cliffordMultiplicityRepresentation A W (QuotientGroup.mk p : Carrier A) f) (p.1.2 x) := by
+        (cliffordMultiplicityRepresentation A W (QuotientGroup.mk p : Carrier A) f) (p.val.2 x)
+            := by
   exact cliffordBalancedTensorRepresentation_projection_tmul A _ _ _ p f x
 
 /-- Postcomposition by an inertia intertwiner acts on the multiplicity factor of the
@@ -87,7 +88,7 @@ noncomputable def cliffordTensorMap {W' : FDRep k (inertia A)} (g : W ⟶ W') :
     erw [LinearMap.comp_apply, cliffordTensorRepresentation_projection_tmul,
       BalancedTensorProduct.map_tmul, LinearMap.comp_apply, BalancedTensorProduct.map_tmul,
       cliffordTensorRepresentation_projection_tmul]
-    exact congrArg (fun h => BalancedTensorProduct.tmul k (End A) (N := V) h (p.1.2 x))
+    exact congrArg (fun h => BalancedTensorProduct.tmul k (End A) (N := V) h (p.val.2 x))
       (cliffordMultiplicityRepresentation_naturality A W g (QuotientGroup.mk p) f)
 
 /-- The tensor map postcomposes the multiplicity and leaves the vector unchanged. -/
@@ -137,10 +138,10 @@ noncomputable def cliffordBalancedEvaluation :
       (cliffordTensorRepresentation_projection_tmul A W p f x)).trans (heval _ _)
     have h₂ :
         ((cliffordMultiplicityRepresentation A W (QuotientGroup.mk p : Carrier A) f).hom.hom.hom
-          (p.1.2 x) : W) = W.ρ (projection A p) (f.hom.hom.hom x) := by
+          (p.val.2 x) : W) = W.ρ (projection A p) (f.hom.hom.hom x) := by
       rw [cliffordMultiplicityRepresentation_mk_apply, projection_apply]
-      exact congrArg (fun y : A => W.ρ p.1.1 (f.hom.hom.hom y))
-        (p.1.2.symm_apply_apply x)
+      exact congrArg (fun y : A => W.ρ p.val.1 (f.hom.hom.hom y))
+        (p.val.2.symm_apply_apply x)
     exact (LinearMap.comp_apply _ _ _).trans (h₁.trans (h₂.trans
       ((congrArg (W.ρ (projection A p)) (heval f x).symm).trans
         (LinearMap.comp_apply _ _ _).symm)))

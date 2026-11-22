@@ -66,14 +66,14 @@ noncomputable def mk :
 /-- A radical element has zero class exactly when it lies in the radical square. -/
 @[simp]
 theorem mk_eq_zero (x : (Ring.jacobson (pathAlgebra k Q ⧸ I)).restrictScalars k) :
-    mk I x = 0 ↔ x.1 ∈ Ring.jacobson (pathAlgebra k Q ⧸ I) ^ 2 :=
+    mk I x = 0 ↔ x.val ∈ Ring.jacobson (pathAlgebra k Q ⧸ I) ^ 2 :=
   Submodule.Quotient.mk_eq_zero _
 
 /-- Two radical elements have the same class exactly when their difference lies in the
 radical square. -/
 @[simp]
 theorem mk_eq_mk (x y : (Ring.jacobson (pathAlgebra k Q ⧸ I)).restrictScalars k) :
-    mk I x = mk I y ↔ x.1 - y.1 ∈ Ring.jacobson (pathAlgebra k Q ⧸ I) ^ 2 :=
+    mk I x = mk I y ↔ x.val - y.val ∈ Ring.jacobson (pathAlgebra k Q ⧸ I) ^ 2 :=
   Submodule.Quotient.eq _
 
 /-- Every first radical-layer class is represented by an element of the radical. -/
@@ -89,17 +89,17 @@ private noncomputable def radicalLayerMap (h : IsAdmissibleIdeal I) :
   (boundQuiverRadicalLayer.mk I).comp
     (((Ideal.Quotient.mkₐ k I).toLinearMap.comp (grade k Q 1).subtype).codRestrict
       ((Ring.jacobson (pathAlgebra k Q ⧸ I)).restrictScalars k)
-      (fun x => h.mk_mem_jacobson_iff x.1 |>.2
+      (fun x => h.mk_mem_jacobson_iff x.val |>.2
         (by simpa only [Submodule.pow_one] using
-          mem_arrowIdeal_pow.2 (grade_le_pathSpan k Q 1 x.2))))
+          mem_arrowIdeal_pow.2 (grade_le_pathSpan k Q 1 x.property))))
 
 private theorem radicalLayerMap_apply (h : IsAdmissibleIdeal I) (x : grade k Q 1) :
     radicalLayerMap h x = boundQuiverRadicalLayer.mk I
-      (⟨Ideal.Quotient.mk I x.1, by
+      (⟨Ideal.Quotient.mk I x.val, by
         simpa only [Submodule.restrictScalars_mem] using
-          (h.mk_mem_jacobson_iff x.1).2
+          (h.mk_mem_jacobson_iff x.val).2
             (by simpa only [Submodule.pow_one] using
-              mem_arrowIdeal_pow.2 (grade_le_pathSpan k Q 1 x.2))⟩ :
+              mem_arrowIdeal_pow.2 (grade_le_pathSpan k Q 1 x.property))⟩ :
         (Ring.jacobson (pathAlgebra k Q ⧸ I)).restrictScalars k) := (rfl)
 
 private theorem radicalLayerMap_bijective (h : IsAdmissibleIdeal I) :
@@ -109,7 +109,7 @@ private theorem radicalLayerMap_bijective (h : IsAdmissibleIdeal I) :
     intro x hx
     rw [radicalLayerMap_apply, boundQuiverRadicalLayer.mk_eq_zero] at hx
     have hlong := mem_pathSpan_iff.1 (mem_arrowIdeal_pow.1
-      ((h.mk_mem_jacobson_sq_iff x.1).1 hx))
+      ((h.mk_mem_jacobson_sq_iff x.val).1 hx))
     apply Subtype.ext
     simp only [Submodule.coe_zero]
     apply (pathAlgebraBasis k Q).repr.injective
@@ -117,21 +117,21 @@ private theorem radicalLayerMap_bijective (h : IsAdmissibleIdeal I) :
     intro p
     simp only [map_zero, Finsupp.coe_zero, Pi.zero_apply]
     by_contra hp
-    have := mem_grade_iff.1 x.2 p (Finsupp.mem_support_iff.2 hp)
+    have := mem_grade_iff.1 x.property p (Finsupp.mem_support_iff.2 hp)
     have := hlong p hp
     omega
   · intro y
     obtain ⟨y, rfl⟩ := boundQuiverRadicalLayer.mk_surjective y
-    obtain ⟨f, hf⟩ := Ideal.Quotient.mk_surjective y.1
+    obtain ⟨f, hf⟩ := Ideal.Quotient.mk_surjective y.val
     have hpos : f ∈ pathSpan k Q 1 := by
       exact mem_arrowIdeal_pow.1 (by
-        simpa only [Submodule.pow_one] using (h.mk_mem_jacobson_iff f).1 (hf ▸ y.2))
+        simpa only [Submodule.pow_one] using (h.mk_mem_jacobson_iff f).1 (hf ▸ y.property))
     rw [pathSpan_eq_grade_sup_pathSpan_succ k Q 1] at hpos
     obtain ⟨g, hg, z, hz, hgz⟩ := Submodule.mem_sup.1 hpos
     refine ⟨⟨g, hg⟩, ?_⟩
     rw [radicalLayerMap_apply, boundQuiverRadicalLayer.mk_eq_mk]
     -- Equality in `J/J²` is tested on the difference of the ambient representatives.
-    have hdiff : Ideal.Quotient.mk I g - y.1 = Ideal.Quotient.mk I (-z) := by
+    have hdiff : Ideal.Quotient.mk I g - y.val = Ideal.Quotient.mk I (-z) := by
       rw [← hf, ← map_sub, ← hgz]
       simp
     rw [hdiff]
@@ -148,11 +148,11 @@ noncomputable def radicalLayerEquiv (h : IsAdmissibleIdeal I) :
 @[simp]
 theorem radicalLayerEquiv_apply (h : IsAdmissibleIdeal I) (x : grade k Q 1) :
     h.radicalLayerEquiv x = boundQuiverRadicalLayer.mk I
-      (⟨Ideal.Quotient.mk I x.1, by
+      (⟨Ideal.Quotient.mk I x.val, by
         simpa only [Submodule.restrictScalars_mem] using
-          (h.mk_mem_jacobson_iff x.1).2
+          (h.mk_mem_jacobson_iff x.val).2
             (by simpa only [Submodule.pow_one] using
-              mem_arrowIdeal_pow.2 (grade_le_pathSpan k Q 1 x.2))⟩ :
+              mem_arrowIdeal_pow.2 (grade_le_pathSpan k Q 1 x.property))⟩ :
         (Ring.jacobson (pathAlgebra k Q ⧸ I)).restrictScalars k) :=
   radicalLayerMap_apply h x
 
