@@ -7,7 +7,13 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
+public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.CharacterMap
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.DiagramAutomorphism
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.DiagramAutomorphism.Root.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.Lattice
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.DiagramAutomorphism.CharacterMap
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.DiagramAutomorphism.Root.Subgroup
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.DiagramAutomorphism.ToralClosure
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.RootSubgroup
 
 /-!
@@ -44,7 +50,9 @@ fundamental-weight coordinates
 corresponding points of that closure
 (`TauCeti.DynkinType.chevalleyGroup_eq_kostantToralPointsSubgroup`), and every diagonal matrix of
 a torus parameter `s : Fin t.rank → Aˣ`, acting on each weight vector through its weight, is a
-point of `G_sc(t)` (`TauCeti.DynkinType.kostantTorusMatrix_mem_chevalleyGroup`).
+point of `G_sc(t)` (`TauCeti.DynkinType.kostantTorusMatrix_mem_chevalleyGroup`). Diagram symmetries
+act on `(t.scChevalleyDatum ht).points A` via `TauCeti.DynkinType.scChevalleyDatumDiagramAut`,
+commuting with value-ring maps (`TauCeti.DynkinType.map_comp_scChevalleyDatumDiagramAut`).
 
 ## Main declarations
 
@@ -64,6 +72,10 @@ point of `G_sc(t)` (`TauCeti.DynkinType.kostantTorusMatrix_mem_chevalleyGroup`).
 * `TauCeti.DynkinType.chevalleyTorus`: its split maximal torus, with character lattice the full
   weight lattice; `TauCeti.DynkinType.isClosedImmersion_chevalleyTorus` makes it a closed
   subgroup.
+* `TauCeti.DynkinType.scChevalleyDatumDiagramAutHom` and
+  `TauCeti.DynkinType.scChevalleyDatumDiagramAut`: the diagram symmetry action on the points of
+  `scChevalleyDatum`, with value-ring naturality (`map_comp_scChevalleyDatumDiagramAut`) and
+  character-map compatibility (`isCharacterMap_scChevalleyDatumDiagramAut`).
 
 ## References
 
@@ -82,7 +94,7 @@ noncomputable section
 
 open _root_.TauCeti.UniversalEnvelopingAlgebra
 
-universe v
+universe v v'
 
 variable (t : DynkinType) (ht : t.Valid)
 
@@ -284,6 +296,247 @@ lattice span the weight lattice. -/
 instance isClosedImmersion_chevalleyTorus :
     IsClosedImmersion (t.chevalleyTorus ht).hom.hom.left :=
   (t.scChevalleyDatum ht).isClosedImmersion_torus
+
+/-! ## Diagram automorphisms on `scChevalleyDatum` -/
+
+section DiagramAut
+
+open Multiplicative
+
+attribute [local instance high] Algebra.toModule
+
+variable {t} {σ τ : Equiv.Perm (Fin t.rank)}
+
+private noncomputable def scPointsEquiv (A : Type v) [CommRing A] :
+    (t.scChevalleyDatum ht).points A ≃*
+      kostantToralPointsSubgroup (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+        (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
+        (t.kostantForm_apply_mem_scLattice ht)
+        (t.isNilpotent_representation_scModule_rootGenerator ht)
+        (t.scWeightBasis ht) (t.scWeight ht) A :=
+  MulEquiv.subgroupCongr (t.chevalleyGroup_eq_kostantToralPointsSubgroup ht A)
+
+/-- The diagram automorphism of the points of `t.scChevalleyDatum ht`, obtained by transporting
+`t.scToralDiagramAutPoints ht hσ A` along `chevalleyGroup_eq_kostantToralPointsSubgroup`. -/
+noncomputable def scChevalleyDatumDiagramAut (hσ : σ ∈ t.diagramSymmetry)
+    (A : Type v) [CommRing A] :
+    MulAut ((t.scChevalleyDatum ht).points A) :=
+  MulAut.congr (t.scPointsEquiv ht A).symm (t.scToralDiagramAutPoints ht hσ A)
+
+/-- The diagram symmetry group acts on the points of `t.scChevalleyDatum ht`, obtained by
+transporting `t.scToralDiagramAutPointsHom ht A` along `scPointsEquiv`. -/
+noncomputable def scChevalleyDatumDiagramAutHom (A : Type v) [CommRing A] :
+    t.diagramSymmetry →* MulAut ((t.scChevalleyDatum ht).points A) :=
+  (MulAut.congr (t.scPointsEquiv ht A).symm).toMonoidHom.comp
+    (t.scToralDiagramAutPointsHom ht A)
+
+/-- Evaluation of the bundled diagram action on `scChevalleyDatum` is
+`scChevalleyDatumDiagramAut`. -/
+@[simp]
+theorem scChevalleyDatumDiagramAutHom_apply (A : Type v) [CommRing A] (g : t.diagramSymmetry) :
+    t.scChevalleyDatumDiagramAutHom ht A g = t.scChevalleyDatumDiagramAut ht g.property A :=
+  congrArg (MulAut.congr (t.scPointsEquiv ht A).symm) (t.scToralDiagramAutPointsHom_apply ht A g)
+
+private theorem scPointsEquiv_scChevalleyDatumDiagramAut (hσ : σ ∈ t.diagramSymmetry)
+    (A : Type v) [CommRing A] (g : (t.scChevalleyDatum ht).points A) :
+    t.scPointsEquiv ht A (t.scChevalleyDatumDiagramAut ht hσ A g) =
+      t.scToralDiagramAutPoints ht hσ A (t.scPointsEquiv ht A g) :=
+  (t.scPointsEquiv ht A).apply_symm_apply _
+
+private theorem scPointsEquiv_map {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
+    (f : A →+* B) (g : (t.scChevalleyDatum ht).points A) :
+    (t.scPointsEquiv ht B
+        (((t.scChevalleyDatum ht).pointsPresentation A).map
+          ((t.scChevalleyDatum ht).pointsPresentation B) f g) :
+        Matrix.GeneralLinearGroup (Fin (t.scWeightBasisCard ht)) B) =
+      (((kostantToralPointsPresentation (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+          (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
+          (t.kostantForm_apply_mem_scLattice ht)
+          (t.isNilpotent_representation_scModule_rootGenerator ht)
+          (t.scWeightBasis ht) (t.scWeight ht) A).map
+        (kostantToralPointsPresentation (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+          (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
+          (t.kostantForm_apply_mem_scLattice ht)
+          (t.isNilpotent_representation_scModule_rootGenerator ht)
+          (t.scWeightBasis ht) (t.scWeight ht) B) f)
+        (t.scPointsEquiv ht A g) :
+        Matrix.GeneralLinearGroup (Fin (t.scWeightBasisCard ht)) B) :=
+  ((MulEquiv.subgroupCongr_apply (t.chevalleyGroup_eq_kostantToralPointsSubgroup ht B) _).trans
+    (GeneralLinear.IntegralPointsPresentation.coe_map
+      ((t.scChevalleyDatum ht).pointsPresentation A)
+      ((t.scChevalleyDatum ht).pointsPresentation B) f g)).trans <|
+    (congrArg (Matrix.GeneralLinearGroup.map f)
+      (MulEquiv.subgroupCongr_apply (t.chevalleyGroup_eq_kostantToralPointsSubgroup ht A)
+        g).symm).trans
+      (GeneralLinear.IntegralPointsPresentation.coe_map
+        (kostantToralPointsPresentation (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+          (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
+          (t.kostantForm_apply_mem_scLattice ht)
+          (t.isNilpotent_representation_scModule_rootGenerator ht)
+          (t.scWeightBasis ht) (t.scWeight ht) A)
+        (kostantToralPointsPresentation (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+          (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
+          (t.kostantForm_apply_mem_scLattice ht)
+          (t.isNilpotent_representation_scModule_rootGenerator ht)
+          (t.scWeightBasis ht) (t.scWeight ht) B)
+        f (t.scPointsEquiv ht A g)).symm
+
+/-- The diagram automorphism on `scChevalleyDatum` is natural in the value ring. In particular
+it commutes with ring-endomorphism maps such as Frobenius. -/
+theorem map_comp_scChevalleyDatumDiagramAut (hσ : σ ∈ t.diagramSymmetry)
+    {A : Type v} {B : Type v'} [CommRing A] [CommRing B] (f : A →+* B) :
+    (((t.scChevalleyDatum ht).pointsPresentation A).map
+        ((t.scChevalleyDatum ht).pointsPresentation B) f).comp
+        (t.scChevalleyDatumDiagramAut ht hσ A).toMonoidHom =
+      (t.scChevalleyDatumDiagramAut ht hσ B).toMonoidHom.comp
+        (((t.scChevalleyDatum ht).pointsPresentation A).map
+          ((t.scChevalleyDatum ht).pointsPresentation B) f) := by
+  ext1 g
+  apply (t.scPointsEquiv ht B).injective
+  apply Subtype.ext
+  have h1 := t.scPointsEquiv_map ht f (t.scChevalleyDatumDiagramAut ht hσ A g)
+  have h2 := congrArg
+    (fun x => (((kostantToralPointsPresentation (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+        (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
+        (t.kostantForm_apply_mem_scLattice ht)
+        (t.isNilpotent_representation_scModule_rootGenerator ht)
+        (t.scWeightBasis ht) (t.scWeight ht) A).map
+      (kostantToralPointsPresentation (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+        (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
+        (t.kostantForm_apply_mem_scLattice ht)
+        (t.isNilpotent_representation_scModule_rootGenerator ht)
+        (t.scWeightBasis ht) (t.scWeight ht) B) f x) :
+      Matrix.GeneralLinearGroup (Fin (t.scWeightBasisCard ht)) B))
+    (t.scPointsEquiv_scChevalleyDatumDiagramAut ht hσ A g)
+  have h3 := congrArg Subtype.val
+    (DFunLike.congr_fun (t.map_comp_scToralDiagramAutPoints ht hσ f) (t.scPointsEquiv ht A g))
+  have h4 := congrArg
+    (fun x => ((t.scToralDiagramAutPoints ht hσ B x :
+      Matrix.GeneralLinearGroup (Fin (t.scWeightBasisCard ht)) B)))
+    (Subtype.ext (t.scPointsEquiv_map ht f g).symm)
+  have h5 := congrArg Subtype.val
+    (t.scPointsEquiv_scChevalleyDatumDiagramAut ht hσ B
+      (((t.scChevalleyDatum ht).pointsPresentation A).map
+        ((t.scChevalleyDatum ht).pointsPresentation B) f g)).symm
+  exact ((h1.trans h2).trans (h3.trans h4)).trans h5
+
+/-- The identity diagram symmetry acts as the identity on `(t.scChevalleyDatum ht).points A`. -/
+@[simp]
+theorem scChevalleyDatumDiagramAut_one (A : Type v) [CommRing A] :
+    t.scChevalleyDatumDiagramAut ht t.diagramSymmetry.one_mem A = 1 :=
+  (t.scChevalleyDatumDiagramAutHom_apply ht A 1).symm.trans
+    (t.scChevalleyDatumDiagramAutHom ht A).map_one
+
+/-- Diagram automorphisms on `(t.scChevalleyDatum ht).points A` compose multiplicatively. -/
+@[simp]
+theorem scChevalleyDatumDiagramAut_mul (hσ : σ ∈ t.diagramSymmetry) (hτ : τ ∈ t.diagramSymmetry)
+    (A : Type v) [CommRing A] :
+    t.scChevalleyDatumDiagramAut ht (t.diagramSymmetry.mul_mem hσ hτ) A =
+      t.scChevalleyDatumDiagramAut ht hσ A * t.scChevalleyDatumDiagramAut ht hτ A :=
+  (t.scChevalleyDatumDiagramAutHom_apply ht A (⟨σ, hσ⟩ * ⟨τ, hτ⟩)).symm.trans <|
+    ((t.scChevalleyDatumDiagramAutHom ht A).map_mul ⟨σ, hσ⟩ ⟨τ, hτ⟩).trans <|
+      congrArg₂ (· * ·) (t.scChevalleyDatumDiagramAutHom_apply ht A ⟨σ, hσ⟩)
+        (t.scChevalleyDatumDiagramAutHom_apply ht A ⟨τ, hτ⟩)
+
+/-- Inverting a diagram symmetry inverts its automorphism on `(t.scChevalleyDatum ht).points A`. -/
+@[simp]
+theorem scChevalleyDatumDiagramAut_inv (hσ : σ ∈ t.diagramSymmetry) (A : Type v) [CommRing A] :
+    t.scChevalleyDatumDiagramAut ht (t.diagramSymmetry.inv_mem hσ) A =
+      (t.scChevalleyDatumDiagramAut ht hσ A)⁻¹ :=
+  (t.scChevalleyDatumDiagramAutHom_apply ht A ⟨σ, hσ⟩⁻¹).symm.trans <|
+    ((t.scChevalleyDatumDiagramAutHom ht A).map_inv ⟨σ, hσ⟩).trans <|
+      congrArg Inv.inv (t.scChevalleyDatumDiagramAutHom_apply ht A ⟨σ, hσ⟩)
+
+/-- Every order relation of a diagram symmetry holds on `(t.scChevalleyDatum ht).points A`. -/
+theorem scChevalleyDatumDiagramAut_pow_eq_one (hσ : σ ∈ t.diagramSymmetry) (A : Type v)
+    [CommRing A] {m : ℕ} (hm : σ ^ m = 1) :
+    t.scChevalleyDatumDiagramAut ht hσ A ^ m = 1 :=
+  (congrArg (· ^ m) (t.scChevalleyDatumDiagramAutHom_apply ht A ⟨σ, hσ⟩)).symm.trans <|
+    ((t.scChevalleyDatumDiagramAutHom ht A).map_pow ⟨σ, hσ⟩ m).symm.trans <|
+      (congrArg (t.scChevalleyDatumDiagramAutHom ht A)
+        (Subtype.ext hm : (⟨σ, hσ⟩ : t.diagramSymmetry) ^ m = 1)).trans
+        (t.scChevalleyDatumDiagramAutHom ht A).map_one
+
+/-- On every root subgroup of `scChevalleyDatum`, the diagram automorphism permutes the root
+index by `diagramRootPerm` and multiplies the additive parameter by `chevalleyDiagramSign`. -/
+@[simp]
+theorem scChevalleyDatumDiagramAut_rootSubgroupPoints (hσ : σ ∈ t.diagramSymmetry)
+    (α : Fin t.numRoots) (A : Type v) [CommRing A] (u : A) :
+    t.scChevalleyDatumDiagramAut ht hσ A
+        ((t.scChevalleyDatum ht).rootSubgroupPoints α A (ofAdd u)) =
+      (t.scChevalleyDatum ht).rootSubgroupPoints (t.diagramRootPerm ht hσ α) A
+        (ofAdd (((t.chevalleyDiagramSign ht hσ α : ℤ) : A) * u)) := by
+  have hroot (γ : Fin t.numRoots) (v : A) :
+      t.scPointsEquiv ht A ((t.scChevalleyDatum ht).rootSubgroupPoints γ A (ofAdd v)) =
+        chevalleyToralRootSubgroupPoints (t := t) (ht := ht)
+          (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
+          (t.kostantForm_apply_mem_scLattice ht)
+          (t.isNilpotent_representation_scModule_rootGenerator ht)
+          (t.scWeightBasis ht) (t.scWeight ht) γ A (ofAdd v) :=
+    Subtype.ext <| (MulEquiv.subgroupCongr_apply _ _).trans <|
+      ((t.scChevalleyDatum ht).coe_rootSubgroupPoints γ A (ofAdd v)).trans
+        (coe_chevalleyToralRootSubgroupPoints (t := t) (ht := ht) _ _ _ _ _ _ γ A (ofAdd v)).symm
+  exact (t.scPointsEquiv ht A).injective <|
+    (t.scPointsEquiv_scChevalleyDatumDiagramAut ht hσ A _).trans <|
+      (congrArg _ (hroot α u)).trans <|
+        (t.scToralDiagramAutPoints_chevalleyToralRootSubgroupPoints ht hσ α A u).trans
+          (hroot _ _).symm
+
+private theorem scPointsEquiv_torusPoints (A : Type v) [CommRing A] (r : Fin t.rank → Aˣ) :
+    t.scPointsEquiv ht A ((t.scChevalleyDatum ht).torusPoints A r) =
+      kostantToralWeightTorusPoints (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+        (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
+        (t.kostantForm_apply_mem_scLattice ht)
+        (t.isNilpotent_representation_scModule_rootGenerator ht)
+        (t.scWeightBasis ht) (t.scWeight ht) A r := by
+  apply Subtype.ext
+  have h1 := (t.scChevalleyDatum ht).coe_torusPoints A r
+  rw [t.scChevalleyDatum_coordinateWeight ht] at h1
+  exact (MulEquiv.subgroupCongr_apply _ _).trans <|
+    h1.trans (coe_kostantToralWeightTorusPoints _ _ _ _ _ _ _ _ A r).symm
+
+/-- On the torus of `scChevalleyDatum`, the diagram automorphism relabels parameters by `σ⁻¹`. -/
+@[simp]
+theorem scChevalleyDatumDiagramAut_torusPoints (hσ : σ ∈ t.diagramSymmetry)
+    (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
+    t.scChevalleyDatumDiagramAut ht hσ A ((t.scChevalleyDatum ht).torusPoints A s) =
+      (t.scChevalleyDatum ht).torusPoints A (fun k => s (σ⁻¹ k)) :=
+  (t.scPointsEquiv ht A).injective <|
+    (t.scPointsEquiv_scChevalleyDatumDiagramAut ht hσ A _).trans <|
+      (congrArg _ (t.scPointsEquiv_torusPoints ht A s)).trans <|
+        (t.scToralDiagramAutPoints_kostantToralWeightTorusPoints ht hσ A s).trans
+          (t.scPointsEquiv_torusPoints ht A _).symm
+
+/-- The diagram automorphism on `scChevalleyDatum` has character map equal to the weight map of
+the inverse root-datum diagram automorphism, over every commutative ring. -/
+theorem isCharacterMap_scChevalleyDatumDiagramAut (hσ : σ ∈ t.diagramSymmetry)
+    (A : Type v) [CommRing A] :
+    IsCharacterMap ((t.scChevalleyDatum ht).torusPoints A)
+      (t.scChevalleyDatumDiagramAut ht hσ A).toMonoidHom
+      (diagramAut ht hσ)⁻¹.toHom.weightMap :=
+  isCharacterMap_iff.mpr fun s => (t.scPointsEquiv ht A).injective <|
+    (t.scPointsEquiv_scChevalleyDatumDiagramAut ht hσ A _).trans <|
+      (congrArg _ (t.scPointsEquiv_torusPoints ht A s)).trans <|
+        ((t.isCharacterMap_scToralDiagramAutPoints ht hσ A).map_apply s).trans
+          (t.scPointsEquiv_torusPoints ht A _).symm
+
+/-- Conjugating an endomorphism `F` of `(t.scChevalleyDatum ht).points A` by the diagram
+automorphism `γ_σ` conjugates its character map by `(diagramAut ht hσ).toHom.weightMap`. -/
+theorem isCharacterMap_conj_scChevalleyDatumDiagramAut (hσ : σ ∈ t.diagramSymmetry)
+    (A : Type v) [CommRing A]
+    {F : (t.scChevalleyDatum ht).points A →* (t.scChevalleyDatum ht).points A}
+    {φ : Module.End ℤ (Fin t.rank → ℤ)}
+    (hφ : IsCharacterMap ((t.scChevalleyDatum ht).torusPoints A) F φ) :
+    IsCharacterMap ((t.scChevalleyDatum ht).torusPoints A)
+      (((t.scChevalleyDatumDiagramAut ht hσ A).toMonoidHom.comp F).comp
+        (t.scChevalleyDatumDiagramAut ht hσ A)⁻¹.toMonoidHom)
+      ((diagramAut ht hσ).toHom.weightMap * φ * (diagramAut ht hσ)⁻¹.toHom.weightMap) := by
+  have hinv := t.isCharacterMap_scChevalleyDatumDiagramAut ht (t.diagramSymmetry.inv_mem hσ) A
+  rw [scChevalleyDatumDiagramAut_inv ht hσ A, diagramAut_inv ht hσ, inv_inv] at hinv
+  simpa only [mul_assoc] using
+    ((t.isCharacterMap_scChevalleyDatumDiagramAut ht hσ A).comp hφ).comp hinv
+
+end DiagramAut
 
 end
 

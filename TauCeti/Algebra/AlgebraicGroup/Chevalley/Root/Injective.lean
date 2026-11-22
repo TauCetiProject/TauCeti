@@ -9,8 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 import TauCeti.FieldTheory.IsAlgClosed.Units
-import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Quotient
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 import Mathlib.RingTheory.Localization.FractionRing
 
 /-!
@@ -20,8 +18,9 @@ For an arbitrary Chevalley datum `D`, every root element with additive parameter
 nonidentity over every nontrivial commutative ring
 (`ChevalleyDatum.rootSubgroupPoints_ofAdd_one_ne_one`). Over any integral domain `A` — including
 `ℤ`, `𝔽₂`, and fields of small characteristic — every root subgroup `D.rootSubgroupPoints γ A` is
-injective, and root subgroups attached to distinct roots have trivial intersection and distinct
-images.
+injective, and root subgroups attached to distinct roots have trivial intersection; distinct
+roots have distinct root-subgroup images over every nontrivial commutative ring
+(`ChevalleyDatum.range_rootSubgroupPoints_eq_iff`).
 
 The argument reduces to an algebraically closed field by passing to
 `AlgebraicClosure (FractionRing A)`, where the units are divisible and the field is infinite:
@@ -37,7 +36,6 @@ The argument reduces to an algebraically closed field by passing to
 
 ## Main results
 
-* `TauCeti.DynkinType.ChevalleyDatum.coordinateRoot_ne_zero`: every coordinate root is nonzero.
 * `TauCeti.DynkinType.ChevalleyDatum.rootSubgroupPoints_injective`: every root subgroup of a
   Chevalley datum is injective over every integral domain.
 * `TauCeti.DynkinType.ChevalleyDatum.eq_zero_of_rootSubgroupPoints_eq`: equal root elements at
@@ -45,7 +43,7 @@ The argument reduces to an algebraically closed field by passing to
 * `TauCeti.DynkinType.ChevalleyDatum.disjoint_range_rootSubgroupPoints`: distinct roots give
   disjoint root subgroups over every integral domain.
 * `TauCeti.DynkinType.ChevalleyDatum.range_rootSubgroupPoints_eq_iff`: distinct roots have
-  distinct root-subgroup images over every integral domain.
+  distinct root-subgroup images over every nontrivial commutative ring.
 
 ## References
 
@@ -63,26 +61,6 @@ open Multiplicative
 universe v
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
-
-/-- Every root has a nonzero coordinate vector in the chosen basis of the weight lattice. -/
-theorem coordinateRoot_ne_zero (γ : Fin t.numRoots) : D.coordinateRoot γ ≠ 0 := fun h0 =>
-  (t.simplyConnectedRootDatum ht).ne_zero γ <| by
-    simpa [coordinateRoot_def] using congrArg D.weightLatticeEmbedding h0
-
-/-- Proportional coordinate roots (with a nonzero coefficient on `β`) come from equal or
-opposite roots, by reducedness of the pinned simply-connected root datum. -/
-theorem eq_or_eq_neg_of_smul_coordinateRoot_eq {α β : Fin t.numRoots} {a b : ℤ} (ha : a ≠ 0)
-    (h : a • D.coordinateRoot β = b • D.coordinateRoot α) :
-    (t.simplyConnectedRootDatum ht).root α = (t.simplyConnectedRootDatum ht).root β ∨
-      (t.simplyConnectedRootDatum ht).root α = -(t.simplyConnectedRootDatum ht).root β := by
-  have hroot : a • (t.simplyConnectedRootDatum ht).root β =
-      b • (t.simplyConnectedRootDatum ht).root α := by
-    have := congrArg D.weightLatticeEmbedding h
-    rw [map_zsmul, map_zsmul] at this
-    simpa only [coordinateRoot_def, D.weightLatticeEmbedding_repr, Submodule.coe_mk] using this
-  let _ := t.isReduced_simplyConnectedRootDatum ht
-  refine RootPairing.IsReduced.eq_or_eq_neg (P := t.simplyConnectedRootDatum ht) α β fun hlin => ?_
-  exact ha (hlin.eq_zero_of_pair (by rw [hroot, neg_smul, neg_add_cancel])).2
 
 private theorem rootSubgroupPoints_injective_of_rootable (γ : Fin t.numRoots)
     (K : Type v) [Field K] [RootableBy Kˣ ℕ] :
@@ -185,15 +163,21 @@ theorem disjoint_range_rootSubgroupPoints (A : Type v) [CommRing A] [IsDomain A]
     simpa only [ofAdd_toAdd] using hv.symm).1
   rw [toAdd.injective (h.trans (toAdd_one (α := A)).symm), map_one]
 
-/-- **Distinct roots give distinct root-subgroup images** over every integral domain. -/
-theorem range_rootSubgroupPoints_eq_iff (A : Type v) [CommRing A] [IsDomain A]
+/-- **Distinct roots give distinct root-subgroup images** over every nontrivial commutative
+ring. -/
+@[simp]
+theorem range_rootSubgroupPoints_eq_iff (A : Type v) [CommRing A] [Nontrivial A]
     (α β : Fin t.numRoots) :
     (D.rootSubgroupPoints α A).range = (D.rootSubgroupPoints β A).range ↔ α = β := by
   refine ⟨fun h => by_contra fun hne => ?_, fun h => h ▸ rfl⟩
-  have hdisj := D.disjoint_range_rootSubgroupPoints A hne
-  rw [Subgroup.disjoint_def] at hdisj
-  have hmemα : D.rootSubgroupPoints α A (ofAdd 1) ∈ (D.rootSubgroupPoints α A).range :=
-    ⟨ofAdd 1, rfl⟩
-  exact D.rootSubgroupPoints_ofAdd_one_ne_one A α (hdisj hmemα (h ▸ hmemα))
+  obtain ⟨M, hM⟩ := Ideal.exists_maximal A
+  let _ : M.IsMaximal := hM
+  obtain ⟨u, hu⟩ : D.rootSubgroupPoints α A (ofAdd 1) ∈ (D.rootSubgroupPoints β A).range :=
+    h ▸ ⟨ofAdd 1, rfl⟩
+  have hmap := congrArg ((D.pointsPresentation A).map (D.pointsPresentation (A ⧸ M))
+    (Ideal.Quotient.mk M)) hu
+  simp only [D.map_rootSubgroupPoints, toAdd_ofAdd, map_one] at hmap
+  have ha := (D.eq_zero_of_rootSubgroupPoints_eq hne hmap.symm).1
+  exact one_ne_zero (α := A ⧸ M) ha
 
 end TauCeti.DynkinType.ChevalleyDatum

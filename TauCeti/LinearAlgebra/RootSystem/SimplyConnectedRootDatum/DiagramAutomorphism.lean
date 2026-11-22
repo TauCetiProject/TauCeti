@@ -55,6 +55,8 @@ The group of node permutations that the construction consumes is
 
 * `TauCeti.DynkinType.diagramRootPerm_simpleIndex`: the induced permutation extends `σ` along the
   Bourbaki numbering of the simple roots.
+* `TauCeti.DynkinType.diagramRootPerm_mem_posRoots_iff`: the induced permutation preserves positive
+  roots.
 * `TauCeti.DynkinType.root_diagramRootPerm` and `TauCeti.DynkinType.coroot_diagramRootPerm`: every
   root and coroot has its coordinates permuted by `σ`.
 * `TauCeti.DynkinType.eq_diagramAut`: an automorphism of the pinned datum whose weight map is the
@@ -126,6 +128,31 @@ numbering of the simple roots. -/
     (t.simpleSupportEquiv ht i)
   rw [diagramRootPerm, rationalDiagramAut, ← coe_simpleSupportEquiv, h]
   simp
+
+/-- The induced permutation of the root enumeration preserves positive roots. -/
+theorem diagramRootPerm_mem_posRoots_iff (hσ : σ ∈ t.diagramSymmetry)
+    (α : Fin t.numRoots) :
+    t.diagramRootPerm ht hσ α ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) ↔
+      α ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+  have hbase : (t.rationalBase ht).map (t.rationalDiagramAut ht hσ) = t.rationalBase ht := by
+    classical
+    refine RootPairing.Base.ext ?_
+    rw [(t.rationalBase ht).support_map_eq]
+    ext j
+    simp only [Finset.mem_image, rationalDiagramAut_indexEquiv]
+    refine ⟨?_, fun hj => ?_⟩
+    · rintro ⟨k, hk, rfl⟩
+      obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hk
+      exact t.diagramRootPerm_simpleIndex ht hσ i ▸ simpleIndex_mem_support (σ i)
+    · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hj
+      exact ⟨t.simpleIndex ht (σ⁻¹ i), simpleIndex_mem_support _, by
+        rw [t.diagramRootPerm_simpleIndex ht hσ, Equiv.Perm.inv_def, Equiv.apply_symm_apply]⟩
+  have himg := posRoots_map (t.rationalRootSystem ht) (t.rationalBase ht)
+    (t.rationalDiagramAut ht hσ)
+  rw [hbase, rationalDiagramAut_indexEquiv] at himg
+  refine ⟨fun h => ?_, fun h => himg.symm ▸ ⟨α, h, rfl⟩⟩
+  obtain ⟨γ, hγ, hγeq⟩ := himg ▸ h
+  rwa [← (t.diagramRootPerm ht hσ).injective hγeq]
 
 /-! ## The coordinates are permuted by the node permutation -/
 

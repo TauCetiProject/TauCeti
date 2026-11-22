@@ -72,6 +72,10 @@ by finitely many weight vectors
 * `TauCeti.DynkinType.ChevalleyDatum.span_range_coordinateWeight_eq_top`: the coordinate weights
   span `Fin t.rank → ℤ`.
 * `TauCeti.DynkinType.ChevalleyDatum.root_mem_weightLattice`: every root lies in `Λ(D)`.
+* `TauCeti.DynkinType.ChevalleyDatum.coordinateRoot_ne_zero`,
+  `TauCeti.DynkinType.ChevalleyDatum.eq_or_eq_neg_of_smul_coordinateRoot_eq`, and
+  `TauCeti.DynkinType.ChevalleyDatum.linearIndependent_coordinateRoot_simpleIndex`: nonvanishing,
+  reducedness proportionality, and simple-root linear independence of coordinate roots.
 * `TauCeti.DynkinType.ChevalleyDatum.eq_one_of_forall_smul_weight_eq`: the weights detect the
   Weyl group, including when `Λ(D)` is a proper sublattice of the full weight lattice.
 * `TauCeti.DynkinType.ChevalleyDatum.isNilpotent_representation_rootGenerator`: the numbered root
@@ -260,6 +264,47 @@ theorem sum_coordinateRoot_smul (γ : Fin t.numRoots) :
       (t.simplyConnectedRootDatum ht).root γ := by
   have h := congrArg Subtype.val (D.weightLatticeBasis.sum_repr ⟨_, D.root_mem_weightLattice γ⟩)
   rwa [Submodule.coe_sum] at h
+
+private theorem coordinateRoot_map_equivFun_symm (γ : Fin t.numRoots) :
+    (D.weightLattice.subtype ∘ₗ D.weightLatticeBasis.equivFun.symm.toLinearMap)
+        (D.coordinateRoot γ) =
+      (t.simplyConnectedRootDatum ht).root γ :=
+  congrArg Subtype.val (D.weightLatticeBasis.equivFun.symm_apply_apply
+    ⟨_, D.root_mem_weightLattice γ⟩)
+
+/-- Every root has a nonzero coordinate vector in the chosen basis of the weight lattice. -/
+theorem coordinateRoot_ne_zero (γ : Fin t.numRoots) : D.coordinateRoot γ ≠ 0 := by
+  intro h0
+  apply (t.simplyConnectedRootDatum ht).ne_zero γ
+  rw [← D.coordinateRoot_map_equivFun_symm γ, h0, map_zero]
+
+/-- Proportional coordinate roots (with a nonzero coefficient on `β`) come from equal or
+opposite roots, by reducedness of the pinned simply-connected root datum. -/
+theorem eq_or_eq_neg_of_smul_coordinateRoot_eq {α β : Fin t.numRoots} {a b : ℤ} (ha : a ≠ 0)
+    (h : a • D.coordinateRoot β = b • D.coordinateRoot α) :
+    (t.simplyConnectedRootDatum ht).root α = (t.simplyConnectedRootDatum ht).root β ∨
+      (t.simplyConnectedRootDatum ht).root α = -(t.simplyConnectedRootDatum ht).root β := by
+  let e := D.weightLattice.subtype ∘ₗ D.weightLatticeBasis.equivFun.symm.toLinearMap
+  have hroot : a • (t.simplyConnectedRootDatum ht).root β =
+      b • (t.simplyConnectedRootDatum ht).root α := by
+    have := congrArg e h
+    simpa only [map_zsmul, e, D.coordinateRoot_map_equivFun_symm] using this
+  let _ := t.isReduced_simplyConnectedRootDatum ht
+  refine RootPairing.IsReduced.eq_or_eq_neg (P := t.simplyConnectedRootDatum ht) α β fun hlin => ?_
+  exact ha (hlin.eq_zero_of_pair (by rw [hroot, neg_smul, neg_add_cancel])).2
+
+/-- The simple coordinate roots of any Chevalley datum are `ℤ`-linearly independent. -/
+theorem linearIndependent_coordinateRoot_simpleIndex :
+    LinearIndependent ℤ (fun i : Fin t.rank => D.coordinateRoot (t.simpleIndex ht i)) := by
+  let e := D.weightLattice.subtype ∘ₗ D.weightLatticeBasis.equivFun.symm.toLinearMap
+  have hroot : LinearIndependent ℤ
+      (fun i : Fin t.rank => (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i)) := by
+    simpa only [Function.comp_def, coe_simpleSupportEquivSimplyConnectedBase] using
+      (t.simplyConnectedBase ht).linearIndepOn_root.linearIndependent.comp
+        (t.simpleSupportEquivSimplyConnectedBase ht)
+        (t.simpleSupportEquivSimplyConnectedBase ht).injective
+  refine LinearIndependent.of_comp e ?_
+  simpa only [Function.comp_def, e, D.coordinateRoot_map_equivFun_symm] using hroot
 
 /-! ## Nilpotence of the root generators -/
 

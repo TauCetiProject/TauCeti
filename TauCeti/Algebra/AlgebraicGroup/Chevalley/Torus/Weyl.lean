@@ -200,6 +200,13 @@ theorem weylGroup_smul_mem_weightLattice (w : (t.simplyConnectedRootDatum ht).we
       t.coroot'_simpleIndex_apply ht]
     exact sub_mem ih (Submodule.smul_mem _ _ (D.root_mem_weightLattice (t.simpleIndex ht j)))
 
+private theorem weylGroup_map_weightLattice (w : (t.simplyConnectedRootDatum ht).weylGroup) :
+    D.weightLattice.map (DistribMulAction.toModuleAut ℤ (Fin t.rank → ℤ) w).toLinearMap =
+      D.weightLattice :=
+  le_antisymm
+    (Submodule.map_le_iff_le_comap.mpr fun _ hμ => D.weylGroup_smul_mem_weightLattice w hμ)
+    fun μ hμ => ⟨w⁻¹ • μ, D.weylGroup_smul_mem_weightLattice w⁻¹ hμ, smul_inv_smul w μ⟩
+
 /-- The Weyl-group action on the actual character lattice `Λ(D)`, written in the chosen basis
 `D.weightLatticeBasis`. -/
 def weylCharacterAut :
@@ -207,36 +214,37 @@ def weylCharacterAut :
       ((Fin t.rank → ℤ) ≃ₗ[ℤ] (Fin t.rank → ℤ)) where
   toFun w :=
     (D.weightLatticeBasis.equivFun.symm.trans
-      { toFun := fun μ => ⟨w • (μ : Fin t.rank → ℤ), D.weylGroup_smul_mem_weightLattice w μ.2⟩
-        map_add' := fun _ _ => Subtype.ext (smul_add w _ _)
-        map_smul' := fun a _ => Subtype.ext (smul_comm w a _)
-        invFun := fun μ =>
-          ⟨w⁻¹ • (μ : Fin t.rank → ℤ), D.weylGroup_smul_mem_weightLattice w⁻¹ μ.2⟩
-        left_inv := fun _ => Subtype.ext (inv_smul_smul w _)
-        right_inv := fun _ => Subtype.ext (smul_inv_smul w _) }).trans
+      ((DistribMulAction.toModuleAut ℤ (Fin t.rank → ℤ) w).ofSubmodules
+        D.weightLattice D.weightLattice (D.weylGroup_map_weightLattice w))).trans
       D.weightLatticeBasis.equivFun
-  map_one' := LinearEquiv.ext fun _ => D.weightLatticeBasis.equivFun.symm.injective <|
-    Subtype.ext <| by
-      simp only [LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply, LinearEquiv.coe_mk,
-        LinearMap.coe_mk, AddHom.coe_mk, one_smul]
-      rfl
-  map_mul' _ _ := LinearEquiv.ext fun _ => D.weightLatticeBasis.equivFun.symm.injective <|
-    Subtype.ext <| by
-      simp only [LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply, LinearEquiv.coe_mk,
-        LinearMap.coe_mk, AddHom.coe_mk, mul_apply_eq_comp, mul_smul]
+  map_one' := LinearEquiv.ext fun χ => by
+    simp only [LinearEquiv.trans_apply]
+    have h1 : ((DistribMulAction.toModuleAut ℤ (Fin t.rank → ℤ)
+        (1 : (t.simplyConnectedRootDatum ht).weylGroup)).ofSubmodules
+        D.weightLattice D.weightLattice (D.weylGroup_map_weightLattice 1)
+        (D.weightLatticeBasis.equivFun.symm χ)) = D.weightLatticeBasis.equivFun.symm χ :=
+      Subtype.ext (one_smul (t.simplyConnectedRootDatum ht).weylGroup
+        (D.weightLatticeBasis.equivFun.symm χ : Fin t.rank → ℤ))
+    rw [h1, LinearEquiv.apply_symm_apply]
+    rfl
+  map_mul' w₁ w₂ := LinearEquiv.ext fun χ => by
+    simp only [LinearEquiv.trans_apply, mul_apply_eq_comp, LinearEquiv.symm_apply_apply]
+    congr 1
 
 /-- Applying `weylCharacterAut` in the chosen basis matches the ambient Weyl action on `Λ(D)`. -/
 @[simp]
 theorem weightLatticeEmbedding_weylCharacterAut
     (w : (t.simplyConnectedRootDatum ht).weylGroup) (χ : Fin t.rank → ℤ) :
     D.weightLatticeEmbedding (D.weylCharacterAut w χ) = w • D.weightLatticeEmbedding χ := by
-  let μ : D.weightLattice := D.weightLatticeBasis.equivFun.symm χ
-  have hχ : (D.weightLatticeBasis.repr μ : Fin t.rank → ℤ) = χ :=
-    (D.weightLatticeBasis.equivFun_apply μ).symm.trans
-      (D.weightLatticeBasis.equivFun.apply_symm_apply χ)
-  change D.weightLatticeEmbedding (D.weightLatticeBasis.repr
-    ⟨w • (μ : Fin t.rank → ℤ), D.weylGroup_smul_mem_weightLattice w μ.2⟩) = _
-  rw [D.weightLatticeEmbedding_repr, ← hχ, D.weightLatticeEmbedding_repr]
+  have hχ : D.weightLatticeEmbedding χ =
+      (D.weightLatticeBasis.equivFun.symm χ : Fin t.rank → ℤ) := by
+    conv_lhs =>
+      rw [← D.weightLatticeBasis.equivFun.apply_symm_apply χ, Module.Basis.equivFun_apply,
+        D.weightLatticeEmbedding_repr]
+  rw [hχ]
+  dsimp only [weylCharacterAut, MonoidHom.coe_mk, OneHom.coe_mk, LinearEquiv.trans_apply]
+  rw [Module.Basis.equivFun_apply, D.weightLatticeEmbedding_repr]
+  rfl
 
 /-- Evaluating `weylCharacterAut` on a coordinate root gives the coordinate root of the
 permuted root. -/
@@ -248,6 +256,28 @@ theorem weylCharacterAut_coordinateRoot
   apply D.weightLatticeEmbedding_injective
   simp only [D.weightLatticeEmbedding_weylCharacterAut, coordinateRoot_def,
     D.weightLatticeEmbedding_repr, RootPairing.weylGroup_apply_root]
+
+/-- In type `A₁`, the unique simple reflection acts as negation on the actual character lattice
+of every Chevalley datum. -/
+theorem weylCharacterAut_simpleIndex_typeA1 {h1 : (DynkinType.A 1).Valid}
+    (D : ChevalleyDatum (DynkinType.A 1) h1) (i : Fin (DynkinType.A 1).rank) :
+    (D.weylCharacterAut
+      (RootPairing.weylGroup.ofIdx ((DynkinType.A 1).simplyConnectedRootDatum h1)
+        ((DynkinType.A 1).simpleIndex h1 i))).toLinearMap = -1 := by
+  refine LinearMap.ext fun χ => D.weightLatticeEmbedding_injective ?_
+  rw [LinearEquiv.coe_coe, D.weightLatticeEmbedding_weylCharacterAut,
+    RootPairing.weylGroup.ofIdx_smul, RootPairing.Equiv.reflection_smul,
+    RootPairing.reflection_apply, (DynkinType.A 1).coroot'_simpleIndex_apply h1]
+  ext j
+  obtain rfl : j = i := (Fin.eq_zero j).trans (Fin.eq_zero i).symm
+  have hroot : ((DynkinType.A 1).simplyConnectedRootDatum h1).root
+      ((DynkinType.A 1).simpleIndex h1 j) j = 2 := by
+    rw [DynkinType.root_simpleIndex]
+    exact (DynkinType.pairing_simpleIndex (DynkinType.A 1) h1 j j).symm.trans
+      (RootPairing.pairing_same ((DynkinType.A 1).simplyConnectedRootDatum h1) _)
+  simp only [LinearMap.neg_apply, one_apply_eq_self, map_neg, Pi.sub_apply, Pi.smul_apply,
+    Pi.neg_apply, smul_eq_mul, hroot]
+  ring
 
 /-- The simple reflection on actual torus parameters is dual to the corresponding simple
 reflection on the actual character lattice. -/
@@ -296,45 +326,70 @@ theorem isCharacterMap_conj_weylSubgroup (K : Type*) [Field K] (g : D.weylSubgro
         have hmul : (D.weylCharacterAut (D.weylProjection K y)⁻¹).toLinearMap *
             (D.weylCharacterAut (D.weylProjection K x)⁻¹).toLinearMap =
             (D.weylCharacterAut (D.weylProjection K (x * y))⁻¹).toLinearMap := by
-          rw [map_mul, mul_inv_rev, map_mul]; rfl
+          rw [map_mul, mul_inv_rev, map_mul, LinearEquiv.coe_toLinearMap_mul]
         have hconj : (MulAut.conj ((x * y : D.weylSubgroup K) : D.points K)).toMonoidHom =
             (MulAut.conj (x : D.points K)).toMonoidHom.comp
               (MulAut.conj (y : D.points K)).toMonoidHom := by
           ext z; simp [MulAut.conj_apply, mul_assoc]
         rwa [← hconj, hmul] at hcomp
-      inv_mem' := fun {x} hx => isCharacterMap_iff.mpr fun s => by
-        let s' := torusPointMap (D.weylCharacterAut (D.weylProjection K x)).toLinearMap s
-        have hxs' := hx.map_apply s'
-        have hcancel :
-            torusPointMap (D.weylCharacterAut (D.weylProjection K x)⁻¹).toLinearMap s' = s := by
-          rw [← MonoidHom.comp_apply, ← torusPointMap_comp]
-          have hid : (D.weylCharacterAut (D.weylProjection K x)).toLinearMap ∘ₗ
-              (D.weylCharacterAut (D.weylProjection K x)⁻¹).toLinearMap = LinearMap.id := by
-            ext v; simp
-          rw [hid, torusPointMap_id, MonoidHom.id_apply]
-        rw [hcancel] at hxs'
-        have h := congrArg (fun z => ((x : D.points K))⁻¹ * z * (x : D.points K)) hxs'
-        simpa [s', map_inv, inv_inv, MulAut.conj_apply, mul_assoc] using h.symm }
-  have hle : D.weylSubgroup K ≤ H.map (D.weylSubgroup K).subtype := by
-    refine (D.weylSubgroup_def K).le.trans ((Subgroup.closure_le _).mpr ?_)
-    rintro _ (⟨r, rfl⟩ | ⟨j, rfl⟩)
-    · refine ⟨⟨_, D.torusPoints_mem_weylSubgroup K r⟩, isCharacterMap_iff.mpr fun s => ?_, rfl⟩
-      simp only [D.weylProjection_torusPoints, inv_one, map_one, MulEquiv.coe_toMonoidHom,
-        MulAut.conj_apply]
-      change D.torusPoints K r * D.torusPoints K s * (D.torusPoints K r)⁻¹ =
-        D.torusPoints K (torusPointMap 1 s)
-      rw [torusPointMap_one, MonoidHom.id_apply]
-      exact ((Commute.all r s).map (D.torusPoints K)).mul_inv_cancel
-    · refine ⟨⟨_, D.weylElement_mem_weylSubgroup K j⟩, ?_, rfl⟩
+      inv_mem' := fun {x} hx => by
+        have hsymm := hx.symm
+        have hconj : (MulAut.conj (x : D.points K)).symm.toMonoidHom =
+            (MulAut.conj ((x⁻¹ : D.weylSubgroup K) : D.points K)).toMonoidHom := by
+          ext z; simp
+        have hchar : (D.weylCharacterAut (D.weylProjection K x)⁻¹).symm.toLinearMap =
+            (D.weylCharacterAut (D.weylProjection K x⁻¹)⁻¹).toLinearMap := by
+          rw [map_inv (D.weylProjection K), inv_inv, map_inv (D.weylCharacterAut)]
+          rfl
+        rwa [hconj, hchar] at hsymm }
+  have htop : H = ⊤ := D.weylSubgroup_eq_top_of_mem H
+    (fun r => isCharacterMap_iff.mpr fun s => by
+      simpa only [D.weylProjection_torusPoints, inv_one, map_one, LinearEquiv.coe_toLinearMap_one,
+        torusPointMap_id, MonoidHom.id_apply, MulEquiv.coe_toMonoidHom, MulAut.conj_apply] using
+        ((Commute.all r s).map (D.torusPoints K)).mul_inv_cancel)
+    (fun j => by
       have hw : (D.weylProjection K
           ⟨D.weylElement (t.simpleIndex ht j) K 1, D.weylElement_mem_weylSubgroup K j⟩)⁻¹ =
           RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht j) := by
         rw [D.weylProjection_weylElement, RootPairing.weylGroup.ofIdx_inv_eq]
-      change IsCharacterMap (D.torusPoints K) _ _
-      rw [hw]
-      exact D.isCharacterMap_conj_weylElement j K
-  obtain ⟨h, hh, heq⟩ := hle g.property
-  exact Subtype.ext heq ▸ hh
+      have hmem := D.isCharacterMap_conj_weylElement j K
+      rw [← hw] at hmem
+      exact hmem)
+  exact htop.ge (Subgroup.mem_top g)
+
+/-- Left-composing an endomorphism with conjugation by `g ∈ D.weylSubgroup K` right-multiplies
+its character map by `weylCharacterAut (weylProjection K g)⁻¹`. -/
+theorem isCharacterMap_conj_weylSubgroup_comp (K : Type*) [Field K] (g : D.weylSubgroup K)
+    {F : D.points K →* D.points K} {φ : Module.End ℤ (Fin t.rank → ℤ)}
+    (hφ : IsCharacterMap (D.torusPoints K) F φ) :
+    IsCharacterMap (D.torusPoints K)
+      ((MulAut.conj (g : D.points K)).toMonoidHom.comp F)
+      (φ * (D.weylCharacterAut (D.weylProjection K g)⁻¹).toLinearMap) :=
+  (D.isCharacterMap_conj_weylSubgroup K g).comp hφ
+
+/-- Right-composing an endomorphism with conjugation by `g ∈ D.weylSubgroup K` left-multiplies
+its character map by `weylCharacterAut (weylProjection K g)⁻¹`. -/
+theorem isCharacterMap_comp_conj_weylSubgroup (K : Type*) [Field K] (g : D.weylSubgroup K)
+    {F : D.points K →* D.points K} {φ : Module.End ℤ (Fin t.rank → ℤ)}
+    (hφ : IsCharacterMap (D.torusPoints K) F φ) :
+    IsCharacterMap (D.torusPoints K)
+      (F.comp (MulAut.conj (g : D.points K)).toMonoidHom)
+      ((D.weylCharacterAut (D.weylProjection K g)⁻¹).toLinearMap * φ) :=
+  hφ.comp (D.isCharacterMap_conj_weylSubgroup K g)
+
+/-- Conjugating an endomorphism `F` by `g ∈ D.weylSubgroup K` conjugates its character map by
+`weylCharacterAut (weylProjection K g)`. -/
+theorem isCharacterMap_conj_weylSubgroup_comp_conj_inv (K : Type*) [Field K]
+    (g : D.weylSubgroup K) {F : D.points K →* D.points K} {φ : Module.End ℤ (Fin t.rank → ℤ)}
+    (hφ : IsCharacterMap (D.torusPoints K) F φ) :
+    IsCharacterMap (D.torusPoints K)
+      (((MulAut.conj (g : D.points K)).toMonoidHom.comp F).comp
+        (MulAut.conj (g : D.points K)⁻¹).toMonoidHom)
+      ((D.weylCharacterAut (D.weylProjection K g)).toLinearMap * φ *
+        (D.weylCharacterAut (D.weylProjection K g)⁻¹).toLinearMap) := by
+  have hinv := D.isCharacterMap_conj_weylSubgroup K g⁻¹
+  rw [Subgroup.coe_inv, MonoidHom.map_inv (D.weylProjection K), inv_inv] at hinv
+  simpa only [mul_assoc] using (D.isCharacterMap_conj_weylSubgroup_comp K g hφ).comp hinv
 
 end
 

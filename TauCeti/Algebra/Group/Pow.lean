@@ -26,6 +26,8 @@ import TauCeti.Data.Nat.Carry
   `a * h ^ m = b * h ^ n`.
 * `TauCeti.pow_mul_mul_pow_mul_eq`: the carry of `Nat.add_eq_mod_add_carry`, read in the
   powers of an `n`-th root of `a`.
+* `TauCeti.pow_natAbs_eq_of_zpow_eq`: equal integer powers in a division monoid give equal
+  `natAbs` powers.
 -/
 
 public section
@@ -76,5 +78,14 @@ theorem pow_mul_mul_pow_mul_eq {α a : M} {n : ℕ} (hα : α ^ n = a) {m d p q 
     α ^ (m * p) * α ^ (m * q) = α ^ ((m * p + m * q) % n) * if d ≤ p + q then a else 1 := by
   rw [← pow_add, Nat.add_eq_mod_add_carry hmd hp hq, pow_add, pow_mul, hα]
   split_ifs <;> simp
+
+/-- Equal integer powers in a division monoid imply equal `natAbs` powers. -/
+theorem pow_natAbs_eq_of_zpow_eq {G : Type*} [DivisionMonoid G] {a b : G} {n : ℤ}
+    (h : a ^ n = b ^ n) : a ^ n.natAbs = b ^ n.natAbs := by
+  cases n with
+  | ofNat n => simpa using h
+  | negSucc n =>
+    rw [zpow_negSucc, zpow_negSucc] at h
+    simpa using inv_injective h
 
 end TauCeti

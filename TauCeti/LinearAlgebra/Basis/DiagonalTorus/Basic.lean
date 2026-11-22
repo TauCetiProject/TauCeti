@@ -69,7 +69,9 @@ field distinct weights stay distinct (`TauCeti.weightChar_injective`).
   `ℤ`-linear combination equal to one takes every unit as a value.
 * `TauCeti.weightChar_injective`: over an infinite field, distinct weights give distinct
   characters of the torus; `TauCeti.weightChar_injective_of_algebraRat` specializes this to
-  fields that are `ℚ`-algebras, and `TauCeti.exists_torusCharacter_ne` reads it pointwise.
+  fields that are `ℚ`-algebras, `TauCeti.exists_torusCharacter_ne` reads it pointwise, and
+  `TauCeti.smul_eq_smul_of_torusCharacter_eq_one` deduces rational proportionality from annihilator
+  inclusion.
 * `TauCeti.eq_of_span_eq_top_of_torusCharacter_eq`: dually, weights generating the whole character
   lattice separate the points of the torus, over any coefficient ring.
 * `TauCeti.basisDiagonalHom_injective` and `TauCeti.basisWeightTorus_injective`: a diagonal
@@ -406,6 +408,36 @@ torus. This is `TauCeti.weightChar_injective` read pointwise. -/
 theorem exists_torusCharacter_ne {K : Type*} [Field K] [Infinite K] {μ ν : κ → ℤ}
     (h : μ ≠ ν) : ∃ s : κ → Kˣ, torusCharacter s μ ≠ torusCharacter s ν := by
   simpa only [weightChar_apply] using DFunLike.ne_iff.mp (weightChar_injective.ne h)
+
+/-- Over an infinite field, if every torus point annihilating a character `α` also annihilates
+`μ`, then `α` and `μ` are proportional: `α i • μ = μ i • α` for every coordinate `i`. In
+particular, when `α ≠ 0`, `μ` is a rational multiple of `α`. -/
+theorem smul_eq_smul_of_torusCharacter_eq_one {K : Type*} [Field K] [Infinite K]
+    {α μ : κ → ℤ}
+    (h : ∀ s : κ → Kˣ, torusCharacter s α = 1 → torusCharacter s μ = 1) (i : κ) :
+    α i • μ = μ i • α := by
+  classical
+  ext j
+  simp only [Pi.smul_apply, smul_eq_mul]
+  by_contra hne
+  have hd : α i * μ j - μ i * α j ≠ 0 := sub_ne_zero.mpr hne
+  have hwt : (fun _ : Unit => α i * μ j - μ i * α j) ≠ (0 : Unit → ℤ) := fun h0 =>
+    hd (congrFun h0 ())
+  obtain ⟨v, hv⟩ := exists_torusCharacter_ne (K := K) hwt
+  let u : Kˣ := v ()
+  let s : κ → Kˣ := Pi.mulSingle i (u ^ (-α j)) * Pi.mulSingle j (u ^ (α i))
+  have hsα : torusCharacter s α = 1 := by
+    simp only [s, torusCharacter_mul, torusCharacter_mulSingle, ← _root_.zpow_mul,
+      ← _root_.zpow_add]
+    have hexp : -α j * α i + α i * α j = 0 := by ring
+    rw [hexp, zpow_zero]
+  have hsμ : torusCharacter s μ = 1 := h s hsα
+  simp only [s, torusCharacter_mul, torusCharacter_mulSingle, ← _root_.zpow_mul,
+    ← _root_.zpow_add] at hsμ
+  have hexp : -α j * μ i + α i * μ j = α i * μ j - μ i * α j := by ring
+  rw [hexp] at hsμ
+  apply hv
+  simpa [torusCharacter_def, u] using hsμ
 
 /-- The weight characters of a field that is a `ℚ`-algebra separate weights: such a field has
 characteristic zero, hence infinitely many elements. -/

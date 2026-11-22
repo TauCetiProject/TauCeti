@@ -336,6 +336,22 @@ theorem IsCharacterMap.map_range_eq [RootableBy Rˣ ℕ] (h : IsCharacterMap T F
     MonoidHom.range_eq_top.mpr (torusPointMap_surjective_of_injective hφ),
     ← MonoidHom.range_eq_map]
 
+/-- If an automorphism `F` acts on `T` through a lattice automorphism `φ`, then `F.symm` acts
+on `T` through `φ.symm`. -/
+theorem IsCharacterMap.symm {F : G ≃* G} {φ : (κ → ℤ) ≃ₗ[ℤ] (κ → ℤ)}
+    (h : IsCharacterMap T F.toMonoidHom φ.toLinearMap) :
+    IsCharacterMap T F.symm.toMonoidHom φ.symm.toLinearMap := by
+  intro s
+  let s' := torusPointMap φ.symm.toLinearMap s
+  have h1 : torusPointMap φ.toLinearMap s' = s := by
+    rw [← MonoidHom.comp_apply, ← torusPointMap_comp, LinearEquiv.comp_coe,
+      LinearEquiv.self_trans_symm, LinearEquiv.refl_toLinearMap, torusPointMap_id,
+      MonoidHom.id_apply]
+  have h2 := h.map_apply s'
+  rw [h1] at h2
+  have h3 := congrArg F.symm h2
+  simpa [s'] using h3.symm
+
 /-- **Lang's equation on the torus.** If the units of `R` are divisible and `1 - φ` is injective,
 then every torus point is `T u * (F (T u))⁻¹` for some torus point `T u`: the homomorphism
 `t ↦ t * F(t)⁻¹` of the torus is surjective. Its character map is `1 - φ`, whose dual is
@@ -347,6 +363,14 @@ theorem IsCharacterMap.exists_eq_mul_inv [RootableBy Rˣ ℕ] (h : IsCharacterMa
   refine ⟨u, ?_⟩
   rw [h, torusPointMap_sub, torusPointMap_one, MonoidHom.div_apply, MonoidHom.id_apply, map_div,
     div_eq_mul_inv]
+
+/-- **Lang's equation on the torus for a scalar-power character map.** If the units of `R` are
+divisible and `φ ^ n = m • 1` for some integer `m ≠ 1`, then every torus point is
+`T u * (F (T u))⁻¹` for some torus point `T u`. -/
+theorem IsCharacterMap.exists_eq_mul_inv_of_pow_eq_smul_one [RootableBy Rˣ ℕ]
+    (h : IsCharacterMap T F φ) {n : ℕ} {m : ℤ} (hm : m ≠ 1) (hpow : φ ^ n = m • 1)
+    (s : κ → Rˣ) : ∃ u, T s = T u * (F (T u))⁻¹ :=
+  h.exists_eq_mul_inv (injective_one_sub_of_pow_eq_smul_one hpow hm) s
 
 end Group
 

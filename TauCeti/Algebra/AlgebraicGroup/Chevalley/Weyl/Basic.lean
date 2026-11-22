@@ -72,6 +72,22 @@ theorem weylElement_mem_weylSubgroup (A : Type v) [CommRing A] (i : Fin t.rank) 
     D.weylElement (t.simpleIndex ht i) A 1 ∈ D.weylSubgroup A :=
   Subgroup.subset_closure (Or.inr ⟨i, rfl⟩)
 
+/-- Any subgroup of `D.weylSubgroup A` containing the actual torus and all pinned simple Weyl
+representatives is the whole Weyl subgroup. -/
+theorem weylSubgroup_eq_top_of_mem {A : Type v} [CommRing A] (H : Subgroup (D.weylSubgroup A))
+    (hT : ∀ s : Fin t.rank → Aˣ, ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ ∈ H)
+    (hw : ∀ i : Fin t.rank,
+      ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩ ∈ H) :
+    H = ⊤ := by
+  have hle : D.weylSubgroup A ≤ H.map (D.weylSubgroup A).subtype := by
+    refine (D.weylSubgroup_def A).le.trans ((Subgroup.closure_le _).mpr ?_)
+    rintro _ (⟨s, rfl⟩ | ⟨i, rfl⟩)
+    · exact ⟨_, hT s, rfl⟩
+    · exact ⟨_, hw i, rfl⟩
+  exact eq_top_iff.mpr fun g _ =>
+    let ⟨h, hh, heq⟩ := hle g.property
+    Subtype.ext heq ▸ hh
+
 private theorem isSl2Triple_representation (i : Fin t.rank) :
     IsSl2Triple
       (D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h i)))
