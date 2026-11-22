@@ -41,10 +41,11 @@ of compactified one-dimensional moduli spaces:
   `IsMorseSmalePair.exists_homeomorph_Ico_of_target` in
   `TauCeti.Geometry.Manifold.Morse.Gluing.Pair`).
 
-The proof glues in a Morse box at `q` (`TauCeti.IsAdaptedPseudoGradient.exists_morseBox_of_broken`)
-with entrance point `y₁` on the trajectory through `a₁` and exit point `y₂` on the orbit of `y`.
-The level cut of `W^u(p)` through `y₁` and the set `Z' = flow (-T) ⁻¹' Z` through `y₂` are
-transverse discs (`IsMorseSmale.exists_unstableSet_level_param` and
+The proof glues in a Morse box at `q`
+(`TauCeti.IsAdaptedPseudoGradient.exists_morseBox_of_broken_of_isSliceChart`) with entrance
+point `y₁` on the trajectory through `a₁` and exit point `y₂` on the orbit of `y`. The level cut
+of `W^u(p)` through `y₁` and the set `Z' = flow (-T) ⁻¹' Z` through `y₂` are transverse discs
+(`IsMorseSmale.exists_unstableSet_level_param` and
 `TauCeti.exists_param_of_span_mtangentConeAt_sup_eq_top`), and the model gluing
 (`TauCeti.exists_homeomorph_closure_splitGluingPairs_of_hasStrictFDerivAt`) joins them by a
 half-open arc of entrance and exit points. Unlike a stable manifold, `Z'` is not invariant under the
@@ -345,13 +346,9 @@ private theorem IsMorseSmale.exists_transverseGluingArc {hX : IsAdaptedPseudoGra
   -- the orbit of the exit point, which depends continuously on it: an orbit meets `Z'` at most
   -- once near `y₂`, so following the flow for bounded times embeds a compact piece of `Z'`.
   have hpq' : p ≠ q := by rintro rfl; omega
-  obtain ⟨r, -, hyr⟩ := hX.exists_tendsto_atTop hf y
-  have hyr : y ∈ hX.flow.stableSet r := Flow.mem_stableSet.2 hyr
-  have hqr : q ≠ r := by
-    rintro rfl
-    exact hyq (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hy, hyr⟩)
-  obtain ⟨φ, ε, ρ, T₁, T₂, y₁, y₂, hφ, hε, hερ, hε₂, hloc, hT₁, hT₂, hy₁φ, hy₂φ, hy₁s, hy₁ε,
-    hy₂u, hy₂ε⟩ := hX.exists_morseBox_of_broken hf hpq' hqr ha₁ ⟨hy, hyr⟩
+  obtain ⟨r, φ, ε, ρ, T₁, T₂, y₁, y₂, φ', hqr, hφ, hε, hερ, hε₂, hloc, hT₁, hT₂, hy₁φ, hy₂φ, hy₁s,
+    hy₁ε, hy₂u, hy₂ε, hy₁, hy₂, hφ', hZ', hy₂φ', hy₂Z, htr'⟩ :=
+    hX.exists_morseBox_of_broken_of_isSliceChart hf hpq' ha₁ hy hyq hφZ hZ hyφZ hyZ htr
   set Φ : M → WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
     fun w ↦ φ.splitCoord (φ.coord (φ.toChart w)) with hΦdef
   set Ψ : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) → M :=
@@ -360,11 +357,6 @@ private theorem IsMorseSmale.exists_transverseGluingArc {hX : IsAdaptedPseudoGra
     simp only [hΨdef, hΦdef, LinearEquiv.symm_apply_apply, φ.toChart.left_inv hw]
   have hε₁ : ∀ z, ‖z‖ ≤ ε → φ.coord.symm z ∈ φ.toChart.target := fun z hz ↦
     hε₂ z (by linarith)
-  have hy₁ : y₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q :=
-    hT₁ ▸ hX.flow.isInvariant_unstableSet_inter_stableSet p q T₁ ha₁
-  have hy₂ : y₂ ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r :=
-    hT₂ ▸ hX.flow.isInvariant_unstableSet_inter_stableSet q r T₂ ⟨hy, hyr⟩
-  have hy₂y : hX.flow (-T₂) y₂ = y := by rw [← hT₂, Flow.map_neg_apply_map]
   have hfa₁ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq' ha₁
   have hfy₂ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hqr hy₂
   obtain ⟨hA₁, hA₂, hy₁κ, hy₂κ⟩ :=
@@ -378,10 +370,7 @@ private theorem IsMorseSmale.exists_transverseGluingArc {hX : IsAdaptedPseudoGra
   have hU : U ∈ 𝓝 y₁ := hA₁.mono fun w ⟨h₁, _, h₂, h₃, _⟩ ↦ ⟨h₁, h₂, h₃⟩
   have hV : V ∈ 𝓝 y₂ := hA₂.mono fun w ⟨h₁, _, h₂, h₃, _⟩ ↦ ⟨h₁, h₃, h₂⟩
   -- The transverse set carried by the flow to the exit point.
-  set Z' := hX.flow (-T₂) ⁻¹' Z with hZ'def
-  obtain ⟨φ', hφ', hZ', hy₂φ', htr'⟩ := hX.exists_isSliceChart_preimage_flow hφZ hZ hyφZ htr T₂
-  rw [hT₂] at hy₂φ' htr'
-  have hy₂Z : y₂ ∈ Z' := by rw [hZ'def, mem_preimage, hy₂y]; exact hyZ
+  set Z' := hX.flow (-T₂) ⁻¹' Z
   have hL : IsClosed (L : Set E) := Submodule.isClosed_of_finiteDimensional _
   have hdimZ' : Module.finrank ℝ (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) Z' y₂)) =
       Module.finrank ℝ L := hZ'.finrank_span_mtangentConeAt (by simp) hφ' hL hy₂φ' hy₂Z
