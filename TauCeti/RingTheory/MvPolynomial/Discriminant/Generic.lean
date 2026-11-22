@@ -16,7 +16,7 @@ import Mathlib.Algebra.Prime.Lemmas
 import TauCeti.RingTheory.MvPolynomial.IrreducibleQuadratic
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
-import TauCeti.RingTheory.Polynomial.Resultant.Normalization
+import TauCeti.RingTheory.Polynomial.Resultant.WeightedHomogeneous
 
 /-!
 # Weighted homogeneity and primality of the generic monic discriminant
@@ -31,14 +31,10 @@ monic discriminant `(Polynomial.freeMonic R m).discr` is weighted homogeneous of
 `(2 : R) = 0`), so under those hypotheses the repeated-root locus where the generic monic
 discriminant vanishes is an irreducible weighted-homogeneous hypersurface of weight `m * (m - 1)`.
 
-1. **Weighted homogeneity.** Scaling the roots of `Polynomial.freeMonic R m` by an indeterminate
-   `T` multiplies the `k`-th coefficient by `T ^ (m - k)` and multiplies the discriminant by
-   `T ^ (m * (m - 1))`. Consequently `(Polynomial.freeMonic R m).discr` is weighted homogeneous of
-   weight `m * (m - 1)` when `X k` is given weight `m - k`
-   (`Polynomial.isWeightedHomogeneous_discr_freeMonic`). Specializing the universal monic
-   polynomial transfers this to any monic polynomial `f` over `MvPolynomial σ R` whose `k`-th
-   coefficient (`k < f.natDegree`) is weighted homogeneous of weight `(f.natDegree - k) • u` in an
-   arbitrary additive commutative monoid (`Polynomial.Monic.isWeightedHomogeneous_discr`).
+1. **Weighted homogeneity.** Specializing `Polynomial.isWeightedHomogeneous_discr` to the
+   universal monic polynomial `Polynomial.freeMonic R m` shows that
+   `(Polynomial.freeMonic R m).discr` is weighted homogeneous of weight `m * (m - 1)` when `X k` is
+   given weight `m - k` (`Polynomial.isWeightedHomogeneous_discr_freeMonic`).
 
 2. **Primality of the generic monic discriminant.** Via Vieta's formulas and the fundamental
    theorem of symmetric polynomials, `MvPolynomial (Fin m) R` embeds `R`-algebraically onto the
@@ -55,9 +51,8 @@ discriminant vanishes is an irreducible weighted-homogeneous hypersurface of wei
 
 ## Main results
 
-* `Polynomial.isWeightedHomogeneous_discr_freeMonic`,
-  `Polynomial.Monic.isWeightedHomogeneous_discr`: weighted homogeneity of the universal and
-  specialized monic discriminants.
+* `Polynomial.isWeightedHomogeneous_discr_freeMonic`: weighted homogeneity of the universal monic
+  discriminant.
 * `MvPolynomial.vietaAlgHom_discr_freeMonic`: `MvPolynomial.vietaAlgHom` sends
   `(Polynomial.freeMonic R m).discr` to the square of the Vandermonde alternant.
 * `Polynomial.isSquare_discr_freeMonic_of_two_eq_zero`,
@@ -87,54 +82,14 @@ theorem isWeightedHomogeneous_discr_freeMonic (R : Type*) [CommRing R] (m : ℕ)
   · rw [Subsingleton.elim (freeMonic R m).discr 0]
     exact isWeightedHomogeneous_zero R _ _
   let w : Fin m → ℕ := fun i ↦ m - (i : ℕ)
-  let g : Fin m → (MvPolynomial (Fin m) R)[X] :=
-    fun i ↦ Polynomial.C (MvPolynomial.X i) * Polynomial.X ^ w i
-  let F : (MvPolynomial (Fin m) R)[X][X] := (freeMonic R m).map Polynomial.C
-  have hFdeg : F.natDegree = m := by
-    rw [((monic_freeMonic R m).natDegree_map Polynomial.C), natDegree_freeMonic]
-  have hscale_mon : (F.scaleRoots Polynomial.X).Monic :=
-    (monic_scaleRoots_iff _).mpr ((monic_freeMonic R m).map Polynomial.C)
-  have hscale_deg : (F.scaleRoots Polynomial.X).natDegree = m := by
-    rw [natDegree_scaleRoots, hFdeg]
-  have hg_eq : g = fun i : Fin m ↦ (F.scaleRoots Polynomial.X).coeff i := by
-    funext i
-    simp [F, g, w, coeff_scaleRoots, hFdeg, coeff_freeMonic, i.isLt]
-  have hscale : (freeMonic R m).map (MvPolynomial.aeval g).toRingHom =
-      F.scaleRoots Polynomial.X := by
-    rw [hg_eq]
-    exact congrArg Subtype.val
-      ((MvPolynomial.mapEquivMonic R _ m).apply_symm_apply (.mk _ hscale_mon hscale_deg))
-  have hdiscr := congrArg Polynomial.discr hscale
-  rw [(monic_freeMonic R m).discr_map, discr_scaleRoots, hFdeg,
-    (monic_freeMonic R m).discr_map, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
-    mul_comm] at hdiscr
-  have hcoeff := congrArg (fun p : (MvPolynomial (Fin m) R)[X] ↦ p.coeff (m * (m - 1))) hdiscr
-  rw [MvPolynomial.coeff_aeval_C_X_mul_X_pow, coeff_C_mul_X_pow, ite_eq_left rfl] at hcoeff
-  rw [← hcoeff]
-  exact weightedHomogeneousComponent_mem w (freeMonic R m).discr (m * (m - 1))
-
-/-- **Weighted homogeneity of the discriminant.** If `f` is a monic polynomial over
-`MvPolynomial σ R` whose coefficient in degree `k < f.natDegree` is weighted homogeneous of weight
-`(f.natDegree - k) • u` in an additive commutative monoid `M`, then `f.discr` is weighted
-homogeneous of weight `(f.natDegree * (f.natDegree - 1)) • u`. -/
-theorem Monic.isWeightedHomogeneous_discr {R σ M : Type*} [CommRing R] [AddCommMonoid M]
-    (w : σ → M) (u : M) {f : (MvPolynomial σ R)[X]} (hf : f.Monic)
-    (hc : ∀ k < f.natDegree, (f.coeff k).IsWeightedHomogeneous w ((f.natDegree - k) • u)) :
-    f.discr.IsWeightedHomogeneous w ((f.natDegree * (f.natDegree - 1)) • u) := by
-  let n := f.natDegree
-  let φ : MvPolynomial (Fin n) R →ₐ[R] MvPolynomial σ R :=
-    MvPolynomial.aeval fun i : Fin n ↦ f.coeff i
-  have hmap : (freeMonic R n).map φ.toRingHom = f :=
-    congrArg Subtype.val ((MvPolynomial.mapEquivMonic R _ n).apply_symm_apply (.mk f hf rfl))
-  have hdiscr : f.discr = φ (freeMonic R n).discr := by
-    rw [← hmap, (monic_freeMonic R n).discr_map]
-    rfl
-  have hfree : (freeMonic R n).discr.IsWeightedHomogeneous
-      (fun i : Fin n ↦ (n - (i : ℕ)) • u) ((n * (n - 1)) • u) := fun d hd ↦ by
-    simpa only [Finsupp.weight_apply, map_finsuppSum, map_nsmul, multiplesHom_apply, smul_eq_mul,
-      mul_smul] using congrArg (multiplesHom M u) (isWeightedHomogeneous_discr_freeMonic R n hd)
-  rw [hdiscr]
-  exact hfree.aeval fun i ↦ hc i i.isLt
+  have h := isWeightedHomogeneous_discr (w := w) (1 : ℕ) (p := freeMonic R m) fun i ↦ by
+    rw [natDegree_freeMonic, coeff_freeMonic, smul_eq_mul, mul_one]
+    split_ifs with hi him
+    · exact isWeightedHomogeneous_X R w ⟨i, hi⟩
+    · rw [him, Nat.sub_self]; exact isWeightedHomogeneous_one R w
+    · exact isWeightedHomogeneous_zero R w (m - i)
+  rw [natDegree_freeMonic] at h
+  simpa [w] using h
 
 /-! ### Primality of the generic monic discriminant -/
 

@@ -33,11 +33,12 @@ The discriminant of the generic depressed polynomial is weighted homogeneous of 
 * `TauCeti.monic_genericDepressed`, `TauCeti.natDegree_genericDepressed`,
   `TauCeti.degree_genericDepressed`, `TauCeti.nextCoeff_genericDepressed`: the generic depressed
   polynomial is monic of degree `m` with vanishing subleading coefficient.
-* `TauCeti.map_eval_genericDepressed`: every monic depressed polynomial of degree `m` is a
-  specialization of the generic one.
+* `TauCeti.map_eval_genericDepressed`: every monic depressed polynomial of degree `m` over an
+  `R`-algebra is a specialization of the generic one.
 * `TauCeti.discr_genericDepressed`: `depressedDiscr R m` is the discriminant of
   `genericDepressed R m`.
-* `TauCeti.depressedDiscr_mem`: the discriminant is weighted homogeneous of weight `m (m - 1)`.
+* `TauCeti.depressedDiscr_mem_smul`, `TauCeti.depressedDiscr_mem`: the discriminant is weighted
+  homogeneous of weight `(m * (m - 1)) • u` (and `m * (m - 1)` for `depressedWeight m`).
 * `TauCeti.depressedDiscr_two`, `TauCeti.depressedDiscr_three`: the discriminants in degrees `2`
   and `3`.
 -/
@@ -142,19 +143,19 @@ theorem nextCoeff_genericDepressed : (genericDepressed R m).nextCoeff = 0 := by
   rw [coeff_genericDepressed, ite_eq_right (by omega), dite_eq_right (by omega)]
 
 /-- **Universal property of the generic depressed polynomial.** A monic polynomial `p` of degree
-`m` with vanishing subleading coefficient is the specialization of `genericDepressed R m` at
-`aⱼ₊₂ = p.coeff (m - 2 - j)`. -/
-theorem map_eval_genericDepressed {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = m)
-    (hnext : p.nextCoeff = 0) :
-    (genericDepressed R m).map (MvPolynomial.eval fun j : Fin (m - 1) ↦ p.coeff (m - 2 - j)) =
+`m` with vanishing subleading coefficient over an `R`-algebra `S` is the specialization of
+`genericDepressed R m` at `aⱼ₊₂ = p.coeff (m - 2 - j)`. -/
+theorem map_eval_genericDepressed {S : Type*} [CommSemiring S] [Algebra R S]
+    {p : S[X]} (hp : p.Monic) (hdeg : p.natDegree = m) (hnext : p.nextCoeff = 0) :
+    (genericDepressed R m).map
+        (MvPolynomial.aeval (R := R) fun j : Fin (m - 1) ↦ p.coeff (m - 2 - j)).toRingHom =
       p := by
   ext k : 2
   rw [coeff_map, coeff_genericDepressed]
   split_ifs with hm hk
   · rw [map_one, hm, ← hdeg, hp.coeff_natDegree]
-  · rw [MvPolynomial.eval_X]
+  · simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, MvPolynomial.aeval_X]
     congr 1
-    simp only
     omega
   · rw [map_zero, eq_comm]
     rcases lt_or_ge m k with hlt | hle
@@ -179,15 +180,37 @@ variable {R m}
 theorem discr_genericDepressed : (genericDepressed R m).discr = depressedDiscr R m := (rfl)
 
 /-- The discriminant of a monic polynomial `p` of degree `m` with vanishing subleading coefficient
-is `depressedDiscr R m` evaluated at `aⱼ₊₂ = p.coeff (m - 2 - j)`. -/
-theorem discr_eq_eval_depressedDiscr {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = m)
-    (hnext : p.nextCoeff = 0) :
+over an `R`-algebra `S` is `depressedDiscr R m` evaluated at `aⱼ₊₂ = p.coeff (m - 2 - j)`. -/
+theorem discr_eq_eval_depressedDiscr {S : Type*} [CommRing S] [Algebra R S]
+    {p : S[X]} (hp : p.Monic) (hdeg : p.natDegree = m) (hnext : p.nextCoeff = 0) :
     p.discr =
-      MvPolynomial.eval (fun j : Fin (m - 1) ↦ p.coeff (m - 2 - j)) (depressedDiscr R m) := by
-  rw [← discr_genericDepressed, ← monic_genericDepressed.discr_map,
-    map_eval_genericDepressed hp hdeg hnext]
+      MvPolynomial.aeval (R := R) (fun j : Fin (m - 1) ↦ p.coeff (m - 2 - j))
+        (depressedDiscr R m) := by
+  have h := (monic_genericDepressed (R := R) (m := m)).discr_map
+    (MvPolynomial.aeval (R := R) fun j : Fin (m - 1) ↦ p.coeff (m - 2 - j)).toRingHom
+  rw [map_eval_genericDepressed hp hdeg hnext] at h
+  rw [← discr_genericDepressed]
+  exact h
 
 variable (R m)
+
+/-- **The generic depressed discriminant is isobaric (general monoid weights).** For any element
+`u` of an additive commutative monoid `M`, the discriminant of `Xᵐ + a₂ Xᵐ⁻² + ⋯ + aₘ` is
+weighted homogeneous of weight `(m * (m - 1)) • u` when `aⱼ` is given weight `j • u`. -/
+theorem depressedDiscr_mem_smul {M : Type*} [AddCommMonoid M] (u : M) :
+    depressedDiscr R m ∈
+      MvPolynomial.weightedHomogeneousSubmodule R (fun j : Fin (m - 1) ↦ ((j : ℕ) + 2) • u)
+        ((m * (m - 1)) • u) := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · rw [Subsingleton.elim (depressedDiscr R m) 0]
+    exact zero_mem _
+  rw [← discr_genericDepressed, MvPolynomial.mem_weightedHomogeneousSubmodule]
+  have h := isWeightedHomogeneous_discr u (p := genericDepressed R m) fun i ↦ by
+    rw [natDegree_genericDepressed]
+    have hi := (isWeightedHomogeneous_coeff_genericDepressed (R := R) (m := m) i).comp_weight
+      (multiplesHom M u)
+    simpa [Function.comp_def, multiplesHom_apply] using hi
+  rwa [natDegree_genericDepressed] at h
 
 /-- **The generic depressed discriminant is isobaric.** The discriminant of
 `Xᵐ + a₂ Xᵐ⁻² + ⋯ + aₘ` is weighted homogeneous of weight `m (m - 1)`, for the weights
@@ -195,20 +218,13 @@ variable (R m)
 theorem depressedDiscr_mem :
     depressedDiscr R m ∈
       MvPolynomial.weightedHomogeneousSubmodule R (depressedWeight m) (m * (m - 1)) := by
-  rcases subsingleton_or_nontrivial R with hR | hR
-  · rw [Subsingleton.elim (depressedDiscr R m) 0]
-    exact zero_mem _
-  have h := isWeightedHomogeneous_discr (p := genericDepressed R m) fun i ↦ by
-    rw [natDegree_genericDepressed]
-    exact isWeightedHomogeneous_coeff_genericDepressed i
-  rw [natDegree_genericDepressed] at h
-  have hw : (Nat.castAddMonoidHom ℤ) ∘ (fun j : Fin (m - 1) ↦ (j : ℕ) + 2) = depressedWeight m := by
+  have h := depressedDiscr_mem_smul R m (1 : ℤ)
+  have hw : (fun j : Fin (m - 1) ↦ ((j : ℕ) + 2) • (1 : ℤ)) = depressedWeight m := by
     ext j
     simp
-  have hm : Nat.castAddMonoidHom ℤ (m * (m - 1)) = (m * (m - 1) : ℤ) := by
+  have hm : ((m * (m - 1)) • (1 : ℤ)) = (m * (m - 1) : ℤ) := by
     rcases m with _ | m <;> simp
-  rw [← discr_genericDepressed, MvPolynomial.mem_weightedHomogeneousSubmodule, ← hw, ← hm]
-  exact h.comp_weight _
+  rwa [hw, hm] at h
 
 /-- For `m = 2`, the discriminant of `X² + a₂` is `-4 a₂`. -/
 theorem depressedDiscr_two : depressedDiscr R 2 = -4 * MvPolynomial.X 0 := by
