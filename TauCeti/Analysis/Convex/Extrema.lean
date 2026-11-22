@@ -45,7 +45,7 @@ open scoped Topology
 
 variable {E β : Type*} [AddCommGroup E] [TopologicalSpace E] [Module ℝ E] [IsTopologicalAddGroup E]
   [ContinuousSMul ℝ E] [AddCommGroup β] [PartialOrder β] [IsOrderedAddMonoid β]
-  [Module ℝ β] [IsOrderedModule ℝ β] [PosSMulReflectLE ℝ β] {s : Set E} {u g : E → β} {x : E}
+  [Module ℝ β] [IsOrderedModule ℝ β] {s : Set E} {u g : E → β} {x : E}
 
 /-- **Local supporting hyperplanes of a convex function are global.** If `u` is convex on `s`,
 `x ∈ s`, and the affine function `x' ↦ u x + ℓ (x' - x)` lies below `u` at the points of `s`

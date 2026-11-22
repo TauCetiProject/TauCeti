@@ -126,9 +126,10 @@ section Elimination
 
 variable {X ι I κ β : Type*} [Fintype ι]
 
-/-- **Shared-row projection (sum of componentwise suprema).** When every support set `H j` is
-nonempty, `x` lifts to a point of `sharedRows` if and only if `x ∈ D` and the sum of the
-componentwise suprema over `H j` is at most `b`. -/
+/-- **Shared-row projection (sum of componentwise suprema).** Over an additive commutative monoid
+equipped with a semilattice-sup order whose addition preserves order (`IsOrderedAddMonoid`), when
+every support set `H j` is nonempty, `x` lifts to a point of `sharedRows` if and only if `x ∈ D`
+and the sum of the componentwise suprema over `H j` is at most `b`. -/
 theorem exists_mem_sharedRows_iff_sum_sup'_le [AddCommMonoid β] [SemilatticeSup β]
     [IsOrderedAddMonoid β] {D : Set X} {row : ι → I → X → β} {H : ι → Finset I}
     (hne : ∀ j, (H j).Nonempty) {b : β} {x : X} :
@@ -141,9 +142,9 @@ theorem exists_mem_sharedRows_iff_sum_sup'_le [AddCommMonoid β] [SemilatticeSup
       mem_sharedRows.2 ⟨hxD, fun j i hi => le_sup' (fun i => row j i x) hi, hsum⟩⟩
 
 /-- **Shared-row projection (all mixed choices).** Over a linearly ordered additive commutative
-monoid, when every support set `H j` is nonempty, `x` lifts to a point of `sharedRows` if and only
-if `x ∈ D` and every mixed-choice sum `∑ j, row j (choice j) x` with `choice j ∈ H j` is at most
-`b`. -/
+monoid with order-preserving addition, when every support set `H j` is nonempty, `x` lifts to a
+point of `sharedRows` if and only if `x ∈ D` and every mixed-choice sum
+`∑ j, row j (choice j) x` with `choice j ∈ H j` is at most `b`. -/
 theorem exists_mem_sharedRows_iff_forall_choice [AddCommMonoid β] [LinearOrder β]
     [IsOrderedAddMonoid β] {D : Set X} {row : ι → I → X → β} {H : ι → Finset I}
     (hne : ∀ j, (H j).Nonempty) {b : β} {x : X} :
@@ -173,8 +174,10 @@ theorem exists_mem_sharedRows_iff_of_exists_empty [AddCommGroup β] [Preorder β
     · simpa [y, hjj] using hu j i hi
   · rw [Finset.sum_update_of_mem (Finset.mem_univ j₀), sub_add_cancel]
 
-/-- **Independent-row projection.** When each anchor carries its own free height vector, eliminating
-the heights yields exactly `x ∈ D` together with each same-anchor diagonal sum inequality. -/
+/-- **Independent-row projection.** Over a preordered additive commutative monoid with
+order-preserving addition (`IsOrderedAddMonoid`), when each anchor carries its own free height
+vector, eliminating the heights yields exactly `x ∈ D` together with each same-anchor diagonal sum
+inequality. -/
 theorem exists_mem_independentRows_iff [AddCommMonoid β] [Preorder β] [IsOrderedAddMonoid β]
     {D : Set X} {row : κ → ι → X → β} {b : κ → β} {x : X} :
     (∃ y, (x, y) ∈ independentRows D row b) ↔ x ∈ D ∧ ∀ a, ∑ j, row a j x ≤ b a := by

@@ -43,8 +43,9 @@ open Finset
 
 namespace TauCeti
 
-/-- Bounding a finite sum of nonempty finite maxima is equivalent to bounding every mixed choice of
-one element from each finite set. -/
+/-- Bounding a finite sum of nonempty finite maxima in a linearly ordered additive commutative
+monoid with order-preserving addition is equivalent to bounding every mixed choice of one element
+from each finite set. -/
 theorem sum_sup'_le_iff_forall_choice {ι I β : Type*} [Fintype ι]
     [AddCommMonoid β] [LinearOrder β] [IsOrderedAddMonoid β]
     (H : ι → Finset I) (hne : ∀ j, (H j).Nonempty) (f : ι → I → β) (b : β) :
@@ -76,7 +77,8 @@ theorem bddAbove_range_of_forall_choice_sum_le {ι κ β : Type*} [Fintype ι]
     rw [Finset.sum_update_of_mem (Finset.mem_univ j), add_comm] at hch
     exact le_sub_iff_add_le'.2 hch
 
-/-- Bounding a finite sum of componentwise conditional suprema is equivalent to bounding every
+/-- Bounding a finite sum of componentwise conditional suprema in a conditionally complete lattice
+ordered additive commutative group with order-preserving addition is equivalent to bounding every
 mixed-choice sum. Each component family must be bounded above, and the common index type must be
 nonempty; the component type itself may be empty. -/
 theorem sum_ciSup_le_iff_forall_choice {ι κ β : Type*} [Fintype ι] [Nonempty κ]
@@ -107,8 +109,9 @@ theorem sum_ciSup_le_iff_forall_choice {ι κ β : Type*} [Fintype ι] [Nonempty
       exact sum_congr rfl fun k hk => by rw [Function.update_of_ne (ne_of_mem_of_not_mem hk hj)]
   exact key Finset.univ b hall
 
-/-- A finite sum of nonempty finite maxima equals the maximum of the sums over all choices in the
-Cartesian product `Fintype.piFinset H`. -/
+/-- In a linearly ordered additive commutative monoid with order-preserving addition, a finite sum
+of nonempty finite maxima equals the maximum of the sums over all choices in the Cartesian product
+`Fintype.piFinset H`. -/
 theorem sum_sup'_eq_sup'_piFinset {ι I β : Type*} [Fintype ι] [DecidableEq ι]
     [AddCommMonoid β] [LinearOrder β] [IsOrderedAddMonoid β]
     (H : ι → Finset I) (hne : ∀ j, (H j).Nonempty) (f : ι → I → β) :
