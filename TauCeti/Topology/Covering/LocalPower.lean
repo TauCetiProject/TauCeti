@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.IsLocalHomeomorph
 public import Mathlib.Data.Set.Card
 
 import Mathlib.Analysis.Complex.Polynomial.Basic
-import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
@@ -53,10 +51,6 @@ is what adds up the local degrees over a fibre of a finite branched covering.
   wherever the target has a chart.
 * `TauCeti.isLocalPowerAt_id`: the identity is locally the first power map wherever there is a
   chart.
-* `IsLocalHomeomorphOn.exists_ncard_inter_preimage_eq`: a local homeomorphism has one preimage
-  nearby, with no chart into `ℂ`.
-* `IsClosedMap.eventually_ncard_preimage_eq_finsum`: for a closed map with finite fibres, the local
-  preimage counts at the points of a fibre add up to the number of preimages of nearby points.
 
 ## References
 
@@ -253,54 +247,3 @@ theorem TauCeti.isLocalPowerAt_id {X : Type*} [TopologicalSpace X] {x : X}
     {ψ : OpenPartialHomeomorph X ℂ} (hx : x ∈ ψ.source) : IsLocalPowerAt (id : X → X) x 1 :=
   (Homeomorph.refl X).isLocalHomeomorph.isLocalHomeomorphOn.isLocalPowerAt_one (s := univ)
     (mem_univ x) hx
-
-/-- **A local homeomorphism has one preimage nearby.** If `f` is a local homeomorphism at every
-point of `s` and `x ∈ s`, then inside any neighbourhood `N` of `x` there is an open neighbourhood
-`V` of `x` such that every point close enough to `f x` has exactly one preimage in `V`. This is the
-count of `TauCeti.IsLocalPowerAt.exists_ncard_inter_preimage_eq` with exponent `1`, and it needs no
-chart into `ℂ`, so it also applies at boundary points of surfaces. -/
-theorem IsLocalHomeomorphOn.exists_ncard_inter_preimage_eq {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] {f : X → Y} {s : Set X} {x : X} (hf : IsLocalHomeomorphOn f s)
-    (hx : x ∈ s) {N : Set X} (hN : N ∈ 𝓝 x) :
-    ∃ V ⊆ N, IsOpen V ∧ x ∈ V ∧ ∀ᶠ y in 𝓝 (f x), (V ∩ f ⁻¹' {y}).ncard = 1 := by
-  obtain ⟨φ, hxφ, rfl⟩ := hf x hx
-  obtain ⟨W, hWN, hWo, hxW⟩ := mem_nhds_iff.1 hN
-  refine ⟨φ.source ∩ W, inter_subset_right.trans hWN, φ.open_source.inter hWo, ⟨hxφ, hxW⟩, ?_⟩
-  filter_upwards [(φ.isOpen_image_source_inter hWo).mem_nhds (mem_image_of_mem φ ⟨hxφ, hxW⟩)]
-    with y ⟨x', hx', hx'y⟩
-  refine ncard_eq_one.2 ⟨x', Subset.antisymm (fun z hz => ?_) ?_⟩
-  · exact φ.injOn hz.1.1 hx'.1 ((mem_singleton_iff.1 hz.2).trans hx'y.symm)
-  · exact singleton_subset_iff.2 ⟨hx', hx'y⟩
-
-/-- **Local preimage counts add up over a finite fibre.** Let `p : X → Y` be a closed map with
-finite fibres, `X` Hausdorff. Suppose that every point `x` of the fibre over `y` has arbitrarily
-small open neighbourhoods `V` in which every point `y' ≠ y` close enough to `y` has exactly `e x`
-preimages, as `TauCeti.IsLocalPowerAt.exists_ncard_inter_preimage_eq` provides at a local power map
-of exponent `e x`. Then every point `y' ≠ y` close enough to `y` has exactly `∑ᶠ x ∈ p ⁻¹' {y}, e x`
-preimages: closedness of `p` puts all of them in disjoint such neighbourhoods of the points over
-`y`. This is how the local degrees over a fibre of a branched cover add up to the number of sheets
-nearby. -/
-theorem IsClosedMap.eventually_ncard_preimage_eq_finsum {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] [T2Space X] {p : X → Y} (hp : IsClosedMap p)
-    (hfin : ∀ y, (p ⁻¹' {y}).Finite) {e : X → ℕ} {y : Y}
-    (he : ∀ x ∈ p ⁻¹' {y}, ∀ N ∈ 𝓝 x, ∃ V ⊆ N, IsOpen V ∧ x ∈ V ∧
-      ∀ᶠ y' in 𝓝[≠] y, (V ∩ p ⁻¹' {y'}).ncard = e x) :
-    ∀ᶠ y' in 𝓝[≠] y, (p ⁻¹' {y'}).ncard = ∑ᶠ x ∈ p ⁻¹' {y}, e x := by
-  set F := p ⁻¹' {y}
-  have hF : F.Finite := hfin y
-  -- Separate the points of the fibre `F` by pairwise disjoint neighbourhoods `V x`, on which the
-  -- preimages of each point near `y` are counted by `e x`.
-  obtain ⟨U, hU, hUdisj⟩ := hF.t2_separation
-  choose! V hVU hVo hxV hV using fun x (hx : x ∈ F) => he x hx (U x) ((hU x).2.mem_nhds (hU x).1)
-  -- Since `p` is closed, the fibres near `y` lie in the union of the `V x`.
-  have ht : ∀ᶠ y' in 𝓝 y, ∀ x' ∈ p ⁻¹' {y'}, x' ∈ ⋃ x ∈ F, V x :=
-    hp.eventually_nhds_fiber y fun x hx =>
-      Filter.mem_of_superset ((hVo x hx).mem_nhds (hxV x hx)) fun _ h => mem_biUnion hx h
-  filter_upwards [nhdsWithin_le_nhds ht, hF.eventually_all.2 hV] with y' hy't hy'V
-  have hcover : p ⁻¹' {y'} = ⋃ x ∈ F, V x ∩ p ⁻¹' {y'} := by
-    refine Subset.antisymm (fun x' hx' => ?_) (iUnion₂_subset fun _ _ => inter_subset_right)
-    obtain ⟨x, hx, hx'x⟩ := mem_iUnion₂.1 (hy't x' hx')
-    exact mem_biUnion hx ⟨hx'x, hx'⟩
-  rw [hcover, hF.ncard_biUnion (fun _ _ => (hfin y').subset inter_subset_right)
-    (hUdisj.mono_on fun x hx => inter_subset_left.trans (hVU x hx))]
-  exact finsum_mem_congr rfl hy'V

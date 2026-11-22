@@ -12,6 +12,7 @@ public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Topology.Covering.LocalPower
 
 import Mathlib.Topology.DiscreteSubset
+import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
 # Branched covers of topological surfaces and their degree
