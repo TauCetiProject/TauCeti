@@ -335,11 +335,8 @@ private theorem hochschildDifferential_unitKillingCochain_of_lt {𝒜 : AInfinit
       (by simp only [zero_add]; exact (congrArg w (Fin.ext rfl)).trans hwi)
   rw [hinit, (PiTensorProduct.tprod R).map_coord_zero (0 : Fin 2) rfl, map_zero, map_zero,
     zero_add]
-  conv_lhs =>
-    rhs
-    rw [← Nat.add_sub_of_le (Nat.succ_le_of_lt (Nat.lt_trans hij j.isLt)), Nat.succ_sub_succ,
-      Finset.sum_range_add]
-  rw [unitKillingCochain_barDifferential_prefix h𝒜 he π m j hIH hw (le_of_lt hij) hwi,
+  rw [Finset.sum_range_eq_sum_add_sum_sub _ (by omega : i.val + 1 ≤ m + 2),
+    unitKillingCochain_barDifferential_prefix h𝒜 he π m j hIH hw (le_of_lt hij) hwi,
     Finset.sum_eq_zero fun t ht ↦ by
       rw [Finset.mem_range] at ht
       rw [splice_two_eq_of_tprod R (by omega) w _,
@@ -485,10 +482,8 @@ private theorem hochschildDifferential_unitKillingCochain_same {𝒜 : AInfinity
       brace_def, brace_def, LinearMap.comp_apply, LinearMap.comp_apply, ← barDifferential_def,
       taylor_gradedCoderiv_unitKillingCochain 𝒜 e π m j hw,
       unitKillingCochain_barDifferential_of_tprod 𝒜 e π m j hw]
-    conv_lhs =>
-      rhs
-      rw [← Nat.add_sub_of_le (Nat.succ_le_of_lt j.isLt), Nat.succ_sub_succ, Finset.sum_range_add]
-    rw [hpre, hsuf, hinit, taylor_of_two_neg_smul_duplicateAt 𝒜 e j w]
+    rw [Finset.sum_range_eq_sum_add_sum_sub _ (by omega : j.val + 1 ≤ m + 2), Nat.succ_sub_succ,
+      hpre, hsuf, hinit, taylor_of_two_neg_smul_duplicateAt 𝒜 e j w]
   rw [hdφ]
   exact Eq.trans (by abel) (rescaled_stasheff_duplicateAt h𝒜 he m j hlow hIH hw hwj h𝒟j)
 

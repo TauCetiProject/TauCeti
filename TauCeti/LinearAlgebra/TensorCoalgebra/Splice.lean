@@ -671,18 +671,6 @@ theorem splice_two_duplicateAt_of_lt (e : M) {n : ℕ} {j : Fin (n + 1)} {p : �
     duplicateAt_apply, dite_eq_right (by rw [Fin.val_mk, Fin.val_mk]; omega),
     ite_eq_left (by rw [Fin.val_mk, Fin.val_mk]; omega)]
 
-/-- Collapsing `[w (j - 1), e]` to `w (j - 1)` in `duplicateAt e j w` yields `w` when `w j = e`. -/
-theorem splice_two_duplicateAt_pred {e : M} {n : ℕ} {j : Fin (n + 1)} (hj : 1 ≤ j.val)
-    {w : Fin (n + 1) → M} (hw : w j = e) :
-    splice R (duplicateAt e j w) 0 (n + 2) (j.val - 1) 2 (w ⟨j.val - 1, by omega⟩) =
-      of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R w) := by
-  rw [splice_eq_of_tprod R _ _ two_pos (by omega) (by omega)]
-  refine of_tprod_congr R M _ rfl fun k ↦ ?_
-  simp only [Fin.cast_eq_self, zero_add, duplicateAt_apply]; split_ifs
-  all_goals first
-    | omega | exact congrArg w (Fin.ext rfl) | (rw [← hw]; exact congrArg w (Fin.ext (by omega)))
-    | exact congrArg w (Fin.ext (by dsimp only; omega))
-
 /-- Collapsing `[e, e]` at slot `j` to `e` in `duplicateAt e j w` recovers `w` when `w j = e`. -/
 theorem splice_two_duplicateAt_self {e : M} {n : ℕ} {j : Fin (n + 1)} {w : Fin (n + 1) → M}
     (hw : w j = e) : splice R (duplicateAt e j w) 0 (n + 2) j.val 2 e =
@@ -693,17 +681,35 @@ theorem splice_two_duplicateAt_self {e : M} {n : ℕ} {j : Fin (n + 1)} {w : Fin
   all_goals first
     | omega | exact congrArg w (Fin.ext rfl) | (rw [← hw]; exact congrArg w (Fin.ext (by omega)))
 
+/-- Collapsing `[w (j - 1), e]` to `w (j - 1)` in `duplicateAt e j w` yields `w` when `w j = e`. -/
+theorem splice_two_duplicateAt_pred {e : M} {n : ℕ} {j : Fin (n + 1)} (hj : 1 ≤ j.val)
+    {w : Fin (n + 1) → M} (hw : w j = e) :
+    splice R (duplicateAt e j w) 0 (n + 2) (j.val - 1) 2 (w ⟨j.val - 1, by omega⟩) =
+      of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R w) := by
+  have h := splice_two_succ_eq_splice_two_pred R (n := n + 1) (p := j.val) hj (by omega)
+    (duplicateAt e j w)
+  have hj1 : duplicateAt e j w ⟨j.val + 1, by omega⟩ = e := duplicateAt_succ e j w
+  have hj0 : duplicateAt e j w ⟨j.val - 1, by omega⟩ = w ⟨j.val - 1, by omega⟩ :=
+    duplicateAt_castSucc_of_lt e w
+      (show (⟨j.val - 1, by omega⟩ : Fin (n + 1)) < j from Fin.lt_def.2 (by dsimp; omega))
+  rw [hj1, hj0] at h
+  exact h.symm.trans (splice_two_duplicateAt_self R hw)
+
 /-- Collapsing `[e, w (j + 1)]` to `w (j + 1)` in `duplicateAt e j w` yields `w` when `w j = e`. -/
 theorem splice_two_duplicateAt_succ {e : M} {n : ℕ} {j : Fin (n + 1)} (hj : j.val < n)
     {w : Fin (n + 1) → M} (hw : w j = e) :
     splice R (duplicateAt e j w) 0 (n + 2) (j.val + 1) 2 (w ⟨j.val + 1, by omega⟩) =
       of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R w) := by
-  rw [splice_eq_of_tprod R _ _ two_pos (by omega) (by omega)]
-  refine of_tprod_congr R M _ rfl fun k ↦ ?_
-  simp only [Fin.cast_eq_self, zero_add, duplicateAt_apply]; split_ifs
-  all_goals first
-    | omega | exact congrArg w (Fin.ext rfl) | (rw [← hw]; exact congrArg w (Fin.ext (by omega)))
-    | exact congrArg w (Fin.ext (by dsimp only; omega))
+  have h := splice_two_succ_eq_splice_two_pred R (n := n + 1) (p := j.val + 1)
+    (Nat.succ_pos _) (by omega) (duplicateAt e j w)
+  have hj2 : duplicateAt e j w ⟨j.val + 1 + 1, by omega⟩ = w ⟨j.val + 1, by omega⟩ :=
+    duplicateAt_succ_of_gt e w
+      (show j < (⟨j.val + 1, by omega⟩ : Fin (n + 1)) from Fin.lt_def.2 (by dsimp; omega))
+  have hj0 : duplicateAt e j w ⟨j.val + 1 - 1, by omega⟩ = e := by
+    have hidx : (⟨j.val + 1 - 1, by omega⟩ : Fin (n + 2)) = j.castSucc := Fin.ext (by simp)
+    rw [hidx, duplicateAt_castSucc]
+  rw [hj2, hj0, Nat.add_sub_cancel] at h
+  exact h.trans (splice_two_duplicateAt_self R hw)
 
 /-- For `q ≥ j`, the two-letter subword at `q + 1` of `duplicateAt e j w` equals that at `q` of `w`
 when `w j = e`. -/

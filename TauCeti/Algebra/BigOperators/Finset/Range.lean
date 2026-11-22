@@ -76,6 +76,9 @@ as those of noncrossing partitions, into sums over `Finset.range`.
 * `Finset.prod_range_eq_mul_prod_range_succ`, `Finset.sum_range_eq_add_sum_range_succ`: shift
   the index of a product or sum over `range n` whose factor or term at the top index `n` is
   trivial.
+* `Finset.prod_range_eq_prod_mul_prod_sub`, `Finset.sum_range_eq_sum_add_sum_sub`: split a
+  product or sum over `range n` at `k ≤ n` into a prefix over `range k` and a shifted tail over
+  `range (n - k)`.
 * `Finset.four_dvd_sum_range_two_mul_add_one`: a sum over `range (2 * k + 1)` of even terms,
   symmetric under `i ↦ 2 * k - i` and vanishing at the middle index `k`, is divisible by `4`.
 * `Finset.prod_card_filter_lt_card_filter_gt`, `Finset.sum_card_filter_lt_card_filter_gt`: reindex
@@ -156,6 +159,17 @@ theorem prod_range_eq_mul_prod_range_succ {M : Type*} [CommMonoid M] (f : ℕ �
   have h := prod_range_succ f n
   rw [prod_range_succ', hf, mul_one] at h
   rw [← h, mul_comm]
+
+/-- Splitting a product over `range n` at `k ≤ n` into the prefix over `range k` and the shifted
+tail over `range (n - k)`. -/
+@[to_additive
+  /-- Splitting a sum over `range n` at `k ≤ n` into the prefix over `range k` and the shifted
+  tail over `range (n - k)`. -/]
+theorem prod_range_eq_prod_mul_prod_sub {M : Type*} [CommMonoid M] (f : ℕ → M) {k n : ℕ}
+    (hk : k ≤ n) :
+    ∏ p ∈ range n, f p = (∏ p ∈ range k, f p) * ∏ t ∈ range (n - k), f (k + t) := by
+  have h := prod_range_add f k (n - k)
+  rwa [Nat.add_sub_of_le hk] at h
 
 
 /-- A sum over `range (2 * k + 1)` of a family that is symmetric under `i ↦ 2 * k - i`, vanishes

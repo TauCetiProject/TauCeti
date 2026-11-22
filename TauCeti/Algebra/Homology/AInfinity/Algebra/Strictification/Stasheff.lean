@@ -350,9 +350,8 @@ theorem IsMinimal.taylor_barDifferential_duplicateAt {𝒜 : AInfinityAlgebra R 
   rw [Finset.sum_range_succ _ (m + 3),
     splice_eq_zero_of_not_fits R _ _ (by omega : ¬ (0 < 2 ∧ (m + 3) + 2 ≤ m + 4)), map_zero,
     smul_zero, add_zero] at hzero
-  nth_rw 1 [← Nat.add_sub_of_le (Nat.succ_le_of_lt hjlt), Nat.succ_sub_succ] at hzero
-  rw [Finset.sum_range_add, taylor_barDifferential_duplicateAt_binary_prefix h𝒜 he j hIH hw hwj,
-    htail] at hzero
+  rw [Finset.sum_range_eq_sum_add_sum_sub _ (by omega : j.val + 1 ≤ m + 3), Nat.succ_sub_succ,
+    taylor_barDifferential_duplicateAt_binary_prefix h𝒜 he j hIH hw hwj, htail] at hzero
   by_cases hj0 : j.val = 0 <;>
     [rw [ite_eq_left hj0, ite_eq_left hj0] at hzero;
      rw [ite_eq_right hj0, ite_eq_right hj0] at hzero] <;>
