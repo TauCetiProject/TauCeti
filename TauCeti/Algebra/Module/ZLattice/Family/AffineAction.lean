@@ -79,6 +79,9 @@ at every point: there is one `l : Λ` with `∑ j < m, β (g ^ j • y) = P y l`
 * `TauCeti.continuousConstSMul_torusFamilyAffineMulAction`,
   `TauCeti.properlyDiscontinuousSMul_torusFamilyAffineMulAction`: continuity and proper
   discontinuity of the affine action.
+* `TauCeti.isQuotientCoveringMap_quotientMk_torusFamilyAffineMulAction`: over a free and properly
+  discontinuous action on a locally compact Hausdorff base, the orbit map of the affine action is
+  a quotient covering map.
 
 ## References
 
@@ -473,5 +476,48 @@ theorem isCancelSMul_torusFamilyAffineMulAction [IsCancelSMul Γ Y] :
     (torusFamilyAffineMulAction_stabilizer_le R hone hmul P ρ hP b hb hbmul x hg)
 
 end Group
+
+/-! ### The orbit map of the affine action -/
+
+section Covering
+
+variable [TopologicalSpace Y] [LocallyCompactSpace Y] [T2Space Y] [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [FiniteDimensional ℝ E] (P : Y → Λ →ₗ[ℤ] E)
+  [∀ y, DiscreteTopology (LinearMap.range (P y))] [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
+  (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Function.Injective (P y))
+  {Γ : Type*} [Group Γ] [MulAction Γ Y] [ProperlyDiscontinuousSMul Γ Y] [IsCancelSMul Γ Y]
+  (R : Γ → Y → E →+ E) (hone : ∀ (y : Y) (v : E), R 1 y v = v)
+  (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))
+  (ρ : Representation ℤ Γ Λ) (hP : ∀ (g : Γ) (y : Y) (l : Λ), P (g • y) (ρ g l) = R g y (P y l))
+  (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
+  (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
+  (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hP b hb g (b h y))
+
+include hcont hinj in
+/-- **The orbit map of the affine action is a quotient covering map.** For a continuous family of
+full lattices and an affine action with continuous linear and translation parts, over a free and
+properly discontinuous action on a locally compact Hausdorff base, the orbit map `X → X/Γ` of the
+family of tori `X = (Y × E)/Λ` is a covering map, and `X/Γ` is its quotient by the free action of
+`Γ`. -/
+theorem isQuotientCoveringMap_quotientMk_torusFamilyAffineMulAction
+    (hR : ∀ g : Γ, Continuous fun p : Y × E ↦ R g p.1 p.2) (hbc : ∀ g, Continuous (b g)) :
+    letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
+    IsQuotientCoveringMap
+      (Quotient.mk (MulAction.orbitRel Γ (AddAction.orbitRel.Quotient Λ (Y × E)))) Γ := by
+  let _ := periodAddAction P
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
+  have := continuousConstVAdd_periodAddAction P hcont
+  have := properlyDiscontinuousVAdd_periodAddAction P hcont hinj
+  have : T2Space (AddAction.orbitRel.Quotient Λ (Y × E)) :=
+    t2Space_of_properlyDiscontinuousVAdd_of_t2Space
+  have : LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (Y × E)) :=
+    AddAction.isOpenQuotientMap_quotientMk.locallyCompactSpace
+  have := properlyDiscontinuousSMul_torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
+  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul hcont hR hbc
+  have := isCancelSMul_torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
+  exact isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul
+
+end Covering
 
 end TauCeti

@@ -46,8 +46,9 @@ algebra are descended to it in `TauCeti.RepresentationTheory.Quiver.PathAlgebra.
   rotation is.
 * `TauCeti.commutatorSubmodule_le_ker_iff`: a linear map kills the commutator submodule exactly
   when it takes equal values on `x * y` and `y * x`.
-* `TauCeti.map_mem_commutatorSubmodule`: a multiplicative linear map, such as an algebra
-  homomorphism, carries commutators to commutators.
+* `TauCeti.map_mem_commutatorSubmodule` and `TauCeti.map_mem_commutatorSubmodule_of_ringHom`: a
+  multiplicative linear map, and more generally any non-unital ring homomorphism from a ring whose
+  scalar action commutes with multiplication, carries commutators to commutators.
 * `TauCeti.trace_map_eq_zero_of_mem_commutatorSubmodule`: the trace of a matrix representation
   vanishes on the commutator submodule.  A representation in which an element has nonzero trace
   therefore shows that its cyclic class is nonzero.
@@ -148,6 +149,27 @@ theorem map_mem_commutatorSubmodule {B F : Type*} [NonUnitalNonAssocRing B] [Mod
     rintro ⟨x, y⟩
     simpa using mul_sub_mul_mem_commutatorSubmodule k B (f x) (f y)
   exact hle hx
+
+variable {k A} in
+/-- A non-unital ring homomorphism carries the commutator submodule over `k` into the commutator
+submodule over any semiring `l`, whenever `k` acts associatively and centrally on `A`: each scalar
+multiple `r • (a * b - b * a) = (r • a) * b - b * (r • a)` is itself a commutator. -/
+theorem map_mem_commutatorSubmodule_of_ringHom {l B F : Type*} [Semiring l]
+    [NonUnitalNonAssocRing B] [IsScalarTower k A A] [SMulCommClass k A A] [Module l B]
+    [FunLike F A B] [NonUnitalRingHomClass F A B] (f : F) {x : A}
+    (hx : x ∈ commutatorSubmodule k A) : f x ∈ commutatorSubmodule l B := by
+  suffices ∀ r : k, f (r • x) ∈ commutatorSubmodule l B by simpa using this 1
+  induction hx using Submodule.span_induction with
+  | mem z hz =>
+    obtain ⟨⟨a, b⟩, rfl⟩ := hz
+    intro r
+    have hr : r • (a * b - b * a) = (r • a) * b - b * (r • a) := by
+      rw [smul_sub, smul_mul_assoc, mul_smul_comm]
+    rw [hr, map_sub, map_mul, map_mul]
+    exact mul_sub_mul_mem_commutatorSubmodule l B (f (r • a)) (f b)
+  | zero => intro _; simp
+  | add y z _ _ hy hz => intro r; rw [smul_add, map_add]; exact add_mem (hy r) (hz r)
+  | smul s y _ hy => intro r; rw [smul_smul]; exact hy (r * s)
 
 end Semiring
 

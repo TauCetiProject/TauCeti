@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.OpenMapping
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import Mathlib.Topology.LocalAtTarget
+public import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 public import TauCeti.RingTheory.RootsOfUnity.PowFiber
 public import TauCeti.Topology.Algebra.GroupAction.FreeLocus
 public import TauCeti.Topology.Homeomorph.Quotient
@@ -57,6 +58,9 @@ restricted power map with its image.
   `r ^ m`.
 * `TauCeti.rootsOfUnityBall.powMap`, `TauCeti.rootsOfUnityBall.rootMap`: the power map from the
   disc of radius `r` to the disc of radius `r ^ m`, and its principal-root section.
+* `TauCeti.exp_log_add_inv_mul_log_div_pow_mem_rootsOfUnityBall`: the branch
+  `t ↦ exp (log z₀ + (1 / m) log (t / z₀ ^ m))` of the `m`-th root, for a nonzero `z₀` in the
+  disc of radius `r`, maps the disc of radius `r ^ m` into the disc of radius `r`.
 * `TauCeti.rootsOfUnityBallQuotientHomeomorph`: the orbit space of the disc of radius `r` is
   homeomorphic to the disc of radius `r ^ m`.
 * `TauCeti.freeLocus_rootsOfUnity`: for `m ≥ 2`, the action is free exactly off `0`.
@@ -235,6 +239,22 @@ theorem powMap_rootMap (hr : 0 ≤ r) (t : Metric.ball (0 : ℂ) (r ^ m)) :
   Subtype.ext (Complex.cpow_nat_inv_pow _ (NeZero.ne m))
 
 end rootsOfUnityBall
+
+open Complex in
+/-- **A holomorphic branch of the `m`-th root.** For a nonzero point `z₀` of the disc of
+radius `r`, the branch `t ↦ exp (log z₀ + (1 / m) log (t / z₀ ^ m))` of the `m`-th root
+(`Complex.exp_log_add_inv_mul_log_div_pow`) maps the disc of radius `r ^ m` into the disc of
+radius `r`; at `t = 0` it takes the value `z₀`. -/
+theorem exp_log_add_inv_mul_log_div_pow_mem_rootsOfUnityBall {r : ℝ} {z₀ : rootsOfUnityBall m r}
+    (hz₀ : (z₀ : ℂ) ≠ 0) (t : Metric.ball (0 : ℂ) (r ^ m)) :
+    exp (log z₀ + (m : ℂ)⁻¹ * log (t / (z₀ : ℂ) ^ m)) ∈ rootsOfUnityBall m r := by
+  have hr : 0 ≤ r := (norm_nonneg _).trans (mem_rootsOfUnityBall.1 z₀.property).le
+  by_cases ht : (t : ℂ) = 0
+  · simp only [ht, zero_div, log_zero, mul_zero, add_zero, exp_log hz₀]
+    exact z₀.property
+  · rw [mem_rootsOfUnityBall, ← pow_lt_pow_iff_left₀ (norm_nonneg _) hr (NeZero.ne m),
+      ← norm_pow, exp_log_add_inv_mul_log_div_pow hz₀ ht, ← mem_ball_zero_iff]
+    exact t.property
 
 /-- For `0 ≤ r`, the orbit space of the disc of radius `r` about `0` under the `m`-th roots of
 unity is homeomorphic to the disc of radius `r ^ m`, by sending the orbit of `u` to `u ^ m`. -/

@@ -342,7 +342,7 @@ theorem lift_generator (x : GeneratorTuple q A) (g : Generator) :
 /-- Two algebra maps from `UqSl2 q` agreeing on `E`, `F` and `K` are equal; agreement on `K⁻¹`
 follows since it is the inverse of `K`. -/
 @[ext high]
-theorem hom_ext {F G : UqSl2 q →ₐ[ℂ] A}
+theorem hom_ext {A : Type*} [Semiring A] [Algebra ℂ A] {F G : UqSl2 q →ₐ[ℂ] A}
     (he : F (e q) = G (e q)) (hf : F (f q) = G (f q))
     (hk : F (k q) = G (k q)) : F = G := by
   have hkInv : F (kInv q) = G (kInv q) :=

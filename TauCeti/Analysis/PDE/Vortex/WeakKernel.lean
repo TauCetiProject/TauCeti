@@ -119,6 +119,14 @@ def weakGaugeFixedKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
   (Submodule.span ℝ {g | ∃ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η ∧
     HasCompactSupport η ∧ (g : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume] gaugeFixedAdjoint x η})ᗮ
 
+/-- The defining formula of the weak kernel. -/
+theorem weakGaugeFixedKernel_def (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    weakGaugeFixedKernel x =
+      (Submodule.span ℝ {g : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) |
+        ∃ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η ∧ HasCompactSupport η ∧
+          (g : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume] gaugeFixedAdjoint x η})ᗮ :=
+  (rfl)
+
 /-- The weak kernel of `L_x` is a closed subspace of `L²(ℂ; ℝ⁴)`. -/
 theorem isClosed_weakGaugeFixedKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     IsClosed
@@ -146,8 +154,7 @@ theorem mem_weakGaugeFixedKernel_iff (hx : Continuous x)
   refine ⟨fun h η hη hηc ↦ ?_, fun h g hg ↦ ?_⟩
   · -- The field `L_x* η` is continuous with compact support, so it has an `L²` class.
     have hm : MemLp (gaugeFixedAdjoint x η) 2 volume :=
-      (continuous_gaugeFixedAdjoint hx (hη.of_le (by simp))).memLp_of_hasCompactSupport
-        (hasCompactSupport_gaugeFixedAdjoint hηc)
+      memLp_gaugeFixedAdjoint hx (hη.of_le (by simp)) hηc
     rw [← L2.inner_toLp u hm, real_inner_comm]
     exact h _ (Submodule.subset_span ⟨η, hη, hηc, hm.coeFn_toLp⟩)
   · induction hg using Submodule.span_induction with

@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Normed.Group.Real
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Continuity of parametric integrals with compactly supported integrand
@@ -27,7 +28,10 @@ ball `B`, the integral of `Φ x (f₀ x)` for an almost everywhere zero extensio
 from `s` and an integrand `Φ` vanishing at `0`, and that a continuous square-integrable function
 `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive on nonempty open sets.
 It also bounds the integral over a measurable set `S` by integrals over unions with disjoint sets,
-and that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K} σ`.
+that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K} σ`, that a pointwise
+bound `0 ≤ f ≤ c₁ g₁ + c₂ g₂` integrates to the same bound for the integrals, and turns a bound
+on the Lebesgue integral of a nonnegative function into integrability and a bound on its Bochner
+integral.
 
 ## Main statements
 
@@ -43,6 +47,8 @@ and that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K}
   bound `a ≥ λ` alone gives `∫_s a⁻¹ > 0` when `μ s > 0`.
 * `TauCeti.le_setIntegral_Icc_add_of_le_mul`: if `m ≤ K σ` on `[a, a + K]`, with `K > 0`, then
   `m ≤ ∫_a^{a+K} σ`.
+* `TauCeti.setIntegral_le_mul_add_mul_of_le`: a pointwise bound `0 ≤ f ≤ c₁ g₁ + c₂ g₂` on a
+  measurable set integrates to `∫_s f ≤ c₁ ∫_s g₁ + c₂ ∫_s g₂`.
 * `TauCeti.setIntegral_sq_le_of_support_subset_closedBall`: a function bounded by `K` on a closed
   ball `B` and vanishing off it has `∫_s ψ² ≤ K² |B|` over every set `s`.
 * `TauCeti.integral_eq_setIntegral_of_ae_eq_indicator`: if `f₀` is almost everywhere the zero
@@ -57,10 +63,16 @@ and that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K}
 * `MeasureTheory.setLIntegral_enorm_sq_eq_ofReal_setIntegral`: the Lebesgue integral of `‖f‖ₑ ^ 2`
   over `A` is `ofReal` of the Bochner integral of `‖f‖ ^ 2`, and
   `MeasureTheory.setLIntegral_enorm_sq_le_ofReal` the corresponding bound.
+* `MeasureTheory.integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le`: a function nonnegative
+  on `Ω ⊆ S` whose Lebesgue integral over `S` is at most `ENNReal.ofReal E` is integrable on `Ω`
+  with Bochner integral at most `E`.
 * `Continuous.eq_zero_of_integral_conj_mul_self_eq_zero`: a continuous square-integrable function
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 * `MeasureTheory.norm_setIntegral_le_add_of_disjoint`: the integral over `S` is bounded by the
   integrals over `H ∪ (S ∪ T)`, `H` and `T`, for disjoint `H`, `S`, `T`.
+* `ContinuousOn.integrableOn_insertNth_Icc`: continuity on a closed box `Set.Icc a b` gives
+  integrability on every coordinate slice `x i = c` (`c ∈ Set.Icc (a i) (b i)`) against any
+  measure finite on compact sets.
 -/
 
 public section
@@ -222,6 +234,19 @@ theorem le_setIntegral_Icc_add_of_le_mul {σ : ℝ → ℝ} {a K m : ℝ} (hK : 
     (fun r hr ↦ (div_le_iff₀' hK).2 (hm r hr)) hσ
   simpa [hK.le, hK.ne'] using h
 
+/-- **Integrating a bound by a combination of two functions.** If `0 ≤ f ≤ c₁ g₁ + c₂ g₂` on a
+measurable set `s`, with `g₁` and `g₂` integrable on `s`, then
+`∫_s f ≤ c₁ ∫_s g₁ + c₂ ∫_s g₂`. -/
+theorem setIntegral_le_mul_add_mul_of_le {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {s : Set α} {f g₁ g₂ : α → ℝ} {c₁ c₂ : ℝ} (hs : MeasurableSet s) (hf : ∀ x ∈ s, 0 ≤ f x)
+    (hg₁ : IntegrableOn g₁ s μ) (hg₂ : IntegrableOn g₂ s μ)
+    (h : ∀ x ∈ s, f x ≤ c₁ * g₁ x + c₂ * g₂ x) :
+    ∫ x in s, f x ∂μ ≤ c₁ * (∫ x in s, g₁ x ∂μ) + c₂ * ∫ x in s, g₂ x ∂μ := by
+  rw [← integral_const_mul, ← integral_const_mul,
+    ← integral_add (hg₁.const_mul c₁) (hg₂.const_mul c₂)]
+  exact integral_mono_of_nonneg (ae_restrict_of_forall_mem hs hf)
+    ((hg₁.const_mul c₁).add (hg₂.const_mul c₂)) (ae_restrict_of_forall_mem hs h)
+
 open Metric in
 /-- A function bounded by `K` on a closed ball and vanishing off it has `∫_s ψ² ≤ K² |B|` over
 every set `s`, where `B` is the closed ball. -/
@@ -328,6 +353,18 @@ theorem setLIntegral_enorm_sq_le_ofReal {α E : Type*} [MeasurableSpace α]
     ∫⁻ x in A, ‖f x‖ₑ ^ 2 ∂ν ≤ ENNReal.ofReal c :=
   (setLIntegral_enorm_sq_eq_ofReal_setIntegral hf).trans_le (ENNReal.ofReal_le_ofReal h)
 
+/-- Let `f` be almost everywhere strongly measurable and almost everywhere nonnegative on `Ω ⊆ S`.
+If the Lebesgue integral of `ENNReal.ofReal ∘ f` over `S` is at most `ENNReal.ofReal E` with
+`E ≥ 0`, then `f` is integrable on `Ω` and its Bochner integral over `Ω` is at most `E`. -/
+theorem integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le {α : Type*}
+    [MeasurableSpace α] {ν : Measure α} {S Ω : Set α} {f : α → ℝ}
+    (hf : AEStronglyMeasurable f (ν.restrict Ω)) (hf0 : 0 ≤ᵐ[ν.restrict Ω] f) (hΩS : Ω ⊆ S)
+    {E : ℝ} (hE0 : 0 ≤ E) (hE : ∫⁻ x in S, ENNReal.ofReal (f x) ∂ν ≤ ENNReal.ofReal E) :
+    IntegrableOn f Ω ν ∧ ∫ x in Ω, f x ∂ν ≤ E := by
+  have h := TauCeti.MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le hf hf0
+    (E := E.toNNReal) ((lintegral_mono_set hΩS).trans hE)
+  exact ⟨h.1, h.2.trans_eq (Real.coe_toNNReal _ hE0)⟩
+
 variable {α : Type*} {m : MeasurableSpace α} {μ : Measure α} {E : Type*} [NormedAddCommGroup E]
   [NormedSpace ℝ E]
 
@@ -351,3 +388,20 @@ theorem norm_setIntegral_le_add_of_disjoint {f : α → E} {H S T : Set α}
     _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
 
 end MeasureTheory
+
+/-- Continuity of `f` on the closed box `Set.Icc a b` gives integrability on every slice `x i = c`
+for `c ∈ Set.Icc (a i) (b i)`, against any measure finite on compact sets. -/
+theorem ContinuousOn.integrableOn_insertNth_Icc {n : ℕ} {α : Fin (n + 1) → Type*}
+    [∀ j, Preorder (α j)] [∀ j, TopologicalSpace (α j)]
+    {E : Type*} [NormedAddCommGroup E]
+    {a b : ∀ j, α j} {f : (∀ j, α j) → E}
+    (hf : ContinuousOn f (Icc a b)) (i : Fin (n + 1))
+    [MeasurableSpace (∀ j, α (i.succAbove j))]
+    [OpensMeasurableSpace (∀ j, α (i.succAbove j))]
+    [CompactIccSpace (∀ j, α (i.succAbove j))] [T2Space (∀ j, α (i.succAbove j))]
+    {μ : Measure (∀ j, α (i.succAbove j))} [IsFiniteMeasureOnCompacts μ]
+    {c : α i} (hc : c ∈ Icc (a i) (b i)) :
+    IntegrableOn (fun x ↦ f (i.insertNth c x))
+      (Icc (fun j ↦ a (i.succAbove j)) (fun j ↦ b (i.succAbove j))) μ :=
+  (hf.comp (continuousOn_const.finInsertNth i continuousOn_id) fun _ hx ↦
+    Fin.insertNth_mem_Icc.mpr ⟨hc, hx⟩).integrableOn_Icc
