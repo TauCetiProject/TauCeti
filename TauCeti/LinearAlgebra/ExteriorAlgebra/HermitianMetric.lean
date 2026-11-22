@@ -81,9 +81,7 @@ noncomputable def sesqExteriorAlgebra (B : M →ₛₗ[σ] M →ₗ[R] R) :
     _root_.ExteriorAlgebra R M →ₛₗ[σ] _root_.ExteriorAlgebra R M →ₗ[R] R :=
   let Φ : (⨁ n, ⋀[R]^n M) →ₗ[R] (_root_.ExteriorAlgebra R M →ₛₗ[σ] R) :=
     DirectSum.toModule R ℕ (_root_.ExteriorAlgebra R M →ₛₗ[σ] R) fun n ↦
-      { toFun y := ((B.sesqExteriorPower n).flip y).comp (TauCeti.exteriorPower.proj R M n)
-        map_add' y₁ y₂ := by ext x; simp
-        map_smul' c y := by ext x; simp }
+      (B.sesqExteriorPower n).flip.compl₂ (TauCeti.exteriorPower.proj R M n)
   (Φ.comp (DirectSum.decomposeLinearEquiv (fun n ↦ ⋀[R]^n M)).toLinearMap).flip
 
 /-- Pairing an arbitrary element with a homogeneous element of degree `n` projects the first

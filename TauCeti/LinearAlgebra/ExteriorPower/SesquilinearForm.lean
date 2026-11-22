@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.ExteriorPower.BilinForm
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 import Mathlib.Algebra.Algebra.RestrictScalars
+import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
 # Sesquilinear Gram forms on exterior powers
@@ -210,26 +211,12 @@ theorem toLinearMapₛₗ₂_exteriorPower_one {R M I : Type*} [CommRing R] [Add
         (1 : Matrix (Set.powersetCard I n) (Set.powersetCard I n) R) =
       (toLinearMapₛₗ₂ σ b b (1 : Matrix I I R)).sesqExteriorPower n := by
   refine LinearMap.ext_basis (b.exteriorPower n) (b.exteriorPower n) fun s t ↦ ?_
-  rw [toLinearMapₛₗ₂_apply_basis, Matrix.one_apply, exteriorPower.basis_apply,
+  rw [toLinearMapₛₗ₂_one_basis_eq_coord, exteriorPower.basis_coord, exteriorPower.basis_apply,
     exteriorPower.basis_apply, exteriorPower.ιMulti_family, exteriorPower.ιMulti_family,
-    LinearMap.sesqExteriorPower_ιMulti_ιMulti]
-  split_ifs with h
-  · subst h
-    have hmat : (Matrix.of fun i j : Fin n ↦
-        toLinearMapₛₗ₂ σ b b (1 : Matrix I I R)
-          ((b ∘ Set.powersetCard.ofFinEmbEquiv.symm s) i)
-          ((b ∘ Set.powersetCard.ofFinEmbEquiv.symm s) j)) = 1 := by
-      ext i j
-      rw [of_apply, Function.comp_apply, Function.comp_apply, toLinearMapₛₗ₂_apply_basis,
-        Matrix.one_apply, Matrix.one_apply]
-      simp
-    rw [hmat, Matrix.det_one]
-  · obtain ⟨x, hxs, hxt⟩ := (Set.powersetCard.exists_mem_notMem_iff_ne s t).mp h
-    simp only [Set.mem_range, not_exists,
-      ← Set.powersetCard.mem_range_ofFinEmbEquiv_symm_iff_mem] at hxs hxt
-    obtain ⟨i, rfl⟩ := hxs
-    refine (Matrix.det_eq_zero_of_row_eq_zero i fun j ↦ ?_).symm
-    rw [of_apply, Function.comp_apply, Function.comp_apply, toLinearMapₛₗ₂_apply_basis,
-      Matrix.one_apply_ne (Ne.symm (hxt j))]
+    exteriorPower.ιMultiDual_apply_ιMulti, LinearMap.sesqExteriorPower_ιMulti_ιMulti,
+    ← Matrix.det_transpose]
+  congr 1
+  ext i j
+  simp [toLinearMapₛₗ₂_one_basis_eq_coord]
 
 end Matrix

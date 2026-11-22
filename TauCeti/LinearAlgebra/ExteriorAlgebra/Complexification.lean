@@ -156,48 +156,22 @@ theorem sesqExteriorAlgebra_sesqComplexification_baseChangeEquiv (B : BilinForm 
     B.sesqComplexification.sesqExteriorAlgebra
         (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ x) (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ y) =
       sesqComplexification B.sesqExteriorAlgebra x y := by
-  let e := (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).toLinearMap
-  let K := TauCeti.tmulConj (ExteriorAlgebra ℝ V)
-  have hhom {k : ℕ} (u : ⋀[ℝ]^k V) :
-      ExteriorAlgebra.baseChangeEquiv ℝ V ℂ ((1 : ℂ) ⊗ₜ[ℝ] (u : ExteriorAlgebra ℝ V)) =
-        (((TauCeti.exteriorPower.equivBaseChange ℂ k).symm ((1 : ℂ) ⊗ₜ[ℝ] u) :
-          ⋀[ℂ]^k (ℂ ⊗[ℝ] V)) : ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)) := by
-    apply (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm.injective
-    rw [AlgEquiv.symm_apply_apply, ← TauCeti.exteriorPower.subtype_baseChange_equivBaseChange,
-      LinearEquiv.apply_symm_apply, LinearMap.baseChange_tmul, Submodule.coe_subtype]
-  have h : (((B.sesqComplexification.sesqExteriorAlgebra.comp e).compl₂ e) ∘ₛₗ K :
-        ℂ ⊗[ℝ] ExteriorAlgebra ℝ V →ₗ[ℂ] ℂ ⊗[ℝ] ExteriorAlgebra ℝ V →ₗ[ℂ] ℂ) =
-      sesqComplexification B.sesqExteriorAlgebra ∘ₛₗ K := by
-    apply TensorProduct.AlgebraTensorModule.curry_injective
-    apply LinearMap.ext_ring
-    refine LinearMap.ext fun s ↦ ?_
-    apply TensorProduct.AlgebraTensorModule.curry_injective
-    apply LinearMap.ext_ring
-    refine LinearMap.ext fun t ↦ ?_
-    simp only [TensorProduct.AlgebraTensorModule.curry_apply, TensorProduct.curry_apply,
-      LinearMap.restrictScalars_apply, LinearMap.comp_apply, LinearMap.compl₂_apply, K, e,
-      TauCeti.tmulConj_tmul, map_one, AlgEquiv.toLinearMap_apply]
-    induction s using DirectSum.Decomposition.inductionOn fun p ↦ ⋀[ℝ]^p V with
-    | zero => simp
-    | add s₁ s₂ hs₁ hs₂ =>
-      simp only [TensorProduct.tmul_add, map_add, LinearMap.add_apply, hs₁, hs₂]
-    | @homogeneous p s =>
-      induction t using DirectSum.Decomposition.inductionOn fun q ↦ ⋀[ℝ]^q V with
-      | zero => simp
-      | add t₁ t₂ ht₁ ht₂ => simp only [TensorProduct.tmul_add, map_add, ht₁, ht₂]
-      | @homogeneous q t =>
-        rw [hhom, hhom]
-        rcases eq_or_ne p q with rfl | hpq
-        · rw [LinearMap.sesqExteriorAlgebra_coe_coe,
-            sesqExteriorPower_sesqComplexification_equivBaseChange_symm,
-            ← sesqComplexification_sesqExteriorAlgebra_subtype_baseChange,
-            LinearMap.baseChange_tmul, LinearMap.baseChange_tmul, Submodule.coe_subtype]
-        · rw [B.sesqComplexification.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq
-              (Subtype.prop _) (Subtype.prop _),
-            sesqComplexification_tmul_tmul,
-            B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq s.property t.property,
-            Complex.ofReal_zero, mul_zero]
-  simpa [K, e, TauCeti.tmulConj_tmulConj] using LinearMap.congr_fun₂ h (K x) y
+  let e := (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm.toLinearMap
+  have h : ((sesqComplexification B.sesqExteriorAlgebra).comp e).compl₂ e =
+      B.sesqComplexification.sesqExteriorAlgebra := by
+    rw [LinearMap.eq_sesqExteriorAlgebra_iff]
+    refine ⟨fun n u v ↦ ?_, fun hpq u v ↦ ?_⟩
+    · simp only [LinearMap.compl₂_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, e,
+        ← TauCeti.exteriorPower.subtype_baseChange_equivBaseChange,
+        sesqComplexification_sesqExteriorAlgebra_subtype_baseChange,
+        sesqComplexification_sesqExteriorPower_equivBaseChange]
+    · simp only [LinearMap.compl₂_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, e,
+        ← TauCeti.exteriorPower.subtype_baseChange_equivBaseChange]
+      exact sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne B hpq
+        (LinearMap.mem_range_self _ _) (LinearMap.mem_range_self _ _)
+  simpa [e] using
+    (LinearMap.congr_fun₂ h (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ x)
+      (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ y)).symm
 
 /-- Inverse form of `sesqExteriorAlgebra_sesqComplexification_baseChangeEquiv`. -/
 @[simp]
