@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Complex.Circle
@@ -15,6 +16,7 @@ public import Mathlib.NumberTheory.Real.Irrational
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Topology.Instances.AddCircle.DenseSubgroup
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Linear
@@ -65,8 +67,8 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 * `Circle.upperSemicircle`: the parametrization `x ↦ x + √(1 - x²) I` of the upper semicircle by
   `[-1, 1]`; with its inverse it covers the circle (`Circle.exists_upperSemicircle_eq_or_inv_eq`),
   meeting the lower semicircle only at `±1` (`Circle.upperSemicircle_eq_inv_iff`).
-* `Circle.differentiableAt_coe_inv`: the pointwise inverse of a differentiable circle-valued map
-  is differentiable.
+* `Circle.differentiableAt_coe_inv` and `Circle.contDiff_coe_inv`: the pointwise inverse of a
+  differentiable, respectively `Cⁿ`, circle-valued map is differentiable, respectively `Cⁿ`.
 * `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
   `unitary ℂ` and the topological group isomorphism `Circle ≃ₜ* unitary ℂ`.
 * `TauCeti.hasDerivAt_coe_circleExp`: the velocity of `t ↦ exp (t i)` at `t` is `i exp (t i)`.
@@ -258,6 +260,13 @@ theorem differentiableAt_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace
     DifferentiableAt ℝ (fun w ↦ ((u⁻¹ w : Circle) : ℂ)) z := by
   simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
     Complex.conjCLE.differentiableAt.comp z hu
+
+/-- The pointwise inverse of a `Cⁿ` circle-valued map, as a map into `ℂ`, is `Cⁿ`. -/
+theorem contDiff_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {n : WithTop ℕ∞} {u : E → Circle} (hu : ContDiff ℝ n fun w ↦ (u w : ℂ)) :
+    ContDiff ℝ n fun w ↦ ((u⁻¹ w : Circle) : ℂ) := by
+  simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
+    Complex.conjCLE.contDiff.comp hu
 
 /-- The map `t ↦ exp (i t)` from the real line to the circle, as a continuous homomorphism
 from `Multiplicative ℝ`. -/

@@ -46,6 +46,8 @@ in `Type`.
   `Σ nᵢ ∫_{σᵢ} φ`.
 * `TauCeti.homologyPeriodHom_hurewicz₁`: the period of a loop is the value on its Hurewicz class.
 * `TauCeti.homologyPeriodHom_mextDeriv`: exact forms have vanishing periods, for any coefficients.
+* `TauCeti.homologyPeriodHom_mapCoeff`: the periods commute with continuous linear maps of the
+  coefficients.
 * `TauCeti.IsPrimitiveOn.eventually_exists_path_pathClassIntegral_eq_sub`: near a point where a
   closed `1`-form has a primitive `g`, paths from the point integrate the form to the change of `g`.
 * `TauCeti.exists_mextDeriv_eq_of_homologyPeriodHom_eq_zero`: a closed `1`-form whose periods on
