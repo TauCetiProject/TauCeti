@@ -79,26 +79,12 @@ variable {M R : Type*} [CommMonoid M] [Finite Mˣ] [CommRing R] [IsDomain R]
 
 namespace Subgroup
 
-omit [Finite Mˣ] [IsDomain R] [Fintype (MulChar M R)] in
-/-- The characters trivial on a subgroup `H` of `Mˣ` are the characters of `Mˣ ⧸ H`. -/
-private noncomputable def mulCharEquivQuotient (H : Subgroup Mˣ) :
-    {χ : MulChar M R // ∀ h ∈ H, χ h = 1} ≃ (Mˣ ⧸ H →* Rˣ) :=
-  (MulChar.equivToUnitHom.subtypeEquiv fun χ ↦ by
-    simp [MonoidHom.mem_ker, MonoidHom.domRestrict_eq_one_iff, Units.ext_iff]).trans
-    (MonoidHom.domRestrictHomKerEquiv Rˣ H).toEquiv
-
-omit [Finite Mˣ] [IsDomain R] [Fintype (MulChar M R)] in
-private theorem mulCharEquivQuotient_apply (H : Subgroup Mˣ)
-    (χ : {χ : MulChar M R // ∀ h ∈ H, χ h = 1}) (u : Mˣ) :
-    (mulCharEquivQuotient H χ (u : Mˣ ⧸ H) : R) = (χ : MulChar M R) u := by
-  simp [mulCharEquivQuotient]
-
 omit [Finite Mˣ] [Fintype (MulChar M R)] in
 /-- A subgroup of finite index has finitely many characters trivial on it, since they are the
 characters of the finite group `Mˣ ⧸ H`. -/
 instance finite_subtype_mulChar (H : Subgroup Mˣ) [Finite (Mˣ ⧸ H)] :
     Finite {χ : MulChar M R // ∀ h ∈ H, χ h = 1} :=
-  Finite.of_equiv _ (mulCharEquivQuotient H).symm
+  Finite.of_equiv _ (MulChar.subtypeTrivialOnEquivQuotient H).symm
 
 omit [Finite Mˣ] [Fintype (MulChar M R)] in
 /-- **Orthogonality for the characters trivial on a subgroup.** For a subgroup `H` of `Mˣ` of
@@ -114,8 +100,10 @@ theorem sum_subtype_mulChar_apply_eq_ite (H : Subgroup Mˣ) [Finite (Mˣ ⧸ H)]
     ∑ χ : {χ : MulChar M R // ∀ h ∈ H, χ h = 1}, (χ : MulChar M R) u =
       if u ∈ H then (H.index : R) else 0 := by
   classical
-  rw [Fintype.sum_equiv (mulCharEquivQuotient H) _ (fun ψ ↦ (ψ (u : Mˣ ⧸ H) : R))
-      fun χ ↦ (mulCharEquivQuotient_apply H χ u).symm, CommGroup.sum_monoidHom_apply_eq_ite]
+  rw [Fintype.sum_equiv (MulChar.subtypeTrivialOnEquivQuotient H) _
+      (fun ψ ↦ (ψ (u : Mˣ ⧸ H) : R))
+      fun χ ↦ (MulChar.subtypeTrivialOnEquivQuotient_apply H χ u).symm,
+    CommGroup.sum_monoidHom_apply_eq_ite]
   simp only [QuotientGroup.eq_one_iff, index_eq_card]
 
 omit [Finite Mˣ] in
@@ -170,7 +158,7 @@ theorem _root_.Units.sum_inv_mul_mulChar_apply_eq_ite (v : Mˣ) (a : M) [Decidab
     ∑ χ : MulChar M R, χ⁻¹ v * χ a = if a = v then (Nat.card Mˣ : R) else 0 := by
   classical
   have hterm (χ : MulChar M R) : χ⁻¹ v * χ a = χ (↑v⁻¹ * a) := by
-    rw [map_mul, inv_apply_units]
+    rw [map_mul, inv_apply_coe]
   simp_rw [hterm, sum_mulChar_apply_eq_ite, Units.inv_mul_eq_one, eq_comm (a := (v : M))]
 
 omit [Finite Mˣ] in
@@ -182,7 +170,7 @@ theorem card_units_mul_apply_eq_sum_mulChar_units [Fintype Mˣ] (φ : Mˣ → R)
     (Nat.card Mˣ : R) * φ u = ∑ χ : MulChar M R, χ u * ∑ y : Mˣ, φ y * χ⁻¹ y := by
   rw [← smul_eq_mul, ← CommGroup.sum_inv_smul_sum_smul φ u]
   refine Fintype.sum_equiv (equivToUnitHom.symm.trans (Equiv.inv _)) _ _ fun ψ ↦ ?_
-  simp [inv_apply_units, mul_comm]
+  simp [inv_apply_coe, mul_comm]
 
 omit [Finite Mˣ] in
 /-- **The Fourier expansion on `Mˣ` of a function on `M`.** With enough roots of unity in `R` for

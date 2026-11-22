@@ -45,7 +45,7 @@ finite product of quadratic characters is quadratic (`MulChar.isQuadratic_prod`)
 
 A character satisfies `χ ^ d = 1` if and only if it is trivial on the `d`-th powers of units
 (`MulChar.pow_eq_one_iff_forall_mem_range_apply_eq_one`). At a unit `v`, the inverse character
-takes the value `χ⁻¹ v = χ v⁻¹` (`MulChar.inv_apply_units`). With values in a domain, the sum of a
+takes the value `χ⁻¹ v = χ v⁻¹` (`MulChar.inv_apply_coe`). With values in a domain, the sum of a
 character over a finite commutative monoid `M` is the cast of `#Mˣ` for the trivial character and
 zero otherwise (`MulChar.sum_eq_ite`).
 -/
@@ -165,7 +165,7 @@ theorem pow_eq_one_iff_forall_mem_range_apply_eq_one {M R : Type*} [CommMonoid M
     forall_apply_eq_imp_iff, pow_apply_coe, Units.val_pow_eq_pow_val, map_pow]
 
 /-- At a unit `v`, the inverse of a character takes the value `χ v⁻¹`, with the inverse in `Mˣ`. -/
-theorem inv_apply_units {M R : Type*} [CommMonoid M] [CommMonoidWithZero R] (χ : MulChar M R)
+theorem inv_apply_coe {M R : Type*} [CommMonoid M] [CommMonoidWithZero R] (χ : MulChar M R)
     (v : Mˣ) : χ⁻¹ v = χ ↑v⁻¹ := by
   have h : mulEquivToUnitHom χ⁻¹ v = mulEquivToUnitHom χ v⁻¹ := by
     simp only [map_inv, MonoidHom.inv_apply]
