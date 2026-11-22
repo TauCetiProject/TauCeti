@@ -42,7 +42,7 @@ Stefan Kebekus) from global `Meromorphic f` to `MeromorphicOn f (sphere 0 |R|)`.
 `ValueDistribution.Cartan.cartanKernel` in Mathlib is unexposed in a `public section` without an
 unfolding lemma, we state the public integrability theorem directly for the uncurried kernel.
 Given that product integrability, the two iterated circle-average results are instances of the
-circle-average Fubini lemmas `TauCeti.circleIntegrable_circleAverage` and
+circle-average Fubini lemmas `MeasureTheory.IntegrableOn.circleIntegrable_circleAverage` and
 `TauCeti.circleAverage_circleAverage_swap`.
 
 ## References
@@ -157,8 +157,8 @@ meromorphic on `sphere 0 |R|`, then `a ↦ circleAverage (Real.log ‖f · - a�
 integrable on the unit circle. -/
 theorem circleIntegrable_circleAverage_log_norm_sub (hf : MeromorphicOn f (sphere 0 |R|)) :
     CircleIntegrable (fun a ↦ circleAverage (fun z ↦ Real.log ‖f z - a‖) 0 R) 0 1 :=
-  TauCeti.circleIntegrable_circleAverage (F := fun a z ↦ Real.log ‖f z - a‖)
-    hf.integrableOn_log_norm_circleMap_sub
+  hf.integrableOn_log_norm_circleMap_sub.circleIntegrable_circleAverage
+    (F := fun a z ↦ Real.log ‖f z - a‖)
 
 /-- Local version of `ValueDistribution.circleAverage_circleAverage_eq_proximity_top`: if `f` is
 meromorphic on `sphere 0 |R|`, then the unit-circle average over `a` of

@@ -225,17 +225,18 @@ theorem circleAverage_norm_logDeriv_le {r : ℝ} (hg : AnalyticOnNhd ℂ g (clos
       (((continuousOn_fst.sub continuousOn_snd).norm.pow 2).inv₀ fun p hp ↦ ?_)
     refine pow_ne_zero 2 (norm_ne_zero_iff.2 (sub_ne_zero.2 fun h ↦ ?_))
     exact hout p.2 hp.2 (h ▸ sphere_subset_closedBall hp.1)
-  have hKint := TauCeti.integrableOn_uncurry_circleMap hK
+  have hKint := hK.integrableOn_uncurry_circleMap
   calc circleAverage (fun z ↦ ‖logDeriv g z‖) c r
       ≤ circleAverage (fun z ↦ circleAverage (K z) c R) c r := by
         refine circleAverage_mono ((hg.mono hsub).circleIntegrable_norm_logDeriv
-          fun w hw ↦ hn w (hsub hw)) (TauCeti.circleIntegrable_circleAverage hKint)
+          fun w hw ↦ hn w (hsub hw)) hKint.circleIntegrable_circleAverage
           fun z hz ↦ ?_
         rw [hg.logDeriv_eq_circleAverage_smul_log_norm hn (sphere_subset_ball hr hz)]
         refine norm_circleAverage_le_circleAverage_norm.trans_eq
           (circleAverage_congr_sphere fun w hw ↦ ?_)
         rw [hRabs, mem_sphere_iff_norm] at hw
-        simp [hK_def, hw, norm_sub_rev z w, div_eq_mul_inv]
+        simp only [hK_def, smul_eq_mul, div_eq_mul_inv, Complex.norm_mul, Complex.norm_ofNat,
+          norm_inv, norm_pow, norm_real, norm_eq_abs, hw, norm_sub_rev z w]
         ring
     _ = circleAverage (fun w ↦ circleAverage (fun z ↦ K z w) c r) c R :=
         TauCeti.circleAverage_circleAverage_swap hKint
