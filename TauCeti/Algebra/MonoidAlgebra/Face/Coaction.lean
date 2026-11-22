@@ -22,7 +22,7 @@ import TauCeti.Algebra.MonoidAlgebra.Localization
 import TauCeti.RingTheory.KrullDimension.FiniteType
 
 /-!
-# Orbit localizations, torus coactions, and Krull dimensions of face algebras
+# Orbit localizations, diagonalizable-group coactions, and Krull dimensions of face algebras
 
 Let `S` be an additive submonoid of an abelian group `G` and `F : SaturatedAddSubmonoid S` a face
 of `S`.
@@ -34,9 +34,12 @@ of `S`.
    (`SaturatedAddSubmonoid.exists_isLocalization_away_faceSubgroup`). Composing face restriction
    with `F.toFaceSubgroup` gives `F.orbitMap R : R[S] →ₐ[R] R[F.faceSubgroup]` with kernel
    `F.toAddSubmonoid.faceIdeal R` (`SaturatedAddSubmonoid.ker_orbitMap`).
-2. **Torus coaction.** Specializing `AddMonoidAlgebra.gradedCoaction` to `S.toGroupClosure` gives
-   `S.torusCoaction R`, the native coaction of `Spec R[AddSubgroup.closure S]` on `Spec R[S]`,
-   for which face restriction, `F.orbitMap R`, and normalization are equivariant.
+2. **Diagonalizable-group coaction.** Specializing `AddMonoidAlgebra.gradedCoaction` to
+   `S.toGroupClosure` gives `S.torusCoaction R`, the native coaction of the diagonalizable-group
+   algebra `R[AddSubgroup.closure S]` on `R[S]` (which is a split torus when
+   `AddSubgroup.closure S` is finite-rank free abelian, e.g. when `S.FG` and `G` is
+   torsion-free). Face restriction, `F.orbitMap R`, and the positive-multiple saturation inclusion
+   `R[S] →ₐ[R] R[S.nsmulSaturation ⊓ AddSubgroup.closure S]` are equivariant for this coaction.
 3. **Krull dimensions and ranks.** Over a field `k` and torsion-free `G`, for `S.FG` we prove
    `ringKrullDim k[F] = ringKrullDim k[F.faceSubgroup] = Module.finrank ℤ F.faceSubgroup`
    (`SaturatedAddSubmonoid.ringKrullDim_addMonoidAlgebra` and
@@ -50,7 +53,7 @@ of `S`.
   `SaturatedAddSubmonoid.exists_isLocalization_away_faceSubgroup`: orbit localizations.
 * `SaturatedAddSubmonoid.orbitMap` and `SaturatedAddSubmonoid.ker_orbitMap`: orbit coordinate hom.
 * `AddSubmonoid.torusCoaction` and `AddMonoidAlgebra.map_faceRestriction_comp_gradedCoaction`:
-  native torus coaction and equivariance.
+  native diagonalizable-group coaction and equivariance.
 * `SaturatedAddSubmonoid.ringKrullDim_addMonoidAlgebra`,
   `SaturatedAddSubmonoid.ringKrullDim_addMonoidAlgebra_faceSubgroup`, and
   `SaturatedAddSubmonoid.finrank_faceSubgroup_strictMono`: Krull dimensions and strict rank
@@ -99,8 +102,9 @@ theorem exists_isLocalization_away_faceSubgroup (hS : S.FG) (R : Type*) [CommSem
   exact exists_isLocalization_away_of_exists_add_eq F.toFaceSubgroup_injective
     F.exists_add_toFaceSubgroup_eq R
 
-/-- Coordinate-ring homomorphism of the torus orbit associated to a face `F` of `S`, obtained by
-restricting `R[S]` to `R[F]` and localizing along `F.toFaceSubgroup : F →+ F.faceSubgroup`. -/
+/-- Coordinate-ring homomorphism of the diagonalizable-group orbit associated to a face `F` of `S`,
+obtained by restricting `R[S]` to `R[F]` and localizing along `F.toFaceSubgroup : F →+
+F.faceSubgroup`. -/
 noncomputable def orbitMap (R : Type*) [CommSemiring R] :
     AddMonoidAlgebra R S →ₐ[R] AddMonoidAlgebra R F.faceSubgroup :=
   (mapDomainAlgHom R R F.toFaceSubgroup).comp (F.toAddSubmonoid.faceRestriction F.addSaturated R)
@@ -168,7 +172,9 @@ section TorusCoaction
 
 variable {G : Type*} [AddCommGroup G] (S : AddSubmonoid G) (R : Type*) [CommSemiring R]
 
-/-- The native coaction of the dense torus algebra `R[AddSubgroup.closure S]` on `R[S]`. -/
+/-- The native coaction of the diagonalizable-group algebra `R[AddSubgroup.closure S]` on `R[S]`
+(which is a split-torus coaction when `AddSubgroup.closure S` is finite-rank free abelian, e.g.
+when `S.FG` and `G` is torsion-free). -/
 noncomputable def torusCoaction :
     AddMonoidAlgebra R S →ₐ[R]
       AddMonoidAlgebra R (AddSubgroup.closure (S : Set G)) ⊗[R] AddMonoidAlgebra R S :=
@@ -183,8 +189,8 @@ theorem torusCoaction_single (s : S) (r : R) :
     S.torusCoaction R (single s r) = single (S.toGroupClosure s) 1 ⊗ₜ[R] single s r :=
   gradedCoaction_single R S.toGroupClosure s r
 
-/-- For any face `F` of `S`, `F.orbitMap R` is equivariant for the ambient torus coaction of
-`R[AddSubgroup.closure S]`. -/
+/-- For any face `F` of `S`, `F.orbitMap R` is equivariant for the diagonalizable-group coaction
+of `R[AddSubgroup.closure S]`. -/
 theorem map_orbitMap_comp_torusCoaction (F : SaturatedAddSubmonoid S) :
     (Algebra.TensorProduct.map (AlgHom.id R _) (F.orbitMap R)).comp (S.torusCoaction R) =
       (gradedCoaction R F.faceSubgroup.subtype).comp (F.orbitMap R) := by
@@ -195,8 +201,9 @@ theorem map_orbitMap_comp_torusCoaction (F : SaturatedAddSubmonoid S) :
       AddSubgroup.coe_subtype, F.coe_toFaceSubgroup]
   · simp [F.orbitMap_single_of_notMem R hs]
 
-/-- The normalization map from `R[S]` to `R[S.nsmulSaturation ⊓ AddSubgroup.closure S]` is
-equivariant for the ambient torus `R[AddSubgroup.closure S]`. -/
+/-- The positive-multiple saturation inclusion from `R[S]` to
+`R[S.nsmulSaturation ⊓ AddSubgroup.closure S]` is equivariant for the diagonalizable-group
+algebra `R[AddSubgroup.closure S]`. -/
 theorem map_inclusion_nsmulSaturation_comp_torusCoaction :
     (Algebra.TensorProduct.map (AlgHom.id R _)
       (mapDomainAlgHom R R
