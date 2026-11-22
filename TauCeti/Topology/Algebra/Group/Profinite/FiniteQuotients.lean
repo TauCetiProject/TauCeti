@@ -113,10 +113,10 @@ private def LevelSurjection (N : OpenNormalSubgroup G) :=
 `G ⧸ N → G ⧸ N'`, for `N ≤ N'`. -/
 private def levelSurjectionMap ⦃N N' : OpenNormalSubgroup G⦄ (hle : N ≤ N')
     (f : LevelSurjection H N) : LevelSurjection H N' :=
-  ⟨(QuotientGroup.mapOfLE hle).comp f.1, (QuotientGroup.mapOfLE_surjective hle).comp f.2.1,
+  ⟨(QuotientGroup.mapOfLE hle).comp f.val, (QuotientGroup.mapOfLE_surjective hle).comp f.property.1,
     Subgroup.isOpen_mono (fun a ha ↦ by
       rw [MonoidHom.mem_ker] at ha ⊢
-      rw [MonoidHom.comp_apply, ha, map_one]) f.2.2⟩
+      rw [MonoidHom.comp_apply, ha, map_one]) f.property.2⟩
 
 private instance : DirectedSystem (LevelSurjection H (G := G))
     (levelSurjectionMap (G := G) (H := H)) where
@@ -136,7 +136,7 @@ theorem exists_continuous_surjective_of_forall_isFiniteContinuousQuotient
   have : ∀ N, Finite (LevelSurjection H N) := fun N ↦
     have := hH.finite_monoidHom_isOpen_ker (G ⧸ N.toSubgroup)
     Finite.of_injective (fun f : LevelSurjection H N ↦
-      (⟨f.1, f.2.2⟩ : {f : H →* G ⧸ N.toSubgroup // IsOpen (f.ker : Set H)}))
+      (⟨f.val, f.property.2⟩ : {f : H →* G ⧸ N.toSubgroup // IsOpen (f.ker : Set H)}))
       fun _ _ hfg ↦ Subtype.ext (Subtype.mk.inj hfg)
   have : ∀ N, Nonempty (LevelSurjection H N) := fun N ↦
     let ⟨_, f, hf⟩ := isFiniteContinuousQuotient_iff.mp (h N)
@@ -145,19 +145,19 @@ theorem exists_continuous_surjective_of_forall_isFiniteContinuousQuotient
   -- `G` assembles it into a homomorphism `H →* G`.
   obtain ⟨x, hx⟩ :=
     exists_forall_map_eq_of_codirected_of_finite (levelSurjectionMap (G := G) (H := H))
-  obtain ⟨φ, hφ, -⟩ := existsUnique_monoidHom_mk'_comp_eq (fun N ↦ (x N).1)
+  obtain ⟨φ, hφ, -⟩ := existsUnique_monoidHom_mk'_comp_eq (fun N ↦ (x N).val)
     fun _ _ hle ↦ congrArg Subtype.val (hx hle)
   -- Continuity is checked on the finite quotients, where the shadows have open kernels.
   have hcont : Continuous φ := by
     refine continuous_iff_forall_continuous_mk.mpr fun N ↦ ?_
     have hN : IsOpen (((QuotientGroup.mk' N.toSubgroup).comp φ).ker : Set H) := by
       rw [hφ N]
-      exact (x N).2.2
+      exact (x N).property.2
     simpa [MonoidHom.coe_comp, Function.comp_def] using
       ((QuotientGroup.mk' N.toSubgroup).comp φ).continuous_iff_isOpen_ker.mpr hN
   refine ⟨φ, hcont, surjective_of_forall_surjective_mk'_comp hcont fun N ↦ ?_⟩
   rw [hφ N]
-  exact (x N).2.1
+  exact (x N).property.1
 
 end Surjection
 

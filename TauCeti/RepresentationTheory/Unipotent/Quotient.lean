@@ -60,7 +60,7 @@ theorem _root_.Representation.isNilpotent_sub_one_of_quotient
         ⟨hp g, fun _ hx ↦ hx⟩)) ?_ ?_
   · convert IsNilpotent.zero
     ext y
-    simp [hfix y y.2]
+    simp [hfix y y.property]
   · rwa [rho.quotient_sub_one_eq_mapQ p hp g] at hn
 
 end TauCeti

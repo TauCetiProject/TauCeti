@@ -173,6 +173,18 @@ theorem single_le_iff {a b : α} :
     toDegRevLex (single b 1) ≤ toDegRevLex (single a 1) ↔ a ≤ b :=
   single_strictAnti.le_iff_ge
 
+/-- Between two quadratic monomials, if `max a b < max c d`, then `single c 1 + single d 1`
+strictly precedes `single a 1 + single b 1` in the graded reverse lexicographic order. -/
+theorem single_add_single_lt_of_max_lt {a b c d : α} (h : max a b < max c d) :
+    toDegRevLex (single c 1 + single d 1) < toDegRevLex (single a 1 + single b 1) := by
+  refine lt_iff_exists.2 <| Or.inr ⟨by simp, max c d, fun j hj ↦ ?_, ?_⟩
+  · simp [(le_max_left c d |>.trans_lt hj).ne', (le_max_right c d |>.trans_lt hj).ne',
+      (le_max_left a b |>.trans_lt (h.trans hj)).ne',
+      (le_max_right a b |>.trans_lt (h.trans hj)).ne']
+  · rcases max_choice c d with hcd | hcd <;>
+      · rw [hcd] at h ⊢
+        simp [(le_max_left a b |>.trans_lt h).ne', (le_max_right a b |>.trans_lt h).ne']
+
 theorem monotone_degree :
     Monotone (fun x : DegRevLex (α →₀ ℕ) ↦ (ofDegRevLex x).degree) := fun _ _ h ↦ by
   rcases le_iff.1 h with h | h
@@ -229,6 +241,12 @@ theorem degRevLex_single_le_iff {a b : σ} :
 theorem degRevLex_single_lt_iff {a b : σ} :
     single a 1 ≺[degRevLex] single b 1 ↔ b < a := by
   rw [degRevLex_lt_iff, DegRevLex.single_lt_iff]
+
+/-- Between two quadratic monomials, if `max a b < max c d`, then `single c 1 + single d 1` is
+strictly smaller than `single a 1 + single b 1` in `degRevLex`. -/
+theorem degRevLex_single_add_single_lt_of_max_lt {a b c d : σ} (h : max a b < max c d) :
+    single c 1 + single d 1 ≺[degRevLex] single a 1 + single b 1 :=
+  DegRevLex.single_add_single_lt_of_max_lt h
 
 end MonomialOrder
 

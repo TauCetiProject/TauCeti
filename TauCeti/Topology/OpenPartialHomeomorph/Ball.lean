@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Uniform
+public import Mathlib.Analysis.Normed.Module.Convex
+public import Mathlib.Topology.Homotopy.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
+public import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 
 /-!
 # Balls of a chart
@@ -15,7 +17,11 @@ An open partial homeomorphism `e : M → V` into a pseudometric space pulls the 
 about `e b` back to the open set `OpenPartialHomeomorph.chartBall e b ε` of `M`, a neighbourhood
 of `b` when `b ∈ e.source` and `0 < ε`. When `V` is a seminormed group and the ball lies in the
 target of `e`, the map `x ↦ e x - e b` is a homeomorphism of this set with the ball of radius `ε`
-about `0` (`OpenPartialHomeomorph.chartBallHomeomorph`).
+about `0` (`OpenPartialHomeomorph.chartBallHomeomorph`). When moreover `V` is a real normed
+space and `b ∈ e.source`, straight lines to `e b` contract every map into this set onto the
+constant map at `b` (`OpenPartialHomeomorph.chartBallHomotopy`), and scaling `e x - e b` down to
+`0` contracts the chart ball itself onto `b` (`OpenPartialHomeomorph.chartBallContraction`), so
+that, for instance, a local coefficient system on the chart ball is constant.
 -/
 
 public section
@@ -82,6 +88,72 @@ lemma coe_chartBallHomeomorph_symm_apply (v : ball (0 : V) ε) :
     ((chartBallHomeomorph e hε).symm v : M) = e.symm (v + e b) :=
   (rfl)
 
+/-- The coordinate `x ↦ e x - e b` on `chartBall e b ε` vanishes exactly at `b`. -/
+lemma chartBallHomeomorph_eq_zero_iff (hb : b ∈ e.source) (x : chartBall e b ε) :
+    (chartBallHomeomorph e hε x : V) = 0 ↔ (x : M) = b := by
+  rw [coe_chartBallHomeomorph_apply, sub_eq_zero]
+  exact e.injOn.eq_iff (e.chartBall_subset_source b ε x.property) hb
+
 end SeminormedAddCommGroup
+
+section NormedSpace
+
+variable {X M V : Type*} [TopologicalSpace X] [TopologicalSpace M] [SeminormedAddCommGroup V]
+  [NormedSpace ℝ V] (e : OpenPartialHomeomorph M V) {b : M} (hb : b ∈ e.source) {ε : ℝ}
+  (hε : ball (e b) ε ⊆ e.target) (hε₀ : 0 < ε)
+
+include hb hε in
+/-- **Maps into a chart ball are nullhomotopic.** A continuous map `g` into the chart ball
+`chartBall e b ε`, for a ball about `e b` inside the target of `e`, is homotopic to the constant
+map at `b`, through `(t, x) ↦ e.symm (e b + (1 - t) • (e (g x) - e b))`: straight lines to `e b`
+in the chart. -/
+def chartBallHomotopy {g : C(X, M)} (hg : ∀ x, g x ∈ chartBall e b ε) :
+    g.Homotopy (ContinuousMap.const X b) where
+  toFun z := e.symm (e b + (1 - (z.1 : ℝ)) • (e (g z.2) - e b))
+  continuous_toFun := by
+    have heg : Continuous fun x ↦ e (g x) :=
+      e.continuousOn.comp_continuous g.continuous fun x ↦ (hg x).1
+    refine e.continuousOn_symm.comp_continuous (continuous_const.add
+      ((continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).smul
+        ((heg.comp continuous_snd).sub continuous_const))) fun z ↦ hε ?_
+    exact (convex_ball (e b) ε).add_smul_sub_mem (mem_ball_self (pos_of_mem_ball (hg z.2).2))
+      (hg z.2).2 ⟨unitInterval.one_sub_nonneg z.1, unitInterval.one_sub_le_one z.1⟩
+  map_zero_left x := by simp [e.left_inv (hg x).1]
+  map_one_left x := by simp [e.left_inv hb]
+
+@[simp]
+lemma chartBallHomotopy_apply {g : C(X, M)} (hg : ∀ x, g x ∈ chartBall e b ε)
+    (z : unitInterval × X) :
+    chartBallHomotopy e hb hε hg z = e.symm (e b + (1 - (z.1 : ℝ)) • (e (g z.2) - e b)) :=
+  (rfl)
+
+include hb in
+/-- **The straight-line contraction of a chart ball onto its centre.** At time `t` it sends `x` to
+the point of the chart ball read as `(1 - t) • (e x - e b)` through
+`OpenPartialHomeomorph.chartBallHomeomorph`, so it starts at the identity and ends at the constant
+map at `b`. -/
+def chartBallContraction :
+    (ContinuousMap.id (chartBall e b ε)).Homotopy
+      (ContinuousMap.const (chartBall e b ε) ⟨b, e.mem_chartBall_self hb hε₀⟩) where
+  toFun tx := (chartBallHomeomorph e hε).symm
+    ⟨(1 - (tx.1 : ℝ)) • (chartBallHomeomorph e hε tx.2 : V),
+      balanced_ball_zero.smul_mem
+        (by
+          rw [Real.norm_of_nonneg (sub_nonneg.2 tx.1.property.2)]
+          exact sub_le_self _ tx.1.property.1)
+        (chartBallHomeomorph e hε tx.2).property⟩
+  continuous_toFun := (chartBallHomeomorph e hε).symm.continuous.comp <|
+    ((continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).smul
+      (continuous_subtypeVal.comp ((chartBallHomeomorph e hε).continuous.comp
+        continuous_snd))).subtype_mk _
+  map_zero_left x := Subtype.ext <| by simp [e.left_inv (e.chartBall_subset_source b ε x.property)]
+  map_one_left x := Subtype.ext <| by simp [e.left_inv hb]
+
+@[simp]
+lemma coe_chartBallContraction_apply (t : unitInterval) (x : chartBall e b ε) :
+    (chartBallContraction e hb hε hε₀ (t, x) : M) = e.symm ((1 - (t : ℝ)) • (e x - e b) + e b) :=
+  (rfl)
+
+end NormedSpace
 
 end OpenPartialHomeomorph

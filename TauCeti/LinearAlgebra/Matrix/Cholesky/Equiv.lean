@@ -40,9 +40,10 @@ namespace TauCeti
 Cholesky factor. -/
 theorem eq_cholesky_of_mul_transpose_self_eq {p : ℕ} (A : PosDefMatrix p)
     (L : PosDiagLowerTriangular p)
-    (hL : L.1 * L.1ᵀ = (A.1 : Matrix (Fin p) (Fin p) ℝ)) : L = cholesky A := by
+    (hL : L.val * L.valᵀ = (A.val : Matrix (Fin p) (Fin p) ℝ)) : L = cholesky A := by
   apply Subtype.ext
-  exact L.2.1.eq_of_mul_transpose_self_eq (cholesky A).2.1 L.2.2 (cholesky A).2.2
+  exact L.property.1.eq_of_mul_transpose_self_eq (cholesky A).property.1 L.property.2
+      (cholesky A).property.2
     (hL.trans (cholesky_mul_transpose A).symm)
 
 /-- Taking the Cholesky factor after reconstructing a matrix from a positive-diagonal

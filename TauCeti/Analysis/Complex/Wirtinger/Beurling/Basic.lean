@@ -222,7 +222,7 @@ theorem norm_beurlingLp_le (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) {C :
     ‖beurlingLp (F := F) p hp hp_top‖ ≤ C := by
   have hd : DenseRange (SchwartzMap.toLpCLM ℂ F p (volume : Measure ℂ)).toLinearMap :=
     SchwartzMap.denseRange_toLpCLM (E := ℂ) (F := F) (μ := volume) hp_top
-  exact LinearMap.opNorm_extendOfNorm_le hd C.2
+  exact LinearMap.opNorm_extendOfNorm_le hd C.property
     (norm_beurlingSchwartzToLp_le_of_bound hp hp_top hC)
 
 /-- A continuous linear operator on Lp is the Beurling operator exactly when it agrees with the
