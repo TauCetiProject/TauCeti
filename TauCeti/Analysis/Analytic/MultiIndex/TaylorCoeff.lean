@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Analytic.MultiIndex.Coeff
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.IteratedFDeriv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
+import TauCeti.Analysis.Normed.Group.InfiniteSum
 import TauCeti.GroupTheory.Perm.FiberSubgroup
 
 /-!
@@ -492,9 +493,9 @@ theorem mvTaylorCoeff_smul [Module A F] [IsBoundedSMul A F] [IsScalarTower 𝕜 
   have hρ₁_le : (ρ : ℝ) ≤ ρ₁ := NNReal.coe_le_coe.2 (min_le_left ρ₁ ρ₂)
   have hρ₂_le : (ρ : ℝ) ≤ ρ₂ := NNReal.coe_le_coe.2 (min_le_right ρ₁ ρ₂)
   have hfρ : Summable fun β : ι → ℕ ↦ ‖mvTaylorCoeff f x β‖ * (ρ : ℝ) ^ (∑ i, β i) :=
-    summable_norm_mul_pow_of_le (min_le_left ρ₁ ρ₂) hsum₁
+    summable_mul_pow_of_le (fun _ ↦ norm_nonneg _) (min_le_left ρ₁ ρ₂) hsum₁
   have hgρ : Summable fun γ : ι → ℕ ↦ ‖mvTaylorCoeff g x γ‖ * (ρ : ℝ) ^ (∑ i, γ i) :=
-    summable_norm_mul_pow_of_le (min_le_right ρ₁ ρ₂) hsum₂
+    summable_mul_pow_of_le (fun _ ↦ norm_nonneg _) (min_le_right ρ₁ ρ₂) hsum₂
   have hconv := summable_norm_sum_Iic_smul_mul_pow ρ.coe_nonneg hfρ hgρ
   refine mvTaylorCoeff_eq_of_hasSum (lt_min hρ₁ hρ₂) hconv (fun y hy ↦ ?_) α
   have hu := hexp₁ y (hy.trans_le hρ₁_le)

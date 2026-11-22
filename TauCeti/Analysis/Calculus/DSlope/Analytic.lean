@@ -66,8 +66,7 @@ theorem TauCeti.analyticWithinAt_dslope_update_iff_of_ne {s : Set (ι → 𝕜)}
     have heq : (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) =ᶠ[𝓝 x]
         (fun z ↦ (z i - ζ)⁻¹ • (f z - f (Function.update z i ζ))) := by
       filter_upwards [hcoord.continuousAt.eventually_ne hne] with z hz
-      apply (eq_inv_smul_iff₀ (sub_ne_zero.mpr hz)).2
-      simp only [sub_smul_dslope, Function.update_eq_self]
+      rw [dslope_of_ne _ hz, slope_def_module, Function.update_eq_self]
     exact hquot.congr_of_eventuallyEq (heq.filter_mono nhdsWithin_le_nhds) heq.eq_of_nhds
 
 /-- Away from its base hyperplane, a coordinate divided difference is analytic exactly when
