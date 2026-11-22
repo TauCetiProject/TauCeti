@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.PLowerCentralSeries
-import Mathlib.Data.Nat.Choose.Dvd
 import TauCeti.GroupTheory.Commutator
 
 /-!
@@ -355,26 +354,15 @@ theorem mk_mul_pow_pLowerCentralSeries_add_two (hG : IsPGroup p G)
     ((x * y : G) : G ⧸ (⊤ : Subgroup G).pLowerCentralSeries p (m + 2)) ^ p =
       (x : G ⧸ (⊤ : Subgroup G).pLowerCentralSeries p (m + 2)) ^ p *
         (y : G ⧸ (⊤ : Subgroup G).pLowerCentralSeries p (m + 2)) ^ p := by
-  set N := (⊤ : Subgroup G).pLowerCentralSeries p (m + 2)
-  rw [QuotientGroup.mk_mul]
-  by_cases hp2 : p = 2
-  · subst hp2
-    exact (QuotientGroup.commute_mk_iff.mpr <| inv_mem_iff.mp <| commutatorElement_inv x y ▸
-      hpow.commutator_pLowerCentralSeries_top_le_add_two hG m
-        (commutator_mem_commutator hy (mem_top x))).mul_pow 2
-  · have hyx : ⁅y, x⁆ ∈ (⊤ : Subgroup G).pLowerCentralSeries p (m + 1) :=
-      Subgroup.commutator_mem_pLowerCentralSeries_succ p ⊤ hy (mem_top x)
-    have hcent : ∀ g : G, Commute (g : G ⧸ N) ((⁅y, x⁆ : G) : G ⧸ N) := fun g ↦
-      (QuotientGroup.commute_mk_iff.mpr
-        (Subgroup.commutator_mem_pLowerCentralSeries_succ p ⊤ hyx (mem_top g))).symm
-    have hmk_comm : ⁅(y : G ⧸ N), (x : G ⧸ N)⁆ = ((⁅y, x⁆ : G) : G ⧸ N) :=
-      (map_commutatorElement (QuotientGroup.mk' N) y x).symm
-    obtain ⟨c, hc⟩ :=
-      hp.out.dvd_choose_self two_ne_zero (lt_of_le_of_ne hp.out.two_le (Ne.symm hp2))
-    rw [Commute.mul_pow_eq_pow_mul_pow_mul_commutatorElement_pow_choose_two
-        (hmk_comm.symm ▸ hcent x) (hmk_comm.symm ▸ hcent y) p,
-      hmk_comm, hc, pow_mul, Subgroup.mk_pow_eq_one_of_mem_pLowerCentralSeries p ⊤ hyx,
-      one_pow, mul_one]
+  have hyx := Subgroup.commutator_mem_pLowerCentralSeries_succ p ⊤ hy (mem_top x)
+  exact QuotientGroup.mk_mul_pow_eq_of_prime hp.out
+    (fun hp2 ↦ by
+      subst hp2
+      exact hpow.commutator_pLowerCentralSeries_top_le_add_two hG m
+        (commutator_mem_commutator hy (mem_top x)))
+    (fun _ ↦ Subgroup.commutator_mem_pLowerCentralSeries_succ p ⊤ hyx (mem_top x))
+    (fun _ ↦ Subgroup.commutator_mem_pLowerCentralSeries_succ p ⊤ hyx (mem_top y))
+    (fun _ ↦ Subgroup.pow_mem_pLowerCentralSeries_succ p ⊤ hyx)
 
 /-- Every element of `λ_{m+1}` is congruent modulo `λ_{m+2}` to the `p`-th power of an element
 of `λ_m`. -/

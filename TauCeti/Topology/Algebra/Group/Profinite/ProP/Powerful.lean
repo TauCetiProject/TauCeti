@@ -12,6 +12,7 @@ public import TauCeti.Topology.Algebra.Group.Powerful
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 import Mathlib.Data.Nat.Choose.Dvd
+import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 
 /-!
 # Powerful pro-`p` groups
@@ -31,15 +32,15 @@ equivalent to bijectivity of every `gradedPow p G k` via torsion lifting (DDMS L
 
 * `TauCeti.closedPowerSubgroup_prod`, `TauCeti.closedPowerSubgroup_pi`,
   `TauCeti.IsPowerful.pi`: product compatibility for closed power subgroups and powerfulness.
-* `TauCeti.commutator_le_closedPowerSubgroup_two_dihedralGroup`,
-  `TauCeti.not_isPowerful_two_dihedralGroup`, `TauCeti.not_isPowerful_heisenbergGroup_zmod`:
+* `TauCeti.not_isPowerful_two_dihedralGroup`, `TauCeti.not_isPowerful_heisenbergGroup_zmod`:
   non-powerful witnesses showing the fourth-power condition at `p = 2` and non-powerful finite
   `p`-groups for every prime `p`.
 * `TauCeti.IsProP.mem_pLowerCentralSeries_iff_exists_pow_pow`,
   `TauCeti.IsProP.pLowerCentralSeries_eq_closedPowerSubgroup`,
   `TauCeti.IsProP.proPFrattini_eq_closedPowerSubgroup`: DDMS Theorem 3.6(ii)–(iii).
 * `TauCeti.IsProP.isPowerful_pLowerCentralSeries`,
-  `TauCeti.IsProP.map_subtype_pLowerCentralSeries_pLowerCentralSeries`: DDMS Theorem 3.6(i), (iv).
+  `TauCeti.IsProP.map_subtype_pLowerCentralSeries_pLowerCentralSeries`,
+  `TauCeti.IsProP.pLowerCentralSeries_pLowerCentralSeries_eq_subgroupOf`: DDMS Theorem 3.6(i), (iv).
 * `TauCeti.IsProP.gradedPow_add`, `TauCeti.IsProP.gradedPow_surjective`,
   `TauCeti.IsProP.antitone_natCard_gradedPiece`: DDMS Lemma 3.4.
 * `TauCeti.IsProP.exists_pow_eq_one_of_notMem_pLowerCentralSeries_one`,
@@ -142,10 +143,6 @@ section Powerful
 
 variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
-/-- Every subsingleton topological group is powerful for every `p`. -/
-theorem isPowerful_of_subsingleton [Subsingleton G] : IsPowerful p G :=
-  isPowerful_of_isMulCommutative
-
 /-- On a discrete group, `IsPowerful p G` agrees with `(⊤ : Subgroup G).IsPowerfullyEmbedded p`. -/
 theorem isPowerful_iff_isPowerfullyEmbedded_top [DiscreteTopology G] :
     IsPowerful p G ↔ (⊤ : Subgroup G).IsPowerfullyEmbedded p := by
@@ -181,18 +178,10 @@ end Powerful
 
 section Witnesses
 
-/-- In every dihedral group `DihedralGroup n`, every commutator is a square, so
-`[D_n, D_n] ≤ D_n²`. -/
-theorem commutator_le_closedPowerSubgroup_two_dihedralGroup (n : ℕ)
-    [TopologicalSpace (DihedralGroup n)] [DiscreteTopology (DihedralGroup n)] :
-    ⁅(⊤ : Subgroup (DihedralGroup n)), ⊤⁆ ≤ closedPowerSubgroup 2 (DihedralGroup n) := by
-  simpa [commutator_def] using
-    (commutator_le_closedPowerSubgroup_two (G := DihedralGroup n))
-
 /-- Whenever `4 ∣ n`, `DihedralGroup n` is not powerful at `p = 2`: every fourth power is a
-rotation by a multiple of `4`, whereas `[r 1, sr 0] = r 2`. Together with
-`TauCeti.commutator_le_closedPowerSubgroup_two_dihedralGroup`, this shows why the fourth-power
-condition at `p = 2` is strictly stronger than `[G, G] ≤ G²`. -/
+rotation by a multiple of `4`, whereas `r 2 ∈ [D_n, D_n]`. Together with
+`TauCeti.commutator_le_closedPowerSubgroup_two`, this shows why the fourth-power condition at
+`p = 2` is strictly stronger than `[G, G] ≤ G²`. -/
 theorem not_isPowerful_two_dihedralGroup {n : ℕ} (hn : 4 ∣ n)
     [TopologicalSpace (DihedralGroup n)] [DiscreteTopology (DihedralGroup n)] :
     ¬ IsPowerful 2 (DihedralGroup n) := fun hpow ↦ by
@@ -206,21 +195,17 @@ theorem not_isPowerful_two_dihedralGroup {n : ℕ} (hn : 4 ∣ n)
       rintro (i | i)
       · exact ⟨i, by rw [DihedralGroup.r_pow, Nat.cast_ofNat, mul_comm]⟩
       · exact ⟨0, by rw [show (4 : ℕ) = 2 * 2 from rfl, pow_mul]; simp [sq]⟩
-  obtain ⟨i, hi⟩ := h4le (isPowerful_two_iff.mp hpow <| by
-    rw [commutator_def]
-    exact commutator_mem_commutator (mem_top (DihedralGroup.r (1 : ZMod n)))
-      (mem_top (DihedralGroup.sr (0 : ZMod n))))
-  have h2eq : (2 : ZMod n) = 4 * i :=
-    DihedralGroup.r.inj ((by simp [commutatorElement_def]; ring :
-      ⁅DihedralGroup.r (1 : ZMod n), DihedralGroup.sr (0 : ZMod n)⁆ = DihedralGroup.r 2).symm.trans
-      hi)
-  have h := congrArg (ZMod.castHom hn (ZMod 4)) h2eq
+  have hr2 : DihedralGroup.r (2 : ZMod n) ∈ K :=
+    Subgroup.zpowers_le.mp <|
+      commutator_dihedralGroup_eq_zpowers n ▸ (isPowerful_two_iff.mp hpow).trans h4le
+  obtain ⟨i, hi⟩ := hr2
+  have h := congrArg (ZMod.castHom hn (ZMod 4)) (DihedralGroup.r.inj hi)
   rw [map_ofNat, map_mul, map_ofNat, show (4 : ZMod 4) = 0 from by decide, zero_mul] at h
   exact (by decide : (2 : ZMod 4) ≠ 0) h
 
 /-- For every prime `p`, the finite Heisenberg group `HeisenbergGroup (ZMod p)` is not powerful
-for `p`: every `p`-th power (or fourth power when `p = 2`) is trivial, while the commutator
-`⁅(1, 0, 0), (0, 1, 0)⁆ = (0, 0, 1)` is nontrivial. -/
+for `p`: every `p`-th power (or fourth power when `p = 2`) is trivial, while `(0, 0, 1)` lies in
+the commutator subgroup. -/
 theorem not_isPowerful_heisenbergGroup_zmod (p : ℕ) [hp : Fact p.Prime] :
     ¬ IsPowerful p (HeisenbergGroup (ZMod p)) := fun hpow ↦ by
   set e : ℕ := if p = 2 then 4 else p
@@ -235,11 +220,12 @@ theorem not_isPowerful_heisenbergGroup_zmod (p : ℕ) [hp : Fact p.Prime] :
   have hbot : closedPowerSubgroup e (HeisenbergGroup (ZMod p)) = ⊥ :=
     le_bot_iff.mp ((closedPowerSubgroup_le_iff (isClosed_discrete _)).mpr fun a ↦ mem_bot.mpr <| by
       rw [HeisenbergGroup.pow_eq]; ext <;> simp [hzero e _ hpe, hzero (e.choose 2) _ hpe2])
-  have h := congrArg HeisenbergGroup.z <| mem_bot.mp <| hbot ▸
-    (isPowerful_iff.mp hpow) (commutator_def (HeisenbergGroup (ZMod p)) ▸
-      commutator_mem_commutator (mem_top (⟨1, 0, 0⟩ : HeisenbergGroup (ZMod p)))
-        (mem_top (⟨0, 1, 0⟩ : HeisenbergGroup (ZMod p))))
-  simp [HeisenbergGroup.commutatorElement_eq] at h
+  have hcomm : HeisenbergGroup.zAxis ≤ (⊥ : Subgroup (HeisenbergGroup (ZMod p))) := by
+    rw [← HeisenbergGroup.commutator_eq_zAxis, ← hbot]
+    exact isPowerful_iff.mp hpow
+  have hz : (⟨0, 0, 1⟩ : HeisenbergGroup (ZMod p)) ∈ (⊥ : Subgroup _) :=
+    hcomm (HeisenbergGroup.mem_zAxis_iff.mpr ⟨rfl, rfl⟩)
+  exact one_ne_zero (congrArg HeisenbergGroup.z (mem_bot.mp hz))
 
 end Witnesses
 
@@ -250,6 +236,12 @@ section ProfiniteProP
 variable {p : ℕ} [hp : Fact p.Prime]
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- In a profinite powerful group, the pro-`p` Frattini subgroup is `closedPowerSubgroup p G`. -/
+theorem IsPowerful.proPFrattini_eq_closedPowerSubgroup (hpow : IsPowerful p G) :
+    proPFrattini p G = closedPowerSubgroup p G := by
+  rw [← pLowerCentralSeries_one_eq_proPFrattini hp.out,
+    hpow.closedPowerSubgroup_eq_pLowerCentralSeries_one.symm]
 
 namespace IsProP
 
@@ -316,18 +308,6 @@ theorem pLowerCentralSeries_eq_closedPowerSubgroup (hG : IsProP p G) (hpow : IsP
       hx ▸ pow_mem_closedPowerSubgroup x)
     ((closedPowerSubgroup_le_iff (isClosed_pLowerCentralSeries k)).mpr fun g ↦ by
       simpa using pow_pow_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p g) k)
-
-/-- In a profinite powerful pro-`p` group, `λ_1(G) = closedPowerSubgroup p G`. -/
-theorem pLowerCentralSeries_one_eq_closedPowerSubgroup (hG : IsProP p G) (hpow : IsPowerful p G) :
-    pLowerCentralSeries p G 1 = closedPowerSubgroup p G := by
-  simpa using hG.pLowerCentralSeries_eq_closedPowerSubgroup hpow 1
-
-/-- In a profinite powerful pro-`p` group, the pro-`p` Frattini subgroup is
-`closedPowerSubgroup p G`. -/
-theorem proPFrattini_eq_closedPowerSubgroup (hG : IsProP p G) (hpow : IsPowerful p G) :
-    proPFrattini p G = closedPowerSubgroup p G := by
-  rw [← pLowerCentralSeries_one_eq_proPFrattini hp.out,
-    hG.pLowerCentralSeries_one_eq_closedPowerSubgroup hpow]
 
 /-- In a profinite powerful pro-`2` group, `⁅λ_k(G), G⁆ ≤ λ_{k+2}(G)` for every `k`. -/
 theorem commutator_pLowerCentralSeries_top_le_add_two (hG : IsProP 2 G) (hpow : IsPowerful 2 G)
@@ -399,6 +379,17 @@ theorem map_subtype_pLowerCentralSeries_pLowerCentralSeries (hG : IsProP p G)
     exact ⟨z ^ (p ^ j), (hH_proP.mem_pLowerCentralSeries_iff_exists_pow_pow hH_pow j).mpr ⟨z, rfl⟩,
       by rw [← hx, coe_subtype, coe_pow, ← pow_mul, ← pow_add]⟩
 
+/-- In a profinite powerful pro-`p` group, the `j`-th term of the lower `p`-series of `λ_k(G)`
+equals `λ_{k+j}(G).subgroupOf (λ_k(G))`. -/
+theorem pLowerCentralSeries_pLowerCentralSeries_eq_subgroupOf (hG : IsProP p G)
+    (hpow : IsPowerful p G) (k j : ℕ) :
+    pLowerCentralSeries p (pLowerCentralSeries p G k) j =
+      (pLowerCentralSeries p G (k + j)).subgroupOf (pLowerCentralSeries p G k) := by
+  have h := congrArg (fun K ↦ K.comap (pLowerCentralSeries p G k).subtype)
+    (hG.map_subtype_pLowerCentralSeries_pLowerCentralSeries hpow k j)
+  rwa [Subgroup.comap_map_eq_self_of_injective
+    (pLowerCentralSeries p G k).subtype_injective] at h
+
 /-! ### Graded `p`-power operator and torsion lifting -/
 
 /-- **Additivity of the graded `p`-power operator** in every degree for a profinite powerful
@@ -448,25 +439,15 @@ theorem mk_mul_pow_pLowerCentralSeries_add_two (hG : IsProP p G) (hpow : IsPower
     ((x * y : G) : G ⧸ pLowerCentralSeries p G (m + 2)) ^ p =
       (x : G ⧸ pLowerCentralSeries p G (m + 2)) ^ p *
         (y : G ⧸ pLowerCentralSeries p G (m + 2)) ^ p := by
-  set N := pLowerCentralSeries p G (m + 2)
-  rw [QuotientGroup.mk_mul]
-  by_cases hp2 : p = 2
-  · subst hp2
-    exact (QuotientGroup.commute_mk_iff.mpr <| inv_mem_iff.mp <| commutatorElement_inv x y ▸
-      hG.commutator_pLowerCentralSeries_top_le_add_two hpow m
-        (commutator_mem_commutator hy (mem_top x))).mul_pow 2
-  · have hyx := commutator_mem_pLowerCentralSeries_succ hy x
-    have hmk_comm : ⁅(y : G ⧸ N), (x : G ⧸ N)⁆ = ((⁅y, x⁆ : G) : G ⧸ N) :=
-      (map_commutatorElement (QuotientGroup.mk' N) y x).symm
-    obtain ⟨c, hc⟩ :=
-      hp.out.dvd_choose_self two_ne_zero (lt_of_le_of_ne hp.out.two_le (Ne.symm hp2))
-    have hpow_yx : (((⁅y, x⁆ : G) : G ⧸ N) ^ p) = 1 := by
-      rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
-      exact pow_mem_pLowerCentralSeries hyx
-    rw [Commute.mul_pow_eq_pow_mul_pow_mul_commutatorElement_pow_choose_two
-        (hmk_comm.symm ▸ commute_mk_of_mem_pLowerCentralSeries hyx x)
-        (hmk_comm.symm ▸ commute_mk_of_mem_pLowerCentralSeries hyx y) p,
-      hmk_comm, hc, pow_mul, hpow_yx, one_pow, mul_one]
+  have hyx := commutator_mem_pLowerCentralSeries_succ hy x
+  exact QuotientGroup.mk_mul_pow_eq_of_prime hp.out
+    (fun hp2 ↦ by
+      subst hp2
+      exact hG.commutator_pLowerCentralSeries_top_le_add_two hpow m
+        (commutator_mem_commutator hy (mem_top x)))
+    (fun _ ↦ commutator_mem_pLowerCentralSeries_succ hyx x)
+    (fun _ ↦ commutator_mem_pLowerCentralSeries_succ hyx y)
+    (fun _ ↦ pow_mem_pLowerCentralSeries hyx)
 
 /-- One step of the torsion-lifting iteration: if `x ^ p ∈ λ_{k+2}`, there exists `y ∈ λ_{k+1}`
 such that `(x * y) ^ p ∈ λ_{k+3}`. -/
@@ -535,15 +516,16 @@ theorem forall_eq_one_of_pow_eq_one_iff_injective_gradedPow (hG : IsProP p G)
     obtain ⟨a, rfl⟩ := gradedMk_surjective k z
     rw [gradedMk_eq_zero_iff]
     by_contra ha1
-    have hH_mem : ∀ j (b : pLowerCentralSeries p G k),
-        b ∈ pLowerCentralSeries p (pLowerCentralSeries p G k) j ↔
-          (b : G) ∈ pLowerCentralSeries p G (k + j) := fun j b ↦ by
-      rw [← hG.map_subtype_pLowerCentralSeries_pLowerCentralSeries hpow k j, mem_map]
-      exact ⟨fun hb ↦ ⟨b, hb, rfl⟩, fun ⟨c, hc, hcb⟩ ↦ Subtype.ext hcb ▸ hc⟩
+    have hH1 : pLowerCentralSeries p (pLowerCentralSeries p G k) 1 =
+        (pLowerCentralSeries p G (k + 1)).subgroupOf (pLowerCentralSeries p G k) :=
+      hG.pLowerCentralSeries_pLowerCentralSeries_eq_subgroupOf hpow k 1
+    have hH2 : pLowerCentralSeries p (pLowerCentralSeries p G k) 2 =
+        (pLowerCentralSeries p G (k + 2)).subgroupOf (pLowerCentralSeries p G k) :=
+      hG.pLowerCentralSeries_pLowerCentralSeries_eq_subgroupOf hpow k 2
     obtain ⟨h, hne, hhp, -⟩ :=
       (hG.subgroup (pLowerCentralSeries p G k)).exists_pow_eq_one_of_notMem_pLowerCentralSeries_one
-        (hG.isPowerful_pLowerCentralSeries hpow k) ((hH_mem 1 a).not.mpr ha1)
-        ((hH_mem 2 (a ^ p)).mpr <| by rw [coe_pow]; simpa [f, gradedPow_gradedMk] using hz)
+        (hG.isPowerful_pLowerCentralSeries hpow k) (by rwa [hH1, mem_subgroupOf])
+        (by rw [hH2, mem_subgroupOf, coe_pow]; simpa [f, gradedPow_gradedMk] using hz)
     exact hne (Subtype.ext (htors (h : G) (by rw [← coe_pow, hhp]; rfl)))
   · refine mem_bot.mp ((hG.iInf_pLowerCentralSeries_eq_bot hp.out) ▸ mem_iInf.mpr fun k ↦ ?_)
     induction k with

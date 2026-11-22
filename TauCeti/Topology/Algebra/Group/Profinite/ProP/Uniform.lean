@@ -48,7 +48,8 @@ when it is topologically isomorphic to `ℤ_p ^ d` for some `d`
   `d(G) = log_p [G : Gᵖ]`.
 * `TauCeti.IsProP.forall_eq_one_of_isOfFinOrder_iff`: torsion-freeness iff no `p`-torsion.
 * `TauCeti.IsProP.isUniform_iff_isPowerful_and_forall_natCard_gradedPiece_eq`,
-  `TauCeti.IsProP.isUniform_iff_isPowerful_and_forall_index_pLowerCentralSeries_eq`: DDMS Thm. 4.5.
+  `TauCeti.IsProP.isUniform_iff_isPowerful_and_forall_relIndex_pLowerCentralSeries_eq`:
+  DDMS Thm. 4.5.
 * `TauCeti.IsUniform.uniformDimension_eq_topologicalGeneratorRankNat`,
   `TauCeti.IsUniform.natCard_gradedPiece`, `TauCeti.IsUniform.index_pLowerCentralSeries`,
   `TauCeti.IsUniform.index_closedPowerSubgroup_pow`: dimension and index formulas.
@@ -95,15 +96,9 @@ theorem IsProP.exists_pow_eq_one_of_isOfFinOrder (hG : IsProP p G) {g : G} (hg :
     (isOpen_compl_singleton (x := g)) hg.symm
   let q := QuotientGroup.mk' U.toSubgroup
   have hqg : q g ≠ 1 := fun h1 ↦ hU ((QuotientGroup.eq_one_iff g).mp h1) rfl
-  obtain ⟨k, hk⟩ := (IsPGroup.iff_orderOf.mp (isProP_iff.mp hG U)) (q g)
-  have hk_ne : k ≠ 0 := by rintro rfl; exact hqg (orderOf_eq_one_iff.mp (by simpa using hk))
-  have hp_dvd : p ∣ orderOf g := (dvd_pow_self p hk_ne).trans (hk ▸ orderOf_map_dvd q g)
-  set m : ℕ := orderOf g / p
-  have hmp : m * p = orderOf g := Nat.div_mul_cancel hp_dvd
-  have hm_pos : 0 < m := Nat.pos_of_mul_pos_right (hmp.symm ▸ hfin.orderOf_pos)
-  have hm_lt : m < orderOf g := hmp ▸ lt_mul_of_one_lt_right hm_pos hp.out.one_lt
-  exact ⟨m, fun h1 ↦ hm_lt.not_ge (Nat.le_of_dvd hm_pos (orderOf_dvd_of_pow_eq_one h1)),
-    by rw [← pow_mul, hmp, pow_orderOf_eq_one]⟩
+  have hp_dvd : p ∣ orderOf g := ((isProP_iff.mp hG U).dvd_orderOf hqg).trans (orderOf_map_dvd q g)
+  have hord := orderOf_eq_prime_iff.mp (orderOf_pow_orderOf_div hfin.orderOf_pos.ne' hp_dvd)
+  exact ⟨orderOf g / p, hord.2, hord.1⟩
 
 /-- **Torsion-freeness in a profinite pro-`p` group** is equivalent to having no elements of
 order `p`. -/
@@ -156,31 +151,12 @@ theorem uniformDimension_def :
     uniformDimension p G = Nat.log p (closedPowerSubgroup p G).index := by
   rw [uniformDimension]
 
-/-- A uniform pro-`p` group has no nontrivial elements of finite order. -/
-theorem IsUniform.eq_one_of_isOfFinOrder (h : IsUniform p G) {g : G} (hg : IsOfFinOrder g) :
-    g = 1 := by
-  have := h.isMulTorsionFree
-  obtain ⟨n, hn, hgn⟩ := isOfFinOrder_iff_pow_eq_one.mp hg
-  exact (pow_eq_one_iff_left hn.ne').mp hgn
-
-/-- A uniform pro-`p` group has no nontrivial `p`-torsion. -/
-theorem IsUniform.eq_one_of_pow_eq_one (h : IsUniform p G) {g : G} (hg : g ^ p = 1) :
-    g = 1 :=
-  h.eq_one_of_isOfFinOrder (isOfFinOrder_iff_pow_eq_one.mpr ⟨p, h.prime.pos, hg⟩)
-
-/-- The cardinality of `gr_k(G) = λ_k(G) ⧸ λ_{k+1}(G)` is the index of `λ_{k+1}(G)` in `λ_k(G)`. -/
-theorem natCard_gradedPiece_eq_index (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G]
-    [IsTopologicalGroup G] (k : ℕ) :
-    Nat.card (gradedPiece p G k) =
-      ((pLowerCentralSeries p G (k + 1)).subgroupOf (pLowerCentralSeries p G k)).index := by
-  rw [Subgroup.index_eq_card]; exact Nat.card_congr Additive.toMul
-
 /-- The cardinality of `gr_k(G)` is the relative index of `λ_{k+1}(G)` in `λ_k(G)`. -/
 theorem natCard_gradedPiece_eq_relIndex (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G]
     [IsTopologicalGroup G] (k : ℕ) :
     Nat.card (gradedPiece p G k) =
-      (pLowerCentralSeries p G (k + 1)).relIndex (pLowerCentralSeries p G k) :=
-  natCard_gradedPiece_eq_index p G k
+      (pLowerCentralSeries p G (k + 1)).relIndex (pLowerCentralSeries p G k) := by
+  rw [Subgroup.relIndex, Subgroup.index_eq_card]; exact Nat.card_congr Additive.toMul
 
 /-- The cardinality of `gr_0(G)` is the index `[G : λ_1(G)]`. -/
 theorem natCard_gradedPiece_zero_eq_index (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G]
@@ -252,8 +228,9 @@ theorem IsProP.isUniform_iff_isPowerful_and_forall_natCard_gradedPiece_eq (hG : 
     IsUniform p G ↔
       IsPowerful p G ∧ ∀ k, Nat.card (gradedPiece p G k) = Nat.card (gradedPiece p G 0) := by
   refine ⟨fun hU ↦ ⟨hU.isPowerful, fun k ↦ ?_⟩, fun ⟨hpow, hcard⟩ ↦ ?_⟩
-  · have htors : ∀ g : G, g ^ p = 1 → g = 1 :=
-      (hG.forall_eq_one_of_isOfFinOrder_iff).mp fun _ hg ↦ hU.eq_one_of_isOfFinOrder hg
+  · have := hU.isMulTorsionFree
+    have htors : ∀ g : G, g ^ p = 1 → g = 1 :=
+      (hG.forall_eq_one_of_isOfFinOrder_iff).mp fun _ hg ↦ hg.eq_one'
     have hbij := (hG.forall_eq_one_of_pow_eq_one_iff_bijective_gradedPow hU.isPowerful).mp htors
     induction k with
     | zero => rfl
@@ -265,31 +242,20 @@ theorem IsProP.isUniform_iff_isPowerful_and_forall_natCard_gradedPiece_eq (hG : 
     have htors : ∀ g : G, IsOfFinOrder g → g = 1 :=
       (hG.forall_eq_one_of_isOfFinOrder_iff).mpr
         ((hG.forall_eq_one_of_pow_eq_one_iff_bijective_gradedPow hpow).mpr hbij)
-    refine ⟨hp.out, ‹_›, ‹_›, hG, hfg, ?_, hpow⟩
-    exact ⟨fun n hn a b hab hpow_eq ↦ mul_inv_eq_one.mp <| htors (a * b⁻¹) <|
-      isOfFinOrder_iff_pow_eq_one.mpr ⟨n, Nat.pos_of_ne_zero hn, by
-        rw [(hab.inv_right).mul_pow, hpow_eq, inv_pow, mul_inv_cancel]⟩⟩
+    exact ⟨hp.out, ‹_›, ‹_›, hG, hfg,
+      IsMulTorsionFree.of_not_isOfFinOrder fun g hne hfin ↦ hne (htors g hfin), hpow⟩
 
-/-- **Constant lower-`p`-series indices characterize uniformity** (subgroup-index form): a
+/-- **Constant lower-`p`-series indices characterize uniformity** (relative-index form): a
 topologically finitely generated profinite pro-`p` group is uniform if and only if it is powerful
-and `[λ_k(G) : λ_{k+1}(G)] = [G : λ_1(G)]` for every `k`. -/
-theorem IsProP.isUniform_iff_isPowerful_and_forall_index_pLowerCentralSeries_eq (hG : IsProP p G)
-    (hfg : IsTopologicallyFinitelyGenerated G) :
-    IsUniform p G ↔
-      IsPowerful p G ∧
-        ∀ k, ((pLowerCentralSeries p G (k + 1)).subgroupOf (pLowerCentralSeries p G k)).index =
-          (pLowerCentralSeries p G 1).index := by
-  rw [hG.isUniform_iff_isPowerful_and_forall_natCard_gradedPiece_eq hfg]
-  simp_rw [natCard_gradedPiece_zero_eq_index, natCard_gradedPiece_eq_index]
-
-/-- **Constant lower-`p`-series indices characterize uniformity** (relative-index form). -/
+and `(λ_{k+1}(G)).relIndex (λ_k(G)) = [G : λ_1(G)]` for every `k`. -/
 theorem IsProP.isUniform_iff_isPowerful_and_forall_relIndex_pLowerCentralSeries_eq (hG : IsProP p G)
     (hfg : IsTopologicallyFinitelyGenerated G) :
     IsUniform p G ↔
       IsPowerful p G ∧
         ∀ k, (pLowerCentralSeries p G (k + 1)).relIndex (pLowerCentralSeries p G k) =
-          (pLowerCentralSeries p G 1).index :=
-  hG.isUniform_iff_isPowerful_and_forall_index_pLowerCentralSeries_eq hfg
+          (pLowerCentralSeries p G 1).index := by
+  rw [hG.isUniform_iff_isPowerful_and_forall_natCard_gradedPiece_eq hfg]
+  simp_rw [natCard_gradedPiece_zero_eq_index, natCard_gradedPiece_eq_relIndex]
 
 end Characterization
 
@@ -298,10 +264,7 @@ namespace IsUniform
 /-- In a uniform pro-`p` group `G`, `[G : λ_1(G)] = p ^ uniformDimension p G`. -/
 theorem index_pLowerCentralSeries_one (hU : IsUniform p G) :
     (pLowerCentralSeries p G 1).index = p ^ uniformDimension p G := by
-  have := Fact.mk hU.prime
-  have := hU.compactSpace
-  have := hU.totallyDisconnectedSpace
-  rw [hU.isProP.pLowerCentralSeries_one_eq_closedPowerSubgroup hU.isPowerful,
+  rw [hU.isPowerful.closedPowerSubgroup_eq_pLowerCentralSeries_one.symm,
     hU.index_closedPowerSubgroup_eq_pow_uniformDimension]
 
 /-- The dimension of a uniform pro-`p` group is uniquely determined by `[G : λ_1(G)] = p ^ d`. -/
@@ -327,18 +290,12 @@ theorem natCard_gradedPiece (hU : IsUniform p G) (k : ℕ) :
     hU.isTopologicallyFinitelyGenerated).mp hU).2 k,
     natCard_gradedPiece_zero_eq_index, hU.index_pLowerCentralSeries_one]
 
-/-- Every successive lower-`p`-series index `[λ_k(G) : λ_{k+1}(G)]` of a uniform pro-`p` group
-equals `p ^ uniformDimension p G`. -/
-theorem index_pLowerCentralSeries_subgroupOf (hU : IsUniform p G) (k : ℕ) :
-    ((pLowerCentralSeries p G (k + 1)).subgroupOf (pLowerCentralSeries p G k)).index =
-      p ^ uniformDimension p G := by
-  rw [← natCard_gradedPiece_eq_index, hU.natCard_gradedPiece k]
-
 /-- Every successive lower-`p`-series relative index of a uniform pro-`p` group equals
 `p ^ uniformDimension p G`. -/
 theorem relIndex_pLowerCentralSeries (hU : IsUniform p G) (k : ℕ) :
     (pLowerCentralSeries p G (k + 1)).relIndex (pLowerCentralSeries p G k) =
-      p ^ uniformDimension p G := hU.index_pLowerCentralSeries_subgroupOf k
+      p ^ uniformDimension p G := by
+  rw [← natCard_gradedPiece_eq_relIndex, hU.natCard_gradedPiece k]
 
 /-- In a uniform pro-`p` group `G`, `[G : λ_k(G)] = p ^ (k * uniformDimension p G)`. -/
 theorem index_pLowerCentralSeries (hU : IsUniform p G) (k : ℕ) :
@@ -403,7 +360,7 @@ theorem isUniform_of_subsingleton [hp : Fact p.Prime] [Subsingleton G] : IsUnifo
   isTopologicallyFinitelyGenerated := (Set.finite_empty (α := G)).isTopologicallyFinitelyGenerated
     (Subsingleton.elim _ _)
   isMulTorsionFree := ⟨fun _ _ a b _ _ ↦ Subsingleton.elim a b⟩
-  isPowerful := isPowerful_of_subsingleton
+  isPowerful := isPowerful_of_isMulCommutative
 
 /-- The dimension of a trivial (subsingleton) topological group is `0`. -/
 @[simp]
@@ -489,17 +446,11 @@ theorem IsUniform.uniformDimension_pLowerCentralSeries (hU : IsUniform p G) (k :
   have := Fact.mk hU.prime
   have := hU.compactSpace
   have := hU.totallyDisconnectedSpace
-  set H := TauCeti.pLowerCentralSeries p G k
-  have h1 : TauCeti.pLowerCentralSeries p H 1 =
-      (TauCeti.pLowerCentralSeries p G (k + 1)).subgroupOf H := by
-    ext x
-    rw [mem_subgroupOf, ← hU.isProP.map_subtype_pLowerCentralSeries_pLowerCentralSeries
-      hU.isPowerful k 1, mem_map]
-    exact ⟨fun hx ↦ ⟨x, hx, rfl⟩, fun ⟨y, hy, hyx⟩ ↦ Subtype.ext hyx ▸ hy⟩
+  have h1 := hU.isProP.pLowerCentralSeries_pLowerCentralSeries_eq_subgroupOf hU.isPowerful k 1
   exact Nat.pow_right_injective hU.prime.two_le <| by
     dsimp only
     rw [← (hU.pLowerCentralSeries k).index_pLowerCentralSeries_one, h1,
-      hU.index_pLowerCentralSeries_subgroupOf k]
+      ← Subgroup.relIndex, hU.relIndex_pLowerCentralSeries k]
 
 /-- Every canonical closed power subgroup `G^{p^k}` of a uniform pro-`p` group `G` is uniform. -/
 theorem IsUniform.closedPowerSubgroup_pow (hU : IsUniform p G) (k : ℕ) :
@@ -605,10 +556,6 @@ theorem uniformDimension_multiplicative_pi_padicInt (ι : Type*) [Fintype ι] :
     IsUniform.uniformDimension_pi fun _ : ι ↦ isUniform_multiplicative_padicInt p]
   simp
 
-/-- The cyclic group `ℤ/p` (written multiplicatively) is powerful. -/
-theorem isPowerful_multiplicative_zmod : IsPowerful p (Multiplicative (ZMod p)) :=
-  isPowerful_of_isMulCommutative
-
 /-- **`ℤ/p` is not uniform**, for any group topology: the class of `1` is a nontrivial element of
 order `p`. Being commutative, `ℤ/p` is nevertheless powerful, by
 `TauCeti.isPowerful_of_isMulCommutative`. -/
@@ -621,31 +568,22 @@ theorem not_isUniform_multiplicative_zmod [TopologicalSpace (Multiplicative (ZMo
   have h1 := eq_of_pow_eq_pow_of_commute (Fact.out : p.Prime).ne_zero (Commute.one_right _) h
   exact one_ne_zero (ofAdd_eq_one.mp h1)
 
-/-- The first lower-`p`-series term of `ℤ/p` is trivial. -/
-theorem pLowerCentralSeries_one_multiplicative_zmod :
-    pLowerCentralSeries p (Multiplicative (ZMod p)) 1 = ⊥ := by
-  have hproP : IsProP p (Multiplicative (ZMod p)) :=
-    (IsPGroup.of_card (n := 1) (by rw [Nat.card_congr Multiplicative.toAdd, Nat.card_zmod,
-      pow_one])).isProP
-  rw [hproP.pLowerCentralSeries_one_eq_closedPowerSubgroup (isPowerful_multiplicative_zmod p)]
-  refine le_bot_iff.mp ((closedPowerSubgroup_le_iff (isClosed_discrete _)).mpr fun g ↦
-    mem_bot.mpr <| Multiplicative.toAdd.injective (by
-      rw [toAdd_pow, nsmul_eq_mul, ZMod.natCast_self, zero_mul, toAdd_one]))
-
 /-- The degree-zero lower-`p`-series index of `ℤ/p` is `p`. -/
 theorem index_pLowerCentralSeries_multiplicative_zmod_zero :
     (pLowerCentralSeries p (Multiplicative (ZMod p)) 1).index = p := by
-  rw [pLowerCentralSeries_one_multiplicative_zmod, Subgroup.index_bot,
-    Nat.card_congr Multiplicative.toAdd, Nat.card_zmod]
+  rw [pLowerCentralSeries_one_eq_proPFrattini hp.out, proPFrattini_multiplicative_zmod_eq_bot,
+    Subgroup.index_bot, Nat.card_congr Multiplicative.toAdd, Nat.card_zmod]
 
 /-- Every higher successive lower-`p`-series index of `ℤ/p` is `1`, so the lower-`p`-series
 indices of `ℤ/p` are `p, 1, 1, …`. -/
 theorem index_pLowerCentralSeries_multiplicative_zmod_succ (k : ℕ) :
     ((pLowerCentralSeries p (Multiplicative (ZMod p)) (k + 2)).subgroupOf
       (pLowerCentralSeries p (Multiplicative (ZMod p)) (k + 1))).index = 1 := by
+  have h1 : pLowerCentralSeries p (Multiplicative (ZMod p)) 1 = ⊥ :=
+    (pLowerCentralSeries_one_eq_proPFrattini hp.out).trans
+      (proPFrattini_multiplicative_zmod_eq_bot p)
   have hbot : ∀ m, 1 ≤ m → pLowerCentralSeries p (Multiplicative (ZMod p)) m = ⊥ := fun m hm ↦
-    le_bot_iff.mp ((pLowerCentralSeries_antitone hm).trans
-      (pLowerCentralSeries_one_multiplicative_zmod p).le)
+    le_bot_iff.mp ((pLowerCentralSeries_antitone hm).trans h1.le)
   rw [hbot (k + 2) (by omega), hbot (k + 1) (by omega), Subgroup.bot_subgroupOf,
     Subgroup.index_bot, Nat.card_unique]
 
@@ -725,10 +663,9 @@ theorem isUniform_level {m : ℕ} (hm : (if p = 2 then 2 else 1) ≤ m) :
   isProP := (isProP_padicInt p).subgroup _
   isTopologicallyFinitelyGenerated :=
     (isTopologicallyFinitelyGenerated_padicInt p).of_openSubgroup (level p m).toOpenSubgroup
-  isMulTorsionFree := ⟨fun n hn a b hab hpow ↦ mul_inv_eq_one.mp <| Subtype.ext <|
-    eq_one_of_isOfFinOrder_padicInt p <| (level p m).toSubgroup.subtype.isOfFinOrder <|
-      isOfFinOrder_iff_pow_eq_one.mpr ⟨n, Nat.pos_of_ne_zero hn, by
-        rw [(hab.inv_right).mul_pow, hpow, inv_pow, mul_inv_cancel]⟩⟩
+  isMulTorsionFree := IsMulTorsionFree.of_not_isOfFinOrder fun _ hne ha ↦
+    hne <| Subtype.ext <| eq_one_of_isOfFinOrder_padicInt p <|
+      (level p m).toSubgroup.subtype.isOfFinOrder ha
   isPowerful := isPowerful_level p hm
 
 /-- For `1 ≤ m`, the closed `p`-th power subgroup of `HeisenbergGroup.level p m` is precisely
