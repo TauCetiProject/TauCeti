@@ -34,7 +34,8 @@ the converse holds as well: if the order of vanishing `a` satisfies `a < j`, the
 indices give a first break at `j` with slope `m`. More generally, any finite face of slope `m`
 ending at `j` makes `f` restricted at `b ^ m`, so over a complete ultrametric normed field
 Weierstrass preparation at `b ^ m` writes `f` uniquely as a restricted unit times a monic
-polynomial of degree `j`. At a first break that polynomial is pure of slope `m`.
+polynomial of degree `j`. At a first break that polynomial is pure of slope `m`, and its finite
+slopes are exactly the `j - a` slopes of the first segment.
 
 ## Main results
 
@@ -52,6 +53,8 @@ polynomial of degree `j`. At a first break that polynomial is pure of slope `m`.
   by Weierstrass preparation at a first break.
 * `PowerSeries.forall_mem_newtonSlopes_eq_of_isFirstBreak`: the polynomial factor is pure of
   the first slope, even without completeness.
+* `PowerSeries.newtonSlopes_eq_replicate_of_isFirstBreak`: its finite slopes are `j - a`
+  copies of the first slope.
 
 ## References
 
@@ -171,6 +174,43 @@ theorem forall_mem_newtonSlopes_eq_of_isFirstBreak [IsUltrametricDist K] {m : �
   obtain ⟨-, hface⟩ := (isFirstBreak_newtonPolygon_iff_isFiniteFace ha
     (v.ne_top_iff.mpr (order_eq_nat.mp ha).1)).mp hbr
   exact forall_mem_newtonSlopes_eq_of_isFiniteFace_of_order_eq v hb hv hface ha hu hPdeg hmul
+
+/-- **First-segment slopes.** Let `a` be the order of vanishing of `f`, and suppose the Newton
+polygon of `f` has its first break at `j` with slope `m`. If `u * P = f` for a unit `u` of the
+ring of series restricted at `b ^ m` and a polynomial `P` of degree at most `j`, then the finite
+slopes of `P` are `j - a` copies of `m`: `P` carries exactly the first segment of the polygon. -/
+theorem newtonSlopes_eq_replicate_of_isFirstBreak [IsUltrametricDist K] {a : ℕ}
+    (ha : f.order = a) {m : ℝ} {j : ℕ} (hbr : IsFirstBreak (f.newtonPolygon v) m j)
+    {u : IsRestricted.subring (R := K) (b ^ m)} (hu : IsUnit u)
+    {P : Polynomial K} (hPdeg : P.natDegree ≤ j) (hmul : (u : K⟦X⟧) * (P : K⟦X⟧) = f) :
+    P.newtonSlopes v = Multiset.replicate (j - a) m := by
+  have hv0 : ∀ x, v x = ⊤ → x = 0 := fun _ ↦ v.top_iff.mp
+  obtain ⟨haj, hface⟩ := (isFirstBreak_newtonPolygon_iff_isFiniteFace ha
+    (v.ne_top_iff.mpr (order_eq_nat.mp ha).1)).mp hbr
+  have hfd := (isLowestDominant_and_isDistinguished_of_isFirstBreak_newtonPolygon v hb hv ha hbr).2
+  have hcm : 0 < b ^ m := Real.rpow_pos_of_pos (zero_lt_one.trans hb) m
+  have hP0 : P ≠ 0 := by
+    rintro rfl
+    exact hfd.ne_zero (by rw [← hmul, Polynomial.coe_zero, mul_zero])
+  -- Up to `j`, the Newton polygons of `P` and `f` have the same finite domain, so `P` vanishes at
+  -- zero to the same order `a` as `f`.
+  have hu0 : v ((u : K⟦X⟧).coeff 0) ≠ ⊤ :=
+    v.ne_top_iff.mpr (TauCeti.PowerSeries.isDistinguished_zero_of_isUnit hcm hu).coeff_ne_zero
+  have hne {n : ℕ} (hn : n ≤ j) : P.newtonPolygon v n ≠ ⊤ ↔ f.newtonPolygon v n ≠ ⊤ := by
+    rw [newtonPolygon_eq_add_of_isUnit_mul v hb hv hfd hu hPdeg hmul hn, WithTop.add_ne_top,
+      and_iff_left hu0]
+  have htrail : P.natTrailingDegree = a := by
+    have hP := (P.newtonPolygon_ne_top_iff v hv0 hP0 (n := a)).mp
+      ((hne haj.le).mpr hface.left_ne_top)
+    refine le_antisymm hP.1 (Polynomial.le_natTrailingDegree_of_forall_lt_newtonPolygon_eq_top
+      (mt (hv0 _) (Polynomial.trailingCoeff_ne_zero.mpr hP0)) fun n hn ↦ ?_)
+    by_contra hPn
+    exact (hne (hn.trans haj).le).mp hPn
+      (f.newtonPolygon_eq_top_of_lt_order v (ha ▸ by exact_mod_cast hn))
+  refine Multiset.eq_replicate.mpr ⟨?_,
+    forall_mem_newtonSlopes_eq_of_isFirstBreak v hb hv hbr hu hPdeg hmul⟩
+  rw [Polynomial.card_newtonSlopes P v hv0,
+    TauCeti.PowerSeries.natDegree_eq_of_isUnit_mul hcm hfd hu hPdeg hmul, htrail]
 
 end NormedDivisionRing
 

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.ZLattice.Determinant
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.LinearAlgebra.Complex.Determinant
 
 /-!
 # Lattices under a linear change of variables
@@ -15,6 +17,9 @@ A continuous linear automorphism `A` of a finite-dimensional real vector space c
 `ZLattice.comap ℝ L A⁻¹`. Pulling back along `A` divides the covolume by `|det A|`
 (`ZLattice.covolume_comap_continuousLinearEquiv`), so `covolume (A L) = |det A| * covolume L`, and
 the dual lattice transforms by the adjoint of `A⁻¹` (`ZLattice.dual_comap_continuousLinearEquiv`).
+A `ℂ`-linear automorphism `A` of a finite-dimensional complex space has real determinant
+`|det A|²`, so pulling back along it divides the covolume by `|det A|²`
+(`ZLattice.covolume_comap_restrictScalars`).
 
 In a finite-dimensional real inner product space this exhibits every full lattice as a linear
 image of the self-dual lattice spanned by an orthonormal basis: for every orthonormal basis there
@@ -24,8 +29,10 @@ change of variables `ContinuousLinearEquiv.fourier_comp`, this is what reduces a
 over a general lattice and its dual to the same formula over `ℤⁿ`, the constant `|det A|` becoming
 the covolume.
 
-## Main statement
+## Main statements
 
+* `ZLattice.covolume_comap_restrictScalars`: pulling a full lattice back along a `ℂ`-linear
+  automorphism `A` divides its covolume by `|det A|²`, for every Haar measure.
 * `ZLattice.exists_comap_span_orthonormalBasis_eq`: every full lattice in a finite-dimensional
   real inner product space is the image of the lattice spanned by a given orthonormal basis under
   an automorphism `A` with `|det A| = covolume L`, and its pullback along the adjoint of `A` is
@@ -37,6 +44,25 @@ public section
 open Module Submodule MeasureTheory
 
 namespace ZLattice
+
+section ComplexLinear
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- **Complex change of variables for covolumes.** Pulling a full lattice back along a
+`ℂ`-linear automorphism `A` divides its covolume by `|det A|²`, for any Haar measure: as a real
+linear map, `A` has determinant `Complex.normSq (det A)`. Read through images,
+`covolume (A L) = |det A|² * covolume L`. -/
+theorem covolume_comap_restrictScalars (L : Submodule ℤ E) [DiscreteTopology L]
+    [IsZLattice ℝ L] (A : E ≃L[ℂ] E) (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] :
+    covolume (ZLattice.comap ℝ L (A.restrictScalars ℝ).toLinearMap) μ =
+      (Complex.normSq (LinearMap.det (A.toLinearMap : E →ₗ[ℂ] E)))⁻¹ * covolume L μ := by
+  rw [covolume_comap_continuousLinearEquiv L (A.restrictScalars ℝ) μ,
+    ← LinearMap.det_restrictScalars_eq_normSq]
+  simp [abs_of_nonneg (LinearMap.det_restrictScalars_nonneg _)]
+
+end ComplexLinear
 
 section InnerProductSpace
 

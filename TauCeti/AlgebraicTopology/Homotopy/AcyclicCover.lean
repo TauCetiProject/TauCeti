@@ -9,7 +9,9 @@ public import TauCeti.AlgebraicTopology.Homotopy.NConnectedCover
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 import TauCeti.AlgebraicTopology.EilenbergMacLane.PathFibration
 import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Sigma
+import TauCeti.AlgebraicTopology.Homotopy.WhiteheadTower
 import TauCeti.AlgebraicTopology.Singular.Homotopy.CWApproximation
+import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 
 /-!
 # Homotopy groups of acyclic spaces along the Whitehead tower
@@ -32,9 +34,10 @@ projection `Z⟨n + 2⟩ → Z` from the `(n + 2)`-connected cover is a fibratio
 `K(πₙ₊₂(Z), n + 1)` spaces (`TauCeti.isEilenbergMacLaneSpace_fiber_nConnectedCoverProj`). When
 these are `k`-acyclic it is a `k`-homology isomorphism, so the cover inherits `k`-acyclicity in each
 degree `i + 1` in the finite range. The cover is `(n + 2)`-connected and has the homotopy groups
-of `Z` above `n + 2`, so the first input applies to it in the next degree. Initially and at each
-stage, the space is replaced by the CW approximation of its base point's path component, which is
-Hausdorff, path-connected, and preserves positive homotopy groups and homology vanishing.
+of `Z` above `n + 2`, so the first input applies to it in the next degree. Initially the space is
+replaced by the CW approximation of its base point's path component, which is path-connected and
+preserves positive homotopy groups and homology vanishing; the shared induction along the Whitehead
+tower, `TauCeti.whiteheadTower_induction`, then replaces each stage by its CW approximation.
 
 The Eilenberg--Mac Lane fibre sits over the `(n + 1)`-connected stage `Z`, never over the original
 space: only the fibrations `K(πₙ₊₂ Z, n + 1) → Z⟨n + 2⟩ → Z` between successive stages are used,
@@ -101,58 +104,6 @@ variable (P : (G : Type) → [AddCommGroup G] → Prop) (r : ℕ)
       ∀ i, Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)))
 
 include hP hπ hK in
-/-- The induction along the Whitehead tower: for an `(n + 1)`-connected space whose `k`-homology
-vanishes in `n + 2 ≤ q ≤ n + d + 2 + r`, the homotopy group `π_{n + d + 2}` has the property `P`.
-The induction is on `d`. -/
-private theorem prop_homotopyGroup_of_add (d : ℕ) :
-    ∀ (n : ℕ) {Z : Type} [TopologicalSpace Z] [PathConnectedSpace Z] (z : Z),
-      (∀ j, j ≠ 0 → j < n + 2 → Subsingleton (π_ j Z z)) →
-      (∀ q, n + 2 ≤ q → q ≤ n + d + 2 + r →
-        Subsingleton (((singularChains k).obj (TopCat.of Z)).homology q)) →
-        ∀ N, N = n + d → P (Additive (π_ (N + 2) Z z)) := by
-  induction d with
-  | zero =>
-    intro n Z _ _ z hZ hZk N hN
-    rw [hN]
-    exact hπ z n hZ hZk
-  | succ d ih =>
-    intro n Z _ _ z hZ hZk N hN
-    rw [hN]
-    -- Replace `Z` by the CW approximation `X` of the path component of `z`, which is Hausdorff.
-    let X := cwApproximation (TopCat.of Z) (Quotient.out (ZerothHomotopy.mk z))
-    let x₀ := cwApproximationBasepoint (TopCat.of Z) (Quotient.out (ZerothHomotopy.mk z))
-    have hX : ∀ j, j ≠ 0 → j < n + 2 → Subsingleton (π_ j X x₀) := fun j hj0 hj ↦ by
-      obtain ⟨j', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hj0
-      have := hZ (j' + 1) hj0 hj
-      exact (cwApproximationPathComponentHomotopyGroupMulEquiv z j').toEquiv.subsingleton
-    -- `X` is a retract of `sigmaCWApproximation Z`, so it inherits `k`-homology vanishing.
-    have hXk (q : ℕ) (hq1 : n + 2 ≤ q) (hq2 : q ≤ n + (d + 1) + 2 + r) :
-        Subsingleton (((singularChains k).obj X).homology q) :=
-      ModuleCat.isZero_iff_subsingleton.1 <|
-        isZero_singularHomology_cwApproximation_of_isZero z k q <|
-          ModuleCat.isZero_iff_subsingleton.2 (hZk q hq1 hq2)
-    -- The first homotopy group `πₙ₊₂(X)` has the property `P`, so the fibres of the
-    -- `(n + 2)`-connected cover `C` of `X` are `k`-acyclic, and `C` inherits the remaining range.
-    have hPX : P (Additive (π_ (n + 2) X x₀)) := hπ x₀ n hX fun q hq1 hq2 ↦ hXk q hq1 (by omega)
-    let C := nConnectedCover (n + 2) X x₀
-    let c₀ := nConnectedCoverBasepoint (n + 2) X x₀
-    have hC : ∀ j, j ≠ 0 → j < n + 1 + 2 → Subsingleton (π_ j C c₀) := fun j _ hj ↦
-      subsingleton_homotopyGroup_nConnectedCover_of_pathConnectedSpace (n + 2) X x₀ c₀
-        (by omega)
-    have hCk (q : ℕ) (hq1 : n + 1 + 2 ≤ q) (hq2 : q ≤ n + 1 + d + 2 + r) :
-        Subsingleton (((singularChains k).obj C).homology q) := by
-      obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : q ≠ 0)
-      exact subsingleton_singularHomology_nConnectedCover_of_fiber k X x₀ n hX
-        (fun hY ↦ hK hPX (hY.of_mulEquiv (MulEquiv.multiplicativeAdditive _).symm))
-        q' (hXk (q' + 1) (by omega) (by omega))
-    -- The cover has the homotopy groups of `X`, hence of `Z`, above dimension `n + 2`.
-    have he : π_ (n + 1 + d + 2) C c₀ ≃* π_ (n + (d + 1) + 2) Z z :=
-      ((nConnectedCoverHomotopyGroupMulEquiv (n + 2) X x₀ _ (by omega)).trans
-        (HomotopyGroup.congrMulEquiv (finCongr (by omega : n + 1 + d + 2 = n + d + 2 + 1)))).trans
-          (cwApproximationPathComponentHomotopyGroupMulEquiv z (n + d + 2))
-    exact hP he.toAdditive (ih (n + 1) c₀ hC hCk (n + 1 + d) rfl)
-
-include hP hπ hK in
 /-- **Homotopy groups of acyclic spaces.** Let `k` be a ring, `r : ℕ`, and `P` a property of
 abelian groups invariant under isomorphism. Suppose that
 
@@ -174,12 +125,30 @@ theorem prop_homotopyGroup_of_subsingleton_singularHomology {Y : Type} [Topologi
   have h₁ (j : ℕ) (hj0 : j ≠ 0) (hj : j < 2) : Subsingleton (π_ j X x₀) := by
     obtain rfl : j = 1 := by omega
     exact (cwApproximationPathComponentHomotopyGroupMulEquiv y 0).toEquiv.subsingleton
-  have hXk (q : ℕ) (hq1 : 0 + 2 ≤ q) (hq2 : q ≤ 0 + n + 2 + r) :
+  have hXk (q : ℕ) (hq1 : 2 ≤ q) (hq2 : q ≤ n + 2 + r) :
       Subsingleton (((singularChains k).obj X).homology q) :=
     ModuleCat.isZero_iff_subsingleton.1 <|
       isZero_singularHomology_cwApproximation_of_isZero y k q <|
-        ModuleCat.isZero_iff_subsingleton.2 (hY q hq1 (by omega))
-  exact hP (cwApproximationPathComponentHomotopyGroupMulEquiv y (n + 1)).toAdditive
-    (prop_homotopyGroup_of_add k P r hP hπ hK n 0 x₀ h₁ hXk n (Nat.zero_add n).symm)
+        ModuleCat.isZero_iff_subsingleton.2 (hY q hq1 hq2)
+  -- Climb the Whitehead tower: the first homotopy group of each stage has `P`, so the fibres of its
+  -- next cover are `k`-acyclic, and so is the cover.
+  refine hP (cwApproximationPathComponentHomotopyGroupMulEquiv y (n + 1)).toAdditive <|
+    whiteheadTower_induction (N := n)
+      (fun W ↦ ∀ q, 2 ≤ q → q ≤ n + 2 + r →
+        Subsingleton (((singularChains k).obj W).homology q))
+      (fun G _ ↦ P (Additive G)) (fun _ _ f hf hWk q hq1 hq2 ↦ ?_)
+      (fun _ _ _ _ e ↦ hP e.toAdditive)
+      (fun z hZ hZk ↦ hπ z n hZ fun q hq1 hq2 ↦ hZk q (by omega) hq2)
+      (fun m _ W _ _ w hW hWk q hq1 hq2 ↦ ?_)
+      (Nat.zero_le n) x₀ h₁ hXk
+  · -- A weak homotopy equivalence is a homology isomorphism.
+    have := hf.isIso_singularHomologyMap (ModuleCat.of k k) q
+    exact (subsingleton_singularChains_homology_iff_of_isIso _ f _).2 (hWk q hq1 hq2)
+  · -- The fibres of the cover are `k`-acyclic, so `k`-homology vanishing transfers to the cover.
+    obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : q ≠ 0)
+    exact subsingleton_singularHomology_nConnectedCover_of_fiber k W w m hW
+      (fun hY' ↦ hK (hπ w m hW fun j hj1 hj2 ↦ hWk j (by omega) (by omega))
+        (hY'.of_mulEquiv (MulEquiv.multiplicativeAdditive _).symm))
+      q' (hWk (q' + 1) hq1 hq2)
 
 end TauCeti
