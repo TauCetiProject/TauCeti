@@ -15,28 +15,29 @@ import Mathlib.Topology.Instances.Matrix
 /-!
 # Column-vector action of `CStarMatrix` on finite right Hilbert C⋆-modules
 
-For a C⋆-algebra `A` (possibly non-unital), `CStarMatrix m n A` acts (when `n` is finite) on
-column vectors in the standard right Hilbert `A`-module `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)` by left
-matrix-vector multiplication `(M *ᵥ v) i = ∑ j, M i j * v j`. Unlike Mathlib's `CStarMatrix.toCLM`,
-which acts on the left module `C⋆ᵐᵒᵈ(A, m → A)` by `Matrix.vecMul` on the right, this column-vector
-action commutes with the right `A`-action (`MulOpposite.op a • v`), and when both `m` and `n` are
-finite `mulVecCLM M` and `mulVecCLM M.conjTranspose` form a C⋆-module adjoint pair. Over a unital
-ring `A`, `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)` is a finite free right `A`-module and `mulVecLinearMap M`
-represents a right `A`-linear operator.
+For a (possibly non-unital) normed complex algebra `A` (with `IsScalarTower ℂ A A` and
+`SMulCommClass ℂ A A`), `CStarMatrix m n A` acts (when `n` is finite) on column vectors in
+`C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)` by left matrix-vector multiplication `(M *ᵥ v) i = ∑ j, M i j * v j`. Unlike
+Mathlib's `CStarMatrix.toCLM`, which acts on the left module `C⋆ᵐᵒᵈ(A, m → A)` by `Matrix.vecMul`
+on the right, this column-vector action commutes with the right `A`-action
+(`MulOpposite.op a • v`). When `A` is a (possibly non-unital) C⋆-algebra and both `m` and `n` are
+finite, `mulVecCLM M` and `mulVecCLM M.conjTranspose` form a C⋆-module adjoint pair. Over a unital
+ring `A` and for finite `n`, `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)` is a finite free right `A`-module and
+`mulVecLinearMap M` represents a right `A`-linear operator.
 
 ## Main declarations
 
-* `CStarMatrix.mulVecCLM`: for finite `n`, left matrix-vector multiplication bundled
-  complex-linearly in the matrix as
+* `CStarMatrix.mulVecCLM`: for finite `n` over a (possibly non-unital) normed complex algebra `A`,
+  left matrix-vector multiplication bundled complex-linearly in the matrix as
   `CStarMatrix m n A →ₗ[ℂ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A) →L[ℂ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, m → A)`.
 * `CStarMatrix.isAdjointPair_mulVecCLM_conjTranspose`, `CStarMatrix.isAdjointPair_mulVecCLM_star`:
-  for finite `m` and `n` (resp. finite `n`), `mulVecCLM M` and `mulVecCLM M.conjTranspose` form a
-  C⋆-module adjoint pair.
+  over a (possibly non-unital) C⋆-algebra `A` for finite `m` and `n` (resp. finite `n`),
+  `mulVecCLM M` and `mulVecCLM M.conjTranspose` form a C⋆-module adjoint pair.
 * `CStarMatrix.mulVecLinearMap`: over a unital ring `A` and finite `n`, left matrix-vector
   multiplication bundled additively in the matrix as
   `CStarMatrix m n A →ₗ[ℤ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A) →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, m → A)`.
-* `CStarMatrix.gram_mulVecCLM_single_one`: for finite `m` and `n`, the Gram matrix of the columns
-  `j ↦ mulVecCLM M (e j)` of `M` is `M.conjTranspose * M`.
+* `CStarMatrix.gram_mulVecCLM_single_one`: over a unital C⋆-algebra `A` and for finite `m` and `n`,
+  the Gram matrix of the columns `j ↦ mulVecCLM M (e j)` of `M` is `M.conjTranspose * M`.
 
 ## References
 
@@ -52,7 +53,10 @@ namespace CStarMatrix
 
 section NonUnital
 
-variable {l m n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A]
+section Normed
+
+variable {l m n A : Type*} [Fintype n] [NonUnitalNormedRing A] [NormedSpace ℂ A]
+  [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
 
 /-- Left multiplication by a `CStarMatrix m n A` on column vectors in `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)`, bundled
 complex-linearly in the matrix as a continuous complex-linear map. Unlike `CStarMatrix.toCLM`,
@@ -69,14 +73,12 @@ noncomputable def mulVecCLM :
         (WithCStarModule.equivL ℂ (A := Aᵐᵒᵖ) (E := m → A)).symm.continuous.comp <|
           (continuous_const.matrix_mulVec continuous_id).comp
             (WithCStarModule.equivL ℂ (A := Aᵐᵒᵖ) (E := n → A)).continuous }
-  map_add' M N := ContinuousLinearMap.ext fun v ↦
-    (congrArg (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ (m → A)).symm
-      (Matrix.add_mulVec (ofMatrix.symm M) (ofMatrix.symm N)
-        (WithCStarModule.equiv Aᵐᵒᵖ (n → A) v))).trans (map_add _ _ _)
-  map_smul' c M := ContinuousLinearMap.ext fun v ↦
-    (congrArg (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ (m → A)).symm
-      (Matrix.smul_mulVec c (ofMatrix.symm M)
-        (WithCStarModule.equiv Aᵐᵒᵖ (n → A) v))).trans (map_smul _ _ _)
+  map_add' M N := ContinuousLinearMap.ext fun _ ↦
+    (congrArg (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ (m → A)).symm <|
+      Matrix.add_mulVec (ofMatrix.symm M) (ofMatrix.symm N) _).trans (map_add _ _ _)
+  map_smul' c M := ContinuousLinearMap.ext fun _ ↦
+    (congrArg (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ (m → A)).symm <|
+      Matrix.smul_mulVec c (ofMatrix.symm M) _).trans (map_smul _ _ _)
 
 theorem mulVecCLM_apply (M : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) :
     mulVecCLM M v =
@@ -113,10 +115,15 @@ theorem _root_.IsIdempotentElem.mulVecCLM {p : CStarMatrix n n A} (hp : IsIdempo
     IsIdempotentElem (mulVecCLM p) := by
   rw [IsIdempotentElem, ContinuousLinearMap.mul_def, mulVecCLM_comp_mulVecCLM, hp.eq]
 
+end Normed
+
+section CStar
+
+variable {m n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
 /-- Column-vector multiplication by `M` and by `M.conjTranspose` form a module adjoint pair on the
 standard right Hilbert `A`-modules (for finite `m` and `n`). -/
-theorem isAdjointPair_mulVecCLM_conjTranspose [Fintype m] [PartialOrder A] [StarOrderedRing A]
-    (M : CStarMatrix m n A) :
+theorem isAdjointPair_mulVecCLM_conjTranspose [Fintype m] (M : CStarMatrix m n A) :
     LinearMap.IsAdjointPair
       (innerₛₗ (A := Aᵐᵒᵖ) (E := C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A))).flip
       (innerₛₗ (A := Aᵐᵒᵖ) (E := C⋆ᵐᵒᵈ(Aᵐᵒᵖ, m → A))).flip
@@ -128,11 +135,13 @@ theorem isAdjointPair_mulVecCLM_conjTranspose [Fintype m] [PartialOrder A] [Star
 
 /-- Column-vector multiplication by a square matrix `M` and by `star M` form a module adjoint pair
 on `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)`. -/
-theorem isAdjointPair_mulVecCLM_star [PartialOrder A] [StarOrderedRing A] (M : CStarMatrix n n A) :
+theorem isAdjointPair_mulVecCLM_star (M : CStarMatrix n n A) :
     LinearMap.IsAdjointPair
       (innerₛₗ (A := Aᵐᵒᵖ) (E := C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A))).flip
       (innerₛₗ (A := Aᵐᵒᵖ) (E := C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A))).flip (mulVecCLM M) (mulVecCLM (star M)) :=
   isAdjointPair_mulVecCLM_conjTranspose M
+
+end CStar
 
 end NonUnital
 
@@ -150,27 +159,26 @@ def mulVecLinearMap [Ring A] :
       (WithCStarModule.linearEquiv Aᵐᵒᵖ Aᵐᵒᵖ (n → A)).toLinearMap
   map_add' M N := by
     ext1 v
-    have hadd : ofMatrix.symm (M + N) = ofMatrix.symm M + ofMatrix.symm N := rfl
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.add_apply, hadd, map_add]
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.add_apply,
+      show ofMatrix.symm (M + N) = ofMatrix.symm M + ofMatrix.symm N from rfl, map_add]
   map_smul' c M := by
     ext1 v
-    have hsmul : ofMatrix.symm (c • M) = c • ofMatrix.symm M := rfl
     simp only [RingHom.id_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.smul_apply,
-      hsmul, map_zsmul]
+      show ofMatrix.symm (c • M) = c • ofMatrix.symm M from rfl, map_zsmul]
 
 theorem mulVecLinearMap_apply [Ring A] (M : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) :
     mulVecLinearMap M v =
       (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm
-        (ofMatrix.symm M *ᵥ WithCStarModule.equiv Aᵐᵒᵖ (n → A) v) := by
-  simp [mulVecLinearMap]
+        (ofMatrix.symm M *ᵥ WithCStarModule.equiv Aᵐᵒᵖ (n → A) v) := by simp [mulVecLinearMap]
 
 @[simp] theorem mulVecLinearMap_apply_apply [Ring A] (M : CStarMatrix m n A)
     (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) (i : m) : mulVecLinearMap M v i = ∑ j, M i j * v j := by
   simp [mulVecLinearMap_apply, Matrix.mulVec, dotProduct]
 
-@[simp] theorem coe_mulVecLinearMap [CStarAlgebra A] (M : CStarMatrix m n A) :
-    ⇑(mulVecLinearMap M) = ⇑(mulVecCLM M) := by
-  funext v; rw [mulVecLinearMap_apply, mulVecCLM_apply]
+@[simp] theorem coe_mulVecLinearMap [NormedRing A] [NormedSpace ℂ A] [IsScalarTower ℂ A A]
+    [SMulCommClass ℂ A A] (M : CStarMatrix m n A) :
+    ⇑(mulVecLinearMap M) = ⇑(mulVecCLM M) :=
+  funext fun v ↦ (mulVecLinearMap_apply M v).trans (mulVecCLM_apply M v).symm
 
 @[simp] theorem mulVecLinearMap_comp_mulVecLinearMap [Fintype m] [Ring A] (M : CStarMatrix l m A)
     (N : CStarMatrix m n A) :
@@ -189,11 +197,12 @@ theorem mulVecLinearMap_apply [Ring A] (M : CStarMatrix m n A) (v : C⋆ᵐᵒ�
 @[simp] theorem mulVecLinearMap_one [DecidableEq n] [Ring A] :
     mulVecLinearMap (1 : CStarMatrix n n A) = LinearMap.id := by
   ext1 v
-  have hone : ofMatrix.symm (1 : CStarMatrix n n A) = 1 := rfl
-  simp only [mulVecLinearMap_apply, LinearMap.id_apply, hone, Matrix.one_mulVec,
+  simp only [mulVecLinearMap_apply, LinearMap.id_apply,
+    show ofMatrix.symm (1 : CStarMatrix n n A) = 1 from rfl, Matrix.one_mulVec,
     Equiv.symm_apply_apply]
 
-@[simp] theorem mulVecCLM_one [DecidableEq n] [CStarAlgebra A] :
+@[simp] theorem mulVecCLM_one [DecidableEq n] [NormedRing A] [NormedSpace ℂ A]
+    [IsScalarTower ℂ A A] [SMulCommClass ℂ A A] :
     mulVecCLM (1 : CStarMatrix n n A) = .id ℂ _ := by
   ext v
   rw [ContinuousLinearMap.id_apply, ← coe_mulVecLinearMap, mulVecLinearMap_one, LinearMap.id_apply]

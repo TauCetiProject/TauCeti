@@ -98,7 +98,7 @@ theorem exists_isParsevalFrame_iff_finite_projective {A E : Type*}
       Module.Finite Aᵐᵒᵖ E ∧ Module.Projective Aᵐᵒᵖ E := by
   refine ⟨fun ⟨_, _, hx⟩ ↦ ⟨hx.finite, hx.projective⟩, fun ⟨_, _⟩ ↦ ?_⟩
   obtain ⟨n, f₀, g₀, _, _, hfg₀⟩ := Module.Finite.exists_comp_eq_id_of_projective Aᵐᵒᵖ E
-  let e := WithCStarModule.piOpLinearEquiv A (Fin n)
+  let e := TauCeti.WithCStarModule.piOpLinearEquiv A (Fin n)
   obtain ⟨x, hx⟩ := (f₀ ∘ₗ e.toLinearMap).exists_isParsevalFrame_of_comp_eq_id
     (e.symm.toLinearMap ∘ₗ g₀)
     (by ext z; simpa [LinearMap.comp_apply] using LinearMap.congr_fun hfg₀ z)
@@ -118,7 +118,7 @@ theorem exists_completeSpace_cstarModule_of_finite_projective (A M : Type*)
   obtain ⟨n, f₀, g₀, _, hg₀_inj, hfg₀⟩ := Module.Finite.exists_comp_eq_id_of_projective Aᵐᵒᵖ M
   set F_n := C⋆ᵐᵒᵈ(Aᵐᵒᵖ, Fin n → A)
   have : IsScalarTower ℂ Aᵐᵒᵖ F_n := CStarModule.isScalarTower Aᵐᵒᵖ F_n
-  let e_pi : F_n ≃ₗ[Aᵐᵒᵖ] (Fin n → Aᵐᵒᵖ) := WithCStarModule.piOpLinearEquiv A (Fin n)
+  let e_pi : F_n ≃ₗ[Aᵐᵒᵖ] (Fin n → Aᵐᵒᵖ) := TauCeti.WithCStarModule.piOpLinearEquiv A (Fin n)
   let f : F_n →ₗ[Aᵐᵒᵖ] M := f₀ ∘ₗ e_pi.toLinearMap
   let g : M →ₗ[Aᵐᵒᵖ] F_n := e_pi.symm.toLinearMap ∘ₗ g₀
   have hfg_apply : Function.LeftInverse f g := fun m ↦ by
@@ -178,7 +178,6 @@ projective right `A`-module is unique up to unitary isomorphism. -/
 theorem TauCeti.CStarModule.nonempty_linearIsometryEquiv_iff_nonempty_linearEquiv :
     Nonempty (E ≃ₗᵢ[Aᵐᵒᵖ] F) ↔ Nonempty (E ≃ₗ[Aᵐᵒᵖ] F) :=
   ⟨fun ⟨U⟩ ↦ ⟨U.toLinearEquiv⟩, fun ⟨T⟩ ↦
-    let ⟨U, _, _, _, _⟩ := T.exists_polar_linearIsometryEquiv_of_finite_projective
-    ⟨U⟩⟩
+    ⟨T.exists_polar_linearIsometryEquiv_of_finite_projective.choose⟩⟩
 
 end FiniteProjectiveMaps

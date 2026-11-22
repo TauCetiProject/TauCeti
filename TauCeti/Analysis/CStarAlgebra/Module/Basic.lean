@@ -33,8 +33,8 @@ Riesz theorem.
 ## Main declarations
 
 * `CStarModule.inner_zero_left'`, `CStarModule.inner_zero_right'`, `CStarModule.inner_neg_left'`,
-  `CStarModule.inner_neg_right'`: zero and negation inner-product identities without
-  `[StarModule ℂ A]`.
+  `CStarModule.inner_neg_right'`, `CStarModule.inner_sum_right'`: zero, negation, and finite-sum
+  inner-product identities without `[StarModule ℂ A]`.
 * `TauCeti.CStarModule.parallelogram_law`, `TauCeti.CStarModule.inner_add_add_self_le`,
   `TauCeti.CStarModule.unop_inner_add_add_self_le`: the parallelogram identity and the order
   bounds `⟪x + y, x + y⟫_A ≤ 2 • (⟪x, x⟫_A + ⟪y, y⟫_A)` and
@@ -53,14 +53,17 @@ Riesz theorem.
   `‖⟪y, x⟫_A‖` over the closed unit ball.
 * `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`, and `CStarModule.norm_inner_smul_le`:
   `‖⟪y, z⟫_A x‖ ≤ ‖x‖ ‖y‖ ‖z‖`.
-* `TauCeti.CStarModule.inner_map_map_le_of_norm_le`, `CStarModule.inner_map_map_le_norm_sq_smul`:
-  Paschke's inequality `⟪T x, T x⟫_A ≤ C ^ 2 • ⟪x, x⟫_A` for any action-preserving function with
-  pointwise norm bound `‖T x‖ ≤ C * ‖x‖`, and its bounded operator specialization
+* `TauCeti.CStarModule.inner_self_le_of_norm_smul_le`,
+  `TauCeti.CStarModule.inner_map_map_le_of_norm_le`, `CStarModule.inner_map_map_le_norm_sq_smul`:
+  two-vector Paschke inequality `⟪y, y⟫_A ≤ C ^ 2 • ⟪x, x⟫_A` from `∀ a : A, ‖a x‖` bounds on
+  `‖a y‖`, Paschke's inequality `⟪T x, T x⟫_A ≤ C ^ 2 • ⟪x, x⟫_A` for any action-preserving
+  function with pointwise norm bound `‖T x‖ ≤ C * ‖x‖`, and its bounded operator specialization
   `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A`.
 * `CStarModule.tendsto_smul`: the action is essential, `e x → x` along an approximate unit.
 * `CStarModule.star_unop_inner_mul_unop_inner_le`: the Cauchy–Schwarz inequality
   `⟨x, y⟩_A⋆ ⟨x, y⟩_A ≤ ‖x‖² ⟨y, y⟩_A` for right modules.
 * `CStarModule.isGreatest_norm_unop_inner`, `CStarModule.norm_op_smul_le`,
+  `TauCeti.CStarModule.unop_inner_self_le_of_norm_op_smul_le`,
   `TauCeti.CStarModule.unop_inner_map_map_le_of_norm_le`,
   `ContinuousLinearMap.unop_inner_map_map_le_norm_sq_smul`, `CStarModule.tendsto_op_smul`: norm
   recovery, `‖x a‖ ≤ ‖x‖ ‖a‖`, Paschke's inequality, and essentiality of the action for right
@@ -135,6 +138,12 @@ theorem inner_neg_left' {x y : E} : inner A (-x) y = -inner A x y :=
 theorem inner_neg_right' {x y : E} : inner A x (-y) = -inner A x y :=
   eq_neg_of_add_eq_zero_left <| by
     rw [← inner_add_right, neg_add_cancel, inner_zero_right']
+
+/-- Right finite-sum inner product `⟪x, ∑ i ∈ s, y i⟫_A = ∑ i ∈ s, ⟪x, y i⟫_A`, without requiring
+`[StarModule ℂ A]` (compare Mathlib's `CStarModule.inner_sum_right`). -/
+theorem inner_sum_right' {ι : Type*} {s : Finset ι} {x : E} {y : ι → E} :
+    inner A x (∑ i ∈ s, y i) = ∑ i ∈ s, inner A x (y i) :=
+  map_sum (AddMonoidHom.mk' (inner A x) fun _ _ ↦ inner_add_right) y s
 
 /-- Vectors are determined by their inner products against all vectors in the first slot. -/
 theorem ext_inner_left {x y : E} (h : ∀ z, inner A z x = inner A z y) : x = y := by
@@ -527,15 +536,13 @@ private lemma tendsto_unitization_smul {G : Type*} [NormedAddCommGroup G] [Modul
   refine ((hsmul.const_smul v.fst).add hsnd).congr fun e ↦ CStarModule.ext_inner_left (A := A)
     fun w ↦ by simp [add_mul, mul_assoc, smul_mul_assoc]
 
-/-- **Paschke's inequality** for any function `T : E → F` commuting with the `A`-action
-(`∀ a x, T (a • x) = a • T x`) and satisfying a pointwise norm bound `‖T x‖ ≤ C * ‖x‖`:
-`⟪T x, T x⟫_A ≤ C ^ 2 • ⟪x, x⟫_A`, with no linearity, continuity, adjointability, or completeness
-assumptions (Paschke, Proposition 2.6; Lance, Proposition 1.2). -/
-theorem inner_map_map_le_of_norm_le {E F : Type*} [AddCommGroup E] [Module ℂ E] [SMul A E]
+/-- **Paschke's inequality** (two-vector form): if `x : E` and `y : F` satisfy
+`‖a • y‖ ≤ C * ‖a • x‖` for all `a : A`, then `⟪y, y⟫_A ≤ C ^ 2 • ⟪x, x⟫_A`, with no linearity,
+continuity, adjointability, or completeness assumptions. -/
+theorem inner_self_le_of_norm_smul_le {E F : Type*} [AddCommGroup E] [Module ℂ E] [SMul A E]
     [Norm E] [CStarModule A E] [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F]
-    [CStarModule A F] (T : E → F) {C : ℝ} (hbound : ∀ x : E, ‖T x‖ ≤ C * ‖x‖)
-    (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) (x : E) :
-    inner A (T x) (T x) ≤ C ^ 2 • inner A x x := by
+    [CStarModule A F] (x : E) (y : F) {C : ℝ} (h : ∀ a : A, ‖a • y‖ ≤ C * ‖a • x‖) :
+    inner A y y ≤ C ^ 2 • inner A x x := by
   let : NormedAddCommGroup E := CStarModule.normedAddCommGroup A
   let : NormedAddCommGroup F := CStarModule.normedAddCommGroup A
   have := (CStarAlgebra.increasingApproximateUnit A).neBot
@@ -546,15 +553,36 @@ theorem inner_map_map_le_of_norm_le {E F : Type*} [AddCommGroup E] [Module ℂ E
     simpa only [map_zero, add_zero] using ((by fun_prop : Continuous fun ε : ℝ ↦
       C ^ 2 • (q + algebraMap ℝ (Unitization ℂ A) ε)).tendsto 0).mono_left nhdsWithin_le_nhds
   refine ge_of_tendsto htend (eventually_nhdsWithin_of_forall fun ε hε ↦
-    inr_inner_self_le_sq_smul_of_le x (T x)
+    inr_inner_self_le_sq_smul_of_le x y
       (IsStrictlyPositive.nonneg_add (Unitization.inr_nonneg ℂ _ CStarModule.inner_self_nonneg)
         (isStrictlyPositive_algebraMap hε))
       (le_add_of_nonneg_right (isStrictlyPositive_algebraMap hε).nonneg)
       (le_of_tendsto_of_tendsto'
-        (tendsto_unitization_smul (CFC.sqrt (q + algebraMap ℝ (Unitization ℂ A) ε)⁻¹ʳ) (T x)).norm
+        (tendsto_unitization_smul (CFC.sqrt (q + algebraMap ℝ (Unitization ℂ A) ε)⁻¹ʳ) y).norm
         ((tendsto_unitization_smul (CFC.sqrt (q + algebraMap ℝ (Unitization ℂ A) ε)⁻¹ʳ)
           x).norm.const_mul C)
-        fun e ↦ by rw [← hT]; exact hbound _))
+        fun e ↦ h _))
+
+/-- **Paschke's inequality** for any function `T : E → F` commuting with the `A`-action
+(`∀ a x, T (a • x) = a • T x`) and satisfying a pointwise norm bound `‖T x‖ ≤ C * ‖x‖`:
+`⟪T x, T x⟫_A ≤ C ^ 2 • ⟪x, x⟫_A`, with no linearity, continuity, adjointability, or completeness
+assumptions (Paschke, Proposition 2.6; Lance, Proposition 1.2). -/
+theorem inner_map_map_le_of_norm_le {E F : Type*} [AddCommGroup E] [Module ℂ E] [SMul A E]
+    [Norm E] [CStarModule A E] [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F]
+    [CStarModule A F] (T : E → F) {C : ℝ} (hbound : ∀ x : E, ‖T x‖ ≤ C * ‖x‖)
+    (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) (x : E) :
+    inner A (T x) (T x) ≤ C ^ 2 • inner A x x :=
+  inner_self_le_of_norm_smul_le x (T x) fun a ↦ by rw [← hT]; exact hbound _
+
+/-- Right-module two-vector form of Paschke's inequality: if `x : E` and `y : F` satisfy
+`‖op a • y‖ ≤ C * ‖op a • x‖` for all `a : A`, then `⟨y, y⟩_A ≤ C ^ 2 • ⟨x, x⟩_A`. -/
+theorem unop_inner_self_le_of_norm_op_smul_le {A E F : Type*} [NonUnitalCStarAlgebra A]
+    [PartialOrder A] [StarOrderedRing A] [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E]
+    [CStarModule Aᵐᵒᵖ E] [AddCommGroup F] [Module ℂ F] [SMul Aᵐᵒᵖ F] [Norm F]
+    [CStarModule Aᵐᵒᵖ F] (x : E) (y : F) {C : ℝ} (h : ∀ a : A, ‖op a • y‖ ≤ C * ‖op a • x‖) :
+    unop (inner Aᵐᵒᵖ y y) ≤ C ^ 2 • unop (inner Aᵐᵒᵖ x x) := by
+  rw [← unop_smul]
+  exact unop_le_unop.mpr <| inner_self_le_of_norm_smul_le (A := Aᵐᵒᵖ) x y fun a ↦ h (unop a)
 
 /-- Right-module form of Paschke's inequality for any function `T : E → F` commuting with the
 right `A`-action (`∀ a x, T (op a • x) = op a • T x`) and satisfying `‖T x‖ ≤ C * ‖x‖`:
@@ -564,10 +592,8 @@ theorem unop_inner_map_map_le_of_norm_le {A E F : Type*} [NonUnitalCStarAlgebra 
     [CStarModule Aᵐᵒᵖ E] [AddCommGroup F] [Module ℂ F] [SMul Aᵐᵒᵖ F] [Norm F]
     [CStarModule Aᵐᵒᵖ F] (T : E → F) {C : ℝ} (hbound : ∀ x : E, ‖T x‖ ≤ C * ‖x‖)
     (hT : ∀ (a : A) (x : E), T (op a • x) = op a • T x) (x : E) :
-    unop (inner Aᵐᵒᵖ (T x) (T x)) ≤ C ^ 2 • unop (inner Aᵐᵒᵖ x x) := by
-  rw [← unop_smul]
-  exact unop_le_unop.mpr <|
-    inner_map_map_le_of_norm_le (A := Aᵐᵒᵖ) T hbound (fun a y ↦ hT (unop a) y) x
+    unop (inner Aᵐᵒᵖ (T x) (T x)) ≤ C ^ 2 • unop (inner Aᵐᵒᵖ x x) :=
+  unop_inner_self_le_of_norm_op_smul_le x (T x) fun a ↦ by rw [← hT]; exact hbound _
 
 end Paschke
 

@@ -12,9 +12,13 @@ public import TauCeti.Analysis.CStarAlgebra.Module.Adjointable
 # Adjointable isometries and unitaries on Hilbert C⋆-modules
 
 This file develops adjointable isometries (`V* ∘ V = id_E`) and unitary equivalences between
-Hilbert C⋆-modules. As for the algebraic API of `TauCeti.AdjointableMap`, the coefficient ring `A`
-only needs to be a non-unital star ring with a compatible complex module structure, partial order,
-and norm; in particular every (possibly non-unital) C⋆-algebra is allowed.
+Hilbert C⋆-modules. For the algebraic adjointable-isometry API (`TauCeti.AdjointableMap`), the
+bundled unitaries `TauCeti.CStarModuleUnitary`, and the constructors
+`LinearMap.isometryOfInnerCStarModule` / `LinearEquiv.isometryOfInnerCStarModule`, the coefficient
+ring `A` only needs to be a non-unital star ring with a compatible complex module structure, partial
+order, and norm. By contrast, Lance's isometry-to-inner-product theorems require a C⋆-algebra `A`:
+possibly non-unital for complex-linear isometries commuting with the `A`-action, and unital for
+bundled `A`-linear or `Aᵐᵒᵖ`-linear isometries.
 
 An adjointable operator `V : TauCeti.AdjointableMap A E F` satisfies `V* ∘ V = id_E` if and only if
 it preserves all `A`-valued inner products (`adjoint_comp_self_eq_id_iff_inner_map_map`),
@@ -59,8 +63,12 @@ is its adjoint if and only if it is surjective and preserves the `A`-valued inne
 * `LinearMap.isometryOfInnerCStarModule`, `LinearEquiv.isometryOfInnerCStarModule`: construct
   linear isometries and isometric equivalences from inner-product preservation.
 * `LinearIsometry.inner_map_map_of_map_smul_cstarModule`,
-  `LinearIsometry.inner_map_map_cstarModule`, `LinearIsometryEquiv.inner_map_map_cstarModule`:
-  every `A`-linear isometry (not necessarily surjective) preserves `⟪·, ·⟫_A`.
+  `LinearIsometryEquiv.inner_map_map_of_map_smul_cstarModule`: over a (possibly non-unital)
+  C⋆-algebra `A`, every complex-linear isometry (not necessarily surjective) commuting with the
+  `A`-action preserves `⟪·, ·⟫_A`.
+* `LinearIsometry.inner_map_map_cstarModule`, `LinearIsometryEquiv.inner_map_map_cstarModule`,
+  `LinearIsometryEquiv.unop_inner_map_map_cstarModule`: over a unital C⋆-algebra `A`, every
+  bundled `A`-linear or `Aᵐᵒᵖ`-linear isometry preserves the `A`-valued inner product.
 
 ## References
 
@@ -791,33 +799,14 @@ variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrdered
 `f : E →ₗᵢ[ℂ] F` commuting with the `A`-action preserves `⟪·, ·⟫_A`. -/
 theorem inner_map_map_of_map_smul_cstarModule (f : E →ₗᵢ[ℂ] F)
     (hf : ∀ (a : A) (x : E), f (a • x) = a • f x) (x y : E) :
-    inner A (f x) (f y) = inner A x y := by
-  refine (CStarModule.inner_map_map_iff_forall_inner_map_map_self f).mpr (fun z ↦ ?_) x y
-  refine le_antisymm ?_ ?_
-  · have hle := TauCeti.CStarModule.inner_map_map_le_of_norm_le (A := A) (C := 1) f
-      (fun w ↦ by rw [f.norm_map, one_mul]) hf z
-    simpa using hle
-  · have hinj : Function.Injective f := fun u v huv ↦ sub_eq_zero.mp <|
-      (CStarModule.inner_self (A := A)).mp <| by
-        rw [← norm_eq_zero, ← CStarModule.norm_sq_eq A, ← f.norm_map, map_sub, huv, sub_self,
-          norm_zero, sq, mul_zero]
-    let S := LinearMap.range f.toLinearMap
-    let : SMul A S := ⟨fun a w ↦ ⟨a • (w : F), by
-      obtain ⟨w₀, hw₀⟩ := w.property
-      exact ⟨a • w₀, by simpa [hf] using congrArg (a • ·) hw₀⟩⟩⟩
-    let : CStarModule A S :=
-      CStarModule.induced S.subtype Subtype.val_injective (fun _ _ ↦ rfl) (fun _ ↦ rfl)
-    let g : S → E := fun w ↦ Classical.choose w.property
-    have hfg (w : S) : f (g w) = w := Classical.choose_spec w.property
-    have hg_smul (a : A) (w : S) : g (a • w) = a • g w :=
-      hinj (by rw [hfg, hf, hfg]; rfl)
-    have hg_norm (w : S) : ‖g w‖ ≤ 1 * ‖w‖ := by
-      rw [one_mul, ← f.norm_map, hfg]; rfl
-    have hle := TauCeti.CStarModule.inner_map_map_le_of_norm_le (A := A) (C := 1) g hg_norm hg_smul
-      ⟨f z, z, rfl⟩
-    have hgz : g ⟨f z, z, rfl⟩ = z := hinj (hfg ⟨f z, z, rfl⟩)
-    rw [hgz, one_pow, one_smul] at hle
-    exact hle.trans_eq (CStarModule.induced_inner S.subtype Subtype.val_injective _ _ _ _)
+    inner A (f x) (f y) = inner A x y :=
+  (CStarModule.inner_map_map_iff_forall_inner_map_map_self f).mpr (fun z ↦ le_antisymm
+    (by
+      simpa using TauCeti.CStarModule.inner_self_le_of_norm_smul_le (A := A) (C := 1) z (f z)
+        fun a ↦ by rw [← hf, f.norm_map, one_mul])
+    (by
+      simpa using TauCeti.CStarModule.inner_self_le_of_norm_smul_le (A := A) (C := 1) (f z) z
+        fun a ↦ by rw [← hf, f.norm_map, one_mul])) x y
 
 end NonUnital
 

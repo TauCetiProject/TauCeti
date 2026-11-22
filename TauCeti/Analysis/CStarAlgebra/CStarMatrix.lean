@@ -66,8 +66,8 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 * `CStarMatrix.submatrix_nonneg` and `CStarMatrix.extend_nonneg`: reindexing a positive matrix
   along any map of indices, or extending it by zero along an injective one, gives a positive
   matrix.
-* `CStarMatrix.algebraMap_le_iff_forall_sum_le`: the quadratic-form criterion for scalar lower
-  bounds `algebraMap ℝ (CStarMatrix n n A) r ≤ M` over a unital C⋆-algebra.
+* `TauCeti.CStarMatrix.algebraMap_le_iff_forall_sum_le`: the quadratic-form criterion for scalar
+  lower bounds `algebraMap ℝ (CStarMatrix n n A) r ≤ M` over a unital C⋆-algebra.
 * `WithCStarModule.norm_equiv_symm_pi_smul`: the vector `(vᵢ a)ᵢ` of the Hilbert `A`-module `Aᵐ`
   has norm `‖v‖ ‖a‖`.
 * `CStarMatrix.norm_sum_smul_le`: compressing `x ∈ M_{m,n}(A)` by scalar vectors `v`, `w` gives
@@ -496,6 +496,10 @@ theorem norm_sum_smul_le (x : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(ℂ, m → �
 
 end Compression
 
+end CStarMatrix
+
+namespace TauCeti.CStarMatrix
+
 /-- Over a unital C⋆-algebra, a matrix `M : CStarMatrix n n A` satisfies
 `algebraMap ℝ (CStarMatrix n n A) r ≤ M` if and only if every finite quadratic form
 `∑ i, ∑ j, star (a i) * M i j * a j` dominates `r • ∑ i, star (a i) * a i`. -/
@@ -503,12 +507,13 @@ theorem algebraMap_le_iff_forall_sum_le {n A : Type*} [Fintype n] [DecidableEq n
     [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] {r : ℝ} {M : CStarMatrix n n A} :
     algebraMap ℝ (CStarMatrix n n A) r ≤ M ↔
       ∀ a : n → A, r • ∑ i, star (a i) * a i ≤ ∑ i, ∑ j, star (a i) * M i j * a j := by
-  rw [← sub_nonneg, Algebra.algebraMap_eq_smul_one, nonneg_iff_forall_sum_nonneg]
+  rw [← sub_nonneg, Algebra.algebraMap_eq_smul_one, _root_.CStarMatrix.nonneg_iff_forall_sum_nonneg]
   refine forall_congr' fun a ↦ ?_
   have hone :
       ∑ i, ∑ j, star (a i) * (r • (1 : CStarMatrix n n A)) i j * a j =
         r • ∑ i, star (a i) * a i := by
-    simp [one_apply, ite_mul, mul_ite, ← Finset.smul_sum]
-  simp_rw [sub_apply, mul_sub, sub_mul, Finset.sum_sub_distrib, hone, sub_nonneg]
+    simp [_root_.CStarMatrix.one_apply, ite_mul, mul_ite, ← Finset.smul_sum]
+  simp_rw [_root_.CStarMatrix.sub_apply, mul_sub, sub_mul, Finset.sum_sub_distrib, hone,
+    sub_nonneg]
 
-end CStarMatrix
+end TauCeti.CStarMatrix

@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 public import Mathlib.Analysis.CStarAlgebra.Module.Defs
 
+import TauCeti.Analysis.CStarAlgebra.Module.Basic
+
 /-!
 # Gram matrices in right Hilbert C⋆-modules
 
@@ -26,10 +28,10 @@ for the comparison between finite frames and projections.
 ## Main declarations
 
 * `CStarMatrix.gram`: the Gram matrix of a finite family in a right Hilbert C⋆-module.
-* `CStarMatrix.isSelfAdjoint_gram`: Gram matrices are self-adjoint (purely algebraically).
+* `TauCeti.CStarMatrix.isSelfAdjoint_gram`: Gram matrices are self-adjoint (purely algebraically).
 * `CStarMatrix.sum_star_mul_gram_mul`: the quadratic forms of a Gram matrix are inner products.
-* `CStarMatrix.sum_inner_smul_of_gram_eq_one`: a family with identity Gram matrix reconstructs
-  every vector in its right `A`-linear span.
+* `TauCeti.CStarMatrix.sum_inner_smul_of_gram_eq_one`: a family with identity Gram matrix
+  reconstructs every vector in its right `A`-linear span.
 * `CStarMatrix.gram_nonneg`: Gram matrices are positive.
 
 ## References
@@ -56,18 +58,6 @@ def gram (A : Type*) [Inner Aᵐᵒᵖ E] (x : n → E) : CStarMatrix n n A :=
 lemma gram_apply [Inner Aᵐᵒᵖ E] (x : n → E) (i j : n) :
     gram A x i j = unop (inner Aᵐᵒᵖ (x i) (x j)) := (rfl)
 
-section SelfAdjoint
-
-variable [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm Aᵐᵒᵖ]
-  [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
-
-/-- Every Gram matrix is self-adjoint, by the conjugate symmetry of the module inner product. -/
-theorem isSelfAdjoint_gram (x : n → E) : IsSelfAdjoint (gram A x) := by
-  ext i j
-  simp [CStarMatrix.star_apply, gram_apply, ← unop_star, CStarModule.star_inner]
-
-end SelfAdjoint
-
 section Algebraic
 
 variable [NonUnitalSeminormedRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [PartialOrder A]
@@ -86,33 +76,6 @@ lemma sum_star_mul_gram_mul [Fintype n] (x : n → E) (a b : n → A) :
 
 end Algebraic
 
-section UnitalAlgebraic
-
-variable [Fintype n] [DecidableEq n] [Ring A] [StarRing A] [Module ℂ A] [PartialOrder A]
-  [Norm Aᵐᵒᵖ] [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
-
-/-- If a finite family `x : n → E` has identity Gram matrix `gram A x = 1`, pairing `x i` against
-a right linear combination `∑ j, op (c j) • x j` recovers the `i`-th coefficient `op (c i)`. -/
-theorem inner_sum_op_smul_of_gram_eq_one {x : n → E} (hx : gram A x = 1) (c : n → A) (i : n) :
-    inner Aᵐᵒᵖ (x i) (∑ j, op (c j) • x j) = op (c i) := by
-  apply unop_injective
-  have hsum : inner Aᵐᵒᵖ (x i) (∑ j, op (c j) • x j) = ∑ j, inner Aᵐᵒᵖ (x i) (op (c j) • x j) :=
-    map_sum (AddMonoidHom.mk' (inner Aᵐᵒᵖ (x i)) fun _ _ ↦ CStarModule.inner_add_right) _ _
-  rw [hsum, Finset.unop_sum]
-  have hgram (j : n) : unop (inner Aᵐᵒᵖ (x i) (x j)) = (1 : CStarMatrix n n A) i j := by
-    rw [← gram_apply, hx]
-  simp [CStarModule.inner_op_smul_right, hgram, one_apply]
-
-/-- A finite family `x : n → E` with identity Gram matrix `gram A x = 1` reconstructs every vector
-in its right `A`-linear span by `u = ∑ i, ⟪x i, u⟫ • x i`. -/
-theorem sum_inner_smul_of_gram_eq_one {x : n → E} (hx : gram A x = 1) {u : E}
-    (hu : ∃ c : n → A, ∑ j, op (c j) • x j = u) :
-    ∑ i, inner Aᵐᵒᵖ (x i) u • x i = u := by
-  obtain ⟨c, rfl⟩ := hu
-  simp_rw [inner_sum_op_smul_of_gram_eq_one hx c]
-
-end UnitalAlgebraic
-
 variable [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
 
@@ -123,3 +86,48 @@ theorem gram_nonneg [Fintype n] (x : n → E) : 0 ≤ gram A x :=
     exact CStarModule.inner_self_nonneg
 
 end CStarMatrix
+
+namespace TauCeti.CStarMatrix
+
+variable {A E n : Type*}
+
+section SelfAdjoint
+
+variable [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm Aᵐᵒᵖ]
+  [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
+
+/-- Every Gram matrix is self-adjoint, by the conjugate symmetry of the module inner product. -/
+theorem isSelfAdjoint_gram (x : n → E) : IsSelfAdjoint (_root_.CStarMatrix.gram A x) := by
+  ext i j
+  simp [_root_.CStarMatrix.star_apply, _root_.CStarMatrix.gram_apply, ← unop_star,
+    CStarModule.star_inner]
+
+end SelfAdjoint
+
+section UnitalAlgebraic
+
+variable [Fintype n] [DecidableEq n] [Ring A] [StarRing A] [Module ℂ A] [PartialOrder A]
+  [Norm Aᵐᵒᵖ] [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
+
+/-- If a finite family `x : n → E` has identity Gram matrix `gram A x = 1`, pairing `x i` against
+a right linear combination `∑ j, op (c j) • x j` recovers the `i`-th coefficient `op (c i)`. -/
+theorem inner_sum_op_smul_of_gram_eq_one {x : n → E} (hx : _root_.CStarMatrix.gram A x = 1)
+    (c : n → A) (i : n) :
+    inner Aᵐᵒᵖ (x i) (∑ j, op (c j) • x j) = op (c i) := by
+  apply unop_injective
+  rw [CStarModule.inner_sum_right', Finset.unop_sum]
+  have hgram (j : n) : unop (inner Aᵐᵒᵖ (x i) (x j)) = (1 : _root_.CStarMatrix n n A) i j := by
+    rw [← _root_.CStarMatrix.gram_apply, hx]
+  simp [CStarModule.inner_op_smul_right, hgram, _root_.CStarMatrix.one_apply]
+
+/-- A finite family `x : n → E` with identity Gram matrix `gram A x = 1` reconstructs every vector
+in its right `A`-linear span by `u = ∑ i, ⟪x i, u⟫ • x i`. -/
+theorem sum_inner_smul_of_gram_eq_one {x : n → E} (hx : _root_.CStarMatrix.gram A x = 1) {u : E}
+    (hu : ∃ c : n → A, ∑ j, op (c j) • x j = u) :
+    ∑ i, inner Aᵐᵒᵖ (x i) u • x i = u := by
+  obtain ⟨c, rfl⟩ := hu
+  simp_rw [inner_sum_op_smul_of_gram_eq_one hx c]
+
+end UnitalAlgebraic
+
+end TauCeti.CStarMatrix
