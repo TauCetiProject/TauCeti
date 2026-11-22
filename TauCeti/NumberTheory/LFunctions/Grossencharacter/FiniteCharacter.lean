@@ -8,6 +8,8 @@ module
 public import Mathlib.NumberTheory.MulChar.Basic
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Compatibility
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Residue
+import Mathlib.NumberTheory.MulChar.Lemmas
+import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 import TauCeti.RingTheory.Ideal.Quotient.Representative
 
@@ -217,6 +219,23 @@ theorem residueCharacter_residue (χ : Grossencharacter K 𝔪) (x : primeToSubg
   rw [← coe_residueHom, residueCharacter, MulChar.ofUnitHom_coe,
     MonoidHom.liftOfRightInverse_comp_apply]
 
+/-- **The finite character takes values of norm `1`**: it factors through the finite group of
+residue units modulo `𝔪₀` (`residueCharacter_residue`), so its values are roots of unity. -/
+theorem norm_finiteCharacterK (χ : Grossencharacter K 𝔪) (x : primeToSubgroup 𝔪) :
+    ‖(χ.finiteCharacterK x : ℂ)‖ = 1 := by
+  have : Finite (𝓞 K ⧸ 𝔪.finitePart) :=
+    Ring.HasFiniteQuotients.finiteQuotient 𝔪.finitePart_ne_bot
+  have := Fintype.ofFinite (𝓞 K ⧸ 𝔪.finitePart)ˣ
+  rw [← residueCharacter_residue, ← coe_residueHom, ← MulChar.coe_equivToUnitHom]
+  exact Complex.norm_eq_one_of_mem_rootsOfUnity (MulChar.apply_mem_rootsOfUnity _)
+
+/-- **At a trivial finite modulus the finite character is trivial**: the residue ring modulo
+`𝓞 K` has a single element. -/
+theorem finiteCharacterK_eq_one_of_finitePart_eq_top (χ : Grossencharacter K 𝔪)
+    (h : 𝔪.finitePart = ⊤) (x : primeToSubgroup 𝔪) : χ.finiteCharacterK x = 1 := by
+  have : Subsingleton (𝓞 K ⧸ 𝔪.finitePart) := Ideal.Quotient.subsingleton_iff.mpr h
+  exact χ.finiteCharacterK_eq_one_of_residueHom_eq_one (Subsingleton.elim _ _)
+
 /-! ### The finite character on algebraic integers -/
 
 /-- **Hecke's finite character** of a presentation on the algebraic integers:
@@ -316,6 +335,130 @@ theorem existsUnique_residueCharacter (χ : Grossencharacter K 𝔪) :
     fun ψ hψ ↦ MulChar.ext' fun r ↦ ?_⟩
   obtain ⟨b, hb₀, rfl⟩ := Ideal.Quotient.exists_ne_zero_mk_eq 𝔪.finitePart_ne_bot r
   rw [hψ b hb₀, χ.finiteCharacter_eq_residueCharacter hb₀]
+
+/-! ### The finite character on `K` -/
+
+/-- **Hecke's finite character on `K`**: the finite character `finiteCharacterK` at the elements
+of `K` that are units at the primes dividing `𝔪`, extended by `0` to every other element, `0`
+included. It extends `finiteCharacter` from `𝓞 K` to `K` (`finiteCharacterField_algebraMap`), and
+it is the coefficient of the twisted theta series of a fractional ideal. It is multiplicative
+along the fractions prime to `𝔪` (`finiteCharacterField_coe_mul`), but not on all of `K`: a
+uniformizer at a prime dividing `𝔪₀` and its inverse are both sent to `0`, their product to `1`. -/
+def finiteCharacterField (χ : Grossencharacter K 𝔪) (x : K) : ℂ :=
+  Function.extend (fun y : primeToSubgroup 𝔪 ↦ ((y : Kˣ) : K)) (fun y ↦ (χ.finiteCharacterK y : ℂ))
+    0 x
+
+/-- **At a fraction prime to `𝔪`, the finite character on `K` is `finiteCharacterK`.** -/
+@[simp]
+theorem finiteCharacterField_coe (χ : Grossencharacter K 𝔪) (x : primeToSubgroup 𝔪) :
+    χ.finiteCharacterField ((x : Kˣ) : K) = χ.finiteCharacterK x :=
+  Function.Injective.extend_apply (fun _ _ h ↦ Subtype.ext (Units.ext h)) _ _ x
+
+/-- **Off the fractions prime to `𝔪`, the finite character on `K` vanishes.** -/
+theorem finiteCharacterField_eq_zero (χ : Grossencharacter K 𝔪) {x : K}
+    (hx : ∀ y : primeToSubgroup 𝔪, ((y : Kˣ) : K) ≠ x) : χ.finiteCharacterField x = 0 :=
+  Function.extend_apply' _ _ x (not_exists.mpr hx)
+
+/-- **The finite character on `K` vanishes exactly off the fractions prime to `𝔪`.** -/
+theorem finiteCharacterField_eq_zero_iff (χ : Grossencharacter K 𝔪) {x : K} :
+    χ.finiteCharacterField x = 0 ↔ ∀ y : primeToSubgroup 𝔪, ((y : Kˣ) : K) ≠ x := by
+  refine ⟨fun h y hy ↦ ?_, χ.finiteCharacterField_eq_zero⟩
+  rw [← hy, finiteCharacterField_coe] at h
+  exact (χ.finiteCharacterK y).ne_zero h
+
+@[simp]
+theorem finiteCharacterField_zero (χ : Grossencharacter K 𝔪) : χ.finiteCharacterField 0 = 0 :=
+  χ.finiteCharacterField_eq_zero fun y ↦ (y : Kˣ).ne_zero
+
+/-- **The finite character on `K` extends the finite character on `𝓞 K`.** -/
+@[simp]
+theorem finiteCharacterField_algebraMap (χ : Grossencharacter K 𝔪) (a : 𝓞 K) :
+    χ.finiteCharacterField (algebraMap (𝓞 K) K a) = χ.finiteCharacter a := by
+  by_cases ha : 𝔪.IsCoprimeTo (Ideal.span {a})
+  · obtain ⟨x, hx⟩ := Modulus.isCoprimeTo_span_singleton_iff.mp ha
+    rw [χ.finiteCharacter_eq_finiteCharacterK x hx.symm, ← finiteCharacterField_coe]
+    exact congrArg χ.finiteCharacterField hx.symm
+  · rw [χ.finiteCharacter_eq_zero_of_not_isCoprimeTo ha]
+    exact χ.finiteCharacterField_eq_zero fun y hy ↦
+      ha (Modulus.isCoprimeTo_span_singleton_iff.mpr ⟨y, hy⟩)
+
+/-- **Multiplicativity along the fractions prime to `𝔪`**: multiplying by a fraction `y` prime
+to `𝔪` multiplies the finite character on `K` by `finiteCharacterK y`. -/
+theorem finiteCharacterField_coe_mul (χ : Grossencharacter K 𝔪) (y : primeToSubgroup 𝔪)
+    (x : K) :
+    χ.finiteCharacterField (((y : Kˣ) : K) * x) =
+      χ.finiteCharacterK y * χ.finiteCharacterField x := by
+  by_cases hx : ∃ z : primeToSubgroup 𝔪, ((z : Kˣ) : K) = x
+  · obtain ⟨z, rfl⟩ := hx
+    rw [← Units.val_mul, ← Subgroup.coe_mul, finiteCharacterField_coe, finiteCharacterField_coe,
+      map_mul, Units.val_mul]
+  · rw [χ.finiteCharacterField_eq_zero (not_exists.mp hx), mul_zero]
+    refine χ.finiteCharacterField_eq_zero fun z hz ↦ hx ⟨y⁻¹ * z, ?_⟩
+    rw [Subgroup.coe_mul, Units.val_mul, hz, Subgroup.coe_inv, ← mul_assoc, Units.inv_mul,
+      one_mul]
+
+/-- The values of the finite character on `K` have norm at most `1`. -/
+theorem norm_finiteCharacterField_le (χ : Grossencharacter K 𝔪) (x : K) :
+    ‖χ.finiteCharacterField x‖ ≤ 1 := by
+  by_cases hx : ∃ z : primeToSubgroup 𝔪, ((z : Kˣ) : K) = x
+  · obtain ⟨z, rfl⟩ := hx
+    rw [finiteCharacterField_coe, norm_finiteCharacterK]
+  · rw [χ.finiteCharacterField_eq_zero (not_exists.mp hx), norm_zero]
+    exact zero_le_one
+
+/-- **At a trivial finite modulus, the finite character on `K` is `1` at every nonzero element**:
+every element of `Kˣ` is prime to `𝔪`, and the finite character is trivial
+(`finiteCharacterK_eq_one_of_finitePart_eq_top`). -/
+theorem finiteCharacterField_of_finitePart_eq_top (χ : Grossencharacter K 𝔪)
+    (h : 𝔪.finitePart = ⊤) {x : K} (hx : x ≠ 0) : χ.finiteCharacterField x = 1 := by
+  have hmem : Units.mk0 x hx ∈ primeToSubgroup 𝔪 := mem_primeToSubgroup.mpr fun v hv ↦ by
+    rw [h, Ideal.dvd_iff_le, top_le_iff] at hv
+    exact (v.isPrime.ne_top hv).elim
+  rw [show x = ((⟨Units.mk0 x hx, hmem⟩ : primeToSubgroup 𝔪) : Kˣ) from rfl,
+    finiteCharacterField_coe, χ.finiteCharacterK_eq_one_of_finitePart_eq_top h, Units.val_one]
+
+/-- The finite character at a fraction prime to `𝔪`, through the ideal character of the presented
+Hecke character at the principal ideal it generates. -/
+private theorem exists_finiteCharacterK_eq_idealCharacter (χ : Grossencharacter K 𝔪)
+    (x : primeToSubgroup 𝔪) :
+    ∃ hx : toPrincipalIdeal (𝓞 K) K (x : Kˣ) ∈
+        idealsPrimeTo ⟨χ.toHeckeCharacter.finiteConductor,
+          χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩,
+      χ.finiteCharacterK x = χ.toHeckeCharacter.idealCharacter ⟨_, hx⟩ *
+        ∏ w : InfinitePlace K, χ.toHeckeCharacter.infiniteComponent w
+          (Units.map (algebraMap K w.Completion).toMonoidHom x) := by
+  set z := NumberFieldArithmetic.idealsAwayInclusion K
+    (Modulus.support_mono χ.mk_finiteConductor_dvd)
+    (NumberFieldArithmetic.principalIdealAway K 𝔪.support x)
+  have hz : (z : (FractionalIdeal (𝓞 K)⁰ K)ˣ) = toPrincipalIdeal (𝓞 K) K (x : Kˣ) := by
+    rw [NumberFieldArithmetic.coe_idealsAwayInclusion,
+      NumberFieldArithmetic.coe_principalIdealAway]
+  refine ⟨hz ▸ z.property, ?_⟩
+  rw [finiteCharacterK_apply, archimedeanValue_apply]
+  exact congrArg (· * _) (congrArg _ (Subtype.ext hz))
+
+/-- **The finite character on `K` depends only on the Hecke character and the finite part of the
+modulus.** -/
+theorem finiteCharacterField_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪}
+    {ψ : Grossencharacter K 𝔫} (h : χ.toHeckeCharacter = ψ.toHeckeCharacter)
+    (h𝔪 : 𝔪.finitePart = 𝔫.finitePart) :
+    χ.finiteCharacterField = ψ.finiteCharacterField := by
+  have hmem (x : Kˣ) : x ∈ primeToSubgroup 𝔪 ↔ x ∈ primeToSubgroup 𝔫 := by
+    simp only [mem_primeToSubgroup, h𝔪]
+  funext x
+  by_cases hx : ∃ z : primeToSubgroup 𝔪, ((z : Kˣ) : K) = x
+  · obtain ⟨⟨z, hz⟩, rfl⟩ := hx
+    refine (χ.finiteCharacterField_coe ⟨z, hz⟩).trans
+      (Eq.trans ?_ (ψ.finiteCharacterField_coe ⟨z, (hmem z).mp hz⟩).symm)
+    obtain ⟨h₁, e₁⟩ := χ.exists_finiteCharacterK_eq_idealCharacter ⟨z, hz⟩
+    obtain ⟨h₂, e₂⟩ := ψ.exists_finiteCharacterK_eq_idealCharacter ⟨z, (hmem z).mp hz⟩
+    rw [e₁, e₂]
+    clear e₁ e₂
+    revert h₁ h₂
+    rw [h]
+    exact fun _ _ ↦ rfl
+  · rw [χ.finiteCharacterField_eq_zero (not_exists.mp hx), ψ.finiteCharacterField_eq_zero]
+    exact fun z hz ↦ hx ⟨⟨z, (hmem z).mpr z.property⟩, hz⟩
 
 end Grossencharacter
 
