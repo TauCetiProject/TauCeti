@@ -33,8 +33,6 @@ of variables between a reference element and a physical element to their diamete
   when `x ↦ B x + b` maps `ball y ρ` into a bounded set `s`.
 * `ContinuousLinearMap.opNorm_le_diam_div_two_mul_of_mapsTo_ball`: the linear specialization
   (`b = 0`).
-* `ContinuousLinearMap.opNorm_le_diam_div_two_mul_of_ball_subset_preimage_add`: preimage-inclusion
-  form of the bound.
 * `ContinuousLinearEquiv.opNorm_symm_le_diam_div_two_mul_of_ball_subset`: the dual bound
   `‖(B.symm : F →L[𝕜] E)‖ ≤ diam s / (2 * ρ)` when `ball z ρ ⊆ w` and `(B · + b) ⁻¹' w ⊆ s`.
 
@@ -102,15 +100,6 @@ theorem opNorm_le_diam_div_two_mul_of_mapsTo_ball (B : E →L[𝕜] F) {y : E} {
     ‖B‖ ≤ diam s / (2 * ρ) :=
   B.opNorm_le_diam_div_two_mul_of_mapsTo_add_ball (b := 0) hρ hs (by simpa using h)
 
-/-- Preimage-inclusion form of `ContinuousLinearMap.opNorm_le_diam_div_two_mul_of_mapsTo_add_ball`:
-if `ball y ρ` lies in the preimage of a bounded set `s` under `x ↦ B x + b`, then
-`‖B‖ ≤ Metric.diam s / (2 * ρ)`. -/
-theorem opNorm_le_diam_div_two_mul_of_ball_subset_preimage_add (B : E →L[𝕜] F) {b : F} {y : E}
-    {ρ : ℝ} {s : Set F} (hρ : 0 < ρ) (hs : Bornology.IsBounded s)
-    (h : ball y ρ ⊆ (fun x ↦ B x + b) ⁻¹' s) :
-    ‖B‖ ≤ diam s / (2 * ρ) :=
-  B.opNorm_le_diam_div_two_mul_of_mapsTo_add_ball hρ hs (mapsTo_iff_subset_preimage.2 h)
-
 end ContinuousLinearMap
 
 namespace ContinuousLinearEquiv
@@ -130,13 +119,5 @@ theorem opNorm_symm_le_diam_div_two_mul_of_ball_subset (B : E ≃L[𝕜] F) {b :
   simp only [mem_preimage, ContinuousLinearEquiv.coe_coe, ← sub_eq_add_neg, ← map_sub,
     B.apply_symm_apply, sub_add_cancel]
   exact hz hy
-
-/-- Specialization of `ContinuousLinearEquiv.opNorm_symm_le_diam_div_two_mul_of_ball_subset` when
-`s = (fun x ↦ B x + b) ⁻¹' w`. -/
-theorem opNorm_symm_le_diam_div_two_mul_of_eq_preimage (B : E ≃L[𝕜] F) {b : F} {z : F} {ρ : ℝ}
-    {s : Set E} {w : Set F} (hρ : 0 < ρ) (hs : Bornology.IsBounded s)
-    (hsw : s = (fun x ↦ B x + b) ⁻¹' w) (hz : ball z ρ ⊆ w) :
-    ‖(B.symm : F →L[𝕜] E)‖ ≤ diam s / (2 * ρ) :=
-  B.opNorm_symm_le_diam_div_two_mul_of_ball_subset hρ hs hsw.symm.subset hz
 
 end ContinuousLinearEquiv

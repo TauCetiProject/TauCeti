@@ -39,6 +39,8 @@ infinite-order elements, such as those used for Euclidean triangle groups.
   `x ↦ a * x + b` of a field with `a ≠ 1` is a homothety about its fixed point.
 * `TauCeti.AffineEquiv.commutatorElement_homothetyUnitsMulHom`: the commutator of
   homotheties about two points is a translation.
+* `LinearEquiv.eq_preimage_symm_add_neg`, `LinearEquiv.mapsTo_symm_add_neg`: inverse-domain
+  preimage and `MapsTo` identities for the affine equivalence `x ↦ B x + b`.
 -/
 
 public section
@@ -191,3 +193,31 @@ theorem commutatorElement_homothetyUnitsMulHom (p q : P) (ω η : Rˣ) :
 end AffineEquiv
 
 end TauCeti
+
+namespace LinearEquiv
+
+variable {k V₁ V₂ : Type*} [Ring k] [AddCommGroup V₁] [Module k V₁] [AddCommGroup V₂]
+  [Module k V₂]
+
+/-- If `s` is the preimage of `t` under the affine equivalence `x ↦ B x + b` associated to a
+linear equivalence `B`, then `t` is the preimage of `s` under the inverse affine equivalence
+`y ↦ B.symm y + -B.symm b`. -/
+theorem eq_preimage_symm_add_neg (B : V₁ ≃ₗ[k] V₂) (b : V₂) {s : Set V₁} {t : Set V₂}
+    (hst : s = (fun x ↦ B x + b) ⁻¹' t) :
+    t = (fun y ↦ B.symm y + -B.symm b) ⁻¹' s := by
+  let e : V₁ ≃ᵃ[k] V₂ := B.toAffineEquiv.trans (AffineEquiv.vaddConst k b)
+  have he : (⇑e : V₁ → V₂) = fun x ↦ B x + b := funext fun x ↦ by
+    simp [e]
+  have hesymm : (⇑e.symm : V₂ → V₁) = fun y ↦ B.symm y + -B.symm b := funext fun y ↦
+    e.symm_apply_eq.2 (by simp [he])
+  rw [← hesymm, hst, ← he]
+  exact (e.toEquiv.symm_preimage_preimage t).symm
+
+/-- If `s` is the preimage of `t` under `x ↦ B x + b`, then the inverse affine map
+`y ↦ B.symm y + -B.symm b` maps `t` into `s`. -/
+theorem mapsTo_symm_add_neg (B : V₁ ≃ₗ[k] V₂) (b : V₂) {s : Set V₁} {t : Set V₂}
+    (hst : s = (fun x ↦ B x + b) ⁻¹' t) :
+    Set.MapsTo (fun y ↦ B.symm y + -B.symm b) t s :=
+  (B.eq_preimage_symm_add_neg b hst).symm ▸ Set.mapsTo_preimage _ _
+
+end LinearEquiv

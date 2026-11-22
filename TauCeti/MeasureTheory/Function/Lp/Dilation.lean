@@ -40,6 +40,9 @@ continuous extended norm.
 * `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage`,
   `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage`: the same
   identities for the `Lᵖ` seminorms on the preimage of `s` and on `s`.
+* `MeasureTheory.Measure.toReal_ofReal_abs_inv_rpow`,
+  `MeasureTheory.Measure.abs_inv_det_smulLeft_rpow`: real-valued Jacobian-factor identities for
+  affine and homothetic `Lᵖ` scaling.
 -/
 
 public section
@@ -111,6 +114,33 @@ theorem eLpNorm_comp_continuousLinearEquiv (u : E → G) (e : E ≃L[ℝ] E) (p 
     eLpNorm (u ∘ e) p μ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
       eLpNorm u p μ := by
   simpa using eLpNorm_comp_continuousLinearEquiv_restrict_preimage μ u e p (s := Set.univ)
+
+section JacobianFactors
+
+/-- Converting the `Lᵖ` Jacobian factor `(ENNReal.ofReal |c⁻¹| ^ q).toReal` for a real scalar `c`
+and exponent `q` to `|c|⁻¹ ^ q`. -/
+theorem toReal_ofReal_abs_inv_rpow (c q : ℝ) :
+    (ENNReal.ofReal |c⁻¹| ^ q).toReal = |c|⁻¹ ^ q := by
+  rw [← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _), abs_inv]
+
+/-- For a nonzero scalar `r`, the `L^q` Jacobian factor `|det (r • id)|⁻¹ ^ (1 / q).toReal` on a
+real topological vector space `F` equals `|r|⁻¹ ^ (dim F / q.toReal)`. -/
+theorem abs_inv_det_smulLeft_rpow (F : Type*) [AddCommGroup F] [Module ℝ F]
+    [TopologicalSpace F] [ContinuousConstSMul ℝ F]
+    (q : ℝ≥0∞) {r : ℝ} (hr : r ≠ 0) :
+    |LinearMap.det
+        ((ContinuousLinearEquiv.smulLeft (Units.mk0 r hr) : F ≃L[ℝ] F) : F →ₗ[ℝ] F)|⁻¹ ^
+        (1 / q).toReal =
+      |r|⁻¹ ^ ((finrank ℝ F : ℝ) / q.toReal) := by
+  have hlin : ((ContinuousLinearEquiv.smulLeft (Units.mk0 r hr) : F ≃L[ℝ] F) : F →ₗ[ℝ] F) =
+      r • LinearMap.id := by
+    ext v
+    simp [Units.smul_def]
+  rw [hlin, LinearMap.det_smul, LinearMap.det_id, mul_one, abs_pow, ← inv_pow,
+    ← Real.rpow_natCast, ← Real.rpow_mul (by positivity), one_div, ENNReal.toReal_inv,
+    div_eq_mul_inv]
+
+end JacobianFactors
 
 variable {μ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
   {r s : ℝ}
