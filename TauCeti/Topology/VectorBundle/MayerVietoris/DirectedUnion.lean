@@ -614,11 +614,10 @@ which `2 = 0`, such as `ZMod 2` or any field of characteristic two: some class o
 `Hʳ(E, E₀; K, K)`, `r = dim F`, restricts to a generator of `Hʳ(E_b, E_b ∖ {0}; K, K) ≅ K` on every
 fibre. No orientation of the bundle is needed, and the base is arbitrary. Two linear
 trivializations read a class of `Hʳ(F, F ∖ {0}; K, K)` on a common fibre up to the sign of their
-coordinate change
-(`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`), and `-1`
-acts as `1` when `2 = 0`. When `K` has more units than `1` the Thom class is not unique, since a
-unit multiple of a Thom class is again one; with a single unit it is
-(`TauCeti.existsUnique_isThomClass_of_subsingleton_units`). -/
+coordinate change, and `-1` acts as `1` when `2 = 0`
+(`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_of_two_eq_zero`). When `K`
+has more units than `1` the Thom class is not unique, since a unit multiple of a Thom class is
+again one; with a single unit it is (`TauCeti.existsUnique_isThomClass_of_subsingleton_units`). -/
 theorem exists_isThomClass_of_two_eq_zero (h2 : (2 : K) = 0) :
     ∃ u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
       (finrank ℝ F), IsThomClass F E u := by
@@ -632,21 +631,6 @@ theorem exists_isThomClass_of_two_eq_zero (h2 : (2 : K) = 0) :
     ((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K (ModuleCat.of K K)
       (finrank ℝ F)).mapIso (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.op
         ).toLinearEquiv.span_singleton_apply_eq_top_iff.2 hg
-  -- Two trivializations read `g` on a common fibre up to a sign, which acts trivially.
-  have hread (e e' : Trivialization F (π F E)) [e.IsLinear ℝ] [e'.IsLinear ℝ] {b : B}
-      (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) :
-      TopPair.singularCohomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom _ g =
-        TopPair.singularCohomologyMap
-          (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g := by
-    rw [e.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb']
-    set x := TopPair.singularCohomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom
-      _ g
-    have hx : -x = x := neg_eq_of_add_eq_zero_left (by rw [← two_smul K x, h2, zero_smul])
-    have hdet : (e.coordChangeL ℝ e' b : F →L[ℝ] F).det ≠ 0 :=
-      (e.coordChangeL ℝ e' b).toLinearEquiv.isUnit_det'.ne_zero
-    rcases hdet.lt_or_gt with h | h
-    · simpa [sign_neg h] using hx
-    · simp [sign_pos h]
   -- The local classes over the trivializing sets realize these fibre classes, so they glue.
   obtain ⟨x, hx⟩ := exists_singularCohomology_thomPair_fiber (R := ModuleCat.of K K)
     (M := ModuleCat.of K K) (fun b ↦ TopPair.singularCohomologyMap
@@ -656,7 +640,9 @@ theorem exists_isThomClass_of_two_eq_zero (h2 : (2 : K) = 0) :
       (trivializationAt F E c).exists_singularCohomology_thomPairOver_fiber ℝ subset_rfl g
     exact ⟨_, (trivializationAt F E c).open_baseSet, mem_baseSet_trivializationAt F E c,
       ⟨trivializationAt F E c, inferInstance, subset_rfl⟩, u, fun b hb ↦
-        (hu b hb).trans (hread _ _ hb (mem_baseSet_trivializationAt F E b)).symm⟩
+        (hu b hb).trans (Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_of_two_eq_zero
+          (trivializationAt F E c) (trivializationAt F E b) h2 hb
+            (mem_baseSet_trivializationAt F E b) g).symm⟩
   exact ⟨x, isThomClass_iff.2 ⟨inferInstance, fun b ↦ hx b ▸ hgen _ _⟩⟩
 
 end TwoEqZero
