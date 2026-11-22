@@ -10,8 +10,10 @@ public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 public import TauCeti.Algebra.Ring.Subgroup
 
-import Mathlib.LinearAlgebra.Matrix.Charpoly.LinearMap
-import TauCeti.LinearAlgebra.End.Aeval
+import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
+import TauCeti.LinearAlgebra.End.Restrict
+import TauCeti.RingTheory.Ideal.Extended
+import TauCeti.RingTheory.IntegralOrder.LeftOrder
 
 /-!
 # The multiplier ring of a submodule of an algebra
@@ -25,15 +27,15 @@ the `R`-submodule `I • M` of `B` lies in `B₀` only under a hypothesis such a
 element of `B₀` is integral over `R` (`Submodule.FG.isIntegral_of_mem_multiplierRing`), and so
 is every right multiplier `b`, with `M b ⊆ M` (`Submodule.FG.isIntegral_of_forall_mul_mem`).
 
-The image of `R` is central in `B₀`, so the extension `J = I B₀` of an ideal `I` of `R` along the
-structure map `R → B₀` is a two-sided ideal whose powers are the extensions of the powers of `I`.
-The last part of the file compares `I • M` with `J`. These comparisons are how a lattice in a
-finite algebra over a Huber ring yields a pair of definition.
+The image of `R` is central in `B₀`, so the powers of the extension `J = I B₀` of an ideal `I` of
+`R` along the structure map `R → B₀` are the extensions of the powers of `I`. The last part of the
+file compares `I • M` with `J`. These comparisons are how a lattice in a finite algebra over a
+Huber ring yields a pair of definition.
 
 ## Main results
 
 * `Submodule.toMultiplierRing`: the structure map `R → B₀`.
-* `Submodule.commute_toMultiplierRing`: the image of `R` in `B₀` is central.
+* `Submodule.map_toMultiplierRing_pow`: extension of ideals along `R → B₀` commutes with powers.
 * `Submodule.smul_subset_multiplierRing`: if `I` carries `M * M` into `M`, then `I • M ⊆ B₀`.
 * `Submodule.FG.isIntegral_of_mem_multiplierRing`: if `M` is finitely generated and contains `1`,
   every element of `B₀` is integral over `R`.
@@ -49,38 +51,6 @@ public section
 open scoped Pointwise
 
 namespace Submodule
-
-/-- The extension of an ideal along a ring map whose image is central is two-sided. -/
-private theorem isTwoSided_map_of_commute {R S : Type*} [Semiring R] [Semiring S] {f : R →+* S}
-    (hf : ∀ a y, Commute (f a) y) (I : Ideal R) : (I.map f).IsTwoSided where
-  mul_mem_of_left b hx := by
-    induction hx using Submodule.span_induction with
-    | mem x hx =>
-      obtain ⟨a, ha, rfl⟩ := hx
-      rw [(hf a b).eq]
-      exact Ideal.mul_mem_left _ _ (Ideal.mem_map_of_mem f ha)
-    | zero => rw [zero_mul]; exact Ideal.zero_mem _
-    | add x y _ _ hx hy => rw [add_mul]; exact Ideal.add_mem _ hx hy
-    | smul c x _ hx => rw [smul_eq_mul, mul_assoc]; exact Ideal.mul_mem_left _ _ hx
-
-/-- Extension of ideals along a ring map whose image is central commutes with powers. This is
-Mathlib's `Ideal.map_pow` without assuming the target commutative. -/
-private theorem map_pow_of_commute {R S : Type*} [Semiring R] [Semiring S] {f : R →+* S}
-    (hf : ∀ a y, Commute (f a) y) (I : Ideal R) (n : ℕ) : (I ^ n).map f = I.map f ^ n := by
-  induction n with
-  | zero =>
-    rw [Submodule.pow_zero, Submodule.pow_zero, Ideal.one_eq_top, Ideal.one_eq_top, Ideal.map_top]
-  | succ n ih =>
-    rw [Submodule.pow_succ, Submodule.pow_succ, ← ih]
-    refine le_antisymm (Ideal.map_le_iff_le_comap.mpr <| Ideal.mul_le.mpr fun r hr s hs ↦ ?_) ?_
-    · rw [Ideal.mem_comap, map_mul]
-      exact Ideal.mul_mem_mul (Ideal.mem_map_of_mem f hr) (Ideal.mem_map_of_mem f hs)
-    · -- The product of two spans is the span of the products, as the first factor is two-sided.
-      have : (Ideal.span (f '' (I ^ n : Ideal R))).IsTwoSided :=
-        isTwoSided_map_of_commute hf (I ^ n)
-      rw [Ideal.map, Ideal.map, Ideal.span_mul_span, Ideal.span_le]
-      rintro _ ⟨_, ⟨r, hr, rfl⟩, _, ⟨s, hs, rfl⟩, rfl⟩
-      simpa only [map_mul, SetLike.mem_coe] using Ideal.mem_map_of_mem f (Ideal.mul_mem_mul hr hs)
 
 variable {R : Type*} [CommRing R]
 
@@ -116,12 +86,18 @@ theorem coe_toMultiplierRing (M : Submodule R B) (a : R) :
     (M.toMultiplierRing a : B) = algebraMap R B a := by
   rw [toMultiplierRing, RingHom.codRestrict_apply]
 
-/-- The image of the structure map `R → B₀` is central in the multiplier ring `B₀`. -/
-theorem commute_toMultiplierRing (M : Submodule R B) (a : R)
-    (x : M.toAddSubgroup.multiplierRing) : Commute (M.toMultiplierRing a) x :=
-  Subtype.ext <| by
-    rw [Subring.coe_mul, Subring.coe_mul, coe_toMultiplierRing]
-    exact Algebra.commutes a _
+/-- Extension of ideals along the structure map `R → B₀` commutes with powers. -/
+theorem map_toMultiplierRing_pow (M : Submodule R B) (I : Ideal R) (n : ℕ) :
+    (I ^ n).map M.toMultiplierRing = I.map M.toMultiplierRing ^ n := by
+  -- The image of `R` is central in `B₀`, so `toMultiplierRing` makes `B₀` an `R`-algebra and
+  -- `Ideal.map_algebraMap_pow` applies.
+  have hc (a : R) (x : M.toAddSubgroup.multiplierRing) :
+      M.toMultiplierRing a * x = x * M.toMultiplierRing a :=
+    Subtype.ext <| by
+      rw [Subring.coe_mul, Subring.coe_mul, coe_toMultiplierRing]
+      exact Algebra.commutes a _
+  have h := @Ideal.map_algebraMap_pow R _ _ _ (M.toMultiplierRing.toAlgebra' hc) I n
+  rwa [RingHom.algebraMap_toAlgebra'] at h
 
 /-- **The multiplier ring of a finitely generated submodule containing `1` is integral.** If `M`
 is a finitely generated `R`-submodule of an `R`-algebra `B` with `1 ∈ M`, every `b ∈ B` with
@@ -129,22 +105,23 @@ is a finitely generated `R`-submodule of an `R`-algebra `B` with `1 ∈ M`, ever
 theorem FG.isIntegral_of_mem_multiplierRing {M : Submodule R B} (hM : M.FG) (h1 : (1 : B) ∈ M)
     {b : B} (hb : b ∈ M.toAddSubgroup.multiplierRing) : IsIntegral R b := by
   have : Module.Finite R M := Module.Finite.iff_fg.mpr hM
-  have hbM (m : B) (hm : m ∈ M) : Algebra.lmul R B b m ∈ M := by
-    rw [Algebra.coe_lmul_eq_mul, LinearMap.mul_apply', ← M.mem_toAddSubgroup]
-    exact AddSubgroup.mem_multiplierRing.mp hb m (M.mem_toAddSubgroup.mpr hm)
-  -- By Cayley–Hamilton, left multiplication by `b` on `M` satisfies a monic polynomial `p`.
-  let f : Module.End R M := (Algebra.lmul R B b).restrict hbM
-  obtain ⟨p, hp, hpf⟩ := LinearMap.exists_monic_and_aeval_eq_zero R f
-  refine ⟨p, hp, ?_⟩
-  -- The inclusion `M → B` intertwines `f` with left multiplication by `b`, so evaluating `p`
-  -- at `f` and applying it to `1 ∈ M` is evaluating `p` at `b`.
-  have hcomp : (Algebra.lmul R B b).comp M.subtype = M.subtype.comp f :=
-    (LinearMap.subtype_comp_restrict hbM).symm
-  have hb1 : Polynomial.aeval b p = 0 := by
-    have := LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq hcomp p) ⟨1, h1⟩
-    rw [Polynomial.aeval_algHom_apply] at this
-    simpa [hpf] using this
-  rwa [← Polynomial.aeval_def]
+  -- The left order `O_l(M)`, which is `B₀` as an `R`-subalgebra, acts on `M` by left
+  -- multiplication. By Cayley–Hamilton (Mathlib's instance `Module.End.isIntegral`),
+  -- `Module.End R M` is integral over `R`.
+  let φ : M.leftOrder →ₐ[R] Module.End R M :=
+    ((Algebra.lmul R B).comp M.leftOrder.val).restrictEnd M fun x m hm ↦ by
+      rw [AlgHom.comp_apply, Subalgebra.coe_val, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply']
+      exact mem_leftOrder_iff.mp x.property m hm
+  -- The action is faithful, since evaluating at `1 ∈ M` recovers the multiplier.
+  have hφ : Function.Injective φ := fun x y hxy ↦ by
+    have h := congr_arg Subtype.val (LinearMap.congr_fun hxy ⟨1, h1⟩)
+    simp only [φ, AlgHom.coe_restrictEnd_apply, AlgHom.comp_apply, Subalgebra.coe_val,
+      Algebra.coe_lmul_eq_mul, LinearMap.mul_apply', mul_one] at h
+    exact Subtype.ext h
+  have hbO : b ∈ M.leftOrder := by rwa [← Subalgebra.mem_toSubring, toSubring_leftOrder]
+  have h : IsIntegral R (⟨b, hbO⟩ : M.leftOrder) :=
+    (isIntegral_algHom_iff (B := Module.End R M) φ hφ).mp (Algebra.IsIntegral.isIntegral _)
+  simpa only [Subalgebra.coe_val] using h.map M.leftOrder.val
 
 /-- **Right multipliers of a finitely generated submodule containing `1` are integral.** If `M`
 is a finitely generated `R`-submodule of an `R`-algebra `B` with `1 ∈ M`, every `b ∈ B` with
@@ -171,7 +148,7 @@ theorem coe_map_pow_subset {M : Submodule R B} (h1 : (1 : B) ∈ M) (I : Ideal R
     Subtype.val '' ((I.map M.toMultiplierRing ^ n : Ideal M.toAddSubgroup.multiplierRing) :
       Set M.toAddSubgroup.multiplierRing) ⊆ ((I ^ n • M : Submodule R B) : Set B) := by
   rintro _ ⟨x, hx, rfl⟩
-  rw [SetLike.mem_coe, ← map_pow_of_commute M.commute_toMultiplierRing] at hx
+  rw [SetLike.mem_coe, ← map_toMultiplierRing_pow, Ideal.map] at hx
   induction hx using Submodule.span_induction with
   | mem y hy =>
     obtain ⟨a, ha, rfl⟩ := hy
@@ -182,7 +159,9 @@ theorem coe_map_pow_subset {M : Submodule R B} (h1 : (1 : B) ∈ M) (I : Ideal R
   | smul r y _ hy =>
     -- Left multiplication by `r ∈ B₀` maps `M` into itself, hence also `Iⁿ • M`.
     have hr : M.map (LinearMap.mulLeft R (r : B)) ≤ M := Submodule.map_le_iff_le_comap.mpr
-      fun m hm ↦ AddSubgroup.mem_multiplierRing.mp r.property m hm
+      fun m hm ↦ by
+        rw [Submodule.mem_comap, LinearMap.mulLeft_apply, ← Submodule.mem_toAddSubgroup]
+        exact AddSubgroup.mem_multiplierRing.mp r.property m (M.mem_toAddSubgroup.mpr hm)
     rw [smul_eq_mul, Subring.coe_mul, ← LinearMap.mulLeft_apply R]
     exact (Submodule.map_smul'' _ _ _).trans_le (Submodule.smul_mono le_rfl hr)
       (Submodule.mem_map_of_mem hy)
@@ -197,10 +176,10 @@ theorem smul_subset_coe_map_pow {M : Submodule R B} {I : Ideal R} {j : ℕ}
   intro x hx
   rw [pow_add, Submodule.mul_smul] at hx
   refine Submodule.smul_induction_on hx (fun a ha y hy ↦ ?_) ?_
-  · refine ⟨M.toMultiplierRing a * ⟨y, hj hy⟩, ?_, ?_⟩
-    · rw [← map_pow_of_commute M.commute_toMultiplierRing, (M.commute_toMultiplierRing _ _).eq]
+  · refine ⟨⟨y, hj hy⟩ * M.toMultiplierRing a, ?_, ?_⟩
+    · rw [← map_toMultiplierRing_pow]
       exact Ideal.mul_mem_left _ _ (Ideal.mem_map_of_mem _ ha)
-    · rw [Subring.coe_mul, coe_toMultiplierRing, ← Algebra.smul_def]
+    · rw [Subring.coe_mul, coe_toMultiplierRing, ← Algebra.commutes, ← Algebra.smul_def]
   · rintro _ _ ⟨x, hx, rfl⟩ ⟨y, hy, rfl⟩
     exact ⟨x + y, Ideal.add_mem _ hx hy, rfl⟩
 
