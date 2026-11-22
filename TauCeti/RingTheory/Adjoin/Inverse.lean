@@ -265,7 +265,7 @@ theorem fg_inf_of_mul_eq_one [IsNoetherianRing R] (hFG : F * G = 1) {S : Set N}
       algebraMap_smul, sub_add_cancel]
   rw [hx]
   exact Submodule.add_mem_sup (shiftEval_mem_span hg hD hκ m)
-    (Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span i.2))
+    (Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span i.property))
 
 end Intersection
 

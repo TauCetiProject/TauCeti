@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Defs
+import Mathlib.RingTheory.Finiteness.Basic
 
 /-!
 # Basic facts about root systems
@@ -21,6 +22,8 @@ theory.
 ## Main results
 
 * `RootPairing.nonempty_of_isRootSystem`: a root system on a nontrivial module has a root.
+* `RootPairing.finite_weight_of_isRootSystem`: the weight module of a finite root system is finitely
+  generated.
 * `RootPairing.corootKer_eq_bot`: the central kernel of a root system is trivial.
 * `RootPairing.reflection_apply_of_mem_corootKer`: every root reflection fixes `P.corootKer`
   pointwise.
@@ -40,6 +43,13 @@ lemma nonempty_of_isRootSystem [Nontrivial M] (P : RootPairing ι R M N) [P.IsRo
   have hspan := IsRootSystem.span_root_eq_top (P := P)
   rw [Set.range_eq_empty, Submodule.span_empty] at hspan
   exact bot_ne_top hspan
+
+/-- On a finite root system, the weight module is finitely generated because it is spanned by the
+finite set of roots. -/
+theorem finite_weight_of_isRootSystem (P : RootPairing ι R M N) [Finite ι] [P.IsRootSystem] :
+    Module.Finite R M :=
+  Module.finite_def.mpr
+    (IsRootSystem.span_root_eq_top (P := P) ▸ Submodule.fg_span (Set.finite_range P.root))
 
 section CorootKer
 

@@ -80,8 +80,9 @@ theorem exists_contMDiffAt_localFlow [FiniteDimensional ℝ E] [I.Boundaryless]
       (I.isInteriorPoint_iff.mp (BoundarylessManifold.isInteriorPoint (I := I)))) hsymmV
   have hws' : ContDiffOn ℝ (((⊤ : ℕ∞) : WithTop ℕ∞) + 1) w
       W := by simpa using hws
-  obtain ⟨φ, hφ, hφ0, hφadd, hφderiv⟩ :=
-    ODE.exists_contDiffAt_localFlow (n := (⊤ : ℕ∞)) w hws' hatarget
+  obtain ⟨φ, A, hA, hbase, hflow, hφ0, hφadd, hφderiv⟩ :=
+    ODE.exists_contDiffOn_localFlow (n := (⊤ : ℕ∞)) w hws' hatarget
+  have hφ := hflow.contDiffAt (hA.mem_nhds hbase)
   have hφ' : ContDiffAt ℝ ∞ (fun p : E × ℝ ↦ φ p.1 p.2) (extChartAt I a a, 0) := by simpa using hφ
   have htarget : ∀ᶠ p in nhds ((extChartAt I a a, 0) : E × ℝ),
       φ p.1 p.2 ∈ interior (extChartAt I a).target := by

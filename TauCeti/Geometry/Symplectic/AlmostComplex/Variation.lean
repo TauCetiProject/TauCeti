@@ -23,16 +23,24 @@ is close to `u(z₀)` are close to `z₀`.
 
 This file proves the resulting pairing statement, in a coordinate model with target a
 finite-dimensional real vector space `V` and the domain any locally compact Hausdorff space `S`
-with a measure that is positive on open sets and finite on compact sets. The inputs are a
-`Cⁿ` family of complex structures `J : V → AlmostComplexStructure V`, maps `u, w : S → V` and a
-covector field `η : S → V →L[ℝ] ℝ`, continuous near a point `z₀`. Write the injective point
-condition as `(𝓝 (u z₀)).comap u ≤ 𝓝 z₀`; for a continuous map on a compact domain whose fibre
-over `u z₀` is `{z₀}` it follows from `IsClosedMap.comap_nhds_le` and `nhdsSet_singleton`. If
-`w z₀ ≠ 0` and `η z₀ ≠ 0`, then for every neighbourhood `W` of `u z₀` there is a compactly
-supported `Cⁿ` variation `Y : V → V →L[ℝ] V`, supported in `W` and tangent to the space of
-complex structures at every point, with
+with a measure that is positive on open sets and finite on compact sets. The complex structures
+on `V` form a `Cⁿ` family `J : X → AlmostComplexStructure V` indexed by a finite-dimensional real
+vector space `X`, and the other inputs are maps `u : S → X`, `w : S → V` and a covector field
+`η : S → V →L[ℝ] ℝ`, continuous near a point `z₀`. Write the injective point condition as
+`(𝓝 (u z₀)).comap u ≤ 𝓝 z₀`; for a continuous map on a compact domain whose fibre over `u z₀` is
+`{z₀}` it follows from `IsClosedMap.comap_nhds_le` and `nhdsSet_singleton`. If `w z₀ ≠ 0` and
+`η z₀ ≠ 0`, then for every neighbourhood `W` of `u z₀` there is a compactly supported `Cⁿ`
+variation `Y : X → V →L[ℝ] V`, supported in `W` and tangent to the space of complex structures
+at every point, with
 
 `0 < ∫ η z (Y (u z) (w z)) ∂μ`.
+
+For a domain-independent structure on the target, `X` is the target `V` itself and `u` is the
+map. If the structure also depends on a parameter `π z ∈ P` of the domain point, such as the time
+`t` of a Floer cylinder `(s, t) ↦ u(s, t)` with a time-dependent structure `J_t`, take
+`X = P × V` and the map `z ↦ (π z, u z)`: the variation is then localized near
+`(π z₀, u z₀)`, and the injective point condition is the one for this map, which is weaker than
+injectivity of `u`.
 
 There are two versions, one for each tangent condition:
 
@@ -71,45 +79,48 @@ variable {S V : Type*} [TopologicalSpace S] [T2Space S] [LocallyCompactSpace S]
   [MeasurableSpace S] [OpensMeasurableSpace S] {μ : Measure S} [μ.IsOpenPosMeasure]
   [IsFiniteMeasureOnCompacts μ]
   [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {X : Type*}
 
 namespace AlmostComplexStructure
 
 /-- The variation `x ↦ ρ x • (A + J x A J x) / 2` obtained by averaging `A` with its conjugates
 by the complex structures `J x` and cutting it off by `ρ`. -/
-private noncomputable def localizedVariation (J : V → AlmostComplexStructure V) (ρ : V → ℝ)
-    (A : V →L[ℝ] V) (x : V) : V →L[ℝ] V :=
+private noncomputable def localizedVariation (J : X → AlmostComplexStructure V) (ρ : X → ℝ)
+    (A : V →L[ℝ] V) (x : X) : V →L[ℝ] V :=
   ρ x • (2⁻¹ : ℝ) • (A + LinearMap.toContinuousLinearMap (J x).toLinearMap ∘L A ∘L
     LinearMap.toContinuousLinearMap (J x).toLinearMap)
 
-private theorem coe_localizedVariation (J : V → AlmostComplexStructure V) (ρ : V → ℝ)
-    (A : V →L[ℝ] V) (x : V) :
+private theorem coe_localizedVariation (J : X → AlmostComplexStructure V) (ρ : X → ℝ)
+    (A : V →L[ℝ] V) (x : X) :
     (localizedVariation J ρ A x : Module.End ℝ V) =
       ρ x • (2⁻¹ : ℝ) • ((A : Module.End ℝ V) + (J x).toLinearMap * A * (J x).toLinearMap) := by
   ext v
   simp [localizedVariation]
 
-private theorem localizedVariation_mem_tangentSpace (J : V → AlmostComplexStructure V)
-    (ρ : V → ℝ) (A : V →L[ℝ] V) (x : V) :
+private theorem localizedVariation_mem_tangentSpace (J : X → AlmostComplexStructure V)
+    (ρ : X → ℝ) (A : V →L[ℝ] V) (x : X) :
     (localizedVariation J ρ A x : Module.End ℝ V) ∈ (J x).tangentSpace := by
   rw [coe_localizedVariation]
   exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _ ((J x).add_mul_mul_mem_tangentSpace _))
+
+variable [NormedAddCommGroup X] [NormedSpace ℝ X] [FiniteDimensional ℝ X]
 
 /-- Smoothness, support and tangency of the localized variation, and the positivity of its
 pairing for a suitable cutoff. The cutoff is a bump function at `u z₀` supported in a
 neighbourhood of `u z₀` whose preimage lies in a compact neighbourhood of `z₀` on which the
 uncut pairing is positive. -/
 private theorem exists_localizedVariation
-    {J : V → AlmostComplexStructure V} {n : ℕ∞}
+    {J : X → AlmostComplexStructure V} {n : ℕ∞}
     (hJ : ContDiff ℝ n fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap)
-    {u w : S → V} {η : S → V →L[ℝ] ℝ} {z₀ : S}
+    {u : S → X} {w : S → V} {η : S → V →L[ℝ] ℝ} {z₀ : S}
     (hu : ∀ᶠ z in 𝓝 z₀, ContinuousAt u z) (hw : ∀ᶠ z in 𝓝 z₀, ContinuousAt w z)
     (hη : ∀ᶠ z in 𝓝 z₀, ContinuousAt η z) (hinj : (𝓝 (u z₀)).comap u ≤ 𝓝 z₀)
     {A : V →L[ℝ] V} (hA : (A : Module.End ℝ V) ∈ (J (u z₀)).tangentSpace)
-    (hpos : 0 < η z₀ (A (w z₀))) {W : Set V} (hW : W ∈ 𝓝 (u z₀)) :
-    ∃ ρ : V → ℝ, ContDiff ℝ n (localizedVariation J ρ A) ∧
+    (hpos : 0 < η z₀ (A (w z₀))) {W : Set X} (hW : W ∈ 𝓝 (u z₀)) :
+    ∃ ρ : X → ℝ, ContDiff ℝ n (localizedVariation J ρ A) ∧
       HasCompactSupport (localizedVariation J ρ A) ∧ tsupport (localizedVariation J ρ A) ⊆ W ∧
       0 < ∫ z, η z (localizedVariation J ρ A (u z) (w z)) ∂μ := by
-  set Jc : V → V →L[ℝ] V := fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap
+  set Jc : X → V →L[ℝ] V := fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap
   -- The pairing before the cutoff, and its value `η z₀ (A (w z₀))` at `z₀`.
   set G : S → ℝ := fun z ↦ η z (((2⁻¹ : ℝ) • (A + Jc (u z) ∘L A ∘L Jc (u z))) (w z))
   have hG₀ : G z₀ = η z₀ (A (w z₀)) := by
@@ -167,13 +178,13 @@ neighbourhood `W` of `u z₀`, some compactly supported `Cⁿ` variation `Y` sup
 `Y x` anticommuting with `J x` at every point, pairs positively with `η` along `u`:
 `0 < ∫ η z (Y (u z) (w z)) ∂μ`. -/
 theorem exists_contDiff_mem_tangentSpace_integral_pos
-    {J : V → AlmostComplexStructure V} {n : ℕ∞}
+    {J : X → AlmostComplexStructure V} {n : ℕ∞}
     (hJ : ContDiff ℝ n fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap)
-    {u w : S → V} {η : S → V →L[ℝ] ℝ} {z₀ : S}
+    {u : S → X} {w : S → V} {η : S → V →L[ℝ] ℝ} {z₀ : S}
     (hu : ∀ᶠ z in 𝓝 z₀, ContinuousAt u z) (hw : ∀ᶠ z in 𝓝 z₀, ContinuousAt w z)
     (hη : ∀ᶠ z in 𝓝 z₀, ContinuousAt η z) (hinj : (𝓝 (u z₀)).comap u ≤ 𝓝 z₀)
-    (hw₀ : w z₀ ≠ 0) (hη₀ : η z₀ ≠ 0) {W : Set V} (hW : W ∈ 𝓝 (u z₀)) :
-    ∃ Y : V → V →L[ℝ] V, ContDiff ℝ n Y ∧ HasCompactSupport Y ∧ tsupport Y ⊆ W ∧
+    (hw₀ : w z₀ ≠ 0) (hη₀ : η z₀ ≠ 0) {W : Set X} (hW : W ∈ 𝓝 (u z₀)) :
+    ∃ Y : X → V →L[ℝ] V, ContDiff ℝ n Y ∧ HasCompactSupport Y ∧ tsupport Y ⊆ W ∧
       (∀ x, (Y x : Module.End ℝ V) ∈ (J x).tangentSpace) ∧
       0 < ∫ z, η z (Y (u z) (w z)) ∂μ := by
   obtain ⟨e, he⟩ : ∃ e, η z₀ e ≠ 0 := by simpa using DFunLike.ne_iff.1 hη₀
@@ -188,13 +199,13 @@ neighbourhood `W` of `u z₀`, with `Y x` anticommuting with `J x`, then `η z�
 injective point `z₀` of `u` where `w z₀ ≠ 0`, provided `u`, `w` and `η` are continuous near
 `z₀`. -/
 theorem eq_zero_of_forall_mem_tangentSpace_integral_eq_zero
-    {J : V → AlmostComplexStructure V} {n : ℕ∞}
+    {J : X → AlmostComplexStructure V} {n : ℕ∞}
     (hJ : ContDiff ℝ n fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap)
-    {u w : S → V} {η : S → V →L[ℝ] ℝ} {z₀ : S}
+    {u : S → X} {w : S → V} {η : S → V →L[ℝ] ℝ} {z₀ : S}
     (hu : ∀ᶠ z in 𝓝 z₀, ContinuousAt u z) (hw : ∀ᶠ z in 𝓝 z₀, ContinuousAt w z)
     (hη : ∀ᶠ z in 𝓝 z₀, ContinuousAt η z) (hinj : (𝓝 (u z₀)).comap u ≤ 𝓝 z₀)
-    (hw₀ : w z₀ ≠ 0) {W : Set V} (hW : W ∈ 𝓝 (u z₀))
-    (h : ∀ Y : V → V →L[ℝ] V, ContDiff ℝ n Y → HasCompactSupport Y → tsupport Y ⊆ W →
+    (hw₀ : w z₀ ≠ 0) {W : Set X} (hW : W ∈ 𝓝 (u z₀))
+    (h : ∀ Y : X → V →L[ℝ] V, ContDiff ℝ n Y → HasCompactSupport Y → tsupport Y ⊆ W →
       (∀ x, (Y x : Module.End ℝ V) ∈ (J x).tangentSpace) → ∫ z, η z (Y (u z) (w z)) ∂μ = 0) :
     η z₀ = 0 := by
   by_contra hη₀
@@ -206,6 +217,8 @@ end AlmostComplexStructure
 
 namespace SymplecticForm
 
+variable [NormedAddCommGroup X] [NormedSpace ℝ X] [FiniteDimensional ℝ X]
+
 /-- **Compatible variations detect cokernel elements at injective points.** Let `z₀` be an
 injective point of `u`, in the sense that points whose image is close to `u z₀` are close to
 `z₀`, and let `u`, `w` and the covector field `η` be continuous near `z₀`, with `w z₀ ≠ 0` and
@@ -214,14 +227,14 @@ injective point of `u`, in the sense that points whose image is close to `u z₀
 supported in `W`, with `Y x` in the compatible tangent space of `J x` at every point, pairs
 positively with `η` along `u`: `0 < ∫ η z (Y (u z) (w z)) ∂μ`. -/
 theorem exists_contDiff_mem_compatibleTangentSpace_integral_pos {ω : SymplecticForm V}
-    {J : V → AlmostComplexStructure V} {n : ℕ∞}
+    {J : X → AlmostComplexStructure V} {n : ℕ∞}
     (hJ : ContDiff ℝ n fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap)
-    (hJω : ∀ x, ω.Invariant (J x)) {u w : S → V} {η : S → V →L[ℝ] ℝ} {z₀ : S}
+    (hJω : ∀ x, ω.Invariant (J x)) {u : S → X} {w : S → V} {η : S → V →L[ℝ] ℝ} {z₀ : S}
     (hJ₀ : ω.Tames (J (u z₀)))
     (hu : ∀ᶠ z in 𝓝 z₀, ContinuousAt u z) (hw : ∀ᶠ z in 𝓝 z₀, ContinuousAt w z)
     (hη : ∀ᶠ z in 𝓝 z₀, ContinuousAt η z) (hinj : (𝓝 (u z₀)).comap u ≤ 𝓝 z₀)
-    (hw₀ : w z₀ ≠ 0) (hη₀ : η z₀ ≠ 0) {W : Set V} (hW : W ∈ 𝓝 (u z₀)) :
-    ∃ Y : V → V →L[ℝ] V, ContDiff ℝ n Y ∧ HasCompactSupport Y ∧ tsupport Y ⊆ W ∧
+    (hw₀ : w z₀ ≠ 0) (hη₀ : η z₀ ≠ 0) {W : Set X} (hW : W ∈ 𝓝 (u z₀)) :
+    ∃ Y : X → V →L[ℝ] V, ContDiff ℝ n Y ∧ HasCompactSupport Y ∧ tsupport Y ⊆ W ∧
       (∀ x, (Y x : Module.End ℝ V) ∈ ω.compatibleTangentSpace (J x)) ∧
       0 < ∫ z, η z (Y (u z) (w z)) ∂μ := by
   obtain ⟨e, he⟩ : ∃ e, η z₀ e ≠ 0 := by simpa using DFunLike.ne_iff.1 hη₀
@@ -244,14 +257,14 @@ of `u z₀`, with `Y x` in the compatible tangent space of `J x`, then `η z₀ 
 injective point `z₀` of `u` where `w z₀ ≠ 0`, provided `u`, `w` and `η` are continuous near
 `z₀`. -/
 theorem eq_zero_of_forall_mem_compatibleTangentSpace_integral_eq_zero {ω : SymplecticForm V}
-    {J : V → AlmostComplexStructure V} {n : ℕ∞}
+    {J : X → AlmostComplexStructure V} {n : ℕ∞}
     (hJ : ContDiff ℝ n fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap)
-    (hJω : ∀ x, ω.Invariant (J x)) {u w : S → V} {η : S → V →L[ℝ] ℝ} {z₀ : S}
+    (hJω : ∀ x, ω.Invariant (J x)) {u : S → X} {w : S → V} {η : S → V →L[ℝ] ℝ} {z₀ : S}
     (hJ₀ : ω.Tames (J (u z₀)))
     (hu : ∀ᶠ z in 𝓝 z₀, ContinuousAt u z) (hw : ∀ᶠ z in 𝓝 z₀, ContinuousAt w z)
     (hη : ∀ᶠ z in 𝓝 z₀, ContinuousAt η z) (hinj : (𝓝 (u z₀)).comap u ≤ 𝓝 z₀)
-    (hw₀ : w z₀ ≠ 0) {W : Set V} (hW : W ∈ 𝓝 (u z₀))
-    (h : ∀ Y : V → V →L[ℝ] V, ContDiff ℝ n Y → HasCompactSupport Y → tsupport Y ⊆ W →
+    (hw₀ : w z₀ ≠ 0) {W : Set X} (hW : W ∈ 𝓝 (u z₀))
+    (h : ∀ Y : X → V →L[ℝ] V, ContDiff ℝ n Y → HasCompactSupport Y → tsupport Y ⊆ W →
       (∀ x, (Y x : Module.End ℝ V) ∈ ω.compatibleTangentSpace (J x)) →
         ∫ z, η z (Y (u z) (w z)) ∂μ = 0) :
     η z₀ = 0 := by

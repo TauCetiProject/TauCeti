@@ -27,8 +27,8 @@ identity `-Δ G = δ₀`: for every `C²` function `f : ℂ → ℝ` with compac
 `∫ z, Δ f z * G z = -f 0`,
 
 and, with the pole moved to `a`, `∫ z, Δ f z * G (z - a) = -f a`. This is the two-dimensional
-counterpart of `TauCeti.integral_laplacian_mul_newtonianKernel` for `ℝⁿ`, `n ≥ 3`, and it is the
-identity that makes the planar Newtonian potential `G ⋆ f` solve Poisson's equation.
+counterpart of `TauCeti.integral_laplacian_mul_newtonianKernel` for `ℝⁿ`, `n = 1` or `n ≥ 3`, and
+it is the identity that makes the planar Newtonian potential `G ⋆ f` solve Poisson's equation.
 
 The argument has the same two steps as in higher dimensions.
 
@@ -259,7 +259,7 @@ theorem hasWeakFDerivOn_planarNewtonianKernel (Ω : Opens ℂ) :
   hasWeakFDerivOn_of_forall_integral_fderiv_smul locallyIntegrable_planarNewtonianKernel
     locallyIntegrable_fderiv_planarNewtonianKernel (fun _ hg hc v ↦ by
       simpa only [smul_eq_mul, mul_comm] using
-        integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul hg hc v) Ω
+        integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul (hg.of_le (by simp)) hc v) Ω
 
 /-- Away from the pole, the gradient pairing `∇G · ∇f` is `-(2π)⁻¹ ‖z‖⁻² f' z z`. -/
 private lemma sum_fderiv_planarNewtonianKernel_mul_fderiv (b : OrthonormalBasis (Fin 2) ℝ ℂ)

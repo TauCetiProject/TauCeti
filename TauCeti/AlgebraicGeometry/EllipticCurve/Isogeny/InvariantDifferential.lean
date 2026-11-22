@@ -86,7 +86,7 @@ theorem weilDifferentialDivisor_pullbackDifferential_invariantDifferential :
     weilDifferentialDivisor W₁.isFunctionField (isIntegrallyClosedIn_functionField W₁)
         (kaehlerDifferentialEquivWeilDifferentialOfSeparating W₁.isFunctionField
           (isIntegrallyClosedIn_functionField W₁) (transcendental_genericX W₁)
-          (φ.pullbackDifferential (invariantDifferential W₂))).2
+          (φ.pullbackDifferential (invariantDifferential W₂))).property
         (kaehlerDifferentialEquivWeilDifferentialOfSeparating_pullbackDifferential_ne_zero φ) =
       0 := by
   let _ := weilDifferentialSpaceModule W₁.isFunctionField
@@ -147,7 +147,7 @@ theorem existsUnique_pullbackDifferential_invariantDifferential_eq_smul (φ : Is
     rw [← coe_weilDifferentialSpaceModule_smul, ← map_smul, ha]
   have hdiv := (weilDifferentialDivisor_repartitionDualMul W₁.isFunctionField hex₁
     (kaehlerDifferentialEquivWeilDifferentialOfSeparating W₁.isFunctionField hex₁
-      (transcendental_genericX W₁) (invariantDifferential W₁)).2
+      (transcendental_genericX W₁) (invariantDifferential W₁)).property
     (kaehlerDifferentialEquivWeilDifferentialOfSeparating_invariantDifferential_ne_zero W₁)
     (Units.mk0 a ha0)).symm.trans ((weilDifferentialDivisor_congr _ _ hcoe _ _ (Submodule.coe_mem _)
       (kaehlerDifferentialEquivWeilDifferentialOfSeparating_pullbackDifferential_ne_zero φ)).trans

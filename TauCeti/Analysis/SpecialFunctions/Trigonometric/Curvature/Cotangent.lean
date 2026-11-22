@@ -1,11 +1,13 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Curvature.Basic
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
 # Logarithmic derivatives of constant-curvature model functions
@@ -14,16 +16,20 @@ The ratio `curvatureCotangent κ = curvatureCosine κ / curvatureSine κ` of the
 model functions solves the scalar Riccati equation `f' = -f² - κ` on its regular domain. Its
 singular initial asymptotic is `t * curvatureCotangent κ t → 1`. It is positive before the
 spherical half-radius, and at all positive times in nonpositive curvature. These are the
-scalar-model inputs to local Hessian comparison.
+scalar-model inputs to local Hessian comparison. The interval integral of the normalized
+quadratic model is the terminal model cotangent, including when the normalizing model sine
+vanishes.
 
 ## References
 
-* J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapter 11.
+* J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapters 10 and 11.
+* [lean-eval-submissions](https://github.com/frenzymath/lean-eval-submissions).
+* [PoincareConjecture](https://github.com/frenzymath/PoincareConjecture).
 -/
 
 public noncomputable section
 namespace TauCeti
-open Filter Real Set
+open Filter Real Set MeasureTheory
 open scoped ContDiff Topology
 
 /-- The logarithmic derivative `s_κ' / s_κ` of the constant-curvature model sine. -/
@@ -32,6 +38,39 @@ def curvatureCotangent (κ t : ℝ) : ℝ := curvatureCosine κ t / curvatureSin
 /-- Evaluation of the model logarithmic derivative. -/
 theorem curvatureCotangent_def (κ t : ℝ) :
     curvatureCotangent κ t = curvatureCosine κ t / curvatureSine κ t := by rfl
+
+/-- The integral of the normalized constant-curvature quadratic model is the terminal model
+cotangent. The identity holds for either interval orientation and also when the normalizing
+model sine vanishes, using the totalized division convention. -/
+theorem integral_curvatureCosine_div_sq_sub_mul_curvatureSine_div_sq (κ a b : ℝ) :
+    (∫ t in a..b, (curvatureCosine κ (t - a) / curvatureSine κ (b - a)) ^ 2 -
+      κ * (curvatureSine κ (t - a) / curvatureSine κ (b - a)) ^ 2) =
+      curvatureCotangent κ (b - a) := by
+  let d := curvatureSine κ (b - a)
+  have hd (t : ℝ) : HasDerivAt
+      (fun r ↦ curvatureSine κ (r - a) * curvatureCosine κ (r - a) / d ^ 2)
+      ((curvatureCosine κ (t - a) / d) ^ 2 -
+        κ * (curvatureSine κ (t - a) / d) ^ 2) t := by
+    convert (((hasDerivAt_curvatureSine κ (t - a)).comp_sub_const t a).mul
+      ((hasDerivAt_curvatureCosine κ (t - a)).comp_sub_const t a)).div_const (d ^ 2) using 1
+    simp only [div_pow]
+    ring
+  have hC : Continuous (fun t ↦ curvatureCosine κ (t - a) / d) :=
+    ((contDiff_curvatureCosine κ).continuous.comp
+      (continuous_id.sub continuous_const)).div_const d
+  have hS : Continuous (fun t ↦ curvatureSine κ (t - a) / d) :=
+    ((contDiff_curvatureSine κ).continuous.comp
+      (continuous_id.sub continuous_const)).div_const d
+  have hint : IntervalIntegrable (fun t ↦ (curvatureCosine κ (t - a) / d) ^ 2 -
+      κ * (curvatureSine κ (t - a) / d) ^ 2) volume a b :=
+    ((hC.pow 2).sub (continuous_const.mul (hS.pow 2))).intervalIntegrable _ _
+  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ ↦ hd t) hint]
+  dsimp only [d] at *
+  by_cases hd0 : curvatureSine κ (b - a) = 0
+  · simp [curvatureCotangent_def, hd0]
+  · simp only [sub_self, curvatureSine_zero_right, zero_mul, zero_div, sub_zero,
+      curvatureCotangent_def]
+    field_simp
 
 @[simp] theorem curvatureCotangent_zero_left (t : ℝ) : curvatureCotangent 0 t = t⁻¹ := by
   simp [curvatureCotangent_def, one_div]
