@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Equiv.Basic
 public import Mathlib.Algebra.Group.Hom.Instances
+public import Mathlib.Algebra.Group.Subgroup.Ker
 public import TauCeti.Algebra.Group.Hom.Lift
 
 /-!
@@ -43,6 +44,8 @@ Flipping a biadditive pairing also preserves equivariance under a common scalar 
 * `AddMonoidHom.bijective_of_bijective_pairing`: bijectivity of a curried biadditive pairing is
   preserved by bijective changes of variables and target.
 * `AddMonoidHom.flip_map_smul`: flipping a biadditive pairing preserves equivariance.
+* `AddMonoidHom.ker_compl₂_addEquiv_comp`: postcomposing a biadditive pairing with an additive
+  equivalence preserves the kernel of the restricted pairing on a subgroup.
 * `TauCeti.forall_eq_zero_and_exists_eq_of_bijective_of_addEquiv`: a pairing that reads, through
   additive equivalences, as a bijective curried homomorphism separates the points of its second
   argument, and every homomorphism out of its first argument is pairing with some point.
@@ -149,5 +152,16 @@ theorem flip_map_smul {S M N P : Type*} [AddZeroClass M] [AddZeroClass N] [AddCo
     ∀ (a : S) (n : N) (m : M), μ.flip (a • n) (a • m) = a • μ.flip n m := by
   intro a n m
   simpa only [flip_apply] using hμ a m n
+
+/-- Precomposing the target of a biadditive pairing with an additive equivalence preserves the
+kernel of the restricted pairing on any subgroup. -/
+theorem ker_compl₂_addEquiv_comp {A B C D : Type*} [AddGroup A] [AddGroup B]
+    [AddCommMonoid C] [AddCommMonoid D] (e : C ≃+ D) (f : A →+ B →+ C) (H : AddSubgroup B) :
+    ((e.addMonoidHomCongrRight.toAddMonoidHom.comp f).compl₂ H.subtype).ker =
+      (f.compl₂ H.subtype).ker := by
+  ext a
+  simp only [mem_ker, DFunLike.ext_iff, compl₂_apply, comp_apply, AddEquiv.coe_toAddMonoidHom,
+    AddEquiv.addMonoidHomCongrRight_apply, zero_apply]
+  exact ⟨fun h x ↦ e.injective (by simpa using h x), fun h x ↦ by simpa using congrArg e (h x)⟩
 
 end AddMonoidHom

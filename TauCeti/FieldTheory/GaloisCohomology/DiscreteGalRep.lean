@@ -18,8 +18,8 @@ Continuous Galois cohomology on `Field.absoluteGaloisGroup F` uses bundled repre
 `A : TauCeti.GalRep n F`, that is, objects of `TopRep (ZMod n) (Field.absoluteGaloisGroup F)` with
 Mathlib's `continuousCohomology`. Arithmetic applications—such as Kummer modules, elliptic-curve
 torsion, and unramified local duality—instead work with discrete `AbsoluteGaloisGroup F`-modules
-`M` (either already equipped with a `Module (ZMod n) M` instance or merely killed by `n`) and
-explicit low-degree cohomology `H⁰`, `H¹`, `H²`.
+`M` equipped with a `Module (ZMod n) M` instance and explicit low-degree cohomology `H⁰`, `H¹`,
+`H²`.
 
 This file builds the shared bridge between the two for an arbitrary field `F`:
 
@@ -28,10 +28,6 @@ This file builds the shared bridge between the two for an arbitrary field `F`:
   `TauCeti.absoluteGaloisGroupRestrictEquiv F` to obtain an object of `GalRep n F`, together with
   `galRepOfZModModuleEquiv`, `galRepOfZModModuleEquiv_smul`, and
   `galRepOfZModModuleH0Equiv` / `H1Equiv` / `H2Equiv`.
-* `TauCeti.galRepOfDiscreteModule`: specializes `galRepOfZModModule` to an unbundled discrete
-  `AbsoluteGaloisGroup F`-module killed by `n` via `AddCommGroup.zmodModule`, together with
-  `galRepOfDiscreteModuleEquiv`, `galRepOfDiscreteModuleEquiv_smul`, and
-  `galRepOfDiscreteModuleH0Equiv` / `H1Equiv` / `H2Equiv`.
 -/
 
 public noncomputable section
@@ -200,126 +196,5 @@ theorem galRepOfZModModuleH2Equiv_apply (x : H2 (AbsoluteGaloisGroup F) M) :
   rw [galRepOfZModModuleH2Equiv, AddEquiv.trans_apply, explicitMap2Equiv_apply]
 
 end ZModModule
-
-section Unbundled
-
-variable (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-  [DistribMulAction (AbsoluteGaloisGroup F) M] (hM : ∀ x : M, n • x = 0)
-
-/-- **Bundle an unbundled discrete `G_F`-module killed by `n` as an object of `GalRep n F`**,
-equipping `M` with its `ZMod n`-module structure via `AddCommGroup.zmodModule hM` and
-delegating to `galRepOfZModModule`. -/
-def galRepOfDiscreteModule : GalRep n F :=
-  letI : Module (ZMod n) M := AddCommGroup.zmodModule hM
-  galRepOfZModModule n F M
-
-/-- The carrier of `galRepOfDiscreteModule n F M hM` has the discrete topology. -/
-instance : DiscreteTopology (galRepOfDiscreteModule n F M hM).V :=
-  inferInstanceAs (DiscreteTopology M)
-
-/-- The coefficient dictionary `M ≃+ (galRepOfDiscreteModule n F M hM).V`. -/
-def galRepOfDiscreteModuleEquiv : M ≃+ (galRepOfDiscreteModule n F M hM).V :=
-  letI : Module (ZMod n) M := AddCommGroup.zmodModule hM
-  galRepOfZModModuleEquiv n F M
-
-/-- Finiteness of `(galRepOfDiscreteModule n F M hM).V` when `M` is finite. -/
-instance [Finite M] : Finite (galRepOfDiscreteModule n F M hM).V :=
-  Finite.of_equiv M (galRepOfDiscreteModuleEquiv n F M hM).toEquiv
-
-/-- **The coefficient dictionary is equivariant**: `g ∈ Field.absoluteGaloisGroup F` acts on
-`galRepOfDiscreteModule n F M hM` as its restriction to the separable closure acts on `M`. -/
-@[simp]
-theorem galRepOfDiscreteModuleEquiv_smul (g : Field.absoluteGaloisGroup F) (x : M) :
-    galRepOfDiscreteModuleEquiv n F M hM (absoluteGaloisGroupRestrictEquiv F g • x) =
-      (galRepOfDiscreteModule n F M hM).ρ g (galRepOfDiscreteModuleEquiv n F M hM x) := by
-  let _ : Module (ZMod n) M := AddCommGroup.zmodModule hM
-  exact galRepOfZModModuleEquiv_smul n F M g x
-
-attribute [local instance] TopRep.distribMulAction
-
-/-- **Degree-zero cohomology comparison** between explicit `H⁰(G_F, M)` and
-`continuousCohomology 0 (galRepOfDiscreteModule n F M hM)`. -/
-def galRepOfDiscreteModuleH0Equiv :
-    H0 (AbsoluteGaloisGroup F) M ≃+ continuousCohomology 0 (galRepOfDiscreteModule n F M hM) :=
-  letI : Module (ZMod n) M := AddCommGroup.zmodModule hM
-  galRepOfZModModuleH0Equiv n F M
-
-/-- `galRepOfDiscreteModuleH0Equiv` is pullback along `absoluteGaloisGroupRestrictEquiv F`
-followed by the degree-zero comparison with canonical continuous cohomology. -/
-theorem galRepOfDiscreteModuleH0Equiv_apply (x : H0 (AbsoluteGaloisGroup F) M) :
-    galRepOfDiscreteModuleH0Equiv n F M hM x =
-      ofDiscreteModuleRestrictScalarsIntEquiv (galRepOfDiscreteModule n F M hM) 0
-        ((explicitH0IsoContinuousCohomology (Field.absoluteGaloisGroup F)
-            (galRepOfDiscreteModule n F M hM).V).toContinuousLinearEquiv.toAddEquiv
-          (explicitMap0 (AbsoluteGaloisGroup F) M
-            (absoluteGaloisGroupRestrictEquiv F :
-              Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F)
-            (galRepOfDiscreteModuleEquiv n F M hM).toAddMonoidHom
-            (fun g m ↦ (galRepOfDiscreteModuleEquiv_smul n F M hM g m).trans
-              (TopRep.distribMulAction_smul _ g _).symm) x)) := by
-  let _ : Module (ZMod n) M := AddCommGroup.zmodModule hM
-  exact galRepOfZModModuleH0Equiv_apply n F M x
-
-variable [ContinuousSMul (AbsoluteGaloisGroup F) M]
-
-/-- `galRepOfDiscreteModule n F M hM` is smooth and discrete when `G_F` acts continuously on
-`M`. -/
-theorem isSmoothDiscrete_galRepOfDiscreteModule :
-    IsSmoothDiscrete (ZMod n) (galRepOfDiscreteModule n F M hM) := by
-  let _ : Module (ZMod n) M := AddCommGroup.zmodModule hM
-  exact isSmoothDiscrete_galRepOfZModModule n F M
-
-/-- `Fact` instance for `isSmoothDiscrete_galRepOfDiscreteModule`. -/
-instance : Fact (IsSmoothDiscrete (ZMod n) (galRepOfDiscreteModule n F M hM)) :=
-  ⟨isSmoothDiscrete_galRepOfDiscreteModule n F M hM⟩
-
-/-- The action of `Field.absoluteGaloisGroup F` on `galRepOfDiscreteModule n F M hM` is
-continuous. -/
-instance : ContinuousSMul (Field.absoluteGaloisGroup F) (galRepOfDiscreteModule n F M hM).V :=
-  (isSmoothDiscrete_galRepOfDiscreteModule n F M hM).continuousSMul
-
-/-- **Degree-one cohomology comparison** between explicit `H¹(G_F, M)` and
-`continuousCohomology 1 (galRepOfDiscreteModule n F M hM)`. -/
-def galRepOfDiscreteModuleH1Equiv :
-    H1 (AbsoluteGaloisGroup F) M ≃+ continuousCohomology 1 (galRepOfDiscreteModule n F M hM) :=
-  letI : Module (ZMod n) M := AddCommGroup.zmodModule hM
-  galRepOfZModModuleH1Equiv n F M
-
-/-- `galRepOfDiscreteModuleH1Equiv` is degree-one pullback along
-`absoluteGaloisGroupRestrictEquiv F` followed by the comparison with canonical continuous
-cohomology. -/
-theorem galRepOfDiscreteModuleH1Equiv_apply (x : H1 (AbsoluteGaloisGroup F) M) :
-    galRepOfDiscreteModuleH1Equiv n F M hM x =
-      (galRepOfDiscreteModule n F M hM).explicitH1AddEquivContinuousCohomologyOfDiscrete
-        (explicitMap1 (AbsoluteGaloisGroup F) M (Field.absoluteGaloisGroup F)
-          (galRepOfDiscreteModule n F M hM).V (absoluteGaloisGroupRestrictEquiv F)
-          (galRepOfDiscreteModuleEquiv n F M hM).toAddMonoidHom continuous_of_discreteTopology
-          (fun g m ↦ (galRepOfDiscreteModuleEquiv_smul n F M hM g m).trans
-            (TopRep.distribMulAction_smul _ g _).symm) x) := by
-  let _ : Module (ZMod n) M := AddCommGroup.zmodModule hM
-  exact galRepOfZModModuleH1Equiv_apply n F M x
-
-/-- **Degree-two cohomology comparison** between explicit `H²(G_F, M)` and
-`continuousCohomology 2 (galRepOfDiscreteModule n F M hM)`. -/
-def galRepOfDiscreteModuleH2Equiv :
-    H2 (AbsoluteGaloisGroup F) M ≃+ continuousCohomology 2 (galRepOfDiscreteModule n F M hM) :=
-  letI : Module (ZMod n) M := AddCommGroup.zmodModule hM
-  galRepOfZModModuleH2Equiv n F M
-
-/-- `galRepOfDiscreteModuleH2Equiv` is degree-two pullback along
-`absoluteGaloisGroupRestrictEquiv F` followed by the comparison with canonical continuous
-cohomology. -/
-theorem galRepOfDiscreteModuleH2Equiv_apply (x : H2 (AbsoluteGaloisGroup F) M) :
-    galRepOfDiscreteModuleH2Equiv n F M hM x =
-      (galRepOfDiscreteModule n F M hM).explicitH2AddEquivContinuousCohomologyOfDiscrete
-        (explicitMap2 (AbsoluteGaloisGroup F) M (Field.absoluteGaloisGroup F)
-          (galRepOfDiscreteModule n F M hM).V (absoluteGaloisGroupRestrictEquiv F)
-          (galRepOfDiscreteModuleEquiv n F M hM).toAddMonoidHom continuous_of_discreteTopology
-          (fun g m ↦ (galRepOfDiscreteModuleEquiv_smul n F M hM g m).trans
-            (TopRep.distribMulAction_smul _ g _).symm) x) := by
-  let _ : Module (ZMod n) M := AddCommGroup.zmodModule hM
-  exact galRepOfZModModuleH2Equiv_apply n F M x
-
-end Unbundled
 
 end TauCeti

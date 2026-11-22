@@ -20,14 +20,17 @@ coefficient module uses the separable closure, so inertia is transported from th
 through `TauCeti.absoluteGaloisGroupRestrictEquiv`. When `W` is elliptic and `m ≠ 0`, this
 unramified subgroup is finite of order `#E(K)[m]`.
 
-At good reduction, if `m` is prime to the residue characteristic, every Kummer class is
-unramified. Indeed inertia fixes every `m`-division point of a rational point, so the cocycle
-`σ ↦ σ Q - Q` vanishes on inertia. Over the completion of a Dedekind domain at a prime `u` with
-finite residue field not dividing `m`, comparing orders with `[E(K) : m E(K)] = #E(K)[m]` upgrades
-this inclusion to equality: `(W.kummerMap m hm).range = W.unramifiedTorsionCohomology m`.
+When the chosen equation `W` is integral over `𝒪[K]` with an elliptic integral model (unit
+discriminant), if `m` is prime to the residue characteristic, every Kummer class is unramified.
+Indeed inertia fixes every `m`-division point of a rational point, so the cocycle `σ ↦ σ Q - Q`
+vanishes on inertia. Over the completion `F_u` of the fraction field of a Dedekind domain at a
+prime `u` with finite residue field not dividing `m`, if the chosen equation `V` is integral over
+`𝒪[F_u]` with an elliptic integral model, comparing orders with `[E(F_u) : m E(F_u)] = #E(F_u)[m]`
+upgrades this inclusion to equality: `(V.kummerMap m hm).range = V.unramifiedTorsionCohomology m`.
 
 Consequently a Selmer class restricts to an unramified class at each nonarchimedean local
-field in its defining family where the equation has good reduction and `m` is a residue unit.
+field in its defining family where the base-changed equation is integral with unit discriminant and
+`m` is a residue unit.
 Unramifiedness is also stable under restriction to any extension of nonarchimedean local fields,
 since the inertia subgroup of the larger field maps into that of the smaller one. This carries the
 local conditions at the places of a number field to the places of a finite extension, such as the
@@ -143,15 +146,20 @@ theorem kummerCocycle_eq_zero_of_mem_inertiaSubgroup
   rw [coe_kummerCocycle, smul_pointCoeff_eq_self_of_mem_inertiaSubgroup hm hQ hσ, sub_self]
   rfl
 
+private theorem residueField_natCast_ne_zero_of_not_mem {A : Type*} [CommRing A]
+    [IsDedekindDomain A] {F : Type*} [Field F] [Algebra A F] [IsFractionRing A F]
+    (u : IsDedekindDomain.HeightOneSpectrum A) {m : ℕ} (hm : (m : A) ∉ u.asIdeal) :
+    (m : 𝓀[u.adicCompletion F]) ≠ 0 := by
+  rw [Ne, ringChar.spec, u.ringChar_residueField_adicCompletion_dvd_iff]
+  exact hm
+
 open scoped Classical in
 /-- At good reduction, the Kummer class of a rational point is unramified when the multiplier is
 prime to the residue characteristic. -/
 theorem kummerMap_mem_unramifiedTorsionCohomology
     (hmres : (m : 𝓀[K]) ≠ 0) (P : W.toAffine.Point) :
-    W.kummerMap m (by
-      have hm := (IsLocalRing.residue_ne_zero_iff_isUnit (m : 𝒪[K])).mp
-        (by simpa using hmres)
-      simpa using hm.map (algebraMap 𝒪[K] K)) P ∈ W.unramifiedTorsionCohomology m := by
+    W.kummerMap m (natCast_ne_zero_of_residueField_natCast_ne_zero hmres).isUnit P ∈
+      W.unramifiedTorsionCohomology m := by
   classical
   generalize_proofs
   rename_i hm
@@ -168,10 +176,8 @@ open scoped Classical in
 the unramified local condition. -/
 theorem range_kummerMap_le_unramifiedTorsionCohomology
     (hmres : (m : 𝓀[K]) ≠ 0) :
-    (W.kummerMap m (by
-      have hm := (IsLocalRing.residue_ne_zero_iff_isUnit (m : 𝒪[K])).mp
-        (by simpa using hmres)
-      simpa using hm.map (algebraMap 𝒪[K] K))).range ≤ W.unramifiedTorsionCohomology m := by
+    (W.kummerMap m (natCast_ne_zero_of_residueField_natCast_ne_zero hmres).isUnit).range ≤
+      W.unramifiedTorsionCohomology m := by
   classical
   rintro c ⟨P, rfl⟩
   exact W.kummerMap_mem_unramifiedTorsionCohomology m hmres P
@@ -186,19 +192,16 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A]
   (V : WeierstrassCurve (u.adicCompletion F))
   [IsIntegral 𝒪[u.adicCompletion F] V] [(integralModel 𝒪[u.adicCompletion F] V).IsElliptic]
 
-/-- **At good reduction away from `m`, the local Kummer image equals unramified cohomology**
-(Milne, *ADT* I, Proposition 3.8): over the `u`-adic completion of the fraction field of a
-Dedekind domain with finite residue field `A ⧸ u`, if `V` has good reduction and `m ∉ u`, then
-`im(δ_m : E(F_u) → H¹(G_{F_u}, E[m])) = H¹_ur(G_{F_u}, E[m])`. -/
+/-- **When the chosen equation is integral with unit discriminant away from `m`, the local Kummer
+image equals unramified cohomology** (Milne, *ADT* I, Proposition 3.8): over the `u`-adic
+completion of the fraction field of a Dedekind domain with finite residue field `A ⧸ u`, if the
+chosen equation `V` is integral over `𝒪[F_u]` with an elliptic integral model (unit discriminant)
+and `m ∉ u`, then `im(δ_m : E(F_u) → H¹(G_{F_u}, E[m])) = H¹_ur(G_{F_u}, E[m])`. -/
 theorem range_kummerMap_eq_unramifiedTorsionCohomology
     (hm : (m : A) ∉ u.asIdeal) :
-    (V.kummerMap m (by
-      have hmres : (m : 𝓀[u.adicCompletion F]) ≠ 0 := by
-        rw [Ne, ringChar.spec, u.ringChar_residueField_adicCompletion_dvd_iff]
-        exact hm
-      have hmo := (IsLocalRing.residue_ne_zero_iff_isUnit (m : 𝒪[u.adicCompletion F])).mp
-        (by simpa using hmres)
-      simpa using hmo.map (algebraMap 𝒪[u.adicCompletion F] (u.adicCompletion F)))).range =
+    (V.kummerMap m (natCast_ne_zero_of_residueField_natCast_ne_zero (K := u.adicCompletion F)
+      (by rw [Ne, ringChar.spec, u.ringChar_residueField_adicCompletion_dvd_iff]
+          exact hm)).isUnit).range =
       V.unramifiedTorsionCohomology m := by
   cases Subsingleton.elim ‹DecidableEq (u.adicCompletion F)›
     (fun a b ↦ Classical.propDecidable (a = b))
@@ -206,13 +209,10 @@ theorem range_kummerMap_eq_unramifiedTorsionCohomology
   have : V.IsElliptic := by
     rw [← baseChange_integralModel_eq 𝒪[u.adicCompletion F] V]
     infer_instance
-  have hmres : (m : 𝓀[u.adicCompletion F]) ≠ 0 := by
-    rw [Ne, ringChar.spec, u.ringChar_residueField_adicCompletion_dvd_iff]
-    exact hm
-  have hmU : IsUnit (m : u.adicCompletion F) := by
-    have hmo := (IsLocalRing.residue_ne_zero_iff_isUnit (m : 𝒪[u.adicCompletion F])).mp
-      (by simpa using hmres)
-    simpa using hmo.map (algebraMap 𝒪[u.adicCompletion F] (u.adicCompletion F))
+  have hmres : (m : 𝓀[u.adicCompletion F]) ≠ 0 :=
+    residueField_natCast_ne_zero_of_not_mem u hm
+  have hmU : IsUnit (m : u.adicCompletion F) :=
+    (natCast_ne_zero_of_residueField_natCast_ne_zero hmres).isUnit
   have : NeZero m := NeZero.of_neZero_natCast (u.adicCompletion F) (h := ⟨hmU.ne_zero⟩)
   apply AddSubgroup.eq_of_le_of_card_ge (V.range_kummerMap_le_unramifiedTorsionCohomology m hmres)
   rw [V.natCard_unramifiedTorsionCohomology m, ← AddSubgroup.index_ker, V.ker_kummerMap m hmU,
@@ -235,8 +235,9 @@ variable {K : Type*} [Field K] (W : WeierstrassCurve K)
   [IsIntegral 𝒪[L i] (W⁄(L i))] [(integralModel 𝒪[L i] (W⁄(L i))).IsElliptic]
 
 /-- A Selmer class is unramified at each nonarchimedean local field in its defining family
-where the equation has good reduction and the multiplier is prime to the residue characteristic.
-No good-reduction assumption is made at the other fields in the family. -/
+where the base-changed equation is integral with unit discriminant and the multiplier is prime to
+the residue characteristic. No good-reduction assumption is made at the other fields in the
+family. -/
 theorem torsionRes_mem_unramifiedTorsionCohomology_of_mem_selmerGroup {m : ℕ}
     (hmres : (m : 𝓀[L i]) ≠ 0)
     {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)} (hc : c ∈ W.selmerGroup τ m) :
@@ -251,10 +252,7 @@ theorem torsionRes_mem_unramifiedTorsionCohomology_of_mem_selmerGroup {m : ℕ}
     have hΔL := (W⁄(L i)).isUnit_Δ.ne_zero
     rw [baseChange, map_Δ, hΔ, map_zero] at hΔL
     exact hΔL rfl
-  have hmL : IsUnit (m : L i) := by
-    have hm := (IsLocalRing.residue_ne_zero_iff_isUnit (m : 𝒪[L i])).mp
-      (by simpa using hmres)
-    simpa using hm.map (algebraMap 𝒪[L i] (L i))
+  have hmL : IsUnit (m : L i) := (natCast_ne_zero_of_residueField_natCast_ne_zero hmres).isUnit
   have hm : IsUnit (m : K) := by
     rw [isUnit_iff_ne_zero]
     intro h
@@ -296,9 +294,10 @@ theorem mem_unramifiedOutsideTorsionCohomology_iff
       ∀ v ∉ S, W.torsionRes (τ v) m c ∈ (W⁄(v.adicCompletion K)).unramifiedTorsionCohomology m := by
   simp only [unramifiedOutsideTorsionCohomology, AddSubgroup.mem_iInf, AddSubgroup.mem_comap]
 
-/-- **Selmer classes are unramified outside the bad primes.** If `W` has good reduction at every
-prime `v ∉ S` and no prime outside `S` divides `m`, then every class of the `m`-Selmer group
-relative to the completions `K_v` is unramified outside `S`. -/
+/-- **Selmer classes are unramified outside the bad primes.** If the base-changed equation `W⁄K_v`
+is integral over `𝒪[K_v]` with an elliptic integral model at every prime `v ∉ S` and no prime
+outside `S` divides `m`, then every class of the `m`-Selmer group relative to the completions `K_v`
+is unramified outside `S`. -/
 theorem selmerGroup_le_unramifiedOutsideTorsionCohomology
     (hgood : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W⁄(v.adicCompletion K)),
       (integralModel 𝒪[v.adicCompletion K] (W⁄(v.adicCompletion K))).IsElliptic)
@@ -308,9 +307,8 @@ theorem selmerGroup_le_unramifiedOutsideTorsionCohomology
   rw [mem_unramifiedOutsideTorsionCohomology_iff]
   intro v hv
   obtain ⟨_, _⟩ := hgood v hv
-  refine W.torsionRes_mem_unramifiedTorsionCohomology_of_mem_selmerGroup τ v ?_ hc
-  rw [Ne, ringChar.spec, v.ringChar_residueField_adicCompletion_dvd_iff]
-  exact hS v hv
+  exact W.torsionRes_mem_unramifiedTorsionCohomology_of_mem_selmerGroup τ v
+    (residueField_natCast_ne_zero_of_not_mem v (hS v hv)) hc
 
 end Dedekind
 

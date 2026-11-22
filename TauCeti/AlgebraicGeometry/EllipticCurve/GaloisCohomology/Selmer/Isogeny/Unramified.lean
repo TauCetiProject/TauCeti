@@ -151,6 +151,68 @@ theorem localCondition_selmerStructure_eq_unramifiedKerCohomology (v : HeightOne
 
 end DedekindSinglePlace
 
+section DedekindOutsideS
+
+open IsDedekindDomain
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+  {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+  {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
+  (φ : Isogeny W₁.toAffine W₂.toAffine)
+  (τ : ∀ v : HeightOneSpectrum R,
+    SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+
+/-- **`φ`-Selmer classes are unramified outside the bad primes of `W₁` and the divisors of
+`deg φ`.** Only residue fields at height-one primes outside `S` are assumed finite. -/
+theorem selmerGroup_le_unramifiedOutsideKerCohomology {S : Set (HeightOneSpectrum R)}
+    (hfinite : ∀ v ∉ S, Finite (R ⧸ v.asIdeal))
+    (hgood : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W₁⁄(v.adicCompletion K)),
+      (integralModel 𝒪[v.adicCompletion K] (W₁⁄(v.adicCompletion K))).IsElliptic)
+    (hS : ∀ v ∉ S, (φ.degree : R) ∉ v.asIdeal) :
+    φ.selmerGroup τ ≤ φ.unramifiedOutsideKerCohomology τ S hfinite := by
+  intro c hc
+  rw [mem_unramifiedOutsideKerCohomology_iff]
+  intro v hv
+  have : Finite (R ⧸ v.asIdeal) := hfinite v hv
+  obtain ⟨_, _⟩ := hgood v hv
+  refine φ.kerRes_mem_unramifiedKerCohomology_of_mem_selmerGroup τ v ?_ hc
+  rw [Ne, ringChar.spec, v.ringChar_residueField_adicCompletion_dvd_iff]
+  exact hS v hv
+
+/-- **Presentation of `Sel_φ` relative to an exceptional set `S` over a Dedekind domain whose
+height-one primes outside `S` have finite residue fields.** If both displayed base-changed
+equations `W₁⁄K_v` and `W₂⁄K_v` are integral over `𝒪[K_v]` with elliptic integral models (unit
+discriminant) for every `v ∉ S` and no prime outside `S` divides `deg φ`, then a class in
+`H¹(G_K, E₁[φ])` belongs to `Sel_φ` (relative to all height-one completions) if and only if it is
+unramified outside `S` and satisfies the local condition at the primes in `S`. When `S` is finite,
+this reduces `Sel_φ` to finitely many local conditions outside the unramified locus. -/
+theorem mem_selmerGroup_iff_mem_unramifiedOutsideKerCohomology_and_forall_mem
+    {S : Set (HeightOneSpectrum R)}
+    (hfinite : ∀ v ∉ S, Finite (R ⧸ v.asIdeal))
+    (hgood₁ : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W₁⁄(v.adicCompletion K)),
+      (integralModel 𝒪[v.adicCompletion K] (W₁⁄(v.adicCompletion K))).IsElliptic)
+    (hgood₂ : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W₂⁄(v.adicCompletion K)),
+      (integralModel 𝒪[v.adicCompletion K] (W₂⁄(v.adicCompletion K))).IsElliptic)
+    (hS : ∀ v ∉ S, (φ.degree : R) ∉ v.asIdeal)
+    {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} :
+    c ∈ φ.selmerGroup τ ↔
+      c ∈ φ.unramifiedOutsideKerCohomology τ S hfinite ∧
+        ∀ v ∈ S, φ.kerRes (τ v) c ∈ (φ.selmerStructure τ).localCondition v := by
+  refine ⟨fun hc ↦ ⟨φ.selmerGroup_le_unramifiedOutsideKerCohomology τ hfinite hgood₁ hS hc,
+    fun v _ ↦ (φ.mem_selmerGroup_iff_forall_kerRes_mem_localCondition τ).1 hc v⟩, ?_⟩
+  rintro ⟨hur, hloc⟩
+  rw [mem_selmerGroup_iff_forall_kerRes_mem_localCondition]
+  intro v
+  by_cases hv : v ∈ S
+  · exact hloc v hv
+  · have : Finite (R ⧸ v.asIdeal) := hfinite v hv
+    obtain ⟨_, _⟩ := hgood₁ v hv
+    obtain ⟨_, _⟩ := hgood₂ v hv
+    rw [φ.localCondition_selmerStructure_eq_unramifiedKerCohomology τ v (hS v hv)]
+    exact mem_unramifiedOutsideKerCohomology_iff.mp hur v hv
+
+end DedekindOutsideS
+
 section DedekindGlobal
 
 open IsDedekindDomain
@@ -163,30 +225,15 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   (τ : ∀ v : HeightOneSpectrum R,
     SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
 
-/-- **`φ`-Selmer classes are unramified outside the bad primes of `W₁` and the divisors of
-`deg φ`.** -/
-theorem selmerGroup_le_unramifiedOutsideKerCohomology {S : Set (HeightOneSpectrum R)}
-    (hgood : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W₁⁄(v.adicCompletion K)),
-      (integralModel 𝒪[v.adicCompletion K] (W₁⁄(v.adicCompletion K))).IsElliptic)
-    (hS : ∀ v ∉ S, (φ.degree : R) ∉ v.asIdeal) :
-    φ.selmerGroup τ ≤ φ.unramifiedOutsideKerCohomology τ S := by
-  intro c hc
-  rw [mem_unramifiedOutsideKerCohomology_iff]
-  intro v hv
-  obtain ⟨_, _⟩ := hgood v hv
-  refine φ.kerRes_mem_unramifiedKerCohomology_of_mem_selmerGroup τ v ?_ hc
-  rw [Ne, ringChar.spec, v.ringChar_residueField_adicCompletion_dvd_iff]
-  exact hS v hv
-
 variable (R) in
 /-- **There is a finite set of primes containing `S` outside which every `φ`-Selmer class is
 unramified**, whenever `deg φ` is nonzero in `K`. -/
 theorem exists_finset_selmerGroup_le_unramifiedOutsideKerCohomology
     (hφ : (φ.degree : K) ≠ 0) (S : Finset (HeightOneSpectrum R)) :
     ∃ T : Finset (HeightOneSpectrum R), S ⊆ T ∧
-      φ.selmerGroup τ ≤ φ.unramifiedOutsideKerCohomology τ T := by
+      φ.selmerGroup τ ≤ φ.unramifiedOutsideKerCohomology τ T (fun _ _ ↦ inferInstance) := by
   obtain ⟨T, hST, hgood, hprime⟩ := exists_finset_isElliptic_integralModel_adicCompletion R W₁ hφ S
-  exact ⟨T, hST, φ.selmerGroup_le_unramifiedOutsideKerCohomology τ hgood hprime⟩
+  exact ⟨T, hST, φ.selmerGroup_le_unramifiedOutsideKerCohomology τ _ hgood hprime⟩
 
 variable (R) in
 /-- **At all but finitely many places `v`, the local condition of `φ.selmerStructure τ` equals the
@@ -201,35 +248,6 @@ theorem eventually_localCondition_selmerStructure_eq_unramifiedKerCohomology
     eventually_isElliptic_integralModel_adicCompletion R W₂] with v hv ⟨_, _⟩
   obtain ⟨_, _⟩ := hT₁ v hv
   exact φ.localCondition_selmerStructure_eq_unramifiedKerCohomology τ v (hTdeg v hv)
-
-/-- **Presentation of `Sel_φ` relative to an exceptional set `S` over a Dedekind domain with
-finite residue fields at every height-one prime.** If `W₁` and `W₂` have good reduction outside
-`S` and no prime outside `S` divides `deg φ`, then a class in `H¹(G_K, E₁[φ])` belongs to
-`Sel_φ` (relative to all height-one completions) if and only if it is unramified outside `S` and
-satisfies the local condition at the primes in `S`. When `S` is finite, this reduces `Sel_φ` to
-finitely many local conditions outside the unramified locus. -/
-theorem mem_selmerGroup_iff_mem_unramifiedOutsideKerCohomology_and_forall_mem
-    {S : Set (HeightOneSpectrum R)}
-    (hgood₁ : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W₁⁄(v.adicCompletion K)),
-      (integralModel 𝒪[v.adicCompletion K] (W₁⁄(v.adicCompletion K))).IsElliptic)
-    (hgood₂ : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W₂⁄(v.adicCompletion K)),
-      (integralModel 𝒪[v.adicCompletion K] (W₂⁄(v.adicCompletion K))).IsElliptic)
-    (hS : ∀ v ∉ S, (φ.degree : R) ∉ v.asIdeal)
-    {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} :
-    c ∈ φ.selmerGroup τ ↔
-      c ∈ φ.unramifiedOutsideKerCohomology τ S ∧
-        ∀ v ∈ S, φ.kerRes (τ v) c ∈ (φ.selmerStructure τ).localCondition v := by
-  refine ⟨fun hc ↦ ⟨φ.selmerGroup_le_unramifiedOutsideKerCohomology τ hgood₁ hS hc,
-    fun v _ ↦ (φ.mem_selmerGroup_iff_forall_kerRes_mem_localCondition τ).1 hc v⟩, ?_⟩
-  rintro ⟨hur, hloc⟩
-  rw [mem_selmerGroup_iff_forall_kerRes_mem_localCondition]
-  intro v
-  by_cases hv : v ∈ S
-  · exact hloc v hv
-  · obtain ⟨_, _⟩ := hgood₁ v hv
-    obtain ⟨_, _⟩ := hgood₂ v hv
-    rw [φ.localCondition_selmerStructure_eq_unramifiedKerCohomology τ v (hS v hv)]
-    exact mem_unramifiedOutsideKerCohomology_iff.mp hur v hv
 
 end DedekindGlobal
 

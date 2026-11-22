@@ -302,7 +302,6 @@ section Global
 open IsDedekindDomain
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
-  [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
   {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁.toAffine W₂.toAffine)
@@ -311,16 +310,20 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 
 /-- **The classes of `H¹(G_K, E₁[φ])` unramified outside `S`**: those whose restriction to `K_v`
 along `τ v` is unramified for every height-one prime `v ∉ S`. -/
-def unramifiedOutsideKerCohomology (S : Set (HeightOneSpectrum R)) :
+def unramifiedOutsideKerCohomology (S : Set (HeightOneSpectrum R))
+    (hfinite : ∀ v ∉ S, Finite (R ⧸ v.asIdeal)) :
     AddSubgroup (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :=
-  ⨅ (v : HeightOneSpectrum R) (_ : v ∉ S),
+  ⨅ (v : HeightOneSpectrum R) (hv : v ∉ S),
+    letI : Finite (R ⧸ v.asIdeal) := hfinite v hv
     ((φ.baseChange (v.adicCompletion K)).unramifiedKerCohomology).comap (φ.kerRes (τ v))
 
 /-- `unramifiedOutsideKerCohomology` is the infimum over `v ∉ S` of the pullbacks along `φ.kerRes`
 of the local unramified kernel cohomology subgroups. -/
-theorem unramifiedOutsideKerCohomology_def (S : Set (HeightOneSpectrum R)) :
-    φ.unramifiedOutsideKerCohomology τ S =
-      ⨅ (v : HeightOneSpectrum R) (_ : v ∉ S),
+theorem unramifiedOutsideKerCohomology_def (S : Set (HeightOneSpectrum R))
+    (hfinite : ∀ v ∉ S, Finite (R ⧸ v.asIdeal)) :
+    φ.unramifiedOutsideKerCohomology τ S hfinite =
+      ⨅ (v : HeightOneSpectrum R) (hv : v ∉ S),
+        letI : Finite (R ⧸ v.asIdeal) := hfinite v hv
         ((φ.baseChange (v.adicCompletion K)).unramifiedKerCohomology).comap (φ.kerRes (τ v)) :=
   (rfl)
 
@@ -329,15 +332,20 @@ variable {φ τ} in
 `v ∉ S` lies in `(φ.baseChange K_v).unramifiedKerCohomology`. -/
 @[simp]
 theorem mem_unramifiedOutsideKerCohomology_iff {S : Set (HeightOneSpectrum R)}
+    {hfinite : ∀ v ∉ S, Finite (R ⧸ v.asIdeal)}
     {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} :
-    c ∈ φ.unramifiedOutsideKerCohomology τ S ↔
-      ∀ v ∉ S, φ.kerRes (τ v) c ∈ (φ.baseChange (v.adicCompletion K)).unramifiedKerCohomology := by
+    c ∈ φ.unramifiedOutsideKerCohomology τ S hfinite ↔
+      ∀ (v : HeightOneSpectrum R) (hv : v ∉ S),
+        letI : Finite (R ⧸ v.asIdeal) := hfinite v hv
+        φ.kerRes (τ v) c ∈ (φ.baseChange (v.adicCompletion K)).unramifiedKerCohomology := by
   simp only [unramifiedOutsideKerCohomology, AddSubgroup.mem_iInf, AddSubgroup.mem_comap]
 
 /-- Enlarging the exceptional set `S` enlarges `unramifiedOutsideKerCohomology`. -/
-theorem unramifiedOutsideKerCohomology_mono {S T : Set (HeightOneSpectrum R)} (hST : S ⊆ T) :
-    φ.unramifiedOutsideKerCohomology τ S ≤ φ.unramifiedOutsideKerCohomology τ T := fun _ hc ↦
-  mem_unramifiedOutsideKerCohomology_iff.2 fun v hv ↦
+theorem unramifiedOutsideKerCohomology_mono {S T : Set (HeightOneSpectrum R)} (hST : S ⊆ T)
+    (hfinite : ∀ v ∉ S, Finite (R ⧸ v.asIdeal)) :
+    φ.unramifiedOutsideKerCohomology τ S hfinite ≤
+      φ.unramifiedOutsideKerCohomology τ T (fun v hv ↦ hfinite v fun hvS ↦ hv (hST hvS)) :=
+  fun _ hc ↦ mem_unramifiedOutsideKerCohomology_iff.2 fun v hv ↦
     mem_unramifiedOutsideKerCohomology_iff.1 hc v (fun hvS ↦ hv (hST hvS))
 
 end Global

@@ -180,9 +180,13 @@ theorem finite_H1_of_nsmul_eq_zero (hn : (n : F) ≠ 0)
     [DistribMulAction (AbsoluteGaloisGroup F) M] [ContinuousSMul (AbsoluteGaloisGroup F) M]
     [Finite M] (hM : ∀ x : M, n • x = 0) :
     Finite (H1 (AbsoluteGaloisGroup F) M) := by
-  have : Finite (continuousCohomology 1 (galRepOfDiscreteModule n F M hM)) :=
-    finite_continuousCohomology_of_le_one hn (galRepOfDiscreteModule n F M hM) Fact.out le_rfl
-  exact Finite.of_equiv _ (galRepOfDiscreteModuleH1Equiv n F M hM).symm.toEquiv
+  let : Module (ZMod n) M := AddCommGroup.zmodModule hM
+  let A := galRepOfZModModule n F M
+  have : Finite (continuousCohomology 1 A) :=
+    @finite_continuousCohomology_of_le_one F _ _ _ _ n hn A
+      (isSmoothDiscrete_galRepOfZModModule n F M)
+      (Finite.of_equiv M (galRepOfZModModuleEquiv n F M).toEquiv) 1 le_rfl
+  exact Finite.of_equiv _ (galRepOfZModModuleH1Equiv n F M).symm.toEquiv
 
 /-- **Finiteness of explicit `H¹` (by order).** Let `F` be a nonarchimedean local field and `M` a
 finite discrete `G_F`-module whose order is nonzero in `F`. Then `H¹(G_F, M)` is finite. -/

@@ -6,13 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.ZMod.Injective
-public import TauCeti.Algebra.Module.ZMod.SMulCommClass
 public import TauCeti.FieldTheory.GaloisCohomology.DiscreteGalRep
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
-public import TauCeti.Topology.Algebra.MulAction.Discrete
 
 /-!
 # The roots of unity as a coefficient object, and the transported Kummer isomorphism

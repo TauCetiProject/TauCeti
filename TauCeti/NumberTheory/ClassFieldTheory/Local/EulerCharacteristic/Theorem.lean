@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.De
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Formula
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Induced
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.ModularInduction
-import TauCeti.RepresentationTheory.Homological.ContCohomology.NatCardComparison
 
 /-!
 # Tate's local Euler characteristic formula
@@ -116,32 +115,16 @@ theorem natCard_H1_eq_mul (M : Type) [AddCommGroup M] [TopologicalSpace M]
       Nat.card (ContCohomology.H0 (AbsoluteGaloisGroup F) M) *
         Nat.card (ContCohomology.H2 (AbsoluteGaloisGroup F) M) *
         p ^ (Module.finrank ℚ_[p] F * padicValNat p (Nat.card M)) := by
-  let := AddCommGroup.zmodModule (fun (_ : M) ↦ card_nsmul_eq_zero')
-  let A := ofDiscreteModule (ZMod (Nat.card M)) (AbsoluteGaloisGroup F) M
-  let r := absoluteGaloisGroupRestrictEquiv F
-  let X : GalRep (Nat.card M) F :=
-    TopRep.res ((r : Field.absoluteGaloisGroup F →ₜ* AbsoluteGaloisGroup F) :
-      Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F) A
-  have hX : IsSmoothDiscrete (ZMod (Nat.card M)) X :=
-    (ofDiscreteModule_isSmoothDiscrete _ _ _).res r.continuous
-  have : Fact (IsSmoothDiscrete (ZMod (Nat.card M)) X) := ⟨hX⟩
-  have hA : IsSmoothDiscrete (ZMod (Nat.card M)) A :=
-    ofDiscreteModule_isSmoothDiscrete _ _ _
-  let := TopRep.distribMulAction A
-  have : Finite X.V := ‹Finite M›
-  have := r.symm.toHomeomorph.isOpenEmbedding.locallyCompactSpace
-  -- Instance synthesis gets stuck on the bundled carrier, so supply its topology explicitly.
-  have hc₀ := @TopRep.natCard_H0_eq_natCard_continuousCohomology
-    _ _ _ _ _ _ _ A hA.discreteTopology
-  have hc₁ := @TopRep.natCard_H1_eq_natCard_continuousCohomology
-    _ _ _ _ _ _ _ A hA.discreteTopology hA.continuousSMul
-  have hc₂ := @TopRep.natCard_H2_eq_natCard_continuousCohomology
-    _ _ _ _ _ _ _ A hA.discreteTopology hA.continuousSMul inferInstance
-  have h := eulerCharacteristic_mixed p F (Nat.card M) Nat.card_pos.ne' X inferInstance
-  rw [r.natCard_continuousCohomology_res A 0,
-    r.natCard_continuousCohomology_res A 1,
-    r.natCard_continuousCohomology_res A 2,
-    ← hc₀, ← hc₁, ← hc₂] at h
+  let : Module (ZMod (Nat.card M)) M :=
+    AddCommGroup.zmodModule (fun (_ : M) ↦ card_nsmul_eq_zero')
+  let A := galRepOfZModModule (Nat.card M) F M
+  have h := @eulerCharacteristic_mixed p _ F _ _ _ _ _ (Nat.card M) Nat.card_pos.ne' A
+    (Finite.of_equiv M (galRepOfZModModuleEquiv (Nat.card M) F M).toEquiv)
+    ⟨isSmoothDiscrete_galRepOfZModModule (Nat.card M) F M⟩
+  rw [← Nat.card_congr (galRepOfZModModuleH0Equiv (Nat.card M) F M).toEquiv,
+    ← Nat.card_congr (galRepOfZModModuleH1Equiv (Nat.card M) F M).toEquiv,
+    ← Nat.card_congr (galRepOfZModModuleH2Equiv (Nat.card M) F M).toEquiv,
+    Nat.card_congr (galRepOfZModModuleEquiv (Nat.card M) F M).symm.toEquiv] at h
   exact h
 
 section ExplicitPrimeToP
