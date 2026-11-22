@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.FreeGroup.Computability
 public import TauCeti.GroupTheory.FreeGroup.Conjugacy.Basic
 public import TauCeti.GroupTheory.ProperPower
 import TauCeti.Computability.Primrec.List
+import TauCeti.GroupTheory.FreeGroup.Reduce
 
 /-!
 # Primitive-recursive proper-power membership

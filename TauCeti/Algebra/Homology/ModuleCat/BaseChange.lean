@@ -186,7 +186,7 @@ theorem flat_X_of_quasiIso {P K : CochainComplex (ModuleCat.{u} R) ℤ} (ψ : P 
     (D.pOpcyclesIso (a - 2) (a - 1) (by simp; lia) (hzero.eq_of_src _ _)).toLinearEquiv
   -- The term `P.X a` of the source is a direct summand of the cone in degree `a - 1`.
   exact Module.Flat.of_retract (f := hD) ((mappingCone.inl ψ).v a (a - 1) (by lia)).hom
-    ((mappingCone.fst ψ).1.v (a - 1) a (by lia)).hom
+    ((mappingCone.fst ψ).val.v (a - 1) a (by lia)).hom
     (by rw [← ModuleCat.hom_comp, mappingCone.inl_v_fst_v, ModuleCat.hom_id])
 
 /-- **Finite projective models of bounded flat complexes** (Mumford). Let `R` be a Noetherian ring

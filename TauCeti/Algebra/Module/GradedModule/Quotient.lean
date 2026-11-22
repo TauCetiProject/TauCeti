@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.LinearAlgebra.Graded.LinearMap
+public import TauCeti.LinearAlgebra.Submodule.Independent
 
 /-!
 # Gradings of homogeneous submodules and of their quotients
@@ -103,7 +104,7 @@ noncomputable def submodule : InternalGrading R U ι where
   piece p := (G.piece p).comap (U.subtype.restrictScalars R)
   isInternal := DirectSum.isInternal_comap G.piece _ (U.subtype.restrictScalars R)
     Subtype.val_injective
-    (fun _ _ ↦ Iff.rfl) fun p x ↦ ⟨⟨_, hU p x.2⟩, rfl⟩
+    (fun _ _ ↦ Iff.rfl) fun p x ↦ ⟨⟨_, hU p x.property⟩, rfl⟩
 
 @[simp]
 theorem submodule_piece (p : ι) :

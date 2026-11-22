@@ -284,27 +284,35 @@ theorem isTopologicallyFinitelyGenerated_congr (e : G ≃ₜ* H) :
   ⟨fun hG ↦ hG.of_surjective (f := (e : G →* H)) e.continuous e.surjective,
     fun hH ↦ hH.of_surjective (f := (e.symm : H →* G)) e.symm.continuous e.symm.surjective⟩
 
-/-- A binary product of topologically finitely generated groups is topologically finitely
-generated. -/
+/-- **Topological finite generation passes to binary products**: the images of topological
+generating sets of the two factors under the inclusions `g ↦ (g, 1)` and `h ↦ (1, h)` together
+generate `G × H` topologically. -/
 theorem IsTopologicallyFinitelyGenerated.prod (hG : IsTopologicallyFinitelyGenerated G)
     (hH : IsTopologicallyFinitelyGenerated H) : IsTopologicallyFinitelyGenerated (G × H) := by
+  classical
   obtain ⟨s, hs⟩ := hG
   obtain ⟨t, ht⟩ := hH
-  let u : Set (G × H) := MonoidHom.inl G H '' (s : Set G) ∪ MonoidHom.inr G H '' (t : Set H)
-  have hu : u.Finite := (s.finite_toSet.image _).union (t.finite_toSet.image _)
-  refine hu.isTopologicallyFinitelyGenerated (eq_top_iff.mpr ?_)
-  have hprod : (Subgroup.closure (s : Set G)).prod (Subgroup.closure (t : Set H)) ≤
-      Subgroup.closure u := by
-    rw [Subgroup.prod_le_iff, Subgroup.map_le_iff_le_comap, Subgroup.map_le_iff_le_comap,
-      Subgroup.closure_le, Subgroup.closure_le]
-    exact ⟨fun g hg ↦ Subgroup.subset_closure (Or.inl ⟨g, hg, rfl⟩),
-      fun h hh ↦ Subgroup.subset_closure (Or.inr ⟨h, hh, rfl⟩)⟩
-  have htop : ((Subgroup.closure (s : Set G)).prod
-      (Subgroup.closure (t : Set H))).topologicalClosure = ⊤ := SetLike.coe_injective <| by
-    rw [Subgroup.topologicalClosure_coe, Subgroup.coe_prod, closure_prod_eq,
-      ← Subgroup.topologicalClosure_coe, ← Subgroup.topologicalClosure_coe, hs, ht,
-      Subgroup.coe_top, Subgroup.coe_top, Subgroup.coe_top, Set.univ_prod_univ]
-  exact htop.ge.trans (Subgroup.topologicalClosure_mono hprod)
+  let u : Finset (G × H) := s.image (MonoidHom.inl G H) ∪ t.image (MonoidHom.inr G H)
+  let K := (Subgroup.closure (u : Set (G × H))).topologicalClosure
+  have hK : IsClosed (K : Set (G × H)) := Subgroup.isClosed_topologicalClosure _
+  have hu : ∀ x ∈ u, x ∈ K := fun _ hx ↦
+    Subgroup.le_topologicalClosure _ (Subgroup.subset_closure hx)
+  -- Each factor of a generating set lands in `K`, so the closed preimage of `K` under each
+  -- inclusion is everything.
+  have hinl : (⊤ : Subgroup G) ≤ K.comap (MonoidHom.inl G H) := by
+    rw [← hs]
+    refine Subgroup.topologicalClosure_minimal _ ((Subgroup.closure_le _).mpr fun g hg ↦ ?_)
+      (hK.preimage (continuous_id.prodMk continuous_const))
+    exact hu _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ hg))
+  have hinr : (⊤ : Subgroup H) ≤ K.comap (MonoidHom.inr G H) := by
+    rw [← ht]
+    refine Subgroup.topologicalClosure_minimal _ ((Subgroup.closure_le _).mpr fun h hh ↦ ?_)
+      (hK.preimage (continuous_const.prodMk continuous_id))
+    exact hu _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ hh))
+  refine ⟨u, eq_top_iff.mpr fun x _ ↦ ?_⟩
+  have hx : x = MonoidHom.inl G H x.1 * MonoidHom.inr G H x.2 := by simp
+  rw [hx]
+  exact mul_mem (hinl (Subgroup.mem_top x.1)) (hinr (Subgroup.mem_top x.2))
 
 /-- A finite indexed product of topologically finitely generated groups is topologically finitely
 generated. -/
@@ -352,8 +360,8 @@ theorem IsTopologicallyFinitelyGenerated.finite_monoidHom_isOpen_ker
     Finite {f : G →* F // IsOpen (f.ker : Set G)} := by
   obtain ⟨s, hs⟩ := hG
   have : Finite (s : Set G) := s.finite_toSet.to_subtype
-  refine Finite.of_injective (fun f (x : (s : Set G)) ↦ f.1 x) fun f g hfg ↦ Subtype.ext ?_
-  exact MonoidHom.eq_of_eqOn_of_isOpen_ker hs f.2 g.2 fun x hx ↦ congrFun hfg ⟨x, hx⟩
+  refine Finite.of_injective (fun f (x : (s : Set G)) ↦ f.val x) fun f g hfg ↦ Subtype.ext ?_
+  exact MonoidHom.eq_of_eqOn_of_isOpen_ker hs f.property g.property fun x hx ↦ congrFun hfg ⟨x, hx⟩
 
 end OpenKernel
 

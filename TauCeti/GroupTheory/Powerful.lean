@@ -388,7 +388,7 @@ theorem exists_mk_pow_eq_of_mem_pLowerCentralSeries_succ (hG : IsPGroup p G)
   let f : (⊤ : Subgroup G).pLowerCentralSeries p m →* G ⧸ N :=
     { toFun := fun y ↦ ((y : G) : G ⧸ N) ^ p
       map_one' := by simp
-      map_mul' := fun a b ↦ hpow.mk_mul_pow_pLowerCentralSeries_add_two hG m a b.2 }
+      map_mul' := fun a b ↦ hpow.mk_mul_pow_pLowerCentralSeries_add_two hG m a b.property }
   have hle : ((⊤ : Subgroup G).pLowerCentralSeries p (m + 1)).map (QuotientGroup.mk' N) ≤
       f.range := by
     rw [hpow.pLowerCentralSeries_succ_eq_powClosure hG m, Subgroup.map_le_iff_le_comap,
@@ -468,7 +468,7 @@ theorem mem_pLowerCentralSeries_iff_exists_pow_pow (hG : IsPGroup p G)
         (hpow.map_subtype_pLowerCentralSeries_pLowerCentralSeries hG k 1 ▸ hg :
           g ∈ ((⊤ : Subgroup H).pLowerCentralSeries p 1).map H.subtype)
       obtain ⟨y, hy⟩ := hH_pow.exists_pow_eq_of_mem_pLowerCentralSeries_one (hG.to_subgroup H) hg'
-      obtain ⟨x, hx⟩ := ih y.2
+      obtain ⟨x, hx⟩ := ih y.property
       exact ⟨x, by rw [pow_succ, pow_mul, hx]; exact congrArg Subtype.val hy⟩
   · rintro ⟨x, rfl⟩
     induction k with

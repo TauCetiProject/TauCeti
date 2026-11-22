@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Embedding.Extend
-public import Mathlib.CategoryTheory.Preadditive.Basic
+public import TauCeti.Algebra.Homology.CochainComplex.ScaleDifferential
 public import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # Alternating differentials and the cap-product grading
 
 For an integer-graded cochain complex, multiplying the differential out of degree `k` by
-`(-1)^(k+1)` gives an isomorphic complex. The comparison multiplies degree `k` by
-`(-1)^(k(k+1)/2)`, also in negative degrees. It is natural in cochain maps, so it can be
-applied to inverse systems without changing their transition maps.
+`(-1)^(k+1)` gives an isomorphic complex, an instance of `CochainComplex.scaleDifferential`.
+The comparison multiplies degree `k` by `(-1)^(k(k+1)/2)`, also in negative degrees. It is
+natural in cochain maps, so it can be applied to inverse systems without changing their
+transition maps.
 
 In particular, extend a nonnegative chain complex by zero using the degree map `j ↦ m-j`.
 The resulting signed differential is the one for cap product with a fundamental cycle in the
@@ -36,104 +37,46 @@ namespace CochainComplex
 variable {C : Type*} [Category* C] [Preadditive C]
 
 /-- Multiply the differential out of integer degree `k` by `(-1)^(k+1)`, leaving the
-objects unchanged. -/
-def alternatingDifferential (K : CochainComplex C ℤ) : CochainComplex C ℤ where
-  X := K.X
-  d i j := ((i + 1).negOnePow : ℤ) • K.d i j
-  shape i j hij := by simp [K.shape i j hij]
-  d_comp_d' i j k _ _ := by simp
-
-/-- The alternating differential does not change the objects. -/
-def alternatingDifferentialXIso (K : CochainComplex C ℤ) (k : ℤ) :
-    K.alternatingDifferential.X k ≅ K.X k := Iso.refl _
-
-/-- The differential under the canonical identifications of objects. -/
-@[reassoc (attr := simp)]
-theorem alternatingDifferential_d (K : CochainComplex C ℤ) (i j : ℤ) :
-    K.alternatingDifferential.d i j ≫ (K.alternatingDifferentialXIso j).hom =
-      ((i + 1).negOnePow : ℤ) • ((K.alternatingDifferentialXIso i).hom ≫ K.d i j) := by
-  dsimp [alternatingDifferentialXIso, alternatingDifferential]
-  simp only [Category.comp_id, Category.id_comp]
-  -- Compute the differential after removing the identity object identifications.
-  rfl
+objects unchanged. It is an abbreviation, so that the API of
+`CochainComplex.scaleDifferential` applies to it. -/
+abbrev alternatingDifferential (K : CochainComplex C ℤ) : CochainComplex C ℤ :=
+  K.scaleDifferential fun i ↦ (i + 1).negOnePow
 
 /-- The alternating-differential comparison has degree-`k` component
 `(-1)^(k(k+1)/2)`. No boundedness assumption is needed. -/
 def alternatingDifferentialIso (K : CochainComplex C ℤ) : K ≅ K.alternatingDifferential :=
-  HomologicalComplex.Hom.isoOfComponents
-    (fun k ↦
-      { hom := ((k * (k + 1) / 2).negOnePow : ℤ) • (K.alternatingDifferentialXIso k).inv
-        inv := ((k * (k + 1) / 2).negOnePow : ℤ) • (K.alternatingDifferentialXIso k).hom
-        hom_inv_id := by simp [smul_smul, ← Units.val_mul]
-        inv_hom_id := by simp [smul_smul, ← Units.val_mul] }) (by
-      intro i j hij
-      have hj : i + 1 = j := hij
-      subst j
-      apply (cancel_mono (K.alternatingDifferentialXIso (i + 1)).hom).1
-      simp only [Preadditive.zsmul_comp, Category.assoc, alternatingDifferential_d,
-        Preadditive.comp_zsmul, Iso.inv_hom_id_assoc, Iso.inv_hom_id,
-        Category.comp_id, smul_smul, Int.negOnePow_mul_succ_div_two_succ,
-        Units.val_mul, mul_comm])
+  (K.scaleDifferentialIso _ (fun k ↦ (k * (k + 1) / 2).negOnePow)
+    Int.negOnePow_mul_succ_div_two_succ_mul).symm
 
 @[simp]
 theorem alternatingDifferentialIso_hom_f (K : CochainComplex C ℤ) (k : ℤ) :
-    K.alternatingDifferentialIso.hom.f k =
-      ((k * (k + 1) / 2).negOnePow : ℤ) • (K.alternatingDifferentialXIso k).inv := (rfl)
+    K.alternatingDifferentialIso.hom.f k = ((k * (k + 1) / 2).negOnePow : ℤ) •
+      (K.scaleDifferentialXIso (fun i ↦ (i + 1).negOnePow) k).inv := by
+  simp [alternatingDifferentialIso]
 
 @[simp]
 theorem alternatingDifferentialIso_inv_f (K : CochainComplex C ℤ) (k : ℤ) :
-    K.alternatingDifferentialIso.inv.f k =
-      ((k * (k + 1) / 2).negOnePow : ℤ) • (K.alternatingDifferentialXIso k).hom := (rfl)
+    K.alternatingDifferentialIso.inv.f k = ((k * (k + 1) / 2).negOnePow : ℤ) •
+      (K.scaleDifferentialXIso (fun i ↦ (i + 1).negOnePow) k).hom := by
+  simp [alternatingDifferentialIso]
 
-/-- A cochain map also commutes with the alternating differentials, with the same
-components under the canonical identifications. -/
-def alternatingDifferentialMap {K L : CochainComplex C ℤ} (f : K ⟶ L) :
-    K.alternatingDifferential ⟶ L.alternatingDifferential where
-  f k := (K.alternatingDifferentialXIso k).hom ≫ f.f k ≫
-    (L.alternatingDifferentialXIso k).inv
-  comm' i j _ := by
-    dsimp [alternatingDifferentialXIso, alternatingDifferential]
-    simp [f.comm]
-
-@[simp]
-theorem alternatingDifferentialMap_f {K L : CochainComplex C ℤ} (f : K ⟶ L) (k : ℤ) :
-    (alternatingDifferentialMap f).f k = (K.alternatingDifferentialXIso k).hom ≫
-      f.f k ≫ (L.alternatingDifferentialXIso k).inv := (rfl)
-
-/-- Alternating the differential is functorial, retaining the transition maps of any
-system of complexes degreewise. The functor body is exposed so that its object types reduce
-in the component formulas; the complex itself remains opaque. -/
-@[expose]
-def alternatingDifferentialFunctor : CochainComplex C ℤ ⥤ CochainComplex C ℤ where
-  obj := alternatingDifferential
-  map := alternatingDifferentialMap
-  map_id K := by ext k; simp
-  map_comp f g := by ext k; simp
-
-@[simp]
-theorem alternatingDifferentialFunctor_obj (K : CochainComplex C ℤ) :
-    alternatingDifferentialFunctor.obj K = K.alternatingDifferential := (rfl)
-
-@[simp]
-theorem alternatingDifferentialFunctor_map {K L : CochainComplex C ℤ} (f : K ⟶ L) :
-    alternatingDifferentialFunctor.map f = alternatingDifferentialMap f := (rfl)
-
+variable (C) in
 /-- The signed/unsigned comparison is natural, so homology and limit comparisons may be
 transported along it. -/
 def alternatingDifferentialNatIso :
-    𝟭 (CochainComplex C ℤ) ≅ alternatingDifferentialFunctor :=
-  NatIso.ofComponents alternatingDifferentialIso (by
-    intro K L f
-    ext k
-    simp [alternatingDifferentialFunctor])
+    𝟭 (CochainComplex C ℤ) ≅ scaleDifferentialFunctor C fun i ↦ (i + 1).negOnePow :=
+  (scaleDifferentialNatIso C _ (fun k ↦ (k * (k + 1) / 2).negOnePow)
+    Int.negOnePow_mul_succ_div_two_succ_mul).symm
 
 @[simp]
 theorem alternatingDifferentialNatIso_hom_app (K : CochainComplex C ℤ) :
-    alternatingDifferentialNatIso.hom.app K = K.alternatingDifferentialIso.hom := (rfl)
+    (alternatingDifferentialNatIso C).hom.app K = K.alternatingDifferentialIso.hom :=
+  scaleDifferentialNatIso_inv_app _ _ _ K
 
 @[simp]
 theorem alternatingDifferentialNatIso_inv_app (K : CochainComplex C ℤ) :
-    alternatingDifferentialNatIso.inv.app K = K.alternatingDifferentialIso.inv := (rfl)
+    (alternatingDifferentialNatIso C).inv.app K = K.alternatingDifferentialIso.inv :=
+  scaleDifferentialNatIso_hom_app _ _ _ K
 
 end CochainComplex
 
@@ -150,7 +93,7 @@ identify the object types in its map and comparison formulas. -/
 noncomputable def extendIntLEAlternatingDifferentialFunctor (m : ℤ) :
     ChainComplex C ℕ ⥤ CochainComplex C ℤ :=
   (ComplexShape.embeddingUpIntLE m).extendFunctor C ⋙
-    CochainComplex.alternatingDifferentialFunctor
+    CochainComplex.scaleDifferentialFunctor C fun i ↦ (i + 1).negOnePow
 
 @[simp]
 theorem extendIntLEAlternatingDifferentialFunctor_obj (m : ℤ) (K : ChainComplex C ℕ) :
@@ -160,8 +103,9 @@ theorem extendIntLEAlternatingDifferentialFunctor_obj (m : ℤ) (K : ChainComple
 
 @[simp]
 theorem extendIntLEAlternatingDifferentialFunctor_map (m : ℤ) {K L : ChainComplex C ℕ} (f : K ⟶ L) :
-    (extendIntLEAlternatingDifferentialFunctor m).map f = CochainComplex.alternatingDifferentialMap
-      (HomologicalComplex.extendMap f (ComplexShape.embeddingUpIntLE m)) := (rfl)
+    (extendIntLEAlternatingDifferentialFunctor m).map f = CochainComplex.scaleDifferentialMap
+      (HomologicalComplex.extendMap f (ComplexShape.embeddingUpIntLE m))
+      (fun i ↦ (i + 1).negOnePow) := (rfl)
 
 /-- Natural comparison from the unsigned zero extension to its alternating differential.
 It multiplies degree `k` by `(-1)^(k(k+1)/2)` under the canonical object identifications. -/
@@ -169,18 +113,20 @@ noncomputable def extendIntLEAlternatingDifferentialNatIso (m : ℤ) :
     (ComplexShape.embeddingUpIntLE m).extendFunctor C ≅
       extendIntLEAlternatingDifferentialFunctor (C := C) m :=
   Functor.isoWhiskerLeft ((ComplexShape.embeddingUpIntLE m).extendFunctor C)
-    CochainComplex.alternatingDifferentialNatIso
+    (CochainComplex.alternatingDifferentialNatIso C)
 
 @[simp]
 theorem extendIntLEAlternatingDifferentialNatIso_hom_app (m : ℤ) (K : ChainComplex C ℕ) :
     (extendIntLEAlternatingDifferentialNatIso (C := C) m).hom.app K =
       (CochainComplex.alternatingDifferentialIso
-        (K.extend (ComplexShape.embeddingUpIntLE m))).hom := (rfl)
+        (K.extend (ComplexShape.embeddingUpIntLE m))).hom :=
+  CochainComplex.alternatingDifferentialNatIso_hom_app _
 
 @[simp]
 theorem extendIntLEAlternatingDifferentialNatIso_inv_app (m : ℤ) (K : ChainComplex C ℕ) :
     (extendIntLEAlternatingDifferentialNatIso (C := C) m).inv.app K =
       (CochainComplex.alternatingDifferentialIso
-        (K.extend (ComplexShape.embeddingUpIntLE m))).inv := (rfl)
+        (K.extend (ComplexShape.embeddingUpIntLE m))).inv :=
+  CochainComplex.alternatingDifferentialNatIso_inv_app _
 
 end TauCeti

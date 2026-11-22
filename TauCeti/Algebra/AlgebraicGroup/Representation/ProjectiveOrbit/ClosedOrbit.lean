@@ -93,7 +93,7 @@ theorem isClosed_range_projectiveOrbitMap_of_forall_mem_closure
   -- A nonempty closed subset of projective space contains a closed point, which is a line.
   obtain ⟨y, hy, hyc⟩ :=
     (isClosed_closure_diff_range_projectiveOrbitMap m hm).exists_closed_singleton
-      (Set.nonempty_iff_ne_empty.mpr hne)
+      (Set.ne_empty_iff_nonempty.mp hne)
   obtain ⟨m', hm', rfl⟩ :=
     (ProjectiveSpectrum.mem_closedPoints_iff_exists_projectiveOrbitMap_eq (H := H) y).mp hyc
   exact (hmin m' hm' hy.1).not_gt (topologicalKrullDim_range_projectiveOrbitMap_lt hm hm' hy)
