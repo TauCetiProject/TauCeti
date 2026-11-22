@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.Order.Fin.Tuple
 public import Mathlib.AlgebraicTopology.SimplicialSet.ProdStdSimplexOne
 public import TauCeti.Algebra.Homology.Monoidal.Summand
@@ -1015,8 +1017,8 @@ lemma shuffle_naturality {K' L' : SSet.{w}} (f : K ⟶ K') (g : L ⟶ L') :
       shuffle K L R S ≫ chainComplexMap (f ⊗ₘ g) (R ⊗ S) := by
   ext n : 1
   refine mapBifunctor.hom_ext fun p q h ↦ tensorChainComplexX_hom_ext fun x y ↦ ?_
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, tensorHom_eq_mapBifunctorMap,
-    ι_tensorHom_assoc, tensorHom_comp_tensorHom_assoc, ι_chainComplexMap_f, ι_chainComplexMap_f,
+  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, ι_tensorHom_f_assoc,
+    tensorHom_comp_tensorHom_assoc, ι_chainComplexMap_f, ι_chainComplexMap_f,
     ιChainComplex_tensorHom_ιChainComplex_shuffle_f,
     ιChainComplex_tensorHom_ιChainComplex_shuffle_f_assoc, chainComplexMap_f_comp,
     tensorHom_comp_tensorHom, yonedaEquiv_symm_comp, yonedaEquiv_symm_comp]
@@ -1030,8 +1032,8 @@ lemma shuffle_coefficient_naturality {R' S' : C} (f : R ⟶ R') (g : S ⟶ S') :
       shuffle K L R S ≫ ((chainComplexFunctor C).map (f ⊗ₘ g)).app (K ⊗ L) := by
   ext n : 1
   refine mapBifunctor.hom_ext fun p q h ↦ tensorChainComplexX_hom_ext fun x y ↦ ?_
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, tensorHom_eq_mapBifunctorMap,
-    ι_tensorHom_assoc, tensorHom_comp_tensorHom_assoc,
+  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, ι_tensorHom_f_assoc,
+    tensorHom_comp_tensorHom_assoc,
     SSet.ιChainComplex_chainComplexFunctor_map_app_f,
     SSet.ιChainComplex_chainComplexFunctor_map_app_f, ← tensorHom_comp_tensorHom_assoc,
     ιChainComplex_tensorHom_ιChainComplex_shuffle_f,

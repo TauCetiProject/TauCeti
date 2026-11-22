@@ -49,8 +49,13 @@ The converse direction of the universal property is
 * `Bundle.Trivialization.continuous_chartLocalization`: it is continuous.
 * `Bundle.Trivialization.chartTestSection_chartLocalization`: extending the localization through
   the chart recovers `ψ • s`.
+* `TauCeti.exists_chart_source_subset_baseSet`: on a boundaryless manifold, every point lies in a
+  smooth chart into the model space with smooth inverse, inside the base set of the trivialization
+  at that point.
 * `ContMDiffSection.ChartTestData`: a trivialization together with a chart smooth on its source
   inside the base set, indexing the chart extensions `ChartTestData.chartTestSection`.
+* `ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`: compactly supported sections are
+  finite sums of chart extensions of native test functions.
 * `ContMDiffSection.continuous_compactlySupportedTopology_iff_chartTestSection`: the universal
   property of the test topology with respect to chart extensions.
 * `ContMDiffSection.compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSection`:
@@ -292,6 +297,16 @@ private theorem contMDiffOn_testChart_symm {n : ℕ∞ω} [IsManifold I n M] (x 
   OpenPartialHomeomorph.contMDiffOn_extendTrans_symm _ (restr_chartAt_mem_maximalAtlas V x)
     contDiff_id
 
+variable (I F) in
+/-- On a manifold without boundary, every point `x` lies in the source of a smooth chart into the
+model space with smooth inverse, whose source lies in the base set of the trivialization at `x`. -/
+theorem TauCeti.exists_chart_source_subset_baseSet {n : ℕ∞ω} [IsManifold I n M] (x : M) :
+    ∃ c : OpenPartialHomeomorph M E, ContMDiffOn I 𝓘(ℝ, E) n c c.source ∧
+      ContMDiffOn 𝓘(ℝ, E) I n c.symm c.target ∧ c.source ⊆ (trivializationAt F V x).baseSet ∧
+      x ∈ c.source :=
+  ⟨testChart F I V x, contMDiffOn_testChart V x, contMDiffOn_testChart_symm V x,
+    testChart_source_subset V x, mem_testChart_source V x⟩
+
 end TestChart
 
 namespace ContMDiffSection
@@ -404,6 +419,23 @@ private theorem exists_ofSupportedIn_eq_sum (K : Compacts M) :
     simp [hsum y hy]
   · rw [(σ : Cₛ^n⟮I; F, V⟯).eq_zero_of_notMem_tsupport fun h ↦ hy (mem_supportedIn.1 σ.property h),
       smul_zero]
+
+/-- **Compactly supported sections are spanned by chart extensions.** On a boundaryless Hausdorff
+`σ`-compact manifold with finite-dimensional model, every compactly supported section is a finite
+sum of chart extensions of native test functions. In particular a linear map on compactly supported
+sections is determined by its composites with the chart extensions. -/
+theorem span_iUnion_range_chartTestSection_eq_top :
+    Submodule.span ℝ (⋃ p : ChartTestData I F V n, range p.chartTestSection) = ⊤ := by
+  refine Submodule.eq_top_iff'.2 fun s ↦ ?_
+  let K : Compacts M := ⟨_, mem_compactlySupported.1 s.property⟩
+  let σ : supportedIn I F n V K := ⟨s, mem_supportedIn.2 subset_rfl⟩
+  obtain ⟨t, ψ, L, hL, hψ, hdecomp⟩ := exists_ofSupportedIn_eq_sum (I := I) (F := F) (V := V)
+    (n := n) K
+  have hs : s = ofSupportedIn K σ := Subtype.ext (ofSupportedIn_apply K σ).symm
+  rw [hs, hdecomp σ]
+  refine Submodule.sum_mem _ fun x _ ↦ Submodule.subset_span (mem_iUnion.2
+    ⟨⟨trivializationAt F V x, testChart F I V x, contMDiffOn_testChart V x,
+      testChart_source_subset V x⟩, mem_range_self _⟩)
 
 variable {ι : Type*} (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
