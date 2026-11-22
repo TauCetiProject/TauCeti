@@ -289,6 +289,26 @@ theorem ofIso_inv {X Y : C} (e : X ≅ Y) :
     (ofIso e : (mk X : E.QCategory) ≅ mk Y).inv = ofInflation e.inv (E.inflations.of_isIso _) :=
   (rfl)
 
+/-- `ofIso` sends the identity isomorphism to the identity. -/
+@[simp]
+theorem ofIso_refl (X : C) : ofIso (Iso.refl X) = Iso.refl (mk X : E.QCategory) := by
+  ext
+  exact ofInflation_id X
+
+/-- `ofIso` is compatible with composition of isomorphisms. -/
+@[simp]
+theorem ofIso_trans {X Y Z : C} (e : X ≅ Y) (f : Y ≅ Z) :
+    ofIso (e ≪≫ f) = (ofIso e ≪≫ ofIso f : (mk X : E.QCategory) ≅ mk Z) := by
+  ext
+  exact ofInflation_comp e.hom f.hom _ _
+
+/-- `ofIso` is compatible with inverses of isomorphisms. -/
+@[simp]
+theorem ofIso_symm {X Y : C} (e : X ≅ Y) :
+    ofIso e.symm = (ofIso e : (mk X : E.QCategory) ≅ mk Y).symm := by
+  ext
+  simp
+
 /-- For an isomorphism `e` of `C`, the reversed deflation `e.hom` is the inverse of
 `ofIso e`. -/
 @[simp]
