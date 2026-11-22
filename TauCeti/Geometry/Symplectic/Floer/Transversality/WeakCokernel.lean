@@ -34,8 +34,8 @@ On an open set `Ω ⊆ ℂ`, a test function `φ` on `Ω` gives the test map `ξ
 and `S_c(w) = C(e w)` (`TauCeti.SymplecticForm.floerLinearization_comp_equivRealProdCLM_symm`).
 These coefficients are `C¹` and continuous, so `η ∘ e` annihilates a real Cauchy–Riemann operator
 with `C¹` coefficients, and the regularity of such annihilators
-(`TauCeti.memWkpLoc_one_of_forall_integral_apply_eq_zero`) applies. No inner product on `V` is
-needed.
+(`TauCeti.memWkpLoc_one_of_forall_integral_apply_cauchyRiemann_eq_zero`) applies. No inner
+product on `V` is needed.
 
 By Morrey's embedding (`r > 2`), `η ∘ e` then has a continuous representative, which is the
 regularity taken by the pointwise detection lemmas of
@@ -85,13 +85,10 @@ theorem floerLinearization_comp_equivRealProdCLM_symm (ω : SymplecticForm V)
     ω.floerLinearization J Ks Kt u (φ ∘ equivRealProdCLM.symm) (equivRealProdCLM w) =
       fderiv ℝ φ w 1 + J (equivRealProdCLM w) (u (equivRealProdCLM w)) (fderiv ℝ φ w I) +
         ω.floerLinearizationCoeff J Ks Kt u (equivRealProdCLM w) (φ w) := by
-  have h1 : equivRealProdCLM.symm stdComplexLineReal = 1 :=
-    equivRealProdCLM.symm_apply_eq.2 (by simp [stdComplexLineReal])
-  have hI : equivRealProdCLM.symm stdComplexLineImag = I :=
-    equivRealProdCLM.symm_apply_eq.2 (by simp [stdComplexLineImag])
   rw [floerLinearization_eq_add, ContinuousLinearEquiv.comp_right_fderiv]
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.symm_apply_apply, comp_apply, h1, hI]
+    ContinuousLinearEquiv.symm_apply_apply, comp_apply, equivRealProdCLM_symm_stdComplexLineReal,
+    equivRealProdCLM_symm_stdComplexLineImag]
 
 /-- **Weak cokernel elements of the linearized Floer operator are `W^{1,r}_loc`.** Let `Ω ⊆ ℂ`
 be open and `e = Complex.equivRealProdCLM`. Suppose that over `e '' Ω` the map `u` is `C¹`, the
@@ -122,7 +119,8 @@ theorem memWkpLoc_one_of_forall_integral_apply_floerLinearization_eq_zero {Ω : 
   have hSc : ContinuousOn (fun w ↦ ω.floerLinearizationCoeff J Ks Kt u (e w)) Ω := fun w hw ↦
     ((continuousAt_floerLinearizationCoeff ω (hJ w hw) (hKs w hw) (hKt w hw)
       (hu w hw)).comp e.continuous.continuousAt).continuousWithinAt
-  refine memWkpLoc_one_of_forall_integral_apply_eq_zero hJc hSc hJ2 hq hη (fun φ ↦ ?_) hr hr_top
+  refine memWkpLoc_one_of_forall_integral_apply_cauchyRiemann_eq_zero hJc hSc hJ2 hq hη
+    (fun φ ↦ ?_) hr hr_top
   -- A test function `φ` on `Ω` gives the test map `φ ∘ e⁻¹` supported over `Ω`.
   set U : Opens (ℝ × ℝ) := ⟨e.symm ⁻¹' Ω, Ω.isOpen.preimage e.symm.continuous⟩
   have hmaps : MapsTo e Ω U := fun w hw ↦ by simpa [U] using hw
