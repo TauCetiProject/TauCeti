@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Action.Limits
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.FrobeniusSchur.Simple
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Simple
 public import TauCeti.RepresentationTheory.Character.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Basic
 public import TauCeti.RepresentationTheory.FDRep.Invariants

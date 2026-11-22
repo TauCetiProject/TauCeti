@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Elementary
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
+import TauCeti.Probability.BrownianMotion.Integral.Energy.Basic
 import TauCeti.Probability.BrownianMotion.Martingale
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import Mathlib.Probability.Independence.Integration
@@ -133,10 +134,7 @@ theorem martingale_sq_simpleGains_sub (hW : IsFilteredPreBrownianReal ℱ W P)
     -- Its height is L¹ by Cauchy–Schwarz, and Brownian independence suffices thereafter.
     have hknown : StronglyMeasurable[ℱ (τ n)] (Finance.simpleGains τ n a W (τ n)) :=
       Finance.stronglyAdapted_simpleGains hτn han hW.adapted.stronglyAdapted (τ n)
-    have hprev₂ : MemLp (Finance.simpleGains τ n a W (τ n)) 2 P := by
-      convert hW.memLp_sum_mul_sub hτn han han₂ using 1
-      ext ω
-      exact Finance.simpleGains_apply_eq_sum hτn le_rfl W ω
+    have hprev₂ := hW.memLp_simpleGains hτn han han₂ (τ n)
     have hcross := hW.martingale_mul_sub_min hsv (hknown.mul (ha n n.lt_succ_self))
       (hprev₂.integrable_mul (ha₂ n n.lt_succ_self))
     have hnext := hW.martingale_sq_mul_sub_min_sub hsv (ha n n.lt_succ_self)

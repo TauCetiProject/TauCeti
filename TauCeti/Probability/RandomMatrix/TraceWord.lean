@@ -121,6 +121,16 @@ private theorem wignerMatrix_apply_eq_orientEntry {n : ℕ} (ω : Ω) (i j : Fin
     simp [orientEntry, entryIndex]
   · simp [orientEntry, entryIndex, h, h.not_gt]
 
+/-- The coordinates of the `n × n` corner entry array are almost everywhere measurable. -/
+private theorem aemeasurable_cornerEntry {n : ℕ}
+    (hξm : ∀ ij : StrictUpper, ij.val.2 < n → AEMeasurable (ξ ij) P)
+    (hηm : ∀ i < n, AEMeasurable (η i) P)
+    (r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n}) :
+    AEMeasurable (Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P := by
+  cases r with
+  | inl ij => exact hξm ij.val ij.property
+  | inr i => exact Complex.measurable_ofReal.comp_aemeasurable (hηm i.val i.property)
+
 /-- **Edge-disjoint Wigner products are independent.** Let the entries in the `n × n` corner be
 independent. Two finite products of entries of the `n × n` Wigner matrix reading disjoint sets of
 unordered positions are independent. No centering or finite-moment assumption is required. -/
@@ -135,41 +145,14 @@ theorem indepFun_prod_wignerMatrix_apply_of_disjoint {ι₁ ι₂ : Type*} [Fint
     IndepFun
       (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u₁ s) (v₁ s))
       (fun ω ↦ ∏ t, wignerMatrix ξ η n ω (u₂ t) (v₂ t)) P := by
-  classical
-  set X : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} → Ω → ℂ :=
-    fun r ↦ Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r
-  set e₁ : ι₁ → {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} :=
-    fun s ↦ entryIndex (u₁ s) (v₁ s)
-  set e₂ : ι₂ → {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} :=
-    fun t ↦ entryIndex (u₂ t) (v₂ t)
-  have hX (r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n}) : AEMeasurable (X r) P := by
-    cases r with
-    | inl ij => exact hξm ij.val ij.property
-    | inr i => exact Complex.measurable_ofReal.comp_aemeasurable (hηm i.val i.property)
-  set S₁ : Finset ({ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n}) := Finset.univ.image e₁
-  set S₂ : Finset ({ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n}) := Finset.univ.image e₂
-  have hS : Disjoint S₁ S₂ := by
-    rw [Finset.disjoint_left]
-    intro k hk₁ hk₂
-    obtain ⟨s, -, rfl⟩ := Finset.mem_image.mp hk₁
-    obtain ⟨t, -, htk⟩ := Finset.mem_image.mp hk₂
-    exact hdisj s t (entryIndex_eq_entryIndex_iff.mp htk.symm)
-  set φ₁ : (S₁ → ℂ) → ℂ := fun g ↦ ∏ s ∈ Finset.univ.attach,
-    (Real.sqrt n : ℂ)⁻¹ * orientEntry (u₁ s.val) (v₁ s.val) (g ⟨e₁ s.val,
-        Finset.mem_image_of_mem e₁ s.property⟩)
-  set φ₂ : (S₂ → ℂ) → ℂ := fun g ↦ ∏ t ∈ Finset.univ.attach,
-    (Real.sqrt n : ℂ)⁻¹ * orientEntry (u₂ t.val) (v₂ t.val) (g ⟨e₂ t.val,
-        Finset.mem_image_of_mem e₂ t.property⟩)
-  have hφ₁ : Measurable φ₁ := Finset.measurable_prod _ fun s _ ↦
-    measurable_const.mul ((measurable_orientEntry _ _).comp (measurable_pi_apply _))
-  have hφ₂ : Measurable φ₂ := Finset.measurable_prod _ fun t _ ↦
-    measurable_const.mul ((measurable_orientEntry _ _).comp (measurable_pi_apply _))
-  have hind := (hindep.indepFun_finset₀ S₁ S₂ hS hX).comp hφ₁ hφ₂
-  refine hind.congr (.of_forall fun ω ↦ ?_) (.of_forall fun ω ↦ ?_)
-  · simp only [Function.comp_apply, φ₁, ← Finset.prod_attach Finset.univ,
-      wignerMatrix_apply_eq_orientEntry, X, e₁]
-  · simp only [Function.comp_apply, φ₂, ← Finset.prod_attach Finset.univ,
-      wignerMatrix_apply_eq_orientEntry, X, e₂]
+  refine (hindep.indepFun_fun_prod_comp_of_disjoint (aemeasurable_cornerEntry hξm hηm)
+    (e₁ := fun s ↦ entryIndex (u₁ s) (v₁ s)) (e₂ := fun t ↦ entryIndex (u₂ t) (v₂ t))
+    (fun s t h ↦ hdisj s t (entryIndex_eq_entryIndex_iff.mp h))
+    (g₁ := fun s z ↦ (Real.sqrt n : ℂ)⁻¹ * orientEntry (u₁ s) (v₁ s) z)
+    (g₂ := fun t z ↦ (Real.sqrt n : ℂ)⁻¹ * orientEntry (u₂ t) (v₂ t) z)
+    (fun _ ↦ measurable_const.mul (measurable_orientEntry _ _))
+    (fun _ ↦ measurable_const.mul (measurable_orientEntry _ _))).congr ?_ ?_ <;>
+  exact .of_forall fun ω ↦ by simp only [wignerMatrix_apply_eq_orientEntry]
 
 /-- **Factorization of edge-disjoint Wigner products.** Let the entries in the `n × n` corner be
 independent. When two finite products of entries of the `n × n` Wigner matrix read disjoint sets of
@@ -209,20 +192,14 @@ theorem integral_prod_wignerMatrix_apply_eq_zero {ι : Type*} [Fintype ι] {n : 
     (hη : ∀ i < n, ∫ ω, η i ω ∂P = 0) (u v : ι → Fin n)
     {t : ι} (ht : ∀ s, s(u s, v s) = s(u t, v t) → s = t) :
     ∫ ω, ∏ s, wignerMatrix ξ η n ω (u s) (v s) ∂P = 0 := by
-  classical
-  have hsplit (ω : Ω) : ∏ s, wignerMatrix ξ η n ω (u s) (v s) =
-      (∏ _ : Unit, wignerMatrix ξ η n ω (u t) (v t)) *
-        ∏ s : ↥(Finset.univ.erase t), wignerMatrix ξ η n ω (u s.val) (v s.val) := by
-    rw [Fintype.prod_unique (f := fun _ : Unit ↦ wignerMatrix ξ η n ω (u t) (v t)),
-      Finset.prod_coe_sort (f := fun s ↦ wignerMatrix ξ η n ω (u s) (v s)),
-      Finset.mul_prod_erase Finset.univ (fun s ↦ wignerMatrix ξ η n ω (u s) (v s))
-        (Finset.mem_univ t)]
-  simp_rw [hsplit]
-  rw [integral_prod_mul_prod_wignerMatrix_apply_of_disjoint hξm hηm hindep
-    (fun _ : Unit ↦ u t) (fun _ : Unit ↦ v t)
-    (fun s : ↥(Finset.univ.erase t) ↦ u s.val) (fun s : ↥(Finset.univ.erase t) ↦ v s.val)
-    (fun _ s hs ↦ (Finset.mem_erase.mp s.property).1 (ht s.val hs.symm))]
-  simp [integral_wignerMatrix_apply_eq_zero (P := P) hξ hη (u t) (v t)]
+  have h := hindep.integral_fun_prod_comp_eq_zero (aemeasurable_cornerEntry hξm hηm)
+    (e := fun s ↦ entryIndex (u s) (v s))
+    (g := fun s z ↦ (Real.sqrt n : ℂ)⁻¹ * orientEntry (u s) (v s) z)
+    (fun _ ↦ measurable_const.mul (measurable_orientEntry _ _)) (t := t)
+    (fun s hs ↦ ht s (entryIndex_eq_entryIndex_iff.mp hs)) (by
+      simpa only [wignerMatrix_apply_eq_orientEntry] using
+        integral_wignerMatrix_apply_eq_zero (P := P) hξ hη (u t) (v t))
+  simpa only [wignerMatrix_apply_eq_orientEntry] using h
 
 /-- On a finite measure space, the trace of the `k`th power of a Wigner matrix of size `n` lies in
 `Lᵖ` for every `p : ℝ≥0∞` whenever all coordinates of the `n × n` corner lie in `L^(p * k)`.

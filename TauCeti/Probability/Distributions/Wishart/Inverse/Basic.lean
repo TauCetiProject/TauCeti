@@ -411,8 +411,8 @@ theorem inverseWishartMeasure_of_posDef (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
           (nonsingularWishartPDF n S⁻¹)).map symmetricInv := by
         rw [hrestrict _ fun A hA => nonsingularWishartPDF_of_not_posDef n S⁻¹ hA]
     _ = ((symmetricLebesgue p).restrict C).withDensity (inverseWishartPDF n S) :=
-        Measure.map_withDensity_eq_withDensity measurable_symmetricInv hw
-          (measurable_inverseWishartPDF n S) hmap hfactor
+        Measure.map_withDensity_eq_withDensity measurable_symmetricInv.aemeasurable hw.aemeasurable
+          (measurable_inverseWishartPDF n S).aemeasurable hmap hfactor
     _ = (symmetricLebesgue p).withDensity (inverseWishartPDF n S) :=
         (hrestrict _ fun A hA => inverseWishartPDF_of_not_posDef n S hA).symm
 
