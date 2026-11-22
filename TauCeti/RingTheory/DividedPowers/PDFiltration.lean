@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.GradedMonoid
 public import Mathlib.RingTheory.DividedPowers.RatAlgebra
 public import Mathlib.RingTheory.DividedPowers.SubDPIdeal
+import TauCeti.RingTheory.DividedPowers.DPMorphism
 
 /-!
 # The divided power filtration of a divided power ideal
@@ -47,7 +48,8 @@ filtration coincides with the ordinary power filtration `I ^ n`.
 * `DividedPowers.pdFiltration_antitone`: `n ↦ hI.pdFiltration n` is antitone.
 * `DividedPowers.pdFiltration_mul_le`:
   `hI.pdFiltration m * hI.pdFiltration n ≤ hI.pdFiltration (m + n)`.
-* `DividedPowers.pow_le_pdFiltration`: `I ^ n ≤ hI.pdFiltration n`.
+* `DividedPowers.pow_le_pdFiltration`, `DividedPowers.pow_eq_bot_of_pdFiltration_eq_bot`:
+  `I ^ n ≤ hI.pdFiltration n` and `hI.pdFiltration n = ⊥ → I ^ n = ⊥`.
 * `DividedPowers.dpow_mem_pdFiltration_mul`: for `n ≠ 0` and `x ∈ hI.pdFiltration n`,
   `hI.dpow m x ∈ hI.pdFiltration (m * n)`.
 * `DividedPowers.isSubDPIdeal_pdFiltration`: for `n ≠ 0`, `hI.pdFiltration n` is a sub-dp-ideal.
@@ -238,39 +240,42 @@ theorem pdFiltration_pow_le (m n : ℕ) :
 theorem pow_le_pdFiltration (n : ℕ) : I ^ n ≤ hI.pdFiltration n := by
   simpa using hI.pdFiltration_pow_le n 1
 
-private theorem list_prod_eq_one_of_sum_eq_zero (l : List (ℕ × R)) (hl : ∀ p ∈ l, p.2 ∈ I)
-    (hsum : (l.map Prod.fst).sum = 0) :
-    (l.map fun p ↦ hI.dpow p.1 p.2).prod = 1 := by
-  refine List.prod_eq_one fun x hx ↦ ?_
-  obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hx
-  have hp0 : p.1 = 0 := Nat.eq_zero_of_le_zero <|
-    (List.le_sum_of_mem (List.mem_map_of_mem hp)).trans hsum.le
-  rw [hp0, hI.dpow_zero (hl p hp)]
+/-- If `hI.pdFiltration n = ⊥`, then the ordinary ideal power `I ^ n` vanishes. -/
+theorem pow_eq_bot_of_pdFiltration_eq_bot {n : ℕ} (h : hI.pdFiltration n = ⊥) : I ^ n = ⊥ :=
+  eq_bot_iff.mpr ((hI.pow_le_pdFiltration n).trans h.le)
 
 private theorem dpow_list_prod_mem_pdFiltration_mul {m : ℕ} (l : List (ℕ × R))
     (hl : ∀ p ∈ l, p.2 ∈ I) (hpos : (l.map Prod.fst).sum ≠ 0) :
     hI.dpow m (l.map fun p ↦ hI.dpow p.1 p.2).prod ∈
       hI.pdFiltration (m * (l.map Prod.fst).sum) := by
-  induction l with
-  | nil => simp at hpos
-  | cons p t ih =>
-    have hpI : p.2 ∈ I := hl p List.mem_cons_self
-    have htI : ∀ q ∈ t, q.2 ∈ I := fun q hq ↦ hl q (List.mem_cons_of_mem p hq)
-    simp only [List.map_cons, List.prod_cons, List.sum_cons]
-    rcases eq_or_ne p.1 0 with hp0 | hp0
-    · simp only [hp0, hI.dpow_zero hpI, one_mul, zero_add]
-      exact ih htI (by simpa [hp0] using hpos)
-    · rcases eq_or_ne (t.map Prod.fst).sum 0 with ht0 | ht0
-      · rw [hI.list_prod_eq_one_of_sum_eq_zero t htI ht0, mul_one, ht0, add_zero,
-          hI.dpow_comp hp0 hpI]
-        exact (hI.pdFiltration (m * p.1)).mul_mem_left _ (hI.dpow_mem_pdFiltration hpI)
-      · have hprodI : (t.map fun q ↦ hI.dpow q.1 q.2).prod ∈ I :=
-          hI.pdFiltration_le_self ht0 (hI.list_prod_dpow_mem_pdFiltration t htI le_rfl)
-        rw [hI.dpow_mul hprodI, mul_add]
-        have hpow : hI.dpow p.1 p.2 ^ m ∈ hI.pdFiltration (m * p.1) :=
-          hI.pdFiltration_pow_le m p.1 (Ideal.pow_mem_pow (hI.dpow_mem_pdFiltration hpI) m)
-        exact hI.pdFiltration_mul_le (m * p.1) (m * (t.map Prod.fst).sum)
-          (Ideal.mul_mem_mul hpow (ih htI ht0))
+  let s : Finset (Fin l.length) := Finset.univ.filter fun i ↦ l[(i : ℕ)].1 ≠ 0
+  have hs : s.Nonempty := by
+    by_contra h
+    rw [Finset.not_nonempty_iff_eq_empty, Finset.filter_eq_empty_iff] at h
+    apply hpos
+    rw [← Fin.sum_univ_fun_getElem l Prod.fst]
+    exact Finset.sum_eq_zero fun i hi ↦ not_not.mp (h hi)
+  have hprod : (l.map fun p ↦ hI.dpow p.1 p.2).prod =
+      ∏ i ∈ s, hI.dpow l[(i : ℕ)].1 l[(i : ℕ)].2 := by
+    rw [← Fin.prod_univ_fun_getElem l fun p ↦ hI.dpow p.1 p.2]
+    refine (Finset.prod_filter_of_ne (p := fun i : Fin l.length ↦ l[(i : ℕ)].1 ≠ 0)
+      fun i _ hne ↦ ?_).symm
+    intro h0
+    exact hne (by rw [h0, hI.dpow_zero (hl _ (List.getElem_mem i.isLt))])
+  have hsum : (l.map Prod.fst).sum = ∑ i ∈ s, l[(i : ℕ)].1 := by
+    rw [← Fin.sum_univ_fun_getElem l Prod.fst]
+    exact (Finset.sum_filter_of_ne (p := fun i : Fin l.length ↦ l[(i : ℕ)].1 ≠ 0)
+      fun _ _ hne ↦ hne).symm
+  have hdp := hI.dpow_prod (r := fun i : Fin l.length ↦ hI.dpow l[(i : ℕ)].1 l[(i : ℕ)].2) hs
+    (fun i hi ↦ hI.dpow_mem (Finset.mem_filter.mp hi).2 (hl _ (List.getElem_mem i.isLt))) (n := m)
+  rw [hprod, hdp, hsum, Finset.mul_sum, nsmul_eq_mul]
+  refine Ideal.mul_mem_left _ _ <|
+    SetLike.prod_mem_graded hI.pdFiltration (fun i : Fin l.length ↦ m * l[(i : ℕ)].1)
+      (fun i : Fin l.length ↦ hI.dpow m (hI.dpow l[(i : ℕ)].1 l[(i : ℕ)].2)) fun i hi ↦ ?_
+  have hi0 : l[(i : ℕ)].1 ≠ 0 := (Finset.mem_filter.mp hi).2
+  have hiI : l[(i : ℕ)].2 ∈ I := hl _ (List.getElem_mem i.isLt)
+  rw [hI.dpow_comp hi0 hiI]
+  exact Ideal.mul_mem_left _ _ (hI.dpow_mem_pdFiltration hiI)
 
 /-- For `n ≠ 0` and `x ∈ hI.pdFiltration n`, its `m`-th divided power lies in
 `hI.pdFiltration (m * n)`. -/
@@ -413,17 +418,6 @@ section Functoriality
 variable {R S : Type*} [CommSemiring R] [CommSemiring S] {I : Ideal R} {J : Ideal S}
   {hI : DividedPowers I} {hJ : DividedPowers J}
 
-/-- A divided power morphism maps a finite product of divided powers of elements of `I` to the
-corresponding product of divided powers of their images. -/
-theorem IsDPMorphism.map_list_prod_dpow {f : R →+* S} (hf : IsDPMorphism hI hJ f)
-    {l : List (ℕ × R)} (hl : ∀ p ∈ l, p.2 ∈ I) :
-    f (l.map fun p ↦ hI.dpow p.1 p.2).prod =
-      ((l.map fun p ↦ (p.1, f p.2)).map fun q ↦ hJ.dpow q.1 q.2).prod := by
-  rw [map_list_prod]
-  simp only [List.map_map]
-  congr 1
-  exact List.map_congr_left fun p hp ↦ hf.map_dpow (hl p hp)
-
 /-- A divided power morphism maps each filtration step into the corresponding step of the target:
 `(hI.pdFiltration n).map f ≤ hJ.pdFiltration n`. -/
 theorem IsDPMorphism.map_pdFiltration_le {f : R →+* S} (hf : IsDPMorphism hI hJ f) (n : ℕ) :
@@ -519,6 +513,7 @@ theorem pdFiltration_bot_of_ne_zero (R : Type*) [CommSemiring R] {n : ℕ} (hn :
 
 /-- In a `ℚ`-algebra, the divided power filtration of any divided power structure coincides with
 the ordinary ideal power filtration `I ^ n`. -/
+@[simp]
 theorem pdFiltration_eq_pow [Algebra ℚ R] (hI : DividedPowers I) (n : ℕ) :
     hI.pdFiltration n = I ^ n := by
   refine hI.pdFiltration_eq_pow_of_dpow_mem_pow (fun m _ x hx ↦ ?_) n

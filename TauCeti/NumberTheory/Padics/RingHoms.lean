@@ -107,7 +107,6 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   finite of cardinality `p`.
 * `PadicInt.ringHom_eq_id`, `PadicInt.RingHom.unique`: the identity is the unique ring
   endomorphism of `ℤ_[p]`.
-* `PadicInt.map_toZModPow_span_p`: `(Ideal.span {(p : ℤ_[p])}).map (PadicInt.toZModPow e) = (p)`.
 -/
 
 public section
@@ -603,11 +602,5 @@ every truncation level `n ≥ m`. This is what makes the `p`-adic power well def
 theorem pow_appr_eq_pow_appr (x : ℤ_[p]) {m : ℕ} (hg : g ^ p ^ m = 1) (hmn : m ≤ n) :
     g ^ x.appr n = g ^ x.appr m :=
   pow_eq_pow_of_modEq (x.appr_modEq hmn) hg
-
-variable (p) in
-/-- The image of the ideal `(p) ⊂ ℤ_[p]` under `PadicInt.toZModPow e` is `(p) ⊂ ZMod (p ^ e)`. -/
-theorem map_toZModPow_span_p (e : ℕ) :
-    (Ideal.span {(p : ℤ_[p])}).map (toZModPow e) = Ideal.span {(p : ZMod (p ^ e))} := by
-  rw [Ideal.map_span, Set.image_singleton, map_natCast]
 
 end PadicInt

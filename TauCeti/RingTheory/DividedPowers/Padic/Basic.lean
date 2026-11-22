@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DividedPowers.Padic
+public import Mathlib.RingTheory.DividedPowers.RatAlgebra
 public import Mathlib.RingTheory.DividedPowers.SubDPIdeal
 public import TauCeti.NumberTheory.Padics.RingHoms
+import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.RingTheory.DividedPowers.SubDPIdeal
 
 /-!
 # Canonical divided powers on `ZMod (p ^ e)` and `p`-adic valuations
@@ -39,13 +42,14 @@ PD-nilpotence classification of `PadicInt.dividedPowers p` and `ZMod.dividedPowe
 * `PadicInt.valuation_dpow_p`: `((dividedPowers p).dpow n p).valuation = n - multiplicity p n!`.
 * `PadicInt.sub_one_mul_valuation_dpow_p`: Legendre identity
   `(p - 1) * ((dividedPowers p).dpow n p).valuation = (p - 2) * n + (p.digits n).sum`.
-* `PadicInt.isSubDPIdeal_span_pow`: `Ideal.span {(p : ℤ_[p]) ^ e}` is a sub-dp-ideal for `e ≠ 0`.
 * `PadicInt.isSubDPIdeal_ker_toZModPow_inf`:
   `RingHom.ker (toZModPow e) ⊓ Ideal.span {(p : ℤ_[p])}` is a sub-dp-ideal.
 * `PadicInt.valuation_dpow_two`: for `p = 2`, the `2`-adic valuation of `γₙ(2)` is the binary
   digit sum `(Nat.digits 2 n).sum`.
 * `ZMod.toZModPow_isDPMorphism`, `ZMod.dividedPowers_dpow_p`, and `ZMod.dividedPowers_unique`:
   compatibility, evaluation on `(p)`, and uniqueness of `ZMod.dividedPowers p e`.
+* `ZMod.dividedPowers_two_two_ne_ofSquareZero`: on `(2) ⊂ ZMod 4`, `ZMod.dividedPowers 2 2`
+  differs from `DividedPowers.OfSquareZero.dividedPowers`.
 
 ## References
 
@@ -194,7 +198,8 @@ variable (p : ℕ) [hp : Fact p.Prime] (e : ℕ)
 noncomputable def dividedPowers : DividedPowers (Ideal.span {(p : ZMod (p ^ e))}) :=
   DividedPowers.Quotient.OfSurjective.dividedPowers (PadicInt.dividedPowers p)
     (ZMod.ringHom_surjective (PadicInt.toZModPow e))
-    (PadicInt.map_toZModPow_span_p p e).symm
+    (Eq.symm <| by simpa only [PadicInt.maximalIdeal_eq_span_p] using
+      PadicInt.map_maximalIdeal_eq_span_p (PadicInt.toZModPow (p := p) e))
     (PadicInt.isSubDPIdeal_ker_toZModPow_inf p e)
 
 /-- The canonical quotient `PadicInt.toZModPow e : ℤ_[p] →+* ZMod (p ^ e)` is a divided power
@@ -203,7 +208,8 @@ theorem toZModPow_isDPMorphism :
     (PadicInt.dividedPowers p).IsDPMorphism (ZMod.dividedPowers p e) (PadicInt.toZModPow e) :=
   DividedPowers.Quotient.OfSurjective.isDPMorphism (PadicInt.dividedPowers p)
     (ZMod.ringHom_surjective (PadicInt.toZModPow e))
-    (PadicInt.map_toZModPow_span_p p e).symm
+    (Eq.symm <| by simpa only [PadicInt.maximalIdeal_eq_span_p] using
+      PadicInt.map_maximalIdeal_eq_span_p (PadicInt.toZModPow (p := p) e))
     (PadicInt.isSubDPIdeal_ker_toZModPow_inf p e)
 
 /-- Evaluation of `ZMod.dividedPowers p e` on the generator `(p : ZMod (p ^ e))`. -/
@@ -220,7 +226,8 @@ theorem dividedPowers_unique (hquot : DividedPowers (Ideal.span {(p : ZMod (p ^ 
     hquot = ZMod.dividedPowers p e :=
   DividedPowers.Quotient.OfSurjective.dividedPowers_unique (PadicInt.dividedPowers p)
     (ZMod.ringHom_surjective (PadicInt.toZModPow e))
-    (PadicInt.map_toZModPow_span_p p e).symm
+    (Eq.symm <| by simpa only [PadicInt.maximalIdeal_eq_span_p] using
+      PadicInt.map_maximalIdeal_eq_span_p (PadicInt.toZModPow (p := p) e))
     (PadicInt.isSubDPIdeal_ker_toZModPow_inf p e) hquot hm
 
 end Canonical
@@ -245,6 +252,20 @@ theorem exists_unit_mul_two_eq_dpow_two_pow (e a : ℕ) :
   simp only [Nat.cast_ofNat] at h
   rw [h, hu, map_mul, map_ofNat]
   rfl
+
+/-- On the square-zero ideal `(2) ⊂ ZMod (2 ^ 2)` (`ℤ/4ℤ`), `ZMod.dividedPowers 2 2` (with
+`γ₂(2) = 2`) differs from `DividedPowers.OfSquareZero.dividedPowers` (with `γ₂(2) = 0`). -/
+theorem dividedPowers_two_two_ne_ofSquareZero
+    [DecidablePred fun x : ZMod (2 ^ 2) ↦ x ∈ Ideal.span {((2 : ℕ) : ZMod (2 ^ 2))}] :
+    ZMod.dividedPowers 2 2 ≠ DividedPowers.OfSquareZero.dividedPowers (by
+      rw [Ideal.span_singleton_pow, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]
+      simpa only [Nat.cast_ofNat] using ZMod.natCast_pow_eq_zero_of_le 2 (le_refl 2)) := by
+  intro h
+  have h0 : (ZMod.dividedPowers 2 2).dpow 2 (2 : ZMod (2 ^ 2)) = 0 := by
+    rw [h]
+    exact DividedPowers.OfSquareZero.dpow_of_two_le _ le_rfl 2
+  rw [dividedPowers_two_dpow_two] at h0
+  exact absurd h0 (by decide)
 
 end PrimeTwo
 

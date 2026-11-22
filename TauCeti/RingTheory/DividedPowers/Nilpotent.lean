@@ -91,10 +91,6 @@ theorem isPDNilpotent_iff_exists_eq_bot :
       exact (hI.pdFiltration_antitone (Nat.zero_le 1)).trans hn.le
     · exact ⟨n, Nat.pos_of_ne_zero hne, hn⟩
 
-/-- If `hI.pdFiltration n = ⊥`, then the ordinary ideal power `I ^ n` vanishes. -/
-theorem pow_eq_bot_of_pdFiltration_eq_bot {n : ℕ} (h : hI.pdFiltration n = ⊥) : I ^ n = ⊥ :=
-  eq_bot_iff.mpr ((hI.pow_le_pdFiltration n).trans h.le)
-
 /-- A PD-nilpotent divided power ideal is nilpotent as an ideal. -/
 theorem IsPDNilpotent.isNilpotent {hI : DividedPowers I} (h : hI.IsPDNilpotent) :
     _root_.IsNilpotent I := by
@@ -188,6 +184,7 @@ theorem isPDNilpotent_iff_isNilpotent_of_dpow_mem_pow
     (hI.pdFiltration_eq_pow_of_dpow_mem_pow h)
 
 /-- Over a `ℚ`-algebra, PD-nilpotence is equivalent to ordinary ideal nilpotence. -/
+@[simp]
 theorem isPDNilpotent_iff_isNilpotent [Algebra ℚ R] :
     hI.IsPDNilpotent ↔ _root_.IsNilpotent I :=
   hI.isPDNilpotent_iff_isNilpotent_of_pdFiltration_eq_pow hI.pdFiltration_eq_pow

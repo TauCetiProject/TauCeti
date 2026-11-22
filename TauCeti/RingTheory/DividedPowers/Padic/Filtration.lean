@@ -48,8 +48,8 @@ a complete classification of PD-nilpotence.
   filtration characterization.
 * `ZMod.isPDNilpotent_dividedPowers_iff`:
   `(ZMod.dividedPowers p e).IsPDNilpotent ↔ p ≠ 2 ∨ e ≤ 1`.
-* `ZMod.dividedPowers_two_two_ne_ofSquareZero`: the two divided power structures on `(2) ⊂ ZMod 4`
-  are distinct.
+* `ZMod.not_isPDNilpotent_dividedPowers_two`: for `e ≥ 2`, `ZMod.dividedPowers 2 e` is not
+  PD-nilpotent.
 
 ## References
 
@@ -148,7 +148,9 @@ the divided power filtration of `PadicInt.dividedPowers p`. -/
 theorem pdFiltration_dividedPowers (n : ℕ) :
     (ZMod.dividedPowers p e).pdFiltration n =
       ((PadicInt.dividedPowers p).pdFiltration n).map (PadicInt.toZModPow e) :=
-  ((toZModPow_isDPMorphism p e).map_pdFiltration_eq (PadicInt.map_toZModPow_span_p p e) n).symm
+  ((toZModPow_isDPMorphism p e).map_pdFiltration_eq (by
+    simpa only [PadicInt.maximalIdeal_eq_span_p] using
+      PadicInt.map_maximalIdeal_eq_span_p (PadicInt.toZModPow (p := p) e)) n).symm
 
 /-- Vanishing of the `n`-th divided power filtration step in `ZMod (p ^ e)` is equivalent to
 containment of the `n`-th filtration step in `Ideal.span {(p : ℤ_[p]) ^ e}`. -/
@@ -174,7 +176,8 @@ section PrimeTwoAndClassification
 theorem pdFiltration_dividedPowers_two {e n : ℕ} (hn : n ≠ 0) :
     (ZMod.dividedPowers 2 e).pdFiltration n = Ideal.span {(2 : ZMod (2 ^ e))} := by
   rw [pdFiltration_dividedPowers 2 e n, PadicInt.pdFiltration_two_eq hn]
-  simpa only [Nat.cast_ofNat] using PadicInt.map_toZModPow_span_p 2 e
+  simpa only [Nat.cast_ofNat, PadicInt.maximalIdeal_eq_span_p] using
+    PadicInt.map_maximalIdeal_eq_span_p (PadicInt.toZModPow (p := 2) e)
 
 /-- Complete classification of PD-nilpotence for the canonical divided power structure on
 `(p) ⊂ ZMod (p ^ e)`: it is PD-nilpotent if and only if `p` is odd (`p ≠ 2`) or `e ≤ 1`. -/
@@ -203,19 +206,6 @@ theorem not_isPDNilpotent_dividedPowers_two {e : ℕ} (he : 2 ≤ e) :
     ¬ (ZMod.dividedPowers 2 e).IsPDNilpotent := by
   rw [isPDNilpotent_dividedPowers_iff 2 e]
   omega
-
-/-- On the square-zero ideal `(2) ⊂ ZMod (2 ^ 2)` (`ℤ/4ℤ`), `ZMod.dividedPowers 2 2` (which is not
-PD-nilpotent, with `γ₂(2) = 2`) differs from `DividedPowers.OfSquareZero.dividedPowers` (which is
-PD-nilpotent, with `γ₂(2) = 0`). -/
-theorem dividedPowers_two_two_ne_ofSquareZero
-    [DecidablePred fun x : ZMod (2 ^ 2) ↦ x ∈ Ideal.span {((2 : ℕ) : ZMod (2 ^ 2))}] :
-    ZMod.dividedPowers 2 2 ≠ DividedPowers.OfSquareZero.dividedPowers (by
-      rw [Ideal.span_singleton_pow, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]
-      simpa only [Nat.cast_ofNat] using ZMod.natCast_pow_eq_zero_of_le 2 (le_refl 2)) := by
-  intro h
-  have hnil : (ZMod.dividedPowers 2 2).IsPDNilpotent :=
-    h ▸ DividedPowers.OfSquareZero.isPDNilpotent _
-  exact not_isPDNilpotent_dividedPowers_two le_rfl hnil
 
 end PrimeTwoAndClassification
 
