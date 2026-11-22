@@ -161,6 +161,17 @@ variable [IsManifold I ∞ M] {D : Π x : M, Submodule ℝ (TangentSpace I x)}
 
 open SmoothForm
 
+omit [FiniteDimensional ℝ E] in
+/-- **The Lie derivative of a one-form on a vector field tangent to its kernel.** If `W` is
+differentiable at `x` and tangent to `ker α` near `x`, then `L_X α (W) = -α([X, W])` at `x`: the
+derivative of `α(W)` vanishes there. -/
+theorem SmoothForm.mlieDerivForm_apply_eq_neg_apply_mlieBracket {W : Π y : M, TangentSpace I y}
+    (hWd : MDiffAt (T% W) x) (hW : ∀ᶠ y in 𝓝 x, W y ∈ α.kerDistribution y) :
+    mlieDerivForm X α.val x ![W x] = -α.val x ![mlieBracket I X W x] := by
+  rw [mlieDerivForm_apply_one (α.mdifferentiableAt x) hWd,
+    Filter.EventuallyEq.mvfderiv_eq (f := fun _ ↦ (0 : ℝ))
+      (hW.mono fun y hy ↦ mem_kerDistribution.1 hy), mvfderiv_const, zero_apply, zero_sub]
+
 namespace PreservesDistributionAt
 
 omit [FiniteDimensional ℝ E] in
@@ -173,16 +184,16 @@ theorem mlieDerivForm_apply_eq_zero {k : ℕ} (hD : IsContMDiffDistribution I �
   obtain ⟨U, hU, hxU, W, hW, hWD, hWx⟩ := hD.exists_contMDiffOn_apply_eq (⟨v, hv⟩ : D x)
   have hWx' : W x = v := hWx
   have hWd : MDiffAt (T% W) x := (hW.contMDiffAt (hU.mem_nhds hxU)).mdifferentiableAt (by simp)
-  -- `α(W)` vanishes near `x`, so `L_X α (W) = -α([X, W])`, and `[X, W]` lies in `D x = ker α_x`.
-  have hαW : (fun y ↦ α.val y ![W y]) =ᶠ[𝓝 x] fun _ ↦ (0 : ℝ) := by
+  -- `W` is tangent to `ker α` near `x`, so `L_X α (W) = -α([X, W])`, and `[X, W]` lies in
+  -- `D x = ker α_x`.
+  have hWα : ∀ᶠ y in 𝓝 x, W y ∈ α.kerDistribution y := by
     filter_upwards [hαD, hU.mem_nhds hxU] with y hy hyU
-    rw [← mem_kerDistribution, hy]
-    exact hWD y hyU
+    exact hy ▸ hWD y hyU
   have hbr : mlieBracket I X W x ∈ α.kerDistribution x := by
     rw [hαD.self_of_nhds]
     exact preservesDistributionAt_iff.1 hX hU hxU hW hWD
-  rw [← hWx', mlieDerivForm_apply_one (α.mdifferentiableAt x) hWd, hαW.mvfderiv_eq,
-    mvfderiv_const, zero_apply, mem_kerDistribution.1 hbr, sub_zero]
+  rw [← hWx', mlieDerivForm_apply_eq_neg_apply_mlieBracket hWd hWα, mem_kerDistribution.1 hbr,
+    neg_zero]
 
 /-- **A contact vector field satisfies the contact Hamiltonian equation of a local contact form.**
 If the kernel of `α` is the smooth contact structure `D` near `x` and a vector field `X`,
@@ -256,15 +267,6 @@ smooth hyperplane field; it need not be a contact form. -/
 theorem preservesDistribution_kerDistribution_iff_mlieDerivForm (hα : ∀ x, α.val x ≠ 0) :
     PreservesDistribution I α.kerDistribution X ↔
       ∀ x, ∀ v ∈ α.kerDistribution x, mlieDerivForm X α.val x ![v] = 0 := by
-  -- The formula `L_X α (W) = X(α(W)) - α([X, W])` for `W` tangent to `ker α` near the point,
-  -- where `α(W)` vanishes near the point, so that its derivative vanishes.
-  have key {x : M} {W : Π y : M, TangentSpace I y} (hWd : MDiffAt (T% W) x)
-      (hW : ∀ᶠ y in 𝓝 x, W y ∈ α.kerDistribution y) :
-      mlieDerivForm X α.val x ![W x] = -α.val x ![mlieBracket I X W x] := by
-    rw [mlieDerivForm_apply_one (α.mdifferentiableAt x) hWd,
-      Filter.EventuallyEq.mvfderiv_eq (f := fun _ ↦ (0 : ℝ))
-        (hW.mono fun y hy ↦ mem_kerDistribution.1 hy), mvfderiv_const,
-      zero_apply, zero_sub]
   constructor
   · intro hX x v hv
     let _ : IsManifold I ((∞ : ℕ∞ω) + 1) M := IsManifold.of_le (n := ∞) (by simp)
@@ -273,7 +275,8 @@ theorem preservesDistribution_kerDistribution_iff_mlieDerivForm (hα : ∀ x, α
   · refine fun h ↦ preservesDistribution_iff.2 fun U hU V hV hVD x hx ↦ ?_
     have hVd : MDiffAt (T% V) x := (hV.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt (by simp)
     have hx' := h x (V x) (hVD x hx)
-    rw [key hVd (eventually_of_mem (hU.mem_nhds hx) hVD), neg_eq_zero] at hx'
+    rw [mlieDerivForm_apply_eq_neg_apply_mlieBracket hVd (eventually_of_mem (hU.mem_nhds hx) hVD),
+      neg_eq_zero] at hx'
     exact mem_kerDistribution.2 hx'
 
 omit [FiniteDimensional ℝ E] in
