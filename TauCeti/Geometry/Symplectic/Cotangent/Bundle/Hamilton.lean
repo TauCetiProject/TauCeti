@@ -100,14 +100,9 @@ theorem symplecticForm_hamiltonianVectorField_comp_modelSpaceDiffeomorph
       (by rw [mfderiv_modelSpaceDiffeomorph]; exact Function.surjective_id) hh.mdifferentiableAt
     rwa [mfderiv_modelSpaceDiffeomorph, SymplecticForm.hamiltonianVectorField_constSmooth] at key
   · have hd : ¬MDifferentiableAt (𝓘(ℝ, E).prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ)
-        (h ∘ modelSpaceDiffeomorph E) z := fun hd ↦ hh <| by
-      -- `h` is `h ∘ Φ` read through the inverse of the diffeomorphism `Φ`.
-      rw [← (modelSpaceDiffeomorph E).symm_apply_apply z] at hd
-      have := hd.comp (modelSpaceDiffeomorph E z)
-        ((modelSpaceDiffeomorph E).symm.mdifferentiable (by simp) _)
-      rwa [show (h ∘ modelSpaceDiffeomorph E) ∘ (modelSpaceDiffeomorph E).symm = h from
-        funext fun w ↦ congrArg h ((modelSpaceDiffeomorph E).apply_symm_apply w),
-        mdifferentiableAt_iff_differentiableAt] at this
+        (h ∘ modelSpaceDiffeomorph E) z := by
+      rwa [(modelSpaceDiffeomorph E).mdifferentiableAt_comp_diffeomorph_iff (by simp),
+        mdifferentiableAt_iff_differentiableAt]
     rw [SmoothTwoForm.hamiltonianVectorField_eq_zero_of_not_mdifferentiableAt hd]
     exact ((SymplecticForm.hamiltonianVectorField_eq_zero_iff _ _ _).2
       (fderiv_zero_of_not_differentiableAt hh)).symm
@@ -373,22 +368,12 @@ theorem IsHyperregularLagrangian.mfderiv_legendreMap_mul_sq_sub_eq_hamiltonianVe
         (hxy.trans (mfderiv_lineDiffeomorph_apply ℝ _ y))
       obtain ⟨h1, h2⟩ := Prod.mk.inj hxy'
       exact Prod.ext h1 (ContinuousLinearMap.ext_ring h2)
-  have hℓFL : MDifferentiableAt 𝓘(ℝ, ℝ).tangent 𝓘(ℝ, ℝ × ℝ)
-      (lineDiffeomorph ℝ ∘ legendreMap L) v := by
-    rw [lineDiffeomorph_comp_legendreMap_mul_sq_sub v]
-    exact ((ContinuousLinearMap.fst ℝ ℝ ℝ).prod
-      (m • ContinuousLinearMap.snd ℝ ℝ ℝ)).differentiableAt.mdifferentiableAt.comp v
-        (mdifferentiableAt_extChartAt (mem_chart_source _ v))
-  have hFL : MDifferentiableAt 𝓘(ℝ, ℝ).tangent (𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ →L[ℝ] ℝ))
-      (legendreMap L) v :=
-    (((lineDiffeomorph ℝ).symm.mdifferentiable (by simp) _).comp v hℓFL).congr_of_eventuallyEq
-      (Filter.Eventually.of_forall fun u ↦ ((lineDiffeomorph ℝ).symm_apply_apply _).symm)
   -- Left side in coordinates: `d(ℓ ∘ FL)(v, -V'/m) = (v, m (-V'/m)) = (v, -V')`.
   have hlhs : mfderiv (𝓘(ℝ).prod 𝓘(ℝ, ℝ →L[ℝ] ℝ)) 𝓘(ℝ, ℝ × ℝ) (lineDiffeomorph ℝ)
       (legendreMap L v) (mfderiv 𝓘(ℝ, ℝ).tangent (𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ →L[ℝ] ℝ)) (legendreMap L) v
         ((v.snd, -deriv V v.proj / m) : ℝ × ℝ)) = ((v.snd, -deriv V v.proj) : ℝ × ℝ) := by
-    have hcomp := mfderiv_comp_apply v ((lineDiffeomorph ℝ).mdifferentiable (by simp) _) hFL
-      ((v.snd, -deriv V v.proj / m) : ℝ × ℝ)
+    have hcomp := DFunLike.congr_fun ((lineDiffeomorph ℝ).mfderiv_diffeomorph_comp
+      (K := 𝓘(ℝ, ℝ).tangent) (by simp) (legendreMap L) v) ((v.snd, -deriv V v.proj / m) : ℝ × ℝ)
     exact hcomp.symm.trans ((mfderiv_lineDiffeomorph_comp_legendreMap_mul_sq_sub v _).trans
       (Prod.ext rfl (mul_div_cancel₀ _ hm)))
   -- Right side in coordinates: `dℓ(X_H) = (p / m, -V'(q))`, which is `(v, -V')` at `p = m v`.
