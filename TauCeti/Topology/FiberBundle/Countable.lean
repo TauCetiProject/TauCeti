@@ -8,19 +8,20 @@ module
 public import Mathlib.Topology.FiberBundle.Basic
 
 /-!
-# Second countability of fibre bundles
+# Second countability and local compactness of fibre bundles
 
-A fibre bundle with second-countable base and model fibre has second-countable total space.
-This allows metrizability results for manifolds to apply to finite-dimensional vector bundles,
-including normal bundles. Over a second-countable base, countably many of the preferred
-trivializations `trivializationAt` cover the base
+A fibre bundle with second-countable base and model fibre has second-countable total space, and
+one with locally compact base and model fibre has locally compact total space. This allows
+metrizability and σ-compactness results for manifolds to apply to finite-dimensional vector
+bundles, including normal and cotangent bundles. Over a second-countable base, countably many of
+the preferred trivializations `trivializationAt` cover the base
 (`TauCeti.FiberBundle.exists_iUnion_baseSet_trivializationAt_eq_univ`); this is how
 measurability of sections is tested chart by chart.
 -/
 
 public section
 
-open Bundle Set TopologicalSpace
+open Bundle Set TopologicalSpace Filter Topology
 
 namespace TauCeti.FiberBundle
 
@@ -44,6 +45,30 @@ instance secondCountableTopology_totalSpace {B F : Type*} {V : B → Type*}
   intro p
   obtain ⟨b, hb, hpb⟩ := mem_iUnion₂.mp (hbase ▸ mem_univ p.proj)
   exact mem_iUnion.mpr ⟨⟨b, hb⟩, (trivializationAt F V b).mem_source.mpr hpb⟩
+
+/-- A fibre bundle with locally compact base and model fibre has locally compact total space: near
+each point it is homeomorphic to an open subset of the locally compact product of base and fibre.
+Together with `TauCeti.FiberBundle.secondCountableTopology_totalSpace`, this makes the total space
+σ-compact over a second-countable base with a second-countable fibre. -/
+instance locallyCompactSpace_totalSpace {B F : Type*} {V : B → Type*}
+    [TopologicalSpace B] [TopologicalSpace F] [∀ b, TopologicalSpace (V b)]
+    [TopologicalSpace (TotalSpace F V)] [FiberBundle F V]
+    [LocallyCompactSpace B] [LocallyCompactSpace F] :
+    LocallyCompactSpace (TotalSpace F V) := by
+  have (v : TotalSpace F V) : (𝓝 v).HasBasis
+      (fun s ↦ s ∈ 𝓝 (trivializationAt F V v.proj v) ∧ IsCompact s ∧
+        s ⊆ (trivializationAt F V v.proj).target)
+      fun s ↦ (trivializationAt F V v.proj).toOpenPartialHomeomorph.symm '' s := by
+    rw [← (trivializationAt F V v.proj).toOpenPartialHomeomorph.symm_map_nhds_eq
+      (FiberBundle.mem_trivializationAt_proj_source)]
+    exact ((compact_basis_nhds _).hasBasis_self_subset
+      ((trivializationAt F V v.proj).open_target.mem_nhds
+        ((trivializationAt F V v.proj).map_source
+          FiberBundle.mem_trivializationAt_proj_source))).map _
+  refine .of_hasBasis this ?_
+  rintro v s ⟨-, hs, hst⟩
+  exact hs.image_of_continuousOn
+    ((trivializationAt F V v.proj).toOpenPartialHomeomorph.continuousOn_symm.mono hst)
 
 variable (F : Type*) {B : Type*} (V : B → Type*) [TopologicalSpace B] [TopologicalSpace F]
   [∀ b, TopologicalSpace (V b)] [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] in

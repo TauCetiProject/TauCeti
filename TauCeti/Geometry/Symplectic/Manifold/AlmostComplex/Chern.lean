@@ -214,6 +214,33 @@ variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteD
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold I' ∞ N] {σ' : SmoothTwoForm I' N}
 
+/-- The differential of a diffeomorphism `h : M → N` at `x`, as a real-linear isomorphism from the
+tangent space of `M` with a complex structure `K` to the tangent space of `N` with `J'`. -/
+private def mfderivFiberRealEquiv
+    (K : Bundle.ContinuousComplexStructure E (TangentSpace I : M → Type _))
+    (h : M ≃ₘ⟮I, I'⟯ N) (J' : SmoothAlmostComplexStructure I' N) (x : M) :
+    K.Fiber x ≃L[ℝ] (J'.toContMDiff ⊤).toContinuousComplexStructure.Fiber (h x) :=
+  (K.fiberEquiv x).trans ((h.mfderivToContinuousLinearEquiv (by simp) x).trans
+    ((J'.toContMDiff ⊤).toContinuousComplexStructure.fiberEquiv (h x)).symm)
+
+/-- `mfderivFiberRealEquiv` as a `σ`-semilinear isomorphism, given its compatibility with complex
+scalars. -/
+private def mfderivFiberEquivₛₗ {σ σ' : ℂ →+* ℂ} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+    (K : Bundle.ContinuousComplexStructure E (TangentSpace I : M → Type _))
+    (h : M ≃ₘ⟮I, I'⟯ N) (J' : SmoothAlmostComplexStructure I' N) (x : M)
+    (hsmul : ∀ (z : ℂ) (v : K.Fiber x),
+      mfderivFiberRealEquiv K h J' x (z • v) = σ z • mfderivFiberRealEquiv K h J' x v) :
+    K.Fiber x ≃SL[σ] (J'.toContMDiff ⊤).toContinuousComplexStructure.Fiber (h x) :=
+  let A := mfderivFiberRealEquiv K h J' x
+  { toFun := A
+    invFun := A.symm
+    map_add' := map_add A
+    map_smul' := hsmul
+    left_inv := A.left_inv
+    right_inv := A.right_inv
+    continuous_toFun := A.continuous
+    continuous_invFun := A.symm.continuous }
+
 /-- The differential of a diffeomorphism `h : M → N` at `x`, as a complex-linear isomorphism from
 the tangent space of `M` with the pulled-back complex structure `h^* J'` to the tangent space of
 `N` with `J'`. -/
@@ -221,21 +248,12 @@ private def mfderivFiberEquiv (h : M ≃ₘ⟮I, I'⟯ N) (J' : SmoothAlmostComp
     (x : M) :
     ((J'.pullback h).toContMDiff ⊤).toContinuousComplexStructure.Fiber x ≃L[ℂ]
       (J'.toContMDiff ⊤).toContinuousComplexStructure.Fiber (h x) :=
-  let K := ((J'.pullback h).toContMDiff ⊤).toContinuousComplexStructure
-  let K' := (J'.toContMDiff ⊤).toContinuousComplexStructure
-  let A := h.mfderivToContinuousLinearEquiv (by simp) x
-  { toFun v := (K'.fiberEquiv (h x)).symm (A (K.fiberEquiv x v))
-    invFun w := (K.fiberEquiv x).symm (A.symm (K'.fiberEquiv (h x) w))
-    map_add' v w := by simp
-    map_smul' z v := by
-      apply (K'.fiberEquiv (h x)).injective
-      simp only [RingHom.id_apply, Bundle.ContinuousComplexStructure.fiberEquiv_smul,
-        ContinuousLinearEquiv.apply_symm_apply, map_add, map_smul]
-      simp [K, K', A]
-    left_inv v := by simp
-    right_inv w := by simp
-    continuous_toFun := by fun_prop
-    continuous_invFun := by fun_prop }
+  mfderivFiberEquivₛₗ _ h J' x fun z v ↦ by
+    apply ((J'.toContMDiff ⊤).toContinuousComplexStructure.fiberEquiv (h x)).injective
+    simp only [mfderivFiberRealEquiv, ContinuousLinearEquiv.trans_apply, RingHom.id_apply,
+      Bundle.ContinuousComplexStructure.fiberEquiv_smul, ContinuousLinearEquiv.apply_symm_apply,
+      map_add, map_smul]
+    simp
 
 /-- The differential of a diffeomorphism `h : M → N` at `x`, as a conjugate-linear isomorphism from
 the tangent space of `M` with the complex structure `-h^* J'` to the tangent space of `N` with
@@ -244,55 +262,28 @@ private def mfderivConjFiberEquiv (h : M ≃ₘ⟮I, I'⟯ N) (J' : SmoothAlmost
     (x : M) :
     ((-J'.pullback h).toContMDiff ⊤).toContinuousComplexStructure.Fiber x ≃L⋆[ℂ]
       (J'.toContMDiff ⊤).toContinuousComplexStructure.Fiber (h x) :=
-  let K := ((-J'.pullback h).toContMDiff ⊤).toContinuousComplexStructure
-  let K' := (J'.toContMDiff ⊤).toContinuousComplexStructure
-  let A := h.mfderivToContinuousLinearEquiv (by simp) x
-  { toFun v := (K'.fiberEquiv (h x)).symm (A (K.fiberEquiv x v))
-    invFun w := (K.fiberEquiv x).symm (A.symm (K'.fiberEquiv (h x) w))
-    map_add' v w := by simp
-    map_smul' z v := by
-      apply (K'.fiberEquiv (h x)).injective
-      simp only [Bundle.ContinuousComplexStructure.fiberEquiv_smul,
-        ContinuousLinearEquiv.apply_symm_apply, map_add, map_smul]
-      simp [K, K', A, SmoothAlmostComplexStructure.mfderiv_pullback_apply]
-    left_inv v := by simp
-    right_inv w := by simp
-    continuous_toFun := by fun_prop
-    continuous_invFun := by fun_prop }
-
-section Continuity
-
-variable (G G' : Type*) [NormedAddCommGroup G] [NormedSpace ℂ G] [FiniteDimensional ℂ G]
-  [Fact (finrank ℝ E = 2 * finrank ℂ G)] [NormedAddCommGroup G'] [NormedSpace ℂ G']
-  [FiniteDimensional ℂ G'] [Fact (finrank ℝ E' = 2 * finrank ℂ G')]
+  mfderivFiberEquivₛₗ _ h J' x fun z v ↦ by
+    apply ((J'.toContMDiff ⊤).toContinuousComplexStructure.fiberEquiv (h x)).injective
+    simp only [mfderivFiberRealEquiv, ContinuousLinearEquiv.trans_apply,
+      Bundle.ContinuousComplexStructure.fiberEquiv_smul, ContinuousLinearEquiv.apply_symm_apply,
+      map_add, map_smul]
+    simp [SmoothAlmostComplexStructure.mfderiv_pullback_apply]
 
 omit [T2Space M] [SigmaCompactSpace M] in
-/-- On total spaces, `mfderivFiberEquiv` is the tangent map of `h`, hence continuous. -/
-private theorem continuous_mfderivFiberEquiv (h : M ≃ₘ⟮I, I'⟯ N)
-    (J' : SmoothAlmostComplexStructure I' N) :
-    Continuous fun v : TotalSpace G
-        ((J'.pullback h).toContMDiff ⊤).toContinuousComplexStructure.Fiber ↦
-      TotalSpace.mk' G' (h v.proj) (mfderivFiberEquiv h J' v.proj v.snd) := by
+/-- On total spaces, `mfderivFiberRealEquiv` is the tangent map of `h`, hence continuous. The
+complex-linear and conjugate-linear versions have the same underlying map. -/
+private theorem continuous_mfderivFiberRealEquiv (G G' : Type*) [NormedAddCommGroup G]
+    [NormedSpace ℂ G] [FiniteDimensional ℂ G] [Fact (finrank ℝ E = 2 * finrank ℂ G)]
+    [NormedAddCommGroup G'] [NormedSpace ℂ G'] [FiniteDimensional ℂ G']
+    [Fact (finrank ℝ E' = 2 * finrank ℂ G')]
+    (K : Bundle.ContinuousComplexStructure E (TangentSpace I : M → Type _))
+    (h : M ≃ₘ⟮I, I'⟯ N) (J' : SmoothAlmostComplexStructure I' N) :
+    Continuous fun v : TotalSpace G K.Fiber ↦
+      TotalSpace.mk' G' (h v.proj) (mfderivFiberRealEquiv K h J' v.proj v.snd) := by
   refine (((J'.toContMDiff ⊤).toContinuousComplexStructure.totalSpaceHomeomorph
     G').symm.continuous.comp (h.contMDiff.continuous_tangentMap (by simp))).comp
-      (((J'.pullback h).toContMDiff ⊤).toContinuousComplexStructure.totalSpaceHomeomorph
-        G).continuous |>.congr fun v ↦ ?_
-  simp [mfderivFiberEquiv, tangentMap]
-
-omit [T2Space M] [SigmaCompactSpace M] in
-/-- On total spaces, `mfderivConjFiberEquiv` is the tangent map of `h`, hence continuous. -/
-private theorem continuous_mfderivConjFiberEquiv (h : M ≃ₘ⟮I, I'⟯ N)
-    (J' : SmoothAlmostComplexStructure I' N) :
-    Continuous fun v : TotalSpace G
-        ((-J'.pullback h).toContMDiff ⊤).toContinuousComplexStructure.Fiber ↦
-      TotalSpace.mk' G' (h v.proj) (mfderivConjFiberEquiv h J' v.proj v.snd) := by
-  refine (((J'.toContMDiff ⊤).toContinuousComplexStructure.totalSpaceHomeomorph
-    G').symm.continuous.comp (h.contMDiff.continuous_tangentMap (by simp))).comp
-      (((-J'.pullback h).toContMDiff ⊤).toContinuousComplexStructure.totalSpaceHomeomorph
-        G).continuous |>.congr fun v ↦ ?_
-  simp [mfderivConjFiberEquiv, tangentMap]
-
-end Continuity
+      (K.totalSpaceHomeomorph G).continuous |>.congr fun v ↦ ?_
+  simp [mfderivFiberRealEquiv, tangentMap]
 
 variable [T2Space N] [SigmaCompactSpace N]
 
@@ -314,7 +305,7 @@ theorem firstChernHom_map_of_mpullback_eq (hσ : σ.IsNondegenerate) (hσ' : σ'
       hJ'.tames ⊤,
     hσ.firstChernHom_eq_clutchingNumberHom (EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) hJ ⊤]
   exact clutchingNumberHom_map_of_continuousLinearEquiv ⟨h, h.continuous⟩ (mfderivFiberEquiv h J')
-    (continuous_mfderivFiberEquiv _ _ h J') rfl a
+    (continuous_mfderivFiberRealEquiv _ _ _ h J') rfl a
 
 /-- **Anti-symplectic diffeomorphisms reverse the first Chern number.** If a diffeomorphism
 `h : M → N` pulls `σ'` back to `-σ`, then the first Chern number of `σ'` on the image
@@ -331,22 +322,12 @@ theorem firstChernHom_map_of_mpullback_eq_neg (hσ : σ.IsNondegenerate)
   have : Fact (finrank ℝ E' = 2 * finrank ℂ (EuclideanSpace ℂ (Fin (finrank ℝ E' / 2)))) :=
     ⟨two_mul_finrank_euclideanSpace hσ' (h x)⟩
   obtain ⟨J', hJ'⟩ := exists_compatible hσ'
-  have hJ : σ.Tames (-J'.pullback h) := by
-    have hJh := hJ'.tames.pullback h
-    rw [hh, SmoothTwoForm.tames_iff] at hJh
-    refine SmoothTwoForm.tames_iff.2 fun y v hv ↦ ?_
-    have hy := hJh y v hv
-    rw [SmoothBundleForm.eval₂_neg] at hy
-    -- `tames_iff` states the goal through the redex `(fun x ↦ ⇑((-h^* J').toEndomorphism x)) y v`;
-    -- restate it as the application `(-h^* J') y v` that `neg_apply` rewrites.
-    change 0 < SmoothBundleForm.eval₂ σ y v ((-J'.pullback h) y v)
-    rw [SmoothAlmostComplexStructure.neg_apply, SmoothBundleForm.eval₂_neg_right]
-    linarith
+  have hJ : σ.Tames (-J'.pullback h) := (hh ▸ hJ'.tames.pullback h).neg
   rw [hσ'.firstChernHom_eq_clutchingNumberHom (EuclideanSpace ℂ (Fin (finrank ℝ E' / 2)))
       hJ'.tames ⊤,
     hσ.firstChernHom_eq_clutchingNumberHom (EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) hJ ⊤]
   exact clutchingNumberHom_map_of_conjugateLinear ⟨h, h.continuous⟩ (mfderivConjFiberEquiv h J')
-    (continuous_mfderivConjFiberEquiv _ _ h J') rfl a
+    (continuous_mfderivFiberRealEquiv _ _ _ h J') rfl a
 
 end Diffeomorph
 

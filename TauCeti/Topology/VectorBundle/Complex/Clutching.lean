@@ -480,6 +480,21 @@ variable [VectorBundle ℂ F E] [∀ x, IsTopologicalAddGroup (E x)] [∀ x, Con
 /-- The finite-dimensional model fibre is complete, as `TauCeti.exists_continuous_frame` needs. -/
 private local instance : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
 
+/-- The clutching number of the image `f ∘ p` of a sphere `p` is the degree around the boundary of
+the clutching function of any continuous frame `ψ z : F' ≃ E' (f (p z))` along `p`, read in a
+trivialization containing the base point. -/
+theorem clutchingNumber_map_eq_squareBoundaryDegree (f : C(X, Y)) (hfx : f x = y)
+    (p : Ω^ (Fin 2) X x) (e' : Trivialization F' (π F' E')) [e'.IsLinear ℂ] (hy : y ∈ e'.baseSet)
+    {ψ : ∀ z, F' ≃L[ℂ] E' (f (p z))}
+    (hψ : Continuous fun q : (Fin 2 → I) × F' ↦ TotalSpace.mk' F' (f (p q.1)) (ψ q.1 q.2)) :
+    clutchingNumber F' E' (GenLoop.map f hfx p) =
+      squareBoundaryDegree (clutchingFunction (fun z ↦ f (p z)) ψ e') := by
+  subst hfx
+  have hk : ∀ z ∈ Cube.boundary (Fin 2), f.comp (p : C(Fin 2 → I, X)) z = f x :=
+    fun z hz ↦ congrArg f (GenLoop.boundary p z hz)
+  rw [show GenLoop.map f rfl p = ⟨f.comp p, hk⟩ from Subtype.ext (GenLoop.coe_map f rfl p)]
+  exact clutchingNumber_eq_squareBoundaryDegree _ e' hy hψ
+
 /-- **Naturality of clutching numbers.** Let `f : X → Y` be continuous and let
 `Φ x : E x ≃ E' (f x)` be a family of complex-linear isomorphisms, continuous as a map of total
 spaces covering `f`. Then the clutching number of `E'` on the image `f ∘ p` of a sphere `p` is the
@@ -489,11 +504,6 @@ theorem clutchingNumber_map_of_continuousLinearEquiv (f : C(X, Y)) (Φ : ∀ x, 
     (hfx : f x = y) (p : Ω^ (Fin 2) X x) :
     clutchingNumber F' E' (GenLoop.map f hfx p) = clutchingNumber F E p := by
   subst hfx
-  -- The image sphere is the composite `f ∘ p`, along which frames are families over `p`.
-  have hk : ∀ z ∈ Cube.boundary (Fin 2), f.comp (p : C(Fin 2 → I, X)) z = f x :=
-    fun z hz ↦ congrArg f (GenLoop.boundary p z hz)
-  set q : Ω^ (Fin 2) Y (f x) := ⟨f.comp p, hk⟩
-  rw [show GenLoop.map f rfl p = q from Subtype.ext (GenLoop.coe_map f rfl p)]
   obtain ⟨φ, hφ⟩ := exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous p)
   set e := trivializationAt F E x
   set e' := trivializationAt F' E' (f x)
@@ -513,7 +523,7 @@ theorem clutchingNumber_map_of_continuousLinearEquiv (f : C(X, Y)) (Φ : ∀ x, 
     rintro z rfl h h'
     ext v
     simp [L, e.symm_apply_apply_mk h]
-  rw [clutchingNumber_eq_squareBoundaryDegree q e' hx' (φ := ψ) hψ,
+  rw [clutchingNumber_map_eq_squareBoundaryDegree f rfl p e' hx' hψ,
     clutchingNumber_eq_squareBoundaryDegree p e hx hφ]
   refine squareBoundaryDegree_congr fun z hz ↦ ?_
   have hpz : p z = x := GenLoop.boundary p z hz
@@ -524,11 +534,8 @@ theorem clutchingNumber_map_of_continuousLinearEquiv (f : C(X, Y)) (Φ : ∀ x, 
       L.trans (((φ z).trans (e.continuousLinearEquivAt ℂ (p z) h)).trans L.symm) := by
     ext v
     simpa [ψ] using congrArg (fun T : E (p z) ≃L[ℂ] F' ↦ T (φ z (L v))) (hΦx (p z) hpz h h')
-  rw [clutchingFunction_of_mem (f := q) h', clutchingFunction_of_mem h]
-  -- The point `q z` of the composite `f.comp p` is `f (p z)` by definition, but `rw` and `simp`
-  -- do not unfold the composite inside the dependent fibre, so restate the goal at `f (p z)`.
-  change ((ψ z).trans (e'.continuousLinearEquivAt ℂ (f (p z)) h')).normalizedDet⁻¹ = _
-  rw [hconj, ContinuousLinearEquiv.normalizedDet_trans_trans_symm]
+  rw [clutchingFunction_of_mem (f := fun z ↦ f (p z)) h', clutchingFunction_of_mem h, hconj,
+    ContinuousLinearEquiv.normalizedDet_trans_trans_symm]
 
 /-- **Naturality of clutching number homomorphisms.** For a family of complex-linear
 isomorphisms `Φ x : E x ≃ E' (f x)` continuous on total spaces and covering a continuous map

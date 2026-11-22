@@ -102,11 +102,6 @@ theorem clutchingNumber_map_of_conjugateLinear (f : C(X, Y)) (Φ : ∀ x, E x �
     (hfx : f x = y) (p : Ω^ (Fin 2) X x) :
     clutchingNumber F' E' (GenLoop.map f hfx p) = -clutchingNumber F E p := by
   subst hfx
-  -- The image sphere is the composite `f ∘ p`, along which frames are families over `p`.
-  have hk : ∀ z ∈ Cube.boundary (Fin 2), f.comp (p : C(Fin 2 → I, X)) z = f x :=
-    fun z hz ↦ congrArg f (GenLoop.boundary p z hz)
-  set q : Ω^ (Fin 2) Y (f x) := ⟨f.comp p, hk⟩
-  rw [show GenLoop.map f rfl p = q from Subtype.ext (GenLoop.coe_map f rfl p)]
   obtain ⟨φ, hφ⟩ := exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous p)
   set e := trivializationAt F E x
   set e' := trivializationAt F' E' (f x)
@@ -126,7 +121,8 @@ theorem clutchingNumber_map_of_conjugateLinear (f : C(X, Y)) (Φ : ∀ x, E x �
     hΦ.comp (hφ.comp (continuous_fst.prodMk (K.symm.continuous.comp continuous_snd)))
   -- On the boundary, the clutching function of `ψ` is the inverse of that of `φ`.
   have heq :
-      EqOn (clutchingFunction q ψ e') (clutchingFunction p φ e)⁻¹ (Cube.boundary (Fin 2)) := by
+      EqOn (clutchingFunction (fun z ↦ f (p z)) ψ e') (clutchingFunction p φ e)⁻¹
+        (Cube.boundary (Fin 2)) := by
     intro z hz
     have hpz : p z = x := GenLoop.boundary p z hz
     have h : p z ∈ e.baseSet := mem_of_eq_of_mem hpz hx
@@ -135,13 +131,10 @@ theorem clutchingNumber_map_of_conjugateLinear (f : C(X, Y)) (Φ : ∀ x, E x �
         (K.symm.trans ((φ z).trans (e.continuousLinearEquivAt ℂ (p z) h))).trans K := by
       ext v
       simp [ψ, hK (p z) h h' hpz]
-    rw [Pi.inv_apply, clutchingFunction_of_mem (f := q) h', clutchingFunction_of_mem h]
-    -- The point `q z` of the composite `f.comp p` is `f (p z)` by definition, but `rw` and `simp`
-    -- do not unfold the composite inside the dependent fibre, so restate the goal at `f (p z)`.
-    change ((ψ z).trans (e'.continuousLinearEquivAt ℂ (f (p z)) h')).normalizedDet⁻¹ = _
-    rw [hc, ContinuousLinearEquiv.normalizedDet_conjₛₗ]
+    rw [Pi.inv_apply, clutchingFunction_of_mem (f := fun z ↦ f (p z)) h',
+      clutchingFunction_of_mem h, hc, ContinuousLinearEquiv.normalizedDet_conjₛₗ]
   have h₁ := clutchingNumber_eq_squareBoundaryDegree p e hx hφ
-  have h₂ := clutchingNumber_eq_squareBoundaryDegree q e' hx' (φ := ψ) hψ
+  have h₂ := clutchingNumber_map_eq_squareBoundaryDegree f rfl p e' hx' hψ
   rw [squareBoundaryDegree_congr heq, squareBoundaryDegree_inv, ← h₁] at h₂
   exact h₂
 

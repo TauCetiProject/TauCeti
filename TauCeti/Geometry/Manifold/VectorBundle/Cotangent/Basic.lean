@@ -421,15 +421,14 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [ChartedSpace H M] [IsManifold I 1 M]
 
 /-- The cotangent bundle of a σ-compact manifold with a finite-dimensional real model is
-σ-compact: it is second countable, as a fibre bundle over a second-countable base, and locally
-compact, as a manifold with a finite-dimensional model. -/
+σ-compact: the base is second countable and locally compact, so the total space is too, as a fibre
+bundle with finite-dimensional fibre (`TauCeti.FiberBundle.secondCountableTopology_totalSpace`,
+`TauCeti.FiberBundle.locallyCompactSpace_totalSpace`). -/
 instance sigmaCompactSpace [SigmaCompactSpace M] : SigmaCompactSpace (CotangentBundle I M) := by
   have : SecondCountableTopology H := I.secondCountableTopology
   have : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact H M
-  have : LocallyCompactSpace (ModelProd H (E →L[ℝ] ℝ)) :=
-    (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).locallyCompactSpace
-  have : LocallyCompactSpace (CotangentBundle I M) :=
-    ChartedSpace.locallyCompactSpace (ModelProd H (E →L[ℝ] ℝ)) _
+  have : LocallyCompactSpace H := I.locallyCompactSpace
+  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
   infer_instance
 
 end SigmaCompact

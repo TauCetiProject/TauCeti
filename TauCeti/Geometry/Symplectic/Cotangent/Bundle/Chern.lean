@@ -82,6 +82,11 @@ def fiberNeg : CotangentBundle I M ≃ₘ⟮I.prod 𝓘(ℝ, E →L[ℝ] ℝ), I
 theorem fiberNeg_apply (p : CotangentBundle I M) : fiberNeg I M p = ⟨p.proj, -p.snd⟩ := by
   simp [fiberNeg]
 
+/-- The fibre negation is an involution. -/
+@[simp]
+theorem fiberNeg_symm : (fiberNeg I M).symm = fiberNeg I M :=
+  Diffeomorph.ext fun p ↦ by simp [fiberNeg, vectorBundleScalarDiffeomorph_symm]
+
 /-- **The fibre negation is anti-symplectic**: it pulls the canonical symplectic form back to its
 negative, `ν^* ω = -ω`. -/
 theorem mpullback_fiberNeg_symplecticForm :
