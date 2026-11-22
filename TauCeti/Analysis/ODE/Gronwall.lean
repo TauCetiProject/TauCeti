@@ -25,8 +25,7 @@ function by an integral of itself: an integrable `φ` with `φ t ≤ c + K ∫�
 `t ∈ [a, b]`, for some `K ≥ 0`. This file proves that such a `φ` satisfies
 `φ t ≤ c exp (K (t - a))` at every `t ∈ [a, b]` where the inequality itself holds
 (`TauCeti.le_mul_exp_of_le_add_mul_integral`). This is the constant-kernel case of the
-integrable-kernel inequality `TauCeti.le_mul_exp_integral_of_le_add_integral_mul`, with the
-hypothesis needed only almost everywhere.
+integrable-kernel inequality `TauCeti.le_mul_exp_integral_of_le_add_integral_mul`.
 
 The hypothesis `K ≥ 0` cannot be dropped: a very negative stretch of `φ` makes `c + K ∫ₐᵗ φ`
 large when `K < 0`.
@@ -83,31 +82,13 @@ theorem le_mul_exp_of_le_add_mul_integral {φ : ℝ → ℝ} {a b c K t : ℝ}
     (h : ∀ᵐ s ∂volume.restrict (Icc a b), φ s ≤ c + K * ∫ r in a..s, φ r)
     (ht : t ∈ Icc a b) (hφt : φ t ≤ c + K * ∫ s in a..t, φ s) :
     φ t ≤ c * exp (K * (t - a)) := by
-  -- The bound `χ = c + K ∫ₐ φ` of `φ` (a.e. on `[a, b]`) is continuous, and it satisfies the
-  -- hypothesis of the integrable-kernel inequality with the constant kernel `K` everywhere on
-  -- `[a, b]`, because `∫ₐˣ φ ≤ ∫ₐˣ χ` and `K ≥ 0`. Hence `φ t ≤ χ t ≤ c exp (K (t - a))`.
-  have hab : a ≤ b := ht.1.trans ht.2
-  have hint : IntervalIntegrable φ volume a b :=
-    (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2 hφ
-  set χ : ℝ → ℝ := fun t ↦ c + K * ∫ s in a..t, φ s
-  have hχ : ContinuousOn χ (Icc a b) := by
-    have hΨ : ContinuousOn (fun t ↦ ∫ s in a..t, φ s) (Icc a b) := by
-      simpa only [uIcc_of_le hab] using
-        intervalIntegral.continuousOn_primitive_interval' hint left_mem_uIcc
-    exact continuousOn_const.add (continuousOn_const.mul hΨ)
-  have hχint : IntervalIntegrable χ volume a b := hχ.intervalIntegrable_of_Icc hab
-  -- `χ x ≤ c + ∫ₐˣ K χ` on `[a, b]`, because `φ ≤ χ` almost everywhere there.
-  have hχle (x : ℝ) (hx : x ∈ Icc a b) : χ x ≤ c + ∫ s in a..x, K * χ s := by
-    have hsub : uIcc a x ⊆ uIcc a b := uIcc_subset_uIcc_left (Icc_subset_uIcc hx)
-    rw [intervalIntegral.integral_const_mul]
-    gcongr c + K * ?_
-    exact intervalIntegral.integral_mono_ae_restrict hx.1 (hint.mono_set hsub)
-      (hχint.mono_set hsub) (ae_restrict_of_ae_restrict_of_subset (Icc_subset_Icc_right hx.2) h)
+  -- Apply the integrable-kernel inequality to the constant kernel `K`, which integrates to
+  -- `∫ₐᵗ K = (t - a) K`.
   have hgr := le_mul_exp_integral_of_le_add_integral_mul (integrableOn_const measure_Icc_lt_top.ne)
-    (.of_forall fun _ ↦ hK) (hχ.integrableOn_Icc.const_mul K) hχle t ht
-  -- The constant kernel integrates to `∫ₐᵗ K = (t - a) K`.
-  rw [intervalIntegral.integral_const, smul_eq_mul, mul_comm (t - a)] at hgr
-  exact hφt.trans hgr
+    (.of_forall fun _ ↦ hK) (hφ.const_mul K)
+    (by simpa only [intervalIntegral.integral_const_mul] using h) ht
+    (by rwa [intervalIntegral.integral_const_mul])
+  rwa [intervalIntegral.integral_const, smul_eq_mul, mul_comm (t - a)] at hgr
 
 /-- **Grönwall's inequality for monotone functions, almost-everywhere form.** Let `g` be monotone
 on `[s, t]` with `g s ≥ 0`. If `k g ≤ g'` at almost every point of `(s, t)`, then
