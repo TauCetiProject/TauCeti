@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.ModularCurve.Simultaneous.Basic
-import TauCeti.CategoryTheory.Aut.Representable
+import TauCeti.CategoryTheory.Yoneda
 
 /-!
 # Forgetful projections between simultaneous moduli schemes
@@ -99,10 +99,11 @@ theorem mem_base_of_forget_middle (D₁ : Q₁.RelRepData)
     (h : W (D₁.rep V₂).hom) : W a₂.base := by
   apply D₁.mem_base_of_forget_right
     (S.ofIso (whiskerLeftIso P (β_ Q₁ Q₂))) R₂ a₂ _ h
-  rw [Functor.Monoidal.whiskerLeft_app_apply, Functor.RepresentableBy.ofIso_homEquiv_apply,
-    whiskerLeftIso_hom, Functor.Monoidal.whiskerLeft_app_apply,
-    Functor.Monoidal.braiding_hom_app_apply, Functor.Monoidal.fst_app_apply]
-  simpa only [Functor.Monoidal.whiskerLeft_app_apply, Functor.Monoidal.snd_app_apply] using ha₂
+  -- `whiskerLeft_app_apply` and `fst_app_apply` no longer match once their argument is
+  -- simplified to a literal tuple, so they rewrite top-down (`↓`)
+  simpa only [↓Functor.Monoidal.whiskerLeft_app_apply, ↓Functor.Monoidal.fst_app_apply,
+    Functor.RepresentableBy.ofIso_homEquiv_apply, whiskerLeftIso_hom,
+    Functor.Monoidal.braiding_hom_app_apply, Functor.Monoidal.snd_app_apply] using ha₂
 
 end Triple
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.ModularCurve.Simultaneous.Projections
-import TauCeti.CategoryTheory.Aut.Representable
+import TauCeti.CategoryTheory.Yoneda
 
 /-!
 # The scheme of two rigidifications
@@ -56,6 +56,8 @@ theorem doubleRepresentableBy_homEquiv {X : EllObj B}
       ((R.homEquiv (f ≫ V.baseChangeFunctorHom (D.rep V))).1,
         ((R.homEquiv (f ≫ V.baseChangeFunctorHom (D.rep V))).2,
           Q.map f.op (D.universal V))) := by
+  -- `rw`, not `simp`: `simp` leaves the pointwise composite of the braiding and the associator
+  -- unreduced here (`types_comp_apply` does not fire on it)
   rw [doubleRepresentableBy, Functor.RepresentableBy.ofIso_homEquiv_apply, Iso.trans_hom,
     NatTrans.comp_app, types_comp_apply, Functor.Monoidal.associator_hom_app_apply,
     Functor.Monoidal.braiding_hom_app_apply, tensorRepresentableBy_homEquiv]
