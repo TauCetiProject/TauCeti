@@ -137,7 +137,9 @@ theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCro
           k n (TauCeti.singularRelativeCross k X Y hA hB μ p q n h a b) =
       ((TopPair.ofSubset A).singularKronecker (R := R) (M := M) k p a ⊗ₘ
         (TopPair.ofSubset B).singularKronecker (R := S) (M := N) k q b) ≫ μ := by
-  simp only [singularRelativeHomologyCross_def, TopPair.singularKronecker_def]
+  rw [singularRelativeHomologyCross_def, ← relativeShuffle_comp_smallSingularSubcomplexPairToUnion,
+    homologyMap_comp]
+  simp only [TopPair.singularKronecker_def]
   exact (Category.assoc _ _ _).trans <|
     (whisker_eq _ ((Category.assoc _ _ _).trans
       (homologyMap_relativeShuffle_comp_singularKronecker_singularRelativeCross
@@ -158,7 +160,8 @@ theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCro
     singularRelativeHomologyCross X Y R S A B p q n h ≫
         (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularKronecker (R := R ⊗ S) (M := L)
           k n (TauCeti.singularRelativeCross k X Y hA hB μ p' q' n h' a b) = 0 := by
-  simp only [singularRelativeHomologyCross_def, TopPair.singularKronecker_def]
+  rw [singularRelativeHomologyCross_def, ← relativeShuffle_comp_smallSingularSubcomplexPairToUnion,
+    homologyMap_comp, TopPair.singularKronecker_def]
   exact (Category.assoc _ _ _).trans <|
     (whisker_eq _ ((Category.assoc _ _ _).trans
       (homologyMap_relativeShuffle_comp_singularKronecker_singularRelativeCross

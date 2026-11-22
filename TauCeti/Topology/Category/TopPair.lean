@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Category.TopCat.Limits.Products
-public import Mathlib.Topology.Category.TopCat.Monoidal
+public import TauCeti.Topology.Category.TopCat.Monoidal
 public import Mathlib.Topology.Category.TopPair
 public import TauCeti.Topology.Category.TopCat.Fiber
 
@@ -793,32 +793,6 @@ union with the preimage of any subset `A` of `X` under the first projection. -/
 lemma isOpen_subtypeVal_preimage_preimage_snd_union (hB : IsOpen B) :
     IsOpen ((↑) ⁻¹' (snd X Y ⁻¹' B) : Set ↥(fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)) :=
   (hB.preimage (snd X Y).hom.continuous).preimage continuous_subtypeVal
-
-/-- The product of two maps carries the preimage of `A` under the first projection into the
-preimage of `A'` when the first map carries `A` into `A'`. -/
-lemma mapsTo_tensorHom_preimage_fst {A' : Set X'} (f : X ⟶ X') (g : Y ⟶ Y')
-    (hf : Set.MapsTo f A A') : Set.MapsTo (f ⊗ₘ g) (fst X Y ⁻¹' A) (fst X' Y' ⁻¹' A') :=
-  fun x hx ↦ by
-    rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, tensorHom_fst,
-      ConcreteCategory.comp_apply]
-    exact hf hx
-
-/-- The product of two maps carries the preimage of `B` under the second projection into the
-preimage of `B'` when the second map carries `B` into `B'`. -/
-lemma mapsTo_tensorHom_preimage_snd {B' : Set Y'} (f : X ⟶ X') (g : Y ⟶ Y')
-    (hg : Set.MapsTo g B B') : Set.MapsTo (f ⊗ₘ g) (snd X Y ⁻¹' B) (snd X' Y' ⁻¹' B') :=
-  fun x hx ↦ by
-    rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, tensorHom_snd,
-      ConcreteCategory.comp_apply]
-    exact hg hx
-
-/-- The product of two maps carrying `A` into `A'` and `B` into `B'` carries the union of the
-preimages of `A` and `B` under the projections into the union of the preimages of `A'` and
-`B'`. -/
-lemma mapsTo_tensorHom_preimage_union {A' : Set X'} {B' : Set Y'} (f : X ⟶ X') (g : Y ⟶ Y')
-    (hf : Set.MapsTo f A A') (hg : Set.MapsTo g B B') :
-    Set.MapsTo (f ⊗ₘ g) (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B) (fst X' Y' ⁻¹' A' ∪ snd X' Y' ⁻¹' B') :=
-  (mapsTo_tensorHom_preimage_fst f g hf).union_union (mapsTo_tensorHom_preimage_snd f g hg)
 
 variable (X Y A) in
 /-- The homeomorphism `A × Y ≅ fst⁻¹(A)` between the product of the subspace `A ⊆ X` with `Y`

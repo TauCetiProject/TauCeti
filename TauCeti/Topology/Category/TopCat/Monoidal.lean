@@ -18,7 +18,9 @@ and the identity, so it is a split monomorphism, and it is natural in `X` and in
 
 We also record `TopCat.ofHom_fst` and `TopCat.ofHom_snd`, identifying
 `TopCat.ofHom ContinuousMap.fst` and `TopCat.ofHom ContinuousMap.snd` with the cartesian
-projections `fst` and `snd`, and `TopCat.mapsTo_tensorHom_compl_singleton` showing that a product of
+projections `fst` and `snd`, `TopCat.mapsTo_tensorHom_preimage_fst`,
+`TopCat.mapsTo_tensorHom_preimage_snd`, and `TopCat.mapsTo_tensorHom_preimage_union` for
+preimages under projections, and `TopCat.mapsTo_tensorHom_compl_singleton` showing that a product of
 maps preserving singleton complements preserves the complement of the pair. When `X` has the
 discrete topology, `TopCat.sigmaConstIsoProd X Y` identifies the disjoint union
 `TopCat.of (Σ _ : X, Y)` with the product `X ⊗ Y`, matching each summand inclusion `TopCat.sigmaι`
@@ -45,6 +47,35 @@ lemma ofHom_snd {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] :
     TopCat.ofHom (ContinuousMap.snd : C(X × Y, Y)) = snd (of X) (of Y) :=
   TopCat.ext fun _ ↦ rfl
 
+/-- The product of two maps carries the preimage of `A` under the first projection into the
+preimage of `A'` when the first map carries `A` into `A'`. -/
+lemma mapsTo_tensorHom_preimage_fst {X Y X' Y' : TopCat.{u}} {A : Set X} {A' : Set X'}
+    (f : X ⟶ X') (g : Y ⟶ Y') (hf : Set.MapsTo f A A') :
+    Set.MapsTo (f ⊗ₘ g) (fst X Y ⁻¹' A) (fst X' Y' ⁻¹' A') :=
+  fun x hx ↦ by
+    rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, tensorHom_fst,
+      ConcreteCategory.comp_apply]
+    exact hf hx
+
+/-- The product of two maps carries the preimage of `B` under the second projection into the
+preimage of `B'` when the second map carries `B` into `B'`. -/
+lemma mapsTo_tensorHom_preimage_snd {X Y X' Y' : TopCat.{u}} {B : Set Y} {B' : Set Y'}
+    (f : X ⟶ X') (g : Y ⟶ Y') (hg : Set.MapsTo g B B') :
+    Set.MapsTo (f ⊗ₘ g) (snd X Y ⁻¹' B) (snd X' Y' ⁻¹' B') :=
+  fun x hx ↦ by
+    rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, tensorHom_snd,
+      ConcreteCategory.comp_apply]
+    exact hg hx
+
+/-- The product of two maps carrying `A` into `A'` and `B` into `B'` carries the union of the
+preimages of `A` and `B` under the projections into the union of the preimages of `A'` and
+`B'`. -/
+lemma mapsTo_tensorHom_preimage_union {X Y X' Y' : TopCat.{u}} {A : Set X} {B : Set Y}
+    {A' : Set X'} {B' : Set Y'} (f : X ⟶ X') (g : Y ⟶ Y')
+    (hf : Set.MapsTo f A A') (hg : Set.MapsTo g B B') :
+    Set.MapsTo (f ⊗ₘ g) (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B) (fst X' Y' ⁻¹' A' ∪ snd X' Y' ⁻¹' B') :=
+  (mapsTo_tensorHom_preimage_fst f g hf).union_union (mapsTo_tensorHom_preimage_snd f g hg)
+
 /-- The product of two continuous maps carrying `{x₁}ᶜ` into `{y₁}ᶜ` and `{x₂}ᶜ` into `{y₂}ᶜ`
 carries `{(x₁, x₂)}ᶜ` into `{(y₁, y₂)}ᶜ`. -/
 lemma mapsTo_tensorHom_compl_singleton {V₁ V₂ W₁ W₂ : Type u} [TopologicalSpace V₁]
@@ -54,7 +85,7 @@ lemma mapsTo_tensorHom_compl_singleton {V₁ V₂ W₁ W₂ : Type u} [Topologic
     (hg₂ : Set.MapsTo g₂ ({x₂}ᶜ : Set V₂) ({y₂}ᶜ : Set W₂)) :
     Set.MapsTo (g₁ ⊗ₘ g₂) ({(x₁, x₂)}ᶜ : Set (V₁ × V₂)) ({(y₁, y₂)}ᶜ : Set (W₁ × W₂)) := by
   rw [Set.compl_singleton_prod, Set.compl_singleton_prod]
-  exact fun _ h ↦ h.imp (fun hx ↦ hg₁ hx) (fun hx ↦ hg₂ hx)
+  exact mapsTo_tensorHom_preimage_union g₁ g₂ hg₁ hg₂
 
 variable (X F : TopCat.{u})
 

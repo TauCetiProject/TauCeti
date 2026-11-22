@@ -65,6 +65,47 @@ def alexanderWhitneyShuffleHomotopy (X Y : TopCat.{w}) (R S : C) :
           ← Functor.OplaxMonoidal.δ_of_cartesianMonoidalCategory, Functor.Monoidal.δ_μ,
           CategoryTheory.Functor.map_id]
 
+/-- The homotopy `TopCat.alexanderWhitneyShuffleHomotopy` is natural in both topological spaces. -/
+@[reassoc]
+lemma alexanderWhitneyShuffleHomotopy_hom_naturality {X Y X' Y' : TopCat.{w}}
+    (f : X ⟶ X') (g : Y ⟶ Y') (R S : C) (i j : ℕ) :
+    (SSet.chainComplexMap (toSSet.map (f ⊗ₘ g)) (R ⊗ S)).f i ≫
+        (alexanderWhitneyShuffleHomotopy X' Y' R S).hom i j =
+      (alexanderWhitneyShuffleHomotopy X Y R S).hom i j ≫
+        (SSet.chainComplexMap (toSSet.map (f ⊗ₘ g)) (R ⊗ S)).f j := by
+  simp only [alexanderWhitneyShuffleHomotopy, Homotopy.trans_hom, Homotopy.ofEq_hom,
+    Pi.zero_apply, zero_add, add_zero, Homotopy.compLeft_hom, Homotopy.compRight_hom]
+  have hnat : (SSet.chainComplexMap (toSSet.map f ⊗ₘ toSSet.map g) (R ⊗ S)).f i ≫
+      (SSet.alexanderWhitneyShuffleHomotopy (toSSet.obj X') (toSSet.obj Y') R S).hom i j =
+      (SSet.alexanderWhitneyShuffleHomotopy (toSSet.obj X) (toSSet.obj Y) R S).hom i j ≫
+        (SSet.chainComplexMap (toSSet.map f ⊗ₘ toSSet.map g) (R ⊗ S)).f j :=
+    SSet.alexanderWhitneyShuffleHomotopy_hom_naturality R S (toSSet.map f) (toSSet.map g) i j
+  have hprod : toSSet.map (f ⊗ₘ g) ≫ CartesianMonoidalCategory.prodComparison toSSet X' Y' =
+      CartesianMonoidalCategory.prodComparison toSSet X Y ≫ (toSSet.map f ⊗ₘ toSSet.map g) :=
+    CartesianMonoidalCategory.prodComparison_natural toSSet f g
+  have hμ : (toSSet.map f ⊗ₘ toSSet.map g) ≫ Functor.LaxMonoidal.μ toSSet X' Y' =
+      Functor.LaxMonoidal.μ toSSet X Y ≫ toSSet.map (f ⊗ₘ g) :=
+    Functor.LaxMonoidal.μ_natural toSSet f g
+  have hprodc :
+      (SSet.chainComplexMap (toSSet.map (f ⊗ₘ g)) (R ⊗ S)).f i ≫
+        (SSet.chainComplexMap
+          (CartesianMonoidalCategory.prodComparison toSSet X' Y') (R ⊗ S)).f i =
+      (SSet.chainComplexMap
+          (CartesianMonoidalCategory.prodComparison toSSet X Y) (R ⊗ S)).f i ≫
+        (SSet.chainComplexMap (toSSet.map f ⊗ₘ toSSet.map g) (R ⊗ S)).f i := by
+    rw [SSet.chainComplexMap_f_comp, hprod, ← SSet.chainComplexMap_f_comp]
+  have hμc :
+      (SSet.chainComplexMap (toSSet.map f ⊗ₘ toSSet.map g) (R ⊗ S)).f j ≫
+        (SSet.chainComplexMap (Functor.LaxMonoidal.μ toSSet X' Y') (R ⊗ S)).f j =
+      (SSet.chainComplexMap (Functor.LaxMonoidal.μ toSSet X Y) (R ⊗ S)).f j ≫
+        (SSet.chainComplexMap (toSSet.map (f ⊗ₘ g)) (R ⊗ S)).f j := by
+    rw [SSet.chainComplexMap_f_comp, hμ, ← SSet.chainComplexMap_f_comp]
+  simp only [Category.assoc]
+  rw [← Category.assoc ((SSet.chainComplexMap (toSSet.map (f ⊗ₘ g)) (R ⊗ S)).f i), hprodc,
+    Category.assoc,
+    ← Category.assoc ((SSet.chainComplexMap (toSSet.map f ⊗ₘ toSSet.map g) (R ⊗ S)).f i),
+    hnat, Category.assoc, hμc]
+
 /-- **The Eilenberg–Zilber homotopy on singular chains**: the shuffle map
 `C(X; R) ⊗ C(Y; S) ⟶ C(X × Y; R ⊗ S)` followed by the Alexander–Whitney map is chain homotopic to
 the identity of `C(X; R) ⊗ C(Y; S)`. -/

@@ -320,6 +320,17 @@ def alexanderWhitneyShuffleHomotopy :
     (fun _ _ _ _ _ _ ↦ by rw [Category.comp_id, Category.id_comp])
     (fun _ _ ↦ by simp) K L
 
+variable {K L} in
+/-- The homotopy `SSet.alexanderWhitneyShuffleHomotopy` is natural in both simplicial sets. -/
+@[reassoc]
+lemma alexanderWhitneyShuffleHomotopy_hom_naturality {K' L' : SSet.{w}} (f : K ⟶ K')
+    (g : L ⟶ L') (i j : ℕ) :
+    (chainComplexMap (f ⊗ₘ g) (R ⊗ S)).f i ≫
+        (alexanderWhitneyShuffleHomotopy K' L' R S).hom i j =
+      (alexanderWhitneyShuffleHomotopy K L R S).hom i j ≫
+        (chainComplexMap (f ⊗ₘ g) (R ⊗ S)).f j :=
+  prodChainComplexHomotopy_hom_naturality _ _ _ _ _ f g i j
+
 end EilenbergZilber
 
 namespace stdSimplex

@@ -119,7 +119,7 @@ its relative chains is a split epimorphism. -/
 instance isSplitEpi_chainComplexπ_f (R : C) (P : SSetPair.{w}) (n : ℕ) :
     IsSplitEpi ((P.chainComplexπ R).f n) :=
   let b := binaryBiconeOfIsSplitMonoOfCokernel (P.isColimitCokernelCoforkChainComplexX R n)
-  ⟨⟨b.inr, b.inr_snd⟩⟩
+  inferInstanceAs (IsSplitEpi b.snd)
 
 variable {A : Type*} [Category* A] [HasCoproducts.{w} A] [Abelian A]
 

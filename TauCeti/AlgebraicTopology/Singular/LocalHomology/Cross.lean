@@ -138,8 +138,8 @@ theorem complSingletonPairHomologyCross_naturality
     complSingletonPairHomologyCross x₁ x₂ v p q n h ≫
       TopPair.singularHomologyMap (TopPair.ofSubsetMap (g₁ ⊗ₘ g₂)
         (TopCat.mapsTo_tensorHom_compl_singleton g₁ g₂ hg₁ hg₂)) T n := by
-  let uPair := TopPair.ofSubsetMap (g₁ ⊗ₘ g₂) ((TopCat.mapsTo_tensorHom_preimage_fst g₁ g₂
-    hg₁).union_union (TopCat.mapsTo_tensorHom_preimage_snd g₁ g₂ hg₂))
+  let uPair := TopPair.ofSubsetMap (g₁ ⊗ₘ g₂)
+    (TopCat.mapsTo_tensorHom_preimage_union g₁ g₂ hg₁ hg₂)
   let idV := TopPair.ofSubsetMap (B := fst (TopCat.of V₁) (TopCat.of V₂) ⁻¹' ({x₁}ᶜ : Set V₁) ∪
       snd (TopCat.of V₁) (TopCat.of V₂) ⁻¹' ({x₂}ᶜ : Set V₂)) (B' := ({(x₁, x₂)}ᶜ : Set _))
     (𝟙 (TopCat.of V₁ ⊗ TopCat.of V₂)) (Set.compl_singleton_prod x₁ x₂).superset
