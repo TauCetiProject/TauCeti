@@ -43,6 +43,9 @@ at `exp y`, so the chain rule `(f ∘ exp)'(y) = e^y f'(e^y)` holds with no hypo
 * `ContDiff.isBigO_iteratedFDeriv_exp_sub_one`: along a filter on which `ρ` is bounded, the
   derivative of order `n` of `exp ℓ - 1` is `O(ρ)` when the derivatives of `ℓ` of order at most `n`
   are `O(ρ)`.
+* `ContDiffOn.norm_iteratedFDeriv_exp_comp_le`: the pointwise bound
+  `‖Dⁿ (exp f) (x)‖ ≤ n! exp (f x) max ε εⁿ` when the derivatives of `f` of orders `1` to `n` at
+  `x` have norm at most `ε`.
 -/
 
 public section
@@ -213,3 +216,48 @@ theorem ContDiff.isBigO_iteratedFDeriv_exp_sub_one {D : Type*} [NormedAddCommGro
       ((hℓ.isBigO_iteratedFDeriv_succ_exp (fun i _ hi ↦ hdec i hi) (hbdd n (by omega))))
     rw [fun_iteratedFDeriv_sub_apply (hexp.contDiffAt.of_le (by simp)) contDiffAt_const,
       iteratedFDeriv_const_of_ne n.succ_ne_zero, Pi.zero_apply, sub_zero]
+
+open Set in
+open scoped Nat in
+/-- **Pointwise bound on the derivatives of `exp f`.** Let `f` be `Cⁿ` on an open set containing
+`x`, with derivatives of orders `1` to `n` at `x` of norm at most `ε`. Then the derivative of order
+`n` of `y ↦ exp (f y)` at `x` has norm at most `n! exp (f x) max ε εⁿ`; for `n ≥ 1` and `ε ≤ 1`
+this is `n! exp (f x) ε`. It is a form of the Faà di Bruno bound `norm_iteratedFDeriv_comp_le`
+in which the derivatives of `f` of all positive orders have one bound `ε`. -/
+theorem ContDiffOn.norm_iteratedFDeriv_exp_comp_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : E → ℝ} {s : Set E} {n : ℕ} (hf : ContDiffOn ℝ n f s) (hs : IsOpen s)
+    {x : E} (hx : x ∈ s) {ε : ℝ} (hε : 0 ≤ ε)
+    (hD : ∀ i, 1 ≤ i → i ≤ n → ‖iteratedFDeriv ℝ i f x‖ ≤ ε) :
+    ‖iteratedFDeriv ℝ n (fun y ↦ Real.exp (f y)) x‖ ≤ n ! * Real.exp (f x) * max ε (ε ^ n) := by
+  set t : ℝ := ε ^ ((n : ℝ)⁻¹)
+  set D : ℝ := max t ε
+  have ht₀ : 0 ≤ t := Real.rpow_nonneg hε _
+  -- Every power `Dⁱ` with `1 ≤ i ≤ n` is at least `ε`, and `Dⁿ ≤ max ε εⁿ`.
+  have hεD (i : ℕ) (hi : 1 ≤ i) (hin : i ≤ n) : ε ≤ D ^ i := by
+    rcases le_total 1 ε with h1 | h1
+    · exact (le_max_right t ε).trans (le_self_pow₀ (h1.trans (le_max_right t ε)) (by omega))
+    · have htn : t ^ n = ε := Real.rpow_inv_natCast_pow hε (by omega)
+      have ht₁ : t ≤ 1 := Real.rpow_le_one hε h1 (by positivity)
+      calc ε = t ^ n := htn.symm
+        _ ≤ t ^ i := pow_le_pow_of_le_one ht₀ ht₁ hin
+        _ ≤ D ^ i := pow_le_pow_left₀ ht₀ (le_max_left t ε) i
+  have hDn : D ^ n ≤ max ε (ε ^ n) := by
+    rcases le_total t ε with h | h
+    · rw [show D = ε from max_eq_right h]
+      exact le_max_right _ _
+    · rw [show D = t from max_eq_left h]
+      rcases Nat.eq_zero_or_pos n with rfl | hn
+      · simp
+      · rw [Real.rpow_inv_natCast_pow hε hn.ne']
+        exact le_max_left _ _
+  have h := norm_iteratedFDerivWithin_comp_le (g := Real.exp) (t := univ) (C := Real.exp (f x))
+    (D := D) Real.contDiff_exp.contDiffOn hf le_rfl uniqueDiffOn_univ hs.uniqueDiffOn
+    (mapsTo_univ _ _) hx (fun i _ ↦ by
+      rw [iteratedFDerivWithin_univ, norm_iteratedFDeriv_eq_norm_iteratedDeriv,
+        iteratedDeriv_eq_iterate, Real.iter_deriv_exp, Real.norm_eq_abs,
+        abs_of_pos (Real.exp_pos _)])
+    (fun i hi hin ↦ by
+      rw [iteratedFDerivWithin_of_isOpen i hs hx]
+      exact (hD i hi hin).trans (hεD i hi hin))
+  rw [iteratedFDerivWithin_of_isOpen n hs hx] at h
+  exact h.trans (mul_le_mul_of_nonneg_left hDn (by positivity))
