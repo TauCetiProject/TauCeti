@@ -11,11 +11,9 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.PDE.Strichartz.Retarded
-import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.Star
-import TauCeti.MeasureTheory.Integral.ChristKiselev
 
 /-!
 # Mixed-norm Strichartz estimates for the frequency-localized wave equation
