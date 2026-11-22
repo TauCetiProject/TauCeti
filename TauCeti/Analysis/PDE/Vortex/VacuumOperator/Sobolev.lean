@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LaplacianResolvent
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Basic
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
+import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian.Power
 
 /-!
 # The vacuum vortex operator on the Sobolev scale

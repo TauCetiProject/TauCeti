@@ -202,9 +202,9 @@ theorem tendsto_hamiltonianAction_of_tendsto_integral_norm_sq_sliceDefect
   have hX : Continuous (uncurry X) :=
     (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous
   have hloop : ∀ i, Continuous fun t ↦ u (φ i, t) := fun i ↦
-    continuous_slice_of_continuousOn hu.continuousOn (hφa i)
+    continuous_slice_of_continuousOn hu.continuousOn fun t ↦ ⟨hφa i, mem_univ t⟩
   have hdefc : ∀ i, Continuous fun t ↦ sliceDefect X u (φ i, t) := fun i ↦
-    continuous_sliceDefect_slice hu hX (hφa i)
+    continuous_sliceDefect_slice (isOpen_Ioi.prod isOpen_univ) hu hX fun t ↦ ⟨hφa i, mem_univ t⟩
   -- Integrals of continuous functions of `(t, u(s_i, t))` over a period converge.
   have hdct : ∀ Φ : ℝ × V → ℝ, Continuous Φ →
       Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, Φ (t, u (φ i, t))) l
@@ -217,8 +217,8 @@ theorem tendsto_hamiltonianAction_of_tendsto_integral_norm_sq_sliceDefect
       l (𝓝 0) :=
     tendsto_integral_apply_of_tendsto_integral_norm (y := fun i t ↦ u (φ i, t))
       (fun i t ↦ hR _ (huK _ (hφa i) t)) hdefc
-      (tendsto_integral_norm_sliceDefect_of_tendsto_integral_norm_sq hu hX hφa hdef le_rfl
-        zero_le_one le_rfl)
+      (tendsto_integral_norm_sliceDefect_of_tendsto_integral_norm_sq (fun _ ↦ hu) hX hφa hdef
+        le_rfl zero_le_one le_rfl)
   -- Hence the actions converge.
   have hω1 := hdct (fun p ↦ ω p.2 (X p.1 p.2)) (ω.continuous_apply_comp continuous_snd hX)
   have hH1 := hdct (uncurry H) hH.continuous
