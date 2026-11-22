@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.ExteriorSquare
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Reaction
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Bracket
+import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Trace
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
@@ -25,7 +26,7 @@ where `R ∧ S = exteriorPower.symmMap₂ R S` acts on `⋀² (⋀² V)` by
 `(R ∧ S)(X ∧ Y) = ½ (R X ∧ S Y + S X ∧ R Y)`; this is `TauCeti.bivectorSharp R S`, and
 `R# = R # R = ad ∘ ⋀² R ∘ ad*`. Through the adjoint formula `ad* (u ∧ v) = ∑ₚ (u ∧ eₚ) ∧ (v ∧ eₚ)`
 the sharp product becomes a contraction over an orthonormal basis `(eₚ)`
-(`TauCeti.inner_bivectorSharp_ιMulti`):
+(`TauCeti.inner_bivectorSharp_self_ιMulti`, polarized in `TauCeti.inner_bivectorSharp_ιMulti`):
 
 `⟪R# (u ∧ v), z ∧ w⟫ = ∑ₚ ∑_q (⟪R (u ∧ eₚ), z ∧ e_q⟫ ⟪R (v ∧ eₚ), w ∧ e_q⟫
   - ⟪R (u ∧ eₚ), w ∧ e_q⟫ ⟪R (v ∧ eₚ), z ∧ e_q⟫)`.

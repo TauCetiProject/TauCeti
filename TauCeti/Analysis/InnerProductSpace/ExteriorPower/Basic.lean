@@ -9,10 +9,12 @@ public import Mathlib.Analysis.InnerProductSpace.ExteriorPower
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import TauCeti.Algebra.Lie.ExteriorPower
 public import TauCeti.Analysis.InnerProductSpace.Dual
+public import TauCeti.LinearAlgebra.BilinearForm.ExteriorSquare
 public import Mathlib.LinearAlgebra.UnitaryGroup
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
+import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
@@ -40,7 +42,8 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 * `ContinuousLinearMap.gradientWedge P`: the wedge `p₁ ∧ p₂` of the vectors representing the
   real and imaginary parts of a complex-valued covector `P`.
 * `TauCeti.twoVectorContraction F`: the skew endomorphism `u ↦ u ⌟ F` of a two-vector, with
-  `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`.
+  `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`, and `TauCeti.twoVectorContractionₗ`: the same map bundled as a
+  linear map `⋀² V → End V`.
 * `TauCeti.twoVectorAlternatingSum θ a b c`: the alternating sum
   `θ(a)(b, c) - θ(b)(a, c) + θ(c)(a, b)` of a map with values in two-vectors, which is
   `dω(a, b, c)` for `θ v = ∇_v ω` and a torsion-free connection. It is linear in `θ` and
@@ -85,6 +88,11 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   `F ∈ ⋀² V` by `⟪u, ·⟫` (`TauCeti.twoVectorContraction`) represents the two-form of `F`,
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`: on two-forms, wedging with `u` is adjoint to contracting with
   `⟪u, ·⟫`. So `u ↦ u ⌟ F` is skew-adjoint (`TauCeti.inner_twoVectorContraction_apply_left`).
+* `TauCeti.twoVectorContraction_ιMulti_two_apply`: `(a ∧ b) ⌟ u = ⟪a, u⟫ b - ⟪b, u⟫ a`.
+* `TauCeti.twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint`: up to sign,
+  `F ↦ (u ↦ u ⌟ F)` is the identification `LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint` of
+  `⋀² V` with the skew-adjoint endomorphisms for the inner product, so it is injective
+  (`TauCeti.twoVectorContraction_injective`).
 -/
 
 public section
@@ -544,6 +552,58 @@ theorem inner_twoVectorContraction_apply_left (F : ⋀[ℝ]^2 V) (u w : V) :
   rw [real_inner_comm _ u]
   linarith
 
+/-- The skew endomorphism of a pure wedge: `(a ∧ b) ⌟ u = ⟪a, u⟫ b - ⟪b, u⟫ a`, the
+infinitesimal rotation of the plane of `a` and `b`. -/
+theorem twoVectorContraction_ιMulti_two_apply (a b u : V) :
+    twoVectorContraction (ιMulti ℝ 2 ![a, b]) u = ⟪a, u⟫ • b - ⟪b, u⟫ • a := by
+  refine ext_inner_right ℝ fun w ↦ ?_
+  rw [inner_twoVectorContraction_apply, inner_ιMulti_two, inner_sub_left, real_inner_smul_left,
+    real_inner_smul_left]
+  ring
+
+variable (V) in
+/-- The skew endomorphism `F ↦ (u ↦ u ⌟ F)` of two-vectors, bundled as a linear map
+`⋀² V → End V`. -/
+noncomputable def twoVectorContractionₗ : ⋀[ℝ]^2 V →ₗ[ℝ] Module.End ℝ V where
+  toFun := twoVectorContraction
+  map_add' := twoVectorContraction_add
+  map_smul' := twoVectorContraction_smul
+
+omit [FiniteDimensional ℝ V] in
+@[simp]
+theorem twoVectorContractionₗ_apply (F : ⋀[ℝ]^2 V) :
+    twoVectorContractionₗ V F = twoVectorContraction F :=
+  (rfl)
+
+/-- The skew endomorphism `u ↦ u ⌟ F` is the negative of the image of `F` under the
+identification `LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint` of `⋀² V` with the skew-adjoint
+endomorphisms for the inner product, whose sign is chosen to match the Clifford bivector action. -/
+theorem twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint
+    (hB : Function.Bijective (innerₗ V)) (hBsymm : LinearMap.BilinForm.IsSymm (innerₗ V))
+    (F : ⋀[ℝ]^2 V) :
+    twoVectorContraction F =
+      -(LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ V) hB hBsymm F :
+        Module.End ℝ V) := by
+  let : LieRing (Module.End ℝ V) := LieRing.ofAssociativeRing
+  let : LieAlgebra ℝ (Module.End ℝ V) := LieAlgebra.ofAssociativeAlgebra
+  -- Both sides are linear in `F`, so it suffices to compare them on pure wedges.
+  have key : twoVectorContractionₗ V =
+      -((skewAdjointLieSubalgebra (innerₗ V)).toSubmodule.subtype ∘ₗ
+        (LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ V) hB hBsymm).toLinearMap) := by
+    refine linearMap_ext_ιMulti_two fun a b ↦ ?_
+    ext u
+    simp [twoVectorContraction_ιMulti_two_apply]
+  exact LinearMap.congr_fun key F
+
+/-- A two-vector is determined by its skew endomorphism `u ↦ u ⌟ X`. -/
+theorem twoVectorContraction_injective :
+    Function.Injective (twoVectorContraction : ⋀[ℝ]^2 V → Module.End ℝ V) := fun X Y h ↦ by
+  have hsymm : LinearMap.BilinForm.IsSymm (innerₗ V) := ⟨fun v w ↦ real_inner_comm w v⟩
+  refine (LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ V) bijective_innerₗ
+    hsymm).injective (Subtype.ext ?_)
+  rw [← neg_inj, ← twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint,
+    ← twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint, h]
+
 end TwoVectorContraction
 
 section TwoVectorAlternatingSum
@@ -601,47 +661,3 @@ theorem twoVectorAlternatingSum_swap₂₃ (θ : V → ⋀[ℝ]^2 V) (a b c : V)
 end TwoVectorAlternatingSum
 
 end TauCeti
-
-namespace OrthonormalBasis
-
-open exteriorPower TauCeti
-open scoped RealInnerProductSpace
-
-variable {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [Fintype ι]
-
-/-- **Coordinates of a two-vector over all ordered pairs.** For an orthonormal basis `b` of `E`,
-`∑ₚ ∑_q ⟪x, bₚ ∧ b_q⟫ • (bₚ ∧ b_q) = 2 • x`: each unordered pair `{p, q}` contributes twice. -/
-theorem sum_sum_inner_smul_ιMulti_two (b : OrthonormalBasis ι ℝ E) (x : ⋀[ℝ]^2 E) :
-    ∑ p, ∑ q, ⟪x, ιMulti ℝ 2 ![b p, b q]⟫ • ιMulti ℝ 2 ![b p, b q] = (2 : ℝ) • x := by
-  refine ext_inner_ιMulti_two fun a c ↦ ?_
-  have hA (y z : E) : ⟪x, ιMulti ℝ 2 ![y, z]⟫ = ⟪twoVectorContraction x y, z⟫ :=
-    (inner_twoVectorContraction_apply ..).symm
-  simp only [sum_inner, real_inner_smul_left, inner_ιMulti_two, hA]
-  calc ∑ p, ∑ q, ⟪twoVectorContraction x (b p), b q⟫ * (⟪b p, a⟫ * ⟪b q, c⟫ - ⟪b p, c⟫ * ⟪b q, a⟫)
-      = ∑ p, (⟪b p, a⟫ * ∑ q, ⟪twoVectorContraction x (b p), b q⟫ * ⟪b q, c⟫ -
-          ⟪b p, c⟫ * ∑ q, ⟪twoVectorContraction x (b p), b q⟫ * ⟪b q, a⟫) := by
-        simp only [Finset.mul_sum, ← Finset.sum_sub_distrib]
-        exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
-    _ = ∑ p, (⟪c, b p⟫ * ⟪b p, twoVectorContraction x a⟫ -
-          ⟪a, b p⟫ * ⟪b p, twoVectorContraction x c⟫) := by
-        simp only [b.sum_inner_mul_inner]
-        simp only [inner_twoVectorContraction_apply_left x (b _), real_inner_comm a (b _),
-          real_inner_comm c (b _)]
-        exact Finset.sum_congr rfl fun _ _ ↦ by ring
-    _ = 2 * ⟪twoVectorContraction x a, c⟫ := by
-        rw [Finset.sum_sub_distrib, b.sum_inner_mul_inner, b.sum_inner_mul_inner,
-          real_inner_comm (twoVectorContraction x a) c, inner_twoVectorContraction_apply_left x a c]
-        ring
-
-/-- **The inner product of two-vectors in coordinates over all ordered pairs.** For an orthonormal
-basis `b` of `E`, `∑ₚ ∑_q ⟪x, bₚ ∧ b_q⟫ ⟪y, bₚ ∧ b_q⟫ = 2 ⟪x, y⟫`. -/
-theorem sum_sum_inner_ιMulti_two_mul_inner_ιMulti_two (b : OrthonormalBasis ι ℝ E)
-    (x y : ⋀[ℝ]^2 E) :
-    ∑ p, ∑ q, ⟪x, ιMulti ℝ 2 ![b p, b q]⟫ * ⟪y, ιMulti ℝ 2 ![b p, b q]⟫ = 2 * ⟪x, y⟫ := by
-  have h := congrArg (⟪·, y⟫) (b.sum_sum_inner_smul_ιMulti_two x)
-  simp only [sum_inner, real_inner_smul_left] at h
-  rw [← h]
-  simp only [real_inner_comm _ y]
-
-end OrthonormalBasis

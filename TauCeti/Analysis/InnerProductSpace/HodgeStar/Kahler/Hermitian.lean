@@ -100,7 +100,7 @@ symmetric bilinear form `QuadraticMap.associated` to the quadratic form `B(v, v)
 def hermitianForm (J : AlmostComplexStructure V) : ⋀[ℝ]^2 V →ₗ[ℝ] LinearMap.BilinForm ℝ V :=
   QuadraticMap.associated ∘ₗ LinearMap.BilinMap.toQuadraticMapLinearMap ℝ ℝ V ∘ₗ
     LinearMap.compRight ℝ ((innerₗ V).compl₂ J.toLinearMap) ∘ₗ
-      ⟨⟨twoVectorContraction, twoVectorContraction_add⟩, twoVectorContraction_smul⟩
+      twoVectorContractionₗ V
 
 /-- The Hermitian part is `B(v, w) = (F(v, J w) + F(w, J v)) / 2`. -/
 theorem hermitianForm_apply (J : AlmostComplexStructure V) (F : ⋀[ℝ]^2 V) (v w : V) :
@@ -118,8 +118,8 @@ theorem hermitianForm_apply_self (J : AlmostComplexStructure V) (F : ⋀[ℝ]^2 
     J.hermitianForm F v v = ⟪F, ιMulti ℝ 2 ![v, J v]⟫ := by
   rw [hermitianForm, LinearMap.comp_apply, QuadraticMap.associated_eq_self_apply]
   simp only [LinearMap.comp_apply, LinearMap.BilinMap.toQuadraticMapLinearMap_apply,
-    LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.compRight_apply, LinearMap.coe_mk,
-    AddHom.coe_mk, LinearMap.compl₂_apply, innerₗ_apply_apply, inner_twoVectorContraction_apply]
+    LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.compRight_apply, twoVectorContractionₗ_apply,
+    LinearMap.compl₂_apply, innerₗ_apply_apply, inner_twoVectorContraction_apply]
 
 omit [FiniteDimensional ℝ V] in
 /-- The Hermitian part of a two-form is symmetric. -/
