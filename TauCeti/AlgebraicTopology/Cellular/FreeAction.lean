@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Preadditive.Projective.Resolution
-public import Mathlib.LinearAlgebra.Basis.SMul
 public import Mathlib.RepresentationTheory.Rep.Iso
 public import TauCeti.AlgebraicTopology.Cellular.Equivariant
 public import TauCeti.AlgebraicTopology.Cellular.LocalDegree
@@ -38,9 +37,9 @@ translation carries characteristic maps strictly onto characteristic maps
 (`TauCeti.cellActionUnit_eq_one_of_smul_map`).
 
 When `G` acts freely on the cells (`hfree`) and `R` is a commutative ring, rescaling the geometric
-cellular basis along each orbit by `TauCeti.cellActionUnit` produces an `R`-basis
-`TauCeti.cellActionOrbitBasis` that agrees with the cellular basis on a chosen representative `s a`
-of each orbit and is permuted without signs by `G`. Consequently:
+cellular basis along each orbit (`Representation.monomialRescaledBasis`) produces an `R`-basis that
+agrees with the cellular basis on a chosen representative `s a` of each orbit and is permuted
+without signs by `G` (`Representation.freeEquivOfMonomialBasis`). Consequently:
 
 * each cellular chain group is isomorphic in `Rep R G` to the free representation on the `G`-orbits
   of `n`-cells (`TauCeti.cellActionChainRepIsoFree` and
@@ -59,7 +58,6 @@ of each orbit and is permuted without signs by `G`. Consequently:
   `ChainComplex (Rep R G) ℕ`.
 * `TauCeti.cellActionScale` and `TauCeti.cellActionUnit`: the local scalar (and unit, when `G` is a
   group) by which `g` rescales the cellular basis vector of `i` onto that of `g • i`.
-* `TauCeti.cellActionOrbitBasis`: the orbit-rescaled `R`-basis freely permuted by `G`.
 * `TauCeti.cellActionChainRepIsoFree` and `TauCeti.quotientCellularChainRepIsoFree`: freeness of
   each cellular chain group over `R[G]` on orbit representatives and on the cells of the orbit
   space.
@@ -383,55 +381,6 @@ private lemma cellActionChainRepresentation_monomial :
     ⟨cellActionScale C hcell R g (h • s a), by
       rw [sigmaSMulCellEquiv_apply, sigmaSMulCellEquiv_apply,
         cellActionChainRepresentation_cellularChainBasis, ← smul_smul]⟩
-
-/-- **The orbit-adapted cellular basis** associated with orbit representatives `s`: obtained from
-`TauCeti.cellularChainBasis` via `Representation.monomialRescaledBasis`, so that the vector of
-`g • s a` is the image under `g` of the cellular basis vector of `s a`. -/
-def cellActionOrbitBasis :
-    Module.Basis (cell C n) R (cellularChainGroup C (ModuleCat.of R R) n : ModuleCat R) :=
-  (cellActionChainRepresentation C hcell R n).monomialRescaledBasis (cellularChainBasis C R n)
-    (sigmaSMulCellEquiv hcell hfree s hs)
-    (cellActionChainRepresentation_monomial C hcell hfree R s hs)
-
-/-- On the cell `g • s a` indexed by `⟨a, g⟩`, `TauCeti.cellActionOrbitBasis` is the image under
-`g` of the cellular basis vector of `s a`. -/
-theorem cellActionOrbitBasis_sigmaSMulCellEquiv (a : ι) (g : G) :
-    cellActionOrbitBasis C hcell hfree R s hs (sigmaSMulCellEquiv hcell hfree s hs ⟨a, g⟩) =
-      cellActionChainRepresentation C hcell R n g (cellularChainBasis C R n (s a)) := by
-  let := cellMulAction hcell n
-  rw [cellActionOrbitBasis, Representation.monomialRescaledBasis_apply, sigmaSMulCellEquiv_apply,
-    one_smul]
-
-/-- On the translate `g • s a` of an orbit representative, `TauCeti.cellActionOrbitBasis` is the
-image under `g` of the cellular basis vector of `s a`. -/
-@[simp]
-theorem cellActionOrbitBasis_smul_section (a : ι) (g : G) :
-    letI := cellMulAction hcell n
-    cellActionOrbitBasis C hcell hfree R s hs (g • s a) =
-      cellActionChainRepresentation C hcell R n g (cellularChainBasis C R n (s a)) := by
-  let := cellMulAction hcell n
-  rw [← sigmaSMulCellEquiv_apply hcell hfree s hs ⟨a, g⟩, cellActionOrbitBasis_sigmaSMulCellEquiv]
-
-/-- On each chosen orbit representative `s a`, `TauCeti.cellActionOrbitBasis` agrees with the
-geometric cellular basis `TauCeti.cellularChainBasis`. -/
-@[simp]
-theorem cellActionOrbitBasis_apply_section (a : ι) :
-    cellActionOrbitBasis C hcell hfree R s hs (s a) = cellularChainBasis C R n (s a) := by
-  let := cellMulAction hcell n
-  have h1 : sigmaSMulCellEquiv hcell hfree s hs ⟨a, 1⟩ = s a := by
-    rw [sigmaSMulCellEquiv_apply, one_smul]
-  conv_lhs => rw [← h1]
-  rw [cellActionOrbitBasis_sigmaSMulCellEquiv, map_one, Module.End.one_eq_id, LinearMap.id_apply]
-
-/-- Translation by `g` permutes `TauCeti.cellActionOrbitBasis` along the left `G`-action on the
-fibres of `TauCeti.sigmaSMulCellEquiv`, with no orientation sign. -/
-theorem cellActionChainRepresentation_cellActionOrbitBasis (g h : G) (a : ι) :
-    cellActionChainRepresentation C hcell R n g
-        (cellActionOrbitBasis C hcell hfree R s hs (sigmaSMulCellEquiv hcell hfree s hs ⟨a, h⟩)) =
-      cellActionOrbitBasis C hcell hfree R s hs
-        (sigmaSMulCellEquiv hcell hfree s hs ⟨a, g * h⟩) := by
-  rw [cellActionOrbitBasis_sigmaSMulCellEquiv, cellActionOrbitBasis_sigmaSMulCellEquiv,
-    map_mul, Module.End.mul_eq_comp, LinearMap.comp_apply]
 
 /-- **The cellular chains of a free cellular action are free over `R[G]`**: given one
 representative `s a` in each `G`-orbit of `n`-cells, the `n`-th cellular chain group of `C` is

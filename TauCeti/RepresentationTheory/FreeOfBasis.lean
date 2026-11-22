@@ -148,19 +148,24 @@ private lemma apply_basis_eq_repr_smul (g h : G) (i : ι) :
 monomially along `e`, rescales `b` so that the basis vector at `e ⟨i, h⟩` is
 `ρ h (b (e ⟨i, 1⟩))`. -/
 def monomialRescaledBasis : Module.Basis X k V :=
-  b.isUnitSMul (w := fun x ↦ b.repr (ρ (e.symm x).2 (b (e ⟨(e.symm x).1, 1⟩))) x) fun x ↦ by
-    have h1 := apply_basis_eq_repr_smul ρ b e hb (e.symm x).2 1 (e.symm x).1
-    have h2 := apply_basis_eq_repr_smul ρ b e hb (e.symm x).2⁻¹ (e.symm x).2 (e.symm x).1
-    rw [mul_one, _root_.Equiv.apply_symm_apply] at h1
-    rw [inv_mul_cancel, _root_.Equiv.apply_symm_apply] at h2
-    exact val_unitOfApplyBasisEqSmul ρ b h1 h2 ▸ (ρ.unitOfApplyBasisEqSmul b h1 h2).isUnit
+  b.unitsSMul fun x ↦
+    let h1 : ρ (e.symm x).2 (b (e ⟨(e.symm x).1, 1⟩)) =
+        b.repr (ρ (e.symm x).2 (b (e ⟨(e.symm x).1, 1⟩))) x • b x := by
+      have h := apply_basis_eq_repr_smul ρ b e hb (e.symm x).2 1 (e.symm x).1
+      rwa [mul_one, _root_.Equiv.apply_symm_apply] at h
+    let h2 : ρ (e.symm x).2⁻¹ (b x) =
+        b.repr (ρ (e.symm x).2⁻¹ (b x)) (e ⟨(e.symm x).1, 1⟩) • b (e ⟨(e.symm x).1, 1⟩) := by
+      have h := apply_basis_eq_repr_smul ρ b e hb (e.symm x).2⁻¹ (e.symm x).2 (e.symm x).1
+      rwa [inv_mul_cancel, _root_.Equiv.apply_symm_apply] at h
+    ρ.unitOfApplyBasisEqSmul b h1 h2
 
 /-- The rescaled basis `Representation.monomialRescaledBasis` sends `e ⟨i, h⟩` to
 `ρ h (b (e ⟨i, 1⟩))`. -/
 @[simp]
 theorem monomialRescaledBasis_apply (i : ι) (h : G) :
     ρ.monomialRescaledBasis b e hb (e ⟨i, h⟩) = ρ h (b (e ⟨i, 1⟩)) := by
-  rw [monomialRescaledBasis, Module.Basis.isUnitSMul_apply, e.symm_apply_apply]
+  rw [monomialRescaledBasis, Module.Basis.unitsSMul_apply, Units.smul_def,
+    val_unitOfApplyBasisEqSmul, e.symm_apply_apply]
   have h1 := apply_basis_eq_repr_smul ρ b e hb h 1 i
   rw [mul_one] at h1
   exact h1.symm
