@@ -42,7 +42,7 @@ in place of the mod `2` one. The homology of a band with one critical value `c` 
 of the homologies of the Thom pairs of the negative normal bundles of the pieces on the level `c`
 (`TauCeti.IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair`), so its
 dimension is the sum of their contributions
-(`TauCeti.IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum_finrank_twistedHomology`),
+(`TauCeti.IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber`),
 and the inequalities of the filtration of `M` by sublevels at a cut of the values of `f`
 (`TauCeti.IsMorseBottFamily.exists_cut_sum_finrank_sublevelPair_eq_sum`) give the result.
 
@@ -57,12 +57,13 @@ live in `Type`.
 
 In the namespace `TauCeti.IsMorseBottFamily`:
 
-* `finrank_singularHomology_sublevelPair_eq_sum_finrank_twistedHomology`: the dimension of the
+* `twistedBettiNumber`: the twisted Betti numbers `dim Hₖ(S j; o(ν⁻ j) ⊗ K)` of the pieces.
+* `finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber`: the dimension of the
   homology of a band with a single critical value.
-* `bettiNumber_le_sum_finrank_twistedHomology`,
-  `sum_range_neg_one_pow_mul_bettiNumber_le_sum_finrank_twistedHomology`,
-  `sum_range_neg_one_pow_mul_bettiNumber_eq_sum_finrank_twistedHomology` and
-  `exists_sum_range_monomial_sum_finrank_twistedHomology_eq_add_mul`: the weak and strong
+* `bettiNumber_le_sum_twistedBettiNumber`,
+  `sum_range_neg_one_pow_mul_bettiNumber_le_sum_twistedBettiNumber`,
+  `sum_range_neg_one_pow_mul_bettiNumber_eq_sum_twistedBettiNumber` and
+  `exists_sum_range_monomial_sum_twistedBettiNumber_eq_add_mul`: the weak and strong
   Morse–Bott inequalities, Euler's equality and the Morse–Bott polynomial identity with
   coefficients twisted by the orientation local systems of the negative normal bundles.
 
@@ -114,6 +115,32 @@ variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace �
 
 include hV
 
+/-- **The twisted Betti numbers of a piece of a Morse–Bott function.** Let the family
+`i j : S j → M` exhibit `f` as a Morse–Bott function, let `g j` be smooth fibre metrics on the
+normal bundles of the pieces, and let the negative normal spaces relative to `g j` have local frames
+of size `r j`, so that they form the negative normal bundle `ν⁻ j` of rank `r j`. This is
+`dim Hₖ(S j; o(ν⁻ j) ⊗ K)`, the dimension of the homology of `S j` with coefficients in the
+orientation local system `o(ν⁻ j)` of `ν⁻ j`. -/
+@[expose] def twistedBettiNumber (j : ι) (k : ℕ) : ℕ :=
+  letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+  letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+  letI : TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
+      fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+        (g j).toRiemannianMetric s) :=
+    subbundleTopology (P j)
+      ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
+  letI : FiberBundle (Fin (r j) → ℝ) fun s ↦
+      (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric s :=
+    (hV j).fiberBundle
+  haveI : VectorBundle ℝ (Fin (r j) → ℝ) fun s ↦
+      (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric s :=
+    (hV j).vectorBundle
+  finrank K (twistedHomology (signLocalSystem (Fin (r j) → ℝ)
+    (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+      (g j).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) k)
+
 open scoped Classical in
 /-- **The homology of a critical band of a Morse–Bott function, with twisted coefficients.** Let
 the family `i j : S j → M` exhibit `f` as a Morse–Bott function on a compact boundaryless manifold,
@@ -124,33 +151,12 @@ be such that `c` is the only critical value of `f` in `[a, b]`. Then
 `dim Hₙ({f ≤ b}, {f ≤ a}; K) = ∑ dim H_{n - r j}(S j; o(ν⁻ j) ⊗ K)`, the sum running over the
 pieces on the level `f = c` with `r j ≤ n`, where `o(ν⁻ j)` is the orientation local system of
 `ν⁻ j`. If `c` is not a critical value, the sum is empty. -/
-theorem finrank_singularHomology_sublevelPair_eq_sum_finrank_twistedHomology {a b c : ℝ}
+theorem finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber {a b c : ℝ}
     (hac : a < c) (hcb : c < b) (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
     (n : ℕ) :
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
-      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
-      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-    letI : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
-        fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s) :=
-      fun j ↦ subbundleTopology (P j)
-        ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
-    letI : ∀ j, FiberBundle (Fin (r j) → ℝ) fun s ↦
-        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s :=
-      fun j ↦ (hV j).fiberBundle
-    haveI : ∀ j, VectorBundle ℝ (Fin (r j) → ℝ) fun s ↦
-        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s :=
-      fun j ↦ (hV j).vectorBundle
     finrank K ((sublevelPair f (hac.trans hcb).le).singularHomology (ModuleCat.of K K) n :
         ModuleCat K) =
-      ∑ j with (∀ s, f (i j s) = c) ∧ r j ≤ n,
-        finrank K (twistedHomology (signLocalSystem (Fin (r j) → ℝ)
-          (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-            (g j).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm))
-          (n - r j)) := by
+      ∑ j with (∀ s, f (i j s) = c) ∧ r j ≤ n, h.twistedBettiNumber hn hdim g hV K j (n - r j) := by
   let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
   let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
@@ -178,11 +184,11 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_finrank_twistedHomology {a 
   have := ModuleCat.finite_of_finite_biproduct (R := K) W
   rw [e'.toLinearEquiv.finrank_eq, ModuleCat.finrank_biproduct]
   -- Each Thom pair has the twisted homology of its base, shifted by the rank.
-  have hW (j : {j // ∀ s, f (i j s) = c}) : finrank K (W j) = if r j ≤ n then
-      finrank K (twistedHomology (signLocalSystem (Fin (r j) → ℝ) (V j) K
-        ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) (n - r j)) else 0 := by
+  have hW (j : {j // ∀ s, f (i j s) = c}) : finrank K (W j) =
+      if r j ≤ n then h.twistedBettiNumber hn hdim g hV K j (n - r j) else 0 := by
     split_ifs with hrn
-    · exact finrank_singularHomology_thomPair_eq_finrank_twistedHomology _ _ _ _
+    · unfold twistedBettiNumber
+      exact finrank_singularHomology_thomPair_eq_finrank_twistedHomology _ _ _ _
         (by rw [finrank_fin_fun]; omega)
     · have hz := isZero_singularHomology_thomPair (F := Fin (r j) → ℝ) (E := V j)
         (ModuleCat.of K K) (n := n) (by rw [finrank_fin_fun]; omega)
@@ -190,64 +196,24 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_finrank_twistedHomology {a 
       exact Module.finrank_zero_of_subsingleton
   simp only [hW]
   rw [← Finset.filter_filter, Finset.sum_filter]
-  exact (Finset.sum_subtype _ (fun j ↦ by simp) fun j ↦ if r j ≤ n then
-    finrank K (twistedHomology (signLocalSystem (Fin (r j) → ℝ) (V j) K
-      ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) (n - r j)) else 0).symm
+  exact (Finset.sum_subtype _ (fun j ↦ by simp) fun j ↦
+    if r j ≤ n then h.twistedBettiNumber hn hdim g hV K j (n - r j) else 0).symm
 
 open scoped Classical in
 /-- **A cut of the values of a Morse–Bott function, with twisted coefficients.** Under the
-hypotheses of `finrank_singularHomology_sublevelPair_eq_sum_finrank_twistedHomology`, the values of
-`f` can be cut at values `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)`, regular from `s 1` on, with
+hypotheses of `finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber`, the values of `f`
+can be cut at values `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)`, regular from `s 1` on, with
 `s 0 < f ≤ s (N + 1)`, such that summing over the bands the dimensions of their homology counts the
 twisted homology of every piece once, shifted by its index. -/
-private theorem exists_cut_sum_finrank_sublevelPair_eq_sum_finrank_twistedHomology :
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
-      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
-      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-    letI : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
-        fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s) :=
-      fun j ↦ subbundleTopology (P j)
-        ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
-    letI : ∀ j, FiberBundle (Fin (r j) → ℝ) fun s ↦
-        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s :=
-      fun j ↦ (hV j).fiberBundle
-    haveI : ∀ j, VectorBundle ℝ (Fin (r j) → ℝ) fun s ↦
-        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s :=
-      fun j ↦ (hV j).vectorBundle
+private theorem exists_cut_sum_finrank_sublevelPair_eq_sum_twistedBettiNumber :
     ∃ (s : ℕ → ℝ) (hs : Monotone s) (N : ℕ), (∀ x, s 0 < f x) ∧ (∀ x, f x ≤ s (N + 1)) ∧
       (∀ j ≤ N, IsRegularValue I 𝓘(ℝ) f (s (j + 1))) ∧
       ∀ n, ∑ j ∈ Finset.range (N + 1),
           finrank K ((sublevelPair f (hs j.le_succ)).singularHomology (ModuleCat.of K K) n :
             ModuleCat K) =
-        ∑ p with r p ≤ n, finrank K (twistedHomology (signLocalSystem (Fin (r p) → ℝ)
-          (fun s ↦ (h.isNondegenerateCriticalSubmanifold p).negativeNormalSpace hn
-            (g p).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm))
-          (n - r p)) :=
-  by
-  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
-    fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
-    fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-  let _ : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
-      fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-        (g j).toRiemannianMetric s) :=
-    fun j ↦ subbundleTopology (P j)
-      ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
-  let _ : ∀ j, FiberBundle (Fin (r j) → ℝ) fun s ↦
-      (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric s :=
-    fun j ↦ (hV j).fiberBundle
-  have (j : ι) : VectorBundle ℝ (Fin (r j) → ℝ) fun s ↦
-      (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric s :=
-    (hV j).vectorBundle
-  exact h.exists_cut_sum_finrank_sublevelPair_eq_sum K
-    (fun j k ↦ finrank K (twistedHomology (signLocalSystem (Fin (r j) → ℝ)
-      (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-        (g j).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) k))
-    (h.finrank_singularHomology_sublevelPair_eq_sum_finrank_twistedHomology hn hdim g hV K)
+        ∑ p with r p ≤ n, h.twistedBettiNumber hn hdim g hV K p (n - r p) :=
+  h.exists_cut_sum_finrank_sublevelPair_eq_sum K (h.twistedBettiNumber hn hdim g hV K)
+    (h.finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber hn hdim g hV K)
 
 /-- **The weak Morse–Bott inequalities with twisted coefficients.** Let the family `i j : S j → M`
 exhibit `f` as a Morse–Bott function on a compact boundaryless manifold, let `g j` be smooth fibre
@@ -256,138 +222,57 @@ have local frames of size `r j`, so that they form the negative normal bundle `�
 Let `K` be a field in which `2` is invertible, such as `ℚ`. Then
 `bₙ(M; K) ≤ ∑ dim H_{n - r j}(S j; o(ν⁻ j) ⊗ K)`, the sum running over the pieces with `r j ≤ n`,
 where `o(ν⁻ j)` is the orientation local system of `ν⁻ j`. -/
-theorem bettiNumber_le_sum_finrank_twistedHomology (n : ℕ) :
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
-      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
-      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-    letI : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
-        fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s) :=
-      fun j ↦ subbundleTopology (P j)
-        ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
-    letI : ∀ j, FiberBundle (Fin (r j) → ℝ) fun s ↦
-        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s :=
-      fun j ↦ (hV j).fiberBundle
-    haveI : ∀ j, VectorBundle ℝ (Fin (r j) → ℝ) fun s ↦
-        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s :=
-      fun j ↦ (hV j).vectorBundle
-    bettiNumber K M n ≤
-      ∑ p with r p ≤ n, finrank K (twistedHomology (signLocalSystem (Fin (r p) → ℝ)
-        (fun s ↦ (h.isNondegenerateCriticalSubmanifold p).negativeNormalSpace hn
-          (g p).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm))
-        (n - r p)) := by
+theorem bettiNumber_le_sum_twistedBettiNumber (n : ℕ) :
+    bettiNumber K M n ≤ ∑ p with r p ≤ n, h.twistedBettiNumber hn hdim g hV K p (n - r p) := by
   obtain ⟨s, hs, N, hs₀, hsN, hreg, hsum⟩ :=
-    exists_cut_sum_finrank_sublevelPair_eq_sum_finrank_twistedHomology hn h hdim g hV K
+    exists_cut_sum_finrank_sublevelPair_eq_sum_twistedBettiNumber hn h hdim g hV K
   rw [bettiNumber_def, ← hsum]
   exact finrank_singularHomology_le_sum_sublevelPair_of_contMDiff (ModuleCat.of K K) h.contMDiff
     hs hs₀ hsN hreg n
 
 /-- **The strong Morse–Bott inequalities with twisted coefficients.** Under the hypotheses of
-`TauCeti.IsMorseBottFamily.bettiNumber_le_sum_finrank_twistedHomology`, write `bₖ = bₖ(M; K)` and
+`TauCeti.IsMorseBottFamily.bettiNumber_le_sum_twistedBettiNumber`, write `bₖ = bₖ(M; K)` and
 `cₖ = ∑ dim H_{k - r j}(S j; o(ν⁻ j) ⊗ K)` over the pieces with `r j ≤ k`, the coefficient of `tᵏ`
 in the twisted Morse–Bott polynomial `∑ⱼ t^{r j} P_{S j; o(ν⁻ j)}(t)`. Then
 `bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀`. -/
-theorem sum_range_neg_one_pow_mul_bettiNumber_le_sum_finrank_twistedHomology (n : ℕ) :
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
-      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
-      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-    letI : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
-        fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s) :=
-      fun j ↦ subbundleTopology (P j)
-        ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
-    letI : ∀ j, FiberBundle (Fin (r j) → ℝ) fun s ↦
-        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s :=
-      fun j ↦ (hV j).fiberBundle
-    haveI : ∀ j, VectorBundle ℝ (Fin (r j) → ℝ) fun s ↦
-        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s :=
-      fun j ↦ (hV j).vectorBundle
+theorem sum_range_neg_one_pow_mul_bettiNumber_le_sum_twistedBettiNumber (n : ℕ) :
     ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - k) * bettiNumber K M k ≤
       ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - k) *
-        ((∑ p with r p ≤ k, finrank K (twistedHomology (signLocalSystem (Fin (r p) → ℝ)
-            (fun s ↦ (h.isNondegenerateCriticalSubmanifold p).negativeNormalSpace hn
-              (g p).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm))
-            (k - r p)) : ℕ) : ℤ) := by
+        ((∑ p with r p ≤ k, h.twistedBettiNumber hn hdim g hV K p (k - r p) : ℕ) : ℤ) := by
   obtain ⟨s, hs, N, hs₀, hsN, hreg, hsum⟩ :=
-    exists_cut_sum_finrank_sublevelPair_eq_sum_finrank_twistedHomology hn h hdim g hV K
+    exists_cut_sum_finrank_sublevelPair_eq_sum_twistedBettiNumber hn h hdim g hV K
   simpa only [← bettiNumber_def, hsum] using
     sum_range_neg_one_pow_mul_finrank_singularHomology_le_sum_sublevelPair_of_contMDiff
       (ModuleCat.of K K) h.contMDiff hs hs₀ hsN hreg n
 
 /-- **Euler's equality for a Morse–Bott function with twisted coefficients.** Under the hypotheses
-of `TauCeti.IsMorseBottFamily.bettiNumber_le_sum_finrank_twistedHomology`, for every `n` at least
-the dimension of `M`, `∑ₖ₌₀ⁿ (-1)ᵏ bₖ = ∑ₖ₌₀ⁿ (-1)ᵏ cₖ`, where
+of `TauCeti.IsMorseBottFamily.bettiNumber_le_sum_twistedBettiNumber`, for every `n` at least the
+dimension of `M`, `∑ₖ₌₀ⁿ (-1)ᵏ bₖ = ∑ₖ₌₀ⁿ (-1)ᵏ cₖ`, where
 `cₖ = ∑ dim H_{k - r j}(S j; o(ν⁻ j) ⊗ K)` over the pieces with `r j ≤ k`. -/
-theorem sum_range_neg_one_pow_mul_bettiNumber_eq_sum_finrank_twistedHomology {n : ℕ}
+theorem sum_range_neg_one_pow_mul_bettiNumber_eq_sum_twistedBettiNumber {n : ℕ}
     (hdimn : finrank ℝ E ≤ n) :
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
-      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
-      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-    letI : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
-        fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s) :=
-      fun j ↦ subbundleTopology (P j)
-        ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
-    letI : ∀ j, FiberBundle (Fin (r j) → ℝ) fun s ↦
-        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s :=
-      fun j ↦ (hV j).fiberBundle
-    haveI : ∀ j, VectorBundle ℝ (Fin (r j) → ℝ) fun s ↦
-        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s :=
-      fun j ↦ (hV j).vectorBundle
     ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ k * bettiNumber K M k =
       ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ k *
-        ((∑ p with r p ≤ k, finrank K (twistedHomology (signLocalSystem (Fin (r p) → ℝ)
-            (fun s ↦ (h.isNondegenerateCriticalSubmanifold p).negativeNormalSpace hn
-              (g p).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm))
-            (k - r p)) : ℕ) : ℤ) := by
+        ((∑ p with r p ≤ k, h.twistedBettiNumber hn hdim g hV K p (k - r p) : ℕ) : ℤ) := by
   obtain ⟨s, hs, N, hs₀, hsN, hreg, hsum⟩ :=
-    exists_cut_sum_finrank_sublevelPair_eq_sum_finrank_twistedHomology hn h hdim g hV K
+    exists_cut_sum_finrank_sublevelPair_eq_sum_twistedBettiNumber hn h hdim g hV K
   simpa only [← bettiNumber_def, hsum] using
     sum_range_neg_one_pow_mul_finrank_singularHomology_eq_sum_sublevelPair_of_contMDiff
       (ModuleCat.of K K) h.contMDiff hs hs₀ hsN hreg hdimn
 
 /-- **The Morse–Bott polynomial identity with twisted coefficients.** Under the hypotheses of
-`TauCeti.IsMorseBottFamily.bettiNumber_le_sum_finrank_twistedHomology`, for every `n` at least the
+`TauCeti.IsMorseBottFamily.bettiNumber_le_sum_twistedBettiNumber`, for every `n` at least the
 dimension of `M`, `∑ₖ₌₀ⁿ cₖ tᵏ = ∑ₖ₌₀ⁿ bₖ tᵏ + (1 + t) Q(t)` for a polynomial `Q` with natural
 number coefficients, where `cₖ = ∑ dim H_{k - r j}(S j; o(ν⁻ j) ⊗ K)` over the pieces with
 `r j ≤ k`: the twisted Morse–Bott polynomial `∑ⱼ t^{r j} P_{S j; o(ν⁻ j)}(t)` exceeds the Poincaré
 polynomial of `M` by `(1 + t) Q(t)`. -/
-theorem exists_sum_range_monomial_sum_finrank_twistedHomology_eq_add_mul {n : ℕ}
+theorem exists_sum_range_monomial_sum_twistedBettiNumber_eq_add_mul {n : ℕ}
     (hdimn : finrank ℝ E ≤ n) :
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
-      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
-      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-    letI : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
-        fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s) :=
-      fun j ↦ subbundleTopology (P j)
-        ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
-    letI : ∀ j, FiberBundle (Fin (r j) → ℝ) fun s ↦
-        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s :=
-      fun j ↦ (hV j).fiberBundle
-    haveI : ∀ j, VectorBundle ℝ (Fin (r j) → ℝ) fun s ↦
-        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-          (g j).toRiemannianMetric s :=
-      fun j ↦ (hV j).vectorBundle
-    ∃ Q : ℕ[X], ∑ k ∈ Finset.range (n + 1), monomial k
-        (∑ p with r p ≤ k, finrank K (twistedHomology (signLocalSystem (Fin (r p) → ℝ)
-          (fun s ↦ (h.isNondegenerateCriticalSubmanifold p).negativeNormalSpace hn
-            (g p).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm))
-          (k - r p))) =
+    ∃ Q : ℕ[X], ∑ k ∈ Finset.range (n + 1),
+        monomial k (∑ p with r p ≤ k, h.twistedBettiNumber hn hdim g hV K p (k - r p)) =
       ∑ k ∈ Finset.range (n + 1), monomial k (bettiNumber K M k) + (1 + Polynomial.X) * Q := by
   obtain ⟨s, hs, N, hs₀, hsN, hreg, hsum⟩ :=
-    exists_cut_sum_finrank_sublevelPair_eq_sum_finrank_twistedHomology hn h hdim g hV K
+    exists_cut_sum_finrank_sublevelPair_eq_sum_twistedBettiNumber hn h hdim g hV K
   obtain ⟨Q, hQ, -⟩ := exists_sum_range_monomial_sum_sublevelPair_eq_add_mul_of_contMDiff
     (ModuleCat.of K K) h.contMDiff hs hs₀ hsN hreg hdimn
   simp only [← bettiNumber_def, hsum] at hQ
