@@ -118,22 +118,23 @@ section Small
 
 variable [Finite ι] {v : StrongDual ℝ V}
 
-/-- For every small `ε > 0`, each edge of the polyhedron from the smooth vertex `v`, along which
-all the facets of `s` other than `j₀` stay active, meets the new facet of the polyhedron chopped at
-depth `ε`. -/
+/-- For every small `ε > 0`, every proper subset `t` of the facets `s` at the smooth vertex `v` is
+active at a point of the new facet of the polyhedron chopped at depth `ε`: the point at depth `ε`
+on an edge from `v` along which `t` stays active. -/
 private theorem eventually_exists_mem_cornerChop_edge (hi : IsIntegralLattice i)
     (hv : IsSmoothVertex i u c v) (hvP : v ∈ facetPolyhedron i u c)
     (hs : (s : Set ι) = activeSet (facetPairing i u) c v) :
-    ∀ᶠ ε in 𝓝[>] 0, ∀ j₀ ∈ s,
+    ∀ᶠ ε in 𝓝[>] 0, ∀ t ⊂ s,
       ∃ x ∈ facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε),
-        ∑ j ∈ s, (x (i (u j)) - c j) = ε ∧ ∀ j ∈ s, j ≠ j₀ → x (i (u j)) = c j := by
+        ∑ j ∈ s, (x (i (u j)) - c j) = ε ∧ (t : Set ι) ⊆ activeSet (facetPairing i u) c x := by
   classical
   obtain ⟨w, hw, -⟩ := hv.exists_coord hi hs
   have hvs (j) (hj : j ∈ s) : v (i (u j)) = c j := by
     rwa [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply] at hj
   filter_upwards [self_mem_nhdsWithin,
     (hv.eventually_forall_mem_facetPolyhedron hi hvP hs).filter_mono nhdsWithin_le_nhds]
-    with ε (hε0 : 0 < ε) hε j₀ hj₀
+    with ε (hε0 : 0 < ε) hε t hts
+  obtain ⟨j₀, hj₀, hj₀t⟩ := Finset.not_subset.1 hts.2
   -- The point at depth `ε` on the edge has the coordinates `ε` at `j₀` and `0` elsewhere.
   have hy (j) (hj : j ∈ s) : (v + ε • w j₀) (i (u j)) - c j = if j = j₀ then ε else 0 := by
     by_cases h : j = j₀
@@ -143,11 +144,12 @@ private theorem eventually_exists_mem_cornerChop_edge (hi : IsIntegralLattice i)
   have hsum : ∑ j ∈ s, ((v + ε • w j₀) (i (u j)) - c j) = ε := by
     rw [Finset.sum_congr rfl hy, Finset.sum_ite_eq', ite_eq_left hj₀]
   refine ⟨v + ε • w j₀, mem_facetPolyhedron_cornerChop_iff.2
-    ⟨hε _ (fun j hj ↦ ?_) hsum.le, hsum.ge⟩, hsum, fun j hj hne ↦ ?_⟩
+    ⟨hε _ (fun j hj ↦ ?_) hsum.le, hsum.ge⟩, hsum, fun j hj ↦ ?_⟩
   · rw [← sub_nonneg, hy j hj]
     split_ifs <;> linarith
-  · have := hy j hj
-    rw [ite_eq_right hne] at this
+  · have := hy j (hts.1 hj)
+    rw [ite_eq_right fun (hjj₀ : j = j₀) ↦ hj₀t (hjj₀ ▸ hj)] at this
+    rw [mem_activeSet, facetPairing_apply]
     linarith
 
 /-- For every small `ε > 0`, every face of the polyhedron not contained in the facets `s` at the
@@ -202,11 +204,8 @@ theorem IsSmoothVertex.eventually_isNonface_cornerChop_map_some_iff (hi : IsInte
   obtain ⟨x, hx, hxt⟩ : ∃ x ∈ facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε),
       (t : Set ι) ⊆ activeSet (facetPairing i u) c x := by
     by_cases hts : t ⊆ s
-    · obtain ⟨j₀, hj₀s, hj₀t⟩ := Finset.not_subset.1 h.2
-      obtain ⟨x, hx, -, hxs⟩ := hedge j₀ hj₀s
-      refine ⟨x, hx, fun j hj ↦ ?_⟩
-      rw [mem_activeSet, facetPairing_apply]
-      exact hxs j (hts hj) fun hjj₀ ↦ hj₀t (hjj₀ ▸ hj)
+    · obtain ⟨x, hx, -, hxt⟩ := hedge t ⟨hts, h.2⟩
+      exact ⟨x, hx, hxt⟩
     · exact hface t h.1 hts
   refine isNonface_def.1 ht x hx fun o ho ↦ ?_
   obtain ⟨j, hj, rfl⟩ := Finset.mem_map.1 (Finset.mem_coe.1 ho)
@@ -226,16 +225,12 @@ theorem IsSmoothVertex.eventually_isNonface_cornerChop_insertNone_iff (hi : IsIn
     with ε (hε0 : 0 < ε) hedge hslack t
   constructor
   · -- A proper subset of `s` meets the new facet on an edge from the corner.
-    rintro ht ⟨hts, hst⟩
-    obtain ⟨j₀, hj₀s, hj₀t⟩ := Finset.not_subset.1 hst
-    obtain ⟨x, hx, hxε, hxs⟩ := hedge j₀ hj₀s
+    rintro ht hts
+    obtain ⟨x, hx, hxε, hxt⟩ := hedge t hts
     refine isNonface_def.1 ht x hx fun o ho ↦ ?_
     cases o with
     | none => exact none_mem_activeSet_cornerChop_iff.2 hxε
-    | some j =>
-      have hj : j ∈ t := by simpa using ho
-      rw [some_mem_activeSet_cornerChop_iff, mem_activeSet, facetPairing_apply]
-      exact hxs j (hts hj) fun hjj₀ ↦ hj₀t (hjj₀ ▸ hj)
+    | some j => exact some_mem_activeSet_cornerChop_iff.2 (hxt (by simpa using ho))
   · -- On the new facet near the corner, only facets of `s` are active, and not all of them.
     refine fun hts ↦ isNonface_def.2 fun x hx hxt ↦ hts ?_
     have hnone : ∑ j ∈ s, (x (i (u j)) - c j) = ε :=
@@ -250,6 +245,18 @@ theorem IsSmoothVertex.eventually_isNonface_cornerChop_insertNone_iff (hi : IsIn
     rintro rfl
     rw [Finset.sum_eq_zero fun j hj ↦ by rw [hxt' j hj, sub_self]] at hnone
     exact hε0.ne hnone
+
+/-- For every small `ε > 0`, the new facet of the polyhedron chopped at depth `ε` meets no old facet
+outside the facets `s` at the corner: `D none * D (some j)` lies in its Stanley–Reisner ideal for
+every `j ∉ s`. -/
+private theorem IsSmoothVertex.eventually_X_none_mul_X_some_mem_stanleyReisnerIdeal (k : Type*)
+    [CommRing k] (hi : IsIntegralLattice i) (hv : IsSmoothVertex i u c v)
+    (hvP : v ∈ facetPolyhedron i u c) (hs : (s : Set ι) = activeSet (facetPairing i u) c v) :
+    ∀ᶠ ε in 𝓝[>] 0, ∀ j ∉ s, X none * X (some j) ∈
+      stanleyReisnerIdeal i (cornerChopNormal u s) (cornerChopSupport c s ε) k := by
+  filter_upwards [hv.eventually_isNonface_cornerChop_insertNone_iff hi hvP hs] with ε hnone j hj
+  have h : ¬{j} ⊂ s := fun h ↦ hj (h.subset (Finset.mem_singleton_self j))
+  simpa using ((hnone {j}).2 h).prod_mem_stanleyReisnerIdeal (k := k)
 
 /-- **The Stanley–Reisner ideal of a small corner chop.** Let `v` be a smooth vertex of the
 polyhedron `Δ` in an integral lattice, at which the facets indexed by `s` meet. Then for every
@@ -267,7 +274,8 @@ theorem IsSmoothVertex.eventually_stanleyReisnerIdeal_cornerChop (k : Type*) [Co
         Ideal.span (insert (∏ j ∈ s, X (some j)) ((fun j ↦ X none * X (some j)) '' (↑s)ᶜ)) := by
   classical
   filter_upwards [hv.eventually_isNonface_cornerChop_map_some_iff hi hvP hs,
-    hv.eventually_isNonface_cornerChop_insertNone_iff hi hvP hs] with ε hsome hnone
+    hv.eventually_isNonface_cornerChop_insertNone_iff hi hvP hs,
+    hv.eventually_X_none_mul_X_some_mem_stanleyReisnerIdeal k hi hvP hs] with ε hsome hnone hE
   apply le_antisymm
   · -- Each nonface is a set of old facets or contains the new facet; its monomial is a multiple of
     -- one of the generators.
@@ -300,8 +308,7 @@ theorem IsSmoothVertex.eventually_stanleyReisnerIdeal_cornerChop (k : Type*) [Co
     · rw [Ideal.span_le]
       rintro _ (rfl | ⟨j, hj, rfl⟩)
       · simpa using ((hsome s).2 (Or.inr subset_rfl)).prod_mem_stanleyReisnerIdeal (k := k)
-      · have h : ¬{j} ⊂ s := fun h ↦ hj (h.subset (Finset.mem_singleton_self j))
-        simpa using ((hnone {j}).2 h).prod_mem_stanleyReisnerIdeal (k := k)
+      · exact hE j hj
 
 end Small
 
@@ -321,6 +328,18 @@ def cornerChopPullback : MvPolynomial ι k →ₐ[k] MvPolynomial (Option ι) k 
 theorem cornerChopPullback_X (j : ι) :
     cornerChopPullback s k (X j) = X (some j) + if j ∈ s then X none else 0 :=
   aeval_X _ j
+
+/-- Modulo the exceptional divisor `E = D none`, the blowdown pullback of a monomial is the same
+monomial in the proper transforms. -/
+private theorem X_none_dvd_cornerChopPullback_prod_sub (t : Finset ι) :
+    X none ∣ cornerChopPullback s k (∏ j ∈ t, X j) - ∏ j ∈ t.map .some, X j := by
+  rw [← Ideal.mem_span_singleton, ← Ideal.Quotient.eq, map_prod, Finset.prod_map, map_prod,
+    map_prod]
+  refine Finset.prod_congr rfl fun j _ ↦ ?_
+  rw [Ideal.Quotient.eq, cornerChopPullback_X, Function.Embedding.some_apply, add_sub_cancel_left]
+  split_ifs
+  · exact Ideal.mem_span_singleton_self _
+  · exact zero_mem _
 
 variable [Fintype ι]
 
@@ -356,35 +375,27 @@ theorem IsSmoothVertex.eventually_facetIdeal_le_comap_cornerChopPullback
     ∀ᶠ ε in 𝓝[>] 0, facetIdeal i u c k ≤
       (facetIdeal i (cornerChopNormal u s) (cornerChopSupport c s ε) k).comap
         (cornerChopPullback s k) := by
-  filter_upwards [hv.eventually_isNonface_cornerChop_insertNone_iff hi hvP hs] with ε hnone
+  filter_upwards [hv.eventually_X_none_mul_X_some_mem_stanleyReisnerIdeal k hi hvP hs] with ε hE
   rw [facetIdeal_le_iff, linearRelationIdeal_le_iff, stanleyReisnerIdeal_le_iff]
   refine ⟨fun t ht ↦ ?_, fun φ ↦ ?_⟩
   · -- A nonface `t` of `Δ` does not lie in `s`, the facets at the corner `v ∈ Δ`; pick `j₁ ∈ t`
-    -- off `s`. Modulo `E`, the pullback of `∏_{j ∈ t} D j` is `∏_{j ∈ t} D (some j)`, and
-    -- `E D (some j₁) = 0`, so the pullback is `∏_{j ∈ t} D (some j)` modulo `E D (some j₁)`.
+    -- off `s`. Modulo `E`, the pullback of `∏_{j ∈ t.erase j₁} D j` is
+    -- `∏_{j ∈ t.erase j₁} D (some j)`, and `D j₁` pulls back to `D (some j₁)`, so the pullback of
+    -- `∏_{j ∈ t} D j` is `∏_{j ∈ t} D (some j)` modulo `E D (some j₁)`.
     obtain ⟨j₁, hj₁t, hj₁s⟩ : ∃ j₁ ∈ t, j₁ ∉ s := by
       by_contra! h
       exact isNonface_def.1 ht v hvP (fun j hj ↦ hs ▸ Finset.mem_coe.2 (h j hj))
-    have hE : ∏ j ∈ t.erase j₁, cornerChopPullback s k (X j) -
-        ∏ j ∈ t.erase j₁, X (some j) ∈ Ideal.span {X none} := by
-      rw [← Ideal.Quotient.eq, map_prod, map_prod]
-      refine Finset.prod_congr rfl fun j _ ↦ ?_
-      rw [Ideal.Quotient.eq, cornerChopPullback_X, add_sub_cancel_left]
-      split_ifs
-      · exact Ideal.mem_span_singleton_self _
-      · exact zero_mem _
-    obtain ⟨r, hr⟩ := Ideal.mem_span_singleton'.1 hE
+    obtain ⟨r, hr⟩ := X_none_dvd_cornerChopPullback_prod_sub s k (t.erase j₁)
     have hprod : cornerChopPullback s k (∏ j ∈ t, X j) =
         ∏ j ∈ t.map .some, X j + r * (X none * X (some j₁)) := by
-      rw [map_prod, ← Finset.mul_prod_erase _ _ hj₁t, cornerChopPullback_X, ite_eq_right hj₁s,
-        add_zero, eq_add_of_sub_eq hr.symm, Finset.prod_map, ← Finset.mul_prod_erase _ _ hj₁t]
-      simp only [Function.Embedding.some_apply]
-      ring
+      rw [← Finset.mul_prod_erase _ _ hj₁t, map_mul, cornerChopPullback_X, ite_eq_right hj₁s,
+        add_zero, ← Finset.mul_prod_erase _ _ (Finset.mem_map_of_mem .some hj₁t),
+        ← Finset.map_erase, Function.Embedding.some_apply]
+      linear_combination X (some j₁) * hr
     rw [Ideal.mem_comap, hprod]
     refine stanleyReisnerIdeal_le_facetIdeal _ _ _ k (add_mem ?_ (Ideal.mul_mem_left _ _ ?_))
     · exact ht.cornerChop_map_some.prod_mem_stanleyReisnerIdeal
-    · have h : ¬{j₁} ⊂ s := fun h ↦ hj₁s (h.subset (Finset.mem_singleton_self j₁))
-      simpa using ((hnone {j₁}).2 h).prod_mem_stanleyReisnerIdeal (k := k)
+    · exact hE j₁ hj₁s
   · rw [Ideal.mem_comap, cornerChopPullback_linearRelation]
     exact linearRelationIdeal_le_facetIdeal _ _ _ k (linearRelation_mem_linearRelationIdeal _ k φ)
 
