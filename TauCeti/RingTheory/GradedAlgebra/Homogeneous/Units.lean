@@ -65,6 +65,22 @@ public section
 
 open DirectSum
 
+section GradedMonoid
+
+variable {ι A σ : Type*} [AddGroup ι] [Monoid A] [SetLike σ A] {𝒜 : ι → σ}
+  [SetLike.GradedMonoid 𝒜]
+
+/-- In a monoid graded by an additive group, an integer power of a unit `u` whose value has
+degree `d` and whose inverse has degree `-d` is homogeneous of degree `m • d`. -/
+theorem Units.val_zpow_mem_graded_of_val_inv_mem (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d)
+    (hinv : ((u⁻¹ : Aˣ) : A) ∈ 𝒜 (-d)) (m : ℤ) :
+    ((u ^ m : Aˣ) : A) ∈ 𝒜 (m • d) := by
+  rcases Int.eq_nat_or_neg m with ⟨n, rfl | rfl⟩
+  · simpa using SetLike.pow_mem_graded n hu
+  · simpa [zpow_neg, ← inv_zpow, neg_zsmul, ← zsmul_neg] using SetLike.pow_mem_graded n hinv
+
+end GradedMonoid
+
 section Inverse
 
 variable {ι A σ : Type*} [DecidableEq ι] [AddGroup ι] [Semiring A] [SetLike σ A]
@@ -80,11 +96,8 @@ theorem Units.val_inv_mem_graded (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d) :
 /-- In a ring graded by an additive group, an integer power of a homogeneous unit of degree `d`
 is homogeneous of degree `m • d`. -/
 theorem Units.val_zpow_mem_graded (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d) (m : ℤ) :
-    ((u ^ m : Aˣ) : A) ∈ 𝒜 (m • d) := by
-  rcases Int.eq_nat_or_neg m with ⟨n, rfl | rfl⟩
-  · simpa using SetLike.pow_mem_graded n hu
-  · simpa [zpow_neg, ← inv_zpow, neg_zsmul, ← zsmul_neg] using
-      SetLike.pow_mem_graded n (u.val_inv_mem_graded hu)
+    ((u ^ m : Aˣ) : A) ∈ 𝒜 (m • d) :=
+  u.val_zpow_mem_graded_of_val_inv_mem hu (u.val_inv_mem_graded hu) m
 
 end Inverse
 

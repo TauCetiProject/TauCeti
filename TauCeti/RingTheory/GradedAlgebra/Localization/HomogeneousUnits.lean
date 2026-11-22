@@ -128,7 +128,8 @@ theorem homogeneousUnitDegrees_awayGrading :
     rintro d ⟨a, ha, n, hdvd⟩
     have hunit : IsUnit (algebraMap A (Localization.Away f) a) :=
       (IsLocalization.Away.algebraMap_isUnit_iff f).mpr ⟨n, hdvd⟩
-    exact mem_homogeneousUnitDegrees_of_mem (u := hunit.unit) (algebraMap_mem_awayGrading ha)
+    exact mem_homogeneousUnitDegrees_of_mem (u := hunit.unit)
+      (by simpa [hunit.unit_spec] using algebraMap_mem_awayGrading (hf := hf) ha)
 
 /-- Localizing away from a homogeneous unit `f` does not enlarge `homogeneousUnitDegrees`. -/
 theorem homogeneousUnitDegrees_awayGrading_of_isUnit (hu : IsUnit f) :
@@ -136,7 +137,9 @@ theorem homogeneousUnitDegrees_awayGrading_of_isUnit (hu : IsUnit f) :
   refine le_antisymm ?_ (homogeneousUnitDegrees_le_homogeneousUnitDegrees_awayGrading 𝒜 hf)
   rw [homogeneousUnitDegrees_awayGrading, AddSubgroup.closure_le]
   rintro d ⟨a, ha, n, hdvd⟩
-  exact mem_homogeneousUnitDegrees_of_mem (u := (isUnit_of_dvd_unit hdvd (hu.pow n)).unit) ha
+  have ha_unit : IsUnit a := isUnit_of_dvd_unit hdvd (hu.pow n)
+  exact mem_homogeneousUnitDegrees_of_mem (u := ha_unit.unit)
+    (by simpa [ha_unit.unit_spec] using ha)
 
 @[simp]
 theorem homogeneousUnitDegrees_awayGrading_one (h1 : (1 : A) ∈ 𝒜 (0 : ι)) :
@@ -148,21 +151,11 @@ theorem homogeneousUnitDegrees_awayGrading_one (h1 : (1 : A) ∈ 𝒜 (0 : ι)) 
 theorem awayUnitOfDvd_self_zpow_mem_awayGrading (m : ℤ) :
     ((TauCeti.Localization.awayUnitOfDvd (Localization.Away f) (dvd_rfl : f ∣ f) ^ m :
         (Localization.Away f)ˣ) : Localization.Away f) ∈
-      awayGrading 𝒜 hf (m • e) := by
-  let u := TauCeti.Localization.awayUnitOfDvd (Localization.Away f) (dvd_rfl : f ∣ f)
-  have hu : (u : Localization.Away f) ∈ awayGrading 𝒜 hf e := by
-    simpa [u] using algebraMap_mem_awayGrading (hf := hf) hf
-  have hinv : ((u⁻¹ : (Localization.Away f)ˣ) : Localization.Away f) ∈
-      awayGrading 𝒜 hf (-e) := by
-    have h_eq : ((u⁻¹ : (Localization.Away f)ˣ) : Localization.Away f) =
-        IsLocalization.Away.invSelf f := by
-      apply u.isUnit.mul_left_cancel
-      simp [u]
-    rw [h_eq]
-    exact invSelf_mem_awayGrading
-  rcases Int.eq_nat_or_neg m with ⟨n, rfl | rfl⟩
-  · simpa [u] using SetLike.pow_mem_graded n hu
-  · simpa [zpow_neg, ← inv_zpow, neg_zsmul, ← zsmul_neg] using SetLike.pow_mem_graded n hinv
+      awayGrading 𝒜 hf (m • e) :=
+  (TauCeti.Localization.awayUnitOfDvd (Localization.Away f)
+      (dvd_rfl : f ∣ f)).val_zpow_mem_graded_of_val_inv_mem
+    (by simpa using algebraMap_mem_awayGrading (hf := hf) hf)
+    (by simpa using invSelf_mem_awayGrading) m
 
 end Semiring
 

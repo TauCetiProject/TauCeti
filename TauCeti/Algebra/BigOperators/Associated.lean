@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Associated
 public import TauCeti.Algebra.GroupWithZero.Associated
+import Mathlib.RingTheory.Multiplicity
 
 /-!
 # Divisors of products of prime elements
@@ -83,27 +84,15 @@ theorem eq_of_associated_prod_pow_primes (s : Finset ι) {p : ι → M₀} (hp :
     (hs : (s : Set ι).Pairwise fun i j ↦ ¬Associated (p i) (p j)) {m n : ι → ℕ}
     (h : Associated (∏ i ∈ s, p i ^ m i) (∏ i ∈ s, p i ^ n i)) ⦃i : ι⦄ (hi : i ∈ s) :
     m i = n i := by
-  classical
-  -- If `m i < n i`, cancelling `p i ^ m i` leaves a factor of `p i` dividing the remaining product
-  -- on the left, forcing `p i` to divide `p j` for some `j ∈ s \ {i}`.
-  have hle : ∀ {a b : ι → ℕ}, Associated (∏ j ∈ s, p j ^ a j) (∏ j ∈ s, p j ^ b j) →
-      ∀ j ∈ s, a j ≤ b j := by
-    intro a b hab j hj
-    by_contra! hlt
-    obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_lt hlt
-    have hpj : Prime (p j) := hp j hj
-    have hpow : p j ^ a j = p j ^ b j * p j ^ (k + 1) := by rw [hk, add_assoc, pow_add]
-    rw [← Finset.mul_prod_erase s (fun l ↦ p l ^ a l) hj,
-      ← Finset.mul_prod_erase s (fun l ↦ p l ^ b l) hj, hpow, mul_assoc] at hab
-    have hab' : Associated (p j ^ (k + 1) * ∏ l ∈ s.erase j, p l ^ a l)
-        (∏ l ∈ s.erase j, p l ^ b l) :=
-      Associated.of_mul_left hab Associated.rfl (pow_ne_zero (b j) hpj.ne_zero)
-    have hdvd : p j ∣ ∏ l ∈ s.erase j, p l ^ b l :=
-      (dvd_mul_of_dvd_left (dvd_pow_self (p j) (Nat.succ_ne_zero k)) _).trans hab'.dvd
-    obtain ⟨l, hl, hpl⟩ := hpj.exists_mem_finset_dvd hdvd
-    obtain ⟨hlne, hls⟩ := mem_erase.mp hl
-    exact hs hj hls (Ne.symm hlne)
-      (hpj.associated_of_dvd (hp l hls) (hpj.dvd_of_dvd_pow hpl))
-  exact le_antisymm (hle h i hi) (hle h.symm i hi)
+  have hpi : Prime (p i) := hp i hi
+  have key := emultiplicity_eq_of_associated_right (a := p i) h
+  have hzero (j : ι) (hj : j ∈ s) (hji : j ≠ i) (k : ℕ) : emultiplicity (p i) (p j ^ k) = 0 := by
+    rw [emultiplicity_pow hpi, emultiplicity_eq_zero.mpr fun hdvd ↦
+      hs hi hj hji.symm (hpi.associated_of_dvd (hp j hj) hdvd), mul_zero]
+  simp only [Finset.emultiplicity_prod hpi] at key
+  rw [Finset.sum_eq_single i (fun j hj hji ↦ hzero j hj hji _) (fun hni ↦ absurd hi hni),
+    Finset.sum_eq_single i (fun j hj hji ↦ hzero j hj hji _) (fun hni ↦ absurd hi hni),
+    emultiplicity_pow_self_of_prime hpi, emultiplicity_pow_self_of_prime hpi] at key
+  exact Nat.cast_inj.mp key
 
 end Finset

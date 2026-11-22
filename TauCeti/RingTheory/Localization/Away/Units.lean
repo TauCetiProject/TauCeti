@@ -60,6 +60,19 @@ theorem val_awayUnitOfDvd {x y : R} (h : y ∣ x) [IsLocalization.Away x S] :
     (awayUnitOfDvd S h : S) = algebraMap R S y :=
   (IsLocalization.Away.isUnit_of_dvd (S := S) x h).unit_spec
 
+/-- If `x = y * z`, the inverse of `awayUnitOfDvd S h` in `S` is `algebraMap R S z * invSelf x`. -/
+theorem val_inv_awayUnitOfDvd_of_eq_mul {x y z : R} (h : y ∣ x) (hx : x = y * z)
+    [IsLocalization.Away x S] :
+    (((awayUnitOfDvd S h)⁻¹ : Sˣ) : S) = algebraMap R S z * IsLocalization.Away.invSelf x := by
+  apply (awayUnitOfDvd S h).isUnit.mul_left_cancel
+  rw [Units.mul_inv, val_awayUnitOfDvd, ← mul_assoc, ← map_mul, ← hx,
+    IsLocalization.Away.mul_invSelf]
+
+@[simp]
+theorem val_inv_awayUnitOfDvd_self {x : R} (h : x ∣ x) [IsLocalization.Away x S] :
+    (((awayUnitOfDvd S h)⁻¹ : Sˣ) : S) = IsLocalization.Away.invSelf x := by
+  simpa using val_inv_awayUnitOfDvd_of_eq_mul S h (mul_one x).symm
+
 /-- A product of natural powers of `awayUnitOfDvd` over `s` evaluates in `S` to the image of
 `∏ i ∈ s, p i ^ k i`. -/
 theorem coe_prod_awayUnitOfDvd_zpow_natCast {ι : Type*} (s : Finset ι) (p : ι → R) (k : ι → ℕ)
@@ -75,10 +88,10 @@ theorem coe_prod_awayUnitOfDvd_zpow_natCast {ι : Type*} (s : Finset ι) (p : ι
 private theorem coe_prod_awayUnitOfDvd_zpow_mul_eq {ι : Type*} (s : Finset ι) (p : ι → R)
     [IsLocalization.Away (∏ i ∈ s, p i) S] (f g : s → ℤ) (a : ι → ℕ)
     (hfg : ∀ i : s, f i + g i = (a i.val : ℤ)) :
-    (((∏ i : s, awayUnitOfDvd S (Finset.dvd_prod_of_mem p i.property) ^ f i) *
-        (∏ i : s, awayUnitOfDvd S (Finset.dvd_prod_of_mem p i.property) ^ g i) : Sˣ) : S) =
+    ((∏ i : s, awayUnitOfDvd S (Finset.dvd_prod_of_mem p i.property) ^ f i : Sˣ) : S) *
+      ((∏ i : s, awayUnitOfDvd S (Finset.dvd_prod_of_mem p i.property) ^ g i : Sˣ) : S) =
       algebraMap R S (∏ i ∈ s, p i ^ a i) := by
-  rw [← Finset.prod_mul_distrib]
+  rw [← Units.val_mul, ← Finset.prod_mul_distrib]
   simp_rw [← zpow_add, hfg]
   exact coe_prod_awayUnitOfDvd_zpow_natCast S s p a
 
@@ -120,21 +133,18 @@ theorem isUnit_away_prod_primes_iff (s : Finset ι) {p : ι → R}
           y := by
   refine ⟨fun hy ↦ ?_, fun ⟨u, m, h⟩ ↦ h ▸
     ((u.isUnit.map (algebraMap R S)).mul (Units.isUnit _))⟩
-  obtain ⟨⟨a, ⟨_, n, rfl⟩⟩, hay⟩ := IsLocalization.surj (Submonoid.powers (∏ i ∈ s, p i)) y
-  dsimp only at hay
-  have hprod_unit :
-      ((∏ i : s,
-          TauCeti.Localization.awayUnitOfDvd S (dvd_prod_of_mem p i.property) ^ (n : ℤ) : Sˣ) : S) =
-        algebraMap R S ((∏ i ∈ s, p i) ^ n) := by
+  obtain ⟨n, a, hay⟩ := IsLocalization.Away.surj (∏ i ∈ s, p i) y
+  rw [← map_pow] at hay
+  let P : Sˣ :=
+    ∏ i : s, TauCeti.Localization.awayUnitOfDvd S (dvd_prod_of_mem p i.property) ^ (n : ℤ)
+  have hP : (P : S) = algebraMap R S ((∏ i ∈ s, p i) ^ n) := by
     rw [TauCeti.Localization.coe_prod_awayUnitOfDvd_zpow_natCast S s p (fun _ ↦ n), prod_pow]
   have ha_unit : IsUnit (algebraMap R S a) := by
-    rw [← hay, ← hprod_unit]
-    exact hy.mul (Units.isUnit _)
+    rw [← hay, ← hP]
+    exact hy.mul P.isUnit
   obtain ⟨k, u, hu⟩ :=
     (s.isUnit_algebraMap_away_prod_primes_iff (S := S) hp).mp ha_unit |>.imp fun _ h ↦ h.symm
   refine ⟨u, fun i ↦ (k i.val : ℤ) - (n : ℤ), ?_⟩
-  let P : Sˣ :=
-    ∏ i : s, TauCeti.Localization.awayUnitOfDvd S (dvd_prod_of_mem p i.property) ^ (n : ℤ)
   have hmul :
       algebraMap R S (u : R) *
           ((∏ i : s,
@@ -142,10 +152,17 @@ theorem isUnit_away_prod_primes_iff (s : Finset ι) {p : ι → R}
               ((k i.val : ℤ) - (n : ℤ)) : Sˣ) : S) *
           (P : S) =
         y * (P : S) := by
-    rw [mul_assoc, ← Units.val_mul,
-      TauCeti.Localization.coe_prod_awayUnitOfDvd_zpow_mul_eq S s p _ _ k
-        (fun i ↦ sub_add_cancel _ _),
-      ← map_mul, mul_comm (u : R), hu, ← hay, hprod_unit]
+    calc
+      algebraMap R S (u : R) *
+          ((∏ i : s,
+            TauCeti.Localization.awayUnitOfDvd S (dvd_prod_of_mem p i.property) ^
+              ((k i.val : ℤ) - (n : ℤ)) : Sˣ) : S) *
+          (P : S)
+        = algebraMap R S ((u : R) * ∏ i ∈ s, p i ^ k i) := by
+          rw [mul_assoc, TauCeti.Localization.coe_prod_awayUnitOfDvd_zpow_mul_eq S s p _ _ k
+            (fun i ↦ sub_add_cancel _ _), ← map_mul]
+      _ = y * (P : S) := by
+          rw [mul_comm (u : R), hu, ← hay, hP]
   exact P.isUnit.mul_right_cancel hmul
 
 end Finset
@@ -156,12 +173,10 @@ namespace TauCeti.Localization
 private noncomputable def awayUnitsProdPrimesHom {ι R : Type*} (S : Type*) [CommSemiring R]
     [CommSemiring S] [Algebra R S] (s : Finset ι) (p : ι → R)
     [IsLocalization.Away (∏ i ∈ s, p i) S] :
-    Rˣ × (s → Multiplicative ℤ) →* Sˣ where
-  toFun um :=
-    Units.map (algebraMap R S : R →* S) um.1 *
-      ∏ i : s, awayUnitOfDvd S (Finset.dvd_prod_of_mem p i.property) ^ (um.2 i).toAdd
-  map_one' := by simp
-  map_mul' a b := by simp [Finset.prod_mul_distrib, zpow_add, mul_mul_mul_comm]
+    Rˣ × (s → Multiplicative ℤ) →* Sˣ :=
+  (Units.map (algebraMap R S : R →* S)).coprod
+    (∏ i : s, (zpowersHom Sˣ (awayUnitOfDvd S (Finset.dvd_prod_of_mem p i.property))).comp
+      (Pi.evalMonoidHom (fun _ : s ↦ Multiplicative ℤ) i))
 
 @[simp]
 private theorem awayUnitsProdPrimesHom_apply {ι R : Type*} (S : Type*) [CommSemiring R]
@@ -170,7 +185,7 @@ private theorem awayUnitsProdPrimesHom_apply {ι R : Type*} (S : Type*) [CommSem
     awayUnitsProdPrimesHom S s p (u, m) =
       Units.map (algebraMap R S : R →* S) u *
         ∏ i : s, awayUnitOfDvd S (Finset.dvd_prod_of_mem p i.property) ^ (m i).toAdd := by
-  simp [awayUnitsProdPrimesHom]
+  simp [awayUnitsProdPrimesHom, MonoidHom.finsetProd_apply]
 
 private theorem awayUnitsProdPrimesHom_injective {ι R : Type*} (S : Type*) [CommSemiring R]
     [IsCancelMulZero R] [CommSemiring S] [Algebra R S] (s : Finset ι) {p : ι → R}
@@ -191,13 +206,13 @@ private theorem awayUnitsProdPrimesHom_injective {ι R : Type*} (S : Type*) [Com
   let a : ι → ℕ := fun i ↦ if hi : i ∈ s then (m ⟨i, hi⟩).toAdd.toNat else 0
   let b : ι → ℕ := fun i ↦ if hi : i ∈ s then (-(m ⟨i, hi⟩).toAdd).toNat else 0
   let B : Sˣ := ∏ i : s, awayUnitOfDvd S (Finset.dvd_prod_of_mem p i.property) ^ (b i.val : ℤ)
-  have hmul : ((awayUnitsProdPrimesHom S s p (u, m) * B : Sˣ) : S) = (B : S) := by
-    rw [hm, one_mul]
-  rw [awayUnitsProdPrimesHom_apply, mul_assoc, Units.val_mul, Units.val_mul] at hmul
+  have hmul : ((awayUnitsProdPrimesHom S s p (u, m) : Sˣ) : S) * (B : S) = (B : S) := by
+    rw [← Units.val_mul, hm, one_mul]
   have hadd (i : s) : (m i).toAdd + (b i.val : ℤ) = (a i.val : ℤ) := by
     simp only [a, b, i.property, ↓reduceDIte, Subtype.eta]
     omega
-  rw [← Units.val_mul, coe_prod_awayUnitOfDvd_zpow_mul_eq S s p _ _ a hadd] at hmul
+  rw [awayUnitsProdPrimesHom_apply, Units.val_mul, mul_assoc,
+    coe_prod_awayUnitOfDvd_zpow_mul_eq S s p _ _ a hadd] at hmul
   have hR : (u : R) * ∏ i ∈ s, p i ^ a i = ∏ i ∈ s, p i ^ b i := hinj <| by
     rw [map_mul, ← coe_prod_awayUnitOfDvd_zpow_natCast S s p b]
     simpa only [Units.coe_map, MonoidHom.coe_ofClass] using hmul
@@ -235,7 +250,7 @@ theorem awayProdPrimesUnitsMulEquiv_apply {ι R : Type*} (S : Type*) [CommSemiri
     awayProdPrimesUnitsMulEquiv S s hp hs (u, m) =
       Units.map (algebraMap R S : R →* S) u *
         ∏ i : s, awayUnitOfDvd S (Finset.dvd_prod_of_mem p i.property) ^ (m i).toAdd :=
-  (rfl)
+  awayUnitsProdPrimesHom_apply S s p u m
 
 @[simp]
 theorem awayProdPrimesUnitsMulEquiv_symm_map {ι R : Type*} (S : Type*) [CommSemiring R]

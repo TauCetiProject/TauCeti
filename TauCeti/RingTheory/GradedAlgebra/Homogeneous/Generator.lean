@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.DirectSum.Laurent
 public import TauCeti.Algebra.Polynomial.Laurent.Units.Connected
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Units
+import TauCeti.Algebra.Module.Equiv.Basic
 
 /-!
 # Homogeneous generators and shift classification on a connected spectrum
@@ -126,25 +127,20 @@ graded-isomorphic to `A(d)`. -/
 noncomputable def shiftClass : ShiftClassGroup 𝒜 :=
   ((exists_shift_linearEquiv_of_connected 𝒜 ℳ).choose : ShiftClassGroup 𝒜)
 
-private theorem exists_linearEquiv_iff_of {A : Type*} [CommRing A] {P Q R : ℤ → A → Prop}
-    {φ₀ : A ≃ₗ[A] A} (hφ₀ : ∀ n x, P n (φ₀ x) ↔ Q n x) :
-    (∃ ψ : A ≃ₗ[A] A, ∀ n x, R n (ψ x) ↔ Q n x) ↔
-      ∃ φ : A ≃ₗ[A] A, ∀ n x, P n (φ x) ↔ R n x :=
-  ⟨fun ⟨ψ, hψ⟩ ↦ ⟨ψ.symm.trans φ₀, fun n x ↦ by
-      rw [LinearEquiv.trans_apply, hφ₀, ← hψ n (ψ.symm x), ψ.apply_symm_apply]⟩,
-    fun ⟨φ, hφ⟩ ↦ ⟨φ₀.trans φ.symm, fun n x ↦ by
-      rw [LinearEquiv.trans_apply, ← hφ n (φ.symm (φ₀ x)), φ.apply_symm_apply, hφ₀]⟩⟩
+private theorem shiftClass_spec :
+    ∃ (d₀ : ℤ) (φ₀ : A ≃ₗ[A] A),
+      shiftClass 𝒜 ℳ = (d₀ : ShiftClassGroup 𝒜) ∧ ∀ n x, φ₀ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d₀) :=
+  let ⟨φ₀, hφ₀⟩ := (exists_shift_linearEquiv_of_connected 𝒜 ℳ).choose_spec
+  ⟨_, φ₀, rfl, hφ₀⟩
 
 /-- A compatible `ℤ`-grading `ℳ` of `A` on a preconnected prime spectrum has shift class `d` if
 and only if `(A, ℳ)` is graded-isomorphic to the shift `A(d)`. -/
 theorem shiftClass_eq_mk_iff {d : ℤ} :
     shiftClass 𝒜 ℳ = (d : ShiftClassGroup 𝒜) ↔
       ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d) := by
-  let d₀ := (exists_shift_linearEquiv_of_connected 𝒜 ℳ).choose
-  obtain ⟨φ₀, hφ₀⟩ := (exists_shift_linearEquiv_of_connected 𝒜 ℳ).choose_spec
-  have hd₀ : shiftClass 𝒜 ℳ = (d₀ : ShiftClassGroup 𝒜) := rfl
+  obtain ⟨d₀, φ₀, hd₀, hφ₀⟩ := shiftClass_spec 𝒜 ℳ
   rw [hd₀, ShiftClassGroup.mk_eq_mk_iff]
-  exact exists_linearEquiv_iff_of hφ₀
+  exact φ₀.exists_forall_iff_of_forall_iff hφ₀
 
 /-- If `ℳ` contains a homogeneous unit in degree `c`, its shift class is `-c`. -/
 theorem shiftClass_eq_mk_neg_of_isUnit_mem {u : A} (hu : IsUnit u) {c : ℤ} (hmem : u ∈ ℳ c) :
@@ -162,11 +158,9 @@ theorem shiftClass_self : shiftClass 𝒜 𝒜 = 0 := by
 theorem shiftClass_eq_iff :
     shiftClass 𝒜 ℳ = shiftClass 𝒜 𝒩 ↔
       ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ 𝒩 n ↔ x ∈ ℳ n := by
-  let d := (exists_shift_linearEquiv_of_connected 𝒜 𝒩).choose
-  obtain ⟨φN, hφN⟩ := (exists_shift_linearEquiv_of_connected 𝒜 𝒩).choose_spec
-  have hN : shiftClass 𝒜 𝒩 = (d : ShiftClassGroup 𝒜) := rfl
+  obtain ⟨d, φN, hN, hφN⟩ := shiftClass_spec 𝒜 𝒩
   rw [hN, shiftClass_eq_mk_iff]
-  exact exists_linearEquiv_iff_of hφN
+  exact φN.exists_forall_iff_of_forall_iff hφN
 
 end ShiftClass
 

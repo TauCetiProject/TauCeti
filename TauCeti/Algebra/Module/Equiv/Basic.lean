@@ -51,6 +51,8 @@ characterized by the equivalence intertwining the two endomorphisms.
   linear map.
 * `LinearEquiv.funCongrLeft_toAddMonoidHom`: forgetting linearity in coordinate transport
   gives additive coordinate transport.
+* `LinearEquiv.exists_forall_iff_of_forall_iff`: transport of indexed predicate families along
+  a linear equivalence.
 -/
 
 public section
@@ -249,5 +251,25 @@ theorem smulOfUnit_apply (u : Rˣ) (x : M) : (smulOfUnit u : M ≃ₗ[R] M) x = 
 theorem toLinearMap_smulOfNeZero (K V : Type*) [Field K] [AddCommGroup V] [Module K V] (c : K)
     (hc : c ≠ 0) : (smulOfNeZero K V c hc).toLinearMap = c • LinearMap.id :=
   LinearMap.ext fun _ ↦ smulOfNeZero_apply _ _ _ _ _
+
+section FamilyTransport
+
+variable {ι R M N K : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N] [AddCommMonoid K] [Module R K]
+
+/-- Transport of indexed predicate families along a linear equivalence: if `φ₀ : N ≃ₗ[R] M`
+relates `P` and `Q` (`∀ i x, P i (φ₀ x) ↔ Q i x`), then a linear equivalence `N ≃ₗ[R] K`
+relating `T` and `Q` exists if and only if a linear equivalence `K ≃ₗ[R] M` relating `P` and `T`
+exists. -/
+theorem exists_forall_iff_of_forall_iff (φ₀ : N ≃ₗ[R] M) {P : ι → M → Prop} {Q : ι → N → Prop}
+    {T : ι → K → Prop} (hφ₀ : ∀ i x, P i (φ₀ x) ↔ Q i x) :
+    (∃ ψ : N ≃ₗ[R] K, ∀ i x, T i (ψ x) ↔ Q i x) ↔
+      ∃ φ : K ≃ₗ[R] M, ∀ i x, P i (φ x) ↔ T i x :=
+  ⟨fun ⟨ψ, hψ⟩ ↦ ⟨ψ.symm.trans φ₀, fun i x ↦ by
+      rw [LinearEquiv.trans_apply, hφ₀, ← hψ i (ψ.symm x), ψ.apply_symm_apply]⟩,
+    fun ⟨φ, hφ⟩ ↦ ⟨φ₀.trans φ.symm, fun i x ↦ by
+      rw [LinearEquiv.trans_apply, ← hφ i (φ.symm (φ₀ x)), φ.apply_symm_apply, hφ₀]⟩⟩
+
+end FamilyTransport
 
 end LinearEquiv
