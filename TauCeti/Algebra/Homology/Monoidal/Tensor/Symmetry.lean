@@ -135,7 +135,7 @@ lemma ιTensorObj_tensorBraiding_inv_f (p q j : I) (h : q + p = j) :
 
 variable {K L} in
 /-- The signed interchange is natural in both complexes. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma tensorBraiding_hom_naturality {K' L' : HomologicalComplex C c} [K'.HasTensor L']
     [L'.HasTensor K'] (f : K ⟶ K') (g : L ⟶ L') :
     tensorHom f g ≫ (tensorBraiding K' L').hom = (tensorBraiding K L).hom ≫ tensorHom g f := by
@@ -147,11 +147,12 @@ lemma tensorBraiding_hom_naturality {K' L' : HomologicalComplex C c} [K'.HasTens
 
 variable {K L} in
 /-- The inverse of the signed interchange is natural in both complexes. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma tensorBraiding_inv_naturality {K' L' : HomologicalComplex C c} [K'.HasTensor L']
     [L'.HasTensor K'] (f : K ⟶ K') (g : L ⟶ L') :
-    tensorHom g f ≫ (tensorBraiding K' L').inv = (tensorBraiding K L).inv ≫ tensorHom f g := by
-  rw [Iso.comp_inv_eq, Category.assoc, tensorBraiding_hom_naturality, Iso.inv_hom_id_assoc]
+    tensorHom g f ≫ (tensorBraiding K' L').inv = (tensorBraiding K L).inv ≫ tensorHom f g :=
+  (CommSq.vert_inv (g := tensorBraiding K L) (h := tensorBraiding K' L')
+    ⟨tensorBraiding_hom_naturality f g⟩).w
 
 /-- With symmetric signs, the inverse of the signed interchange of `K ⊗ L` is the signed
 interchange of `L ⊗ K` for the reversed braiding of `C`: on each summand both are the inverse
