@@ -39,7 +39,7 @@ This file constructs the extension in the two main cases of Stacks Project, Lemm
    finite scalar substitutions (`DividedPowers.extensionCoeff_subst`), and the equational criterion
    of flatness (`Module.Flat.isTrivialRelation_of_sum_smul_eq_zero`) yields presentation
    independence (`DividedPowers.extensionCoeff_eq_of_sum_eq`). Upgrading the resulting
-   `AdditivePowers` via `DividedPowers.AdditivePowers.toDividedPowers` produces `mapOfFlat`.
+   `TauCeti.PD.AdditivePowers` via `TauCeti.PD.AdditivePowers.toDividedPowers` produces `mapOfFlat`.
 3. **Localizations** (`DividedPowers.mapOfIsLocalization`): since every localization is flat
    (`IsLocalization.flat`), `hI` extends uniquely to `I.map (algebraMap A B)` with
    `dpow n (IsLocalization.mk' B x s) = IsLocalization.mk' B (hI.dpow n x) (s ^ n)`.
@@ -84,7 +84,7 @@ theorem ext_of_isDPMorphism_map (hI : DividedPowers I) (f : A →+* B)
     hB = hB' := by
   ext n b hb
   exact ((mem_dpEqualizer_iff hB hB').mp
-    (le_equalizer_of_isDPMorphism hI f le_rfl hB hB' h1 h2 hb)).2 n
+    (le_equalizer_of_isDPMorphism hI f le_rfl hB hB' h1 h2 hb)).right n
 
 /-- Universal property of an extension of divided powers to `I.map f`: a ring homomorphism
 `g : B →+* C` is a divided power morphism out of `(I.map f, hB)` if and only if `g.comp f` is a
@@ -522,10 +522,10 @@ theorem extensionCoeff_eq_of_sum_eq [Module.Flat A B] {ι κ : Type*} [Decidable
     simp only [r, Sum.elim_inl, Sum.elim_inr, neg_mul, sum_neg_distrib] at hk
     have h1 : ∑ i : s, x i * a (.inl i) k = ∑ i ∈ s, a₁ i k * x i := by
       rw [← sum_coe_sort s (fun i ↦ a₁ i k * x i)]
-      exact sum_congr rfl fun i _ ↦ by simp only [a₁, dite_eq_left i.2, mul_comm]
+      exact sum_congr rfl fun i _ ↦ by simp only [a₁, dite_eq_left i.property, mul_comm]
     have h2 : ∑ j : t, x' j * a (.inr j) k = ∑ j ∈ t, a₂ j k * x' j := by
       rw [← sum_coe_sort t (fun j ↦ a₂ j k * x' j)]
-      exact sum_congr rfl fun j _ ↦ by simp only [a₂, dite_eq_left j.2, mul_comm]
+      exact sum_congr rfl fun j _ ↦ by simp only [a₂, dite_eq_left j.property, mul_comm]
     rw [h1, h2] at hk
     exact eq_of_sub_eq_zero (by simpa only [sub_eq_add_neg] using hk)
   rw [extensionCoeff_congr hI (algebraMap A B) n hb₁ (fun _ _ ↦ rfl),
@@ -547,7 +547,7 @@ private noncomputable def flatDpow (hI : DividedPowers I) (B : Type*) [CommRing 
   open scoped Classical in
   if hz : z ∈ I.map (algebraMap A B) then
     let h := exists_sum_mul_algebraMap_of_mem_map hz
-    extensionCoeff hI (algebraMap A B) n univ h.choose_spec.2.choose Subtype.val
+    extensionCoeff hI (algebraMap A B) n univ h.choose_spec.right.choose Subtype.val
   else 0
 
 private theorem flatDpow_sum [Module.Flat A B] {ι : Type*} [DecidableEq ι] (hI : DividedPowers I)
@@ -561,7 +561,7 @@ private theorem flatDpow_sum [Module.Flat A B] {ι : Type*} [DecidableEq ι] (hI
   simp only [flatDpow, dite_eq_left hz]
   set h := exists_sum_mul_algebraMap_of_mem_map hz
   exact extensionCoeff_eq_of_sum_eq hI n
-    (fun i _ ↦ h.choose_spec.1 i.2) hx h.choose_spec.2.choose_spec
+    (fun i _ ↦ h.choose_spec.left i.property) hx h.choose_spec.right.choose_spec
 
 private theorem flatDpow_sum_eq_coeff_prod [Module.Flat A B] {ι : Type*}
     (hI : DividedPowers I) (n : ℕ) {s : Finset ι} (b : ι → B) {x : ι → A}
@@ -574,7 +574,7 @@ private theorem flatDpow_sum_eq_coeff_prod [Module.Flat A B] {ι : Type*}
 
 private noncomputable def flatAdditivePowers (hI : DividedPowers I) (B : Type*) [CommRing B]
     [Algebra A B] [Module.Flat A B] :
-    AdditivePowers (I.map (algebraMap A B)) where
+    TauCeti.PD.AdditivePowers (I.map (algebraMap A B)) where
   dpow := flatDpow hI B
   dpow_null {n z} hz := by
     classical
@@ -582,21 +582,21 @@ private noncomputable def flatAdditivePowers (hI : DividedPowers I) (B : Type*) 
   dpow_zero {z} hz := by
     classical
     obtain ⟨t, ht, c, rfl⟩ := exists_sum_mul_algebraMap_of_mem_map hz
-    rw [flatDpow_sum_eq_coeff_prod hI 0 c (fun i _ ↦ ht i.2),
+    rw [flatDpow_sum_eq_coeff_prod hI 0 c (fun i _ ↦ ht i.property),
       PowerSeries.coeff_zero_eq_constantCoeff_apply, map_prod]
-    exact prod_eq_one fun i _ ↦ constantCoeff_rescale_map_exp hI (algebraMap A B) _ (ht i.2)
+    exact prod_eq_one fun i _ ↦ constantCoeff_rescale_map_exp hI (algebraMap A B) _ (ht i.property)
   dpow_one {z} hz := by
     classical
     obtain ⟨t, ht, c, rfl⟩ := exists_sum_mul_algebraMap_of_mem_map hz
-    rw [flatDpow_sum_eq_coeff_prod hI 1 c (fun i _ ↦ ht i.2), PowerSeries.coeff_one_prod]
+    rw [flatDpow_sum_eq_coeff_prod hI 1 c (fun i _ ↦ ht i.property), PowerSeries.coeff_one_prod]
     refine sum_congr rfl fun i _ ↦ ?_
-    rw [prod_eq_one fun j _ ↦ constantCoeff_rescale_map_exp hI (algebraMap A B) _ (ht j.2),
-      mul_one, coeff_rescale_map_exp, pow_one, hI.dpow_one (ht i.2)]
+    rw [prod_eq_one fun j _ ↦ constantCoeff_rescale_map_exp hI (algebraMap A B) _ (ht j.property),
+      mul_one, coeff_rescale_map_exp, pow_one, hI.dpow_one (ht i.property)]
   dpow_mem {n z} hn hz := by
     classical
     obtain ⟨t, ht, c, rfl⟩ := exists_sum_mul_algebraMap_of_mem_map hz
-    rw [flatDpow_sum hI n c (fun i _ ↦ ht i.2)]
-    exact extensionCoeff_mem hI (algebraMap A B) hn c (fun i _ ↦ ht i.2)
+    rw [flatDpow_sum hI n c (fun i _ ↦ ht i.property)]
+    exact extensionCoeff_mem hI (algebraMap A B) hn c (fun i _ ↦ ht i.property)
   dpow_add {n z₁ z₂} hz₁ hz₂ := by
     classical
     obtain ⟨t₁, ht₁, c₁, rfl⟩ := exists_sum_mul_algebraMap_of_mem_map hz₁
@@ -606,13 +606,13 @@ private noncomputable def flatAdditivePowers (hI : DividedPowers I) (B : Type*) 
       rw [Fintype.sum_sum_type]
       simp
     have hx₁₂ : ∀ u ∈ (univ : Finset (t₁ ⊕ t₂)), Sum.elim Subtype.val Subtype.val u ∈ I :=
-      fun u _ ↦ by cases u with | inl i => exact ht₁ i.2 | inr j => exact ht₂ j.2
+      fun u _ ↦ by cases u with | inl i => exact ht₁ i.property | inr j => exact ht₂ j.property
     rw [hsum, flatDpow_sum_eq_coeff_prod hI n (Sum.elim c₁ c₂) hx₁₂, Fintype.prod_sum_type]
     simp only [Sum.elim_inl, Sum.elim_inr]
     rw [PowerSeries.coeff_mul]
     refine sum_congr rfl fun k _ ↦ ?_
-    rw [flatDpow_sum_eq_coeff_prod hI k.1 c₁ (fun i _ ↦ ht₁ i.2),
-      flatDpow_sum_eq_coeff_prod hI k.2 c₂ (fun j _ ↦ ht₂ j.2)]
+    rw [flatDpow_sum_eq_coeff_prod hI k.1 c₁ (fun i _ ↦ ht₁ i.property),
+      flatDpow_sum_eq_coeff_prod hI k.2 c₂ (fun j _ ↦ ht₂ j.property)]
   dpow_mul {n a z} hz := by
     classical
     obtain ⟨t, ht, c, rfl⟩ := exists_sum_mul_algebraMap_of_mem_map hz
@@ -620,8 +620,8 @@ private noncomputable def flatAdditivePowers (hI : DividedPowers I) (B : Type*) 
         ∑ i : t, (a * c i) * algebraMap A B i := by
       rw [mul_sum]
       exact sum_congr rfl fun i _ ↦ (mul_assoc _ _ _).symm
-    rw [hmul, flatDpow_sum_eq_coeff_prod hI n (fun i ↦ a * c i) (fun i _ ↦ ht i.2),
-      flatDpow_sum_eq_coeff_prod hI n c (fun i _ ↦ ht i.2)]
+    rw [hmul, flatDpow_sum_eq_coeff_prod hI n (fun i ↦ a * c i) (fun i _ ↦ ht i.property),
+      flatDpow_sum_eq_coeff_prod hI n c (fun i _ ↦ ht i.property)]
     have hprod : ∏ i : t, PowerSeries.rescale (a * c i)
           (PowerSeries.map (algebraMap A B) (hI.exp i)) =
         PowerSeries.rescale a (∏ i : t, PowerSeries.rescale (c i)
@@ -649,7 +649,7 @@ noncomputable def mapOfFlat (hI : DividedPowers I) (B : Type*) [CommRing B] [Alg
       obtain ⟨x, hx, rfl⟩ := hs
       simp only [flatAdditivePowers_dpow_algebraMap hI _ hx]
       rw [← map_mul, hI.mul_dpow hx, map_mul, map_natCast])
-    (fun s hs m {n} hn ↦ by
+    (fun s hs m n hn ↦ by
       obtain ⟨x, hx, rfl⟩ := hs
       simp only [flatAdditivePowers_dpow_algebraMap hI _ hx,
         flatAdditivePowers_dpow_algebraMap hI _ (hI.dpow_mem hn hx)]
@@ -661,7 +661,7 @@ theorem mapOfFlat_dpow_sum [Module.Flat A B] {ι : Type*} [DecidableEq ι] (hI :
     (n : ℕ) {s : Finset ι} (b : ι → B) {x : ι → A} (hx : ∀ i ∈ s, x i ∈ I) :
     (hI.mapOfFlat B).dpow n (∑ i ∈ s, b i * algebraMap A B (x i)) =
       extensionCoeff hI (algebraMap A B) n s b x := by
-  rw [mapOfFlat, AdditivePowers.toDividedPowers_dpow]
+  rw [mapOfFlat, TauCeti.PD.AdditivePowers.toDividedPowers_dpow]
   exact flatDpow_sum hI n b hx
 
 /-- `algebraMap A B` is a divided power morphism from `(I, hI)` to
@@ -670,7 +670,7 @@ theorem isDPMorphism_mapOfFlat [Module.Flat A B] (hI : DividedPowers I) :
     IsDPMorphism hI (hI.mapOfFlat B) (algebraMap A B) where
   ideal_comp := le_rfl
   dpow_comp {n} x hx := by
-    rw [mapOfFlat, AdditivePowers.toDividedPowers_dpow]
+    rw [mapOfFlat, TauCeti.PD.AdditivePowers.toDividedPowers_dpow]
     exact flatAdditivePowers_dpow_algebraMap hI n hx
 
 /-- On an element `algebraMap A B x` with `x ∈ I`, `mapOfFlat` agrees with `hI`. -/

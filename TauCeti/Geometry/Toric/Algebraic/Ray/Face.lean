@@ -66,11 +66,11 @@ variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
 private theorem exists_faceOrderIsoSet_toricRay_eq_singleton
     {C : PointedCone ℝ V} {ι : Type*} (v : ι → V)
     (hv : LinearIndependent ℝ v) (hcone : C = PointedCone.hull ℝ (Set.range v))
-    (ρ : ToricRay C) : ∃ a : ι, PointedCone.faceOrderIsoSet hv hcone ρ.1 = {a} := by
+    (ρ : ToricRay C) : ∃ a : ι, PointedCone.faceOrderIsoSet hv hcone ρ.val = {a} := by
   classical
   apply Set.ncard_eq_one.mp
   simpa only [← Nat.card_coe_set_eq] using
-    (finrank_span_face_eq_card_faceOrderIsoSet v hv hcone ρ.1).symm.trans ρ.2
+    (finrank_span_face_eq_card_faceOrderIsoSet v hv hcone ρ.val).symm.trans ρ.property
 
 /-- The rays of the cone hull of a linearly independent family `v : ι → V` are indexed by
 `ι`: each ray is spanned by exactly one member of the family. The member attached to a ray is
@@ -87,7 +87,7 @@ noncomputable def toricRayEquivOfLinearIndependent
     finrank_span_face_eq_card_faceOrderIsoSet v hv hcone G
   let f : ToricRay C → ι := fun ρ ↦
     Classical.choose (exists_faceOrderIsoSet_toricRay_eq_singleton v hv hcone ρ)
-  have hf (ρ : ToricRay C) : e ρ.1 = {f ρ} :=
+  have hf (ρ : ToricRay C) : e ρ.val = {f ρ} :=
     Classical.choose_spec (exists_faceOrderIsoSet_toricRay_eq_singleton v hv hcone ρ)
   have hfinj : Function.Injective f := by
     intro ρ ν h
@@ -109,7 +109,7 @@ noncomputable def toricRayEquivOfLinearIndependent
 private theorem faceOrderIsoSet_toricRay
     {C : PointedCone ℝ V} {ι : Type*} (v : ι → V)
     (hv : LinearIndependent ℝ v) (hcone : C = PointedCone.hull ℝ (Set.range v))
-    (ρ : ToricRay C) : PointedCone.faceOrderIsoSet hv hcone ρ.1 =
+    (ρ : ToricRay C) : PointedCone.faceOrderIsoSet hv hcone ρ.val =
       {toricRayEquivOfLinearIndependent v hv hcone ρ} := by
   classical
   unfold toricRayEquivOfLinearIndependent
@@ -176,7 +176,7 @@ theorem exists_face_rays_eq_of_isSimplicial (hσ : σ.IsSimplicial) (A : Set (To
   let equiv := toricRayEquivOfLinearIndependent v hv hcone
   refine ⟨e.symm (equiv '' A), fun ρ ↦ ?_⟩
   -- The face order is the order of its underlying pointed cones.
-  change ρ.1 ≤ e.symm (equiv '' A) ↔ ρ ∈ A
+  change ρ.val ≤ e.symm (equiv '' A) ↔ ρ ∈ A
   rw [← e.le_iff_le, e.apply_symm_apply, faceOrderIsoSet_toricRay v hv hcone,
     Set.singleton_subset_iff]
   constructor
@@ -222,14 +222,14 @@ theorem faceOrderIso_apply (F : σ.Face) :
   ext ρ
   rw [mem_faceOrderIso_iff, Set.mem_ofPred_eq]
   refine ⟨fun h ↦ ?_, fun h ↦ h (primitiveGenerator_mem hi hσ.toIsToricCone ρ)⟩
-  rw [ρ.eq_hull_singleton (hσ.salient.anti ρ.1.isFaceOf.le)
+  rw [ρ.eq_hull_singleton (hσ.salient.anti ρ.val.isFaceOf.le)
     (primitiveGenerator_mem hi hσ.toIsToricCone ρ)
     (by simpa using hi.injective.ne (primitiveGenerator_ne_zero hi hσ.toIsToricCone ρ))]
   exact Submodule.span_le.2 (Set.singleton_subset_iff.2 h)
 
 /-- A ray of a regular cone, viewed as a face, contains no other ray. This is not a `simp` lemma:
 `faceOrderIso_apply` rewrites its left-hand side. -/
-theorem faceOrderIso_toricRay (ρ : ToricRay σ) : faceOrderIso hi hσ ρ.1 = {ρ} := by
+theorem faceOrderIso_toricRay (ρ : ToricRay σ) : faceOrderIso hi hσ ρ.val = {ρ} := by
   ext ν
   rw [faceOrderIso_apply, ToricRay.range_faceEmbedding, Set.mem_ofPred_eq, Set.mem_singleton_iff]
   exact ToricRay.toPointedCone_le_toPointedCone_iff hσ.salient

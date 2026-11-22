@@ -83,11 +83,11 @@ theorem finrank_eigenspace_prodMap_withLpMap (T₁ : V₁ →ₗ[K] V₁) (T₂ 
     · rintro ⟨h₁, h₂⟩
       simp [WithLp.map, WithLp.ext_iff, Prod.ext_iff, prodMap_apply, h₁, h₂]
   let e : eigenspace ((T₁.prodMap T₂).withLpMap 2) μ ≃ₗ[K] eigenspace T₁ μ × eigenspace T₂ μ :=
-    { toFun x := (⟨x.1.fst, (hmem.mp x.2).1⟩, ⟨x.1.snd, (hmem.mp x.2).2⟩)
-      invFun y := ⟨WithLp.toLp 2 (y.1.1, y.2.1), hmem.mpr ⟨by simp, by simp⟩⟩
+    { toFun x := (⟨x.val.fst, (hmem.mp x.property).1⟩, ⟨x.val.snd, (hmem.mp x.property).2⟩)
+      invFun y := ⟨WithLp.toLp 2 (y.1.val, y.2.val), hmem.mpr ⟨by simp, by simp⟩⟩
       map_add' x y := rfl
       map_smul' c x := rfl
-      left_inv x := Subtype.ext (WithLp.toLp_ofLp 2 x.1)
+      left_inv x := Subtype.ext (WithLp.toLp_ofLp 2 x.val)
       right_inv y := rfl }
   rw [e.finrank_eq, finrank_prod]
 

@@ -93,6 +93,6 @@ theorem subsingleton_cohomology_totalization (hS : S.ShortExact) :
   intro z
   rw [IsDGRightModule.mem_boundaries]
   exact (totalization_differential_exact S hS z).1
-    (((totalization S).toDG.isDGRightModule.mem_cycles).mp z.2)
+    (((totalization S).toDG.isDGRightModule.mem_cycles).mp z.property)
 
 end TauCeti.CurvedDGRightModuleCat

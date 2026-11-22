@@ -1,0 +1,433 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.Morse.Boundary.Sign
+public import TauCeti.LinearAlgebra.Orientation.Exact.Pair
+public import TauCeti.Geometry.Manifold.Morse.Boundary.FundamentalChain
+public import TauCeti.Geometry.Manifold.Orientation.Pullback
+
+/-!
+# Signs of trajectories of the reversed pseudo-gradient
+
+Let `f` be a Morse function on a compact boundaryless manifold `M` of dimension `n`, and `X` a
+Morse–Smale pseudo-gradient adapted to `f`. Then `-X` is a Morse–Smale pseudo-gradient adapted
+to `-f`, and a trajectory of `X` from `p` to `q`, run backwards, is a trajectory of `-X` from `q` to
+`p`. When `ind p = ind q + 1`, it is counted by both integral Morse boundaries, that of `f` with the
+sign `TauCeti.IsAdaptedPseudoGradient.trajectorySign` measured against orientations `op` and `oq`
+of the unstable manifolds of `X` at `p` and `q`, and that of `-f` with the sign measured against
+orientations `oq'` and `op'` of the unstable manifolds of `-X`, the stable manifolds of `X`. This
+file compares the two signs.
+
+A Morse chart `φ` at a critical point `x` splits the coordinates into those of negative weight,
+the unstable directions of `X`, and those of positive weight, the unstable directions of `-X`
+(`TauCeti.MorseChart.neg`). At a point `y` of the unstable manifold of `x`, the unstable frame of
+`X` and the normal coordinates of the stable manifold of `-X` form a short exact sequence
+
+`0 → V⁻ → T_y M → V⁺ → 0`
+
+(`TauCeti.IsAdaptedPseudoGradient.exact_unstableFrame_neg_stableNormal`); at a point of the
+stable manifold of `x`, the unstable frame of `-X` and the normal coordinates of the stable manifold
+of `X` form the short exact sequence `0 → V⁺ → T_y M → V⁻ → 0`
+(`TauCeti.IsAdaptedPseudoGradient.exact_neg_unstableFrame_stableNormal`). Orientations of `V⁻` and
+`V⁺` therefore orient `T_y M`, subspace first (`Orientation.ofExact`). At a point `y` of a
+trajectory from `p` to `q` this gives two orientations of `T_y M`, one built from `op` and `op'` at
+`p` and one built from `oq'` and `oq` at `q`. Whether they agree measures the twist of the
+orientation local system of `M` along the trajectory, relative to the chosen orientations.
+
+**The sign rule** (`TauCeti.IsAdaptedPseudoGradient.neg_trajectorySign`). With `ε = 1` when the two
+orientations of `T_y M` agree and `ε = -1` otherwise,
+
+`sign_{-X}(y) = -(-1) ^ (ind_f q * ind_{-f} p) * ε * sign_X(y)`.
+
+This is the pointwise form of the comparison between the integral Morse complex of `-f` and the
+dual of the integral Morse complex of `f`. The linear algebra is
+`Orientation.ite_map_eq_prod_of_exact`: the comparison maps of `f` and `-f` at `y` are the two
+comparison maps of the pair of exact sequences, for the linear form `df_y`, since `d(-f) = -df`.
+
+**Oriented manifolds.** Let `oM` orient `M`. Along the unstable manifold of `p`, the orientation of
+`T_y M` built from `op` and `op'` is that of `M` at every point exactly when it is so at `p`
+(`TauCeti.IsAdaptedPseudoGradient.reindex_ofExact_unstableFrame_eq_orientationAt_iff`), and
+likewise along the stable manifold of `q` for the orientation built from `oq'` and `oq`
+(`TauCeti.IsAdaptedPseudoGradient.reindex_ofExact_neg_unstableFrame_eq_orientationAt_iff`). Both
+follow by carrying the orientations along the flow: the flow preserves `oM`, and flowing `y` close
+to the critical point, into the region where `X` is linear in the Morse chart, identifies the exact
+sequence at `y` with the one at the critical point through the derivatives of the chart composed
+with the flow. So when `op` followed by `op'` orients `M` at `p` and `oq'` followed by `oq` orients
+`M` at `q`, both orientations of `T_y M` are the orientation of `M`, `ε = 1`, and
+
+`sign_{-X}(y) = -(-1) ^ (ind_f q * ind_{-f} p) * sign_X(y)`
+
+(`TauCeti.IsAdaptedPseudoGradient.neg_trajectorySign_of_orientationAt`). Summing over the
+trajectories, the signed count of the trajectories of `-X` from `q` to `p` is
+`-(-1) ^ (ind_f q * ind_{-f} p)` times that of the trajectories of `X` from `p` to `q`
+(`TauCeti.IsAdaptedPseudoGradient.neg_signedTrajectoryCount_of_orientationAt`).
+
+## Main results
+
+In the namespace `TauCeti.IsAdaptedPseudoGradient`:
+
+* `neg_trajectorySign`: the sign rule.
+* `reindex_ofExact_unstableFrame_eq_orientationAt_iff`,
+  `reindex_ofExact_neg_unstableFrame_eq_orientationAt_iff`: along an unstable, respectively
+  stable, manifold, the orientation built from the exact sequence compares with the orientation of
+  `M` as it does at the critical point.
+* `neg_trajectorySign_of_orientationAt`: the sign rule on an oriented manifold.
+* `neg_signedTrajectoryCount_of_orientationAt`: the signed counts of `-X` and `X` on an oriented
+  manifold.
+
+## References
+
+* M. Hutchings, *Lecture notes on Morse homology (with an eye towards Floer theory and
+  pseudoholomorphic curves)*, 2002, §2.3 (orientations) and §3, Exercise 5 (the Morse complex of
+  `-f` and Poincaré duality).
+* M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
+  Chapter 4 (the Morse complex with integer coefficients).
+-/
+
+public section
+
+open Filter Function Set Topology
+open scoped ContDiff Manifold
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
+  [CompactSpace M] [T2Space M]
+  {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
+
+namespace IsAdaptedPseudoGradient
+
+section SignRule
+
+variable {hX : IsAdaptedPseudoGradient f X} {p q : M} {φp : MorseChart E f p}
+  {φq : MorseChart E f q}
+  (hφp : ∀ y ∈ φp.toChart.source,
+    φp.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp.toChart y (X y)) =
+      fun i ↦ -(φp.weight i * φp.coord (φp.toChart y) i))
+  (hφq : ∀ y ∈ φq.toChart.source,
+    φq.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart y (X y)) =
+      fun i ↦ -(φq.weight i * φq.coord (φq.toChart y) i))
+
+include hφp hφq
+
+open scoped Classical in
+/-- **The sign rule for the reversed pseudo-gradient.** Let `X` be a Morse–Smale pseudo-gradient
+adapted to a Morse function `f`, `p` and `q` critical points with `ind p = ind q + 1`, and `y` a
+point of a trajectory from `p` to `q`. Orient the coordinates of negative weight of the Morse charts
+`φp` and `φq` by `op` and `oq`, and those of positive weight, the coordinates of negative weight of
+the negated charts, by `op'` and `oq'`. Then the sign of the trajectory of `-X` from `q` to `p`
+through `y` is the sign of the trajectory of `X` times `-(-1) ^ (ind_f q * ind_{-f} p)` times the
+comparison of two orientations of `T_y M`: the one induced by `oq'` and `oq` through the stable
+manifold of `q`, and the one induced by `op` and `op'` through the unstable manifold of `p`. -/
+theorem neg_trajectorySign (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
+    (hp : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f p)
+    (hq : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f q)
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) {y : M}
+    (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
+    (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)))
+    (op' : Orientation ℝ ({i // (φp.neg hp).weight i < 0} → ℝ)
+      (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) p)))
+    (oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q)))
+    (oq' : Orientation ℝ ({i // (φq.neg hq).weight i < 0} → ℝ)
+      (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) q))) :
+    (hX.neg hf).trajectorySign (φq.neg hq) (φp.neg hp) oq' op'
+        (hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq) y =
+      -(-1) ^ (manifoldMorseIndex 𝓘(ℝ, E) f q * manifoldMorseIndex 𝓘(ℝ, E) (-f) p) *
+        (if Orientation.reindex ℝ (TangentSpace 𝓘(ℝ, E) y) (finCongr (by
+              rw [hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq, hpq]; ring))
+            (Orientation.ofExact
+              (injective_unstableFrame_of_mem (hX := hX.neg hf) (φq.coord_mfderiv_neg hφq hq)
+                hf.neg ((hX.stableSet_eq_unstableSet_neg hf q).subset hy.2))
+              (exact_neg_unstableFrame_stableNormal hφq hf hq hy.2)
+              (surjective_stableNormal_of_mem hφq hy.2) oq' oq
+              (φq.neg hq).finrank_negativeWeight_fun φq.finrank_negativeWeight_fun) =
+          Orientation.ofExact (injective_unstableFrame_of_mem hφp hf hy.1)
+            (exact_unstableFrame_neg_stableNormal hφp hf hp hy.1)
+            (surjective_stableNormal_of_mem (hX := hX.neg hf) (φp.coord_mfderiv_neg hφp hp)
+              ((hX.unstableSet_eq_stableSet_neg hf p).subset hy.1)) op op'
+            φp.finrank_negativeWeight_fun (φp.neg hp).finrank_negativeWeight_fun then 1
+          else -1) *
+        hX.trajectorySign φp φq op oq hpq y := by
+  have hb := bijective_trajectoryComparison hφp hφq hMS hf hpq hy
+  have hb' := bijective_trajectoryComparison (φq.coord_mfderiv_neg hφq hq)
+    (φp.coord_mfderiv_neg hφp hp) (hMS.neg hf) hf.neg
+    (hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq)
+    ⟨(hX.stableSet_eq_unstableSet_neg hf q).subset hy.2,
+      (hX.unstableSet_eq_stableSet_neg hf p).subset hy.1⟩
+  rw [trajectorySign_of_bijective hb, trajectorySign_of_bijective hb',
+    MorseChart.trajectoryTargetOrientation_def, MorseChart.trajectoryTargetOrientation_def]
+  exact Orientation.ite_map_eq_prod_of_exact (l := (mvfderiv 𝓘(ℝ, E) f y).toLinearMap) _ _ _ _ _ _
+    (eΦ := LinearEquiv.ofBijective _ hb) (fun v ↦ by simp [trajectoryComparison_apply])
+    (eΨ := LinearEquiv.ofBijective _ hb') (fun v ↦ by simp [trajectoryComparison_apply])
+    _ _ op op' oq' oq _ _ _ _
+
+end SignRule
+
+/-! ### Oriented manifolds -/
+
+section Oriented
+
+variable {ι : Type*} [Fintype ι] {hX : IsAdaptedPseudoGradient f X} {p q : M}
+
+/-- **The orientation of `M` along an unstable manifold.** Let `X` be linear in a Morse chart `φ`
+at a critical point `p`, and orient the coordinates of negative weight of `φ` by `op` and those of
+`-φ`, the coordinates of positive weight of `φ`, by `op'`. At each point `y` of `W^u(p)` the
+unstable frame and the normal coordinates of `W^u(p)`, the stable manifold of `-X`, form the short
+exact sequence `0 → V⁻ → T_y M → V⁺ → 0`, so `op` and `op'` orient `T_y M`, subspace first. This
+orientation is that of `M` at `y` exactly when it is so at `p`. -/
+theorem reindex_ofExact_unstableFrame_eq_orientationAt_iff {φ : MorseChart E f p}
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    (hf : IsMorse 𝓘(ℝ, E) f) (hp : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f p)
+    (oM : Manifold.Orientation 𝓘(ℝ, E) M ι)
+    (e : Fin (manifoldMorseIndex 𝓘(ℝ, E) f p + manifoldMorseIndex 𝓘(ℝ, E) (-f) p) ≃ ι)
+    (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)))
+    (op' : Orientation ℝ ({i // (φ.neg hp).weight i < 0} → ℝ)
+      (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) p)))
+    {y : M} (hy : y ∈ hX.flow.unstableSet p) :
+    Orientation.reindex ℝ _ e (Orientation.ofExact (injective_unstableFrame_of_mem hφ hf hy)
+        (exact_unstableFrame_neg_stableNormal hφ hf hp hy)
+        (surjective_stableNormal_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hp)
+          ((hX.unstableSet_eq_stableSet_neg hf p).subset hy)) op op'
+        φ.finrank_negativeWeight_fun (φ.neg hp).finrank_negativeWeight_fun) =
+        oM.orientationAt y ↔
+      Orientation.reindex ℝ _ e (Orientation.ofExact
+          (injective_unstableFrame_of_mem hφ hf (hX.mem_unstableSet_self hp.mem_criticalPoints))
+          (exact_unstableFrame_neg_stableNormal hφ hf hp
+            (hX.mem_unstableSet_self hp.mem_criticalPoints))
+          (surjective_stableNormal_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hp)
+            ((hX.unstableSet_eq_stableSet_neg hf p).subset
+              (hX.mem_unstableSet_self hp.mem_criticalPoints))) op op'
+          φ.finrank_negativeWeight_fun (φ.neg hp).finrank_negativeWeight_fun) =
+        oM.orientationAt p := by
+  have hcrit := hX.mfderiv_eq_zero_of_mem_unstableSet hy
+  have hpp := hX.mem_unstableSet_self hp.mem_criticalPoints
+  obtain ⟨oE, hU⟩ := Manifold.Orientation.exists_eventually_isOrientationPreservingAt
+    (contMDiffAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one φ.mem_source)
+    (isInvertible_mfderiv_chart φ.mem_maximalAtlas_one φ.mem_source) oM
+  -- Flow `y` back close to `p`, to a time of linear backward flow of both `y` and `p`.
+  have hlim : Tendsto (fun T ↦ hX.flow (-T) y) atTop (𝓝 p) :=
+    (Flow.mem_unstableSet.1 hy).comp tendsto_neg_atTop_atBot
+  obtain ⟨T, hT, hTp, hTU⟩ := ((hX.eventually_mem_linearBackwardTimes hφ hf hy).and
+    ((hX.eventually_mem_linearBackwardTimes hφ hf hpp).and (hlim.eventually hU))).exists
+  have hpU : oM.IsOrientationPreservingAt oE φ.toChart (hX.flow (-T) p) := by
+    rw [hX.flow_apply_of_mfderiv_eq_zero hcrit]
+    exact hU.self_of_nhds
+  -- The derivatives of `φ ∘ Φ_{-T}` at `y` and at `p` identify the two tangent spaces, carrying
+  -- the orientation of `M` at `y` to that at `p`.
+  obtain ⟨eB, hD, hor⟩ := Manifold.Orientation.exists_linearEquiv_map_orientationAt
+    (hTU.comp (hX.isOrientationPreservingAt_flow oM (-T) y))
+    (hpU.comp (hX.isOrientationPreservingAt_flow oM (-T) p))
+  -- It identifies the two exact sequences.
+  have hcomp : (φ.neg hp).toChart ∘ (hX.neg hf).flow T = φ.toChart ∘ hX.flow (-T) := by
+    rw [MorseChart.neg_toChart, hX.neg_flow hf]
+    funext z
+    simp
+  have hfe (c : {i // φ.weight i < 0} → ℝ) :
+      eB (hX.unstableFrame φ y c) = hX.unstableFrame φ p c :=
+    (isInvertible_mfderiv_toChart_comp_flow ((mem_linearBackwardTimes hX φ).1 hTp).1).injective (by
+      rw [hD, mfderiv_unstableFrame hφ hT, mfderiv_unstableFrame hφ hTp])
+  have hge (w : TangentSpace 𝓘(ℝ, E) y) :
+      (hX.neg hf).stableNormal (φ.neg hp) p (eB w) = (hX.neg hf).stableNormal (φ.neg hp) y w := by
+    have hT' := (neg_linearForwardTimes hf hp y).symm ▸ hT
+    have hTp' := (neg_linearForwardTimes hf hp p).symm ▸ hTp
+    rw [stableNormal_apply (φ.coord_mfderiv_neg hφ hp) hTp',
+      stableNormal_apply (φ.coord_mfderiv_neg hφ hp) hT', hcomp, hD]
+  have hmap := Orientation.map_ofExact (injective_unstableFrame_of_mem hφ hf hy)
+    (exact_unstableFrame_neg_stableNormal hφ hf hp hy)
+    (surjective_stableNormal_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hp)
+      ((hX.unstableSet_eq_stableSet_neg hf p).subset hy))
+    (injective_unstableFrame_of_mem hφ hf hpp) (exact_unstableFrame_neg_stableNormal hφ hf hp hpp)
+    (surjective_stableNormal_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hp)
+      ((hX.unstableSet_eq_stableSet_neg hf p).subset hpp))
+    (LinearEquiv.refl ℝ _) eB (LinearEquiv.refl ℝ _) hfe (fun w ↦ (hge w).symm) op op'
+    φ.finrank_negativeWeight_fun (φ.neg hp).finrank_negativeWeight_fun
+  simp only [Orientation.map_refl, Equiv.refl_apply] at hmap
+  rw [← (Orientation.map ι eB).injective.eq_iff, Orientation.map_reindex, hmap, hor]
+
+/-- **The orientation of `M` along a stable manifold.** Let `X` be linear in a Morse chart `φ` at
+a critical point `q`, and orient the coordinates of positive weight of `φ`, the coordinates of
+negative weight of `-φ`, by `oq'` and those of negative weight of `φ` by `oq`. At each point `y`
+of `W^s(q)` the unstable frame of `-X` and the normal coordinates of `W^s(q)` form the short exact
+sequence `0 → V⁺ → T_y M → V⁻ → 0`, so `oq'` and `oq` orient `T_y M`, subspace first. This
+orientation is that of `M` at `y` exactly when it is so at `q`. -/
+theorem reindex_ofExact_neg_unstableFrame_eq_orientationAt_iff {φ : MorseChart E f q}
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    (hf : IsMorse 𝓘(ℝ, E) f) (hq : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f q)
+    (oM : Manifold.Orientation 𝓘(ℝ, E) M ι)
+    (e : Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) q + manifoldMorseIndex 𝓘(ℝ, E) f q) ≃ ι)
+    (oq' : Orientation ℝ ({i // (φ.neg hq).weight i < 0} → ℝ)
+      (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) q)))
+    (oq : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q)))
+    {y : M} (hy : y ∈ hX.flow.stableSet q) :
+    Orientation.reindex ℝ _ e (Orientation.ofExact
+        (injective_unstableFrame_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hq) hf.neg
+          ((hX.stableSet_eq_unstableSet_neg hf q).subset hy))
+        (exact_neg_unstableFrame_stableNormal hφ hf hq hy) (surjective_stableNormal_of_mem hφ hy)
+        oq' oq (φ.neg hq).finrank_negativeWeight_fun φ.finrank_negativeWeight_fun) =
+        oM.orientationAt y ↔
+      Orientation.reindex ℝ _ e (Orientation.ofExact
+          (injective_unstableFrame_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hq) hf.neg
+            ((hX.stableSet_eq_unstableSet_neg hf q).subset
+              (hX.mem_stableSet_self hq.mem_criticalPoints)))
+          (exact_neg_unstableFrame_stableNormal hφ hf hq
+            (hX.mem_stableSet_self hq.mem_criticalPoints))
+          (surjective_stableNormal_of_mem hφ (hX.mem_stableSet_self hq.mem_criticalPoints))
+          oq' oq (φ.neg hq).finrank_negativeWeight_fun φ.finrank_negativeWeight_fun) =
+        oM.orientationAt q := by
+  have hcrit := hX.mfderiv_eq_zero_of_mem_stableSet hy
+  have hqq := hX.mem_stableSet_self hq.mem_criticalPoints
+  obtain ⟨oE, hU⟩ := Manifold.Orientation.exists_eventually_isOrientationPreservingAt
+    (contMDiffAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one φ.mem_source)
+    (isInvertible_mfderiv_chart φ.mem_maximalAtlas_one φ.mem_source) oM
+  -- Flow `y` forward close to `q`, to a time of linear forward flow of both `y` and `q`.
+  obtain ⟨T, hT, hTq, hTU⟩ := ((hX.eventually_mem_linearForwardTimes hφ hy).and
+    ((hX.eventually_mem_linearForwardTimes hφ hqq).and
+      ((Flow.mem_stableSet.1 hy).eventually hU))).exists
+  have hqU : oM.IsOrientationPreservingAt oE φ.toChart (hX.flow T q) := by
+    rw [hX.flow_apply_of_mfderiv_eq_zero hcrit]
+    exact hU.self_of_nhds
+  -- The derivatives of `φ ∘ Φ_T` at `y` and at `q` identify the two tangent spaces, carrying the
+  -- orientation of `M` at `y` to that at `q`.
+  obtain ⟨eB, hD, hor⟩ := Manifold.Orientation.exists_linearEquiv_map_orientationAt
+    (hTU.comp (hX.isOrientationPreservingAt_flow oM T y))
+    (hqU.comp (hX.isOrientationPreservingAt_flow oM T q))
+  -- It identifies the two exact sequences.
+  have hcomp : (φ.neg hq).toChart ∘ (hX.neg hf).flow (-T) = φ.toChart ∘ hX.flow T := by
+    rw [MorseChart.neg_toChart, hX.neg_flow hf]
+    funext z
+    simp
+  have hT' := (neg_linearBackwardTimes hf hq y).symm ▸ hT
+  have hTq' := (neg_linearBackwardTimes hf hq q).symm ▸ hTq
+  have hfe (c : {i // (φ.neg hq).weight i < 0} → ℝ) :
+      eB ((hX.neg hf).unstableFrame (φ.neg hq) y c) =
+        (hX.neg hf).unstableFrame (φ.neg hq) q c := by
+    refine (isInvertible_mfderiv_toChart_comp_flow
+      ((mem_linearForwardTimes hX φ).1 hTq).1).injective ?_
+    rw [hD, ← hcomp, mfderiv_unstableFrame (φ.coord_mfderiv_neg hφ hq) hT',
+      mfderiv_unstableFrame (φ.coord_mfderiv_neg hφ hq) hTq']
+  have hge (w : TangentSpace 𝓘(ℝ, E) y) : hX.stableNormal φ q (eB w) = hX.stableNormal φ y w := by
+    rw [stableNormal_apply hφ hTq, stableNormal_apply hφ hT, hD]
+  have hmap := Orientation.map_ofExact
+    (injective_unstableFrame_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hq) hf.neg
+      ((hX.stableSet_eq_unstableSet_neg hf q).subset hy))
+    (exact_neg_unstableFrame_stableNormal hφ hf hq hy) (surjective_stableNormal_of_mem hφ hy)
+    (injective_unstableFrame_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hq) hf.neg
+      ((hX.stableSet_eq_unstableSet_neg hf q).subset hqq))
+    (exact_neg_unstableFrame_stableNormal hφ hf hq hqq) (surjective_stableNormal_of_mem hφ hqq)
+    (LinearEquiv.refl ℝ _) eB (LinearEquiv.refl ℝ _) hfe (fun w ↦ (hge w).symm) oq' oq
+    (φ.neg hq).finrank_negativeWeight_fun φ.finrank_negativeWeight_fun
+  simp only [Orientation.map_refl, Equiv.refl_apply] at hmap
+  rw [← (Orientation.map ι eB).injective.eq_iff, Orientation.map_reindex, hmap, hor]
+
+end Oriented
+
+/-! ### The sign rule on an oriented manifold -/
+
+section OrientedSignRule
+
+variable {hX : IsAdaptedPseudoGradient f X} {p q : M} {φp : MorseChart E f p}
+  {φq : MorseChart E f q}
+  (hφp : ∀ y ∈ φp.toChart.source,
+    φp.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp.toChart y (X y)) =
+      fun i ↦ -(φp.weight i * φp.coord (φp.toChart y) i))
+  (hφq : ∀ y ∈ φq.toChart.source,
+    φq.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart y (X y)) =
+      fun i ↦ -(φq.weight i * φq.coord (φq.toChart y) i))
+  (hf : IsMorse 𝓘(ℝ, E) f) (hp : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f p)
+  (hq : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f q)
+  (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (Module.finrank ℝ E)))
+  (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)))
+  (op' : Orientation ℝ ({i // (φp.neg hp).weight i < 0} → ℝ)
+    (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) p)))
+  (oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q)))
+  (oq' : Orientation ℝ ({i // (φq.neg hq).weight i < 0} → ℝ)
+    (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) q)))
+  -- `op` followed by `op'` orients `M` at `p`, and `oq'` followed by `oq` orients `M` at `q`.
+  (hop : Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
+      hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))
+    (Orientation.ofExact
+      (injective_unstableFrame_of_mem hφp hf (hX.mem_unstableSet_self hp.mem_criticalPoints))
+      (exact_unstableFrame_neg_stableNormal hφp hf hp
+        (hX.mem_unstableSet_self hp.mem_criticalPoints))
+      (surjective_stableNormal_of_mem (hX := hX.neg hf) (φp.coord_mfderiv_neg hφp hp)
+        ((hX.unstableSet_eq_stableSet_neg hf p).subset
+          (hX.mem_unstableSet_self hp.mem_criticalPoints))) op op'
+      φp.finrank_negativeWeight_fun (φp.neg hp).finrank_negativeWeight_fun) =
+    oM.orientationAt p)
+  (hoq : Orientation.reindex ℝ _ (finCongr
+      hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank)
+    (Orientation.ofExact
+      (injective_unstableFrame_of_mem (hX := hX.neg hf) (φq.coord_mfderiv_neg hφq hq) hf.neg
+        ((hX.stableSet_eq_unstableSet_neg hf q).subset
+          (hX.mem_stableSet_self hq.mem_criticalPoints)))
+      (exact_neg_unstableFrame_stableNormal hφq hf hq (hX.mem_stableSet_self hq.mem_criticalPoints))
+      (surjective_stableNormal_of_mem hφq (hX.mem_stableSet_self hq.mem_criticalPoints))
+      oq' oq (φq.neg hq).finrank_negativeWeight_fun φq.finrank_negativeWeight_fun) =
+    oM.orientationAt q)
+
+include hop hoq
+
+/-- **The sign rule for the reversed pseudo-gradient on an oriented manifold.** Let `oM` orient
+`M`, and choose the orientations so that, at `p`, the orientation `op` of the unstable manifold
+followed by the orientation `op'` of the stable manifold is that of `M`, and at `q` the orientation
+`oq'` of the stable manifold followed by the orientation `oq` of the unstable manifold is that of
+`M`. Then every trajectory from `p` to `q` counts for `-f` with the sign
+`-(-1) ^ (ind_f q * ind_{-f} p)` times its sign for `f`. -/
+theorem neg_trajectorySign_of_orientationAt (hMS : hX.IsMorseSmale)
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
+    {y : M} (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
+    (hX.neg hf).trajectorySign (φq.neg hq) (φp.neg hp) oq' op'
+        (hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq) y =
+      -(-1) ^ (manifoldMorseIndex 𝓘(ℝ, E) f q * manifoldMorseIndex 𝓘(ℝ, E) (-f) p) *
+        hX.trajectorySign φp φq op oq hpq y := by
+  -- Both orientations of `T_y M` compared by the sign rule are the orientation of `M`.
+  have hP := (reindex_ofExact_unstableFrame_eq_orientationAt_iff hφp hf hp oM _ op op' hy.1).2 hop
+  have hQ := (reindex_ofExact_neg_unstableFrame_eq_orientationAt_iff hφq hf hq oM _ oq' oq
+    hy.2).2 hoq
+  have hcond : Orientation.reindex ℝ _ (finCongr (by
+        rw [hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq, hpq]; ring))
+      (Orientation.ofExact
+        (injective_unstableFrame_of_mem (hX := hX.neg hf) (φq.coord_mfderiv_neg hφq hq) hf.neg
+          ((hX.stableSet_eq_unstableSet_neg hf q).subset hy.2))
+        (exact_neg_unstableFrame_stableNormal hφq hf hq hy.2)
+        (surjective_stableNormal_of_mem hφq hy.2)
+        oq' oq (φq.neg hq).finrank_negativeWeight_fun φq.finrank_negativeWeight_fun) =
+      Orientation.ofExact (injective_unstableFrame_of_mem hφp hf hy.1)
+        (exact_unstableFrame_neg_stableNormal hφp hf hp hy.1)
+        (surjective_stableNormal_of_mem (hX := hX.neg hf) (φp.coord_mfderiv_neg hφp hp)
+          ((hX.unstableSet_eq_stableSet_neg hf p).subset hy.1)) op op'
+        φp.finrank_negativeWeight_fun (φp.neg hp).finrank_negativeWeight_fun := by
+    refine (Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
+      hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))).injective ?_
+    rw [Orientation.reindex_finCongr_reindex_finCongr, hP]
+    exact hQ
+  rw [neg_trajectorySign hφp hφq hMS hf hp hq hpq hy op op' oq oq', ite_eq_left hcond, mul_one]
+
+/-- **Signed counts for the reversed pseudo-gradient on an oriented manifold.** With the
+orientations of `neg_trajectorySign_of_orientationAt`, the signed count of the trajectories of `-X`
+from `q` to `p` is `-(-1) ^ (ind_f q * ind_{-f} p)` times the signed count of the trajectories of
+`X` from `p` to `q`. -/
+theorem neg_signedTrajectoryCount_of_orientationAt (hMS : hX.IsMorseSmale)
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
+    (hX.neg hf).signedTrajectoryCount (φq.neg hq) (φp.neg hp) oq' op'
+        (hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq) =
+      -(-1) ^ (manifoldMorseIndex 𝓘(ℝ, E) f q * manifoldMorseIndex 𝓘(ℝ, E) (-f) p) *
+        hX.signedTrajectoryCount φp φq op oq hpq := by
+  rw [signedTrajectoryCount_def, signedTrajectoryCount_def, hX.neg_morseTrajectorySlice hf,
+    mul_finsum_mem]
+  refine finsum_mem_congr rfl fun y hy ↦ ?_
+  exact neg_trajectorySign_of_orientationAt hφp hφq hf hp hq oM op op' oq oq' hop hoq hMS hpq
+    ⟨(hX.mem_morseTrajectorySlice.1 hy).1, (hX.mem_morseTrajectorySlice.1 hy).2.1⟩
+
+end OrientedSignRule
+
+end IsAdaptedPseudoGradient
+
+end TauCeti

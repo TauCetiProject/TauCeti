@@ -20,8 +20,16 @@ A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`).
 It also expands the value of a continuous linear map in a Hilbert basis,
 `T x = ∑ᵢ ⟪bᵢ, x⟫ T bᵢ` (`HilbertBasis.hasSum_inner_smul_apply`). It records that a continuous
 linear map vanishing on all but finitely many vectors of a Hilbert basis has finite rank, since
-every vector is the sum of its basis expansion, and that a continuous linear map is determined by
-its matrix entries in Hilbert bases of its source and target (`HilbertBasis.ext_inner_apply`).
+every vector is the sum of its basis expansion, and that continuous (semi)linear maps, linear
+isometries, and linear isometric equivalences out of `E` are determined by their values on a
+Hilbert basis (`HilbertBasis.ext_continuousLinearMap`, `HilbertBasis.ext_linearIsometry`,
+`HilbertBasis.ext_linearIsometryEquiv`, `HilbertBasis.ext_inner_apply`). More generally, a
+continuous semilinear map out of `E` sends every vector into a closed submodule containing the
+images of the basis vectors (`HilbertBasis.apply_mem_of_forall_apply_mem`).
+
+Finally, the orthogonal complement of the span of the basis vectors indexed by a set `s` is the
+closed span of the basis vectors indexed by its complement (`HilbertBasis.orthogonal_span_image`).
+This computes the cokernels of isometries that send a Hilbert basis into another one.
 -/
 
 public section
@@ -47,16 +55,56 @@ theorem inner_eq_zero_of_forall_inner_eq_zero {K : Submodule 𝕜 E}
       innerSL_apply_apply, map_smul, hx, smul_zero] using hsum
   exact hzero.unique hasSum_zero
 
+/-- Two continuous semilinear maps from `E` to a Hausdorff topological module agree when they agree
+on every vector of a Hilbert basis of `E`. -/
+theorem ext_continuousLinearMap {ι 𝕜' M : Type*} [Semiring 𝕜'] {σ : 𝕜 →+* 𝕜'}
+    [AddCommMonoid M] [TopologicalSpace M] [T2Space M] [Module 𝕜' M]
+    (b : _root_.HilbertBasis ι 𝕜 E) {A B : E →SL[σ] M} (h : ∀ i, A (b i) = B (b i)) : A = B := by
+  refine ContinuousLinearMap.ext_on (Submodule.dense_iff_topologicalClosure_eq_top.2 b.dense_span)
+    ?_
+  rintro _ ⟨i, rfl⟩
+  exact h i
+
+/-- A continuous semilinear map out of `E` sends every vector into a closed submodule that contains
+the images of all vectors of a Hilbert basis of `E`. -/
+theorem apply_mem_of_forall_apply_mem {ι 𝕜' M : Type*} [Semiring 𝕜'] {σ : 𝕜 →+* 𝕜'}
+    [AddCommMonoid M] [Module 𝕜' M] [TopologicalSpace M] (b : _root_.HilbertBasis ι 𝕜 E)
+    {S : Submodule 𝕜' M} (hS : IsClosed (S : Set M)) (L : E →SL[σ] M) (h : ∀ i, L (b i) ∈ S)
+    (x : E) : L x ∈ S := by
+  have hle : Submodule.span 𝕜 (Set.range b) ≤ S.comap (L : E →ₛₗ[σ] M) :=
+    Submodule.span_le.2 (Set.range_subset_iff.2 h)
+  have hcl := Submodule.topologicalClosure_minimal _ hle (hS.preimage L.continuous)
+  rw [b.dense_span] at hcl
+  exact hcl Submodule.mem_top
+
+/-- Two semilinear isometries out of `E` into a normed module agree when they agree on every vector
+of a Hilbert basis of `E`. -/
+theorem ext_linearIsometry {ι 𝕜' M : Type*} [Semiring 𝕜'] {σ : 𝕜 →+* 𝕜'}
+    [NormedAddCommGroup M] [Module 𝕜' M] (b : _root_.HilbertBasis ι 𝕜 E)
+    {f g : E →ₛₗᵢ[σ] M} (h : ∀ i, f (b i) = g (b i)) : f = g :=
+  LinearIsometry.toContinuousLinearMap_injective <| b.ext_continuousLinearMap fun i ↦ by
+    simpa only [LinearIsometry.coe_toContinuousLinearMap] using h i
+
+/-- Two semilinear isometric equivalences out of `E` into a seminormed module agree when they agree
+on every vector of a Hilbert basis of `E`. -/
+theorem ext_linearIsometryEquiv {ι 𝕜' M : Type*} [Semiring 𝕜'] {σ : 𝕜 →+* 𝕜'} {σ' : 𝕜' →+* 𝕜}
+    [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+    [SeminormedAddCommGroup M] [Module 𝕜' M] (b : _root_.HilbertBasis ι 𝕜 E)
+    {U V : E ≃ₛₗᵢ[σ] M} (h : ∀ i, U (b i) = V (b i)) : U = V := by
+  have : T2Space M := U.toHomeomorph.t2Space
+  exact LinearIsometryEquiv.toLinearIsometry_injective <|
+    LinearIsometry.toContinuousLinearMap_injective <|
+      b.ext_continuousLinearMap fun i ↦ by
+        simpa only [LinearIsometry.coe_toContinuousLinearMap,
+          LinearIsometryEquiv.coe_toLinearIsometry] using h i
+
 /-- Two continuous linear maps between Hilbert spaces are equal when their matrix entries
 `⟪c i, A (b j)⟫` in Hilbert bases `b` of the source and `c` of the target agree. -/
 theorem ext_inner_apply {iota kappa F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace 𝕜 F] (b : _root_.HilbertBasis iota 𝕜 E) (c : _root_.HilbertBasis kappa 𝕜 F)
-    {A B : E →L[𝕜] F} (h : ∀ i j, ⟪c i, A (b j)⟫_𝕜 = ⟪c i, B (b j)⟫_𝕜) : A = B := by
-  refine ContinuousLinearMap.ext_on (Submodule.dense_iff_topologicalClosure_eq_top.2 b.dense_span)
-    ?_
-  rintro _ ⟨j, rfl⟩
-  exact c.repr.injective (lp.ext (funext fun i ↦ by
-    simp only [_root_.HilbertBasis.repr_apply_apply, h]))
+    {A B : E →L[𝕜] F} (h : ∀ i j, ⟪c i, A (b j)⟫_𝕜 = ⟪c i, B (b j)⟫_𝕜) : A = B :=
+  b.ext_continuousLinearMap fun j ↦ c.repr.injective <| lp.ext <| funext fun i ↦ by
+    simp only [_root_.HilbertBasis.repr_apply_apply, h]
 
 /-- **Expansion of an operator in a Hilbert basis.** `T x = ∑ᵢ ⟪bᵢ, x⟫ T bᵢ`. -/
 theorem hasSum_inner_smul_apply {iota F : Type*} [AddCommGroup F] [Module 𝕜 F]
@@ -85,5 +133,27 @@ theorem hasFiniteRange_of_apply_eq_zero {iota F : Type*}
   · rw [Submodule.span_le]
     rintro _ ⟨i, -, rfl⟩
     exact ⟨b i, rfl⟩
+
+/-- The orthogonal complement of the span of the basis vectors indexed by `s` is the closed span
+of the basis vectors indexed by the complement of `s`. -/
+theorem orthogonal_span_image {iota : Type*} (b : _root_.HilbertBasis iota 𝕜 E) (s : Set iota) :
+    (Submodule.span 𝕜 (b '' s))ᗮ = (Submodule.span 𝕜 (b '' sᶜ)).topologicalClosure := by
+  apply le_antisymm
+  · intro y hy
+    -- The basis expansion of `y` has no terms indexed by `s`.
+    have hzero : ∀ i ∈ s, ⟪b i, y⟫_𝕜 = 0 := fun i hi ↦
+      Submodule.inner_right_of_mem_orthogonal (K := Submodule.span 𝕜 (b '' s))
+        (Submodule.subset_span ⟨i, hi, rfl⟩) hy
+    rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe]
+    refine mem_closure_of_tendsto (b.hasSum_repr y) (Filter.Eventually.of_forall fun t ↦ ?_)
+    refine SetLike.mem_coe.2 (Submodule.sum_mem _ fun i _ ↦ ?_)
+    by_cases hi : i ∈ s
+    · rw [b.repr_apply_apply, hzero i hi, zero_smul]
+      exact Submodule.zero_mem _
+    · exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, hi, rfl⟩)
+  · refine Submodule.topologicalClosure_minimal _ ?_ (Submodule.isClosed_orthogonal _)
+    rw [← Submodule.isOrtho_iff_le, Submodule.isOrtho_span]
+    rintro _ ⟨j, hj, rfl⟩ _ ⟨i, hi, rfl⟩
+    exact b.orthonormal.inner_eq_zero fun hji ↦ hj (hji ▸ hi)
 
 end HilbertBasis

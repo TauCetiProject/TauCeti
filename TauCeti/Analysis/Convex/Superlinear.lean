@@ -18,7 +18,8 @@ continuous superlinear function on a proper normed space attains every tilted mi
 For a strictly convex function the minimizer is unique. In finite-dimensional real inner
 product spaces this identifies the gradient of the Legendre–Fenchel conjugate with the
 unique point at which the conjugate supremum is attained, without assuming that the
-original function is differentiable.
+original function is differentiable; when the function is differentiable, the conjugate
+gradient is the two-sided inverse of its gradient.
 
 The conjugate and subgradient reciprocity are those of `TauCeti.Analysis.Convex.Conjugate`
 and `TauCeti.Analysis.Convex.Subdifferential`. Tilted-minimum attainment uses Mathlib's
@@ -196,6 +197,50 @@ theorem mem_subdifferential_iff_eq_gradient_fenchelConjugate_of_superlinear
   obtain ⟨T, _, hgrad⟩ := exists_continuous_hasGradientAt_fenchelConjugate_of_superlinear hs hh
   rw [(hgrad y).1.gradient]
   exact (hgrad y).2 x
+
+/-- At a point where a strictly convex superlinear function `h` is differentiable, `y = ∇h x`
+holds if and only if `x` is the gradient of the real representative of `h⋆` at `y`. -/
+theorem eq_gradient_iff_eq_gradient_fenchelConjugate_of_superlinear
+    (hs : StrictConvexOn ℝ univ h)
+    (hh : Tendsto (fun x => h x / ‖x‖) (cocompact E) atTop) {x : E}
+    (hd : DifferentiableAt ℝ h x) (y : E) :
+    y = gradient h x ↔
+      x = gradient
+        (fun z => (fenchelConjugate (innerₗ E) (fun w => (h w : EReal)) z).toReal) y := by
+  rw [← mem_subdifferential_iff_eq_gradient_fenchelConjugate_of_superlinear hs hh x y]
+  have hepi : Convex ℝ {p : E × ℝ | (h p.1 : EReal) ≤ p.2} := by
+    simpa only [mem_univ, ite_true] using convexOn_iff_convex_epigraph_ite.1 hs.convexOn
+  have hd' : DifferentiableAt ℝ (fun z => (h z : EReal).toReal) x := by
+    simpa only [EReal.toReal_coe] using hd
+  refine ⟨?_, fun hy => ?_⟩
+  · rintro rfl
+    simpa only [EReal.toReal_coe] using gradient_toReal_mem_subdifferential hepi
+      (fun z => EReal.coe_ne_bot (h z)) (EReal.coe_ne_top (h x)) hd'
+  · have hgrad := gradient_toReal_eq_of_mem_subdifferential hy
+      (Eventually.of_forall fun z => EReal.coe_ne_top (h z)) hd'
+    simpa only [EReal.toReal_coe] using hgrad.symm
+
+/-- For a differentiable strictly convex superlinear function, the gradient of the real
+representative of its conjugate is a left inverse of its gradient. -/
+theorem leftInverse_gradient_fenchelConjugate_of_superlinear
+    (hs : StrictConvexOn ℝ univ h)
+    (hh : Tendsto (fun x => h x / ‖x‖) (cocompact E) atTop)
+    (hd : Differentiable ℝ h) :
+    Function.LeftInverse
+      (gradient fun z => (fenchelConjugate (innerₗ E) (fun w => (h w : EReal)) z).toReal)
+      (gradient h) := fun x =>
+  ((eq_gradient_iff_eq_gradient_fenchelConjugate_of_superlinear hs hh (hd x) _).1 rfl).symm
+
+/-- For a differentiable strictly convex superlinear function, the gradient of the real
+representative of its conjugate is a right inverse of its gradient. -/
+theorem rightInverse_gradient_fenchelConjugate_of_superlinear
+    (hs : StrictConvexOn ℝ univ h)
+    (hh : Tendsto (fun x => h x / ‖x‖) (cocompact E) atTop)
+    (hd : Differentiable ℝ h) :
+    Function.RightInverse
+      (gradient fun z => (fenchelConjugate (innerₗ E) (fun w => (h w : EReal)) z).toReal)
+      (gradient h) := fun y =>
+  ((eq_gradient_iff_eq_gradient_fenchelConjugate_of_superlinear hs hh (hd _) y).2 rfl).symm
 
 end FiniteDimensional
 
