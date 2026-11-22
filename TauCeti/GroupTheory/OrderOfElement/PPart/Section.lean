@@ -17,10 +17,10 @@ Fix a prime `p`. The **`p`-section** of an element `x` of `p`-power order is the
 representatives of the conjugacy classes of `p`-elements partition the group, and each section is
 described by the centralizer of its representative: an element of finite order has `p`-part
 exactly `x` when it is `s * x` for a `p`-regular element `s` of `C_G(x)`, and two such elements
-are conjugate in `G` exactly when their `p`-free parts are conjugate in `C_G(x)`. So the conjugacy
-classes of `G` inside the section of `x` correspond to the `p`-regular conjugacy classes of
-`C_G(x)`, and the number of conjugacy classes of a finite group is the sum, over the classes of
-`p`-elements, of the number of `p`-regular classes of their centralizers.
+are conjugate in `G` exactly when their `p`-free parts are conjugate in `C_G(x)`. So in a torsion
+group the conjugacy classes of `G` inside the section of `x` correspond to the `p`-regular
+conjugacy classes of `C_G(x)`, and the number of conjugacy classes of a finite group is the sum,
+over the classes of `p`-elements, of the number of `p`-regular classes of their centralizers.
 
 This is the indexing of modular character theory: generalized decomposition numbers and Brauer's
 second main theorem are stated section by section, with the Brauer characters of `C_G(x)` on the
@@ -159,9 +159,9 @@ theorem pPart_eq_iff_exists_mul_eq (hp : p.Prime) {x g : G} {k : ℕ} (hx : orde
   · rintro ⟨s, hs, hsp, rfl⟩
     exact pPart_mul_of_mem_centralizer hp hx hs hsp
 
-/-- **The parametrization of a section.** For `x` of `p`-power order in a torsion group,
-`g ↦ pFreePart p g` is a bijection from the elements with `p`-part `x` to the `p`-regular
-elements of `C_G(x)`, with inverse `s ↦ s * x`. -/
+/-- **The parametrization of the elements with `p`-part `x`.** For `x` of `p`-power order in a
+torsion group, `g ↦ pFreePart p g` is a bijection from the elements with `p`-part `x` to the
+`p`-regular elements of `C_G(x)`, with inverse `s ↦ s * x`. -/
 noncomputable def pFreePartEquiv (hp : p.Prime) {x : G} {k : ℕ} (hx : orderOf x = p ^ k)
     (hG : IsMulTorsion G) :
     {g : G // pPart p g = x} ≃ {s : centralizer {x} // (orderOf s).Coprime p} where
@@ -220,8 +220,9 @@ theorem isConj_iff_exists_mem_centralizer {x g h : G} (hg : pPart p g = x) (hh :
 /-! ### Conjugacy classes in a section -/
 
 /-- The map sending the conjugacy class of `s` in `C_G(x)` to the conjugacy class of `s * x` in
-`G`. For `x` of `p`-power order it maps the `p`-regular classes of `C_G(x)` bijectively onto the
-classes of `G` in the `p`-section of `x` (`TauCeti.bijOn_centralizerConjClassesMul`). -/
+`G`. For `x` of `p`-power order in a torsion group it maps the `p`-regular classes of `C_G(x)`
+bijectively onto the classes of `G` in the `p`-section of `x`
+(`TauCeti.bijOn_centralizerConjClassesMul`). -/
 def centralizerConjClassesMul (x : G) : ConjClasses (centralizer {x}) → ConjClasses G :=
   Quotient.lift (fun s => ConjClasses.mk ((s : G) * x)) fun s t hst => by
     obtain ⟨c, rfl⟩ := isConj_iff.1 hst
