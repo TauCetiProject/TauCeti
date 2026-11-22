@@ -18,8 +18,8 @@ laws.  It also transports a double-coset space along a group isomorphism, identi
 quotients by conjugate right subgroups by right translation, and carries a single double coset
 along a multiplicative map: `DoubleCoset.image_doubleCoset` computes the image,
 `DoubleCoset.mem_doubleCoset_image_iff` transports membership along an injective multiplicative
-map, and `DoubleCoset.image_doubleCoset_subgroupOf` specializes this to double cosets of restricted
-subgroups `H.subgroupOf E` and `K.subgroupOf E`.
+map, and `DoubleCoset.image_doubleCoset_subgroupOf` and `DoubleCoset.mem_doubleCoset_subgroupOf_iff`
+specialize these to double cosets of restricted subgroups `H.subgroupOf E` and `K.subgroupOf E`.
 
 These are the double-coset analogues of `Subgroup.quotientMapOfLE` and `QuotientGroup.congr` for
 ordinary coset spaces.
@@ -186,9 +186,16 @@ theorem image_doubleCoset_subgroupOf {E H K : Subgroup G} (x : E) :
       doubleCoset (x : G) ((H ⊓ E : Subgroup G) : Set G) ((K ⊓ E : Subgroup G) : Set G) := by
   have himg (L : Subgroup G) :
       Subtype.val '' (L.subgroupOf E : Set E) = ((L ⊓ E : Subgroup G) : Set G) := by
-    rw [← Subgroup.coe_subtype, ← Subgroup.coe_map, Subgroup.subgroupOf,
-      Subgroup.map_comap_eq, Subgroup.range_subtype, inf_comm]
+    rw [← Subgroup.coe_subtype, ← Subgroup.coe_map, Subgroup.subgroupOf_map_subtype]
   simpa only [Subgroup.coe_subtype, himg] using
     image_doubleCoset E.subtype x (H.subgroupOf E : Set E) (K.subgroupOf E : Set E)
+
+/-- Membership in a double coset of restricted subgroups `H.subgroupOf E` and `K.subgroupOf E`
+is equivalent to ambient membership in the double coset of `H ⊓ E` and `K ⊓ E`. -/
+theorem mem_doubleCoset_subgroupOf_iff {E H K : Subgroup G} (a x : E) :
+    x ∈ doubleCoset a (H.subgroupOf E : Set E) (K.subgroupOf E : Set E) ↔
+      (x : G) ∈ doubleCoset (a : G) ((H ⊓ E : Subgroup G) : Set G)
+        ((K ⊓ E : Subgroup G) : Set G) := by
+  rw [← E.subtype_injective.mem_set_image, Subgroup.coe_subtype, image_doubleCoset_subgroupOf]
 
 end DoubleCoset

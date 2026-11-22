@@ -82,6 +82,24 @@ theorem puncturedPositivePoints_eq_iSup (A : Type v) [CommRing A] (i : Fin t.ran
         (D.rootSubgroupPoints γ A).range :=
   D.subsystemPoints_eq_iSup _ A
 
+/-- Containment of punctured positive points can be checked on positive root elements other than
+`αᵢ`. -/
+theorem puncturedPositivePoints_le_iff {A : Type v} [CommRing A] {i : Fin t.rank}
+    {P : Subgroup (D.points A)} :
+    D.puncturedPositivePoints A i ≤ P ↔
+      ∀ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
+        ∀ u, D.rootSubgroupPoints γ A u ∈ P :=
+  D.subsystemPoints_le_iff
+
+/-- Every positive root element other than `αᵢ` belongs to the punctured positive subgroup. -/
+@[simp]
+theorem rootSubgroupPoints_mem_puncturedPositivePoints (A : Type v) [CommRing A]
+    {i : Fin t.rank} {γ : Fin t.numRoots}
+    (hγ : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i})
+    (u : Multiplicative A) :
+    D.rootSubgroupPoints γ A u ∈ D.puncturedPositivePoints A i :=
+  D.rootSubgroupPoints_mem_subsystemPoints A hγ u
+
 /-- The punctured positive subgroup is contained in `D.positivePoints A`. -/
 theorem puncturedPositivePoints_le_positivePoints (A : Type v) [CommRing A] (i : Fin t.rank) :
     D.puncturedPositivePoints A i ≤ D.positivePoints A := by
@@ -134,16 +152,23 @@ theorem closure_simpleRootPair_le_normalizer_puncturedPositivePoints (i : Fin t.
   have h := DynkinType.closure_simpleRootPair_le_normalizer_posRoots_diff_singleton
     D.representation D.lattice D.representation_mem_lattice
     D.isNilpotent_representation_rootGenerator i (CommAlgCat.of ℤ A)
-  -- First express both generated subgroups in lattice coordinates. The injective
-  -- coordinate map then reflects normalization back into the datum's point group.
+  have hU : U.map f = D.subsystemSubgroup
+      (posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i})
+      (CommAlgCat.of ℤ A) := by
+    rw [← Subgroup.map_map]
+    dsimp only [U]
+    rw [D.puncturedPositivePoints_def, D.map_subsystemPoints_subtype]
+    exact (Subgroup.map_symm_eq_iff_map_eq (e := e) _).mpr rfl
+  -- First express both subgroups in lattice coordinates. The injective coordinate map then
+  -- reflects normalization back into the datum's point group.
   have hmap : (Subgroup.closure
       (Set.range (D.rootSubgroupPoints (t.simpleIndex ht i) A) ∪
         Set.range (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
           (t.simpleIndex ht i) (t.simpleIndex ht i)) A))).map f ≤
         Subgroup.normalizer (U.map f) := by
-    simpa only [U, D.puncturedPositivePoints_eq_iSup A i, Subgroup.closure_union,
-      ← MonoidHom.coe_range, Subgroup.closure_eq, Subgroup.map_sup, Subgroup.map_iSup,
-      MonoidHom.map_range, hf] using h
+    rw [hU, D.subsystemSubgroup_eq_iSup]
+    simpa only [Subgroup.closure_union, ← MonoidHom.coe_range, Subgroup.closure_eq,
+      Subgroup.map_sup, MonoidHom.map_range, hf] using h
   have hpre := (Subgroup.map_le_iff_le_comap.mp hmap).trans
     ((U.map f).le_normalizer_comap f)
   simpa only [Subgroup.comap_map_eq_self_of_injective hinj] using hpre

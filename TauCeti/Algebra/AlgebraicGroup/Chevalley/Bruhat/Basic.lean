@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem
 import TauCeti.GroupTheory.DoubleCoset.Map
-import TauCeti.LinearAlgebra.RootSystem.Inversions.Length
 
 /-!
 # Bruhat cells and the Bruhat decomposition of a Chevalley datum
@@ -21,8 +20,7 @@ since `N(K)` normalizes `T_D(K)` and `T_D(K)` normalizes `U(K)`).
 Distinct elements of `W` index pairwise disjoint Bruhat cells whose union is the extended
 elementary subgroup `D.extendedElementarySubgroup K`. Left multiplication by a simple cell
 `B(K) sᵢ B(K)` either collapses to `B(K) (sᵢ w) B(K)` when `w⁻¹(αᵢ)` is positive or splits as
-`B(K) (sᵢ w) B(K) ∪ B(K) w B(K)` when `w⁻¹(αᵢ)` is negative, characterizing Tits word-length
-increase in terms of positive roots.
+`B(K) (sᵢ w) B(K) ∪ B(K) w B(K)` when `w⁻¹(αᵢ)` is negative.
 
 ## Main definitions and results
 
@@ -36,10 +34,9 @@ increase in terms of positive roots.
   `ChevalleyDatum.iUnion_bruhatCell_eq_extendedElementarySubgroup`, and
   `ChevalleyDatum.existsUnique_mem_bruhatCell_of_mem_extendedElementarySubgroup`: the disjoint
   `W`-indexed Bruhat decomposition of `D.extendedElementarySubgroup K`.
-* `ChevalleyDatum.bruhatCell_ofIdx_mul_eq_of_mem_posRoots`,
-  `ChevalleyDatum.bruhatCell_ofIdx_mul_eq_union_of_mem_negRoots`, and
-  `ChevalleyDatum.wordLength_titsSimpleReflection_mul_gt_iff_mem_posRoots`: root-positivity rules
-  for simple Bruhat-cell multiplication and Tits word length.
+* `ChevalleyDatum.bruhatCell_ofIdx_mul_eq_of_mem_posRoots` and
+  `ChevalleyDatum.bruhatCell_ofIdx_mul_eq_union_of_mem_negRoots`: root-positivity rules for
+  simple Bruhat-cell multiplication.
 
 ## References
 
@@ -298,30 +295,5 @@ theorem bruhatCell_ofIdx_mul_eq_union_of_mem_negRoots
         rw [← mul_assoc, hself]
     _ = D.bruhatCell K (s * w) ∪ D.bruhatCell K w := by
         rw [Set.union_mul, habsorb, hstep]
-
-/-- Left multiplication by the `i`-th simple reflection increases the Tits word length of `q`
-precisely when `(titsWeylGroupMulEquiv q)⁻¹(αᵢ)` is a positive root. -/
-theorem wordLength_titsSimpleReflection_mul_gt_iff_mem_posRoots
-    (i : Fin t.rank) (q : (D.titsSystem K).WeylGroup) :
-    (D.titsSystem K).simpleGenerators.wordLength q <
-        (D.titsSystem K).simpleGenerators.wordLength (D.titsSimpleReflection K i * q) ↔
-      (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.titsWeylGroupMulEquiv K q)⁻¹
-        (t.simpleIndex ht i) ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-  let _ := t.isReduced_simplyConnectedRootDatum ht
-  let P := t.simplyConnectedRootDatum ht
-  let b := t.simplyConnectedBase ht
-  let w := D.titsWeylGroupMulEquiv K q
-  have hpos : b.IsPos (t.simpleIndex ht i) :=
-    b.isPos_of_mem_support ((t.mem_support_simplyConnectedBase ht).mpr (by simp))
-  conv_lhs =>
-    rhs
-    rw [← (D.titsWeylGroupMulEquiv K).symm_apply_apply (D.titsSimpleReflection K i * q),
-      map_mul, D.titsWeylGroupMulEquiv_titsSimpleReflection K i]
-  conv_lhs =>
-    lhs
-    rw [← (D.titsWeylGroupMulEquiv K).symm_apply_apply q]
-  rw [D.wordLength_titsWeylGroupMulEquiv_symm, D.wordLength_titsWeylGroupMulEquiv_symm,
-    lt_ncard_inversions_ofIdx_mul_iff P b w hpos, mem_inversions, and_iff_right hpos, not_not,
-    t.posRoots_rationalRootSystem ht, mem_posRoots]
 
 end TauCeti.DynkinType.ChevalleyDatum
