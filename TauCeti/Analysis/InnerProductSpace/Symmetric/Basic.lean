@@ -23,7 +23,9 @@ The same argument applies to operators `A : D →L[𝕜] H` from a normed space 
 space that are symmetric relative to a fixed `ι : D →L[𝕜] H`, in the sense that
 `⟪A x, ι y⟫ = ⟪ι x, A y⟫`: a limit of operators that are frequently symmetric relative to `ι`
 along the filter is again symmetric relative to `ι`
-(`ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto`).
+(`ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto`), and the negative of an operator
+symmetric relative to `ι` is again symmetric relative to `ι`
+(`ContinuousLinearMap.inner_neg_apply_eq_inner_neg_apply`).
 -/
 
 public section
@@ -60,5 +62,13 @@ theorem inner_apply_eq_inner_apply_of_tendsto {α D H : Type*} [NormedAddCommGro
     ⟪B x, ι y⟫_𝕜 = ⟪ι x, B y⟫_𝕜 :=
   (isClosed_eq (f := fun T : D →L[𝕜] H ↦ ⟪T x, ι y⟫_𝕜) (g := fun T ↦ ⟪ι x, T y⟫_𝕜)
     (by fun_prop) (by fun_prop)).mem_of_frequently_of_tendsto (hSymm.mono fun s hs ↦ hs x y) hA
+
+/-- **Negation preserves symmetry relative to an embedding.** If `B : D →L[𝕜] H` satisfies
+`⟪B x, ι y⟫ = ⟪ι x, B y⟫`, then so does `-B`. -/
+theorem inner_neg_apply_eq_inner_neg_apply {D H : Type*} [NormedAddCommGroup D] [NormedSpace 𝕜 D]
+    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] {ι B : D →L[𝕜] H}
+    (hB : ∀ x y, ⟪B x, ι y⟫_𝕜 = ⟪ι x, B y⟫_𝕜) (x y : D) :
+    ⟪(-B) x, ι y⟫_𝕜 = ⟪ι x, (-B) y⟫_𝕜 := by
+  simp only [neg_apply, inner_neg_left, inner_neg_right, hB]
 
 end ContinuousLinearMap

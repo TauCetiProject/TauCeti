@@ -21,7 +21,8 @@ is the inclusion of a dense domain, this says that `A(s)` is a symmetric operato
 domain `D`. The operator `D_A u = (ι ∘ u)' + A(s) u(s)` from `L²(ℝ, D) ∩ W^{1,2}(ℝ, H)` to
 `L²(ℝ, H)` is `TauCeti.WeakDerivStep.familyDomainTrajectoryOperator ι AL`. This file identifies its
 cokernel with the kernel of its formal adjoint, and deduces that `D_A` is Fredholm when `ι` is
-compact and the limits of `A` at `±∞` are invertible.
+compact, the limits `B₋` and `B₊` of `A` at `±∞` are invertible, and `A(s) - B₊` is uniformly
+bounded through `ι`: `‖(A(s) - B₊) x‖ ≤ c ‖ι x‖` for almost every `s`.
 
 **The formal adjoint.** Integrating by parts
 (`TauCeti.WeakDerivStep.inner_weakFDeriv_apply_one_compLpL_eq_neg_inner`),
@@ -81,8 +82,9 @@ finite-dimensional space, where the regularity of the cokernel is automatic.
   `TauCeti.WeakDerivStep`): the paths orthogonal to the range of `D_A` lie in the graph space.
 * `TauCeti.WeakDerivStep.orthogonal_range_familyDomainTrajectoryOperator_eq_map_ker`: the
   orthogonal complement of the range of `D_A` is the image of the kernel of `D_{-A}`.
-* `TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`: for compact `ι` and
-  invertible limits, `D_A` is Fredholm.
+* `TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`: for compact `ι`, `A(s)`
+  `ι`-symmetric for almost every `s` with invertible limits `B₋` and `B₊`, and
+  `‖(A(s) - B₊) x‖ ≤ c ‖ι x‖` for almost every `s`, `D_A` is Fredholm.
 * `TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator`: its index is
   `dim ker D_A - dim ker D_{-A}`.
 
@@ -198,7 +200,8 @@ theorem exists_compLpL_prev_eq_of_mem_orthogonal_range_familyDomainTrajectoryOpe
   simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply, innerSL_apply_apply]
     at hg
   -- Solve the adjoint autonomous equation `D_{-B} w = g`.
-  obtain ⟨w, hw⟩ := (bijective_domainTrajectoryOperator (inner_neg_apply_eq_inner hSymmB)
+  obtain ⟨w, hw⟩ := (bijective_domainTrajectoryOperator
+    (ContinuousLinearMap.inner_neg_apply_eq_inner_neg_apply hSymmB)
     (ContinuousLinearMap.isInvertible_neg_iff.2 hB)).2 g
   -- Then `⟪D_B u, η - ι ∘ w⟫ = 0` for every `u`, and `D_B` is onto, so `η = ι ∘ w`.
   refine ⟨w, (sub_eq_zero.1 (inner_self_eq_zero (𝕜 := ℝ) |>.1 ?_)).symm⟩
@@ -365,8 +368,10 @@ private theorem finiteDimensional_ker_familyDomainTrajectoryOperator_neg
     (hc : ∀ᵐ s ∂volume, ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
     FiniteDimensional ℝ (familyDomainTrajectoryOperator (p := 2) ι (-AL)).ker := by
   refine finiteDimensional_ker_familyDomainTrajectoryOperator (A := -A) hι
-    (inner_neg_apply_eq_inner hSymmbot) (ContinuousLinearMap.isInvertible_neg_iff.2 hBbot)
-    (inner_neg_apply_eq_inner hSymmtop) (ContinuousLinearMap.isInvertible_neg_iff.2 hBtop)
+    (ContinuousLinearMap.inner_neg_apply_eq_inner_neg_apply hSymmbot)
+    (ContinuousLinearMap.isInvertible_neg_iff.2 hBbot)
+    (ContinuousLinearMap.inner_neg_apply_eq_inner_neg_apply hSymmtop)
+    (ContinuousLinearMap.isInvertible_neg_iff.2 hBtop)
     ((Lp.coeFn_neg AL).trans hAL.neg) hbot.neg htop.neg fun _ ↦ ⟨c, hc.mono fun s hs _ x ↦ ?_⟩
   -- `(-A s) - (-B₊) = -(A s - B₊)`.
   simpa only [Pi.neg_apply, neg_sub_neg, ← neg_sub (A s), neg_apply, norm_neg] using hs x
