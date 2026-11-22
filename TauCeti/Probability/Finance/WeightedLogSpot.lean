@@ -74,16 +74,21 @@ theorem abs_weightedLogSpotPrice_le (u : ParabolicC2HolderSpace α ℝ ℝ hab)
     ((norm_timeExtension_le hab.le (valueL u) t (log s)).trans (norm_valueL_le u))
     (by positivity)
 
+private theorem continuousOn_timeExtension_log {F : Type*} [NormedAddCommGroup F]
+    (hab' : a ≤ b) {f : slab (E := ℝ) a b → F} (hf : Continuous f) :
+    ContinuousOn (fun p : ℝ × ℝ ↦ timeExtension hab' f (log p.1) p.2)
+      (Ioi 0 ×ˢ (univ : Set ℝ)) := by
+  have hc := continuous_timeExtension hab' hf
+  intro p hp
+  exact (hc.continuousAt.comp (continuous_snd.continuousAt.prodMk
+    ((continuousAt_log hp.1.ne').comp continuous_fst.continuousAt))).continuousWithinAt
+
 /-- The reconstructed price is jointly continuous at positive spot, including the time
 endpoints. The canonical time extension is continuous even outside the slab. -/
 theorem continuousOn_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
-    ContinuousOn (Function.uncurry (weightedLogSpotPrice u)) (Ioi 0 ×ˢ (univ : Set ℝ)) := by
-  have hc := continuous_timeExtension hab.le (valueL u).continuous
-  intro p hp
-  apply ContinuousAt.continuousWithinAt
-  exact (continuous_const.add continuous_fst).continuousAt.mul
-    (hc.continuousAt.comp (continuous_snd.continuousAt.prodMk
-      ((continuousAt_log (ne_of_gt hp.1)).comp continuous_fst.continuousAt)))
+    ContinuousOn (Function.uncurry (weightedLogSpotPrice u)) (Ioi 0 ×ˢ (univ : Set ℝ)) :=
+  (continuousOn_const.add continuousOn_fst).mul
+    (continuousOn_timeExtension_log hab.le (valueL u).continuous)
 
 private theorem contDiffOn_spatialSlice_comp_log (u : ParabolicC2HolderSpace α ℝ ℝ hab)
     (t : Icc a b) : ContDiffOn ℝ 2 (fun x => u (slabMk (log x) t)) (Ioi 0) :=
@@ -124,19 +129,14 @@ theorem continuousOn_deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace
   let g : ℝ × ℝ → ℝ := fun p ↦
     timeExtension hab.le u (log p.1) p.2 +
       (1 + p.1) / p.1 * timeExtension hab.le (spatialFDerivL u) (log p.1) p.2 1
-  have hu : Continuous fun q : ℝ × ℝ ↦ timeExtension hab.le u q.2 q.1 :=
-    continuous_timeExtension hab.le (valueL u).continuous
-  have hdu : Continuous fun q : ℝ × ℝ ↦ timeExtension hab.le (spatialFDerivL u) q.2 q.1 1 :=
-    (ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp
-      (continuous_timeExtension hab.le (spatialFDerivL u).continuous)
-  have hg : ContinuousOn g (Ioi 0 ×ˢ Icc a b) := by
-    intro p hp
-    have hlog : ContinuousAt (fun q : ℝ × ℝ ↦ (q.2, log q.1)) p :=
-      continuous_snd.continuousAt.prodMk
-        ((continuousAt_log hp.1.ne').comp continuous_fst.continuousAt)
-    exact (ContinuousAt.add (hu.continuousAt.comp hlog)
-      (((continuous_const.add continuous_fst).continuousAt.div continuous_fst.continuousAt
-        hp.1.ne').mul (hdu.continuousAt.comp hlog))).continuousWithinAt
+  have hu := (continuousOn_timeExtension_log hab.le (valueL u).continuous).mono
+    (prod_mono_right (subset_univ (Icc a b)))
+  have hdu := ((ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp_continuousOn
+    (continuousOn_timeExtension_log hab.le (spatialFDerivL u).continuous)).mono
+    (prod_mono_right (subset_univ (Icc a b)))
+  have hg : ContinuousOn g (Ioi 0 ×ˢ Icc a b) :=
+    hu.add (((continuousOn_const.add continuousOn_fst).div continuousOn_fst
+      fun _ (hp : _ ∈ Ioi 0 ×ˢ Icc a b) ↦ hp.1.ne').mul hdu)
   refine hg.congr fun p hp ↦ ?_
   rw [deriv_weightedLogSpotPrice_spot u hp.1 ⟨p.2, hp.2⟩]
   have ht1 := timeExtension_of_mem hab.le (valueL u) (log p.1) ⟨p.2, hp.2⟩
@@ -189,24 +189,17 @@ theorem continuousOn_deriv_deriv_weightedLogSpotPrice_spot
   let g : ℝ × ℝ → ℝ := fun p ↦
     ((p.1 - 1) * timeExtension hab.le (spatialFDerivL u) (log p.1) p.2 1 +
       (1 + p.1) * timeExtension hab.le (spatialSecondFDerivL u) (log p.1) p.2 1 1) / p.1 ^ 2
-  have hdu : Continuous fun q : ℝ × ℝ ↦ timeExtension hab.le (spatialFDerivL u) q.2 q.1 1 :=
-    (ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp
-      (continuous_timeExtension hab.le (spatialFDerivL u).continuous)
-  have hddu : Continuous fun q : ℝ × ℝ ↦
-      timeExtension hab.le (spatialSecondFDerivL u) q.2 q.1 1 1 :=
-    (ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp
-      ((ContinuousLinearMap.apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)).continuous.comp
-        (continuous_timeExtension hab.le (spatialSecondFDerivL u).continuous))
-  have hg : ContinuousOn g (Ioi 0 ×ˢ Icc a b) := by
-    intro p hp
-    have hlog : ContinuousAt (fun q : ℝ × ℝ ↦ (q.2, log q.1)) p :=
-      continuous_snd.continuousAt.prodMk
-        ((continuousAt_log hp.1.ne').comp continuous_fst.continuousAt)
-    exact ((((continuous_fst.continuousAt.sub continuousAt_const).mul
-      (hdu.continuousAt.comp hlog)).add
-      ((continuousAt_const.add continuous_fst.continuousAt).mul
-        (hddu.continuousAt.comp hlog))).div
-      (continuous_fst.continuousAt.pow 2) (pow_ne_zero 2 hp.1.ne')).continuousWithinAt
+  have hdu := ((ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp_continuousOn
+    (continuousOn_timeExtension_log hab.le (spatialFDerivL u).continuous)).mono
+    (prod_mono_right (subset_univ (Icc a b)))
+  have hddu := ((ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp_continuousOn
+    ((ContinuousLinearMap.apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)).continuous.comp_continuousOn
+      (continuousOn_timeExtension_log hab.le (spatialSecondFDerivL u).continuous))).mono
+    (prod_mono_right (subset_univ (Icc a b)))
+  have hg : ContinuousOn g (Ioi 0 ×ˢ Icc a b) :=
+    (((continuousOn_fst.sub continuousOn_const).mul hdu).add
+      ((continuousOn_const.add continuousOn_fst).mul hddu)).div
+      (continuousOn_fst.pow 2) fun _ hp ↦ pow_ne_zero 2 hp.1.ne'
   refine hg.congr fun p hp ↦ ?_
   rw [deriv_deriv_weightedLogSpotPrice_spot u hp.1 ⟨p.2, hp.2⟩]
   have ht1 := timeExtension_of_mem hab.le (spatialFDerivL u) (log p.1) ⟨p.2, hp.2⟩
@@ -280,15 +273,10 @@ theorem continuousOn_derivWithin_weightedLogSpotPrice_time
     ContinuousOn (fun p : ℝ × ℝ ↦ derivWithin (weightedLogSpotPrice u p.1) (Icc a b) p.2)
       (Ioi 0 ×ˢ Icc a b) := by
   let g : ℝ × ℝ → ℝ := fun p ↦ (1 + p.1) * timeExtension hab.le (timeDerivL u) (log p.1) p.2
-  have hdt : Continuous fun q : ℝ × ℝ ↦ timeExtension hab.le (timeDerivL u) q.2 q.1 :=
-    continuous_timeExtension hab.le (timeDerivL u).continuous
-  have hg : ContinuousOn g (Ioi 0 ×ˢ Icc a b) := by
-    intro p hp
-    have hlog : ContinuousAt (fun q : ℝ × ℝ ↦ (q.2, log q.1)) p :=
-      continuous_snd.continuousAt.prodMk
-        ((continuousAt_log hp.1.ne').comp continuous_fst.continuousAt)
-    exact ((continuousAt_const.add continuous_fst.continuousAt).mul
-      (hdt.continuousAt.comp hlog)).continuousWithinAt
+  have hdt := (continuousOn_timeExtension_log hab.le (timeDerivL u).continuous).mono
+    (prod_mono_right (subset_univ (Icc a b)))
+  have hg : ContinuousOn g (Ioi 0 ×ˢ Icc a b) :=
+    (continuousOn_const.add continuousOn_fst).mul hdt
   refine hg.congr fun p hp ↦ ?_
   rw [derivWithin_weightedLogSpotPrice_time u p.1 ⟨p.2, hp.2⟩]
   have ht1 := timeExtension_of_mem hab.le (timeDerivL u) (log p.1) ⟨p.2, hp.2⟩

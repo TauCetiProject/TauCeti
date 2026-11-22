@@ -103,11 +103,11 @@ def weightedLogSpotTerminalDataCLE {α : ℝ≥0} {t₀ t₁ : ℝ} (hα₀ : 0 
     (ha : ∃ δ : ℝ, 0 < δ ∧ ∀ p, δ ≤ a p) :
     ParabolicC2HolderSpace α ℝ ℝ ht ≃L[ℝ]
       HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ × CkHolderSpace 2 α ℝ ℝ :=
-  have hbij := ha.elim fun _ h ↦
-    (isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL (ht := ht) hα₀ hα₁ r
-      h.1 h.2).bijective
-  ContinuousLinearEquiv.ofBijective _ (LinearMap.ker_eq_bot.2 hbij.1)
-    (LinearMap.range_eq_top.2 hbij.2)
+  realTerminalDataCLE hα₀ hα₁ ht
+    (weightedLogSpotSecondOrderCoeff a)
+    (weightedLogSpotFirstOrderCoeff hα₁.le a r)
+    (weightedLogSpotZerothOrderCoeff hα₁.le r)
+    (ha.imp fun _ ⟨hδ, h⟩ ↦ ⟨hδ, fun p ↦ by simpa using h p⟩)
 
 section WeightedCLEProps
 
@@ -122,7 +122,9 @@ theorem weightedLogSpotTerminalDataCLE_apply (u : ParabolicC2HolderSpace α ℝ 
     weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ha u =
       (weightedLogSpotPricingOperatorL hα₁.le a r u,
         u.spatialTrace ⟨t₁, right_mem_Icc.2 ht.le⟩) := by
-  simp [weightedLogSpotTerminalDataCLE, spatialTraceL_apply]
+  dsimp only [weightedLogSpotTerminalDataCLE]
+  rw [weightedLogSpotPricingOperatorL_def]
+  exact realTerminalDataCLE_apply u
 
 /-- The solution of the weighted log-spot terminal-value problem with forcing `f` and terminal
 datum `g` has backward pricing residual `f`. -/
@@ -131,9 +133,9 @@ theorem weightedLogSpotPricingOperatorL_weightedLogSpotTerminalDataCLE_symm_appl
     (d : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ × CkHolderSpace 2 α ℝ ℝ) :
     weightedLogSpotPricingOperatorL hα₁.le a r
       ((weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ha).symm d) = d.1 := by
-  have h := (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ha).apply_symm_apply d
-  rw [weightedLogSpotTerminalDataCLE_apply] at h
-  exact congrArg Prod.fst h
+  dsimp only [weightedLogSpotTerminalDataCLE]
+  rw [weightedLogSpotPricingOperatorL_def]
+  exact backwardParabolicOperatorL_realTerminalDataCLE_symm_apply d
 
 /-- The solution of the weighted log-spot terminal-value problem with forcing `f` and terminal
 datum `g` has terminal trace `g`. -/
@@ -141,10 +143,8 @@ datum `g` has terminal trace `g`. -/
 theorem spatialTrace_weightedLogSpotTerminalDataCLE_symm_apply
     (d : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ × CkHolderSpace 2 α ℝ ℝ) :
     ((weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ha).symm d).spatialTrace
-      ⟨t₁, right_mem_Icc.2 ht.le⟩ = d.2 := by
-  have h := (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ha).apply_symm_apply d
-  rw [weightedLogSpotTerminalDataCLE_apply] at h
-  exact congrArg Prod.snd h
+      ⟨t₁, right_mem_Icc.2 ht.le⟩ = d.2 :=
+  spatialTrace_realTerminalDataCLE_symm_apply d
 
 /-- The solution of the weighted log-spot terminal-value problem with terminal datum `g` takes the
 value `g y` at `(y, t₁)`. -/
@@ -152,8 +152,8 @@ value `g y` at `(y, t₁)`. -/
 theorem weightedLogSpotTerminalDataCLE_symm_apply_slabMk_right
     (d : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ × CkHolderSpace 2 α ℝ ℝ) (y : ℝ) :
     (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ha).symm d
-      (slabMk y ⟨t₁, right_mem_Icc.2 ht.le⟩) = d.2 y := by
-  rw [← spatialTrace_apply, spatialTrace_weightedLogSpotTerminalDataCLE_symm_apply]
+      (slabMk y ⟨t₁, right_mem_Icc.2 ht.le⟩) = d.2 y :=
+  realTerminalDataCLE_symm_apply_slabMk_right d y
 
 /-- **Pointwise exponential bound for the weighted log-spot solution operator.** If `r ≥ -γ` with
 `0 ≤ γ`, `|f| ≤ K` and `|g| ≤ M`, then the solution `u` of `P u = f`, `u(·, t₁) = g` satisfies
@@ -175,22 +175,6 @@ theorem abs_weightedLogSpotTerminalDataCLE_symm_apply_le {γ M K : ℝ}
     exact hd₂ y
 
 end WeightedCLEProps
-
-private theorem weightedLogSpotTerminalDataCLE_symm_eq {α : ℝ≥0} {t₀ t₁ : ℝ}
-    (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t₀ < t₁)
-    (a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) (ha : ∃ δ : ℝ, 0 < δ ∧ ∀ p, δ ≤ a p) :
-    (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ha).symm.toContinuousLinearMap =
-      (realTerminalDataCLE hα₀ hα₁ ht
-        (weightedLogSpotSecondOrderCoeff a)
-        (weightedLogSpotFirstOrderCoeff hα₁.le a r)
-        (weightedLogSpotZerothOrderCoeff hα₁.le r)
-        (ha.imp fun _ ⟨hδ, h⟩ ↦ ⟨hδ, fun p ↦ by simpa using h p⟩)).symm.toContinuousLinearMap := by
-  refine ContinuousLinearMap.ext fun d ↦ ?_
-  apply (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ha).injective
-  simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
-    weightedLogSpotTerminalDataCLE_apply, weightedLogSpotPricingOperatorL_def,
-    backwardParabolicOperatorL_realTerminalDataCLE_symm_apply,
-    spatialTrace_realTerminalDataCLE_symm_apply]
 
 private def weightedCoeffBound {α : ℝ≥0} (hα : α ≤ 1) (K : ℝ≥0) : ℝ≥0 :=
   K + K + 2 * K * ‖logOneAddExpGrad hα‖₊ + K * (1 + ‖logOneAddExpGrad hα‖₊)
@@ -235,7 +219,6 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_le {α : ℝ≥0} (hα�
     (weightedCoeffBound hα₁.le K) T₀
   refine ⟨C, hC, fun {t₀ t₁} ht hTT₀ a r ha hak hrk ↦ ?_⟩
   obtain ⟨h2, h1, h0⟩ := norm_weightedCoeffs_le hα₁.le hak hrk
-  rw [weightedLogSpotTerminalDataCLE_symm_eq]
   exact hest ht hTT₀ (weightedLogSpotSecondOrderCoeff a)
     (weightedLogSpotFirstOrderCoeff hα₁.le a r) (weightedLogSpotZerothOrderCoeff hα₁.le r)
     (fun p ↦ by simpa using ha p) h2 h1 h0
@@ -260,7 +243,6 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_sub_le {α : ℝ≥0} (h
     fun {t₀ t₁} ht hTT₀ a a' r r' ha ha' hak hrk hak' hrk' ↦ ?_⟩
   obtain ⟨h2, h1, h0⟩ := norm_weightedCoeffs_le hα₁.le hak hrk
   obtain ⟨h2', h1', h0'⟩ := norm_weightedCoeffs_le hα₁.le hak' hrk'
-  rw [weightedLogSpotTerminalDataCLE_symm_eq, weightedLogSpotTerminalDataCLE_symm_eq]
   have hmid := hest ht hTT₀
     (weightedLogSpotSecondOrderCoeff a) (weightedLogSpotSecondOrderCoeff a')
     (weightedLogSpotFirstOrderCoeff hα₁.le a r) (weightedLogSpotFirstOrderCoeff hα₁.le a' r')
@@ -290,9 +272,8 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_sub_le {α : ℝ≥0} (h
         (2 + 2 * L) * (‖a - a'‖ + ‖r - r'‖) := by
     have hL : 0 ≤ L := norm_nonneg _
     nlinarith [norm_nonneg (a - a'), norm_nonneg (r - r')]
-  calc _ ≤ C * ((2 + 2 * L) * (‖a - a'‖ + ‖r - r'‖)) := by
-        convert hmid.trans (mul_le_mul_of_nonneg_left hsum hC) using 0
-    _ = C * (2 + 2 * L) * (‖a - a'‖ + ‖r - r'‖) := by ring
+  refine le_of_eq_of_le ?_ ((hmid.trans (mul_le_mul_of_nonneg_left hsum hC)).trans_eq (by ring))
+  dsimp only [weightedLogSpotTerminalDataCLE]
 
 end TerminalDataCLE
 

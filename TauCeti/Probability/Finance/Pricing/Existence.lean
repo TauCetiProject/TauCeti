@@ -27,8 +27,7 @@ for `s > 0`, `t ∈ [t₀, t₁]` with terminal value `C(s, t₁) = h(s)`
 
 Specialized to market volatility `σ(s, t)` and a time-only `(α / 2)`-Hölder short rate `r(t)`:
 
-* `TauCeti.Finance.memHolder_logSpot_of_abs_le_of_lipschitzWith_of_holderOnWith`,
-  `TauCeti.Finance.logSpotHalfVarianceHolder` and `TauCeti.Finance.shortRateHolder` build the
+* `TauCeti.Finance.logSpotHalfVarianceHolder` and `TauCeti.Finance.shortRateHolder` build the
   parabolic Hölder coefficient fields on `slab t₀ t₁`.
 * `TauCeti.Finance.eq_weightedLogSpotPrice_of_pde` proves that every continuous linear-growth
   competitor with matching interior coefficients and payoff that solves the interior pricing PDE
@@ -37,9 +36,9 @@ Specialized to market volatility `σ(s, t)` and a time-only `(α / 2)`-Hölder s
   log-spot profile witnessing classical interior PDE solvability, uniqueness in the linear-growth
   class, joint continuity of `C`, `∂ₛC`, `∂ₛ²C` and within-slab `∂ₜC` on `(0, ∞) × [t₀, t₁]`,
   and linear-growth bounds on both price and dollar delta `s ∂ₛC`, directly from parabolic
-  Hölder regularity of `(y, t) ↦ σ(e^y, t)`.
-* `TauCeti.Finance.exists_weightedLogSpotPrice_pde_and_unique_of_lipschitzWith_of_holderOnWith`
-  derives the spatially Lipschitz / temporally `(α / 2)`-Hölder market-volatility case.
+  Hölder regularity of `(y, t) ↦ σ(e^y, t)` (supplied for spatially Lipschitz and temporally
+  `(α / 2)`-Hölder volatilities by
+  `ParabolicSpaceTime.memHolder_slab_of_norm_le_of_lipschitzWith_of_holderOnWith`).
 
 ## References
 
@@ -102,18 +101,6 @@ theorem existsUnique_pde_weightedLogSpotPrice_eq_zero (hα₀ : 0 < α) (hα₁ 
 /-! ### Market coefficient fields -/
 
 section MarketCoefficients
-
-/-- If `σ(e^y, t)` is bounded on `ℝ × [t₀, t₁]`, uniformly Lipschitz in `y` for each `t ∈ [t₀, t₁]`,
-and uniformly `(α / 2)`-Hölder in `t` on `[t₀, t₁]` for each `y ∈ ℝ`, then `(y, t) ↦ σ(e^y, t)` is
-parabolically `α`-Hölder on `slab t₀ t₁` (`α ≤ 1`). -/
-theorem memHolder_logSpot_of_abs_le_of_lipschitzWith_of_holderOnWith (hα : α ≤ 1)
-    {σ : ℝ → ℝ → ℝ} {M L H : ℝ≥0} (hbdd : ∀ y, ∀ t ∈ Icc t₀ t₁, |σ (exp y) t| ≤ M)
-    (hlip : ∀ t ∈ Icc t₀ t₁, LipschitzWith L (fun y ↦ σ (exp y) t))
-    (htime : ∀ y, HolderOnWith H (α / 2) (σ (exp y)) (Icc t₀ t₁)) :
-    MemHolder α
-      (fun p : slab (E := ℝ) t₀ t₁ ↦ σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p)) :=
-  ParabolicSpaceTime.memHolder_slab_of_norm_le_of_lipschitzWith_of_holderOnWith hα
-    (fun y t ht' ↦ by simpa only [Real.norm_eq_abs] using hbdd y t ht') hlip htime
 
 /-- The log-spot half-variance field `a(y, t) = σ(e^y, t)² / 2` as an element of
 `HolderSpace α (slab t₀ t₁) ℝ`, built from a bounded parabolically `α`-Hölder volatility
@@ -316,59 +303,6 @@ theorem exists_weightedLogSpotPrice_pde_and_unique
   · exact eq_weightedLogSpotPrice_of_pde hα₁.le
       (fun s hs t ht' ↦ by simp [a, exp_log hs]) (fun s _ t ht' ↦ by simp [rH])
       u hPu huterm hCc hCg hCcd hCd hCpde hCt
-
-/-- **Existence, linear-growth bounds, and uniqueness for the pricing PDE with spatially Lipschitz
-log-spot volatility.** Specializes `exists_weightedLogSpotPrice_pde_and_unique` to bounded
-volatilities `σ(e^y, t)` that are uniformly Lipschitz in `y` and uniformly `(α / 2)`-Hölder in
-`t`, via `memHolder_logSpot_of_abs_le_of_lipschitzWith_of_holderOnWith`. -/
-theorem exists_weightedLogSpotPrice_pde_and_unique_of_lipschitzWith_of_holderOnWith
-    (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t₀ < t₁)
-    {σ : ℝ → ℝ → ℝ} {r h : ℝ → ℝ} {δ : ℝ} {M L H H_r : ℝ≥0}
-    (hδ : 0 < δ)
-    (hσ_low : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → δ ≤ σ s t ^ 2)
-    (hσ_bdd : ∀ y, ∀ t ∈ Icc t₀ t₁, |σ (exp y) t| ≤ M)
-    (hσ_lip : ∀ t ∈ Icc t₀ t₁, LipschitzWith L (fun y ↦ σ (exp y) t))
-    (hσ_time : ∀ y, HolderOnWith H (α / 2) (σ (exp y)) (Icc t₀ t₁))
-    (hr_hol : HolderOnWith H_r (α / 2) r (Icc t₀ t₁))
-    (g : CkHolderSpace 2 α ℝ ℝ) (hg : ∀ y, g y = h (exp y) / (1 + exp y)) :
-    ∃ u : ParabolicC2HolderSpace α ℝ ℝ ht,
-      weightedLogSpotPricingOperatorL hα₁.le
-          (logSpotHalfVarianceHolder hα₀ σ hσ_bdd
-            (memHolder_logSpot_of_abs_le_of_lipschitzWith_of_holderOnWith
-              hα₁.le hσ_bdd hσ_lip hσ_time))
-          (shortRateHolder hα₀ r hr_hol) u = 0 ∧
-      u.spatialTrace ⟨t₁, right_mem_Icc.2 ht.le⟩ = g ∧
-      (∀ s > 0, weightedLogSpotPrice u s t₁ = h s) ∧
-      ContinuousOn (Function.uncurry (weightedLogSpotPrice u)) (Ioi 0 ×ˢ Icc t₀ t₁) ∧
-      ContinuousOn (fun p : ℝ × ℝ ↦ deriv (fun s ↦ weightedLogSpotPrice u s p.2) p.1)
-        (Ioi 0 ×ˢ Icc t₀ t₁) ∧
-      ContinuousOn (fun p : ℝ × ℝ ↦ deriv (deriv fun s ↦ weightedLogSpotPrice u s p.2) p.1)
-        (Ioi 0 ×ˢ Icc t₀ t₁) ∧
-      ContinuousOn (fun p : ℝ × ℝ ↦ derivWithin (weightedLogSpotPrice u p.1) (Icc t₀ t₁) p.2)
-        (Ioi 0 ×ˢ Icc t₀ t₁) ∧
-      (∀ s > 0, ∀ t ∈ Icc t₀ t₁,
-        ContDiffAt ℝ 2 (fun x ↦ weightedLogSpotPrice u x t) s ∧
-          |weightedLogSpotPrice u s t| + |s * deriv (fun x ↦ weightedLogSpotPrice u x t) s| ≤
-            2 * ‖u‖ * (1 + s)) ∧
-      (∀ s > 0, ∀ t ∈ Ioo t₀ t₁,
-        DifferentiableAt ℝ (weightedLogSpotPrice u s) t ∧
-          deriv (weightedLogSpotPrice u s) t +
-              σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
-              r t * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s -
-                weightedLogSpotPrice u s t) = 0) ∧
-      ∀ (C : ℝ → ℝ → ℝ) (A : ℝ),
-        ContinuousOn (Function.uncurry C) (Ioi 0 ×ˢ Icc t₀ t₁) →
-        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → |C s t| ≤ A * (1 + s)) →
-        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → ContDiffAt ℝ 2 (fun x ↦ C x t) s) →
-        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → DifferentiableAt ℝ (fun τ ↦ C s τ) t) →
-        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ →
-          deriv (fun τ ↦ C s τ) t + σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ C x t) s +
-            r t * (s * deriv (fun x ↦ C x t) s - C s t) = 0) →
-        (∀ ⦃s⦄, 0 < s → C s t₁ = h s) →
-        ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → C s t = weightedLogSpotPrice u s t :=
-  exists_weightedLogSpotPrice_pde_and_unique hα₀ hα₁ ht hδ hσ_low hσ_bdd
-    (memHolder_logSpot_of_abs_le_of_lipschitzWith_of_holderOnWith hα₁.le hσ_bdd hσ_lip hσ_time)
-    hr_hol g hg
 
 end SpotPricingPDE
 

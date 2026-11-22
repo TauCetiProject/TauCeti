@@ -108,11 +108,6 @@ private theorem norm_evalCoord_le {G : Type*} [NormedAddCommGroup G] [NormedSpac
       (slabSpaceIsometryEquiv (a := a) (b := b) coord.toIsometryEquiv) A)
   simpa [evalCoord] using hL
 
-private theorem norm_mulCLM_le_one : ‖ContinuousLinearMap.mul ℝ ℝ‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦
-    ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun y ↦ by
-      simp [mul_comm]
-
 private theorem evalCoord_ellipticity
     {A : HolderSpace α (slab (E := ℝ) a b) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ)}
     {lam : ℝ} (hA : ∀ p, lam ≤ A p (ContinuousLinearMap.mul ℝ ℝ))
@@ -394,7 +389,7 @@ theorem exists_norm_realTerminalDataCLE_symm_le (hα₀ : 0 < α) (hα₁ : α <
     ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
     ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
   exact hest ht hTT₀ _ _ _ (evalCoord_ellipticity hA)
-    (fun _ _ ↦ (norm_evalCoord_le A norm_mulCLM_le_one).trans hAk)
+    (fun _ _ ↦ (norm_evalCoord_le A (ContinuousLinearMap.opNorm_mul_le ℝ ℝ)).trans hAk)
     (fun _ ↦ (norm_evalCoord_le B ContinuousLinearMap.norm_id_le).trans hBk)
     ((norm_evalCoord_le C₀ norm_one.le).trans hCk)
 
@@ -423,17 +418,17 @@ theorem exists_norm_realTerminalDataCLE_symm_sub_le (hα₀ : 0 < α) (hα₁ : 
     ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
   have hmid := hest ht hTT₀ _ _ _ _ _ _
     (evalCoord_ellipticity hA) (evalCoord_ellipticity hA')
-    (fun _ _ ↦ (norm_evalCoord_le A norm_mulCLM_le_one).trans hAk)
+    (fun _ _ ↦ (norm_evalCoord_le A (ContinuousLinearMap.opNorm_mul_le ℝ ℝ)).trans hAk)
     (fun _ ↦ (norm_evalCoord_le B ContinuousLinearMap.norm_id_le).trans hBk)
     ((norm_evalCoord_le C₀ norm_one.le).trans hCk)
-    (fun _ _ ↦ (norm_evalCoord_le A' norm_mulCLM_le_one).trans hAk')
+    (fun _ _ ↦ (norm_evalCoord_le A' (ContinuousLinearMap.opNorm_mul_le ℝ ℝ)).trans hAk')
     (fun _ ↦ (norm_evalCoord_le B' ContinuousLinearMap.norm_id_le).trans hBk')
     ((norm_evalCoord_le C₀' norm_one.le).trans hCk')
   simp only [Finset.univ_unique, Finset.sum_singleton, ← evalCoord_sub] at hmid
   have hδ : ‖evalCoord (A - A') (ContinuousLinearMap.mul ℝ ℝ)‖ +
         ‖evalCoord (B - B') (ContinuousLinearMap.id ℝ ℝ)‖ + ‖evalCoord (C₀ - C₀') 1‖ ≤
       ‖A - A'‖ + ‖B - B'‖ + ‖C₀ - C₀'‖ :=
-    add_le_add (add_le_add (norm_evalCoord_le (A - A') norm_mulCLM_le_one)
+    add_le_add (add_le_add (norm_evalCoord_le (A - A') (ContinuousLinearMap.opNorm_mul_le ℝ ℝ))
       (norm_evalCoord_le (B - B') ContinuousLinearMap.norm_id_le))
       (norm_evalCoord_le (C₀ - C₀') norm_one.le)
   calc _ ≤ C * (‖evalCoord (A - A') (ContinuousLinearMap.mul ℝ ℝ)‖ +
