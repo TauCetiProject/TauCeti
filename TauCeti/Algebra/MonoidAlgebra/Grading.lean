@@ -34,8 +34,6 @@ infinite fibre, as is the rank of a free module of infinite rank.
   elements of `M` of grade `i`.
 * `AddMonoidAlgebra.single_coeff_of_mem_grade`: an element of `grade R m` is recovered from its
   `m`-th coefficient as `single m (x.coeff m) = x`.
-* `AddMonoidAlgebra.coe_decompose_grade`: the degree-`m` homogeneous component of `x : R[M]` in
-  the canonical grading `grade R` is `single m (x.coeff m)`.
 * `AddMonoidAlgebra.map_mem_gradeBy`, `AddMonoidAlgebra.mapAlgHom_mem_gradeBy`,
   `AddMonoidAlgebra.mapAlgHom_mem_grade`: coefficient homomorphisms preserve graded pieces.
 * `TauCeti.homogeneousUnitDegrees_gradeBy`: for the group algebra `R[G]` graded by an additive
@@ -88,20 +86,6 @@ theorem single_coeff_of_mem_grade {R : Type*} [CommSemiring R] {m : M} {x : R[M]
     (hx : x ∈ grade R m) : single m (x.coeff m) = x := by
   obtain ⟨r, rfl⟩ := (mem_grade_iff' R m x).mp hx
   simp [lsingle_apply]
-
-/-- The degree-`m` homogeneous component of `x : R[M]` in the canonical `M`-grading
-`AddMonoidAlgebra.grade R` is `single m (x.coeff m)`. -/
-@[simp]
-theorem coe_decompose_grade {R : Type*} [CommSemiring R] [AddMonoid M] [DecidableEq M]
-    (x : R[M]) (m : M) :
-    (DirectSum.decompose (grade R : M → Submodule R R[M]) x m : R[M]) =
-      single m (x.coeff m) := by
-  induction x using induction_linear with
-  | zero => simp
-  | add x y hx hy => simp [hx, hy, single_add]
-  | single m' r =>
-    rw [grade.decompose_single, DirectSum.coe_of_apply, coeff_single]
-    rcases eq_or_ne m' m with rfl | h <;> simp [Finsupp.single_eq_of_ne, Ne.symm, *]
 
 /-- Mapping coefficients along an additive monoid homomorphism preserves every graded piece of
 `gradeBy`. -/
