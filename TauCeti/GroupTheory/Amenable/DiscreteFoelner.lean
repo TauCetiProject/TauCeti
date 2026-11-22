@@ -92,46 +92,35 @@ section Group
 
 variable {G : Type*} [Group G]
 
-/-- For a finite subset `K ⊆ G`, the continuous linear map `a ↦ (L_g a - a)_{g ∈ K}` from
-`ℓ¹(G)` into the sum-norm finite product `PiLp 1 (fun _ : K ↦ lp (fun _ : G ↦ ℝ) 1)`. -/
-def lpTranslateSub (K : Finset G) :
-    lp (fun _ : G ↦ ℝ) 1 →L[ℝ] PiLp 1 (fun _ : K ↦ lp (fun _ : G ↦ ℝ) 1) :=
-  (PiLp.continuousLinearEquiv 1 ℝ _).symm.toContinuousLinearMap.comp
-    (ContinuousLinearMap.pi fun g : K ↦
-      (lp.leftTranslation 1 ℝ (g : G)).toLinearIsometry.toContinuousLinearMap -
-        ContinuousLinearMap.id ℝ _)
-
-@[simp]
-theorem lpTranslateSub_apply (K : Finset G) (a : lp (fun _ : G ↦ ℝ) 1) (g : K) :
-    lpTranslateSub K a g = lp.leftTranslation 1 ℝ (g : G) a - a := by
-  simp [lpTranslateSub]
-
-/-- In `PiLp 1`, the norm of `lpTranslateSub K a` is `∑ g ∈ K, ‖L_g a - a‖`. -/
-theorem norm_lpTranslateSub (K : Finset G) (a : lp (fun _ : G ↦ ℝ) 1) :
-    ‖lpTranslateSub K a‖ = ∑ g ∈ K, ‖lp.leftTranslation 1 ℝ g a - a‖ := by
-  rw [PiLp.norm_eq_of_L1]
-  simp only [lpTranslateSub_apply]
-  exact K.sum_coe_sort fun g ↦ ‖lp.leftTranslation 1 ℝ g a - a‖
+/-- Auxiliary `ℝ`-linear map sending `u ∈ ℓ¹(G)` to `(L_g u - u)_{g ∈ K}` in the `ℓ¹` direct sum
+over `K`. -/
+private def leftTranslationSubLinearMap (K : Finset G) :
+    lp (fun _ : G ↦ ℝ) 1 →ₗ[ℝ] PiLp 1 (fun _ : K ↦ lp (fun _ : G ↦ ℝ) 1) :=
+  (WithLp.linearEquiv 1 ℝ (∀ _ : K, lp (fun _ : G ↦ ℝ) 1)).symm.toLinearMap.comp
+    (LinearMap.pi fun g : K ↦
+      (lp.leftTranslation 1 ℝ (g : G)).toLinearEquiv.toLinearMap - LinearMap.id)
 
 /-- For a finite subset `K ⊆ G` and a finitely supported probability `p : StdSimplex ℝ G`, the
 family `(L_g (p.toLp 1) - p.toLp 1)_{g ∈ K}` in the finite `ℓ¹` product
 `PiLp 1 (fun _ : K ↦ lp (fun _ : G ↦ ℝ) 1)` equipped with the sum norm. -/
 def stdSimplexLeftTranslationSub (K : Finset G) (p : StdSimplex ℝ G) :
     PiLp 1 (fun _ : K ↦ lp (fun _ : G ↦ ℝ) 1) :=
-  lpTranslateSub K (p.toLp 1)
+  leftTranslationSubLinearMap K (p.toLp 1)
 
 @[simp]
 theorem stdSimplexLeftTranslationSub_apply (K : Finset G) (p : StdSimplex ℝ G) (g : K) :
-    stdSimplexLeftTranslationSub K p g = lp.leftTranslation 1 ℝ (g : G) (p.toLp 1) - p.toLp 1 :=
-  lpTranslateSub_apply K (p.toLp 1) g
+    stdSimplexLeftTranslationSub K p g = lp.leftTranslation 1 ℝ (g : G) (p.toLp 1) - p.toLp 1 := by
+  simp [stdSimplexLeftTranslationSub, leftTranslationSubLinearMap]
 
 /-- In `PiLp 1`, the norm of `stdSimplexLeftTranslationSub K p` is the sum over `g ∈ K` of the
 `ℓ¹` translation errors `‖L_g (p.toLp 1) - p.toLp 1‖`. -/
 @[simp]
 theorem norm_stdSimplexLeftTranslationSub (K : Finset G) (p : StdSimplex ℝ G) :
     ‖stdSimplexLeftTranslationSub K p‖ =
-      ∑ g ∈ K, ‖lp.leftTranslation 1 ℝ g (p.toLp 1) - p.toLp 1‖ :=
-  norm_lpTranslateSub K (p.toLp 1)
+      ∑ g ∈ K, ‖lp.leftTranslation 1 ℝ g (p.toLp 1) - p.toLp 1‖ := by
+  rw [PiLp.norm_eq_of_L1]
+  simp only [stdSimplexLeftTranslationSub_apply]
+  exact K.sum_coe_sort fun g ↦ ‖lp.leftTranslation 1 ℝ g (p.toLp 1) - p.toLp 1‖
 
 /-- On a point mass `StdSimplex.single x`, the `g`-th coordinate of
 `stdSimplexLeftTranslationSub K (.single x)` is `δ_{g * x} - δ_x`. -/
@@ -163,8 +152,9 @@ theorem range_stdSimplexLeftTranslationSub_eq_convexHull (K : Finset G) :
       convexHull ℝ (Set.range fun x : G ↦ stdSimplexLeftTranslationSub K (.single x)) := by
   classical
   have h : Set.range (stdSimplexLeftTranslationSub K) =
-      (lpTranslateSub K).toLinearMap '' Set.range (fun p : StdSimplex ℝ G ↦ p.toLp 1) :=
-    Set.range_comp' (lpTranslateSub K).toLinearMap fun p : StdSimplex ℝ G ↦ p.toLp 1
+      leftTranslationSubLinearMap K '' Set.range (fun p : StdSimplex ℝ G ↦ p.toLp 1) := by
+    ext y
+    simp [stdSimplexLeftTranslationSub]
   rw [h, StdSimplex.range_toLp_eq_convexHull, LinearMap.image_convexHull, ← Set.range_comp]
   congr 1
   ext x

@@ -316,12 +316,6 @@ theorem norm_piLpCoordBCF_le [Fintype ι] [Fact (1 ≤ p)]
   exact (Λ.opNorm_comp_le _).trans
     (mul_le_of_le_one_right (norm_nonneg Λ) (PiLp.norm_singleCLM_le i))
 
-/-- Every pointwise value of a coordinate bounded function of `Λ` has norm at most `‖Λ‖`. -/
-theorem norm_piLpCoordBCF_apply_le [Fintype ι] [Fact (1 ≤ p)]
-    (Λ : StrongDual 𝕜 (PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1))) (i : ι) (y : α) :
-    ‖Λ.piLpCoordBCF i y‖ ≤ ‖Λ‖ :=
-  ((Λ.piLpCoordBCF i).norm_coe_le_norm y).trans (Λ.norm_piLpCoordBCF_le i)
-
 /-- A continuous linear functional on `PiLp p (fun _ : ι ↦ ℓ¹(α, 𝕜))` is the sum over `i` of the
 `ℓ¹`-pairings with its coordinate bounded functions `Λ.piLpCoordBCF i`. -/
 theorem apply_eq_sum_bcfPairing [Fintype ι]
