@@ -13,6 +13,7 @@ public import TauCeti.KnotTheory.Grid.Grading.MarkingCount
 public import TauCeti.RingTheory.MvPolynomial.ConstantCoeffReduction
 import TauCeti.KnotTheory.Grid.Rectangle.Count
 import TauCeti.KnotTheory.Grid.Rectangle.Swap
+import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 
 /-!
 # The unblocked grid complex `GC⁻`
@@ -222,17 +223,15 @@ noncomputable def matrixMap (M : GridState n → GridState n → MvPolynomial (F
 /-- The matrix coefficients of the map with matrix coefficients `M`. -/
 theorem matrixMap_single_apply (M : GridState n → GridState n → MvPolynomial (Fin n) R)
     (x y : GridState n) (p : MvPolynomial (Fin n) R) :
-    matrixMap R M (Finsupp.single x p) y = p * M x y := by
-  rw [matrixMap, Finsupp.linearCombination_single, Finsupp.smul_apply, smul_eq_mul,
-    Finsupp.equivFunOnFinite_symm_apply_apply]
+    matrixMap R M (Finsupp.single x p) y = p * M x y :=
+  Finsupp.linearCombination_equivFunOnFinite_symm_single_apply M x y p
 
 /-- The coefficient formula for the map with matrix coefficients `M` on an arbitrary chain. -/
 @[simp]
 theorem matrixMap_apply_apply (M : GridState n → GridState n → MvPolynomial (Fin n) R)
     (c : GridChainMinus R n) (y : GridState n) :
-    matrixMap R M c y = c.sum fun x p => p * M x y := by
-  rw [matrixMap, Finsupp.linearCombination_apply]
-  simp [Finsupp.sum_apply]
+    matrixMap R M c y = c.sum fun x p => p * M x y :=
+  Finsupp.linearCombination_equivFunOnFinite_symm_apply M c y
 
 /-- The map on `GC⁻` with matrix coefficients `M`, semilinear over the renaming of the variables
 by `σ`: it sends the generator `x` with coefficient `p` to `∑ y, rename σ p * M x y • y`. -/
@@ -774,7 +773,7 @@ theorem constantCoeff_sum_OMonomial {x y : GridState n} (s : Finset (GridRectang
     simp
   have h₂ : ∀ r ∈ s.filter fun r => ¬G.OColumns r.toGridRectangle = ∅,
       constantCoeff (G.OMonomial R r.toGridRectangle) = 0 := fun r hr => by
-    obtain ⟨c, hc⟩ := Finset.nonempty_iff_ne_empty.mpr (Finset.mem_filter.mp hr).2
+    obtain ⟨c, hc⟩ := Finset.ne_empty_iff_nonempty.1 (Finset.mem_filter.mp hr).2
     rw [G.OMonomial_eq_monomial R, MvPolynomial.constantCoeff_monomial]
     have hsum : (∑ c ∈ G.OColumns r.toGridRectangle, Finsupp.single c 1) ≠
         (0 : Fin n →₀ ℕ) := by
@@ -863,7 +862,7 @@ theorem unblockedDifferentialOnGenerator_support_subset (x : GridState n) :
   intro y hy
   rw [Finsupp.mem_support_iff, unblockedDifferentialOnGenerator_apply] at hy
   have hne : (G.unblockedRectangles x y).Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty]
+    rw [← Finset.ne_empty_iff_nonempty]
     intro he
     rw [unblockedCoefficient, he, Finset.sum_empty] at hy
     exact hy rfl

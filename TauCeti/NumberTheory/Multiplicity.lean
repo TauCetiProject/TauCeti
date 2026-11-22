@@ -34,6 +34,13 @@ valuation of two-variable cyclotomic values and for the nonprimitive prime divis
 `emultiplicity_pow_sub_pow_of_prime`, `Nat.multiplicity_pow_sub_pow` and
 `Nat.multiplicity_pow_two_sub_pow`.
 
+## The divisibility `2 ^ r ∣ 3 ^ r - 1`
+
+By lifting the exponent, `v₂(3 ^ r - 1) = 1` for odd `r` and `v₂(3 ^ r - 1) = v₂(r) + 2` for even
+`r ≠ 0`. Comparing with `r` shows that `2 ^ r ∣ 3 ^ r - 1` only for `r ∈ {0, 1, 2, 4}`. This is the
+arithmetic step in Adams and Atiyah's K-theoretic proof that a map `S^(4r-1) → S^(2r)` of odd
+Hopf invariant exists only for `r ∈ {1, 2, 4}`.
+
 ## Lifting a residue so that `b ^ n - 1` has exact `p`-adic valuation
 
 Let `p` be a prime and `n` a natural number prime to `p`. If `b₀ ^ n ≡ 1 (mod p ^ k)`, then `b₀`
@@ -55,6 +62,7 @@ In the computation of the generator rank of the absolute Galois group of a `p`-a
   `v₂(x ^ n - y ^ n) = v₂(x - y)`.
 * `Nat.multiplicity_pow_two_sub_pow_of_even`: for odd `y < x` and even `n ≠ 0`,
   `v₂(x ^ n - y ^ n) + 1 = v₂(x ^ 2 - y ^ 2) + v₂(n)`.
+* `Nat.two_pow_dvd_three_pow_sub_one_iff`: `2 ^ r ∣ 3 ^ r - 1` exactly for `r ∈ {0, 1, 2, 4}`.
 * `TauCeti.exists_modEq_pow_sub_one_eq_mul`: the lift with `b ^ n - 1 = p ^ k * c`, `p ∤ c`.
 
 ## References
@@ -63,6 +71,8 @@ In the computation of the generator rank of the absolute Galois group of a `p`-a
   Math. (2) 5 (1904), 173–180, Theorem III, p. 175.
 * Ö. Avcı, *Large Zsigmondy primes*, arXiv:2011.06136v2 (2023), Lemma 2.2.
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, proof of (7.4.1).
+* J. F. Adams and M. F. Atiyah, *K-theory and the Hopf invariant*, Quart. J. Math. Oxford (2)
+  17 (1966), 31–38.
 -/
 
 public section
@@ -116,6 +126,35 @@ theorem multiplicity_pow_two_sub_pow_of_even {x y n : ℕ} (hyx : y < x) (hx : O
   rw [Nat.sq_sub_sq, multiplicity_mul (by omega) (by omega),
     multiplicity_pow_two_sub_pow hyx (even_iff_two_dvd.mp (Nat.Odd.sub_odd hx hy))
       hx.not_two_dvd_nat hn0 hn]
+
+/-- `2 ^ r` divides `3 ^ r - 1` exactly when `r ∈ {0, 1, 2, 4}`. For odd `r` the valuation
+`v₂(3 ^ r - 1)` is `1`; for even `r ≠ 0` it is `v₂(r) + 2`, which is at least `r` only for
+`r ∈ {2, 4}`. -/
+theorem two_pow_dvd_three_pow_sub_one_iff {r : ℕ} :
+    2 ^ r ∣ 3 ^ r - 1 ↔ r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 4 := by
+  refine ⟨fun h ↦ ?_, by rintro (rfl | rfl | rfl | rfl) <;> norm_num⟩
+  rcases eq_or_ne r 0 with rfl | hr
+  · exact .inl rfl
+  have h3 : 1 < 3 ^ r := Nat.one_lt_pow hr (by norm_num)
+  have hle : r ≤ multiplicity 2 (3 ^ r - 1) :=
+    (pow_dvd_iff_le_multiplicity (by norm_num) (by omega)).mp h
+  rcases r.even_or_odd with hev | hodd
+  · -- `v₂(3 ^ r - 1) = v₂(r) + 2`, while `2 ^ v₂(r) ≤ r`, so `v₂(r) ≤ 2` and `r ≤ 4`.
+    have hv := multiplicity_pow_two_sub_pow_of_even (by norm_num : 1 < 3) (by decide) odd_one hev hr
+    rw [one_pow, show 3 ^ 2 - 1 ^ 2 = 2 ^ 3 by norm_num,
+      multiplicity_pow_self (by norm_num) (by norm_num)] at hv
+    have hpow : 2 ^ multiplicity 2 r ≤ r := Nat.le_of_dvd (by omega) (pow_multiplicity_dvd 2 r)
+    have hv2 : multiplicity 2 r ≤ 2 := by
+      by_contra! h3
+      obtain ⟨m, hm⟩ := Nat.exists_eq_add_of_le h3
+      have := Nat.lt_two_pow_self (n := m)
+      rw [hm, pow_add] at hpow
+      omega
+    obtain ⟨k, hk⟩ := hev
+    omega
+  · have hv := multiplicity_pow_two_sub_pow_of_odd (by decide : Odd 3) odd_one hodd
+    rw [one_pow, show 3 - 1 = 2 by norm_num, multiplicity_self (by norm_num)] at hv
+    omega
 
 end Nat
 

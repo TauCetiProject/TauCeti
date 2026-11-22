@@ -144,7 +144,7 @@ theorem HasCotype.of_map [Fact (1 ≤ q)] (h : HasCotype F q C) (f : 𝓕)
   fun n y ↦ calc
   ‖WithLp.toLp q y‖ ≤ K * ‖WithLp.toLp q (fun i ↦ f (y i))‖ := by
     calc ‖WithLp.toLp q y‖ ≤ ‖(K : ℝ) • WithLp.toLp q (fun i ↦ ‖f (y i)‖)‖ :=
-          PiLp.norm_mono fun i ↦ by simpa [abs_of_nonneg K.2] using hK (y i)
+          PiLp.norm_mono fun i ↦ by simpa [abs_of_nonneg K.property] using hK (y i)
       _ = K * ‖WithLp.toLp q (fun i ↦ f (y i))‖ := by
           rw [norm_smul, Real.norm_eq_abs, NNReal.abs_eq,
             PiLp.norm_norm (WithLp.toLp q fun i ↦ f (y i))]

@@ -38,6 +38,8 @@ than selected by a typeclass.
   positive power of which lies in `A⁺`.
 * `TauCeti.Huber.IsRingOfIntegralElements.exists_isPseudoUniformizer`: in a Tate ring, `A⁺`
   contains a pseudouniformiser.
+* `TauCeti.Huber.IsRingOfIntegralElements.isLocalization`: a Tate ring is the localisation of
+  `A⁺` at the elements of `A⁺` which are units of the ambient ring.
 * `TauCeti.Huber.IsRingOfIntegralElements.map`: an isomorphism of topological rings carries a
   ring of integral elements onto a ring of integral elements.
 * `TauCeti.Huber.isRingOfIntegralElements_powerBoundedSubring`, `TauCeti.Huber.Pair.powerBounded`:
@@ -115,7 +117,7 @@ theorem mem_of_isTopologicallyNilpotent_of_isIntegrallyClosedIn {Aplus : Subring
   have hpow : IsIntegral Aplus (a ^ n) :=
     isIntegral_algebraMap (R := Aplus) (x := (⟨a ^ n, hmem⟩ : Aplus))
   obtain ⟨y, hy⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow hn hpow
-  exact hy ▸ y.2
+  exact hy ▸ y.property
 
 /-- `A°° ⊆ A⁺` for every ring of integral elements. -/
 theorem IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent [NonarchimedeanRing A]
@@ -138,6 +140,14 @@ theorem IsRingOfIntegralElements.exists_isPseudoUniformizer [IsTopologicalRing A
     ∃ ϖ : Aplus, IsPseudoUniformizer (ϖ : A) :=
   have ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
   ⟨⟨ϖ, h.mem_of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent⟩, hϖ⟩
+
+/-- A Tate ring `A` is the localisation of a ring of integral elements `A⁺` at the elements of
+`A⁺` which are units of `A`. -/
+theorem IsRingOfIntegralElements.isLocalization [IsTopologicalRing A] [IsTateRing A]
+    {Aplus : Subring A} (h : IsRingOfIntegralElements Aplus) :
+    IsLocalization ((IsUnit.submonoid A).comap Aplus.subtype) A :=
+  have hϖ := h.exists_isPseudoUniformizer.choose_spec
+  Aplus.isLocalization_of_isOpen h.isOpen _ hϖ.isTopologicallyNilpotent hϖ.isUnit
 
 /-- An isomorphism of topological rings carries a ring of integral elements onto a ring of
 integral elements. -/
@@ -381,7 +391,7 @@ noncomputable def Hom.quotientLift {S : Pair A} {T : Pair B} (J : Ideal A) (f : 
     let R : Subring (A ⧸ J) := S.plus.map (Ideal.Quotient.mk J)
     let φ : R →+* T.plus :=
       (ψ.comp R.subtype).codRestrict T.plus fun x ↦ by
-        obtain ⟨a, ha, hax⟩ := Subring.mem_map.mp x.2
+        obtain ⟨a, ha, hax⟩ := Subring.mem_map.mp x.property
         have hψx : ψ x = f.toRingHom a := by
           rw [← hax]
           exact Ideal.Quotient.lift_mk J f.toRingHom _
