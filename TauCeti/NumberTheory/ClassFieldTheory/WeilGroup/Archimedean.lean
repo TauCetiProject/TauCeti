@@ -13,6 +13,7 @@ public import Mathlib.Topology.Algebra.Group.TopologicalAbelianization
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.Algebra.GroupWithZero
 import TauCeti.Algebra.Quaternion.ComplexSubfield
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # The archimedean Weil groups
@@ -25,9 +26,17 @@ and `ℂˣ` is an open subgroup whose complement is `jℂˣ`.
 
 The norm `W_ℝ → ℝˣ` sends `z ↦ |z|²` and `j ↦ -1`; on a quaternion `q ∈ W_ℝ` it is
 `q.re² + q.imI² - q.imJ² - q.imK²`. It is a surjective continuous homomorphism whose kernel is the
-commutator subgroup, so it identifies the abelianization of `W_ℝ` with `ℝˣ`. The extension does
-not split: every element outside `ℂˣ` squares to its norm, a negative real number, so no element
-outside `ℂˣ` has order two.
+commutator subgroup, so it identifies the abelianization of `W_ℝ` with `ℝˣ`, both algebraically
+(`Group.Abelianization`) and as topological groups (`TopologicalAbelianization`). The extension
+does not split: every element outside `ℂˣ` squares to its norm, a negative real number, so no
+element outside `ℂˣ` has order two and `W_ℝ → Gal(ℂ/ℝ)` has no homomorphic section.
+
+The archimedean Weil groups play the role for `ℝ` and `ℂ` that the Weil group `W_K` plays for a
+nonarchimedean local field: the norm realizes archimedean local reciprocity `W_ℝ^{ab} ≃ₜ* ℝˣ`,
+and continuous representations of `W_ℝ` and `W_ℂ` are the archimedean Langlands parameters.
+Homomorphisms out of `W_ℝ` are built from a homomorphism out of `ℂˣ` and an image of `j` by
+`WeilGroupReal.lift`, are determined by these data (`WeilGroupReal.hom_ext`), and are continuous
+when they are continuous on `ℂˣ` (`WeilGroupReal.continuous_iff_continuous_comp_includeComplex`).
 
 ## Main definitions
 
@@ -64,7 +73,7 @@ outside `ℂˣ` has order two.
   kernel the commutator subgroup.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.sq_eq_norm_of_notMem_range_includeComplex`,
   `TauCeti.ClassFieldTheory.WeilGroupReal.sq_ne_one_of_notMem_range_includeComplex`: an element
-  outside `ℂˣ` squares to its norm, which is negative; so the extension does not split.
+  outside `ℂˣ` squares to its norm, which is negative, so it does not have order two.
 
 ## References
 
@@ -100,7 +109,7 @@ def realWeilSubgroup : Subgroup ℍˣ where
   inv_mem' := by
     rintro a (⟨ha₁, ha₂⟩ | ⟨ha₁, ha₂⟩) <;> simp [Quaternion.inv_def, *]
 
-/-- A unit quaternion lies in `realWeilSubgroup` exactly when it lies in `ℂ` or in `jℂ`. -/
+/-- An invertible quaternion lies in `realWeilSubgroup` exactly when it lies in `ℂ` or in `jℂ`. -/
 theorem mem_realWeilSubgroup_iff {q : ℍˣ} :
     q ∈ realWeilSubgroup ↔
       ((q : ℍ).imJ = 0 ∧ (q : ℍ).imK = 0) ∨ ((q : ℍ).re = 0 ∧ (q : ℍ).imI = 0) :=
@@ -118,8 +127,9 @@ abbrev WeilGroupReal : Type := realWeilSubgroup
 
 example : IsTopologicalGroup WeilGroupReal := inferInstance
 
-/-- `W_ℝ` is locally compact, as a closed subgroup of `ℍˣ`. -/
-instance : LocallyCompactSpace WeilGroupReal :=
+/-- `W_ℝ` is locally compact. -/
+instance instLocallyCompactSpaceWeilGroupReal : LocallyCompactSpace WeilGroupReal :=
+  -- a closed subgroup of the locally compact group `ℍˣ`
   isClosed_realWeilSubgroup.locallyCompactSpace
 
 namespace WeilGroupReal
@@ -139,14 +149,14 @@ theorem continuous_coe_quaternion : Continuous fun w : WeilGroupReal ↦ ((w : �
 
 /-- **The inclusion `W_ℂ → W_ℝ`**, through `ℂ ⊆ ℍ`. -/
 def includeComplex : WeilGroupComplex →* WeilGroupReal :=
-  (Units.map (Quaternion.ofComplex : ℂ →* ℍ)).codRestrict realWeilSubgroup fun _ ↦
-    Or.inl ⟨rfl, rfl⟩
+  (Units.map (Quaternion.ofComplex : ℂ →* ℍ)).codRestrict realWeilSubgroup fun _ ↦ by
+    simp [mem_realWeilSubgroup_iff]
 
 /-- The inclusion `W_ℂ → W_ℝ` is `ℂ ⊆ ℍ` on underlying quaternions. -/
 @[simp]
 theorem coe_includeComplex (z : WeilGroupComplex) :
-    ((includeComplex z : ℍˣ) : ℍ) = ((z : ℂ) : ℍ) :=
-  (rfl)
+    ((includeComplex z : ℍˣ) : ℍ) = ((z : ℂ) : ℍ) := by
+  simp [includeComplex]
 
 /-- The element `j` of `W_ℝ`: the quaternion unit `TauCeti.Quaternion.jUnit`. -/
 def j : WeilGroupReal :=
@@ -205,6 +215,13 @@ theorem inv_j_mul_includeComplex_mul_j (z : WeilGroupComplex) :
     j⁻¹ * includeComplex z * j = includeComplex (star z) := by
   rw [mul_assoc, includeComplex_mul_j, inv_mul_cancel_left]
 
+/-- **Multiplication on `jℂˣ`**: `(j a)(j b) = -conj(a) b`. -/
+theorem j_mul_includeComplex_mul_j_mul_includeComplex (a b : WeilGroupComplex) :
+    j * includeComplex a * (j * includeComplex b) = includeComplex (-1 * star a * b) := by
+  rw [map_mul, map_mul, ← j_mul_j, mul_assoc j, ← mul_assoc (includeComplex a),
+    includeComplex_mul_j]
+  group
+
 /-- An element of `W_ℝ` lies in `ℂˣ` exactly when its `j`- and `k`-coordinates vanish. -/
 theorem mem_range_includeComplex_iff {w : WeilGroupReal} :
     w ∈ includeComplex.range ↔ ((w : ℍˣ) : ℍ).imJ = 0 ∧ ((w : ℍˣ) : ℍ).imK = 0 := by
@@ -249,7 +266,7 @@ theorem hom_ext {G : Type*} [Monoid G] {f g : WeilGroupReal →* G}
 
 section lift
 
-variable {G : Type*} [Group G] (f : WeilGroupComplex →* G) (g : G)
+variable {G : Type*} [Monoid G] (f : WeilGroupComplex →* G) (g : G)
 
 open scoped Classical in
 /-- The function underlying `WeilGroupReal.lift`: `z ↦ f z` on `ℂˣ` and `jz ↦ g * f z` on
@@ -273,16 +290,15 @@ private theorem liftFun_j_mul (z : WeilGroupComplex) :
     (mul_left_cancel ((exists_includeComplex_or_j_mul _).resolve_left h).choose_spec)
 
 /-- **The universal property of `W_ℝ`**: a homomorphism `f : W_ℂ →* G` together with `g : G`
-satisfying `g² = f (-1)` and `g (f z) g⁻¹ = f (conj z)` extends uniquely (`hom_ext`) to `W_ℝ`,
-sending `j` to `g`. -/
-def lift (hg : g ^ 2 = f (-1)) (hgf : ∀ z, g * f z * g⁻¹ = f (star z)) :
+satisfying `g² = f (-1)` and `g (f z) = f (conj z) g` extends uniquely (`hom_ext`) to `W_ℝ`,
+sending `j` to `g`. The target need only be a monoid, such as `Module.End ℂ V`. -/
+def lift (hg : g ^ 2 = f (-1)) (hgf : ∀ z, g * f z = f (star z) * g) :
     WeilGroupReal →* G where
   toFun := liftFun f g
   map_one' := by rw [← map_one includeComplex, liftFun_includeComplex, map_one]
   map_mul' v w := by
     have hc (z : WeilGroupComplex) : f z * g = g * f (star z) := by
-      conv_lhs => rw [← star_star z, ← hgf]
-      rw [inv_mul_cancel_right]
+      rw [hgf, star_star]
     obtain ⟨a, rfl⟩ | ⟨a, rfl⟩ := exists_includeComplex_or_j_mul v <;>
     obtain ⟨b, rfl⟩ | ⟨b, rfl⟩ := exists_includeComplex_or_j_mul w
     · rw [← map_mul, liftFun_includeComplex, liftFun_includeComplex, liftFun_includeComplex,
@@ -291,16 +307,11 @@ def lift (hg : g ^ 2 = f (-1)) (hgf : ∀ z, g * f z * g⁻¹ = f (star z)) :
         liftFun_j_mul, liftFun_j_mul, map_mul, ← mul_assoc (f a), hc, mul_assoc]
     · rw [mul_assoc, ← map_mul, liftFun_includeComplex, liftFun_j_mul, liftFun_j_mul, map_mul,
         mul_assoc]
-    · rw [show j * includeComplex a * (j * includeComplex b) =
-          includeComplex (-1 * star a * b) by
-        rw [map_mul, map_mul, ← j_mul_j, mul_assoc j, ← mul_assoc (includeComplex a),
-          includeComplex_mul_j]
-        group]
-      rw [liftFun_includeComplex, liftFun_j_mul, liftFun_j_mul, map_mul, map_mul, ← hg,
-        mul_assoc g, ← mul_assoc (f a), hc]
+    · rw [j_mul_includeComplex_mul_j_mul_includeComplex, liftFun_includeComplex, liftFun_j_mul,
+        liftFun_j_mul, map_mul, map_mul, ← hg, mul_assoc g, ← mul_assoc (f a), hc]
       simp only [sq, mul_assoc]
 
-variable {f g} {hg : g ^ 2 = f (-1)} {hgf : ∀ z, g * f z * g⁻¹ = f (star z)}
+variable {f g} {hg : g ^ 2 = f (-1)} {hgf : ∀ z, g * f z = f (star z) * g}
 
 /-- `WeilGroupReal.lift f g` restricts to `f` on `ℂˣ`. -/
 @[simp]
@@ -323,11 +334,11 @@ end lift
 
 /-! ### The norm -/
 
-/-- The quadratic form `q.re² + q.imI² - q.imJ² - q.imK²` on `W_ℝ` is nowhere zero, since it is
-`±|q|²` on `ℂ ∪ jℂ`. -/
+/-- The quadratic form `q.re² + q.imI² - q.imJ² - q.imK²` on `W_ℝ` is nowhere zero. -/
 private theorem normForm_ne_zero (w : WeilGroupReal) :
     ((w : ℍˣ) : ℍ).re ^ 2 + ((w : ℍˣ) : ℍ).imI ^ 2 - ((w : ℍˣ) : ℍ).imJ ^ 2 -
       ((w : ℍˣ) : ℍ).imK ^ 2 ≠ 0 := by
+  -- On `ℂˣ ∪ jℂˣ` the form is `±|q|²`.
   obtain ⟨q, (⟨h₁, h₂⟩ | ⟨h₁, h₂⟩)⟩ := w <;>
   · have h := Quaternion.normSq_ne_zero.2 q.ne_zero
     rw [Quaternion.normSq_def'] at h
@@ -343,8 +354,7 @@ def norm : WeilGroupReal →* ℝˣ where
   map_mul' := by
     rintro ⟨a, (⟨ha₁, ha₂⟩ | ⟨ha₁, ha₂⟩)⟩ ⟨b, (⟨hb₁, hb₂⟩ | ⟨hb₁, hb₂⟩)⟩ <;>
     · ext
-      simp only [Units.val_mk0, Units.val_mul, Subgroup.coe_mul, Quaternion.re_mul,
-        Quaternion.imI_mul, Quaternion.imJ_mul, Quaternion.imK_mul, ha₁, ha₂, hb₁, hb₂]
+      simp [ha₁, ha₂, hb₁, hb₂]
       ring
 
 /-- The norm of `q ∈ W_ℝ` is `q.re² + q.imI² - q.imJ² - q.imK²`. -/
@@ -379,9 +389,7 @@ theorem coe_norm_neg_iff {w : WeilGroupReal} : (norm w : ℝ) < 0 ↔ w ∉ incl
   obtain ⟨z, rfl⟩ | ⟨z, rfl⟩ := exists_includeComplex_or_j_mul w
   · simpa using Complex.normSq_nonneg _
   · simp only [j_mul_includeComplex_notMem_range_includeComplex, not_false_eq_true, iff_true]
-    rw [map_mul, norm_j, Units.val_mul, coe_norm_includeComplex, Units.val_neg, Units.val_one,
-      neg_one_mul, neg_lt_zero]
-    exact Complex.normSq_pos.2 (by simp)
+    simp
 
 /-- **The norm is positive exactly on `ℂˣ`.** -/
 theorem coe_norm_pos_iff {w : WeilGroupReal} : 0 < (norm w : ℝ) ↔ w ∈ includeComplex.range := by
@@ -394,7 +402,7 @@ theorem range_includeComplex_eq_comap_norm :
   rw [Subgroup.mem_comap, Units.mem_posSubgroup, coe_norm_pos_iff]
 
 /-- `ℂˣ` is a normal subgroup of `W_ℝ`. -/
-instance : includeComplex.range.Normal := by
+instance instNormalRangeIncludeComplex : includeComplex.range.Normal := by
   rw [range_includeComplex_eq_comap_norm]
   infer_instance
 
@@ -428,17 +436,17 @@ private theorem continuous_normSection : Continuous normSection := by
   have h : (fun r : ℝˣ ↦ (⟨√(max (r : ℝ) 0), 0, √(max (-r : ℝ) 0), 0⟩ : ℍ)) = fun r : ℝˣ ↦
       ((√(max (r : ℝ) 0) : ℝ) : ℍ) + √(max (-r : ℝ) 0) • (⟨0, 0, 1, 0⟩ : ℍ) := by
     ext r <;> simp
-  change Continuous fun r : ℝˣ ↦ (⟨√(max (r : ℝ) 0), 0, √(max (-r : ℝ) 0), 0⟩ : ℍ)
+  simp only [Function.comp_def, Units.val_mk0]
   rw [h]
   have hv : Continuous fun r : ℝˣ ↦ (r : ℝ) := Units.continuous_val
   exact (Quaternion.continuous_coe.comp (hv.max continuous_const).sqrt).add
     (((hv.neg.max continuous_const).sqrt).smul continuous_const)
 
-/-- **The norm is a quotient map**: it has a continuous section. -/
+/-- **The norm is a quotient map.** -/
 theorem isQuotientMap_norm : IsQuotientMap norm :=
   .of_inverse continuous_normSection continuous_norm norm_normSection
 
-/-- **The norm is surjective**: `|·|²` covers the positive reals, and `j` contributes the sign. -/
+/-- **The norm is surjective.** -/
 theorem norm_surjective : Function.Surjective norm :=
   isQuotientMap_norm.surjective
 
@@ -451,8 +459,8 @@ theorem index_range_includeComplex : includeComplex.range.index = 2 := by
   rw [range_includeComplex_eq_comap_norm, Subgroup.index_comap_of_surjective _ norm_surjective,
     Units.index_posSubgroup]
 
-/-- **The extension does not split**: an element `w` of `W_ℝ` outside `ℂˣ` squares to its norm,
-a negative real number (`coe_norm_neg_iff`). -/
+/-- An element `w` of `W_ℝ` outside `ℂˣ` squares to its norm in `ℂˣ`, which is negative by
+`coe_norm_neg_iff`. -/
 theorem sq_eq_norm_of_notMem_range_includeComplex {w : WeilGroupReal}
     (hw : w ∉ includeComplex.range) :
     w ^ 2 = includeComplex (Units.map (algebraMap ℝ ℂ : ℝ →* ℂ) (norm w)) := by
@@ -461,15 +469,13 @@ theorem sq_eq_norm_of_notMem_range_includeComplex {w : WeilGroupReal}
   · rw [ext_iff]
     ext <;> simp [coe_norm, sq] <;> ring
 
-/-- **No element outside `ℂˣ` has order two**, so `W_ℝ → W_ℝ / ℂˣ` has no section. -/
+/-- **No element outside `ℂˣ` squares to `1`.** -/
 theorem sq_ne_one_of_notMem_range_includeComplex {w : WeilGroupReal}
     (hw : w ∉ includeComplex.range) : w ^ 2 ≠ 1 := by
   rw [sq_eq_norm_of_notMem_range_includeComplex hw, ← map_one includeComplex,
     includeComplex_injective.ne_iff]
   intro h
-  have := congrArg (fun u : ℂˣ ↦ (u : ℂ).re) h
-  simp only [Units.coe_map, MonoidHom.coe_ofClass, Complex.coe_algebraMap, Complex.ofReal_re,
-    Units.val_one, Complex.one_re] at this
+  have : (norm w : ℝ) = 1 := by simpa using congrArg (fun u : ℂˣ ↦ (u : ℂ).re) h
   linarith [coe_norm_neg_iff.2 hw]
 
 /-- The commutator of `j` and `z ∈ ℂˣ` is `conj z / z`. -/
@@ -477,10 +483,10 @@ theorem commutatorElement_j_includeComplex (z : WeilGroupComplex) :
     (⁅j, includeComplex z⁆ : WeilGroupReal) = includeComplex (star z * z⁻¹) := by
   rw [commutatorElement_def, j_mul_includeComplex_mul_inv_j, map_mul, map_inv]
 
-/-- **The norm induces the abelianization**: its kernel is the commutator subgroup of `W_ℝ`. The
-kernel is the unit circle in `ℂˣ`, and every `z` with `|z| = 1` is the commutator
-`⁅j, conj s⁆ = s / conj s = s²` for a square root `s` of `z`. -/
+/-- **The norm induces the abelianization**: its kernel is the commutator subgroup of `W_ℝ`. -/
 theorem ker_norm : norm.ker = commutator WeilGroupReal := by
+  -- The kernel is the unit circle in `ℂˣ`, and every `z` with `|z| = 1` is the commutator
+  -- `⁅j, conj s⁆ = s / conj s = s²` for a square root `s` of `z`.
   refine le_antisymm (fun w hw ↦ ?_) (Group.Abelianization.commutator_le_ker norm)
   rw [MonoidHom.mem_ker] at hw
   have hpos : w ∈ includeComplex.range := by
@@ -513,8 +519,12 @@ def abelianizationEquiv : Group.Abelianization WeilGroupReal ≃* ℝˣ :=
 /-- `abelianizationEquiv` sends the class of `w` to its norm. -/
 @[simp]
 theorem abelianizationEquiv_of (w : WeilGroupReal) :
-    abelianizationEquiv (Group.Abelianization.of w) = norm w :=
-  (rfl)
+    abelianizationEquiv (Group.Abelianization.of w) = norm w := by
+  -- `Group.Abelianization WeilGroupReal` is by definition `W_ℝ ⧸ commutator W_ℝ`, and
+  -- `Group.Abelianization.of w` the class of `w`. The first factor of `abelianizationEquiv` fixes
+  -- classes by definition (as in `QuotientGroup.quotientMulEquivOfEq_mk`), so the composite sends
+  -- the class of `w` where the second factor does.
+  exact QuotientGroup.quotientKerEquivOfSurjective_apply_mk norm norm_surjective w
 
 /-- The inverse of `abelianizationEquiv` sends the norm of `w` to the class of `w`. -/
 @[simp]
@@ -522,7 +532,7 @@ theorem abelianizationEquiv_symm_norm (w : WeilGroupReal) :
     abelianizationEquiv.symm (norm w) = Group.Abelianization.of w := by
   rw [MulEquiv.symm_apply_eq, abelianizationEquiv_of]
 
-/-- The commutator subgroup of `W_ℝ` is closed, as the kernel of the norm. -/
+/-- The commutator subgroup of `W_ℝ` is closed. -/
 theorem isClosed_commutator : IsClosed (commutator WeilGroupReal : Set WeilGroupReal) := by
   rw [← ker_norm]
   exact isClosed_singleton.preimage continuous_norm
@@ -544,15 +554,14 @@ def topologicalAbelianizationEquiv : TopologicalAbelianization WeilGroupReal ≃
       have h : (e.symm : ℝˣ → TopologicalAbelianization WeilGroupReal) =
           fun r ↦ (normSection r : TopologicalAbelianization WeilGroupReal) :=
         funext fun r ↦ e.symm_apply_eq.2 (norm_normSection r).symm
-      change Continuous e.symm
-      rw [h]
+      rw [MulEquiv.invFun_eq_symm, h]
       exact continuous_quotient_mk'.comp continuous_normSection }
 
 /-- `topologicalAbelianizationEquiv` sends the class of `w` to its norm. -/
 @[simp]
 theorem topologicalAbelianizationEquiv_mk (w : WeilGroupReal) :
-    topologicalAbelianizationEquiv (w : TopologicalAbelianization WeilGroupReal) = norm w :=
-  (rfl)
+    topologicalAbelianizationEquiv (w : TopologicalAbelianization WeilGroupReal) = norm w := by
+  simp [topologicalAbelianizationEquiv]
 
 /-- The inverse of `topologicalAbelianizationEquiv` sends the norm of `w` to the class of
 `w`. -/
@@ -564,8 +573,9 @@ theorem topologicalAbelianizationEquiv_symm_norm (w : WeilGroupReal) :
 
 /-! ### Topology -/
 
-/-- **`ℂˣ` is an open subgroup of `W_ℝ`**: it is where the norm is positive. -/
+/-- **`ℂˣ` is an open subgroup of `W_ℝ`.** -/
 theorem isOpen_range_includeComplex : IsOpen (includeComplex.range : Set WeilGroupReal) := by
+  -- `ℂˣ` is where the norm is positive.
   have h : (includeComplex.range : Set WeilGroupReal) =
       (fun w ↦ (norm w : ℝ)) ⁻¹' Set.Ioi 0 := by
     ext w
@@ -578,6 +588,10 @@ embedding. -/
 theorem isOpenEmbedding_includeComplex : IsOpenEmbedding includeComplex := by
   refine ⟨⟨?_, includeComplex_injective⟩, isOpen_range_includeComplex⟩
   rw [← isEmbedding_coe_quaternion.isInducing.of_comp_iff]
+  have hcomp : (fun w : WeilGroupReal ↦ ((w : ℍˣ) : ℍ)) ∘ includeComplex =
+      Quaternion.ofComplex.toLinearMap ∘ ((↑) : ℂˣ → ℂ) := by
+    ext z <;> simp
+  rw [hcomp]
   exact ((LinearMap.isClosedEmbedding_of_injective (f := Quaternion.ofComplex.toLinearMap)
     (LinearMap.ker_eq_bot_of_injective Quaternion.ofComplex.toRingHom.injective)).isEmbedding.comp
     Units.isEmbedding_val₀).isInducing
