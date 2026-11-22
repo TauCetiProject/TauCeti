@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
+public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic.Basic
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Signature
-public import TauCeti.Geometry.Manifold.Complex.FiniteCWType
 
 /-!
 # Finite CW type for compactified modular curves
@@ -15,7 +14,7 @@ public import TauCeti.Geometry.Manifold.Complex.FiniteCWType
 Every finite-index subgroup `Γ' ≤ PSL(2, ℤ)` has cofinite effective image in `PSL(2, ℝ)`
 (`Subgroup.isCofinite_map_psl2zToPSL2R`), so its compactified quotient `X(Γ')` has finite CW type.
 Isolating this instance here keeps cellular and signature dependencies out of
-`TauCeti.Analysis.Complex.Fuchsian.Arithmetic`.
+`TauCeti.Analysis.Complex.Fuchsian.Arithmetic.Basic`.
 -/
 
 public noncomputable section

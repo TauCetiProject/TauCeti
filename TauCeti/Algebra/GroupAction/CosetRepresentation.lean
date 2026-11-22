@@ -495,12 +495,18 @@ theorem natCard_orbit_conjAct_eq_index_div_natCard_centralizer [Finite β] {H : 
   rw [← e.natCard_orbit_conjAct_mul_natCard_centralizer_permutationRepresentation,
     Nat.mul_div_cancel _ Nat.card_pos]
 
+/-- If `e.permutationRepresentation g` fixes `x : β`, then `g` fixes `e.symm x` in `α`. -/
+theorem smul_symm_of_permutationRepresentation_eq {α : Type*} [MulAction G α] (e : α ≃ β)
+    {g : G} {x : β} (hx : e.permutationRepresentation g x = x) :
+    g • e.symm x = e.symm x := by
+  simpa [permutationRepresentation_apply] using congrArg e.symm hx
+
 /-- A transported coset permutation `e.permutationRepresentation a` fixes `e (g H)` if and only
 if `g⁻¹ * a * g ∈ H`. -/
 theorem permutationRepresentation_quotient_apply_eq_self_iff {H : Subgroup G}
     (e : G ⧸ H ≃ β) (a g : G) :
     e.permutationRepresentation a (e (g : G ⧸ H)) = e (g : G ⧸ H) ↔ g⁻¹ * a * g ∈ H := by
-  rw [permutationRepresentation_apply_eq_self_iff, MulAction.mem_stabilizer_iff,
-    MulAction.Quotient.smul_mk, smul_eq_mul, eq_comm, QuotientGroup.eq, ← mul_assoc]
+  rw [permutationRepresentation_apply_eq_self_iff, MulAction.mem_stabilizer_iff]
+  exact TauCeti.smul_quotientGroup_mk_eq_self_iff H a g
 
 end Equiv

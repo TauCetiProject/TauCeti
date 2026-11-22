@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Basic
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Weighted
-import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
+import TauCeti.Analysis.Complex.Fuchsian.Arithmetic.Basic
 import TauCeti.Analysis.Complex.Fuchsian.Compactification.Extension
 import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Degree

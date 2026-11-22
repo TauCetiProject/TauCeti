@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.Modular.Invariants.Basic
 import TauCeti.Combinatorics.PermutationTriple.ComputedInvariants
 import TauCeti.Combinatorics.PermutationTriple.Decidable
-import TauCeti.Combinatorics.PermutationTriple.Mirror
 
 /-!
 # Non-completeness of the classical modular invariant vector

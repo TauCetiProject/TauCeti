@@ -5,19 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.ModularForms.Cusps
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.LevelOne
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Finite
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.FiniteIndex
 import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Cofinite
-import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
+import TauCeti.GroupTheory.DoubleCoset.Orbits
+import TauCeti.GroupTheory.QuotientGroup.Congr
 
 /-!
 # Modular subgroups in `PSL(2, ℝ)` and their cusps
-
-For any subgroup `Γ' ≤ PSL(2, ℤ)`, the Fuchsian cusp points and cusp orbits of `Γ'.map psl2zToPSL2R`
-agree with Mathlib's `IsCusp` and `CuspOrbits` for `Γ'.liftSL ≤ SL(2, ℤ)`
-(`Subgroup.isCuspPoint_map_psl2zToPSL2R_iff_isCusp`, `Subgroup.fuchsianCuspOrbitEquivCuspOrbits`).
 
 Every finite-index subgroup of `SL(2, ℤ)` or `PSL(2, ℤ)` gives a cofinite subgroup of
 `PSL(2, ℝ)`, with compact cusp compactification.
@@ -28,6 +24,10 @@ and two such orbits agree exactly when `γ⁻¹ h γ'` fixes `∞` for some `h` 
 These facts allow the compactified Fuchsian quotient and its cusp charts to be used for
 congruence modular curves, and reduce counting cusps to arithmetic in `SL(2, ℤ)`; in
 particular there are finitely many cusp orbits.
+
+This module also provides the shared inverse-translate orbit map
+`TauCeti.ModularGroup.inverseTranslateOrbit` from `PSL(2, ℤ) ⧸ Γ'` into the orbit space of
+`Γ'.map psl2zToPSL2R`, used to identify both cusp orbits and elliptic orbits.
 
 ## References
 
@@ -40,95 +40,6 @@ open Matrix Matrix.ProjectiveSpecialLinearGroup MulAction OnePoint Subgroup
 open scoped MatrixGroups Modular
 
 namespace Subgroup
-
-/-- For any `Γ' ≤ PSL(2, ℤ)`, the Fuchsian cusp points of `Γ'.map psl2zToPSL2R` are exactly
-Mathlib's cusps of `Γ'.liftSL ≤ SL(2, ℤ)`. -/
-theorem isCuspPoint_map_psl2zToPSL2R_iff_isCusp (Γ' : Subgroup PSL(2, ℤ)) (c : OnePoint ℝ) :
-    (Γ'.map psl2zToPSL2R).IsCuspPoint c ↔ IsCusp c (Γ'.liftSL : Subgroup (GL (Fin 2) ℝ)) := by
-  constructor
-  · intro hc
-    obtain ⟨⟨_, g, hg, rfl⟩, hfix, hpar⟩ :=
-      Subgroup.isCuspPoint_iff_exists_mem_stabilizer_isParabolic.mp hc
-    induction g using QuotientGroup.induction_on with
-    | H a =>
-      exact ⟨Matrix.SpecialLinearGroup.mapGL ℝ a,
-        Subgroup.mem_map_of_mem _ (Subgroup.mem_liftSL.mpr hg),
-        (TauCeti.isParabolic_psl2zToPSL2R_iff a).mp hpar,
-        (TauCeti.psl2zToPSL2R_smul_boundary a c) ▸ (mem_stabilizer_iff.mp hfix)⟩
-  · rintro ⟨p, hp, hpar, hfix⟩
-    obtain ⟨a, ha, rfl⟩ := Subgroup.mem_map.mp hp
-    apply Subgroup.isCuspPoint_iff_exists_mem_stabilizer_isParabolic.mpr
-    refine ⟨⟨psl2zToPSL2R (a : PSL(2, ℤ)),
-      Subgroup.mem_map_of_mem _ (Subgroup.mem_liftSL.mp ha)⟩, ?_, ?_⟩
-    · exact mem_stabilizer_iff.mpr (by
-        simpa only [MulAction.subgroup_smul_def, TauCeti.psl2zToPSL2R_smul_boundary] using hfix)
-    · exact (TauCeti.isParabolic_psl2zToPSL2R_iff a).mpr hpar
-
-private theorem mem_orbit_map_psl2zToPSL2R_iff (Γ' : Subgroup PSL(2, ℤ)) (c₁ c₂ : OnePoint ℝ) :
-    c₁ ∈ orbit (Γ'.map psl2zToPSL2R) c₂ ↔
-      c₁ ∈ orbit (Γ'.liftSL : Subgroup (GL (Fin 2) ℝ)) c₂ := by
-  simp only [mem_orbit_iff, Subtype.exists, Subgroup.smul_def]
-  constructor
-  · rintro ⟨_, ⟨g, hg, rfl⟩, hsmul⟩
-    obtain ⟨γ, rfl⟩ := QuotientGroup.mk_surjective g
-    exact ⟨Matrix.SpecialLinearGroup.mapGL ℝ γ,
-      Subgroup.mem_map_of_mem _ (Subgroup.mem_liftSL.mpr hg),
-      by rwa [← TauCeti.psl2zToPSL2R_smul_boundary]⟩
-  · rintro ⟨_, ⟨γ, hγ, rfl⟩, hsmul⟩
-    exact ⟨psl2zToPSL2R (γ : PSL(2, ℤ)),
-      Subgroup.mem_map_of_mem _ (Subgroup.mem_liftSL.mp hγ),
-      by rwa [TauCeti.psl2zToPSL2R_smul_boundary]⟩
-
-/-- **Fuchsian vs. Mathlib cusp orbits.** For any `Γ' ≤ PSL(2, ℤ)`, the Fuchsian cusp orbits
-`(Γ'.map psl2zToPSL2R).CuspOrbit` biject onto Mathlib's `CuspOrbits Γ'.liftSL`. -/
-def fuchsianCuspOrbitEquivCuspOrbits (Γ' : Subgroup PSL(2, ℤ)) :
-    (Γ'.map psl2zToPSL2R).CuspOrbit ≃ CuspOrbits (Γ'.liftSL : Subgroup (GL (Fin 2) ℝ)) :=
-  let invFun : CuspOrbits (Γ'.liftSL : Subgroup (GL (Fin 2) ℝ)) →
-      (Γ'.map psl2zToPSL2R).CuspOrbit :=
-    Quotient.lift
-      (fun c ↦ (Γ'.map psl2zToPSL2R).cuspOrbitMk ⟨c.val, Subgroup.mem_cuspPoints.mpr
-        ((isCuspPoint_map_psl2zToPSL2R_iff_isCusp Γ' c.val).mpr
-          (mem_cuspsSubMulAction.mp c.property))⟩)
-      fun _ _ h ↦ by
-        rw [Subgroup.cuspOrbitMk_eq_iff, mem_orbit_map_psl2zToPSL2R_iff]
-        obtain ⟨g, hg⟩ := mem_orbit_iff.mp (orbitRel_apply.mp h)
-        exact mem_orbit_iff.mpr ⟨g, congrArg Subtype.val hg⟩
-  (Equiv.ofBijective invFun
-    ⟨fun a b hab ↦ by
-      induction a using Quotient.inductionOn with | h c₁ =>
-      induction b using Quotient.inductionOn with | h c₂ =>
-      dsimp only [invFun] at hab
-      rw [Quotient.lift_mk, Quotient.lift_mk, Subgroup.cuspOrbitMk_eq_iff,
-        mem_orbit_map_psl2zToPSL2R_iff] at hab
-      obtain ⟨g, hg⟩ := mem_orbit_iff.mp hab
-      exact Quotient.sound (orbitRel_apply.mpr (mem_orbit_iff.mpr ⟨g, Subtype.ext hg⟩)),
-    fun C ↦ by
-      obtain ⟨c, rfl⟩ := Subgroup.cuspOrbitMk_surjective C
-      exact ⟨Quotient.mk'' ⟨c.val, mem_cuspsSubMulAction.mpr
-        ((isCuspPoint_map_psl2zToPSL2R_iff_isCusp Γ' c.val).mp
-          (Subgroup.mem_cuspPoints.mp c.property))⟩, rfl⟩⟩).symm
-
-/-- `fuchsianCuspOrbitEquivCuspOrbits` sends a Mathlib cusp orbit back to the corresponding
-Fuchsian cusp orbit. -/
-@[simp]
-theorem fuchsianCuspOrbitEquivCuspOrbits_symm_mk (Γ' : Subgroup PSL(2, ℤ))
-    (c : cuspsSubMulAction (Γ'.liftSL : Subgroup (GL (Fin 2) ℝ))) :
-    (fuchsianCuspOrbitEquivCuspOrbits Γ').symm (Quotient.mk'' c) =
-      (Γ'.map psl2zToPSL2R).cuspOrbitMk ⟨c.val, Subgroup.mem_cuspPoints.mpr
-        ((isCuspPoint_map_psl2zToPSL2R_iff_isCusp Γ' c.val).mpr
-          (mem_cuspsSubMulAction.mp c.property))⟩ :=
-  (rfl)
-
-/-- `fuchsianCuspOrbitEquivCuspOrbits` sends the Fuchsian cusp orbit of `c` to the Mathlib cusp
-orbit of `c`. -/
-@[simp]
-theorem fuchsianCuspOrbitEquivCuspOrbits_cuspOrbitMk (Γ' : Subgroup PSL(2, ℤ))
-    (c : (Γ'.map psl2zToPSL2R).cuspPoints) :
-    fuchsianCuspOrbitEquivCuspOrbits Γ' ((Γ'.map psl2zToPSL2R).cuspOrbitMk c) =
-      Quotient.mk'' ⟨c.val, mem_cuspsSubMulAction.mpr
-        ((isCuspPoint_map_psl2zToPSL2R_iff_isCusp Γ' c.val).mp
-          (Subgroup.mem_cuspPoints.mp c.property))⟩ :=
-  (Equiv.eq_symm_apply _).mp rfl
 
 variable (H : Subgroup SL(2, ℤ)) [H.FiniteIndex]
 
@@ -242,3 +153,79 @@ instance finite_cuspOrbit_map_sl2zToPSL2R : Finite (H.map sl2zToPSL2R).CuspOrbit
   H.isCofinite_map_sl2zToPSL2R.finite_cuspOrbit
 
 end Subgroup
+
+namespace TauCeti.ModularGroup
+
+/-- The group isomorphism between `PSL(2, ℤ)` and the range of `psl2zToPSL2R` in `PSL(2, ℝ)`. -/
+def modularMulEquivRange : PSL(2, ℤ) ≃* psl2zToPSL2R.range :=
+  MonoidHom.ofInjective psl2zToPSL2R_injective
+
+/-- Mapping `Γ' ≤ PSL(2, ℤ)` along `modularMulEquivRange` yields `(Γ'.map psl2zToPSL2R)` viewed
+inside `psl2zToPSL2R.range`. -/
+theorem map_modularMulEquivRange (Γ' : Subgroup PSL(2, ℤ)) :
+    Γ'.map (modularMulEquivRange : PSL(2, ℤ) →* psl2zToPSL2R.range) =
+      (Γ'.map psl2zToPSL2R).subgroupOf psl2zToPSL2R.range := by
+  ext ⟨x, hx⟩
+  simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf, modularMulEquivRange, Subtype.ext_iff]
+  rfl
+
+/-- Transport of left cosets `PSL(2, ℤ) ⧸ Γ'` to cosets in `psl2zToPSL2R.range`. -/
+def modularCosetEquiv (Γ' : Subgroup PSL(2, ℤ)) :
+    PSL(2, ℤ) ⧸ Γ' ≃ psl2zToPSL2R.range ⧸ (Γ'.map psl2zToPSL2R).subgroupOf psl2zToPSL2R.range :=
+  TauCeti.QuotientGroup.congrOfMapEq modularMulEquivRange (map_modularMulEquivRange Γ')
+
+/-- Evaluation of `modularCosetEquiv` on a coset representative. -/
+theorem modularCosetEquiv_mk (Γ' : Subgroup PSL(2, ℤ)) (g : PSL(2, ℤ)) :
+    modularCosetEquiv Γ' (g : PSL(2, ℤ) ⧸ Γ') =
+      ((⟨psl2zToPSL2R g, g, rfl⟩ : psl2zToPSL2R.range) :
+        psl2zToPSL2R.range ⧸ (Γ'.map psl2zToPSL2R).subgroupOf psl2zToPSL2R.range) :=
+  TauCeti.QuotientGroup.congrOfMapEq_mk modularMulEquivRange (map_modularMulEquivRange Γ') g
+
+/-- Equivariance of `modularCosetEquiv` under left translation. -/
+theorem modularCosetEquiv_smul (Γ' : Subgroup PSL(2, ℤ)) (s : PSL(2, ℤ))
+    (q : PSL(2, ℤ) ⧸ Γ') :
+    modularCosetEquiv Γ' (s • q) = (⟨psl2zToPSL2R s, s, rfl⟩ : psl2zToPSL2R.range) •
+      modularCosetEquiv Γ' q :=
+  TauCeti.QuotientGroup.congrOfMapEq_smul modularMulEquivRange (map_modularMulEquivRange Γ') s q
+
+/-- The `(Γ'.map psl2zToPSL2R)`-orbit of `g⁻¹ • p` associated to a coset `g Γ' : PSL(2, ℤ) ⧸ Γ'`,
+for any action of `PSL(2, ℝ)` on `α`. -/
+def inverseTranslateOrbit {α : Type*} [MulAction PSL(2, ℝ) α]
+    (Γ' : Subgroup PSL(2, ℤ)) (p : α) (q : PSL(2, ℤ) ⧸ Γ') :
+    orbitRel.Quotient (Γ'.map psl2zToPSL2R) α :=
+  TauCeti.orbitOfCosetTranslate p (modularCosetEquiv Γ' q)
+
+/-- Evaluating `inverseTranslateOrbit` on a coset `g Γ'` gives the orbit of `psl2zToPSL2R g⁻¹ • p`.
+-/
+@[simp]
+theorem inverseTranslateOrbit_mk {α : Type*} [MulAction PSL(2, ℝ) α]
+    (Γ' : Subgroup PSL(2, ℤ)) (p : α) (g : PSL(2, ℤ)) :
+    inverseTranslateOrbit Γ' p (g : PSL(2, ℤ) ⧸ Γ') =
+      Quotient.mk (orbitRel (Γ'.map psl2zToPSL2R) α) (psl2zToPSL2R g⁻¹ • p) := by
+  rw [inverseTranslateOrbit, modularCosetEquiv_mk, TauCeti.orbitOfCosetTranslate_mk, map_inv]
+
+/-- Two cosets have the same `inverseTranslateOrbit` at `p` iff they lie in the same orbit of
+the cyclic subgroup `⟨s⟩` generating the level-one stabilizer of `p`. -/
+theorem inverseTranslateOrbit_eq_iff_mem_orbit_zpowers {α : Type*} [MulAction PSL(2, ℝ) α]
+    (Γ' : Subgroup PSL(2, ℤ)) {p : α} {s : PSL(2, ℤ)}
+    (hstab : ∀ g : PSL(2, ℤ), psl2zToPSL2R g • p = p ↔ g ∈ Subgroup.zpowers s)
+    (q₁ q₂ : PSL(2, ℤ) ⧸ Γ') :
+    inverseTranslateOrbit Γ' p q₁ = inverseTranslateOrbit Γ' p q₂ ↔
+      q₁ ∈ MulAction.orbit (Subgroup.zpowers s) q₂ := by
+  rw [inverseTranslateOrbit, inverseTranslateOrbit,
+    TauCeti.orbitOfCosetTranslate_eq_iff (Γ'.map_le_range psl2zToPSL2R), mem_orbit_iff,
+    mem_orbit_iff]
+  constructor
+  · rintro ⟨⟨⟨_, g, rfl⟩, hg⟩, hsmul⟩
+    have hmem : g ∈ Subgroup.zpowers s :=
+      (hstab g).mp (by simpa [mem_stabilizer_iff, Subgroup.smul_def] using hg)
+    refine ⟨⟨g, hmem⟩, (modularCosetEquiv Γ').injective ?_⟩
+    simpa [Subgroup.smul_def, modularCosetEquiv_smul] using hsmul
+  · rintro ⟨⟨g, hg⟩, hsmul⟩
+    have hfix : (⟨psl2zToPSL2R g, g, rfl⟩ : psl2zToPSL2R.range) ∈
+        stabilizer psl2zToPSL2R.range p := by
+      simpa [mem_stabilizer_iff, Subgroup.smul_def] using (hstab g).mpr hg
+    refine ⟨⟨⟨psl2zToPSL2R g, g, rfl⟩, hfix⟩, ?_⟩
+    simpa [Subgroup.smul_def, ← modularCosetEquiv_smul] using congrArg (modularCosetEquiv Γ') hsmul
+
+end TauCeti.ModularGroup

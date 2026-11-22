@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
+public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic.Basic
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
 import TauCeti.NumberTheory.Modular.ConjugateTranslation

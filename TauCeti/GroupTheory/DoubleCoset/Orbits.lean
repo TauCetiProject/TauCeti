@@ -9,7 +9,6 @@ public import TauCeti.GroupTheory.GroupAction.Burnside
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import TauCeti.GroupTheory.DoubleCoset.Inv
 public import Mathlib.GroupTheory.Coset.Card
-public import Mathlib.GroupTheory.DoubleCoset
 import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
@@ -118,6 +117,13 @@ theorem preimage_orbit_eq_doubleCoset (s : G) (H K : Subgroup G) :
       = DoubleCoset.doubleCoset s (K : Set G) (H : Set G) :=
   Set.ext fun _ => (mem_doubleCoset_iff_mk_mem_orbit s H K).symm
 
+private theorem orbitRel_mk_iff_doubleCoset_inv_eq (H K : Subgroup G) (g₁ g₂ : G) :
+    orbitRel K (G ⧸ H) (g₁ : G ⧸ H) (g₂ : G ⧸ H) ↔
+      DoubleCoset.mk H K g₁⁻¹ = DoubleCoset.mk H K g₂⁻¹ := by
+  rw [orbitRel_apply, ← mem_doubleCoset_iff_mk_mem_orbit,
+    ← DoubleCoset.inv_mem_doubleCoset_inv_iff, DoubleCoset.mem_doubleCoset]
+  exact DoubleCoset.eq.symm.trans eq_comm
+
 /-- **Orbits on cosets are double cosets.** The `K`-orbits on `G ⧸ H` are in canonical bijection
 with the double cosets `H \ G / K`, sending the `K`-orbit of `gH` to `H g⁻¹ K`. -/
 noncomputable def orbitQuotientEquivDoubleCoset (H K : Subgroup G) :
@@ -131,20 +137,15 @@ noncomputable def orbitQuotientEquivDoubleCoset (H K : Subgroup G) :
       fun q₁ q₂ h => by
         induction q₁ using QuotientGroup.induction_on with | H g₁ =>
         induction q₂ using QuotientGroup.induction_on with | H g₂ =>
-        change orbitRel K (G ⧸ H) (g₁ : G ⧸ H) (g₂ : G ⧸ H) at h
-        rw [orbitRel_apply, ← mem_doubleCoset_iff_mk_mem_orbit,
-          ← DoubleCoset.inv_mem_doubleCoset_inv_iff] at h
-        exact (DoubleCoset.eq.mpr (DoubleCoset.mem_doubleCoset.mp h)).symm)
+        rw [Quotient.lift_mk, Quotient.lift_mk]
+        exact (orbitRel_mk_iff_doubleCoset_inv_eq H K g₁ g₂).mp h)
     ⟨fun q₁ q₂ hq => by
       induction q₁ using Quotient.ind with | _ c₁ =>
       induction q₂ using Quotient.ind with | _ c₂ =>
       induction c₁ using QuotientGroup.induction_on with | H g₁ =>
       induction c₂ using QuotientGroup.induction_on with | H g₂ =>
-      change DoubleCoset.mk H K g₁⁻¹ = DoubleCoset.mk H K g₂⁻¹ at hq
-      have hmem : g₁⁻¹ ∈ DoubleCoset.doubleCoset g₂⁻¹ (H : Set G) (K : Set G) :=
-        DoubleCoset.mem_doubleCoset.mpr (DoubleCoset.eq.mp hq.symm)
-      rw [DoubleCoset.inv_mem_doubleCoset_inv_iff, mem_doubleCoset_iff_mk_mem_orbit] at hmem
-      exact Quotient.sound' (orbitRel_apply.mpr hmem),
+      rw [Quotient.lift_mk, Quotient.lift_mk, Quotient.lift_mk, Quotient.lift_mk] at hq
+      exact Quotient.sound' ((orbitRel_mk_iff_doubleCoset_inv_eq H K g₁ g₂).mpr hq),
     fun d => by
       induction d using Quotient.ind' with | _ g =>
       refine ⟨Quotient.mk (orbitRel K (G ⧸ H)) ((g⁻¹ : G) : G ⧸ H), ?_⟩

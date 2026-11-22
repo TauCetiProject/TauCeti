@@ -265,6 +265,23 @@ theorem pslS_mul_self : pslS * pslS = 1 := by
 @[simp]
 theorem pslS_inv : pslS⁻¹ = pslS := inv_eq_of_mul_eq_one_right pslS_mul_self
 
+/-- Casting an `SL(2, ℤ)` matrix to `SL(2, ℝ)` and embedding into `GL(2, ℝ)` agrees with
+`Matrix.SpecialLinearGroup.mapGL ℝ`. -/
+theorem toGL_map_intCastRingHom (a : SL(2, ℤ)) :
+    Matrix.SpecialLinearGroup.toGL (Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) a) =
+      Matrix.SpecialLinearGroup.mapGL ℝ a := by
+  apply Units.ext
+  ext i j
+  simp [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
+
+/-- An element of `SL(2, ℤ)` has parabolic image under `psl2zToPSL2R` exactly when its image
+`mapGL ℝ a` in `GL(2, ℝ)` is parabolic. -/
+theorem isParabolic_psl2zToPSL2R_iff (a : SL(2, ℤ)) :
+    Matrix.ProjectiveSpecialLinearGroup.IsParabolic (psl2zToPSL2R (a : PSL(2, ℤ))) ↔
+      (Matrix.SpecialLinearGroup.mapGL ℝ a).IsParabolic := by
+  rw [psl2zToPSL2R_mk, sl2zToPSL2R_apply,
+    Matrix.ProjectiveSpecialLinearGroup.isParabolic_mk_iff, toGL_map_intCastRingHom]
+
 end TauCeti
 
 /-- The det-normalized `SL(2, ℝ)` representative of a `GL(2, ℝ)⁺` element, as a monoid

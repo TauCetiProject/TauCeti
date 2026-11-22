@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
+public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic.Basic
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Degree
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 import TauCeti.Analysis.Complex.Fuchsian.Compactification.Cusp.Fiber

@@ -5,14 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.DoubleCoset
-public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
+public import TauCeti.GroupTheory.DoubleCoset.Map
 public import TauCeti.GroupTheory.DoubleCoset.Orbits
 public import TauCeti.GroupTheory.GroupAction.Orbit.CycleType
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Projective
 public import TauCeti.NumberTheory.Modular.CosetTriple
-import TauCeti.Combinatorics.PermutationTriple.Mirror
-import TauCeti.GroupTheory.Coset.Basic
+import TauCeti.GroupTheory.Perm.Semiconj
 
 /-!
 # Combinatorial invariants of the modular coset triple
@@ -159,54 +156,6 @@ theorem ellipticThree_le : ellipticThree Γ' e ≤ n := by
 
 /-! ### Cycle periods of `permT`, double cosets, and width ratios -/
 
-/-- The period of `permT Γ' e` at `e (g Γ')` divides `h` iff `g⁻¹ T ^ h g ∈ Γ'`. -/
-theorem minimalPeriod_permT_dvd_iff (g : PSL(2, ℤ)) (h : ℕ) :
-    Function.minimalPeriod (permT Γ' e) (e (g : PSL(2, ℤ) ⧸ Γ')) ∣ h ↔
-      g⁻¹ * (T : PSL(2, ℤ)) ^ h * g ∈ Γ' := by
-  rw [← Function.isPeriodicPt_iff_minimalPeriod_dvd, Function.IsPeriodicPt, Function.IsFixedPt,
-    Perm.iterate_eq_pow, permT_pow_apply_eq_iff]
-
-/-- Lifted to `SL(2, ℤ)`, the period of `permT Γ' e` at `e (σ Γ')` divides `h` iff
-`σ⁻¹ T ^ h σ ∈ Γ'.liftSL`. -/
-theorem minimalPeriod_permT_mk_dvd_iff (σ : SL(2, ℤ)) (h : ℕ) :
-    Function.minimalPeriod (permT Γ' e) (e ((σ : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) ∣ h ↔
-      σ⁻¹ * _root_.ModularGroup.T ^ h * σ ∈ Γ'.liftSL := by
-  rw [minimalPeriod_permT_dvd_iff, Subgroup.mem_liftSL, QuotientGroup.mk_mul,
-    QuotientGroup.mk_mul, QuotientGroup.mk_inv, QuotientGroup.mk_pow]
-
-/-- Every point has positive minimal period under `permT Γ' e`. -/
-theorem minimalPeriod_permT_pos (x : Fin n) : 0 < Function.minimalPeriod (permT Γ' e) x :=
-  Function.minimalPeriod_pos_of_mem_periodicPts ⟨orderOf (permT Γ' e), orderOf_pos _, by
-    simp [Function.IsPeriodicPt, Function.IsFixedPt, ← Equiv.Perm.coe_pow]⟩
-
-/-- The period of `permT Γ' e` at `e (g Γ')` is the least positive `h` with `g⁻¹ T ^ h g ∈ Γ'`. -/
-theorem minimalPeriod_permT_eq_sInf (g : PSL(2, ℤ)) :
-    Function.minimalPeriod (permT Γ' e) (e (g : PSL(2, ℤ) ⧸ Γ')) =
-      sInf {h : ℕ | 0 < h ∧ g⁻¹ * (T : PSL(2, ℤ)) ^ h * g ∈ Γ'} := by
-  have hmem : Function.minimalPeriod (permT Γ' e) (e (g : PSL(2, ℤ) ⧸ Γ')) ∈
-      {h : ℕ | 0 < h ∧ g⁻¹ * (T : PSL(2, ℤ)) ^ h * g ∈ Γ'} :=
-    ⟨minimalPeriod_permT_pos Γ' e _, (minimalPeriod_permT_dvd_iff Γ' e g _).mp dvd_rfl⟩
-  exact le_antisymm
-    (le_csInf ⟨_, hmem⟩ fun h ⟨hh, hmem'⟩ ↦
-      Nat.le_of_dvd hh ((minimalPeriod_permT_dvd_iff Γ' e g h).mpr hmem'))
-    (Nat.sInf_le hmem)
-
-/-- For `σ : SL(2, ℤ)`, the period of `permT Γ' e` at `e (σ⁻¹ Γ')` (for the cusp `σ • ∞`) is the
-least positive `h` with `σ T ^ h σ⁻¹ ∈ Γ'.liftSL`. -/
-theorem minimalPeriod_permT_mk_inv_eq_sInf (σ : SL(2, ℤ)) :
-    Function.minimalPeriod (permT Γ' e)
-        (e (((σ⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) =
-      sInf {h : ℕ | 0 < h ∧ σ * _root_.ModularGroup.T ^ h * σ⁻¹ ∈ Γ'.liftSL} := by
-  rw [minimalPeriod_permT_eq_sInf]; congr 1; ext h
-  simp [Subgroup.mem_liftSL, QuotientGroup.mk_mul, QuotientGroup.mk_inv, QuotientGroup.mk_pow]
-
-/-- At the base coset `e 1` (the cusp `∞`), the period of `permT Γ' e` is the least positive `h`
-with `T ^ h ∈ Γ'.liftSL`. -/
-theorem minimalPeriod_permT_one :
-    Function.minimalPeriod (permT Γ' e) (e ((1 : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) =
-      sInf {h : ℕ | 0 < h ∧ _root_.ModularGroup.T ^ h ∈ Γ'.liftSL} := by
-  simpa using minimalPeriod_permT_mk_inv_eq_sInf Γ' e 1
-
 /-- **Double-coset bijection for cusps.** The cycles of `permT Γ' e` are in canonical bijection
 with the double cosets `Γ' \ PSL(2, ℤ) / ⟨T⟩`, sending the cycle of `e (g Γ')` to
 `Γ' g⁻¹ ⟨T⟩`. -/
@@ -249,15 +198,6 @@ theorem cuspCount_eq_card_doubleCoset :
     cuspCount Γ' e = Nat.card
       (DoubleCoset.Quotient (Γ' : Set PSL(2, ℤ)) (Subgroup.zpowers (T : PSL(2, ℤ)))) := by
   rw [cuspCount_def, orbitCount_def, Nat.card_congr (permTCycleEquivDoubleCoset Γ' e)]
-
-/-- **Divisibility of cusp widths under subgroup inclusion.** If `Γ'' ≤ Γ'`, then the cusp width
-of `Γ'` at `g Γ'` divides the cusp width of `Γ''` at `g Γ''`. -/
-theorem minimalPeriod_permT_dvd_of_le {Γ'' Γ' : Subgroup PSL(2, ℤ)} (h : Γ'' ≤ Γ')
-    (e'' : PSL(2, ℤ) ⧸ Γ'' ≃ Fin m) (e' : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) (g : PSL(2, ℤ)) :
-    Function.minimalPeriod (permT Γ' e') (e' (g : PSL(2, ℤ) ⧸ Γ')) ∣
-      Function.minimalPeriod (permT Γ'' e'') (e'' (g : PSL(2, ℤ) ⧸ Γ'')) :=
-  (minimalPeriod_permT_dvd_iff Γ' e' g _).mpr <|
-    h ((minimalPeriod_permT_dvd_iff Γ'' e'' g _).mp dvd_rfl)
 
 /-- The canonical map on `permT`-cycles induced by `Γ'' ≤ Γ'`, sending the cycle of `e'' (g Γ'')`
 to the cycle of `e' (g Γ')`. -/
@@ -318,6 +258,21 @@ theorem cuspCycleMapOfLE_comp {Γ''' Γ'' Γ' : Subgroup PSL(2, ℤ)}
       cuspCycleMapOfLE (h₁.trans h₂) e''' e' :=
   funext (cuspCycleMapOfLE_cuspCycleMapOfLE h₁ h₂ e''' e'' e')
 
+/-- Naturality of `permTCycleEquivDoubleCoset` under subgroup inclusion `Γ'' ≤ Γ'`:
+`cuspCycleMapOfLE` corresponds to `DoubleCoset.quotientMapOfLELeft`. -/
+@[simp]
+theorem permTCycleEquivDoubleCoset_cuspCycleMapOfLE {Γ'' Γ' : Subgroup PSL(2, ℤ)} (h : Γ'' ≤ Γ')
+    (e'' : PSL(2, ℤ) ⧸ Γ'' ≃ Fin m) (e' : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+    (q : Quotient (SameCycle.setoid (permT Γ'' e''))) :
+    permTCycleEquivDoubleCoset Γ' e' (cuspCycleMapOfLE h e'' e' q) =
+      DoubleCoset.quotientMapOfLELeft h (Subgroup.zpowers (T : PSL(2, ℤ)))
+        (permTCycleEquivDoubleCoset Γ'' e'' q) := by
+  induction q using Quotient.ind with | _ y =>
+  obtain ⟨qy, rfl⟩ := e''.surjective y
+  induction qy using QuotientGroup.induction_on with | H g =>
+  rw [cuspCycleMapOfLE_mk, permTCycleEquivDoubleCoset_mk, permTCycleEquivDoubleCoset_mk,
+    DoubleCoset.quotientMapOfLELeft_apply_mk]
+
 /-- The width of a `permT`-cycle, well-defined on `Quotient (SameCycle.setoid (permT Γ' e))`. -/
 noncomputable def cuspCycleWidth :
     Quotient (SameCycle.setoid (permT Γ' e)) → ℕ :=
@@ -336,11 +291,8 @@ theorem cuspWidths_eq_map_cuspCycleWidth
 
 /-- The period of `permT Γ' e` at any point `x` belongs to `cuspWidths Γ' e`. -/
 theorem minimalPeriod_permT_mem_cuspWidths (x : Fin n) :
-    Function.minimalPeriod (permT Γ' e) x ∈ cuspWidths Γ' e := by
-  classical
-  have := Fintype.ofFinite (Quotient (SameCycle.setoid (permT Γ' e)))
-  rw [cuspWidths_eq_map_cuspCycleWidth]
-  exact Multiset.mem_map.mpr ⟨Quotient.mk _ x, Finset.mem_univ _, rfl⟩
+    Function.minimalPeriod (permT Γ' e) x ∈ cuspWidths Γ' e :=
+  Perm.minimalPeriod_mem_fullCycleType (permT Γ' e) x
 
 /-- For `Γ'' ≤ Γ'`, the width of the image cusp divides the width of each cusp above it. -/
 theorem cuspCycleWidth_map_dvd {Γ'' Γ' : Subgroup PSL(2, ℤ)} (h : Γ'' ≤ Γ')
@@ -370,42 +322,73 @@ theorem natCard_fiber_permTCycleEquivDoubleCoset
   rw [← natCard_fiber_cuspCycle Γ' e ((permTCycleEquivDoubleCoset Γ' e).symm d)]
   exact Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ (Equiv.eq_symm_apply _).symm)
 
-private theorem sum_cuspCycleWidth_fiber_eq_natCard {Γ'' Γ' : Subgroup PSL(2, ℤ)} (h : Γ'' ≤ Γ')
-    (e'' : PSL(2, ℤ) ⧸ Γ'' ≃ Fin m) (e' : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
-    (c : Quotient (SameCycle.setoid (permT Γ' e'))) :
-    ∑ᶠ q ∈ {q | cuspCycleMapOfLE h e'' e' q = c}, cuspCycleWidth Γ'' e'' q =
-      Nat.card {y : Fin m // cuspCycleMapOfLE h e'' e' (Quotient.mk _ y) = c} := by
-  classical
-  have : Fintype (Quotient (SameCycle.setoid (permT Γ'' e''))) := Fintype.ofFinite _
-  have hSfin : ({q | cuspCycleMapOfLE h e'' e' q = c} : Set _).Finite := Set.toFinite _
-  rw [finsum_mem_eq_finite_toFinset_sum _ hSfin,
-    show hSfin.toFinset = Finset.univ.filter (fun q ↦ cuspCycleMapOfLE h e'' e' q = c) by
-      ext; simp]
-  calc
-    ∑ q ∈ Finset.univ.filter (fun q ↦ cuspCycleMapOfLE h e'' e' q = c), cuspCycleWidth Γ'' e'' q
-      = ∑ q ∈ Finset.univ.filter (fun q ↦ cuspCycleMapOfLE h e'' e' q = c),
-          (Finset.univ.filter (fun y : Fin m ↦
-            Quotient.mk (SameCycle.setoid (permT Γ'' e'')) y = q)).card := by
-        refine Finset.sum_congr rfl fun q _ ↦ ?_
-        rw [← natCard_fiber_cuspCycle Γ'' e'' q, Nat.card_eq_fintype_card, Fintype.card_subtype]
-    _ = ∑ q ∈ Finset.univ.filter (fun q ↦ cuspCycleMapOfLE h e'' e' q = c),
-          ∑ _y ∈ (Finset.univ.filter (fun y : Fin m ↦
-            cuspCycleMapOfLE h e'' e' (Quotient.mk _ y) = c)).filter
-              (fun y ↦ Quotient.mk (SameCycle.setoid (permT Γ'' e'')) y = q), (1 : ℕ) := by
-        refine Finset.sum_congr rfl fun q hq ↦ ?_
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hq
-        rw [← Finset.card_eq_sum_ones]
-        congr 1; ext y
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-        exact ⟨fun hy ↦ ⟨by rw [hy, hq], hy⟩, And.right⟩
-    _ = (Finset.univ.filter (fun y : Fin m ↦
-          cuspCycleMapOfLE h e'' e' (Quotient.mk _ y) = c)).card := by
-        rw [Finset.card_eq_sum_ones]
-        exact Finset.sum_fiberwise_of_maps_to
-          (fun y hy ↦ by
-            simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hy ⊢; exact hy) _
-    _ = Nat.card {y : Fin m // cuspCycleMapOfLE h e'' e' (Quotient.mk _ y) = c} := by
-        rw [Nat.card_eq_fintype_card, Fintype.card_subtype]
+/-- The canonical map from right cosets `Γ' \ PSL(2, ℤ)` to double cosets
+`Γ' \ PSL(2, ℤ) / ⟨T⟩`. -/
+def rightCosetToDoubleCoset :
+    Quotient (QuotientGroup.rightRel Γ') →
+      DoubleCoset.Quotient (Γ' : Set PSL(2, ℤ)) (Subgroup.zpowers (T : PSL(2, ℤ))) :=
+  Quotient.lift (fun g ↦ DoubleCoset.mk Γ' (Subgroup.zpowers (T : PSL(2, ℤ))) g) fun a b h ↦
+    DoubleCoset.eq.mpr ⟨b * a⁻¹, QuotientGroup.rightRel_apply.mp h, 1, Subgroup.one_mem _, by simp⟩
+
+/-- `rightCosetToDoubleCoset` sends the right coset `Γ' g` to `Γ' g ⟨T⟩`. -/
+@[simp]
+theorem rightCosetToDoubleCoset_mk (g : PSL(2, ℤ)) :
+    rightCosetToDoubleCoset Γ' (Quotient.mk'' g) =
+      DoubleCoset.mk Γ' (Subgroup.zpowers (T : PSL(2, ℤ))) g :=
+  (rfl)
+
+/-- **The width of a double coset as its number of right cosets.** The number of right cosets
+`Γ' g : Quotient (QuotientGroup.rightRel Γ')` mapping into a double coset `d` equals
+`cuspCycleWidth Γ' e ((permTCycleEquivDoubleCoset Γ' e).symm d)`. -/
+theorem natCard_fiber_rightCosetToDoubleCoset
+    (d : DoubleCoset.Quotient (Γ' : Set PSL(2, ℤ)) (Subgroup.zpowers (T : PSL(2, ℤ)))) :
+    Nat.card {q : Quotient (QuotientGroup.rightRel Γ') // rightCosetToDoubleCoset Γ' q = d} =
+      cuspCycleWidth Γ' e ((permTCycleEquivDoubleCoset Γ' e).symm d) := by
+  rw [← natCard_fiber_permTCycleEquivDoubleCoset Γ' e d]
+  refine Nat.card_congr
+    (Equiv.subtypeEquiv ((QuotientGroup.quotientRightRelEquivQuotientLeftRel Γ').trans e)
+      fun q ↦ ?_)
+  induction q using Quotient.inductionOn' with | h g =>
+  simp [QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk]
+
+private def cosetProjOfLE {Γ'' Γ' : Subgroup PSL(2, ℤ)} (h : Γ'' ≤ Γ')
+    (e'' : PSL(2, ℤ) ⧸ Γ'' ≃ Fin m) (e' : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) : Fin m → Fin n :=
+  fun y ↦ e' (Subgroup.quotientMapOfLE h (e''.symm y))
+
+private theorem semiconj_cosetProjOfLE {Γ'' Γ' : Subgroup PSL(2, ℤ)} (h : Γ'' ≤ Γ')
+    (e'' : PSL(2, ℤ) ⧸ Γ'' ≃ Fin m) (e' : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+    Function.Semiconj (cosetProjOfLE h e'' e') (permT Γ'' e'') (permT Γ' e') := by
+  intro y
+  obtain ⟨q, rfl⟩ := e''.surjective y
+  induction q using QuotientGroup.induction_on with | H g =>
+  have h1 : permT Γ'' e'' (e'' (g : PSL(2, ℤ) ⧸ Γ'')) =
+      e'' ((((T : PSL(2, ℤ)) * g : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ'')) := by
+    simp
+  have h2 : permT Γ' e' (e' (g : PSL(2, ℤ) ⧸ Γ')) =
+      e' ((((T : PSL(2, ℤ)) * g : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) := by
+    simp
+  simp only [cosetProjOfLE, h1, e''.symm_apply_apply, Subgroup.quotientMapOfLE_apply_mk, h2]
+
+private theorem cycleQuotientMap_semiconj_cosetProjOfLE {Γ'' Γ' : Subgroup PSL(2, ℤ)} (h : Γ'' ≤ Γ')
+    (e'' : PSL(2, ℤ) ⧸ Γ'' ≃ Fin m) (e' : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+    (semiconj_cosetProjOfLE h e'' e').cycleQuotientMap = cuspCycleMapOfLE h e'' e' := by
+  ext q
+  induction q using Quotient.ind with | _ y =>
+  rw [Function.Semiconj.cycleQuotientMap_mk, cuspCycleMapOfLE_mk_apply]
+  rfl
+
+private theorem lift_minimalPeriod_eq_cuspCycleWidth {Γ' : Subgroup PSL(2, ℤ)}
+    (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+    Quotient.lift (s := SameCycle.setoid (permT Γ' e)) (Function.minimalPeriod (permT Γ' e))
+        (fun _ _ hxy ↦ hxy.minimalPeriod_eq) = cuspCycleWidth Γ' e := by
+  ext q
+  induction q using Quotient.ind with | _ y => rfl
+
+private theorem card_fiber_cosetProjOfLE {Γ'' Γ' : Subgroup PSL(2, ℤ)} (h : Γ'' ≤ Γ')
+    (e'' : PSL(2, ℤ) ⧸ Γ'' ≃ Fin m) (e' : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) (x : Fin n) :
+    Nat.card {y : Fin m // cosetProjOfLE h e'' e' y = x} = Γ''.relIndex Γ' := by
+  rw [← Subgroup.card_fiber_quotientMapOfLE h (e'.symm x)]
+  exact Nat.card_congr (Equiv.subtypeEquiv e''.symm fun y ↦ (Equiv.eq_symm_apply e').symm)
 
 /-- **Sum of cusp widths over a cusp under subgroup inclusion.** For `Γ'' ≤ Γ'`, the widths of
 the cusps of `Γ''` lying over a cusp `c` of `Γ'` sum to `[Γ' : Γ''] · width(c)`. -/
@@ -414,36 +397,9 @@ theorem sum_cuspCycleWidth_fiber_of_le {Γ'' Γ' : Subgroup PSL(2, ℤ)} (h : Γ
     (c : Quotient (SameCycle.setoid (permT Γ' e'))) :
     ∑ᶠ q ∈ {q | cuspCycleMapOfLE h e'' e' q = c}, cuspCycleWidth Γ'' e'' q =
       Γ''.relIndex Γ' * cuspCycleWidth Γ' e' c := by
-  classical
-  let proj : Fin m → Fin n := fun y ↦ e' (Subgroup.quotientMapOfLE h (e''.symm y))
-  have hfiber (x : Fin n) : Nat.card {y : Fin m // proj y = x} = Γ''.relIndex Γ' := by
-    rw [← Subgroup.card_fiber_quotientMapOfLE h (e'.symm x)]
-    refine Nat.card_congr (Equiv.subtypeEquiv e''.symm fun y ↦ ?_)
-    dsimp only [proj]
-    exact (Equiv.eq_symm_apply e').symm
-  let equivSigma :
-      {y : Fin m // cuspCycleMapOfLE h e'' e' (Quotient.mk _ y) = c} ≃
-        Σ x : {x : Fin n // Quotient.mk (SameCycle.setoid (permT Γ' e')) x = c},
-          {y : Fin m // proj y = x.val} :=
-    { toFun := fun ⟨y, hy⟩ ↦ ⟨⟨proj y, by rwa [← cuspCycleMapOfLE_mk_apply]⟩, ⟨y, rfl⟩⟩
-      invFun := fun ⟨⟨x, hx⟩, ⟨y, hy⟩⟩ ↦
-        ⟨y, by rw [cuspCycleMapOfLE_mk_apply]; change Quotient.mk _ (proj y) = c; rwa [hy]⟩
-      left_inv := fun ⟨_, _⟩ ↦ rfl
-      right_inv := fun ⟨⟨_, _⟩, ⟨_, rfl⟩⟩ ↦ rfl }
-  calc
-    ∑ᶠ q ∈ {q | cuspCycleMapOfLE h e'' e' q = c}, cuspCycleWidth Γ'' e'' q
-      = Nat.card {y : Fin m // cuspCycleMapOfLE h e'' e' (Quotient.mk _ y) = c} :=
-        sum_cuspCycleWidth_fiber_eq_natCard h e'' e' c
-    _ = ∑ x : {x : Fin n // Quotient.mk (SameCycle.setoid (permT Γ' e')) x = c},
-          Nat.card {y : Fin m // proj y = x.val} := by
-        rw [Nat.card_congr equivSigma, Nat.card_eq_fintype_card, Fintype.card_sigma]
-        simp_rw [Nat.card_eq_fintype_card]
-    _ = Nat.card {x : Fin n // Quotient.mk (SameCycle.setoid (permT Γ' e')) x = c} *
-          Γ''.relIndex Γ' := by
-        simp_rw [hfiber, Finset.sum_const, Finset.card_univ, smul_eq_mul,
-          ← Nat.card_eq_fintype_card]
-    _ = Γ''.relIndex Γ' * cuspCycleWidth Γ' e' c := by
-        rw [mul_comm, natCard_fiber_cuspCycle]
+  simpa only [cycleQuotientMap_semiconj_cosetProjOfLE, lift_minimalPeriod_eq_cuspCycleWidth] using
+    (semiconj_cosetProjOfLE h e'' e').sum_minimalPeriod_cycleQuotientMap_fiber_eq_mul
+      (card_fiber_cosetProjOfLE h e'' e') c
 
 /-- **Sum of width ratios (ramification indices) over a cusp.** For `Γ'' ≤ Γ'`, the cusp width
 ratios `width(c'') / width(c)` over all cusps `c''` of `Γ''` lying above `c` sum to
@@ -453,15 +409,9 @@ theorem sum_widthRatio_permT_fiber_of_le {Γ'' Γ' : Subgroup PSL(2, ℤ)} (h : 
     (c : Quotient (SameCycle.setoid (permT Γ' e'))) :
     ∑ᶠ q ∈ {q | cuspCycleMapOfLE h e'' e' q = c},
         (cuspCycleWidth Γ'' e'' q / cuspCycleWidth Γ' e' c) = Γ''.relIndex Γ' := by
-  classical
-  have hpos : 0 < cuspCycleWidth Γ' e' c := by
-    induction c using Quotient.ind with | _ x => exact minimalPeriod_permT_pos Γ' e' x
-  have hSfin : ({q | cuspCycleMapOfLE h e'' e' q = c} : Set _).Finite := Set.toFinite _
-  refine Nat.eq_of_mul_eq_mul_right hpos ?_
-  rw [← sum_cuspCycleWidth_fiber_of_le h e'' e' c, finsum_mem_eq_finite_toFinset_sum _ hSfin,
-    finsum_mem_eq_finite_toFinset_sum _ hSfin, Finset.sum_mul]
-  exact Finset.sum_congr rfl fun q hq ↦
-    Nat.div_mul_cancel ((hSfin.mem_toFinset.mp hq) ▸ cuspCycleWidth_map_dvd h e'' e' q)
+  simpa only [cycleQuotientMap_semiconj_cosetProjOfLE, lift_minimalPeriod_eq_cuspCycleWidth] using
+    (semiconj_cosetProjOfLE h e'' e').sum_minimalPeriod_div_cycleQuotientMap_fiber_eq
+      (card_fiber_cosetProjOfLE h e'' e') c
 
 /-! ### The full modular group -/
 
@@ -716,6 +666,46 @@ theorem genus_formula :
   rw [cuspCount_def, permT]
   omega
 
+private theorem eq_one_of_conj_mem_of_pow_eq_one {Γ' : Subgroup PSL(2, ℤ)} [IsMulTorsionFree Γ']
+    {x g : PSL(2, ℤ)} {k : ℕ} (hk : 0 < k) (hxk : x ^ k = 1) (hmem : g⁻¹ * x * g ∈ Γ') :
+    x = 1 := by
+  have hconj : (g⁻¹ * x * g) ^ k = 1 := by
+    have hmul : g⁻¹ * x * g = (MulAut.conj g⁻¹) x := by simp
+    rw [hmul, ← map_pow, hxk, map_one]
+  have hfin : IsOfFinOrder (⟨g⁻¹ * x * g, hmem⟩ : Γ') :=
+    isOfFinOrder_iff_pow_eq_one.mpr ⟨k, hk, Subtype.ext hconj⟩
+  have h1 : g⁻¹ * x * g = 1 := congrArg Subtype.val hfin.eq_one'
+  calc
+    x = g * (g⁻¹ * x * g) * g⁻¹ := by simp [mul_assoc]
+    _ = g * 1 * g⁻¹ := by rw [h1]
+    _ = 1 := by simp
+
+/-- A torsion-free subgroup of `PSL(2, ℤ)` has no elliptic points of period `2`. -/
+@[simp]
+theorem ellipticTwo_eq_zero [IsMulTorsionFree Γ'] : ellipticTwo Γ' e = 0 := by
+  rw [ellipticTwo_def, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+  intro i _ hfi
+  obtain ⟨q, rfl⟩ := e.surjective i
+  induction q using QuotientGroup.induction_on with | H g =>
+  have hS := eq_one_of_conj_mem_of_pow_eq_one two_pos coe_S_sq
+    ((permS_apply_eq_self_iff Γ' e g).mp hfi)
+  have ho := orderOf_coe_S
+  rw [hS, orderOf_one] at ho
+  omega
+
+/-- A torsion-free subgroup of `PSL(2, ℤ)` has no elliptic points of period `3`. -/
+@[simp]
+theorem ellipticThree_eq_zero [IsMulTorsionFree Γ'] : ellipticThree Γ' e = 0 := by
+  rw [ellipticThree_def, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+  intro i _ hfi
+  obtain ⟨q, rfl⟩ := e.surjective i
+  induction q using QuotientGroup.induction_on with | H g =>
+  have hU := eq_one_of_conj_mem_of_pow_eq_one (by decide) coe_U_pow_three
+    ((modularTriple_σ0_apply_eq_self_iff Γ' e g).mp hfi)
+  have ho := orderOf_coe_U
+  rw [hU, orderOf_one] at ho
+  omega
+
 /-- For a torsion-free subgroup (`e₂ = e₃ = 0`), the genus formula is `12 g + 6 c = 12 + n`. -/
 theorem genus_formula_of_elliptic_eq_zero {Γ' : Subgroup PSL(2, ℤ)} (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
     (h2 : ellipticTwo Γ' e = 0) (h3 : ellipticThree Γ' e = 0) :
@@ -825,12 +815,6 @@ theorem invariants_map_conjJAut
     invariants ⊤ eTop = ⟨1, 0, 1, 1, {1}⟩ := by ext1 <;> simp
 
 /-! ### Opposite (right-coset / LMFDB) convention -/
-
-/-- The right-coset permutation of `S` squares to `1`. -/
-theorem rightCosetPerm_S_sq (r : Quotient (QuotientGroup.rightRel Γ') ≃ Fin n) :
-    (r.permCongr (Γ'.rightCosetPerm (S : PSL(2, ℤ)))) ^ 2 = 1 := by
-  rw [sq, ← r.permCongr_mul, ← Γ'.rightCosetPerm_mul, ← sq, coe_S_sq, Γ'.rightCosetPerm_one]
-  exact Equiv.ext fun _ ↦ by simp
 
 /-- Under the opposite (right-coset) convention, `cuspWidths` agrees with the full cycle type of
 the right-coset permutation of `T`. -/

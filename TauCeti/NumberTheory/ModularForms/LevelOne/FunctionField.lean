@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Sphere
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Comap
 public import TauCeti.Analysis.Complex.RiemannSurface.RationalFunction
 public import TauCeti.NumberTheory.ModularForms.QExpansion.FunctionField
-import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
+import TauCeti.Analysis.Complex.Fuchsian.Arithmetic.Basic
 import TauCeti.Analysis.Complex.Fuchsian.Compactification.FiniteHolomorphicMap
 import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Cofinite
 import TauCeti.Analysis.Complex.ModularForms.LevelOne.JInputs
