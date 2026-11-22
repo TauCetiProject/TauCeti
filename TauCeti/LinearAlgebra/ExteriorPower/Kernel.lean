@@ -7,15 +7,16 @@ module
 
 public import Mathlib.LinearAlgebra.ExteriorPower.Pairing
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The kernel of the exterior-square action
 
-An automorphism of a free module with at least three basis vectors acts trivially on its exterior
-square exactly when it is scalar multiplication by a scalar whose square is one. This holds
-over any commutative ring, including in characteristic two. Without zero divisors the scalars
-are `±1`. The rank restriction is essential: in rank two the exterior square detects only the
-determinant.
+An endomorphism of a free module with at least three basis vectors acts trivially on its exterior
+square exactly when it is scalar multiplication by a scalar whose square is one; in particular it
+is then an automorphism. This holds over any commutative ring, including in characteristic two.
+Without zero divisors the scalars are `±1`. The rank restriction is essential: in rank two the
+exterior square detects only the determinant.
 
 This criterion identifies the kernel of the exterior-square realization of the six-dimensional
 orthogonal representation of the four-dimensional special linear group.
@@ -40,85 +41,77 @@ theorem exteriorPower_ιMulti_apply_eq_of_map_eq_id {f : M ≃ₗ[R] M}
     fin_cases i <;> simp
   simpa only [map_apply_ιMulti, LinearEquiv.coe_coe, hv, LinearMap.id_apply] using h
 
-/-- If an automorphism acts trivially on the exterior square, pairing with two linear
-functionals equates the corresponding minors for the automorphism and its inverse. -/
-theorem exteriorPower_pairing_eq_of_map_eq_id {f : M ≃ₗ[R] M}
-    (hf : exteriorPower.map 2 f.toLinearMap = LinearMap.id)
-    (φ ψ : Module.Dual R M) (x y : M) :
-    φ (f x) * ψ y - ψ (f x) * φ y =
-      φ x * ψ (f.symm y) - ψ x * φ (f.symm y) := by
+/-- If an endomorphism acts trivially on the exterior square, it preserves every `2 × 2` minor
+cut out by a pair of linear functionals. -/
+theorem exteriorPower_pairing_eq_of_map_eq_id {f : M →ₗ[R] M}
+    (hf : exteriorPower.map 2 f = LinearMap.id) (φ ψ : Module.Dual R M) (x y : M) :
+    φ (f x) * ψ (f y) - ψ (f x) * φ (f y) = φ x * ψ y - ψ x * φ y := by
   have h := congrArg (pairingDual R M 2 (ιMulti R 2 ![φ, ψ]))
-    (exteriorPower_ιMulti_apply_eq_of_map_eq_id hf x y)
+    (LinearMap.congr_fun hf (ιMulti R 2 ![x, y]))
   simpa [pairingDual_ιMulti_ιMulti, Matrix.det_fin_two] using h
 
 end TauCeti
 
-/-- With at least three basis vectors, an automorphism acts trivially on the exterior square
+/-- With at least three basis vectors, an endomorphism acts trivially on the exterior square
 exactly when it is scalar multiplication by a scalar whose square is one. -/
 theorem Module.Basis.exteriorPower_map_eq_id_iff (b : Module.Basis ι R M)
-    (hι : 3 ≤ ENat.card ι) (f : M ≃ₗ[R] M) :
-    exteriorPower.map 2 f.toLinearMap = LinearMap.id ↔
-      ∃ c : R, c ^ 2 = 1 ∧ f.toLinearMap = c • LinearMap.id := by
+    (hι : 3 ≤ ENat.card ι) (f : M →ₗ[R] M) :
+    exteriorPower.map 2 f = LinearMap.id ↔ ∃ c : R, c ^ 2 = 1 ∧ f = c • LinearMap.id := by
   classical
   have hthird (i j : ι) : ∃ k : ι, k ≠ i ∧ k ≠ j :=
     ENat.exists_ne_ne_of_three_le hι i j
   constructor
   · intro hf
-    -- Pairing against a third basis coordinate forces every off-diagonal entry to vanish.
-    have hoff (i k : ι) (hik : i ≠ k) : b.coord k (f (b i)) = 0 := by
+    -- `b.repr (f (b i)) k` is the `(k, i)` entry of the matrix of `f`, and the `2 × 2` minors
+    -- of this matrix are those of the identity matrix.
+    have hminor (k l i j : ι) :
+        b.repr (f (b i)) k * b.repr (f (b j)) l - b.repr (f (b i)) l * b.repr (f (b j)) k =
+          Finsupp.single i 1 k * Finsupp.single j 1 l -
+            Finsupp.single i 1 l * Finsupp.single j 1 k := by
+      simpa only [Module.Basis.coord_apply, Module.Basis.repr_self] using
+        TauCeti.exteriorPower_pairing_eq_of_map_eq_id hf (b.coord k) (b.coord l) (b i) (b j)
+    -- The minors on the columns `i` and `j`, for a third index `j`, kill the entry `(k, i)`.
+    have hoff (i k : ι) (hik : i ≠ k) : b.repr (f (b i)) k = 0 := by
       obtain ⟨j, hji, hjk⟩ := hthird i k
-      simpa [Module.Basis.coord_apply, hik, hik.symm, hji, hji.symm, hjk, hjk.symm]
-        using TauCeti.exteriorPower_pairing_eq_of_map_eq_id hf (b.coord k) (b.coord j) (b i) (b j)
-    have hdiag (i j : ι) (hij : i ≠ j) :
-        b.coord i (f (b i)) = b.coord j (f.symm (b j)) := by
-      simpa [Module.Basis.coord_apply, hij, hij.symm]
-        using TauCeti.exteriorPower_pairing_eq_of_map_eq_id hf (b.coord i) (b.coord j) (b i) (b j)
-    -- A third index relates any two diagonal entries through the same inverse entry.
+      have e₁ := hminor k i i j
+      have e₂ := hminor k j i j
+      have e₃ := hminor i j i j
+      simp only [Finsupp.single_apply, hik, hji, hjk, hji.symm, ite_true, ite_false]
+        at e₁ e₂ e₃
+      linear_combination (-(b.repr (f (b i)) k)) * e₃ + b.repr (f (b i)) i * e₂ -
+        b.repr (f (b i)) j * e₁
+    -- Hence the product of any two distinct diagonal entries is one.
+    have hdiag (i j : ι) (hij : i ≠ j) : b.repr (f (b i)) i * b.repr (f (b j)) j = 1 := by
+      simpa [hoff j i hij.symm, hij, hij.symm] using hminor i j i j
+    -- A third index then makes all diagonal entries equal.
     obtain ⟨i₀⟩ := (ENat.card_pos_iff_nonempty ι).mp (lt_of_lt_of_le (by norm_num) hι)
-    let c := b.coord i₀ (f (b i₀))
-    have hsame (i : ι) : b.coord i (f (b i)) = c := by
+    set c := b.repr (f (b i₀)) i₀
+    have hsame (i : ι) : b.repr (f (b i)) i = c := by
       obtain ⟨j, hji, hji₀⟩ := hthird i i₀
-      exact (hdiag i j hji.symm).trans (hdiag i₀ j hji₀.symm).symm
-    -- The coordinate identities identify the automorphism with scalar multiplication.
-    have hscalar : f.toLinearMap = c • LinearMap.id := by
-      apply b.ext
-      intro i
-      apply b.repr.injective
-      ext k
-      by_cases hik : i = k
-      · subst k
-        simpa [Module.Basis.coord_apply] using hsame i
-      · simp [← Module.Basis.coord_apply, hoff i k hik, Ne.symm hik]
-    -- Its trivial action on one basis wedge forces the scalar's square to be one.
-    have hsq : c ^ 2 = 1 := by
-      obtain ⟨j, hji, -⟩ := hthird i₀ i₀
-      have h := LinearMap.congr_fun hf (ιMulti R 2 ![b i₀, b j])
-      rw [hscalar] at h
-      have hp := congrArg
-        (pairingDual R M 2 (ιMulti R 2 ![b.coord i₀, b.coord j])) h
-      simpa [map_apply_ιMulti, pairingDual_ιMulti_ιMulti, Matrix.det_fin_two,
-        Function.comp_def, Module.Basis.coord_apply, hji, hji.symm, pow_two] using hp
-    exact ⟨c, hsq, hscalar⟩
-  · rintro ⟨c, hc, hf⟩
-    apply exteriorPower.linearMap_ext
-    apply AlternatingMap.ext
-    intro v
-    simp only [LinearMap.compAlternatingMap_apply, map_apply_ιMulti, hf,
-      LinearMap.smul_apply, LinearMap.id_apply, Function.comp_def]
-    rw [(ιMulti R 2).map_smul_univ (fun _ ↦ c) v]
-    simp [hc]
+      linear_combination c * hdiag i j hji.symm - b.repr (f (b i)) i * hdiag i₀ j hji₀.symm
+    -- The coordinate identities identify the endomorphism with scalar multiplication.
+    refine ⟨c, ?_, b.ext fun i ↦ b.repr.injective ?_⟩
+    · obtain ⟨j, hji₀, -⟩ := hthird i₀ i₀
+      simpa [pow_two, hsame j] using hdiag i₀ j hji₀.symm
+    ext k
+    by_cases hik : i = k
+    · subst k
+      simpa using hsame i
+    · simp [hoff i k hik, Ne.symm hik]
+  · rintro ⟨c, hc, rfl⟩
+    ext v
+    simp [AlternatingMap.map_smul_univ, hc]
 
-/-- Over a ring without zero divisors, the kernel of the exterior-square action on a free module
-with at least three basis vectors consists of the scalar automorphisms `±1`. In characteristic
-two these coincide. -/
+/-- Over a ring without zero divisors, an endomorphism of a free module with at least three basis
+vectors acts trivially on the exterior square exactly when it is `±1`. In characteristic two
+these coincide. -/
 theorem Module.Basis.exteriorPower_map_eq_id_iff_eq_or_eq_neg_id
-    [NoZeroDivisors R] (b : Module.Basis ι R M) (hι : 3 ≤ ENat.card ι) (f : M ≃ₗ[R] M) :
-    exteriorPower.map 2 f.toLinearMap = LinearMap.id ↔
-      f.toLinearMap = LinearMap.id ∨ f.toLinearMap = -LinearMap.id := by
+    [NoZeroDivisors R] (b : Module.Basis ι R M) (hι : 3 ≤ ENat.card ι) (f : M →ₗ[R] M) :
+    exteriorPower.map 2 f = LinearMap.id ↔ f = LinearMap.id ∨ f = -LinearMap.id := by
   rw [b.exteriorPower_map_eq_id_iff hι f]
   constructor
-  · rintro ⟨c, hc, hf⟩
-    rcases sq_eq_one_iff.mp hc with rfl | rfl <;> simp_all
-  · rintro (hf | hf)
-    · exact ⟨1, by simp, by simpa using hf⟩
-    · exact ⟨-1, by simp, by simpa using hf⟩
+  · rintro ⟨c, hc, rfl⟩
+    rcases sq_eq_one_iff.mp hc with rfl | rfl <;> simp
+  · rintro (rfl | rfl)
+    · exact ⟨1, by simp, by simp⟩
+    · exact ⟨-1, by simp, by simp⟩

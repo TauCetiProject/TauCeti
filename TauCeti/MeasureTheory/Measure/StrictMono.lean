@@ -36,6 +36,14 @@ namespace TauCeti
 private abbrev PosStrictMono (n : ℕ) : Set (Fin n → ℝ≥0) :=
   {s | (∀ i, 0 < s i) ∧ StrictMono s}
 
+private theorem measurableSet_posStrictMono (n : ℕ) :
+    MeasurableSet (PosStrictMono n) := by
+  have heq : PosStrictMono n = {s : Fin n → ℝ≥0 | StrictMono s ∧ ∀ i, s i ∈ Ioi 0} := by
+    ext s
+    exact and_comm
+  rw [heq]
+  exact measurableSet_setOf_strictMono_and_forall_mem measurableSet_Ioi
+
 private def separatedBoxSystem (n : ℕ) : Set (Set ↥(PosStrictMono n)) :=
   {A | ∃ a b : Fin n → ℝ≥0, IsSeparatedBox a b ∧
     A = ((↑) : ↥(PosStrictMono n) → Fin n → ℝ≥0) ⁻¹' (univ.pi fun i => Ioc (a i) (b i))}
@@ -178,7 +186,7 @@ theorem ext_of_Ioc_strictMono' {n : ℕ} {μ ν : Measure (Fin n → ℝ≥0)}
       μ (univ.pi fun i => Ioc (a i) (b i)) = ν (univ.pi fun i => Ioc (a i) (b i))) :
     μ = ν := by
   let coeΔ : ↥(PosStrictMono n) → Fin n → ℝ≥0 := Subtype.val
-  have hΔ : MeasurableSet (PosStrictMono n) := measurableSet_setOf_pos_and_strictMono n
+  have hΔ : MeasurableSet (PosStrictMono n) := measurableSet_posStrictMono n
   have he : MeasurableEmbedding coeΔ := MeasurableEmbedding.subtypeVal hΔ
   have hμ_eq : (μ.comap coeΔ).map coeΔ = μ := by
     rw [he.map_comap, Subtype.range_coe, Measure.restrict_eq_self_of_ae_mem hμ]
@@ -234,7 +242,7 @@ theorem ae_pos_and_strictMono_map_sum_Iic_pi {m : ℕ} (ν : Fin m → Measure �
       (∀ i, 0 < s i) ∧ StrictMono s := by
   have hsum : Measurable (fun (x : Fin m → ℝ≥0) (i : Fin m) => ∑ j ∈ Finset.Iic i, x j) :=
     measurable_pi_iff.mpr fun i => Finset.measurable_sum _ fun j _ => measurable_pi_apply j
-  rw [ae_map_iff hsum.aemeasurable (measurableSet_setOf_pos_and_strictMono m)]
+  rw [ae_map_iff hsum.aemeasurable (measurableSet_posStrictMono m)]
   have hae_coord : ∀ᵐ x ∂Measure.pi ν, ∀ i, 0 < x i := by
     rw [ae_all_iff]
     intro i
