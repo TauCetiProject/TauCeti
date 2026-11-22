@@ -695,31 +695,6 @@ theorem analyticOrderAt_automorphyDescent_differentialFrame (hs : (s : PSL(2, �
 
 /-! ### Transport of the frame along `Γ` -/
 
-section
-
-variable {D' : Γ.CuspDatum} {s' h : SL(2, ℝ)} {γ : Γ}
-
-/-- The lift `s' * h * s⁻¹` of `σ' γ σ⁻¹`. -/
-private theorem coe_scaling_mul_mul_inv (hs : (s : PSL(2, ℝ)) = D.scaling)
-    (hs' : (s' : PSL(2, ℝ)) = D'.scaling) (hh : (h : PSL(2, ℝ)) = γ) :
-    ((s' * h * s⁻¹ : SL(2, ℝ)) : PSL(2, ℝ)) = D'.scaling * γ * D.scaling⁻¹ := by
-  rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv, hs, hs', hh]
-
-/-- If `γ` carries the cusp of `D` to that of `D'`, then `σ' γ σ⁻¹` fixes `∞`, so its lift
-`s' * h * s⁻¹` is upper triangular. -/
-private theorem scaling_mul_mul_inv_apply_one_zero (hs : (s : PSL(2, ℝ)) = D.scaling)
-    (hs' : (s' : PSL(2, ℝ)) = D'.scaling) (hh : (h : PSL(2, ℝ)) = γ)
-    (hγ : γ • D.cusp = D'.cusp) : (s' * h * s⁻¹) 1 0 = 0 := by
-  have hg : ((s' * h * s⁻¹ : SL(2, ℝ)) : PSL(2, ℝ)) • (OnePoint.infty : OnePoint ℝ) =
-      OnePoint.infty := by
-    rw [coe_scaling_mul_mul_inv hs hs' hh, mul_smul, mul_smul,
-      inv_smul_eq_iff.mpr D.scaling_smul_cusp.symm, ← Subgroup.smul_def, hγ,
-      D'.scaling_smul_cusp]
-  rwa [OnePoint.pslMk_smul, OnePoint.smul_infty_eq_self_iff,
-    Matrix.SpecialLinearGroup.coe_GL_coe_matrix] at hg
-
-end
-
 /-- **The transition function between the frames at two cusps of the same orbit is constant.**
 Let `D` and `D'` be cusp data whose cusps are related by `γ ∈ Γ`, `γ • c = c'`, and let `s`, `s'`
 and `h` lift their scalings `σ`, `σ'` and `γ`. Then `t = s' * h * s⁻¹` is upper triangular, and
@@ -743,7 +718,7 @@ theorem automorphyFrame_smul_of_smul_cusp_eq (hs : (s : PSL(2, ℝ)) = D.scaling
             D.width) ^ r) *
         automorphyFrame D s k r τ := by
   set t := s' * h * s⁻¹ with ht_def
-  have ht : t 1 0 = 0 := scaling_mul_mul_inv_apply_one_zero hs hs' hh hγ
+  have ht : t 1 0 = 0 := TauCeti.scaling_mul_mul_inv_apply_one_zero hs hs' hh hγ
   have hdet : (t 0 0 : ℂ) * t 1 1 = 1 := by
     have h := t.det_coe
     rw [Matrix.det_fin_two, ht, mul_zero, sub_zero] at h
@@ -752,16 +727,10 @@ theorem automorphyFrame_smul_of_smul_cusp_eq (hs : (s : PSL(2, ℝ)) = D.scaling
   have hσ (x : ℍ) : ((D'.scaling • (γ : PSL(2, ℝ)) • x : ℍ) : ℂ) =
       (t 0 0 : ℂ) ^ 2 * (D.scaling • x : ℍ) + t 0 0 * t 0 1 := by
     rw [← coe_smul_of_apply_zero_one_eq_zero ht, ← UpperHalfPlane.pslMk_smul,
-      coe_scaling_mul_mul_inv hs hs' hh, mul_smul, mul_smul, inv_smul_smul]
-  -- hence the widths satisfy `w' = t₀₀ ^ 2 * w`, comparing `D'` with the transport of `D`
-  have hw : D'.width = t 0 0 ^ 2 * D.width := by
-    have hc := Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer γ.property)
-    have h := TauCeti.cuspDatum_width_eq_mul (D := D.conj hc) (D' := D')
-      (by rw [_root_.Subgroup.CuspDatum.conj_cusp, ← hγ, Subgroup.smul_def])
-      (a := t 0 0 ^ 2) (b := t 0 0 * t 0 1) fun x ↦ by
-        rw [_root_.Subgroup.CuspDatum.conj_scaling, mul_smul, Complex.ofReal_pow,
-          Complex.ofReal_mul, ← hσ, smul_inv_smul]
-    rwa [_root_.Subgroup.CuspDatum.conj_width] at h
+      TauCeti.coe_scaling_mul_mul_inv hs hs' hh, mul_smul, mul_smul, inv_smul_smul]
+  -- hence the widths satisfy `w' = t₀₀ ^ 2 * w`
+  have hw : D'.width = t 0 0 ^ 2 * D.width :=
+    TauCeti.cuspDatum_width_eq_mul_of_smul hs hs' hh hγ
   -- the automorphy factors: `denom s' (h • τ) * denom h τ = t₁₁ * denom s τ`
   have hden : denom (Matrix.SpecialLinearGroup.mapGL ℝ s') ((h • τ : ℍ) : ℂ) =
       (t 1 1 : ℂ) * denom (Matrix.SpecialLinearGroup.mapGL ℝ s) τ /
@@ -1070,7 +1039,7 @@ theorem exponent_eq_of_smul_cusp_eq
       _root_.Subgroup.CuspDatum.coe_conj_generator, QuotientGroup.mk_mul, QuotientGroup.mk_mul,
       QuotientGroup.mk_inv, hh, hg]
   -- conjugation by the upper triangular `t = s' * h * s⁻¹` keeps the lower-right entry
-  have ht : (s' * h * s⁻¹) 1 0 = 0 := scaling_mul_mul_inv_apply_one_zero hs hs' hh hγ
+  have ht : (s' * h * s⁻¹) 1 0 = 0 := TauCeti.scaling_mul_mul_inv_apply_one_zero hs hs' hh hγ
   have hM : (s * g * s⁻¹) 1 0 = 0 :=
     (TauCeti.UpperHalfPlane.entries_of_coe_eq_upperRightHom (coe_conj_eq_upperRightHom hs hg)).1
   have hdet : (s' * h * s⁻¹) 0 0 * (s' * h * s⁻¹) 1 1 = 1 := by

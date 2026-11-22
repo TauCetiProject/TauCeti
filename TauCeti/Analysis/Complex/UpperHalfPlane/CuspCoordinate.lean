@@ -14,7 +14,6 @@ public import TauCeti.Analysis.Complex.UnitDisc.PuncturedManifold
 public import Mathlib.Topology.Maps.Strict.Basic
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
-import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
 # The local coordinate at a cusp

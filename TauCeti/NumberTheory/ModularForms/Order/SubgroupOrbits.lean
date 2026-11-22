@@ -181,20 +181,6 @@ lemma card_fiber_orbitOfCosetTranslate_mul_cardStabilizerOnOrbit_eq (p : ℍ)
   rw [card_fiber_orbitOfCosetTranslate_mul_cardStabilizerOnOrbit
       (Subgroup.map_le_range _ _) p q, card_stabilizer_slGL_eq_two_mul_ellipticOrder]
 
-/-- **The stabiliser weight is positive.** A point of `ℍ` has a finite, nonempty stabiliser in any
-subgroup of `SL(2, ℤ)` — it sits inside the finite `SL(2, ℤ)`-stabiliser, whose order the
-orbit-stabiliser identity divides — so its cardinality never vanishes. -/
-lemma cardStabilizerOnOrbit_ne_zero (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) :
-    cardStabilizerOnOrbit o ≠ 0 := by
-  induction o using Quotient.inductionOn' with
-  | h z =>
-    intro h0
-    have hprod := card_fiber_orbitOfCosetTranslate_mul_cardStabilizerOnOrbit_eq (Γ := Γ) z
-      (o := Quotient.mk'' z) (slOrbitOfSubgroupOrbit_mk z)
-    rw [h0, Nat.mul_zero] at hprod
-    have := ModularGroup.ellipticOrder_pos (Quotient.mk'' z : orbitRel.Quotient SL(2, ℤ) ℍ)
-    omega
-
 /-- A single `SL(2, ℤ)`-orbit contains only finitely many `Γ`-orbits: each is a coset translate
 of any of its points, and the coset space is finite. -/
 lemma finite_preimage_slOrbitOfSubgroupOrbit
@@ -347,7 +333,9 @@ lemma cardStabilizerOnOrbit_mul_weightedOrderOfVanishingOnSubgroupOrbit
     (cardStabilizerOnOrbit o : ℚ) * weightedOrderOfVanishingOnSubgroupOrbit f o =
       2 * (orderOfVanishingOnSubgroupOrbit f o : ℚ) := by
   rw [weightedOrderOfVanishingOnSubgroupOrbit_def]
-  exact mul_div_cancel₀ _ (by exact_mod_cast cardStabilizerOnOrbit_ne_zero o)
+  have := Subgroup.properlyDiscontinuousSMul_of_le (α := ℍ) inferInstance
+    (Subgroup.map_le_range (Matrix.SpecialLinearGroup.mapGL ℝ) Γ)
+  exact mul_div_cancel₀ _ (by exact_mod_cast TauCeti.cardStabilizerOnOrbit_ne_zero o)
 
 /-- The general-level weighted order is nonnegative: a modular form is holomorphic and the
 weight is positive. -/

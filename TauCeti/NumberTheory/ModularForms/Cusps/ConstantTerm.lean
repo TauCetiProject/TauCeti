@@ -13,6 +13,7 @@ import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.NumberTheory.Modular.ConjugateTranslation
+import TauCeti.NumberTheory.ModularForms.ArithmeticSubgroups
 import TauCeti.NumberTheory.ModularForms.QExpansion.BigO
 
 /-!

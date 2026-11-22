@@ -9,7 +9,6 @@ public import Mathlib.Data.ENat.BigOperators
 public import TauCeti.NumberTheory.ModularForms.Basic
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Order
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 /-!

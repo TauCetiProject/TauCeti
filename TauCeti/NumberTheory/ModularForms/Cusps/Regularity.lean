@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.ModularForms.Cusps
 public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
-public import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 

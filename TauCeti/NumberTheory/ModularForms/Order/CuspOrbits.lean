@@ -9,7 +9,8 @@ public import Mathlib.NumberTheory.ModularForms.CuspFormSubmodule
 public import TauCeti.NumberTheory.ModularForms.Cusps.Regularity
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Irregular
 import TauCeti.Analysis.Complex.Fuchsian.Cusp.ChangeScaling
-import TauCeti.Analysis.Complex.Fuchsian.Cusp.Conj
+import TauCeti.NumberTheory.ModularForms.ArithmeticSubgroups
+import TauCeti.NumberTheory.ModularForms.Cusps.ConstantTerm
 import TauCeti.NumberTheory.ModularForms.Cusps.Width
 
 /-!
@@ -113,24 +114,12 @@ theorem orderAtCusp_slash_scaling_inv_eq (f : F) {D : (Γ.map sl2zToPSL2R).CuspD
   set h₀ : SL(2, ℝ) := Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) γ₀
   set s₀ : SL(2, ℝ) := Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) γ⁻¹
   set t : SL(2, ℝ) := s * h₀ * s₀⁻¹ with ht_def
-  have hcoe_t : ((t : SL(2, ℝ)) : PSL(2, ℝ)) = D.scaling * g₀ * D₀.scaling⁻¹ := by
-    rw [ht_def, QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv, hs,
-      ← sl2zToPSL2R_apply, hg₀_eq, ← sl2zToPSL2R_apply, hD₀_scal]
-  have ht : t 1 0 = 0 := by
-    have hfix : ((t : SL(2, ℝ)) : PSL(2, ℝ)) • (∞ : OnePoint ℝ) = ∞ := by
-      rw [hcoe_t, mul_smul, mul_smul, inv_smul_eq_iff.mpr D₀.scaling_smul_cusp.symm,
-        ← Subgroup.smul_def, hg₀_cusp, D.scaling_smul_cusp]
-    rwa [OnePoint.pslMk_smul, OnePoint.smul_infty_eq_self_iff,
-      Matrix.SpecialLinearGroup.coe_GL_coe_matrix] at hfix
+  have hs₀ : (s₀ : PSL(2, ℝ)) = D₀.scaling := by rw [← sl2zToPSL2R_apply, hD₀_scal]
+  have hh₀ : (h₀ : PSL(2, ℝ)) = g₀ := by rw [← sl2zToPSL2R_apply, hg₀_eq]
+  have ht : t 1 0 = 0 := scaling_mul_mul_inv_apply_one_zero hs₀ hs hh₀ hg₀_cusp
   have hw : D.width = t 0 0 ^ 2 * Γγ.widthInfty := by
-    have hw₀ := TauCeti.cuspDatum_width_eq_mul
-      (D := D₀.conj (Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer g₀.property)))
-      (D' := D) (by rw [_root_.Subgroup.CuspDatum.conj_cusp, ← hg₀_cusp, Subgroup.smul_def])
-      (a := t 0 0 ^ 2) (b := t 0 0 * t 0 1) fun x ↦ by
-        rw [_root_.Subgroup.CuspDatum.conj_scaling, mul_smul, Complex.ofReal_pow,
-          Complex.ofReal_mul, ← UpperHalfPlane.coe_smul_of_apply_zero_one_eq_zero ht,
-          ← UpperHalfPlane.pslMk_smul, hcoe_t, mul_smul, mul_smul, inv_smul_smul, smul_inv_smul]
-    rwa [_root_.Subgroup.CuspDatum.conj_width, cuspDatum_width_eq_widthInfty hD₀_scal] at hw₀
+    rw [cuspDatum_width_eq_mul_of_smul hs₀ hs hh₀ hg₀_cusp,
+      cuspDatum_width_eq_widthInfty hD₀_scal]
   have hs_inv : s⁻¹ = h₀ * s₀⁻¹ * t⁻¹ := by rw [ht_def]; group
   have hslash : ⇑f ∣[k] mapGL ℝ s⁻¹ = (⇑f ∣[k] mapGL ℝ γ) ∣[k] mapGL ℝ t⁻¹ := by
     rw [hs_inv, map_mul, map_mul,
@@ -285,16 +274,16 @@ theorem _root_.ModularForm.mem_cuspFormSubmodule_iff_forall_orderAtCuspOrbit_pos
     f ∈ _root_.ModularForm.cuspFormSubmodule (Γ : Subgroup (GL (Fin 2) ℝ)) k ↔
       ∀ C : (Γ.map sl2zToPSL2R).CuspOrbit, 0 < orderAtCuspOrbit f C := by
   have hf' : (⇑f : ℍ → ℂ) ≠ 0 := FunLike.coe_zero_iff.not.mpr hf
-  rw [_root_.ModularForm.mem_cuspFormSubmodule_iff, _root_.ModularForm.isCuspForm_iff]
-  refine ⟨fun hcusp C ↦ ?_, fun hpos c hc ↦ ?_⟩
-  · obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
-    exact (orderAtCuspOrbit_cuspOrbitOfSL2Z_pos_iff hf' γ).mpr <|
-      hcusp ((Subgroup.IsArithmetic.isCusp_iff_isCusp_SL2Z _).mpr (_root_.isCusp_SL2Z_iff'.mpr
-        ⟨γ, rfl⟩)) (mapGL ℝ γ) rfl
-  · rw [OnePoint.isZeroAt_iff_forall_SL2Z ((Subgroup.IsArithmetic.isCusp_iff_isCusp_SL2Z _).mp hc)]
-    intro γ _
-    rw [_root_.ModularForm.SL_slash, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
-    exact (orderAtCuspOrbit_cuspOrbitOfSL2Z_pos_iff hf' γ).mp (hpos _)
+  rw [_root_.ModularForm.mem_cuspFormSubmodule_iff_constantTermAt_eq_zero]
+  have hiff (γ : SL(2, ℤ)) : _root_.ModularForm.constantTermAt γ f = 0 ↔
+      0 < orderAtCuspOrbit f (Γ.cuspOrbitOfSL2Z γ) := by
+    rw [_root_.ModularForm.constantTermAt_eq_valueAtInfty,
+      orderAtCuspOrbit_cuspOrbitOfSL2Z_pos_iff hf' γ,
+      ← _root_.ModularForm.coe_translate f (mapGL ℝ γ)]
+    exact ⟨fun h ↦ _root_.ModularForm.isZeroAtImInfty_of_valueAtInfty_eq_zero _ h,
+      fun h ↦ h.valueAtInfty_eq_zero⟩
+  simp_rw [hiff]
+  exact ⟨fun h C ↦ let ⟨γ, hγ⟩ := Γ.cuspOrbitOfSL2Z_surjective C; hγ ▸ h γ, fun h γ ↦ h _⟩
 
 /-- **Additivity on products at cusps (`ModularFormClass` form)**. -/
 theorem orderAtCuspOrbit_eq_add_of_coe_eq_mul [Γ.FiniteIndex]

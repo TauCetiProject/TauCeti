@@ -10,15 +10,15 @@ public import TauCeti.NumberTheory.ModularForms.Cusps.TranslationOrbit.Basic
 import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.NumberTheory.Modular.ConjugateTranslation
+import TauCeti.NumberTheory.ModularForms.ArithmeticSubgroups
 
 /-!
 # Projection from cusp translation orbits to projective cusp orbits
 
 For finite-index `Γ ≤ SL(2, ℤ)`, this file defines `Γ.cuspOrbitOfTranslationOrbit` sending the
 translation orbit of `γ` in `CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))` to
-`Γ.cuspOrbitOfSL2Z γ⁻¹`, characterizes its fibre `{c₀, c₁}` and coincidence criterion
-`c₀ = c₁ ↔ (-1 : SL(2, ℤ)) ∈ Γ ∨ ¬Γ.IsRegularCusp (Γ.cuspOrbitOfSL2Z γ)`, and identifies
-`cuspTranslationOrbitWidth` at `γ⁻¹` with `strictWidthInfty` of `γ⁻¹ Γ γ`.
+`Γ.cuspOrbitOfSL2Z γ⁻¹` and characterizes its fibre `{c₀, c₁}` and coincidence criterion
+`c₀ = c₁ ↔ (-1 : SL(2, ℤ)) ∈ Γ ∨ ¬Γ.IsRegularCusp (Γ.cuspOrbitOfSL2Z γ)`.
 
 ## References
 
@@ -178,37 +178,6 @@ theorem cuspTranslationOrbit_mk_inv_eq_mk_neg_inv_iff [Γ.FiniteIndex] (γ : SL(
     · obtain ⟨j, hj, -⟩ := exists_int_eq_and_neg_conj_T_zpow_mem_of_neg_upperRightHom_mem_conj γ
         (Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty Γγ hirr)
       exact ⟨j, hj ▸ Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty Γγ hirr⟩
-
-/-- **Strict cusp width equals integer cusp-translation-orbit width**: `strictWidthInfty` of
-`γ⁻¹ Γ γ` equals the width of the cusp translation orbit of `γ⁻¹`. -/
-theorem natCast_cuspTranslationOrbitWidth_mk_inv_eq_strictWidthInfty (γ : SL(2, ℤ)) :
-    (cuspTranslationOrbitWidth
-      (⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ⁻¹)⟧ :
-        CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) : ℝ) =
-      (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).strictWidthInfty := by
-  set w₀ := cuspTranslationOrbitWidth (⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ⁻¹)⟧ :
-    CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ)))
-  refine (Subgroup.strictWidthInfty_eq_of_strictPeriods_eq_zmultiples ?_ (Nat.cast_nonneg _)).symm
-  ext x
-  rw [Subgroup.mem_strictPeriods_iff, AddSubgroup.mem_zmultiples_iff]
-  refine ⟨fun hx ↦ ?_, fun ⟨m, hm⟩ ↦ ?_⟩
-  · obtain ⟨j, rfl, hj_mem⟩ := exists_int_eq_and_conj_T_zpow_mem_of_upperRightHom_mem_conj γ hx
-    obtain ⟨m, hm⟩ := Int.natCast_dvd.mpr <|
-      (cuspTranslationOrbitWidth_mk_dvd_iff γ⁻¹ j.natAbs).mpr <| by
-        rw [inv_inv]
-        rcases Int.natAbs_eq j with h | h
-        · rwa [← zpow_natCast, ← h]
-        · have hinv : (γ * ModularGroup.T ^ j * γ⁻¹)⁻¹ = γ * ModularGroup.T ^ (-j) * γ⁻¹ := by
-            group
-          rw [← zpow_natCast, ← neg_eq_iff_eq_neg.mpr h, ← hinv]; exact inv_mem hj_mem
-    exact ⟨m, by rw [zsmul_eq_mul, mul_comm, ← Int.cast_natCast, ← Int.cast_mul, ← hm]⟩
-  · have hm_mem : γ * ModularGroup.T ^ ((w₀ : ℤ) * m) * γ⁻¹ ∈ Γ := by
-      rw [_root_.zpow_mul, zpow_natCast, ← conj_zpow]
-      exact zpow_mem
-        (by simpa only [inv_inv] using (cuspTranslationOrbitWidth_mk_dvd_iff γ⁻¹ w₀).mp dvd_rfl) m
-    rw [← hm, zsmul_eq_mul, mul_comm, ← Int.cast_natCast, ← Int.cast_mul,
-      ← ModularGroup.mapGL_T_zpow_eq_upperRightHom, Subgroup.mem_conjAct_inv_smul_iff]
-    simpa [map_mul, map_inv, mul_assoc] using Subgroup.mem_map_of_mem (mapGL ℝ) hm_mem
 
 end TauCeti.ModularForm
 

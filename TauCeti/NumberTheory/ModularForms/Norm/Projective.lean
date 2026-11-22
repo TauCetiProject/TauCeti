@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.Cusps.TranslationOrbit.Projectiv
 public import TauCeti.NumberTheory.ModularForms.Norm.Cusps
 public import TauCeti.NumberTheory.ModularForms.Order.CompactifiedQuotient
 import TauCeti.GroupTheory.GroupAction.ConjAct
+import TauCeti.NumberTheory.ModularForms.ArithmeticSubgroups
 
 /-!
 # The projective valence formula on the compactified quotient

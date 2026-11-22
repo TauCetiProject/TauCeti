@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import Mathlib.Analysis.Calculus.FDeriv.Star
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
 # Modular-forms basics: extensions of Mathlib's API
@@ -82,16 +81,12 @@ AINTLIB `LeanModularForms` project
   every integer power of `A`.
 * `TauCeti.ModularForm.SL_slash_S_slash_S`: `(f ∣[k] S) ∣[k] S = (-1)^k • f`, the action of
   `S² = -I`.
-* `Subgroup.IsArithmetic.conj_mapGL_inv`: conjugating an arithmetic subgroup of `GL(2, ℝ)` by
-  `(mapGL ℝ γ)⁻¹` (`γ ∈ SL(2, ℤ)`) preserves arithmeticity.
 * `Subgroup.IsArithmetic.isCusp_of_isCusp`: any two arithmetic groups have the same cusps.
 * `TauCeti.ModularForm.eq_zero_of_eq_const`: a constant slash-invariant form of nonzero weight
   vanishes when its group has finite-index intersection with the modular group.
 * `ModularForm.mem_range_restrictₗ_iff`, `CuspForm.mem_range_restrictₗ_iff`: for `Γ' ≤ Γ` with every
   cusp of `Γ` a cusp of `Γ'`, a form for `Γ'` extends to `Γ` exactly when it is `Γ`-slash
   invariant.
-* `Subgroup.card_quotient_mapGL_eq_index`: the index `[SL(2, ℤ) : Γ]` equals the cardinality
-  of the coset space `𝒮ℒ ⧸ (Γ.map (mapGL ℝ)).subgroupOf 𝒮ℒ`.
 * `SlashInvariantForm.restrict_trace`, `ModularForm.restrict_trace`, `CuspForm.restrict_trace`:
   when every element of `Γ` factors as an element of `Γ' ≤ Γ` times an element of `𝒢`, the trace
   from `𝒢` to `Γ` restricts to the trace from `𝒢` to `Γ'`.
@@ -118,15 +113,6 @@ theorem det_pos_of_mem_slGL {g : GL (Fin 2) ℝ} (hg : g ∈ 𝒮ℒ) :
   obtain ⟨γ, rfl⟩ := hg
   rw [← Matrix.GeneralLinearGroup.val_det_apply, Matrix.SpecialLinearGroup.det_mapGL]
   exact one_pos
-
-/-- The index of a subgroup of `SL(2, ℤ)` equals the number of cosets of its real matrix
-image in `𝒮ℒ`. -/
-theorem _root_.Subgroup.card_quotient_mapGL_eq_index (Γ : Subgroup SL(2, ℤ)) :
-    Nat.card (𝒮ℒ ⧸ (Γ.map (Matrix.SpecialLinearGroup.mapGL ℝ)).subgroupOf 𝒮ℒ) = Γ.index := by
-  rw [← Subgroup.index_eq_card, ← Subgroup.relIndex,
-    MonoidHom.range_eq_map (Matrix.SpecialLinearGroup.mapGL ℝ), ← Subgroup.relIndex_comap,
-    Subgroup.comap_map_eq_self_of_injective Matrix.SpecialLinearGroup.mapGL_injective,
-    Subgroup.relIndex_top_right]
 
 /-- The slash-action conjugation `σ` is the identity for matrices coming from
 `SL₂(ℤ)`: their determinant is `1 > 0`, so the `σ` branch picks `ContinuousAlgEquiv.refl ℝ ℂ`.
@@ -458,12 +444,6 @@ variable {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} {k : ℤ}
 -- characteristic lemmas are written `(rfl)` rather than `rfl`: the parentheses opt out of
 -- exporting the definitional equality, which downstream modules do not need and which those
 -- lemmas themselves replace.
-
-/-- Conjugating an arithmetic subgroup of `GL(2, ℝ)` by `(mapGL ℝ γ)⁻¹` (`γ ∈ SL(2, ℤ)`) preserves
-arithmeticity. -/
-instance _root_.Subgroup.IsArithmetic.conj_mapGL_inv [Γ.IsArithmetic] (γ : SL(2, ℤ)) :
-    (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ).IsArithmetic :=
-  Subgroup.isArithmetic_conj_of_mem (H := 𝒮ℒ) (inv_mem (MonoidHom.mem_range.mpr ⟨γ, rfl⟩))
 
 /-- Two arithmetic subgroups of `GL(2, ℝ)` have the same cusps, namely those of `SL(2, ℤ)`.
 This is the standard way to supply the cusp hypothesis of `ModularForm.ofSlashInvariant`. -/

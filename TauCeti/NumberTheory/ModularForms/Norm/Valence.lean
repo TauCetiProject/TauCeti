@@ -117,7 +117,9 @@ private lemma card_fiber_smul_orderOfVanishingOnSubgroupOrbit_mul_ellipticOrder_
   · rw [Set.indicator_of_mem (by simpa using ho), weightedOrderOfVanishingOnSubgroupOrbit_def]
     have hprod := card_fiber_orbitOfCosetTranslate_mul_cardStabilizerOnOrbit_eq p ho
     have hc : (cardStabilizerOnOrbit o : ℚ) ≠ 0 := by
-      exact_mod_cast cardStabilizerOnOrbit_ne_zero o
+      have := Subgroup.properlyDiscontinuousSMul_of_le (α := ℍ) inferInstance
+        (Subgroup.map_le_range (Matrix.SpecialLinearGroup.mapGL ℝ) Γ)
+      exact_mod_cast TauCeti.cardStabilizerOnOrbit_ne_zero o
     have hprod' : (Nat.card {q : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ //
         orbitOfCosetTranslate p q = o} : ℚ) * (cardStabilizerOnOrbit o : ℚ) =
         2 * (ModularGroup.ellipticOrder
@@ -240,7 +242,9 @@ theorem twentyFour_mul_orderOfVanishingOnSubgroupOrbit_le_weight_mul_index_mul_c
       k * Nat.card (𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) *
         cardStabilizerOnOrbit o := by
   have hc : (0 : ℚ) < (cardStabilizerOnOrbit o : ℚ) := by
-    exact_mod_cast Nat.pos_of_ne_zero (cardStabilizerOnOrbit_ne_zero o)
+    have := Subgroup.properlyDiscontinuousSMul_of_le (α := ℍ) inferInstance
+      (Subgroup.map_le_range (Matrix.SpecialLinearGroup.mapGL ℝ) Γ)
+    exact_mod_cast Nat.pos_of_ne_zero (TauCeti.cardStabilizerOnOrbit_ne_zero o)
   have hsingle := single_le_finsum o (hasFiniteSupport_weightedOrderOfVanishingOnSubgroupOrbit f)
     (weightedOrderOfVanishingOnSubgroupOrbit_nonneg f)
   have hcusp : (0 : ℚ) ≤ (qExpansionOrderAtCusp 1 ⇑(_root_.ModularForm.norm 𝒮ℒ f) : ℚ) := by

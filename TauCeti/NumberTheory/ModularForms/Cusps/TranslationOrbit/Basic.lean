@@ -7,8 +7,11 @@ module
 
 public import Mathlib.Data.ZMod.QuotientGroup
 public import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.GroupTheory.GroupAction.Orbit.Period
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
+import TauCeti.NumberTheory.Modular.ConjugateTranslation
 
 /-!
 # Cusp translation orbits and their widths
@@ -31,8 +34,11 @@ norm and valence machinery.
 ## Main results
 
 * `TauCeti.ModularForm.cuspTranslationOrbitWidth_mk`: the width at a representative coset.
-* `TauCeti.ModularForm.cuspTranslationOrbitWidth_mk_dvd_iff`: integral membership criterion for
+* `TauCeti.ModularForm.intCast_cuspTranslationOrbitWidth_mk_dvd_iff` and
+  `TauCeti.ModularForm.cuspTranslationOrbitWidth_mk_dvd_iff`: integral membership criteria for
   subgroups of `SL(2, ℤ)`.
+* `TauCeti.ModularForm.natCast_cuspTranslationOrbitWidth_mk_inv_eq_strictWidthInfty`: equality with
+  `strictWidthInfty` of `γ⁻¹ Γ γ`.
 * `TauCeti.ModularForm.cuspTranslationOrbitWidth_mk_inf`: width of an intersection is the `lcm`.
 * `TauCeti.ModularForm.cuspTranslationOrbitWidth_mk_one`: the base coset has width
   `Subgroup.integerCuspWidth 𝒢`.
@@ -44,7 +50,7 @@ public noncomputable section
 
 open Matrix MulAction UpperHalfPlane Function
 
-open scoped ModularForm MatrixGroups
+open scoped ModularForm MatrixGroups Pointwise
 
 namespace TauCeti.ModularForm
 
@@ -100,6 +106,15 @@ coset. -/
   obtain ⟨j, hj⟩ := MulAction.exists_zpow_smul_eq_out TSL q
   rw [cuspTranslationOrbitWidth, ← hj, MulAction.minimalPeriod_zpow_smul]
 
+/-- **What the period of a coset says about the group (integer exponent)**: `T ^ j` fixes the
+coset of `x` exactly when `x⁻¹ T ^ j x ∈ 𝒢`. -/
+lemma intCast_minimalPeriod_TSL_dvd_iff (x : 𝒮ℒ) (j : ℤ) :
+    (minimalPeriod (TSL • ·) (QuotientGroup.mk x : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) : ℤ) ∣ j ↔
+      ((x⁻¹ * TSL ^ j * x : 𝒮ℒ) : GL (Fin 2) ℝ) ∈ 𝒢 := by
+  have hconj : ((TSL ^ j * x : 𝒮ℒ)⁻¹ * x : 𝒮ℒ) = (x⁻¹ * TSL ^ j * x : 𝒮ℒ)⁻¹ := by group
+  rw [← MulAction.zpow_smul_eq_iff_minimalPeriod_dvd, MulAction.Quotient.smul_mk, smul_eq_mul,
+    QuotientGroup.eq, Subgroup.mem_subgroupOf, hconj, InvMemClass.coe_inv, Subgroup.inv_mem_iff]
+
 /-- **What the period of a coset says about the group**: `T ^ n` fixes the coset of `x` exactly
 when `x⁻¹ T ^ n x ∈ 𝒢`. Thus the action period is characterized by divisibility of exactly these
 exponents. When the period is positive — in particular under `[𝒢.IsFiniteRelIndex 𝒮ℒ]` — it is
@@ -108,11 +123,28 @@ space rather than its projective quotient. -/
 lemma minimalPeriod_TSL_dvd_iff (x : 𝒮ℒ) (n : ℕ) :
     minimalPeriod (TSL • ·) (QuotientGroup.mk x : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) ∣ n ↔
       ((x⁻¹ * TSL ^ n * x : 𝒮ℒ) : GL (Fin 2) ℝ) ∈ 𝒢 := by
-  have hconj : ((TSL ^ n * x : 𝒮ℒ)⁻¹ * x : 𝒮ℒ) =
-      (x⁻¹ * TSL ^ n * x : 𝒮ℒ)⁻¹ := by
-    group
-  rw [← MulAction.pow_smul_eq_iff_minimalPeriod_dvd, MulAction.Quotient.smul_mk, smul_eq_mul,
-    QuotientGroup.eq, Subgroup.mem_subgroupOf, hconj, InvMemClass.coe_inv, Subgroup.inv_mem_iff]
+  simpa only [← Int.natCast_dvd_natCast, zpow_natCast] using
+    intCast_minimalPeriod_TSL_dvd_iff x n
+
+/-- For `Γ ≤ SL(2, ℤ)`, the width of the cusp translation orbit of the coset of `γ` (the cusp
+`γ⁻¹ ∞`) divides an integer `j` exactly when `γ⁻¹ T ^ j γ ∈ Γ`. -/
+lemma intCast_cuspTranslationOrbitWidth_mk_dvd_iff {Γ : Subgroup SL(2, ℤ)} (γ : SL(2, ℤ))
+    (j : ℤ) :
+    (cuspTranslationOrbitWidth
+        (⟦(QuotientGroup.mk ((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ) :
+          𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ)⟧ :
+            CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) : ℤ) ∣ j ↔
+      γ⁻¹ * ModularGroup.T ^ j * γ ∈ Γ := by
+  have hconj : (((((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ)⁻¹ * TSL ^ j *
+      (Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ) : 𝒮ℒ) : GL (Fin 2) ℝ) =
+        Matrix.SpecialLinearGroup.mapGL ℝ (γ⁻¹ * ModularGroup.T ^ j * γ) := by
+    have hT : ((TSL ^ j : 𝒮ℒ) : GL (Fin 2) ℝ) =
+        Matrix.SpecialLinearGroup.mapGL ℝ (ModularGroup.T ^ j) := by
+      rw [coe_TSL_zpow, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
+    simp only [InvMemClass.coe_inv, Subgroup.coe_mul, MonoidHom.coe_rangeRestrict, map_inv, hT,
+      map_mul]
+  rw [cuspTranslationOrbitWidth_mk, intCast_minimalPeriod_TSL_dvd_iff, hconj,
+    Subgroup.mem_map_iff_mem Matrix.SpecialLinearGroup.mapGL_injective]
 
 /-- For `Γ ≤ SL(2, ℤ)`, the width of the cusp translation orbit of the coset of `γ` (the cusp
 `γ⁻¹ ∞`) divides `m` exactly when `γ⁻¹ T ^ m γ ∈ Γ`. -/
@@ -122,17 +154,36 @@ lemma cuspTranslationOrbitWidth_mk_dvd_iff {Γ : Subgroup SL(2, ℤ)} (γ : SL(2
           𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ)⟧ :
             CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) ∣ m ↔
       γ⁻¹ * ModularGroup.T ^ m * γ ∈ Γ := by
-  have hconj : (((((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ)⁻¹ * TSL ^ m *
-      (Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ) : 𝒮ℒ) : GL (Fin 2) ℝ) =
-        Matrix.SpecialLinearGroup.mapGL ℝ (γ⁻¹ * ModularGroup.T ^ m * γ) := by
-    have hT : ((TSL ^ m : 𝒮ℒ) : GL (Fin 2) ℝ) =
-        Matrix.SpecialLinearGroup.mapGL ℝ (ModularGroup.T ^ m) := by
-      rw [← zpow_natCast, coe_TSL_zpow, zpow_natCast,
-        Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
-    simp only [InvMemClass.coe_inv, Subgroup.coe_mul, MonoidHom.coe_rangeRestrict, map_inv, hT,
-      map_mul]
-  rw [cuspTranslationOrbitWidth_mk, minimalPeriod_TSL_dvd_iff, hconj,
-    Subgroup.mem_map_iff_mem Matrix.SpecialLinearGroup.mapGL_injective]
+  simpa only [← Int.natCast_dvd_natCast, zpow_natCast] using
+    intCast_cuspTranslationOrbitWidth_mk_dvd_iff γ m
+
+/-- **Strict cusp width equals integer cusp-translation-orbit width**: `strictWidthInfty` of
+`γ⁻¹ Γ γ` equals the width of the cusp translation orbit of `γ⁻¹`. -/
+theorem natCast_cuspTranslationOrbitWidth_mk_inv_eq_strictWidthInfty {Γ : Subgroup SL(2, ℤ)}
+    (γ : SL(2, ℤ)) :
+    (cuspTranslationOrbitWidth
+      (⟦QuotientGroup.mk ((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ⁻¹)⟧ :
+        CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) : ℝ) =
+      (ConjAct.toConjAct (Matrix.SpecialLinearGroup.mapGL ℝ γ)⁻¹ •
+        (Γ : Subgroup (GL (Fin 2) ℝ))).strictWidthInfty := by
+  set w₀ := cuspTranslationOrbitWidth
+    (⟦QuotientGroup.mk ((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ⁻¹)⟧ :
+      CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ)))
+  refine (Subgroup.strictWidthInfty_eq_of_strictPeriods_eq_zmultiples ?_ (Nat.cast_nonneg _)).symm
+  ext x
+  rw [Subgroup.mem_strictPeriods_iff, AddSubgroup.mem_zmultiples_iff]
+  refine ⟨fun hx ↦ ?_, fun ⟨m, hm⟩ ↦ ?_⟩
+  · obtain ⟨j, rfl, hj_mem⟩ := exists_int_eq_and_conj_T_zpow_mem_of_upperRightHom_mem_conj γ hx
+    obtain ⟨m, hm⟩ :=
+      (intCast_cuspTranslationOrbitWidth_mk_dvd_iff γ⁻¹ j).mpr (by simpa using hj_mem)
+    exact ⟨m, by rw [zsmul_eq_mul, mul_comm, ← Int.cast_natCast, ← Int.cast_mul, ← hm]⟩
+  · have hm_mem : γ * ModularGroup.T ^ ((w₀ : ℤ) * m) * γ⁻¹ ∈ Γ := by
+      simpa only [inv_inv] using
+        (intCast_cuspTranslationOrbitWidth_mk_dvd_iff γ⁻¹ ((w₀ : ℤ) * m)).mp ⟨m, rfl⟩
+    rw [← hm, zsmul_eq_mul, mul_comm, ← Int.cast_natCast, ← Int.cast_mul,
+      ← TauCeti.ModularGroup.mapGL_T_zpow_eq_upperRightHom, Subgroup.mem_conjAct_inv_smul_iff]
+    simpa [map_mul, map_inv, mul_assoc] using
+      Subgroup.mem_map_of_mem (Matrix.SpecialLinearGroup.mapGL ℝ) hm_mem
 
 /-- **Widths of an intersection**: at every coset, the width of the cusp translation orbit for
 `𝒢₁ ⊓ 𝒢₂` is the least common multiple of the widths for `𝒢₁` and for `𝒢₂`. -/

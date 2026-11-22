@@ -123,4 +123,73 @@ theorem cuspDatum_norm_coordinate_eq (hc : D.cusp = D'.cusp) (z : ℍ) :
   rw [cuspDatum_coordinate_eq hc hσ, norm_mul, Complex.norm_exp]
   simp [Complex.div_re, Complex.mul_re, Complex.mul_im]
 
+section LiftTransition
+
+variable {D' : Γ.CuspDatum} {s s' h : SL(2, ℝ)} {γ : Γ}
+
+/-- The lift `s' * h * s⁻¹` of `σ' γ σ⁻¹` in `PSL(2, ℝ)`. -/
+theorem coe_scaling_mul_mul_inv (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hs' : (s' : PSL(2, ℝ)) = D'.scaling) (hh : (h : PSL(2, ℝ)) = γ) :
+    ((s' * h * s⁻¹ : SL(2, ℝ)) : PSL(2, ℝ)) = D'.scaling * γ * D.scaling⁻¹ := by
+  rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv, hs, hs', hh]
+
+/-- If `γ ∈ Γ` carries the cusp of `D` to that of `D'`, then `σ' γ σ⁻¹` fixes `∞`, so its lift
+`s' * h * s⁻¹` is upper triangular. -/
+theorem scaling_mul_mul_inv_apply_one_zero (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hs' : (s' : PSL(2, ℝ)) = D'.scaling) (hh : (h : PSL(2, ℝ)) = γ)
+    (hγ : γ • D.cusp = D'.cusp) : (s' * h * s⁻¹) 1 0 = 0 := by
+  have hg : ((s' * h * s⁻¹ : SL(2, ℝ)) : PSL(2, ℝ)) • (∞ : OnePoint ℝ) = ∞ := by
+    rw [coe_scaling_mul_mul_inv hs hs' hh, mul_smul, mul_smul,
+      inv_smul_eq_iff.mpr D.scaling_smul_cusp.symm, ← Subgroup.smul_def, hγ,
+      D'.scaling_smul_cusp]
+  rwa [OnePoint.pslMk_smul, OnePoint.smul_infty_eq_self_iff,
+    Matrix.SpecialLinearGroup.coe_GL_coe_matrix] at hg
+
+/-- If `γ ∈ Γ` carries the cusp of `D` to that of `D'`, with lifts `s`, `s'`, `h` of
+`D.scaling`, `D'.scaling`, `γ`, then the widths satisfy
+`D'.width = (s' * h * s⁻¹) 0 0 ^ 2 * D.width`. -/
+theorem cuspDatum_width_eq_mul_of_smul (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hs' : (s' : PSL(2, ℝ)) = D'.scaling) (hh : (h : PSL(2, ℝ)) = γ)
+    (hγ : γ • D.cusp = D'.cusp) :
+    D'.width = (s' * h * s⁻¹) 0 0 ^ 2 * D.width := by
+  set t : SL(2, ℝ) := s' * h * s⁻¹
+  have ht : t 1 0 = 0 := scaling_mul_mul_inv_apply_one_zero hs hs' hh hγ
+  have ht00 : t 0 0 ≠ 0 := by
+    have h := t.det_coe
+    rw [Matrix.det_fin_two, ht, mul_zero, sub_zero] at h
+    exact left_ne_zero_of_mul_eq_one h
+  let E : Γ.CuspDatum :=
+    { cusp := D'.cusp
+      scaling := D'.scaling
+      generator := γ * D.generator * γ⁻¹
+      width := t 0 0 ^ 2 * D.width
+      width_pos := mul_pos (sq_pos_of_ne_zero ht00) D.width_pos
+      zpowers_generator := by
+        ext g
+        simp only [Subgroup.mem_zpowers_iff]
+        constructor
+        · rintro ⟨n, rfl⟩
+          have hgen : D.generator ^ n ∈ MulAction.stabilizer Γ D.cusp :=
+            D.zpowers_generator ▸ Subgroup.mem_zpowers_iff.mpr ⟨n, rfl⟩
+          rw [MulAction.mem_stabilizer_iff, conj_zpow, ← hγ, mul_smul, mul_smul, inv_smul_smul,
+            MulAction.mem_stabilizer_iff.mp hgen]
+        · intro hg
+          have hmem : γ⁻¹ * g * γ ∈ MulAction.stabilizer Γ D.cusp := by
+            rw [MulAction.mem_stabilizer_iff, mul_smul, mul_smul, hγ,
+              MulAction.mem_stabilizer_iff.mp hg, ← hγ, inv_smul_smul]
+          obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp (D.zpowers_generator.symm ▸ hmem)
+          exact ⟨n, by rw [conj_zpow, hn]; group⟩
+      scaling_mul_generator_mul_inv := by
+        have hconj : D'.scaling * ((γ * D.generator * γ⁻¹ : Γ) : PSL(2, ℝ)) * D'.scaling⁻¹ =
+            (t : PSL(2, ℝ)) * upperRightHom D.width * (t : PSL(2, ℝ))⁻¹ := by
+          simp only [Subgroup.coe_mul, InvMemClass.coe_inv]
+          rw [← D.scaling_mul_generator_mul_inv, coe_scaling_mul_mul_inv hs hs' hh]
+          group
+        rw [hconj]
+        exact mk_mul_upperRightHom_mul_inv t ht D.width }
+  have hE : E = D' := Subgroup.CuspDatum.ext rfl
+  exact congrArg (fun F : Γ.CuspDatum ↦ F.width) hE.symm
+
+end LiftTransition
+
 end TauCeti

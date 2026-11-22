@@ -155,9 +155,9 @@ lemma orderOfVanishingAt_zero (z : ℍ) : orderOfVanishingAt 0 z = 0 :=
 @[simp]
 lemma orderOfVanishingAt_const_smul {c : ℂ} (hc : c ≠ 0) (f : ℍ → ℂ) (z : ℍ) :
     orderOfVanishingAt (c • f) z = orderOfVanishingAt f z := by
-  have hsmul : (c • f) ∘ ofComplex = (fun _ : ℂ ↦ c) * (f ∘ ofComplex) := rfl
+  have hsmul : (c • f) ∘ ofComplex = c • (f ∘ ofComplex) := rfl
   rw [orderOfVanishingAt_def, orderOfVanishingAt_def, hsmul,
-    meromorphicOrderAt_mul_of_ne_zero analyticAt_const hc]
+    meromorphicOrderAt_const_smul_eq_meromorphicOrderAt hc]
 
 /-- The vanishing order of a holomorphic function is nonnegative. -/
 lemma orderOfVanishingAt_nonneg (hf : MDiff f) (z : ℍ) : 0 ≤ orderOfVanishingAt f z := by

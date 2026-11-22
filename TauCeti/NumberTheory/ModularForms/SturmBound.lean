@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.ModularForms.LevelOne.DimensionFormula
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 public import TauCeti.NumberTheory.ModularForms.Norm.Trace
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
+import TauCeti.NumberTheory.ModularForms.ArithmeticSubgroups
 
 /-!
 # The Sturm bound for finite-index subgroups of `SL(2, ℤ)`
