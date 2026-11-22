@@ -42,6 +42,9 @@ its limiting point is fixed by the flow.  Time reversal exchanges the two constr
   (respectively unstable) set but its own.
 * `Flow.stableSet_reverse` and `Flow.unstableSet_reverse`: time reversal exchanges
   stable and unstable sets.
+* `Flow.stableSet_eq_of_forall_notMem` and `Flow.unstableSet_eq_of_forall_notMem`: two flows
+  agreeing off a closed set avoided by the orbits of a stable (resp. unstable) set have the same
+  stable (resp. unstable) set.
 * `Homeomorph.image_stableSet_eq` and `Homeomorph.image_unstableSet_eq`: a topological conjugacy
   transports stable and unstable sets.
 
@@ -239,6 +242,54 @@ theorem stableSet_reverse (φ : _root_.Flow ℝ α) (x : α) :
 theorem unstableSet_reverse (φ : _root_.Flow ℝ α) (x : α) :
     unstableSet φ.reverse x = stableSet φ x := by
   rw [← stableSet_reverse φ.reverse x, reverse_reverse]
+
+/-- **Stable sets of two flows agreeing off a closed set.** Let `q` lie outside a closed set `A`.
+Suppose that the orbits under `φ` of the points of its stable set avoid `A`, that `ψ` agrees with
+`φ` along every `φ`-orbit avoiding `A`, and that `φ` agrees with `ψ` in forward time along every
+forward `ψ`-orbit avoiding `A`. Then `q` has the same stable set for `ψ` as for `φ`. -/
+theorem stableSet_eq_of_forall_notMem {φ ψ : _root_.Flow ℝ α} {A : Set α} (hA : IsClosed A)
+    {q : α} (hq : q ∉ A) (hφA : ∀ y ∈ stableSet φ q, ∀ t, φ t y ∉ A)
+    (hφψ : ∀ y, (∀ t, φ t y ∉ A) → ∀ t, ψ t y = φ t y)
+    (hψφ : ∀ y, (∀ t, 0 ≤ t → ψ t y ∉ A) → ∀ t, 0 ≤ t → φ t y = ψ t y) :
+    stableSet ψ q = stableSet φ q := by
+  ext y
+  constructor
+  · intro hy
+    -- Far ahead, the `ψ`-orbit of `y` stays outside `A`; restarted there, it is a `φ`-orbit.
+    obtain ⟨T₀, hT₀⟩ := eventually_atTop.1 ((mem_stableSet.1 hy).eventually
+      (hA.isOpen_compl.mem_nhds hq))
+    set T := max T₀ 0
+    have hz : ψ T y ∈ stableSet φ q := by
+      have hagree := hψφ (ψ T y) fun t ht ↦ by
+        rw [← ψ.map_add]
+        exact hT₀ _ (by linarith [le_max_left T₀ 0])
+      refine mem_stableSet.2 ((tendsto_congr' ?_).1
+        (mem_stableSet.1 (isInvariant_stableSet ψ q T hy)))
+      filter_upwards [eventually_ge_atTop 0] with t ht using (hagree t ht).symm
+    have hyz : φ (-T) (ψ T y) = y := by
+      rw [← hφψ _ (hφA _ hz) (-T), map_neg_apply_map]
+    rw [← hyz]
+    exact isInvariant_stableSet φ q (-T) hz
+  · intro hy
+    rw [mem_stableSet]
+    simpa only [hφψ y (hφA y hy)] using mem_stableSet.1 hy
+
+/-- **Unstable sets of two flows agreeing off a closed set.** The time reversal of
+`Flow.stableSet_eq_of_forall_notMem`. -/
+theorem unstableSet_eq_of_forall_notMem {φ ψ : _root_.Flow ℝ α} {A : Set α} (hA : IsClosed A)
+    {q : α} (hq : q ∉ A) (hφA : ∀ y ∈ unstableSet φ q, ∀ t, φ t y ∉ A)
+    (hφψ : ∀ y, (∀ t, φ t y ∉ A) → ∀ t, ψ t y = φ t y)
+    (hψφ : ∀ y, (∀ t, t ≤ 0 → ψ t y ∉ A) → ∀ t, t ≤ 0 → φ t y = ψ t y) :
+    unstableSet ψ q = unstableSet φ q := by
+  rw [← stableSet_reverse, ← stableSet_reverse]
+  refine stableSet_eq_of_forall_notMem hA hq (fun y hy t ↦ ?_) (fun y hy t ↦ ?_)
+    fun y hy t ht ↦ ?_
+  · rw [stableSet_reverse] at hy
+    exact hφA y hy (-t)
+  · exact hφψ y (fun t ↦ by simpa only [_root_.Flow.reverse_apply, neg_neg] using hy (-t)) (-t)
+  · have hy' : ∀ t, t ≤ 0 → ψ t y ∉ A := fun t ht' ↦ by
+      simpa only [_root_.Flow.reverse_apply, neg_neg] using hy (-t) (neg_nonneg.2 ht')
+    exact hψφ y hy' (-t) (neg_nonpos.2 ht)
 
 /-- Reversing the flow and negating a function preserves antitonicity of the function along an
 orbit. -/

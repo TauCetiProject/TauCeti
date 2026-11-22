@@ -46,9 +46,10 @@ unstable sets.
   `TauCeti.IsNondegenerateCriticalPoint.eventually_exists_mem_closure_unstableSet_inter_stableSet`:
   limits of trajectories break at a nondegenerate critical point.
 * `TauCeti.exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet` and its time
-  reversal `TauCeti.exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet`: when the
-  limiting orbits converge, the break produces a connecting orbit to (resp. from) another
-  nondegenerate critical point.
+  reversal `TauCeti.exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet`: when
+  every forward orbit in the stable-set closure (resp. every backward orbit in the unstable-set
+  closure) converges to a nondegenerate critical point, the break produces a connecting orbit to
+  (resp. from) another nondegenerate critical point.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_isChain_of_mem_closure_stableSet_inter_stableSet`
   and its time reversal: finite chains of nonconstant connecting orbits, with length bounded by
   the index drop.
@@ -185,7 +186,7 @@ every forward orbit in that closure converges to a nondegenerate critical point,
 nonconstant connecting orbit from `x` to another nondegenerate critical point `a`, with a point in
 the closure of `Wˢ(q)`. -/
 theorem exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet
-    (hx : IsNondegenerateCriticalPoint f x) (hfs : ContDiff ℝ 2 f)
+    (hx : IsNondegenerateCriticalPoint f x) (hfd : Differentiable ℝ f)
     (hf : LipschitzWith K (∇ f)) {q y : E} (hqx : q ≠ x)
     (hy : y ∈ closure (Flow.stableSet (negativeGradientFlow f hf) q) ∩
       Flow.stableSet (negativeGradientFlow f hf) x)
@@ -207,8 +208,8 @@ theorem exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet
   subst a
   have hzx : z = x := Flow.IsNegativeGradient.eq_of_mem_unstableSet_inter_stableSet
     (isNegativeGradient_negativeGradientFlow f hf)
-      (fun t ↦ (hfs.differentiable (by norm_num)).differentiableAt)
-      hfs.continuous.continuousAt ⟨hz.2, hza⟩
+      (fun t ↦ (hfd _))
+      hfd.continuous.continuousAt ⟨hz.2, hza⟩
   rw [hzx, dist_self] at hzr
   exact (ne_of_gt hr) hzr.symm
 
@@ -218,7 +219,7 @@ nonconstant connecting orbit from another nondegenerate critical point `a` to `x
 the closure of `Wᵘ(p)`. This is the time-reversed counterpart of
 `exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet`. -/
 theorem exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet
-    (hx : IsNondegenerateCriticalPoint f x) (hfs : ContDiff ℝ 2 f)
+    (hx : IsNondegenerateCriticalPoint f x) (hfd : Differentiable ℝ f)
     (hf : LipschitzWith K (∇ f)) {p y : E} (hpx : p ≠ x)
     (hy : y ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p) ∩
       Flow.unstableSet (negativeGradientFlow f hf) x)
@@ -240,8 +241,8 @@ theorem exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet
   subst a
   have hzx : z = x := Flow.IsNegativeGradient.eq_of_mem_unstableSet_inter_stableSet
     (isNegativeGradient_negativeGradientFlow f hf)
-      (fun t ↦ (hfs.differentiable (by norm_num)).differentiableAt)
-      hfs.continuous.continuousAt ⟨hza, hz.2⟩
+      (fun t ↦ (hfd _))
+      hfd.continuous.continuousAt ⟨hza, hz.2⟩
   rw [hzx, dist_self] at hzr
   exact (ne_of_gt hr) hzr.symm
 
@@ -287,7 +288,7 @@ theorem exists_isChain_of_mem_closure_stableSet_inter_stableSet
         obtain ⟨y, hy⟩ := hy
         obtain ⟨a, z, ha, hax, hzq, hza⟩ :=
           exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet
-            hx hfs hf hqx hy hconv
+            hx (hfs.differentiable (by norm_num)) hf hqx hy hconv
         have hdrop := htr.morseIndex_lt hx ha hfs hax.symm hzq.2 hza
         have hedge : x ≠ a ∧
             (Flow.unstableSet (negativeGradientFlow f hf) x ∩
@@ -371,7 +372,7 @@ theorem exists_isChain_of_mem_closure_unstableSet_inter_unstableSet
         obtain ⟨y, hy⟩ := hy
         obtain ⟨a, z, ha, hax, hzp, hza⟩ :=
           exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet
-            hx hfs hf hpx hy hconv
+            hx (hfs.differentiable (by norm_num)) hf hpx hy hconv
         have hxa := htr.morseIndex_lt ha hx hfs hax hza hzp.2
         have hcodim : d - morseIndex f a < d - morseIndex f x := by
           have hxa' := morseIndex_le_finrank (f := f) (x := a)
