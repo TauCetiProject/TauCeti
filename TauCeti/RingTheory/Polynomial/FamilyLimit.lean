@@ -7,8 +7,10 @@ module
 
 public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.Topology.Algebra.Algebra.Equiv
+public import Mathlib.Topology.Algebra.IsUniformGroup.Defs
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
+import Mathlib.Topology.Algebra.IsUniformGroup.Constructions
 import TauCeti.RingTheory.AdjoinRoot.Basic
 
 /-!
@@ -17,7 +19,8 @@ import TauCeti.RingTheory.AdjoinRoot.Basic
 For a family of polynomials `g : ι → R[X]`, the *polynomial-family limit*
 `TauCeti.PolyFamilyLimit g = lim_i R[X]/(g i)` is the algebra of families `x i ∈ R[X]/(g i)` that
 are compatible with every reduction map: whenever `g i ∣ g j`, reducing `x j` modulo `g i` gives
-`x i`. It carries the topology induced from the product of the discrete quotients.
+`x i`. It carries the topology induced from the product of the discrete quotients, for which it
+is a complete Hausdorff topological ring.
 
 Many completions of `R[X]` are of this form: the `(X - 1)`-adic completion (along the powers of
 `X - 1`), Habiro's cyclotomic completions (along products of cyclotomic polynomials, see
@@ -55,6 +58,8 @@ No hypothesis on `R` is needed; in particular `R` may have torsion or be the zer
   `TauCeti.PolyFamilyLimit.liftCompatAlgHom_unique`: the universal property of the inverse limit.
 * `TauCeti.PolyFamilyLimit.continuous_iff`: maps into the limit are continuous exactly when all
   their coordinates are locally constant.
+* `TauCeti.isClosed_polyFamilyCompat`: the compatible families are closed in the product of the
+  discrete quotients, so the limit is complete for its group uniformity.
 * `TauCeti.PolyFamilyLimit.proj_reduce`: the coordinate equation of the comparison map: its
   coordinate at `j` is the reduction of the coordinate at any `i` with `h j ∣ g i`.
 * `TauCeti.PolyFamilyLimit.reduce_comp_reduce`, `TauCeti.PolyFamilyLimit.reduce_eq_id`:
@@ -142,6 +147,7 @@ noncomputable def liftCompatAlgHom (φ : ∀ i, A →ₐ[R] AdjoinRoot (g i))
   (AlgHom.pi φ).codRestrict _ fun a ↦
     mem_polyFamilyCompat.mpr fun i j hij ↦ by simpa using DFunLike.congr_fun (hφ i j hij) a
 
+/-- The coordinate at `i` of the induced map is `φ i`. -/
 @[simp]
 theorem proj_liftCompatAlgHom (hφ) (i : ι) (a : A) :
     proj i (liftCompatAlgHom φ hφ a) = φ i a :=
@@ -197,7 +203,7 @@ theorem topologicalSpace_eq_iInf_induced (g : ι → R[X]) :
   rw [instTopologicalSpace, Pi.topologicalSpace, induced_iInf]
   refine iInf_congr fun i ↦ ?_
   rw [induced_compose]
-  rfl
+  exact congrArg (TopologicalSpace.induced · ⊥) (funext fun x ↦ (proj_apply i x).symm)
 
 /-- Every projection is locally constant. -/
 theorem isLocallyConstant_proj (i : ι) :
@@ -223,15 +229,52 @@ theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → PolyFamilyLim
   have : DiscreteTopology (AdjoinRoot (g i)) := discreteTopology_bot _
   rw [continuous_induced_rng, IsLocallyConstant.iff_continuous]
 
+/-- `PolyFamilyLimit g` is a topological ring: it is a subring of the product of the discrete, hence
+topological, rings `R[X]/(g i)`, with the induced topology. -/
 instance (g : ι → R[X]) : IsTopologicalRing (PolyFamilyLimit g) := by
   let _ : ∀ i, TopologicalSpace (AdjoinRoot (g i)) := fun _ ↦ ⊥
   have : ∀ i, DiscreteTopology (AdjoinRoot (g i)) := fun _ ↦ discreteTopology_bot _
   exact Subring.instIsTopologicalRing (polyFamilyCompat g).toSubring
 
+/-- `PolyFamilyLimit g` is Hausdorff: its topology is induced by the inclusion into the product
+of the discrete quotients `R[X]/(g i)`. -/
 instance (g : ι → R[X]) : T2Space (PolyFamilyLimit g) := by
   let _ : ∀ i, TopologicalSpace (AdjoinRoot (g i)) := fun _ ↦ ⊥
   have : ∀ i, DiscreteTopology (AdjoinRoot (g i)) := fun _ ↦ discreteTopology_bot _
   exact inferInstance
+
+/-- The canonical additive-group uniform structure on `PolyFamilyLimit g` compatible with its
+inverse-limit topology. -/
+noncomputable instance (g : ι → R[X]) : UniformSpace (PolyFamilyLimit g) :=
+  IsTopologicalAddGroup.rightUniformSpace (PolyFamilyLimit g)
+
+instance (g : ι → R[X]) : IsUniformAddGroup (PolyFamilyLimit g) :=
+  isUniformAddGroup_of_addCommGroup
+
+/-- The compatible families form a closed subset of the product of the discrete quotients
+`R[X]/(g i)`. -/
+theorem isClosed_polyFamilyCompat (g : ι → R[X]) :
+    @IsClosed (∀ i, AdjoinRoot (g i)) (@Pi.topologicalSpace ι (fun i ↦ AdjoinRoot (g i)) fun _ ↦ ⊥)
+      (polyFamilyCompat g : Set (∀ i, AdjoinRoot (g i))) := by
+  let _ : ∀ i, TopologicalSpace (AdjoinRoot (g i)) := fun _ ↦ ⊥
+  have : ∀ i, DiscreteTopology (AdjoinRoot (g i)) := fun _ ↦ discreteTopology_bot _
+  have hset : (polyFamilyCompat g : Set (∀ i, AdjoinRoot (g i))) =
+      ⋂ (i : ι) (j : ι) (h : g i ∣ g j),
+        {x | AdjoinRoot.algHomOfDvd R (g j) (g i) h (x j) = x i} := by
+    ext x
+    simp [mem_polyFamilyCompat]
+  rw [hset]
+  exact isClosed_iInter fun i ↦ isClosed_iInter fun j ↦ isClosed_iInter fun _ ↦
+    isClosed_eq (continuous_of_discreteTopology.comp (continuous_apply j)) (continuous_apply i)
+
+/-- `PolyFamilyLimit g` is complete for its group uniformity: it is a closed additive subgroup of
+the product of the discrete, hence complete, quotients `R[X]/(g i)`. -/
+instance (g : ι → R[X]) : CompleteSpace (PolyFamilyLimit g) := by
+  let _ : ∀ i, UniformSpace (AdjoinRoot (g i)) := fun _ ↦ ⊥
+  have hind : Topology.IsInducing (polyFamilyCompat g).val := Topology.IsInducing.subtypeVal
+  have hrange : Set.range (polyFamilyCompat g).val = polyFamilyCompat g := Subtype.range_val
+  exact (AddMonoidHom.isUniformInducing_of_isInducing hind).completeSpace
+    (hrange ▸ (isClosed_polyFamilyCompat g).isComplete)
 
 /-! ### Reduction from a dominating coordinate -/
 
@@ -265,9 +308,8 @@ theorem projOfDvd_apply (hg : Directed (· ∣ ·) g) {p : R[X]} {i : ι} (hi : 
 
 /-- On a member of the family, `projOfDvd` is the projection. -/
 @[simp]
-theorem projOfDvd_self (hg : Directed (· ∣ ·) g) (i : ι) :
-    projOfDvd ⟨i, dvd_refl (g i)⟩ = proj i := by
-  rw [projOfDvd_eq hg (dvd_refl (g i)), AdjoinRoot.algHomOfDvd_self, AlgHom.id_comp]
+theorem projOfDvd_self (i : ι) : projOfDvd ⟨i, dvd_refl (g i)⟩ = proj i :=
+  algHomOfDvd_comp_proj _
 
 @[simp]
 theorem projOfDvd_fromPoly {p : R[X]} (hp : ∃ i, p ∣ g i)
@@ -388,11 +430,13 @@ theorem proj_cofinalEquiv {j : κ} {i : ι} (hji : h j ∣ g i) (x : PolyFamilyL
       AdjoinRoot.algHomOfDvd R (g i) (h j) hji (proj i x) :=
   proj_reduce hg hhg hji x
 
+/-- The cofinal equivalence extends the identity of `R[X]`. -/
 theorem cofinalEquiv_fromPoly (p : R[X]) :
     cofinalEquiv hg hh hhg hgh (fromPoly g p) = fromPoly h p :=
   reduce_fromPoly hg hhg p
 
-/-- **Transitivity of cofinal replacement.** -/
+/-- **Transitivity of cofinal replacement.** Composing the cofinal equivalences `g → h` and
+`h → k` gives the cofinal equivalence `g → k`. -/
 @[simp]
 theorem cofinalEquiv_trans (hk : Directed (· ∣ ·) k) (hkh : ∀ l, ∃ j, k l ∣ h j)
     (hhk : ∀ j, ∃ l, h j ∣ k l) (hkg : ∀ l, ∃ i, k l ∣ g i) (hgk : ∀ i, ∃ l, g i ∣ k l) :

@@ -49,6 +49,8 @@ of `∏ n ∈ s, cyclotomic n R` are already cofinal.
 * `TauCeti.exists_dvd_cycloChain`: every index divides some member of the cofinal chain.
 * `TauCeti.exists_dvd_prod_cyclotomic_pow`, `TauCeti.exists_dvd_cycloProd_pow`: for finite `s`,
   every index divides a power of `∏ n ∈ s, cyclotomic n R`.
+* `TauCeti.cycloIndex.directed_dvd`, `TauCeti.directed_dvd_cycloProd_pow`: the indices, and for
+  finite `S` the powers of `cycloProd R hS`, are directed for divisibility.
 * `TauCeti.cycloIndex_eq_bot_iff_subsingleton_or`: over any commutative ring the index monoid is
   trivial exactly when `R` is the zero ring or every order in `S` is zero.
 
@@ -323,6 +325,10 @@ theorem cycloIndex.exists_dvd_and_dvd (f g : cycloIndex R S) :
     ∃ h : cycloIndex R S, (f : R[X]) ∣ h ∧ (g : R[X]) ∣ h :=
   ⟨f * g, dvd_mul_right (f : R[X]) g, dvd_mul_left (g : R[X]) f⟩
 
+/-- The members of `cycloIndex R S` form a directed family for divisibility. -/
+theorem cycloIndex.directed_dvd : Directed (· ∣ ·) (fun f : cycloIndex R S ↦ (f : R[X])) :=
+  cycloIndex.exists_dvd_and_dvd
+
 variable (R) in
 /-- `cycloChain R S N` bundled as an element of `cycloIndex R S`. -/
 noncomputable def cycloChainIndex (S : Set ℕ) (N : ℕ) : cycloIndex R S :=
@@ -392,6 +398,12 @@ theorem exists_dvd_cycloProd_pow (hS : S.Finite) {f : R[X]} (hf : f ∈ cycloInd
     ∃ k : ℕ, f ∣ cycloProd R hS ^ k := by
   rw [← hS.coe_toFinset] at hf
   exact exists_dvd_prod_cyclotomic_pow hf
+
+variable (R) in
+/-- The powers of `cycloProd R hS` form a directed family for divisibility. -/
+theorem directed_dvd_cycloProd_pow (hS : S.Finite) :
+    Directed (· ∣ ·) (fun k : ℕ ↦ cycloProd R hS ^ k) := fun k l ↦
+  ⟨max k l, pow_dvd_pow _ (le_max_left k l), pow_dvd_pow _ (le_max_right k l)⟩
 
 end Supplements
 
