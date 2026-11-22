@@ -108,19 +108,12 @@ variable {n : ℕ} {k : WithTop ℕ∞} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
   {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))} {x : M}
 
-/-- The half-space model `𝓡∂ (n + 1)` sends a point to the frontier of its range exactly when the
-zeroth coordinate of the point vanishes. -/
-private theorem mem_frontier_range_euclideanHalfSpace_iff (z : EuclideanHalfSpace (n + 1)) :
-    (𝓡∂ (n + 1)) z ∈ frontier (range (𝓡∂ (n + 1))) ↔ z.val 0 = 0 := by
-  rw [frontier_range_modelWithCornersEuclideanHalfSpace, modelWithCornersEuclideanHalfSpace_toFun]
-  exact eq_comm
-
 /-- A point of a charted space modeled on the `(n + 1)`-dimensional Euclidean half-space lies on
 the boundary exactly when any chart around it reads it with vanishing zeroth coordinate. -/
 theorem ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (hx : x ∈ e.source) :
     x ∈ (𝓡∂ (n + 1)).boundary M ↔ (e x).val 0 = 0 :=
   (ModelWithCorners.mem_boundary_iff_mem_frontier_range_of_finiteDimensional hx).trans
-    (mem_frontier_range_euclideanHalfSpace_iff _)
+    (modelWithCornersEuclideanHalfSpace_mem_frontier_range_iff _)
 
 variable (n) in
 /-- Deleting the zeroth coordinate identifies the points that the half-space model sends to the
@@ -130,12 +123,12 @@ private noncomputable def euclideanHalfSpaceFrontierHomeomorph :
       EuclideanSpace ℝ (Fin n) where
   toFun z := EuclideanHalfSpace.boundaryProj n z.val
   invFun y := ⟨EuclideanHalfSpace.boundaryParam n y,
-    (mem_frontier_range_euclideanHalfSpace_iff _).2 (by simp)⟩
+    (modelWithCornersEuclideanHalfSpace_mem_frontier_range_iff _).2 (by simp)⟩
   left_inv z := Subtype.ext <| by
     dsimp only
     rw [EuclideanHalfSpace.boundaryProj_coe]
     exact EuclideanHalfSpace.boundaryParam_boundaryProj
-      ((mem_frontier_range_euclideanHalfSpace_iff _).1 z.property)
+      ((modelWithCornersEuclideanHalfSpace_mem_frontier_range_iff _).1 z.property)
   right_inv := EuclideanHalfSpace.boundaryProj_boundaryParam
   continuous_toFun := EuclideanHalfSpace.continuous_boundaryProj.comp continuous_subtypeVal
   continuous_invFun := EuclideanHalfSpace.continuous_boundaryParam.subtype_mk _

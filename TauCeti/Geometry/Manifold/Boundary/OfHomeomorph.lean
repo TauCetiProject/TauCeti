@@ -14,7 +14,7 @@ public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 Let `I : ModelWithCorners 𝕜 E H` be a model with corners on a finite-dimensional space, and `M` a
 charted space modelled on `H`. Every chart of `M`, in the atlas or not, reads the boundary points of
 `M` as the points that `I` sends to the frontier of its range
-(`ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional`): this is the
+(`ModelWithCorners.mem_boundary_iff_mem_frontier_range_of_finiteDimensional`): this is the
 topological invariance of the boundary, and it needs no condition on the transition maps. So a
 homeomorphism `φ` from the boundary `{z : H // I z ∈ frontier (range I)}` of the model onto a
 space `F` turns every chart of `M` into a chart of the boundary `I.boundary M` with values in `F`:
@@ -36,8 +36,6 @@ are instances of this construction.
 
 ## Main results
 
-* `ModelWithCorners.mem_boundary_iff_mem_frontier_range_of_finiteDimensional`: every chart reads
-  the boundary points of `M` as the points that `I` sends to the frontier of its range.
 * `ModelWithCorners.boundaryChartedSpaceOfHomeomorph_atlas` and the
   `boundaryChartedSpaceOfHomeomorph_chartAt_*` lemmas: the atlas of the boundary and the source,
   target, values and inverse of its charts.
@@ -54,15 +52,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E H : Type*} [NormedAddC
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {F : Type*} [TopologicalSpace F]
   {φ : {z : H // I z ∈ frontier (range I)} ≃ₜ F} {π : H → F}
   {e : OpenPartialHomeomorph M H}
-
-/-- A chart of `M`, in the atlas or not, reads a point of its source on the boundary exactly when
-`I` sends the reading to the frontier of its range. This is
-`ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional`, stated for the
-boundary set `I.boundary M`. -/
-theorem mem_boundary_iff_mem_frontier_range_of_finiteDimensional {x : M} (hx : x ∈ e.source) :
-    x ∈ I.boundary M ↔ I (e x) ∈ frontier (range I) := by
-  rw [ModelWithCorners.boundary, mem_ofPred_eq,
-    isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional hx]
 
 /-- The inverse of the homeomorphism of the model boundary, read in the target of a chart of `M`,
 is the reading of a boundary point. -/

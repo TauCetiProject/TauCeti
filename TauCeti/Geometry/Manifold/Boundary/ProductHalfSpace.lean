@@ -52,14 +52,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace {q : E × ℝ | 0 ≤ q.2} M]
 
-omit [FiniteDimensional ℝ E] in
-/-- The half-space model sends a point to the frontier of its range exactly when its height
-vanishes. -/
-private theorem mem_frontier_range_modelWithCornersHalfSpace_iff (q : {q : E × ℝ | 0 ≤ q.2}) :
-    modelWithCornersHalfSpace E q ∈ frontier (range (modelWithCornersHalfSpace E)) ↔
-      q.val.2 = 0 := by
-  rw [frontier_range_modelWithCornersHalfSpace, modelWithCornersHalfSpace_apply, mem_ofPred_eq]
-
 /-- **Topological invariance of the boundary.** On a charted space modelled on the half-space in
 `E × ℝ`, with `E` finite dimensional, a point lies on the boundary exactly when any chart around
 it, in the atlas or not, reads it at height zero. -/
@@ -67,7 +59,7 @@ theorem mem_boundary_modelWithCornersHalfSpace_iff
     {e : OpenPartialHomeomorph M {q : E × ℝ | 0 ≤ q.2}} {x : M} (hx : x ∈ e.source) :
     x ∈ (modelWithCornersHalfSpace E).boundary M ↔ (e x).val.2 = 0 :=
   (ModelWithCorners.mem_boundary_iff_mem_frontier_range_of_finiteDimensional hx).trans
-    (mem_frontier_range_modelWithCornersHalfSpace_iff _)
+    (modelWithCornersHalfSpace_mem_frontier_range_iff _)
 
 omit [FiniteDimensional ℝ E] in
 variable (E) in
@@ -78,11 +70,11 @@ private noncomputable def halfSpaceFrontierHomeomorph :
       modelWithCornersHalfSpace E q ∈ frontier (range (modelWithCornersHalfSpace E))} ≃ₜ E where
   toFun q := q.val.val.1
   invFun z := ⟨(modelWithCornersHalfSpace E).symm (z, 0),
-    (mem_frontier_range_modelWithCornersHalfSpace_iff _).2 <| by
+    (modelWithCornersHalfSpace_mem_frontier_range_iff _).2 <| by
       rw [coe_modelWithCornersHalfSpace_symm_apply E le_rfl]⟩
   left_inv q := Subtype.ext <| Subtype.ext <|
     (coe_modelWithCornersHalfSpace_symm_apply E le_rfl).trans
-      (Prod.ext rfl ((mem_frontier_range_modelWithCornersHalfSpace_iff _).1 q.property).symm)
+      (Prod.ext rfl ((modelWithCornersHalfSpace_mem_frontier_range_iff _).1 q.property).symm)
   right_inv z := by simp [modelWithCornersHalfSpace_symm_apply]
   continuous_toFun := continuous_fst.comp (continuous_subtypeVal.comp continuous_subtypeVal)
   continuous_invFun := ((modelWithCornersHalfSpace E).continuous_symm.comp
