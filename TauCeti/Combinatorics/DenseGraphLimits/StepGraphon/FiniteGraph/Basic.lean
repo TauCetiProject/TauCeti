@@ -266,27 +266,18 @@ theorem homDensity_finiteGraphGraphon (F : SimpleGraph V) [DecidableRel F.Adj] (
     (G : SimpleGraph (Fin m)) :
     homDensity F (finiteGraphGraphon G) = homDensityFin F G := by
   classical
-  -- the resulting finite sum counts the homomorphisms
-  have hsum : (∑ ψ : V → Fin m, if ∀ a b, F.Adj a b →
-        (G.map Fin.valEmbedding).Adj ((ψ a : ℕ)) ((ψ b : ℕ)) then (1 : ℝ) else 0)
-      = (Nat.card (F →g G) : ℝ) := by
-    simp_rw [map_valEmbedding_adj_iff G]
-    rw [Finset.sum_boole, SimpleGraph.card_hom_eq_card_adjPreservingMaps,
-      Nat.card_eq_fintype_card, Fintype.card_subtype]
-  have hpi : (∫ x : V → I,
-        (if ∀ a b, F.Adj a b →
-          (G.map Fin.valEmbedding).Adj (cellIdx m (x a)) (cellIdx m (x b)) then (1 : ℝ) else 0)
-        ∂(Measure.pi fun _ : V => (volume : Measure I)))
-      = (∑ ψ : V → Fin m, if ∀ a b, F.Adj a b →
-          (G.map Fin.valEmbedding).Adj (ψ a : ℕ) (ψ b : ℕ) then (1 : ℝ) else 0)
-          / (m : ℝ) ^ Fintype.card V := by
-    simpa [smul_eq_mul, div_eq_inv_mul] using
-      (integral_pi_comp_cellIdx_eq_inv_smul_sum (V := V) hm
-        (fun ν : V → ℕ => if ∀ a b, F.Adj a b → (G.map Fin.valEmbedding).Adj (ν a) (ν b)
-          then (1 : ℝ) else 0))
-  rw [homDensity_def,
-    integral_congr_ae (Filter.Eventually.of_forall (prod_edgeFactor_finiteGraphGraphon F G)),
-    hpi, hsum, homDensityFin_def, Fintype.card_fin]
+  have : NeZero m := ⟨hm.ne'⟩
+  -- the edge product is the indicator that the cells of the points span a homomorphism
+  have hind : ∀ x : V → I, ∏ e ∈ F.edgeFinset, edgeFactor (finiteGraphGraphon G) x e
+      = if ∀ a b, F.Adj a b → G.Adj (cellFin m (x a)) (cellFin m (x b)) then (1 : ℝ) else 0 := by
+    intro x
+    simp only [prod_edgeFactor_finiteGraphGraphon, ← coe_cellFin, map_valEmbedding_adj_iff]
+  rw [homDensity_def, integral_congr_ae (Filter.Eventually.of_forall hind),
+    integral_pi_comp_cellFin_eq_inv_smul_sum
+      (fun ψ : V → Fin m => if ∀ a b, F.Adj a b → G.Adj (ψ a) (ψ b) then (1 : ℝ) else 0),
+    Finset.sum_boole, smul_eq_mul, inv_mul_eq_div, homDensityFin_def,
+    SimpleGraph.card_hom_eq_card_adjPreservingMaps, Nat.card_eq_fintype_card, Fintype.card_subtype,
+    Fintype.card_fin]
 
 end DenseGraphLimits
 
