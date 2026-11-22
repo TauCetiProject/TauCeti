@@ -21,8 +21,12 @@ when `A · [S] ≥ -1` for every such sphere; for `A` Poincaré dual to a class 
 is `⟨e, [S]⟩ ≥ -1`. Both notions refer to the same `J` as the count.
 
 This file defines them on the embedded pseudoholomorphic images of
-`TauCeti.Geometry.Symplectic.Manifold.EmbeddedCurve`.
+`TauCeti.Geometry.Symplectic.Manifold.EmbeddedCurve`, for an intersection form
+`B : TauCeti.IntersectionForm X`.
 
+* `TauCeti.IntersectionForm X`, the `ℤ`-bilinear forms on `H₂(X; ℤ)` for the `ℤ`-module structure
+  `AddCommGroup.toIntModule`, as in the abstract counts and cycles over an additive group which
+  this file specializes.
 * `TauCeti.exceptionalImages J B κ`, the set `Exc_J`: the embedded `J`-holomorphic images `S`
   whose class is exceptional, `[S] · [S] = κ · [S] = -1`. An embedded curve of genus `g` satisfies
   the adjunction formula `[S] · [S] + κ · [S] = 2 g - 2`, and under it these images are exactly the
@@ -30,10 +34,6 @@ This file defines them on the embedded pseudoholomorphic images of
   (`TauCeti.EmbeddedPseudoholomorphicCurve.range_mem_exceptionalImages_iff`). For a generic `J`,
   every embedded image of negative square is one of them
   (`TauCeti.mem_exceptionalImages_of_apply_self_neg`).
-
-The intersection form `B` is bilinear for the `ℤ`-module structure `AddCommGroup.toIntModule` of
-`H₂(X; ℤ)`, as in the abstract counts and cycles over an additive group which this file
-specializes.
 * `TauCeti.IsGoodClass J B κ A`, the predicate `good_J(A)`: `A · [S] ≥ -1` for every
   `S ∈ exceptionalImages J B κ`.
 
@@ -65,6 +65,8 @@ positivity of intersections are inputs here; the geometric theorems supplying th
 
 ## Main definitions
 
+* `TauCeti.IntersectionForm`: the type of intersection forms on `H₂(X; ℤ)`.
+* `TauCeti.IntersectionForm.IsSymm`: symmetry of an intersection form.
 * `TauCeti.exceptionalImages`: the embedded images in exceptional classes.
 * `TauCeti.IsGoodClass`: the classes at least `-1` on every exceptional image.
 
@@ -85,11 +87,17 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
--- Intersection forms on `H₂(X; ℤ)` are bilinear for the `ℤ`-module structure
--- `AddCommGroup.toIntModule`, the one the abstract counts and cycles over an additive group use,
--- rather than the `ModuleCat ℤ` structure of `secondHomology X`, which agrees with it only
--- propositionally. Raising its priority makes `BilinForm ℤ (secondHomology X)` use it.
-attribute [local instance high] AddCommGroup.toIntModule
+/-- The `ℤ`-bilinear forms on `H₂(X; ℤ)`, such as the intersection form of a closed oriented
+four-manifold `X`. They are bilinear for the `ℤ`-module structure `AddCommGroup.toIntModule`, the
+one the abstract counts and cycles over an additive group use, rather than for the `ModuleCat ℤ`
+structure of `secondHomology X`, which agrees with it only propositionally. -/
+abbrev IntersectionForm (X : Type) [TopologicalSpace X] : Type :=
+  @BilinForm ℤ _ (secondHomology X) _ (AddCommGroup.toIntModule _)
+
+/-- An intersection form `B : TauCeti.IntersectionForm X` is **symmetric**,
+`LinearMap.BilinForm.IsSymm` for the `ℤ`-module structure `AddCommGroup.toIntModule`. -/
+abbrev IntersectionForm.IsSymm {X : Type} [TopologicalSpace X] (B : IntersectionForm X) : Prop :=
+  @LinearMap.BilinForm.IsSymm ℤ (secondHomology X) _ _ (AddCommGroup.toIntModule _) B
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {X : Type} [TopologicalSpace X] [ChartedSpace H X]
@@ -97,7 +105,7 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 section Defs
 
-variable (J : SmoothAlmostComplexStructure I X) (B : BilinForm ℤ (secondHomology X))
+variable (J : SmoothAlmostComplexStructure I X) (B : IntersectionForm X)
   (κ : secondHomology X)
 
 /-- The **exceptional images** `Exc_J` of an almost complex structure `J`, for the intersection
@@ -117,7 +125,7 @@ def IsGoodClass (A : secondHomology X) : Prop :=
 
 end Defs
 
-variable {J : SmoothAlmostComplexStructure I X} {B : BilinForm ℤ (secondHomology X)}
+variable {J : SmoothAlmostComplexStructure I X} {B : IntersectionForm X}
   {κ A : secondHomology X} {S : Set X}
 
 @[simp]
@@ -245,13 +253,12 @@ section CanonicalCycle
 variable {ι : Type*} [Fintype ι] {C : ι → Set X} {m : ι → ℕ}
 
 /-- **Every exceptional image is a component of a canonical cycle.** Let `∑ m i • [C i]` be a
-canonical cycle of images whose components meet every exceptional image other than themselves
-nonnegatively. Since an exceptional image pairs negatively with the canonical class, it is one
-of the components. -/
+canonical cycle of images whose components other than the exceptional image `S` meet it
+nonnegatively. Since `S` pairs negatively with the canonical class, it is one of the
+components. -/
 theorem IsCanonicalCycle.exists_eq_of_mem_exceptionalImages
     (h : IsCanonicalCycle B κ (embeddedCurveClass J ∘ C) m)
-    (hpos : ∀ S ∈ exceptionalImages J B κ, ∀ i, C i ≠ S →
-      0 ≤ B (embeddedCurveClass J (C i)) (embeddedCurveClass J S))
+    (hpos : ∀ i, C i ≠ S → 0 ≤ B (embeddedCurveClass J (C i)) (embeddedCurveClass J S))
     (hS : S ∈ exceptionalImages J B κ) : ∃ i, C i = S := by
   by_contra hne
   push Not at hne
@@ -259,8 +266,8 @@ theorem IsCanonicalCycle.exists_eq_of_mem_exceptionalImages
     rw [apply_canonical_eq_neg_one_of_mem_exceptionalImages hS]
     norm_num
   -- The canonical cycle has a component of the same class as `S`, which is not `S` itself.
-  obtain ⟨i, hi⟩ := h.exists_eq_of_apply_canonical_neg hκ fun i ↦ .inr (hpos S hS i (hne i))
-  have := hpos S hS i (hne i)
+  obtain ⟨i, hi⟩ := h.exists_eq_of_apply_canonical_neg hκ fun i ↦ .inr (hpos i (hne i))
+  have := hpos i (hne i)
   rw [Function.comp_apply] at hi
   rw [hi, apply_self_eq_neg_one_of_mem_exceptionalImages hS] at this
   omega
@@ -281,12 +288,12 @@ theorem IsCanonicalCycle.finite_exceptionalImages
     (hpos : ∀ S ∈ exceptionalImages J B κ, ∀ i, C i ≠ S →
       0 ≤ B (embeddedCurveClass J (C i)) (embeddedCurveClass J S)) :
     (exceptionalImages J B κ).Finite :=
-  (finite_range C).subset fun _ hS ↦ h.exists_eq_of_mem_exceptionalImages hpos hS
+  (finite_range C).subset fun _ hS ↦ h.exists_eq_of_mem_exceptionalImages (hpos _ hS) hS
 
 /-- **Subcycles of a canonical cycle are good.** If the images of a canonical cycle
 `∑ m i • [C i]` meet every exceptional image other than themselves nonnegatively, then every
 subcycle `∑ a i • [C i]` with `a ≤ m` is a good class: it pairs with each exceptional image to
-`0` or `-1`. -/
+at least `-1`. -/
 theorem IsCanonicalCycle.isGoodClass_sum (hB : B.IsSymm)
     (h : IsCanonicalCycle B κ (embeddedCurveClass J ∘ C) m)
     (hpos : ∀ S ∈ exceptionalImages J B κ, ∀ i, C i ≠ S →
