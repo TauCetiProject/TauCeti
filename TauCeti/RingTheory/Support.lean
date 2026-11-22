@@ -16,11 +16,12 @@ import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
 import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 import Mathlib.RingTheory.Localization.Finiteness
 import Mathlib.Tactic.ENatToNat
+import TauCeti.RingTheory.Ideal.Radical
 import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.Localization.Annihilator
 
 /-!
-# Primes of small height in the support of a torsion module
+# Support of modules over commutative rings
 
 A finitely generated torsion module `M` over a noetherian ring `A` vanishes at every minimal prime
 of `A`, so every prime of height at most one in its support is minimal over the annihilator of
@@ -40,6 +41,14 @@ Every prime in the support of a finite product `∏ᵢ A ⧸ 𝔭 ^ nᵢ` contai
 
 A finite module each of whose elements is killed by an element outside a prime `P` is killed by a
 single element outside `P` (`Module.exists_notMem_forall_smul_eq_zero`).
+
+For a finite module, support in `V(I)` in the prime spectrum is equivalent to annihilation
+by a positive power of the finitely generated ideal `I`. This is the affine algebraic
+condition for formal support; it uses the full prime spectrum, not just the open primes.
+
+## References
+
+* The Stacks Project, Tag 00L6, for the finite-module support criterion over noetherian rings.
 -/
 
 public section
@@ -116,6 +125,15 @@ end Module.IsTorsion
 namespace Module
 
 variable {A : Type*} [CommRing A]
+
+/-- A finite module has support in `V(I)` exactly when a positive power of the finitely
+generated ideal `I` annihilates it. -/
+theorem support_subset_zeroLocus_iff_exists_pow_le_annihilator {M : Type*}
+    [AddCommGroup M] [Module A M] [Module.Finite A M] {I : Ideal A} (hI : I.FG) :
+    support A M ⊆ PrimeSpectrum.zeroLocus I ↔
+      ∃ n : ℕ, 0 < n ∧ I ^ n ≤ annihilator A M := by
+  rw [support_eq_zeroLocus, PrimeSpectrum.zeroLocus_subset_zeroLocus_iff,
+    Ideal.le_radical_iff_exists_pow_le_of_fg hI]
 
 /-- A prime in the support of `∏ᵢ A ⧸ 𝔭 ^ nᵢ` contains `𝔭`. -/
 theorem le_of_mem_support_pi_quotient_pow {ι : Type*} [Finite ι] {𝔭 : Ideal A}

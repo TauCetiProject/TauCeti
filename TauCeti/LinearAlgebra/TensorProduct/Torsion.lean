@@ -12,11 +12,14 @@ public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.LinearAlgebra.TensorProduct.Pi
 import TauCeti.Algebra.Module.Torsion.PrimaryComponent
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Torsion in tensor products
 
 An annihilator of either factor annihilates its tensor product with an arbitrary module.
+If `I ^ a` and `J ^ b` kill the respective factors, then `(I ⊔ J) ^ (a + b - 1)`
+kills their tensor product.
 Similarly, the tensor product of commutative additive monoids is torsion if either factor is
 torsion.
 No flatness or finite generation is required. These facts supply the tensor closure properties
@@ -112,6 +115,30 @@ theorem subsingleton_tensorProduct_of_isTorsionBySet_left {I : Ideal R}
   (TensorProduct.comm R M N).toEquiv.subsingleton
 
 end TauCeti
+
+namespace Module
+
+variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [AddCommMonoid N]
+  [Module R M] [Module R N]
+
+/-- The sum of the annihilators of the factors annihilates their tensor product. -/
+theorem sup_annihilator_le_annihilator_tensorProduct :
+    annihilator R M ⊔ annihilator R N ≤ annihilator R (M ⊗[R] N) :=
+  sup_le
+    (fun _ h ↦ mem_annihilator.mpr
+      (TauCeti.isTorsionBy_tensorProduct_left (N := N) (mem_annihilator.mp h)))
+    (fun _ h ↦ mem_annihilator.mpr
+      (TauCeti.isTorsionBy_tensorProduct_right (M := M) (mem_annihilator.mp h)))
+
+/-- If `I ^ a` kills `M` and `J ^ b` kills `N`, then `(I ⊔ J) ^ (a + b - 1)` kills
+their tensor product. This also holds for zero exponents, when the corresponding factor is zero. -/
+theorem sup_pow_le_annihilator_tensorProduct {I J : Ideal R} {a b : ℕ}
+    (hM : I ^ a ≤ annihilator R M) (hN : J ^ b ≤ annihilator R N) :
+    (I ⊔ J) ^ (a + b - 1) ≤ annihilator R (M ⊗[R] N) :=
+  Ideal.sup_pow_add_sub_one_le_pow_sup_pow.trans
+    ((sup_le_sup hM hN).trans sup_annihilator_le_annihilator_tensorProduct)
+
+end Module
 
 namespace TauCeti
 
