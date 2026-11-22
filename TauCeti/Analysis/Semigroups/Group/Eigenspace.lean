@@ -97,17 +97,8 @@ theorem mem_eigenspace_iff (U : StronglyContinuousGroup X)
     (hU : U.toSemigroup.IsComplexLinear) (ω : ℝ) (x : X) :
     x ∈ U.eigenspace hU ω ↔ ∀ t : ℝ, U t x = Complex.exp (ω * t * Complex.I) • x := by
   rw [eigenspace_eq_fixedSubmodule_phaseShift, mem_fixedSubmodule_iff]
-  simp only [phaseShift_apply_apply]
-  refine forall_congr' fun t ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · calc U t x = Complex.exp ((ω * t : ℂ) * Complex.I) •
-            (Complex.exp (-(ω * t : ℂ) * Complex.I) • U t x) := by
-          rw [smul_smul, ← Complex.exp_add]
-          have hexp : (ω * t : ℂ) * Complex.I + -(ω * t : ℂ) * Complex.I = 0 := by ring
-          rw [hexp, Complex.exp_zero, one_smul]
-      _ = Complex.exp (ω * t * Complex.I) • x := by rw [h]
-  · rw [h, smul_smul, ← Complex.exp_add]
-    have hexp : -(ω * t : ℂ) * Complex.I + ω * t * Complex.I = 0 := by ring
-    rw [hexp, Complex.exp_zero, one_smul]
+  refine forall_congr' fun t ↦ ?_
+  rw [phaseShift_apply_apply, neg_mul, Complex.exp_neg, inv_smul_eq_iff₀ (Complex.exp_ne_zero _)]
 
 /-- The underlying set of `eigenspace` at `ω` is `{x | ∀ t : ℝ, U t x = exp (ω * t * I) • x}`. -/
 theorem coe_eigenspace (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear)

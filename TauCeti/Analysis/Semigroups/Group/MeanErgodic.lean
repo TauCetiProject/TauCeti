@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.Semigroups.Group.Eigenspace
 public import TauCeti.Analysis.Semigroups.Group.Unitary
 import Mathlib.Analysis.InnerProductSpace.MeanErgodic
@@ -63,10 +62,10 @@ theorem tendsto_average_starProjection [CompleteSpace H] (hU : U.IsUnitary) (v :
     Tendsto (fun T : ℝ ↦ T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) atTop
       (𝓝 ((U.fixedSubmodule hU.isComplexLinear).starProjection v)) := by
   let f : H →L[ℂ] H := U.toSemigroup.complexLinearOperator hU.isComplexLinear 1
-  have hf_norm : ‖f‖ ≤ 1 := ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by
-    rw [U.toSemigroup.complexLinearOperator_apply, U.toSemigroup_apply]
-    simpa only [NNReal.coe_one, one_mul] using
-      ((U 1).le_opNorm x).trans (mul_le_of_le_one_left (norm_nonneg x) (hU.opNorm_le_one 1))
+  have hf_norm : ‖f‖ ≤ 1 := by
+    rw [← ContinuousLinearMap.norm_restrictScalars (𝕜' := ℝ) f,
+      U.toSemigroup.complexLinearOperator_restrictScalars, U.toSemigroup_apply, NNReal.coe_one]
+    exact hU.opNorm_le_one 1
   let w₀ : H := ∫ t in (0 : ℝ)..1, U t v
   obtain ⟨L, hbirk⟩ : ∃ L : H, Tendsto (birkhoffAverage ℂ f _root_.id · w₀) atTop (𝓝 L) :=
     ⟨_, f.tendsto_birkhoffAverage_orthogonalProjection hf_norm w₀⟩

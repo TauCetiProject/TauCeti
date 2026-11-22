@@ -263,12 +263,9 @@ theorem hasSum_prod_real_diagonal {α : Type*} [MeasurableSpace α] [MeasurableE
   have hne : ∑' x : α, μ {x} * ν {x} ≠ ∞ := by
     rw [← prod_diagonal]
     exact measure_ne_top _ _
-  have hsum : Summable fun x : α ↦ μ.real {x} * ν.real {x} := by
-    simpa only [ENNReal.toReal_mul, measureReal_def] using ENNReal.summable_toReal hne
-  have htsum : ∑' x : α, μ.real {x} * ν.real {x} = (μ.prod ν).real (Set.diagonal α) := by
-    rw [measureReal_def, prod_diagonal, ENNReal.tsum_toReal_eq (fun _ ↦ by finiteness)]
-    simp_rw [ENNReal.toReal_mul, measureReal_def]
-  exact htsum ▸ hsum.hasSum
+  have h := ENNReal.hasSum_toReal hne
+  rw [← ENNReal.tsum_toReal_eq (fun _ ↦ by finiteness), ← prod_diagonal, ← measureReal_def] at h
+  simpa only [ENNReal.toReal_mul, measureReal_def] using h
 
 /-- For finite measures `μ` and `ν` on a space with measurable diagonal, the real mass of the
 diagonal under `μ.prod ν` is `∑' x, μ.real {x} * ν.real {x}`. -/

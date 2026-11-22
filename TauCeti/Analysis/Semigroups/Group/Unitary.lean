@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5
 module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearPMap
-public import TauCeti.Analysis.Semigroups.Group.Generator
-public import TauCeti.Analysis.Semigroups.Group.InverseSemigroups
 public import TauCeti.Analysis.Semigroups.Group.PhaseShift
-public import TauCeti.Analysis.Semigroups.Generator.ComplexLinear
 -- Non-public: differentiation of the inner product turns preservation by the group into
 -- skew-symmetry of the generator.
 import Mathlib.Analysis.InnerProductSpace.Calculus

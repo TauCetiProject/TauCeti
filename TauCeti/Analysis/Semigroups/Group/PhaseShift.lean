@@ -60,16 +60,16 @@ def phaseShift (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLine
       ext x
       simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
         StronglyContinuousSemigroup.phaseShift_apply_apply, toSemigroup_apply, reflect_apply]
-      rw [U.map_smul_of_isComplexLinear hU, smul_smul, ← Complex.exp_add,
-        show -(↑b * ↑↑t) * Complex.I + -(↑(-b) * ↑↑t) * Complex.I = 0 by push_cast; ring,
-        Complex.exp_zero, one_smul, U.map_apply_map_neg_apply])
+      rw [U.map_smul_of_isComplexLinear hU, U.map_apply_map_neg_apply, Complex.ofReal_neg,
+        neg_mul (↑b : ℂ), neg_neg, neg_mul, Complex.exp_neg,
+        inv_smul_smul₀ (Complex.exp_ne_zero _)])
     (fun t ↦ by
       ext x
       simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
         StronglyContinuousSemigroup.phaseShift_apply_apply, toSemigroup_apply, reflect_apply]
-      rw [U.map_smul_of_isComplexLinear hU, smul_smul, ← Complex.exp_add,
-        show -(↑(-b) * ↑↑t) * Complex.I + -(↑b * ↑↑t) * Complex.I = 0 by push_cast; ring,
-        Complex.exp_zero, one_smul, U.map_neg_apply_map_apply])
+      rw [U.map_smul_of_isComplexLinear hU, U.map_neg_apply_map_apply, Complex.ofReal_neg,
+        neg_mul (↑b : ℂ), neg_neg, neg_mul, Complex.exp_neg,
+        smul_inv_smul₀ (Complex.exp_ne_zero _)])
 
 /-- The operator at real time `t` of a phase-shifted C₀-group. -/
 @[simp]
@@ -144,14 +144,16 @@ theorem phaseShift {U : StronglyContinuousGroup X} {ω M : ℝ}
     (hb : U.HasGrowthBound ω M) (hU : U.toSemigroup.IsComplexLinear) (b : ℝ) :
     (U.phaseShift hU b).HasGrowthBound ω M := by
   refine hasGrowthBound_of_bound hb.one_le fun t ↦ ?_
-  rw [phaseShift_apply]
-  have hnorm : ‖Complex.exp (-(b * t) * Complex.I)‖ = 1 := by
-    rw [← Complex.ofReal_mul, ← Complex.ofReal_neg, Complex.norm_exp_ofReal_mul_I]
-  calc ‖Complex.exp (-(b * t) * Complex.I) • U t‖
-      ≤ ‖Complex.exp (-(b * t) * Complex.I)‖ * ‖U t‖ :=
-        ContinuousLinearMap.opNorm_smul_le _ _
-    _ = ‖U t‖ := by rw [hnorm, one_mul]
-    _ ≤ M * Real.exp (ω * |t|) := hb.bound t
+  rcases le_or_gt 0 t with ht | ht
+  · have hfwd := hb.toSemigroup.phaseShift hU b
+    rw [← phaseShift_toSemigroup] at hfwd
+    simpa only [(U.phaseShift hU b).toSemigroup_realOperator_of_nonneg ht, abs_of_nonneg ht] using
+      hfwd.bound t ht
+  · have hneg : 0 ≤ -t := neg_nonneg.mpr ht.le
+    have hrev := hb.reflect.toSemigroup.phaseShift (U.reflect_isComplexLinear hU) (-b)
+    rw [← phaseShift_toSemigroup, ← phaseShift_reflect U hU b] at hrev
+    simpa only [(U.phaseShift hU b).reflect_toSemigroup_realOperator_of_nonneg hneg, neg_neg,
+      abs_of_neg ht] using hrev.bound (-t) hneg
 
 end HasGrowthBound
 
