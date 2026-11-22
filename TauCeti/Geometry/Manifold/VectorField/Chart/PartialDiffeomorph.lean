@@ -89,12 +89,14 @@ theorem exists_contMDiff_mfderiv_apply_eq {m : ℕ∞ω} (Φ : PartialDiffeomorp
         (Φ.isInvertible_mfderiv hn hx) hmn).congr_of_eventuallyEq ?_
       filter_upwards [Φ.open_source.mem_nhds hx] with z hz
       simp only [W, hz, ↓reduceIte]
+      -- `W₀'` is `W₀` retyped: the tangent spaces of `V` are definitionally `V`.
       rfl
     · -- Off the source, the field vanishes near `x`, which is not in the compact set `K`.
       refine ((Bundle.contMDiff_zeroSection ℝ (TangentSpace I : M → Type _))
         x).congr_of_eventuallyEq ?_
       filter_upwards [hK.isClosed.isOpen_compl.mem_nhds fun h ↦ hx (hKs h)] with z hz
       rw [hWK hz]
+      -- `Bundle.zeroSection` is by definition the section `z ↦ ⟨z, 0⟩`.
       rfl
   · simp only [W, hx, ↓reduceIte]
     rw [VectorField.mpullback_apply]
