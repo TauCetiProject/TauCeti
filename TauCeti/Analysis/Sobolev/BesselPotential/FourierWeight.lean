@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Equivalent Fourier weights for the Sobolev norms `H^s`
@@ -161,7 +162,7 @@ private theorem norm_fourier_toLp_sq (u : H^{s}(E, F)) (ξ : E) :
 `BesselPotentialSpace.fourierFun u`. -/
 theorem norm_sq_eq_integral_one_add_norm_sq_rpow_mul_norm_fourierFun_sq (u : H^{s}(E, F)) :
     ‖u‖ ^ 2 = ∫ ξ, (1 + ‖ξ‖ ^ 2) ^ s * ‖u.fourierFun ξ‖ ^ 2 := by
-  rw [← norm_fourier_toLp_eq, Lp.norm_sq_eq_integral_norm_sq]
+  rw [← norm_fourier_toLp_eq, ← Lp.integral_norm_sq_eq_norm_sq]
   exact integral_congr_ae (.of_forall (norm_fourier_toLp_sq u))
 
 /-- The Plancherel integrand `(1 + ‖ξ‖ ^ 2) ^ s ‖𝓕 u ξ‖²` of `u ∈ H^s` is integrable. -/

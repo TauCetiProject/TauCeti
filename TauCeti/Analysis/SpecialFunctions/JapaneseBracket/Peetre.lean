@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.Segment
 public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Peetre's inequality for the Japanese bracket
@@ -370,12 +371,11 @@ theorem one_add_norm_sq_rpow_le_one_add_norm_rpow (x : E) {r : ℝ} (hr : 0 ≤ 
         rw [← Real.rpow_natCast (1 + ‖x‖) 2, ← Real.rpow_mul (by positivity)]
         ring_nf
 
-/-- The square of the inhomogeneous weight lies between the squared bracket and twice it,
-`1 + ‖x‖ ^ 2 ≤ (1 + ‖x‖) ^ 2 ≤ 2 (1 + ‖x‖ ^ 2)`, and its real powers are powers of the square. -/
+/-- The square of the inhomogeneous weight is at most twice the squared bracket,
+`(1 + ‖x‖) ^ 2 ≤ 2 (1 + ‖x‖ ^ 2)`, and its real powers are powers of the square. -/
 private theorem one_add_norm_rpow_eq_and_bounds (x : E) (s : ℝ) :
-    (1 + ‖x‖) ^ s = ((1 + ‖x‖) ^ 2) ^ (s / 2) ∧ 1 + ‖x‖ ^ 2 ≤ (1 + ‖x‖) ^ 2 ∧
-      (1 + ‖x‖) ^ 2 ≤ 2 * (1 + ‖x‖ ^ 2) := by
-  refine ⟨?_, by nlinarith [norm_nonneg x], by nlinarith [sq_nonneg (‖x‖ - 1)]⟩
+    (1 + ‖x‖) ^ s = ((1 + ‖x‖) ^ 2) ^ (s / 2) ∧ (1 + ‖x‖) ^ 2 ≤ 2 * (1 + ‖x‖ ^ 2) := by
+  refine ⟨?_, by nlinarith [sq_nonneg (‖x‖ - 1)]⟩
   rw [← Real.rpow_natCast (1 + ‖x‖) 2, ← Real.rpow_mul (by positivity)]
   congr 1
   push_cast
@@ -387,19 +387,10 @@ private theorem one_add_norm_rpow_eq_and_bounds (x : E) (s : ℝ) :
 holds at `‖x‖ = 1` for `s ≥ 0` and at `x = 0` for `s ≤ 0`, so the constant is sharp. -/
 theorem one_add_norm_rpow_le_max_mul_one_add_norm_sq_rpow (x : E) (s : ℝ) :
     (1 + ‖x‖) ^ s ≤ max 1 (2 ^ (s / 2)) * (1 + ‖x‖ ^ 2) ^ (s / 2) := by
-  obtain ⟨hsq, hlo, hhi⟩ := one_add_norm_rpow_eq_and_bounds x s
-  rw [hsq]
-  rcases le_total 0 s with hs | hs
-  · calc ((1 + ‖x‖) ^ 2) ^ (s / 2) ≤ (2 * (1 + ‖x‖ ^ 2)) ^ (s / 2) :=
-          Real.rpow_le_rpow (by positivity) hhi (by positivity)
-      _ = 2 ^ (s / 2) * (1 + ‖x‖ ^ 2) ^ (s / 2) := Real.mul_rpow (by norm_num) (by positivity)
-      _ ≤ max 1 (2 ^ (s / 2)) * (1 + ‖x‖ ^ 2) ^ (s / 2) := by
-          gcongr
-          exact le_max_right _ _
-  · calc ((1 + ‖x‖) ^ 2) ^ (s / 2) ≤ (1 + ‖x‖ ^ 2) ^ (s / 2) :=
-          Real.rpow_le_rpow_of_nonpos (by positivity) hlo (by linarith)
-      _ ≤ max 1 (2 ^ (s / 2)) * (1 + ‖x‖ ^ 2) ^ (s / 2) :=
-          le_mul_of_one_le_left (by positivity) (le_max_left _ _)
+  rw [(one_add_norm_rpow_eq_and_bounds x s).1,
+    show (1 + ‖x‖) ^ 2 = 1 + ‖x‖ ^ 2 + 2 * ‖x‖ by ring]
+  exact Real.add_rpow_le_max_two_rpow_mul (s / 2) (by positivity)
+    (by nlinarith [sq_nonneg (‖x‖ - 1)])
 
 /-- **The inhomogeneous weight is at least a multiple of the Japanese bracket.** For every real
 `s`, `min 1 (2 ^ (s / 2)) (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ (1 + ‖x‖) ^ s`. Equality holds at `x = 0` for
@@ -409,7 +400,7 @@ theorem min_mul_one_add_norm_sq_rpow_le_one_add_norm_rpow (x : E) (s : ℝ) :
   rcases le_total 0 s with hs | hs
   · exact (mul_le_of_le_one_left (by positivity) (min_le_left _ _)).trans
       (one_add_norm_sq_rpow_le_one_add_norm_rpow x hs)
-  obtain ⟨hsq, -, hhi⟩ := one_add_norm_rpow_eq_and_bounds x s
+  obtain ⟨hsq, hhi⟩ := one_add_norm_rpow_eq_and_bounds x s
   rw [hsq]
   calc min 1 (2 ^ (s / 2)) * (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ 2 ^ (s / 2) * (1 + ‖x‖ ^ 2) ^ (s / 2) := by
         gcongr
