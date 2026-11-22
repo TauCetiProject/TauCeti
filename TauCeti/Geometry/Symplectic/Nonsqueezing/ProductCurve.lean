@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 public import TauCeti.Analysis.Complex.RiemannSurface.MappingDegree
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.RiemannSphere
-public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Orientation
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Prod
 public import TauCeti.Geometry.Symplectic.Manifold.Torus.AlmostComplex
 
@@ -21,7 +20,8 @@ Fubini–Study form, and a torus `T = ∀ i : ι ⊕ ι, AddCircle (p i)` with i
 `ω_T`. For the product `J = i × J_T` of the complex structure of the sphere and the standard
 structure of the torus (`TauCeti.SmoothAlmostComplexStructure.prod`,
 `TauCeti.torusAlmostComplexStructure`), this file identifies these spheres: they are exactly the
-maps `z ↦ (g • z, t)` for a Möbius transformation `g ∈ GL(2, ℂ)` and a point `t ∈ T`.
+maps `z ↦ (g • z, t)` for a Möbius transformation `g ∈ GL(2, ℂ)` and a point `t ∈ T`. The results
+hold more generally with `J_T` replaced by any `ω_T`-tame almost complex structure on the torus.
 
 Let `u : OnePoint ℂ → S² × T` be smooth and pseudoholomorphic for `J`. Its components are
 pseudoholomorphic (`TauCeti.SmoothAlmostComplexStructure.isPseudoholomorphic_prod_iff`).
@@ -43,7 +43,7 @@ class of `u` is read off from its area: by
 `TauCeti.integralTopForm_mpullback_prod_torusSymplecticForm_eq_degree_mul` the area
 `∫ u^*(pr₁^*(a • ω_FS) + pr₂^*ω_T)` is `a` times the degree of the sphere component, so for
 `a ≠ 0` the spheres of area `a` are exactly the maps `(g • ·, t)`
-(`TauCeti.integralTopForm_mpullback_eq_iff_exists_smul`).
+(`TauCeti.integralTopForm_mpullback_prod_torusSymplecticForm_eq_iff_exists_smul`).
 
 ## Main results
 
@@ -51,8 +51,8 @@ class of `u` is read off from its area: by
   component of a pseudoholomorphic sphere in `P × T` is constant.
 * `TauCeti.degree_fst_comp_eq_one_iff_exists_smul`: a pseudoholomorphic sphere has sphere
   component of degree one exactly when it is `z ↦ (g • z, t)`.
-* `TauCeti.integralTopForm_mpullback_eq_iff_exists_smul`: the same with the area `a` in place of
-  the degree.
+* `TauCeti.integralTopForm_mpullback_prod_torusSymplecticForm_eq_iff_exists_smul`: the same with
+  the area `a` in place of the degree.
 * `TauCeti.contMDiff_smul_prodMk_const`, `TauCeti.isPseudoholomorphic_smul_prodMk_const`: the maps
   `z ↦ (g • z, t)` into `S² × M` are smooth and pseudoholomorphic.
 
@@ -101,16 +101,18 @@ theorem snd_apply_eq_of_isPseudoholomorphic_prod_of_tames_torusSymplecticForm {E
     (contMDiff_snd.comp hv) hK
     (SmoothAlmostComplexStructure.isPseudoholomorphic_prod_iff.1 hhol).2 z z'
 
-/-- **The class-`A` spheres of `S² × T` for the product structure.** A smooth map
+/-- **The class-`A` spheres of `S² × T` for the product structure.** Let `K` be an almost complex
+structure on the torus tamed by `ω_T`, such as the standard one. A smooth map
 `u : OnePoint ℂ → S² × T`, pseudoholomorphic for the product of the complex structure of the
-Riemann sphere and the standard structure of the torus, has sphere component of mapping degree one
-exactly when it is `z ↦ (g • z, t)` for a Möbius transformation `g` and a point `t` of the
-torus. -/
+Riemann sphere and `K`, has sphere component of mapping degree one exactly when it is
+`z ↦ (g • z, t)` for a Möbius transformation `g` and a point `t` of the torus. -/
 theorem degree_fst_comp_eq_one_iff_exists_smul
+    {K : SmoothAlmostComplexStructure (ModelWithCorners.pi fun _ : ι ⊕ ι ↦ 𝓘(ℝ))
+      (∀ i, AddCircle (p i))}
     (hu : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod (ModelWithCorners.pi fun _ : ι ⊕ ι ↦ 𝓘(ℝ))) ∞ u)
+    (hK : (torusSymplecticForm p).Tames K)
     (hhol : IsPseudoholomorphic (SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ))
-      ((SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ)).prod
-        (torusAlmostComplexStructure p)) u) :
+      ((SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ)).prod K) u) :
     degree ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
         (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
       ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
@@ -123,8 +125,8 @@ theorem degree_fst_comp_eq_one_iff_exists_smul
       (SmoothAlmostComplexStructure.isPseudoholomorphic_prod_iff.1 hhol).1
   rw [hfst.degree_reindex_complexManifoldOrientation_eq_one_iff_exists_smul]
   refine ⟨fun ⟨g, hg⟩ ↦ ⟨g, (u OnePoint.infty).2, funext fun z ↦ Prod.ext (congrFun hg z) ?_⟩, ?_⟩
-  · exact snd_apply_eq_of_isPseudoholomorphic_prod_of_tames_torusSymplecticForm hu
-      (compatible_torusAlmostComplexStructure p).tames hhol z OnePoint.infty
+  · exact snd_apply_eq_of_isPseudoholomorphic_prod_of_tames_torusSymplecticForm hu hK hhol z
+      OnePoint.infty
   · rintro ⟨g, t, rfl⟩
     exact ⟨g, rfl⟩
 
@@ -157,20 +159,22 @@ end Mobius
 
 /-- **The pseudoholomorphic spheres of area `a` in `S²(a) × T`.** For `a ≠ 0`, a smooth map
 `u : OnePoint ℂ → S²(a) × T`, pseudoholomorphic for the product of the complex structure of the
-Riemann sphere and the standard structure of the torus, has symplectic area
-`∫ u^*(pr₁^*(a • ω_FS) + pr₂^*ω_T) = a` exactly when it is `z ↦ (g • z, t)` for a Möbius
-transformation `g` and a point `t` of the torus. -/
-theorem integralTopForm_mpullback_eq_iff_exists_smul {a : ℝ} (ha : a ≠ 0)
+Riemann sphere and an `ω_T`-tame almost complex structure `K` on the torus, such as the standard
+one, has symplectic area `∫ u^*(pr₁^*(a • ω_FS) + pr₂^*ω_T) = a` exactly when it is
+`z ↦ (g • z, t)` for a Möbius transformation `g` and a point `t` of the torus. -/
+theorem integralTopForm_mpullback_prod_torusSymplecticForm_eq_iff_exists_smul {a : ℝ} (ha : a ≠ 0)
+    {K : SmoothAlmostComplexStructure (ModelWithCorners.pi fun _ : ι ⊕ ι ↦ 𝓘(ℝ))
+      (∀ i, AddCircle (p i))}
     (hu : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod (ModelWithCorners.pi fun _ : ι ⊕ ι ↦ 𝓘(ℝ))) ∞ u)
+    (hK : (torusSymplecticForm p).Tames K)
     (hhol : IsPseudoholomorphic (SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ))
-      ((SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ)).prod
-        (torusAlmostComplexStructure p)) u) :
+      ((SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ)).prod K) u) :
     integralTopForm ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
         (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
       (SmoothForm.mpullback u hu
         ((a • OnePoint.fubiniStudyForm).prod (torusSymplecticForm p))).val = a ↔
       ∃ (g : GL (Fin 2) ℂ) (t : ∀ i, AddCircle (p i)), u = fun z ↦ (g • z, t) := by
-  rw [← degree_fst_comp_eq_one_iff_exists_smul hu hhol,
+  rw [← degree_fst_comp_eq_one_iff_exists_smul hu hK hhol,
     integralTopForm_mpullback_prod_torusSymplecticForm_eq_degree_mul _ _
       (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (Set.subset_univ _)) hu,
     SmoothForm.smul_toRoughForm, integralTopForm_smul, OnePoint.integralTopForm_fubiniStudyForm,
